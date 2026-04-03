@@ -33,7 +33,6 @@ MCP >> initialize [
 MCP >> onInitialize: protocolVersion capabilities: capabilities clientInfo: clientInfo websiteUrl: websiteUrl [
 
 	<jrpc: #initialize>
-	self halt. 
 	^ MCPStructureInitialize new
 		  protocolVersion: '2025-11-25';
 		  capabilities:
@@ -52,8 +51,6 @@ MCP >> onInitialize: protocolVersion capabilities: capabilities clientInfo: clie
 MCP >> rpcNotificationInitialized [
 
 	<jrpc: #'notifications/initialized'>
-	self halt.
-
 	^ nil
 ]
 
@@ -62,6 +59,20 @@ MCP >> rpcPing [
 
 	<jrpc: #ping>
 	^ Dictionary new
+]
+
+{ #category : 'as yet unclassified' }
+MCP >> rpcResourcesList [
+
+	<jrpc: #'resources/list'>
+	^ {#resource -> {  } } asDictionary 
+]
+
+{ #category : 'as yet unclassified' }
+MCP >> rpcResourcesTemplateList [
+
+	<jrpc: #'resources/templates/list'>
+	^ {#resourceTemplates -> {  } } asDictionary 
 ]
 
 { #category : 'as yet unclassified' }

@@ -35,11 +35,11 @@ MCPHTTPServer >> answerOptionsWith: response [
 { #category : 'initialization' }
 MCPHTTPServer >> answerPost: request with: response [
 
-	| requestContents payload |
-	requestContents := request contents.
-	payload := self handleJSON: requestContents.
-	payload ifNil: [
+	| payload |
+	payload := self handleJSON: request contents.
+	(payload isString and: [ payload isEmpty ]) ifTrue: [
 			response statusLine: ZnStatusLine accepted.
+			response headers at: #'Content-Length' put: '0'.
 			^ response ].
 	response entity: (ZnEntity json: payload).
 	^ response
