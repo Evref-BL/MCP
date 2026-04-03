@@ -1,0 +1,4 @@
+[mcp_servers.pharo]
+enabled = true
+required = true
+url = "http://127.0.0.1:4000"
