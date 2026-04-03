@@ -33,6 +33,7 @@ MCP >> initialize [
 MCP >> onInitialize: protocolVersion capabilities: capabilities clientInfo: clientInfo websiteUrl: websiteUrl [
 
 	<jrpc: #initialize>
+	self halt. 
 	^ MCPStructureInitialize new
 		  protocolVersion: '2025-11-25';
 		  capabilities:
@@ -51,6 +52,7 @@ MCP >> onInitialize: protocolVersion capabilities: capabilities clientInfo: clie
 MCP >> rpcNotificationInitialized [
 
 	<jrpc: #'notifications/initialized'>
+		self halt. 
 	
 	
 ]
