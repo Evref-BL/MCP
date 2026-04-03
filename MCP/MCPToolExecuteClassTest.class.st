@@ -20,9 +20,9 @@ MCPToolExecuteClassTest >> executeWithArguments: arguments [
 MCPToolExecuteClassTest >> initialize [
 
 	super initialize.
-	name := 'pharo-execute-class-test'.
-	title := 'Execute Pharo class tests'.
-	description := 'Execute Pharo class tests'.
+	name := 'pharo-execute-all-class-test'.
+	title := 'Execute Pharo a test of class'.
+	description := 'Execute Pharo a test of class'.
 	inputSchema := MCPStructureInputSchema new
 		               type: 'object';
 		               properties: { (MCPStructureProperties new
