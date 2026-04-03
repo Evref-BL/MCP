@@ -56,14 +56,14 @@ MCP >> rpcNotificationInitialized [
 ]
 
 { #category : 'as yet unclassified' }
-MCP >> rpcToolCall: name withParams: params [
+MCP >> rpcToolCall: name withParams: arguments [
 
 	<jrpc: #'tools/call'>
 	toolsList
 		at: name
 		ifPresent: [ :tool |
 				^ (MCPStructureCallToolResult content:
-					   (tool executeWithArguments: params)) asJRPCJSON ]
+					   (tool executeWithArguments: arguments)) asJRPCJSON ]
 		ifAbsent: [ ToolNotFound signal ]
 ]
 
