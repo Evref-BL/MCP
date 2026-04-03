@@ -9,6 +9,50 @@ Class {
 { #category : 'initialization' }
 MCPHTTPServer >> answer: request with: response [
 
+		self configureResponse: response for: request.
+	request method = #OPTIONS ifTrue: [ ^ self answerOptionsWith: response ].
+	request method = #GET ifTrue: [ ^ self answerGet: request with: response ].
+	request method = #POST ifTrue: [ ^ self answerPost: request with: response ].
+	^ self answerUnsupportedMethodWith: response
+]
+
+{ #category : 'initialization' }
+MCPHTTPServer >> answerGet: request with: response [
+	"Codex uses Streamable HTTP. Until this server supports SSE on GET,
+	answer explicitly with 405 instead of timing out with an empty reply."
+
+	response statusLine: ZnStatusLine methodNotAllowed.
+	^ response
+]
+
+{ #category : 'initialization' }
+MCPHTTPServer >> answerOptionsWith: response [
+
+	response statusLine: ZnStatusLine noContent.
+	^ response
+]
+
+{ #category : 'initialization' }
+MCPHTTPServer >> answerPost: request with: response [
+
+	| requestContents payload |
+	requestContents := request contents.
+	payload := self handleJSON: requestContents.
+
+	response entity: (ZnEntity json: payload).
+	^ response
+]
+
+{ #category : 'initialization' }
+MCPHTTPServer >> answerUnsupportedMethodWith: response [
+
+	response statusLine: ZnStatusLine methodNotAllowed.
+	^ response
+]
+
+{ #category : 'initialization' }
+MCPHTTPServer >> configureResponse: response for: request [
+
 	| origin |
 	origin := request headers at: 'Origin' ifAbsent: [ '*' ].
 
@@ -18,13 +62,7 @@ MCPHTTPServer >> answer: request with: response [
 		put: 'GET, POST, OPTIONS'.
 	response headers
 		at: #'Access-Control-Allow-Headers'
-		put: 'content-type, mcp-protocol-version'.
-	request method = #OPTIONS
-		ifTrue: [ response statusLine: ZnStatusLine noContent ]
-		ifFalse: [
-			response entity:
-				(ZnEntity json: (self handleJSON: request contents)) ].
-	^ response
+		put: 'accept, content-type, last-event-id, mcp-protocol-version, mcp-session-id'
 ]
 
 { #category : 'initialization' }
