@@ -56,6 +56,13 @@ MCP >> rpcNotificationInitialized [
 ]
 
 { #category : 'as yet unclassified' }
+MCP >> rpcPing [
+
+	<jrpc: #ping>
+	^ Dictionary new
+]
+
+{ #category : 'as yet unclassified' }
 MCP >> rpcToolCall: name withParams: arguments [
 
 	<jrpc: #'tools/call'>
