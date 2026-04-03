@@ -52,9 +52,9 @@ MCP >> onInitialize: protocolVersion capabilities: capabilities clientInfo: clie
 MCP >> rpcNotificationInitialized [
 
 	<jrpc: #'notifications/initialized'>
-		self halt. 
-	
-	
+	self halt.
+
+	^ nil
 ]
 
 { #category : 'as yet unclassified' }

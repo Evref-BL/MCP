@@ -38,7 +38,9 @@ MCPHTTPServer >> answerPost: request with: response [
 	| requestContents payload |
 	requestContents := request contents.
 	payload := self handleJSON: requestContents.
-
+	payload ifNil: [
+			response statusLine: ZnStatusLine accepted.
+			^ response ].
 	response entity: (ZnEntity json: payload).
 	^ response
 ]
