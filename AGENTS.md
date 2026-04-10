@@ -5,6 +5,7 @@ Use the `pharo` MCP server for Pharo and Smalltalk tasks in this workspace.
 When a request involves Pharo, prefer MCP tool calls over guessing from memory or inspecting unrelated local files.
 
 Use the `pharo` MCP tools first for:
+
 - counting or listing packages
 - browsing classes, methods, and protocols
 - reading Pharo-side state that only exists in the running image
