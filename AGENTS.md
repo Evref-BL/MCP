@@ -14,3 +14,7 @@ Use the `pharo` MCP tools first for:
 If a needed answer should come from Pharo, explicitly say you are using the `pharo` MCP server.
 
 If a `pharo` MCP tool fails or returns incomplete data, report the failure clearly instead of inventing the answer.
+
+## How to use me
+
+Remember that the Pharo image must be save when we finish to implement some code or execute heavy script.
