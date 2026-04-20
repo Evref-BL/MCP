@@ -35,5 +35,6 @@ BaselineOfMCP >> defineGroups: spec [
 BaselineOfMCP >> definePackages: spec [
 	"common"
 
-	spec package: 'MCP' with: [ spec requires: #( 'JRPC' ) ]
+	spec package: 'MCP' with: [ spec requires: #( 'JRPC' ) ].
+	spec package: 'MCP-Spec' with: [ spec requires: #( 'MCP' ) ]
 ]
