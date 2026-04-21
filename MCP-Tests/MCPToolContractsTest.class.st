@@ -5,6 +5,24 @@ Class {
 	#package : 'MCP-Tests'
 }
 
+{ #category : 'private' }
+MCPToolContractsTest >> callToolNamed: aToolName withArguments: someArguments [
+
+	^ MCP new rpcToolCall: aToolName withParams: someArguments
+]
+
+{ #category : 'private' }
+MCPToolContractsTest >> firstTextFromToolResult: aResult [
+
+	^ (aResult at: #content) first at: #text
+]
+
+{ #category : 'private' }
+MCPToolContractsTest >> handleJSON: aJSONString [
+
+	^ MCP new server messageProcessor handleJSON: aJSONString
+]
+
 { #category : 'tests' }
 MCPToolContractsTest >> testCreatePackageRequiresPackageNameInSchema [
 
@@ -24,12 +42,20 @@ MCPToolContractsTest >> testEvalIsMarkedAsAdvancedEscapeHatch [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testEvalRequiresCodeInSchema [
+
+	self assert: (MCPToolEval new inputSchema required includes: 'code')
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testEvalReturnsCompilationFailureInformation [
 
 	| result text |
-	result := MCPToolEval new executeWithArguments:
-		          { (#code -> '1 +') } asDictionary.
-	text := result first text.
+	result := self
+		          callToolNamed: 'pharo-eval'
+		          withArguments: { (#code -> '1 +') } asDictionary.
+	text := self firstTextFromToolResult: result.
+	self assert: (result at: #isError).
 	self assert: (text includesSubstring: 'failed during compilation').
 	self assert: (text includesSubstring: 'RBSyntaxErrorNotice').
 	self assert: (text includesSubstring: 'Position: 4')
@@ -39,9 +65,12 @@ MCPToolContractsTest >> testEvalReturnsCompilationFailureInformation [
 MCPToolContractsTest >> testEvalReturnsRuntimeFailureInformation [
 
 	| result text |
-	result := MCPToolEval new executeWithArguments:
+	result := self
+		          callToolNamed: 'pharo-eval'
+		          withArguments:
 		          { (#code -> 'Error signal: ''boom''') } asDictionary.
-	text := result first text.
+	text := self firstTextFromToolResult: result.
+	self assert: (result at: #isError).
 	self assert: (text includesSubstring: 'failed during execution').
 	self assert: (text includesSubstring: 'boom').
 	self assert: (text includesSubstring: 'Signaler context:')
@@ -50,41 +79,112 @@ MCPToolContractsTest >> testEvalReturnsRuntimeFailureInformation [
 { #category : 'tests' }
 MCPToolContractsTest >> testGetClassesListsClassesForExistingPackage [
 
-	| result |
-	result := MCPToolGetClasses new executeWithArguments:
+	| result text |
+	result := self
+		          callToolNamed: 'pharo-list-package-classes'
+		          withArguments:
 		          { (#packageName -> 'MCP-Tests') } asDictionary.
-	self assert: (result first text includesSubstring:
-			 'MCP-Tests/MCPToolCompileMethodTest')
+	text := self firstTextFromToolResult: result.
+	self deny: (result at: #isError).
+	self assert:
+		(text includesSubstring: 'MCP-Tests/MCPToolCompileMethodTest')
 ]
 
 { #category : 'tests' }
 MCPToolContractsTest >> testGetClassesReportsMissingPackageErrorsInBand [
 
 	| result text |
-	result := MCPToolGetClasses new executeWithArguments:
+	result := self
+		          callToolNamed: 'pharo-list-package-classes'
+		          withArguments:
 		          { (#packageName -> 'MCP-Definitely-Missing') }
 			          asDictionary.
-	text := result first text.
+	text := self firstTextFromToolResult: result.
+	self assert: (result at: #isError).
 	self assert: (text includesSubstring:
 			 'Unable to list classes for package MCP-Definitely-Missing').
-	self assert: (text includesSubstring: 'NotFound').
-	self assert: (text includesSubstring:
-			 'There is no package named MCP-Definitely-Missing')
+	self assert: (text includesSubstring: 'There is no package named').
+	self deny:
+		(text includesSubstring: 'Tool pharo-list-package-classes failed')
 ]
 
 { #category : 'tests' }
 MCPToolContractsTest >> testGetClassesSignalsMissingPackageErrors [
 
 	| result text |
-	result := MCPToolGetClasses new executeWithArguments:
+	result := self
+		          callToolNamed: 'pharo-list-package-classes'
+		          withArguments:
 		          { (#packageName -> 'MCP-Definitely-Missing') }
 			          asDictionary.
-	text := result first text.
+	text := self firstTextFromToolResult: result.
+	self assert: (result at: #isError).
 	self assert: (text includesSubstring:
 			 'Unable to list classes for package MCP-Definitely-Missing').
-	self assert: (text includesSubstring: 'NotFound').
+	self assert: (text includesSubstring: 'There is no package named').
+	self deny:
+		(text includesSubstring: 'Tool pharo-list-package-classes failed')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testHandleJSONReturnsInvalidParamsForMissingRequiredArguments [
+
+	| response |
+	response := self handleJSON:
+		            '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"pharo-eval","arguments":{}}}'.
+	self assert: (response includesSubstring: '"code":-32602').
+	self assert: (response includesSubstring:
+			 '"message":"Invalid method parameter(s)."')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testHandleJSONReturnsMethodNotFoundForUnknownTool [
+
+	| response |
+	response := self handleJSON:
+		            '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"does-not-exist","arguments":{}}}'.
+	self assert: (response includesSubstring: '"code":-32601').
+	self assert: (response includesSubstring:
+			 '"message":"The method does not exist / is not available."')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testListPackageClassesListsClassesForExistingPackage [
+
+	| result text |
+	result := self
+		          callToolNamed: 'pharo-list-package-classes'
+		          withArguments:
+		          { (#packageName -> 'MCP-Tests') } asDictionary.
+	text := self firstTextFromToolResult: result.
+	self deny: (result at: #isError).
+	self assert:
+		(text includesSubstring: 'MCP-Tests/MCPToolCompileMethodTest')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testListPackageClassesRequiresPackageNameInSchema [
+
+	self assert:
+		(MCPToolGetClasses new inputSchema required includes: 'packageName')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testListPackageClassesReturnsErrorResultForMissingPackage [
+
+	| result text |
+	result := self
+		          callToolNamed: 'pharo-list-package-classes'
+		          withArguments:
+		          { (#packageName -> 'MCP-Definitely-Missing') }
+			          asDictionary.
+	text := self firstTextFromToolResult: result.
+	self assert: (result at: #isError).
 	self assert: (text includesSubstring:
-			 'There is no package named MCP-Definitely-Missing')
+			 'Unable to list classes for package MCP-Definitely-Missing').
+	self assert: (text includesSubstring: 'There is no package named').
+	self deny:
+		(text includesSubstring: 'Tool pharo-list-package-classes failed')
 ]
 
 { #category : 'tests' }
@@ -92,4 +192,37 @@ MCPToolContractsTest >> testReadClassRequiresClassNameInSchema [
 
 	self assert:
 		(MCPToolReadClass new inputSchema required includes: 'className')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testRpcToolCallSignalsInvalidParametersWhenRequiredArgumentIsMissing [
+
+	self
+		should: [
+		self callToolNamed: 'pharo-eval' withArguments: Dictionary new ]
+		raise: JRPCInvalidParameters
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
+
+	self
+		assert: MCPToolExecuteClassTest new name
+		equals: 'pharo-run-test-method'.
+	self
+		assert: MCPToolExecuteClassTest new inputSchema required asSet
+		equals: #( 'className' 'testMethodName' ) asSet.
+	self
+		assert: MCPToolExecuteAllTestOfClass new name
+		equals: 'pharo-run-test-class'.
+	self
+		assert: MCPToolExecuteAllTestOfClass new inputSchema required asSet
+		equals: #( 'className' ) asSet
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testToolNamesUsePharoPrefix [
+
+	self assert: (MCPTool allSubclasses allSatisfy: [ :each |
+			 each new name beginsWith: 'pharo-' ])
 ]

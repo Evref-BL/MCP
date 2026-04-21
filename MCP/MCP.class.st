@@ -83,9 +83,19 @@ MCP >> rpcToolCall: name withParams: arguments [
 	toolsList
 		at: name
 		ifPresent: [ :tool |
-			^ (MCPStructureCallToolResult content:
-				   (tool executeWithArguments: arguments)) asJRPCJSON ]
-		ifAbsent: [ ToolNotFound signal ]
+			| result |
+			tool validateArguments: arguments.
+			^ [
+			  result := tool executeWithArguments: arguments.
+			  ((result isKindOf: MCPStructureCallToolResult)
+				   ifTrue: [ result ]
+				   ifFalse: [ MCPStructureCallToolResult content: result ])
+				  asJRPCJSON ]
+				  on: Error
+				  do: [ :error |
+					  (error isKindOf: JRPCError) ifTrue: [ error pass ].
+					  (tool errorResultFor: error) asJRPCJSON ] ]
+		ifAbsent: [ JRPCNonExistentHandler signal: name ]
 ]
 
 { #category : 'as yet unclassified' }

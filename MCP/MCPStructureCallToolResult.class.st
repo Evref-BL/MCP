@@ -2,7 +2,8 @@ Class {
 	#name : 'MCPStructureCallToolResult',
 	#superclass : 'Object',
 	#instVars : [
-		'content'
+		'content',
+		'structuredContent'
 	],
 	#category : 'MCP-Structure',
 	#package : 'MCP',
@@ -38,4 +39,10 @@ MCPStructureCallToolResult >> content [
 MCPStructureCallToolResult >> content: anObject [
 
 	content := anObject
+]
+
+{ #category : 'accessing' }
+MCPStructureCallToolResult >> isError [
+
+	^ false
 ]

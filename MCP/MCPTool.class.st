@@ -7,7 +7,8 @@ Class {
 		'description',
 		'icons',
 		'inputSchema',
-		'handler'
+		'handler',
+		'outputSchema'
 	],
 	#category : 'MCP-Tools',
 	#package : 'MCP',
@@ -46,6 +47,26 @@ MCPTool >> executeWithArguments: anArgument [
 	"You can also overide me to make things easier to manage"
 
 	^ handler value: anArgument
+]
+
+{ #category : 'error handling' }
+MCPTool >> failureMessageFor: anError [
+
+	| message |
+	message := anError messageText
+		           ifNil: [ '' ]
+		           ifNotNil: [ :text | text asString ].
+	^ String streamContents: [ :stream |
+		  stream
+			  nextPutAll: 'Tool ';
+			  nextPutAll: self name;
+			  nextPutAll: ' failed (';
+			  nextPutAll: anError class name;
+			  nextPutAll: ')'.
+		  message isEmpty ifFalse: [
+			  stream
+				  nextPutAll: ': ';
+				  nextPutAll: message ] ]
 ]
 
 { #category : 'accessing' }
