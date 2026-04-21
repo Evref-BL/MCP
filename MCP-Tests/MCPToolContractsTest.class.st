@@ -79,15 +79,15 @@ MCPToolContractsTest >> testEvalReturnsRuntimeFailureInformation [
 { #category : 'tests' }
 MCPToolContractsTest >> testGetClassesListsClassesForExistingPackage [
 
-	| result text |
+	| data result |
 	result := self
 		          callToolNamed: 'pharo-list-package-classes'
 		          withArguments:
 		          { (#packageName -> 'MCP-Tests') } asDictionary.
-	text := self firstTextFromToolResult: result.
-	self deny: (result at: #isError).
+	data := (result at: #structuredContent) at: #data.
+	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert:
-		(text includesSubstring: 'MCP-Tests/MCPToolCompileMethodTest')
+		((data at: #classNames) includes: 'MCPToolCompileMethodTest')
 ]
 
 { #category : 'tests' }
@@ -151,15 +151,15 @@ MCPToolContractsTest >> testHandleJSONReturnsMethodNotFoundForUnknownTool [
 { #category : 'tests' }
 MCPToolContractsTest >> testListPackageClassesListsClassesForExistingPackage [
 
-	| result text |
+	| data result |
 	result := self
 		          callToolNamed: 'pharo-list-package-classes'
 		          withArguments:
 		          { (#packageName -> 'MCP-Tests') } asDictionary.
-	text := self firstTextFromToolResult: result.
-	self deny: (result at: #isError).
+	data := (result at: #structuredContent) at: #data.
+	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert:
-		(text includesSubstring: 'MCP-Tests/MCPToolCompileMethodTest')
+		((data at: #classNames) includes: 'MCPToolCompileMethodTest')
 ]
 
 { #category : 'tests' }

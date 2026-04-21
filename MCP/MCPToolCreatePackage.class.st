@@ -13,10 +13,13 @@ MCPToolCreatePackage >> executeWithArguments: arguments [
 	packageName := arguments at: #packageName.
 	wasExisting := self packageOrganizer hasPackage: packageName.
 	self packageOrganizer ensurePackage: packageName.
-
-	^ { (MCPStructureTextContent text: (wasExisting
-			    ifTrue: [ 'Package ' , packageName , ' already exists.' ]
-			    ifFalse: [ 'Package ' , packageName , ' created.' ])) }
+	^ self
+		  successResultText: (wasExisting
+				   ifTrue: [ 'Package ' , packageName , ' already existed.' ]
+				   ifFalse: [ 'Package ' , packageName , ' created.' ])
+		  data: {
+				  (#packageName -> packageName).
+				  (#existed -> wasExisting) } asDictionary
 ]
 
 { #category : 'initialization' }
@@ -25,15 +28,28 @@ MCPToolCreatePackage >> initialize [
 	super initialize.
 	name := 'pharo-create-package'.
 	title := 'Create Pharo Package'.
-	description := 'Create a package in the Pharo environment'.
+	description := 'Create a package in the running Pharo image, or report that it already exists.'.
 	inputSchema := MCPStructureInputSchema new
 		               type: 'object';
 		               properties: { (MCPStructureProperties new
 				                name: 'packageName';
 				                type: 'string';
-				                description:
-					                'The name of the package to be created') };
+				                description: 'The name of the package to create.';
+				                yourself) };
 		               required: #( 'packageName' );
 		               yourself.
+	outputSchema := self
+		                standardOutputSchemaForDataProperties: {
+				                (self
+					                 schemaPropertyNamed: 'packageName'
+					                 type: 'string'
+					                 description:
+					                 'The package name that was requested.').
+				                (self
+					                 schemaPropertyNamed: 'existed'
+					                 type: 'boolean'
+					                 description:
+					                 'Whether the package already existed before the call.') }
+		                required: #( 'packageName' 'existed' ).
 	icons := {  }
 ]

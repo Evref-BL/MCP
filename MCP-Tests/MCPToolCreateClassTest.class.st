@@ -50,6 +50,18 @@ MCPToolCreateClassTest >> createdClassNames [
 ]
 
 { #category : 'private' }
+MCPToolCreateClassTest >> dataFromResult: aResult [
+
+	^ aResult structuredContent at: #data
+]
+
+{ #category : 'private' }
+MCPToolCreateClassTest >> errorFromResult: aResult [
+
+	^ aResult structuredContent at: #error
+]
+
+{ #category : 'private' }
 MCPToolCreateClassTest >> generatedPackageName [
 
 	^ 'MCP-Tests-CreateClass'
@@ -93,25 +105,28 @@ MCPToolCreateClassTest >> tearDown [
 { #category : 'tests' }
 MCPToolCreateClassTest >> testCreatesAClass [
 
-	| createdClass result |
+	| createdClass data result |
 	result := tool executeWithArguments: (self
 			           argumentsForClassName: 'MCPToolCreateClassTestGenerated'
 			           superclassName: 'Object'
 			           packageName: self generatedPackageName).
+	data := self dataFromResult: result.
 	createdClass := self classNamed: 'MCPToolCreateClassTestGenerated'.
 	self assert: createdClass superclass equals: Object.
 	self
 		assert: createdClass packageName asString
 		equals: self generatedPackageName.
 	self assert: createdClass slots isEmpty.
-	self assert: (result first text includesSubstring:
-			 'Created class MCPToolCreateClassTestGenerated < Object')
+	self
+		assert: (data at: #className)
+		equals: 'MCPToolCreateClassTestGenerated'.
+	self assert: (data at: #superclassName) equals: 'Object'
 ]
 
 { #category : 'tests' }
 MCPToolCreateClassTest >> testCreatesAClassWithClassSlots [
 
-	| createdClass result |
+	| createdClass data result |
 	result := tool executeWithArguments: (self
 			           argumentsForClassName:
 			           'MCPToolCreateClassTestClassSlots'
@@ -120,17 +135,18 @@ MCPToolCreateClassTest >> testCreatesAClassWithClassSlots [
 			           tag: nil
 			           slots: nil
 			           classSlots: #( 'defaultName' )).
+	data := self dataFromResult: result.
 	createdClass := self classNamed: 'MCPToolCreateClassTestClassSlots'.
 	self
 		assert: (createdClass classSide slots collect: #name as: Array)
 		equals: #( #defaultName ).
-	self assert: (result first text includesSubstring: '1 class slot')
+	self assert: (data at: #classSlotNames) equals: #( 'defaultName' )
 ]
 
 { #category : 'tests' }
 MCPToolCreateClassTest >> testCreatesAClassWithSlotsAndTag [
 
-	| createdClass result |
+	| createdClass data result |
 	result := tool executeWithArguments: (self
 			           argumentsForClassName: 'MCPToolCreateClassTestTagged'
 			           superclassName: 'Object'
@@ -138,6 +154,7 @@ MCPToolCreateClassTest >> testCreatesAClassWithSlotsAndTag [
 			           tag: 'Generated'
 			           slots: #( 'firstName' 'lastName' )
 			           classSlots: nil).
+	data := self dataFromResult: result.
 	createdClass := self classNamed: 'MCPToolCreateClassTestTagged'.
 	self
 		assert: (createdClass slots collect: #name as: Array)
@@ -146,8 +163,10 @@ MCPToolCreateClassTest >> testCreatesAClassWithSlotsAndTag [
 	self
 		assert: createdClass category asString
 		equals: self generatedPackageName , '-Generated'.
-	self assert:
-		(result first text includesSubstring: '2 instance slots')
+	self assert: (data at: #tag) equals: 'Generated'.
+	self
+		assert: (data at: #instanceSlotNames)
+		equals: #( 'firstName' 'lastName' )
 ]
 
 { #category : 'tests' }
@@ -170,18 +189,16 @@ MCPToolCreateClassTest >> testEnsuresThePackageBeforeCreatingTheClass [
 { #category : 'tests' }
 MCPToolCreateClassTest >> testSignalsAnErrorWhenTheClassAlreadyExists [
 
-	| arguments error |
+	| arguments result |
 	arguments := self
 		             argumentsForClassName:
 		             'MCPToolCreateClassTestGenerated'
 		             superclassName: 'Object'
 		             packageName: self generatedPackageName.
 	tool executeWithArguments: arguments.
-	error := [
-	         tool executeWithArguments: arguments.
-	         nil ]
-		         on: Error
-		         do: [ :anError | anError ].
-	self assert: error notNil.
-	self assert: (error messageText includesSubstring: 'already exists')
+	result := tool executeWithArguments: arguments.
+	self assert: result isError.
+	self
+		assert: ((self errorFromResult: result) at: #message)
+		equals: 'Class MCPToolCreateClassTestGenerated already exists.'
 ]

@@ -9,7 +9,7 @@ Class {
 { #category : 'executing' }
 MCPToolEval >> executeWithArguments: arguments [
 
-	| compiler notice answer |
+	| answer compiler notice |
 	compiler := SmalltalkImage current compiler.
 	compiler compilationContext isScripting: true.
 	notice := nil.
@@ -19,12 +19,27 @@ MCPToolEval >> executeWithArguments: arguments [
 	answer := [ compiler evaluate: (arguments at: #code) ]
 		          on: Error
 		          do: [ :error |
-			          ^ { (MCPStructureTextContent text:
-				             (self runtimeFailureMessageFor: error)) } ].
+			          ^ self
+				            errorResultText:
+				            (self runtimeFailureMessageFor: error)
+				            details: {
+						            (#errorClass -> error class name).
+						            (#message -> error messageText).
+						            (#signalerContext
+						             ->
+						             (error signalerContext ifNotNil: [ :ctx |
+							              ctx printString ])) } asDictionary ].
 	notice ifNotNil: [
-		^ { (MCPStructureTextContent text:
-			   (self syntaxFailureMessageFor: notice)) } ].
-	^ { (MCPStructureTextContent text: answer printString) }
+		^ self
+			  errorResultText: (self syntaxFailureMessageFor: notice)
+			  details: {
+					  (#errorClass -> notice class name).
+					  (#message -> notice messageText).
+					  (#description -> 'Compilation failed before evaluation.').
+					  (#position -> notice position) } asDictionary ].
+	^ self
+		  successResultText: 'Code evaluated successfully.'
+		  data: { (#resultPrintString -> answer printString) } asDictionary
 ]
 
 { #category : 'initialization' }
@@ -32,16 +47,25 @@ MCPToolEval >> initialize [
 
 	super initialize.
 	name := 'pharo-eval'.
-	title := 'Execute Pharo Code'.
-	description := 'Executes arbitrary Smalltalk code in the Pharo image and returns the result, may have side effects, and is less constrained than the dedicated MCP tools.'.
+	title := 'Evaluate Pharo Code'.
+	description := 'Evaluate arbitrary Smalltalk code in the running Pharo image. Prefer dedicated tools when possible; this tool is an escape hatch and may have side effects.'.
 	inputSchema := MCPStructureInputSchema new
 		               type: 'object';
 		               properties: { (MCPStructureProperties new
 				                name: 'code';
 				                type: 'string';
 				                description:
-					                'The Smalltalk code to execute in the running Pharo image.') };
+					                'The Smalltalk code to execute in the running Pharo image.';
+				                yourself) };
+		               required: #( 'code' );
 		               yourself.
+	outputSchema := self
+		                standardOutputSchemaForDataProperties: { (self
+				                 schemaPropertyNamed: 'resultPrintString'
+				                 type: 'string'
+				                 description:
+				                 'The printString of the evaluated result.') }
+		                required: #( 'resultPrintString' ).
 	icons := {  }
 ]
 

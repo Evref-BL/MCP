@@ -124,13 +124,13 @@ MCP >> stop [
 	server stop
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'accessing' }
 MCP >> toolsList [
 
 	^ toolsList
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'accessing' }
 MCP >> toolsList: aToolsList [
 
 	^ toolsList := aToolsList

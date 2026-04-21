@@ -19,6 +19,12 @@ MCPToolCompileMethodTest >> argumentsForClassName: aClassName classSide: aBoolea
 ]
 
 { #category : 'private' }
+MCPToolCompileMethodTest >> dataFromResult: aResult [
+
+	^ aResult structuredContent at: #data
+]
+
+{ #category : 'private' }
 MCPToolCompileMethodTest >> removeSelector: aSelector from: aBehavior [
 
 	(aBehavior includesSelector: aSelector) ifTrue: [
@@ -61,31 +67,34 @@ MCPToolCompileMethodTest >> tearDown [
 { #category : 'tests' }
 MCPToolCompileMethodTest >> testCompilesClassSideMethod [
 
-	| result |
+	| data result |
 	result := tool executeWithArguments: (self
 			           argumentsForClassName: 'MCPToolCompileMethodTestTarget'
 			           classSide: true
 			           methodSource: 'classAnswer ^ 7'
 			           protocol: 'tests').
+	data := self dataFromResult: result.
 	self assert: MCPToolCompileMethodTestTarget classAnswer equals: 7.
 	self
 		assert:
 			(MCPToolCompileMethodTestTarget classSide >> #classAnswer) protocol
 				name
 		equals: #tests.
-	self assert: (result first text includesSubstring:
-			 'MCPToolCompileMethodTestTarget class>>classAnswer')
+	self
+		assert: (data at: #methodReference)
+		equals: 'MCPToolCompileMethodTestTarget class>>classAnswer'
 ]
 
 { #category : 'tests' }
 MCPToolCompileMethodTest >> testCompilesInstanceSideMethod [
 
-	| result |
+	| data result |
 	result := tool executeWithArguments: (self
 			           argumentsForClassName: 'MCPToolCompileMethodTestTarget'
 			           classSide: false
 			           methodSource: 'instanceAnswer ^ 42'
 			           protocol: 'tests').
+	data := self dataFromResult: result.
 	self
 		assert: MCPToolCompileMethodTestTarget new instanceAnswer
 		equals: 42.
@@ -93,8 +102,9 @@ MCPToolCompileMethodTest >> testCompilesInstanceSideMethod [
 		assert:
 		(MCPToolCompileMethodTestTarget >> #instanceAnswer) protocol name
 		equals: #tests.
-	self assert: (result first text includesSubstring:
-			 'MCPToolCompileMethodTestTarget>>instanceAnswer')
+	self
+		assert: (data at: #methodReference)
+		equals: 'MCPToolCompileMethodTestTarget>>instanceAnswer'
 ]
 
 { #category : 'tests' }

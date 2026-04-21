@@ -19,20 +19,30 @@ MCPStructureCallToolResult class >> content: aContent [
 ]
 
 { #category : 'accessing' }
+MCPStructureCallToolResult class >> content: aContent structuredContent: aStructuredContent [
+
+	^ self new
+		  content: aContent;
+		  structuredContent: aStructuredContent;
+		  yourself
+]
+
+{ #category : 'accessing' }
 MCPStructureCallToolResult >> asJRPCJSON [
 
 	| dic |
 	dic := Dictionary new.
-	self content ifNotNil: [
-		dic at: #content put: self content asJRPCJSON ].
-
+	dic at: #content put: self content asJRPCJSON.
+	self structuredContent ifNotNil: [
+		dic at: #structuredContent put: self structuredContent asJRPCJSON ].
+	self isError ifTrue: [ dic at: #isError put: true ].
 	^ dic
 ]
 
 { #category : 'accessing' }
 MCPStructureCallToolResult >> content [
 
-	^ content
+	^ content ifNil: [ #(  ) ]
 ]
 
 { #category : 'accessing' }
@@ -45,4 +55,16 @@ MCPStructureCallToolResult >> content: anObject [
 MCPStructureCallToolResult >> isError [
 
 	^ false
+]
+
+{ #category : 'accessing' }
+MCPStructureCallToolResult >> structuredContent [
+
+	^ structuredContent
+]
+
+{ #category : 'accessing' }
+MCPStructureCallToolResult >> structuredContent: anObject [
+
+	structuredContent := anObject
 ]

@@ -4,7 +4,8 @@ Class {
 	#instVars : [
 		'type',
 		'properties',
-		'required'
+		'required',
+		'additionalProperties'
 	],
 	#category : 'MCP-Structure',
 	#package : 'MCP',
@@ -12,22 +13,39 @@ Class {
 }
 
 { #category : 'accessing' }
+MCPStructureInputSchema >> additionalProperties [
+
+	^ additionalProperties
+]
+
+{ #category : 'accessing' }
+MCPStructureInputSchema >> additionalProperties: anObject [
+
+	additionalProperties := anObject
+]
+
+{ #category : 'accessing' }
 MCPStructureInputSchema >> asJRPCJSON [
 
 	| dic |
 	dic := Dictionary new.
-	self properties
-		ifNotNil: [
-			| propertiesDicObject |
-			propertiesDicObject := Dictionary new.
-			self properties do: [ :prop |
-				propertiesDicObject at: prop name put: prop metaDescription ].
-			dic at: #properties put: propertiesDicObject ]
-		ifNil: [ dic at: #additionalProperties put: false ].
+	self type ifNotNil: [ dic at: #type put: self type asJRPCJSON ].
+	self properties ifNotNil: [
+		dic at: #properties put: self propertiesAsJRPCJSON ].
 	self required ifNotNil: [
 		dic at: #required put: self required asJRPCJSON ].
-	self type ifNotNil: [ dic at: #type put: self type asJRPCJSON ].
+	self additionalProperties ifNotNil: [
+		dic
+			at: #additionalProperties
+			put: self additionalProperties asJRPCJSON ].
 	^ dic
+]
+
+{ #category : 'initialization' }
+MCPStructureInputSchema >> initialize [
+
+	super initialize.
+	additionalProperties := false
 ]
 
 { #category : 'accessing' }
@@ -40,6 +58,16 @@ MCPStructureInputSchema >> properties [
 MCPStructureInputSchema >> properties: anObject [
 
 	properties := anObject
+]
+
+{ #category : 'private' }
+MCPStructureInputSchema >> propertiesAsJRPCJSON [
+
+	| propertiesDictionary |
+	propertiesDictionary := Dictionary new.
+	self properties do: [ :prop |
+		propertiesDictionary at: prop name put: prop metaDescription ].
+	^ propertiesDictionary
 ]
 
 { #category : 'accessing' }

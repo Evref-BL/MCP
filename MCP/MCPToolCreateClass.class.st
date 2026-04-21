@@ -48,13 +48,32 @@ MCPToolCreateClass >> ensurePackageNamed: aPackageName [
 { #category : 'executing' }
 MCPToolCreateClass >> executeWithArguments: arguments [
 
-	| classNameSymbol createdClass |
+	| classNameSymbol createdClass duplicateMessage |
 	classNameSymbol := self classNameSymbolFromArguments: arguments.
 	(self class environment includesKey: classNameSymbol) ifTrue: [
-		self error: 'Class ' , classNameSymbol asString , ' already exists.' ].
+		duplicateMessage := 'Class ' , classNameSymbol asString
+		                    , ' already exists.'.
+		^ self errorResultText: duplicateMessage details: {
+				  (#errorClass -> 'ClassAlreadyExists').
+				  (#message -> duplicateMessage).
+				  (#className -> classNameSymbol asString) } asDictionary ].
 	createdClass := self buildClassFromArguments: arguments.
-	^ { (MCPStructureTextContent text:
-		   (self successMessageFor: createdClass)) }
+	^ self
+		  successResultText:
+		  'Created class ' , createdClass name asString , '.'
+		  data: {
+				  (#className -> createdClass name asString).
+				  (#superclassName -> createdClass superclass name asString).
+				  (#packageName -> createdClass packageName asString).
+				  (#tag -> createdClass packageTagName asString).
+				  (#instanceSlotNames
+				   ->
+				   (createdClass slots
+					    collect: [ :each | each name asString ]
+					    as: Array)).
+				  (#classSlotNames -> (createdClass classSide slots
+					    collect: [ :each | each name asString ]
+					    as: Array)) } asDictionary
 ]
 
 { #category : 'initialization' }
@@ -63,7 +82,7 @@ MCPToolCreateClass >> initialize [
 	super initialize.
 	name := 'pharo-create-class'.
 	title := 'Create Pharo Class'.
-	description := 'Creates a new class in the Pharo image using the class builder.'.
+	description := 'Create a new class in the running Pharo image using the Pharo class builder.'.
 	inputSchema := MCPStructureInputSchema new
 		               type: 'object';
 		               properties: {
@@ -90,21 +109,73 @@ MCPToolCreateClass >> initialize [
 					                description:
 						                'An optional package tag for the new class.';
 					                yourself).
-				               (MCPStructureProperties new
-					                name: 'slots';
-					                type: 'array';
-					                description:
-						                'Optional instance-side slot names for the new class.';
+				               ((MCPStructureProperties new
+					                 name: 'slots';
+					                 type: 'array';
+					                 description:
+						                 'Optional instance-side slot names for the new class.')
+					                items: (MCPStructureProperties new
+							                 type: 'string';
+							                 description: 'An instance-side slot name.';
+							                 yourself);
 					                yourself).
-				               (MCPStructureProperties new
-					                name: 'classSlots';
-					                type: 'array';
-					                description:
-						                'Optional class-side slot names for the new class.';
+				               ((MCPStructureProperties new
+					                 name: 'classSlots';
+					                 type: 'array';
+					                 description:
+						                 'Optional class-side slot names for the new class.')
+					                items: (MCPStructureProperties new
+							                 type: 'string';
+							                 description: 'A class-side slot name.';
+							                 yourself);
 					                yourself) };
 		               required:
 		               #( 'className' 'superclassName' 'packageName' );
 		               yourself.
+	outputSchema := self
+		                standardOutputSchemaForDataProperties: {
+				                (self
+					                 schemaPropertyNamed: 'className'
+					                 type: 'string'
+					                 description: 'The class that was created.').
+				                (self
+					                 schemaPropertyNamed: 'superclassName'
+					                 type: 'string'
+					                 description:
+					                 'The superclass of the created class.').
+				                (self
+					                 schemaPropertyNamed: 'packageName'
+					                 type: 'string'
+					                 description:
+					                 'The owning package of the created class.').
+				                (self
+					                 schemaPropertyNamed: 'tag'
+					                 type: 'string'
+					                 description:
+					                 'The package tag assigned to the class.').
+				                ((self
+					                  schemaPropertyNamed: 'instanceSlotNames'
+					                  type: 'array'
+					                  description:
+						                  'The instance-side slots installed on the class.')
+					                 items: (MCPStructureProperties new
+							                  type: 'string';
+							                  description: 'An instance-side slot name.';
+							                  yourself);
+					                 yourself).
+				                ((self
+					                  schemaPropertyNamed: 'classSlotNames'
+					                  type: 'array'
+					                  description:
+						                  'The class-side slots installed on the class.')
+					                 items: (MCPStructureProperties new
+							                  type: 'string';
+							                  description: 'A class-side slot name.';
+							                  yourself);
+					                 yourself) }
+		                required:
+			                #( 'className' 'superclassName' 'packageName'
+			                   'tag' 'instanceSlotNames' 'classSlotNames' ).
 	icons := {  }
 ]
 

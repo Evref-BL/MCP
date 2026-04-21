@@ -20,7 +20,7 @@ MCPToolCompileMethod >> behaviorFromArguments: arguments [
 { #category : 'executing' }
 MCPToolCompileMethod >> executeWithArguments: arguments [
 
-	| behavior methodSource protocol selector compiledMethod |
+	| behavior methodSource protocol selector compiledMethod methodReference |
 	behavior := self behaviorFromArguments: arguments.
 	methodSource := self normalizedMethodSourceFrom:
 		                (arguments at: #methodSource).
@@ -28,10 +28,17 @@ MCPToolCompileMethod >> executeWithArguments: arguments [
 	selector := behavior compile: methodSource classified: protocol.
 	compiledMethod := behavior >> selector.
 	compiledMethod reformat.
-	^ { (MCPStructureTextContent text:
-		   'Compiled '
-		   , (self methodReferenceFor: behavior selector: selector)
-		   , ' in protocol ' , protocol printString , '.') }
+	methodReference := self
+		                   methodReferenceFor: behavior
+		                   selector: selector.
+	^ self
+		  successResultText: 'Compiled ' , methodReference , '.'
+		  data: {
+				  (#className -> (arguments at: #className)).
+				  (#classSide -> (arguments at: #classSide)).
+				  (#selector -> selector asString).
+				  (#protocol -> protocol).
+				  (#methodReference -> methodReference) } asDictionary
 ]
 
 { #category : 'initialization' }
@@ -40,7 +47,7 @@ MCPToolCompileMethod >> initialize [
 	super initialize.
 	name := 'pharo-compile-method'.
 	title := 'Compile Pharo Method'.
-	description := 'Compiles a method on the instance side or class side of a Pharo class, normalizes line endings to CR, and reformats the compiled method.'.
+	description := 'Compile a method on the instance side or class side of a Pharo class, normalize line endings, and reformat the resulting method.'.
 	inputSchema := MCPStructureInputSchema new
 		               type: 'object';
 		               properties: {
@@ -71,6 +78,35 @@ MCPToolCompileMethod >> initialize [
 		               #( 'className' 'classSide' 'methodSource'
 		                  'protocol' );
 		               yourself.
+	outputSchema := self
+		                standardOutputSchemaForDataProperties: {
+				                (self
+					                 schemaPropertyNamed: 'className'
+					                 type: 'string'
+					                 description:
+					                 'The target class that received the method.').
+				                (self
+					                 schemaPropertyNamed: 'classSide'
+					                 type: 'boolean'
+					                 description:
+					                 'Whether the method was compiled on the class side.').
+				                (self
+					                 schemaPropertyNamed: 'selector'
+					                 type: 'string'
+					                 description: 'The selector that was compiled.').
+				                (self
+					                 schemaPropertyNamed: 'protocol'
+					                 type: 'string'
+					                 description:
+					                 'The protocol that received the compiled method.').
+				                (self
+					                 schemaPropertyNamed: 'methodReference'
+					                 type: 'string'
+					                 description:
+					                 'A readable method reference for the compiled method.') }
+		                required:
+		                #( 'className' 'classSide' 'selector' 'protocol'
+		                   'methodReference' ).
 	icons := {  }
 ]
 
