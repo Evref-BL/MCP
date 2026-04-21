@@ -125,10 +125,11 @@ MCPToolStructuredOutputTest >> testRemoveClassReturnsStructuredError [
 
 	| result structured error |
 	result := self
-		          callToolNamed: 'pharo-remove-class'
+		          callToolNamed: 'pharo-remove-classes'
 		          withArguments:
-		          { (#className -> 'MCPToolRemoveClassDefinitelyMissing') }
-			          asDictionary.
+			          { (#classNames
+			           -> { 'MCPToolRemoveClassDefinitelyMissing' }) }
+				          asDictionary.
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
@@ -142,23 +143,27 @@ MCPToolStructuredOutputTest >> testRemoveClassReturnsStructuredError [
 { #category : 'tests' }
 MCPToolStructuredOutputTest >> testRunTestClassReturnsStructuredIssues [
 
-	| data firstIssue result |
+	| data firstIssue result singleResult |
 	result := self
-		          callToolNamed: 'pharo-run-test-class'
-		          withArguments:
-		          { (#className -> 'MCPToolStructuredOutputTestTarget') }
-			          asDictionary.
+		          callToolNamed: 'pharo-run-tests'
+		          withArguments: { (#tests
+			           ->
+			           { { (#className -> 'MCPToolStructuredOutputTestTarget') }
+				           asDictionary }) } asDictionary.
 	data := self dataFrom: result.
+	singleResult := (data at: #results) first.
 	firstIssue := (data at: #issues) first.
 	self
 		assert: ((self structuredContentFrom: result) at: #status)
 		equals: 'ok'.
+	self assert: (data at: #selectionCount) equals: 1.
 	self assert: (data at: #runCount) equals: 3.
-	self assert: (data at: #failureCount) equals: 1.
-	self assert: (data at: #errorCount) equals: 1.
-	self assert: ((data at: #failingTestNames) includes:
+	self assert: (singleResult at: #runCount) equals: 3.
+	self assert: (singleResult at: #failureCount) equals: 1.
+	self assert: (singleResult at: #errorCount) equals: 1.
+	self assert: ((singleResult at: #failingTestNames) includes:
 			 'MCPToolStructuredOutputTestTarget>>#testFails').
-	self assert: ((data at: #failingTestNames) includes:
+	self assert: ((singleResult at: #failingTestNames) includes:
 			 'MCPToolStructuredOutputTestTarget>>#testErrors').
 	self assert: (firstIssue includesKey: #message)
 ]
@@ -166,22 +171,33 @@ MCPToolStructuredOutputTest >> testRunTestClassReturnsStructuredIssues [
 { #category : 'tests' }
 MCPToolStructuredOutputTest >> testRunTestMethodReturnsStructuredIssues [
 
-	| data issue result |
+	| data methodResult result |
 	result := self
-		          callToolNamed: 'pharo-run-test-method'
-		          withArguments: {
-				          (#className -> 'MCPToolStructuredOutputTestTarget').
-				          (#testMethodName -> 'testFails') } asDictionary.
+		          callToolNamed: 'pharo-run-tests'
+		          withArguments: { (#tests -> {
+				           { (#className -> 'MCPToolStructuredOutputTestTarget') }
+					           asDictionary.
+				           {
+					           (#className -> 'MCPToolStructuredOutputTestTarget').
+					           (#testMethodName -> 'testFails') } asDictionary }) }
+				          asDictionary.
 	data := self dataFrom: result.
-	issue := (data at: #issues) first.
+	methodResult := (data at: #results) detect: [ :each |
+		                (each at: #testMethodName ifAbsent: [ nil ])
+		                = 'testFails' ].
 	self
 		assert: ((self structuredContentFrom: result) at: #status)
 		equals: 'ok'.
-	self assert: (data at: #runCount) equals: 1.
-	self assert: (data at: #testMethodName) equals: 'testFails'.
-	self assert: (data at: #failureCount) equals: 1.
-	self assert: (data at: #errorCount) equals: 0.
+	self assert: (data at: #selectionCount) equals: 2.
+	self assert: (data at: #runCount) equals: 4.
+	self assert: (data at: #failureCount) equals: 2.
+	self assert: (data at: #errorCount) equals: 1.
+	self assert: (data at: #issues) size equals: 3.
+	self assert: (methodResult at: #runCount) equals: 1.
+	self assert: (methodResult at: #testMethodName) equals: 'testFails'.
+	self assert: (methodResult at: #failureCount) equals: 1.
+	self assert: (methodResult at: #errorCount) equals: 0.
 	self
-		assert: (issue at: #testName)
+		assert: ((methodResult at: #issues) first at: #testName)
 		equals: 'MCPToolStructuredOutputTestTarget>>#testFails'
 ]

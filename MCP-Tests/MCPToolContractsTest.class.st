@@ -246,18 +246,10 @@ MCPToolContractsTest >> testRpcToolCallSignalsInvalidParametersWhenRequiredArgum
 { #category : 'tests' }
 MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 
+	self assert: MCPToolRunTests new name equals: 'pharo-run-tests'.
 	self
-		assert: MCPToolExecuteClassTest new name
-		equals: 'pharo-run-test-method'.
-	self
-		assert: MCPToolExecuteClassTest new inputSchema required asSet
-		equals: #( 'className' 'testMethodName' ) asSet.
-	self
-		assert: MCPToolExecuteAllTestOfClass new name
-		equals: 'pharo-run-test-class'.
-	self
-		assert: MCPToolExecuteAllTestOfClass new inputSchema required asSet
-		equals: #( 'className' ) asSet
+		assert: MCPToolRunTests new inputSchema required asSet
+		equals: #( 'tests' ) asSet
 ]
 
 { #category : 'tests' }
