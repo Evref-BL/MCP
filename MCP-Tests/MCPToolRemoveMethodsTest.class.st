@@ -87,6 +87,12 @@ MCPToolRemoveMethodsTest >> firstInstanceBatchSelectorString [
 ]
 
 { #category : 'private' }
+MCPToolRemoveMethodsTest >> firstTextFrom: aResult [
+
+	^ (aResult at: #content) first at: #text
+]
+
+{ #category : 'private' }
 MCPToolRemoveMethodsTest >> instanceBatchArguments [
 
 	^ {
@@ -248,6 +254,35 @@ MCPToolRemoveMethodsTest >> tearDown [
 ]
 
 { #category : 'tests' }
+MCPToolRemoveMethodsTest >> testForceRemovesMethodsEvenWhenExternalSendersExistAndWarns [
+
+	| data result text |
+	result := self callToolWith: {
+			          (#className -> 'MCPToolRemoveMethodsTestTarget').
+			          (#classSide -> false).
+			          (#selectors -> { self protectedSelector }) } asDictionary.
+	data := self dataFrom: result.
+	text := self firstTextFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert:
+		(text includesSubstring: 'Warning: this bypasses sender checks').
+	self deny: (MCPToolRemoveMethodsTestTarget includesSelector:
+			 self protectedSelectorSymbol).
+	self assert: (MCPToolRemoveMethodsTestSender includesSelector:
+			 #sendProtectedRemovalTarget).
+	self
+		should: [
+		MCPToolRemoveMethodsTestSender new sendProtectedRemovalTarget ]
+		raise: MessageNotUnderstood.
+	self
+		assert: (data at: #selectors)
+		equals: { self protectedSelector } asArray.
+	self
+		assert: ((data at: #removedMethods) first at: #methodReference)
+		equals: 'MCPToolRemoveMethodsTestTarget>>' , self protectedSelector
+]
+
+{ #category : 'tests' }
 MCPToolRemoveMethodsTest >> testRemovesBatchOfClassSideMethods [
 
 	| data result |
@@ -310,29 +345,6 @@ MCPToolRemoveMethodsTest >> testReturnsStructuredErrorWhenAnyMethodIsMissing [
 	self assert: (error at: #selector) equals: self missingSelectorString.
 	self assert: (MCPToolRemoveMethodsTestTarget includesSelector:
 			 self firstInstanceBatchSelector)
-]
-
-{ #category : 'tests' }
-MCPToolRemoveMethodsTest >> testReturnsStructuredErrorWhenExternalSendersExist [
-
-	| error result structured |
-	result := self callToolWith: {
-			          (#className -> 'MCPToolRemoveMethodsTestTarget').
-			          (#classSide -> false).
-			          (#selectors -> { self protectedSelector }) } asDictionary.
-	structured := self structuredContentFrom: result.
-	error := self errorFrom: result.
-	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
-	self
-		assert: (error at: #className)
-		equals: 'MCPToolRemoveMethodsTestTarget'.
-	self assert: (error at: #classSide) equals: false.
-	self
-		assert: (error at: #selectors)
-		equals: { self protectedSelector } asArray.
-	self assert: (MCPToolRemoveMethodsTestTarget includesSelector:
-			 self protectedSelectorSymbol)
 ]
 
 { #category : 'tests' }

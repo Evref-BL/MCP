@@ -6,9 +6,13 @@ Class {
 }
 
 { #category : 'tests' }
-MCPToolChangeMethodProtocolTestTarget class >> classProtocolTarget [ ^ 7
+MCPToolChangeMethodProtocolTestTarget class >> classProtocolTarget [
+
+	^ 7
 ]
 
 { #category : 'tests' }
-MCPToolChangeMethodProtocolTestTarget >> instanceProtocolTarget [ ^ 41
+MCPToolChangeMethodProtocolTestTarget >> instanceProtocolTarget [
+
+	^ 41
 ]

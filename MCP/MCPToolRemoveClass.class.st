@@ -6,50 +6,24 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'private' }
-MCPToolRemoveClass >> applySafeRemovalOf: aClass withSnapshot: snapshot [
-
-	| reparentedSubclassNames targetSuperclass |
-	reparentedSubclassNames := snapshot at: #reparentedSubclassNames.
-	reparentedSubclassNames ifNotEmpty: [
-		targetSuperclass := aClass superclass.
-		aClass subclasses do: [ :each | each superclass: targetSuperclass ] ].
-	aClass removeFromSystem
-]
-
-{ #category : 'private' }
-MCPToolRemoveClass >> classNameSymbolFromArguments: arguments [
-
-	^ (arguments at: #className) asSymbol
-]
-
-{ #category : 'private' }
-MCPToolRemoveClass >> classSlotNamesOf: aClass [
-
-	^ aClass classSide slots
-		  collect: [ :each | each name asString ]
-		  as: Array
-]
-
 { #category : 'executing' }
 MCPToolRemoveClass >> executeWithArguments: arguments [
 
-	| className removedClass snapshot |
+	| className result |
 	className := arguments at: #className.
 	^ [
-	  removedClass := self class environment
-		                  at: className asSymbol
-		                  ifAbsent: [
-		                  ^ self missingClassResultForClassName: className ].
-	  self validateSafeRemovalOfClassNamed: className.
-	  snapshot := self snapshotForRemovalOf: removedClass.
-	  self applySafeRemovalOf: removedClass withSnapshot: snapshot.
+	  [
+	  result := (MCPRemoveClassCommand className: className) execute.
 	  self
 		  successResultText: (self
 				   successSummaryForClassName: className
-				   reparentedSubclassNames:
-				   (snapshot at: #reparentedSubclassNames))
-		  data: snapshot ]
+				   reparentedSubclassNames: result reparentedSubclassNames)
+		  data: result asDictionary ]
+		  on: MCPCommandError
+		  do: [ :error |
+			  self
+				  errorResultText: error messageText
+				  details: error structuredDetails ] ]
 		  on: Exception
 		  do: [ :error |
 			  self
@@ -172,67 +146,6 @@ MCPToolRemoveClass >> initialize [
 ]
 
 { #category : 'private' }
-MCPToolRemoveClass >> instanceSlotNamesOf: aClass [
-
-	^ aClass slots collect: [ :each | each name asString ] as: Array
-]
-
-{ #category : 'private' }
-MCPToolRemoveClass >> isEmptyClass: aClass [
-
-	^ aClass classVarNames isEmpty and: [
-		  aClass instVarNames isEmpty and: [ aClass selectors isEmpty ] ]
-]
-
-{ #category : 'private' }
-MCPToolRemoveClass >> missingClassResultForClassName: className [
-
-	| message |
-	message := 'Class ' , className , ' does not exist.'.
-	^ self errorResultText: message details: {
-			  (#errorClass -> 'ClassNotFound').
-			  (#message -> message).
-			  (#className -> className) } asDictionary
-]
-
-{ #category : 'private' }
-MCPToolRemoveClass >> snapshotForRemovalOf: aClass [
-
-	| subclassNames superclassName wasEmpty reparentedSubclassNames |
-	subclassNames := self subclassNamesOf: aClass.
-	superclassName := aClass superclass
-		                  ifNil: [ '' ]
-		                  ifNotNil: [ :superclass |
-		                  superclass name asString ].
-	wasEmpty := self isEmptyClass: aClass.
-	reparentedSubclassNames := (wasEmpty and: [ aClass superclass notNil ])
-		                           ifTrue: [ subclassNames ]
-		                           ifFalse: [ #(  ) ].
-	^ {
-		  (#className -> aClass name asString).
-		  (#superclassName -> superclassName).
-		  (#packageName -> aClass packageName asString).
-		  (#tag -> (self tagNameOf: aClass)).
-		  (#wasEmpty -> wasEmpty).
-		  (#reparentedToSuperclassName -> (reparentedSubclassNames isEmpty
-			    ifTrue: [ '' ]
-			    ifFalse: [ superclassName ])).
-		  (#instanceSlotNames -> (self instanceSlotNamesOf: aClass)).
-		  (#classSlotNames -> (self classSlotNamesOf: aClass)).
-		  (#subclassNames -> subclassNames).
-		  (#reparentedSubclassNames -> reparentedSubclassNames) }
-		  asDictionary
-]
-
-{ #category : 'private' }
-MCPToolRemoveClass >> subclassNamesOf: aClass [
-
-	^ (aClass subclasses
-		   collect: [ :each | each name asString ]
-		   as: Array) asSortedCollection asArray
-]
-
-{ #category : 'private' }
 MCPToolRemoveClass >> successSummaryForClassName: className reparentedSubclassNames: reparentedSubclassNames [
 
 	^ reparentedSubclassNames isEmpty
@@ -240,19 +153,4 @@ MCPToolRemoveClass >> successSummaryForClassName: className reparentedSubclassNa
 		  ifFalse: [
 			  'Removed class ' , className , ' and reparented subclasses: '
 			  , (', ' join: reparentedSubclassNames) , '.' ]
-]
-
-{ #category : 'private' }
-MCPToolRemoveClass >> tagNameOf: aClass [
-
-	^ aClass packageTagName asString
-]
-
-{ #category : 'private' }
-MCPToolRemoveClass >> validateSafeRemovalOfClassNamed: className [
-
-	| refactoring |
-	refactoring := ReRemoveClassRefactoring classNames: { className }.
-	refactoring prepareForExecution.
-	refactoring checkPreconditions
 ]

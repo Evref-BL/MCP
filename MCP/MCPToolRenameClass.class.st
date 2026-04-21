@@ -6,49 +6,27 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'private' }
-MCPToolRenameClass >> classSlotNamesOf: aClass [
-
-	^ aClass classSide slots
-		  collect: [ :each | each name asString ]
-		  as: Array
-]
-
-{ #category : 'private' }
-MCPToolRenameClass >> dataForRenamedClass: aClass oldClassName: anOldClassName [
-
-	^ {
-		  (#oldClassName -> anOldClassName).
-		  (#newClassName -> aClass name asString).
-		  (#superclassName -> (aClass superclass
-			    ifNil: [ '' ]
-			    ifNotNil: [ :superclass | superclass name asString ])).
-		  (#packageName -> aClass packageName asString).
-		  (#tag -> (self tagNameOf: aClass)).
-		  (#instanceSlotNames -> (self instanceSlotNamesOf: aClass)).
-		  (#classSlotNames -> (self classSlotNamesOf: aClass)).
-		  (#subclassNames -> (self subclassNamesOf: aClass)) } asDictionary
-]
-
 { #category : 'executing' }
 MCPToolRenameClass >> executeWithArguments: arguments [
 
-	| className newClassName renamedClass |
+	| className newClassName result |
 	className := arguments at: #className.
 	newClassName := arguments at: #newClassName.
 	^ [
-	  self class environment
-		  at: className asSymbol
-		  ifAbsent: [ ^ self missingClassResultForClassName: className ].
-	  (ReRenameClassRefactoring rename: className to: newClassName)
-		  execute.
-	  renamedClass := self class environment at: newClassName asSymbol.
+	  [
+	  result := (MCPRenameClassCommand
+		             className: className
+		             newClassName: newClassName) execute.
 	  self
 		  successResultText:
 		  (self successSummaryFrom: className to: newClassName)
-		  data:
-		  (self dataForRenamedClass: renamedClass oldClassName: className) ]
-		  on: Error
+		  data: result asDictionary ]
+		  on: MCPCommandError
+		  do: [ :error |
+			  self
+				  errorResultText: error messageText
+				  details: error structuredDetails ] ]
+		  on: Exception
 		  do: [ :error |
 			  self
 				  errorResultText: (self
@@ -162,38 +140,7 @@ MCPToolRenameClass >> initialize [
 ]
 
 { #category : 'private' }
-MCPToolRenameClass >> instanceSlotNamesOf: aClass [
-
-	^ aClass slots collect: [ :each | each name asString ] as: Array
-]
-
-{ #category : 'private' }
-MCPToolRenameClass >> missingClassResultForClassName: className [
-
-	| message |
-	message := 'Class ' , className , ' does not exist.'.
-	^ self errorResultText: message details: {
-			  (#errorClass -> 'ClassNotFound').
-			  (#message -> message).
-			  (#className -> className) } asDictionary
-]
-
-{ #category : 'private' }
-MCPToolRenameClass >> subclassNamesOf: aClass [
-
-	^ (aClass subclasses
-		   collect: [ :each | each name asString ]
-		   as: Array) asSortedCollection asArray
-]
-
-{ #category : 'private' }
 MCPToolRenameClass >> successSummaryFrom: className to: newClassName [
 
 	^ 'Renamed class ' , className , ' to ' , newClassName , '.'
-]
-
-{ #category : 'private' }
-MCPToolRenameClass >> tagNameOf: aClass [
-
-	^ aClass packageTagName asString
 ]

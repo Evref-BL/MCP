@@ -6,93 +6,31 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'private' }
-MCPToolMoveClass >> classSlotNamesOf: aClass [
-
-	^ aClass classSide slots
-		  collect: [ :each | each name asString ]
-		  as: Array
-]
-
-{ #category : 'private' }
-MCPToolMoveClass >> dataForClass: aClass oldPackageName: oldPackageName oldTag: oldTag [
-
-	^ {
-		  (#className -> aClass name asString).
-		  (#superclassName -> (aClass superclass
-			    ifNil: [ '' ]
-			    ifNotNil: [ :superclass | superclass name asString ])).
-		  (#oldPackageName -> oldPackageName).
-		  (#packageName -> aClass packageName asString).
-		  (#oldTag -> oldTag).
-		  (#tag -> (self tagNameOf: aClass)).
-		  (#instanceSlotNames -> (self instanceSlotNamesOf: aClass)).
-		  (#classSlotNames -> (self classSlotNamesOf: aClass)).
-		  (#subclassNames -> (self subclassNamesOf: aClass)) } asDictionary
-]
-
-{ #category : 'private' }
-MCPToolMoveClass >> destinationValidationResultForClassNamed: className packageName: packageName tag: tag [
-
-	| package |
-	(self packageOrganizer hasPackage: packageName) ifFalse: [
-		^ self
-			  missingPackageResultForClassNamed: className
-			  packageName: packageName ].
-	tag ifNil: [ ^ nil ].
-	package := self packageOrganizer packageNamed: packageName.
-	(package hasTag: tag) ifFalse: [
-		^ self
-			  missingTagResultForClassNamed: className
-			  packageName: packageName
-			  tag: tag ].
-	^ nil
-]
-
-{ #category : 'private' }
-MCPToolMoveClass >> destinationValidationResultForPackageName: packageName tag: tag [
-
-	| package |
-	(self packageOrganizer hasPackage: packageName) ifFalse: [
-		^ self missingPackageResultForPackageName: packageName ].
-	tag ifNil: [ ^ nil ].
-	package := self packageOrganizer packageNamed: packageName.
-	(package hasTag: tag) ifFalse: [
-		^ self missingTagResultForPackageName: packageName tag: tag ].
-	^ nil
-]
-
 { #category : 'executing' }
 MCPToolMoveClass >> executeWithArguments: arguments [
 
-	| className movedClass oldPackageName oldTag packageName tag validationResult |
+	| className movedClass packageName result tag |
 	className := arguments at: #className.
 	packageName := arguments at: #packageName.
 	tag := self tagFromArguments: arguments.
 	^ [
-	  movedClass := self class environment
-		                at: className asSymbol
-		                ifAbsent: [
-		                ^ self missingClassResultForClassName: className ].
-	  validationResult := self
-		                      destinationValidationResultForClassNamed:
-		                      className
-		                      packageName: packageName
-		                      tag: tag.
-	  validationResult ifNotNil: [ ^ validationResult ].
-	  oldPackageName := movedClass packageName asString.
-	  oldTag := self tagNameOf: movedClass.
-	  self performMoveOf: className toPackage: packageName tag: tag.
-	  movedClass := self class environment at: className asSymbol.
+	  [
+	  result := (MCPMoveClassCommand
+		             className: className
+		             packageName: packageName
+		             tag: tag) execute.
+	  movedClass := Smalltalk globals at: className asSymbol.
 	  self
 		  successResultText: (self
 				   successSummaryForClass: movedClass
 				   packageName: packageName
 				   tag: tag)
-		  data: (self
-				   dataForClass: movedClass
-				   oldPackageName: oldPackageName
-				   oldTag: oldTag) ]
+		  data: result asDictionary ]
+		  on: MCPCommandError
+		  do: [ :error |
+			  self
+				  errorResultText: error messageText
+				  details: error structuredDetails ] ]
 		  on: Exception
 		  do: [ :error |
 			  self
@@ -227,95 +165,6 @@ MCPToolMoveClass >> initialize [
 ]
 
 { #category : 'private' }
-MCPToolMoveClass >> instanceSlotNamesOf: aClass [
-
-	^ aClass slots collect: [ :each | each name asString ] as: Array
-]
-
-{ #category : 'private' }
-MCPToolMoveClass >> missingClassResultForClassName: className [
-
-	| message |
-	message := 'Class ' , className , ' does not exist.'.
-	^ self errorResultText: message details: {
-			  (#errorClass -> 'ClassNotFound').
-			  (#message -> message).
-			  (#className -> className) } asDictionary
-]
-
-{ #category : 'private' }
-MCPToolMoveClass >> missingPackageResultForClassNamed: className packageName: packageName [
-
-	| message |
-	message := 'Package ' , packageName , ' does not exist.'.
-	^ self errorResultText: message details: {
-			  (#errorClass -> 'PackageNotFound').
-			  (#message -> message).
-			  (#className -> className).
-			  (#packageName -> packageName) } asDictionary
-]
-
-{ #category : 'private' }
-MCPToolMoveClass >> missingPackageResultForPackageName: packageName [
-
-	| message |
-	message := 'Package ' , packageName , ' does not exist.'.
-	^ self errorResultText: message details: {
-			  (#errorClass -> 'PackageNotFound').
-			  (#message -> message).
-			  (#packageName -> packageName) } asDictionary
-]
-
-{ #category : 'private' }
-MCPToolMoveClass >> missingTagResultForClassNamed: className packageName: packageName tag: tag [
-
-	| message |
-	message := 'Package ' , packageName , ' does not have a tag named '
-	           , tag , '.'.
-	^ self errorResultText: message details: {
-			  (#errorClass -> 'TagNotFound').
-			  (#message -> message).
-			  (#className -> className).
-			  (#packageName -> packageName).
-			  (#tag -> tag) } asDictionary
-]
-
-{ #category : 'private' }
-MCPToolMoveClass >> missingTagResultForPackageName: packageName tag: tag [
-
-	| message |
-	message := 'Package ' , packageName , ' does not have a tag named '
-	           , tag , '.'.
-	^ self errorResultText: message details: {
-			  (#errorClass -> 'TagNotFound').
-			  (#message -> message).
-			  (#packageName -> packageName).
-			  (#tag -> tag) } asDictionary
-]
-
-{ #category : 'private' }
-MCPToolMoveClass >> performMoveOf: className toPackage: packageName tag: tag [
-
-	tag
-		ifNil: [
-			(RBMoveClassTransformation move: className toPackage: packageName)
-				execute ]
-		ifNotNil: [
-			(RBMoveClassTransformation
-				 move: className
-				 toPackage: packageName
-				 inTag: tag) execute ]
-]
-
-{ #category : 'private' }
-MCPToolMoveClass >> subclassNamesOf: aClass [
-
-	^ (aClass subclasses
-		   collect: [ :each | each name asString ]
-		   as: Array) asSortedCollection asArray
-]
-
-{ #category : 'private' }
 MCPToolMoveClass >> successSummaryForClass: aClass packageName: packageName tag: tag [
 
 	^ String streamContents: [ :stream |
@@ -337,10 +186,4 @@ MCPToolMoveClass >> tagFromArguments: arguments [
 	| tag |
 	tag := self stringArgumentNamed: 'tag' in: arguments.
 	^ tag ifNil: [ nil ] ifNotNil: [ tag ]
-]
-
-{ #category : 'private' }
-MCPToolMoveClass >> tagNameOf: aClass [
-
-	^ aClass packageTagName asString
 ]

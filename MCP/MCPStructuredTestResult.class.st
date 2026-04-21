@@ -4,9 +4,9 @@ Class {
 	#instVars : [
 		'issueDetails'
 	],
-	#category : 'MCP-Utilities',
+	#category : 'MCP-Internal',
 	#package : 'MCP',
-	#tag : 'Utilities'
+	#tag : 'Internal'
 }
 
 { #category : 'initialization' }

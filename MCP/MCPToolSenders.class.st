@@ -1,23 +1,10 @@
 Class {
 	#name : 'MCPToolSenders',
-	#superclass : 'MCPToolImplementors',
+	#superclass : 'MCPTool',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
 }
-
-{ #category : 'private - searching' }
-MCPToolSenders >> allCompiledMethodsForSide: side [
-
-	| methods |
-	methods := IdentitySet new.
-	Smalltalk globals allBehaviorsDo: [ :eachBehavior |
-		eachBehavior methods do: [ :eachMethod |
-			(eachMethod isCompiledMethod and: [
-				 self matchesSide: side forCompiledMethod: eachMethod ]) ifTrue: [
-				methods add: eachMethod ] ] ].
-	^ methods asArray
-]
 
 { #category : 'private - searching' }
 MCPToolSenders >> classBindingForSelectorSymbol: aSelectorSymbol [
@@ -41,16 +28,8 @@ MCPToolSenders >> compiledMethod: aCompiledMethod referencesClassBinding: classB
 { #category : 'executing' }
 MCPToolSenders >> executeWithArguments: arguments [
 
-	| caseSensitive classNames compiledMethods data endIndex entries filterPattern filterMode includeSource limit offset packageNames pagedEntries scope selectorString startIndex totalCount truncated side |
+	| caseSensitive data endIndex entries filterPattern filterMode includeSource limit offset pagedEntries query requestedScope selectorString startIndex totalCount truncated |
 	selectorString := self selectorStringFrom: arguments.
-	scope := self normalizedScopeFrom: arguments.
-	side := self normalizedSideFrom: arguments.
-	packageNames := self
-		                stringArrayArgumentNamed: 'packageNames'
-		                in: arguments.
-	classNames := self
-		              stringArrayArgumentNamed: 'classNames'
-		              in: arguments.
 	filterPattern := self stringArgumentNamed: 'filter' in: arguments.
 	filterMode := self normalizedFilterModeFrom: arguments.
 	caseSensitive := self
@@ -69,19 +48,18 @@ MCPToolSenders >> executeWithArguments: arguments [
 		          nonNegativeIntegerArgumentNamed: 'offset'
 		          in: arguments
 		          default: 0.
+	requestedScope := (self stringArgumentNamed: 'scope' in: arguments)
+		                  ifNil: [ 'image' ].
 	^ [
-	  self
-		  validateScope: scope
-		  packageNames: packageNames
-		  classNames: classNames.
-	  compiledMethods := self
-		                     scopedSendersOf: selectorString asSymbol
-		                     scope: scope
-		                     packageNames: packageNames
-		                     classNames: classNames
-		                     side: side.
+	  | classBinding |
+	  query := self compiledMethodScopeQueryFromArguments: arguments.
+	  classBinding := self classBindingForSelectorSymbol:
+		                  selectorString asSymbol.
 	  entries := self
-		             entriesFromCompiledMethods: compiledMethods
+		             compiledMethodEntriesFrom: (self
+				              matchingSendersForSelector: selectorString asSymbol
+				              classBinding: classBinding
+				              inCompiledMethods: query compiledMethods)
 		             filter: filterPattern
 		             filterMode: filterMode
 		             caseSensitive: caseSensitive
@@ -97,11 +75,11 @@ MCPToolSenders >> executeWithArguments: arguments [
 	  truncated := offset + pagedEntries size < totalCount.
 	  data := {
 		          (#selector -> selectorString).
-		          (#scope -> scope).
-		          (#side -> side).
+		          (#scope -> query scope).
+		          (#side -> query side).
 		          (#sourceIncluded -> includeSource).
-		          (#packageNames -> (packageNames ifNil: [ #(  ) ])).
-		          (#classNames -> (classNames ifNil: [ #(  ) ])).
+		          (#packageNames -> query packageNames).
+		          (#classNames -> query classNames).
 		          (#returnedCount -> pagedEntries size).
 		          (#totalCount -> totalCount).
 		          (#offset -> offset).
@@ -111,7 +89,7 @@ MCPToolSenders >> executeWithArguments: arguments [
 	  self
 		  successResultText: (self
 				   successSummaryForSelector: selectorString
-				   scope: scope
+				   scope: query scope
 				   returnedCount: pagedEntries size
 				   totalCount: totalCount
 				   truncated: truncated)
@@ -121,13 +99,13 @@ MCPToolSenders >> executeWithArguments: arguments [
 			  self
 				  errorResultText: (self
 						   failureMessageForSelector: selectorString
-						   scope: scope
+						   scope: requestedScope
 						   error: error)
 				  details: {
 						  (#errorClass -> error class name).
 						  (#message -> error messageText).
 						  (#selector -> selectorString).
-						  (#scope -> scope) } asDictionary ]
+						  (#scope -> requestedScope) } asDictionary ]
 ]
 
 { #category : 'private - results' }
@@ -143,33 +121,6 @@ MCPToolSenders >> failureMessageForSelector: selectorString scope: scope error: 
 			  nextPutAll: anError class name;
 			  nextPutAll: '): ';
 			  nextPutAll: anError messageText ]
-]
-
-{ #category : 'private - searching' }
-MCPToolSenders >> imageSendersOf: aSelectorSymbol side: side [
-
-	| classBinding referenceSenders selectorSenders |
-	selectorSenders := ((SystemNavigation default allCallsOn:
-		                     aSelectorSymbol) select: [ :eachMethod |
-		                    self
-			                    matchesSide: side
-			                    forCompiledMethod: eachMethod ]) asArray.
-	classBinding := self classBindingForSelectorSymbol: aSelectorSymbol.
-	classBinding ifNil: [ ^ selectorSenders ].
-	referenceSenders := self
-		                    imageSendersReferencingClassBinding:
-		                    classBinding
-		                    side: side.
-	^ self mergeCompiledMethods: selectorSenders with: referenceSenders
-]
-
-{ #category : 'private - searching' }
-MCPToolSenders >> imageSendersReferencingClassBinding: classBinding side: side [
-
-	^ ((self allCompiledMethodsForSide: side) select: [ :eachMethod |
-		   self
-			   compiledMethod: eachMethod
-			   referencesClassBinding: classBinding ]) asArray
 ]
 
 { #category : 'initialization' }
@@ -347,40 +298,6 @@ MCPToolSenders >> mergeCompiledMethods: leftMethods with: rightMethods [
 	merged addAll: leftMethods.
 	merged addAll: rightMethods.
 	^ merged asArray
-]
-
-{ #category : 'private - searching' }
-MCPToolSenders >> scopedSendersOf: aSelectorSymbol scope: scope packageNames: packageNames classNames: classNames side: side [
-
-	| classBinding methods |
-	classBinding := self classBindingForSelectorSymbol: aSelectorSymbol.
-	scope = 'image' ifTrue: [
-		^ self imageSendersOf: aSelectorSymbol side: side ].
-	scope = 'packages' ifTrue: [
-		methods := self
-			           compiledMethodsForPackageNames: packageNames
-			           side: side.
-		^ self
-			  matchingSendersForSelector: aSelectorSymbol
-			  classBinding: classBinding
-			  inCompiledMethods: methods ].
-	scope = 'classes' ifTrue: [
-		methods := self compiledMethodsForBehaviors:
-			           (self behaviorsForClassNames: classNames side: side).
-		^ self
-			  matchingSendersForSelector: aSelectorSymbol
-			  classBinding: classBinding
-			  inCompiledMethods: methods ].
-	scope = 'hierarchy' ifTrue: [
-		methods := self compiledMethodsForBehaviors:
-			           (self
-				            hierarchyBehaviorsForClassNames: classNames
-				            side: side).
-		^ self
-			  matchingSendersForSelector: aSelectorSymbol
-			  classBinding: classBinding
-			  inCompiledMethods: methods ].
-	Error signal: 'Unsupported scope: ' , scope
 ]
 
 { #category : 'private - schema' }

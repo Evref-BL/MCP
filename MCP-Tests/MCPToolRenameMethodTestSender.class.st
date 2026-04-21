@@ -6,9 +6,13 @@ Class {
 }
 
 { #category : 'tests' }
-MCPToolRenameMethodTestSender >> callClassTarget [ ^ MCPToolRenameMethodTestTarget buildValue: 'value'
+MCPToolRenameMethodTestSender >> callClassTarget [
+
+	^ MCPToolRenameMethodTestTarget buildValue: 'value'
 ]
 
 { #category : 'tests' }
-MCPToolRenameMethodTestSender >> callInstanceTarget [ ^ MCPToolRenameMethodTestTarget new combine: 'first' with: 'second'
+MCPToolRenameMethodTestSender >> callInstanceTarget [
+
+	^ MCPToolRenameMethodTestTarget new combine: 'first' with: 'second'
 ]

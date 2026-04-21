@@ -332,36 +332,8 @@ MCPToolListMethods >> matchesSelector: selectorString protocol: protocolString s
 { #category : 'private' }
 MCPToolListMethods >> methodEntryForSelector: aSelector compiledMethod: aCompiledMethod className: aClassName isClassSide: isClassSide includeSource: includeSource sourceText: sourceText [
 
-	| entry protocolName selectorName |
-	selectorName := aSelector asString.
-	protocolName := aCompiledMethod protocol
-		                ifNil: [ '' ]
-		                ifNotNil: [ :protocol | protocol name asString ].
-	entry := Dictionary new.
-	entry at: #selector put: selectorName.
-	entry at: #protocol put: protocolName.
-	entry at: #side put: (isClassSide
-			 ifTrue: [ 'class' ]
-			 ifFalse: [ 'instance' ]).
-	entry at: #methodReference put: (self
-			 methodReferenceForClassName: aClassName
-			 selector: selectorName
-			 isClassSide: isClassSide).
-	includeSource ifTrue: [
-		entry at: #source put: (sourceText ifNil: [ '' ]) ].
-	^ entry
-]
-
-{ #category : 'private - arguments' }
-MCPToolListMethods >> normalizedSideFrom: arguments [
-
-	| side |
-	side := (self stringArgumentNamed: 'side' in: arguments) ifNil: [
-		        ^ 'both' ].
-	side := side asLowercase.
-	(#( 'instance' 'class' 'both' ) includes: side) ifFalse: [
-		Error signal: 'side must be one of instance, class, or both.' ].
-	^ side
+	^ (MCPCompiledMethodInfo fromCompiledMethod: aCompiledMethod)
+		  listMethodDictionaryIncludingSource: includeSource
 ]
 
 { #category : 'private - results' }

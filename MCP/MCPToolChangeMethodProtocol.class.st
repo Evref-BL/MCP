@@ -1,6 +1,6 @@
 Class {
 	#name : 'MCPToolChangeMethodProtocol',
-	#superclass : 'MCPToolRemoveMethod',
+	#superclass : 'MCPTool',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -9,20 +9,41 @@ Class {
 { #category : 'private' }
 MCPToolChangeMethodProtocol >> dataForCompiledMethod: aCompiledMethod className: className classSide: classSide oldProtocol: oldProtocol [
 
+	| info |
+	info := MCPCompiledMethodInfo fromCompiledMethod: aCompiledMethod.
 	^ {
 		  (#className -> className).
 		  (#classSide -> classSide).
-		  (#selector -> aCompiledMethod selector asString).
+		  (#selector -> info selector).
 		  (#oldProtocol -> oldProtocol).
-		  (#protocol
-		   -> (self protocolNameForCompiledMethod: aCompiledMethod)).
-		  (#packageName
-		   -> (self packageNameForCompiledMethod: aCompiledMethod)).
-		  (#isExtension -> (self isExtensionCompiledMethod: aCompiledMethod)).
-		  (#source -> (aCompiledMethod sourceCode ifNil: [ '' ])).
-		  (#methodReference -> (self
-			    methodReferenceFor: aCompiledMethod methodClass
-			    selector: aCompiledMethod selector)) } asDictionary
+		  (#protocol -> info protocol).
+		  (#packageName -> info packageName).
+		  (#isExtension -> info isExtension).
+		  (#source -> info source).
+		  (#methodReference -> info methodReference) } asDictionary
+]
+
+{ #category : 'private' }
+MCPToolChangeMethodProtocol >> errorResultForError: anError className: className classSide: classSide selector: selector protocol: protocol [
+
+	(anError isKindOf: MCPCommandError) ifTrue: [
+		^ self
+			  errorResultText: anError messageText
+			  details: anError structuredDetails ].
+	^ self
+		  errorResultText: (self
+				   failureMessageForClassNamed: className
+				   classSide: classSide
+				   selector: selector
+				   protocol: protocol
+				   error: anError)
+		  details: {
+				  (#errorClass -> anError class name).
+				  (#message -> anError messageText).
+				  (#className -> className).
+				  (#classSide -> classSide).
+				  (#selector -> selector).
+				  (#protocol -> protocol) } asDictionary
 ]
 
 { #category : 'executing' }
@@ -33,17 +54,18 @@ MCPToolChangeMethodProtocol >> executeWithArguments: arguments [
 	classSide := arguments at: #classSide.
 	selector := arguments at: #selector.
 	protocol := arguments at: #protocol.
-	behavior := self behaviorFromArguments: arguments.
 	selectorSymbol := selector asSymbol.
-	compiledMethod := behavior
-		                  compiledMethodAt: selectorSymbol
-		                  ifAbsent: [
-			                  ^ self
-				                    missingMethodResultForClassName: className
+	^ [
+	  behavior := self behaviorNamed: className classSide: classSide.
+	  compiledMethod := behavior
+		                    compiledMethodAt: selectorSymbol
+		                    ifAbsent: [
+			                    MCPCommandError
+				                    signalMissingMethodInClassName: className
 				                    classSide: classSide
 				                    selector: selector ].
-	oldProtocol := self protocolNameForCompiledMethod: compiledMethod.
-	^ [
+	  oldProtocol := (MCPCompiledMethodInfo fromCompiledMethod:
+		                  compiledMethod) protocol.
 	  (RBMethodProtocolTransformation
 		   protocol: protocol
 		   inMethod: selectorSymbol
@@ -53,8 +75,10 @@ MCPToolChangeMethodProtocol >> executeWithArguments: arguments [
 	  newCompiledMethod := behavior compiledMethodAt: selectorSymbol.
 	  self
 		  successResultText: 'Changed protocol for '
-			  , (self methodReferenceFor: behavior selector: selectorSymbol)
-			  , '.'
+			  ,
+			  (self
+				   methodReferenceForBehavior: behavior
+				   selector: selectorSymbol) , '.'
 		  data: (self
 				   dataForCompiledMethod: newCompiledMethod
 				   className: className
@@ -63,19 +87,11 @@ MCPToolChangeMethodProtocol >> executeWithArguments: arguments [
 		  on: Exception
 		  do: [ :error |
 			  self
-				  errorResultText: (self
-						   failureMessageForClassNamed: className
-						   classSide: classSide
-						   selector: selector
-						   protocol: protocol
-						   error: error)
-				  details: {
-						  (#errorClass -> error class name).
-						  (#message -> error messageText).
-						  (#className -> className).
-						  (#classSide -> classSide).
-						  (#selector -> selector).
-						  (#protocol -> protocol) } asDictionary ]
+				  errorResultForError: error
+				  className: className
+				  classSide: classSide
+				  selector: selector
+				  protocol: protocol ]
 ]
 
 { #category : 'private' }

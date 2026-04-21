@@ -1,6 +1,6 @@
 Class {
 	#name : 'MCPToolRemoveMethods',
-	#superclass : 'MCPToolRemoveMethod',
+	#superclass : 'MCPTool',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -9,17 +9,36 @@ Class {
 { #category : 'private' }
 MCPToolRemoveMethods >> dataForCompiledMethod: aCompiledMethod [
 
+	| info |
+	info := MCPCompiledMethodInfo fromCompiledMethod: aCompiledMethod.
 	^ {
-		  (#selector -> aCompiledMethod selector asString).
-		  (#protocol
-		   -> (self protocolNameForCompiledMethod: aCompiledMethod)).
-		  (#packageName
-		   -> (self packageNameForCompiledMethod: aCompiledMethod)).
-		  (#isExtension -> (self isExtensionCompiledMethod: aCompiledMethod)).
-		  (#source -> (aCompiledMethod sourceCode ifNil: [ '' ])).
-		  (#methodReference -> (self
-			    methodReferenceFor: aCompiledMethod methodClass
-			    selector: aCompiledMethod selector)) } asDictionary
+		  (#selector -> info selector).
+		  (#protocol -> info protocol).
+		  (#packageName -> info packageName).
+		  (#isExtension -> info isExtension).
+		  (#source -> info source).
+		  (#methodReference -> info methodReference) } asDictionary
+]
+
+{ #category : 'private' }
+MCPToolRemoveMethods >> errorResultForError: anError className: className classSide: classSide selectors: selectors [
+
+	(anError isKindOf: MCPCommandError) ifTrue: [
+		^ self
+			  errorResultText: anError messageText
+			  details: anError structuredDetails ].
+	^ self
+		  errorResultText: (self
+				   failureMessageForClassNamed: className
+				   classSide: classSide
+				   selectors: selectors
+				   error: anError)
+		  details: {
+				  (#errorClass -> anError class name).
+				  (#message -> anError messageText).
+				  (#className -> className).
+				  (#classSide -> classSide).
+				  (#selectors -> selectors asArray) } asDictionary
 ]
 
 { #category : 'executing' }
@@ -29,23 +48,21 @@ MCPToolRemoveMethods >> executeWithArguments: arguments [
 	className := arguments at: #className.
 	classSide := arguments at: #classSide.
 	selectors := self selectorsFromArguments: arguments.
-	behavior := self behaviorFromArguments: arguments.
 	selectorSymbols := selectors collect: #asSymbol.
-	removedMethods := selectorSymbols collect: [ :selector |
-		                  | compiledMethod |
-		                  compiledMethod := behavior
-			                                    compiledMethodAt: selector
-			                                    ifAbsent: [
-				                                    ^ self
-					                                      missingMethodResultForClassName:
+	^ [
+	  behavior := self behaviorNamed: className classSide: classSide.
+	  removedMethods := selectorSymbols collect: [ :selector |
+		                    | compiledMethod |
+		                    compiledMethod := behavior
+			                                      compiledMethodAt: selector
+			                                      ifAbsent: [
+				                                      MCPCommandError
+					                                      signalMissingMethodInClassName:
 					                                      className
 					                                      classSide: classSide
 					                                      selector: selector asString ].
-		                  self dataForCompiledMethod: compiledMethod ].
-	^ [
-	  (ReRemoveMethodsRefactoring
-		   selectors: selectorSymbols
-		   from: behavior) execute.
+		                    self dataForCompiledMethod: compiledMethod ].
+	  self forceRemoveSelectors: selectorSymbols from: behavior.
 	  self
 		  successResultText: (self
 				   successSummaryForClassName: className
@@ -59,17 +76,10 @@ MCPToolRemoveMethods >> executeWithArguments: arguments [
 		  on: Exception
 		  do: [ :error |
 			  self
-				  errorResultText: (self
-						   failureMessageForClassNamed: className
-						   classSide: classSide
-						   selectors: selectors
-						   error: error)
-				  details: {
-						  (#errorClass -> error class name).
-						  (#message -> error messageText).
-						  (#className -> className).
-						  (#classSide -> classSide).
-						  (#selectors -> selectors asArray) } asDictionary ]
+				  errorResultForError: error
+				  className: className
+				  classSide: classSide
+				  selectors: selectors ]
 ]
 
 { #category : 'private' }
@@ -91,13 +101,25 @@ MCPToolRemoveMethods >> failureMessageForClassNamed: className classSide: classS
 			  nextPutAll: anError messageText ]
 ]
 
+{ #category : 'private' }
+MCPToolRemoveMethods >> forceRemoveSelectors: selectorSymbols from: aBehavior [
+
+	| refactoring |
+	refactoring := ReRemoveMethodsRefactoring
+		               selectors: selectorSymbols
+		               from: aBehavior.
+	refactoring checkSuperMethods.
+	refactoring removeMethodChanges.
+	refactoring performChanges
+]
+
 { #category : 'initialization' }
 MCPToolRemoveMethods >> initialize [
 
 	super initialize.
 	name := 'pharo-remove-methods'.
 	title := 'Remove Pharo Methods'.
-	description := 'Remove multiple methods from the instance side or class side of a Pharo class using ReRemoveMethodsRefactoring. The refactoring reasons about the batch and rejects removals that still have external senders.'.
+	description := 'Force remove multiple methods from the instance side or class side of a Pharo class as one batch. This bypasses sender checks, so existing senders may be left broken.'.
 	inputSchema := MCPStructureInputSchema new
 		               type: 'object';
 		               properties: {
@@ -117,7 +139,7 @@ MCPToolRemoveMethods >> initialize [
 					                 name: 'selectors';
 					                 type: 'array';
 					                 description:
-						                 'The selectors to remove as a single refactoring batch.')
+						                 'The selectors to remove as a single force-removal batch.')
 					                items: (MCPStructureProperties new
 							                 type: 'string';
 							                 description: 'A selector to remove.';
@@ -141,7 +163,7 @@ MCPToolRemoveMethods >> initialize [
 					                  schemaPropertyNamed: 'selectors'
 					                  type: 'array'
 					                  description:
-						                  'The selectors removed by the batch refactoring.')
+						                  'The selectors removed by the batch operation.')
 					                 items: (MCPStructureProperties new
 							                  type: 'string';
 							                  description: 'A removed selector.';
@@ -222,6 +244,8 @@ MCPToolRemoveMethods >> successSummaryForClassName: className classSide: classSi
 	targetName := classSide
 		              ifTrue: [ className , ' class' ]
 		              ifFalse: [ className ].
-	^ 'Removed ' , selectors size asString , ' methods from '
-	  , targetName , ': ' , (', ' join: selectors) , '.'
+	^ 'Force-removed ' , selectors size asString , ' methods from '
+	  , targetName , ': ' , (', ' join: selectors)
+	  ,
+	  '. Warning: this bypasses sender checks and may leave broken senders.'
 ]

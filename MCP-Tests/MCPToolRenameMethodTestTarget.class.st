@@ -6,9 +6,13 @@ Class {
 }
 
 { #category : 'tests' }
-MCPToolRenameMethodTestTarget class >> buildValue: aString [ ^ 'Class-' , aString
+MCPToolRenameMethodTestTarget class >> buildValue: aString [
+
+	^ 'Class-' , aString
 ]
 
 { #category : 'tests' }
-MCPToolRenameMethodTestTarget >> combine: first with: second [ ^ first , '-' , second
+MCPToolRenameMethodTestTarget >> combine: first with: second [
+
+	^ first , '-' , second
 ]

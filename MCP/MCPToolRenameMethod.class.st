@@ -1,6 +1,6 @@
 Class {
 	#name : 'MCPToolRenameMethod',
-	#superclass : 'MCPToolRemoveMethod',
+	#superclass : 'MCPTool',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -9,22 +9,43 @@ Class {
 { #category : 'private' }
 MCPToolRenameMethod >> dataForCompiledMethod: aCompiledMethod className: className classSide: classSide oldSelector: oldSelector newSelector: newSelector permutation: permutation oldMethodReference: oldMethodReference [
 
+	| info |
+	info := MCPCompiledMethodInfo fromCompiledMethod: aCompiledMethod.
 	^ {
 		  (#className -> className).
 		  (#classSide -> classSide).
 		  (#oldSelector -> oldSelector).
 		  (#newSelector -> newSelector).
 		  (#permutation -> permutation asArray).
-		  (#protocol
-		   -> (self protocolNameForCompiledMethod: aCompiledMethod)).
-		  (#packageName
-		   -> (self packageNameForCompiledMethod: aCompiledMethod)).
-		  (#isExtension -> (self isExtensionCompiledMethod: aCompiledMethod)).
-		  (#source -> (aCompiledMethod sourceCode ifNil: [ '' ])).
+		  (#protocol -> info protocol).
+		  (#packageName -> info packageName).
+		  (#isExtension -> info isExtension).
+		  (#source -> info source).
 		  (#oldMethodReference -> oldMethodReference).
-		  (#methodReference -> (self
-			    methodReferenceFor: aCompiledMethod methodClass
-			    selector: aCompiledMethod selector)) } asDictionary
+		  (#methodReference -> info methodReference) } asDictionary
+]
+
+{ #category : 'private' }
+MCPToolRenameMethod >> errorResultForError: anError className: className classSide: classSide selector: oldSelector newSelector: newSelector [
+
+	(anError isKindOf: MCPCommandError) ifTrue: [
+		^ self
+			  errorResultText: anError messageText
+			  details: anError structuredDetails ].
+	^ self
+		  errorResultText: (self
+				   failureMessageForClassNamed: className
+				   classSide: classSide
+				   selector: oldSelector
+				   newSelector: newSelector
+				   error: anError)
+		  details: {
+				  (#errorClass -> anError class name).
+				  (#message -> anError messageText).
+				  (#className -> className).
+				  (#classSide -> classSide).
+				  (#selector -> oldSelector).
+				  (#newSelector -> newSelector) } asDictionary
 ]
 
 { #category : 'executing' }
@@ -35,23 +56,23 @@ MCPToolRenameMethod >> executeWithArguments: arguments [
 	classSide := arguments at: #classSide.
 	oldSelector := arguments at: #selector.
 	newSelector := arguments at: #newSelector.
-	behavior := self behaviorFromArguments: arguments.
 	oldSelectorSymbol := oldSelector asSymbol.
 	newSelectorSymbol := newSelector asSymbol.
-	compiledMethod := behavior
-		                  compiledMethodAt: oldSelectorSymbol
-		                  ifAbsent: [
-			                  ^ self
-				                    missingMethodResultForClassName: className
-				                    classSide: classSide
-				                    selector: oldSelector ].
-	oldMethodReference := self
-		                      methodReferenceFor: behavior
-		                      selector: oldSelectorSymbol.
 	permutation := self
 		               permutationFromArguments: arguments
 		               selector: oldSelectorSymbol.
 	^ [
+	  behavior := self behaviorNamed: className classSide: classSide.
+	  compiledMethod := behavior
+		                    compiledMethodAt: oldSelectorSymbol
+		                    ifAbsent: [
+			                    MCPCommandError
+				                    signalMissingMethodInClassName: className
+				                    classSide: classSide
+				                    selector: oldSelector ].
+	  oldMethodReference := self
+		                        methodReferenceForBehavior: behavior
+		                        selector: oldSelectorSymbol.
 	  (ReRenameMethodRefactoring
 		   renameMethod: oldSelectorSymbol
 		   in: behavior
@@ -60,8 +81,10 @@ MCPToolRenameMethod >> executeWithArguments: arguments [
 	  newCompiledMethod := behavior compiledMethodAt: newSelectorSymbol.
 	  self
 		  successResultText: 'Renamed ' , oldMethodReference , ' to '
-			  , (self methodReferenceFor: behavior selector: newSelectorSymbol)
-			  , '.'
+			  ,
+			  (self
+				   methodReferenceForBehavior: behavior
+				   selector: newSelectorSymbol) , '.'
 		  data: (self
 				   dataForCompiledMethod: newCompiledMethod
 				   className: className
@@ -73,19 +96,11 @@ MCPToolRenameMethod >> executeWithArguments: arguments [
 		  on: Exception
 		  do: [ :error |
 			  self
-				  errorResultText: (self
-						   failureMessageForClassNamed: className
-						   classSide: classSide
-						   selector: oldSelector
-						   newSelector: newSelector
-						   error: error)
-				  details: {
-						  (#errorClass -> error class name).
-						  (#message -> error messageText).
-						  (#className -> className).
-						  (#classSide -> classSide).
-						  (#selector -> oldSelector).
-						  (#newSelector -> newSelector) } asDictionary ]
+				  errorResultForError: error
+				  className: className
+				  classSide: classSide
+				  selector: oldSelector
+				  newSelector: newSelector ]
 ]
 
 { #category : 'private' }

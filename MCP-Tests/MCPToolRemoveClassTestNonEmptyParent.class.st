@@ -6,5 +6,7 @@ Class {
 }
 
 { #category : 'tests' }
-MCPToolRemoveClassTestNonEmptyParent >> marker [ ^ 1
+MCPToolRemoveClassTestNonEmptyParent >> marker [
+
+	^ 1
 ]

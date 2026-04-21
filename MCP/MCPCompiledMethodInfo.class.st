@@ -1,0 +1,132 @@
+Class {
+	#name : 'MCPCompiledMethodInfo',
+	#superclass : 'Object',
+	#instVars : [
+		'className',
+		'side',
+		'selector',
+		'protocol',
+		'packageName',
+		'isExtension',
+		'methodReference',
+		'source'
+	],
+	#category : 'MCP-Internal',
+	#package : 'MCP',
+	#tag : 'Internal'
+}
+
+{ #category : 'instance creation' }
+MCPCompiledMethodInfo class >> fromCompiledMethod: aCompiledMethod [
+
+	^ self new initializeFromCompiledMethod: aCompiledMethod
+]
+
+{ #category : 'converting' }
+MCPCompiledMethodInfo >> asDictionaryIncludingSource: includeSource [
+
+	| data |
+	data := {
+		        (#selector -> self selector).
+		        (#className -> self className).
+		        (#side -> self side).
+		        (#packageName -> self packageName).
+		        (#isExtension -> self isExtension).
+		        (#protocol -> self protocol).
+		        (#methodReference -> self methodReference) } asDictionary.
+	includeSource ifTrue: [ data at: #source put: self source ].
+	^ data
+]
+
+{ #category : 'accessing' }
+MCPCompiledMethodInfo >> className [
+
+	^ className
+]
+
+{ #category : 'initialization' }
+MCPCompiledMethodInfo >> initializeFromCompiledMethod: aCompiledMethod [
+
+	| classPackageName methodPackageName |
+	className := aCompiledMethod methodClass instanceSide name asString.
+	side := aCompiledMethod methodClass isMeta
+		        ifTrue: [ 'class' ]
+		        ifFalse: [ 'instance' ].
+	selector := aCompiledMethod selector asString.
+	protocol := aCompiledMethod protocol
+		            ifNil: [ '' ]
+		            ifNotNil: [ :aProtocol | aProtocol name asString ].
+	methodPackageName := aCompiledMethod package
+		                     ifNil: [
+		                     aCompiledMethod methodClass instanceSide
+			                     package name asString ]
+		                     ifNotNil: [ :aPackage | aPackage name asString ].
+	packageName := methodPackageName.
+	classPackageName := aCompiledMethod methodClass instanceSide package
+		                    name asString.
+	isExtension := packageName ~= classPackageName.
+	methodReference := String streamContents: [ :stream |
+		                   stream nextPutAll: className.
+		                   side = 'class' ifTrue: [
+			                   stream nextPutAll: ' class' ].
+		                   stream
+			                   nextPutAll: '>>';
+			                   nextPutAll: selector ].
+	source := aCompiledMethod sourceCode ifNil: [ '' ].
+	^ self
+]
+
+{ #category : 'accessing' }
+MCPCompiledMethodInfo >> isExtension [
+
+	^ isExtension = true
+]
+
+{ #category : 'converting' }
+MCPCompiledMethodInfo >> listMethodDictionaryIncludingSource: includeSource [
+
+	| data |
+	data := {
+		        (#selector -> self selector).
+		        (#protocol -> self protocol).
+		        (#side -> self side).
+		        (#methodReference -> self methodReference) } asDictionary.
+	includeSource ifTrue: [ data at: #source put: self source ].
+	^ data
+]
+
+{ #category : 'accessing' }
+MCPCompiledMethodInfo >> methodReference [
+
+	^ methodReference
+]
+
+{ #category : 'accessing' }
+MCPCompiledMethodInfo >> packageName [
+
+	^ packageName
+]
+
+{ #category : 'accessing' }
+MCPCompiledMethodInfo >> protocol [
+
+	^ protocol
+]
+
+{ #category : 'accessing' }
+MCPCompiledMethodInfo >> selector [
+
+	^ selector
+]
+
+{ #category : 'accessing' }
+MCPCompiledMethodInfo >> side [
+
+	^ side
+]
+
+{ #category : 'accessing' }
+MCPCompiledMethodInfo >> source [
+
+	^ source
+]

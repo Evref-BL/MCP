@@ -6,5 +6,7 @@ Class {
 }
 
 { #category : 'tests' }
-MCPToolRemoveClassTestSender >> useReferencedClass [ ^ MCPToolRemoveClassTestReferenced new
+MCPToolRemoveClassTestSender >> useReferencedClass [
+
+	^ MCPToolRemoveClassTestReferenced new
 ]

@@ -42,6 +42,16 @@ MCPTool >> asJRPCJSON [
 	^ dic
 ]
 
+{ #category : 'private - methods' }
+MCPTool >> behaviorNamed: aClassName classSide: aBoolean [
+
+	| targetClass |
+	targetClass := self class environment at: aClassName asSymbol.
+	^ aBoolean
+		  ifTrue: [ targetClass classSide ]
+		  ifFalse: [ targetClass ]
+]
+
 { #category : 'private - arguments' }
 MCPTool >> booleanArgumentNamed: anArgumentName in: arguments default: aBoolean [
 
@@ -56,6 +66,47 @@ MCPTool >> booleanArgumentNamed: anArgumentName in: arguments default: aBoolean 
 	normalized = 'true' ifTrue: [ ^ true ].
 	normalized = 'false' ifTrue: [ ^ false ].
 	Error signal: anArgumentName asString , ' must be a boolean.'
+]
+
+{ #category : 'private - methods' }
+MCPTool >> compiledMethodEntriesFrom: compiledMethods filter: filterPattern filterMode: filterMode caseSensitive: caseSensitive includeSource: includeSource [
+
+	| entries matcher needsSourceText |
+	matcher := self
+		           matcherForPattern: filterPattern
+		           mode: filterMode
+		           caseSensitive: caseSensitive.
+	needsSourceText := includeSource or: [ filterPattern notNil ].
+	entries := OrderedCollection new.
+	compiledMethods do: [ :eachMethod |
+		| entry info sourceText |
+		info := MCPCompiledMethodInfo fromCompiledMethod: eachMethod.
+		sourceText := needsSourceText
+			              ifTrue: [ info source ]
+			              ifFalse: [ nil ].
+		entry := info asDictionaryIncludingSource: includeSource.
+		(self
+			 matchesFilterOnCompiledMethodEntry: entry
+			 sourceText: sourceText
+			 matcher: matcher) ifTrue: [ entries add: entry ] ].
+	^ (entries asSortedCollection: [ :left :right |
+		   (left at: #methodReference) <= (right at: #methodReference) ])
+		  asArray
+]
+
+{ #category : 'private - methods' }
+MCPTool >> compiledMethodScopeQueryFromArguments: arguments [
+
+	^ MCPCompiledMethodScopeQuery
+		  scope: (self stringArgumentNamed: 'scope' in: arguments)
+		  packageNames:
+		  (self
+			   argumentNamed: 'packageNames'
+			   in: arguments
+			   ifAbsent: [ nil ])
+		  classNames:
+		  (self argumentNamed: 'classNames' in: arguments ifAbsent: [ nil ])
+		  side: (self stringArgumentNamed: 'side' in: arguments)
 ]
 
 { #category : 'accessing' }
@@ -176,6 +227,28 @@ MCPTool >> failureMessageFor: anError [
 				  nextPutAll: message ] ]
 ]
 
+{ #category : 'private - filtering' }
+MCPTool >> filterTextForCompiledMethodEntry: anEntry sourceText: sourceText [
+
+	^ String streamContents: [ :stream |
+		  stream
+			  nextPutAll: (anEntry at: #selector);
+			  nextPutAll: ' ';
+			  nextPutAll: (anEntry at: #className);
+			  nextPutAll: ' ';
+			  nextPutAll: (anEntry at: #side);
+			  nextPutAll: ' ';
+			  nextPutAll: (anEntry at: #packageName);
+			  nextPutAll: ' ';
+			  nextPutAll: (anEntry at: #protocol);
+			  nextPutAll: ' ';
+			  nextPutAll: (anEntry at: #methodReference).
+		  sourceText ifNotNil: [
+			  stream
+				  nextPutAll: ' ';
+				  nextPutAll: sourceText ] ]
+]
+
 { #category : 'accessing' }
 MCPTool >> handler [
 
@@ -249,6 +322,24 @@ MCPTool >> matcherForPattern: aPattern mode: aMode caseSensitive: aBoolean [
 	Error signal: 'Unsupported filter mode: ' , aMode
 ]
 
+{ #category : 'private - filtering' }
+MCPTool >> matchesFilterOnCompiledMethodEntry: anEntry sourceText: sourceText matcher: aMatcher [
+
+	^ aMatcher value:
+		  (self
+			   filterTextForCompiledMethodEntry: anEntry
+			   sourceText: sourceText)
+]
+
+{ #category : 'private - methods' }
+MCPTool >> methodReferenceForBehavior: aBehavior selector: aSelector [
+
+	^ String streamContents: [ :stream |
+		  stream nextPutAll: (self targetNameForBehavior: aBehavior).
+		  stream nextPutAll: '>>'.
+		  stream nextPutAll: aSelector asString ]
+]
+
 { #category : 'private - methods' }
 MCPTool >> methodReferenceForClassName: aClassName selector: aSelector isClassSide: isClassSide [
 
@@ -309,6 +400,18 @@ MCPTool >> normalizedFilterModeFrom: arguments [
 		Error signal:
 			'filterMode must be one of substring, prefix, exact, or regex.' ].
 	^ mode
+]
+
+{ #category : 'private - arguments' }
+MCPTool >> normalizedSideFrom: arguments [
+
+	| side |
+	side := (self stringArgumentNamed: 'side' in: arguments) ifNil: [
+		        ^ 'both' ].
+	side := side asLowercase.
+	(#( 'instance' 'class' 'both' ) includes: side) ifFalse: [
+		Error signal: 'side must be one of instance, class, or both.' ].
+	^ side
 ]
 
 { #category : 'accessing' }
@@ -459,6 +562,22 @@ MCPTool >> stringArgumentNamed: anArgumentName in: arguments [
 		  ifFalse: [ value ]
 ]
 
+{ #category : 'private - schema' }
+MCPTool >> stringArraySchemaNamed: aName description: aDescription itemDescription: anItemDescription [
+
+	| itemsProperty |
+	itemsProperty := MCPStructureProperties new
+		                 type: 'string';
+		                 description: anItemDescription;
+		                 yourself.
+	^ (self
+		   schemaPropertyNamed: aName
+		   type: 'array'
+		   description: aDescription)
+		  items: itemsProperty;
+		  yourself
+]
+
 { #category : 'private - tests' }
 MCPTool >> structuredDataForTestResult: aResult className: className testMethodName: testMethodName [
 
@@ -491,6 +610,14 @@ MCPTool >> successResultText: aSummary data: aDictionary [
 		  structuredContent: {
 				  (#status -> 'ok').
 				  (#data -> aDictionary) } asDictionary
+]
+
+{ #category : 'private - methods' }
+MCPTool >> targetNameForBehavior: aBehavior [
+
+	^ aBehavior isMeta
+		  ifTrue: [ aBehavior instanceSide name , ' class' ]
+		  ifFalse: [ aBehavior name ]
 ]
 
 { #category : 'private - tests' }

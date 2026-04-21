@@ -9,19 +9,18 @@ Class {
 { #category : 'private' }
 MCPToolCompileMethod >> behaviorFromArguments: arguments [
 
-	| targetClass |
-	targetClass := self class environment at:
-		               (arguments at: #className) asSymbol.
-	^ (arguments at: #classSide)
-		  ifTrue: [ targetClass classSide ]
-		  ifFalse: [ targetClass ]
+	^ self
+		  behaviorNamed: (arguments at: #className)
+		  classSide: (arguments at: #classSide)
 ]
 
 { #category : 'executing' }
 MCPToolCompileMethod >> executeWithArguments: arguments [
 
-	| behavior methodSource protocol selector compiledMethod methodReference |
-	behavior := self behaviorFromArguments: arguments.
+	| behavior compiledMethod methodReference methodSource protocol selector |
+	behavior := self
+		            behaviorNamed: (arguments at: #className)
+		            classSide: (arguments at: #classSide).
 	methodSource := self normalizedMethodSourceFrom:
 		                (arguments at: #methodSource).
 	protocol := arguments at: #protocol.
@@ -29,7 +28,7 @@ MCPToolCompileMethod >> executeWithArguments: arguments [
 	compiledMethod := behavior >> selector.
 	compiledMethod reformat.
 	methodReference := self
-		                   methodReferenceFor: behavior
+		                   methodReferenceForBehavior: behavior
 		                   selector: selector.
 	^ self
 		  successResultText: 'Compiled ' , methodReference , '.'
@@ -113,10 +112,7 @@ MCPToolCompileMethod >> initialize [
 { #category : 'private' }
 MCPToolCompileMethod >> methodReferenceFor: aBehavior selector: aSelector [
 
-	^ String streamContents: [ :stream |
-		  stream nextPutAll: (self targetNameFor: aBehavior).
-		  stream nextPutAll: '>>'.
-		  stream nextPutAll: aSelector asString ]
+	^ self methodReferenceForBehavior: aBehavior selector: aSelector
 ]
 
 { #category : 'private' }
@@ -128,7 +124,5 @@ MCPToolCompileMethod >> normalizedMethodSourceFrom: aMethodSource [
 { #category : 'private' }
 MCPToolCompileMethod >> targetNameFor: aBehavior [
 
-	^ aBehavior isMeta
-		  ifTrue: [ aBehavior instanceSide name , ' class' ]
-		  ifFalse: [ aBehavior name ]
+	^ self targetNameForBehavior: aBehavior
 ]
