@@ -6,33 +6,21 @@ Class {
 }
 
 { #category : 'private' }
+MCPToolRemoveClassTest >> argumentsForClassName: aClassName [
+
+	^ { (#className -> aClassName) } asDictionary
+]
+
+{ #category : 'private' }
 MCPToolRemoveClassTest >> callToolWith: someArguments [
 
 	^ MCP new rpcToolCall: 'pharo-remove-class' withParams: someArguments
 ]
 
 { #category : 'private' }
-MCPToolRemoveClassTest >> childClassName [
+MCPToolRemoveClassTest >> classNamed: aClassName [
 
-	^ 'MCPToolRemoveClassTestChild'
-]
-
-{ #category : 'private' }
-MCPToolRemoveClassTest >> createClassNamed: aClassName superclassName: aSuperclassName tag: aTag slots: someSlots classSlots: someClassSlots [
-
-	| builder createdClass |
-	self packageOrganizer ensurePackage: self generatedPackageName.
-	builder := (self class environment at: aSuperclassName asSymbol)
-	           << aClassName asSymbol.
-	builder package: self generatedPackageName.
-	aTag ifNotNil: [ builder tag: aTag ].
-	someSlots ifNotNil: [
-		builder slots: (someSlots collect: [ :each | each asSymbol ]) ].
-	someClassSlots ifNotNil: [
-		builder classSlots:
-			(someClassSlots collect: [ :each | each asSymbol ]) ].
-	createdClass := builder install.
-	^ createdClass
+	^ self class environment at: aClassName asSymbol
 ]
 
 { #category : 'private' }
@@ -42,55 +30,148 @@ MCPToolRemoveClassTest >> dataFrom: aResult [
 ]
 
 { #category : 'private' }
+MCPToolRemoveClassTest >> emptyChildClassName [
+
+	^ self fixturePrefix , 'EmptyChild'
+]
+
+{ #category : 'private' }
+MCPToolRemoveClassTest >> emptyParentClassName [
+
+	^ self fixturePrefix , 'EmptyParent'
+]
+
+{ #category : 'private' }
+MCPToolRemoveClassTest >> ensureClassNamed: aClassName superclassName: aSuperclassName [
+
+	| symbol superclass |
+	symbol := aClassName asSymbol.
+	(self class environment includesKey: symbol) ifTrue: [ ^ self ].
+	superclass := self class environment at: aSuperclassName asSymbol.
+	(superclass << symbol)
+		package: 'MCP-Tests';
+		install
+]
+
+{ #category : 'private' }
+MCPToolRemoveClassTest >> ensureMethodSource: aMethodSource onClassNamed: aClassName [
+
+	(self classNamed: aClassName)
+		compile: aMethodSource
+		classified: 'tests'
+]
+
+{ #category : 'private' }
 MCPToolRemoveClassTest >> errorFrom: aResult [
 
 	^ (self structuredContentFrom: aResult) at: #error
 ]
 
 { #category : 'private' }
-MCPToolRemoveClassTest >> generatedPackageName [
+MCPToolRemoveClassTest >> fixtureClassNames [
 
-	^ 'MCP-Tests-RemoveClass'
+	^ {
+		  self simpleClassName.
+		  self emptyParentClassName.
+		  self emptyChildClassName.
+		  self nonEmptyParentClassName.
+		  self nonEmptyChildClassName.
+		  self referencedClassName.
+		  self senderClassName } asArray
 ]
 
 { #category : 'private' }
-MCPToolRemoveClassTest >> parentClassName [
+MCPToolRemoveClassTest >> fixturePrefix [
 
-	^ 'MCPToolRemoveClassTestParent'
+	^ self class name asString
 ]
 
 { #category : 'private' }
-MCPToolRemoveClassTest >> removableClassName [
+MCPToolRemoveClassTest >> missingClassName [
 
-	^ 'MCPToolRemoveClassTestRemovable'
+	^ self fixturePrefix , 'Missing'
+]
+
+{ #category : 'private' }
+MCPToolRemoveClassTest >> nonEmptyChildClassName [
+
+	^ self fixturePrefix , 'NonEmptyChild'
+]
+
+{ #category : 'private' }
+MCPToolRemoveClassTest >> nonEmptyParentClassName [
+
+	^ self fixturePrefix , 'NonEmptyParent'
+]
+
+{ #category : 'private' }
+MCPToolRemoveClassTest >> referenceSenderMethodSource [
+
+	^ 'useReferencedClass ^ ' , self referencedClassName , ' new'
+]
+
+{ #category : 'private' }
+MCPToolRemoveClassTest >> referencedClassName [
+
+	^ self fixturePrefix , 'Referenced'
 ]
 
 { #category : 'private' }
 MCPToolRemoveClassTest >> removeClassNamed: aClassName [
 
-	| classSymbol |
-	classSymbol := aClassName asSymbol.
-	(self class environment includesKey: classSymbol) ifTrue: [
-		(self class environment at: classSymbol) removeFromSystem ]
+	| symbol |
+	symbol := aClassName asSymbol.
+	(self class environment includesKey: symbol) ifTrue: [
+		(self class environment at: symbol) removeFromSystem ]
 ]
 
 { #category : 'private' }
-MCPToolRemoveClassTest >> removeGeneratedPackage [
+MCPToolRemoveClassTest >> restoreFixtureClasses [
 
-	(self packageOrganizer hasPackage: self generatedPackageName)
-		ifTrue: [
-			self packageOrganizer removePackage:
-				(self packageOrganizer packageNamed: self generatedPackageName) ]
+	self fixtureClassNames reverseDo: [ :each |
+		self removeClassNamed: each ].
+	self ensureClassNamed: self simpleClassName superclassName: 'Object'.
+	self
+		ensureClassNamed: self emptyParentClassName
+		superclassName: 'Object'.
+	self
+		ensureClassNamed: self emptyChildClassName
+		superclassName: self emptyParentClassName.
+	self
+		ensureClassNamed: self nonEmptyParentClassName
+		superclassName: 'Object'.
+	self
+		ensureClassNamed: self nonEmptyChildClassName
+		superclassName: self nonEmptyParentClassName.
+	self
+		ensureClassNamed: self referencedClassName
+		superclassName: 'Object'.
+	self ensureClassNamed: self senderClassName superclassName: 'Object'.
+	self
+		ensureMethodSource: 'marker ^ 1'
+		onClassNamed: self nonEmptyParentClassName.
+	self
+		ensureMethodSource: self referenceSenderMethodSource
+		onClassNamed: self senderClassName
+]
+
+{ #category : 'private' }
+MCPToolRemoveClassTest >> senderClassName [
+
+	^ self fixturePrefix , 'Sender'
 ]
 
 { #category : 'running' }
 MCPToolRemoveClassTest >> setUp [
 
 	super setUp.
-	self removeClassNamed: self childClassName.
-	self removeClassNamed: self parentClassName.
-	self removeClassNamed: self removableClassName.
-	self removeGeneratedPackage
+	self restoreFixtureClasses
+]
+
+{ #category : 'private' }
+MCPToolRemoveClassTest >> simpleClassName [
+
+	^ self fixturePrefix , 'Simple'
 ]
 
 { #category : 'private' }
@@ -102,72 +183,24 @@ MCPToolRemoveClassTest >> structuredContentFrom: aResult [
 { #category : 'running' }
 MCPToolRemoveClassTest >> tearDown [
 
-	self removeClassNamed: self childClassName.
-	self removeClassNamed: self parentClassName.
-	self removeClassNamed: self removableClassName.
-	self removeGeneratedPackage.
+	self restoreFixtureClasses.
 	super tearDown
 ]
 
 { #category : 'tests' }
-MCPToolRemoveClassTest >> testRejectsRemovalWhenClassHasSubclasses [
+MCPToolRemoveClassTest >> testReturnsStructuredErrorWhenClassHasReferences [
 
 	| error result structured |
-	self
-		createClassNamed: self parentClassName
-		superclassName: 'Object'
-		tag: nil
-		slots: nil
-		classSlots: nil.
-	self
-		createClassNamed: self childClassName
-		superclassName: self parentClassName
-		tag: nil
-		slots: nil
-		classSlots: nil.
 	result := self callToolWith:
-		          { (#className -> self parentClassName) } asDictionary.
+		          (self argumentsForClassName: self referencedClassName).
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #errorClass) equals: 'ClassHasSubclasses'.
+	self assert: (error at: #className) equals: self referencedClassName.
 	self assert:
-		((error at: #subclassNames) includes: self childClassName).
-	self assert:
-		(self class environment includesKey: self parentClassName asSymbol).
-	self assert:
-		(self class environment includesKey: self childClassName asSymbol)
-]
-
-{ #category : 'tests' }
-MCPToolRemoveClassTest >> testRemovesClassAndReturnsMetadata [
-
-	| data result |
-	self
-		createClassNamed: self removableClassName
-		superclassName: 'Object'
-		tag: 'Generated'
-		slots: #( 'firstName' 'lastName' )
-		classSlots: #( 'defaultName' ).
-	result := self callToolWith:
-		          { (#className -> self removableClassName) } asDictionary.
-	data := self dataFrom: result.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self deny:
 		(self class environment includesKey:
-			 self removableClassName asSymbol).
-	self assert: (data at: #className) equals: self removableClassName.
-	self assert: (data at: #superclassName) equals: 'Object'.
-	self
-		assert: (data at: #packageName)
-		equals: self generatedPackageName.
-	self assert: (data at: #tag) equals: 'Generated'.
-	self
-		assert: (data at: #instanceSlotNames)
-		equals: #( 'firstName' 'lastName' ).
-	self assert: (data at: #classSlotNames) equals: #( 'defaultName' ).
-	self assert: (data at: #subclassNames) equals: #(  )
+			 self referencedClassName asSymbol)
 ]
 
 { #category : 'tests' }
@@ -175,16 +208,75 @@ MCPToolRemoveClassTest >> testReturnsStructuredErrorWhenClassIsMissing [
 
 	| error result structured |
 	result := self callToolWith:
-		          { (#className -> 'MCPToolRemoveClassTestMissing') }
-			          asDictionary.
+		          (self argumentsForClassName: self missingClassName).
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
 	self assert: (error at: #errorClass) equals: 'ClassNotFound'.
+	self assert: (error at: #className) equals: self missingClassName
+]
+
+{ #category : 'tests' }
+MCPToolRemoveClassTest >> testReturnsStructuredErrorWhenNonEmptyClassHasSubclasses [
+
+	| error result structured |
+	result := self callToolWith:
+		          (self argumentsForClassName: self nonEmptyParentClassName).
+	structured := self structuredContentFrom: result.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (structured at: #status) equals: 'error'.
 	self
 		assert: (error at: #className)
-		equals: 'MCPToolRemoveClassTestMissing'
+		equals: self nonEmptyParentClassName.
+	self assert: (self class environment includesKey:
+			 self nonEmptyParentClassName asSymbol).
+	self
+		assert:
+			(self classNamed: self nonEmptyChildClassName) superclass name
+				asString
+		equals: self nonEmptyParentClassName
+]
+
+{ #category : 'tests' }
+MCPToolRemoveClassTest >> testSafelyRemovesEmptyClassAndReparentsDirectSubclasses [
+
+	| data result |
+	result := self callToolWith:
+		          (self argumentsForClassName: self emptyParentClassName).
+	data := self dataFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self deny: (self class environment includesKey:
+			 self emptyParentClassName asSymbol).
+	self
+		assert:
+		(self classNamed: self emptyChildClassName) superclass name asString
+		equals: 'Object'.
+	self assert: (data at: #wasEmpty).
+	self
+		assert: (data at: #subclassNames)
+		equals: { self emptyChildClassName } asArray.
+	self
+		assert: (data at: #reparentedSubclassNames)
+		equals: { self emptyChildClassName } asArray.
+	self assert: (data at: #reparentedToSuperclassName) equals: 'Object'
+]
+
+{ #category : 'tests' }
+MCPToolRemoveClassTest >> testSafelyRemovesSimpleClass [
+
+	| data result |
+	result := self callToolWith:
+		          (self argumentsForClassName: self simpleClassName).
+	data := self dataFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self deny:
+		(self class environment includesKey: self simpleClassName asSymbol).
+	self assert: (data at: #className) equals: self simpleClassName.
+	self assert: (data at: #wasEmpty).
+	self assert: (data at: #subclassNames) isEmpty.
+	self assert: (data at: #reparentedSubclassNames) isEmpty
 ]
 
 { #category : 'tests' }

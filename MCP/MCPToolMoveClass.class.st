@@ -1,10 +1,18 @@
 Class {
 	#name : 'MCPToolMoveClass',
-	#superclass : 'MCPToolRemoveClass',
+	#superclass : 'MCPTool',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
 }
+
+{ #category : 'private' }
+MCPToolMoveClass >> classSlotNamesOf: aClass [
+
+	^ aClass classSide slots
+		  collect: [ :each | each name asString ]
+		  as: Array
+]
 
 { #category : 'private' }
 MCPToolMoveClass >> dataForClass: aClass oldPackageName: oldPackageName oldTag: oldTag [
@@ -219,6 +227,23 @@ MCPToolMoveClass >> initialize [
 ]
 
 { #category : 'private' }
+MCPToolMoveClass >> instanceSlotNamesOf: aClass [
+
+	^ aClass slots collect: [ :each | each name asString ] as: Array
+]
+
+{ #category : 'private' }
+MCPToolMoveClass >> missingClassResultForClassName: className [
+
+	| message |
+	message := 'Class ' , className , ' does not exist.'.
+	^ self errorResultText: message details: {
+			  (#errorClass -> 'ClassNotFound').
+			  (#message -> message).
+			  (#className -> className) } asDictionary
+]
+
+{ #category : 'private' }
 MCPToolMoveClass >> missingPackageResultForClassNamed: className packageName: packageName [
 
 	| message |
@@ -283,6 +308,14 @@ MCPToolMoveClass >> performMoveOf: className toPackage: packageName tag: tag [
 ]
 
 { #category : 'private' }
+MCPToolMoveClass >> subclassNamesOf: aClass [
+
+	^ (aClass subclasses
+		   collect: [ :each | each name asString ]
+		   as: Array) asSortedCollection asArray
+]
+
+{ #category : 'private' }
 MCPToolMoveClass >> successSummaryForClass: aClass packageName: packageName tag: tag [
 
 	^ String streamContents: [ :stream |
@@ -304,4 +337,10 @@ MCPToolMoveClass >> tagFromArguments: arguments [
 	| tag |
 	tag := self stringArgumentNamed: 'tag' in: arguments.
 	^ tag ifNil: [ nil ] ifNotNil: [ tag ]
+]
+
+{ #category : 'private' }
+MCPToolMoveClass >> tagNameOf: aClass [
+
+	^ aClass packageTagName asString
 ]

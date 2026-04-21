@@ -1,10 +1,10 @@
 Class {
-	#name : 'MCPToolRemoveClassSafeTestNonEmptyParent',
+	#name : 'MCPToolRemoveClassTestNonEmptyParent',
 	#superclass : 'Object',
 	#category : 'MCP-Tests',
 	#package : 'MCP-Tests'
 }
 
 { #category : 'tests' }
-MCPToolRemoveClassSafeTestNonEmptyParent >> marker [ ^ 1
+MCPToolRemoveClassTestNonEmptyParent >> marker [ ^ 1
 ]
