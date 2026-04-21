@@ -5,8 +5,9 @@ Class {
 		'server',
 		'toolsList'
 	],
-	#category : 'MCP',
-	#package : 'MCP'
+	#category : 'MCP-Server',
+	#package : 'MCP',
+	#tag : 'Server'
 }
 
 { #category : 'as yet unclassified' }
@@ -22,9 +23,9 @@ MCP >> initialize [
 	super initialize.
 	toolsList := Dictionary new.
 	MCPTool allSubclasses do: [ :subclass |
-			| tool |
-			tool := subclass new.
-			toolsList at: tool name put: tool ].
+		| tool |
+		tool := subclass new.
+		toolsList at: tool name put: tool ].
 	server := MCPHTTPServer new.
 	server addHandlersFromPragmasIn: self
 ]
@@ -65,14 +66,14 @@ MCP >> rpcPing [
 MCP >> rpcResourcesList [
 
 	<jrpc: #'resources/list'>
-	^ {#resource -> {  } } asDictionary 
+	^ { (#resource -> {  }) } asDictionary
 ]
 
 { #category : 'as yet unclassified' }
 MCP >> rpcResourcesTemplateList [
 
 	<jrpc: #'resources/templates/list'>
-	^ {#resourceTemplates -> {  } } asDictionary 
+	^ { (#resourceTemplates -> {  }) } asDictionary
 ]
 
 { #category : 'as yet unclassified' }
@@ -82,8 +83,8 @@ MCP >> rpcToolCall: name withParams: arguments [
 	toolsList
 		at: name
 		ifPresent: [ :tool |
-				^ (MCPStructureCallToolResult content:
-					   (tool executeWithArguments: arguments)) asJRPCJSON ]
+			^ (MCPStructureCallToolResult content:
+				   (tool executeWithArguments: arguments)) asJRPCJSON ]
 		ifAbsent: [ ToolNotFound signal ]
 ]
 
@@ -91,24 +92,25 @@ MCP >> rpcToolCall: name withParams: arguments [
 MCP >> rpcToolsList [
 
 	<jrpc: #'tools/list'>
-	^ {(#tools -> toolsList values asArray)} asDictionary asJRPCJSON
+	^ { (#tools -> toolsList values asArray) } asDictionary asJRPCJSON
 ]
 
 { #category : 'accessing' }
 MCP >> server [
+
 	^ server
 ]
 
 { #category : 'start' }
 MCP >> start [
 
-	
 	server start.
-	server addHandlersFromPragmasIn: self.
+	server addHandlersFromPragmasIn: self
 ]
 
 { #category : 'accessing' }
 MCP >> stop [
+
 	server stop
 ]
 

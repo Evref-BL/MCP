@@ -9,10 +9,13 @@ Class {
 { #category : 'initialization' }
 MCPHTTPServer >> answer: request with: response [
 
-		self configureResponse: response for: request.
-	request method = #OPTIONS ifTrue: [ ^ self answerOptionsWith: response ].
-	request method = #GET ifTrue: [ ^ self answerGet: request with: response ].
-	request method = #POST ifTrue: [ ^ self answerPost: request with: response ].
+	self configureResponse: response for: request.
+	request method = #OPTIONS ifTrue: [
+		^ self answerOptionsWith: response ].
+	request method = #GET ifTrue: [
+		^ self answerGet: request with: response ].
+	request method = #POST ifTrue: [
+		^ self answerPost: request with: response ].
 	^ self answerUnsupportedMethodWith: response
 ]
 
@@ -38,9 +41,9 @@ MCPHTTPServer >> answerPost: request with: response [
 	| payload |
 	payload := self handleJSON: request contents.
 	(payload isString and: [ payload isEmpty ]) ifTrue: [
-			response statusLine: ZnStatusLine accepted.
-			response headers at: #'Content-Length' put: '0'.
-			^ response ].
+		response statusLine: ZnStatusLine accepted.
+		response headers at: #'Content-Length' put: '0'.
+		^ response ].
 	response entity: (ZnEntity json: payload).
 	^ response
 ]
@@ -64,7 +67,8 @@ MCPHTTPServer >> configureResponse: response for: request [
 		put: 'GET, POST, OPTIONS'.
 	response headers
 		at: #'Access-Control-Allow-Headers'
-		put: 'accept, content-type, last-event-id, mcp-protocol-version, mcp-session-id'
+		put:
+		'accept, content-type, last-event-id, mcp-protocol-version, mcp-session-id'
 ]
 
 { #category : 'initialization' }

@@ -17,15 +17,20 @@ Class {
 
 { #category : 'accessing' }
 MCPStructureServerInfo >> asJRPCJSON [
+
 	| dic |
 	dic := Dictionary new.
-	self description ifNotNil: [ dic at: #description put: self description asJRPCJSON ].
+	self description ifNotNil: [
+		dic at: #description put: self description asJRPCJSON ].
 	self icons ifNotNil: [ dic at: #icons put: self icons asJRPCJSON ].
-	self instructions ifNotNil: [ dic at: #instructions put: self instructions asJRPCJSON ].
+	self instructions ifNotNil: [
+		dic at: #instructions put: self instructions asJRPCJSON ].
 	self name ifNotNil: [ dic at: #name put: self name asJRPCJSON ].
 	self title ifNotNil: [ dic at: #title put: self title asJRPCJSON ].
-	self version ifNotNil: [ dic at: #version put: self version asJRPCJSON ].
-	self websiteUrl ifNotNil: [ dic at: #websiteUrl put: self websiteUrl asJRPCJSON ].
+	self version ifNotNil: [
+		dic at: #version put: self version asJRPCJSON ].
+	self websiteUrl ifNotNil: [
+		dic at: #websiteUrl put: self websiteUrl asJRPCJSON ].
 	^ dic
 ]
 

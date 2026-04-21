@@ -17,13 +17,12 @@ MCPStructureInputSchema >> asJRPCJSON [
 	| dic |
 	dic := Dictionary new.
 	self properties
-		ifNotNil: [ 
-			| propertiesDicObject|
+		ifNotNil: [
+			| propertiesDicObject |
 			propertiesDicObject := Dictionary new.
 			self properties do: [ :prop |
-				propertiesDicObject at: prop name put: prop metaDescription.
-				 ].
-			dic at: #properties put: propertiesDicObject  ]
+				propertiesDicObject at: prop name put: prop metaDescription ].
+			dic at: #properties put: propertiesDicObject ]
 		ifNil: [ dic at: #additionalProperties put: false ].
 	self required ifNotNil: [
 		dic at: #required put: self required asJRPCJSON ].

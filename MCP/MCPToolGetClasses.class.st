@@ -1,18 +1,19 @@
 Class {
 	#name : 'MCPToolGetClasses',
 	#superclass : 'MCPTool',
-	#category : 'MCP',
-	#package : 'MCP'
+	#category : 'MCP-Tools',
+	#package : 'MCP',
+	#tag : 'Tools'
 }
 
 { #category : 'executing' }
 MCPToolGetClasses >> executeWithArguments: arguments [
 
 	^ { (MCPStructureTextContent text: (([
-			     (arguments at: #packageName) asPackage classes
-				     collect: [ :class |
-				     (arguments at: #packageName) , '/' , class name ]
-				     as: Array ]
+		     (arguments at: #packageName) asPackage classes
+			     collect: [ :class |
+			     (arguments at: #packageName) , '/' , class name ]
+			     as: Array ]
 			     on: Error
 			     do: [ {  } asArray ]) joinUsing: ', ')) }
 ]

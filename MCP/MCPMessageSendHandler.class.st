@@ -27,15 +27,17 @@ MCPMessageSendHandler >> executeWithArguments: anArrayOrDictionary [
 	anArrayOrDictionary ifNil: [ arguments := #(  ) ].
 
 	anArrayOrDictionary isDictionary ifTrue: [
-			arguments := OrderedCollection new.
-			arguments addAll: (self parametersNames collect: [ :name |
-					 anArrayOrDictionary at: name ifAbsent: [ nil ] ]).
-			arguments := arguments asArray ].
+		arguments := OrderedCollection new.
+		arguments addAll: (self parametersNames collect: [ :name |
+				 anArrayOrDictionary at: name ifAbsent: [ nil ] ]).
+		arguments := arguments asArray ].
 
 	^ self send: self messageSelector to: self receiver with: arguments
 ]
 
 { #category : 'accessing' }
 MCPMessageSendHandler >> parametersNames [
-	^ (self receiver class lookupSelector: self messageSelector) argumentNames
+
+	^ (self receiver class lookupSelector: self messageSelector)
+		  argumentNames
 ]

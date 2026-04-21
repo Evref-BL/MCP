@@ -28,6 +28,7 @@ MCPStructureTextContent >> asJRPCJSON [
 
 { #category : 'initialization' }
 MCPStructureTextContent >> initialize [
+
 	super initialize.
 	type := 'text'
 ]

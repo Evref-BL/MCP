@@ -1,8 +1,9 @@
 Class {
 	#name : 'MCPToolCreatePackage',
 	#superclass : 'MCPTool',
-	#category : 'MCP',
-	#package : 'MCP'
+	#category : 'MCP-Tools',
+	#package : 'MCP',
+	#tag : 'Tools'
 }
 
 { #category : 'executing' }
@@ -12,7 +13,6 @@ MCPToolCreatePackage >> executeWithArguments: arguments [
 	packageName := arguments at: #packageName.
 	wasExisting := self packageOrganizer hasPackage: packageName.
 	self packageOrganizer ensurePackage: packageName.
-
 
 	^ { (MCPStructureTextContent text: (wasExisting
 			    ifTrue: [ 'Package ' , packageName , ' already exists.' ]

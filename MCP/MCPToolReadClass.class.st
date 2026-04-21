@@ -1,8 +1,9 @@
 Class {
 	#name : 'MCPToolReadClass',
 	#superclass : 'MCPTool',
-	#category : 'MCP',
-	#package : 'MCP'
+	#category : 'MCP-Tools',
+	#package : 'MCP',
+	#tag : 'Tools'
 }
 
 { #category : 'executing' }
@@ -11,10 +12,10 @@ MCPToolReadClass >> executeWithArguments: arguments [
 	| className content |
 	className := arguments at: #className.
 	content := String streamContents: [ :stream |
-			           TonelWriter
-				           exportClass:
-				           (self class environment at: className asSymbol)
-				           on: stream ].
+		           TonelWriter
+			           exportClass:
+			           (self class environment at: className asSymbol)
+			           on: stream ].
 
 	^ { (MCPStructureTextContent text: content) }
 ]

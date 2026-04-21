@@ -1,8 +1,9 @@
 Class {
 	#name : 'MCPToolEval',
 	#superclass : 'MCPTool',
-	#category : 'MCP',
-	#package : 'MCP'
+	#category : 'MCP-Tools',
+	#package : 'MCP',
+	#tag : 'Tools'
 }
 
 { #category : 'executing' }

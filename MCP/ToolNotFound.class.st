@@ -1,6 +1,7 @@
 Class {
 	#name : 'ToolNotFound',
 	#superclass : 'Exception',
-	#category : 'MCP',
-	#package : 'MCP'
+	#category : 'MCP-Tools',
+	#package : 'MCP',
+	#tag : 'Tools'
 }

@@ -9,8 +9,9 @@ Class {
 		'inputSchema',
 		'handler'
 	],
-	#category : 'MCP',
-	#package : 'MCP'
+	#category : 'MCP-Tools',
+	#package : 'MCP',
+	#tag : 'Tools'
 }
 
 { #category : 'accessing' }
