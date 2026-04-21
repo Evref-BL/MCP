@@ -38,6 +38,38 @@ MCPToolSendersTest >> structuredContentFrom: aResult [
 ]
 
 { #category : 'tests' }
+MCPToolSendersTest >> testClassesScopeFindsClassReferencesForExactClasses [
+
+	| data result |
+	result := self callToolWith: {
+			          (#selector -> 'MCPToolSendersTestExtensionTarget').
+			          (#scope -> 'classes').
+			          (#classNames -> #( 'MCPToolSendersTestExact' )) }
+			          asDictionary.
+	data := self dataFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) equals: 4.
+	self
+		assert: (data at: #classNames) asArray
+		equals: #( 'MCPToolSendersTestExact' ).
+	self
+		methodReference: 'MCPToolSendersTestExact>>referenceExtensionTarget'
+		in: (data at: #senders).
+	self
+		methodReference:
+		'MCPToolSendersTestExact class>>referenceExtensionTarget'
+		in: (data at: #senders).
+	self
+		methodReference:
+		'MCPToolSendersTestExact>>sendExistingClassNamedSelector'
+		in: (data at: #senders).
+	self
+		methodReference:
+		'MCPToolSendersTestExact class>>sendExistingClassNamedSelector'
+		in: (data at: #senders)
+]
+
+{ #category : 'tests' }
 MCPToolSendersTest >> testClassesScopeLimitsToExactClasses [
 
 	| data result |
@@ -96,6 +128,34 @@ MCPToolSendersTest >> testHierarchyScopeSearchesWholeHierarchy [
 		in: (data at: #senders).
 	self
 		methodReference: 'MCPToolSendersTestChild>>childHierarchySender'
+		in: (data at: #senders)
+]
+
+{ #category : 'tests' }
+MCPToolSendersTest >> testImageScopeFindsClassReferencesWhenSelectorMatchesExistingClassName [
+
+	| data result |
+	result := self callToolWith:
+		          { (#selector -> 'MCPToolSendersTestExtensionTarget') }
+			          asDictionary.
+	data := self dataFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #scope) equals: 'image'.
+	self assert: (data at: #totalCount) equals: 4.
+	self
+		methodReference: 'MCPToolSendersTestExact>>referenceExtensionTarget'
+		in: (data at: #senders).
+	self
+		methodReference:
+		'MCPToolSendersTestExact class>>referenceExtensionTarget'
+		in: (data at: #senders).
+	self
+		methodReference:
+		'MCPToolSendersTestExact>>sendExistingClassNamedSelector'
+		in: (data at: #senders).
+	self
+		methodReference:
+		'MCPToolSendersTestExact class>>sendExistingClassNamedSelector'
 		in: (data at: #senders)
 ]
 

@@ -6,6 +6,38 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'private - searching' }
+MCPToolSenders >> allCompiledMethodsForSide: side [
+
+	| methods |
+	methods := IdentitySet new.
+	Smalltalk globals allBehaviorsDo: [ :eachBehavior |
+		eachBehavior methods do: [ :eachMethod |
+			(eachMethod isCompiledMethod and: [
+				 self matchesSide: side forCompiledMethod: eachMethod ]) ifTrue: [
+				methods add: eachMethod ] ] ].
+	^ methods asArray
+]
+
+{ #category : 'private - searching' }
+MCPToolSenders >> classBindingForSelectorSymbol: aSelectorSymbol [
+
+	| binding |
+	binding := Smalltalk globals
+		           associationAt: aSelectorSymbol
+		           ifAbsent: [ ^ nil ].
+	^ binding value isBehavior
+		  ifTrue: [ binding ]
+		  ifFalse: [ nil ]
+]
+
+{ #category : 'private - searching' }
+MCPToolSenders >> compiledMethod: aCompiledMethod referencesClassBinding: classBinding [
+
+	^ aCompiledMethod hasLiteralSuchThat: [ :eachLiteral |
+		  eachLiteral == classBinding ]
+]
+
 { #category : 'executing' }
 MCPToolSenders >> executeWithArguments: arguments [
 
@@ -116,9 +148,28 @@ MCPToolSenders >> failureMessageForSelector: selectorString scope: scope error: 
 { #category : 'private - searching' }
 MCPToolSenders >> imageSendersOf: aSelectorSymbol side: side [
 
-	^ ((SystemNavigation default allCallsOn: aSelectorSymbol) select: [
-		   :eachMethod |
-		   self matchesSide: side forCompiledMethod: eachMethod ]) asArray
+	| classBinding referenceSenders selectorSenders |
+	selectorSenders := ((SystemNavigation default allCallsOn:
+		                     aSelectorSymbol) select: [ :eachMethod |
+		                    self
+			                    matchesSide: side
+			                    forCompiledMethod: eachMethod ]) asArray.
+	classBinding := self classBindingForSelectorSymbol: aSelectorSymbol.
+	classBinding ifNil: [ ^ selectorSenders ].
+	referenceSenders := self
+		                    imageSendersReferencingClassBinding:
+		                    classBinding
+		                    side: side.
+	^ self mergeCompiledMethods: selectorSenders with: referenceSenders
+]
+
+{ #category : 'private - searching' }
+MCPToolSenders >> imageSendersReferencingClassBinding: classBinding side: side [
+
+	^ ((self allCompiledMethodsForSide: side) select: [ :eachMethod |
+		   self
+			   compiledMethod: eachMethod
+			   referencesClassBinding: classBinding ]) asArray
 ]
 
 { #category : 'initialization' }
@@ -273,29 +324,62 @@ MCPToolSenders >> initialize [
 ]
 
 { #category : 'private - searching' }
+MCPToolSenders >> matchingSendersForSelector: aSelectorSymbol classBinding: classBinding inCompiledMethods: compiledMethods [
+
+	| referenceSenders selectorSenders |
+	selectorSenders := (compiledMethods select: [ :eachMethod |
+		                    eachMethod sendsSelector: aSelectorSymbol ])
+		                   asArray.
+	classBinding ifNil: [ ^ selectorSenders ].
+	referenceSenders := (compiledMethods select: [ :eachMethod |
+		                     self
+			                     compiledMethod: eachMethod
+			                     referencesClassBinding: classBinding ])
+		                    asArray.
+	^ self mergeCompiledMethods: selectorSenders with: referenceSenders
+]
+
+{ #category : 'private - searching' }
+MCPToolSenders >> mergeCompiledMethods: leftMethods with: rightMethods [
+
+	| merged |
+	merged := IdentitySet new.
+	merged addAll: leftMethods.
+	merged addAll: rightMethods.
+	^ merged asArray
+]
+
+{ #category : 'private - searching' }
 MCPToolSenders >> scopedSendersOf: aSelectorSymbol scope: scope packageNames: packageNames classNames: classNames side: side [
 
-	| methods |
+	| classBinding methods |
+	classBinding := self classBindingForSelectorSymbol: aSelectorSymbol.
 	scope = 'image' ifTrue: [
 		^ self imageSendersOf: aSelectorSymbol side: side ].
 	scope = 'packages' ifTrue: [
 		methods := self
 			           compiledMethodsForPackageNames: packageNames
 			           side: side.
-		^ (methods select: [ :eachMethod |
-			   eachMethod sendsSelector: aSelectorSymbol ]) asArray ].
+		^ self
+			  matchingSendersForSelector: aSelectorSymbol
+			  classBinding: classBinding
+			  inCompiledMethods: methods ].
 	scope = 'classes' ifTrue: [
 		methods := self compiledMethodsForBehaviors:
 			           (self behaviorsForClassNames: classNames side: side).
-		^ (methods select: [ :eachMethod |
-			   eachMethod sendsSelector: aSelectorSymbol ]) asArray ].
+		^ self
+			  matchingSendersForSelector: aSelectorSymbol
+			  classBinding: classBinding
+			  inCompiledMethods: methods ].
 	scope = 'hierarchy' ifTrue: [
 		methods := self compiledMethodsForBehaviors:
 			           (self
 				            hierarchyBehaviorsForClassNames: classNames
 				            side: side).
-		^ (methods select: [ :eachMethod |
-			   eachMethod sendsSelector: aSelectorSymbol ]) asArray ].
+		^ self
+			  matchingSendersForSelector: aSelectorSymbol
+			  classBinding: classBinding
+			  inCompiledMethods: methods ].
 	Error signal: 'Unsupported scope: ' , scope
 ]
 
