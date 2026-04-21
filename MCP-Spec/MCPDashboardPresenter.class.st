@@ -25,9 +25,9 @@ Class {
 MCPDashboardPresenter class >> on: anMCP [
 
 	^ self new
-		model: anMCP;
-		updatePresenter;
-		yourself
+		  model: anMCP;
+		  updatePresenter;
+		  yourself
 ]
 
 { #category : 'instance creation' }
@@ -42,12 +42,9 @@ MCPDashboardPresenter >> applyConfiguration [
 	[
 	| newPort |
 	newPort := self readPortFromInput.
-	self model
-		configurePort: newPort
-		debugMode: debugCheckBox state ]
+	self model configurePort: newPort debugMode: debugCheckBox state ]
 		on: Error
-		do: [ :error |
-			UIManager default alert: error messageText ].
+		do: [ :error | UIManager default alert: error messageText ].
 
 	self refreshView
 ]
@@ -62,31 +59,38 @@ MCPDashboardPresenter >> connectPresenters [
 	restartButton action: [ self restartServer ]
 ]
 
-{ #category : 'actions' }
+{ #category : 'layout' }
 MCPDashboardPresenter >> defaultLayout [
 
 	^ SpBoxLayout newTopToBottom
-		add: summaryLabel expand: false;
-		add: statusLabel expand: false;
-		add: urlLabel expand: false;
-		add: detailsLabel expand: false;
-		add: (SpBoxLayout newLeftToRight
-			add: portLabel expand: false;
-			add: portInput withConstraints: [ :constraints | constraints width: 90 ];
-			add: debugCheckBox withConstraints: [ :constraints | constraints width: 140 ];
-			add: applyButton withConstraints: [ :constraints | constraints width: 110 ];
-			yourself)
-		withConstraints: [ :constraints | constraints height: 30 ];
-		add: (SpBoxLayout newLeftToRight
-			add: refreshButton withConstraints: [ :constraints | constraints width: 110 ];
-			add: startButton withConstraints: [ :constraints | constraints width: 110 ];
-			add: stopButton withConstraints: [ :constraints | constraints width: 110 ];
-			add: restartButton withConstraints: [ :constraints | constraints width: 120 ];
-			yourself)
-		withConstraints: [ :constraints | constraints height: 30 ];
-		add: toolsLabel expand: false;
-		add: toolsTable;
-		yourself
+		  add: summaryLabel expand: false;
+		  add: statusLabel expand: false;
+		  add: urlLabel expand: false;
+		  add: detailsLabel expand: false;
+		  add: (SpBoxLayout newLeftToRight
+				   add: portLabel expand: false;
+				   add: portInput
+				   withConstraints: [ :constraints | constraints width: 90 ];
+				   add: debugCheckBox
+				   withConstraints: [ :constraints | constraints width: 140 ];
+				   add: applyButton
+				   withConstraints: [ :constraints | constraints width: 110 ];
+				   yourself)
+		  withConstraints: [ :constraints | constraints height: 30 ];
+		  add: (SpBoxLayout newLeftToRight
+				   add: refreshButton
+				   withConstraints: [ :constraints | constraints width: 110 ];
+				   add: startButton
+				   withConstraints: [ :constraints | constraints width: 110 ];
+				   add: stopButton
+				   withConstraints: [ :constraints | constraints width: 110 ];
+				   add: restartButton
+				   withConstraints: [ :constraints | constraints width: 120 ];
+				   yourself)
+		  withConstraints: [ :constraints | constraints height: 30 ];
+		  add: toolsLabel expand: false;
+		  add: toolsTable;
+		  yourself
 ]
 
 { #category : 'api' }
@@ -123,10 +127,12 @@ MCPDashboardPresenter >> initializePresenters [
 
 	toolsTable
 		addColumn: (SpStringTableColumn title: 'Nom' evaluated: #name);
-		addColumn: (SpStringTableColumn title: 'Classe' evaluated: [ :tool | tool class name ]);
 		addColumn: (SpStringTableColumn
-			title: 'Description'
-			evaluated: [ :tool | tool description ifNil: [ '' ] ]);
+				 title: 'Classe'
+				 evaluated: [ :tool | tool class name ]);
+		addColumn: (SpStringTableColumn
+				 title: 'Description'
+				 evaluated: [ :tool | tool description ifNil: [ '' ] ]);
 		beResizable
 ]
 
@@ -142,16 +148,16 @@ MCPDashboardPresenter >> readPortFromInput [
 	| trimmedPort parsedPort |
 	trimmedPort := portInput text asString trimBoth.
 
-	trimmedPort isEmpty ifTrue: [ self error: 'Le port ne peut pas etre vide.' ].
+	trimmedPort isEmpty ifTrue: [
+		self error: 'Le port ne peut pas etre vide.' ].
 
-	parsedPort := [
-		trimmedPort asInteger ]
-			on: Error
-			do: [ :error |
-				self error: 'Le port doit etre un entier valide.' ].
+	parsedPort := [ trimmedPort asInteger ]
+		              on: Error
+		              do: [ :error |
+		              self error: 'Le port doit etre un entier valide.' ].
 
-	(parsedPort between: 1 and: 65535)
-		ifFalse: [ self error: 'Le port doit etre compris entre 1 et 65535.' ].
+	(parsedPort between: 1 and: 65535) ifFalse: [
+		self error: 'Le port doit etre compris entre 1 et 65535.' ].
 
 	^ parsedPort
 ]
@@ -163,20 +169,21 @@ MCPDashboardPresenter >> refreshView [
 	mcp := self model ifNil: [ ^ self ].
 
 	summaryLabel label: mcp dashboardSummary.
-	statusLabel
-		label:
-			('Etat HTTP: {1} | Ecoute: {2}'
-				format: {
-						(mcp isRunning ifTrue: [ 'actif' ] ifFalse: [ 'arrete' ]).
-						(mcp isListening ifTrue: [ 'oui' ] ifFalse: [ 'non' ]) }).
-	urlLabel label: 'URL locale: ', mcp localUrlString.
-	detailsLabel
-		label:
-			('Handlers: {1} | Outils: {2} | Debug: {3}'
-				format: {
-						mcp handlersCount asString.
-						mcp sortedTools size asString.
-						(mcp debugMode ifTrue: [ 'oui' ] ifFalse: [ 'non' ]) }).
+	statusLabel label: ('Etat HTTP: {1} | Ecoute: {2}' format: {
+				 (mcp isRunning
+					  ifTrue: [ 'actif' ]
+					  ifFalse: [ 'arrete' ]).
+				 (mcp isListening
+					  ifTrue: [ 'oui' ]
+					  ifFalse: [ 'non' ]) }).
+	urlLabel label: 'URL locale: ' , mcp localUrlString.
+	detailsLabel label:
+		('Handlers: {1} | Outils: {2} | Debug: {3}' format: {
+				 mcp handlersCount asString.
+				 mcp sortedTools size asString.
+				 (mcp debugMode
+					  ifTrue: [ 'oui' ]
+					  ifFalse: [ 'non' ]) }).
 	portInput text: mcp port asString.
 	debugCheckBox state: mcp debugMode.
 	toolsLabel label: 'Outils exposes'.
@@ -186,11 +193,9 @@ MCPDashboardPresenter >> refreshView [
 { #category : 'actions' }
 MCPDashboardPresenter >> restartServer [
 
-	[
-	self model restart ]
+	[ self model restart ]
 		on: Error
-		do: [ :error |
-			UIManager default alert: error messageText ].
+		do: [ :error | UIManager default alert: error messageText ].
 
 	self refreshView
 ]
@@ -198,11 +203,9 @@ MCPDashboardPresenter >> restartServer [
 { #category : 'actions' }
 MCPDashboardPresenter >> startServer [
 
-	[
-	self model start ]
+	[ self model start ]
 		on: Error
-		do: [ :error |
-			UIManager default alert: error messageText ].
+		do: [ :error | UIManager default alert: error messageText ].
 
 	self refreshView
 ]
@@ -210,11 +213,9 @@ MCPDashboardPresenter >> startServer [
 { #category : 'actions' }
 MCPDashboardPresenter >> stopServer [
 
-	[
-	self model stop ]
+	[ self model stop ]
 		on: Error
-		do: [ :error |
-			UIManager default alert: error messageText ].
+		do: [ :error | UIManager default alert: error messageText ].
 
 	self refreshView
 ]

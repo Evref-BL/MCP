@@ -34,12 +34,14 @@ MCP >> configurePort: aPortNumber debugMode: aBoolean [
 MCP >> dashboardSummary [
 
 	^ String streamContents: [ :stream |
-		stream
-			nextPutAll: 'Serveur MCP ';
-			nextPutAll: (self isRunning ifTrue: [ 'actif' ] ifFalse: [ 'arrete' ]);
-			nextPutAll: ' sur le port ';
-			print: self port.
-		self isListening ifTrue: [ stream nextPutAll: ' (a l''ecoute)' ] ]
+		  stream
+			  nextPutAll: 'Serveur MCP ';
+			  nextPutAll: (self isRunning
+					   ifTrue: [ 'actif' ]
+					   ifFalse: [ 'arrete' ]);
+			  nextPutAll: ' sur le port ';
+			  print: self port.
+		  self isListening ifTrue: [ stream nextPutAll: ' (a l''ecoute)' ] ]
 ]
 
 { #category : '*MCP-Spec' }
@@ -108,5 +110,5 @@ MCP >> restart [
 MCP >> sortedTools [
 
 	^ self toolsList values asSortedCollection: [ :left :right |
-		left name <= right name ]
+		  left name <= right name ]
 ]
