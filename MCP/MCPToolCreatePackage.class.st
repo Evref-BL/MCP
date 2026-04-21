@@ -33,6 +33,7 @@ MCPToolCreatePackage >> initialize [
 				                type: 'string';
 				                description:
 					                'The name of the package to be created') };
+		               required: #( 'packageName' );
 		               yourself.
 	icons := {  }
 ]
