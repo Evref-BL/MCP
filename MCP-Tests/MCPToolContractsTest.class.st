@@ -224,6 +224,17 @@ MCPToolContractsTest >> testRenameClassHasAccurateNameAndRequiredArguments [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testRenameMethodHasAccurateNameAndRequiredArguments [
+
+	self
+		assert: MCPToolRenameMethod new name
+		equals: 'pharo-rename-method'.
+	self
+		assert: MCPToolRenameMethod new inputSchema required asSet
+		equals: #( 'className' 'classSide' 'selector' 'newSelector' ) asSet
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testRpcToolCallSignalsInvalidParametersWhenRequiredArgumentIsMissing [
 
 	self
