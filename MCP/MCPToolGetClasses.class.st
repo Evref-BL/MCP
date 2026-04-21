@@ -9,13 +9,30 @@ Class {
 { #category : 'executing' }
 MCPToolGetClasses >> executeWithArguments: arguments [
 
-	^ { (MCPStructureTextContent text: (([
-		     (arguments at: #packageName) asPackage classes
-			     collect: [ :class |
-			     (arguments at: #packageName) , '/' , class name ]
-			     as: Array ]
-			     on: Error
-			     do: [ {  } asArray ]) joinUsing: ', ')) }
+	| packageName classes |
+	packageName := arguments at: #packageName.
+	^ [
+	  classes := packageName asPackage classes
+		             collect: [ :class | packageName , '/' , class name ]
+		             as: Array.
+	  { (MCPStructureTextContent text: (classes joinUsing: ', ')) } ]
+		  on: Error
+		  do: [ :error |
+			  { (MCPStructureTextContent text:
+				   (self failureMessageForPackageNamed: packageName error: error)) } ]
+]
+
+{ #category : 'private' }
+MCPToolGetClasses >> failureMessageForPackageNamed: aPackageName error: anError [
+
+	^ String streamContents: [ :stream |
+		  stream
+			  nextPutAll: 'Unable to list classes for package ';
+			  nextPutAll: aPackageName;
+			  nextPutAll: ' (';
+			  nextPutAll: anError class name;
+			  nextPutAll: '): ';
+			  nextPutAll: anError messageText ]
 ]
 
 { #category : 'initialization' }
