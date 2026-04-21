@@ -19,9 +19,9 @@ BaselineOfMCP >> defineDependencies: spec [
 
 	spec
 		baseline: 'JRPC' with: [
-				spec
-					repository: 'github://juliendelplanque/JRPC:v3.2.1/src';
-					loads: #( 'Deployment' ) ];
+			spec
+				repository: 'github://juliendelplanque/JRPC:v3.2.1/src';
+				loads: #( 'Deployment' ) ];
 		import: 'JRPC'
 ]
 
@@ -36,5 +36,6 @@ BaselineOfMCP >> definePackages: spec [
 	"common"
 
 	spec package: 'MCP' with: [ spec requires: #( 'JRPC' ) ].
-	spec package: 'MCP-Spec' with: [ spec requires: #( 'MCP' ) ]
+	spec package: 'MCP-Spec' with: [ spec requires: #( 'MCP' ) ].
+	spec package: 'MCP-Tests' with: [ spec requires: #( 'MCP' ) ]
 ]
