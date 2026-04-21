@@ -24,22 +24,20 @@ MCPToolContractsTest >> handleJSON: aJSONString [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testChangeMethodProtocolHasAccurateNameAndRequiredArguments [
-
-	self
-		assert: MCPToolChangeMethodProtocol new name
-		equals: 'pharo-change-method-protocol'.
-	self
-		assert: MCPToolChangeMethodProtocol new inputSchema required asSet
-		equals: #( 'className' 'classSide' 'selector' 'protocol' ) asSet
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testCreatePackageRequiresPackageNameInSchema [
 
 	self assert:
 		(MCPToolCreatePackage new inputSchema required includes:
 			 'packageName')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testEditMethodHasAccurateNameAndRequiredArguments [
+
+	self assert: MCPToolEditMethod new name equals: 'pharo-edit-method'.
+	self
+		assert: MCPToolEditMethod new inputSchema required asSet
+		equals: #( 'operation' 'className' 'classSide' ) asSet
 ]
 
 { #category : 'tests' }
@@ -98,7 +96,7 @@ MCPToolContractsTest >> testGetClassesListsClassesForExistingPackage [
 	data := (result at: #structuredContent) at: #data.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert:
-		((data at: #classNames) includes: 'MCPToolCompileMethodTest')
+		((data at: #classNames) includes: 'MCPToolEditMethodTest')
 ]
 
 { #category : 'tests' }
@@ -170,7 +168,7 @@ MCPToolContractsTest >> testListPackageClassesListsClassesForExistingPackage [
 	data := (result at: #structuredContent) at: #data.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert:
-		((data at: #classNames) includes: 'MCPToolCompileMethodTest')
+		((data at: #classNames) includes: 'MCPToolEditMethodTest')
 ]
 
 { #category : 'tests' }
@@ -241,17 +239,6 @@ MCPToolContractsTest >> testRenameClassHasAccurateNameAndRequiredArguments [
 	self
 		assert: MCPToolRenameClass new inputSchema required asSet
 		equals: #( 'className' 'newClassName' ) asSet
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testRenameMethodHasAccurateNameAndRequiredArguments [
-
-	self
-		assert: MCPToolRenameMethod new name
-		equals: 'pharo-rename-method'.
-	self
-		assert: MCPToolRenameMethod new inputSchema required asSet
-		equals: #( 'className' 'classSide' 'selector' 'newSelector' ) asSet
 ]
 
 { #category : 'tests' }
