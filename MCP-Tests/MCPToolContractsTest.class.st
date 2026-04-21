@@ -199,6 +199,15 @@ MCPToolContractsTest >> testListPackageClassesReturnsErrorResultForMissingPackag
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testMoveClassHasAccurateNameAndRequiredArguments [
+
+	self assert: MCPToolMoveClass new name equals: 'pharo-move-class'.
+	self
+		assert: MCPToolMoveClass new inputSchema required asSet
+		equals: #( 'className' 'packageName' ) asSet
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testReadClassRequiresClassNameInSchema [
 
 	self assert:
