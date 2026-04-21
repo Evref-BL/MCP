@@ -33,7 +33,8 @@ MCPToolReadClass >> initialize [
 				                name: 'className';
 				                type: 'string';
 				                description:
-					                'The name of the package we will look class into') };
+					                'The name of the class to read from the image.') };
+		               required: #( 'className' );
 		               yourself.
 	icons := {  }
 ]
