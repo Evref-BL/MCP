@@ -195,6 +195,15 @@ MCPToolContractsTest >> testReadClassRequiresClassNameInSchema [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testRemoveClassHasAccurateNameAndRequiredArguments [
+
+	self assert: MCPToolRemoveClass new name equals: 'pharo-remove-class'.
+	self
+		assert: MCPToolRemoveClass new inputSchema required asSet
+		equals: #( 'className' ) asSet
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testRemoveMethodHasAccurateNameAndRequiredArguments [
 
 	self

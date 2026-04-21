@@ -121,6 +121,25 @@ MCPToolStructuredOutputTest >> testListPackagesReturnsStructuredArrayData [
 ]
 
 { #category : 'tests' }
+MCPToolStructuredOutputTest >> testRemoveClassReturnsStructuredError [
+
+	| result structured error |
+	result := self
+		          callToolNamed: 'pharo-remove-class'
+		          withArguments:
+		          { (#className -> 'MCPToolRemoveClassDefinitelyMissing') }
+			          asDictionary.
+	structured := self structuredContentFrom: result.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (structured at: #status) equals: 'error'.
+	self assert: (error at: #errorClass) equals: 'ClassNotFound'.
+	self
+		assert: (error at: #className)
+		equals: 'MCPToolRemoveClassDefinitelyMissing'
+]
+
+{ #category : 'tests' }
 MCPToolStructuredOutputTest >> testRunTestClassReturnsStructuredIssues [
 
 	| data firstIssue result |
