@@ -39,6 +39,48 @@ MCPToolStructuredOutputTest >> testAllToolsAdvertiseOutputSchema [
 ]
 
 { #category : 'tests' }
+MCPToolStructuredOutputTest >> testDescribeClassReturnsStructuredError [
+
+	| error result structured |
+	result := self
+		          callToolNamed: 'pharo-describe-class'
+		          withArguments:
+			          { (#className -> 'MCPToolDescribeClassDefinitelyMissing') }
+				          asDictionary.
+	structured := self structuredContentFrom: result.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (structured at: #status) equals: 'error'.
+	self assert: (error at: #errorClass) equals: 'ClassNotFound'.
+	self
+		assert: (error at: #className)
+		equals: 'MCPToolDescribeClassDefinitelyMissing'
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testDescribeClassReturnsStructuredSuccess [
+
+	| data result |
+	result := self
+		          callToolNamed: 'pharo-describe-class'
+		          withArguments:
+		          { (#className -> 'MCPToolReadMethodTestTarget') }
+			          asDictionary.
+	data := self dataFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self
+		assert: ((self structuredContentFrom: result) at: #status)
+		equals: 'ok'.
+	self
+		assert: (data at: #className)
+		equals: 'MCPToolReadMethodTestTarget'.
+	self assert: (data at: #instanceMethodCount) equals: 1.
+	self assert: (data at: #classMethodCount) equals: 1.
+	self assert: (data at: #superclasses) isEmpty.
+	self assert: (data at: #subclasses) isEmpty
+]
+
+{ #category : 'tests' }
 MCPToolStructuredOutputTest >> testEvalReturnsStructuredError [
 
 	| result structured error |

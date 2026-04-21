@@ -32,6 +32,17 @@ MCPToolContractsTest >> testCreatePackageRequiresPackageNameInSchema [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testDescribeClassHasAccurateNameAndRequiredArguments [
+
+	self
+		assert: MCPToolDescribeClass new name
+		equals: 'pharo-describe-class'.
+	self
+		assert: MCPToolDescribeClass new inputSchema required asSet
+		equals: #( 'className' ) asSet
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testEditClassHasAccurateNameAndRequiredArguments [
 
 	self assert: MCPToolEditClass new name equals: 'pharo-edit-class'.
@@ -203,13 +214,6 @@ MCPToolContractsTest >> testListPackageClassesReturnsErrorResultForMissingPackag
 	self assert: (text includesSubstring: 'There is no package named').
 	self deny:
 		(text includesSubstring: 'Tool pharo-list-package-classes failed')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testReadClassRequiresClassNameInSchema [
-
-	self assert:
-		(MCPToolReadClass new inputSchema required includes: 'className')
 ]
 
 { #category : 'tests' }
