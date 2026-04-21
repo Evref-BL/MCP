@@ -224,6 +224,17 @@ MCPToolContractsTest >> testRemoveClassHasAccurateNameAndRequiredArguments [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testRemoveClassSafeHasAccurateNameAndRequiredArguments [
+
+	self
+		assert: MCPToolRemoveClassSafe new name
+		equals: 'pharo-remove-class-safe'.
+	self
+		assert: MCPToolRemoveClassSafe new inputSchema required asSet
+		equals: #( 'className' ) asSet
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testRemoveMethodHasAccurateNameAndRequiredArguments [
 
 	self
