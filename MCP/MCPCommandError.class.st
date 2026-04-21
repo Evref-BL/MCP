@@ -11,6 +11,17 @@ Class {
 }
 
 { #category : 'signaling' }
+MCPCommandError class >> signalClassAlreadyExistsNamed: aClassName [
+
+	| message |
+	message := 'Class ' , aClassName , ' already exists.'.
+	^ self
+		  signalErrorCode: #ClassAlreadyExists
+		  message: message
+		  details: { (#className -> aClassName) } asDictionary
+]
+
+{ #category : 'signaling' }
 MCPCommandError class >> signalErrorCode: anErrorCode message: aMessage details: aDictionary [
 
 	^ self new
@@ -66,6 +77,19 @@ MCPCommandError class >> signalMissingPackageNamed: aPackageName forClassNamed: 
 	^ self signalErrorCode: #PackageNotFound message: message details: {
 			  (#className -> aClassName).
 			  (#packageName -> aPackageName) } asDictionary
+]
+
+{ #category : 'signaling' }
+MCPCommandError class >> signalMissingSuperclassNamed: aSuperclassName forClassNamed: aClassName [
+
+	| message |
+	message := 'Superclass ' , aSuperclassName , ' does not exist.'.
+	^ self
+		  signalErrorCode: #SuperclassNotFound
+		  message: message
+		  details: {
+				  (#className -> aClassName).
+				  (#superclassName -> aSuperclassName) } asDictionary
 ]
 
 { #category : 'signaling' }

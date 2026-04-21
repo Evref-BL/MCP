@@ -17,6 +17,23 @@ MCPCommandErrorTest >> capture: aBlock [
 ]
 
 { #category : 'tests' }
+MCPCommandErrorTest >> testClassAlreadyExistsErrorCarriesClassName [
+
+	| details error |
+	error := self capture: [
+		         MCPCommandError signalClassAlreadyExistsNamed:
+			         'MCPCommandErrorTestExisting' ].
+	details := error structuredDetails.
+	self assert: error errorCode equals: #ClassAlreadyExists.
+	self
+		assert: (details at: #className)
+		equals: 'MCPCommandErrorTestExisting'.
+	self
+		assert: (details at: #message)
+		equals: 'Class MCPCommandErrorTestExisting already exists.'
+]
+
+{ #category : 'tests' }
 MCPCommandErrorTest >> testMissingClassErrorCarriesStructuredDetails [
 
 	| error details |
@@ -63,6 +80,22 @@ MCPCommandErrorTest >> testMissingPackageErrorCarriesPackageName [
 	self assert: error errorCode equals: #PackageNotFound.
 	self assert: (details at: #packageName) equals: 'MCP-Tests-Missing'.
 	self assert: (details at: #errorClass) equals: 'PackageNotFound'
+]
+
+{ #category : 'tests' }
+MCPCommandErrorTest >> testMissingSuperclassErrorCarriesSuperclassName [
+
+	| details error |
+	error := self capture: [
+		         MCPCommandError
+			         signalMissingSuperclassNamed: 'MCPMissingSuperclass'
+			         forClassNamed: 'MCPNewClass' ].
+	details := error structuredDetails.
+	self assert: error errorCode equals: #SuperclassNotFound.
+	self assert: (details at: #className) equals: 'MCPNewClass'.
+	self
+		assert: (details at: #superclassName)
+		equals: 'MCPMissingSuperclass'
 ]
 
 { #category : 'tests' }

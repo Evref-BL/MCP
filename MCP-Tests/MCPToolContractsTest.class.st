@@ -32,6 +32,15 @@ MCPToolContractsTest >> testCreatePackageRequiresPackageNameInSchema [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testEditClassHasAccurateNameAndRequiredArguments [
+
+	self assert: MCPToolEditClass new name equals: 'pharo-edit-class'.
+	self
+		assert: MCPToolEditClass new inputSchema required asSet
+		equals: #( 'operation' 'className' ) asSet
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testEditMethodHasAccurateNameAndRequiredArguments [
 
 	self assert: MCPToolEditMethod new name equals: 'pharo-edit-method'.
@@ -197,15 +206,6 @@ MCPToolContractsTest >> testListPackageClassesReturnsErrorResultForMissingPackag
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testMoveClassHasAccurateNameAndRequiredArguments [
-
-	self assert: MCPToolMoveClass new name equals: 'pharo-move-class'.
-	self
-		assert: MCPToolMoveClass new inputSchema required asSet
-		equals: #( 'className' 'packageName' ) asSet
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testReadClassRequiresClassNameInSchema [
 
 	self assert:
@@ -230,15 +230,6 @@ MCPToolContractsTest >> testRemoveMethodsHasAccurateNameAndRequiredArguments [
 	self
 		assert: MCPToolRemoveMethods new inputSchema required asSet
 		equals: #( 'className' 'classSide' 'selectors' ) asSet
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testRenameClassHasAccurateNameAndRequiredArguments [
-
-	self assert: MCPToolRenameClass new name equals: 'pharo-rename-class'.
-	self
-		assert: MCPToolRenameClass new inputSchema required asSet
-		equals: #( 'className' 'newClassName' ) asSet
 ]
 
 { #category : 'tests' }
