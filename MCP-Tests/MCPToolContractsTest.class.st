@@ -24,6 +24,17 @@ MCPToolContractsTest >> handleJSON: aJSONString [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testChangeMethodProtocolHasAccurateNameAndRequiredArguments [
+
+	self
+		assert: MCPToolChangeMethodProtocol new name
+		equals: 'pharo-change-method-protocol'.
+	self
+		assert: MCPToolChangeMethodProtocol new inputSchema required asSet
+		equals: #( 'className' 'classSide' 'selector' 'protocol' ) asSet
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testCreatePackageRequiresPackageNameInSchema [
 
 	self assert:
