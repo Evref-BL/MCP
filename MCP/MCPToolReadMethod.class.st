@@ -6,16 +6,6 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'private - arguments' }
-MCPToolReadMethod >> argumentNamed: anArgumentName in: arguments ifAbsent: aBlock [
-
-	arguments ifNil: [ ^ aBlock value ].
-	^ arguments
-		  at: anArgumentName asSymbol
-		  ifAbsent: [
-		  arguments at: anArgumentName asString ifAbsent: aBlock ]
-]
-
 { #category : 'private - analysis' }
 MCPToolReadMethod >> bindingClassNameFor: aBinding [
 
@@ -285,17 +275,6 @@ MCPToolReadMethod >> methodBehaviorForClassNamed: className side: side [
 		  ifFalse: [ baseClass ]
 ]
 
-{ #category : 'private - reading' }
-MCPToolReadMethod >> methodReferenceForClassName: aClassName selector: aSelector isClassSide: isClassSide [
-
-	^ String streamContents: [ :stream |
-		  stream nextPutAll: aClassName.
-		  isClassSide ifTrue: [ stream nextPutAll: ' class' ].
-		  stream
-			  nextPutAll: '>>';
-			  nextPutAll: aSelector ]
-]
-
 { #category : 'private - analysis' }
 MCPToolReadMethod >> newVariableSummaryForNode: aVariableNode kind: aKind methodBehavior: aBehavior [
 
@@ -378,12 +357,6 @@ MCPToolReadMethod >> recordReferenceFromNode: aVariableNode inSummary: aSummary 
 	aSummary at: #referenceCount put: (aSummary at: #referenceCount) + 1
 ]
 
-{ #category : 'private - arguments' }
-MCPToolReadMethod >> selectorStringFrom: arguments [
-
-	^ self stringArgumentNamed: 'selector' in: arguments
-]
-
 { #category : 'private - schema' }
 MCPToolReadMethod >> sourceIntervalSchema [
 
@@ -404,21 +377,6 @@ MCPToolReadMethod >> sourceIntervalSchema [
 		  required: #( 'start' 'stop' );
 		  additionalProperties: false;
 		  yourself
-]
-
-{ #category : 'private - arguments' }
-MCPToolReadMethod >> stringArgumentNamed: anArgumentName in: arguments [
-
-	| value |
-	value := self
-		         argumentNamed: anArgumentName
-		         in: arguments
-		         ifAbsent: [ ^ nil ].
-	value ifNil: [ ^ nil ].
-	value := value asString trimBoth.
-	^ value isEmpty
-		  ifTrue: [ nil ]
-		  ifFalse: [ value ]
 ]
 
 { #category : 'private - results' }

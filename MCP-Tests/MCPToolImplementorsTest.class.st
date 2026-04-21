@@ -1,0 +1,163 @@
+Class {
+	#name : 'MCPToolImplementorsTest',
+	#superclass : 'TestCase',
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
+}
+
+{ #category : 'private' }
+MCPToolImplementorsTest >> callToolWith: someArguments [
+
+	^ MCP new rpcToolCall: 'pharo-implementors' withParams: someArguments
+]
+
+{ #category : 'private' }
+MCPToolImplementorsTest >> dataFrom: aResult [
+
+	^ (self structuredContentFrom: aResult) at: #data
+]
+
+{ #category : 'private' }
+MCPToolImplementorsTest >> errorFrom: aResult [
+
+	^ (self structuredContentFrom: aResult) at: #error
+]
+
+{ #category : 'private' }
+MCPToolImplementorsTest >> methodReference: aMethodReference in: implementors [
+
+	^ implementors
+		  detect: [ :each | (each at: #methodReference) = aMethodReference ]
+		  ifNone: [ self fail: 'Missing implementor ' , aMethodReference ]
+]
+
+{ #category : 'private' }
+MCPToolImplementorsTest >> structuredContentFrom: aResult [
+
+	^ aResult at: #structuredContent
+]
+
+{ #category : 'tests' }
+MCPToolImplementorsTest >> testClassesScopeLimitsToExactClasses [
+
+	| data result |
+	result := self callToolWith: {
+			          (#selector -> 'hierarchyProbe').
+			          (#scope -> 'classes').
+			          (#classNames -> #( 'MCPToolImplementorsTestChild' )) }
+			          asDictionary.
+	data := self dataFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) equals: 1.
+	self
+		assert: (data at: #classNames) asArray
+		equals: #( 'MCPToolImplementorsTestChild' ).
+	self
+		methodReference: 'MCPToolImplementorsTestChild>>hierarchyProbe'
+		in: (data at: #implementors)
+]
+
+{ #category : 'tests' }
+MCPToolImplementorsTest >> testFilterCanNarrowResultsAndPaginate [
+
+	| data result |
+	result := self callToolWith: {
+			          (#selector -> 'dualProbe').
+			          (#filter -> ' class>>').
+			          (#limit -> 1) } asDictionary.
+	data := self dataFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) equals: 1.
+	self assert: (data at: #returnedCount) equals: 1.
+	self deny: (data at: #truncated).
+	self
+		methodReference: 'MCPToolImplementorsTestExact class>>dualProbe'
+		in: (data at: #implementors)
+]
+
+{ #category : 'tests' }
+MCPToolImplementorsTest >> testHierarchyScopeSearchesWholeHierarchy [
+
+	| data result |
+	result := self callToolWith: {
+			          (#selector -> 'hierarchyProbe').
+			          (#scope -> 'hierarchy').
+			          (#classNames -> #( 'MCPToolImplementorsTestMid' )) }
+			          asDictionary.
+	data := self dataFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) equals: 2.
+	self
+		methodReference: 'MCPToolImplementorsTestBase>>hierarchyProbe'
+		in: (data at: #implementors).
+	self
+		methodReference: 'MCPToolImplementorsTestChild>>hierarchyProbe'
+		in: (data at: #implementors)
+]
+
+{ #category : 'tests' }
+MCPToolImplementorsTest >> testImageScopeFindsInstanceAndClassImplementors [
+
+	| data result |
+	result := self callToolWith:
+		          { (#selector -> 'dualProbe') } asDictionary.
+	data := self dataFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self
+		assert: ((self structuredContentFrom: result) at: #status)
+		equals: 'ok'.
+	self assert: (data at: #scope) equals: 'image'.
+	self assert: (data at: #side) equals: 'both'.
+	self assert: (data at: #totalCount) equals: 2.
+	self
+		methodReference: 'MCPToolImplementorsTestExact>>dualProbe'
+		in: (data at: #implementors).
+	self
+		methodReference: 'MCPToolImplementorsTestExact class>>dualProbe'
+		in: (data at: #implementors)
+]
+
+{ #category : 'tests' }
+MCPToolImplementorsTest >> testPackagesScopeIncludesExtensionMethods [
+
+	| data implementor result |
+	result := self callToolWith: {
+			          (#selector -> 'extensionProbe').
+			          (#scope -> 'packages').
+			          (#packageNames -> #( 'MCP-Tests-Extensions' )) }
+			          asDictionary.
+	data := self dataFrom: result.
+	implementor := self
+		               methodReference:
+		               'MCPToolImplementorsTestExtensionTarget>>extensionProbe'
+		               in: (data at: #implementors).
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) equals: 1.
+	self
+		assert: (implementor at: #packageName)
+		equals: 'MCP-Tests-Extensions'.
+	self assert: (implementor at: #isExtension)
+]
+
+{ #category : 'tests' }
+MCPToolImplementorsTest >> testPackagesScopeReturnsStructuredErrorWhenPackageNamesAreMissing [
+
+	| error result structured |
+	result := self callToolWith: {
+			          (#selector -> 'extensionProbe').
+			          (#scope -> 'packages') } asDictionary.
+	structured := self structuredContentFrom: result.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (structured at: #status) equals: 'error'.
+	self assert: (error at: #scope) equals: 'packages'.
+	self assert:
+		((error at: #message) includesSubstring: 'packageNames is required')
+]
+
+{ #category : 'tests' }
+MCPToolImplementorsTest >> testToolRequiresSelectorInSchema [
+
+	self assert:
+		(MCPToolImplementors new inputSchema required includes: 'selector')
+]

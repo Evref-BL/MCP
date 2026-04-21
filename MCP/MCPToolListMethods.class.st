@@ -6,32 +6,6 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'private - arguments' }
-MCPToolListMethods >> argumentNamed: anArgumentName in: arguments ifAbsent: aBlock [
-
-	arguments ifNil: [ ^ aBlock value ].
-	^ arguments
-		  at: anArgumentName asSymbol
-		  ifAbsent: [
-		  arguments at: anArgumentName asString ifAbsent: aBlock ]
-]
-
-{ #category : 'private - arguments' }
-MCPToolListMethods >> booleanArgumentNamed: anArgumentName in: arguments default: aBoolean [
-
-	| normalized value |
-	value := self
-		         argumentNamed: anArgumentName
-		         in: arguments
-		         ifAbsent: [ ^ aBoolean ].
-	value ifNil: [ ^ aBoolean ].
-	(value == true or: [ value == false ]) ifTrue: [ ^ value ].
-	normalized := value asString trimBoth asLowercase.
-	normalized = 'true' ifTrue: [ ^ true ].
-	normalized = 'false' ifTrue: [ ^ false ].
-	Error signal: anArgumentName asString , ' must be a boolean.'
-]
-
 { #category : 'executing' }
 MCPToolListMethods >> executeWithArguments: arguments [
 
@@ -348,36 +322,6 @@ MCPToolListMethods >> initialize [
 ]
 
 { #category : 'private - filtering' }
-MCPToolListMethods >> matcherForPattern: aPattern mode: aMode caseSensitive: aBoolean [
-
-	| normalizedPattern regex |
-	aPattern ifNil: [ ^ [ :candidate | true ] ].
-	aMode = 'regex' ifTrue: [
-		regex := aBoolean
-			         ifTrue: [ aPattern asRegex ]
-			         ifFalse: [ aPattern asRegexIgnoringCase ].
-		^ [ :candidate |
-		  regex search:
-			  (candidate ifNil: [ '' ] ifNotNil: [ candidate asString ]) ] ].
-	normalizedPattern := self
-		                     normalizeFilterString: aPattern
-		                     caseSensitive: aBoolean.
-	aMode = 'substring' ifTrue: [
-		^ [ :candidate |
-		  (self normalizeFilterString: candidate caseSensitive: aBoolean)
-			  includesSubstring: normalizedPattern ] ].
-	aMode = 'prefix' ifTrue: [
-		^ [ :candidate |
-		  (self normalizeFilterString: candidate caseSensitive: aBoolean)
-			  beginsWith: normalizedPattern ] ].
-	aMode = 'exact' ifTrue: [
-		^ [ :candidate |
-		  (self normalizeFilterString: candidate caseSensitive: aBoolean)
-		  = normalizedPattern ] ].
-	Error signal: 'Unsupported filter mode: ' , aMode
-]
-
-{ #category : 'private - filtering' }
 MCPToolListMethods >> matchesSelector: selectorString protocol: protocolString source: sourceString selectorMatcher: selectorMatcher protocolMatcher: protocolMatcher sourceMatcher: sourceMatcher [
 
 	^ (selectorMatcher value: selectorString) and: [
@@ -408,56 +352,6 @@ MCPToolListMethods >> methodEntryForSelector: aSelector compiledMethod: aCompile
 	^ entry
 ]
 
-{ #category : 'private' }
-MCPToolListMethods >> methodReferenceForClassName: aClassName selector: aSelector isClassSide: isClassSide [
-
-	^ String streamContents: [ :stream |
-		  stream nextPutAll: aClassName.
-		  isClassSide ifTrue: [ stream nextPutAll: ' class' ].
-		  stream
-			  nextPutAll: '>>';
-			  nextPutAll: aSelector ]
-]
-
-{ #category : 'private - arguments' }
-MCPToolListMethods >> nonNegativeIntegerArgumentNamed: anArgumentName in: arguments default: anInteger [
-
-	| value |
-	value := self
-		         argumentNamed: anArgumentName
-		         in: arguments
-		         ifAbsent: [ ^ anInteger ].
-	value ifNil: [ ^ anInteger ].
-	(value isInteger and: [ value >= 0 ]) ifTrue: [ ^ value ].
-	Error signal:
-		anArgumentName asString , ' must be a non-negative integer.'
-]
-
-{ #category : 'private - filtering' }
-MCPToolListMethods >> normalizeFilterString: aValue caseSensitive: aBoolean [
-
-	| normalized |
-	normalized := aValue
-		              ifNil: [ '' ]
-		              ifNotNil: [ :value | value asString ].
-	^ aBoolean
-		  ifTrue: [ normalized ]
-		  ifFalse: [ normalized asLowercase ]
-]
-
-{ #category : 'private - arguments' }
-MCPToolListMethods >> normalizedFilterModeFrom: arguments [
-
-	| mode |
-	mode := (self stringArgumentNamed: 'filterMode' in: arguments)
-		        ifNil: [ ^ 'substring' ].
-	mode := mode asLowercase.
-	(#( 'substring' 'prefix' 'exact' 'regex' ) includes: mode) ifFalse: [
-		Error signal:
-			'filterMode must be one of substring, prefix, exact, or regex.' ].
-	^ mode
-]
-
 { #category : 'private - arguments' }
 MCPToolListMethods >> normalizedSideFrom: arguments [
 
@@ -468,21 +362,6 @@ MCPToolListMethods >> normalizedSideFrom: arguments [
 	(#( 'instance' 'class' 'both' ) includes: side) ifFalse: [
 		Error signal: 'side must be one of instance, class, or both.' ].
 	^ side
-]
-
-{ #category : 'private - arguments' }
-MCPToolListMethods >> stringArgumentNamed: anArgumentName in: arguments [
-
-	| value |
-	value := self
-		         argumentNamed: anArgumentName
-		         in: arguments
-		         ifAbsent: [ ^ nil ].
-	value ifNil: [ ^ nil ].
-	value := value asString trimBoth.
-	^ value isEmpty
-		  ifTrue: [ nil ]
-		  ifFalse: [ value ]
 ]
 
 { #category : 'private - results' }

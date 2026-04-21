@@ -15,6 +15,16 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'private - arguments' }
+MCPTool >> argumentNamed: anArgumentName in: arguments ifAbsent: aBlock [
+
+	arguments ifNil: [ ^ aBlock value ].
+	^ arguments
+		  at: anArgumentName asSymbol
+		  ifAbsent: [
+		  arguments at: anArgumentName asString ifAbsent: aBlock ]
+]
+
 { #category : 'accessing' }
 MCPTool >> asJRPCJSON [
 
@@ -30,6 +40,22 @@ MCPTool >> asJRPCJSON [
 	self name ifNotNil: [ dic at: #name put: self name asJRPCJSON ].
 	self title ifNotNil: [ dic at: #title put: self title asJRPCJSON ].
 	^ dic
+]
+
+{ #category : 'private - arguments' }
+MCPTool >> booleanArgumentNamed: anArgumentName in: arguments default: aBoolean [
+
+	| normalized value |
+	value := self
+		         argumentNamed: anArgumentName
+		         in: arguments
+		         ifAbsent: [ ^ aBoolean ].
+	value ifNil: [ ^ aBoolean ].
+	(value == true or: [ value == false ]) ifTrue: [ ^ value ].
+	normalized := value asString trimBoth asLowercase.
+	normalized = 'true' ifTrue: [ ^ true ].
+	normalized = 'false' ifTrue: [ ^ false ].
+	Error signal: anArgumentName asString , ' must be a boolean.'
 ]
 
 { #category : 'accessing' }
@@ -193,6 +219,47 @@ MCPTool >> inputSchema: anObject [
 	inputSchema := anObject
 ]
 
+{ #category : 'private - filtering' }
+MCPTool >> matcherForPattern: aPattern mode: aMode caseSensitive: aBoolean [
+
+	| normalizedPattern regex |
+	aPattern ifNil: [ ^ [ :candidate | true ] ].
+	aMode = 'regex' ifTrue: [
+		regex := aBoolean
+			         ifTrue: [ aPattern asRegex ]
+			         ifFalse: [ aPattern asRegexIgnoringCase ].
+		^ [ :candidate |
+		  regex search:
+			  (candidate ifNil: [ '' ] ifNotNil: [ candidate asString ]) ] ].
+	normalizedPattern := self
+		                     normalizeFilterString: aPattern
+		                     caseSensitive: aBoolean.
+	aMode = 'substring' ifTrue: [
+		^ [ :candidate |
+		  (self normalizeFilterString: candidate caseSensitive: aBoolean)
+			  includesSubstring: normalizedPattern ] ].
+	aMode = 'prefix' ifTrue: [
+		^ [ :candidate |
+		  (self normalizeFilterString: candidate caseSensitive: aBoolean)
+			  beginsWith: normalizedPattern ] ].
+	aMode = 'exact' ifTrue: [
+		^ [ :candidate |
+		  (self normalizeFilterString: candidate caseSensitive: aBoolean)
+		  = normalizedPattern ] ].
+	Error signal: 'Unsupported filter mode: ' , aMode
+]
+
+{ #category : 'private - methods' }
+MCPTool >> methodReferenceForClassName: aClassName selector: aSelector isClassSide: isClassSide [
+
+	^ String streamContents: [ :stream |
+		  stream nextPutAll: aClassName.
+		  isClassSide ifTrue: [ stream nextPutAll: ' class' ].
+		  stream
+			  nextPutAll: '>>';
+			  nextPutAll: aSelector ]
+]
+
 { #category : 'accessing' }
 MCPTool >> name [
 
@@ -203,6 +270,45 @@ MCPTool >> name [
 MCPTool >> name: anObject [
 
 	name := anObject
+]
+
+{ #category : 'private - arguments' }
+MCPTool >> nonNegativeIntegerArgumentNamed: anArgumentName in: arguments default: anInteger [
+
+	| value |
+	value := self
+		         argumentNamed: anArgumentName
+		         in: arguments
+		         ifAbsent: [ ^ anInteger ].
+	value ifNil: [ ^ anInteger ].
+	(value isInteger and: [ value >= 0 ]) ifTrue: [ ^ value ].
+	Error signal:
+		anArgumentName asString , ' must be a non-negative integer.'
+]
+
+{ #category : 'private - filtering' }
+MCPTool >> normalizeFilterString: aValue caseSensitive: aBoolean [
+
+	| normalized |
+	normalized := aValue
+		              ifNil: [ '' ]
+		              ifNotNil: [ :value | value asString ].
+	^ aBoolean
+		  ifTrue: [ normalized ]
+		  ifFalse: [ normalized asLowercase ]
+]
+
+{ #category : 'private - arguments' }
+MCPTool >> normalizedFilterModeFrom: arguments [
+
+	| mode |
+	mode := (self stringArgumentNamed: 'filterMode' in: arguments)
+		        ifNil: [ ^ 'substring' ].
+	mode := mode asLowercase.
+	(#( 'substring' 'prefix' 'exact' 'regex' ) includes: mode) ifFalse: [
+		Error signal:
+			'filterMode must be one of substring, prefix, exact, or regex.' ].
+	^ mode
 ]
 
 { #category : 'accessing' }
@@ -225,6 +331,12 @@ MCPTool >> schemaPropertyNamed: aName type: aType description: aDescription [
 		  type: aType;
 		  description: aDescription;
 		  yourself
+]
+
+{ #category : 'private - arguments' }
+MCPTool >> selectorStringFrom: arguments [
+
+	^ self stringArgumentNamed: 'selector' in: arguments
 ]
 
 { #category : 'private - schema' }
@@ -330,6 +442,21 @@ MCPTool >> standardTestRequiredFieldsIncludingMethodName: includeMethodName [
 		               'issues' ).
 	includeMethodName ifTrue: [ required add: 'testMethodName' ].
 	^ required asArray
+]
+
+{ #category : 'private - arguments' }
+MCPTool >> stringArgumentNamed: anArgumentName in: arguments [
+
+	| value |
+	value := self
+		         argumentNamed: anArgumentName
+		         in: arguments
+		         ifAbsent: [ ^ nil ].
+	value ifNil: [ ^ nil ].
+	value := value asString trimBoth.
+	^ value isEmpty
+		  ifTrue: [ nil ]
+		  ifFalse: [ value ]
 ]
 
 { #category : 'private - tests' }
