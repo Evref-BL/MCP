@@ -15,26 +15,7 @@ MCPToolImplementors >> defaultDescription [
 { #category : 'defaults' }
 MCPToolImplementors >> defaultIcons [
 
-	| packageNamesProperty classNamesProperty implementorsProperty |
-	packageNamesProperty := self
-		                        stringArraySchemaNamed: 'packageNames'
-		                        description:
-		                        'The package names that define the packages scope. Required when scope=packages.'
-		                        itemDescription: 'A package name.'.
-	classNamesProperty := self
-		                      stringArraySchemaNamed: 'classNames'
-		                      description:
-		                      'The class names that define the classes or hierarchy scope. Required when scope=classes or scope=hierarchy.'
-		                      itemDescription: 'A class name.'.
-	implementorsProperty := self
-		                        schemaPropertyNamed: 'implementors'
-		                        type: 'array'
-		                        description:
-		                        'The implementors returned for the requested page.'.
-	implementorsProperty items: self implementorEntrySchema.
-	^ { (self
-		          pngCompositeBaseIconNamed: #references
-		          badgeIconNamed: #into) }
+	^ { (self pngHorizontallyFlippedIconNamed: #references) }
 ]
 
 { #category : 'defaults' }

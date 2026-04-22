@@ -123,26 +123,7 @@ MCPToolFindClasses >> defaultDescription [
 { #category : 'defaults' }
 MCPToolFindClasses >> defaultIcons [
 
-	| packageNamesProperty classNamesProperty classesProperty |
-	packageNamesProperty := self
-		                        stringArraySchemaNamed: 'packageNames'
-		                        description:
-		                        'The package names that define the packages scope. Required when scope=packages.'
-		                        itemDescription: 'A package name.'.
-	classNamesProperty := self
-		                      stringArraySchemaNamed: 'classNames'
-		                      description:
-		                      'The class names that define the classes or hierarchy scope. Required when scope=classes or scope=hierarchy.'
-		                      itemDescription: 'A class name.'.
-	classesProperty := self
-		                   schemaPropertyNamed: 'classes'
-		                   type: 'array'
-		                   description:
-		                   'The class entries returned for the requested page.'.
-	classesProperty items: self classEntrySchema.
-	^ { (self
-		          pngCompositeBaseIconNamed: #class
-		          badgeIconNamed: #zoomIn) }
+	^ { (self pngCompositeBaseIconNamed: #class badgeIconNamed: #search) }
 ]
 
 { #category : 'defaults' }

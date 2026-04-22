@@ -34,26 +34,7 @@ MCPToolReferences >> defaultDescription [
 { #category : 'defaults' }
 MCPToolReferences >> defaultIcons [
 
-	| packageNamesProperty classNamesProperty referencesProperty |
-	packageNamesProperty := self
-		                        stringArraySchemaNamed: 'packageNames'
-		                        description:
-		                        'The package names that define the packages scope. Required when scope=packages.'
-		                        itemDescription: 'A package name.'.
-	classNamesProperty := self
-		                      stringArraySchemaNamed: 'classNames'
-		                      description:
-		                      'The class names that define the classes or hierarchy scope. Required when scope=classes or scope=hierarchy.'
-		                      itemDescription: 'A class name.'.
-	referencesProperty := self
-		                      schemaPropertyNamed: 'references'
-		                      type: 'array'
-		                      description:
-		                      'The matching methods returned for the requested page. Each entry is a method that references the requested target.'.
-	referencesProperty items: self senderEntrySchema.
-	^ { (self
-		          pngCompositeBaseIconNamed: #references
-		          badgeIconNamed: #over) }
+	^ { (self pngIconNamed: #references) }
 ]
 
 { #category : 'defaults' }

@@ -28,9 +28,7 @@ MCPToolRemoveMethods >> defaultDescription [
 { #category : 'defaults' }
 MCPToolRemoveMethods >> defaultIcons [
 
-	^ { (self
-		          pngCompositeBaseIconNamed: #page
-		          badgeIconNamed: #delete) }
+	^ { (self pngCompositeBaseIconNamed: #page badgeIconNamed: #delete) }
 ]
 
 { #category : 'defaults' }

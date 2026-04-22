@@ -35,9 +35,7 @@ MCPToolRemoveClasses >> defaultDescription [
 { #category : 'defaults' }
 MCPToolRemoveClasses >> defaultIcons [
 
-	^ { (self
-		          pngCompositeBaseIconNamed: #class
-		          badgeIconNamed: #delete) }
+	^ { (self pngCompositeBaseIconNamed: #class badgeIconNamed: #delete) }
 ]
 
 { #category : 'defaults' }

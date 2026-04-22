@@ -48,38 +48,7 @@ MCPToolFindMethods >> defaultDescription [
 { #category : 'defaults' }
 MCPToolFindMethods >> defaultIcons [
 
-	| packageNamesProperty classNamesProperty filterTargetsItemProperty filterTargetsProperty methodsProperty |
-	packageNamesProperty := self
-		                        stringArraySchemaNamed: 'packageNames'
-		                        description:
-		                        'The package names that define the packages scope. Required when scope=packages.'
-		                        itemDescription: 'A package name.'.
-	classNamesProperty := self
-		                      stringArraySchemaNamed: 'classNames'
-		                      description:
-		                      'The class names that define the classes or hierarchy scope. Required when scope=classes or scope=hierarchy.'
-		                      itemDescription: 'A class name.'.
-	filterTargetsItemProperty := MCPStructureProperties new
-		                             type: 'string';
-		                             description: 'A filter target.';
-		                             enum: self supportedFilterTargets;
-		                             yourself.
-	filterTargetsProperty := (self
-		                          schemaPropertyNamed: 'filterTargets'
-		                          type: 'array'
-		                          description:
-			                          'Optional method-entry fields matched by filter. Defaults to selector. This filters the listed methods; it does not perform reference lookup.')
-		                         items: filterTargetsItemProperty;
-		                         yourself.
-	methodsProperty := self
-		                   schemaPropertyNamed: 'methods'
-		                   type: 'array'
-		                   description:
-		                   'The method entries returned for the requested page.'.
-	methodsProperty items: self methodEntrySchema.
-	^ { (self
-		          pngCompositeBaseIconNamed: #page
-		          badgeIconNamed: #zoomIn) }
+	^ { (self pngCompositeBaseIconNamed: #page badgeIconNamed: #search) }
 ]
 
 { #category : 'defaults' }

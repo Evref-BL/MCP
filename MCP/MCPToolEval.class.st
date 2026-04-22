@@ -15,7 +15,7 @@ MCPToolEval >> defaultDescription [
 { #category : 'defaults' }
 MCPToolEval >> defaultIcons [
 
-	^ { (self pngIconNamed: #scriptManager) }
+	^ { (self pngIconNamed: #spawn) }
 ]
 
 { #category : 'defaults' }

@@ -62,9 +62,7 @@ MCPToolEditMethod >> defaultDescription [
 { #category : 'defaults' }
 MCPToolEditMethod >> defaultIcons [
 
-	^ { (self
-		          pngCompositeBaseIconNamed: #page
-		          badgeIconNamed: #edit) }
+	^ { (self pngCompositeBaseIconNamed: #page badgeIconNamed: #edit) }
 ]
 
 { #category : 'defaults' }

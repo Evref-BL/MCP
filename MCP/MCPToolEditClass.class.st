@@ -41,9 +41,7 @@ MCPToolEditClass >> defaultDescription [
 { #category : 'defaults' }
 MCPToolEditClass >> defaultIcons [
 
-	^ { (self
-		          pngCompositeBaseIconNamed: #class
-		          badgeIconNamed: #edit) }
+	^ { (self pngCompositeBaseIconNamed: #class badgeIconNamed: #edit) }
 ]
 
 { #category : 'defaults' }

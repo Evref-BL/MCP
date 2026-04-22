@@ -499,7 +499,7 @@ MCPToolContractsTest >> testRemoveMethodsHasAccurateNameAndRequiredArguments [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testRequestedCompositeToolIconsAreAdvertised [
+MCPToolContractsTest >> testRequestedToolIconsAreAdvertised [
 
 	self
 		assert: (MCPToolInspectClass new asJRPCJSON at: #icons) first
@@ -527,27 +527,25 @@ MCPToolContractsTest >> testRequestedCompositeToolIconsAreAdvertised [
 		assert: (MCPToolFindClasses new asJRPCJSON at: #icons) first
 		equals: (MCPStructureIcon
 				 compositeBaseIconNamed: #class
-				 badgeIconNamed: #zoomIn) asJRPCJSON.
+				 badgeIconNamed: #search) asJRPCJSON.
 	self
 		assert: (MCPToolFindMethods new asJRPCJSON at: #icons) first
 		equals: (MCPStructureIcon
 				 compositeBaseIconNamed: #page
-				 badgeIconNamed: #zoomIn) asJRPCJSON.
+				 badgeIconNamed: #search) asJRPCJSON.
 	self
 		assert: (MCPToolFindPackages new asJRPCJSON at: #icons) first
 		equals: (MCPStructureIcon
-				 compositeBaseIconNamed: #package
-				 badgeIconNamed: #zoomIn) asJRPCJSON.
+				 compositeBaseIconNamed: #open
+				 badgeIconNamed: #search) asJRPCJSON.
 	self
 		assert: (MCPToolImplementors new asJRPCJSON at: #icons) first
-		equals: (MCPStructureIcon
-				 compositeBaseIconNamed: #references
-				 badgeIconNamed: #into) asJRPCJSON.
+		equals:
+			(MCPStructureIcon horizontallyFlippedPngIconNamed: #references)
+				asJRPCJSON.
 	self
 		assert: (MCPToolReferences new asJRPCJSON at: #icons) first
-		equals: (MCPStructureIcon
-				 compositeBaseIconNamed: #references
-				 badgeIconNamed: #over) asJRPCJSON.
+		equals: (MCPStructureIcon pngIconNamed: #references) asJRPCJSON.
 	self
 		assert: (MCPToolRemoveClasses new asJRPCJSON at: #icons) first
 		equals: (MCPStructureIcon
@@ -563,7 +561,7 @@ MCPToolContractsTest >> testRequestedCompositeToolIconsAreAdvertised [
 		equals: (MCPStructureIcon pngIconNamed: #testRunner) asJRPCJSON.
 	self
 		assert: (MCPToolEval new asJRPCJSON at: #icons) first
-		equals: (MCPStructureIcon pngIconNamed: #scriptManager) asJRPCJSON
+		equals: (MCPStructureIcon pngIconNamed: #spawn) asJRPCJSON
 ]
 
 { #category : 'tests' }
@@ -578,10 +576,17 @@ MCPToolContractsTest >> testRpcToolCallSignalsInvalidParametersWhenRequiredArgum
 { #category : 'tests' }
 MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 
+	| dataProperties outputSchema testsProperty |
 	self assert: MCPToolRunTests new name equals: 'run-tests'.
 	self
 		assert: MCPToolRunTests new inputSchema required asSet
-		equals: #( 'tests' ) asSet
+		equals: #( 'tests' ) asSet.
+	outputSchema := MCPToolRunTests new outputSchema asJRPCJSON.
+	dataProperties := ((outputSchema at: #properties) at: 'data') at:
+		                  #properties.
+	testsProperty := dataProperties at: 'tests'.
+	self assert: (testsProperty at: #type) equals: 'array'.
+	self assert: ((testsProperty at: #items) at: #type) equals: 'string'
 ]
 
 { #category : 'tests' }

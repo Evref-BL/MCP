@@ -15,6 +15,36 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'scripts' }
+MCPTool class >> browseIcons [
+
+	<script>
+	| iconExtent rows presenter table window |
+	iconExtent := 16 @ 16.
+	rows := (self allSubclasses asSortedCollection: [ :a :b |
+		         a name <= b name ]) collect: [ :each |
+		        each name
+		        ->
+			        ((Form fromBase64String:
+				          (each new icons first src copyAfter: $,)) scaledToSize:
+				         iconExtent) ].
+	presenter := SpPresenter new.
+	table := presenter newTable.
+	table
+		addColumn: ((SpImageTableColumn title: '' evaluated: #value)
+				 width: iconExtent x + 8;
+				 yourself);
+		addColumn: (SpStringTableColumn title: 'Class' evaluated: #key);
+		hideColumnHeaders;
+		items: rows.
+	presenter layout: (presenter newBoxLayoutTopToBottom
+			 add: table;
+			 yourself).
+	window := presenter asWindow.
+	window title: 'MCP Tool Icons'.
+	^ window open
+]
+
 { #category : 'private - arguments' }
 MCPTool >> argumentNamed: anArgumentName in: arguments ifAbsent: aBlock [
 
@@ -522,6 +552,12 @@ MCPTool >> pngDataUriForForm: aForm [
 	bytes := ByteArray streamContents: [ :stream |
 		         PNGReadWriter putForm: aForm onStream: stream ].
 	^ 'data:image/png;base64,' , bytes base64Encoded
+]
+
+{ #category : 'private - icons' }
+MCPTool >> pngHorizontallyFlippedIconNamed: anIconSymbol [
+
+	^ MCPStructureIcon horizontallyFlippedPngIconNamed: anIconSymbol
 ]
 
 { #category : 'private - icons' }

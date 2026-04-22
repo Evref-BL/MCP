@@ -318,18 +318,19 @@ MCPToolStructuredOutputTest >> testRemoveClassReturnsStructuredError [
 MCPToolStructuredOutputTest >> testRunTestClassReturnsStructuredIssues [
 
 	| data firstIssue result singleResult |
-	result := self
-		          callToolNamed: 'run-tests'
-		          withArguments: { (#tests
-			           ->
-			           { { (#className -> 'MCPToolStructuredOutputTestTarget') }
-				           asDictionary }) } asDictionary.
+	result := self callToolNamed: 'run-tests' withArguments: { (#tests
+		           ->
+		           { { (#className -> 'MCPToolStructuredOutputTestTarget') }
+			           asDictionary }) } asDictionary.
 	data := self dataFrom: result.
 	singleResult := (data at: #results) first.
 	firstIssue := (data at: #issues) first.
 	self
 		assert: ((self structuredContentFrom: result) at: #status)
 		equals: 'ok'.
+	self
+		assert: (data at: #tests)
+		equals: #( 'MCPToolStructuredOutputTestTarget' ).
 	self assert: (data at: #selectionCount) equals: 1.
 	self assert: (data at: #runCount) equals: 3.
 	self assert: (singleResult at: #runCount) equals: 3.
@@ -362,6 +363,10 @@ MCPToolStructuredOutputTest >> testRunTestMethodReturnsStructuredIssues [
 	self
 		assert: ((self structuredContentFrom: result) at: #status)
 		equals: 'ok'.
+	self
+		assert: (data at: #tests)
+		equals: #( 'MCPToolStructuredOutputTestTarget'
+			   'testFails' ).
 	self assert: (data at: #selectionCount) equals: 2.
 	self assert: (data at: #runCount) equals: 4.
 	self assert: (data at: #failureCount) equals: 2.

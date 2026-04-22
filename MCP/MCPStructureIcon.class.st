@@ -15,15 +15,9 @@ Class {
 { #category : 'instance creation' }
 MCPStructureIcon class >> compositeBaseIconNamed: aBaseIconSymbol badgeIconNamed: aBadgeIconSymbol [
 
-	| compositeForm |
-	compositeForm := self
-		                 compositeFormBaseIconNamed: aBaseIconSymbol
-		                 badgeIconNamed: aBadgeIconSymbol.
-	^ self new
-		  src: (self pngDataUriForForm: compositeForm);
-		  mimeType: 'image/png';
-		  sizes: { (self pngSizeStringForForm: compositeForm) };
-		  yourself
+	^ self iconForForm: (self
+			   compositeFormBaseIconNamed: aBaseIconSymbol
+			   badgeIconNamed: aBadgeIconSymbol)
 ]
 
 { #category : 'instance creation' }
@@ -58,6 +52,23 @@ MCPStructureIcon class >> highScaleFormNamed: anIconSymbol [
 ]
 
 { #category : 'instance creation' }
+MCPStructureIcon class >> horizontallyFlippedPngIconNamed: anIconSymbol [
+
+	^ self iconForForm:
+		  (self highScaleFormNamed: anIconSymbol) deepCopy flipHorizontally
+]
+
+{ #category : 'instance creation' }
+MCPStructureIcon class >> iconForForm: aForm [
+
+	^ self new
+		  src: (self pngDataUriForForm: aForm);
+		  mimeType: 'image/png';
+		  sizes: { (self pngSizeStringForForm: aForm) };
+		  yourself
+]
+
+{ #category : 'instance creation' }
 MCPStructureIcon class >> pngDataUriForForm: aForm [
 
 	| bytes |
@@ -69,13 +80,7 @@ MCPStructureIcon class >> pngDataUriForForm: aForm [
 { #category : 'instance creation' }
 MCPStructureIcon class >> pngIconNamed: anIconSymbol [
 
-	| form |
-	form := self highScaleFormNamed: anIconSymbol.
-	^ self new
-		  src: (self pngDataUriForForm: form);
-		  mimeType: 'image/png';
-		  sizes: { (self pngSizeStringForForm: form) };
-		  yourself
+	^ self iconForForm: (self highScaleFormNamed: anIconSymbol)
 ]
 
 { #category : 'instance creation' }

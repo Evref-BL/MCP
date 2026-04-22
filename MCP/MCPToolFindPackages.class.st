@@ -15,21 +15,7 @@ MCPToolFindPackages >> defaultDescription [
 { #category : 'defaults' }
 MCPToolFindPackages >> defaultIcons [
 
-	| projectNamesProperty packageEntryProperty |
-	projectNamesProperty := self
-		                        stringArraySchemaNamed: 'projectNames'
-		                        description:
-		                        'The project names that define the project scope. Required when scope=project.'
-		                        itemDescription: 'A project name.'.
-	packageEntryProperty := self
-		                        schemaPropertyNamed: 'packages'
-		                        type: 'array'
-		                        description:
-		                        'The package entries returned for the requested page.'.
-	packageEntryProperty items: self packageEntrySchema.
-	^ { (self
-		          pngCompositeBaseIconNamed: #package
-		          badgeIconNamed: #zoomIn) }
+	^ { (self pngCompositeBaseIconNamed: #open badgeIconNamed: #search) }
 ]
 
 { #category : 'defaults' }

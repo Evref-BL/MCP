@@ -18,7 +18,7 @@ MCPToolRunTests >> aggregateDataForResults: resultEntries tests: testRequests [
 	issues := issues asSortedCollection: [ :left :right |
 		          (left at: #testName) <= (right at: #testName) ].
 	data := Dictionary new.
-	data at: #tests put: testRequests asArray.
+	data at: #tests put: (self compactTestNamesFrom: testRequests).
 	data at: #selectionCount put: testRequests size.
 	data at: #results put: resultEntries asArray.
 	data at: #runCount put: (resultEntries
@@ -39,6 +39,14 @@ MCPToolRunTests >> aggregateDataForResults: resultEntries tests: testRequests [
 	data at: #failingTestNames put: failingNames asArray.
 	data at: #issues put: issues asArray.
 	^ data
+]
+
+{ #category : 'private' }
+MCPToolRunTests >> compactTestNamesFrom: testRequests [
+
+	^ (testRequests collect: [ :each |
+		   each at: #testMethodName ifAbsent: [ each at: #className ] ])
+		  asArray
 ]
 
 { #category : 'defaults' }
@@ -79,67 +87,69 @@ MCPToolRunTests >> defaultName [
 MCPToolRunTests >> defaultOutputSchema [
 
 	^ self
-		                standardOutputSchemaForDataProperties: {
-				                ((self
-					                  schemaPropertyNamed: 'tests'
-					                  type: 'array'
-					                  description:
-						                  'The normalized batch of test execution requests that ran.')
-					                 items: self testRequestObjectSchema;
-					                 yourself).
-				                (self
-					                 integerSchemaPropertyNamed: 'selectionCount'
-					                 description:
-					                 'The number of test execution requests in the batch.').
-				                ((self
-					                  schemaPropertyNamed: 'results'
-					                  type: 'array'
-					                  description:
-						                  'Structured results for each test execution request in the batch.')
-					                 items: self testResultObjectSchema;
-					                 yourself).
-				                (self
-					                 integerSchemaPropertyNamed: 'runCount'
-					                 description:
-					                 'The total number of tests that ran across the batch.').
-				                (self
-					                 integerSchemaPropertyNamed: 'passedCount'
-					                 description:
-					                 'The total number of tests that passed across the batch.').
-				                (self
-					                 integerSchemaPropertyNamed: 'skippedCount'
-					                 description:
-					                 'The total number of tests that were skipped across the batch.').
-				                (self
-					                 integerSchemaPropertyNamed: 'failureCount'
-					                 description:
-					                 'The total number of failing tests across the batch.').
-				                (self
-					                 integerSchemaPropertyNamed: 'errorCount'
-					                 description:
-					                 'The total number of tests ending in errors across the batch.').
-				                ((self
-					                  schemaPropertyNamed: 'failingTestNames'
-					                  type: 'array'
-					                  description:
-						                  'Readable identifiers for tests that failed or errored across the batch.')
-					                 items: (MCPStructureProperties new
-							                  type: 'string';
-							                  description: 'A failing test identifier.';
-							                  yourself);
-					                 yourself).
-				                ((self
-					                  schemaPropertyNamed: 'issues'
-					                  type: 'array'
-					                  description:
-						                  'Detailed issues captured while running the batch.')
-					                 items: self testIssueObjectSchema;
-					                 yourself) }
-		                required:
-			                #( 'tests' 'selectionCount' 'results' 'runCount'
-			                   'passedCount' 'skippedCount' 'failureCount'
-			                   'errorCount' 'failingTestNames'
-			                   'issues' )
+		  standardOutputSchemaForDataProperties: {
+				  ((self
+					    schemaPropertyNamed: 'tests'
+					    type: 'array'
+					    description:
+						    'The normalized batch of test execution requests that ran, expressed as class names for full test classes and test selectors for individual test methods.')
+					   items: (MCPStructureProperties new
+							    type: 'string';
+							    description: 'A normalized test request name.';
+							    yourself);
+					   yourself).
+				  (self
+					   integerSchemaPropertyNamed: 'selectionCount'
+					   description:
+					   'The number of test execution requests in the batch.').
+				  ((self
+					    schemaPropertyNamed: 'results'
+					    type: 'array'
+					    description:
+						    'Structured results for each test execution request in the batch.')
+					   items: self testResultObjectSchema;
+					   yourself).
+				  (self
+					   integerSchemaPropertyNamed: 'runCount'
+					   description:
+					   'The total number of tests that ran across the batch.').
+				  (self
+					   integerSchemaPropertyNamed: 'passedCount'
+					   description:
+					   'The total number of tests that passed across the batch.').
+				  (self
+					   integerSchemaPropertyNamed: 'skippedCount'
+					   description:
+					   'The total number of tests that were skipped across the batch.').
+				  (self
+					   integerSchemaPropertyNamed: 'failureCount'
+					   description:
+					   'The total number of failing tests across the batch.').
+				  (self
+					   integerSchemaPropertyNamed: 'errorCount'
+					   description:
+					   'The total number of tests ending in errors across the batch.').
+				  ((self
+					    schemaPropertyNamed: 'failingTestNames'
+					    type: 'array'
+					    description:
+						    'Readable identifiers for tests that failed or errored across the batch.')
+					   items: (MCPStructureProperties new
+							    type: 'string';
+							    description: 'A failing test identifier.';
+							    yourself);
+					   yourself).
+				  ((self
+					    schemaPropertyNamed: 'issues'
+					    type: 'array'
+					    description:
+						    'Detailed issues captured while running the batch.')
+					   items: self testIssueObjectSchema;
+					   yourself) }
+		  required:
+			  #( 'tests' 'selectionCount' 'results' 'runCount' 'passedCount'
+			     'skippedCount' 'failureCount' 'errorCount' 'failingTestNames'
+			     'issues' )
 ]
 
 { #category : 'defaults' }
@@ -161,7 +171,8 @@ MCPToolRunTests >> errorResultForError: anError tests: testRequests [
 		  details: {
 				  (#errorClass -> anError class name).
 				  (#message -> anError messageText).
-				  (#tests -> testRequests asArray) } asDictionary
+				  (#tests -> (self compactTestNamesFrom: testRequests)) }
+				  asDictionary
 ]
 
 { #category : 'executing' }
