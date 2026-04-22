@@ -90,6 +90,7 @@ MCPToolStructuredOutputTest >> testDescribeClassReturnsStructuredSuccess [
 		equals: 'MCPToolDescribeMethodTestTarget'.
 	self assert: (data at: #instanceMethodCount) equals: 1.
 	self assert: (data at: #classMethodCount) equals: 1.
+	self deny: (data includesKey: #classComment).
 	self assert: (data at: #superclasses) isEmpty.
 	self assert: (data at: #subclasses) isEmpty
 ]

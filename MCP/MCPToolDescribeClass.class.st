@@ -54,7 +54,11 @@ MCPToolDescribeClass >> classDescriptionDataProperties [
 		  (self
 			   integerSchemaPropertyNamed: 'classMethodCount'
 			   description:
-			   'The number of class-side methods defined on the class.') }
+			   'The number of class-side methods defined on the class.').
+		  (self
+			   schemaPropertyNamed: 'classComment'
+			   type: 'string'
+			   description: 'The class comment when includeComment=true.') }
 ]
 
 { #category : 'private - schema' }
@@ -91,8 +95,28 @@ MCPToolDescribeClass >> classNameFromArguments: arguments [
 { #category : 'private - hierarchy' }
 MCPToolDescribeClass >> descriptionDictionariesForClasses: someClasses [
 
+	^ self
+		  descriptionDictionariesForClasses: someClasses
+		  includeComment: false
+]
+
+{ #category : 'private - hierarchy' }
+MCPToolDescribeClass >> descriptionDictionariesForClasses: someClasses includeComment: includeComment [
+
 	^ (someClasses collect: [ :each |
-		   (MCPClassDescription fromClass: each) asDictionary ]) asArray
+		   self
+			   descriptionDictionaryForClass: each
+			   includeComment: includeComment ]) asArray
+]
+
+{ #category : 'private - hierarchy' }
+MCPToolDescribeClass >> descriptionDictionaryForClass: aClass includeComment: includeComment [
+
+	| data |
+	data := (MCPClassDescription fromClass: aClass) asDictionary copy.
+	includeComment ifTrue: [
+		data at: #classComment put: (aClass comment ifNil: [ '' ]) ].
+	^ data
 ]
 
 { #category : 'private' }
@@ -114,24 +138,29 @@ MCPToolDescribeClass >> errorResultForError: anError className: className [
 { #category : 'executing' }
 MCPToolDescribeClass >> executeWithArguments: arguments [
 
-	| className data describedClass subclasses superclasses |
+	| className data describedClass includeComment subclasses superclasses |
 	className := self classNameFromArguments: arguments.
 	^ [
 	  describedClass := self resolvedClassNamed: className.
+	  includeComment := self
+		                    booleanArgumentNamed: 'includeComment'
+		                    in: arguments
+		                    default: false.
 	  superclasses := self
 		                  superclassesForClass: describedClass
 		                  arguments: arguments.
 	  subclasses := self
 		                subclassesForClass: describedClass
 		                arguments: arguments.
-	  data := (MCPClassDescription fromClass: describedClass)
-		          asDictionary copy.
-	  data
-		  at: #superclasses
-		  put: (self descriptionDictionariesForClasses: superclasses).
-	  data
-		  at: #subclasses
-		  put: (self descriptionDictionariesForClasses: subclasses).
+	  data := self
+		          descriptionDictionaryForClass: describedClass
+		          includeComment: includeComment.
+	  data at: #superclasses put: (self
+			   descriptionDictionariesForClasses: superclasses
+			   includeComment: includeComment).
+	  data at: #subclasses put: (self
+			   descriptionDictionariesForClasses: subclasses
+			   includeComment: includeComment).
 	  self
 		  successResultText: (self
 				   successSummaryForClassName: className
@@ -159,7 +188,7 @@ MCPToolDescribeClass >> failureMessageForClassName: className error: anError [
 { #category : 'initialization' }
 MCPToolDescribeClass >> initialize [
 
-	| includeSuperclassesProperty subclassDepthProperty upToSuperclassNameProperty |
+	| includeCommentProperty includeSuperclassesProperty subclassDepthProperty upToSuperclassNameProperty |
 	super initialize.
 	name := 'describe-class'.
 	title := 'Describe Pharo Class'.
@@ -170,6 +199,12 @@ MCPToolDescribeClass >> initialize [
 		                               description:
 			                               'Whether to include superclass descriptions. Defaults to false.';
 		                               yourself.
+	includeCommentProperty := MCPStructureProperties new
+		                          name: 'includeComment';
+		                          type: 'boolean';
+		                          description:
+			                          'Whether to include the class comment in returned class descriptions. Defaults to false.';
+		                          yourself.
 	upToSuperclassNameProperty := MCPStructureProperties new
 		                              name: 'upToSuperclassName';
 		                              type: 'string';
@@ -191,6 +226,7 @@ MCPToolDescribeClass >> initialize [
 					                description: 'The class to describe.';
 					                yourself).
 				               includeSuperclassesProperty.
+				               includeCommentProperty.
 				               upToSuperclassNameProperty.
 				               subclassDepthProperty };
 		               required: #( 'className' );

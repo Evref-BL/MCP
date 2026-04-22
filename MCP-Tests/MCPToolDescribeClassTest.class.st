@@ -59,6 +59,13 @@ MCPToolDescribeClassTest >> dataFrom: aResult [
 ]
 
 { #category : 'private' }
+MCPToolDescribeClassTest >> ensureClassComment: aComment onClassNamed: aClassName [
+
+	self withoutEpiceaDuring: [
+		(self classNamed: aClassName) comment: aComment stamp: '' ]
+]
+
+{ #category : 'private' }
 MCPToolDescribeClassTest >> ensureClassMethodSource: aMethodSource onClassNamed: aClassName [
 
 	self withoutEpiceaDuring: [
@@ -156,7 +163,19 @@ MCPToolDescribeClassTest >> restoreFixtureClasses [
 		onClassNamed: self baseClassName.
 	self
 		ensureClassMethodSource: 'classMarker ^ 2'
-		onClassNamed: self baseClassName
+		onClassNamed: self baseClassName.
+	self
+		ensureClassComment: 'Base fixture class comment.'
+		onClassNamed: self baseClassName.
+	self
+		ensureClassComment: 'Child A fixture class comment.'
+		onClassNamed: self childAClassName.
+	self
+		ensureClassComment: 'Child Z fixture class comment.'
+		onClassNamed: self childZClassName.
+	self
+		ensureClassComment: 'Grandchild fixture class comment.'
+		onClassNamed: self grandchildClassName
 ]
 
 { #category : 'running' }
@@ -194,6 +213,7 @@ MCPToolDescribeClassTest >> testDescribesClassMetadata [
 	self assert: (data at: #superclassName) equals: 'Object'.
 	self assert: (data at: #packageName) equals: 'MCP-Tests'.
 	self assert: (data at: #tag) equals: 'Internal'.
+	self deny: (data includesKey: #classComment).
 	self
 		assert: (data at: #instanceSlotNames)
 		equals: #( 'betaSlot' 'alphaSlot' ).
@@ -207,6 +227,42 @@ MCPToolDescribeClassTest >> testDescribesClassMetadata [
 	self assert: (data at: #classMethodCount) equals: 1.
 	self assert: (data at: #superclasses) isEmpty.
 	self assert: (data at: #subclasses) isEmpty
+]
+
+{ #category : 'tests' }
+MCPToolDescribeClassTest >> testIncludesClassCommentsWhenRequested [
+
+	| data result subclasses superclasses |
+	result := self callToolWith: {
+			          (#className -> self childZClassName).
+			          (#includeComment -> true).
+			          (#includeSuperclasses -> true).
+			          (#upToSuperclassName -> self baseClassName).
+			          (#subclassDepth -> 1) } asDictionary.
+	data := self dataFrom: result.
+	superclasses := data at: #superclasses.
+	subclasses := data at: #subclasses.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self
+		assert: ((self structuredContentFrom: result) at: #status)
+		equals: 'ok'.
+	self
+		assert: (data at: #classComment)
+		equals: 'Child Z fixture class comment.'.
+	self assert: superclasses size equals: 1.
+	self
+		assert: (superclasses first at: #className)
+		equals: self baseClassName.
+	self
+		assert: (superclasses first at: #classComment)
+		equals: 'Base fixture class comment.'.
+	self assert: subclasses size equals: 1.
+	self
+		assert: (subclasses first at: #className)
+		equals: self grandchildClassName.
+	self
+		assert: (subclasses first at: #classComment)
+		equals: 'Grandchild fixture class comment.'
 ]
 
 { #category : 'tests' }

@@ -64,12 +64,15 @@ MCPToolContractsTest >> testAllToolsAdvertisePngIconsWithDataUris [
 { #category : 'tests' }
 MCPToolContractsTest >> testDescribeClassHasAccurateNameAndRequiredArguments [
 
+	| inputPropertyNames tool |
+	tool := MCPToolDescribeClass new.
+	inputPropertyNames := tool inputSchema properties collect: [ :each |
+		                      each name ].
+	self assert: tool name equals: 'describe-class'.
 	self
-		assert: MCPToolDescribeClass new name
-		equals: 'describe-class'.
-	self
-		assert: MCPToolDescribeClass new inputSchema required asSet
-		equals: #( 'className' ) asSet
+		assert: tool inputSchema required asSet
+		equals: #( 'className' ) asSet.
+	self assert: (inputPropertyNames includes: 'includeComment')
 ]
 
 { #category : 'tests' }
