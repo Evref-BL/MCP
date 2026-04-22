@@ -99,53 +99,66 @@ MCPToolContractsTest >> testEvalReturnsRuntimeFailureInformation [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testGetClassesListsClassesForExistingPackage [
+MCPToolContractsTest >> testFindClassesHasAccurateNameAndSchema [
 
-	| data result |
+	| propertyNames schema |
+	schema := MCPToolFindClasses new inputSchema.
+	propertyNames := schema properties collect: [ :each | each name ].
+	self assert: MCPToolFindClasses new name equals: 'pharo-find-classes'.
+	self assert: schema required equals: #(  ).
+	self assert: (propertyNames includes: 'scope').
+	self assert: (propertyNames includes: 'packageName').
+	self assert: (propertyNames includes: 'packageNames').
+	self assert: (propertyNames includes: 'classNames').
+	self assert: (propertyNames includes: 'filter')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testFindClassesListsClassesForExistingPackage [
+
+	| classNames data result |
+	result := self callToolNamed: 'pharo-find-classes' withArguments: {
+			          (#scope -> 'packages').
+			          (#packageNames -> #( 'MCP-Tests' )) } asDictionary.
+	data := (result at: #structuredContent) at: #data.
+	classNames := (data at: #classes) collect: [ :each |
+		              each at: #className ].
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #scope) equals: 'packages'.
+	self assert: (data at: #packageNames) equals: #( 'MCP-Tests' ).
+	self assert: (classNames includes: 'MCPToolEditMethodTest')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testFindClassesReturnsErrorResultForMissingPackage [
+
+	| result text |
+	result := self callToolNamed: 'pharo-find-classes' withArguments: {
+			          (#scope -> 'packages').
+			          (#packageNames -> #( 'MCP-Definitely-Missing' )) }
+			          asDictionary.
+	text := self firstTextFromToolResult: result.
+	self assert: (result at: #isError).
+	self assert: (text includesSubstring:
+			 'Package MCP-Definitely-Missing does not exist.').
+	self deny: (text includesSubstring: 'Tool pharo-find-classes failed')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testFindClassesUsesLegacyPackageNameAlias [
+
+	| classNames data result |
 	result := self
-		          callToolNamed: 'pharo-list-package-classes'
+		          callToolNamed: 'pharo-find-classes'
 		          withArguments:
 		          { (#packageName -> 'MCP-Tests') } asDictionary.
 	data := (result at: #structuredContent) at: #data.
+	classNames := (data at: #classes) collect: [ :each |
+		              each at: #className ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert:
-		((data at: #classNames) includes: 'MCPToolEditMethodTest')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testGetClassesReportsMissingPackageErrorsInBand [
-
-	| result text |
-	result := self
-		          callToolNamed: 'pharo-list-package-classes'
-		          withArguments:
-		          { (#packageName -> 'MCP-Definitely-Missing') }
-			          asDictionary.
-	text := self firstTextFromToolResult: result.
-	self assert: (result at: #isError).
-	self assert: (text includesSubstring:
-			 'Unable to list classes for package MCP-Definitely-Missing').
-	self assert: (text includesSubstring: 'There is no package named').
-	self deny:
-		(text includesSubstring: 'Tool pharo-list-package-classes failed')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testGetClassesSignalsMissingPackageErrors [
-
-	| result text |
-	result := self
-		          callToolNamed: 'pharo-list-package-classes'
-		          withArguments:
-		          { (#packageName -> 'MCP-Definitely-Missing') }
-			          asDictionary.
-	text := self firstTextFromToolResult: result.
-	self assert: (result at: #isError).
-	self assert: (text includesSubstring:
-			 'Unable to list classes for package MCP-Definitely-Missing').
-	self assert: (text includesSubstring: 'There is no package named').
-	self deny:
-		(text includesSubstring: 'Tool pharo-list-package-classes failed')
+	self assert: (data at: #scope) equals: 'packages'.
+	self assert: (data at: #packageNames) equals: #( 'MCP-Tests' ).
+	self assert: (classNames includes: 'MCPToolEditMethodTest')
 ]
 
 { #category : 'tests' }
@@ -168,45 +181,6 @@ MCPToolContractsTest >> testHandleJSONReturnsMethodNotFoundForUnknownTool [
 	self assert: (response includesSubstring: '"code":-32601').
 	self assert: (response includesSubstring:
 			 '"message":"The method does not exist / is not available."')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testListPackageClassesListsClassesForExistingPackage [
-
-	| data result |
-	result := self
-		          callToolNamed: 'pharo-list-package-classes'
-		          withArguments:
-		          { (#packageName -> 'MCP-Tests') } asDictionary.
-	data := (result at: #structuredContent) at: #data.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert:
-		((data at: #classNames) includes: 'MCPToolEditMethodTest')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testListPackageClassesRequiresPackageNameInSchema [
-
-	self assert:
-		(MCPToolGetClasses new inputSchema required includes: 'packageName')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testListPackageClassesReturnsErrorResultForMissingPackage [
-
-	| result text |
-	result := self
-		          callToolNamed: 'pharo-list-package-classes'
-		          withArguments:
-		          { (#packageName -> 'MCP-Definitely-Missing') }
-			          asDictionary.
-	text := self firstTextFromToolResult: result.
-	self assert: (result at: #isError).
-	self assert: (text includesSubstring:
-			 'Unable to list classes for package MCP-Definitely-Missing').
-	self assert: (text includesSubstring: 'There is no package named').
-	self deny:
-		(text includesSubstring: 'Tool pharo-list-package-classes failed')
 ]
 
 { #category : 'tests' }

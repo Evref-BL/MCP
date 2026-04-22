@@ -111,29 +111,34 @@ MCPToolStructuredOutputTest >> testEvalReturnsStructuredSuccess [
 ]
 
 { #category : 'tests' }
-MCPToolStructuredOutputTest >> testListPackageClassesReturnsStructuredArrayData [
+MCPToolStructuredOutputTest >> testFindClassesReturnsStructuredArrayData [
 
-	| result data |
+	| classNames data result |
 	result := self
-		          callToolNamed: 'pharo-list-package-classes'
+		          callToolNamed: 'pharo-find-classes'
 		          withArguments:
 		          { (#packageName -> 'MCP-Tests') } asDictionary.
 	data := self dataFrom: result.
+	classNames := (data at: #classes) collect: [ :each |
+		              each at: #className ].
 	self
 		assert: ((self structuredContentFrom: result) at: #status)
 		equals: 'ok'.
-	self assert: (data at: #packageName) equals: 'MCP-Tests'.
-	self assert: (data at: #count) equals: (data at: #classNames) size.
-	self assert:
-		((data at: #classNames) includes: 'MCPToolContractsTest')
+	self assert: (data at: #scope) equals: 'packages'.
+	self assert: (data at: #packageNames) equals: #( 'MCP-Tests' ).
+	self assert: (data at: #returnedCount) equals: classNames size.
+	self assert: ((data at: #classes) allSatisfy: [ :each |
+			 (each includesKey: #className) and: [
+				 each includesKey: #packageName ] ]).
+	self assert: (classNames includes: 'MCPToolContractsTest')
 ]
 
 { #category : 'tests' }
-MCPToolStructuredOutputTest >> testListPackageClassesReturnsStructuredError [
+MCPToolStructuredOutputTest >> testFindClassesReturnsStructuredError [
 
 	| result structured error |
 	result := self
-		          callToolNamed: 'pharo-list-package-classes'
+		          callToolNamed: 'pharo-find-classes'
 		          withArguments:
 		          { (#packageName -> 'MCP-Definitely-Missing') }
 			          asDictionary.
@@ -144,8 +149,9 @@ MCPToolStructuredOutputTest >> testListPackageClassesReturnsStructuredError [
 	self
 		assert: (error at: #packageName)
 		equals: 'MCP-Definitely-Missing'.
-	self assert:
-		((error at: #message) includesSubstring: 'There is no package named')
+	self assert: (error at: #scope) equals: 'packages'.
+	self assert: ((error at: #message) includesSubstring:
+			 'Package MCP-Definitely-Missing does not exist.')
 ]
 
 { #category : 'tests' }

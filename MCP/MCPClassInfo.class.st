@@ -54,7 +54,9 @@ MCPClassInfo >> initializeFromClass: aClass [
 		                  ifNil: [ '' ]
 		                  ifNotNil: [ :aSuperclass |
 		                  aSuperclass name asString ].
-	packageName := aClass packageName asString.
+	packageName := aClass package
+		               ifNil: [ '' ]
+		               ifNotNil: [ :aPackage | aPackage name asString ].
 	tag := aClass packageTagName asString.
 	instanceSlotNames := aClass slots
 		                     collect: [ :each | each name asString ]
