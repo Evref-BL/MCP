@@ -63,44 +63,6 @@ MCPToolContractsTest >> testAllToolsAdvertisePngIconsWithDataUris [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testDescribeClassHasAccurateNameAndRequiredArguments [
-
-	| inputPropertyNames tool |
-	tool := MCPToolDescribeClass new.
-	inputPropertyNames := tool inputSchema properties collect: [ :each |
-		                      each name ].
-	self assert: tool name equals: 'describe-class'.
-	self
-		assert: tool inputSchema required asSet
-		equals: #( 'className' ) asSet.
-	self assert: (inputPropertyNames includes: 'includeComment')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testDescribeMethodHasAccurateNameAndRequiredArguments [
-
-	| propertyNames variablePropertyNames |
-	propertyNames := MCPToolDescribeMethod new inputSchema properties
-		                 collect: [ :each | each name ].
-	variablePropertyNames := (MCPToolDescribeMethod new
-		                          variableReferenceSchema extraProperties
-		                          at: #properties) collect: [ :each |
-		                         each name ].
-	self
-		assert: MCPToolDescribeMethod new name
-		equals: 'describe-method'.
-	self
-		assert: MCPToolDescribeMethod new inputSchema required asSet
-		equals: #( 'className' 'selector' ) asSet.
-	self assert: (propertyNames includes: 'className').
-	self assert: (propertyNames includes: 'selector').
-	self assert: (propertyNames includes: 'side').
-	self deny: (variablePropertyNames includes: 'sourceIntervals').
-	self deny: (variablePropertyNames includes: 'external').
-	self deny: (variablePropertyNames includes: 'declaredInMethod')
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testEditClassHasAccurateNameAndRequiredArguments [
 
 	| operationProperty propertyNames tool |
@@ -394,11 +356,49 @@ MCPToolContractsTest >> testInitializeAdvertisesPharoServerIcon [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testInspectClassHasAccurateNameAndRequiredArguments [
+
+	| inputPropertyNames tool |
+	tool := MCPToolInspectClass new.
+	inputPropertyNames := tool inputSchema properties collect: [ :each |
+		                      each name ].
+	self assert: tool name equals: 'inspect-class'.
+	self
+		assert: tool inputSchema required asSet
+		equals: #( 'className' ) asSet.
+	self assert: (inputPropertyNames includes: 'includeComment')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testInspectMethodHasAccurateNameAndRequiredArguments [
+
+	| propertyNames variablePropertyNames |
+	propertyNames := MCPToolInspectMethod new inputSchema properties
+		                 collect: [ :each | each name ].
+	variablePropertyNames := (MCPToolInspectMethod new
+		                          variableReferenceSchema extraProperties
+		                          at: #properties) collect: [ :each |
+		                         each name ].
+	self
+		assert: MCPToolInspectMethod new name
+		equals: 'inspect-method'.
+	self
+		assert: MCPToolInspectMethod new inputSchema required asSet
+		equals: #( 'className' 'selector' ) asSet.
+	self assert: (propertyNames includes: 'className').
+	self assert: (propertyNames includes: 'selector').
+	self assert: (propertyNames includes: 'side').
+	self deny: (variablePropertyNames includes: 'sourceIntervals').
+	self deny: (variablePropertyNames includes: 'external').
+	self deny: (variablePropertyNames includes: 'declaredInMethod')
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable [
 
-	| describeClassTool describeMethodTool editMethodTool findClassesTool findMethodsTool findPackagesTool implementorsTool referencesTool removeClassesTool removeMethodsTool |
-	describeClassTool := MCPToolDescribeClass new.
-	describeMethodTool := MCPToolDescribeMethod new.
+	| inspectClassTool inspectMethodTool editMethodTool findClassesTool findMethodsTool findPackagesTool implementorsTool referencesTool removeClassesTool removeMethodsTool |
+	inspectClassTool := MCPToolInspectClass new.
+	inspectMethodTool := MCPToolInspectMethod new.
 	editMethodTool := MCPToolEditMethod new.
 	findClassesTool := MCPToolFindClasses new.
 	findMethodsTool := MCPToolFindMethods new.
@@ -410,23 +410,23 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 	self
 		assert: ((self
 				  inputPropertyNamed: 'includeSuperclasses'
-				  inTool: describeClassTool) extraProperties at: #default)
+				  inTool: inspectClassTool) extraProperties at: #default)
 		equals: false.
 	self
 		assert:
 			((self
 				  inputPropertyNamed: 'includeComment'
-				  inTool: describeClassTool) extraProperties at: #default)
+				  inTool: inspectClassTool) extraProperties at: #default)
 		equals: false.
 	self
 		assert:
 			((self
 				  inputPropertyNamed: 'subclassDepth'
-				  inTool: describeClassTool) extraProperties at: #default)
+				  inTool: inspectClassTool) extraProperties at: #default)
 		equals: 0.
 	self
 		assert:
-			((self inputPropertyNamed: 'side' inTool: describeMethodTool)
+			((self inputPropertyNamed: 'side' inTool: inspectMethodTool)
 				 extraProperties at: #default)
 		equals: 'instance'.
 	self
@@ -502,12 +502,12 @@ MCPToolContractsTest >> testRemoveMethodsHasAccurateNameAndRequiredArguments [
 MCPToolContractsTest >> testRequestedCompositeToolIconsAreAdvertised [
 
 	self
-		assert: (MCPToolDescribeClass new asJRPCJSON at: #icons) first
+		assert: (MCPToolInspectClass new asJRPCJSON at: #icons) first
 		equals: (MCPStructureIcon
 				 compositeBaseIconNamed: #class
 				 badgeIconNamed: #inspect) asJRPCJSON.
 	self
-		assert: (MCPToolDescribeMethod new asJRPCJSON at: #icons) first
+		assert: (MCPToolInspectMethod new asJRPCJSON at: #icons) first
 		equals: (MCPStructureIcon
 				 compositeBaseIconNamed: #page
 				 badgeIconNamed: #inspect) asJRPCJSON.

@@ -1,5 +1,5 @@
 Class {
-	#name : 'MCPToolDescribeClass',
+	#name : 'MCPToolInspectClass',
 	#superclass : 'MCPTool',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
@@ -7,18 +7,18 @@ Class {
 }
 
 { #category : 'private - schema' }
-MCPToolDescribeClass >> classDescriptionDataProperties [
+MCPToolInspectClass >> classDescriptionDataProperties [
 
 	^ {
 		  (self
 			   schemaPropertyNamed: 'className'
 			   type: 'string'
-			   description: 'The described class.').
+			   description: 'The inspected class.').
 		  (self
 			   schemaPropertyNamed: 'superclassName'
 			   type: 'string'
 			   description:
-			   'The direct superclass of the described class, or an empty string for the root.').
+			   'The direct superclass of the inspected class, or an empty string for the root.').
 		  (self
 			   schemaPropertyNamed: 'packageName'
 			   type: 'string'
@@ -62,7 +62,7 @@ MCPToolDescribeClass >> classDescriptionDataProperties [
 ]
 
 { #category : 'private - schema' }
-MCPToolDescribeClass >> classDescriptionObjectSchema [
+MCPToolInspectClass >> classDescriptionObjectSchema [
 
 	^ MCPStructureProperties new
 		  name: 'classDescription';
@@ -75,7 +75,7 @@ MCPToolDescribeClass >> classDescriptionObjectSchema [
 ]
 
 { #category : 'private - schema' }
-MCPToolDescribeClass >> classDescriptionRequiredFields [
+MCPToolInspectClass >> classDescriptionRequiredFields [
 
 	^ #( 'className' 'superclassName' 'packageName' 'tag' 'instanceSlotNames'
 	     'classSlotNames' 'traitNames' 'classTraitNames'
@@ -83,7 +83,7 @@ MCPToolDescribeClass >> classDescriptionRequiredFields [
 ]
 
 { #category : 'private - arguments' }
-MCPToolDescribeClass >> classNameFromArguments: arguments [
+MCPToolInspectClass >> classNameFromArguments: arguments [
 
 	| className |
 	className := self stringArgumentNamed: 'className' in: arguments.
@@ -93,13 +93,13 @@ MCPToolDescribeClass >> classNameFromArguments: arguments [
 ]
 
 { #category : 'defaults' }
-MCPToolDescribeClass >> defaultDescription [
+MCPToolInspectClass >> defaultDescription [
 
 	^ 'Inspect one class by name and return structured metadata, with optional superclass and subclass context. Use find-classes to discover candidate classes first.'
 ]
 
 { #category : 'defaults' }
-MCPToolDescribeClass >> defaultIcons [
+MCPToolInspectClass >> defaultIcons [
 
 	^ { (self
 		          pngCompositeBaseIconNamed: #class
@@ -107,7 +107,7 @@ MCPToolDescribeClass >> defaultIcons [
 ]
 
 { #category : 'defaults' }
-MCPToolDescribeClass >> defaultInputSchema [
+MCPToolInspectClass >> defaultInputSchema [
 
 	| includeSuperclassesProperty includeCommentProperty upToSuperclassNameProperty subclassDepthProperty |
 	includeSuperclassesProperty := MCPStructureProperties new
@@ -128,7 +128,7 @@ MCPToolDescribeClass >> defaultInputSchema [
 		                              name: 'upToSuperclassName';
 		                              type: 'string';
 		                              description:
-			                              'An optional superclass name that stops the included superclass chain at a specific ancestor. When omitted, only the requested class is described unless includeSuperclasses=true.';
+			                              'An optional superclass name that stops the included superclass chain at a specific ancestor. When omitted, only the requested class is inspected unless includeSuperclasses=true.';
 		                              yourself.
 	subclassDepthProperty := MCPStructureProperties new
 		                         name: 'subclassDepth';
@@ -143,7 +143,7 @@ MCPToolDescribeClass >> defaultInputSchema [
 				  (MCPStructureProperties new
 					   name: 'className';
 					   type: 'string';
-					   description: 'The class to describe.';
+					   description: 'The class to inspect.';
 					   yourself).
 				  includeSuperclassesProperty.
 				  includeCommentProperty.
@@ -154,13 +154,13 @@ MCPToolDescribeClass >> defaultInputSchema [
 ]
 
 { #category : 'defaults' }
-MCPToolDescribeClass >> defaultName [
+MCPToolInspectClass >> defaultName [
 
-	^ 'describe-class'
+	^ 'inspect-class'
 ]
 
 { #category : 'defaults' }
-MCPToolDescribeClass >> defaultOutputSchema [
+MCPToolInspectClass >> defaultOutputSchema [
 
 	^ self
 		                standardOutputSchemaForDataProperties:
@@ -176,7 +176,7 @@ MCPToolDescribeClass >> defaultOutputSchema [
 					                  schemaPropertyNamed: 'subclasses'
 					                  type: 'array'
 					                  description:
-						                  'The included subclasses or descendants of the described class, bounded by subclassDepth.')
+						                  'The included subclasses or descendants of the inspected class, bounded by subclassDepth.')
 					                 items: self classDescriptionObjectSchema;
 					                 yourself) }
 		                required:
@@ -185,13 +185,13 @@ MCPToolDescribeClass >> defaultOutputSchema [
 ]
 
 { #category : 'defaults' }
-MCPToolDescribeClass >> defaultTitle [
+MCPToolInspectClass >> defaultTitle [
 
-	^ 'Describe Pharo Class'
+	^ 'Inspect Pharo Class'
 ]
 
 { #category : 'private - hierarchy' }
-MCPToolDescribeClass >> descriptionDictionariesForClasses: someClasses [
+MCPToolInspectClass >> descriptionDictionariesForClasses: someClasses [
 
 	^ self
 		  descriptionDictionariesForClasses: someClasses
@@ -199,7 +199,7 @@ MCPToolDescribeClass >> descriptionDictionariesForClasses: someClasses [
 ]
 
 { #category : 'private - hierarchy' }
-MCPToolDescribeClass >> descriptionDictionariesForClasses: someClasses includeComment: includeComment [
+MCPToolInspectClass >> descriptionDictionariesForClasses: someClasses includeComment: includeComment [
 
 	^ (someClasses collect: [ :each |
 		   self
@@ -208,7 +208,7 @@ MCPToolDescribeClass >> descriptionDictionariesForClasses: someClasses includeCo
 ]
 
 { #category : 'private - hierarchy' }
-MCPToolDescribeClass >> descriptionDictionaryForClass: aClass includeComment: includeComment [
+MCPToolInspectClass >> descriptionDictionaryForClass: aClass includeComment: includeComment [
 
 	| data |
 	data := (MCPClassDescription fromClass: aClass) asDictionary copy.
@@ -218,7 +218,7 @@ MCPToolDescribeClass >> descriptionDictionaryForClass: aClass includeComment: in
 ]
 
 { #category : 'private' }
-MCPToolDescribeClass >> errorResultForError: anError className: className [
+MCPToolInspectClass >> errorResultForError: anError className: className [
 
 	(anError isKindOf: MCPCommandError) ifTrue: [
 		^ self
@@ -234,24 +234,24 @@ MCPToolDescribeClass >> errorResultForError: anError className: className [
 ]
 
 { #category : 'executing' }
-MCPToolDescribeClass >> executeWithArguments: arguments [
+MCPToolInspectClass >> executeWithArguments: arguments [
 
-	| className data describedClass includeComment subclasses superclasses |
+	| className data includeComment subclasses superclasses targetClass |
 	className := self classNameFromArguments: arguments.
 	^ [
-	  describedClass := self resolvedClassNamed: className.
+	  targetClass := self resolvedClassNamed: className.
 	  includeComment := self
 		                    booleanArgumentNamed: 'includeComment'
 		                    in: arguments
 		                    default: false.
 	  superclasses := self
-		                  superclassesForClass: describedClass
+		                  superclassesForClass: targetClass
 		                  arguments: arguments.
 	  subclasses := self
-		                subclassesForClass: describedClass
+		                subclassesForClass: targetClass
 		                arguments: arguments.
 	  data := self
-		          descriptionDictionaryForClass: describedClass
+		          descriptionDictionaryForClass: targetClass
 		          includeComment: includeComment.
 	  data at: #superclasses put: (self
 			   descriptionDictionariesForClasses: superclasses
@@ -271,11 +271,11 @@ MCPToolDescribeClass >> executeWithArguments: arguments [
 ]
 
 { #category : 'private' }
-MCPToolDescribeClass >> failureMessageForClassName: className error: anError [
+MCPToolInspectClass >> failureMessageForClassName: className error: anError [
 
 	^ String streamContents: [ :stream |
 		  stream
-			  nextPutAll: 'Unable to describe class ';
+			  nextPutAll: 'Unable to inspect class ';
 			  nextPutAll: className;
 			  nextPutAll: ' (';
 			  nextPutAll: anError class name;
@@ -284,7 +284,7 @@ MCPToolDescribeClass >> failureMessageForClassName: className error: anError [
 ]
 
 { #category : 'private - hierarchy' }
-MCPToolDescribeClass >> resolvedClassNamed: className [
+MCPToolInspectClass >> resolvedClassNamed: className [
 
 	^ Smalltalk globals
 		  at: className asSymbol
@@ -292,14 +292,14 @@ MCPToolDescribeClass >> resolvedClassNamed: className [
 ]
 
 { #category : 'private - hierarchy' }
-MCPToolDescribeClass >> sortedClassesByName: someClasses [
+MCPToolInspectClass >> sortedClassesByName: someClasses [
 
 	^ (someClasses asSortedCollection: [ :left :right |
 		   left name <= right name ]) asArray
 ]
 
 { #category : 'private - hierarchy' }
-MCPToolDescribeClass >> subclassesForClass: aClass arguments: arguments [
+MCPToolInspectClass >> subclassesForClass: aClass arguments: arguments [
 
 	| subclassDepth subclasses |
 	subclassDepth := self
@@ -317,11 +317,11 @@ MCPToolDescribeClass >> subclassesForClass: aClass arguments: arguments [
 ]
 
 { #category : 'private' }
-MCPToolDescribeClass >> successSummaryForClassName: className superclasses: superclasses subclasses: subclasses [
+MCPToolInspectClass >> successSummaryForClassName: className superclasses: superclasses subclasses: subclasses [
 
 	^ String streamContents: [ :stream |
 		  stream
-			  nextPutAll: 'Described class ';
+			  nextPutAll: 'Inspected class ';
 			  nextPutAll: className;
 			  nextPut: $..
 		  (superclasses isEmpty and: [ subclasses isEmpty ]) ifFalse: [
@@ -343,7 +343,7 @@ MCPToolDescribeClass >> successSummaryForClassName: className superclasses: supe
 ]
 
 { #category : 'private - hierarchy' }
-MCPToolDescribeClass >> superclassesForClass: aClass arguments: arguments [
+MCPToolInspectClass >> superclassesForClass: aClass arguments: arguments [
 
 	| includeSuperclasses targetSuperclass targetSuperclassName |
 	includeSuperclasses := self

@@ -16,105 +16,6 @@ MCPToolStructuredOutputTest >> testAllToolsAdvertiseOutputSchema [
 ]
 
 { #category : 'tests' }
-MCPToolStructuredOutputTest >> testDescribeClassReturnsStructuredError [
-
-	| error result structured |
-	result := self
-		          callToolNamed: 'describe-class'
-		          withArguments:
-			          { (#className -> 'MCPToolDescribeClassDefinitelyMissing') }
-				          asDictionary.
-	structured := self structuredContentFrom: result.
-	error := self errorFrom: result.
-	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
-	self
-		assert: (self summaryFrom: result)
-		equals: ((result at: #content) first at: #text).
-	self assert: (self warningsFrom: result) equals: #(  ).
-	self assert: (error at: #errorClass) equals: 'MCPCommandError'. self assert: (error at: #errorCode) equals: 'ClassNotFound'.
-	self
-		assert: (error at: #className)
-		equals: 'MCPToolDescribeClassDefinitelyMissing'
-]
-
-{ #category : 'tests' }
-MCPToolStructuredOutputTest >> testDescribeClassReturnsStructuredSuccess [
-
-	| data result structured |
-	result := self
-		          callToolNamed: 'describe-class'
-		          withArguments:
-		          { (#className -> 'MCPToolDescribeMethodTestTarget') }
-			          asDictionary.
-	structured := self structuredContentFrom: result.
-	data := self dataFrom: result.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (structured at: #status) equals: 'ok'.
-	self
-		assert: (self summaryFrom: result)
-		equals: ((result at: #content) first at: #text).
-	self assert: (self warningsFrom: result) equals: #(  ).
-	self
-		assert: (data at: #className)
-		equals: 'MCPToolDescribeMethodTestTarget'.
-	self assert: (data at: #instanceMethodCount) equals: 1.
-	self assert: (data at: #classMethodCount) equals: 1.
-	self deny: (data includesKey: #classComment).
-	self assert: (data at: #superclasses) isEmpty.
-	self assert: (data at: #subclasses) isEmpty
-]
-
-{ #category : 'tests' }
-MCPToolStructuredOutputTest >> testDescribeMethodReturnsStructuredError [
-
-	| error result structured |
-	result := self
-		          callToolNamed: 'describe-method'
-		          withArguments: {
-				          (#className -> 'MCPToolDescribeMethodTestTarget').
-				          (#selector -> 'doesNotExist') } asDictionary.
-	structured := self structuredContentFrom: result.
-	error := self errorFrom: result.
-	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #errorClass) equals: 'MCPCommandError'. self assert: (error at: #errorCode) equals: 'MethodNotFound'.
-	self
-		assert: (error at: #className)
-		equals: 'MCPToolDescribeMethodTestTarget'.
-	self assert: (error at: #selector) equals: 'doesNotExist'.
-	self assert: (error at: #side) equals: 'instance'.
-	self deny: (error at: #classSide)
-]
-
-{ #category : 'tests' }
-MCPToolStructuredOutputTest >> testDescribeMethodReturnsStructuredSuccess [
-
-	| data result |
-	result := self callToolNamed: 'describe-method' withArguments: {
-			          (#className -> 'MCPToolDescribeMethodTestTarget').
-			          (#selector -> 'readInstanceWith:') } asDictionary.
-	data := self dataFrom: result.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self
-		assert: ((self structuredContentFrom: result) at: #status)
-		equals: 'ok'.
-	self
-		assert: (data at: #className)
-		equals: 'MCPToolDescribeMethodTestTarget'.
-	self assert: (data at: #selector) equals: 'readInstanceWith:'.
-	self assert: (data at: #externalVariableCount) equals: 4.
-	self deny:
-		((data at: #externalVariableReferences) anySatisfy: [ :each |
-			 (each at: #name) = 'self' ]).
-	self assert: ((data at: #variableReferences) allSatisfy: [ :each |
-			 #( #sourceIntervals #external #declaredInMethod ) noneSatisfy: [
-				 :key | each includesKey: key ] ]).
-	self assert:
-		((data at: #source) includesSubstring: String cr asString)
-]
-
-{ #category : 'tests' }
 MCPToolStructuredOutputTest >> testEvaluateReturnsStructuredError [
 
 	| result structured error |
@@ -292,6 +193,105 @@ MCPToolStructuredOutputTest >> testFindPackagesReturnsStructuredError [
 	self assert: (error at: #scope) equals: 'project'.
 	self assert: ((error at: #message) includesSubstring:
 			 'Project DefinitelyMissingProject does not exist.')
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testInspectClassReturnsStructuredError [
+
+	| error result structured |
+	result := self
+		          callToolNamed: 'inspect-class'
+		          withArguments:
+			          { (#className -> 'MCPToolInspectClassDefinitelyMissing') }
+				          asDictionary.
+	structured := self structuredContentFrom: result.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (structured at: #status) equals: 'error'.
+	self
+		assert: (self summaryFrom: result)
+		equals: ((result at: #content) first at: #text).
+	self assert: (self warningsFrom: result) equals: #(  ).
+	self assert: (error at: #errorClass) equals: 'MCPCommandError'. self assert: (error at: #errorCode) equals: 'ClassNotFound'.
+	self
+		assert: (error at: #className)
+		equals: 'MCPToolInspectClassDefinitelyMissing'
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testInspectClassReturnsStructuredSuccess [
+
+	| data result structured |
+	result := self
+		          callToolNamed: 'inspect-class'
+		          withArguments:
+		          { (#className -> 'MCPToolInspectMethodTestTarget') }
+			          asDictionary.
+	structured := self structuredContentFrom: result.
+	data := self dataFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (structured at: #status) equals: 'ok'.
+	self
+		assert: (self summaryFrom: result)
+		equals: ((result at: #content) first at: #text).
+	self assert: (self warningsFrom: result) equals: #(  ).
+	self
+		assert: (data at: #className)
+		equals: 'MCPToolInspectMethodTestTarget'.
+	self assert: (data at: #instanceMethodCount) equals: 1.
+	self assert: (data at: #classMethodCount) equals: 1.
+	self deny: (data includesKey: #classComment).
+	self assert: (data at: #superclasses) isEmpty.
+	self assert: (data at: #subclasses) isEmpty
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testInspectMethodReturnsStructuredError [
+
+	| error result structured |
+	result := self
+		          callToolNamed: 'inspect-method'
+		          withArguments: {
+				          (#className -> 'MCPToolInspectMethodTestTarget').
+				          (#selector -> 'doesNotExist') } asDictionary.
+	structured := self structuredContentFrom: result.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (structured at: #status) equals: 'error'.
+	self assert: (error at: #errorClass) equals: 'MCPCommandError'. self assert: (error at: #errorCode) equals: 'MethodNotFound'.
+	self
+		assert: (error at: #className)
+		equals: 'MCPToolInspectMethodTestTarget'.
+	self assert: (error at: #selector) equals: 'doesNotExist'.
+	self assert: (error at: #side) equals: 'instance'.
+	self deny: (error at: #classSide)
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testInspectMethodReturnsStructuredSuccess [
+
+	| data result |
+	result := self callToolNamed: 'inspect-method' withArguments: {
+			          (#className -> 'MCPToolInspectMethodTestTarget').
+			          (#selector -> 'readInstanceWith:') } asDictionary.
+	data := self dataFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self
+		assert: ((self structuredContentFrom: result) at: #status)
+		equals: 'ok'.
+	self
+		assert: (data at: #className)
+		equals: 'MCPToolInspectMethodTestTarget'.
+	self assert: (data at: #selector) equals: 'readInstanceWith:'.
+	self assert: (data at: #externalVariableCount) equals: 4.
+	self deny:
+		((data at: #externalVariableReferences) anySatisfy: [ :each |
+			 (each at: #name) = 'self' ]).
+	self assert: ((data at: #variableReferences) allSatisfy: [ :each |
+			 #( #sourceIntervals #external #declaredInMethod ) noneSatisfy: [
+				 :key | each includesKey: key ] ]).
+	self assert:
+		((data at: #source) includesSubstring: String cr asString)
 ]
 
 { #category : 'tests' }

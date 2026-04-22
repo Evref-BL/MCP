@@ -1,5 +1,5 @@
 Class {
-	#name : 'MCPToolDescribeMethod',
+	#name : 'MCPToolInspectMethod',
 	#superclass : 'MCPTool',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
@@ -7,7 +7,7 @@ Class {
 }
 
 { #category : 'private - analysis' }
-MCPToolDescribeMethod >> bindingClassNameFor: aBinding [
+MCPToolInspectMethod >> bindingClassNameFor: aBinding [
 
 	^ aBinding
 		  ifNil: [ 'UnknownBinding' ]
@@ -15,7 +15,7 @@ MCPToolDescribeMethod >> bindingClassNameFor: aBinding [
 ]
 
 { #category : 'private - reading' }
-MCPToolDescribeMethod >> compiledMethodForClassNamed: className selector: selectorString side: side [
+MCPToolInspectMethod >> compiledMethodForClassNamed: className selector: selectorString side: side [
 
 	| behavior selectorSymbol |
 	behavior := self methodBehaviorForClassNamed: className side: side.
@@ -29,13 +29,13 @@ MCPToolDescribeMethod >> compiledMethodForClassNamed: className selector: select
 ]
 
 { #category : 'defaults' }
-MCPToolDescribeMethod >> defaultDescription [
+MCPToolInspectMethod >> defaultDescription [
 
 	^ 'Inspect one known method and return its source plus structured variable-reference context. Use find-methods, implementors, or references to discover methods first.'
 ]
 
 { #category : 'defaults' }
-MCPToolDescribeMethod >> defaultIcons [
+MCPToolInspectMethod >> defaultIcons [
 
 	^ { (self
 		          pngCompositeBaseIconNamed: #page
@@ -43,7 +43,7 @@ MCPToolDescribeMethod >> defaultIcons [
 ]
 
 { #category : 'defaults' }
-MCPToolDescribeMethod >> defaultInputSchema [
+MCPToolInspectMethod >> defaultInputSchema [
 
 	| sideProperty |
 	sideProperty := MCPStructureProperties new
@@ -65,7 +65,7 @@ MCPToolDescribeMethod >> defaultInputSchema [
 				  (MCPStructureProperties new
 					   name: 'selector';
 					   type: 'string';
-					   description: 'The selector of the method to describe.';
+					   description: 'The selector of the method to inspect.';
 					   yourself).
 				  sideProperty };
 		  required: #( 'className' 'selector' );
@@ -73,13 +73,13 @@ MCPToolDescribeMethod >> defaultInputSchema [
 ]
 
 { #category : 'defaults' }
-MCPToolDescribeMethod >> defaultName [
+MCPToolInspectMethod >> defaultName [
 
-	^ 'describe-method'
+	^ 'inspect-method'
 ]
 
 { #category : 'defaults' }
-MCPToolDescribeMethod >> defaultOutputSchema [
+MCPToolInspectMethod >> defaultOutputSchema [
 
 	| variableNameItemSchema |
 	variableNameItemSchema := MCPStructureProperties new
@@ -96,7 +96,7 @@ MCPToolDescribeMethod >> defaultOutputSchema [
 				                (self
 					                 schemaPropertyNamed: 'selector'
 					                 type: 'string'
-					                 description: 'The selector that was described.').
+					                 description: 'The selector that was inspected.').
 				                ((self
 					                  schemaPropertyNamed: 'side'
 					                  type: 'string'
@@ -161,13 +161,13 @@ MCPToolDescribeMethod >> defaultOutputSchema [
 ]
 
 { #category : 'defaults' }
-MCPToolDescribeMethod >> defaultTitle [
+MCPToolInspectMethod >> defaultTitle [
 
-	^ 'Describe Pharo Method'
+	^ 'Inspect Pharo Method'
 ]
 
 { #category : 'private' }
-MCPToolDescribeMethod >> errorResultForError: anError className: className selector: selectorString side: side [
+MCPToolInspectMethod >> errorResultForError: anError className: className selector: selectorString side: side [
 
 	| details |
 	(anError isKindOf: MCPCommandError) ifTrue: [
@@ -191,7 +191,7 @@ MCPToolDescribeMethod >> errorResultForError: anError className: className selec
 ]
 
 { #category : 'executing' }
-MCPToolDescribeMethod >> executeWithArguments: arguments [
+MCPToolInspectMethod >> executeWithArguments: arguments [
 
 	| argumentNames className compiledMethod data externalVariableReferences methodBehavior methodNode protocolName selectorString side temporaryNames variableReferences |
 	className := self
@@ -252,11 +252,11 @@ MCPToolDescribeMethod >> executeWithArguments: arguments [
 ]
 
 { #category : 'private - results' }
-MCPToolDescribeMethod >> failureMessageForClassNamed: className selector: selectorString side: side error: anError [
+MCPToolInspectMethod >> failureMessageForClassNamed: className selector: selectorString side: side error: anError [
 
 	^ String streamContents: [ :stream |
 		  stream
-			  nextPutAll: 'Unable to describe method ';
+			  nextPutAll: 'Unable to inspect method ';
 			  nextPutAll: className;
 			  nextPutAll: '>>';
 			  nextPutAll: selectorString;
@@ -269,19 +269,19 @@ MCPToolDescribeMethod >> failureMessageForClassNamed: className selector: select
 ]
 
 { #category : 'private - analysis' }
-MCPToolDescribeMethod >> incrementReferenceCountInSummary: aSummary [
+MCPToolInspectMethod >> incrementReferenceCountInSummary: aSummary [
 
 	aSummary at: #referenceCount put: (aSummary at: #referenceCount) + 1
 ]
 
 { #category : 'private - analysis' }
-MCPToolDescribeMethod >> isExternalVariableKind: aKind [
+MCPToolInspectMethod >> isExternalVariableKind: aKind [
 
 	^ (#( 'argument' 'temporary' 'self' ) includes: aKind) not
 ]
 
 { #category : 'private - analysis' }
-MCPToolDescribeMethod >> matchingSummaryForNodeName: aName kind: aKind ownerName: anOwnerName in: summaries [
+MCPToolInspectMethod >> matchingSummaryForNodeName: aName kind: aKind ownerName: anOwnerName in: summaries [
 
 	^ summaries
 		  detect: [ :each |
@@ -292,7 +292,7 @@ MCPToolDescribeMethod >> matchingSummaryForNodeName: aName kind: aKind ownerName
 ]
 
 { #category : 'private - reading' }
-MCPToolDescribeMethod >> methodBehaviorForClassNamed: className side: side [
+MCPToolInspectMethod >> methodBehaviorForClassNamed: className side: side [
 
 	| baseClass |
 	baseClass := self class environment
@@ -305,7 +305,7 @@ MCPToolDescribeMethod >> methodBehaviorForClassNamed: className side: side [
 ]
 
 { #category : 'private - analysis' }
-MCPToolDescribeMethod >> newVariableSummaryForNode: aVariableNode kind: aKind methodBehavior: aBehavior [
+MCPToolInspectMethod >> newVariableSummaryForNode: aVariableNode kind: aKind methodBehavior: aBehavior [
 
 	| binding ownerName summary |
 	binding := aVariableNode binding.
@@ -323,7 +323,7 @@ MCPToolDescribeMethod >> newVariableSummaryForNode: aVariableNode kind: aKind me
 ]
 
 { #category : 'private - arguments' }
-MCPToolDescribeMethod >> normalizedSideFrom: arguments [
+MCPToolInspectMethod >> normalizedSideFrom: arguments [
 
 	| side |
 	side := (self stringArgumentNamed: 'side' in: arguments) ifNil: [
@@ -335,7 +335,7 @@ MCPToolDescribeMethod >> normalizedSideFrom: arguments [
 ]
 
 { #category : 'private - analysis' }
-MCPToolDescribeMethod >> ownerNameForNode: aVariableNode kind: aKind methodBehavior: aBehavior [
+MCPToolInspectMethod >> ownerNameForNode: aVariableNode kind: aKind methodBehavior: aBehavior [
 
 	| binding owner |
 	binding := aVariableNode binding.
@@ -373,11 +373,11 @@ MCPToolDescribeMethod >> ownerNameForNode: aVariableNode kind: aKind methodBehav
 ]
 
 { #category : 'private - results' }
-MCPToolDescribeMethod >> successSummaryForClassName: className selector: selector side: side externalVariableCount: externalVariableCount [
+MCPToolInspectMethod >> successSummaryForClassName: className selector: selector side: side externalVariableCount: externalVariableCount [
 
 	^ String streamContents: [ :stream |
 		  stream
-			  nextPutAll: 'Described method ';
+			  nextPutAll: 'Inspected method ';
 			  nextPutAll: className;
 			  nextPutAll: '>>';
 			  nextPutAll: selector;
@@ -393,7 +393,7 @@ MCPToolDescribeMethod >> successSummaryForClassName: className selector: selecto
 ]
 
 { #category : 'private - analysis' }
-MCPToolDescribeMethod >> variableKindForNode: aVariableNode methodBehavior: aBehavior [
+MCPToolInspectMethod >> variableKindForNode: aVariableNode methodBehavior: aBehavior [
 
 	| binding |
 	aVariableNode isSelfVariable ifTrue: [ ^ 'self' ].
@@ -418,7 +418,7 @@ MCPToolDescribeMethod >> variableKindForNode: aVariableNode methodBehavior: aBeh
 ]
 
 { #category : 'private - schema' }
-MCPToolDescribeMethod >> variableReferenceSchema [
+MCPToolInspectMethod >> variableReferenceSchema [
 
 	| ownerNameProperty |
 	ownerNameProperty := self
@@ -461,7 +461,7 @@ MCPToolDescribeMethod >> variableReferenceSchema [
 ]
 
 { #category : 'private - analysis' }
-MCPToolDescribeMethod >> variableSummariesForMethod: aCompiledMethod methodBehavior: aBehavior [
+MCPToolInspectMethod >> variableSummariesForMethod: aCompiledMethod methodBehavior: aBehavior [
 
 	| summaries |
 	summaries := OrderedCollection new.

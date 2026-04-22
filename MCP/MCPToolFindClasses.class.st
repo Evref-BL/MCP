@@ -117,7 +117,7 @@ MCPToolFindClasses >> classesForScope: scope packageNames: packageNames classNam
 { #category : 'defaults' }
 MCPToolFindClasses >> defaultDescription [
 
-	^ 'List classes in the selected scope and optionally filter them by class metadata. Use describe-class when you already know the class to inspect.'
+	^ 'List classes in the selected scope and optionally filter them by class metadata. Use inspect-class when you already know the class to inspect.'
 ]
 
 { #category : 'defaults' }

@@ -1,5 +1,5 @@
 Class {
-	#name : 'MCPToolDescribeMethodTest',
+	#name : 'MCPToolInspectMethodTest',
 	#superclass : 'MCPToolTestCase',
 	#category : 'MCP-Tests-Tools',
 	#package : 'MCP-Tests',
@@ -7,11 +7,11 @@ Class {
 }
 
 { #category : 'tests' }
-MCPToolDescribeMethodTest >> testDescribeMethodReturnsInstanceSideVariableContext [
+MCPToolInspectMethodTest >> testInspectMethodReturnsInstanceSideVariableContext [
 
 	| classVariable data globalVariable instanceVariable result selfVariable |
 	result := self callToolWith: {
-			          (#className -> 'MCPToolDescribeMethodTestTarget').
+			          (#className -> 'MCPToolInspectMethodTestTarget').
 			          (#selector -> 'readInstanceWith:') } asDictionary.
 	data := self dataFrom: result.
 	instanceVariable := self
@@ -37,7 +37,7 @@ MCPToolDescribeMethodTest >> testDescribeMethodReturnsInstanceSideVariableContex
 	self assert: (instanceVariable at: #kind) equals: 'instanceVariable'.
 	self
 		assert: (instanceVariable at: #ownerName)
-		equals: 'MCPToolDescribeMethodTestTarget'.
+		equals: 'MCPToolInspectMethodTestTarget'.
 	self assert: (classVariable at: #kind) equals: 'classVariable'.
 	self assert: (globalVariable at: #kind) equals: 'class'.
 	self
@@ -58,11 +58,11 @@ MCPToolDescribeMethodTest >> testDescribeMethodReturnsInstanceSideVariableContex
 ]
 
 { #category : 'tests' }
-MCPToolDescribeMethodTest >> testDescribeMethodReturnsStructuredErrorForMissingSelector [
+MCPToolInspectMethodTest >> testInspectMethodReturnsStructuredErrorForMissingSelector [
 
 	| error result structured |
 	result := self callToolWith: {
-			          (#className -> 'MCPToolDescribeMethodTestTarget').
+			          (#className -> 'MCPToolInspectMethodTestTarget').
 			          (#selector -> 'doesNotExist') } asDictionary.
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
@@ -71,19 +71,19 @@ MCPToolDescribeMethodTest >> testDescribeMethodReturnsStructuredErrorForMissingS
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'. self assert: (error at: #errorCode) equals: 'MethodNotFound'.
 	self
 		assert: (error at: #className)
-		equals: 'MCPToolDescribeMethodTestTarget'.
+		equals: 'MCPToolInspectMethodTestTarget'.
 	self assert: (error at: #selector) equals: 'doesNotExist'.
 	self assert: (error at: #side) equals: 'instance'.
 	self assert: ((error at: #message) includesSubstring:
-			 'Method MCPToolDescribeMethodTestTarget>>doesNotExist does not exist.')
+			 'Method MCPToolInspectMethodTestTarget>>doesNotExist does not exist.')
 ]
 
 { #category : 'tests' }
-MCPToolDescribeMethodTest >> testDescribeMethodSupportsClassSideContext [
+MCPToolInspectMethodTest >> testInspectMethodSupportsClassSideContext [
 
 	| classInstanceVariable data result thisContextVariable |
 	result := self callToolWith: {
-			          (#className -> 'MCPToolDescribeMethodTestTarget').
+			          (#className -> 'MCPToolInspectMethodTestTarget').
 			          (#selector -> 'readClassSide').
 			          (#side -> 'class') } asDictionary.
 	data := self dataFrom: result.
@@ -100,7 +100,7 @@ MCPToolDescribeMethodTest >> testDescribeMethodSupportsClassSideContext [
 		equals: 'classInstanceVariable'.
 	self
 		assert: (classInstanceVariable at: #ownerName)
-		equals: 'MCPToolDescribeMethodTestTarget class'.
+		equals: 'MCPToolInspectMethodTestTarget class'.
 	self assert: (thisContextVariable at: #kind) equals: 'thisContext'.
 	self
 		assert: (thisContextVariable at: #ownerName)
@@ -119,21 +119,21 @@ MCPToolDescribeMethodTest >> testDescribeMethodSupportsClassSideContext [
 ]
 
 { #category : 'tests' }
-MCPToolDescribeMethodTest >> testToolRequiresClassNameAndSelectorInSchema [
+MCPToolInspectMethodTest >> testToolRequiresClassNameAndSelectorInSchema [
 
 	self
-		assert: MCPToolDescribeMethod new inputSchema required asSet
+		assert: MCPToolInspectMethod new inputSchema required asSet
 		equals: #( 'className' 'selector' ) asSet
 ]
 
 { #category : 'private - calling' }
-MCPToolDescribeMethodTest >> toolName [
+MCPToolInspectMethodTest >> toolName [
 
-	^ 'describe-method'
+	^ 'inspect-method'
 ]
 
 { #category : 'private' }
-MCPToolDescribeMethodTest >> variableNamed: aName in: variableReferences [
+MCPToolInspectMethodTest >> variableNamed: aName in: variableReferences [
 
 	^ variableReferences
 		  detect: [ :each | (each at: #name) = aName ]

@@ -1,5 +1,5 @@
 Class {
-	#name : 'MCPToolDescribeClassTest',
+	#name : 'MCPToolInspectClassTest',
 	#superclass : 'MCPToolTestCase',
 	#category : 'MCP-Tests-Tools',
 	#package : 'MCP-Tests',
@@ -7,32 +7,32 @@ Class {
 }
 
 { #category : 'private' }
-MCPToolDescribeClassTest >> baseClassName [
+MCPToolInspectClassTest >> baseClassName [
 
 	^ self fixturePrefix , 'Base'
 ]
 
 { #category : 'private' }
-MCPToolDescribeClassTest >> childAClassName [
+MCPToolInspectClassTest >> childAClassName [
 
 	^ self fixturePrefix , 'AChild'
 ]
 
 { #category : 'private' }
-MCPToolDescribeClassTest >> childZClassName [
+MCPToolInspectClassTest >> childZClassName [
 
 	^ self fixturePrefix , 'ZChild'
 ]
 
 { #category : 'private' }
-MCPToolDescribeClassTest >> ensureClassComment: aComment onClassNamed: aClassName [
+MCPToolInspectClassTest >> ensureClassComment: aComment onClassNamed: aClassName [
 
 	self withoutEpiceaDuring: [
 		(self classNamed: aClassName) comment: aComment stamp: '' ]
 ]
 
 { #category : 'private' }
-MCPToolDescribeClassTest >> ensureClassMethodSource: aMethodSource onClassNamed: aClassName [
+MCPToolInspectClassTest >> ensureClassMethodSource: aMethodSource onClassNamed: aClassName [
 
 	self withoutEpiceaDuring: [
 		(self classNamed: aClassName) classSide
@@ -41,7 +41,7 @@ MCPToolDescribeClassTest >> ensureClassMethodSource: aMethodSource onClassNamed:
 ]
 
 { #category : 'private' }
-MCPToolDescribeClassTest >> ensureMethodSource: aMethodSource onClassNamed: aClassName [
+MCPToolInspectClassTest >> ensureMethodSource: aMethodSource onClassNamed: aClassName [
 
 	self withoutEpiceaDuring: [
 		(self classNamed: aClassName)
@@ -50,7 +50,7 @@ MCPToolDescribeClassTest >> ensureMethodSource: aMethodSource onClassNamed: aCla
 ]
 
 { #category : 'private' }
-MCPToolDescribeClassTest >> fixtureClassNames [
+MCPToolInspectClassTest >> fixtureClassNames [
 
 	^ {
 		  self baseClassName.
@@ -60,32 +60,32 @@ MCPToolDescribeClassTest >> fixtureClassNames [
 ]
 
 { #category : 'private' }
-MCPToolDescribeClassTest >> fixturePrefix [
+MCPToolInspectClassTest >> fixturePrefix [
 
 	^ self class name asString
 ]
 
 { #category : 'private' }
-MCPToolDescribeClassTest >> grandchildClassName [
+MCPToolInspectClassTest >> grandchildClassName [
 
 	^ self fixturePrefix , 'Grandchild'
 ]
 
 { #category : 'private' }
-MCPToolDescribeClassTest >> missingClassName [
+MCPToolInspectClassTest >> missingClassName [
 
 	^ self fixturePrefix , 'Missing'
 ]
 
 { #category : 'private' }
-MCPToolDescribeClassTest >> removeFixtureClasses [
+MCPToolInspectClassTest >> removeFixtureClasses [
 
 	self fixtureClassNames reverseDo: [ :each |
 		self removeClassNamed: each ]
 ]
 
 { #category : 'private' }
-MCPToolDescribeClassTest >> restoreFixtureClasses [
+MCPToolInspectClassTest >> restoreFixtureClasses [
 
 	self removeFixtureClasses.
 	self
@@ -129,52 +129,21 @@ MCPToolDescribeClassTest >> restoreFixtureClasses [
 ]
 
 { #category : 'running' }
-MCPToolDescribeClassTest >> setUp [
+MCPToolInspectClassTest >> setUp [
 
 	super setUp.
 	self restoreFixtureClasses
 ]
 
 { #category : 'running' }
-MCPToolDescribeClassTest >> tearDown [
+MCPToolInspectClassTest >> tearDown [
 
 	self removeFixtureClasses.
 	super tearDown
 ]
 
 { #category : 'tests' }
-MCPToolDescribeClassTest >> testDescribesClassMetadata [
-
-	| data result |
-	result := self callToolWith:
-		          { (#className -> self baseClassName) } asDictionary.
-	data := self dataFrom: result.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self
-		assert: ((self structuredContentFrom: result) at: #status)
-		equals: 'ok'.
-	self assert: (data at: #className) equals: self baseClassName.
-	self assert: (data at: #superclassName) equals: 'Object'.
-	self assert: (data at: #packageName) equals: 'MCP-Tests'.
-	self assert: (data at: #tag) equals: 'Internal'.
-	self deny: (data includesKey: #classComment).
-	self
-		assert: (data at: #instanceSlotNames)
-		equals: #( 'betaSlot' 'alphaSlot' ).
-	self
-		assert: (data at: #classSlotNames)
-		equals: #( 'classBeta' 'classAlpha' ).
-	self assert: (data at: #traitNames) isEmpty.
-	self assert: (data at: #classTraitNames) isEmpty.
-	self assert: (data at: #sharedPoolNames) isEmpty.
-	self assert: (data at: #instanceMethodCount) equals: 1.
-	self assert: (data at: #classMethodCount) equals: 1.
-	self assert: (data at: #superclasses) isEmpty.
-	self assert: (data at: #subclasses) isEmpty
-]
-
-{ #category : 'tests' }
-MCPToolDescribeClassTest >> testIncludesClassCommentsWhenRequested [
+MCPToolInspectClassTest >> testIncludesClassCommentsWhenRequested [
 
 	| data result subclasses superclasses |
 	result := self callToolWith: {
@@ -210,7 +179,7 @@ MCPToolDescribeClassTest >> testIncludesClassCommentsWhenRequested [
 ]
 
 { #category : 'tests' }
-MCPToolDescribeClassTest >> testIncludesDirectSubclasses [
+MCPToolInspectClassTest >> testIncludesDirectSubclasses [
 
 	| data result subclasses |
 	result := self callToolWith: {
@@ -230,7 +199,7 @@ MCPToolDescribeClassTest >> testIncludesDirectSubclasses [
 ]
 
 { #category : 'tests' }
-MCPToolDescribeClassTest >> testIncludesNamedSuperclassChain [
+MCPToolInspectClassTest >> testIncludesNamedSuperclassChain [
 
 	| data result superclasses |
 	result := self callToolWith: {
@@ -252,7 +221,7 @@ MCPToolDescribeClassTest >> testIncludesNamedSuperclassChain [
 ]
 
 { #category : 'tests' }
-MCPToolDescribeClassTest >> testIncludesSharedPoolNamesForSharedPoolUsingClass [
+MCPToolInspectClassTest >> testIncludesSharedPoolNamesForSharedPoolUsingClass [
 
 	| data result |
 	result := self callToolWith:
@@ -264,7 +233,7 @@ MCPToolDescribeClassTest >> testIncludesSharedPoolNamesForSharedPoolUsingClass [
 ]
 
 { #category : 'tests' }
-MCPToolDescribeClassTest >> testIncludesSubclassesUpToRequestedDepth [
+MCPToolInspectClassTest >> testIncludesSubclassesUpToRequestedDepth [
 
 	| data result subclasses |
 	result := self callToolWith: {
@@ -285,7 +254,7 @@ MCPToolDescribeClassTest >> testIncludesSubclassesUpToRequestedDepth [
 ]
 
 { #category : 'tests' }
-MCPToolDescribeClassTest >> testIncludesTraitNamesForTraitUsingClass [
+MCPToolInspectClassTest >> testIncludesTraitNamesForTraitUsingClass [
 
 	| data result |
 	result := self callToolWith:
@@ -299,7 +268,38 @@ MCPToolDescribeClassTest >> testIncludesTraitNamesForTraitUsingClass [
 ]
 
 { #category : 'tests' }
-MCPToolDescribeClassTest >> testRejectsNegativeSubclassDepth [
+MCPToolInspectClassTest >> testInspectsClassMetadata [
+
+	| data result |
+	result := self callToolWith:
+		          { (#className -> self baseClassName) } asDictionary.
+	data := self dataFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self
+		assert: ((self structuredContentFrom: result) at: #status)
+		equals: 'ok'.
+	self assert: (data at: #className) equals: self baseClassName.
+	self assert: (data at: #superclassName) equals: 'Object'.
+	self assert: (data at: #packageName) equals: 'MCP-Tests'.
+	self assert: (data at: #tag) equals: 'Internal'.
+	self deny: (data includesKey: #classComment).
+	self
+		assert: (data at: #instanceSlotNames)
+		equals: #( 'betaSlot' 'alphaSlot' ).
+	self
+		assert: (data at: #classSlotNames)
+		equals: #( 'classBeta' 'classAlpha' ).
+	self assert: (data at: #traitNames) isEmpty.
+	self assert: (data at: #classTraitNames) isEmpty.
+	self assert: (data at: #sharedPoolNames) isEmpty.
+	self assert: (data at: #instanceMethodCount) equals: 1.
+	self assert: (data at: #classMethodCount) equals: 1.
+	self assert: (data at: #superclasses) isEmpty.
+	self assert: (data at: #subclasses) isEmpty
+]
+
+{ #category : 'tests' }
+MCPToolInspectClassTest >> testRejectsNegativeSubclassDepth [
 
 	| error result structured |
 	result := self callToolWith: {
@@ -316,7 +316,7 @@ MCPToolDescribeClassTest >> testRejectsNegativeSubclassDepth [
 ]
 
 { #category : 'tests' }
-MCPToolDescribeClassTest >> testReturnsStructuredErrorWhenClassIsMissing [
+MCPToolInspectClassTest >> testReturnsStructuredErrorWhenClassIsMissing [
 
 	| error result structured |
 	result := self callToolWith:
@@ -330,15 +330,15 @@ MCPToolDescribeClassTest >> testReturnsStructuredErrorWhenClassIsMissing [
 ]
 
 { #category : 'tests' }
-MCPToolDescribeClassTest >> testToolRequiresClassNameInSchema [
+MCPToolInspectClassTest >> testToolRequiresClassNameInSchema [
 
 	self
-		assert: MCPToolDescribeClass new inputSchema required asSet
+		assert: MCPToolInspectClass new inputSchema required asSet
 		equals: #( 'className' ) asSet
 ]
 
 { #category : 'private - calling' }
-MCPToolDescribeClassTest >> toolName [
+MCPToolInspectClassTest >> toolName [
 
-	^ 'describe-class'
+	^ 'inspect-class'
 ]
