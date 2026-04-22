@@ -120,9 +120,9 @@ MCPToolContractsTest >> testEvaluateIsMarkedAsAdvancedEscapeHatch [
 
 	| description |
 	self
-		assert: (MCPToolEval new asJRPCJSON at: #name)
+		assert: (MCPToolEvaluate new asJRPCJSON at: #name)
 		equals: 'evaluate'.
-	description := MCPToolEval new description.
+	description := MCPToolEvaluate new description.
 	self assert: (description includesSubstring: 'escape hatch').
 	self assert:
 		(description includesSubstring: 'arbitrary Smalltalk code')
@@ -131,7 +131,7 @@ MCPToolContractsTest >> testEvaluateIsMarkedAsAdvancedEscapeHatch [
 { #category : 'tests' }
 MCPToolContractsTest >> testEvaluateRequiresCodeInSchema [
 
-	self assert: (MCPToolEval new inputSchema required includes: 'code')
+	self assert: (MCPToolEvaluate new inputSchema required includes: 'code')
 ]
 
 { #category : 'tests' }
@@ -560,7 +560,7 @@ MCPToolContractsTest >> testRequestedToolIconsAreAdvertised [
 		assert: (MCPToolRunTests new asJRPCJSON at: #icons) first
 		equals: (MCPStructureIcon pngIconNamed: #testRunner) asJRPCJSON.
 	self
-		assert: (MCPToolEval new asJRPCJSON at: #icons) first
+		assert: (MCPToolEvaluate new asJRPCJSON at: #icons) first
 		equals: (MCPStructureIcon pngIconNamed: #spawn) asJRPCJSON
 ]
 

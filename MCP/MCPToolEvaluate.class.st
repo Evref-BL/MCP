@@ -1,5 +1,5 @@
 Class {
-	#name : 'MCPToolEval',
+	#name : 'MCPToolEvaluate',
 	#superclass : 'MCPTool',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
@@ -7,19 +7,19 @@ Class {
 }
 
 { #category : 'defaults' }
-MCPToolEval >> defaultDescription [
+MCPToolEvaluate >> defaultDescription [
 
 	^ 'Evaluate arbitrary Smalltalk code and return a bounded preview of the result. Use this escape hatch only when a dedicated tool does not fit; it may mutate image state.'
 ]
 
 { #category : 'defaults' }
-MCPToolEval >> defaultIcons [
+MCPToolEvaluate >> defaultIcons [
 
 	^ { (self pngIconNamed: #spawn) }
 ]
 
 { #category : 'defaults' }
-MCPToolEval >> defaultInputSchema [
+MCPToolEvaluate >> defaultInputSchema [
 
 	^ MCPStructureInputSchema new
 		               type: 'object';
@@ -34,13 +34,13 @@ MCPToolEval >> defaultInputSchema [
 ]
 
 { #category : 'defaults' }
-MCPToolEval >> defaultName [
+MCPToolEvaluate >> defaultName [
 
 	^ 'evaluate'
 ]
 
 { #category : 'defaults' }
-MCPToolEval >> defaultOutputSchema [
+MCPToolEvaluate >> defaultOutputSchema [
 
 	^ self
 		                standardOutputSchemaForDataProperties: {
@@ -60,13 +60,13 @@ MCPToolEval >> defaultOutputSchema [
 ]
 
 { #category : 'defaults' }
-MCPToolEval >> defaultTitle [
+MCPToolEvaluate >> defaultTitle [
 
 	^ 'Evaluate Pharo Code'
 ]
 
 { #category : 'executing' }
-MCPToolEval >> executeWithArguments: arguments [
+MCPToolEvaluate >> executeWithArguments: arguments [
 
 	| answer compiler notice |
 	compiler := SmalltalkImage current compiler.
@@ -105,13 +105,13 @@ MCPToolEval >> executeWithArguments: arguments [
 ]
 
 { #category : 'private' }
-MCPToolEval >> resultPreviewCharacterLimit [
+MCPToolEvaluate >> resultPreviewCharacterLimit [
 
 	^ 10000
 ]
 
 { #category : 'private' }
-MCPToolEval >> runtimeFailureMessageFor: anError [
+MCPToolEvaluate >> runtimeFailureMessageFor: anError [
 
 	^ String streamContents: [ :stream |
 		  stream
@@ -126,7 +126,7 @@ MCPToolEval >> runtimeFailureMessageFor: anError [
 ]
 
 { #category : 'private' }
-MCPToolEval >> syntaxFailureMessageFor: aNotice [
+MCPToolEvaluate >> syntaxFailureMessageFor: aNotice [
 
 	^ String streamContents: [ :stream |
 		  stream
