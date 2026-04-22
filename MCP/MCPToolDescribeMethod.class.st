@@ -215,13 +215,13 @@ MCPToolDescribeMethod >> initialize [
 					                 items: variableNameItemSchema;
 					                 yourself).
 				                (self
-					                 schemaPropertyNamed: 'variableReferenceCount'
-					                 type: 'number'
+					                 integerSchemaPropertyNamed:
+					                 'variableReferenceCount'
 					                 description:
 					                 'The number of unique referenced variables summarized in the result.').
 				                (self
-					                 schemaPropertyNamed: 'externalVariableCount'
-					                 type: 'number'
+					                 integerSchemaPropertyNamed:
+					                 'externalVariableCount'
 					                 description:
 					                 'The number of unique referenced variables that are external to the method, excluding self.').
 				                ((self
@@ -426,8 +426,7 @@ MCPToolDescribeMethod >> variableReferenceSchema [
 					   description:
 					   'The compiler binding class used to resolve the variable.').
 				  (self
-					   schemaPropertyNamed: 'referenceCount'
-					   type: 'number'
+					   integerSchemaPropertyNamed: 'referenceCount'
 					   description:
 					   'How many times the variable is referenced in the method.') };
 		  required: #( 'name' 'kind' 'bindingClass' 'referenceCount' );

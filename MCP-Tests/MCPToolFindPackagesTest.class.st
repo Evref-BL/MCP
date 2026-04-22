@@ -138,7 +138,7 @@ MCPToolFindPackagesTest >> testProjectScopeReturnsStructuredErrorWhenProjectIsMi
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #errorClass) equals: 'ProjectNotFound'.
+	self assert: (error at: #errorClass) equals: 'MCPCommandError'. self assert: (error at: #errorCode) equals: 'ProjectNotFound'.
 	self
 		assert: (error at: #projectName)
 		equals: 'DefinitelyMissingProject'.

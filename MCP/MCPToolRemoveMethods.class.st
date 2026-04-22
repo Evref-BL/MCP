@@ -43,11 +43,12 @@ MCPToolRemoveMethods >> errorResultForError: anError className: className classS
 { #category : 'executing' }
 MCPToolRemoveMethods >> executeWithArguments: arguments [
 
-	| behavior className classSide removedMethods selectors selectorSymbols |
+	| behavior className classSide removedMethods selectors selectorSymbols warningMessage |
 	className := arguments at: #className.
 	classSide := arguments at: #classSide.
 	selectors := self selectorsFromArguments: arguments.
 	selectorSymbols := selectors collect: #asSymbol.
+	warningMessage := 'This bypasses sender checks and may leave broken senders.'.
 	^ [
 	  behavior := self behaviorNamed: className classSide: classSide.
 	  removedMethods := selectorSymbols collect: [ :selector |
@@ -71,7 +72,8 @@ MCPToolRemoveMethods >> executeWithArguments: arguments [
 				  (#className -> className).
 				  (#classSide -> classSide).
 				  (#selectors -> selectors asArray).
-				  (#removedMethods -> removedMethods asArray) } asDictionary ]
+				  (#removedMethods -> removedMethods asArray) } asDictionary
+		  warnings: { warningMessage } ]
 		  on: Exception
 		  do: [ :error |
 			  self
@@ -239,7 +241,5 @@ MCPToolRemoveMethods >> successSummaryForClassName: className classSide: classSi
 		              ifTrue: [ className , ' class' ]
 		              ifFalse: [ className ].
 	^ 'Force-removed ' , selectors size asString , ' methods from '
-	  , targetName , ': ' , (', ' join: selectors)
-	  ,
-	  '. Warning: this bypasses sender checks and may leave broken senders.'
+	  , targetName , ': ' , (', ' join: selectors) , '.'
 ]

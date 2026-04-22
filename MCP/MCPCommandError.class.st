@@ -155,7 +155,8 @@ MCPCommandError >> structuredDetails [
 
 	| structured |
 	structured := self details copy.
-	structured at: #errorClass put: self errorCode asString.
+	structured at: #errorClass put: self class name.
+	structured at: #errorCode put: self errorCode asString.
 	structured at: #message put: self messageText.
 	^ structured
 ]

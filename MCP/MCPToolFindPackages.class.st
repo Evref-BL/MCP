@@ -180,13 +180,13 @@ MCPToolFindPackages >> initialize [
 					                yourself).
 				               (MCPStructureProperties new
 					                name: 'limit';
-					                type: 'number';
+					                type: 'integer';
 					                description:
 						                'Maximum number of matching packages to return. Defaults to 100. Use 0 to request counts only.';
 					                yourself).
 				               (MCPStructureProperties new
 					                name: 'offset';
-					                type: 'number';
+					                type: 'integer';
 					                description:
 						                'Zero-based pagination offset applied after filtering. Defaults to 0.';
 					                yourself) };
@@ -209,23 +209,19 @@ MCPToolFindPackages >> initialize [
 					                 yourself).
 				                projectNamesProperty.
 				                (self
-					                 schemaPropertyNamed: 'returnedCount'
-					                 type: 'number'
+					                 integerSchemaPropertyNamed: 'returnedCount'
 					                 description:
 					                 'The number of package entries returned in this page.').
 				                (self
-					                 schemaPropertyNamed: 'totalCount'
-					                 type: 'number'
+					                 integerSchemaPropertyNamed: 'totalCount'
 					                 description:
 					                 'The total number of matching packages before pagination.').
 				                (self
-					                 schemaPropertyNamed: 'offset'
-					                 type: 'number'
+					                 integerSchemaPropertyNamed: 'offset'
 					                 description:
 					                 'The zero-based pagination offset that was applied.').
 				                (self
-					                 schemaPropertyNamed: 'limit'
-					                 type: 'number'
+					                 integerSchemaPropertyNamed: 'limit'
 					                 description:
 					                 'The maximum number of package entries requested.').
 				                (self
@@ -295,12 +291,10 @@ MCPToolFindPackages >> packageInfoDataProperties [
 			   description: 'The package tag names defined in the package.'
 			   itemDescription: 'A package tag name.').
 		  (self
-			   schemaPropertyNamed: 'definedClassCount'
-			   type: 'number'
+			   integerSchemaPropertyNamed: 'definedClassCount'
 			   description: 'The number of classes defined in the package.').
 		  (self
-			   schemaPropertyNamed: 'extensionMethodCount'
-			   type: 'number'
+			   integerSchemaPropertyNamed: 'extensionMethodCount'
 			   description:
 			   'The number of extension methods owned by the package.').
 		  (self

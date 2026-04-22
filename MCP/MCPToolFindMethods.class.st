@@ -170,13 +170,13 @@ MCPToolFindMethods >> initialize [
 					                yourself).
 				               (MCPStructureProperties new
 					                name: 'limit';
-					                type: 'number';
+					                type: 'integer';
 					                description:
 						                'Maximum number of matching methods to return. Defaults to 100. Use 0 to request counts only.';
 					                yourself).
 				               (MCPStructureProperties new
 					                name: 'offset';
-					                type: 'number';
+					                type: 'integer';
 					                description:
 						                'Zero-based pagination offset applied after filtering. Defaults to 0.';
 					                yourself) };
@@ -212,23 +212,19 @@ MCPToolFindMethods >> initialize [
 				                packageNamesProperty.
 				                classNamesProperty.
 				                (self
-					                 schemaPropertyNamed: 'returnedCount'
-					                 type: 'number'
+					                 integerSchemaPropertyNamed: 'returnedCount'
 					                 description:
 					                 'The number of methods returned in this page.').
 				                (self
-					                 schemaPropertyNamed: 'totalCount'
-					                 type: 'number'
+					                 integerSchemaPropertyNamed: 'totalCount'
 					                 description:
 					                 'The total number of matching methods before pagination.').
 				                (self
-					                 schemaPropertyNamed: 'offset'
-					                 type: 'number'
+					                 integerSchemaPropertyNamed: 'offset'
 					                 description:
 					                 'The zero-based pagination offset that was applied.').
 				                (self
-					                 schemaPropertyNamed: 'limit'
-					                 type: 'number'
+					                 integerSchemaPropertyNamed: 'limit'
 					                 description:
 					                 'The maximum number of methods requested.').
 				                (self

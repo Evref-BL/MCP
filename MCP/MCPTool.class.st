@@ -192,14 +192,21 @@ MCPTool >> errorResultText: aString [
 { #category : 'error handling' }
 MCPTool >> errorResultText: aString details: aDictionary [
 
-	| details |
-	details := aDictionary copy.
-	details at: #message ifAbsentPut: [ aString ].
+	| details normalizedSummary |
+	normalizedSummary := aString
+		                     ifNil: [ '' ]
+		                     ifNotNil: [ aString asString ].
+	details := aDictionary
+		           ifNil: [ Dictionary new ]
+		           ifNotNil: [ aDictionary copy ].
+	details at: #message ifAbsentPut: [ normalizedSummary ].
 	details at: #errorClass ifAbsentPut: [ 'ToolError' ].
 	^ MCPStructureErrorToolResult
-		  content: { (self textContent: aString) }
+		  content: { (self textContent: normalizedSummary) }
 		  structuredContent: {
 				  (#status -> 'error').
+				  (#summary -> normalizedSummary).
+				  (#warnings -> #(  )).
 				  (#error -> details) } asDictionary
 ]
 
@@ -211,7 +218,12 @@ MCPTool >> errorSchemaProperties [
 			   schemaPropertyNamed: 'errorClass'
 			   type: 'string'
 			   description:
-			   'The Smalltalk exception class name when a tool fails.').
+			   'The Smalltalk exception class name describing the failure.').
+		  (self
+			   schemaPropertyNamed: 'errorCode'
+			   type: 'string'
+			   description:
+			   'A tool-specific error code when the failure was signaled intentionally by the MCP implementation.').
 		  (self
 			   schemaPropertyNamed: 'message'
 			   type: 'string'
@@ -318,6 +330,15 @@ MCPTool >> inputSchema [
 MCPTool >> inputSchema: anObject [
 
 	inputSchema := anObject
+]
+
+{ #category : 'private - schema' }
+MCPTool >> integerSchemaPropertyNamed: propertyName description: propertyDescription [
+
+	^ self
+		  schemaPropertyNamed: propertyName
+		  type: 'integer'
+		  description: propertyDescription
 ]
 
 { #category : 'private - filtering' }
@@ -495,12 +516,12 @@ MCPTool >> selectorStringFrom: arguments [
 { #category : 'private - schema' }
 MCPTool >> standardOutputSchemaForDataProperties: dataProperties required: requiredFields [
 
-	| dataProperty errorProperty |
+	| dataProperty errorProperty statusProperty summaryProperty |
 	dataProperty := self
 		                schemaPropertyNamed: 'data'
 		                type: 'object'
 		                description:
-		                'The structured success payload returned by the tool.'.
+		                'The structured success payload returned by the tool when status=ok.'.
 	dataProperty
 		properties: dataProperties;
 		required: requiredFields;
@@ -509,22 +530,30 @@ MCPTool >> standardOutputSchemaForDataProperties: dataProperties required: requi
 		                 schemaPropertyNamed: 'error'
 		                 type: 'object'
 		                 description:
-		                 'Structured error information when the tool returns isError=true.'.
+		                 'Structured error information when status=error.'.
 	errorProperty
 		properties: self errorSchemaProperties;
 		required: #( 'message' );
 		additionalProperties: true.
+	statusProperty := self
+		                  schemaPropertyNamed: 'status'
+		                  type: 'string'
+		                  description: 'The tool result status.'.
+	statusProperty enum: #( 'ok' 'error' ).
+	summaryProperty := self
+		                   schemaPropertyNamed: 'summary'
+		                   type: 'string'
+		                   description:
+		                   'A concise human-readable summary of the tool result.'.
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties: {
-				  (self
-					   schemaPropertyNamed: 'status'
-					   type: 'string'
-					   description:
-						   'The tool result status. Uses ok for success and error for tool-level failures.').
+				  statusProperty.
+				  summaryProperty.
+				  self warningsSchemaProperty.
 				  dataProperty.
 				  errorProperty };
-		  required: #( 'status' );
+		  required: #( 'status' 'summary' 'warnings' );
 		  additionalProperties: false;
 		  yourself
 ]
@@ -532,32 +561,27 @@ MCPTool >> standardOutputSchemaForDataProperties: dataProperties required: requi
 { #category : 'private - tests' }
 MCPTool >> standardTestDataPropertiesIncludingMethodName: includeMethodName [
 
-	| properties failingNamesProperty issuesProperty |
+	| failingNamesProperty issuesProperty properties |
 	properties := OrderedCollection withAll: {
 			              (self
 				               schemaPropertyNamed: 'className'
 				               type: 'string'
 				               description: 'The test class that was executed.').
 			              (self
-				               schemaPropertyNamed: 'runCount'
-				               type: 'number'
+				               integerSchemaPropertyNamed: 'runCount'
 				               description: 'The number of tests that ran.').
 			              (self
-				               schemaPropertyNamed: 'passedCount'
-				               type: 'number'
+				               integerSchemaPropertyNamed: 'passedCount'
 				               description: 'The number of tests that passed.').
 			              (self
-				               schemaPropertyNamed: 'skippedCount'
-				               type: 'number'
+				               integerSchemaPropertyNamed: 'skippedCount'
 				               description:
 				               'The number of tests that were skipped.').
 			              (self
-				               schemaPropertyNamed: 'failureCount'
-				               type: 'number'
+				               integerSchemaPropertyNamed: 'failureCount'
 				               description: 'The number of failing tests.').
 			              (self
-				               schemaPropertyNamed: 'errorCount'
-				               type: 'number'
+				               integerSchemaPropertyNamed: 'errorCount'
 				               description:
 				               'The number of tests ending in errors.') }.
 	includeMethodName ifTrue: [
@@ -667,10 +691,27 @@ MCPTool >> structuredDataForTestResult: aResult className: className testMethodN
 { #category : 'private - results' }
 MCPTool >> successResultText: aSummary data: aDictionary [
 
+	^ self successResultText: aSummary data: aDictionary warnings: #(  )
+]
+
+{ #category : 'private - results' }
+MCPTool >> successResultText: aSummary data: aDictionary warnings: warningStrings [
+
+	| normalizedSummary warnings |
+	normalizedSummary := aSummary
+		                     ifNil: [ '' ]
+		                     ifNotNil: [ aSummary asString ].
+	warnings := warningStrings
+		            ifNil: [ #(  ) ]
+		            ifNotNil: [
+		            (warningStrings collect: [ :each | each asString ])
+			            asArray ].
 	^ MCPStructureCallToolResult
-		  content: { (self textContent: aSummary) }
+		  content: { (self textContent: normalizedSummary) }
 		  structuredContent: {
 				  (#status -> 'ok').
+				  (#summary -> normalizedSummary).
+				  (#warnings -> warnings).
 				  (#data -> aDictionary) } asDictionary
 ]
 
@@ -776,4 +817,20 @@ MCPTool >> validateArguments: arguments [
 			                                 (dictionary at: symbolKey) notNil ].
 		                    hasString or: [ hasSymbol ] ].
 	missingArguments ifNotEmpty: [ JRPCInvalidParameters signal ]
+]
+
+{ #category : 'private - schema' }
+MCPTool >> warningsSchemaProperty [
+
+	| warningsProperty |
+	warningsProperty := self
+		                    schemaPropertyNamed: 'warnings'
+		                    type: 'array'
+		                    description:
+		                    'Human-readable warnings associated with the tool result. Empty when no warnings were produced.'.
+	warningsProperty items: (MCPStructureProperties new
+			 type: 'string';
+			 description: 'A warning message.';
+			 yourself).
+	^ warningsProperty
 ]

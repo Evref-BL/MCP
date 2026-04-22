@@ -127,8 +127,7 @@ MCPToolRunTests >> initialize [
 					                 items: self testRequestObjectSchema;
 					                 yourself).
 				                (self
-					                 schemaPropertyNamed: 'selectionCount'
-					                 type: 'number'
+					                 integerSchemaPropertyNamed: 'selectionCount'
 					                 description:
 					                 'The number of test execution requests in the batch.').
 				                ((self
@@ -139,28 +138,23 @@ MCPToolRunTests >> initialize [
 					                 items: self testResultObjectSchema;
 					                 yourself).
 				                (self
-					                 schemaPropertyNamed: 'runCount'
-					                 type: 'number'
+					                 integerSchemaPropertyNamed: 'runCount'
 					                 description:
 					                 'The total number of tests that ran across the batch.').
 				                (self
-					                 schemaPropertyNamed: 'passedCount'
-					                 type: 'number'
+					                 integerSchemaPropertyNamed: 'passedCount'
 					                 description:
 					                 'The total number of tests that passed across the batch.').
 				                (self
-					                 schemaPropertyNamed: 'skippedCount'
-					                 type: 'number'
+					                 integerSchemaPropertyNamed: 'skippedCount'
 					                 description:
 					                 'The total number of tests that were skipped across the batch.').
 				                (self
-					                 schemaPropertyNamed: 'failureCount'
-					                 type: 'number'
+					                 integerSchemaPropertyNamed: 'failureCount'
 					                 description:
 					                 'The total number of failing tests across the batch.').
 				                (self
-					                 schemaPropertyNamed: 'errorCount'
-					                 type: 'number'
+					                 integerSchemaPropertyNamed: 'errorCount'
 					                 description:
 					                 'The total number of tests ending in errors across the batch.').
 				                ((self

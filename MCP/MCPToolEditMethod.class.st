@@ -6,10 +6,51 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'private - schema' }
+MCPToolEditMethod >> compiledMethodDataProperties [
+
+	^ {
+		  (self
+			   schemaPropertyNamed: 'selector'
+			   type: 'string'
+			   description:
+			   'The selector of the method after the edit completes.').
+		  (self
+			   schemaPropertyNamed: 'className'
+			   type: 'string'
+			   description: 'The class that defines the edited method.').
+		  ((self
+			    schemaPropertyNamed: 'side'
+			    type: 'string'
+			    description: 'The side on which the edited method is defined.')
+			   enum: #( 'instance' 'class' );
+			   yourself).
+		  (self
+			   schemaPropertyNamed: 'packageName'
+			   type: 'string'
+			   description: 'The package that owns the edited method.').
+		  (self
+			   schemaPropertyNamed: 'isExtension'
+			   type: 'boolean'
+			   description:
+			   'Whether the edited method is an extension on its class package.').
+		  (self
+			   schemaPropertyNamed: 'protocol'
+			   type: 'string'
+			   description:
+			   'The protocol/category containing the edited method after the operation.').
+		  (self
+			   schemaPropertyNamed: 'source'
+			   type: 'string'
+			   description:
+			   'The formatted source code of the edited method after the operation.') }
+]
+
 { #category : 'private' }
 MCPToolEditMethod >> dataForCompiledMethod: aCompiledMethod [
 
-	^ Dictionary new
+	^ (MCPCompiledMethodInfo fromCompiledMethod: aCompiledMethod)
+		  asDictionaryIncludingSource: true
 ]
 
 { #category : 'private' }
@@ -313,7 +354,8 @@ MCPToolEditMethod >> initialize [
 					                name: 'operation';
 					                type: 'string';
 					                description:
-						                'The edit operation to perform. Supported values are compile, rename, and changeProtocol.';
+						                'The edit operation to perform. Supported canonical values are compile, rename, and changeProtocol.';
+					                enum: #( 'compile' 'rename' 'changeProtocol' );
 					                yourself).
 				               (MCPStructureProperties new
 					                name: 'className';
@@ -357,15 +399,18 @@ MCPToolEditMethod >> initialize [
 					                 description:
 						                 'Optional 1-based argument permutation for operation=rename. Defaults to the identity permutation.')
 					                items: (MCPStructureProperties new
-							                 type: 'number';
+							                 type: 'integer';
 							                 description: 'A 1-based argument index.';
 							                 yourself);
 					                yourself) };
 		               required: #( 'operation' 'className' 'classSide' );
 		               yourself.
 	outputSchema := self
-		                standardOutputSchemaForDataProperties: #(  )
-		                required: #(  ).
+		                standardOutputSchemaForDataProperties:
+		                self compiledMethodDataProperties
+		                required:
+			                #( 'selector' 'className' 'side' 'packageName'
+			                   'isExtension' 'protocol' 'source' ).
 	icons := {  }
 ]
 
@@ -403,8 +448,7 @@ MCPToolEditMethod >> operationFromArguments: arguments [
 	normalized := operation asLowercase.
 	normalized = 'compile' ifTrue: [ ^ 'compile' ].
 	normalized = 'rename' ifTrue: [ ^ 'rename' ].
-	(#( 'changeprotocol' 'change-protocol' ) includes: normalized)
-		ifTrue: [ ^ 'changeProtocol' ].
+	normalized = 'changeprotocol' ifTrue: [ ^ 'changeProtocol' ].
 	Error signal:
 		'operation must be one of compile, rename, or changeProtocol.'
 ]

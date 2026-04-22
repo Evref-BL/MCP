@@ -226,6 +226,7 @@ MCPToolEditClass >> initialize [
 					                type: 'string';
 					                description:
 						                'The class edit operation to perform. Supported values are create, move, and rename.';
+					                enum: #( 'create' 'move' 'rename' );
 					                yourself).
 				               (MCPStructureProperties new
 					                name: 'className';

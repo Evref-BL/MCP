@@ -259,16 +259,22 @@ MCPToolRemoveMethodsTest >> tearDown [
 { #category : 'tests' }
 MCPToolRemoveMethodsTest >> testForceRemovesMethodsEvenWhenExternalSendersExistAndWarns [
 
-	| data result text |
+	| data result structured text warnings |
 	result := self callToolWith: {
 			          (#className -> 'MCPToolRemoveMethodsTestTarget').
 			          (#classSide -> false).
 			          (#selectors -> { self protectedSelector }) } asDictionary.
+	structured := self structuredContentFrom: result.
 	data := self dataFrom: result.
 	text := self firstTextFrom: result.
+	warnings := structured at: #warnings.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert:
-		(text includesSubstring: 'Warning: this bypasses sender checks').
+	self deny: (text includesSubstring: 'Warning:').
+	self
+		assert: warnings
+		equals:
+			{ 'This bypasses sender checks and may leave broken senders.' }
+				asArray.
 	self deny: (MCPToolRemoveMethodsTestTarget includesSelector:
 			 self protectedSelectorSymbol).
 	self assert: (MCPToolRemoveMethodsTestSender includesSelector:
@@ -354,7 +360,7 @@ MCPToolRemoveMethodsTest >> testReturnsStructuredErrorWhenAnyMethodIsMissing [
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #errorClass) equals: 'MethodNotFound'.
+	self assert: (error at: #errorClass) equals: 'MCPCommandError'. self assert: (error at: #errorCode) equals: 'MethodNotFound'.
 	self assert: (error at: #selector) equals: self missingSelectorString.
 	self assert: (MCPToolRemoveMethodsTestTarget includesSelector:
 			 self firstInstanceBatchSelector)

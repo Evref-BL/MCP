@@ -456,7 +456,7 @@ MCPToolEditClassTest >> testReturnsStructuredErrorWhenClassAlreadyExists [
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #operation) equals: 'create'.
-	self assert: (error at: #errorClass) equals: 'ClassAlreadyExists'.
+	self assert: (error at: #errorClass) equals: 'MCPCommandError'. self assert: (error at: #errorCode) equals: 'ClassAlreadyExists'.
 	self
 		assert: (error at: #message)
 		equals: 'Class MCPToolEditClassTestGenerated already exists.'
@@ -476,7 +476,7 @@ MCPToolEditClassTest >> testReturnsStructuredErrorWhenDestinationTagIsMissing [
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
 	self assert: (error at: #operation) equals: 'move'.
-	self assert: (error at: #errorClass) equals: 'TagNotFound'.
+	self assert: (error at: #errorClass) equals: 'MCPCommandError'. self assert: (error at: #errorCode) equals: 'TagNotFound'.
 	self assert: (error at: #className) equals: self moveTargetClassName.
 	self
 		assert: (error at: #packageName)
@@ -498,7 +498,7 @@ MCPToolEditClassTest >> testReturnsStructuredErrorWhenMoveClassIsMissing [
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
 	self assert: (error at: #operation) equals: 'move'.
-	self assert: (error at: #errorClass) equals: 'ClassNotFound'.
+	self assert: (error at: #errorClass) equals: 'MCPCommandError'. self assert: (error at: #errorCode) equals: 'ClassNotFound'.
 	self
 		assert: (error at: #className)
 		equals: 'MCPToolEditClassTestMissing'
@@ -515,7 +515,7 @@ MCPToolEditClassTest >> testReturnsStructuredErrorWhenRenameClassIsMissing [
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #operation) equals: 'rename'.
-	self assert: (error at: #errorClass) equals: 'ClassNotFound'.
+	self assert: (error at: #errorClass) equals: 'MCPCommandError'. self assert: (error at: #errorCode) equals: 'ClassNotFound'.
 	self
 		assert: (error at: #message)
 		equals: 'Class MCPToolEditClassTestMissing does not exist.'
@@ -533,7 +533,7 @@ MCPToolEditClassTest >> testReturnsStructuredErrorWhenSuperclassIsMissing [
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #operation) equals: 'create'.
-	self assert: (error at: #errorClass) equals: 'SuperclassNotFound'.
+	self assert: (error at: #errorClass) equals: 'MCPCommandError'. self assert: (error at: #errorCode) equals: 'SuperclassNotFound'.
 	self
 		assert: (error at: #superclassName)
 		equals: 'DefinitelyMissingSuperclass'

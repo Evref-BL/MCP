@@ -48,13 +48,11 @@ MCPToolDescribeClass >> classDescriptionDataProperties [
 			   description: 'The shared pools referenced by the class.'
 			   itemDescription: 'A shared pool name.').
 		  (self
-			   schemaPropertyNamed: 'instanceMethodCount'
-			   type: 'number'
+			   integerSchemaPropertyNamed: 'instanceMethodCount'
 			   description:
 			   'The number of instance-side methods defined on the class.').
 		  (self
-			   schemaPropertyNamed: 'classMethodCount'
-			   type: 'number'
+			   integerSchemaPropertyNamed: 'classMethodCount'
 			   description:
 			   'The number of class-side methods defined on the class.') }
 ]
@@ -180,7 +178,7 @@ MCPToolDescribeClass >> initialize [
 		                              yourself.
 	subclassDepthProperty := MCPStructureProperties new
 		                         name: 'subclassDepth';
-		                         type: 'number';
+		                         type: 'integer';
 		                         description:
 			                         'How many subclass levels to include. Uses 0 by default, 1 for direct subclasses, 2 for grandchildren too, and so on.';
 		                         yourself.

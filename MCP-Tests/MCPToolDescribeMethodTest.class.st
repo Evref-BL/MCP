@@ -95,7 +95,7 @@ MCPToolDescribeMethodTest >> testDescribeMethodReturnsStructuredErrorForMissingS
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #errorClass) equals: 'MethodNotFound'.
+	self assert: (error at: #errorClass) equals: 'MCPCommandError'. self assert: (error at: #errorCode) equals: 'MethodNotFound'.
 	self
 		assert: (error at: #className)
 		equals: 'MCPToolDescribeMethodTestTarget'.

@@ -30,6 +30,12 @@ MCPToolStructuredOutputTest >> structuredContentFrom: aResult [
 	^ aResult at: #structuredContent
 ]
 
+{ #category : 'private' }
+MCPToolStructuredOutputTest >> summaryFrom: aResult [
+
+	^ (self structuredContentFrom: aResult) at: #summary
+]
+
 { #category : 'tests' }
 MCPToolStructuredOutputTest >> testAllToolsAdvertiseOutputSchema [
 
@@ -52,7 +58,11 @@ MCPToolStructuredOutputTest >> testDescribeClassReturnsStructuredError [
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #errorClass) equals: 'ClassNotFound'.
+	self
+		assert: (self summaryFrom: result)
+		equals: ((result at: #content) first at: #text).
+	self assert: (self warningsFrom: result) equals: #(  ).
+	self assert: (error at: #errorClass) equals: 'MCPCommandError'. self assert: (error at: #errorCode) equals: 'ClassNotFound'.
 	self
 		assert: (error at: #className)
 		equals: 'MCPToolDescribeClassDefinitelyMissing'
@@ -61,17 +71,20 @@ MCPToolStructuredOutputTest >> testDescribeClassReturnsStructuredError [
 { #category : 'tests' }
 MCPToolStructuredOutputTest >> testDescribeClassReturnsStructuredSuccess [
 
-	| data result |
+	| data result structured |
 	result := self
 		          callToolNamed: 'pharo-describe-class'
 		          withArguments:
 		          { (#className -> 'MCPToolDescribeMethodTestTarget') }
 			          asDictionary.
+	structured := self structuredContentFrom: result.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (structured at: #status) equals: 'ok'.
 	self
-		assert: ((self structuredContentFrom: result) at: #status)
-		equals: 'ok'.
+		assert: (self summaryFrom: result)
+		equals: ((result at: #content) first at: #text).
+	self assert: (self warningsFrom: result) equals: #(  ).
 	self
 		assert: (data at: #className)
 		equals: 'MCPToolDescribeMethodTestTarget'.
@@ -94,7 +107,7 @@ MCPToolStructuredOutputTest >> testDescribeMethodReturnsStructuredError [
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #errorClass) equals: 'MethodNotFound'.
+	self assert: (error at: #errorClass) equals: 'MCPCommandError'. self assert: (error at: #errorCode) equals: 'MethodNotFound'.
 	self
 		assert: (error at: #className)
 		equals: 'MCPToolDescribeMethodTestTarget'.
@@ -325,7 +338,7 @@ MCPToolStructuredOutputTest >> testRemoveClassReturnsStructuredError [
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #errorClass) equals: 'ClassNotFound'.
+	self assert: (error at: #errorClass) equals: 'MCPCommandError'. self assert: (error at: #errorCode) equals: 'ClassNotFound'.
 	self
 		assert: (error at: #className)
 		equals: 'MCPToolRemoveClassDefinitelyMissing'
@@ -391,4 +404,10 @@ MCPToolStructuredOutputTest >> testRunTestMethodReturnsStructuredIssues [
 	self
 		assert: ((methodResult at: #issues) first at: #testName)
 		equals: 'MCPToolStructuredOutputTestTarget>>#testFails'
+]
+
+{ #category : 'private' }
+MCPToolStructuredOutputTest >> warningsFrom: aResult [
+
+	^ (self structuredContentFrom: aResult) at: #warnings
 ]

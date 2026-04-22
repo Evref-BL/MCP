@@ -25,6 +25,23 @@ MCPToolContractsTest >> handleJSON: aJSONString [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testAllToolOutputSchemasAdvertiseStructuredSummaryWarningsAndStatus [
+
+	MCPTool allSubclasses do: [ :toolClass |
+		| outputSchema propertyNames statusProperty |
+		outputSchema := toolClass new outputSchema.
+		propertyNames := outputSchema properties collect: [ :each |
+			                 each name ].
+		statusProperty := outputSchema properties detect: [ :each |
+			                  each name = 'status' ].
+		self assert: (propertyNames includes: 'summary').
+		self assert: (propertyNames includes: 'warnings').
+		self
+			assert: (statusProperty extraProperties at: #enum) asArray
+			equals: #( 'ok' 'error' ) ]
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testDescribeClassHasAccurateNameAndRequiredArguments [
 
 	self
@@ -75,6 +92,31 @@ MCPToolContractsTest >> testEditMethodHasAccurateNameAndRequiredArguments [
 	self
 		assert: MCPToolEditMethod new inputSchema required asSet
 		equals: #( 'operation' 'className' 'classSide' ) asSet
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testEditMethodSchemaAdvertisesCompiledMethodState [
+
+	| dataProperties dataProperty operationProperty permutationProperty propertyNames tool |
+	tool := MCPToolEditMethod new.
+	operationProperty := tool inputSchema properties detect: [ :each |
+		                     each name = 'operation' ].
+	permutationProperty := tool inputSchema properties detect: [ :each |
+		                       each name = 'permutation' ].
+	dataProperty := tool outputSchema properties detect: [ :each |
+		                each name = 'data' ].
+	dataProperties := dataProperty extraProperties at: #properties.
+	propertyNames := dataProperties collect: [ :each | each name ].
+	self
+		assert: (operationProperty extraProperties at: #enum) asArray
+		equals: #( 'compile' 'rename' 'changeProtocol' ).
+	self assert:
+		(permutationProperty extraProperties at: #items) type = 'integer'.
+	self
+		assert: propertyNames asSet
+		equals:
+			#( 'selector' 'className' 'side' 'packageName' 'isExtension'
+			   'protocol' 'source' ) asSet
 ]
 
 { #category : 'tests' }

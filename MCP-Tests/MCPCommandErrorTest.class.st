@@ -42,7 +42,7 @@ MCPCommandErrorTest >> testMissingClassErrorCarriesStructuredDetails [
 			         'MCPCommandErrorTestMissing' ].
 	details := error structuredDetails.
 	self assert: error errorCode equals: #ClassNotFound.
-	self assert: (details at: #errorClass) equals: 'ClassNotFound'.
+	self assert: (details at: #errorClass) equals: 'MCPCommandError'. self assert: (details at: #errorCode) equals: 'ClassNotFound'.
 	self
 		assert: (details at: #className)
 		equals: 'MCPCommandErrorTestMissing'.
@@ -63,6 +63,8 @@ MCPCommandErrorTest >> testMissingMethodErrorCarriesClassSideAndSelector [
 			         selector: 'value' ].
 	details := error structuredDetails.
 	self assert: error errorCode equals: #MethodNotFound.
+	self assert: (details at: #errorClass) equals: 'MCPCommandError'.
+	self assert: (details at: #errorCode) equals: 'MethodNotFound'.
 	self
 		assert: (details at: #className)
 		equals: 'MCPCommandErrorTestTarget'.
@@ -70,7 +72,8 @@ MCPCommandErrorTest >> testMissingMethodErrorCarriesClassSideAndSelector [
 	self assert: (details at: #selector) equals: 'value'.
 	self
 		assert: details keys asSet
-		equals: #( errorClass message className classSide selector ) asSet
+		equals:
+		#( errorClass errorCode message className classSide selector ) asSet
 ]
 
 { #category : 'tests' }
@@ -82,8 +85,9 @@ MCPCommandErrorTest >> testMissingPackageErrorCarriesPackageName [
 			         'MCP-Tests-Missing' ].
 	details := error structuredDetails.
 	self assert: error errorCode equals: #PackageNotFound.
-	self assert: (details at: #packageName) equals: 'MCP-Tests-Missing'.
-	self assert: (details at: #errorClass) equals: 'PackageNotFound'
+	self assert: (details at: #errorClass) equals: 'MCPCommandError'.
+	self assert: (details at: #errorCode) equals: 'PackageNotFound'.
+	self assert: (details at: #packageName) equals: 'MCP-Tests-Missing'
 ]
 
 { #category : 'tests' }
