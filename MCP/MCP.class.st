@@ -22,9 +22,9 @@ MCP >> initialize [
 
 	super initialize.
 	toolsList := Dictionary new.
-	MCPTool allSubclasses do: [ :subclass |
+	MCPTool concreteSubclasses do: [ :toolClass |
 		| tool |
-		tool := subclass new.
+		tool := toolClass new.
 		toolsList at: tool name put: tool ].
 	server := MCPHTTPServer new.
 	server addHandlersFromPragmasIn: self

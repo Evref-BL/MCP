@@ -1,6 +1,6 @@
 Class {
 	#name : 'MCPToolImplementors',
-	#superclass : 'MCPTool',
+	#superclass : 'MCPCompiledMethodQueryTool',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -195,84 +195,14 @@ MCPToolImplementors >> defaultTitle [
 	^ 'Find Pharo Implementors'
 ]
 
-{ #category : 'executing' }
-MCPToolImplementors >> executeWithArguments: arguments [
+{ #category : 'private - template' }
+MCPToolImplementors >> failureMessageForRequestedContext: requestedContext error: anError [
 
-	| caseSensitive data endIndex entries filterPattern filterMode includeSource limit offset pagedEntries query requestedScope selectorString startIndex totalCount truncated |
-	selectorString := self selectorStringFrom: arguments.
-	filterPattern := self stringArgumentNamed: 'filter' in: arguments.
-	filterMode := self normalizedFilterModeFrom: arguments.
-	caseSensitive := self
-		                 booleanArgumentNamed: 'caseSensitive'
-		                 in: arguments
-		                 default: false.
-	includeSource := self
-		                 booleanArgumentNamed: 'includeSource'
-		                 in: arguments
-		                 default: false.
-	limit := self
-		         nonNegativeIntegerArgumentNamed: 'limit'
-		         in: arguments
-		         default: 100.
-	offset := self
-		          nonNegativeIntegerArgumentNamed: 'offset'
-		          in: arguments
-		          default: 0.
-	requestedScope := (self stringArgumentNamed: 'scope' in: arguments)
-		                  ifNil: [ 'image' ].
-	^ [
-	  query := self compiledMethodScopeQueryFromArguments: arguments.
-	  entries := self
-		             compiledMethodEntriesFrom:
-			             (query compiledMethods select: [ :eachMethod |
-				              eachMethod selector = selectorString asSymbol ])
-				             asArray
-		             filter: filterPattern
-		             filterMode: filterMode
-		             caseSensitive: caseSensitive
-		             includeSource: includeSource.
-	  totalCount := entries size.
-	  startIndex := offset + 1.
-	  pagedEntries := (startIndex > totalCount or: [ limit = 0 ])
-		                  ifTrue: [ #(  ) ]
-		                  ifFalse: [
-			                  endIndex := totalCount min: offset + limit.
-			                  (entries copyFrom: startIndex to: endIndex)
-				                  asArray ].
-	  truncated := offset + pagedEntries size < totalCount.
-	  data := {
-		          (#selector -> selectorString).
-		          (#scope -> query scope).
-		          (#side -> query side).
-		          (#sourceIncluded -> includeSource).
-		          (#packageNames -> query packageNames).
-		          (#classNames -> query classNames).
-		          (#returnedCount -> pagedEntries size).
-		          (#totalCount -> totalCount).
-		          (#offset -> offset).
-		          (#limit -> limit).
-		          (#truncated -> truncated).
-		          (#implementors -> pagedEntries) } asDictionary.
-	  self
-		  successResultText: (self
-				   successSummaryForSelector: selectorString
-				   scope: query scope
-				   returnedCount: pagedEntries size
-				   totalCount: totalCount
-				   truncated: truncated)
-		  data: data ]
-		  on: Error
-		  do: [ :error |
-			  self
-				  errorResultText: (self
-						   failureMessageForSelector: selectorString
-						   scope: requestedScope
-						   error: error)
-				  details: {
-						  (#errorClass -> error class name).
-						  (#message -> error messageText).
-						  (#selector -> selectorString).
-						  (#scope -> requestedScope) } asDictionary ]
+	^ self
+		  failureMessageForSelector:
+		  (requestedContext at: #selector ifAbsent: [ '' ])
+		  scope: (requestedContext at: #scope)
+		  error: anError
 ]
 
 { #category : 'private - results' }
@@ -293,49 +223,84 @@ MCPToolImplementors >> failureMessageForSelector: selectorString scope: scope er
 { #category : 'private - schema' }
 MCPToolImplementors >> implementorEntrySchema [
 
-	^ MCPStructureProperties new
-		  name: 'implementor';
-		  type: 'object';
-		  description: 'A method implementing the requested selector.';
-		  properties: {
-				  (self
-					   schemaPropertyNamed: 'selector'
-					   type: 'string'
-					   description: 'The implemented selector.').
-				  (self
-					   schemaPropertyNamed: 'className'
-					   type: 'string'
-					   description: 'The base class that defines the implementor.').
-				  ((self
-					    schemaPropertyNamed: 'side'
-					    type: 'string'
-					    description: 'The side on which the implementor is defined.')
-					   enum: #( 'instance' 'class' );
-					   yourself).
-				  (self
-					   schemaPropertyNamed: 'packageName'
-					   type: 'string'
-					   description: 'The package that owns the method.').
-				  (self
-					   schemaPropertyNamed: 'isExtension'
-					   type: 'boolean'
-					   description:
-					   'Whether the method is an extension on its class package.').
-				  (self
-					   schemaPropertyNamed: 'protocol'
-					   type: 'string'
-					   description:
-					   'The protocol/category containing the implementor.').
-				  (self
-					   schemaPropertyNamed: 'source'
-					   type: 'string'
-					   description:
-					   'The formatted source code of the implementor when includeSource=true.') };
-		  required:
-			  #( 'selector' 'className' 'side' 'packageName' 'isExtension'
-			     'protocol' );
-		  additionalProperties: false;
-		  yourself
+	^ self
+		  compiledMethodEntrySchemaNamed: 'implementor'
+		  description: 'A method implementing the requested selector.'
+		  subjectDescription: 'implementor'
+		  selectorDescription: 'The implemented selector.'
+		  sourceDescription:
+		  'The formatted source code of the implementor when includeSource=true.'
+]
+
+{ #category : 'private - template' }
+MCPToolImplementors >> queryEntriesForParameters: parameters [
+
+	| compiledMethods query selectorString |
+	query := parameters at: #query.
+	selectorString := parameters at: #selector.
+	compiledMethods := query compiledMethods select: [ :eachMethod |
+		                   eachMethod selector = selectorString asSymbol ].
+	^ self
+		  compiledMethodEntriesFrom: compiledMethods asArray
+		  filter: (parameters at: #filterPattern)
+		  filterMode: (parameters at: #filterMode)
+		  caseSensitive: (parameters at: #caseSensitive)
+		  includeSource: (parameters at: #includeSource)
+]
+
+{ #category : 'private - template' }
+MCPToolImplementors >> queryParametersFromArguments: arguments [
+
+	| parameters |
+	parameters := self compiledMethodQueryParametersFromArguments:
+		              arguments.
+	parameters at: #selector put: (self selectorStringFrom: arguments).
+	^ parameters
+]
+
+{ #category : 'private - template' }
+MCPToolImplementors >> queryResultDataForParameters: parameters page: page [
+
+	^ self
+		  compiledMethodQueryResultDataForParameters: parameters
+		  page: page
+		  entriesKey: #implementors
+		  extraData:
+		  { (#selector -> (parameters at: #selector)) } asDictionary
+]
+
+{ #category : 'private - template' }
+MCPToolImplementors >> requestedContextFromArguments: arguments [
+
+	| scope selectorString |
+	scope := self
+		         argumentNamed: 'scope'
+		         in: arguments
+		         ifAbsent: [ 'image' ].
+	scope := scope
+		         ifNil: [ 'image' ]
+		         ifNotNil: [ scope asString asLowercase ].
+	selectorString := self
+		                  argumentNamed: 'selector'
+		                  in: arguments
+		                  ifAbsent: [ nil ].
+	selectorString := selectorString
+		                  ifNil: [ nil ]
+		                  ifNotNil: [ selectorString asString ].
+	^ {
+		  (#scope -> scope).
+		  (#selector -> selectorString) } asDictionary
+]
+
+{ #category : 'private - template' }
+MCPToolImplementors >> successSummaryForParameters: parameters page: page [
+
+	^ self
+		  successSummaryForSelector: (parameters at: #selector)
+		  scope: (parameters at: #query) scope
+		  returnedCount: (page at: #returnedCount)
+		  totalCount: (page at: #totalCount)
+		  truncated: (page at: #truncated)
 ]
 
 { #category : 'private - results' }

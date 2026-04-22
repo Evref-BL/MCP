@@ -140,8 +140,9 @@ MCPToolStructuredOutputTest >> testFindPackagesDefaultsToImageScopeWhenScopeIsOm
 
 	| data packageNames result |
 	result := self callToolNamed: 'find-packages' withArguments: {
-			          (#filter -> '^MCP\s').
-			          (#filterMode -> 'regex') } asDictionary.
+			          (#filter -> 'MCP').
+			          (#filterTargets -> #( 'project' )).
+			          (#filterMode -> 'exact') } asDictionary.
 	data := self dataFrom: result.
 	packageNames := (data at: #packages) collect: [ :each |
 		                each at: #packageName ].
@@ -150,7 +151,9 @@ MCPToolStructuredOutputTest >> testFindPackagesDefaultsToImageScopeWhenScopeIsOm
 		equals: 'ok'.
 	self assert: (data at: #scope) equals: 'image'.
 	self assert: (data at: #projectNames) equals: #(  ).
-	self assert: (data at: #returnedCount) equals: 1.
+	self assert: (data at: #filterTargets) equals: #( 'project' ).
+	self assert: (data at: #returnedCount) equals: packageNames size.
+	self assert: (data at: #totalCount) > 0.
 	self assert: (packageNames includes: 'MCP')
 ]
 
@@ -169,6 +172,7 @@ MCPToolStructuredOutputTest >> testFindPackagesReturnsStructuredArrayData [
 		equals: 'ok'.
 	self assert: (data at: #scope) equals: 'project'.
 	self assert: (data at: #projectNames) equals: #( 'MCP' ).
+	self assert: (data at: #filterTargets) equals: #( 'package' ).
 	self assert: (data at: #returnedCount) equals: packageNames size.
 	self assert: ((data at: #packages) allSatisfy: [ :each |
 			 (each includesKey: #packageName) and: [

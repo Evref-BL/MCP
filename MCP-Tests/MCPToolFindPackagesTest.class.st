@@ -49,6 +49,7 @@ MCPToolFindPackagesTest >> testCanFilterPackageEntriesByTagNamesUsingControlledP
 			        packageEntriesFrom: packages
 			        packageProjectNames: packageProjectNames
 			        filter: 'FixtureBetaTag'
+			        filterTargets: #( 'tag' )
 			        filterMode: 'substring'
 			        caseSensitive: false.
 		self assert: data size equals: 1.
@@ -57,6 +58,26 @@ MCPToolFindPackagesTest >> testCanFilterPackageEntriesByTagNamesUsingControlledP
 			         in: data.
 		self assert: (entry at: #projectNames) equals: #( 'FixtureProject' ).
 		self assert: (entry at: #tagNames) equals: #( 'FixtureBetaTag' ) ]
+]
+
+{ #category : 'tests' }
+MCPToolFindPackagesTest >> testImageScopeCanFilterPackagesByTagTarget [
+
+	self withTemporaryTaggedPackagesDo: [ :packages :packageProjectNames |
+		| data packageNames result |
+		result := self callToolWith: {
+				          (#filter -> 'FixtureBetaTag').
+				          (#filterTargets -> #( 'tag' )).
+				          (#filterMode -> 'exact') } asDictionary.
+		data := self dataFrom: result.
+		packageNames := (data at: #packages) collect: [ :each |
+			                each at: #packageName ].
+		self deny: (result at: #isError ifAbsent: [ false ]).
+		self assert: (data at: #filterTargets) equals: #( 'tag' ).
+		self assert: (data at: #totalCount) equals: 1.
+		self
+			assert: packageNames
+			equals: #( 'MCP-Tests-FindPackages-Temp-Beta' ) ]
 ]
 
 { #category : 'tests' }
@@ -96,6 +117,7 @@ MCPToolFindPackagesTest >> testImageScopeFindsExactPackageNameMatch [
 
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #scope) equals: 'image'.
+	self assert: (data at: #filterTargets) equals: #( 'package' ).
 	self assert: (data at: #totalCount) equals: 1.
 	self assert: packageNames equals: #( 'MCP-Tests' )
 ]
@@ -105,13 +127,15 @@ MCPToolFindPackagesTest >> testImageScopeFindsStructuredPackages [
 
 	| data entry result |
 	result := self callToolWith: {
-			          (#filter -> '^MCP\s').
-			          (#filterMode -> 'regex') } asDictionary.
+			          (#filter -> 'MCP').
+			          (#filterTargets -> #( 'project' )).
+			          (#filterMode -> 'exact') } asDictionary.
 	data := self dataFrom: result.
 	entry := self entryNamed: 'MCP' in: (data at: #packages).
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #scope) equals: 'image'.
-	self assert: (data at: #totalCount) equals: 1.
+	self assert: (data at: #filterTargets) equals: #( 'project' ).
+	self assert: (data at: #totalCount) > 0.
 	self assert: (entry at: #projectNames) equals: #( 'MCP' ).
 	self assert: (entry at: #definedClassCount) > 0.
 	self assert: ((entry at: #tagNames) includes: 'Tools')
@@ -150,6 +174,27 @@ MCPToolFindPackagesTest >> testProjectScopeReturnsStructuredErrorWhenProjectIsMi
 		assert: (error at: #projectName)
 		equals: 'DefinitelyMissingProject'.
 	self assert: (error at: #scope) equals: 'project'
+]
+
+{ #category : 'tests' }
+MCPToolFindPackagesTest >> testReturnsStructuredErrorForInvalidFilterTarget [
+
+	| error result structured |
+	result := self callToolWith: {
+			          (#scope -> 'image').
+			          (#filter -> 'needle').
+			          (#filterTargets -> #( 'definedClassCount' )) }
+			          asDictionary.
+	structured := self structuredContentFrom: result.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (structured at: #status) equals: 'error'.
+	self assert: (error at: #scope) equals: 'image'.
+	self assert: (error at: #errorClass) equals: 'Error'.
+	self assert:
+		((error at: #message) includesSubstring: 'filterTargets').
+	self assert:
+		((error at: #message) includesSubstring: 'definedClassCount')
 ]
 
 { #category : 'private - calling' }

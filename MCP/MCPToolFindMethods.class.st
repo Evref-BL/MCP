@@ -1,6 +1,6 @@
 Class {
 	#name : 'MCPToolFindMethods',
-	#superclass : 'MCPTool',
+	#superclass : 'MCPCompiledMethodQueryTool',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -253,90 +253,12 @@ MCPToolFindMethods >> defaultTitle [
 	^ 'Find Pharo Methods'
 ]
 
-{ #category : 'private - results' }
-MCPToolFindMethods >> errorResultForError: anError scope: scope [
+{ #category : 'private - template' }
+MCPToolFindMethods >> failureMessageForRequestedContext: requestedContext error: anError [
 
-	(anError isKindOf: MCPCommandError) ifTrue: [
-		| details |
-		details := anError structuredDetails copy.
-		details at: #scope put: scope.
-		^ self errorResultText: anError messageText details: details ].
 	^ self
-		  errorResultText:
-		  (self failureMessageForScope: scope error: anError)
-		  details: {
-				  (#errorClass -> anError class name).
-				  (#message -> anError messageText).
-				  (#scope -> scope) } asDictionary
-]
-
-{ #category : 'executing' }
-MCPToolFindMethods >> executeWithArguments: arguments [
-
-	| caseSensitive data endIndex entries filterPattern filterMode filterTargets includeSource limit offset pagedEntries query requestedScope startIndex totalCount truncated |
-	requestedScope := (self stringArgumentNamed: 'scope' in: arguments)
-		                  ifNil: [ 'image' ]
-		                  ifNotNil: [ :scope | scope asLowercase ].
-	^ [
-	  filterPattern := self stringArgumentNamed: 'filter' in: arguments.
-	  filterTargets := self normalizedFilterTargetsFrom: arguments.
-	  filterMode := self normalizedFilterModeFrom: arguments.
-	  caseSensitive := self
-		                   booleanArgumentNamed: 'caseSensitive'
-		                   in: arguments
-		                   default: false.
-	  includeSource := self
-		                   booleanArgumentNamed: 'includeSource'
-		                   in: arguments
-		                   default: false.
-	  limit := self
-		           nonNegativeIntegerArgumentNamed: 'limit'
-		           in: arguments
-		           default: 100.
-	  offset := self
-		            nonNegativeIntegerArgumentNamed: 'offset'
-		            in: arguments
-		            default: 0.
-	  query := self compiledMethodScopeQueryFromArguments: arguments.
-	  entries := self
-		             compiledMethodEntriesFromQuery: query
-		             filter: filterPattern
-		             filterTargets: filterTargets
-		             filterMode: filterMode
-		             caseSensitive: caseSensitive
-		             includeSource: includeSource.
-	  totalCount := entries size.
-	  startIndex := offset + 1.
-	  pagedEntries := (startIndex > totalCount or: [ limit = 0 ])
-		                  ifTrue: [ #(  ) ]
-		                  ifFalse: [
-			                  endIndex := totalCount min: offset + limit.
-			                  (entries copyFrom: startIndex to: endIndex)
-				                  asArray ].
-	  truncated := offset + pagedEntries size < totalCount.
-	  data := {
-		          (#scope -> query scope).
-		          (#side -> query side).
-		          (#sourceIncluded -> includeSource).
-		          (#packageNames -> query packageNames).
-		          (#classNames -> query classNames).
-		          (#filterTargets -> filterTargets).
-		          (#returnedCount -> pagedEntries size).
-		          (#totalCount -> totalCount).
-		          (#offset -> offset).
-		          (#limit -> limit).
-		          (#truncated -> truncated).
-		          (#methods -> pagedEntries) } asDictionary.
-	  self
-		  successResultText: (self
-				   successSummaryForScope: query scope
-				   returnedCount: pagedEntries size
-				   totalCount: totalCount
-				   truncated: truncated)
-		  data: data ]
-		  on: Error
-		  do: [ :error |
-		  self errorResultForError: error scope: requestedScope ]
+		  failureMessageForScope: (requestedContext at: #scope)
+		  error: anError
 ]
 
 { #category : 'private - results' }
@@ -381,48 +303,73 @@ MCPToolFindMethods >> matchesFilterOnCompiledMethodEntry: anEntry sourceText: so
 { #category : 'private - schema' }
 MCPToolFindMethods >> methodEntrySchema [
 
-	^ MCPStructureProperties new
-		  name: 'method';
-		  type: 'object';
-		  description: 'A method matching the query.';
-		  properties: {
-				  (self
-					   schemaPropertyNamed: 'selector'
-					   type: 'string'
-					   description: 'The selector name.').
-				  (self
-					   schemaPropertyNamed: 'className'
-					   type: 'string'
-					   description: 'The base class that defines the method.').
-				  ((self
-					    schemaPropertyNamed: 'side'
-					    type: 'string'
-					    description: 'The side on which the method is defined.')
-					   enum: #( 'instance' 'class' );
-					   yourself).
-				  (self
-					   schemaPropertyNamed: 'packageName'
-					   type: 'string'
-					   description: 'The package that owns the method.').
-				  (self
-					   schemaPropertyNamed: 'isExtension'
-					   type: 'boolean'
-					   description:
-					   'Whether the method is an extension on its class package.').
-				  (self
-					   schemaPropertyNamed: 'protocol'
-					   type: 'string'
-					   description: 'The protocol/category containing the method.').
-				  (self
-					   schemaPropertyNamed: 'source'
-					   type: 'string'
-					   description:
-					   'The formatted source code of the method when includeSource=true.') };
-		  required:
-			  #( 'selector' 'className' 'side' 'packageName' 'isExtension'
-			     'protocol' );
-		  additionalProperties: false;
-		  yourself
+	^ self
+		  compiledMethodEntrySchemaNamed: 'method'
+		  description: 'A method matching the query.'
+		  subjectDescription: 'method'
+		  selectorDescription: 'The selector name.'
+		  sourceDescription:
+		  'The formatted source code of the method when includeSource=true.'
+]
+
+{ #category : 'private - template' }
+MCPToolFindMethods >> queryEntriesForParameters: parameters [
+
+	^ self
+		  compiledMethodEntriesFromQuery: (parameters at: #query)
+		  filter: (parameters at: #filterPattern)
+		  filterTargets: (parameters at: #filterTargets)
+		  filterMode: (parameters at: #filterMode)
+		  caseSensitive: (parameters at: #caseSensitive)
+		  includeSource: (parameters at: #includeSource)
+]
+
+{ #category : 'private - template' }
+MCPToolFindMethods >> queryParametersFromArguments: arguments [
+
+	| parameters |
+	parameters := self compiledMethodQueryParametersFromArguments:
+		              arguments.
+	parameters
+		at: #filterTargets
+		put: (self normalizedFilterTargetsFrom: arguments).
+	^ parameters
+]
+
+{ #category : 'private - template' }
+MCPToolFindMethods >> queryResultDataForParameters: parameters page: page [
+
+	^ self
+		  compiledMethodQueryResultDataForParameters: parameters
+		  page: page
+		  entriesKey: #methods
+		  extraData:
+		  { (#filterTargets -> (parameters at: #filterTargets)) }
+			  asDictionary
+]
+
+{ #category : 'private - template' }
+MCPToolFindMethods >> requestedContextFromArguments: arguments [
+
+	| scope |
+	scope := self
+		         argumentNamed: 'scope'
+		         in: arguments
+		         ifAbsent: [ 'image' ].
+	scope := scope
+		         ifNil: [ 'image' ]
+		         ifNotNil: [ scope asString asLowercase ].
+	^ { (#scope -> scope) } asDictionary
+]
+
+{ #category : 'private - template' }
+MCPToolFindMethods >> successSummaryForParameters: parameters page: page [
+
+	^ self
+		  successSummaryForScope: (parameters at: #query) scope
+		  returnedCount: (page at: #returnedCount)
+		  totalCount: (page at: #totalCount)
+		  truncated: (page at: #truncated)
 ]
 
 { #category : 'private - results' }

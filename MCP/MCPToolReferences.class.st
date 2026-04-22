@@ -1,6 +1,6 @@
 Class {
 	#name : 'MCPToolReferences',
-	#superclass : 'MCPTool',
+	#superclass : 'MCPCompiledMethodQueryTool',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -230,93 +230,15 @@ MCPToolReferences >> defaultTitle [
 	^ 'Find Pharo References'
 ]
 
-{ #category : 'executing' }
-MCPToolReferences >> executeWithArguments: arguments [
+{ #category : 'private - template' }
+MCPToolReferences >> failureMessageForRequestedContext: requestedContext error: anError [
 
-	| caseSensitive compiledMethods data endIndex entries filterPattern filterMode includeSource limit mode offset pagedEntries query requestedMode requestedScope startIndex targetString totalCount truncated |
-	targetString := self stringArgumentNamed: 'target' in: arguments.
-	filterPattern := self stringArgumentNamed: 'filter' in: arguments.
-	filterMode := self normalizedFilterModeFrom: arguments.
-	caseSensitive := self
-		                 booleanArgumentNamed: 'caseSensitive'
-		                 in: arguments
-		                 default: false.
-	includeSource := self
-		                 booleanArgumentNamed: 'includeSource'
-		                 in: arguments
-		                 default: false.
-	limit := self
-		         nonNegativeIntegerArgumentNamed: 'limit'
-		         in: arguments
-		         default: 100.
-	offset := self
-		          nonNegativeIntegerArgumentNamed: 'offset'
-		          in: arguments
-		          default: 0.
-	requestedScope := (self stringArgumentNamed: 'scope' in: arguments)
-		                  ifNil: [ 'image' ].
-	requestedMode := (self stringArgumentNamed: 'mode' in: arguments)
-		                 ifNil: [ 'unknown' ].
-	^ [
-	  mode := self modeFromArguments: arguments.
-	  query := self compiledMethodScopeQueryFromArguments: arguments.
-	  compiledMethods := query compiledMethods.
-	  entries := self
-		             compiledMethodEntriesFrom: (self
-				              matchingCompiledMethodsForTarget: targetString
-				              mode: mode
-				              scopeQuery: query
-				              inCompiledMethods: compiledMethods)
-		             filter: filterPattern
-		             filterMode: filterMode
-		             caseSensitive: caseSensitive
-		             includeSource: includeSource.
-	  totalCount := entries size.
-	  startIndex := offset + 1.
-	  pagedEntries := (startIndex > totalCount or: [ limit = 0 ])
-		                  ifTrue: [ #(  ) ]
-		                  ifFalse: [
-			                  endIndex := totalCount min: offset + limit.
-			                  (entries copyFrom: startIndex to: endIndex)
-				                  asArray ].
-	  truncated := offset + pagedEntries size < totalCount.
-	  data := {
-		          (#target -> targetString).
-		          (#mode -> mode).
-		          (#scope -> query scope).
-		          (#side -> query side).
-		          (#sourceIncluded -> includeSource).
-		          (#packageNames -> query packageNames).
-		          (#classNames -> query classNames).
-		          (#returnedCount -> pagedEntries size).
-		          (#totalCount -> totalCount).
-		          (#offset -> offset).
-		          (#limit -> limit).
-		          (#truncated -> truncated).
-		          (#references -> pagedEntries) } asDictionary.
-	  self
-		  successResultText: (self
-				   successSummaryForTarget: targetString
-				   mode: mode
-				   scope: query scope
-				   returnedCount: pagedEntries size
-				   totalCount: totalCount
-				   truncated: truncated)
-		  data: data ]
-		  on: Error
-		  do: [ :error |
-			  self
-				  errorResultText: (self
-						   failureMessageForTarget: targetString
-						   mode: requestedMode
-						   scope: requestedScope
-						   error: error)
-				  details: {
-						  (#errorClass -> error class name).
-						  (#message -> error messageText).
-						  (#target -> targetString).
-						  (#mode -> requestedMode).
-						  (#scope -> requestedScope) } asDictionary ]
+	^ self
+		  failureMessageForTarget:
+		  (requestedContext at: #target ifAbsent: [ '' ])
+		  mode: (requestedContext at: #mode ifAbsent: [ 'unknown' ])
+		  scope: (requestedContext at: #scope)
+		  error: anError
 ]
 
 { #category : 'private - results' }
@@ -417,54 +339,102 @@ MCPToolReferences >> queryDescriptionForMode: mode [
 	^ 'references'
 ]
 
+{ #category : 'private - template' }
+MCPToolReferences >> queryEntriesForParameters: parameters [
+
+	| compiledMethods query |
+	query := parameters at: #query.
+	compiledMethods := query compiledMethods.
+	^ self
+		  compiledMethodEntriesFrom: (self
+				   matchingCompiledMethodsForTarget: (parameters at: #target)
+				   mode: (parameters at: #mode)
+				   scopeQuery: query
+				   inCompiledMethods: compiledMethods)
+		  filter: (parameters at: #filterPattern)
+		  filterMode: (parameters at: #filterMode)
+		  caseSensitive: (parameters at: #caseSensitive)
+		  includeSource: (parameters at: #includeSource)
+]
+
+{ #category : 'private - template' }
+MCPToolReferences >> queryParametersFromArguments: arguments [
+
+	| parameters |
+	parameters := self compiledMethodQueryParametersFromArguments:
+		              arguments.
+	parameters
+		at: #target
+		put: (self stringArgumentNamed: 'target' in: arguments).
+	parameters at: #mode put: (self modeFromArguments: arguments).
+	^ parameters
+]
+
+{ #category : 'private - template' }
+MCPToolReferences >> queryResultDataForParameters: parameters page: page [
+
+	^ self
+		  compiledMethodQueryResultDataForParameters: parameters
+		  page: page
+		  entriesKey: #references
+		  extraData: {
+				  (#target -> (parameters at: #target)).
+				  (#mode -> (parameters at: #mode)) } asDictionary
+]
+
+{ #category : 'private - template' }
+MCPToolReferences >> requestedContextFromArguments: arguments [
+
+	| mode scope targetString |
+	scope := self
+		         argumentNamed: 'scope'
+		         in: arguments
+		         ifAbsent: [ 'image' ].
+	scope := scope
+		         ifNil: [ 'image' ]
+		         ifNotNil: [ scope asString asLowercase ].
+	mode := self
+		        argumentNamed: 'mode'
+		        in: arguments
+		        ifAbsent: [ 'unknown' ].
+	mode := mode
+		        ifNil: [ 'unknown' ]
+		        ifNotNil: [ mode asString asLowercase ].
+	targetString := self
+		                argumentNamed: 'target'
+		                in: arguments
+		                ifAbsent: [ nil ].
+	targetString := targetString
+		                ifNil: [ nil ]
+		                ifNotNil: [ targetString asString ].
+	^ {
+		  (#scope -> scope).
+		  (#mode -> mode).
+		  (#target -> targetString) } asDictionary
+]
+
 { #category : 'private - schema' }
 MCPToolReferences >> senderEntrySchema [
 
-	^ MCPStructureProperties new
-		  name: 'reference';
-		  type: 'object';
-		  description: 'A method matching the requested reference query.';
-		  properties: {
-				  (self
-					   schemaPropertyNamed: 'selector'
-					   type: 'string'
-					   description: 'The selector of the matching method.').
-				  (self
-					   schemaPropertyNamed: 'className'
-					   type: 'string'
-					   description:
-						   'The base class that defines the matching method.').
-				  ((self
-					    schemaPropertyNamed: 'side'
-					    type: 'string'
-					    description:
-						    'The side on which the matching method is defined.')
-					   enum: #( 'instance' 'class' );
-					   yourself).
-				  (self
-					   schemaPropertyNamed: 'packageName'
-					   type: 'string'
-					   description: 'The package that owns the matching method.').
-				  (self
-					   schemaPropertyNamed: 'isExtension'
-					   type: 'boolean'
-					   description:
-					   'Whether the matching method is an extension on its class package.').
-				  (self
-					   schemaPropertyNamed: 'protocol'
-					   type: 'string'
-					   description:
-					   'The protocol/category containing the matching method.').
-				  (self
-					   schemaPropertyNamed: 'source'
-					   type: 'string'
-					   description:
-					   'The formatted source code of the matching method when includeSource=true.') };
-		  required:
-			  #( 'selector' 'className' 'side' 'packageName' 'isExtension'
-			     'protocol' );
-		  additionalProperties: false;
-		  yourself
+	^ self
+		  compiledMethodEntrySchemaNamed: 'reference'
+		  description: 'A method matching the requested reference query.'
+		  subjectDescription: 'matching method'
+		  selectorDescription: 'The selector of the matching method.'
+		  sourceDescription:
+		  'The formatted source code of the matching method when includeSource=true.'
+]
+
+{ #category : 'private - template' }
+MCPToolReferences >> successSummaryForParameters: parameters page: page [
+
+	^ self
+		  successSummaryForTarget: (parameters at: #target)
+		  mode: (parameters at: #mode)
+		  scope: (parameters at: #query) scope
+		  returnedCount: (page at: #returnedCount)
+		  totalCount: (page at: #totalCount)
+		  truncated: (page at: #truncated)
 ]
 
 { #category : 'private - results' }

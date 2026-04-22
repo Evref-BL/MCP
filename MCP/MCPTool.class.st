@@ -21,7 +21,7 @@ MCPTool class >> browseIcons [
 	<script>
 	| iconExtent rows presenter table window |
 	iconExtent := 16 @ 16.
-	rows := (self allSubclasses asSortedCollection: [ :a :b |
+	rows := (self concreteSubclasses asSortedCollection: [ :a :b |
 		         a name <= b name ]) collect: [ :each |
 		        each name
 		        ->
@@ -43,6 +43,18 @@ MCPTool class >> browseIcons [
 	window := presenter asWindow.
 	window title: 'MCP Tool Icons'.
 	^ window open
+]
+
+{ #category : 'querying' }
+MCPTool class >> concreteSubclasses [
+
+	^ self allSubclasses reject: [ :each | each isAbstract ]
+]
+
+{ #category : 'testing' }
+MCPTool class >> isAbstract [
+
+	^ self = MCPTool
 ]
 
 { #category : 'private - arguments' }

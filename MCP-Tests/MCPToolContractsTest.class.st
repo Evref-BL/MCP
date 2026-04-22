@@ -28,7 +28,7 @@ MCPToolContractsTest >> inputPropertyNamed: aPropertyName inTool: aTool [
 { #category : 'tests' }
 MCPToolContractsTest >> testAllToolOutputSchemasAdvertiseStructuredSummaryWarningsAndStatus [
 
-	MCPTool allSubclasses do: [ :toolClass |
+	MCPTool concreteSubclasses do: [ :toolClass |
 		| outputSchema propertyNames statusProperty |
 		outputSchema := toolClass new outputSchema.
 		propertyNames := outputSchema properties collect: [ :each |
@@ -46,7 +46,7 @@ MCPToolContractsTest >> testAllToolOutputSchemasAdvertiseStructuredSummaryWarnin
 MCPToolContractsTest >> testAllToolsAdvertisePngIconsWithDataUris [
 
 	| toolDefinitions |
-	toolDefinitions := MCPTool allSubclasses collect: [ :each |
+	toolDefinitions := MCPTool concreteSubclasses collect: [ :each |
 		                   each new asJRPCJSON ].
 	toolDefinitions do: [ :definition |
 		| icon icons |
@@ -275,13 +275,12 @@ MCPToolContractsTest >> testFindPackagesHasAccurateNameAndSchema [
 	| propertyNames schema |
 	schema := MCPToolFindPackages new inputSchema.
 	propertyNames := schema properties collect: [ :each | each name ].
-	self
-		assert: MCPToolFindPackages new name
-		equals: 'find-packages'.
+	self assert: MCPToolFindPackages new name equals: 'find-packages'.
 	self assert: schema required equals: #(  ).
 	self assert: (propertyNames includes: 'scope').
 	self assert: (propertyNames includes: 'projectNames').
 	self assert: (propertyNames includes: 'filter').
+	self assert: (propertyNames includes: 'filterTargets').
 	self assert: (propertyNames includes: 'filterMode')
 ]
 
@@ -601,6 +600,6 @@ MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 { #category : 'tests' }
 MCPToolContractsTest >> testToolNamesDoNotUsePharoPrefix [
 
-	self assert: (MCPTool allSubclasses noneSatisfy: [ :each |
+	self assert: (MCPTool concreteSubclasses noneSatisfy: [ :each |
 			 each new name includesSubstring: 'pharo-' ])
 ]

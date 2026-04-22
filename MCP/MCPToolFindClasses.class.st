@@ -1,6 +1,6 @@
 Class {
 	#name : 'MCPToolFindClasses',
-	#superclass : 'MCPTool',
+	#superclass : 'MCPQueryTool',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -74,47 +74,6 @@ MCPToolFindClasses >> classInfoDataProperties [
 			   stringArraySchemaNamed: 'subclassNames'
 			   description: 'The direct subclasses of the class.'
 			   itemDescription: 'A subclass name.') }
-]
-
-{ #category : 'private - arguments' }
-MCPToolFindClasses >> classNamesFromArguments: arguments [
-
-	^ self stringCollectionArgumentNamed: 'classNames' in: arguments
-]
-
-{ #category : 'private - querying' }
-MCPToolFindClasses >> classesForPackageNames: packageNames [
-
-	| classes |
-	classes := IdentitySet new.
-	packageNames do: [ :eachName |
-		(self resolvedPackageNamed: eachName) classes do: [ :eachClass |
-			classes add: eachClass instanceSide ] ].
-	^ self sortedClassesByName: classes
-]
-
-{ #category : 'private - querying' }
-MCPToolFindClasses >> classesForScope: scope packageNames: packageNames classNames: classNames [
-
-	scope = 'image' ifTrue: [
-		| classes |
-		classes := IdentitySet new.
-		Smalltalk globals allClasses do: [ :eachClass |
-			classes add: eachClass instanceSide ].
-		^ self sortedClassesByName: classes ].
-	scope = 'packages' ifTrue: [
-		packageNames ifEmpty: [
-			Error signal: 'packageNames is required when scope=packages.' ].
-		^ self classesForPackageNames: packageNames ].
-	scope = 'classes' ifTrue: [
-		classNames ifEmpty: [
-			Error signal: 'classNames is required when scope=classes.' ].
-		^ self resolvedClassesNamed: classNames ].
-	scope = 'hierarchy' ifTrue: [
-		classNames ifEmpty: [
-			Error signal: 'classNames is required when scope=hierarchy.' ].
-		^ self hierarchyClassesNamed: classNames ].
-	Error signal: 'Unsupported scope: ' , scope
 ]
 
 { #category : 'defaults' }
@@ -300,88 +259,12 @@ MCPToolFindClasses >> defaultTitle [
 	^ 'Find Pharo Classes'
 ]
 
-{ #category : 'private - results' }
-MCPToolFindClasses >> errorResultForError: anError scope: scope [
+{ #category : 'private - template' }
+MCPToolFindClasses >> failureMessageForRequestedContext: requestedContext error: anError [
 
-	(anError isKindOf: MCPCommandError) ifTrue: [
-		| details |
-		details := anError structuredDetails copy.
-		details at: #scope put: scope.
-		^ self errorResultText: anError messageText details: details ].
 	^ self
-		  errorResultText:
-		  (self failureMessageForScope: scope error: anError)
-		  details: {
-				  (#errorClass -> anError class name).
-				  (#message -> anError messageText).
-				  (#scope -> scope) } asDictionary
-]
-
-{ #category : 'executing' }
-MCPToolFindClasses >> executeWithArguments: arguments [
-
-	| caseSensitive classEntries classNames data endIndex filterPattern filterMode filterTargets limit offset packageNames pagedEntries requestedScope scope startIndex totalCount truncated |
-	requestedScope := (self stringArgumentNamed: 'scope' in: arguments)
-		                  ifNil: [ 'image' ]
-		                  ifNotNil: [ :value | value asLowercase ].
-	^ [
-	  filterPattern := self stringArgumentNamed: 'filter' in: arguments.
-	  filterTargets := self normalizedFilterTargetsFrom: arguments.
-	  filterMode := self normalizedFilterModeFrom: arguments.
-	  caseSensitive := self
-		                   booleanArgumentNamed: 'caseSensitive'
-		                   in: arguments
-		                   default: false.
-	  limit := self
-		           nonNegativeIntegerArgumentNamed: 'limit'
-		           in: arguments
-		           default: 100.
-	  offset := self
-		            nonNegativeIntegerArgumentNamed: 'offset'
-		            in: arguments
-		            default: 0.
-	  scope := self scopeFromArguments: arguments.
-	  packageNames := self packageNamesFromArguments: arguments.
-	  classNames := self classNamesFromArguments: arguments.
-	  classEntries := self
-		                  classEntriesFrom: (self
-				                   classesForScope: scope
-				                   packageNames: packageNames
-				                   classNames: classNames)
-		                  filter: filterPattern
-		                  filterTargets: filterTargets
-		                  filterMode: filterMode
-		                  caseSensitive: caseSensitive.
-	  totalCount := classEntries size.
-	  startIndex := offset + 1.
-	  pagedEntries := (startIndex > totalCount or: [ limit = 0 ])
-		                  ifTrue: [ #(  ) ]
-		                  ifFalse: [
-			                  endIndex := totalCount min: offset + limit.
-			                  (classEntries copyFrom: startIndex to: endIndex)
-				                  asArray ].
-	  truncated := offset + pagedEntries size < totalCount.
-	  data := {
-		          (#scope -> scope).
-		          (#packageNames -> packageNames).
-		          (#classNames -> classNames).
-		          (#filterTargets -> filterTargets).
-		          (#returnedCount -> pagedEntries size).
-		          (#totalCount -> totalCount).
-		          (#offset -> offset).
-		          (#limit -> limit).
-		          (#truncated -> truncated).
-		          (#classes -> pagedEntries) } asDictionary.
-	  self
-		  successResultText: (self
-				   successSummaryForScope: scope
-				   returnedCount: pagedEntries size
-				   totalCount: totalCount
-				   truncated: truncated)
-		  data: data ]
-		  on: Exception
-		  do: [ :error |
-		  self errorResultForError: error scope: requestedScope ]
+		  failureMessageForScope: (requestedContext at: #scope)
+		  error: anError
 ]
 
 { #category : 'private - results' }
@@ -415,17 +298,6 @@ MCPToolFindClasses >> filterTextsForClassEntry: anEntry targets: filterTargets [
 	^ texts asArray
 ]
 
-{ #category : 'private - querying' }
-MCPToolFindClasses >> hierarchyClassesNamed: classNames [
-
-	| classes |
-	classes := IdentitySet new.
-	(self resolvedClassesNamed: classNames) do: [ :eachClass |
-		eachClass withAllSuperAndSubclasses do: [ :relatedClass |
-			classes add: relatedClass instanceSide ] ].
-	^ self sortedClassesByName: classes
-]
-
 { #category : 'private - filtering' }
 MCPToolFindClasses >> matchesFilterOnClassEntry: anEntry matcher: aMatcher targets: filterTargets [
 
@@ -433,58 +305,94 @@ MCPToolFindClasses >> matchesFilterOnClassEntry: anEntry matcher: aMatcher targe
 		  anySatisfy: [ :each | aMatcher value: each ]
 ]
 
-{ #category : 'private - arguments' }
-MCPToolFindClasses >> packageNamesFromArguments: arguments [
+{ #category : 'private - template' }
+MCPToolFindClasses >> queryEntriesForParameters: parameters [
 
-	^ self stringCollectionArgumentNamed: 'packageNames' in: arguments
+	^ self
+		  classEntriesFrom: (parameters at: #scopeQuery) classes
+		  filter: (parameters at: #filterPattern)
+		  filterTargets: (parameters at: #filterTargets)
+		  filterMode: (parameters at: #filterMode)
+		  caseSensitive: (parameters at: #caseSensitive)
 ]
 
-{ #category : 'private - querying' }
-MCPToolFindClasses >> resolvedClassNamed: className [
+{ #category : 'private - template' }
+MCPToolFindClasses >> queryParametersFromArguments: arguments [
 
-	^ Smalltalk globals
-		  at: className asSymbol
-		  ifAbsent: [ MCPCommandError signalMissingClassNamed: className ]
+	| scopeQuery |
+	scopeQuery := MCPClassScopeQuery
+		              scope:
+		              (self stringArgumentNamed: 'scope' in: arguments)
+		              packageNames:
+		              (self
+			               argumentNamed: 'packageNames'
+			               in: arguments
+			               ifAbsent: [ nil ])
+		              classNames:
+		              (self
+			               argumentNamed: 'classNames'
+			               in: arguments
+			               ifAbsent: [ nil ]).
+	^ {
+		  (#filterPattern
+		   -> (self stringArgumentNamed: 'filter' in: arguments)).
+		  (#filterTargets -> (self normalizedFilterTargetsFrom: arguments)).
+		  (#filterMode -> (self normalizedFilterModeFrom: arguments)).
+		  (#caseSensitive -> (self
+			    booleanArgumentNamed: 'caseSensitive'
+			    in: arguments
+			    default: false)).
+		  (#limit -> (self
+			    nonNegativeIntegerArgumentNamed: 'limit'
+			    in: arguments
+			    default: 100)).
+		  (#offset -> (self
+			    nonNegativeIntegerArgumentNamed: 'offset'
+			    in: arguments
+			    default: 0)).
+		  (#scopeQuery -> scopeQuery) } asDictionary
 ]
 
-{ #category : 'private - querying' }
-MCPToolFindClasses >> resolvedClassesNamed: classNames [
+{ #category : 'private - template' }
+MCPToolFindClasses >> queryResultDataForParameters: parameters page: page [
 
-	| classes |
-	classes := IdentitySet new.
-	classNames do: [ :eachName |
-		classes add: (self resolvedClassNamed: eachName) instanceSide ].
-	^ self sortedClassesByName: classes
+	| scopeQuery |
+	scopeQuery := parameters at: #scopeQuery.
+	^ self
+		  queryResultDataFrom: {
+				  (#scope -> scopeQuery scope).
+				  (#packageNames -> scopeQuery packageNames).
+				  (#classNames -> scopeQuery classNames).
+				  (#filterTargets -> (parameters at: #filterTargets)) }
+				  asDictionary
+		  page: page
+		  entriesKey: #classes
 ]
 
-{ #category : 'private - querying' }
-MCPToolFindClasses >> resolvedPackageNamed: packageName [
-
-	^ PackageOrganizer default
-		  packageNamed: packageName asSymbol
-		  ifAbsent: [
-		  MCPCommandError signalMissingPackageNamed: packageName ]
-]
-
-{ #category : 'private - arguments' }
-MCPToolFindClasses >> scopeFromArguments: arguments [
+{ #category : 'private - template' }
+MCPToolFindClasses >> requestedContextFromArguments: arguments [
 
 	| scope |
-	scope := (self stringArgumentNamed: 'scope' in: arguments)
+	scope := self
+		         argumentNamed: 'scope'
+		         in: arguments
+		         ifAbsent: [ 'image' ].
+	scope := scope
 		         ifNil: [ 'image' ]
-		         ifNotNil: [ :value | value asLowercase ].
-	(#( 'image' 'packages' 'hierarchy' 'classes' ) includes: scope)
-		ifFalse: [
-			Error signal:
-				'scope must be one of image, packages, hierarchy, or classes.' ].
-	^ scope
+		         ifNotNil: [ scope asString asLowercase ].
+	^ { (#scope -> scope) } asDictionary
 ]
 
-{ #category : 'private - querying' }
-MCPToolFindClasses >> sortedClassesByName: someClasses [
+{ #category : 'private - template' }
+MCPToolFindClasses >> successSummaryForParameters: parameters page: page [
 
-	^ (someClasses asSortedCollection: [ :left :right |
-		   left name <= right name ]) asArray
+	| scopeQuery |
+	scopeQuery := parameters at: #scopeQuery.
+	^ self
+		  successSummaryForScope: scopeQuery scope
+		  returnedCount: (page at: #returnedCount)
+		  totalCount: (page at: #totalCount)
+		  truncated: (page at: #truncated)
 ]
 
 { #category : 'private - results' }
