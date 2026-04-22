@@ -45,6 +45,12 @@ MCPToolFindMethods >> defaultDescription [
 	^ 'List methods in a scope and optionally filter the returned method entries. Use implementors to find definitions of a selector, and references to find methods that use a selector, class, or variable.'
 ]
 
+{ #category : 'private - arguments' }
+MCPToolFindMethods >> defaultFilterTargets [
+
+	^ #( 'selector' )
+]
+
 { #category : 'defaults' }
 MCPToolFindMethods >> defaultIcons [
 
@@ -101,7 +107,7 @@ MCPToolFindMethods >> defaultInputSchema [
 		                          description:
 			                          'Optional method-entry fields matched by filter. Defaults to selector. This filters the listed methods; it does not perform reference lookup.')
 		                         items: filterTargetsItemProperty;
-		                         default: #( 'selector' );
+		                         default: self defaultFilterTargets;
 		                         yourself.
 	^ MCPStructureInputSchema new
 		  type: 'object';
@@ -417,34 +423,6 @@ MCPToolFindMethods >> methodEntrySchema [
 			     'protocol' );
 		  additionalProperties: false;
 		  yourself
-]
-
-{ #category : 'private - arguments' }
-MCPToolFindMethods >> normalizedFilterTargetsFrom: arguments [
-
-	| invalidTargets normalizedTargets rawTargets |
-	rawTargets := self
-		              argumentNamed: 'filterTargets'
-		              in: arguments
-		              ifAbsent: [ ^ #( 'selector' ) ].
-	normalizedTargets := OrderedCollection new.
-	(self
-		 normalizedStringCollection: rawTargets
-		 argumentName: 'filterTargets') do: [ :each |
-		| normalized |
-		normalized := each asLowercase.
-		(normalizedTargets includes: normalized) ifFalse: [
-			normalizedTargets add: normalized ] ].
-	normalizedTargets ifEmpty: [
-		Error signal: 'filterTargets must contain at least one target.' ].
-	invalidTargets := normalizedTargets reject: [ :each |
-		                  self supportedFilterTargets includes: each ].
-	invalidTargets ifNotEmpty: [
-		Error signal: 'Unsupported filterTargets value(s): '
-			, invalidTargets asArray printString
-			,
-			'. Supported targets are selector, class, package, protocol, reference, source.' ].
-	^ normalizedTargets asArray
 ]
 
 { #category : 'private - results' }

@@ -418,6 +418,14 @@ MCPTool >> matcherForPattern: aPattern mode: aMode caseSensitive: aBoolean [
 ]
 
 { #category : 'private - filtering' }
+MCPTool >> matchesFilterMode: filterMode matcher: aMatcher filterText: filterText exactValues: exactValues [
+
+	filterMode = 'exact' ifFalse: [ ^ aMatcher value: filterText ].
+
+	^ exactValues anySatisfy: [ :each | aMatcher value: each ]
+]
+
+{ #category : 'private - filtering' }
 MCPTool >> matchesFilterOnCompiledMethodEntry: anEntry sourceText: sourceText matcher: aMatcher [
 
 	^ aMatcher value:
@@ -495,6 +503,37 @@ MCPTool >> normalizedFilterModeFrom: arguments [
 		Error signal:
 			'filterMode must be one of substring, prefix, exact, or regex.' ].
 	^ mode
+]
+
+{ #category : 'private - arguments' }
+MCPTool >> normalizedFilterTargetsFrom: arguments [
+
+	| invalidTargets normalizedTargets rawTargets supportedTargets |
+	rawTargets := self
+		              argumentNamed: 'filterTargets'
+		              in: arguments
+		              ifAbsent: [ ^ self defaultFilterTargets ].
+	supportedTargets := self supportedFilterTargets.
+	normalizedTargets := OrderedCollection new.
+	invalidTargets := OrderedCollection new.
+	(self
+		 normalizedStringCollection: rawTargets
+		 argumentName: 'filterTargets') do: [ :each |
+		| canonical |
+		canonical := supportedTargets
+			             detect: [ :supported |
+			             supported asLowercase = each asLowercase ]
+			             ifNone: [ nil ].
+		canonical ifNil: [ invalidTargets add: each ] ifNotNil: [
+			(normalizedTargets includes: canonical) ifFalse: [
+				normalizedTargets add: canonical ] ] ].
+	invalidTargets ifNotEmpty: [
+		Error signal: 'Unsupported filterTargets value(s): '
+			, invalidTargets asArray printString , '. Supported targets are '
+			, supportedTargets printString , '.' ].
+	normalizedTargets ifEmpty: [
+		Error signal: 'filterTargets must contain at least one target.' ].
+	^ normalizedTargets asArray
 ]
 
 { #category : 'private - arguments' }

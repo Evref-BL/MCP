@@ -7,7 +7,7 @@ Class {
 }
 
 { #category : 'private - filtering' }
-MCPToolFindClasses >> classEntriesFrom: classes filter: filterPattern filterMode: filterMode caseSensitive: caseSensitive [
+MCPToolFindClasses >> classEntriesFrom: classes filter: filterPattern filterTargets: filterTargets filterMode: filterMode caseSensitive: caseSensitive [
 
 	| entries matcher |
 	matcher := self
@@ -18,8 +18,11 @@ MCPToolFindClasses >> classEntriesFrom: classes filter: filterPattern filterMode
 	classes do: [ :eachClass |
 		| entry |
 		entry := (MCPClassInfo fromClass: eachClass) asDictionary.
-		(matcher value: (self filterTextForClassEntry: entry)) ifTrue: [
-			entries add: entry ] ].
+		(filterPattern isNil or: [
+			 self
+				 matchesFilterOnClassEntry: entry
+				 matcher: matcher
+				 targets: filterTargets ]) ifTrue: [ entries add: entry ] ].
 	^ entries asArray
 ]
 
@@ -120,6 +123,12 @@ MCPToolFindClasses >> defaultDescription [
 	^ 'List classes in the selected scope and optionally filter them by class metadata. Use inspect-class when you already know the class to inspect.'
 ]
 
+{ #category : 'private - arguments' }
+MCPToolFindClasses >> defaultFilterTargets [
+
+	^ #( 'class' )
+]
+
 { #category : 'defaults' }
 MCPToolFindClasses >> defaultIcons [
 
@@ -129,7 +138,7 @@ MCPToolFindClasses >> defaultIcons [
 { #category : 'defaults' }
 MCPToolFindClasses >> defaultInputSchema [
 
-	| scopeProperty packageNamesProperty classNamesProperty filterModeProperty |
+	| scopeProperty packageNamesProperty classNamesProperty filterModeProperty filterTargetsItemProperty filterTargetsProperty |
 	scopeProperty := MCPStructureProperties new
 		                 name: 'scope';
 		                 type: 'string';
@@ -152,11 +161,24 @@ MCPToolFindClasses >> defaultInputSchema [
 		                      name: 'filterMode';
 		                      type: 'string';
 		                      description:
-			                      'How the class filter is matched. Defaults to substring.';
+			                      'How the filter is matched. Defaults to substring.';
 		                      enum:
 			                      #( 'substring' 'prefix' 'exact' 'regex' );
 		                      default: 'substring';
 		                      yourself.
+	filterTargetsItemProperty := MCPStructureProperties new
+		                             type: 'string';
+		                             description: 'A filter target.';
+		                             enum: self supportedFilterTargets;
+		                             yourself.
+	filterTargetsProperty := (self
+		                          schemaPropertyNamed: 'filterTargets'
+		                          type: 'array'
+		                          description:
+			                          'Optional class-entry fields matched by filter. Defaults to class.')
+		                         items: filterTargetsItemProperty;
+		                         default: self defaultFilterTargets;
+		                         yourself.
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties: {
@@ -167,8 +189,9 @@ MCPToolFindClasses >> defaultInputSchema [
 					   name: 'filter';
 					   type: 'string';
 					   description:
-						   'Optional filter applied to class metadata such as names, package, tag, slots, and subclasses.';
+						   'Optional filter applied to the listed class-entry fields. Use filterTargets to choose which fields are matched.';
 					   yourself).
+				  filterTargetsProperty.
 				  filterModeProperty.
 				  (MCPStructureProperties new
 					   name: 'caseSensitive';
@@ -204,7 +227,7 @@ MCPToolFindClasses >> defaultName [
 { #category : 'defaults' }
 MCPToolFindClasses >> defaultOutputSchema [
 
-	| packageNamesProperty classNamesProperty classesProperty |
+	| packageNamesProperty classNamesProperty filterTargetsItemProperty filterTargetsProperty classesProperty |
 	packageNamesProperty := self
 		                        stringArraySchemaNamed: 'packageNames'
 		                        description:
@@ -215,6 +238,18 @@ MCPToolFindClasses >> defaultOutputSchema [
 		                      description:
 		                      'The class names that define the classes or hierarchy scope. Required when scope=classes or scope=hierarchy.'
 		                      itemDescription: 'A class name.'.
+	filterTargetsItemProperty := MCPStructureProperties new
+		                             type: 'string';
+		                             description: 'A filter target.';
+		                             enum: self supportedFilterTargets;
+		                             yourself.
+	filterTargetsProperty := (self
+		                          schemaPropertyNamed: 'filterTargets'
+		                          type: 'array'
+		                          description:
+			                          'The class-entry fields matched by filter. Defaults to class.')
+		                         items: filterTargetsItemProperty;
+		                         yourself.
 	classesProperty := self
 		                   schemaPropertyNamed: 'classes'
 		                   type: 'array'
@@ -222,43 +257,41 @@ MCPToolFindClasses >> defaultOutputSchema [
 		                   'The class entries returned for the requested page.'.
 	classesProperty items: self classEntrySchema.
 	^ self
-		                standardOutputSchemaForDataProperties: {
-				                ((self
-					                  schemaPropertyNamed: 'scope'
-					                  type: 'string'
-					                  description:
-						                  'The scope used to search for classes.')
-					                 enum:
-						                 #( 'image' 'packages' 'hierarchy' 'classes' );
-					                 yourself).
-				                packageNamesProperty.
-				                classNamesProperty.
-				                (self
-					                 integerSchemaPropertyNamed: 'returnedCount'
-					                 description:
-					                 'The number of class entries returned in this page.').
-				                (self
-					                 integerSchemaPropertyNamed: 'totalCount'
-					                 description:
-					                 'The total number of matching classes before pagination.').
-				                (self
-					                 integerSchemaPropertyNamed: 'offset'
-					                 description:
-					                 'The zero-based pagination offset that was applied.').
-				                (self
-					                 integerSchemaPropertyNamed: 'limit'
-					                 description:
-					                 'The maximum number of class entries requested.').
-				                (self
-					                 schemaPropertyNamed: 'truncated'
-					                 type: 'boolean'
-					                 description:
-					                 'Whether additional matching classes exist beyond the returned page.').
-				                classesProperty }
-		                required:
-			                #( 'scope' 'packageNames' 'classNames' 'returnedCount'
-			                   'totalCount' 'offset' 'limit' 'truncated'
-			                   'classes' )
+		  standardOutputSchemaForDataProperties: {
+				  ((self
+					    schemaPropertyNamed: 'scope'
+					    type: 'string'
+					    description: 'The scope used to search for classes.')
+					   enum: #( 'image' 'packages' 'hierarchy' 'classes' );
+					   yourself).
+				  packageNamesProperty.
+				  classNamesProperty.
+				  filterTargetsProperty.
+				  (self
+					   integerSchemaPropertyNamed: 'returnedCount'
+					   description:
+					   'The number of class entries returned in this page.').
+				  (self
+					   integerSchemaPropertyNamed: 'totalCount'
+					   description:
+					   'The total number of matching classes before pagination.').
+				  (self
+					   integerSchemaPropertyNamed: 'offset'
+					   description:
+					   'The zero-based pagination offset that was applied.').
+				  (self
+					   integerSchemaPropertyNamed: 'limit'
+					   description: 'The maximum number of class entries requested.').
+				  (self
+					   schemaPropertyNamed: 'truncated'
+					   type: 'boolean'
+					   description:
+					   'Whether additional matching classes exist beyond the returned page.').
+				  classesProperty }
+		  required:
+			  #( 'scope' 'packageNames' 'classNames' 'filterTargets'
+			     'returnedCount' 'totalCount' 'offset' 'limit' 'truncated'
+			     'classes' )
 ]
 
 { #category : 'defaults' }
@@ -287,25 +320,26 @@ MCPToolFindClasses >> errorResultForError: anError scope: scope [
 { #category : 'executing' }
 MCPToolFindClasses >> executeWithArguments: arguments [
 
-	| caseSensitive classEntries classNames data endIndex filterPattern filterMode limit offset packageNames pagedEntries requestedScope scope startIndex totalCount truncated |
-	filterPattern := self stringArgumentNamed: 'filter' in: arguments.
-	filterMode := self normalizedFilterModeFrom: arguments.
-	caseSensitive := self
-		                 booleanArgumentNamed: 'caseSensitive'
-		                 in: arguments
-		                 default: false.
-	limit := self
-		         nonNegativeIntegerArgumentNamed: 'limit'
-		         in: arguments
-		         default: 100.
-	offset := self
-		          nonNegativeIntegerArgumentNamed: 'offset'
-		          in: arguments
-		          default: 0.
+	| caseSensitive classEntries classNames data endIndex filterPattern filterMode filterTargets limit offset packageNames pagedEntries requestedScope scope startIndex totalCount truncated |
 	requestedScope := (self stringArgumentNamed: 'scope' in: arguments)
 		                  ifNil: [ 'image' ]
 		                  ifNotNil: [ :value | value asLowercase ].
 	^ [
+	  filterPattern := self stringArgumentNamed: 'filter' in: arguments.
+	  filterTargets := self normalizedFilterTargetsFrom: arguments.
+	  filterMode := self normalizedFilterModeFrom: arguments.
+	  caseSensitive := self
+		                   booleanArgumentNamed: 'caseSensitive'
+		                   in: arguments
+		                   default: false.
+	  limit := self
+		           nonNegativeIntegerArgumentNamed: 'limit'
+		           in: arguments
+		           default: 100.
+	  offset := self
+		            nonNegativeIntegerArgumentNamed: 'offset'
+		            in: arguments
+		            default: 0.
 	  scope := self scopeFromArguments: arguments.
 	  packageNames := self packageNamesFromArguments: arguments.
 	  classNames := self classNamesFromArguments: arguments.
@@ -315,6 +349,7 @@ MCPToolFindClasses >> executeWithArguments: arguments [
 				                   packageNames: packageNames
 				                   classNames: classNames)
 		                  filter: filterPattern
+		                  filterTargets: filterTargets
 		                  filterMode: filterMode
 		                  caseSensitive: caseSensitive.
 	  totalCount := classEntries size.
@@ -330,6 +365,7 @@ MCPToolFindClasses >> executeWithArguments: arguments [
 		          (#scope -> scope).
 		          (#packageNames -> packageNames).
 		          (#classNames -> classNames).
+		          (#filterTargets -> filterTargets).
 		          (#returnedCount -> pagedEntries size).
 		          (#totalCount -> totalCount).
 		          (#offset -> offset).
@@ -362,29 +398,21 @@ MCPToolFindClasses >> failureMessageForScope: scope error: anError [
 ]
 
 { #category : 'private - filtering' }
-MCPToolFindClasses >> filterTextForClassEntry: anEntry [
+MCPToolFindClasses >> filterTextsForClassEntry: anEntry targets: filterTargets [
 
-	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: (anEntry at: #className);
-			  nextPutAll: ' ';
-			  nextPutAll: (anEntry at: #superclassName);
-			  nextPutAll: ' ';
-			  nextPutAll: (anEntry at: #packageName);
-			  nextPutAll: ' ';
-			  nextPutAll: (anEntry at: #tag).
-		  (anEntry at: #instanceSlotNames) do: [ :each |
-			  stream
-				  space;
-				  nextPutAll: each ].
-		  (anEntry at: #classSlotNames) do: [ :each |
-			  stream
-				  space;
-				  nextPutAll: each ].
-		  (anEntry at: #subclassNames) do: [ :each |
-			  stream
-				  space;
-				  nextPutAll: each ] ]
+	| texts |
+	texts := OrderedCollection new.
+	filterTargets do: [ :each |
+		each = 'class' ifTrue: [ texts add: (anEntry at: #className) ].
+		each = 'package' ifTrue: [ texts add: (anEntry at: #packageName) ].
+		each = 'tag' ifTrue: [ texts add: (anEntry at: #tag) ].
+		each = 'instanceSlot' ifTrue: [
+			(anEntry at: #instanceSlotNames) do: [ :slotName |
+				texts add: slotName ] ].
+		each = 'classSlot' ifTrue: [
+			(anEntry at: #classSlotNames) do: [ :slotName |
+				texts add: slotName ] ] ].
+	^ texts asArray
 ]
 
 { #category : 'private - querying' }
@@ -396,6 +424,13 @@ MCPToolFindClasses >> hierarchyClassesNamed: classNames [
 		eachClass withAllSuperAndSubclasses do: [ :relatedClass |
 			classes add: relatedClass instanceSide ] ].
 	^ self sortedClassesByName: classes
+]
+
+{ #category : 'private - filtering' }
+MCPToolFindClasses >> matchesFilterOnClassEntry: anEntry matcher: aMatcher targets: filterTargets [
+
+	^ (self filterTextsForClassEntry: anEntry targets: filterTargets)
+		  anySatisfy: [ :each | aMatcher value: each ]
 ]
 
 { #category : 'private - arguments' }
@@ -465,4 +500,10 @@ MCPToolFindClasses >> successSummaryForScope: scope returnedCount: returnedCount
 			  nextPutAll: ' matched'.
 		  truncated ifTrue: [ stream nextPutAll: ', more available' ].
 		  stream nextPutAll: ').' ]
+]
+
+{ #category : 'private - arguments' }
+MCPToolFindClasses >> supportedFilterTargets [
+
+	^ #( 'class' 'package' 'tag' 'instanceSlot' 'classSlot' )
 ]

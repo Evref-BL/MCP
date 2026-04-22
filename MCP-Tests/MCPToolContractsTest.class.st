@@ -175,7 +175,8 @@ MCPToolContractsTest >> testFindClassesHasAccurateNameAndSchema [
 	self deny: (propertyNames includes: 'packageName').
 	self assert: (propertyNames includes: 'packageNames').
 	self assert: (propertyNames includes: 'classNames').
-	self assert: (propertyNames includes: 'filter')
+	self assert: (propertyNames includes: 'filter').
+	self assert: (propertyNames includes: 'filterTargets')
 ]
 
 { #category : 'tests' }
@@ -420,9 +421,8 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 		equals: false.
 	self
 		assert:
-			((self
-				  inputPropertyNamed: 'subclassDepth'
-				  inTool: inspectClassTool) extraProperties at: #default)
+			((self inputPropertyNamed: 'subclassDepth' inTool: inspectClassTool)
+				 extraProperties at: #default)
 		equals: 0.
 	self
 		assert:
@@ -438,6 +438,11 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 		assert: ((self inputPropertyNamed: 'scope' inTool: findClassesTool)
 				 extraProperties at: #default)
 		equals: 'image'.
+	self
+		assert:
+			((self inputPropertyNamed: 'filterTargets' inTool: findClassesTool)
+				 extraProperties at: #default)
+		equals: #( 'class' ).
 	self
 		assert: ((self inputPropertyNamed: 'limit' inTool: findClassesTool)
 				 extraProperties at: #default)

@@ -275,11 +275,11 @@ MCPToolFindPackages >> filterTextForPackageEntry: anEntry [
 { #category : 'private - filtering' }
 MCPToolFindPackages >> matchesFilterOnPackageEntry: anEntry filterMode: filterMode matcher: aMatcher [
 
-	filterMode = 'exact' ifFalse: [
-		^ aMatcher value: (self filterTextForPackageEntry: anEntry) ].
-
-	^ (self packageFilterValuesForExactMatch: anEntry) anySatisfy: [
-		  :each | aMatcher value: each ]
+	^ self
+		  matchesFilterMode: filterMode
+		  matcher: aMatcher
+		  filterText: (self filterTextForPackageEntry: anEntry)
+		  exactValues: (self packageFilterValuesForExactMatch: anEntry)
 ]
 
 { #category : 'private - filtering' }

@@ -60,6 +60,7 @@ MCPToolStructuredOutputTest >> testFindClassesReturnsStructuredArrayData [
 		equals: 'ok'.
 	self assert: (data at: #scope) equals: 'packages'.
 	self assert: (data at: #packageNames) equals: #( 'MCP-Tests' ).
+	self assert: (data at: #filterTargets) equals: #( 'class' ).
 	self assert: (data at: #returnedCount) equals: classNames size.
 	self assert: ((data at: #classes) allSatisfy: [ :each |
 			 (each includesKey: #className) and: [

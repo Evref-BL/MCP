@@ -129,14 +129,37 @@ MCPToolFindClassesTest >> testClassesScopeReturnsExactClassInfos [
 ]
 
 { #category : 'tests' }
+MCPToolFindClassesTest >> testDefaultFilterAppliesToClassOnly [
+
+	| classNames data result |
+	result := self callToolWith: {
+			          (#scope -> 'packages').
+			          (#packageNames -> #( 'MCP-Tests' )).
+			          (#filter -> self baseClassName).
+			          (#filterMode -> 'exact') } asDictionary.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	data := self dataFrom: result.
+	classNames := (data at: #classes) collect: [ :each |
+		              each at: #className ].
+	self assert: (data at: #scope) equals: 'packages'.
+	self assert: (data at: #packageNames) equals: #( 'MCP-Tests' ).
+	self assert: (data at: #filterTargets) equals: #( 'class' ).
+	self assert: (data at: #totalCount) equals: 1.
+	self assert: classNames equals: { self baseClassName } asArray
+]
+
+{ #category : 'tests' }
 MCPToolFindClassesTest >> testFilterCanMatchSlotNames [
 
 	| data result |
 	result := self callToolWith: {
-			          (#packageName -> 'MCP-Tests').
-			          (#filter -> 'alphaSlot') } asDictionary.
+			          (#scope -> 'packages').
+			          (#packageNames -> #( 'MCP-Tests' )).
+			          (#filter -> 'alphaSlot').
+			          (#filterTargets -> #( 'instanceSlot' )) } asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #filterTargets) equals: #( 'instanceSlot' ).
 	self assert: (data at: #totalCount) equals: 1.
 	self entryNamed: self baseClassName in: (data at: #classes)
 ]
@@ -201,6 +224,26 @@ MCPToolFindClassesTest >> testPackagesScopeReturnsPackageClasses [
 			self baseClassName.
 			self childClassName.
 			self grandchildClassName } asArray
+]
+
+{ #category : 'tests' }
+MCPToolFindClassesTest >> testReturnsStructuredErrorForInvalidFilterTarget [
+
+	| error result structured |
+	result := self callToolWith: {
+			          (#scope -> 'packages').
+			          (#packageNames -> #( 'MCP-Tests' )).
+			          (#filter -> 'needle').
+			          (#filterTargets -> #( 'bogus' )) } asDictionary.
+	structured := self structuredContentFrom: result.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (structured at: #status) equals: 'error'.
+	self assert: (error at: #scope) equals: 'packages'.
+	self assert: (error at: #errorClass) equals: 'Error'.
+	self assert:
+		((error at: #message) includesSubstring: 'filterTargets').
+	self assert: ((error at: #message) includesSubstring: 'bogus')
 ]
 
 { #category : 'tests' }
