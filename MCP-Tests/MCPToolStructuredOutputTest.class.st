@@ -144,11 +144,11 @@ MCPToolStructuredOutputTest >> testDescribeMethodReturnsStructuredSuccess [
 ]
 
 { #category : 'tests' }
-MCPToolStructuredOutputTest >> testEvalReturnsStructuredError [
+MCPToolStructuredOutputTest >> testEvaluateReturnsStructuredError [
 
 	| result structured error |
 	result := self
-		          callToolNamed: 'eval'
+		          callToolNamed: 'evaluate'
 		          withArguments: { (#code -> '1 +') } asDictionary.
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
@@ -159,16 +159,17 @@ MCPToolStructuredOutputTest >> testEvalReturnsStructuredError [
 ]
 
 { #category : 'tests' }
-MCPToolStructuredOutputTest >> testEvalReturnsStructuredSuccess [
+MCPToolStructuredOutputTest >> testEvaluateReturnsStructuredSuccess [
 
 	| result data structured |
 	result := self
-		          callToolNamed: 'eval'
+		          callToolNamed: 'evaluate'
 		          withArguments: { (#code -> '1 + 2') } asDictionary.
 	structured := self structuredContentFrom: result.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (structured at: #status) equals: 'ok'.
+	self assert: (data at: #resultClassName) equals: 'SmallInteger'.
 	self assert: (data at: #resultPrintString) equals: '3'
 ]
 

@@ -37,16 +37,19 @@ MCPToolEval >> executeWithArguments: arguments [
 					  (#message -> notice messageText).
 					  (#description -> 'Compilation failed before evaluation.').
 					  (#position -> notice position) } asDictionary ].
-	^ self
-		  successResultText: 'Code evaluated successfully.'
-		  data: { (#resultPrintString -> answer printString) } asDictionary
+	^ self successResultText: 'Code evaluated successfully.' data: {
+			  (#resultClassName -> answer class name asString).
+			  (#resultPrintString
+			   ->
+			   (answer printStringLimitedTo: self resultPreviewCharacterLimit)) }
+			  asDictionary
 ]
 
 { #category : 'initialization' }
 MCPToolEval >> initialize [
 
 	super initialize.
-	name := 'eval'.
+	name := 'evaluate'.
 	title := 'Evaluate Pharo Code'.
 	description := 'Evaluate arbitrary Smalltalk code in the running Pharo image. Prefer dedicated tools when possible; this tool is an escape hatch and may have side effects.'.
 	inputSchema := MCPStructureInputSchema new
@@ -60,13 +63,27 @@ MCPToolEval >> initialize [
 		               required: #( 'code' );
 		               yourself.
 	outputSchema := self
-		                standardOutputSchemaForDataProperties: { (self
-				                 schemaPropertyNamed: 'resultPrintString'
-				                 type: 'string'
-				                 description:
-				                 'The printString of the evaluated result.') }
-		                required: #( 'resultPrintString' ).
+		                standardOutputSchemaForDataProperties: {
+				                (self
+					                 schemaPropertyNamed: 'resultClassName'
+					                 type: 'string'
+					                 description:
+					                 'The name of the evaluated result''s class.').
+				                (self
+					                 schemaPropertyNamed: 'resultPrintString'
+					                 type: 'string'
+					                 description:
+						                 'A printString preview of the evaluated result, limited to '
+						                 , self resultPreviewCharacterLimit printString
+						                 , ' characters.') }
+		                required: #( 'resultClassName' 'resultPrintString' ).
 	icons := { (self pngIconNamed: #scriptManager) }
+]
+
+{ #category : 'private' }
+MCPToolEval >> resultPreviewCharacterLimit [
+
+	^ 10000
 ]
 
 { #category : 'private' }

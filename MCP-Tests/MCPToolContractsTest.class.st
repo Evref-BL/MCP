@@ -140,9 +140,12 @@ MCPToolContractsTest >> testEditMethodSchemaAdvertisesCompiledMethodState [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testEvalIsMarkedAsAdvancedEscapeHatch [
+MCPToolContractsTest >> testEvaluateIsMarkedAsAdvancedEscapeHatch [
 
 	| description |
+	self
+		assert: (MCPToolEval new asJRPCJSON at: #name)
+		equals: 'evaluate'.
 	description := MCPToolEval new description.
 	self assert: (description includesSubstring: 'escape hatch').
 	self assert:
@@ -150,17 +153,17 @@ MCPToolContractsTest >> testEvalIsMarkedAsAdvancedEscapeHatch [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testEvalRequiresCodeInSchema [
+MCPToolContractsTest >> testEvaluateRequiresCodeInSchema [
 
 	self assert: (MCPToolEval new inputSchema required includes: 'code')
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testEvalReturnsCompilationFailureInformation [
+MCPToolContractsTest >> testEvaluateReturnsCompilationFailureInformation [
 
 	| result text |
 	result := self
-		          callToolNamed: 'eval'
+		          callToolNamed: 'evaluate'
 		          withArguments: { (#code -> '1 +') } asDictionary.
 	text := self firstTextFromToolResult: result.
 	self assert: (result at: #isError).
@@ -170,11 +173,11 @@ MCPToolContractsTest >> testEvalReturnsCompilationFailureInformation [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testEvalReturnsRuntimeFailureInformation [
+MCPToolContractsTest >> testEvaluateReturnsRuntimeFailureInformation [
 
 	| result text |
 	result := self
-		          callToolNamed: 'eval'
+		          callToolNamed: 'evaluate'
 		          withArguments:
 		          { (#code -> 'Error signal: ''boom''') } asDictionary.
 	text := self firstTextFromToolResult: result.
@@ -342,7 +345,7 @@ MCPToolContractsTest >> testHandleJSONReturnsInvalidParamsForMissingRequiredArgu
 
 	| response |
 	response := self handleJSON:
-		            '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"eval","arguments":{}}}'.
+		            '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"evaluate","arguments":{}}}'.
 	self assert: (response includesSubstring: '"code":-32602').
 	self assert: (response includesSubstring:
 			 '"message":"Invalid method parameter(s)."')
@@ -471,7 +474,7 @@ MCPToolContractsTest >> testRpcToolCallSignalsInvalidParametersWhenRequiredArgum
 
 	self
 		should: [
-		self callToolNamed: 'eval' withArguments: Dictionary new ]
+		self callToolNamed: 'evaluate' withArguments: Dictionary new ]
 		raise: JRPCInvalidParameters
 ]
 
