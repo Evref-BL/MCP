@@ -137,7 +137,7 @@ MCPToolFindPackages >> initialize [
 
 	| filterModeProperty packageEntryProperty projectNamesProperty scopeProperty |
 	super initialize.
-	name := 'pharo-find-packages'.
+	name := 'find-packages'.
 	title := 'Find Pharo Packages'.
 	description := 'Find packages in the running Pharo image with optional scope, project selection, text filtering, and pagination.'.
 	scopeProperty := MCPStructureProperties new
@@ -234,7 +234,7 @@ MCPToolFindPackages >> initialize [
 			                #( 'scope' 'projectNames' 'returnedCount'
 			                   'totalCount' 'offset' 'limit' 'truncated'
 			                   'packages' ).
-	icons := {  }
+	icons := { self pngCompositeBaseIconNamed: #package badgeIconNamed: #zoomIn }
 ]
 
 { #category : 'private - filtering' }

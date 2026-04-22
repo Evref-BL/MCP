@@ -250,7 +250,7 @@ MCPToolFindClasses >> initialize [
 
 	| classNamesProperty classesProperty filterModeProperty packageNamesProperty scopeProperty |
 	super initialize.
-	name := 'pharo-find-classes'.
+	name := 'find-classes'.
 	title := 'Find Pharo Classes'.
 	description := 'Find classes in the running Pharo image with optional scope, filtering, and pagination.'.
 	scopeProperty := MCPStructureProperties new
@@ -355,7 +355,7 @@ MCPToolFindClasses >> initialize [
 			                #( 'scope' 'packageNames' 'classNames' 'returnedCount'
 			                   'totalCount' 'offset' 'limit' 'truncated'
 			                   'classes' ).
-	icons := {  }
+	icons := { self pngCompositeBaseIconNamed: #class badgeIconNamed: #zoomIn }
 ]
 
 { #category : 'private - arguments' }

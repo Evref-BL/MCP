@@ -45,6 +45,7 @@ MCP >> onInitialize: protocolVersion capabilities: capabilities clientInfo: clie
 				   version: '1.0.0';
 				   description: 'a MCP server for Pharo';
 				   websiteUrl: 'https://badetitou.fr';
+				   icons: { (MCPStructureIcon pngIconNamed: #pharo) };
 				   yourself)
 ]
 

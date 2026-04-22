@@ -136,7 +136,7 @@ MCPToolSenders >> initialize [
 
 	| classNamesProperty modeProperty packageNamesProperty scopeProperty sendersProperty sideProperty |
 	super initialize.
-	name := 'pharo-senders'.
+	name := 'senders'.
 	title := 'Find Pharo Senders and References'.
 	description := 'Find method senders, class references, or variable references in the running Pharo image, optionally scoped to packages, hierarchies, or specific classes.'.
 	scopeProperty := MCPStructureProperties new
@@ -291,7 +291,7 @@ MCPToolSenders >> initialize [
 			                   'packageNames' 'classNames' 'returnedCount'
 			                   'totalCount' 'offset' 'limit' 'truncated'
 			                   'senders' ).
-	icons := {  }
+	icons := { self pngCompositeBaseIconNamed: #references badgeIconNamed: #over }
 ]
 
 { #category : 'private - searching' }

@@ -103,7 +103,7 @@ MCPToolRunTests >> failureMessageForTests: testRequests error: anError [
 MCPToolRunTests >> initialize [
 
 	super initialize.
-	name := 'pharo-run-tests'.
+	name := 'run-tests'.
 	title := 'Run Pharo Tests'.
 	description := 'Run multiple Pharo test executions as one batch. Each batch entry can run a full test class suite or a single test method when testMethodName is provided.'.
 	inputSchema := MCPStructureInputSchema new
@@ -179,7 +179,7 @@ MCPToolRunTests >> initialize [
 			                   'passedCount' 'skippedCount' 'failureCount'
 			                   'errorCount' 'failingTestNames'
 			                   'issues' ).
-	icons := {  }
+	icons := { self pngIconNamed: #testRunner }
 ]
 
 { #category : 'private' }

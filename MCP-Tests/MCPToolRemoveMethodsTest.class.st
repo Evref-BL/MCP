@@ -10,7 +10,7 @@ Class {
 MCPToolRemoveMethodsTest >> callToolWith: someArguments [
 
 	^ MCP new
-		  rpcToolCall: 'pharo-remove-methods'
+		  rpcToolCall: 'remove-methods'
 		  withParams: someArguments
 ]
 

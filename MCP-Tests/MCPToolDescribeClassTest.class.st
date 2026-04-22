@@ -16,7 +16,7 @@ MCPToolDescribeClassTest >> baseClassName [
 MCPToolDescribeClassTest >> callToolWith: someArguments [
 
 	^ MCP new
-		  rpcToolCall: 'pharo-describe-class'
+		  rpcToolCall: 'describe-class'
 		  withParams: someArguments
 ]
 

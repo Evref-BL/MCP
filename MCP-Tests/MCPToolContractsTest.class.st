@@ -42,11 +42,31 @@ MCPToolContractsTest >> testAllToolOutputSchemasAdvertiseStructuredSummaryWarnin
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testAllToolsAdvertisePngIconsWithDataUris [
+
+	| toolDefinitions |
+	toolDefinitions := MCPTool allSubclasses collect: [ :each |
+		                   each new asJRPCJSON ].
+	toolDefinitions do: [ :definition |
+		| icon icons |
+		icons := definition
+			         at: #icons
+			         ifAbsent: [
+			         self fail: 'Missing icons for tool definition.' ].
+		self deny: icons isEmpty.
+		icon := icons first.
+		self assert: (icon at: #mimeType) equals: 'image/png'.
+		self assert: ((icon at: #src) beginsWith: 'data:image/png;base64,').
+		self assert: (icon at: #sizes) size equals: 1.
+		self assert: ((icon at: #sizes) first includesSubstring: 'x') ]
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testDescribeClassHasAccurateNameAndRequiredArguments [
 
 	self
 		assert: MCPToolDescribeClass new name
-		equals: 'pharo-describe-class'.
+		equals: 'describe-class'.
 	self
 		assert: MCPToolDescribeClass new inputSchema required asSet
 		equals: #( 'className' ) asSet
@@ -64,7 +84,7 @@ MCPToolContractsTest >> testDescribeMethodHasAccurateNameAndRequiredArguments [
 		                         each name ].
 	self
 		assert: MCPToolDescribeMethod new name
-		equals: 'pharo-describe-method'.
+		equals: 'describe-method'.
 	self
 		assert: MCPToolDescribeMethod new inputSchema required asSet
 		equals: #( 'className' 'selector' ) asSet.
@@ -79,7 +99,7 @@ MCPToolContractsTest >> testDescribeMethodHasAccurateNameAndRequiredArguments [
 { #category : 'tests' }
 MCPToolContractsTest >> testEditClassHasAccurateNameAndRequiredArguments [
 
-	self assert: MCPToolEditClass new name equals: 'pharo-edit-class'.
+	self assert: MCPToolEditClass new name equals: 'edit-class'.
 	self
 		assert: MCPToolEditClass new inputSchema required asSet
 		equals: #( 'operation' 'className' ) asSet
@@ -88,7 +108,7 @@ MCPToolContractsTest >> testEditClassHasAccurateNameAndRequiredArguments [
 { #category : 'tests' }
 MCPToolContractsTest >> testEditMethodHasAccurateNameAndRequiredArguments [
 
-	self assert: MCPToolEditMethod new name equals: 'pharo-edit-method'.
+	self assert: MCPToolEditMethod new name equals: 'edit-method'.
 	self
 		assert: MCPToolEditMethod new inputSchema required asSet
 		equals: #( 'operation' 'className' 'classSide' ) asSet
@@ -140,7 +160,7 @@ MCPToolContractsTest >> testEvalReturnsCompilationFailureInformation [
 
 	| result text |
 	result := self
-		          callToolNamed: 'pharo-eval'
+		          callToolNamed: 'eval'
 		          withArguments: { (#code -> '1 +') } asDictionary.
 	text := self firstTextFromToolResult: result.
 	self assert: (result at: #isError).
@@ -154,7 +174,7 @@ MCPToolContractsTest >> testEvalReturnsRuntimeFailureInformation [
 
 	| result text |
 	result := self
-		          callToolNamed: 'pharo-eval'
+		          callToolNamed: 'eval'
 		          withArguments:
 		          { (#code -> 'Error signal: ''boom''') } asDictionary.
 	text := self firstTextFromToolResult: result.
@@ -170,7 +190,7 @@ MCPToolContractsTest >> testFindClassesHasAccurateNameAndSchema [
 	| propertyNames schema |
 	schema := MCPToolFindClasses new inputSchema.
 	propertyNames := schema properties collect: [ :each | each name ].
-	self assert: MCPToolFindClasses new name equals: 'pharo-find-classes'.
+	self assert: MCPToolFindClasses new name equals: 'find-classes'.
 	self assert: schema required equals: #(  ).
 	self assert: (propertyNames includes: 'scope').
 	self deny: (propertyNames includes: 'packageName').
@@ -183,7 +203,7 @@ MCPToolContractsTest >> testFindClassesHasAccurateNameAndSchema [
 MCPToolContractsTest >> testFindClassesListsClassesForExistingPackage [
 
 	| classNames data result |
-	result := self callToolNamed: 'pharo-find-classes' withArguments: {
+	result := self callToolNamed: 'find-classes' withArguments: {
 			          (#scope -> 'packages').
 			          (#packageNames -> #( 'MCP-Tests' )) } asDictionary.
 	data := (result at: #structuredContent) at: #data.
@@ -199,7 +219,7 @@ MCPToolContractsTest >> testFindClassesListsClassesForExistingPackage [
 MCPToolContractsTest >> testFindClassesReturnsErrorResultForMissingPackage [
 
 	| result text |
-	result := self callToolNamed: 'pharo-find-classes' withArguments: {
+	result := self callToolNamed: 'find-classes' withArguments: {
 			          (#scope -> 'packages').
 			          (#packageNames -> #( 'MCP-Definitely-Missing' )) }
 			          asDictionary.
@@ -207,7 +227,7 @@ MCPToolContractsTest >> testFindClassesReturnsErrorResultForMissingPackage [
 	self assert: (result at: #isError).
 	self assert: (text includesSubstring:
 			 'Package MCP-Definitely-Missing does not exist.').
-	self deny: (text includesSubstring: 'Tool pharo-find-classes failed')
+	self deny: (text includesSubstring: 'Tool find-classes failed')
 ]
 
 { #category : 'tests' }
@@ -216,7 +236,7 @@ MCPToolContractsTest >> testFindMethodsHasAccurateNameAndSchema [
 	| propertyNames schema |
 	schema := MCPToolFindMethods new inputSchema.
 	propertyNames := schema properties collect: [ :each | each name ].
-	self assert: MCPToolFindMethods new name equals: 'pharo-find-methods'.
+	self assert: MCPToolFindMethods new name equals: 'find-methods'.
 	self assert: schema required equals: #(  ).
 	self assert: (propertyNames includes: 'scope').
 	self assert: (propertyNames includes: 'packageNames').
@@ -229,7 +249,7 @@ MCPToolContractsTest >> testFindMethodsHasAccurateNameAndSchema [
 MCPToolContractsTest >> testFindMethodsListsMethodsForExistingClassScope [
 
 	| classNames data result selectors |
-	result := self callToolNamed: 'pharo-find-methods' withArguments: {
+	result := self callToolNamed: 'find-methods' withArguments: {
 			          (#scope -> 'classes').
 			          (#classNames -> #( 'MCPToolFindMethodsTestTarget' )) }
 			          asDictionary.
@@ -248,7 +268,7 @@ MCPToolContractsTest >> testFindMethodsListsMethodsForExistingClassScope [
 MCPToolContractsTest >> testFindMethodsReturnsErrorResultForMissingClass [
 
 	| result text |
-	result := self callToolNamed: 'pharo-find-methods' withArguments: {
+	result := self callToolNamed: 'find-methods' withArguments: {
 			          (#scope -> 'classes').
 			          (#classNames
 			           -> #( 'MCPDefinitelyMissingFindMethodsClass' )) }
@@ -257,7 +277,7 @@ MCPToolContractsTest >> testFindMethodsReturnsErrorResultForMissingClass [
 	self assert: (result at: #isError).
 	self assert: (text includesSubstring:
 			 'Class MCPDefinitelyMissingFindMethodsClass does not exist.').
-	self deny: (text includesSubstring: 'Tool pharo-find-methods failed')
+	self deny: (text includesSubstring: 'Tool find-methods failed')
 ]
 
 { #category : 'tests' }
@@ -268,7 +288,7 @@ MCPToolContractsTest >> testFindPackagesHasAccurateNameAndSchema [
 	propertyNames := schema properties collect: [ :each | each name ].
 	self
 		assert: MCPToolFindPackages new name
-		equals: 'pharo-find-packages'.
+		equals: 'find-packages'.
 	self assert: schema required equals: #(  ).
 	self assert: (propertyNames includes: 'scope').
 	self assert: (propertyNames includes: 'projectNames').
@@ -280,7 +300,7 @@ MCPToolContractsTest >> testFindPackagesHasAccurateNameAndSchema [
 MCPToolContractsTest >> testFindPackagesListsPackagesForExistingProject [
 
 	| packageNames data result |
-	result := self callToolNamed: 'pharo-find-packages' withArguments: {
+	result := self callToolNamed: 'find-packages' withArguments: {
 			          (#scope -> 'project').
 			          (#projectNames -> #( 'MCP' )) } asDictionary.
 	data := (result at: #structuredContent) at: #data.
@@ -297,7 +317,7 @@ MCPToolContractsTest >> testFindPackagesListsPackagesForExistingProject [
 MCPToolContractsTest >> testFindPackagesReturnsErrorResultForMissingProject [
 
 	| result text |
-	result := self callToolNamed: 'pharo-find-packages' withArguments: {
+	result := self callToolNamed: 'find-packages' withArguments: {
 			          (#scope -> 'project').
 			          (#projectNames -> #( 'DefinitelyMissingProject' )) }
 			          asDictionary.
@@ -305,8 +325,7 @@ MCPToolContractsTest >> testFindPackagesReturnsErrorResultForMissingProject [
 	self assert: (result at: #isError).
 	self assert: (text includesSubstring:
 			 'Project DefinitelyMissingProject does not exist.').
-	self deny:
-		(text includesSubstring: 'Tool pharo-find-packages failed')
+	self deny: (text includesSubstring: 'Tool find-packages failed')
 ]
 
 { #category : 'tests' }
@@ -314,7 +333,7 @@ MCPToolContractsTest >> testHandleJSONReturnsInvalidParamsForMissingRequiredArgu
 
 	| response |
 	response := self handleJSON:
-		            '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"pharo-eval","arguments":{}}}'.
+		            '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"eval","arguments":{}}}'.
 	self assert: (response includesSubstring: '"code":-32602').
 	self assert: (response includesSubstring:
 			 '"message":"Invalid method parameter(s)."')
@@ -332,11 +351,28 @@ MCPToolContractsTest >> testHandleJSONReturnsMethodNotFoundForUnknownTool [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testInitializeAdvertisesPharoServerIcon [
+
+	| expectedIcon icon response serverInfo |
+	expectedIcon := (MCPStructureIcon pngIconNamed: #pharo) asJRPCJSON.
+	response := (MCP new
+		             onInitialize: nil
+		             capabilities: nil
+		             clientInfo: nil
+		             websiteUrl: nil) asJRPCJSON.
+	serverInfo := response at: #serverInfo.
+	self assert: (serverInfo includesKey: #icons).
+	self deny: (serverInfo at: #icons) isEmpty.
+	icon := (serverInfo at: #icons) first.
+	self assert: icon equals: expectedIcon
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testRemoveClassHasAccurateNameAndRequiredArguments [
 
 	self
 		assert: MCPToolRemoveClasses new name
-		equals: 'pharo-remove-classes'.
+		equals: 'remove-classes'.
 	self
 		assert: MCPToolRemoveClasses new inputSchema required asSet
 		equals: #( 'classNames' ) asSet
@@ -347,10 +383,77 @@ MCPToolContractsTest >> testRemoveMethodsHasAccurateNameAndRequiredArguments [
 
 	self
 		assert: MCPToolRemoveMethods new name
-		equals: 'pharo-remove-methods'.
+		equals: 'remove-methods'.
 	self
 		assert: MCPToolRemoveMethods new inputSchema required asSet
 		equals: #( 'className' 'classSide' 'selectors' ) asSet
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testRequestedCompositeToolIconsAreAdvertised [
+
+	self
+		assert: (MCPToolDescribeClass new asJRPCJSON at: #icons) first
+		equals: (MCPStructureIcon
+				 compositeBaseIconNamed: #class
+				 badgeIconNamed: #inspect) asJRPCJSON.
+	self
+		assert: (MCPToolDescribeMethod new asJRPCJSON at: #icons) first
+		equals: (MCPStructureIcon
+				 compositeBaseIconNamed: #page
+				 badgeIconNamed: #inspect) asJRPCJSON.
+	self
+		assert: (MCPToolEditClass new asJRPCJSON at: #icons) first
+		equals:
+			(MCPStructureIcon
+				 compositeBaseIconNamed: #class
+				 badgeIconNamed: #edit) asJRPCJSON.
+	self
+		assert: (MCPToolEditMethod new asJRPCJSON at: #icons) first
+		equals: (MCPStructureIcon
+				 compositeBaseIconNamed: #workspace
+				 badgeIconNamed: #edit) asJRPCJSON.
+	self
+		assert: (MCPToolFindClasses new asJRPCJSON at: #icons) first
+		equals: (MCPStructureIcon
+				 compositeBaseIconNamed: #class
+				 badgeIconNamed: #zoomIn) asJRPCJSON.
+	self
+		assert: (MCPToolFindMethods new asJRPCJSON at: #icons) first
+		equals: (MCPStructureIcon
+				 compositeBaseIconNamed: #page
+				 badgeIconNamed: #zoomIn) asJRPCJSON.
+	self
+		assert: (MCPToolFindPackages new asJRPCJSON at: #icons) first
+		equals: (MCPStructureIcon
+				 compositeBaseIconNamed: #package
+				 badgeIconNamed: #zoomIn) asJRPCJSON.
+	self
+		assert: (MCPToolImplementors new asJRPCJSON at: #icons) first
+		equals: (MCPStructureIcon
+				 compositeBaseIconNamed: #references
+				 badgeIconNamed: #into) asJRPCJSON.
+	self
+		assert: (MCPToolSenders new asJRPCJSON at: #icons) first
+		equals: (MCPStructureIcon
+				 compositeBaseIconNamed: #references
+				 badgeIconNamed: #over) asJRPCJSON.
+	self
+		assert: (MCPToolRemoveClasses new asJRPCJSON at: #icons) first
+		equals: (MCPStructureIcon
+				 compositeBaseIconNamed: #class
+				 badgeIconNamed: #delete) asJRPCJSON.
+	self
+		assert: (MCPToolRemoveMethods new asJRPCJSON at: #icons) first
+		equals: (MCPStructureIcon
+				 compositeBaseIconNamed: #page
+				 badgeIconNamed: #delete) asJRPCJSON.
+	self
+		assert: (MCPToolRunTests new asJRPCJSON at: #icons) first
+		equals: (MCPStructureIcon pngIconNamed: #testRunner) asJRPCJSON.
+	self
+		assert: (MCPToolEval new asJRPCJSON at: #icons) first
+		equals: (MCPStructureIcon pngIconNamed: #scriptManager) asJRPCJSON
 ]
 
 { #category : 'tests' }
@@ -358,22 +461,22 @@ MCPToolContractsTest >> testRpcToolCallSignalsInvalidParametersWhenRequiredArgum
 
 	self
 		should: [
-		self callToolNamed: 'pharo-eval' withArguments: Dictionary new ]
+		self callToolNamed: 'eval' withArguments: Dictionary new ]
 		raise: JRPCInvalidParameters
 ]
 
 { #category : 'tests' }
 MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 
-	self assert: MCPToolRunTests new name equals: 'pharo-run-tests'.
+	self assert: MCPToolRunTests new name equals: 'run-tests'.
 	self
 		assert: MCPToolRunTests new inputSchema required asSet
 		equals: #( 'tests' ) asSet
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testToolNamesUsePharoPrefix [
+MCPToolContractsTest >> testToolNamesDoNotUsePharoPrefix [
 
-	self assert: (MCPTool allSubclasses allSatisfy: [ :each |
-			 each new name beginsWith: 'pharo-' ])
+	self assert: (MCPTool allSubclasses noneSatisfy: [ :each |
+			 each new name includesSubstring: 'pharo-' ])
 ]

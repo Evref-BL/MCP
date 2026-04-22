@@ -9,7 +9,7 @@ Class {
 { #category : 'private' }
 MCPToolSendersTest >> callToolWith: someArguments [
 
-	^ MCP new rpcToolCall: 'pharo-senders' withParams: someArguments
+	^ MCP new rpcToolCall: 'senders' withParams: someArguments
 ]
 
 { #category : 'private' }

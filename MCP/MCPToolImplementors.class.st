@@ -154,7 +154,7 @@ MCPToolImplementors >> initialize [
 
 	| classNamesProperty implementorsProperty packageNamesProperty scopeProperty sideProperty |
 	super initialize.
-	name := 'pharo-implementors'.
+	name := 'implementors'.
 	title := 'Find Pharo Implementors'.
 	description := 'Find implementors of a selector in the running Pharo image, optionally scoped to packages, hierarchies, or specific classes.'.
 	scopeProperty := MCPStructureProperties new
@@ -293,7 +293,7 @@ MCPToolImplementors >> initialize [
 			                   'packageNames' 'classNames' 'returnedCount'
 			                   'totalCount' 'offset' 'limit' 'truncated'
 			                   'implementors' ).
-	icons := {  }
+	icons := { self pngCompositeBaseIconNamed: #references badgeIconNamed: #into }
 ]
 
 { #category : 'private - results' }

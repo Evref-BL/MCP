@@ -30,7 +30,7 @@ MCPToolRemoveClassesTest >> batchClassNames [
 MCPToolRemoveClassesTest >> callToolWith: someArguments [
 
 	^ MCP new
-		  rpcToolCall: 'pharo-remove-classes'
+		  rpcToolCall: 'remove-classes'
 		  withParams: someArguments
 ]
 

@@ -118,7 +118,7 @@ MCPToolRemoveMethods >> forceRemoveSelectors: selectorSymbols from: aBehavior [
 MCPToolRemoveMethods >> initialize [
 
 	super initialize.
-	name := 'pharo-remove-methods'.
+	name := 'remove-methods'.
 	title := 'Remove Pharo Methods'.
 	description := 'Force remove multiple methods from the instance side or class side of a Pharo class as one batch. This bypasses sender checks, so existing senders may be left broken.'.
 	inputSchema := MCPStructureInputSchema new
@@ -211,7 +211,7 @@ MCPToolRemoveMethods >> initialize [
 					                 yourself) }
 		                required:
 		                #( 'className' 'classSide' 'selectors' 'removedMethods' ).
-	icons := {  }
+	icons := { self pngCompositeBaseIconNamed: #page badgeIconNamed: #delete }
 ]
 
 { #category : 'private' }

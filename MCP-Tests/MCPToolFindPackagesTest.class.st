@@ -10,7 +10,7 @@ Class {
 MCPToolFindPackagesTest >> callToolWith: someArguments [
 
 	^ MCP new
-		  rpcToolCall: 'pharo-find-packages'
+		  rpcToolCall: 'find-packages'
 		  withParams: someArguments
 ]
 

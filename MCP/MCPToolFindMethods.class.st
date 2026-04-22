@@ -107,7 +107,7 @@ MCPToolFindMethods >> initialize [
 
 	| classNamesProperty filterModeProperty methodsProperty packageNamesProperty scopeProperty sideProperty |
 	super initialize.
-	name := 'pharo-find-methods'.
+	name := 'find-methods'.
 	title := 'Find Pharo Methods'.
 	description := 'Find methods in the running Pharo image, optionally scoped to packages, hierarchies, or specific classes.'.
 	scopeProperty := MCPStructureProperties new
@@ -237,7 +237,7 @@ MCPToolFindMethods >> initialize [
 			                #( 'scope' 'side' 'sourceIncluded' 'packageNames'
 			                   'classNames' 'returnedCount' 'totalCount'
 			                   'offset' 'limit' 'truncated' 'methods' ).
-	icons := {  }
+	icons := { self pngCompositeBaseIconNamed: #page badgeIconNamed: #zoomIn }
 ]
 
 { #category : 'private - schema' }

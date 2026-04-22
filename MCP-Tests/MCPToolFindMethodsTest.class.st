@@ -9,7 +9,7 @@ Class {
 { #category : 'private' }
 MCPToolFindMethodsTest >> callToolWith: someArguments [
 
-	^ MCP new rpcToolCall: 'pharo-find-methods' withParams: someArguments
+	^ MCP new rpcToolCall: 'find-methods' withParams: someArguments
 ]
 
 { #category : 'private' }

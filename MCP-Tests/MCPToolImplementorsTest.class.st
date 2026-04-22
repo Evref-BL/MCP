@@ -9,7 +9,7 @@ Class {
 { #category : 'private' }
 MCPToolImplementorsTest >> callToolWith: someArguments [
 
-	^ MCP new rpcToolCall: 'pharo-implementors' withParams: someArguments
+	^ MCP new rpcToolCall: 'implementors' withParams: someArguments
 ]
 
 { #category : 'private' }

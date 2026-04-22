@@ -77,7 +77,7 @@ MCPToolRemoveClasses >> failureMessageForClassNames: classNames error: anError [
 MCPToolRemoveClasses >> initialize [
 
 	super initialize.
-	name := 'pharo-remove-classes'.
+	name := 'remove-classes'.
 	title := 'Remove Pharo Classes'.
 	description := 'Remove multiple classes from the running Pharo image as one batch using ReRemoveClassRefactoring safety checks. Empty classes may be removed with subclasses by reparenting those subclasses to the removed class superclass. If a removed class was the last defined class in its package, that package is removed too.'.
 	inputSchema := MCPStructureInputSchema new
@@ -208,7 +208,7 @@ MCPToolRemoveClasses >> initialize [
 					                 yourself) }
 		                required:
 		                #( 'classNames' 'removedClasses' 'removedPackageNames' ).
-	icons := {  }
+	icons := { self pngCompositeBaseIconNamed: #class badgeIconNamed: #delete }
 ]
 
 { #category : 'private' }

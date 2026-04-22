@@ -161,7 +161,7 @@ MCPToolDescribeClass >> initialize [
 
 	| includeSuperclassesProperty subclassDepthProperty upToSuperclassNameProperty |
 	super initialize.
-	name := 'pharo-describe-class'.
+	name := 'describe-class'.
 	title := 'Describe Pharo Class'.
 	description := 'Describe a class from the running Pharo image using structured metadata, with optional superclass and subclass exploration.'.
 	includeSuperclassesProperty := MCPStructureProperties new
@@ -215,7 +215,7 @@ MCPToolDescribeClass >> initialize [
 		                required:
 		                self classDescriptionRequiredFields
 		                , #( 'superclasses' 'subclasses' ).
-	icons := {  }
+	icons := { self pngCompositeBaseIconNamed: #class badgeIconNamed: #inspect }
 ]
 
 { #category : 'private - hierarchy' }

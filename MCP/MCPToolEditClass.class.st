@@ -215,7 +215,7 @@ MCPToolEditClass >> failureMessageForRenameClassNamed: className to: newClassNam
 MCPToolEditClass >> initialize [
 
 	super initialize.
-	name := 'pharo-edit-class'.
+	name := 'edit-class'.
 	title := 'Edit Pharo Class'.
 	description := 'Edit a class in the running Pharo image by creating it, moving it to another package or tag, or renaming it.'.
 	inputSchema := MCPStructureInputSchema new
@@ -361,7 +361,7 @@ MCPToolEditClass >> initialize [
 			                #( 'operation' 'className' 'superclassName'
 			                   'packageName' 'tag' 'instanceSlotNames'
 			                   'classSlotNames' 'subclassNames' ).
-	icons := {  }
+	icons := { self pngCompositeBaseIconNamed: #class badgeIconNamed: #edit }
 ]
 
 { #category : 'private - arguments' }

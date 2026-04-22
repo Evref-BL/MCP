@@ -15,7 +15,7 @@ MCPToolFindClassesTest >> baseClassName [
 { #category : 'private' }
 MCPToolFindClassesTest >> callToolWith: someArguments [
 
-	^ MCP new rpcToolCall: 'pharo-find-classes' withParams: someArguments
+	^ MCP new rpcToolCall: 'find-classes' withParams: someArguments
 ]
 
 { #category : 'private' }

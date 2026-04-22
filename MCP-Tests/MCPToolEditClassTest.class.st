@@ -10,7 +10,7 @@ Class {
 MCPToolEditClassTest >> callToolWith: someArguments [
 
 	^ self withoutEpiceaDuring: [
-		  MCP new rpcToolCall: 'pharo-edit-class' withParams: someArguments ]
+		  MCP new rpcToolCall: 'edit-class' withParams: someArguments ]
 ]
 
 { #category : 'private' }

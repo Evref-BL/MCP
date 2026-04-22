@@ -497,6 +497,35 @@ MCPTool >> outputSchema: anObject [
 	outputSchema := anObject
 ]
 
+{ #category : 'private - icons' }
+MCPTool >> pngCompositeBaseIconNamed: aBaseIconSymbol badgeIconNamed: aBadgeIconSymbol [
+
+	^ MCPStructureIcon
+		  compositeBaseIconNamed: aBaseIconSymbol
+		  badgeIconNamed: aBadgeIconSymbol
+]
+
+{ #category : 'private - icons' }
+MCPTool >> pngDataUriForForm: aForm [
+
+	| bytes |
+	bytes := ByteArray streamContents: [ :stream |
+		         PNGReadWriter putForm: aForm onStream: stream ].
+	^ 'data:image/png;base64,' , bytes base64Encoded
+]
+
+{ #category : 'private - icons' }
+MCPTool >> pngIconNamed: anIconSymbol [
+
+	^ MCPStructureIcon pngIconNamed: anIconSymbol
+]
+
+{ #category : 'private - icons' }
+MCPTool >> pngSizeStringForForm: aForm [
+
+	^ aForm width asString , 'x' , aForm height asString
+]
+
 { #category : 'private - schema' }
 MCPTool >> schemaPropertyNamed: aName type: aType description: aDescription [
 

@@ -33,7 +33,7 @@ MCPToolEditMethodTest >> assertSuccessDataHasCompiledMethodShape: data [
 MCPToolEditMethodTest >> callToolWith: someArguments [
 
 	^ self withoutEpiceaDuring: [
-		  MCP new rpcToolCall: 'pharo-edit-method' withParams: someArguments ]
+		  MCP new rpcToolCall: 'edit-method' withParams: someArguments ]
 ]
 
 { #category : 'private' }

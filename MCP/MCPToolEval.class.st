@@ -46,7 +46,7 @@ MCPToolEval >> executeWithArguments: arguments [
 MCPToolEval >> initialize [
 
 	super initialize.
-	name := 'pharo-eval'.
+	name := 'eval'.
 	title := 'Evaluate Pharo Code'.
 	description := 'Evaluate arbitrary Smalltalk code in the running Pharo image. Prefer dedicated tools when possible; this tool is an escape hatch and may have side effects.'.
 	inputSchema := MCPStructureInputSchema new
@@ -66,7 +66,7 @@ MCPToolEval >> initialize [
 				                 description:
 				                 'The printString of the evaluated result.') }
 		                required: #( 'resultPrintString' ).
-	icons := {  }
+	icons := { self pngIconNamed: #scriptManager }
 ]
 
 { #category : 'private' }

@@ -50,7 +50,7 @@ MCPToolStructuredOutputTest >> testDescribeClassReturnsStructuredError [
 
 	| error result structured |
 	result := self
-		          callToolNamed: 'pharo-describe-class'
+		          callToolNamed: 'describe-class'
 		          withArguments:
 			          { (#className -> 'MCPToolDescribeClassDefinitelyMissing') }
 				          asDictionary.
@@ -73,7 +73,7 @@ MCPToolStructuredOutputTest >> testDescribeClassReturnsStructuredSuccess [
 
 	| data result structured |
 	result := self
-		          callToolNamed: 'pharo-describe-class'
+		          callToolNamed: 'describe-class'
 		          withArguments:
 		          { (#className -> 'MCPToolDescribeMethodTestTarget') }
 			          asDictionary.
@@ -99,7 +99,7 @@ MCPToolStructuredOutputTest >> testDescribeMethodReturnsStructuredError [
 
 	| error result structured |
 	result := self
-		          callToolNamed: 'pharo-describe-method'
+		          callToolNamed: 'describe-method'
 		          withArguments: {
 				          (#className -> 'MCPToolDescribeMethodTestTarget').
 				          (#selector -> 'doesNotExist') } asDictionary.
@@ -121,7 +121,7 @@ MCPToolStructuredOutputTest >> testDescribeMethodReturnsStructuredSuccess [
 
 	| data result |
 	result := self
-		          callToolNamed: 'pharo-describe-method'
+		          callToolNamed: 'describe-method'
 		          withArguments: {
 				          (#className -> 'MCPToolDescribeMethodTestTarget').
 				          (#selector -> 'readInstanceWith:') } asDictionary.
@@ -151,7 +151,7 @@ MCPToolStructuredOutputTest >> testEvalReturnsStructuredError [
 
 	| result structured error |
 	result := self
-		          callToolNamed: 'pharo-eval'
+		          callToolNamed: 'eval'
 		          withArguments: { (#code -> '1 +') } asDictionary.
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
@@ -166,7 +166,7 @@ MCPToolStructuredOutputTest >> testEvalReturnsStructuredSuccess [
 
 	| result data structured |
 	result := self
-		          callToolNamed: 'pharo-eval'
+		          callToolNamed: 'eval'
 		          withArguments: { (#code -> '1 + 2') } asDictionary.
 	structured := self structuredContentFrom: result.
 	data := self dataFrom: result.
@@ -179,7 +179,7 @@ MCPToolStructuredOutputTest >> testEvalReturnsStructuredSuccess [
 MCPToolStructuredOutputTest >> testFindClassesReturnsStructuredArrayData [
 
 	| classNames data result |
-	result := self callToolNamed: 'pharo-find-classes' withArguments: {
+	result := self callToolNamed: 'find-classes' withArguments: {
 			          (#scope -> 'packages').
 			          (#packageNames -> #( 'MCP-Tests' )) } asDictionary.
 	data := self dataFrom: result.
@@ -201,7 +201,7 @@ MCPToolStructuredOutputTest >> testFindClassesReturnsStructuredArrayData [
 MCPToolStructuredOutputTest >> testFindClassesReturnsStructuredError [
 
 	| result structured error |
-	result := self callToolNamed: 'pharo-find-classes' withArguments: {
+	result := self callToolNamed: 'find-classes' withArguments: {
 			          (#scope -> 'packages').
 			          (#packageNames -> #( 'MCP-Definitely-Missing' )) }
 			          asDictionary.
@@ -221,7 +221,7 @@ MCPToolStructuredOutputTest >> testFindClassesReturnsStructuredError [
 MCPToolStructuredOutputTest >> testFindMethodsReturnsStructuredArrayData [
 
 	| data result selectors |
-	result := self callToolNamed: 'pharo-find-methods' withArguments: {
+	result := self callToolNamed: 'find-methods' withArguments: {
 			          (#scope -> 'classes').
 			          (#classNames -> #( 'MCPToolFindMethodsTestTarget' )) }
 			          asDictionary.
@@ -247,7 +247,7 @@ MCPToolStructuredOutputTest >> testFindMethodsReturnsStructuredArrayData [
 MCPToolStructuredOutputTest >> testFindMethodsReturnsStructuredError [
 
 	| result structured error |
-	result := self callToolNamed: 'pharo-find-methods' withArguments: {
+	result := self callToolNamed: 'find-methods' withArguments: {
 			          (#scope -> 'packages').
 			          (#packageNames -> #( 'MCP-Definitely-Missing' )) }
 			          asDictionary.
@@ -267,7 +267,7 @@ MCPToolStructuredOutputTest >> testFindMethodsReturnsStructuredError [
 MCPToolStructuredOutputTest >> testFindPackagesDefaultsToImageScopeWhenScopeIsOmitted [
 
 	| data packageNames result |
-	result := self callToolNamed: 'pharo-find-packages' withArguments: {
+	result := self callToolNamed: 'find-packages' withArguments: {
 			          (#filter -> '^MCP\s').
 			          (#filterMode -> 'regex') } asDictionary.
 	data := self dataFrom: result.
@@ -286,7 +286,7 @@ MCPToolStructuredOutputTest >> testFindPackagesDefaultsToImageScopeWhenScopeIsOm
 MCPToolStructuredOutputTest >> testFindPackagesReturnsStructuredArrayData [
 
 	| result data packageNames |
-	result := self callToolNamed: 'pharo-find-packages' withArguments: {
+	result := self callToolNamed: 'find-packages' withArguments: {
 			          (#scope -> 'project').
 			          (#projectNames -> #( 'MCP' )) } asDictionary.
 	data := self dataFrom: result.
@@ -308,7 +308,7 @@ MCPToolStructuredOutputTest >> testFindPackagesReturnsStructuredArrayData [
 MCPToolStructuredOutputTest >> testFindPackagesReturnsStructuredError [
 
 	| result structured error |
-	result := self callToolNamed: 'pharo-find-packages' withArguments: {
+	result := self callToolNamed: 'find-packages' withArguments: {
 			          (#scope -> 'project').
 			          (#projectNames -> #( 'DefinitelyMissingProject' )) }
 			          asDictionary.
@@ -329,7 +329,7 @@ MCPToolStructuredOutputTest >> testRemoveClassReturnsStructuredError [
 
 	| result structured error |
 	result := self
-		          callToolNamed: 'pharo-remove-classes'
+		          callToolNamed: 'remove-classes'
 		          withArguments:
 			          { (#classNames
 			           -> { 'MCPToolRemoveClassDefinitelyMissing' }) }
@@ -349,7 +349,7 @@ MCPToolStructuredOutputTest >> testRunTestClassReturnsStructuredIssues [
 
 	| data firstIssue result singleResult |
 	result := self
-		          callToolNamed: 'pharo-run-tests'
+		          callToolNamed: 'run-tests'
 		          withArguments: { (#tests
 			           ->
 			           { { (#className -> 'MCPToolStructuredOutputTestTarget') }
@@ -377,7 +377,7 @@ MCPToolStructuredOutputTest >> testRunTestMethodReturnsStructuredIssues [
 
 	| data methodResult result |
 	result := self
-		          callToolNamed: 'pharo-run-tests'
+		          callToolNamed: 'run-tests'
 		          withArguments: { (#tests -> {
 				           { (#className -> 'MCPToolStructuredOutputTestTarget') }
 					           asDictionary.

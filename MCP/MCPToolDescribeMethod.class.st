@@ -142,7 +142,7 @@ MCPToolDescribeMethod >> initialize [
 
 	| sideProperty variableNameItemSchema |
 	super initialize.
-	name := 'pharo-describe-method'.
+	name := 'describe-method'.
 	title := 'Describe Pharo Method'.
 	description := 'Describe a single method from the running Pharo image, including structured variable-resolution context.'.
 	sideProperty := MCPStructureProperties new
@@ -245,7 +245,7 @@ MCPToolDescribeMethod >> initialize [
 			                   'variableReferenceCount'
 			                   'externalVariableCount' 'variableReferences'
 			                   'externalVariableReferences' ).
-	icons := {  }
+	icons := { self pngCompositeBaseIconNamed: #page badgeIconNamed: #inspect }
 ]
 
 { #category : 'private - analysis' }

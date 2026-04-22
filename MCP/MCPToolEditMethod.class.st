@@ -344,7 +344,7 @@ MCPToolEditMethod >> identityPermutationForSelector: aSelector [
 MCPToolEditMethod >> initialize [
 
 	super initialize.
-	name := 'pharo-edit-method'.
+	name := 'edit-method'.
 	title := 'Edit Pharo Method'.
 	description := 'Edit a method on the instance side or class side of a Pharo class by compiling source, renaming a selector, or changing a protocol.'.
 	inputSchema := MCPStructureInputSchema new
@@ -411,7 +411,7 @@ MCPToolEditMethod >> initialize [
 		                required:
 			                #( 'selector' 'className' 'side' 'packageName'
 			                   'isExtension' 'protocol' 'source' ).
-	icons := {  }
+	icons := { self pngCompositeBaseIconNamed: #workspace badgeIconNamed: #edit }
 ]
 
 { #category : 'private' }

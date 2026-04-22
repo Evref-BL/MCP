@@ -10,7 +10,7 @@ Class {
 MCPToolDescribeMethodTest >> callToolWith: someArguments [
 
 	^ MCP new
-		  rpcToolCall: 'pharo-describe-method'
+		  rpcToolCall: 'describe-method'
 		  withParams: someArguments
 ]
 
