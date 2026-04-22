@@ -10,7 +10,7 @@ Class {
 MCPCreateClassCommandTest >> captureCommandError: aBlock [
 
 	^ [
-	  aBlock value.
+	  self withoutEpiceaDuring: [ aBlock value ].
 	  self fail: 'Expected MCPCommandError' ]
 		  on: MCPCommandError
 		  do: [ :error | error ]
@@ -32,6 +32,12 @@ MCPCreateClassCommandTest >> createdClassNames [
 ]
 
 { #category : 'private' }
+MCPCreateClassCommandTest >> executeCommand: aCommand [
+
+	^ self withoutEpiceaDuring: [ aCommand execute ]
+]
+
+{ #category : 'private' }
 MCPCreateClassCommandTest >> generatedPackageName [
 
 	^ 'MCP-Tests-CreateClassCommand'
@@ -42,17 +48,19 @@ MCPCreateClassCommandTest >> removeClassNamed: aClassName [
 
 	| classSymbol |
 	classSymbol := aClassName asSymbol.
-	(Smalltalk globals includesKey: classSymbol) ifTrue: [
-		(Smalltalk globals at: classSymbol) removeFromSystem ]
+	self withoutEpiceaDuring: [
+		(Smalltalk globals includesKey: classSymbol) ifTrue: [
+			(Smalltalk globals at: classSymbol) removeFromSystem ] ]
 ]
 
 { #category : 'private' }
 MCPCreateClassCommandTest >> removeGeneratedPackage [
 
-	(self packageOrganizer hasPackage: self generatedPackageName)
-		ifTrue: [
-			self packageOrganizer removePackage:
-				(self packageOrganizer packageNamed: self generatedPackageName) ]
+	self withoutEpiceaDuring: [
+		(self packageOrganizer hasPackage: self generatedPackageName)
+			ifTrue: [
+				self packageOrganizer removePackage:
+					(self packageOrganizer packageNamed: self generatedPackageName) ] ]
 ]
 
 { #category : 'running' }
@@ -75,13 +83,13 @@ MCPCreateClassCommandTest >> tearDown [
 MCPCreateClassCommandTest >> testCreatesClassAndReturnsResultObject [
 
 	| result createdClass |
-	result := (MCPCreateClassCommand
-		           className: 'MCPCreateClassCommandTestGenerated'
-		           superclassName: 'Object'
-		           packageName: self generatedPackageName
-		           tag: nil
-		           slots: nil
-		           classSlots: nil) execute.
+	result := self executeCommand: (MCPCreateClassCommand
+			           className: 'MCPCreateClassCommandTestGenerated'
+			           superclassName: 'Object'
+			           packageName: self generatedPackageName
+			           tag: nil
+			           slots: nil
+			           classSlots: nil).
 	createdClass := self classNamed: 'MCPCreateClassCommandTestGenerated'.
 	self assert: createdClass superclass equals: Object.
 	self
@@ -99,13 +107,13 @@ MCPCreateClassCommandTest >> testCreatesClassAndReturnsResultObject [
 MCPCreateClassCommandTest >> testCreatesClassWithTagSlotsAndClassSlots [
 
 	| createdClass result |
-	result := (MCPCreateClassCommand
-		           className: 'MCPCreateClassCommandTestTagged'
-		           superclassName: 'Object'
-		           packageName: self generatedPackageName
-		           tag: 'Generated'
-		           slots: #( 'firstName' 'lastName' )
-		           classSlots: #( 'defaultName' )) execute.
+	result := self executeCommand: (MCPCreateClassCommand
+			           className: 'MCPCreateClassCommandTestTagged'
+			           superclassName: 'Object'
+			           packageName: self generatedPackageName
+			           tag: 'Generated'
+			           slots: #( 'firstName' 'lastName' )
+			           classSlots: #( 'defaultName' )).
 	createdClass := self classNamed: 'MCPCreateClassCommandTestTagged'.
 	self
 		assert: (createdClass slots collect: #name as: Array)
@@ -121,13 +129,13 @@ MCPCreateClassCommandTest >> testCreatesClassWithTagSlotsAndClassSlots [
 MCPCreateClassCommandTest >> testExistingClassSignalsCommandError [
 
 	| error |
-	(MCPCreateClassCommand
-		 className: 'MCPCreateClassCommandTestGenerated'
-		 superclassName: 'Object'
-		 packageName: self generatedPackageName
-		 tag: nil
-		 slots: nil
-		 classSlots: nil) execute.
+	self executeCommand: (MCPCreateClassCommand
+			 className: 'MCPCreateClassCommandTestGenerated'
+			 superclassName: 'Object'
+			 packageName: self generatedPackageName
+			 tag: nil
+			 slots: nil
+			 classSlots: nil).
 	error := self captureCommandError: [
 		         (MCPCreateClassCommand
 			          className: 'MCPCreateClassCommandTestGenerated'

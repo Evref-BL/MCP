@@ -15,7 +15,8 @@ MCPToolEditMethodTest >> assertSuccessDataIsEmpty: data [
 { #category : 'private' }
 MCPToolEditMethodTest >> callToolWith: someArguments [
 
-	^ MCP new rpcToolCall: 'pharo-edit-method' withParams: someArguments
+	^ self withoutEpiceaDuring: [
+		  MCP new rpcToolCall: 'pharo-edit-method' withParams: someArguments ]
 ]
 
 { #category : 'private' }
@@ -73,7 +74,8 @@ MCPToolEditMethodTest >> dataFrom: aResult [
 { #category : 'private' }
 MCPToolEditMethodTest >> ensureMethodSource: aMethodSource protocol: aProtocol on: aBehavior [
 
-	aBehavior compile: aMethodSource classified: aProtocol
+	self withoutEpiceaDuring: [
+		aBehavior compile: aMethodSource classified: aProtocol ]
 ]
 
 { #category : 'private' }
@@ -137,8 +139,9 @@ MCPToolEditMethodTest >> instanceSelector [
 { #category : 'private' }
 MCPToolEditMethodTest >> removeSelector: aSelector from: aBehavior [
 
-	(aBehavior includesSelector: aSelector) ifTrue: [
-		aBehavior removeSelector: aSelector ]
+	self withoutEpiceaDuring: [
+		(aBehavior includesSelector: aSelector) ifTrue: [
+			aBehavior removeSelector: aSelector ] ]
 ]
 
 { #category : 'private' }

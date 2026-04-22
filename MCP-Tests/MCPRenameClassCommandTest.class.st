@@ -10,7 +10,7 @@ Class {
 MCPRenameClassCommandTest >> captureCommandError: aBlock [
 
 	^ [
-	  aBlock value.
+	  self withoutEpiceaDuring: [ aBlock value ].
 	  self fail: 'Expected MCPCommandError' ]
 		  on: MCPCommandError
 		  do: [ :error | error ]
@@ -28,14 +28,21 @@ MCPRenameClassCommandTest >> ensureOriginalFixtureState [
 	| originalSymbol renamedSymbol |
 	originalSymbol := self originalClassName asSymbol.
 	renamedSymbol := self renamedClassName asSymbol.
-	((Smalltalk globals includesKey: originalSymbol) and: [
-		 Smalltalk globals includesKey: renamedSymbol ]) ifTrue: [
-		(Smalltalk globals at: renamedSymbol) removeFromSystem ].
-	((Smalltalk globals includesKey: renamedSymbol) and: [
-		 (Smalltalk globals includesKey: originalSymbol) not ]) ifTrue: [
-		(ReRenameClassRefactoring
-			 rename: self renamedClassName
-			 to: self originalClassName) execute ]
+	self withoutEpiceaDuring: [
+		((Smalltalk globals includesKey: originalSymbol) and: [
+			 Smalltalk globals includesKey: renamedSymbol ]) ifTrue: [
+			(Smalltalk globals at: renamedSymbol) removeFromSystem ].
+		((Smalltalk globals includesKey: renamedSymbol) and: [
+			 (Smalltalk globals includesKey: originalSymbol) not ]) ifTrue: [
+			(ReRenameClassRefactoring
+				 rename: self renamedClassName
+				 to: self originalClassName) execute ] ]
+]
+
+{ #category : 'private' }
+MCPRenameClassCommandTest >> executeCommand: aCommand [
+
+	^ self withoutEpiceaDuring: [ aCommand execute ]
 ]
 
 { #category : 'private' }
@@ -82,9 +89,9 @@ MCPRenameClassCommandTest >> testMissingClassSignalsCommandError [
 MCPRenameClassCommandTest >> testRenamesClassAndReturnsResultObject [
 
 	| result |
-	result := (MCPRenameClassCommand
-		           className: self originalClassName
-		           newClassName: self renamedClassName) execute.
+	result := self executeCommand: (MCPRenameClassCommand
+			           className: self originalClassName
+			           newClassName: self renamedClassName).
 	self assert:
 		(Smalltalk globals includesKey: self renamedClassName asSymbol).
 	self deny:

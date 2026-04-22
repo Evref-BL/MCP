@@ -10,7 +10,7 @@ Class {
 MCPMoveClassCommandTest >> captureCommandError: aBlock [
 
 	^ [
-	  aBlock value.
+	  self withoutEpiceaDuring: [ aBlock value ].
 	  self fail: 'Expected MCPCommandError' ]
 		  on: MCPCommandError
 		  do: [ :error | error ]
@@ -35,9 +35,36 @@ MCPMoveClassCommandTest >> destinationTagName [
 ]
 
 { #category : 'private' }
+MCPMoveClassCommandTest >> ensureDestinationPackage [
+
+	self withoutEpiceaDuring: [
+		| package |
+		package := PackageOrganizer default ensurePackage:
+			           self destinationPackageName.
+		package ensureTag: self destinationTagName ]
+]
+
+{ #category : 'private' }
+MCPMoveClassCommandTest >> executeCommand: aCommand [
+
+	^ self withoutEpiceaDuring: [ aCommand execute ]
+]
+
+{ #category : 'private' }
 MCPMoveClassCommandTest >> originalPackageName [
 
 	^ 'MCP-Tests'
+]
+
+{ #category : 'private' }
+MCPMoveClassCommandTest >> removeDestinationPackage [
+
+	self withoutEpiceaDuring: [
+		(PackageOrganizer default hasPackage: self destinationPackageName)
+			ifTrue: [
+				PackageOrganizer default removePackage:
+					(PackageOrganizer default packageNamed:
+						 self destinationPackageName) ] ]
 ]
 
 { #category : 'private' }
@@ -46,16 +73,19 @@ MCPMoveClassCommandTest >> restoreTargetClassLocation [
 	(self targetClass packageName asString = self originalPackageName
 		 and: [ self currentTagOfTargetClass = 'Uncategorized' ]) ifTrue: [
 		^ self ].
-	(RBMoveClassTransformation
-		 move: self targetClassName
-		 toPackage: self originalPackageName) execute
+	self withoutEpiceaDuring: [
+		(RBMoveClassTransformation
+			 move: self targetClassName
+			 toPackage: self originalPackageName) execute ]
 ]
 
 { #category : 'running' }
 MCPMoveClassCommandTest >> setUp [
 
 	super setUp.
-	self restoreTargetClassLocation
+	self restoreTargetClassLocation.
+	self removeDestinationPackage.
+	self ensureDestinationPackage
 ]
 
 { #category : 'private' }
@@ -74,6 +104,7 @@ MCPMoveClassCommandTest >> targetClassName [
 MCPMoveClassCommandTest >> tearDown [
 
 	self restoreTargetClassLocation.
+	self removeDestinationPackage.
 	super tearDown
 ]
 
@@ -114,10 +145,10 @@ MCPMoveClassCommandTest >> testMissingPackageSignalsCommandError [
 MCPMoveClassCommandTest >> testMovesClassAndReturnsResultObject [
 
 	| result |
-	result := (MCPMoveClassCommand
-		           className: self targetClassName
-		           packageName: self destinationPackageName
-		           tag: self destinationTagName) execute.
+	result := self executeCommand: (MCPMoveClassCommand
+			           className: self targetClassName
+			           packageName: self destinationPackageName
+			           tag: self destinationTagName).
 	self
 		assert: self targetClass packageName asString
 		equals: self destinationPackageName.

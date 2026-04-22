@@ -40,7 +40,8 @@ MCPToolRemoveMethodsTest >> dataFrom: aResult [
 { #category : 'private' }
 MCPToolRemoveMethodsTest >> ensureMethodSource: aMethodSource protocol: aProtocol on: aBehavior [
 
-	aBehavior compile: aMethodSource classified: aProtocol
+	self withoutEpiceaDuring: [
+		aBehavior compile: aMethodSource classified: aProtocol ]
 ]
 
 { #category : 'private' }
@@ -143,8 +144,9 @@ MCPToolRemoveMethodsTest >> protectedSelectorSymbol [
 { #category : 'private' }
 MCPToolRemoveMethodsTest >> removeSelector: aSelector from: aBehavior [
 
-	(aBehavior includesSelector: aSelector) ifTrue: [
-		aBehavior removeSelector: aSelector ]
+	self withoutEpiceaDuring: [
+		(aBehavior includesSelector: aSelector) ifTrue: [
+			aBehavior removeSelector: aSelector ] ]
 ]
 
 { #category : 'private' }

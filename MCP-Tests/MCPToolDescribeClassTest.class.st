@@ -41,14 +41,15 @@ MCPToolDescribeClassTest >> classNamed: aClassName [
 { #category : 'private' }
 MCPToolDescribeClassTest >> createClassNamed: aClassName superclassName: aSuperclassName slots: someSlots classSlots: someClassSlots [
 
-	| builder superclass |
-	superclass := self classNamed: aSuperclassName.
-	builder := superclass << aClassName asSymbol.
-	builder package: 'MCP-Tests'.
-	builder tag: 'Internal'.
-	builder slots: someSlots.
-	builder classSlots: someClassSlots.
-	builder install
+	^ self withoutEpiceaDuring: [
+		  | builder superclass |
+		  superclass := self classNamed: aSuperclassName.
+		  builder := superclass << aClassName asSymbol.
+		  builder package: 'MCP-Tests'.
+		  builder tag: 'Internal'.
+		  builder slots: someSlots.
+		  builder classSlots: someClassSlots.
+		  builder install ]
 ]
 
 { #category : 'private' }
@@ -60,17 +61,19 @@ MCPToolDescribeClassTest >> dataFrom: aResult [
 { #category : 'private' }
 MCPToolDescribeClassTest >> ensureClassMethodSource: aMethodSource onClassNamed: aClassName [
 
-	(self classNamed: aClassName) classSide
-		compile: aMethodSource
-		classified: 'testing'
+	self withoutEpiceaDuring: [
+		(self classNamed: aClassName) classSide
+			compile: aMethodSource
+			classified: 'testing' ]
 ]
 
 { #category : 'private' }
 MCPToolDescribeClassTest >> ensureMethodSource: aMethodSource onClassNamed: aClassName [
 
-	(self classNamed: aClassName)
-		compile: aMethodSource
-		classified: 'testing'
+	self withoutEpiceaDuring: [
+		(self classNamed: aClassName)
+			compile: aMethodSource
+			classified: 'testing' ]
 ]
 
 { #category : 'private' }
@@ -112,8 +115,9 @@ MCPToolDescribeClassTest >> removeClassNamed: aClassName [
 
 	| symbol |
 	symbol := aClassName asSymbol.
-	(self class environment includesKey: symbol) ifTrue: [
-		(self class environment at: symbol) removeFromSystem ]
+	self withoutEpiceaDuring: [
+		(self class environment includesKey: symbol) ifTrue: [
+			(self class environment at: symbol) removeFromSystem ] ]
 ]
 
 { #category : 'private' }

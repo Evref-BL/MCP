@@ -33,14 +33,15 @@ MCPToolFindClassesTest >> classNamed: aClassName [
 { #category : 'private' }
 MCPToolFindClassesTest >> createClassNamed: aClassName superclassName: aSuperclassName slots: someSlots classSlots: someClassSlots [
 
-	| builder superclass |
-	superclass := self classNamed: aSuperclassName.
-	builder := superclass << aClassName asSymbol.
-	builder package: 'MCP-Tests'.
-	builder tag: 'Internal'.
-	builder slots: someSlots.
-	builder classSlots: someClassSlots.
-	builder install
+	^ self withoutEpiceaDuring: [
+		  | builder superclass |
+		  superclass := self classNamed: aSuperclassName.
+		  builder := superclass << aClassName asSymbol.
+		  builder package: 'MCP-Tests'.
+		  builder tag: 'Internal'.
+		  builder slots: someSlots.
+		  builder classSlots: someClassSlots.
+		  builder install ]
 ]
 
 { #category : 'private' }
@@ -93,8 +94,9 @@ MCPToolFindClassesTest >> missingClassName [
 { #category : 'private' }
 MCPToolFindClassesTest >> removeClassNamed: aClassName [
 
-	(Smalltalk globals includesKey: aClassName asSymbol) ifTrue: [
-		(Smalltalk globals at: aClassName asSymbol) removeFromSystem ]
+	self withoutEpiceaDuring: [
+		(Smalltalk globals includesKey: aClassName asSymbol) ifTrue: [
+			(Smalltalk globals at: aClassName asSymbol) removeFromSystem ] ]
 ]
 
 { #category : 'private' }

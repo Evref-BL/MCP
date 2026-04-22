@@ -37,5 +37,8 @@ BaselineOfMCP >> definePackages: spec [
 
 	spec package: 'MCP' with: [ spec requires: #( 'JRPC' ) ].
 	spec package: 'MCP-Spec' with: [ spec requires: #( 'MCP' ) ].
-	spec package: 'MCP-Tests' with: [ spec requires: #( 'MCP' ) ]
+	spec package: 'MCP-Tests' with: [ spec requires: #( 'MCP' ) ].
+	spec
+		package: 'MCP-Tests-Extensions'
+		with: [ spec requires: #( 'MCP-Tests' ) ]
 ]

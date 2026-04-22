@@ -42,13 +42,14 @@ MCPRemoveClassesCommandTest >> createClassNamed: aClassName superclassName: aSup
 { #category : 'private' }
 MCPRemoveClassesCommandTest >> createClassNamed: aClassName superclassName: aSuperclassName packageName: aPackageName [
 
-	| builder superclass |
-	superclass := self classNamed: aSuperclassName.
-	builder := superclass << aClassName asSymbol.
-	builder package: aPackageName.
-	builder tag: 'Internal'.
-	builder slots: #(  ).
-	builder install
+	^ self withoutEpiceaDuring: [
+		  | builder superclass |
+		  superclass := self classNamed: aSuperclassName.
+		  builder := superclass << aClassName asSymbol.
+		  builder package: aPackageName.
+		  builder tag: 'Internal'.
+		  builder slots: #(  ).
+		  builder install ]
 ]
 
 { #category : 'private' }
@@ -117,8 +118,9 @@ MCPRemoveClassesCommandTest >> packageCleanupPackageName [
 { #category : 'private' }
 MCPRemoveClassesCommandTest >> removeClassNamed: aClassName [
 
-	(Smalltalk globals includesKey: aClassName asSymbol) ifTrue: [
-		(Smalltalk globals at: aClassName asSymbol) removeFromSystem ]
+	self withoutEpiceaDuring: [
+		(Smalltalk globals includesKey: aClassName asSymbol) ifTrue: [
+			(Smalltalk globals at: aClassName asSymbol) removeFromSystem ] ]
 ]
 
 { #category : 'private' }
@@ -132,8 +134,9 @@ MCPRemoveClassesCommandTest >> removeFixtureClasses [
 { #category : 'private' }
 MCPRemoveClassesCommandTest >> removePackageNamed: aPackageName [
 
-	(PackageOrganizer default hasPackage: aPackageName) ifTrue: [
-		PackageOrganizer default removePackage: aPackageName ]
+	self withoutEpiceaDuring: [
+		(PackageOrganizer default hasPackage: aPackageName) ifTrue: [
+			PackageOrganizer default removePackage: aPackageName ] ]
 ]
 
 { #category : 'running' }

@@ -27,19 +27,21 @@ MCPCompiledMethodInfoTest >> classTarget [
 { #category : 'private' }
 MCPCompiledMethodInfoTest >> createTargetClass [
 
-	| builder |
 	self hasTargetClass ifTrue: [ ^ self ].
-	builder := Object << self targetClassName asSymbol.
-	builder package: 'MCP-Tests'.
-	builder tag: 'Internal'.
-	builder slots: #(  ).
-	builder install
+	self withoutEpiceaDuring: [
+		| builder |
+		builder := Object << self targetClassName asSymbol.
+		builder package: 'MCP-Tests'.
+		builder tag: 'Internal'.
+		builder slots: #(  ).
+		builder install ]
 ]
 
 { #category : 'private' }
 MCPCompiledMethodInfoTest >> ensureMethodSource: aMethodSource protocol: aProtocol on: aBehavior [
 
-	aBehavior compile: aMethodSource classified: aProtocol
+	self withoutEpiceaDuring: [
+		aBehavior compile: aMethodSource classified: aProtocol ]
 ]
 
 { #category : 'private' }
@@ -63,8 +65,9 @@ MCPCompiledMethodInfoTest >> instanceSelector [
 { #category : 'private' }
 MCPCompiledMethodInfoTest >> removeSelector: aSelector from: aBehavior [
 
-	(aBehavior includesSelector: aSelector) ifTrue: [
-		aBehavior removeSelector: aSelector ]
+	self withoutEpiceaDuring: [
+		(aBehavior includesSelector: aSelector) ifTrue: [
+			aBehavior removeSelector: aSelector ] ]
 ]
 
 { #category : 'private' }

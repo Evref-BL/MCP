@@ -74,17 +74,19 @@ MCPToolRemoveClassesTest >> ensureClassNamed: aClassName superclassName: aSuperc
 	symbol := aClassName asSymbol.
 	(self class environment includesKey: symbol) ifTrue: [ ^ self ].
 	superclass := self class environment at: aSuperclassName asSymbol.
-	(superclass << symbol)
-		package: aPackageName;
-		install
+	self withoutEpiceaDuring: [
+		(superclass << symbol)
+			package: aPackageName;
+			install ]
 ]
 
 { #category : 'private' }
 MCPToolRemoveClassesTest >> ensureMethodSource: aMethodSource onClassNamed: aClassName [
 
-	(self classNamed: aClassName)
-		compile: aMethodSource
-		classified: 'tests'
+	self withoutEpiceaDuring: [
+		(self classNamed: aClassName)
+			compile: aMethodSource
+			classified: 'tests' ]
 ]
 
 { #category : 'private' }
@@ -160,15 +162,25 @@ MCPToolRemoveClassesTest >> removeClassNamed: aClassName [
 
 	| symbol |
 	symbol := aClassName asSymbol.
-	(self class environment includesKey: symbol) ifTrue: [
-		(self class environment at: symbol) removeFromSystem ]
+	self withoutEpiceaDuring: [
+		(self class environment includesKey: symbol) ifTrue: [
+			(self class environment at: symbol) removeFromSystem ] ]
+]
+
+{ #category : 'private' }
+MCPToolRemoveClassesTest >> removeFixtureClasses [
+
+	self fixtureClassNames reverseDo: [ :each |
+		self removeClassNamed: each ].
+	self removePackageNamed: self packageCleanupPackageName
 ]
 
 { #category : 'private' }
 MCPToolRemoveClassesTest >> removePackageNamed: aPackageName [
 
-	(PackageOrganizer default hasPackage: aPackageName) ifTrue: [
-		PackageOrganizer default removePackage: aPackageName ]
+	self withoutEpiceaDuring: [
+		(PackageOrganizer default hasPackage: aPackageName) ifTrue: [
+			PackageOrganizer default removePackage: aPackageName ] ]
 ]
 
 { #category : 'private' }
@@ -180,9 +192,7 @@ MCPToolRemoveClassesTest >> removedClassesFrom: aResult [
 { #category : 'private' }
 MCPToolRemoveClassesTest >> restoreFixtureClasses [
 
-	self fixtureClassNames reverseDo: [ :each |
-		self removeClassNamed: each ].
-	self removePackageNamed: self packageCleanupPackageName.
+	self removeFixtureClasses.
 	self ensureClassNamed: self simpleClassName superclassName: 'Object'.
 	self
 		ensureClassNamed: self emptyParentClassName
@@ -240,7 +250,7 @@ MCPToolRemoveClassesTest >> structuredContentFrom: aResult [
 { #category : 'running' }
 MCPToolRemoveClassesTest >> tearDown [
 
-	self restoreFixtureClasses.
+	self removeFixtureClasses.
 	super tearDown
 ]
 

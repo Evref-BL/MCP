@@ -9,7 +9,8 @@ Class {
 { #category : 'private' }
 MCPToolEditClassTest >> callToolWith: someArguments [
 
-	^ MCP new rpcToolCall: 'pharo-edit-class' withParams: someArguments
+	^ self withoutEpiceaDuring: [
+		  MCP new rpcToolCall: 'pharo-edit-class' withParams: someArguments ]
 ]
 
 { #category : 'private' }
@@ -79,19 +80,30 @@ MCPToolEditClassTest >> destinationTagName [
 ]
 
 { #category : 'private' }
+MCPToolEditClassTest >> ensureDestinationPackage [
+
+	self withoutEpiceaDuring: [
+		| package |
+		package := PackageOrganizer default ensurePackage:
+			           self destinationPackageName.
+		package ensureTag: self destinationTagName ]
+]
+
+{ #category : 'private' }
 MCPToolEditClassTest >> ensureOriginalRenameFixtureState [
 
 	| originalSymbol renamedSymbol |
 	originalSymbol := self originalClassName asSymbol.
 	renamedSymbol := self renamedClassName asSymbol.
-	((Smalltalk globals includesKey: originalSymbol) and: [
-		 Smalltalk globals includesKey: renamedSymbol ]) ifTrue: [
-		(Smalltalk globals at: renamedSymbol) removeFromSystem ].
-	((Smalltalk globals includesKey: renamedSymbol) and: [
-		 (Smalltalk globals includesKey: originalSymbol) not ]) ifTrue: [
-		(ReRenameClassRefactoring
-			 rename: self renamedClassName
-			 to: self originalClassName) execute ]
+	self withoutEpiceaDuring: [
+		((Smalltalk globals includesKey: originalSymbol) and: [
+			 Smalltalk globals includesKey: renamedSymbol ]) ifTrue: [
+			(Smalltalk globals at: renamedSymbol) removeFromSystem ].
+		((Smalltalk globals includesKey: renamedSymbol) and: [
+			 (Smalltalk globals includesKey: originalSymbol) not ]) ifTrue: [
+			(ReRenameClassRefactoring
+				 rename: self renamedClassName
+				 to: self originalClassName) execute ] ]
 ]
 
 { #category : 'private' }
@@ -160,17 +172,30 @@ MCPToolEditClassTest >> removeClassNamed: aClassName [
 
 	| classSymbol |
 	classSymbol := aClassName asSymbol.
-	(Smalltalk globals includesKey: classSymbol) ifTrue: [
-		(Smalltalk globals at: classSymbol) removeFromSystem ]
+	self withoutEpiceaDuring: [
+		(Smalltalk globals includesKey: classSymbol) ifTrue: [
+			(Smalltalk globals at: classSymbol) removeFromSystem ] ]
+]
+
+{ #category : 'private' }
+MCPToolEditClassTest >> removeDestinationPackage [
+
+	self withoutEpiceaDuring: [
+		(PackageOrganizer default hasPackage: self destinationPackageName)
+			ifTrue: [
+				PackageOrganizer default removePackage:
+					(PackageOrganizer default packageNamed:
+						 self destinationPackageName) ] ]
 ]
 
 { #category : 'private' }
 MCPToolEditClassTest >> removeGeneratedPackage [
 
-	(self packageOrganizer hasPackage: self generatedPackageName)
-		ifTrue: [
-			self packageOrganizer removePackage:
-				(self packageOrganizer packageNamed: self generatedPackageName) ]
+	self withoutEpiceaDuring: [
+		(self packageOrganizer hasPackage: self generatedPackageName)
+			ifTrue: [
+				self packageOrganizer removePackage:
+					(self packageOrganizer packageNamed: self generatedPackageName) ] ]
 ]
 
 { #category : 'private' }
@@ -195,9 +220,10 @@ MCPToolEditClassTest >> restoreMoveTargetClassLocation [
 	 = self originalMovePackageName and: [
 		 self currentTagOfMoveTargetClass = 'Uncategorized' ]) ifTrue: [
 		^ self ].
-	(RBMoveClassTransformation
-		 move: self moveTargetClassName
-		 toPackage: self originalMovePackageName) execute
+	self withoutEpiceaDuring: [
+		(RBMoveClassTransformation
+			 move: self moveTargetClassName
+			 toPackage: self originalMovePackageName) execute ]
 ]
 
 { #category : 'running' }
@@ -207,6 +233,8 @@ MCPToolEditClassTest >> setUp [
 	self createdClassNames do: [ :each | self removeClassNamed: each ].
 	self removeGeneratedPackage.
 	self restoreMoveTargetClassLocation.
+	self removeDestinationPackage.
+	self ensureDestinationPackage.
 	self ensureOriginalRenameFixtureState
 ]
 
@@ -228,6 +256,7 @@ MCPToolEditClassTest >> tearDown [
 	self createdClassNames do: [ :each | self removeClassNamed: each ].
 	self removeGeneratedPackage.
 	self restoreMoveTargetClassLocation.
+	self removeDestinationPackage.
 	self ensureOriginalRenameFixtureState.
 	super tearDown
 ]

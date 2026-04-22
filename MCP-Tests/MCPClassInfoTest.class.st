@@ -33,14 +33,15 @@ MCPClassInfoTest >> classNamed: aClassName [
 { #category : 'private' }
 MCPClassInfoTest >> createClassNamed: aClassName superclassName: aSuperclassName slots: someSlots classSlots: someClassSlots [
 
-	| builder superclass |
-	superclass := self classNamed: aSuperclassName.
-	builder := superclass << aClassName asSymbol.
-	builder package: 'MCP-Tests'.
-	builder tag: 'Internal'.
-	builder slots: someSlots.
-	builder classSlots: someClassSlots.
-	builder install
+	^ self withoutEpiceaDuring: [
+		  | builder superclass |
+		  superclass := self classNamed: aSuperclassName.
+		  builder := superclass << aClassName asSymbol.
+		  builder package: 'MCP-Tests'.
+		  builder tag: 'Internal'.
+		  builder slots: someSlots.
+		  builder classSlots: someClassSlots.
+		  builder install ]
 ]
 
 { #category : 'private' }
@@ -76,8 +77,9 @@ MCPClassInfoTest >> fixtureClassNames [
 { #category : 'private' }
 MCPClassInfoTest >> removeClassNamed: aClassName [
 
-	(Smalltalk globals includesKey: aClassName asSymbol) ifTrue: [
-		(Smalltalk globals at: aClassName asSymbol) removeFromSystem ]
+	self withoutEpiceaDuring: [
+		(Smalltalk globals includesKey: aClassName asSymbol) ifTrue: [
+			(Smalltalk globals at: aClassName asSymbol) removeFromSystem ] ]
 ]
 
 { #category : 'private' }
