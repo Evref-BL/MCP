@@ -25,16 +25,6 @@ MCPRemoveClassesCommand class >> classNames: someClassNames force: forceRemoval 
 		  yourself
 ]
 
-{ #category : 'private' }
-MCPRemoveClassesCommand >> applySafeRemovalOf: aClass reparentedSubclassNames: someNames [
-
-	| targetSuperclass |
-	someNames ifNotEmpty: [
-		targetSuperclass := aClass superclass.
-		aClass subclasses do: [ :each | each superclass: targetSuperclass ] ].
-	aClass removeFromSystem
-]
-
 { #category : 'accessing' }
 MCPRemoveClassesCommand >> classNames [
 
@@ -170,13 +160,4 @@ MCPRemoveClassesCommand >> validatePreparedRefactoring: aRefactoring [
 					warning resume: true ] ]
 		ifFalse: [ aRefactoring checkPreconditions ].
 	^ warningMessages asArray
-]
-
-{ #category : 'private' }
-MCPRemoveClassesCommand >> validateSafeRemovalOfClassNames: someClassNames [
-
-	| refactoring |
-	refactoring := ReRemoveClassRefactoring classNames: someClassNames.
-	refactoring prepareForExecution.
-	refactoring checkPreconditions
 ]

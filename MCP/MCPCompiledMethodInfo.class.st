@@ -73,18 +73,6 @@ MCPCompiledMethodInfo >> isExtension [
 	^ isExtension = true
 ]
 
-{ #category : 'converting' }
-MCPCompiledMethodInfo >> listMethodDictionaryIncludingSource: includeSource [
-
-	| data |
-	data := {
-		        (#selector -> self selector).
-		        (#protocol -> self protocol).
-		        (#side -> self side) } asDictionary.
-	includeSource ifTrue: [ data at: #source put: self source ].
-	^ data
-]
-
 { #category : 'accessing' }
 MCPCompiledMethodInfo >> packageName [
 

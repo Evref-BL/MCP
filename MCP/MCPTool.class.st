@@ -149,12 +149,6 @@ MCPTool >> description: anObject [
 	description := anObject
 ]
 
-{ #category : 'error handling' }
-MCPTool >> errorContentFor: anError [
-
-	^ { (self textContent: (self failureMessageFor: anError)) }
-]
-
 { #category : 'private - results' }
 MCPTool >> errorDetailsFor: anError [
 
@@ -179,14 +173,6 @@ MCPTool >> errorResultFor: anError [
 	^ self
 		  errorResultText: (self failureMessageFor: anError)
 		  details: (self errorDetailsFor: anError)
-]
-
-{ #category : 'error handling' }
-MCPTool >> errorResultText: aString [
-
-	^ self
-		  errorResultText: aString
-		  details: { (#message -> aString) } asDictionary
 ]
 
 { #category : 'error handling' }

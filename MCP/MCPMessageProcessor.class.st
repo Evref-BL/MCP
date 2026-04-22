@@ -25,9 +25,3 @@ MCPMessageProcessor >> addHandlersFromPragmasIn: anObject [
 				 messageSelector: pragma methodSelector;
 				 yourself) ]
 ]
-
-{ #category : 'as yet unclassified' }
-MCPMessageProcessor >> handleJRPCSuccessResponseObject: aJRPCSuccessResponseObject [
-
-	^ JRPCEmptyResponseObject new
-]
