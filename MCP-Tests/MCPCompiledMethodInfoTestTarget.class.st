@@ -7,13 +7,9 @@ Class {
 }
 
 { #category : 'tests' }
-MCPCompiledMethodInfoTestTarget class >> classInfoTarget [
-
-	^ 2
+MCPCompiledMethodInfoTestTarget class >> classInfoTarget [ ^ 2
 ]
 
 { #category : 'tests' }
-MCPCompiledMethodInfoTestTarget >> infoTarget [
-
-	^ 1
+MCPCompiledMethodInfoTestTarget >> infoTarget [ ^ 1
 ]
