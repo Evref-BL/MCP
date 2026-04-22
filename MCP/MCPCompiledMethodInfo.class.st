@@ -8,7 +8,6 @@ Class {
 		'protocol',
 		'packageName',
 		'isExtension',
-		'methodReference',
 		'source'
 	],
 	#category : 'MCP-Internal',
@@ -32,8 +31,7 @@ MCPCompiledMethodInfo >> asDictionaryIncludingSource: includeSource [
 		        (#side -> self side).
 		        (#packageName -> self packageName).
 		        (#isExtension -> self isExtension).
-		        (#protocol -> self protocol).
-		        (#methodReference -> self methodReference) } asDictionary.
+		        (#protocol -> self protocol) } asDictionary.
 	includeSource ifTrue: [ data at: #source put: self source ].
 	^ data
 ]
@@ -65,13 +63,6 @@ MCPCompiledMethodInfo >> initializeFromCompiledMethod: aCompiledMethod [
 	classPackageName := aCompiledMethod methodClass instanceSide package
 		                    name asString.
 	isExtension := packageName ~= classPackageName.
-	methodReference := String streamContents: [ :stream |
-		                   stream nextPutAll: className.
-		                   side = 'class' ifTrue: [
-			                   stream nextPutAll: ' class' ].
-		                   stream
-			                   nextPutAll: '>>';
-			                   nextPutAll: selector ].
 	source := aCompiledMethod sourceCode ifNil: [ '' ].
 	^ self
 ]
@@ -89,16 +80,9 @@ MCPCompiledMethodInfo >> listMethodDictionaryIncludingSource: includeSource [
 	data := {
 		        (#selector -> self selector).
 		        (#protocol -> self protocol).
-		        (#side -> self side).
-		        (#methodReference -> self methodReference) } asDictionary.
+		        (#side -> self side) } asDictionary.
 	includeSource ifTrue: [ data at: #source put: self source ].
 	^ data
-]
-
-{ #category : 'accessing' }
-MCPCompiledMethodInfo >> methodReference [
-
-	^ methodReference
 ]
 
 { #category : 'accessing' }

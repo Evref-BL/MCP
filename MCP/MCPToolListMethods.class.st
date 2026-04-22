@@ -96,9 +96,6 @@ MCPToolListMethods >> executeWithArguments: arguments [
 						   isClassSide: isClassSide
 						   includeSource: includeSource
 						   sourceText: sourceText) ] ] ].
-	  methodEntries := methodEntries asSortedCollection: [ :left :right |
-		                   (left at: #methodReference)
-		                   <= (right at: #methodReference) ].
 	  totalCount := methodEntries size.
 	  startIndex := offset + 1.
 	  pagedMethods := (startIndex > totalCount or: [ limit = 0 ])
@@ -256,17 +253,11 @@ MCPToolListMethods >> initialize [
 					                 enum: #( 'instance' 'class' );
 					                 yourself).
 				                (self
-					                 schemaPropertyNamed: 'methodReference'
-					                 type: 'string'
-					                 description:
-					                 'A readable method reference such as Class>>selector or Class class>>selector.').
-				                (self
 					                 schemaPropertyNamed: 'source'
 					                 type: 'string'
 					                 description:
 					                 'The formatted source code of the method when includeSource=true.') };
-		                required:
-		                #( 'selector' 'protocol' 'side' 'methodReference' );
+		                required: #( 'selector' 'protocol' 'side' );
 		                additionalProperties: false;
 		                yourself.
 	methodsProperty items: methodSchema.

@@ -1,9 +1,16 @@
 Class {
 	#name : 'MCPToolEditMethodTest',
 	#superclass : 'TestCase',
-	#category : 'MCP-Tests',
-	#package : 'MCP-Tests'
+	#category : 'MCP-Tests-Tests',
+	#package : 'MCP-Tests',
+	#tag : 'Tests'
 }
+
+{ #category : 'private' }
+MCPToolEditMethodTest >> assertSuccessDataIsEmpty: data [
+
+	self assert: data isEmpty
+]
 
 { #category : 'private' }
 MCPToolEditMethodTest >> callToolWith: someArguments [
@@ -254,8 +261,16 @@ MCPToolEditMethodTest >> testChangeProtocolReturnsStructuredErrorWhenMethodIsMis
 	self assert: (error at: #operation) equals: 'changeProtocol'.
 	self assert: (error at: #errorClass) equals: 'MethodNotFound'.
 	self
-		assert: (error at: #methodReference)
-		equals: 'MCPToolEditMethodTestTarget>>instanceProtocolTarget'
+		assert: (error at: #className)
+		equals: 'MCPToolEditMethodTestTarget'.
+	self assert: (error at: #classSide) equals: false.
+	self
+		assert: (error at: #selector)
+		equals: self instanceProtocolSelector asString.
+	self
+		assert: error keys asSet
+		equals:
+		#( operation errorClass message className classSide selector ) asSet
 ]
 
 { #category : 'tests' }
@@ -270,13 +285,7 @@ MCPToolEditMethodTest >> testChangesClassSideMethodProtocol [
 			(MCPToolEditMethodTestTarget classSide
 			 >> self classProtocolSelector) protocol name asString
 		equals: 'instance creation'.
-	self assert: (data at: #operation) equals: 'changeProtocol'.
-	self assert: (data at: #classSide).
-	self assert: (data at: #oldProtocol) equals: 'tests'.
-	self assert: (data at: #protocol) equals: 'instance creation'.
-	self
-		assert: (data at: #methodReference)
-		equals: 'MCPToolEditMethodTestTarget class>>classProtocolTarget'
+	self assertSuccessDataIsEmpty: data
 ]
 
 { #category : 'tests' }
@@ -291,23 +300,7 @@ MCPToolEditMethodTest >> testChangesInstanceSideMethodProtocol [
 			(MCPToolEditMethodTestTarget >> self instanceProtocolSelector)
 				protocol name asString
 		equals: 'accessing'.
-	self assert: (data at: #operation) equals: 'changeProtocol'.
-	self
-		assert: (data at: #className)
-		equals: 'MCPToolEditMethodTestTarget'.
-	self assert: (data at: #classSide) equals: false.
-	self
-		assert: (data at: #selector)
-		equals: self instanceProtocolSelector asString.
-	self assert: (data at: #oldProtocol) equals: 'tests'.
-	self assert: (data at: #protocol) equals: 'accessing'.
-	self assert: (data at: #packageName) equals: 'MCP-Tests'.
-	self deny: (data at: #isExtension).
-	self
-		assert: (data at: #methodReference)
-		equals: 'MCPToolEditMethodTestTarget>>instanceProtocolTarget'.
-	self assert:
-		((data at: #source) includesSubstring: 'instanceProtocolTarget')
+	self assertSuccessDataIsEmpty: data
 ]
 
 { #category : 'tests' }
@@ -322,11 +315,7 @@ MCPToolEditMethodTest >> testChangingExtensionMethodProtocolUpdatesPackageMetada
 			(MCPToolEditMethodTestTarget >> self extensionProtocolSelector)
 				protocol name asString
 		equals: 'tests'.
-	self assert: (data at: #operation) equals: 'changeProtocol'.
-	self assert: (data at: #oldProtocol) equals: '*MCP-Tests-Extensions'.
-	self assert: (data at: #protocol) equals: 'tests'.
-	self assert: (data at: #packageName) equals: 'MCP-Tests'.
-	self deny: (data at: #isExtension)
+	self assertSuccessDataIsEmpty: data
 ]
 
 { #category : 'tests' }
@@ -346,12 +335,7 @@ MCPToolEditMethodTest >> testCompilesClassSideMethod [
 		(MCPToolEditMethodTestTarget classSide >> #classAnswer) protocol
 			name
 		equals: #tests.
-	self assert: (data at: #operation) equals: 'compile'.
-	self assert: (data at: #classSide).
-	self assert: (data at: #selector) equals: 'classAnswer'.
-	self
-		assert: (data at: #methodReference)
-		equals: 'MCPToolEditMethodTestTarget class>>classAnswer'
+	self assertSuccessDataIsEmpty: data
 ]
 
 { #category : 'tests' }
@@ -372,18 +356,7 @@ MCPToolEditMethodTest >> testCompilesInstanceSideMethod [
 		assert:
 		(MCPToolEditMethodTestTarget >> #instanceAnswer) protocol name
 		equals: #tests.
-	self assert: (data at: #operation) equals: 'compile'.
-	self
-		assert: (data at: #className)
-		equals: 'MCPToolEditMethodTestTarget'.
-	self assert: (data at: #classSide) equals: false.
-	self assert: (data at: #selector) equals: 'instanceAnswer'.
-	self assert: (data at: #protocol) equals: 'tests'.
-	self assert: (data at: #packageName) equals: 'MCP-Tests'.
-	self deny: (data at: #isExtension).
-	self
-		assert: (data at: #methodReference)
-		equals: 'MCPToolEditMethodTestTarget>>instanceAnswer'
+	self assertSuccessDataIsEmpty: data
 ]
 
 { #category : 'tests' }
@@ -437,8 +410,16 @@ MCPToolEditMethodTest >> testRenameReturnsStructuredErrorWhenMethodIsMissing [
 	self assert: (error at: #operation) equals: 'rename'.
 	self assert: (error at: #errorClass) equals: 'MethodNotFound'.
 	self
-		assert: (error at: #methodReference)
-		equals: 'MCPToolEditMethodTestTarget>>combine:with:'
+		assert: (error at: #className)
+		equals: 'MCPToolEditMethodTestTarget'.
+	self assert: (error at: #classSide) equals: false.
+	self
+		assert: (error at: #selector)
+		equals: self instanceSelector asString.
+	self
+		assert: error keys asSet
+		equals:
+		#( operation errorClass message className classSide selector ) asSet
 ]
 
 { #category : 'tests' }
@@ -471,12 +452,7 @@ MCPToolEditMethodTest >> testRenamesClassSideMethodWithDefaultPermutation [
 	self
 		assert: MCPToolEditMethodTestSender new callClassTarget
 		equals: 'Class-value'.
-	self assert: (data at: #operation) equals: 'rename'.
-	self assert: (data at: #classSide).
-	self assert: (data at: #permutation) equals: #( 1 ).
-	self
-		assert: (data at: #methodReference)
-		equals: 'MCPToolEditMethodTestTarget class>>makeValue:'
+	self assertSuccessDataIsEmpty: data
 ]
 
 { #category : 'tests' }
@@ -490,32 +466,7 @@ MCPToolEditMethodTest >> testRenamesInstanceMethodAndReturnsStructuredData [
 		(MCPToolEditMethodTestTarget includesSelector: self instanceSelector).
 	self assert: (MCPToolEditMethodTestTarget includesSelector:
 			 self renamedInstanceSelector).
-	self assert: (data at: #operation) equals: 'rename'.
-	self
-		assert: (data at: #className)
-		equals: 'MCPToolEditMethodTestTarget'.
-	self assert: (data at: #classSide) equals: false.
-	self
-		assert: (data at: #selector)
-		equals: self renamedInstanceSelector asString.
-	self
-		assert: (data at: #oldSelector)
-		equals: self instanceSelector asString.
-	self
-		assert: (data at: #newSelector)
-		equals: self renamedInstanceSelector asString.
-	self assert: (data at: #permutation) equals: #( 2 1 ).
-	self assert: (data at: #protocol) equals: 'tests'.
-	self assert: (data at: #packageName) equals: 'MCP-Tests'.
-	self deny: (data at: #isExtension).
-	self
-		assert: (data at: #oldMethodReference)
-		equals: 'MCPToolEditMethodTestTarget>>combine:with:'.
-	self
-		assert: (data at: #methodReference)
-		equals: 'MCPToolEditMethodTestTarget>>with:combine:'.
-	self assert:
-		((data at: #source) includesSubstring: 'with: second combine: first')
+	self assertSuccessDataIsEmpty: data
 ]
 
 { #category : 'tests' }

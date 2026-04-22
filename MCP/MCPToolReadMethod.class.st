@@ -36,7 +36,7 @@ MCPToolReadMethod >> declaredInMethodForKind: aKind [
 { #category : 'executing' }
 MCPToolReadMethod >> executeWithArguments: arguments [
 
-	| argumentNames className compiledMethod data externalVariableReferences methodBehavior methodReference methodNode protocolName selectorString side temporaryNames variableReferences |
+	| argumentNames className compiledMethod data externalVariableReferences methodBehavior methodNode protocolName selectorString side temporaryNames variableReferences |
 	className := self
 		             argumentNamed: 'className'
 		             in: arguments
@@ -55,10 +55,6 @@ MCPToolReadMethod >> executeWithArguments: arguments [
 	  protocolName := compiledMethod protocol
 		                  ifNil: [ '' ]
 		                  ifNotNil: [ :protocol | protocol name asString ].
-	  methodReference := self
-		                     methodReferenceForClassName: className
-		                     selector: selectorString
-		                     isClassSide: side = 'class'.
 	  argumentNames := (methodNode arguments collect: [ :each |
 		                    each name asString ]) asArray.
 	  temporaryNames := (methodNode temporaries collect: [ :each |
@@ -73,7 +69,6 @@ MCPToolReadMethod >> executeWithArguments: arguments [
 		          (#selector -> selectorString).
 		          (#side -> side).
 		          (#protocol -> protocolName).
-		          (#methodReference -> methodReference).
 		          (#source -> (compiledMethod sourceCode ifNil: [ '' ])).
 		          (#argumentNames -> argumentNames).
 		          (#temporaryNames -> temporaryNames).
@@ -197,11 +192,6 @@ MCPToolReadMethod >> initialize [
 					                 description:
 					                 'The protocol/category containing the method.').
 				                (self
-					                 schemaPropertyNamed: 'methodReference'
-					                 type: 'string'
-					                 description:
-					                 'A readable method reference such as Class>>selector or Class class>>selector.').
-				                (self
 					                 schemaPropertyNamed: 'source'
 					                 type: 'string'
 					                 description:
@@ -247,8 +237,8 @@ MCPToolReadMethod >> initialize [
 					                 yourself) }
 		                required:
 			                #( 'className' 'selector' 'side' 'protocol'
-			                   'methodReference' 'source' 'argumentNames'
-			                   'temporaryNames' 'variableReferenceCount'
+			                   'source' 'argumentNames' 'temporaryNames'
+			                   'variableReferenceCount'
 			                   'externalVariableCount' 'variableReferences'
 			                   'externalVariableReferences' ).
 	icons := {  }

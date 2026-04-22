@@ -6,13 +6,9 @@ Class {
 }
 
 { #category : 'tests' }
-MCPToolEditMethodTestSender >> callClassTarget [
-
-	^ MCPToolEditMethodTestTarget buildValue: 'value'
+MCPToolEditMethodTestSender >> callClassTarget [ ^ MCPToolEditMethodTestTarget buildValue: 'value'
 ]
 
 { #category : 'tests' }
-MCPToolEditMethodTestSender >> callInstanceTarget [
-
-	^ MCPToolEditMethodTestTarget new combine: 'first' with: 'second'
+MCPToolEditMethodTestSender >> callInstanceTarget [ ^ MCPToolEditMethodTestTarget new combine: 'first' with: 'second'
 ]

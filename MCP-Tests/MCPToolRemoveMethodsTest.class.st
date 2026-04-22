@@ -1,8 +1,9 @@
 Class {
 	#name : 'MCPToolRemoveMethodsTest',
 	#superclass : 'TestCase',
-	#category : 'MCP-Tests',
-	#package : 'MCP-Tests'
+	#category : 'MCP-Tests-Tests',
+	#package : 'MCP-Tests',
+	#tag : 'Tests'
 }
 
 { #category : 'private' }
@@ -278,8 +279,11 @@ MCPToolRemoveMethodsTest >> testForceRemovesMethodsEvenWhenExternalSendersExistA
 		assert: (data at: #selectors)
 		equals: { self protectedSelector } asArray.
 	self
-		assert: ((data at: #removedMethods) first at: #methodReference)
-		equals: 'MCPToolRemoveMethodsTestTarget>>' , self protectedSelector
+		assert: ((data at: #removedMethods) first at: #selector)
+		equals: self protectedSelector.
+	self
+		assert: (data at: #removedMethods) first keys asSet
+		equals: #( selector protocol packageName isExtension source ) asSet
 ]
 
 { #category : 'tests' }
@@ -319,12 +323,15 @@ MCPToolRemoveMethodsTest >> testRemovesBatchOfInstanceMethods [
 		assert: (data at: #selectors)
 		equals: self instanceBatchSelectors.
 	self assert: removedMethods size equals: 2.
-	self assert:
-		((removedMethods first at: #methodReference) includesSubstring:
-			 self firstInstanceBatchSelectorString).
-	self assert:
-		((removedMethods second at: #methodReference) includesSubstring:
-			 self secondInstanceBatchSelectorString)
+	self
+		assert: (removedMethods first at: #selector)
+		equals: self firstInstanceBatchSelectorString.
+	self
+		assert: (removedMethods second at: #selector)
+		equals: self secondInstanceBatchSelectorString.
+	self assert: (removedMethods allSatisfy: [ :each |
+			 each keys asSet
+			 = #( selector protocol packageName isExtension source ) asSet ])
 ]
 
 { #category : 'tests' }

@@ -1,8 +1,9 @@
 Class {
 	#name : 'MCPToolImplementorsTest',
 	#superclass : 'TestCase',
-	#category : 'MCP-Tests',
-	#package : 'MCP-Tests'
+	#category : 'MCP-Tests-Tests',
+	#package : 'MCP-Tests',
+	#tag : 'Tests'
 }
 
 { #category : 'private' }
@@ -18,17 +19,26 @@ MCPToolImplementorsTest >> dataFrom: aResult [
 ]
 
 { #category : 'private' }
-MCPToolImplementorsTest >> errorFrom: aResult [
+MCPToolImplementorsTest >> entryForReference: aReference in: implementors [
 
-	^ (self structuredContentFrom: aResult) at: #error
+	^ implementors
+		  detect: [ :each |
+			  | reference |
+			  reference := String streamContents: [ :stream |
+				               stream nextPutAll: (each at: #className).
+				               (each at: #side) = 'class' ifTrue: [
+					               stream nextPutAll: ' class' ].
+				               stream
+					               nextPutAll: '>>';
+					               nextPutAll: (each at: #selector) ].
+			  reference = aReference ]
+		  ifNone: [ self fail: 'Missing implementor ' , aReference ]
 ]
 
 { #category : 'private' }
-MCPToolImplementorsTest >> methodReference: aMethodReference in: implementors [
+MCPToolImplementorsTest >> errorFrom: aResult [
 
-	^ implementors
-		  detect: [ :each | (each at: #methodReference) = aMethodReference ]
-		  ifNone: [ self fail: 'Missing implementor ' , aMethodReference ]
+	^ (self structuredContentFrom: aResult) at: #error
 ]
 
 { #category : 'private' }
@@ -53,7 +63,7 @@ MCPToolImplementorsTest >> testClassesScopeLimitsToExactClasses [
 		assert: (data at: #classNames) asArray
 		equals: #( 'MCPToolImplementorsTestChild' ).
 	self
-		methodReference: 'MCPToolImplementorsTestChild>>hierarchyProbe'
+		entryForReference: 'MCPToolImplementorsTestChild>>hierarchyProbe'
 		in: (data at: #implementors)
 ]
 
@@ -71,7 +81,7 @@ MCPToolImplementorsTest >> testFilterCanNarrowResultsAndPaginate [
 	self assert: (data at: #returnedCount) equals: 1.
 	self deny: (data at: #truncated).
 	self
-		methodReference: 'MCPToolImplementorsTestExact class>>dualProbe'
+		entryForReference: 'MCPToolImplementorsTestExact class>>dualProbe'
 		in: (data at: #implementors)
 ]
 
@@ -88,10 +98,10 @@ MCPToolImplementorsTest >> testHierarchyScopeSearchesWholeHierarchy [
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #totalCount) equals: 2.
 	self
-		methodReference: 'MCPToolImplementorsTestBase>>hierarchyProbe'
+		entryForReference: 'MCPToolImplementorsTestBase>>hierarchyProbe'
 		in: (data at: #implementors).
 	self
-		methodReference: 'MCPToolImplementorsTestChild>>hierarchyProbe'
+		entryForReference: 'MCPToolImplementorsTestChild>>hierarchyProbe'
 		in: (data at: #implementors)
 ]
 
@@ -110,10 +120,10 @@ MCPToolImplementorsTest >> testImageScopeFindsInstanceAndClassImplementors [
 	self assert: (data at: #side) equals: 'both'.
 	self assert: (data at: #totalCount) equals: 2.
 	self
-		methodReference: 'MCPToolImplementorsTestExact>>dualProbe'
+		entryForReference: 'MCPToolImplementorsTestExact>>dualProbe'
 		in: (data at: #implementors).
 	self
-		methodReference: 'MCPToolImplementorsTestExact class>>dualProbe'
+		entryForReference: 'MCPToolImplementorsTestExact class>>dualProbe'
 		in: (data at: #implementors)
 ]
 
@@ -128,7 +138,7 @@ MCPToolImplementorsTest >> testPackagesScopeIncludesExtensionMethods [
 			          asDictionary.
 	data := self dataFrom: result.
 	implementor := self
-		               methodReference:
+		               entryForReference:
 		               'MCPToolImplementorsTestExtensionTarget>>extensionProbe'
 		               in: (data at: #implementors).
 	self deny: (result at: #isError ifAbsent: [ false ]).

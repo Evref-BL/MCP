@@ -7,33 +7,9 @@ Class {
 }
 
 { #category : 'private' }
-MCPToolEditMethod >> changeProtocolDataForCompiledMethod: aCompiledMethod className: className classSide: classSide oldProtocol: oldProtocol [
+MCPToolEditMethod >> dataForCompiledMethod: aCompiledMethod [
 
-	| data |
-	data := self
-		        dataForCompiledMethod: aCompiledMethod
-		        className: className
-		        classSide: classSide
-		        operation: 'changeProtocol'.
-	data at: #oldProtocol put: oldProtocol.
-	^ data
-]
-
-{ #category : 'private' }
-MCPToolEditMethod >> dataForCompiledMethod: aCompiledMethod className: className classSide: classSide operation: operation [
-
-	| info |
-	info := MCPCompiledMethodInfo fromCompiledMethod: aCompiledMethod.
-	^ {
-		  (#operation -> operation).
-		  (#className -> className).
-		  (#classSide -> classSide).
-		  (#selector -> info selector).
-		  (#protocol -> info protocol).
-		  (#packageName -> info packageName).
-		  (#isExtension -> info isExtension).
-		  (#source -> info source).
-		  (#methodReference -> info methodReference) } asDictionary
+	^ Dictionary new
 ]
 
 { #category : 'private' }
@@ -113,7 +89,7 @@ MCPToolEditMethod >> errorResultForRenameError: anError className: className cla
 { #category : 'executing' }
 MCPToolEditMethod >> executeChangeProtocolWithArguments: arguments [
 
-	| behavior className classSide compiledMethod newCompiledMethod oldProtocol protocol selector selectorSymbol |
+	| behavior className classSide compiledMethod newCompiledMethod protocol selector selectorSymbol |
 	className := self stringArgumentNamed: 'className' in: arguments.
 	classSide := self
 		             booleanArgumentNamed: 'classSide'
@@ -131,8 +107,6 @@ MCPToolEditMethod >> executeChangeProtocolWithArguments: arguments [
 				                    signalMissingMethodInClassName: className
 				                    classSide: classSide
 				                    selector: selector ].
-	  oldProtocol := (MCPCompiledMethodInfo fromCompiledMethod:
-		                  compiledMethod) protocol.
 	  (RBMethodProtocolTransformation
 		   protocol: protocol
 		   inMethod: selectorSymbol
@@ -146,11 +120,7 @@ MCPToolEditMethod >> executeChangeProtocolWithArguments: arguments [
 			  (self
 				   methodReferenceForBehavior: behavior
 				   selector: selectorSymbol) , '.'
-		  data: (self
-				   changeProtocolDataForCompiledMethod: newCompiledMethod
-				   className: className
-				   classSide: classSide
-				   oldProtocol: oldProtocol) ]
+		  data: (self dataForCompiledMethod: newCompiledMethod) ]
 		  on: Exception
 		  do: [ :error |
 			  self
@@ -187,11 +157,7 @@ MCPToolEditMethod >> executeCompileWithArguments: arguments [
 		  successResultText: 'Compiled '
 			  , (self methodReferenceForBehavior: behavior selector: selector)
 			  , '.'
-		  data: (self
-				   dataForCompiledMethod: compiledMethod
-				   className: className
-				   classSide: classSide
-				   operation: 'compile') ]
+		  data: (self dataForCompiledMethod: compiledMethod) ]
 		  on: Exception
 		  do: [ :error |
 			  self
@@ -241,14 +207,7 @@ MCPToolEditMethod >> executeRenameWithArguments: arguments [
 			  (self
 				   methodReferenceForBehavior: behavior
 				   selector: newSelectorSymbol) , '.'
-		  data: (self
-				   renameDataForCompiledMethod: newCompiledMethod
-				   className: className
-				   classSide: classSide
-				   oldSelector: oldSelector
-				   newSelector: newSelector
-				   permutation: permutation
-				   oldMethodReference: oldMethodReference) ]
+		  data: (self dataForCompiledMethod: newCompiledMethod) ]
 		  on: Exception
 		  do: [ :error |
 			  self
@@ -405,86 +364,8 @@ MCPToolEditMethod >> initialize [
 		               required: #( 'operation' 'className' 'classSide' );
 		               yourself.
 	outputSchema := self
-		                standardOutputSchemaForDataProperties: {
-				                (self
-					                 schemaPropertyNamed: 'operation'
-					                 type: 'string'
-					                 description:
-					                 'The edit operation that was performed.').
-				                (self
-					                 schemaPropertyNamed: 'className'
-					                 type: 'string'
-					                 description:
-					                 'The class whose method was edited.').
-				                (self
-					                 schemaPropertyNamed: 'classSide'
-					                 type: 'boolean'
-					                 description:
-					                 'Whether the edited method is on the class side.').
-				                (self
-					                 schemaPropertyNamed: 'selector'
-					                 type: 'string'
-					                 description:
-					                 'The selector after the edit operation completes.').
-				                (self
-					                 schemaPropertyNamed: 'protocol'
-					                 type: 'string'
-					                 description:
-					                 'The protocol containing the edited method after the operation.').
-				                (self
-					                 schemaPropertyNamed: 'packageName'
-					                 type: 'string'
-					                 description:
-					                 'The package that owns the edited method after the operation.').
-				                (self
-					                 schemaPropertyNamed: 'isExtension'
-					                 type: 'boolean'
-					                 description:
-					                 'Whether the edited method is an extension method after the operation.').
-				                (self
-					                 schemaPropertyNamed: 'source'
-					                 type: 'string'
-					                 description:
-					                 'The method source after the operation.').
-				                (self
-					                 schemaPropertyNamed: 'methodReference'
-					                 type: 'string'
-					                 description:
-					                 'A readable method reference for the edited method after the operation.').
-				                (self
-					                 schemaPropertyNamed: 'oldSelector'
-					                 type: 'string'
-					                 description:
-					                 'The selector before a rename operation.').
-				                (self
-					                 schemaPropertyNamed: 'newSelector'
-					                 type: 'string'
-					                 description:
-					                 'The selector after a rename operation.').
-				                ((self
-					                  schemaPropertyNamed: 'permutation'
-					                  type: 'array'
-					                  description:
-						                  'The normalized permutation used for a rename operation.')
-					                 items: (MCPStructureProperties new
-							                  type: 'number';
-							                  description: 'A 1-based argument index.';
-							                  yourself);
-					                 yourself).
-				                (self
-					                 schemaPropertyNamed: 'oldMethodReference'
-					                 type: 'string'
-					                 description:
-					                 'A readable method reference for the original selector before a rename operation.').
-				                (self
-					                 schemaPropertyNamed: 'oldProtocol'
-					                 type: 'string'
-					                 description:
-					                 'The protocol before a changeProtocol operation.') }
-		                required:
-			                #( 'operation' 'className' 'classSide' 'selector'
-			                   'protocol' 'packageName' 'isExtension'
-			                   'source' 'methodReference' ).
+		                standardOutputSchemaForDataProperties: #(  )
+		                required: #(  ).
 	icons := {  }
 ]
 
@@ -541,23 +422,6 @@ MCPToolEditMethod >> permutationFromArguments: arguments selector: aSelector [
 	permutation := self normalizedPermutation: permutation.
 	self validatePermutation: permutation forSelector: aSelector.
 	^ permutation
-]
-
-{ #category : 'private' }
-MCPToolEditMethod >> renameDataForCompiledMethod: aCompiledMethod className: className classSide: classSide oldSelector: oldSelector newSelector: newSelector permutation: permutation oldMethodReference: oldMethodReference [
-
-	| data |
-	data := self
-		        dataForCompiledMethod: aCompiledMethod
-		        className: className
-		        classSide: classSide
-		        operation: 'rename'.
-	data
-		at: #oldSelector put: oldSelector;
-		at: #newSelector put: newSelector;
-		at: #permutation put: permutation asArray;
-		at: #oldMethodReference put: oldMethodReference.
-	^ data
 ]
 
 { #category : 'private' }

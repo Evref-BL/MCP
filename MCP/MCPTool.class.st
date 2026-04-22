@@ -90,8 +90,17 @@ MCPTool >> compiledMethodEntriesFrom: compiledMethods filter: filterPattern filt
 			 sourceText: sourceText
 			 matcher: matcher) ifTrue: [ entries add: entry ] ].
 	^ (entries asSortedCollection: [ :left :right |
-		   (left at: #methodReference) <= (right at: #methodReference) ])
-		  asArray
+		   (self compiledMethodEntryLabel: left)
+		   <= (self compiledMethodEntryLabel: right) ]) asArray
+]
+
+{ #category : 'private - filtering' }
+MCPTool >> compiledMethodEntryLabel: anEntry [
+
+	^ self
+		  methodReferenceForClassName: (anEntry at: #className)
+		  selector: (anEntry at: #selector)
+		  isClassSide: (anEntry at: #side) = 'class'
 ]
 
 { #category : 'private - methods' }
@@ -242,7 +251,7 @@ MCPTool >> filterTextForCompiledMethodEntry: anEntry sourceText: sourceText [
 			  nextPutAll: ' ';
 			  nextPutAll: (anEntry at: #protocol);
 			  nextPutAll: ' ';
-			  nextPutAll: (anEntry at: #methodReference).
+			  nextPutAll: (self compiledMethodEntryLabel: anEntry).
 		  sourceText ifNotNil: [
 			  stream
 				  nextPutAll: ' ';

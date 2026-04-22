@@ -138,18 +138,13 @@ MCPToolImplementors >> implementorEntrySchema [
 					   description:
 					   'The protocol/category containing the implementor.').
 				  (self
-					   schemaPropertyNamed: 'methodReference'
-					   type: 'string'
-					   description:
-					   'A readable method reference such as Class>>selector or Class class>>selector.').
-				  (self
 					   schemaPropertyNamed: 'source'
 					   type: 'string'
 					   description:
 					   'The formatted source code of the implementor when includeSource=true.') };
 		  required:
 			  #( 'selector' 'className' 'side' 'packageName' 'isExtension'
-			     'protocol' 'methodReference' );
+			     'protocol' );
 		  additionalProperties: false;
 		  yourself
 ]

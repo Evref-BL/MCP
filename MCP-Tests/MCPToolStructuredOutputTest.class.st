@@ -1,8 +1,9 @@
 Class {
 	#name : 'MCPToolStructuredOutputTest',
 	#superclass : 'TestCase',
-	#category : 'MCP-Tests',
-	#package : 'MCP-Tests'
+	#category : 'MCP-Tests-Tests',
+	#package : 'MCP-Tests',
+	#tag : 'Tests'
 }
 
 { #category : 'private' }

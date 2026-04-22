@@ -337,18 +337,13 @@ MCPToolSenders >> senderEntrySchema [
 					   description:
 					   'The protocol/category containing the sender method.').
 				  (self
-					   schemaPropertyNamed: 'methodReference'
-					   type: 'string'
-					   description:
-					   'A readable method reference such as Class>>selector or Class class>>selector.').
-				  (self
 					   schemaPropertyNamed: 'source'
 					   type: 'string'
 					   description:
 					   'The formatted source code of the sender when includeSource=true.') };
 		  required:
 			  #( 'selector' 'className' 'side' 'packageName' 'isExtension'
-			     'protocol' 'methodReference' );
+			     'protocol' );
 		  additionalProperties: false;
 		  yourself
 ]

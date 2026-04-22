@@ -121,12 +121,11 @@ MCPCompiledMethodInfoTest >> testBuildsInfoForExtensionMethod [
 	info := MCPCompiledMethodInfo fromCompiledMethod:
 		        self targetClass >> self extensionSelector.
 	self assert: info className equals: self targetClassName.
+	self assert: info selector equals: 'extensionInfoTarget'.
+	self assert: info side equals: 'instance'.
 	self assert: info packageName equals: 'MCP-Tests-Extensions'.
 	self assert: info isExtension.
 	self assert: info protocol equals: '*MCP-Tests-Extensions'.
-	self
-		assert: info methodReference
-		equals: self targetClassName , '>>extensionInfoTarget'.
 	self assert: (info source includesSubstring: 'extensionInfoTarget')
 ]
 
@@ -143,8 +142,7 @@ MCPCompiledMethodInfoTest >> testBuildsInfoForInstanceAndClassMethods [
 	self assert: instanceInfo selector equals: 'infoTarget'.
 	self assert: instanceInfo protocol equals: 'tests'.
 	self deny: instanceInfo isExtension.
+	self assert: classInfo className equals: self targetClassName.
 	self assert: classInfo side equals: 'class'.
-	self
-		assert: classInfo methodReference
-		equals: self targetClassName , ' class>>classInfoTarget'
+	self assert: classInfo selector equals: 'classInfoTarget'
 ]

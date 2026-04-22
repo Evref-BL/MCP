@@ -45,17 +45,15 @@ MCPCommandError class >> signalMissingClassNamed: aClassName [
 { #category : 'signaling' }
 MCPCommandError class >> signalMissingMethodInClassName: aClassName classSide: aBoolean selector: aSelectorString [
 
-	| message methodReference |
-	methodReference := aBoolean
-		                   ifTrue: [
-		                   aClassName , ' class>>' , aSelectorString ]
-		                   ifFalse: [ aClassName , '>>' , aSelectorString ].
-	message := 'Method ' , methodReference , ' does not exist.'.
+	| message |
+	message := 'Method ' , (aBoolean
+		            ifTrue: [ aClassName , ' class>>' , aSelectorString ]
+		            ifFalse: [ aClassName , '>>' , aSelectorString ])
+	           , ' does not exist.'.
 	^ self signalErrorCode: #MethodNotFound message: message details: {
 			  (#className -> aClassName).
 			  (#classSide -> aBoolean).
-			  (#selector -> aSelectorString).
-			  (#methodReference -> methodReference) } asDictionary
+			  (#selector -> aSelectorString) } asDictionary
 ]
 
 { #category : 'signaling' }

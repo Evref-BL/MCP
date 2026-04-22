@@ -52,7 +52,7 @@ MCPCommandErrorTest >> testMissingClassErrorCarriesStructuredDetails [
 ]
 
 { #category : 'tests' }
-MCPCommandErrorTest >> testMissingMethodErrorCarriesMethodReference [
+MCPCommandErrorTest >> testMissingMethodErrorCarriesClassSideAndSelector [
 
 	| details error |
 	error := self capture: [
@@ -64,9 +64,13 @@ MCPCommandErrorTest >> testMissingMethodErrorCarriesMethodReference [
 	details := error structuredDetails.
 	self assert: error errorCode equals: #MethodNotFound.
 	self
-		assert: (details at: #methodReference)
-		equals: 'MCPCommandErrorTestTarget class>>value'.
-	self assert: (details at: #selector) equals: 'value'
+		assert: (details at: #className)
+		equals: 'MCPCommandErrorTestTarget'.
+	self assert: (details at: #classSide).
+	self assert: (details at: #selector) equals: 'value'.
+	self
+		assert: details keys asSet
+		equals: #( errorClass message className classSide selector ) asSet
 ]
 
 { #category : 'tests' }

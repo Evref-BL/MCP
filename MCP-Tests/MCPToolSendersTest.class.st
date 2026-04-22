@@ -1,8 +1,9 @@
 Class {
 	#name : 'MCPToolSendersTest',
 	#superclass : 'TestCase',
-	#category : 'MCP-Tests',
-	#package : 'MCP-Tests'
+	#category : 'MCP-Tests-Tests',
+	#package : 'MCP-Tests',
+	#tag : 'Tests'
 }
 
 { #category : 'private' }
@@ -18,17 +19,26 @@ MCPToolSendersTest >> dataFrom: aResult [
 ]
 
 { #category : 'private' }
-MCPToolSendersTest >> errorFrom: aResult [
+MCPToolSendersTest >> entryForReference: aReference in: senders [
 
-	^ (self structuredContentFrom: aResult) at: #error
+	^ senders
+		  detect: [ :each |
+			  | reference |
+			  reference := String streamContents: [ :stream |
+				               stream nextPutAll: (each at: #className).
+				               (each at: #side) = 'class' ifTrue: [
+					               stream nextPutAll: ' class' ].
+				               stream
+					               nextPutAll: '>>';
+					               nextPutAll: (each at: #selector) ].
+			  reference = aReference ]
+		  ifNone: [ self fail: 'Missing sender ' , aReference ]
 ]
 
 { #category : 'private' }
-MCPToolSendersTest >> methodReference: aMethodReference in: senders [
+MCPToolSendersTest >> errorFrom: aResult [
 
-	^ senders
-		  detect: [ :each | (each at: #methodReference) = aMethodReference ]
-		  ifNone: [ self fail: 'Missing sender ' , aMethodReference ]
+	^ (self structuredContentFrom: aResult) at: #error
 ]
 
 { #category : 'private' }
@@ -53,18 +63,19 @@ MCPToolSendersTest >> testClassesScopeFindsClassReferencesForExactClasses [
 		assert: (data at: #classNames) asArray
 		equals: #( 'MCPToolSendersTestExact' ).
 	self
-		methodReference: 'MCPToolSendersTestExact>>referenceExtensionTarget'
+		entryForReference:
+		'MCPToolSendersTestExact>>referenceExtensionTarget'
 		in: (data at: #senders).
 	self
-		methodReference:
+		entryForReference:
 		'MCPToolSendersTestExact class>>referenceExtensionTarget'
 		in: (data at: #senders).
 	self
-		methodReference:
+		entryForReference:
 		'MCPToolSendersTestExact>>sendExistingClassNamedSelector'
 		in: (data at: #senders).
 	self
-		methodReference:
+		entryForReference:
 		'MCPToolSendersTestExact class>>sendExistingClassNamedSelector'
 		in: (data at: #senders)
 ]
@@ -85,7 +96,7 @@ MCPToolSendersTest >> testClassesScopeLimitsToExactClasses [
 		assert: (data at: #classNames) asArray
 		equals: #( 'MCPToolSendersTestChild' ).
 	self
-		methodReference: 'MCPToolSendersTestChild>>childHierarchySender'
+		entryForReference: 'MCPToolSendersTestChild>>childHierarchySender'
 		in: (data at: #senders)
 ]
 
@@ -100,7 +111,7 @@ MCPToolSendersTest >> testFilterCanNarrowResultsPaginateAndIncludeSource [
 			          (#limit -> 1) } asDictionary.
 	data := self dataFrom: result.
 	sender := self
-		          methodReference:
+		          entryForReference:
 		          'MCPToolSendersTestExact class>>classSendShared'
 		          in: (data at: #senders).
 	self deny: (result at: #isError ifAbsent: [ false ]).
@@ -124,10 +135,10 @@ MCPToolSendersTest >> testHierarchyScopeSearchesWholeHierarchy [
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #totalCount) equals: 2.
 	self
-		methodReference: 'MCPToolSendersTestBase>>baseHierarchySender'
+		entryForReference: 'MCPToolSendersTestBase>>baseHierarchySender'
 		in: (data at: #senders).
 	self
-		methodReference: 'MCPToolSendersTestChild>>childHierarchySender'
+		entryForReference: 'MCPToolSendersTestChild>>childHierarchySender'
 		in: (data at: #senders)
 ]
 
@@ -143,18 +154,19 @@ MCPToolSendersTest >> testImageScopeFindsClassReferencesWhenSelectorMatchesExist
 	self assert: (data at: #scope) equals: 'image'.
 	self assert: (data at: #totalCount) equals: 4.
 	self
-		methodReference: 'MCPToolSendersTestExact>>referenceExtensionTarget'
+		entryForReference:
+		'MCPToolSendersTestExact>>referenceExtensionTarget'
 		in: (data at: #senders).
 	self
-		methodReference:
+		entryForReference:
 		'MCPToolSendersTestExact class>>referenceExtensionTarget'
 		in: (data at: #senders).
 	self
-		methodReference:
+		entryForReference:
 		'MCPToolSendersTestExact>>sendExistingClassNamedSelector'
 		in: (data at: #senders).
 	self
-		methodReference:
+		entryForReference:
 		'MCPToolSendersTestExact class>>sendExistingClassNamedSelector'
 		in: (data at: #senders)
 ]
@@ -174,10 +186,10 @@ MCPToolSendersTest >> testImageScopeFindsInstanceAndClassSenders [
 	self assert: (data at: #side) equals: 'both'.
 	self assert: (data at: #totalCount) equals: 2.
 	self
-		methodReference: 'MCPToolSendersTestExact>>instanceSendShared'
+		entryForReference: 'MCPToolSendersTestExact>>instanceSendShared'
 		in: (data at: #senders).
 	self
-		methodReference: 'MCPToolSendersTestExact class>>classSendShared'
+		entryForReference: 'MCPToolSendersTestExact class>>classSendShared'
 		in: (data at: #senders)
 ]
 
@@ -192,7 +204,7 @@ MCPToolSendersTest >> testPackagesScopeIncludesExtensionMethods [
 			          asDictionary.
 	data := self dataFrom: result.
 	sender := self
-		          methodReference:
+		          entryForReference:
 		          'MCPToolSendersTestExtensionTarget>>extensionSender'
 		          in: (data at: #senders).
 	self deny: (result at: #isError ifAbsent: [ false ]).

@@ -16,8 +16,7 @@ MCPToolRemoveMethods >> dataForCompiledMethod: aCompiledMethod [
 		  (#protocol -> info protocol).
 		  (#packageName -> info packageName).
 		  (#isExtension -> info isExtension).
-		  (#source -> info source).
-		  (#methodReference -> info methodReference) } asDictionary
+		  (#source -> info source) } asDictionary
 ]
 
 { #category : 'private' }
@@ -201,15 +200,10 @@ MCPToolRemoveMethods >> initialize [
 										                   schemaPropertyNamed: 'source'
 										                   type: 'string'
 										                   description:
-											                   'The source code of the removed method.').
-									                  (self
-										                   schemaPropertyNamed: 'methodReference'
-										                   type: 'string'
-										                   description:
-											                   'A readable method reference for the removed method.') };
+											                   'The source code of the removed method.') };
 							                  required:
 								                  #( 'selector' 'protocol' 'packageName'
-								                     'isExtension' 'source' 'methodReference' );
+								                     'isExtension' 'source' );
 							                  additionalProperties: false;
 							                  yourself);
 					                 yourself) }

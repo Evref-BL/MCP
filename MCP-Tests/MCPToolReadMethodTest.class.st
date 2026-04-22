@@ -1,8 +1,9 @@
 Class {
 	#name : 'MCPToolReadMethodTest',
 	#superclass : 'TestCase',
-	#category : 'MCP-Tests',
-	#package : 'MCP-Tests'
+	#category : 'MCP-Tests-Tests',
+	#package : 'MCP-Tests',
+	#tag : 'Tests'
 }
 
 { #category : 'private' }
@@ -110,9 +111,6 @@ MCPToolReadMethodTest >> testReadMethodSupportsClassSideContext [
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #side) equals: 'class'.
 	self
-		assert: (data at: #methodReference)
-		equals: 'MCPToolReadMethodTestTarget class>>readClassSide'.
-	self
 		assert: (classInstanceVariable at: #kind)
 		equals: 'classInstanceVariable'.
 	self
@@ -121,7 +119,13 @@ MCPToolReadMethodTest >> testReadMethodSupportsClassSideContext [
 	self assert: (thisContextVariable at: #kind) equals: 'thisContext'.
 	self
 		assert: (thisContextVariable at: #ownerName)
-		equals: 'execution context'
+		equals: 'execution context'.
+	self
+		assert: data keys asSet
+		equals:
+			#( className selector side protocol source argumentNames
+			   temporaryNames variableReferenceCount externalVariableCount
+			   variableReferences externalVariableReferences ) asSet
 ]
 
 { #category : 'tests' }
