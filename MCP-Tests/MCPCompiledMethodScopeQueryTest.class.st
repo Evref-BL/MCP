@@ -25,13 +25,14 @@ MCPCompiledMethodScopeQueryTest >> testClassesScopeCollectsMethodsFromExactClass
 	query := MCPCompiledMethodScopeQuery
 		         scope: 'classes'
 		         packageNames: nil
-		         classNames: #( 'MCPToolImplementorsTestChild' )
+		         classNames: #( 'MCPToolHierarchyTestChild' )
 		         side: 'instance'.
 	methodIdentities := self methodIdentitiesFor: query compiledMethods.
 	self assert: (methodIdentities includes:
-			 'MCPToolImplementorsTestChild>>hierarchyProbe').
-	self deny: (methodIdentities includes:
-			 'MCPToolImplementorsTestBase>>hierarchyProbe')
+			 'MCPToolHierarchyTestChild>>hierarchyProbe').
+	self deny:
+		(methodIdentities includes:
+			 'MCPToolHierarchyTestBase>>hierarchyProbe')
 ]
 
 { #category : 'tests' }
@@ -62,13 +63,14 @@ MCPCompiledMethodScopeQueryTest >> testHierarchyScopeCollectsMethodsAcrossTheHie
 	query := MCPCompiledMethodScopeQuery
 		         scope: 'hierarchy'
 		         packageNames: nil
-		         classNames: #( 'MCPToolImplementorsTestMid' )
+		         classNames: #( 'MCPToolHierarchyTestMid' )
 		         side: 'instance'.
 	methodIdentities := self methodIdentitiesFor: query compiledMethods.
+	self assert:
+		(methodIdentities includes:
+			 'MCPToolHierarchyTestBase>>hierarchyProbe').
 	self assert: (methodIdentities includes:
-			 'MCPToolImplementorsTestBase>>hierarchyProbe').
-	self assert: (methodIdentities includes:
-			 'MCPToolImplementorsTestChild>>hierarchyProbe')
+			 'MCPToolHierarchyTestChild>>hierarchyProbe')
 ]
 
 { #category : 'tests' }
@@ -99,7 +101,7 @@ MCPCompiledMethodScopeQueryTest >> testPackagesScopeIncludesExtensionMethods [
 		         side: 'instance'.
 	methodIdentities := self methodIdentitiesFor: query compiledMethods.
 	self assert: (methodIdentities includes:
-			 'MCPToolImplementorsTestExtensionTarget>>extensionProbe')
+			 'MCPToolReferencesTestExtensionTarget>>extensionProbe')
 ]
 
 { #category : 'tests' }

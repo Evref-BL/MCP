@@ -66,7 +66,7 @@ MCPToolReferencesTest >> testClassesScopeLimitsToExactClasses [
 			          (#target -> 'hierarchyTarget').
 			          (#mode -> 'method').
 			          (#scope -> 'classes').
-			          (#classNames -> #( 'MCPToolReferencesTestChild' )) }
+			          (#classNames -> #( 'MCPToolHierarchyTestChild' )) }
 			          asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
@@ -74,9 +74,9 @@ MCPToolReferencesTest >> testClassesScopeLimitsToExactClasses [
 	self assert: (data at: #totalCount) equals: 1.
 	self
 		assert: (data at: #classNames) asArray
-		equals: #( 'MCPToolReferencesTestChild' ).
+		equals: #( 'MCPToolHierarchyTestChild' ).
 	self
-		entryForReference: 'MCPToolReferencesTestChild>>childHierarchySender'
+		entryForReference: 'MCPToolHierarchyTestChild>>childHierarchySender'
 		in: (data at: #references)
 ]
 
@@ -114,17 +114,17 @@ MCPToolReferencesTest >> testHierarchyScopeSearchesWholeHierarchy [
 			          (#target -> 'hierarchyTarget').
 			          (#mode -> 'method').
 			          (#scope -> 'hierarchy').
-			          (#classNames -> #( 'MCPToolReferencesTestMid' )) }
+			          (#classNames -> #( 'MCPToolHierarchyTestMid' )) }
 			          asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #mode) equals: 'method'.
 	self assert: (data at: #totalCount) equals: 2.
 	self
-		entryForReference: 'MCPToolReferencesTestBase>>baseHierarchySender'
+		entryForReference: 'MCPToolHierarchyTestBase>>baseHierarchySender'
 		in: (data at: #references).
 	self
-		entryForReference: 'MCPToolReferencesTestChild>>childHierarchySender'
+		entryForReference: 'MCPToolHierarchyTestChild>>childHierarchySender'
 		in: (data at: #references)
 ]
 

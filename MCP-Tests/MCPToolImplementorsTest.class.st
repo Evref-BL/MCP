@@ -53,16 +53,16 @@ MCPToolImplementorsTest >> testClassesScopeLimitsToExactClasses [
 	result := self callToolWith: {
 			          (#selector -> 'hierarchyProbe').
 			          (#scope -> 'classes').
-			          (#classNames -> #( 'MCPToolImplementorsTestChild' )) }
+			          (#classNames -> #( 'MCPToolHierarchyTestChild' )) }
 			          asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #totalCount) equals: 1.
 	self
 		assert: (data at: #classNames) asArray
-		equals: #( 'MCPToolImplementorsTestChild' ).
+		equals: #( 'MCPToolHierarchyTestChild' ).
 	self
-		entryForReference: 'MCPToolImplementorsTestChild>>hierarchyProbe'
+		entryForReference: 'MCPToolHierarchyTestChild>>hierarchyProbe'
 		in: (data at: #implementors)
 ]
 
@@ -91,16 +91,16 @@ MCPToolImplementorsTest >> testHierarchyScopeSearchesWholeHierarchy [
 	result := self callToolWith: {
 			          (#selector -> 'hierarchyProbe').
 			          (#scope -> 'hierarchy').
-			          (#classNames -> #( 'MCPToolImplementorsTestMid' )) }
+			          (#classNames -> #( 'MCPToolHierarchyTestMid' )) }
 			          asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #totalCount) equals: 2.
 	self
-		entryForReference: 'MCPToolImplementorsTestBase>>hierarchyProbe'
+		entryForReference: 'MCPToolHierarchyTestBase>>hierarchyProbe'
 		in: (data at: #implementors).
 	self
-		entryForReference: 'MCPToolImplementorsTestChild>>hierarchyProbe'
+		entryForReference: 'MCPToolHierarchyTestChild>>hierarchyProbe'
 		in: (data at: #implementors)
 ]
 
@@ -138,7 +138,7 @@ MCPToolImplementorsTest >> testPackagesScopeIncludesExtensionMethods [
 	data := self dataFrom: result.
 	implementor := self
 		               entryForReference:
-		               'MCPToolImplementorsTestExtensionTarget>>extensionProbe'
+		               'MCPToolReferencesTestExtensionTarget>>extensionProbe'
 		               in: (data at: #implementors).
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #totalCount) equals: 1.

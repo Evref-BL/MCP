@@ -154,7 +154,7 @@ MCPToolFindMethodsTest >> testHierarchyScopeReturnsWholeHierarchy [
 	| data result |
 	result := self callToolWith: {
 			          (#scope -> 'hierarchy').
-			          (#classNames -> #( 'MCPToolImplementorsTestMid' )).
+			          (#classNames -> #( 'MCPToolHierarchyTestMid' )).
 			          (#side -> 'instance').
 			          (#filter -> 'hierarchyProbe') } asDictionary.
 	data := self dataFrom: result.
@@ -162,10 +162,10 @@ MCPToolFindMethodsTest >> testHierarchyScopeReturnsWholeHierarchy [
 	self assert: (data at: #scope) equals: 'hierarchy'.
 	self assert: (data at: #totalCount) equals: 2.
 	self
-		entryForReference: 'MCPToolImplementorsTestBase>>hierarchyProbe'
+		entryForReference: 'MCPToolHierarchyTestBase>>hierarchyProbe'
 		in: (data at: #methods).
 	self
-		entryForReference: 'MCPToolImplementorsTestChild>>hierarchyProbe'
+		entryForReference: 'MCPToolHierarchyTestChild>>hierarchyProbe'
 		in: (data at: #methods)
 ]
 
@@ -180,7 +180,7 @@ MCPToolFindMethodsTest >> testPackagesScopeIncludesExtensionMethods [
 	data := self dataFrom: result.
 	method := self
 		          entryForReference:
-		          'MCPToolImplementorsTestExtensionTarget>>extensionProbe'
+		          'MCPToolReferencesTestExtensionTarget>>extensionProbe'
 		          in: (data at: #methods).
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #scope) equals: 'packages'.
