@@ -49,6 +49,19 @@ MCPCompiledMethodScopeQuery >> allCompiledMethods [
 	^ self compiledMethodsForBehaviors: self allBehaviors
 ]
 
+{ #category : 'private - scope' }
+MCPCompiledMethodScopeQuery >> allCompiledMethodsDo: aBlock [
+
+	| seenMethods |
+	seenMethods := IdentitySet new.
+	Smalltalk globals allBehaviorsDo: [ :eachBehavior |
+		(self matchesSideForBehavior: eachBehavior) ifTrue: [
+			eachBehavior methods do: [ :eachMethod |
+				(seenMethods includes: eachMethod) ifFalse: [
+					seenMethods add: eachMethod.
+					aBlock value: eachMethod ] ] ] ]
+]
+
 { #category : 'querying' }
 MCPCompiledMethodScopeQuery >> behaviors [
 
@@ -124,6 +137,24 @@ MCPCompiledMethodScopeQuery >> compiledMethods [
 	Error signal: 'Unsupported scope: ' , scope
 ]
 
+{ #category : 'querying' }
+MCPCompiledMethodScopeQuery >> compiledMethodsDo: aBlock [
+
+	self validate.
+	scope = 'image' ifTrue: [ ^ self allCompiledMethodsDo: aBlock ].
+	scope = 'packages' ifTrue: [
+		^ self compiledMethodsForPackageNamesDo: aBlock ].
+	scope = 'classes' ifTrue: [
+		^ self
+			  compiledMethodsForBehaviors: self behaviorsForClassNames
+			  do: aBlock ].
+	scope = 'hierarchy' ifTrue: [
+		^ self
+			  compiledMethodsForBehaviors: self hierarchyBehaviorsForClassNames
+			  do: aBlock ].
+	Error signal: 'Unsupported scope: ' , scope
+]
+
 { #category : 'private - scope' }
 MCPCompiledMethodScopeQuery >> compiledMethodsForBehaviors: behaviors [
 
@@ -132,6 +163,18 @@ MCPCompiledMethodScopeQuery >> compiledMethodsForBehaviors: behaviors [
 	behaviors do: [ :eachBehavior |
 		eachBehavior methods do: [ :eachMethod | methods add: eachMethod ] ].
 	^ methods asArray
+]
+
+{ #category : 'private - scope' }
+MCPCompiledMethodScopeQuery >> compiledMethodsForBehaviors: behaviors do: aBlock [
+
+	| seenMethods |
+	seenMethods := IdentitySet new.
+	behaviors do: [ :eachBehavior |
+		eachBehavior methods do: [ :eachMethod |
+			(seenMethods includes: eachMethod) ifFalse: [
+				seenMethods add: eachMethod.
+				aBlock value: eachMethod ] ] ]
 ]
 
 { #category : 'private - scope' }
@@ -152,6 +195,32 @@ MCPCompiledMethodScopeQuery >> compiledMethodsForPackageNames [
 			(self matchesSideForCompiledMethod: eachMethod) ifTrue: [
 				methods add: eachMethod ] ] ].
 	^ methods asArray
+]
+
+{ #category : 'private - scope' }
+MCPCompiledMethodScopeQuery >> compiledMethodsForPackageNamesDo: aBlock [
+
+	| seenMethods |
+	seenMethods := IdentitySet new.
+	self packageNames do: [ :eachName |
+		| package |
+		package := self packageNamed: eachName.
+		package definedClasses do: [ :aClass |
+			(side = 'instance' or: [ side = 'both' ]) ifTrue: [
+				aClass localMethods do: [ :eachMethod |
+					(seenMethods includes: eachMethod) ifFalse: [
+						seenMethods add: eachMethod.
+						aBlock value: eachMethod ] ] ].
+			(side = 'class' or: [ side = 'both' ]) ifTrue: [
+				aClass classSide localMethods do: [ :eachMethod |
+					(seenMethods includes: eachMethod) ifFalse: [
+						seenMethods add: eachMethod.
+						aBlock value: eachMethod ] ] ] ].
+		package extensionMethods do: [ :eachMethod |
+			(self matchesSideForCompiledMethod: eachMethod) ifTrue: [
+				(seenMethods includes: eachMethod) ifFalse: [
+					seenMethods add: eachMethod.
+					aBlock value: eachMethod ] ] ] ]
 ]
 
 { #category : 'private - scope' }

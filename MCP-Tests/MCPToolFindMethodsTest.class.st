@@ -54,6 +54,46 @@ MCPToolFindMethodsTest >> targetClassName [
 ]
 
 { #category : 'tests' }
+MCPToolFindMethodsTest >> testCanFilterAcrossExplicitProtocolTarget [
+
+	| data result selectors |
+	result := self callToolWith: {
+			          (#scope -> 'classes').
+			          (#classNames -> { self targetClassName }).
+			          (#filter -> 'helpers').
+			          (#filterTargets -> #( 'protocol' )) } asDictionary.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	data := self dataFrom: result.
+	selectors := (data at: #methods) collect: [ :each |
+		             each at: #selector ].
+	self assert: (data at: #scope) equals: 'classes'.
+	self assert: (data at: #filterTargets) equals: #( 'protocol' ).
+	self assert: (data at: #totalCount) equals: 2.
+	self
+		assert: selectors asSet
+		equals: #( 'betaHelper' 'classUtility' ) asSet
+]
+
+{ #category : 'tests' }
+MCPToolFindMethodsTest >> testCanFilterAcrossExplicitSourceTargetWithoutIncludingSource [
+
+	| data result |
+	result := self callToolWith: {
+			          (#scope -> 'classes').
+			          (#classNames -> { self targetClassName }).
+			          (#filter -> 'gamma value').
+			          (#filterTargets -> #( 'source' )) } asDictionary.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	data := self dataFrom: result.
+	self assert: (data at: #filterTargets) equals: #( 'source' ).
+	self assert: (data at: #totalCount) equals: 1.
+	self
+		assert: ((data at: #methods) first at: #selector)
+		equals: 'gammaUtility'.
+	self deny: ((data at: #methods) first includesKey: #source)
+]
+
+{ #category : 'tests' }
 MCPToolFindMethodsTest >> testCanFilterPaginateAndIncludeSource [
 
 	| data result |
@@ -62,11 +102,13 @@ MCPToolFindMethodsTest >> testCanFilterPaginateAndIncludeSource [
 			          (#classNames -> { self targetClassName }).
 			          (#side -> 'class').
 			          (#filter -> 'meta').
+			          (#filterTargets -> #( 'protocol' )).
 			          (#includeSource -> true).
 			          (#limit -> 1) } asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #sourceIncluded).
+	self assert: (data at: #filterTargets) equals: #( 'protocol' ).
 	self assert: (data at: #totalCount) equals: 2.
 	self assert: (data at: #returnedCount) equals: 1.
 	self assert: (data at: #truncated).
@@ -82,25 +124,6 @@ MCPToolFindMethodsTest >> testCanFilterPaginateAndIncludeSource [
 			 (each at: #source) includesSubstring: String cr asString ]).
 	self deny: ((data at: #methods) anySatisfy: [ :each |
 			 (each at: #source) includesSubstring: String tab asString ])
-]
-
-{ #category : 'tests' }
-MCPToolFindMethodsTest >> testClassesScopeCanFilterAcrossMethodMetadata [
-
-	| data result selectors |
-	result := self callToolWith: {
-			          (#scope -> 'classes').
-			          (#classNames -> { self targetClassName }).
-			          (#filter -> 'helpers') } asDictionary.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	data := self dataFrom: result.
-	selectors := (data at: #methods) collect: [ :each |
-		             each at: #selector ].
-	self assert: (data at: #scope) equals: 'classes'.
-	self assert: (data at: #totalCount) equals: 2.
-	self
-		assert: selectors asSet
-		equals: #( 'betaHelper' 'classUtility' ) asSet
 ]
 
 { #category : 'tests' }
@@ -132,6 +155,23 @@ MCPToolFindMethodsTest >> testClassesScopeReturnsMethodsForExactClassNames [
 		entryForReference:
 		self targetClassName , ' class>>classNeedleSelector'
 		in: (data at: #methods)
+]
+
+{ #category : 'tests' }
+MCPToolFindMethodsTest >> testDefaultFilterAppliesToSelectorOnly [
+
+	| data result |
+	result := self callToolWith: {
+			          (#scope -> 'classes').
+			          (#classNames -> { self targetClassName }).
+			          (#filter -> 'helpers') } asDictionary.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	data := self dataFrom: result.
+	self assert: (data at: #scope) equals: 'classes'.
+	self assert: (data at: #filterTargets) equals: #( 'selector' ).
+	self assert: (data at: #totalCount) equals: 0.
+	self assert: (data at: #returnedCount) equals: 0.
+	self assert: (data at: #methods) isEmpty
 ]
 
 { #category : 'tests' }
@@ -173,6 +213,26 @@ MCPToolFindMethodsTest >> testPackagesScopeIncludesExtensionMethods [
 	self assert: (data at: #totalCount) equals: 1.
 	self assert: (method at: #packageName) equals: 'MCP-Tests-Extensions'.
 	self assert: (method at: #isExtension)
+]
+
+{ #category : 'tests' }
+MCPToolFindMethodsTest >> testReturnsStructuredErrorForInvalidFilterTarget [
+
+	| error result structured |
+	result := self callToolWith: {
+			          (#scope -> 'classes').
+			          (#classNames -> { self targetClassName }).
+			          (#filter -> 'needle').
+			          (#filterTargets -> #( 'bogus' )) } asDictionary.
+	structured := self structuredContentFrom: result.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (structured at: #status) equals: 'error'.
+	self assert: (error at: #scope) equals: 'classes'.
+	self assert: (error at: #errorClass) equals: 'Error'.
+	self assert:
+		((error at: #message) includesSubstring: 'filterTargets').
+	self assert: ((error at: #message) includesSubstring: 'bogus')
 ]
 
 { #category : 'tests' }

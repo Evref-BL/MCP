@@ -235,6 +235,7 @@ MCPToolStructuredOutputTest >> testFindMethodsReturnsStructuredArrayData [
 	self
 		assert: (data at: #classNames)
 		equals: #( 'MCPToolFindMethodsTestTarget' ).
+	self assert: (data at: #filterTargets) equals: #( 'selector' ).
 	self assert: (data at: #returnedCount) equals: selectors size.
 	self assert: ((data at: #methods) allSatisfy: [ :each |
 			 (each includesKey: #selector) and: [

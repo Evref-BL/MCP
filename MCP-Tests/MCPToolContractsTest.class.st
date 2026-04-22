@@ -233,15 +233,24 @@ MCPToolContractsTest >> testFindClassesReturnsErrorResultForMissingPackage [
 { #category : 'tests' }
 MCPToolContractsTest >> testFindMethodsHasAccurateNameAndSchema [
 
-	| propertyNames schema |
+	| filterTargetsProperty propertyNames schema |
 	schema := MCPToolFindMethods new inputSchema.
 	propertyNames := schema properties collect: [ :each | each name ].
+	filterTargetsProperty := schema properties detect: [ :each |
+		                         each name = 'filterTargets' ].
 	self assert: MCPToolFindMethods new name equals: 'find-methods'.
 	self assert: schema required equals: #(  ).
 	self assert: (propertyNames includes: 'scope').
 	self assert: (propertyNames includes: 'packageNames').
 	self assert: (propertyNames includes: 'classNames').
 	self assert: (propertyNames includes: 'filter').
+	self assert: (propertyNames includes: 'filterTargets').
+	self
+		assert:
+			((filterTargetsProperty extraProperties at: #items) extraProperties
+				 at: #enum) asArray
+		equals:
+		#( 'selector' 'class' 'package' 'protocol' 'reference' 'source' ).
 	self deny: (propertyNames includes: 'className')
 ]
 

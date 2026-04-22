@@ -6,6 +6,74 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'private - methods' }
+MCPToolFindMethods >> compiledMethodEntriesFrom: compiledMethods filter: filterPattern filterTargets: filterTargets filterMode: filterMode caseSensitive: caseSensitive includeSource: includeSource [
+
+	| entries matcher needsSourceForFiltering |
+	matcher := self
+		           matcherForPattern: filterPattern
+		           mode: filterMode
+		           caseSensitive: caseSensitive.
+	needsSourceForFiltering := filterPattern notNil and: [
+		                           filterTargets includes: 'source' ].
+	entries := OrderedCollection new.
+	compiledMethods do: [ :eachMethod |
+		| entry info sourceText |
+		info := MCPCompiledMethodInfo fromCompiledMethod: eachMethod.
+		entry := info asDictionaryIncludingSource: false.
+		sourceText := needsSourceForFiltering
+			              ifTrue: [ self normalizedSourceText: info source ]
+			              ifFalse: [ nil ].
+		(filterPattern isNil or: [
+			 self
+				 matchesFilterOnCompiledMethodEntry: entry
+				 sourceText: sourceText
+				 matcher: matcher
+				 targets: filterTargets ]) ifTrue: [
+			includeSource ifTrue: [
+				sourceText ifNil: [
+					sourceText := self normalizedSourceText: info source ].
+				entry at: #source put: sourceText ].
+			entries add: entry ] ].
+	^ (entries asSortedCollection: [ :left :right |
+		   (self compiledMethodEntryLabel: left)
+		   <= (self compiledMethodEntryLabel: right) ]) asArray
+]
+
+{ #category : 'private - methods' }
+MCPToolFindMethods >> compiledMethodEntriesFromQuery: query filter: filterPattern filterTargets: filterTargets filterMode: filterMode caseSensitive: caseSensitive includeSource: includeSource [
+
+	| entries matcher needsSourceForFiltering |
+	matcher := self
+		           matcherForPattern: filterPattern
+		           mode: filterMode
+		           caseSensitive: caseSensitive.
+	needsSourceForFiltering := filterPattern notNil and: [
+		                           filterTargets includes: 'source' ].
+	entries := OrderedCollection new.
+	query compiledMethodsDo: [ :eachMethod |
+		| entry info sourceText |
+		info := MCPCompiledMethodInfo fromCompiledMethod: eachMethod.
+		entry := info asDictionaryIncludingSource: false.
+		sourceText := needsSourceForFiltering
+			              ifTrue: [ self normalizedSourceText: info source ]
+			              ifFalse: [ nil ].
+		(filterPattern isNil or: [
+			 self
+				 matchesFilterOnCompiledMethodEntry: entry
+				 sourceText: sourceText
+				 matcher: matcher
+				 targets: filterTargets ]) ifTrue: [
+			includeSource ifTrue: [
+				sourceText ifNil: [
+					sourceText := self normalizedSourceText: info source ].
+				entry at: #source put: sourceText ].
+			entries add: entry ] ].
+	^ (entries asSortedCollection: [ :left :right |
+		   (self compiledMethodEntryLabel: left)
+		   <= (self compiledMethodEntryLabel: right) ]) asArray
+]
+
 { #category : 'private - results' }
 MCPToolFindMethods >> errorResultForError: anError scope: scope [
 
@@ -26,33 +94,35 @@ MCPToolFindMethods >> errorResultForError: anError scope: scope [
 { #category : 'executing' }
 MCPToolFindMethods >> executeWithArguments: arguments [
 
-	| caseSensitive data endIndex entries filterPattern filterMode includeSource limit offset pagedEntries query requestedScope startIndex totalCount truncated |
-	filterPattern := self stringArgumentNamed: 'filter' in: arguments.
-	filterMode := self normalizedFilterModeFrom: arguments.
-	caseSensitive := self
-		                 booleanArgumentNamed: 'caseSensitive'
-		                 in: arguments
-		                 default: false.
-	includeSource := self
-		                 booleanArgumentNamed: 'includeSource'
-		                 in: arguments
-		                 default: false.
-	limit := self
-		         nonNegativeIntegerArgumentNamed: 'limit'
-		         in: arguments
-		         default: 100.
-	offset := self
-		          nonNegativeIntegerArgumentNamed: 'offset'
-		          in: arguments
-		          default: 0.
+	| caseSensitive data endIndex entries filterPattern filterMode filterTargets includeSource limit offset pagedEntries query requestedScope startIndex totalCount truncated |
 	requestedScope := (self stringArgumentNamed: 'scope' in: arguments)
 		                  ifNil: [ 'image' ]
 		                  ifNotNil: [ :scope | scope asLowercase ].
 	^ [
+	  filterPattern := self stringArgumentNamed: 'filter' in: arguments.
+	  filterTargets := self normalizedFilterTargetsFrom: arguments.
+	  filterMode := self normalizedFilterModeFrom: arguments.
+	  caseSensitive := self
+		                   booleanArgumentNamed: 'caseSensitive'
+		                   in: arguments
+		                   default: false.
+	  includeSource := self
+		                   booleanArgumentNamed: 'includeSource'
+		                   in: arguments
+		                   default: false.
+	  limit := self
+		           nonNegativeIntegerArgumentNamed: 'limit'
+		           in: arguments
+		           default: 100.
+	  offset := self
+		            nonNegativeIntegerArgumentNamed: 'offset'
+		            in: arguments
+		            default: 0.
 	  query := self compiledMethodScopeQueryFromArguments: arguments.
 	  entries := self
-		             compiledMethodEntriesFrom: query compiledMethods
+		             compiledMethodEntriesFromQuery: query
 		             filter: filterPattern
+		             filterTargets: filterTargets
 		             filterMode: filterMode
 		             caseSensitive: caseSensitive
 		             includeSource: includeSource.
@@ -71,6 +141,7 @@ MCPToolFindMethods >> executeWithArguments: arguments [
 		          (#sourceIncluded -> includeSource).
 		          (#packageNames -> query packageNames).
 		          (#classNames -> query classNames).
+		          (#filterTargets -> filterTargets).
 		          (#returnedCount -> pagedEntries size).
 		          (#totalCount -> totalCount).
 		          (#offset -> offset).
@@ -102,10 +173,26 @@ MCPToolFindMethods >> failureMessageForScope: scope error: anError [
 			  nextPutAll: anError messageText ]
 ]
 
+{ #category : 'private - filtering' }
+MCPToolFindMethods >> filterTextsForCompiledMethodEntry: anEntry sourceText: sourceText targets: filterTargets [
+
+	| texts |
+	texts := OrderedCollection new.
+	filterTargets do: [ :each |
+		each = 'selector' ifTrue: [ texts add: (anEntry at: #selector) ].
+		each = 'class' ifTrue: [ texts add: (anEntry at: #className) ].
+		each = 'package' ifTrue: [ texts add: (anEntry at: #packageName) ].
+		each = 'protocol' ifTrue: [ texts add: (anEntry at: #protocol) ].
+		each = 'reference' ifTrue: [
+			texts add: (self compiledMethodEntryLabel: anEntry) ].
+		each = 'source' ifTrue: [ texts add: sourceText ] ].
+	^ texts asArray
+]
+
 { #category : 'initialization' }
 MCPToolFindMethods >> initialize [
 
-	| classNamesProperty filterModeProperty methodsProperty packageNamesProperty scopeProperty sideProperty |
+	| classNamesProperty filterModeProperty filterTargetsItemProperty filterTargetsProperty methodsProperty packageNamesProperty scopeProperty sideProperty |
 	super initialize.
 	name := 'find-methods'.
 	title := 'Find Pharo Methods'.
@@ -142,6 +229,18 @@ MCPToolFindMethods >> initialize [
 		                      enum:
 			                      #( 'substring' 'prefix' 'exact' 'regex' );
 		                      yourself.
+	filterTargetsItemProperty := MCPStructureProperties new
+		                             type: 'string';
+		                             description: 'A filter target.';
+		                             enum: self supportedFilterTargets;
+		                             yourself.
+	filterTargetsProperty := (self
+		                          schemaPropertyNamed: 'filterTargets'
+		                          type: 'array'
+		                          description:
+			                          'Optional targets matched by filter. Defaults to selector.')
+		                         items: filterTargetsItemProperty;
+		                         yourself.
 	inputSchema := MCPStructureInputSchema new
 		               type: 'object';
 		               properties: {
@@ -153,8 +252,9 @@ MCPToolFindMethods >> initialize [
 					                name: 'filter';
 					                type: 'string';
 					                description:
-						                'Optional filter applied to selector, class, package, protocol, method reference, and source text.';
+						                'Optional filter applied to the selected filter targets.';
 					                yourself).
+				               filterTargetsProperty.
 				               filterModeProperty.
 				               (MCPStructureProperties new
 					                name: 'caseSensitive';
@@ -211,6 +311,7 @@ MCPToolFindMethods >> initialize [
 					                 'Whether method source was included in the returned entries.').
 				                packageNamesProperty.
 				                classNamesProperty.
+				                filterTargetsProperty.
 				                (self
 					                 integerSchemaPropertyNamed: 'returnedCount'
 					                 description:
@@ -235,9 +336,22 @@ MCPToolFindMethods >> initialize [
 				                methodsProperty }
 		                required:
 			                #( 'scope' 'side' 'sourceIncluded' 'packageNames'
-			                   'classNames' 'returnedCount' 'totalCount'
-			                   'offset' 'limit' 'truncated' 'methods' ).
-	icons := { self pngCompositeBaseIconNamed: #page badgeIconNamed: #zoomIn }
+			                   'classNames' 'filterTargets' 'returnedCount'
+			                   'totalCount' 'offset' 'limit' 'truncated'
+			                   'methods' ).
+	icons := { (self
+		          pngCompositeBaseIconNamed: #page
+		          badgeIconNamed: #zoomIn) }
+]
+
+{ #category : 'private - filtering' }
+MCPToolFindMethods >> matchesFilterOnCompiledMethodEntry: anEntry sourceText: sourceText matcher: aMatcher targets: filterTargets [
+
+	^ (self
+		   filterTextsForCompiledMethodEntry: anEntry
+		   sourceText: sourceText
+		   targets: filterTargets) anySatisfy: [ :each |
+		  aMatcher value: each ]
 ]
 
 { #category : 'private - schema' }
@@ -287,6 +401,34 @@ MCPToolFindMethods >> methodEntrySchema [
 		  yourself
 ]
 
+{ #category : 'private - arguments' }
+MCPToolFindMethods >> normalizedFilterTargetsFrom: arguments [
+
+	| invalidTargets normalizedTargets rawTargets |
+	rawTargets := self
+		              argumentNamed: 'filterTargets'
+		              in: arguments
+		              ifAbsent: [ ^ #( 'selector' ) ].
+	normalizedTargets := OrderedCollection new.
+	(self
+		 normalizedStringCollection: rawTargets
+		 argumentName: 'filterTargets') do: [ :each |
+		| normalized |
+		normalized := each asLowercase.
+		(normalizedTargets includes: normalized) ifFalse: [
+			normalizedTargets add: normalized ] ].
+	normalizedTargets ifEmpty: [
+		Error signal: 'filterTargets must contain at least one target.' ].
+	invalidTargets := normalizedTargets reject: [ :each |
+		                  self supportedFilterTargets includes: each ].
+	invalidTargets ifNotEmpty: [
+		Error signal: 'Unsupported filterTargets value(s): '
+			, invalidTargets asArray printString
+			,
+			'. Supported targets are selector, class, package, protocol, reference, source.' ].
+	^ normalizedTargets asArray
+]
+
 { #category : 'private - results' }
 MCPToolFindMethods >> successSummaryForScope: scope returnedCount: returnedCount totalCount: totalCount truncated: truncated [
 
@@ -300,4 +442,10 @@ MCPToolFindMethods >> successSummaryForScope: scope returnedCount: returnedCount
 			  nextPutAll: ' matched'.
 		  truncated ifTrue: [ stream nextPutAll: ', more available' ].
 		  stream nextPutAll: ').' ]
+]
+
+{ #category : 'private - arguments' }
+MCPToolFindMethods >> supportedFilterTargets [
+
+	^ #( 'selector' 'class' 'package' 'protocol' 'reference' 'source' )
 ]
