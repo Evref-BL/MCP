@@ -67,8 +67,7 @@ MCPCompiledMethodScopeQuery >> behaviorsForClassNames [
 	behaviors := IdentitySet new.
 	self classNames do: [ :eachName |
 		self
-			addBehaviorsForBaseClass:
-			(Smalltalk globals at: eachName asSymbol) instanceSide
+			addBehaviorsForBaseClass: (self classNamed: eachName) instanceSide
 			to: behaviors ].
 	^ behaviors asArray
 ]
@@ -80,13 +79,21 @@ MCPCompiledMethodScopeQuery >> behaviorsForPackageNames [
 	behaviors := IdentitySet new.
 	self packageNames do: [ :eachName |
 		| package |
-		package := eachName asPackage.
+		package := self packageNamed: eachName.
 		package definedClasses do: [ :aClass |
 			self addBehaviorsForBaseClass: aClass to: behaviors ].
 		package extensionMethods do: [ :eachMethod |
 			(self matchesSideForCompiledMethod: eachMethod) ifTrue: [
 				behaviors add: eachMethod methodClass ] ] ].
 	^ behaviors asArray
+]
+
+{ #category : 'private - resolution' }
+MCPCompiledMethodScopeQuery >> classNamed: aClassName [
+
+	^ Smalltalk globals
+		  at: aClassName asSymbol
+		  ifAbsent: [ MCPCommandError signalMissingClassNamed: aClassName ]
 ]
 
 { #category : 'accessing' }
@@ -134,7 +141,7 @@ MCPCompiledMethodScopeQuery >> compiledMethodsForPackageNames [
 	methods := IdentitySet new.
 	self packageNames do: [ :eachName |
 		| package |
-		package := eachName asPackage.
+		package := self packageNamed: eachName.
 		package definedClasses do: [ :aClass |
 			(side = 'instance' or: [ side = 'both' ]) ifTrue: [
 				aClass localMethods do: [ :eachMethod | methods add: eachMethod ] ].
@@ -152,8 +159,7 @@ MCPCompiledMethodScopeQuery >> hierarchyBehaviorsForClassNames [
 
 	| baseClasses behaviors hierarchyClasses |
 	baseClasses := self classNames collect: [ :eachName |
-		               (Smalltalk globals at: eachName asSymbol)
-			               instanceSide ].
+		               (self classNamed: eachName) instanceSide ].
 	hierarchyClasses := IdentitySet new.
 	baseClasses do: [ :eachClass |
 		eachClass withAllSuperAndSubclasses do: [ :relatedClass |
@@ -204,6 +210,14 @@ MCPCompiledMethodScopeQuery >> normalizedStringCollection: aValue argumentName: 
 		normalized := each asString trimBoth.
 		normalized isEmpty ifFalse: [ values add: normalized ] ].
 	^ values asArray
+]
+
+{ #category : 'private - resolution' }
+MCPCompiledMethodScopeQuery >> packageNamed: aPackageName [
+
+	(PackageOrganizer default hasPackage: aPackageName) ifFalse: [
+		MCPCommandError signalMissingPackageNamed: aPackageName ].
+	^ PackageOrganizer default packageNamed: aPackageName
 ]
 
 { #category : 'accessing' }

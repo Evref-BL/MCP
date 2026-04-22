@@ -107,7 +107,7 @@ MCPToolContractsTest >> testFindClassesHasAccurateNameAndSchema [
 	self assert: MCPToolFindClasses new name equals: 'pharo-find-classes'.
 	self assert: schema required equals: #(  ).
 	self assert: (propertyNames includes: 'scope').
-	self assert: (propertyNames includes: 'packageName').
+	self deny: (propertyNames includes: 'packageName').
 	self assert: (propertyNames includes: 'packageNames').
 	self assert: (propertyNames includes: 'classNames').
 	self assert: (propertyNames includes: 'filter')
@@ -145,20 +145,53 @@ MCPToolContractsTest >> testFindClassesReturnsErrorResultForMissingPackage [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testFindClassesUsesLegacyPackageNameAlias [
+MCPToolContractsTest >> testFindMethodsHasAccurateNameAndSchema [
 
-	| classNames data result |
-	result := self
-		          callToolNamed: 'pharo-find-classes'
-		          withArguments:
-		          { (#packageName -> 'MCP-Tests') } asDictionary.
+	| propertyNames schema |
+	schema := MCPToolFindMethods new inputSchema.
+	propertyNames := schema properties collect: [ :each | each name ].
+	self assert: MCPToolFindMethods new name equals: 'pharo-find-methods'.
+	self assert: schema required equals: #(  ).
+	self assert: (propertyNames includes: 'scope').
+	self assert: (propertyNames includes: 'packageNames').
+	self assert: (propertyNames includes: 'classNames').
+	self assert: (propertyNames includes: 'filter').
+	self deny: (propertyNames includes: 'className')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testFindMethodsListsMethodsForExistingClassScope [
+
+	| classNames data result selectors |
+	result := self callToolNamed: 'pharo-find-methods' withArguments: {
+			          (#scope -> 'classes').
+			          (#classNames -> #( 'MCPToolFindMethodsTestTarget' )) }
+			          asDictionary.
 	data := (result at: #structuredContent) at: #data.
-	classNames := (data at: #classes) collect: [ :each |
-		              each at: #className ].
+	selectors := (data at: #methods) collect: [ :each |
+		             each at: #selector ].
+	classNames := data at: #classNames.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #scope) equals: 'packages'.
-	self assert: (data at: #packageNames) equals: #( 'MCP-Tests' ).
-	self assert: (classNames includes: 'MCPToolEditMethodTest')
+	self assert: (data at: #scope) equals: 'classes'.
+	self assert: classNames equals: #( 'MCPToolFindMethodsTestTarget' ).
+	self assert: (selectors includes: 'alphaNeedleSelector').
+	self assert: (selectors includes: 'classNeedleSelector')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testFindMethodsReturnsErrorResultForMissingClass [
+
+	| result text |
+	result := self callToolNamed: 'pharo-find-methods' withArguments: {
+			          (#scope -> 'classes').
+			          (#classNames
+			           -> #( 'MCPDefinitelyMissingFindMethodsClass' )) }
+			          asDictionary.
+	text := self firstTextFromToolResult: result.
+	self assert: (result at: #isError).
+	self assert: (text includesSubstring:
+			 'Class MCPDefinitelyMissingFindMethodsClass does not exist.').
+	self deny: (text includesSubstring: 'Tool pharo-find-methods failed')
 ]
 
 { #category : 'tests' }

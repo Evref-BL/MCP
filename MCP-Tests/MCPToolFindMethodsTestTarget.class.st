@@ -1,36 +1,36 @@
 Class {
-	#name : 'MCPToolListMethodsTestTarget',
+	#name : 'MCPToolFindMethodsTestTarget',
 	#superclass : 'Object',
 	#category : 'MCP-Tests',
 	#package : 'MCP-Tests'
 }
 
 { #category : 'meta filtering' }
-MCPToolListMethodsTestTarget class >> classNeedleSelector [
+MCPToolFindMethodsTestTarget class >> classNeedleSelector [
 
 	^ 'class needle'
 ]
 
 { #category : 'meta helpers' }
-MCPToolListMethodsTestTarget class >> classUtility [
+MCPToolFindMethodsTestTarget class >> classUtility [
 
 	^ 'class utility'
 ]
 
 { #category : 'filtering' }
-MCPToolListMethodsTestTarget >> alphaNeedleSelector [
+MCPToolFindMethodsTestTarget >> alphaNeedleSelector [
 
 	^ 'needle alpha'
 ]
 
 { #category : 'helpers' }
-MCPToolListMethodsTestTarget >> betaHelper [
+MCPToolFindMethodsTestTarget >> betaHelper [
 
 	^ 'beta helper'
 ]
 
 { #category : 'filtering' }
-MCPToolListMethodsTestTarget >> gammaUtility [
+MCPToolFindMethodsTestTarget >> gammaUtility [
 
 	^ 'gamma value'
 ]

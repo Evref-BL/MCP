@@ -114,10 +114,9 @@ MCPToolStructuredOutputTest >> testEvalReturnsStructuredSuccess [
 MCPToolStructuredOutputTest >> testFindClassesReturnsStructuredArrayData [
 
 	| classNames data result |
-	result := self
-		          callToolNamed: 'pharo-find-classes'
-		          withArguments:
-		          { (#packageName -> 'MCP-Tests') } asDictionary.
+	result := self callToolNamed: 'pharo-find-classes' withArguments: {
+			          (#scope -> 'packages').
+			          (#packageNames -> #( 'MCP-Tests' )) } asDictionary.
 	data := self dataFrom: result.
 	classNames := (data at: #classes) collect: [ :each |
 		              each at: #className ].
@@ -137,10 +136,55 @@ MCPToolStructuredOutputTest >> testFindClassesReturnsStructuredArrayData [
 MCPToolStructuredOutputTest >> testFindClassesReturnsStructuredError [
 
 	| result structured error |
-	result := self
-		          callToolNamed: 'pharo-find-classes'
-		          withArguments:
-		          { (#packageName -> 'MCP-Definitely-Missing') }
+	result := self callToolNamed: 'pharo-find-classes' withArguments: {
+			          (#scope -> 'packages').
+			          (#packageNames -> #( 'MCP-Definitely-Missing' )) }
+			          asDictionary.
+	structured := self structuredContentFrom: result.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (structured at: #status) equals: 'error'.
+	self
+		assert: (error at: #packageName)
+		equals: 'MCP-Definitely-Missing'.
+	self assert: (error at: #scope) equals: 'packages'.
+	self assert: ((error at: #message) includesSubstring:
+			 'Package MCP-Definitely-Missing does not exist.')
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testFindMethodsReturnsStructuredArrayData [
+
+	| data result selectors |
+	result := self callToolNamed: 'pharo-find-methods' withArguments: {
+			          (#scope -> 'classes').
+			          (#classNames -> #( 'MCPToolFindMethodsTestTarget' )) }
+			          asDictionary.
+	data := self dataFrom: result.
+	selectors := (data at: #methods) collect: [ :each |
+		             each at: #selector ].
+	self
+		assert: ((self structuredContentFrom: result) at: #status)
+		equals: 'ok'.
+	self assert: (data at: #scope) equals: 'classes'.
+	self
+		assert: (data at: #classNames)
+		equals: #( 'MCPToolFindMethodsTestTarget' ).
+	self assert: (data at: #returnedCount) equals: selectors size.
+	self assert: ((data at: #methods) allSatisfy: [ :each |
+			 (each includesKey: #selector) and: [
+				 (each includesKey: #className) and: [
+					 each includesKey: #packageName ] ] ]).
+	self assert: (selectors includes: 'alphaNeedleSelector')
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testFindMethodsReturnsStructuredError [
+
+	| result structured error |
+	result := self callToolNamed: 'pharo-find-methods' withArguments: {
+			          (#scope -> 'packages').
+			          (#packageNames -> #( 'MCP-Definitely-Missing' )) }
 			          asDictionary.
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.

@@ -76,10 +76,7 @@ MCPToolFindClasses >> classInfoDataProperties [
 { #category : 'private - arguments' }
 MCPToolFindClasses >> classNamesFromArguments: arguments [
 
-	^ self
-		  normalizedStringCollection:
-		  (self argumentNamed: 'classNames' in: arguments ifAbsent: [ nil ])
-		  argumentName: 'classNames'
+	^ self stringCollectionArgumentNamed: 'classNames' in: arguments
 ]
 
 { #category : 'private - querying' }
@@ -117,16 +114,6 @@ MCPToolFindClasses >> classesForScope: scope packageNames: packageNames classNam
 	Error signal: 'Unsupported scope: ' , scope
 ]
 
-{ #category : 'private - arguments' }
-MCPToolFindClasses >> defaultScopeFromArguments: arguments [
-
-	(self stringArgumentNamed: 'scope' in: arguments) ifNotNil: [ :scope |
-		^ scope asLowercase ].
-	^ (self stringArgumentNamed: 'packageName' in: arguments)
-		  ifNil: [ 'image' ]
-		  ifNotNil: [ 'packages' ]
-]
-
 { #category : 'private - results' }
 MCPToolFindClasses >> errorResultForError: anError scope: scope [
 
@@ -162,7 +149,9 @@ MCPToolFindClasses >> executeWithArguments: arguments [
 		          nonNegativeIntegerArgumentNamed: 'offset'
 		          in: arguments
 		          default: 0.
-	requestedScope := self defaultScopeFromArguments: arguments.
+	requestedScope := (self stringArgumentNamed: 'scope' in: arguments)
+		                  ifNil: [ 'image' ]
+		                  ifNotNil: [ :value | value asLowercase ].
 	^ [
 	  scope := self scopeFromArguments: arguments.
 	  packageNames := self packageNamesFromArguments: arguments.
@@ -259,28 +248,22 @@ MCPToolFindClasses >> hierarchyClassesNamed: classNames [
 { #category : 'initialization' }
 MCPToolFindClasses >> initialize [
 
-	| classNamesProperty classesProperty filterModeProperty packageNameProperty packageNamesProperty scopeProperty |
+	| classNamesProperty classesProperty filterModeProperty packageNamesProperty scopeProperty |
 	super initialize.
 	name := 'pharo-find-classes'.
 	title := 'Find Pharo Classes'.
-	description := 'Find classes in the running Pharo image with optional scope, filtering, and pagination. packageName remains supported as a legacy alias for packages scope.'.
+	description := 'Find classes in the running Pharo image with optional scope, filtering, and pagination.'.
 	scopeProperty := MCPStructureProperties new
 		                 name: 'scope';
 		                 type: 'string';
 		                 description:
-			                 'Where to search for classes. Defaults to image, or packages when packageName is provided.';
+			                 'Where to search for classes. Defaults to image.';
 		                 enum: #( 'image' 'packages' 'hierarchy' 'classes' );
 		                 yourself.
-	packageNameProperty := MCPStructureProperties new
-		                       name: 'packageName';
-		                       type: 'string';
-		                       description:
-			                       'Legacy alias for querying a single package. When scope is omitted, providing packageName implies scope=packages.';
-		                       yourself.
 	packageNamesProperty := self
 		                        stringArraySchemaNamed: 'packageNames'
 		                        description:
-		                        'The package names that define the packages scope. Required when scope=packages unless packageName is provided.'
+		                        'The package names that define the packages scope. Required when scope=packages.'
 		                        itemDescription: 'A package name.'.
 	classNamesProperty := self
 		                      stringArraySchemaNamed: 'classNames'
@@ -299,7 +282,6 @@ MCPToolFindClasses >> initialize [
 		               type: 'object';
 		               properties: {
 				               scopeProperty.
-				               packageNameProperty.
 				               packageNamesProperty.
 				               classNamesProperty.
 				               (MCPStructureProperties new
@@ -381,38 +363,9 @@ MCPToolFindClasses >> initialize [
 ]
 
 { #category : 'private - arguments' }
-MCPToolFindClasses >> normalizedStringCollection: aValue argumentName: anArgumentName [
-
-	| normalized value values |
-	aValue ifNil: [ ^ #(  ) ].
-	value := aValue.
-	(value isString or: [ value isSymbol ]) ifTrue: [ value := { value } ].
-	(value isCollection and: [ value isString not ]) ifFalse: [
-		Error signal: anArgumentName , ' must be an array of strings.' ].
-	values := OrderedCollection new.
-	value do: [ :each |
-		normalized := each asString trimBoth.
-		normalized isEmpty ifFalse: [ values add: normalized ] ].
-	^ values asArray
-]
-
-{ #category : 'private - arguments' }
 MCPToolFindClasses >> packageNamesFromArguments: arguments [
 
-	| legacyPackageName packageNamesValue |
-	packageNamesValue := self
-		                     argumentNamed: 'packageNames'
-		                     in: arguments
-		                     ifAbsent: [ nil ].
-	legacyPackageName := self
-		                     stringArgumentNamed: 'packageName'
-		                     in: arguments.
-	packageNamesValue ifNil: [
-		legacyPackageName ifNotNil: [
-			packageNamesValue := { legacyPackageName } ] ].
-	^ self
-		  normalizedStringCollection: packageNamesValue
-		  argumentName: 'packageNames'
+	^ self stringCollectionArgumentNamed: 'packageNames' in: arguments
 ]
 
 { #category : 'private - querying' }
@@ -446,7 +399,9 @@ MCPToolFindClasses >> resolvedPackageNamed: packageName [
 MCPToolFindClasses >> scopeFromArguments: arguments [
 
 	| scope |
-	scope := self defaultScopeFromArguments: arguments.
+	scope := (self stringArgumentNamed: 'scope' in: arguments)
+		         ifNil: [ 'image' ]
+		         ifNotNil: [ :value | value asLowercase ].
 	(#( 'image' 'packages' 'hierarchy' 'classes' ) includes: scope)
 		ifFalse: [
 			Error signal:

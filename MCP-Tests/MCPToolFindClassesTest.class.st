@@ -236,11 +236,12 @@ MCPToolFindClassesTest >> testImageScopeCanFilterAndPaginate [
 ]
 
 { #category : 'tests' }
-MCPToolFindClassesTest >> testLegacyPackageNameAliasUsesPackagesScope [
+MCPToolFindClassesTest >> testPackagesScopeReturnsPackageClasses [
 
 	| classNames data result |
 	result := self callToolWith: {
-			          (#packageName -> 'MCP-Tests').
+			          (#scope -> 'packages').
+			          (#packageNames -> #( 'MCP-Tests' )).
 			          (#filter -> self fixturePrefix) } asDictionary.
 	data := self dataFrom: result.
 	classNames := (data at: #classes) collect: [ :each |

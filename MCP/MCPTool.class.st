@@ -423,6 +423,22 @@ MCPTool >> normalizedSideFrom: arguments [
 	^ side
 ]
 
+{ #category : 'private - arguments' }
+MCPTool >> normalizedStringCollection: aValue argumentName: anArgumentName [
+
+	| normalized value values |
+	aValue ifNil: [ ^ #(  ) ].
+	value := aValue.
+	(value isString or: [ value isSymbol ]) ifTrue: [ value := { value } ].
+	(value isCollection and: [ value isString not ]) ifFalse: [
+		Error signal: anArgumentName , ' must be an array of strings.' ].
+	values := OrderedCollection new.
+	value do: [ :each |
+		normalized := each asString trimBoth.
+		normalized isEmpty ifFalse: [ values add: normalized ] ].
+	^ values asArray
+]
+
 { #category : 'accessing' }
 MCPTool >> outputSchema [
 
@@ -585,6 +601,18 @@ MCPTool >> stringArraySchemaNamed: aName description: aDescription itemDescripti
 		   description: aDescription)
 		  items: itemsProperty;
 		  yourself
+]
+
+{ #category : 'private - arguments' }
+MCPTool >> stringCollectionArgumentNamed: anArgumentName in: arguments [
+
+	^ self
+		  normalizedStringCollection:
+		  (self
+			   argumentNamed: anArgumentName
+			   in: arguments
+			   ifAbsent: [ nil ])
+		  argumentName: anArgumentName
 ]
 
 { #category : 'private - tests' }

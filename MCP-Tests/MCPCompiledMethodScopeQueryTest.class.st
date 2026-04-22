@@ -35,6 +35,27 @@ MCPCompiledMethodScopeQueryTest >> testClassesScopeCollectsMethodsFromExactClass
 ]
 
 { #category : 'tests' }
+MCPCompiledMethodScopeQueryTest >> testClassesScopeSignalsCommandErrorWhenClassIsMissing [
+
+	| error query |
+	query := MCPCompiledMethodScopeQuery
+		         scope: 'classes'
+		         packageNames: nil
+		         classNames:
+		         #( 'MCPDefinitelyMissingCompiledMethodScopeQueryClass' )
+		         side: 'instance'.
+	error := [
+	         query compiledMethods.
+	         self fail: 'Expected MCPCommandError' ]
+		         on: MCPCommandError
+		         do: [ :caught | caught ].
+	self assert: error errorCode equals: #ClassNotFound.
+	self
+		assert: (error structuredDetails at: #className)
+		equals: 'MCPDefinitelyMissingCompiledMethodScopeQueryClass'
+]
+
+{ #category : 'tests' }
 MCPCompiledMethodScopeQueryTest >> testHierarchyScopeCollectsMethodsAcrossTheHierarchy [
 
 	| methodIdentities query |
@@ -79,4 +100,24 @@ MCPCompiledMethodScopeQueryTest >> testPackagesScopeIncludesExtensionMethods [
 	methodIdentities := self methodIdentitiesFor: query compiledMethods.
 	self assert: (methodIdentities includes:
 			 'MCPToolImplementorsTestExtensionTarget>>extensionProbe')
+]
+
+{ #category : 'tests' }
+MCPCompiledMethodScopeQueryTest >> testPackagesScopeSignalsCommandErrorWhenPackageIsMissing [
+
+	| error query |
+	query := MCPCompiledMethodScopeQuery
+		         scope: 'packages'
+		         packageNames: #( 'MCP-Definitely-Missing' )
+		         classNames: nil
+		         side: 'instance'.
+	error := [
+	         query compiledMethods.
+	         self fail: 'Expected MCPCommandError' ]
+		         on: MCPCommandError
+		         do: [ :caught | caught ].
+	self assert: error errorCode equals: #PackageNotFound.
+	self
+		assert: (error structuredDetails at: #packageName)
+		equals: 'MCP-Definitely-Missing'
 ]

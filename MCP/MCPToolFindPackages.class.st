@@ -241,22 +241,6 @@ MCPToolFindPackages >> initialize [
 	icons := {  }
 ]
 
-{ #category : 'private - arguments' }
-MCPToolFindPackages >> normalizedStringCollection: aValue argumentName: anArgumentName [
-
-	| normalized value values |
-	aValue ifNil: [ ^ #(  ) ].
-	value := aValue.
-	(value isString or: [ value isSymbol ]) ifTrue: [ value := { value } ].
-	(value isCollection and: [ value isString not ]) ifFalse: [
-		Error signal: anArgumentName , ' must be an array of strings.' ].
-	values := OrderedCollection new.
-	value do: [ :each |
-		normalized := each asString trimBoth.
-		normalized isEmpty ifFalse: [ values add: normalized ] ].
-	^ values asArray
-]
-
 { #category : 'private - filtering' }
 MCPToolFindPackages >> packageEntriesFrom: packages packageProjectNames: packageProjectNames filter: filterPattern filterMode: filterMode caseSensitive: caseSensitive [
 
@@ -374,13 +358,7 @@ MCPToolFindPackages >> projectManager [
 { #category : 'private - arguments' }
 MCPToolFindPackages >> projectNamesFromArguments: arguments [
 
-	^ self
-		  normalizedStringCollection:
-		  (self
-			   argumentNamed: 'projectNames'
-			   in: arguments
-			   ifAbsent: [ nil ])
-		  argumentName: 'projectNames'
+	^ self stringCollectionArgumentNamed: 'projectNames' in: arguments
 ]
 
 { #category : 'private - querying' }
