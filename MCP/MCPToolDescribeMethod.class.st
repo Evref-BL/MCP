@@ -89,8 +89,7 @@ MCPToolDescribeMethod >> executeWithArguments: arguments [
 		          (#selector -> selectorString).
 		          (#side -> side).
 		          (#protocol -> protocolName).
-		          (#source
-		           -> (self normalizedSourceText: compiledMethod sourceCode)).
+		          (#source -> (compiledMethod sourceCode ifNil: [ '' ])).
 		          (#argumentNames -> argumentNames).
 		          (#temporaryNames -> temporaryNames).
 		          (#variableReferenceCount -> variableReferences size).

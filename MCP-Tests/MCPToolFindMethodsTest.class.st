@@ -120,10 +120,8 @@ MCPToolFindMethodsTest >> testCanFilterPaginateAndIncludeSource [
 	self assert:
 		((data at: #methods) allSatisfy: [ :each |
 			 each includesKey: #source ]).
-	self deny: ((data at: #methods) anySatisfy: [ :each |
-			 (each at: #source) includesSubstring: String cr asString ]).
-	self deny: ((data at: #methods) anySatisfy: [ :each |
-			 (each at: #source) includesSubstring: String tab asString ])
+	self assert: ((data at: #methods) anySatisfy: [ :each |
+			 (each at: #source) includesSubstring: String cr asString ])
 ]
 
 { #category : 'tests' }

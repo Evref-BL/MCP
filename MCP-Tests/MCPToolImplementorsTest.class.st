@@ -48,7 +48,7 @@ MCPToolImplementorsTest >> structuredContentFrom: aResult [
 ]
 
 { #category : 'tests' }
-MCPToolImplementorsTest >> testCanIncludeNormalizedSource [
+MCPToolImplementorsTest >> testCanIncludeFormattedSource [
 
 	| data implementor result |
 	result := self callToolWith: {
@@ -66,10 +66,8 @@ MCPToolImplementorsTest >> testCanIncludeNormalizedSource [
 	self assert: (data at: #returnedCount) equals: 1.
 	self deny: (data at: #truncated).
 	self assert: (implementor includesKey: #source).
-	self deny:
-		((implementor at: #source) includesSubstring: String cr asString).
-	self deny:
-		((implementor at: #source) includesSubstring: String tab asString)
+	self assert:
+		((implementor at: #source) includesSubstring: String cr asString)
 ]
 
 { #category : 'tests' }

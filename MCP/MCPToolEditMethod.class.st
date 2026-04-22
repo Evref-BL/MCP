@@ -188,16 +188,13 @@ MCPToolEditMethod >> executeCompileWithArguments: arguments [
 		                ifAbsent: [ JRPCInvalidParameters signal ].
 	^ [
 	  behavior := self behaviorNamed: className classSide: classSide.
-	  selector := behavior
-		              compile:
-		              (self normalizedMethodSourceFrom: methodSource)
-		              classified: protocol.
+	  selector := behavior compile: methodSource classified: protocol.
 	  compiledMethod := behavior >> selector.
 	  compiledMethod reformat.
 	  self
 		  successResultText: 'Compiled '
 			  , (self methodReferenceForBehavior: behavior selector: selector)
-			  , '.'
+			  , '. '
 		  data: (self dataForCompiledMethod: compiledMethod) ]
 		  on: Exception
 		  do: [ :error |
@@ -414,12 +411,6 @@ MCPToolEditMethod >> initialize [
 	icons := { (self
 		          pngCompositeBaseIconNamed: #page
 		          badgeIconNamed: #edit) }
-]
-
-{ #category : 'private' }
-MCPToolEditMethod >> normalizedMethodSourceFrom: aMethodSource [
-
-	^ aMethodSource withInternalLineEndings
 ]
 
 { #category : 'private' }

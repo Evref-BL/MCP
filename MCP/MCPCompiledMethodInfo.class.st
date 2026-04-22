@@ -100,5 +100,5 @@ MCPCompiledMethodInfo >> side [
 { #category : 'accessing' }
 MCPCompiledMethodInfo >> source [
 
-	^ MCPTool normalizedSourceText: source
+	^ source ifNil: [ '' ]
 ]

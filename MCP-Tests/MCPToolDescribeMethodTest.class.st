@@ -77,9 +77,8 @@ MCPToolDescribeMethodTest >> testDescribeMethodReturnsInstanceSideVariableContex
 	self assert: ((data at: #variableReferences) allSatisfy: [ :each |
 			 #( #sourceIntervals #external #declaredInMethod ) noneSatisfy: [
 				 :key | each includesKey: key ] ]).
-	self deny: ((data at: #source) includesSubstring: String cr asString).
-	self deny:
-		((data at: #source) includesSubstring: String tab asString).
+	self assert:
+		((data at: #source) includesSubstring: String cr asString).
 	self assert: ((data at: #source) includesSubstring:
 			 'instanceCounter ifNil: [ SharedLimit ]')
 ]
@@ -135,9 +134,8 @@ MCPToolDescribeMethodTest >> testDescribeMethodSupportsClassSideContext [
 	self assert: ((data at: #variableReferences) allSatisfy: [ :each |
 			 #( #sourceIntervals #external #declaredInMethod ) noneSatisfy: [
 				 :key | each includesKey: key ] ]).
-	self deny: ((data at: #source) includesSubstring: String cr asString).
-	self deny:
-		((data at: #source) includesSubstring: String tab asString).
+	self assert:
+		((data at: #source) includesSubstring: String cr asString).
 	self
 		assert: data keys asSet
 		equals:

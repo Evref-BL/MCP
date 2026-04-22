@@ -126,10 +126,8 @@ MCPToolSendersTest >> testFilterCanNarrowResultsPaginateAndIncludeSource [
 	self deny: (data at: #truncated).
 	self assert:
 		((sender at: #source) includesSubstring: 'self sharedTarget').
-	self deny:
-		((sender at: #source) includesSubstring: String cr asString).
-	self deny:
-		((sender at: #source) includesSubstring: String tab asString)
+	self assert:
+		((sender at: #source) includesSubstring: String cr asString)
 ]
 
 { #category : 'tests' }

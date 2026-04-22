@@ -120,11 +120,9 @@ MCPToolStructuredOutputTest >> testDescribeMethodReturnsStructuredError [
 MCPToolStructuredOutputTest >> testDescribeMethodReturnsStructuredSuccess [
 
 	| data result |
-	result := self
-		          callToolNamed: 'describe-method'
-		          withArguments: {
-				          (#className -> 'MCPToolDescribeMethodTestTarget').
-				          (#selector -> 'readInstanceWith:') } asDictionary.
+	result := self callToolNamed: 'describe-method' withArguments: {
+			          (#className -> 'MCPToolDescribeMethodTestTarget').
+			          (#selector -> 'readInstanceWith:') } asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self
@@ -141,9 +139,8 @@ MCPToolStructuredOutputTest >> testDescribeMethodReturnsStructuredSuccess [
 	self assert: ((data at: #variableReferences) allSatisfy: [ :each |
 			 #( #sourceIntervals #external #declaredInMethod ) noneSatisfy: [
 				 :key | each includesKey: key ] ]).
-	self deny: ((data at: #source) includesSubstring: String cr asString).
-	self deny:
-		((data at: #source) includesSubstring: String tab asString)
+	self assert:
+		((data at: #source) includesSubstring: String cr asString)
 ]
 
 { #category : 'tests' }

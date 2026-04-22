@@ -22,7 +22,7 @@ MCPToolFindMethods >> compiledMethodEntriesFromQuery: query filter: filterPatter
 		info := MCPCompiledMethodInfo fromCompiledMethod: eachMethod.
 		entry := info asDictionaryIncludingSource: false.
 		sourceText := needsSourceForFiltering
-			              ifTrue: [ self normalizedSourceText: info source ]
+			              ifTrue: [ info source ]
 			              ifFalse: [ nil ].
 		(filterPattern isNil or: [
 			 self
@@ -31,8 +31,7 @@ MCPToolFindMethods >> compiledMethodEntriesFromQuery: query filter: filterPatter
 				 matcher: matcher
 				 targets: filterTargets ]) ifTrue: [
 			includeSource ifTrue: [
-				sourceText ifNil: [
-					sourceText := self normalizedSourceText: info source ].
+				sourceText ifNil: [ sourceText := info source ].
 				entry at: #source put: sourceText ].
 			entries add: entry ] ].
 	^ (entries asSortedCollection: [ :left :right |

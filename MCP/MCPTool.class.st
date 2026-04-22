@@ -15,24 +15,6 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'private - source' }
-MCPTool class >> normalizedSourceText: aSourceText [
-
-	| previousWasSeparator |
-	aSourceText ifNil: [ ^ '' ].
-	previousWasSeparator := true.
-	^ String new: aSourceText size streamContents: [ :stream |
-		  aSourceText do: [ :each |
-			  each isSeparator
-				  ifTrue: [
-					  previousWasSeparator ifFalse: [
-						  stream space.
-						  previousWasSeparator := true ] ]
-				  ifFalse: [
-					  stream nextPut: each.
-					  previousWasSeparator := false ] ] ]
-]
-
 { #category : 'private - arguments' }
 MCPTool >> argumentNamed: anArgumentName in: arguments ifAbsent: aBlock [
 
@@ -100,7 +82,7 @@ MCPTool >> compiledMethodEntriesFrom: compiledMethods filter: filterPattern filt
 		| entry info sourceText |
 		info := MCPCompiledMethodInfo fromCompiledMethod: eachMethod.
 		sourceText := needsSourceText
-			              ifTrue: [ self normalizedSourceText: info source ]
+			              ifTrue: [ info source ]
 			              ifFalse: [ nil ].
 		entry := info asDictionaryIncludingSource: includeSource.
 		includeSource ifTrue: [ entry at: #source put: sourceText ].
@@ -447,12 +429,6 @@ MCPTool >> normalizedSideFrom: arguments [
 	(#( 'instance' 'class' 'both' ) includes: side) ifFalse: [
 		Error signal: 'side must be one of instance, class, or both.' ].
 	^ side
-]
-
-{ #category : 'private - source' }
-MCPTool >> normalizedSourceText: aSourceText [
-
-	^ self class normalizedSourceText: aSourceText
 ]
 
 { #category : 'private - arguments' }
