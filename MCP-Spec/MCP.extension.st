@@ -55,7 +55,7 @@ MCP >> handlersCount [
 ]
 
 { #category : '*MCP-Spec' }
-MCP >> inspectionDashboard [
+MCP >> inspectionDashboard: aBuilder [
 
 	<inspectorPresentationOrder: 0 title: 'Dashboard'>
 	^ MCPDashboardPresenter on: self
