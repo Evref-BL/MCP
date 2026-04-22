@@ -411,7 +411,9 @@ MCPToolEditMethod >> initialize [
 		                required:
 			                #( 'selector' 'className' 'side' 'packageName'
 			                   'isExtension' 'protocol' 'source' ).
-	icons := { self pngCompositeBaseIconNamed: #workspace badgeIconNamed: #edit }
+	icons := { (self
+		          pngCompositeBaseIconNamed: #page
+		          badgeIconNamed: #edit) }
 ]
 
 { #category : 'private' }

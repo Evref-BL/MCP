@@ -355,7 +355,9 @@ MCPToolFindClasses >> initialize [
 			                #( 'scope' 'packageNames' 'classNames' 'returnedCount'
 			                   'totalCount' 'offset' 'limit' 'truncated'
 			                   'classes' ).
-	icons := { self pngCompositeBaseIconNamed: #class badgeIconNamed: #zoomIn }
+	icons := { (self
+		          pngCompositeBaseIconNamed: #class
+		          badgeIconNamed: #zoomIn) }
 ]
 
 { #category : 'private - arguments' }

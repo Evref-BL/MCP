@@ -245,7 +245,9 @@ MCPToolDescribeMethod >> initialize [
 			                   'variableReferenceCount'
 			                   'externalVariableCount' 'variableReferences'
 			                   'externalVariableReferences' ).
-	icons := { self pngCompositeBaseIconNamed: #page badgeIconNamed: #inspect }
+	icons := { (self
+		          pngCompositeBaseIconNamed: #page
+		          badgeIconNamed: #inspect) }
 ]
 
 { #category : 'private - analysis' }

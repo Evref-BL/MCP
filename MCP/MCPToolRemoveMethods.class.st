@@ -211,7 +211,9 @@ MCPToolRemoveMethods >> initialize [
 					                 yourself) }
 		                required:
 		                #( 'className' 'classSide' 'selectors' 'removedMethods' ).
-	icons := { self pngCompositeBaseIconNamed: #page badgeIconNamed: #delete }
+	icons := { (self
+		          pngCompositeBaseIconNamed: #page
+		          badgeIconNamed: #delete) }
 ]
 
 { #category : 'private' }

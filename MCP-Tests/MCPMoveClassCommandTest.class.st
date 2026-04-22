@@ -109,6 +109,23 @@ MCPMoveClassCommandTest >> tearDown [
 ]
 
 { #category : 'tests' }
+MCPMoveClassCommandTest >> testEnsuresMissingDestinationPackageBeforeMovingClass [
+
+	| result |
+	self removeDestinationPackage.
+	result := self executeCommand: (MCPMoveClassCommand
+			           className: self targetClassName
+			           packageName: self destinationPackageName
+			           tag: nil).
+	self assert:
+		(PackageOrganizer default hasPackage: self destinationPackageName).
+	self
+		assert: self targetClass packageName asString
+		equals: self destinationPackageName.
+	self assert: result oldPackageName equals: self originalPackageName
+]
+
+{ #category : 'tests' }
 MCPMoveClassCommandTest >> testMissingDestinationTagSignalsCommandError [
 
 	| error |
@@ -124,21 +141,6 @@ MCPMoveClassCommandTest >> testMissingDestinationTagSignalsCommandError [
 	self
 		assert: (error structuredDetails at: #tag)
 		equals: 'DefinitelyMissing'
-]
-
-{ #category : 'tests' }
-MCPMoveClassCommandTest >> testMissingPackageSignalsCommandError [
-
-	| error |
-	error := self captureCommandError: [
-		         (MCPMoveClassCommand
-			          className: self targetClassName
-			          packageName: 'MCP-Definitely-Missing'
-			          tag: nil) execute ].
-	self assert: error errorCode equals: #PackageNotFound.
-	self
-		assert: (error structuredDetails at: #packageName)
-		equals: 'MCP-Definitely-Missing'
 ]
 
 { #category : 'tests' }

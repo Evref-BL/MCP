@@ -179,7 +179,7 @@ MCPToolRunTests >> initialize [
 			                   'passedCount' 'skippedCount' 'failureCount'
 			                   'errorCount' 'failingTestNames'
 			                   'issues' ).
-	icons := { self pngIconNamed: #testRunner }
+	icons := { (self pngIconNamed: #testRunner) }
 ]
 
 { #category : 'private' }

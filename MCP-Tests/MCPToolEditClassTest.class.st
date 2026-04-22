@@ -336,6 +336,27 @@ MCPToolEditClassTest >> testCreatesClassWithSlotsAndTag [
 ]
 
 { #category : 'tests' }
+MCPToolEditClassTest >> testEnsuresMissingDestinationPackageBeforeMovingClass [
+
+	| data result |
+	self removeDestinationPackage.
+	result := self callToolWith: self moveToPackageArguments.
+	data := self dataFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert:
+		(PackageOrganizer default hasPackage: self destinationPackageName).
+	self
+		assert: self moveTargetClass packageName asString
+		equals: self destinationPackageName.
+	self
+		assert: (data at: #packageName)
+		equals: self destinationPackageName.
+	self
+		assert: (data at: #oldPackageName)
+		equals: self originalMovePackageName
+]
+
+{ #category : 'tests' }
 MCPToolEditClassTest >> testEnsuresPackageBeforeCreatingClass [
 
 	| createdClass |

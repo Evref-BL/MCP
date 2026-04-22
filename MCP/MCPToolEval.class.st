@@ -66,7 +66,7 @@ MCPToolEval >> initialize [
 				                 description:
 				                 'The printString of the evaluated result.') }
 		                required: #( 'resultPrintString' ).
-	icons := { self pngIconNamed: #scriptManager }
+	icons := { (self pngIconNamed: #scriptManager) }
 ]
 
 { #category : 'private' }

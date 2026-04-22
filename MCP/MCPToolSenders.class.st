@@ -291,7 +291,9 @@ MCPToolSenders >> initialize [
 			                   'packageNames' 'classNames' 'returnedCount'
 			                   'totalCount' 'offset' 'limit' 'truncated'
 			                   'senders' ).
-	icons := { self pngCompositeBaseIconNamed: #references badgeIconNamed: #over }
+	icons := { (self
+		          pngCompositeBaseIconNamed: #references
+		          badgeIconNamed: #over) }
 ]
 
 { #category : 'private - searching' }

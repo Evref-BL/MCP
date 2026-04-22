@@ -37,17 +37,19 @@ MCPMoveClassCommand >> className: aString [
 MCPMoveClassCommand >> destinationValidation [
 
 	| package |
-	(self packageOrganizer hasPackage: self packageName) ifFalse: [
-		MCPCommandError
-			signalMissingPackageNamed: self packageName
-			forClassNamed: self className ].
+	package := self ensurePackageNamed: self packageName.
 	self tag ifNil: [ ^ self ].
-	package := self packageOrganizer packageNamed: self packageName.
 	(package hasTag: self tag) ifFalse: [
 		MCPCommandError
 			signalMissingTag: self tag
 			packageName: self packageName
 			forClassNamed: self className ]
+]
+
+{ #category : 'private' }
+MCPMoveClassCommand >> ensurePackageNamed: aPackageName [
+
+	^ self packageOrganizer ensurePackage: aPackageName
 ]
 
 { #category : 'executing' }

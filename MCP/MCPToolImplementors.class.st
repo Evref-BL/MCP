@@ -293,7 +293,9 @@ MCPToolImplementors >> initialize [
 			                   'packageNames' 'classNames' 'returnedCount'
 			                   'totalCount' 'offset' 'limit' 'truncated'
 			                   'implementors' ).
-	icons := { self pngCompositeBaseIconNamed: #references badgeIconNamed: #into }
+	icons := { (self
+		          pngCompositeBaseIconNamed: #references
+		          badgeIconNamed: #into) }
 ]
 
 { #category : 'private - results' }

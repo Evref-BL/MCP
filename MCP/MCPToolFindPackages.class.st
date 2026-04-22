@@ -234,7 +234,9 @@ MCPToolFindPackages >> initialize [
 			                #( 'scope' 'projectNames' 'returnedCount'
 			                   'totalCount' 'offset' 'limit' 'truncated'
 			                   'packages' ).
-	icons := { self pngCompositeBaseIconNamed: #package badgeIconNamed: #zoomIn }
+	icons := { (self
+		          pngCompositeBaseIconNamed: #package
+		          badgeIconNamed: #zoomIn) }
 ]
 
 { #category : 'private - filtering' }

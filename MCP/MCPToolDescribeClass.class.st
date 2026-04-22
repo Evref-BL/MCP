@@ -215,7 +215,9 @@ MCPToolDescribeClass >> initialize [
 		                required:
 		                self classDescriptionRequiredFields
 		                , #( 'superclasses' 'subclasses' ).
-	icons := { self pngCompositeBaseIconNamed: #class badgeIconNamed: #inspect }
+	icons := { (self
+		          pngCompositeBaseIconNamed: #class
+		          badgeIconNamed: #inspect) }
 ]
 
 { #category : 'private - hierarchy' }

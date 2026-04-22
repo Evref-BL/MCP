@@ -361,7 +361,9 @@ MCPToolEditClass >> initialize [
 			                #( 'operation' 'className' 'superclassName'
 			                   'packageName' 'tag' 'instanceSlotNames'
 			                   'classSlotNames' 'subclassNames' ).
-	icons := { self pngCompositeBaseIconNamed: #class badgeIconNamed: #edit }
+	icons := { (self
+		          pngCompositeBaseIconNamed: #class
+		          badgeIconNamed: #edit) }
 ]
 
 { #category : 'private - arguments' }
