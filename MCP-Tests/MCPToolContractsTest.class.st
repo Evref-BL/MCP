@@ -1,16 +1,10 @@
 Class {
 	#name : 'MCPToolContractsTest',
-	#superclass : 'TestCase',
-	#category : 'MCP-Tests-Tests',
+	#superclass : 'MCPToolAPITestCase',
+	#category : 'MCP-Tests-Tools',
 	#package : 'MCP-Tests',
-	#tag : 'Tests'
+	#tag : 'Tools'
 }
-
-{ #category : 'private' }
-MCPToolContractsTest >> callToolNamed: aToolName withArguments: someArguments [
-
-	^ MCP new rpcToolCall: aToolName withParams: someArguments
-]
 
 { #category : 'private' }
 MCPToolContractsTest >> firstTextFromToolResult: aResult [

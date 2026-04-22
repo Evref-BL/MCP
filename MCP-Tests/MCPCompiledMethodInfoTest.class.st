@@ -1,16 +1,10 @@
 Class {
 	#name : 'MCPCompiledMethodInfoTest',
-	#superclass : 'TestCase',
+	#superclass : 'MCPTestCase',
 	#category : 'MCP-Tests-Internal',
 	#package : 'MCP-Tests',
 	#tag : 'Internal'
 }
-
-{ #category : 'private' }
-MCPCompiledMethodInfoTest >> classNamed: aClassName [
-
-	^ Smalltalk globals at: aClassName asSymbol
-]
 
 { #category : 'private' }
 MCPCompiledMethodInfoTest >> classSelector [
@@ -38,13 +32,6 @@ MCPCompiledMethodInfoTest >> createTargetClass [
 ]
 
 { #category : 'private' }
-MCPCompiledMethodInfoTest >> ensureMethodSource: aMethodSource protocol: aProtocol on: aBehavior [
-
-	self withoutEpiceaDuring: [
-		aBehavior compile: aMethodSource classified: aProtocol ]
-]
-
-{ #category : 'private' }
 MCPCompiledMethodInfoTest >> extensionSelector [
 
 	^ #extensionInfoTarget
@@ -60,14 +47,6 @@ MCPCompiledMethodInfoTest >> hasTargetClass [
 MCPCompiledMethodInfoTest >> instanceSelector [
 
 	^ #infoTarget
-]
-
-{ #category : 'private' }
-MCPCompiledMethodInfoTest >> removeSelector: aSelector from: aBehavior [
-
-	self withoutEpiceaDuring: [
-		(aBehavior includesSelector: aSelector) ifTrue: [
-			aBehavior removeSelector: aSelector ] ]
 ]
 
 { #category : 'private' }

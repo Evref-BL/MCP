@@ -1,9 +1,9 @@
 Class {
 	#name : 'MCPPackageInfoTest',
-	#superclass : 'TestCase',
-	#category : 'MCP-Tests-Tests',
+	#superclass : 'MCPTestCase',
+	#category : 'MCP-Tests-Internal',
 	#package : 'MCP-Tests',
-	#tag : 'Tests'
+	#tag : 'Internal'
 }
 
 { #category : 'tests' }

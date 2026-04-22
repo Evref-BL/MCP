@@ -1,9 +1,9 @@
 Class {
 	#name : 'MCPToolFindClassesTest',
-	#superclass : 'TestCase',
-	#category : 'MCP-Tests-Tests',
+	#superclass : 'MCPToolTestCase',
+	#category : 'MCP-Tests-Tools',
 	#package : 'MCP-Tests',
-	#tag : 'Tests'
+	#tag : 'Tools'
 }
 
 { #category : 'private' }
@@ -13,41 +13,9 @@ MCPToolFindClassesTest >> baseClassName [
 ]
 
 { #category : 'private' }
-MCPToolFindClassesTest >> callToolWith: someArguments [
-
-	^ MCP new rpcToolCall: 'find-classes' withParams: someArguments
-]
-
-{ #category : 'private' }
 MCPToolFindClassesTest >> childClassName [
 
 	^ self fixturePrefix , 'Child'
-]
-
-{ #category : 'private' }
-MCPToolFindClassesTest >> classNamed: aClassName [
-
-	^ Smalltalk globals at: aClassName asSymbol
-]
-
-{ #category : 'private' }
-MCPToolFindClassesTest >> createClassNamed: aClassName superclassName: aSuperclassName slots: someSlots classSlots: someClassSlots [
-
-	^ self withoutEpiceaDuring: [
-		  | builder superclass |
-		  superclass := self classNamed: aSuperclassName.
-		  builder := superclass << aClassName asSymbol.
-		  builder package: 'MCP-Tests'.
-		  builder tag: 'Internal'.
-		  builder slots: someSlots.
-		  builder classSlots: someClassSlots.
-		  builder install ]
-]
-
-{ #category : 'private' }
-MCPToolFindClassesTest >> dataFrom: aResult [
-
-	^ (self structuredContentFrom: aResult) at: #data
 ]
 
 { #category : 'private' }
@@ -56,12 +24,6 @@ MCPToolFindClassesTest >> entryNamed: aClassName in: classEntries [
 	^ classEntries
 		  detect: [ :each | (each at: #className) = aClassName ]
 		  ifNone: [ self fail: 'Missing class entry ' , aClassName ]
-]
-
-{ #category : 'private' }
-MCPToolFindClassesTest >> errorFrom: aResult [
-
-	^ (self structuredContentFrom: aResult) at: #error
 ]
 
 { #category : 'private' }
@@ -89,14 +51,6 @@ MCPToolFindClassesTest >> grandchildClassName [
 MCPToolFindClassesTest >> missingClassName [
 
 	^ self fixturePrefix , 'Missing'
-]
-
-{ #category : 'private' }
-MCPToolFindClassesTest >> removeClassNamed: aClassName [
-
-	self withoutEpiceaDuring: [
-		(Smalltalk globals includesKey: aClassName asSymbol) ifTrue: [
-			(Smalltalk globals at: aClassName asSymbol) removeFromSystem ] ]
 ]
 
 { #category : 'private' }
@@ -132,12 +86,6 @@ MCPToolFindClassesTest >> setUp [
 
 	super setUp.
 	self restoreFixtureClasses
-]
-
-{ #category : 'private' }
-MCPToolFindClassesTest >> structuredContentFrom: aResult [
-
-	^ aResult at: #structuredContent
 ]
 
 { #category : 'running' }
@@ -294,4 +242,10 @@ MCPToolFindClassesTest >> testReturnsStructuredErrorWhenPackageIsMissing [
 MCPToolFindClassesTest >> testToolDoesNotRequireArgumentsInSchema [
 
 	self assert: MCPToolFindClasses new inputSchema required equals: #(  )
+]
+
+{ #category : 'private - calling' }
+MCPToolFindClassesTest >> toolName [
+
+	^ 'find-classes'
 ]

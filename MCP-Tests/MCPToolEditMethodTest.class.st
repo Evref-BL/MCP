@@ -1,10 +1,16 @@
 Class {
 	#name : 'MCPToolEditMethodTest',
-	#superclass : 'TestCase',
-	#category : 'MCP-Tests-Tests',
+	#superclass : 'MCPToolTestCase',
+	#category : 'MCP-Tests-Tools',
 	#package : 'MCP-Tests',
-	#tag : 'Tests'
+	#tag : 'Tools'
 }
+
+{ #category : 'private - calling' }
+MCPToolEditMethodTest >> aroundToolCall: aBlock [
+
+	^ self withoutEpiceaDuring: aBlock
+]
 
 { #category : 'private' }
 MCPToolEditMethodTest >> assertSuccessDataHasCompiledMethodShape: data [
@@ -27,13 +33,6 @@ MCPToolEditMethodTest >> assertSuccessDataHasCompiledMethodShape: data [
 	self deny: ((data at: #source) includesSubstring: String cr asString).
 	self deny:
 		((data at: #source) includesSubstring: String tab asString)
-]
-
-{ #category : 'private' }
-MCPToolEditMethodTest >> callToolWith: someArguments [
-
-	^ self withoutEpiceaDuring: [
-		  MCP new rpcToolCall: 'edit-method' withParams: someArguments ]
 ]
 
 { #category : 'private' }
@@ -80,25 +79,6 @@ MCPToolEditMethodTest >> compileArgumentsForClassName: aClassName classSide: aBo
 		  (#classSide -> aBoolean).
 		  (#methodSource -> aMethodSource).
 		  (#protocol -> aProtocol) } asDictionary
-]
-
-{ #category : 'private' }
-MCPToolEditMethodTest >> dataFrom: aResult [
-
-	^ (self structuredContentFrom: aResult) at: #data
-]
-
-{ #category : 'private' }
-MCPToolEditMethodTest >> ensureMethodSource: aMethodSource protocol: aProtocol on: aBehavior [
-
-	self withoutEpiceaDuring: [
-		aBehavior compile: aMethodSource classified: aProtocol ]
-]
-
-{ #category : 'private' }
-MCPToolEditMethodTest >> errorFrom: aResult [
-
-	^ (self structuredContentFrom: aResult) at: #error
 ]
 
 { #category : 'private' }
@@ -151,14 +131,6 @@ MCPToolEditMethodTest >> instanceRenameArguments [
 MCPToolEditMethodTest >> instanceSelector [
 
 	^ ('combine:' , 'with:') asSymbol
-]
-
-{ #category : 'private' }
-MCPToolEditMethodTest >> removeSelector: aSelector from: aBehavior [
-
-	self withoutEpiceaDuring: [
-		(aBehavior includesSelector: aSelector) ifTrue: [
-			aBehavior removeSelector: aSelector ] ]
 ]
 
 { #category : 'private' }
@@ -251,12 +223,6 @@ MCPToolEditMethodTest >> setUp [
 
 	super setUp.
 	self restoreFixtureMethods
-]
-
-{ #category : 'private' }
-MCPToolEditMethodTest >> structuredContentFrom: aResult [
-
-	^ aResult at: #structuredContent
 ]
 
 { #category : 'running' }
@@ -559,4 +525,10 @@ MCPToolEditMethodTest >> testToolRequiresOperationClassNameAndClassSideInSchema 
 	self
 		assert: MCPToolEditMethod new inputSchema required asSet
 		equals: #( 'operation' 'className' 'classSide' ) asSet
+]
+
+{ #category : 'private - calling' }
+MCPToolEditMethodTest >> toolName [
+
+	^ 'edit-method'
 ]

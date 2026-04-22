@@ -1,26 +1,10 @@
 Class {
 	#name : 'MCPRenameClassCommandTest',
-	#superclass : 'TestCase',
+	#superclass : 'MCPCommandTestCase',
 	#category : 'MCP-Tests-Internal',
 	#package : 'MCP-Tests',
 	#tag : 'Internal'
 }
-
-{ #category : 'private' }
-MCPRenameClassCommandTest >> captureCommandError: aBlock [
-
-	^ [
-	  self withoutEpiceaDuring: [ aBlock value ].
-	  self fail: 'Expected MCPCommandError' ]
-		  on: MCPCommandError
-		  do: [ :error | error ]
-]
-
-{ #category : 'private' }
-MCPRenameClassCommandTest >> classNamed: aClassName [
-
-	^ Smalltalk globals at: aClassName asSymbol
-]
 
 { #category : 'private' }
 MCPRenameClassCommandTest >> ensureOriginalFixtureState [
@@ -37,12 +21,6 @@ MCPRenameClassCommandTest >> ensureOriginalFixtureState [
 			(ReRenameClassRefactoring
 				 rename: self renamedClassName
 				 to: self originalClassName) execute ] ]
-]
-
-{ #category : 'private' }
-MCPRenameClassCommandTest >> executeCommand: aCommand [
-
-	^ self withoutEpiceaDuring: [ aCommand execute ]
 ]
 
 { #category : 'private' }

@@ -1,40 +1,10 @@
 Class {
 	#name : 'MCPToolStructuredOutputTest',
-	#superclass : 'TestCase',
+	#superclass : 'MCPToolAPITestCase',
 	#category : 'MCP-Tests-Internal',
 	#package : 'MCP-Tests',
 	#tag : 'Internal'
 }
-
-{ #category : 'private' }
-MCPToolStructuredOutputTest >> callToolNamed: aToolName withArguments: someArguments [
-
-	^ MCP new rpcToolCall: aToolName withParams: someArguments
-]
-
-{ #category : 'private' }
-MCPToolStructuredOutputTest >> dataFrom: aResult [
-
-	^ (self structuredContentFrom: aResult) at: #data
-]
-
-{ #category : 'private' }
-MCPToolStructuredOutputTest >> errorFrom: aResult [
-
-	^ (self structuredContentFrom: aResult) at: #error
-]
-
-{ #category : 'private' }
-MCPToolStructuredOutputTest >> structuredContentFrom: aResult [
-
-	^ aResult at: #structuredContent
-]
-
-{ #category : 'private' }
-MCPToolStructuredOutputTest >> summaryFrom: aResult [
-
-	^ (self structuredContentFrom: aResult) at: #summary
-]
 
 { #category : 'tests' }
 MCPToolStructuredOutputTest >> testAllToolsAdvertiseOutputSchema [
@@ -404,10 +374,4 @@ MCPToolStructuredOutputTest >> testRunTestMethodReturnsStructuredIssues [
 	self
 		assert: ((methodResult at: #issues) first at: #testName)
 		equals: 'MCPToolStructuredOutputTestTarget>>#testFails'
-]
-
-{ #category : 'private' }
-MCPToolStructuredOutputTest >> warningsFrom: aResult [
-
-	^ (self structuredContentFrom: aResult) at: #warnings
 ]

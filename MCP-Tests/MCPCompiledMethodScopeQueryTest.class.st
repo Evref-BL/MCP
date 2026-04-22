@@ -1,6 +1,6 @@
 Class {
 	#name : 'MCPCompiledMethodScopeQueryTest',
-	#superclass : 'TestCase',
+	#superclass : 'MCPTestCase',
 	#category : 'MCP-Tests-Internal',
 	#package : 'MCP-Tests',
 	#tag : 'Internal'

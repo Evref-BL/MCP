@@ -1,22 +1,10 @@
 Class {
 	#name : 'MCPToolReferencesTest',
-	#superclass : 'TestCase',
-	#category : 'MCP-Tests-Tests',
+	#superclass : 'MCPToolTestCase',
+	#category : 'MCP-Tests-Tools',
 	#package : 'MCP-Tests',
-	#tag : 'Tests'
+	#tag : 'Tools'
 }
-
-{ #category : 'private' }
-MCPToolReferencesTest >> callToolWith: someArguments [
-
-	^ MCP new rpcToolCall: 'references' withParams: someArguments
-]
-
-{ #category : 'private' }
-MCPToolReferencesTest >> dataFrom: aResult [
-
-	^ (self structuredContentFrom: aResult) at: #data
-]
 
 { #category : 'private' }
 MCPToolReferencesTest >> entryForReference: aReference in: senders [
@@ -33,18 +21,6 @@ MCPToolReferencesTest >> entryForReference: aReference in: senders [
 					               nextPutAll: (each at: #selector) ].
 			  reference = aReference ]
 		  ifNone: [ self fail: 'Missing reference ' , aReference ]
-]
-
-{ #category : 'private' }
-MCPToolReferencesTest >> errorFrom: aResult [
-
-	^ (self structuredContentFrom: aResult) at: #error
-]
-
-{ #category : 'private' }
-MCPToolReferencesTest >> structuredContentFrom: aResult [
-
-	^ aResult at: #structuredContent
 ]
 
 { #category : 'tests' }
@@ -344,4 +320,10 @@ MCPToolReferencesTest >> testVariableModeReturnsStructuredErrorWhenVariableIsMis
 	self assert: (error at: #mode) equals: 'variable'.
 	self assert: ((error at: #message) includesSubstring:
 			 'No variable named missingTrackedSlot')
+]
+
+{ #category : 'private - calling' }
+MCPToolReferencesTest >> toolName [
+
+	^ 'references'
 ]

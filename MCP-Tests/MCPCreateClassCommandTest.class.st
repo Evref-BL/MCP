@@ -1,26 +1,10 @@
 Class {
 	#name : 'MCPCreateClassCommandTest',
-	#superclass : 'TestCase',
+	#superclass : 'MCPCommandTestCase',
 	#category : 'MCP-Tests-Internal',
 	#package : 'MCP-Tests',
 	#tag : 'Internal'
 }
-
-{ #category : 'private' }
-MCPCreateClassCommandTest >> captureCommandError: aBlock [
-
-	^ [
-	  self withoutEpiceaDuring: [ aBlock value ].
-	  self fail: 'Expected MCPCommandError' ]
-		  on: MCPCommandError
-		  do: [ :error | error ]
-]
-
-{ #category : 'private' }
-MCPCreateClassCommandTest >> classNamed: aClassName [
-
-	^ Smalltalk globals at: aClassName asSymbol
-]
 
 { #category : 'private' }
 MCPCreateClassCommandTest >> createdClassNames [
@@ -32,25 +16,9 @@ MCPCreateClassCommandTest >> createdClassNames [
 ]
 
 { #category : 'private' }
-MCPCreateClassCommandTest >> executeCommand: aCommand [
-
-	^ self withoutEpiceaDuring: [ aCommand execute ]
-]
-
-{ #category : 'private' }
 MCPCreateClassCommandTest >> generatedPackageName [
 
 	^ 'MCP-Tests-CreateClassCommand'
-]
-
-{ #category : 'private' }
-MCPCreateClassCommandTest >> removeClassNamed: aClassName [
-
-	| classSymbol |
-	classSymbol := aClassName asSymbol.
-	self withoutEpiceaDuring: [
-		(Smalltalk globals includesKey: classSymbol) ifTrue: [
-			(Smalltalk globals at: classSymbol) removeFromSystem ] ]
 ]
 
 { #category : 'private' }

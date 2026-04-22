@@ -1,6 +1,6 @@
 Class {
 	#name : 'MCPClassInfoTest',
-	#superclass : 'TestCase',
+	#superclass : 'MCPTestCase',
 	#category : 'MCP-Tests-Internal',
 	#package : 'MCP-Tests',
 	#tag : 'Internal'
@@ -22,26 +22,6 @@ MCPClassInfoTest >> childAClassName [
 MCPClassInfoTest >> childZClassName [
 
 	^ 'MCPClassInfoTestZChild'
-]
-
-{ #category : 'private' }
-MCPClassInfoTest >> classNamed: aClassName [
-
-	^ Smalltalk globals at: aClassName asSymbol
-]
-
-{ #category : 'private' }
-MCPClassInfoTest >> createClassNamed: aClassName superclassName: aSuperclassName slots: someSlots classSlots: someClassSlots [
-
-	^ self withoutEpiceaDuring: [
-		  | builder superclass |
-		  superclass := self classNamed: aSuperclassName.
-		  builder := superclass << aClassName asSymbol.
-		  builder package: 'MCP-Tests'.
-		  builder tag: 'Internal'.
-		  builder slots: someSlots.
-		  builder classSlots: someClassSlots.
-		  builder install ]
 ]
 
 { #category : 'private' }
@@ -72,14 +52,6 @@ MCPClassInfoTest >> fixtureClassNames [
 		  self baseClassName.
 		  self childAClassName.
 		  self childZClassName }
-]
-
-{ #category : 'private' }
-MCPClassInfoTest >> removeClassNamed: aClassName [
-
-	self withoutEpiceaDuring: [
-		(Smalltalk globals includesKey: aClassName asSymbol) ifTrue: [
-			(Smalltalk globals at: aClassName asSymbol) removeFromSystem ] ]
 ]
 
 { #category : 'private' }

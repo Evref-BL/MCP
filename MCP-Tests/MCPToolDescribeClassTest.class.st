@@ -1,23 +1,15 @@
 Class {
 	#name : 'MCPToolDescribeClassTest',
-	#superclass : 'TestCase',
-	#category : 'MCP-Tests-Tests',
+	#superclass : 'MCPToolTestCase',
+	#category : 'MCP-Tests-Tools',
 	#package : 'MCP-Tests',
-	#tag : 'Tests'
+	#tag : 'Tools'
 }
 
 { #category : 'private' }
 MCPToolDescribeClassTest >> baseClassName [
 
 	^ self fixturePrefix , 'Base'
-]
-
-{ #category : 'private' }
-MCPToolDescribeClassTest >> callToolWith: someArguments [
-
-	^ MCP new
-		  rpcToolCall: 'describe-class'
-		  withParams: someArguments
 ]
 
 { #category : 'private' }
@@ -30,32 +22,6 @@ MCPToolDescribeClassTest >> childAClassName [
 MCPToolDescribeClassTest >> childZClassName [
 
 	^ self fixturePrefix , 'ZChild'
-]
-
-{ #category : 'private' }
-MCPToolDescribeClassTest >> classNamed: aClassName [
-
-	^ self class environment at: aClassName asSymbol
-]
-
-{ #category : 'private' }
-MCPToolDescribeClassTest >> createClassNamed: aClassName superclassName: aSuperclassName slots: someSlots classSlots: someClassSlots [
-
-	^ self withoutEpiceaDuring: [
-		  | builder superclass |
-		  superclass := self classNamed: aSuperclassName.
-		  builder := superclass << aClassName asSymbol.
-		  builder package: 'MCP-Tests'.
-		  builder tag: 'Internal'.
-		  builder slots: someSlots.
-		  builder classSlots: someClassSlots.
-		  builder install ]
-]
-
-{ #category : 'private' }
-MCPToolDescribeClassTest >> dataFrom: aResult [
-
-	^ (self structuredContentFrom: aResult) at: #data
 ]
 
 { #category : 'private' }
@@ -84,12 +50,6 @@ MCPToolDescribeClassTest >> ensureMethodSource: aMethodSource onClassNamed: aCla
 ]
 
 { #category : 'private' }
-MCPToolDescribeClassTest >> errorFrom: aResult [
-
-	^ (self structuredContentFrom: aResult) at: #error
-]
-
-{ #category : 'private' }
 MCPToolDescribeClassTest >> fixtureClassNames [
 
 	^ {
@@ -115,16 +75,6 @@ MCPToolDescribeClassTest >> grandchildClassName [
 MCPToolDescribeClassTest >> missingClassName [
 
 	^ self fixturePrefix , 'Missing'
-]
-
-{ #category : 'private' }
-MCPToolDescribeClassTest >> removeClassNamed: aClassName [
-
-	| symbol |
-	symbol := aClassName asSymbol.
-	self withoutEpiceaDuring: [
-		(self class environment includesKey: symbol) ifTrue: [
-			(self class environment at: symbol) removeFromSystem ] ]
 ]
 
 { #category : 'private' }
@@ -183,12 +133,6 @@ MCPToolDescribeClassTest >> setUp [
 
 	super setUp.
 	self restoreFixtureClasses
-]
-
-{ #category : 'private' }
-MCPToolDescribeClassTest >> structuredContentFrom: aResult [
-
-	^ aResult at: #structuredContent
 ]
 
 { #category : 'running' }
@@ -391,4 +335,10 @@ MCPToolDescribeClassTest >> testToolRequiresClassNameInSchema [
 	self
 		assert: MCPToolDescribeClass new inputSchema required asSet
 		equals: #( 'className' ) asSet
+]
+
+{ #category : 'private - calling' }
+MCPToolDescribeClassTest >> toolName [
+
+	^ 'describe-class'
 ]

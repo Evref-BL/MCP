@@ -1,20 +1,10 @@
 Class {
 	#name : 'MCPMoveClassCommandTest',
-	#superclass : 'TestCase',
+	#superclass : 'MCPCommandTestCase',
 	#category : 'MCP-Tests-Internal',
 	#package : 'MCP-Tests',
 	#tag : 'Internal'
 }
-
-{ #category : 'private' }
-MCPMoveClassCommandTest >> captureCommandError: aBlock [
-
-	^ [
-	  self withoutEpiceaDuring: [ aBlock value ].
-	  self fail: 'Expected MCPCommandError' ]
-		  on: MCPCommandError
-		  do: [ :error | error ]
-]
 
 { #category : 'private' }
 MCPMoveClassCommandTest >> currentTagOfTargetClass [
@@ -42,12 +32,6 @@ MCPMoveClassCommandTest >> ensureDestinationPackage [
 		package := PackageOrganizer default ensurePackage:
 			           self destinationPackageName.
 		package ensureTag: self destinationTagName ]
-]
-
-{ #category : 'private' }
-MCPMoveClassCommandTest >> executeCommand: aCommand [
-
-	^ self withoutEpiceaDuring: [ aCommand execute ]
 ]
 
 { #category : 'private' }

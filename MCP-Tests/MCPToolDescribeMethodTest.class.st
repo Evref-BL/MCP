@@ -1,36 +1,10 @@
 Class {
 	#name : 'MCPToolDescribeMethodTest',
-	#superclass : 'TestCase',
-	#category : 'MCP-Tests-Tests',
+	#superclass : 'MCPToolTestCase',
+	#category : 'MCP-Tests-Tools',
 	#package : 'MCP-Tests',
-	#tag : 'Tests'
+	#tag : 'Tools'
 }
-
-{ #category : 'private' }
-MCPToolDescribeMethodTest >> callToolWith: someArguments [
-
-	^ MCP new
-		  rpcToolCall: 'describe-method'
-		  withParams: someArguments
-]
-
-{ #category : 'private' }
-MCPToolDescribeMethodTest >> dataFrom: aResult [
-
-	^ (self structuredContentFrom: aResult) at: #data
-]
-
-{ #category : 'private' }
-MCPToolDescribeMethodTest >> errorFrom: aResult [
-
-	^ (self structuredContentFrom: aResult) at: #error
-]
-
-{ #category : 'private' }
-MCPToolDescribeMethodTest >> structuredContentFrom: aResult [
-
-	^ aResult at: #structuredContent
-]
 
 { #category : 'tests' }
 MCPToolDescribeMethodTest >> testDescribeMethodReturnsInstanceSideVariableContext [
@@ -150,6 +124,12 @@ MCPToolDescribeMethodTest >> testToolRequiresClassNameAndSelectorInSchema [
 	self
 		assert: MCPToolDescribeMethod new inputSchema required asSet
 		equals: #( 'className' 'selector' ) asSet
+]
+
+{ #category : 'private - calling' }
+MCPToolDescribeMethodTest >> toolName [
+
+	^ 'describe-method'
 ]
 
 { #category : 'private' }

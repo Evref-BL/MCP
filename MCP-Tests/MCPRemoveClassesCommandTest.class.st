@@ -1,6 +1,6 @@
 Class {
 	#name : 'MCPRemoveClassesCommandTest',
-	#superclass : 'TestCase',
+	#superclass : 'MCPCommandTestCase',
 	#category : 'MCP-Tests-Internal',
 	#package : 'MCP-Tests',
 	#tag : 'Internal'
@@ -12,22 +12,6 @@ MCPRemoveClassesCommandTest >> batchClassNames [
 	^ {
 		  self simpleClassName.
 		  self packageCleanupClassName } asArray
-]
-
-{ #category : 'private' }
-MCPRemoveClassesCommandTest >> captureCommandError: aBlock [
-
-	^ [
-	  aBlock value.
-	  self fail: 'Expected MCPCommandError' ]
-		  on: MCPCommandError
-		  do: [ :error | error ]
-]
-
-{ #category : 'private' }
-MCPRemoveClassesCommandTest >> classNamed: aClassName [
-
-	^ Smalltalk globals at: aClassName asSymbol
 ]
 
 { #category : 'private' }
@@ -146,27 +130,11 @@ MCPRemoveClassesCommandTest >> referencedClassName [
 ]
 
 { #category : 'private' }
-MCPRemoveClassesCommandTest >> removeClassNamed: aClassName [
-
-	self withoutEpiceaDuring: [
-		(Smalltalk globals includesKey: aClassName asSymbol) ifTrue: [
-			(Smalltalk globals at: aClassName asSymbol) removeFromSystem ] ]
-]
-
-{ #category : 'private' }
 MCPRemoveClassesCommandTest >> removeFixtureClasses [
 
 	self fixtureClassNames reverseDo: [ :each |
 		self removeClassNamed: each ].
 	self removePackageNamed: self packageCleanupPackageName
-]
-
-{ #category : 'private' }
-MCPRemoveClassesCommandTest >> removePackageNamed: aPackageName [
-
-	self withoutEpiceaDuring: [
-		(PackageOrganizer default hasPackage: aPackageName) ifTrue: [
-			PackageOrganizer default removePackage: aPackageName ] ]
 ]
 
 { #category : 'private' }

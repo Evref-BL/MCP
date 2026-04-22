@@ -1,22 +1,10 @@
 Class {
 	#name : 'MCPToolImplementorsTest',
-	#superclass : 'TestCase',
-	#category : 'MCP-Tests-Tests',
+	#superclass : 'MCPToolTestCase',
+	#category : 'MCP-Tests-Tools',
 	#package : 'MCP-Tests',
-	#tag : 'Tests'
+	#tag : 'Tools'
 }
-
-{ #category : 'private' }
-MCPToolImplementorsTest >> callToolWith: someArguments [
-
-	^ MCP new rpcToolCall: 'implementors' withParams: someArguments
-]
-
-{ #category : 'private' }
-MCPToolImplementorsTest >> dataFrom: aResult [
-
-	^ (self structuredContentFrom: aResult) at: #data
-]
 
 { #category : 'private' }
 MCPToolImplementorsTest >> entryForReference: aReference in: implementors [
@@ -33,18 +21,6 @@ MCPToolImplementorsTest >> entryForReference: aReference in: implementors [
 					               nextPutAll: (each at: #selector) ].
 			  reference = aReference ]
 		  ifNone: [ self fail: 'Missing implementor ' , aReference ]
-]
-
-{ #category : 'private' }
-MCPToolImplementorsTest >> errorFrom: aResult [
-
-	^ (self structuredContentFrom: aResult) at: #error
-]
-
-{ #category : 'private' }
-MCPToolImplementorsTest >> structuredContentFrom: aResult [
-
-	^ aResult at: #structuredContent
 ]
 
 { #category : 'tests' }
@@ -193,4 +169,10 @@ MCPToolImplementorsTest >> testToolRequiresSelectorInSchema [
 
 	self assert:
 		(MCPToolImplementors new inputSchema required includes: 'selector')
+]
+
+{ #category : 'private - calling' }
+MCPToolImplementorsTest >> toolName [
+
+	^ 'implementors'
 ]

@@ -1,9 +1,9 @@
 Class {
 	#name : 'MCPToolRemoveClassesTest',
-	#superclass : 'TestCase',
-	#category : 'MCP-Tests-Tests',
+	#superclass : 'MCPToolTestCase',
+	#category : 'MCP-Tests-Tools',
 	#package : 'MCP-Tests',
-	#tag : 'Tests'
+	#tag : 'Tools'
 }
 
 { #category : 'private' }
@@ -32,26 +32,6 @@ MCPToolRemoveClassesTest >> batchClassNames [
 	^ {
 		  self simpleClassName.
 		  self packageCleanupClassName } asArray
-]
-
-{ #category : 'private' }
-MCPToolRemoveClassesTest >> callToolWith: someArguments [
-
-	^ MCP new
-		  rpcToolCall: 'remove-classes'
-		  withParams: someArguments
-]
-
-{ #category : 'private' }
-MCPToolRemoveClassesTest >> classNamed: aClassName [
-
-	^ self class environment at: aClassName asSymbol
-]
-
-{ #category : 'private' }
-MCPToolRemoveClassesTest >> dataFrom: aResult [
-
-	^ (self structuredContentFrom: aResult) at: #data
 ]
 
 { #category : 'private' }
@@ -95,12 +75,6 @@ MCPToolRemoveClassesTest >> ensureMethodSource: aMethodSource onClassNamed: aCla
 		(self classNamed: aClassName)
 			compile: aMethodSource
 			classified: 'tests' ]
-]
-
-{ #category : 'private' }
-MCPToolRemoveClassesTest >> errorFrom: aResult [
-
-	^ (self structuredContentFrom: aResult) at: #error
 ]
 
 { #category : 'private' }
@@ -166,29 +140,11 @@ MCPToolRemoveClassesTest >> referencedClassName [
 ]
 
 { #category : 'private' }
-MCPToolRemoveClassesTest >> removeClassNamed: aClassName [
-
-	| symbol |
-	symbol := aClassName asSymbol.
-	self withoutEpiceaDuring: [
-		(self class environment includesKey: symbol) ifTrue: [
-			(self class environment at: symbol) removeFromSystem ] ]
-]
-
-{ #category : 'private' }
 MCPToolRemoveClassesTest >> removeFixtureClasses [
 
 	self fixtureClassNames reverseDo: [ :each |
 		self removeClassNamed: each ].
 	self removePackageNamed: self packageCleanupPackageName
-]
-
-{ #category : 'private' }
-MCPToolRemoveClassesTest >> removePackageNamed: aPackageName [
-
-	self withoutEpiceaDuring: [
-		(PackageOrganizer default hasPackage: aPackageName) ifTrue: [
-			PackageOrganizer default removePackage: aPackageName ] ]
 ]
 
 { #category : 'private' }
@@ -247,12 +203,6 @@ MCPToolRemoveClassesTest >> setUp [
 MCPToolRemoveClassesTest >> simpleClassName [
 
 	^ self fixturePrefix , 'Simple'
-]
-
-{ #category : 'private' }
-MCPToolRemoveClassesTest >> structuredContentFrom: aResult [
-
-	^ aResult at: #structuredContent
 ]
 
 { #category : 'running' }
@@ -442,4 +392,10 @@ MCPToolRemoveClassesTest >> testToolRequiresClassNameInSchema [
 	propertyNames := schema properties collect: [ :each | each name ].
 	self assert: schema required asSet equals: #( 'classNames' ) asSet.
 	self assert: (propertyNames includes: 'force')
+]
+
+{ #category : 'private - calling' }
+MCPToolRemoveClassesTest >> toolName [
+
+	^ 'remove-classes'
 ]

@@ -1,18 +1,10 @@
 Class {
 	#name : 'MCPToolRemoveMethodsTest',
-	#superclass : 'TestCase',
-	#category : 'MCP-Tests-Tests',
+	#superclass : 'MCPToolTestCase',
+	#category : 'MCP-Tests-Tools',
 	#package : 'MCP-Tests',
-	#tag : 'Tests'
+	#tag : 'Tools'
 }
-
-{ #category : 'private' }
-MCPToolRemoveMethodsTest >> callToolWith: someArguments [
-
-	^ MCP new
-		  rpcToolCall: 'remove-methods'
-		  withParams: someArguments
-]
 
 { #category : 'private' }
 MCPToolRemoveMethodsTest >> classBatchArguments [
@@ -29,25 +21,6 @@ MCPToolRemoveMethodsTest >> classBatchSelectors [
 	^ {
 		  self firstClassBatchSelectorString.
 		  self secondClassBatchSelectorString } asArray
-]
-
-{ #category : 'private' }
-MCPToolRemoveMethodsTest >> dataFrom: aResult [
-
-	^ (self structuredContentFrom: aResult) at: #data
-]
-
-{ #category : 'private' }
-MCPToolRemoveMethodsTest >> ensureMethodSource: aMethodSource protocol: aProtocol on: aBehavior [
-
-	self withoutEpiceaDuring: [
-		aBehavior compile: aMethodSource classified: aProtocol ]
-]
-
-{ #category : 'private' }
-MCPToolRemoveMethodsTest >> errorFrom: aResult [
-
-	^ (self structuredContentFrom: aResult) at: #error
 ]
 
 { #category : 'private' }
@@ -142,14 +115,6 @@ MCPToolRemoveMethodsTest >> protectedSelectorSymbol [
 ]
 
 { #category : 'private' }
-MCPToolRemoveMethodsTest >> removeSelector: aSelector from: aBehavior [
-
-	self withoutEpiceaDuring: [
-		(aBehavior includesSelector: aSelector) ifTrue: [
-			aBehavior removeSelector: aSelector ] ]
-]
-
-{ #category : 'private' }
 MCPToolRemoveMethodsTest >> restoreFixtureMethods [
 
 	self
@@ -241,12 +206,6 @@ MCPToolRemoveMethodsTest >> setUp [
 
 	super setUp.
 	self restoreFixtureMethods
-]
-
-{ #category : 'private' }
-MCPToolRemoveMethodsTest >> structuredContentFrom: aResult [
-
-	^ aResult at: #structuredContent
 ]
 
 { #category : 'running' }
@@ -372,4 +331,10 @@ MCPToolRemoveMethodsTest >> testToolRequiresSelectorsInSchema [
 	self
 		assert: MCPToolRemoveMethods new inputSchema required asSet
 		equals: #( 'className' 'classSide' 'selectors' ) asSet
+]
+
+{ #category : 'private - calling' }
+MCPToolRemoveMethodsTest >> toolName [
+
+	^ 'remove-methods'
 ]

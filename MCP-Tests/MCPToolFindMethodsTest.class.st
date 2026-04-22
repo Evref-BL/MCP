@@ -1,22 +1,10 @@
 Class {
 	#name : 'MCPToolFindMethodsTest',
-	#superclass : 'TestCase',
-	#category : 'MCP-Tests-Tests',
+	#superclass : 'MCPToolTestCase',
+	#category : 'MCP-Tests-Tools',
 	#package : 'MCP-Tests',
-	#tag : 'Tests'
+	#tag : 'Tools'
 }
-
-{ #category : 'private' }
-MCPToolFindMethodsTest >> callToolWith: someArguments [
-
-	^ MCP new rpcToolCall: 'find-methods' withParams: someArguments
-]
-
-{ #category : 'private' }
-MCPToolFindMethodsTest >> dataFrom: aResult [
-
-	^ (self structuredContentFrom: aResult) at: #data
-]
 
 { #category : 'private' }
 MCPToolFindMethodsTest >> entryForReference: aReference in: methods [
@@ -33,18 +21,6 @@ MCPToolFindMethodsTest >> entryForReference: aReference in: methods [
 					               nextPutAll: (each at: #selector) ].
 			  reference = aReference ]
 		  ifNone: [ self fail: 'Missing method ' , aReference ]
-]
-
-{ #category : 'private' }
-MCPToolFindMethodsTest >> errorFrom: aResult [
-
-	^ (self structuredContentFrom: aResult) at: #error
-]
-
-{ #category : 'private' }
-MCPToolFindMethodsTest >> structuredContentFrom: aResult [
-
-	^ aResult at: #structuredContent
 ]
 
 { #category : 'private' }
@@ -299,4 +275,10 @@ MCPToolFindMethodsTest >> testToolDoesNotRequireArgumentsInSchema [
 	self
 		assert: MCPToolFindMethods new inputSchema required
 		equals: #(  )
+]
+
+{ #category : 'private - calling' }
+MCPToolFindMethodsTest >> toolName [
+
+	^ 'find-methods'
 ]

@@ -1,23 +1,20 @@
 Class {
 	#name : 'MCPToolFindPackagesTest',
-	#superclass : 'TestCase',
-	#category : 'MCP-Tests-Tests',
+	#superclass : 'MCPToolTestCase',
+	#category : 'MCP-Tests-Tools',
 	#package : 'MCP-Tests',
-	#tag : 'Tests'
+	#tag : 'Tools'
 }
 
 { #category : 'private' }
-MCPToolFindPackagesTest >> callToolWith: someArguments [
+MCPToolFindPackagesTest >> createFixtureClassNamed: aClassName packageName: aPackageName tag: aTag [
 
-	^ MCP new
-		  rpcToolCall: 'find-packages'
-		  withParams: someArguments
-]
-
-{ #category : 'private' }
-MCPToolFindPackagesTest >> dataFrom: aResult [
-
-	^ (self structuredContentFrom: aResult) at: #data
+	^ self withoutEpiceaDuring: [
+		  | builder |
+		  builder := Object << aClassName asSymbol.
+		  builder package: aPackageName.
+		  builder tag: aTag.
+		  builder install ]
 ]
 
 { #category : 'private' }
@@ -26,12 +23,6 @@ MCPToolFindPackagesTest >> entryNamed: aPackageName in: packageEntries [
 	^ packageEntries
 		  detect: [ :each | (each at: #packageName) = aPackageName ]
 		  ifNone: [ self fail: 'Missing package entry ' , aPackageName ]
-]
-
-{ #category : 'private' }
-MCPToolFindPackagesTest >> errorFrom: aResult [
-
-	^ (self structuredContentFrom: aResult) at: #error
 ]
 
 { #category : 'private' }
@@ -49,10 +40,23 @@ MCPToolFindPackagesTest >> mcpProjectPackageNames [
 		  asArray asSortedCollection asArray
 ]
 
-{ #category : 'private' }
-MCPToolFindPackagesTest >> structuredContentFrom: aResult [
+{ #category : 'tests' }
+MCPToolFindPackagesTest >> testCanFilterPackageEntriesByTagNamesUsingControlledPackages [
 
-	^ aResult at: #structuredContent
+	self withTemporaryTaggedPackagesDo: [ :packages :packageProjectNames |
+		| data entry |
+		data := MCPToolFindPackages new
+			        packageEntriesFrom: packages
+			        packageProjectNames: packageProjectNames
+			        filter: 'FixtureBetaTag'
+			        filterMode: 'substring'
+			        caseSensitive: false.
+		self assert: data size equals: 1.
+		entry := self
+			         entryNamed: 'MCP-Tests-FindPackages-Temp-Beta'
+			         in: data.
+		self assert: (entry at: #projectNames) equals: #( 'FixtureProject' ).
+		self assert: (entry at: #tagNames) equals: #( 'FixtureBetaTag' ) ]
 ]
 
 { #category : 'tests' }
@@ -114,20 +118,6 @@ MCPToolFindPackagesTest >> testImageScopeFindsStructuredPackages [
 ]
 
 { #category : 'tests' }
-MCPToolFindPackagesTest >> testProjectScopeCanFilterByTagNames [
-
-	| data result |
-	result := self callToolWith: {
-			          (#scope -> 'project').
-			          (#projectNames -> #( 'MCP' )).
-			          (#filter -> 'Tools') } asDictionary.
-	data := self dataFrom: result.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #totalCount) equals: 1.
-	self entryNamed: 'MCP' in: (data at: #packages)
-]
-
-{ #category : 'tests' }
 MCPToolFindPackagesTest >> testProjectScopeFindsPackagesForNamedProject [
 
 	| data packageNames result |
@@ -160,4 +150,52 @@ MCPToolFindPackagesTest >> testProjectScopeReturnsStructuredErrorWhenProjectIsMi
 		assert: (error at: #projectName)
 		equals: 'DefinitelyMissingProject'.
 	self assert: (error at: #scope) equals: 'project'
+]
+
+{ #category : 'private - calling' }
+MCPToolFindPackagesTest >> toolName [
+
+	^ 'find-packages'
+]
+
+{ #category : 'private' }
+MCPToolFindPackagesTest >> withTemporaryTaggedPackagesDo: aBlock [
+
+	| alphaClassName alphaPackage alphaPackageName betaClassName betaPackage betaPackageName packageProjectNames |
+	alphaClassName := 'MCPToolFindPackagesTempAlpha'.
+	betaClassName := 'MCPToolFindPackagesTempBeta'.
+	alphaPackageName := 'MCP-Tests-FindPackages-Temp-Alpha'.
+	betaPackageName := 'MCP-Tests-FindPackages-Temp-Beta'.
+	self removeClassNamed: alphaClassName.
+	self removeClassNamed: betaClassName.
+	self removePackageNamed: alphaPackageName.
+	self removePackageNamed: betaPackageName.
+	[
+	self
+		createFixtureClassNamed: alphaClassName
+		packageName: alphaPackageName
+		tag: 'FixtureAlphaTag'.
+	self
+		createFixtureClassNamed: betaClassName
+		packageName: betaPackageName
+		tag: 'FixtureBetaTag'.
+	alphaPackage := PackageOrganizer default packageNamed:
+		                alphaPackageName asSymbol.
+	betaPackage := PackageOrganizer default packageNamed:
+		               betaPackageName asSymbol.
+	packageProjectNames := Dictionary new
+		                       at: alphaPackageName
+		                       put: #( 'FixtureProject' );
+		                       at: betaPackageName
+		                       put: #( 'FixtureProject' );
+		                       yourself.
+	aBlock
+		value: {
+				alphaPackage.
+				betaPackage } asArray
+		value: packageProjectNames ] ensure: [
+		self removeClassNamed: alphaClassName.
+		self removeClassNamed: betaClassName.
+		self removePackageNamed: alphaPackageName.
+		self removePackageNamed: betaPackageName ]
 ]

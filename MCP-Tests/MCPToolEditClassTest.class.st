@@ -1,22 +1,15 @@
 Class {
 	#name : 'MCPToolEditClassTest',
-	#superclass : 'TestCase',
-	#category : 'MCP-Tests-Tests',
+	#superclass : 'MCPToolTestCase',
+	#category : 'MCP-Tests-Tools',
 	#package : 'MCP-Tests',
-	#tag : 'Tests'
+	#tag : 'Tools'
 }
 
-{ #category : 'private' }
-MCPToolEditClassTest >> callToolWith: someArguments [
+{ #category : 'private - calling' }
+MCPToolEditClassTest >> aroundToolCall: aBlock [
 
-	^ self withoutEpiceaDuring: [
-		  MCP new rpcToolCall: 'edit-class' withParams: someArguments ]
-]
-
-{ #category : 'private' }
-MCPToolEditClassTest >> classNamed: aClassName [
-
-	^ Smalltalk globals at: aClassName asSymbol
+	^ self withoutEpiceaDuring: aBlock
 ]
 
 { #category : 'private' }
@@ -62,12 +55,6 @@ MCPToolEditClassTest >> currentTagOfMoveTargetClass [
 ]
 
 { #category : 'private' }
-MCPToolEditClassTest >> dataFrom: aResult [
-
-	^ (self structuredContentFrom: aResult) at: #data
-]
-
-{ #category : 'private' }
 MCPToolEditClassTest >> destinationPackageName [
 
 	^ 'MCP-Tests-MoveClass'
@@ -104,12 +91,6 @@ MCPToolEditClassTest >> ensureOriginalRenameFixtureState [
 			(ReRenameClassRefactoring
 				 rename: self renamedClassName
 				 to: self originalClassName) execute ] ]
-]
-
-{ #category : 'private' }
-MCPToolEditClassTest >> errorFrom: aResult [
-
-	^ (self structuredContentFrom: aResult) at: #error
 ]
 
 { #category : 'private' }
@@ -165,16 +146,6 @@ MCPToolEditClassTest >> originalMovePackageName [
 MCPToolEditClassTest >> referenceClassName [
 
 	^ 'MCPToolRenameClassTestReference'
-]
-
-{ #category : 'private' }
-MCPToolEditClassTest >> removeClassNamed: aClassName [
-
-	| classSymbol |
-	classSymbol := aClassName asSymbol.
-	self withoutEpiceaDuring: [
-		(Smalltalk globals includesKey: classSymbol) ifTrue: [
-			(Smalltalk globals at: classSymbol) removeFromSystem ] ]
 ]
 
 { #category : 'private' }
@@ -236,12 +207,6 @@ MCPToolEditClassTest >> setUp [
 	self removeDestinationPackage.
 	self ensureDestinationPackage.
 	self ensureOriginalRenameFixtureState
-]
-
-{ #category : 'private' }
-MCPToolEditClassTest >> structuredContentFrom: aResult [
-
-	^ aResult at: #structuredContent
 ]
 
 { #category : 'private' }
@@ -578,4 +543,10 @@ MCPToolEditClassTest >> testToolRequiresOperationAndClassNameInSchema [
 	self
 		assert: MCPToolEditClass new inputSchema required asSet
 		equals: #( 'operation' 'className' ) asSet
+]
+
+{ #category : 'private - calling' }
+MCPToolEditClassTest >> toolName [
+
+	^ 'edit-class'
 ]
