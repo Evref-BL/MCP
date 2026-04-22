@@ -2,7 +2,8 @@ Class {
 	#name : 'MCPRemoveClassesCommand',
 	#superclass : 'Object',
 	#instVars : [
-		'className'
+		'classNames',
+		'force'
 	],
 	#category : 'MCP-Internal',
 	#package : 'MCP',
@@ -12,8 +13,15 @@ Class {
 { #category : 'instance creation' }
 MCPRemoveClassesCommand class >> classNames: someClassNames [
 
+	^ self classNames: someClassNames force: false
+]
+
+{ #category : 'instance creation' }
+MCPRemoveClassesCommand class >> classNames: someClassNames force: forceRemoval [
+
 	^ self new
 		  classNames: someClassNames;
+		  force: forceRemoval;
 		  yourself
 ]
 
@@ -30,13 +38,13 @@ MCPRemoveClassesCommand >> applySafeRemovalOf: aClass reparentedSubclassNames: s
 { #category : 'accessing' }
 MCPRemoveClassesCommand >> classNames [
 
-	^ className ifNil: [ #(  ) ]
+	^ classNames ifNil: [ #(  ) ]
 ]
 
 { #category : 'accessing' }
 MCPRemoveClassesCommand >> classNames: someClassNames [
 
-	className := someClassNames
+	classNames := someClassNames
 		             ifNil: [ #(  ) ]
 		             ifNotNil: [ someClassNames asArray ]
 ]
@@ -44,22 +52,34 @@ MCPRemoveClassesCommand >> classNames: someClassNames [
 { #category : 'executing' }
 MCPRemoveClassesCommand >> execute [
 
-	| removedClasses removedPackageNames resolvedClasses |
+	| refactoring removedClasses removedPackageNames resolvedClasses warningMessages |
 	resolvedClasses := self resolvedClasses.
-	self validateSafeRemovalOfClassNames: self classNames.
+	refactoring := self preparedRefactoringForClassNames: self classNames.
+	warningMessages := self validatePreparedRefactoring: refactoring.
 	removedClasses := resolvedClasses collect: [ :each |
 		                  self resultForRemovedClass: each ].
+	self performRemovalWithPreparedRefactoring: refactoring.
 	removedPackageNames := OrderedCollection new.
-	resolvedClasses with: removedClasses do: [ :eachClass :eachResult |
-		self
-			applySafeRemovalOf: eachClass
-			reparentedSubclassNames: eachResult reparentedSubclassNames.
+	removedClasses do: [ :eachResult |
 		self
 			removePackageIfNowEmptyNamed: eachResult classInfo packageName
 			recordingInto: removedPackageNames ].
 	^ MCPRemoveClassesResult
 		  removedClasses: removedClasses
 		  removedPackageNames: removedPackageNames
+		  warningMessages: warningMessages
+]
+
+{ #category : 'accessing' }
+MCPRemoveClassesCommand >> force [
+
+	^ force = true
+]
+
+{ #category : 'accessing' }
+MCPRemoveClassesCommand >> force: aBoolean [
+
+	force := aBoolean
 ]
 
 { #category : 'private' }
@@ -67,6 +87,23 @@ MCPRemoveClassesCommand >> isEmptyClass: aClass [
 
 	^ aClass classVarNames isEmpty and: [
 		  aClass instVarNames isEmpty and: [ aClass selectors isEmpty ] ]
+]
+
+{ #category : 'private' }
+MCPRemoveClassesCommand >> performRemovalWithPreparedRefactoring: aRefactoring [
+
+	aRefactoring removeClassChanges.
+	aRefactoring performChanges
+]
+
+{ #category : 'private' }
+MCPRemoveClassesCommand >> preparedRefactoringForClassNames: someClassNames [
+
+	| refactoring |
+	refactoring := ReRemoveClassRefactoring classNames:
+		               (someClassNames collect: #asSymbol).
+	refactoring prepareForExecution.
+	^ refactoring
 ]
 
 { #category : 'private' }
@@ -97,7 +134,10 @@ MCPRemoveClassesCommand >> resultForRemovedClass: aClass [
 	| classInfo reparentedSubclassNames wasEmpty |
 	classInfo := MCPClassInfo fromClass: aClass.
 	wasEmpty := self isEmptyClass: aClass.
-	reparentedSubclassNames := (wasEmpty and: [ aClass superclass notNil ])
+	reparentedSubclassNames := (self
+		                            shouldReparentSubclassesWhenRemoving:
+		                            aClass
+		                            wasEmpty: wasEmpty)
 		                           ifTrue: [ classInfo subclassNames ]
 		                           ifFalse: [ #(  ) ].
 	^ MCPRemoveClassResult
@@ -107,6 +147,29 @@ MCPRemoveClassesCommand >> resultForRemovedClass: aClass [
 				   ifTrue: [ '' ]
 				   ifFalse: [ classInfo superclassName ])
 		  reparentedSubclassNames: reparentedSubclassNames
+]
+
+{ #category : 'private' }
+MCPRemoveClassesCommand >> shouldReparentSubclassesWhenRemoving: aClass wasEmpty: wasEmpty [
+
+	^ aClass subclasses notEmpty and: [
+		  aClass superclass notNil and: [ self force or: [ wasEmpty ] ] ]
+]
+
+{ #category : 'private' }
+MCPRemoveClassesCommand >> validatePreparedRefactoring: aRefactoring [
+
+	| warningMessages |
+	warningMessages := OrderedCollection new.
+	self force
+		ifTrue: [
+			[ aRefactoring checkPreconditions ]
+				on: RBRefactoringWarning
+				do: [ :warning |
+					warningMessages add: warning messageText.
+					warning resume: true ] ]
+		ifFalse: [ aRefactoring checkPreconditions ].
+	^ warningMessages asArray
 ]
 
 { #category : 'private' }

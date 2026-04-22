@@ -19,6 +19,14 @@ MCPToolRemoveClassesTest >> argumentsForClassNames: someClassNames [
 ]
 
 { #category : 'private' }
+MCPToolRemoveClassesTest >> argumentsForClassNames: someClassNames force: aBoolean [
+
+	^ {
+		  (#classNames -> someClassNames).
+		  (#force -> aBoolean) } asDictionary
+]
+
+{ #category : 'private' }
 MCPToolRemoveClassesTest >> batchClassNames [
 
 	^ {
@@ -255,6 +263,63 @@ MCPToolRemoveClassesTest >> tearDown [
 ]
 
 { #category : 'tests' }
+MCPToolRemoveClassesTest >> testForceRemovesNonEmptyClassAndReparentsSubclassesWithWarnings [
+
+	| removedClass result structured warnings |
+	result := self callToolWith: (self
+			           argumentsForClassNames: { self nonEmptyParentClassName }
+			           force: true).
+	structured := self structuredContentFrom: result.
+	removedClass := (self removedClassesFrom: result) first.
+	warnings := structured at: #warnings.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self deny: (self class environment includesKey:
+			 self nonEmptyParentClassName asSymbol).
+	self
+		assert:
+			(self classNamed: self nonEmptyChildClassName) superclass name
+				asString
+		equals: 'Object'.
+	self deny: (removedClass at: #wasEmpty).
+	self
+		assert: (removedClass at: #reparentedSubclassNames)
+		equals: { self nonEmptyChildClassName } asArray.
+	self assert: warnings size equals: 1.
+	self assert:
+		(warnings first includesSubstring: self nonEmptyParentClassName)
+]
+
+{ #category : 'tests' }
+MCPToolRemoveClassesTest >> testForceRemovesReferencedClassAndReturnsWarnings [
+
+	| data removedClass result structured warnings |
+	result := self callToolWith:
+		          (self
+			           argumentsForClassNames: { self referencedClassName }
+			           force: true).
+	structured := self structuredContentFrom: result.
+	data := self dataFrom: result.
+	removedClass := (self removedClassesFrom: result) first.
+	warnings := structured at: #warnings.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self deny:
+		(self class environment includesKey:
+			 self referencedClassName asSymbol).
+	self assert:
+		((self classNamed: self senderClassName) includesSelector:
+			 #useReferencedClass).
+	self
+		assert: (data at: #classNames)
+		equals: { self referencedClassName } asArray.
+	self
+		assert: (removedClass at: #className)
+		equals: self referencedClassName.
+	self assert: warnings size equals: 1.
+	self assert:
+		(warnings first includesSubstring: self referencedClassName)
+]
+
+{ #category : 'tests' }
 MCPToolRemoveClassesTest >> testReturnsStructuredErrorWhenClassHasReferences [
 
 	| error result structured |
@@ -372,7 +437,9 @@ MCPToolRemoveClassesTest >> testSafelyRemovesSimpleClass [
 { #category : 'tests' }
 MCPToolRemoveClassesTest >> testToolRequiresClassNameInSchema [
 
-	self
-		assert: MCPToolRemoveClasses new inputSchema required asSet
-		equals: #( 'classNames' ) asSet
+	| propertyNames schema |
+	schema := MCPToolRemoveClasses new inputSchema.
+	propertyNames := schema properties collect: [ :each | each name ].
+	self assert: schema required asSet equals: #( 'classNames' ) asSet.
+	self assert: (propertyNames includes: 'force')
 ]

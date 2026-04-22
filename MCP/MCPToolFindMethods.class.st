@@ -7,40 +7,6 @@ Class {
 }
 
 { #category : 'private - methods' }
-MCPToolFindMethods >> compiledMethodEntriesFrom: compiledMethods filter: filterPattern filterTargets: filterTargets filterMode: filterMode caseSensitive: caseSensitive includeSource: includeSource [
-
-	| entries matcher needsSourceForFiltering |
-	matcher := self
-		           matcherForPattern: filterPattern
-		           mode: filterMode
-		           caseSensitive: caseSensitive.
-	needsSourceForFiltering := filterPattern notNil and: [
-		                           filterTargets includes: 'source' ].
-	entries := OrderedCollection new.
-	compiledMethods do: [ :eachMethod |
-		| entry info sourceText |
-		info := MCPCompiledMethodInfo fromCompiledMethod: eachMethod.
-		entry := info asDictionaryIncludingSource: false.
-		sourceText := needsSourceForFiltering
-			              ifTrue: [ self normalizedSourceText: info source ]
-			              ifFalse: [ nil ].
-		(filterPattern isNil or: [
-			 self
-				 matchesFilterOnCompiledMethodEntry: entry
-				 sourceText: sourceText
-				 matcher: matcher
-				 targets: filterTargets ]) ifTrue: [
-			includeSource ifTrue: [
-				sourceText ifNil: [
-					sourceText := self normalizedSourceText: info source ].
-				entry at: #source put: sourceText ].
-			entries add: entry ] ].
-	^ (entries asSortedCollection: [ :left :right |
-		   (self compiledMethodEntryLabel: left)
-		   <= (self compiledMethodEntryLabel: right) ]) asArray
-]
-
-{ #category : 'private - methods' }
 MCPToolFindMethods >> compiledMethodEntriesFromQuery: query filter: filterPattern filterTargets: filterTargets filterMode: filterMode caseSensitive: caseSensitive includeSource: includeSource [
 
 	| entries matcher needsSourceForFiltering |

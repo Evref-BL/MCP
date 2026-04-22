@@ -3,7 +3,8 @@ Class {
 	#superclass : 'Object',
 	#instVars : [
 		'removedClasses',
-		'removedPackageNames'
+		'removedPackageNames',
+		'warningMessages'
 	],
 	#category : 'MCP-Internal',
 	#package : 'MCP',
@@ -13,9 +14,19 @@ Class {
 { #category : 'instance creation' }
 MCPRemoveClassesResult class >> removedClasses: someRemovedClasses removedPackageNames: somePackageNames [
 
+	^ self
+		  removedClasses: someRemovedClasses
+		  removedPackageNames: somePackageNames
+		  warningMessages: #(  )
+]
+
+{ #category : 'instance creation' }
+MCPRemoveClassesResult class >> removedClasses: someRemovedClasses removedPackageNames: somePackageNames warningMessages: someWarningMessages [
+
 	^ self new
 		  removedClasses: someRemovedClasses;
 		  removedPackageNames: somePackageNames;
+		  warningMessages: someWarningMessages;
 		  yourself
 ]
 
@@ -59,4 +70,18 @@ MCPRemoveClassesResult >> removedPackageNames: aCollection [
 	removedPackageNames := aCollection
 		                       ifNil: [ #(  ) ]
 		                       ifNotNil: [ aCollection asArray ]
+]
+
+{ #category : 'accessing' }
+MCPRemoveClassesResult >> warningMessages [
+
+	^ warningMessages ifNil: [ #(  ) ]
+]
+
+{ #category : 'accessing' }
+MCPRemoveClassesResult >> warningMessages: aCollection [
+
+	warningMessages := aCollection
+		                   ifNil: [ #(  ) ]
+		                   ifNotNil: [ aCollection asArray ]
 ]

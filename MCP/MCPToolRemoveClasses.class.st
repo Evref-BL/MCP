@@ -45,16 +45,24 @@ MCPToolRemoveClasses >> errorResultForError: anError classNames: classNames [
 { #category : 'executing' }
 MCPToolRemoveClasses >> executeWithArguments: arguments [
 
-	| classNames result |
+	| classNames forceRemoval result |
 	classNames := self classNamesFromArguments: arguments.
+	forceRemoval := self
+		                booleanArgumentNamed: 'force'
+		                in: arguments
+		                default: false.
 	^ [
-	  result := (MCPRemoveClassesCommand classNames: classNames) execute.
+	  result := (MCPRemoveClassesCommand
+		             classNames: classNames
+		             force: forceRemoval) execute.
 	  self
 		  successResultText: (self
 				   successSummaryForClassNames: classNames
 				   removedClasses: result removedClasses
-				   removedPackageNames: result removedPackageNames)
-		  data: result asDictionary ]
+				   removedPackageNames: result removedPackageNames
+				   forced: result warningMessages notEmpty)
+		  data: result asDictionary
+		  warnings: result warningMessages ]
 		  on: Exception
 		  do: [ :error |
 		  self errorResultForError: error classNames: classNames ]
@@ -79,19 +87,26 @@ MCPToolRemoveClasses >> initialize [
 	super initialize.
 	name := 'remove-classes'.
 	title := 'Remove Pharo Classes'.
-	description := 'Remove multiple classes from the running Pharo image as one batch using ReRemoveClassRefactoring safety checks. Empty classes may be removed with subclasses by reparenting those subclasses to the removed class superclass. If a removed class was the last defined class in its package, that package is removed too.'.
+	description := 'Remove multiple classes from the running Pharo image as one batch. By default this uses ReRemoveClassRefactoring safety checks. When force is true, breaking-change warnings are bypassed, the classes are still removed, and the warning text is returned in the tool result warnings.'.
 	inputSchema := MCPStructureInputSchema new
 		               type: 'object';
-		               properties: { ((MCPStructureProperties new
-				                 name: 'classNames';
-				                 type: 'array';
-				                 description:
-					                 'The class names to remove as a single safe-removal batch.')
-				                items: (MCPStructureProperties new
-						                 type: 'string';
-						                 description: 'A class name to remove.';
-						                 yourself);
-				                yourself) };
+		               properties: {
+				               ((MCPStructureProperties new
+					                 name: 'classNames';
+					                 type: 'array';
+					                 description:
+						                 'The class names to remove as a single batch.')
+					                items: (MCPStructureProperties new
+							                 type: 'string';
+							                 description: 'A class name to remove.';
+							                 yourself);
+					                yourself).
+				               (MCPStructureProperties new
+					                name: 'force';
+					                type: 'boolean';
+					                description:
+						                'When true, proceed even if ReRemoveClassRefactoring reports breaking-change warnings. Those warnings are returned in the tool result warnings.';
+					                yourself) };
 		               required: #( 'classNames' );
 		               yourself.
 	outputSchema := self
@@ -208,11 +223,13 @@ MCPToolRemoveClasses >> initialize [
 					                 yourself) }
 		                required:
 		                #( 'classNames' 'removedClasses' 'removedPackageNames' ).
-	icons := { self pngCompositeBaseIconNamed: #class badgeIconNamed: #delete }
+	icons := { (self
+		          pngCompositeBaseIconNamed: #class
+		          badgeIconNamed: #delete) }
 ]
 
 { #category : 'private' }
-MCPToolRemoveClasses >> successSummaryForClassNames: classNames removedClasses: removedClasses removedPackageNames: removedPackageNames [
+MCPToolRemoveClasses >> successSummaryForClassNames: classNames removedClasses: removedClasses removedPackageNames: removedPackageNames forced: wasForced [
 
 	| reparentedSubclassNames |
 	reparentedSubclassNames := OrderedCollection new.
@@ -223,17 +240,33 @@ MCPToolRemoveClasses >> successSummaryForClassNames: classNames removedClasses: 
 	^ String streamContents: [ :stream |
 		  classNames size = 1
 			  ifTrue: [
-				  stream
-					  nextPutAll: 'Removed class ';
-					  nextPutAll: classNames first;
-					  nextPut: $. ]
+				  wasForced
+					  ifTrue: [
+						  stream
+							  nextPutAll: 'Force-removed class ';
+							  nextPutAll: classNames first;
+							  nextPut: $. ]
+					  ifFalse: [
+						  stream
+							  nextPutAll: 'Removed class ';
+							  nextPutAll: classNames first;
+							  nextPut: $. ] ]
 			  ifFalse: [
-				  stream
-					  nextPutAll: 'Removed ';
-					  nextPutAll: classNames size asString;
-					  nextPutAll: ' classes: ';
-					  nextPutAll: (', ' join: classNames);
-					  nextPut: $. ].
+				  wasForced
+					  ifTrue: [
+						  stream
+							  nextPutAll: 'Force-removed ';
+							  nextPutAll: classNames size asString;
+							  nextPutAll: ' classes: ';
+							  nextPutAll: (', ' join: classNames);
+							  nextPut: $. ]
+					  ifFalse: [
+						  stream
+							  nextPutAll: 'Removed ';
+							  nextPutAll: classNames size asString;
+							  nextPutAll: ' classes: ';
+							  nextPutAll: (', ' join: classNames);
+							  nextPut: $. ] ].
 		  reparentedSubclassNames ifNotEmpty: [
 			  stream
 				  space;

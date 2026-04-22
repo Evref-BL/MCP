@@ -76,9 +76,25 @@ MCPRemoveClassesCommandTest >> ensureFixtureClasses [
 		createClassNamed: self emptyChildClassName
 		superclassName: self emptyParentClassName.
 	self
+		createClassNamed: self referencedClassName
+		superclassName: 'Object'.
+	self createClassNamed: self senderClassName superclassName: 'Object'.
+	self
+		ensureMethodSource: self referenceSenderMethodSource
+		onClassNamed: self senderClassName.
+	self
 		createClassNamed: self packageCleanupClassName
 		superclassName: 'Object'
 		packageName: self packageCleanupPackageName
+]
+
+{ #category : 'private' }
+MCPRemoveClassesCommandTest >> ensureMethodSource: aMethodSource onClassNamed: aClassName [
+
+	self withoutEpiceaDuring: [
+		(self classNamed: aClassName)
+			compile: aMethodSource
+			classified: 'tests' ]
 ]
 
 { #category : 'private' }
@@ -88,6 +104,8 @@ MCPRemoveClassesCommandTest >> fixtureClassNames [
 		  self simpleClassName.
 		  self emptyParentClassName.
 		  self emptyChildClassName.
+		  self referencedClassName.
+		  self senderClassName.
 		  self packageCleanupClassName }
 ]
 
@@ -116,6 +134,18 @@ MCPRemoveClassesCommandTest >> packageCleanupPackageName [
 ]
 
 { #category : 'private' }
+MCPRemoveClassesCommandTest >> referenceSenderMethodSource [
+
+	^ 'useReferencedClass ^ ' , self referencedClassName , ' new'
+]
+
+{ #category : 'private' }
+MCPRemoveClassesCommandTest >> referencedClassName [
+
+	^ self fixturePrefix , 'Referenced'
+]
+
+{ #category : 'private' }
 MCPRemoveClassesCommandTest >> removeClassNamed: aClassName [
 
 	self withoutEpiceaDuring: [
@@ -139,6 +169,12 @@ MCPRemoveClassesCommandTest >> removePackageNamed: aPackageName [
 			PackageOrganizer default removePackage: aPackageName ] ]
 ]
 
+{ #category : 'private' }
+MCPRemoveClassesCommandTest >> senderClassName [
+
+	^ self fixturePrefix , 'Sender'
+]
+
 { #category : 'running' }
 MCPRemoveClassesCommandTest >> setUp [
 
@@ -157,6 +193,23 @@ MCPRemoveClassesCommandTest >> tearDown [
 
 	self removeFixtureClasses.
 	super tearDown
+]
+
+{ #category : 'tests' }
+MCPRemoveClassesCommandTest >> testForceRemovesReferencedClassAndReturnsWarningMessages [
+
+	| result |
+	result := (MCPRemoveClassesCommand
+		           classNames: { self referencedClassName }
+		           force: true) execute.
+	self deny:
+		(Smalltalk globals includesKey: self referencedClassName asSymbol).
+	self assert:
+		((self classNamed: self senderClassName) includesSelector:
+			 #useReferencedClass).
+	self assert: result warningMessages size equals: 1.
+	self assert: (result warningMessages first includesSubstring:
+			 self referencedClassName)
 ]
 
 { #category : 'tests' }
@@ -188,6 +241,7 @@ MCPRemoveClassesCommandTest >> testRemovesSimpleClassAndReturnsSnapshot [
 	self deny:
 		(Smalltalk globals includesKey:
 			 self packageCleanupClassName asSymbol).
+	self assert: result warningMessages isEmpty.
 	self
 		assert: (result asDictionary at: #classNames)
 		equals: self batchClassNames.
@@ -214,6 +268,7 @@ MCPRemoveClassesCommandTest >> testReparentsDirectSubclassesWhenRemovingEmptyCla
 		assert:
 		(self classNamed: self emptyChildClassName) superclass name asString
 		equals: 'Object'.
+	self assert: result warningMessages isEmpty.
 	self assert: removedClass wasEmpty.
 	self
 		assert: removedClass reparentedSubclassNames
