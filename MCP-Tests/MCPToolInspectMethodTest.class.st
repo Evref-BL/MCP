@@ -12,7 +12,8 @@ MCPToolInspectMethodTest >> testInspectMethodReturnsInstanceSideVariableContext 
 	| classVariable data globalVariable instanceVariable result selfVariable |
 	result := self callToolWith: {
 			          (#className -> 'MCPToolInspectMethodTestTarget').
-			          (#selector -> 'readInstanceWith:') } asDictionary.
+			          (#selector -> 'readInstanceWith:').
+			          (#includeVariableDetails -> true) } asDictionary.
 	data := self dataFrom: result.
 	instanceVariable := self
 		                    variableNamed: 'instanceCounter'
@@ -30,6 +31,7 @@ MCPToolInspectMethodTest >> testInspectMethodReturnsInstanceSideVariableContext 
 	self
 		assert: ((self structuredContentFrom: result) at: #status)
 		equals: 'ok'.
+	self assert: (data at: #variableDetailsIncluded) equals: true.
 	self assert: (data at: #side) equals: 'instance'.
 	self assert: (data at: #protocol) equals: 'reading'.
 	self assert: (data at: #argumentNames) equals: #( 'anArgument' ).
@@ -85,7 +87,8 @@ MCPToolInspectMethodTest >> testInspectMethodSupportsClassSideContext [
 	result := self callToolWith: {
 			          (#className -> 'MCPToolInspectMethodTestTarget').
 			          (#selector -> 'readClassSide').
-			          (#side -> 'class') } asDictionary.
+			          (#side -> 'class').
+			          (#includeVariableDetails -> true) } asDictionary.
 	data := self dataFrom: result.
 	classInstanceVariable := self
 		                         variableNamed: 'classCounter'
@@ -94,6 +97,7 @@ MCPToolInspectMethodTest >> testInspectMethodSupportsClassSideContext [
 		                       variableNamed: 'thisContext'
 		                       in: (data at: #externalVariableReferences).
 	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #variableDetailsIncluded) equals: true.
 	self assert: (data at: #side) equals: 'class'.
 	self
 		assert: (classInstanceVariable at: #kind)
@@ -114,8 +118,9 @@ MCPToolInspectMethodTest >> testInspectMethodSupportsClassSideContext [
 		assert: data keys asSet
 		equals:
 			#( className selector side protocol source argumentNames
-			   temporaryNames variableReferenceCount externalVariableCount
-			   variableReferences externalVariableReferences ) asSet
+			   temporaryNames variableDetailsIncluded variableReferenceCount
+			   externalVariableCount variableReferences externalVariableReferences )
+				asSet
 ]
 
 { #category : 'tests' }

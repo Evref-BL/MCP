@@ -380,15 +380,14 @@ MCPToolContractsTest >> testInspectMethodHasAccurateNameAndRequiredArguments [
 		                          variableReferenceSchema extraProperties
 		                          at: #properties) collect: [ :each |
 		                         each name ].
-	self
-		assert: MCPToolInspectMethod new name
-		equals: 'inspect-method'.
+	self assert: MCPToolInspectMethod new name equals: 'inspect-method'.
 	self
 		assert: MCPToolInspectMethod new inputSchema required asSet
 		equals: #( 'className' 'selector' ) asSet.
 	self assert: (propertyNames includes: 'className').
 	self assert: (propertyNames includes: 'selector').
 	self assert: (propertyNames includes: 'side').
+	self assert: (propertyNames includes: 'includeVariableDetails').
 	self deny: (variablePropertyNames includes: 'sourceIntervals').
 	self deny: (variablePropertyNames includes: 'external').
 	self deny: (variablePropertyNames includes: 'declaredInMethod')
@@ -429,6 +428,11 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 			((self inputPropertyNamed: 'side' inTool: inspectMethodTool)
 				 extraProperties at: #default)
 		equals: 'instance'.
+	self
+		assert: ((self
+				  inputPropertyNamed: 'includeVariableDetails'
+				  inTool: inspectMethodTool) extraProperties at: #default)
+		equals: false.
 	self
 		assert:
 			((self inputPropertyNamed: 'classSide' inTool: editMethodTool)

@@ -43,7 +43,7 @@ MCPToolInspectMethod >> defaultIcons [
 { #category : 'defaults' }
 MCPToolInspectMethod >> defaultInputSchema [
 
-	| sideProperty |
+	| includeVariableDetailsProperty sideProperty |
 	sideProperty := MCPStructureProperties new
 		                name: 'side';
 		                type: 'string';
@@ -52,6 +52,13 @@ MCPToolInspectMethod >> defaultInputSchema [
 		                enum: #( 'instance' 'class' );
 		                default: 'instance';
 		                yourself.
+	includeVariableDetailsProperty := MCPStructureProperties new
+		                                  name: 'includeVariableDetails';
+		                                  type: 'boolean';
+		                                  description:
+			                                  'Whether to include variable reference summaries and counts. Defaults to false.';
+		                                  default: false;
+		                                  yourself.
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties: {
@@ -65,7 +72,8 @@ MCPToolInspectMethod >> defaultInputSchema [
 					   type: 'string';
 					   description: 'The selector of the method to inspect.';
 					   yourself).
-				  sideProperty };
+				  sideProperty.
+				  includeVariableDetailsProperty };
 		  required: #( 'className' 'selector' );
 		  yourself
 ]
@@ -85,77 +93,73 @@ MCPToolInspectMethod >> defaultOutputSchema [
 		                          description: 'A variable name.';
 		                          yourself.
 	^ self
-		                standardOutputSchemaForDataProperties: {
-				                (self
-					                 schemaPropertyNamed: 'className'
-					                 type: 'string'
-					                 description:
-					                 'The class that defines the method.').
-				                (self
-					                 schemaPropertyNamed: 'selector'
-					                 type: 'string'
-					                 description: 'The selector that was inspected.').
-				                ((self
-					                  schemaPropertyNamed: 'side'
-					                  type: 'string'
-					                  description: 'The requested method side.')
-					                 enum: #( 'instance' 'class' );
-					                 yourself).
-				                (self
-					                 schemaPropertyNamed: 'protocol'
-					                 type: 'string'
-					                 description:
-					                 'The protocol/category containing the method.').
-				                (self
-					                 schemaPropertyNamed: 'source'
-					                 type: 'string'
-					                 description:
-					                 'The formatted source code of the method.').
-				                ((self
-					                  schemaPropertyNamed: 'argumentNames'
-					                  type: 'array'
-					                  description:
-						                  'The top-level argument names declared by the method.')
-					                 items: variableNameItemSchema;
-					                 yourself).
-				                ((self
-					                  schemaPropertyNamed: 'temporaryNames'
-					                  type: 'array'
-					                  description:
-						                  'The top-level temporary variable names declared by the method.')
-					                 items: variableNameItemSchema;
-					                 yourself).
-				                (self
-					                 integerSchemaPropertyNamed:
-					                 'variableReferenceCount'
-					                 description:
-					                 'The number of unique referenced variables summarized in the result.').
-				                (self
-					                 integerSchemaPropertyNamed:
-					                 'externalVariableCount'
-					                 description:
-					                 'The number of unique referenced variables that are external to the method, excluding self.').
-				                ((self
-					                  schemaPropertyNamed: 'variableReferences'
-					                  type: 'array'
-					                  description:
-						                  'Structured summaries of all referenced variables in first-use order.')
-					                 items: self variableReferenceSchema;
-					                 yourself).
-				                ((self
-					                  schemaPropertyNamed:
-						                  'externalVariableReferences'
-					                  type: 'array'
-					                  description:
-						                  'Structured summaries of referenced variables that are external to the method, excluding self.')
-					                 items: self variableReferenceSchema;
-					                 yourself) }
-		                required:
-			                #( 'className' 'selector' 'side' 'protocol'
-			                   'source' 'argumentNames' 'temporaryNames'
-			                   'variableReferenceCount'
-			                   'externalVariableCount' 'variableReferences'
-			                   'externalVariableReferences' )
+		  standardOutputSchemaForDataProperties: {
+				  (self
+					   schemaPropertyNamed: 'className'
+					   type: 'string'
+					   description: 'The class that defines the method.').
+				  (self
+					   schemaPropertyNamed: 'selector'
+					   type: 'string'
+					   description: 'The selector that was inspected.').
+				  ((self
+					    schemaPropertyNamed: 'side'
+					    type: 'string'
+					    description: 'The requested method side.')
+					   enum: #( 'instance' 'class' );
+					   yourself).
+				  (self
+					   schemaPropertyNamed: 'protocol'
+					   type: 'string'
+					   description: 'The protocol/category containing the method.').
+				  (self
+					   schemaPropertyNamed: 'source'
+					   type: 'string'
+					   description: 'The formatted source code of the method.').
+				  ((self
+					    schemaPropertyNamed: 'argumentNames'
+					    type: 'array'
+					    description:
+						    'The top-level argument names declared by the method.')
+					   items: variableNameItemSchema;
+					   yourself).
+				  ((self
+					    schemaPropertyNamed: 'temporaryNames'
+					    type: 'array'
+					    description:
+						    'The top-level temporary variable names declared by the method.')
+					   items: variableNameItemSchema;
+					   yourself).
+				  (self
+					   schemaPropertyNamed: 'variableDetailsIncluded'
+					   type: 'boolean'
+					   description:
+					   'Whether variable reference summaries and counts are included in the result.').
+				  (self
+					   integerSchemaPropertyNamed: 'variableReferenceCount'
+					   description:
+					   'The number of unique referenced variables summarized in the result when variable details are included.').
+				  (self
+					   integerSchemaPropertyNamed: 'externalVariableCount'
+					   description:
+					   'The number of unique referenced variables that are external to the method, excluding self, when variable details are included.').
+				  ((self
+					    schemaPropertyNamed: 'variableReferences'
+					    type: 'array'
+					    description:
+						    'Structured summaries of all referenced variables in first-use order when variable details are included.')
+					   items: self variableReferenceSchema;
+					   yourself).
+				  ((self
+					    schemaPropertyNamed: 'externalVariableReferences'
+					    type: 'array'
+					    description:
+						    'Structured summaries of referenced variables that are external to the method, excluding self, when variable details are included.')
+					   items: self variableReferenceSchema;
+					   yourself) }
+		  required:
+			  #( 'className' 'selector' 'side' 'protocol' 'source' 'argumentNames'
+			     'temporaryNames' 'variableDetailsIncluded' )
 ]
 
 { #category : 'defaults' }
@@ -191,7 +195,7 @@ MCPToolInspectMethod >> errorResultForError: anError className: className select
 { #category : 'executing' }
 MCPToolInspectMethod >> executeWithArguments: arguments [
 
-	| argumentNames className compiledMethod data externalVariableReferences methodBehavior methodNode protocolName selectorString side temporaryNames variableReferences |
+	| argumentNames className compiledMethod data externalVariableReferences includeVariableDetails methodBehavior methodNode protocolName selectorString side temporaryNames variableReferences |
 	className := self
 		             argumentNamed: 'className'
 		             in: arguments
@@ -199,9 +203,11 @@ MCPToolInspectMethod >> executeWithArguments: arguments [
 	selectorString := self selectorStringFrom: arguments.
 	side := self normalizedSideFrom: arguments.
 	^ [
-	  methodBehavior := self
-		                    methodBehaviorForClassNamed: className
-		                    side: side.
+	  includeVariableDetails := self
+		                            booleanArgumentNamed:
+		                            'includeVariableDetails'
+		                            in: arguments
+		                            default: false.
 	  compiledMethod := self
 		                    compiledMethodForClassNamed: className
 		                    selector: selectorString
@@ -214,12 +220,6 @@ MCPToolInspectMethod >> executeWithArguments: arguments [
 		                    each name asString ]) asArray.
 	  temporaryNames := (methodNode temporaries collect: [ :each |
 		                     each name asString ]) asArray.
-	  variableReferences := self
-		                        variableSummariesForMethod: compiledMethod
-		                        methodBehavior: methodBehavior.
-	  externalVariableReferences := (variableReferences select: [ :each |
-		                                 self isExternalVariableKind:
-			                                 (each at: #kind) ]) asArray.
 	  data := {
 		          (#className -> className).
 		          (#selector -> selectorString).
@@ -228,17 +228,32 @@ MCPToolInspectMethod >> executeWithArguments: arguments [
 		          (#source -> (compiledMethod sourceCode ifNil: [ '' ])).
 		          (#argumentNames -> argumentNames).
 		          (#temporaryNames -> temporaryNames).
-		          (#variableReferenceCount -> variableReferences size).
-		          (#externalVariableCount -> externalVariableReferences size).
-		          (#variableReferences -> variableReferences).
-		          (#externalVariableReferences -> externalVariableReferences) }
+		          (#variableDetailsIncluded -> includeVariableDetails) }
 		          asDictionary.
+	  externalVariableReferences := nil.
+	  includeVariableDetails ifTrue: [
+		  methodBehavior := self
+			                    methodBehaviorForClassNamed: className
+			                    side: side.
+		  variableReferences := self
+			                        variableSummariesForMethod: compiledMethod
+			                        methodBehavior: methodBehavior.
+		  externalVariableReferences := (variableReferences select: [ :each |
+			                                 self isExternalVariableKind:
+				                                 (each at: #kind) ]) asArray.
+		  data
+			  at: #variableReferenceCount put: variableReferences size;
+			  at: #externalVariableCount put: externalVariableReferences size;
+			  at: #variableReferences put: variableReferences;
+			  at: #externalVariableReferences put: externalVariableReferences ].
 	  self
 		  successResultText: (self
 				   successSummaryForClassName: className
 				   selector: selectorString
 				   side: side
-				   externalVariableCount: externalVariableReferences size)
+				   externalVariableCount: (externalVariableReferences
+						    ifNil: [ nil ]
+						    ifNotNil: [ externalVariableReferences size ]))
 		  data: data ]
 		  on: Error
 		  do: [ :error |
@@ -381,13 +396,16 @@ MCPToolInspectMethod >> successSummaryForClassName: className selector: selector
 			  nextPutAll: selector;
 			  nextPutAll: ' [side=';
 			  nextPutAll: side;
-			  nextPutAll: '] with ';
-			  print: externalVariableCount;
-			  nextPutAll: ' external variable reference';
-			  nextPutAll: (externalVariableCount = 1
-					   ifTrue: [ '' ]
-					   ifFalse: [ 's' ]);
-			  nextPutAll: '.' ]
+			  nextPutAll: ']'.
+		  externalVariableCount ifNotNil: [
+			  stream
+				  nextPutAll: ' with ';
+				  print: externalVariableCount;
+				  nextPutAll: ' external variable reference';
+				  nextPutAll: (externalVariableCount = 1
+						   ifTrue: [ '' ]
+						   ifFalse: [ 's' ]) ].
+		  stream nextPutAll: '.' ]
 ]
 
 { #category : 'private - analysis' }

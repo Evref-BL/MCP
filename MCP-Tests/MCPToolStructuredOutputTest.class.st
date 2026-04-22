@@ -284,13 +284,11 @@ MCPToolStructuredOutputTest >> testInspectMethodReturnsStructuredSuccess [
 		assert: (data at: #className)
 		equals: 'MCPToolInspectMethodTestTarget'.
 	self assert: (data at: #selector) equals: 'readInstanceWith:'.
-	self assert: (data at: #externalVariableCount) equals: 4.
-	self deny:
-		((data at: #externalVariableReferences) anySatisfy: [ :each |
-			 (each at: #name) = 'self' ]).
-	self assert: ((data at: #variableReferences) allSatisfy: [ :each |
-			 #( #sourceIntervals #external #declaredInMethod ) noneSatisfy: [
-				 :key | each includesKey: key ] ]).
+	self assert: (data at: #variableDetailsIncluded) equals: false.
+	self deny: (data includesKey: #externalVariableCount).
+	self deny: (data includesKey: #variableReferenceCount).
+	self deny: (data includesKey: #externalVariableReferences).
+	self deny: (data includesKey: #variableReferences).
 	self assert:
 		((data at: #source) includesSubstring: String cr asString)
 ]
