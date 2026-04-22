@@ -80,6 +80,23 @@ MCPToolFindPackagesTest >> testImageScopeCanPaginateFilteredPackages [
 ]
 
 { #category : 'tests' }
+MCPToolFindPackagesTest >> testImageScopeFindsExactPackageNameMatch [
+
+	| data packageNames result |
+	result := self callToolWith: {
+			          (#filter -> 'MCP-Tests').
+			          (#filterMode -> 'exact') } asDictionary.
+	data := self dataFrom: result.
+	packageNames := (data at: #packages) collect: [ :each |
+		                each at: #packageName ].
+
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #scope) equals: 'image'.
+	self assert: (data at: #totalCount) equals: 1.
+	self assert: packageNames equals: #( 'MCP-Tests' )
+]
+
+{ #category : 'tests' }
 MCPToolFindPackagesTest >> testImageScopeFindsStructuredPackages [
 
 	| data entry result |

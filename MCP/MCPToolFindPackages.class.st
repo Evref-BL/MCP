@@ -238,6 +238,16 @@ MCPToolFindPackages >> initialize [
 ]
 
 { #category : 'private - filtering' }
+MCPToolFindPackages >> matchesFilterOnPackageEntry: anEntry filterMode: filterMode matcher: aMatcher [
+
+	filterMode = 'exact' ifFalse: [
+		^ aMatcher value: (self filterTextForPackageEntry: anEntry) ].
+
+	^ (self packageFilterValuesForExactMatch: anEntry) anySatisfy: [
+		  :each | aMatcher value: each ]
+]
+
+{ #category : 'private - filtering' }
 MCPToolFindPackages >> packageEntriesFrom: packages packageProjectNames: packageProjectNames filter: filterPattern filterMode: filterMode caseSensitive: caseSensitive [
 
 	| entries matcher |
@@ -254,8 +264,10 @@ MCPToolFindPackages >> packageEntriesFrom: packages packageProjectNames: package
 		entry := (MCPPackageInfo
 			          fromPackage: eachPackage
 			          projectNames: projectNames) asDictionary.
-		(matcher value: (self filterTextForPackageEntry: entry)) ifTrue: [
-			entries add: entry ] ].
+		(self
+			 matchesFilterOnPackageEntry: entry
+			 filterMode: filterMode
+			 matcher: matcher) ifTrue: [ entries add: entry ] ].
 	^ entries asArray
 ]
 
@@ -272,6 +284,21 @@ MCPToolFindPackages >> packageEntrySchema [
 			     'extensionMethodCount' 'isUndefined' );
 		  additionalProperties: false;
 		  yourself
+]
+
+{ #category : 'private - filtering' }
+MCPToolFindPackages >> packageFilterValuesForExactMatch: anEntry [
+
+	| values |
+	values := OrderedCollection new.
+	values
+		add: (anEntry at: #packageName);
+		add: (anEntry at: #definedClassCount) asString;
+		add: (anEntry at: #extensionMethodCount) asString;
+		add: (anEntry at: #isUndefined) asString.
+	(anEntry at: #projectNames) do: [ :each | values add: each ].
+	(anEntry at: #tagNames) do: [ :each | values add: each ].
+	^ values asArray
 ]
 
 { #category : 'private - schema' }
