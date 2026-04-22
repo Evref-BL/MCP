@@ -38,12 +38,7 @@ MCPMoveClassCommand >> destinationValidation [
 
 	| package |
 	package := self ensurePackageNamed: self packageName.
-	self tag ifNil: [ ^ self ].
-	(package hasTag: self tag) ifFalse: [
-		MCPCommandError
-			signalMissingTag: self tag
-			packageName: self packageName
-			forClassNamed: self className ]
+	self tag ifNotNil: [ package ensureTag: self tag ]
 ]
 
 { #category : 'private' }

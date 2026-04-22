@@ -126,21 +126,32 @@ MCPMoveClassCommandTest >> testEnsuresMissingDestinationPackageBeforeMovingClass
 ]
 
 { #category : 'tests' }
+MCPMoveClassCommandTest >> testEnsuresMissingDestinationTagBeforeMovingClass [
+
+	| package result |
+	self removeDestinationPackage.
+	self withoutEpiceaDuring: [
+		PackageOrganizer default ensurePackage: self destinationPackageName ].
+	result := self executeCommand: (MCPMoveClassCommand
+			           className: self targetClassName
+			           packageName: self destinationPackageName
+			           tag: self destinationTagName).
+	package := PackageOrganizer default packageNamed:
+		           self destinationPackageName.
+	self assert: (package hasTag: self destinationTagName).
+	self
+		assert: self targetClass packageName asString
+		equals: self destinationPackageName.
+	self
+		assert: self currentTagOfTargetClass
+		equals: self destinationTagName.
+	self assert: result oldPackageName equals: self originalPackageName
+]
+
+{ #category : 'tests' }
 MCPMoveClassCommandTest >> testMissingDestinationTagSignalsCommandError [
 
-	| error |
-	error := self captureCommandError: [
-		         (MCPMoveClassCommand
-			          className: self targetClassName
-			          packageName: self destinationPackageName
-			          tag: 'DefinitelyMissing') execute ].
-	self assert: error errorCode equals: #TagNotFound.
-	self
-		assert: (error structuredDetails at: #className)
-		equals: self targetClassName.
-	self
-		assert: (error structuredDetails at: #tag)
-		equals: 'DefinitelyMissing'
+	self testEnsuresMissingDestinationTagBeforeMovingClass
 ]
 
 { #category : 'tests' }

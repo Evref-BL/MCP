@@ -357,6 +357,31 @@ MCPToolEditClassTest >> testEnsuresMissingDestinationPackageBeforeMovingClass [
 ]
 
 { #category : 'tests' }
+MCPToolEditClassTest >> testEnsuresMissingDestinationTagBeforeMovingClass [
+
+	| data package result |
+	self removeDestinationPackage.
+	self withoutEpiceaDuring: [
+		PackageOrganizer default ensurePackage: self destinationPackageName ].
+	result := self callToolWith: self moveToPackageAndTagArguments.
+	data := self dataFrom: result.
+	package := PackageOrganizer default packageNamed:
+		           self destinationPackageName.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (package hasTag: self destinationTagName).
+	self
+		assert: self moveTargetClass packageName asString
+		equals: self destinationPackageName.
+	self
+		assert: self currentTagOfMoveTargetClass
+		equals: self destinationTagName.
+	self
+		assert: (data at: #packageName)
+		equals: self destinationPackageName.
+	self assert: (data at: #tag) equals: self destinationTagName
+]
+
+{ #category : 'tests' }
 MCPToolEditClassTest >> testEnsuresPackageBeforeCreatingClass [
 
 	| createdClass |
@@ -486,23 +511,7 @@ MCPToolEditClassTest >> testReturnsStructuredErrorWhenClassAlreadyExists [
 { #category : 'tests' }
 MCPToolEditClassTest >> testReturnsStructuredErrorWhenDestinationTagIsMissing [
 
-	| error result structured |
-	result := self callToolWith: {
-			          (#operation -> 'move').
-			          (#className -> self moveTargetClassName).
-			          (#packageName -> self destinationPackageName).
-			          (#tag -> 'DefinitelyMissing') } asDictionary.
-	structured := self structuredContentFrom: result.
-	error := self errorFrom: result.
-	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #operation) equals: 'move'.
-	self assert: (error at: #errorClass) equals: 'MCPCommandError'. self assert: (error at: #errorCode) equals: 'TagNotFound'.
-	self assert: (error at: #className) equals: self moveTargetClassName.
-	self
-		assert: (error at: #packageName)
-		equals: self destinationPackageName.
-	self assert: (error at: #tag) equals: 'DefinitelyMissing'
+	self testEnsuresMissingDestinationTagBeforeMovingClass
 ]
 
 { #category : 'tests' }
