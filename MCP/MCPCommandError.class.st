@@ -78,6 +78,17 @@ MCPCommandError class >> signalMissingPackageNamed: aPackageName forClassNamed: 
 ]
 
 { #category : 'signaling' }
+MCPCommandError class >> signalMissingProjectNamed: aProjectName [
+
+	| message |
+	message := 'Project ' , aProjectName , ' does not exist.'.
+	^ self
+		  signalErrorCode: #ProjectNotFound
+		  message: message
+		  details: { (#projectName -> aProjectName) } asDictionary
+]
+
+{ #category : 'signaling' }
 MCPCommandError class >> signalMissingSuperclassNamed: aSuperclassName forClassNamed: aClassName [
 
 	| message |

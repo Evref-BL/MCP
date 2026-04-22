@@ -155,18 +155,64 @@ MCPToolStructuredOutputTest >> testFindClassesReturnsStructuredError [
 ]
 
 { #category : 'tests' }
-MCPToolStructuredOutputTest >> testListPackagesReturnsStructuredArrayData [
+MCPToolStructuredOutputTest >> testFindPackagesDefaultsToImageScopeWhenScopeIsOmitted [
 
-	| result data |
-	result := self
-		          callToolNamed: 'pharo-list-packages'
-		          withArguments: Dictionary new.
+	| data packageNames result |
+	result := self callToolNamed: 'pharo-find-packages' withArguments: {
+			          (#filter -> '^MCP\s').
+			          (#filterMode -> 'regex') } asDictionary.
 	data := self dataFrom: result.
+	packageNames := (data at: #packages) collect: [ :each |
+		                each at: #packageName ].
 	self
 		assert: ((self structuredContentFrom: result) at: #status)
 		equals: 'ok'.
-	self assert: (data at: #count) equals: (data at: #packageNames) size.
-	self assert: ((data at: #packageNames) includes: 'MCP')
+	self assert: (data at: #scope) equals: 'image'.
+	self assert: (data at: #projectNames) equals: #(  ).
+	self assert: (data at: #returnedCount) equals: 1.
+	self assert: (packageNames includes: 'MCP')
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testFindPackagesReturnsStructuredArrayData [
+
+	| result data packageNames |
+	result := self callToolNamed: 'pharo-find-packages' withArguments: {
+			          (#scope -> 'project').
+			          (#projectNames -> #( 'MCP' )) } asDictionary.
+	data := self dataFrom: result.
+	packageNames := (data at: #packages) collect: [ :each |
+		                each at: #packageName ].
+	self
+		assert: ((self structuredContentFrom: result) at: #status)
+		equals: 'ok'.
+	self assert: (data at: #scope) equals: 'project'.
+	self assert: (data at: #projectNames) equals: #( 'MCP' ).
+	self assert: (data at: #returnedCount) equals: packageNames size.
+	self assert: ((data at: #packages) allSatisfy: [ :each |
+			 (each includesKey: #packageName) and: [
+				 each includesKey: #projectNames ] ]).
+	self assert: (packageNames includes: 'MCP')
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testFindPackagesReturnsStructuredError [
+
+	| result structured error |
+	result := self callToolNamed: 'pharo-find-packages' withArguments: {
+			          (#scope -> 'project').
+			          (#projectNames -> #( 'DefinitelyMissingProject' )) }
+			          asDictionary.
+	structured := self structuredContentFrom: result.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (structured at: #status) equals: 'error'.
+	self
+		assert: (error at: #projectName)
+		equals: 'DefinitelyMissingProject'.
+	self assert: (error at: #scope) equals: 'project'.
+	self assert: ((error at: #message) includesSubstring:
+			 'Project DefinitelyMissingProject does not exist.')
 ]
 
 { #category : 'tests' }

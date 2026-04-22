@@ -162,6 +162,55 @@ MCPToolContractsTest >> testFindClassesUsesLegacyPackageNameAlias [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testFindPackagesHasAccurateNameAndSchema [
+
+	| propertyNames schema |
+	schema := MCPToolFindPackages new inputSchema.
+	propertyNames := schema properties collect: [ :each | each name ].
+	self
+		assert: MCPToolFindPackages new name
+		equals: 'pharo-find-packages'.
+	self assert: schema required equals: #(  ).
+	self assert: (propertyNames includes: 'scope').
+	self assert: (propertyNames includes: 'projectNames').
+	self assert: (propertyNames includes: 'filter').
+	self assert: (propertyNames includes: 'filterMode')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testFindPackagesListsPackagesForExistingProject [
+
+	| packageNames data result |
+	result := self callToolNamed: 'pharo-find-packages' withArguments: {
+			          (#scope -> 'project').
+			          (#projectNames -> #( 'MCP' )) } asDictionary.
+	data := (result at: #structuredContent) at: #data.
+	packageNames := (data at: #packages) collect: [ :each |
+		                each at: #packageName ].
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #scope) equals: 'project'.
+	self assert: (data at: #projectNames) equals: #( 'MCP' ).
+	self assert: (packageNames includes: 'MCP').
+	self assert: (packageNames includes: 'MCP-Tests')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testFindPackagesReturnsErrorResultForMissingProject [
+
+	| result text |
+	result := self callToolNamed: 'pharo-find-packages' withArguments: {
+			          (#scope -> 'project').
+			          (#projectNames -> #( 'DefinitelyMissingProject' )) }
+			          asDictionary.
+	text := self firstTextFromToolResult: result.
+	self assert: (result at: #isError).
+	self assert: (text includesSubstring:
+			 'Project DefinitelyMissingProject does not exist.').
+	self deny:
+		(text includesSubstring: 'Tool pharo-find-packages failed')
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testHandleJSONReturnsInvalidParamsForMissingRequiredArguments [
 
 	| response |
