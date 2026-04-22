@@ -19,6 +19,132 @@ MCPToolRemoveMethods >> dataForCompiledMethod: aCompiledMethod [
 		  (#source -> info source) } asDictionary
 ]
 
+{ #category : 'defaults' }
+MCPToolRemoveMethods >> defaultDescription [
+
+	^ 'Remove methods from one class as a batch without sender safety checks. Use edit-method to compile, rename, or recategorize methods instead.'
+]
+
+{ #category : 'defaults' }
+MCPToolRemoveMethods >> defaultIcons [
+
+	^ { (self
+		          pngCompositeBaseIconNamed: #page
+		          badgeIconNamed: #delete) }
+]
+
+{ #category : 'defaults' }
+MCPToolRemoveMethods >> defaultInputSchema [
+
+	^ MCPStructureInputSchema new
+		               type: 'object';
+		               properties: {
+				               (MCPStructureProperties new
+					                name: 'className';
+					                type: 'string';
+					                description:
+						                'The class from which methods will be removed.';
+					                yourself).
+				               (MCPStructureProperties new
+					                name: 'classSide';
+					                type: 'boolean';
+					                description:
+						                'Whether to remove methods from the class side.';
+					                yourself).
+				               ((MCPStructureProperties new
+					                 name: 'selectors';
+					                 type: 'array';
+					                 description:
+						                 'The selectors to remove as a single force-removal batch.')
+					                items: (MCPStructureProperties new
+							                 type: 'string';
+							                 description: 'A selector to remove.';
+							                 yourself);
+					                yourself) };
+		               required: #( 'className' 'classSide' 'selectors' );
+		               yourself
+]
+
+{ #category : 'defaults' }
+MCPToolRemoveMethods >> defaultName [
+
+	^ 'remove-methods'
+]
+
+{ #category : 'defaults' }
+MCPToolRemoveMethods >> defaultOutputSchema [
+
+	^ self
+		                standardOutputSchemaForDataProperties: {
+				                (self
+					                 schemaPropertyNamed: 'className'
+					                 type: 'string'
+					                 description:
+					                 'The class from which methods were removed.').
+				                (self
+					                 schemaPropertyNamed: 'classSide'
+					                 type: 'boolean'
+					                 description:
+					                 'Whether the removed methods were on the class side.').
+				                ((self
+					                  schemaPropertyNamed: 'selectors'
+					                  type: 'array'
+					                  description:
+						                  'The selectors removed by the batch operation.')
+					                 items: (MCPStructureProperties new
+							                  type: 'string';
+							                  description: 'A removed selector.';
+							                  yourself);
+					                 yourself).
+				                ((self
+					                  schemaPropertyNamed: 'removedMethods'
+					                  type: 'array'
+					                  description:
+						                  'Structured details for each removed method in the batch.')
+					                 items: (MCPStructureProperties new
+							                  type: 'object';
+							                  properties: {
+									                  (self
+										                   schemaPropertyNamed: 'selector'
+										                   type: 'string'
+										                   description:
+											                   'The selector that was removed.').
+									                  (self
+										                   schemaPropertyNamed: 'protocol'
+										                   type: 'string'
+										                   description:
+											                   'The protocol that contained the removed method.').
+									                  (self
+										                   schemaPropertyNamed: 'packageName'
+										                   type: 'string'
+										                   description:
+											                   'The package that owned the removed method.').
+									                  (self
+										                   schemaPropertyNamed: 'isExtension'
+										                   type: 'boolean'
+										                   description:
+											                   'Whether the removed method was an extension method.').
+									                  (self
+										                   schemaPropertyNamed: 'source'
+										                   type: 'string'
+										                   description:
+											                   'The source code of the removed method.') };
+							                  required:
+								                  #( 'selector' 'protocol' 'packageName'
+								                     'isExtension' 'source' );
+							                  additionalProperties: false;
+							                  yourself);
+					                 yourself) }
+		                required:
+		                #( 'className' 'classSide' 'selectors' 'removedMethods' )
+]
+
+{ #category : 'defaults' }
+MCPToolRemoveMethods >> defaultTitle [
+
+	^ 'Remove Pharo Methods'
+]
+
 { #category : 'private' }
 MCPToolRemoveMethods >> errorResultForError: anError className: className classSide: classSide selectors: selectors [
 
@@ -112,108 +238,6 @@ MCPToolRemoveMethods >> forceRemoveSelectors: selectorSymbols from: aBehavior [
 	refactoring checkSuperMethods.
 	refactoring removeMethodChanges.
 	refactoring performChanges
-]
-
-{ #category : 'initialization' }
-MCPToolRemoveMethods >> initialize [
-
-	super initialize.
-	name := 'remove-methods'.
-	title := 'Remove Pharo Methods'.
-	description := 'Remove methods from one class as a batch without sender safety checks. Use edit-method to compile, rename, or recategorize methods instead.'.
-	inputSchema := MCPStructureInputSchema new
-		               type: 'object';
-		               properties: {
-				               (MCPStructureProperties new
-					                name: 'className';
-					                type: 'string';
-					                description:
-						                'The class from which methods will be removed.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'classSide';
-					                type: 'boolean';
-					                description:
-						                'Whether to remove methods from the class side.';
-					                yourself).
-				               ((MCPStructureProperties new
-					                 name: 'selectors';
-					                 type: 'array';
-					                 description:
-						                 'The selectors to remove as a single force-removal batch.')
-					                items: (MCPStructureProperties new
-							                 type: 'string';
-							                 description: 'A selector to remove.';
-							                 yourself);
-					                yourself) };
-		               required: #( 'className' 'classSide' 'selectors' );
-		               yourself.
-	outputSchema := self
-		                standardOutputSchemaForDataProperties: {
-				                (self
-					                 schemaPropertyNamed: 'className'
-					                 type: 'string'
-					                 description:
-					                 'The class from which methods were removed.').
-				                (self
-					                 schemaPropertyNamed: 'classSide'
-					                 type: 'boolean'
-					                 description:
-					                 'Whether the removed methods were on the class side.').
-				                ((self
-					                  schemaPropertyNamed: 'selectors'
-					                  type: 'array'
-					                  description:
-						                  'The selectors removed by the batch operation.')
-					                 items: (MCPStructureProperties new
-							                  type: 'string';
-							                  description: 'A removed selector.';
-							                  yourself);
-					                 yourself).
-				                ((self
-					                  schemaPropertyNamed: 'removedMethods'
-					                  type: 'array'
-					                  description:
-						                  'Structured details for each removed method in the batch.')
-					                 items: (MCPStructureProperties new
-							                  type: 'object';
-							                  properties: {
-									                  (self
-										                   schemaPropertyNamed: 'selector'
-										                   type: 'string'
-										                   description:
-											                   'The selector that was removed.').
-									                  (self
-										                   schemaPropertyNamed: 'protocol'
-										                   type: 'string'
-										                   description:
-											                   'The protocol that contained the removed method.').
-									                  (self
-										                   schemaPropertyNamed: 'packageName'
-										                   type: 'string'
-										                   description:
-											                   'The package that owned the removed method.').
-									                  (self
-										                   schemaPropertyNamed: 'isExtension'
-										                   type: 'boolean'
-										                   description:
-											                   'Whether the removed method was an extension method.').
-									                  (self
-										                   schemaPropertyNamed: 'source'
-										                   type: 'string'
-										                   description:
-											                   'The source code of the removed method.') };
-							                  required:
-								                  #( 'selector' 'protocol' 'packageName'
-								                     'isExtension' 'source' );
-							                  additionalProperties: false;
-							                  yourself);
-					                 yourself) }
-		                required:
-		                #( 'className' 'classSide' 'selectors' 'removedMethods' ).
-	icons := { (self
-		          pngCompositeBaseIconNamed: #page
-		          badgeIconNamed: #delete) }
 ]
 
 { #category : 'private' }

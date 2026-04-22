@@ -26,69 +26,24 @@ MCPToolRemoveClasses >> classNamesFromArguments: arguments [
 	^ normalized asArray
 ]
 
-{ #category : 'private' }
-MCPToolRemoveClasses >> errorResultForError: anError classNames: classNames [
+{ #category : 'defaults' }
+MCPToolRemoveClasses >> defaultDescription [
 
-	(anError isKindOf: MCPCommandError) ifTrue: [
-		^ self
-			  errorResultText: anError messageText
-			  details: anError structuredDetails ].
-	^ self
-		  errorResultText:
-		  (self failureMessageForClassNames: classNames error: anError)
-		  details: {
-				  (#errorClass -> anError class name).
-				  (#message -> anError messageText).
-				  (#classNames -> classNames asArray) } asDictionary
+	^ 'Remove classes as one batch. By default the tool respects safe-removal warnings. When force is true, it still removes the classes and returns those warnings.'
 ]
 
-{ #category : 'executing' }
-MCPToolRemoveClasses >> executeWithArguments: arguments [
+{ #category : 'defaults' }
+MCPToolRemoveClasses >> defaultIcons [
 
-	| classNames forceRemoval result |
-	classNames := self classNamesFromArguments: arguments.
-	forceRemoval := self
-		                booleanArgumentNamed: 'force'
-		                in: arguments
-		                default: false.
-	^ [
-	  result := (MCPRemoveClassesCommand
-		             classNames: classNames
-		             force: forceRemoval) execute.
-	  self
-		  successResultText: (self
-				   successSummaryForClassNames: classNames
-				   removedClasses: result removedClasses
-				   removedPackageNames: result removedPackageNames
-				   forced: result warningMessages notEmpty)
-		  data: result asDictionary
-		  warnings: result warningMessages ]
-		  on: Exception
-		  do: [ :error |
-		  self errorResultForError: error classNames: classNames ]
+	^ { (self
+		          pngCompositeBaseIconNamed: #class
+		          badgeIconNamed: #delete) }
 ]
 
-{ #category : 'private' }
-MCPToolRemoveClasses >> failureMessageForClassNames: classNames error: anError [
+{ #category : 'defaults' }
+MCPToolRemoveClasses >> defaultInputSchema [
 
-	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: 'Unable to remove classes: ';
-			  nextPutAll: (', ' join: classNames);
-			  nextPutAll: ' (';
-			  nextPutAll: anError class name;
-			  nextPutAll: '): ';
-			  nextPutAll: anError messageText ]
-]
-
-{ #category : 'initialization' }
-MCPToolRemoveClasses >> initialize [
-
-	super initialize.
-	name := 'remove-classes'.
-	title := 'Remove Pharo Classes'.
-	description := 'Remove classes as one batch. By default the tool respects safe-removal warnings. When force is true, it still removes the classes and returns those warnings.'.
-	inputSchema := MCPStructureInputSchema new
+	^ MCPStructureInputSchema new
 		               type: 'object';
 		               properties: {
 				               ((MCPStructureProperties new
@@ -108,8 +63,19 @@ MCPToolRemoveClasses >> initialize [
 						                'When true, proceed even if safe-removal warnings are raised. Those warnings are returned in the tool result warnings.';
 					                yourself) };
 		               required: #( 'classNames' );
-		               yourself.
-	outputSchema := self
+		               yourself
+]
+
+{ #category : 'defaults' }
+MCPToolRemoveClasses >> defaultName [
+
+	^ 'remove-classes'
+]
+
+{ #category : 'defaults' }
+MCPToolRemoveClasses >> defaultOutputSchema [
+
+	^ self
 		                standardOutputSchemaForDataProperties: {
 				                ((self
 					                  schemaPropertyNamed: 'classNames'
@@ -222,10 +188,68 @@ MCPToolRemoveClasses >> initialize [
 							                  yourself);
 					                 yourself) }
 		                required:
-		                #( 'classNames' 'removedClasses' 'removedPackageNames' ).
-	icons := { (self
-		          pngCompositeBaseIconNamed: #class
-		          badgeIconNamed: #delete) }
+		                #( 'classNames' 'removedClasses' 'removedPackageNames' )
+]
+
+{ #category : 'defaults' }
+MCPToolRemoveClasses >> defaultTitle [
+
+	^ 'Remove Pharo Classes'
+]
+
+{ #category : 'private' }
+MCPToolRemoveClasses >> errorResultForError: anError classNames: classNames [
+
+	(anError isKindOf: MCPCommandError) ifTrue: [
+		^ self
+			  errorResultText: anError messageText
+			  details: anError structuredDetails ].
+	^ self
+		  errorResultText:
+		  (self failureMessageForClassNames: classNames error: anError)
+		  details: {
+				  (#errorClass -> anError class name).
+				  (#message -> anError messageText).
+				  (#classNames -> classNames asArray) } asDictionary
+]
+
+{ #category : 'executing' }
+MCPToolRemoveClasses >> executeWithArguments: arguments [
+
+	| classNames forceRemoval result |
+	classNames := self classNamesFromArguments: arguments.
+	forceRemoval := self
+		                booleanArgumentNamed: 'force'
+		                in: arguments
+		                default: false.
+	^ [
+	  result := (MCPRemoveClassesCommand
+		             classNames: classNames
+		             force: forceRemoval) execute.
+	  self
+		  successResultText: (self
+				   successSummaryForClassNames: classNames
+				   removedClasses: result removedClasses
+				   removedPackageNames: result removedPackageNames
+				   forced: result warningMessages notEmpty)
+		  data: result asDictionary
+		  warnings: result warningMessages ]
+		  on: Exception
+		  do: [ :error |
+		  self errorResultForError: error classNames: classNames ]
+]
+
+{ #category : 'private' }
+MCPToolRemoveClasses >> failureMessageForClassNames: classNames error: anError [
+
+	^ String streamContents: [ :stream |
+		  stream
+			  nextPutAll: 'Unable to remove classes: ';
+			  nextPutAll: (', ' join: classNames);
+			  nextPutAll: ' (';
+			  nextPutAll: anError class name;
+			  nextPutAll: '): ';
+			  nextPutAll: anError messageText ]
 ]
 
 { #category : 'private' }

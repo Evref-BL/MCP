@@ -28,6 +28,144 @@ MCPToolDescribeMethod >> compiledMethodForClassNamed: className selector: select
 	^ behavior compiledMethodAt: selectorSymbol
 ]
 
+{ #category : 'defaults' }
+MCPToolDescribeMethod >> defaultDescription [
+
+	^ 'Inspect one known method and return its source plus structured variable-reference context. Use find-methods, implementors, or references to discover methods first.'
+]
+
+{ #category : 'defaults' }
+MCPToolDescribeMethod >> defaultIcons [
+
+	^ { (self
+		          pngCompositeBaseIconNamed: #page
+		          badgeIconNamed: #inspect) }
+]
+
+{ #category : 'defaults' }
+MCPToolDescribeMethod >> defaultInputSchema [
+
+	| sideProperty |
+	sideProperty := MCPStructureProperties new
+		                name: 'side';
+		                type: 'string';
+		                description:
+			                'Which side of the class defines the method. Defaults to instance.';
+		                enum: #( 'instance' 'class' );
+		                yourself.
+	^ MCPStructureInputSchema new
+		               type: 'object';
+		               properties: {
+				               (MCPStructureProperties new
+					                name: 'className';
+					                type: 'string';
+					                description: 'The class that defines the method.';
+					                yourself).
+				               (MCPStructureProperties new
+					                name: 'selector';
+					                type: 'string';
+					                description:
+						                'The selector of the method to describe.';
+					                yourself).
+				               sideProperty };
+		               required: #( 'className' 'selector' );
+		               yourself
+]
+
+{ #category : 'defaults' }
+MCPToolDescribeMethod >> defaultName [
+
+	^ 'describe-method'
+]
+
+{ #category : 'defaults' }
+MCPToolDescribeMethod >> defaultOutputSchema [
+
+	| variableNameItemSchema |
+	variableNameItemSchema := MCPStructureProperties new
+		                          type: 'string';
+		                          description: 'A variable name.';
+		                          yourself.
+	^ self
+		                standardOutputSchemaForDataProperties: {
+				                (self
+					                 schemaPropertyNamed: 'className'
+					                 type: 'string'
+					                 description:
+					                 'The class that defines the method.').
+				                (self
+					                 schemaPropertyNamed: 'selector'
+					                 type: 'string'
+					                 description: 'The selector that was described.').
+				                ((self
+					                  schemaPropertyNamed: 'side'
+					                  type: 'string'
+					                  description: 'The requested method side.')
+					                 enum: #( 'instance' 'class' );
+					                 yourself).
+				                (self
+					                 schemaPropertyNamed: 'protocol'
+					                 type: 'string'
+					                 description:
+					                 'The protocol/category containing the method.').
+				                (self
+					                 schemaPropertyNamed: 'source'
+					                 type: 'string'
+					                 description:
+					                 'The formatted source code of the method.').
+				                ((self
+					                  schemaPropertyNamed: 'argumentNames'
+					                  type: 'array'
+					                  description:
+						                  'The top-level argument names declared by the method.')
+					                 items: variableNameItemSchema;
+					                 yourself).
+				                ((self
+					                  schemaPropertyNamed: 'temporaryNames'
+					                  type: 'array'
+					                  description:
+						                  'The top-level temporary variable names declared by the method.')
+					                 items: variableNameItemSchema;
+					                 yourself).
+				                (self
+					                 integerSchemaPropertyNamed:
+					                 'variableReferenceCount'
+					                 description:
+					                 'The number of unique referenced variables summarized in the result.').
+				                (self
+					                 integerSchemaPropertyNamed:
+					                 'externalVariableCount'
+					                 description:
+					                 'The number of unique referenced variables that are external to the method, excluding self.').
+				                ((self
+					                  schemaPropertyNamed: 'variableReferences'
+					                  type: 'array'
+					                  description:
+						                  'Structured summaries of all referenced variables in first-use order.')
+					                 items: self variableReferenceSchema;
+					                 yourself).
+				                ((self
+					                  schemaPropertyNamed:
+						                  'externalVariableReferences'
+					                  type: 'array'
+					                  description:
+						                  'Structured summaries of referenced variables that are external to the method, excluding self.')
+					                 items: self variableReferenceSchema;
+					                 yourself) }
+		                required:
+			                #( 'className' 'selector' 'side' 'protocol'
+			                   'source' 'argumentNames' 'temporaryNames'
+			                   'variableReferenceCount'
+			                   'externalVariableCount' 'variableReferences'
+			                   'externalVariableReferences' )
+]
+
+{ #category : 'defaults' }
+MCPToolDescribeMethod >> defaultTitle [
+
+	^ 'Describe Pharo Method'
+]
+
 { #category : 'private' }
 MCPToolDescribeMethod >> errorResultForError: anError className: className selector: selectorString side: side [
 
@@ -134,119 +272,6 @@ MCPToolDescribeMethod >> failureMessageForClassNamed: className selector: select
 MCPToolDescribeMethod >> incrementReferenceCountInSummary: aSummary [
 
 	aSummary at: #referenceCount put: (aSummary at: #referenceCount) + 1
-]
-
-{ #category : 'initialization' }
-MCPToolDescribeMethod >> initialize [
-
-	| sideProperty variableNameItemSchema |
-	super initialize.
-	name := 'describe-method'.
-	title := 'Describe Pharo Method'.
-	description := 'Inspect one known method and return its source plus structured variable-reference context. Use find-methods, implementors, or references to discover methods first.'.
-	sideProperty := MCPStructureProperties new
-		                name: 'side';
-		                type: 'string';
-		                description:
-			                'Which side of the class defines the method. Defaults to instance.';
-		                enum: #( 'instance' 'class' );
-		                yourself.
-	inputSchema := MCPStructureInputSchema new
-		               type: 'object';
-		               properties: {
-				               (MCPStructureProperties new
-					                name: 'className';
-					                type: 'string';
-					                description: 'The class that defines the method.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'selector';
-					                type: 'string';
-					                description:
-						                'The selector of the method to describe.';
-					                yourself).
-				               sideProperty };
-		               required: #( 'className' 'selector' );
-		               yourself.
-	variableNameItemSchema := MCPStructureProperties new
-		                          type: 'string';
-		                          description: 'A variable name.';
-		                          yourself.
-	outputSchema := self
-		                standardOutputSchemaForDataProperties: {
-				                (self
-					                 schemaPropertyNamed: 'className'
-					                 type: 'string'
-					                 description:
-					                 'The class that defines the method.').
-				                (self
-					                 schemaPropertyNamed: 'selector'
-					                 type: 'string'
-					                 description: 'The selector that was described.').
-				                ((self
-					                  schemaPropertyNamed: 'side'
-					                  type: 'string'
-					                  description: 'The requested method side.')
-					                 enum: #( 'instance' 'class' );
-					                 yourself).
-				                (self
-					                 schemaPropertyNamed: 'protocol'
-					                 type: 'string'
-					                 description:
-					                 'The protocol/category containing the method.').
-				                (self
-					                 schemaPropertyNamed: 'source'
-					                 type: 'string'
-					                 description:
-					                 'The formatted source code of the method.').
-				                ((self
-					                  schemaPropertyNamed: 'argumentNames'
-					                  type: 'array'
-					                  description:
-						                  'The top-level argument names declared by the method.')
-					                 items: variableNameItemSchema;
-					                 yourself).
-				                ((self
-					                  schemaPropertyNamed: 'temporaryNames'
-					                  type: 'array'
-					                  description:
-						                  'The top-level temporary variable names declared by the method.')
-					                 items: variableNameItemSchema;
-					                 yourself).
-				                (self
-					                 integerSchemaPropertyNamed:
-					                 'variableReferenceCount'
-					                 description:
-					                 'The number of unique referenced variables summarized in the result.').
-				                (self
-					                 integerSchemaPropertyNamed:
-					                 'externalVariableCount'
-					                 description:
-					                 'The number of unique referenced variables that are external to the method, excluding self.').
-				                ((self
-					                  schemaPropertyNamed: 'variableReferences'
-					                  type: 'array'
-					                  description:
-						                  'Structured summaries of all referenced variables in first-use order.')
-					                 items: self variableReferenceSchema;
-					                 yourself).
-				                ((self
-					                  schemaPropertyNamed:
-						                  'externalVariableReferences'
-					                  type: 'array'
-					                  description:
-						                  'Structured summaries of referenced variables that are external to the method, excluding self.')
-					                 items: self variableReferenceSchema;
-					                 yourself) }
-		                required:
-			                #( 'className' 'selector' 'side' 'protocol'
-			                   'source' 'argumentNames' 'temporaryNames'
-			                   'variableReferenceCount'
-			                   'externalVariableCount' 'variableReferences'
-			                   'externalVariableReferences' ).
-	icons := { (self
-		          pngCompositeBaseIconNamed: #page
-		          badgeIconNamed: #inspect) }
 ]
 
 { #category : 'private - analysis' }

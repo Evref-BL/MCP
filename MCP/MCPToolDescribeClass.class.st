@@ -92,6 +92,101 @@ MCPToolDescribeClass >> classNameFromArguments: arguments [
 	^ className
 ]
 
+{ #category : 'defaults' }
+MCPToolDescribeClass >> defaultDescription [
+
+	^ 'Inspect one class by name and return structured metadata, with optional superclass and subclass context. Use find-classes to discover candidate classes first.'
+]
+
+{ #category : 'defaults' }
+MCPToolDescribeClass >> defaultIcons [
+
+	^ { (self
+		          pngCompositeBaseIconNamed: #class
+		          badgeIconNamed: #inspect) }
+]
+
+{ #category : 'defaults' }
+MCPToolDescribeClass >> defaultInputSchema [
+
+	| includeSuperclassesProperty includeCommentProperty upToSuperclassNameProperty subclassDepthProperty |
+	includeSuperclassesProperty := MCPStructureProperties new
+		                               name: 'includeSuperclasses';
+		                               type: 'boolean';
+		                               description:
+			                               'Whether to include superclass descriptions. Defaults to false.';
+		                               yourself.
+	includeCommentProperty := MCPStructureProperties new
+		                          name: 'includeComment';
+		                          type: 'boolean';
+		                          description:
+			                          'Whether to include the class comment in returned class descriptions. Defaults to false.';
+		                          yourself.
+	upToSuperclassNameProperty := MCPStructureProperties new
+		                              name: 'upToSuperclassName';
+		                              type: 'string';
+		                              description:
+			                              'An optional superclass name that stops the included superclass chain at a specific ancestor. If the named class is not actually an ancestor, the chain continues to the root.';
+		                              yourself.
+	subclassDepthProperty := MCPStructureProperties new
+		                         name: 'subclassDepth';
+		                         type: 'integer';
+		                         description:
+			                         'How many subclass levels to include. Uses 0 by default, 1 for direct subclasses, 2 for grandchildren too, and so on.';
+		                         yourself.
+	^ MCPStructureInputSchema new
+		               type: 'object';
+		               properties: {
+				               (MCPStructureProperties new
+					                name: 'className';
+					                type: 'string';
+					                description: 'The class to describe.';
+					                yourself).
+				               includeSuperclassesProperty.
+				               includeCommentProperty.
+				               upToSuperclassNameProperty.
+				               subclassDepthProperty };
+		               required: #( 'className' );
+		               yourself
+]
+
+{ #category : 'defaults' }
+MCPToolDescribeClass >> defaultName [
+
+	^ 'describe-class'
+]
+
+{ #category : 'defaults' }
+MCPToolDescribeClass >> defaultOutputSchema [
+
+	^ self
+		                standardOutputSchemaForDataProperties:
+			                self classDescriptionDataProperties , {
+				                ((self
+					                  schemaPropertyNamed: 'superclasses'
+					                  type: 'array'
+					                  description:
+						                  'The included superclasses, starting from the direct superclass and moving upward.')
+					                 items: self classDescriptionObjectSchema;
+					                 yourself).
+				                ((self
+					                  schemaPropertyNamed: 'subclasses'
+					                  type: 'array'
+					                  description:
+						                  'The included subclasses or descendants of the described class, bounded by subclassDepth.')
+					                 items: self classDescriptionObjectSchema;
+					                 yourself) }
+		                required:
+		                self classDescriptionRequiredFields
+		                , #( 'superclasses' 'subclasses' )
+]
+
+{ #category : 'defaults' }
+MCPToolDescribeClass >> defaultTitle [
+
+	^ 'Describe Pharo Class'
+]
+
 { #category : 'private - hierarchy' }
 MCPToolDescribeClass >> descriptionDictionariesForClasses: someClasses [
 
@@ -183,77 +278,6 @@ MCPToolDescribeClass >> failureMessageForClassName: className error: anError [
 			  nextPutAll: anError class name;
 			  nextPutAll: '): ';
 			  nextPutAll: anError messageText ]
-]
-
-{ #category : 'initialization' }
-MCPToolDescribeClass >> initialize [
-
-	| includeCommentProperty includeSuperclassesProperty subclassDepthProperty upToSuperclassNameProperty |
-	super initialize.
-	name := 'describe-class'.
-	title := 'Describe Pharo Class'.
-	description := 'Inspect one class by name and return structured metadata, with optional superclass and subclass context. Use find-classes to discover candidate classes first.'.
-	includeSuperclassesProperty := MCPStructureProperties new
-		                               name: 'includeSuperclasses';
-		                               type: 'boolean';
-		                               description:
-			                               'Whether to include superclass descriptions. Defaults to false.';
-		                               yourself.
-	includeCommentProperty := MCPStructureProperties new
-		                          name: 'includeComment';
-		                          type: 'boolean';
-		                          description:
-			                          'Whether to include the class comment in returned class descriptions. Defaults to false.';
-		                          yourself.
-	upToSuperclassNameProperty := MCPStructureProperties new
-		                              name: 'upToSuperclassName';
-		                              type: 'string';
-		                              description:
-			                              'An optional superclass name that stops the included superclass chain at a specific ancestor. If the named class is not actually an ancestor, the chain continues to the root.';
-		                              yourself.
-	subclassDepthProperty := MCPStructureProperties new
-		                         name: 'subclassDepth';
-		                         type: 'integer';
-		                         description:
-			                         'How many subclass levels to include. Uses 0 by default, 1 for direct subclasses, 2 for grandchildren too, and so on.';
-		                         yourself.
-	inputSchema := MCPStructureInputSchema new
-		               type: 'object';
-		               properties: {
-				               (MCPStructureProperties new
-					                name: 'className';
-					                type: 'string';
-					                description: 'The class to describe.';
-					                yourself).
-				               includeSuperclassesProperty.
-				               includeCommentProperty.
-				               upToSuperclassNameProperty.
-				               subclassDepthProperty };
-		               required: #( 'className' );
-		               yourself.
-	outputSchema := self
-		                standardOutputSchemaForDataProperties:
-			                self classDescriptionDataProperties , {
-				                ((self
-					                  schemaPropertyNamed: 'superclasses'
-					                  type: 'array'
-					                  description:
-						                  'The included superclasses, starting from the direct superclass and moving upward.')
-					                 items: self classDescriptionObjectSchema;
-					                 yourself).
-				                ((self
-					                  schemaPropertyNamed: 'subclasses'
-					                  type: 'array'
-					                  description:
-						                  'The included subclasses or descendants of the described class, bounded by subclassDepth.')
-					                 items: self classDescriptionObjectSchema;
-					                 yourself) }
-		                required:
-		                self classDescriptionRequiredFields
-		                , #( 'superclasses' 'subclasses' ).
-	icons := { (self
-		          pngCompositeBaseIconNamed: #class
-		          badgeIconNamed: #inspect) }
 ]
 
 { #category : 'private - hierarchy' }

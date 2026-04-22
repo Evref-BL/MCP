@@ -114,6 +114,173 @@ MCPToolFindClasses >> classesForScope: scope packageNames: packageNames classNam
 	Error signal: 'Unsupported scope: ' , scope
 ]
 
+{ #category : 'defaults' }
+MCPToolFindClasses >> defaultDescription [
+
+	^ 'List classes in the selected scope and optionally filter them by class metadata. Use describe-class when you already know the class to inspect.'
+]
+
+{ #category : 'defaults' }
+MCPToolFindClasses >> defaultIcons [
+
+	| packageNamesProperty classNamesProperty classesProperty |
+	packageNamesProperty := self
+		                        stringArraySchemaNamed: 'packageNames'
+		                        description:
+		                        'The package names that define the packages scope. Required when scope=packages.'
+		                        itemDescription: 'A package name.'.
+	classNamesProperty := self
+		                      stringArraySchemaNamed: 'classNames'
+		                      description:
+		                      'The class names that define the classes or hierarchy scope. Required when scope=classes or scope=hierarchy.'
+		                      itemDescription: 'A class name.'.
+	classesProperty := self
+		                   schemaPropertyNamed: 'classes'
+		                   type: 'array'
+		                   description:
+		                   'The class entries returned for the requested page.'.
+	classesProperty items: self classEntrySchema.
+	^ { (self
+		          pngCompositeBaseIconNamed: #class
+		          badgeIconNamed: #zoomIn) }
+]
+
+{ #category : 'defaults' }
+MCPToolFindClasses >> defaultInputSchema [
+
+	| scopeProperty packageNamesProperty classNamesProperty filterModeProperty |
+	scopeProperty := MCPStructureProperties new
+		                 name: 'scope';
+		                 type: 'string';
+		                 description:
+			                 'Where to search for classes. Defaults to image.';
+		                 enum: #( 'image' 'packages' 'hierarchy' 'classes' );
+		                 yourself.
+	packageNamesProperty := self
+		                        stringArraySchemaNamed: 'packageNames'
+		                        description:
+		                        'The package names that define the packages scope. Required when scope=packages.'
+		                        itemDescription: 'A package name.'.
+	classNamesProperty := self
+		                      stringArraySchemaNamed: 'classNames'
+		                      description:
+		                      'The class names that define the classes or hierarchy scope. Required when scope=classes or scope=hierarchy.'
+		                      itemDescription: 'A class name.'.
+	filterModeProperty := MCPStructureProperties new
+		                      name: 'filterMode';
+		                      type: 'string';
+		                      description:
+			                      'How the class filter is matched. Defaults to substring.';
+		                      enum:
+			                      #( 'substring' 'prefix' 'exact' 'regex' );
+		                      yourself.
+	^ MCPStructureInputSchema new
+		               type: 'object';
+		               properties: {
+				               scopeProperty.
+				               packageNamesProperty.
+				               classNamesProperty.
+				               (MCPStructureProperties new
+					                name: 'filter';
+					                type: 'string';
+					                description:
+						                'Optional filter applied to class metadata such as names, package, tag, slots, and subclasses.';
+					                yourself).
+				               filterModeProperty.
+				               (MCPStructureProperties new
+					                name: 'caseSensitive';
+					                type: 'boolean';
+					                description:
+						                'Whether filter matching is case-sensitive. Defaults to false.';
+					                yourself).
+				               (MCPStructureProperties new
+					                name: 'limit';
+					                type: 'integer';
+					                description:
+						                'Maximum number of matching classes to return. Defaults to 100. Use 0 to request counts only.';
+					                yourself).
+				               (MCPStructureProperties new
+					                name: 'offset';
+					                type: 'integer';
+					                description:
+						                'Zero-based pagination offset applied after filtering. Defaults to 0.';
+					                yourself) };
+		               required: #(  );
+		               yourself
+]
+
+{ #category : 'defaults' }
+MCPToolFindClasses >> defaultName [
+
+	^ 'find-classes'
+]
+
+{ #category : 'defaults' }
+MCPToolFindClasses >> defaultOutputSchema [
+
+	| packageNamesProperty classNamesProperty classesProperty |
+	packageNamesProperty := self
+		                        stringArraySchemaNamed: 'packageNames'
+		                        description:
+		                        'The package names that define the packages scope. Required when scope=packages.'
+		                        itemDescription: 'A package name.'.
+	classNamesProperty := self
+		                      stringArraySchemaNamed: 'classNames'
+		                      description:
+		                      'The class names that define the classes or hierarchy scope. Required when scope=classes or scope=hierarchy.'
+		                      itemDescription: 'A class name.'.
+	classesProperty := self
+		                   schemaPropertyNamed: 'classes'
+		                   type: 'array'
+		                   description:
+		                   'The class entries returned for the requested page.'.
+	classesProperty items: self classEntrySchema.
+	^ self
+		                standardOutputSchemaForDataProperties: {
+				                ((self
+					                  schemaPropertyNamed: 'scope'
+					                  type: 'string'
+					                  description:
+						                  'The scope used to search for classes.')
+					                 enum:
+						                 #( 'image' 'packages' 'hierarchy' 'classes' );
+					                 yourself).
+				                packageNamesProperty.
+				                classNamesProperty.
+				                (self
+					                 integerSchemaPropertyNamed: 'returnedCount'
+					                 description:
+					                 'The number of class entries returned in this page.').
+				                (self
+					                 integerSchemaPropertyNamed: 'totalCount'
+					                 description:
+					                 'The total number of matching classes before pagination.').
+				                (self
+					                 integerSchemaPropertyNamed: 'offset'
+					                 description:
+					                 'The zero-based pagination offset that was applied.').
+				                (self
+					                 integerSchemaPropertyNamed: 'limit'
+					                 description:
+					                 'The maximum number of class entries requested.').
+				                (self
+					                 schemaPropertyNamed: 'truncated'
+					                 type: 'boolean'
+					                 description:
+					                 'Whether additional matching classes exist beyond the returned page.').
+				                classesProperty }
+		                required:
+			                #( 'scope' 'packageNames' 'classNames' 'returnedCount'
+			                   'totalCount' 'offset' 'limit' 'truncated'
+			                   'classes' )
+]
+
+{ #category : 'defaults' }
+MCPToolFindClasses >> defaultTitle [
+
+	^ 'Find Pharo Classes'
+]
+
 { #category : 'private - results' }
 MCPToolFindClasses >> errorResultForError: anError scope: scope [
 
@@ -243,121 +410,6 @@ MCPToolFindClasses >> hierarchyClassesNamed: classNames [
 		eachClass withAllSuperAndSubclasses do: [ :relatedClass |
 			classes add: relatedClass instanceSide ] ].
 	^ self sortedClassesByName: classes
-]
-
-{ #category : 'initialization' }
-MCPToolFindClasses >> initialize [
-
-	| classNamesProperty classesProperty filterModeProperty packageNamesProperty scopeProperty |
-	super initialize.
-	name := 'find-classes'.
-	title := 'Find Pharo Classes'.
-	description := 'List classes in the selected scope and optionally filter them by class metadata. Use describe-class when you already know the class to inspect.'.
-	scopeProperty := MCPStructureProperties new
-		                 name: 'scope';
-		                 type: 'string';
-		                 description:
-			                 'Where to search for classes. Defaults to image.';
-		                 enum: #( 'image' 'packages' 'hierarchy' 'classes' );
-		                 yourself.
-	packageNamesProperty := self
-		                        stringArraySchemaNamed: 'packageNames'
-		                        description:
-		                        'The package names that define the packages scope. Required when scope=packages.'
-		                        itemDescription: 'A package name.'.
-	classNamesProperty := self
-		                      stringArraySchemaNamed: 'classNames'
-		                      description:
-		                      'The class names that define the classes or hierarchy scope. Required when scope=classes or scope=hierarchy.'
-		                      itemDescription: 'A class name.'.
-	filterModeProperty := MCPStructureProperties new
-		                      name: 'filterMode';
-		                      type: 'string';
-		                      description:
-			                      'How the class filter is matched. Defaults to substring.';
-		                      enum:
-			                      #( 'substring' 'prefix' 'exact' 'regex' );
-		                      yourself.
-	inputSchema := MCPStructureInputSchema new
-		               type: 'object';
-		               properties: {
-				               scopeProperty.
-				               packageNamesProperty.
-				               classNamesProperty.
-				               (MCPStructureProperties new
-					                name: 'filter';
-					                type: 'string';
-					                description:
-						                'Optional filter applied to class metadata such as names, package, tag, slots, and subclasses.';
-					                yourself).
-				               filterModeProperty.
-				               (MCPStructureProperties new
-					                name: 'caseSensitive';
-					                type: 'boolean';
-					                description:
-						                'Whether filter matching is case-sensitive. Defaults to false.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'limit';
-					                type: 'integer';
-					                description:
-						                'Maximum number of matching classes to return. Defaults to 100. Use 0 to request counts only.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'offset';
-					                type: 'integer';
-					                description:
-						                'Zero-based pagination offset applied after filtering. Defaults to 0.';
-					                yourself) };
-		               required: #(  );
-		               yourself.
-	classesProperty := self
-		                   schemaPropertyNamed: 'classes'
-		                   type: 'array'
-		                   description:
-		                   'The class entries returned for the requested page.'.
-	classesProperty items: self classEntrySchema.
-	outputSchema := self
-		                standardOutputSchemaForDataProperties: {
-				                ((self
-					                  schemaPropertyNamed: 'scope'
-					                  type: 'string'
-					                  description:
-						                  'The scope used to search for classes.')
-					                 enum:
-						                 #( 'image' 'packages' 'hierarchy' 'classes' );
-					                 yourself).
-				                packageNamesProperty.
-				                classNamesProperty.
-				                (self
-					                 integerSchemaPropertyNamed: 'returnedCount'
-					                 description:
-					                 'The number of class entries returned in this page.').
-				                (self
-					                 integerSchemaPropertyNamed: 'totalCount'
-					                 description:
-					                 'The total number of matching classes before pagination.').
-				                (self
-					                 integerSchemaPropertyNamed: 'offset'
-					                 description:
-					                 'The zero-based pagination offset that was applied.').
-				                (self
-					                 integerSchemaPropertyNamed: 'limit'
-					                 description:
-					                 'The maximum number of class entries requested.').
-				                (self
-					                 schemaPropertyNamed: 'truncated'
-					                 type: 'boolean'
-					                 description:
-					                 'Whether additional matching classes exist beyond the returned page.').
-				                classesProperty }
-		                required:
-			                #( 'scope' 'packageNames' 'classNames' 'returnedCount'
-			                   'totalCount' 'offset' 'limit' 'truncated'
-			                   'classes' ).
-	icons := { (self
-		          pngCompositeBaseIconNamed: #class
-		          badgeIconNamed: #zoomIn) }
 ]
 
 { #category : 'private - arguments' }

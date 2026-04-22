@@ -15,6 +15,185 @@ MCPToolEditClass >> dataForResult: aResult operation: operation [
 	^ data
 ]
 
+{ #category : 'defaults' }
+MCPToolEditClass >> defaultDescription [
+
+	^ 'Create, move, or rename a class in the running image. Use this for structural class changes; use edit-method for methods and remove-classes for deletion.'
+]
+
+{ #category : 'defaults' }
+MCPToolEditClass >> defaultIcons [
+
+	^ { (self
+		          pngCompositeBaseIconNamed: #class
+		          badgeIconNamed: #edit) }
+]
+
+{ #category : 'defaults' }
+MCPToolEditClass >> defaultInputSchema [
+
+	^ MCPStructureInputSchema new
+		               type: 'object';
+		               properties: {
+				               (MCPStructureProperties new
+					                name: 'operation';
+					                type: 'string';
+					                description:
+						                'The class edit operation to perform. Supported values are create, move, and rename.';
+					                enum: #( 'create' 'move' 'rename' );
+					                yourself).
+				               (MCPStructureProperties new
+					                name: 'className';
+					                type: 'string';
+					                description:
+						                'The class to edit, or the class name to create.';
+					                yourself).
+				               (MCPStructureProperties new
+					                name: 'superclassName';
+					                type: 'string';
+					                description:
+						                'The superclass to use when operation=create.';
+					                yourself).
+				               (MCPStructureProperties new
+					                name: 'packageName';
+					                type: 'string';
+					                description:
+						                'The package to create into when operation=create, or the destination package when operation=move. Missing destination packages are created automatically.';
+					                yourself).
+				               (MCPStructureProperties new
+					                name: 'tag';
+					                type: 'string';
+					                description:
+						                'An optional package tag for operation=create, or the destination tag when operation=move. Missing destination tags are created automatically.';
+					                yourself).
+				               ((MCPStructureProperties new
+					                 name: 'slots';
+					                 type: 'array';
+					                 description:
+						                 'Optional instance-side slot names for operation=create.')
+					                items: (MCPStructureProperties new
+							                 type: 'string';
+							                 description: 'An instance-side slot name.';
+							                 yourself);
+					                yourself).
+				               ((MCPStructureProperties new
+					                 name: 'classSlots';
+					                 type: 'array';
+					                 description:
+						                 'Optional class-side slot names for operation=create.')
+					                items: (MCPStructureProperties new
+							                 type: 'string';
+							                 description: 'A class-side slot name.';
+							                 yourself);
+					                yourself).
+				               (MCPStructureProperties new
+					                name: 'newClassName';
+					                type: 'string';
+					                description:
+						                'The new class name to assign when operation=rename.';
+					                yourself) };
+		               required: #( 'operation' 'className' );
+		               yourself
+]
+
+{ #category : 'defaults' }
+MCPToolEditClass >> defaultName [
+
+	^ 'edit-class'
+]
+
+{ #category : 'defaults' }
+MCPToolEditClass >> defaultOutputSchema [
+
+	^ self
+		                standardOutputSchemaForDataProperties: {
+				                (self
+					                 schemaPropertyNamed: 'operation'
+					                 type: 'string'
+					                 description:
+					                 'The class edit operation that was performed.').
+				                (self
+					                 schemaPropertyNamed: 'className'
+					                 type: 'string'
+					                 description:
+					                 'The class name after the operation completes.').
+				                (self
+					                 schemaPropertyNamed: 'superclassName'
+					                 type: 'string'
+					                 description:
+					                 'The superclass of the class after the operation.').
+				                (self
+					                 schemaPropertyNamed: 'packageName'
+					                 type: 'string'
+					                 description:
+					                 'The owning package of the class after the operation.').
+				                (self
+					                 schemaPropertyNamed: 'tag'
+					                 type: 'string'
+					                 description:
+					                 'The package tag assigned to the class after the operation.').
+				                ((self
+					                  schemaPropertyNamed: 'instanceSlotNames'
+					                  type: 'array'
+					                  description:
+						                  'The instance-side slots present on the class after the operation.')
+					                 items: (MCPStructureProperties new
+							                  type: 'string';
+							                  description: 'An instance-side slot name.';
+							                  yourself);
+					                 yourself).
+				                ((self
+					                  schemaPropertyNamed: 'classSlotNames'
+					                  type: 'array'
+					                  description:
+						                  'The class-side slots present on the class after the operation.')
+					                 items: (MCPStructureProperties new
+							                  type: 'string';
+							                  description: 'A class-side slot name.';
+							                  yourself);
+					                 yourself).
+				                ((self
+					                  schemaPropertyNamed: 'subclassNames'
+					                  type: 'array'
+					                  description:
+						                  'The direct subclasses of the class after the operation.')
+					                 items: (MCPStructureProperties new
+							                  type: 'string';
+							                  description: 'A direct subclass name.';
+							                  yourself);
+					                 yourself).
+				                (self
+					                 schemaPropertyNamed: 'oldPackageName'
+					                 type: 'string'
+					                 description:
+					                 'The previous package when operation=move.').
+				                (self
+					                 schemaPropertyNamed: 'oldTag'
+					                 type: 'string'
+					                 description:
+					                 'The previous package tag when operation=move.').
+				                (self
+					                 schemaPropertyNamed: 'oldClassName'
+					                 type: 'string'
+					                 description:
+					                 'The previous class name when operation=rename.').
+				                (self
+					                 schemaPropertyNamed: 'newClassName'
+					                 type: 'string'
+					                 description:
+					                 'The new class name when operation=rename.') }
+		                required:
+			                #( 'operation' 'className' 'superclassName'
+			                   'packageName' 'tag' 'instanceSlotNames'
+			                   'classSlotNames' 'subclassNames' )
+]
+
+{ #category : 'defaults' }
+MCPToolEditClass >> defaultTitle [
+
+	^ 'Edit Pharo Class'
+]
+
 { #category : 'private' }
 MCPToolEditClass >> errorResultForCommandError: anError operation: operation [
 
@@ -209,161 +388,6 @@ MCPToolEditClass >> failureMessageForRenameClassNamed: className to: newClassNam
 			  nextPutAll: anError class name;
 			  nextPutAll: '): ';
 			  nextPutAll: anError messageText ]
-]
-
-{ #category : 'initialization' }
-MCPToolEditClass >> initialize [
-
-	super initialize.
-	name := 'edit-class'.
-	title := 'Edit Pharo Class'.
-	description := 'Create, move, or rename a class in the running image. Use this for structural class changes; use edit-method for methods and remove-classes for deletion.'.
-	inputSchema := MCPStructureInputSchema new
-		               type: 'object';
-		               properties: {
-				               (MCPStructureProperties new
-					                name: 'operation';
-					                type: 'string';
-					                description:
-						                'The class edit operation to perform. Supported values are create, move, and rename.';
-					                enum: #( 'create' 'move' 'rename' );
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'className';
-					                type: 'string';
-					                description:
-						                'The class to edit, or the class name to create.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'superclassName';
-					                type: 'string';
-					                description:
-						                'The superclass to use when operation=create.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'packageName';
-					                type: 'string';
-					                description:
-						                'The package to create into when operation=create, or the destination package when operation=move. Missing destination packages are created automatically.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'tag';
-					                type: 'string';
-					                description:
-						                'An optional package tag for operation=create, or the destination tag when operation=move. Missing destination tags are created automatically.';
-					                yourself).
-				               ((MCPStructureProperties new
-					                 name: 'slots';
-					                 type: 'array';
-					                 description:
-						                 'Optional instance-side slot names for operation=create.')
-					                items: (MCPStructureProperties new
-							                 type: 'string';
-							                 description: 'An instance-side slot name.';
-							                 yourself);
-					                yourself).
-				               ((MCPStructureProperties new
-					                 name: 'classSlots';
-					                 type: 'array';
-					                 description:
-						                 'Optional class-side slot names for operation=create.')
-					                items: (MCPStructureProperties new
-							                 type: 'string';
-							                 description: 'A class-side slot name.';
-							                 yourself);
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'newClassName';
-					                type: 'string';
-					                description:
-						                'The new class name to assign when operation=rename.';
-					                yourself) };
-		               required: #( 'operation' 'className' );
-		               yourself.
-	outputSchema := self
-		                standardOutputSchemaForDataProperties: {
-				                (self
-					                 schemaPropertyNamed: 'operation'
-					                 type: 'string'
-					                 description:
-					                 'The class edit operation that was performed.').
-				                (self
-					                 schemaPropertyNamed: 'className'
-					                 type: 'string'
-					                 description:
-					                 'The class name after the operation completes.').
-				                (self
-					                 schemaPropertyNamed: 'superclassName'
-					                 type: 'string'
-					                 description:
-					                 'The superclass of the class after the operation.').
-				                (self
-					                 schemaPropertyNamed: 'packageName'
-					                 type: 'string'
-					                 description:
-					                 'The owning package of the class after the operation.').
-				                (self
-					                 schemaPropertyNamed: 'tag'
-					                 type: 'string'
-					                 description:
-					                 'The package tag assigned to the class after the operation.').
-				                ((self
-					                  schemaPropertyNamed: 'instanceSlotNames'
-					                  type: 'array'
-					                  description:
-						                  'The instance-side slots present on the class after the operation.')
-					                 items: (MCPStructureProperties new
-							                  type: 'string';
-							                  description: 'An instance-side slot name.';
-							                  yourself);
-					                 yourself).
-				                ((self
-					                  schemaPropertyNamed: 'classSlotNames'
-					                  type: 'array'
-					                  description:
-						                  'The class-side slots present on the class after the operation.')
-					                 items: (MCPStructureProperties new
-							                  type: 'string';
-							                  description: 'A class-side slot name.';
-							                  yourself);
-					                 yourself).
-				                ((self
-					                  schemaPropertyNamed: 'subclassNames'
-					                  type: 'array'
-					                  description:
-						                  'The direct subclasses of the class after the operation.')
-					                 items: (MCPStructureProperties new
-							                  type: 'string';
-							                  description: 'A direct subclass name.';
-							                  yourself);
-					                 yourself).
-				                (self
-					                 schemaPropertyNamed: 'oldPackageName'
-					                 type: 'string'
-					                 description:
-					                 'The previous package when operation=move.').
-				                (self
-					                 schemaPropertyNamed: 'oldTag'
-					                 type: 'string'
-					                 description:
-					                 'The previous package tag when operation=move.').
-				                (self
-					                 schemaPropertyNamed: 'oldClassName'
-					                 type: 'string'
-					                 description:
-					                 'The previous class name when operation=rename.').
-				                (self
-					                 schemaPropertyNamed: 'newClassName'
-					                 type: 'string'
-					                 description:
-					                 'The new class name when operation=rename.') }
-		                required:
-			                #( 'operation' 'className' 'superclassName'
-			                   'packageName' 'tag' 'instanceSlotNames'
-			                   'classSlotNames' 'subclassNames' ).
-	icons := { (self
-		          pngCompositeBaseIconNamed: #class
-		          badgeIconNamed: #edit) }
 ]
 
 { #category : 'private - arguments' }

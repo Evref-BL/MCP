@@ -41,72 +41,22 @@ MCPToolRunTests >> aggregateDataForResults: resultEntries tests: testRequests [
 	^ data
 ]
 
-{ #category : 'private' }
-MCPToolRunTests >> errorResultForError: anError tests: testRequests [
+{ #category : 'defaults' }
+MCPToolRunTests >> defaultDescription [
 
-	(anError isKindOf: MCPCommandError) ifTrue: [
-		^ self
-			  errorResultText: anError messageText
-			  details: anError structuredDetails ].
-	^ self
-		  errorResultText:
-		  (self failureMessageForTests: testRequests error: anError)
-		  details: {
-				  (#errorClass -> anError class name).
-				  (#message -> anError messageText).
-				  (#tests -> testRequests asArray) } asDictionary
+	^ 'Run test classes or individual test methods as a batch and return aggregated results.'
 ]
 
-{ #category : 'executing' }
-MCPToolRunTests >> executeWithArguments: arguments [
+{ #category : 'defaults' }
+MCPToolRunTests >> defaultIcons [
 
-	| data resultEntries testRequests validatedRequests |
-	testRequests := #(  ).
-	^ [
-	  testRequests := self testRequestsFromArguments: arguments.
-	  validatedRequests := self validatedRequestsFrom: testRequests.
-	  resultEntries := validatedRequests collect: [ :each |
-		                   self resultForValidatedRequest: each ].
-	  data := self
-		          aggregateDataForResults: resultEntries
-		          tests: testRequests.
-	  self
-		  successResultText: (self successSummaryForData: data)
-		  data: data ]
-		  on: Exception
-		  do: [ :error |
-		  self errorResultForError: error tests: testRequests ]
+	^ { (self pngIconNamed: #testRunner) }
 ]
 
-{ #category : 'private' }
-MCPToolRunTests >> failureMessageForTests: testRequests error: anError [
+{ #category : 'defaults' }
+MCPToolRunTests >> defaultInputSchema [
 
-	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: 'Unable to run tests: ';
-			  nextPutAll: (', ' join: (testRequests collect: [ :each |
-								    | className testMethodName |
-								    className := each at: #className.
-								    testMethodName := each
-									                      at: #testMethodName
-									                      ifAbsent: [ nil ].
-								    testMethodName
-									    ifNil: [ className ]
-									    ifNotNil: [ className , '>>' , testMethodName ] ]));
-			  nextPutAll: ' (';
-			  nextPutAll: anError class name;
-			  nextPutAll: '): ';
-			  nextPutAll: anError messageText ]
-]
-
-{ #category : 'initialization' }
-MCPToolRunTests >> initialize [
-
-	super initialize.
-	name := 'run-tests'.
-	title := 'Run Pharo Tests'.
-	description := 'Run test classes or individual test methods as a batch and return aggregated results.'.
-	inputSchema := MCPStructureInputSchema new
+	^ MCPStructureInputSchema new
 		               type: 'object';
 		               properties: { ((MCPStructureProperties new
 				                 name: 'tests';
@@ -116,8 +66,19 @@ MCPToolRunTests >> initialize [
 				                items: self testRequestObjectSchema;
 				                yourself) };
 		               required: #( 'tests' );
-		               yourself.
-	outputSchema := self
+		               yourself
+]
+
+{ #category : 'defaults' }
+MCPToolRunTests >> defaultName [
+
+	^ 'run-tests'
+]
+
+{ #category : 'defaults' }
+MCPToolRunTests >> defaultOutputSchema [
+
+	^ self
 		                standardOutputSchemaForDataProperties: {
 				                ((self
 					                  schemaPropertyNamed: 'tests'
@@ -178,8 +139,71 @@ MCPToolRunTests >> initialize [
 			                #( 'tests' 'selectionCount' 'results' 'runCount'
 			                   'passedCount' 'skippedCount' 'failureCount'
 			                   'errorCount' 'failingTestNames'
-			                   'issues' ).
-	icons := { (self pngIconNamed: #testRunner) }
+			                   'issues' )
+]
+
+{ #category : 'defaults' }
+MCPToolRunTests >> defaultTitle [
+
+	^ 'Run Pharo Tests'
+]
+
+{ #category : 'private' }
+MCPToolRunTests >> errorResultForError: anError tests: testRequests [
+
+	(anError isKindOf: MCPCommandError) ifTrue: [
+		^ self
+			  errorResultText: anError messageText
+			  details: anError structuredDetails ].
+	^ self
+		  errorResultText:
+		  (self failureMessageForTests: testRequests error: anError)
+		  details: {
+				  (#errorClass -> anError class name).
+				  (#message -> anError messageText).
+				  (#tests -> testRequests asArray) } asDictionary
+]
+
+{ #category : 'executing' }
+MCPToolRunTests >> executeWithArguments: arguments [
+
+	| data resultEntries testRequests validatedRequests |
+	testRequests := #(  ).
+	^ [
+	  testRequests := self testRequestsFromArguments: arguments.
+	  validatedRequests := self validatedRequestsFrom: testRequests.
+	  resultEntries := validatedRequests collect: [ :each |
+		                   self resultForValidatedRequest: each ].
+	  data := self
+		          aggregateDataForResults: resultEntries
+		          tests: testRequests.
+	  self
+		  successResultText: (self successSummaryForData: data)
+		  data: data ]
+		  on: Exception
+		  do: [ :error |
+		  self errorResultForError: error tests: testRequests ]
+]
+
+{ #category : 'private' }
+MCPToolRunTests >> failureMessageForTests: testRequests error: anError [
+
+	^ String streamContents: [ :stream |
+		  stream
+			  nextPutAll: 'Unable to run tests: ';
+			  nextPutAll: (', ' join: (testRequests collect: [ :each |
+								    | className testMethodName |
+								    className := each at: #className.
+								    testMethodName := each
+									                      at: #testMethodName
+									                      ifAbsent: [ nil ].
+								    testMethodName
+									    ifNil: [ className ]
+									    ifNotNil: [ className , '>>' , testMethodName ] ]));
+			  nextPutAll: ' (';
+			  nextPutAll: anError class name;
+			  nextPutAll: '): ';
+			  nextPutAll: anError messageText ]
 ]
 
 { #category : 'private' }

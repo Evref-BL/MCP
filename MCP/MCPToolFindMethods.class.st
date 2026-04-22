@@ -39,6 +39,237 @@ MCPToolFindMethods >> compiledMethodEntriesFromQuery: query filter: filterPatter
 		   <= (self compiledMethodEntryLabel: right) ]) asArray
 ]
 
+{ #category : 'defaults' }
+MCPToolFindMethods >> defaultDescription [
+
+	^ 'List methods in a scope and optionally filter the returned method entries. Use implementors to find definitions of a selector, and references to find methods that use a selector, class, or variable.'
+]
+
+{ #category : 'defaults' }
+MCPToolFindMethods >> defaultIcons [
+
+	| packageNamesProperty classNamesProperty filterTargetsItemProperty filterTargetsProperty methodsProperty |
+	packageNamesProperty := self
+		                        stringArraySchemaNamed: 'packageNames'
+		                        description:
+		                        'The package names that define the packages scope. Required when scope=packages.'
+		                        itemDescription: 'A package name.'.
+	classNamesProperty := self
+		                      stringArraySchemaNamed: 'classNames'
+		                      description:
+		                      'The class names that define the classes or hierarchy scope. Required when scope=classes or scope=hierarchy.'
+		                      itemDescription: 'A class name.'.
+	filterTargetsItemProperty := MCPStructureProperties new
+		                             type: 'string';
+		                             description: 'A filter target.';
+		                             enum: self supportedFilterTargets;
+		                             yourself.
+	filterTargetsProperty := (self
+		                          schemaPropertyNamed: 'filterTargets'
+		                          type: 'array'
+		                          description:
+			                          'Optional method-entry fields matched by filter. Defaults to selector. This filters the listed methods; it does not perform reference lookup.')
+		                         items: filterTargetsItemProperty;
+		                         yourself.
+	methodsProperty := self
+		                   schemaPropertyNamed: 'methods'
+		                   type: 'array'
+		                   description:
+		                   'The method entries returned for the requested page.'.
+	methodsProperty items: self methodEntrySchema.
+	^ { (self
+		          pngCompositeBaseIconNamed: #page
+		          badgeIconNamed: #zoomIn) }
+]
+
+{ #category : 'defaults' }
+MCPToolFindMethods >> defaultInputSchema [
+
+	| scopeProperty sideProperty packageNamesProperty classNamesProperty filterModeProperty filterTargetsItemProperty filterTargetsProperty |
+	scopeProperty := MCPStructureProperties new
+		                 name: 'scope';
+		                 type: 'string';
+		                 description:
+			                 'Where to search for methods. Defaults to image.';
+		                 enum: #( 'image' 'packages' 'hierarchy' 'classes' );
+		                 yourself.
+	sideProperty := MCPStructureProperties new
+		                name: 'side';
+		                type: 'string';
+		                description:
+			                'Which method side to search. Defaults to both.';
+		                enum: #( 'instance' 'class' 'both' );
+		                yourself.
+	packageNamesProperty := self
+		                        stringArraySchemaNamed: 'packageNames'
+		                        description:
+		                        'The package names that define the packages scope. Required when scope=packages.'
+		                        itemDescription: 'A package name.'.
+	classNamesProperty := self
+		                      stringArraySchemaNamed: 'classNames'
+		                      description:
+		                      'The class names that define the classes or hierarchy scope. Required when scope=classes or scope=hierarchy.'
+		                      itemDescription: 'A class name.'.
+	filterModeProperty := MCPStructureProperties new
+		                      name: 'filterMode';
+		                      type: 'string';
+		                      description:
+			                      'How the filter is matched. Defaults to substring.';
+		                      enum:
+			                      #( 'substring' 'prefix' 'exact' 'regex' );
+		                      yourself.
+	filterTargetsItemProperty := MCPStructureProperties new
+		                             type: 'string';
+		                             description: 'A filter target.';
+		                             enum: self supportedFilterTargets;
+		                             yourself.
+	filterTargetsProperty := (self
+		                          schemaPropertyNamed: 'filterTargets'
+		                          type: 'array'
+		                          description:
+			                          'Optional method-entry fields matched by filter. Defaults to selector. This filters the listed methods; it does not perform reference lookup.')
+		                         items: filterTargetsItemProperty;
+		                         yourself.
+	^ MCPStructureInputSchema new
+		               type: 'object';
+		               properties: {
+				               scopeProperty.
+				               sideProperty.
+				               packageNamesProperty.
+				               classNamesProperty.
+				               (MCPStructureProperties new
+					                name: 'filter';
+					                type: 'string';
+					                description:
+						                'Optional filter applied to the methods found in scope. Use filterTargets to choose which fields are matched.';
+					                yourself).
+				               filterTargetsProperty.
+				               filterModeProperty.
+				               (MCPStructureProperties new
+					                name: 'caseSensitive';
+					                type: 'boolean';
+					                description:
+						                'Whether filter matching is case-sensitive. Defaults to false.';
+					                yourself).
+				               (MCPStructureProperties new
+					                name: 'includeSource';
+					                type: 'boolean';
+					                description:
+						                'Whether to include method source code in each result entry. Defaults to false.';
+					                yourself).
+				               (MCPStructureProperties new
+					                name: 'limit';
+					                type: 'integer';
+					                description:
+						                'Maximum number of matching methods to return. Defaults to 100. Use 0 to request counts only.';
+					                yourself).
+				               (MCPStructureProperties new
+					                name: 'offset';
+					                type: 'integer';
+					                description:
+						                'Zero-based pagination offset applied after filtering. Defaults to 0.';
+					                yourself) };
+		               required: #(  );
+		               yourself
+]
+
+{ #category : 'defaults' }
+MCPToolFindMethods >> defaultName [
+
+	^ 'find-methods'
+]
+
+{ #category : 'defaults' }
+MCPToolFindMethods >> defaultOutputSchema [
+
+	| packageNamesProperty classNamesProperty filterTargetsItemProperty filterTargetsProperty methodsProperty |
+	packageNamesProperty := self
+		                        stringArraySchemaNamed: 'packageNames'
+		                        description:
+		                        'The package names that define the packages scope. Required when scope=packages.'
+		                        itemDescription: 'A package name.'.
+	classNamesProperty := self
+		                      stringArraySchemaNamed: 'classNames'
+		                      description:
+		                      'The class names that define the classes or hierarchy scope. Required when scope=classes or scope=hierarchy.'
+		                      itemDescription: 'A class name.'.
+	filterTargetsItemProperty := MCPStructureProperties new
+		                             type: 'string';
+		                             description: 'A filter target.';
+		                             enum: self supportedFilterTargets;
+		                             yourself.
+	filterTargetsProperty := (self
+		                          schemaPropertyNamed: 'filterTargets'
+		                          type: 'array'
+		                          description:
+			                          'Optional method-entry fields matched by filter. Defaults to selector. This filters the listed methods; it does not perform reference lookup.')
+		                         items: filterTargetsItemProperty;
+		                         yourself.
+	methodsProperty := self
+		                   schemaPropertyNamed: 'methods'
+		                   type: 'array'
+		                   description:
+		                   'The method entries returned for the requested page.'.
+	methodsProperty items: self methodEntrySchema.
+	^ self
+		                standardOutputSchemaForDataProperties: {
+				                ((self
+					                  schemaPropertyNamed: 'scope'
+					                  type: 'string'
+					                  description:
+						                  'The scope used to search for methods.')
+					                 enum:
+						                 #( 'image' 'packages' 'hierarchy' 'classes' );
+					                 yourself).
+				                ((self
+					                  schemaPropertyNamed: 'side'
+					                  type: 'string'
+					                  description: 'The searched method side.')
+					                 enum: #( 'instance' 'class' 'both' );
+					                 yourself).
+				                (self
+					                 schemaPropertyNamed: 'sourceIncluded'
+					                 type: 'boolean'
+					                 description:
+					                 'Whether method source was included in the returned entries.').
+				                packageNamesProperty.
+				                classNamesProperty.
+				                filterTargetsProperty.
+				                (self
+					                 integerSchemaPropertyNamed: 'returnedCount'
+					                 description:
+					                 'The number of methods returned in this page.').
+				                (self
+					                 integerSchemaPropertyNamed: 'totalCount'
+					                 description:
+					                 'The total number of matching methods before pagination.').
+				                (self
+					                 integerSchemaPropertyNamed: 'offset'
+					                 description:
+					                 'The zero-based pagination offset that was applied.').
+				                (self
+					                 integerSchemaPropertyNamed: 'limit'
+					                 description:
+					                 'The maximum number of methods requested.').
+				                (self
+					                 schemaPropertyNamed: 'truncated'
+					                 type: 'boolean'
+					                 description:
+					                 'Whether additional matching methods exist beyond the returned page.').
+				                methodsProperty }
+		                required:
+			                #( 'scope' 'side' 'sourceIncluded' 'packageNames'
+			                   'classNames' 'filterTargets' 'returnedCount'
+			                   'totalCount' 'offset' 'limit' 'truncated'
+			                   'methods' )
+]
+
+{ #category : 'defaults' }
+MCPToolFindMethods >> defaultTitle [
+
+	^ 'Find Pharo Methods'
+]
+
 { #category : 'private - results' }
 MCPToolFindMethods >> errorResultForError: anError scope: scope [
 
@@ -152,161 +383,6 @@ MCPToolFindMethods >> filterTextsForCompiledMethodEntry: anEntry sourceText: sou
 			texts add: (self compiledMethodEntryLabel: anEntry) ].
 		each = 'source' ifTrue: [ texts add: sourceText ] ].
 	^ texts asArray
-]
-
-{ #category : 'initialization' }
-MCPToolFindMethods >> initialize [
-
-	| classNamesProperty filterModeProperty filterTargetsItemProperty filterTargetsProperty methodsProperty packageNamesProperty scopeProperty sideProperty |
-	super initialize.
-	name := 'find-methods'.
-	title := 'Find Pharo Methods'.
-	description := 'List methods in a scope and optionally filter the returned method entries. Use implementors to find definitions of a selector, and references to find methods that use a selector, class, or variable.'.
-	scopeProperty := MCPStructureProperties new
-		                 name: 'scope';
-		                 type: 'string';
-		                 description:
-			                 'Where to search for methods. Defaults to image.';
-		                 enum: #( 'image' 'packages' 'hierarchy' 'classes' );
-		                 yourself.
-	sideProperty := MCPStructureProperties new
-		                name: 'side';
-		                type: 'string';
-		                description:
-			                'Which method side to search. Defaults to both.';
-		                enum: #( 'instance' 'class' 'both' );
-		                yourself.
-	packageNamesProperty := self
-		                        stringArraySchemaNamed: 'packageNames'
-		                        description:
-		                        'The package names that define the packages scope. Required when scope=packages.'
-		                        itemDescription: 'A package name.'.
-	classNamesProperty := self
-		                      stringArraySchemaNamed: 'classNames'
-		                      description:
-		                      'The class names that define the classes or hierarchy scope. Required when scope=classes or scope=hierarchy.'
-		                      itemDescription: 'A class name.'.
-	filterModeProperty := MCPStructureProperties new
-		                      name: 'filterMode';
-		                      type: 'string';
-		                      description:
-			                      'How the filter is matched. Defaults to substring.';
-		                      enum:
-			                      #( 'substring' 'prefix' 'exact' 'regex' );
-		                      yourself.
-	filterTargetsItemProperty := MCPStructureProperties new
-		                             type: 'string';
-		                             description: 'A filter target.';
-		                             enum: self supportedFilterTargets;
-		                             yourself.
-	filterTargetsProperty := (self
-		                          schemaPropertyNamed: 'filterTargets'
-		                          type: 'array'
-		                          description:
-			                          'Optional method-entry fields matched by filter. Defaults to selector. This filters the listed methods; it does not perform reference lookup.')
-		                         items: filterTargetsItemProperty;
-		                         yourself.
-	inputSchema := MCPStructureInputSchema new
-		               type: 'object';
-		               properties: {
-				               scopeProperty.
-				               sideProperty.
-				               packageNamesProperty.
-				               classNamesProperty.
-				               (MCPStructureProperties new
-					                name: 'filter';
-					                type: 'string';
-					                description:
-						                'Optional filter applied to the methods found in scope. Use filterTargets to choose which fields are matched.';
-					                yourself).
-				               filterTargetsProperty.
-				               filterModeProperty.
-				               (MCPStructureProperties new
-					                name: 'caseSensitive';
-					                type: 'boolean';
-					                description:
-						                'Whether filter matching is case-sensitive. Defaults to false.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'includeSource';
-					                type: 'boolean';
-					                description:
-						                'Whether to include method source code in each result entry. Defaults to false.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'limit';
-					                type: 'integer';
-					                description:
-						                'Maximum number of matching methods to return. Defaults to 100. Use 0 to request counts only.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'offset';
-					                type: 'integer';
-					                description:
-						                'Zero-based pagination offset applied after filtering. Defaults to 0.';
-					                yourself) };
-		               required: #(  );
-		               yourself.
-	methodsProperty := self
-		                   schemaPropertyNamed: 'methods'
-		                   type: 'array'
-		                   description:
-		                   'The method entries returned for the requested page.'.
-	methodsProperty items: self methodEntrySchema.
-	outputSchema := self
-		                standardOutputSchemaForDataProperties: {
-				                ((self
-					                  schemaPropertyNamed: 'scope'
-					                  type: 'string'
-					                  description:
-						                  'The scope used to search for methods.')
-					                 enum:
-						                 #( 'image' 'packages' 'hierarchy' 'classes' );
-					                 yourself).
-				                ((self
-					                  schemaPropertyNamed: 'side'
-					                  type: 'string'
-					                  description: 'The searched method side.')
-					                 enum: #( 'instance' 'class' 'both' );
-					                 yourself).
-				                (self
-					                 schemaPropertyNamed: 'sourceIncluded'
-					                 type: 'boolean'
-					                 description:
-					                 'Whether method source was included in the returned entries.').
-				                packageNamesProperty.
-				                classNamesProperty.
-				                filterTargetsProperty.
-				                (self
-					                 integerSchemaPropertyNamed: 'returnedCount'
-					                 description:
-					                 'The number of methods returned in this page.').
-				                (self
-					                 integerSchemaPropertyNamed: 'totalCount'
-					                 description:
-					                 'The total number of matching methods before pagination.').
-				                (self
-					                 integerSchemaPropertyNamed: 'offset'
-					                 description:
-					                 'The zero-based pagination offset that was applied.').
-				                (self
-					                 integerSchemaPropertyNamed: 'limit'
-					                 description:
-					                 'The maximum number of methods requested.').
-				                (self
-					                 schemaPropertyNamed: 'truncated'
-					                 type: 'boolean'
-					                 description:
-					                 'Whether additional matching methods exist beyond the returned page.').
-				                methodsProperty }
-		                required:
-			                #( 'scope' 'side' 'sourceIncluded' 'packageNames'
-			                   'classNames' 'filterTargets' 'returnedCount'
-			                   'totalCount' 'offset' 'limit' 'truncated'
-			                   'methods' ).
-	icons := { (self
-		          pngCompositeBaseIconNamed: #page
-		          badgeIconNamed: #zoomIn) }
 ]
 
 { #category : 'private - filtering' }

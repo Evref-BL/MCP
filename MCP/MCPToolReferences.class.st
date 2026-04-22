@@ -25,6 +25,223 @@ MCPToolReferences >> compiledMethod: aCompiledMethod referencesAnyVariable: vari
 		  eachVariable isAccessedIn: aCompiledMethod ]
 ]
 
+{ #category : 'defaults' }
+MCPToolReferences >> defaultDescription [
+
+	^ 'Find methods that reference a selector, class, or variable in a chosen scope. Use mode=method for message sends, mode=class for class/global references, and mode=variable for variable or slot references. Use find-methods to list methods without reference matching.'
+]
+
+{ #category : 'defaults' }
+MCPToolReferences >> defaultIcons [
+
+	| packageNamesProperty classNamesProperty referencesProperty |
+	packageNamesProperty := self
+		                        stringArraySchemaNamed: 'packageNames'
+		                        description:
+		                        'The package names that define the packages scope. Required when scope=packages.'
+		                        itemDescription: 'A package name.'.
+	classNamesProperty := self
+		                      stringArraySchemaNamed: 'classNames'
+		                      description:
+		                      'The class names that define the classes or hierarchy scope. Required when scope=classes or scope=hierarchy.'
+		                      itemDescription: 'A class name.'.
+	referencesProperty := self
+		                      schemaPropertyNamed: 'references'
+		                      type: 'array'
+		                      description:
+		                      'The matching methods returned for the requested page. Each entry is a method that references the requested target.'.
+	referencesProperty items: self senderEntrySchema.
+	^ { (self
+		          pngCompositeBaseIconNamed: #references
+		          badgeIconNamed: #over) }
+]
+
+{ #category : 'defaults' }
+MCPToolReferences >> defaultInputSchema [
+
+	| scopeProperty sideProperty modeProperty packageNamesProperty classNamesProperty |
+	scopeProperty := MCPStructureProperties new
+		                 name: 'scope';
+		                 type: 'string';
+		                 description:
+			                 'Where to search for references. Defaults to image.';
+		                 enum: #( 'image' 'packages' 'hierarchy' 'classes' );
+		                 yourself.
+	sideProperty := MCPStructureProperties new
+		                name: 'side';
+		                type: 'string';
+		                description:
+			                'Which method side to search. Defaults to both.';
+		                enum: #( 'instance' 'class' 'both' );
+		                yourself.
+	modeProperty := MCPStructureProperties new
+		                name: 'mode';
+		                type: 'string';
+		                description:
+			                'Which reference query to run. Use method for message sends to a selector, class for references to a class/global binding, and variable for variable or slot references.';
+		                enum: #( 'method' 'class' 'variable' );
+		                yourself.
+	packageNamesProperty := self
+		                        stringArraySchemaNamed: 'packageNames'
+		                        description:
+		                        'The package names that define the packages scope. Required when scope=packages.'
+		                        itemDescription: 'A package name.'.
+	classNamesProperty := self
+		                      stringArraySchemaNamed: 'classNames'
+		                      description:
+		                      'The class names that define the classes or hierarchy scope. Required when scope=classes or scope=hierarchy.'
+		                      itemDescription: 'A class name.'.
+	^ MCPStructureInputSchema new
+		               type: 'object';
+		               properties: {
+				               (MCPStructureProperties new
+					                name: 'target';
+					                type: 'string';
+					                description:
+						                'The selector, class name, or variable name to look for, depending on mode.';
+					                yourself).
+				               modeProperty.
+				               scopeProperty.
+				               sideProperty.
+				               packageNamesProperty.
+				               classNamesProperty.
+				               (MCPStructureProperties new
+					                name: 'filter';
+					                type: 'string';
+					                description:
+						                'Optional filter applied to the matching reference methods after target lookup.';
+					                yourself).
+				               (MCPStructureProperties new
+					                name: 'filterMode';
+					                type: 'string';
+					                description:
+						                'How the filter is matched. Defaults to substring.';
+					                enum: #( 'substring' 'prefix' 'exact' 'regex' );
+					                yourself).
+				               (MCPStructureProperties new
+					                name: 'caseSensitive';
+					                type: 'boolean';
+					                description:
+						                'Whether filter matching is case-sensitive. Defaults to false.';
+					                yourself).
+				               (MCPStructureProperties new
+					                name: 'includeSource';
+					                type: 'boolean';
+					                description:
+						                'Whether to include method source code in each result entry. Defaults to false.';
+					                yourself).
+				               (MCPStructureProperties new
+					                name: 'limit';
+					                type: 'integer';
+					                description:
+						                'Maximum number of matching methods to return. Defaults to 100. Use 0 to request counts only.';
+					                yourself).
+				               (MCPStructureProperties new
+					                name: 'offset';
+					                type: 'integer';
+					                description:
+						                'Zero-based pagination offset applied after filtering. Defaults to 0.';
+					                yourself) };
+		               required: #( 'target' 'mode' );
+		               yourself
+]
+
+{ #category : 'defaults' }
+MCPToolReferences >> defaultName [
+
+	^ 'references'
+]
+
+{ #category : 'defaults' }
+MCPToolReferences >> defaultOutputSchema [
+
+	| packageNamesProperty classNamesProperty referencesProperty |
+	packageNamesProperty := self
+		                        stringArraySchemaNamed: 'packageNames'
+		                        description:
+		                        'The package names that define the packages scope. Required when scope=packages.'
+		                        itemDescription: 'A package name.'.
+	classNamesProperty := self
+		                      stringArraySchemaNamed: 'classNames'
+		                      description:
+		                      'The class names that define the classes or hierarchy scope. Required when scope=classes or scope=hierarchy.'
+		                      itemDescription: 'A class name.'.
+	referencesProperty := self
+		                      schemaPropertyNamed: 'references'
+		                      type: 'array'
+		                      description:
+		                      'The matching methods returned for the requested page. Each entry is a method that references the requested target.'.
+	referencesProperty items: self senderEntrySchema.
+	^ self
+		                standardOutputSchemaForDataProperties: {
+				                (self
+					                 schemaPropertyNamed: 'target'
+					                 type: 'string'
+					                 description:
+					                 'The selector, class name, or variable name that was searched for.').
+				                ((self
+					                  schemaPropertyNamed: 'mode'
+					                  type: 'string'
+					                  description:
+						                  'The reference mode that was searched.')
+					                 enum: #( 'method' 'class' 'variable' );
+					                 yourself).
+				                ((self
+					                  schemaPropertyNamed: 'scope'
+					                  type: 'string'
+					                  description:
+						                  'The scope used to search for references.')
+					                 enum:
+						                 #( 'image' 'packages' 'hierarchy' 'classes' );
+					                 yourself).
+				                ((self
+					                  schemaPropertyNamed: 'side'
+					                  type: 'string'
+					                  description: 'The searched method side.')
+					                 enum: #( 'instance' 'class' 'both' );
+					                 yourself).
+				                (self
+					                 schemaPropertyNamed: 'sourceIncluded'
+					                 type: 'boolean'
+					                 description:
+					                 'Whether method source was included in the returned entries.').
+				                packageNamesProperty.
+				                classNamesProperty.
+				                (self
+					                 integerSchemaPropertyNamed: 'returnedCount'
+					                 description:
+					                 'The number of matching methods returned in this page.').
+				                (self
+					                 integerSchemaPropertyNamed: 'totalCount'
+					                 description:
+					                 'The total number of matching methods before pagination.').
+				                (self
+					                 integerSchemaPropertyNamed: 'offset'
+					                 description:
+					                 'The zero-based pagination offset that was applied.').
+				                (self
+					                 integerSchemaPropertyNamed: 'limit'
+					                 description:
+					                 'The maximum number of matching methods requested.').
+				                (self
+					                 schemaPropertyNamed: 'truncated'
+					                 type: 'boolean'
+					                 description:
+					                 'Whether additional matching methods exist beyond the returned page.').
+				                referencesProperty }
+		                required:
+			                #( 'target' 'mode' 'scope' 'side' 'sourceIncluded'
+			                   'packageNames' 'classNames' 'returnedCount'
+			                   'totalCount' 'offset' 'limit' 'truncated'
+			                   'references' )
+]
+
+{ #category : 'defaults' }
+MCPToolReferences >> defaultTitle [
+
+	^ 'Find Pharo References'
+]
+
 { #category : 'executing' }
 MCPToolReferences >> executeWithArguments: arguments [
 
@@ -129,171 +346,6 @@ MCPToolReferences >> failureMessageForTarget: targetString mode: mode scope: sco
 			  nextPutAll: anError class name;
 			  nextPutAll: '): ';
 			  nextPutAll: anError messageText ]
-]
-
-{ #category : 'initialization' }
-MCPToolReferences >> initialize [
-
-	| classNamesProperty modeProperty packageNamesProperty referencesProperty scopeProperty sideProperty |
-	super initialize.
-	name := 'references'.
-	title := 'Find Pharo References'.
-	description := 'Find methods that reference a selector, class, or variable in a chosen scope. Use mode=method for message sends, mode=class for class/global references, and mode=variable for variable or slot references. Use find-methods to list methods without reference matching.'.
-	scopeProperty := MCPStructureProperties new
-		                 name: 'scope';
-		                 type: 'string';
-		                 description:
-			                 'Where to search for references. Defaults to image.';
-		                 enum: #( 'image' 'packages' 'hierarchy' 'classes' );
-		                 yourself.
-	sideProperty := MCPStructureProperties new
-		                name: 'side';
-		                type: 'string';
-		                description:
-			                'Which method side to search. Defaults to both.';
-		                enum: #( 'instance' 'class' 'both' );
-		                yourself.
-	modeProperty := MCPStructureProperties new
-		                name: 'mode';
-		                type: 'string';
-		                description:
-			                'Which reference query to run. Use method for message sends to a selector, class for references to a class/global binding, and variable for variable or slot references.';
-		                enum: #( 'method' 'class' 'variable' );
-		                yourself.
-	packageNamesProperty := self
-		                        stringArraySchemaNamed: 'packageNames'
-		                        description:
-		                        'The package names that define the packages scope. Required when scope=packages.'
-		                        itemDescription: 'A package name.'.
-	classNamesProperty := self
-		                      stringArraySchemaNamed: 'classNames'
-		                      description:
-		                      'The class names that define the classes or hierarchy scope. Required when scope=classes or scope=hierarchy.'
-		                      itemDescription: 'A class name.'.
-	inputSchema := MCPStructureInputSchema new
-		               type: 'object';
-		               properties: {
-				               (MCPStructureProperties new
-					                name: 'target';
-					                type: 'string';
-					                description:
-						                'The selector, class name, or variable name to look for, depending on mode.';
-					                yourself).
-				               modeProperty.
-				               scopeProperty.
-				               sideProperty.
-				               packageNamesProperty.
-				               classNamesProperty.
-				               (MCPStructureProperties new
-					                name: 'filter';
-					                type: 'string';
-					                description:
-						                'Optional filter applied to the matching reference methods after target lookup.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'filterMode';
-					                type: 'string';
-					                description:
-						                'How the filter is matched. Defaults to substring.';
-					                enum: #( 'substring' 'prefix' 'exact' 'regex' );
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'caseSensitive';
-					                type: 'boolean';
-					                description:
-						                'Whether filter matching is case-sensitive. Defaults to false.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'includeSource';
-					                type: 'boolean';
-					                description:
-						                'Whether to include method source code in each result entry. Defaults to false.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'limit';
-					                type: 'integer';
-					                description:
-						                'Maximum number of matching methods to return. Defaults to 100. Use 0 to request counts only.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'offset';
-					                type: 'integer';
-					                description:
-						                'Zero-based pagination offset applied after filtering. Defaults to 0.';
-					                yourself) };
-		               required: #( 'target' 'mode' );
-		               yourself.
-	referencesProperty := self
-		                      schemaPropertyNamed: 'references'
-		                      type: 'array'
-		                      description:
-		                      'The matching methods returned for the requested page. Each entry is a method that references the requested target.'.
-	referencesProperty items: self senderEntrySchema.
-	outputSchema := self
-		                standardOutputSchemaForDataProperties: {
-				                (self
-					                 schemaPropertyNamed: 'target'
-					                 type: 'string'
-					                 description:
-					                 'The selector, class name, or variable name that was searched for.').
-				                ((self
-					                  schemaPropertyNamed: 'mode'
-					                  type: 'string'
-					                  description:
-						                  'The reference mode that was searched.')
-					                 enum: #( 'method' 'class' 'variable' );
-					                 yourself).
-				                ((self
-					                  schemaPropertyNamed: 'scope'
-					                  type: 'string'
-					                  description:
-						                  'The scope used to search for references.')
-					                 enum:
-						                 #( 'image' 'packages' 'hierarchy' 'classes' );
-					                 yourself).
-				                ((self
-					                  schemaPropertyNamed: 'side'
-					                  type: 'string'
-					                  description: 'The searched method side.')
-					                 enum: #( 'instance' 'class' 'both' );
-					                 yourself).
-				                (self
-					                 schemaPropertyNamed: 'sourceIncluded'
-					                 type: 'boolean'
-					                 description:
-					                 'Whether method source was included in the returned entries.').
-				                packageNamesProperty.
-				                classNamesProperty.
-				                (self
-					                 integerSchemaPropertyNamed: 'returnedCount'
-					                 description:
-					                 'The number of matching methods returned in this page.').
-				                (self
-					                 integerSchemaPropertyNamed: 'totalCount'
-					                 description:
-					                 'The total number of matching methods before pagination.').
-				                (self
-					                 integerSchemaPropertyNamed: 'offset'
-					                 description:
-					                 'The zero-based pagination offset that was applied.').
-				                (self
-					                 integerSchemaPropertyNamed: 'limit'
-					                 description:
-					                 'The maximum number of matching methods requested.').
-				                (self
-					                 schemaPropertyNamed: 'truncated'
-					                 type: 'boolean'
-					                 description:
-					                 'Whether additional matching methods exist beyond the returned page.').
-				                referencesProperty }
-		                required:
-			                #( 'target' 'mode' 'scope' 'side' 'sourceIncluded'
-			                   'packageNames' 'classNames' 'returnedCount'
-			                   'totalCount' 'offset' 'limit' 'truncated'
-			                   'references' ).
-	icons := { (self
-		          pngCompositeBaseIconNamed: #references
-		          badgeIconNamed: #over) }
 ]
 
 { #category : 'private - searching' }

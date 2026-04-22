@@ -6,12 +6,161 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'defaults' }
+MCPToolFindPackages >> defaultDescription [
+
+	^ 'List packages in the image or in a project and optionally filter them by package metadata.'
+]
+
+{ #category : 'defaults' }
+MCPToolFindPackages >> defaultIcons [
+
+	| projectNamesProperty packageEntryProperty |
+	projectNamesProperty := self
+		                        stringArraySchemaNamed: 'projectNames'
+		                        description:
+		                        'The project names that define the project scope. Required when scope=project.'
+		                        itemDescription: 'A project name.'.
+	packageEntryProperty := self
+		                        schemaPropertyNamed: 'packages'
+		                        type: 'array'
+		                        description:
+		                        'The package entries returned for the requested page.'.
+	packageEntryProperty items: self packageEntrySchema.
+	^ { (self
+		          pngCompositeBaseIconNamed: #package
+		          badgeIconNamed: #zoomIn) }
+]
+
+{ #category : 'defaults' }
+MCPToolFindPackages >> defaultInputSchema [
+
+	| scopeProperty projectNamesProperty filterModeProperty |
+	scopeProperty := MCPStructureProperties new
+		                 name: 'scope';
+		                 type: 'string';
+		                 description:
+			                 'Where to search for packages. Defaults to image.';
+		                 enum: #( 'image' 'project' );
+		                 yourself.
+	projectNamesProperty := self
+		                        stringArraySchemaNamed: 'projectNames'
+		                        description:
+		                        'The project names that define the project scope. Required when scope=project.'
+		                        itemDescription: 'A project name.'.
+	filterModeProperty := MCPStructureProperties new
+		                      name: 'filterMode';
+		                      type: 'string';
+		                      description:
+			                      'How the package filter is matched. Defaults to substring.';
+		                      enum:
+			                      #( 'substring' 'prefix' 'exact' 'regex' );
+		                      yourself.
+	^ MCPStructureInputSchema new
+		               type: 'object';
+		               properties: {
+				               scopeProperty.
+				               projectNamesProperty.
+				               (MCPStructureProperties new
+					                name: 'filter';
+					                type: 'string';
+					                description:
+						                'Optional filter applied to package metadata such as names, projects, tags, and package metrics.';
+					                yourself).
+				               filterModeProperty.
+				               (MCPStructureProperties new
+					                name: 'caseSensitive';
+					                type: 'boolean';
+					                description:
+						                'Whether filter matching is case-sensitive. Defaults to false.';
+					                yourself).
+				               (MCPStructureProperties new
+					                name: 'limit';
+					                type: 'integer';
+					                description:
+						                'Maximum number of matching packages to return. Defaults to 100. Use 0 to request counts only.';
+					                yourself).
+				               (MCPStructureProperties new
+					                name: 'offset';
+					                type: 'integer';
+					                description:
+						                'Zero-based pagination offset applied after filtering. Defaults to 0.';
+					                yourself) };
+		               required: #(  );
+		               yourself
+]
+
+{ #category : 'defaults' }
+MCPToolFindPackages >> defaultName [
+
+	^ 'find-packages'
+]
+
+{ #category : 'defaults' }
+MCPToolFindPackages >> defaultOutputSchema [
+
+	| projectNamesProperty packageEntryProperty |
+	projectNamesProperty := self
+		                        stringArraySchemaNamed: 'projectNames'
+		                        description:
+		                        'The project names that define the project scope. Required when scope=project.'
+		                        itemDescription: 'A project name.'.
+	packageEntryProperty := self
+		                        schemaPropertyNamed: 'packages'
+		                        type: 'array'
+		                        description:
+		                        'The package entries returned for the requested page.'.
+	packageEntryProperty items: self packageEntrySchema.
+	^ self
+		                standardOutputSchemaForDataProperties: {
+				                ((self
+					                  schemaPropertyNamed: 'scope'
+					                  type: 'string'
+					                  description:
+						                  'The scope used to search for packages.')
+					                 enum: #( 'image' 'project' );
+					                 yourself).
+				                projectNamesProperty.
+				                (self
+					                 integerSchemaPropertyNamed: 'returnedCount'
+					                 description:
+					                 'The number of package entries returned in this page.').
+				                (self
+					                 integerSchemaPropertyNamed: 'totalCount'
+					                 description:
+					                 'The total number of matching packages before pagination.').
+				                (self
+					                 integerSchemaPropertyNamed: 'offset'
+					                 description:
+					                 'The zero-based pagination offset that was applied.').
+				                (self
+					                 integerSchemaPropertyNamed: 'limit'
+					                 description:
+					                 'The maximum number of package entries requested.').
+				                (self
+					                 schemaPropertyNamed: 'truncated'
+					                 type: 'boolean'
+					                 description:
+					                 'Whether additional matching packages exist beyond the returned page.').
+				                packageEntryProperty }
+		                required:
+			                #( 'scope' 'projectNames' 'returnedCount'
+			                   'totalCount' 'offset' 'limit' 'truncated'
+			                   'packages' )
+]
+
 { #category : 'private - arguments' }
 MCPToolFindPackages >> defaultScopeFromArguments: arguments [
 
 	(self stringArgumentNamed: 'scope' in: arguments) ifNotNil: [ :scope |
 		^ scope asLowercase ].
 	^ 'image'
+]
+
+{ #category : 'defaults' }
+MCPToolFindPackages >> defaultTitle [
+
+	^ 'Find Pharo Packages'
 ]
 
 { #category : 'private - results' }
@@ -130,113 +279,6 @@ MCPToolFindPackages >> filterTextForPackageEntry: anEntry [
 			  stream
 				  space;
 				  nextPutAll: each ] ]
-]
-
-{ #category : 'initialization' }
-MCPToolFindPackages >> initialize [
-
-	| filterModeProperty packageEntryProperty projectNamesProperty scopeProperty |
-	super initialize.
-	name := 'find-packages'.
-	title := 'Find Pharo Packages'.
-	description := 'List packages in the image or in a project and optionally filter them by package metadata.'.
-	scopeProperty := MCPStructureProperties new
-		                 name: 'scope';
-		                 type: 'string';
-		                 description:
-			                 'Where to search for packages. Defaults to image.';
-		                 enum: #( 'image' 'project' );
-		                 yourself.
-	projectNamesProperty := self
-		                        stringArraySchemaNamed: 'projectNames'
-		                        description:
-		                        'The project names that define the project scope. Required when scope=project.'
-		                        itemDescription: 'A project name.'.
-	filterModeProperty := MCPStructureProperties new
-		                      name: 'filterMode';
-		                      type: 'string';
-		                      description:
-			                      'How the package filter is matched. Defaults to substring.';
-		                      enum:
-			                      #( 'substring' 'prefix' 'exact' 'regex' );
-		                      yourself.
-	inputSchema := MCPStructureInputSchema new
-		               type: 'object';
-		               properties: {
-				               scopeProperty.
-				               projectNamesProperty.
-				               (MCPStructureProperties new
-					                name: 'filter';
-					                type: 'string';
-					                description:
-						                'Optional filter applied to package metadata such as names, projects, tags, and package metrics.';
-					                yourself).
-				               filterModeProperty.
-				               (MCPStructureProperties new
-					                name: 'caseSensitive';
-					                type: 'boolean';
-					                description:
-						                'Whether filter matching is case-sensitive. Defaults to false.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'limit';
-					                type: 'integer';
-					                description:
-						                'Maximum number of matching packages to return. Defaults to 100. Use 0 to request counts only.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'offset';
-					                type: 'integer';
-					                description:
-						                'Zero-based pagination offset applied after filtering. Defaults to 0.';
-					                yourself) };
-		               required: #(  );
-		               yourself.
-	packageEntryProperty := self
-		                        schemaPropertyNamed: 'packages'
-		                        type: 'array'
-		                        description:
-		                        'The package entries returned for the requested page.'.
-	packageEntryProperty items: self packageEntrySchema.
-	outputSchema := self
-		                standardOutputSchemaForDataProperties: {
-				                ((self
-					                  schemaPropertyNamed: 'scope'
-					                  type: 'string'
-					                  description:
-						                  'The scope used to search for packages.')
-					                 enum: #( 'image' 'project' );
-					                 yourself).
-				                projectNamesProperty.
-				                (self
-					                 integerSchemaPropertyNamed: 'returnedCount'
-					                 description:
-					                 'The number of package entries returned in this page.').
-				                (self
-					                 integerSchemaPropertyNamed: 'totalCount'
-					                 description:
-					                 'The total number of matching packages before pagination.').
-				                (self
-					                 integerSchemaPropertyNamed: 'offset'
-					                 description:
-					                 'The zero-based pagination offset that was applied.').
-				                (self
-					                 integerSchemaPropertyNamed: 'limit'
-					                 description:
-					                 'The maximum number of package entries requested.').
-				                (self
-					                 schemaPropertyNamed: 'truncated'
-					                 type: 'boolean'
-					                 description:
-					                 'Whether additional matching packages exist beyond the returned page.').
-				                packageEntryProperty }
-		                required:
-			                #( 'scope' 'projectNames' 'returnedCount'
-			                   'totalCount' 'offset' 'limit' 'truncated'
-			                   'packages' ).
-	icons := { (self
-		          pngCompositeBaseIconNamed: #package
-		          badgeIconNamed: #zoomIn) }
 ]
 
 { #category : 'private - filtering' }

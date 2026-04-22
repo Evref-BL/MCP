@@ -6,6 +6,65 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'defaults' }
+MCPToolEval >> defaultDescription [
+
+	^ 'Evaluate arbitrary Smalltalk code and return a bounded preview of the result. Use this escape hatch only when a dedicated tool does not fit; it may mutate image state.'
+]
+
+{ #category : 'defaults' }
+MCPToolEval >> defaultIcons [
+
+	^ { (self pngIconNamed: #scriptManager) }
+]
+
+{ #category : 'defaults' }
+MCPToolEval >> defaultInputSchema [
+
+	^ MCPStructureInputSchema new
+		               type: 'object';
+		               properties: { (MCPStructureProperties new
+				                name: 'code';
+				                type: 'string';
+				                description:
+					                'The Smalltalk code to execute in the running Pharo image.';
+				                yourself) };
+		               required: #( 'code' );
+		               yourself
+]
+
+{ #category : 'defaults' }
+MCPToolEval >> defaultName [
+
+	^ 'evaluate'
+]
+
+{ #category : 'defaults' }
+MCPToolEval >> defaultOutputSchema [
+
+	^ self
+		                standardOutputSchemaForDataProperties: {
+				                (self
+					                 schemaPropertyNamed: 'resultClassName'
+					                 type: 'string'
+					                 description:
+					                 'The name of the evaluated result''s class.').
+				                (self
+					                 schemaPropertyNamed: 'resultPrintString'
+					                 type: 'string'
+					                 description:
+						                 'A printString preview of the evaluated result, limited to '
+						                 , self resultPreviewCharacterLimit printString
+						                 , ' characters.') }
+		                required: #( 'resultClassName' 'resultPrintString' )
+]
+
+{ #category : 'defaults' }
+MCPToolEval >> defaultTitle [
+
+	^ 'Evaluate Pharo Code'
+]
+
 { #category : 'executing' }
 MCPToolEval >> executeWithArguments: arguments [
 
@@ -43,41 +102,6 @@ MCPToolEval >> executeWithArguments: arguments [
 			   ->
 			   (answer printStringLimitedTo: self resultPreviewCharacterLimit)) }
 			  asDictionary
-]
-
-{ #category : 'initialization' }
-MCPToolEval >> initialize [
-
-	super initialize.
-	name := 'evaluate'.
-	title := 'Evaluate Pharo Code'.
-	description := 'Evaluate arbitrary Smalltalk code and return a bounded preview of the result. Use this escape hatch only when a dedicated tool does not fit; it may mutate image state.'.
-	inputSchema := MCPStructureInputSchema new
-		               type: 'object';
-		               properties: { (MCPStructureProperties new
-				                name: 'code';
-				                type: 'string';
-				                description:
-					                'The Smalltalk code to execute in the running Pharo image.';
-				                yourself) };
-		               required: #( 'code' );
-		               yourself.
-	outputSchema := self
-		                standardOutputSchemaForDataProperties: {
-				                (self
-					                 schemaPropertyNamed: 'resultClassName'
-					                 type: 'string'
-					                 description:
-					                 'The name of the evaluated result''s class.').
-				                (self
-					                 schemaPropertyNamed: 'resultPrintString'
-					                 type: 'string'
-					                 description:
-						                 'A printString preview of the evaluated result, limited to '
-						                 , self resultPreviewCharacterLimit printString
-						                 , ' characters.') }
-		                required: #( 'resultClassName' 'resultPrintString' ).
-	icons := { (self pngIconNamed: #scriptManager) }
 ]
 
 { #category : 'private' }

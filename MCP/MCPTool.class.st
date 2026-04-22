@@ -119,6 +119,48 @@ MCPTool >> compiledMethodScopeQueryFromArguments: arguments [
 		  side: (self stringArgumentNamed: 'side' in: arguments)
 ]
 
+{ #category : 'defaults' }
+MCPTool >> defaultDescription [
+
+	self subclassResponsibility
+]
+
+{ #category : 'defaults' }
+MCPTool >> defaultHandler [
+
+	^ [ :arguments |  ]
+]
+
+{ #category : 'defaults' }
+MCPTool >> defaultIcons [
+
+	self subclassResponsibility
+]
+
+{ #category : 'defaults' }
+MCPTool >> defaultInputSchema [
+
+	self subclassResponsibility
+]
+
+{ #category : 'defaults' }
+MCPTool >> defaultName [
+
+	self subclassResponsibility
+]
+
+{ #category : 'defaults' }
+MCPTool >> defaultOutputSchema [
+
+	self subclassResponsibility
+]
+
+{ #category : 'defaults' }
+MCPTool >> defaultTitle [
+
+	self subclassResponsibility
+]
+
 { #category : 'accessing' }
 MCPTool >> description [
 
@@ -285,7 +327,13 @@ MCPTool >> icons: anObject [
 MCPTool >> initialize [
 
 	super initialize.
-	handler := [ :args |  ]
+	name := self defaultName.
+	title := self defaultTitle.
+	description := self defaultDescription.
+	handler := self defaultHandler.
+	inputSchema := self defaultInputSchema.
+	outputSchema := self defaultOutputSchema.
+	icons := self defaultIcons
 ]
 
 { #category : 'accessing' }
