@@ -115,39 +115,42 @@ MCPToolDescribeClass >> defaultInputSchema [
 		                               type: 'boolean';
 		                               description:
 			                               'Whether to include superclass descriptions. Defaults to false.';
+		                               default: false;
 		                               yourself.
 	includeCommentProperty := MCPStructureProperties new
 		                          name: 'includeComment';
 		                          type: 'boolean';
 		                          description:
 			                          'Whether to include the class comment in returned class descriptions. Defaults to false.';
+		                          default: false;
 		                          yourself.
 	upToSuperclassNameProperty := MCPStructureProperties new
 		                              name: 'upToSuperclassName';
 		                              type: 'string';
 		                              description:
-			                              'An optional superclass name that stops the included superclass chain at a specific ancestor. If the named class is not actually an ancestor, the chain continues to the root.';
+			                              'An optional superclass name that stops the included superclass chain at a specific ancestor. When omitted, only the requested class is described unless includeSuperclasses=true.';
 		                              yourself.
 	subclassDepthProperty := MCPStructureProperties new
 		                         name: 'subclassDepth';
 		                         type: 'integer';
 		                         description:
 			                         'How many subclass levels to include. Uses 0 by default, 1 for direct subclasses, 2 for grandchildren too, and so on.';
+		                         default: 0;
 		                         yourself.
 	^ MCPStructureInputSchema new
-		               type: 'object';
-		               properties: {
-				               (MCPStructureProperties new
-					                name: 'className';
-					                type: 'string';
-					                description: 'The class to describe.';
-					                yourself).
-				               includeSuperclassesProperty.
-				               includeCommentProperty.
-				               upToSuperclassNameProperty.
-				               subclassDepthProperty };
-		               required: #( 'className' );
-		               yourself
+		  type: 'object';
+		  properties: {
+				  (MCPStructureProperties new
+					   name: 'className';
+					   type: 'string';
+					   description: 'The class to describe.';
+					   yourself).
+				  includeSuperclassesProperty.
+				  includeCommentProperty.
+				  upToSuperclassNameProperty.
+				  subclassDepthProperty };
+		  required: #( 'className' );
+		  yourself
 ]
 
 { #category : 'defaults' }

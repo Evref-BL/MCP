@@ -18,6 +18,13 @@ MCPToolContractsTest >> handleJSON: aJSONString [
 	^ MCP new server messageProcessor handleJSON: aJSONString
 ]
 
+{ #category : 'private' }
+MCPToolContractsTest >> inputPropertyNamed: aPropertyName inTool: aTool [
+
+	^ aTool inputSchema properties detect: [ :each |
+		  each name = aPropertyName ]
+]
+
 { #category : 'tests' }
 MCPToolContractsTest >> testAllToolOutputSchemasAdvertiseStructuredSummaryWarningsAndStatus [
 
@@ -118,7 +125,7 @@ MCPToolContractsTest >> testEditMethodHasAccurateNameAndRequiredArguments [
 	self assert: MCPToolEditMethod new name equals: 'edit-method'.
 	self
 		assert: MCPToolEditMethod new inputSchema required asSet
-		equals: #( 'operation' 'className' 'classSide' ) asSet
+		equals: #( 'operation' 'className' ) asSet
 ]
 
 { #category : 'tests' }
@@ -387,6 +394,91 @@ MCPToolContractsTest >> testInitializeAdvertisesPharoServerIcon [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable [
+
+	| describeClassTool describeMethodTool editMethodTool findClassesTool findMethodsTool findPackagesTool implementorsTool referencesTool removeClassesTool removeMethodsTool |
+	describeClassTool := MCPToolDescribeClass new.
+	describeMethodTool := MCPToolDescribeMethod new.
+	editMethodTool := MCPToolEditMethod new.
+	findClassesTool := MCPToolFindClasses new.
+	findMethodsTool := MCPToolFindMethods new.
+	findPackagesTool := MCPToolFindPackages new.
+	implementorsTool := MCPToolImplementors new.
+	referencesTool := MCPToolReferences new.
+	removeClassesTool := MCPToolRemoveClasses new.
+	removeMethodsTool := MCPToolRemoveMethods new.
+	self
+		assert: ((self
+				  inputPropertyNamed: 'includeSuperclasses'
+				  inTool: describeClassTool) extraProperties at: #default)
+		equals: false.
+	self
+		assert:
+			((self
+				  inputPropertyNamed: 'includeComment'
+				  inTool: describeClassTool) extraProperties at: #default)
+		equals: false.
+	self
+		assert:
+			((self
+				  inputPropertyNamed: 'subclassDepth'
+				  inTool: describeClassTool) extraProperties at: #default)
+		equals: 0.
+	self
+		assert:
+			((self inputPropertyNamed: 'side' inTool: describeMethodTool)
+				 extraProperties at: #default)
+		equals: 'instance'.
+	self
+		assert:
+			((self inputPropertyNamed: 'classSide' inTool: editMethodTool)
+				 extraProperties at: #default)
+		equals: false.
+	self
+		assert: ((self inputPropertyNamed: 'scope' inTool: findClassesTool)
+				 extraProperties at: #default)
+		equals: 'image'.
+	self
+		assert: ((self inputPropertyNamed: 'limit' inTool: findClassesTool)
+				 extraProperties at: #default)
+		equals: 100.
+	self
+		assert:
+			((self inputPropertyNamed: 'filterTargets' inTool: findMethodsTool)
+				 extraProperties at: #default)
+		equals: #( 'selector' ).
+	self
+		assert:
+			((self inputPropertyNamed: 'includeSource' inTool: findMethodsTool)
+				 extraProperties at: #default)
+		equals: false.
+	self
+		assert:
+			((self inputPropertyNamed: 'scope' inTool: findPackagesTool)
+				 extraProperties at: #default)
+		equals: 'image'.
+	self
+		assert: ((self inputPropertyNamed: 'side' inTool: implementorsTool)
+				 extraProperties at: #default)
+		equals: 'both'.
+	self
+		assert:
+			((self inputPropertyNamed: 'includeSource' inTool: referencesTool)
+				 extraProperties at: #default)
+		equals: false.
+	self
+		assert:
+			((self inputPropertyNamed: 'force' inTool: removeClassesTool)
+				 extraProperties at: #default)
+		equals: false.
+	self
+		assert:
+			((self inputPropertyNamed: 'classSide' inTool: removeMethodsTool)
+				 extraProperties at: #default)
+		equals: false
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testRemoveClassHasAccurateNameAndRequiredArguments [
 
 	self
@@ -400,12 +492,10 @@ MCPToolContractsTest >> testRemoveClassHasAccurateNameAndRequiredArguments [
 { #category : 'tests' }
 MCPToolContractsTest >> testRemoveMethodsHasAccurateNameAndRequiredArguments [
 
-	self
-		assert: MCPToolRemoveMethods new name
-		equals: 'remove-methods'.
+	self assert: MCPToolRemoveMethods new name equals: 'remove-methods'.
 	self
 		assert: MCPToolRemoveMethods new inputSchema required asSet
-		equals: #( 'className' 'classSide' 'selectors' ) asSet
+		equals: #( 'className' 'selectors' ) asSet
 ]
 
 { #category : 'tests' }

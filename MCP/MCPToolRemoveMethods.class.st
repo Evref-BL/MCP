@@ -37,32 +37,32 @@ MCPToolRemoveMethods >> defaultIcons [
 MCPToolRemoveMethods >> defaultInputSchema [
 
 	^ MCPStructureInputSchema new
-		               type: 'object';
-		               properties: {
-				               (MCPStructureProperties new
-					                name: 'className';
-					                type: 'string';
-					                description:
-						                'The class from which methods will be removed.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'classSide';
-					                type: 'boolean';
-					                description:
-						                'Whether to remove methods from the class side.';
-					                yourself).
-				               ((MCPStructureProperties new
-					                 name: 'selectors';
-					                 type: 'array';
-					                 description:
-						                 'The selectors to remove as a single force-removal batch.')
-					                items: (MCPStructureProperties new
-							                 type: 'string';
-							                 description: 'A selector to remove.';
-							                 yourself);
-					                yourself) };
-		               required: #( 'className' 'classSide' 'selectors' );
-		               yourself
+		  type: 'object';
+		  properties: {
+				  (MCPStructureProperties new
+					   name: 'className';
+					   type: 'string';
+					   description: 'The class from which methods will be removed.';
+					   yourself).
+				  (MCPStructureProperties new
+					   name: 'classSide';
+					   type: 'boolean';
+					   description:
+						   'Whether to remove methods from the class side. Defaults to false.';
+					   default: false;
+					   yourself).
+				  ((MCPStructureProperties new
+					    name: 'selectors';
+					    type: 'array';
+					    description:
+						    'The selectors to remove as a single force-removal batch.')
+					   items: (MCPStructureProperties new
+							    type: 'string';
+							    description: 'A selector to remove.';
+							    yourself);
+					   yourself) };
+		  required: #( 'className' 'selectors' );
+		  yourself
 ]
 
 { #category : 'defaults' }
@@ -171,7 +171,10 @@ MCPToolRemoveMethods >> executeWithArguments: arguments [
 
 	| behavior className classSide removedMethods selectors selectorSymbols warningMessage |
 	className := arguments at: #className.
-	classSide := arguments at: #classSide.
+	classSide := self
+		             booleanArgumentNamed: 'classSide'
+		             in: arguments
+		             default: false.
 	selectors := self selectorsFromArguments: arguments.
 	selectorSymbols := selectors collect: #asSymbol.
 	warningMessage := 'This bypasses sender checks and may leave broken senders.'.

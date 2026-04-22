@@ -44,26 +44,26 @@ MCPToolRemoveClasses >> defaultIcons [
 MCPToolRemoveClasses >> defaultInputSchema [
 
 	^ MCPStructureInputSchema new
-		               type: 'object';
-		               properties: {
-				               ((MCPStructureProperties new
-					                 name: 'classNames';
-					                 type: 'array';
-					                 description:
-						                 'The class names to remove as a single batch.')
-					                items: (MCPStructureProperties new
-							                 type: 'string';
-							                 description: 'A class name to remove.';
-							                 yourself);
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'force';
-					                type: 'boolean';
-					                description:
-						                'When true, proceed even if safe-removal warnings are raised. Those warnings are returned in the tool result warnings.';
-					                yourself) };
-		               required: #( 'classNames' );
-		               yourself
+		  type: 'object';
+		  properties: {
+				  ((MCPStructureProperties new
+					    name: 'classNames';
+					    type: 'array';
+					    description: 'The class names to remove as a single batch.')
+					   items: (MCPStructureProperties new
+							    type: 'string';
+							    description: 'A class name to remove.';
+							    yourself);
+					   yourself).
+				  (MCPStructureProperties new
+					   name: 'force';
+					   type: 'boolean';
+					   description:
+						   'When true, proceed even if safe-removal warnings are raised. Those warnings are returned in the tool result warnings. Defaults to false.';
+					   default: false;
+					   yourself) };
+		  required: #( 'classNames' );
+		  yourself
 ]
 
 { #category : 'defaults' }

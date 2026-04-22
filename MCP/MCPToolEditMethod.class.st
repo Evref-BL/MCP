@@ -71,63 +71,63 @@ MCPToolEditMethod >> defaultIcons [
 MCPToolEditMethod >> defaultInputSchema [
 
 	^ MCPStructureInputSchema new
-		               type: 'object';
-		               properties: {
-				               (MCPStructureProperties new
-					                name: 'operation';
-					                type: 'string';
-					                description:
-						                'The edit operation to perform. Supported canonical values are compile, rename, and changeProtocol.';
-					                enum: #( 'compile' 'rename' 'changeProtocol' );
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'className';
-					                type: 'string';
-					                description:
-						                'The class whose method will be edited.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'classSide';
-					                type: 'boolean';
-					                description:
-						                'Whether the target method is on the class side.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'selector';
-					                type: 'string';
-					                description:
-						                'The existing selector to rename or changeProtocol. Not used for compile.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'methodSource';
-					                type: 'string';
-					                description:
-						                'The full method source to compile when operation=compile.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'protocol';
-					                type: 'string';
-					                description:
-						                'The target protocol for operation=compile or changeProtocol. For extension methods, use an extension protocol such as *Package-Name.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'newSelector';
-					                type: 'string';
-					                description:
-						                'The new selector to install when operation=rename.';
-					                yourself).
-				               ((MCPStructureProperties new
-					                 name: 'permutation';
-					                 type: 'array';
-					                 description:
-						                 'Optional 1-based argument permutation for operation=rename. Defaults to the identity permutation.')
-					                items: (MCPStructureProperties new
-							                 type: 'integer';
-							                 description: 'A 1-based argument index.';
-							                 yourself);
-					                yourself) };
-		               required: #( 'operation' 'className' 'classSide' );
-		               yourself
+		  type: 'object';
+		  properties: {
+				  (MCPStructureProperties new
+					   name: 'operation';
+					   type: 'string';
+					   description:
+						   'The edit operation to perform. Supported canonical values are compile, rename, and changeProtocol.';
+					   enum: #( 'compile' 'rename' 'changeProtocol' );
+					   yourself).
+				  (MCPStructureProperties new
+					   name: 'className';
+					   type: 'string';
+					   description: 'The class whose method will be edited.';
+					   yourself).
+				  (MCPStructureProperties new
+					   name: 'classSide';
+					   type: 'boolean';
+					   description:
+						   'Whether the target method is on the class side. Defaults to false.';
+					   default: false;
+					   yourself).
+				  (MCPStructureProperties new
+					   name: 'selector';
+					   type: 'string';
+					   description:
+						   'The existing selector to rename or changeProtocol. Not used for compile.';
+					   yourself).
+				  (MCPStructureProperties new
+					   name: 'methodSource';
+					   type: 'string';
+					   description:
+						   'The full method source to compile when operation=compile.';
+					   yourself).
+				  (MCPStructureProperties new
+					   name: 'protocol';
+					   type: 'string';
+					   description:
+						   'The target protocol for operation=compile or changeProtocol. For extension methods, use an extension protocol such as *Package-Name.';
+					   yourself).
+				  (MCPStructureProperties new
+					   name: 'newSelector';
+					   type: 'string';
+					   description:
+						   'The new selector to install when operation=rename.';
+					   yourself).
+				  ((MCPStructureProperties new
+					    name: 'permutation';
+					    type: 'array';
+					    description:
+						    'Optional 1-based argument permutation for operation=rename. Defaults to the identity permutation.')
+					   items: (MCPStructureProperties new
+							    type: 'integer';
+							    description: 'A 1-based argument index.';
+							    yourself);
+					   yourself) };
+		  required: #( 'operation' 'className' );
+		  yourself
 ]
 
 { #category : 'defaults' }

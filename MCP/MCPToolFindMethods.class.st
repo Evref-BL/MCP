@@ -92,6 +92,7 @@ MCPToolFindMethods >> defaultInputSchema [
 		                 description:
 			                 'Where to search for methods. Defaults to image.';
 		                 enum: #( 'image' 'packages' 'hierarchy' 'classes' );
+		                 default: 'image';
 		                 yourself.
 	sideProperty := MCPStructureProperties new
 		                name: 'side';
@@ -99,6 +100,7 @@ MCPToolFindMethods >> defaultInputSchema [
 		                description:
 			                'Which method side to search. Defaults to both.';
 		                enum: #( 'instance' 'class' 'both' );
+		                default: 'both';
 		                yourself.
 	packageNamesProperty := self
 		                        stringArraySchemaNamed: 'packageNames'
@@ -117,6 +119,7 @@ MCPToolFindMethods >> defaultInputSchema [
 			                      'How the filter is matched. Defaults to substring.';
 		                      enum:
 			                      #( 'substring' 'prefix' 'exact' 'regex' );
+		                      default: 'substring';
 		                      yourself.
 	filterTargetsItemProperty := MCPStructureProperties new
 		                             type: 'string';
@@ -129,48 +132,53 @@ MCPToolFindMethods >> defaultInputSchema [
 		                          description:
 			                          'Optional method-entry fields matched by filter. Defaults to selector. This filters the listed methods; it does not perform reference lookup.')
 		                         items: filterTargetsItemProperty;
+		                         default: #( 'selector' );
 		                         yourself.
 	^ MCPStructureInputSchema new
-		               type: 'object';
-		               properties: {
-				               scopeProperty.
-				               sideProperty.
-				               packageNamesProperty.
-				               classNamesProperty.
-				               (MCPStructureProperties new
-					                name: 'filter';
-					                type: 'string';
-					                description:
-						                'Optional filter applied to the methods found in scope. Use filterTargets to choose which fields are matched.';
-					                yourself).
-				               filterTargetsProperty.
-				               filterModeProperty.
-				               (MCPStructureProperties new
-					                name: 'caseSensitive';
-					                type: 'boolean';
-					                description:
-						                'Whether filter matching is case-sensitive. Defaults to false.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'includeSource';
-					                type: 'boolean';
-					                description:
-						                'Whether to include method source code in each result entry. Defaults to false.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'limit';
-					                type: 'integer';
-					                description:
-						                'Maximum number of matching methods to return. Defaults to 100. Use 0 to request counts only.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'offset';
-					                type: 'integer';
-					                description:
-						                'Zero-based pagination offset applied after filtering. Defaults to 0.';
-					                yourself) };
-		               required: #(  );
-		               yourself
+		  type: 'object';
+		  properties: {
+				  scopeProperty.
+				  sideProperty.
+				  packageNamesProperty.
+				  classNamesProperty.
+				  (MCPStructureProperties new
+					   name: 'filter';
+					   type: 'string';
+					   description:
+						   'Optional filter applied to the methods found in scope. Use filterTargets to choose which fields are matched.';
+					   yourself).
+				  filterTargetsProperty.
+				  filterModeProperty.
+				  (MCPStructureProperties new
+					   name: 'caseSensitive';
+					   type: 'boolean';
+					   description:
+						   'Whether filter matching is case-sensitive. Defaults to false.';
+					   default: false;
+					   yourself).
+				  (MCPStructureProperties new
+					   name: 'includeSource';
+					   type: 'boolean';
+					   description:
+						   'Whether to include method source code in each result entry. Defaults to false.';
+					   default: false;
+					   yourself).
+				  (MCPStructureProperties new
+					   name: 'limit';
+					   type: 'integer';
+					   description:
+						   'Maximum number of matching methods to return. Defaults to 100. Use 0 to request counts only.';
+					   default: 100;
+					   yourself).
+				  (MCPStructureProperties new
+					   name: 'offset';
+					   type: 'integer';
+					   description:
+						   'Zero-based pagination offset applied after filtering. Defaults to 0.';
+					   default: 0;
+					   yourself) };
+		  required: #(  );
+		  yourself
 ]
 
 { #category : 'defaults' }

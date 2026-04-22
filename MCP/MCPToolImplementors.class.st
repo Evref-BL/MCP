@@ -47,6 +47,7 @@ MCPToolImplementors >> defaultInputSchema [
 		                 description:
 			                 'Where to search for implementors. Defaults to image.';
 		                 enum: #( 'image' 'packages' 'hierarchy' 'classes' );
+		                 default: 'image';
 		                 yourself.
 	sideProperty := MCPStructureProperties new
 		                name: 'side';
@@ -54,6 +55,7 @@ MCPToolImplementors >> defaultInputSchema [
 		                description:
 			                'Which method side to search. Defaults to both.';
 		                enum: #( 'instance' 'class' 'both' );
+		                default: 'both';
 		                yourself.
 	packageNamesProperty := self
 		                        stringArraySchemaNamed: 'packageNames'
@@ -66,57 +68,62 @@ MCPToolImplementors >> defaultInputSchema [
 		                      'The class names that define the classes or hierarchy scope. Required when scope=classes or scope=hierarchy.'
 		                      itemDescription: 'A class name.'.
 	^ MCPStructureInputSchema new
-		               type: 'object';
-		               properties: {
-				               (MCPStructureProperties new
-					                name: 'selector';
-					                type: 'string';
-					                description:
-						                'The selector whose implementors should be found.';
-					                yourself).
-				               scopeProperty.
-				               sideProperty.
-				               packageNamesProperty.
-				               classNamesProperty.
-				               (MCPStructureProperties new
-					                name: 'filter';
-					                type: 'string';
-					                description:
-						                'Optional filter applied to implementor methods after selector matching.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'filterMode';
-					                type: 'string';
-					                description:
-						                'How the filter is matched. Defaults to substring.';
-					                enum: #( 'substring' 'prefix' 'exact' 'regex' );
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'caseSensitive';
-					                type: 'boolean';
-					                description:
-						                'Whether filter matching is case-sensitive. Defaults to false.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'includeSource';
-					                type: 'boolean';
-					                description:
-						                'Whether to include implementor source code in each result entry. Defaults to false.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'limit';
-					                type: 'integer';
-					                description:
-						                'Maximum number of matching implementors to return. Defaults to 100. Use 0 to request counts only.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'offset';
-					                type: 'integer';
-					                description:
-						                'Zero-based pagination offset applied after filtering. Defaults to 0.';
-					                yourself) };
-		               required: #( 'selector' );
-		               yourself
+		  type: 'object';
+		  properties: {
+				  (MCPStructureProperties new
+					   name: 'selector';
+					   type: 'string';
+					   description:
+						   'The selector whose implementors should be found.';
+					   yourself).
+				  scopeProperty.
+				  sideProperty.
+				  packageNamesProperty.
+				  classNamesProperty.
+				  (MCPStructureProperties new
+					   name: 'filter';
+					   type: 'string';
+					   description:
+						   'Optional filter applied to implementor methods after selector matching.';
+					   yourself).
+				  (MCPStructureProperties new
+					   name: 'filterMode';
+					   type: 'string';
+					   description:
+						   'How the filter is matched. Defaults to substring.';
+					   enum: #( 'substring' 'prefix' 'exact' 'regex' );
+					   default: 'substring';
+					   yourself).
+				  (MCPStructureProperties new
+					   name: 'caseSensitive';
+					   type: 'boolean';
+					   description:
+						   'Whether filter matching is case-sensitive. Defaults to false.';
+					   default: false;
+					   yourself).
+				  (MCPStructureProperties new
+					   name: 'includeSource';
+					   type: 'boolean';
+					   description:
+						   'Whether to include implementor source code in each result entry. Defaults to false.';
+					   default: false;
+					   yourself).
+				  (MCPStructureProperties new
+					   name: 'limit';
+					   type: 'integer';
+					   description:
+						   'Maximum number of matching implementors to return. Defaults to 100. Use 0 to request counts only.';
+					   default: 100;
+					   yourself).
+				  (MCPStructureProperties new
+					   name: 'offset';
+					   type: 'integer';
+					   description:
+						   'Zero-based pagination offset applied after filtering. Defaults to 0.';
+					   default: 0;
+					   yourself) };
+		  required: #( 'selector' );
+		  yourself
 ]
 
 { #category : 'defaults' }

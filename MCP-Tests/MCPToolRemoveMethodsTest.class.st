@@ -216,6 +216,23 @@ MCPToolRemoveMethodsTest >> tearDown [
 ]
 
 { #category : 'tests' }
+MCPToolRemoveMethodsTest >> testDefaultsToRemovingInstanceSideMethodsWhenClassSideIsOmitted [
+
+	| data result |
+	result := self callToolWith: {
+			          (#className -> 'MCPToolRemoveMethodsTestTarget').
+			          (#selectors -> self instanceBatchSelectors) }
+			          asDictionary.
+	data := self dataFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self deny: (MCPToolRemoveMethodsTestTarget includesSelector:
+			 self firstInstanceBatchSelector).
+	self deny: (MCPToolRemoveMethodsTestTarget includesSelector:
+			 self secondInstanceBatchSelector).
+	self assert: (data at: #classSide) equals: false
+]
+
+{ #category : 'tests' }
 MCPToolRemoveMethodsTest >> testForceRemovesMethodsEvenWhenExternalSendersExistAndWarns [
 
 	| data result structured text warnings |
@@ -328,9 +345,15 @@ MCPToolRemoveMethodsTest >> testReturnsStructuredErrorWhenAnyMethodIsMissing [
 { #category : 'tests' }
 MCPToolRemoveMethodsTest >> testToolRequiresSelectorsInSchema [
 
+	| classSideProperty |
+	classSideProperty := MCPToolRemoveMethods new inputSchema properties
+		                     detect: [ :each | each name = 'classSide' ].
 	self
 		assert: MCPToolRemoveMethods new inputSchema required asSet
-		equals: #( 'className' 'classSide' 'selectors' ) asSet
+		equals: #( 'className' 'selectors' ) asSet.
+	self
+		assert: (classSideProperty extraProperties at: #default)
+		equals: false
 ]
 
 { #category : 'private - calling' }

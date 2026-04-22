@@ -52,24 +52,24 @@ MCPToolDescribeMethod >> defaultInputSchema [
 		                description:
 			                'Which side of the class defines the method. Defaults to instance.';
 		                enum: #( 'instance' 'class' );
+		                default: 'instance';
 		                yourself.
 	^ MCPStructureInputSchema new
-		               type: 'object';
-		               properties: {
-				               (MCPStructureProperties new
-					                name: 'className';
-					                type: 'string';
-					                description: 'The class that defines the method.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'selector';
-					                type: 'string';
-					                description:
-						                'The selector of the method to describe.';
-					                yourself).
-				               sideProperty };
-		               required: #( 'className' 'selector' );
-		               yourself
+		  type: 'object';
+		  properties: {
+				  (MCPStructureProperties new
+					   name: 'className';
+					   type: 'string';
+					   description: 'The class that defines the method.';
+					   yourself).
+				  (MCPStructureProperties new
+					   name: 'selector';
+					   type: 'string';
+					   description: 'The selector of the method to describe.';
+					   yourself).
+				  sideProperty };
+		  required: #( 'className' 'selector' );
+		  yourself
 ]
 
 { #category : 'defaults' }

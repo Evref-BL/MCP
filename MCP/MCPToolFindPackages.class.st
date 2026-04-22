@@ -42,6 +42,7 @@ MCPToolFindPackages >> defaultInputSchema [
 		                 description:
 			                 'Where to search for packages. Defaults to image.';
 		                 enum: #( 'image' 'project' );
+		                 default: 'image';
 		                 yourself.
 	projectNamesProperty := self
 		                        stringArraySchemaNamed: 'projectNames'
@@ -55,39 +56,43 @@ MCPToolFindPackages >> defaultInputSchema [
 			                      'How the package filter is matched. Defaults to substring.';
 		                      enum:
 			                      #( 'substring' 'prefix' 'exact' 'regex' );
+		                      default: 'substring';
 		                      yourself.
 	^ MCPStructureInputSchema new
-		               type: 'object';
-		               properties: {
-				               scopeProperty.
-				               projectNamesProperty.
-				               (MCPStructureProperties new
-					                name: 'filter';
-					                type: 'string';
-					                description:
-						                'Optional filter applied to package metadata such as names, projects, tags, and package metrics.';
-					                yourself).
-				               filterModeProperty.
-				               (MCPStructureProperties new
-					                name: 'caseSensitive';
-					                type: 'boolean';
-					                description:
-						                'Whether filter matching is case-sensitive. Defaults to false.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'limit';
-					                type: 'integer';
-					                description:
-						                'Maximum number of matching packages to return. Defaults to 100. Use 0 to request counts only.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'offset';
-					                type: 'integer';
-					                description:
-						                'Zero-based pagination offset applied after filtering. Defaults to 0.';
-					                yourself) };
-		               required: #(  );
-		               yourself
+		  type: 'object';
+		  properties: {
+				  scopeProperty.
+				  projectNamesProperty.
+				  (MCPStructureProperties new
+					   name: 'filter';
+					   type: 'string';
+					   description:
+						   'Optional filter applied to package metadata such as names, projects, tags, and package metrics.';
+					   yourself).
+				  filterModeProperty.
+				  (MCPStructureProperties new
+					   name: 'caseSensitive';
+					   type: 'boolean';
+					   description:
+						   'Whether filter matching is case-sensitive. Defaults to false.';
+					   default: false;
+					   yourself).
+				  (MCPStructureProperties new
+					   name: 'limit';
+					   type: 'integer';
+					   description:
+						   'Maximum number of matching packages to return. Defaults to 100. Use 0 to request counts only.';
+					   default: 100;
+					   yourself).
+				  (MCPStructureProperties new
+					   name: 'offset';
+					   type: 'integer';
+					   description:
+						   'Zero-based pagination offset applied after filtering. Defaults to 0.';
+					   default: 0;
+					   yourself) };
+		  required: #(  );
+		  yourself
 ]
 
 { #category : 'defaults' }

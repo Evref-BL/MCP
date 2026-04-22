@@ -66,6 +66,7 @@ MCPToolReferences >> defaultInputSchema [
 		                 description:
 			                 'Where to search for references. Defaults to image.';
 		                 enum: #( 'image' 'packages' 'hierarchy' 'classes' );
+		                 default: 'image';
 		                 yourself.
 	sideProperty := MCPStructureProperties new
 		                name: 'side';
@@ -73,6 +74,7 @@ MCPToolReferences >> defaultInputSchema [
 		                description:
 			                'Which method side to search. Defaults to both.';
 		                enum: #( 'instance' 'class' 'both' );
+		                default: 'both';
 		                yourself.
 	modeProperty := MCPStructureProperties new
 		                name: 'mode';
@@ -92,58 +94,63 @@ MCPToolReferences >> defaultInputSchema [
 		                      'The class names that define the classes or hierarchy scope. Required when scope=classes or scope=hierarchy.'
 		                      itemDescription: 'A class name.'.
 	^ MCPStructureInputSchema new
-		               type: 'object';
-		               properties: {
-				               (MCPStructureProperties new
-					                name: 'target';
-					                type: 'string';
-					                description:
-						                'The selector, class name, or variable name to look for, depending on mode.';
-					                yourself).
-				               modeProperty.
-				               scopeProperty.
-				               sideProperty.
-				               packageNamesProperty.
-				               classNamesProperty.
-				               (MCPStructureProperties new
-					                name: 'filter';
-					                type: 'string';
-					                description:
-						                'Optional filter applied to the matching reference methods after target lookup.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'filterMode';
-					                type: 'string';
-					                description:
-						                'How the filter is matched. Defaults to substring.';
-					                enum: #( 'substring' 'prefix' 'exact' 'regex' );
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'caseSensitive';
-					                type: 'boolean';
-					                description:
-						                'Whether filter matching is case-sensitive. Defaults to false.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'includeSource';
-					                type: 'boolean';
-					                description:
-						                'Whether to include method source code in each result entry. Defaults to false.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'limit';
-					                type: 'integer';
-					                description:
-						                'Maximum number of matching methods to return. Defaults to 100. Use 0 to request counts only.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'offset';
-					                type: 'integer';
-					                description:
-						                'Zero-based pagination offset applied after filtering. Defaults to 0.';
-					                yourself) };
-		               required: #( 'target' 'mode' );
-		               yourself
+		  type: 'object';
+		  properties: {
+				  (MCPStructureProperties new
+					   name: 'target';
+					   type: 'string';
+					   description:
+						   'The selector, class name, or variable name to look for, depending on mode.';
+					   yourself).
+				  modeProperty.
+				  scopeProperty.
+				  sideProperty.
+				  packageNamesProperty.
+				  classNamesProperty.
+				  (MCPStructureProperties new
+					   name: 'filter';
+					   type: 'string';
+					   description:
+						   'Optional filter applied to the matching reference methods after target lookup.';
+					   yourself).
+				  (MCPStructureProperties new
+					   name: 'filterMode';
+					   type: 'string';
+					   description:
+						   'How the filter is matched. Defaults to substring.';
+					   enum: #( 'substring' 'prefix' 'exact' 'regex' );
+					   default: 'substring';
+					   yourself).
+				  (MCPStructureProperties new
+					   name: 'caseSensitive';
+					   type: 'boolean';
+					   description:
+						   'Whether filter matching is case-sensitive. Defaults to false.';
+					   default: false;
+					   yourself).
+				  (MCPStructureProperties new
+					   name: 'includeSource';
+					   type: 'boolean';
+					   description:
+						   'Whether to include method source code in each result entry. Defaults to false.';
+					   default: false;
+					   yourself).
+				  (MCPStructureProperties new
+					   name: 'limit';
+					   type: 'integer';
+					   description:
+						   'Maximum number of matching methods to return. Defaults to 100. Use 0 to request counts only.';
+					   default: 100;
+					   yourself).
+				  (MCPStructureProperties new
+					   name: 'offset';
+					   type: 'integer';
+					   description:
+						   'Zero-based pagination offset applied after filtering. Defaults to 0.';
+					   default: 0;
+					   yourself) };
+		  required: #( 'target' 'mode' );
+		  yourself
 ]
 
 { #category : 'defaults' }

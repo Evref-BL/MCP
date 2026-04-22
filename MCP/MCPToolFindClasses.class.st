@@ -155,6 +155,7 @@ MCPToolFindClasses >> defaultInputSchema [
 		                 description:
 			                 'Where to search for classes. Defaults to image.';
 		                 enum: #( 'image' 'packages' 'hierarchy' 'classes' );
+		                 default: 'image';
 		                 yourself.
 	packageNamesProperty := self
 		                        stringArraySchemaNamed: 'packageNames'
@@ -173,40 +174,44 @@ MCPToolFindClasses >> defaultInputSchema [
 			                      'How the class filter is matched. Defaults to substring.';
 		                      enum:
 			                      #( 'substring' 'prefix' 'exact' 'regex' );
+		                      default: 'substring';
 		                      yourself.
 	^ MCPStructureInputSchema new
-		               type: 'object';
-		               properties: {
-				               scopeProperty.
-				               packageNamesProperty.
-				               classNamesProperty.
-				               (MCPStructureProperties new
-					                name: 'filter';
-					                type: 'string';
-					                description:
-						                'Optional filter applied to class metadata such as names, package, tag, slots, and subclasses.';
-					                yourself).
-				               filterModeProperty.
-				               (MCPStructureProperties new
-					                name: 'caseSensitive';
-					                type: 'boolean';
-					                description:
-						                'Whether filter matching is case-sensitive. Defaults to false.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'limit';
-					                type: 'integer';
-					                description:
-						                'Maximum number of matching classes to return. Defaults to 100. Use 0 to request counts only.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'offset';
-					                type: 'integer';
-					                description:
-						                'Zero-based pagination offset applied after filtering. Defaults to 0.';
-					                yourself) };
-		               required: #(  );
-		               yourself
+		  type: 'object';
+		  properties: {
+				  scopeProperty.
+				  packageNamesProperty.
+				  classNamesProperty.
+				  (MCPStructureProperties new
+					   name: 'filter';
+					   type: 'string';
+					   description:
+						   'Optional filter applied to class metadata such as names, package, tag, slots, and subclasses.';
+					   yourself).
+				  filterModeProperty.
+				  (MCPStructureProperties new
+					   name: 'caseSensitive';
+					   type: 'boolean';
+					   description:
+						   'Whether filter matching is case-sensitive. Defaults to false.';
+					   default: false;
+					   yourself).
+				  (MCPStructureProperties new
+					   name: 'limit';
+					   type: 'integer';
+					   description:
+						   'Maximum number of matching classes to return. Defaults to 100. Use 0 to request counts only.';
+					   default: 100;
+					   yourself).
+				  (MCPStructureProperties new
+					   name: 'offset';
+					   type: 'integer';
+					   description:
+						   'Zero-based pagination offset applied after filtering. Defaults to 0.';
+					   default: 0;
+					   yourself) };
+		  required: #(  );
+		  yourself
 ]
 
 { #category : 'defaults' }

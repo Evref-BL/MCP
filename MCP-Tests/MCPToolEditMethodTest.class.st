@@ -335,6 +335,25 @@ MCPToolEditMethodTest >> testChangingExtensionMethodProtocolUpdatesPackageMetada
 ]
 
 { #category : 'tests' }
+MCPToolEditMethodTest >> testCompileDefaultsToInstanceSideWhenClassSideIsOmitted [
+
+	| data result |
+	result := self callToolWith: {
+			          (#operation -> 'compile').
+			          (#className -> 'MCPToolEditMethodTestTarget').
+			          (#methodSource -> 'instanceAnswer ^ 42').
+			          (#protocol -> 'tests') } asDictionary.
+	data := self dataFrom: result.
+	self
+		assert: MCPToolEditMethodTestTarget new instanceAnswer
+		equals: 42.
+	self deny: (MCPToolEditMethodTestTarget classSide includesSelector:
+			 #instanceAnswer).
+	self assertSuccessDataHasCompiledMethodShape: data.
+	self assert: (data at: #side) equals: 'instance'
+]
+
+{ #category : 'tests' }
 MCPToolEditMethodTest >> testCompilesClassSideMethod [
 
 	| data result |
@@ -520,11 +539,17 @@ MCPToolEditMethodTest >> testRenamesInstanceMethodAndReturnsStructuredData [
 ]
 
 { #category : 'tests' }
-MCPToolEditMethodTest >> testToolRequiresOperationClassNameAndClassSideInSchema [
+MCPToolEditMethodTest >> testToolRequiresOperationAndClassNameInSchema [
 
+	| classSideProperty |
+	classSideProperty := MCPToolEditMethod new inputSchema properties
+		                     detect: [ :each | each name = 'classSide' ].
 	self
 		assert: MCPToolEditMethod new inputSchema required asSet
-		equals: #( 'operation' 'className' 'classSide' ) asSet
+		equals: #( 'operation' 'className' ) asSet.
+	self
+		assert: (classSideProperty extraProperties at: #default)
+		equals: false
 ]
 
 { #category : 'private - calling' }
