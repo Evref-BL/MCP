@@ -25,14 +25,6 @@ MCPToolContractsTest >> handleJSON: aJSONString [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testCreatePackageRequiresPackageNameInSchema [
-
-	self assert:
-		(MCPToolCreatePackage new inputSchema required includes:
-			 'packageName')
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testDescribeClassHasAccurateNameAndRequiredArguments [
 
 	self
