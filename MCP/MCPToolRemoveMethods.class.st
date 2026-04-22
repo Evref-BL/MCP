@@ -120,7 +120,7 @@ MCPToolRemoveMethods >> initialize [
 	super initialize.
 	name := 'remove-methods'.
 	title := 'Remove Pharo Methods'.
-	description := 'Force remove multiple methods from the instance side or class side of a Pharo class as one batch. This bypasses sender checks, so existing senders may be left broken.'.
+	description := 'Remove methods from one class as a batch without sender safety checks. Use edit-method to compile, rename, or recategorize methods instead.'.
 	inputSchema := MCPStructureInputSchema new
 		               type: 'object';
 		               properties: {

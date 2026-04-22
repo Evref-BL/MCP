@@ -51,7 +51,7 @@ MCPToolEval >> initialize [
 	super initialize.
 	name := 'evaluate'.
 	title := 'Evaluate Pharo Code'.
-	description := 'Evaluate arbitrary Smalltalk code in the running Pharo image. Prefer dedicated tools when possible; this tool is an escape hatch and may have side effects.'.
+	description := 'Evaluate arbitrary Smalltalk code and return a bounded preview of the result. Use this escape hatch only when a dedicated tool does not fit; it may mutate image state.'.
 	inputSchema := MCPStructureInputSchema new
 		               type: 'object';
 		               properties: { (MCPStructureProperties new

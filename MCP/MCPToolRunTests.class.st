@@ -105,7 +105,7 @@ MCPToolRunTests >> initialize [
 	super initialize.
 	name := 'run-tests'.
 	title := 'Run Pharo Tests'.
-	description := 'Run multiple Pharo test executions as one batch. Each batch entry can run a full test class suite or a single test method when testMethodName is provided.'.
+	description := 'Run test classes or individual test methods as a batch and return aggregated results.'.
 	inputSchema := MCPStructureInputSchema new
 		               type: 'object';
 		               properties: { ((MCPStructureProperties new

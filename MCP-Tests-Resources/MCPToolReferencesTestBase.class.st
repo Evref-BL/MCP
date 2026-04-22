@@ -1,18 +1,18 @@
 Class {
-	#name : 'MCPToolSendersTestBase',
+	#name : 'MCPToolReferencesTestBase',
 	#superclass : 'Object',
 	#category : 'MCP-Tests-Resources',
 	#package : 'MCP-Tests-Resources'
 }
 
 { #category : 'testing' }
-MCPToolSendersTestBase >> baseHierarchySender [
+MCPToolReferencesTestBase >> baseHierarchySender [
 
 	^ self hierarchyTarget
 ]
 
 { #category : 'testing' }
-MCPToolSendersTestBase >> hierarchyTarget [
+MCPToolReferencesTestBase >> hierarchyTarget [
 
 	^ 'base-target'
 ]

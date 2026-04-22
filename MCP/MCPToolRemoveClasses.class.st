@@ -87,7 +87,7 @@ MCPToolRemoveClasses >> initialize [
 	super initialize.
 	name := 'remove-classes'.
 	title := 'Remove Pharo Classes'.
-	description := 'Remove multiple classes from the running Pharo image as one batch. By default this uses ReRemoveClassRefactoring safety checks. When force is true, breaking-change warnings are bypassed, the classes are still removed, and the warning text is returned in the tool result warnings.'.
+	description := 'Remove classes as one batch. By default the tool respects safe-removal warnings. When force is true, it still removes the classes and returns those warnings.'.
 	inputSchema := MCPStructureInputSchema new
 		               type: 'object';
 		               properties: {
@@ -105,7 +105,7 @@ MCPToolRemoveClasses >> initialize [
 					                name: 'force';
 					                type: 'boolean';
 					                description:
-						                'When true, proceed even if ReRemoveClassRefactoring reports breaking-change warnings. Those warnings are returned in the tool result warnings.';
+						                'When true, proceed even if safe-removal warnings are raised. Those warnings are returned in the tool result warnings.';
 					                yourself) };
 		               required: #( 'classNames' );
 		               yourself.

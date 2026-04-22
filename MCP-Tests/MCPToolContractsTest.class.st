@@ -447,7 +447,7 @@ MCPToolContractsTest >> testRequestedCompositeToolIconsAreAdvertised [
 				 compositeBaseIconNamed: #references
 				 badgeIconNamed: #into) asJRPCJSON.
 	self
-		assert: (MCPToolSenders new asJRPCJSON at: #icons) first
+		assert: (MCPToolReferences new asJRPCJSON at: #icons) first
 		equals: (MCPStructureIcon
 				 compositeBaseIconNamed: #references
 				 badgeIconNamed: #over) asJRPCJSON.

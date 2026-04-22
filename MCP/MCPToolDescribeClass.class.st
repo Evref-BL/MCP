@@ -163,7 +163,7 @@ MCPToolDescribeClass >> initialize [
 	super initialize.
 	name := 'describe-class'.
 	title := 'Describe Pharo Class'.
-	description := 'Describe a class from the running Pharo image using structured metadata, with optional superclass and subclass exploration.'.
+	description := 'Inspect one class by name and return structured metadata, with optional superclass and subclass context. Use find-classes to discover candidate classes first.'.
 	includeSuperclassesProperty := MCPStructureProperties new
 		                               name: 'includeSuperclasses';
 		                               type: 'boolean';
@@ -174,7 +174,7 @@ MCPToolDescribeClass >> initialize [
 		                              name: 'upToSuperclassName';
 		                              type: 'string';
 		                              description:
-			                              'An optional superclass name used with Behavior>>allSuperclassesIncluding:. If the named class is not an ancestor, the result runs up to the root.';
+			                              'An optional superclass name that stops the included superclass chain at a specific ancestor. If the named class is not actually an ancestor, the chain continues to the root.';
 		                              yourself.
 	subclassDepthProperty := MCPStructureProperties new
 		                         name: 'subclassDepth';

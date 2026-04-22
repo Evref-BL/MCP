@@ -156,7 +156,7 @@ MCPToolImplementors >> initialize [
 	super initialize.
 	name := 'implementors'.
 	title := 'Find Pharo Implementors'.
-	description := 'Find implementors of a selector in the running Pharo image, optionally scoped to packages, hierarchies, or specific classes.'.
+	description := 'Find methods that define a given selector, optionally scoped and filtered. Use references for callers or usages, and find-methods to list methods without selector matching.'.
 	scopeProperty := MCPStructureProperties new
 		                 name: 'scope';
 		                 type: 'string';
@@ -198,7 +198,7 @@ MCPToolImplementors >> initialize [
 					                name: 'filter';
 					                type: 'string';
 					                description:
-						                'Optional filter applied to selector, class, package, protocol, method reference, and source text.';
+						                'Optional filter applied to implementor methods after selector matching.';
 					                yourself).
 				               (MCPStructureProperties new
 					                name: 'filterMode';

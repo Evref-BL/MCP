@@ -143,7 +143,7 @@ MCPToolDescribeMethod >> initialize [
 	super initialize.
 	name := 'describe-method'.
 	title := 'Describe Pharo Method'.
-	description := 'Describe a single method from the running Pharo image, including structured variable-resolution context.'.
+	description := 'Inspect one known method and return its source plus structured variable-reference context. Use find-methods, implementors, or references to discover methods first.'.
 	sideProperty := MCPStructureProperties new
 		                name: 'side';
 		                type: 'string';
@@ -198,7 +198,7 @@ MCPToolDescribeMethod >> initialize [
 					                 schemaPropertyNamed: 'source'
 					                 type: 'string'
 					                 description:
-					                 'The normalized source code of the method.').
+					                 'The formatted source code of the method.').
 				                ((self
 					                  schemaPropertyNamed: 'argumentNames'
 					                  type: 'array'

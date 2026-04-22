@@ -139,7 +139,7 @@ MCPToolFindPackages >> initialize [
 	super initialize.
 	name := 'find-packages'.
 	title := 'Find Pharo Packages'.
-	description := 'Find packages in the running Pharo image with optional scope, project selection, text filtering, and pagination.'.
+	description := 'List packages in the image or in a project and optionally filter them by package metadata.'.
 	scopeProperty := MCPStructureProperties new
 		                 name: 'scope';
 		                 type: 'string';
@@ -169,7 +169,7 @@ MCPToolFindPackages >> initialize [
 					                name: 'filter';
 					                type: 'string';
 					                description:
-						                'Optional filter applied to package name, project names, tag names, and package metrics.';
+						                'Optional filter applied to package metadata such as names, projects, tags, and package metrics.';
 					                yourself).
 				               filterModeProperty.
 				               (MCPStructureProperties new

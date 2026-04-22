@@ -343,7 +343,7 @@ MCPToolEditMethod >> initialize [
 	super initialize.
 	name := 'edit-method'.
 	title := 'Edit Pharo Method'.
-	description := 'Edit a method on the instance side or class side of a Pharo class by compiling source, renaming a selector, or changing a protocol.'.
+	description := 'Compile, rename, or recategorize one method on the instance side or class side of a class. Use remove-methods to delete methods.'.
 	inputSchema := MCPStructureInputSchema new
 		               type: 'object';
 		               properties: {
@@ -382,7 +382,7 @@ MCPToolEditMethod >> initialize [
 					                name: 'protocol';
 					                type: 'string';
 					                description:
-						                'The target method protocol for compile or changeProtocol, including extension protocols.';
+						                'The target protocol for operation=compile or changeProtocol. For extension methods, use an extension protocol such as *Package-Name.';
 					                yourself).
 				               (MCPStructureProperties new
 					                name: 'newSelector';

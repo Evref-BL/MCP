@@ -252,7 +252,7 @@ MCPToolFindClasses >> initialize [
 	super initialize.
 	name := 'find-classes'.
 	title := 'Find Pharo Classes'.
-	description := 'Find classes in the running Pharo image with optional scope, filtering, and pagination.'.
+	description := 'List classes in the selected scope and optionally filter them by class metadata. Use describe-class when you already know the class to inspect.'.
 	scopeProperty := MCPStructureProperties new
 		                 name: 'scope';
 		                 type: 'string';
@@ -288,7 +288,7 @@ MCPToolFindClasses >> initialize [
 					                name: 'filter';
 					                type: 'string';
 					                description:
-						                'Optional filter applied to class name, superclass, package, tag, slot names, and subclass names.';
+						                'Optional filter applied to class metadata such as names, package, tag, slots, and subclasses.';
 					                yourself).
 				               filterModeProperty.
 				               (MCPStructureProperties new

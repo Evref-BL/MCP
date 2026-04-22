@@ -161,7 +161,7 @@ MCPToolFindMethods >> initialize [
 	super initialize.
 	name := 'find-methods'.
 	title := 'Find Pharo Methods'.
-	description := 'Find methods in the running Pharo image, optionally scoped to packages, hierarchies, or specific classes.'.
+	description := 'List methods in a scope and optionally filter the returned method entries. Use implementors to find definitions of a selector, and references to find methods that use a selector, class, or variable.'.
 	scopeProperty := MCPStructureProperties new
 		                 name: 'scope';
 		                 type: 'string';
@@ -203,7 +203,7 @@ MCPToolFindMethods >> initialize [
 		                          schemaPropertyNamed: 'filterTargets'
 		                          type: 'array'
 		                          description:
-			                          'Optional targets matched by filter. Defaults to selector.')
+			                          'Optional method-entry fields matched by filter. Defaults to selector. This filters the listed methods; it does not perform reference lookup.')
 		                         items: filterTargetsItemProperty;
 		                         yourself.
 	inputSchema := MCPStructureInputSchema new
@@ -217,7 +217,7 @@ MCPToolFindMethods >> initialize [
 					                name: 'filter';
 					                type: 'string';
 					                description:
-						                'Optional filter applied to the selected filter targets.';
+						                'Optional filter applied to the methods found in scope. Use filterTargets to choose which fields are matched.';
 					                yourself).
 				               filterTargetsProperty.
 				               filterModeProperty.

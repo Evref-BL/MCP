@@ -217,7 +217,7 @@ MCPToolEditClass >> initialize [
 	super initialize.
 	name := 'edit-class'.
 	title := 'Edit Pharo Class'.
-	description := 'Edit a class in the running Pharo image by creating it, moving it to another package or tag, or renaming it.'.
+	description := 'Create, move, or rename a class in the running image. Use this for structural class changes; use edit-method for methods and remove-classes for deletion.'.
 	inputSchema := MCPStructureInputSchema new
 		               type: 'object';
 		               properties: {
@@ -244,13 +244,13 @@ MCPToolEditClass >> initialize [
 					                name: 'packageName';
 					                type: 'string';
 					                description:
-						                'The package to create into or move into when operation=create or move.';
+						                'The package to create into when operation=create, or the destination package when operation=move. Missing destination packages are created automatically.';
 					                yourself).
 				               (MCPStructureProperties new
 					                name: 'tag';
 					                type: 'string';
 					                description:
-						                'An optional package tag for operation=create or move.';
+						                'An optional package tag for operation=create, or the destination tag when operation=move. Missing destination tags are created automatically.';
 					                yourself).
 				               ((MCPStructureProperties new
 					                 name: 'slots';
