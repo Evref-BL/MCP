@@ -158,7 +158,7 @@ MCPToolEditClassTest >> originalClassName [
 { #category : 'private' }
 MCPToolEditClassTest >> originalMovePackageName [
 
-	^ 'MCP-Tests'
+	^ 'MCP-Tests-Resources'
 ]
 
 { #category : 'private' }
@@ -482,7 +482,10 @@ MCPToolEditClassTest >> testRenamesClassAndReturnsStructuredData [
 	self assert: (data at: #oldClassName) equals: self originalClassName.
 	self assert: (data at: #newClassName) equals: self renamedClassName.
 	self assert: (data at: #superclassName) equals: 'Object'.
-	self assert: (data at: #packageName) equals: 'MCP-Tests'.
+	self
+		assert: (data at: #packageName)
+		equals:
+		(self classNamed: self renamedClassName) packageName asString.
 	self
 		assert: (data at: #subclassNames)
 		equals: { self subclassName } asArray

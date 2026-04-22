@@ -94,7 +94,7 @@ MCPCompiledMethodScopeQueryTest >> testPackagesScopeIncludesExtensionMethods [
 	| methodIdentities query |
 	query := MCPCompiledMethodScopeQuery
 		         scope: 'packages'
-		         packageNames: #( 'MCP-Tests-Extensions' )
+		         packageNames: #( 'MCP-Tests-Resources-Extensions' )
 		         classNames: nil
 		         side: 'instance'.
 	methodIdentities := self methodIdentitiesFor: query compiledMethods.

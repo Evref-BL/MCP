@@ -87,7 +87,7 @@ MCPCompiledMethodInfoTest >> restoreFixtureMethods [
 		on: self classTarget.
 	self
 		ensureMethodSource: 'extensionInfoTarget ^ 3'
-		protocol: '*MCP-Tests-Extensions'
+		protocol: '*MCP-Tests-Resources-Extensions'
 		on: self targetClass
 ]
 
@@ -126,9 +126,11 @@ MCPCompiledMethodInfoTest >> testBuildsInfoForExtensionMethod [
 	self assert: info className equals: self targetClassName.
 	self assert: info selector equals: 'extensionInfoTarget'.
 	self assert: info side equals: 'instance'.
-	self assert: info packageName equals: 'MCP-Tests-Extensions'.
+	self
+		assert: info packageName
+		equals: 'MCP-Tests-Resources-Extensions'.
 	self assert: info isExtension.
-	self assert: info protocol equals: '*MCP-Tests-Extensions'.
+	self assert: info protocol equals: '*MCP-Tests-Resources-Extensions'.
 	self assert: (info source includesSubstring: 'extensionInfoTarget')
 ]
 

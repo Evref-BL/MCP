@@ -235,7 +235,7 @@ MCPToolSendersTest >> testPackagesScopeIncludesExtensionMethods [
 			          (#selector -> 'extensionTarget').
 			          (#mode -> 'method').
 			          (#scope -> 'packages').
-			          (#packageNames -> #( 'MCP-Tests-Extensions' )) }
+			          (#packageNames -> #( 'MCP-Tests-Resources-Extensions' )) }
 			          asDictionary.
 	data := self dataFrom: result.
 	sender := self
@@ -245,7 +245,9 @@ MCPToolSendersTest >> testPackagesScopeIncludesExtensionMethods [
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #mode) equals: 'method'.
 	self assert: (data at: #totalCount) equals: 1.
-	self assert: (sender at: #packageName) equals: 'MCP-Tests-Extensions'.
+	self
+		assert: (sender at: #packageName)
+		equals: 'MCP-Tests-Resources-Extensions'.
 	self assert: (sender at: #isExtension)
 ]
 

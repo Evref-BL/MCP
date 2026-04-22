@@ -157,7 +157,7 @@ MCPToolImplementorsTest >> testPackagesScopeIncludesExtensionMethods [
 	result := self callToolWith: {
 			          (#selector -> 'extensionProbe').
 			          (#scope -> 'packages').
-			          (#packageNames -> #( 'MCP-Tests-Extensions' )) }
+			          (#packageNames -> #( 'MCP-Tests-Resources-Extensions' )) }
 			          asDictionary.
 	data := self dataFrom: result.
 	implementor := self
@@ -168,7 +168,7 @@ MCPToolImplementorsTest >> testPackagesScopeIncludesExtensionMethods [
 	self assert: (data at: #totalCount) equals: 1.
 	self
 		assert: (implementor at: #packageName)
-		equals: 'MCP-Tests-Extensions'.
+		equals: 'MCP-Tests-Resources-Extensions'.
 	self assert: (implementor at: #isExtension)
 ]
 

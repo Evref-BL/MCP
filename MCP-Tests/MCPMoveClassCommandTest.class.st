@@ -53,7 +53,7 @@ MCPMoveClassCommandTest >> executeCommand: aCommand [
 { #category : 'private' }
 MCPMoveClassCommandTest >> originalPackageName [
 
-	^ 'MCP-Tests'
+	^ 'MCP-Tests-Resources'
 ]
 
 { #category : 'private' }

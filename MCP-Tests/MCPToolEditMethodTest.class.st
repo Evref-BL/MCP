@@ -232,7 +232,7 @@ MCPToolEditMethodTest >> restoreFixtureMethods [
 		on: MCPToolEditMethodTestTarget classSide.
 	self
 		ensureMethodSource: 'extensionProtocolTarget ^ 99'
-		protocol: '*MCP-Tests-Extensions'
+		protocol: '*MCP-Tests-Resources-Extensions'
 		on: MCPToolEditMethodTestTarget.
 	self
 		ensureMethodSource:

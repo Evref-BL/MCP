@@ -419,8 +419,9 @@ MCPToolContractsTest >> testRequestedCompositeToolIconsAreAdvertised [
 				 badgeIconNamed: #edit) asJRPCJSON.
 	self
 		assert: (MCPToolEditMethod new asJRPCJSON at: #icons) first
-		equals: (MCPStructureIcon
-				 compositeBaseIconNamed: #workspace
+		equals:
+			(MCPStructureIcon
+				 compositeBaseIconNamed: #page
 				 badgeIconNamed: #edit) asJRPCJSON.
 	self
 		assert: (MCPToolFindClasses new asJRPCJSON at: #icons) first

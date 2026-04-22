@@ -199,7 +199,7 @@ MCPToolFindMethodsTest >> testPackagesScopeIncludesExtensionMethods [
 	| data method result |
 	result := self callToolWith: {
 			          (#scope -> 'packages').
-			          (#packageNames -> #( 'MCP-Tests-Extensions' )).
+			          (#packageNames -> #( 'MCP-Tests-Resources-Extensions' )).
 			          (#filter -> 'extensionProbe') } asDictionary.
 	data := self dataFrom: result.
 	method := self
@@ -209,7 +209,9 @@ MCPToolFindMethodsTest >> testPackagesScopeIncludesExtensionMethods [
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #scope) equals: 'packages'.
 	self assert: (data at: #totalCount) equals: 1.
-	self assert: (method at: #packageName) equals: 'MCP-Tests-Extensions'.
+	self
+		assert: (method at: #packageName)
+		equals: 'MCP-Tests-Resources-Extensions'.
 	self assert: (method at: #isExtension)
 ]
 
