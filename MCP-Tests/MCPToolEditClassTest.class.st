@@ -13,6 +13,12 @@ MCPToolEditClassTest >> aroundToolCall: aBlock [
 ]
 
 { #category : 'private' }
+MCPToolEditClassTest >> commentTargetClassName [
+
+	^ 'MCPToolEditClassTestCommentTarget'
+]
+
+{ #category : 'private' }
 MCPToolEditClassTest >> createArgumentsForClassName: aClassName superclassName: aSuperclassName packageName: aPackageName [
 
 	^ self
@@ -45,7 +51,10 @@ MCPToolEditClassTest >> createdClassNames [
 
 	^ #( 'MCPToolEditClassTestGenerated' 'MCPToolEditClassTestTagged'
 	     'MCPToolEditClassTestClassSlots'
-	     'MCPToolEditClassTestTemporaryPackage' )
+	     'MCPToolEditClassTestTemporaryPackage'
+	     'MCPToolEditClassTestCommentTarget'
+	     'MCPToolEditClassTestReparentTarget'
+	     'MCPToolEditClassTestReparentSuperclass' )
 ]
 
 { #category : 'private' }
@@ -185,6 +194,27 @@ MCPToolEditClassTest >> renamedClassName [
 ]
 
 { #category : 'private' }
+MCPToolEditClassTest >> reparentArguments [
+
+	^ {
+		  (#operation -> 'reparent').
+		  (#className -> self reparentTargetClassName).
+		  (#superclassName -> self reparentSuperclassName) } asDictionary
+]
+
+{ #category : 'private' }
+MCPToolEditClassTest >> reparentSuperclassName [
+
+	^ 'MCPToolEditClassTestReparentSuperclass'
+]
+
+{ #category : 'private' }
+MCPToolEditClassTest >> reparentTargetClassName [
+
+	^ 'MCPToolEditClassTestReparentTarget'
+]
+
+{ #category : 'private' }
 MCPToolEditClassTest >> restoreMoveTargetClassLocation [
 
 	(self moveTargetClass packageName asString
@@ -195,6 +225,15 @@ MCPToolEditClassTest >> restoreMoveTargetClassLocation [
 		(RBMoveClassTransformation
 			 move: self moveTargetClassName
 			 toPackage: self originalMovePackageName) execute ]
+]
+
+{ #category : 'private' }
+MCPToolEditClassTest >> setCommentArgumentsWith: aClassComment [
+
+	^ {
+		  (#operation -> 'setComment').
+		  (#className -> self commentTargetClassName).
+		  (#classComment -> aClassComment) } asDictionary
 ]
 
 { #category : 'running' }
@@ -224,6 +263,52 @@ MCPToolEditClassTest >> tearDown [
 	self removeDestinationPackage.
 	self ensureOriginalRenameFixtureState.
 	super tearDown
+]
+
+{ #category : 'tests' }
+MCPToolEditClassTest >> testCanClearClassComment [
+
+	| data result target |
+	self
+		createClassNamed: self commentTargetClassName
+		superclassName: 'Object'
+		slots: #(  )
+		classSlots: #(  ).
+	self withoutEpiceaDuring: [
+		(self classNamed: self commentTargetClassName) comment:
+			'original comment' ].
+	result := self callToolWith: (self setCommentArgumentsWith: '').
+	data := self dataFrom: result.
+	target := self classNamed: self commentTargetClassName.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: target comment equals: ''.
+	self assert: (data at: #classComment) equals: ''.
+	self assert: (data at: #oldClassComment) equals: 'original comment'.
+	self assert: (data at: #newClassComment) equals: ''
+]
+
+{ #category : 'tests' }
+MCPToolEditClassTest >> testChangesClassComment [
+
+	| data result target |
+	self
+		createClassNamed: self commentTargetClassName
+		superclassName: 'Object'
+		slots: #(  )
+		classSlots: #(  ).
+	self withoutEpiceaDuring: [
+		(self classNamed: self commentTargetClassName) comment:
+			'original comment' ].
+	result := self callToolWith:
+		          (self setCommentArgumentsWith: 'updated comment').
+	data := self dataFrom: result.
+	target := self classNamed: self commentTargetClassName.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: target comment equals: 'updated comment'.
+	self assert: (data at: #operation) equals: 'setComment'.
+	self assert: (data at: #classComment) equals: 'updated comment'.
+	self assert: (data at: #oldClassComment) equals: 'original comment'.
+	self assert: (data at: #newClassComment) equals: 'updated comment'
 ]
 
 { #category : 'tests' }
@@ -457,6 +542,44 @@ MCPToolEditClassTest >> testRenamesClassAndReturnsStructuredData [
 ]
 
 { #category : 'tests' }
+MCPToolEditClassTest >> testReparentsClassAndPreservesExistingState [
+
+	| data result target |
+	self
+		createClassNamed: self reparentSuperclassName
+		superclassName: 'Object'
+		slots: #(  )
+		classSlots: #(  ).
+	self
+		createClassNamed: self reparentTargetClassName
+		superclassName: 'Object'
+		slots: #( alphaSlot )
+		classSlots: #(  ).
+	self
+		ensureMethodSource: 'probeMethod ^ 41'
+		protocol: 'testing'
+		on: (self classNamed: self reparentTargetClassName).
+	self withoutEpiceaDuring: [
+		(self classNamed: self reparentTargetClassName) comment:
+			'reparent comment' ].
+	result := self callToolWith: self reparentArguments.
+	data := self dataFrom: result.
+	target := self classNamed: self reparentTargetClassName.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self
+		assert: target superclass name asString
+		equals: self reparentSuperclassName.
+	self assert: target new probeMethod equals: 41.
+	self assert: target comment equals: 'reparent comment'.
+	self assert: (data at: #operation) equals: 'reparent'.
+	self assert: (data at: #oldSuperclassName) equals: 'Object'.
+	self
+		assert: (data at: #superclassName)
+		equals: self reparentSuperclassName.
+	self assert: (data at: #classComment) equals: 'reparent comment'
+]
+
+{ #category : 'tests' }
 MCPToolEditClassTest >> testReturnsStructuredErrorWhenClassAlreadyExists [
 
 	| arguments error result |
@@ -474,6 +597,24 @@ MCPToolEditClassTest >> testReturnsStructuredErrorWhenClassAlreadyExists [
 	self
 		assert: (error at: #message)
 		equals: 'Class MCPToolEditClassTestGenerated already exists.'
+]
+
+{ #category : 'tests' }
+MCPToolEditClassTest >> testReturnsStructuredErrorWhenCommentClassIsMissing [
+
+	| error result |
+	result := self callToolWith: {
+			          (#operation -> 'setComment').
+			          (#className -> 'MCPToolEditClassTestMissing').
+			          (#classComment -> 'ignored') } asDictionary.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #operation) equals: 'setComment'.
+	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
+	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
+	self
+		assert: (error at: #message)
+		equals: 'Class MCPToolEditClassTestMissing does not exist.'
 ]
 
 { #category : 'tests' }
@@ -520,6 +661,30 @@ MCPToolEditClassTest >> testReturnsStructuredErrorWhenRenameClassIsMissing [
 ]
 
 { #category : 'tests' }
+MCPToolEditClassTest >> testReturnsStructuredErrorWhenReparentSuperclassIsMissing [
+
+	| error result |
+	self
+		createClassNamed: self reparentTargetClassName
+		superclassName: 'Object'
+		slots: #(  )
+		classSlots: #(  ).
+	result := self callToolWith: {
+			          (#operation -> 'reparent').
+			          (#className -> self reparentTargetClassName).
+			          (#superclassName -> 'DefinitelyMissingSuperclass') }
+			          asDictionary.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #operation) equals: 'reparent'.
+	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
+	self assert: (error at: #errorCode) equals: 'SuperclassNotFound'.
+	self
+		assert: (error at: #superclassName)
+		equals: 'DefinitelyMissingSuperclass'
+]
+
+{ #category : 'tests' }
 MCPToolEditClassTest >> testReturnsStructuredErrorWhenSuperclassIsMissing [
 
 	| error result |
@@ -540,9 +705,18 @@ MCPToolEditClassTest >> testReturnsStructuredErrorWhenSuperclassIsMissing [
 { #category : 'tests' }
 MCPToolEditClassTest >> testToolRequiresOperationAndClassNameInSchema [
 
+	| operationProperty propertyNames |
+	propertyNames := MCPToolEditClass new inputSchema properties
+		                 collect: [ :each | each name ].
+	operationProperty := MCPToolEditClass new inputSchema properties
+		                     detect: [ :each | each name = 'operation' ].
 	self
 		assert: MCPToolEditClass new inputSchema required asSet
-		equals: #( 'operation' 'className' ) asSet
+		equals: #( 'operation' 'className' ) asSet.
+	self assert: (propertyNames includes: 'classComment').
+	self
+		assert: (operationProperty extraProperties at: #enum) asArray
+		equals: #( 'create' 'move' 'rename' 'reparent' 'setComment' )
 ]
 
 { #category : 'private - calling' }

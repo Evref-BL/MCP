@@ -6,19 +6,36 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'private - arguments' }
+MCPToolEditClass >> classCommentFromArguments: arguments [
+
+	| value |
+	value := self
+		         argumentNamed: 'classComment'
+		         in: arguments
+		         ifAbsent: [ ^ nil ].
+	^ value ifNil: [ '' ] ifNotNil: [ value asString ]
+]
+
 { #category : 'private' }
 MCPToolEditClass >> dataForResult: aResult operation: operation [
 
-	| data |
+	| class data |
 	data := aResult asDictionary copy.
 	data at: #operation put: operation.
+	class := Smalltalk globals
+		         at: (data at: #className) asSymbol
+		         ifAbsent: [ nil ].
+	data
+		at: #classComment
+		put: (class ifNil: [ '' ] ifNotNil: [ class comment ]).
 	^ data
 ]
 
 { #category : 'defaults' }
 MCPToolEditClass >> defaultDescription [
 
-	^ 'Create, move, or rename a class in the running image. Use this for structural class changes; use edit-method for methods and remove-classes for deletion.'
+	^ 'Create, move, rename, reparent, or set the comment of a class in the running image. Use this for class-level definition and comment updates; use edit-method for methods and remove-classes for deletion.'
 ]
 
 { #category : 'defaults' }
@@ -33,67 +50,72 @@ MCPToolEditClass >> defaultIcons [
 MCPToolEditClass >> defaultInputSchema [
 
 	^ MCPStructureInputSchema new
-		               type: 'object';
-		               properties: {
-				               (MCPStructureProperties new
-					                name: 'operation';
-					                type: 'string';
-					                description:
-						                'The class edit operation to perform. Supported values are create, move, and rename.';
-					                enum: #( 'create' 'move' 'rename' );
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'className';
-					                type: 'string';
-					                description:
-						                'The class to edit, or the class name to create.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'superclassName';
-					                type: 'string';
-					                description:
-						                'The superclass to use when operation=create.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'packageName';
-					                type: 'string';
-					                description:
-						                'The package to create into when operation=create, or the destination package when operation=move. Missing destination packages are created automatically.';
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'tag';
-					                type: 'string';
-					                description:
-						                'An optional package tag for operation=create, or the destination tag when operation=move. Missing destination tags are created automatically.';
-					                yourself).
-				               ((MCPStructureProperties new
-					                 name: 'slots';
-					                 type: 'array';
-					                 description:
-						                 'Optional instance-side slot names for operation=create.')
-					                items: (MCPStructureProperties new
-							                 type: 'string';
-							                 description: 'An instance-side slot name.';
-							                 yourself);
-					                yourself).
-				               ((MCPStructureProperties new
-					                 name: 'classSlots';
-					                 type: 'array';
-					                 description:
-						                 'Optional class-side slot names for operation=create.')
-					                items: (MCPStructureProperties new
-							                 type: 'string';
-							                 description: 'A class-side slot name.';
-							                 yourself);
-					                yourself).
-				               (MCPStructureProperties new
-					                name: 'newClassName';
-					                type: 'string';
-					                description:
-						                'The new class name to assign when operation=rename.';
-					                yourself) };
-		               required: #( 'operation' 'className' );
-		               yourself
+		  type: 'object';
+		  properties: {
+				  (MCPStructureProperties new
+					   name: 'operation';
+					   type: 'string';
+					   description:
+						   'The class edit operation to perform. Supported values are create, move, rename, reparent, and setComment.';
+					   enum: #( 'create' 'move' 'rename' 'reparent' 'setComment' );
+					   yourself).
+				  (MCPStructureProperties new
+					   name: 'className';
+					   type: 'string';
+					   description: 'The class to edit, or the class name to create.';
+					   yourself).
+				  (MCPStructureProperties new
+					   name: 'superclassName';
+					   type: 'string';
+					   description:
+						   'The superclass to use when operation=create, or the new superclass when operation=reparent.';
+					   yourself).
+				  (MCPStructureProperties new
+					   name: 'packageName';
+					   type: 'string';
+					   description:
+						   'The package to create into when operation=create, or the destination package when operation=move. Missing destination packages are created automatically.';
+					   yourself).
+				  (MCPStructureProperties new
+					   name: 'tag';
+					   type: 'string';
+					   description:
+						   'An optional package tag for operation=create, or the destination tag when operation=move. Missing destination tags are created automatically.';
+					   yourself).
+				  ((MCPStructureProperties new
+					    name: 'slots';
+					    type: 'array';
+					    description:
+						    'Optional instance-side slot names for operation=create.')
+					   items: (MCPStructureProperties new
+							    type: 'string';
+							    description: 'An instance-side slot name.';
+							    yourself);
+					   yourself).
+				  ((MCPStructureProperties new
+					    name: 'classSlots';
+					    type: 'array';
+					    description:
+						    'Optional class-side slot names for operation=create.')
+					   items: (MCPStructureProperties new
+							    type: 'string';
+							    description: 'A class-side slot name.';
+							    yourself);
+					   yourself).
+				  (MCPStructureProperties new
+					   name: 'newClassName';
+					   type: 'string';
+					   description:
+						   'The new class name to assign when operation=rename.';
+					   yourself).
+				  (MCPStructureProperties new
+					   name: 'classComment';
+					   type: 'string';
+					   description:
+						   'The class comment to assign when operation=setComment. Use an empty string to clear the comment.';
+					   yourself) };
+		  required: #( 'operation' 'className' );
+		  yourself
 ]
 
 { #category : 'defaults' }
@@ -106,86 +128,99 @@ MCPToolEditClass >> defaultName [
 MCPToolEditClass >> defaultOutputSchema [
 
 	^ self
-		                standardOutputSchemaForDataProperties: {
-				                (self
-					                 schemaPropertyNamed: 'operation'
-					                 type: 'string'
-					                 description:
-					                 'The class edit operation that was performed.').
-				                (self
-					                 schemaPropertyNamed: 'className'
-					                 type: 'string'
-					                 description:
-					                 'The class name after the operation completes.').
-				                (self
-					                 schemaPropertyNamed: 'superclassName'
-					                 type: 'string'
-					                 description:
-					                 'The superclass of the class after the operation.').
-				                (self
-					                 schemaPropertyNamed: 'packageName'
-					                 type: 'string'
-					                 description:
-					                 'The owning package of the class after the operation.').
-				                (self
-					                 schemaPropertyNamed: 'tag'
-					                 type: 'string'
-					                 description:
-					                 'The package tag assigned to the class after the operation.').
-				                ((self
-					                  schemaPropertyNamed: 'instanceSlotNames'
-					                  type: 'array'
-					                  description:
-						                  'The instance-side slots present on the class after the operation.')
-					                 items: (MCPStructureProperties new
-							                  type: 'string';
-							                  description: 'An instance-side slot name.';
-							                  yourself);
-					                 yourself).
-				                ((self
-					                  schemaPropertyNamed: 'classSlotNames'
-					                  type: 'array'
-					                  description:
-						                  'The class-side slots present on the class after the operation.')
-					                 items: (MCPStructureProperties new
-							                  type: 'string';
-							                  description: 'A class-side slot name.';
-							                  yourself);
-					                 yourself).
-				                ((self
-					                  schemaPropertyNamed: 'subclassNames'
-					                  type: 'array'
-					                  description:
-						                  'The direct subclasses of the class after the operation.')
-					                 items: (MCPStructureProperties new
-							                  type: 'string';
-							                  description: 'A direct subclass name.';
-							                  yourself);
-					                 yourself).
-				                (self
-					                 schemaPropertyNamed: 'oldPackageName'
-					                 type: 'string'
-					                 description:
-					                 'The previous package when operation=move.').
-				                (self
-					                 schemaPropertyNamed: 'oldTag'
-					                 type: 'string'
-					                 description:
-					                 'The previous package tag when operation=move.').
-				                (self
-					                 schemaPropertyNamed: 'oldClassName'
-					                 type: 'string'
-					                 description:
-					                 'The previous class name when operation=rename.').
-				                (self
-					                 schemaPropertyNamed: 'newClassName'
-					                 type: 'string'
-					                 description:
-					                 'The new class name when operation=rename.') }
-		                required:
-			                #( 'operation' 'className' 'superclassName'
-			                   'packageName' 'tag' 'instanceSlotNames'
-			                   'classSlotNames' 'subclassNames' )
+		  standardOutputSchemaForDataProperties: {
+				  (self
+					   schemaPropertyNamed: 'operation'
+					   type: 'string'
+					   description: 'The class edit operation that was performed.').
+				  (self
+					   schemaPropertyNamed: 'className'
+					   type: 'string'
+					   description: 'The class name after the operation completes.').
+				  (self
+					   schemaPropertyNamed: 'superclassName'
+					   type: 'string'
+					   description:
+					   'The superclass of the class after the operation.').
+				  (self
+					   schemaPropertyNamed: 'packageName'
+					   type: 'string'
+					   description:
+					   'The owning package of the class after the operation.').
+				  (self
+					   schemaPropertyNamed: 'tag'
+					   type: 'string'
+					   description:
+					   'The package tag assigned to the class after the operation.').
+				  (self
+					   schemaPropertyNamed: 'classComment'
+					   type: 'string'
+					   description: 'The class comment after the operation.').
+				  ((self
+					    schemaPropertyNamed: 'instanceSlotNames'
+					    type: 'array'
+					    description:
+						    'The instance-side slots present on the class after the operation.')
+					   items: (MCPStructureProperties new
+							    type: 'string';
+							    description: 'An instance-side slot name.';
+							    yourself);
+					   yourself).
+				  ((self
+					    schemaPropertyNamed: 'classSlotNames'
+					    type: 'array'
+					    description:
+						    'The class-side slots present on the class after the operation.')
+					   items: (MCPStructureProperties new
+							    type: 'string';
+							    description: 'A class-side slot name.';
+							    yourself);
+					   yourself).
+				  ((self
+					    schemaPropertyNamed: 'subclassNames'
+					    type: 'array'
+					    description:
+						    'The direct subclasses of the class after the operation.')
+					   items: (MCPStructureProperties new
+							    type: 'string';
+							    description: 'A direct subclass name.';
+							    yourself);
+					   yourself).
+				  (self
+					   schemaPropertyNamed: 'oldPackageName'
+					   type: 'string'
+					   description: 'The previous package when operation=move.').
+				  (self
+					   schemaPropertyNamed: 'oldTag'
+					   type: 'string'
+					   description: 'The previous package tag when operation=move.').
+				  (self
+					   schemaPropertyNamed: 'oldClassName'
+					   type: 'string'
+					   description: 'The previous class name when operation=rename.').
+				  (self
+					   schemaPropertyNamed: 'newClassName'
+					   type: 'string'
+					   description: 'The new class name when operation=rename.').
+				  (self
+					   schemaPropertyNamed: 'oldSuperclassName'
+					   type: 'string'
+					   description:
+					   'The previous superclass when operation=reparent.').
+				  (self
+					   schemaPropertyNamed: 'oldClassComment'
+					   type: 'string'
+					   description:
+					   'The previous class comment when operation=setComment.').
+				  (self
+					   schemaPropertyNamed: 'newClassComment'
+					   type: 'string'
+					   description:
+					   'The new class comment when operation=setComment.') }
+		  required:
+			  #( 'operation' 'className' 'superclassName' 'packageName'
+			     'tag' 'classComment' 'instanceSlotNames' 'classSlotNames'
+			     'subclassNames' )
 ]
 
 { #category : 'defaults' }
@@ -324,6 +359,74 @@ MCPToolEditClass >> executeRenameWithArguments: arguments [
 ]
 
 { #category : 'executing' }
+MCPToolEditClass >> executeReparentWithArguments: arguments [
+
+	| className result superclassName |
+	className := self stringArgumentNamed: 'className' in: arguments.
+	superclassName := self
+		                  stringArgumentNamed: 'superclassName'
+		                  in: arguments.
+	^ [
+	  [
+	  result := (MCPReparentClassCommand
+		             className: className
+		             superclassName: superclassName) execute.
+	  self
+		  successResultText:
+			  'Reparented class ' , className , ' to superclass '
+			  , superclassName , '.'
+		  data: (self dataForResult: result operation: 'reparent') ]
+		  on: MCPCommandError
+		  do: [ :error |
+			  self errorResultForCommandError: error operation: 'reparent' ] ]
+		  on: Exception
+		  do: [ :error |
+			  self
+				  errorResultText: (self
+						   failureMessageForReparentClassNamed: className
+						   superclassName: superclassName
+						   error: error)
+				  details: {
+						  (#errorClass -> error class name).
+						  (#message -> error messageText).
+						  (#operation -> 'reparent').
+						  (#className -> className).
+						  (#superclassName -> superclassName) } asDictionary ]
+]
+
+{ #category : 'executing' }
+MCPToolEditClass >> executeSetCommentWithArguments: arguments [
+
+	| classComment className result |
+	className := self stringArgumentNamed: 'className' in: arguments.
+	classComment := self classCommentFromArguments: arguments.
+	^ [
+	  [
+	  result := (MCPChangeClassCommentCommand
+		             className: className
+		             classComment: classComment) execute.
+	  self
+		  successResultText: 'Set comment for class ' , className , '.'
+		  data: (self dataForResult: result operation: 'setComment') ]
+		  on: MCPCommandError
+		  do: [ :error |
+			  self errorResultForCommandError: error operation: 'setComment' ] ]
+		  on: Exception
+		  do: [ :error |
+			  self
+				  errorResultText:
+				  (self
+					   failureMessageForSetCommentOnClassNamed: className
+					   error: error)
+				  details: {
+						  (#errorClass -> error class name).
+						  (#message -> error messageText).
+						  (#operation -> 'setComment').
+						  (#className -> className).
+						  (#classComment -> classComment) } asDictionary ]
+]
+
+{ #category : 'executing' }
 MCPToolEditClass >> executeWithArguments: arguments [
 
 	| operation |
@@ -335,7 +438,12 @@ MCPToolEditClass >> executeWithArguments: arguments [
 		^ self executeMoveWithArguments: arguments ].
 	operation = 'rename' ifTrue: [
 		^ self executeRenameWithArguments: arguments ].
-	Error signal: 'operation must be one of create, move, or rename.'
+	operation = 'reparent' ifTrue: [
+		^ self executeReparentWithArguments: arguments ].
+	operation = 'setComment' ifTrue: [
+		^ self executeSetCommentWithArguments: arguments ].
+	Error signal:
+		'operation must be one of create, move, rename, reparent, or setComment.'
 ]
 
 { #category : 'private' }
@@ -390,6 +498,34 @@ MCPToolEditClass >> failureMessageForRenameClassNamed: className to: newClassNam
 			  nextPutAll: anError messageText ]
 ]
 
+{ #category : 'private' }
+MCPToolEditClass >> failureMessageForReparentClassNamed: className superclassName: superclassName error: anError [
+
+	^ String streamContents: [ :stream |
+		  stream
+			  nextPutAll: 'Unable to reparent class ';
+			  nextPutAll: className;
+			  nextPutAll: ' to superclass ';
+			  nextPutAll: superclassName;
+			  nextPutAll: ' (';
+			  nextPutAll: anError class name;
+			  nextPutAll: '): ';
+			  nextPutAll: anError messageText ]
+]
+
+{ #category : 'private' }
+MCPToolEditClass >> failureMessageForSetCommentOnClassNamed: className error: anError [
+
+	^ String streamContents: [ :stream |
+		  stream
+			  nextPutAll: 'Unable to set comment for class ';
+			  nextPutAll: className;
+			  nextPutAll: ' (';
+			  nextPutAll: anError class name;
+			  nextPutAll: '): ';
+			  nextPutAll: anError messageText ]
+]
+
 { #category : 'private - arguments' }
 MCPToolEditClass >> operationFromArguments: arguments [
 
@@ -400,7 +536,10 @@ MCPToolEditClass >> operationFromArguments: arguments [
 	normalized = 'create' ifTrue: [ ^ 'create' ].
 	normalized = 'move' ifTrue: [ ^ 'move' ].
 	normalized = 'rename' ifTrue: [ ^ 'rename' ].
-	Error signal: 'operation must be one of create, move, or rename.'
+	normalized = 'reparent' ifTrue: [ ^ 'reparent' ].
+	normalized = 'setcomment' ifTrue: [ ^ 'setComment' ].
+	Error signal:
+		'operation must be one of create, move, rename, reparent, or setComment.'
 ]
 
 { #category : 'private - arguments' }
@@ -420,5 +559,14 @@ MCPToolEditClass >> validateRequiredArgumentsForOperation: operation in: argumen
 		(self stringArgumentNamed: 'newClassName' in: arguments) ifNil: [
 			JRPCInvalidParameters signal ].
 		^ self ].
-	Error signal: 'operation must be one of create, move, or rename.'
+	operation = 'reparent' ifTrue: [
+		(self stringArgumentNamed: 'superclassName' in: arguments) ifNil: [
+			JRPCInvalidParameters signal ].
+		^ self ].
+	operation = 'setComment' ifTrue: [
+		(self argumentNamed: 'classComment' in: arguments ifAbsent: [ nil ])
+			ifNil: [ JRPCInvalidParameters signal ].
+		^ self ].
+	Error signal:
+		'operation must be one of create, move, rename, reparent, or setComment.'
 ]

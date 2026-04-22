@@ -96,10 +96,20 @@ MCPToolContractsTest >> testDescribeMethodHasAccurateNameAndRequiredArguments [
 { #category : 'tests' }
 MCPToolContractsTest >> testEditClassHasAccurateNameAndRequiredArguments [
 
-	self assert: MCPToolEditClass new name equals: 'edit-class'.
+	| operationProperty propertyNames tool |
+	tool := MCPToolEditClass new.
+	propertyNames := tool inputSchema properties collect: [ :each |
+		                 each name ].
+	operationProperty := tool inputSchema properties detect: [ :each |
+		                     each name = 'operation' ].
+	self assert: tool name equals: 'edit-class'.
 	self
-		assert: MCPToolEditClass new inputSchema required asSet
-		equals: #( 'operation' 'className' ) asSet
+		assert: tool inputSchema required asSet
+		equals: #( 'operation' 'className' ) asSet.
+	self assert: (propertyNames includes: 'classComment').
+	self
+		assert: (operationProperty extraProperties at: #enum) asArray
+		equals: #( 'create' 'move' 'rename' 'reparent' 'setComment' )
 ]
 
 { #category : 'tests' }
