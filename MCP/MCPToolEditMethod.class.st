@@ -287,8 +287,9 @@ MCPToolEditMethod >> executeCompileWithArguments: arguments [
 	^ [
 	  behavior := self behaviorNamed: className classSide: classSide.
 	  selector := behavior compile: methodSource classified: protocol.
-	  compiledMethod := behavior >> selector.
-	  compiledMethod reformat.
+	  compiledMethod := self
+		                    reformattedCompiledMethodForBehavior: behavior
+		                    selector: selector.
 	  self
 		  successResultText: 'Compiled '
 			  , (self methodReferenceForBehavior: behavior selector: selector)
@@ -336,7 +337,10 @@ MCPToolEditMethod >> executeRenameWithArguments: arguments [
 		   in: behavior
 		   to: newSelectorSymbol
 		   permutation: permutation) execute.
-	  newCompiledMethod := behavior compiledMethodAt: newSelectorSymbol.
+	  newCompiledMethod := self
+		                       reformattedCompiledMethodForBehavior:
+		                       behavior
+		                       selector: newSelectorSymbol.
 	  self
 		  successResultText: 'Renamed ' , oldMethodReference , ' to '
 			  ,
@@ -481,6 +485,15 @@ MCPToolEditMethod >> permutationFromArguments: arguments selector: aSelector [
 	permutation := self normalizedPermutation: permutation.
 	self validatePermutation: permutation forSelector: aSelector.
 	^ permutation
+]
+
+{ #category : 'private' }
+MCPToolEditMethod >> reformattedCompiledMethodForBehavior: aBehavior selector: aSelector [
+
+	| compiledMethod |
+	compiledMethod := aBehavior >> aSelector.
+	compiledMethod reformat.
+	^ aBehavior >> aSelector
 ]
 
 { #category : 'private' }

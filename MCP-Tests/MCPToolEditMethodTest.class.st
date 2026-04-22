@@ -30,9 +30,7 @@ MCPToolEditMethodTest >> assertSuccessDataHasCompiledMethodShape: data [
 			 (data at: #isExtension) = false ]).
 	self assert: (data at: #protocol) isString.
 	self assert: (data at: #source) isString.
-	self deny: ((data at: #source) includesSubstring: String cr asString).
-	self deny:
-		((data at: #source) includesSubstring: String tab asString)
+	self deny: (data at: #source) isEmpty
 ]
 
 { #category : 'private' }
@@ -431,17 +429,52 @@ MCPToolEditMethodTest >> testNormalizesLineEndingsBeforeCompilation [
 { #category : 'tests' }
 MCPToolEditMethodTest >> testReformatsCompiledMethod [
 
-	| reformattedSource source |
+	| data reformattedSource result source |
 	source := 'uglyAnswer   ^   1+2'.
-	self callToolWith: (self
-			 compileArgumentsForClassName: 'MCPToolEditMethodTestTarget'
-			 classSide: false
-			 methodSource: source
-			 protocol: 'tests').
+	result := self callToolWith: (self
+			           compileArgumentsForClassName:
+			           'MCPToolEditMethodTestTarget'
+			           classSide: false
+			           methodSource: source
+			           protocol: 'tests').
+	data := self dataFrom: result.
 	reformattedSource := (MCPToolEditMethodTestTarget >> #uglyAnswer)
 		                     sourceCode.
+	self assert: (data at: #source) equals: reformattedSource.
 	self assert: (reformattedSource includesSubstring: '1 + 2').
 	self assert: MCPToolEditMethodTestTarget new uglyAnswer equals: 3
+]
+
+{ #category : 'tests' }
+MCPToolEditMethodTest >> testRenameReturnsFormattedSourceForRenamedMethod [
+
+	| data newSelector oldSelector renamedSource result |
+	oldSelector := ('uglyRename:' , 'with:') asSymbol.
+	newSelector := ('with:' , 'uglyRename:') asSymbol.
+	[
+	self
+		ensureMethodSource:
+		'uglyRename: first  with:second ^first,''-'',second'
+		protocol: 'tests'
+		on: MCPToolEditMethodTestTarget.
+	result := self callToolWith: {
+			          (#operation -> 'rename').
+			          (#className -> 'MCPToolEditMethodTestTarget').
+			          (#classSide -> false).
+			          (#selector -> oldSelector asString).
+			          (#newSelector -> newSelector asString).
+			          (#permutation -> #( 2 1 )) } asDictionary.
+	data := self dataFrom: result.
+	renamedSource := (MCPToolEditMethodTestTarget >> newSelector)
+		                 sourceCode.
+	self assert: (data at: #source) equals: renamedSource.
+	self assert:
+		(renamedSource includesSubstring: 'with: second uglyRename: first').
+	self assert:
+		(renamedSource includesSubstring: '^ first , ''-'' , second') ]
+		ensure: [
+			self removeSelector: oldSelector from: MCPToolEditMethodTestTarget.
+			self removeSelector: newSelector from: MCPToolEditMethodTestTarget ]
 ]
 
 { #category : 'tests' }
