@@ -33,16 +33,31 @@ MCPCompiledMethodScopeQuery >> addBehaviorsForBaseClass: aClass to: behaviors [
 ]
 
 { #category : 'private - scope' }
+MCPCompiledMethodScopeQuery >> allBehaviors [
+
+	| behaviors |
+	behaviors := IdentitySet new.
+	Smalltalk globals allBehaviorsDo: [ :eachBehavior |
+		(self matchesSideForBehavior: eachBehavior) ifTrue: [
+			behaviors add: eachBehavior ] ].
+	^ behaviors asArray
+]
+
+{ #category : 'private - scope' }
 MCPCompiledMethodScopeQuery >> allCompiledMethods [
 
-	| methods |
-	methods := IdentitySet new.
-	Smalltalk globals allBehaviorsDo: [ :eachBehavior |
-		eachBehavior methods do: [ :eachMethod |
-			(eachMethod isCompiledMethod and: [
-				 self matchesSideForCompiledMethod: eachMethod ]) ifTrue: [
-				methods add: eachMethod ] ] ].
-	^ methods asArray
+	^ self compiledMethodsForBehaviors: self allBehaviors
+]
+
+{ #category : 'querying' }
+MCPCompiledMethodScopeQuery >> behaviors [
+
+	self validate.
+	scope = 'image' ifTrue: [ ^ self allBehaviors ].
+	scope = 'packages' ifTrue: [ ^ self behaviorsForPackageNames ].
+	scope = 'classes' ifTrue: [ ^ self behaviorsForClassNames ].
+	scope = 'hierarchy' ifTrue: [ ^ self hierarchyBehaviorsForClassNames ].
+	Error signal: 'Unsupported scope: ' , scope
 ]
 
 { #category : 'private - scope' }
@@ -55,6 +70,22 @@ MCPCompiledMethodScopeQuery >> behaviorsForClassNames [
 			addBehaviorsForBaseClass:
 			(Smalltalk globals at: eachName asSymbol) instanceSide
 			to: behaviors ].
+	^ behaviors asArray
+]
+
+{ #category : 'private - scope' }
+MCPCompiledMethodScopeQuery >> behaviorsForPackageNames [
+
+	| behaviors |
+	behaviors := IdentitySet new.
+	self packageNames do: [ :eachName |
+		| package |
+		package := eachName asPackage.
+		package definedClasses do: [ :aClass |
+			self addBehaviorsForBaseClass: aClass to: behaviors ].
+		package extensionMethods do: [ :eachMethod |
+			(self matchesSideForCompiledMethod: eachMethod) ifTrue: [
+				behaviors add: eachMethod methodClass ] ] ].
 	^ behaviors asArray
 ]
 
@@ -141,6 +172,14 @@ MCPCompiledMethodScopeQuery >> initialize [
 	packageNames := #(  ).
 	classNames := #(  ).
 	side := 'both'
+]
+
+{ #category : 'private - scope' }
+MCPCompiledMethodScopeQuery >> matchesSideForBehavior: aBehavior [
+
+	side = 'both' ifTrue: [ ^ true ].
+	side = 'class' ifTrue: [ ^ aBehavior isMeta ].
+	^ aBehavior isMeta not
 ]
 
 { #category : 'private - scope' }

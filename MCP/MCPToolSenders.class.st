@@ -7,11 +7,11 @@ Class {
 }
 
 { #category : 'private - searching' }
-MCPToolSenders >> classBindingForSelectorSymbol: aSelectorSymbol [
+MCPToolSenders >> classBindingForClassName: aClassName [
 
 	| binding |
 	binding := Smalltalk globals
-		           associationAt: aSelectorSymbol
+		           associationAt: aClassName asSymbol
 		           ifAbsent: [ ^ nil ].
 	^ binding value isBehavior
 		  ifTrue: [ binding ]
@@ -19,16 +19,16 @@ MCPToolSenders >> classBindingForSelectorSymbol: aSelectorSymbol [
 ]
 
 { #category : 'private - searching' }
-MCPToolSenders >> compiledMethod: aCompiledMethod referencesClassBinding: classBinding [
+MCPToolSenders >> compiledMethod: aCompiledMethod referencesAnyVariable: variables [
 
-	^ aCompiledMethod hasLiteralSuchThat: [ :eachLiteral |
-		  eachLiteral == classBinding ]
+	^ variables anySatisfy: [ :eachVariable |
+		  eachVariable isAccessedIn: aCompiledMethod ]
 ]
 
 { #category : 'executing' }
 MCPToolSenders >> executeWithArguments: arguments [
 
-	| caseSensitive data endIndex entries filterPattern filterMode includeSource limit offset pagedEntries query requestedScope selectorString startIndex totalCount truncated |
+	| caseSensitive compiledMethods data endIndex entries filterPattern filterMode includeSource limit mode offset pagedEntries query requestedMode requestedScope selectorString startIndex totalCount truncated |
 	selectorString := self selectorStringFrom: arguments.
 	filterPattern := self stringArgumentNamed: 'filter' in: arguments.
 	filterMode := self normalizedFilterModeFrom: arguments.
@@ -50,16 +50,18 @@ MCPToolSenders >> executeWithArguments: arguments [
 		          default: 0.
 	requestedScope := (self stringArgumentNamed: 'scope' in: arguments)
 		                  ifNil: [ 'image' ].
+	requestedMode := (self stringArgumentNamed: 'mode' in: arguments)
+		                 ifNil: [ 'unknown' ].
 	^ [
-	  | classBinding |
+	  mode := self modeFromArguments: arguments.
 	  query := self compiledMethodScopeQueryFromArguments: arguments.
-	  classBinding := self classBindingForSelectorSymbol:
-		                  selectorString asSymbol.
+	  compiledMethods := query compiledMethods.
 	  entries := self
 		             compiledMethodEntriesFrom: (self
-				              matchingSendersForSelector: selectorString asSymbol
-				              classBinding: classBinding
-				              inCompiledMethods: query compiledMethods)
+				              matchingCompiledMethodsForTarget: selectorString
+				              mode: mode
+				              scopeQuery: query
+				              inCompiledMethods: compiledMethods)
 		             filter: filterPattern
 		             filterMode: filterMode
 		             caseSensitive: caseSensitive
@@ -75,6 +77,7 @@ MCPToolSenders >> executeWithArguments: arguments [
 	  truncated := offset + pagedEntries size < totalCount.
 	  data := {
 		          (#selector -> selectorString).
+		          (#mode -> mode).
 		          (#scope -> query scope).
 		          (#side -> query side).
 		          (#sourceIncluded -> includeSource).
@@ -88,7 +91,8 @@ MCPToolSenders >> executeWithArguments: arguments [
 		          (#senders -> pagedEntries) } asDictionary.
 	  self
 		  successResultText: (self
-				   successSummaryForSelector: selectorString
+				   successSummaryForTarget: selectorString
+				   mode: mode
 				   scope: query scope
 				   returnedCount: pagedEntries size
 				   totalCount: totalCount
@@ -98,23 +102,27 @@ MCPToolSenders >> executeWithArguments: arguments [
 		  do: [ :error |
 			  self
 				  errorResultText: (self
-						   failureMessageForSelector: selectorString
+						   failureMessageForTarget: selectorString
+						   mode: requestedMode
 						   scope: requestedScope
 						   error: error)
 				  details: {
 						  (#errorClass -> error class name).
 						  (#message -> error messageText).
 						  (#selector -> selectorString).
+						  (#mode -> requestedMode).
 						  (#scope -> requestedScope) } asDictionary ]
 ]
 
 { #category : 'private - results' }
-MCPToolSenders >> failureMessageForSelector: selectorString scope: scope error: anError [
+MCPToolSenders >> failureMessageForTarget: targetString mode: mode scope: scope error: anError [
 
 	^ String streamContents: [ :stream |
 		  stream
-			  nextPutAll: 'Unable to find senders for #';
-			  nextPutAll: selectorString;
+			  nextPutAll: 'Unable to find ';
+			  nextPutAll: (self queryDescriptionForMode: mode);
+			  nextPutAll: ' for ';
+			  nextPutAll: (self targetLabelFor: targetString mode: mode);
 			  nextPutAll: ' [scope=';
 			  nextPutAll: scope;
 			  nextPutAll: '] (';
@@ -126,16 +134,16 @@ MCPToolSenders >> failureMessageForSelector: selectorString scope: scope error: 
 { #category : 'initialization' }
 MCPToolSenders >> initialize [
 
-	| classNamesProperty packageNamesProperty scopeProperty sendersProperty sideProperty |
+	| classNamesProperty modeProperty packageNamesProperty scopeProperty sendersProperty sideProperty |
 	super initialize.
 	name := 'pharo-senders'.
-	title := 'Find Pharo Senders'.
-	description := 'Find methods that send a selector in the running Pharo image, optionally scoped to packages, hierarchies, or specific classes.'.
+	title := 'Find Pharo Senders and References'.
+	description := 'Find method senders, class references, or variable references in the running Pharo image, optionally scoped to packages, hierarchies, or specific classes.'.
 	scopeProperty := MCPStructureProperties new
 		                 name: 'scope';
 		                 type: 'string';
 		                 description:
-			                 'Where to search for senders. Defaults to image.';
+			                 'Where to search for senders or references. Defaults to image.';
 		                 enum: #( 'image' 'packages' 'hierarchy' 'classes' );
 		                 yourself.
 	sideProperty := MCPStructureProperties new
@@ -144,6 +152,13 @@ MCPToolSenders >> initialize [
 		                description:
 			                'Which method side to search. Defaults to both.';
 		                enum: #( 'instance' 'class' 'both' );
+		                yourself.
+	modeProperty := MCPStructureProperties new
+		                name: 'mode';
+		                type: 'string';
+		                description:
+			                'Which sender or reference query to run. Use method for message senders, class for class references, and variable for variable references.';
+		                enum: #( 'method' 'class' 'variable' );
 		                yourself.
 	packageNamesProperty := self
 		                        stringArraySchemaNamed: 'packageNames'
@@ -162,8 +177,9 @@ MCPToolSenders >> initialize [
 					                name: 'selector';
 					                type: 'string';
 					                description:
-						                'The selector whose senders should be found.';
+						                'The selector, class name, or variable name to search, depending on mode.';
 					                yourself).
+				               modeProperty.
 				               scopeProperty.
 				               sideProperty.
 				               packageNamesProperty.
@@ -172,7 +188,7 @@ MCPToolSenders >> initialize [
 					                name: 'filter';
 					                type: 'string';
 					                description:
-						                'Optional filter applied to sender selector, class, package, protocol, method reference, and source text.';
+						                'Optional filter applied to method selector, class, package, protocol, method reference, and source text.';
 					                yourself).
 				               (MCPStructureProperties new
 					                name: 'filterMode';
@@ -191,13 +207,13 @@ MCPToolSenders >> initialize [
 					                name: 'includeSource';
 					                type: 'boolean';
 					                description:
-						                'Whether to include sender source code in each result entry. Defaults to false.';
+						                'Whether to include method source code in each result entry. Defaults to false.';
 					                yourself).
 				               (MCPStructureProperties new
 					                name: 'limit';
 					                type: 'number';
 					                description:
-						                'Maximum number of matching senders to return. Defaults to 100. Use 0 to request counts only.';
+						                'Maximum number of matching methods to return. Defaults to 100. Use 0 to request counts only.';
 					                yourself).
 				               (MCPStructureProperties new
 					                name: 'offset';
@@ -205,25 +221,33 @@ MCPToolSenders >> initialize [
 					                description:
 						                'Zero-based pagination offset applied after filtering. Defaults to 0.';
 					                yourself) };
-		               required: #( 'selector' );
+		               required: #( 'selector' 'mode' );
 		               yourself.
 	sendersProperty := self
 		                   schemaPropertyNamed: 'senders'
 		                   type: 'array'
 		                   description:
-		                   'The sender methods returned for the requested page.'.
+		                   'The matching methods returned for the requested page.'.
 	sendersProperty items: self senderEntrySchema.
 	outputSchema := self
 		                standardOutputSchemaForDataProperties: {
 				                (self
 					                 schemaPropertyNamed: 'selector'
 					                 type: 'string'
-					                 description: 'The selector that was searched.').
+					                 description:
+					                 'The selector, class name, or variable name that was searched.').
+				                ((self
+					                  schemaPropertyNamed: 'mode'
+					                  type: 'string'
+					                  description:
+						                  'The sender or reference mode that was searched.')
+					                 enum: #( 'method' 'class' 'variable' );
+					                 yourself).
 				                ((self
 					                  schemaPropertyNamed: 'scope'
 					                  type: 'string'
 					                  description:
-						                  'The scope used to search for senders.')
+						                  'The scope used to search for senders or references.')
 					                 enum:
 						                 #( 'image' 'packages' 'hierarchy' 'classes' );
 					                 yourself).
@@ -237,19 +261,19 @@ MCPToolSenders >> initialize [
 					                 schemaPropertyNamed: 'sourceIncluded'
 					                 type: 'boolean'
 					                 description:
-					                 'Whether sender source was included in the returned entries.').
+					                 'Whether method source was included in the returned entries.').
 				                packageNamesProperty.
 				                classNamesProperty.
 				                (self
 					                 schemaPropertyNamed: 'returnedCount'
 					                 type: 'number'
 					                 description:
-					                 'The number of senders returned in this page.').
+					                 'The number of matching methods returned in this page.').
 				                (self
 					                 schemaPropertyNamed: 'totalCount'
 					                 type: 'number'
 					                 description:
-					                 'The total number of matching senders before pagination.').
+					                 'The total number of matching methods before pagination.').
 				                (self
 					                 schemaPropertyNamed: 'offset'
 					                 type: 'number'
@@ -259,15 +283,15 @@ MCPToolSenders >> initialize [
 					                 schemaPropertyNamed: 'limit'
 					                 type: 'number'
 					                 description:
-					                 'The maximum number of senders requested.').
+					                 'The maximum number of matching methods requested.').
 				                (self
 					                 schemaPropertyNamed: 'truncated'
 					                 type: 'boolean'
 					                 description:
-					                 'Whether additional matching senders exist beyond the returned page.').
+					                 'Whether additional matching methods exist beyond the returned page.').
 				                sendersProperty }
 		                required:
-			                #( 'selector' 'scope' 'side' 'sourceIncluded'
+			                #( 'selector' 'mode' 'scope' 'side' 'sourceIncluded'
 			                   'packageNames' 'classNames' 'returnedCount'
 			                   'totalCount' 'offset' 'limit' 'truncated'
 			                   'senders' ).
@@ -275,29 +299,87 @@ MCPToolSenders >> initialize [
 ]
 
 { #category : 'private - searching' }
-MCPToolSenders >> matchingSendersForSelector: aSelectorSymbol classBinding: classBinding inCompiledMethods: compiledMethods [
+MCPToolSenders >> matchingClassReferencesForClassNamed: aClassName inCompiledMethods: compiledMethods [
 
-	| referenceSenders selectorSenders |
-	selectorSenders := (compiledMethods select: [ :eachMethod |
-		                    eachMethod sendsSelector: aSelectorSymbol ])
-		                   asArray.
-	classBinding ifNil: [ ^ selectorSenders ].
-	referenceSenders := (compiledMethods select: [ :eachMethod |
-		                     self
-			                     compiledMethod: eachMethod
-			                     referencesClassBinding: classBinding ])
-		                    asArray.
-	^ self mergeCompiledMethods: selectorSenders with: referenceSenders
+	| classBinding classSymbol |
+	classBinding := self classBindingForClassName: aClassName.
+	classBinding ifNil: [
+		Error signal: 'There is no class named ' , aClassName , '.' ].
+	classSymbol := aClassName asSymbol.
+	^ (compiledMethods select: [ :eachMethod |
+		   (self
+			    compiledMethod: eachMethod
+			    referencesAnyVariable: { classBinding }) or: [
+			   eachMethod hasSelector: classSymbol ] ]) asArray
 ]
 
 { #category : 'private - searching' }
-MCPToolSenders >> mergeCompiledMethods: leftMethods with: rightMethods [
+MCPToolSenders >> matchingCompiledMethodsForTarget: targetString mode: mode scopeQuery: query inCompiledMethods: compiledMethods [
 
-	| merged |
-	merged := IdentitySet new.
-	merged addAll: leftMethods.
-	merged addAll: rightMethods.
-	^ merged asArray
+	mode = 'method' ifTrue: [
+		^ self
+			  matchingMethodSendersForSelector: targetString asSymbol
+			  inCompiledMethods: compiledMethods ].
+	mode = 'class' ifTrue: [
+		^ self
+			  matchingClassReferencesForClassNamed: targetString
+			  inCompiledMethods: compiledMethods ].
+	mode = 'variable' ifTrue: [
+		^ self
+			  matchingVariableReferencesNamed: targetString
+			  scopeQuery: query
+			  inCompiledMethods: compiledMethods ].
+	Error signal: 'Unsupported mode: ' , mode
+]
+
+{ #category : 'private - searching' }
+MCPToolSenders >> matchingMethodSendersForSelector: aSelectorSymbol inCompiledMethods: compiledMethods [
+
+	| specialSelectorIndex |
+	specialSelectorIndex := Smalltalk specialSelectorIndexOrNil:
+		                        aSelectorSymbol.
+	^ (compiledMethods select: [ :eachMethod |
+		   eachMethod
+			   hasSelector: aSelectorSymbol
+			   specialSelectorIndex: specialSelectorIndex ]) asArray
+]
+
+{ #category : 'private - searching' }
+MCPToolSenders >> matchingVariableReferencesNamed: aVariableName scopeQuery: query inCompiledMethods: compiledMethods [
+
+	| variables |
+	variables := self
+		             variableBindingsNamed: aVariableName
+		             inBehaviors: query behaviors.
+	variables ifEmpty: [
+		Error signal: 'No variable named ' , aVariableName
+			, ' is accessible in the requested scope.' ].
+	^ (compiledMethods select: [ :eachMethod |
+		   self compiledMethod: eachMethod referencesAnyVariable: variables ])
+		  asArray
+]
+
+{ #category : 'private - arguments' }
+MCPToolSenders >> modeFromArguments: arguments [
+
+	| mode |
+	mode := (self stringArgumentNamed: 'mode' in: arguments) ifNil: [
+		        Error signal: 'mode is required.' ].
+	mode := mode asLowercase.
+	mode = 'methodsenders' ifTrue: [ ^ 'method' ].
+	mode = 'classreferences' ifTrue: [ ^ 'class' ].
+	mode = 'variablereferences' ifTrue: [ ^ 'variable' ].
+	(#( 'method' 'class' 'variable' ) includes: mode) ifTrue: [ ^ mode ].
+	Error signal: 'mode must be one of method, class, or variable.'
+]
+
+{ #category : 'private - results' }
+MCPToolSenders >> queryDescriptionForMode: mode [
+
+	mode = 'method' ifTrue: [ ^ 'method senders' ].
+	mode = 'class' ifTrue: [ ^ 'class references' ].
+	mode = 'variable' ifTrue: [ ^ 'variable references' ].
+	^ 'senders or references'
 ]
 
 { #category : 'private - schema' }
@@ -306,41 +388,44 @@ MCPToolSenders >> senderEntrySchema [
 	^ MCPStructureProperties new
 		  name: 'sender';
 		  type: 'object';
-		  description: 'A method that sends the requested selector.';
+		  description:
+			  'A method matching the requested sender or reference query.';
 		  properties: {
 				  (self
 					   schemaPropertyNamed: 'selector'
 					   type: 'string'
-					   description: 'The selector of the sender method.').
+					   description: 'The selector of the matching method.').
 				  (self
 					   schemaPropertyNamed: 'className'
 					   type: 'string'
-					   description: 'The base class that defines the sender method.').
+					   description:
+						   'The base class that defines the matching method.').
 				  ((self
 					    schemaPropertyNamed: 'side'
 					    type: 'string'
-					    description: 'The side on which the sender is defined.')
+					    description:
+						    'The side on which the matching method is defined.')
 					   enum: #( 'instance' 'class' );
 					   yourself).
 				  (self
 					   schemaPropertyNamed: 'packageName'
 					   type: 'string'
-					   description: 'The package that owns the sender method.').
+					   description: 'The package that owns the matching method.').
 				  (self
 					   schemaPropertyNamed: 'isExtension'
 					   type: 'boolean'
 					   description:
-					   'Whether the sender method is an extension on its class package.').
+					   'Whether the matching method is an extension on its class package.').
 				  (self
 					   schemaPropertyNamed: 'protocol'
 					   type: 'string'
 					   description:
-					   'The protocol/category containing the sender method.').
+					   'The protocol/category containing the matching method.').
 				  (self
 					   schemaPropertyNamed: 'source'
 					   type: 'string'
 					   description:
-					   'The formatted source code of the sender when includeSource=true.') };
+					   'The formatted source code of the matching method when includeSource=true.') };
 		  required:
 			  #( 'selector' 'className' 'side' 'packageName' 'isExtension'
 			     'protocol' );
@@ -349,13 +434,15 @@ MCPToolSenders >> senderEntrySchema [
 ]
 
 { #category : 'private - results' }
-MCPToolSenders >> successSummaryForSelector: selectorString scope: scope returnedCount: returnedCount totalCount: totalCount truncated: truncated [
+MCPToolSenders >> successSummaryForTarget: targetString mode: mode scope: scope returnedCount: returnedCount totalCount: totalCount truncated: truncated [
 
 	^ String streamContents: [ :stream |
 		  stream
 			  print: returnedCount;
-			  nextPutAll: ' senders returned for #';
-			  nextPutAll: selectorString;
+			  nextPutAll: ' ';
+			  nextPutAll: (self queryDescriptionForMode: mode);
+			  nextPutAll: ' returned for ';
+			  nextPutAll: (self targetLabelFor: targetString mode: mode);
 			  nextPutAll: ' [scope=';
 			  nextPutAll: scope;
 			  nextPutAll: '] (';
@@ -363,4 +450,25 @@ MCPToolSenders >> successSummaryForSelector: selectorString scope: scope returne
 			  nextPutAll: ' matched'.
 		  truncated ifTrue: [ stream nextPutAll: ', more available' ].
 		  stream nextPutAll: ').' ]
+]
+
+{ #category : 'private - results' }
+MCPToolSenders >> targetLabelFor: targetString mode: mode [
+
+	mode = 'method' ifTrue: [ ^ '#' , targetString ].
+	^ targetString
+]
+
+{ #category : 'private - searching' }
+MCPToolSenders >> variableBindingsNamed: aVariableName inBehaviors: behaviors [
+
+	| variables |
+	variables := IdentitySet new.
+	behaviors do: [ :eachBehavior |
+		eachBehavior allSlots do: [ :eachSlot |
+			eachSlot name asString = aVariableName ifTrue: [
+				variables add: eachSlot ] ].
+		(eachBehavior bindingOf: aVariableName) ifNotNil: [ :binding |
+			variables add: binding ] ].
+	^ variables asArray
 ]
