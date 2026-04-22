@@ -333,7 +333,11 @@ MCPToolRemoveMethodsTest >> testRemovesBatchOfInstanceMethods [
 		equals: self secondInstanceBatchSelectorString.
 	self assert: (removedMethods allSatisfy: [ :each |
 			 each keys asSet
-			 = #( selector protocol packageName isExtension source ) asSet ])
+			 = #( selector protocol packageName isExtension source ) asSet ]).
+	self deny: (removedMethods anySatisfy: [ :each |
+			 (each at: #source) includesSubstring: String cr asString ]).
+	self deny: (removedMethods anySatisfy: [ :each |
+			 (each at: #source) includesSubstring: String tab asString ])
 ]
 
 { #category : 'tests' }

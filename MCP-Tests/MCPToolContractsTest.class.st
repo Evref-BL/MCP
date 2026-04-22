@@ -36,6 +36,30 @@ MCPToolContractsTest >> testDescribeClassHasAccurateNameAndRequiredArguments [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testDescribeMethodHasAccurateNameAndRequiredArguments [
+
+	| propertyNames variablePropertyNames |
+	propertyNames := MCPToolDescribeMethod new inputSchema properties
+		                 collect: [ :each | each name ].
+	variablePropertyNames := (MCPToolDescribeMethod new
+		                          variableReferenceSchema extraProperties
+		                          at: #properties) collect: [ :each |
+		                         each name ].
+	self
+		assert: MCPToolDescribeMethod new name
+		equals: 'pharo-describe-method'.
+	self
+		assert: MCPToolDescribeMethod new inputSchema required asSet
+		equals: #( 'className' 'selector' ) asSet.
+	self assert: (propertyNames includes: 'className').
+	self assert: (propertyNames includes: 'selector').
+	self assert: (propertyNames includes: 'side').
+	self deny: (variablePropertyNames includes: 'sourceIntervals').
+	self deny: (variablePropertyNames includes: 'external').
+	self deny: (variablePropertyNames includes: 'declaredInMethod')
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testEditClassHasAccurateNameAndRequiredArguments [
 
 	self assert: MCPToolEditClass new name equals: 'pharo-edit-class'.

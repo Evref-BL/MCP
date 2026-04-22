@@ -65,7 +65,7 @@ MCPToolStructuredOutputTest >> testDescribeClassReturnsStructuredSuccess [
 	result := self
 		          callToolNamed: 'pharo-describe-class'
 		          withArguments:
-		          { (#className -> 'MCPToolReadMethodTestTarget') }
+		          { (#className -> 'MCPToolDescribeMethodTestTarget') }
 			          asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
@@ -74,11 +74,63 @@ MCPToolStructuredOutputTest >> testDescribeClassReturnsStructuredSuccess [
 		equals: 'ok'.
 	self
 		assert: (data at: #className)
-		equals: 'MCPToolReadMethodTestTarget'.
+		equals: 'MCPToolDescribeMethodTestTarget'.
 	self assert: (data at: #instanceMethodCount) equals: 1.
 	self assert: (data at: #classMethodCount) equals: 1.
 	self assert: (data at: #superclasses) isEmpty.
 	self assert: (data at: #subclasses) isEmpty
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testDescribeMethodReturnsStructuredError [
+
+	| error result structured |
+	result := self
+		          callToolNamed: 'pharo-describe-method'
+		          withArguments: {
+				          (#className -> 'MCPToolDescribeMethodTestTarget').
+				          (#selector -> 'doesNotExist') } asDictionary.
+	structured := self structuredContentFrom: result.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (structured at: #status) equals: 'error'.
+	self assert: (error at: #errorClass) equals: 'MethodNotFound'.
+	self
+		assert: (error at: #className)
+		equals: 'MCPToolDescribeMethodTestTarget'.
+	self assert: (error at: #selector) equals: 'doesNotExist'.
+	self assert: (error at: #side) equals: 'instance'.
+	self deny: (error at: #classSide)
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testDescribeMethodReturnsStructuredSuccess [
+
+	| data result |
+	result := self
+		          callToolNamed: 'pharo-describe-method'
+		          withArguments: {
+				          (#className -> 'MCPToolDescribeMethodTestTarget').
+				          (#selector -> 'readInstanceWith:') } asDictionary.
+	data := self dataFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self
+		assert: ((self structuredContentFrom: result) at: #status)
+		equals: 'ok'.
+	self
+		assert: (data at: #className)
+		equals: 'MCPToolDescribeMethodTestTarget'.
+	self assert: (data at: #selector) equals: 'readInstanceWith:'.
+	self assert: (data at: #externalVariableCount) equals: 4.
+	self deny:
+		((data at: #externalVariableReferences) anySatisfy: [ :each |
+			 (each at: #name) = 'self' ]).
+	self assert: ((data at: #variableReferences) allSatisfy: [ :each |
+			 #( #sourceIntervals #external #declaredInMethod ) noneSatisfy: [
+				 :key | each includesKey: key ] ]).
+	self deny: ((data at: #source) includesSubstring: String cr asString).
+	self deny:
+		((data at: #source) includesSubstring: String tab asString)
 ]
 
 { #category : 'tests' }

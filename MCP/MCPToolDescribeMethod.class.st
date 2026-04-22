@@ -1,5 +1,5 @@
 Class {
-	#name : 'MCPToolReadMethod',
+	#name : 'MCPToolDescribeMethod',
 	#superclass : 'MCPTool',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
@@ -7,7 +7,7 @@ Class {
 }
 
 { #category : 'private - analysis' }
-MCPToolReadMethod >> bindingClassNameFor: aBinding [
+MCPToolDescribeMethod >> bindingClassNameFor: aBinding [
 
 	^ aBinding
 		  ifNil: [ 'UnknownBinding' ]
@@ -15,26 +15,45 @@ MCPToolReadMethod >> bindingClassNameFor: aBinding [
 ]
 
 { #category : 'private - reading' }
-MCPToolReadMethod >> compiledMethodForClassNamed: className selector: selectorString side: side [
+MCPToolDescribeMethod >> compiledMethodForClassNamed: className selector: selectorString side: side [
 
 	| behavior selectorSymbol |
 	behavior := self methodBehaviorForClassNamed: className side: side.
 	selectorSymbol := selectorString asSymbol.
 	(behavior includesSelector: selectorSymbol) ifFalse: [
-		Error signal:
-			'No method named ' , selectorString , ' found on ' , behavior name
-			, '.' ].
+		MCPCommandError
+			signalMissingMethodInClassName: className
+			classSide: side = 'class'
+			selector: selectorString ].
 	^ behavior compiledMethodAt: selectorSymbol
 ]
 
-{ #category : 'private - analysis' }
-MCPToolReadMethod >> declaredInMethodForKind: aKind [
+{ #category : 'private' }
+MCPToolDescribeMethod >> errorResultForError: anError className: className selector: selectorString side: side [
 
-	^ #( 'argument' 'temporary' ) includes: aKind
+	| details |
+	(anError isKindOf: MCPCommandError) ifTrue: [
+		details := anError structuredDetails copy.
+		details at: #className ifAbsentPut: [ className ].
+		details at: #selector ifAbsentPut: [ selectorString ].
+		details at: #side put: side.
+		^ self errorResultText: anError messageText details: details ].
+	^ self
+		  errorResultText: (self
+				   failureMessageForClassNamed: className
+				   selector: selectorString
+				   side: side
+				   error: anError)
+		  details: {
+				  (#errorClass -> anError class name).
+				  (#message -> anError messageText).
+				  (#className -> className).
+				  (#selector -> selectorString).
+				  (#side -> side) } asDictionary
 ]
 
 { #category : 'executing' }
-MCPToolReadMethod >> executeWithArguments: arguments [
+MCPToolDescribeMethod >> executeWithArguments: arguments [
 
 	| argumentNames className compiledMethod data externalVariableReferences methodBehavior methodNode protocolName selectorString side temporaryNames variableReferences |
 	className := self
@@ -63,13 +82,15 @@ MCPToolReadMethod >> executeWithArguments: arguments [
 		                        variableSummariesForMethod: compiledMethod
 		                        methodBehavior: methodBehavior.
 	  externalVariableReferences := (variableReferences select: [ :each |
-		                                 each at: #external ]) asArray.
+		                                 self isExternalVariableKind:
+			                                 (each at: #kind) ]) asArray.
 	  data := {
 		          (#className -> className).
 		          (#selector -> selectorString).
 		          (#side -> side).
 		          (#protocol -> protocolName).
-		          (#source -> (compiledMethod sourceCode ifNil: [ '' ])).
+		          (#source
+		           -> (self normalizedSourceText: compiledMethod sourceCode)).
 		          (#argumentNames -> argumentNames).
 		          (#temporaryNames -> temporaryNames).
 		          (#variableReferenceCount -> variableReferences size).
@@ -87,25 +108,18 @@ MCPToolReadMethod >> executeWithArguments: arguments [
 		  on: Error
 		  do: [ :error |
 			  self
-				  errorResultText: (self
-						   failureMessageForClassNamed: className
-						   selector: selectorString
-						   side: side
-						   error: error)
-				  details: {
-						  (#errorClass -> error class name).
-						  (#message -> error messageText).
-						  (#className -> className).
-						  (#selector -> selectorString).
-						  (#side -> side) } asDictionary ]
+				  errorResultForError: error
+				  className: className
+				  selector: selectorString
+				  side: side ]
 ]
 
 { #category : 'private - results' }
-MCPToolReadMethod >> failureMessageForClassNamed: className selector: selectorString side: side error: anError [
+MCPToolDescribeMethod >> failureMessageForClassNamed: className selector: selectorString side: side error: anError [
 
 	^ String streamContents: [ :stream |
 		  stream
-			  nextPutAll: 'Unable to read method ';
+			  nextPutAll: 'Unable to describe method ';
 			  nextPutAll: className;
 			  nextPutAll: '>>';
 			  nextPutAll: selectorString;
@@ -118,29 +132,19 @@ MCPToolReadMethod >> failureMessageForClassNamed: className selector: selectorSt
 ]
 
 { #category : 'private - analysis' }
-MCPToolReadMethod >> finalizedVariableSummariesFrom: summaries [
+MCPToolDescribeMethod >> incrementReferenceCountInSummary: aSummary [
 
-	^ (summaries asSortedCollection: [ :left :right |
-		   ((left at: #sourceIntervals) first at: #start)
-		   <= ((right at: #sourceIntervals) first at: #start) ])
-		  collect: [ :each |
-			  | finalized |
-			  finalized := each copy.
-			  finalized
-				  at: #sourceIntervals
-				  put: (each at: #sourceIntervals) asArray.
-			  finalized ]
-		  as: Array
+	aSummary at: #referenceCount put: (aSummary at: #referenceCount) + 1
 ]
 
 { #category : 'initialization' }
-MCPToolReadMethod >> initialize [
+MCPToolDescribeMethod >> initialize [
 
 	| sideProperty variableNameItemSchema |
 	super initialize.
-	name := 'pharo-read-method'.
-	title := 'Read Pharo Method'.
-	description := 'Read a single method from the running Pharo image, including structured variable-resolution context.'.
+	name := 'pharo-describe-method'.
+	title := 'Describe Pharo Method'.
+	description := 'Describe a single method from the running Pharo image, including structured variable-resolution context.'.
 	sideProperty := MCPStructureProperties new
 		                name: 'side';
 		                type: 'string';
@@ -160,7 +164,7 @@ MCPToolReadMethod >> initialize [
 					                name: 'selector';
 					                type: 'string';
 					                description:
-						                'The selector of the method to read.';
+						                'The selector of the method to describe.';
 					                yourself).
 				               sideProperty };
 		               required: #( 'className' 'selector' );
@@ -179,7 +183,7 @@ MCPToolReadMethod >> initialize [
 				                (self
 					                 schemaPropertyNamed: 'selector'
 					                 type: 'string'
-					                 description: 'The selector that was read.').
+					                 description: 'The selector that was described.').
 				                ((self
 					                  schemaPropertyNamed: 'side'
 					                  type: 'string'
@@ -195,7 +199,7 @@ MCPToolReadMethod >> initialize [
 					                 schemaPropertyNamed: 'source'
 					                 type: 'string'
 					                 description:
-					                 'The formatted source code of the method.').
+					                 'The normalized source code of the method.').
 				                ((self
 					                  schemaPropertyNamed: 'argumentNames'
 					                  type: 'array'
@@ -219,12 +223,12 @@ MCPToolReadMethod >> initialize [
 					                 schemaPropertyNamed: 'externalVariableCount'
 					                 type: 'number'
 					                 description:
-					                 'The number of unique referenced variables that are not declared locally in the method.').
+					                 'The number of unique referenced variables that are external to the method, excluding self.').
 				                ((self
 					                  schemaPropertyNamed: 'variableReferences'
 					                  type: 'array'
 					                  description:
-						                  'Structured summaries of all referenced variables in source order.')
+						                  'Structured summaries of all referenced variables in first-use order.')
 					                 items: self variableReferenceSchema;
 					                 yourself).
 				                ((self
@@ -232,7 +236,7 @@ MCPToolReadMethod >> initialize [
 						                  'externalVariableReferences'
 					                  type: 'array'
 					                  description:
-						                  'Structured summaries of referenced variables that come from outside the method''s local declarations.')
+						                  'Structured summaries of referenced variables that are external to the method, excluding self.')
 					                 items: self variableReferenceSchema;
 					                 yourself) }
 		                required:
@@ -245,7 +249,13 @@ MCPToolReadMethod >> initialize [
 ]
 
 { #category : 'private - analysis' }
-MCPToolReadMethod >> matchingSummaryForNodeName: aName kind: aKind ownerName: anOwnerName in: summaries [
+MCPToolDescribeMethod >> isExternalVariableKind: aKind [
+
+	^ (#( 'argument' 'temporary' 'self' ) includes: aKind) not
+]
+
+{ #category : 'private - analysis' }
+MCPToolDescribeMethod >> matchingSummaryForNodeName: aName kind: aKind ownerName: anOwnerName in: summaries [
 
 	^ summaries
 		  detect: [ :each |
@@ -256,17 +266,20 @@ MCPToolReadMethod >> matchingSummaryForNodeName: aName kind: aKind ownerName: an
 ]
 
 { #category : 'private - reading' }
-MCPToolReadMethod >> methodBehaviorForClassNamed: className side: side [
+MCPToolDescribeMethod >> methodBehaviorForClassNamed: className side: side [
 
 	| baseClass |
-	baseClass := self class environment at: className asSymbol.
+	baseClass := self class environment
+		             at: className asSymbol
+		             ifAbsent: [
+		             MCPCommandError signalMissingClassNamed: className ].
 	^ side = 'class'
 		  ifTrue: [ baseClass classSide ]
 		  ifFalse: [ baseClass ]
 ]
 
 { #category : 'private - analysis' }
-MCPToolReadMethod >> newVariableSummaryForNode: aVariableNode kind: aKind methodBehavior: aBehavior [
+MCPToolDescribeMethod >> newVariableSummaryForNode: aVariableNode kind: aKind methodBehavior: aBehavior [
 
 	| binding ownerName summary |
 	binding := aVariableNode binding.
@@ -277,19 +290,14 @@ MCPToolReadMethod >> newVariableSummaryForNode: aVariableNode kind: aKind method
 	summary := Dictionary new.
 	summary at: #name put: aVariableNode name asString.
 	summary at: #kind put: aKind.
-	summary
-		at: #declaredInMethod
-		put: (self declaredInMethodForKind: aKind).
-	summary at: #external put: (self declaredInMethodForKind: aKind) not.
 	summary at: #bindingClass put: (self bindingClassNameFor: binding).
 	summary at: #referenceCount put: 0.
-	summary at: #sourceIntervals put: OrderedCollection new.
 	ownerName ifNotNil: [ summary at: #ownerName put: ownerName ].
 	^ summary
 ]
 
 { #category : 'private - arguments' }
-MCPToolReadMethod >> normalizedSideFrom: arguments [
+MCPToolDescribeMethod >> normalizedSideFrom: arguments [
 
 	| side |
 	side := (self stringArgumentNamed: 'side' in: arguments) ifNil: [
@@ -301,7 +309,7 @@ MCPToolReadMethod >> normalizedSideFrom: arguments [
 ]
 
 { #category : 'private - analysis' }
-MCPToolReadMethod >> ownerNameForNode: aVariableNode kind: aKind methodBehavior: aBehavior [
+MCPToolDescribeMethod >> ownerNameForNode: aVariableNode kind: aKind methodBehavior: aBehavior [
 
 	| binding owner |
 	binding := aVariableNode binding.
@@ -338,43 +346,12 @@ MCPToolReadMethod >> ownerNameForNode: aVariableNode kind: aKind methodBehavior:
 	^ owner ifNil: [ nil ] ifNotNil: [ owner asString ]
 ]
 
-{ #category : 'private - analysis' }
-MCPToolReadMethod >> recordReferenceFromNode: aVariableNode inSummary: aSummary [
-
-	(aSummary at: #sourceIntervals) add: {
-			(#start -> aVariableNode start).
-			(#stop -> aVariableNode stop) } asDictionary.
-	aSummary at: #referenceCount put: (aSummary at: #referenceCount) + 1
-]
-
-{ #category : 'private - schema' }
-MCPToolReadMethod >> sourceIntervalSchema [
-
-	^ MCPStructureProperties new
-		  name: 'sourceInterval';
-		  type: 'object';
-		  description: 'A source interval where the variable is referenced.';
-		  properties: {
-				  (self
-					   schemaPropertyNamed: 'start'
-					   type: 'number'
-					   description:
-						   'The 1-based start position in the method source.').
-				  (self
-					   schemaPropertyNamed: 'stop'
-					   type: 'number'
-					   description: 'The 1-based end position in the method source.') };
-		  required: #( 'start' 'stop' );
-		  additionalProperties: false;
-		  yourself
-]
-
 { #category : 'private - results' }
-MCPToolReadMethod >> successSummaryForClassName: className selector: selector side: side externalVariableCount: externalVariableCount [
+MCPToolDescribeMethod >> successSummaryForClassName: className selector: selector side: side externalVariableCount: externalVariableCount [
 
 	^ String streamContents: [ :stream |
 		  stream
-			  nextPutAll: 'Read method ';
+			  nextPutAll: 'Described method ';
 			  nextPutAll: className;
 			  nextPutAll: '>>';
 			  nextPutAll: selector;
@@ -390,7 +367,7 @@ MCPToolReadMethod >> successSummaryForClassName: className selector: selector si
 ]
 
 { #category : 'private - analysis' }
-MCPToolReadMethod >> variableKindForNode: aVariableNode methodBehavior: aBehavior [
+MCPToolDescribeMethod >> variableKindForNode: aVariableNode methodBehavior: aBehavior [
 
 	| binding |
 	aVariableNode isSelfVariable ifTrue: [ ^ 'self' ].
@@ -415,15 +392,9 @@ MCPToolReadMethod >> variableKindForNode: aVariableNode methodBehavior: aBehavio
 ]
 
 { #category : 'private - schema' }
-MCPToolReadMethod >> variableReferenceSchema [
+MCPToolDescribeMethod >> variableReferenceSchema [
 
-	| intervalsProperty ownerNameProperty |
-	intervalsProperty := self
-		                     schemaPropertyNamed: 'sourceIntervals'
-		                     type: 'array'
-		                     description:
-		                     'Source intervals where the variable is referenced.'.
-	intervalsProperty items: self sourceIntervalSchema.
+	| ownerNameProperty |
 	ownerNameProperty := self
 		                     schemaPropertyNamed: 'ownerName'
 		                     type: 'string'
@@ -448,16 +419,6 @@ MCPToolReadMethod >> variableReferenceSchema [
 						      'class' 'global' 'self' 'super' 'thisContext'
 						      'undeclared' 'unknown' );
 					   yourself).
-				  (self
-					   schemaPropertyNamed: 'declaredInMethod'
-					   type: 'boolean'
-					   description:
-					   'Whether the variable is declared locally in the method source.').
-				  (self
-					   schemaPropertyNamed: 'external'
-					   type: 'boolean'
-					   description:
-					   'Whether the variable comes from outside the method''s local declarations.').
 				  ownerNameProperty.
 				  (self
 					   schemaPropertyNamed: 'bindingClass'
@@ -468,23 +429,20 @@ MCPToolReadMethod >> variableReferenceSchema [
 					   schemaPropertyNamed: 'referenceCount'
 					   type: 'number'
 					   description:
-					   'How many times the variable is referenced in the method.').
-				  intervalsProperty };
-		  required:
-			  #( 'name' 'kind' 'declaredInMethod' 'external' 'bindingClass'
-			     'referenceCount' 'sourceIntervals' );
+					   'How many times the variable is referenced in the method.') };
+		  required: #( 'name' 'kind' 'bindingClass' 'referenceCount' );
 		  additionalProperties: false;
 		  yourself
 ]
 
 { #category : 'private - analysis' }
-MCPToolReadMethod >> variableSummariesForMethod: aCompiledMethod methodBehavior: aBehavior [
+MCPToolDescribeMethod >> variableSummariesForMethod: aCompiledMethod methodBehavior: aBehavior [
 
 	| summaries |
 	summaries := OrderedCollection new.
 	aCompiledMethod ast allChildren do: [ :node |
 		(node isKindOf: RBVariableNode) ifTrue: [
-			| kind summary ownerName |
+			| kind ownerName summary |
 			kind := self variableKindForNode: node methodBehavior: aBehavior.
 			ownerName := self
 				             ownerNameForNode: node
@@ -501,6 +459,6 @@ MCPToolReadMethod >> variableSummariesForMethod: aCompiledMethod methodBehavior:
 					           kind: kind
 					           methodBehavior: aBehavior.
 				summaries add: summary ].
-			self recordReferenceFromNode: node inSummary: summary ] ].
-	^ self finalizedVariableSummariesFrom: summaries
+			self incrementReferenceCountInSummary: summary ] ].
+	^ summaries asArray
 ]

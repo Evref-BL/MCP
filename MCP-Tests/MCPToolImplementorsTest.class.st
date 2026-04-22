@@ -48,6 +48,31 @@ MCPToolImplementorsTest >> structuredContentFrom: aResult [
 ]
 
 { #category : 'tests' }
+MCPToolImplementorsTest >> testCanIncludeNormalizedSource [
+
+	| data implementor result |
+	result := self callToolWith: {
+			          (#selector -> 'dualProbe').
+			          (#filter -> ' class>>').
+			          (#includeSource -> true).
+			          (#limit -> 1) } asDictionary.
+	data := self dataFrom: result.
+	implementor := self
+		               entryForReference:
+		               'MCPToolImplementorsTestExact class>>dualProbe'
+		               in: (data at: #implementors).
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) equals: 1.
+	self assert: (data at: #returnedCount) equals: 1.
+	self deny: (data at: #truncated).
+	self assert: (implementor includesKey: #source).
+	self deny:
+		((implementor at: #source) includesSubstring: String cr asString).
+	self deny:
+		((implementor at: #source) includesSubstring: String tab asString)
+]
+
+{ #category : 'tests' }
 MCPToolImplementorsTest >> testClassesScopeLimitsToExactClasses [
 
 	| data result |

@@ -1,5 +1,5 @@
 Class {
-	#name : 'MCPToolReadMethodTestTarget',
+	#name : 'MCPToolDescribeMethodTestTarget',
 	#superclass : 'Object',
 	#instVars : [
 		'instanceCounter'
@@ -15,7 +15,7 @@ Class {
 }
 
 { #category : 'reading' }
-MCPToolReadMethodTestTarget class >> readClassSide [
+MCPToolDescribeMethodTestTarget class >> readClassSide [
 
 	| local |
 	local := classCounter ifNil: [ SharedLimit ].
@@ -26,7 +26,7 @@ MCPToolReadMethodTestTarget class >> readClassSide [
 ]
 
 { #category : 'reading' }
-MCPToolReadMethodTestTarget >> readInstanceWith: anArgument [
+MCPToolDescribeMethodTestTarget >> readInstanceWith: anArgument [
 
 	| local |
 	local := instanceCounter ifNil: [ SharedLimit ].

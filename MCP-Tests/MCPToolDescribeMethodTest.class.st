@@ -1,5 +1,5 @@
 Class {
-	#name : 'MCPToolReadMethodTest',
+	#name : 'MCPToolDescribeMethodTest',
 	#superclass : 'TestCase',
 	#category : 'MCP-Tests-Tests',
 	#package : 'MCP-Tests',
@@ -7,35 +7,37 @@ Class {
 }
 
 { #category : 'private' }
-MCPToolReadMethodTest >> callToolWith: someArguments [
+MCPToolDescribeMethodTest >> callToolWith: someArguments [
 
-	^ MCP new rpcToolCall: 'pharo-read-method' withParams: someArguments
+	^ MCP new
+		  rpcToolCall: 'pharo-describe-method'
+		  withParams: someArguments
 ]
 
 { #category : 'private' }
-MCPToolReadMethodTest >> dataFrom: aResult [
+MCPToolDescribeMethodTest >> dataFrom: aResult [
 
 	^ (self structuredContentFrom: aResult) at: #data
 ]
 
 { #category : 'private' }
-MCPToolReadMethodTest >> errorFrom: aResult [
+MCPToolDescribeMethodTest >> errorFrom: aResult [
 
 	^ (self structuredContentFrom: aResult) at: #error
 ]
 
 { #category : 'private' }
-MCPToolReadMethodTest >> structuredContentFrom: aResult [
+MCPToolDescribeMethodTest >> structuredContentFrom: aResult [
 
 	^ aResult at: #structuredContent
 ]
 
 { #category : 'tests' }
-MCPToolReadMethodTest >> testReadMethodReturnsInstanceSideVariableContext [
+MCPToolDescribeMethodTest >> testDescribeMethodReturnsInstanceSideVariableContext [
 
 	| classVariable data globalVariable instanceVariable result selfVariable |
 	result := self callToolWith: {
-			          (#className -> 'MCPToolReadMethodTestTarget').
+			          (#className -> 'MCPToolDescribeMethodTestTarget').
 			          (#selector -> 'readInstanceWith:') } asDictionary.
 	data := self dataFrom: result.
 	instanceVariable := self
@@ -61,44 +63,54 @@ MCPToolReadMethodTest >> testReadMethodReturnsInstanceSideVariableContext [
 	self assert: (instanceVariable at: #kind) equals: 'instanceVariable'.
 	self
 		assert: (instanceVariable at: #ownerName)
-		equals: 'MCPToolReadMethodTestTarget'.
+		equals: 'MCPToolDescribeMethodTestTarget'.
 	self assert: (classVariable at: #kind) equals: 'classVariable'.
 	self assert: (globalVariable at: #kind) equals: 'class'.
 	self
 		assert: (globalVariable at: #ownerName)
 		equals: 'Smalltalk globals'.
 	self assert: (selfVariable at: #kind) equals: 'self'.
-	self assert: (data at: #externalVariableCount) equals: 5.
+	self assert: (data at: #externalVariableCount) equals: 4.
+	self deny:
+		((data at: #externalVariableReferences) anySatisfy: [ :each |
+			 (each at: #name) = 'self' ]).
+	self assert: ((data at: #variableReferences) allSatisfy: [ :each |
+			 #( #sourceIntervals #external #declaredInMethod ) noneSatisfy: [
+				 :key | each includesKey: key ] ]).
+	self deny: ((data at: #source) includesSubstring: String cr asString).
+	self deny:
+		((data at: #source) includesSubstring: String tab asString).
 	self assert: ((data at: #source) includesSubstring:
 			 'instanceCounter ifNil: [ SharedLimit ]')
 ]
 
 { #category : 'tests' }
-MCPToolReadMethodTest >> testReadMethodReturnsStructuredErrorForMissingSelector [
+MCPToolDescribeMethodTest >> testDescribeMethodReturnsStructuredErrorForMissingSelector [
 
 	| error result structured |
 	result := self callToolWith: {
-			          (#className -> 'MCPToolReadMethodTestTarget').
+			          (#className -> 'MCPToolDescribeMethodTestTarget').
 			          (#selector -> 'doesNotExist') } asDictionary.
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
+	self assert: (error at: #errorClass) equals: 'MethodNotFound'.
 	self
 		assert: (error at: #className)
-		equals: 'MCPToolReadMethodTestTarget'.
+		equals: 'MCPToolDescribeMethodTestTarget'.
 	self assert: (error at: #selector) equals: 'doesNotExist'.
 	self assert: (error at: #side) equals: 'instance'.
 	self assert: ((error at: #message) includesSubstring:
-			 'No method named doesNotExist found')
+			 'Method MCPToolDescribeMethodTestTarget>>doesNotExist does not exist.')
 ]
 
 { #category : 'tests' }
-MCPToolReadMethodTest >> testReadMethodSupportsClassSideContext [
+MCPToolDescribeMethodTest >> testDescribeMethodSupportsClassSideContext [
 
 	| classInstanceVariable data result thisContextVariable |
 	result := self callToolWith: {
-			          (#className -> 'MCPToolReadMethodTestTarget').
+			          (#className -> 'MCPToolDescribeMethodTestTarget').
 			          (#selector -> 'readClassSide').
 			          (#side -> 'class') } asDictionary.
 	data := self dataFrom: result.
@@ -115,11 +127,17 @@ MCPToolReadMethodTest >> testReadMethodSupportsClassSideContext [
 		equals: 'classInstanceVariable'.
 	self
 		assert: (classInstanceVariable at: #ownerName)
-		equals: 'MCPToolReadMethodTestTarget class'.
+		equals: 'MCPToolDescribeMethodTestTarget class'.
 	self assert: (thisContextVariable at: #kind) equals: 'thisContext'.
 	self
 		assert: (thisContextVariable at: #ownerName)
 		equals: 'execution context'.
+	self assert: ((data at: #variableReferences) allSatisfy: [ :each |
+			 #( #sourceIntervals #external #declaredInMethod ) noneSatisfy: [
+				 :key | each includesKey: key ] ]).
+	self deny: ((data at: #source) includesSubstring: String cr asString).
+	self deny:
+		((data at: #source) includesSubstring: String tab asString).
 	self
 		assert: data keys asSet
 		equals:
@@ -129,15 +147,15 @@ MCPToolReadMethodTest >> testReadMethodSupportsClassSideContext [
 ]
 
 { #category : 'tests' }
-MCPToolReadMethodTest >> testToolRequiresClassNameAndSelectorInSchema [
+MCPToolDescribeMethodTest >> testToolRequiresClassNameAndSelectorInSchema [
 
 	self
-		assert: MCPToolReadMethod new inputSchema required asSet
+		assert: MCPToolDescribeMethod new inputSchema required asSet
 		equals: #( 'className' 'selector' ) asSet
 ]
 
 { #category : 'private' }
-MCPToolReadMethodTest >> variableNamed: aName in: variableReferences [
+MCPToolDescribeMethodTest >> variableNamed: aName in: variableReferences [
 
 	^ variableReferences
 		  detect: [ :each | (each at: #name) = aName ]
