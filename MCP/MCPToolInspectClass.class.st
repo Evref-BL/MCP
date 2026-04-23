@@ -110,14 +110,7 @@ MCPToolInspectClass >> defaultIcons [
 { #category : 'defaults' }
 MCPToolInspectClass >> defaultInputSchema [
 
-	| includeSuperclassesProperty includeCommentProperty upToSuperclassNameProperty subclassDepthProperty |
-	includeSuperclassesProperty := MCPStructureProperties new
-		                               name: 'includeSuperclasses';
-		                               type: 'boolean';
-		                               description:
-			                               'Whether to include superclass descriptions. Defaults to false.';
-		                               default: false;
-		                               yourself.
+	| includeCommentProperty upToSuperclassNameProperty subclassDepthProperty |
 	includeCommentProperty := MCPStructureProperties new
 		                          name: 'includeComment';
 		                          type: 'boolean';
@@ -129,7 +122,7 @@ MCPToolInspectClass >> defaultInputSchema [
 		                              name: 'upToSuperclassName';
 		                              type: 'string';
 		                              description:
-			                              'An optional superclass name that stops the included superclass chain at a specific ancestor. When omitted, only the requested class is inspected unless includeSuperclasses=true.';
+			                              'An optional superclass name that requests the superclass chain up to but not including that ancestor. When omitted, no superclass descriptions are returned.';
 		                              yourself.
 	subclassDepthProperty := MCPStructureProperties new
 		                         name: 'subclassDepth';
@@ -146,7 +139,6 @@ MCPToolInspectClass >> defaultInputSchema [
 					   type: 'string';
 					   description: 'The class to inspect.';
 					   yourself).
-				  includeSuperclassesProperty.
 				  includeCommentProperty.
 				  upToSuperclassNameProperty.
 				  subclassDepthProperty };
@@ -338,17 +330,11 @@ MCPToolInspectClass >> successSummaryForClassName: className superclasses: super
 { #category : 'private - hierarchy' }
 MCPToolInspectClass >> superclassesForClass: aClass arguments: arguments [
 
-	| includeSuperclasses targetSuperclass targetSuperclassName |
-	includeSuperclasses := self
-		                       booleanArgumentNamed: 'includeSuperclasses'
-		                       in: arguments
-		                       default: false.
+	| targetSuperclass targetSuperclassName |
 	targetSuperclassName := self
 		                        stringArgumentNamed: 'upToSuperclassName'
 		                        in: arguments.
-	(includeSuperclasses not and: [ targetSuperclassName isNil ])
-		ifTrue: [ ^ #(  ) ].
-	targetSuperclassName ifNil: [ ^ aClass allSuperclasses asArray ].
+	targetSuperclassName ifNil: [ ^ #(  ) ].
 	targetSuperclass := Smalltalk globals
 		                    at: targetSuperclassName asSymbol
 		                    ifAbsent: [
@@ -356,5 +342,5 @@ MCPToolInspectClass >> superclassesForClass: aClass arguments: arguments [
 				                    signalMissingSuperclassNamed:
 				                    targetSuperclassName
 				                    forClassNamed: aClass name asString ].
-	^ (aClass allSuperclassesIncluding: targetSuperclass) asArray
+	^ (aClass allSuperclasses asArray copyUpTo: targetSuperclass) asArray
 ]

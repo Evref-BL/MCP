@@ -149,7 +149,6 @@ MCPToolInspectClassTest >> testIncludesClassCommentsWhenRequested [
 	result := self callToolWith: {
 			          (#className -> self childZClassName).
 			          (#includeComment -> true).
-			          (#includeSuperclasses -> true).
 			          (#upToSuperclassName -> self baseClassName).
 			          (#subclassDepth -> 1) } asDictionary.
 	data := self dataFrom: result.
@@ -162,13 +161,7 @@ MCPToolInspectClassTest >> testIncludesClassCommentsWhenRequested [
 	self
 		assert: (data at: #classComment)
 		equals: 'Child Z fixture class comment.'.
-	self assert: superclasses size equals: 1.
-	self
-		assert: (superclasses first at: #className)
-		equals: self baseClassName.
-	self
-		assert: (superclasses first at: #classComment)
-		equals: 'Base fixture class comment.'.
+	self assert: superclasses isEmpty.
 	self assert: subclasses size equals: 1.
 	self
 		assert: (subclasses first at: #className)
@@ -204,7 +197,6 @@ MCPToolInspectClassTest >> testIncludesNamedSuperclassChain [
 	| data result superclasses |
 	result := self callToolWith: {
 			          (#className -> self grandchildClassName).
-			          (#includeSuperclasses -> true).
 			          (#upToSuperclassName -> 'Object') } asDictionary.
 	data := self dataFrom: result.
 	superclasses := data at: #superclasses.
@@ -216,8 +208,7 @@ MCPToolInspectClassTest >> testIncludesNamedSuperclassChain [
 		assert: (superclasses collect: [ :each | each at: #className ])
 		equals: {
 				self childZClassName.
-				self baseClassName.
-				'Object' } asArray
+				self baseClassName } asArray
 ]
 
 { #category : 'tests' }

@@ -457,11 +457,6 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 				 extraProperties at: #default)
 		equals: false.
 	self
-		assert: ((self
-				  inputPropertyNamed: 'includeSuperclasses'
-				  inTool: inspectClassTool) extraProperties at: #default)
-		equals: false.
-	self
 		assert:
 			((self
 				  inputPropertyNamed: 'includeComment'
