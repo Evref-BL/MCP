@@ -93,6 +93,10 @@ MCPToolInspectClassTest >> restoreFixtureClasses [
 		superclassName: 'Object'
 		slots: #( betaSlot alphaSlot )
 		classSlots: #( classBeta classAlpha ).
+	self withoutEpiceaDuring: [
+		(self classNamed: self baseClassName)
+			addClassVarNamed: 'BetaShared';
+			addClassVarNamed: 'AlphaShared' ].
 	self
 		createClassNamed: self childZClassName
 		superclassName: self baseClassName
@@ -261,10 +265,12 @@ MCPToolInspectClassTest >> testIncludesTraitNamesForTraitUsingClass [
 { #category : 'tests' }
 MCPToolInspectClassTest >> testInspectsClassMetadata [
 
-	| data result |
+	| data expectedLayoutClassName result |
 	result := self callToolWith:
 		          { (#className -> self baseClassName) } asDictionary.
 	data := self dataFrom: result.
+	expectedLayoutClassName := (self classNamed: self baseClassName)
+		                           classLayout class name asString.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self
 		assert: ((self structuredContentFrom: result) at: #status)
@@ -283,6 +289,12 @@ MCPToolInspectClassTest >> testInspectsClassMetadata [
 	self assert: (data at: #traitNames) isEmpty.
 	self assert: (data at: #classTraitNames) isEmpty.
 	self assert: (data at: #sharedPoolNames) isEmpty.
+	self
+		assert: (data at: #sharedVariableNames)
+		equals: #( 'AlphaShared' 'BetaShared' ).
+	self
+		assert: (data at: #layoutClassName)
+		equals: expectedLayoutClassName.
 	self assert: (data at: #instanceMethodCount) equals: 1.
 	self assert: (data at: #classMethodCount) equals: 1.
 	self assert: (data at: #superclasses) isEmpty.

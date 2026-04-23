@@ -12,7 +12,9 @@ Class {
 		'classTraitNames',
 		'sharedPoolNames',
 		'instanceMethodCount',
-		'classMethodCount'
+		'classMethodCount',
+		'layoutClassName',
+		'sharedVariableNames'
 	],
 	#category : 'MCP-Internal',
 	#package : 'MCP',
@@ -38,6 +40,8 @@ MCPClassDescription >> asDictionary [
 		  (#traitNames -> traitNames).
 		  (#classTraitNames -> classTraitNames).
 		  (#sharedPoolNames -> sharedPoolNames).
+		  (#sharedVariableNames -> sharedVariableNames).
+		  (#layoutClassName -> layoutClassName).
 		  (#instanceMethodCount -> instanceMethodCount).
 		  (#classMethodCount -> classMethodCount) } asDictionary
 ]
@@ -62,6 +66,9 @@ MCPClassDescription >> initializeFromClass: aClass [
 		                    each name asString ]) asArray.
 	sharedPoolNames := (aClass sharedPools collect: [ :each |
 		                    each name asString ]) asArray.
+	sharedVariableNames := (aClass classVarNames collect: [ :each |
+		                        each asString ]) asArray.
+	layoutClassName := aClass classLayout class name asString.
 	instanceMethodCount := aClass selectors size.
 	classMethodCount := aClass classSide selectors size.
 	^ self

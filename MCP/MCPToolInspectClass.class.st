@@ -51,6 +51,15 @@ MCPToolInspectClass >> classDescriptionDataProperties [
 			   description: 'The shared pools referenced by the class.'
 			   itemDescription: 'A shared pool name.').
 		  (self
+			   stringArraySchemaNamed: 'sharedVariableNames'
+			   description:
+			   'The shared variables or class variables defined on the class.'
+			   itemDescription: 'A shared variable name.').
+		  (self
+			   schemaPropertyNamed: 'layoutClassName'
+			   type: 'string'
+			   description: 'The layout class used by the class.').
+		  (self
 			   integerSchemaPropertyNamed: 'instanceMethodCount'
 			   description:
 			   'The number of instance-side methods defined on the class.').
@@ -82,7 +91,8 @@ MCPToolInspectClass >> classDescriptionRequiredFields [
 
 	^ #( 'className' 'superclassName' 'packageName' 'tag' 'instanceSlotNames'
 	     'classSlotNames' 'traitNames' 'classTraitNames'
-	     'sharedPoolNames' 'instanceMethodCount' 'classMethodCount' )
+	     'sharedPoolNames' 'sharedVariableNames' 'layoutClassName'
+	     'instanceMethodCount' 'classMethodCount' )
 ]
 
 { #category : 'private - arguments' }

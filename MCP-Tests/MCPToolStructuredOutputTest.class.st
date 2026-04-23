@@ -230,7 +230,7 @@ MCPToolStructuredOutputTest >> testInspectClassReturnsStructuredError [
 { #category : 'tests' }
 MCPToolStructuredOutputTest >> testInspectClassReturnsStructuredSuccess [
 
-	| data result structured |
+	| data expectedSharedVariableNames result structured |
 	result := self
 		          callToolNamed: 'inspect-class'
 		          withArguments:
@@ -238,6 +238,9 @@ MCPToolStructuredOutputTest >> testInspectClassReturnsStructuredSuccess [
 			          asDictionary.
 	structured := self structuredContentFrom: result.
 	data := self dataFrom: result.
+	expectedSharedVariableNames := (MCPToolInspectMethodTestTarget
+		                                classVarNames collect: [ :each |
+		                                each asString ]) asArray.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (structured at: #status) equals: 'ok'.
 	self
@@ -249,6 +252,10 @@ MCPToolStructuredOutputTest >> testInspectClassReturnsStructuredSuccess [
 		equals: 'MCPToolInspectMethodTestTarget'.
 	self assert: (data at: #instanceMethodCount) equals: 1.
 	self assert: (data at: #classMethodCount) equals: 1.
+	self
+		assert: (data at: #sharedVariableNames)
+		equals: expectedSharedVariableNames.
+	self assert: (data includesKey: #layoutClassName).
 	self deny: (data includesKey: #classComment).
 	self assert: (data at: #superclasses) isEmpty.
 	self assert: (data at: #subclasses) isEmpty
