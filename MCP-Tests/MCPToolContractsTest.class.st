@@ -103,13 +103,14 @@ MCPToolContractsTest >> testEditClassHasAccurateNameAndRequiredArguments [
 		equals: #( 'operation' 'className' ) asSet.
 	self assert: (propertyNames includes: 'classComment').
 	self assert: (propertyNames includes: 'slotName').
+	self assert: (propertyNames includes: 'newSlotName').
 	self assert: (propertyNames includes: 'classSide').
 	self assert: (propertyNames includes: 'force').
 	self
 		assert: (operationProperty extraProperties at: #enum) asArray
 		equals:
-			#( 'create' 'move' 'rename' 'reparent' 'setComment' 'pullUpSlot'
-			   'pushDownSlot' )
+			#( 'create' 'move' 'rename' 'reparent' 'setComment' 'addSlot'
+			   'removeSlot' 'renameSlot' 'pullUpSlot' 'pushDownSlot' )
 ]
 
 { #category : 'tests' }
@@ -151,6 +152,57 @@ MCPToolContractsTest >> testEditMethodSchemaAdvertisesMethodState [
 		equals:
 			#( 'selector' 'className' 'side' 'packageName' 'isExtension'
 			   'protocol' 'source' 'critiques' ) asSet
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testEditToolSchemasAdvertiseOperationBranches [
+
+	| addSlotBranch createBranch editClassBranches editMethodBranches removeSlotBranch renameBranch renameSlotBranch |
+	editClassBranches := MCPToolEditClass new inputSchema asJRPCJSON at:
+		                     #oneOf.
+	editMethodBranches := MCPToolEditMethod new inputSchema asJRPCJSON
+		                      at: #oneOf.
+	self
+		assert: (editClassBranches collect: [ :each |
+				 ((each at: #properties) at: 'operation') at: #const ]) asArray
+		equals:
+			#( 'create' 'move' 'rename' 'reparent' 'setComment' 'addSlot'
+			   'removeSlot' 'renameSlot' 'pullUpSlot' 'pushDownSlot' ).
+	createBranch := editClassBranches detect: [ :each |
+		                (((each at: #properties) at: 'operation') at: #const)
+		                = 'create' ].
+	self
+		assert: (createBranch at: #required) asSet
+		equals:
+		#( 'operation' 'className' 'superclassName' 'packageName' ) asSet.
+	addSlotBranch := editClassBranches detect: [ :each |
+		                 (((each at: #properties) at: 'operation') at:
+			                  #const) = 'addSlot' ].
+	self
+		assert: (addSlotBranch at: #required) asSet
+		equals: #( 'operation' 'className' 'slotName' ) asSet.
+	removeSlotBranch := editClassBranches detect: [ :each |
+		                    (((each at: #properties) at: 'operation') at:
+			                     #const) = 'removeSlot' ].
+	self
+		assert: (removeSlotBranch at: #required) asSet
+		equals: #( 'operation' 'className' 'slotName' ) asSet.
+	renameSlotBranch := editClassBranches detect: [ :each |
+		                    (((each at: #properties) at: 'operation') at:
+			                     #const) = 'renameSlot' ].
+	self
+		assert: (renameSlotBranch at: #required) asSet
+		equals: #( 'operation' 'className' 'slotName' 'newSlotName' ) asSet.
+	self
+		assert: (editMethodBranches collect: [ :each |
+				 ((each at: #properties) at: 'operation') at: #const ]) asArray
+		equals: #( 'compile' 'rename' 'changeProtocol' ).
+	renameBranch := editMethodBranches detect: [ :each |
+		                (((each at: #properties) at: 'operation') at: #const)
+		                = 'rename' ].
+	self
+		assert: (renameBranch at: #required) asSet
+		equals: #( 'operation' 'className' 'selector' 'newSelector' ) asSet
 ]
 
 { #category : 'tests' }
@@ -533,6 +585,58 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 			((self inputPropertyNamed: 'classSide' inTool: removeMethodsTool)
 				 extraProperties at: #default)
 		equals: false
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testQueryToolSchemasAdvertiseScopeBranches [
+
+	| classBranches implementorBranches methodBranches packageBranches projectBranch referenceBranches |
+	classBranches := MCPToolFindClasses new inputSchema asJRPCJSON at:
+		                 #oneOf.
+	methodBranches := MCPToolFindMethods new inputSchema asJRPCJSON at:
+		                  #oneOf.
+	implementorBranches := MCPToolImplementors new inputSchema asJRPCJSON
+		                       at: #oneOf.
+	referenceBranches := MCPToolReferences new inputSchema asJRPCJSON
+		                     at: #oneOf.
+	packageBranches := MCPToolFindPackages new inputSchema asJRPCJSON
+		                   at: #oneOf.
+	self
+		assert: (classBranches collect: [ :each |
+				 ((each at: #properties) at: 'scope') at: #const ]) asArray
+		equals: #( 'image' 'packages' 'classes' 'hierarchy' ).
+	self
+		assert: ((classBranches detect: [ :each |
+				  (((each at: #properties) at: 'scope') at: #const) = 'packages' ])
+				 at: #required) asSet
+		equals: #( 'scope' 'packageNames' ) asSet.
+	self
+		assert: ((classBranches detect: [ :each |
+				  (((each at: #properties) at: 'scope') at: #const) = 'classes' ])
+				 at: #required) asSet
+		equals: #( 'scope' 'classNames' ) asSet.
+	self
+		assert: (methodBranches collect: [ :each |
+				 ((each at: #properties) at: 'scope') at: #const ]) asArray
+		equals: #( 'image' 'packages' 'classes' 'hierarchy' ).
+	self
+		assert: (implementorBranches collect: [ :each |
+				 ((each at: #properties) at: 'scope') at: #const ]) asArray
+		equals: #( 'image' 'packages' 'classes' 'hierarchy' ).
+	self
+		assert: (referenceBranches collect: [ :each |
+				 ((each at: #properties) at: 'scope') at: #const ]) asArray
+		equals: #( 'image' 'packages' 'classes' 'hierarchy' ).
+	self
+		assert: (packageBranches collect: [ :each |
+				 ((each at: #properties) at: 'scope') at: #const ]) asArray
+		equals: #( 'image' 'project' ).
+	projectBranch := packageBranches detect: [ :each |
+		                 (((each at: #properties) at: 'scope') at: #const)
+		                 = 'project' ].
+	self
+		assert: (projectBranch at: #required) asSet
+		equals: #( 'scope' 'projectNames' ) asSet
 ]
 
 { #category : 'tests' }

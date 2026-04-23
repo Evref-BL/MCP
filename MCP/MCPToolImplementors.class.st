@@ -30,9 +30,7 @@ MCPToolImplementors >> defaultInputSchema [
 				   schemaPropertyNamed: 'selector'
 				   type: 'string'
 				   description: 'The selector whose implementors should be found.') }
-			  ,
-				  (self
-					   methodQueryScopeInputPropertiesWithScopeDescription:
+			  , (self methodQueryScopeInputPropertiesWithScopeDescription:
 						   'Where to search for implementors. Defaults to image.')
 			  , (self
 					   methodQueryFilteringInputPropertiesWithFilterDescription:
@@ -43,6 +41,7 @@ MCPToolImplementors >> defaultInputSchema [
 					   limitDescription:
 						   'Maximum number of matching implementors to return. Defaults to 100. Use 0 to request counts only.');
 		  required: #( 'selector' );
+		  oneOf: self scopeBranchSchemasForClassAndMethodQueries;
 		  yourself
 ]
 

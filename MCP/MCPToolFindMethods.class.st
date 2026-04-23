@@ -41,8 +41,7 @@ MCPToolFindMethods >> defaultInputSchema [
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties:
-			  (self
-				   methodQueryScopeInputPropertiesWithScopeDescription:
+			  (self methodQueryScopeInputPropertiesWithScopeDescription:
 					   'Where to search for methods. Defaults to image.') , (self
 					   methodQueryFilteringInputPropertiesWithFilterDescription:
 						   'Optional filter applied to the methods found in scope. Use filterTargets to choose which fields are matched.'
@@ -52,6 +51,7 @@ MCPToolFindMethods >> defaultInputSchema [
 					   limitDescription:
 						   'Maximum number of matching methods to return. Defaults to 100. Use 0 to request counts only.');
 		  required: #(  );
+		  oneOf: self scopeBranchSchemasForClassAndMethodQueries;
 		  yourself
 ]
 

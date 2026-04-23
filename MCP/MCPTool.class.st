@@ -428,6 +428,27 @@ MCPTool >> inputSchema: anObject [
 ]
 
 { #category : 'private - schema' }
+MCPTool >> inputSchemaBranchForStringDiscriminatorNamed: propertyName value: propertyValue required: requiredFields requireDiscriminator: requireDiscriminator [
+
+	| discriminatorProperty required |
+	discriminatorProperty := MCPStructureProperties new
+		                         name: propertyName;
+		                         type: 'string';
+		                         const: propertyValue;
+		                         yourself.
+	required := OrderedCollection new.
+	requireDiscriminator ifTrue: [ required add: propertyName ].
+	requiredFields do: [ :each |
+		(required includes: each) ifFalse: [ required add: each ] ].
+	^ MCPStructureInputSchema new
+		  type: 'object';
+		  properties: { discriminatorProperty };
+		  required: required asArray;
+		  additionalProperties: true;
+		  yourself
+]
+
+{ #category : 'private - schema' }
 MCPTool >> integerSchemaPropertyNamed: propertyName description: propertyDescription [
 
 	^ self

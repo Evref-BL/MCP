@@ -342,5 +342,5 @@ MCPToolInspectClass >> superclassesForClass: aClass arguments: arguments [
 				                    signalMissingSuperclassNamed:
 				                    targetSuperclassName
 				                    forClassNamed: aClass name asString ].
-	^ (aClass allSuperclasses asArray copyUpTo: targetSuperclass) asArray
+	^ aClass allSuperclasses asArray copyUpTo: targetSuperclass
 ]

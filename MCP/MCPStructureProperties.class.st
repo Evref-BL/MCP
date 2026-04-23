@@ -25,6 +25,12 @@ MCPStructureProperties >> asJRPCJSON [
 ]
 
 { #category : 'accessing' }
+MCPStructureProperties >> const: anObject [
+
+	self extraProperties at: #const put: anObject
+]
+
+{ #category : 'accessing' }
 MCPStructureProperties >> default: anObject [
 
 	self extraProperties at: #default put: anObject

@@ -282,6 +282,17 @@ MCPToolEdit >> normalizedSingleLineText: aString [
 	^ text trimBoth
 ]
 
+{ #category : 'private - schema' }
+MCPToolEdit >> operationBranchSchemas [
+
+	^ (self operationSpecifications collect: [ :each |
+		   self
+			   inputSchemaBranchForStringDiscriminatorNamed: 'operation'
+			   value: (each at: #name)
+			   required: { 'className' } , (each at: #requiredArguments)
+			   requireDiscriminator: true ]) asArray
+]
+
 { #category : 'private - errors' }
 MCPToolEdit >> operationErrorCodePrefixFor: operation [
 

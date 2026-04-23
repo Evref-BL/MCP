@@ -84,6 +84,7 @@ MCPToolFindPackages >> defaultInputSchema [
 						   'Zero-based pagination offset applied after filtering. Defaults to 0.'
 					   default: 0) };
 		  required: #(  );
+		  oneOf: self scopeBranchSchemasForPackageQueries;
 		  yourself
 ]
 

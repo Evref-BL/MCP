@@ -51,9 +51,7 @@ MCPToolReferences >> defaultInputSchema [
 					   description:
 						   'The selector, class name, or variable name to look for, depending on mode.').
 				  modeProperty }
-			  ,
-				  (self
-					   methodQueryScopeInputPropertiesWithScopeDescription:
+			  , (self methodQueryScopeInputPropertiesWithScopeDescription:
 						   'Where to search for references. Defaults to image.')
 			  , (self
 					   methodQueryFilteringInputPropertiesWithFilterDescription:
@@ -64,6 +62,7 @@ MCPToolReferences >> defaultInputSchema [
 					   limitDescription:
 						   'Maximum number of matching methods to return. Defaults to 100. Use 0 to request counts only.');
 		  required: #( 'target' 'mode' );
+		  oneOf: self scopeBranchSchemasForClassAndMethodQueries;
 		  yourself
 ]
 

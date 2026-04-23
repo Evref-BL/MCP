@@ -149,6 +149,7 @@ MCPToolEditMethod >> defaultInputSchema [
 					   'Optional package names that limit operation=rename to implementors and senders in those packages.'
 					   itemDescription: 'A package name.') };
 		  required: #( 'operation' 'className' );
+		  oneOf: self operationBranchSchemas;
 		  yourself
 ]
 

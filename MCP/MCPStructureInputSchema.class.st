@@ -5,7 +5,8 @@ Class {
 		'type',
 		'properties',
 		'required',
-		'additionalProperties'
+		'additionalProperties',
+		'extraProperties'
 	],
 	#category : 'MCP-Structure',
 	#package : 'MCP',
@@ -25,6 +26,18 @@ MCPStructureInputSchema >> additionalProperties: anObject [
 ]
 
 { #category : 'accessing' }
+MCPStructureInputSchema >> allOf: aCollection [
+
+	self schemaKeyword: #allOf put: aCollection
+]
+
+{ #category : 'accessing' }
+MCPStructureInputSchema >> anyOf: aCollection [
+
+	self schemaKeyword: #anyOf put: aCollection
+]
+
+{ #category : 'accessing' }
 MCPStructureInputSchema >> asJRPCJSON [
 
 	| dic |
@@ -38,14 +51,45 @@ MCPStructureInputSchema >> asJRPCJSON [
 		dic
 			at: #additionalProperties
 			put: self additionalProperties asJRPCJSON ].
+	self extraProperties keysAndValuesDo: [ :key :value |
+		dic at: key put: (self jsonValueForKey: key value: value) ].
 	^ dic
+]
+
+{ #category : 'accessing' }
+MCPStructureInputSchema >> extraProperties [
+
+	^ extraProperties ifNil: [ extraProperties := Dictionary new ]
+]
+
+{ #category : 'accessing' }
+MCPStructureInputSchema >> extraProperties: anObject [
+
+	extraProperties := anObject
+		                   ifNil: [ Dictionary new ]
+		                   ifNotNil: [ anObject ]
 ]
 
 { #category : 'initialization' }
 MCPStructureInputSchema >> initialize [
 
 	super initialize.
-	additionalProperties := false
+	additionalProperties := false.
+	extraProperties := Dictionary new
+]
+
+{ #category : 'private' }
+MCPStructureInputSchema >> jsonValueForKey: aKey value: aValue [
+
+	^ (aValue respondsTo: #asJRPCJSON)
+		  ifTrue: [ aValue asJRPCJSON ]
+		  ifFalse: [ aValue ]
+]
+
+{ #category : 'accessing' }
+MCPStructureInputSchema >> oneOf: aCollection [
+
+	self schemaKeyword: #oneOf put: aCollection
 ]
 
 { #category : 'accessing' }
@@ -80,6 +124,12 @@ MCPStructureInputSchema >> required [
 MCPStructureInputSchema >> required: anObject [
 
 	required := anObject
+]
+
+{ #category : 'accessing' }
+MCPStructureInputSchema >> schemaKeyword: aKeyword put: aValue [
+
+	self extraProperties at: aKeyword put: aValue
 ]
 
 { #category : 'accessing' }

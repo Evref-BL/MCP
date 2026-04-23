@@ -177,6 +177,48 @@ MCPToolQuery >> requestedContextFromArguments: arguments [
 	^ self subclassResponsibility
 ]
 
+{ #category : 'private - schema' }
+MCPToolQuery >> scopeBranchSchemasForClassAndMethodQueries [
+
+	^ {
+		  (self
+			   inputSchemaBranchForStringDiscriminatorNamed: 'scope'
+			   value: 'image'
+			   required: #(  )
+			   requireDiscriminator: false).
+		  (self
+			   inputSchemaBranchForStringDiscriminatorNamed: 'scope'
+			   value: 'packages'
+			   required: #( 'packageNames' )
+			   requireDiscriminator: true).
+		  (self
+			   inputSchemaBranchForStringDiscriminatorNamed: 'scope'
+			   value: 'classes'
+			   required: #( 'classNames' )
+			   requireDiscriminator: true).
+		  (self
+			   inputSchemaBranchForStringDiscriminatorNamed: 'scope'
+			   value: 'hierarchy'
+			   required: #( 'classNames' )
+			   requireDiscriminator: true) } asArray
+]
+
+{ #category : 'private - schema' }
+MCPToolQuery >> scopeBranchSchemasForPackageQueries [
+
+	^ {
+		  (self
+			   inputSchemaBranchForStringDiscriminatorNamed: 'scope'
+			   value: 'image'
+			   required: #(  )
+			   requireDiscriminator: false).
+		  (self
+			   inputSchemaBranchForStringDiscriminatorNamed: 'scope'
+			   value: 'project'
+			   required: #( 'projectNames' )
+			   requireDiscriminator: true) } asArray
+]
+
 { #category : 'private - results' }
 MCPToolQuery >> scopeQueryFailureMessageFor: resultKind scope: scope error: anError [
 
