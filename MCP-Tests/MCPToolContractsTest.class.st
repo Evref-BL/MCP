@@ -127,7 +127,7 @@ MCPToolContractsTest >> testEditMethodHasAccurateNameAndRequiredArguments [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testEditMethodSchemaAdvertisesCompiledMethodState [
+MCPToolContractsTest >> testEditMethodSchemaAdvertisesMethodState [
 
 	| dataProperties dataProperty operationProperty permutationProperty propertyNames tool |
 	tool := MCPToolEditMethod new.
@@ -621,7 +621,7 @@ MCPToolContractsTest >> testRequestedToolIconsAreAdvertised [
 		equals: (MCPStructureIcon pngIconNamed: #testRunner) asJRPCJSON.
 	self
 		assert: (MCPToolEvaluate new asJRPCJSON at: #icons) first
-		equals: (MCPStructureIcon pngIconNamed: #spawn) asJRPCJSON
+		equals: (MCPStructureIcon pngIconNamed: #go) asJRPCJSON
 ]
 
 { #category : 'tests' }

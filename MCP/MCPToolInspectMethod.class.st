@@ -17,20 +17,6 @@ MCPToolInspectMethod >> bindingClassNameFor: aBinding [
 		  ifNotNil: [ :binding | binding class name asString ]
 ]
 
-{ #category : 'private - reading' }
-MCPToolInspectMethod >> compiledMethodForClassNamed: className selector: selectorString side: side [
-
-	| behavior selectorSymbol |
-	behavior := self methodBehaviorForClassNamed: className side: side.
-	selectorSymbol := selectorString asSymbol.
-	(behavior includesSelector: selectorSymbol) ifFalse: [
-		MCPCommandError
-			signalMissingMethodInClassName: className
-			classSide: side = 'class'
-			selector: selectorString ].
-	^ behavior compiledMethodAt: selectorSymbol
-]
-
 { #category : 'defaults' }
 MCPToolInspectMethod >> defaultDescription [
 
@@ -113,7 +99,7 @@ MCPToolInspectMethod >> defaultOutputSchema [
 { #category : 'defaults' }
 MCPToolInspectMethod >> defaultTitle [
 
-	^ 'Inspect Pharo Method'
+	^ 'Inspect Method'
 ]
 
 { #category : 'private' }
@@ -157,7 +143,7 @@ MCPToolInspectMethod >> executeWithArguments: arguments [
 		                            in: arguments
 		                            default: false.
 	  compiledMethod := self
-		                    compiledMethodForClassNamed: className
+		                    methodForClassNamed: className
 		                    selector: selectorString
 		                    side: side.
 	  protocolName := compiledMethod protocol
@@ -236,6 +222,20 @@ MCPToolInspectMethod >> methodBehaviorForClassNamed: className side: side [
 	^ side = 'class'
 		  ifTrue: [ baseClass classSide ]
 		  ifFalse: [ baseClass ]
+]
+
+{ #category : 'private - reading' }
+MCPToolInspectMethod >> methodForClassNamed: className selector: selectorString side: side [
+
+	| behavior selectorSymbol |
+	behavior := self methodBehaviorForClassNamed: className side: side.
+	selectorSymbol := selectorString asSymbol.
+	(behavior includesSelector: selectorSymbol) ifFalse: [
+		MCPCommandError
+			signalMissingMethodInClassName: className
+			classSide: side = 'class'
+			selector: selectorString ].
+	^ behavior compiledMethodAt: selectorSymbol
 ]
 
 { #category : 'private - analysis' }

@@ -107,7 +107,7 @@ MCPToolFindPackages >> defaultOutputSchema [
 { #category : 'defaults' }
 MCPToolFindPackages >> defaultTitle [
 
-	^ 'Find Pharo Packages'
+	^ 'Find Packages'
 ]
 
 { #category : 'private - template' }

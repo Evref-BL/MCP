@@ -18,7 +18,7 @@ MCPToolEvaluate >> defaultDescription [
 { #category : 'defaults' }
 MCPToolEvaluate >> defaultIcons [
 
-	^ { (self pngIconNamed: #spawn) }
+	^ { (self pngIconNamed: #go) }
 ]
 
 { #category : 'defaults' }
@@ -65,7 +65,7 @@ MCPToolEvaluate >> defaultOutputSchema [
 { #category : 'defaults' }
 MCPToolEvaluate >> defaultTitle [
 
-	^ 'Evaluate Pharo Code'
+	^ 'Evaluate Code'
 ]
 
 { #category : 'executing' }

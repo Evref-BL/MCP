@@ -195,7 +195,7 @@ MCPToolRemoveClasses >> defaultOutputSchema [
 { #category : 'defaults' }
 MCPToolRemoveClasses >> defaultTitle [
 
-	^ 'Remove Pharo Classes'
+	^ 'Remove Classes'
 ]
 
 { #category : 'private' }

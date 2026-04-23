@@ -27,7 +27,7 @@ MCPCompiledMethodScopeQueryTest >> testClassesScopeCollectsMethodsFromExactClass
 		         packageNames: nil
 		         classNames: #( 'MCPToolHierarchyTestChild' )
 		         side: 'instance'.
-	methodIdentities := self methodIdentitiesFor: query compiledMethods.
+	methodIdentities := self methodIdentitiesFor: query methods.
 	self assert: (methodIdentities includes:
 			 'MCPToolHierarchyTestChild>>hierarchyProbe').
 	self deny:
@@ -46,7 +46,7 @@ MCPCompiledMethodScopeQueryTest >> testClassesScopeSignalsCommandErrorWhenClassI
 		         #( 'MCPDefinitelyMissingCompiledMethodScopeQueryClass' )
 		         side: 'instance'.
 	error := [
-	         query compiledMethods.
+	         query methods.
 	         self fail: 'Expected MCPCommandError' ]
 		         on: MCPCommandError
 		         do: [ :caught | caught ].
@@ -65,7 +65,7 @@ MCPCompiledMethodScopeQueryTest >> testHierarchyScopeCollectsMethodsAcrossTheHie
 		         packageNames: nil
 		         classNames: #( 'MCPToolHierarchyTestMid' )
 		         side: 'instance'.
-	methodIdentities := self methodIdentitiesFor: query compiledMethods.
+	methodIdentities := self methodIdentitiesFor: query methods.
 	self assert:
 		(methodIdentities includes:
 			 'MCPToolHierarchyTestBase>>hierarchyProbe').
@@ -82,7 +82,7 @@ MCPCompiledMethodScopeQueryTest >> testImageScopeRespectsSideFiltering [
 		         packageNames: nil
 		         classNames: nil
 		         side: 'class'.
-	methodIdentities := self methodIdentitiesFor: query compiledMethods.
+	methodIdentities := self methodIdentitiesFor: query methods.
 	self assert: (methodIdentities includes:
 			 'MCPToolImplementorsTestExact class>>dualProbe').
 	self deny:
@@ -100,7 +100,7 @@ MCPCompiledMethodScopeQueryTest >> testInvalidScopeSignalsErrorWhenQuerying [
 		         classNames: nil
 		         side: 'instance'.
 	error := [
-	         query compiledMethods.
+	         query methods.
 	         self fail: 'Expected Error' ]
 		         on: Error
 		         do: [ :caught | caught ].
@@ -119,7 +119,7 @@ MCPCompiledMethodScopeQueryTest >> testPackagesScopeIncludesExtensionMethods [
 		         packageNames: #( 'MCP-Tests-Resources-Extensions' )
 		         classNames: nil
 		         side: 'instance'.
-	methodIdentities := self methodIdentitiesFor: query compiledMethods.
+	methodIdentities := self methodIdentitiesFor: query methods.
 	self assert: (methodIdentities includes:
 			 'MCPToolReferencesTestExtensionTarget>>extensionProbe')
 ]
@@ -134,7 +134,7 @@ MCPCompiledMethodScopeQueryTest >> testPackagesScopeSignalsCommandErrorWhenPacka
 		         classNames: nil
 		         side: 'instance'.
 	error := [
-	         query compiledMethods.
+	         query methods.
 	         self fail: 'Expected MCPCommandError' ]
 		         on: MCPCommandError
 		         do: [ :caught | caught ].

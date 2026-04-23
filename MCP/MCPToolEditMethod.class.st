@@ -27,95 +27,6 @@ MCPToolEditMethod >> classReferenceNameFor: className classSide: classSide [
 		  ifFalse: [ className ]
 ]
 
-{ #category : 'private - schema' }
-MCPToolEditMethod >> compiledMethodCritiqueSchema [
-
-	^ MCPStructureProperties new
-		  type: 'object';
-		  description:
-			  'One included Renraku critique reported for the compiled method.';
-		  properties: {
-				  (self
-					   schemaPropertyNamed: 'ruleClass'
-					   type: 'string'
-					   description:
-						   'The Renraku rule class that reported the critique.').
-				  (self
-					   schemaPropertyNamed: 'title'
-					   type: 'string'
-					   description:
-						   'The short critique title, including any rule-specific hint.').
-				  (self
-					   schemaPropertyNamed: 'description'
-					   type: 'string'
-					   description:
-						   'The critique rationale explaining why the rule flagged the method.').
-				  (self
-					   integerSchemaPropertyNamed: 'start'
-					   description:
-						   'The first character position of the critique interval in the method source when available.').
-				  (self
-					   integerSchemaPropertyNamed: 'stop'
-					   description:
-						   'The last character position of the critique interval in the method source when available.') };
-		  required: #( 'ruleClass' 'title' 'description' );
-		  additionalProperties: false;
-		  yourself
-]
-
-{ #category : 'private - schema' }
-MCPToolEditMethod >> compiledMethodCritiquesSchemaProperty [
-
-	^ (self
-		   schemaPropertyNamed: 'critiques'
-		   type: 'array'
-		   description:
-			   'Renraku critiques included in compile output: all error-severity critiques plus selected non-error rules.')
-		  items: self compiledMethodCritiqueSchema;
-		  yourself
-]
-
-{ #category : 'private - schema' }
-MCPToolEditMethod >> compiledMethodDataProperties [
-
-	^ {
-		  (self
-			   schemaPropertyNamed: 'selector'
-			   type: 'string'
-			   description:
-			   'The selector of the method after the edit completes.').
-		  (self
-			   schemaPropertyNamed: 'className'
-			   type: 'string'
-			   description: 'The class that defines the edited method.').
-		  ((self
-			    schemaPropertyNamed: 'side'
-			    type: 'string'
-			    description: 'The side on which the edited method is defined.')
-			   enum: #( 'instance' 'class' );
-			   yourself).
-		  (self
-			   schemaPropertyNamed: 'packageName'
-			   type: 'string'
-			   description: 'The package that owns the edited method.').
-		  (self
-			   schemaPropertyNamed: 'isExtension'
-			   type: 'boolean'
-			   description:
-			   'Whether the edited method is an extension on its class package.').
-		  (self
-			   schemaPropertyNamed: 'protocol'
-			   type: 'string'
-			   description:
-			   'The protocol/category containing the edited method after the operation.').
-		  (self
-			   schemaPropertyNamed: 'source'
-			   type: 'string'
-			   description:
-			   'The formatted source code of the edited method after the operation.').
-		  self compiledMethodCritiquesSchemaProperty }
-]
-
 { #category : 'private' }
 MCPToolEditMethod >> critiqueDataFor: aCritique [
 
@@ -134,7 +45,7 @@ MCPToolEditMethod >> critiqueDataFor: aCritique [
 ]
 
 { #category : 'private' }
-MCPToolEditMethod >> critiqueDataForCompiledMethod: aCompiledMethod [
+MCPToolEditMethod >> critiqueDataForMethod: aCompiledMethod [
 
 	| critiques |
 	critiques := aCompiledMethod critiques select: [ :each |
@@ -147,18 +58,18 @@ MCPToolEditMethod >> critiqueDataForCompiledMethod: aCompiledMethod [
 ]
 
 { #category : 'private' }
-MCPToolEditMethod >> dataForCompiledMethod: aCompiledMethod [
+MCPToolEditMethod >> dataForMethod: aCompiledMethod [
 
-	^ (MCPCompiledMethodInfo fromCompiledMethod: aCompiledMethod)
+	^ (MCPCompiledMethodInfo fromMethod: aCompiledMethod)
 		  asDictionaryIncludingSource: true
 ]
 
 { #category : 'private' }
-MCPToolEditMethod >> dataForCompiledMethodWithCritiques: aCompiledMethod [
+MCPToolEditMethod >> dataForMethodWithCritiques: aCompiledMethod [
 
 	| critiques data |
-	data := self dataForCompiledMethod: aCompiledMethod.
-	critiques := self critiqueDataForCompiledMethod: aCompiledMethod.
+	data := self dataForMethod: aCompiledMethod.
+	critiques := self critiqueDataForMethod: aCompiledMethod.
 	critiques ifNotEmpty: [ data at: #critiques put: critiques ].
 	^ data
 ]
@@ -247,7 +158,7 @@ MCPToolEditMethod >> defaultOutputSchema [
 
 	^ self
 		                standardOutputSchemaForDataProperties:
-		                self compiledMethodDataProperties
+		                self methodDataProperties
 		                required:
 			                #( 'selector' 'className' 'side' 'packageName'
 			                   'isExtension' 'protocol' 'source' )
@@ -256,7 +167,7 @@ MCPToolEditMethod >> defaultOutputSchema [
 { #category : 'defaults' }
 MCPToolEditMethod >> defaultTitle [
 
-	^ 'Edit Pharo Method'
+	^ 'Edit Method'
 ]
 
 { #category : 'executing' }
@@ -302,7 +213,7 @@ MCPToolEditMethod >> executeChangeProtocolWithArguments: arguments [
 					  (self
 						   methodReferenceForBehavior: behavior
 						   selector: selectorSymbol) , '.'
-				  data: (self dataForCompiledMethod: newCompiledMethod)
+				  data: (self dataForMethod: newCompiledMethod)
 				  warnings: warningMessages ]
 		  failureSummary: [ :error |
 			  self
@@ -340,7 +251,7 @@ MCPToolEditMethod >> executeCompileWithArguments: arguments [
 			  behavior := self behaviorNamed: className classSide: classSide.
 			  selector := behavior compile: methodSource classified: protocol.
 			  compiledMethod := self
-				                    reformattedCompiledMethodForBehavior: behavior
+				                    reformattedMethodForBehavior: behavior
 				                    selector: selector ]
 		  successResult: [ :warningMessages |
 			  self
@@ -348,7 +259,7 @@ MCPToolEditMethod >> executeCompileWithArguments: arguments [
 					  ,
 					  (self methodReferenceForBehavior: behavior selector: selector)
 					  , '.'
-				  data: (self dataForCompiledMethodWithCritiques: compiledMethod)
+				  data: (self dataForMethodWithCritiques: compiledMethod)
 				  warnings: warningMessages ]
 		  failureSummary: [ :error |
 			  self
@@ -399,7 +310,7 @@ MCPToolEditMethod >> executeRenameWithArguments: arguments [
 				   to: newSelectorSymbol
 				   permutation: permutation) execute.
 			  newCompiledMethod := self
-				                       reformattedCompiledMethodForBehavior:
+				                       reformattedMethodForBehavior:
 				                       behavior
 				                       selector: newSelectorSymbol ]
 		  successResult: [ :warningMessages |
@@ -409,7 +320,7 @@ MCPToolEditMethod >> executeRenameWithArguments: arguments [
 					  (self
 						   methodReferenceForBehavior: behavior
 						   selector: newSelectorSymbol) , '.'
-				  data: (self dataForCompiledMethod: newCompiledMethod)
+				  data: (self dataForMethod: newCompiledMethod)
 				  warnings: warningMessages ]
 		  failureSummary: [ :error |
 			  self
@@ -482,6 +393,95 @@ MCPToolEditMethod >> identityPermutationForSelector: aSelector [
 	^ (1 to: aSelector numArgs) asArray
 ]
 
+{ #category : 'private - schema' }
+MCPToolEditMethod >> methodCritiqueSchema [
+
+	^ MCPStructureProperties new
+		  type: 'object';
+		  description:
+			  'One included Renraku critique reported for the method.';
+		  properties: {
+				  (self
+					   schemaPropertyNamed: 'ruleClass'
+					   type: 'string'
+					   description:
+						   'The Renraku rule class that reported the critique.').
+				  (self
+					   schemaPropertyNamed: 'title'
+					   type: 'string'
+					   description:
+						   'The short critique title, including any rule-specific hint.').
+				  (self
+					   schemaPropertyNamed: 'description'
+					   type: 'string'
+					   description:
+						   'The critique rationale explaining why the rule flagged the method.').
+				  (self
+					   integerSchemaPropertyNamed: 'start'
+					   description:
+						   'The first character position of the critique interval in the method source when available.').
+				  (self
+					   integerSchemaPropertyNamed: 'stop'
+					   description:
+						   'The last character position of the critique interval in the method source when available.') };
+		  required: #( 'ruleClass' 'title' 'description' );
+		  additionalProperties: false;
+		  yourself
+]
+
+{ #category : 'private - schema' }
+MCPToolEditMethod >> methodCritiquesSchemaProperty [
+
+	^ (self
+		   schemaPropertyNamed: 'critiques'
+		   type: 'array'
+		   description:
+			   'Renraku critiques included in compile output: all error-severity critiques plus selected non-error rules.')
+		  items: self methodCritiqueSchema;
+		  yourself
+]
+
+{ #category : 'private - schema' }
+MCPToolEditMethod >> methodDataProperties [
+
+	^ {
+		  (self
+			   schemaPropertyNamed: 'selector'
+			   type: 'string'
+			   description:
+			   'The selector of the method after the edit completes.').
+		  (self
+			   schemaPropertyNamed: 'className'
+			   type: 'string'
+			   description: 'The class that defines the edited method.').
+		  ((self
+			    schemaPropertyNamed: 'side'
+			    type: 'string'
+			    description: 'The side on which the edited method is defined.')
+			   enum: #( 'instance' 'class' );
+			   yourself).
+		  (self
+			   schemaPropertyNamed: 'packageName'
+			   type: 'string'
+			   description: 'The package that owns the edited method.').
+		  (self
+			   schemaPropertyNamed: 'isExtension'
+			   type: 'boolean'
+			   description:
+			   'Whether the edited method is an extension on its class package.').
+		  (self
+			   schemaPropertyNamed: 'protocol'
+			   type: 'string'
+			   description:
+			   'The protocol/category containing the edited method after the operation.').
+		  (self
+			   schemaPropertyNamed: 'source'
+			   type: 'string'
+			   description:
+			   'The formatted source code of the edited method after the operation.').
+		  self methodCritiquesSchemaProperty }
+]
+
 { #category : 'private' }
 MCPToolEditMethod >> normalizedPermutation: someIndexes [
 
@@ -537,7 +537,7 @@ MCPToolEditMethod >> permutationFromArguments: arguments selector: aSelector [
 ]
 
 { #category : 'private' }
-MCPToolEditMethod >> reformattedCompiledMethodForBehavior: aBehavior selector: aSelector [
+MCPToolEditMethod >> reformattedMethodForBehavior: aBehavior selector: aSelector [
 
 	| compiledMethod |
 	compiledMethod := aBehavior >> aSelector.

@@ -3,7 +3,7 @@ Finds methods that reference a selector, class, or variable. It is the main call
 "
 Class {
 	#name : 'MCPToolReferences',
-	#superclass : 'MCPCompiledMethodQueryTool',
+	#superclass : 'MCPMethodQueryTool',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -19,13 +19,6 @@ MCPToolReferences >> classBindingForClassName: aClassName [
 	^ binding value isBehavior
 		  ifTrue: [ binding ]
 		  ifFalse: [ nil ]
-]
-
-{ #category : 'private - searching' }
-MCPToolReferences >> compiledMethod: aCompiledMethod referencesAnyVariable: variables [
-
-	^ variables anySatisfy: [ :eachVariable |
-		  eachVariable isAccessedIn: aCompiledMethod ]
 ]
 
 { #category : 'defaults' }
@@ -60,10 +53,10 @@ MCPToolReferences >> defaultInputSchema [
 				  modeProperty }
 			  ,
 				  (self
-					   compiledMethodQueryScopeInputPropertiesWithScopeDescription:
+					   methodQueryScopeInputPropertiesWithScopeDescription:
 						   'Where to search for references. Defaults to image.')
 			  , (self
-					   compiledMethodQueryFilteringInputPropertiesWithFilterDescription:
+					   methodQueryFilteringInputPropertiesWithFilterDescription:
 						   'Optional filter applied to the matching reference methods after target lookup.'
 					   extraProperties: #(  )
 					   includeSourceDescription:
@@ -94,7 +87,7 @@ MCPToolReferences >> defaultOutputSchema [
 { #category : 'defaults' }
 MCPToolReferences >> defaultTitle [
 
-	^ 'Find Pharo References'
+	^ 'Find References'
 ]
 
 { #category : 'private - template' }
@@ -126,7 +119,7 @@ MCPToolReferences >> failureMessageForTarget: targetString mode: mode scope: sco
 ]
 
 { #category : 'private - searching' }
-MCPToolReferences >> matchingClassReferencesForClassNamed: aClassName inCompiledMethods: compiledMethods [
+MCPToolReferences >> matchingClassReferencesForClassNamed: aClassName inMethods: compiledMethods [
 
 	| classBinding classSymbol |
 	classBinding := self classBindingForClassName: aClassName.
@@ -134,33 +127,12 @@ MCPToolReferences >> matchingClassReferencesForClassNamed: aClassName inCompiled
 		Error signal: 'There is no class named ' , aClassName , '.' ].
 	classSymbol := aClassName asSymbol.
 	^ (compiledMethods select: [ :eachMethod |
-		   (self
-			    compiledMethod: eachMethod
-			    referencesAnyVariable: { classBinding }) or: [
-			   eachMethod hasSelector: classSymbol ] ]) asArray
+		   (self method: eachMethod referencesAnyVariable: { classBinding })
+			   or: [ eachMethod hasSelector: classSymbol ] ]) asArray
 ]
 
 { #category : 'private - searching' }
-MCPToolReferences >> matchingCompiledMethodsForTarget: targetString mode: mode scopeQuery: query inCompiledMethods: compiledMethods [
-
-	mode = 'method' ifTrue: [
-		^ self
-			  matchingMethodSendersForSelector: targetString asSymbol
-			  inCompiledMethods: compiledMethods ].
-	mode = 'class' ifTrue: [
-		^ self
-			  matchingClassReferencesForClassNamed: targetString
-			  inCompiledMethods: compiledMethods ].
-	mode = 'variable' ifTrue: [
-		^ self
-			  matchingVariableReferencesNamed: targetString
-			  scopeQuery: query
-			  inCompiledMethods: compiledMethods ].
-	Error signal: 'Unsupported mode: ' , mode
-]
-
-{ #category : 'private - searching' }
-MCPToolReferences >> matchingMethodSendersForSelector: aSelectorSymbol inCompiledMethods: compiledMethods [
+MCPToolReferences >> matchingMethodSendersForSelector: aSelectorSymbol inMethods: compiledMethods [
 
 	| specialSelectorIndex |
 	specialSelectorIndex := Smalltalk specialSelectorIndexOrNil:
@@ -172,7 +144,26 @@ MCPToolReferences >> matchingMethodSendersForSelector: aSelectorSymbol inCompile
 ]
 
 { #category : 'private - searching' }
-MCPToolReferences >> matchingVariableReferencesNamed: aVariableName scopeQuery: query inCompiledMethods: compiledMethods [
+MCPToolReferences >> matchingMethodsForTarget: targetString mode: mode scopeQuery: query inMethods: compiledMethods [
+
+	mode = 'method' ifTrue: [
+		^ self
+			  matchingMethodSendersForSelector: targetString asSymbol
+			  inMethods: compiledMethods ].
+	mode = 'class' ifTrue: [
+		^ self
+			  matchingClassReferencesForClassNamed: targetString
+			  inMethods: compiledMethods ].
+	mode = 'variable' ifTrue: [
+		^ self
+			  matchingVariableReferencesNamed: targetString
+			  scopeQuery: query
+			  inMethods: compiledMethods ].
+	Error signal: 'Unsupported mode: ' , mode
+]
+
+{ #category : 'private - searching' }
+MCPToolReferences >> matchingVariableReferencesNamed: aVariableName scopeQuery: query inMethods: compiledMethods [
 
 	| variables |
 	variables := self
@@ -182,8 +173,15 @@ MCPToolReferences >> matchingVariableReferencesNamed: aVariableName scopeQuery: 
 		Error signal: 'No variable named ' , aVariableName
 			, ' is accessible in the requested scope.' ].
 	^ (compiledMethods select: [ :eachMethod |
-		   self compiledMethod: eachMethod referencesAnyVariable: variables ])
+		   self method: eachMethod referencesAnyVariable: variables ])
 		  asArray
+]
+
+{ #category : 'private - searching' }
+MCPToolReferences >> method: aCompiledMethod referencesAnyVariable: variables [
+
+	^ variables anySatisfy: [ :eachVariable |
+		  eachVariable isAccessedIn: aCompiledMethod ]
 ]
 
 { #category : 'private - arguments' }
@@ -211,13 +209,13 @@ MCPToolReferences >> queryEntriesForParameters: parameters [
 
 	| compiledMethods query |
 	query := parameters at: #query.
-	compiledMethods := query compiledMethods.
+	compiledMethods := query methods.
 	^ self
-		  compiledMethodEntriesFrom: (self
-				   matchingCompiledMethodsForTarget: (parameters at: #target)
+		  methodEntriesFrom: (self
+				   matchingMethodsForTarget: (parameters at: #target)
 				   mode: (parameters at: #mode)
 				   scopeQuery: query
-				   inCompiledMethods: compiledMethods)
+				   inMethods: compiledMethods)
 		  filter: (parameters at: #filterPattern)
 		  filterMode: (parameters at: #filterMode)
 		  caseSensitive: (parameters at: #caseSensitive)
@@ -228,7 +226,7 @@ MCPToolReferences >> queryEntriesForParameters: parameters [
 MCPToolReferences >> queryParametersFromArguments: arguments [
 
 	| parameters |
-	parameters := self compiledMethodQueryParametersFromArguments:
+	parameters := self methodQueryParametersFromArguments:
 		              arguments.
 	parameters
 		at: #target
@@ -241,7 +239,7 @@ MCPToolReferences >> queryParametersFromArguments: arguments [
 MCPToolReferences >> queryResultDataForParameters: parameters page: page [
 
 	^ self
-		  compiledMethodQueryResultDataForPage: page
+		  methodQueryResultDataForPage: page
 		  entriesKey: #references
 ]
 
@@ -280,7 +278,7 @@ MCPToolReferences >> requestedContextFromArguments: arguments [
 MCPToolReferences >> senderEntrySchema [
 
 	^ self
-		  compiledMethodEntrySchemaNamed: 'reference'
+		  methodEntrySchemaNamed: 'reference'
 		  description: 'A method matching the requested reference query.'
 		  subjectDescription: 'matching method'
 		  selectorDescription: 'The selector of the matching method.'

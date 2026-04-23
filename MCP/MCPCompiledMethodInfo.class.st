@@ -16,9 +16,9 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPCompiledMethodInfo class >> fromCompiledMethod: aCompiledMethod [
+MCPCompiledMethodInfo class >> fromMethod: aCompiledMethod [
 
-	^ self new initializeFromCompiledMethod: aCompiledMethod
+	^ self new initializeFromMethod: aCompiledMethod
 ]
 
 { #category : 'converting' }
@@ -43,7 +43,7 @@ MCPCompiledMethodInfo >> className [
 ]
 
 { #category : 'initialization' }
-MCPCompiledMethodInfo >> initializeFromCompiledMethod: aCompiledMethod [
+MCPCompiledMethodInfo >> initializeFromMethod: aCompiledMethod [
 
 	| classPackageName methodPackageName |
 	className := aCompiledMethod methodClass instanceSide name asString.

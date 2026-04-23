@@ -10,10 +10,10 @@ Class {
 }
 
 { #category : 'private' }
-MCPToolRemoveMethods >> dataForCompiledMethod: aCompiledMethod [
+MCPToolRemoveMethods >> dataForMethod: aCompiledMethod [
 
 	| info |
-	info := MCPCompiledMethodInfo fromCompiledMethod: aCompiledMethod.
+	info := MCPCompiledMethodInfo fromMethod: aCompiledMethod.
 	^ {
 		  (#selector -> info selector).
 		  (#protocol -> info protocol).
@@ -143,7 +143,7 @@ MCPToolRemoveMethods >> defaultOutputSchema [
 { #category : 'defaults' }
 MCPToolRemoveMethods >> defaultTitle [
 
-	^ 'Remove Pharo Methods'
+	^ 'Remove Methods'
 ]
 
 { #category : 'private' }
@@ -191,7 +191,7 @@ MCPToolRemoveMethods >> executeWithArguments: arguments [
 					                                      className
 					                                      classSide: classSide
 					                                      selector: selector asString ].
-		                    self dataForCompiledMethod: compiledMethod ].
+		                    self dataForMethod: compiledMethod ].
 	  self forceRemoveSelectors: selectorSymbols from: behavior.
 	  self
 		  successResultText: (self

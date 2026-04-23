@@ -1,8 +1,8 @@
 "
-Shared base class for query tools that return compiled methods. It factors common scope, filtering, and schema behavior for method-like results.
+Shared base class for query tools that return methods. It factors common scope, filtering, and schema behavior for method results.
 "
 Class {
-	#name : 'MCPCompiledMethodQueryTool',
+	#name : 'MCPMethodQueryTool',
 	#superclass : 'MCPQueryTool',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
@@ -10,13 +10,13 @@ Class {
 }
 
 { #category : 'testing' }
-MCPCompiledMethodQueryTool class >> isAbstract [
+MCPMethodQueryTool class >> isAbstract [
 
-	^ self = MCPCompiledMethodQueryTool
+	^ self = MCPMethodQueryTool
 ]
 
 { #category : 'private - schema' }
-MCPCompiledMethodQueryTool >> compiledMethodEntrySchemaNamed: entryName description: entryDescription subjectDescription: subjectDescription selectorDescription: selectorDescription sourceDescription: sourceDescription [
+MCPMethodQueryTool >> methodEntrySchemaNamed: entryName description: entryDescription subjectDescription: subjectDescription selectorDescription: selectorDescription sourceDescription: sourceDescription [
 
 	^ MCPStructureProperties new
 		  name: entryName;
@@ -65,7 +65,7 @@ MCPCompiledMethodQueryTool >> compiledMethodEntrySchemaNamed: entryName descript
 ]
 
 { #category : 'private - schema' }
-MCPCompiledMethodQueryTool >> compiledMethodQueryFilteringInputPropertiesWithFilterDescription: filterDescription extraProperties: extraProperties includeSourceDescription: includeSourceDescription limitDescription: limitDescription [
+MCPMethodQueryTool >> methodQueryFilteringInputPropertiesWithFilterDescription: filterDescription extraProperties: extraProperties includeSourceDescription: includeSourceDescription limitDescription: limitDescription [
 
 	| properties |
 	properties := OrderedCollection new.
@@ -101,7 +101,7 @@ MCPCompiledMethodQueryTool >> compiledMethodQueryFilteringInputPropertiesWithFil
 ]
 
 { #category : 'private - arguments' }
-MCPCompiledMethodQueryTool >> compiledMethodQueryParametersFromArguments: arguments [
+MCPMethodQueryTool >> methodQueryParametersFromArguments: arguments [
 
 	^ {
 		  (#filterPattern
@@ -123,18 +123,18 @@ MCPCompiledMethodQueryTool >> compiledMethodQueryParametersFromArguments: argume
 			    nonNegativeIntegerArgumentNamed: 'offset'
 			    in: arguments
 			    default: 0)).
-		  (#query -> (self compiledMethodScopeQueryFromArguments: arguments)) }
+		  (#query -> (self methodScopeQueryFromArguments: arguments)) }
 		  asDictionary
 ]
 
 { #category : 'private - results' }
-MCPCompiledMethodQueryTool >> compiledMethodQueryResultDataForPage: page entriesKey: entriesKey [
+MCPMethodQueryTool >> methodQueryResultDataForPage: page entriesKey: entriesKey [
 
 	^ self queryResultDataFrom: nil page: page entriesKey: entriesKey
 ]
 
 { #category : 'private - schema' }
-MCPCompiledMethodQueryTool >> compiledMethodQueryScopeInputPropertiesWithScopeDescription: scopeDescription [
+MCPMethodQueryTool >> methodQueryScopeInputPropertiesWithScopeDescription: scopeDescription [
 
 	| scopeProperty sideProperty packageNamesProperty classNamesProperty |
 	scopeProperty := self

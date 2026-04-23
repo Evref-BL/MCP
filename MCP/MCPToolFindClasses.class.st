@@ -174,7 +174,7 @@ MCPToolFindClasses >> defaultOutputSchema [
 { #category : 'defaults' }
 MCPToolFindClasses >> defaultTitle [
 
-	^ 'Find Pharo Classes'
+	^ 'Find Classes'
 ]
 
 { #category : 'private - template' }

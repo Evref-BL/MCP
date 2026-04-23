@@ -3,7 +3,7 @@ Finds methods that implement a given selector. It is the direct entry point for 
 "
 Class {
 	#name : 'MCPToolImplementors',
-	#superclass : 'MCPCompiledMethodQueryTool',
+	#superclass : 'MCPMethodQueryTool',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -32,10 +32,10 @@ MCPToolImplementors >> defaultInputSchema [
 				   description: 'The selector whose implementors should be found.') }
 			  ,
 				  (self
-					   compiledMethodQueryScopeInputPropertiesWithScopeDescription:
+					   methodQueryScopeInputPropertiesWithScopeDescription:
 						   'Where to search for implementors. Defaults to image.')
 			  , (self
-					   compiledMethodQueryFilteringInputPropertiesWithFilterDescription:
+					   methodQueryFilteringInputPropertiesWithFilterDescription:
 						   'Optional filter applied to implementor methods after selector matching.'
 					   extraProperties: #(  )
 					   includeSourceDescription:
@@ -67,7 +67,7 @@ MCPToolImplementors >> defaultOutputSchema [
 { #category : 'defaults' }
 MCPToolImplementors >> defaultTitle [
 
-	^ 'Find Pharo Implementors'
+	^ 'Find Implementors'
 ]
 
 { #category : 'private - template' }
@@ -99,7 +99,7 @@ MCPToolImplementors >> failureMessageForSelector: selectorString scope: scope er
 MCPToolImplementors >> implementorEntrySchema [
 
 	^ self
-		  compiledMethodEntrySchemaNamed: 'implementor'
+		  methodEntrySchemaNamed: 'implementor'
 		  description: 'A method implementing the requested selector.'
 		  subjectDescription: 'implementor'
 		  selectorDescription: 'The implemented selector.'
@@ -113,10 +113,10 @@ MCPToolImplementors >> queryEntriesForParameters: parameters [
 	| compiledMethods query selectorString |
 	query := parameters at: #query.
 	selectorString := parameters at: #selector.
-	compiledMethods := query compiledMethods select: [ :eachMethod |
+	compiledMethods := query methods select: [ :eachMethod |
 		                   eachMethod selector = selectorString asSymbol ].
 	^ self
-		  compiledMethodEntriesFrom: compiledMethods asArray
+		  methodEntriesFrom: compiledMethods asArray
 		  filter: (parameters at: #filterPattern)
 		  filterMode: (parameters at: #filterMode)
 		  caseSensitive: (parameters at: #caseSensitive)
@@ -127,7 +127,7 @@ MCPToolImplementors >> queryEntriesForParameters: parameters [
 MCPToolImplementors >> queryParametersFromArguments: arguments [
 
 	| parameters |
-	parameters := self compiledMethodQueryParametersFromArguments:
+	parameters := self methodQueryParametersFromArguments:
 		              arguments.
 	parameters at: #selector put: (self selectorStringFrom: arguments).
 	^ parameters
@@ -137,7 +137,7 @@ MCPToolImplementors >> queryParametersFromArguments: arguments [
 MCPToolImplementors >> queryResultDataForParameters: parameters page: page [
 
 	^ self
-		  compiledMethodQueryResultDataForPage: page
+		  methodQueryResultDataForPage: page
 		  entriesKey: #implementors
 ]
 

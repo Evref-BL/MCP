@@ -256,7 +256,7 @@ MCPToolEditClass >> defaultOutputSchema [
 { #category : 'defaults' }
 MCPToolEditClass >> defaultTitle [
 
-	^ 'Edit Pharo Class'
+	^ 'Edit Class'
 ]
 
 { #category : 'executing' }

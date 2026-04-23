@@ -76,7 +76,7 @@ MCPToolRunTests >> defaultOutputSchema [
 { #category : 'defaults' }
 MCPToolRunTests >> defaultTitle [
 
-	^ 'Run Pharo Tests'
+	^ 'Run Tests'
 ]
 
 { #category : 'private' }

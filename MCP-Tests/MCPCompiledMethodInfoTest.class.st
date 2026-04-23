@@ -100,7 +100,7 @@ MCPCompiledMethodInfoTest >> tearDown [
 MCPCompiledMethodInfoTest >> testBuildsInfoForExtensionMethod [
 
 	| info |
-	info := MCPCompiledMethodInfo fromCompiledMethod:
+	info := MCPCompiledMethodInfo fromMethod:
 		        self targetClass >> self extensionSelector.
 	self assert: info className equals: self targetClassName.
 	self assert: info selector equals: 'extensionInfoTarget'.
@@ -117,9 +117,9 @@ MCPCompiledMethodInfoTest >> testBuildsInfoForExtensionMethod [
 MCPCompiledMethodInfoTest >> testBuildsInfoForInstanceAndClassMethods [
 
 	| classInfo instanceInfo |
-	instanceInfo := MCPCompiledMethodInfo fromCompiledMethod:
+	instanceInfo := MCPCompiledMethodInfo fromMethod:
 		                self targetClass >> self instanceSelector.
-	classInfo := MCPCompiledMethodInfo fromCompiledMethod:
+	classInfo := MCPCompiledMethodInfo fromMethod:
 		             self classTarget >> self classSelector.
 	self assert: instanceInfo className equals: self targetClassName.
 	self assert: instanceInfo side equals: 'instance'.

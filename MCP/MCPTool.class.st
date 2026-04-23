@@ -61,7 +61,7 @@ MCPTool class >> displayTools [
 			           yourself).
 	window
 		title: 'MCP Tools';
-		initialExtent: 220 @ 620.
+		initialExtent: 200 @ 620.
 	^ window open
 ]
 
@@ -83,8 +83,8 @@ MCPTool class >> toolGroups [
 			   MCPToolRemoveClasses }).
 		  (#Methods -> {
 			   MCPToolFindMethods.
-			   MCPToolImplementors.
 			   MCPToolReferences.
+			   MCPToolImplementors.
 			   MCPToolInspectMethod.
 			   MCPToolEditMethod.
 			   MCPToolRemoveMethods }).
@@ -169,57 +169,6 @@ MCPTool >> booleanSchemaPropertyNamed: propertyName description: propertyDescrip
 		   description: propertyDescription)
 		  default: defaultValue;
 		  yourself
-]
-
-{ #category : 'private - methods' }
-MCPTool >> compiledMethodEntriesFrom: compiledMethods filter: filterPattern filterMode: filterMode caseSensitive: caseSensitive includeSource: includeSource [
-
-	| entries matcher needsSourceText |
-	matcher := self
-		           matcherForPattern: filterPattern
-		           mode: filterMode
-		           caseSensitive: caseSensitive.
-	needsSourceText := includeSource or: [ filterPattern notNil ].
-	entries := OrderedCollection new.
-	compiledMethods do: [ :eachMethod |
-		| entry info sourceText |
-		info := MCPCompiledMethodInfo fromCompiledMethod: eachMethod.
-		sourceText := needsSourceText
-			              ifTrue: [ info source ]
-			              ifFalse: [ nil ].
-		entry := info asDictionaryIncludingSource: includeSource.
-		includeSource ifTrue: [ entry at: #source put: sourceText ].
-		(self
-			 matchesFilterOnCompiledMethodEntry: entry
-			 sourceText: sourceText
-			 matcher: matcher) ifTrue: [ entries add: entry ] ].
-	^ (entries asSortedCollection: [ :left :right |
-		   (self compiledMethodEntryLabel: left)
-		   <= (self compiledMethodEntryLabel: right) ]) asArray
-]
-
-{ #category : 'private - filtering' }
-MCPTool >> compiledMethodEntryLabel: anEntry [
-
-	^ self
-		  methodReferenceForClassName: (anEntry at: #className)
-		  selector: (anEntry at: #selector)
-		  isClassSide: (anEntry at: #side) = 'class'
-]
-
-{ #category : 'private - methods' }
-MCPTool >> compiledMethodScopeQueryFromArguments: arguments [
-
-	^ MCPCompiledMethodScopeQuery
-		  scope: (self stringArgumentNamed: 'scope' in: arguments)
-		  packageNames:
-		  (self
-			   argumentNamed: 'packageNames'
-			   in: arguments
-			   ifAbsent: [ nil ])
-		  classNames:
-		  (self argumentNamed: 'classNames' in: arguments ifAbsent: [ nil ])
-		  side: (self stringArgumentNamed: 'side' in: arguments)
 ]
 
 { #category : 'defaults' }
@@ -408,7 +357,7 @@ MCPTool >> failureMessageFor: anError [
 ]
 
 { #category : 'private - filtering' }
-MCPTool >> filterTextForCompiledMethodEntry: anEntry sourceText: sourceText [
+MCPTool >> filterTextForMethodEntry: anEntry sourceText: sourceText [
 
 	^ String streamContents: [ :stream |
 		  stream
@@ -422,7 +371,7 @@ MCPTool >> filterTextForCompiledMethodEntry: anEntry sourceText: sourceText [
 			  nextPutAll: ' ';
 			  nextPutAll: (anEntry at: #protocol);
 			  nextPutAll: ' ';
-			  nextPutAll: (self compiledMethodEntryLabel: anEntry).
+			  nextPutAll: (self methodEntryLabel: anEntry).
 		  sourceText ifNotNil: [
 			  stream
 				  nextPutAll: ' ';
@@ -528,12 +477,46 @@ MCPTool >> matcherForPattern: aPattern mode: aMode caseSensitive: aBoolean [
 ]
 
 { #category : 'private - filtering' }
-MCPTool >> matchesFilterOnCompiledMethodEntry: anEntry sourceText: sourceText matcher: aMatcher [
+MCPTool >> matchesFilterOnMethodEntry: anEntry sourceText: sourceText matcher: aMatcher [
 
 	^ aMatcher value:
-		  (self
-			   filterTextForCompiledMethodEntry: anEntry
-			   sourceText: sourceText)
+		  (self filterTextForMethodEntry: anEntry sourceText: sourceText)
+]
+
+{ #category : 'private - methods' }
+MCPTool >> methodEntriesFrom: compiledMethods filter: filterPattern filterMode: filterMode caseSensitive: caseSensitive includeSource: includeSource [
+
+	| entries matcher needsSourceText |
+	matcher := self
+		           matcherForPattern: filterPattern
+		           mode: filterMode
+		           caseSensitive: caseSensitive.
+	needsSourceText := includeSource or: [ filterPattern notNil ].
+	entries := OrderedCollection new.
+	compiledMethods do: [ :eachMethod |
+		| entry info sourceText |
+		info := MCPCompiledMethodInfo fromMethod: eachMethod.
+		sourceText := needsSourceText
+			              ifTrue: [ info source ]
+			              ifFalse: [ nil ].
+		entry := info asDictionaryIncludingSource: includeSource.
+		includeSource ifTrue: [ entry at: #source put: sourceText ].
+		(self
+			 matchesFilterOnMethodEntry: entry
+			 sourceText: sourceText
+			 matcher: matcher) ifTrue: [ entries add: entry ] ].
+	^ (entries asSortedCollection: [ :left :right |
+		   (self methodEntryLabel: left)
+		   <= (self methodEntryLabel: right) ]) asArray
+]
+
+{ #category : 'private - filtering' }
+MCPTool >> methodEntryLabel: anEntry [
+
+	^ self
+		  methodReferenceForClassName: (anEntry at: #className)
+		  selector: (anEntry at: #selector)
+		  isClassSide: (anEntry at: #side) = 'class'
 ]
 
 { #category : 'private - methods' }
@@ -554,6 +537,21 @@ MCPTool >> methodReferenceForClassName: aClassName selector: aSelector isClassSi
 		  stream
 			  nextPutAll: '>>';
 			  nextPutAll: aSelector ]
+]
+
+{ #category : 'private - methods' }
+MCPTool >> methodScopeQueryFromArguments: arguments [
+
+	^ MCPCompiledMethodScopeQuery
+		  scope: (self stringArgumentNamed: 'scope' in: arguments)
+		  packageNames:
+		  (self
+			   argumentNamed: 'packageNames'
+			   in: arguments
+			   ifAbsent: [ nil ])
+		  classNames:
+		  (self argumentNamed: 'classNames' in: arguments ifAbsent: [ nil ])
+		  side: (self stringArgumentNamed: 'side' in: arguments)
 ]
 
 { #category : 'accessing' }

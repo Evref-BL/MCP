@@ -43,13 +43,13 @@ MCPCompiledMethodScopeQuery >> allBehaviors [
 ]
 
 { #category : 'private - scope' }
-MCPCompiledMethodScopeQuery >> allCompiledMethods [
+MCPCompiledMethodScopeQuery >> allMethods [
 
-	^ self compiledMethodsForBehaviors: self allBehaviors
+	^ self methodsForBehaviors: self allBehaviors
 ]
 
 { #category : 'private - scope' }
-MCPCompiledMethodScopeQuery >> allCompiledMethodsDo: aBlock [
+MCPCompiledMethodScopeQuery >> allMethodsDo: aBlock [
 
 	| seenMethods |
 	seenMethods := IdentitySet new.
@@ -95,7 +95,7 @@ MCPCompiledMethodScopeQuery >> behaviorsForPackageNames [
 		package definedClasses do: [ :aClass |
 			self addBehaviorsForBaseClass: aClass to: behaviors ].
 		package extensionMethods do: [ :eachMethod |
-			(self matchesSideForCompiledMethod: eachMethod) ifTrue: [
+			(self matchesSideForMethod: eachMethod) ifTrue: [
 				behaviors add: eachMethod methodClass ] ] ].
 	^ behaviors asArray
 ]
@@ -120,106 +120,6 @@ MCPCompiledMethodScopeQuery >> classNames: someNames [
 	classNames := self
 		              normalizedStringCollection: someNames
 		              argumentName: 'classNames'
-]
-
-{ #category : 'querying' }
-MCPCompiledMethodScopeQuery >> compiledMethods [
-
-	self validate.
-	scope = 'image' ifTrue: [ ^ self allCompiledMethods ].
-	scope = 'packages' ifTrue: [ ^ self compiledMethodsForPackageNames ].
-	scope = 'classes' ifTrue: [
-		^ self compiledMethodsForBehaviors: self behaviorsForClassNames ].
-	scope = 'hierarchy' ifTrue: [
-		^ self compiledMethodsForBehaviors:
-			  self hierarchyBehaviorsForClassNames ].
-	Error signal: 'Unsupported scope: ' , scope
-]
-
-{ #category : 'querying' }
-MCPCompiledMethodScopeQuery >> compiledMethodsDo: aBlock [
-
-	self validate.
-	scope = 'image' ifTrue: [ ^ self allCompiledMethodsDo: aBlock ].
-	scope = 'packages' ifTrue: [
-		^ self compiledMethodsForPackageNamesDo: aBlock ].
-	scope = 'classes' ifTrue: [
-		^ self
-			  compiledMethodsForBehaviors: self behaviorsForClassNames
-			  do: aBlock ].
-	scope = 'hierarchy' ifTrue: [
-		^ self
-			  compiledMethodsForBehaviors: self hierarchyBehaviorsForClassNames
-			  do: aBlock ].
-	Error signal: 'Unsupported scope: ' , scope
-]
-
-{ #category : 'private - scope' }
-MCPCompiledMethodScopeQuery >> compiledMethodsForBehaviors: behaviors [
-
-	| methods |
-	methods := IdentitySet new.
-	behaviors do: [ :eachBehavior |
-		eachBehavior methods do: [ :eachMethod | methods add: eachMethod ] ].
-	^ methods asArray
-]
-
-{ #category : 'private - scope' }
-MCPCompiledMethodScopeQuery >> compiledMethodsForBehaviors: behaviors do: aBlock [
-
-	| seenMethods |
-	seenMethods := IdentitySet new.
-	behaviors do: [ :eachBehavior |
-		eachBehavior methods do: [ :eachMethod |
-			(seenMethods includes: eachMethod) ifFalse: [
-				seenMethods add: eachMethod.
-				aBlock value: eachMethod ] ] ]
-]
-
-{ #category : 'private - scope' }
-MCPCompiledMethodScopeQuery >> compiledMethodsForPackageNames [
-
-	| methods |
-	methods := IdentitySet new.
-	self packageNames do: [ :eachName |
-		| package |
-		package := self packageNamed: eachName.
-		package definedClasses do: [ :aClass |
-			(side = 'instance' or: [ side = 'both' ]) ifTrue: [
-				aClass localMethods do: [ :eachMethod | methods add: eachMethod ] ].
-			(side = 'class' or: [ side = 'both' ]) ifTrue: [
-				aClass classSide localMethods do: [ :eachMethod |
-					methods add: eachMethod ] ] ].
-		package extensionMethods do: [ :eachMethod |
-			(self matchesSideForCompiledMethod: eachMethod) ifTrue: [
-				methods add: eachMethod ] ] ].
-	^ methods asArray
-]
-
-{ #category : 'private - scope' }
-MCPCompiledMethodScopeQuery >> compiledMethodsForPackageNamesDo: aBlock [
-
-	| seenMethods |
-	seenMethods := IdentitySet new.
-	self packageNames do: [ :eachName |
-		| package |
-		package := self packageNamed: eachName.
-		package definedClasses do: [ :aClass |
-			(side = 'instance' or: [ side = 'both' ]) ifTrue: [
-				aClass localMethods do: [ :eachMethod |
-					(seenMethods includes: eachMethod) ifFalse: [
-						seenMethods add: eachMethod.
-						aBlock value: eachMethod ] ] ].
-			(side = 'class' or: [ side = 'both' ]) ifTrue: [
-				aClass classSide localMethods do: [ :eachMethod |
-					(seenMethods includes: eachMethod) ifFalse: [
-						seenMethods add: eachMethod.
-						aBlock value: eachMethod ] ] ] ].
-		package extensionMethods do: [ :eachMethod |
-			(self matchesSideForCompiledMethod: eachMethod) ifTrue: [
-				(seenMethods includes: eachMethod) ifFalse: [
-					seenMethods add: eachMethod.
-					aBlock value: eachMethod ] ] ] ]
 ]
 
 { #category : 'private - scope' }
@@ -256,11 +156,111 @@ MCPCompiledMethodScopeQuery >> matchesSideForBehavior: aBehavior [
 ]
 
 { #category : 'private - scope' }
-MCPCompiledMethodScopeQuery >> matchesSideForCompiledMethod: aCompiledMethod [
+MCPCompiledMethodScopeQuery >> matchesSideForMethod: aCompiledMethod [
 
 	side = 'both' ifTrue: [ ^ true ].
 	side = 'class' ifTrue: [ ^ aCompiledMethod methodClass isMeta ].
 	^ aCompiledMethod methodClass isMeta not
+]
+
+{ #category : 'querying' }
+MCPCompiledMethodScopeQuery >> methods [
+
+	self validate.
+	scope = 'image' ifTrue: [ ^ self allMethods ].
+	scope = 'packages' ifTrue: [ ^ self methodsForPackageNames ].
+	scope = 'classes' ifTrue: [
+		^ self methodsForBehaviors: self behaviorsForClassNames ].
+	scope = 'hierarchy' ifTrue: [
+		^ self methodsForBehaviors:
+			  self hierarchyBehaviorsForClassNames ].
+	Error signal: 'Unsupported scope: ' , scope
+]
+
+{ #category : 'querying' }
+MCPCompiledMethodScopeQuery >> methodsDo: aBlock [
+
+	self validate.
+	scope = 'image' ifTrue: [ ^ self allMethodsDo: aBlock ].
+	scope = 'packages' ifTrue: [
+		^ self methodsForPackageNamesDo: aBlock ].
+	scope = 'classes' ifTrue: [
+		^ self
+			  methodsForBehaviors: self behaviorsForClassNames
+			  do: aBlock ].
+	scope = 'hierarchy' ifTrue: [
+		^ self
+			  methodsForBehaviors: self hierarchyBehaviorsForClassNames
+			  do: aBlock ].
+	Error signal: 'Unsupported scope: ' , scope
+]
+
+{ #category : 'private - scope' }
+MCPCompiledMethodScopeQuery >> methodsForBehaviors: behaviors [
+
+	| methods |
+	methods := IdentitySet new.
+	behaviors do: [ :eachBehavior |
+		eachBehavior methods do: [ :eachMethod | methods add: eachMethod ] ].
+	^ methods asArray
+]
+
+{ #category : 'private - scope' }
+MCPCompiledMethodScopeQuery >> methodsForBehaviors: behaviors do: aBlock [
+
+	| seenMethods |
+	seenMethods := IdentitySet new.
+	behaviors do: [ :eachBehavior |
+		eachBehavior methods do: [ :eachMethod |
+			(seenMethods includes: eachMethod) ifFalse: [
+				seenMethods add: eachMethod.
+				aBlock value: eachMethod ] ] ]
+]
+
+{ #category : 'private - scope' }
+MCPCompiledMethodScopeQuery >> methodsForPackageNames [
+
+	| methods |
+	methods := IdentitySet new.
+	self packageNames do: [ :eachName |
+		| package |
+		package := self packageNamed: eachName.
+		package definedClasses do: [ :aClass |
+			(side = 'instance' or: [ side = 'both' ]) ifTrue: [
+				aClass localMethods do: [ :eachMethod | methods add: eachMethod ] ].
+			(side = 'class' or: [ side = 'both' ]) ifTrue: [
+				aClass classSide localMethods do: [ :eachMethod |
+					methods add: eachMethod ] ] ].
+		package extensionMethods do: [ :eachMethod |
+			(self matchesSideForMethod: eachMethod) ifTrue: [
+				methods add: eachMethod ] ] ].
+	^ methods asArray
+]
+
+{ #category : 'private - scope' }
+MCPCompiledMethodScopeQuery >> methodsForPackageNamesDo: aBlock [
+
+	| seenMethods |
+	seenMethods := IdentitySet new.
+	self packageNames do: [ :eachName |
+		| package |
+		package := self packageNamed: eachName.
+		package definedClasses do: [ :aClass |
+			(side = 'instance' or: [ side = 'both' ]) ifTrue: [
+				aClass localMethods do: [ :eachMethod |
+					(seenMethods includes: eachMethod) ifFalse: [
+						seenMethods add: eachMethod.
+						aBlock value: eachMethod ] ] ].
+			(side = 'class' or: [ side = 'both' ]) ifTrue: [
+				aClass classSide localMethods do: [ :eachMethod |
+					(seenMethods includes: eachMethod) ifFalse: [
+						seenMethods add: eachMethod.
+						aBlock value: eachMethod ] ] ] ].
+		package extensionMethods do: [ :eachMethod |
+			(self matchesSideForMethod: eachMethod) ifTrue: [
+				(seenMethods includes: eachMethod) ifFalse: [
+					seenMethods add: eachMethod.
+					aBlock value: eachMethod ] ] ] ]
 ]
 
 { #category : 'private - resolution' }

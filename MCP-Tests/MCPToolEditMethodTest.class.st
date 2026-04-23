@@ -34,7 +34,7 @@ MCPToolEditMethodTest >> assertCompileForClassName: aClassName methodSource: aMe
 ]
 
 { #category : 'private' }
-MCPToolEditMethodTest >> assertSuccessDataHasCompiledMethodShape: data [
+MCPToolEditMethodTest >> assertSuccessDataHasMethodShape: data [
 
 	self
 		assert: data keys asSet
@@ -293,7 +293,7 @@ MCPToolEditMethodTest >> testChangesClassSideMethodProtocol [
 			(MCPToolEditMethodTestTarget classSide
 			 >> self classProtocolSelector) protocol name asString
 		equals: 'instance creation'.
-	self assertSuccessDataHasCompiledMethodShape: data.
+	self assertSuccessDataHasMethodShape: data.
 	self
 		assert: (data at: #className)
 		equals: 'MCPToolEditMethodTestTarget'.
@@ -317,7 +317,7 @@ MCPToolEditMethodTest >> testChangesInstanceSideMethodProtocol [
 			(MCPToolEditMethodTestTarget >> self instanceProtocolSelector)
 				protocol name asString
 		equals: 'accessing'.
-	self assertSuccessDataHasCompiledMethodShape: data.
+	self assertSuccessDataHasMethodShape: data.
 	self
 		assert: (data at: #className)
 		equals: 'MCPToolEditMethodTestTarget'.
@@ -341,7 +341,7 @@ MCPToolEditMethodTest >> testChangingExtensionMethodProtocolUpdatesPackageMetada
 			(MCPToolEditMethodTestTarget >> self extensionProtocolSelector)
 				protocol name asString
 		equals: 'tests'.
-	self assertSuccessDataHasCompiledMethodShape: data.
+	self assertSuccessDataHasMethodShape: data.
 	self
 		assert: (data at: #className)
 		equals: 'MCPToolEditMethodTestTarget'.
@@ -369,7 +369,7 @@ MCPToolEditMethodTest >> testCompileDefaultsToInstanceSideWhenClassSideIsOmitted
 		equals: 42.
 	self deny: (MCPToolEditMethodTestTarget classSide includesSelector:
 			 #instanceAnswer).
-	self assertSuccessDataHasCompiledMethodShape: data.
+	self assertSuccessDataHasMethodShape: data.
 	self assert: (data at: #side) equals: 'instance'
 ]
 
@@ -524,7 +524,7 @@ MCPToolEditMethodTest >> testCompilesClassSideMethod [
 		(MCPToolEditMethodTestTarget classSide >> #classAnswer) protocol
 			name
 		equals: #tests.
-	self assertSuccessDataHasCompiledMethodShape: data.
+	self assertSuccessDataHasMethodShape: data.
 	self
 		assert: (data at: #className)
 		equals: 'MCPToolEditMethodTestTarget'.
@@ -552,7 +552,7 @@ MCPToolEditMethodTest >> testCompilesInstanceSideMethod [
 		assert:
 		(MCPToolEditMethodTestTarget >> #instanceAnswer) protocol name
 		equals: #tests.
-	self assertSuccessDataHasCompiledMethodShape: data.
+	self assertSuccessDataHasMethodShape: data.
 	self
 		assert: (data at: #className)
 		equals: 'MCPToolEditMethodTestTarget'.
@@ -583,7 +583,7 @@ MCPToolEditMethodTest >> testNormalizesLineEndingsBeforeCompilation [
 ]
 
 { #category : 'tests' }
-MCPToolEditMethodTest >> testReformatsCompiledMethod [
+MCPToolEditMethodTest >> testReformatsMethod [
 
 	| data reformattedSource result source |
 	source := 'uglyAnswer   ^   1+2'.
@@ -695,7 +695,7 @@ MCPToolEditMethodTest >> testRenamesClassSideMethodWithDefaultPermutation [
 	self
 		assert: MCPToolEditMethodTestSender new callClassTarget
 		equals: 'Class-value'.
-	self assertSuccessDataHasCompiledMethodShape: data.
+	self assertSuccessDataHasMethodShape: data.
 	self
 		assert: (data at: #className)
 		equals: 'MCPToolEditMethodTestTarget'.
@@ -718,7 +718,7 @@ MCPToolEditMethodTest >> testRenamesInstanceMethodAndReturnsStructuredData [
 		(MCPToolEditMethodTestTarget includesSelector: self instanceSelector).
 	self assert: (MCPToolEditMethodTestTarget includesSelector:
 			 self renamedInstanceSelector).
-	self assertSuccessDataHasCompiledMethodShape: data.
+	self assertSuccessDataHasMethodShape: data.
 	self
 		assert: (data at: #className)
 		equals: 'MCPToolEditMethodTestTarget'.

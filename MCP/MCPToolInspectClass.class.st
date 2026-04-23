@@ -188,7 +188,7 @@ MCPToolInspectClass >> defaultOutputSchema [
 { #category : 'defaults' }
 MCPToolInspectClass >> defaultTitle [
 
-	^ 'Inspect Pharo Class'
+	^ 'Inspect Class'
 ]
 
 { #category : 'private - hierarchy' }

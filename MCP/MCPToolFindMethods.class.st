@@ -3,44 +3,11 @@ Lists methods in a chosen scope with optional filtering. It is the general metho
 "
 Class {
 	#name : 'MCPToolFindMethods',
-	#superclass : 'MCPCompiledMethodQueryTool',
+	#superclass : 'MCPMethodQueryTool',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
 }
-
-{ #category : 'private - methods' }
-MCPToolFindMethods >> compiledMethodEntriesFromQuery: query filter: filterPattern filterTargets: filterTargets filterMode: filterMode caseSensitive: caseSensitive includeSource: includeSource [
-
-	| entries matcher needsSourceForFiltering |
-	matcher := self
-		           matcherForPattern: filterPattern
-		           mode: filterMode
-		           caseSensitive: caseSensitive.
-	needsSourceForFiltering := filterPattern notNil and: [
-		                           filterTargets includes: 'source' ].
-	entries := OrderedCollection new.
-	query compiledMethodsDo: [ :eachMethod |
-		| entry info sourceText |
-		info := MCPCompiledMethodInfo fromCompiledMethod: eachMethod.
-		entry := info asDictionaryIncludingSource: false.
-		sourceText := needsSourceForFiltering
-			              ifTrue: [ info source ]
-			              ifFalse: [ nil ].
-		(filterPattern isNil or: [
-			 self
-				 matchesFilterOnCompiledMethodEntry: entry
-				 sourceText: sourceText
-				 matcher: matcher
-				 targets: filterTargets ]) ifTrue: [
-			includeSource ifTrue: [
-				sourceText ifNil: [ sourceText := info source ].
-				entry at: #source put: sourceText ].
-			entries add: entry ] ].
-	^ (entries asSortedCollection: [ :left :right |
-		   (self compiledMethodEntryLabel: left)
-		   <= (self compiledMethodEntryLabel: right) ]) asArray
-]
 
 { #category : 'defaults' }
 MCPToolFindMethods >> defaultDescription [
@@ -75,9 +42,9 @@ MCPToolFindMethods >> defaultInputSchema [
 		  type: 'object';
 		  properties:
 			  (self
-				   compiledMethodQueryScopeInputPropertiesWithScopeDescription:
+				   methodQueryScopeInputPropertiesWithScopeDescription:
 					   'Where to search for methods. Defaults to image.') , (self
-					   compiledMethodQueryFilteringInputPropertiesWithFilterDescription:
+					   methodQueryFilteringInputPropertiesWithFilterDescription:
 						   'Optional filter applied to the methods found in scope. Use filterTargets to choose which fields are matched.'
 					   extraProperties: { filterTargetsProperty }
 					   includeSourceDescription:
@@ -108,7 +75,7 @@ MCPToolFindMethods >> defaultOutputSchema [
 { #category : 'defaults' }
 MCPToolFindMethods >> defaultTitle [
 
-	^ 'Find Pharo Methods'
+	^ 'Find Methods'
 ]
 
 { #category : 'private - template' }
@@ -129,7 +96,7 @@ MCPToolFindMethods >> failureMessageForScope: scope error: anError [
 ]
 
 { #category : 'private - filtering' }
-MCPToolFindMethods >> filterTextsForCompiledMethodEntry: anEntry sourceText: sourceText targets: filterTargets [
+MCPToolFindMethods >> filterTextsForMethodEntry: anEntry sourceText: sourceText targets: filterTargets [
 
 	| texts |
 	texts := OrderedCollection new.
@@ -139,26 +106,59 @@ MCPToolFindMethods >> filterTextsForCompiledMethodEntry: anEntry sourceText: sou
 		each = 'package' ifTrue: [ texts add: (anEntry at: #packageName) ].
 		each = 'protocol' ifTrue: [ texts add: (anEntry at: #protocol) ].
 		each = 'reference' ifTrue: [
-			texts add: (self compiledMethodEntryLabel: anEntry) ].
+			texts add: (self methodEntryLabel: anEntry) ].
 		each = 'source' ifTrue: [ texts add: sourceText ] ].
 	^ texts asArray
 ]
 
 { #category : 'private - filtering' }
-MCPToolFindMethods >> matchesFilterOnCompiledMethodEntry: anEntry sourceText: sourceText matcher: aMatcher targets: filterTargets [
+MCPToolFindMethods >> matchesFilterOnMethodEntry: anEntry sourceText: sourceText matcher: aMatcher targets: filterTargets [
 
 	^ (self
-		   filterTextsForCompiledMethodEntry: anEntry
+		   filterTextsForMethodEntry: anEntry
 		   sourceText: sourceText
 		   targets: filterTargets) anySatisfy: [ :each |
 		  aMatcher value: each ]
+]
+
+{ #category : 'private - methods' }
+MCPToolFindMethods >> methodEntriesFromQuery: query filter: filterPattern filterTargets: filterTargets filterMode: filterMode caseSensitive: caseSensitive includeSource: includeSource [
+
+	| entries matcher needsSourceForFiltering |
+	matcher := self
+		           matcherForPattern: filterPattern
+		           mode: filterMode
+		           caseSensitive: caseSensitive.
+	needsSourceForFiltering := filterPattern notNil and: [
+		                           filterTargets includes: 'source' ].
+	entries := OrderedCollection new.
+	query methodsDo: [ :eachMethod |
+		| entry info sourceText |
+		info := MCPCompiledMethodInfo fromMethod: eachMethod.
+		entry := info asDictionaryIncludingSource: false.
+		sourceText := needsSourceForFiltering
+			              ifTrue: [ info source ]
+			              ifFalse: [ nil ].
+		(filterPattern isNil or: [
+			 self
+				 matchesFilterOnMethodEntry: entry
+				 sourceText: sourceText
+				 matcher: matcher
+				 targets: filterTargets ]) ifTrue: [
+			includeSource ifTrue: [
+				sourceText ifNil: [ sourceText := info source ].
+				entry at: #source put: sourceText ].
+			entries add: entry ] ].
+	^ (entries asSortedCollection: [ :left :right |
+		   (self methodEntryLabel: left) <= (self methodEntryLabel: right) ])
+		  asArray
 ]
 
 { #category : 'private - schema' }
 MCPToolFindMethods >> methodEntrySchema [
 
 	^ self
-		  compiledMethodEntrySchemaNamed: 'method'
+		  methodEntrySchemaNamed: 'method'
 		  description: 'A method matching the query.'
 		  subjectDescription: 'method'
 		  selectorDescription: 'The selector name.'
@@ -170,7 +170,7 @@ MCPToolFindMethods >> methodEntrySchema [
 MCPToolFindMethods >> queryEntriesForParameters: parameters [
 
 	^ self
-		  compiledMethodEntriesFromQuery: (parameters at: #query)
+		  methodEntriesFromQuery: (parameters at: #query)
 		  filter: (parameters at: #filterPattern)
 		  filterTargets: (parameters at: #filterTargets)
 		  filterMode: (parameters at: #filterMode)
@@ -182,7 +182,7 @@ MCPToolFindMethods >> queryEntriesForParameters: parameters [
 MCPToolFindMethods >> queryParametersFromArguments: arguments [
 
 	| parameters |
-	parameters := self compiledMethodQueryParametersFromArguments:
+	parameters := self methodQueryParametersFromArguments:
 		              arguments.
 	parameters
 		at: #filterTargets
@@ -194,7 +194,7 @@ MCPToolFindMethods >> queryParametersFromArguments: arguments [
 MCPToolFindMethods >> queryResultDataForParameters: parameters page: page [
 
 	^ self
-		  compiledMethodQueryResultDataForPage: page
+		  methodQueryResultDataForPage: page
 		  entriesKey: #methods
 ]
 
