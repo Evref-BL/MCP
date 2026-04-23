@@ -1,3 +1,6 @@
+"
+Base class for MCP tools exposed by the server. It owns common tool metadata, schema building, and result/error helpers.
+"
 Class {
 	#name : 'MCPTool',
 	#superclass : 'Object',
@@ -15,46 +18,85 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'scripts' }
-MCPTool class >> browseIcons [
-
-	<script>
-	| iconExtent rows presenter table window |
-	iconExtent := 16 @ 16.
-	rows := (self concreteSubclasses asSortedCollection: [ :a :b |
-		         a name <= b name ]) collect: [ :each |
-		        each name
-		        ->
-			        ((Form fromBase64String:
-				          (each new icons first src copyAfter: $,)) scaledToSize:
-				         iconExtent) ].
-	presenter := SpPresenter new.
-	table := presenter newTable.
-	table
-		addColumn: ((SpImageTableColumn title: '' evaluated: #value)
-				 width: iconExtent x + 8;
-				 yourself);
-		addColumn: (SpStringTableColumn title: 'Class' evaluated: #key);
-		hideColumnHeaders;
-		items: rows.
-	presenter layout: (presenter newBoxLayoutTopToBottom
-			 add: table;
-			 yourself).
-	window := presenter asWindow.
-	window title: 'MCP Tool Icons'.
-	^ window open
-]
-
 { #category : 'querying' }
 MCPTool class >> concreteSubclasses [
 
 	^ self allSubclasses reject: [ :each | each isAbstract ]
 ]
 
+{ #category : 'scripts' }
+MCPTool class >> displayTools [
+
+	<script>
+	| content contentLayout heading image label rowLayout window |
+	content := SpPresenter new.
+	contentLayout := SpBoxLayout newTopToBottom
+		                 spacing: 3;
+		                 borderWidth: 9;
+		                 yourself.
+	self toolGroups do: [ :group |
+		heading := content newLabel.
+		heading
+			label: group key;
+			displayBold: [ :ignored | true ].
+		contentLayout add: heading expand: false.
+		group value do: [ :toolClass |
+			image := content newImage.
+			image
+				image: (self toolIconFormOf: toolClass);
+				autoScale: false.
+			label := content newLabel.
+			label label: toolClass new title.
+			rowLayout := SpBoxLayout newLeftToRight
+				             spacing: 6;
+				             hAlignStart;
+				             vAlignCenter;
+				             add: image;
+				             add: label;
+				             yourself.
+			contentLayout add: rowLayout ] ].
+	content layout: contentLayout.
+	window := SpWindowPresenter presenter: (content newPresenter
+			           layout: (SpScrollableLayout with: content);
+			           yourself).
+	window
+		title: 'MCP Tools';
+		initialExtent: 220 @ 620.
+	^ window open
+]
+
 { #category : 'testing' }
 MCPTool class >> isAbstract [
 
 	^ self = MCPTool
+]
+
+{ #category : 'scripts' }
+MCPTool class >> toolGroups [
+
+	^ {
+		  (#Packages -> { MCPToolFindPackages }).
+		  (#Classes -> {
+			   MCPToolFindClasses.
+			   MCPToolInspectClass.
+			   MCPToolEditClass.
+			   MCPToolRemoveClasses }).
+		  (#Methods -> {
+			   MCPToolFindMethods.
+			   MCPToolImplementors.
+			   MCPToolReferences.
+			   MCPToolInspectMethod.
+			   MCPToolEditMethod.
+			   MCPToolRemoveMethods }).
+		  (#Tests -> { MCPToolRunTests }).
+		  (#Scripting -> { MCPToolEvaluate }) }
+]
+
+{ #category : 'scripts' }
+MCPTool class >> toolIconFormOf: aToolClass [
+
+	^ Form fromBase64String:
+		  (aToolClass new icons first src copyAfter: $,)
 ]
 
 { #category : 'private - arguments' }
