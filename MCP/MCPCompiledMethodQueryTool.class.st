@@ -1,3 +1,6 @@
+"
+Shared base class for query tools that return compiled methods. It factors common scope, filtering, and schema behavior for method-like results.
+"
 Class {
 	#name : 'MCPCompiledMethodQueryTool',
 	#superclass : 'MCPQueryTool',

@@ -1,3 +1,6 @@
+"
+Removes methods from one class in one batch. It is intentionally direct and does not perform sender safety checks.
+"
 Class {
 	#name : 'MCPToolRemoveMethods',
 	#superclass : 'MCPTool',

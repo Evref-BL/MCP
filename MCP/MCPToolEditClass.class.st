@@ -1,3 +1,6 @@
+"
+Edits class structure and metadata in the running image. Use it for class-level changes such as creation, moves, renames, reparenting, slot moves, and comment updates.
+"
 Class {
 	#name : 'MCPToolEditClass',
 	#superclass : 'MCPEditTool',

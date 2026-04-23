@@ -1,3 +1,6 @@
+"
+Finds methods that implement a given selector. It is the direct entry point for definition lookup.
+"
 Class {
 	#name : 'MCPToolImplementors',
 	#superclass : 'MCPCompiledMethodQueryTool',

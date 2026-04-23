@@ -1,3 +1,6 @@
+"
+Edits one method in the running image. It handles compilation, renaming, protocol changes, and returns post-compile critiques when relevant.
+"
 Class {
 	#name : 'MCPToolEditMethod',
 	#superclass : 'MCPEditTool',

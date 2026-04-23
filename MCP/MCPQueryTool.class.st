@@ -1,3 +1,6 @@
+"
+Shared base class for query-style MCP tools. It centralizes paged result shaping and query-specific error handling.
+"
 Class {
 	#name : 'MCPQueryTool',
 	#superclass : 'MCPTool',

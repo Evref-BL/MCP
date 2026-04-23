@@ -1,3 +1,6 @@
+"
+Lists methods in a chosen scope with optional filtering. It is the general method discovery tool.
+"
 Class {
 	#name : 'MCPToolFindMethods',
 	#superclass : 'MCPCompiledMethodQueryTool',

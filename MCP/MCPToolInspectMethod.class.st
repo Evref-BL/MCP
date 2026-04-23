@@ -1,3 +1,6 @@
+"
+Returns structured information for one method, including source and optional variable reference details. It is meant for focused method inspection.
+"
 Class {
 	#name : 'MCPToolInspectMethod',
 	#superclass : 'MCPTool',

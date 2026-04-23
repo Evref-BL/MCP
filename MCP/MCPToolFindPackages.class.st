@@ -1,3 +1,6 @@
+"
+Lists packages in the image or a project with optional filtering. It is the general package discovery tool.
+"
 Class {
 	#name : 'MCPToolFindPackages',
 	#superclass : 'MCPQueryTool',

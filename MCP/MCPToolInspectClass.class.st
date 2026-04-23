@@ -1,3 +1,6 @@
+"
+Returns structured metadata for one class, with optional superclass and subclass context. It is meant for focused class inspection rather than broad search.
+"
 Class {
 	#name : 'MCPToolInspectClass',
 	#superclass : 'MCPTool',

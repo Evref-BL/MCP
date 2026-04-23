@@ -1,3 +1,6 @@
+"
+Runs test classes or selected test methods and returns structured results. It is the testing bridge for the MCP server.
+"
 Class {
 	#name : 'MCPToolRunTests',
 	#superclass : 'MCPTool',

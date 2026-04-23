@@ -1,3 +1,6 @@
+"
+Finds methods that reference a selector, class, or variable. It is the main caller and usage query tool.
+"
 Class {
 	#name : 'MCPToolReferences',
 	#superclass : 'MCPCompiledMethodQueryTool',

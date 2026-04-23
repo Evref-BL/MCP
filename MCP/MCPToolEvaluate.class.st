@@ -1,3 +1,6 @@
+"
+Evaluates arbitrary Smalltalk code in the running image. It is the escape hatch when no dedicated tool is a better fit.
+"
 Class {
 	#name : 'MCPToolEvaluate',
 	#superclass : 'MCPTool',

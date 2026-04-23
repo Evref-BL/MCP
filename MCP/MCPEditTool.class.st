@@ -1,3 +1,6 @@
+"
+Shared base class for mutating MCP tools. It centralizes operation selection, warning handling, and structured edit failure reporting.
+"
 Class {
 	#name : 'MCPEditTool',
 	#superclass : 'MCPTool',

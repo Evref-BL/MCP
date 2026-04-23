@@ -1,3 +1,6 @@
+"
+Lists classes in a chosen scope with optional filtering. It is optimized for class discovery rather than hierarchy inspection.
+"
 Class {
 	#name : 'MCPToolFindClasses',
 	#superclass : 'MCPQueryTool',

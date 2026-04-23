@@ -1,3 +1,6 @@
+"
+Removes classes from the image in one batch. It surfaces safe-removal warnings before destructive changes unless forced.
+"
 Class {
 	#name : 'MCPToolRemoveClasses',
 	#superclass : 'MCPTool',
