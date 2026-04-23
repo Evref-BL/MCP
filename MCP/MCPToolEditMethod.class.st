@@ -87,6 +87,7 @@ MCPToolEditMethod >> defaultInputSchema [
 						   'Whether the target method is on the class side. Defaults to false.';
 					   default: false;
 					   yourself).
+				  self forceSchemaProperty.
 				  (MCPStructureProperties new
 					   name: 'selector';
 					   type: 'string';
@@ -148,148 +149,115 @@ MCPToolEditMethod >> defaultTitle [
 	^ 'Edit Pharo Method'
 ]
 
-{ #category : 'private' }
-MCPToolEditMethod >> errorResultForChangeProtocolError: anError className: className classSide: classSide selector: selector protocol: protocol [
-
-	^ self
-		  errorResultForOperationFailure: anError
-		  operation: 'changeProtocol'
-		  requestedContext: {
-				  (#className -> className).
-				  (#classSide -> classSide).
-				  (#selector -> selector).
-				  (#protocol -> protocol) } asDictionary
-		  summary: (self
-				   failureMessageForChangeProtocolClassNamed: className
-				   classSide: classSide
-				   selector: selector
-				   protocol: protocol
-				   error: anError)
-]
-
-{ #category : 'private' }
-MCPToolEditMethod >> errorResultForCompileError: anError className: className classSide: classSide protocol: protocol [
-
-	^ self
-		  errorResultForOperationFailure: anError
-		  operation: 'compile'
-		  requestedContext: {
-				  (#className -> className).
-				  (#classSide -> classSide).
-				  (#protocol -> protocol) } asDictionary
-		  summary: (self
-				   failureMessageForCompileClassNamed: className
-				   classSide: classSide
-				   error: anError)
-]
-
-{ #category : 'private' }
-MCPToolEditMethod >> errorResultForRenameError: anError className: className classSide: classSide selector: oldSelector newSelector: newSelector [
-
-	^ self
-		  errorResultForOperationFailure: anError
-		  operation: 'rename'
-		  requestedContext: {
-				  (#className -> className).
-				  (#classSide -> classSide).
-				  (#selector -> oldSelector).
-				  (#newSelector -> newSelector) } asDictionary
-		  summary: (self
-				   failureMessageForRenameClassNamed: className
-				   classSide: classSide
-				   selector: oldSelector
-				   newSelector: newSelector
-				   error: anError)
-]
-
 { #category : 'executing' }
 MCPToolEditMethod >> executeChangeProtocolWithArguments: arguments [
 
-	| behavior className classSide compiledMethod newCompiledMethod protocol selector selectorSymbol |
+	| behavior className classSide force newCompiledMethod protocol requestedContext selector selectorSymbol |
 	className := self stringArgumentNamed: 'className' in: arguments.
 	classSide := self
 		             booleanArgumentNamed: 'classSide'
 		             in: arguments
 		             default: false.
+	force := self forceFromArguments: arguments.
 	selector := self selectorStringFrom: arguments.
 	protocol := self stringArgumentNamed: 'protocol' in: arguments.
 	selectorSymbol := selector asSymbol.
-	^ [
-	  behavior := self behaviorNamed: className classSide: classSide.
-	  compiledMethod := behavior
-		                    compiledMethodAt: selectorSymbol
-		                    ifAbsent: [
-			                    MCPCommandError
-				                    signalMissingMethodInClassName: className
-				                    classSide: classSide
-				                    selector: selector ].
-	  (RBMethodProtocolTransformation
-		   protocol: protocol
-		   inMethod: selectorSymbol
-		   inClass:
-		   (self transformationClassNameFor: className classSide: classSide))
-		  execute.
-	  newCompiledMethod := behavior compiledMethodAt: selectorSymbol.
-	  self
-		  successResultText: 'Changed protocol for '
-			  ,
-			  (self
-				   methodReferenceForBehavior: behavior
-				   selector: selectorSymbol) , '.'
-		  data: (self dataForCompiledMethod: newCompiledMethod) ]
-		  on: Exception
-		  do: [ :error |
+	requestedContext := {
+		                    (#className -> className).
+		                    (#classSide -> classSide).
+		                    (#selector -> selector).
+		                    (#protocol -> protocol) } asDictionary.
+	^ self
+		  executeEditOperation: 'changeProtocol'
+		  force: force
+		  requestedContext: requestedContext
+		  work: [
+			  behavior := self behaviorNamed: className classSide: classSide.
+			  behavior compiledMethodAt: selectorSymbol ifAbsent: [
+				  MCPCommandError
+					  signalMissingMethodInClassName: className
+					  classSide: classSide
+					  selector: selector ].
+			  (RBMethodProtocolTransformation
+				   protocol: protocol
+				   inMethod: selectorSymbol
+				   inClass:
+				   (self
+					    transformationClassNameFor: className
+					    classSide: classSide)) execute.
+			  newCompiledMethod := behavior compiledMethodAt: selectorSymbol ]
+		  successResult: [ :warningMessages |
 			  self
-				  errorResultForChangeProtocolError: error
-				  className: className
+				  successResultText: 'Changed protocol for '
+					  ,
+					  (self
+						   methodReferenceForBehavior: behavior
+						   selector: selectorSymbol) , '.'
+				  data: (self dataForCompiledMethod: newCompiledMethod)
+				  warnings: warningMessages ]
+		  failureSummary: [ :error |
+			  self
+				  failureMessageForChangeProtocolClassNamed: className
 				  classSide: classSide
 				  selector: selector
-				  protocol: protocol ]
+				  protocol: protocol
+				  error: error ]
 ]
 
 { #category : 'executing' }
 MCPToolEditMethod >> executeCompileWithArguments: arguments [
 
-	| behavior className classSide compiledMethod methodSource protocol selector |
+	| behavior className classSide compiledMethod force methodSource protocol requestedContext selector |
 	className := self stringArgumentNamed: 'className' in: arguments.
 	classSide := self
 		             booleanArgumentNamed: 'classSide'
 		             in: arguments
 		             default: false.
+	force := self forceFromArguments: arguments.
 	protocol := self stringArgumentNamed: 'protocol' in: arguments.
 	methodSource := self
 		                argumentNamed: 'methodSource'
 		                in: arguments
 		                ifAbsent: [ JRPCInvalidParameters signal ].
-	^ [
-	  behavior := self behaviorNamed: className classSide: classSide.
-	  selector := behavior compile: methodSource classified: protocol.
-	  compiledMethod := self
-		                    reformattedCompiledMethodForBehavior: behavior
-		                    selector: selector.
-	  self
-		  successResultText: 'Compiled '
-			  , (self methodReferenceForBehavior: behavior selector: selector)
-			  , '. '
-		  data: (self dataForCompiledMethod: compiledMethod) ]
-		  on: Exception
-		  do: [ :error |
+	requestedContext := {
+		                    (#className -> className).
+		                    (#classSide -> classSide).
+		                    (#protocol -> protocol) } asDictionary.
+	^ self
+		  executeEditOperation: 'compile'
+		  force: force
+		  requestedContext: requestedContext
+		  work: [
+			  behavior := self behaviorNamed: className classSide: classSide.
+			  selector := behavior compile: methodSource classified: protocol.
+			  compiledMethod := self
+				                    reformattedCompiledMethodForBehavior: behavior
+				                    selector: selector ]
+		  successResult: [ :warningMessages |
 			  self
-				  errorResultForCompileError: error
-				  className: className
+				  successResultText: 'Compiled '
+					  ,
+					  (self methodReferenceForBehavior: behavior selector: selector)
+					  , '.'
+				  data: (self dataForCompiledMethod: compiledMethod)
+				  warnings: warningMessages ]
+		  failureSummary: [ :error |
+			  self
+				  failureMessageForCompileClassNamed: className
 				  classSide: classSide
-				  protocol: protocol ]
+				  error: error ]
 ]
 
 { #category : 'executing' }
 MCPToolEditMethod >> executeRenameWithArguments: arguments [
 
-	| behavior className classSide compiledMethod newCompiledMethod newSelector newSelectorSymbol oldMethodReference oldSelector oldSelectorSymbol permutation |
+	| behavior className classSide force newCompiledMethod newSelector newSelectorSymbol oldMethodReference oldSelector oldSelectorSymbol permutation requestedContext |
 	className := self stringArgumentNamed: 'className' in: arguments.
 	classSide := self
 		             booleanArgumentNamed: 'classSide'
 		             in: arguments
 		             default: false.
+	force := self forceFromArguments: arguments.
 	oldSelector := self selectorStringFrom: arguments.
 	newSelector := self stringArgumentNamed: 'newSelector' in: arguments.
 	oldSelectorSymbol := oldSelector asSymbol.
@@ -297,42 +265,50 @@ MCPToolEditMethod >> executeRenameWithArguments: arguments [
 	permutation := self
 		               permutationFromArguments: arguments
 		               selector: oldSelectorSymbol.
-	^ [
-	  behavior := self behaviorNamed: className classSide: classSide.
-	  compiledMethod := behavior
-		                    compiledMethodAt: oldSelectorSymbol
-		                    ifAbsent: [
-			                    MCPCommandError
-				                    signalMissingMethodInClassName: className
-				                    classSide: classSide
-				                    selector: oldSelector ].
-	  oldMethodReference := self
-		                        methodReferenceForBehavior: behavior
-		                        selector: oldSelectorSymbol.
-	  (ReRenameMethodRefactoring
-		   renameMethod: oldSelectorSymbol
-		   in: behavior
-		   to: newSelectorSymbol
-		   permutation: permutation) execute.
-	  newCompiledMethod := self
-		                       reformattedCompiledMethodForBehavior:
-		                       behavior
-		                       selector: newSelectorSymbol.
-	  self
-		  successResultText: 'Renamed ' , oldMethodReference , ' to '
-			  ,
-			  (self
-				   methodReferenceForBehavior: behavior
-				   selector: newSelectorSymbol) , '.'
-		  data: (self dataForCompiledMethod: newCompiledMethod) ]
-		  on: Exception
-		  do: [ :error |
+	requestedContext := {
+		                    (#className -> className).
+		                    (#classSide -> classSide).
+		                    (#selector -> oldSelector).
+		                    (#newSelector -> newSelector) } asDictionary.
+	^ self
+		  executeEditOperation: 'rename'
+		  force: force
+		  requestedContext: requestedContext
+		  work: [
+			  behavior := self behaviorNamed: className classSide: classSide.
+			  behavior compiledMethodAt: oldSelectorSymbol ifAbsent: [
+				  MCPCommandError
+					  signalMissingMethodInClassName: className
+					  classSide: classSide
+					  selector: oldSelector ].
+			  oldMethodReference := self
+				                        methodReferenceForBehavior: behavior
+				                        selector: oldSelectorSymbol.
+			  (ReRenameMethodRefactoring
+				   renameMethod: oldSelectorSymbol
+				   in: behavior
+				   to: newSelectorSymbol
+				   permutation: permutation) execute.
+			  newCompiledMethod := self
+				                       reformattedCompiledMethodForBehavior:
+				                       behavior
+				                       selector: newSelectorSymbol ]
+		  successResult: [ :warningMessages |
 			  self
-				  errorResultForRenameError: error
-				  className: className
+				  successResultText: 'Renamed ' , oldMethodReference , ' to '
+					  ,
+					  (self
+						   methodReferenceForBehavior: behavior
+						   selector: newSelectorSymbol) , '.'
+				  data: (self dataForCompiledMethod: newCompiledMethod)
+				  warnings: warningMessages ]
+		  failureSummary: [ :error |
+			  self
+				  failureMessageForRenameClassNamed: className
 				  classSide: classSide
 				  selector: oldSelector
-				  newSelector: newSelector ]
+				  newSelector: newSelector
+				  error: error ]
 ]
 
 { #category : 'private' }

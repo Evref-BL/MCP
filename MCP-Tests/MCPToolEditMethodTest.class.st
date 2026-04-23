@@ -252,11 +252,12 @@ MCPToolEditMethodTest >> testChangeProtocolReturnsStructuredErrorWhenMethodIsMis
 	self
 		assert: (error at: #selector)
 		equals: self instanceProtocolSelector asString.
+	self assert: (error at: #protocol) equals: 'accessing'.
 	self
 		assert: error keys asSet
 		equals:
 			#( operation errorClass errorCode message className classSide
-			   selector ) asSet
+			   selector protocol ) asSet
 ]
 
 { #category : 'tests' }
@@ -536,10 +537,13 @@ MCPToolEditMethodTest >> testRenameReturnsStructuredErrorWhenMethodIsMissing [
 		assert: (error at: #selector)
 		equals: self instanceSelector asString.
 	self
+		assert: (error at: #newSelector)
+		equals: self renamedInstanceSelector asString.
+	self
 		assert: error keys asSet
 		equals:
 			#( operation errorClass errorCode message className classSide
-			   selector ) asSet
+			   selector newSelector ) asSet
 ]
 
 { #category : 'tests' }

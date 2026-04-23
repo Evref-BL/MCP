@@ -78,6 +78,7 @@ MCPToolContractsTest >> testEditClassHasAccurateNameAndRequiredArguments [
 	self assert: (propertyNames includes: 'classComment').
 	self assert: (propertyNames includes: 'slotName').
 	self assert: (propertyNames includes: 'classSide').
+	self assert: (propertyNames includes: 'force').
 	self
 		assert: (operationProperty extraProperties at: #enum) asArray
 		equals:
@@ -88,10 +89,15 @@ MCPToolContractsTest >> testEditClassHasAccurateNameAndRequiredArguments [
 { #category : 'tests' }
 MCPToolContractsTest >> testEditMethodHasAccurateNameAndRequiredArguments [
 
-	self assert: MCPToolEditMethod new name equals: 'edit-method'.
+	| propertyNames tool |
+	tool := MCPToolEditMethod new.
+	propertyNames := tool inputSchema properties collect: [ :each |
+		                 each name ].
+	self assert: tool name equals: 'edit-method'.
 	self
-		assert: MCPToolEditMethod new inputSchema required asSet
-		equals: #( 'operation' 'className' ) asSet
+		assert: tool inputSchema required asSet
+		equals: #( 'operation' 'className' ) asSet.
+	self assert: (propertyNames includes: 'force')
 ]
 
 { #category : 'tests' }
@@ -395,7 +401,8 @@ MCPToolContractsTest >> testInspectMethodHasAccurateNameAndRequiredArguments [
 { #category : 'tests' }
 MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable [
 
-	| inspectClassTool inspectMethodTool editMethodTool findClassesTool findMethodsTool findPackagesTool implementorsTool referencesTool removeClassesTool removeMethodsTool |
+	| editClassTool inspectClassTool inspectMethodTool editMethodTool findClassesTool findMethodsTool findPackagesTool implementorsTool referencesTool removeClassesTool removeMethodsTool |
+	editClassTool := MCPToolEditClass new.
 	inspectClassTool := MCPToolInspectClass new.
 	inspectMethodTool := MCPToolInspectMethod new.
 	editMethodTool := MCPToolEditMethod new.
@@ -406,6 +413,10 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 	referencesTool := MCPToolReferences new.
 	removeClassesTool := MCPToolRemoveClasses new.
 	removeMethodsTool := MCPToolRemoveMethods new.
+	self
+		assert: ((self inputPropertyNamed: 'force' inTool: editClassTool)
+				 extraProperties at: #default)
+		equals: false.
 	self
 		assert: ((self
 				  inputPropertyNamed: 'includeSuperclasses'
@@ -435,6 +446,10 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 	self
 		assert:
 			((self inputPropertyNamed: 'classSide' inTool: editMethodTool)
+				 extraProperties at: #default)
+		equals: false.
+	self
+		assert: ((self inputPropertyNamed: 'force' inTool: editMethodTool)
 				 extraProperties at: #default)
 		equals: false.
 	self

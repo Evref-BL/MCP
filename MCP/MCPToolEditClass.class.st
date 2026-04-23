@@ -114,6 +114,7 @@ MCPToolEditClass >> defaultInputSchema [
 					   description:
 					   'Whether slot movement targets class-side slots instead of instance-side slots when operation=pullUpSlot or operation=pushDownSlot.'
 					   default: false).
+				  self forceSchemaProperty.
 				  (MCPStructureProperties new
 					   name: 'classComment';
 					   type: 'string';
@@ -258,135 +259,130 @@ MCPToolEditClass >> defaultTitle [
 { #category : 'executing' }
 MCPToolEditClass >> executeCreateWithArguments: arguments [
 
-	| className packageName result slots superclassName tag |
+	| className force packageName requestedContext result slots superclassName tag |
 	className := self stringArgumentNamed: 'className' in: arguments.
 	superclassName := self
 		                  stringArgumentNamed: 'superclassName'
 		                  in: arguments.
 	packageName := self stringArgumentNamed: 'packageName' in: arguments.
 	tag := self stringArgumentNamed: 'tag' in: arguments.
+	force := self forceFromArguments: arguments.
 	slots := self argumentNamed: 'slots' in: arguments ifAbsent: [ nil ].
-	^ [
-	  [
-	  result := (MCPCreateClassCommand
-		             className: className
-		             superclassName: superclassName
-		             packageName: packageName
-		             tag: tag
-		             slots: slots
-		             classSlots:
-		             (self
-			              argumentNamed: 'classSlots'
-			              in: arguments
-			              ifAbsent: [ nil ])) execute.
-	  self
-		  successResultText: 'Created class ' , className , '.'
-		  data: (self dataForResult: result operation: 'create') ]
-		  on: MCPCommandError
-		  do: [ :error |
-		  self errorResultForCommandError: error operation: 'create' ] ]
-		  on: Exception
-		  do: [ :error |
+	requestedContext := {
+		                    (#className -> className).
+		                    (#superclassName -> superclassName).
+		                    (#packageName -> packageName).
+		                    (#tag -> (tag ifNil: [ '' ] ifNotNil: [ tag ])) }
+		                    asDictionary.
+	^ self
+		  executeEditOperation: 'create'
+		  force: force
+		  requestedContext: requestedContext
+		  work: [
+			  result := (MCPCreateClassCommand
+				             className: className
+				             superclassName: superclassName
+				             packageName: packageName
+				             tag: tag
+				             slots: slots
+				             classSlots:
+				             (self
+					              argumentNamed: 'classSlots'
+					              in: arguments
+					              ifAbsent: [ nil ])) execute ]
+		  successResult: [ :warningMessages |
 			  self
-				  errorResultForOperationFailure: error
-				  operation: 'create'
-				  requestedContext: {
-						  (#className -> className).
-						  (#superclassName -> superclassName).
-						  (#packageName -> packageName).
-						  (#tag -> (tag ifNil: [ '' ] ifNotNil: [ tag ])) } asDictionary
-				  summary: (self
-						   failureMessageForCreateClassNamed: className
-						   superclassName: superclassName
-						   packageName: packageName
-						   error: error) ]
+				  successResultText: 'Created class ' , className , '.'
+				  data: (self dataForResult: result operation: 'create')
+				  warnings: warningMessages ]
+		  failureSummary: [ :error |
+			  self
+				  failureMessageForCreateClassNamed: className
+				  superclassName: superclassName
+				  packageName: packageName
+				  error: error ]
 ]
 
 { #category : 'executing' }
 MCPToolEditClass >> executeMoveSlotWithArguments: arguments operation: operation [
 
-	| className classSide result slotName |
+	| className classSide force requestedContext result slotName |
 	className := self stringArgumentNamed: 'className' in: arguments.
 	slotName := self stringArgumentNamed: 'slotName' in: arguments.
 	classSide := self
 		             booleanArgumentNamed: 'classSide'
 		             in: arguments
 		             default: false.
-	^ [
-	  [
-	  result := (MCPMoveSlotCommand
-		             className: className
-		             slotName: slotName
-		             direction: operation
-		             classSide: classSide) execute.
-	  self
-		  successResultText: (operation = 'pullUpSlot'
-				   ifTrue: [
-					   'Pulled up ' , (self slotDescriptionForClassSide: classSide)
-					   , ' ' , slotName , ' to class ' , className , '.' ]
-				   ifFalse: [
-					   'Pushed down ' , (self slotDescriptionForClassSide: classSide)
-					   , ' ' , slotName , ' from class ' , className , '.' ])
-		  data: (self dataForResult: result operation: operation) ]
-		  on: MCPCommandError
-		  do: [ :error |
-			  | details |
-			  details := error structuredDetails copy.
-			  details at: #operation put: operation.
-			  details at: #slotName put: slotName.
-			  details at: #classSide put: classSide.
-			  self errorResultText: error messageText details: details ] ]
-		  on: Exception
-		  do: [ :error |
+	force := self forceFromArguments: arguments.
+	requestedContext := {
+		                    (#className -> className).
+		                    (#slotName -> slotName).
+		                    (#classSide -> classSide) } asDictionary.
+	^ self
+		  executeEditOperation: operation
+		  force: force
+		  requestedContext: requestedContext
+		  work: [
+			  result := (MCPMoveSlotCommand
+				             className: className
+				             slotName: slotName
+				             direction: operation
+				             classSide: classSide) execute ]
+		  successResult: [ :warningMessages |
 			  self
-				  errorResultForOperationFailure: error
+				  successResultText: (operation = 'pullUpSlot'
+						   ifTrue: [
+							   'Pulled up ' , (self slotDescriptionForClassSide: classSide)
+							   , ' ' , slotName , ' to class ' , className , '.' ]
+						   ifFalse: [
+							   'Pushed down '
+							   , (self slotDescriptionForClassSide: classSide) , ' '
+							   , slotName , ' from class ' , className , '.' ])
+				  data: (self dataForResult: result operation: operation)
+				  warnings: warningMessages ]
+		  failureSummary: [ :error |
+			  self
+				  failureMessageForMoveSlotNamed: slotName
+				  onClassNamed: className
+				  classSide: classSide
 				  operation: operation
-				  requestedContext: {
-						  (#className -> className).
-						  (#slotName -> slotName).
-						  (#classSide -> classSide) } asDictionary
-				  summary: (self
-						   failureMessageForMoveSlotNamed: slotName
-						   onClassNamed: className
-						   classSide: classSide
-						   operation: operation
-						   error: error) ]
+				  error: error ]
 ]
 
 { #category : 'executing' }
 MCPToolEditClass >> executeMoveWithArguments: arguments [
 
-	| className packageName result tag |
+	| className force packageName requestedContext result tag |
 	className := self stringArgumentNamed: 'className' in: arguments.
 	packageName := self stringArgumentNamed: 'packageName' in: arguments.
 	tag := self stringArgumentNamed: 'tag' in: arguments.
-	^ [
-	  [
-	  result := (MCPMoveClassCommand
-		             className: className
-		             packageName: packageName
-		             tag: tag) execute.
-	  self
-		  successResultText:
-		  'Moved class ' , className , ' to package ' , packageName , '.'
-		  data: (self dataForResult: result operation: 'move') ]
-		  on: MCPCommandError
-		  do: [ :error |
-		  self errorResultForCommandError: error operation: 'move' ] ]
-		  on: Exception
-		  do: [ :error |
+	force := self forceFromArguments: arguments.
+	requestedContext := {
+		                    (#className -> className).
+		                    (#packageName -> packageName).
+		                    (#tag -> (tag ifNil: [ '' ] ifNotNil: [ tag ])) }
+		                    asDictionary.
+	^ self
+		  executeEditOperation: 'move'
+		  force: force
+		  requestedContext: requestedContext
+		  work: [
+			  result := (MCPMoveClassCommand
+				             className: className
+				             packageName: packageName
+				             tag: tag) execute ]
+		  successResult: [ :warningMessages |
 			  self
-				  errorResultForOperationFailure: error
-				  operation: 'move'
-				  requestedContext: {
-						  (#className -> className).
-						  (#packageName -> packageName).
-						  (#tag -> (tag ifNil: [ '' ] ifNotNil: [ tag ])) } asDictionary
-				  summary: (self
-						   failureMessageForMoveClassNamed: className
-						   packageName: packageName
-						   tag: tag
-						   error: error) ]
+				  successResultText:
+				  'Moved class ' , className , ' to package ' , packageName , '.'
+				  data: (self dataForResult: result operation: 'move')
+				  warnings: warningMessages ]
+		  failureSummary: [ :error |
+			  self
+				  failureMessageForMoveClassNamed: className
+				  packageName: packageName
+				  tag: tag
+				  error: error ]
 ]
 
 { #category : 'executing' }
@@ -408,101 +404,98 @@ MCPToolEditClass >> executePushDownSlotWithArguments: arguments [
 { #category : 'executing' }
 MCPToolEditClass >> executeRenameWithArguments: arguments [
 
-	| className newClassName result |
+	| className force newClassName requestedContext result |
 	className := self stringArgumentNamed: 'className' in: arguments.
 	newClassName := self
 		                stringArgumentNamed: 'newClassName'
 		                in: arguments.
-	^ [
-	  [
-	  result := (MCPRenameClassCommand
-		             className: className
-		             newClassName: newClassName) execute.
-	  self
-		  successResultText:
-		  'Renamed class ' , className , ' to ' , newClassName , '.'
-		  data: (self dataForResult: result operation: 'rename') ]
-		  on: MCPCommandError
-		  do: [ :error |
-		  self errorResultForCommandError: error operation: 'rename' ] ]
-		  on: Exception
-		  do: [ :error |
+	force := self forceFromArguments: arguments.
+	requestedContext := {
+		                    (#className -> className).
+		                    (#newClassName -> newClassName) } asDictionary.
+	^ self
+		  executeEditOperation: 'rename'
+		  force: force
+		  requestedContext: requestedContext
+		  work: [
+			  result := (MCPRenameClassCommand
+				             className: className
+				             newClassName: newClassName) execute ]
+		  successResult: [ :warningMessages |
 			  self
-				  errorResultForOperationFailure: error
-				  operation: 'rename'
-				  requestedContext: {
-						  (#className -> className).
-						  (#newClassName -> newClassName) } asDictionary
-				  summary: (self
-						   failureMessageForRenameClassNamed: className
-						   to: newClassName
-						   error: error) ]
+				  successResultText:
+				  'Renamed class ' , className , ' to ' , newClassName , '.'
+				  data: (self dataForResult: result operation: 'rename')
+				  warnings: warningMessages ]
+		  failureSummary: [ :error |
+			  self
+				  failureMessageForRenameClassNamed: className
+				  to: newClassName
+				  error: error ]
 ]
 
 { #category : 'executing' }
 MCPToolEditClass >> executeReparentWithArguments: arguments [
 
-	| className result superclassName |
+	| className force requestedContext result superclassName |
 	className := self stringArgumentNamed: 'className' in: arguments.
 	superclassName := self
 		                  stringArgumentNamed: 'superclassName'
 		                  in: arguments.
-	^ [
-	  [
-	  result := (MCPReparentClassCommand
-		             className: className
-		             superclassName: superclassName) execute.
-	  self
-		  successResultText:
-			  'Reparented class ' , className , ' to superclass '
-			  , superclassName , '.'
-		  data: (self dataForResult: result operation: 'reparent') ]
-		  on: MCPCommandError
-		  do: [ :error |
-			  self errorResultForCommandError: error operation: 'reparent' ] ]
-		  on: Exception
-		  do: [ :error |
+	force := self forceFromArguments: arguments.
+	requestedContext := {
+		                    (#className -> className).
+		                    (#superclassName -> superclassName) }
+		                    asDictionary.
+	^ self
+		  executeEditOperation: 'reparent'
+		  force: force
+		  requestedContext: requestedContext
+		  work: [
+			  result := (MCPReparentClassCommand
+				             className: className
+				             superclassName: superclassName) execute ]
+		  successResult: [ :warningMessages |
 			  self
-				  errorResultForOperationFailure: error
-				  operation: 'reparent'
-				  requestedContext: {
-						  (#className -> className).
-						  (#superclassName -> superclassName) } asDictionary
-				  summary: (self
-						   failureMessageForReparentClassNamed: className
-						   superclassName: superclassName
-						   error: error) ]
+				  successResultText:
+					  'Reparented class ' , className , ' to superclass '
+					  , superclassName , '.'
+				  data: (self dataForResult: result operation: 'reparent')
+				  warnings: warningMessages ]
+		  failureSummary: [ :error |
+			  self
+				  failureMessageForReparentClassNamed: className
+				  superclassName: superclassName
+				  error: error ]
 ]
 
 { #category : 'executing' }
 MCPToolEditClass >> executeSetCommentWithArguments: arguments [
 
-	| classComment className result |
+	| classComment className force requestedContext result |
 	className := self stringArgumentNamed: 'className' in: arguments.
 	classComment := self classCommentFromArguments: arguments.
-	^ [
-	  [
-	  result := (MCPChangeClassCommentCommand
-		             className: className
-		             classComment: classComment) execute.
-	  self
-		  successResultText: 'Set comment for class ' , className , '.'
-		  data: (self dataForResult: result operation: 'setComment') ]
-		  on: MCPCommandError
-		  do: [ :error |
-			  self errorResultForCommandError: error operation: 'setComment' ] ]
-		  on: Exception
-		  do: [ :error |
+	force := self forceFromArguments: arguments.
+	requestedContext := {
+		                    (#className -> className).
+		                    (#classComment -> classComment) } asDictionary.
+	^ self
+		  executeEditOperation: 'setComment'
+		  force: force
+		  requestedContext: requestedContext
+		  work: [
+			  result := (MCPChangeClassCommentCommand
+				             className: className
+				             classComment: classComment) execute ]
+		  successResult: [ :warningMessages |
 			  self
-				  errorResultForOperationFailure: error
-				  operation: 'setComment'
-				  requestedContext: {
-						  (#className -> className).
-						  (#classComment -> classComment) } asDictionary
-				  summary:
-				  (self
-					   failureMessageForSetCommentOnClassNamed: className
-					   error: error) ]
+				  successResultText: 'Set comment for class ' , className , '.'
+				  data: (self dataForResult: result operation: 'setComment')
+				  warnings: warningMessages ]
+		  failureSummary: [ :error |
+			  self
+				  failureMessageForSetCommentOnClassNamed: className
+				  error: error ]
 ]
 
 { #category : 'private' }

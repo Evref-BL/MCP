@@ -60,7 +60,10 @@ MCPToolEditClassTest >> createdClassNames [
 	     'MCPToolEditClassTestPullUpChildTwo'
 	     'MCPToolEditClassTestPushDownTarget'
 	     'MCPToolEditClassTestPushDownChildOne'
-	     'MCPToolEditClassTestPushDownChildTwo' )
+	     'MCPToolEditClassTestPushDownChildTwo'
+	     'MCPToolEditClassTestWarningPullUpTarget'
+	     'MCPToolEditClassTestWarningPullUpChildOne'
+	     'MCPToolEditClassTestWarningPullUpChildTwo' )
 ]
 
 { #category : 'private' }
@@ -257,11 +260,23 @@ MCPToolEditClassTest >> setUp [
 { #category : 'private' }
 MCPToolEditClassTest >> slotOperationArgumentsFor: anOperation className: aClassName slotName: aSlotName classSide: aBoolean [
 
+	^ self
+		  slotOperationArgumentsFor: anOperation
+		  className: aClassName
+		  slotName: aSlotName
+		  classSide: aBoolean
+		  force: false
+]
+
+{ #category : 'private' }
+MCPToolEditClassTest >> slotOperationArgumentsFor: anOperation className: aClassName slotName: aSlotName classSide: aBoolean force: forceRequested [
+
 	^ {
 		  (#operation -> anOperation).
 		  (#className -> aClassName).
 		  (#slotName -> aSlotName).
-		  (#classSide -> aBoolean) } asDictionary
+		  (#classSide -> aBoolean).
+		  (#force -> forceRequested) } asDictionary
 ]
 
 { #category : 'private' }
@@ -466,6 +481,60 @@ MCPToolEditClassTest >> testEnsuresPackageBeforeCreatingClass [
 ]
 
 { #category : 'tests' }
+MCPToolEditClassTest >> testForcePullUpSlotContinuesPastRefactoringWarningAndReturnsWarnings [
+
+	| childOne childTwo data instance result target warnings |
+	self
+		createClassNamed: 'MCPToolEditClassTestWarningPullUpTarget'
+		superclassName: 'Object'
+		slots: #(  )
+		classSlots: #(  ).
+	self
+		createClassNamed: 'MCPToolEditClassTestWarningPullUpChildOne'
+		superclassName: 'MCPToolEditClassTestWarningPullUpTarget'
+		slots: #( sharedSlot )
+		classSlots: #(  ).
+	self
+		createClassNamed: 'MCPToolEditClassTestWarningPullUpChildTwo'
+		superclassName: 'MCPToolEditClassTestWarningPullUpTarget'
+		slots: #(  )
+		classSlots: #(  ).
+	self
+		ensureMethodSource: 'slotProbe ^ sharedSlot'
+		protocol: 'testing'
+		on: (self classNamed: 'MCPToolEditClassTestWarningPullUpChildOne').
+	result := self callToolWith: (self
+			           slotOperationArgumentsFor: 'pullUpSlot'
+			           className: 'MCPToolEditClassTestWarningPullUpTarget'
+			           slotName: 'sharedSlot'
+			           classSide: false
+			           force: true).
+	data := self dataFrom: result.
+	warnings := self warningsFrom: result.
+	target := self classNamed: 'MCPToolEditClassTestWarningPullUpTarget'.
+	childOne := self classNamed:
+		            'MCPToolEditClassTestWarningPullUpChildOne'.
+	childTwo := self classNamed:
+		            'MCPToolEditClassTestWarningPullUpChildTwo'.
+	instance := childOne new.
+	instance instVarNamed: 'sharedSlot' put: 17.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (warnings anySatisfy: [ :each |
+			 each includesSubstring:
+				 'Not all subclasses have an instance variable named' ]).
+	self
+		assert: (target slots collect: #name as: Array)
+		equals: #( #sharedSlot ).
+	self assert: (childOne slots collect: #name as: Array) equals: #(  ).
+	self assert: (childTwo slots collect: #name as: Array) equals: #(  ).
+	self assert: instance slotProbe equals: 17.
+	self assert: (data at: #operation) equals: 'pullUpSlot'.
+	self assert: (data at: #slotName) equals: 'sharedSlot'.
+	self assert: (data at: #classSide) equals: false.
+	self assert: (data at: #instanceSlotNames) equals: #( 'sharedSlot' )
+]
+
+{ #category : 'tests' }
 MCPToolEditClassTest >> testMovesClassToAnotherPackage [
 
 	| data result |
@@ -533,6 +602,63 @@ MCPToolEditClassTest >> testPullUpSlotReturnsStructuredCommandErrorForRefactorin
 	self assert: (error at: #slotName) equals: 'missingSlot'.
 	self assert: (error at: #classSide) equals: false.
 	self assert: ((error at: #message) includesSubstring: 'missingSlot')
+]
+
+{ #category : 'tests' }
+MCPToolEditClassTest >> testPullUpSlotStopsOnRefactoringWarningByDefault [
+
+	| childOne childTwo error result structured target |
+	self
+		createClassNamed: 'MCPToolEditClassTestWarningPullUpTarget'
+		superclassName: 'Object'
+		slots: #(  )
+		classSlots: #(  ).
+	self
+		createClassNamed: 'MCPToolEditClassTestWarningPullUpChildOne'
+		superclassName: 'MCPToolEditClassTestWarningPullUpTarget'
+		slots: #( sharedSlot )
+		classSlots: #(  ).
+	self
+		createClassNamed: 'MCPToolEditClassTestWarningPullUpChildTwo'
+		superclassName: 'MCPToolEditClassTestWarningPullUpTarget'
+		slots: #(  )
+		classSlots: #(  ).
+	result := self callToolWith: (self
+			           slotOperationArgumentsFor: 'pullUpSlot'
+			           className: 'MCPToolEditClassTestWarningPullUpTarget'
+			           slotName: 'sharedSlot'
+			           classSide: false).
+	structured := self structuredContentFrom: result.
+	error := self errorFrom: result.
+	target := self classNamed: 'MCPToolEditClassTestWarningPullUpTarget'.
+	childOne := self classNamed:
+		            'MCPToolEditClassTestWarningPullUpChildOne'.
+	childTwo := self classNamed:
+		            'MCPToolEditClassTestWarningPullUpChildTwo'.
+	self assert: (result at: #isError).
+	self assert: (structured at: #status) equals: 'error'.
+	self assert: (error at: #operation) equals: 'pullUpSlot'.
+	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
+	self
+		assert: (error at: #errorCode)
+		equals: 'PullUpSlotRefactoringWarning'.
+	self assert: (error at: #causeClass) equals: 'RBRefactoringWarning'.
+	self
+		assert: (error at: #className)
+		equals: 'MCPToolEditClassTestWarningPullUpTarget'.
+	self assert: (error at: #slotName) equals: 'sharedSlot'.
+	self assert: (error at: #classSide) equals: false.
+	self assert: (error at: #forceSupported) equals: true.
+	self assert:
+		((error at: #howToProceed) includesSubstring: 'force=true').
+	self assert: ((error at: #impactMessages) anySatisfy: [ :each |
+			 each includesSubstring:
+				 'Not all subclasses have an instance variable named' ]).
+	self assert: (target slots collect: #name as: Array) equals: #(  ).
+	self
+		assert: (childOne slots collect: #name as: Array)
+		equals: #( #sharedSlot ).
+	self assert: (childTwo slots collect: #name as: Array) equals: #(  )
 ]
 
 { #category : 'tests' }

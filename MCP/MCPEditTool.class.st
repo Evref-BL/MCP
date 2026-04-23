@@ -41,8 +41,20 @@ MCPEditTool >> canonicalOperationNames [
 { #category : 'private' }
 MCPEditTool >> errorResultForCommandError: anError operation: operation [
 
+	^ self
+		  errorResultForCommandError: anError
+		  operation: operation
+		  requestedContext: nil
+]
+
+{ #category : 'private' }
+MCPEditTool >> errorResultForCommandError: anError operation: operation requestedContext: requestedContext [
+
 	| details |
 	details := anError structuredDetails copy.
+	requestedContext ifNotNil: [
+		requestedContext keysAndValuesDo: [ :key :value |
+			value ifNotNil: [ details at: key ifAbsentPut: [ value ] ] ] ].
 	details at: #operation put: operation.
 	^ self errorResultText: anError messageText details: details
 ]
@@ -50,8 +62,16 @@ MCPEditTool >> errorResultForCommandError: anError operation: operation [
 { #category : 'private - errors' }
 MCPEditTool >> errorResultForOperationFailure: anError operation: operation requestedContext: requestedContext summary: summary [
 
+	(anError isKindOf: RBRefactoringWarning) ifTrue: [
+		^ self
+			  errorResultForRefactoringWarning: anError
+			  operation: operation
+			  requestedContext: requestedContext ].
 	(anError isKindOf: MCPCommandError) ifTrue: [
-		^ self errorResultForCommandError: anError operation: operation ].
+		^ self
+			  errorResultForCommandError: anError
+			  operation: operation
+			  requestedContext: requestedContext ].
 	^ self
 		  errorResultForCommandError: (self
 				   normalizedCommandErrorForOperationFailure: anError
@@ -59,6 +79,67 @@ MCPEditTool >> errorResultForOperationFailure: anError operation: operation requ
 				   requestedContext: requestedContext
 				   summary: summary)
 		  operation: operation
+		  requestedContext: requestedContext
+]
+
+{ #category : 'private - warnings' }
+MCPEditTool >> errorResultForRefactoringWarning: aWarning operation: operation requestedContext: requestedContext [
+
+	^ self
+		  errorResultForCommandError: (self
+				   normalizedCommandErrorForRefactoringWarning: aWarning
+				   operation: operation
+				   requestedContext: requestedContext)
+		  operation: operation
+		  requestedContext: requestedContext
+]
+
+{ #category : 'private - execution' }
+MCPEditTool >> executeEditOperation: operation force: forceRequested requestedContext: requestedContext work: operationBlock successResult: successBlock failureSummary: failureSummaryBlock [
+
+	| executionOutcome |
+	^ [
+	  executionOutcome := self
+		                      executeOperationBlock: operationBlock
+		                      force: forceRequested
+		                      operation: operation
+		                      requestedContext: requestedContext.
+	  (executionOutcome includesKey: #stoppedResult) ifTrue: [
+		  ^ executionOutcome at: #stoppedResult ].
+	  successBlock value: (executionOutcome at: #warnings) ]
+		  on: Exception
+		  do: [ :error |
+			  self
+				  errorResultForOperationFailure: error
+				  operation: operation
+				  requestedContext: requestedContext
+				  summary: (failureSummaryBlock value: error) ]
+]
+
+{ #category : 'private - warnings' }
+MCPEditTool >> executeOperationBlock: anOperationBlock force: forceRequested operation: operation requestedContext: requestedContext [
+
+	| value warningMessages |
+	warningMessages := OrderedCollection new.
+	value := [ anOperationBlock value ]
+		         on: RBRefactoringWarning
+		         do: [ :warning |
+			         | impactMessages |
+			         impactMessages := self
+				                           impactMessagesForRefactoringWarning:
+				                           warning.
+			         forceRequested
+				         ifTrue: [
+					         warningMessages addAll: impactMessages.
+					         warning resume: true ]
+				         ifFalse: [
+					         ^ { (#stoppedResult -> (self
+						             errorResultForRefactoringWarning: warning
+						             operation: operation
+						             requestedContext: requestedContext)) } asDictionary ] ].
+	^ {
+		  (#value -> value).
+		  (#warnings -> warningMessages asArray) } asDictionary
 ]
 
 { #category : 'executing' }
@@ -69,6 +150,61 @@ MCPEditTool >> executeWithArguments: arguments [
 	self validateRequiredArgumentsForOperation: operation in: arguments.
 	specification := self operationSpecificationNamed: operation.
 	^ self perform: (specification at: #executeSelector) with: arguments
+]
+
+{ #category : 'private - arguments' }
+MCPEditTool >> forceFromArguments: arguments [
+
+	^ self booleanArgumentNamed: 'force' in: arguments default: false
+]
+
+{ #category : 'private - schema' }
+MCPEditTool >> forceSchemaProperty [
+
+	^ self
+		  booleanSchemaPropertyNamed: 'force'
+		  description:
+		  'Whether to continue past refactoring warnings. Defaults to false. When false, refactoring warnings stop the edit and return impact details with guidance.'
+		  default: false
+]
+
+{ #category : 'private - warnings' }
+MCPEditTool >> howToProceedForRefactoringWarning [
+
+	^ 'Review impactMessages, then rerun the same request with force=true to continue despite these warnings.'
+]
+
+{ #category : 'private - warnings' }
+MCPEditTool >> impactMessageForRefactoringCondition: aCondition [
+
+	| message |
+	(aCondition respondsTo: #violationMessageOn:) ifFalse: [
+		^ self normalizedSingleLineText: aCondition printString ].
+	message := String streamContents: [ :stream |
+		           aCondition violationMessageOn: stream ].
+	^ self normalizedSingleLineText: message
+]
+
+{ #category : 'private - warnings' }
+MCPEditTool >> impactMessagesForRefactoringWarning: aWarning [
+
+	| failedPreconditions impactMessages primaryMessage |
+	impactMessages := OrderedCollection new.
+	failedPreconditions := (aWarning respondsTo: #failedPreconditions)
+		                       ifTrue: [ aWarning failedPreconditions ]
+		                       ifFalse: [ nil ].
+	failedPreconditions ifNotNil: [
+		failedPreconditions do: [ :each |
+			| message |
+			message := self impactMessageForRefactoringCondition: each.
+			message isEmpty ifFalse: [ impactMessages add: message ] ] ].
+	impactMessages ifEmpty: [
+		primaryMessage := self normalizedSingleLineText:
+			                  aWarning messageText.
+		primaryMessage isEmpty ifTrue: [
+			primaryMessage := aWarning class name asString ].
+		impactMessages add: primaryMessage ].
+	^ impactMessages asArray
 ]
 
 { #category : 'private - errors' }
@@ -107,6 +243,44 @@ MCPEditTool >> normalizedCommandErrorForOperationFailure: anError operation: ope
 		  details: details;
 		  messageText: normalizedSummary;
 		  yourself
+]
+
+{ #category : 'private - warnings' }
+MCPEditTool >> normalizedCommandErrorForRefactoringWarning: aWarning operation: operation requestedContext: requestedContext [
+
+	| details impactMessages summary |
+	impactMessages := self impactMessagesForRefactoringWarning: aWarning.
+	summary := self
+		           refactoringWarningSummaryFor: aWarning
+		           operation: operation
+		           requestedContext: requestedContext
+		           impactMessages: impactMessages.
+	details := requestedContext
+		           ifNil: [ Dictionary new ]
+		           ifNotNil: [ requestedContext copy ].
+	details at: #causeClass put: aWarning class name asString.
+	details at: #impactMessages put: impactMessages.
+	details at: #howToProceed put: self howToProceedForRefactoringWarning.
+	details at: #forceSupported put: true.
+	^ MCPCommandError new
+		  errorCode:
+			  (self operationFailureErrorCodeFor: aWarning operation: operation);
+		  details: details;
+		  messageText: summary;
+		  yourself
+]
+
+{ #category : 'private - warnings' }
+MCPEditTool >> normalizedSingleLineText: aString [
+
+	| text |
+	text := aString ifNil: [ '' ] ifNotNil: [ aString asString ].
+	text := text copyReplaceAll: '<n>' with: ' '.
+	text := text copyReplaceAll: String cr with: ' '.
+	text := text copyReplaceAll: String lf with: ' '.
+	[ text includesSubstring: '  ' ] whileTrue: [
+		text := text copyReplaceAll: '  ' with: ' ' ].
+	^ text trimBoth
 ]
 
 { #category : 'private - errors' }
@@ -193,10 +367,55 @@ MCPEditTool >> operationSpecifications [
 	self subclassResponsibility
 ]
 
+{ #category : 'private - warnings' }
+MCPEditTool >> operationTargetDescriptionForRequestedContext: requestedContext [
+
+	| className selector slotName |
+	requestedContext ifNil: [ ^ '' ].
+	className := requestedContext at: #className ifAbsent: [ nil ].
+	selector := requestedContext at: #selector ifAbsent: [ nil ].
+	slotName := requestedContext at: #slotName ifAbsent: [ nil ].
+	(className isNil and: [ selector isNil and: [ slotName isNil ] ])
+		ifTrue: [ ^ '' ].
+	^ String streamContents: [ :stream |
+		  className ifNotNil: [
+			  stream
+				  nextPutAll: ' on ';
+				  nextPutAll: className ].
+		  selector ifNotNil: [
+			  className
+				  ifNil: [ stream nextPutAll: ' for selector ' ]
+				  ifNotNil: [ stream nextPutAll: '>>' ].
+			  stream nextPutAll: selector ].
+		  slotName ifNotNil: [
+			  stream
+				  nextPutAll: ' slot ';
+				  nextPutAll: slotName ] ]
+]
+
 { #category : 'private - operations' }
 MCPEditTool >> operationValidationErrorMessage [
 
 	^ 'operation must be one of ' , self operationNameListText , '.'
+]
+
+{ #category : 'private - warnings' }
+MCPEditTool >> refactoringWarningSummaryFor: aWarning operation: operation requestedContext: requestedContext impactMessages: impactMessages [
+
+	^ String streamContents: [ :stream |
+		  stream
+			  nextPutAll: 'Refactoring warning for ';
+			  nextPutAll: operation;
+			  nextPutAll:
+				  (self operationTargetDescriptionForRequestedContext:
+						   requestedContext).
+		  impactMessages isEmpty ifFalse: [
+			  stream
+				  nextPutAll: ': ';
+				  nextPutAll: impactMessages first ].
+		  stream
+			  nextPutAll: ' ';
+			  nextPutAll: self howToProceedForRefactoringWarning ]
 ]
 
 { #category : 'private - errors' }
