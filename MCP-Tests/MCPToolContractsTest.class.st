@@ -63,6 +63,32 @@ MCPToolContractsTest >> testAllToolsAdvertisePngIconsWithDataUris [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
+
+	| orderedTools |
+	orderedTools := OrderedCollection new.
+	MCPTool toolGroups do: [ :group |
+		orderedTools addAll: group value ].
+	self
+		assert: orderedTools asSet
+		equals: MCPTool concreteSubclasses asSet.
+	self assert: orderedTools asArray equals: {
+			MCPToolFindPackages.
+			MCPToolFindClasses.
+			MCPToolInspectClass.
+			MCPToolEditClass.
+			MCPToolRemoveClasses.
+			MCPToolFindMethods.
+			MCPToolImplementors.
+			MCPToolReferences.
+			MCPToolInspectMethod.
+			MCPToolEditMethod.
+			MCPToolRemoveMethods.
+			MCPToolRunTests.
+			MCPToolEvaluate }
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testEditClassHasAccurateNameAndRequiredArguments [
 
 	| operationProperty propertyNames tool |

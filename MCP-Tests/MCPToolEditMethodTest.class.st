@@ -13,6 +13,27 @@ MCPToolEditMethodTest >> aroundToolCall: aBlock [
 ]
 
 { #category : 'private' }
+MCPToolEditMethodTest >> assertCompileForClassName: aClassName methodSource: aMethodSource protocol: aProtocol returnsSingleCritiqueRuleClass: aRuleClassName titledLike: aSubstring [
+
+	| critique critiques data result |
+	result := self callToolWith: (self
+			           compileArgumentsForClassName: aClassName
+			           classSide: false
+			           methodSource: aMethodSource
+			           protocol: aProtocol).
+	data := self dataFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	critiques := data at: #critiques.
+	self assert: critiques class equals: Array.
+	self assert: critiques size equals: 1.
+	critique := critiques first.
+	self assert: (critique at: #ruleClass) equals: aRuleClassName.
+	self assert: ((critique at: #title) includesSubstring: aSubstring).
+	self assert: (critique at: #description) isString.
+	self deny: (critique at: #description) isEmpty
+]
+
+{ #category : 'private' }
 MCPToolEditMethodTest >> assertSuccessDataHasCompiledMethodShape: data [
 
 	self
@@ -350,6 +371,76 @@ MCPToolEditMethodTest >> testCompileDefaultsToInstanceSideWhenClassSideIsOmitted
 			 #instanceAnswer).
 	self assertSuccessDataHasCompiledMethodShape: data.
 	self assert: (data at: #side) equals: 'instance'
+]
+
+{ #category : 'tests' }
+MCPToolEditMethodTest >> testCompileReturnsAllowlistedMissingSuperSendsCritique [
+
+	self removeSelector: #initialize from: MCPToolHierarchyTestBase.
+	self removeSelector: #initialize from: MCPToolHierarchyTestChild.
+	[
+	self
+		ensureMethodSource: 'initialize super initialize. ^ 1'
+		protocol: 'initialization'
+		on: MCPToolHierarchyTestBase.
+	self
+		assertCompileForClassName: 'MCPToolHierarchyTestChild'
+		methodSource: 'initialize 2 + 3'
+		protocol: 'initialization'
+		returnsSingleCritiqueRuleClass: 'ReMissingSuperSendsRule'
+		titledLike: 'Missing super sends' ] ensure: [
+		self removeSelector: #initialize from: MCPToolHierarchyTestBase.
+		self removeSelector: #initialize from: MCPToolHierarchyTestChild ]
+]
+
+{ #category : 'tests' }
+MCPToolEditMethodTest >> testCompileReturnsAllowlistedReturnInEnsureCritique [
+
+	| selector |
+	selector := #returnInEnsure.
+	self removeSelector: selector from: MCPToolEditMethodTestTarget.
+	[
+	self
+		assertCompileForClassName: 'MCPToolEditMethodTestTarget'
+		methodSource: 'returnInEnsure [ 1 ] ensure: [ ^ 2 ]'
+		protocol: 'tests'
+		returnsSingleCritiqueRuleClass: 'ReReturnInEnsureRule'
+		titledLike: 'return in an ensure:' ] ensure: [
+		self removeSelector: selector from: MCPToolEditMethodTestTarget ]
+]
+
+{ #category : 'tests' }
+MCPToolEditMethodTest >> testCompileReturnsAllowlistedUnaryAccessingWithoutReturnCritique [
+
+	| selector |
+	selector := #counterValue.
+	self removeSelector: selector from: MCPToolInspectMethodTestTarget.
+	[
+	self
+		assertCompileForClassName: 'MCPToolInspectMethodTestTarget'
+		methodSource: 'counterValue instanceCounter + 1'
+		protocol: 'accessing'
+		returnsSingleCritiqueRuleClass:
+		'ReUnaryAccessingMethodWithoutReturnRule'
+		titledLike: 'without explicit return' ] ensure: [
+		self removeSelector: selector from: MCPToolInspectMethodTestTarget ]
+]
+
+{ #category : 'tests' }
+MCPToolEditMethodTest >> testCompileReturnsAllowlistedWarningCritiques [
+
+	| selector |
+	selector := #shadowedCounter:.
+	self removeSelector: selector from: MCPToolInspectMethodTestTarget.
+	[
+	self
+		assertCompileForClassName: 'MCPToolInspectMethodTestTarget'
+		methodSource:
+		'shadowedCounter: value | instanceCounter | instanceCounter := value. ^ instanceCounter + 1'
+		protocol: 'tests'
+		returnsSingleCritiqueRuleClass: 'ReTempVarOverridesInstVarRule'
+		titledLike: 'Outer variable shadowed' ] ensure: [
+		self removeSelector: selector from: MCPToolInspectMethodTestTarget ]
 ]
 
 { #category : 'tests' }

@@ -12,7 +12,7 @@ MCPToolEditMethod >> compiledMethodCritiqueSchema [
 	^ MCPStructureProperties new
 		  type: 'object';
 		  description:
-			  'One error-severity critique reported for the compiled method.';
+			  'One included Renraku critique reported for the compiled method.';
 		  properties: {
 				  (self
 					   schemaPropertyNamed: 'ruleClass'
@@ -28,7 +28,7 @@ MCPToolEditMethod >> compiledMethodCritiqueSchema [
 					   schemaPropertyNamed: 'description'
 					   type: 'string'
 					   description:
-						   'The critique rationale explaining why this is considered an error.').
+						   'The critique rationale explaining why the rule flagged the method.').
 				  (self
 					   integerSchemaPropertyNamed: 'start'
 					   description:
@@ -49,7 +49,7 @@ MCPToolEditMethod >> compiledMethodCritiquesSchemaProperty [
 		   schemaPropertyNamed: 'critiques'
 		   type: 'array'
 		   description:
-			   'Error-severity Renraku critiques reported for the compiled method after compilation.')
+			   'Renraku critiques included in compile output: all error-severity critiques plus selected non-error rules.')
 		  items: self compiledMethodCritiqueSchema;
 		  yourself
 ]
@@ -117,8 +117,7 @@ MCPToolEditMethod >> critiqueDataForCompiledMethod: aCompiledMethod [
 
 	| critiques |
 	critiques := aCompiledMethod critiques select: [ :each |
-		             (each respondsTo: #rule) and: [
-			             each rule notNil and: [ each rule severity = #error ] ] ].
+		             self shouldIncludeCritique: each ].
 	^ ((critiques asSortedCollection: [ :left :right |
 		    left title = right title
 			    ifTrue: [ left rule class name < right rule class name ]
@@ -464,6 +463,16 @@ MCPToolEditMethod >> identityPermutationForSelector: aSelector [
 ]
 
 { #category : 'private' }
+MCPToolEditMethod >> includedCritiqueRuleClasses [
+
+	^ {
+		  ReMissingSuperSendsRule.
+		  ReReturnInEnsureRule.
+		  ReTempVarOverridesInstVarRule.
+		  ReUnaryAccessingMethodWithoutReturnRule }
+]
+
+{ #category : 'private' }
 MCPToolEditMethod >> normalizedPermutation: someIndexes [
 
 	^ someIndexes
@@ -524,6 +533,24 @@ MCPToolEditMethod >> reformattedCompiledMethodForBehavior: aBehavior selector: a
 	compiledMethod := aBehavior >> aSelector.
 	compiledMethod reformat.
 	^ aBehavior >> aSelector
+]
+
+{ #category : 'private' }
+MCPToolEditMethod >> ruleForCritique: aCritique [
+
+	(aCritique respondsTo: #rule) ifFalse: [ ^ nil ].
+	^ aCritique rule
+]
+
+{ #category : 'private' }
+MCPToolEditMethod >> shouldIncludeCritique: aCritique [
+
+	| rule |
+	rule := self ruleForCritique: aCritique.
+	rule ifNil: [ ^ false ].
+	^ rule severity = #error or: [
+		  self includedCritiqueRuleClasses anySatisfy: [ :each |
+			  rule isKindOf: each ] ]
 ]
 
 { #category : 'private' }
