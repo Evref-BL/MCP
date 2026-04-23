@@ -12,6 +12,7 @@ MCPCreateClassCommandTest >> createdClassNames [
 	^ #( 'MCPCreateClassCommandTestGenerated'
 	     'MCPCreateClassCommandTestTagged'
 	     'MCPCreateClassCommandTestClassSlots'
+	     'MCPCreateClassCommandTestConfigured'
 	     'MCPCreateClassCommandTestTemporaryPackage' )
 ]
 
@@ -91,6 +92,57 @@ MCPCreateClassCommandTest >> testCreatesClassWithTagSlotsAndClassSlots [
 		equals: #( #defaultName ).
 	self assert: createdClass packageTagName asString equals: 'Generated'.
 	self assert: result classInfo tag equals: 'Generated'
+]
+
+{ #category : 'tests' }
+MCPCreateClassCommandTest >> testCreatesClassWithTraitsClassTraitsSharedVariablesSharedPoolsAndLayout [
+
+	| createdClass result |
+	result := self executeCommand: (MCPCreateClassCommand
+			           className: 'MCPCreateClassCommandTestConfigured'
+			           superclassName: 'Object'
+			           packageName: self generatedPackageName
+			           tag: 'Configured'
+			           slots: #( 'firstName' )
+			           classSlots: #( 'defaultName' )
+			           traits: #( 'TAbleToRotate' )
+			           classTraits: #( 'TAbleToRotate classTrait' )
+			           sharedVariables: #( 'AlphaShared' 'BetaShared' )
+			           sharedPools: #( 'ChronologyConstants' )
+			           layout: 'WeakLayout').
+	createdClass := self classNamed:
+		                'MCPCreateClassCommandTestConfigured'.
+	self
+		assert:
+		(createdClass traits
+			 collect: [ :each | each name asString ]
+			 as: Array)
+		equals: #( 'TAbleToRotate' ).
+	self
+		assert: (createdClass classSide traits
+				 collect: [ :each | each name asString ]
+				 as: Array)
+		equals: #( 'TAbleToRotate classTrait' ).
+	self
+		assert: createdClass classVarNames
+		equals: #( #AlphaShared #BetaShared ).
+	self
+		assert: (createdClass sharedPools
+				 collect: [ :each | each name asString ]
+				 as: Array)
+		equals: #( 'ChronologyConstants' ).
+	self assert: createdClass classLayout class name equals: #WeakLayout.
+	self assert: result classInfo traitNames equals: #( 'TAbleToRotate' ).
+	self
+		assert: result classInfo classTraitNames
+		equals: #( 'TAbleToRotate classTrait' ).
+	self
+		assert: result classInfo sharedVariableNames
+		equals: #( 'AlphaShared' 'BetaShared' ).
+	self
+		assert: result classInfo sharedPoolNames
+		equals: #( 'ChronologyConstants' ).
+	self assert: result classInfo layoutClassName equals: 'WeakLayout'
 ]
 
 { #category : 'tests' }

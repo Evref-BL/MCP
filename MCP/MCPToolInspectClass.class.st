@@ -52,9 +52,8 @@ MCPToolInspectClass >> classDescriptionDataProperties [
 			   itemDescription: 'A shared pool name.').
 		  (self
 			   stringArraySchemaNamed: 'sharedVariableNames'
-			   description:
-			   'The shared variables or class variables defined on the class.'
-			   itemDescription: 'A shared variable name.').
+			   description: 'The class variables defined on the class.'
+			   itemDescription: 'A class variable name.').
 		  (self
 			   schemaPropertyNamed: 'layoutClassName'
 			   type: 'string'

@@ -80,25 +80,40 @@ MCPToolEditClass >> defaultInputSchema [
 					   description:
 						   'An optional package tag for operation=create, or the destination tag when operation=move. Missing destination tags are created automatically.';
 					   yourself).
-				  ((MCPStructureProperties new
-					    name: 'slots';
-					    type: 'array';
-					    description:
-						    'Optional instance-side slot names for operation=create.')
-					   items: (MCPStructureProperties new
-							    type: 'string';
-							    description: 'An instance-side slot name.';
-							    yourself);
-					   yourself).
-				  ((MCPStructureProperties new
-					    name: 'classSlots';
-					    type: 'array';
-					    description:
-						    'Optional class-side slot names for operation=create.')
-					   items: (MCPStructureProperties new
-							    type: 'string';
-							    description: 'A class-side slot name.';
-							    yourself);
+				  (self
+					   stringArraySchemaNamed: 'slots'
+					   description:
+					   'Optional instance-side slot names for operation=create.'
+					   itemDescription: 'An instance-side slot name.').
+				  (self
+					   stringArraySchemaNamed: 'classSlots'
+					   description:
+					   'Optional class-side slot names for operation=create.'
+					   itemDescription: 'A class-side slot name.').
+				  (self
+					   stringArraySchemaNamed: 'traits'
+					   description: 'Optional trait names for operation=create.'
+					   itemDescription: 'A trait name.').
+				  (self
+					   stringArraySchemaNamed: 'classTraits'
+					   description:
+					   'Optional class-side trait names for operation=create. Use names like TraitName classTrait or TraitName.'
+					   itemDescription: 'A class-side trait name.').
+				  (self
+					   stringArraySchemaNamed: 'sharedVariables'
+					   description:
+					   'Optional class variable names for operation=create.'
+					   itemDescription: 'A class variable name.').
+				  (self
+					   stringArraySchemaNamed: 'sharedPools'
+					   description:
+					   'Optional shared pool names for operation=create.'
+					   itemDescription: 'A shared pool name.').
+				  (MCPStructureProperties new
+					   name: 'layout';
+					   type: 'string';
+					   description:
+						   'An optional layout class name for operation=create.';
 					   yourself).
 				  (MCPStructureProperties new
 					   name: 'newClassName';
@@ -173,26 +188,41 @@ MCPToolEditClass >> defaultOutputSchema [
 					   schemaPropertyNamed: 'classComment'
 					   type: 'string'
 					   description: 'The class comment after the operation.').
-				  ((self
-					    schemaPropertyNamed: 'instanceSlotNames'
-					    type: 'array'
-					    description:
-						    'The instance-side slots present on the class after the operation.')
-					   items: (MCPStructureProperties new
-							    type: 'string';
-							    description: 'An instance-side slot name.';
-							    yourself);
-					   yourself).
-				  ((self
-					    schemaPropertyNamed: 'classSlotNames'
-					    type: 'array'
-					    description:
-						    'The class-side slots present on the class after the operation.')
-					   items: (MCPStructureProperties new
-							    type: 'string';
-							    description: 'A class-side slot name.';
-							    yourself);
-					   yourself).
+				  (self
+					   stringArraySchemaNamed: 'instanceSlotNames'
+					   description:
+					   'The instance-side slots present on the class after the operation.'
+					   itemDescription: 'An instance-side slot name.').
+				  (self
+					   stringArraySchemaNamed: 'classSlotNames'
+					   description:
+					   'The class-side slots present on the class after the operation.'
+					   itemDescription: 'A class-side slot name.').
+				  (self
+					   stringArraySchemaNamed: 'traitNames'
+					   description:
+					   'The traits used by the class after the operation.'
+					   itemDescription: 'A trait name.').
+				  (self
+					   stringArraySchemaNamed: 'classTraitNames'
+					   description:
+					   'The traits used by the class side after the operation.'
+					   itemDescription: 'A class-side trait name.').
+				  (self
+					   stringArraySchemaNamed: 'sharedVariableNames'
+					   description:
+					   'The class variables defined on the class after the operation.'
+					   itemDescription: 'A class variable name.').
+				  (self
+					   stringArraySchemaNamed: 'sharedPoolNames'
+					   description:
+					   'The shared pools referenced by the class after the operation.'
+					   itemDescription: 'A shared pool name.').
+				  (self
+					   schemaPropertyNamed: 'layoutClassName'
+					   type: 'string'
+					   description:
+					   'The layout class used by the class after the operation.').
 				  (self
 					   schemaPropertyNamed: 'slotName'
 					   type: 'string'
@@ -266,7 +296,8 @@ MCPToolEditClass >> defaultOutputSchema [
 		  required:
 			  #( 'operation' 'className' 'superclassName' 'packageName'
 			     'tag' 'classComment' 'instanceSlotNames' 'classSlotNames'
-			     'subclassNames' )
+			     'traitNames' 'classTraitNames' 'sharedVariableNames'
+			     'sharedPoolNames' 'layoutClassName' 'subclassNames' )
 ]
 
 { #category : 'defaults' }
@@ -300,7 +331,7 @@ MCPToolEditClass >> executeAddSlotWithArguments: arguments [
 { #category : 'executing' }
 MCPToolEditClass >> executeCreateWithArguments: arguments [
 
-	| classComment className force packageName requestedContext result slots superclassName tag |
+	| classComment className classSlots classTraits force layout packageName requestedContext result sharedPools sharedVariables slots superclassName tag traits |
 	className := self stringArgumentNamed: 'className' in: arguments.
 	superclassName := self
 		                  stringArgumentNamed: 'superclassName'
@@ -312,6 +343,30 @@ MCPToolEditClass >> executeCreateWithArguments: arguments [
 		                ifFalse: [ nil ].
 	force := self forceFromArguments: arguments.
 	slots := self argumentNamed: 'slots' in: arguments ifAbsent: [ nil ].
+	classSlots := self
+		              argumentNamed: 'classSlots'
+		              in: arguments
+		              ifAbsent: [ nil ].
+	traits := self
+		          argumentNamed: 'traits'
+		          in: arguments
+		          ifAbsent: [ nil ].
+	classTraits := self
+		               argumentNamed: 'classTraits'
+		               in: arguments
+		               ifAbsent: [ nil ].
+	sharedVariables := self
+		                   argumentNamed: 'sharedVariables'
+		                   in: arguments
+		                   ifAbsent: [ nil ].
+	sharedPools := self
+		               argumentNamed: 'sharedPools'
+		               in: arguments
+		               ifAbsent: [ nil ].
+	layout := self
+		          argumentNamed: 'layout'
+		          in: arguments
+		          ifAbsent: [ nil ].
 	requestedContext := {
 		                    (#className -> className).
 		                    (#superclassName -> superclassName).
@@ -321,7 +376,35 @@ MCPToolEditClass >> executeCreateWithArguments: arguments [
 		                     ->
 		                     (classComment
 			                      ifNil: [ '' ]
-			                      ifNotNil: [ classComment ])) } asDictionary.
+			                      ifNotNil: [ classComment ])).
+		                    (#slots
+		                     -> (slots ifNil: [ #(  ) ] ifNotNil: [ slots ])).
+		                    (#classSlots
+		                     ->
+		                     (classSlots
+			                      ifNil: [ #(  ) ]
+			                      ifNotNil: [ classSlots ])).
+		                    (#traits
+		                     ->
+		                     (traits ifNil: [ #(  ) ] ifNotNil: [ traits ])).
+		                    (#classTraits
+		                     ->
+		                     (classTraits
+			                      ifNil: [ #(  ) ]
+			                      ifNotNil: [ classTraits ])).
+		                    (#sharedVariables
+		                     ->
+		                     (sharedVariables
+			                      ifNil: [ #(  ) ]
+			                      ifNotNil: [ sharedVariables ])).
+		                    (#sharedPools
+		                     ->
+		                     (sharedPools
+			                      ifNil: [ #(  ) ]
+			                      ifNotNil: [ sharedPools ])).
+		                    (#layout
+		                     -> (layout ifNil: [ '' ] ifNotNil: [ layout ])) }
+		                    asDictionary.
 	^ self
 		  executeEditOperation: 'create'
 		  force: force
@@ -333,11 +416,12 @@ MCPToolEditClass >> executeCreateWithArguments: arguments [
 				             packageName: packageName
 				             tag: tag
 				             slots: slots
-				             classSlots:
-				             (self
-					              argumentNamed: 'classSlots'
-					              in: arguments
-					              ifAbsent: [ nil ])) execute.
+				             classSlots: classSlots
+				             traits: traits
+				             classTraits: classTraits
+				             sharedVariables: sharedVariables
+				             sharedPools: sharedPools
+				             layout: layout) execute.
 			  classComment ifNotNil: [
 				  (MCPChangeClassCommentCommand
 					   className: className

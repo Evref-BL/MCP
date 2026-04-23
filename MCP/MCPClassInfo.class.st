@@ -8,7 +8,12 @@ Class {
 		'tag',
 		'instanceSlotNames',
 		'classSlotNames',
-		'subclassNames'
+		'subclassNames',
+		'traitNames',
+		'classTraitNames',
+		'sharedVariableNames',
+		'sharedPoolNames',
+		'layoutClassName'
 	],
 	#category : 'MCP-Internal',
 	#package : 'MCP',
@@ -31,6 +36,11 @@ MCPClassInfo >> asDictionary [
 		  (#tag -> self tag).
 		  (#instanceSlotNames -> self instanceSlotNames).
 		  (#classSlotNames -> self classSlotNames).
+		  (#traitNames -> self traitNames).
+		  (#classTraitNames -> self classTraitNames).
+		  (#sharedVariableNames -> self sharedVariableNames).
+		  (#sharedPoolNames -> self sharedPoolNames).
+		  (#layoutClassName -> self layoutClassName).
 		  (#subclassNames -> self subclassNames) } asDictionary
 ]
 
@@ -57,6 +67,12 @@ MCPClassInfo >> classSlotNames [
 	^ classSlotNames
 ]
 
+{ #category : 'accessing' }
+MCPClassInfo >> classTraitNames [
+
+	^ classTraitNames
+]
+
 { #category : 'initialization' }
 MCPClassInfo >> initializeFromClass: aClass [
 
@@ -75,6 +91,19 @@ MCPClassInfo >> initializeFromClass: aClass [
 	classSlotNames := aClass classSide slots
 		                  collect: [ :each | each name asString ]
 		                  as: Array.
+	traitNames := aClass traits
+		              collect: [ :each | each name asString ]
+		              as: Array.
+	classTraitNames := aClass classSide traits
+		                   collect: [ :each | each name asString ]
+		                   as: Array.
+	sharedVariableNames := aClass classVarNames
+		                       collect: [ :each | each asString ]
+		                       as: Array.
+	sharedPoolNames := aClass sharedPools
+		                   collect: [ :each | each name asString ]
+		                   as: Array.
+	layoutClassName := aClass classLayout class name asString.
 	subclassNames := (aClass subclasses
 		                  collect: [ :each | each name asString ]
 		                  as: Array) asSortedCollection asArray.
@@ -88,9 +117,27 @@ MCPClassInfo >> instanceSlotNames [
 ]
 
 { #category : 'accessing' }
+MCPClassInfo >> layoutClassName [
+
+	^ layoutClassName
+]
+
+{ #category : 'accessing' }
 MCPClassInfo >> packageName [
 
 	^ packageName
+]
+
+{ #category : 'accessing' }
+MCPClassInfo >> sharedPoolNames [
+
+	^ sharedPoolNames
+]
+
+{ #category : 'accessing' }
+MCPClassInfo >> sharedVariableNames [
+
+	^ sharedVariableNames
 ]
 
 { #category : 'accessing' }
@@ -109,4 +156,10 @@ MCPClassInfo >> superclassName [
 MCPClassInfo >> tag [
 
 	^ tag
+]
+
+{ #category : 'accessing' }
+MCPClassInfo >> traitNames [
+
+	^ traitNames
 ]

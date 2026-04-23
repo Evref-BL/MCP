@@ -51,6 +51,7 @@ MCPToolEditClassTest >> createdClassNames [
 
 	^ #( 'MCPToolEditClassTestGenerated' 'MCPToolEditClassTestTagged'
 	     'MCPToolEditClassTestClassSlots'
+	     'MCPToolEditClassTestConfigured'
 	     'MCPToolEditClassTestTemporaryPackage'
 	     'MCPToolEditClassTestCommentTarget'
 	     'MCPToolEditClassTestCommented' 'MCPToolEditClassTestReparentTarget'
@@ -507,6 +508,57 @@ MCPToolEditClassTest >> testCreatesClassWithSlotsAndTag [
 	self
 		assert: (data at: #instanceSlotNames)
 		equals: #( 'firstName' 'lastName' )
+]
+
+{ #category : 'tests' }
+MCPToolEditClassTest >> testCreatesClassWithTraitsClassTraitsSharedVariablesSharedPoolsAndLayout [
+
+	| arguments createdClass data result |
+	arguments := self
+		             createArgumentsForClassName:
+		             'MCPToolEditClassTestConfigured'
+		             superclassName: 'Object'
+		             packageName: self generatedPackageName.
+	arguments at: #traits put: #( 'TAbleToRotate' ).
+	arguments at: #classTraits put: #( 'TAbleToRotate classTrait' ).
+	arguments at: #sharedVariables put: #( 'AlphaShared' 'BetaShared' ).
+	arguments at: #sharedPools put: #( 'ChronologyConstants' ).
+	arguments at: #layout put: 'WeakLayout'.
+	result := self callToolWith: arguments.
+	data := self dataFrom: result.
+	createdClass := self classNamed: 'MCPToolEditClassTestConfigured'.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self
+		assert:
+		(createdClass traits
+			 collect: [ :each | each name asString ]
+			 as: Array)
+		equals: #( 'TAbleToRotate' ).
+	self
+		assert: (createdClass classSide traits
+				 collect: [ :each | each name asString ]
+				 as: Array)
+		equals: #( 'TAbleToRotate classTrait' ).
+	self
+		assert: createdClass classVarNames
+		equals: #( #AlphaShared #BetaShared ).
+	self
+		assert: (createdClass sharedPools
+				 collect: [ :each | each name asString ]
+				 as: Array)
+		equals: #( 'ChronologyConstants' ).
+	self assert: createdClass classLayout class name equals: #WeakLayout.
+	self assert: (data at: #traitNames) equals: #( 'TAbleToRotate' ).
+	self
+		assert: (data at: #classTraitNames)
+		equals: #( 'TAbleToRotate classTrait' ).
+	self
+		assert: (data at: #sharedVariableNames)
+		equals: #( 'AlphaShared' 'BetaShared' ).
+	self
+		assert: (data at: #sharedPoolNames)
+		equals: #( 'ChronologyConstants' ).
+	self assert: (data at: #layoutClassName) equals: 'WeakLayout'
 ]
 
 { #category : 'tests' }
@@ -1388,6 +1440,34 @@ MCPToolEditClassTest >> testReturnsStructuredErrorWhenSuperclassIsMissing [
 ]
 
 { #category : 'tests' }
+MCPToolEditClassTest >> testReturnsStructuredErrorWhenTraitIsMissingOnCreate [
+
+	| arguments error result |
+	arguments := self
+		             createArgumentsForClassName:
+		             'MCPToolEditClassTestGenerated'
+		             superclassName: 'Object'
+		             packageName: self generatedPackageName.
+	arguments at: #traits put: #( 'DefinitelyMissingTrait' ).
+	arguments at: #layout put: 'WeakLayout'.
+	result := self callToolWith: arguments.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #operation) equals: 'create'.
+	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
+	self assert: (error at: #errorCode) equals: 'TraitNotFound'.
+	self assert: (error at: #traitName) equals: 'DefinitelyMissingTrait'.
+	self
+		assert: (error at: #traits)
+		equals: #( 'DefinitelyMissingTrait' ).
+	self assert: (error at: #layout) equals: 'WeakLayout'.
+	self
+		assert: (error at: #packageName)
+		equals: self generatedPackageName.
+	self assert: (error at: #superclassName) equals: 'Object'
+]
+
+{ #category : 'tests' }
 MCPToolEditClassTest >> testToolRequiresOperationAndClassNameInSchema [
 
 	| operationProperty propertyNames |
@@ -1399,6 +1479,11 @@ MCPToolEditClassTest >> testToolRequiresOperationAndClassNameInSchema [
 		assert: MCPToolEditClass new inputSchema required asSet
 		equals: #( 'operation' 'className' ) asSet.
 	self assert: (propertyNames includes: 'classComment').
+	self assert: (propertyNames includes: 'traits').
+	self assert: (propertyNames includes: 'classTraits').
+	self assert: (propertyNames includes: 'sharedVariables').
+	self assert: (propertyNames includes: 'sharedPools').
+	self assert: (propertyNames includes: 'layout').
 	self assert: (propertyNames includes: 'slotName').
 	self assert: (propertyNames includes: 'newSlotName').
 	self assert: (propertyNames includes: 'classSide').
