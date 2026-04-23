@@ -101,6 +101,16 @@ MCPToolEditMethodTest >> compileArgumentsForClassName: aClassName classSide: aBo
 ]
 
 { #category : 'private' }
+MCPToolEditMethodTest >> createRenameScopeFixtureClassNamed: aClassName packageName: aPackageName [
+
+	self withoutEpiceaDuring: [
+		| builder |
+		builder := Object << aClassName asSymbol.
+		builder package: aPackageName.
+		builder install ]
+]
+
+{ #category : 'private' }
 MCPToolEditMethodTest >> extensionChangeArguments [
 
 	^ {
@@ -602,6 +612,47 @@ MCPToolEditMethodTest >> testReformatsMethod [
 ]
 
 { #category : 'tests' }
+MCPToolEditMethodTest >> testRenameCanLimitRefactoringToNamedPackages [
+
+	self withRenameScopeFixturesDo: [ :fixtures |
+		| data result senderAClass senderASource senderBClass senderBSource targetAClass targetBClass |
+		result := self callToolWith: {
+				          (#operation -> 'rename').
+				          (#className -> (fixtures at: #targetAClassName)).
+				          (#classSide -> false).
+				          (#selector -> 'scopeSharedTarget').
+				          (#newSelector -> 'scopedSharedTarget').
+				          (#packageNames -> { (fixtures at: #packageAName) }) }
+				          asDictionary.
+		data := self dataFrom: result.
+		targetAClass := Smalltalk globals at:
+			                (fixtures at: #targetAClassName) asSymbol.
+		targetBClass := Smalltalk globals at:
+			                (fixtures at: #targetBClassName) asSymbol.
+		senderAClass := Smalltalk globals at:
+			                (fixtures at: #senderAClassName) asSymbol.
+		senderBClass := Smalltalk globals at:
+			                (fixtures at: #senderBClassName) asSymbol.
+		self deny: (result at: #isError ifAbsent: [ false ]).
+		self deny: (targetAClass includesSelector: #scopeSharedTarget).
+		self assert: (targetAClass includesSelector: #scopedSharedTarget).
+		self assert: (targetBClass includesSelector: #scopeSharedTarget).
+		self deny: (targetBClass includesSelector: #scopedSharedTarget).
+		self assert: senderAClass new callScopedTarget equals: 'A'.
+		self assert: senderBClass new callScopedTarget equals: 'B'.
+		senderASource := (senderAClass >> #callScopedTarget) sourceCode.
+		senderBSource := (senderBClass >> #callScopedTarget) sourceCode.
+		self assert: (senderASource includesSubstring: 'scopedSharedTarget').
+		self assert: (senderBSource includesSubstring: 'scopeSharedTarget').
+		self deny: (senderBSource includesSubstring: 'scopedSharedTarget').
+		self assertSuccessDataHasMethodShape: data.
+		self assert: (data at: #selector) equals: 'scopedSharedTarget'.
+		self
+			assert: (data at: #packageName)
+			equals: (fixtures at: #packageAName) ]
+]
+
+{ #category : 'tests' }
 MCPToolEditMethodTest >> testRenameReturnsFormattedSourceForRenamedMethod [
 
 	| data newSelector oldSelector renamedSource result |
@@ -663,6 +714,31 @@ MCPToolEditMethodTest >> testRenameReturnsStructuredErrorWhenMethodIsMissing [
 		equals:
 			#( operation errorClass errorCode message className classSide
 			   selector newSelector ) asSet
+]
+
+{ #category : 'tests' }
+MCPToolEditMethodTest >> testRenameReturnsStructuredErrorWhenScopedPackageIsMissing [
+
+	| error result structured |
+	result := self callToolWith: (self instanceRenameArguments copy
+			           at: #packageNames put: #( 'DefinitelyMissingPackage' );
+			           yourself).
+	structured := self structuredContentFrom: result.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (structured at: #status) equals: 'error'.
+	self assert: (error at: #operation) equals: 'rename'.
+	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
+	self assert: (error at: #errorCode) equals: 'PackageNotFound'.
+	self
+		assert: (error at: #packageName)
+		equals: 'DefinitelyMissingPackage'.
+	self
+		assert: (error at: #selector)
+		equals: self instanceSelector asString.
+	self
+		assert: (error at: #newSelector)
+		equals: self renamedInstanceSelector asString
 ]
 
 { #category : 'tests' }
@@ -748,4 +824,73 @@ MCPToolEditMethodTest >> testToolRequiresOperationAndClassNameInSchema [
 MCPToolEditMethodTest >> toolName [
 
 	^ 'edit-method'
+]
+
+{ #category : 'private' }
+MCPToolEditMethodTest >> withRenameScopeFixturesDo: aBlock [
+
+	| fixtures packageAName packageBName senderAClassName senderBClassName targetAClassName targetBClassName |
+	packageAName := 'MCP-Tests-EditMethodScope-A'.
+	packageBName := 'MCP-Tests-EditMethodScope-B'.
+	targetAClassName := 'MCPToolEditMethodScopeTargetA'.
+	targetBClassName := 'MCPToolEditMethodScopeTargetB'.
+	senderAClassName := 'MCPToolEditMethodScopeSenderA'.
+	senderBClassName := 'MCPToolEditMethodScopeSenderB'.
+	{
+		targetAClassName.
+		targetBClassName.
+		senderAClassName.
+		senderBClassName } do: [ :eachName |
+		self removeClassNamed: eachName ].
+	{
+		packageAName.
+		packageBName } do: [ :eachName | self removePackageNamed: eachName ].
+	[
+	self
+		createRenameScopeFixtureClassNamed: targetAClassName
+		packageName: packageAName.
+	self
+		createRenameScopeFixtureClassNamed: targetBClassName
+		packageName: packageBName.
+	self
+		createRenameScopeFixtureClassNamed: senderAClassName
+		packageName: packageAName.
+	self
+		createRenameScopeFixtureClassNamed: senderBClassName
+		packageName: packageBName.
+	self
+		ensureMethodSource: 'scopeSharedTarget ^ ''A'''
+		protocol: 'tests'
+		on: (Smalltalk globals at: targetAClassName asSymbol).
+	self
+		ensureMethodSource: 'scopeSharedTarget ^ ''B'''
+		protocol: 'tests'
+		on: (Smalltalk globals at: targetBClassName asSymbol).
+	self
+		ensureMethodSource:
+		'callScopedTarget ^ MCPToolEditMethodScopeTargetA new scopeSharedTarget'
+		protocol: 'tests'
+		on: (Smalltalk globals at: senderAClassName asSymbol).
+	self
+		ensureMethodSource:
+		'callScopedTarget ^ MCPToolEditMethodScopeTargetB new scopeSharedTarget'
+		protocol: 'tests'
+		on: (Smalltalk globals at: senderBClassName asSymbol).
+	fixtures := {
+		            (#packageAName -> packageAName).
+		            (#packageBName -> packageBName).
+		            (#targetAClassName -> targetAClassName).
+		            (#targetBClassName -> targetBClassName).
+		            (#senderAClassName -> senderAClassName).
+		            (#senderBClassName -> senderBClassName) } asDictionary.
+	aBlock value: fixtures ] ensure: [
+		{
+			targetAClassName.
+			targetBClassName.
+			senderAClassName.
+			senderBClassName } do: [ :eachName |
+			self removeClassNamed: eachName ].
+		{
+			packageAName.
+			packageBName } do: [ :eachName | self removePackageNamed: eachName ] ]
 ]

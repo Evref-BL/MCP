@@ -123,7 +123,9 @@ MCPToolContractsTest >> testEditMethodHasAccurateNameAndRequiredArguments [
 	self
 		assert: tool inputSchema required asSet
 		equals: #( 'operation' 'className' ) asSet.
-	self assert: (propertyNames includes: 'force')
+	self assert: (propertyNames includes: 'force').
+	self assert: (propertyNames includes: 'packageNames').
+	self deny: (propertyNames includes: 'projectNames')
 ]
 
 { #category : 'tests' }
