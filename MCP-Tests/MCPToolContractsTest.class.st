@@ -126,6 +126,17 @@ MCPToolContractsTest >> testEditMethodSchemaAdvertisesCompiledMethodState [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testEvaluateErrorSchemaAdvertisesStackTrace [
+
+	| errorProperties errorProperty propertyNames |
+	errorProperty := MCPToolEvaluate new outputSchema properties detect: [
+		                 :each | each name = 'error' ].
+	errorProperties := errorProperty extraProperties at: #properties.
+	propertyNames := errorProperties collect: [ :each | each name ].
+	self assert: (propertyNames includes: 'stackTrace')
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testEvaluateIsMarkedAsAdvancedEscapeHatch [
 
 	| description |

@@ -31,6 +31,25 @@ MCPToolStructuredOutputTest >> testEvaluateReturnsStructuredError [
 ]
 
 { #category : 'tests' }
+MCPToolStructuredOutputTest >> testEvaluateReturnsStructuredRuntimeErrorWithStackTrace [
+
+	| error result stackTrace |
+	result := self
+		          callToolNamed: 'evaluate'
+		          withArguments:
+		          { (#code -> 'Error signal: ''boom''') } asDictionary.
+	error := self errorFrom: result.
+	stackTrace := error at: #stackTrace.
+	self assert: (result at: #isError).
+	self assert: (error at: #errorClass) equals: 'Error'.
+	self assert: ((error at: #message) includesSubstring: 'boom').
+	self assert: (error includesKey: #signalerContext).
+	self assert: stackTrace class equals: Array.
+	self deny: stackTrace isEmpty.
+	self assert: stackTrace first equals: (error at: #signalerContext)
+]
+
+{ #category : 'tests' }
 MCPToolStructuredOutputTest >> testEvaluateReturnsStructuredSuccess [
 
 	| result data structured |

@@ -237,18 +237,26 @@ MCPTool >> description: anObject [
 { #category : 'private - results' }
 MCPTool >> errorDetailsFor: anError [
 
-	| details message |
+	| descriptionText details message stackTrace |
 	details := Dictionary new.
-	message := anError messageText
-		           ifNil: [ '' ]
-		           ifNotNil: [ :text | text asString ].
+	message := (anError respondsTo: #messageText)
+		           ifTrue: [
+			           anError messageText
+				           ifNil: [ '' ]
+				           ifNotNil: [ :text | text asString ] ]
+		           ifFalse: [ anError asString ].
 	details at: #errorClass put: anError class name.
 	details at: #message put: message.
-	(anError description ~= anError class name and: [
-		 anError description ~= message ]) ifTrue: [
-		details at: #description put: anError description ].
-	anError signalerContext ifNotNil: [ :context |
-		details at: #signalerContext put: context printString ].
+	(anError respondsTo: #description) ifTrue: [
+		descriptionText := anError description.
+		(descriptionText ~= anError class name and: [
+			 descriptionText ~= message ]) ifTrue: [
+			details at: #description put: descriptionText ] ].
+	(anError respondsTo: #signalerContext) ifTrue: [
+		anError signalerContext ifNotNil: [ :context |
+			details at: #signalerContext put: context printString.
+			stackTrace := self errorStackTraceForContext: context.
+			stackTrace ifNotEmpty: [ details at: #stackTrace put: stackTrace ] ] ].
 	^ details
 ]
 
@@ -308,7 +316,26 @@ MCPTool >> errorSchemaProperties [
 			   schemaPropertyNamed: 'signalerContext'
 			   type: 'string'
 			   description:
-			   'The signaler context recorded for the exception when available.') }
+			   'The signaler context recorded for the exception when available.').
+		  (self
+			   stringArraySchemaNamed: 'stackTrace'
+			   description:
+			   'A debug stack trace captured from the signaler context when available.'
+			   itemDescription:
+			   'One stack frame from the captured signaler chain, ordered from the signaling frame outward.') }
+]
+
+{ #category : 'private - results' }
+MCPTool >> errorStackTraceForContext: aContext [
+
+	^ ((aContext stackOfSize: self errorStackTraceLimit) collect: [ :each |
+		   each printString ]) asArray
+]
+
+{ #category : 'private - results' }
+MCPTool >> errorStackTraceLimit [
+
+	^ 20
 ]
 
 { #category : 'executing' }

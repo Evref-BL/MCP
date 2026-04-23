@@ -68,7 +68,7 @@ MCPToolEvaluate >> defaultTitle [
 { #category : 'executing' }
 MCPToolEvaluate >> executeWithArguments: arguments [
 
-	| answer compiler notice |
+	| answer compiler details notice |
 	compiler := SmalltalkImage current compiler.
 	compiler compilationContext isScripting: true.
 	notice := nil.
@@ -81,21 +81,16 @@ MCPToolEvaluate >> executeWithArguments: arguments [
 			          ^ self
 				            errorResultText:
 				            (self runtimeFailureMessageFor: error)
-				            details: {
-						            (#errorClass -> error class name).
-						            (#message -> error messageText).
-						            (#signalerContext
-						             ->
-						             (error signalerContext ifNotNil: [ :ctx |
-							              ctx printString ])) } asDictionary ].
+				            details: (self errorDetailsFor: error) ].
 	notice ifNotNil: [
+		details := self errorDetailsFor: notice.
+		details
+			at: #description
+			put: 'Compilation failed before evaluation.'.
+		details at: #position put: notice position.
 		^ self
 			  errorResultText: (self syntaxFailureMessageFor: notice)
-			  details: {
-					  (#errorClass -> notice class name).
-					  (#message -> notice messageText).
-					  (#description -> 'Compilation failed before evaluation.').
-					  (#position -> notice position) } asDictionary ].
+			  details: details ].
 	^ self successResultText: 'Code evaluated successfully.' data: {
 			  (#resultClassName -> answer class name asString).
 			  (#resultPrintString
