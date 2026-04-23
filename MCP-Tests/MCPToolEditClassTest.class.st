@@ -509,6 +509,33 @@ MCPToolEditClassTest >> testMovesClassToExistingTag [
 ]
 
 { #category : 'tests' }
+MCPToolEditClassTest >> testPullUpSlotReturnsStructuredCommandErrorForRefactoringFailure [
+
+	| error result structured |
+	result := self callToolWith: (self
+			           slotOperationArgumentsFor: 'pullUpSlot'
+			           className: 'MCPToolEditMethodTestTarget'
+			           slotName: 'missingSlot'
+			           classSide: false).
+	structured := self structuredContentFrom: result.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (structured at: #status) equals: 'error'.
+	self assert: (error at: #operation) equals: 'pullUpSlot'.
+	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
+	self
+		assert: (error at: #errorCode)
+		equals: 'PullUpSlotRefactoringError'.
+	self assert: (error at: #causeClass) equals: 'RBRefactoringError'.
+	self
+		assert: (error at: #className)
+		equals: 'MCPToolEditMethodTestTarget'.
+	self assert: (error at: #slotName) equals: 'missingSlot'.
+	self assert: (error at: #classSide) equals: false.
+	self assert: ((error at: #message) includesSubstring: 'missingSlot')
+]
+
+{ #category : 'tests' }
 MCPToolEditClassTest >> testPullsUpInstanceSlotAcrossSubclasses [
 
 	| childOne childTwo data instance result target |

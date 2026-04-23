@@ -352,6 +352,42 @@ MCPToolEditMethodTest >> testCompileDefaultsToInstanceSideWhenClassSideIsOmitted
 ]
 
 { #category : 'tests' }
+MCPToolEditMethodTest >> testCompileReturnsStructuredCommandErrorForUndeclaredVariable [
+
+	| error result structured |
+	self removeSelector: #brokenMethod from: MCPToolEditMethodTestTarget.
+	result := self callToolWith: (self
+			           compileArgumentsForClassName:
+			           'MCPToolEditMethodTestTarget'
+			           classSide: false
+			           methodSource: 'brokenMethod ^ missingVar'
+			           protocol: 'tests').
+	structured := self structuredContentFrom: result.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (structured at: #status) equals: 'error'.
+	self assert: (error at: #operation) equals: 'compile'.
+	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
+	self
+		assert: (error at: #errorCode)
+		equals: 'CompileUndeclaredVariable'.
+	self
+		assert: (error at: #causeClass)
+		equals: 'OCUndeclaredVariableWarning'.
+	self
+		assert: (error at: #className)
+		equals: 'MCPToolEditMethodTestTarget'.
+	self assert: (error at: #classSide) equals: false.
+	self assert: (error at: #protocol) equals: 'tests'.
+	self assert: (error at: #selector) equals: 'brokenMethod'.
+	self assert: (error at: #variableName) equals: 'missingVar'.
+	self assert: (error at: #position) equals: 16.
+	self assert: ((error at: #message) includesSubstring: 'missingVar').
+	self deny:
+		(MCPToolEditMethodTestTarget includesSelector: #brokenMethod)
+]
+
+{ #category : 'tests' }
 MCPToolEditMethodTest >> testCompilesClassSideMethod [
 
 	| data result |

@@ -1,6 +1,6 @@
 Class {
 	#name : 'MCPToolEditMethod',
-	#superclass : 'MCPTool',
+	#superclass : 'MCPEditTool',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -71,13 +71,10 @@ MCPToolEditMethod >> defaultInputSchema [
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties: {
-				  (MCPStructureProperties new
-					   name: 'operation';
-					   type: 'string';
-					   description:
-						   'The edit operation to perform. Supported canonical values are compile, rename, and changeProtocol.';
-					   enum: #( 'compile' 'rename' 'changeProtocol' );
-					   yourself).
+				  (self
+					   operationSchemaPropertyWithDescription:
+						   'The edit operation to perform.'
+					   supportedValuesLeadIn: 'Supported canonical values are').
 				  (MCPStructureProperties new
 					   name: 'className';
 					   type: 'string';
@@ -154,75 +151,55 @@ MCPToolEditMethod >> defaultTitle [
 { #category : 'private' }
 MCPToolEditMethod >> errorResultForChangeProtocolError: anError className: className classSide: classSide selector: selector protocol: protocol [
 
-	(anError isKindOf: MCPCommandError) ifTrue: [
-		^ self
-			  errorResultForCommandError: anError
-			  operation: 'changeProtocol' ].
 	^ self
-		  errorResultText: (self
+		  errorResultForOperationFailure: anError
+		  operation: 'changeProtocol'
+		  requestedContext: {
+				  (#className -> className).
+				  (#classSide -> classSide).
+				  (#selector -> selector).
+				  (#protocol -> protocol) } asDictionary
+		  summary: (self
 				   failureMessageForChangeProtocolClassNamed: className
 				   classSide: classSide
 				   selector: selector
 				   protocol: protocol
 				   error: anError)
-		  details: {
-				  (#errorClass -> anError class name).
-				  (#message -> anError messageText).
-				  (#operation -> 'changeProtocol').
-				  (#className -> className).
-				  (#classSide -> classSide).
-				  (#selector -> selector).
-				  (#protocol -> protocol) } asDictionary
-]
-
-{ #category : 'private' }
-MCPToolEditMethod >> errorResultForCommandError: anError operation: operation [
-
-	| details |
-	details := anError structuredDetails copy.
-	details at: #operation put: operation.
-	^ self errorResultText: anError messageText details: details
 ]
 
 { #category : 'private' }
 MCPToolEditMethod >> errorResultForCompileError: anError className: className classSide: classSide protocol: protocol [
 
-	(anError isKindOf: MCPCommandError) ifTrue: [
-		^ self errorResultForCommandError: anError operation: 'compile' ].
 	^ self
-		  errorResultText: (self
-				   failureMessageForCompileClassNamed: className
-				   classSide: classSide
-				   error: anError)
-		  details: {
-				  (#errorClass -> anError class name).
-				  (#message -> anError messageText).
-				  (#operation -> 'compile').
+		  errorResultForOperationFailure: anError
+		  operation: 'compile'
+		  requestedContext: {
 				  (#className -> className).
 				  (#classSide -> classSide).
 				  (#protocol -> protocol) } asDictionary
+		  summary: (self
+				   failureMessageForCompileClassNamed: className
+				   classSide: classSide
+				   error: anError)
 ]
 
 { #category : 'private' }
 MCPToolEditMethod >> errorResultForRenameError: anError className: className classSide: classSide selector: oldSelector newSelector: newSelector [
 
-	(anError isKindOf: MCPCommandError) ifTrue: [
-		^ self errorResultForCommandError: anError operation: 'rename' ].
 	^ self
-		  errorResultText: (self
+		  errorResultForOperationFailure: anError
+		  operation: 'rename'
+		  requestedContext: {
+				  (#className -> className).
+				  (#classSide -> classSide).
+				  (#selector -> oldSelector).
+				  (#newSelector -> newSelector) } asDictionary
+		  summary: (self
 				   failureMessageForRenameClassNamed: className
 				   classSide: classSide
 				   selector: oldSelector
 				   newSelector: newSelector
 				   error: anError)
-		  details: {
-				  (#errorClass -> anError class name).
-				  (#message -> anError messageText).
-				  (#operation -> 'rename').
-				  (#className -> className).
-				  (#classSide -> classSide).
-				  (#selector -> oldSelector).
-				  (#newSelector -> newSelector) } asDictionary
 ]
 
 { #category : 'executing' }
@@ -358,22 +335,6 @@ MCPToolEditMethod >> executeRenameWithArguments: arguments [
 				  newSelector: newSelector ]
 ]
 
-{ #category : 'executing' }
-MCPToolEditMethod >> executeWithArguments: arguments [
-
-	| operation |
-	operation := self operationFromArguments: arguments.
-	self validateRequiredArgumentsForOperation: operation in: arguments.
-	operation = 'compile' ifTrue: [
-		^ self executeCompileWithArguments: arguments ].
-	operation = 'rename' ifTrue: [
-		^ self executeRenameWithArguments: arguments ].
-	operation = 'changeProtocol' ifTrue: [
-		^ self executeChangeProtocolWithArguments: arguments ].
-	Error signal:
-		'operation must be one of compile, rename, or changeProtocol.'
-]
-
 { #category : 'private' }
 MCPToolEditMethod >> failureMessageForChangeProtocolClassNamed: className classSide: classSide selector: selector protocol: protocol error: anError [
 
@@ -389,10 +350,9 @@ MCPToolEditMethod >> failureMessageForChangeProtocolClassNamed: className classS
 			  nextPutAll: selector;
 			  nextPutAll: ' to ';
 			  nextPutAll: protocol;
-			  nextPutAll: ' (';
-			  nextPutAll: anError class name;
-			  nextPutAll: '): ';
-			  nextPutAll: anError messageText ]
+			  nextPutAll: ': ';
+			  nextPutAll:
+				  (self normalizedCauseMessageForOperationError: anError) ]
 ]
 
 { #category : 'private' }
@@ -406,10 +366,9 @@ MCPToolEditMethod >> failureMessageForCompileClassNamed: className classSide: cl
 		  stream
 			  nextPutAll: 'Unable to compile method on ';
 			  nextPutAll: targetName;
-			  nextPutAll: ' (';
-			  nextPutAll: anError class name;
-			  nextPutAll: '): ';
-			  nextPutAll: anError messageText ]
+			  nextPutAll: ': ';
+			  nextPutAll:
+				  (self normalizedCauseMessageForOperationError: anError) ]
 ]
 
 { #category : 'private' }
@@ -427,10 +386,9 @@ MCPToolEditMethod >> failureMessageForRenameClassNamed: className classSide: cla
 			  nextPutAll: oldSelector;
 			  nextPutAll: ' to ';
 			  nextPutAll: newSelector;
-			  nextPutAll: ' (';
-			  nextPutAll: anError class name;
-			  nextPutAll: '): ';
-			  nextPutAll: anError messageText ]
+			  nextPutAll: ': ';
+			  nextPutAll:
+				  (self normalizedCauseMessageForOperationError: anError) ]
 ]
 
 { #category : 'private' }
@@ -458,18 +416,24 @@ MCPToolEditMethod >> normalizedPermutation: someIndexes [
 		  as: Array
 ]
 
-{ #category : 'private - arguments' }
-MCPToolEditMethod >> operationFromArguments: arguments [
+{ #category : 'private - operations' }
+MCPToolEditMethod >> operationSpecifications [
 
-	| normalized operation |
-	operation := self stringArgumentNamed: 'operation' in: arguments.
-	operation ifNil: [ JRPCInvalidParameters signal ].
-	normalized := operation asLowercase.
-	normalized = 'compile' ifTrue: [ ^ 'compile' ].
-	normalized = 'rename' ifTrue: [ ^ 'rename' ].
-	normalized = 'changeprotocol' ifTrue: [ ^ 'changeProtocol' ].
-	Error signal:
-		'operation must be one of compile, rename, or changeProtocol.'
+	^ {
+		  {
+			  (#name -> 'compile').
+			  (#requiredArguments -> #( 'methodSource' 'protocol' )).
+			  (#executeSelector -> #executeCompileWithArguments:) }
+			  asDictionary.
+		  {
+			  (#name -> 'rename').
+			  (#requiredArguments -> #( 'selector' 'newSelector' )).
+			  (#executeSelector -> #executeRenameWithArguments:) } asDictionary.
+		  {
+			  (#name -> 'changeProtocol').
+			  (#requiredArguments -> #( 'selector' 'protocol' )).
+			  (#executeSelector -> #executeChangeProtocolWithArguments:) }
+			  asDictionary }
 ]
 
 { #category : 'private' }
@@ -524,32 +488,4 @@ MCPToolEditMethod >> validatePermutation: permutation forSelector: aSelector [
 		Error signal:
 			'permutation must be a reordering of the integers from 1 to '
 			, expected size asString , '.' ]
-]
-
-{ #category : 'private - arguments' }
-MCPToolEditMethod >> validateRequiredArgumentsForOperation: operation in: arguments [
-
-	operation = 'compile' ifTrue: [
-		(self
-			 argumentNamed: 'methodSource'
-			 in: arguments
-			 ifAbsent: [ JRPCInvalidParameters signal ]) ifNil: [
-			JRPCInvalidParameters signal ].
-		(self stringArgumentNamed: 'protocol' in: arguments) ifNil: [
-			JRPCInvalidParameters signal ].
-		^ self ].
-	operation = 'rename' ifTrue: [
-		(self selectorStringFrom: arguments) ifNil: [
-			JRPCInvalidParameters signal ].
-		(self stringArgumentNamed: 'newSelector' in: arguments) ifNil: [
-			JRPCInvalidParameters signal ].
-		^ self ].
-	operation = 'changeProtocol' ifTrue: [
-		(self selectorStringFrom: arguments) ifNil: [
-			JRPCInvalidParameters signal ].
-		(self stringArgumentNamed: 'protocol' in: arguments) ifNil: [
-			JRPCInvalidParameters signal ].
-		^ self ].
-	Error signal:
-		'operation must be one of compile, rename, or changeProtocol.'
 ]

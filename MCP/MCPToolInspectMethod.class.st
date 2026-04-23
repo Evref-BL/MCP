@@ -212,12 +212,6 @@ MCPToolInspectMethod >> incrementReferenceCountInSummary: aSummary [
 ]
 
 { #category : 'private - analysis' }
-MCPToolInspectMethod >> isExternalVariableKind: aKind [
-
-	^ (#( 'argument' 'temporary' 'self' ) includes: aKind) not
-]
-
-{ #category : 'private - analysis' }
 MCPToolInspectMethod >> matchingSummaryForNodeName: aName kind: aKind ownerName: anOwnerName in: summaries [
 
 	^ summaries

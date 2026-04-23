@@ -1,6 +1,6 @@
 Class {
 	#name : 'MCPToolEditClass',
-	#superclass : 'MCPTool',
+	#superclass : 'MCPEditTool',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -50,15 +50,10 @@ MCPToolEditClass >> defaultInputSchema [
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties: {
-				  (MCPStructureProperties new
-					   name: 'operation';
-					   type: 'string';
-					   description:
-						   'The class edit operation to perform. Supported values are create, move, rename, reparent, setComment, pullUpSlot, and pushDownSlot.';
-					   enum:
-						   #( 'create' 'move' 'rename' 'reparent' 'setComment'
-						      'pullUpSlot' 'pushDownSlot' );
-					   yourself).
+				  (self
+					   operationSchemaPropertyWithDescription:
+						   'The class edit operation to perform.'
+					   supportedValuesLeadIn: 'Supported values are').
 				  (MCPStructureProperties new
 					   name: 'className';
 					   type: 'string';
@@ -260,15 +255,6 @@ MCPToolEditClass >> defaultTitle [
 	^ 'Edit Pharo Class'
 ]
 
-{ #category : 'private' }
-MCPToolEditClass >> errorResultForCommandError: anError operation: operation [
-
-	| details |
-	details := anError structuredDetails copy.
-	details at: #operation put: operation.
-	^ self errorResultText: anError messageText details: details
-]
-
 { #category : 'executing' }
 MCPToolEditClass >> executeCreateWithArguments: arguments [
 
@@ -302,19 +288,18 @@ MCPToolEditClass >> executeCreateWithArguments: arguments [
 		  on: Exception
 		  do: [ :error |
 			  self
-				  errorResultText: (self
-						   failureMessageForCreateClassNamed: className
-						   superclassName: superclassName
-						   packageName: packageName
-						   error: error)
-				  details: {
-						  (#errorClass -> error class name).
-						  (#message -> error messageText).
-						  (#operation -> 'create').
+				  errorResultForOperationFailure: error
+				  operation: 'create'
+				  requestedContext: {
 						  (#className -> className).
 						  (#superclassName -> superclassName).
 						  (#packageName -> packageName).
-						  (#tag -> (tag ifNil: [ '' ] ifNotNil: [ tag ])) } asDictionary ]
+						  (#tag -> (tag ifNil: [ '' ] ifNotNil: [ tag ])) } asDictionary
+				  summary: (self
+						   failureMessageForCreateClassNamed: className
+						   superclassName: superclassName
+						   packageName: packageName
+						   error: error) ]
 ]
 
 { #category : 'executing' }
@@ -354,19 +339,18 @@ MCPToolEditClass >> executeMoveSlotWithArguments: arguments operation: operation
 		  on: Exception
 		  do: [ :error |
 			  self
-				  errorResultText: (self
+				  errorResultForOperationFailure: error
+				  operation: operation
+				  requestedContext: {
+						  (#className -> className).
+						  (#slotName -> slotName).
+						  (#classSide -> classSide) } asDictionary
+				  summary: (self
 						   failureMessageForMoveSlotNamed: slotName
 						   onClassNamed: className
 						   classSide: classSide
 						   operation: operation
-						   error: error)
-				  details: {
-						  (#errorClass -> error class name).
-						  (#message -> error messageText).
-						  (#operation -> operation).
-						  (#className -> className).
-						  (#slotName -> slotName).
-						  (#classSide -> classSide) } asDictionary ]
+						   error: error) ]
 ]
 
 { #category : 'executing' }
@@ -392,18 +376,33 @@ MCPToolEditClass >> executeMoveWithArguments: arguments [
 		  on: Exception
 		  do: [ :error |
 			  self
-				  errorResultText: (self
+				  errorResultForOperationFailure: error
+				  operation: 'move'
+				  requestedContext: {
+						  (#className -> className).
+						  (#packageName -> packageName).
+						  (#tag -> (tag ifNil: [ '' ] ifNotNil: [ tag ])) } asDictionary
+				  summary: (self
 						   failureMessageForMoveClassNamed: className
 						   packageName: packageName
 						   tag: tag
-						   error: error)
-				  details: {
-						  (#errorClass -> error class name).
-						  (#message -> error messageText).
-						  (#operation -> 'move').
-						  (#className -> className).
-						  (#packageName -> packageName).
-						  (#tag -> (tag ifNil: [ '' ] ifNotNil: [ tag ])) } asDictionary ]
+						   error: error) ]
+]
+
+{ #category : 'executing' }
+MCPToolEditClass >> executePullUpSlotWithArguments: arguments [
+
+	^ self
+		  executeMoveSlotWithArguments: arguments
+		  operation: 'pullUpSlot'
+]
+
+{ #category : 'executing' }
+MCPToolEditClass >> executePushDownSlotWithArguments: arguments [
+
+	^ self
+		  executeMoveSlotWithArguments: arguments
+		  operation: 'pushDownSlot'
 ]
 
 { #category : 'executing' }
@@ -429,16 +428,15 @@ MCPToolEditClass >> executeRenameWithArguments: arguments [
 		  on: Exception
 		  do: [ :error |
 			  self
-				  errorResultText: (self
+				  errorResultForOperationFailure: error
+				  operation: 'rename'
+				  requestedContext: {
+						  (#className -> className).
+						  (#newClassName -> newClassName) } asDictionary
+				  summary: (self
 						   failureMessageForRenameClassNamed: className
 						   to: newClassName
-						   error: error)
-				  details: {
-						  (#errorClass -> error class name).
-						  (#message -> error messageText).
-						  (#operation -> 'rename').
-						  (#className -> className).
-						  (#newClassName -> newClassName) } asDictionary ]
+						   error: error) ]
 ]
 
 { #category : 'executing' }
@@ -465,16 +463,15 @@ MCPToolEditClass >> executeReparentWithArguments: arguments [
 		  on: Exception
 		  do: [ :error |
 			  self
-				  errorResultText: (self
+				  errorResultForOperationFailure: error
+				  operation: 'reparent'
+				  requestedContext: {
+						  (#className -> className).
+						  (#superclassName -> superclassName) } asDictionary
+				  summary: (self
 						   failureMessageForReparentClassNamed: className
 						   superclassName: superclassName
-						   error: error)
-				  details: {
-						  (#errorClass -> error class name).
-						  (#message -> error messageText).
-						  (#operation -> 'reparent').
-						  (#className -> className).
-						  (#superclassName -> superclassName) } asDictionary ]
+						   error: error) ]
 ]
 
 { #category : 'executing' }
@@ -497,40 +494,15 @@ MCPToolEditClass >> executeSetCommentWithArguments: arguments [
 		  on: Exception
 		  do: [ :error |
 			  self
-				  errorResultText:
+				  errorResultForOperationFailure: error
+				  operation: 'setComment'
+				  requestedContext: {
+						  (#className -> className).
+						  (#classComment -> classComment) } asDictionary
+				  summary:
 				  (self
 					   failureMessageForSetCommentOnClassNamed: className
-					   error: error)
-				  details: {
-						  (#errorClass -> error class name).
-						  (#message -> error messageText).
-						  (#operation -> 'setComment').
-						  (#className -> className).
-						  (#classComment -> classComment) } asDictionary ]
-]
-
-{ #category : 'executing' }
-MCPToolEditClass >> executeWithArguments: arguments [
-
-	| operation |
-	operation := self operationFromArguments: arguments.
-	self validateRequiredArgumentsForOperation: operation in: arguments.
-	operation = 'create' ifTrue: [
-		^ self executeCreateWithArguments: arguments ].
-	operation = 'move' ifTrue: [
-		^ self executeMoveWithArguments: arguments ].
-	operation = 'rename' ifTrue: [
-		^ self executeRenameWithArguments: arguments ].
-	operation = 'reparent' ifTrue: [
-		^ self executeReparentWithArguments: arguments ].
-	operation = 'setComment' ifTrue: [
-		^ self executeSetCommentWithArguments: arguments ].
-	operation = 'pullUpSlot' ifTrue: [
-		^ self executeMoveSlotWithArguments: arguments operation: operation ].
-	operation = 'pushDownSlot' ifTrue: [
-		^ self executeMoveSlotWithArguments: arguments operation: operation ].
-	Error signal:
-		'operation must be one of create, move, rename, reparent, setComment, pullUpSlot, or pushDownSlot.'
+					   error: error) ]
 ]
 
 { #category : 'private' }
@@ -544,10 +516,9 @@ MCPToolEditClass >> failureMessageForCreateClassNamed: className superclassName:
 			  nextPutAll: superclassName;
 			  nextPutAll: ' in package ';
 			  nextPutAll: packageName;
-			  nextPutAll: ' (';
-			  nextPutAll: anError class name;
-			  nextPutAll: '): ';
-			  nextPutAll: anError messageText ]
+			  nextPutAll: ': ';
+			  nextPutAll:
+				  (self normalizedCauseMessageForOperationError: anError) ]
 ]
 
 { #category : 'private' }
@@ -564,22 +535,23 @@ MCPToolEditClass >> failureMessageForMoveClassNamed: className packageName: pack
 				  nextPutAll: ' tag ';
 				  nextPutAll: tag ].
 		  stream
-			  nextPutAll: ' (';
-			  nextPutAll: anError class name;
-			  nextPutAll: '): ';
-			  nextPutAll: anError messageText ]
+			  nextPutAll: ': ';
+			  nextPutAll:
+				  (self normalizedCauseMessageForOperationError: anError) ]
 ]
 
 { #category : 'private' }
-MCPToolEditClass >> failureMessageForMoveSlotNamed: slotName onClassNamed: className classSide: classSide operation: operation error: error [
+MCPToolEditClass >> failureMessageForMoveSlotNamed: slotName onClassNamed: className classSide: classSide operation: operation error: anError [
 
 	operation = 'pullUpSlot' ifTrue: [
 		^ 'Failed to pull up '
 		  , (self slotDescriptionForClassSide: classSide) , ' ' , slotName
-		  , ' to class ' , className , ': ' , error messageText ].
+		  , ' to class ' , className , ': '
+		  , (self normalizedCauseMessageForOperationError: anError) ].
 	^ 'Failed to push down '
 	  , (self slotDescriptionForClassSide: classSide) , ' ' , slotName
-	  , ' from class ' , className , ': ' , error messageText
+	  , ' from class ' , className , ': '
+	  , (self normalizedCauseMessageForOperationError: anError)
 ]
 
 { #category : 'private' }
@@ -591,10 +563,9 @@ MCPToolEditClass >> failureMessageForRenameClassNamed: className to: newClassNam
 			  nextPutAll: className;
 			  nextPutAll: ' to ';
 			  nextPutAll: newClassName;
-			  nextPutAll: ' (';
-			  nextPutAll: anError class name;
-			  nextPutAll: '): ';
-			  nextPutAll: anError messageText ]
+			  nextPutAll: ': ';
+			  nextPutAll:
+				  (self normalizedCauseMessageForOperationError: anError) ]
 ]
 
 { #category : 'private' }
@@ -606,10 +577,9 @@ MCPToolEditClass >> failureMessageForReparentClassNamed: className superclassNam
 			  nextPutAll: className;
 			  nextPutAll: ' to superclass ';
 			  nextPutAll: superclassName;
-			  nextPutAll: ' (';
-			  nextPutAll: anError class name;
-			  nextPutAll: '): ';
-			  nextPutAll: anError messageText ]
+			  nextPutAll: ': ';
+			  nextPutAll:
+				  (self normalizedCauseMessageForOperationError: anError) ]
 ]
 
 { #category : 'private' }
@@ -619,28 +589,47 @@ MCPToolEditClass >> failureMessageForSetCommentOnClassNamed: className error: an
 		  stream
 			  nextPutAll: 'Unable to set comment for class ';
 			  nextPutAll: className;
-			  nextPutAll: ' (';
-			  nextPutAll: anError class name;
-			  nextPutAll: '): ';
-			  nextPutAll: anError messageText ]
+			  nextPutAll: ': ';
+			  nextPutAll:
+				  (self normalizedCauseMessageForOperationError: anError) ]
 ]
 
-{ #category : 'private - arguments' }
-MCPToolEditClass >> operationFromArguments: arguments [
+{ #category : 'private - operations' }
+MCPToolEditClass >> operationSpecifications [
 
-	| normalized operation |
-	operation := self stringArgumentNamed: 'operation' in: arguments.
-	operation ifNil: [ JRPCInvalidParameters signal ].
-	normalized := operation asLowercase.
-	normalized = 'create' ifTrue: [ ^ 'create' ].
-	normalized = 'move' ifTrue: [ ^ 'move' ].
-	normalized = 'rename' ifTrue: [ ^ 'rename' ].
-	normalized = 'reparent' ifTrue: [ ^ 'reparent' ].
-	normalized = 'setcomment' ifTrue: [ ^ 'setComment' ].
-	normalized = 'pullupslot' ifTrue: [ ^ 'pullUpSlot' ].
-	normalized = 'pushdownslot' ifTrue: [ ^ 'pushDownSlot' ].
-	Error signal:
-		'operation must be one of create, move, rename, reparent, setComment, pullUpSlot, or pushDownSlot.'
+	^ {
+		  {
+			  (#name -> 'create').
+			  (#requiredArguments -> #( 'superclassName' 'packageName' )).
+			  (#executeSelector -> #executeCreateWithArguments:) } asDictionary.
+		  {
+			  (#name -> 'move').
+			  (#requiredArguments -> #( 'packageName' )).
+			  (#executeSelector -> #executeMoveWithArguments:) } asDictionary.
+		  {
+			  (#name -> 'rename').
+			  (#requiredArguments -> #( 'newClassName' )).
+			  (#executeSelector -> #executeRenameWithArguments:) } asDictionary.
+		  {
+			  (#name -> 'reparent').
+			  (#requiredArguments -> #( 'superclassName' )).
+			  (#executeSelector -> #executeReparentWithArguments:) }
+			  asDictionary.
+		  {
+			  (#name -> 'setComment').
+			  (#requiredArguments -> #( 'classComment' )).
+			  (#executeSelector -> #executeSetCommentWithArguments:) }
+			  asDictionary.
+		  {
+			  (#name -> 'pullUpSlot').
+			  (#requiredArguments -> #( 'slotName' )).
+			  (#executeSelector -> #executePullUpSlotWithArguments:) }
+			  asDictionary.
+		  {
+			  (#name -> 'pushDownSlot').
+			  (#requiredArguments -> #( 'slotName' )).
+			  (#executeSelector -> #executePushDownSlotWithArguments:) }
+			  asDictionary }
 ]
 
 { #category : 'private' }
@@ -649,38 +638,4 @@ MCPToolEditClass >> slotDescriptionForClassSide: aBoolean [
 	^ aBoolean
 		  ifTrue: [ 'class-side slot' ]
 		  ifFalse: [ 'slot' ]
-]
-
-{ #category : 'private - arguments' }
-MCPToolEditClass >> validateRequiredArgumentsForOperation: operation in: arguments [
-
-	operation = 'create' ifTrue: [
-		(self stringArgumentNamed: 'superclassName' in: arguments) ifNil: [
-			JRPCInvalidParameters signal ].
-		(self stringArgumentNamed: 'packageName' in: arguments) ifNil: [
-			JRPCInvalidParameters signal ].
-		^ self ].
-	operation = 'move' ifTrue: [
-		(self stringArgumentNamed: 'packageName' in: arguments) ifNil: [
-			JRPCInvalidParameters signal ].
-		^ self ].
-	operation = 'rename' ifTrue: [
-		(self stringArgumentNamed: 'newClassName' in: arguments) ifNil: [
-			JRPCInvalidParameters signal ].
-		^ self ].
-	operation = 'reparent' ifTrue: [
-		(self stringArgumentNamed: 'superclassName' in: arguments) ifNil: [
-			JRPCInvalidParameters signal ].
-		^ self ].
-	operation = 'setComment' ifTrue: [
-		(self argumentNamed: 'classComment' in: arguments ifAbsent: [ nil ])
-			ifNil: [ JRPCInvalidParameters signal ].
-		^ self ].
-	(operation = 'pullUpSlot' or: [ operation = 'pushDownSlot' ])
-		ifTrue: [
-			(self stringArgumentNamed: 'slotName' in: arguments) ifNil: [
-				JRPCInvalidParameters signal ].
-			^ self ].
-	Error signal:
-		'operation must be one of create, move, rename, reparent, setComment, pullUpSlot, or pushDownSlot.'
 ]
