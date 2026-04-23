@@ -83,8 +83,8 @@ MCPTool class >> toolGroups [
 			   MCPToolRemoveClasses }).
 		  (#Methods -> {
 			   MCPToolFindMethods.
-			   MCPToolReferences.
 			   MCPToolImplementors.
+			   MCPToolReferences.
 			   MCPToolInspectMethod.
 			   MCPToolEditMethod.
 			   MCPToolRemoveMethods }).

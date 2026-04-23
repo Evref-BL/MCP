@@ -2,7 +2,7 @@
 Shared base class for query-style MCP tools. It centralizes paged result shaping and query-specific error handling.
 "
 Class {
-	#name : 'MCPQueryTool',
+	#name : 'MCPToolQuery',
 	#superclass : 'MCPTool',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
@@ -10,19 +10,19 @@ Class {
 }
 
 { #category : 'testing' }
-MCPQueryTool class >> isAbstract [
+MCPToolQuery class >> isAbstract [
 
-	^ self = MCPQueryTool
+	^ self = MCPToolQuery
 ]
 
 { #category : 'private - arguments' }
-MCPQueryTool >> defaultFilterTargets [
+MCPToolQuery >> defaultFilterTargets [
 
 	self subclassResponsibility
 ]
 
 { #category : 'private - results' }
-MCPQueryTool >> errorResultForQueryError: anError requestedContext: requestedContext [
+MCPToolQuery >> errorResultForQueryError: anError requestedContext: requestedContext [
 
 	| details normalizedContext |
 	normalizedContext := requestedContext ifNil: [ Dictionary new ].
@@ -44,7 +44,7 @@ MCPQueryTool >> errorResultForQueryError: anError requestedContext: requestedCon
 ]
 
 { #category : 'executing' }
-MCPQueryTool >> executeWithArguments: arguments [
+MCPToolQuery >> executeWithArguments: arguments [
 
 	| page parameters requestedContext |
 	requestedContext := self requestedContextFromArguments: arguments.
@@ -67,13 +67,13 @@ MCPQueryTool >> executeWithArguments: arguments [
 ]
 
 { #category : 'private - template' }
-MCPQueryTool >> failureMessageForRequestedContext: requestedContext error: anError [
+MCPToolQuery >> failureMessageForRequestedContext: requestedContext error: anError [
 
 	^ self subclassResponsibility
 ]
 
 { #category : 'private - schema' }
-MCPQueryTool >> minimalPagedQueryOutputSchemaForEntriesPropertyNamed: entriesPropertyName entriesDescription: entriesDescription entrySchema: entrySchema itemNounPhrase: itemNounPhrase [
+MCPToolQuery >> minimalPagedQueryOutputSchemaForEntriesPropertyNamed: entriesPropertyName entriesDescription: entriesDescription entrySchema: entrySchema itemNounPhrase: itemNounPhrase [
 
 	| entriesProperty |
 	entriesProperty := self
@@ -94,7 +94,7 @@ MCPQueryTool >> minimalPagedQueryOutputSchemaForEntriesPropertyNamed: entriesPro
 ]
 
 { #category : 'private - arguments' }
-MCPQueryTool >> normalizedFilterTargetsFrom: arguments [
+MCPToolQuery >> normalizedFilterTargetsFrom: arguments [
 
 	| invalidTargets normalizedTargets rawTargets supportedTargets |
 	rawTargets := self
@@ -125,13 +125,13 @@ MCPQueryTool >> normalizedFilterTargetsFrom: arguments [
 ]
 
 { #category : 'private - template' }
-MCPQueryTool >> queryEntriesForParameters: parameters [
+MCPToolQuery >> queryEntriesForParameters: parameters [
 
 	^ self subclassResponsibility
 ]
 
 { #category : 'private - pagination' }
-MCPQueryTool >> queryPageForEntries: entries limit: limit offset: offset [
+MCPToolQuery >> queryPageForEntries: entries limit: limit offset: offset [
 
 	| endIndex pagedEntries startIndex totalCount truncated |
 	totalCount := entries size.
@@ -152,19 +152,19 @@ MCPQueryTool >> queryPageForEntries: entries limit: limit offset: offset [
 ]
 
 { #category : 'private - template' }
-MCPQueryTool >> queryParametersFromArguments: arguments [
+MCPToolQuery >> queryParametersFromArguments: arguments [
 
 	^ self subclassResponsibility
 ]
 
 { #category : 'private - template' }
-MCPQueryTool >> queryResultDataForParameters: parameters page: page [
+MCPToolQuery >> queryResultDataForParameters: parameters page: page [
 
 	^ self subclassResponsibility
 ]
 
 { #category : 'private - pagination' }
-MCPQueryTool >> queryResultDataFrom: baseData page: page entriesKey: entriesKey [
+MCPToolQuery >> queryResultDataFrom: baseData page: page entriesKey: entriesKey [
 
 	^ {
 		  (#totalCount -> (page at: #totalCount)).
@@ -172,13 +172,13 @@ MCPQueryTool >> queryResultDataFrom: baseData page: page entriesKey: entriesKey 
 ]
 
 { #category : 'private - template' }
-MCPQueryTool >> requestedContextFromArguments: arguments [
+MCPToolQuery >> requestedContextFromArguments: arguments [
 
 	^ self subclassResponsibility
 ]
 
 { #category : 'private - results' }
-MCPQueryTool >> scopeQueryFailureMessageFor: resultKind scope: scope error: anError [
+MCPToolQuery >> scopeQueryFailureMessageFor: resultKind scope: scope error: anError [
 
 	^ String streamContents: [ :stream |
 		  stream
@@ -193,7 +193,7 @@ MCPQueryTool >> scopeQueryFailureMessageFor: resultKind scope: scope error: anEr
 ]
 
 { #category : 'private - results' }
-MCPQueryTool >> scopeQuerySuccessSummaryFor: resultKind scope: scope returnedCount: returnedCount totalCount: totalCount truncated: truncated [
+MCPToolQuery >> scopeQuerySuccessSummaryFor: resultKind scope: scope returnedCount: returnedCount totalCount: totalCount truncated: truncated [
 
 	^ String streamContents: [ :stream |
 		  stream
@@ -210,13 +210,13 @@ MCPQueryTool >> scopeQuerySuccessSummaryFor: resultKind scope: scope returnedCou
 ]
 
 { #category : 'private - template' }
-MCPQueryTool >> successSummaryForParameters: parameters page: page [
+MCPToolQuery >> successSummaryForParameters: parameters page: page [
 
 	^ self subclassResponsibility
 ]
 
 { #category : 'private - arguments' }
-MCPQueryTool >> supportedFilterTargets [
+MCPToolQuery >> supportedFilterTargets [
 
 	self subclassResponsibility
 ]

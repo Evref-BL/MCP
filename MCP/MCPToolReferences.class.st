@@ -3,7 +3,7 @@ Finds methods that reference a selector, class, or variable. It is the main call
 "
 Class {
 	#name : 'MCPToolReferences',
-	#superclass : 'MCPMethodQueryTool',
+	#superclass : 'MCPToolMethodQuery',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'

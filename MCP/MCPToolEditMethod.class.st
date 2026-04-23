@@ -3,7 +3,7 @@ Edits one method in the running image. It handles compilation, renaming, protoco
 "
 Class {
 	#name : 'MCPToolEditMethod',
-	#superclass : 'MCPEditTool',
+	#superclass : 'MCPToolEdit',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'

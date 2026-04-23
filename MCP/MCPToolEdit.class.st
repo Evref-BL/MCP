@@ -2,7 +2,7 @@
 Shared base class for mutating MCP tools. It centralizes operation selection, warning handling, and structured edit failure reporting.
 "
 Class {
-	#name : 'MCPEditTool',
+	#name : 'MCPToolEdit',
 	#superclass : 'MCPTool',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
@@ -10,13 +10,13 @@ Class {
 }
 
 { #category : 'testing' }
-MCPEditTool class >> isAbstract [
+MCPToolEdit class >> isAbstract [
 
-	^ self = MCPEditTool
+	^ self = MCPToolEdit
 ]
 
 { #category : 'private - errors' }
-MCPEditTool >> addSupplementalDetailsForOperationError: anError to: details [
+MCPToolEdit >> addSupplementalDetailsForOperationError: anError to: details [
 
 	| methodNode position selector variableName |
 	(anError respondsTo: #methodNode) ifTrue: [
@@ -35,14 +35,14 @@ MCPEditTool >> addSupplementalDetailsForOperationError: anError to: details [
 ]
 
 { #category : 'private - operations' }
-MCPEditTool >> canonicalOperationNames [
+MCPToolEdit >> canonicalOperationNames [
 
 	^ (self operationSpecifications collect: [ :each | each at: #name ])
 		  asArray
 ]
 
 { #category : 'private - errors' }
-MCPEditTool >> errorDetailsForRequestedContext: requestedContext causedBy: anError [
+MCPToolEdit >> errorDetailsForRequestedContext: requestedContext causedBy: anError [
 
 	| details |
 	details := requestedContext
@@ -53,7 +53,7 @@ MCPEditTool >> errorDetailsForRequestedContext: requestedContext causedBy: anErr
 ]
 
 { #category : 'private' }
-MCPEditTool >> errorResultForCommandError: anError operation: operation requestedContext: requestedContext [
+MCPToolEdit >> errorResultForCommandError: anError operation: operation requestedContext: requestedContext [
 
 	| details |
 	details := anError structuredDetails copy.
@@ -65,7 +65,7 @@ MCPEditTool >> errorResultForCommandError: anError operation: operation requeste
 ]
 
 { #category : 'private - errors' }
-MCPEditTool >> errorResultForOperationFailure: anError operation: operation requestedContext: requestedContext summary: summary [
+MCPToolEdit >> errorResultForOperationFailure: anError operation: operation requestedContext: requestedContext summary: summary [
 
 	(anError isKindOf: RBRefactoringWarning) ifTrue: [
 		^ self
@@ -88,7 +88,7 @@ MCPEditTool >> errorResultForOperationFailure: anError operation: operation requ
 ]
 
 { #category : 'private - warnings' }
-MCPEditTool >> errorResultForRefactoringWarning: aWarning operation: operation requestedContext: requestedContext [
+MCPToolEdit >> errorResultForRefactoringWarning: aWarning operation: operation requestedContext: requestedContext [
 
 	^ self
 		  errorResultForCommandError: (self
@@ -100,7 +100,7 @@ MCPEditTool >> errorResultForRefactoringWarning: aWarning operation: operation r
 ]
 
 { #category : 'private - execution' }
-MCPEditTool >> executeEditOperation: operation force: forceRequested requestedContext: requestedContext work: operationBlock successResult: successBlock failureSummary: failureSummaryBlock [
+MCPToolEdit >> executeEditOperation: operation force: forceRequested requestedContext: requestedContext work: operationBlock successResult: successBlock failureSummary: failureSummaryBlock [
 
 	| executionOutcome |
 	^ [
@@ -122,7 +122,7 @@ MCPEditTool >> executeEditOperation: operation force: forceRequested requestedCo
 ]
 
 { #category : 'private - execution' }
-MCPEditTool >> executeOperationBlock: anOperationBlock force: forceRequested operation: operation requestedContext: requestedContext [
+MCPToolEdit >> executeOperationBlock: anOperationBlock force: forceRequested operation: operation requestedContext: requestedContext [
 
 	| warningMessages |
 	warningMessages := OrderedCollection new.
@@ -144,7 +144,7 @@ MCPEditTool >> executeOperationBlock: anOperationBlock force: forceRequested ope
 ]
 
 { #category : 'executing' }
-MCPEditTool >> executeWithArguments: arguments [
+MCPToolEdit >> executeWithArguments: arguments [
 
 	| operation specification |
 	operation := self operationFromArguments: arguments.
@@ -154,13 +154,13 @@ MCPEditTool >> executeWithArguments: arguments [
 ]
 
 { #category : 'private - arguments' }
-MCPEditTool >> forceFromArguments: arguments [
+MCPToolEdit >> forceFromArguments: arguments [
 
 	^ self booleanArgumentNamed: 'force' in: arguments default: false
 ]
 
 { #category : 'private - schema' }
-MCPEditTool >> forceSchemaProperty [
+MCPToolEdit >> forceSchemaProperty [
 
 	^ self
 		  booleanSchemaPropertyNamed: 'force'
@@ -170,13 +170,13 @@ MCPEditTool >> forceSchemaProperty [
 ]
 
 { #category : 'private - warnings' }
-MCPEditTool >> howToProceedForRefactoringWarning [
+MCPToolEdit >> howToProceedForRefactoringWarning [
 
 	^ 'Review impactMessages, then rerun the same request with force=true to continue despite these warnings.'
 ]
 
 { #category : 'private - warnings' }
-MCPEditTool >> impactMessageForRefactoringCondition: aCondition [
+MCPToolEdit >> impactMessageForRefactoringCondition: aCondition [
 
 	| message |
 	(aCondition respondsTo: #violationMessageOn:) ifFalse: [
@@ -187,7 +187,7 @@ MCPEditTool >> impactMessageForRefactoringCondition: aCondition [
 ]
 
 { #category : 'private - warnings' }
-MCPEditTool >> impactMessagesForRefactoringWarning: aWarning [
+MCPToolEdit >> impactMessagesForRefactoringWarning: aWarning [
 
 	| failedPreconditions impactMessages primaryMessage |
 	impactMessages := OrderedCollection new.
@@ -209,7 +209,7 @@ MCPEditTool >> impactMessagesForRefactoringWarning: aWarning [
 ]
 
 { #category : 'private - errors' }
-MCPEditTool >> normalizedCauseMessageForOperationError: anError [
+MCPToolEdit >> normalizedCauseMessageForOperationError: anError [
 
 	| descriptionText message |
 	(anError isKindOf: OCUndeclaredVariableWarning) ifTrue: [
@@ -227,7 +227,7 @@ MCPEditTool >> normalizedCauseMessageForOperationError: anError [
 ]
 
 { #category : 'private - errors' }
-MCPEditTool >> normalizedCommandErrorForOperationFailure: anError operation: operation requestedContext: requestedContext summary: summary [
+MCPToolEdit >> normalizedCommandErrorForOperationFailure: anError operation: operation requestedContext: requestedContext summary: summary [
 
 	| details normalizedSummary |
 	normalizedSummary := summary
@@ -246,7 +246,7 @@ MCPEditTool >> normalizedCommandErrorForOperationFailure: anError operation: ope
 ]
 
 { #category : 'private - warnings' }
-MCPEditTool >> normalizedCommandErrorForRefactoringWarning: aWarning operation: operation requestedContext: requestedContext [
+MCPToolEdit >> normalizedCommandErrorForRefactoringWarning: aWarning operation: operation requestedContext: requestedContext [
 
 	| details impactMessages summary |
 	impactMessages := self impactMessagesForRefactoringWarning: aWarning.
@@ -270,7 +270,7 @@ MCPEditTool >> normalizedCommandErrorForRefactoringWarning: aWarning operation: 
 ]
 
 { #category : 'private - warnings' }
-MCPEditTool >> normalizedSingleLineText: aString [
+MCPToolEdit >> normalizedSingleLineText: aString [
 
 	| text |
 	text := aString ifNil: [ '' ] ifNotNil: [ aString asString ].
@@ -283,7 +283,7 @@ MCPEditTool >> normalizedSingleLineText: aString [
 ]
 
 { #category : 'private - errors' }
-MCPEditTool >> operationErrorCodePrefixFor: operation [
+MCPToolEdit >> operationErrorCodePrefixFor: operation [
 
 	operation ifNil: [ ^ 'Operation' ].
 	operation isEmpty ifTrue: [ ^ 'Operation' ].
@@ -291,7 +291,7 @@ MCPEditTool >> operationErrorCodePrefixFor: operation [
 ]
 
 { #category : 'private - errors' }
-MCPEditTool >> operationFailureErrorCodeFor: anError operation: operation [
+MCPToolEdit >> operationFailureErrorCodeFor: anError operation: operation [
 
 	| prefix |
 	prefix := self operationErrorCodePrefixFor: operation.
@@ -309,7 +309,7 @@ MCPEditTool >> operationFailureErrorCodeFor: anError operation: operation [
 ]
 
 { #category : 'private - arguments' }
-MCPEditTool >> operationFromArguments: arguments [
+MCPToolEdit >> operationFromArguments: arguments [
 
 	| normalized operation specification |
 	operation := self stringArgumentNamed: 'operation' in: arguments.
@@ -324,7 +324,7 @@ MCPEditTool >> operationFromArguments: arguments [
 ]
 
 { #category : 'private - operations' }
-MCPEditTool >> operationNameListText [
+MCPToolEdit >> operationNameListText [
 
 	| operationNames |
 	operationNames := self canonicalOperationNames.
@@ -341,7 +341,7 @@ MCPEditTool >> operationNameListText [
 ]
 
 { #category : 'private - schema' }
-MCPEditTool >> operationSchemaPropertyWithDescription: baseDescription supportedValuesLeadIn: supportedValuesLeadIn [
+MCPToolEdit >> operationSchemaPropertyWithDescription: baseDescription supportedValuesLeadIn: supportedValuesLeadIn [
 
 	^ MCPStructureProperties new
 		  name: 'operation';
@@ -353,7 +353,7 @@ MCPEditTool >> operationSchemaPropertyWithDescription: baseDescription supported
 ]
 
 { #category : 'private - operations' }
-MCPEditTool >> operationSpecificationNamed: anOperationName [
+MCPToolEdit >> operationSpecificationNamed: anOperationName [
 
 	^ self operationSpecifications
 		  detect: [ :each | (each at: #name) = anOperationName ]
@@ -361,13 +361,13 @@ MCPEditTool >> operationSpecificationNamed: anOperationName [
 ]
 
 { #category : 'private - operations' }
-MCPEditTool >> operationSpecifications [
+MCPToolEdit >> operationSpecifications [
 
 	self subclassResponsibility
 ]
 
 { #category : 'private - warnings' }
-MCPEditTool >> operationTargetDescriptionForRequestedContext: requestedContext [
+MCPToolEdit >> operationTargetDescriptionForRequestedContext: requestedContext [
 
 	| className selector slotName |
 	requestedContext ifNil: [ ^ '' ].
@@ -393,13 +393,13 @@ MCPEditTool >> operationTargetDescriptionForRequestedContext: requestedContext [
 ]
 
 { #category : 'private - operations' }
-MCPEditTool >> operationValidationErrorMessage [
+MCPToolEdit >> operationValidationErrorMessage [
 
 	^ 'operation must be one of ' , self operationNameListText , '.'
 ]
 
 { #category : 'private - warnings' }
-MCPEditTool >> refactoringWarningSummaryFor: aWarning operation: operation requestedContext: requestedContext impactMessages: impactMessages [
+MCPToolEdit >> refactoringWarningSummaryFor: aWarning operation: operation requestedContext: requestedContext impactMessages: impactMessages [
 
 	^ String streamContents: [ :stream |
 		  stream
@@ -418,7 +418,7 @@ MCPEditTool >> refactoringWarningSummaryFor: aWarning operation: operation reque
 ]
 
 { #category : 'private - errors' }
-MCPEditTool >> undeclaredVariableCauseMessageFor: anError [
+MCPToolEdit >> undeclaredVariableCauseMessageFor: anError [
 
 	| variableName |
 	variableName := self undeclaredVariableNameFor: anError.
@@ -428,7 +428,7 @@ MCPEditTool >> undeclaredVariableCauseMessageFor: anError [
 ]
 
 { #category : 'private - errors' }
-MCPEditTool >> undeclaredVariableNameFor: anError [
+MCPToolEdit >> undeclaredVariableNameFor: anError [
 
 	| node notice |
 	(anError respondsTo: #notice) ifFalse: [ ^ nil ].
@@ -442,7 +442,7 @@ MCPEditTool >> undeclaredVariableNameFor: anError [
 ]
 
 { #category : 'private - arguments' }
-MCPEditTool >> validateRequiredArgumentsForOperation: operation in: arguments [
+MCPToolEdit >> validateRequiredArgumentsForOperation: operation in: arguments [
 
 	| specification |
 	specification := self operationSpecificationNamed: operation.

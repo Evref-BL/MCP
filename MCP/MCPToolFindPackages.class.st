@@ -3,7 +3,7 @@ Lists packages in the image or a project with optional filtering. It is the gene
 "
 Class {
 	#name : 'MCPToolFindPackages',
-	#superclass : 'MCPQueryTool',
+	#superclass : 'MCPToolQuery',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'

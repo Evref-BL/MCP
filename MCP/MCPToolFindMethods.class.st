@@ -3,7 +3,7 @@ Lists methods in a chosen scope with optional filtering. It is the general metho
 "
 Class {
 	#name : 'MCPToolFindMethods',
-	#superclass : 'MCPMethodQueryTool',
+	#superclass : 'MCPToolMethodQuery',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'

@@ -2,21 +2,21 @@
 Shared base class for query tools that return methods. It factors common scope, filtering, and schema behavior for method results.
 "
 Class {
-	#name : 'MCPMethodQueryTool',
-	#superclass : 'MCPQueryTool',
+	#name : 'MCPToolMethodQuery',
+	#superclass : 'MCPToolQuery',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
 }
 
 { #category : 'testing' }
-MCPMethodQueryTool class >> isAbstract [
+MCPToolMethodQuery class >> isAbstract [
 
-	^ self = MCPMethodQueryTool
+	^ self = MCPToolMethodQuery
 ]
 
 { #category : 'private - schema' }
-MCPMethodQueryTool >> methodEntrySchemaNamed: entryName description: entryDescription subjectDescription: subjectDescription selectorDescription: selectorDescription sourceDescription: sourceDescription [
+MCPToolMethodQuery >> methodEntrySchemaNamed: entryName description: entryDescription subjectDescription: subjectDescription selectorDescription: selectorDescription sourceDescription: sourceDescription [
 
 	^ MCPStructureProperties new
 		  name: entryName;
@@ -65,7 +65,7 @@ MCPMethodQueryTool >> methodEntrySchemaNamed: entryName description: entryDescri
 ]
 
 { #category : 'private - schema' }
-MCPMethodQueryTool >> methodQueryFilteringInputPropertiesWithFilterDescription: filterDescription extraProperties: extraProperties includeSourceDescription: includeSourceDescription limitDescription: limitDescription [
+MCPToolMethodQuery >> methodQueryFilteringInputPropertiesWithFilterDescription: filterDescription extraProperties: extraProperties includeSourceDescription: includeSourceDescription limitDescription: limitDescription [
 
 	| properties |
 	properties := OrderedCollection new.
@@ -101,7 +101,7 @@ MCPMethodQueryTool >> methodQueryFilteringInputPropertiesWithFilterDescription: 
 ]
 
 { #category : 'private - arguments' }
-MCPMethodQueryTool >> methodQueryParametersFromArguments: arguments [
+MCPToolMethodQuery >> methodQueryParametersFromArguments: arguments [
 
 	^ {
 		  (#filterPattern
@@ -128,13 +128,13 @@ MCPMethodQueryTool >> methodQueryParametersFromArguments: arguments [
 ]
 
 { #category : 'private - results' }
-MCPMethodQueryTool >> methodQueryResultDataForPage: page entriesKey: entriesKey [
+MCPToolMethodQuery >> methodQueryResultDataForPage: page entriesKey: entriesKey [
 
 	^ self queryResultDataFrom: nil page: page entriesKey: entriesKey
 ]
 
 { #category : 'private - schema' }
-MCPMethodQueryTool >> methodQueryScopeInputPropertiesWithScopeDescription: scopeDescription [
+MCPToolMethodQuery >> methodQueryScopeInputPropertiesWithScopeDescription: scopeDescription [
 
 	| scopeProperty sideProperty packageNamesProperty classNamesProperty |
 	scopeProperty := self

@@ -3,7 +3,7 @@ Lists classes in a chosen scope with optional filtering. It is optimized for cla
 "
 Class {
 	#name : 'MCPToolFindClasses',
-	#superclass : 'MCPQueryTool',
+	#superclass : 'MCPToolQuery',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'

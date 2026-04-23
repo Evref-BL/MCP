@@ -3,7 +3,7 @@ Finds methods that implement a given selector. It is the direct entry point for 
 "
 Class {
 	#name : 'MCPToolImplementors',
-	#superclass : 'MCPMethodQueryTool',
+	#superclass : 'MCPToolMethodQuery',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
