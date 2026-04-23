@@ -76,9 +76,13 @@ MCPToolContractsTest >> testEditClassHasAccurateNameAndRequiredArguments [
 		assert: tool inputSchema required asSet
 		equals: #( 'operation' 'className' ) asSet.
 	self assert: (propertyNames includes: 'classComment').
+	self assert: (propertyNames includes: 'slotName').
+	self assert: (propertyNames includes: 'classSide').
 	self
 		assert: (operationProperty extraProperties at: #enum) asArray
-		equals: #( 'create' 'move' 'rename' 'reparent' 'setComment' )
+		equals:
+			#( 'create' 'move' 'rename' 'reparent' 'setComment' 'pullUpSlot'
+			   'pushDownSlot' )
 ]
 
 { #category : 'tests' }

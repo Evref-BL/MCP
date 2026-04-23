@@ -35,7 +35,7 @@ MCPToolEditClass >> dataForResult: aResult operation: operation [
 { #category : 'defaults' }
 MCPToolEditClass >> defaultDescription [
 
-	^ 'Create, move, rename, reparent, or set the comment of a class in the running image. Use this for class-level definition and comment updates; use edit-method for methods and remove-classes for deletion.'
+	^ 'Create, move, rename, reparent, pull up or push down slots, or set the comment of a class in the running image. Use this for class-level definition and structural updates; use edit-method for methods and remove-classes for deletion.'
 ]
 
 { #category : 'defaults' }
@@ -54,8 +54,10 @@ MCPToolEditClass >> defaultInputSchema [
 					   name: 'operation';
 					   type: 'string';
 					   description:
-						   'The class edit operation to perform. Supported values are create, move, rename, reparent, and setComment.';
-					   enum: #( 'create' 'move' 'rename' 'reparent' 'setComment' );
+						   'The class edit operation to perform. Supported values are create, move, rename, reparent, setComment, pullUpSlot, and pushDownSlot.';
+					   enum:
+						   #( 'create' 'move' 'rename' 'reparent' 'setComment'
+						      'pullUpSlot' 'pushDownSlot' );
 					   yourself).
 				  (MCPStructureProperties new
 					   name: 'className';
@@ -106,6 +108,17 @@ MCPToolEditClass >> defaultInputSchema [
 					   description:
 						   'The new class name to assign when operation=rename.';
 					   yourself).
+				  (MCPStructureProperties new
+					   name: 'slotName';
+					   type: 'string';
+					   description:
+						   'The slot name to pull up or push down when operation=pullUpSlot or operation=pushDownSlot.';
+					   yourself).
+				  (self
+					   booleanSchemaPropertyNamed: 'classSide'
+					   description:
+					   'Whether slot movement targets class-side slots instead of instance-side slots when operation=pullUpSlot or operation=pushDownSlot.'
+					   default: false).
 				  (MCPStructureProperties new
 					   name: 'classComment';
 					   type: 'string';
@@ -172,6 +185,26 @@ MCPToolEditClass >> defaultOutputSchema [
 					   items: (MCPStructureProperties new
 							    type: 'string';
 							    description: 'A class-side slot name.';
+							    yourself);
+					   yourself).
+				  (self
+					   schemaPropertyNamed: 'slotName'
+					   type: 'string'
+					   description:
+					   'The slot name that was pulled up or pushed down when operation=pullUpSlot or operation=pushDownSlot.').
+				  (self
+					   booleanSchemaPropertyNamed: 'classSide'
+					   description:
+					   'Whether the slot move targeted class-side slots instead of instance-side slots.'
+					   default: false).
+				  ((self
+					    schemaPropertyNamed: 'affectedClassNames'
+					    type: 'array'
+					    description:
+						    'The other classes whose slot definitions were changed by operation=pullUpSlot or operation=pushDownSlot.')
+					   items: (MCPStructureProperties new
+							    type: 'string';
+							    description: 'An affected class name.';
 							    yourself);
 					   yourself).
 				  ((self
@@ -282,6 +315,58 @@ MCPToolEditClass >> executeCreateWithArguments: arguments [
 						  (#superclassName -> superclassName).
 						  (#packageName -> packageName).
 						  (#tag -> (tag ifNil: [ '' ] ifNotNil: [ tag ])) } asDictionary ]
+]
+
+{ #category : 'executing' }
+MCPToolEditClass >> executeMoveSlotWithArguments: arguments operation: operation [
+
+	| className classSide result slotName |
+	className := self stringArgumentNamed: 'className' in: arguments.
+	slotName := self stringArgumentNamed: 'slotName' in: arguments.
+	classSide := self
+		             booleanArgumentNamed: 'classSide'
+		             in: arguments
+		             default: false.
+	^ [
+	  [
+	  result := (MCPMoveSlotCommand
+		             className: className
+		             slotName: slotName
+		             direction: operation
+		             classSide: classSide) execute.
+	  self
+		  successResultText: (operation = 'pullUpSlot'
+				   ifTrue: [
+					   'Pulled up ' , (self slotDescriptionForClassSide: classSide)
+					   , ' ' , slotName , ' to class ' , className , '.' ]
+				   ifFalse: [
+					   'Pushed down ' , (self slotDescriptionForClassSide: classSide)
+					   , ' ' , slotName , ' from class ' , className , '.' ])
+		  data: (self dataForResult: result operation: operation) ]
+		  on: MCPCommandError
+		  do: [ :error |
+			  | details |
+			  details := error structuredDetails copy.
+			  details at: #operation put: operation.
+			  details at: #slotName put: slotName.
+			  details at: #classSide put: classSide.
+			  self errorResultText: error messageText details: details ] ]
+		  on: Exception
+		  do: [ :error |
+			  self
+				  errorResultText: (self
+						   failureMessageForMoveSlotNamed: slotName
+						   onClassNamed: className
+						   classSide: classSide
+						   operation: operation
+						   error: error)
+				  details: {
+						  (#errorClass -> error class name).
+						  (#message -> error messageText).
+						  (#operation -> operation).
+						  (#className -> className).
+						  (#slotName -> slotName).
+						  (#classSide -> classSide) } asDictionary ]
 ]
 
 { #category : 'executing' }
@@ -440,8 +525,12 @@ MCPToolEditClass >> executeWithArguments: arguments [
 		^ self executeReparentWithArguments: arguments ].
 	operation = 'setComment' ifTrue: [
 		^ self executeSetCommentWithArguments: arguments ].
+	operation = 'pullUpSlot' ifTrue: [
+		^ self executeMoveSlotWithArguments: arguments operation: operation ].
+	operation = 'pushDownSlot' ifTrue: [
+		^ self executeMoveSlotWithArguments: arguments operation: operation ].
 	Error signal:
-		'operation must be one of create, move, rename, reparent, or setComment.'
+		'operation must be one of create, move, rename, reparent, setComment, pullUpSlot, or pushDownSlot.'
 ]
 
 { #category : 'private' }
@@ -479,6 +568,18 @@ MCPToolEditClass >> failureMessageForMoveClassNamed: className packageName: pack
 			  nextPutAll: anError class name;
 			  nextPutAll: '): ';
 			  nextPutAll: anError messageText ]
+]
+
+{ #category : 'private' }
+MCPToolEditClass >> failureMessageForMoveSlotNamed: slotName onClassNamed: className classSide: classSide operation: operation error: error [
+
+	operation = 'pullUpSlot' ifTrue: [
+		^ 'Failed to pull up '
+		  , (self slotDescriptionForClassSide: classSide) , ' ' , slotName
+		  , ' to class ' , className , ': ' , error messageText ].
+	^ 'Failed to push down '
+	  , (self slotDescriptionForClassSide: classSide) , ' ' , slotName
+	  , ' from class ' , className , ': ' , error messageText
 ]
 
 { #category : 'private' }
@@ -536,8 +637,18 @@ MCPToolEditClass >> operationFromArguments: arguments [
 	normalized = 'rename' ifTrue: [ ^ 'rename' ].
 	normalized = 'reparent' ifTrue: [ ^ 'reparent' ].
 	normalized = 'setcomment' ifTrue: [ ^ 'setComment' ].
+	normalized = 'pullupslot' ifTrue: [ ^ 'pullUpSlot' ].
+	normalized = 'pushdownslot' ifTrue: [ ^ 'pushDownSlot' ].
 	Error signal:
-		'operation must be one of create, move, rename, reparent, or setComment.'
+		'operation must be one of create, move, rename, reparent, setComment, pullUpSlot, or pushDownSlot.'
+]
+
+{ #category : 'private' }
+MCPToolEditClass >> slotDescriptionForClassSide: aBoolean [
+
+	^ aBoolean
+		  ifTrue: [ 'class-side slot' ]
+		  ifFalse: [ 'slot' ]
 ]
 
 { #category : 'private - arguments' }
@@ -565,6 +676,11 @@ MCPToolEditClass >> validateRequiredArgumentsForOperation: operation in: argumen
 		(self argumentNamed: 'classComment' in: arguments ifAbsent: [ nil ])
 			ifNil: [ JRPCInvalidParameters signal ].
 		^ self ].
+	(operation = 'pullUpSlot' or: [ operation = 'pushDownSlot' ])
+		ifTrue: [
+			(self stringArgumentNamed: 'slotName' in: arguments) ifNil: [
+				JRPCInvalidParameters signal ].
+			^ self ].
 	Error signal:
-		'operation must be one of create, move, rename, reparent, or setComment.'
+		'operation must be one of create, move, rename, reparent, setComment, pullUpSlot, or pushDownSlot.'
 ]

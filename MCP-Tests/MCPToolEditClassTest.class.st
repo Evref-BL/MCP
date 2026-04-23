@@ -54,7 +54,13 @@ MCPToolEditClassTest >> createdClassNames [
 	     'MCPToolEditClassTestTemporaryPackage'
 	     'MCPToolEditClassTestCommentTarget'
 	     'MCPToolEditClassTestReparentTarget'
-	     'MCPToolEditClassTestReparentSuperclass' )
+	     'MCPToolEditClassTestReparentSuperclass'
+	     'MCPToolEditClassTestPullUpTarget'
+	     'MCPToolEditClassTestPullUpChildOne'
+	     'MCPToolEditClassTestPullUpChildTwo'
+	     'MCPToolEditClassTestPushDownTarget'
+	     'MCPToolEditClassTestPushDownChildOne'
+	     'MCPToolEditClassTestPushDownChildTwo' )
 ]
 
 { #category : 'private' }
@@ -246,6 +252,16 @@ MCPToolEditClassTest >> setUp [
 	self removeDestinationPackage.
 	self ensureDestinationPackage.
 	self ensureOriginalRenameFixtureState
+]
+
+{ #category : 'private' }
+MCPToolEditClassTest >> slotOperationArgumentsFor: anOperation className: aClassName slotName: aSlotName classSide: aBoolean [
+
+	^ {
+		  (#operation -> anOperation).
+		  (#className -> aClassName).
+		  (#slotName -> aSlotName).
+		  (#classSide -> aBoolean) } asDictionary
 ]
 
 { #category : 'private' }
@@ -493,6 +509,112 @@ MCPToolEditClassTest >> testMovesClassToExistingTag [
 ]
 
 { #category : 'tests' }
+MCPToolEditClassTest >> testPullsUpInstanceSlotAcrossSubclasses [
+
+	| childOne childTwo data instance result target |
+	self
+		createClassNamed: 'MCPToolEditClassTestPullUpTarget'
+		superclassName: 'Object'
+		slots: #(  )
+		classSlots: #(  ).
+	self
+		createClassNamed: 'MCPToolEditClassTestPullUpChildOne'
+		superclassName: 'MCPToolEditClassTestPullUpTarget'
+		slots: #( sharedSlot )
+		classSlots: #(  ).
+	self
+		createClassNamed: 'MCPToolEditClassTestPullUpChildTwo'
+		superclassName: 'MCPToolEditClassTestPullUpTarget'
+		slots: #( sharedSlot )
+		classSlots: #(  ).
+	self
+		ensureMethodSource: 'slotProbe ^ sharedSlot'
+		protocol: 'testing'
+		on: (self classNamed: 'MCPToolEditClassTestPullUpChildOne').
+	result := self callToolWith: (self
+			           slotOperationArgumentsFor: 'pullUpSlot'
+			           className: 'MCPToolEditClassTestPullUpTarget'
+			           slotName: 'sharedSlot'
+			           classSide: false).
+	data := self dataFrom: result.
+	target := self classNamed: 'MCPToolEditClassTestPullUpTarget'.
+	childOne := self classNamed: 'MCPToolEditClassTestPullUpChildOne'.
+	childTwo := self classNamed: 'MCPToolEditClassTestPullUpChildTwo'.
+	instance := childOne new.
+	instance instVarNamed: 'sharedSlot' put: 41.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self
+		assert: (target slots collect: #name as: Array)
+		equals: #( #sharedSlot ).
+	self assert: (childOne slots collect: #name as: Array) equals: #(  ).
+	self assert: (childTwo slots collect: #name as: Array) equals: #(  ).
+	self assert: instance slotProbe equals: 41.
+	self assert: (data at: #operation) equals: 'pullUpSlot'.
+	self assert: (data at: #slotName) equals: 'sharedSlot'.
+	self assert: (data at: #classSide) equals: false.
+	self assert: (data at: #instanceSlotNames) equals: #( 'sharedSlot' ).
+	self
+		assert: (data at: #affectedClassNames) asSet
+		equals: #( 'MCPToolEditClassTestPullUpChildOne'
+			   'MCPToolEditClassTestPullUpChildTwo' ) asSet
+]
+
+{ #category : 'tests' }
+MCPToolEditClassTest >> testPushesDownClassSlotToDirectSubclasses [
+
+	| childOne childTwo data result target |
+	self
+		createClassNamed: 'MCPToolEditClassTestPushDownTarget'
+		superclassName: 'Object'
+		slots: #(  )
+		classSlots: #( sharedClassSlot ).
+	self
+		createClassNamed: 'MCPToolEditClassTestPushDownChildOne'
+		superclassName: 'MCPToolEditClassTestPushDownTarget'
+		slots: #(  )
+		classSlots: #(  ).
+	self
+		createClassNamed: 'MCPToolEditClassTestPushDownChildTwo'
+		superclassName: 'MCPToolEditClassTestPushDownTarget'
+		slots: #(  )
+		classSlots: #(  ).
+	self
+		ensureMethodSource: 'slotProbe ^ sharedClassSlot'
+		protocol: 'testing'
+		on:
+		(self classNamed: 'MCPToolEditClassTestPushDownChildOne') classSide.
+	result := self callToolWith: (self
+			           slotOperationArgumentsFor: 'pushDownSlot'
+			           className: 'MCPToolEditClassTestPushDownTarget'
+			           slotName: 'sharedClassSlot'
+			           classSide: true).
+	data := self dataFrom: result.
+	target := self classNamed: 'MCPToolEditClassTestPushDownTarget'.
+	childOne := self classNamed: 'MCPToolEditClassTestPushDownChildOne'.
+	childTwo := self classNamed: 'MCPToolEditClassTestPushDownChildTwo'.
+	childOne instVarNamed: 'sharedClassSlot' put: 23.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self
+		assert: (target classSide slots collect: #name as: Array)
+		equals: #(  ).
+	self
+		assert: (childOne classSide slots collect: #name as: Array)
+		equals: #( #sharedClassSlot ).
+	self
+		assert: (childTwo classSide slots collect: #name as: Array)
+		equals: #( #sharedClassSlot ).
+	self assert: childOne slotProbe equals: 23.
+	self assert: (data at: #operation) equals: 'pushDownSlot'.
+	self assert: (data at: #slotName) equals: 'sharedClassSlot'.
+	self assert: (data at: #classSide) equals: true.
+	self assert: (data at: #classSlotNames) equals: #(  ).
+	self
+		assert: (data at: #affectedClassNames) asSet
+		equals: #( 'MCPToolEditClassTestPushDownChildOne'
+			   'MCPToolEditClassTestPushDownChildTwo' ) asSet
+]
+
+{ #category : 'tests' }
 MCPToolEditClassTest >> testRenameUpdatesMethodReferences [
 
 	| reference |
@@ -644,6 +766,29 @@ MCPToolEditClassTest >> testReturnsStructuredErrorWhenMoveClassIsMissing [
 ]
 
 { #category : 'tests' }
+MCPToolEditClassTest >> testReturnsStructuredErrorWhenPullUpSlotClassIsMissing [
+
+	| error result structured |
+	result := self callToolWith: (self
+			           slotOperationArgumentsFor: 'pullUpSlot'
+			           className: 'MCPToolEditClassTestMissingPullUp'
+			           slotName: 'sharedSlot'
+			           classSide: false).
+	structured := self structuredContentFrom: result.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (structured at: #status) equals: 'error'.
+	self assert: (error at: #operation) equals: 'pullUpSlot'.
+	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
+	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
+	self
+		assert: (error at: #className)
+		equals: 'MCPToolEditClassTestMissingPullUp'.
+	self assert: (error at: #slotName) equals: 'sharedSlot'.
+	self assert: (error at: #classSide) equals: false
+]
+
+{ #category : 'tests' }
 MCPToolEditClassTest >> testReturnsStructuredErrorWhenRenameClassIsMissing [
 
 	| error result |
@@ -714,9 +859,13 @@ MCPToolEditClassTest >> testToolRequiresOperationAndClassNameInSchema [
 		assert: MCPToolEditClass new inputSchema required asSet
 		equals: #( 'operation' 'className' ) asSet.
 	self assert: (propertyNames includes: 'classComment').
+	self assert: (propertyNames includes: 'slotName').
+	self assert: (propertyNames includes: 'classSide').
 	self
 		assert: (operationProperty extraProperties at: #enum) asArray
-		equals: #( 'create' 'move' 'rename' 'reparent' 'setComment' )
+		equals:
+			#( 'create' 'move' 'rename' 'reparent' 'setComment' 'pullUpSlot'
+			   'pushDownSlot' )
 ]
 
 { #category : 'private - calling' }
