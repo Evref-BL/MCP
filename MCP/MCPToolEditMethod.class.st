@@ -6,6 +6,24 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'private' }
+MCPToolEditMethod >> allowedNonErrorCritiqueRuleClasses [
+
+	^ {
+		  ReMissingSuperSendsRule.
+		  ReReturnInEnsureRule.
+		  ReTempVarOverridesInstVarRule.
+		  ReUnaryAccessingMethodWithoutReturnRule }
+]
+
+{ #category : 'private' }
+MCPToolEditMethod >> classReferenceNameFor: className classSide: classSide [
+
+	^ classSide
+		  ifTrue: [ className , ' class' ]
+		  ifFalse: [ className ]
+]
+
 { #category : 'private - schema' }
 MCPToolEditMethod >> compiledMethodCritiqueSchema [
 
@@ -271,9 +289,8 @@ MCPToolEditMethod >> executeChangeProtocolWithArguments: arguments [
 				   protocol: protocol
 				   inMethod: selectorSymbol
 				   inClass:
-				   (self
-					    transformationClassNameFor: className
-					    classSide: classSide)) execute.
+				   (self classReferenceNameFor: className classSide: classSide))
+				  execute.
 			  newCompiledMethod := behavior compiledMethodAt: selectorSymbol ]
 		  successResult: [ :warningMessages |
 			  self
@@ -405,7 +422,7 @@ MCPToolEditMethod >> failureMessageForChangeProtocolClassNamed: className classS
 
 	| targetName |
 	targetName := self
-		              targetNameForClassName: className
+		              classReferenceNameFor: className
 		              classSide: classSide.
 	^ String streamContents: [ :stream |
 		  stream
@@ -425,7 +442,7 @@ MCPToolEditMethod >> failureMessageForCompileClassNamed: className classSide: cl
 
 	| targetName |
 	targetName := self
-		              targetNameForClassName: className
+		              classReferenceNameFor: className
 		              classSide: classSide.
 	^ String streamContents: [ :stream |
 		  stream
@@ -441,7 +458,7 @@ MCPToolEditMethod >> failureMessageForRenameClassNamed: className classSide: cla
 
 	| targetName |
 	targetName := self
-		              targetNameForClassName: className
+		              classReferenceNameFor: className
 		              classSide: classSide.
 	^ String streamContents: [ :stream |
 		  stream
@@ -460,16 +477,6 @@ MCPToolEditMethod >> failureMessageForRenameClassNamed: className classSide: cla
 MCPToolEditMethod >> identityPermutationForSelector: aSelector [
 
 	^ (1 to: aSelector numArgs) asArray
-]
-
-{ #category : 'private' }
-MCPToolEditMethod >> includedCritiqueRuleClasses [
-
-	^ {
-		  ReMissingSuperSendsRule.
-		  ReReturnInEnsureRule.
-		  ReTempVarOverridesInstVarRule.
-		  ReUnaryAccessingMethodWithoutReturnRule }
 ]
 
 { #category : 'private' }
@@ -536,21 +543,17 @@ MCPToolEditMethod >> reformattedCompiledMethodForBehavior: aBehavior selector: a
 ]
 
 { #category : 'private' }
-MCPToolEditMethod >> ruleForCritique: aCritique [
+MCPToolEditMethod >> shouldIncludeCritique: aCritique [
 
-	(aCritique respondsTo: #rule) ifFalse: [ ^ nil ].
-	^ aCritique rule
+	^ self shouldIncludeCritiqueRule: aCritique rule
 ]
 
 { #category : 'private' }
-MCPToolEditMethod >> shouldIncludeCritique: aCritique [
+MCPToolEditMethod >> shouldIncludeCritiqueRule: aRule [
 
-	| rule |
-	rule := self ruleForCritique: aCritique.
-	rule ifNil: [ ^ false ].
-	^ rule severity = #error or: [
-		  self includedCritiqueRuleClasses anySatisfy: [ :each |
-			  rule isKindOf: each ] ]
+	^ aRule severity = #error or: [
+		  self allowedNonErrorCritiqueRuleClasses anySatisfy: [ :each |
+			  aRule isKindOf: each ] ]
 ]
 
 { #category : 'private' }
@@ -561,22 +564,6 @@ MCPToolEditMethod >> sourceIntervalForCritique: aCritique [
 	(sourceAnchor notNil and: [ sourceAnchor providesInterval ])
 		ifFalse: [ ^ nil ].
 	^ sourceAnchor interval
-]
-
-{ #category : 'private' }
-MCPToolEditMethod >> targetNameForClassName: className classSide: classSide [
-
-	^ classSide
-		  ifTrue: [ className , ' class' ]
-		  ifFalse: [ className ]
-]
-
-{ #category : 'private' }
-MCPToolEditMethod >> transformationClassNameFor: className classSide: classSide [
-
-	^ classSide
-		  ifTrue: [ className , ' class' ]
-		  ifFalse: [ className ]
 ]
 
 { #category : 'private' }

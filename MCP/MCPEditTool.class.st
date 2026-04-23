@@ -38,13 +38,15 @@ MCPEditTool >> canonicalOperationNames [
 		  asArray
 ]
 
-{ #category : 'private' }
-MCPEditTool >> errorResultForCommandError: anError operation: operation [
+{ #category : 'private - errors' }
+MCPEditTool >> errorDetailsForRequestedContext: requestedContext causedBy: anError [
 
-	^ self
-		  errorResultForCommandError: anError
-		  operation: operation
-		  requestedContext: nil
+	| details |
+	details := requestedContext
+		           ifNil: [ Dictionary new ]
+		           ifNotNil: [ requestedContext copy ].
+	details at: #causeClass put: anError class name asString.
+	^ details
 ]
 
 { #category : 'private' }
@@ -116,30 +118,26 @@ MCPEditTool >> executeEditOperation: operation force: forceRequested requestedCo
 				  summary: (failureSummaryBlock value: error) ]
 ]
 
-{ #category : 'private - warnings' }
+{ #category : 'private - execution' }
 MCPEditTool >> executeOperationBlock: anOperationBlock force: forceRequested operation: operation requestedContext: requestedContext [
 
-	| value warningMessages |
+	| warningMessages |
 	warningMessages := OrderedCollection new.
-	value := [ anOperationBlock value ]
-		         on: RBRefactoringWarning
-		         do: [ :warning |
-			         | impactMessages |
-			         impactMessages := self
-				                           impactMessagesForRefactoringWarning:
-				                           warning.
-			         forceRequested
-				         ifTrue: [
-					         warningMessages addAll: impactMessages.
-					         warning resume: true ]
-				         ifFalse: [
-					         ^ { (#stoppedResult -> (self
-						             errorResultForRefactoringWarning: warning
-						             operation: operation
-						             requestedContext: requestedContext)) } asDictionary ] ].
-	^ {
-		  (#value -> value).
-		  (#warnings -> warningMessages asArray) } asDictionary
+	[ anOperationBlock value ]
+		on: RBRefactoringWarning
+		do: [ :warning |
+			| impactMessages |
+			impactMessages := self impactMessagesForRefactoringWarning: warning.
+			forceRequested
+				ifTrue: [
+					warningMessages addAll: impactMessages.
+					warning resume: true ]
+				ifFalse: [
+					^ { (#stoppedResult -> (self
+						    errorResultForRefactoringWarning: warning
+						    operation: operation
+						    requestedContext: requestedContext)) } asDictionary ] ].
+	^ { (#warnings -> warningMessages asArray) } asDictionary
 ]
 
 { #category : 'executing' }
@@ -232,10 +230,9 @@ MCPEditTool >> normalizedCommandErrorForOperationFailure: anError operation: ope
 	normalizedSummary := summary
 		                     ifNil: [ '' ]
 		                     ifNotNil: [ summary asString ].
-	details := requestedContext
-		           ifNil: [ Dictionary new ]
-		           ifNotNil: [ requestedContext copy ].
-	details at: #causeClass put: anError class name asString.
+	details := self
+		           errorDetailsForRequestedContext: requestedContext
+		           causedBy: anError.
 	self addSupplementalDetailsForOperationError: anError to: details.
 	^ MCPCommandError new
 		  errorCode:
@@ -255,10 +252,9 @@ MCPEditTool >> normalizedCommandErrorForRefactoringWarning: aWarning operation: 
 		           operation: operation
 		           requestedContext: requestedContext
 		           impactMessages: impactMessages.
-	details := requestedContext
-		           ifNil: [ Dictionary new ]
-		           ifNotNil: [ requestedContext copy ].
-	details at: #causeClass put: aWarning class name asString.
+	details := self
+		           errorDetailsForRequestedContext: requestedContext
+		           causedBy: aWarning.
 	details at: #impactMessages put: impactMessages.
 	details at: #howToProceed put: self howToProceedForRefactoringWarning.
 	details at: #forceSupported put: true.
