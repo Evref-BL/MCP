@@ -7,6 +7,54 @@ Class {
 }
 
 { #category : 'private - schema' }
+MCPToolEditMethod >> compiledMethodCritiqueSchema [
+
+	^ MCPStructureProperties new
+		  type: 'object';
+		  description:
+			  'One error-severity critique reported for the compiled method.';
+		  properties: {
+				  (self
+					   schemaPropertyNamed: 'ruleClass'
+					   type: 'string'
+					   description:
+						   'The Renraku rule class that reported the critique.').
+				  (self
+					   schemaPropertyNamed: 'title'
+					   type: 'string'
+					   description:
+						   'The short critique title, including any rule-specific hint.').
+				  (self
+					   schemaPropertyNamed: 'description'
+					   type: 'string'
+					   description:
+						   'The critique rationale explaining why this is considered an error.').
+				  (self
+					   integerSchemaPropertyNamed: 'start'
+					   description:
+						   'The first character position of the critique interval in the method source when available.').
+				  (self
+					   integerSchemaPropertyNamed: 'stop'
+					   description:
+						   'The last character position of the critique interval in the method source when available.') };
+		  required: #( 'ruleClass' 'title' 'description' );
+		  additionalProperties: false;
+		  yourself
+]
+
+{ #category : 'private - schema' }
+MCPToolEditMethod >> compiledMethodCritiquesSchemaProperty [
+
+	^ (self
+		   schemaPropertyNamed: 'critiques'
+		   type: 'array'
+		   description:
+			   'Error-severity Renraku critiques reported for the compiled method after compilation.')
+		  items: self compiledMethodCritiqueSchema;
+		  yourself
+]
+
+{ #category : 'private - schema' }
 MCPToolEditMethod >> compiledMethodDataProperties [
 
 	^ {
@@ -43,7 +91,39 @@ MCPToolEditMethod >> compiledMethodDataProperties [
 			   schemaPropertyNamed: 'source'
 			   type: 'string'
 			   description:
-			   'The formatted source code of the edited method after the operation.') }
+			   'The formatted source code of the edited method after the operation.').
+		  self compiledMethodCritiquesSchemaProperty }
+]
+
+{ #category : 'private' }
+MCPToolEditMethod >> critiqueDataFor: aCritique [
+
+	| data interval |
+	data := {
+		        (#ruleClass -> aCritique rule class name asString).
+		        (#title -> aCritique title asString).
+		        (#description -> aCritique description asString) }
+		        asDictionary.
+	interval := self sourceIntervalForCritique: aCritique.
+	interval ifNotNil: [
+		data
+			at: #start put: interval first;
+			at: #stop put: interval last ].
+	^ data
+]
+
+{ #category : 'private' }
+MCPToolEditMethod >> critiqueDataForCompiledMethod: aCompiledMethod [
+
+	| critiques |
+	critiques := aCompiledMethod critiques select: [ :each |
+		             (each respondsTo: #rule) and: [
+			             each rule notNil and: [ each rule severity = #error ] ] ].
+	^ ((critiques asSortedCollection: [ :left :right |
+		    left title = right title
+			    ifTrue: [ left rule class name < right rule class name ]
+			    ifFalse: [ left title < right title ] ]) collect: [ :each |
+		   self critiqueDataFor: each ]) asArray
 ]
 
 { #category : 'private' }
@@ -51,6 +131,16 @@ MCPToolEditMethod >> dataForCompiledMethod: aCompiledMethod [
 
 	^ (MCPCompiledMethodInfo fromCompiledMethod: aCompiledMethod)
 		  asDictionaryIncludingSource: true
+]
+
+{ #category : 'private' }
+MCPToolEditMethod >> dataForCompiledMethodWithCritiques: aCompiledMethod [
+
+	| critiques data |
+	data := self dataForCompiledMethod: aCompiledMethod.
+	critiques := self critiqueDataForCompiledMethod: aCompiledMethod.
+	critiques ifNotEmpty: [ data at: #critiques put: critiques ].
+	^ data
 ]
 
 { #category : 'defaults' }
@@ -239,7 +329,7 @@ MCPToolEditMethod >> executeCompileWithArguments: arguments [
 					  ,
 					  (self methodReferenceForBehavior: behavior selector: selector)
 					  , '.'
-				  data: (self dataForCompiledMethod: compiledMethod)
+				  data: (self dataForCompiledMethodWithCritiques: compiledMethod)
 				  warnings: warningMessages ]
 		  failureSummary: [ :error |
 			  self
@@ -434,6 +524,16 @@ MCPToolEditMethod >> reformattedCompiledMethodForBehavior: aBehavior selector: a
 	compiledMethod := aBehavior >> aSelector.
 	compiledMethod reformat.
 	^ aBehavior >> aSelector
+]
+
+{ #category : 'private' }
+MCPToolEditMethod >> sourceIntervalForCritique: aCritique [
+
+	| sourceAnchor |
+	sourceAnchor := aCritique sourceAnchor.
+	(sourceAnchor notNil and: [ sourceAnchor providesInterval ])
+		ifFalse: [ ^ nil ].
+	^ sourceAnchor interval
 ]
 
 { #category : 'private' }

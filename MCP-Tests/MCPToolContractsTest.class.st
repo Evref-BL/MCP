@@ -122,7 +122,7 @@ MCPToolContractsTest >> testEditMethodSchemaAdvertisesCompiledMethodState [
 		assert: propertyNames asSet
 		equals:
 			#( 'selector' 'className' 'side' 'packageName' 'isExtension'
-			   'protocol' 'source' ) asSet
+			   'protocol' 'source' 'critiques' ) asSet
 ]
 
 { #category : 'tests' }

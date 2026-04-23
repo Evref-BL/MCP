@@ -353,6 +353,34 @@ MCPToolEditMethodTest >> testCompileDefaultsToInstanceSideWhenClassSideIsOmitted
 ]
 
 { #category : 'tests' }
+MCPToolEditMethodTest >> testCompileReturnsErrorSeverityCritiquesOnly [
+
+	| critique critiques data result |
+	result := self callToolWith: (self
+			           compileArgumentsForClassName:
+			           'MCPToolEditMethodTestTarget'
+			           classSide: false
+			           methodSource: 'instanceProtocolTarget ^ True = true'
+			           protocol: 'tests').
+	data := self dataFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	critiques := data at: #critiques.
+	self assert: critiques class equals: Array.
+	self assert: critiques size equals: 1.
+	critique := critiques first.
+	self assert: (critique at: #ruleClass) equals: 'ReUsesTrueRule'.
+	self assert: ((critique at: #title) includesSubstring:
+			 'Uses True/False instead of true/false').
+	self assert: (critique at: #description) isString.
+	self deny: (critique at: #description) isEmpty.
+	self assert: (critique includesKey: #start).
+	self assert: (critique includesKey: #stop).
+	self assert: (critique at: #start) isInteger.
+	self assert: (critique at: #stop) isInteger.
+	self assert: (critique at: #start) < (critique at: #stop)
+]
+
+{ #category : 'tests' }
 MCPToolEditMethodTest >> testCompileReturnsStructuredCommandErrorForUndeclaredVariable [
 
 	| error result structured |
