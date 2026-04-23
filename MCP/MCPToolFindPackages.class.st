@@ -27,76 +27,59 @@ MCPToolFindPackages >> defaultIcons [
 { #category : 'defaults' }
 MCPToolFindPackages >> defaultInputSchema [
 
-	| filterModeProperty filterTargetsItemProperty filterTargetsProperty projectNamesProperty scopeProperty |
-	scopeProperty := MCPStructureProperties new
-		                 name: 'scope';
-		                 type: 'string';
+	| filterModeProperty filterTargetsProperty projectNamesProperty scopeProperty |
+	scopeProperty := self
+		                 stringEnumSchemaPropertyNamed: 'scope'
 		                 description:
-			                 'Where to search for packages. Defaults to image.';
-		                 enum: #( 'image' 'project' );
-		                 default: 'image';
-		                 yourself.
+		                 'Where to search for packages. Defaults to image.'
+		                 values: #( 'image' 'project' )
+		                 default: 'image'.
 	projectNamesProperty := self
 		                        stringArraySchemaNamed: 'projectNames'
 		                        description:
 		                        'The project names that define the project scope. Required when scope=project.'
 		                        itemDescription: 'A project name.'.
-	filterModeProperty := MCPStructureProperties new
-		                      name: 'filterMode';
-		                      type: 'string';
+	filterModeProperty := self
+		                      stringEnumSchemaPropertyNamed: 'filterMode'
 		                      description:
-			                      'How the package filter is matched. Defaults to substring.';
-		                      enum:
-			                      #( 'substring' 'prefix' 'exact' 'regex' );
-		                      default: 'substring';
-		                      yourself.
-	filterTargetsItemProperty := MCPStructureProperties new
-		                             type: 'string';
-		                             description: 'A filter target.';
-		                             enum: self supportedFilterTargets;
-		                             yourself.
-	filterTargetsProperty := (self
-		                          schemaPropertyNamed: 'filterTargets'
-		                          type: 'array'
-		                          description:
-			                          'Optional package-entry fields matched by filter. Defaults to package.')
-		                         items: filterTargetsItemProperty;
-		                         default: self defaultFilterTargets;
-		                         yourself.
+		                      'How the package filter is matched. Defaults to substring.'
+		                      values:
+		                      #( 'substring' 'prefix' 'exact' 'regex' )
+		                      default: 'substring'.
+	filterTargetsProperty := self
+		                         stringEnumArraySchemaNamed: 'filterTargets'
+		                         description:
+		                         'Optional package-entry fields matched by filter. Defaults to package.'
+		                         itemDescription: 'A filter target.'
+		                         values: self supportedFilterTargets
+		                         default: self defaultFilterTargets.
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties: {
 				  scopeProperty.
 				  projectNamesProperty.
-				  (MCPStructureProperties new
-					   name: 'filter';
-					   type: 'string';
+				  (self
+					   schemaPropertyNamed: 'filter'
+					   type: 'string'
 					   description:
-						   'Optional filter applied to the listed package-entry fields. Use filterTargets to choose which fields are matched.';
-					   yourself).
+						   'Optional filter applied to the listed package-entry fields. Use filterTargets to choose which fields are matched.').
 				  filterTargetsProperty.
 				  filterModeProperty.
-				  (MCPStructureProperties new
-					   name: 'caseSensitive';
-					   type: 'boolean';
+				  (self
+					   booleanSchemaPropertyNamed: 'caseSensitive'
 					   description:
-						   'Whether filter matching is case-sensitive. Defaults to false.';
-					   default: false;
-					   yourself).
-				  (MCPStructureProperties new
-					   name: 'limit';
-					   type: 'integer';
+						   'Whether filter matching is case-sensitive. Defaults to false.'
+					   default: false).
+				  (self
+					   integerSchemaPropertyNamed: 'limit'
 					   description:
-						   'Maximum number of matching packages to return. Defaults to 100. Use 0 to request counts only.';
-					   default: 100;
-					   yourself).
-				  (MCPStructureProperties new
-					   name: 'offset';
-					   type: 'integer';
+						   'Maximum number of matching packages to return. Defaults to 100. Use 0 to request counts only.'
+					   default: 100).
+				  (self
+					   integerSchemaPropertyNamed: 'offset'
 					   description:
-						   'Zero-based pagination offset applied after filtering. Defaults to 0.';
-					   default: 0;
-					   yourself) };
+						   'Zero-based pagination offset applied after filtering. Defaults to 0.'
+					   default: 0) };
 		  required: #(  );
 		  yourself
 ]
@@ -110,65 +93,12 @@ MCPToolFindPackages >> defaultName [
 { #category : 'defaults' }
 MCPToolFindPackages >> defaultOutputSchema [
 
-	| filterTargetsItemProperty filterTargetsProperty packageEntryProperty projectNamesProperty |
-	projectNamesProperty := self
-		                        stringArraySchemaNamed: 'projectNames'
-		                        description:
-		                        'The project names that define the project scope. Required when scope=project.'
-		                        itemDescription: 'A project name.'.
-	filterTargetsItemProperty := MCPStructureProperties new
-		                             type: 'string';
-		                             description: 'A filter target.';
-		                             enum: self supportedFilterTargets;
-		                             yourself.
-	filterTargetsProperty := (self
-		                          schemaPropertyNamed: 'filterTargets'
-		                          type: 'array'
-		                          description:
-			                          'The package-entry fields matched by filter. Defaults to package.')
-		                         items: filterTargetsItemProperty;
-		                         yourself.
-	packageEntryProperty := self
-		                        schemaPropertyNamed: 'packages'
-		                        type: 'array'
-		                        description:
-		                        'The package entries returned for the requested page.'.
-	packageEntryProperty items: self packageEntrySchema.
 	^ self
-		  standardOutputSchemaForDataProperties: {
-				  ((self
-					    schemaPropertyNamed: 'scope'
-					    type: 'string'
-					    description: 'The scope used to search for packages.')
-					   enum: #( 'image' 'project' );
-					   yourself).
-				  projectNamesProperty.
-				  filterTargetsProperty.
-				  (self
-					   integerSchemaPropertyNamed: 'returnedCount'
-					   description:
-					   'The number of package entries returned in this page.').
-				  (self
-					   integerSchemaPropertyNamed: 'totalCount'
-					   description:
-					   'The total number of matching packages before pagination.').
-				  (self
-					   integerSchemaPropertyNamed: 'offset'
-					   description:
-					   'The zero-based pagination offset that was applied.').
-				  (self
-					   integerSchemaPropertyNamed: 'limit'
-					   description:
-					   'The maximum number of package entries requested.').
-				  (self
-					   schemaPropertyNamed: 'truncated'
-					   type: 'boolean'
-					   description:
-					   'Whether additional matching packages exist beyond the returned page.').
-				  packageEntryProperty }
-		  required:
-			  #( 'scope' 'projectNames' 'filterTargets' 'returnedCount'
-			     'totalCount' 'offset' 'limit' 'truncated' 'packages' )
+		  minimalPagedQueryOutputSchemaForEntriesPropertyNamed: 'packages'
+		  entriesDescription:
+		  'The package entries returned for the requested page.'
+		  entrySchema: self packageEntrySchema
+		  itemNounPhrase: 'package entries'
 ]
 
 { #category : 'defaults' }
@@ -188,14 +118,10 @@ MCPToolFindPackages >> failureMessageForRequestedContext: requestedContext error
 { #category : 'private - results' }
 MCPToolFindPackages >> failureMessageForScope: scope error: anError [
 
-	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: 'Unable to query packages [scope=';
-			  nextPutAll: scope;
-			  nextPutAll: '] (';
-			  nextPutAll: anError class name;
-			  nextPutAll: '): ';
-			  nextPutAll: anError messageText ]
+	^ self
+		  scopeQueryFailureMessageFor: 'packages'
+		  scope: scope
+		  error: anError
 ]
 
 { #category : 'private - filtering' }
@@ -236,7 +162,7 @@ MCPToolFindPackages >> packageEntriesFrom: packages packageProjectNames: package
 			                ifAbsent: [ #(  ) ].
 		entry := (MCPPackageInfo
 			          fromPackage: eachPackage
-			          projectNames: projectNames) asDictionary.
+			          projectNames: projectNames) asQueryDictionary.
 		(filterPattern isNil or: [
 			 self
 				 matchesFilterOnPackageEntry: entry
@@ -253,9 +179,7 @@ MCPToolFindPackages >> packageEntrySchema [
 		  type: 'object';
 		  description: 'Structured metadata for one queried package.';
 		  properties: self packageInfoDataProperties;
-		  required:
-			  #( 'packageName' 'projectNames' 'tagNames' 'definedClassCount'
-			     'extensionMethodCount' 'isUndefined' );
+		  required: #( 'packageName' 'projectNames' 'tagNames' );
 		  additionalProperties: false;
 		  yourself
 ]
@@ -275,19 +199,7 @@ MCPToolFindPackages >> packageInfoDataProperties [
 		  (self
 			   stringArraySchemaNamed: 'tagNames'
 			   description: 'The package tag names defined in the package.'
-			   itemDescription: 'A package tag name.').
-		  (self
-			   integerSchemaPropertyNamed: 'definedClassCount'
-			   description: 'The number of classes defined in the package.').
-		  (self
-			   integerSchemaPropertyNamed: 'extensionMethodCount'
-			   description:
-			   'The number of extension methods owned by the package.').
-		  (self
-			   schemaPropertyNamed: 'isUndefined'
-			   type: 'boolean'
-			   description:
-			   'Whether the package belongs to the undefined project bucket.') }
+			   itemDescription: 'A package tag name.') }
 ]
 
 { #category : 'private - template' }
@@ -339,16 +251,7 @@ MCPToolFindPackages >> queryParametersFromArguments: arguments [
 { #category : 'private - template' }
 MCPToolFindPackages >> queryResultDataForParameters: parameters page: page [
 
-	| scopeQuery |
-	scopeQuery := parameters at: #scopeQuery.
-	^ self
-		  queryResultDataFrom: {
-				  (#scope -> scopeQuery scope).
-				  (#projectNames -> scopeQuery projectNames).
-				  (#filterTargets -> (parameters at: #filterTargets)) }
-				  asDictionary
-		  page: page
-		  entriesKey: #packages
+	^ self queryResultDataFrom: nil page: page entriesKey: #packages
 ]
 
 { #category : 'private - template' }
@@ -380,16 +283,12 @@ MCPToolFindPackages >> successSummaryForParameters: parameters page: page [
 { #category : 'private - results' }
 MCPToolFindPackages >> successSummaryForScope: scope returnedCount: returnedCount totalCount: totalCount truncated: truncated [
 
-	^ String streamContents: [ :stream |
-		  stream
-			  print: returnedCount;
-			  nextPutAll: ' packages found [scope=';
-			  nextPutAll: scope;
-			  nextPutAll: '] (';
-			  print: totalCount;
-			  nextPutAll: ' matched'.
-		  truncated ifTrue: [ stream nextPutAll: ', more available' ].
-		  stream nextPutAll: ').' ]
+	^ self
+		  scopeQuerySuccessSummaryFor: 'packages'
+		  scope: scope
+		  returnedCount: returnedCount
+		  totalCount: totalCount
+		  truncated: truncated
 ]
 
 { #category : 'private - arguments' }

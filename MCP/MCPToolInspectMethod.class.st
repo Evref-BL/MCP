@@ -87,27 +87,8 @@ MCPToolInspectMethod >> defaultName [
 { #category : 'defaults' }
 MCPToolInspectMethod >> defaultOutputSchema [
 
-	| variableNameItemSchema |
-	variableNameItemSchema := MCPStructureProperties new
-		                          type: 'string';
-		                          description: 'A variable name.';
-		                          yourself.
 	^ self
 		  standardOutputSchemaForDataProperties: {
-				  (self
-					   schemaPropertyNamed: 'className'
-					   type: 'string'
-					   description: 'The class that defines the method.').
-				  (self
-					   schemaPropertyNamed: 'selector'
-					   type: 'string'
-					   description: 'The selector that was inspected.').
-				  ((self
-					    schemaPropertyNamed: 'side'
-					    type: 'string'
-					    description: 'The requested method side.')
-					   enum: #( 'instance' 'class' );
-					   yourself).
 				  (self
 					   schemaPropertyNamed: 'protocol'
 					   type: 'string'
@@ -117,49 +98,13 @@ MCPToolInspectMethod >> defaultOutputSchema [
 					   type: 'string'
 					   description: 'The formatted source code of the method.').
 				  ((self
-					    schemaPropertyNamed: 'argumentNames'
-					    type: 'array'
-					    description:
-						    'The top-level argument names declared by the method.')
-					   items: variableNameItemSchema;
-					   yourself).
-				  ((self
-					    schemaPropertyNamed: 'temporaryNames'
-					    type: 'array'
-					    description:
-						    'The top-level temporary variable names declared by the method.')
-					   items: variableNameItemSchema;
-					   yourself).
-				  (self
-					   schemaPropertyNamed: 'variableDetailsIncluded'
-					   type: 'boolean'
-					   description:
-					   'Whether variable reference summaries and counts are included in the result.').
-				  (self
-					   integerSchemaPropertyNamed: 'variableReferenceCount'
-					   description:
-					   'The number of unique referenced variables summarized in the result when variable details are included.').
-				  (self
-					   integerSchemaPropertyNamed: 'externalVariableCount'
-					   description:
-					   'The number of unique referenced variables that are external to the method, excluding self, when variable details are included.').
-				  ((self
 					    schemaPropertyNamed: 'variableReferences'
 					    type: 'array'
 					    description:
-						    'Structured summaries of all referenced variables in first-use order when variable details are included.')
-					   items: self variableReferenceSchema;
-					   yourself).
-				  ((self
-					    schemaPropertyNamed: 'externalVariableReferences'
-					    type: 'array'
-					    description:
-						    'Structured summaries of referenced variables that are external to the method, excluding self, when variable details are included.')
+						    'Structured summaries of referenced variables in first-use order when variable details are included.')
 					   items: self variableReferenceSchema;
 					   yourself) }
-		  required:
-			  #( 'className' 'selector' 'side' 'protocol' 'source' 'argumentNames'
-			     'temporaryNames' 'variableDetailsIncluded' )
+		  required: #( 'protocol' 'source' )
 ]
 
 { #category : 'defaults' }
@@ -195,7 +140,7 @@ MCPToolInspectMethod >> errorResultForError: anError className: className select
 { #category : 'executing' }
 MCPToolInspectMethod >> executeWithArguments: arguments [
 
-	| argumentNames className compiledMethod data externalVariableReferences includeVariableDetails methodBehavior methodNode protocolName selectorString side temporaryNames variableReferences |
+	| className compiledMethod data includeVariableDetails methodBehavior protocolName selectorString side variableReferences |
 	className := self
 		             argumentNamed: 'className'
 		             in: arguments
@@ -212,25 +157,13 @@ MCPToolInspectMethod >> executeWithArguments: arguments [
 		                    compiledMethodForClassNamed: className
 		                    selector: selectorString
 		                    side: side.
-	  methodNode := compiledMethod ast.
 	  protocolName := compiledMethod protocol
 		                  ifNil: [ '' ]
 		                  ifNotNil: [ :protocol | protocol name asString ].
-	  argumentNames := (methodNode arguments collect: [ :each |
-		                    each name asString ]) asArray.
-	  temporaryNames := (methodNode temporaries collect: [ :each |
-		                     each name asString ]) asArray.
 	  data := {
-		          (#className -> className).
-		          (#selector -> selectorString).
-		          (#side -> side).
 		          (#protocol -> protocolName).
-		          (#source -> (compiledMethod sourceCode ifNil: [ '' ])).
-		          (#argumentNames -> argumentNames).
-		          (#temporaryNames -> temporaryNames).
-		          (#variableDetailsIncluded -> includeVariableDetails) }
+		          (#source -> (compiledMethod sourceCode ifNil: [ '' ])) }
 		          asDictionary.
-	  externalVariableReferences := nil.
 	  includeVariableDetails ifTrue: [
 		  methodBehavior := self
 			                    methodBehaviorForClassNamed: className
@@ -238,22 +171,13 @@ MCPToolInspectMethod >> executeWithArguments: arguments [
 		  variableReferences := self
 			                        variableSummariesForMethod: compiledMethod
 			                        methodBehavior: methodBehavior.
-		  externalVariableReferences := (variableReferences select: [ :each |
-			                                 self isExternalVariableKind:
-				                                 (each at: #kind) ]) asArray.
-		  data
-			  at: #variableReferenceCount put: variableReferences size;
-			  at: #externalVariableCount put: externalVariableReferences size;
-			  at: #variableReferences put: variableReferences;
-			  at: #externalVariableReferences put: externalVariableReferences ].
+		  data at: #variableReferences put: variableReferences ].
 	  self
 		  successResultText: (self
 				   successSummaryForClassName: className
 				   selector: selectorString
 				   side: side
-				   externalVariableCount: (externalVariableReferences
-						    ifNil: [ nil ]
-						    ifNotNil: [ externalVariableReferences size ]))
+				   externalVariableCount: nil)
 		  data: data ]
 		  on: Error
 		  do: [ :error |

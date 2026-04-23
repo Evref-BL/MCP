@@ -110,6 +110,25 @@ MCPTool >> booleanArgumentNamed: anArgumentName in: arguments default: aBoolean 
 	Error signal: anArgumentName asString , ' must be a boolean.'
 ]
 
+{ #category : 'private - schema' }
+MCPTool >> booleanSchemaPropertyNamed: propertyName description: propertyDescription [
+
+	^ self
+		  schemaPropertyNamed: propertyName
+		  type: 'boolean'
+		  description: propertyDescription
+]
+
+{ #category : 'private - schema' }
+MCPTool >> booleanSchemaPropertyNamed: propertyName description: propertyDescription default: defaultValue [
+
+	^ (self
+		   booleanSchemaPropertyNamed: propertyName
+		   description: propertyDescription)
+		  default: defaultValue;
+		  yourself
+]
+
 { #category : 'private - methods' }
 MCPTool >> compiledMethodEntriesFrom: compiledMethods filter: filterPattern filterMode: filterMode caseSensitive: caseSensitive includeSource: includeSource [
 
@@ -399,6 +418,16 @@ MCPTool >> integerSchemaPropertyNamed: propertyName description: propertyDescrip
 		  description: propertyDescription
 ]
 
+{ #category : 'private - schema' }
+MCPTool >> integerSchemaPropertyNamed: propertyName description: propertyDescription default: defaultValue [
+
+	^ (self
+		   integerSchemaPropertyNamed: propertyName
+		   description: propertyDescription)
+		  default: defaultValue;
+		  yourself
+]
+
 { #category : 'private - filtering' }
 MCPTool >> matcherForPattern: aPattern mode: aMode caseSensitive: aBoolean [
 
@@ -427,14 +456,6 @@ MCPTool >> matcherForPattern: aPattern mode: aMode caseSensitive: aBoolean [
 		  (self normalizeFilterString: candidate caseSensitive: aBoolean)
 		  = normalizedPattern ] ].
 	Error signal: 'Unsupported filter mode: ' , aMode
-]
-
-{ #category : 'private - filtering' }
-MCPTool >> matchesFilterMode: filterMode matcher: aMatcher filterText: filterText exactValues: exactValues [
-
-	filterMode = 'exact' ifFalse: [ ^ aMatcher value: filterText ].
-
-	^ exactValues anySatisfy: [ :each | aMatcher value: each ]
 ]
 
 { #category : 'private - filtering' }
@@ -515,37 +536,6 @@ MCPTool >> normalizedFilterModeFrom: arguments [
 		Error signal:
 			'filterMode must be one of substring, prefix, exact, or regex.' ].
 	^ mode
-]
-
-{ #category : 'private - arguments' }
-MCPTool >> normalizedFilterTargetsFrom: arguments [
-
-	| invalidTargets normalizedTargets rawTargets supportedTargets |
-	rawTargets := self
-		              argumentNamed: 'filterTargets'
-		              in: arguments
-		              ifAbsent: [ ^ self defaultFilterTargets ].
-	supportedTargets := self supportedFilterTargets.
-	normalizedTargets := OrderedCollection new.
-	invalidTargets := OrderedCollection new.
-	(self
-		 normalizedStringCollection: rawTargets
-		 argumentName: 'filterTargets') do: [ :each |
-		| canonical |
-		canonical := supportedTargets
-			             detect: [ :supported |
-			             supported asLowercase = each asLowercase ]
-			             ifNone: [ nil ].
-		canonical ifNil: [ invalidTargets add: each ] ifNotNil: [
-			(normalizedTargets includes: canonical) ifFalse: [
-				normalizedTargets add: canonical ] ] ].
-	invalidTargets ifNotEmpty: [
-		Error signal: 'Unsupported filterTargets value(s): '
-			, invalidTargets asArray printString , '. Supported targets are '
-			, supportedTargets printString , '.' ].
-	normalizedTargets ifEmpty: [
-		Error signal: 'filterTargets must contain at least one target.' ].
-	^ normalizedTargets asArray
 ]
 
 { #category : 'private - arguments' }
@@ -662,10 +652,9 @@ MCPTool >> standardOutputSchemaForDataProperties: dataProperties required: requi
 		required: #( 'message' );
 		additionalProperties: true.
 	statusProperty := self
-		                  schemaPropertyNamed: 'status'
-		                  type: 'string'
-		                  description: 'The tool result status.'.
-	statusProperty enum: #( 'ok' 'error' ).
+		                  stringEnumSchemaPropertyNamed: 'status'
+		                  description: 'The tool result status.'
+		                  values: #( 'ok' 'error' ).
 	summaryProperty := self
 		                   schemaPropertyNamed: 'summary'
 		                   type: 'string'
@@ -687,7 +676,7 @@ MCPTool >> standardOutputSchemaForDataProperties: dataProperties required: requi
 { #category : 'private - tests' }
 MCPTool >> standardTestDataPropertiesIncludingMethodName: includeMethodName [
 
-	| failingNamesProperty issuesProperty properties |
+	| issuesProperty properties |
 	properties := OrderedCollection withAll: {
 			              (self
 				               schemaPropertyNamed: 'className'
@@ -695,36 +684,12 @@ MCPTool >> standardTestDataPropertiesIncludingMethodName: includeMethodName [
 				               description: 'The test class that was executed.').
 			              (self
 				               integerSchemaPropertyNamed: 'runCount'
-				               description: 'The number of tests that ran.').
-			              (self
-				               integerSchemaPropertyNamed: 'passedCount'
-				               description: 'The number of tests that passed.').
-			              (self
-				               integerSchemaPropertyNamed: 'skippedCount'
-				               description:
-				               'The number of tests that were skipped.').
-			              (self
-				               integerSchemaPropertyNamed: 'failureCount'
-				               description: 'The number of failing tests.').
-			              (self
-				               integerSchemaPropertyNamed: 'errorCount'
-				               description:
-				               'The number of tests ending in errors.') }.
+				               description: 'The number of tests that ran.') }.
 	includeMethodName ifTrue: [
 		properties add: (self
 				 schemaPropertyNamed: 'testMethodName'
 				 type: 'string'
 				 description: 'The single test method that was executed.') ].
-	failingNamesProperty := self
-		                        schemaPropertyNamed: 'failingTestNames'
-		                        type: 'array'
-		                        description:
-		                        'Readable identifiers for tests that failed or errored.'.
-	failingNamesProperty items: (MCPStructureProperties new
-			 type: 'string';
-			 description: 'A failing test identifier.';
-			 yourself).
-	properties add: failingNamesProperty.
 	issuesProperty := self
 		                  schemaPropertyNamed: 'issues'
 		                  type: 'array'
@@ -740,9 +705,7 @@ MCPTool >> standardTestRequiredFieldsIncludingMethodName: includeMethodName [
 
 	| required |
 	required := OrderedCollection withAll:
-		            #( 'className' 'runCount' 'passedCount' 'skippedCount'
-		               'failureCount' 'errorCount' 'failingTestNames'
-		               'issues' ).
+		            #( 'className' 'runCount' 'issues' ).
 	includeMethodName ifTrue: [ required add: 'testMethodName' ].
 	^ required asArray
 ]
@@ -778,38 +741,73 @@ MCPTool >> stringArraySchemaNamed: aName description: aDescription itemDescripti
 		  yourself
 ]
 
-{ #category : 'private - arguments' }
-MCPTool >> stringCollectionArgumentNamed: anArgumentName in: arguments [
+{ #category : 'private - schema' }
+MCPTool >> stringEnumArraySchemaNamed: propertyName description: propertyDescription itemDescription: itemDescription values: enumValues [
 
-	^ self
-		  normalizedStringCollection:
-		  (self
-			   argumentNamed: anArgumentName
-			   in: arguments
-			   ifAbsent: [ nil ])
-		  argumentName: anArgumentName
+	| itemsProperty |
+	itemsProperty := MCPStructureProperties new
+		                 type: 'string';
+		                 description: itemDescription;
+		                 enum: enumValues;
+		                 yourself.
+	^ (self
+		   schemaPropertyNamed: propertyName
+		   type: 'array'
+		   description: propertyDescription)
+		  items: itemsProperty;
+		  yourself
+]
+
+{ #category : 'private - schema' }
+MCPTool >> stringEnumArraySchemaNamed: propertyName description: propertyDescription itemDescription: itemDescription values: enumValues default: defaultValues [
+
+	^ (self
+		   stringEnumArraySchemaNamed: propertyName
+		   description: propertyDescription
+		   itemDescription: itemDescription
+		   values: enumValues)
+		  default: defaultValues;
+		  yourself
+]
+
+{ #category : 'private - schema' }
+MCPTool >> stringEnumSchemaPropertyNamed: propertyName description: propertyDescription values: enumValues [
+
+	^ (self
+		   schemaPropertyNamed: propertyName
+		   type: 'string'
+		   description: propertyDescription)
+		  enum: enumValues;
+		  yourself
+]
+
+{ #category : 'private - schema' }
+MCPTool >> stringEnumSchemaPropertyNamed: propertyName description: propertyDescription values: enumValues default: defaultValue [
+
+	^ (self
+		   stringEnumSchemaPropertyNamed: propertyName
+		   description: propertyDescription
+		   values: enumValues)
+		  default: defaultValue;
+		  yourself
 ]
 
 { #category : 'private - tests' }
 MCPTool >> structuredDataForTestResult: aResult className: className testMethodName: testMethodName [
 
-	| data issues failingNames |
-	issues := aResult issueDetails asSortedCollection: [ :left :right |
-		          (left at: #testName) <= (right at: #testName) ].
-	failingNames := (issues select: [ :each |
-		                 #( 'failure' 'error' ) includes: (each at: #kind) ])
-		                collect: [ :each | each at: #testName ]
-		                as: Array.
+	| data issues |
+	issues := (aResult issueDetails asSortedCollection: [ :left :right |
+		           (left at: #testName) <= (right at: #testName) ])
+		          collect: [ :each |
+			          | issue |
+			          issue := each copy.
+			          issue removeKey: #testName ifAbsent: [  ].
+			          issue ].
 	data := Dictionary new.
 	data at: #className put: className.
 	testMethodName ifNotNil: [
 		data at: #testMethodName put: testMethodName ].
 	data at: #runCount put: aResult runCount.
-	data at: #passedCount put: aResult passedCount.
-	data at: #skippedCount put: aResult skippedCount.
-	data at: #failureCount put: aResult failureCount.
-	data at: #errorCount put: aResult errorCount.
-	data at: #failingTestNames put: failingNames.
 	data at: #issues put: issues asArray.
 	^ data
 ]
@@ -874,11 +872,6 @@ MCPTool >> testIssueObjectSchema [
 					                  description:
 						                  'The test method that produced the issue.').
 				                 (self
-					                  schemaPropertyNamed: 'testName'
-					                  type: 'string'
-					                  description:
-						                  'A readable test identifier combining class and method.').
-				                 (self
 					                  schemaPropertyNamed: 'errorClass'
 					                  type: 'string'
 					                  description:
@@ -900,7 +893,7 @@ MCPTool >> testIssueObjectSchema [
 						                  'The signaler context captured for the issue when available.') };
 		                 required:
 			                 #( 'kind' 'className' 'testMethodName'
-			                    'testName' 'errorClass' 'message' );
+			                    'errorClass' 'message' );
 		                 additionalProperties: false;
 		                 yourself.
 	^ issueProperty
@@ -948,15 +941,9 @@ MCPTool >> validateArguments: arguments [
 { #category : 'private - schema' }
 MCPTool >> warningsSchemaProperty [
 
-	| warningsProperty |
-	warningsProperty := self
-		                    schemaPropertyNamed: 'warnings'
-		                    type: 'array'
-		                    description:
-		                    'Human-readable warnings associated with the tool result. Empty when no warnings were produced.'.
-	warningsProperty items: (MCPStructureProperties new
-			 type: 'string';
-			 description: 'A warning message.';
-			 yourself).
-	^ warningsProperty
+	^ self
+		  stringArraySchemaNamed: 'warnings'
+		  description:
+		  'Human-readable warnings associated with the tool result. Empty when no warnings were produced.'
+		  itemDescription: 'A warning message.'
 ]

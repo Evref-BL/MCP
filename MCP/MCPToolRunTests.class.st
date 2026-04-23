@@ -9,36 +9,9 @@ Class {
 { #category : 'private' }
 MCPToolRunTests >> aggregateDataForResults: resultEntries tests: testRequests [
 
-	| data failingNames issues |
-	failingNames := OrderedCollection new.
-	issues := OrderedCollection new.
-	resultEntries do: [ :each |
-		failingNames addAll: (each at: #failingTestNames).
-		issues addAll: (each at: #issues) ].
-	issues := issues asSortedCollection: [ :left :right |
-		          (left at: #testName) <= (right at: #testName) ].
-	data := Dictionary new.
-	data at: #tests put: (self compactTestNamesFrom: testRequests).
-	data at: #selectionCount put: testRequests size.
-	data at: #results put: resultEntries asArray.
-	data at: #runCount put: (resultEntries
-			 inject: 0
-			 into: [ :sum :each | sum + (each at: #runCount) ]).
-	data at: #passedCount put: (resultEntries
-			 inject: 0
-			 into: [ :sum :each | sum + (each at: #passedCount) ]).
-	data at: #skippedCount put: (resultEntries
-			 inject: 0
-			 into: [ :sum :each | sum + (each at: #skippedCount) ]).
-	data at: #failureCount put: (resultEntries
-			 inject: 0
-			 into: [ :sum :each | sum + (each at: #failureCount) ]).
-	data at: #errorCount put: (resultEntries
-			 inject: 0
-			 into: [ :sum :each | sum + (each at: #errorCount) ]).
-	data at: #failingTestNames put: failingNames asArray.
-	data at: #issues put: issues asArray.
-	^ data
+	^ Dictionary new
+		  at: #results put: resultEntries asArray;
+		  yourself
 ]
 
 { #category : 'private' }
@@ -87,69 +60,14 @@ MCPToolRunTests >> defaultName [
 MCPToolRunTests >> defaultOutputSchema [
 
 	^ self
-		  standardOutputSchemaForDataProperties: {
-				  ((self
-					    schemaPropertyNamed: 'tests'
-					    type: 'array'
-					    description:
-						    'The normalized batch of test execution requests that ran, expressed as class names for full test classes and test selectors for individual test methods.')
-					   items: (MCPStructureProperties new
-							    type: 'string';
-							    description: 'A normalized test request name.';
-							    yourself);
-					   yourself).
-				  (self
-					   integerSchemaPropertyNamed: 'selectionCount'
-					   description:
-					   'The number of test execution requests in the batch.').
-				  ((self
-					    schemaPropertyNamed: 'results'
-					    type: 'array'
-					    description:
-						    'Structured results for each test execution request in the batch.')
-					   items: self testResultObjectSchema;
-					   yourself).
-				  (self
-					   integerSchemaPropertyNamed: 'runCount'
-					   description:
-					   'The total number of tests that ran across the batch.').
-				  (self
-					   integerSchemaPropertyNamed: 'passedCount'
-					   description:
-					   'The total number of tests that passed across the batch.').
-				  (self
-					   integerSchemaPropertyNamed: 'skippedCount'
-					   description:
-					   'The total number of tests that were skipped across the batch.').
-				  (self
-					   integerSchemaPropertyNamed: 'failureCount'
-					   description:
-					   'The total number of failing tests across the batch.').
-				  (self
-					   integerSchemaPropertyNamed: 'errorCount'
-					   description:
-					   'The total number of tests ending in errors across the batch.').
-				  ((self
-					    schemaPropertyNamed: 'failingTestNames'
-					    type: 'array'
-					    description:
-						    'Readable identifiers for tests that failed or errored across the batch.')
-					   items: (MCPStructureProperties new
-							    type: 'string';
-							    description: 'A failing test identifier.';
-							    yourself);
-					   yourself).
-				  ((self
-					    schemaPropertyNamed: 'issues'
-					    type: 'array'
-					    description:
-						    'Detailed issues captured while running the batch.')
-					   items: self testIssueObjectSchema;
-					   yourself) }
-		  required:
-			  #( 'tests' 'selectionCount' 'results' 'runCount' 'passedCount'
-			     'skippedCount' 'failureCount' 'errorCount' 'failingTestNames'
-			     'issues' )
+		  standardOutputSchemaForDataProperties: { ((self
+				    schemaPropertyNamed: 'results'
+				    type: 'array'
+				    description:
+					    'Structured results for each test execution request in the batch.')
+				   items: self testResultObjectSchema;
+				   yourself) }
+		  required: #( 'results' )
 ]
 
 { #category : 'defaults' }
@@ -236,19 +154,27 @@ MCPToolRunTests >> resultForValidatedRequest: aDictionary [
 { #category : 'private' }
 MCPToolRunTests >> successSummaryForData: data [
 
-	| failureLikeCount selectionWord |
-	selectionWord := (data at: #selectionCount) = 1
+	| failureLikeCount results runCount selectionCount selectionWord |
+	results := data at: #results.
+	selectionCount := results size.
+	selectionWord := selectionCount = 1
 		                 ifTrue: [ 'test selection' ]
 		                 ifFalse: [ 'test selections' ].
-	failureLikeCount := (data at: #failureCount) + (data at: #errorCount).
+	runCount := results
+		            inject: 0
+		            into: [ :sum :each | sum + (each at: #runCount) ].
+	failureLikeCount := results inject: 0 into: [ :sum :each |
+		                    sum + ((each at: #issues) count: [ :issue |
+			                     #( 'failure' 'error' ) includes:
+				                     (issue at: #kind) ]) asInteger ].
 	^ String streamContents: [ :stream |
 		  stream
 			  nextPutAll: 'Executed ';
-			  nextPutAll: (data at: #selectionCount) asString;
+			  nextPutAll: selectionCount asString;
 			  nextPutAll: ' ';
 			  nextPutAll: selectionWord;
 			  nextPutAll: ' covering ';
-			  nextPutAll: (data at: #runCount) asString;
+			  nextPutAll: runCount asString;
 			  nextPutAll: ' tests.'.
 		  failureLikeCount > 0 ifTrue: [
 			  stream

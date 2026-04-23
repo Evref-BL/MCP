@@ -12,6 +12,12 @@ MCPQueryTool class >> isAbstract [
 	^ self = MCPQueryTool
 ]
 
+{ #category : 'private - arguments' }
+MCPQueryTool >> defaultFilterTargets [
+
+	self subclassResponsibility
+]
+
 { #category : 'private - results' }
 MCPQueryTool >> errorResultForQueryError: anError requestedContext: requestedContext [
 
@@ -63,6 +69,58 @@ MCPQueryTool >> failureMessageForRequestedContext: requestedContext error: anErr
 	^ self subclassResponsibility
 ]
 
+{ #category : 'private - schema' }
+MCPQueryTool >> minimalPagedQueryOutputSchemaForEntriesPropertyNamed: entriesPropertyName entriesDescription: entriesDescription entrySchema: entrySchema itemNounPhrase: itemNounPhrase [
+
+	| entriesProperty |
+	entriesProperty := self
+		                   schemaPropertyNamed: entriesPropertyName
+		                   type: 'array'
+		                   description: entriesDescription.
+	entriesProperty items: entrySchema.
+	^ self
+		  standardOutputSchemaForDataProperties: {
+				  (self
+					   integerSchemaPropertyNamed: 'totalCount'
+					   description: 'The total number of matching ' , itemNounPhrase
+						   , ' before pagination.').
+				  entriesProperty }
+		  required: {
+				  'totalCount'.
+				  entriesPropertyName }
+]
+
+{ #category : 'private - arguments' }
+MCPQueryTool >> normalizedFilterTargetsFrom: arguments [
+
+	| invalidTargets normalizedTargets rawTargets supportedTargets |
+	rawTargets := self
+		              argumentNamed: 'filterTargets'
+		              in: arguments
+		              ifAbsent: [ ^ self defaultFilterTargets ].
+	supportedTargets := self supportedFilterTargets.
+	normalizedTargets := OrderedCollection new.
+	invalidTargets := OrderedCollection new.
+	(self
+		 normalizedStringCollection: rawTargets
+		 argumentName: 'filterTargets') do: [ :each |
+		| canonical |
+		canonical := supportedTargets
+			             detect: [ :supported |
+			             supported asLowercase = each asLowercase ]
+			             ifNone: [ nil ].
+		canonical ifNil: [ invalidTargets add: each ] ifNotNil: [
+			(normalizedTargets includes: canonical) ifFalse: [
+				normalizedTargets add: canonical ] ] ].
+	invalidTargets ifNotEmpty: [
+		Error signal: 'Unsupported filterTargets value(s): '
+			, invalidTargets asArray printString , '. Supported targets are '
+			, supportedTargets printString , '.' ].
+	normalizedTargets ifEmpty: [
+		Error signal: 'filterTargets must contain at least one target.' ].
+	^ normalizedTargets asArray
+]
+
 { #category : 'private - template' }
 MCPQueryTool >> queryEntriesForParameters: parameters [
 
@@ -105,18 +163,9 @@ MCPQueryTool >> queryResultDataForParameters: parameters page: page [
 { #category : 'private - pagination' }
 MCPQueryTool >> queryResultDataFrom: baseData page: page entriesKey: entriesKey [
 
-	| data |
-	data := baseData
-		        ifNil: [ Dictionary new ]
-		        ifNotNil: [ baseData copy ].
-	data
-		at: #returnedCount put: (page at: #returnedCount);
-		at: #totalCount put: (page at: #totalCount);
-		at: #offset put: (page at: #offset);
-		at: #limit put: (page at: #limit);
-		at: #truncated put: (page at: #truncated);
-		at: entriesKey put: (page at: #entries).
-	^ data
+	^ {
+		  (#totalCount -> (page at: #totalCount)).
+		  (entriesKey -> (page at: #entries)) } asDictionary
 ]
 
 { #category : 'private - template' }
@@ -125,8 +174,46 @@ MCPQueryTool >> requestedContextFromArguments: arguments [
 	^ self subclassResponsibility
 ]
 
+{ #category : 'private - results' }
+MCPQueryTool >> scopeQueryFailureMessageFor: resultKind scope: scope error: anError [
+
+	^ String streamContents: [ :stream |
+		  stream
+			  nextPutAll: 'Unable to query ';
+			  nextPutAll: resultKind;
+			  nextPutAll: ' [scope=';
+			  nextPutAll: scope;
+			  nextPutAll: '] (';
+			  nextPutAll: anError class name;
+			  nextPutAll: '): ';
+			  nextPutAll: anError messageText ]
+]
+
+{ #category : 'private - results' }
+MCPQueryTool >> scopeQuerySuccessSummaryFor: resultKind scope: scope returnedCount: returnedCount totalCount: totalCount truncated: truncated [
+
+	^ String streamContents: [ :stream |
+		  stream
+			  print: returnedCount;
+			  space;
+			  nextPutAll: resultKind;
+			  nextPutAll: ' found [scope=';
+			  nextPutAll: scope;
+			  nextPutAll: '] (';
+			  print: totalCount;
+			  nextPutAll: ' matched'.
+		  truncated ifTrue: [ stream nextPutAll: ', more available' ].
+		  stream nextPutAll: ').' ]
+]
+
 { #category : 'private - template' }
 MCPQueryTool >> successSummaryForParameters: parameters page: page [
 
 	^ self subclassResponsibility
+]
+
+{ #category : 'private - arguments' }
+MCPQueryTool >> supportedFilterTargets [
+
+	self subclassResponsibility
 ]

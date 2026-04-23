@@ -31,11 +31,7 @@ MCPToolInspectMethodTest >> testInspectMethodReturnsInstanceSideVariableContext 
 	self
 		assert: ((self structuredContentFrom: result) at: #status)
 		equals: 'ok'.
-	self assert: (data at: #variableDetailsIncluded) equals: true.
-	self assert: (data at: #side) equals: 'instance'.
 	self assert: (data at: #protocol) equals: 'reading'.
-	self assert: (data at: #argumentNames) equals: #( 'anArgument' ).
-	self assert: (data at: #temporaryNames) equals: #( 'local' ).
 	self assert: (instanceVariable at: #kind) equals: 'instanceVariable'.
 	self
 		assert: (instanceVariable at: #ownerName)
@@ -46,17 +42,23 @@ MCPToolInspectMethodTest >> testInspectMethodReturnsInstanceSideVariableContext 
 		assert: (globalVariable at: #ownerName)
 		equals: 'Smalltalk globals'.
 	self assert: (selfVariable at: #kind) equals: 'self'.
-	self assert: (data at: #externalVariableCount) equals: 4.
-	self deny:
-		((data at: #externalVariableReferences) anySatisfy: [ :each |
-			 (each at: #name) = 'self' ]).
+	self assert: (data at: #variableReferences) size equals: 7.
 	self assert: ((data at: #variableReferences) allSatisfy: [ :each |
 			 #( #sourceIntervals #external #declaredInMethod ) noneSatisfy: [
 				 :key | each includesKey: key ] ]).
 	self assert:
 		((data at: #source) includesSubstring: String cr asString).
 	self assert: ((data at: #source) includesSubstring:
-			 'instanceCounter ifNil: [ SharedLimit ]')
+			 'instanceCounter ifNil: [ SharedLimit ]').
+	self deny: (data includesKey: #className).
+	self deny: (data includesKey: #selector).
+	self deny: (data includesKey: #side).
+	self deny: (data includesKey: #argumentNames).
+	self deny: (data includesKey: #temporaryNames).
+	self deny: (data includesKey: #variableDetailsIncluded).
+	self deny: (data includesKey: #variableReferenceCount).
+	self deny: (data includesKey: #externalVariableCount).
+	self deny: (data includesKey: #externalVariableReferences)
 ]
 
 { #category : 'tests' }
@@ -92,13 +94,11 @@ MCPToolInspectMethodTest >> testInspectMethodSupportsClassSideContext [
 	data := self dataFrom: result.
 	classInstanceVariable := self
 		                         variableNamed: 'classCounter'
-		                         in: (data at: #externalVariableReferences).
+		                         in: (data at: #variableReferences).
 	thisContextVariable := self
 		                       variableNamed: 'thisContext'
-		                       in: (data at: #externalVariableReferences).
+		                       in: (data at: #variableReferences).
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #variableDetailsIncluded) equals: true.
-	self assert: (data at: #side) equals: 'class'.
 	self
 		assert: (classInstanceVariable at: #kind)
 		equals: 'classInstanceVariable'.
@@ -116,11 +116,7 @@ MCPToolInspectMethodTest >> testInspectMethodSupportsClassSideContext [
 		((data at: #source) includesSubstring: String cr asString).
 	self
 		assert: data keys asSet
-		equals:
-			#( className selector side protocol source argumentNames
-			   temporaryNames variableDetailsIncluded variableReferenceCount
-			   externalVariableCount variableReferences externalVariableReferences )
-				asSet
+		equals: #( protocol source variableReferences ) asSet
 ]
 
 { #category : 'tests' }

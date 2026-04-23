@@ -21,88 +21,24 @@ MCPToolImplementors >> defaultIcons [
 { #category : 'defaults' }
 MCPToolImplementors >> defaultInputSchema [
 
-	| scopeProperty sideProperty packageNamesProperty classNamesProperty |
-	scopeProperty := MCPStructureProperties new
-		                 name: 'scope';
-		                 type: 'string';
-		                 description:
-			                 'Where to search for implementors. Defaults to image.';
-		                 enum: #( 'image' 'packages' 'hierarchy' 'classes' );
-		                 default: 'image';
-		                 yourself.
-	sideProperty := MCPStructureProperties new
-		                name: 'side';
-		                type: 'string';
-		                description:
-			                'Which method side to search. Defaults to both.';
-		                enum: #( 'instance' 'class' 'both' );
-		                default: 'both';
-		                yourself.
-	packageNamesProperty := self
-		                        stringArraySchemaNamed: 'packageNames'
-		                        description:
-		                        'The package names that define the packages scope. Required when scope=packages.'
-		                        itemDescription: 'A package name.'.
-	classNamesProperty := self
-		                      stringArraySchemaNamed: 'classNames'
-		                      description:
-		                      'The class names that define the classes or hierarchy scope. Required when scope=classes or scope=hierarchy.'
-		                      itemDescription: 'A class name.'.
 	^ MCPStructureInputSchema new
 		  type: 'object';
-		  properties: {
-				  (MCPStructureProperties new
-					   name: 'selector';
-					   type: 'string';
-					   description:
-						   'The selector whose implementors should be found.';
-					   yourself).
-				  scopeProperty.
-				  sideProperty.
-				  packageNamesProperty.
-				  classNamesProperty.
-				  (MCPStructureProperties new
-					   name: 'filter';
-					   type: 'string';
-					   description:
-						   'Optional filter applied to implementor methods after selector matching.';
-					   yourself).
-				  (MCPStructureProperties new
-					   name: 'filterMode';
-					   type: 'string';
-					   description:
-						   'How the filter is matched. Defaults to substring.';
-					   enum: #( 'substring' 'prefix' 'exact' 'regex' );
-					   default: 'substring';
-					   yourself).
-				  (MCPStructureProperties new
-					   name: 'caseSensitive';
-					   type: 'boolean';
-					   description:
-						   'Whether filter matching is case-sensitive. Defaults to false.';
-					   default: false;
-					   yourself).
-				  (MCPStructureProperties new
-					   name: 'includeSource';
-					   type: 'boolean';
-					   description:
-						   'Whether to include implementor source code in each result entry. Defaults to false.';
-					   default: false;
-					   yourself).
-				  (MCPStructureProperties new
-					   name: 'limit';
-					   type: 'integer';
-					   description:
-						   'Maximum number of matching implementors to return. Defaults to 100. Use 0 to request counts only.';
-					   default: 100;
-					   yourself).
-				  (MCPStructureProperties new
-					   name: 'offset';
-					   type: 'integer';
-					   description:
-						   'Zero-based pagination offset applied after filtering. Defaults to 0.';
-					   default: 0;
-					   yourself) };
+		  properties: { (self
+				   schemaPropertyNamed: 'selector'
+				   type: 'string'
+				   description: 'The selector whose implementors should be found.') }
+			  ,
+				  (self
+					   compiledMethodQueryScopeInputPropertiesWithScopeDescription:
+						   'Where to search for implementors. Defaults to image.')
+			  , (self
+					   compiledMethodQueryFilteringInputPropertiesWithFilterDescription:
+						   'Optional filter applied to implementor methods after selector matching.'
+					   extraProperties: #(  )
+					   includeSourceDescription:
+						   'Whether to include implementor source code in each result entry. Defaults to false.'
+					   limitDescription:
+						   'Maximum number of matching implementors to return. Defaults to 100. Use 0 to request counts only.');
 		  required: #( 'selector' );
 		  yourself
 ]
@@ -116,77 +52,13 @@ MCPToolImplementors >> defaultName [
 { #category : 'defaults' }
 MCPToolImplementors >> defaultOutputSchema [
 
-	| packageNamesProperty classNamesProperty implementorsProperty |
-	packageNamesProperty := self
-		                        stringArraySchemaNamed: 'packageNames'
-		                        description:
-		                        'The package names that define the packages scope. Required when scope=packages.'
-		                        itemDescription: 'A package name.'.
-	classNamesProperty := self
-		                      stringArraySchemaNamed: 'classNames'
-		                      description:
-		                      'The class names that define the classes or hierarchy scope. Required when scope=classes or scope=hierarchy.'
-		                      itemDescription: 'A class name.'.
-	implementorsProperty := self
-		                        schemaPropertyNamed: 'implementors'
-		                        type: 'array'
-		                        description:
-		                        'The implementors returned for the requested page.'.
-	implementorsProperty items: self implementorEntrySchema.
 	^ self
-		                standardOutputSchemaForDataProperties: {
-				                (self
-					                 schemaPropertyNamed: 'selector'
-					                 type: 'string'
-					                 description: 'The selector that was searched.').
-				                ((self
-					                  schemaPropertyNamed: 'scope'
-					                  type: 'string'
-					                  description:
-						                  'The scope used to search for implementors.')
-					                 enum:
-						                 #( 'image' 'packages' 'hierarchy' 'classes' );
-					                 yourself).
-				                ((self
-					                  schemaPropertyNamed: 'side'
-					                  type: 'string'
-					                  description: 'The searched method side.')
-					                 enum: #( 'instance' 'class' 'both' );
-					                 yourself).
-				                (self
-					                 schemaPropertyNamed: 'sourceIncluded'
-					                 type: 'boolean'
-					                 description:
-					                 'Whether implementor source was included in the returned entries.').
-				                packageNamesProperty.
-				                classNamesProperty.
-				                (self
-					                 integerSchemaPropertyNamed: 'returnedCount'
-					                 description:
-					                 'The number of implementors returned in this page.').
-				                (self
-					                 integerSchemaPropertyNamed: 'totalCount'
-					                 description:
-					                 'The total number of matching implementors before pagination.').
-				                (self
-					                 integerSchemaPropertyNamed: 'offset'
-					                 description:
-					                 'The zero-based pagination offset that was applied.').
-				                (self
-					                 integerSchemaPropertyNamed: 'limit'
-					                 description:
-					                 'The maximum number of implementors requested.').
-				                (self
-					                 schemaPropertyNamed: 'truncated'
-					                 type: 'boolean'
-					                 description:
-					                 'Whether additional matching implementors exist beyond the returned page.').
-				                implementorsProperty }
-		                required:
-			                #( 'selector' 'scope' 'side' 'sourceIncluded'
-			                   'packageNames' 'classNames' 'returnedCount'
-			                   'totalCount' 'offset' 'limit' 'truncated'
-			                   'implementors' )
+		  minimalPagedQueryOutputSchemaForEntriesPropertyNamed:
+		  'implementors'
+		  entriesDescription:
+		  'The implementors returned for the requested page.'
+		  entrySchema: self implementorEntrySchema
+		  itemNounPhrase: 'implementors'
 ]
 
 { #category : 'defaults' }
@@ -262,11 +134,8 @@ MCPToolImplementors >> queryParametersFromArguments: arguments [
 MCPToolImplementors >> queryResultDataForParameters: parameters page: page [
 
 	^ self
-		  compiledMethodQueryResultDataForParameters: parameters
-		  page: page
+		  compiledMethodQueryResultDataForPage: page
 		  entriesKey: #implementors
-		  extraData:
-		  { (#selector -> (parameters at: #selector)) } asDictionary
 ]
 
 { #category : 'private - template' }

@@ -73,7 +73,6 @@ MCPToolFindPackagesTest >> testImageScopeCanFilterPackagesByTagTarget [
 		packageNames := (data at: #packages) collect: [ :each |
 			                each at: #packageName ].
 		self deny: (result at: #isError ifAbsent: [ false ]).
-		self assert: (data at: #filterTargets) equals: #( 'tag' ).
 		self assert: (data at: #totalCount) equals: 1.
 		self
 			assert: packageNames
@@ -97,8 +96,8 @@ MCPToolFindPackagesTest >> testImageScopeCanPaginateFilteredPackages [
 		             collect: [ :each | each name asString ]
 		             as: Array) asSortedCollection asArray.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #scope) equals: 'image'.
 	self assert: (data at: #totalCount) equals: expected size.
+	self assert: packageNames size equals: 2.
 	self
 		assert: packageNames
 		equals: (expected copyFrom: 2 to: 3) asArray
@@ -116,8 +115,6 @@ MCPToolFindPackagesTest >> testImageScopeFindsExactPackageNameMatch [
 		                each at: #packageName ].
 
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #scope) equals: 'image'.
-	self assert: (data at: #filterTargets) equals: #( 'package' ).
 	self assert: (data at: #totalCount) equals: 1.
 	self assert: packageNames equals: #( 'MCP-Tests' )
 ]
@@ -133,12 +130,12 @@ MCPToolFindPackagesTest >> testImageScopeFindsStructuredPackages [
 	data := self dataFrom: result.
 	entry := self entryNamed: 'MCP' in: (data at: #packages).
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #scope) equals: 'image'.
-	self assert: (data at: #filterTargets) equals: #( 'project' ).
 	self assert: (data at: #totalCount) > 0.
 	self assert: (entry at: #projectNames) equals: #( 'MCP' ).
-	self assert: (entry at: #definedClassCount) > 0.
-	self assert: ((entry at: #tagNames) includes: 'Tools')
+	self assert: ((entry at: #tagNames) includes: 'Tools').
+	self deny: (entry includesKey: #definedClassCount).
+	self deny: (entry includesKey: #extensionMethodCount).
+	self deny: (entry includesKey: #isUndefined)
 ]
 
 { #category : 'tests' }
@@ -152,8 +149,9 @@ MCPToolFindPackagesTest >> testProjectScopeFindsPackagesForNamedProject [
 	packageNames := (data at: #packages) collect: [ :each |
 		                each at: #packageName ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #scope) equals: 'project'.
-	self assert: (data at: #projectNames) equals: #( 'MCP' ).
+	self
+		assert: (data at: #totalCount)
+		equals: self mcpProjectPackageNames size.
 	self assert: packageNames equals: self mcpProjectPackageNames
 ]
 

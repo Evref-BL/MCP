@@ -190,8 +190,7 @@ MCPToolContractsTest >> testFindClassesListsClassesForExistingPackage [
 	classNames := (data at: #classes) collect: [ :each |
 		              each at: #className ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #scope) equals: 'packages'.
-	self assert: (data at: #packageNames) equals: #( 'MCP-Tests' ).
+	self assert: (data at: #totalCount) > 0.
 	self assert: (classNames includes: 'MCPToolEditMethodTest')
 ]
 
@@ -237,7 +236,7 @@ MCPToolContractsTest >> testFindMethodsHasAccurateNameAndSchema [
 { #category : 'tests' }
 MCPToolContractsTest >> testFindMethodsListsMethodsForExistingClassScope [
 
-	| classNames data result selectors |
+	| data result selectors |
 	result := self callToolNamed: 'find-methods' withArguments: {
 			          (#scope -> 'classes').
 			          (#classNames -> #( 'MCPToolFindMethodsTestTarget' )) }
@@ -245,10 +244,8 @@ MCPToolContractsTest >> testFindMethodsListsMethodsForExistingClassScope [
 	data := (result at: #structuredContent) at: #data.
 	selectors := (data at: #methods) collect: [ :each |
 		             each at: #selector ].
-	classNames := data at: #classNames.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #scope) equals: 'classes'.
-	self assert: classNames equals: #( 'MCPToolFindMethodsTestTarget' ).
+	self assert: (data at: #totalCount) equals: selectors size.
 	self assert: (selectors includes: 'alphaNeedleSelector').
 	self assert: (selectors includes: 'classNeedleSelector')
 ]
@@ -295,8 +292,7 @@ MCPToolContractsTest >> testFindPackagesListsPackagesForExistingProject [
 	packageNames := (data at: #packages) collect: [ :each |
 		                each at: #packageName ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #scope) equals: 'project'.
-	self assert: (data at: #projectNames) equals: #( 'MCP' ).
+	self assert: (data at: #totalCount) equals: packageNames size.
 	self assert: (packageNames includes: 'MCP').
 	self assert: (packageNames includes: 'MCP-Tests')
 ]
@@ -584,7 +580,7 @@ MCPToolContractsTest >> testRpcToolCallSignalsInvalidParametersWhenRequiredArgum
 { #category : 'tests' }
 MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 
-	| dataProperties outputSchema testsProperty |
+	| dataProperties outputSchema resultsProperty |
 	self assert: MCPToolRunTests new name equals: 'run-tests'.
 	self
 		assert: MCPToolRunTests new inputSchema required asSet
@@ -592,9 +588,12 @@ MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 	outputSchema := MCPToolRunTests new outputSchema asJRPCJSON.
 	dataProperties := ((outputSchema at: #properties) at: 'data') at:
 		                  #properties.
-	testsProperty := dataProperties at: 'tests'.
-	self assert: (testsProperty at: #type) equals: 'array'.
-	self assert: ((testsProperty at: #items) at: #type) equals: 'string'
+	resultsProperty := dataProperties at: 'results'.
+	self assert: (resultsProperty at: #type) equals: 'array'.
+	self
+		assert: ((resultsProperty at: #items) at: #type)
+		equals: 'object'.
+	self deny: (dataProperties includesKey: 'tests')
 ]
 
 { #category : 'tests' }

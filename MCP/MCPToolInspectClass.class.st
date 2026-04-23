@@ -189,14 +189,6 @@ MCPToolInspectClass >> defaultTitle [
 ]
 
 { #category : 'private - hierarchy' }
-MCPToolInspectClass >> descriptionDictionariesForClasses: someClasses [
-
-	^ self
-		  descriptionDictionariesForClasses: someClasses
-		  includeComment: false
-]
-
-{ #category : 'private - hierarchy' }
 MCPToolInspectClass >> descriptionDictionariesForClasses: someClasses includeComment: includeComment [
 
 	^ (someClasses collect: [ :each |

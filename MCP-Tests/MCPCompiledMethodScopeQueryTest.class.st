@@ -91,6 +91,26 @@ MCPCompiledMethodScopeQueryTest >> testImageScopeRespectsSideFiltering [
 ]
 
 { #category : 'tests' }
+MCPCompiledMethodScopeQueryTest >> testInvalidScopeSignalsErrorWhenQuerying [
+
+	| error query |
+	query := MCPCompiledMethodScopeQuery
+		         scope: 'invalid'
+		         packageNames: nil
+		         classNames: nil
+		         side: 'instance'.
+	error := [
+	         query compiledMethods.
+	         self fail: 'Expected Error' ]
+		         on: Error
+		         do: [ :caught | caught ].
+	self
+		assert: error messageText
+		equals:
+		'scope must be one of image, packages, hierarchy, or classes.'
+]
+
+{ #category : 'tests' }
 MCPCompiledMethodScopeQueryTest >> testPackagesScopeIncludesExtensionMethods [
 
 	| methodIdentities query |

@@ -42,8 +42,6 @@ MCPToolFindMethodsTest >> testCanFilterAcrossExplicitProtocolTarget [
 	data := self dataFrom: result.
 	selectors := (data at: #methods) collect: [ :each |
 		             each at: #selector ].
-	self assert: (data at: #scope) equals: 'classes'.
-	self assert: (data at: #filterTargets) equals: #( 'protocol' ).
 	self assert: (data at: #totalCount) equals: 2.
 	self
 		assert: selectors asSet
@@ -61,7 +59,6 @@ MCPToolFindMethodsTest >> testCanFilterAcrossExplicitSourceTargetWithoutIncludin
 			          (#filterTargets -> #( 'source' )) } asDictionary.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	data := self dataFrom: result.
-	self assert: (data at: #filterTargets) equals: #( 'source' ).
 	self assert: (data at: #totalCount) equals: 1.
 	self
 		assert: ((data at: #methods) first at: #selector)
@@ -83,11 +80,8 @@ MCPToolFindMethodsTest >> testCanFilterPaginateAndIncludeSource [
 			          (#limit -> 1) } asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #sourceIncluded).
-	self assert: (data at: #filterTargets) equals: #( 'protocol' ).
 	self assert: (data at: #totalCount) equals: 2.
-	self assert: (data at: #returnedCount) equals: 1.
-	self assert: (data at: #truncated).
+	self assert: (data at: #methods) size equals: 1.
 	self assert:
 		((data at: #methods) allSatisfy: [ :each |
 			 (each at: #side) = 'class' ]).
@@ -114,13 +108,8 @@ MCPToolFindMethodsTest >> testClassesScopeReturnsMethodsForExactClassNames [
 	self
 		assert: ((self structuredContentFrom: result) at: #status)
 		equals: 'ok'.
-	self assert: (data at: #scope) equals: 'classes'.
-	self
-		assert: (data at: #classNames)
-		equals: { self targetClassName } asArray.
-	self assert: (data at: #side) equals: 'both'.
 	self assert: (data at: #totalCount) equals: 5.
-	self assert: (data at: #returnedCount) equals: 5.
+	self assert: (data at: #methods) size equals: 5.
 	self
 		assert: selectors asSet
 		equals: #( 'alphaNeedleSelector' 'betaHelper' 'classNeedleSelector'
@@ -141,10 +130,7 @@ MCPToolFindMethodsTest >> testDefaultFilterAppliesToSelectorOnly [
 			          (#filter -> 'helpers') } asDictionary.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	data := self dataFrom: result.
-	self assert: (data at: #scope) equals: 'classes'.
-	self assert: (data at: #filterTargets) equals: #( 'selector' ).
 	self assert: (data at: #totalCount) equals: 0.
-	self assert: (data at: #returnedCount) equals: 0.
 	self assert: (data at: #methods) isEmpty
 ]
 
@@ -159,7 +145,6 @@ MCPToolFindMethodsTest >> testHierarchyScopeReturnsWholeHierarchy [
 			          (#filter -> 'hierarchyProbe') } asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #scope) equals: 'hierarchy'.
 	self assert: (data at: #totalCount) equals: 2.
 	self
 		entryForReference: 'MCPToolHierarchyTestBase>>hierarchyProbe'
@@ -183,7 +168,6 @@ MCPToolFindMethodsTest >> testPackagesScopeIncludesExtensionMethods [
 		          'MCPToolReferencesTestExtensionTarget>>extensionProbe'
 		          in: (data at: #methods).
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #scope) equals: 'packages'.
 	self assert: (data at: #totalCount) equals: 1.
 	self
 		assert: (method at: #packageName)

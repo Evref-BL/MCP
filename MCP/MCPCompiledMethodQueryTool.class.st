@@ -29,30 +29,27 @@ MCPCompiledMethodQueryTool >> compiledMethodEntrySchemaNamed: entryName descript
 					   type: 'string'
 					   description:
 						   'The base class that defines the ' , subjectDescription , '.').
-				  ((self
-					    schemaPropertyNamed: 'side'
-					    type: 'string'
-					    description:
-						    'The side on which the ' , subjectDescription
-						    , ' is defined.')
-					   enum: #( 'instance' 'class' );
-					   yourself).
+				  (self
+					   stringEnumSchemaPropertyNamed: 'side'
+					   description:
+						   'The side on which the ' , subjectDescription
+						   , ' is defined.'
+					   values: #( 'instance' 'class' )).
 				  (self
 					   schemaPropertyNamed: 'packageName'
 					   type: 'string'
 					   description:
-					   'The package that owns the ' , subjectDescription , '.').
+						   'The package that owns the ' , subjectDescription , '.').
 				  (self
-					   schemaPropertyNamed: 'isExtension'
-					   type: 'boolean'
+					   booleanSchemaPropertyNamed: 'isExtension'
 					   description: 'Whether the ' , subjectDescription
 						   , ' is an extension on its class package.').
 				  (self
 					   schemaPropertyNamed: 'protocol'
 					   type: 'string'
 					   description:
-					   'The protocol/category containing the ' , subjectDescription
-					   , '.').
+						   'The protocol/category containing the ' , subjectDescription
+						   , '.').
 				  (self
 					   schemaPropertyNamed: 'source'
 					   type: 'string'
@@ -62,6 +59,42 @@ MCPCompiledMethodQueryTool >> compiledMethodEntrySchemaNamed: entryName descript
 			     'protocol' );
 		  additionalProperties: false;
 		  yourself
+]
+
+{ #category : 'private - schema' }
+MCPCompiledMethodQueryTool >> compiledMethodQueryFilteringInputPropertiesWithFilterDescription: filterDescription extraProperties: extraProperties includeSourceDescription: includeSourceDescription limitDescription: limitDescription [
+
+	| properties |
+	properties := OrderedCollection new.
+	properties add: (self
+			 schemaPropertyNamed: 'filter'
+			 type: 'string'
+			 description: filterDescription).
+	extraProperties ifNotNil: [ properties addAll: extraProperties ].
+	properties add: (self
+			 stringEnumSchemaPropertyNamed: 'filterMode'
+			 description: 'How the filter is matched. Defaults to substring.'
+			 values: #( 'substring' 'prefix' 'exact' 'regex' )
+			 default: 'substring').
+	properties add: (self
+			 booleanSchemaPropertyNamed: 'caseSensitive'
+			 description:
+			 'Whether filter matching is case-sensitive. Defaults to false.'
+			 default: false).
+	properties add: (self
+			 booleanSchemaPropertyNamed: 'includeSource'
+			 description: includeSourceDescription
+			 default: false).
+	properties add: (self
+			 integerSchemaPropertyNamed: 'limit'
+			 description: limitDescription
+			 default: 100).
+	properties add: (self
+			 integerSchemaPropertyNamed: 'offset'
+			 description:
+			 'Zero-based pagination offset applied after filtering. Defaults to 0.'
+			 default: 0).
+	^ properties asArray
 ]
 
 { #category : 'private - arguments' }
@@ -92,21 +125,40 @@ MCPCompiledMethodQueryTool >> compiledMethodQueryParametersFromArguments: argume
 ]
 
 { #category : 'private - results' }
-MCPCompiledMethodQueryTool >> compiledMethodQueryResultDataForParameters: parameters page: page entriesKey: entriesKey extraData: extraData [
+MCPCompiledMethodQueryTool >> compiledMethodQueryResultDataForPage: page entriesKey: entriesKey [
 
-	| baseData query |
-	query := parameters at: #query.
-	baseData := {
-		            (#scope -> query scope).
-		            (#side -> query side).
-		            (#sourceIncluded -> (parameters at: #includeSource)).
-		            (#packageNames -> query packageNames).
-		            (#classNames -> query classNames) } asDictionary.
-	extraData ifNotNil: [
-		extraData associationsDo: [ :each |
-			baseData at: each key put: each value ] ].
-	^ self
-		  queryResultDataFrom: baseData
-		  page: page
-		  entriesKey: entriesKey
+	^ self queryResultDataFrom: nil page: page entriesKey: entriesKey
+]
+
+{ #category : 'private - schema' }
+MCPCompiledMethodQueryTool >> compiledMethodQueryScopeInputPropertiesWithScopeDescription: scopeDescription [
+
+	| scopeProperty sideProperty packageNamesProperty classNamesProperty |
+	scopeProperty := self
+		                 stringEnumSchemaPropertyNamed: 'scope'
+		                 description: scopeDescription
+		                 values:
+		                 #( 'image' 'packages' 'hierarchy' 'classes' )
+		                 default: 'image'.
+	sideProperty := self
+		                stringEnumSchemaPropertyNamed: 'side'
+		                description:
+		                'Which method side to search. Defaults to both.'
+		                values: #( 'instance' 'class' 'both' )
+		                default: 'both'.
+	packageNamesProperty := self
+		                        stringArraySchemaNamed: 'packageNames'
+		                        description:
+		                        'The package names that define the packages scope. Required when scope=packages.'
+		                        itemDescription: 'A package name.'.
+	classNamesProperty := self
+		                      stringArraySchemaNamed: 'classNames'
+		                      description:
+		                      'The class names that define the classes or hierarchy scope. Required when scope=classes or scope=hierarchy.'
+		                      itemDescription: 'A class name.'.
+	^ {
+		  scopeProperty.
+		  sideProperty.
+		  packageNamesProperty.
+		  classNamesProperty }
 ]

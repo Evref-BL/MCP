@@ -60,98 +60,27 @@ MCPToolFindMethods >> defaultIcons [
 { #category : 'defaults' }
 MCPToolFindMethods >> defaultInputSchema [
 
-	| scopeProperty sideProperty packageNamesProperty classNamesProperty filterModeProperty filterTargetsItemProperty filterTargetsProperty |
-	scopeProperty := MCPStructureProperties new
-		                 name: 'scope';
-		                 type: 'string';
-		                 description:
-			                 'Where to search for methods. Defaults to image.';
-		                 enum: #( 'image' 'packages' 'hierarchy' 'classes' );
-		                 default: 'image';
-		                 yourself.
-	sideProperty := MCPStructureProperties new
-		                name: 'side';
-		                type: 'string';
-		                description:
-			                'Which method side to search. Defaults to both.';
-		                enum: #( 'instance' 'class' 'both' );
-		                default: 'both';
-		                yourself.
-	packageNamesProperty := self
-		                        stringArraySchemaNamed: 'packageNames'
-		                        description:
-		                        'The package names that define the packages scope. Required when scope=packages.'
-		                        itemDescription: 'A package name.'.
-	classNamesProperty := self
-		                      stringArraySchemaNamed: 'classNames'
-		                      description:
-		                      'The class names that define the classes or hierarchy scope. Required when scope=classes or scope=hierarchy.'
-		                      itemDescription: 'A class name.'.
-	filterModeProperty := MCPStructureProperties new
-		                      name: 'filterMode';
-		                      type: 'string';
-		                      description:
-			                      'How the filter is matched. Defaults to substring.';
-		                      enum:
-			                      #( 'substring' 'prefix' 'exact' 'regex' );
-		                      default: 'substring';
-		                      yourself.
-	filterTargetsItemProperty := MCPStructureProperties new
-		                             type: 'string';
-		                             description: 'A filter target.';
-		                             enum: self supportedFilterTargets;
-		                             yourself.
-	filterTargetsProperty := (self
-		                          schemaPropertyNamed: 'filterTargets'
-		                          type: 'array'
-		                          description:
-			                          'Optional method-entry fields matched by filter. Defaults to selector. This filters the listed methods; it does not perform reference lookup.')
-		                         items: filterTargetsItemProperty;
-		                         default: self defaultFilterTargets;
-		                         yourself.
+	| filterTargetsProperty |
+	filterTargetsProperty := self
+		                         stringEnumArraySchemaNamed: 'filterTargets'
+		                         description:
+		                         'Optional method-entry fields matched by filter. Defaults to selector. This filters the listed methods; it does not perform reference lookup.'
+		                         itemDescription: 'A filter target.'
+		                         values: self supportedFilterTargets
+		                         default: self defaultFilterTargets.
 	^ MCPStructureInputSchema new
 		  type: 'object';
-		  properties: {
-				  scopeProperty.
-				  sideProperty.
-				  packageNamesProperty.
-				  classNamesProperty.
-				  (MCPStructureProperties new
-					   name: 'filter';
-					   type: 'string';
-					   description:
-						   'Optional filter applied to the methods found in scope. Use filterTargets to choose which fields are matched.';
-					   yourself).
-				  filterTargetsProperty.
-				  filterModeProperty.
-				  (MCPStructureProperties new
-					   name: 'caseSensitive';
-					   type: 'boolean';
-					   description:
-						   'Whether filter matching is case-sensitive. Defaults to false.';
-					   default: false;
-					   yourself).
-				  (MCPStructureProperties new
-					   name: 'includeSource';
-					   type: 'boolean';
-					   description:
-						   'Whether to include method source code in each result entry. Defaults to false.';
-					   default: false;
-					   yourself).
-				  (MCPStructureProperties new
-					   name: 'limit';
-					   type: 'integer';
-					   description:
-						   'Maximum number of matching methods to return. Defaults to 100. Use 0 to request counts only.';
-					   default: 100;
-					   yourself).
-				  (MCPStructureProperties new
-					   name: 'offset';
-					   type: 'integer';
-					   description:
-						   'Zero-based pagination offset applied after filtering. Defaults to 0.';
-					   default: 0;
-					   yourself) };
+		  properties:
+			  (self
+				   compiledMethodQueryScopeInputPropertiesWithScopeDescription:
+					   'Where to search for methods. Defaults to image.') , (self
+					   compiledMethodQueryFilteringInputPropertiesWithFilterDescription:
+						   'Optional filter applied to the methods found in scope. Use filterTargets to choose which fields are matched.'
+					   extraProperties: { filterTargetsProperty }
+					   includeSourceDescription:
+						   'Whether to include method source code in each result entry. Defaults to false.'
+					   limitDescription:
+						   'Maximum number of matching methods to return. Defaults to 100. Use 0 to request counts only.');
 		  required: #(  );
 		  yourself
 ]
@@ -165,86 +94,12 @@ MCPToolFindMethods >> defaultName [
 { #category : 'defaults' }
 MCPToolFindMethods >> defaultOutputSchema [
 
-	| packageNamesProperty classNamesProperty filterTargetsItemProperty filterTargetsProperty methodsProperty |
-	packageNamesProperty := self
-		                        stringArraySchemaNamed: 'packageNames'
-		                        description:
-		                        'The package names that define the packages scope. Required when scope=packages.'
-		                        itemDescription: 'A package name.'.
-	classNamesProperty := self
-		                      stringArraySchemaNamed: 'classNames'
-		                      description:
-		                      'The class names that define the classes or hierarchy scope. Required when scope=classes or scope=hierarchy.'
-		                      itemDescription: 'A class name.'.
-	filterTargetsItemProperty := MCPStructureProperties new
-		                             type: 'string';
-		                             description: 'A filter target.';
-		                             enum: self supportedFilterTargets;
-		                             yourself.
-	filterTargetsProperty := (self
-		                          schemaPropertyNamed: 'filterTargets'
-		                          type: 'array'
-		                          description:
-			                          'Optional method-entry fields matched by filter. Defaults to selector. This filters the listed methods; it does not perform reference lookup.')
-		                         items: filterTargetsItemProperty;
-		                         yourself.
-	methodsProperty := self
-		                   schemaPropertyNamed: 'methods'
-		                   type: 'array'
-		                   description:
-		                   'The method entries returned for the requested page.'.
-	methodsProperty items: self methodEntrySchema.
 	^ self
-		                standardOutputSchemaForDataProperties: {
-				                ((self
-					                  schemaPropertyNamed: 'scope'
-					                  type: 'string'
-					                  description:
-						                  'The scope used to search for methods.')
-					                 enum:
-						                 #( 'image' 'packages' 'hierarchy' 'classes' );
-					                 yourself).
-				                ((self
-					                  schemaPropertyNamed: 'side'
-					                  type: 'string'
-					                  description: 'The searched method side.')
-					                 enum: #( 'instance' 'class' 'both' );
-					                 yourself).
-				                (self
-					                 schemaPropertyNamed: 'sourceIncluded'
-					                 type: 'boolean'
-					                 description:
-					                 'Whether method source was included in the returned entries.').
-				                packageNamesProperty.
-				                classNamesProperty.
-				                filterTargetsProperty.
-				                (self
-					                 integerSchemaPropertyNamed: 'returnedCount'
-					                 description:
-					                 'The number of methods returned in this page.').
-				                (self
-					                 integerSchemaPropertyNamed: 'totalCount'
-					                 description:
-					                 'The total number of matching methods before pagination.').
-				                (self
-					                 integerSchemaPropertyNamed: 'offset'
-					                 description:
-					                 'The zero-based pagination offset that was applied.').
-				                (self
-					                 integerSchemaPropertyNamed: 'limit'
-					                 description:
-					                 'The maximum number of methods requested.').
-				                (self
-					                 schemaPropertyNamed: 'truncated'
-					                 type: 'boolean'
-					                 description:
-					                 'Whether additional matching methods exist beyond the returned page.').
-				                methodsProperty }
-		                required:
-			                #( 'scope' 'side' 'sourceIncluded' 'packageNames'
-			                   'classNames' 'filterTargets' 'returnedCount'
-			                   'totalCount' 'offset' 'limit' 'truncated'
-			                   'methods' )
+		  minimalPagedQueryOutputSchemaForEntriesPropertyNamed: 'methods'
+		  entriesDescription:
+		  'The method entries returned for the requested page.'
+		  entrySchema: self methodEntrySchema
+		  itemNounPhrase: 'methods'
 ]
 
 { #category : 'defaults' }
@@ -264,14 +119,10 @@ MCPToolFindMethods >> failureMessageForRequestedContext: requestedContext error:
 { #category : 'private - results' }
 MCPToolFindMethods >> failureMessageForScope: scope error: anError [
 
-	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: 'Unable to query methods [scope=';
-			  nextPutAll: scope;
-			  nextPutAll: '] (';
-			  nextPutAll: anError class name;
-			  nextPutAll: '): ';
-			  nextPutAll: anError messageText ]
+	^ self
+		  scopeQueryFailureMessageFor: 'methods'
+		  scope: scope
+		  error: anError
 ]
 
 { #category : 'private - filtering' }
@@ -340,12 +191,8 @@ MCPToolFindMethods >> queryParametersFromArguments: arguments [
 MCPToolFindMethods >> queryResultDataForParameters: parameters page: page [
 
 	^ self
-		  compiledMethodQueryResultDataForParameters: parameters
-		  page: page
+		  compiledMethodQueryResultDataForPage: page
 		  entriesKey: #methods
-		  extraData:
-		  { (#filterTargets -> (parameters at: #filterTargets)) }
-			  asDictionary
 ]
 
 { #category : 'private - template' }
@@ -375,16 +222,12 @@ MCPToolFindMethods >> successSummaryForParameters: parameters page: page [
 { #category : 'private - results' }
 MCPToolFindMethods >> successSummaryForScope: scope returnedCount: returnedCount totalCount: totalCount truncated: truncated [
 
-	^ String streamContents: [ :stream |
-		  stream
-			  print: returnedCount;
-			  nextPutAll: ' methods found [scope=';
-			  nextPutAll: scope;
-			  nextPutAll: '] (';
-			  print: totalCount;
-			  nextPutAll: ' matched'.
-		  truncated ifTrue: [ stream nextPutAll: ', more available' ].
-		  stream nextPutAll: ').' ]
+	^ self
+		  scopeQuerySuccessSummaryFor: 'methods'
+		  scope: scope
+		  returnedCount: returnedCount
+		  totalCount: totalCount
+		  truncated: truncated
 ]
 
 { #category : 'private - arguments' }

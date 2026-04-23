@@ -34,6 +34,17 @@ MCPClassInfo >> asDictionary [
 		  (#subclassNames -> self subclassNames) } asDictionary
 ]
 
+{ #category : 'converting' }
+MCPClassInfo >> asQueryDictionary [
+
+	^ {
+		  (#className -> self className).
+		  (#packageName -> self packageName).
+		  (#tag -> self tag).
+		  (#instanceSlotNames -> self instanceSlotNames).
+		  (#classSlotNames -> self classSlotNames) } asDictionary
+]
+
 { #category : 'accessing' }
 MCPClassInfo >> className [
 

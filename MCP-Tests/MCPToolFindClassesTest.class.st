@@ -109,12 +109,8 @@ MCPToolFindClassesTest >> testClassesScopeReturnsExactClassInfos [
 		             entryNamed: self baseClassName
 		             in: (data at: #classes).
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #scope) equals: 'classes'.
 	self assert: (data at: #totalCount) equals: 2.
-	self assert: (data at: #classNames) asSet equals: {
-			self baseClassName.
-			self childClassName } asSet.
-	self assert: (baseEntry at: #superclassName) equals: 'Object'.
+	self assert: (data at: #classes) size equals: 2.
 	self assert: (baseEntry at: #packageName) equals: 'MCP-Tests'.
 	self assert: (baseEntry at: #tag) equals: 'Internal'.
 	self
@@ -123,9 +119,8 @@ MCPToolFindClassesTest >> testClassesScopeReturnsExactClassInfos [
 	self
 		assert: (baseEntry at: #classSlotNames)
 		equals: #( 'classBeta' 'classAlpha' ).
-	self
-		assert: (baseEntry at: #subclassNames)
-		equals: { self childClassName } asArray
+	self deny: (baseEntry includesKey: #superclassName).
+	self deny: (baseEntry includesKey: #subclassNames)
 ]
 
 { #category : 'tests' }
@@ -141,9 +136,6 @@ MCPToolFindClassesTest >> testDefaultFilterAppliesToClassOnly [
 	data := self dataFrom: result.
 	classNames := (data at: #classes) collect: [ :each |
 		              each at: #className ].
-	self assert: (data at: #scope) equals: 'packages'.
-	self assert: (data at: #packageNames) equals: #( 'MCP-Tests' ).
-	self assert: (data at: #filterTargets) equals: #( 'class' ).
 	self assert: (data at: #totalCount) equals: 1.
 	self assert: classNames equals: { self baseClassName } asArray
 ]
@@ -159,7 +151,6 @@ MCPToolFindClassesTest >> testFilterCanMatchSlotNames [
 			          (#filterTargets -> #( 'instanceSlot' )) } asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #filterTargets) equals: #( 'instanceSlot' ).
 	self assert: (data at: #totalCount) equals: 1.
 	self entryNamed: self baseClassName in: (data at: #classes)
 ]
@@ -177,7 +168,7 @@ MCPToolFindClassesTest >> testHierarchyScopeReturnsRelatedClasses [
 	classNames := (data at: #classes) collect: [ :each |
 		              each at: #className ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #scope) equals: 'hierarchy'.
+	self assert: (data at: #totalCount) equals: 3.
 	self assert: classNames equals: {
 			self baseClassName.
 			self childClassName.
@@ -197,10 +188,8 @@ MCPToolFindClassesTest >> testImageScopeCanFilterAndPaginate [
 	classNames := (data at: #classes) collect: [ :each |
 		              each at: #className ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #scope) equals: 'image'.
 	self assert: (data at: #totalCount) equals: 3.
-	self assert: (data at: #returnedCount) equals: 2.
-	self deny: (data at: #truncated).
+	self assert: classNames size equals: 2.
 	self assert: classNames equals: {
 			self childClassName.
 			self grandchildClassName } asArray
@@ -218,8 +207,7 @@ MCPToolFindClassesTest >> testPackagesScopeReturnsPackageClasses [
 	classNames := (data at: #classes) collect: [ :each |
 		              each at: #className ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #scope) equals: 'packages'.
-	self assert: (data at: #packageNames) equals: #( 'MCP-Tests' ).
+	self assert: (data at: #totalCount) equals: 3.
 	self assert: classNames equals: {
 			self baseClassName.
 			self childClassName.

@@ -39,8 +39,7 @@ MCPToolImplementorsTest >> testCanIncludeFormattedSource [
 		               in: (data at: #implementors).
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #totalCount) equals: 1.
-	self assert: (data at: #returnedCount) equals: 1.
-	self deny: (data at: #truncated).
+	self assert: (data at: #implementors) size equals: 1.
 	self assert: (implementor includesKey: #source).
 	self assert:
 		((implementor at: #source) includesSubstring: String cr asString)
@@ -59,9 +58,6 @@ MCPToolImplementorsTest >> testClassesScopeLimitsToExactClasses [
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #totalCount) equals: 1.
 	self
-		assert: (data at: #classNames) asArray
-		equals: #( 'MCPToolHierarchyTestChild' ).
-	self
 		entryForReference: 'MCPToolHierarchyTestChild>>hierarchyProbe'
 		in: (data at: #implementors)
 ]
@@ -77,8 +73,7 @@ MCPToolImplementorsTest >> testFilterCanNarrowResultsAndPaginate [
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #totalCount) equals: 1.
-	self assert: (data at: #returnedCount) equals: 1.
-	self deny: (data at: #truncated).
+	self assert: (data at: #implementors) size equals: 1.
 	self
 		entryForReference: 'MCPToolImplementorsTestExact class>>dualProbe'
 		in: (data at: #implementors)
@@ -115,8 +110,6 @@ MCPToolImplementorsTest >> testImageScopeFindsInstanceAndClassImplementors [
 	self
 		assert: ((self structuredContentFrom: result) at: #status)
 		equals: 'ok'.
-	self assert: (data at: #scope) equals: 'image'.
-	self assert: (data at: #side) equals: 'both'.
 	self assert: (data at: #totalCount) equals: 2.
 	self
 		entryForReference: 'MCPToolImplementorsTestExact>>dualProbe'

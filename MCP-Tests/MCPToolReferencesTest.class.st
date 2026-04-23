@@ -35,11 +35,7 @@ MCPToolReferencesTest >> testClassesScopeFindsClassReferencesForExactClasses [
 			          asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #mode) equals: 'class'.
 	self assert: (data at: #totalCount) equals: 4.
-	self
-		assert: (data at: #classNames) asArray
-		equals: #( 'MCPToolReferencesTestExact' ).
 	self
 		entryForReference:
 		'MCPToolReferencesTestExact>>referenceExtensionTarget'
@@ -70,11 +66,7 @@ MCPToolReferencesTest >> testClassesScopeLimitsToExactClasses [
 			          asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #mode) equals: 'method'.
 	self assert: (data at: #totalCount) equals: 1.
-	self
-		assert: (data at: #classNames) asArray
-		equals: #( 'MCPToolHierarchyTestChild' ).
 	self
 		entryForReference: 'MCPToolHierarchyTestChild>>childHierarchySender'
 		in: (data at: #references)
@@ -96,10 +88,8 @@ MCPToolReferencesTest >> testFilterCanNarrowResultsPaginateAndIncludeSource [
 		          'MCPToolReferencesTestExact class>>classSendShared'
 		          in: (data at: #references).
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #mode) equals: 'method'.
 	self assert: (data at: #totalCount) equals: 1.
-	self assert: (data at: #returnedCount) equals: 1.
-	self deny: (data at: #truncated).
+	self assert: (data at: #references) size equals: 1.
 	self assert:
 		((sender at: #source) includesSubstring: 'self sharedTarget').
 	self assert:
@@ -118,7 +108,6 @@ MCPToolReferencesTest >> testHierarchyScopeSearchesWholeHierarchy [
 			          asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #mode) equals: 'method'.
 	self assert: (data at: #totalCount) equals: 2.
 	self
 		entryForReference: 'MCPToolHierarchyTestBase>>baseHierarchySender'
@@ -137,8 +126,6 @@ MCPToolReferencesTest >> testImageScopeFindsClassReferencesWhenSelectorMatchesEx
 			          (#mode -> 'class') } asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #mode) equals: 'class'.
-	self assert: (data at: #scope) equals: 'image'.
 	self assert: (data at: #totalCount) equals: 4.
 	self
 		entryForReference:
@@ -170,15 +157,13 @@ MCPToolReferencesTest >> testImageScopeFindsInstanceAndClassSenders [
 	self
 		assert: ((self structuredContentFrom: result) at: #status)
 		equals: 'ok'.
-	self assert: (data at: #mode) equals: 'method'.
-	self assert: (data at: #scope) equals: 'image'.
-	self assert: (data at: #side) equals: 'both'.
 	self assert: (data at: #totalCount) equals: 2.
 	self
 		entryForReference: 'MCPToolReferencesTestExact>>instanceSendShared'
 		in: (data at: #references).
 	self
-		entryForReference: 'MCPToolReferencesTestExact class>>classSendShared'
+		entryForReference:
+		'MCPToolReferencesTestExact class>>classSendShared'
 		in: (data at: #references)
 ]
 
@@ -191,7 +176,6 @@ MCPToolReferencesTest >> testMethodModeDoesNotIncludeClassReferences [
 			          (#mode -> 'method') } asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #mode) equals: 'method'.
 	self assert: (data at: #totalCount) equals: 2.
 	self
 		entryForReference:
@@ -219,7 +203,6 @@ MCPToolReferencesTest >> testPackagesScopeIncludesExtensionMethods [
 		          'MCPToolReferencesTestExtensionTarget>>extensionSender'
 		          in: (data at: #references).
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #mode) equals: 'method'.
 	self assert: (data at: #totalCount) equals: 1.
 	self
 		assert: (sender at: #packageName)
@@ -262,11 +245,11 @@ MCPToolReferencesTest >> testVariableModeFindsClassSideVariableReferences [
 			          (#mode -> 'variable').
 			          (#scope -> 'classes').
 			          (#side -> 'class').
-			          (#classNames -> #( 'MCPToolReferencesVariableTestTarget' )) }
+			          (#classNames
+			           -> #( 'MCPToolReferencesVariableTestTarget' )) }
 			          asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #mode) equals: 'variable'.
 	self assert: (data at: #totalCount) equals: 2.
 	self
 		entryForReference:
@@ -287,11 +270,11 @@ MCPToolReferencesTest >> testVariableModeFindsInstanceVariableReferences [
 			          (#mode -> 'variable').
 			          (#scope -> 'classes').
 			          (#side -> 'instance').
-			          (#classNames -> #( 'MCPToolReferencesVariableTestTarget' )) }
+			          (#classNames
+			           -> #( 'MCPToolReferencesVariableTestTarget' )) }
 			          asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #mode) equals: 'variable'.
 	self assert: (data at: #totalCount) equals: 2.
 	self
 		entryForReference:

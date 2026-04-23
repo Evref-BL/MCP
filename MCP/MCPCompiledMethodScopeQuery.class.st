@@ -1,8 +1,7 @@
 Class {
 	#name : 'MCPCompiledMethodScopeQuery',
-	#superclass : 'Object',
+	#superclass : 'MCPScopeQuery',
 	#instVars : [
-		'scope',
 		'packageNames',
 		'classNames',
 		'side'
@@ -243,7 +242,6 @@ MCPCompiledMethodScopeQuery >> hierarchyBehaviorsForClassNames [
 MCPCompiledMethodScopeQuery >> initialize [
 
 	super initialize.
-	scope := 'image'.
 	packageNames := #(  ).
 	classNames := #(  ).
 	side := 'both'
@@ -263,22 +261,6 @@ MCPCompiledMethodScopeQuery >> matchesSideForCompiledMethod: aCompiledMethod [
 	side = 'both' ifTrue: [ ^ true ].
 	side = 'class' ifTrue: [ ^ aCompiledMethod methodClass isMeta ].
 	^ aCompiledMethod methodClass isMeta not
-]
-
-{ #category : 'private - normalization' }
-MCPCompiledMethodScopeQuery >> normalizedStringCollection: aValue argumentName: anArgumentName [
-
-	| normalized value values |
-	aValue ifNil: [ ^ #(  ) ].
-	value := aValue.
-	(value isString or: [ value isSymbol ]) ifTrue: [ value := { value } ].
-	(value isCollection and: [ value isString not ]) ifFalse: [
-		Error signal: anArgumentName , ' must be an array of strings.' ].
-	values := OrderedCollection new.
-	value do: [ :each |
-		normalized := each asString trimBoth.
-		normalized isEmpty ifFalse: [ values add: normalized ] ].
-	^ values asArray
 ]
 
 { #category : 'private - resolution' }
@@ -304,26 +286,6 @@ MCPCompiledMethodScopeQuery >> packageNames: someNames [
 ]
 
 { #category : 'accessing' }
-MCPCompiledMethodScopeQuery >> scope [
-
-	^ scope
-]
-
-{ #category : 'accessing' }
-MCPCompiledMethodScopeQuery >> scope: aScope [
-
-	| normalized |
-	normalized := aScope
-		              ifNil: [ 'image' ]
-		              ifNotNil: [ aScope asLowercase ].
-	(#( 'image' 'packages' 'hierarchy' 'classes' ) includes: normalized)
-		ifFalse: [
-			Error signal:
-				'scope must be one of image, packages, hierarchy, or classes.' ].
-	scope := normalized
-]
-
-{ #category : 'accessing' }
 MCPCompiledMethodScopeQuery >> side [
 
 	^ side
@@ -342,6 +304,8 @@ MCPCompiledMethodScopeQuery >> side: aSide [
 { #category : 'validating' }
 MCPCompiledMethodScopeQuery >> validate [
 
+	self validateScopeIsOneOf:
+		#( 'image' 'packages' 'hierarchy' 'classes' ).
 	scope = 'packages' ifTrue: [
 		self packageNames ifEmpty: [
 			Error signal: 'packageNames is required when scope=packages.' ] ].

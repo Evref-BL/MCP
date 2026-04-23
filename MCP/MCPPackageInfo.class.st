@@ -34,6 +34,15 @@ MCPPackageInfo >> asDictionary [
 		  (#isUndefined -> self isUndefined) } asDictionary
 ]
 
+{ #category : 'converting' }
+MCPPackageInfo >> asQueryDictionary [
+
+	^ {
+		  (#packageName -> self packageName).
+		  (#projectNames -> self projectNames).
+		  (#tagNames -> self tagNames) } asDictionary
+]
+
 { #category : 'accessing' }
 MCPPackageInfo >> definedClassCount [
 

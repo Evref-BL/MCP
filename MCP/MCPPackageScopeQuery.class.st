@@ -1,8 +1,7 @@
 Class {
 	#name : 'MCPPackageScopeQuery',
-	#superclass : 'Object',
+	#superclass : 'MCPScopeQuery',
 	#instVars : [
-		'scope',
 		'projectNames'
 	],
 	#category : 'MCP-Internal',
@@ -29,24 +28,7 @@ MCPPackageScopeQuery >> allPackages [
 MCPPackageScopeQuery >> initialize [
 
 	super initialize.
-	scope := 'image'.
 	projectNames := #(  )
-]
-
-{ #category : 'private - normalization' }
-MCPPackageScopeQuery >> normalizedStringCollection: aValue argumentName: anArgumentName [
-
-	| normalized value values |
-	aValue ifNil: [ ^ #(  ) ].
-	value := aValue.
-	(value isString or: [ value isSymbol ]) ifTrue: [ value := { value } ].
-	(value isCollection and: [ value isString not ]) ifFalse: [
-		Error signal: anArgumentName , ' must be an array of strings.' ].
-	values := OrderedCollection new.
-	value do: [ :each |
-		normalized := each asString trimBoth.
-		normalized isEmpty ifFalse: [ values add: normalized ] ].
-	^ values asArray
 ]
 
 { #category : 'private - querying' }
@@ -128,20 +110,6 @@ MCPPackageScopeQuery >> resolvedProjectsNamed: someProjectNames [
 	^ projects asArray
 ]
 
-{ #category : 'accessing' }
-MCPPackageScopeQuery >> scope [
-
-	^ scope
-]
-
-{ #category : 'accessing' }
-MCPPackageScopeQuery >> scope: aScope [
-
-	scope := aScope
-		         ifNil: [ 'image' ]
-		         ifNotNil: [ aScope asString asLowercase ]
-]
-
 { #category : 'private - scope' }
 MCPPackageScopeQuery >> sortedPackagesByName: somePackages [
 
@@ -152,8 +120,7 @@ MCPPackageScopeQuery >> sortedPackagesByName: somePackages [
 { #category : 'validating' }
 MCPPackageScopeQuery >> validate [
 
-	(#( 'image' 'project' ) includes: scope) ifFalse: [
-		Error signal: 'scope must be one of image or project.' ].
+	self validateScopeIsOneOf: #( 'image' 'project' ).
 	scope = 'project' ifTrue: [
 		projectNames ifEmpty: [
 			Error signal: 'projectNames is required when scope=project.' ] ]

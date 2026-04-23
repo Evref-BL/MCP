@@ -1,8 +1,7 @@
 Class {
 	#name : 'MCPClassScopeQuery',
-	#superclass : 'Object',
+	#superclass : 'MCPScopeQuery',
 	#instVars : [
-		'scope',
 		'packageNames',
 		'classNames'
 	],
@@ -83,25 +82,8 @@ MCPClassScopeQuery >> hierarchyClassesNamed: someClassNames [
 MCPClassScopeQuery >> initialize [
 
 	super initialize.
-	scope := 'image'.
 	packageNames := #(  ).
 	classNames := #(  )
-]
-
-{ #category : 'private - normalization' }
-MCPClassScopeQuery >> normalizedStringCollection: aValue argumentName: anArgumentName [
-
-	| normalized value values |
-	aValue ifNil: [ ^ #(  ) ].
-	value := aValue.
-	(value isString or: [ value isSymbol ]) ifTrue: [ value := { value } ].
-	(value isCollection and: [ value isString not ]) ifFalse: [
-		Error signal: anArgumentName , ' must be an array of strings.' ].
-	values := OrderedCollection new.
-	value do: [ :each |
-		normalized := each asString trimBoth.
-		normalized isEmpty ifFalse: [ values add: normalized ] ].
-	^ values asArray
 ]
 
 { #category : 'accessing' }
@@ -145,20 +127,6 @@ MCPClassScopeQuery >> resolvedPackageNamed: packageName [
 		  MCPCommandError signalMissingPackageNamed: packageName ]
 ]
 
-{ #category : 'accessing' }
-MCPClassScopeQuery >> scope [
-
-	^ scope
-]
-
-{ #category : 'accessing' }
-MCPClassScopeQuery >> scope: aScope [
-
-	scope := aScope
-		         ifNil: [ 'image' ]
-		         ifNotNil: [ aScope asString asLowercase ]
-]
-
 { #category : 'private - scope' }
 MCPClassScopeQuery >> sortedClassesByName: someClasses [
 
@@ -169,10 +137,8 @@ MCPClassScopeQuery >> sortedClassesByName: someClasses [
 { #category : 'validating' }
 MCPClassScopeQuery >> validate [
 
-	(#( 'image' 'packages' 'hierarchy' 'classes' ) includes: scope)
-		ifFalse: [
-			Error signal:
-				'scope must be one of image, packages, hierarchy, or classes.' ].
+	self validateScopeIsOneOf:
+		#( 'image' 'packages' 'hierarchy' 'classes' ).
 	scope = 'packages' ifTrue: [
 		packageNames ifEmpty: [
 			Error signal: 'packageNames is required when scope=packages.' ] ].
