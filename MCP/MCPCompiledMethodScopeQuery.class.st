@@ -117,9 +117,9 @@ MCPCompiledMethodScopeQuery >> classNames [
 { #category : 'accessing' }
 MCPCompiledMethodScopeQuery >> classNames: someNames [
 
-	classNames := self
-		              normalizedStringCollection: someNames
-		              argumentName: 'classNames'
+	classNames := someNames
+		              ifNil: [ #(  ) ]
+		              ifNotNil: [ someNames asArray ]
 ]
 
 { #category : 'private - scope' }
@@ -280,9 +280,9 @@ MCPCompiledMethodScopeQuery >> packageNames [
 { #category : 'accessing' }
 MCPCompiledMethodScopeQuery >> packageNames: someNames [
 
-	packageNames := self
-		                normalizedStringCollection: someNames
-		                argumentName: 'packageNames'
+	packageNames := someNames
+		                ifNil: [ #(  ) ]
+		                ifNotNil: [ someNames asArray ]
 ]
 
 { #category : 'accessing' }
@@ -294,11 +294,7 @@ MCPCompiledMethodScopeQuery >> side [
 { #category : 'accessing' }
 MCPCompiledMethodScopeQuery >> side: aSide [
 
-	| normalized |
-	normalized := aSide ifNil: [ 'both' ] ifNotNil: [ aSide asLowercase ].
-	(#( 'instance' 'class' 'both' ) includes: normalized) ifFalse: [
-		Error signal: 'side must be one of instance, class, or both.' ].
-	side := normalized
+	side := aSide ifNil: [ 'both' ] ifNotNil: [ aSide ]
 ]
 
 { #category : 'validating' }
@@ -306,6 +302,8 @@ MCPCompiledMethodScopeQuery >> validate [
 
 	self validateScopeIsOneOf:
 		#( 'image' 'packages' 'hierarchy' 'classes' ).
+	(#( 'instance' 'class' 'both' ) includes: side) ifFalse: [
+		Error signal: 'side must be one of instance, class, or both.' ].
 	scope = 'packages' ifTrue: [
 		self packageNames ifEmpty: [
 			Error signal: 'packageNames is required when scope=packages.' ] ].

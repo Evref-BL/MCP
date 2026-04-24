@@ -82,9 +82,9 @@ MCPPackageScopeQuery >> projectNames [
 { #category : 'accessing' }
 MCPPackageScopeQuery >> projectNames: someProjectNames [
 
-	projectNames := self
-		                normalizedStringCollection: someProjectNames
-		                argumentName: 'projectNames'
+	projectNames := someProjectNames
+		                ifNil: [ #(  ) ]
+		                ifNotNil: [ someProjectNames asArray ]
 ]
 
 { #category : 'private - querying' }

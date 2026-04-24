@@ -179,11 +179,30 @@ MCPToolFindMethods >> queryEntriesForParameters: parameters [
 ]
 
 { #category : 'private - template' }
+MCPToolFindMethods >> queryParametersFromRequest: request [
+
+	| parameters |
+	parameters := self methodQueryParametersFromRequest: request.
+	parameters
+		at: #filterTargets
+		put: (self filterTargetsFromRequest: request).
+	^ parameters
+]
+
+{ #category : 'private - template' }
 MCPToolFindMethods >> queryResultDataForParameters: parameters page: page [
 
 	^ self
 		  methodQueryResultDataForPage: page
 		  entriesKey: #methods
+]
+
+{ #category : 'private - template' }
+MCPToolFindMethods >> requestedContextFromRequest: request [
+
+	^ { (#scope
+	   -> (request stringArgumentNamed: 'scope' default: 'image')) }
+		  asDictionary
 ]
 
 { #category : 'private - template' }

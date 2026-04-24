@@ -10,11 +10,25 @@ Class {
 }
 
 { #category : 'private' }
-MCPToolRunTests >> aggregateDataForResults: resultEntries tests: testRequests [
+MCPToolRunTests >> addTestCasesFrom: aTestOrSuite to: testCases [
 
-	^ Dictionary new
-		  at: #results put: resultEntries asArray;
-		  yourself
+	(aTestOrSuite respondsTo: #tests) ifTrue: [
+		aTestOrSuite tests do: [ :each |
+			self addTestCasesFrom: each to: testCases ].
+		^ self ].
+	testCases add: aTestOrSuite
+]
+
+{ #category : 'private' }
+MCPToolRunTests >> aggregateDataForResults: resultEntries timedOut: timedOut unrunTests: unrunTests [
+
+	| data |
+	data := Dictionary new.
+	data at: #results put: resultEntries asArray.
+	timedOut ifTrue: [
+		data at: #timedOut put: true.
+		data at: #unrunTests put: unrunTests asArray ].
+	^ data
 ]
 
 { #category : 'private' }
@@ -23,6 +37,12 @@ MCPToolRunTests >> compactTestNamesFrom: testRequests [
 	^ (testRequests collect: [ :each |
 		   each at: #testMethodName ifAbsent: [ each at: #className ] ])
 		  asArray
+]
+
+{ #category : 'private - timeout' }
+MCPToolRunTests >> deadlineForTimeoutMilliseconds: timeoutMilliseconds [
+
+	^ Time millisecondClockValue + timeoutMilliseconds
 ]
 
 { #category : 'defaults' }
@@ -41,16 +61,21 @@ MCPToolRunTests >> defaultIcons [
 MCPToolRunTests >> defaultInputSchema [
 
 	^ MCPStructureInputSchema new
-		               type: 'object';
-		               properties: { ((MCPStructureProperties new
-				                 name: 'tests';
-				                 type: 'array';
-				                 description:
-					                 'The test execution requests to run as a batch.')
-				                items: self testRequestObjectSchema;
-				                yourself) };
-		               required: #( 'tests' );
-		               yourself
+		  type: 'object';
+		  properties: {
+				  ((MCPStructureProperties new
+					    name: 'tests';
+					    type: 'array';
+					    description: 'The test execution requests to run as a batch.')
+					   items: self testRequestObjectSchema;
+					   yourself).
+				  (self
+					   integerSchemaPropertyNamed: 'timeoutSeconds'
+					   description:
+					   'Server-side timeout for the batch. Defaults to 90 seconds so partial results can be returned before the outer MCP call times out. Use 0 to return immediately with all tests listed in unrunTests.'
+					   default: self defaultTimeoutSeconds) };
+		  required: #( 'tests' );
+		  yourself
 ]
 
 { #category : 'defaults' }
@@ -62,15 +87,34 @@ MCPToolRunTests >> defaultName [
 { #category : 'defaults' }
 MCPToolRunTests >> defaultOutputSchema [
 
+	| resultsProperty unrunTestsProperty |
+	resultsProperty := self
+		                   schemaPropertyNamed: 'results'
+		                   type: 'array'
+		                   description:
+		                   'Structured results for each test execution request in the batch that completed before timeout.'.
+	resultsProperty items: self testResultObjectSchema.
+	unrunTestsProperty := self
+		                      schemaPropertyNamed: 'unrunTests'
+		                      type: 'array'
+		                      description:
+		                      'Test execution requests that did not run because the batch timed out. Pass this array to run-tests to continue from the timeout point.'.
+	unrunTestsProperty items: self testRequestObjectSchema.
 	^ self
-		  standardOutputSchemaForDataProperties: { ((self
-				    schemaPropertyNamed: 'results'
-				    type: 'array'
-				    description:
-					    'Structured results for each test execution request in the batch.')
-				   items: self testResultObjectSchema;
-				   yourself) }
+		  standardOutputSchemaForDataProperties: {
+				  resultsProperty.
+				  (self
+					   booleanSchemaPropertyNamed: 'timedOut'
+					   description:
+					   'Whether the batch stopped early because timeoutSeconds elapsed.').
+				  unrunTestsProperty }
 		  required: #( 'results' )
+]
+
+{ #category : 'defaults' }
+MCPToolRunTests >> defaultTimeoutSeconds [
+
+	^ 90
 ]
 
 { #category : 'defaults' }
@@ -96,6 +140,28 @@ MCPToolRunTests >> errorResultForError: anError tests: testRequests [
 				  asDictionary
 ]
 
+{ #category : 'executing' }
+MCPToolRunTests >> executeWithRequest: request [
+
+	| data deadline testRequests timeoutMilliseconds validatedRequests |
+	testRequests := #(  ).
+	^ [
+	  testRequests := self testRequestsFromRequest: request.
+	  validatedRequests := self validatedRequestsFrom: testRequests.
+	  timeoutMilliseconds := self timeoutMillisecondsFromRequest: request.
+	  deadline := self deadlineForTimeoutMilliseconds:
+		              timeoutMilliseconds.
+	  data := self
+		          runValidatedRequests: validatedRequests
+		          deadline: deadline.
+	  self
+		  successResultText: (self successSummaryForData: data)
+		  data: data ]
+		  on: Exception
+		  do: [ :error |
+		  self errorResultForError: error tests: testRequests ]
+]
+
 { #category : 'private' }
 MCPToolRunTests >> failureMessageForTests: testRequests error: anError [
 
@@ -117,26 +183,102 @@ MCPToolRunTests >> failureMessageForTests: testRequests error: anError [
 			  nextPutAll: anError messageText ]
 ]
 
-{ #category : 'private' }
-MCPToolRunTests >> resultForValidatedRequest: aDictionary [
+{ #category : 'private - timeout' }
+MCPToolRunTests >> hasTimedOutAt: deadline [
 
-	| request result suite testClass testMethodName |
+	^ (self millisecondsRemainingUntil: deadline) <= 0
+]
+
+{ #category : 'private - timeout' }
+MCPToolRunTests >> millisecondsRemainingUntil: deadline [
+
+	^ 0 max: deadline - Time millisecondClockValue
+]
+
+{ #category : 'private' }
+MCPToolRunTests >> resultForValidatedRequest: aDictionary deadline: deadline [
+
+	| includeResult request result testCases testClass timedOutIndex testMethodName |
 	request := aDictionary at: #request.
 	testClass := aDictionary at: #class.
 	testMethodName := request at: #testMethodName ifAbsent: [ nil ].
-	suite := self suiteForClass: testClass testMethodName: testMethodName.
+	testCases := self testCasesForValidatedRequest: aDictionary.
 	result := MCPStructuredTestResult new.
-	suite run: result.
+	timedOutIndex := nil.
+	testCases doWithIndex: [ :testCase :index |
+		timedOutIndex ifNil: [
+			(self runTestCase: testCase into: result deadline: deadline)
+				ifTrue: [ timedOutIndex := index ] ] ].
+	includeResult := timedOutIndex isNil or: [
+		                 result runCount > 0 or: [
+			                 result issueDetails notEmpty ] ].
+	^ Dictionary new
+		  at: #result put: (includeResult
+				   ifTrue: [
+					   self
+						   structuredDataForTestResult: result
+						   className: testClass name asString
+						   testMethodName: testMethodName ]
+				   ifFalse: [ nil ]);
+		  at: #timedOut put: timedOutIndex notNil;
+		  at: #unrunTests put: (timedOutIndex
+				   ifNil: [ #(  ) ]
+				   ifNotNil: [
+					   self
+						   testRequestsForTestCases: testCases
+						   startingAt: timedOutIndex ]);
+		  yourself
+]
+
+{ #category : 'private - timeout' }
+MCPToolRunTests >> runTestCase: aTestCase into: aResult deadline: deadline [
+
+	| remaining |
+	remaining := self millisecondsRemainingUntil: deadline.
+	remaining <= 0 ifTrue: [ ^ true ].
+	^ [
+	  aTestCase run: aResult.
+	  false ] valueWithinMilliseconds: remaining onTimeout: [ true ]
+]
+
+{ #category : 'private' }
+MCPToolRunTests >> runValidatedRequests: validatedRequests deadline: deadline [
+
+	| outcome resultEntries unrunTests |
+	resultEntries := OrderedCollection new.
+	1 to: validatedRequests size do: [ :index |
+		(self hasTimedOutAt: deadline) ifTrue: [
+			unrunTests := self
+				              unrunTestsFrom: validatedRequests
+				              startingAt: index.
+			^ self
+				  aggregateDataForResults: resultEntries
+				  timedOut: true
+				  unrunTests: unrunTests ].
+		outcome := self
+			           resultForValidatedRequest: (validatedRequests at: index)
+			           deadline: deadline.
+		(outcome at: #result) ifNotNil: [ :resultEntry |
+			resultEntries add: resultEntry ].
+		(outcome at: #timedOut) ifTrue: [
+			unrunTests := OrderedCollection new.
+			unrunTests addAll: (outcome at: #unrunTests).
+			unrunTests addAll:
+				(self unrunTestsFrom: validatedRequests startingAt: index + 1).
+			^ self
+				  aggregateDataForResults: resultEntries
+				  timedOut: true
+				  unrunTests: unrunTests ] ].
 	^ self
-		  structuredDataForTestResult: result
-		  className: testClass name asString
-		  testMethodName: testMethodName
+		  aggregateDataForResults: resultEntries
+		  timedOut: false
+		  unrunTests: #(  )
 ]
 
 { #category : 'private' }
 MCPToolRunTests >> successSummaryForData: data [
 
-	| failureLikeCount results runCount selectionCount selectionWord |
+	| failureLikeCount results runCount selectionCount selectionWord timedOut unrunCount |
 	results := data at: #results.
 	selectionCount := results size.
 	selectionWord := selectionCount = 1
@@ -149,7 +291,10 @@ MCPToolRunTests >> successSummaryForData: data [
 		                    sum + ((each at: #issues) count: [ :issue |
 			                     #( 'failure' 'error' ) includes:
 				                     (issue at: #kind) ]) asInteger ].
+	timedOut := data at: #timedOut ifAbsent: [ false ].
+	unrunCount := (data at: #unrunTests ifAbsent: [ #(  ) ]) size.
 	^ String streamContents: [ :stream |
+		  timedOut ifTrue: [ stream nextPutAll: 'Timed out. ' ].
 		  stream
 			  nextPutAll: 'Executed ';
 			  nextPutAll: selectionCount asString;
@@ -162,16 +307,44 @@ MCPToolRunTests >> successSummaryForData: data [
 			  stream
 				  space;
 				  nextPutAll: failureLikeCount asString;
-				  nextPutAll: ' failures/errors were reported.' ] ]
+				  nextPutAll: ' failures/errors were reported.' ].
+		  timedOut ifTrue: [
+			  stream
+				  space;
+				  nextPutAll: unrunCount asString;
+				  nextPutAll: ' test requests remain in unrunTests.' ] ]
 ]
 
 { #category : 'private' }
-MCPToolRunTests >> suiteForClass: testClass testMethodName: testMethodName [
+MCPToolRunTests >> testCasesForValidatedRequest: aDictionary [
 
-	testMethodName ifNil: [ ^ testClass suite ].
-	^ (TestSuite named: testClass name asString)
-		  addTest: (testClass selector: testMethodName asSymbol);
-		  yourself
+	| request suite testClass testMethodName |
+	request := aDictionary at: #request.
+	testClass := aDictionary at: #class.
+	testMethodName := request at: #testMethodName ifAbsent: [ nil ].
+	testMethodName ifNotNil: [
+		^ { (testClass selector: testMethodName asSymbol) } ].
+	suite := testClass suite.
+	^ self testCasesFromSuite: suite
+]
+
+{ #category : 'private' }
+MCPToolRunTests >> testCasesFromSuite: aSuite [
+
+	| testCases |
+	testCases := OrderedCollection new.
+	self addTestCasesFrom: aSuite to: testCases.
+	^ testCases asArray
+]
+
+{ #category : 'private' }
+MCPToolRunTests >> testRequestForTestCase: aTestCase [
+
+	| request |
+	request := Dictionary new.
+	request at: #className put: aTestCase class name asString.
+	request at: #testMethodName put: aTestCase selector asString.
+	^ request
 ]
 
 { #category : 'private' }
@@ -196,6 +369,43 @@ MCPToolRunTests >> testRequestObjectSchema [
 ]
 
 { #category : 'private' }
+MCPToolRunTests >> testRequestsForTestCases: testCases startingAt: startIndex [
+
+	| requests |
+	requests := OrderedCollection new.
+	startIndex to: testCases size do: [ :index |
+		requests add: (self testRequestForTestCase: (testCases at: index)) ].
+	^ requests asArray
+]
+
+{ #category : 'private' }
+MCPToolRunTests >> testRequestsFromRequest: request [
+
+	| normalized requests |
+	requests := request objectCollectionArgumentNamed: 'tests'.
+	normalized := OrderedCollection new.
+	requests do: [ :each |
+		| className testRequest testMethodName |
+		(each respondsTo: #at:ifAbsent:) ifFalse: [
+			Error signal:
+				'tests must contain only objects with className and optional testMethodName.' ].
+		className := request stringArgumentNamed: 'className' in: each.
+		className ifNil: [
+			Error signal: 'tests must contain only non-empty class names.' ].
+		testMethodName := request
+			                  stringArgumentNamed: 'testMethodName'
+			                  in: each.
+		testRequest := Dictionary new.
+		testRequest at: #className put: className.
+		testMethodName ifNotNil: [
+			testRequest at: #testMethodName put: testMethodName ].
+		normalized add: testRequest ].
+	normalized ifEmpty: [
+		Error signal: 'tests must contain at least one test request.' ].
+	^ normalized asArray
+]
+
+{ #category : 'private' }
 MCPToolRunTests >> testResultObjectSchema [
 
 	| properties |
@@ -216,6 +426,27 @@ MCPToolRunTests >> testResultObjectSchema [
 			  (self standardTestRequiredFieldsIncludingMethodName: false);
 		  additionalProperties: false;
 		  yourself
+]
+
+{ #category : 'private - timeout' }
+MCPToolRunTests >> timeoutMillisecondsFromRequest: request [
+
+	^ (request
+		   nonNegativeIntegerArgumentNamed: 'timeoutSeconds'
+		   default: self defaultTimeoutSeconds) * 1000
+]
+
+{ #category : 'private' }
+MCPToolRunTests >> unrunTestsFrom: validatedRequests startingAt: startIndex [
+
+	| unrun |
+	unrun := OrderedCollection new.
+	startIndex to: validatedRequests size do: [ :index |
+		unrun addAll: (self
+				 testRequestsForTestCases:
+				 (self testCasesForValidatedRequest: (validatedRequests at: index))
+				 startingAt: 1) ].
+	^ unrun asArray
 ]
 
 { #category : 'private' }

@@ -77,6 +77,43 @@ MCPToolRequestTest >> testInvalidToolInputErrorResponseIncludesViolations [
 ]
 
 { #category : 'tests' }
+MCPToolRequestTest >> testRequestAccessorsProvideDefaultsUniqueCollectionsSymbolsAndNestedStrings [
+
+	| nested request |
+	request := MCPToolRequest tool: MCPToolFindClasses new arguments: {
+			           (#scope -> 'packages').
+			           (#packageNames -> #( ' MCP ' '' 'MCP' )).
+			           (#filterTargets -> #( 'class' 'package' 'class' )) }
+			           asDictionary.
+	self
+		assert: (request stringCollectionArgumentNamed: 'packageNames')
+		equals: #( 'MCP' 'MCP' ).
+	self
+		assert:
+		(request uniqueStringCollectionArgumentNamed: 'filterTargets')
+		equals: #( 'class' 'package' ).
+	self
+		assert: (request stringArgumentNamed: 'missing' default: 'image')
+		equals: 'image'.
+	self
+		assert: (request symbolCollectionArgumentNamed: 'packageNames')
+		equals: #( #MCP #MCP ).
+	nested := {
+		          (#className -> ' MCPToolRequestTest ').
+		          (#testMethodName
+		           ->
+		           ' testRequestAccessorsProvideDefaultsUniqueCollectionsSymbolsAndNestedStrings ') }
+		          asDictionary.
+	self
+		assert: (request stringArgumentNamed: 'className' in: nested)
+		equals: 'MCPToolRequestTest'.
+	self
+		assert: (request stringArgumentNamed: 'testMethodName' in: nested)
+		equals:
+		'testRequestAccessorsProvideDefaultsUniqueCollectionsSymbolsAndNestedStrings'
+]
+
+{ #category : 'tests' }
 MCPToolRequestTest >> testValidRequestProvidesTypedAccessors [
 
 	| request |

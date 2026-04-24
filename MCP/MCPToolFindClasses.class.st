@@ -232,9 +232,42 @@ MCPToolFindClasses >> queryEntriesForParameters: parameters [
 ]
 
 { #category : 'private - template' }
+MCPToolFindClasses >> queryParametersFromRequest: request [
+
+	| scopeQuery |
+	scopeQuery := MCPClassScopeQuery
+		              scope:
+		              (request stringArgumentNamed: 'scope' default: 'image')
+		              packageNames:
+		              (request stringCollectionArgumentNamed: 'packageNames')
+		              classNames:
+		              (request stringCollectionArgumentNamed: 'classNames').
+	^ {
+		  (#filterPattern -> (request stringArgumentNamed: 'filter')).
+		  (#filterTargets -> (self filterTargetsFromRequest: request)).
+		  (#filterMode -> (self filterModeFromRequest: request)).
+		  (#caseSensitive
+		   -> (request booleanArgumentNamed: 'caseSensitive' default: false)).
+		  (#limit
+		   ->
+		   (request nonNegativeIntegerArgumentNamed: 'limit' default: 100)).
+		  (#offset
+		   -> (request nonNegativeIntegerArgumentNamed: 'offset' default: 0)).
+		  (#scopeQuery -> scopeQuery) } asDictionary
+]
+
+{ #category : 'private - template' }
 MCPToolFindClasses >> queryResultDataForParameters: parameters page: page [
 
 	^ self queryResultDataFrom: nil page: page entriesKey: #classes
+]
+
+{ #category : 'private - template' }
+MCPToolFindClasses >> requestedContextFromRequest: request [
+
+	^ { (#scope
+	   -> (request stringArgumentNamed: 'scope' default: 'image')) }
+		  asDictionary
 ]
 
 { #category : 'private - template' }

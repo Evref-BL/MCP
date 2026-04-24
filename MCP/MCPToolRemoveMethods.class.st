@@ -242,6 +242,16 @@ MCPToolRemoveMethods >> forceRemoveSelectors: selectorSymbols from: aBehavior [
 ]
 
 { #category : 'private' }
+MCPToolRemoveMethods >> selectorsFromRequest: request [
+
+	| selectors |
+	selectors := request uniqueStringCollectionArgumentNamed: 'selectors'.
+	selectors ifEmpty: [
+		Error signal: 'selectors must contain at least one selector.' ].
+	^ selectors
+]
+
+{ #category : 'private' }
 MCPToolRemoveMethods >> successSummaryForClassName: className classSide: classSide selectors: selectors [
 
 	| targetName |

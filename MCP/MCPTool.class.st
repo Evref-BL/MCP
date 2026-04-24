@@ -346,6 +346,12 @@ MCPTool >> failureMessageFor: anError [
 				  nextPutAll: message ] ]
 ]
 
+{ #category : 'private - request' }
+MCPTool >> filterModeFromRequest: request [
+
+	^ request stringArgumentNamed: 'filterMode' default: 'substring'
+]
+
 { #category : 'private - filtering' }
 MCPTool >> filterTextForMethodEntry: anEntry sourceText: sourceText [
 
@@ -563,6 +569,17 @@ MCPTool >> methodReferenceForClassName: aClassName selector: aSelector isClassSi
 			  nextPutAll: aSelector ]
 ]
 
+{ #category : 'private - methods' }
+MCPTool >> methodScopeQueryFromRequest: request [
+
+	^ MCPCompiledMethodScopeQuery
+		  scope: (request stringArgumentNamed: 'scope' default: 'image')
+		  packageNames:
+		  (request stringCollectionArgumentNamed: 'packageNames')
+		  classNames: (request stringCollectionArgumentNamed: 'classNames')
+		  side: (request stringArgumentNamed: 'side' default: 'both')
+]
+
 { #category : 'accessing' }
 MCPTool >> name [
 
@@ -585,22 +602,6 @@ MCPTool >> normalizeFilterString: aValue caseSensitive: aBoolean [
 	^ aBoolean
 		  ifTrue: [ normalized ]
 		  ifFalse: [ normalized asLowercase ]
-]
-
-{ #category : 'private - arguments' }
-MCPTool >> normalizedStringCollection: aValue argumentName: anArgumentName [
-
-	| normalized value values |
-	aValue ifNil: [ ^ #(  ) ].
-	value := aValue.
-	(value isString or: [ value isSymbol ]) ifTrue: [ value := { value } ].
-	(value isCollection and: [ value isString not ]) ifFalse: [
-		Error signal: anArgumentName , ' must be an array of strings.' ].
-	values := OrderedCollection new.
-	value do: [ :each |
-		normalized := each asString trimBoth.
-		normalized isEmpty ifFalse: [ values add: normalized ] ].
-	^ values asArray
 ]
 
 { #category : 'accessing' }

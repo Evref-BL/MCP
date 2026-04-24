@@ -39,9 +39,9 @@ MCPClassScopeQuery >> classNames [
 { #category : 'accessing' }
 MCPClassScopeQuery >> classNames: someClassNames [
 
-	classNames := self
-		              normalizedStringCollection: someClassNames
-		              argumentName: 'classNames'
+	classNames := someClassNames
+		              ifNil: [ #(  ) ]
+		              ifNotNil: [ someClassNames asArray ]
 ]
 
 { #category : 'querying' }
@@ -95,9 +95,9 @@ MCPClassScopeQuery >> packageNames [
 { #category : 'accessing' }
 MCPClassScopeQuery >> packageNames: somePackageNames [
 
-	packageNames := self
-		                normalizedStringCollection: somePackageNames
-		                argumentName: 'packageNames'
+	packageNames := somePackageNames
+		                ifNil: [ #(  ) ]
+		                ifNotNil: [ somePackageNames asArray ]
 ]
 
 { #category : 'private - resolution' }

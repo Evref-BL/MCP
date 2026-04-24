@@ -92,7 +92,9 @@ MCPCreateClassCommand >> classSlots [
 { #category : 'accessing' }
 MCPCreateClassCommand >> classSlots: someSlots [
 
-	classSlots := self normalizedSlotNamesFrom: someSlots
+	classSlots := someSlots
+		              ifNil: [ #(  ) ]
+		              ifNotNil: [ someSlots asArray ]
 ]
 
 { #category : 'accessing' }
@@ -104,7 +106,9 @@ MCPCreateClassCommand >> classTraits [
 { #category : 'accessing' }
 MCPCreateClassCommand >> classTraits: someTraits [
 
-	classTraits := self normalizedNameStringsFrom: someTraits
+	classTraits := someTraits
+		               ifNil: [ #(  ) ]
+		               ifNotNil: [ someTraits asArray ]
 ]
 
 { #category : 'private' }
@@ -134,29 +138,7 @@ MCPCreateClassCommand >> layout [
 { #category : 'accessing' }
 MCPCreateClassCommand >> layout: aLayoutName [
 
-	| normalized |
-	normalized := aLayoutName
-		              ifNil: [ nil ]
-		              ifNotNil: [ aLayoutName asString trimBoth ].
-	layout := (normalized isNil or: [ normalized isEmpty ])
-		          ifTrue: [ nil ]
-		          ifFalse: [ normalized ]
-]
-
-{ #category : 'private' }
-MCPCreateClassCommand >> normalizedNameStringsFrom: someNames [
-
-	| rawNames |
-	rawNames := someNames ifNil: [ #(  ) ] ifNotNil: [ someNames ].
-	^ rawNames collect: [ :each | each asString trimBoth ] as: Array
-]
-
-{ #category : 'private' }
-MCPCreateClassCommand >> normalizedSlotNamesFrom: someSlots [
-
-	| rawSlots |
-	rawSlots := someSlots ifNil: [ #(  ) ] ifNotNil: [ someSlots ].
-	^ rawSlots collect: [ :each | each asSymbol ] as: Array
+	layout := aLayoutName
 ]
 
 { #category : 'accessing' }
@@ -174,16 +156,16 @@ MCPCreateClassCommand >> packageName: aString [
 { #category : 'private' }
 MCPCreateClassCommand >> resolvedClassTraitNamed: aClassTraitName [
 
-	| behavior normalizedName originalName |
-	originalName := aClassTraitName asString trimBoth.
-	normalizedName := (originalName endsWith: ' classTrait')
+	| behavior classTraitName originalName |
+	originalName := aClassTraitName.
+	classTraitName := (originalName endsWith: ' classTrait')
 		                  ifTrue: [
 		                  originalName
 			                  copyFrom: 1
 			                  to: originalName size - ' classTrait' size ]
 		                  ifFalse: [ originalName ].
 	behavior := Smalltalk globals
-		            at: normalizedName asSymbol
+		            at: classTraitName asSymbol
 		            ifAbsent: [
 			            MCPCommandError
 				            signalErrorCode: #ClassTraitNotFound
@@ -237,26 +219,26 @@ MCPCreateClassCommand >> resolvedLayoutClass [
 { #category : 'private' }
 MCPCreateClassCommand >> resolvedSharedPoolNamed: aSharedPoolName [
 
-	| behavior normalizedName |
-	normalizedName := aSharedPoolName asString trimBoth.
+	| behavior sharedPoolName |
+	sharedPoolName := aSharedPoolName.
 	behavior := Smalltalk globals
-		            at: normalizedName asSymbol
+		            at: sharedPoolName asSymbol
 		            ifAbsent: [
 			            MCPCommandError
 				            signalErrorCode: #SharedPoolNotFound
 				            message:
-				            'Shared pool ' , normalizedName , ' does not exist.'
+				            'Shared pool ' , sharedPoolName , ' does not exist.'
 				            details: {
 						            (#className -> self className).
-						            (#sharedPoolName -> normalizedName) } asDictionary ].
+						            (#sharedPoolName -> sharedPoolName) } asDictionary ].
 	((behavior isBehavior and: [ behavior inheritsFrom: SharedPool ])
 		 or: [ behavior = SharedPool ]) ifFalse: [
 		MCPCommandError
 			signalErrorCode: #InvalidSharedPool
-			message: normalizedName , ' is not a shared pool.'
+			message: sharedPoolName , ' is not a shared pool.'
 			details: {
 					(#className -> self className).
-					(#sharedPoolName -> normalizedName) } asDictionary ].
+					(#sharedPoolName -> sharedPoolName) } asDictionary ].
 	^ behavior
 ]
 
@@ -271,29 +253,26 @@ MCPCreateClassCommand >> resolvedSharedPools [
 { #category : 'private' }
 MCPCreateClassCommand >> resolvedTraitNamed: aTraitName [
 
-	| behavior normalizedName |
-	normalizedName := aTraitName asString trimBoth.
-	(normalizedName endsWith: ' classTrait') ifTrue: [
-		normalizedName := normalizedName
-			                  copyFrom: 1
-			                  to: normalizedName size - ' classTrait' size ].
-	behavior := Smalltalk globals
-		            at: normalizedName asSymbol
-		            ifAbsent: [
-			            MCPCommandError
-				            signalErrorCode: #TraitNotFound
-				            message:
-				            'Trait ' , normalizedName , ' does not exist.'
-				            details: {
-						            (#className -> self className).
-						            (#traitName -> normalizedName) } asDictionary ].
+	| behavior traitName |
+	traitName := aTraitName.
+	(traitName endsWith: ' classTrait') ifTrue: [
+		traitName := traitName
+			             copyFrom: 1
+			             to: traitName size - ' classTrait' size ].
+	behavior := Smalltalk globals at: traitName asSymbol ifAbsent: [
+		            MCPCommandError
+			            signalErrorCode: #TraitNotFound
+			            message: 'Trait ' , traitName , ' does not exist.'
+			            details: {
+					            (#className -> self className).
+					            (#traitName -> traitName) } asDictionary ].
 	behavior isTrait ifFalse: [
 		MCPCommandError
 			signalErrorCode: #InvalidTrait
-			message: normalizedName , ' is not a trait.'
+			message: traitName , ' is not a trait.'
 			details: {
 					(#className -> self className).
-					(#traitName -> normalizedName) } asDictionary ].
+					(#traitName -> traitName) } asDictionary ].
 	^ behavior
 ]
 
@@ -314,7 +293,9 @@ MCPCreateClassCommand >> sharedPools [
 { #category : 'accessing' }
 MCPCreateClassCommand >> sharedPools: somePools [
 
-	sharedPools := self normalizedNameStringsFrom: somePools
+	sharedPools := somePools
+		               ifNil: [ #(  ) ]
+		               ifNotNil: [ somePools asArray ]
 ]
 
 { #category : 'accessing' }
@@ -326,7 +307,9 @@ MCPCreateClassCommand >> sharedVariables [
 { #category : 'accessing' }
 MCPCreateClassCommand >> sharedVariables: someVariables [
 
-	sharedVariables := self normalizedNameStringsFrom: someVariables
+	sharedVariables := someVariables
+		                   ifNil: [ #(  ) ]
+		                   ifNotNil: [ someVariables asArray ]
 ]
 
 { #category : 'accessing' }
@@ -338,7 +321,7 @@ MCPCreateClassCommand >> slots [
 { #category : 'accessing' }
 MCPCreateClassCommand >> slots: someSlots [
 
-	slots := self normalizedSlotNamesFrom: someSlots
+	slots := someSlots ifNil: [ #(  ) ] ifNotNil: [ someSlots asArray ]
 ]
 
 { #category : 'private' }
@@ -371,13 +354,7 @@ MCPCreateClassCommand >> tag [
 { #category : 'accessing' }
 MCPCreateClassCommand >> tag: aString [
 
-	| normalized |
-	normalized := aString
-		              ifNil: [ nil ]
-		              ifNotNil: [ aString asString trimBoth ].
-	tag := (normalized isNil or: [ normalized isEmpty ])
-		       ifTrue: [ nil ]
-		       ifFalse: [ normalized ]
+	tag := aString
 ]
 
 { #category : 'accessing' }
@@ -389,5 +366,7 @@ MCPCreateClassCommand >> traits [
 { #category : 'accessing' }
 MCPCreateClassCommand >> traits: someTraits [
 
-	traits := self normalizedNameStringsFrom: someTraits
+	traits := someTraits
+		          ifNil: [ #(  ) ]
+		          ifNotNil: [ someTraits asArray ]
 ]

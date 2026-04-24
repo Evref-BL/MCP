@@ -100,6 +100,25 @@ MCPToolMethodQuery >> methodQueryFilteringInputPropertiesWithFilterDescription: 
 	^ properties asArray
 ]
 
+{ #category : 'private - request' }
+MCPToolMethodQuery >> methodQueryParametersFromRequest: request [
+
+	^ {
+		  (#filterPattern -> (request stringArgumentNamed: 'filter')).
+		  (#filterMode -> (self filterModeFromRequest: request)).
+		  (#caseSensitive
+		   -> (request booleanArgumentNamed: 'caseSensitive' default: false)).
+		  (#includeSource
+		   -> (request booleanArgumentNamed: 'includeSource' default: false)).
+		  (#limit
+		   ->
+		   (request nonNegativeIntegerArgumentNamed: 'limit' default: 100)).
+		  (#offset
+		   -> (request nonNegativeIntegerArgumentNamed: 'offset' default: 0)).
+		  (#query -> (self methodScopeQueryFromRequest: request)) }
+		  asDictionary
+]
+
 { #category : 'private - results' }
 MCPToolMethodQuery >> methodQueryResultDataForPage: page entriesKey: entriesKey [
 

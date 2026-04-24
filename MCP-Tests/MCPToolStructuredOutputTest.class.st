@@ -422,3 +422,49 @@ MCPToolStructuredOutputTest >> testRunTestMethodReturnsStructuredIssues [
 	self deny: (methodResult includesKey: #errorCount).
 	self deny: (methodResult includesKey: #failingTestNames)
 ]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testRunTestsTimeoutReturnsPartialResultsAndUnrunTestsCanResume [
+
+	| data partialResult resumedData resumedResult result unrunTests |
+	result := self callToolNamed: 'run-tests' withArguments: {
+			          (#tests -> {
+				           { (#className -> 'MCPToolRunTestsTimeoutTarget') }
+					           asDictionary.
+				           {
+					           (#className -> 'MCPToolRequestTest').
+					           (#testMethodName
+					            -> 'testValidRequestProvidesTypedAccessors') }
+					           asDictionary }).
+			          (#timeoutSeconds -> 1) } asDictionary.
+	data := self dataFrom: result.
+	self
+		assert: ((self structuredContentFrom: result) at: #status)
+		equals: 'ok'.
+	self assert: (data at: #timedOut).
+	partialResult := (data at: #results) first.
+	self
+		assert: (partialResult at: #className)
+		equals: 'MCPToolRunTestsTimeoutTarget'.
+	self assert: (partialResult at: #runCount) equals: 1.
+	unrunTests := data at: #unrunTests.
+	self assert: (unrunTests anySatisfy: [ :each |
+			 (each at: #className) = 'MCPToolRunTestsTimeoutTarget' and: [
+				 (each at: #testMethodName) = 'testSlowPass' ] ]).
+	self assert: (unrunTests anySatisfy: [ :each |
+			 (each at: #className) = 'MCPToolRequestTest' and: [
+				 (each at: #testMethodName)
+				 = 'testValidRequestProvidesTypedAccessors' ] ]).
+	resumedResult := self callToolNamed: 'run-tests' withArguments: {
+			                 (#tests -> unrunTests).
+			                 (#timeoutSeconds -> 5) } asDictionary.
+	resumedData := self dataFrom: resumedResult.
+	self
+		assert: ((self structuredContentFrom: resumedResult) at: #status)
+		equals: 'ok'.
+	self deny: (resumedData includesKey: #timedOut).
+	self
+		assert:
+		((resumedData at: #results) sum: [ :each | each at: #runCount ])
+		equals: unrunTests size
+]

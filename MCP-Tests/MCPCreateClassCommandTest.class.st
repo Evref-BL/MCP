@@ -81,8 +81,8 @@ MCPCreateClassCommandTest >> testCreatesClassWithTagSlotsAndClassSlots [
 			           superclassName: 'Object'
 			           packageName: self generatedPackageName
 			           tag: 'Generated'
-			           slots: #( 'firstName' 'lastName' )
-			           classSlots: #( 'defaultName' )).
+			           slots: #( #firstName #lastName )
+			           classSlots: #( #defaultName )).
 	createdClass := self classNamed: 'MCPCreateClassCommandTestTagged'.
 	self
 		assert: (createdClass slots collect: #name as: Array)
@@ -103,8 +103,8 @@ MCPCreateClassCommandTest >> testCreatesClassWithTraitsClassTraitsSharedVariable
 			           superclassName: 'Object'
 			           packageName: self generatedPackageName
 			           tag: 'Configured'
-			           slots: #( 'firstName' )
-			           classSlots: #( 'defaultName' )
+			           slots: #( #firstName )
+			           classSlots: #( #defaultName )
 			           traits: #( 'TAbleToRotate' )
 			           classTraits: #( 'TAbleToRotate classTrait' )
 			           sharedVariables: #( 'AlphaShared' 'BetaShared' )

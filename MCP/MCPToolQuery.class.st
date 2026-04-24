@@ -72,6 +72,19 @@ MCPToolQuery >> failureMessageForRequestedContext: requestedContext error: anErr
 	^ self subclassResponsibility
 ]
 
+{ #category : 'private - request' }
+MCPToolQuery >> filterTargetsFromRequest: request [
+
+	| filterTargets |
+	filterTargets := request
+		                 uniqueStringCollectionArgumentNamed:
+		                 'filterTargets'
+		                 default: self defaultFilterTargets.
+	filterTargets ifEmpty: [
+		Error signal: 'filterTargets must contain at least one target.' ].
+	^ filterTargets
+]
+
 { #category : 'private - schema' }
 MCPToolQuery >> minimalPagedQueryOutputSchemaForEntriesPropertyNamed: entriesPropertyName entriesDescription: entriesDescription entrySchema: entrySchema itemNounPhrase: itemNounPhrase [
 

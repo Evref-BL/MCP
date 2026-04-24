@@ -335,6 +335,22 @@ MCPToolEdit >> operationFailureErrorCodeFor: anError operation: operation [
 	^ prefix , 'ExecutionError'
 ]
 
+{ #category : 'private - request' }
+MCPToolEdit >> operationFromRequest: request [
+
+	| operation specification |
+	operation := request stringArgumentNamed: 'operation'.
+	operation ifNil: [
+		MCPInvalidToolInput
+			signalMissingRequiredArgumentNamed: 'operation'
+			forTool: self ].
+	specification := self operationSpecifications
+		                 detect: [ :each | (each at: #name) = operation ]
+		                 ifNone: [
+		                 Error signal: self operationValidationErrorMessage ].
+	^ specification at: #name
+]
+
 { #category : 'private - operations' }
 MCPToolEdit >> operationNameListText [
 
@@ -509,6 +525,28 @@ MCPToolEdit >> refactoringScopePackageNamesSchemaProperty [
 		  itemDescription: 'A package name.'
 ]
 
+{ #category : 'private - request' }
+MCPToolEdit >> refactoringScopeParametersFromRequest: request [
+
+	| classNames explicitScope packageNames scope |
+	packageNames := request stringCollectionArgumentNamed: 'packageNames'.
+	classNames := request stringCollectionArgumentNamed: 'classNames'.
+	explicitScope := request stringArgumentNamed: 'scope'.
+	scope := self
+		         resolvedRefactoringScopeFrom: explicitScope
+		         packageNames: packageNames
+		         classNames: classNames.
+	self
+		validateRefactoringScope: scope
+		packageNames: packageNames
+		classNames: classNames.
+	self validateRefactoringScopePackageNamesExist: packageNames.
+	^ {
+		  (#scope -> scope).
+		  (#packageNames -> packageNames).
+		  (#classNames -> classNames) } asDictionary
+]
+
 { #category : 'private - schema' }
 MCPToolEdit >> refactoringScopeSchemaProperty [
 
@@ -548,19 +586,14 @@ MCPToolEdit >> resolvedRefactoringScopeClassesFrom: classNames [
 			  ifAbsent: [ MCPCommandError signalMissingClassNamed: eachName ] ]
 ]
 
-{ #category : 'private - arguments' }
+{ #category : 'private - request' }
 MCPToolEdit >> resolvedRefactoringScopeFrom: explicitScope packageNames: packageNames classNames: classNames [
 
-	| normalizedScope |
-	normalizedScope := explicitScope
-		                   ifNil: [ nil ]
-		                   ifNotNil: [
-		                   explicitScope asString trimBoth asLowercase ].
-	normalizedScope ifNil: [
+	explicitScope ifNil: [
 		packageNames ifNotEmpty: [
 			classNames ifNotEmpty: [
 				MCPCommandError
-					signalErrorCode: #RefactoringScopeArgumentsConflict
+					signalErrorCode: #RefactoringScopeParametersConflict
 					message:
 					'packageNames and classNames cannot both be used without an explicit scope.'
 					details: {
@@ -573,13 +606,13 @@ MCPToolEdit >> resolvedRefactoringScopeFrom: explicitScope packageNames: package
 				message: 'scope is required when classNames are provided.'
 				details: { (#classNames -> classNames) } asDictionary ].
 		^ 'image' ].
-	(self supportedRefactoringScopes includes: normalizedScope) ifFalse: [
+	(self supportedRefactoringScopes includes: explicitScope) ifFalse: [
 		MCPCommandError
 			signalErrorCode: #InvalidRefactoringScope
 			message:
 			'scope must be one of image, packages, hierarchy, classes.'
-			details: { (#scope -> normalizedScope) } asDictionary ].
-	^ normalizedScope
+			details: { (#scope -> explicitScope) } asDictionary ].
+	^ explicitScope
 ]
 
 { #category : 'private - schema' }

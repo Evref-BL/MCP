@@ -183,6 +183,13 @@ MCPToolReferences >> method: aCompiledMethod referencesAnyVariable: variables [
 		  eachVariable isAccessedIn: aCompiledMethod ]
 ]
 
+{ #category : 'private - request' }
+MCPToolReferences >> modeFromRequest: request [
+
+	^ (request stringArgumentNamed: 'mode') ifNil: [
+		  Error signal: 'mode is required.' ]
+]
+
 { #category : 'private - results' }
 MCPToolReferences >> queryDescriptionForMode: mode [
 
@@ -226,6 +233,16 @@ MCPToolReferences >> queryResultDataForParameters: parameters page: page [
 	^ self
 		  methodQueryResultDataForPage: page
 		  entriesKey: #references
+]
+
+{ #category : 'private - template' }
+MCPToolReferences >> requestedContextFromRequest: request [
+
+	^ {
+		  (#scope -> (request stringArgumentNamed: 'scope' default: 'image')).
+		  (#mode -> (request stringArgumentNamed: 'mode' default: 'unknown')).
+		  (#target -> (request stringArgumentNamed: 'target')) }
+		  asDictionary
 ]
 
 { #category : 'private - schema' }

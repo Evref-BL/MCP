@@ -141,6 +141,15 @@ MCPToolImplementors >> queryResultDataForParameters: parameters page: page [
 ]
 
 { #category : 'private - template' }
+MCPToolImplementors >> requestedContextFromRequest: request [
+
+	^ {
+		  (#scope -> (request stringArgumentNamed: 'scope' default: 'image')).
+		  (#selector -> (request stringArgumentNamed: 'selector')) }
+		  asDictionary
+]
+
+{ #category : 'private - template' }
 MCPToolImplementors >> successSummaryForParameters: parameters page: page [
 
 	^ self

@@ -221,9 +221,40 @@ MCPToolFindPackages >> queryEntriesForParameters: parameters [
 ]
 
 { #category : 'private - template' }
+MCPToolFindPackages >> queryParametersFromRequest: request [
+
+	| scopeQuery |
+	scopeQuery := MCPPackageScopeQuery
+		              scope:
+		              (request stringArgumentNamed: 'scope' default: 'image')
+		              projectNames:
+		              (request stringCollectionArgumentNamed: 'projectNames').
+	^ {
+		  (#filterPattern -> (request stringArgumentNamed: 'filter')).
+		  (#filterTargets -> (self filterTargetsFromRequest: request)).
+		  (#filterMode -> (self filterModeFromRequest: request)).
+		  (#caseSensitive
+		   -> (request booleanArgumentNamed: 'caseSensitive' default: false)).
+		  (#limit
+		   ->
+		   (request nonNegativeIntegerArgumentNamed: 'limit' default: 100)).
+		  (#offset
+		   -> (request nonNegativeIntegerArgumentNamed: 'offset' default: 0)).
+		  (#scopeQuery -> scopeQuery) } asDictionary
+]
+
+{ #category : 'private - template' }
 MCPToolFindPackages >> queryResultDataForParameters: parameters page: page [
 
 	^ self queryResultDataFrom: nil page: page entriesKey: #packages
+]
+
+{ #category : 'private - template' }
+MCPToolFindPackages >> requestedContextFromRequest: request [
+
+	^ { (#scope
+	   -> (request stringArgumentNamed: 'scope' default: 'image')) }
+		  asDictionary
 ]
 
 { #category : 'private - template' }

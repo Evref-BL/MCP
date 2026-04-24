@@ -126,6 +126,53 @@ MCPToolInspectMethod >> errorResultForError: anError className: className select
 				  (#side -> side) } asDictionary
 ]
 
+{ #category : 'executing' }
+MCPToolInspectMethod >> executeWithRequest: request [
+
+	| className compiledMethod data includeVariableDetails methodBehavior protocolName selectorString side variableReferences |
+	className := request stringArgumentNamed: 'className'.
+	selectorString := self selectorStringFromRequest: request.
+	side := self sideFromRequest: request.
+	^ [
+	  includeVariableDetails := request
+		                            booleanArgumentNamed:
+		                            'includeVariableDetails'
+		                            default: false.
+	  compiledMethod := self
+		                    methodForClassNamed: className
+		                    selector: selectorString
+		                    side: side.
+	  protocolName := compiledMethod protocol
+		                  ifNil: [ '' ]
+		                  ifNotNil: [ :protocol | protocol name asString ].
+	  data := {
+		          (#protocol -> protocolName).
+		          (#source -> (compiledMethod sourceCode ifNil: [ '' ])) }
+		          asDictionary.
+	  includeVariableDetails ifTrue: [
+		  methodBehavior := self
+			                    methodBehaviorForClassNamed: className
+			                    side: side.
+		  variableReferences := self
+			                        variableSummariesForMethod: compiledMethod
+			                        methodBehavior: methodBehavior.
+		  data at: #variableReferences put: variableReferences ].
+	  self
+		  successResultText: (self
+				   successSummaryForClassName: className
+				   selector: selectorString
+				   side: side
+				   externalVariableCount: nil)
+		  data: data ]
+		  on: Error
+		  do: [ :error |
+			  self
+				  errorResultForError: error
+				  className: className
+				  selector: selectorString
+				  side: side ]
+]
+
 { #category : 'private - results' }
 MCPToolInspectMethod >> failureMessageForClassNamed: className selector: selectorString side: side error: anError [
 
@@ -241,6 +288,12 @@ MCPToolInspectMethod >> ownerNameForNode: aVariableNode kind: aKind methodBehavi
 														         ifTrue: [ 'Undeclared' ]
 														         ifFalse: [ nil ] ] ] ] ] ] ].
 	^ owner ifNil: [ nil ] ifNotNil: [ owner asString ]
+]
+
+{ #category : 'private - request' }
+MCPToolInspectMethod >> sideFromRequest: request [
+
+	^ request stringArgumentNamed: 'side' default: 'instance'
 ]
 
 { #category : 'private - results' }

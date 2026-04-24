@@ -9,6 +9,17 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'private' }
+MCPToolRemoveClasses >> classNamesFromRequest: request [
+
+	| classNames |
+	classNames := request uniqueStringCollectionArgumentNamed:
+		              'classNames'.
+	classNames ifEmpty: [
+		Error signal: 'classNames must contain at least one class name.' ].
+	^ classNames
+]
+
 { #category : 'defaults' }
 MCPToolRemoveClasses >> defaultDescription [
 

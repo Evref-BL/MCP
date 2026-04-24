@@ -489,25 +489,6 @@ MCPToolEditMethod >> methodDataProperties [
 		  self methodCritiquesSchemaProperty }
 ]
 
-{ #category : 'private' }
-MCPToolEditMethod >> normalizedPermutation: someIndexes [
-
-	^ someIndexes
-		  collect: [ :each |
-			  (each isInteger and: [ each > 0 ])
-				  ifTrue: [ each ]
-				  ifFalse: [
-					  | text |
-					  text := each asString trimBoth.
-					  (text notEmpty and: [
-						   text allSatisfy: [ :character | character isDigit ] ])
-						  ifTrue: [ text asInteger ]
-						  ifFalse: [
-						  Error signal:
-							  'permutation must contain only positive integers.' ] ] ]
-		  as: Array
-]
-
 { #category : 'private - operations' }
 MCPToolEditMethod >> operationSpecifications [
 
@@ -526,6 +507,18 @@ MCPToolEditMethod >> operationSpecifications [
 			  (#requiredProperties -> #( 'selector' 'protocol' )).
 			  (#executeSelector -> #executeChangeProtocolWithRequest:) }
 			  asDictionary }
+]
+
+{ #category : 'private' }
+MCPToolEditMethod >> permutationFromRequest: request selector: aSelector [
+
+	| permutation |
+	permutation := request
+		               arrayArgumentNamed: 'permutation'
+		               ifAbsent: [
+		               ^ self identityPermutationForSelector: aSelector ].
+	self validatePermutation: permutation forSelector: aSelector.
+	^ permutation
 ]
 
 { #category : 'private' }

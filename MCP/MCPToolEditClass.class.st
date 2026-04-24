@@ -331,6 +331,81 @@ MCPToolEditClass >> executeAddSlotWithRequest: request [
 ]
 
 { #category : 'executing' }
+MCPToolEditClass >> executeCreateWithRequest: request [
+
+	| classComment className classSlotNames classSlots classTraits force layout packageName requestedContext result sharedPools sharedVariables slotNames slots superclassName tag traits |
+	className := request stringArgumentNamed: 'className'.
+	superclassName := request stringArgumentNamed: 'superclassName'.
+	packageName := request stringArgumentNamed: 'packageName'.
+	tag := request stringArgumentNamed: 'tag'.
+	classComment := (request hasArgumentNamed: 'classComment')
+		                ifTrue: [ self classCommentFromRequest: request ]
+		                ifFalse: [ nil ].
+	force := self forceFromRequest: request.
+	slotNames := request stringCollectionArgumentNamed: 'slots'.
+	classSlotNames := request stringCollectionArgumentNamed: 'classSlots'.
+	slots := request symbolCollectionArgumentNamed: 'slots'.
+	classSlots := request symbolCollectionArgumentNamed: 'classSlots'.
+	traits := request stringCollectionArgumentNamed: 'traits'.
+	classTraits := request stringCollectionArgumentNamed: 'classTraits'.
+	sharedVariables := request stringCollectionArgumentNamed:
+		                   'sharedVariables'.
+	sharedPools := request stringCollectionArgumentNamed: 'sharedPools'.
+	layout := request stringArgumentNamed: 'layout'.
+	requestedContext := {
+		                    (#className -> className).
+		                    (#superclassName -> superclassName).
+		                    (#packageName -> packageName).
+		                    (#tag -> (tag ifNil: [ '' ] ifNotNil: [ tag ])).
+		                    (#classComment
+		                     ->
+		                     (classComment
+			                      ifNil: [ '' ]
+			                      ifNotNil: [ classComment ])).
+		                    (#slots -> slotNames).
+		                    (#classSlots -> classSlotNames).
+		                    (#traits -> traits).
+		                    (#classTraits -> classTraits).
+		                    (#sharedVariables -> sharedVariables).
+		                    (#sharedPools -> sharedPools).
+		                    (#layout
+		                     -> (layout ifNil: [ '' ] ifNotNil: [ layout ])) }
+		                    asDictionary.
+	^ self
+		  executeEditOperation: 'create'
+		  force: force
+		  requestedContext: requestedContext
+		  work: [
+			  result := (MCPCreateClassCommand
+				             className: className
+				             superclassName: superclassName
+				             packageName: packageName
+				             tag: tag
+				             slots: slots
+				             classSlots: classSlots
+				             traits: traits
+				             classTraits: classTraits
+				             sharedVariables: sharedVariables
+				             sharedPools: sharedPools
+				             layout: layout) execute.
+			  classComment ifNotNil: [
+				  (MCPChangeClassCommentCommand
+					   className: className
+					   classComment: classComment) execute ] ]
+		  successResult: [ :warningMessages |
+			  self
+				  successResultText: 'Created class ' , className , '.'
+				  data: (self dataForResult: result operation: 'create')
+				  warnings: warningMessages ]
+		  failureSummary: [ :error |
+			  self
+				  failureMessageForCreateClassNamed: className
+				  superclassName: superclassName
+				  packageName: packageName
+				  error: error ]
+]
+
+{ #category : 'executing' }
 MCPToolEditClass >> executeMoveSlotWithRequest: request operation: operation [
 
 	^ self

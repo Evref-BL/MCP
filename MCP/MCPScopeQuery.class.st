@@ -16,28 +16,6 @@ MCPScopeQuery >> initialize [
 	scope := 'image'
 ]
 
-{ #category : 'private - normalization' }
-MCPScopeQuery >> normalizedScopeString: aScope [
-
-	^ aScope ifNil: [ 'image' ] ifNotNil: [ aScope asString asLowercase ]
-]
-
-{ #category : 'private - normalization' }
-MCPScopeQuery >> normalizedStringCollection: aValue argumentName: anArgumentName [
-
-	| normalized value values |
-	aValue ifNil: [ ^ #(  ) ].
-	value := aValue.
-	(value isString or: [ value isSymbol ]) ifTrue: [ value := { value } ].
-	(value isCollection and: [ value isString not ]) ifFalse: [
-		Error signal: anArgumentName , ' must be an array of strings.' ].
-	values := OrderedCollection new.
-	value do: [ :each |
-		normalized := each asString trimBoth.
-		normalized isEmpty ifFalse: [ values add: normalized ] ].
-	^ values asArray
-]
-
 { #category : 'accessing' }
 MCPScopeQuery >> scope [
 
@@ -47,7 +25,7 @@ MCPScopeQuery >> scope [
 { #category : 'accessing' }
 MCPScopeQuery >> scope: aScope [
 
-	scope := self normalizedScopeString: aScope
+	scope := aScope ifNil: [ 'image' ] ifNotNil: [ aScope ]
 ]
 
 { #category : 'validating' }
