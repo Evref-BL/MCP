@@ -84,10 +84,10 @@ MCPCompiledMethodScopeQueryTest >> testImageScopeRespectsSideFiltering [
 		         side: 'class'.
 	methodIdentities := self methodIdentitiesFor: query methods.
 	self assert: (methodIdentities includes:
-			 'MCPToolReferencesTestExact class>>sharedTarget').
+			 'MCPToolFindMethodsReferenceFixture class>>sharedTarget').
 	self deny:
 		(methodIdentities includes:
-			 'MCPToolReferencesTestExact>>sharedTarget')
+			 'MCPToolFindMethodsReferenceFixture>>sharedTarget')
 ]
 
 { #category : 'tests' }
@@ -121,7 +121,7 @@ MCPCompiledMethodScopeQueryTest >> testPackagesScopeIncludesExtensionMethods [
 		         side: 'instance'.
 	methodIdentities := self methodIdentitiesFor: query methods.
 	self assert: (methodIdentities includes:
-			 'MCPToolReferencesTestExtensionTarget>>extensionProbe')
+			 'MCPToolFindMethodsReferenceTarget>>extensionProbe')
 ]
 
 { #category : 'tests' }

@@ -1,5 +1,5 @@
 Class {
-	#name : 'MCPToolReferencesVariableTestTarget',
+	#name : 'MCPToolFindMethodsVariableReferenceTarget',
 	#superclass : 'Object',
 	#instVars : [
 		'trackedSlot'
@@ -12,25 +12,25 @@ Class {
 }
 
 { #category : 'testing' }
-MCPToolReferencesVariableTestTarget class >> readTrackedClassSlot [
+MCPToolFindMethodsVariableReferenceTarget class >> readTrackedClassSlot [
 
 	^ trackedClassSlot
 ]
 
 { #category : 'testing' }
-MCPToolReferencesVariableTestTarget class >> writeTrackedClassSlot [
+MCPToolFindMethodsVariableReferenceTarget class >> writeTrackedClassSlot [
 
 	trackedClassSlot := 'class-slot-value'
 ]
 
 { #category : 'testing' }
-MCPToolReferencesVariableTestTarget >> readTrackedSlot [
+MCPToolFindMethodsVariableReferenceTarget >> readTrackedSlot [
 
 	^ trackedSlot
 ]
 
 { #category : 'testing' }
-MCPToolReferencesVariableTestTarget >> writeTrackedSlot [
+MCPToolFindMethodsVariableReferenceTarget >> writeTrackedSlot [
 
 	trackedSlot := 'slot-value'
 ]

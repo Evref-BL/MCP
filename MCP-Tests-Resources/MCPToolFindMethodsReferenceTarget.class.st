@@ -1,12 +1,12 @@
 Class {
-	#name : 'MCPToolReferencesTestExtensionTarget',
+	#name : 'MCPToolFindMethodsReferenceTarget',
 	#superclass : 'Object',
 	#category : 'MCP-Tests-Resources',
 	#package : 'MCP-Tests-Resources'
 }
 
 { #category : 'testing' }
-MCPToolReferencesTestExtensionTarget >> extensionTarget [
+MCPToolFindMethodsReferenceTarget >> extensionTarget [
 
 	^ 'extension-target'
 ]
