@@ -434,8 +434,7 @@ MCPToolContractsTest >> testFindMethodsHasAccurateNameAndSchema [
 		assert:
 			((filterTargetsProperty extraProperties at: #items) extraProperties
 				 at: #enum) asArray
-		equals:
-		#( 'selector' 'class' 'package' 'protocol' 'reference' 'source' ).
+		equals: #( 'selector' 'class' 'package' 'protocol' 'source' ).
 	self deny: (propertyNames includes: 'className')
 ]
 

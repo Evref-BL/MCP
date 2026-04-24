@@ -105,8 +105,6 @@ MCPToolFindMethods >> filterTextsForMethodEntry: anEntry sourceText: sourceText 
 		each = 'class' ifTrue: [ texts add: (anEntry at: #className) ].
 		each = 'package' ifTrue: [ texts add: (anEntry at: #packageName) ].
 		each = 'protocol' ifTrue: [ texts add: (anEntry at: #protocol) ].
-		each = 'reference' ifTrue: [
-			texts add: (self methodEntryLabel: anEntry) ].
 		each = 'source' ifTrue: [ texts add: sourceText ] ].
 	^ texts asArray
 ]
@@ -229,5 +227,5 @@ MCPToolFindMethods >> successSummaryForScope: scope returnedCount: returnedCount
 { #category : 'private - request' }
 MCPToolFindMethods >> supportedFilterTargets [
 
-	^ #( 'selector' 'class' 'package' 'protocol' 'reference' 'source' )
+	^ #( 'selector' 'class' 'package' 'protocol' 'source' )
 ]
