@@ -114,16 +114,6 @@ MCPTool >> asJRPCJSON [
 	^ dic
 ]
 
-{ #category : 'private - methods' }
-MCPTool >> behaviorNamed: aClassName classSide: aBoolean [
-
-	| targetClass |
-	targetClass := self class environment at: aClassName asSymbol.
-	^ aBoolean
-		  ifTrue: [ targetClass classSide ]
-		  ifFalse: [ targetClass ]
-]
-
 { #category : 'private - schema' }
 MCPTool >> booleanSchemaPropertyNamed: propertyName description: propertyDescription [
 
@@ -141,6 +131,12 @@ MCPTool >> booleanSchemaPropertyNamed: propertyName description: propertyDescrip
 		   description: propertyDescription)
 		  default: defaultValue;
 		  yourself
+]
+
+{ #category : 'private - execution' }
+MCPTool >> commandForRequest: aToolRequest [
+
+	self subclassResponsibility
 ]
 
 { #category : 'private - schema' }
@@ -163,12 +159,6 @@ MCPTool >> conditionalInputSchemaIf: conditionSchema thenRequired: requiredField
 MCPTool >> defaultDescription [
 
 	self subclassResponsibility
-]
-
-{ #category : 'private - request' }
-MCPTool >> defaultFilterMode [
-
-	^ 'substring'
 ]
 
 { #category : 'defaults' }
@@ -350,36 +340,6 @@ MCPTool >> failureMessageFor: anError [
 				  nextPutAll: message ] ]
 ]
 
-{ #category : 'private - request' }
-MCPTool >> filterModeFromRequest: request [
-
-	^ request
-		  stringArgumentNamed: 'filterMode'
-		  default: self defaultFilterMode
-]
-
-{ #category : 'private - filtering' }
-MCPTool >> filterTextForMethodEntry: anEntry sourceText: sourceText [
-
-	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: (anEntry at: #selector);
-			  nextPutAll: ' ';
-			  nextPutAll: (anEntry at: #className);
-			  nextPutAll: ' ';
-			  nextPutAll: (anEntry at: #side);
-			  nextPutAll: ' ';
-			  nextPutAll: (anEntry at: #packageName);
-			  nextPutAll: ' ';
-			  nextPutAll: (anEntry at: #protocol);
-			  nextPutAll: ' ';
-			  nextPutAll: (self methodEntryLabel: anEntry).
-		  sourceText ifNotNil: [
-			  stream
-				  nextPutAll: ' ';
-				  nextPutAll: sourceText ] ]
-]
-
 { #category : 'accessing' }
 MCPTool >> handler [
 
@@ -482,110 +442,6 @@ MCPTool >> integerSchemaPropertyNamed: propertyName description: propertyDescrip
 		  yourself
 ]
 
-{ #category : 'private - filtering' }
-MCPTool >> matcherForPattern: aPattern mode: aMode caseSensitive: aBoolean [
-
-	| normalizedPattern regex |
-	aPattern ifNil: [ ^ [ :candidate | true ] ].
-	aMode = 'regex' ifTrue: [
-		regex := aBoolean
-			         ifTrue: [ aPattern asRegex ]
-			         ifFalse: [ aPattern asRegexIgnoringCase ].
-		^ [ :candidate |
-		  regex search:
-			  (candidate ifNil: [ '' ] ifNotNil: [ candidate asString ]) ] ].
-	normalizedPattern := self
-		                     normalizeFilterString: aPattern
-		                     caseSensitive: aBoolean.
-	aMode = 'substring' ifTrue: [
-		^ [ :candidate |
-		  (self normalizeFilterString: candidate caseSensitive: aBoolean)
-			  includesSubstring: normalizedPattern ] ].
-	aMode = 'prefix' ifTrue: [
-		^ [ :candidate |
-		  (self normalizeFilterString: candidate caseSensitive: aBoolean)
-			  beginsWith: normalizedPattern ] ].
-	aMode = 'exact' ifTrue: [
-		^ [ :candidate |
-		  (self normalizeFilterString: candidate caseSensitive: aBoolean)
-		  = normalizedPattern ] ].
-	Error signal: 'Unsupported filter mode: ' , aMode
-]
-
-{ #category : 'private - filtering' }
-MCPTool >> matchesFilterOnMethodEntry: anEntry sourceText: sourceText matcher: aMatcher [
-
-	^ aMatcher value:
-		  (self filterTextForMethodEntry: anEntry sourceText: sourceText)
-]
-
-{ #category : 'private - methods' }
-MCPTool >> methodEntriesFrom: compiledMethods filter: filterPattern filterMode: filterMode caseSensitive: caseSensitive includeSource: includeSource [
-
-	| entries matcher needsSourceText |
-	matcher := self
-		           matcherForPattern: filterPattern
-		           mode: filterMode
-		           caseSensitive: caseSensitive.
-	needsSourceText := includeSource or: [ filterPattern notNil ].
-	entries := OrderedCollection new.
-	compiledMethods do: [ :eachMethod |
-		| entry info sourceText |
-		info := MCPCompiledMethodInfo fromMethod: eachMethod.
-		sourceText := needsSourceText
-			              ifTrue: [ info source ]
-			              ifFalse: [ nil ].
-		entry := info asDictionaryIncludingSource: includeSource.
-		includeSource ifTrue: [ entry at: #source put: sourceText ].
-		(self
-			 matchesFilterOnMethodEntry: entry
-			 sourceText: sourceText
-			 matcher: matcher) ifTrue: [ entries add: entry ] ].
-	^ (entries asSortedCollection: [ :left :right |
-		   (self methodEntryLabel: left)
-		   <= (self methodEntryLabel: right) ]) asArray
-]
-
-{ #category : 'private - filtering' }
-MCPTool >> methodEntryLabel: anEntry [
-
-	^ self
-		  methodReferenceForClassName: (anEntry at: #className)
-		  selector: (anEntry at: #selector)
-		  isClassSide: (anEntry at: #side) = 'class'
-]
-
-{ #category : 'private - methods' }
-MCPTool >> methodReferenceForBehavior: aBehavior selector: aSelector [
-
-	^ String streamContents: [ :stream |
-		  stream nextPutAll: (self targetNameForBehavior: aBehavior).
-		  stream nextPutAll: '>>'.
-		  stream nextPutAll: aSelector asString ]
-]
-
-{ #category : 'private - methods' }
-MCPTool >> methodReferenceForClassName: aClassName selector: aSelector isClassSide: isClassSide [
-
-	^ String streamContents: [ :stream |
-		  stream nextPutAll: aClassName.
-		  isClassSide ifTrue: [ stream nextPutAll: ' class' ].
-		  stream
-			  nextPutAll: '>>';
-			  nextPutAll: aSelector ]
-]
-
-{ #category : 'private - methods' }
-MCPTool >> methodScopeQueryFromRequest: request [
-
-	^ MCPCompiledMethodScopeQuery
-		  scope: (request stringArgumentNamed: 'scope' default: 'image')
-		  packageNames:
-		  (request stringCollectionArgumentNamed: 'packageNames')
-		  classNames: (request stringCollectionArgumentNamed: 'classNames')
-		  side: (request stringArgumentNamed: 'side' default: 'both')
-]
-
 { #category : 'accessing' }
 MCPTool >> name [
 
@@ -596,18 +452,6 @@ MCPTool >> name [
 MCPTool >> name: anObject [
 
 	name := anObject
-]
-
-{ #category : 'private - filtering' }
-MCPTool >> normalizeFilterString: aValue caseSensitive: aBoolean [
-
-	| normalized |
-	normalized := aValue
-		              ifNil: [ '' ]
-		              ifNotNil: [ :value | value asString ].
-	^ aBoolean
-		  ifTrue: [ normalized ]
-		  ifFalse: [ normalized asLowercase ]
 ]
 
 { #category : 'accessing' }
@@ -640,12 +484,6 @@ MCPTool >> pngDataUriForForm: aForm [
 ]
 
 { #category : 'private - icons' }
-MCPTool >> pngHorizontallyFlippedIconNamed: anIconSymbol [
-
-	^ MCPStructureIcon horizontallyFlippedPngIconNamed: anIconSymbol
-]
-
-{ #category : 'private - icons' }
 MCPTool >> pngIconNamed: anIconSymbol [
 
 	^ MCPStructureIcon pngIconNamed: anIconSymbol
@@ -671,12 +509,6 @@ MCPTool >> schemaPropertyNamed: aName type: aType description: aDescription [
 		  type: aType;
 		  description: aDescription;
 		  yourself
-]
-
-{ #category : 'private - request' }
-MCPTool >> selectorStringFromRequest: request [
-
-	^ request stringArgumentNamed: 'selector'
 ]
 
 { #category : 'private - schema' }
@@ -721,43 +553,6 @@ MCPTool >> standardOutputSchemaForDataProperties: dataProperties required: requi
 		  required: #( 'status' 'summary' 'warnings' );
 		  additionalProperties: false;
 		  yourself
-]
-
-{ #category : 'private - tests' }
-MCPTool >> standardTestDataPropertiesIncludingMethodName: includeMethodName [
-
-	| issuesProperty properties |
-	properties := OrderedCollection withAll: {
-			              (self
-				               schemaPropertyNamed: 'className'
-				               type: 'string'
-				               description: 'The test class that was executed.').
-			              (self
-				               integerSchemaPropertyNamed: 'runCount'
-				               description: 'The number of tests that ran.') }.
-	includeMethodName ifTrue: [
-		properties add: (self
-				 schemaPropertyNamed: 'testMethodName'
-				 type: 'string'
-				 description: 'The single test method that was executed.') ].
-	issuesProperty := self
-		                  schemaPropertyNamed: 'issues'
-		                  type: 'array'
-		                  description:
-		                  'Detailed issues captured while running tests.'.
-	issuesProperty items: self testIssueObjectSchema.
-	properties add: issuesProperty.
-	^ properties asArray
-]
-
-{ #category : 'private - tests' }
-MCPTool >> standardTestRequiredFieldsIncludingMethodName: includeMethodName [
-
-	| required |
-	required := OrderedCollection withAll:
-		            #( 'className' 'runCount' 'issues' ).
-	includeMethodName ifTrue: [ required add: 'testMethodName' ].
-	^ required asArray
 ]
 
 { #category : 'private - schema' }
@@ -827,26 +622,6 @@ MCPTool >> stringEnumSchemaPropertyNamed: propertyName description: propertyDesc
 		  yourself
 ]
 
-{ #category : 'private - tests' }
-MCPTool >> structuredDataForTestResult: aResult className: className testMethodName: testMethodName [
-
-	| data issues |
-	issues := (aResult issueDetails asSortedCollection: [ :left :right |
-		           (left at: #testName) <= (right at: #testName) ])
-		          collect: [ :each |
-			          | issue |
-			          issue := each copy.
-			          issue removeKey: #testName ifAbsent: [  ].
-			          issue ].
-	data := Dictionary new.
-	data at: #className put: className.
-	testMethodName ifNotNil: [
-		data at: #testMethodName put: testMethodName ].
-	data at: #runCount put: aResult runCount.
-	data at: #issues put: issues asArray.
-	^ data
-]
-
 { #category : 'private - results' }
 MCPTool >> successResultText: aSummary data: aDictionary [
 
@@ -874,66 +649,6 @@ MCPTool >> successResultText: aSummary data: aDictionary warnings: warningString
 				  (#data -> aDictionary) } asDictionary
 ]
 
-{ #category : 'private - methods' }
-MCPTool >> targetNameForBehavior: aBehavior [
-
-	^ aBehavior isMeta
-		  ifTrue: [ aBehavior instanceSide name , ' class' ]
-		  ifFalse: [ aBehavior name ]
-]
-
-{ #category : 'private - tests' }
-MCPTool >> testIssueObjectSchema [
-
-	| issueProperty |
-	issueProperty := MCPStructureProperties new
-		                 type: 'object';
-		                 description:
-			                 'A single test issue recorded while running tests.';
-		                 properties: {
-				                 (self
-					                  schemaPropertyNamed: 'kind'
-					                  type: 'string'
-					                  description:
-						                  'The issue category, such as failure, error, or skipped.').
-				                 (self
-					                  schemaPropertyNamed: 'className'
-					                  type: 'string'
-					                  description:
-						                  'The test class that produced the issue.').
-				                 (self
-					                  schemaPropertyNamed: 'testMethodName'
-					                  type: 'string'
-					                  description:
-						                  'The test method that produced the issue.').
-				                 (self
-					                  schemaPropertyNamed: 'errorClass'
-					                  type: 'string'
-					                  description:
-						                  'The exception class captured for the issue.').
-				                 (self
-					                  schemaPropertyNamed: 'message'
-					                  type: 'string'
-					                  description:
-						                  'The exception message for the issue.').
-				                 (self
-					                  schemaPropertyNamed: 'description'
-					                  type: 'string'
-					                  description:
-						                  'A longer textual description of the issue when available.').
-				                 (self
-					                  schemaPropertyNamed: 'signalerContext'
-					                  type: 'string'
-					                  description:
-						                  'The signaler context captured for the issue when available.') };
-		                 required:
-			                 #( 'kind' 'className' 'testMethodName'
-			                    'errorClass' 'message' );
-		                 additionalProperties: false;
-		                 yourself.
-	^ issueProperty
-]
-
 { #category : 'private - results' }
 MCPTool >> textContent: aString [
 
@@ -950,6 +665,12 @@ MCPTool >> title [
 MCPTool >> title: anObject [
 
 	title := anObject
+]
+
+{ #category : 'private - request' }
+MCPTool >> toolRequestFromRequest: request [
+
+	^ request
 ]
 
 { #category : 'private - schema' }

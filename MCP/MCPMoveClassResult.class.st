@@ -6,9 +6,9 @@ Class {
 		'oldPackageName',
 		'oldTag'
 	],
-	#category : 'MCP-Internal',
+	#category : 'MCP-Results',
 	#package : 'MCP',
-	#tag : 'Internal'
+	#tag : 'Results'
 }
 
 { #category : 'instance creation' }

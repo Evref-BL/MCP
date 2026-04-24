@@ -160,6 +160,17 @@ MCPToolMethodQuery >> methodQueryScopeInputPropertiesWithScopeDescription: scope
 		  classNamesProperty }
 ]
 
+{ #category : 'private - methods' }
+MCPToolMethodQuery >> methodScopeQueryFromRequest: request [
+
+	^ MCPCompiledMethodScopeQuery
+		  scope: (request stringArgumentNamed: 'scope' default: 'image')
+		  packageNames:
+		  (request stringCollectionArgumentNamed: 'packageNames')
+		  classNames: (request stringCollectionArgumentNamed: 'classNames')
+		  side: (request stringArgumentNamed: 'side' default: 'both')
+]
+
 { #category : 'private - schema' }
 MCPToolMethodQuery >> supportedFilterModes [
 

@@ -15,9 +15,9 @@ Class {
 		'sharedPoolNames',
 		'layoutClassName'
 	],
-	#category : 'MCP-Internal',
+	#category : 'MCP-DTOs',
 	#package : 'MCP',
-	#tag : 'Internal'
+	#tag : 'DTOs'
 }
 
 { #category : 'instance creation' }

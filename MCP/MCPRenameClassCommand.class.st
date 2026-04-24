@@ -6,9 +6,9 @@ Class {
 		'newClassName',
 		'model'
 	],
-	#category : 'MCP-Internal',
+	#category : 'MCP-Commands',
 	#package : 'MCP',
-	#tag : 'Internal'
+	#tag : 'Commands'
 }
 
 { #category : 'instance creation' }

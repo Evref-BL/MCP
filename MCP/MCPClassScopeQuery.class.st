@@ -5,9 +5,9 @@ Class {
 		'packageNames',
 		'classNames'
 	],
-	#category : 'MCP-Internal',
+	#category : 'MCP-Queries',
 	#package : 'MCP',
-	#tag : 'Internal'
+	#tag : 'Queries'
 }
 
 { #category : 'instance creation' }

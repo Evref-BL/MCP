@@ -5,9 +5,9 @@ Class {
 		'className',
 		'classComment'
 	],
-	#category : 'MCP-Internal',
+	#category : 'MCP-Commands',
 	#package : 'MCP',
-	#tag : 'Internal'
+	#tag : 'Commands'
 }
 
 { #category : 'instance creation' }

@@ -11,9 +11,9 @@ Class {
 		'expected',
 		'actual'
 	],
-	#category : 'MCP-Internal',
+	#category : 'MCP-Schema',
 	#package : 'MCP',
-	#tag : 'Internal'
+	#tag : 'Schema'
 }
 
 { #category : 'instance creation' }

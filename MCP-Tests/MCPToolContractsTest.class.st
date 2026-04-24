@@ -7,6 +7,19 @@ Class {
 }
 
 { #category : 'private' }
+MCPToolContractsTest >> assertToolFlowSpec: aSpec [
+
+	| command parsedRequest rawRequest tool |
+	tool := (aSpec at: #toolClass) new.
+	rawRequest := tool requestFromToolCallArguments:
+		              (aSpec at: #arguments).
+	parsedRequest := tool toolRequestFromRequest: rawRequest.
+	command := tool commandForRequest: parsedRequest.
+	self assert: parsedRequest class equals: (aSpec at: #requestClass).
+	self assert: command class equals: (aSpec at: #commandClass)
+]
+
+{ #category : 'private' }
 MCPToolContractsTest >> firstTextFromToolResult: aResult [
 
 	^ (aResult at: #content) first at: #text
@@ -63,6 +76,32 @@ MCPToolContractsTest >> testAllToolsAdvertisePngIconsWithDataUris [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testAllToolsUseParsedRequestsAndCommands [
+
+	| toolClasses |
+	toolClasses := self toolFlowSpecs collect: [ :each |
+		               each at: #toolClass ].
+	self
+		assert: toolClasses asSet
+		equals: MCPTool concreteSubclasses asSet.
+	self toolFlowSpecs do: [ :each | self assertToolFlowSpec: each ]
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testBaseToolDoesNotOwnToolSpecificPrivateHelpers [
+
+	#( testIssueObjectSchema defaultFilterMode filterModeFromRequest:
+	   normalizeFilterString:caseSensitive:
+	   matcherForPattern:mode:caseSensitive:
+	   methodScopeQueryFromRequest: targetNameForBehavior:
+	   methodReferenceForBehavior:selector:
+	   methodReferenceForClassName:selector:isClassSide:
+	   methodEntryLabel: selectorStringFromRequest:
+	   behaviorNamed:classSide: ) do: [ :selector |
+		self deny: (MCPTool includesSelector: selector) ]
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 
 	| orderedTools |
@@ -83,6 +122,17 @@ MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 			MCPToolRemoveMethods.
 			MCPToolRunTests.
 			MCPToolEvaluate }
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testEditClassDescriptionMentionsRecategorizationViaMove [
+
+	| description |
+	description := MCPToolEditClass new description.
+	self assert: (description includesSubstring: 'recategorize').
+	self assert: (description includesSubstring: 'operation=move').
+	self assert: (description includesSubstring: 'destination tag').
+	self assert: (description includesSubstring: 'omit packageName')
 ]
 
 { #category : 'tests' }
@@ -164,7 +214,7 @@ MCPToolContractsTest >> testEditMethodSchemaAdvertisesMethodState [
 { #category : 'tests' }
 MCPToolContractsTest >> testEditToolSchemasAdvertiseOperationBranches [
 
-	| addSlotBranch createBranch editClassBranches editMethodBranches removeSlotBranch renameBranch renameSlotBranch |
+	| addSlotBranch createBranch editClassBranches editMethodBranches moveBranch removeSlotBranch renameBranch renameSlotBranch |
 	editClassBranches := MCPToolEditClass new inputSchema asJRPCJSON at:
 		                     #oneOf.
 	editMethodBranches := MCPToolEditMethod new inputSchema asJRPCJSON
@@ -182,6 +232,12 @@ MCPToolContractsTest >> testEditToolSchemasAdvertiseOperationBranches [
 		assert: (createBranch at: #required) asSet
 		equals:
 		#( 'operation' 'className' 'superclassName' 'packageName' ) asSet.
+	moveBranch := editClassBranches detect: [ :each |
+		              (((each at: #properties) at: 'operation') at: #const)
+		              = 'move' ].
+	self
+		assert: (moveBranch at: #required) asSet
+		equals: #( 'operation' 'className' ) asSet.
 	addSlotBranch := editClassBranches detect: [ :each |
 		                 (((each at: #properties) at: 'operation') at:
 			                  #const) = 'addSlot' ].
@@ -791,6 +847,34 @@ MCPToolContractsTest >> testQueryToolSchemasAdvertiseScopeBranches [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testQueryToolsUseTypedRequestObjects [
+
+	| classRequest methodRequest packageRequest staleSelectors |
+	classRequest := MCPToolFindClasses new querySpecFromRequest:
+		                (MCPToolRequest
+			                 tool: MCPToolFindClasses new
+			                 arguments: Dictionary new).
+	methodRequest := MCPToolFindMethods new querySpecFromRequest:
+		                 (MCPToolRequest
+			                  tool: MCPToolFindMethods new
+			                  arguments: Dictionary new).
+	packageRequest := MCPToolFindPackages new querySpecFromRequest:
+		                  (MCPToolRequest
+			                   tool: MCPToolFindPackages new
+			                   arguments: Dictionary new).
+	self assert: classRequest class equals: MCPFindClassesRequest.
+	self assert: methodRequest class equals: MCPFindMethodsRequest.
+	self assert: packageRequest class equals: MCPFindPackagesRequest.
+	staleSelectors := #( queryParametersFromRequest:
+	                     queryEntriesForParameters:
+	                     successSummaryForParameters:page:
+	                     queryResultDataForParameters:page: ).
+	staleSelectors do: [ :selector |
+		self deny: (MCPToolQuery withAllSubclasses anySatisfy: [ :each |
+				 each includesSelector: selector ]) ]
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testRemoveClassHasAccurateNameAndRequiredArguments [
 
 	self
@@ -946,4 +1030,78 @@ MCPToolContractsTest >> testToolNamesDoNotUsePharoPrefix [
 
 	self assert: (MCPTool concreteSubclasses noneSatisfy: [ :each |
 			 each new name includesSubstring: 'pharo-' ])
+]
+
+{ #category : 'private' }
+MCPToolContractsTest >> toolFlowSpecs [
+
+	^ {
+		  {
+			  (#toolClass -> MCPToolFindPackages).
+			  (#arguments -> Dictionary new).
+			  (#requestClass -> MCPFindPackagesRequest).
+			  (#commandClass -> MCPQueryToolCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolFindClasses).
+			  (#arguments -> Dictionary new).
+			  (#requestClass -> MCPFindClassesRequest).
+			  (#commandClass -> MCPQueryToolCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolInspectClass).
+			  (#arguments -> { (#className -> 'Object') } asDictionary).
+			  (#requestClass -> MCPInspectClassRequest).
+			  (#commandClass -> MCPInspectClassCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolEditClass).
+			  (#arguments -> {
+				   (#operation -> 'setComment').
+				   (#className -> 'Object').
+				   (#classComment -> '') } asDictionary).
+			  (#requestClass -> MCPEditToolRequest).
+			  (#commandClass -> MCPEditToolCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolRemoveClasses).
+			  (#arguments -> { (#classNames -> #( 'Object' )) } asDictionary).
+			  (#requestClass -> MCPRemoveClassesRequest).
+			  (#commandClass -> MCPRemoveClassesCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolFindMethods).
+			  (#arguments -> Dictionary new).
+			  (#requestClass -> MCPFindMethodsRequest).
+			  (#commandClass -> MCPQueryToolCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolInspectMethod).
+			  (#arguments -> {
+				   (#className -> 'Object').
+				   (#selector -> 'class') } asDictionary).
+			  (#requestClass -> MCPInspectMethodRequest).
+			  (#commandClass -> MCPInspectMethodCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolEditMethod).
+			  (#arguments -> {
+				   (#operation -> 'changeProtocol').
+				   (#className -> 'Object').
+				   (#selector -> 'class').
+				   (#protocol -> 'accessing') } asDictionary).
+			  (#requestClass -> MCPEditToolRequest).
+			  (#commandClass -> MCPEditToolCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolRemoveMethods).
+			  (#arguments -> {
+				   (#className -> 'Object').
+				   (#selectors -> #( 'class' )) } asDictionary).
+			  (#requestClass -> MCPRemoveMethodsRequest).
+			  (#commandClass -> MCPRemoveMethodsCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolRunTests).
+			  (#arguments -> { (#tests
+			    -> { { (#className -> 'MCPToolContractsTest') } asDictionary }) }
+				   asDictionary).
+			  (#requestClass -> MCPRunTestsRequest).
+			  (#commandClass -> MCPRunTestsCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolEvaluate).
+			  (#arguments -> { (#code -> '1') } asDictionary).
+			  (#requestClass -> MCPEvaluateRequest).
+			  (#commandClass -> MCPEvaluateCommand) } asDictionary }
 ]

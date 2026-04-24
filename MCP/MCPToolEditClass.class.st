@@ -35,7 +35,7 @@ MCPToolEditClass >> dataForResult: aResult operation: operation [
 { #category : 'defaults' }
 MCPToolEditClass >> defaultDescription [
 
-	^ 'Create, move, rename, or reparent classes; add, remove, rename, pull up, or push down slots; or set a class comment in the running image. Use this for class-level definition and structural updates; use edit-method for methods and remove-classes for deletion.'
+	^ 'Create, move, recategorize, rename, or reparent classes; add, remove, rename, pull up, or push down slots; or set a class comment in the running image. Use operation=move with a destination tag to recategorize a class; omit packageName to keep the class in its current package. Use this for class-level definition and structural updates; use edit-method for methods and remove-classes for deletion.'
 ]
 
 { #category : 'defaults' }
@@ -69,13 +69,13 @@ MCPToolEditClass >> defaultInputSchema [
 					   name: 'packageName';
 					   type: 'string';
 					   description:
-						   'The package to create into when operation=create, or the destination package when operation=move. Missing destination packages are created automatically.';
+						   'The package to create into when operation=create, or the destination package when operation=move. When operation=move and packageName is omitted, the class stays in its current package. Missing destination packages are created automatically.';
 					   yourself).
 				  (MCPStructureProperties new
 					   name: 'tag';
 					   type: 'string';
 					   description:
-						   'An optional package tag for operation=create, or the destination tag when operation=move. Missing destination tags are created automatically.';
+						   'An optional package tag for operation=create, or the destination tag when operation=move. For same-package recategorization, use operation=move with tag and omit packageName. Missing destination tags are created automatically.';
 					   yourself).
 				  (self
 					   stringArraySchemaNamed: 'slots'
@@ -439,7 +439,10 @@ MCPToolEditClass >> executeMoveWithRequest: request [
 
 	| className force packageName requestedContext result tag |
 	className := request stringArgumentNamed: 'className'.
-	packageName := request stringArgumentNamed: 'packageName'.
+	packageName := self
+		               packageNameForMoveClassNamed: className
+		               requestedPackageName:
+		               (request stringArgumentNamed: 'packageName').
 	tag := request stringArgumentNamed: 'tag'.
 	force := self forceFromRequest: request.
 	requestedContext := {
@@ -817,7 +820,7 @@ MCPToolEditClass >> operationSpecifications [
 			  (#executeSelector -> #executeCreateWithRequest:) } asDictionary.
 		  {
 			  (#name -> 'move').
-			  (#requiredProperties -> #( 'packageName' )).
+			  (#requiredProperties -> #(  )).
 			  (#executeSelector -> #executeMoveWithRequest:) } asDictionary.
 		  {
 			  (#name -> 'rename').
@@ -826,8 +829,7 @@ MCPToolEditClass >> operationSpecifications [
 		  {
 			  (#name -> 'reparent').
 			  (#requiredProperties -> #( 'superclassName' )).
-			  (#executeSelector -> #executeReparentWithRequest:) }
-			  asDictionary.
+			  (#executeSelector -> #executeReparentWithRequest:) } asDictionary.
 		  {
 			  (#name -> 'setComment').
 			  (#requiredProperties -> #( 'classComment' )).
@@ -836,8 +838,7 @@ MCPToolEditClass >> operationSpecifications [
 		  {
 			  (#name -> 'addSlot').
 			  (#requiredProperties -> #( 'slotName' )).
-			  (#executeSelector -> #executeAddSlotWithRequest:) }
-			  asDictionary.
+			  (#executeSelector -> #executeAddSlotWithRequest:) } asDictionary.
 		  {
 			  (#name -> 'removeSlot').
 			  (#requiredProperties -> #( 'slotName' )).
@@ -858,6 +859,14 @@ MCPToolEditClass >> operationSpecifications [
 			  (#requiredProperties -> #( 'slotName' )).
 			  (#executeSelector -> #executePushDownSlotWithRequest:) }
 			  asDictionary }
+]
+
+{ #category : 'private - request' }
+MCPToolEditClass >> packageNameForMoveClassNamed: className requestedPackageName: requestedPackageName [
+
+	requestedPackageName ifNotNil: [ ^ requestedPackageName ].
+	^ (Smalltalk globals at: className asSymbol ifAbsent: [ ^ '' ])
+		  packageName asString
 ]
 
 { #category : 'private' }

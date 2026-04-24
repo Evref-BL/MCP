@@ -10,6 +10,22 @@ Class {
 }
 
 { #category : 'private' }
+MCPToolRemoveMethods >> behaviorNamed: aClassName classSide: aBoolean [
+
+	| targetClass |
+	targetClass := self class environment at: aClassName asSymbol.
+	^ aBoolean
+		  ifTrue: [ targetClass classSide ]
+		  ifFalse: [ targetClass ]
+]
+
+{ #category : 'private - execution' }
+MCPToolRemoveMethods >> commandForRequest: removeRequest [
+
+	^ MCPRemoveMethodsCommand tool: self request: removeRequest
+]
+
+{ #category : 'private' }
 MCPToolRemoveMethods >> dataForMethod: aCompiledMethod [
 
 	| info |
@@ -170,44 +186,24 @@ MCPToolRemoveMethods >> errorResultForError: anError className: className classS
 { #category : 'executing' }
 MCPToolRemoveMethods >> executeWithRequest: request [
 
-	| behavior className classSide removedMethods selectors selectorSymbols warningMessage |
-	className := request stringArgumentNamed: 'className'.
-	classSide := request booleanArgumentNamed: 'classSide' default: false.
-	selectors := self selectorsFromRequest: request.
-	selectorSymbols := selectors collect: #asSymbol.
-	warningMessage := 'This bypasses sender checks and may leave broken senders.'.
+	| commandResult removeRequest |
+	removeRequest := self toolRequestFromRequest: request.
 	^ [
-	  behavior := self behaviorNamed: className classSide: classSide.
-	  removedMethods := selectorSymbols collect: [ :selector |
-		                    | compiledMethod |
-		                    compiledMethod := behavior
-			                                      compiledMethodAt: selector
-			                                      ifAbsent: [
-				                                      MCPCommandError
-					                                      signalMissingMethodInClassName:
-					                                      className
-					                                      classSide: classSide
-					                                      selector: selector asString ].
-		                    self dataForMethod: compiledMethod ].
-	  self forceRemoveSelectors: selectorSymbols from: behavior.
+	  commandResult := (self commandForRequest: removeRequest) execute.
 	  self
 		  successResultText: (self
-				   successSummaryForClassName: className
-				   classSide: classSide
-				   selectors: selectors)
-		  data: {
-				  (#className -> className).
-				  (#classSide -> classSide).
-				  (#selectors -> selectors asArray).
-				  (#removedMethods -> removedMethods asArray) } asDictionary
-		  warnings: { warningMessage } ]
+				   successSummaryForClassName: removeRequest className
+				   classSide: removeRequest classSide
+				   selectors: removeRequest selectors)
+		  data: (commandResult at: #data)
+		  warnings: (commandResult at: #warnings) ]
 		  on: Exception
 		  do: [ :error |
 			  self
 				  errorResultForError: error
-				  className: className
-				  classSide: classSide
-				  selectors: selectors ]
+				  className: removeRequest className
+				  classSide: removeRequest classSide
+				  selectors: removeRequest selectors ]
 ]
 
 { #category : 'private' }
@@ -260,4 +256,10 @@ MCPToolRemoveMethods >> successSummaryForClassName: className classSide: classSi
 		              ifFalse: [ className ].
 	^ 'Force-removed ' , selectors size asString , ' methods from '
 	  , targetName , ': ' , (', ' join: selectors) , '.'
+]
+
+{ #category : 'private - request' }
+MCPToolRemoveMethods >> toolRequestFromRequest: request [
+
+	^ MCPRemoveMethodsRequest fromRequest: request tool: self
 ]

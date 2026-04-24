@@ -15,6 +15,18 @@ MCPToolQuery class >> isAbstract [
 	^ self = MCPToolQuery
 ]
 
+{ #category : 'private - execution' }
+MCPToolQuery >> commandForRequest: queryRequest [
+
+	^ MCPQueryToolCommand tool: self request: queryRequest
+]
+
+{ #category : 'private - request' }
+MCPToolQuery >> defaultFilterMode [
+
+	^ 'substring'
+]
+
 { #category : 'private - request' }
 MCPToolQuery >> defaultFilterTargets [
 
@@ -46,19 +58,19 @@ MCPToolQuery >> errorResultForQueryError: anError requestedContext: requestedCon
 { #category : 'executing' }
 MCPToolQuery >> executeWithRequest: request [
 
-	| page parameters requestedContext |
+	| command page queryRequest requestedContext |
 	requestedContext := self requestedContextFromRequest: request.
 	^ [
-	  parameters := self queryParametersFromRequest: request.
+	  queryRequest := self toolRequestFromRequest: request.
+	  command := self commandForRequest: queryRequest.
 	  page := self
-		          queryPageForEntries:
-		          (self queryEntriesForParameters: parameters)
-		          limit: (parameters at: #limit)
-		          offset: (parameters at: #offset).
+		          queryPageForEntries: command execute
+		          limit: (self limitFromQuerySpec: queryRequest)
+		          offset: (self offsetFromQuerySpec: queryRequest).
 	  self
 		  successResultText:
-		  (self successSummaryForParameters: parameters page: page)
-		  data: (self queryResultDataForParameters: parameters page: page) ]
+		  (self successSummaryForQuerySpec: queryRequest page: page)
+		  data: (self queryResultDataForQuerySpec: queryRequest page: page) ]
 		  on: Error
 		  do: [ :error |
 			  self
@@ -73,6 +85,14 @@ MCPToolQuery >> failureMessageForRequestedContext: requestedContext error: anErr
 ]
 
 { #category : 'private - request' }
+MCPToolQuery >> filterModeFromRequest: request [
+
+	^ request
+		  stringArgumentNamed: 'filterMode'
+		  default: self defaultFilterMode
+]
+
+{ #category : 'private - request' }
 MCPToolQuery >> filterTargetsFromRequest: request [
 
 	| filterTargets |
@@ -83,6 +103,42 @@ MCPToolQuery >> filterTargetsFromRequest: request [
 	filterTargets ifEmpty: [
 		Error signal: 'filterTargets must contain at least one target.' ].
 	^ filterTargets
+]
+
+{ #category : 'private - template' }
+MCPToolQuery >> limitFromQuerySpec: queryRequest [
+
+	^ queryRequest limit
+]
+
+{ #category : 'private - filtering' }
+MCPToolQuery >> matcherForPattern: aPattern mode: aMode caseSensitive: aBoolean [
+
+	| normalizedPattern regex |
+	aPattern ifNil: [ ^ [ :candidate | true ] ].
+	aMode = 'regex' ifTrue: [
+		regex := aBoolean
+			         ifTrue: [ aPattern asRegex ]
+			         ifFalse: [ aPattern asRegexIgnoringCase ].
+		^ [ :candidate |
+		  regex search:
+			  (candidate ifNil: [ '' ] ifNotNil: [ candidate asString ]) ] ].
+	normalizedPattern := self
+		                     normalizeFilterString: aPattern
+		                     caseSensitive: aBoolean.
+	aMode = 'substring' ifTrue: [
+		^ [ :candidate |
+		  (self normalizeFilterString: candidate caseSensitive: aBoolean)
+			  includesSubstring: normalizedPattern ] ].
+	aMode = 'prefix' ifTrue: [
+		^ [ :candidate |
+		  (self normalizeFilterString: candidate caseSensitive: aBoolean)
+			  beginsWith: normalizedPattern ] ].
+	aMode = 'exact' ifTrue: [
+		^ [ :candidate |
+		  (self normalizeFilterString: candidate caseSensitive: aBoolean)
+		  = normalizedPattern ] ].
+	Error signal: 'Unsupported filter mode: ' , aMode
 ]
 
 { #category : 'private - schema' }
@@ -106,10 +162,28 @@ MCPToolQuery >> minimalPagedQueryOutputSchemaForEntriesPropertyNamed: entriesPro
 				  entriesPropertyName }
 ]
 
-{ #category : 'private - template' }
-MCPToolQuery >> queryEntriesForParameters: parameters [
+{ #category : 'private - filtering' }
+MCPToolQuery >> normalizeFilterString: aValue caseSensitive: aBoolean [
 
-	^ self subclassResponsibility
+	| normalized |
+	normalized := aValue
+		              ifNil: [ '' ]
+		              ifNotNil: [ :value | value asString ].
+	^ aBoolean
+		  ifTrue: [ normalized ]
+		  ifFalse: [ normalized asLowercase ]
+]
+
+{ #category : 'private - template' }
+MCPToolQuery >> offsetFromQuerySpec: queryRequest [
+
+	^ queryRequest offset
+]
+
+{ #category : 'private - template' }
+MCPToolQuery >> queryEntriesForQuerySpec: queryRequest [
+
+	self subclassResponsibility
 ]
 
 { #category : 'private - pagination' }
@@ -134,15 +208,9 @@ MCPToolQuery >> queryPageForEntries: entries limit: limit offset: offset [
 ]
 
 { #category : 'private - template' }
-MCPToolQuery >> queryParametersFromRequest: request [
+MCPToolQuery >> queryResultDataForQuerySpec: queryRequest page: page [
 
-	^ self subclassResponsibility
-]
-
-{ #category : 'private - template' }
-MCPToolQuery >> queryResultDataForParameters: parameters page: page [
-
-	^ self subclassResponsibility
+	self subclassResponsibility
 ]
 
 { #category : 'private - pagination' }
@@ -151,6 +219,12 @@ MCPToolQuery >> queryResultDataFrom: baseData page: page entriesKey: entriesKey 
 	^ {
 		  (#totalCount -> (page at: #totalCount)).
 		  (entriesKey -> (page at: #entries)) } asDictionary
+]
+
+{ #category : 'private - template' }
+MCPToolQuery >> querySpecFromRequest: request [
+
+	self subclassResponsibility
 ]
 
 { #category : 'private - template' }
@@ -234,13 +308,19 @@ MCPToolQuery >> scopeQuerySuccessSummaryFor: resultKind scope: scope returnedCou
 ]
 
 { #category : 'private - template' }
-MCPToolQuery >> successSummaryForParameters: parameters page: page [
+MCPToolQuery >> successSummaryForQuerySpec: queryRequest page: page [
 
-	^ self subclassResponsibility
+	self subclassResponsibility
 ]
 
 { #category : 'private - request' }
 MCPToolQuery >> supportedFilterTargets [
 
 	self subclassResponsibility
+]
+
+{ #category : 'private - request' }
+MCPToolQuery >> toolRequestFromRequest: request [
+
+	^ self querySpecFromRequest: request
 ]

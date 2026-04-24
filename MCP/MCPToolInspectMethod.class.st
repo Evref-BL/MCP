@@ -17,6 +17,12 @@ MCPToolInspectMethod >> bindingClassNameFor: aBinding [
 		  ifNotNil: [ :binding | binding class name asString ]
 ]
 
+{ #category : 'private - execution' }
+MCPToolInspectMethod >> commandForRequest: inspectRequest [
+
+	^ MCPInspectMethodCommand tool: self request: inspectRequest
+]
+
 { #category : 'defaults' }
 MCPToolInspectMethod >> defaultDescription [
 
@@ -129,48 +135,25 @@ MCPToolInspectMethod >> errorResultForError: anError className: className select
 { #category : 'executing' }
 MCPToolInspectMethod >> executeWithRequest: request [
 
-	| className compiledMethod data includeVariableDetails methodBehavior protocolName selectorString side variableReferences |
-	className := request stringArgumentNamed: 'className'.
-	selectorString := self selectorStringFromRequest: request.
-	side := self sideFromRequest: request.
+	| commandResult inspectRequest |
+	inspectRequest := self toolRequestFromRequest: request.
 	^ [
-	  includeVariableDetails := request
-		                            booleanArgumentNamed:
-		                            'includeVariableDetails'
-		                            default: false.
-	  compiledMethod := self
-		                    methodForClassNamed: className
-		                    selector: selectorString
-		                    side: side.
-	  protocolName := compiledMethod protocol
-		                  ifNil: [ '' ]
-		                  ifNotNil: [ :protocol | protocol name asString ].
-	  data := {
-		          (#protocol -> protocolName).
-		          (#source -> (compiledMethod sourceCode ifNil: [ '' ])) }
-		          asDictionary.
-	  includeVariableDetails ifTrue: [
-		  methodBehavior := self
-			                    methodBehaviorForClassNamed: className
-			                    side: side.
-		  variableReferences := self
-			                        variableSummariesForMethod: compiledMethod
-			                        methodBehavior: methodBehavior.
-		  data at: #variableReferences put: variableReferences ].
+	  commandResult := (self commandForRequest: inspectRequest) execute.
 	  self
 		  successResultText: (self
-				   successSummaryForClassName: className
-				   selector: selectorString
-				   side: side
-				   externalVariableCount: nil)
-		  data: data ]
+				   successSummaryForClassName: inspectRequest className
+				   selector: inspectRequest selectorString
+				   side: inspectRequest side
+				   externalVariableCount:
+				   (commandResult at: #externalVariableCount ifAbsent: [ nil ]))
+		  data: (commandResult at: #data) ]
 		  on: Error
 		  do: [ :error |
 			  self
 				  errorResultForError: error
-				  className: className
-				  selector: selectorString
-				  side: side ]
+				  className: inspectRequest className
+				  selector: inspectRequest selectorString
+				  side: inspectRequest side ]
 ]
 
 { #category : 'private - results' }
@@ -291,6 +274,12 @@ MCPToolInspectMethod >> ownerNameForNode: aVariableNode kind: aKind methodBehavi
 ]
 
 { #category : 'private - request' }
+MCPToolInspectMethod >> selectorStringFromRequest: request [
+
+	^ request stringArgumentNamed: 'selector'
+]
+
+{ #category : 'private - request' }
 MCPToolInspectMethod >> sideFromRequest: request [
 
 	^ request stringArgumentNamed: 'side' default: 'instance'
@@ -317,6 +306,12 @@ MCPToolInspectMethod >> successSummaryForClassName: className selector: selector
 						   ifTrue: [ '' ]
 						   ifFalse: [ 's' ]) ].
 		  stream nextPutAll: '.' ]
+]
+
+{ #category : 'private - request' }
+MCPToolInspectMethod >> toolRequestFromRequest: request [
+
+	^ MCPInspectMethodRequest fromRequest: request tool: self
 ]
 
 { #category : 'private - analysis' }

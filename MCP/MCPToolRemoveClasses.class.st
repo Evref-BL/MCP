@@ -20,6 +20,14 @@ MCPToolRemoveClasses >> classNamesFromRequest: request [
 	^ classNames
 ]
 
+{ #category : 'private - execution' }
+MCPToolRemoveClasses >> commandForRequest: removeRequest [
+
+	^ MCPRemoveClassesCommand
+		  classNames: removeRequest classNames
+		  force: removeRequest force
+]
+
 { #category : 'defaults' }
 MCPToolRemoveClasses >> defaultDescription [
 
@@ -208,16 +216,13 @@ MCPToolRemoveClasses >> errorResultForError: anError classNames: classNames [
 { #category : 'executing' }
 MCPToolRemoveClasses >> executeWithRequest: request [
 
-	| classNames forceRemoval result |
-	classNames := self classNamesFromRequest: request.
-	forceRemoval := request booleanArgumentNamed: 'force' default: false.
+	| removeRequest result |
+	removeRequest := self toolRequestFromRequest: request.
 	^ [
-	  result := (MCPRemoveClassesCommand
-		             classNames: classNames
-		             force: forceRemoval) execute.
+	  result := (self commandForRequest: removeRequest) execute.
 	  self
 		  successResultText: (self
-				   successSummaryForClassNames: classNames
+				   successSummaryForClassNames: removeRequest classNames
 				   removedClasses: result removedClasses
 				   removedPackageNames: result removedPackageNames
 				   forced: result warningMessages notEmpty)
@@ -225,7 +230,9 @@ MCPToolRemoveClasses >> executeWithRequest: request [
 		  warnings: result warningMessages ]
 		  on: Exception
 		  do: [ :error |
-		  self errorResultForError: error classNames: classNames ]
+			  self
+				  errorResultForError: error
+				  classNames: removeRequest classNames ]
 ]
 
 { #category : 'private' }
@@ -292,4 +299,10 @@ MCPToolRemoveClasses >> successSummaryForClassNames: classNames removedClasses: 
 				  nextPutAll: 'Removed packages: ';
 				  nextPutAll: (', ' join: removedPackageNames);
 				  nextPut: $. ] ]
+]
+
+{ #category : 'private - request' }
+MCPToolRemoveClasses >> toolRequestFromRequest: request [
+
+	^ MCPRemoveClassesRequest fromRequest: request tool: self
 ]

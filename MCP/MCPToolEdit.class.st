@@ -57,6 +57,12 @@ MCPToolEdit >> canonicalOperationNames [
 		  asArray
 ]
 
+{ #category : 'private - execution' }
+MCPToolEdit >> commandForRequest: editRequest [
+
+	^ MCPEditToolCommand tool: self request: editRequest
+]
+
 { #category : 'private - errors' }
 MCPToolEdit >> errorDetailsForRequestedContext: requestedContext causedBy: anError [
 
@@ -159,14 +165,23 @@ MCPToolEdit >> executeOperationBlock: anOperationBlock force: forceRequested ope
 	^ { (#warnings -> warningMessages asArray) } asDictionary
 ]
 
+{ #category : 'private - execution' }
+MCPToolEdit >> executeOperationRequest: editRequest [
+
+	| specification |
+	specification := self operationSpecificationNamed:
+		                 editRequest operation.
+	^ self
+		  perform: (specification at: #executeSelector)
+		  with: editRequest rawRequest
+]
+
 { #category : 'executing' }
 MCPToolEdit >> executeWithRequest: request [
 
-	| operation specification |
-	operation := self operationFromRequest: request.
-	self validateRequiredPropertiesForOperation: operation inRequest: request.
-	specification := self operationSpecificationNamed: operation.
-	^ self perform: (specification at: #executeSelector) with: request
+	| editRequest |
+	editRequest := self toolRequestFromRequest: request.
+	^ (self commandForRequest: editRequest) execute
 ]
 
 { #category : 'private - request' }
@@ -619,6 +634,12 @@ MCPToolEdit >> resolvedRefactoringScopeFrom: explicitScope packageNames: package
 MCPToolEdit >> supportedRefactoringScopes [
 
 	^ #( 'image' 'packages' 'hierarchy' 'classes' )
+]
+
+{ #category : 'private - request' }
+MCPToolEdit >> toolRequestFromRequest: request [
+
+	^ MCPEditToolRequest fromRequest: request tool: self
 ]
 
 { #category : 'private - errors' }

@@ -7,9 +7,9 @@ Class {
 	#instVars : [
 		'violations'
 	],
-	#category : 'MCP-Internal',
+	#category : 'MCP-Schema',
 	#package : 'MCP',
-	#tag : 'Internal'
+	#tag : 'Schema'
 }
 
 { #category : 'validating' }

@@ -104,6 +104,12 @@ MCPToolInspectClass >> classNameFromRequest: request [
 	^ className
 ]
 
+{ #category : 'private - execution' }
+MCPToolInspectClass >> commandForRequest: inspectRequest [
+
+	^ MCPInspectClassCommand tool: self request: inspectRequest
+]
+
 { #category : 'defaults' }
 MCPToolInspectClass >> defaultDescription [
 
@@ -230,35 +236,21 @@ MCPToolInspectClass >> errorResultForError: anError className: className [
 { #category : 'executing' }
 MCPToolInspectClass >> executeWithRequest: request [
 
-	| className data includeComment subclasses superclasses targetClass |
-	className := self classNameFromRequest: request.
+	| commandResult inspectRequest |
+	inspectRequest := self toolRequestFromRequest: request.
 	^ [
-	  targetClass := self resolvedClassNamed: className.
-	  includeComment := request
-		                    booleanArgumentNamed: 'includeComment'
-		                    default: false.
-	  superclasses := self
-		                  superclassesForClass: targetClass
-		                  request: request.
-	  subclasses := self subclassesForClass: targetClass request: request.
-	  data := self
-		          descriptionDictionaryForClass: targetClass
-		          includeComment: includeComment.
-	  data at: #superclasses put: (self
-			   descriptionDictionariesForClasses: superclasses
-			   includeComment: includeComment).
-	  data at: #subclasses put: (self
-			   descriptionDictionariesForClasses: subclasses
-			   includeComment: includeComment).
+	  commandResult := (self commandForRequest: inspectRequest) execute.
 	  self
 		  successResultText: (self
-				   successSummaryForClassName: className
-				   superclasses: superclasses
-				   subclasses: subclasses)
-		  data: data ]
+				   successSummaryForClassName: inspectRequest className
+				   superclasses: (commandResult at: #superclasses)
+				   subclasses: (commandResult at: #subclasses))
+		  data: (commandResult at: #data) ]
 		  on: Exception
 		  do: [ :error |
-		  self errorResultForError: error className: className ]
+			  self
+				  errorResultForError: error
+				  className: inspectRequest className ]
 ]
 
 { #category : 'private' }
@@ -347,4 +339,10 @@ MCPToolInspectClass >> superclassesForClass: aClass request: request [
 				                    targetSuperclassName
 				                    forClassNamed: aClass name asString ].
 	^ aClass allSuperclasses asArray copyUpTo: targetSuperclass
+]
+
+{ #category : 'private - request' }
+MCPToolInspectClass >> toolRequestFromRequest: request [
+
+	^ MCPInspectClassRequest fromRequest: request tool: self
 ]

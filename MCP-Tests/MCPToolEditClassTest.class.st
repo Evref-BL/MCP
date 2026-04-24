@@ -157,6 +157,15 @@ MCPToolEditClassTest >> moveToPackageArguments [
 ]
 
 { #category : 'private' }
+MCPToolEditClassTest >> moveToTagArguments [
+
+	^ {
+		  (#operation -> 'move').
+		  (#className -> self moveTargetClassName).
+		  (#tag -> self destinationTagName) } asDictionary
+]
+
+{ #category : 'private' }
 MCPToolEditClassTest >> originalClassName [
 
 	^ 'MCPToolRenameClassTestOriginal'
@@ -559,6 +568,33 @@ MCPToolEditClassTest >> testCreatesClassWithTraitsClassTraitsSharedVariablesShar
 		assert: (data at: #sharedPoolNames)
 		equals: #( 'ChronologyConstants' ).
 	self assert: (data at: #layoutClassName) equals: 'WeakLayout'
+]
+
+{ #category : 'tests' }
+MCPToolEditClassTest >> testDefaultsMovePackageNameToCurrentPackageForRecategorization [
+
+	| data package result |
+	result := self callToolWith: self moveToTagArguments.
+	data := self dataFrom: result.
+	package := PackageOrganizer default packageNamed:
+		           self originalMovePackageName.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (package hasTag: self destinationTagName).
+	self
+		assert: self moveTargetClass packageName asString
+		equals: self originalMovePackageName.
+	self
+		assert: self currentTagOfMoveTargetClass
+		equals: self destinationTagName.
+	self assert: (data at: #operation) equals: 'move'.
+	self
+		assert: (data at: #packageName)
+		equals: self originalMovePackageName.
+	self assert: (data at: #tag) equals: self destinationTagName.
+	self
+		assert: (data at: #oldPackageName)
+		equals: self originalMovePackageName.
+	self assert: (data at: #oldTag) equals: 'Uncategorized'
 ]
 
 { #category : 'tests' }

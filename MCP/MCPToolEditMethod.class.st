@@ -20,6 +20,16 @@ MCPToolEditMethod >> allowedNonErrorCritiqueRuleClasses [
 		  ReUnaryAccessingMethodWithoutReturnRule }
 ]
 
+{ #category : 'private - methods' }
+MCPToolEditMethod >> behaviorNamed: aClassName classSide: aBoolean [
+
+	| targetClass |
+	targetClass := self class environment at: aClassName asSymbol.
+	^ aBoolean
+		  ifTrue: [ targetClass classSide ]
+		  ifFalse: [ targetClass ]
+]
+
 { #category : 'private' }
 MCPToolEditMethod >> classReferenceNameFor: className classSide: classSide [
 
@@ -490,6 +500,15 @@ MCPToolEditMethod >> methodDataProperties [
 		  self methodCritiquesSchemaProperty }
 ]
 
+{ #category : 'private - methods' }
+MCPToolEditMethod >> methodReferenceForBehavior: aBehavior selector: aSelector [
+
+	^ String streamContents: [ :stream |
+		  stream nextPutAll: (self targetNameForBehavior: aBehavior).
+		  stream nextPutAll: '>>'.
+		  stream nextPutAll: aSelector asString ]
+]
+
 { #category : 'private - operations' }
 MCPToolEditMethod >> operationSpecifications [
 
@@ -542,6 +561,12 @@ MCPToolEditMethod >> renameRefactoringForSelector: oldSelectorSymbol inBehavior:
 		  permutation: permutation
 ]
 
+{ #category : 'private - request' }
+MCPToolEditMethod >> selectorStringFromRequest: request [
+
+	^ request stringArgumentNamed: 'selector'
+]
+
 { #category : 'private' }
 MCPToolEditMethod >> shouldIncludeCritique: aCritique [
 
@@ -564,6 +589,14 @@ MCPToolEditMethod >> sourceIntervalForCritique: aCritique [
 	(sourceAnchor notNil and: [ sourceAnchor providesInterval ])
 		ifFalse: [ ^ nil ].
 	^ sourceAnchor interval
+]
+
+{ #category : 'private - methods' }
+MCPToolEditMethod >> targetNameForBehavior: aBehavior [
+
+	^ aBehavior isMeta
+		  ifTrue: [ aBehavior instanceSide name , ' class' ]
+		  ifFalse: [ aBehavior name ]
 ]
 
 { #category : 'private' }

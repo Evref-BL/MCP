@@ -9,9 +9,9 @@ Class {
 		'extensionMethodCount',
 		'isUndefined'
 	],
-	#category : 'MCP-Internal',
+	#category : 'MCP-DTOs',
 	#package : 'MCP',
-	#tag : 'Internal'
+	#tag : 'DTOs'
 }
 
 { #category : 'instance creation' }

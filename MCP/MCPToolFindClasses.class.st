@@ -10,22 +10,23 @@ Class {
 }
 
 { #category : 'private - filtering' }
-MCPToolFindClasses >> classEntriesFrom: classes filter: filterPattern filterTargets: filterTargets filterMode: filterMode caseSensitive: caseSensitive [
+MCPToolFindClasses >> classEntriesForRequest: queryRequest [
 
 	| entries matcher |
 	matcher := self
-		           matcherForPattern: filterPattern
-		           mode: filterMode
-		           caseSensitive: caseSensitive.
+		           matcherForPattern: queryRequest filterPattern
+		           mode: queryRequest filterMode
+		           caseSensitive: queryRequest caseSensitive.
 	entries := OrderedCollection new.
-	classes do: [ :eachClass |
+	queryRequest scopeQuery classes do: [ :eachClass |
 		| entry |
 		entry := (MCPClassInfo fromClass: eachClass) asQueryDictionary.
-		(filterPattern isNil or: [
+		(queryRequest hasFilterPattern not or: [
 			 self
 				 matchesFilterOnClassEntry: entry
 				 matcher: matcher
-				 targets: filterTargets ]) ifTrue: [ entries add: entry ] ].
+				 targets: queryRequest filterTargets ]) ifTrue: [
+			entries add: entry ] ].
 	^ entries asArray
 ]
 
@@ -222,45 +223,21 @@ MCPToolFindClasses >> matchesFilterOnClassEntry: anEntry matcher: aMatcher targe
 ]
 
 { #category : 'private - template' }
-MCPToolFindClasses >> queryEntriesForParameters: parameters [
+MCPToolFindClasses >> queryEntriesForQuerySpec: querySpec [
 
-	^ self
-		  classEntriesFrom: (parameters at: #scopeQuery) classes
-		  filter: (parameters at: #filterPattern)
-		  filterTargets: (parameters at: #filterTargets)
-		  filterMode: (parameters at: #filterMode)
-		  caseSensitive: (parameters at: #caseSensitive)
+	^ self classEntriesForRequest: querySpec
 ]
 
 { #category : 'private - template' }
-MCPToolFindClasses >> queryParametersFromRequest: request [
-
-	| scopeQuery |
-	scopeQuery := MCPClassScopeQuery
-		              scope:
-		              (request stringArgumentNamed: 'scope' default: 'image')
-		              packageNames:
-		              (request stringCollectionArgumentNamed: 'packageNames')
-		              classNames:
-		              (request stringCollectionArgumentNamed: 'classNames').
-	^ {
-		  (#filterPattern -> (request stringArgumentNamed: 'filter')).
-		  (#filterTargets -> (self filterTargetsFromRequest: request)).
-		  (#filterMode -> (self filterModeFromRequest: request)).
-		  (#caseSensitive
-		   -> (request booleanArgumentNamed: 'caseSensitive' default: true)).
-		  (#limit
-		   ->
-		   (request nonNegativeIntegerArgumentNamed: 'limit' default: 100)).
-		  (#offset
-		   -> (request nonNegativeIntegerArgumentNamed: 'offset' default: 0)).
-		  (#scopeQuery -> scopeQuery) } asDictionary
-]
-
-{ #category : 'private - template' }
-MCPToolFindClasses >> queryResultDataForParameters: parameters page: page [
+MCPToolFindClasses >> queryResultDataForQuerySpec: queryRequest page: page [
 
 	^ self queryResultDataFrom: nil page: page entriesKey: #classes
+]
+
+{ #category : 'private - template' }
+MCPToolFindClasses >> querySpecFromRequest: request [
+
+	^ MCPFindClassesRequest fromRequest: request tool: self
 ]
 
 { #category : 'private - template' }
@@ -272,12 +249,10 @@ MCPToolFindClasses >> requestedContextFromRequest: request [
 ]
 
 { #category : 'private - template' }
-MCPToolFindClasses >> successSummaryForParameters: parameters page: page [
+MCPToolFindClasses >> successSummaryForQuerySpec: queryRequest page: page [
 
-	| scopeQuery |
-	scopeQuery := parameters at: #scopeQuery.
 	^ self
-		  successSummaryForScope: scopeQuery scope
+		  successSummaryForScope: queryRequest scopeQuery scope
 		  returnedCount: (page at: #returnedCount)
 		  totalCount: (page at: #totalCount)
 		  truncated: (page at: #truncated)

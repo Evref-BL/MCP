@@ -44,14 +44,17 @@ MCPToolFindPackagesTest >> mcpProjectPackageNames [
 MCPToolFindPackagesTest >> testCanFilterPackageEntriesByTagNamesUsingControlledPackages [
 
 	self withTemporaryTaggedPackagesDo: [ :packages :packageProjectNames |
-		| data entry |
+		| data entry queryRequest |
+		queryRequest := MCPFindPackagesRequest new
+			                filterPattern: 'FixtureBetaTag';
+			                filterTargets: #( 'tag' );
+			                filterMode: 'substring';
+			                caseSensitive: false;
+			                yourself.
 		data := MCPToolFindPackages new
-			        packageEntriesFrom: packages
-			        packageProjectNames: packageProjectNames
-			        filter: 'FixtureBetaTag'
-			        filterTargets: #( 'tag' )
-			        filterMode: 'substring'
-			        caseSensitive: false.
+			        packageEntriesFromPackages: packages
+			        projectNames: packageProjectNames
+			        usingRequest: queryRequest.
 		self assert: data size equals: 1.
 		entry := self
 			         entryNamed: 'MCP-Tests-FindPackages-Temp-Beta'

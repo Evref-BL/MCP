@@ -21,21 +21,16 @@ MCPToolFindMethods >> classBindingForClassName: aClassName [
 		  ifFalse: [ nil ]
 ]
 
-{ #category : 'private - template' }
-MCPToolFindMethods >> classReferenceEntriesFromQuery: query className: className includeSource: includeSource [
+{ #category : 'private - methods' }
+MCPToolFindMethods >> classReferenceEntriesForQuerySpec: querySpec [
 
-	className ifNil: [
-		^ MCPInvalidToolInput
-			  signalMissingRequiredArgumentNamed: 'filter'
-			  forTool: self ].
+	| className |
+	className := querySpec requiredFilterPatternForTool: self.
 	^ self
-		  methodEntriesFrom: (self
+		  methodEntriesFromMethods: (self
 				   matchingClassReferencesForClassNamed: className
-				   inMethods: query methods)
-		  filter: nil
-		  filterMode: self defaultFilterMode
-		  caseSensitive: true
-		  includeSource: includeSource
+				   inMethods: querySpec scopeQuery methods)
+		  querySpec: querySpec
 ]
 
 { #category : 'defaults' }
@@ -149,18 +144,15 @@ MCPToolFindMethods >> filterTextsForMethodEntry: anEntry sourceText: sourceText 
 ]
 
 { #category : 'private - methods' }
-MCPToolFindMethods >> implementorEntriesFromQuery: query selector: selectorString includeSource: includeSource [
+MCPToolFindMethods >> implementorEntriesForQuerySpec: querySpec [
 
 	| compiledMethods selectorSymbol |
-	selectorSymbol := selectorString asSymbol.
-	compiledMethods := query methods select: [ :eachMethod |
+	selectorSymbol := querySpec filterPattern asSymbol.
+	compiledMethods := querySpec scopeQuery methods select: [ :eachMethod |
 		                   eachMethod selector = selectorSymbol ].
 	^ self
-		  methodEntriesFrom: compiledMethods asArray
-		  filter: nil
-		  filterMode: self defaultFilterMode
-		  caseSensitive: true
-		  includeSource: includeSource
+		  methodEntriesFromMethods: compiledMethods asArray
+		  querySpec: querySpec
 ]
 
 { #category : 'private - filtering' }
@@ -220,36 +212,60 @@ MCPToolFindMethods >> method: aCompiledMethod referencesAnyVariable: variables [
 ]
 
 { #category : 'private - methods' }
-MCPToolFindMethods >> methodEntriesFromQuery: query filter: filterPattern filterTargets: filterTargets filterMode: filterMode caseSensitive: caseSensitive includeSource: includeSource [
+MCPToolFindMethods >> methodEntriesFromMethods: compiledMethods querySpec: querySpec [
+
+	| entries needsSourceText |
+	needsSourceText := querySpec includeSource.
+	entries := OrderedCollection new.
+	compiledMethods do: [ :eachMethod |
+		| entry info sourceText |
+		info := MCPCompiledMethodInfo fromMethod: eachMethod.
+		sourceText := needsSourceText
+			              ifTrue: [ info source ]
+			              ifFalse: [ nil ].
+		entry := info asDictionaryIncludingSource: querySpec includeSource.
+		querySpec includeSource ifTrue: [ entry at: #source put: sourceText ].
+		entries add: entry ].
+	^ self sortedMethodEntries: entries
+]
+
+{ #category : 'private - methods' }
+MCPToolFindMethods >> methodEntriesFromQuerySpec: querySpec [
 
 	| entries matcher needsSourceForFiltering |
 	matcher := self
-		           matcherForPattern: filterPattern
-		           mode: filterMode
-		           caseSensitive: caseSensitive.
-	needsSourceForFiltering := filterPattern notNil and: [
-		                           filterTargets includes: 'source' ].
+		           matcherForPattern: querySpec filterPattern
+		           mode: querySpec filterMode
+		           caseSensitive: querySpec caseSensitive.
+	needsSourceForFiltering := querySpec needsSourceForFiltering.
 	entries := OrderedCollection new.
-	query methodsDo: [ :eachMethod |
+	querySpec scopeQuery methodsDo: [ :eachMethod |
 		| entry info sourceText |
 		info := MCPCompiledMethodInfo fromMethod: eachMethod.
 		entry := info asDictionaryIncludingSource: false.
 		sourceText := needsSourceForFiltering
 			              ifTrue: [ info source ]
 			              ifFalse: [ nil ].
-		(filterPattern isNil or: [
+		(querySpec hasFilterPattern not or: [
 			 self
 				 matchesFilterOnMethodEntry: entry
 				 sourceText: sourceText
 				 matcher: matcher
-				 targets: filterTargets ]) ifTrue: [
-			includeSource ifTrue: [
+				 targets: querySpec filterTargets ]) ifTrue: [
+			querySpec includeSource ifTrue: [
 				sourceText ifNil: [ sourceText := info source ].
 				entry at: #source put: sourceText ].
 			entries add: entry ] ].
-	^ (entries asSortedCollection: [ :left :right |
-		   (self methodEntryLabel: left) <= (self methodEntryLabel: right) ])
-		  asArray
+	^ self sortedMethodEntries: entries
+]
+
+{ #category : 'private - methods' }
+MCPToolFindMethods >> methodEntryLabel: anEntry [
+
+	^ self
+		  methodReferenceForClassName: (anEntry at: #className)
+		  selector: (anEntry at: #selector)
+		  isClassSide: (anEntry at: #side) = 'class'
 ]
 
 { #category : 'private - schema' }
@@ -264,58 +280,41 @@ MCPToolFindMethods >> methodEntrySchema [
 		  'The formatted source code of the method when includeSource=true.'
 ]
 
-{ #category : 'private - template' }
-MCPToolFindMethods >> queryEntriesForParameters: parameters [
+{ #category : 'private - methods' }
+MCPToolFindMethods >> methodReferenceForClassName: aClassName selector: aSelector isClassSide: isClassSide [
 
-	(self shouldUseSelectorReferenceLookupForParameters: parameters)
-		ifTrue: [
-			^ self
-				  selectorReferenceEntriesFromQuery: (parameters at: #query)
-				  selector: (parameters at: #filterPattern)
-				  includeSource: (parameters at: #includeSource) ].
-	(self shouldUseClassReferenceLookupForParameters: parameters)
-		ifTrue: [
-			^ self
-				  classReferenceEntriesFromQuery: (parameters at: #query)
-				  className: (parameters at: #filterPattern)
-				  includeSource: (parameters at: #includeSource) ].
-	(self shouldUseVariableReferenceLookupForParameters: parameters)
-		ifTrue: [
-			^ self
-				  variableReferenceEntriesFromQuery: (parameters at: #query)
-				  variableName: (parameters at: #filterPattern)
-				  includeSource: (parameters at: #includeSource) ].
-	(self shouldUseImplementorLookupForParameters: parameters) ifTrue: [
-		^ self
-			  implementorEntriesFromQuery: (parameters at: #query)
-			  selector: (parameters at: #filterPattern)
-			  includeSource: (parameters at: #includeSource) ].
-	^ self
-		  methodEntriesFromQuery: (parameters at: #query)
-		  filter: (parameters at: #filterPattern)
-		  filterTargets: (parameters at: #filterTargets)
-		  filterMode: (parameters at: #filterMode)
-		  caseSensitive: (parameters at: #caseSensitive)
-		  includeSource: (parameters at: #includeSource)
+	^ String streamContents: [ :stream |
+		  stream nextPutAll: aClassName.
+		  isClassSide ifTrue: [ stream nextPutAll: ' class' ].
+		  stream
+			  nextPutAll: '>>';
+			  nextPutAll: aSelector ]
 ]
 
 { #category : 'private - template' }
-MCPToolFindMethods >> queryParametersFromRequest: request [
+MCPToolFindMethods >> queryEntriesForQuerySpec: querySpec [
 
-	| parameters |
-	parameters := self methodQueryParametersFromRequest: request.
-	parameters
-		at: #filterTargets
-		put: (self filterTargetsFromRequest: request).
-	^ parameters
+	querySpec usesSelectorReferenceLookup ifTrue: [
+		^ self selectorReferenceEntriesForQuerySpec: querySpec ].
+	querySpec usesClassReferenceLookup ifTrue: [
+		^ self classReferenceEntriesForQuerySpec: querySpec ].
+	querySpec usesVariableReferenceLookup ifTrue: [
+		^ self variableReferenceEntriesForQuerySpec: querySpec ].
+	querySpec usesImplementorLookup ifTrue: [
+		^ self implementorEntriesForQuerySpec: querySpec ].
+	^ self methodEntriesFromQuerySpec: querySpec
 ]
 
 { #category : 'private - template' }
-MCPToolFindMethods >> queryResultDataForParameters: parameters page: page [
+MCPToolFindMethods >> queryResultDataForQuerySpec: querySpec page: page [
 
-	^ self
-		  methodQueryResultDataForPage: page
-		  entriesKey: #methods
+	^ self methodQueryResultDataForPage: page entriesKey: #methods
+]
+
+{ #category : 'private - template' }
+MCPToolFindMethods >> querySpecFromRequest: request [
+
+	^ MCPFindMethodsRequest fromRequest: request tool: self
 ]
 
 { #category : 'private - schema' }
@@ -350,58 +349,31 @@ MCPToolFindMethods >> requiredFilterSchemasForReferenceModes [
 		   thenRequired: #( 'filter' )) }
 ]
 
-{ #category : 'private - template' }
-MCPToolFindMethods >> selectorReferenceEntriesFromQuery: query selector: selectorString includeSource: includeSource [
+{ #category : 'private - methods' }
+MCPToolFindMethods >> selectorReferenceEntriesForQuerySpec: querySpec [
 
-	selectorString ifNil: [
-		^ MCPInvalidToolInput
-			  signalMissingRequiredArgumentNamed: 'filter'
-			  forTool: self ].
+	| selector |
+	selector := querySpec requiredFilterPatternForTool: self.
 	^ self
-		  methodEntriesFrom: (self
-				   matchingSelectorReferencesForSelector: selectorString asSymbol
-				   inMethods: query methods)
-		  filter: nil
-		  filterMode: self defaultFilterMode
-		  caseSensitive: true
-		  includeSource: includeSource
+		  methodEntriesFromMethods: (self
+				   matchingSelectorReferencesForSelector: selector asSymbol
+				   inMethods: querySpec scopeQuery methods)
+		  querySpec: querySpec
+]
+
+{ #category : 'private - methods' }
+MCPToolFindMethods >> sortedMethodEntries: entries [
+
+	^ (entries asSortedCollection: [ :left :right |
+		   (self methodEntryLabel: left) <= (self methodEntryLabel: right) ])
+		  asArray
 ]
 
 { #category : 'private - template' }
-MCPToolFindMethods >> shouldUseClassReferenceLookupForParameters: parameters [
-
-	^ (parameters at: #filterMode) = 'classReference'
-]
-
-{ #category : 'private - template' }
-MCPToolFindMethods >> shouldUseImplementorLookupForParameters: parameters [
-
-	| filterPattern filterTargets |
-	filterPattern := parameters at: #filterPattern.
-	filterPattern ifNil: [ ^ false ].
-	(parameters at: #filterMode) = 'exact' ifFalse: [ ^ false ].
-	(parameters at: #caseSensitive) ifFalse: [ ^ false ].
-	filterTargets := parameters at: #filterTargets.
-	^ filterTargets asArray = #( 'selector' )
-]
-
-{ #category : 'private - template' }
-MCPToolFindMethods >> shouldUseSelectorReferenceLookupForParameters: parameters [
-
-	^ (parameters at: #filterMode) = 'selectorReference'
-]
-
-{ #category : 'private - template' }
-MCPToolFindMethods >> shouldUseVariableReferenceLookupForParameters: parameters [
-
-	^ (parameters at: #filterMode) = 'variableReference'
-]
-
-{ #category : 'private - template' }
-MCPToolFindMethods >> successSummaryForParameters: parameters page: page [
+MCPToolFindMethods >> successSummaryForQuerySpec: querySpec page: page [
 
 	^ self
-		  successSummaryForScope: (parameters at: #query) scope
+		  successSummaryForScope: querySpec scopeQuery scope
 		  returnedCount: (page at: #returnedCount)
 		  totalCount: (page at: #totalCount)
 		  truncated: (page at: #truncated)
@@ -444,20 +416,15 @@ MCPToolFindMethods >> variableBindingsNamed: aVariableName inBehaviors: behavior
 	^ variables asArray
 ]
 
-{ #category : 'private - template' }
-MCPToolFindMethods >> variableReferenceEntriesFromQuery: query variableName: variableName includeSource: includeSource [
+{ #category : 'private - methods' }
+MCPToolFindMethods >> variableReferenceEntriesForQuerySpec: querySpec [
 
-	variableName ifNil: [
-		^ MCPInvalidToolInput
-			  signalMissingRequiredArgumentNamed: 'filter'
-			  forTool: self ].
+	| variableName |
+	variableName := querySpec requiredFilterPatternForTool: self.
 	^ self
-		  methodEntriesFrom: (self
+		  methodEntriesFromMethods: (self
 				   matchingVariableReferencesNamed: variableName
-				   scopeQuery: query
-				   inMethods: query methods)
-		  filter: nil
-		  filterMode: self defaultFilterMode
-		  caseSensitive: true
-		  includeSource: includeSource
+				   scopeQuery: querySpec scopeQuery
+				   inMethods: querySpec scopeQuery methods)
+		  querySpec: querySpec
 ]

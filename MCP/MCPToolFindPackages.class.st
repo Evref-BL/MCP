@@ -152,13 +152,22 @@ MCPToolFindPackages >> matchesFilterOnPackageEntry: anEntry matcher: aMatcher ta
 ]
 
 { #category : 'private - filtering' }
-MCPToolFindPackages >> packageEntriesFrom: packages packageProjectNames: packageProjectNames filter: filterPattern filterTargets: filterTargets filterMode: filterMode caseSensitive: caseSensitive [
+MCPToolFindPackages >> packageEntriesForRequest: queryRequest [
+
+	^ self
+		  packageEntriesFromPackages: queryRequest scopeQuery packages
+		  projectNames: queryRequest scopeQuery packageProjectNamesMap
+		  usingRequest: queryRequest
+]
+
+{ #category : 'private - filtering' }
+MCPToolFindPackages >> packageEntriesFromPackages: packages projectNames: packageProjectNames usingRequest: queryRequest [
 
 	| entries matcher |
 	matcher := self
-		           matcherForPattern: filterPattern
-		           mode: filterMode
-		           caseSensitive: caseSensitive.
+		           matcherForPattern: queryRequest filterPattern
+		           mode: queryRequest filterMode
+		           caseSensitive: queryRequest caseSensitive.
 	entries := OrderedCollection new.
 	packages do: [ :eachPackage |
 		| entry projectNames |
@@ -168,11 +177,12 @@ MCPToolFindPackages >> packageEntriesFrom: packages packageProjectNames: package
 		entry := (MCPPackageInfo
 			          fromPackage: eachPackage
 			          projectNames: projectNames) asQueryDictionary.
-		(filterPattern isNil or: [
+		(queryRequest hasFilterPattern not or: [
 			 self
 				 matchesFilterOnPackageEntry: entry
 				 matcher: matcher
-				 targets: filterTargets ]) ifTrue: [ entries add: entry ] ].
+				 targets: queryRequest filterTargets ]) ifTrue: [
+			entries add: entry ] ].
 	^ entries asArray
 ]
 
@@ -208,46 +218,21 @@ MCPToolFindPackages >> packageInfoDataProperties [
 ]
 
 { #category : 'private - template' }
-MCPToolFindPackages >> queryEntriesForParameters: parameters [
+MCPToolFindPackages >> queryEntriesForQuerySpec: querySpec [
 
-	| scopeQuery |
-	scopeQuery := parameters at: #scopeQuery.
-	^ self
-		  packageEntriesFrom: scopeQuery packages
-		  packageProjectNames: scopeQuery packageProjectNamesMap
-		  filter: (parameters at: #filterPattern)
-		  filterTargets: (parameters at: #filterTargets)
-		  filterMode: (parameters at: #filterMode)
-		  caseSensitive: (parameters at: #caseSensitive)
+	^ self packageEntriesForRequest: querySpec
 ]
 
 { #category : 'private - template' }
-MCPToolFindPackages >> queryParametersFromRequest: request [
-
-	| scopeQuery |
-	scopeQuery := MCPPackageScopeQuery
-		              scope:
-		              (request stringArgumentNamed: 'scope' default: 'image')
-		              projectNames:
-		              (request stringCollectionArgumentNamed: 'projectNames').
-	^ {
-		  (#filterPattern -> (request stringArgumentNamed: 'filter')).
-		  (#filterTargets -> (self filterTargetsFromRequest: request)).
-		  (#filterMode -> (self filterModeFromRequest: request)).
-		  (#caseSensitive
-		   -> (request booleanArgumentNamed: 'caseSensitive' default: true)).
-		  (#limit
-		   ->
-		   (request nonNegativeIntegerArgumentNamed: 'limit' default: 100)).
-		  (#offset
-		   -> (request nonNegativeIntegerArgumentNamed: 'offset' default: 0)).
-		  (#scopeQuery -> scopeQuery) } asDictionary
-]
-
-{ #category : 'private - template' }
-MCPToolFindPackages >> queryResultDataForParameters: parameters page: page [
+MCPToolFindPackages >> queryResultDataForQuerySpec: queryRequest page: page [
 
 	^ self queryResultDataFrom: nil page: page entriesKey: #packages
+]
+
+{ #category : 'private - template' }
+MCPToolFindPackages >> querySpecFromRequest: request [
+
+	^ MCPFindPackagesRequest fromRequest: request tool: self
 ]
 
 { #category : 'private - template' }
@@ -259,12 +244,10 @@ MCPToolFindPackages >> requestedContextFromRequest: request [
 ]
 
 { #category : 'private - template' }
-MCPToolFindPackages >> successSummaryForParameters: parameters page: page [
+MCPToolFindPackages >> successSummaryForQuerySpec: queryRequest page: page [
 
-	| scopeQuery |
-	scopeQuery := parameters at: #scopeQuery.
 	^ self
-		  successSummaryForScope: scopeQuery scope
+		  successSummaryForScope: queryRequest scopeQuery scope
 		  returnedCount: (page at: #returnedCount)
 		  totalCount: (page at: #totalCount)
 		  truncated: (page at: #truncated)

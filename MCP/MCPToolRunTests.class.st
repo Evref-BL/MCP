@@ -31,6 +31,12 @@ MCPToolRunTests >> aggregateDataForResults: resultEntries timedOut: timedOut unr
 	^ data
 ]
 
+{ #category : 'private - execution' }
+MCPToolRunTests >> commandForRequest: runTestsRequest [
+
+	^ MCPRunTestsCommand tool: self request: runTestsRequest
+]
+
 { #category : 'private' }
 MCPToolRunTests >> compactTestNamesFrom: testRequests [
 
@@ -143,23 +149,21 @@ MCPToolRunTests >> errorResultForError: anError tests: testRequests [
 { #category : 'executing' }
 MCPToolRunTests >> executeWithRequest: request [
 
-	| data deadline testRequests timeoutMilliseconds validatedRequests |
-	testRequests := #(  ).
+	| data runTestsRequest |
+	runTestsRequest := MCPRunTestsRequest new
+		                   initializeTestRequests: #(  )
+		                   timeoutMilliseconds: nil.
 	^ [
-	  testRequests := self testRequestsFromRequest: request.
-	  validatedRequests := self validatedRequestsFrom: testRequests.
-	  timeoutMilliseconds := self timeoutMillisecondsFromRequest: request.
-	  deadline := self deadlineForTimeoutMilliseconds:
-		              timeoutMilliseconds.
-	  data := self
-		          runValidatedRequests: validatedRequests
-		          deadline: deadline.
+	  runTestsRequest := self toolRequestFromRequest: request.
+	  data := (self commandForRequest: runTestsRequest) execute.
 	  self
 		  successResultText: (self successSummaryForData: data)
 		  data: data ]
 		  on: Exception
 		  do: [ :error |
-		  self errorResultForError: error tests: testRequests ]
+			  self
+				  errorResultForError: error
+				  tests: runTestsRequest testRequests ]
 ]
 
 { #category : 'private' }
@@ -275,6 +279,63 @@ MCPToolRunTests >> runValidatedRequests: validatedRequests deadline: deadline [
 		  unrunTests: #(  )
 ]
 
+{ #category : 'private - tests' }
+MCPToolRunTests >> standardTestDataPropertiesIncludingMethodName: includeMethodName [
+
+	| issuesProperty properties |
+	properties := OrderedCollection withAll: {
+			              (self
+				               schemaPropertyNamed: 'className'
+				               type: 'string'
+				               description: 'The test class that was executed.').
+			              (self
+				               integerSchemaPropertyNamed: 'runCount'
+				               description: 'The number of tests that ran.') }.
+	includeMethodName ifTrue: [
+		properties add: (self
+				 schemaPropertyNamed: 'testMethodName'
+				 type: 'string'
+				 description: 'The single test method that was executed.') ].
+	issuesProperty := self
+		                  schemaPropertyNamed: 'issues'
+		                  type: 'array'
+		                  description:
+		                  'Detailed issues captured while running tests.'.
+	issuesProperty items: self testIssueObjectSchema.
+	properties add: issuesProperty.
+	^ properties asArray
+]
+
+{ #category : 'private - tests' }
+MCPToolRunTests >> standardTestRequiredFieldsIncludingMethodName: includeMethodName [
+
+	| required |
+	required := OrderedCollection withAll:
+		            #( 'className' 'runCount' 'issues' ).
+	includeMethodName ifTrue: [ required add: 'testMethodName' ].
+	^ required asArray
+]
+
+{ #category : 'private - tests' }
+MCPToolRunTests >> structuredDataForTestResult: aResult className: className testMethodName: testMethodName [
+
+	| data issues |
+	issues := (aResult issueDetails asSortedCollection: [ :left :right |
+		           (left at: #testName) <= (right at: #testName) ])
+		          collect: [ :each |
+			          | issue |
+			          issue := each copy.
+			          issue removeKey: #testName ifAbsent: [  ].
+			          issue ].
+	data := Dictionary new.
+	data at: #className put: className.
+	testMethodName ifNotNil: [
+		data at: #testMethodName put: testMethodName ].
+	data at: #runCount put: aResult runCount.
+	data at: #issues put: issues asArray.
+	^ data
+]
+
 { #category : 'private' }
 MCPToolRunTests >> successSummaryForData: data [
 
@@ -335,6 +396,58 @@ MCPToolRunTests >> testCasesFromSuite: aSuite [
 	testCases := OrderedCollection new.
 	self addTestCasesFrom: aSuite to: testCases.
 	^ testCases asArray
+]
+
+{ #category : 'private - tests' }
+MCPToolRunTests >> testIssueObjectSchema [
+
+	| issueProperty |
+	issueProperty := MCPStructureProperties new
+		                 type: 'object';
+		                 description:
+			                 'A single test issue recorded while running tests.';
+		                 properties: {
+				                 (self
+					                  schemaPropertyNamed: 'kind'
+					                  type: 'string'
+					                  description:
+						                  'The issue category, such as failure, error, or skipped.').
+				                 (self
+					                  schemaPropertyNamed: 'className'
+					                  type: 'string'
+					                  description:
+						                  'The test class that produced the issue.').
+				                 (self
+					                  schemaPropertyNamed: 'testMethodName'
+					                  type: 'string'
+					                  description:
+						                  'The test method that produced the issue.').
+				                 (self
+					                  schemaPropertyNamed: 'errorClass'
+					                  type: 'string'
+					                  description:
+						                  'The exception class captured for the issue.').
+				                 (self
+					                  schemaPropertyNamed: 'message'
+					                  type: 'string'
+					                  description:
+						                  'The exception message for the issue.').
+				                 (self
+					                  schemaPropertyNamed: 'description'
+					                  type: 'string'
+					                  description:
+						                  'A longer textual description of the issue when available.').
+				                 (self
+					                  schemaPropertyNamed: 'signalerContext'
+					                  type: 'string'
+					                  description:
+						                  'The signaler context captured for the issue when available.') };
+		                 required:
+			                 #( 'kind' 'className' 'testMethodName'
+			                    'errorClass' 'message' );
+		                 additionalProperties: false;
+		                 yourself.
+	^ issueProperty
 ]
 
 { #category : 'private' }
@@ -434,6 +547,12 @@ MCPToolRunTests >> timeoutMillisecondsFromRequest: request [
 	^ (request
 		   nonNegativeIntegerArgumentNamed: 'timeoutSeconds'
 		   default: self defaultTimeoutSeconds) * 1000
+]
+
+{ #category : 'private - request' }
+MCPToolRunTests >> toolRequestFromRequest: request [
+
+	^ MCPRunTestsRequest fromRequest: request tool: self
 ]
 
 { #category : 'private' }

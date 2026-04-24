@@ -9,6 +9,15 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'private - execution' }
+MCPToolEvaluate >> commandForRequest: evaluateRequest [
+
+	^ MCPEvaluateCommand
+		  tool: self
+		  request: evaluateRequest
+		  resultPreviewCharacterLimit: self resultPreviewCharacterLimit
+]
+
 { #category : 'defaults' }
 MCPToolEvaluate >> defaultDescription [
 
@@ -71,35 +80,16 @@ MCPToolEvaluate >> defaultTitle [
 { #category : 'executing' }
 MCPToolEvaluate >> executeWithRequest: request [
 
-	| answer compiler details notice |
-	compiler := SmalltalkImage current compiler.
-	compiler compilationContext isScripting: true.
-	notice := nil.
-	compiler failBlock: [ :aNotice |
-		notice := aNotice.
-		nil ].
-	answer := [ compiler evaluate: (request stringArgumentNamed: 'code') ]
-		          on: Error
-		          do: [ :error |
-			          ^ self
-				            errorResultText:
-				            (self runtimeFailureMessageFor: error)
-				            details: (self errorDetailsFor: error) ].
-	notice ifNotNil: [
-		details := self errorDetailsFor: notice.
-		details
-			at: #description
-			put: 'Compilation failed before evaluation.'.
-		details at: #position put: notice position.
+	| commandResult evaluateRequest |
+	evaluateRequest := self toolRequestFromRequest: request.
+	commandResult := (self commandForRequest: evaluateRequest) execute.
+	(commandResult at: #status) = #error ifTrue: [
 		^ self
-			  errorResultText: (self syntaxFailureMessageFor: notice)
-			  details: details ].
-	^ self successResultText: 'Code evaluated successfully.' data: {
-			  (#resultClassName -> answer class name asString).
-			  (#resultPrintString
-			   ->
-			   (answer printStringLimitedTo: self resultPreviewCharacterLimit)) }
-			  asDictionary
+			  errorResultText: (commandResult at: #summary)
+			  details: (commandResult at: #error) ].
+	^ self
+		  successResultText: 'Code evaluated successfully.'
+		  data: (commandResult at: #data)
 ]
 
 { #category : 'private' }
@@ -136,4 +126,10 @@ MCPToolEvaluate >> syntaxFailureMessageFor: aNotice [
 			  stream
 				  nextPutAll: ' Position: ';
 				  print: aNotice position ] ]
+]
+
+{ #category : 'private - request' }
+MCPToolEvaluate >> toolRequestFromRequest: request [
+
+	^ MCPEvaluateRequest fromRequest: request tool: self
 ]

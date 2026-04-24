@@ -9,9 +9,9 @@ Class {
 		'arguments',
 		'violations'
 	],
-	#category : 'MCP-Internal',
+	#category : 'MCP-Requests',
 	#package : 'MCP',
-	#tag : 'Internal'
+	#tag : 'Requests'
 }
 
 { #category : 'instance creation' }

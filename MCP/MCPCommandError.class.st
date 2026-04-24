@@ -5,9 +5,9 @@ Class {
 		'errorCode',
 		'details'
 	],
-	#category : 'MCP-Internal',
+	#category : 'MCP-Errors',
 	#package : 'MCP',
-	#tag : 'Internal'
+	#tag : 'Errors'
 }
 
 { #category : 'signaling' }
