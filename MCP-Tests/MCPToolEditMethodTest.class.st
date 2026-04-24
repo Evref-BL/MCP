@@ -384,6 +384,23 @@ MCPToolEditMethodTest >> testCompileDefaultsToInstanceSideWhenClassSideIsOmitted
 ]
 
 { #category : 'tests' }
+MCPToolEditMethodTest >> testCompileReturnsAllowlistedExcessiveArgumentsCritique [
+
+	| selector |
+	selector := #argumentHeavyMethod:with:with:with:with:.
+	self removeSelector: selector from: MCPToolEditMethodTestTarget.
+	[
+	self
+		assertCompileForClassName: 'MCPToolEditMethodTestTarget'
+		methodSource:
+		'argumentHeavyMethod: first with: second with: third with: fourth with: fifth ^ first + second + third + fourth + fifth'
+		protocol: 'tests'
+		returnsSingleCritiqueRuleClass: 'ReExcessiveArgumentsRule'
+		titledLike: 'Excessive number of arguments' ] ensure: [
+		self removeSelector: selector from: MCPToolEditMethodTestTarget ]
+]
+
+{ #category : 'tests' }
 MCPToolEditMethodTest >> testCompileReturnsAllowlistedMissingSuperSendsCritique [
 
 	self removeSelector: #initialize from: MCPToolHierarchyTestBase.

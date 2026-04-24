@@ -13,6 +13,7 @@ Class {
 MCPToolEditMethod >> allowedNonErrorCritiqueRuleClasses [
 
 	^ {
+		  ReExcessiveArgumentsRule.
 		  ReMissingSuperSendsRule.
 		  ReReturnInEnsureRule.
 		  ReTempVarOverridesInstVarRule.
