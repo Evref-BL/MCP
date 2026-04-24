@@ -287,6 +287,23 @@ MCPJSONSchemaValidator >> validateIfThenIn: schema for: aValue atPath: path [
 		self validateValue: aValue againstSchema: thenSchema atPath: path ]
 ]
 
+{ #category : 'private - combinators' }
+MCPJSONSchemaValidator >> validateNotIn: schema for: aValue atPath: path [
+
+	| prohibitedSchema |
+	prohibitedSchema := self
+		                    keywordNamed: #not
+		                    in: schema
+		                    ifAbsent: [ ^ self ].
+	(self schema: prohibitedSchema matchesValue: aValue) ifTrue: [
+		self
+			addViolationAt: path
+			keyword: #not
+			message: 'Value must not match the prohibited schema.'
+			expected: 'a value that does not match the prohibited schema'
+			actual: 'matched prohibited schema' ]
+]
+
 { #category : 'private - object validation' }
 MCPJSONSchemaValidator >> validateObject: aDictionary againstSchema: schema atPath: path [
 
@@ -348,6 +365,7 @@ MCPJSONSchemaValidator >> validateValue: aValue againstSchema: aSchemaObject atP
 	self validateAllOfIn: schema for: aValue atPath: path.
 	self validateAnyOfIn: schema for: aValue atPath: path.
 	self validateOneOfIn: schema for: aValue atPath: path.
+	self validateNotIn: schema for: aValue atPath: path.
 	self validateIfThenIn: schema for: aValue atPath: path.
 	self validateConstIn: schema for: aValue atPath: path.
 	self validateEnumIn: schema for: aValue atPath: path.

@@ -188,6 +188,38 @@ MCPJSONSchemaValidatorTest >> testValidatesArrayItemsEnumAndConst [
 ]
 
 { #category : 'tests' }
+MCPJSONSchemaValidatorTest >> testValidatesNot [
+
+	| allowedArguments conflictingArguments directSchema schema violations |
+	directSchema := { (#not -> { (#type -> 'string') } asDictionary) }
+		                asDictionary.
+	self assert: (self violationsFor: 3 schema: directSchema) isEmpty.
+	self
+		assert:
+		(self keywordsFrom:
+			 (self violationsFor: 'name' schema: directSchema))
+		equals: #( 'not' ).
+	schema := {
+		          (#type -> 'object').
+		          (#not
+		           ->
+		           { (#required -> #( 'selector' 'references' )) }
+			           asDictionary) } asDictionary.
+	allowedArguments := { (#selector -> 'yourself') } asDictionary.
+	self assert:
+		(self violationsFor: allowedArguments schema: schema) isEmpty.
+	conflictingArguments := {
+		                        (#selector -> 'yourself').
+		                        (#references -> {
+			                         (#mode -> 'method').
+			                         (#target -> 'yourself') } asDictionary) }
+		                        asDictionary.
+	violations := self violationsFor: conflictingArguments schema: schema.
+	self assert: (self keywordsFrom: violations) equals: #( 'not' ).
+	self assert: violations first path equals: #(  )
+]
+
+{ #category : 'tests' }
 MCPJSONSchemaValidatorTest >> testValidatesOneOfExactlyOneBranch [
 
 	| invalidSchema validSchema |
