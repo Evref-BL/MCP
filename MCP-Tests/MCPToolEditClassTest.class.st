@@ -1048,6 +1048,50 @@ MCPToolEditClassTest >> testRemovesInstanceSlot [
 ]
 
 { #category : 'tests' }
+MCPToolEditClassTest >> testRenameCanLimitRefactoringToClassHierarchy [
+
+	| hierarchyArguments referenceClass referenceSource result subclass |
+	hierarchyArguments := self renameArguments copy
+		                      at: #scope put: 'hierarchy';
+		                      at: #classNames
+		                      put: { self originalClassName };
+		                      yourself.
+	result := self callToolWith: hierarchyArguments.
+	referenceClass := self classNamed: self referenceClassName.
+	subclass := self classNamed: self subclassName.
+	referenceSource := (referenceClass >> #referencedClass) sourceCode.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self
+		assert: subclass superclass name asString
+		equals: self renamedClassName.
+	self assert:
+		(referenceSource includesSubstring: self originalClassName).
+	self deny: (referenceSource includesSubstring: self renamedClassName).
+	self assert: ((referenceClass >> #newReferencedInstance) sourceCode
+			 includesSubstring: self originalClassName)
+]
+
+{ #category : 'tests' }
+MCPToolEditClassTest >> testRenameCanLimitRefactoringToNamedClasses [
+
+	| classesArguments referenceClass result |
+	classesArguments := self renameArguments copy
+		                    at: #scope put: 'classes';
+		                    at: #classNames put: {
+				                    self originalClassName.
+				                    self referenceClassName };
+		                    yourself.
+	result := self callToolWith: classesArguments.
+	referenceClass := self classNamed: self referenceClassName.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert:
+		((referenceClass >> #referencedClass) sourceCode includesSubstring:
+			 self renamedClassName).
+	self assert: ((referenceClass >> #newReferencedInstance) sourceCode
+			 includesSubstring: self renamedClassName)
+]
+
+{ #category : 'tests' }
 MCPToolEditClassTest >> testRenameUpdatesMethodReferences [
 
 	| reference |
@@ -1484,6 +1528,9 @@ MCPToolEditClassTest >> testToolRequiresOperationAndClassNameInSchema [
 	self assert: (propertyNames includes: 'sharedVariables').
 	self assert: (propertyNames includes: 'sharedPools').
 	self assert: (propertyNames includes: 'layout').
+	self assert: (propertyNames includes: 'scope').
+	self assert: (propertyNames includes: 'packageNames').
+	self assert: (propertyNames includes: 'classNames').
 	self assert: (propertyNames includes: 'slotName').
 	self assert: (propertyNames includes: 'newSlotName').
 	self assert: (propertyNames includes: 'classSide').

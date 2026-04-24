@@ -3,7 +3,8 @@ Class {
 	#superclass : 'Object',
 	#instVars : [
 		'className',
-		'newClassName'
+		'newClassName',
+		'model'
 	],
 	#category : 'MCP-Internal',
 	#package : 'MCP',
@@ -16,6 +17,16 @@ MCPRenameClassCommand class >> className: aClassName newClassName: aNewClassName
 	^ self new
 		  className: aClassName;
 		  newClassName: aNewClassName;
+		  yourself
+]
+
+{ #category : 'instance creation' }
+MCPRenameClassCommand class >> className: aClassName newClassName: aNewClassName model: aModel [
+
+	^ self new
+		  className: aClassName;
+		  newClassName: aNewClassName;
+		  model: aModel;
 		  yourself
 ]
 
@@ -38,14 +49,24 @@ MCPRenameClassCommand >> execute [
 	Smalltalk globals
 		at: self className asSymbol
 		ifAbsent: [ MCPCommandError signalMissingClassNamed: self className ].
-	(ReRenameClassRefactoring
-		 rename: self className
-		 to: self newClassName) execute.
+	self refactoring execute.
 	renamedClass := Smalltalk globals at: self newClassName asSymbol.
 	^ MCPRenameClassResult
 		  classInfo: (MCPClassInfo fromClass: renamedClass)
 		  oldClassName: self className
 		  newClassName: self newClassName
+]
+
+{ #category : 'accessing' }
+MCPRenameClassCommand >> model [
+
+	^ model
+]
+
+{ #category : 'accessing' }
+MCPRenameClassCommand >> model: aModel [
+
+	model := aModel
 ]
 
 { #category : 'accessing' }
@@ -58,4 +79,19 @@ MCPRenameClassCommand >> newClassName [
 MCPRenameClassCommand >> newClassName: aString [
 
 	newClassName := aString
+]
+
+{ #category : 'private' }
+MCPRenameClassCommand >> refactoring [
+
+	^ self model
+		  ifNil: [
+			  ReRenameClassRefactoring
+				  rename: self className
+				  to: self newClassName ]
+		  ifNotNil: [
+			  ReRenameClassRefactoring
+				  model: self model
+				  rename: self className
+				  to: self newClassName ]
 ]

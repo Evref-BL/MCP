@@ -107,6 +107,9 @@ MCPToolContractsTest >> testEditClassHasAccurateNameAndRequiredArguments [
 	self assert: (propertyNames includes: 'sharedVariables').
 	self assert: (propertyNames includes: 'sharedPools').
 	self assert: (propertyNames includes: 'layout').
+	self assert: (propertyNames includes: 'scope').
+	self assert: (propertyNames includes: 'packageNames').
+	self assert: (propertyNames includes: 'classNames').
 	self assert: (propertyNames includes: 'slotName').
 	self assert: (propertyNames includes: 'newSlotName').
 	self assert: (propertyNames includes: 'classSide').
@@ -130,7 +133,9 @@ MCPToolContractsTest >> testEditMethodHasAccurateNameAndRequiredArguments [
 		assert: tool inputSchema required asSet
 		equals: #( 'operation' 'className' ) asSet.
 	self assert: (propertyNames includes: 'force').
+	self assert: (propertyNames includes: 'scope').
 	self assert: (propertyNames includes: 'packageNames').
+	self assert: (propertyNames includes: 'classNames').
 	self deny: (propertyNames includes: 'projectNames')
 ]
 
@@ -208,6 +213,101 @@ MCPToolContractsTest >> testEditToolSchemasAdvertiseOperationBranches [
 	self
 		assert: (renameBranch at: #required) asSet
 		equals: #( 'operation' 'className' 'selector' 'newSelector' ) asSet
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testEditToolSchemasAdvertiseRenameScopeConditions [
+
+	| classRenameClassesCondition classRenameHierarchyCondition classRenamePackageCondition editClassConditions editMethodConditions methodRenameClassesCondition methodRenameHierarchyCondition methodRenamePackageCondition |
+	editClassConditions := MCPToolEditClass new inputSchema asJRPCJSON
+		                       at: #allOf.
+	editMethodConditions := MCPToolEditMethod new inputSchema asJRPCJSON
+		                        at: #allOf.
+	self assert: editClassConditions size equals: 3.
+	self assert: editMethodConditions size equals: 3.
+	classRenamePackageCondition := editClassConditions detect: [ :each |
+		                               | conditionProperties |
+		                               conditionProperties := (each at: #if)
+			                                                      at:
+			                                                      #properties.
+		                               ((conditionProperties at: 'operation')
+			                                at: #const) = 'rename' and: [
+			                               ((conditionProperties at: 'scope')
+				                                at: #const) = 'packages' ] ].
+	self
+		assert:
+		((classRenamePackageCondition at: #then) at: #required) asArray
+		equals: #( 'packageNames' ).
+	classRenameClassesCondition := editClassConditions detect: [ :each |
+		                               | conditionProperties |
+		                               conditionProperties := (each at: #if)
+			                                                      at:
+			                                                      #properties.
+		                               ((conditionProperties at: 'operation')
+			                                at: #const) = 'rename' and: [
+			                               ((conditionProperties at: 'scope')
+				                                at: #const) = 'classes' ] ].
+	self
+		assert:
+		((classRenameClassesCondition at: #then) at: #required) asArray
+		equals: #( 'classNames' ).
+	classRenameHierarchyCondition := editClassConditions detect: [ :each |
+		                                 | conditionProperties |
+		                                 conditionProperties := (each at:
+			                                                         #if) at:
+			                                                        #properties.
+		                                 ((conditionProperties at:
+			                                   'operation') at: #const)
+		                                 = 'rename' and: [
+			                                 ((conditionProperties at: 'scope')
+				                                  at: #const) = 'hierarchy' ] ].
+	self
+		assert:
+		((classRenameHierarchyCondition at: #then) at: #required) asArray
+		equals: #( 'classNames' ).
+	methodRenamePackageCondition := editMethodConditions detect: [ :each |
+		                                | conditionProperties |
+		                                conditionProperties := (each at: #if)
+			                                                       at:
+			                                                       #properties.
+		                                ((conditionProperties at:
+			                                  'operation') at: #const)
+		                                = 'rename' and: [
+			                                ((conditionProperties at: 'scope')
+				                                 at: #const) = 'packages' ] ].
+	self
+		assert:
+		((methodRenamePackageCondition at: #then) at: #required) asArray
+		equals: #( 'packageNames' ).
+	methodRenameClassesCondition := editMethodConditions detect: [ :each |
+		                                | conditionProperties |
+		                                conditionProperties := (each at: #if)
+			                                                       at:
+			                                                       #properties.
+		                                ((conditionProperties at:
+			                                  'operation') at: #const)
+		                                = 'rename' and: [
+			                                ((conditionProperties at: 'scope')
+				                                 at: #const) = 'classes' ] ].
+	self
+		assert:
+		((methodRenameClassesCondition at: #then) at: #required) asArray
+		equals: #( 'classNames' ).
+	methodRenameHierarchyCondition := editMethodConditions detect: [
+		                                  :each |
+		                                  | conditionProperties |
+		                                  conditionProperties := (each at:
+			                                                          #if) at:
+			                                                         #properties.
+		                                  ((conditionProperties at:
+			                                    'operation') at: #const)
+		                                  = 'rename' and: [
+			                                  ((conditionProperties at: 'scope')
+				                                   at: #const) = 'hierarchy' ] ].
+	self
+		assert:
+		((methodRenameHierarchyCondition at: #then) at: #required) asArray
+		equals: #( 'classNames' )
 ]
 
 { #category : 'tests' }

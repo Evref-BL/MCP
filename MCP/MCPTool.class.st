@@ -171,6 +171,21 @@ MCPTool >> booleanSchemaPropertyNamed: propertyName description: propertyDescrip
 		  yourself
 ]
 
+{ #category : 'private - schema' }
+MCPTool >> conditionalInputSchemaIf: conditionSchema thenRequired: requiredFields [
+
+	| thenSchema |
+	thenSchema := MCPStructureInputSchema new
+		              type: 'object';
+		              required: requiredFields;
+		              additionalProperties: true;
+		              yourself.
+	^ MCPStructureInputSchema new
+		  schemaKeyword: #if put: conditionSchema;
+		  schemaKeyword: #then put: thenSchema;
+		  yourself
+]
+
 { #category : 'defaults' }
 MCPTool >> defaultDescription [
 
@@ -430,19 +445,32 @@ MCPTool >> inputSchema: anObject [
 { #category : 'private - schema' }
 MCPTool >> inputSchemaBranchForStringDiscriminatorNamed: propertyName value: propertyValue required: requiredFields requireDiscriminator: requireDiscriminator [
 
-	| discriminatorProperty required |
-	discriminatorProperty := MCPStructureProperties new
-		                         name: propertyName;
-		                         type: 'string';
-		                         const: propertyValue;
-		                         yourself.
+	^ self
+		  inputSchemaBranchForStringDiscriminatorValues:
+		  { (propertyName -> propertyValue) }
+		  required: requiredFields
+		  requireDiscriminators: requireDiscriminator
+]
+
+{ #category : 'private - schema' }
+MCPTool >> inputSchemaBranchForStringDiscriminatorValues: discriminatorAssociations required: requiredFields requireDiscriminators: requireDiscriminators [
+
+	| discriminatorProperties required |
+	discriminatorProperties := discriminatorAssociations collect: [ :each |
+		                           MCPStructureProperties new
+			                           name: each key;
+			                           type: 'string';
+			                           const: each value;
+			                           yourself ].
 	required := OrderedCollection new.
-	requireDiscriminator ifTrue: [ required add: propertyName ].
+	requireDiscriminators ifTrue: [
+		discriminatorAssociations do: [ :each |
+			(required includes: each key) ifFalse: [ required add: each key ] ] ].
 	requiredFields do: [ :each |
 		(required includes: each) ifFalse: [ required add: each ] ].
 	^ MCPStructureInputSchema new
 		  type: 'object';
-		  properties: { discriminatorProperty };
+		  properties: discriminatorProperties asArray;
 		  required: required asArray;
 		  additionalProperties: true;
 		  yourself

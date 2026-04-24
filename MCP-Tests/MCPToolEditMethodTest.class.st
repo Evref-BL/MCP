@@ -612,6 +612,49 @@ MCPToolEditMethodTest >> testReformatsMethod [
 ]
 
 { #category : 'tests' }
+MCPToolEditMethodTest >> testRenameCanLimitRefactoringToNamedClasses [
+
+	self withRenameScopeFixturesDo: [ :fixtures |
+		| data result senderAClass senderASource senderBClass senderBSource targetAClass targetBClass |
+		result := self callToolWith: {
+				          (#operation -> 'rename').
+				          (#className -> (fixtures at: #targetAClassName)).
+				          (#classSide -> false).
+				          (#selector -> 'scopeSharedTarget').
+				          (#newSelector -> 'scopedSharedTarget').
+				          (#scope -> 'classes').
+				          (#classNames -> {
+					           (fixtures at: #targetAClassName).
+					           (fixtures at: #senderAClassName) }) } asDictionary.
+		data := self dataFrom: result.
+		targetAClass := Smalltalk globals at:
+			                (fixtures at: #targetAClassName) asSymbol.
+		targetBClass := Smalltalk globals at:
+			                (fixtures at: #targetBClassName) asSymbol.
+		senderAClass := Smalltalk globals at:
+			                (fixtures at: #senderAClassName) asSymbol.
+		senderBClass := Smalltalk globals at:
+			                (fixtures at: #senderBClassName) asSymbol.
+		self deny: (result at: #isError ifAbsent: [ false ]).
+		self deny: (targetAClass includesSelector: #scopeSharedTarget).
+		self assert: (targetAClass includesSelector: #scopedSharedTarget).
+		self assert: (targetBClass includesSelector: #scopeSharedTarget).
+		self deny: (targetBClass includesSelector: #scopedSharedTarget).
+		self assert: senderAClass new callScopedTarget equals: 'A'.
+		self assert: senderBClass new callScopedTarget equals: 'B'.
+		senderASource := (senderAClass >> #callScopedTarget) sourceCode.
+		senderBSource := (senderBClass >> #callScopedTarget) sourceCode.
+		self assert: (senderASource includesSubstring: 'scopedSharedTarget').
+		self assert: (senderBSource includesSubstring: 'scopeSharedTarget').
+		self deny: (senderBSource includesSubstring: 'scopedSharedTarget').
+		self assertSuccessDataHasMethodShape: data.
+		self assert: (data at: #selector) equals: 'scopedSharedTarget'.
+		self
+			assert: (data at: #packageName)
+			equals: (fixtures at: #packageAName) ]
+]
+
+{ #category : 'tests' }
 MCPToolEditMethodTest >> testRenameCanLimitRefactoringToNamedPackages [
 
 	self withRenameScopeFixturesDo: [ :fixtures |
@@ -714,6 +757,28 @@ MCPToolEditMethodTest >> testRenameReturnsStructuredErrorWhenMethodIsMissing [
 		equals:
 			#( operation errorClass errorCode message className classSide
 			   selector newSelector ) asSet
+]
+
+{ #category : 'tests' }
+MCPToolEditMethodTest >> testRenameReturnsStructuredErrorWhenScopeRequiresClassNames [
+
+	| error result structured |
+	result := self callToolWith: (self instanceRenameArguments copy
+			           at: #scope put: 'classes';
+			           yourself).
+	structured := self structuredContentFrom: result.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (structured at: #status) equals: 'error'.
+	self assert: (error at: #operation) equals: 'rename'.
+	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
+	self
+		assert: (error at: #errorCode)
+		equals: 'ClassNamesRequiredForRefactoringScope'.
+	self assert: (error at: #scope) equals: 'classes'.
+	self
+		assert: (error at: #message)
+		equals: 'classNames is required when scope=classes.'
 ]
 
 { #category : 'tests' }

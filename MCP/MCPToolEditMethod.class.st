@@ -143,13 +143,13 @@ MCPToolEditMethod >> defaultInputSchema [
 							    description: 'A 1-based argument index.';
 							    yourself);
 					   yourself).
-				  (self
-					   stringArraySchemaNamed: 'packageNames'
-					   description:
-					   'Optional package names that limit operation=rename to implementors and senders in those packages.'
-					   itemDescription: 'A package name.') };
+				  self refactoringScopeSchemaProperty.
+				  self refactoringScopePackageNamesSchemaProperty.
+				  self refactoringScopeClassNamesSchemaProperty };
 		  required: #( 'operation' 'className' );
 		  oneOf: self operationBranchSchemas;
+		  allOf:
+		  (self refactoringScopeConditionSchemasForOperationNamed: 'rename');
 		  yourself
 ]
 
@@ -277,7 +277,7 @@ MCPToolEditMethod >> executeCompileWithArguments: arguments [
 { #category : 'executing' }
 MCPToolEditMethod >> executeRenameWithArguments: arguments [
 
-	| behavior className classSide force newCompiledMethod newSelector newSelectorSymbol oldCompiledMethod oldMethodReference oldSelector oldSelectorSymbol permutation refactoring renamePackageNames requestedContext |
+	| behavior className classSide force newCompiledMethod newSelector newSelectorSymbol oldMethodReference oldSelector oldSelectorSymbol permutation refactoring refactoringModel requestedContext scopeParameters |
 	className := self stringArgumentNamed: 'className' in: arguments.
 	classSide := self
 		             booleanArgumentNamed: 'classSide'
@@ -291,36 +291,31 @@ MCPToolEditMethod >> executeRenameWithArguments: arguments [
 	permutation := self
 		               permutationFromArguments: arguments
 		               selector: oldSelectorSymbol.
-	renamePackageNames := self renameScopePackageNamesFromArguments:
-		                      arguments.
 	requestedContext := {
 		                    (#className -> className).
 		                    (#classSide -> classSide).
 		                    (#selector -> oldSelector).
 		                    (#newSelector -> newSelector) } asDictionary.
-	renamePackageNames ifNotEmpty: [
-		requestedContext at: #packageNames put: renamePackageNames ].
 	^ self
 		  executeEditOperation: 'rename'
 		  force: force
 		  requestedContext: requestedContext
 		  work: [
-			  | scopedPackageNames |
-			  behavior := self behaviorNamed: className classSide: classSide.
-			  oldCompiledMethod := behavior
-				                       compiledMethodAt: oldSelectorSymbol
-				                       ifAbsent: [
-					                       MCPCommandError
-						                       signalMissingMethodInClassName: className
-						                       classSide: classSide
-						                       selector: oldSelector ].
-			  scopedPackageNames := self resolvedRenamePackageNamesFrom:
-				                        renamePackageNames.
+			  scopeParameters := self refactoringScopeParametersFromArguments:
+				                     arguments.
 			  self
-				  validateRenameScopePackageNames: scopedPackageNames
-				  includeMethod: oldCompiledMethod
-				  behavior: behavior
-				  selector: oldSelectorSymbol.
+				  addRefactoringScopeContextFrom: scopeParameters
+				  toRequestedContext: requestedContext.
+			  behavior := self behaviorNamed: className classSide: classSide.
+			  behavior compiledMethodAt: oldSelectorSymbol ifAbsent: [
+				  MCPCommandError
+					  signalMissingMethodInClassName: className
+					  classSide: classSide
+					  selector: oldSelector ].
+			  refactoringModel := self
+				                      refactoringModelForScopeParameters:
+				                      scopeParameters
+				                      anchoredAtBehavior: behavior.
 			  oldMethodReference := self
 				                        methodReferenceForBehavior: behavior
 				                        selector: oldSelectorSymbol.
@@ -329,7 +324,7 @@ MCPToolEditMethod >> executeRenameWithArguments: arguments [
 				                 inBehavior: behavior
 				                 to: newSelectorSymbol
 				                 permutation: permutation
-				                 packageNames: scopedPackageNames.
+				                 model: refactoringModel.
 			  refactoring execute.
 			  newCompiledMethod := self
 				                       reformattedMethodForBehavior: behavior
@@ -576,40 +571,14 @@ MCPToolEditMethod >> reformattedMethodForBehavior: aBehavior selector: aSelector
 ]
 
 { #category : 'private - refactoring' }
-MCPToolEditMethod >> renameRefactoringForSelector: oldSelectorSymbol inBehavior: aBehavior to: newSelectorSymbol permutation: permutation packageNames: packageNames [
+MCPToolEditMethod >> renameRefactoringForSelector: oldSelectorSymbol inBehavior: aBehavior to: newSelectorSymbol permutation: permutation model: refactoringModel [
 
-	packageNames ifEmpty: [
-		^ ReRenameMethodRefactoring
-			  renameMethod: oldSelectorSymbol
-			  in: aBehavior
-			  to: newSelectorSymbol
-			  permutation: permutation ].
 	^ ReRenameMethodRefactoring
-		  model: (RBNamespace onEnvironment:
-				   (RBBrowserEnvironment new forPackageNames: packageNames))
+		  model: refactoringModel
 		  renameMethod: oldSelectorSymbol
 		  in: aBehavior
 		  to: newSelectorSymbol
 		  permutation: permutation
-]
-
-{ #category : 'private - arguments' }
-MCPToolEditMethod >> renameScopePackageNamesFromArguments: arguments [
-
-	^ self
-		  normalizedStringCollection:
-		  (self
-			   argumentNamed: 'packageNames'
-			   in: arguments
-			   ifAbsent: [ nil ])
-		  argumentName: 'packageNames'
-]
-
-{ #category : 'private - arguments' }
-MCPToolEditMethod >> resolvedRenamePackageNamesFrom: packageNames [
-
-	self validateRenamePackageNamesExist: packageNames.
-	^ packageNames asSortedCollection asArray
 ]
 
 { #category : 'private' }
@@ -648,37 +617,4 @@ MCPToolEditMethod >> validatePermutation: permutation forSelector: aSelector [
 		Error signal:
 			'permutation must be a reordering of the integers from 1 to '
 			, expected size asString , '.' ]
-]
-
-{ #category : 'private - arguments' }
-MCPToolEditMethod >> validateRenamePackageNamesExist: packageNames [
-
-	packageNames do: [ :eachName |
-		(PackageOrganizer default hasPackage: eachName) ifFalse: [
-			MCPCommandError signalMissingPackageNamed: eachName ] ]
-]
-
-{ #category : 'private - arguments' }
-MCPToolEditMethod >> validateRenameScopePackageNames: packageNames includeMethod: aCompiledMethod behavior: aBehavior selector: aSelectorSymbol [
-
-	| methodPackageName |
-	packageNames ifEmpty: [ ^ self ].
-	methodPackageName := self methodPackageNameFor: aCompiledMethod.
-	(packageNames anySatisfy: [ :each | each sameAs: methodPackageName ])
-		ifTrue: [ ^ self ].
-	MCPCommandError
-		signalErrorCode: #RenameScopeExcludesMethodPackage
-		message:
-			'Rename scope does not include package ' , methodPackageName
-			, ' defining '
-			,
-			(self
-				 methodReferenceForBehavior: aBehavior
-				 selector: aSelectorSymbol) , '.'
-		details: {
-				(#className -> aBehavior instanceSide name asString).
-				(#classSide -> aBehavior isMeta).
-				(#selector -> aSelectorSymbol asString).
-				(#packageName -> methodPackageName).
-				(#packageNames -> packageNames) } asDictionary
 ]

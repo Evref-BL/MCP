@@ -15,6 +15,22 @@ MCPToolEdit class >> isAbstract [
 	^ self = MCPToolEdit
 ]
 
+{ #category : 'private - refactoring' }
+MCPToolEdit >> addRefactoringScopeContextFrom: scopeParameters toRequestedContext: requestedContext [
+
+	| classNames packageNames scope |
+	scope := scopeParameters at: #scope.
+	packageNames := scopeParameters at: #packageNames.
+	classNames := scopeParameters at: #classNames.
+	(scope = 'image' and: [
+		 packageNames isEmpty and: [ classNames isEmpty ] ]) ifFalse: [
+		requestedContext at: #scope put: scope ].
+	packageNames ifNotEmpty: [
+		requestedContext at: #packageNames put: packageNames ].
+	classNames ifNotEmpty: [
+		requestedContext at: #classNames put: classNames ]
+]
+
 { #category : 'private - errors' }
 MCPToolEdit >> addSupplementalDetailsForOperationError: anError to: details [
 
@@ -409,6 +425,150 @@ MCPToolEdit >> operationValidationErrorMessage [
 	^ 'operation must be one of ' , self operationNameListText , '.'
 ]
 
+{ #category : 'private - refactoring' }
+MCPToolEdit >> refactoringEnvironmentForScope: scope packageNames: packageNames classNames: classNames [
+
+	| baseEnvironment resolvedClasses |
+	baseEnvironment := RBBrowserEnvironment new.
+	scope = 'image' ifTrue: [ ^ baseEnvironment ].
+	scope = 'packages' ifTrue: [
+		^ baseEnvironment forPackageNames: packageNames ].
+	resolvedClasses := self resolvedRefactoringScopeClassesFrom:
+		                   classNames.
+	scope = 'classes' ifTrue: [
+		^ baseEnvironment forClasses: resolvedClasses ].
+	^ resolvedClasses inject: nil into: [ :environment :eachClass |
+		  | hierarchyEnvironment |
+		  hierarchyEnvironment := baseEnvironment forClassHierarchy:
+			                          eachClass.
+		  environment
+			  ifNil: [ hierarchyEnvironment ]
+			  ifNotNil: [ environment | hierarchyEnvironment ] ]
+]
+
+{ #category : 'private - refactoring' }
+MCPToolEdit >> refactoringModelForScopeParameters: scopeParameters anchoredAtBehavior: aBehavior [
+
+	| classNames environment packageNames scope |
+	scope := scopeParameters at: #scope.
+	packageNames := scopeParameters at: #packageNames.
+	classNames := scopeParameters at: #classNames.
+	environment := self
+		               refactoringEnvironmentForScope: scope
+		               packageNames: packageNames
+		               classNames: classNames.
+	(environment includesClass: aBehavior) ifFalse: [
+		MCPCommandError
+			signalErrorCode: #RefactoringScopeExcludesTargetClass
+			message: 'Refactoring scope does not include ' , (aBehavior isMeta
+					 ifTrue: [ 'the class side of ' ]
+					 ifFalse: [ 'class ' ]) , aBehavior instanceSide name asString
+				, '.'
+			details: {
+					(#scope -> scope).
+					(#packageNames -> packageNames).
+					(#classNames -> classNames).
+					(#className -> aBehavior instanceSide name asString).
+					(#classSide -> aBehavior isMeta) } asDictionary ].
+	^ RBNamespace onEnvironment: environment
+]
+
+{ #category : 'private - schema' }
+MCPToolEdit >> refactoringScopeClassNamesSchemaProperty [
+
+	^ self
+		  stringArraySchemaNamed: 'classNames'
+		  description:
+		  'The class names that define the classes or hierarchy refactoring scope. Required when operation=rename and scope=classes or scope=hierarchy.'
+		  itemDescription: 'A class name.'
+]
+
+{ #category : 'private - schema' }
+MCPToolEdit >> refactoringScopeConditionSchemaForOperationNamed: operationName scope: scopeName required: requiredPropertyNames [
+
+	^ self
+		  conditionalInputSchemaIf: (self
+				   inputSchemaBranchForStringDiscriminatorValues: {
+						   ('operation' -> operationName).
+						   ('scope' -> scopeName) }
+				   required: #(  )
+				   requireDiscriminators: true)
+		  thenRequired: requiredPropertyNames
+]
+
+{ #category : 'private - schema' }
+MCPToolEdit >> refactoringScopeConditionSchemasForOperationNamed: operationName [
+
+	^ {
+		  (self
+			   refactoringScopeConditionSchemaForOperationNamed: operationName
+			   scope: 'packages'
+			   required: #( 'packageNames' )).
+		  (self
+			   refactoringScopeConditionSchemaForOperationNamed: operationName
+			   scope: 'classes'
+			   required: #( 'classNames' )).
+		  (self
+			   refactoringScopeConditionSchemaForOperationNamed: operationName
+			   scope: 'hierarchy'
+			   required: #( 'classNames' )) }
+]
+
+{ #category : 'private - schema' }
+MCPToolEdit >> refactoringScopePackageNamesSchemaProperty [
+
+	^ self
+		  stringArraySchemaNamed: 'packageNames'
+		  description:
+		  'The package names that define the packages refactoring scope. Required when operation=rename and scope=packages.'
+		  itemDescription: 'A package name.'
+]
+
+{ #category : 'private - arguments' }
+MCPToolEdit >> refactoringScopeParametersFromArguments: arguments [
+
+	| classNames explicitScope packageNames scope |
+	packageNames := self
+		                normalizedStringCollection:
+		                (self
+			                 argumentNamed: 'packageNames'
+			                 in: arguments
+			                 ifAbsent: [ nil ])
+		                argumentName: 'packageNames'.
+	classNames := self
+		              normalizedStringCollection:
+		              (self
+			               argumentNamed: 'classNames'
+			               in: arguments
+			               ifAbsent: [ nil ])
+		              argumentName: 'classNames'.
+	explicitScope := self stringArgumentNamed: 'scope' in: arguments.
+	scope := self
+		         resolvedRefactoringScopeFrom: explicitScope
+		         packageNames: packageNames
+		         classNames: classNames.
+	self
+		validateRefactoringScope: scope
+		packageNames: packageNames
+		classNames: classNames.
+	self validateRefactoringScopePackageNamesExist: packageNames.
+	^ {
+		  (#scope -> scope).
+		  (#packageNames -> packageNames).
+		  (#classNames -> classNames) } asDictionary
+]
+
+{ #category : 'private - schema' }
+MCPToolEdit >> refactoringScopeSchemaProperty [
+
+	^ self
+		  stringEnumSchemaPropertyNamed: 'scope'
+		  description:
+		  'Optional refactoring scope for scope-aware rename operations. Defaults to image.'
+		  values: self supportedRefactoringScopes
+		  default: 'image'
+]
+
 { #category : 'private - warnings' }
 MCPToolEdit >> refactoringWarningSummaryFor: aWarning operation: operation requestedContext: requestedContext impactMessages: impactMessages [
 
@@ -426,6 +586,55 @@ MCPToolEdit >> refactoringWarningSummaryFor: aWarning operation: operation reque
 		  stream
 			  nextPutAll: ' ';
 			  nextPutAll: self howToProceedForRefactoringWarning ]
+]
+
+{ #category : 'private - arguments' }
+MCPToolEdit >> resolvedRefactoringScopeClassesFrom: classNames [
+
+	^ classNames collect: [ :eachName |
+		  Smalltalk globals
+			  at: eachName asSymbol
+			  ifAbsent: [ MCPCommandError signalMissingClassNamed: eachName ] ]
+]
+
+{ #category : 'private - arguments' }
+MCPToolEdit >> resolvedRefactoringScopeFrom: explicitScope packageNames: packageNames classNames: classNames [
+
+	| normalizedScope |
+	normalizedScope := explicitScope
+		                   ifNil: [ nil ]
+		                   ifNotNil: [
+		                   explicitScope asString trimBoth asLowercase ].
+	normalizedScope ifNil: [
+		packageNames ifNotEmpty: [
+			classNames ifNotEmpty: [
+				MCPCommandError
+					signalErrorCode: #RefactoringScopeArgumentsConflict
+					message:
+					'packageNames and classNames cannot both be used without an explicit scope.'
+					details: {
+							(#packageNames -> packageNames).
+							(#classNames -> classNames) } asDictionary ].
+			^ 'packages' ].
+		classNames ifNotEmpty: [
+			MCPCommandError
+				signalErrorCode: #RefactoringScopeRequired
+				message: 'scope is required when classNames are provided.'
+				details: { (#classNames -> classNames) } asDictionary ].
+		^ 'image' ].
+	(self supportedRefactoringScopes includes: normalizedScope) ifFalse: [
+		MCPCommandError
+			signalErrorCode: #InvalidRefactoringScope
+			message:
+			'scope must be one of image, packages, hierarchy, classes.'
+			details: { (#scope -> normalizedScope) } asDictionary ].
+	^ normalizedScope
+]
+
+{ #category : 'private - schema' }
+MCPToolEdit >> supportedRefactoringScopes [
+
+	^ #( 'image' 'packages' 'hierarchy' 'classes' )
 ]
 
 { #category : 'private - errors' }
@@ -450,6 +659,56 @@ MCPToolEdit >> undeclaredVariableNameFor: anError [
 	node ifNil: [ ^ nil ].
 	(node respondsTo: #name) ifFalse: [ ^ nil ].
 	^ node name asString
+]
+
+{ #category : 'private - arguments' }
+MCPToolEdit >> validateRefactoringScope: scope packageNames: packageNames classNames: classNames [
+
+	scope = 'image' ifTrue: [
+		(packageNames isEmpty and: [ classNames isEmpty ]) ifFalse: [
+			MCPCommandError
+				signalErrorCode: #RefactoringScopeArgumentsConflict
+				message: 'scope=image does not accept packageNames or classNames.'
+				details: {
+						(#scope -> scope).
+						(#packageNames -> packageNames).
+						(#classNames -> classNames) } asDictionary ].
+		^ self ].
+	scope = 'packages' ifTrue: [
+		packageNames ifEmpty: [
+			MCPCommandError
+				signalErrorCode: #PackageNamesRequiredForRefactoringScope
+				message: 'packageNames is required when scope=packages.'
+				details: { (#scope -> scope) } asDictionary ].
+		classNames ifNotEmpty: [
+			MCPCommandError
+				signalErrorCode: #RefactoringScopeArgumentsConflict
+				message: 'scope=packages does not accept classNames.'
+				details: {
+						(#scope -> scope).
+						(#classNames -> classNames) } asDictionary ].
+		^ self ].
+	(scope = 'classes' or: [ scope = 'hierarchy' ]) ifTrue: [
+		classNames ifEmpty: [
+			MCPCommandError
+				signalErrorCode: #ClassNamesRequiredForRefactoringScope
+				message: 'classNames is required when scope=' , scope , '.'
+				details: { (#scope -> scope) } asDictionary ].
+		packageNames ifNotEmpty: [
+			MCPCommandError
+				signalErrorCode: #RefactoringScopeArgumentsConflict
+				message: 'scope=' , scope , ' does not accept packageNames.'
+				details: {
+						(#scope -> scope).
+						(#packageNames -> packageNames) } asDictionary ] ]
+]
+
+{ #category : 'private - arguments' }
+MCPToolEdit >> validateRefactoringScopePackageNamesExist: packageNames [
+
+	packageNames do: [ :eachName |
+		(PackageOrganizer default hasPackage: eachName) ifFalse: [
+			MCPCommandError signalMissingPackageNamed: eachName ] ]
 ]
 
 { #category : 'private - arguments' }

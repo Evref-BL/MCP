@@ -121,6 +121,9 @@ MCPToolEditClass >> defaultInputSchema [
 					   description:
 						   'The new class name to assign when operation=rename.';
 					   yourself).
+				  self refactoringScopeSchemaProperty.
+				  self refactoringScopePackageNamesSchemaProperty.
+				  self refactoringScopeClassNamesSchemaProperty.
 				  (MCPStructureProperties new
 					   name: 'slotName';
 					   type: 'string';
@@ -147,6 +150,8 @@ MCPToolEditClass >> defaultInputSchema [
 					   yourself) };
 		  required: #( 'operation' 'className' );
 		  oneOf: self operationBranchSchemas;
+		  allOf:
+		  (self refactoringScopeConditionSchemasForOperationNamed: 'rename');
 		  yourself
 ]
 
@@ -588,7 +593,7 @@ MCPToolEditClass >> executeRenameSlotWithArguments: arguments [
 { #category : 'executing' }
 MCPToolEditClass >> executeRenameWithArguments: arguments [
 
-	| className force newClassName requestedContext result |
+	| className force newClassName refactoringModel requestedContext result scopeParameters targetClass |
 	className := self stringArgumentNamed: 'className' in: arguments.
 	newClassName := self
 		                stringArgumentNamed: 'newClassName'
@@ -602,9 +607,24 @@ MCPToolEditClass >> executeRenameWithArguments: arguments [
 		  force: force
 		  requestedContext: requestedContext
 		  work: [
+			  scopeParameters := self refactoringScopeParametersFromArguments:
+				                     arguments.
+			  self
+				  addRefactoringScopeContextFrom: scopeParameters
+				  toRequestedContext: requestedContext.
+			  targetClass := Smalltalk globals
+				                 at: className asSymbol
+				                 ifAbsent: [
+				                 MCPCommandError signalMissingClassNamed:
+					                 className ].
+			  refactoringModel := self
+				                      refactoringModelForScopeParameters:
+				                      scopeParameters
+				                      anchoredAtBehavior: targetClass.
 			  result := (MCPRenameClassCommand
 				             className: className
-				             newClassName: newClassName) execute ]
+				             newClassName: newClassName
+				             model: refactoringModel) execute ]
 		  successResult: [ :warningMessages |
 			  self
 				  successResultText:
