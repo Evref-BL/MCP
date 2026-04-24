@@ -123,12 +123,12 @@ MCPToolImplementors >> queryEntriesForParameters: parameters [
 ]
 
 { #category : 'private - template' }
-MCPToolImplementors >> queryParametersFromArguments: arguments [
+MCPToolImplementors >> queryParametersFromRequest: request [
 
 	| parameters |
-	parameters := self methodQueryParametersFromArguments:
-		              arguments.
-	parameters at: #selector put: (self selectorStringFrom: arguments).
+	parameters := self methodQueryParametersFromRequest:
+		              request.
+	parameters at: #selector put: (self selectorStringFromRequest: request).
 	^ parameters
 ]
 
@@ -138,29 +138,6 @@ MCPToolImplementors >> queryResultDataForParameters: parameters page: page [
 	^ self
 		  methodQueryResultDataForPage: page
 		  entriesKey: #implementors
-]
-
-{ #category : 'private - template' }
-MCPToolImplementors >> requestedContextFromArguments: arguments [
-
-	| scope selectorString |
-	scope := self
-		         argumentNamed: 'scope'
-		         in: arguments
-		         ifAbsent: [ 'image' ].
-	scope := scope
-		         ifNil: [ 'image' ]
-		         ifNotNil: [ scope asString asLowercase ].
-	selectorString := self
-		                  argumentNamed: 'selector'
-		                  in: arguments
-		                  ifAbsent: [ nil ].
-	selectorString := selectorString
-		                  ifNil: [ nil ]
-		                  ifNotNil: [ selectorString asString ].
-	^ {
-		  (#scope -> scope).
-		  (#selector -> selectorString) } asDictionary
 ]
 
 { #category : 'private - template' }

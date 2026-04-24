@@ -12,7 +12,6 @@ MCPMessageSendHandler >> checkParametersForRequest: aJRPCRequestObject [
 	aJRPCRequestObject params ifNil: [
 		self parametersCount = 0 ifFalse: [ JRPCInvalidParameters signal ] ].
 
-
 	(aJRPCRequestObject params isDictionary or: [
 		 aJRPCRequestObject params isNil ]) ifFalse: [
 		JRPCInvalidParameters signal ]

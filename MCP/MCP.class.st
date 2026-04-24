@@ -84,10 +84,10 @@ MCP >> rpcToolCall: name withParams: arguments [
 	toolsList
 		at: name
 		ifPresent: [ :tool |
-			| result |
-			tool validateArguments: arguments.
+			| request result |
+			request := tool requestFromToolCallArguments: arguments.
 			^ [
-			  result := tool executeWithArguments: arguments.
+			  result := tool executeWithRequest: request.
 			  ((result isKindOf: MCPStructureCallToolResult)
 				   ifTrue: [ result ]
 				   ifFalse: [ MCPStructureCallToolResult content: result ])

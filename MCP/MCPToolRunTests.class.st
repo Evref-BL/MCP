@@ -96,27 +96,6 @@ MCPToolRunTests >> errorResultForError: anError tests: testRequests [
 				  asDictionary
 ]
 
-{ #category : 'executing' }
-MCPToolRunTests >> executeWithArguments: arguments [
-
-	| data resultEntries testRequests validatedRequests |
-	testRequests := #(  ).
-	^ [
-	  testRequests := self testRequestsFromArguments: arguments.
-	  validatedRequests := self validatedRequestsFrom: testRequests.
-	  resultEntries := validatedRequests collect: [ :each |
-		                   self resultForValidatedRequest: each ].
-	  data := self
-		          aggregateDataForResults: resultEntries
-		          tests: testRequests.
-	  self
-		  successResultText: (self successSummaryForData: data)
-		  data: data ]
-		  on: Exception
-		  do: [ :error |
-		  self errorResultForError: error tests: testRequests ]
-]
-
 { #category : 'private' }
 MCPToolRunTests >> failureMessageForTests: testRequests error: anError [
 
@@ -214,42 +193,6 @@ MCPToolRunTests >> testRequestObjectSchema [
 		  required: #( 'className' );
 		  additionalProperties: false;
 		  yourself
-]
-
-{ #category : 'private' }
-MCPToolRunTests >> testRequestsFromArguments: arguments [
-
-	| normalized requests |
-	requests := arguments at: #tests ifAbsent: [ #(  ) ].
-	requests ifNil: [ requests := #(  ) ].
-	normalized := OrderedCollection new.
-	requests do: [ :each |
-		| className request testMethodName |
-		(each respondsTo: #at:ifAbsent:) ifFalse: [
-			Error signal:
-				'tests must contain only objects with className and optional testMethodName.' ].
-		className := (each at: #className ifAbsent: [
-			              each at: 'className' ifAbsent: [
-				              Error signal:
-					              'tests must contain only objects with className and optional testMethodName.' ] ])
-			             asString trimBoth.
-		className isEmpty ifTrue: [
-			Error signal: 'tests must contain only non-empty class names.' ].
-		testMethodName := each
-			                  at: #testMethodName
-			                  ifAbsent: [
-			                  each at: 'testMethodName' ifAbsent: [ nil ] ].
-		testMethodName ifNotNil: [
-			testMethodName := testMethodName asString trimBoth.
-			testMethodName isEmpty ifTrue: [ testMethodName := nil ] ].
-		request := Dictionary new.
-		request at: #className put: className.
-		testMethodName ifNotNil: [
-			request at: #testMethodName put: testMethodName ].
-		normalized add: request ].
-	normalized ifEmpty: [
-		Error signal: 'tests must contain at least one test request.' ].
-	^ normalized asArray
 ]
 
 { #category : 'private' }

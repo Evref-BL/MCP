@@ -15,7 +15,7 @@ MCPToolFindPackages >> defaultDescription [
 	^ 'List packages in the image or in a project and optionally filter them by package metadata.'
 ]
 
-{ #category : 'private - arguments' }
+{ #category : 'private - request' }
 MCPToolFindPackages >> defaultFilterTargets [
 
 	^ #( 'package' )
@@ -221,55 +221,9 @@ MCPToolFindPackages >> queryEntriesForParameters: parameters [
 ]
 
 { #category : 'private - template' }
-MCPToolFindPackages >> queryParametersFromArguments: arguments [
-
-	| scopeQuery |
-	scopeQuery := MCPPackageScopeQuery
-		              scope:
-		              (self stringArgumentNamed: 'scope' in: arguments)
-		              projectNames:
-		              (self
-			               argumentNamed: 'projectNames'
-			               in: arguments
-			               ifAbsent: [ nil ]).
-	^ {
-		  (#filterPattern
-		   -> (self stringArgumentNamed: 'filter' in: arguments)).
-		  (#filterTargets -> (self normalizedFilterTargetsFrom: arguments)).
-		  (#filterMode -> (self normalizedFilterModeFrom: arguments)).
-		  (#caseSensitive -> (self
-			    booleanArgumentNamed: 'caseSensitive'
-			    in: arguments
-			    default: false)).
-		  (#limit -> (self
-			    nonNegativeIntegerArgumentNamed: 'limit'
-			    in: arguments
-			    default: 100)).
-		  (#offset -> (self
-			    nonNegativeIntegerArgumentNamed: 'offset'
-			    in: arguments
-			    default: 0)).
-		  (#scopeQuery -> scopeQuery) } asDictionary
-]
-
-{ #category : 'private - template' }
 MCPToolFindPackages >> queryResultDataForParameters: parameters page: page [
 
 	^ self queryResultDataFrom: nil page: page entriesKey: #packages
-]
-
-{ #category : 'private - template' }
-MCPToolFindPackages >> requestedContextFromArguments: arguments [
-
-	| scope |
-	scope := self
-		         argumentNamed: 'scope'
-		         in: arguments
-		         ifAbsent: [ 'image' ].
-	scope := scope
-		         ifNil: [ 'image' ]
-		         ifNotNil: [ scope asString asLowercase ].
-	^ { (#scope -> scope) } asDictionary
 ]
 
 { #category : 'private - template' }
@@ -295,7 +249,7 @@ MCPToolFindPackages >> successSummaryForScope: scope returnedCount: returnedCoun
 		  truncated: truncated
 ]
 
-{ #category : 'private - arguments' }
+{ #category : 'private - request' }
 MCPToolFindPackages >> supportedFilterTargets [
 
 	^ #( 'package' 'project' 'tag' )

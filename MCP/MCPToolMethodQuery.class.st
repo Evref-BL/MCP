@@ -100,33 +100,6 @@ MCPToolMethodQuery >> methodQueryFilteringInputPropertiesWithFilterDescription: 
 	^ properties asArray
 ]
 
-{ #category : 'private - arguments' }
-MCPToolMethodQuery >> methodQueryParametersFromArguments: arguments [
-
-	^ {
-		  (#filterPattern
-		   -> (self stringArgumentNamed: 'filter' in: arguments)).
-		  (#filterMode -> (self normalizedFilterModeFrom: arguments)).
-		  (#caseSensitive -> (self
-			    booleanArgumentNamed: 'caseSensitive'
-			    in: arguments
-			    default: false)).
-		  (#includeSource -> (self
-			    booleanArgumentNamed: 'includeSource'
-			    in: arguments
-			    default: false)).
-		  (#limit -> (self
-			    nonNegativeIntegerArgumentNamed: 'limit'
-			    in: arguments
-			    default: 100)).
-		  (#offset -> (self
-			    nonNegativeIntegerArgumentNamed: 'offset'
-			    in: arguments
-			    default: 0)).
-		  (#query -> (self methodScopeQueryFromArguments: arguments)) }
-		  asDictionary
-]
-
 { #category : 'private - results' }
 MCPToolMethodQuery >> methodQueryResultDataForPage: page entriesKey: entriesKey [
 

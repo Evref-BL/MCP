@@ -831,6 +831,51 @@ MCPToolContractsTest >> testRequestedToolIconsAreAdvertised [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testRpcToolCallSignalsInvalidParametersForConditionalSchemaFailure [
+
+	self
+		should: [
+			self
+				callToolNamed: 'find-classes'
+				withArguments: { (#scope -> 'packages') } asDictionary ]
+		raise: JRPCInvalidParameters
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testRpcToolCallSignalsInvalidParametersForInvalidNestedArrayItem [
+
+	self
+		should: [
+			self
+				callToolNamed: 'run-tests'
+				withArguments:
+				{ (#tests -> #( 'MCPToolContractsTest' )) } asDictionary ]
+		raise: JRPCInvalidParameters
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testRpcToolCallSignalsInvalidParametersForUnexpectedArgument [
+
+	self
+		should: [
+			self callToolNamed: 'evaluate' withArguments: {
+					(#code -> '1 + 1').
+					(#unexpected -> true) } asDictionary ]
+		raise: JRPCInvalidParameters
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testRpcToolCallSignalsInvalidParametersForWrongArgumentType [
+
+	self
+		should: [
+			self
+				callToolNamed: 'find-classes'
+				withArguments: { (#caseSensitive -> 'true') } asDictionary ]
+		raise: JRPCInvalidParameters
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testRpcToolCallSignalsInvalidParametersWhenRequiredArgumentIsMissing [
 
 	self

@@ -177,17 +177,14 @@ MCPToolEditMethod >> defaultTitle [
 ]
 
 { #category : 'executing' }
-MCPToolEditMethod >> executeChangeProtocolWithArguments: arguments [
+MCPToolEditMethod >> executeChangeProtocolWithRequest: request [
 
 	| behavior className classSide force newCompiledMethod protocol requestedContext selector selectorSymbol |
-	className := self stringArgumentNamed: 'className' in: arguments.
-	classSide := self
-		             booleanArgumentNamed: 'classSide'
-		             in: arguments
-		             default: false.
-	force := self forceFromArguments: arguments.
-	selector := self selectorStringFrom: arguments.
-	protocol := self stringArgumentNamed: 'protocol' in: arguments.
+	className := request stringArgumentNamed: 'className'.
+	classSide := request booleanArgumentNamed: 'classSide' default: false.
+	force := self forceFromRequest: request.
+	selector := self selectorStringFromRequest: request.
+	protocol := request stringArgumentNamed: 'protocol'.
 	selectorSymbol := selector asSymbol.
 	requestedContext := {
 		                    (#className -> className).
@@ -231,20 +228,17 @@ MCPToolEditMethod >> executeChangeProtocolWithArguments: arguments [
 ]
 
 { #category : 'executing' }
-MCPToolEditMethod >> executeCompileWithArguments: arguments [
+MCPToolEditMethod >> executeCompileWithRequest: request [
 
 	| behavior className classSide compiledMethod force methodSource protocol requestedContext selector |
-	className := self stringArgumentNamed: 'className' in: arguments.
-	classSide := self
-		             booleanArgumentNamed: 'classSide'
-		             in: arguments
-		             default: false.
-	force := self forceFromArguments: arguments.
-	protocol := self stringArgumentNamed: 'protocol' in: arguments.
-	methodSource := self
-		                argumentNamed: 'methodSource'
-		                in: arguments
-		                ifAbsent: [ JRPCInvalidParameters signal ].
+	className := request stringArgumentNamed: 'className'.
+	classSide := request booleanArgumentNamed: 'classSide' default: false.
+	force := self forceFromRequest: request.
+	protocol := request stringArgumentNamed: 'protocol'.
+	methodSource := request argumentNamed: 'methodSource' ifAbsent: [
+		                MCPInvalidToolInput
+			                signalMissingRequiredArgumentNamed: 'methodSource'
+			                forTool: self ].
 	requestedContext := {
 		                    (#className -> className).
 		                    (#classSide -> classSide).
@@ -275,21 +269,18 @@ MCPToolEditMethod >> executeCompileWithArguments: arguments [
 ]
 
 { #category : 'executing' }
-MCPToolEditMethod >> executeRenameWithArguments: arguments [
+MCPToolEditMethod >> executeRenameWithRequest: request [
 
 	| behavior className classSide force newCompiledMethod newSelector newSelectorSymbol oldMethodReference oldSelector oldSelectorSymbol permutation refactoring refactoringModel requestedContext scopeParameters |
-	className := self stringArgumentNamed: 'className' in: arguments.
-	classSide := self
-		             booleanArgumentNamed: 'classSide'
-		             in: arguments
-		             default: false.
-	force := self forceFromArguments: arguments.
-	oldSelector := self selectorStringFrom: arguments.
-	newSelector := self stringArgumentNamed: 'newSelector' in: arguments.
+	className := request stringArgumentNamed: 'className'.
+	classSide := request booleanArgumentNamed: 'classSide' default: false.
+	force := self forceFromRequest: request.
+	oldSelector := self selectorStringFromRequest: request.
+	newSelector := request stringArgumentNamed: 'newSelector'.
 	oldSelectorSymbol := oldSelector asSymbol.
 	newSelectorSymbol := newSelector asSymbol.
 	permutation := self
-		               permutationFromArguments: arguments
+		               permutationFromRequest: request
 		               selector: oldSelectorSymbol.
 	requestedContext := {
 		                    (#className -> className).
@@ -301,8 +292,8 @@ MCPToolEditMethod >> executeRenameWithArguments: arguments [
 		  force: force
 		  requestedContext: requestedContext
 		  work: [
-			  scopeParameters := self refactoringScopeParametersFromArguments:
-				                     arguments.
+			  scopeParameters := self refactoringScopeParametersFromRequest:
+				                     request.
 			  self
 				  addRefactoringScopeContextFrom: scopeParameters
 				  toRequestedContext: requestedContext.
@@ -499,15 +490,6 @@ MCPToolEditMethod >> methodDataProperties [
 ]
 
 { #category : 'private' }
-MCPToolEditMethod >> methodPackageNameFor: aCompiledMethod [
-
-	| package |
-	package := aCompiledMethod package ifNil: [
-		           aCompiledMethod methodClass instanceSide package ].
-	^ package name asString
-]
-
-{ #category : 'private' }
 MCPToolEditMethod >> normalizedPermutation: someIndexes [
 
 	^ someIndexes
@@ -532,33 +514,18 @@ MCPToolEditMethod >> operationSpecifications [
 	^ {
 		  {
 			  (#name -> 'compile').
-			  (#requiredArguments -> #( 'methodSource' 'protocol' )).
-			  (#executeSelector -> #executeCompileWithArguments:) }
+			  (#requiredProperties -> #( 'methodSource' 'protocol' )).
+			  (#executeSelector -> #executeCompileWithRequest:) }
 			  asDictionary.
 		  {
 			  (#name -> 'rename').
-			  (#requiredArguments -> #( 'selector' 'newSelector' )).
-			  (#executeSelector -> #executeRenameWithArguments:) } asDictionary.
+			  (#requiredProperties -> #( 'selector' 'newSelector' )).
+			  (#executeSelector -> #executeRenameWithRequest:) } asDictionary.
 		  {
 			  (#name -> 'changeProtocol').
-			  (#requiredArguments -> #( 'selector' 'protocol' )).
-			  (#executeSelector -> #executeChangeProtocolWithArguments:) }
+			  (#requiredProperties -> #( 'selector' 'protocol' )).
+			  (#executeSelector -> #executeChangeProtocolWithRequest:) }
 			  asDictionary }
-]
-
-{ #category : 'private' }
-MCPToolEditMethod >> permutationFromArguments: arguments selector: aSelector [
-
-	| permutation |
-	permutation := arguments
-		               at: #permutation
-		               ifAbsent: [
-		               ^ self identityPermutationForSelector: aSelector ].
-	permutation ifNil: [
-		^ self identityPermutationForSelector: aSelector ].
-	permutation := self normalizedPermutation: permutation.
-	self validatePermutation: permutation forSelector: aSelector.
-	^ permutation
 ]
 
 { #category : 'private' }

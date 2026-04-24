@@ -126,57 +126,6 @@ MCPToolInspectMethod >> errorResultForError: anError className: className select
 				  (#side -> side) } asDictionary
 ]
 
-{ #category : 'executing' }
-MCPToolInspectMethod >> executeWithArguments: arguments [
-
-	| className compiledMethod data includeVariableDetails methodBehavior protocolName selectorString side variableReferences |
-	className := self
-		             argumentNamed: 'className'
-		             in: arguments
-		             ifAbsent: [ nil ].
-	selectorString := self selectorStringFrom: arguments.
-	side := self normalizedSideFrom: arguments.
-	^ [
-	  includeVariableDetails := self
-		                            booleanArgumentNamed:
-		                            'includeVariableDetails'
-		                            in: arguments
-		                            default: false.
-	  compiledMethod := self
-		                    methodForClassNamed: className
-		                    selector: selectorString
-		                    side: side.
-	  protocolName := compiledMethod protocol
-		                  ifNil: [ '' ]
-		                  ifNotNil: [ :protocol | protocol name asString ].
-	  data := {
-		          (#protocol -> protocolName).
-		          (#source -> (compiledMethod sourceCode ifNil: [ '' ])) }
-		          asDictionary.
-	  includeVariableDetails ifTrue: [
-		  methodBehavior := self
-			                    methodBehaviorForClassNamed: className
-			                    side: side.
-		  variableReferences := self
-			                        variableSummariesForMethod: compiledMethod
-			                        methodBehavior: methodBehavior.
-		  data at: #variableReferences put: variableReferences ].
-	  self
-		  successResultText: (self
-				   successSummaryForClassName: className
-				   selector: selectorString
-				   side: side
-				   externalVariableCount: nil)
-		  data: data ]
-		  on: Error
-		  do: [ :error |
-			  self
-				  errorResultForError: error
-				  className: className
-				  selector: selectorString
-				  side: side ]
-]
-
 { #category : 'private - results' }
 MCPToolInspectMethod >> failureMessageForClassNamed: className selector: selectorString side: side error: anError [
 
@@ -254,18 +203,6 @@ MCPToolInspectMethod >> newVariableSummaryForNode: aVariableNode kind: aKind met
 	summary at: #referenceCount put: 0.
 	ownerName ifNotNil: [ summary at: #ownerName put: ownerName ].
 	^ summary
-]
-
-{ #category : 'private - arguments' }
-MCPToolInspectMethod >> normalizedSideFrom: arguments [
-
-	| side |
-	side := (self stringArgumentNamed: 'side' in: arguments) ifNil: [
-		        ^ 'instance' ].
-	side := side asLowercase.
-	(#( 'instance' 'class' ) includes: side) ifFalse: [
-		Error signal: 'side must be either instance or class.' ].
-	^ side
 ]
 
 { #category : 'private - analysis' }

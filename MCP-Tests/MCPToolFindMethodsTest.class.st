@@ -178,21 +178,14 @@ MCPToolFindMethodsTest >> testPackagesScopeIncludesExtensionMethods [
 { #category : 'tests' }
 MCPToolFindMethodsTest >> testReturnsStructuredErrorForInvalidFilterTarget [
 
-	| error result structured |
-	result := self callToolWith: {
-			          (#scope -> 'classes').
-			          (#classNames -> { self targetClassName }).
-			          (#filter -> 'needle').
-			          (#filterTargets -> #( 'bogus' )) } asDictionary.
-	structured := self structuredContentFrom: result.
-	error := self errorFrom: result.
-	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #scope) equals: 'classes'.
-	self assert: (error at: #errorClass) equals: 'Error'.
-	self assert:
-		((error at: #message) includesSubstring: 'filterTargets').
-	self assert: ((error at: #message) includesSubstring: 'bogus')
+	self
+		should: [
+			self callToolWith: {
+					(#scope -> 'classes').
+					(#classNames -> { self targetClassName }).
+					(#filter -> 'needle').
+					(#filterTargets -> #( 'bogus' )) } asDictionary ]
+		raise: JRPCInvalidParameters
 ]
 
 { #category : 'tests' }

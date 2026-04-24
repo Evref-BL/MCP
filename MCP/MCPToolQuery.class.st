@@ -15,7 +15,7 @@ MCPToolQuery class >> isAbstract [
 	^ self = MCPToolQuery
 ]
 
-{ #category : 'private - arguments' }
+{ #category : 'private - request' }
 MCPToolQuery >> defaultFilterTargets [
 
 	self subclassResponsibility
@@ -44,12 +44,12 @@ MCPToolQuery >> errorResultForQueryError: anError requestedContext: requestedCon
 ]
 
 { #category : 'executing' }
-MCPToolQuery >> executeWithArguments: arguments [
+MCPToolQuery >> executeWithRequest: request [
 
 	| page parameters requestedContext |
-	requestedContext := self requestedContextFromArguments: arguments.
+	requestedContext := self requestedContextFromRequest: request.
 	^ [
-	  parameters := self queryParametersFromArguments: arguments.
+	  parameters := self queryParametersFromRequest: request.
 	  page := self
 		          queryPageForEntries:
 		          (self queryEntriesForParameters: parameters)
@@ -93,37 +93,6 @@ MCPToolQuery >> minimalPagedQueryOutputSchemaForEntriesPropertyNamed: entriesPro
 				  entriesPropertyName }
 ]
 
-{ #category : 'private - arguments' }
-MCPToolQuery >> normalizedFilterTargetsFrom: arguments [
-
-	| invalidTargets normalizedTargets rawTargets supportedTargets |
-	rawTargets := self
-		              argumentNamed: 'filterTargets'
-		              in: arguments
-		              ifAbsent: [ ^ self defaultFilterTargets ].
-	supportedTargets := self supportedFilterTargets.
-	normalizedTargets := OrderedCollection new.
-	invalidTargets := OrderedCollection new.
-	(self
-		 normalizedStringCollection: rawTargets
-		 argumentName: 'filterTargets') do: [ :each |
-		| canonical |
-		canonical := supportedTargets
-			             detect: [ :supported |
-			             supported asLowercase = each asLowercase ]
-			             ifNone: [ nil ].
-		canonical ifNil: [ invalidTargets add: each ] ifNotNil: [
-			(normalizedTargets includes: canonical) ifFalse: [
-				normalizedTargets add: canonical ] ] ].
-	invalidTargets ifNotEmpty: [
-		Error signal: 'Unsupported filterTargets value(s): '
-			, invalidTargets asArray printString , '. Supported targets are '
-			, supportedTargets printString , '.' ].
-	normalizedTargets ifEmpty: [
-		Error signal: 'filterTargets must contain at least one target.' ].
-	^ normalizedTargets asArray
-]
-
 { #category : 'private - template' }
 MCPToolQuery >> queryEntriesForParameters: parameters [
 
@@ -152,7 +121,7 @@ MCPToolQuery >> queryPageForEntries: entries limit: limit offset: offset [
 ]
 
 { #category : 'private - template' }
-MCPToolQuery >> queryParametersFromArguments: arguments [
+MCPToolQuery >> queryParametersFromRequest: request [
 
 	^ self subclassResponsibility
 ]
@@ -172,7 +141,7 @@ MCPToolQuery >> queryResultDataFrom: baseData page: page entriesKey: entriesKey 
 ]
 
 { #category : 'private - template' }
-MCPToolQuery >> requestedContextFromArguments: arguments [
+MCPToolQuery >> requestedContextFromRequest: request [
 
 	^ self subclassResponsibility
 ]
@@ -257,7 +226,7 @@ MCPToolQuery >> successSummaryForParameters: parameters page: page [
 	^ self subclassResponsibility
 ]
 
-{ #category : 'private - arguments' }
+{ #category : 'private - request' }
 MCPToolQuery >> supportedFilterTargets [
 
 	self subclassResponsibility

@@ -69,7 +69,7 @@ MCPToolEvaluate >> defaultTitle [
 ]
 
 { #category : 'executing' }
-MCPToolEvaluate >> executeWithArguments: arguments [
+MCPToolEvaluate >> executeWithRequest: request [
 
 	| answer compiler details notice |
 	compiler := SmalltalkImage current compiler.
@@ -78,7 +78,7 @@ MCPToolEvaluate >> executeWithArguments: arguments [
 	compiler failBlock: [ :aNotice |
 		notice := aNotice.
 		nil ].
-	answer := [ compiler evaluate: (arguments at: #code) ]
+	answer := [ compiler evaluate: (request stringArgumentNamed: 'code') ]
 		          on: Error
 		          do: [ :error |
 			          ^ self

@@ -160,19 +160,19 @@ MCPToolEdit >> executeOperationBlock: anOperationBlock force: forceRequested ope
 ]
 
 { #category : 'executing' }
-MCPToolEdit >> executeWithArguments: arguments [
+MCPToolEdit >> executeWithRequest: request [
 
 	| operation specification |
-	operation := self operationFromArguments: arguments.
-	self validateRequiredArgumentsForOperation: operation in: arguments.
+	operation := self operationFromRequest: request.
+	self validateRequiredPropertiesForOperation: operation inRequest: request.
 	specification := self operationSpecificationNamed: operation.
-	^ self perform: (specification at: #executeSelector) with: arguments
+	^ self perform: (specification at: #executeSelector) with: request
 ]
 
-{ #category : 'private - arguments' }
-MCPToolEdit >> forceFromArguments: arguments [
+{ #category : 'private - request' }
+MCPToolEdit >> forceFromRequest: request [
 
-	^ self booleanArgumentNamed: 'force' in: arguments default: false
+	^ request booleanArgumentNamed: 'force' default: false
 ]
 
 { #category : 'private - schema' }
@@ -305,7 +305,7 @@ MCPToolEdit >> operationBranchSchemas [
 		   self
 			   inputSchemaBranchForStringDiscriminatorNamed: 'operation'
 			   value: (each at: #name)
-			   required: { 'className' } , (each at: #requiredArguments)
+			   required: { 'className' } , (each at: #requiredProperties)
 			   requireDiscriminator: true ]) asArray
 ]
 
@@ -333,21 +333,6 @@ MCPToolEdit >> operationFailureErrorCodeFor: anError operation: operation [
 	(anError isKindOf: RBRefactoringError) ifTrue: [
 		^ prefix , 'RefactoringError' ].
 	^ prefix , 'ExecutionError'
-]
-
-{ #category : 'private - arguments' }
-MCPToolEdit >> operationFromArguments: arguments [
-
-	| normalized operation specification |
-	operation := self stringArgumentNamed: 'operation' in: arguments.
-	operation ifNil: [ JRPCInvalidParameters signal ].
-	normalized := operation asLowercase.
-	specification := self operationSpecifications
-		                 detect: [ :each |
-		                 (each at: #name) asLowercase = normalized ]
-		                 ifNone: [
-		                 Error signal: self operationValidationErrorMessage ].
-	^ specification at: #name
 ]
 
 { #category : 'private - operations' }
@@ -524,40 +509,6 @@ MCPToolEdit >> refactoringScopePackageNamesSchemaProperty [
 		  itemDescription: 'A package name.'
 ]
 
-{ #category : 'private - arguments' }
-MCPToolEdit >> refactoringScopeParametersFromArguments: arguments [
-
-	| classNames explicitScope packageNames scope |
-	packageNames := self
-		                normalizedStringCollection:
-		                (self
-			                 argumentNamed: 'packageNames'
-			                 in: arguments
-			                 ifAbsent: [ nil ])
-		                argumentName: 'packageNames'.
-	classNames := self
-		              normalizedStringCollection:
-		              (self
-			               argumentNamed: 'classNames'
-			               in: arguments
-			               ifAbsent: [ nil ])
-		              argumentName: 'classNames'.
-	explicitScope := self stringArgumentNamed: 'scope' in: arguments.
-	scope := self
-		         resolvedRefactoringScopeFrom: explicitScope
-		         packageNames: packageNames
-		         classNames: classNames.
-	self
-		validateRefactoringScope: scope
-		packageNames: packageNames
-		classNames: classNames.
-	self validateRefactoringScopePackageNamesExist: packageNames.
-	^ {
-		  (#scope -> scope).
-		  (#packageNames -> packageNames).
-		  (#classNames -> classNames) } asDictionary
-]
-
 { #category : 'private - schema' }
 MCPToolEdit >> refactoringScopeSchemaProperty [
 
@@ -588,7 +539,7 @@ MCPToolEdit >> refactoringWarningSummaryFor: aWarning operation: operation reque
 			  nextPutAll: self howToProceedForRefactoringWarning ]
 ]
 
-{ #category : 'private - arguments' }
+{ #category : 'private - request' }
 MCPToolEdit >> resolvedRefactoringScopeClassesFrom: classNames [
 
 	^ classNames collect: [ :eachName |
@@ -661,13 +612,13 @@ MCPToolEdit >> undeclaredVariableNameFor: anError [
 	^ node name asString
 ]
 
-{ #category : 'private - arguments' }
+{ #category : 'private - request' }
 MCPToolEdit >> validateRefactoringScope: scope packageNames: packageNames classNames: classNames [
 
 	scope = 'image' ifTrue: [
 		(packageNames isEmpty and: [ classNames isEmpty ]) ifFalse: [
 			MCPCommandError
-				signalErrorCode: #RefactoringScopeArgumentsConflict
+				signalErrorCode: #RefactoringScopeParametersConflict
 				message: 'scope=image does not accept packageNames or classNames.'
 				details: {
 						(#scope -> scope).
@@ -682,7 +633,7 @@ MCPToolEdit >> validateRefactoringScope: scope packageNames: packageNames classN
 				details: { (#scope -> scope) } asDictionary ].
 		classNames ifNotEmpty: [
 			MCPCommandError
-				signalErrorCode: #RefactoringScopeArgumentsConflict
+				signalErrorCode: #RefactoringScopeParametersConflict
 				message: 'scope=packages does not accept classNames.'
 				details: {
 						(#scope -> scope).
@@ -696,14 +647,14 @@ MCPToolEdit >> validateRefactoringScope: scope packageNames: packageNames classN
 				details: { (#scope -> scope) } asDictionary ].
 		packageNames ifNotEmpty: [
 			MCPCommandError
-				signalErrorCode: #RefactoringScopeArgumentsConflict
+				signalErrorCode: #RefactoringScopeParametersConflict
 				message: 'scope=' , scope , ' does not accept packageNames.'
 				details: {
 						(#scope -> scope).
 						(#packageNames -> packageNames) } asDictionary ] ]
 ]
 
-{ #category : 'private - arguments' }
+{ #category : 'private - request' }
 MCPToolEdit >> validateRefactoringScopePackageNamesExist: packageNames [
 
 	packageNames do: [ :eachName |
@@ -711,13 +662,15 @@ MCPToolEdit >> validateRefactoringScopePackageNamesExist: packageNames [
 			MCPCommandError signalMissingPackageNamed: eachName ] ]
 ]
 
-{ #category : 'private - arguments' }
-MCPToolEdit >> validateRequiredArgumentsForOperation: operation in: arguments [
+{ #category : 'private - request' }
+MCPToolEdit >> validateRequiredPropertiesForOperation: operation inRequest: request [
 
 	| specification |
 	specification := self operationSpecificationNamed: operation.
-	(specification at: #requiredArguments ifAbsent: [ #(  ) ]) do: [
+	(specification at: #requiredProperties ifAbsent: [ #(  ) ]) do: [
 		:each |
-		(self argumentNamed: each in: arguments ifAbsent: [ nil ]) ifNil: [
-			JRPCInvalidParameters signal ] ]
+		(request argumentNamed: each ifAbsent: [ nil ]) ifNil: [
+			MCPInvalidToolInput
+				signalMissingRequiredArgumentNamed: each
+				forTool: self ] ]
 ]

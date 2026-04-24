@@ -75,7 +75,7 @@ MCPToolFindClasses >> defaultDescription [
 	^ 'List classes in the selected scope and optionally filter them by class metadata. Use inspect-class when you already know the class to inspect.'
 ]
 
-{ #category : 'private - arguments' }
+{ #category : 'private - request' }
 MCPToolFindClasses >> defaultFilterTargets [
 
 	^ #( 'class' )
@@ -232,60 +232,9 @@ MCPToolFindClasses >> queryEntriesForParameters: parameters [
 ]
 
 { #category : 'private - template' }
-MCPToolFindClasses >> queryParametersFromArguments: arguments [
-
-	| scopeQuery |
-	scopeQuery := MCPClassScopeQuery
-		              scope:
-		              (self stringArgumentNamed: 'scope' in: arguments)
-		              packageNames:
-		              (self
-			               argumentNamed: 'packageNames'
-			               in: arguments
-			               ifAbsent: [ nil ])
-		              classNames:
-		              (self
-			               argumentNamed: 'classNames'
-			               in: arguments
-			               ifAbsent: [ nil ]).
-	^ {
-		  (#filterPattern
-		   -> (self stringArgumentNamed: 'filter' in: arguments)).
-		  (#filterTargets -> (self normalizedFilterTargetsFrom: arguments)).
-		  (#filterMode -> (self normalizedFilterModeFrom: arguments)).
-		  (#caseSensitive -> (self
-			    booleanArgumentNamed: 'caseSensitive'
-			    in: arguments
-			    default: false)).
-		  (#limit -> (self
-			    nonNegativeIntegerArgumentNamed: 'limit'
-			    in: arguments
-			    default: 100)).
-		  (#offset -> (self
-			    nonNegativeIntegerArgumentNamed: 'offset'
-			    in: arguments
-			    default: 0)).
-		  (#scopeQuery -> scopeQuery) } asDictionary
-]
-
-{ #category : 'private - template' }
 MCPToolFindClasses >> queryResultDataForParameters: parameters page: page [
 
 	^ self queryResultDataFrom: nil page: page entriesKey: #classes
-]
-
-{ #category : 'private - template' }
-MCPToolFindClasses >> requestedContextFromArguments: arguments [
-
-	| scope |
-	scope := self
-		         argumentNamed: 'scope'
-		         in: arguments
-		         ifAbsent: [ 'image' ].
-	scope := scope
-		         ifNil: [ 'image' ]
-		         ifNotNil: [ scope asString asLowercase ].
-	^ { (#scope -> scope) } asDictionary
 ]
 
 { #category : 'private - template' }
@@ -311,7 +260,7 @@ MCPToolFindClasses >> successSummaryForScope: scope returnedCount: returnedCount
 		  truncated: truncated
 ]
 
-{ #category : 'private - arguments' }
+{ #category : 'private - request' }
 MCPToolFindClasses >> supportedFilterTargets [
 
 	^ #( 'class' 'package' 'tag' 'instanceSlot' 'classSlot' )

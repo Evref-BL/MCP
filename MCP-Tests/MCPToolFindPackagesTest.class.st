@@ -177,22 +177,13 @@ MCPToolFindPackagesTest >> testProjectScopeReturnsStructuredErrorWhenProjectIsMi
 { #category : 'tests' }
 MCPToolFindPackagesTest >> testReturnsStructuredErrorForInvalidFilterTarget [
 
-	| error result structured |
-	result := self callToolWith: {
-			          (#scope -> 'image').
-			          (#filter -> 'needle').
-			          (#filterTargets -> #( 'definedClassCount' )) }
-			          asDictionary.
-	structured := self structuredContentFrom: result.
-	error := self errorFrom: result.
-	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #scope) equals: 'image'.
-	self assert: (error at: #errorClass) equals: 'Error'.
-	self assert:
-		((error at: #message) includesSubstring: 'filterTargets').
-	self assert:
-		((error at: #message) includesSubstring: 'definedClassCount')
+	self
+		should: [
+			self callToolWith: {
+					(#scope -> 'image').
+					(#filter -> 'needle').
+					(#filterTargets -> #( 'definedClassCount' )) } asDictionary ]
+		raise: JRPCInvalidParameters
 ]
 
 { #category : 'private - calling' }

@@ -168,15 +168,12 @@ MCPToolRemoveMethods >> errorResultForError: anError className: className classS
 ]
 
 { #category : 'executing' }
-MCPToolRemoveMethods >> executeWithArguments: arguments [
+MCPToolRemoveMethods >> executeWithRequest: request [
 
 	| behavior className classSide removedMethods selectors selectorSymbols warningMessage |
-	className := arguments at: #className.
-	classSide := self
-		             booleanArgumentNamed: 'classSide'
-		             in: arguments
-		             default: false.
-	selectors := self selectorsFromArguments: arguments.
+	className := request stringArgumentNamed: 'className'.
+	classSide := request booleanArgumentNamed: 'classSide' default: false.
+	selectors := self selectorsFromRequest: request.
 	selectorSymbols := selectors collect: #asSymbol.
 	warningMessage := 'This bypasses sender checks and may leave broken senders.'.
 	^ [
@@ -242,25 +239,6 @@ MCPToolRemoveMethods >> forceRemoveSelectors: selectorSymbols from: aBehavior [
 	refactoring checkSuperMethods.
 	refactoring removeMethodChanges.
 	refactoring performChanges
-]
-
-{ #category : 'private' }
-MCPToolRemoveMethods >> selectorsFromArguments: arguments [
-
-	| normalized selectors |
-	selectors := arguments at: #selectors ifAbsent: [ #(  ) ].
-	selectors ifNil: [ selectors := #(  ) ].
-	normalized := OrderedCollection new.
-	selectors do: [ :each |
-		| selector |
-		selector := each asString trimBoth.
-		selector isEmpty ifTrue: [
-			Error signal:
-				'selectors must contain only non-empty selector strings.' ].
-		(normalized includes: selector) ifFalse: [ normalized add: selector ] ].
-	normalized ifEmpty: [
-		Error signal: 'selectors must contain at least one selector.' ].
-	^ normalized asArray
 ]
 
 { #category : 'private' }

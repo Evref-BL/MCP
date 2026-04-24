@@ -183,17 +183,6 @@ MCPToolReferences >> method: aCompiledMethod referencesAnyVariable: variables [
 		  eachVariable isAccessedIn: aCompiledMethod ]
 ]
 
-{ #category : 'private - arguments' }
-MCPToolReferences >> modeFromArguments: arguments [
-
-	| mode |
-	mode := (self stringArgumentNamed: 'mode' in: arguments) ifNil: [
-		        Error signal: 'mode is required.' ].
-	mode := mode asLowercase.
-	(#( 'method' 'class' 'variable' ) includes: mode) ifTrue: [ ^ mode ].
-	Error signal: 'mode must be one of method, class, or variable.'
-]
-
 { #category : 'private - results' }
 MCPToolReferences >> queryDescriptionForMode: mode [
 
@@ -222,15 +211,12 @@ MCPToolReferences >> queryEntriesForParameters: parameters [
 ]
 
 { #category : 'private - template' }
-MCPToolReferences >> queryParametersFromArguments: arguments [
+MCPToolReferences >> queryParametersFromRequest: request [
 
 	| parameters |
-	parameters := self methodQueryParametersFromArguments:
-		              arguments.
-	parameters
-		at: #target
-		put: (self stringArgumentNamed: 'target' in: arguments).
-	parameters at: #mode put: (self modeFromArguments: arguments).
+	parameters := self methodQueryParametersFromRequest: request.
+	parameters at: #target put: (request stringArgumentNamed: 'target').
+	parameters at: #mode put: (self modeFromRequest: request).
 	^ parameters
 ]
 
@@ -240,37 +226,6 @@ MCPToolReferences >> queryResultDataForParameters: parameters page: page [
 	^ self
 		  methodQueryResultDataForPage: page
 		  entriesKey: #references
-]
-
-{ #category : 'private - template' }
-MCPToolReferences >> requestedContextFromArguments: arguments [
-
-	| mode scope targetString |
-	scope := self
-		         argumentNamed: 'scope'
-		         in: arguments
-		         ifAbsent: [ 'image' ].
-	scope := scope
-		         ifNil: [ 'image' ]
-		         ifNotNil: [ scope asString asLowercase ].
-	mode := self
-		        argumentNamed: 'mode'
-		        in: arguments
-		        ifAbsent: [ 'unknown' ].
-	mode := mode
-		        ifNil: [ 'unknown' ]
-		        ifNotNil: [ mode asString asLowercase ].
-	targetString := self
-		                argumentNamed: 'target'
-		                in: arguments
-		                ifAbsent: [ nil ].
-	targetString := targetString
-		                ifNil: [ nil ]
-		                ifNotNil: [ targetString asString ].
-	^ {
-		  (#scope -> scope).
-		  (#mode -> mode).
-		  (#target -> targetString) } asDictionary
 ]
 
 { #category : 'private - schema' }

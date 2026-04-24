@@ -762,23 +762,12 @@ MCPToolEditMethodTest >> testRenameReturnsStructuredErrorWhenMethodIsMissing [
 { #category : 'tests' }
 MCPToolEditMethodTest >> testRenameReturnsStructuredErrorWhenScopeRequiresClassNames [
 
-	| error result structured |
-	result := self callToolWith: (self instanceRenameArguments copy
-			           at: #scope put: 'classes';
-			           yourself).
-	structured := self structuredContentFrom: result.
-	error := self errorFrom: result.
-	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #operation) equals: 'rename'.
-	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self
-		assert: (error at: #errorCode)
-		equals: 'ClassNamesRequiredForRefactoringScope'.
-	self assert: (error at: #scope) equals: 'classes'.
-	self
-		assert: (error at: #message)
-		equals: 'classNames is required when scope=classes.'
+		should: [
+			self callToolWith: (self instanceRenameArguments copy
+					 at: #scope put: 'classes';
+					 yourself) ]
+		raise: JRPCInvalidParameters
 ]
 
 { #category : 'tests' }

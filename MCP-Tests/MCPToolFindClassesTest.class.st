@@ -217,21 +217,14 @@ MCPToolFindClassesTest >> testPackagesScopeReturnsPackageClasses [
 { #category : 'tests' }
 MCPToolFindClassesTest >> testReturnsStructuredErrorForInvalidFilterTarget [
 
-	| error result structured |
-	result := self callToolWith: {
-			          (#scope -> 'packages').
-			          (#packageNames -> #( 'MCP-Tests' )).
-			          (#filter -> 'needle').
-			          (#filterTargets -> #( 'bogus' )) } asDictionary.
-	structured := self structuredContentFrom: result.
-	error := self errorFrom: result.
-	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #scope) equals: 'packages'.
-	self assert: (error at: #errorClass) equals: 'Error'.
-	self assert:
-		((error at: #message) includesSubstring: 'filterTargets').
-	self assert: ((error at: #message) includesSubstring: 'bogus')
+	self
+		should: [
+			self callToolWith: {
+					(#scope -> 'packages').
+					(#packageNames -> #( 'MCP-Tests' )).
+					(#filter -> 'needle').
+					(#filterTargets -> #( 'bogus' )) } asDictionary ]
+		raise: JRPCInvalidParameters
 ]
 
 { #category : 'tests' }

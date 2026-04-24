@@ -9,14 +9,11 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'private - arguments' }
-MCPToolEditClass >> classCommentFromArguments: arguments [
+{ #category : 'private - request' }
+MCPToolEditClass >> classCommentFromRequest: request [
 
 	| value |
-	value := self
-		         argumentNamed: 'classComment'
-		         in: arguments
-		         ifAbsent: [ ^ nil ].
+	value := request argumentNamed: 'classComment' ifAbsent: [ ^ nil ].
 	^ value ifNil: [ '' ] ifNotNil: [ value asString ]
 ]
 
@@ -312,11 +309,11 @@ MCPToolEditClass >> defaultTitle [
 ]
 
 { #category : 'executing' }
-MCPToolEditClass >> executeAddSlotWithArguments: arguments [
+MCPToolEditClass >> executeAddSlotWithRequest: request [
 
 	^ self
 		  executeSlotOperation: 'addSlot'
-		  withArguments: arguments
+		  withRequest: request
 		  work: [ :className :slotName :classSide |
 			  (MCPAddSlotCommand
 				   className: className
@@ -334,122 +331,11 @@ MCPToolEditClass >> executeAddSlotWithArguments: arguments [
 ]
 
 { #category : 'executing' }
-MCPToolEditClass >> executeCreateWithArguments: arguments [
-
-	| classComment className classSlots classTraits force layout packageName requestedContext result sharedPools sharedVariables slots superclassName tag traits |
-	className := self stringArgumentNamed: 'className' in: arguments.
-	superclassName := self
-		                  stringArgumentNamed: 'superclassName'
-		                  in: arguments.
-	packageName := self stringArgumentNamed: 'packageName' in: arguments.
-	tag := self stringArgumentNamed: 'tag' in: arguments.
-	classComment := (arguments includesKey: 'classComment')
-		                ifTrue: [ self classCommentFromArguments: arguments ]
-		                ifFalse: [ nil ].
-	force := self forceFromArguments: arguments.
-	slots := self argumentNamed: 'slots' in: arguments ifAbsent: [ nil ].
-	classSlots := self
-		              argumentNamed: 'classSlots'
-		              in: arguments
-		              ifAbsent: [ nil ].
-	traits := self
-		          argumentNamed: 'traits'
-		          in: arguments
-		          ifAbsent: [ nil ].
-	classTraits := self
-		               argumentNamed: 'classTraits'
-		               in: arguments
-		               ifAbsent: [ nil ].
-	sharedVariables := self
-		                   argumentNamed: 'sharedVariables'
-		                   in: arguments
-		                   ifAbsent: [ nil ].
-	sharedPools := self
-		               argumentNamed: 'sharedPools'
-		               in: arguments
-		               ifAbsent: [ nil ].
-	layout := self
-		          argumentNamed: 'layout'
-		          in: arguments
-		          ifAbsent: [ nil ].
-	requestedContext := {
-		                    (#className -> className).
-		                    (#superclassName -> superclassName).
-		                    (#packageName -> packageName).
-		                    (#tag -> (tag ifNil: [ '' ] ifNotNil: [ tag ])).
-		                    (#classComment
-		                     ->
-		                     (classComment
-			                      ifNil: [ '' ]
-			                      ifNotNil: [ classComment ])).
-		                    (#slots
-		                     -> (slots ifNil: [ #(  ) ] ifNotNil: [ slots ])).
-		                    (#classSlots
-		                     ->
-		                     (classSlots
-			                      ifNil: [ #(  ) ]
-			                      ifNotNil: [ classSlots ])).
-		                    (#traits
-		                     ->
-		                     (traits ifNil: [ #(  ) ] ifNotNil: [ traits ])).
-		                    (#classTraits
-		                     ->
-		                     (classTraits
-			                      ifNil: [ #(  ) ]
-			                      ifNotNil: [ classTraits ])).
-		                    (#sharedVariables
-		                     ->
-		                     (sharedVariables
-			                      ifNil: [ #(  ) ]
-			                      ifNotNil: [ sharedVariables ])).
-		                    (#sharedPools
-		                     ->
-		                     (sharedPools
-			                      ifNil: [ #(  ) ]
-			                      ifNotNil: [ sharedPools ])).
-		                    (#layout
-		                     -> (layout ifNil: [ '' ] ifNotNil: [ layout ])) }
-		                    asDictionary.
-	^ self
-		  executeEditOperation: 'create'
-		  force: force
-		  requestedContext: requestedContext
-		  work: [
-			  result := (MCPCreateClassCommand
-				             className: className
-				             superclassName: superclassName
-				             packageName: packageName
-				             tag: tag
-				             slots: slots
-				             classSlots: classSlots
-				             traits: traits
-				             classTraits: classTraits
-				             sharedVariables: sharedVariables
-				             sharedPools: sharedPools
-				             layout: layout) execute.
-			  classComment ifNotNil: [
-				  (MCPChangeClassCommentCommand
-					   className: className
-					   classComment: classComment) execute ] ]
-		  successResult: [ :warningMessages |
-			  self
-				  successResultText: 'Created class ' , className , '.'
-				  data: (self dataForResult: result operation: 'create')
-				  warnings: warningMessages ]
-		  failureSummary: [ :error |
-			  self
-				  failureMessageForCreateClassNamed: className
-				  superclassName: superclassName
-				  packageName: packageName
-				  error: error ]
-]
-
-{ #category : 'executing' }
-MCPToolEditClass >> executeMoveSlotWithArguments: arguments operation: operation [
+MCPToolEditClass >> executeMoveSlotWithRequest: request operation: operation [
 
 	^ self
 		  executeSlotOperation: operation
-		  withArguments: arguments
+		  withRequest: request
 		  work: [ :className :slotName :classSide |
 			  (MCPMoveSlotCommand
 				   className: className
@@ -474,13 +360,13 @@ MCPToolEditClass >> executeMoveSlotWithArguments: arguments operation: operation
 ]
 
 { #category : 'executing' }
-MCPToolEditClass >> executeMoveWithArguments: arguments [
+MCPToolEditClass >> executeMoveWithRequest: request [
 
 	| className force packageName requestedContext result tag |
-	className := self stringArgumentNamed: 'className' in: arguments.
-	packageName := self stringArgumentNamed: 'packageName' in: arguments.
-	tag := self stringArgumentNamed: 'tag' in: arguments.
-	force := self forceFromArguments: arguments.
+	className := request stringArgumentNamed: 'className'.
+	packageName := request stringArgumentNamed: 'packageName'.
+	tag := request stringArgumentNamed: 'tag'.
+	force := self forceFromRequest: request.
 	requestedContext := {
 		                    (#className -> className).
 		                    (#packageName -> packageName).
@@ -510,27 +396,27 @@ MCPToolEditClass >> executeMoveWithArguments: arguments [
 ]
 
 { #category : 'executing' }
-MCPToolEditClass >> executePullUpSlotWithArguments: arguments [
+MCPToolEditClass >> executePullUpSlotWithRequest: request [
 
 	^ self
-		  executeMoveSlotWithArguments: arguments
+		  executeMoveSlotWithRequest: request
 		  operation: 'pullUpSlot'
 ]
 
 { #category : 'executing' }
-MCPToolEditClass >> executePushDownSlotWithArguments: arguments [
+MCPToolEditClass >> executePushDownSlotWithRequest: request [
 
 	^ self
-		  executeMoveSlotWithArguments: arguments
+		  executeMoveSlotWithRequest: request
 		  operation: 'pushDownSlot'
 ]
 
 { #category : 'executing' }
-MCPToolEditClass >> executeRemoveSlotWithArguments: arguments [
+MCPToolEditClass >> executeRemoveSlotWithRequest: request [
 
 	^ self
 		  executeSlotOperation: 'removeSlot'
-		  withArguments: arguments
+		  withRequest: request
 		  work: [ :className :slotName :classSide |
 			  (MCPRemoveSlotCommand
 				   className: className
@@ -548,17 +434,14 @@ MCPToolEditClass >> executeRemoveSlotWithArguments: arguments [
 ]
 
 { #category : 'executing' }
-MCPToolEditClass >> executeRenameSlotWithArguments: arguments [
+MCPToolEditClass >> executeRenameSlotWithRequest: request [
 
 	| className classSide force newSlotName requestedContext result slotName |
-	className := self stringArgumentNamed: 'className' in: arguments.
-	slotName := self stringArgumentNamed: 'slotName' in: arguments.
-	newSlotName := self stringArgumentNamed: 'newSlotName' in: arguments.
-	classSide := self
-		             booleanArgumentNamed: 'classSide'
-		             in: arguments
-		             default: false.
-	force := self forceFromArguments: arguments.
+	className := request stringArgumentNamed: 'className'.
+	slotName := request stringArgumentNamed: 'slotName'.
+	newSlotName := request stringArgumentNamed: 'newSlotName'.
+	classSide := request booleanArgumentNamed: 'classSide' default: false.
+	force := self forceFromRequest: request.
 	requestedContext := {
 		                    (#className -> className).
 		                    (#slotName -> slotName).
@@ -591,14 +474,12 @@ MCPToolEditClass >> executeRenameSlotWithArguments: arguments [
 ]
 
 { #category : 'executing' }
-MCPToolEditClass >> executeRenameWithArguments: arguments [
+MCPToolEditClass >> executeRenameWithRequest: request [
 
 	| className force newClassName refactoringModel requestedContext result scopeParameters targetClass |
-	className := self stringArgumentNamed: 'className' in: arguments.
-	newClassName := self
-		                stringArgumentNamed: 'newClassName'
-		                in: arguments.
-	force := self forceFromArguments: arguments.
+	className := request stringArgumentNamed: 'className'.
+	newClassName := request stringArgumentNamed: 'newClassName'.
+	force := self forceFromRequest: request.
 	requestedContext := {
 		                    (#className -> className).
 		                    (#newClassName -> newClassName) } asDictionary.
@@ -607,8 +488,8 @@ MCPToolEditClass >> executeRenameWithArguments: arguments [
 		  force: force
 		  requestedContext: requestedContext
 		  work: [
-			  scopeParameters := self refactoringScopeParametersFromArguments:
-				                     arguments.
+			  scopeParameters := self refactoringScopeParametersFromRequest:
+				                     request.
 			  self
 				  addRefactoringScopeContextFrom: scopeParameters
 				  toRequestedContext: requestedContext.
@@ -639,14 +520,12 @@ MCPToolEditClass >> executeRenameWithArguments: arguments [
 ]
 
 { #category : 'executing' }
-MCPToolEditClass >> executeReparentWithArguments: arguments [
+MCPToolEditClass >> executeReparentWithRequest: request [
 
 	| className force requestedContext result superclassName |
-	className := self stringArgumentNamed: 'className' in: arguments.
-	superclassName := self
-		                  stringArgumentNamed: 'superclassName'
-		                  in: arguments.
-	force := self forceFromArguments: arguments.
+	className := request stringArgumentNamed: 'className'.
+	superclassName := request stringArgumentNamed: 'superclassName'.
+	force := self forceFromRequest: request.
 	requestedContext := {
 		                    (#className -> className).
 		                    (#superclassName -> superclassName) }
@@ -674,12 +553,12 @@ MCPToolEditClass >> executeReparentWithArguments: arguments [
 ]
 
 { #category : 'executing' }
-MCPToolEditClass >> executeSetCommentWithArguments: arguments [
+MCPToolEditClass >> executeSetCommentWithRequest: request [
 
 	| classComment className force requestedContext result |
-	className := self stringArgumentNamed: 'className' in: arguments.
-	classComment := self classCommentFromArguments: arguments.
-	force := self forceFromArguments: arguments.
+	className := request stringArgumentNamed: 'className'.
+	classComment := self classCommentFromRequest: request.
+	force := self forceFromRequest: request.
 	requestedContext := {
 		                    (#className -> className).
 		                    (#classComment -> classComment) } asDictionary.
@@ -703,16 +582,13 @@ MCPToolEditClass >> executeSetCommentWithArguments: arguments [
 ]
 
 { #category : 'private - execution' }
-MCPToolEditClass >> executeSlotOperation: operation withArguments: arguments work: operationBlock successSummary: successSummaryBlock failureSummary: failureSummaryBlock [
+MCPToolEditClass >> executeSlotOperation: operation withRequest: request work: operationBlock successSummary: successSummaryBlock failureSummary: failureSummaryBlock [
 
 	| className classSide force requestedContext result slotName |
-	className := self stringArgumentNamed: 'className' in: arguments.
-	slotName := self stringArgumentNamed: 'slotName' in: arguments.
-	classSide := self
-		             booleanArgumentNamed: 'classSide'
-		             in: arguments
-		             default: false.
-	force := self forceFromArguments: arguments.
+	className := request stringArgumentNamed: 'className'.
+	slotName := request stringArgumentNamed: 'slotName'.
+	classSide := request booleanArgumentNamed: 'classSide' default: false.
+	force := self forceFromRequest: request.
 	requestedContext := {
 		                    (#className -> className).
 		                    (#slotName -> slotName).
@@ -862,50 +738,50 @@ MCPToolEditClass >> operationSpecifications [
 	^ {
 		  {
 			  (#name -> 'create').
-			  (#requiredArguments -> #( 'superclassName' 'packageName' )).
-			  (#executeSelector -> #executeCreateWithArguments:) } asDictionary.
+			  (#requiredProperties -> #( 'superclassName' 'packageName' )).
+			  (#executeSelector -> #executeCreateWithRequest:) } asDictionary.
 		  {
 			  (#name -> 'move').
-			  (#requiredArguments -> #( 'packageName' )).
-			  (#executeSelector -> #executeMoveWithArguments:) } asDictionary.
+			  (#requiredProperties -> #( 'packageName' )).
+			  (#executeSelector -> #executeMoveWithRequest:) } asDictionary.
 		  {
 			  (#name -> 'rename').
-			  (#requiredArguments -> #( 'newClassName' )).
-			  (#executeSelector -> #executeRenameWithArguments:) } asDictionary.
+			  (#requiredProperties -> #( 'newClassName' )).
+			  (#executeSelector -> #executeRenameWithRequest:) } asDictionary.
 		  {
 			  (#name -> 'reparent').
-			  (#requiredArguments -> #( 'superclassName' )).
-			  (#executeSelector -> #executeReparentWithArguments:) }
+			  (#requiredProperties -> #( 'superclassName' )).
+			  (#executeSelector -> #executeReparentWithRequest:) }
 			  asDictionary.
 		  {
 			  (#name -> 'setComment').
-			  (#requiredArguments -> #( 'classComment' )).
-			  (#executeSelector -> #executeSetCommentWithArguments:) }
+			  (#requiredProperties -> #( 'classComment' )).
+			  (#executeSelector -> #executeSetCommentWithRequest:) }
 			  asDictionary.
 		  {
 			  (#name -> 'addSlot').
-			  (#requiredArguments -> #( 'slotName' )).
-			  (#executeSelector -> #executeAddSlotWithArguments:) }
+			  (#requiredProperties -> #( 'slotName' )).
+			  (#executeSelector -> #executeAddSlotWithRequest:) }
 			  asDictionary.
 		  {
 			  (#name -> 'removeSlot').
-			  (#requiredArguments -> #( 'slotName' )).
-			  (#executeSelector -> #executeRemoveSlotWithArguments:) }
+			  (#requiredProperties -> #( 'slotName' )).
+			  (#executeSelector -> #executeRemoveSlotWithRequest:) }
 			  asDictionary.
 		  {
 			  (#name -> 'renameSlot').
-			  (#requiredArguments -> #( 'slotName' 'newSlotName' )).
-			  (#executeSelector -> #executeRenameSlotWithArguments:) }
+			  (#requiredProperties -> #( 'slotName' 'newSlotName' )).
+			  (#executeSelector -> #executeRenameSlotWithRequest:) }
 			  asDictionary.
 		  {
 			  (#name -> 'pullUpSlot').
-			  (#requiredArguments -> #( 'slotName' )).
-			  (#executeSelector -> #executePullUpSlotWithArguments:) }
+			  (#requiredProperties -> #( 'slotName' )).
+			  (#executeSelector -> #executePullUpSlotWithRequest:) }
 			  asDictionary.
 		  {
 			  (#name -> 'pushDownSlot').
-			  (#requiredArguments -> #( 'slotName' )).
-			  (#executeSelector -> #executePushDownSlotWithArguments:) }
+			  (#requiredProperties -> #( 'slotName' )).
+			  (#executeSelector -> #executePushDownSlotWithRequest:) }
 			  asDictionary }
 ]
 

@@ -15,7 +15,7 @@ MCPToolFindMethods >> defaultDescription [
 	^ 'List methods in a scope and optionally filter the returned method entries. Use implementors to find definitions of a selector, and references to find methods that use a selector, class, or variable.'
 ]
 
-{ #category : 'private - arguments' }
+{ #category : 'private - request' }
 MCPToolFindMethods >> defaultFilterTargets [
 
 	^ #( 'selector' )
@@ -179,37 +179,11 @@ MCPToolFindMethods >> queryEntriesForParameters: parameters [
 ]
 
 { #category : 'private - template' }
-MCPToolFindMethods >> queryParametersFromArguments: arguments [
-
-	| parameters |
-	parameters := self methodQueryParametersFromArguments:
-		              arguments.
-	parameters
-		at: #filterTargets
-		put: (self normalizedFilterTargetsFrom: arguments).
-	^ parameters
-]
-
-{ #category : 'private - template' }
 MCPToolFindMethods >> queryResultDataForParameters: parameters page: page [
 
 	^ self
 		  methodQueryResultDataForPage: page
 		  entriesKey: #methods
-]
-
-{ #category : 'private - template' }
-MCPToolFindMethods >> requestedContextFromArguments: arguments [
-
-	| scope |
-	scope := self
-		         argumentNamed: 'scope'
-		         in: arguments
-		         ifAbsent: [ 'image' ].
-	scope := scope
-		         ifNil: [ 'image' ]
-		         ifNotNil: [ scope asString asLowercase ].
-	^ { (#scope -> scope) } asDictionary
 ]
 
 { #category : 'private - template' }
@@ -233,7 +207,7 @@ MCPToolFindMethods >> successSummaryForScope: scope returnedCount: returnedCount
 		  truncated: truncated
 ]
 
-{ #category : 'private - arguments' }
+{ #category : 'private - request' }
 MCPToolFindMethods >> supportedFilterTargets [
 
 	^ #( 'selector' 'class' 'package' 'protocol' 'reference' 'source' )

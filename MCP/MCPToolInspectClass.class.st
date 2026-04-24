@@ -94,11 +94,11 @@ MCPToolInspectClass >> classDescriptionRequiredFields [
 	     'instanceMethodCount' 'classMethodCount' )
 ]
 
-{ #category : 'private - arguments' }
-MCPToolInspectClass >> classNameFromArguments: arguments [
+{ #category : 'private - request' }
+MCPToolInspectClass >> classNameFromRequest: request [
 
 	| className |
-	className := self stringArgumentNamed: 'className' in: arguments.
+	className := request stringArgumentNamed: 'className'.
 	className ifNil: [
 		Error signal: 'className must be a non-empty string.' ].
 	^ className
@@ -228,22 +228,19 @@ MCPToolInspectClass >> errorResultForError: anError className: className [
 ]
 
 { #category : 'executing' }
-MCPToolInspectClass >> executeWithArguments: arguments [
+MCPToolInspectClass >> executeWithRequest: request [
 
 	| className data includeComment subclasses superclasses targetClass |
-	className := self classNameFromArguments: arguments.
+	className := self classNameFromRequest: request.
 	^ [
 	  targetClass := self resolvedClassNamed: className.
-	  includeComment := self
+	  includeComment := request
 		                    booleanArgumentNamed: 'includeComment'
-		                    in: arguments
 		                    default: false.
 	  superclasses := self
 		                  superclassesForClass: targetClass
-		                  arguments: arguments.
-	  subclasses := self
-		                subclassesForClass: targetClass
-		                arguments: arguments.
+		                  request: request.
+	  subclasses := self subclassesForClass: targetClass request: request.
 	  data := self
 		          descriptionDictionaryForClass: targetClass
 		          includeComment: includeComment.
@@ -293,12 +290,11 @@ MCPToolInspectClass >> sortedClassesByName: someClasses [
 ]
 
 { #category : 'private - hierarchy' }
-MCPToolInspectClass >> subclassesForClass: aClass arguments: arguments [
+MCPToolInspectClass >> subclassesForClass: aClass request: request [
 
 	| subclassDepth subclasses |
-	subclassDepth := self
+	subclassDepth := request
 		                 nonNegativeIntegerArgumentNamed: 'subclassDepth'
-		                 in: arguments
 		                 default: 0.
 	subclassDepth = 0 ifTrue: [ ^ #(  ) ].
 	subclasses := OrderedCollection new.
@@ -337,12 +333,11 @@ MCPToolInspectClass >> successSummaryForClassName: className superclasses: super
 ]
 
 { #category : 'private - hierarchy' }
-MCPToolInspectClass >> superclassesForClass: aClass arguments: arguments [
+MCPToolInspectClass >> superclassesForClass: aClass request: request [
 
 	| targetSuperclass targetSuperclassName |
-	targetSuperclassName := self
-		                        stringArgumentNamed: 'upToSuperclassName'
-		                        in: arguments.
+	targetSuperclassName := request stringArgumentNamed:
+		                        'upToSuperclassName'.
 	targetSuperclassName ifNil: [ ^ #(  ) ].
 	targetSuperclass := Smalltalk globals
 		                    at: targetSuperclassName asSymbol

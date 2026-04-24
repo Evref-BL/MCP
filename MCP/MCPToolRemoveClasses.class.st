@@ -9,26 +9,6 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'private' }
-MCPToolRemoveClasses >> classNamesFromArguments: arguments [
-
-	| classNames normalized |
-	classNames := arguments at: #classNames ifAbsent: [ #(  ) ].
-	classNames ifNil: [ classNames := #(  ) ].
-	normalized := OrderedCollection new.
-	classNames do: [ :each |
-		| className |
-		className := each asString trimBoth.
-		className isEmpty ifTrue: [
-			Error signal:
-				'classNames must contain only non-empty class name strings.' ].
-		(normalized includes: className) ifFalse: [
-			normalized add: className ] ].
-	normalized ifEmpty: [
-		Error signal: 'classNames must contain at least one class name.' ].
-	^ normalized asArray
-]
-
 { #category : 'defaults' }
 MCPToolRemoveClasses >> defaultDescription [
 
@@ -215,14 +195,11 @@ MCPToolRemoveClasses >> errorResultForError: anError classNames: classNames [
 ]
 
 { #category : 'executing' }
-MCPToolRemoveClasses >> executeWithArguments: arguments [
+MCPToolRemoveClasses >> executeWithRequest: request [
 
 	| classNames forceRemoval result |
-	classNames := self classNamesFromArguments: arguments.
-	forceRemoval := self
-		                booleanArgumentNamed: 'force'
-		                in: arguments
-		                default: false.
+	classNames := self classNamesFromRequest: request.
+	forceRemoval := request booleanArgumentNamed: 'force' default: false.
 	^ [
 	  result := (MCPRemoveClassesCommand
 		             classNames: classNames

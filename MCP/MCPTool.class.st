@@ -99,16 +99,6 @@ MCPTool class >> toolIconFormOf: aToolClass [
 		  (aToolClass new icons first src copyAfter: $,)
 ]
 
-{ #category : 'private - arguments' }
-MCPTool >> argumentNamed: anArgumentName in: arguments ifAbsent: aBlock [
-
-	arguments ifNil: [ ^ aBlock value ].
-	^ arguments
-		  at: anArgumentName asSymbol
-		  ifAbsent: [
-		  arguments at: anArgumentName asString ifAbsent: aBlock ]
-]
-
 { #category : 'accessing' }
 MCPTool >> asJRPCJSON [
 
@@ -134,22 +124,6 @@ MCPTool >> behaviorNamed: aClassName classSide: aBoolean [
 	^ aBoolean
 		  ifTrue: [ targetClass classSide ]
 		  ifFalse: [ targetClass ]
-]
-
-{ #category : 'private - arguments' }
-MCPTool >> booleanArgumentNamed: anArgumentName in: arguments default: aBoolean [
-
-	| normalized value |
-	value := self
-		         argumentNamed: anArgumentName
-		         in: arguments
-		         ifAbsent: [ ^ aBoolean ].
-	value ifNil: [ ^ aBoolean ].
-	(value == true or: [ value == false ]) ifTrue: [ ^ value ].
-	normalized := value asString trimBoth asLowercase.
-	normalized = 'true' ifTrue: [ ^ true ].
-	normalized = 'false' ifTrue: [ ^ false ].
-	Error signal: anArgumentName asString , ' must be a boolean.'
 ]
 
 { #category : 'private - schema' }
@@ -181,6 +155,7 @@ MCPTool >> conditionalInputSchemaIf: conditionSchema thenRequired: requiredField
 		              additionalProperties: true;
 		              yourself.
 	^ MCPStructureInputSchema new
+		  additionalProperties: true;
 		  schemaKeyword: #if put: conditionSchema;
 		  schemaKeyword: #then put: thenSchema;
 		  yourself
@@ -195,7 +170,7 @@ MCPTool >> defaultDescription [
 { #category : 'defaults' }
 MCPTool >> defaultHandler [
 
-	^ [ :arguments |  ]
+	^ [ :request |  ]
 ]
 
 { #category : 'defaults' }
@@ -345,10 +320,10 @@ MCPTool >> errorStackTraceLimit [
 ]
 
 { #category : 'executing' }
-MCPTool >> executeWithArguments: anArgument [
-	"You can also overide me to make things easier to manage"
+MCPTool >> executeWithRequest: aRequest [
+	"Subclasses may override me to manage execution directly."
 
-	^ handler value: anArgument
+	^ handler value: aRequest
 ]
 
 { #category : 'error handling' }
@@ -588,21 +563,6 @@ MCPTool >> methodReferenceForClassName: aClassName selector: aSelector isClassSi
 			  nextPutAll: aSelector ]
 ]
 
-{ #category : 'private - methods' }
-MCPTool >> methodScopeQueryFromArguments: arguments [
-
-	^ MCPCompiledMethodScopeQuery
-		  scope: (self stringArgumentNamed: 'scope' in: arguments)
-		  packageNames:
-		  (self
-			   argumentNamed: 'packageNames'
-			   in: arguments
-			   ifAbsent: [ nil ])
-		  classNames:
-		  (self argumentNamed: 'classNames' in: arguments ifAbsent: [ nil ])
-		  side: (self stringArgumentNamed: 'side' in: arguments)
-]
-
 { #category : 'accessing' }
 MCPTool >> name [
 
@@ -615,20 +575,6 @@ MCPTool >> name: anObject [
 	name := anObject
 ]
 
-{ #category : 'private - arguments' }
-MCPTool >> nonNegativeIntegerArgumentNamed: anArgumentName in: arguments default: anInteger [
-
-	| value |
-	value := self
-		         argumentNamed: anArgumentName
-		         in: arguments
-		         ifAbsent: [ ^ anInteger ].
-	value ifNil: [ ^ anInteger ].
-	(value isInteger and: [ value >= 0 ]) ifTrue: [ ^ value ].
-	Error signal:
-		anArgumentName asString , ' must be a non-negative integer.'
-]
-
 { #category : 'private - filtering' }
 MCPTool >> normalizeFilterString: aValue caseSensitive: aBoolean [
 
@@ -639,31 +585,6 @@ MCPTool >> normalizeFilterString: aValue caseSensitive: aBoolean [
 	^ aBoolean
 		  ifTrue: [ normalized ]
 		  ifFalse: [ normalized asLowercase ]
-]
-
-{ #category : 'private - arguments' }
-MCPTool >> normalizedFilterModeFrom: arguments [
-
-	| mode |
-	mode := (self stringArgumentNamed: 'filterMode' in: arguments)
-		        ifNil: [ ^ 'substring' ].
-	mode := mode asLowercase.
-	(#( 'substring' 'prefix' 'exact' 'regex' ) includes: mode) ifFalse: [
-		Error signal:
-			'filterMode must be one of substring, prefix, exact, or regex.' ].
-	^ mode
-]
-
-{ #category : 'private - arguments' }
-MCPTool >> normalizedSideFrom: arguments [
-
-	| side |
-	side := (self stringArgumentNamed: 'side' in: arguments) ifNil: [
-		        ^ 'both' ].
-	side := side asLowercase.
-	(#( 'instance' 'class' 'both' ) includes: side) ifFalse: [
-		Error signal: 'side must be one of instance, class, or both.' ].
-	^ side
 ]
 
 { #category : 'private - arguments' }
@@ -729,6 +650,12 @@ MCPTool >> pngSizeStringForForm: aForm [
 	^ aForm width asString , 'x' , aForm height asString
 ]
 
+{ #category : 'validating' }
+MCPTool >> requestFromToolCallArguments: toolCallArguments [
+
+	^ MCPToolRequest tool: self arguments: toolCallArguments
+]
+
 { #category : 'private - schema' }
 MCPTool >> schemaPropertyNamed: aName type: aType description: aDescription [
 
@@ -739,10 +666,10 @@ MCPTool >> schemaPropertyNamed: aName type: aType description: aDescription [
 		  yourself
 ]
 
-{ #category : 'private - arguments' }
-MCPTool >> selectorStringFrom: arguments [
+{ #category : 'private - request' }
+MCPTool >> selectorStringFromRequest: request [
 
-	^ self stringArgumentNamed: 'selector' in: arguments
+	^ request stringArgumentNamed: 'selector'
 ]
 
 { #category : 'private - schema' }
@@ -824,21 +751,6 @@ MCPTool >> standardTestRequiredFieldsIncludingMethodName: includeMethodName [
 		            #( 'className' 'runCount' 'issues' ).
 	includeMethodName ifTrue: [ required add: 'testMethodName' ].
 	^ required asArray
-]
-
-{ #category : 'private - arguments' }
-MCPTool >> stringArgumentNamed: anArgumentName in: arguments [
-
-	| value |
-	value := self
-		         argumentNamed: anArgumentName
-		         in: arguments
-		         ifAbsent: [ ^ nil ].
-	value ifNil: [ ^ nil ].
-	value := value asString trimBoth.
-	^ value isEmpty
-		  ifTrue: [ nil ]
-		  ifFalse: [ value ]
 ]
 
 { #category : 'private - schema' }
@@ -1031,27 +943,6 @@ MCPTool >> title [
 MCPTool >> title: anObject [
 
 	title := anObject
-]
-
-{ #category : 'validating' }
-MCPTool >> validateArguments: arguments [
-
-	| dictionary missingArguments requiredArguments |
-	self inputSchema ifNil: [ ^ self ].
-	requiredArguments := self inputSchema required ifNil: [ ^ self ].
-	dictionary := arguments ifNil: [ Dictionary new ].
-	missingArguments := requiredArguments reject: [ :each |
-		                    | hasString hasSymbol stringKey symbolKey |
-		                    stringKey := each asString.
-		                    symbolKey := each asSymbol.
-		                    hasString := (dictionary includesKey: stringKey)
-			                                 and: [
-			                                 (dictionary at: stringKey) notNil ].
-		                    hasSymbol := (dictionary includesKey: symbolKey)
-			                                 and: [
-			                                 (dictionary at: symbolKey) notNil ].
-		                    hasString or: [ hasSymbol ] ].
-	missingArguments ifNotEmpty: [ JRPCInvalidParameters signal ]
 ]
 
 { #category : 'private - schema' }

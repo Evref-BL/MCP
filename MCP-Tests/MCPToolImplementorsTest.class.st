@@ -144,17 +144,12 @@ MCPToolImplementorsTest >> testPackagesScopeIncludesExtensionMethods [
 { #category : 'tests' }
 MCPToolImplementorsTest >> testPackagesScopeReturnsStructuredErrorWhenPackageNamesAreMissing [
 
-	| error result structured |
-	result := self callToolWith: {
-			          (#selector -> 'extensionProbe').
-			          (#scope -> 'packages') } asDictionary.
-	structured := self structuredContentFrom: result.
-	error := self errorFrom: result.
-	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #scope) equals: 'packages'.
-	self assert:
-		((error at: #message) includesSubstring: 'packageNames is required')
+	self
+		should: [
+			self callToolWith: {
+					(#selector -> 'extensionProbe').
+					(#scope -> 'packages') } asDictionary ]
+		raise: JRPCInvalidParameters
 ]
 
 { #category : 'tests' }
