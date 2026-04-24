@@ -83,8 +83,6 @@ MCPTool class >> toolGroups [
 			   MCPToolRemoveClasses }).
 		  (#Methods -> {
 			   MCPToolFindMethods.
-			   MCPToolImplementors.
-			   MCPToolReferences.
 			   MCPToolInspectMethod.
 			   MCPToolEditMethod.
 			   MCPToolRemoveMethods }).
@@ -165,6 +163,12 @@ MCPTool >> conditionalInputSchemaIf: conditionSchema thenRequired: requiredField
 MCPTool >> defaultDescription [
 
 	self subclassResponsibility
+]
+
+{ #category : 'private - request' }
+MCPTool >> defaultFilterMode [
+
+	^ 'substring'
 ]
 
 { #category : 'defaults' }
@@ -349,7 +353,9 @@ MCPTool >> failureMessageFor: anError [
 { #category : 'private - request' }
 MCPTool >> filterModeFromRequest: request [
 
-	^ request stringArgumentNamed: 'filterMode' default: 'substring'
+	^ request
+		  stringArgumentNamed: 'filterMode'
+		  default: self defaultFilterMode
 ]
 
 { #category : 'private - filtering' }

@@ -20,7 +20,7 @@ MCPToolInspectMethod >> bindingClassNameFor: aBinding [
 { #category : 'defaults' }
 MCPToolInspectMethod >> defaultDescription [
 
-	^ 'Inspect one known method and return its source plus structured variable-reference context. Use find-methods, implementors, or references to discover methods first.'
+	^ 'Inspect one known method and return its source plus structured variable-reference context. Use find-methods or references to discover methods first.'
 ]
 
 { #category : 'defaults' }

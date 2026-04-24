@@ -84,10 +84,10 @@ MCPCompiledMethodScopeQueryTest >> testImageScopeRespectsSideFiltering [
 		         side: 'class'.
 	methodIdentities := self methodIdentitiesFor: query methods.
 	self assert: (methodIdentities includes:
-			 'MCPToolImplementorsTestExact class>>dualProbe').
+			 'MCPToolReferencesTestExact class>>sharedTarget').
 	self deny:
 		(methodIdentities includes:
-			 'MCPToolImplementorsTestExact>>dualProbe')
+			 'MCPToolReferencesTestExact>>sharedTarget')
 ]
 
 { #category : 'tests' }

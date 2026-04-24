@@ -111,10 +111,11 @@ MCPToolFindClasses >> defaultInputSchema [
 	filterModeProperty := self
 		                      stringEnumSchemaPropertyNamed: 'filterMode'
 		                      description:
-		                      'How the filter is matched. Defaults to substring.'
+			                      'How the filter is matched. Defaults to '
+			                      , self defaultFilterMode , '.'
 		                      values:
 		                      #( 'substring' 'prefix' 'exact' 'regex' )
-		                      default: 'substring'.
+		                      default: self defaultFilterMode.
 	filterTargetsProperty := self
 		                         stringEnumArraySchemaNamed: 'filterTargets'
 		                         description:
@@ -138,8 +139,8 @@ MCPToolFindClasses >> defaultInputSchema [
 				  (self
 					   booleanSchemaPropertyNamed: 'caseSensitive'
 					   description:
-						   'Whether filter matching is case-sensitive. Defaults to false.'
-					   default: false).
+						   'Whether filter matching is case-sensitive. Defaults to true.'
+					   default: true).
 				  (self
 					   integerSchemaPropertyNamed: 'limit'
 					   description:
@@ -247,7 +248,7 @@ MCPToolFindClasses >> queryParametersFromRequest: request [
 		  (#filterTargets -> (self filterTargetsFromRequest: request)).
 		  (#filterMode -> (self filterModeFromRequest: request)).
 		  (#caseSensitive
-		   -> (request booleanArgumentNamed: 'caseSensitive' default: false)).
+		   -> (request booleanArgumentNamed: 'caseSensitive' default: true)).
 		  (#limit
 		   ->
 		   (request nonNegativeIntegerArgumentNamed: 'limit' default: 100)).

@@ -76,14 +76,16 @@ MCPToolMethodQuery >> methodQueryFilteringInputPropertiesWithFilterDescription: 
 	extraProperties ifNotNil: [ properties addAll: extraProperties ].
 	properties add: (self
 			 stringEnumSchemaPropertyNamed: 'filterMode'
-			 description: 'How the filter is matched. Defaults to substring.'
-			 values: #( 'substring' 'prefix' 'exact' 'regex' )
-			 default: 'substring').
+			 description:
+				 'How the filter is matched or interpreted. Defaults to '
+				 , self defaultFilterMode , '.'
+			 values: self supportedFilterModes
+			 default: self defaultFilterMode).
 	properties add: (self
 			 booleanSchemaPropertyNamed: 'caseSensitive'
 			 description:
-			 'Whether filter matching is case-sensitive. Defaults to false.'
-			 default: false).
+			 'Whether filter matching is case-sensitive. Defaults to true.'
+			 default: true).
 	properties add: (self
 			 booleanSchemaPropertyNamed: 'includeSource'
 			 description: includeSourceDescription
@@ -107,7 +109,7 @@ MCPToolMethodQuery >> methodQueryParametersFromRequest: request [
 		  (#filterPattern -> (request stringArgumentNamed: 'filter')).
 		  (#filterMode -> (self filterModeFromRequest: request)).
 		  (#caseSensitive
-		   -> (request booleanArgumentNamed: 'caseSensitive' default: false)).
+		   -> (request booleanArgumentNamed: 'caseSensitive' default: true)).
 		  (#includeSource
 		   -> (request booleanArgumentNamed: 'includeSource' default: false)).
 		  (#limit
@@ -156,4 +158,10 @@ MCPToolMethodQuery >> methodQueryScopeInputPropertiesWithScopeDescription: scope
 		  sideProperty.
 		  packageNamesProperty.
 		  classNamesProperty }
+]
+
+{ #category : 'private - schema' }
+MCPToolMethodQuery >> supportedFilterModes [
+
+	^ #( 'substring' 'prefix' 'exact' 'regex' )
 ]

@@ -45,9 +45,10 @@ MCPStructureInputSchema >> asJRPCJSON [
 	self type ifNotNil: [ dic at: #type put: self type asJRPCJSON ].
 	self properties ifNotNil: [
 		dic at: #properties put: self propertiesAsJRPCJSON ].
-	self required ifNotNil: [
+	(self required notNil and: [ self required notEmpty ]) ifTrue: [
 		dic at: #required put: self required asJRPCJSON ].
-	self additionalProperties ifNotNil: [
+	(self additionalProperties notNil and: [
+		 self additionalProperties ~~ true ]) ifTrue: [
 		dic
 			at: #additionalProperties
 			put: self additionalProperties asJRPCJSON ].

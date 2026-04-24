@@ -67,8 +67,7 @@ MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 
 	| orderedTools |
 	orderedTools := OrderedCollection new.
-	MCPTool toolGroups do: [ :group |
-		orderedTools addAll: group value ].
+	MCPTool toolGroups do: [ :group | orderedTools addAll: group value ].
 	self
 		assert: orderedTools asSet
 		equals: MCPTool concreteSubclasses asSet.
@@ -79,8 +78,6 @@ MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 			MCPToolEditClass.
 			MCPToolRemoveClasses.
 			MCPToolFindMethods.
-			MCPToolImplementors.
-			MCPToolReferences.
 			MCPToolInspectMethod.
 			MCPToolEditMethod.
 			MCPToolRemoveMethods.
@@ -418,11 +415,13 @@ MCPToolContractsTest >> testFindClassesReturnsErrorResultForMissingPackage [
 { #category : 'tests' }
 MCPToolContractsTest >> testFindMethodsHasAccurateNameAndSchema [
 
-	| filterTargetsProperty propertyNames schema |
+	| filterModeProperty filterTargetsProperty propertyNames schema |
 	schema := MCPToolFindMethods new inputSchema.
 	propertyNames := schema properties collect: [ :each | each name ].
 	filterTargetsProperty := schema properties detect: [ :each |
 		                         each name = 'filterTargets' ].
+	filterModeProperty := schema properties detect: [ :each |
+		                      each name = 'filterMode' ].
 	self assert: MCPToolFindMethods new name equals: 'find-methods'.
 	self assert: schema required equals: #(  ).
 	self assert: (propertyNames includes: 'scope').
@@ -435,6 +434,10 @@ MCPToolContractsTest >> testFindMethodsHasAccurateNameAndSchema [
 			((filterTargetsProperty extraProperties at: #items) extraProperties
 				 at: #enum) asArray
 		equals: #( 'selector' 'class' 'package' 'protocol' 'source' ).
+	self
+		assert: (filterModeProperty extraProperties at: #enum) asArray
+		equals: #( 'substring' 'prefix' 'exact' 'regex' 'selectorReference'
+			   'classReference' 'variableReference' ).
 	self deny: (propertyNames includes: 'className')
 ]
 
@@ -453,6 +456,27 @@ MCPToolContractsTest >> testFindMethodsListsMethodsForExistingClassScope [
 	self assert: (data at: #totalCount) equals: selectors size.
 	self assert: (selectors includes: 'alphaNeedleSelector').
 	self assert: (selectors includes: 'classNeedleSelector')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testFindMethodsReferenceModesShareRequiredFilterCondition [
+
+	| condition filterModeProperty schema |
+	schema := MCPToolFindMethods new inputSchema asJRPCJSON.
+	self assert: (schema at: #allOf) size equals: 1.
+	condition := (schema at: #allOf) first.
+	filterModeProperty := ((condition at: #if) at: #properties) at:
+		                      'filterMode'.
+	self
+		assert: (filterModeProperty at: #enum) asArray
+		equals:
+		#( 'selectorReference' 'classReference' 'variableReference' ).
+	self
+		assert: ((condition at: #if) at: #required) asArray
+		equals: #( 'filterMode' ).
+	self
+		assert: ((condition at: #then) at: #required) asArray
+		equals: #( 'filter' )
 ]
 
 { #category : 'tests' }
@@ -557,6 +581,22 @@ MCPToolContractsTest >> testInitializeAdvertisesPharoServerIcon [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testInputSchemaJSONOmitsDefaultSchemaNoise [
+
+	| condition imageBranch schema |
+	schema := MCPToolFindMethods new inputSchema asJRPCJSON.
+	self deny: (schema includesKey: #required).
+	self assert: (schema at: #additionalProperties) equals: false.
+	imageBranch := (schema at: #oneOf) first.
+	self deny: (imageBranch includesKey: #required).
+	self deny: (imageBranch includesKey: #additionalProperties).
+	condition := (schema at: #allOf) first.
+	self deny: (condition includesKey: #additionalProperties).
+	self deny: ((condition at: #if) includesKey: #additionalProperties).
+	self deny: ((condition at: #then) includesKey: #additionalProperties)
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testInspectClassHasAccurateNameAndRequiredArguments [
 
 	| inputPropertyNames tool |
@@ -596,7 +636,7 @@ MCPToolContractsTest >> testInspectMethodHasAccurateNameAndRequiredArguments [
 { #category : 'tests' }
 MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable [
 
-	| editClassTool inspectClassTool inspectMethodTool editMethodTool findClassesTool findMethodsTool findPackagesTool implementorsTool referencesTool removeClassesTool removeMethodsTool |
+	| editClassTool inspectClassTool inspectMethodTool editMethodTool findClassesTool findMethodsTool findPackagesTool removeClassesTool removeMethodsTool |
 	editClassTool := MCPToolEditClass new.
 	inspectClassTool := MCPToolInspectClass new.
 	inspectMethodTool := MCPToolInspectMethod new.
@@ -604,8 +644,6 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 	findClassesTool := MCPToolFindClasses new.
 	findMethodsTool := MCPToolFindMethods new.
 	findPackagesTool := MCPToolFindPackages new.
-	implementorsTool := MCPToolImplementors new.
-	referencesTool := MCPToolReferences new.
 	removeClassesTool := MCPToolRemoveClasses new.
 	removeMethodsTool := MCPToolRemoveMethods new.
 	self
@@ -652,6 +690,16 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 				 extraProperties at: #default)
 		equals: #( 'class' ).
 	self
+		assert:
+			((self inputPropertyNamed: 'filterMode' inTool: findClassesTool)
+				 extraProperties at: #default)
+		equals: 'substring'.
+	self
+		assert:
+			((self inputPropertyNamed: 'caseSensitive' inTool: findClassesTool)
+				 extraProperties at: #default)
+		equals: true.
+	self
 		assert: ((self inputPropertyNamed: 'limit' inTool: findClassesTool)
 				 extraProperties at: #default)
 		equals: 100.
@@ -660,6 +708,16 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 			((self inputPropertyNamed: 'filterTargets' inTool: findMethodsTool)
 				 extraProperties at: #default)
 		equals: #( 'selector' ).
+	self
+		assert:
+			((self inputPropertyNamed: 'filterMode' inTool: findMethodsTool)
+				 extraProperties at: #default)
+		equals: 'exact'.
+	self
+		assert:
+			((self inputPropertyNamed: 'caseSensitive' inTool: findMethodsTool)
+				 extraProperties at: #default)
+		equals: true.
 	self
 		assert:
 			((self inputPropertyNamed: 'includeSource' inTool: findMethodsTool)
@@ -671,14 +729,15 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 				 extraProperties at: #default)
 		equals: 'image'.
 	self
-		assert: ((self inputPropertyNamed: 'side' inTool: implementorsTool)
+		assert:
+			((self inputPropertyNamed: 'filterMode' inTool: findPackagesTool)
 				 extraProperties at: #default)
-		equals: 'both'.
+		equals: 'substring'.
 	self
 		assert:
-			((self inputPropertyNamed: 'includeSource' inTool: referencesTool)
+			((self inputPropertyNamed: 'caseSensitive' inTool: findPackagesTool)
 				 extraProperties at: #default)
-		equals: false.
+		equals: true.
 	self
 		assert:
 			((self inputPropertyNamed: 'force' inTool: removeClassesTool)
@@ -694,15 +753,11 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 { #category : 'tests' }
 MCPToolContractsTest >> testQueryToolSchemasAdvertiseScopeBranches [
 
-	| classBranches implementorBranches methodBranches packageBranches projectBranch referenceBranches |
+	| classBranches methodBranches packageBranches projectBranch |
 	classBranches := MCPToolFindClasses new inputSchema asJRPCJSON at:
 		                 #oneOf.
 	methodBranches := MCPToolFindMethods new inputSchema asJRPCJSON at:
 		                  #oneOf.
-	implementorBranches := MCPToolImplementors new inputSchema asJRPCJSON
-		                       at: #oneOf.
-	referenceBranches := MCPToolReferences new inputSchema asJRPCJSON
-		                     at: #oneOf.
 	packageBranches := MCPToolFindPackages new inputSchema asJRPCJSON
 		                   at: #oneOf.
 	self
@@ -721,14 +776,6 @@ MCPToolContractsTest >> testQueryToolSchemasAdvertiseScopeBranches [
 		equals: #( 'scope' 'classNames' ) asSet.
 	self
 		assert: (methodBranches collect: [ :each |
-				 ((each at: #properties) at: 'scope') at: #const ]) asArray
-		equals: #( 'image' 'packages' 'classes' 'hierarchy' ).
-	self
-		assert: (implementorBranches collect: [ :each |
-				 ((each at: #properties) at: 'scope') at: #const ]) asArray
-		equals: #( 'image' 'packages' 'classes' 'hierarchy' ).
-	self
-		assert: (referenceBranches collect: [ :each |
 				 ((each at: #properties) at: 'scope') at: #const ]) asArray
 		equals: #( 'image' 'packages' 'classes' 'hierarchy' ).
 	self
@@ -803,14 +850,6 @@ MCPToolContractsTest >> testRequestedToolIconsAreAdvertised [
 		equals: (MCPStructureIcon
 				 compositeBaseIconNamed: #open
 				 badgeIconNamed: #search) asJRPCJSON.
-	self
-		assert: (MCPToolImplementors new asJRPCJSON at: #icons) first
-		equals:
-			(MCPStructureIcon horizontallyFlippedPngIconNamed: #references)
-				asJRPCJSON.
-	self
-		assert: (MCPToolReferences new asJRPCJSON at: #icons) first
-		equals: (MCPStructureIcon pngIconNamed: #references) asJRPCJSON.
 	self
 		assert: (MCPToolRemoveClasses new asJRPCJSON at: #icons) first
 		equals: (MCPStructureIcon
