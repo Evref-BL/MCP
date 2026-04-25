@@ -639,7 +639,8 @@ MCPToolFindMethodsTest >> testSelectorReferenceFindsInstanceAndClassSenders [
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #totalCount) equals: 2.
 	self
-		entryForReference: 'MCPToolFindMethodsReferenceFixture>>instanceSendShared'
+		entryForReference:
+		'MCPToolFindMethodsReferenceFixture>>instanceSendShared'
 		in: (data at: #methods).
 	self
 		entryForReference:
@@ -699,7 +700,8 @@ MCPToolFindMethodsTest >> testSelectorReferenceIgnoresFilterTargets [
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #totalCount) equals: 2.
 	self
-		entryForReference: 'MCPToolFindMethodsReferenceFixture>>instanceSendShared'
+		entryForReference:
+		'MCPToolFindMethodsReferenceFixture>>instanceSendShared'
 		in: (data at: #methods).
 	self
 		entryForReference:

@@ -1,8 +1,8 @@
 "
-Parsed edit-method compile request. It captures the target behavior, source, protocol, and warning policy supplied by the MCP transport request so compilation can run without repeatedly reading raw arguments.
+Parsed edit-method create request. It captures the target behavior, source, protocol, and warning policy supplied by the MCP transport request so method creation or replacement can run without repeatedly reading raw arguments.
 "
 Class {
-	#name : 'MCPMethodCompileRequest',
+	#name : 'MCPMethodCreateRequest',
 	#superclass : 'Object',
 	#instVars : [
 		'className',
@@ -17,31 +17,31 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPMethodCompileRequest class >> fromRequest: request tool: aTool [
+MCPMethodCreateRequest class >> fromRequest: request tool: aTool [
 
 	^ self new initializeFromRequest: request tool: aTool
 ]
 
 { #category : 'accessing' }
-MCPMethodCompileRequest >> className [
+MCPMethodCreateRequest >> className [
 
 	^ className
 ]
 
 { #category : 'accessing' }
-MCPMethodCompileRequest >> classSide [
+MCPMethodCreateRequest >> classSide [
 
 	^ classSide = true
 ]
 
 { #category : 'accessing' }
-MCPMethodCompileRequest >> force [
+MCPMethodCreateRequest >> force [
 
 	^ force = true
 ]
 
 { #category : 'initialization' }
-MCPMethodCompileRequest >> initializeFromRequest: request tool: aTool [
+MCPMethodCreateRequest >> initializeFromRequest: request tool: aTool [
 
 	className := request stringArgumentNamed: 'className'.
 	classSide := request booleanArgumentNamed: 'classSide' default: false.
@@ -55,19 +55,19 @@ MCPMethodCompileRequest >> initializeFromRequest: request tool: aTool [
 ]
 
 { #category : 'accessing' }
-MCPMethodCompileRequest >> methodSource [
+MCPMethodCreateRequest >> methodSource [
 
 	^ methodSource
 ]
 
 { #category : 'accessing' }
-MCPMethodCompileRequest >> protocol [
+MCPMethodCreateRequest >> protocol [
 
 	^ protocol
 ]
 
 { #category : 'converting' }
-MCPMethodCompileRequest >> requestedContext [
+MCPMethodCreateRequest >> requestedContext [
 
 	^ {
 		  (#className -> self className).

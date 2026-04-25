@@ -42,7 +42,8 @@ MCPCommandErrorTest >> testMissingClassErrorCarriesStructuredDetails [
 			         'MCPCommandErrorTestMissing' ].
 	details := error structuredDetails.
 	self assert: error errorCode equals: #ClassNotFound.
-	self assert: (details at: #errorClass) equals: 'MCPCommandError'. self assert: (details at: #errorCode) equals: 'ClassNotFound'.
+	self assert: (details at: #errorClass) equals: 'MCPCommandError'.
+	self assert: (details at: #errorCode) equals: 'ClassNotFound'.
 	self
 		assert: (details at: #className)
 		equals: 'MCPCommandErrorTestMissing'.

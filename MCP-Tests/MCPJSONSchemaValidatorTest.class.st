@@ -41,7 +41,7 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 			   (#className -> 'MCPTool').
 			   (#newClassName -> 'MCPToolRenamed') } asDictionary).
 		  (MCPToolEditMethod -> {
-			   (#operation -> 'compile').
+			   (#operation -> 'create').
 			   (#className -> 'MCPTool').
 			   (#methodSource -> 'temporarySelector ^ self').
 			   (#protocol -> 'tests') } asDictionary).

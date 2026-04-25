@@ -40,15 +40,14 @@ MCPToolInspectMethod >> defaultIcons [
 { #category : 'defaults' }
 MCPToolInspectMethod >> defaultInputSchema [
 
-	| includeVariableDetailsProperty sideProperty |
-	sideProperty := MCPStructureProperties new
-		                name: 'side';
-		                type: 'string';
-		                description:
-			                'Which side of the class defines the method.';
-		                enum: #( 'instance' 'class' );
-		                default: 'instance';
-		                yourself.
+	| classSideProperty includeVariableDetailsProperty |
+	classSideProperty := MCPStructureProperties new
+		                     name: 'classSide';
+		                     type: 'boolean';
+		                     description:
+			                     'Whether the target method is on the class side.';
+		                     default: false;
+		                     yourself.
 	includeVariableDetailsProperty := MCPStructureProperties new
 		                                  name: 'includeVariableDetails';
 		                                  type: 'boolean';
@@ -69,7 +68,7 @@ MCPToolInspectMethod >> defaultInputSchema [
 					   type: 'string';
 					   description: 'The selector of the method to inspect.';
 					   yourself).
-				  sideProperty.
+				  classSideProperty.
 				  includeVariableDetailsProperty };
 		  required: #( 'className' 'selector' );
 		  yourself
@@ -111,27 +110,27 @@ MCPToolInspectMethod >> defaultTitle [
 ]
 
 { #category : 'private' }
-MCPToolInspectMethod >> errorResultForError: anError className: className selector: selectorString side: side [
+MCPToolInspectMethod >> errorResultForError: anError className: className selector: selectorString classSide: classSide [
 
 	| details |
 	(anError isKindOf: MCPCommandError) ifTrue: [
 		details := anError structuredDetails copy.
 		details at: #className ifAbsentPut: [ className ].
 		details at: #selector ifAbsentPut: [ selectorString ].
-		details at: #side put: side.
+		details at: #classSide put: classSide.
 		^ self errorResultText: anError messageText details: details ].
 	^ self
 		  errorResultText: (self
 				   failureMessageForClassNamed: className
 				   selector: selectorString
-				   side: side
+				   classSide: classSide
 				   error: anError)
 		  details: {
 				  (#errorClass -> anError class name).
 				  (#message -> anError messageText).
 				  (#className -> className).
 				  (#selector -> selectorString).
-				  (#side -> side) } asDictionary
+				  (#classSide -> classSide) } asDictionary
 ]
 
 { #category : 'executing' }
@@ -145,7 +144,7 @@ MCPToolInspectMethod >> executeWithRequest: request [
 		  successResultText: (self
 				   successSummaryForClassName: inspectRequest className
 				   selector: inspectRequest selectorString
-				   side: inspectRequest side
+				   classSide: inspectRequest classSide
 				   externalVariableCount: commandResult externalVariableCount)
 		  data: commandResult data ]
 		  on: Error
@@ -154,11 +153,11 @@ MCPToolInspectMethod >> executeWithRequest: request [
 				  errorResultForError: error
 				  className: inspectRequest className
 				  selector: inspectRequest selectorString
-				  side: inspectRequest side ]
+				  classSide: inspectRequest classSide ]
 ]
 
 { #category : 'private - results' }
-MCPToolInspectMethod >> failureMessageForClassNamed: className selector: selectorString side: side error: anError [
+MCPToolInspectMethod >> failureMessageForClassNamed: className selector: selectorString classSide: classSide error: anError [
 
 	^ String streamContents: [ :stream |
 		  stream
@@ -166,8 +165,8 @@ MCPToolInspectMethod >> failureMessageForClassNamed: className selector: selecto
 			  nextPutAll: className;
 			  nextPutAll: '>>';
 			  nextPutAll: selectorString;
-			  nextPutAll: ' [side=';
-			  nextPutAll: side;
+			  nextPutAll: ' [classSide=';
+			  print: classSide;
 			  nextPutAll: '] (';
 			  nextPutAll: anError class name;
 			  nextPutAll: '): ';
@@ -253,14 +252,8 @@ MCPToolInspectMethod >> parsedRequestFromToolRequest: request [
 	^ MCPInspectMethodRequest fromRequest: request tool: self
 ]
 
-{ #category : 'private - request' }
-MCPToolInspectMethod >> sideFromRequest: request [
-
-	^ request stringArgumentNamed: 'side' default: 'instance'
-]
-
 { #category : 'private - results' }
-MCPToolInspectMethod >> successSummaryForClassName: className selector: selector side: side externalVariableCount: externalVariableCount [
+MCPToolInspectMethod >> successSummaryForClassName: className selector: selector classSide: classSide externalVariableCount: externalVariableCount [
 
 	^ String streamContents: [ :stream |
 		  stream
@@ -268,8 +261,8 @@ MCPToolInspectMethod >> successSummaryForClassName: className selector: selector
 			  nextPutAll: className;
 			  nextPutAll: '>>';
 			  nextPutAll: selector;
-			  nextPutAll: ' [side=';
-			  nextPutAll: side;
+			  nextPutAll: ' [classSide=';
+			  print: classSide;
 			  nextPutAll: ']'.
 		  externalVariableCount ifNotNil: [
 			  stream

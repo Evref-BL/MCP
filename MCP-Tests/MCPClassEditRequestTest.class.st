@@ -53,10 +53,34 @@ MCPClassEditRequestTest >> testCreateRequestParsesDefinitionArguments [
 ]
 
 { #category : 'tests' }
-MCPClassEditRequestTest >> testSlotEditRequestParsesCommonArguments [
+MCPClassEditRequestTest >> testUpdateCommandResolvesOmittedMovePackageName [
+
+	| command context editRequest request tool |
+	tool := MCPToolEditClass new.
+	request := self toolRequestWithArguments: {
+			           (#operation -> 'update').
+			           (#className -> self class name asString).
+			           (#tag -> 'Requests') } asDictionary.
+	editRequest := tool parsedRequestFromToolRequest: request.
+	command := tool commandForRequest: editRequest.
+	context := command moveRequestedContext.
+	self
+		assert: command classRequest className
+		equals: self class name asString.
+	self
+		assert: command movePackageName
+		equals: self class packageName asString.
+	self assert: command classRequest tag equals: 'Requests'.
+	self
+		assert: (context at: #packageName)
+		equals: self class packageName asString
+]
+
+{ #category : 'tests' }
+MCPClassEditRequestTest >> testUpdateRequestParsesSlotArguments [
 
 	| context request |
-	request := MCPClassSlotEditRequest
+	request := MCPClassUpdateRequest
 		           fromRequest: (self toolRequestWithArguments: {
 					            (#className -> 'ExistingClass').
 					            (#slotAction -> 'rename').
@@ -71,35 +95,12 @@ MCPClassEditRequestTest >> testSlotEditRequestParsesCommonArguments [
 	self assert: request newSlotName equals: 'newName'.
 	self assert: request classSide.
 	self assert: request force.
-	context := request renameRequestedContext.
+	context := request renameSlotRequestedContext.
 	self assert: (context at: #className) equals: 'ExistingClass'.
 	self assert: (context at: #slotAction) equals: 'rename'.
 	self assert: (context at: #slotName) equals: 'oldName'.
 	self assert: (context at: #newSlotName) equals: 'newName'.
 	self assert: (context at: #classSide)
-]
-
-{ #category : 'tests' }
-MCPClassEditRequestTest >> testUpdateCommandResolvesOmittedMovePackageName [
-
-	| command context request tool |
-	tool := MCPToolEditClass new.
-	request := self toolRequestWithArguments: {
-			           (#operation -> 'update').
-			           (#className -> self class name asString).
-			           (#tag -> 'Requests') } asDictionary.
-	command := tool updateCommandForToolRequest: request.
-	context := command moveRequestedContext.
-	self
-		assert: command classRequest className
-		equals: self class name asString.
-	self
-		assert: command movePackageName
-		equals: self class packageName asString.
-	self assert: command classRequest tag equals: 'Requests'.
-	self
-		assert: (context at: #packageName)
-		equals: self class packageName asString
 ]
 
 { #category : 'tests' }

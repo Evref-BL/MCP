@@ -26,7 +26,7 @@ MCPInspectMethodCommand >> execute [
 	compiledMethod := tool
 		                  methodForClassNamed: request className
 		                  selector: request selectorString
-		                  side: request side.
+		                  classSide: request classSide.
 	protocolName := compiledMethod protocol
 		                ifNil: [ '' ]
 		                ifNotNil: [ :protocol | protocol name asString ].
@@ -36,8 +36,8 @@ MCPInspectMethodCommand >> execute [
 		        asDictionary.
 	request includeVariableDetails ifTrue: [
 		methodBehavior := tool
-			                  methodBehaviorForClassNamed: request className
-			                  side: request side.
+			                  behaviorNamed: request className
+			                  classSide: request classSide.
 		variableReferences := tool
 			                      variableSummariesForMethod: compiledMethod
 			                      methodBehavior: methodBehavior.

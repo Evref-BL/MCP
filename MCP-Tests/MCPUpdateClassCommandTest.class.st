@@ -12,10 +12,11 @@ Class {
 { #category : 'private' }
 MCPUpdateClassCommandTest >> commandForArguments: arguments [
 
-	| tool toolRequest |
+	| editRequest tool toolRequest |
 	tool := MCPToolEditClass new.
 	toolRequest := tool requestFromToolCallArguments: arguments.
-	^ tool updateCommandForToolRequest: toolRequest
+	editRequest := tool parsedRequestFromToolRequest: toolRequest.
+	^ tool commandForRequest: editRequest
 ]
 
 { #category : 'tests' }
@@ -24,7 +25,6 @@ MCPUpdateClassCommandTest >> testAppliedChangeResultWrapsPlanAndResult [
 	| appliedChange changeResult data plan |
 	plan := MCPClassUpdatePlanInfo
 		        operation: 'setComment'
-		        commandClassName: 'MCPChangeClassCommentCommand'
 		        requestedContext: { (#className -> 'Object') } asDictionary.
 	changeResult := MCPChangeClassCommentResult
 		                classInfo: (MCPClassInfo fromClass: Object)
@@ -38,11 +38,98 @@ MCPUpdateClassCommandTest >> testAppliedChangeResultWrapsPlanAndResult [
 	self
 		assert: ((data at: #updatePlan) at: #operation)
 		equals: 'setComment'.
+	self deny: ((data at: #updatePlan) includesKey: #commandClassName).
 	self
 		assert: ((data at: #appliedChange) at: #resultClassName)
 		equals: 'MCPChangeClassCommentResult'.
 	self assert: (data at: #oldClassComment) equals: 'old'.
 	self assert: (data at: #newClassComment) equals: 'new'
+]
+
+{ #category : 'tests' }
+MCPUpdateClassCommandTest >> testBuildsClassTraitReplacementUpdatePlan [
+
+	| command context plan |
+	command := self commandForArguments: (self updateArgumentsWith:
+			            { (#classTraits -> #( 'TAbleToRotate classTrait' )) }).
+	plan := command updatePlan.
+	context := plan requestedContext.
+	self assert: plan operation equals: 'replaceClassTraits'.
+	self assert: (context at: #className) equals: 'Object'.
+	self
+		assert: (context at: #classTraits)
+		equals: #( 'TAbleToRotate classTrait' )
+]
+
+{ #category : 'tests' }
+MCPUpdateClassCommandTest >> testBuildsDefinitionReplacementUpdatePlan [
+
+	| command context plan |
+	command := self commandForArguments: (self updateArgumentsWith: {
+				            (#slots -> #( 'first' 'second' )).
+				            (#classSlots -> #( 'Current' )) }).
+	plan := command updatePlan.
+	context := plan requestedContext.
+	self assert: plan operation equals: 'replaceDefinition'.
+	self assert: (context at: #className) equals: 'Object'.
+	self assert: (context at: #slots) equals: #( 'first' 'second' ).
+	self assert: (context at: #classSlots) equals: #( 'Current' )
+]
+
+{ #category : 'tests' }
+MCPUpdateClassCommandTest >> testBuildsLayoutReplacementUpdatePlan [
+
+	| command context plan |
+	command := self commandForArguments:
+		           (self updateArgumentsWith: { (#layout -> 'WeakLayout') }).
+	plan := command updatePlan.
+	context := plan requestedContext.
+	self assert: plan operation equals: 'replaceLayout'.
+	self assert: (context at: #className) equals: 'Object'.
+	self assert: (context at: #layout) equals: 'WeakLayout'
+]
+
+{ #category : 'tests' }
+MCPUpdateClassCommandTest >> testBuildsSharedPoolReplacementUpdatePlan [
+
+	| command context plan |
+	command := self commandForArguments: (self updateArgumentsWith:
+			            { (#sharedPools -> #( 'ChronologyConstants' )) }).
+	plan := command updatePlan.
+	context := plan requestedContext.
+	self assert: plan operation equals: 'replaceSharedPools'.
+	self assert: (context at: #className) equals: 'Object'.
+	self
+		assert: (context at: #sharedPools)
+		equals: #( 'ChronologyConstants' )
+]
+
+{ #category : 'tests' }
+MCPUpdateClassCommandTest >> testBuildsSharedVariableReplacementUpdatePlan [
+
+	| command context plan |
+	command := self commandForArguments:
+		           (self updateArgumentsWith:
+			            { (#sharedVariables -> #( 'Current' )) }).
+	plan := command updatePlan.
+	context := plan requestedContext.
+	self assert: plan operation equals: 'replaceSharedVariables'.
+	self assert: (context at: #className) equals: 'Object'.
+	self assert: (context at: #sharedVariables) equals: #( 'Current' )
+]
+
+{ #category : 'tests' }
+MCPUpdateClassCommandTest >> testBuildsTraitReplacementUpdatePlan [
+
+	| command context plan |
+	command := self commandForArguments:
+		           (self updateArgumentsWith:
+			            { (#traits -> #( 'TAbleToRotate' )) }).
+	plan := command updatePlan.
+	context := plan requestedContext.
+	self assert: plan operation equals: 'replaceTraits'.
+	self assert: (context at: #className) equals: 'Object'.
+	self assert: (context at: #traits) equals: #( 'TAbleToRotate' )
 ]
 
 { #category : 'tests' }
@@ -54,7 +141,6 @@ MCPUpdateClassCommandTest >> testBuildsUpdatePlan [
 	plan := command updatePlan.
 	context := plan requestedContext.
 	self assert: plan operation equals: 'move'.
-	self assert: plan commandClassName equals: 'MCPMoveClassCommand'.
 	self assert: (context at: #className) equals: 'Object'.
 	self assert: (context at: #packageName) equals: 'MCP'
 ]
@@ -86,7 +172,41 @@ MCPUpdateClassCommandTest >> testMapsClassPatchFieldsToUpdateActions [
 		assert: (self commandForArguments:
 				 (self updateArgumentsWith: { (#classComment -> '') }))
 				updateAction
-		equals: 'setComment'
+		equals: 'setComment'.
+	self
+		assert: (self commandForArguments:
+				 (self updateArgumentsWith: { (#slots -> #( 'slot' )) }))
+				updateAction
+		equals: 'replaceDefinition'.
+	self
+		assert: (self commandForArguments:
+				 (self updateArgumentsWith: { (#classSlots -> #( 'Current' )) }))
+				updateAction
+		equals: 'replaceDefinition'.
+	self
+		assert: (self commandForArguments:
+				 (self updateArgumentsWith: { (#traits -> #( 'TAbleToRotate' )) }))
+				updateAction
+		equals: 'replaceTraits'.
+	self
+		assert: (self commandForArguments: (self updateArgumentsWith:
+					  { (#classTraits -> #( 'TAbleToRotate classTrait' )) }))
+				updateAction
+		equals: 'replaceClassTraits'.
+	self
+		assert: (self commandForArguments:
+				 (self updateArgumentsWith:
+					  { (#sharedVariables -> #( 'Current' )) })) updateAction
+		equals: 'replaceSharedVariables'.
+	self
+		assert: (self commandForArguments: (self updateArgumentsWith:
+					  { (#sharedPools -> #( 'ChronologyConstants' )) })) updateAction
+		equals: 'replaceSharedPools'.
+	self
+		assert: (self commandForArguments:
+				 (self updateArgumentsWith: { (#layout -> 'WeakLayout') }))
+				updateAction
+		equals: 'replaceLayout'
 ]
 
 { #category : 'tests' }
@@ -135,21 +255,6 @@ MCPUpdateClassCommandTest >> testRejectsAmbiguousUpdateActions [
 ]
 
 { #category : 'tests' }
-MCPUpdateClassCommandTest >> testRejectsDefinitionReplacementUntilImplemented [
-
-	| error |
-	error := self captureCommandError: [
-		         (self commandForArguments:
-			          (self updateArgumentsWith: { (#slots -> #( 'alpha' )) }))
-			         updateAction ].
-	self
-		assert: error errorCode
-		equals: #ClassDefinitionUpdateNotImplemented.
-	self assert:
-		((error details at: #definitionProperties) includes: 'slots')
-]
-
-{ #category : 'tests' }
 MCPUpdateClassCommandTest >> testRejectsMissingUpdateAction [
 
 	| error |
@@ -182,11 +287,12 @@ MCPUpdateClassCommandTest >> testToolBuildsUpdateClassCommand [
 			                { (#classComment -> 'updated') }).
 	editRequest := tool parsedRequestFromToolRequest: toolRequest.
 	command := tool commandForRequest: editRequest.
+	self assert: editRequest class equals: MCPClassUpdateRequest.
 	self assert: command class equals: MCPUpdateClassCommand.
 	self assert: command tool identicalTo: tool.
+	self assert: command classRequest identicalTo: editRequest.
 	self assert: command classRequest className equals: 'Object'.
-	self assert: command classRequest classComment equals: 'updated'.
-	self assert: command slotRequest className equals: 'Object'
+	self assert: command classRequest classComment equals: 'updated'
 ]
 
 { #category : 'private' }

@@ -1,8 +1,8 @@
 "
-Structured result DTO for a successful edit-method compile operation. It serializes the compiled method metadata and any included critiques.
+Structured result DTO for a successful edit-method create operation. It serializes the compiled method metadata and any included critiques.
 "
 Class {
-	#name : 'MCPMethodCompileResult',
+	#name : 'MCPMethodCreateResult',
 	#superclass : 'Object',
 	#instVars : [
 		'methodInfo',
@@ -14,7 +14,7 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPMethodCompileResult class >> method: aCompiledMethod critiques: critiqueDictionaries [
+MCPMethodCreateResult class >> method: aCompiledMethod critiques: critiqueDictionaries [
 
 	^ self new
 		  methodInfo: (MCPCompiledMethodInfo fromMethod: aCompiledMethod);
@@ -23,7 +23,7 @@ MCPMethodCompileResult class >> method: aCompiledMethod critiques: critiqueDicti
 ]
 
 { #category : 'converting' }
-MCPMethodCompileResult >> asDictionary [
+MCPMethodCreateResult >> asDictionary [
 
 	| data |
 	data := self methodInfo asDictionaryIncludingSource: true.
@@ -32,25 +32,25 @@ MCPMethodCompileResult >> asDictionary [
 ]
 
 { #category : 'accessing' }
-MCPMethodCompileResult >> critiques [
+MCPMethodCreateResult >> critiques [
 
 	^ critiques ifNil: [ #(  ) ]
 ]
 
 { #category : 'accessing' }
-MCPMethodCompileResult >> critiques: critiqueDictionaries [
+MCPMethodCreateResult >> critiques: critiqueDictionaries [
 
 	critiques := critiqueDictionaries ifNil: [ #(  ) ]
 ]
 
 { #category : 'accessing' }
-MCPMethodCompileResult >> methodInfo [
+MCPMethodCreateResult >> methodInfo [
 
 	^ methodInfo
 ]
 
 { #category : 'accessing' }
-MCPMethodCompileResult >> methodInfo: aMethodInfo [
+MCPMethodCreateResult >> methodInfo: aMethodInfo [
 
 	methodInfo := aMethodInfo
 ]

@@ -1,5 +1,5 @@
 "
-Edits one method in the running image. It handles compilation, renaming, protocol changes, and returns post-compile critiques when relevant.
+Edits one method in the running image. It handles method creation or replacement, renaming, protocol changes, and returns post-create critiques when relevant.
 "
 Class {
 	#name : 'MCPToolEditMethod',
@@ -33,8 +33,8 @@ MCPToolEditMethod >> classReferenceNameFor: className classSide: classSide [
 { #category : 'private - execution' }
 MCPToolEditMethod >> commandForRequest: methodRequest [
 
-	(methodRequest isKindOf: MCPMethodCompileRequest) ifTrue: [
-		^ MCPCompileMethodCommand tool: self request: methodRequest ].
+	(methodRequest isKindOf: MCPMethodCreateRequest) ifTrue: [
+		^ MCPCreateMethodCommand tool: self request: methodRequest ].
 	(methodRequest isKindOf: MCPMethodUpdateRequest) ifTrue: [
 		^ MCPUpdateMethodCommand tool: self request: methodRequest ].
 	^ super commandForRequest: methodRequest
@@ -80,7 +80,7 @@ MCPToolEditMethod >> dataForMethod: aCompiledMethod [
 { #category : 'defaults' }
 MCPToolEditMethod >> defaultDescription [
 
-	^ 'Compile or update one method on the instance side or class side of a class. Use operation=compile with methodSource and protocol to create or replace a method. Use operation=update with selector plus one patch field, such as newSelector or protocol. Rename updates can be scoped with packageNames, classNames, or hierarchyClassNames. force=false stops on refactoring warnings and returns impactMessages plus howToProceed; force=true continues and returns warnings in the output. Use remove-methods to delete methods.'
+	^ 'Create or update one method on the instance side or class side of a class. Use operation=create with methodSource and protocol to create or replace a method. Use operation=update with selector plus one patch field, such as newSelector or protocol. Rename updates can be scoped with packageNames, classNames, or hierarchyClassNames. force=false stops on refactoring warnings and returns impactMessages plus howToProceed; force=true continues and returns warnings in the output. Use remove-methods to delete methods.'
 ]
 
 { #category : 'defaults' }
@@ -97,7 +97,7 @@ MCPToolEditMethod >> defaultInputSchema [
 		  properties: {
 				  (self
 					   operationSchemaPropertyWithDescription:
-						   'The high-level method edit operation. operation=compile creates or replaces a method. operation=update applies exactly one patch to an existing method, such as newSelector or protocol.'
+						   'The high-level method edit operation. operation=create creates or replaces a method. operation=update applies exactly one patch to an existing method, such as newSelector or protocol.'
 					   supportedValuesLeadIn: 'Supported values are').
 				  (MCPStructureProperties new
 					   name: 'className';
@@ -115,19 +115,19 @@ MCPToolEditMethod >> defaultInputSchema [
 					   name: 'selector';
 					   type: 'string';
 					   description:
-						   'The existing selector to patch during operation=update. Not used for operation=compile.';
+						   'The existing selector to patch during operation=update. Not used for operation=create.';
 					   yourself).
 				  (MCPStructureProperties new
 					   name: 'methodSource';
 					   type: 'string';
 					   description:
-						   'The full method source to compile when operation=compile.';
+						   'The full method source to compile when operation=create.';
 					   yourself).
 				  (MCPStructureProperties new
 					   name: 'protocol';
 					   type: 'string';
 					   description:
-						   'The target protocol for operation=compile. During operation=update this is a recategorization patch; do not combine it with another update action. For extension methods, use an extension protocol such as *Package-Name.';
+						   'The target protocol for operation=create. During operation=update this is a recategorization patch; do not combine it with another update action. For extension methods, use an extension protocol such as *Package-Name.';
 					   yourself).
 				  (MCPStructureProperties new
 					   name: 'newSelector';
@@ -164,11 +164,10 @@ MCPToolEditMethod >> defaultName [
 MCPToolEditMethod >> defaultOutputSchema [
 
 	^ self
-		                standardOutputSchemaForDataProperties:
-		                self methodDataProperties
-		                required:
-			                #( 'selector' 'className' 'side' 'packageName'
-			                   'isExtension' 'protocol' 'source' )
+		  standardOutputSchemaForDataProperties: self methodDataProperties
+		  required:
+			  #( 'selector' 'className' 'side' 'packageName' 'isExtension'
+			     'protocol' 'source' )
 ]
 
 { #category : 'defaults' }
@@ -241,23 +240,23 @@ MCPToolEditMethod >> methodAppliedChangeOutputSchemaProperty [
 		                     schemaPropertyNamed: 'operation'
 		                     type: 'string'
 		                     description:
-		                     'The internal method update action that produced the applied change.'.
+		                     'The method update action that produced the applied change.'.
 	resultClassProperty := self
 		                       schemaPropertyNamed: 'resultClassName'
 		                       type: 'string'
 		                       description:
-		                       'The DTO class returned by the internal update action.'.
+		                       'The result DTO class returned by the method update action.'.
 	resultProperty := self
 		                  schemaPropertyNamed: 'result'
 		                  type: 'object'
 		                  description:
-		                  'The internal method update result DTO serialized as a dictionary.'.
+		                  'The method update result DTO serialized as a dictionary.'.
 	resultProperty additionalProperties: true.
 	property := self
 		            schemaPropertyNamed: 'appliedChange'
 		            type: 'object'
 		            description:
-		            'The applied method update change, preserving the internal result DTO.'.
+		            'The applied method update change and its result DTO.'.
 	property
 		properties: {
 				operationProperty.
@@ -387,17 +386,12 @@ MCPToolEditMethod >> methodDataProperties [
 { #category : 'private - schema' }
 MCPToolEditMethod >> methodUpdatePlanOutputSchemaProperty [
 
-	| commandProperty operationProperty property requestedContextProperty |
+	| operationProperty property requestedContextProperty |
 	operationProperty := self
 		                     schemaPropertyNamed: 'operation'
 		                     type: 'string'
 		                     description:
-		                     'The internal method update action selected from operation=update.'.
-	commandProperty := self
-		                   schemaPropertyNamed: 'commandClassName'
-		                   type: 'string'
-		                   description:
-		                   'The command class that applied the method update.'.
+		                     'The method update action selected from operation=update.'.
 	requestedContextProperty := self
 		                            schemaPropertyNamed: 'requestedContext'
 		                            type: 'object'
@@ -412,9 +406,8 @@ MCPToolEditMethod >> methodUpdatePlanOutputSchemaProperty [
 	property
 		properties: {
 				operationProperty.
-				commandProperty.
 				requestedContextProperty };
-		required: #( 'operation' 'commandClassName' 'requestedContext' );
+		required: #( 'operation' 'requestedContext' );
 		additionalProperties: false.
 	^ property
 ]
@@ -424,7 +417,7 @@ MCPToolEditMethod >> operationSpecifications [
 
 	^ {
 		  {
-			  (#name -> 'compile').
+			  (#name -> 'create').
 			  (#requiredProperties -> #( 'methodSource' 'protocol' )) }
 			  asDictionary.
 		  {
@@ -440,8 +433,8 @@ MCPToolEditMethod >> parsedRequestFromToolRequest: request [
 	self
 		validateRequiredPropertiesForOperation: operation
 		inRequest: request.
-	operation = 'compile' ifTrue: [
-		^ MCPMethodCompileRequest fromRequest: request tool: self ].
+	operation = 'create' ifTrue: [
+		^ MCPMethodCreateRequest fromRequest: request tool: self ].
 	operation = 'update' ifTrue: [
 		^ MCPMethodUpdateRequest fromRequest: request tool: self ].
 	Error signal: self operationValidationErrorMessage

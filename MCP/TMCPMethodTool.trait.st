@@ -19,19 +19,6 @@ TMCPMethodTool >> behaviorNamed: aClassName classSide: aBoolean [
 ]
 
 { #category : 'private - methods' }
-TMCPMethodTool >> methodBehaviorForClassNamed: className side: side [
-
-	| baseClass |
-	baseClass := self class environment
-		             at: className asSymbol
-		             ifAbsent: [
-		             MCPCommandError signalMissingClassNamed: className ].
-	^ side = 'class'
-		  ifTrue: [ baseClass classSide ]
-		  ifFalse: [ baseClass ]
-]
-
-{ #category : 'private - methods' }
 TMCPMethodTool >> methodEntryLabel: anEntry [
 
 	^ self
@@ -41,15 +28,15 @@ TMCPMethodTool >> methodEntryLabel: anEntry [
 ]
 
 { #category : 'private - methods' }
-TMCPMethodTool >> methodForClassNamed: className selector: selectorString side: side [
+TMCPMethodTool >> methodForClassNamed: className selector: selectorString classSide: classSide [
 
 	| behavior selectorSymbol |
-	behavior := self methodBehaviorForClassNamed: className side: side.
+	behavior := self behaviorNamed: className classSide: classSide.
 	selectorSymbol := selectorString asSymbol.
 	(behavior includesSelector: selectorSymbol) ifFalse: [
 		MCPCommandError
 			signalMissingMethodInClassName: className
-			classSide: side = 'class'
+			classSide: classSide
 			selector: selectorString ].
 	^ behavior compiledMethodAt: selectorSymbol
 ]

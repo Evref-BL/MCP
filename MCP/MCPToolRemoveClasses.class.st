@@ -78,119 +78,113 @@ MCPToolRemoveClasses >> defaultName [
 MCPToolRemoveClasses >> defaultOutputSchema [
 
 	^ self
-		                standardOutputSchemaForDataProperties: {
-				                ((self
-					                  schemaPropertyNamed: 'classNames'
-					                  type: 'array'
-					                  description:
-						                  'The class names removed by the batch operation.')
-					                 items: (MCPStructureProperties new
-							                  type: 'string';
-							                  description: 'A removed class name.';
-							                  yourself);
-					                 yourself).
-				                ((self
-					                  schemaPropertyNamed: 'removedClasses'
-					                  type: 'array'
-					                  description:
-						                  'Structured details for each removed class in the batch.')
-					                 items: (MCPStructureProperties new
-							                  type: 'object';
-							                  properties: {
-									                  (self
-										                   schemaPropertyNamed: 'className'
-										                   type: 'string'
-										                   description:
-											                   'The class that was removed.').
-									                  (self
-										                   schemaPropertyNamed: 'superclassName'
-										                   type: 'string'
-										                   description:
-											                   'The superclass of the removed class before removal.').
-									                  (self
-										                   schemaPropertyNamed: 'packageName'
-										                   type: 'string'
-										                   description:
-											                   'The package that owned the removed class before removal.').
-									                  (self
-										                   schemaPropertyNamed: 'tag'
-										                   type: 'string'
-										                   description:
-											                   'The package tag that was assigned to the removed class before removal.').
-									                  (self
-										                   schemaPropertyNamed: 'wasEmpty'
-										                   type: 'boolean'
-										                   description:
-											                   'Whether the removed class was considered empty by the safe-removal rules.').
-									                  (self
-										                   schemaPropertyNamed:
-											                   'reparentedToSuperclassName'
-										                   type: 'string'
-										                   description:
-											                   'The superclass that direct subclasses were reparented to when applicable.').
-									                  ((self
-										                    schemaPropertyNamed: 'instanceSlotNames'
-										                    type: 'array'
-										                    description:
-											                    'The instance-side slots that were present on the removed class.')
-										                   items: (MCPStructureProperties new
-												                    type: 'string';
-												                    description:
-													                    'An instance-side slot name.';
-												                    yourself);
-										                   yourself).
-									                  ((self
-										                    schemaPropertyNamed: 'classSlotNames'
-										                    type: 'array'
-										                    description:
-											                    'The class-side slots that were present on the removed class.')
-										                   items: (MCPStructureProperties new
-												                    type: 'string';
-												                    description: 'A class-side slot name.';
-												                    yourself);
-										                   yourself).
-									                  ((self
-										                    schemaPropertyNamed: 'subclassNames'
-										                    type: 'array'
-										                    description:
-											                    'The direct subclasses that existed before removal.')
-										                   items: (MCPStructureProperties new
-												                    type: 'string';
-												                    description: 'A direct subclass name.';
-												                    yourself);
-										                   yourself).
-									                  ((self
-										                    schemaPropertyNamed:
-											                    'reparentedSubclassNames'
-										                    type: 'array'
-										                    description:
-											                    'The direct subclasses that were reparented as part of the removal.')
-										                   items: (MCPStructureProperties new
-												                    type: 'string';
-												                    description:
-													                    'A reparented direct subclass name.';
-												                    yourself);
-										                   yourself) };
-							                  required:
-								                  #( 'className' 'superclassName'
-								                     'packageName' 'tag' 'wasEmpty' 'reparentedToSuperclassName'
-								                     'instanceSlotNames' 'classSlotNames'
-								                     'subclassNames' 'reparentedSubclassNames' );
-							                  additionalProperties: false;
-							                  yourself);
-					                 yourself).
-				                ((self
-					                  schemaPropertyNamed: 'removedPackageNames'
-					                  type: 'array'
-					                  description:
-						                  'Packages removed because the batch removed their last defined class.')
-					                 items: (MCPStructureProperties new
-							                  type: 'string';
-							                  description: 'A removed package name.';
-							                  yourself);
-					                 yourself) }
-		                required:
-		                #( 'classNames' 'removedClasses' 'removedPackageNames' )
+		  standardOutputSchemaForDataProperties: {
+				  ((self
+					    schemaPropertyNamed: 'classNames'
+					    type: 'array'
+					    description:
+						    'The class names removed by the batch operation.')
+					   items: (MCPStructureProperties new
+							    type: 'string';
+							    description: 'A removed class name.';
+							    yourself);
+					   yourself).
+				  ((self
+					    schemaPropertyNamed: 'removedClasses'
+					    type: 'array'
+					    description:
+						    'Structured details for each removed class in the batch.')
+					   items: (MCPStructureProperties new
+							    type: 'object';
+							    properties: {
+									    (self
+										     schemaPropertyNamed: 'className'
+										     type: 'string'
+										     description: 'The class that was removed.').
+									    (self
+										     schemaPropertyNamed: 'superclassName'
+										     type: 'string'
+										     description:
+											     'The superclass of the removed class before removal.').
+									    (self
+										     schemaPropertyNamed: 'packageName'
+										     type: 'string'
+										     description:
+											     'The package that owned the removed class before removal.').
+									    (self
+										     schemaPropertyNamed: 'tag'
+										     type: 'string'
+										     description:
+											     'The package tag that was assigned to the removed class before removal.').
+									    (self
+										     schemaPropertyNamed: 'wasEmpty'
+										     type: 'boolean'
+										     description:
+											     'Whether the removed class was considered empty by the safe-removal rules.').
+									    (self
+										     schemaPropertyNamed: 'reparentedToSuperclassName'
+										     type: 'string'
+										     description:
+											     'The superclass that direct subclasses were reparented to when applicable.').
+									    ((self
+										      schemaPropertyNamed: 'instanceSlotNames'
+										      type: 'array'
+										      description:
+											      'The instance-side slots that were present on the removed class.')
+										     items: (MCPStructureProperties new
+												      type: 'string';
+												      description: 'An instance-side slot name.';
+												      yourself);
+										     yourself).
+									    ((self
+										      schemaPropertyNamed: 'classSlotNames'
+										      type: 'array'
+										      description:
+											      'The class-side slots that were present on the removed class.')
+										     items: (MCPStructureProperties new
+												      type: 'string';
+												      description: 'A class-side slot name.';
+												      yourself);
+										     yourself).
+									    ((self
+										      schemaPropertyNamed: 'subclassNames'
+										      type: 'array'
+										      description:
+											      'The direct subclasses that existed before removal.')
+										     items: (MCPStructureProperties new
+												      type: 'string';
+												      description: 'A direct subclass name.';
+												      yourself);
+										     yourself).
+									    ((self
+										      schemaPropertyNamed: 'reparentedSubclassNames'
+										      type: 'array'
+										      description:
+											      'The direct subclasses that were reparented as part of the removal.')
+										     items: (MCPStructureProperties new
+												      type: 'string';
+												      description: 'A reparented direct subclass name.';
+												      yourself);
+										     yourself) };
+							    required:
+								    #( 'className' 'superclassName' 'packageName'
+								       'tag' 'wasEmpty' 'reparentedToSuperclassName'
+								       'instanceSlotNames' 'classSlotNames' 'subclassNames'
+								       'reparentedSubclassNames' );
+							    additionalProperties: false;
+							    yourself);
+					   yourself).
+				  ((self
+					    schemaPropertyNamed: 'removedPackageNames'
+					    type: 'array'
+					    description:
+						    'Packages removed because the batch removed their last defined class.')
+					   items: (MCPStructureProperties new
+							    type: 'string';
+							    description: 'A removed package name.';
+							    yourself);
+					   yourself) }
+		  required: #( 'classNames' 'removedClasses' 'removedPackageNames' )
 ]
 
 { #category : 'defaults' }

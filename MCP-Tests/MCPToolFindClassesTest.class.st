@@ -387,7 +387,9 @@ MCPToolFindClassesTest >> testSubclassClassNamesReturnSubclassesOnly [
 { #category : 'tests' }
 MCPToolFindClassesTest >> testToolDoesNotRequireArgumentsInSchema [
 
-	self assert: MCPToolFindClasses new inputSchema required equals: #(  )
+	self
+		assert: MCPToolFindClasses new inputSchema required
+		equals: #(  )
 ]
 
 { #category : 'tests' }

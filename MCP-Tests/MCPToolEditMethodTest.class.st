@@ -92,7 +92,7 @@ MCPToolEditMethodTest >> classSelector [
 MCPToolEditMethodTest >> compileArgumentsForClassName: aClassName classSide: aBoolean methodSource: aMethodSource protocol: aProtocol [
 
 	^ {
-		  (#operation -> 'compile').
+		  (#operation -> 'create').
 		  (#className -> aClassName).
 		  (#classSide -> aBoolean).
 		  (#methodSource -> aMethodSource).
@@ -368,7 +368,7 @@ MCPToolEditMethodTest >> testCompileDefaultsToInstanceSideWhenClassSideIsOmitted
 
 	| data result |
 	result := self callToolWith: {
-			          (#operation -> 'compile').
+			          (#operation -> 'create').
 			          (#className -> 'MCPToolEditMethodTestTarget').
 			          (#methodSource -> 'instanceAnswer ^ 42').
 			          (#protocol -> 'tests') } asDictionary.
@@ -512,11 +512,11 @@ MCPToolEditMethodTest >> testCompileReturnsStructuredCommandErrorForUndeclaredVa
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #operation) equals: 'compile'.
+	self assert: (error at: #operation) equals: 'create'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self
 		assert: (error at: #errorCode)
-		equals: 'CompileUndeclaredVariable'.
+		equals: 'CreateUndeclaredVariable'.
 	self
 		assert: (error at: #causeClass)
 		equals: 'OCUndeclaredVariableWarning'.

@@ -227,7 +227,8 @@ MCPToolStructuredOutputTest >> testInspectClassReturnsStructuredError [
 		assert: (self summaryFrom: result)
 		equals: ((result at: #content) first at: #text).
 	self assert: (self warningsFrom: result) equals: #(  ).
-	self assert: (error at: #errorClass) equals: 'MCPCommandError'. self assert: (error at: #errorCode) equals: 'ClassNotFound'.
+	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
+	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
 	self
 		assert: (error at: #className)
 		equals: 'MCPToolInspectClassDefinitelyMissing'
@@ -273,22 +274,22 @@ MCPToolStructuredOutputTest >> testInspectClassReturnsStructuredSuccess [
 MCPToolStructuredOutputTest >> testInspectMethodReturnsStructuredError [
 
 	| error result structured |
-	result := self
-		          callToolNamed: 'inspect-method'
-		          withArguments: {
-				          (#className -> 'MCPToolInspectMethodTestTarget').
-				          (#selector -> 'doesNotExist') } asDictionary.
+	result := self callToolNamed: 'inspect-method' withArguments: {
+			          (#className -> 'MCPToolInspectMethodTestTarget').
+			          (#selector -> 'doesNotExist') } asDictionary.
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #errorClass) equals: 'MCPCommandError'. self assert: (error at: #errorCode) equals: 'MethodNotFound'.
+	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
+	self assert: (error at: #errorCode) equals: 'MethodNotFound'.
 	self
 		assert: (error at: #className)
 		equals: 'MCPToolInspectMethodTestTarget'.
 	self assert: (error at: #selector) equals: 'doesNotExist'.
-	self assert: (error at: #side) equals: 'instance'.
-	self deny: (error at: #classSide)
+	self assert: (error includesKey: #classSide).
+	self deny: (error at: #classSide).
+	self deny: (error includesKey: #side)
 ]
 
 { #category : 'tests' }
@@ -332,7 +333,8 @@ MCPToolStructuredOutputTest >> testRemoveClassReturnsStructuredError [
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #errorClass) equals: 'MCPCommandError'. self assert: (error at: #errorCode) equals: 'ClassNotFound'.
+	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
+	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
 	self
 		assert: (error at: #className)
 		equals: 'MCPToolRemoveClassDefinitelyMissing'

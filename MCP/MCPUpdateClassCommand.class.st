@@ -1,13 +1,12 @@
 "
-Orchestrates operation=update for edit-class. It receives parsed class and slot requests, builds an MCPClassUpdatePlanInfo for the single internal update action, dispatches to the existing narrow command that applies the change, and wraps the narrow command result in MCPClassAppliedChangeResult for tool output.
+Orchestrates operation=update for edit-class. It receives one parsed MCPClassUpdateRequest, builds an MCPClassUpdatePlanInfo for the single internal update action, dispatches to the command that applies the change, and wraps the command result in MCPClassAppliedChangeResult for tool output. Slot edits and slot collection replacement are both parsed from the same update request.
 "
 Class {
 	#name : 'MCPUpdateClassCommand',
 	#superclass : 'Object',
 	#instVars : [
 		'tool',
-		'classRequest',
-		'slotRequest'
+		'classRequest'
 	],
 	#category : 'MCP-Commands',
 	#package : 'MCP',
@@ -15,12 +14,9 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPUpdateClassCommand class >> tool: aTool classRequest: aClassRequest slotRequest: aSlotRequest [
+MCPUpdateClassCommand class >> tool: aTool request: aClassRequest [
 
-	^ self new
-		  initializeTool: aTool
-		  classRequest: aClassRequest
-		  slotRequest: aSlotRequest
+	^ self new initializeTool: aTool request: aClassRequest
 ]
 
 { #category : 'private - results' }
@@ -35,25 +31,6 @@ MCPUpdateClassCommand >> appliedUpdateResultFor: aChangeResult plan: plan [
 MCPUpdateClassCommand >> classRequest [
 
 	^ classRequest
-]
-
-{ #category : 'private - planning' }
-MCPUpdateClassCommand >> commandClassNameForAction: action [
-
-	| commandClassNames |
-	commandClassNames := {
-		                     ('move' -> MCPMoveClassCommand name).
-		                     ('rename' -> MCPRenameClassCommand name).
-		                     ('reparent' -> MCPReparentClassCommand name).
-		                     ('setComment'
-		                      -> MCPChangeClassCommentCommand name).
-		                     ('addSlot' -> MCPAddSlotCommand name).
-		                     ('removeSlot' -> MCPRemoveSlotCommand name).
-		                     ('renameSlot' -> MCPRenameSlotCommand name).
-		                     ('pullUpSlot' -> MCPMoveSlotCommand name).
-		                     ('pushDownSlot' -> MCPMoveSlotCommand name) }
-		                     asDictionary.
-	^ commandClassNames at: action ifAbsent: [ '' ]
 ]
 
 { #category : 'executing' }
@@ -76,28 +53,29 @@ MCPUpdateClassCommand >> executeAddSlotWithPlan: plan [
 	| result |
 	^ self tool
 		  executeEditOperation: 'addSlot'
-		  force: self slotRequest force
+		  force: self classRequest force
 		  requestedContext: plan requestedContext
 		  work: [
 			  result := (MCPAddSlotCommand
-				             className: self slotRequest className
-				             slotName: self slotRequest slotName
-				             classSide: self slotRequest classSide) execute ]
+				             className: self classRequest className
+				             slotName: self classRequest slotName
+				             classSide: self classRequest classSide) execute ]
 		  successResult: [ :warningMessages |
 			  self tool
 				  successResultText: 'Added '
 					  ,
 					  (self tool slotDescriptionForClassSide:
-						   self slotRequest classSide) , ' ' , self slotRequest slotName
-					  , ' to class ' , self slotRequest className , '.'
+						   self classRequest classSide) , ' '
+					  , self classRequest slotName , ' to class '
+					  , self classRequest className , '.'
 				  data: (self tool dataForAppliedUpdateResult:
 						   (self appliedUpdateResultFor: result plan: plan))
 				  warnings: warningMessages ]
 		  failureSummary: [ :error |
 			  self tool
-				  failureMessageForAddSlotNamed: self slotRequest slotName
-				  onClassNamed: self slotRequest className
-				  classSide: self slotRequest classSide
+				  failureMessageForAddSlotNamed: self classRequest slotName
+				  onClassNamed: self classRequest className
+				  classSide: self classRequest classSide
 				  error: error ]
 ]
 
@@ -107,14 +85,14 @@ MCPUpdateClassCommand >> executeMoveSlotAction: operation withPlan: plan [
 	| result |
 	^ self tool
 		  executeEditOperation: operation
-		  force: self slotRequest force
+		  force: self classRequest force
 		  requestedContext: plan requestedContext
 		  work: [
 			  result := (MCPMoveSlotCommand
-				             className: self slotRequest className
-				             slotName: self slotRequest slotName
+				             className: self classRequest className
+				             slotName: self classRequest slotName
 				             direction: operation
-				             classSide: self slotRequest classSide) execute ]
+				             classSide: self classRequest classSide) execute ]
 		  successResult: [ :warningMessages |
 			  self tool
 				  successResultText:
@@ -124,9 +102,9 @@ MCPUpdateClassCommand >> executeMoveSlotAction: operation withPlan: plan [
 				  warnings: warningMessages ]
 		  failureSummary: [ :error |
 			  self tool
-				  failureMessageForMoveSlotNamed: self slotRequest slotName
-				  onClassNamed: self slotRequest className
-				  classSide: self slotRequest classSide
+				  failureMessageForMoveSlotNamed: self classRequest slotName
+				  onClassNamed: self classRequest className
+				  classSide: self classRequest classSide
 				  operation: operation
 				  error: error ]
 ]
@@ -195,28 +173,29 @@ MCPUpdateClassCommand >> executeRemoveSlotWithPlan: plan [
 	| result |
 	^ self tool
 		  executeEditOperation: 'removeSlot'
-		  force: self slotRequest force
+		  force: self classRequest force
 		  requestedContext: plan requestedContext
 		  work: [
 			  result := (MCPRemoveSlotCommand
-				             className: self slotRequest className
-				             slotName: self slotRequest slotName
-				             classSide: self slotRequest classSide) execute ]
+				             className: self classRequest className
+				             slotName: self classRequest slotName
+				             classSide: self classRequest classSide) execute ]
 		  successResult: [ :warningMessages |
 			  self tool
 				  successResultText: 'Removed '
 					  ,
 					  (self tool slotDescriptionForClassSide:
-						   self slotRequest classSide) , ' ' , self slotRequest slotName
-					  , ' from class ' , self slotRequest className , '.'
+						   self classRequest classSide) , ' '
+					  , self classRequest slotName , ' from class '
+					  , self classRequest className , '.'
 				  data: (self tool dataForAppliedUpdateResult:
 						   (self appliedUpdateResultFor: result plan: plan))
 				  warnings: warningMessages ]
 		  failureSummary: [ :error |
 			  self tool
-				  failureMessageForRemoveSlotNamed: self slotRequest slotName
-				  onClassNamed: self slotRequest className
-				  classSide: self slotRequest classSide
+				  failureMessageForRemoveSlotNamed: self classRequest slotName
+				  onClassNamed: self classRequest className
+				  classSide: self classRequest classSide
 				  error: error ]
 ]
 
@@ -226,29 +205,29 @@ MCPUpdateClassCommand >> executeRenameSlotWithPlan: plan [
 	| result |
 	^ self tool
 		  executeEditOperation: 'renameSlot'
-		  force: self slotRequest force
+		  force: self classRequest force
 		  requestedContext: plan requestedContext
 		  work: [
 			  result := (MCPRenameSlotCommand
-				             className: self slotRequest className
-				             slotName: self slotRequest slotName
-				             newSlotName: self slotRequest newSlotName
-				             classSide: self slotRequest classSide) execute ]
+				             className: self classRequest className
+				             slotName: self classRequest slotName
+				             newSlotName: self classRequest newSlotName
+				             classSide: self classRequest classSide) execute ]
 		  successResult: [ :warningMessages |
 			  self tool
 				  successResultText:
-					  'Renamed slot ' , self slotRequest slotName , ' to '
-					  , self slotRequest newSlotName , ' in class '
-					  , self slotRequest className , '.'
+					  'Renamed slot ' , self classRequest slotName , ' to '
+					  , self classRequest newSlotName , ' in class '
+					  , self classRequest className , '.'
 				  data: (self tool dataForAppliedUpdateResult:
 						   (self appliedUpdateResultFor: result plan: plan))
 				  warnings: warningMessages ]
 		  failureSummary: [ :error |
 			  self tool
-				  failureMessageForRenameSlotNamed: self slotRequest slotName
-				  to: self slotRequest newSlotName
-				  onClassNamed: self slotRequest className
-				  classSide: self slotRequest classSide
+				  failureMessageForRenameSlotNamed: self classRequest slotName
+				  to: self classRequest newSlotName
+				  onClassNamed: self classRequest className
+				  classSide: self classRequest classSide
 				  error: error ]
 ]
 
@@ -317,6 +296,174 @@ MCPUpdateClassCommand >> executeReparentWithPlan: plan [
 				  error: error ]
 ]
 
+{ #category : 'executing - class' }
+MCPUpdateClassCommand >> executeReplaceClassTraitsWithPlan: plan [
+
+	| result |
+	^ self tool
+		  executeEditOperation: 'replaceClassTraits'
+		  force: self classRequest force
+		  requestedContext: plan requestedContext
+		  work: [
+			  result := (MCPReplaceClassSideTraitsCommand
+				             className: self classRequest className
+				             classTraitNames: self classRequest classTraits)
+				            execute ]
+		  successResult: [ :warningMessages |
+			  self tool
+				  successResultText:
+					  'Replaced class-side traits for class '
+					  , self classRequest className , '.'
+				  data: (self tool dataForAppliedUpdateResult:
+						   (self appliedUpdateResultFor: result plan: plan))
+				  warnings: warningMessages ]
+		  failureSummary: [ :error |
+			  self tool
+				  failureMessageForReplaceClassTraitsOnClassNamed:
+				  self classRequest className
+				  error: error ]
+]
+
+{ #category : 'executing - class' }
+MCPUpdateClassCommand >> executeReplaceDefinitionWithPlan: plan [
+
+	| command result |
+	command := MCPReplaceClassDefinitionCommand new.
+	command
+		className: self classRequest className;
+		slotNames: self classRequest slotNames;
+		classSlotNames: self classRequest classSlotNames;
+		replaceSlots: (self classRequest hasSuppliedPropertyNamed: 'slots');
+		replaceClassSlots:
+			(self classRequest hasSuppliedPropertyNamed: 'classSlots').
+	^ self tool
+		  executeEditOperation: 'replaceDefinition'
+		  force: self classRequest force
+		  requestedContext: plan requestedContext
+		  work: [ result := command execute ]
+		  successResult: [ :warningMessages |
+			  self tool
+				  successResultText:
+					  'Replaced slot definition for class '
+					  , self classRequest className , '.'
+				  data: (self tool dataForAppliedUpdateResult:
+						   (self appliedUpdateResultFor: result plan: plan))
+				  warnings: warningMessages ]
+		  failureSummary: [ :error |
+			  self tool
+				  failureMessageForReplaceDefinitionOnClassNamed:
+				  self classRequest className
+				  error: error ]
+]
+
+{ #category : 'executing - class' }
+MCPUpdateClassCommand >> executeReplaceLayoutWithPlan: plan [
+
+	| result |
+	^ self tool
+		  executeEditOperation: 'replaceLayout'
+		  force: self classRequest force
+		  requestedContext: plan requestedContext
+		  work: [
+			  result := (MCPReplaceClassLayoutCommand
+				             className: self classRequest className
+				             layout: self classRequest layout) execute ]
+		  successResult: [ :warningMessages |
+			  self tool
+				  successResultText:
+				  'Replaced layout for class ' , self classRequest className , '.'
+				  data: (self tool dataForAppliedUpdateResult:
+						   (self appliedUpdateResultFor: result plan: plan))
+				  warnings: warningMessages ]
+		  failureSummary: [ :error |
+			  self tool
+				  failureMessageForReplaceLayoutOnClassNamed:
+				  self classRequest className
+				  error: error ]
+]
+
+{ #category : 'executing - class' }
+MCPUpdateClassCommand >> executeReplaceSharedPoolsWithPlan: plan [
+
+	| result |
+	^ self tool
+		  executeEditOperation: 'replaceSharedPools'
+		  force: self classRequest force
+		  requestedContext: plan requestedContext
+		  work: [
+			  result := (MCPReplaceClassSharedPoolsCommand
+				             className: self classRequest className
+				             sharedPoolNames: self classRequest sharedPools)
+				            execute ]
+		  successResult: [ :warningMessages |
+			  self tool
+				  successResultText:
+				  'Replaced shared pools for class ' , self classRequest className
+				  , '.'
+				  data: (self tool dataForAppliedUpdateResult:
+						   (self appliedUpdateResultFor: result plan: plan))
+				  warnings: warningMessages ]
+		  failureSummary: [ :error |
+			  self tool
+				  failureMessageForReplaceSharedPoolsOnClassNamed:
+				  self classRequest className
+				  error: error ]
+]
+
+{ #category : 'executing - class' }
+MCPUpdateClassCommand >> executeReplaceSharedVariablesWithPlan: plan [
+
+	| result |
+	^ self tool
+		  executeEditOperation: 'replaceSharedVariables'
+		  force: self classRequest force
+		  requestedContext: plan requestedContext
+		  work: [
+			  result := (MCPReplaceClassSharedVariablesCommand
+				             className: self classRequest className
+				             sharedVariableNames:
+				             self classRequest sharedVariables) execute ]
+		  successResult: [ :warningMessages |
+			  self tool
+				  successResultText:
+					  'Replaced shared variables for class '
+					  , self classRequest className , '.'
+				  data: (self tool dataForAppliedUpdateResult:
+						   (self appliedUpdateResultFor: result plan: plan))
+				  warnings: warningMessages ]
+		  failureSummary: [ :error |
+			  self tool
+				  failureMessageForReplaceSharedVariablesOnClassNamed:
+				  self classRequest className
+				  error: error ]
+]
+
+{ #category : 'executing - class' }
+MCPUpdateClassCommand >> executeReplaceTraitsWithPlan: plan [
+
+	| result |
+	^ self tool
+		  executeEditOperation: 'replaceTraits'
+		  force: self classRequest force
+		  requestedContext: plan requestedContext
+		  work: [
+			  result := (MCPReplaceClassTraitsCommand
+				             className: self classRequest className
+				             traitNames: self classRequest traits) execute ]
+		  successResult: [ :warningMessages |
+			  self tool
+				  successResultText:
+				  'Replaced traits for class ' , self classRequest className , '.'
+				  data: (self tool dataForAppliedUpdateResult:
+						   (self appliedUpdateResultFor: result plan: plan))
+				  warnings: warningMessages ]
+		  failureSummary: [ :error |
+			  self tool
+				  failureMessageForReplaceTraitsOnClassNamed:
+				  self classRequest className
+				  error: error ]
+]
+
 { #category : 'private - planning' }
 MCPUpdateClassCommand >> executeSelectorForAction: action [
 
@@ -326,6 +473,16 @@ MCPUpdateClassCommand >> executeSelectorForAction: action [
 		             ('rename' -> #executeRenameWithPlan:).
 		             ('reparent' -> #executeReparentWithPlan:).
 		             ('setComment' -> #executeSetCommentWithPlan:).
+		             ('replaceTraits' -> #executeReplaceTraitsWithPlan:).
+		             ('replaceClassTraits'
+		              -> #executeReplaceClassTraitsWithPlan:).
+		             ('replaceSharedVariables'
+		              -> #executeReplaceSharedVariablesWithPlan:).
+		             ('replaceSharedPools'
+		              -> #executeReplaceSharedPoolsWithPlan:).
+		             ('replaceLayout' -> #executeReplaceLayoutWithPlan:).
+		             ('replaceDefinition'
+		              -> #executeReplaceDefinitionWithPlan:).
 		             ('addSlot' -> #executeAddSlotWithPlan:).
 		             ('removeSlot' -> #executeRemoveSlotWithPlan:).
 		             ('renameSlot' -> #executeRenameSlotWithPlan:).
@@ -362,11 +519,10 @@ MCPUpdateClassCommand >> executeSetCommentWithPlan: plan [
 ]
 
 { #category : 'initialization' }
-MCPUpdateClassCommand >> initializeTool: aTool classRequest: aClassRequest slotRequest: aSlotRequest [
+MCPUpdateClassCommand >> initializeTool: aTool request: aClassRequest [
 
 	tool := aTool.
 	classRequest := aClassRequest.
-	slotRequest := aSlotRequest.
 	^ self
 ]
 
@@ -402,9 +558,9 @@ MCPUpdateClassCommand >> requestedContextForAction: action [
 			toRequestedContext: context.
 		^ context ].
 	action = 'renameSlot' ifTrue: [
-		^ self slotRequest renameRequestedContext ].
+		^ self classRequest renameSlotRequestedContext ].
 	(#( 'addSlot' 'removeSlot' 'pullUpSlot' 'pushDownSlot' ) includes:
-		 action) ifTrue: [ ^ self slotRequest requestedContext ].
+		 action) ifTrue: [ ^ self classRequest slotRequestedContext ].
 	^ self classRequest requestedContext
 ]
 
@@ -426,27 +582,8 @@ MCPUpdateClassCommand >> signalNoUpdateRequested [
 	^ MCPCommandError
 		  signalErrorCode: #NoClassUpdateRequested
 		  message:
-		  'operation=update requires one update field such as newClassName, superclassName, packageName, tag, classComment, or slotAction.'
+		  'operation=update requires one update field such as newClassName, superclassName, packageName, tag, classComment, slots, classSlots, traits, classTraits, sharedVariables, sharedPools, layout, or slotAction.'
 		  details: self validationContext
-]
-
-{ #category : 'private - signaling' }
-MCPUpdateClassCommand >> signalUnsupportedDefinitionUpdate [
-
-	^ MCPCommandError
-		  signalErrorCode: #ClassDefinitionUpdateNotImplemented
-		  message:
-		  'Class definition replacement updates are not implemented yet.'
-		  details: (self validationContext
-				   at: #definitionProperties
-				   put: self classRequest suppliedDefinitionProperties;
-				   yourself)
-]
-
-{ #category : 'accessing' }
-MCPUpdateClassCommand >> slotRequest [
-
-	^ slotRequest
 ]
 
 { #category : 'private - slots' }
@@ -454,12 +591,12 @@ MCPUpdateClassCommand >> successMessageForMoveSlotAction: operation [
 
 	| slotDescription |
 	slotDescription := self tool slotDescriptionForClassSide:
-		                   self slotRequest classSide.
+		                   self classRequest classSide.
 	operation = 'pullUpSlot' ifTrue: [
-		^ 'Pulled up ' , slotDescription , ' ' , self slotRequest slotName
-		  , ' to class ' , self slotRequest className , '.' ].
-	^ 'Pushed down ' , slotDescription , ' ' , self slotRequest slotName
-	  , ' from class ' , self slotRequest className , '.'
+		^ 'Pulled up ' , slotDescription , ' ' , self classRequest slotName
+		  , ' to class ' , self classRequest className , '.' ].
+	^ 'Pushed down ' , slotDescription , ' ' , self classRequest slotName
+	  , ' from class ' , self classRequest className , '.'
 ]
 
 { #category : 'accessing' }
@@ -474,14 +611,12 @@ MCPUpdateClassCommand >> updateAction [
 	| actions slotOperation |
 	actions := OrderedCollection withAll:
 		           self classRequest requestedClassUpdateActions.
-	self slotRequest validateForUpdate.
-	slotOperation := self slotRequest slotOperation.
+	self classRequest validateSlotUpdate.
+	slotOperation := self classRequest slotOperation.
 	slotOperation ifNotNil: [ actions add: slotOperation ].
 	actions ifEmpty: [ self signalNoUpdateRequested ].
 	actions size > 1 ifTrue: [
 		self signalAmbiguousUpdateActions: actions asArray ].
-	actions first = 'definition' ifTrue: [
-		self signalUnsupportedDefinitionUpdate ].
 	^ actions first
 ]
 
@@ -492,17 +627,11 @@ MCPUpdateClassCommand >> updatePlan [
 	action := self updateAction.
 	^ MCPClassUpdatePlanInfo
 		  operation: action
-		  commandClassName: (self commandClassNameForAction: action)
 		  requestedContext: (self requestedContextForAction: action)
 ]
 
 { #category : 'private' }
 MCPUpdateClassCommand >> validationContext [
 
-	| context slotContext |
-	context := self classRequest requestedContext copy.
-	slotContext := self slotRequest requestedContext.
-	slotContext keysAndValuesDo: [ :key :value |
-		value ifNotNil: [ context at: key ifAbsentPut: [ value ] ] ].
-	^ context
+	^ self classRequest validationContext
 ]

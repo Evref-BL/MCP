@@ -72,12 +72,15 @@ MCPToolInspectMethodTest >> testInspectMethodReturnsStructuredErrorForMissingSel
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #errorClass) equals: 'MCPCommandError'. self assert: (error at: #errorCode) equals: 'MethodNotFound'.
+	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
+	self assert: (error at: #errorCode) equals: 'MethodNotFound'.
 	self
 		assert: (error at: #className)
 		equals: 'MCPToolInspectMethodTestTarget'.
 	self assert: (error at: #selector) equals: 'doesNotExist'.
-	self assert: (error at: #side) equals: 'instance'.
+	self assert: (error includesKey: #classSide).
+	self deny: (error at: #classSide).
+	self deny: (error includesKey: #side).
 	self assert: ((error at: #message) includesSubstring:
 			 'Method MCPToolInspectMethodTestTarget>>doesNotExist does not exist.')
 ]
@@ -89,7 +92,7 @@ MCPToolInspectMethodTest >> testInspectMethodSupportsClassSideContext [
 	result := self callToolWith: {
 			          (#className -> 'MCPToolInspectMethodTestTarget').
 			          (#selector -> 'readClassSide').
-			          (#side -> 'class').
+			          (#classSide -> true).
 			          (#includeVariableDetails -> true) } asDictionary.
 	data := self dataFrom: result.
 	classInstanceVariable := self

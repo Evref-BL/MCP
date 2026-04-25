@@ -27,12 +27,6 @@ MCPUpdateMethodCommand >> appliedUpdateResultFor: aChangeResult plan: plan [
 		  changeResult: aChangeResult
 ]
 
-{ #category : 'private - planning' }
-MCPUpdateMethodCommand >> commandClassNameForAction: action [
-
-	^ self class name asString
-]
-
 { #category : 'executing' }
 MCPUpdateMethodCommand >> execute [
 
@@ -271,6 +265,5 @@ MCPUpdateMethodCommand >> updatePlan [
 	action := self updateAction.
 	^ MCPMethodUpdatePlanInfo
 		  operation: action
-		  commandClassName: (self commandClassNameForAction: action)
 		  requestedContext: (self requestedContextForAction: action)
 ]

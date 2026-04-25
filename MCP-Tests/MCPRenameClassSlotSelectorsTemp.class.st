@@ -9,5 +9,7 @@ Class {
 }
 
 { #category : 'as yet unclassified' }
-MCPRenameClassSlotSelectorsTemp class >> probe [ ^ alpha
+MCPRenameClassSlotSelectorsTemp class >> probe [
+
+	^ alpha
 ]

@@ -184,25 +184,25 @@ MCPToolInspectClass >> defaultName [
 MCPToolInspectClass >> defaultOutputSchema [
 
 	^ self
-		                standardOutputSchemaForDataProperties:
-			                self classDescriptionDataProperties , {
-				                ((self
-					                  schemaPropertyNamed: 'superclasses'
-					                  type: 'array'
-					                  description:
-						                  'The included superclasses, starting from the direct superclass and moving upward.')
-					                 items: self classDescriptionObjectSchema;
-					                 yourself).
-				                ((self
-					                  schemaPropertyNamed: 'subclasses'
-					                  type: 'array'
-					                  description:
-						                  'The included subclasses or descendants of the inspected class, bounded by subclassDepth.')
-					                 items: self classDescriptionObjectSchema;
-					                 yourself) }
-		                required:
-		                self classDescriptionRequiredFields
-		                , #( 'superclasses' 'subclasses' )
+		  standardOutputSchemaForDataProperties:
+			  self classDescriptionDataProperties , {
+				  ((self
+					    schemaPropertyNamed: 'superclasses'
+					    type: 'array'
+					    description:
+						    'The included superclasses, starting from the direct superclass and moving upward.')
+					   items: self classDescriptionObjectSchema;
+					   yourself).
+				  ((self
+					    schemaPropertyNamed: 'subclasses'
+					    type: 'array'
+					    description:
+						    'The included subclasses or descendants of the inspected class, bounded by subclassDepth.')
+					   items: self classDescriptionObjectSchema;
+					   yourself) }
+		  required:
+		  self classDescriptionRequiredFields
+		  , #( 'superclasses' 'subclasses' )
 ]
 
 { #category : 'defaults' }

@@ -7,8 +7,8 @@ Class {
 	#instVars : [
 		'className',
 		'selectorString',
-		'side',
-		'includeVariableDetails'
+		'includeVariableDetails',
+		'classSide'
 	],
 	#category : 'MCP-Requests',
 	#package : 'MCP',
@@ -21,7 +21,8 @@ MCPInspectMethodRequest class >> fromRequest: aRequest tool: aTool [
 	^ self new
 		  initializeClassName: (aRequest stringArgumentNamed: 'className')
 		  selectorString: (aTool selectorStringFromRequest: aRequest)
-		  side: (aTool sideFromRequest: aRequest)
+		  classSide:
+		  (aRequest booleanArgumentNamed: 'classSide' default: false)
 		  includeVariableDetails: (aRequest
 				   booleanArgumentNamed: 'includeVariableDetails'
 				   default: false)
@@ -34,17 +35,29 @@ MCPInspectMethodRequest >> className [
 ]
 
 { #category : 'accessing' }
+MCPInspectMethodRequest >> classSide [
+
+	^ classSide
+]
+
+{ #category : 'accessing' }
+MCPInspectMethodRequest >> classSide: anObject [
+
+	classSide := anObject
+]
+
+{ #category : 'accessing' }
 MCPInspectMethodRequest >> includeVariableDetails [
 
 	^ includeVariableDetails
 ]
 
 { #category : 'initialization' }
-MCPInspectMethodRequest >> initializeClassName: aClassName selectorString: aSelectorString side: aSide includeVariableDetails: aBoolean [
+MCPInspectMethodRequest >> initializeClassName: aClassName selectorString: aSelectorString classSide: aSide includeVariableDetails: aBoolean [
 
 	className := aClassName.
 	selectorString := aSelectorString.
-	side := aSide.
+	classSide := aSide.
 	includeVariableDetails := aBoolean.
 	^ self
 ]
@@ -53,10 +66,4 @@ MCPInspectMethodRequest >> initializeClassName: aClassName selectorString: aSele
 MCPInspectMethodRequest >> selectorString [
 
 	^ selectorString
-]
-
-{ #category : 'accessing' }
-MCPInspectMethodRequest >> side [
-
-	^ side
 ]

@@ -1,8 +1,8 @@
 "
-Command for compiling or replacing one method from a parsed edit-method compile request.
+Command for creating or replacing one method from a parsed edit-method create request. The command compiles the supplied source and returns method metadata plus any included critiques.
 "
 Class {
-	#name : 'MCPCompileMethodCommand',
+	#name : 'MCPCreateMethodCommand',
 	#superclass : 'Object',
 	#instVars : [
 		'tool',
@@ -14,17 +14,17 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPCompileMethodCommand class >> tool: aTool request: aRequest [
+MCPCreateMethodCommand class >> tool: aTool request: aRequest [
 
 	^ self new initializeTool: aTool request: aRequest
 ]
 
 { #category : 'executing' }
-MCPCompileMethodCommand >> execute [
+MCPCreateMethodCommand >> execute [
 
 	| behavior compiledMethod methodReference result selector |
 	^ self tool
-		  executeEditOperation: 'compile'
+		  executeEditOperation: 'create'
 		  force: self request force
 		  requestedContext: self request requestedContext
 		  work: [
@@ -40,13 +40,14 @@ MCPCompileMethodCommand >> execute [
 			  methodReference := self tool
 				                     methodReferenceForBehavior: behavior
 				                     selector: selector.
-			  result := MCPMethodCompileResult
+			  result := MCPMethodCreateResult
 				            method: compiledMethod
 				            critiques:
 				            (self tool critiqueDataForMethod: compiledMethod) ]
 		  successResult: [ :warningMessages |
 			  self tool
-				  successResultText: 'Compiled ' , methodReference , '.'
+				  successResultText:
+				  'Created or replaced ' , methodReference , '.'
 				  data: result asDictionary
 				  warnings: warningMessages ]
 		  failureSummary: [ :error |
@@ -57,7 +58,7 @@ MCPCompileMethodCommand >> execute [
 ]
 
 { #category : 'initialization' }
-MCPCompileMethodCommand >> initializeTool: aTool request: aRequest [
+MCPCreateMethodCommand >> initializeTool: aTool request: aRequest [
 
 	tool := aTool.
 	request := aRequest.
@@ -65,13 +66,13 @@ MCPCompileMethodCommand >> initializeTool: aTool request: aRequest [
 ]
 
 { #category : 'accessing' }
-MCPCompileMethodCommand >> request [
+MCPCreateMethodCommand >> request [
 
 	^ request
 ]
 
 { #category : 'accessing' }
-MCPCompileMethodCommand >> tool [
+MCPCreateMethodCommand >> tool [
 
 	^ tool
 ]

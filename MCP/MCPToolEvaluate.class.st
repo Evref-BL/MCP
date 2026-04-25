@@ -34,15 +34,15 @@ MCPToolEvaluate >> defaultIcons [
 MCPToolEvaluate >> defaultInputSchema [
 
 	^ MCPStructureInputSchema new
-		               type: 'object';
-		               properties: { (MCPStructureProperties new
-				                name: 'code';
-				                type: 'string';
-				                description:
-					                'The Smalltalk code to execute in the running Pharo image.';
-				                yourself) };
-		               required: #( 'code' );
-		               yourself
+		  type: 'object';
+		  properties: { (MCPStructureProperties new
+				   name: 'code';
+				   type: 'string';
+				   description:
+					   'The Smalltalk code to execute in the running Pharo image.';
+				   yourself) };
+		  required: #( 'code' );
+		  yourself
 ]
 
 { #category : 'defaults' }
@@ -55,20 +55,19 @@ MCPToolEvaluate >> defaultName [
 MCPToolEvaluate >> defaultOutputSchema [
 
 	^ self
-		                standardOutputSchemaForDataProperties: {
-				                (self
-					                 schemaPropertyNamed: 'resultClassName'
-					                 type: 'string'
-					                 description:
-					                 'The name of the evaluated result''s class.').
-				                (self
-					                 schemaPropertyNamed: 'resultPrintString'
-					                 type: 'string'
-					                 description:
-						                 'A printString preview of the evaluated result, limited to '
-						                 , self resultPreviewCharacterLimit printString
-						                 , ' characters.') }
-		                required: #( 'resultClassName' 'resultPrintString' )
+		  standardOutputSchemaForDataProperties: {
+				  (self
+					   schemaPropertyNamed: 'resultClassName'
+					   type: 'string'
+					   description: 'The name of the evaluated result''s class.').
+				  (self
+					   schemaPropertyNamed: 'resultPrintString'
+					   type: 'string'
+					   description:
+						   'A printString preview of the evaluated result, limited to '
+						   , self resultPreviewCharacterLimit printString
+						   , ' characters.') }
+		  required: #( 'resultClassName' 'resultPrintString' )
 ]
 
 { #category : 'defaults' }

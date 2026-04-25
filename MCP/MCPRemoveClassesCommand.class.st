@@ -40,8 +40,8 @@ MCPRemoveClassesCommand >> classNames [
 MCPRemoveClassesCommand >> classNames: someClassNames [
 
 	classNames := someClassNames
-		             ifNil: [ #(  ) ]
-		             ifNotNil: [ someClassNames asArray ]
+		              ifNil: [ #(  ) ]
+		              ifNotNil: [ someClassNames asArray ]
 ]
 
 { #category : 'executing' }

@@ -50,6 +50,22 @@ MCPToolEditClassTest >> createdClassNames [
 	     'MCPToolEditClassTestCommentTarget'
 	     'MCPToolEditClassTestCommented' 'MCPToolEditClassTestReparentTarget'
 	     'MCPToolEditClassTestReparentSuperclass'
+	     'MCPToolEditClassTestTraitTarget'
+	     'MCPToolEditClassTestTraitRemovalTarget'
+	     'MCPToolEditClassTestMissingTraitTarget'
+	     'MCPToolEditClassTestClassTraitTarget'
+	     'MCPToolEditClassTestClassTraitRemovalTarget'
+	     'MCPToolEditClassTestMissingClassTraitTarget'
+	     'MCPToolEditClassTestSharedVariableTarget'
+	     'MCPToolEditClassTestSharedVariableRemovalTarget'
+	     'MCPToolEditClassTestSharedVariablePreservationTarget'
+	     'MCPToolEditClassTestSharedPoolTarget'
+	     'MCPToolEditClassTestSharedPoolRemovalTarget'
+	     'MCPToolEditClassTestMissingSharedPoolTarget'
+	     'MCPToolEditClassTestLayoutTarget'
+	     'MCPToolEditClassTestMissingLayoutTarget'
+	     'MCPToolEditClassTestInvalidLayoutTarget'
+	     'MCPToolEditClassTestDefinitionTarget'
 	     'MCPToolEditClassTestAddSlotTarget'
 	     'MCPToolEditClassTestAddClassSlotTarget'
 	     'MCPToolEditClassTestRemoveSlotTarget'
@@ -752,6 +768,36 @@ MCPToolEditClassTest >> testUpdateMovesClassToExistingTag [
 ]
 
 { #category : 'tests - update' }
+MCPToolEditClassTest >> testUpdatePreservesSharedVariableValueWhenNameIsKept [
+
+	| createArguments result targetClass |
+	createArguments := self
+		                   createRequestArgumentsForClassName:
+		                   'MCPToolEditClassTestSharedVariablePreservationTarget'
+		                   superclassName: 'Object'
+		                   packageName: self generatedPackageName.
+	createArguments at: #sharedVariables put: #( 'AlphaShared' ).
+	self callToolWith: createArguments.
+	targetClass := self classNamed:
+		               'MCPToolEditClassTestSharedVariablePreservationTarget'.
+	targetClass writeClassVariableNamed: #AlphaShared value: 123.
+	result := self callToolWith: (self
+			           updateRequestArgumentsForSharedVariablesInClassNamed:
+			           'MCPToolEditClassTestSharedVariablePreservationTarget'
+			           sharedVariables: #( 'AlphaShared' 'BetaShared' )).
+	targetClass := self classNamed:
+		               'MCPToolEditClassTestSharedVariablePreservationTarget'.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self
+		assert: targetClass classVarNames
+		equals: #( #AlphaShared #BetaShared ).
+	self
+		assert: (targetClass readClassVariableNamed: #AlphaShared)
+		equals: 123.
+	self assert: (targetClass readClassVariableNamed: #BetaShared) isNil
+]
+
+{ #category : 'tests - update' }
 MCPToolEditClassTest >> testUpdatePullUpSlotReturnsStructuredCommandErrorForRefactoringFailure [
 
 	| error result structured |
@@ -1046,6 +1092,34 @@ MCPToolEditClassTest >> testUpdateRemovesClassSideSlot [
 ]
 
 { #category : 'tests - update' }
+MCPToolEditClassTest >> testUpdateRemovesClassSideTraitsWithEmptyArray [
+
+	| createArguments data result targetClass |
+	createArguments := self
+		                   createRequestArgumentsForClassName:
+		                   'MCPToolEditClassTestClassTraitRemovalTarget'
+		                   superclassName: 'Object'
+		                   packageName: self generatedPackageName.
+	createArguments at: #classTraits put: #( 'TAbleToRotate classTrait' ).
+	self callToolWith: createArguments.
+	result := self callToolWith: (self
+			           updateRequestArgumentsForClassTraitsInClassNamed:
+			           'MCPToolEditClassTestClassTraitRemovalTarget'
+			           classTraits: #(  )).
+	data := self dataFrom: result.
+	targetClass := self classNamed:
+		               'MCPToolEditClassTestClassTraitRemovalTarget'.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: targetClass classSide traits isEmpty.
+	self assert: (data at: #operation) equals: 'replaceClassTraits'.
+	self
+		assert: (data at: #oldClassTraitNames)
+		equals: #( 'TAbleToRotate classTrait' ).
+	self assert: (data at: #newClassTraitNames) equals: #(  ).
+	self assert: (data at: #classTraitNames) equals: #(  )
+]
+
+{ #category : 'tests - update' }
 MCPToolEditClassTest >> testUpdateRemovesInstanceSlot [
 
 	| data result target |
@@ -1068,6 +1142,88 @@ MCPToolEditClassTest >> testUpdateRemovesInstanceSlot [
 	self assert: (data at: #classSide) equals: false.
 	self assert: (data at: #instanceSlotNames) equals: #(  ).
 	self assert: (data at: #classSlotNames) equals: #(  )
+]
+
+{ #category : 'tests - update' }
+MCPToolEditClassTest >> testUpdateRemovesSharedPoolsWithEmptyArray [
+
+	| createArguments data result targetClass |
+	createArguments := self
+		                   createRequestArgumentsForClassName:
+		                   'MCPToolEditClassTestSharedPoolRemovalTarget'
+		                   superclassName: 'Object'
+		                   packageName: self generatedPackageName.
+	createArguments at: #sharedPools put: #( 'ChronologyConstants' ).
+	self callToolWith: createArguments.
+	result := self callToolWith: (self
+			           updateRequestArgumentsForSharedPoolsInClassNamed:
+			           'MCPToolEditClassTestSharedPoolRemovalTarget'
+			           sharedPools: #(  )).
+	data := self dataFrom: result.
+	targetClass := self classNamed:
+		               'MCPToolEditClassTestSharedPoolRemovalTarget'.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: targetClass sharedPools isEmpty.
+	self assert: (data at: #operation) equals: 'replaceSharedPools'.
+	self
+		assert: (data at: #oldSharedPoolNames)
+		equals: #( 'ChronologyConstants' ).
+	self assert: (data at: #newSharedPoolNames) isEmpty.
+	self assert: (data at: #sharedPoolNames) isEmpty
+]
+
+{ #category : 'tests - update' }
+MCPToolEditClassTest >> testUpdateRemovesSharedVariablesWithEmptyArray [
+
+	| createArguments data result targetClass |
+	createArguments := self
+		                   createRequestArgumentsForClassName:
+		                   'MCPToolEditClassTestSharedVariableRemovalTarget'
+		                   superclassName: 'Object'
+		                   packageName: self generatedPackageName.
+	createArguments at: #sharedVariables put: #( 'AlphaShared' ).
+	self callToolWith: createArguments.
+	result := self callToolWith: (self
+			           updateRequestArgumentsForSharedVariablesInClassNamed:
+			           'MCPToolEditClassTestSharedVariableRemovalTarget'
+			           sharedVariables: #(  )).
+	data := self dataFrom: result.
+	targetClass := self classNamed:
+		               'MCPToolEditClassTestSharedVariableRemovalTarget'.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: targetClass classVarNames isEmpty.
+	self assert: (data at: #operation) equals: 'replaceSharedVariables'.
+	self
+		assert: (data at: #oldSharedVariableNames)
+		equals: #( 'AlphaShared' ).
+	self assert: (data at: #newSharedVariableNames) isEmpty.
+	self assert: (data at: #sharedVariableNames) isEmpty
+]
+
+{ #category : 'tests - update' }
+MCPToolEditClassTest >> testUpdateRemovesTraitsWithEmptyArray [
+
+	| createArguments data result targetClass |
+	createArguments := self
+		                   createRequestArgumentsForClassName:
+		                   'MCPToolEditClassTestTraitRemovalTarget'
+		                   superclassName: 'Object'
+		                   packageName: self generatedPackageName.
+	createArguments at: #traits put: #( 'TAbleToRotate' ).
+	self callToolWith: createArguments.
+	result := self callToolWith: (self
+			           updateRequestArgumentsForTraitsInClassNamed:
+			           'MCPToolEditClassTestTraitRemovalTarget'
+			           traits: #(  )).
+	data := self dataFrom: result.
+	targetClass := self classNamed:
+		               'MCPToolEditClassTestTraitRemovalTarget'.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: targetClass traits isEmpty.
+	self assert: (data at: #operation) equals: 'replaceTraits'.
+	self assert: (data at: #oldTraitNames) equals: #( 'TAbleToRotate' ).
+	self assert: (data at: #newTraitNames) equals: #(  ).
+	self assert: (data at: #traitNames) equals: #(  )
 ]
 
 { #category : 'tests - update' }
@@ -1162,6 +1318,61 @@ MCPToolEditClassTest >> testUpdateRenamesClassAndReturnsStructuredData [
 ]
 
 { #category : 'tests - update' }
+MCPToolEditClassTest >> testUpdateRenamesClassSideSlotAndPreservesValue [
+
+	| data result target |
+	self
+		createClassNamed: 'MCPToolEditClassTestRenameClassSideSlotTarget'
+		superclassName: 'Object'
+		slots: #(  )
+		classSlots: #( oldClassSlot ).
+	target := self classNamed:
+		          'MCPToolEditClassTestRenameClassSideSlotTarget'.
+	self
+		ensureMethodSource: 'oldClassSlot ^ oldClassSlot'
+		protocol: 'accessing'
+		on: target classSide.
+	self
+		ensureMethodSource:
+		'oldClassSlot: anObject oldClassSlot := anObject'
+		protocol: 'accessing'
+		on: target classSide.
+	self
+		ensureMethodSource: 'slotProbe ^ self oldClassSlot'
+		protocol: 'testing'
+		on: target classSide.
+	target oldClassSlot: 73.
+	result := self callToolWith: (self
+			           updateRequestArgumentsForSlotRenameInClassNamed:
+			           'MCPToolEditClassTestRenameClassSideSlotTarget'
+			           slotName: 'oldClassSlot'
+			           newSlotName: 'renamedClassSlot'
+			           classSide: true).
+	data := self dataFrom: result.
+	target := self classNamed:
+		          'MCPToolEditClassTestRenameClassSideSlotTarget'.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self
+		assert: (target classSide slots collect: #name as: Array)
+		equals: #( #renamedClassSlot ).
+	self deny: (target classSide includesSelector: #oldClassSlot).
+	self deny: (target classSide includesSelector: #oldClassSlot:).
+	self assert: (target classSide includesSelector: #renamedClassSlot).
+	self assert: (target classSide includesSelector: #renamedClassSlot:).
+	self assert: target renamedClassSlot equals: 73.
+	target renamedClassSlot: 91.
+	self assert: target slotProbe equals: 91.
+	self assert: (data at: #operation) equals: 'renameSlot'.
+	self assert: (data at: #oldSlotName) equals: 'oldClassSlot'.
+	self assert: (data at: #newSlotName) equals: 'renamedClassSlot'.
+	self assert: (data at: #classSide) equals: true.
+	self assert: (data at: #instanceSlotNames) equals: #(  ).
+	self
+		assert: (data at: #classSlotNames)
+		equals: #( 'renamedClassSlot' )
+]
+
+{ #category : 'tests - update' }
 MCPToolEditClassTest >> testUpdateRenamesInstanceSlotAndUpdatesReferences [
 
 	| data instance result target |
@@ -1246,6 +1457,246 @@ MCPToolEditClassTest >> testUpdateReparentsClassAndPreservesExistingState [
 		assert: (data at: #superclassName)
 		equals: self reparentSuperclassName.
 	self assert: (data at: #classComment) equals: 'reparent comment'
+]
+
+{ #category : 'tests - update' }
+MCPToolEditClassTest >> testUpdateReplacesClassSideTraits [
+
+	| createArguments data result targetClass |
+	createArguments := self
+		                   createRequestArgumentsForClassName:
+		                   'MCPToolEditClassTestClassTraitTarget'
+		                   superclassName: 'Object'
+		                   packageName: self generatedPackageName.
+	createArguments at: #classTraits put: #( 'TAbleToRotate classTrait' ).
+	self callToolWith: createArguments.
+	result := self callToolWith: (self
+			           updateRequestArgumentsForClassTraitsInClassNamed:
+			           'MCPToolEditClassTestClassTraitTarget'
+			           classTraits: #( 'TComparable' )).
+	data := self dataFrom: result.
+	targetClass := self classNamed:
+		               'MCPToolEditClassTestClassTraitTarget'.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self
+		assert: (targetClass classSide traits
+				 collect: [ :each | each name asString ]
+				 as: Array)
+		equals: #( 'TComparable classTrait' ).
+	self assert: (data at: #operation) equals: 'replaceClassTraits'.
+	self
+		assert: (data at: #oldClassTraitNames)
+		equals: #( 'TAbleToRotate classTrait' ).
+	self
+		assert: (data at: #newClassTraitNames)
+		equals: #( 'TComparable' ).
+	self
+		assert: (data at: #classTraitNames)
+		equals: #( 'TComparable classTrait' ).
+	self
+		assert: ((data at: #updatePlan) at: #operation)
+		equals: 'replaceClassTraits'.
+	self
+		assert: ((data at: #appliedChange) at: #resultClassName)
+		equals: 'MCPReplaceClassSideTraitsResult'
+]
+
+{ #category : 'tests - update' }
+MCPToolEditClassTest >> testUpdateReplacesLayout [
+
+	| data result targetClass |
+	self
+		createClassNamed: 'MCPToolEditClassTestLayoutTarget'
+		superclassName: 'Object'
+		slots: #(  )
+		classSlots: #(  ).
+	result := self callToolWith: (self
+			           updateRequestArgumentsForLayoutInClassNamed:
+			           'MCPToolEditClassTestLayoutTarget'
+			           layout: 'WeakLayout').
+	data := self dataFrom: result.
+	targetClass := self classNamed: 'MCPToolEditClassTestLayoutTarget'.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: targetClass classLayout class name equals: #WeakLayout.
+	self assert: (data at: #operation) equals: 'replaceLayout'.
+	self assert: (data at: #oldLayoutClassName) equals: 'FixedLayout'.
+	self assert: (data at: #newLayoutClassName) equals: 'WeakLayout'.
+	self assert: (data at: #layoutClassName) equals: 'WeakLayout'.
+	self
+		assert: ((data at: #updatePlan) at: #operation)
+		equals: 'replaceLayout'.
+	self
+		assert: ((data at: #appliedChange) at: #resultClassName)
+		equals: 'MCPReplaceClassLayoutResult'
+]
+
+{ #category : 'tests - update' }
+MCPToolEditClassTest >> testUpdateReplacesSharedPools [
+
+	| createArguments data result targetClass |
+	createArguments := self
+		                   createRequestArgumentsForClassName:
+		                   'MCPToolEditClassTestSharedPoolTarget'
+		                   superclassName: 'Object'
+		                   packageName: self generatedPackageName.
+	createArguments at: #sharedPools put: #( 'ChronologyConstants' ).
+	self callToolWith: createArguments.
+	result := self callToolWith: (self
+			           updateRequestArgumentsForSharedPoolsInClassNamed:
+			           'MCPToolEditClassTestSharedPoolTarget'
+			           sharedPools: #( 'TextConstants' )).
+	data := self dataFrom: result.
+	targetClass := self classNamed:
+		               'MCPToolEditClassTestSharedPoolTarget'.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self
+		assert: (targetClass sharedPools
+				 collect: [ :each | each name asString ]
+				 as: Array)
+		equals: #( 'TextConstants' ).
+	self assert: (data at: #operation) equals: 'replaceSharedPools'.
+	self
+		assert: (data at: #oldSharedPoolNames)
+		equals: #( 'ChronologyConstants' ).
+	self
+		assert: (data at: #newSharedPoolNames)
+		equals: #( 'TextConstants' ).
+	self assert: (data at: #sharedPoolNames) equals: #( 'TextConstants' ).
+	self
+		assert: ((data at: #updatePlan) at: #operation)
+		equals: 'replaceSharedPools'.
+	self
+		assert: ((data at: #appliedChange) at: #resultClassName)
+		equals: 'MCPReplaceClassSharedPoolsResult'
+]
+
+{ #category : 'tests - update' }
+MCPToolEditClassTest >> testUpdateReplacesSharedVariables [
+
+	| createArguments data result targetClass |
+	createArguments := self
+		                   createRequestArgumentsForClassName:
+		                   'MCPToolEditClassTestSharedVariableTarget'
+		                   superclassName: 'Object'
+		                   packageName: self generatedPackageName.
+	createArguments at: #sharedVariables put: #( 'AlphaShared' ).
+	self callToolWith: createArguments.
+	result := self callToolWith: (self
+			           updateRequestArgumentsForSharedVariablesInClassNamed:
+			           'MCPToolEditClassTestSharedVariableTarget'
+			           sharedVariables: #( 'BetaShared' )).
+	data := self dataFrom: result.
+	targetClass := self classNamed:
+		               'MCPToolEditClassTestSharedVariableTarget'.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: targetClass classVarNames equals: #( #BetaShared ).
+	self assert: (data at: #operation) equals: 'replaceSharedVariables'.
+	self
+		assert: (data at: #oldSharedVariableNames)
+		equals: #( 'AlphaShared' ).
+	self
+		assert: (data at: #newSharedVariableNames)
+		equals: #( 'BetaShared' ).
+	self
+		assert: (data at: #sharedVariableNames)
+		equals: #( 'BetaShared' ).
+	self
+		assert: ((data at: #updatePlan) at: #operation)
+		equals: 'replaceSharedVariables'.
+	self
+		assert: ((data at: #appliedChange) at: #resultClassName)
+		equals: 'MCPReplaceClassSharedVariablesResult'
+]
+
+{ #category : 'tests - update' }
+MCPToolEditClassTest >> testUpdateReplacesSlotDefinitionAndPreservesMatchingValues [
+
+	| data instance result target |
+	self
+		createClassNamed: 'MCPToolEditClassTestDefinitionTarget'
+		superclassName: 'Object'
+		slots: #( oldSlot keptSlot )
+		classSlots: #( oldClassSlot keptClassSlot ).
+	target := self classNamed: 'MCPToolEditClassTestDefinitionTarget'.
+	instance := target new.
+	instance instVarNamed: 'keptSlot' put: 13.
+	target instVarNamed: 'keptClassSlot' put: 17.
+	result := self callToolWith: (self updateRequestArgumentsWith: {
+				           (#className -> 'MCPToolEditClassTestDefinitionTarget').
+				           (#slots -> #( 'keptSlot' 'newSlot' )).
+				           (#classSlots -> #( 'keptClassSlot' 'newClassSlot' )) }).
+	data := self dataFrom: result.
+	target := self classNamed: 'MCPToolEditClassTestDefinitionTarget'.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self
+		assert: (target slots collect: #name as: Array)
+		equals: #( #keptSlot #newSlot ).
+	self
+		assert: (target classSide slots collect: #name as: Array)
+		equals: #( #keptClassSlot #newClassSlot ).
+	self assert: (instance instVarNamed: 'keptSlot') equals: 13.
+	self assert: (target instVarNamed: 'keptClassSlot') equals: 17.
+	self assert: (data at: #operation) equals: 'replaceDefinition'.
+	self
+		assert: (data at: #oldInstanceSlotNames)
+		equals: #( 'oldSlot' 'keptSlot' ).
+	self
+		assert: (data at: #newInstanceSlotNames)
+		equals: #( 'keptSlot' 'newSlot' ).
+	self
+		assert: (data at: #oldClassSlotNames)
+		equals: #( 'oldClassSlot' 'keptClassSlot' ).
+	self
+		assert: (data at: #newClassSlotNames)
+		equals: #( 'keptClassSlot' 'newClassSlot' ).
+	self
+		assert: (data at: #instanceSlotNames)
+		equals: #( 'keptSlot' 'newSlot' ).
+	self
+		assert: (data at: #classSlotNames)
+		equals: #( 'keptClassSlot' 'newClassSlot' ).
+	self
+		assert: ((data at: #updatePlan) at: #operation)
+		equals: 'replaceDefinition'.
+	self
+		assert: ((data at: #appliedChange) at: #resultClassName)
+		equals: 'MCPReplaceClassDefinitionResult'
+]
+
+{ #category : 'tests - update' }
+MCPToolEditClassTest >> testUpdateReplacesTraits [
+
+	| createArguments data result targetClass |
+	createArguments := self
+		                   createRequestArgumentsForClassName:
+		                   'MCPToolEditClassTestTraitTarget'
+		                   superclassName: 'Object'
+		                   packageName: self generatedPackageName.
+	createArguments at: #traits put: #( 'TAbleToRotate' ).
+	self callToolWith: createArguments.
+	result := self callToolWith: (self
+			           updateRequestArgumentsForTraitsInClassNamed:
+			           'MCPToolEditClassTestTraitTarget'
+			           traits: #( 'TComparable' )).
+	data := self dataFrom: result.
+	targetClass := self classNamed: 'MCPToolEditClassTestTraitTarget'.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self
+		assert:
+		(targetClass traits
+			 collect: [ :each | each name asString ]
+			 as: Array)
+		equals: #( 'TComparable' ).
+	self assert: (data at: #operation) equals: 'replaceTraits'.
+	self assert: (data at: #oldTraitNames) equals: #( 'TAbleToRotate' ).
+	self assert: (data at: #newTraitNames) equals: #( 'TComparable' ).
+	self assert: (data at: #traitNames) equals: #( 'TComparable' ).
+	self
+		assert: ((data at: #updatePlan) at: #operation)
+		equals: 'replaceTraits'.
+	self
+		assert: ((data at: #appliedChange) at: #resultClassName)
+		equals: 'MCPReplaceClassTraitsResult'
 ]
 
 { #category : 'tests - update' }
@@ -1425,45 +1876,6 @@ MCPToolEditClassTest >> testUpdateReturnsStructuredErrorWhenRenameSlotClassIsMis
 ]
 
 { #category : 'tests - update' }
-MCPToolEditClassTest >> testUpdateReturnsStructuredErrorWhenRenameSlotRejectsClassSide [
-
-	| error result structured target |
-	self
-		createClassNamed: 'MCPToolEditClassTestRenameClassSideSlotTarget'
-		superclassName: 'Object'
-		slots: #(  )
-		classSlots: #( oldClassSlot ).
-	result := self callToolWith: (self
-			           updateRequestArgumentsForSlotRenameInClassNamed:
-			           'MCPToolEditClassTestRenameClassSideSlotTarget'
-			           slotName: 'oldClassSlot'
-			           newSlotName: 'renamedClassSlot'
-			           classSide: true).
-	structured := self structuredContentFrom: result.
-	error := self errorFrom: result.
-	target := self classNamed:
-		          'MCPToolEditClassTestRenameClassSideSlotTarget'.
-	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #operation) equals: 'renameSlot'.
-	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
-	self
-		assert: (error at: #errorCode)
-		equals: 'RenameSlotClassSideUnsupported'.
-	self
-		assert: (error at: #className)
-		equals: 'MCPToolEditClassTestRenameClassSideSlotTarget'.
-	self assert: (error at: #slotName) equals: 'oldClassSlot'.
-	self assert: (error at: #newSlotName) equals: 'renamedClassSlot'.
-	self assert: (error at: #classSide) equals: true.
-	self assert:
-		((error at: #message) includesSubstring: 'instance-side slots').
-	self
-		assert: (target classSide slots collect: #name as: Array)
-		equals: #( #oldClassSlot )
-]
-
-{ #category : 'tests - update' }
 MCPToolEditClassTest >> testUpdateReturnsStructuredErrorWhenReparentSuperclassIsMissing [
 
 	| error result |
@@ -1488,9 +1900,145 @@ MCPToolEditClassTest >> testUpdateReturnsStructuredErrorWhenReparentSuperclassIs
 ]
 
 { #category : 'tests - update' }
+MCPToolEditClassTest >> testUpdateReturnsStructuredErrorWhenReplacementClassTraitIsMissing [
+
+	| createArguments error result |
+	createArguments := self
+		                   createRequestArgumentsForClassName:
+		                   'MCPToolEditClassTestMissingClassTraitTarget'
+		                   superclassName: 'Object'
+		                   packageName: self generatedPackageName.
+	self callToolWith: createArguments.
+	result := self callToolWith: (self
+			           updateRequestArgumentsForClassTraitsInClassNamed:
+			           'MCPToolEditClassTestMissingClassTraitTarget'
+			           classTraits: #( 'DefinitelyMissingClassTrait' )).
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #operation) equals: 'replaceClassTraits'.
+	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
+	self assert: (error at: #errorCode) equals: 'ClassTraitNotFound'.
+	self
+		assert: (error at: #className)
+		equals: 'MCPToolEditClassTestMissingClassTraitTarget'.
+	self
+		assert: (error at: #classTraitName)
+		equals: 'DefinitelyMissingClassTrait'.
+	self
+		assert: (error at: #classTraits)
+		equals: #( 'DefinitelyMissingClassTrait' )
+]
+
+{ #category : 'tests - update' }
+MCPToolEditClassTest >> testUpdateReturnsStructuredErrorWhenReplacementLayoutIsInvalid [
+
+	| error result |
+	self
+		createClassNamed: 'MCPToolEditClassTestInvalidLayoutTarget'
+		superclassName: 'Object'
+		slots: #(  )
+		classSlots: #(  ).
+	result := self callToolWith: (self
+			           updateRequestArgumentsForLayoutInClassNamed:
+			           'MCPToolEditClassTestInvalidLayoutTarget'
+			           layout: 'Object').
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #operation) equals: 'replaceLayout'.
+	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
+	self assert: (error at: #errorCode) equals: 'InvalidLayoutClass'.
+	self
+		assert: (error at: #className)
+		equals: 'MCPToolEditClassTestInvalidLayoutTarget'.
+	self assert: (error at: #layout) equals: 'Object'
+]
+
+{ #category : 'tests - update' }
+MCPToolEditClassTest >> testUpdateReturnsStructuredErrorWhenReplacementLayoutIsMissing [
+
+	| error result |
+	self
+		createClassNamed: 'MCPToolEditClassTestMissingLayoutTarget'
+		superclassName: 'Object'
+		slots: #(  )
+		classSlots: #(  ).
+	result := self callToolWith: (self
+			           updateRequestArgumentsForLayoutInClassNamed:
+			           'MCPToolEditClassTestMissingLayoutTarget'
+			           layout: 'DefinitelyMissingLayout').
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #operation) equals: 'replaceLayout'.
+	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
+	self assert: (error at: #errorCode) equals: 'LayoutClassNotFound'.
+	self
+		assert: (error at: #className)
+		equals: 'MCPToolEditClassTestMissingLayoutTarget'.
+	self assert: (error at: #layout) equals: 'DefinitelyMissingLayout'
+]
+
+{ #category : 'tests - update' }
+MCPToolEditClassTest >> testUpdateReturnsStructuredErrorWhenReplacementSharedPoolIsMissing [
+
+	| createArguments error result |
+	createArguments := self
+		                   createRequestArgumentsForClassName:
+		                   'MCPToolEditClassTestMissingSharedPoolTarget'
+		                   superclassName: 'Object'
+		                   packageName: self generatedPackageName.
+	self callToolWith: createArguments.
+	result := self callToolWith: (self
+			           updateRequestArgumentsForSharedPoolsInClassNamed:
+			           'MCPToolEditClassTestMissingSharedPoolTarget'
+			           sharedPools: #( 'DefinitelyMissingSharedPool' )).
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #operation) equals: 'replaceSharedPools'.
+	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
+	self assert: (error at: #errorCode) equals: 'SharedPoolNotFound'.
+	self
+		assert: (error at: #className)
+		equals: 'MCPToolEditClassTestMissingSharedPoolTarget'.
+	self
+		assert: (error at: #sharedPoolName)
+		equals: 'DefinitelyMissingSharedPool'.
+	self
+		assert: (error at: #sharedPools)
+		equals: #( 'DefinitelyMissingSharedPool' )
+]
+
+{ #category : 'tests - update' }
+MCPToolEditClassTest >> testUpdateReturnsStructuredErrorWhenReplacementTraitIsMissing [
+
+	| createArguments error result |
+	createArguments := self
+		                   createRequestArgumentsForClassName:
+		                   'MCPToolEditClassTestMissingTraitTarget'
+		                   superclassName: 'Object'
+		                   packageName: self generatedPackageName.
+	self callToolWith: createArguments.
+	result := self callToolWith: (self
+			           updateRequestArgumentsForTraitsInClassNamed:
+			           'MCPToolEditClassTestMissingTraitTarget'
+			           traits: #( 'DefinitelyMissingTrait' )).
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #operation) equals: 'replaceTraits'.
+	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
+	self assert: (error at: #errorCode) equals: 'TraitNotFound'.
+	self
+		assert: (error at: #className)
+		equals: 'MCPToolEditClassTestMissingTraitTarget'.
+	self assert: (error at: #traitName) equals: 'DefinitelyMissingTrait'.
+	self
+		assert: (error at: #traits)
+		equals: #( 'DefinitelyMissingTrait' )
+]
+
+{ #category : 'tests - update' }
 MCPToolEditClassTest >> testUpdateSetsClassComment [
 
-	| data result target |
+	| data result target updatePlan |
 	self
 		createClassNamed: self commentTargetClassName
 		superclassName: 'Object'
@@ -1503,6 +2051,7 @@ MCPToolEditClassTest >> testUpdateSetsClassComment [
 		          (self updateRequestArgumentsForClassComment:
 			           'updated comment').
 	data := self dataFrom: result.
+	updatePlan := data at: #updatePlan.
 	target := self classNamed: self commentTargetClassName.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: target comment equals: 'updated comment'.
@@ -1510,12 +2059,8 @@ MCPToolEditClassTest >> testUpdateSetsClassComment [
 	self assert: (data at: #classComment) equals: 'updated comment'.
 	self assert: (data at: #oldClassComment) equals: 'original comment'.
 	self assert: (data at: #newClassComment) equals: 'updated comment'.
-	self
-		assert: ((data at: #updatePlan) at: #operation)
-		equals: 'setComment'.
-	self
-		assert: ((data at: #updatePlan) at: #commandClassName)
-		equals: 'MCPChangeClassCommentCommand'.
+	self assert: (updatePlan at: #operation) equals: 'setComment'.
+	self deny: (updatePlan includesKey: #commandClassName).
 	self
 		assert: ((data at: #appliedChange) at: #resultClassName)
 		equals: 'MCPChangeClassCommentResult'
@@ -1534,6 +2079,22 @@ MCPToolEditClassTest >> updateRequestArgumentsForClassComment: aClassComment [
 		  (#operation -> 'update').
 		  (#className -> self commentTargetClassName).
 		  (#classComment -> aClassComment) } asDictionary
+]
+
+{ #category : 'private - update' }
+MCPToolEditClassTest >> updateRequestArgumentsForClassTraitsInClassNamed: aClassName classTraits: someClassTraitNames [
+
+	^ self updateRequestArgumentsWith: {
+			  (#className -> aClassName).
+			  (#classTraits -> someClassTraitNames) }
+]
+
+{ #category : 'private - update' }
+MCPToolEditClassTest >> updateRequestArgumentsForLayoutInClassNamed: aClassName layout: aLayoutName [
+
+	^ self updateRequestArgumentsWith: {
+			  (#className -> aClassName).
+			  (#layout -> aLayoutName) }
 ]
 
 { #category : 'private - update' }
@@ -1583,6 +2144,22 @@ MCPToolEditClassTest >> updateRequestArgumentsForReparent [
 ]
 
 { #category : 'private - update' }
+MCPToolEditClassTest >> updateRequestArgumentsForSharedPoolsInClassNamed: aClassName sharedPools: someNames [
+
+	^ self updateRequestArgumentsWith: {
+			  (#className -> aClassName).
+			  (#sharedPools -> someNames) }
+]
+
+{ #category : 'private - update' }
+MCPToolEditClassTest >> updateRequestArgumentsForSharedVariablesInClassNamed: aClassName sharedVariables: someNames [
+
+	^ self updateRequestArgumentsWith: {
+			  (#className -> aClassName).
+			  (#sharedVariables -> someNames) }
+]
+
+{ #category : 'private - update' }
 MCPToolEditClassTest >> updateRequestArgumentsForSlotAction: slotAction className: aClassName slotName: aSlotName classSide: aBoolean [
 
 	^ self updateRequestArgumentsWith: {
@@ -1601,6 +2178,14 @@ MCPToolEditClassTest >> updateRequestArgumentsForSlotRenameInClassNamed: aClassN
 			  (#slotName -> aSlotName).
 			  (#newSlotName -> aNewSlotName).
 			  (#classSide -> aBoolean) }
+]
+
+{ #category : 'private - update' }
+MCPToolEditClassTest >> updateRequestArgumentsForTraitsInClassNamed: aClassName traits: someTraitNames [
+
+	^ self updateRequestArgumentsWith: {
+			  (#className -> aClassName).
+			  (#traits -> someTraitNames) }
 ]
 
 { #category : 'private - update' }

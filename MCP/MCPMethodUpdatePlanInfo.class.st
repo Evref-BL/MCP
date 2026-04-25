@@ -1,12 +1,11 @@
 "
-DTO describing the internal update action selected for an edit-method update request before the action is executed.
+DTO for the edit-method update action selected from an update request before the action is applied. It records the selected update action and the request context used for validation and error reporting.
 "
 Class {
 	#name : 'MCPMethodUpdatePlanInfo',
 	#superclass : 'Object',
 	#instVars : [
 		'operation',
-		'commandClassName',
 		'requestedContext'
 	],
 	#category : 'MCP-Results',
@@ -15,11 +14,10 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPMethodUpdatePlanInfo class >> operation: anOperation commandClassName: aCommandClassName requestedContext: aDictionary [
+MCPMethodUpdatePlanInfo class >> operation: anOperation requestedContext: aDictionary [
 
 	^ self new
 		  operation: anOperation;
-		  commandClassName: aCommandClassName;
 		  requestedContext: aDictionary;
 		  yourself
 ]
@@ -29,20 +27,7 @@ MCPMethodUpdatePlanInfo >> asDictionary [
 
 	^ {
 		  (#operation -> self operation).
-		  (#commandClassName -> self commandClassName).
 		  (#requestedContext -> self requestedContext) } asDictionary
-]
-
-{ #category : 'accessing' }
-MCPMethodUpdatePlanInfo >> commandClassName [
-
-	^ commandClassName
-]
-
-{ #category : 'accessing' }
-MCPMethodUpdatePlanInfo >> commandClassName: aString [
-
-	commandClassName := aString
 ]
 
 { #category : 'accessing' }
