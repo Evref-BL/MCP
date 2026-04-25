@@ -260,8 +260,8 @@ MCP >> rpcToolsList [
 { #category : 'private - saving' }
 MCP >> saveImageAfterSuccessfulTool: aTool result: aResult [
 
-	(aTool shouldSaveImageAfterSuccessfulExecution and: [
-		 aResult isError not ]) ifTrue: [ self saveImageSession ]
+	((aTool shouldSaveImageAfterSuccessfulExecutionForResult: aResult)
+		 and: [ aResult isError not ]) ifTrue: [ self saveImageSession ]
 ]
 
 { #category : 'private - saving' }

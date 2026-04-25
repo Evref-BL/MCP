@@ -80,6 +80,18 @@ MCPToolRequest >> booleanArgumentNamed: anArgumentName default: aBoolean [
 ]
 
 { #category : 'accessing' }
+MCPToolRequest >> booleanArgumentNamed: anArgumentName in: aDictionary default: aBoolean [
+
+	| value |
+	value := self
+		         valueNamed: anArgumentName
+		         in: aDictionary
+		         ifAbsent: [ ^ aBoolean ].
+	value ifNil: [ ^ aBoolean ].
+	^ value
+]
+
+{ #category : 'accessing' }
 MCPToolRequest >> hasArgumentNamed: anArgumentName [
 
 	^ (self arguments includesKey: anArgumentName asSymbol) or: [

@@ -58,6 +58,18 @@ MCPCompiledMethodScopeQuery >> allMethodsDo: aBlock [
 					aBlock value: eachMethod ] ] ] ]
 ]
 
+{ #category : 'converting' }
+MCPCompiledMethodScopeQuery >> asDictionary [
+
+	^ {
+		  (#packageNames -> self packageNames).
+		  (#classNames -> self classNames).
+		  (#hierarchyClassNames -> self hierarchyClassNames).
+		  (#subclassClassNames -> self subclassClassNames).
+		  (#parentClassNames -> self parentClassNames).
+		  (#side -> self side) } asDictionary
+]
+
 { #category : 'querying' }
 MCPCompiledMethodScopeQuery >> behaviors [
 

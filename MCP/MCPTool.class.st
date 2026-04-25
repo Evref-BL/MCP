@@ -98,6 +98,7 @@ MCPTool class >> toolGroups [
 			   MCPToolFindMethods.
 			   MCPToolInspectMethod.
 			   MCPToolEditMethod.
+			   MCPToolRewriteMethods.
 			   MCPToolRemoveMethods }).
 		  (#Tests -> { MCPToolRunTests }).
 		  (#Scripting -> { MCPToolEvaluate }) }
@@ -547,6 +548,12 @@ MCPTool >> schemaPropertyNamed: aName type: aType description: aDescription [
 MCPTool >> shouldSaveImageAfterSuccessfulExecution [
 
 	^ false
+]
+
+{ #category : 'testing' }
+MCPTool >> shouldSaveImageAfterSuccessfulExecutionForResult: aResult [
+
+	^ self shouldSaveImageAfterSuccessfulExecution
 ]
 
 { #category : 'private - schema' }

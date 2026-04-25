@@ -321,23 +321,6 @@ MCPToolFindMethods >> methodQueryResultDataForPage: page entriesKey: entriesKey 
 	^ self queryResultDataFrom: nil page: page entriesKey: entriesKey
 ]
 
-{ #category : 'private - methods' }
-MCPToolFindMethods >> methodScopeQueryFromRequest: request [
-
-	^ MCPCompiledMethodScopeQuery new
-		  packageNames:
-			  (request stringCollectionArgumentNamed: 'packageNames');
-		  classNames: (request stringCollectionArgumentNamed: 'classNames');
-		  hierarchyClassNames:
-			  (request stringCollectionArgumentNamed: 'hierarchyClassNames');
-		  subclassClassNames:
-			  (request stringCollectionArgumentNamed: 'subclassClassNames');
-		  parentClassNames:
-			  (request stringCollectionArgumentNamed: 'parentClassNames');
-		  side: (request stringArgumentNamed: 'side' default: 'both');
-		  yourself
-]
-
 { #category : 'private - template' }
 MCPToolFindMethods >> queryEntriesForQueryRequest: queryRequest [
 

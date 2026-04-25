@@ -127,6 +127,7 @@ MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 			MCPToolFindMethods.
 			MCPToolInspectMethod.
 			MCPToolEditMethod.
+			MCPToolRewriteMethods.
 			MCPToolRemoveMethods.
 			MCPToolRunTests.
 			MCPToolEvaluate }
@@ -158,6 +159,8 @@ MCPToolContractsTest >> testDictionaryShapedCommandResultsUseDTOClasses [
 		                         -> MCPInspectClassResult).
 		                        (MCPInspectMethodCommand
 		                         -> MCPInspectMethodResult).
+		                        (MCPRewriteMethodsCommand
+		                         -> MCPMethodRewriteReport).
 		                        (MCPRemoveMethodsCommand
 		                         -> MCPRemoveMethodsResult) }.
 	commandResultClasses do: [ :association |
@@ -873,11 +876,13 @@ MCPToolContractsTest >> testMethodToolTraitOwnsSharedMethodHelpers [
 		                     MCPToolFindMethods.
 		                     MCPToolInspectMethod.
 		                     MCPToolEditMethod.
+		                     MCPToolRewriteMethods.
 		                     MCPToolRemoveMethods }.
 	sharedSelectors := #( selectorStringFromRequest:
 	                      behaviorNamed:classSide:
 	                      methodReferenceForBehavior:selector:
-	                      methodReferenceForClassName:selector:isClassSide: ).
+	                      methodReferenceForClassName:selector:isClassSide:
+	                      methodScopeQueryFromRequest: ).
 	methodToolClasses do: [ :toolClass |
 		self assert: (toolClass traits includes: TMCPMethodTool).
 		sharedSelectors do: [ :selector |
@@ -895,6 +900,8 @@ MCPToolContractsTest >> testMutatingToolsRequestImageSaveAfterSuccessfulExecutio
 		MCPToolEditClass new shouldSaveImageAfterSuccessfulExecution.
 	self assert:
 		MCPToolEditMethod new shouldSaveImageAfterSuccessfulExecution.
+	self deny:
+		MCPToolRewriteMethods new shouldSaveImageAfterSuccessfulExecution.
 	self assert:
 		MCPToolRemoveClasses new shouldSaveImageAfterSuccessfulExecution.
 	self assert:
@@ -906,11 +913,12 @@ MCPToolContractsTest >> testMutatingToolsRequestImageSaveAfterSuccessfulExecutio
 { #category : 'tests' }
 MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable [
 
-	| editClassTool inspectClassTool inspectMethodTool editMethodTool findClassesTool findMethodsTool findPackagesTool removeClassesTool removeMethodsTool |
+	| editClassTool editMethodTool findClassesTool findMethodsTool findPackagesTool inspectClassTool inspectMethodTool removeClassesTool removeMethodsTool rewriteMethodsTool |
 	editClassTool := MCPToolEditClass new.
 	inspectClassTool := MCPToolInspectClass new.
 	inspectMethodTool := MCPToolInspectMethod new.
 	editMethodTool := MCPToolEditMethod new.
+	rewriteMethodsTool := MCPToolRewriteMethods new.
 	findClassesTool := MCPToolFindClasses new.
 	findMethodsTool := MCPToolFindMethods new.
 	findPackagesTool := MCPToolFindPackages new.
@@ -950,6 +958,27 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 		assert: ((self inputPropertyNamed: 'force' inTool: editMethodTool)
 				 extraProperties at: #default)
 		equals: false.
+	self
+		assert:
+			((self inputPropertyNamed: 'apply' inTool: rewriteMethodsTool)
+				 extraProperties at: #default)
+		equals: false.
+	self
+		assert:
+			((self inputPropertyNamed: 'force' inTool: rewriteMethodsTool)
+				 extraProperties at: #default)
+		equals: false.
+	self
+		assert:
+			((self
+				  inputPropertyNamed: 'includeSources'
+				  inTool: rewriteMethodsTool) extraProperties at: #default)
+		equals: true.
+	self
+		assert:
+			((self inputPropertyNamed: 'side' inTool: rewriteMethodsTool)
+				 extraProperties at: #default)
+		equals: 'both'.
 	self
 		assert:
 			((self inputPropertyNamed: 'filterTargets' inTool: findClassesTool)
@@ -1175,6 +1204,12 @@ MCPToolContractsTest >> testRequestedToolIconsAreAdvertised [
 				 compositeBaseIconNamed: #page
 				 badgeIconNamed: #edit) asJRPCJSON.
 	self
+		assert: (MCPToolRewriteMethods new asJRPCJSON at: #icons) first
+		equals:
+			(MCPStructureIcon
+				 compositeBaseIconNamed: #page
+				 badgeIconNamed: #edit) asJRPCJSON.
+	self
 		assert: (MCPToolFindClasses new asJRPCJSON at: #icons) first
 		equals: (MCPStructureIcon
 				 compositeBaseIconNamed: #class
@@ -1391,6 +1426,13 @@ MCPToolContractsTest >> toolFlowSpecs [
 				   (#protocol -> 'accessing') } asDictionary).
 			  (#requestClass -> MCPMethodUpdateRequest).
 			  (#commandClass -> MCPUpdateMethodCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolRewriteMethods).
+			  (#arguments -> { (#rules -> { {
+				    (#lhs -> 'self').
+				    (#rhs -> 'self') } asDictionary }) } asDictionary).
+			  (#requestClass -> MCPMethodRewriteRequest).
+			  (#commandClass -> MCPRewriteMethodsCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolRemoveMethods).
 			  (#arguments -> {

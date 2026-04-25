@@ -61,6 +61,23 @@ TMCPMethodTool >> methodReferenceForClassName: aClassName selector: aSelector is
 			  nextPutAll: aSelector ]
 ]
 
+{ #category : 'private - methods' }
+TMCPMethodTool >> methodScopeQueryFromRequest: request [
+
+	^ MCPCompiledMethodScopeQuery new
+		  packageNames:
+			  (request stringCollectionArgumentNamed: 'packageNames');
+		  classNames: (request stringCollectionArgumentNamed: 'classNames');
+		  hierarchyClassNames:
+			  (request stringCollectionArgumentNamed: 'hierarchyClassNames');
+		  subclassClassNames:
+			  (request stringCollectionArgumentNamed: 'subclassClassNames');
+		  parentClassNames:
+			  (request stringCollectionArgumentNamed: 'parentClassNames');
+		  side: (request stringArgumentNamed: 'side' default: 'both');
+		  yourself
+]
+
 { #category : 'private - request' }
 TMCPMethodTool >> selectorStringFromRequest: request [
 
