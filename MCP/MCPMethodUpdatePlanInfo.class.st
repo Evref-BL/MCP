@@ -5,8 +5,8 @@ Class {
 	#name : 'MCPMethodUpdatePlanInfo',
 	#superclass : 'Object',
 	#instVars : [
-		'operation',
-		'requestedContext'
+		'requestedContext',
+		'updateAction'
 	],
 	#category : 'MCP-Results',
 	#package : 'MCP',
@@ -14,10 +14,10 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPMethodUpdatePlanInfo class >> operation: anOperation requestedContext: aDictionary [
+MCPMethodUpdatePlanInfo class >> updateAction: anUpdateAction requestedContext: aDictionary [
 
 	^ self new
-		  operation: anOperation;
+		  updateAction: anUpdateAction;
 		  requestedContext: aDictionary;
 		  yourself
 ]
@@ -26,20 +26,8 @@ MCPMethodUpdatePlanInfo class >> operation: anOperation requestedContext: aDicti
 MCPMethodUpdatePlanInfo >> asDictionary [
 
 	^ {
-		  (#operation -> self operation).
+		  (#updateAction -> self updateAction).
 		  (#requestedContext -> self requestedContext) } asDictionary
-]
-
-{ #category : 'accessing' }
-MCPMethodUpdatePlanInfo >> operation [
-
-	^ operation
-]
-
-{ #category : 'accessing' }
-MCPMethodUpdatePlanInfo >> operation: aString [
-
-	operation := aString
 ]
 
 { #category : 'accessing' }
@@ -52,4 +40,16 @@ MCPMethodUpdatePlanInfo >> requestedContext [
 MCPMethodUpdatePlanInfo >> requestedContext: aDictionary [
 
 	requestedContext := aDictionary ifNil: [ Dictionary new ]
+]
+
+{ #category : 'accessing' }
+MCPMethodUpdatePlanInfo >> updateAction [
+
+	^ updateAction
+]
+
+{ #category : 'accessing' }
+MCPMethodUpdatePlanInfo >> updateAction: anObject [
+
+	updateAction := anObject
 ]

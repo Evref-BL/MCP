@@ -527,7 +527,8 @@ MCPToolEditClassTest >> testUpdateAddsClassSideSlot [
 	self
 		assert: (target classSide slots collect: #name as: Array)
 		equals: #( #addedClassSlot ).
-	self assert: (data at: #operation) equals: 'addSlot'.
+	self assert: (data at: #operation) equals: 'update'.
+	self assert: (data at: #updateAction) equals: 'addSlot'.
 	self assert: (data at: #slotName) equals: 'addedClassSlot'.
 	self assert: (data at: #classSide) equals: true.
 	self assert: (data at: #instanceSlotNames) equals: #(  ).
@@ -554,7 +555,8 @@ MCPToolEditClassTest >> testUpdateAddsInstanceSlot [
 	self
 		assert: (target slots collect: #name as: Array)
 		equals: #( #addedSlot ).
-	self assert: (data at: #operation) equals: 'addSlot'.
+	self assert: (data at: #operation) equals: 'update'.
+	self assert: (data at: #updateAction) equals: 'addSlot'.
 	self assert: (data at: #slotName) equals: 'addedSlot'.
 	self assert: (data at: #classSide) equals: false.
 	self assert: (data at: #instanceSlotNames) equals: #( 'addedSlot' ).
@@ -633,7 +635,8 @@ MCPToolEditClassTest >> testUpdateForcePullUpSlotContinuesPastRefactoringWarning
 	self assert: (childOne slots collect: #name as: Array) equals: #(  ).
 	self assert: (childTwo slots collect: #name as: Array) equals: #(  ).
 	self assert: instance slotProbe equals: 17.
-	self assert: (data at: #operation) equals: 'pullUpSlot'.
+	self assert: (data at: #operation) equals: 'update'.
+	self assert: (data at: #updateAction) equals: 'pullUpSlot'.
 	self assert: (data at: #slotName) equals: 'sharedSlot'.
 	self assert: (data at: #classSide) equals: false.
 	self assert: (data at: #instanceSlotNames) equals: #( 'sharedSlot' )
@@ -668,7 +671,8 @@ MCPToolEditClassTest >> testUpdateForceRemoveSlotContinuesPastRefactoringWarning
 			 each includesSubstring:
 				 'Variable referencedSlot is still referenced' ]).
 	self assert: (target slots collect: #name as: Array) equals: #(  ).
-	self assert: (data at: #operation) equals: 'removeSlot'.
+	self assert: (data at: #operation) equals: 'update'.
+	self assert: (data at: #updateAction) equals: 'removeSlot'.
 	self assert: (data at: #slotName) equals: 'referencedSlot'.
 	self assert: (data at: #classSide) equals: false.
 	self assert: (data at: #instanceSlotNames) equals: #(  )
@@ -733,7 +737,8 @@ MCPToolEditClassTest >> testUpdateMovesClassToAnotherPackage [
 	self
 		assert: self moveTargetClass packageName asString
 		equals: self destinationPackageName.
-	self assert: (data at: #operation) equals: 'move'.
+	self assert: (data at: #operation) equals: 'update'.
+	self assert: (data at: #updateAction) equals: 'move'.
 	self assert: (data at: #className) equals: self moveTargetClassName.
 	self
 		assert: (data at: #oldPackageName)
@@ -760,7 +765,8 @@ MCPToolEditClassTest >> testUpdateMovesClassToExistingTag [
 	self
 		assert: self currentTagOfMoveTargetClass
 		equals: self destinationTagName.
-	self assert: (data at: #operation) equals: 'move'.
+	self assert: (data at: #operation) equals: 'update'.
+	self assert: (data at: #updateAction) equals: 'move'.
 	self
 		assert: (data at: #packageName)
 		equals: self destinationPackageName.
@@ -810,7 +816,8 @@ MCPToolEditClassTest >> testUpdatePullUpSlotReturnsStructuredCommandErrorForRefa
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #operation) equals: 'pullUpSlot'.
+	self assert: (error at: #operation) equals: 'update'.
+	self assert: (error at: #updateAction) equals: 'pullUpSlot'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self
 		assert: (error at: #errorCode)
@@ -857,7 +864,8 @@ MCPToolEditClassTest >> testUpdatePullUpSlotStopsOnRefactoringWarningByDefault [
 		            'MCPToolEditClassTestWarningPullUpChildTwo'.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #operation) equals: 'pullUpSlot'.
+	self assert: (error at: #operation) equals: 'update'.
+	self assert: (error at: #updateAction) equals: 'pullUpSlot'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self
 		assert: (error at: #errorCode)
@@ -922,7 +930,8 @@ MCPToolEditClassTest >> testUpdatePullsUpInstanceSlotAcrossSubclasses [
 	self assert: (childOne slots collect: #name as: Array) equals: #(  ).
 	self assert: (childTwo slots collect: #name as: Array) equals: #(  ).
 	self assert: instance slotProbe equals: 41.
-	self assert: (data at: #operation) equals: 'pullUpSlot'.
+	self assert: (data at: #operation) equals: 'update'.
+	self assert: (data at: #updateAction) equals: 'pullUpSlot'.
 	self assert: (data at: #slotName) equals: 'sharedSlot'.
 	self assert: (data at: #classSide) equals: false.
 	self assert: (data at: #instanceSlotNames) equals: #( 'sharedSlot' ).
@@ -977,7 +986,8 @@ MCPToolEditClassTest >> testUpdatePushesDownClassSlotToDirectSubclasses [
 		assert: (childTwo classSide slots collect: #name as: Array)
 		equals: #( #sharedClassSlot ).
 	self assert: childOne slotProbe equals: 23.
-	self assert: (data at: #operation) equals: 'pushDownSlot'.
+	self assert: (data at: #operation) equals: 'update'.
+	self assert: (data at: #updateAction) equals: 'pushDownSlot'.
 	self assert: (data at: #slotName) equals: 'sharedClassSlot'.
 	self assert: (data at: #classSide) equals: true.
 	self assert: (data at: #classSlotNames) equals: #(  ).
@@ -1004,7 +1014,8 @@ MCPToolEditClassTest >> testUpdateRecategorizesWithinCurrentPackageWhenPackageNa
 	self
 		assert: self currentTagOfMoveTargetClass
 		equals: self destinationTagName.
-	self assert: (data at: #operation) equals: 'move'.
+	self assert: (data at: #operation) equals: 'update'.
+	self assert: (data at: #updateAction) equals: 'move'.
 	self
 		assert: (data at: #packageName)
 		equals: self originalMovePackageName.
@@ -1039,7 +1050,8 @@ MCPToolEditClassTest >> testUpdateRemoveSlotStopsOnRefactoringWarningByDefault [
 		          'MCPToolEditClassTestWarningRemoveSlotTarget'.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #operation) equals: 'removeSlot'.
+	self assert: (error at: #operation) equals: 'update'.
+	self assert: (error at: #updateAction) equals: 'removeSlot'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self
 		assert: (error at: #errorCode)
@@ -1084,7 +1096,8 @@ MCPToolEditClassTest >> testUpdateRemovesClassSideSlot [
 	self
 		assert: (target classSide slots collect: #name as: Array)
 		equals: #(  ).
-	self assert: (data at: #operation) equals: 'removeSlot'.
+	self assert: (data at: #operation) equals: 'update'.
+	self assert: (data at: #updateAction) equals: 'removeSlot'.
 	self assert: (data at: #slotName) equals: 'removableClassSlot'.
 	self assert: (data at: #classSide) equals: true.
 	self assert: (data at: #instanceSlotNames) equals: #(  ).
@@ -1111,7 +1124,8 @@ MCPToolEditClassTest >> testUpdateRemovesClassSideTraitsWithEmptyArray [
 		               'MCPToolEditClassTestClassTraitRemovalTarget'.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: targetClass classSide traits isEmpty.
-	self assert: (data at: #operation) equals: 'replaceClassTraits'.
+	self assert: (data at: #operation) equals: 'update'.
+	self assert: (data at: #updateAction) equals: 'replaceClassTraits'.
 	self
 		assert: (data at: #oldClassTraitNames)
 		equals: #( 'TAbleToRotate classTrait' ).
@@ -1137,7 +1151,8 @@ MCPToolEditClassTest >> testUpdateRemovesInstanceSlot [
 	target := self classNamed: 'MCPToolEditClassTestRemoveSlotTarget'.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (target slots collect: #name as: Array) equals: #(  ).
-	self assert: (data at: #operation) equals: 'removeSlot'.
+	self assert: (data at: #operation) equals: 'update'.
+	self assert: (data at: #updateAction) equals: 'removeSlot'.
 	self assert: (data at: #slotName) equals: 'removableSlot'.
 	self assert: (data at: #classSide) equals: false.
 	self assert: (data at: #instanceSlotNames) equals: #(  ).
@@ -1164,7 +1179,8 @@ MCPToolEditClassTest >> testUpdateRemovesSharedPoolsWithEmptyArray [
 		               'MCPToolEditClassTestSharedPoolRemovalTarget'.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: targetClass sharedPools isEmpty.
-	self assert: (data at: #operation) equals: 'replaceSharedPools'.
+	self assert: (data at: #operation) equals: 'update'.
+	self assert: (data at: #updateAction) equals: 'replaceSharedPools'.
 	self
 		assert: (data at: #oldSharedPoolNames)
 		equals: #( 'ChronologyConstants' ).
@@ -1192,7 +1208,10 @@ MCPToolEditClassTest >> testUpdateRemovesSharedVariablesWithEmptyArray [
 		               'MCPToolEditClassTestSharedVariableRemovalTarget'.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: targetClass classVarNames isEmpty.
-	self assert: (data at: #operation) equals: 'replaceSharedVariables'.
+	self assert: (data at: #operation) equals: 'update'.
+	self
+		assert: (data at: #updateAction)
+		equals: 'replaceSharedVariables'.
 	self
 		assert: (data at: #oldSharedVariableNames)
 		equals: #( 'AlphaShared' ).
@@ -1220,7 +1239,8 @@ MCPToolEditClassTest >> testUpdateRemovesTraitsWithEmptyArray [
 		               'MCPToolEditClassTestTraitRemovalTarget'.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: targetClass traits isEmpty.
-	self assert: (data at: #operation) equals: 'replaceTraits'.
+	self assert: (data at: #operation) equals: 'update'.
+	self assert: (data at: #updateAction) equals: 'replaceTraits'.
 	self assert: (data at: #oldTraitNames) equals: #( 'TAbleToRotate' ).
 	self assert: (data at: #newTraitNames) equals: #(  ).
 	self assert: (data at: #traitNames) equals: #(  )
@@ -1303,7 +1323,8 @@ MCPToolEditClassTest >> testUpdateRenamesClassAndReturnsStructuredData [
 		(Smalltalk globals includesKey: self renamedClassName asSymbol).
 	self deny:
 		(Smalltalk globals includesKey: self originalClassName asSymbol).
-	self assert: (data at: #operation) equals: 'rename'.
+	self assert: (data at: #operation) equals: 'update'.
+	self assert: (data at: #updateAction) equals: 'rename'.
 	self assert: (data at: #className) equals: self renamedClassName.
 	self assert: (data at: #oldClassName) equals: self originalClassName.
 	self assert: (data at: #newClassName) equals: self renamedClassName.
@@ -1362,7 +1383,8 @@ MCPToolEditClassTest >> testUpdateRenamesClassSideSlotAndPreservesValue [
 	self assert: target renamedClassSlot equals: 73.
 	target renamedClassSlot: 91.
 	self assert: target slotProbe equals: 91.
-	self assert: (data at: #operation) equals: 'renameSlot'.
+	self assert: (data at: #operation) equals: 'update'.
+	self assert: (data at: #updateAction) equals: 'renameSlot'.
 	self assert: (data at: #oldSlotName) equals: 'oldClassSlot'.
 	self assert: (data at: #newSlotName) equals: 'renamedClassSlot'.
 	self assert: (data at: #classSide) equals: true.
@@ -1413,7 +1435,8 @@ MCPToolEditClassTest >> testUpdateRenamesInstanceSlotAndUpdatesReferences [
 	self assert: (target includesSelector: #renamedSlot:).
 	self assert: instance renamedSlot equals: 37.
 	self assert: instance slotProbe equals: 37.
-	self assert: (data at: #operation) equals: 'renameSlot'.
+	self assert: (data at: #operation) equals: 'update'.
+	self assert: (data at: #updateAction) equals: 'renameSlot'.
 	self assert: (data at: #oldSlotName) equals: 'oldSlot'.
 	self assert: (data at: #newSlotName) equals: 'renamedSlot'.
 	self assert: (data at: #classSide) equals: false.
@@ -1451,7 +1474,8 @@ MCPToolEditClassTest >> testUpdateReparentsClassAndPreservesExistingState [
 		equals: self reparentSuperclassName.
 	self assert: target new probeMethod equals: 41.
 	self assert: target comment equals: 'reparent comment'.
-	self assert: (data at: #operation) equals: 'reparent'.
+	self assert: (data at: #operation) equals: 'update'.
+	self assert: (data at: #updateAction) equals: 'reparent'.
 	self assert: (data at: #oldSuperclassName) equals: 'Object'.
 	self
 		assert: (data at: #superclassName)
@@ -1483,7 +1507,8 @@ MCPToolEditClassTest >> testUpdateReplacesClassSideTraits [
 				 collect: [ :each | each name asString ]
 				 as: Array)
 		equals: #( 'TComparable classTrait' ).
-	self assert: (data at: #operation) equals: 'replaceClassTraits'.
+	self assert: (data at: #operation) equals: 'update'.
+	self assert: (data at: #updateAction) equals: 'replaceClassTraits'.
 	self
 		assert: (data at: #oldClassTraitNames)
 		equals: #( 'TAbleToRotate classTrait' ).
@@ -1494,7 +1519,7 @@ MCPToolEditClassTest >> testUpdateReplacesClassSideTraits [
 		assert: (data at: #classTraitNames)
 		equals: #( 'TComparable classTrait' ).
 	self
-		assert: ((data at: #updatePlan) at: #operation)
+		assert: ((data at: #updatePlan) at: #updateAction)
 		equals: 'replaceClassTraits'.
 	self
 		assert: ((data at: #appliedChange) at: #resultClassName)
@@ -1518,12 +1543,13 @@ MCPToolEditClassTest >> testUpdateReplacesLayout [
 	targetClass := self classNamed: 'MCPToolEditClassTestLayoutTarget'.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: targetClass classLayout class name equals: #WeakLayout.
-	self assert: (data at: #operation) equals: 'replaceLayout'.
+	self assert: (data at: #operation) equals: 'update'.
+	self assert: (data at: #updateAction) equals: 'replaceLayout'.
 	self assert: (data at: #oldLayoutClassName) equals: 'FixedLayout'.
 	self assert: (data at: #newLayoutClassName) equals: 'WeakLayout'.
 	self assert: (data at: #layoutClassName) equals: 'WeakLayout'.
 	self
-		assert: ((data at: #updatePlan) at: #operation)
+		assert: ((data at: #updatePlan) at: #updateAction)
 		equals: 'replaceLayout'.
 	self
 		assert: ((data at: #appliedChange) at: #resultClassName)
@@ -1554,7 +1580,8 @@ MCPToolEditClassTest >> testUpdateReplacesSharedPools [
 				 collect: [ :each | each name asString ]
 				 as: Array)
 		equals: #( 'TextConstants' ).
-	self assert: (data at: #operation) equals: 'replaceSharedPools'.
+	self assert: (data at: #operation) equals: 'update'.
+	self assert: (data at: #updateAction) equals: 'replaceSharedPools'.
 	self
 		assert: (data at: #oldSharedPoolNames)
 		equals: #( 'ChronologyConstants' ).
@@ -1563,7 +1590,7 @@ MCPToolEditClassTest >> testUpdateReplacesSharedPools [
 		equals: #( 'TextConstants' ).
 	self assert: (data at: #sharedPoolNames) equals: #( 'TextConstants' ).
 	self
-		assert: ((data at: #updatePlan) at: #operation)
+		assert: ((data at: #updatePlan) at: #updateAction)
 		equals: 'replaceSharedPools'.
 	self
 		assert: ((data at: #appliedChange) at: #resultClassName)
@@ -1590,7 +1617,10 @@ MCPToolEditClassTest >> testUpdateReplacesSharedVariables [
 		               'MCPToolEditClassTestSharedVariableTarget'.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: targetClass classVarNames equals: #( #BetaShared ).
-	self assert: (data at: #operation) equals: 'replaceSharedVariables'.
+	self assert: (data at: #operation) equals: 'update'.
+	self
+		assert: (data at: #updateAction)
+		equals: 'replaceSharedVariables'.
 	self
 		assert: (data at: #oldSharedVariableNames)
 		equals: #( 'AlphaShared' ).
@@ -1601,7 +1631,7 @@ MCPToolEditClassTest >> testUpdateReplacesSharedVariables [
 		assert: (data at: #sharedVariableNames)
 		equals: #( 'BetaShared' ).
 	self
-		assert: ((data at: #updatePlan) at: #operation)
+		assert: ((data at: #updatePlan) at: #updateAction)
 		equals: 'replaceSharedVariables'.
 	self
 		assert: ((data at: #appliedChange) at: #resultClassName)
@@ -1636,7 +1666,8 @@ MCPToolEditClassTest >> testUpdateReplacesSlotDefinitionAndPreservesMatchingValu
 		equals: #( #keptClassSlot #newClassSlot ).
 	self assert: (instance instVarNamed: 'keptSlot') equals: 13.
 	self assert: (target instVarNamed: 'keptClassSlot') equals: 17.
-	self assert: (data at: #operation) equals: 'replaceDefinition'.
+	self assert: (data at: #operation) equals: 'update'.
+	self assert: (data at: #updateAction) equals: 'replaceDefinition'.
 	self
 		assert: (data at: #oldInstanceSlotNames)
 		equals: #( 'oldSlot' 'keptSlot' ).
@@ -1656,7 +1687,7 @@ MCPToolEditClassTest >> testUpdateReplacesSlotDefinitionAndPreservesMatchingValu
 		assert: (data at: #classSlotNames)
 		equals: #( 'keptClassSlot' 'newClassSlot' ).
 	self
-		assert: ((data at: #updatePlan) at: #operation)
+		assert: ((data at: #updatePlan) at: #updateAction)
 		equals: 'replaceDefinition'.
 	self
 		assert: ((data at: #appliedChange) at: #resultClassName)
@@ -1687,12 +1718,13 @@ MCPToolEditClassTest >> testUpdateReplacesTraits [
 			 collect: [ :each | each name asString ]
 			 as: Array)
 		equals: #( 'TComparable' ).
-	self assert: (data at: #operation) equals: 'replaceTraits'.
+	self assert: (data at: #operation) equals: 'update'.
+	self assert: (data at: #updateAction) equals: 'replaceTraits'.
 	self assert: (data at: #oldTraitNames) equals: #( 'TAbleToRotate' ).
 	self assert: (data at: #newTraitNames) equals: #( 'TComparable' ).
 	self assert: (data at: #traitNames) equals: #( 'TComparable' ).
 	self
-		assert: ((data at: #updatePlan) at: #operation)
+		assert: ((data at: #updatePlan) at: #updateAction)
 		equals: 'replaceTraits'.
 	self
 		assert: ((data at: #appliedChange) at: #resultClassName)
@@ -1731,7 +1763,8 @@ MCPToolEditClassTest >> testUpdateReturnsStructuredErrorWhenAddSlotClassIsMissin
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #operation) equals: 'addSlot'.
+	self assert: (error at: #operation) equals: 'update'.
+	self assert: (error at: #updateAction) equals: 'addSlot'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
 	self
@@ -1751,7 +1784,8 @@ MCPToolEditClassTest >> testUpdateReturnsStructuredErrorWhenCommentClassIsMissin
 			          (#classComment -> 'ignored') } asDictionary.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self assert: (error at: #operation) equals: 'setComment'.
+	self assert: (error at: #operation) equals: 'update'.
+	self assert: (error at: #updateAction) equals: 'setComment'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
 	self
@@ -1778,7 +1812,8 @@ MCPToolEditClassTest >> testUpdateReturnsStructuredErrorWhenMoveClassIsMissing [
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #operation) equals: 'move'.
+	self assert: (error at: #operation) equals: 'update'.
+	self assert: (error at: #updateAction) equals: 'move'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
 	self
@@ -1799,7 +1834,8 @@ MCPToolEditClassTest >> testUpdateReturnsStructuredErrorWhenPullUpSlotClassIsMis
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #operation) equals: 'pullUpSlot'.
+	self assert: (error at: #operation) equals: 'update'.
+	self assert: (error at: #updateAction) equals: 'pullUpSlot'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
 	self
@@ -1822,7 +1858,8 @@ MCPToolEditClassTest >> testUpdateReturnsStructuredErrorWhenRemoveSlotClassIsMis
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #operation) equals: 'removeSlot'.
+	self assert: (error at: #operation) equals: 'update'.
+	self assert: (error at: #updateAction) equals: 'removeSlot'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
 	self
@@ -1842,7 +1879,8 @@ MCPToolEditClassTest >> testUpdateReturnsStructuredErrorWhenRenameClassIsMissing
 			          (#newClassName -> self renamedClassName) } asDictionary.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self assert: (error at: #operation) equals: 'rename'.
+	self assert: (error at: #operation) equals: 'update'.
+	self assert: (error at: #updateAction) equals: 'rename'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
 	self
@@ -1864,7 +1902,8 @@ MCPToolEditClassTest >> testUpdateReturnsStructuredErrorWhenRenameSlotClassIsMis
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #operation) equals: 'renameSlot'.
+	self assert: (error at: #operation) equals: 'update'.
+	self assert: (error at: #updateAction) equals: 'renameSlot'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
 	self
@@ -1891,7 +1930,8 @@ MCPToolEditClassTest >> testUpdateReturnsStructuredErrorWhenReparentSuperclassIs
 			          asDictionary.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self assert: (error at: #operation) equals: 'reparent'.
+	self assert: (error at: #operation) equals: 'update'.
+	self assert: (error at: #updateAction) equals: 'reparent'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'SuperclassNotFound'.
 	self
@@ -1915,7 +1955,8 @@ MCPToolEditClassTest >> testUpdateReturnsStructuredErrorWhenReplacementClassTrai
 			           classTraits: #( 'DefinitelyMissingClassTrait' )).
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self assert: (error at: #operation) equals: 'replaceClassTraits'.
+	self assert: (error at: #operation) equals: 'update'.
+	self assert: (error at: #updateAction) equals: 'replaceClassTraits'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ClassTraitNotFound'.
 	self
@@ -1944,7 +1985,8 @@ MCPToolEditClassTest >> testUpdateReturnsStructuredErrorWhenReplacementLayoutIsI
 			           layout: 'Object').
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self assert: (error at: #operation) equals: 'replaceLayout'.
+	self assert: (error at: #operation) equals: 'update'.
+	self assert: (error at: #updateAction) equals: 'replaceLayout'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'InvalidLayoutClass'.
 	self
@@ -1968,7 +2010,8 @@ MCPToolEditClassTest >> testUpdateReturnsStructuredErrorWhenReplacementLayoutIsM
 			           layout: 'DefinitelyMissingLayout').
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self assert: (error at: #operation) equals: 'replaceLayout'.
+	self assert: (error at: #operation) equals: 'update'.
+	self assert: (error at: #updateAction) equals: 'replaceLayout'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'LayoutClassNotFound'.
 	self
@@ -1993,7 +2036,8 @@ MCPToolEditClassTest >> testUpdateReturnsStructuredErrorWhenReplacementSharedPoo
 			           sharedPools: #( 'DefinitelyMissingSharedPool' )).
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self assert: (error at: #operation) equals: 'replaceSharedPools'.
+	self assert: (error at: #operation) equals: 'update'.
+	self assert: (error at: #updateAction) equals: 'replaceSharedPools'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'SharedPoolNotFound'.
 	self
@@ -2023,7 +2067,8 @@ MCPToolEditClassTest >> testUpdateReturnsStructuredErrorWhenReplacementTraitIsMi
 			           traits: #( 'DefinitelyMissingTrait' )).
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self assert: (error at: #operation) equals: 'replaceTraits'.
+	self assert: (error at: #operation) equals: 'update'.
+	self assert: (error at: #updateAction) equals: 'replaceTraits'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'TraitNotFound'.
 	self
@@ -2055,11 +2100,12 @@ MCPToolEditClassTest >> testUpdateSetsClassComment [
 	target := self classNamed: self commentTargetClassName.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: target comment equals: 'updated comment'.
-	self assert: (data at: #operation) equals: 'setComment'.
+	self assert: (data at: #operation) equals: 'update'.
+	self assert: (data at: #updateAction) equals: 'setComment'.
 	self assert: (data at: #classComment) equals: 'updated comment'.
 	self assert: (data at: #oldClassComment) equals: 'original comment'.
 	self assert: (data at: #newClassComment) equals: 'updated comment'.
-	self assert: (updatePlan at: #operation) equals: 'setComment'.
+	self assert: (updatePlan at: #updateAction) equals: 'setComment'.
 	self deny: (updatePlan includesKey: #commandClassName).
 	self
 		assert: ((data at: #appliedChange) at: #resultClassName)

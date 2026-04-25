@@ -14,12 +14,12 @@ Class {
 { #category : 'private - schema' }
 MCPToolEditClass >> appliedChangeOutputSchemaProperty [
 
-	| operationProperty property resultClassProperty resultProperty |
-	operationProperty := self
-		                     schemaPropertyNamed: 'operation'
-		                     type: 'string'
-		                     description:
-		                     'The update action that produced the applied change.'.
+	| property resultClassProperty resultProperty updateActionProperty |
+	updateActionProperty := self
+		                        schemaPropertyNamed: 'updateAction'
+		                        type: 'string'
+		                        description:
+		                        'The update action that produced the applied change.'.
 	resultClassProperty := self
 		                       schemaPropertyNamed: 'resultClassName'
 		                       type: 'string'
@@ -38,10 +38,10 @@ MCPToolEditClass >> appliedChangeOutputSchemaProperty [
 		            'The applied update change and its result DTO.'.
 	property
 		properties: {
-				operationProperty.
+				updateActionProperty.
 				resultClassProperty.
 				resultProperty };
-		required: #( 'operation' 'resultClassName' 'result' );
+		required: #( 'updateAction' 'resultClassName' 'result' );
 		additionalProperties: false.
 	^ property
 ]
@@ -225,7 +225,13 @@ MCPToolEditClass >> defaultOutputSchema [
 				  (self
 					   schemaPropertyNamed: 'operation'
 					   type: 'string'
-					   description: 'The class edit operation that was performed.').
+					   description:
+					   'The public class edit operation that was performed: create or update.').
+				  (self
+					   schemaPropertyNamed: 'updateAction'
+					   type: 'string'
+					   description:
+					   'The update action performed when operation=update.').
 				  self updatePlanOutputSchemaProperty.
 				  self appliedChangeOutputSchemaProperty.
 				  (self
@@ -264,22 +270,22 @@ MCPToolEditClass >> defaultOutputSchema [
 				  (self
 					   stringArraySchemaNamed: 'oldInstanceSlotNames'
 					   description:
-					   'The instance-side slots present before operation=replaceDefinition.'
+					   'The instance-side slots present before updateAction=replaceDefinition.'
 					   itemDescription: 'A previous instance-side slot name.').
 				  (self
 					   stringArraySchemaNamed: 'newInstanceSlotNames'
 					   description:
-					   'The instance-side slots requested by operation=replaceDefinition.'
+					   'The instance-side slots requested by updateAction=replaceDefinition.'
 					   itemDescription: 'A new instance-side slot name.').
 				  (self
 					   stringArraySchemaNamed: 'oldClassSlotNames'
 					   description:
-					   'The class-side slots present before operation=replaceDefinition.'
+					   'The class-side slots present before updateAction=replaceDefinition.'
 					   itemDescription: 'A previous class-side slot name.').
 				  (self
 					   stringArraySchemaNamed: 'newClassSlotNames'
 					   description:
-					   'The class-side slots requested by operation=replaceDefinition.'
+					   'The class-side slots requested by updateAction=replaceDefinition.'
 					   itemDescription: 'A new class-side slot name.').
 				  (self
 					   stringArraySchemaNamed: 'traitNames'
@@ -289,12 +295,12 @@ MCPToolEditClass >> defaultOutputSchema [
 				  (self
 					   stringArraySchemaNamed: 'oldTraitNames'
 					   description:
-					   'The instance-side traits used before operation=replaceTraits.'
+					   'The instance-side traits used before updateAction=replaceTraits.'
 					   itemDescription: 'A previous trait name.').
 				  (self
 					   stringArraySchemaNamed: 'newTraitNames'
 					   description:
-					   'The instance-side traits requested by operation=replaceTraits.'
+					   'The instance-side traits requested by updateAction=replaceTraits.'
 					   itemDescription: 'A new trait name.').
 				  (self
 					   stringArraySchemaNamed: 'classTraitNames'
@@ -304,12 +310,12 @@ MCPToolEditClass >> defaultOutputSchema [
 				  (self
 					   stringArraySchemaNamed: 'oldClassTraitNames'
 					   description:
-					   'The class-side traits used before operation=replaceClassTraits.'
+					   'The class-side traits used before updateAction=replaceClassTraits.'
 					   itemDescription: 'A previous class-side trait name.').
 				  (self
 					   stringArraySchemaNamed: 'newClassTraitNames'
 					   description:
-					   'The class-side traits requested by operation=replaceClassTraits.'
+					   'The class-side traits requested by updateAction=replaceClassTraits.'
 					   itemDescription: 'A new class-side trait name.').
 				  (self
 					   stringArraySchemaNamed: 'sharedVariableNames'
@@ -319,12 +325,12 @@ MCPToolEditClass >> defaultOutputSchema [
 				  (self
 					   stringArraySchemaNamed: 'oldSharedVariableNames'
 					   description:
-					   'The class variables defined before operation=replaceSharedVariables.'
+					   'The class variables defined before updateAction=replaceSharedVariables.'
 					   itemDescription: 'A previous class variable name.').
 				  (self
 					   stringArraySchemaNamed: 'newSharedVariableNames'
 					   description:
-					   'The class variables requested by operation=replaceSharedVariables.'
+					   'The class variables requested by updateAction=replaceSharedVariables.'
 					   itemDescription: 'A new class variable name.').
 				  (self
 					   stringArraySchemaNamed: 'sharedPoolNames'
@@ -334,12 +340,12 @@ MCPToolEditClass >> defaultOutputSchema [
 				  (self
 					   stringArraySchemaNamed: 'oldSharedPoolNames'
 					   description:
-					   'The shared pools referenced before operation=replaceSharedPools.'
+					   'The shared pools referenced before updateAction=replaceSharedPools.'
 					   itemDescription: 'A previous shared pool name.').
 				  (self
 					   stringArraySchemaNamed: 'newSharedPoolNames'
 					   description:
-					   'The shared pools requested by operation=replaceSharedPools.'
+					   'The shared pools requested by updateAction=replaceSharedPools.'
 					   itemDescription: 'A new shared pool name.').
 				  (self
 					   schemaPropertyNamed: 'layoutClassName'
@@ -350,26 +356,26 @@ MCPToolEditClass >> defaultOutputSchema [
 					   schemaPropertyNamed: 'oldLayoutClassName'
 					   type: 'string'
 					   description:
-					   'The layout class used before operation=replaceLayout.').
+					   'The layout class used before updateAction=replaceLayout.').
 				  (self
 					   schemaPropertyNamed: 'newLayoutClassName'
 					   type: 'string'
 					   description:
-					   'The layout class requested by operation=replaceLayout.').
+					   'The layout class requested by updateAction=replaceLayout.').
 				  (self
 					   schemaPropertyNamed: 'slotName'
 					   type: 'string'
 					   description:
-					   'The slot name that was added, removed, pulled up, or pushed down when operation=addSlot, operation=removeSlot, operation=pullUpSlot, or operation=pushDownSlot.').
+					   'The slot name that was added, removed, pulled up, or pushed down when updateAction=addSlot, updateAction=removeSlot, updateAction=pullUpSlot, or updateAction=pushDownSlot.').
 				  (self
 					   schemaPropertyNamed: 'oldSlotName'
 					   type: 'string'
 					   description:
-					   'The previous slot name when operation=renameSlot.').
+					   'The previous slot name when updateAction=renameSlot.').
 				  (self
 					   schemaPropertyNamed: 'newSlotName'
 					   type: 'string'
-					   description: 'The new slot name when operation=renameSlot.').
+					   description: 'The new slot name when updateAction=renameSlot.').
 				  (self
 					   booleanSchemaPropertyNamed: 'classSide'
 					   description:
@@ -379,7 +385,7 @@ MCPToolEditClass >> defaultOutputSchema [
 					    schemaPropertyNamed: 'affectedClassNames'
 					    type: 'array'
 					    description:
-						    'The other classes whose slot definitions were changed by operation=pullUpSlot or operation=pushDownSlot.')
+						    'The other classes whose slot definitions were changed by updateAction=pullUpSlot or updateAction=pushDownSlot.')
 					   items: (MCPStructureProperties new
 							    type: 'string';
 							    description: 'An affected class name.';
@@ -398,34 +404,36 @@ MCPToolEditClass >> defaultOutputSchema [
 				  (self
 					   schemaPropertyNamed: 'oldPackageName'
 					   type: 'string'
-					   description: 'The previous package when operation=move.').
+					   description: 'The previous package when updateAction=move.').
 				  (self
 					   schemaPropertyNamed: 'oldTag'
 					   type: 'string'
-					   description: 'The previous package tag when operation=move.').
+					   description:
+					   'The previous package tag when updateAction=move.').
 				  (self
 					   schemaPropertyNamed: 'oldClassName'
 					   type: 'string'
-					   description: 'The previous class name when operation=rename.').
+					   description:
+					   'The previous class name when updateAction=rename.').
 				  (self
 					   schemaPropertyNamed: 'newClassName'
 					   type: 'string'
-					   description: 'The new class name when operation=rename.').
+					   description: 'The new class name when updateAction=rename.').
 				  (self
 					   schemaPropertyNamed: 'oldSuperclassName'
 					   type: 'string'
 					   description:
-					   'The previous superclass when operation=reparent.').
+					   'The previous superclass when updateAction=reparent.').
 				  (self
 					   schemaPropertyNamed: 'oldClassComment'
 					   type: 'string'
 					   description:
-					   'The previous class comment when operation=setComment.').
+					   'The previous class comment when updateAction=setComment.').
 				  (self
 					   schemaPropertyNamed: 'newClassComment'
 					   type: 'string'
 					   description:
-					   'The new class comment when operation=setComment.') }
+					   'The new class comment when updateAction=setComment.') }
 		  required:
 			  #( 'operation' 'className' 'superclassName' 'packageName'
 			     'tag' 'classComment' 'instanceSlotNames' 'classSlotNames'
@@ -671,12 +679,12 @@ MCPToolEditClass >> slotDescriptionForClassSide: aBoolean [
 { #category : 'private - schema' }
 MCPToolEditClass >> updatePlanOutputSchemaProperty [
 
-	| operationProperty property requestedContextProperty |
-	operationProperty := self
-		                     schemaPropertyNamed: 'operation'
-		                     type: 'string'
-		                     description:
-		                     'The update action selected from operation=update.'.
+	| property requestedContextProperty updateActionProperty |
+	updateActionProperty := self
+		                        schemaPropertyNamed: 'updateAction'
+		                        type: 'string'
+		                        description:
+		                        'The update action selected from operation=update.'.
 	requestedContextProperty := self
 		                            schemaPropertyNamed: 'requestedContext'
 		                            type: 'object'
@@ -690,9 +698,9 @@ MCPToolEditClass >> updatePlanOutputSchemaProperty [
 		            'The planned update action before it is executed.'.
 	property
 		properties: {
-				operationProperty.
+				updateActionProperty.
 				requestedContextProperty };
-		required: #( 'operation' 'requestedContext' );
+		required: #( 'updateAction' 'requestedContext' );
 		additionalProperties: false.
 	^ property
 ]

@@ -143,12 +143,13 @@ MCPUpdateClassCommand >> executeMoveWithPlan: plan [
 MCPUpdateClassCommand >> executePlan: plan [
 
 	| selector |
-	selector := self executeSelectorForAction: plan operation.
+	selector := self executeSelectorForAction: plan updateAction.
 	selector ifNotNil: [ ^ self perform: selector with: plan ].
 	^ self tool
 		  errorResultForCommandError: (MCPCommandError new
 				   errorCode: #UnknownClassUpdateAction;
-				   messageText: 'Unknown class update action: ' , plan operation;
+				   messageText:
+					   'Unknown class update action: ' , plan updateAction;
 				   details: plan requestedContext;
 				   yourself)
 		  operation: 'update'
@@ -626,7 +627,7 @@ MCPUpdateClassCommand >> updatePlan [
 	| action |
 	action := self updateAction.
 	^ MCPClassUpdatePlanInfo
-		  operation: action
+		  updateAction: action
 		  requestedContext: (self requestedContextForAction: action)
 ]
 

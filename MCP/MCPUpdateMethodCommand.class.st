@@ -71,7 +71,7 @@ MCPUpdateMethodCommand >> executeChangeProtocolWithPlan: plan [
 						    classSide: self request classSide)) execute.
 			  newCompiledMethod := behavior compiledMethodAt: selectorSymbol.
 			  changeResult := (MCPMethodUpdateChangeResult
-				                   operation: 'changeProtocol'
+				                   updateAction: 'changeProtocol'
 				                   method: newCompiledMethod)
 				                  oldProtocol: oldProtocol;
 				                  newProtocol: self request protocol;
@@ -99,12 +99,13 @@ MCPUpdateMethodCommand >> executeChangeProtocolWithPlan: plan [
 MCPUpdateMethodCommand >> executePlan: plan [
 
 	| selector |
-	selector := self executeSelectorForAction: plan operation.
+	selector := self executeSelectorForAction: plan updateAction.
 	selector ifNotNil: [ ^ self perform: selector with: plan ].
 	^ self tool
 		  errorResultForCommandError: (MCPCommandError new
 				   errorCode: #UnknownMethodUpdateAction;
-				   messageText: 'Unknown method update action: ' , plan operation;
+				   messageText:
+					   'Unknown method update action: ' , plan updateAction;
 				   details: plan requestedContext;
 				   yourself)
 		  operation: 'update'
@@ -148,7 +149,7 @@ MCPUpdateMethodCommand >> executeRenameWithPlan: plan [
 				                       reformattedMethodForBehavior: behavior
 				                       selector: newSelectorSymbol.
 			  changeResult := (MCPMethodUpdateChangeResult
-				                   operation: 'rename'
+				                   updateAction: 'rename'
 				                   method: newCompiledMethod)
 				                  oldSelector: self request selector;
 				                  newSelector: self request newSelector;
@@ -264,6 +265,6 @@ MCPUpdateMethodCommand >> updatePlan [
 	| action |
 	action := self updateAction.
 	^ MCPMethodUpdatePlanInfo
-		  operation: action
+		  updateAction: action
 		  requestedContext: (self requestedContextForAction: action)
 ]

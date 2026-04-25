@@ -86,7 +86,11 @@ MCPToolEdit >> errorResultForCommandError: anError operation: operation requeste
 	requestedContext ifNotNil: [
 		requestedContext keysAndValuesDo: [ :key :value |
 			value ifNotNil: [ details at: key ifAbsentPut: [ value ] ] ] ].
-	details at: #operation put: operation.
+	(#( 'create' 'update' ) includes: operation)
+		ifTrue: [ details at: #operation put: operation ]
+		ifFalse: [
+			details at: #operation put: 'update'.
+			details at: #updateAction put: operation ].
 	^ self errorResultText: anError messageText details: details
 ]
 

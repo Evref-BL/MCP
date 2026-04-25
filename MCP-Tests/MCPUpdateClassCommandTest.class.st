@@ -24,7 +24,7 @@ MCPUpdateClassCommandTest >> testAppliedChangeResultWrapsPlanAndResult [
 
 	| appliedChange changeResult data plan |
 	plan := MCPClassUpdatePlanInfo
-		        operation: 'setComment'
+		        updateAction: 'setComment'
 		        requestedContext: { (#className -> 'Object') } asDictionary.
 	changeResult := MCPChangeClassCommentResult
 		                classInfo: (MCPClassInfo fromClass: Object)
@@ -34,9 +34,10 @@ MCPUpdateClassCommandTest >> testAppliedChangeResultWrapsPlanAndResult [
 		                 updatePlan: plan
 		                 changeResult: changeResult.
 	data := appliedChange asDictionary.
-	self assert: (data at: #operation) equals: 'setComment'.
+	self assert: (data at: #operation) equals: 'update'.
+	self assert: (data at: #updateAction) equals: 'setComment'.
 	self
-		assert: ((data at: #updatePlan) at: #operation)
+		assert: ((data at: #updatePlan) at: #updateAction)
 		equals: 'setComment'.
 	self deny: ((data at: #updatePlan) includesKey: #commandClassName).
 	self
@@ -54,7 +55,7 @@ MCPUpdateClassCommandTest >> testBuildsClassTraitReplacementUpdatePlan [
 			            { (#classTraits -> #( 'TAbleToRotate classTrait' )) }).
 	plan := command updatePlan.
 	context := plan requestedContext.
-	self assert: plan operation equals: 'replaceClassTraits'.
+	self assert: plan updateAction equals: 'replaceClassTraits'.
 	self assert: (context at: #className) equals: 'Object'.
 	self
 		assert: (context at: #classTraits)
@@ -70,7 +71,7 @@ MCPUpdateClassCommandTest >> testBuildsDefinitionReplacementUpdatePlan [
 				            (#classSlots -> #( 'Current' )) }).
 	plan := command updatePlan.
 	context := plan requestedContext.
-	self assert: plan operation equals: 'replaceDefinition'.
+	self assert: plan updateAction equals: 'replaceDefinition'.
 	self assert: (context at: #className) equals: 'Object'.
 	self assert: (context at: #slots) equals: #( 'first' 'second' ).
 	self assert: (context at: #classSlots) equals: #( 'Current' )
@@ -84,7 +85,7 @@ MCPUpdateClassCommandTest >> testBuildsLayoutReplacementUpdatePlan [
 		           (self updateArgumentsWith: { (#layout -> 'WeakLayout') }).
 	plan := command updatePlan.
 	context := plan requestedContext.
-	self assert: plan operation equals: 'replaceLayout'.
+	self assert: plan updateAction equals: 'replaceLayout'.
 	self assert: (context at: #className) equals: 'Object'.
 	self assert: (context at: #layout) equals: 'WeakLayout'
 ]
@@ -97,7 +98,7 @@ MCPUpdateClassCommandTest >> testBuildsSharedPoolReplacementUpdatePlan [
 			            { (#sharedPools -> #( 'ChronologyConstants' )) }).
 	plan := command updatePlan.
 	context := plan requestedContext.
-	self assert: plan operation equals: 'replaceSharedPools'.
+	self assert: plan updateAction equals: 'replaceSharedPools'.
 	self assert: (context at: #className) equals: 'Object'.
 	self
 		assert: (context at: #sharedPools)
@@ -113,7 +114,7 @@ MCPUpdateClassCommandTest >> testBuildsSharedVariableReplacementUpdatePlan [
 			            { (#sharedVariables -> #( 'Current' )) }).
 	plan := command updatePlan.
 	context := plan requestedContext.
-	self assert: plan operation equals: 'replaceSharedVariables'.
+	self assert: plan updateAction equals: 'replaceSharedVariables'.
 	self assert: (context at: #className) equals: 'Object'.
 	self assert: (context at: #sharedVariables) equals: #( 'Current' )
 ]
@@ -127,7 +128,7 @@ MCPUpdateClassCommandTest >> testBuildsTraitReplacementUpdatePlan [
 			            { (#traits -> #( 'TAbleToRotate' )) }).
 	plan := command updatePlan.
 	context := plan requestedContext.
-	self assert: plan operation equals: 'replaceTraits'.
+	self assert: plan updateAction equals: 'replaceTraits'.
 	self assert: (context at: #className) equals: 'Object'.
 	self assert: (context at: #traits) equals: #( 'TAbleToRotate' )
 ]
@@ -140,7 +141,7 @@ MCPUpdateClassCommandTest >> testBuildsUpdatePlan [
 		           (self updateArgumentsWith: { (#packageName -> 'MCP') }).
 	plan := command updatePlan.
 	context := plan requestedContext.
-	self assert: plan operation equals: 'move'.
+	self assert: plan updateAction equals: 'move'.
 	self assert: (context at: #className) equals: 'Object'.
 	self assert: (context at: #packageName) equals: 'MCP'
 ]

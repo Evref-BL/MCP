@@ -231,7 +231,7 @@ MCPToolContractsTest >> testEditClassOutputSchemaAdvertisesUpdateResultDTOs [
 		                        #properties.
 	self assert: (dataProperties includesKey: 'updatePlan').
 	self assert: (dataProperties includesKey: 'appliedChange').
-	self assert: (updatePlanProperties includesKey: 'operation').
+	self assert: (updatePlanProperties includesKey: 'updateAction').
 	self assert: (updatePlanProperties includesKey: 'requestedContext').
 	self deny: (updatePlanProperties includesKey: 'commandClassName').
 	self assert:
@@ -387,11 +387,10 @@ MCPToolContractsTest >> testEditMethodSchemaAdvertisesMethodState [
 		(permutationProperty extraProperties at: #items) type = 'integer'.
 	self
 		assert: propertyNames asSet
-		equals:
-			#( 'operation' 'updatePlan' 'appliedChange' 'selector' 'className'
-			   'classSide' 'packageName' 'isExtension' 'protocol' 'source'
-			   'oldSelector' 'newSelector' 'oldProtocol' 'newProtocol'
-			   'critiques' ) asSet
+		equals: #( 'operation' 'updateAction' 'updatePlan' 'appliedChange'
+			   'selector' 'className' 'classSide' 'packageName' 'isExtension'
+			   'protocol' 'source' 'oldSelector' 'newSelector' 'oldProtocol'
+			   'newProtocol' 'critiques' ) asSet
 ]
 
 { #category : 'tests' }

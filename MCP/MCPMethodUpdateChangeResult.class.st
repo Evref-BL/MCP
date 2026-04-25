@@ -6,11 +6,11 @@ Class {
 	#superclass : 'Object',
 	#instVars : [
 		'methodInfo',
-		'operation',
 		'oldSelector',
 		'newSelector',
 		'oldProtocol',
-		'newProtocol'
+		'newProtocol',
+		'updateAction'
 	],
 	#category : 'MCP-Results',
 	#package : 'MCP',
@@ -18,10 +18,10 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPMethodUpdateChangeResult class >> operation: anOperation method: aCompiledMethod [
+MCPMethodUpdateChangeResult class >> updateAction: anUpdateAction method: aCompiledMethod [
 
 	^ self new
-		  operation: anOperation;
+		  updateAction: anUpdateAction;
 		  methodInfo: (MCPCompiledMethodInfo fromMethod: aCompiledMethod);
 		  yourself
 ]
@@ -31,7 +31,7 @@ MCPMethodUpdateChangeResult >> asDictionary [
 
 	| data |
 	data := self methodInfo asDictionaryIncludingSource: true.
-	data at: #operation put: self operation.
+	data at: #updateAction put: self updateAction.
 	self oldSelector ifNotNil: [
 		data at: #oldSelector put: self oldSelector ].
 	self newSelector ifNotNil: [
@@ -104,13 +104,13 @@ MCPMethodUpdateChangeResult >> oldSelector: aString [
 ]
 
 { #category : 'accessing' }
-MCPMethodUpdateChangeResult >> operation [
+MCPMethodUpdateChangeResult >> updateAction [
 
-	^ operation
+	^ updateAction
 ]
 
 { #category : 'accessing' }
-MCPMethodUpdateChangeResult >> operation: aString [
+MCPMethodUpdateChangeResult >> updateAction: anObject [
 
-	operation := aString
+	updateAction := anObject
 ]

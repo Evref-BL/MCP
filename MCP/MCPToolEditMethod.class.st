@@ -235,12 +235,12 @@ MCPToolEditMethod >> failureMessageForRenameClassNamed: className classSide: cla
 { #category : 'private - schema' }
 MCPToolEditMethod >> methodAppliedChangeOutputSchemaProperty [
 
-	| operationProperty property resultClassProperty resultProperty |
-	operationProperty := self
-		                     schemaPropertyNamed: 'operation'
-		                     type: 'string'
-		                     description:
-		                     'The method update action that produced the applied change.'.
+	| property resultClassProperty resultProperty updateActionProperty |
+	updateActionProperty := self
+		                        schemaPropertyNamed: 'updateAction'
+		                        type: 'string'
+		                        description:
+		                        'The method update action that produced the applied change.'.
 	resultClassProperty := self
 		                       schemaPropertyNamed: 'resultClassName'
 		                       type: 'string'
@@ -259,10 +259,10 @@ MCPToolEditMethod >> methodAppliedChangeOutputSchemaProperty [
 		            'The applied method update change and its result DTO.'.
 	property
 		properties: {
-				operationProperty.
+				updateActionProperty.
 				resultClassProperty.
 				resultProperty };
-		required: #( 'operation' 'resultClassName' 'result' );
+		required: #( 'updateAction' 'resultClassName' 'result' );
 		additionalProperties: false.
 	^ property
 ]
@@ -323,7 +323,12 @@ MCPToolEditMethod >> methodDataProperties [
 			   schemaPropertyNamed: 'operation'
 			   type: 'string'
 			   description:
-			   'The internal method update action that was performed when operation=update.').
+			   'The public method edit operation that was performed: create or update.').
+		  (self
+			   schemaPropertyNamed: 'updateAction'
+			   type: 'string'
+			   description:
+			   'The update action performed when operation=update.').
 		  self methodUpdatePlanOutputSchemaProperty.
 		  self methodAppliedChangeOutputSchemaProperty.
 		  (self
@@ -384,12 +389,12 @@ MCPToolEditMethod >> methodDataProperties [
 { #category : 'private - schema' }
 MCPToolEditMethod >> methodUpdatePlanOutputSchemaProperty [
 
-	| operationProperty property requestedContextProperty |
-	operationProperty := self
-		                     schemaPropertyNamed: 'operation'
-		                     type: 'string'
-		                     description:
-		                     'The method update action selected from operation=update.'.
+	| property requestedContextProperty updateActionProperty |
+	updateActionProperty := self
+		                        schemaPropertyNamed: 'updateAction'
+		                        type: 'string'
+		                        description:
+		                        'The method update action selected from operation=update.'.
 	requestedContextProperty := self
 		                            schemaPropertyNamed: 'requestedContext'
 		                            type: 'object'
@@ -403,9 +408,9 @@ MCPToolEditMethod >> methodUpdatePlanOutputSchemaProperty [
 		            'The planned method update action before it is executed.'.
 	property
 		properties: {
-				operationProperty.
+				updateActionProperty.
 				requestedContextProperty };
-		required: #( 'operation' 'requestedContext' );
+		required: #( 'updateAction' 'requestedContext' );
 		additionalProperties: false.
 	^ property
 ]

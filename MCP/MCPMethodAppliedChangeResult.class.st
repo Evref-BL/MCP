@@ -26,7 +26,7 @@ MCPMethodAppliedChangeResult class >> updatePlan: anUpdatePlan changeResult: aCh
 MCPMethodAppliedChangeResult >> appliedChangeDictionary [
 
 	^ {
-		  (#operation -> self operation).
+		  (#updateAction -> self updateAction).
 		  (#resultClassName -> self changeResult class name asString).
 		  (#result -> self changeResult asDictionary) } asDictionary
 ]
@@ -36,7 +36,8 @@ MCPMethodAppliedChangeResult >> asDictionary [
 
 	| data |
 	data := self changeResult asDictionary copy.
-	data at: #operation put: self operation.
+	data at: #operation put: 'update'.
+	data at: #updateAction put: self updateAction.
 	data at: #updatePlan put: self updatePlan asDictionary.
 	data at: #appliedChange put: self appliedChangeDictionary.
 	^ data
@@ -55,9 +56,9 @@ MCPMethodAppliedChangeResult >> changeResult: aResult [
 ]
 
 { #category : 'accessing' }
-MCPMethodAppliedChangeResult >> operation [
+MCPMethodAppliedChangeResult >> updateAction [
 
-	^ self updatePlan operation
+	^ self updatePlan updateAction
 ]
 
 { #category : 'accessing' }

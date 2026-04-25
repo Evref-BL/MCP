@@ -26,7 +26,7 @@ MCPClassAppliedChangeResult class >> updatePlan: anUpdatePlan changeResult: aCha
 MCPClassAppliedChangeResult >> appliedChangeDictionary [
 
 	^ {
-		  (#operation -> self operation).
+		  (#updateAction -> self updateAction).
 		  (#resultClassName -> self changeResult class name asString).
 		  (#result -> self changeResult asDictionary) } asDictionary
 ]
@@ -36,7 +36,8 @@ MCPClassAppliedChangeResult >> asDictionary [
 
 	| data |
 	data := self changeResult asDictionary copy.
-	data at: #operation put: self operation.
+	data at: #operation put: 'update'.
+	data at: #updateAction put: self updateAction.
 	data at: #updatePlan put: self updatePlan asDictionary.
 	data at: #appliedChange put: self appliedChangeDictionary.
 	^ data
@@ -55,9 +56,9 @@ MCPClassAppliedChangeResult >> changeResult: aResult [
 ]
 
 { #category : 'accessing' }
-MCPClassAppliedChangeResult >> operation [
+MCPClassAppliedChangeResult >> updateAction [
 
-	^ self updatePlan operation
+	^ self updatePlan updateAction
 ]
 
 { #category : 'accessing' }

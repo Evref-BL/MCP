@@ -273,7 +273,8 @@ MCPToolEditMethodTest >> testChangeProtocolReturnsStructuredErrorWhenMethodIsMis
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #operation) equals: 'changeProtocol'.
+	self assert: (error at: #operation) equals: 'update'.
+	self assert: (error at: #updateAction) equals: 'changeProtocol'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'MethodNotFound'.
 	self
@@ -287,8 +288,8 @@ MCPToolEditMethodTest >> testChangeProtocolReturnsStructuredErrorWhenMethodIsMis
 	self
 		assert: error keys asSet
 		equals:
-			#( operation errorClass errorCode message className classSide
-			   selector protocol ) asSet
+			#( operation updateAction errorClass errorCode message className
+			   classSide selector protocol ) asSet
 ]
 
 { #category : 'tests' }
@@ -664,7 +665,8 @@ MCPToolEditMethodTest >> testRenameCanLimitRefactoringToNamedClasses [
 		self assert: (senderBSource includesSubstring: 'scopeSharedTarget').
 		self deny: (senderBSource includesSubstring: 'scopedSharedTarget').
 		self assertSuccessDataHasMethodShape: data.
-		self assert: (data at: #operation) equals: 'rename'.
+		self assert: (data at: #operation) equals: 'update'.
+		self assert: (data at: #updateAction) equals: 'rename'.
 		self assert: (data at: #selector) equals: 'scopedSharedTarget'.
 		self
 			assert: (data at: #packageName)
@@ -706,7 +708,8 @@ MCPToolEditMethodTest >> testRenameCanLimitRefactoringToNamedPackages [
 		self assert: (senderBSource includesSubstring: 'scopeSharedTarget').
 		self deny: (senderBSource includesSubstring: 'scopedSharedTarget').
 		self assertSuccessDataHasMethodShape: data.
-		self assert: (data at: #operation) equals: 'rename'.
+		self assert: (data at: #operation) equals: 'update'.
+		self assert: (data at: #updateAction) equals: 'rename'.
 		self assert: (data at: #selector) equals: 'scopedSharedTarget'.
 		self
 			assert: (data at: #packageName)
@@ -735,7 +738,8 @@ MCPToolEditMethodTest >> testRenameReturnsFormattedSourceForRenamedMethod [
 	data := self dataFrom: result.
 	renamedSource := (MCPToolEditMethodTestTarget >> newSelector)
 		                 sourceCode.
-	self assert: (data at: #operation) equals: 'rename'.
+	self assert: (data at: #operation) equals: 'update'.
+	self assert: (data at: #updateAction) equals: 'rename'.
 	self assert: (data at: #source) equals: renamedSource.
 	self assert:
 		(renamedSource includesSubstring: 'with: second uglyRename: first').
@@ -758,7 +762,8 @@ MCPToolEditMethodTest >> testRenameReturnsStructuredErrorWhenMethodIsMissing [
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #operation) equals: 'rename'.
+	self assert: (error at: #operation) equals: 'update'.
+	self assert: (error at: #updateAction) equals: 'rename'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'MethodNotFound'.
 	self
@@ -775,8 +780,8 @@ MCPToolEditMethodTest >> testRenameReturnsStructuredErrorWhenMethodIsMissing [
 	self
 		assert: error keys asSet
 		equals:
-			#( operation errorClass errorCode message className classSide
-			   selector newSelector permutation ) asSet
+			#( operation updateAction errorClass errorCode message className
+			   classSide selector newSelector permutation ) asSet
 ]
 
 { #category : 'tests' }
