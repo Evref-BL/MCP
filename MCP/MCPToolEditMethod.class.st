@@ -30,6 +30,16 @@ MCPToolEditMethod >> classReferenceNameFor: className classSide: classSide [
 		  ifFalse: [ className ]
 ]
 
+{ #category : 'private - execution' }
+MCPToolEditMethod >> commandForRequest: methodRequest [
+
+	(methodRequest isKindOf: MCPMethodCompileRequest) ifTrue: [
+		^ MCPCompileMethodCommand tool: self request: methodRequest ].
+	(methodRequest isKindOf: MCPMethodUpdateRequest) ifTrue: [
+		^ MCPUpdateMethodCommand tool: self request: methodRequest ].
+	^ super commandForRequest: methodRequest
+]
+
 { #category : 'private' }
 MCPToolEditMethod >> critiqueDataFor: aCritique [
 
@@ -67,20 +77,10 @@ MCPToolEditMethod >> dataForMethod: aCompiledMethod [
 		  asDictionaryIncludingSource: true
 ]
 
-{ #category : 'private' }
-MCPToolEditMethod >> dataForMethodWithCritiques: aCompiledMethod [
-
-	| critiques data |
-	data := self dataForMethod: aCompiledMethod.
-	critiques := self critiqueDataForMethod: aCompiledMethod.
-	critiques ifNotEmpty: [ data at: #critiques put: critiques ].
-	^ data
-]
-
 { #category : 'defaults' }
 MCPToolEditMethod >> defaultDescription [
 
-	^ 'Compile, rename, or recategorize one method on the instance side or class side of a class. Use changeProtocol to recategorize a method. Rename can be scoped with scope, packageNames, or classNames. force=false stops on refactoring warnings and returns impactMessages plus howToProceed; force=true continues and returns warnings in the output. Use remove-methods to delete methods.'
+	^ 'Compile or update one method on the instance side or class side of a class. Use operation=compile with methodSource and protocol to create or replace a method. Use operation=update with selector plus one patch field, such as newSelector or protocol. Rename updates can be scoped with packageNames, classNames, or hierarchyClassNames. force=false stops on refactoring warnings and returns impactMessages plus howToProceed; force=true continues and returns warnings in the output. Use remove-methods to delete methods.'
 ]
 
 { #category : 'defaults' }
@@ -97,8 +97,8 @@ MCPToolEditMethod >> defaultInputSchema [
 		  properties: {
 				  (self
 					   operationSchemaPropertyWithDescription:
-						   'The edit operation to perform.'
-					   supportedValuesLeadIn: 'Supported canonical values are').
+						   'The high-level method edit operation. operation=compile creates or replaces a method. operation=update applies exactly one patch to an existing method, such as newSelector or protocol.'
+					   supportedValuesLeadIn: 'Supported values are').
 				  (MCPStructureProperties new
 					   name: 'className';
 					   type: 'string';
@@ -115,7 +115,7 @@ MCPToolEditMethod >> defaultInputSchema [
 					   name: 'selector';
 					   type: 'string';
 					   description:
-						   'The existing selector to rename or changeProtocol. Not used for compile.';
+						   'The existing selector to patch during operation=update. Not used for operation=compile.';
 					   yourself).
 				  (MCPStructureProperties new
 					   name: 'methodSource';
@@ -127,31 +127,30 @@ MCPToolEditMethod >> defaultInputSchema [
 					   name: 'protocol';
 					   type: 'string';
 					   description:
-						   'The target protocol for operation=compile or changeProtocol. For extension methods, use an extension protocol such as *Package-Name.';
+						   'The target protocol for operation=compile. During operation=update this is a recategorization patch; do not combine it with another update action. For extension methods, use an extension protocol such as *Package-Name.';
 					   yourself).
 				  (MCPStructureProperties new
 					   name: 'newSelector';
 					   type: 'string';
 					   description:
-						   'The new selector to install when operation=rename.';
+						   'The replacement selector for an operation=update rename patch; do not combine it with another update action.';
 					   yourself).
 				  ((MCPStructureProperties new
 					    name: 'permutation';
 					    type: 'array';
 					    description:
-						    'Optional 1-based argument permutation for operation=rename. When omitted, the identity permutation is used.')
+						    'Optional 1-based argument permutation for an operation=update rename patch.')
 					   items: (MCPStructureProperties new
 							    type: 'integer';
 							    description: 'A 1-based argument index.';
 							    yourself);
 					   yourself).
-				  self refactoringScopeSchemaProperty.
 				  self refactoringScopePackageNamesSchemaProperty.
-				  self refactoringScopeClassNamesSchemaProperty };
+				  self refactoringScopeClassNamesSchemaProperty.
+				  self refactoringScopeHierarchyClassNamesSchemaProperty };
 		  required: #( 'operation' 'className' );
 		  oneOf: self operationBranchSchemas;
-		  allOf:
-		  (self refactoringScopeConditionSchemasForOperationNamed: 'rename');
+		  additionalProperties: false;
 		  yourself
 ]
 
@@ -176,166 +175,6 @@ MCPToolEditMethod >> defaultOutputSchema [
 MCPToolEditMethod >> defaultTitle [
 
 	^ 'Edit Method'
-]
-
-{ #category : 'executing' }
-MCPToolEditMethod >> executeChangeProtocolWithRequest: request [
-
-	| behavior className classSide force newCompiledMethod protocol requestedContext selector selectorSymbol |
-	className := request stringArgumentNamed: 'className'.
-	classSide := request booleanArgumentNamed: 'classSide' default: false.
-	force := self forceFromRequest: request.
-	selector := self selectorStringFromRequest: request.
-	protocol := request stringArgumentNamed: 'protocol'.
-	selectorSymbol := selector asSymbol.
-	requestedContext := {
-		                    (#className -> className).
-		                    (#classSide -> classSide).
-		                    (#selector -> selector).
-		                    (#protocol -> protocol) } asDictionary.
-	^ self
-		  executeEditOperation: 'changeProtocol'
-		  force: force
-		  requestedContext: requestedContext
-		  work: [
-			  behavior := self behaviorNamed: className classSide: classSide.
-			  behavior compiledMethodAt: selectorSymbol ifAbsent: [
-				  MCPCommandError
-					  signalMissingMethodInClassName: className
-					  classSide: classSide
-					  selector: selector ].
-			  (RBMethodProtocolTransformation
-				   protocol: protocol
-				   inMethod: selectorSymbol
-				   inClass:
-				   (self classReferenceNameFor: className classSide: classSide))
-				  execute.
-			  newCompiledMethod := behavior compiledMethodAt: selectorSymbol ]
-		  successResult: [ :warningMessages |
-			  self
-				  successResultText: 'Changed protocol for '
-					  ,
-					  (self
-						   methodReferenceForBehavior: behavior
-						   selector: selectorSymbol) , '.'
-				  data: (self dataForMethod: newCompiledMethod)
-				  warnings: warningMessages ]
-		  failureSummary: [ :error |
-			  self
-				  failureMessageForChangeProtocolClassNamed: className
-				  classSide: classSide
-				  selector: selector
-				  protocol: protocol
-				  error: error ]
-]
-
-{ #category : 'executing' }
-MCPToolEditMethod >> executeCompileWithRequest: request [
-
-	| behavior className classSide compiledMethod force methodSource protocol requestedContext selector |
-	className := request stringArgumentNamed: 'className'.
-	classSide := request booleanArgumentNamed: 'classSide' default: false.
-	force := self forceFromRequest: request.
-	protocol := request stringArgumentNamed: 'protocol'.
-	methodSource := request argumentNamed: 'methodSource' ifAbsent: [
-		                MCPInvalidToolInput
-			                signalMissingRequiredArgumentNamed: 'methodSource'
-			                forTool: self ].
-	requestedContext := {
-		                    (#className -> className).
-		                    (#classSide -> classSide).
-		                    (#protocol -> protocol) } asDictionary.
-	^ self
-		  executeEditOperation: 'compile'
-		  force: force
-		  requestedContext: requestedContext
-		  work: [
-			  behavior := self behaviorNamed: className classSide: classSide.
-			  selector := behavior compile: methodSource classified: protocol.
-			  compiledMethod := self
-				                    reformattedMethodForBehavior: behavior
-				                    selector: selector ]
-		  successResult: [ :warningMessages |
-			  self
-				  successResultText: 'Compiled '
-					  ,
-					  (self methodReferenceForBehavior: behavior selector: selector)
-					  , '.'
-				  data: (self dataForMethodWithCritiques: compiledMethod)
-				  warnings: warningMessages ]
-		  failureSummary: [ :error |
-			  self
-				  failureMessageForCompileClassNamed: className
-				  classSide: classSide
-				  error: error ]
-]
-
-{ #category : 'executing' }
-MCPToolEditMethod >> executeRenameWithRequest: request [
-
-	| behavior className classSide force newCompiledMethod newSelector newSelectorSymbol oldMethodReference oldSelector oldSelectorSymbol permutation refactoring refactoringModel requestedContext scopeSpec |
-	className := request stringArgumentNamed: 'className'.
-	classSide := request booleanArgumentNamed: 'classSide' default: false.
-	force := self forceFromRequest: request.
-	oldSelector := self selectorStringFromRequest: request.
-	newSelector := request stringArgumentNamed: 'newSelector'.
-	oldSelectorSymbol := oldSelector asSymbol.
-	newSelectorSymbol := newSelector asSymbol.
-	permutation := self
-		               permutationFromRequest: request
-		               selector: oldSelectorSymbol.
-	requestedContext := {
-		                    (#className -> className).
-		                    (#classSide -> classSide).
-		                    (#selector -> oldSelector).
-		                    (#newSelector -> newSelector) } asDictionary.
-	^ self
-		  executeEditOperation: 'rename'
-		  force: force
-		  requestedContext: requestedContext
-		  work: [
-			  scopeSpec := self refactoringScopeSpecFromRequest: request.
-			  self
-				  addRefactoringScopeContextFromSpec: scopeSpec
-				  toRequestedContext: requestedContext.
-			  behavior := self behaviorNamed: className classSide: classSide.
-			  behavior compiledMethodAt: oldSelectorSymbol ifAbsent: [
-				  MCPCommandError
-					  signalMissingMethodInClassName: className
-					  classSide: classSide
-					  selector: oldSelector ].
-			  refactoringModel := self
-				                      refactoringModelForScopeSpec: scopeSpec
-				                      anchoredAtBehavior: behavior.
-			  oldMethodReference := self
-				                        methodReferenceForBehavior: behavior
-				                        selector: oldSelectorSymbol.
-			  refactoring := self
-				                 renameRefactoringForSelector: oldSelectorSymbol
-				                 inBehavior: behavior
-				                 to: newSelectorSymbol
-				                 permutation: permutation
-				                 model: refactoringModel.
-			  refactoring execute.
-			  newCompiledMethod := self
-				                       reformattedMethodForBehavior: behavior
-				                       selector: newSelectorSymbol ]
-		  successResult: [ :warningMessages |
-			  self
-				  successResultText: 'Renamed ' , oldMethodReference , ' to '
-					  ,
-					  (self
-						   methodReferenceForBehavior: behavior
-						   selector: newSelectorSymbol) , '.'
-				  data: (self dataForMethod: newCompiledMethod)
-				  warnings: warningMessages ]
-		  failureSummary: [ :error |
-			  self
-				  failureMessageForRenameClassNamed: className
-				  classSide: classSide
-				  selector: oldSelector
-				  newSelector: newSelector
-				  error: error ]
 ]
 
 { #category : 'private' }
@@ -394,10 +233,39 @@ MCPToolEditMethod >> failureMessageForRenameClassNamed: className classSide: cla
 				  (self normalizedCauseMessageForOperationError: anError) ]
 ]
 
-{ #category : 'private' }
-MCPToolEditMethod >> identityPermutationForSelector: aSelector [
+{ #category : 'private - schema' }
+MCPToolEditMethod >> methodAppliedChangeOutputSchemaProperty [
 
-	^ (1 to: aSelector numArgs) asArray
+	| operationProperty property resultClassProperty resultProperty |
+	operationProperty := self
+		                     schemaPropertyNamed: 'operation'
+		                     type: 'string'
+		                     description:
+		                     'The internal method update action that produced the applied change.'.
+	resultClassProperty := self
+		                       schemaPropertyNamed: 'resultClassName'
+		                       type: 'string'
+		                       description:
+		                       'The DTO class returned by the internal update action.'.
+	resultProperty := self
+		                  schemaPropertyNamed: 'result'
+		                  type: 'object'
+		                  description:
+		                  'The internal method update result DTO serialized as a dictionary.'.
+	resultProperty additionalProperties: true.
+	property := self
+		            schemaPropertyNamed: 'appliedChange'
+		            type: 'object'
+		            description:
+		            'The applied method update change, preserving the internal result DTO.'.
+	property
+		properties: {
+				operationProperty.
+				resultClassProperty.
+				resultProperty };
+		required: #( 'operation' 'resultClassName' 'result' );
+		additionalProperties: false.
+	^ property
 ]
 
 { #category : 'private - schema' }
@@ -453,6 +321,13 @@ MCPToolEditMethod >> methodDataProperties [
 
 	^ {
 		  (self
+			   schemaPropertyNamed: 'operation'
+			   type: 'string'
+			   description:
+			   'The internal method update action that was performed when operation=update.').
+		  self methodUpdatePlanOutputSchemaProperty.
+		  self methodAppliedChangeOutputSchemaProperty.
+		  (self
 			   schemaPropertyNamed: 'selector'
 			   type: 'string'
 			   description:
@@ -486,7 +361,62 @@ MCPToolEditMethod >> methodDataProperties [
 			   type: 'string'
 			   description:
 			   'The formatted source code of the edited method after the operation.').
+		  (self
+			   schemaPropertyNamed: 'oldSelector'
+			   type: 'string'
+			   description:
+			   'The previous selector when the update action is rename.').
+		  (self
+			   schemaPropertyNamed: 'newSelector'
+			   type: 'string'
+			   description:
+			   'The new selector when the update action is rename.').
+		  (self
+			   schemaPropertyNamed: 'oldProtocol'
+			   type: 'string'
+			   description:
+			   'The previous protocol when the update action is changeProtocol.').
+		  (self
+			   schemaPropertyNamed: 'newProtocol'
+			   type: 'string'
+			   description:
+			   'The new protocol when the update action is changeProtocol.').
 		  self methodCritiquesSchemaProperty }
+]
+
+{ #category : 'private - schema' }
+MCPToolEditMethod >> methodUpdatePlanOutputSchemaProperty [
+
+	| commandProperty operationProperty property requestedContextProperty |
+	operationProperty := self
+		                     schemaPropertyNamed: 'operation'
+		                     type: 'string'
+		                     description:
+		                     'The internal method update action selected from operation=update.'.
+	commandProperty := self
+		                   schemaPropertyNamed: 'commandClassName'
+		                   type: 'string'
+		                   description:
+		                   'The command class that applied the method update.'.
+	requestedContextProperty := self
+		                            schemaPropertyNamed: 'requestedContext'
+		                            type: 'object'
+		                            description:
+		                            'The normalized request context used to execute the update.'.
+	requestedContextProperty additionalProperties: true.
+	property := self
+		            schemaPropertyNamed: 'updatePlan'
+		            type: 'object'
+		            description:
+		            'The planned method update action before it is executed.'.
+	property
+		properties: {
+				operationProperty.
+				commandProperty.
+				requestedContextProperty };
+		required: #( 'operation' 'commandClassName' 'requestedContext' );
+		additionalProperties: false.
+	^ property
 ]
 
 { #category : 'private - operations' }
@@ -495,30 +425,26 @@ MCPToolEditMethod >> operationSpecifications [
 	^ {
 		  {
 			  (#name -> 'compile').
-			  (#requiredProperties -> #( 'methodSource' 'protocol' )).
-			  (#executeSelector -> #executeCompileWithRequest:) }
+			  (#requiredProperties -> #( 'methodSource' 'protocol' )) }
 			  asDictionary.
 		  {
-			  (#name -> 'rename').
-			  (#requiredProperties -> #( 'selector' 'newSelector' )).
-			  (#executeSelector -> #executeRenameWithRequest:) } asDictionary.
-		  {
-			  (#name -> 'changeProtocol').
-			  (#requiredProperties -> #( 'selector' 'protocol' )).
-			  (#executeSelector -> #executeChangeProtocolWithRequest:) }
-			  asDictionary }
+			  (#name -> 'update').
+			  (#requiredProperties -> #( 'selector' )) } asDictionary }
 ]
 
-{ #category : 'private' }
-MCPToolEditMethod >> permutationFromRequest: request selector: aSelector [
+{ #category : 'private - request' }
+MCPToolEditMethod >> parsedRequestFromToolRequest: request [
 
-	| permutation |
-	permutation := request
-		               arrayArgumentNamed: 'permutation'
-		               ifAbsent: [
-		               ^ self identityPermutationForSelector: aSelector ].
-	self validatePermutation: permutation forSelector: aSelector.
-	^ permutation
+	| operation |
+	operation := self operationFromRequest: request.
+	self
+		validateRequiredPropertiesForOperation: operation
+		inRequest: request.
+	operation = 'compile' ifTrue: [
+		^ MCPMethodCompileRequest fromRequest: request tool: self ].
+	operation = 'update' ifTrue: [
+		^ MCPMethodUpdateRequest fromRequest: request tool: self ].
+	Error signal: self operationValidationErrorMessage
 ]
 
 { #category : 'private' }
@@ -563,18 +489,4 @@ MCPToolEditMethod >> sourceIntervalForCritique: aCritique [
 	(sourceAnchor notNil and: [ sourceAnchor providesInterval ])
 		ifFalse: [ ^ nil ].
 	^ sourceAnchor interval
-]
-
-{ #category : 'private' }
-MCPToolEditMethod >> validatePermutation: permutation forSelector: aSelector [
-
-	| expected |
-	expected := self identityPermutationForSelector: aSelector.
-	permutation size = expected size ifFalse: [
-		Error signal:
-			'permutation must contain one index for each method argument.' ].
-	permutation asSet = expected asSet ifFalse: [
-		Error signal:
-			'permutation must be a reordering of the integers from 1 to '
-			, expected size asString , '.' ]
 ]

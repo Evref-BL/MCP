@@ -61,33 +61,17 @@ MCPToolFindMethods >> defaultIcons [
 { #category : 'defaults' }
 MCPToolFindMethods >> defaultInputSchema [
 
-	| filterTargetsProperty schema |
-	filterTargetsProperty := self
-		                         stringEnumArraySchemaNamed: 'filterTargets'
-		                         description:
-		                         'Optional method-entry fields matched by filter for field filtering. Ignored by reference lookup modes: selectorReference, classReference, and variableReference.'
-		                         itemDescription: 'A filter target.'
-		                         values: self supportedFilterTargets
-		                         default: self defaultFilterTargets.
-	schema := MCPStructureInputSchema new
-		          type: 'object';
-		          properties:
-			          (self
-				           methodQueryScopeInputPropertiesWithScopeDescription:
-					           'Method scope.') , (self
-					           methodQueryFilteringInputPropertiesWithFilterDescription:
-						           'For field filtering, the text matched against method-entry fields. For reference lookup modes, the referenced selector, class, or variable name; required when filterMode is selectorReference, classReference, or variableReference.'
-					           extraProperties: {
-							           filterTargetsProperty.
-							           self wherePredicateSchemaProperty }
-					           includeSourceDescription:
-						           'Whether to include method source code in each result entry.'
-					           limitDescription:
-						           'Maximum number of matching methods to return. Use 0 to request counts only.');
-		          required: #(  );
-		          yourself.
-	schema allOf: self requiredFilterSchemasForReferenceModes.
-	^ schema
+	| properties |
+	properties := self methodQueryScopeInputProperties , (self
+		               methodFilteringInputPropertiesWithFilterDescription:
+		               'For field filtering, the text matched against method-entry fields. For reference lookup modes, the referenced selector, class, or variable name; required when filterMode is selectorReference, classReference, or variableReference.'
+		               includeSourceDescription:
+		               'Whether to include method source code in each result entry.'
+		               limitDescription:
+		               'Maximum number of matching methods to return. Use 0 to request counts only.').
+	^ self
+		  queryInputSchemaWithProperties: properties
+		  allOf: self requiredFilterSchemasForReferenceModes
 ]
 
 { #category : 'defaults' }
@@ -331,102 +315,10 @@ MCPToolFindMethods >> methodEntrySchemaNamed: entryName description: entryDescri
 		  yourself
 ]
 
-{ #category : 'private - schema' }
-MCPToolFindMethods >> methodQueryFilteringInputPropertiesWithFilterDescription: filterDescription extraProperties: extraProperties includeSourceDescription: includeSourceDescription limitDescription: limitDescription [
-
-	| properties |
-	properties := OrderedCollection new.
-	properties add: (self
-			 schemaPropertyNamed: 'filter'
-			 type: 'string'
-			 description: filterDescription).
-	extraProperties ifNotNil: [ properties addAll: extraProperties ].
-	properties add: (self
-			 stringEnumSchemaPropertyNamed: 'filterMode'
-			 description:
-			 'How the filter is matched or interpreted. Reference modes on find-methods are selectorReference for senders, classReference for class references, and variableReference for variable references.'
-			 values: self supportedFilterModes
-			 default: self defaultFilterMode).
-	properties add: (self
-			 booleanSchemaPropertyNamed: 'caseSensitive'
-			 description:
-			 'Whether filter matching is case-sensitive. Reference lookup modes ignore this option.'
-			 default: true).
-	properties add: (self
-			 booleanSchemaPropertyNamed: 'includeSource'
-			 description: includeSourceDescription
-			 default: false).
-	properties add: (self
-			 integerSchemaPropertyNamed: 'limit'
-			 description: limitDescription
-			 default: 100).
-	properties add: (self
-			 integerSchemaPropertyNamed: 'offset'
-			 description:
-			 'Zero-based pagination offset applied after filtering.'
-			 default: 0).
-	^ properties asArray
-]
-
 { #category : 'private - results' }
 MCPToolFindMethods >> methodQueryResultDataForPage: page entriesKey: entriesKey [
 
 	^ self queryResultDataFrom: nil page: page entriesKey: entriesKey
-]
-
-{ #category : 'private - schema' }
-MCPToolFindMethods >> methodQueryScopeInputPropertiesWithScopeDescription: scopeDescription [
-
-	| classNamesProperty hierarchyClassNamesProperty packageNamesProperty parentClassNamesProperty sideProperty subclassClassNamesProperty |
-	sideProperty := self
-		                stringEnumSchemaPropertyNamed: 'side'
-		                description:
-		                'Which method side to search. instance searches instance-side methods, class searches class-side methods, and both searches both sides.'
-		                values: #( 'instance' 'class' 'both' )
-		                default: 'both'.
-	packageNamesProperty := self
-		                        stringArraySchemaNamed: 'packageNames'
-		                        description: scopeDescription
-			                        ,
-			                        ' Package names whose defined methods and extension methods are included. Omit all method scope properties to search all methods. Combine with other method scope properties to union scopes.'
-		                        itemDescription: 'A package name.'.
-	classNamesProperty := self
-		                      stringArraySchemaNamed: 'classNames'
-		                      description: scopeDescription
-			                      ,
-			                      ' Exact class names whose methods are included. Omit all method scope properties to search all methods. Combine with other method scope properties to union scopes.'
-		                      itemDescription: 'A class name.'.
-	hierarchyClassNamesProperty := self
-		                               stringArraySchemaNamed:
-		                               'hierarchyClassNames'
-		                               description: scopeDescription
-			                               ,
-			                               ' Class names whose superclasses, subclasses, and own methods are included. Omit all method scope properties to search all methods. Combine with other method scope properties to union scopes.'
-		                               itemDescription:
-		                               'A hierarchy root class name.'.
-	subclassClassNamesProperty := self
-		                              stringArraySchemaNamed:
-		                              'subclassClassNames'
-		                              description: scopeDescription
-			                              ,
-			                              ' Class names whose subclass methods are included. The named classes are excluded unless classNames also includes them. Combine with other method scope properties to union scopes.'
-		                              itemDescription:
-		                              'A class name whose subclasses are included.'.
-	parentClassNamesProperty := self
-		                            stringArraySchemaNamed:
-		                            'parentClassNames'
-		                            description: scopeDescription
-			                            ,
-			                            ' Class names whose superclass methods are included. The named classes are excluded unless classNames also includes them. Combine with other method scope properties to union scopes.'
-		                            itemDescription:
-		                            'A class name whose superclasses are included.'.
-	^ {
-		  sideProperty.
-		  packageNamesProperty.
-		  classNamesProperty.
-		  hierarchyClassNamesProperty.
-		  subclassClassNamesProperty.
-		  parentClassNamesProperty }
 ]
 
 { #category : 'private - methods' }

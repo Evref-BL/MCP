@@ -97,7 +97,7 @@ MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasRejectInvalidBranchArgu
 		equals: #( 'additionalProperties' ).
 	editMethodViolations := self
 		                        violationsFor: {
-				                        (#operation -> 'rename').
+				                        (#operation -> 'update').
 				                        (#className -> 'MCPTool').
 				                        (#selector -> 'defaultName').
 				                        (#newSelector -> 'defaultTitle').
@@ -105,7 +105,7 @@ MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasRejectInvalidBranchArgu
 		                        schema: MCPToolEditMethod new inputSchema.
 	self
 		assert: (self keywordsFrom: editMethodViolations)
-		equals: #( 'required' )
+		equals: #( 'additionalProperties' )
 ]
 
 { #category : 'tests' }

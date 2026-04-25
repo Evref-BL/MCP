@@ -21,6 +21,33 @@ MCPToolQuery >> addScopeLabel: aString to: labels [
 	(labels includes: aString) ifFalse: [ labels add: aString ]
 ]
 
+{ #category : 'private - schema' }
+MCPToolQuery >> baseFilteringInputPropertiesWithFilterDescription: filterDescription filterTargetsDescription: targetsDescription filterModeDescription: modeDescription filterModeValues: modeValues [
+
+	^ {
+		  (self filterSchemaPropertyWithDescription: filterDescription).
+		  (self filterTargetsSchemaPropertyWithDescription:
+			   targetsDescription).
+		  (self
+			   filterModeSchemaPropertyWithDescription: modeDescription
+			   values: modeValues) }
+]
+
+{ #category : 'private - schema' }
+MCPToolQuery >> basicFilterModes [
+
+	^ #( 'substring' 'prefix' 'exact' 'regex' )
+]
+
+{ #category : 'private - schema' }
+MCPToolQuery >> caseSensitiveSchemaPropertyWithDescription: caseSensitiveDescription [
+
+	^ self
+		  booleanSchemaPropertyNamed: 'caseSensitive'
+		  description: caseSensitiveDescription
+		  default: true
+]
+
 { #category : 'private - results' }
 MCPToolQuery >> classAndMethodScopeSummaryForScopeQuery: scopeQuery [
 
@@ -58,6 +85,67 @@ MCPToolQuery >> classAndMethodScopeSummaryFromRequest: request [
 			   -> (request stringCollectionArgumentNamed: 'subclassClassNames')).
 			  ('parents'
 			   -> (request stringCollectionArgumentNamed: 'parentClassNames')) }
+]
+
+{ #category : 'private - schema' }
+MCPToolQuery >> classQueryScopeInputProperties [
+
+	^ {
+		  self classScopePackageNamesProperty.
+		  self classScopeClassNamesProperty.
+		  self classScopeHierarchyClassNamesProperty.
+		  self classScopeSubclassClassNamesProperty.
+		  self classScopeParentClassNamesProperty }
+]
+
+{ #category : 'private - schema' }
+MCPToolQuery >> classScopeClassNamesProperty [
+
+	^ self
+		  stringArraySchemaNamed: 'classNames'
+		  description:
+		  'Class scope: exact class names to include. Omit all class scope properties to search all classes. Combine with other class scope properties to union scopes.'
+		  itemDescription: 'A class name.'
+]
+
+{ #category : 'private - schema' }
+MCPToolQuery >> classScopeHierarchyClassNamesProperty [
+
+	^ self
+		  stringArraySchemaNamed: 'hierarchyClassNames'
+		  description:
+		  'Class scope: class names whose superclasses, subclasses, and the named classes are included. Omit all class scope properties to search all classes. Combine with other class scope properties to union scopes.'
+		  itemDescription: 'A hierarchy root class name.'
+]
+
+{ #category : 'private - schema' }
+MCPToolQuery >> classScopePackageNamesProperty [
+
+	^ self
+		  stringArraySchemaNamed: 'packageNames'
+		  description:
+		  'Class scope: package names whose defined classes are included. Omit all class scope properties to search all classes. Combine with other class scope properties to union scopes.'
+		  itemDescription: 'A package name.'
+]
+
+{ #category : 'private - schema' }
+MCPToolQuery >> classScopeParentClassNamesProperty [
+
+	^ self
+		  stringArraySchemaNamed: 'parentClassNames'
+		  description:
+		  'Class scope: class names whose superclasses are included. The named classes are excluded unless classNames also includes them. Combine with other class scope properties to union scopes.'
+		  itemDescription: 'A class name whose superclasses are included.'
+]
+
+{ #category : 'private - schema' }
+MCPToolQuery >> classScopeSubclassClassNamesProperty [
+
+	^ self
+		  stringArraySchemaNamed: 'subclassClassNames'
+		  description:
+		  'Class scope: class names whose subclasses are included. The named classes are excluded unless classNames also includes them. Combine with other class scope properties to union scopes.'
+		  itemDescription: 'A class name whose subclasses are included.'
 ]
 
 { #category : 'private - execution' }
@@ -138,12 +226,48 @@ MCPToolQuery >> failureMessageForScope: scopeSummary error: anError [
 	self subclassResponsibility
 ]
 
+{ #category : 'private - schema' }
+MCPToolQuery >> fieldFilteringInputPropertiesWithFilterDescription: filterDescription filterTargetsDescription: targetsDescription filterModeDescription: modeDescription limitDescription: limitDescription [
+
+	^ (self
+		   baseFilteringInputPropertiesWithFilterDescription:
+		   filterDescription
+		   filterTargetsDescription: targetsDescription
+		   filterModeDescription: modeDescription
+		   filterModeValues: self basicFilterModes) , {
+		  self wherePredicateSchemaProperty.
+		  (self caseSensitiveSchemaPropertyWithDescription:
+			   'Whether filter matching is case-sensitive.') }
+	  ,
+	  (self paginationInputPropertiesWithLimitDescription:
+		   limitDescription)
+]
+
 { #category : 'private - request' }
 MCPToolQuery >> filterModeFromRequest: request [
 
 	^ request
 		  stringArgumentNamed: 'filterMode'
 		  default: self defaultFilterMode
+]
+
+{ #category : 'private - schema' }
+MCPToolQuery >> filterModeSchemaPropertyWithDescription: modeDescription values: modeValues [
+
+	^ self
+		  stringEnumSchemaPropertyNamed: 'filterMode'
+		  description: modeDescription
+		  values: modeValues
+		  default: self defaultFilterMode
+]
+
+{ #category : 'private - schema' }
+MCPToolQuery >> filterSchemaPropertyWithDescription: filterDescription [
+
+	^ self
+		  schemaPropertyNamed: 'filter'
+		  type: 'string'
+		  description: filterDescription
 ]
 
 { #category : 'private - request' }
@@ -157,6 +281,26 @@ MCPToolQuery >> filterTargetsFromRequest: request [
 	filterTargets ifEmpty: [
 		Error signal: 'filterTargets must contain at least one target.' ].
 	^ filterTargets
+]
+
+{ #category : 'private - schema' }
+MCPToolQuery >> filterTargetsSchemaPropertyWithDescription: targetsDescription [
+
+	^ self
+		  stringEnumArraySchemaNamed: 'filterTargets'
+		  description: targetsDescription
+		  itemDescription: 'A filter target.'
+		  values: self supportedFilterTargets
+		  default: self defaultFilterTargets
+]
+
+{ #category : 'private - schema' }
+MCPToolQuery >> includeSourceSchemaPropertyWithDescription: includeSourceDescription [
+
+	^ self
+		  booleanSchemaPropertyNamed: 'includeSource'
+		  description: includeSourceDescription
+		  default: false
 ]
 
 { #category : 'private - template' }
@@ -193,6 +337,100 @@ MCPToolQuery >> matcherForPattern: aPattern mode: aMode caseSensitive: aBoolean 
 		  (self normalizeFilterString: candidate caseSensitive: aBoolean)
 		  = normalizedPattern ] ].
 	Error signal: 'Unsupported filter mode: ' , aMode
+]
+
+{ #category : 'private - schema' }
+MCPToolQuery >> methodFilteringInputPropertiesWithFilterDescription: filterDescription includeSourceDescription: includeSourceDescription limitDescription: limitDescription [
+
+	^ (self
+		   baseFilteringInputPropertiesWithFilterDescription:
+		   filterDescription
+		   filterTargetsDescription:
+		   'Optional method-entry fields matched by filter for field filtering. Ignored by reference lookup modes: selectorReference, classReference, and variableReference.'
+		   filterModeDescription:
+		   'How the filter is matched or interpreted. Reference modes on find-methods are selectorReference for senders, classReference for class references, and variableReference for variable references.'
+		   filterModeValues: self supportedFilterModes) , {
+		  self wherePredicateSchemaProperty.
+		  (self caseSensitiveSchemaPropertyWithDescription:
+			   'Whether filter matching is case-sensitive. Reference lookup modes ignore this option.').
+		  (self includeSourceSchemaPropertyWithDescription:
+			   includeSourceDescription) }
+	  ,
+	  (self paginationInputPropertiesWithLimitDescription:
+		   limitDescription)
+]
+
+{ #category : 'private - schema' }
+MCPToolQuery >> methodQueryScopeInputProperties [
+
+	^ {
+		  self methodSideSchemaProperty.
+		  self methodScopePackageNamesProperty.
+		  self methodScopeClassNamesProperty.
+		  self methodScopeHierarchyClassNamesProperty.
+		  self methodScopeSubclassClassNamesProperty.
+		  self methodScopeParentClassNamesProperty }
+]
+
+{ #category : 'private - schema' }
+MCPToolQuery >> methodScopeClassNamesProperty [
+
+	^ self
+		  stringArraySchemaNamed: 'classNames'
+		  description:
+		  'Method scope. Exact class names whose methods are included. Omit all method scope properties to search all methods. Combine with other method scope properties to union scopes.'
+		  itemDescription: 'A class name.'
+]
+
+{ #category : 'private - schema' }
+MCPToolQuery >> methodScopeHierarchyClassNamesProperty [
+
+	^ self
+		  stringArraySchemaNamed: 'hierarchyClassNames'
+		  description:
+		  'Method scope. Class names whose superclasses, subclasses, and own methods are included. Omit all method scope properties to search all methods. Combine with other method scope properties to union scopes.'
+		  itemDescription: 'A hierarchy root class name.'
+]
+
+{ #category : 'private - schema' }
+MCPToolQuery >> methodScopePackageNamesProperty [
+
+	^ self
+		  stringArraySchemaNamed: 'packageNames'
+		  description:
+		  'Method scope. Package names whose defined methods and extension methods are included. Omit all method scope properties to search all methods. Combine with other method scope properties to union scopes.'
+		  itemDescription: 'A package name.'
+]
+
+{ #category : 'private - schema' }
+MCPToolQuery >> methodScopeParentClassNamesProperty [
+
+	^ self
+		  stringArraySchemaNamed: 'parentClassNames'
+		  description:
+		  'Method scope. Class names whose superclass methods are included. The named classes are excluded unless classNames also includes them. Combine with other method scope properties to union scopes.'
+		  itemDescription: 'A class name whose superclasses are included.'
+]
+
+{ #category : 'private - schema' }
+MCPToolQuery >> methodScopeSubclassClassNamesProperty [
+
+	^ self
+		  stringArraySchemaNamed: 'subclassClassNames'
+		  description:
+		  'Method scope. Class names whose subclass methods are included. The named classes are excluded unless classNames also includes them. Combine with other method scope properties to union scopes.'
+		  itemDescription: 'A class name whose subclasses are included.'
+]
+
+{ #category : 'private - schema' }
+MCPToolQuery >> methodSideSchemaProperty [
+
+	^ self
+		  stringEnumSchemaPropertyNamed: 'side'
+		  description:
+		  'Which method side to search. instance searches instance-side methods, class searches class-side methods, and both searches both sides.'
+		  values: #( 'instance' 'class' 'both' )
+		  default: 'both'
 ]
 
 { #category : 'private - schema' }
@@ -240,6 +478,34 @@ MCPToolQuery >> offsetFromQueryRequest: queryRequest [
 	^ queryRequest offset
 ]
 
+{ #category : 'private - schema' }
+MCPToolQuery >> packageQueryScopeInputProperties [
+
+	^ {
+		  self packageScopeProjectNamesProperty.
+		  self packageScopePackageNamesProperty }
+]
+
+{ #category : 'private - schema' }
+MCPToolQuery >> packageScopePackageNamesProperty [
+
+	^ self
+		  stringArraySchemaNamed: 'packageNames'
+		  description:
+		  'Package scope: exact package names to include. Omit all package scope properties to search all packages. Combine with projectNames to union scopes.'
+		  itemDescription: 'A package name.'
+]
+
+{ #category : 'private - schema' }
+MCPToolQuery >> packageScopeProjectNamesProperty [
+
+	^ self
+		  stringArraySchemaNamed: 'projectNames'
+		  description:
+		  'Package scope: project names whose packages are included. Omit all package scope properties to search all packages. Combine with packageNames to union scopes.'
+		  itemDescription: 'A project name.'
+]
+
 { #category : 'private - results' }
 MCPToolQuery >> packageScopeSummaryForProjectNames: projectNames packageNames: packageNames [
 
@@ -252,6 +518,21 @@ MCPToolQuery >> packageScopeSummaryForProjectNames: projectNames packageNames: p
 	^ self scopeSummaryFromLabels: labels
 ]
 
+{ #category : 'private - schema' }
+MCPToolQuery >> paginationInputPropertiesWithLimitDescription: limitDescription [
+
+	^ {
+		  (self
+			   integerSchemaPropertyNamed: 'limit'
+			   description: limitDescription
+			   default: 100).
+		  (self
+			   integerSchemaPropertyNamed: 'offset'
+			   description:
+			   'Zero-based pagination offset applied after filtering.'
+			   default: 0) }
+]
+
 { #category : 'private - request' }
 MCPToolQuery >> parsedRequestFromToolRequest: request [
 
@@ -262,6 +543,25 @@ MCPToolQuery >> parsedRequestFromToolRequest: request [
 MCPToolQuery >> queryEntriesForQueryRequest: queryRequest [
 
 	self subclassResponsibility
+]
+
+{ #category : 'private - schema' }
+MCPToolQuery >> queryInputSchemaWithProperties: inputProperties [
+
+	^ MCPStructureInputSchema new
+		  type: 'object';
+		  properties: inputProperties;
+		  required: #(  );
+		  yourself
+]
+
+{ #category : 'private - schema' }
+MCPToolQuery >> queryInputSchemaWithProperties: inputProperties allOf: conditionSchemas [
+
+	| schema |
+	schema := self queryInputSchemaWithProperties: inputProperties.
+	conditionSchemas ifNotEmpty: [ schema allOf: conditionSchemas ].
+	^ schema
 ]
 
 { #category : 'private - pagination' }
@@ -368,6 +668,12 @@ MCPToolQuery >> successSummaryForQueryRequest: queryRequest page: page [
 	self subclassResponsibility
 ]
 
+{ #category : 'private - schema' }
+MCPToolQuery >> supportedFilterModes [
+
+	^ self basicFilterModes
+]
+
 { #category : 'private - request' }
 MCPToolQuery >> supportedFilterTargets [
 
@@ -453,6 +759,33 @@ MCPToolQuery >> whereEntryForEntityKind: entityKind object: object context: cont
 MCPToolQuery >> whereEntryValueAt: key in: entry [
 
 	^ entry at: key ifAbsent: [ nil ]
+]
+
+{ #category : 'private - schema' }
+MCPToolQuery >> whereEquivalentToSchemaProperty [
+
+	^ MCPStructureProperties new
+		  name: 'equivalentTo';
+		  type: 'object';
+		  description:
+			  'Method reference used by method predicates to match methods with an equivalent AST.';
+		  properties: {
+				  (self
+					   schemaPropertyNamed: 'className'
+					   type: 'string'
+					   description: 'The class that defines the referenced method.').
+				  (self
+					   schemaPropertyNamed: 'selector'
+					   type: 'string'
+					   description: 'The referenced method selector.').
+				  (self
+					   booleanSchemaPropertyNamed: 'classSide'
+					   description:
+						   'Whether the referenced method is on the class side.'
+					   default: false) };
+		  required: #( 'className' 'selector' );
+		  additionalProperties: false;
+		  yourself
 ]
 
 { #category : 'private - where' }
@@ -651,6 +984,27 @@ MCPToolQuery >> whereMethodsForPackage: aPackage [
 	^ methods asArray
 ]
 
+{ #category : 'private - schema' }
+MCPToolQuery >> whereNestedPredicatePropertyNamed: propertyName description: propertyDescription [
+
+	^ MCPStructureProperties new
+		  name: propertyName;
+		  type: 'object';
+		  description: propertyDescription;
+		  additionalProperties: true;
+		  yourself
+]
+
+{ #category : 'private - schema' }
+MCPToolQuery >> whereNestedPredicateSchema [
+
+	^ MCPStructureProperties new
+		  type: 'object';
+		  description: 'A nested where predicate.';
+		  additionalProperties: true;
+		  yourself
+]
+
 { #category : 'private - where' }
 MCPToolQuery >> wherePackageFieldTextsForField: fieldName evaluation: evaluation [
 
@@ -684,124 +1038,95 @@ MCPToolQuery >> wherePackageProjectNamesMapIn: context [
 ]
 
 { #category : 'private - schema' }
+MCPToolQuery >> wherePredicateArrayPropertyNamed: propertyName description: propertyDescription [
+
+	^ (self
+		   schemaPropertyNamed: propertyName
+		   type: 'array'
+		   description: propertyDescription)
+		  items: self whereNestedPredicateSchema;
+		  yourself
+]
+
+{ #category : 'private - schema' }
+MCPToolQuery >> wherePredicateFilterTargetsSchemaProperty [
+
+	^ self
+		  stringArraySchemaNamed: 'filterTargets'
+		  description: 'Entry fields matched by a filter predicate.'
+		  itemDescription: 'A filter target.'
+]
+
+{ #category : 'private - schema' }
+MCPToolQuery >> wherePredicateProperties [
+
+	^ {
+		  (self
+			   wherePredicateArrayPropertyNamed: 'all'
+			   description: 'All nested predicates must match.').
+		  (self
+			   wherePredicateArrayPropertyNamed: 'any'
+			   description: 'At least one nested predicate must match.').
+		  (self
+			   whereNestedPredicatePropertyNamed: 'not'
+			   description: 'A nested predicate whose match is negated.').
+		  (self
+			   schemaPropertyNamed: 'field'
+			   type: 'string'
+			   description: 'Entry field name to match.').
+		  (self
+			   schemaPropertyNamed: 'value'
+			   type: 'string'
+			   description: 'Text matched by a field predicate.').
+		  (self
+			   stringEnumSchemaPropertyNamed: 'mode'
+			   description: 'How a field predicate is matched.'
+			   values: self basicFilterModes
+			   default: self defaultFilterMode).
+		  (self
+			   schemaPropertyNamed: 'filter'
+			   type: 'string'
+			   description:
+			   'Text matched by a filter predicate or reference lookup predicate.').
+		  (self
+			   stringEnumSchemaPropertyNamed: 'filterMode'
+			   description:
+			   'How a filter predicate is matched. Reference modes apply to method predicates.'
+			   values: self supportedFilterModes
+			   default: self defaultFilterMode).
+		  self wherePredicateFilterTargetsSchemaProperty.
+		  (self
+			   booleanSchemaPropertyNamed: 'caseSensitive'
+			   description: 'Whether text matching is case-sensitive.'
+			   default: true).
+		  self whereEquivalentToSchemaProperty.
+		  (self
+			   schemaPropertyNamed: 'exists'
+			   type: 'string'
+			   description:
+			   'Relation name for which at least one related entity must match nested where.').
+		  (self
+			   schemaPropertyNamed: 'none'
+			   type: 'string'
+			   description:
+			   'Relation name for which no related entity may match nested where.').
+		  (self
+			   whereNestedPredicatePropertyNamed: 'where'
+			   description:
+			   'Nested predicate used by exists and none relation predicates.') }
+]
+
+{ #category : 'private - schema' }
 MCPToolQuery >> wherePredicateSchemaProperty [
 
-	| anyItems allItems equivalentTo filterTargets notProperty nestedWhere whereProperty |
-	allItems := MCPStructureProperties new
-		            type: 'object';
-		            description: 'A nested where predicate.';
-		            additionalProperties: true;
-		            yourself.
-	anyItems := MCPStructureProperties new
-		            type: 'object';
-		            description: 'A nested where predicate.';
-		            additionalProperties: true;
-		            yourself.
-	notProperty := MCPStructureProperties new
-		               name: 'not';
-		               type: 'object';
-		               description:
-			               'A nested predicate whose match is negated.';
-		               additionalProperties: true;
-		               yourself.
-	nestedWhere := MCPStructureProperties new
-		               name: 'where';
-		               type: 'object';
-		               description:
-			               'Nested predicate used by exists and none relation predicates.';
-		               additionalProperties: true;
-		               yourself.
-	filterTargets := self
-		                 stringArraySchemaNamed: 'filterTargets'
-		                 description:
-		                 'Entry fields matched by a filter predicate.'
-		                 itemDescription: 'A filter target.'.
-	equivalentTo := MCPStructureProperties new
-		                name: 'equivalentTo';
-		                type: 'object';
-		                description:
-			                'Method reference used by method predicates to match methods with an equivalent AST.';
-		                properties: {
-				                (self
-					                 schemaPropertyNamed: 'className'
-					                 type: 'string'
-					                 description:
-						                 'The class that defines the referenced method.').
-				                (self
-					                 schemaPropertyNamed: 'selector'
-					                 type: 'string'
-					                 description: 'The referenced method selector.').
-				                (self
-					                 booleanSchemaPropertyNamed: 'classSide'
-					                 description:
-						                 'Whether the referenced method is on the class side.'
-					                 default: false) };
-		                required: #( 'className' 'selector' );
-		                additionalProperties: false;
-		                yourself.
+	| whereProperty |
 	whereProperty := self
 		                 schemaPropertyNamed: 'where'
 		                 type: 'object'
 		                 description:
 		                 'Optional recursive predicate applied before pagination. Use all, any, and not for boolean composition; field, value, and mode for field matching; filter, filterMode, and filterTargets for top-level-style filtering; equivalentTo for AST equivalence to a referenced method; exists or none with relation names and nested where for relation queries. Method predicates support selectorReference, classReference, variableReference, and equivalentTo.'.
 	whereProperty
-		properties: {
-				((self
-					  schemaPropertyNamed: 'all'
-					  type: 'array'
-					  description: 'All nested predicates must match.')
-					 items: allItems;
-					 yourself).
-				((self
-					  schemaPropertyNamed: 'any'
-					  type: 'array'
-					  description: 'At least one nested predicate must match.')
-					 items: anyItems;
-					 yourself).
-				notProperty.
-				(self
-					 schemaPropertyNamed: 'field'
-					 type: 'string'
-					 description: 'Entry field name to match.').
-				(self
-					 schemaPropertyNamed: 'value'
-					 type: 'string'
-					 description: 'Text matched by a field predicate.').
-				(self
-					 stringEnumSchemaPropertyNamed: 'mode'
-					 description: 'How a field predicate is matched.'
-					 values: #( 'substring' 'prefix' 'exact' 'regex' )
-					 default: self defaultFilterMode).
-				(self
-					 schemaPropertyNamed: 'filter'
-					 type: 'string'
-					 description:
-					 'Text matched by a filter predicate or reference lookup predicate.').
-				(self
-					 stringEnumSchemaPropertyNamed: 'filterMode'
-					 description:
-					 'How a filter predicate is matched. Reference modes apply to method predicates.'
-					 values:
-						 #( 'substring' 'prefix' 'exact' 'regex' 'selectorReference'
-						    'classReference' 'variableReference' )
-					 default: self defaultFilterMode).
-				filterTargets.
-				(self
-					 booleanSchemaPropertyNamed: 'caseSensitive'
-					 description: 'Whether text matching is case-sensitive.'
-					 default: true).
-				equivalentTo.
-				(self
-					 schemaPropertyNamed: 'exists'
-					 type: 'string'
-					 description:
-					 'Relation name for which at least one related entity must match nested where.').
-				(self
-					 schemaPropertyNamed: 'none'
-					 type: 'string'
-					 description:
-					 'Relation name for which no related entity may match nested where.').
-				nestedWhere };
+		properties: self wherePredicateProperties;
 		additionalProperties: true.
 	^ whereProperty
 ]

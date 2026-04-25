@@ -18,12 +18,14 @@ MCPToolEdit class >> isAbstract [
 { #category : 'private - refactoring' }
 MCPToolEdit >> addRefactoringScopeContextFromSpec: scopeSpec toRequestedContext: requestedContext [
 
-	scopeSpec isDefaultImageScope ifFalse: [
-		requestedContext at: #scope put: scopeSpec scope ].
 	scopeSpec packageNames ifNotEmpty: [
 		requestedContext at: #packageNames put: scopeSpec packageNames ].
 	scopeSpec classNames ifNotEmpty: [
-		requestedContext at: #classNames put: scopeSpec classNames ]
+		requestedContext at: #classNames put: scopeSpec classNames ].
+	scopeSpec hierarchyClassNames ifNotEmpty: [
+		requestedContext
+			at: #hierarchyClassNames
+			put: scopeSpec hierarchyClassNames ]
 ]
 
 { #category : 'private - errors' }
@@ -50,6 +52,13 @@ MCPToolEdit >> canonicalOperationNames [
 
 	^ (self operationSpecifications collect: [ :each | each at: #name ])
 		  asArray
+]
+
+{ #category : 'private - refactoring' }
+MCPToolEdit >> classesRefactoringEnvironmentForClassNames: classNames baseEnvironment: baseEnvironment [
+
+	^ baseEnvironment forClasses:
+		  (self resolvedRefactoringScopeClassesFrom: classNames)
 ]
 
 { #category : 'private - execution' }
@@ -174,8 +183,18 @@ MCPToolEdit >> executeOperationRequest: editRequest [
 { #category : 'executing' }
 MCPToolEdit >> executeWithRequest: request [
 
-	| editRequest |
-	editRequest := self parsedRequestFromToolRequest: request.
+	| editRequest operation requestedContext |
+	[ editRequest := self parsedRequestFromToolRequest: request ]
+		on: MCPCommandError
+		do: [ :error |
+			operation := request
+				             stringArgumentNamed: 'operation'
+				             default: 'edit'.
+			requestedContext := request asDictionary copy.
+			^ self
+				  errorResultForCommandError: error
+				  operation: operation
+				  requestedContext: requestedContext ].
 	^ (self commandForRequest: editRequest) execute
 ]
 
@@ -193,6 +212,20 @@ MCPToolEdit >> forceSchemaProperty [
 		  description:
 		  'Controls refactoring warning handling. force=false stops on RBRefactoringWarning and returns an error with impactMessages, howToProceed, and forceSupported=true. force=true resumes past the warning and returns the warning text in warnings.'
 		  default: false
+]
+
+{ #category : 'private - refactoring' }
+MCPToolEdit >> hierarchyRefactoringEnvironmentForClassNames: classNames baseEnvironment: baseEnvironment [
+
+	| environment resolvedClasses |
+	resolvedClasses := self resolvedRefactoringScopeClassesFrom:
+		                   classNames.
+	environment := nil.
+	resolvedClasses do: [ :eachClass |
+		environment := self
+			               unionRefactoringEnvironment: environment
+			               with: (baseEnvironment forClassHierarchy: eachClass) ].
+	^ environment
 ]
 
 { #category : 'private - warnings' }
@@ -443,47 +476,51 @@ MCPToolEdit >> parsedRequestFromToolRequest: request [
 ]
 
 { #category : 'private - refactoring' }
-MCPToolEdit >> refactoringEnvironmentForScope: scope packageNames: packageNames classNames: classNames [
+MCPToolEdit >> refactoringEnvironmentForScopeSpec: scopeSpec [
 
-	| baseEnvironment resolvedClasses |
+	| baseEnvironment environment |
 	baseEnvironment := RBBrowserEnvironment new.
-	scope = 'image' ifTrue: [ ^ baseEnvironment ].
-	scope = 'packages' ifTrue: [
-		^ baseEnvironment forPackageNames: packageNames ].
-	resolvedClasses := self resolvedRefactoringScopeClassesFrom:
-		                   classNames.
-	scope = 'classes' ifTrue: [
-		^ baseEnvironment forClasses: resolvedClasses ].
-	^ resolvedClasses inject: nil into: [ :environment :eachClass |
-		  | hierarchyEnvironment |
-		  hierarchyEnvironment := baseEnvironment forClassHierarchy:
-			                          eachClass.
-		  environment
-			  ifNil: [ hierarchyEnvironment ]
-			  ifNotNil: [ environment | hierarchyEnvironment ] ]
+	scopeSpec isDefaultImageScope ifTrue: [ ^ baseEnvironment ].
+	environment := nil.
+	scopeSpec packageNames ifNotEmpty: [
+		environment := self
+			               unionRefactoringEnvironment: environment
+			               with:
+			               (baseEnvironment forPackageNames:
+				                scopeSpec packageNames) ].
+	scopeSpec classNames ifNotEmpty: [
+		environment := self
+			               unionRefactoringEnvironment: environment
+			               with: (self
+					                classesRefactoringEnvironmentForClassNames:
+					                scopeSpec classNames
+					                baseEnvironment: baseEnvironment) ].
+	scopeSpec hierarchyClassNames ifNotEmpty: [
+		environment := self
+			               unionRefactoringEnvironment: environment
+			               with: (self
+					                hierarchyRefactoringEnvironmentForClassNames:
+					                scopeSpec hierarchyClassNames
+					                baseEnvironment: baseEnvironment) ].
+	^ environment ifNil: [ baseEnvironment ]
 ]
 
 { #category : 'private - refactoring' }
 MCPToolEdit >> refactoringModelForScopeSpec: scopeSpec anchoredAtBehavior: aBehavior [
 
-	| environment |
-	environment := self
-		               refactoringEnvironmentForScope: scopeSpec scope
-		               packageNames: scopeSpec packageNames
-		               classNames: scopeSpec classNames.
+	| details environment |
+	environment := self refactoringEnvironmentForScopeSpec: scopeSpec.
 	(environment includesClass: aBehavior) ifFalse: [
+		details := scopeSpec asDictionary copy.
+		details at: #className put: aBehavior instanceSide name asString.
+		details at: #classSide put: aBehavior isMeta.
 		MCPCommandError
 			signalErrorCode: #RefactoringScopeExcludesTargetClass
 			message: 'Refactoring scope does not include ' , (aBehavior isMeta
 					 ifTrue: [ 'the class side of ' ]
 					 ifFalse: [ 'class ' ]) , aBehavior instanceSide name asString
 				, '.'
-			details: {
-					(#scope -> scopeSpec scope).
-					(#packageNames -> scopeSpec packageNames).
-					(#classNames -> scopeSpec classNames).
-					(#className -> aBehavior instanceSide name asString).
-					(#classSide -> aBehavior isMeta) } asDictionary ].
+			details: details ].
 	^ RBNamespace onEnvironment: environment
 ]
 
@@ -493,39 +530,18 @@ MCPToolEdit >> refactoringScopeClassNamesSchemaProperty [
 	^ self
 		  stringArraySchemaNamed: 'classNames'
 		  description:
-		  'The class names that define the classes or hierarchy refactoring scope. Required when operation=rename and scope=classes or scope=hierarchy. scope=classes uses only these classes; scope=hierarchy also includes their superclasses and subclasses.'
+		  'Exact class scope for scope-aware update actions. The refactoring is applied only inside these classes.'
 		  itemDescription: 'A class name.'
 ]
 
 { #category : 'private - schema' }
-MCPToolEdit >> refactoringScopeConditionSchemaForOperationNamed: operationName scope: scopeName required: requiredPropertyNames [
+MCPToolEdit >> refactoringScopeHierarchyClassNamesSchemaProperty [
 
 	^ self
-		  conditionalInputSchemaIf: (self
-				   inputSchemaBranchForStringDiscriminatorValues: {
-						   ('operation' -> operationName).
-						   ('scope' -> scopeName) }
-				   required: #(  )
-				   requireDiscriminators: true)
-		  thenRequired: requiredPropertyNames
-]
-
-{ #category : 'private - schema' }
-MCPToolEdit >> refactoringScopeConditionSchemasForOperationNamed: operationName [
-
-	^ {
-		  (self
-			   refactoringScopeConditionSchemaForOperationNamed: operationName
-			   scope: 'packages'
-			   required: #( 'packageNames' )).
-		  (self
-			   refactoringScopeConditionSchemaForOperationNamed: operationName
-			   scope: 'classes'
-			   required: #( 'classNames' )).
-		  (self
-			   refactoringScopeConditionSchemaForOperationNamed: operationName
-			   scope: 'hierarchy'
-			   required: #( 'classNames' )) }
+		  stringArraySchemaNamed: 'hierarchyClassNames'
+		  description:
+		  'Class hierarchy scope for scope-aware update actions. Each named class contributes its superclass and subclass hierarchy.'
+		  itemDescription: 'A class name whose hierarchy is included.'
 ]
 
 { #category : 'private - schema' }
@@ -534,41 +550,23 @@ MCPToolEdit >> refactoringScopePackageNamesSchemaProperty [
 	^ self
 		  stringArraySchemaNamed: 'packageNames'
 		  description:
-		  'The package names that define the packages refactoring scope. Required when operation=rename and scope=packages. The rename is applied only inside these packages.'
+		  'Package scope for scope-aware update actions. The refactoring is applied only inside these packages.'
 		  itemDescription: 'A package name.'
-]
-
-{ #category : 'private - schema' }
-MCPToolEdit >> refactoringScopeSchemaProperty [
-
-	^ self
-		  stringEnumSchemaPropertyNamed: 'scope'
-		  description:
-		  'Optional refactoring scope for scope-aware rename operations. image searches the whole image. packages restricts the rename to packageNames. classes restricts it to classNames. hierarchy expands classNames to their superclasses and subclasses.'
-		  values: self supportedRefactoringScopes
-		  default: 'image'
 ]
 
 { #category : 'private - request' }
 MCPToolEdit >> refactoringScopeSpecFromRequest: request [
 
-	| classNames explicitScope packageNames scope |
+	| classNames hierarchyClassNames packageNames |
 	packageNames := request stringCollectionArgumentNamed: 'packageNames'.
 	classNames := request stringCollectionArgumentNamed: 'classNames'.
-	explicitScope := request stringArgumentNamed: 'scope'.
-	scope := self
-		         resolvedRefactoringScopeFrom: explicitScope
-		         packageNames: packageNames
-		         classNames: classNames.
-	self
-		validateRefactoringScope: scope
-		packageNames: packageNames
-		classNames: classNames.
+	hierarchyClassNames := request stringCollectionArgumentNamed:
+		                       'hierarchyClassNames'.
 	self validateRefactoringScopePackageNamesExist: packageNames.
 	^ MCPRefactoringScopeSpec
-		  scope: scope
 		  packageNames: packageNames
 		  classNames: classNames
+		  hierarchyClassNames: hierarchyClassNames
 ]
 
 { #category : 'private - warnings' }
@@ -599,41 +597,6 @@ MCPToolEdit >> resolvedRefactoringScopeClassesFrom: classNames [
 			  ifAbsent: [ MCPCommandError signalMissingClassNamed: eachName ] ]
 ]
 
-{ #category : 'private - request' }
-MCPToolEdit >> resolvedRefactoringScopeFrom: explicitScope packageNames: packageNames classNames: classNames [
-
-	explicitScope ifNil: [
-		packageNames ifNotEmpty: [
-			classNames ifNotEmpty: [
-				MCPCommandError
-					signalErrorCode: #RefactoringScopeParametersConflict
-					message:
-					'packageNames and classNames cannot both be used without an explicit scope.'
-					details: {
-							(#packageNames -> packageNames).
-							(#classNames -> classNames) } asDictionary ].
-			^ 'packages' ].
-		classNames ifNotEmpty: [
-			MCPCommandError
-				signalErrorCode: #RefactoringScopeRequired
-				message: 'scope is required when classNames are provided.'
-				details: { (#classNames -> classNames) } asDictionary ].
-		^ 'image' ].
-	(self supportedRefactoringScopes includes: explicitScope) ifFalse: [
-		MCPCommandError
-			signalErrorCode: #InvalidRefactoringScope
-			message:
-			'scope must be one of image, packages, hierarchy, classes.'
-			details: { (#scope -> explicitScope) } asDictionary ].
-	^ explicitScope
-]
-
-{ #category : 'private - schema' }
-MCPToolEdit >> supportedRefactoringScopes [
-
-	^ #( 'image' 'packages' 'hierarchy' 'classes' )
-]
-
 { #category : 'private - errors' }
 MCPToolEdit >> undeclaredVariableCauseMessageFor: anError [
 
@@ -658,46 +621,12 @@ MCPToolEdit >> undeclaredVariableNameFor: anError [
 	^ node name asString
 ]
 
-{ #category : 'private - request' }
-MCPToolEdit >> validateRefactoringScope: scope packageNames: packageNames classNames: classNames [
+{ #category : 'private - refactoring' }
+MCPToolEdit >> unionRefactoringEnvironment: currentEnvironment with: addedEnvironment [
 
-	scope = 'image' ifTrue: [
-		(packageNames isEmpty and: [ classNames isEmpty ]) ifFalse: [
-			MCPCommandError
-				signalErrorCode: #RefactoringScopeParametersConflict
-				message: 'scope=image does not accept packageNames or classNames.'
-				details: {
-						(#scope -> scope).
-						(#packageNames -> packageNames).
-						(#classNames -> classNames) } asDictionary ].
-		^ self ].
-	scope = 'packages' ifTrue: [
-		packageNames ifEmpty: [
-			MCPCommandError
-				signalErrorCode: #PackageNamesRequiredForRefactoringScope
-				message: 'packageNames is required when scope=packages.'
-				details: { (#scope -> scope) } asDictionary ].
-		classNames ifNotEmpty: [
-			MCPCommandError
-				signalErrorCode: #RefactoringScopeParametersConflict
-				message: 'scope=packages does not accept classNames.'
-				details: {
-						(#scope -> scope).
-						(#classNames -> classNames) } asDictionary ].
-		^ self ].
-	(scope = 'classes' or: [ scope = 'hierarchy' ]) ifTrue: [
-		classNames ifEmpty: [
-			MCPCommandError
-				signalErrorCode: #ClassNamesRequiredForRefactoringScope
-				message: 'classNames is required when scope=' , scope , '.'
-				details: { (#scope -> scope) } asDictionary ].
-		packageNames ifNotEmpty: [
-			MCPCommandError
-				signalErrorCode: #RefactoringScopeParametersConflict
-				message: 'scope=' , scope , ' does not accept packageNames.'
-				details: {
-						(#scope -> scope).
-						(#packageNames -> packageNames) } asDictionary ] ]
+	^ currentEnvironment
+		  ifNil: [ addedEnvironment ]
+		  ifNotNil: [ currentEnvironment | addedEnvironment ]
 ]
 
 { #category : 'private - request' }

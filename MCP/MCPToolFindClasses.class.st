@@ -101,83 +101,16 @@ MCPToolFindClasses >> defaultIcons [
 { #category : 'defaults' }
 MCPToolFindClasses >> defaultInputSchema [
 
-	| classNamesProperty filterModeProperty filterTargetsProperty hierarchyClassNamesProperty packageNamesProperty parentClassNamesProperty subclassClassNamesProperty |
-	packageNamesProperty := self
-		                        stringArraySchemaNamed: 'packageNames'
-		                        description:
-		                        'Class scope: package names whose defined classes are included. Omit all class scope properties to search all classes. Combine with other class scope properties to union scopes.'
-		                        itemDescription: 'A package name.'.
-	classNamesProperty := self
-		                      stringArraySchemaNamed: 'classNames'
-		                      description:
-		                      'Class scope: exact class names to include. Omit all class scope properties to search all classes. Combine with other class scope properties to union scopes.'
-		                      itemDescription: 'A class name.'.
-	hierarchyClassNamesProperty := self
-		                               stringArraySchemaNamed:
-		                               'hierarchyClassNames'
-		                               description:
-		                               'Class scope: class names whose superclasses, subclasses, and the named classes are included. Omit all class scope properties to search all classes. Combine with other class scope properties to union scopes.'
-		                               itemDescription:
-		                               'A hierarchy root class name.'.
-	subclassClassNamesProperty := self
-		                              stringArraySchemaNamed:
-		                              'subclassClassNames'
-		                              description:
-		                              'Class scope: class names whose subclasses are included. The named classes are excluded unless classNames also includes them. Combine with other class scope properties to union scopes.'
-		                              itemDescription:
-		                              'A class name whose subclasses are included.'.
-	parentClassNamesProperty := self
-		                            stringArraySchemaNamed:
-		                            'parentClassNames'
-		                            description:
-		                            'Class scope: class names whose superclasses are included. The named classes are excluded unless classNames also includes them. Combine with other class scope properties to union scopes.'
-		                            itemDescription:
-		                            'A class name whose superclasses are included.'.
-	filterModeProperty := self
-		                      stringEnumSchemaPropertyNamed: 'filterMode'
-		                      description: 'How the filter is matched.'
-		                      values:
-		                      #( 'substring' 'prefix' 'exact' 'regex' )
-		                      default: self defaultFilterMode.
-	filterTargetsProperty := self
-		                         stringEnumArraySchemaNamed: 'filterTargets'
-		                         description:
-		                         'Optional class-entry fields matched by filter.'
-		                         itemDescription: 'A filter target.'
-		                         values: self supportedFilterTargets
-		                         default: self defaultFilterTargets.
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: {
-				  packageNamesProperty.
-				  classNamesProperty.
-				  hierarchyClassNamesProperty.
-				  subclassClassNamesProperty.
-				  parentClassNamesProperty.
-				  (self
-					   schemaPropertyNamed: 'filter'
-					   type: 'string'
-					   description:
-						   'Optional filter applied to the listed class-entry fields. Use filterTargets to choose which fields are matched.').
-				  filterTargetsProperty.
-				  filterModeProperty.
-				  self wherePredicateSchemaProperty.
-				  (self
-					   booleanSchemaPropertyNamed: 'caseSensitive'
-					   description: 'Whether filter matching is case-sensitive.'
-					   default: true).
-				  (self
-					   integerSchemaPropertyNamed: 'limit'
-					   description:
-						   'Maximum number of matching classes to return. Use 0 to request counts only.'
-					   default: 100).
-				  (self
-					   integerSchemaPropertyNamed: 'offset'
-					   description:
-						   'Zero-based pagination offset applied after filtering.'
-					   default: 0) };
-		  required: #(  );
-		  yourself
+	| properties |
+	properties := self classQueryScopeInputProperties , (self
+		               fieldFilteringInputPropertiesWithFilterDescription:
+		               'Optional filter applied to the listed class-entry fields. Use filterTargets to choose which fields are matched.'
+		               filterTargetsDescription:
+		               'Optional class-entry fields matched by filter.'
+		               filterModeDescription: 'How the filter is matched.'
+		               limitDescription:
+		               'Maximum number of matching classes to return. Use 0 to request counts only.').
+	^ self queryInputSchemaWithProperties: properties
 ]
 
 { #category : 'defaults' }

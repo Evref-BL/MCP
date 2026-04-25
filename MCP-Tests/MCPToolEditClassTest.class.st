@@ -476,9 +476,9 @@ MCPToolEditClassTest >> testSchemaRequiresOperationAndClassName [
 	self assert: (propertyNames includes: 'sharedVariables').
 	self assert: (propertyNames includes: 'sharedPools').
 	self assert: (propertyNames includes: 'layout').
-	self assert: (propertyNames includes: 'scope').
 	self assert: (propertyNames includes: 'packageNames').
 	self assert: (propertyNames includes: 'classNames').
+	self assert: (propertyNames includes: 'hierarchyClassNames').
 	self assert: (propertyNames includes: 'slotAction').
 	self assert: (propertyNames includes: 'slotName').
 	self assert: (propertyNames includes: 'newSlotName').
@@ -1075,8 +1075,7 @@ MCPToolEditClassTest >> testUpdateRenameCanLimitRefactoringToClassHierarchy [
 
 	| hierarchyArguments referenceClass referenceSource result subclass |
 	hierarchyArguments := self updateRequestArgumentsForRename copy
-		                      at: #scope put: 'hierarchy';
-		                      at: #classNames
+		                      at: #hierarchyClassNames
 		                      put: { self originalClassName };
 		                      yourself.
 	result := self callToolWith: hierarchyArguments.
@@ -1099,7 +1098,6 @@ MCPToolEditClassTest >> testUpdateRenameCanLimitRefactoringToNamedClasses [
 
 	| classesArguments referenceClass result |
 	classesArguments := self updateRequestArgumentsForRename copy
-		                    at: #scope put: 'classes';
 		                    at: #classNames put: {
 				                    self originalClassName.
 				                    self referenceClassName };

@@ -171,9 +171,9 @@ MCPToolEditClass >> defaultInputSchema [
 					   description:
 						   'The new class name for an operation=update rename patch; do not combine it with another update action.';
 					   yourself).
-				  self refactoringScopeSchemaProperty.
 				  self refactoringScopePackageNamesSchemaProperty.
 				  self refactoringScopeClassNamesSchemaProperty.
+				  self refactoringScopeHierarchyClassNamesSchemaProperty.
 				  (self
 					   stringEnumSchemaPropertyNamed: 'slotAction'
 					   description:
@@ -205,8 +205,7 @@ MCPToolEditClass >> defaultInputSchema [
 					   yourself) };
 		  required: #( 'operation' 'className' );
 		  oneOf: self operationBranchSchemas;
-		  allOf:
-		  (self refactoringScopeConditionSchemasForOperationNamed: 'update');
+		  additionalProperties: false;
 		  yourself
 ]
 

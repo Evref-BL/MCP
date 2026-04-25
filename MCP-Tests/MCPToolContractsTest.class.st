@@ -203,9 +203,9 @@ MCPToolContractsTest >> testEditClassHasAccurateNameAndRequiredArguments [
 	self assert: (propertyNames includes: 'sharedVariables').
 	self assert: (propertyNames includes: 'sharedPools').
 	self assert: (propertyNames includes: 'layout').
-	self assert: (propertyNames includes: 'scope').
 	self assert: (propertyNames includes: 'packageNames').
 	self assert: (propertyNames includes: 'classNames').
+	self assert: (propertyNames includes: 'hierarchyClassNames').
 	self assert: (propertyNames includes: 'slotAction').
 	self assert: (propertyNames includes: 'slotName').
 	self assert: (propertyNames includes: 'newSlotName').
@@ -309,9 +309,9 @@ MCPToolContractsTest >> testEditMethodHasAccurateNameAndRequiredArguments [
 		assert: tool inputSchema required asSet
 		equals: #( 'operation' 'className' ) asSet.
 	self assert: (propertyNames includes: 'force').
-	self assert: (propertyNames includes: 'scope').
 	self assert: (propertyNames includes: 'packageNames').
 	self assert: (propertyNames includes: 'classNames').
+	self assert: (propertyNames includes: 'hierarchyClassNames').
 	self deny: (propertyNames includes: 'projectNames')
 ]
 
@@ -330,20 +330,21 @@ MCPToolContractsTest >> testEditMethodSchemaAdvertisesMethodState [
 	propertyNames := dataProperties collect: [ :each | each name ].
 	self
 		assert: (operationProperty extraProperties at: #enum) asArray
-		equals: #( 'compile' 'rename' 'changeProtocol' ).
+		equals: #( 'compile' 'update' ).
 	self assert:
 		(permutationProperty extraProperties at: #items) type = 'integer'.
 	self
 		assert: propertyNames asSet
 		equals:
-			#( 'selector' 'className' 'side' 'packageName' 'isExtension'
-			   'protocol' 'source' 'critiques' ) asSet
+			#( 'operation' 'updatePlan' 'appliedChange' 'selector' 'className'
+			   'side' 'packageName' 'isExtension' 'protocol' 'source' 'oldSelector'
+			   'newSelector' 'oldProtocol' 'newProtocol' 'critiques' ) asSet
 ]
 
 { #category : 'tests' }
 MCPToolContractsTest >> testEditToolSchemasAdvertiseOperationBranches [
 
-	| createBranch editClassBranches editMethodBranches renameBranch updateBranch |
+	| compileBranch createBranch editClassBranches editMethodBranches updateBranch |
 	editClassBranches := MCPToolEditClass new inputSchema asJRPCJSON at:
 		                     #oneOf.
 	editMethodBranches := MCPToolEditMethod new inputSchema asJRPCJSON
@@ -368,108 +369,44 @@ MCPToolContractsTest >> testEditToolSchemasAdvertiseOperationBranches [
 	self
 		assert: (editMethodBranches collect: [ :each |
 				 ((each at: #properties) at: 'operation') at: #const ]) asArray
-		equals: #( 'compile' 'rename' 'changeProtocol' ).
-	renameBranch := editMethodBranches detect: [ :each |
-		                (((each at: #properties) at: 'operation') at: #const)
-		                = 'rename' ].
+		equals: #( 'compile' 'update' ).
+	compileBranch := editMethodBranches detect: [ :each |
+		                 (((each at: #properties) at: 'operation') at:
+			                  #const) = 'compile' ].
 	self
-		assert: (renameBranch at: #required) asSet
-		equals: #( 'operation' 'className' 'selector' 'newSelector' ) asSet
+		assert: (compileBranch at: #required) asSet
+		equals: #( 'operation' 'className' 'methodSource' 'protocol' ) asSet.
+	updateBranch := editMethodBranches detect: [ :each |
+		                (((each at: #properties) at: 'operation') at: #const)
+		                = 'update' ].
+	self
+		assert: (updateBranch at: #required) asSet
+		equals: #( 'operation' 'className' 'selector' ) asSet
 ]
 
 { #category : 'tests' }
 MCPToolContractsTest >> testEditToolSchemasAdvertiseRenameScopeConditions [
 
-	| classRenameClassesCondition classRenameHierarchyCondition classRenamePackageCondition editClassConditions editMethodConditions methodRenameClassesCondition methodRenameHierarchyCondition methodRenamePackageCondition |
-	editClassConditions := MCPToolEditClass new inputSchema asJRPCJSON
-		                       at: #allOf.
-	editMethodConditions := MCPToolEditMethod new inputSchema asJRPCJSON
-		                        at: #allOf.
-	self assert: editClassConditions size equals: 3.
-	self assert: editMethodConditions size equals: 3.
-	classRenamePackageCondition := editClassConditions detect: [ :each |
-		                               | conditionProperties |
-		                               conditionProperties := (each at: #if)
-			                                                      at:
-			                                                      #properties.
-		                               ((conditionProperties at: 'operation')
-			                                at: #const) = 'update' and: [
-			                               ((conditionProperties at: 'scope')
-				                                at: #const) = 'packages' ] ].
+	| editClassInputSchema editClassPropertyNames editMethodInputSchema editMethodPropertyNames |
+	editClassInputSchema := MCPToolEditClass new inputSchema.
+	editMethodInputSchema := MCPToolEditMethod new inputSchema.
+	editClassPropertyNames := editClassInputSchema properties collect: [
+		                          :each | each name ].
+	editMethodPropertyNames := editMethodInputSchema properties collect: [
+		                           :each | each name ].
+	{
+		editClassPropertyNames.
+		editMethodPropertyNames } do: [ :propertyNames |
+		self deny: (propertyNames includes: 'scope').
+		self assert: (propertyNames includes: 'packageNames').
+		self assert: (propertyNames includes: 'classNames').
+		self assert: (propertyNames includes: 'hierarchyClassNames') ].
 	self
-		assert:
-		((classRenamePackageCondition at: #then) at: #required) asArray
-		equals: #( 'packageNames' ).
-	classRenameClassesCondition := editClassConditions detect: [ :each |
-		                               | conditionProperties |
-		                               conditionProperties := (each at: #if)
-			                                                      at:
-			                                                      #properties.
-		                               ((conditionProperties at: 'operation')
-			                                at: #const) = 'update' and: [
-			                               ((conditionProperties at: 'scope')
-				                                at: #const) = 'classes' ] ].
+		assert: (editClassInputSchema asJRPCJSON at: #additionalProperties)
+		equals: false.
 	self
-		assert:
-		((classRenameClassesCondition at: #then) at: #required) asArray
-		equals: #( 'classNames' ).
-	classRenameHierarchyCondition := editClassConditions detect: [ :each |
-		                                 | conditionProperties |
-		                                 conditionProperties := (each at:
-			                                                         #if) at:
-			                                                        #properties.
-		                                 ((conditionProperties at:
-			                                   'operation') at: #const)
-		                                 = 'update' and: [
-			                                 ((conditionProperties at: 'scope')
-				                                  at: #const) = 'hierarchy' ] ].
-	self
-		assert:
-		((classRenameHierarchyCondition at: #then) at: #required) asArray
-		equals: #( 'classNames' ).
-	methodRenamePackageCondition := editMethodConditions detect: [ :each |
-		                                | conditionProperties |
-		                                conditionProperties := (each at: #if)
-			                                                       at:
-			                                                       #properties.
-		                                ((conditionProperties at:
-			                                  'operation') at: #const)
-		                                = 'rename' and: [
-			                                ((conditionProperties at: 'scope')
-				                                 at: #const) = 'packages' ] ].
-	self
-		assert:
-		((methodRenamePackageCondition at: #then) at: #required) asArray
-		equals: #( 'packageNames' ).
-	methodRenameClassesCondition := editMethodConditions detect: [ :each |
-		                                | conditionProperties |
-		                                conditionProperties := (each at: #if)
-			                                                       at:
-			                                                       #properties.
-		                                ((conditionProperties at:
-			                                  'operation') at: #const)
-		                                = 'rename' and: [
-			                                ((conditionProperties at: 'scope')
-				                                 at: #const) = 'classes' ] ].
-	self
-		assert:
-		((methodRenameClassesCondition at: #then) at: #required) asArray
-		equals: #( 'classNames' ).
-	methodRenameHierarchyCondition := editMethodConditions detect: [
-		                                  :each |
-		                                  | conditionProperties |
-		                                  conditionProperties := (each at:
-			                                                          #if) at:
-			                                                         #properties.
-		                                  ((conditionProperties at:
-			                                    'operation') at: #const)
-		                                  = 'rename' and: [
-			                                  ((conditionProperties at: 'scope')
-				                                   at: #const) = 'hierarchy' ] ].
-	self
-		assert:
-		((methodRenameHierarchyCondition at: #then) at: #required) asArray
-		equals: #( 'classNames' )
+		assert: (editMethodInputSchema asJRPCJSON at: #additionalProperties)
+		equals: false
 ]
 
 { #category : 'tests' }
@@ -539,7 +476,6 @@ MCPToolContractsTest >> testFindClassesHasAccurateNameAndSchema [
 	propertyNames := schema properties collect: [ :each | each name ].
 	self assert: MCPToolFindClasses new name equals: 'find-classes'.
 	self assert: schema required equals: #(  ).
-	self deny: (propertyNames includes: 'scope').
 	self deny: (propertyNames includes: 'packageName').
 	self assert: (propertyNames includes: 'packageNames').
 	self assert: (propertyNames includes: 'classNames').
@@ -619,7 +555,6 @@ MCPToolContractsTest >> testFindMethodsHasAccurateNameAndSchema [
 		                      each name = 'filterMode' ].
 	self assert: MCPToolFindMethods new name equals: 'find-methods'.
 	self assert: schema required equals: #(  ).
-	self deny: (propertyNames includes: 'scope').
 	self assert: (propertyNames includes: 'packageNames').
 	self assert: (propertyNames includes: 'classNames').
 	self assert: (propertyNames includes: 'hierarchyClassNames').
@@ -733,7 +668,6 @@ MCPToolContractsTest >> testFindPackagesHasAccurateNameAndSchema [
 	propertyNames := schema properties collect: [ :each | each name ].
 	self assert: MCPToolFindPackages new name equals: 'find-packages'.
 	self assert: schema required equals: #(  ).
-	self deny: (propertyNames includes: 'scope').
 	self assert: (propertyNames includes: 'projectNames').
 	self assert: (propertyNames includes: 'packageNames').
 	self assert: (propertyNames includes: 'filter').
@@ -1337,12 +1271,12 @@ MCPToolContractsTest >> toolFlowSpecs [
 		  {
 			  (#toolClass -> MCPToolEditMethod).
 			  (#arguments -> {
-				   (#operation -> 'changeProtocol').
+				   (#operation -> 'update').
 				   (#className -> 'Object').
 				   (#selector -> 'class').
 				   (#protocol -> 'accessing') } asDictionary).
-			  (#requestClass -> MCPEditToolRequest).
-			  (#commandClass -> MCPEditToolCommand) } asDictionary.
+			  (#requestClass -> MCPMethodUpdateRequest).
+			  (#commandClass -> MCPUpdateMethodCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolRemoveMethods).
 			  (#arguments -> {

@@ -30,60 +30,17 @@ MCPToolFindPackages >> defaultIcons [
 { #category : 'defaults' }
 MCPToolFindPackages >> defaultInputSchema [
 
-	| filterModeProperty filterTargetsProperty packageNamesProperty projectNamesProperty |
-	projectNamesProperty := self
-		                        stringArraySchemaNamed: 'projectNames'
-		                        description:
-		                        'Package scope: project names whose packages are included. Omit all package scope properties to search all packages. Combine with packageNames to union scopes.'
-		                        itemDescription: 'A project name.'.
-	packageNamesProperty := self
-		                        stringArraySchemaNamed: 'packageNames'
-		                        description:
-		                        'Package scope: exact package names to include. Omit all package scope properties to search all packages. Combine with projectNames to union scopes.'
-		                        itemDescription: 'A package name.'.
-	filterModeProperty := self
-		                      stringEnumSchemaPropertyNamed: 'filterMode'
-		                      description:
-		                      'How the package filter is matched.'
-		                      values:
-		                      #( 'substring' 'prefix' 'exact' 'regex' )
-		                      default: self defaultFilterMode.
-	filterTargetsProperty := self
-		                         stringEnumArraySchemaNamed: 'filterTargets'
-		                         description:
-		                         'Optional package-entry fields matched by filter.'
-		                         itemDescription: 'A filter target.'
-		                         values: self supportedFilterTargets
-		                         default: self defaultFilterTargets.
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: {
-				  projectNamesProperty.
-				  packageNamesProperty.
-				  (self
-					   schemaPropertyNamed: 'filter'
-					   type: 'string'
-					   description:
-						   'Optional filter applied to the listed package-entry fields. Use filterTargets to choose which fields are matched.').
-				  filterTargetsProperty.
-				  filterModeProperty.
-				  self wherePredicateSchemaProperty.
-				  (self
-					   booleanSchemaPropertyNamed: 'caseSensitive'
-					   description: 'Whether filter matching is case-sensitive.'
-					   default: true).
-				  (self
-					   integerSchemaPropertyNamed: 'limit'
-					   description:
-						   'Maximum number of matching packages to return. Use 0 to request counts only.'
-					   default: 100).
-				  (self
-					   integerSchemaPropertyNamed: 'offset'
-					   description:
-						   'Zero-based pagination offset applied after filtering.'
-					   default: 0) };
-		  required: #(  );
-		  yourself
+	| properties |
+	properties := self packageQueryScopeInputProperties , (self
+		               fieldFilteringInputPropertiesWithFilterDescription:
+		               'Optional filter applied to the listed package-entry fields. Use filterTargets to choose which fields are matched.'
+		               filterTargetsDescription:
+		               'Optional package-entry fields matched by filter.'
+		               filterModeDescription:
+		               'How the package filter is matched.'
+		               limitDescription:
+		               'Maximum number of matching packages to return. Use 0 to request counts only.').
+	^ self queryInputSchemaWithProperties: properties
 ]
 
 { #category : 'defaults' }
