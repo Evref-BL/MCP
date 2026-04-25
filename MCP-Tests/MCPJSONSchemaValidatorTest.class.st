@@ -187,6 +187,39 @@ MCPJSONSchemaValidatorTest >> testValidatesArrayItemsEnumAndConst [
 ]
 
 { #category : 'tests' }
+MCPJSONSchemaValidatorTest >> testValidatesMinItemsAndMinLength [
+
+	| arguments schema violations |
+	schema := {
+		          (#type -> 'object').
+		          (#properties -> { ('rules' -> {
+			            (#type -> 'array').
+			            (#minItems -> 1).
+			            (#items -> {
+				             (#type -> 'object').
+				             (#properties -> {
+					              ('lhs' -> {
+						               (#type -> 'string').
+						               (#minLength -> 1) } asDictionary).
+					              ('rhs' -> {
+						               (#type -> 'string').
+						               (#minLength -> 1) } asDictionary) } asDictionary) }
+				             asDictionary) } asDictionary) } asDictionary) }
+		          asDictionary.
+	arguments := { (#rules -> { {
+		              (#lhs -> '').
+		              (#rhs -> '') } asDictionary }) } asDictionary.
+	violations := self violationsFor: arguments schema: schema.
+	self
+		assert: (self keywordsFrom: violations) asBag
+		equals: #( 'minLength' 'minLength' ) asBag.
+	violations := self
+		              violationsFor: { (#rules -> #(  )) } asDictionary
+		              schema: schema.
+	self assert: (self keywordsFrom: violations) equals: #( 'minItems' )
+]
+
+{ #category : 'tests' }
 MCPJSONSchemaValidatorTest >> testValidatesNot [
 
 	| allowedArguments conflictingArguments directSchema schema violations |

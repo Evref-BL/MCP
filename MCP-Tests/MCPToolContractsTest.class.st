@@ -1243,6 +1243,13 @@ MCPToolContractsTest >> testRequestedToolIconsAreAdvertised [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testRewriteMethodsIsMethodScopedCommandTool [
+
+	self assert: MCPToolRewriteMethods superclass equals: MCPTool.
+	self assert: (MCPToolRewriteMethods traits includes: TMCPMethodTool)
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testRpcToolCallRejectsLegacyScopeArgument [
 
 	self

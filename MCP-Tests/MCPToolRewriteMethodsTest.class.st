@@ -10,13 +10,13 @@ Class {
 }
 
 { #category : 'private' }
-MCPToolRewriteMethodsTest >> applyArgumentsForRule: aRule expectedChangeCount: expectedCount [
+MCPToolRewriteMethodsTest >> applyArgumentsForRule: aRule expectedChangeSetHash: expectedHash [
 
 	^ {
 		  (#rules -> { aRule }).
 		  (#classNames -> { self targetClassName }).
 		  (#apply -> true).
-		  (#expectedChangeCount -> expectedCount) } asDictionary
+		  (#expectedChangeSetHash -> expectedHash) } asDictionary
 ]
 
 { #category : 'private' }
@@ -62,11 +62,18 @@ MCPToolRewriteMethodsTest >> rewriteRuleFrom: lhsString to: rhsString [
 		  (#rhs -> rhsString) } asDictionary
 ]
 
+{ #category : 'private' }
+MCPToolRewriteMethodsTest >> secondaryTargetClassName [
+
+	^ 'MCPToolRewriteMethodsATarget'
+]
+
 { #category : 'running' }
 MCPToolRewriteMethodsTest >> setUp [
 
 	super setUp.
 	self removeClassNamed: self targetClassName.
+	self removeClassNamed: self secondaryTargetClassName.
 	self
 		createClassNamed: self targetClassName
 		superclassName: 'Object'
@@ -96,41 +103,53 @@ MCPToolRewriteMethodsTest >> targetClassName [
 { #category : 'running' }
 MCPToolRewriteMethodsTest >> tearDown [
 
+	self removeClassNamed: self secondaryTargetClassName.
 	self removeClassNamed: self targetClassName.
 	super tearDown
 ]
 
 { #category : 'tests' }
-MCPToolRewriteMethodsTest >> testApplyMutatesMethodWhenExpectedCountMatches [
+MCPToolRewriteMethodsTest >> testApplyMutatesMethodWhenExpectedChangeSetHashMatches [
 
-	| data result rule |
+	| data hash previewResult result rule |
 	rule := self rewriteRuleFrom: 'self oldValue' to: 'self newValue'.
+	previewResult := self callToolWith:
+		                 (self previewArgumentsForRule: rule).
+	hash := (self dataFrom: previewResult) at: #changeSetHash.
 	result := self callToolWith:
-		          (self applyArgumentsForRule: rule expectedChangeCount: 1).
+		          (self
+			           applyArgumentsForRule: rule
+			           expectedChangeSetHash: hash).
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #apply).
 	self assert: (data at: #changeCount) equals: 1.
 	self assert: (data at: #appliedCount) equals: 1.
+	self assert: (data at: #changeSetHash) equals: hash.
 	self assert:
 		((self sourceForSelector: #previewTarget) includesSubstring:
 			 'newValue')
 ]
 
 { #category : 'tests' }
-MCPToolRewriteMethodsTest >> testApplyRejectsMismatchedExpectedChangeCount [
+MCPToolRewriteMethodsTest >> testApplyRejectsMismatchedExpectedChangeSetHash [
 
-	| error result rule |
+	| badHash error previewResult result rule |
 	rule := self rewriteRuleFrom: 'self oldValue' to: 'self newValue'.
+	previewResult := self callToolWith:
+		                 (self previewArgumentsForRule: rule).
+	badHash := ((self dataFrom: previewResult) at: #changeSetHash) + 1.
 	result := self callToolWith:
-		          (self applyArgumentsForRule: rule expectedChangeCount: 2).
+		          (self
+			           applyArgumentsForRule: rule
+			           expectedChangeSetHash: badHash).
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self
 		assert: (error at: #errorCode)
-		equals: 'RewriteChangeCountMismatch'.
-	self assert: (error at: #expectedChangeCount) equals: 2.
-	self assert: (error at: #actualChangeCount) equals: 1.
+		equals: 'RewriteChangeSetHashMismatch'.
+	self assert: (error at: #expectedChangeSetHash) equals: badHash.
+	self deny: (error at: #actualChangeSetHash) equals: badHash.
 	self assert:
 		((self sourceForSelector: #previewTarget) includesSubstring:
 			 'oldValue')
@@ -144,7 +163,7 @@ MCPToolRewriteMethodsTest >> testApplyRequiresExplicitScopeUnlessForced [
 	result := self callToolWith: {
 			          (#rules -> { rule }).
 			          (#apply -> true).
-			          (#expectedChangeCount -> 1) } asDictionary.
+			          (#expectedChangeSetHash -> 1) } asDictionary.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self
@@ -201,6 +220,61 @@ MCPToolRewriteMethodsTest >> testClassSideScopeRewritesOnlyClassSideMethod [
 ]
 
 { #category : 'tests' }
+MCPToolRewriteMethodsTest >> testInvalidLhsPatternReportsRuleDiagnostics [
+
+	| error result validRule |
+	validRule := self
+		             rewriteRuleFrom: 'self otherValue'
+		             to: 'self sameValue'.
+	result := self callToolWith: {
+			          (#rules -> {
+				           validRule.
+				           {
+					           (#name -> 'broken-lhs').
+					           (#lhs -> 'self +').
+					           (#rhs -> 'self newValue').
+					           (#isForMethod -> false) } asDictionary }).
+			          (#classNames -> { self targetClassName }) } asDictionary.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self
+		assert: (error at: #errorCode)
+		equals: 'RewriteRuleInvalidPattern'.
+	self assert: (error at: #ruleIndex) equals: 2.
+	self assert: (error at: #ruleName) equals: 'broken-lhs'.
+	self assert: (error at: #lhs) equals: 'self +'.
+	self assert: (error at: #rhs) equals: 'self newValue'.
+	self deny: (error at: #isForMethod).
+	self assert: (error includesKey: #backendErrorClass).
+	self assert: (error includesKey: #backendMessage)
+]
+
+{ #category : 'tests' }
+MCPToolRewriteMethodsTest >> testInvalidRhsPatternReportsRuleDiagnostics [
+
+	| error result |
+	result := self callToolWith: {
+			          (#rules -> { {
+				           (#name -> 'broken-rhs').
+				           (#lhs -> 'self oldValue').
+				           (#rhs -> 'self +').
+				           (#isForMethod -> false) } asDictionary }).
+			          (#classNames -> { self targetClassName }) } asDictionary.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self
+		assert: (error at: #errorCode)
+		equals: 'RewriteRuleInvalidPattern'.
+	self assert: (error at: #ruleIndex) equals: 1.
+	self assert: (error at: #ruleName) equals: 'broken-rhs'.
+	self assert: (error at: #lhs) equals: 'self oldValue'.
+	self assert: (error at: #rhs) equals: 'self +'.
+	self deny: (error at: #isForMethod).
+	self assert: (error includesKey: #backendErrorClass).
+	self assert: (error includesKey: #backendMessage)
+]
+
+{ #category : 'tests' }
 MCPToolRewriteMethodsTest >> testPreviewCanOmitSources [
 
 	| change data result rule |
@@ -218,6 +292,68 @@ MCPToolRewriteMethodsTest >> testPreviewCanOmitSources [
 ]
 
 { #category : 'tests' }
+MCPToolRewriteMethodsTest >> testPreviewChangesAreSortedByClassNameClassSideAndSelector [
+
+	| changes data result rule secondaryClass triples |
+	self
+		createClassNamed: self secondaryTargetClassName
+		superclassName: 'Object'
+		slots: #(  )
+		classSlots: #(  ).
+	secondaryClass := self classNamed: self secondaryTargetClassName.
+	self
+		ensureMethodSource: 'betaTarget ^ self oldValue'
+		protocol: 'tests'
+		on: secondaryClass.
+	self
+		ensureMethodSource: 'alphaTarget ^ self oldValue'
+		protocol: 'tests'
+		on: secondaryClass classSide.
+	self
+		ensureMethodSource: 'zetaTarget ^ self oldValue'
+		protocol: 'tests'
+		on: self targetClass.
+	self
+		ensureMethodSource: 'alphaTarget ^ self oldValue'
+		protocol: 'tests'
+		on: self targetClass classSide.
+	rule := self rewriteRuleFrom: 'self oldValue' to: 'self newValue'.
+	result := self callToolWith: {
+			          (#rules -> { rule }).
+			          (#classNames -> {
+				           self targetClassName.
+				           self secondaryTargetClassName }) } asDictionary.
+	data := self dataFrom: result.
+	changes := data at: #changes.
+	triples := changes collect: [ :each |
+		           {
+			           (each at: #className).
+			           (each at: #classSide).
+			           (each at: #selector) } ].
+	self assert: triples asArray equals: {
+			{
+				self secondaryTargetClassName.
+				false.
+				'betaTarget' }.
+			{
+				self secondaryTargetClassName.
+				true.
+				'alphaTarget' }.
+			{
+				self targetClassName.
+				false.
+				'previewTarget' }.
+			{
+				self targetClassName.
+				false.
+				'zetaTarget' }.
+			{
+				self targetClassName.
+				true.
+				'alphaTarget' } }
+]
+
+{ #category : 'tests' }
 MCPToolRewriteMethodsTest >> testPreviewReturnsChangesWithoutMutatingMethod [
 
 	| change data result rule |
@@ -229,6 +365,7 @@ MCPToolRewriteMethodsTest >> testPreviewReturnsChangesWithoutMutatingMethod [
 	self deny: (data at: #apply).
 	self assert: (data at: #changeCount) equals: 1.
 	self assert: (data at: #appliedCount) equals: 0.
+	self assert: (data at: #changeSetHash) isInteger.
 	self assert: (change at: #className) equals: self targetClassName.
 	self assert: (change at: #classSide) equals: false.
 	self assert: (change at: #selector) equals: 'previewTarget'.
@@ -242,7 +379,7 @@ MCPToolRewriteMethodsTest >> testPreviewReturnsChangesWithoutMutatingMethod [
 { #category : 'tests' }
 MCPToolRewriteMethodsTest >> testSchemaAdvertisesRewriteContract [
 
-	| propertyNames ruleProperties rulesProperty tool |
+	| lhsProperty propertyNames rhsProperty ruleProperties rulesProperty tool |
 	tool := MCPToolRewriteMethods new.
 	propertyNames := tool inputSchema properties collect: [ :each |
 		                 each name ].
@@ -251,12 +388,24 @@ MCPToolRewriteMethodsTest >> testSchemaAdvertisesRewriteContract [
 	ruleProperties := ((rulesProperty extraProperties at: #items)
 		                   extraProperties at: #properties) collect: [ :each |
 		                  each name ].
+	lhsProperty := ((rulesProperty extraProperties at: #items)
+		                extraProperties at: #properties) detect: [ :each |
+		               each name = 'lhs' ].
+	rhsProperty := ((rulesProperty extraProperties at: #items)
+		                extraProperties at: #properties) detect: [ :each |
+		               each name = 'rhs' ].
 	self assert: tool name equals: 'rewrite-methods'.
 	self
 		assert: tool inputSchema required asSet
 		equals: #( 'rules' ) asSet.
+	self assert:
+		(tool description includesSubstring: 'RB AST pattern syntax').
+	self assert: (tool description includesSubstring: 'not regex').
+	self assert: (rulesProperty extraProperties at: #minItems) equals: 1.
+	self assert: (lhsProperty extraProperties at: #minLength) equals: 1.
+	self assert: (rhsProperty extraProperties at: #minLength) equals: 1.
 	self assert: (propertyNames includes: 'apply').
-	self assert: (propertyNames includes: 'expectedChangeCount').
+	self assert: (propertyNames includes: 'expectedChangeSetHash').
 	self assert: (propertyNames includes: 'force').
 	self assert: (propertyNames includes: 'includeSources').
 	self assert: (propertyNames includes: 'packageNames').

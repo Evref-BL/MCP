@@ -205,7 +205,18 @@ MCPJSONSchemaValidator >> validateAnyOfIn: schema for: aValue atPath: path [
 { #category : 'private - array validation' }
 MCPJSONSchemaValidator >> validateArray: aCollection againstSchema: schema atPath: path [
 
-	| itemSchema |
+	| itemSchema minimumSize |
+	minimumSize := self
+		               keywordNamed: #minItems
+		               in: schema
+		               ifAbsent: [ nil ].
+	(minimumSize notNil and: [ aCollection size < minimumSize ]) ifTrue: [
+		self
+			addViolationAt: path
+			keyword: #minItems
+			message: 'Array has too few items.'
+			expected: minimumSize
+			actual: aCollection size ].
 	itemSchema := self
 		              keywordNamed: #items
 		              in: schema
@@ -356,6 +367,23 @@ MCPJSONSchemaValidator >> validateRequiredPropertiesIn: aDictionary againstSchem
 				actual: nil ] ]
 ]
 
+{ #category : 'private - string validation' }
+MCPJSONSchemaValidator >> validateString: aString againstSchema: schema atPath: path [
+
+	| minimumLength |
+	minimumLength := self
+		                 keywordNamed: #minLength
+		                 in: schema
+		                 ifAbsent: [ nil ].
+	(minimumLength notNil and: [ aString size < minimumLength ]) ifTrue: [
+		self
+			addViolationAt: path
+			keyword: #minLength
+			message: 'String is too short.'
+			expected: minimumLength
+			actual: aString size ]
+]
+
 { #category : 'private - validating' }
 MCPJSONSchemaValidator >> validateValue: aValue againstSchema: aSchemaObject atPath: path [
 
@@ -384,7 +412,9 @@ MCPJSONSchemaValidator >> validateValue: aValue againstSchema: aSchemaObject atP
 			aValue isDictionary ifTrue: [
 				self validateObject: aValue againstSchema: schema atPath: path ] ].
 	(self isJSONArray: aValue) ifTrue: [
-		self validateArray: aValue againstSchema: schema atPath: path ]
+		self validateArray: aValue againstSchema: schema atPath: path ].
+	aValue isString ifTrue: [
+		self validateString: aValue againstSchema: schema atPath: path ]
 ]
 
 { #category : 'private - testing' }

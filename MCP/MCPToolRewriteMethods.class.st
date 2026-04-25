@@ -1,11 +1,12 @@
 "
-Mass-edits methods by applying Smalltalk AST rewrite pattern rules in a method scope. The default mode previews changes; apply mode mutates the image only after explicit change-count confirmation.
+Mass-edits methods by applying Smalltalk AST rewrite rules in a method scope.
+
+It is a method-scoped command tool, not a query tool: preview mode calculates ordered rewrite changes and a changeSetHash, while apply mode mutates the image only after expectedChangeSetHash confirmation.
 "
 Class {
 	#name : 'MCPToolRewriteMethods',
-	#superclass : 'MCPToolQuery',
+	#superclass : 'MCPTool',
 	#traits : 'TMCPMethodTool',
-	#classTraits : 'TMCPMethodTool classTrait',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -20,7 +21,7 @@ MCPToolRewriteMethods >> commandForRequest: rewriteRequest [
 { #category : 'defaults' }
 MCPToolRewriteMethods >> defaultDescription [
 
-	^ 'Preview or apply Smalltalk AST rewrite pattern rules to methods in a scope. By default apply=false returns a preview without mutating the image. apply=true performs the rewrite and requires expectedChangeCount; applying to the whole image also requires force=true. Scope properties are unioned and match find-methods semantics.'
+	^ 'Preview or apply Smalltalk AST rewrite rules to methods in a scope. Patterns use RB AST pattern syntax, not regex; pattern variables such as `@node` match AST nodes. By default apply=false returns a preview with changeSetHash and does not mutate the image. apply=true performs the rewrite and requires expectedChangeSetHash from a preview. Applying to the whole image also requires force=true. Scope properties are unioned and match find-methods semantics.'
 ]
 
 { #category : 'defaults' }
@@ -39,7 +40,8 @@ MCPToolRewriteMethods >> defaultInputSchema [
 		          required: #( 'rules' );
 		          additionalProperties: false;
 		          yourself.
-	schema allOf: { self expectedChangeCountRequiredWhenApplyingSchema }.
+	schema allOf:
+		{ self expectedChangeSetHashRequiredWhenApplyingSchema }.
 	^ schema
 ]
 
@@ -54,8 +56,8 @@ MCPToolRewriteMethods >> defaultOutputSchema [
 
 	^ self
 		  standardOutputSchemaForDataProperties: self rewriteDataProperties
-		  required:
-		  #( 'apply' 'changeCount' 'appliedCount' 'scope' 'changes' )
+		  required: #( 'apply' 'changeCount' 'appliedCount' 'changeSetHash'
+			     'scope' 'changes' )
 ]
 
 { #category : 'defaults' }
@@ -89,7 +91,7 @@ MCPToolRewriteMethods >> executeWithRequest: request [
 ]
 
 { #category : 'private - schema' }
-MCPToolRewriteMethods >> expectedChangeCountRequiredWhenApplyingSchema [
+MCPToolRewriteMethods >> expectedChangeSetHashRequiredWhenApplyingSchema [
 
 	| conditionSchema expectedSchema |
 	conditionSchema := MCPStructureInputSchema new
@@ -104,7 +106,7 @@ MCPToolRewriteMethods >> expectedChangeCountRequiredWhenApplyingSchema [
 		                   yourself.
 	expectedSchema := MCPStructureInputSchema new
 		                  type: 'object';
-		                  required: #( 'expectedChangeCount' );
+		                  required: #( 'expectedChangeSetHash' );
 		                  additionalProperties: true;
 		                  yourself.
 	^ MCPStructureInputSchema new
@@ -188,9 +190,8 @@ MCPToolRewriteMethods >> rewriteDataProperties [
 			   description:
 			   'The number of rewrite changes applied to the image.').
 		  (self
-			   integerSchemaPropertyNamed: 'expectedChangeCount'
-			   description:
-			   'The expected change count supplied by apply requests.').
+			   integerSchemaPropertyNamed: 'changeSetHash'
+			   description: 'Hash of the calculated rewrite change set.').
 		  self rewriteScopeSchemaProperty.
 		  self rewriteChangesSchemaProperty }
 ]
@@ -203,12 +204,12 @@ MCPToolRewriteMethods >> rewriteInputProperties [
 		  (self
 			   booleanSchemaPropertyNamed: 'apply'
 			   description:
-			   'Whether to apply the rewrite changes. false previews changes without mutation; true mutates matching methods after expectedChangeCount validation.'
+			   'Whether to apply the rewrite changes. false previews changes without mutation; true mutates matching methods after expectedChangeSetHash validation.'
 			   default: false).
 		  (self
-			   integerSchemaPropertyNamed: 'expectedChangeCount'
+			   integerSchemaPropertyNamed: 'expectedChangeSetHash'
 			   description:
-			   'Required when apply=true. The rewrite is applied only when the calculated change count exactly matches this value.').
+			   'Required when apply=true. Use the changeSetHash returned by a preview of the same rewrite request.').
 		  (self
 			   booleanSchemaPropertyNamed: 'force'
 			   description:
@@ -226,25 +227,28 @@ MCPToolRewriteMethods >> rewriteRuleSchema [
 
 	^ MCPStructureProperties new
 		  type: 'object';
-		  description:
-			  'A Smalltalk AST rewrite rule. Use RB pattern variables such as `@node in lhs and rhs patterns.';
+		  description: 'One method rewrite rule.';
 		  properties: {
 				  (self
 					   schemaPropertyNamed: 'name'
 					   type: 'string'
 					   description: 'Optional rule name used for diagnostics.').
-				  (self
-					   schemaPropertyNamed: 'lhs'
-					   type: 'string'
-					   description: 'The left-hand Smalltalk AST pattern to find.').
-				  (self
-					   schemaPropertyNamed: 'rhs'
-					   type: 'string'
-					   description: 'The replacement Smalltalk AST pattern.').
+				  ((self
+					    schemaPropertyNamed: 'lhs'
+					    type: 'string'
+					    description: 'The left-hand pattern to find.')
+					   minLength: 1;
+					   yourself).
+				  ((self
+					    schemaPropertyNamed: 'rhs'
+					    type: 'string'
+					    description: 'The replacement pattern.')
+					   minLength: 1;
+					   yourself).
 				  (self
 					   booleanSchemaPropertyNamed: 'isForMethod'
 					   description:
-						   'Whether lhs and rhs are whole-method patterns instead of expression patterns.'
+					   'Whether lhs and rhs are whole-method patterns instead of expression patterns.'
 					   default: false) };
 		  required: #( 'lhs' 'rhs' );
 		  additionalProperties: false;
@@ -258,7 +262,8 @@ MCPToolRewriteMethods >> rewriteRulesSchemaProperty [
 		   schemaPropertyNamed: 'rules'
 		   type: 'array'
 		   description:
-			   'One or more Smalltalk AST rewrite pattern rules. Rules are applied with the NewTools rewriter backend.')
+			   'One or more method rewrite rules applied with the NewTools rewriter backend.')
+		  minItems: 1;
 		  items: self rewriteRuleSchema;
 		  yourself
 ]

@@ -1,7 +1,7 @@
 "
 Parsed input for rewrite-methods.
 
-It owns raw tool argument parsing for rewrite rules, preview/apply flags, change-count confirmation, and method scope selection.
+It owns raw tool argument parsing for rewrite rules, preview/apply flags, change-set hash confirmation, and method scope selection.
 "
 Class {
 	#name : 'MCPMethodRewriteRequest',
@@ -9,7 +9,7 @@ Class {
 	#instVars : [
 		'rules',
 		'apply',
-		'expectedChangeCount',
+		'expectedChangeSetHash',
 		'force',
 		'includeSources',
 		'scopeQuery'
@@ -32,9 +32,9 @@ MCPMethodRewriteRequest >> apply [
 ]
 
 { #category : 'accessing' }
-MCPMethodRewriteRequest >> expectedChangeCount [
+MCPMethodRewriteRequest >> expectedChangeSetHash [
 
-	^ expectedChangeCount
+	^ expectedChangeSetHash
 ]
 
 { #category : 'accessing' }
@@ -70,14 +70,14 @@ MCPMethodRewriteRequest >> initializeFromRequest: request tool: aTool [
 	includeSources := request
 		                  booleanArgumentNamed: 'includeSources'
 		                  default: true.
-	expectedChangeCount := (request hasArgumentNamed:
-		                        'expectedChangeCount')
-		                       ifTrue: [
-			                       request
-				                       nonNegativeIntegerArgumentNamed:
-				                       'expectedChangeCount'
-				                       default: nil ]
-		                       ifFalse: [ nil ].
+	expectedChangeSetHash := (request hasArgumentNamed:
+		                          'expectedChangeSetHash')
+		                         ifTrue: [
+			                         request
+				                         nonNegativeIntegerArgumentNamed:
+				                         'expectedChangeSetHash'
+				                         default: nil ]
+		                         ifFalse: [ nil ].
 	scopeQuery := aTool methodScopeQueryFromRequest: request.
 	^ self
 ]
@@ -88,8 +88,8 @@ MCPMethodRewriteRequest >> requestedContext [
 	| context |
 	context := Dictionary new.
 	context at: #apply put: self apply.
-	self expectedChangeCount ifNotNil: [ :count |
-		context at: #expectedChangeCount put: count ].
+	self expectedChangeSetHash ifNotNil: [ :hash |
+		context at: #expectedChangeSetHash put: hash ].
 	context at: #force put: self force.
 	context at: #includeSources put: self includeSources.
 	context at: #scope put: self scopeQuery asDictionary.

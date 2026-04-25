@@ -41,6 +41,18 @@ TMCPMethodTool >> methodForClassNamed: className selector: selectorString classS
 	^ behavior compiledMethodAt: selectorSymbol
 ]
 
+{ #category : 'private - schema' }
+TMCPMethodTool >> methodQueryScopeInputProperties [
+
+	^ {
+		  self methodSideSchemaProperty.
+		  self methodScopePackageNamesProperty.
+		  self methodScopeClassNamesProperty.
+		  self methodScopeHierarchyClassNamesProperty.
+		  self methodScopeSubclassClassNamesProperty.
+		  self methodScopeParentClassNamesProperty }
+]
+
 { #category : 'private - methods' }
 TMCPMethodTool >> methodReferenceForBehavior: aBehavior selector: aSelector [
 
@@ -61,6 +73,46 @@ TMCPMethodTool >> methodReferenceForClassName: aClassName selector: aSelector is
 			  nextPutAll: aSelector ]
 ]
 
+{ #category : 'private - schema' }
+TMCPMethodTool >> methodScopeClassNamesProperty [
+
+	^ self
+		  stringArraySchemaNamed: 'classNames'
+		  description:
+		  'Method scope. Exact class names whose methods are included. Omit all method scope properties to search all methods. Combine with other method scope properties to union scopes.'
+		  itemDescription: 'A class name.'
+]
+
+{ #category : 'private - schema' }
+TMCPMethodTool >> methodScopeHierarchyClassNamesProperty [
+
+	^ self
+		  stringArraySchemaNamed: 'hierarchyClassNames'
+		  description:
+		  'Method scope. Class names whose superclasses, subclasses, and own methods are included. Omit all method scope properties to search all methods. Combine with other method scope properties to union scopes.'
+		  itemDescription: 'A hierarchy root class name.'
+]
+
+{ #category : 'private - schema' }
+TMCPMethodTool >> methodScopePackageNamesProperty [
+
+	^ self
+		  stringArraySchemaNamed: 'packageNames'
+		  description:
+		  'Method scope. Package names whose defined methods and extension methods are included. Omit all method scope properties to search all methods. Combine with other method scope properties to union scopes.'
+		  itemDescription: 'A package name.'
+]
+
+{ #category : 'private - schema' }
+TMCPMethodTool >> methodScopeParentClassNamesProperty [
+
+	^ self
+		  stringArraySchemaNamed: 'parentClassNames'
+		  description:
+		  'Method scope. Class names whose superclass methods are included. The named classes are excluded unless classNames also includes them. Combine with other method scope properties to union scopes.'
+		  itemDescription: 'A class name whose superclasses are included.'
+]
+
 { #category : 'private - methods' }
 TMCPMethodTool >> methodScopeQueryFromRequest: request [
 
@@ -76,6 +128,27 @@ TMCPMethodTool >> methodScopeQueryFromRequest: request [
 			  (request stringCollectionArgumentNamed: 'parentClassNames');
 		  side: (request stringArgumentNamed: 'side' default: 'both');
 		  yourself
+]
+
+{ #category : 'private - schema' }
+TMCPMethodTool >> methodScopeSubclassClassNamesProperty [
+
+	^ self
+		  stringArraySchemaNamed: 'subclassClassNames'
+		  description:
+		  'Method scope. Class names whose subclass methods are included. The named classes are excluded unless classNames also includes them. Combine with other method scope properties to union scopes.'
+		  itemDescription: 'A class name whose subclasses are included.'
+]
+
+{ #category : 'private - schema' }
+TMCPMethodTool >> methodSideSchemaProperty [
+
+	^ self
+		  stringEnumSchemaPropertyNamed: 'side'
+		  description:
+		  'Which method side to search. instance searches instance-side methods, class searches class-side methods, and both searches both sides.'
+		  values: #( 'instance' 'class' 'both' )
+		  default: 'both'
 ]
 
 { #category : 'private - request' }

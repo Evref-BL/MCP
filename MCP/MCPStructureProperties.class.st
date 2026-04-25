@@ -107,6 +107,18 @@ MCPStructureProperties >> metaDescription [
 ]
 
 { #category : 'accessing' }
+MCPStructureProperties >> minItems: anInteger [
+
+	self extraProperties at: #minItems put: anInteger
+]
+
+{ #category : 'accessing' }
+MCPStructureProperties >> minLength: anInteger [
+
+	self extraProperties at: #minLength put: anInteger
+]
+
+{ #category : 'accessing' }
 MCPStructureProperties >> name [
 
 	^ name
