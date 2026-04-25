@@ -183,6 +183,46 @@ MCPToolContractsTest >> testDictionaryShapedCommandResultsUseDTOClasses [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testDisplayToolsCatalogSummarizesToolOperations [
+
+	| presenter |
+	presenter := MCPToolsCatalogPresenter new.
+	self
+		assert:
+		(presenter toolCatalogOperationSummaryFor: MCPToolEditRepository new)
+		equals: 'create | update | export'.
+	self
+		assert:
+		(presenter toolCatalogOperationSummaryFor: MCPToolEditMethod new)
+		equals: 'create | update'.
+	self
+		assert:
+		(presenter toolCatalogOperationSummaryFor: MCPToolRewriteMethods new)
+		equals: 'preview | apply'.
+	self
+		assert:
+		(presenter toolCatalogOperationSummaryFor: MCPToolFindMethods new)
+		equals: 'query'.
+	self
+		assert:
+		(presenter toolCatalogOperationSummaryFor: MCPToolInspectClass new)
+		equals: 'inspect'.
+	self
+		assert:
+		(presenter toolCatalogOperationSummaryFor: MCPToolRemoveMethods new)
+		equals: 'remove'
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testDisplayToolsEntryPointBelongsToMCP [
+
+	self assert: (MCP class includesSelector: #openToolCatalog).
+	self deny: (MCPTool class includesSelector: #openToolCatalog).
+	self assert: (MCPToolsCatalogPresenter inheritsFrom: SpPresenter).
+	self assert: MCPToolsCatalogPresenter package name equals: 'MCP-Spec'
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testEditClassDescriptionMentionsRecategorizationViaMove [
 
 	| description |
@@ -1182,7 +1222,9 @@ MCPToolContractsTest >> testParsedInputClassesUseRequestOrSpecSuffixes [
 { #category : 'tests' }
 MCPToolContractsTest >> testQueryScopeDescriptionsExplainScopeSemantics [
 
-	| classDescription methodDescription packageDescription parentDescription subclassDescription |
+	| classDescription findClassesDescription findMethodsDescription methodDescription packageDescription parentDescription subclassDescription |
+	findClassesDescription := MCPToolFindClasses new description.
+	findMethodsDescription := MCPToolFindMethods new description.
 	classDescription := (self
 		                     inputPropertyNamed: 'hierarchyClassNames'
 		                     inTool: MCPToolFindClasses new) description.
@@ -1198,24 +1240,25 @@ MCPToolContractsTest >> testQueryScopeDescriptionsExplainScopeSemantics [
 	packageDescription := (self
 		                       inputPropertyNamed: 'projectNames'
 		                       inTool: MCPToolFindPackages new) description.
-	self assert:
-		(classDescription includesSubstring:
-			 'Omit all class scope properties').
+	self deny: (findClassesDescription includesSubstring: 'GUI').
+	self deny: (findMethodsDescription includesSubstring: 'GUI').
 	self assert: (classDescription includesSubstring:
-			 'superclasses, subclasses, and the named classes').
-	self assert:
-		(subclassDescription includesSubstring: 'subclass methods').
+			 'If no class scope property is provided').
+	self assert: (classDescription includesSubstring:
+			 'its superclasses, and its subclasses').
 	self assert: (subclassDescription includesSubstring:
-			 'The named classes are excluded').
-	self assert:
-		(parentDescription includesSubstring: 'superclasses are included').
+			 'methods defined on subclasses').
+	self assert: (subclassDescription includesSubstring:
+			 'The named classes themselves are excluded').
 	self assert:
 		(parentDescription includesSubstring:
-			 'The named classes are excluded').
+			 'superclasses of these classes').
+	self assert: (parentDescription includesSubstring:
+			 'The named classes themselves are excluded').
 	self assert:
-		(methodDescription includesSubstring: 'extension methods').
+		(methodDescription includesSubstring: 'including extension methods').
 	self assert: (methodDescription includesSubstring:
-			 'Omit all method scope properties').
+			 'If no method scope property is provided').
 	self assert: (packageDescription includesSubstring:
 			 'project names whose packages are included').
 	self assert:

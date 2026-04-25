@@ -104,7 +104,7 @@ MCPToolQuery >> classScopeClassNamesProperty [
 	^ self
 		  stringArraySchemaNamed: 'classNames'
 		  description:
-		  'Class scope: exact class names to include. Omit all class scope properties to search all classes. Combine with other class scope properties to union scopes.'
+		  'Class scope: include these exact classes. If no class scope property is provided, all classes are searched. Scope properties are unioned.'
 		  itemDescription: 'A class name.'
 ]
 
@@ -114,7 +114,7 @@ MCPToolQuery >> classScopeHierarchyClassNamesProperty [
 	^ self
 		  stringArraySchemaNamed: 'hierarchyClassNames'
 		  description:
-		  'Class scope: class names whose superclasses, subclasses, and the named classes are included. Omit all class scope properties to search all classes. Combine with other class scope properties to union scopes.'
+		  'Class scope: include each named class, its superclasses, and its subclasses. If no class scope property is provided, all classes are searched. Scope properties are unioned.'
 		  itemDescription: 'A hierarchy root class name.'
 ]
 
@@ -124,7 +124,7 @@ MCPToolQuery >> classScopePackageNamesProperty [
 	^ self
 		  stringArraySchemaNamed: 'packageNames'
 		  description:
-		  'Class scope: package names whose defined classes are included. Omit all class scope properties to search all classes. Combine with other class scope properties to union scopes.'
+		  'Class scope: include classes defined in these packages. If no class scope property is provided, all classes are searched. Scope properties are unioned.'
 		  itemDescription: 'A package name.'
 ]
 
@@ -134,7 +134,7 @@ MCPToolQuery >> classScopeParentClassNamesProperty [
 	^ self
 		  stringArraySchemaNamed: 'parentClassNames'
 		  description:
-		  'Class scope: class names whose superclasses are included. The named classes are excluded unless classNames also includes them. Combine with other class scope properties to union scopes.'
+		  'Class scope: include superclasses of these classes. The named classes themselves are excluded unless also listed in classNames. Scope properties are unioned.'
 		  itemDescription: 'A class name whose superclasses are included.'
 ]
 
@@ -144,7 +144,7 @@ MCPToolQuery >> classScopeSubclassClassNamesProperty [
 	^ self
 		  stringArraySchemaNamed: 'subclassClassNames'
 		  description:
-		  'Class scope: class names whose subclasses are included. The named classes are excluded unless classNames also includes them. Combine with other class scope properties to union scopes.'
+		  'Class scope: include subclasses of these classes. The named classes themselves are excluded unless also listed in classNames. Scope properties are unioned.'
 		  itemDescription: 'A class name whose subclasses are included.'
 ]
 

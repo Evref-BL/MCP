@@ -16,6 +16,13 @@ Class {
 	#tag : 'Server'
 }
 
+{ #category : 'scripts' }
+MCP class >> openToolCatalog [
+
+	<script>
+	^ MCPToolsCatalogPresenter open
+]
+
 { #category : 'monitoring' }
 MCP >> clearMonitoring [
 

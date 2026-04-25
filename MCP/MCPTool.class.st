@@ -37,47 +37,6 @@ MCPTool class >> concreteSubclasses [
 	^ self allSubclasses reject: [ :each | each isAbstract ]
 ]
 
-{ #category : 'scripts' }
-MCPTool class >> displayTools [
-
-	<script>
-	| content contentLayout heading image label rowLayout window |
-	content := SpPresenter new.
-	contentLayout := SpBoxLayout newTopToBottom
-		                 spacing: 3;
-		                 borderWidth: 9;
-		                 yourself.
-	self toolGroups do: [ :group |
-		heading := content newLabel.
-		heading
-			label: group key;
-			displayBold: [ :ignored | true ].
-		contentLayout add: heading expand: false.
-		group value do: [ :toolClass |
-			image := content newImage.
-			image
-				image: (self toolIconFormOf: toolClass);
-				autoScale: false.
-			label := content newLabel.
-			label label: toolClass new title.
-			rowLayout := SpBoxLayout newLeftToRight
-				             spacing: 6;
-				             hAlignStart;
-				             vAlignCenter;
-				             add: image;
-				             add: label;
-				             yourself.
-			contentLayout add: rowLayout ] ].
-	content layout: contentLayout.
-	window := SpWindowPresenter presenter: (content newPresenter
-			           layout: (SpScrollableLayout with: content);
-			           yourself).
-	window
-		title: 'MCP Tools';
-		initialExtent: 200 @ 620.
-	^ window open
-]
-
 { #category : 'testing' }
 MCPTool class >> isAbstract [
 

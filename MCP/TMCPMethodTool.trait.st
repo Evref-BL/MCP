@@ -79,7 +79,7 @@ TMCPMethodTool >> methodScopeClassNamesProperty [
 	^ self
 		  stringArraySchemaNamed: 'classNames'
 		  description:
-		  'Method scope. Exact class names whose methods are included. Omit all method scope properties to search all methods. Combine with other method scope properties to union scopes.'
+		  'Method scope: include methods defined on these exact classes. If no method scope property is provided, all methods are searched. Scope properties are unioned.'
 		  itemDescription: 'A class name.'
 ]
 
@@ -89,7 +89,7 @@ TMCPMethodTool >> methodScopeHierarchyClassNamesProperty [
 	^ self
 		  stringArraySchemaNamed: 'hierarchyClassNames'
 		  description:
-		  'Method scope. Class names whose superclasses, subclasses, and own methods are included. Omit all method scope properties to search all methods. Combine with other method scope properties to union scopes.'
+		  'Method scope: include methods defined on each named class, its superclasses, and its subclasses. If no method scope property is provided, all methods are searched. Scope properties are unioned.'
 		  itemDescription: 'A hierarchy root class name.'
 ]
 
@@ -99,7 +99,7 @@ TMCPMethodTool >> methodScopePackageNamesProperty [
 	^ self
 		  stringArraySchemaNamed: 'packageNames'
 		  description:
-		  'Method scope. Package names whose defined methods and extension methods are included. Omit all method scope properties to search all methods. Combine with other method scope properties to union scopes.'
+		  'Method scope: include methods defined in these packages, including extension methods. If no method scope property is provided, all methods are searched. Scope properties are unioned.'
 		  itemDescription: 'A package name.'
 ]
 
@@ -109,7 +109,7 @@ TMCPMethodTool >> methodScopeParentClassNamesProperty [
 	^ self
 		  stringArraySchemaNamed: 'parentClassNames'
 		  description:
-		  'Method scope. Class names whose superclass methods are included. The named classes are excluded unless classNames also includes them. Combine with other method scope properties to union scopes.'
+		  'Method scope: include methods defined on superclasses of these classes. The named classes themselves are excluded unless also listed in classNames. Scope properties are unioned.'
 		  itemDescription: 'A class name whose superclasses are included.'
 ]
 
@@ -136,7 +136,7 @@ TMCPMethodTool >> methodScopeSubclassClassNamesProperty [
 	^ self
 		  stringArraySchemaNamed: 'subclassClassNames'
 		  description:
-		  'Method scope. Class names whose subclass methods are included. The named classes are excluded unless classNames also includes them. Combine with other method scope properties to union scopes.'
+		  'Method scope: include methods defined on subclasses of these classes. The named classes themselves are excluded unless also listed in classNames. Scope properties are unioned.'
 		  itemDescription: 'A class name whose subclasses are included.'
 ]
 

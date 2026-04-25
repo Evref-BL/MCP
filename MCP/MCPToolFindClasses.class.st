@@ -83,7 +83,7 @@ MCPToolFindClasses >> classInfoDataProperties [
 { #category : 'defaults' }
 MCPToolFindClasses >> defaultDescription [
 
-	^ 'List classes and optionally filter them by class metadata. Omit packageNames, classNames, hierarchyClassNames, subclassClassNames, and parentClassNames to search all classes. Use packageNames for package-defined classes, classNames for exact classes, hierarchyClassNames for hierarchy roots including the root, subclassClassNames for GUI Subclasses-style scope, and parentClassNames for GUI Parents-style scope. Multiple scope properties are unioned. Use where for recursive boolean predicates and relation predicates. Use inspect-class when you already know the class to inspect.'
+	^ 'List classes and optionally filter them by class metadata. If no class scope properties are provided, the whole image is searched. Scope properties are unioned: packageNames includes classes defined in packages; classNames includes exact classes; hierarchyClassNames includes the named classes plus their superclasses and subclasses; subclassClassNames includes only subclasses of the named classes; parentClassNames includes only superclasses of the named classes. Use where for recursive boolean predicates and relation predicates. Use inspect-class when you already know the class to inspect.'
 ]
 
 { #category : 'private - request' }
