@@ -88,6 +88,9 @@ MCPTool class >> isAbstract [
 MCPTool class >> toolGroups [
 
 	^ {
+		  (#Repositories -> {
+			   MCPToolFindRepositories.
+			   MCPToolEditRepository }).
 		  (#Packages -> { MCPToolFindPackages }).
 		  (#Classes -> {
 			   MCPToolFindClasses.

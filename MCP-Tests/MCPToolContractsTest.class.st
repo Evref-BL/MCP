@@ -119,6 +119,8 @@ MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 		assert: orderedTools asSet
 		equals: MCPTool concreteSubclasses asSet.
 	self assert: orderedTools asArray equals: {
+			MCPToolFindRepositories.
+			MCPToolEditRepository.
 			MCPToolFindPackages.
 			MCPToolFindClasses.
 			MCPToolInspectClass.
@@ -162,7 +164,13 @@ MCPToolContractsTest >> testDictionaryShapedCommandResultsUseDTOClasses [
 		                        (MCPRewriteMethodsCommand
 		                         -> MCPMethodRewriteReport).
 		                        (MCPRemoveMethodsCommand
-		                         -> MCPRemoveMethodsResult) }.
+		                         -> MCPRemoveMethodsResult).
+		                        (MCPCreateRepositoryCommand
+		                         -> MCPRepositoryCreateResult).
+		                        (MCPUpdateRepositoryCommand
+		                         -> MCPRepositoryUpdateResult).
+		                        (MCPExportRepositoryCommand
+		                         -> MCPRepositoryExportResult) }.
 	commandResultClasses do: [ :association |
 		| source |
 		source := (association key >> #execute) sourceCode.
@@ -405,13 +413,89 @@ MCPToolContractsTest >> testEditMethodSchemaAdvertisesMethodState [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testEditRepositoryDescriptionExplainsPackageAndFilesystemSemantics [
+
+	| description packageNamesDescription removePackageNamesDescription tool |
+	tool := MCPToolEditRepository new.
+	description := tool description.
+	packageNamesDescription := (self
+		                            inputPropertyNamed: 'packageNames'
+		                            inTool: tool) description.
+	removePackageNamesDescription := (self
+		                                  inputPropertyNamed:
+		                                  'removePackageNames'
+		                                  inTool: tool) description.
+	self assert: (description includesSubstring: 'IceRepositoryCreator').
+	self assert: (description includesSubstring: 'registers').
+	self assert: (description includesSubstring: 'IcePackage>>remove').
+	self assert: (description includesSubstring: 'without unloading').
+	self assert: (description includesSubstring: 'operation=export').
+	self assert: (description includesSubstring: 'git index').
+	self assert:
+		(description includesSubstring: 'does not stage or commit').
+	self assert: (packageNamesDescription includesSubstring:
+			 'replaces the full managed package list').
+	self assert:
+		(removePackageNamesDescription includesSubstring: 'does not unload')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testEditRepositoryHasAccurateNameAndRequiredArguments [
+
+	| operationProperty propertyNames tool |
+	tool := MCPToolEditRepository new.
+	propertyNames := tool inputSchema properties collect: [ :each |
+		                 each name ].
+	operationProperty := tool inputSchema properties detect: [ :each |
+		                     each name = 'operation' ].
+	self assert: tool name equals: 'edit-repository'.
+	self
+		assert: tool inputSchema required asSet
+		equals: #( 'operation' ) asSet.
+	self assert: (propertyNames includes: 'name').
+	self assert: (propertyNames includes: 'repositoryName').
+	self assert: (propertyNames includes: 'location').
+	self assert: (propertyNames includes: 'subdirectory').
+	self assert: (propertyNames includes: 'packageNames').
+	self assert: (propertyNames includes: 'addPackageNames').
+	self assert: (propertyNames includes: 'removePackageNames').
+	self
+		assert: (operationProperty extraProperties at: #enum) asArray
+		equals: #( 'create' 'update' 'export' )
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testEditToolSchemasAdvertiseOperationBranches [
 
-	| classCreateBranch editClassBranches editMethodBranches methodCreateBranch updateBranch |
+	| classCreateBranch editClassBranches editMethodBranches editRepositoryBranches methodCreateBranch repositoryCreateBranch repositoryExportBranch updateBranch |
+	editRepositoryBranches := MCPToolEditRepository new inputSchema
+		                          asJRPCJSON at: #oneOf.
 	editClassBranches := MCPToolEditClass new inputSchema asJRPCJSON at:
 		                     #oneOf.
 	editMethodBranches := MCPToolEditMethod new inputSchema asJRPCJSON
 		                      at: #oneOf.
+	self
+		assert: (editRepositoryBranches collect: [ :each |
+				 ((each at: #properties) at: 'operation') at: #const ]) asArray
+		equals: #( 'create' 'update' 'export' ).
+	repositoryCreateBranch := editRepositoryBranches detect: [ :each |
+		                          (((each at: #properties) at: 'operation')
+			                           at: #const) = 'create' ].
+	self
+		assert: (repositoryCreateBranch at: #required) asSet
+		equals: #( 'operation' 'name' 'location' ) asSet.
+	updateBranch := editRepositoryBranches detect: [ :each |
+		                (((each at: #properties) at: 'operation') at: #const)
+		                = 'update' ].
+	self
+		assert: (updateBranch at: #required) asSet
+		equals: #( 'operation' ) asSet.
+	repositoryExportBranch := editRepositoryBranches detect: [ :each |
+		                          (((each at: #properties) at: 'operation')
+			                           at: #const) = 'export' ].
+	self
+		assert: (repositoryExportBranch at: #required) asSet
+		equals: #( 'operation' 'repositoryName' ) asSet.
 	self
 		assert: (editClassBranches collect: [ :each |
 				 ((each at: #properties) at: 'operation') at: #const ]) asArray
@@ -773,6 +857,28 @@ MCPToolContractsTest >> testFindPackagesReturnsErrorResultForMissingProject [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testFindRepositoriesHasAccurateNameAndSchema [
+
+	| propertyNames schema |
+	schema := MCPToolFindRepositories new inputSchema.
+	propertyNames := schema properties collect: [ :each | each name ].
+	self
+		assert: MCPToolFindRepositories new name
+		equals: 'find-repositories'.
+	self assert: schema required equals: #(  ).
+	self assert: (propertyNames includes: 'repositoryNames').
+	self assert: (propertyNames includes: 'directoryPaths').
+	self assert: (propertyNames includes: 'packageNames').
+	self assert: (propertyNames includes: 'isModified').
+	self assert: (propertyNames includes: 'isMissing').
+	self assert: (propertyNames includes: 'filter').
+	self assert: (propertyNames includes: 'filterTargets').
+	self assert: (propertyNames includes: 'filterMode').
+	self assert: (propertyNames includes: 'limit').
+	self assert: (propertyNames includes: 'offset')
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testHandleJSONReturnsInvalidParamsForMissingRequiredArguments [
 
 	| response |
@@ -896,6 +1002,8 @@ MCPToolContractsTest >> testMutatingToolsRequestImageSaveAfterSuccessfulExecutio
 		MCPToolFindMethods new shouldSaveImageAfterSuccessfulExecution.
 	self deny:
 		MCPToolInspectClass new shouldSaveImageAfterSuccessfulExecution.
+	self assert:
+		MCPToolEditRepository new shouldSaveImageAfterSuccessfulExecution.
 	self assert:
 		MCPToolEditClass new shouldSaveImageAfterSuccessfulExecution.
 	self assert:
@@ -1132,7 +1240,11 @@ MCPToolContractsTest >> testQueryToolSchemasDoNotAdvertiseLegacyScopeBranches [
 { #category : 'tests' }
 MCPToolContractsTest >> testQueryToolsUseTypedRequestObjects [
 
-	| classRequest methodRequest packageRequest staleSelectors |
+	| classRequest methodRequest packageRequest repositoryRequest staleSelectors |
+	repositoryRequest := MCPToolFindRepositories new
+		                     queryRequestFromToolRequest: (MCPToolRequest
+				                      tool: MCPToolFindRepositories new
+				                      arguments: Dictionary new).
 	classRequest := MCPToolFindClasses new queryRequestFromToolRequest:
 		                (MCPToolRequest
 			                 tool: MCPToolFindClasses new
@@ -1145,6 +1257,9 @@ MCPToolContractsTest >> testQueryToolsUseTypedRequestObjects [
 		                  queryRequestFromToolRequest: (MCPToolRequest
 				                   tool: MCPToolFindPackages new
 				                   arguments: Dictionary new).
+	self
+		assert: repositoryRequest class
+		equals: MCPRepositoryQuerySpec.
 	self assert: classRequest class equals: MCPFindClassesRequest.
 	self assert: methodRequest class equals: MCPFindMethodsRequest.
 	self assert: packageRequest class equals: MCPFindPackagesRequest.
@@ -1192,6 +1307,12 @@ MCPToolContractsTest >> testRequestedToolIconsAreAdvertised [
 				 compositeBaseIconNamed: #page
 				 badgeIconNamed: #inspect) asJRPCJSON.
 	self
+		assert: (MCPToolEditRepository new asJRPCJSON at: #icons) first
+		equals:
+			(MCPStructureIcon
+				 compositeBaseIconNamed: #box
+				 badgeIconNamed: #edit) asJRPCJSON.
+	self
 		assert: (MCPToolEditClass new asJRPCJSON at: #icons) first
 		equals:
 			(MCPStructureIcon
@@ -1205,10 +1326,9 @@ MCPToolContractsTest >> testRequestedToolIconsAreAdvertised [
 				 badgeIconNamed: #edit) asJRPCJSON.
 	self
 		assert: (MCPToolRewriteMethods new asJRPCJSON at: #icons) first
-		equals:
-			(MCPStructureIcon
+		equals: (MCPStructureIcon
 				 compositeBaseIconNamed: #page
-				 badgeIconNamed: #edit) asJRPCJSON.
+				 badgeIconNamed: #refreshCircling) asJRPCJSON.
 	self
 		assert: (MCPToolFindClasses new asJRPCJSON at: #icons) first
 		equals: (MCPStructureIcon
@@ -1223,6 +1343,12 @@ MCPToolContractsTest >> testRequestedToolIconsAreAdvertised [
 		assert: (MCPToolFindPackages new asJRPCJSON at: #icons) first
 		equals: (MCPStructureIcon
 				 compositeBaseIconNamed: #open
+				 badgeIconNamed: #search) asJRPCJSON.
+	self
+		assert: (MCPToolFindRepositories new asJRPCJSON at: #icons) first
+		equals:
+			(MCPStructureIcon
+				 compositeBaseIconNamed: #box
 				 badgeIconNamed: #search) asJRPCJSON.
 	self
 		assert: (MCPToolRemoveClasses new asJRPCJSON at: #icons) first
@@ -1384,6 +1510,19 @@ MCPToolContractsTest >> testToolNamesDoNotUsePharoPrefix [
 MCPToolContractsTest >> toolFlowSpecs [
 
 	^ {
+		  {
+			  (#toolClass -> MCPToolFindRepositories).
+			  (#arguments -> Dictionary new).
+			  (#requestClass -> MCPRepositoryQuerySpec).
+			  (#commandClass -> MCPQueryToolCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolEditRepository).
+			  (#arguments -> {
+				   (#operation -> 'update').
+				   (#repositoryName -> 'MCP').
+				   (#addPackageNames -> #( 'MCP' )) } asDictionary).
+			  (#requestClass -> MCPRepositoryUpdateRequest).
+			  (#commandClass -> MCPUpdateRepositoryCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolFindPackages).
 			  (#arguments -> Dictionary new).

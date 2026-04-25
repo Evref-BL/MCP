@@ -34,6 +34,11 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 		  (MCPToolRemoveMethods -> {
 			   (#className -> 'MCPTool').
 			   (#selectors -> #( 'temporarySelector' )) } asDictionary).
+		  (MCPToolFindRepositories -> Dictionary new).
+		  (MCPToolEditRepository -> {
+			   (#operation -> 'update').
+			   (#repositoryName -> 'MCP').
+			   (#addPackageNames -> #( 'MCP' )) } asDictionary).
 		  (MCPToolFindClasses -> Dictionary new).
 		  (MCPToolFindPackages -> Dictionary new).
 		  (MCPToolEditClass -> {
