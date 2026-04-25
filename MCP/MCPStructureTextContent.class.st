@@ -1,3 +1,8 @@
+"
+MCP protocol structure for a text content block.
+
+Tools use it for the human-readable text portion of call results.
+"
 Class {
 	#name : 'MCPStructureTextContent',
 	#superclass : 'MCPStructureContentBlock',

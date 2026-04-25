@@ -1,3 +1,8 @@
+"
+Command that removes one or more classes from the image.
+
+It gathers removal warnings, removes now-empty packages when applicable, and returns an MCPRemoveClassesResult describing removed classes and warnings.
+"
 Class {
 	#name : 'MCPRemoveClassesCommand',
 	#superclass : 'Object',

@@ -1,3 +1,8 @@
+"
+Command that moves a slot up or down a class hierarchy.
+
+It performs pull-up or push-down refactorings for instance-side or class-side slots and returns the affected class names.
+"
 Class {
 	#name : 'MCPMoveSlotCommand',
 	#superclass : 'Object',

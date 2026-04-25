@@ -1,3 +1,8 @@
+"
+MCP protocol structure for a tool call result.
+
+It contains the user-visible content blocks and optional structuredContent returned by a tool.
+"
 Class {
 	#name : 'MCPStructureCallToolResult',
 	#superclass : 'Object',

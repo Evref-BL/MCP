@@ -1,3 +1,8 @@
+"
+Structured representation of one JSON Schema property.
+
+It stores property name, type, description, and extra schema keywords such as enum, items, default, properties, required, and additionalProperties.
+"
 Class {
 	#name : 'MCPStructureProperties',
 	#superclass : 'Object',

@@ -1,3 +1,8 @@
+"
+Result DTO for one class removed as part of a remove-classes command.
+
+It records the removed class metadata and whether subclasses were reparented.
+"
 Class {
 	#name : 'MCPRemoveClassResult',
 	#superclass : 'Object',

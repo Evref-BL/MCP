@@ -1,3 +1,8 @@
+"
+DTO for compact class metadata used by class queries and edit reports.
+
+It describes the class identity, package placement, slots, traits, shared variables, pools, subclasses, and layout.
+"
 Class {
 	#name : 'MCPClassInfo',
 	#superclass : 'Object',

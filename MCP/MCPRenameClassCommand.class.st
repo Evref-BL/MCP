@@ -1,3 +1,8 @@
+"
+Command that renames a class using the refactoring engine.
+
+It preserves the old class name for reporting and returns the renamed class metadata in MCPRenameClassResult.
+"
 Class {
 	#name : 'MCPRenameClassCommand',
 	#superclass : 'Object',

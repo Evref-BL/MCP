@@ -1,3 +1,8 @@
+"
+Result DTO for remove-classes.
+
+It groups per-class removal results, package names removed as cleanup, and warning messages produced by safe-removal checks.
+"
 Class {
 	#name : 'MCPRemoveClassesResult',
 	#superclass : 'Object',

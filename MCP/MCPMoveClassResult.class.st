@@ -1,3 +1,8 @@
+"
+Result DTO for moving or recategorizing a class.
+
+It carries the updated class info plus the previous package and tag.
+"
 Class {
 	#name : 'MCPMoveClassResult',
 	#superclass : 'Object',

@@ -1,3 +1,8 @@
+"
+JSON-RPC handler that invokes a Smalltalk message on a receiver.
+
+It maps dictionary parameters to the target method argument order and sends the configured selector to the configured receiver. MCPMessageProcessor creates these handlers from jrpc pragmas.
+"
 Class {
 	#name : 'MCPMessageSendHandler',
 	#superclass : 'JRPCMessageSendHandler',

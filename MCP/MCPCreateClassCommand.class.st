@@ -1,3 +1,8 @@
+"
+Command that creates a class from a parsed edit-class request.
+
+It owns the class-builder interaction for superclass, package, tag, slots, traits, shared variables, pools, and layout, then returns an MCPCreateClassResult.
+"
 Class {
 	#name : 'MCPCreateClassCommand',
 	#superclass : 'Object',

@@ -1,3 +1,8 @@
+"
+Result DTO for a class comment change.
+
+It carries the updated class info and both the old and new comments so the tool can report the edit precisely.
+"
 Class {
 	#name : 'MCPChangeClassCommentResult',
 	#superclass : 'Object',

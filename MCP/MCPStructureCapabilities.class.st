@@ -1,3 +1,8 @@
+"
+MCP protocol structure for server capabilities.
+
+It advertises which capability groups the server supports, including tools, resources, prompts, logging, and tasks.
+"
 Class {
 	#name : 'MCPStructureCapabilities',
 	#superclass : 'Object',

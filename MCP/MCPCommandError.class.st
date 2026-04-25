@@ -1,3 +1,8 @@
+"
+Structured error raised by MCP commands and queries.
+
+It carries a stable error code and details dictionary so tools can return useful structured error output instead of only message text.
+"
 Class {
 	#name : 'MCPCommandError',
 	#superclass : 'Error',

@@ -1,5 +1,18 @@
 "
-Base class for MCP tools exposed by the server. It owns common tool metadata, schema building, and result/error helpers.
+Abstract base for MCP tools exposed by the server.
+
+A tool owns its public MCP metadata: name, title, description, icons, input schema, and output schema. The server uses that metadata when advertising tools and when validating an incoming tool call.
+
+The normal execution flow is:
+1. The MCP server receives a JSON-RPC tool call and dispatches it to the matching MCPTool instance.
+2. MCPToolRequest validates the raw arguments against the tool input schema. This is the transport/schema boundary.
+3. The concrete tool parses the MCPToolRequest into a tool-specific request or spec object.
+4. The tool creates and dispatches a command or query command.
+5. Commands perform the image operation or query and return result DTOs, info DTOs, reports, warnings, or errors.
+6. The tool arranges those DTOs into text and structured output that matches its output schema.
+7. The server serializes the tool result into the HTTP/JSON-RPC response.
+
+Subclasses should keep protocol and schema mechanics in the tool, put image work in commands or query objects, and avoid passing raw argument dictionaries beyond request parsing.
 "
 Class {
 	#name : 'MCPTool',

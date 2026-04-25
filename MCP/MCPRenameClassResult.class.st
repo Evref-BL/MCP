@@ -1,3 +1,8 @@
+"
+Result DTO for renaming a class.
+
+It carries the updated class info and both old and new class names.
+"
 Class {
 	#name : 'MCPRenameClassResult',
 	#superclass : 'Object',

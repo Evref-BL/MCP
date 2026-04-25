@@ -1,3 +1,8 @@
+"
+Result DTO for class creation.
+
+It wraps the MCPClassInfo for the newly created class.
+"
 Class {
 	#name : 'MCPCreateClassResult',
 	#superclass : 'Object',

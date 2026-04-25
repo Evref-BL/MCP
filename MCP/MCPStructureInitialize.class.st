@@ -1,3 +1,8 @@
+"
+MCP protocol structure returned by initialize.
+
+It carries protocol version, advertised server capabilities, and serverInfo metadata.
+"
 Class {
 	#name : 'MCPStructureInitialize',
 	#superclass : 'Object',

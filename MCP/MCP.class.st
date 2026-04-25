@@ -1,3 +1,8 @@
+"
+Top-level MCP server application object.
+
+MCP owns the registered tool instances and the HTTP server. It exposes the core JSON-RPC MCP handlers, including initialization, tool listing, tool calls, ping, and empty resource listings. Tool calls are delegated to the matching MCPTool after request validation.
+"
 Class {
 	#name : 'MCP',
 	#superclass : 'Object',

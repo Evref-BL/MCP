@@ -1,3 +1,8 @@
+"
+HTTP transport wrapper for the MCP JSON-RPC endpoint.
+
+It configures a Zinc server, handles CORS and supported HTTP methods, decodes POST bodies through the message processor, and encodes JSON responses. Protocol dispatch belongs to MCPMessageProcessor and MCP, not to this transport class.
+"
 Class {
 	#name : 'MCPHTTPServer',
 	#superclass : 'JRPCHTTPServer',

@@ -1,3 +1,8 @@
+"
+Command that changes the superclass of one class.
+
+It records the previous superclass and returns MCPReparentClassResult with updated class metadata.
+"
 Class {
 	#name : 'MCPReparentClassCommand',
 	#superclass : 'Object',

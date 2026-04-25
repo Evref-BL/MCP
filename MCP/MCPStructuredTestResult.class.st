@@ -1,3 +1,8 @@
+"
+DTO used by run-tests structured output.
+
+It holds one test result plus normalized issue details for failures, errors, and warnings.
+"
 Class {
 	#name : 'MCPStructuredTestResult',
 	#superclass : 'TestResult',

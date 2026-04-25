@@ -1,3 +1,8 @@
+"
+DTO for rich class metadata used by inspect-class.
+
+It includes package, tag, layout, slots, traits, pools, shared variables, method counts, and trait composition strings.
+"
 Class {
 	#name : 'MCPClassDescriptionInfo',
 	#superclass : 'Object',

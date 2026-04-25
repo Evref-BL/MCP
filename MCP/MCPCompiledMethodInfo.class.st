@@ -1,3 +1,8 @@
+"
+DTO for compiled method metadata.
+
+It records selector, declaring class, side, protocol, package, extension status, and optionally formatted source text.
+"
 Class {
 	#name : 'MCPCompiledMethodInfo',
 	#superclass : 'Object',

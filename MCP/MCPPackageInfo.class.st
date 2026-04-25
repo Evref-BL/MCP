@@ -1,3 +1,8 @@
+"
+DTO for package metadata.
+
+It records package name, project names, tag names, class and extension method counts, and whether the package is undefined.
+"
 Class {
 	#name : 'MCPPackageInfo',
 	#superclass : 'Object',

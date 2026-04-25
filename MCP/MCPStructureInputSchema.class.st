@@ -1,3 +1,8 @@
+"
+Structured representation of a JSON Schema object used as a tool input schema.
+
+It serializes type, properties, required fields, additionalProperties, and extra schema keywords into JSON-RPC output.
+"
 Class {
 	#name : 'MCPStructureInputSchema',
 	#superclass : 'Object',

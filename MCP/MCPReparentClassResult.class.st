@@ -1,3 +1,8 @@
+"
+Result DTO for changing a class superclass.
+
+It carries the updated class info and the old superclass name.
+"
 Class {
 	#name : 'MCPReparentClassResult',
 	#superclass : 'Object',

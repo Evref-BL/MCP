@@ -1,3 +1,8 @@
+"
+Result DTO for slot pull-up or push-down operations.
+
+It includes updated class info, the moved slot identity, side, and affected class names.
+"
 Class {
 	#name : 'MCPMoveSlotResult',
 	#superclass : 'Object',

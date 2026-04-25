@@ -1,3 +1,8 @@
+"
+MCP protocol structure for server and tool icons.
+
+It stores icon source, MIME type, size information, and optional theme metadata.
+"
 Class {
 	#name : 'MCPStructureIcon',
 	#superclass : 'Object',

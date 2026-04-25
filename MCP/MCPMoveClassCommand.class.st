@@ -1,3 +1,8 @@
+"
+Command that moves a class to another package and/or tag.
+
+When only a tag is supplied, it recategorizes the class inside its current package. The command reports the old package and tag through MCPMoveClassResult.
+"
 Class {
 	#name : 'MCPMoveClassCommand',
 	#superclass : 'Object',
