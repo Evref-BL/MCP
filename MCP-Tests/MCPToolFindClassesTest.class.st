@@ -155,6 +155,27 @@ MCPToolFindClassesTest >> testDefaultFilterAppliesToClassOnly [
 ]
 
 { #category : 'tests' }
+MCPToolFindClassesTest >> testDirectionalScopesAreUnionedWithExactClassNames [
+
+	| classNames data result |
+	result := self callToolWith: {
+			          (#classNames -> { self childClassName }).
+			          (#subclassClassNames -> { self childClassName }).
+			          (#parentClassNames -> { self childClassName }).
+			          (#filter -> self fixturePrefix).
+			          (#filterMode -> 'prefix') } asDictionary.
+	data := self dataFrom: result.
+	classNames := (data at: #classes) collect: [ :each |
+		              each at: #className ].
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) equals: 3.
+	self assert: classNames equals: {
+			self baseClassName.
+			self childClassName.
+			self grandchildClassName } asArray
+]
+
+{ #category : 'tests' }
 MCPToolFindClassesTest >> testFilterCanMatchSlotNames [
 
 	| data result |
@@ -284,6 +305,22 @@ MCPToolFindClassesTest >> testPackageNamesSelectPackageScope [
 ]
 
 { #category : 'tests' }
+MCPToolFindClassesTest >> testParentClassNamesReturnParentsOnly [
+
+	| classNames data result |
+	result := self callToolWith: {
+			          (#parentClassNames -> { self childClassName }).
+			          (#filter -> self fixturePrefix).
+			          (#filterMode -> 'prefix') } asDictionary.
+	data := self dataFrom: result.
+	classNames := (data at: #classes) collect: [ :each |
+		              each at: #className ].
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) equals: 1.
+	self assert: classNames equals: { self baseClassName } asArray
+]
+
+{ #category : 'tests' }
 MCPToolFindClassesTest >> testReturnsStructuredErrorForInvalidFilterTarget [
 
 	self
@@ -329,6 +366,22 @@ MCPToolFindClassesTest >> testReturnsStructuredErrorWhenPackageIsMissing [
 		assert: (error at: #packageName)
 		equals: 'MCP-Definitely-Missing'.
 	self assert: (error at: #scope) equals: 'packages'
+]
+
+{ #category : 'tests' }
+MCPToolFindClassesTest >> testSubclassClassNamesReturnSubclassesOnly [
+
+	| classNames data result |
+	result := self callToolWith: {
+			          (#subclassClassNames -> { self childClassName }).
+			          (#filter -> self fixturePrefix).
+			          (#filterMode -> 'prefix') } asDictionary.
+	data := self dataFrom: result.
+	classNames := (data at: #classes) collect: [ :each |
+		              each at: #className ].
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) equals: 1.
+	self assert: classNames equals: { self grandchildClassName } asArray
 ]
 
 { #category : 'tests' }

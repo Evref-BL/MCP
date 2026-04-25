@@ -83,7 +83,7 @@ MCPToolFindClasses >> classInfoDataProperties [
 { #category : 'defaults' }
 MCPToolFindClasses >> defaultDescription [
 
-	^ 'List classes and optionally filter them by class metadata. Omit packageNames, classNames, and hierarchyClassNames to search all classes. Use packageNames for package-defined classes, classNames for exact classes, and hierarchyClassNames for hierarchy roots. Multiple scope properties are unioned. Use where for recursive boolean predicates and relation predicates. Use inspect-class when you already know the class to inspect.'
+	^ 'List classes and optionally filter them by class metadata. Omit packageNames, classNames, hierarchyClassNames, subclassClassNames, and parentClassNames to search all classes. Use packageNames for package-defined classes, classNames for exact classes, hierarchyClassNames for hierarchy roots including the root, subclassClassNames for GUI Subclasses-style scope, and parentClassNames for GUI Parents-style scope. Multiple scope properties are unioned. Use where for recursive boolean predicates and relation predicates. Use inspect-class when you already know the class to inspect.'
 ]
 
 { #category : 'private - request' }
@@ -101,24 +101,38 @@ MCPToolFindClasses >> defaultIcons [
 { #category : 'defaults' }
 MCPToolFindClasses >> defaultInputSchema [
 
-	| classNamesProperty filterModeProperty filterTargetsProperty hierarchyClassNamesProperty packageNamesProperty |
+	| classNamesProperty filterModeProperty filterTargetsProperty hierarchyClassNamesProperty packageNamesProperty parentClassNamesProperty subclassClassNamesProperty |
 	packageNamesProperty := self
 		                        stringArraySchemaNamed: 'packageNames'
 		                        description:
-		                        'Class scope: package names whose defined classes are included. Omit all class scope properties to search all classes. Combine with classNames and hierarchyClassNames to union scopes.'
+		                        'Class scope: package names whose defined classes are included. Omit all class scope properties to search all classes. Combine with other class scope properties to union scopes.'
 		                        itemDescription: 'A package name.'.
 	classNamesProperty := self
 		                      stringArraySchemaNamed: 'classNames'
 		                      description:
-		                      'Class scope: exact class names to include. Omit all class scope properties to search all classes. Combine with packageNames and hierarchyClassNames to union scopes.'
+		                      'Class scope: exact class names to include. Omit all class scope properties to search all classes. Combine with other class scope properties to union scopes.'
 		                      itemDescription: 'A class name.'.
 	hierarchyClassNamesProperty := self
 		                               stringArraySchemaNamed:
 		                               'hierarchyClassNames'
 		                               description:
-		                               'Class scope: class names whose superclasses and subclasses are included. Omit all class scope properties to search all classes. Combine with packageNames and classNames to union scopes.'
+		                               'Class scope: class names whose superclasses, subclasses, and the named classes are included. Omit all class scope properties to search all classes. Combine with other class scope properties to union scopes.'
 		                               itemDescription:
 		                               'A hierarchy root class name.'.
+	subclassClassNamesProperty := self
+		                              stringArraySchemaNamed:
+		                              'subclassClassNames'
+		                              description:
+		                              'Class scope: class names whose subclasses are included. The named classes are excluded unless classNames also includes them. Combine with other class scope properties to union scopes.'
+		                              itemDescription:
+		                              'A class name whose subclasses are included.'.
+	parentClassNamesProperty := self
+		                            stringArraySchemaNamed:
+		                            'parentClassNames'
+		                            description:
+		                            'Class scope: class names whose superclasses are included. The named classes are excluded unless classNames also includes them. Combine with other class scope properties to union scopes.'
+		                            itemDescription:
+		                            'A class name whose superclasses are included.'.
 	filterModeProperty := self
 		                      stringEnumSchemaPropertyNamed: 'filterMode'
 		                      description: 'How the filter is matched.'
@@ -138,6 +152,8 @@ MCPToolFindClasses >> defaultInputSchema [
 				  packageNamesProperty.
 				  classNamesProperty.
 				  hierarchyClassNamesProperty.
+				  subclassClassNamesProperty.
+				  parentClassNamesProperty.
 				  (self
 					   schemaPropertyNamed: 'filter'
 					   type: 'string'
@@ -242,13 +258,7 @@ MCPToolFindClasses >> queryResultDataForQueryRequest: queryRequest page: page [
 { #category : 'private - template' }
 MCPToolFindClasses >> requestedContextFromRequest: request [
 
-	^ { (#scope -> (self
-		    classAndMethodScopeSummaryForPackageNames:
-		    (request stringCollectionArgumentNamed: 'packageNames')
-		    classNames:
-		    (request stringCollectionArgumentNamed: 'classNames')
-		    hierarchyClassNames:
-		    (request stringCollectionArgumentNamed: 'hierarchyClassNames'))) }
+	^ { (#scope -> (self classAndMethodScopeSummaryFromRequest: request)) }
 		  asDictionary
 ]
 
@@ -256,12 +266,9 @@ MCPToolFindClasses >> requestedContextFromRequest: request [
 MCPToolFindClasses >> successSummaryForQueryRequest: queryRequest page: page [
 
 	^ self
-		  successSummaryForScope: (self
-				   classAndMethodScopeSummaryForPackageNames:
-				   queryRequest scopeQuery packageNames
-				   classNames: queryRequest scopeQuery classNames
-				   hierarchyClassNames:
-				   queryRequest scopeQuery hierarchyClassNames)
+		  successSummaryForScope:
+		  (self classAndMethodScopeSummaryForScopeQuery:
+			   queryRequest scopeQuery)
 		  page: page
 ]
 

@@ -22,17 +22,42 @@ MCPToolQuery >> addScopeLabel: aString to: labels [
 ]
 
 { #category : 'private - results' }
-MCPToolQuery >> classAndMethodScopeSummaryForPackageNames: packageNames classNames: classNames hierarchyClassNames: hierarchyClassNames [
+MCPToolQuery >> classAndMethodScopeSummaryForScopeQuery: scopeQuery [
+
+	^ self classAndMethodScopeSummaryFromAssociations: {
+			  ('packages' -> scopeQuery packageNames).
+			  ('classes' -> scopeQuery classNames).
+			  ('hierarchy' -> scopeQuery hierarchyClassNames).
+			  ('subclasses' -> scopeQuery subclassClassNames).
+			  ('parents' -> scopeQuery parentClassNames) }
+]
+
+{ #category : 'private - results' }
+MCPToolQuery >> classAndMethodScopeSummaryFromAssociations: scopeAssociations [
 
 	| labels |
 	labels := OrderedCollection new.
-	packageNames notEmpty ifTrue: [
-		self addScopeLabel: 'packages' to: labels ].
-	classNames notEmpty ifTrue: [
-		self addScopeLabel: 'classes' to: labels ].
-	hierarchyClassNames notEmpty ifTrue: [
-		self addScopeLabel: 'hierarchy' to: labels ].
+	scopeAssociations do: [ :eachAssociation |
+		eachAssociation value notEmpty ifTrue: [
+			self addScopeLabel: eachAssociation key to: labels ] ].
 	^ self scopeSummaryFromLabels: labels
+]
+
+{ #category : 'private - results' }
+MCPToolQuery >> classAndMethodScopeSummaryFromRequest: request [
+
+	^ self classAndMethodScopeSummaryFromAssociations: {
+			  ('packages'
+			   -> (request stringCollectionArgumentNamed: 'packageNames')).
+			  ('classes'
+			   -> (request stringCollectionArgumentNamed: 'classNames')).
+			  ('hierarchy'
+			   ->
+			   (request stringCollectionArgumentNamed: 'hierarchyClassNames')).
+			  ('subclasses'
+			   -> (request stringCollectionArgumentNamed: 'subclassClassNames')).
+			  ('parents'
+			   -> (request stringCollectionArgumentNamed: 'parentClassNames')) }
 ]
 
 { #category : 'private - execution' }

@@ -544,6 +544,8 @@ MCPToolContractsTest >> testFindClassesHasAccurateNameAndSchema [
 	self assert: (propertyNames includes: 'packageNames').
 	self assert: (propertyNames includes: 'classNames').
 	self assert: (propertyNames includes: 'hierarchyClassNames').
+	self assert: (propertyNames includes: 'subclassClassNames').
+	self assert: (propertyNames includes: 'parentClassNames').
 	self assert: (propertyNames includes: 'filter').
 	self assert: (propertyNames includes: 'filterTargets')
 ]
@@ -621,6 +623,8 @@ MCPToolContractsTest >> testFindMethodsHasAccurateNameAndSchema [
 	self assert: (propertyNames includes: 'packageNames').
 	self assert: (propertyNames includes: 'classNames').
 	self assert: (propertyNames includes: 'hierarchyClassNames').
+	self assert: (propertyNames includes: 'subclassClassNames').
+	self assert: (propertyNames includes: 'parentClassNames').
 	self assert: (propertyNames includes: 'filter').
 	self assert: (propertyNames includes: 'filterTargets').
 	self
@@ -1027,10 +1031,16 @@ MCPToolContractsTest >> testParsedInputClassesUseRequestOrSpecSuffixes [
 { #category : 'tests' }
 MCPToolContractsTest >> testQueryScopeDescriptionsExplainScopeSemantics [
 
-	| classDescription methodDescription packageDescription |
+	| classDescription methodDescription packageDescription parentDescription subclassDescription |
 	classDescription := (self
 		                     inputPropertyNamed: 'hierarchyClassNames'
 		                     inTool: MCPToolFindClasses new) description.
+	subclassDescription := (self
+		                        inputPropertyNamed: 'subclassClassNames'
+		                        inTool: MCPToolFindMethods new) description.
+	parentDescription := (self
+		                      inputPropertyNamed: 'parentClassNames'
+		                      inTool: MCPToolFindClasses new) description.
 	methodDescription := (self
 		                      inputPropertyNamed: 'packageNames'
 		                      inTool: MCPToolFindMethods new) description.
@@ -1041,7 +1051,16 @@ MCPToolContractsTest >> testQueryScopeDescriptionsExplainScopeSemantics [
 		(classDescription includesSubstring:
 			 'Omit all class scope properties').
 	self assert: (classDescription includesSubstring:
-			 'Combine with packageNames and classNames').
+			 'superclasses, subclasses, and the named classes').
+	self assert:
+		(subclassDescription includesSubstring: 'subclass methods').
+	self assert: (subclassDescription includesSubstring:
+			 'The named classes are excluded').
+	self assert:
+		(parentDescription includesSubstring: 'superclasses are included').
+	self assert:
+		(parentDescription includesSubstring:
+			 'The named classes are excluded').
 	self assert:
 		(methodDescription includesSubstring: 'extension methods').
 	self assert: (methodDescription includesSubstring:

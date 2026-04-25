@@ -1,7 +1,7 @@
 "
 Parsed scope query for method listings and reference lookup.
 
-It resolves packageNames, classNames, hierarchyClassNames, and side into a union of compiled methods.
+It resolves packageNames, classNames, hierarchyClassNames, subclassClassNames, parentClassNames, and side into a union of compiled methods. Directional subclass and parent scopes exclude their anchor classes.
 "
 Class {
 	#name : 'MCPCompiledMethodScopeQuery',
@@ -10,7 +10,9 @@ Class {
 		'packageNames',
 		'classNames',
 		'side',
-		'hierarchyClassNames'
+		'hierarchyClassNames',
+		'subclassClassNames',
+		'parentClassNames'
 	],
 	#category : 'MCP-Queries',
 	#package : 'MCP',
@@ -59,7 +61,7 @@ MCPCompiledMethodScopeQuery >> allMethodsDo: aBlock [
 { #category : 'querying' }
 MCPCompiledMethodScopeQuery >> behaviors [
 
-	| behaviors hierarchyRoots |
+	| behaviors hierarchyRoots parentRoots subclassRoots |
 	self validate.
 	self usesImplicitImageScope ifTrue: [ ^ self allBehaviors ].
 	behaviors := IdentitySet new.
@@ -70,6 +72,12 @@ MCPCompiledMethodScopeQuery >> behaviors [
 	hierarchyRoots := self hierarchyClassNames.
 	hierarchyRoots ifNotEmpty: [
 		behaviors addAll: self hierarchyBehaviorsForClassNames ].
+	subclassRoots := self subclassClassNames.
+	subclassRoots ifNotEmpty: [
+		behaviors addAll: self subclassBehaviorsForClassNames ].
+	parentRoots := self parentClassNames.
+	parentRoots ifNotEmpty: [
+		behaviors addAll: self parentBehaviorsForClassNames ].
 	^ behaviors asArray
 ]
 
@@ -160,6 +168,8 @@ MCPCompiledMethodScopeQuery >> initialize [
 	packageNames := #(  ).
 	classNames := #(  ).
 	hierarchyClassNames := #(  ).
+	subclassClassNames := #(  ).
+	parentClassNames := #(  ).
 	side := 'both'
 ]
 
@@ -182,7 +192,7 @@ MCPCompiledMethodScopeQuery >> matchesSideForMethod: aCompiledMethod [
 { #category : 'querying' }
 MCPCompiledMethodScopeQuery >> methods [
 
-	| hierarchyRoots methods |
+	| hierarchyRoots methods parentRoots subclassRoots |
 	self validate.
 	self usesImplicitImageScope ifTrue: [ ^ self allMethods ].
 	methods := IdentitySet new.
@@ -195,6 +205,14 @@ MCPCompiledMethodScopeQuery >> methods [
 	hierarchyRoots ifNotEmpty: [
 		methods addAll:
 			(self methodsForBehaviors: self hierarchyBehaviorsForClassNames) ].
+	subclassRoots := self subclassClassNames.
+	subclassRoots ifNotEmpty: [
+		methods addAll:
+			(self methodsForBehaviors: self subclassBehaviorsForClassNames) ].
+	parentRoots := self parentClassNames.
+	parentRoots ifNotEmpty: [
+		methods addAll:
+			(self methodsForBehaviors: self parentBehaviorsForClassNames) ].
 	^ methods asArray
 ]
 
@@ -301,6 +319,36 @@ MCPCompiledMethodScopeQuery >> packageNames: someNames [
 		                ifNotNil: [ someNames asArray ]
 ]
 
+{ #category : 'private - scope' }
+MCPCompiledMethodScopeQuery >> parentBehaviorsForClassNames [
+
+	| baseClasses behaviors relatedClasses |
+	baseClasses := self parentClassNames collect: [ :eachName |
+		               (self classNamed: eachName) instanceSide ].
+	relatedClasses := IdentitySet new.
+	baseClasses do: [ :eachClass |
+		eachClass allSuperclasses do: [ :relatedClass |
+			relatedClasses add: relatedClass instanceSide ] ].
+	behaviors := IdentitySet new.
+	relatedClasses do: [ :eachClass |
+		self addBehaviorsForBaseClass: eachClass to: behaviors ].
+	^ behaviors asArray
+]
+
+{ #category : 'accessing' }
+MCPCompiledMethodScopeQuery >> parentClassNames [
+
+	^ parentClassNames ifNil: [ #(  ) ]
+]
+
+{ #category : 'accessing' }
+MCPCompiledMethodScopeQuery >> parentClassNames: someNames [
+
+	parentClassNames := someNames
+		                    ifNil: [ #(  ) ]
+		                    ifNotNil: [ someNames asArray ]
+]
+
 { #category : 'accessing' }
 MCPCompiledMethodScopeQuery >> side [
 
@@ -313,11 +361,44 @@ MCPCompiledMethodScopeQuery >> side: aSide [
 	side := aSide ifNil: [ 'both' ] ifNotNil: [ aSide ]
 ]
 
+{ #category : 'private - scope' }
+MCPCompiledMethodScopeQuery >> subclassBehaviorsForClassNames [
+
+	| baseClasses behaviors relatedClasses |
+	baseClasses := self subclassClassNames collect: [ :eachName |
+		               (self classNamed: eachName) instanceSide ].
+	relatedClasses := IdentitySet new.
+	baseClasses do: [ :eachClass |
+		eachClass allSubclasses do: [ :relatedClass |
+			relatedClasses add: relatedClass instanceSide ] ].
+	behaviors := IdentitySet new.
+	relatedClasses do: [ :eachClass |
+		self addBehaviorsForBaseClass: eachClass to: behaviors ].
+	^ behaviors asArray
+]
+
+{ #category : 'accessing' }
+MCPCompiledMethodScopeQuery >> subclassClassNames [
+
+	^ subclassClassNames ifNil: [ #(  ) ]
+]
+
+{ #category : 'accessing' }
+MCPCompiledMethodScopeQuery >> subclassClassNames: someNames [
+
+	subclassClassNames := someNames
+		                      ifNil: [ #(  ) ]
+		                      ifNotNil: [ someNames asArray ]
+]
+
 { #category : 'private - source' }
 MCPCompiledMethodScopeQuery >> usesImplicitImageScope [
 
 	^ self packageNames isEmpty and: [
-		  self classNames isEmpty and: [ self hierarchyClassNames isEmpty ] ]
+		  self classNames isEmpty and: [
+			  self hierarchyClassNames isEmpty and: [
+				  self subclassClassNames isEmpty and: [
+					  self parentClassNames isEmpty ] ] ] ]
 ]
 
 { #category : 'validating' }

@@ -32,6 +32,12 @@ MCPFindClassesRequest class >> fromRequest: request tool: aTool [
 		              hierarchyClassNames:
 			              (request stringCollectionArgumentNamed:
 					               'hierarchyClassNames');
+		              subclassClassNames:
+			              (request stringCollectionArgumentNamed:
+					               'subclassClassNames');
+		              parentClassNames:
+			              (request stringCollectionArgumentNamed:
+					               'parentClassNames');
 		              yourself.
 	^ self new
 		  scopeQuery: scopeQuery;

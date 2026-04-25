@@ -132,3 +132,35 @@ MCPCompiledMethodScopeQueryTest >> testPackageScopeSignalsCommandErrorWhenPackag
 		assert: (error structuredDetails at: #packageName)
 		equals: 'MCP-Definitely-Missing'
 ]
+
+{ #category : 'tests' }
+MCPCompiledMethodScopeQueryTest >> testParentScopeCollectsMethodsFromParentsOnly [
+
+	| methodIdentities query |
+	query := MCPCompiledMethodScopeQuery new
+		         parentClassNames: #( 'MCPToolHierarchyTestMid' );
+		         side: 'instance';
+		         yourself.
+	methodIdentities := self methodIdentitiesFor: query methods.
+	self assert:
+		(methodIdentities includes:
+			 'MCPToolHierarchyTestBase>>hierarchyProbe').
+	self deny: (methodIdentities includes:
+			 'MCPToolHierarchyTestChild>>hierarchyProbe')
+]
+
+{ #category : 'tests' }
+MCPCompiledMethodScopeQueryTest >> testSubclassScopeCollectsMethodsFromSubclassesOnly [
+
+	| methodIdentities query |
+	query := MCPCompiledMethodScopeQuery new
+		         subclassClassNames: #( 'MCPToolHierarchyTestMid' );
+		         side: 'instance';
+		         yourself.
+	methodIdentities := self methodIdentitiesFor: query methods.
+	self assert: (methodIdentities includes:
+			 'MCPToolHierarchyTestChild>>hierarchyProbe').
+	self deny:
+		(methodIdentities includes:
+			 'MCPToolHierarchyTestBase>>hierarchyProbe')
+]

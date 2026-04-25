@@ -37,7 +37,7 @@ MCPToolFindMethods >> classReferenceEntriesForQueryRequest: queryRequest [
 { #category : 'defaults' }
 MCPToolFindMethods >> defaultDescription [
 
-	^ 'List methods and optionally filter returned method entries. Omit packageNames, classNames, and hierarchyClassNames to search all methods. Use packageNames for package-defined and extension methods, classNames for exact classes, and hierarchyClassNames for hierarchy roots. Multiple scope properties are unioned. Use filterMode=exact with filterTargets=selector and caseSensitive=true to find implementors. Use filterMode=selectorReference to find senders of the selector named by filter. Use filterMode=classReference to find methods that reference the class named by filter. Use filterMode=variableReference to find methods that reference the variable named by filter. Reference lookup modes require filter and ignore filterTargets. Use where for recursive boolean predicates and relation predicates; method predicates can use equivalentTo with a className/selector/classSide method reference to match AST-equivalent methods.'
+	^ 'List methods and optionally filter returned method entries. Omit packageNames, classNames, hierarchyClassNames, subclassClassNames, and parentClassNames to search all methods. Use packageNames for package-defined and extension methods, classNames for exact classes, hierarchyClassNames for hierarchy roots including the root, subclassClassNames for GUI Subclasses-style scope, and parentClassNames for GUI Parents-style scope. Multiple scope properties are unioned. Use filterMode=exact with filterTargets=selector and caseSensitive=true to find implementors. Use filterMode=selectorReference to find senders of the selector named by filter. Use filterMode=classReference to find methods that reference the class named by filter. Use filterMode=variableReference to find methods that reference the variable named by filter. Reference lookup modes require filter and ignore filterTargets. Use where for recursive boolean predicates and relation predicates; method predicates can use equivalentTo with a className/selector/classSide method reference to match AST-equivalent methods.'
 ]
 
 { #category : 'private - request' }
@@ -377,7 +377,7 @@ MCPToolFindMethods >> methodQueryResultDataForPage: page entriesKey: entriesKey 
 { #category : 'private - schema' }
 MCPToolFindMethods >> methodQueryScopeInputPropertiesWithScopeDescription: scopeDescription [
 
-	| classNamesProperty hierarchyClassNamesProperty packageNamesProperty sideProperty |
+	| classNamesProperty hierarchyClassNamesProperty packageNamesProperty parentClassNamesProperty sideProperty subclassClassNamesProperty |
 	sideProperty := self
 		                stringEnumSchemaPropertyNamed: 'side'
 		                description:
@@ -388,27 +388,45 @@ MCPToolFindMethods >> methodQueryScopeInputPropertiesWithScopeDescription: scope
 		                        stringArraySchemaNamed: 'packageNames'
 		                        description: scopeDescription
 			                        ,
-			                        ' Package names whose defined methods and extension methods are included. Omit all method scope properties to search all methods. Combine with classNames and hierarchyClassNames to union scopes.'
+			                        ' Package names whose defined methods and extension methods are included. Omit all method scope properties to search all methods. Combine with other method scope properties to union scopes.'
 		                        itemDescription: 'A package name.'.
 	classNamesProperty := self
 		                      stringArraySchemaNamed: 'classNames'
 		                      description: scopeDescription
 			                      ,
-			                      ' Exact class names whose methods are included. Omit all method scope properties to search all methods. Combine with packageNames and hierarchyClassNames to union scopes.'
+			                      ' Exact class names whose methods are included. Omit all method scope properties to search all methods. Combine with other method scope properties to union scopes.'
 		                      itemDescription: 'A class name.'.
 	hierarchyClassNamesProperty := self
 		                               stringArraySchemaNamed:
 		                               'hierarchyClassNames'
 		                               description: scopeDescription
 			                               ,
-			                               ' Class names whose superclasses and subclasses have their methods included. Omit all method scope properties to search all methods. Combine with packageNames and classNames to union scopes.'
+			                               ' Class names whose superclasses, subclasses, and own methods are included. Omit all method scope properties to search all methods. Combine with other method scope properties to union scopes.'
 		                               itemDescription:
 		                               'A hierarchy root class name.'.
+	subclassClassNamesProperty := self
+		                              stringArraySchemaNamed:
+		                              'subclassClassNames'
+		                              description: scopeDescription
+			                              ,
+			                              ' Class names whose subclass methods are included. The named classes are excluded unless classNames also includes them. Combine with other method scope properties to union scopes.'
+		                              itemDescription:
+		                              'A class name whose subclasses are included.'.
+	parentClassNamesProperty := self
+		                            stringArraySchemaNamed:
+		                            'parentClassNames'
+		                            description: scopeDescription
+			                            ,
+			                            ' Class names whose superclass methods are included. The named classes are excluded unless classNames also includes them. Combine with other method scope properties to union scopes.'
+		                            itemDescription:
+		                            'A class name whose superclasses are included.'.
 	^ {
 		  sideProperty.
 		  packageNamesProperty.
 		  classNamesProperty.
-		  hierarchyClassNamesProperty }
+		  hierarchyClassNamesProperty.
+		  subclassClassNamesProperty.
+		  parentClassNamesProperty }
 ]
 
 { #category : 'private - methods' }
@@ -420,6 +438,10 @@ MCPToolFindMethods >> methodScopeQueryFromRequest: request [
 		  classNames: (request stringCollectionArgumentNamed: 'classNames');
 		  hierarchyClassNames:
 			  (request stringCollectionArgumentNamed: 'hierarchyClassNames');
+		  subclassClassNames:
+			  (request stringCollectionArgumentNamed: 'subclassClassNames');
+		  parentClassNames:
+			  (request stringCollectionArgumentNamed: 'parentClassNames');
 		  side: (request stringArgumentNamed: 'side' default: 'both');
 		  yourself
 ]
@@ -459,13 +481,7 @@ MCPToolFindMethods >> referenceFilterModes [
 { #category : 'private - template' }
 MCPToolFindMethods >> requestedContextFromRequest: request [
 
-	^ { (#scope -> (self
-		    classAndMethodScopeSummaryForPackageNames:
-		    (request stringCollectionArgumentNamed: 'packageNames')
-		    classNames:
-		    (request stringCollectionArgumentNamed: 'classNames')
-		    hierarchyClassNames:
-		    (request stringCollectionArgumentNamed: 'hierarchyClassNames'))) }
+	^ { (#scope -> (self classAndMethodScopeSummaryFromRequest: request)) }
 		  asDictionary
 ]
 
@@ -512,12 +528,9 @@ MCPToolFindMethods >> sortedMethodEntries: entries [
 MCPToolFindMethods >> successSummaryForQueryRequest: queryRequest page: page [
 
 	^ self
-		  successSummaryForScope: (self
-				   classAndMethodScopeSummaryForPackageNames:
-				   queryRequest scopeQuery packageNames
-				   classNames: queryRequest scopeQuery classNames
-				   hierarchyClassNames:
-				   queryRequest scopeQuery hierarchyClassNames)
+		  successSummaryForScope:
+		  (self classAndMethodScopeSummaryForScopeQuery:
+			   queryRequest scopeQuery)
 		  page: page
 ]
 

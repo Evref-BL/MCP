@@ -354,6 +354,26 @@ MCPToolFindMethodsTest >> testDefaultFilterAppliesToSelectorOnly [
 ]
 
 { #category : 'tests' }
+MCPToolFindMethodsTest >> testDirectionalScopesAreUnionedForMethods [
+
+	| data result |
+	result := self callToolWith: {
+			          (#subclassClassNames -> #( 'MCPToolHierarchyTestMid' )).
+			          (#parentClassNames -> #( 'MCPToolHierarchyTestMid' )).
+			          (#side -> 'instance').
+			          (#filter -> 'hierarchyProbe') } asDictionary.
+	data := self dataFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) equals: 2.
+	self
+		entryForReference: 'MCPToolHierarchyTestBase>>hierarchyProbe'
+		in: (data at: #methods).
+	self
+		entryForReference: 'MCPToolHierarchyTestChild>>hierarchyProbe'
+		in: (data at: #methods)
+]
+
+{ #category : 'tests' }
 MCPToolFindMethodsTest >> testHierarchyClassNamesReturnWholeHierarchy [
 
 	| data result |
@@ -472,6 +492,22 @@ MCPToolFindMethodsTest >> testPackageNamesSelectPackageScope [
 		assert: (method at: #packageName)
 		equals: 'MCP-Tests-Resources-Extensions'.
 	self assert: (method at: #isExtension)
+]
+
+{ #category : 'tests' }
+MCPToolFindMethodsTest >> testParentClassNamesReturnParentMethods [
+
+	| data result |
+	result := self callToolWith: {
+			          (#parentClassNames -> #( 'MCPToolHierarchyTestMid' )).
+			          (#side -> 'instance').
+			          (#filter -> 'hierarchyProbe') } asDictionary.
+	data := self dataFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) equals: 1.
+	self
+		entryForReference: 'MCPToolHierarchyTestBase>>hierarchyProbe'
+		in: (data at: #methods)
 ]
 
 { #category : 'tests' }
@@ -694,6 +730,23 @@ MCPToolFindMethodsTest >> testSelectorReferencePackageNamesIncludeExtensionMetho
 ]
 
 { #category : 'tests' }
+MCPToolFindMethodsTest >> testSelectorReferenceParentClassNamesSearchParents [
+
+	| data result |
+	result := self callToolWith: {
+			          (#filter -> 'hierarchyTarget').
+			          (#filterMode -> 'selectorReference').
+			          (#parentClassNames -> #( 'MCPToolHierarchyTestMid' )) }
+			          asDictionary.
+	data := self dataFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) equals: 1.
+	self
+		entryForReference: 'MCPToolHierarchyTestBase>>baseHierarchySender'
+		in: (data at: #methods)
+]
+
+{ #category : 'tests' }
 MCPToolFindMethodsTest >> testSelectorReferenceRequiresFilter [
 
 	self
@@ -701,6 +754,39 @@ MCPToolFindMethodsTest >> testSelectorReferenceRequiresFilter [
 			self callToolWith:
 				{ (#filterMode -> 'selectorReference') } asDictionary ]
 		raise: MCPInvalidToolInput
+]
+
+{ #category : 'tests' }
+MCPToolFindMethodsTest >> testSelectorReferenceSubclassClassNamesSearchSubclasses [
+
+	| data result |
+	result := self callToolWith: {
+			          (#filter -> 'hierarchyTarget').
+			          (#filterMode -> 'selectorReference').
+			          (#subclassClassNames -> #( 'MCPToolHierarchyTestMid' )) }
+			          asDictionary.
+	data := self dataFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) equals: 1.
+	self
+		entryForReference: 'MCPToolHierarchyTestChild>>childHierarchySender'
+		in: (data at: #methods)
+]
+
+{ #category : 'tests' }
+MCPToolFindMethodsTest >> testSubclassClassNamesReturnSubclassMethods [
+
+	| data result |
+	result := self callToolWith: {
+			          (#subclassClassNames -> #( 'MCPToolHierarchyTestMid' )).
+			          (#side -> 'instance').
+			          (#filter -> 'hierarchyProbe') } asDictionary.
+	data := self dataFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) equals: 1.
+	self
+		entryForReference: 'MCPToolHierarchyTestChild>>hierarchyProbe'
+		in: (data at: #methods)
 ]
 
 { #category : 'tests' }
