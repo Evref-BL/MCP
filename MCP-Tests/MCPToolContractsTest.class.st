@@ -370,12 +370,16 @@ MCPToolContractsTest >> testEditMethodHasAccurateNameAndRequiredArguments [
 { #category : 'tests' }
 MCPToolContractsTest >> testEditMethodSchemaAdvertisesMethodState [
 
-	| dataProperties dataProperty operationProperty permutationProperty propertyNames tool |
+	| argumentNamesProperty argumentValuesProperty dataProperties dataProperty operationProperty permutationProperty propertyNames tool |
 	tool := MCPToolEditMethod new.
 	operationProperty := tool inputSchema properties detect: [ :each |
 		                     each name = 'operation' ].
 	permutationProperty := tool inputSchema properties detect: [ :each |
 		                       each name = 'permutation' ].
+	argumentNamesProperty := tool inputSchema properties detect: [ :each |
+		                         each name = 'argumentNames' ].
+	argumentValuesProperty := tool inputSchema properties detect: [ :each |
+		                          each name = 'argumentValueExpressions' ].
 	dataProperty := tool outputSchema properties detect: [ :each |
 		                each name = 'data' ].
 	dataProperties := dataProperty extraProperties at: #properties.
@@ -385,6 +389,10 @@ MCPToolContractsTest >> testEditMethodSchemaAdvertisesMethodState [
 		equals: #( 'create' 'update' ).
 	self assert:
 		(permutationProperty extraProperties at: #items) type = 'integer'.
+	self assert:
+		(argumentNamesProperty extraProperties at: #items) type = 'string'.
+	self assert:
+		(argumentValuesProperty extraProperties at: #items) type = 'string'.
 	self
 		assert: propertyNames asSet
 		equals: #( 'operation' 'updateAction' 'updatePlan' 'appliedChange'

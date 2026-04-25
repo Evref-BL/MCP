@@ -251,14 +251,90 @@ MCPToolEditMethodTest >> restoreFixtureMethods [
 MCPToolEditMethodTest >> setUp [
 
 	super setUp.
+	self
+		removeSelector: #combine:with:separator:
+		from: MCPToolEditMethodTestTarget.
+	self
+		removeSelector: #buildValue:prefix:
+		from: MCPToolEditMethodTestTarget classSide.
 	self restoreFixtureMethods
 ]
 
 { #category : 'running' }
 MCPToolEditMethodTest >> tearDown [
 
+	self
+		removeSelector: #combine:with:separator:
+		from: MCPToolEditMethodTestTarget.
+	self
+		removeSelector: #buildValue:prefix:
+		from: MCPToolEditMethodTestTarget classSide.
 	self restoreFixtureMethods.
 	super tearDown
+]
+
+{ #category : 'tests' }
+MCPToolEditMethodTest >> testAddArgumentsUpdatesClassSideSenders [
+
+	| data result senderSource |
+	result := self callToolWith: {
+			          (#operation -> 'update').
+			          (#className -> 'MCPToolEditMethodTestTarget').
+			          (#classSide -> true).
+			          (#selector -> 'buildValue:').
+			          (#newSelector -> 'buildValue:prefix:').
+			          (#argumentNames -> #( 'aString' 'prefix' )).
+			          (#argumentValueExpressions -> #( 'nil' )) } asDictionary.
+	data := self dataFrom: result.
+	senderSource := (MCPToolEditMethodTestSender >> #callClassTarget)
+		                sourceCode.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #operation) equals: 'update'.
+	self assert: (data at: #updateAction) equals: 'addArguments'.
+	self assert: (data at: #classSide) equals: true.
+	self assert:
+		(MCPToolEditMethodTestTarget classSide includesSelector:
+			 #buildValue:prefix:).
+	self assert: (senderSource includesSubstring: 'prefix: nil').
+	self
+		assert: MCPToolEditMethodTestSender new callClassTarget
+		equals: 'Class-value'
+]
+
+{ #category : 'tests' }
+MCPToolEditMethodTest >> testAddArgumentsUpdatesSendersAndReportsAction [
+
+	| data result senderSource targetSource |
+	result := self callToolWith: {
+			          (#operation -> 'update').
+			          (#className -> 'MCPToolEditMethodTestTarget').
+			          (#classSide -> false).
+			          (#selector -> 'combine:with:').
+			          (#newSelector -> 'combine:with:separator:').
+			          (#argumentNames -> #( 'first' 'second' 'separator' )).
+			          (#argumentValueExpressions
+			           -> (Array with: (String streamContents: [ :stream |
+						             stream
+							             nextPut: $';
+							             nextPut: $|;
+							             nextPut: $' ]))) } asDictionary.
+	data := self dataFrom: result.
+	targetSource := (MCPToolEditMethodTestTarget
+	                 >> #combine:with:separator:) sourceCode.
+	senderSource := (MCPToolEditMethodTestSender >> #callInstanceTarget)
+		                sourceCode.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #operation) equals: 'update'.
+	self assert: (data at: #updateAction) equals: 'addArguments'.
+	self assert: (data at: #oldSelector) equals: 'combine:with:'.
+	self
+		assert: (data at: #newSelector)
+		equals: 'combine:with:separator:'.
+	self assert: (targetSource includesSubstring: 'separator: separator').
+	self assert: (senderSource includesSubstring: 'separator: ''|''').
+	self
+		assert: MCPToolEditMethodTestSender new callInstanceTarget
+		equals: 'first-second'
 ]
 
 { #category : 'tests' }
@@ -627,6 +703,89 @@ MCPToolEditMethodTest >> testReformatsMethod [
 	self assert: (data at: #source) equals: reformattedSource.
 	self assert: (reformattedSource includesSubstring: '1 + 2').
 	self assert: MCPToolEditMethodTestTarget new uglyAnswer equals: 3
+]
+
+{ #category : 'tests' }
+MCPToolEditMethodTest >> testRemoveArgumentsFailsWhenRemovedArgumentIsReferenced [
+
+	| error newSelector oldSelector result structured |
+	oldSelector := ('referencedRemove:' , 'unused:') asSymbol.
+	newSelector := #referencedRemove:.
+	[
+	self
+		ensureMethodSource:
+		'referencedRemove: first unused: ignored ^ ignored'
+		protocol: 'tests'
+		on: MCPToolEditMethodTestTarget.
+	result := self callToolWith: {
+			          (#operation -> 'update').
+			          (#className -> 'MCPToolEditMethodTestTarget').
+			          (#classSide -> false).
+			          (#selector -> oldSelector asString).
+			          (#newSelector -> newSelector asString) } asDictionary.
+	structured := self structuredContentFrom: result.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (structured at: #status) equals: 'error'.
+	self assert: (error at: #operation) equals: 'update'.
+	self assert: (error at: #updateAction) equals: 'removeArguments'.
+	self
+		assert: (error at: #className)
+		equals: 'MCPToolEditMethodTestTarget'.
+	self assert: (error at: #selector) equals: oldSelector asString.
+	self assert: (error at: #newSelector) equals: newSelector asString.
+	self assert:
+		(MCPToolEditMethodTestTarget includesSelector: oldSelector).
+	self deny:
+		(MCPToolEditMethodTestTarget includesSelector: newSelector) ]
+		ensure: [
+			self removeSelector: oldSelector from: MCPToolEditMethodTestTarget.
+			self removeSelector: newSelector from: MCPToolEditMethodTestTarget ]
+]
+
+{ #category : 'tests' }
+MCPToolEditMethodTest >> testRemoveArgumentsUpdatesSendersAndReportsAction [
+
+	| data newSelector oldSelector result senderSource |
+	oldSelector := ('keep:' , 'unused:') asSymbol.
+	newSelector := #keep:.
+	[
+	self
+		ensureMethodSource: 'keep: first unused: ignored ^ first'
+		protocol: 'tests'
+		on: MCPToolEditMethodTestTarget.
+	self
+		ensureMethodSource:
+		'callRemoveArgumentTarget ^ MCPToolEditMethodTestTarget new keep: ''value'' unused: ''ignored'''
+		protocol: 'tests'
+		on: MCPToolEditMethodTestSender.
+	result := self callToolWith: {
+			          (#operation -> 'update').
+			          (#className -> 'MCPToolEditMethodTestTarget').
+			          (#classSide -> false).
+			          (#selector -> oldSelector asString).
+			          (#newSelector -> newSelector asString) } asDictionary.
+	data := self dataFrom: result.
+	senderSource := (MCPToolEditMethodTestSender
+	                 >> #callRemoveArgumentTarget) sourceCode.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #operation) equals: 'update'.
+	self assert: (data at: #updateAction) equals: 'removeArguments'.
+	self assert: (data at: #oldSelector) equals: oldSelector asString.
+	self assert: (data at: #newSelector) equals: newSelector asString.
+	self deny:
+		(MCPToolEditMethodTestTarget includesSelector: oldSelector).
+	self assert:
+		(MCPToolEditMethodTestTarget includesSelector: newSelector).
+	self deny: (senderSource includesSubstring: 'unused:').
+	self
+		assert: MCPToolEditMethodTestSender new callRemoveArgumentTarget
+		equals: 'value' ] ensure: [
+		self removeSelector: oldSelector from: MCPToolEditMethodTestTarget.
+		self removeSelector: newSelector from: MCPToolEditMethodTestTarget.
+		self
+			removeSelector: #callRemoveArgumentTarget
+			from: MCPToolEditMethodTestSender ]
 ]
 
 { #category : 'tests' }

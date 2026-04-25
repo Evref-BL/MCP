@@ -1,5 +1,5 @@
 "
-Edits one method in the running image. It handles method creation or replacement, renaming, protocol changes, and returns post-create critiques when relevant.
+Edits one method in the running image. It handles method creation or replacement, selector updates including argument add/remove refactorings, protocol changes, and returns post-create critiques when relevant.
 "
 Class {
 	#name : 'MCPToolEditMethod',
@@ -10,6 +10,18 @@ Class {
 	#package : 'MCP',
 	#tag : 'Tools'
 }
+
+{ #category : 'private - refactoring' }
+MCPToolEditMethod >> addParameterRefactoringForSelector: oldSelectorSymbol inBehavior: aBehavior to: newSelectorSymbol permutation: permutation newArgs: newArguments model: refactoringModel [
+
+	^ RBAddParameterRefactoring
+		  model: refactoringModel
+		  addParameterToMethod: oldSelectorSymbol
+		  in: aBehavior
+		  newSelector: newSelectorSymbol
+		  permutation: permutation
+		  newArgs: newArguments
+]
 
 { #category : 'private' }
 MCPToolEditMethod >> allowedNonErrorCritiqueRuleClasses [
@@ -97,7 +109,7 @@ MCPToolEditMethod >> defaultInputSchema [
 		  properties: {
 				  (self
 					   operationSchemaPropertyWithDescription:
-						   'The high-level method edit operation. operation=create creates or replaces a method. operation=update applies exactly one patch to an existing method, such as newSelector or protocol.'
+						   'The high-level method edit operation. operation=create creates or replaces a method. operation=update applies exactly one patch to an existing method, such as selector change or protocol change.'
 					   supportedValuesLeadIn: 'Supported values are').
 				  (MCPStructureProperties new
 					   name: 'className';
@@ -133,16 +145,38 @@ MCPToolEditMethod >> defaultInputSchema [
 					   name: 'newSelector';
 					   type: 'string';
 					   description:
-						   'The replacement selector for an operation=update rename patch; do not combine it with another update action.';
+						   'The target selector for an operation=update selector patch. Same arity renames or reorders arguments; higher arity adds arguments; lower arity removes arguments.';
 					   yourself).
 				  ((MCPStructureProperties new
 					    name: 'permutation';
 					    type: 'array';
 					    description:
-						    'Optional 1-based argument permutation for an operation=update rename patch.')
+						    'Optional target-argument map for newSelector. Positive entries are 1-based indexes into the old selector arguments. Negative entries mark newly added argument positions. For removal, list the kept old argument indexes.')
 					   items: (MCPStructureProperties new
 							    type: 'integer';
-							    description: 'A 1-based argument index.';
+							    description:
+								    'An old argument index, or a negative placeholder for an added argument.';
+							    yourself);
+					   yourself).
+				  ((MCPStructureProperties new
+					    name: 'argumentNames';
+					    type: 'array';
+					    description:
+						    'Target selector argument names in order. Required when newSelector adds arguments. Existing argument positions can reuse their current names.')
+					   items: (MCPStructureProperties new
+							    type: 'string';
+							    description: 'An argument name in target selector order.';
+							    yourself);
+					   yourself).
+				  ((MCPStructureProperties new
+					    name: 'argumentValueExpressions';
+					    type: 'array';
+					    description:
+						    'Default call expressions for newly added arguments, in the order the added arguments appear in newSelector. Omit to use nil for each added argument.')
+					   items: (MCPStructureProperties new
+							    type: 'string';
+							    description:
+								    'A Smalltalk expression inserted at sender call sites for a newly added argument.';
 							    yourself);
 					   yourself).
 				  self refactoringScopePackageNamesSchemaProperty.
@@ -174,6 +208,31 @@ MCPToolEditMethod >> defaultOutputSchema [
 MCPToolEditMethod >> defaultTitle [
 
 	^ 'Edit Method'
+]
+
+{ #category : 'private' }
+MCPToolEditMethod >> failureMessageForArgumentUpdateAction: updateAction classNamed: className classSide: classSide selector: oldSelector newSelector: newSelector error: anError [
+
+	| targetName verb |
+	targetName := self
+		              classReferenceNameFor: className
+		              classSide: classSide.
+	verb := updateAction = 'addArguments'
+		        ifTrue: [ 'add arguments to' ]
+		        ifFalse: [ 'remove arguments from' ].
+	^ String streamContents: [ :stream |
+		  stream
+			  nextPutAll: 'Unable to ';
+			  nextPutAll: verb;
+			  nextPutAll: ' method ';
+			  nextPutAll: targetName;
+			  nextPutAll: '>>';
+			  nextPutAll: oldSelector;
+			  nextPutAll: ' as ';
+			  nextPutAll: newSelector;
+			  nextPutAll: ': ';
+			  nextPutAll:
+				  (self normalizedCauseMessageForOperationError: anError) ]
 ]
 
 { #category : 'private' }
@@ -367,12 +426,12 @@ MCPToolEditMethod >> methodDataProperties [
 			   schemaPropertyNamed: 'oldSelector'
 			   type: 'string'
 			   description:
-			   'The previous selector when the update action is rename.').
+			   'The previous selector when updateAction changes the selector.').
 		  (self
 			   schemaPropertyNamed: 'newSelector'
 			   type: 'string'
 			   description:
-			   'The new selector when the update action is rename.').
+			   'The target selector when updateAction changes the selector.').
 		  (self
 			   schemaPropertyNamed: 'oldProtocol'
 			   type: 'string'
@@ -450,6 +509,16 @@ MCPToolEditMethod >> reformattedMethodForBehavior: aBehavior selector: aSelector
 	compiledMethod := aBehavior >> aSelector.
 	compiledMethod reformat.
 	^ aBehavior >> aSelector
+]
+
+{ #category : 'private - refactoring' }
+MCPToolEditMethod >> removeParameterRefactoringForArgumentNamed: argumentName inBehavior: aBehavior selector: selectorSymbol model: refactoringModel [
+
+	^ RBRemoveParameterRefactoring
+		  model: refactoringModel
+		  removeParameter: argumentName
+		  in: aBehavior
+		  selector: selectorSymbol
 ]
 
 { #category : 'private - refactoring' }
