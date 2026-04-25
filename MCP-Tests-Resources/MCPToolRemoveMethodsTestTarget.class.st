@@ -6,31 +6,21 @@ Class {
 }
 
 { #category : 'tests' }
-MCPToolRemoveMethodsTestTarget class >> firstClassBatchRemoval [
-
-	^ self secondClassBatchRemoval + 1
+MCPToolRemoveMethodsTestTarget class >> firstClassBatchRemoval [ ^ self secondClassBatchRemoval + 1
 ]
 
 { #category : 'tests' }
-MCPToolRemoveMethodsTestTarget class >> secondClassBatchRemoval [
-
-	^ 7
+MCPToolRemoveMethodsTestTarget class >> secondClassBatchRemoval [ ^ 7
 ]
 
 { #category : 'tests' }
-MCPToolRemoveMethodsTestTarget >> externallyReferencedBatchRemoval [
-
-	^ 5
+MCPToolRemoveMethodsTestTarget >> externallyReferencedBatchRemoval [ ^ 5
 ]
 
 { #category : 'tests' }
-MCPToolRemoveMethodsTestTarget >> firstBatchRemoval [
-
-	^ self secondBatchRemoval + 1
+MCPToolRemoveMethodsTestTarget >> firstBatchRemoval [ ^ self secondBatchRemoval + 1
 ]
 
 { #category : 'tests' }
-MCPToolRemoveMethodsTestTarget >> secondBatchRemoval [
-
-	^ 2
+MCPToolRemoveMethodsTestTarget >> secondBatchRemoval [ ^ 2
 ]

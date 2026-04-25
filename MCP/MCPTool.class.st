@@ -543,6 +543,12 @@ MCPTool >> schemaPropertyNamed: aName type: aType description: aDescription [
 		  yourself
 ]
 
+{ #category : 'testing' }
+MCPTool >> shouldSaveImageAfterSuccessfulExecution [
+
+	^ false
+]
+
 { #category : 'private - schema' }
 MCPTool >> standardOutputSchemaForDataProperties: dataProperties required: requiredFields [
 

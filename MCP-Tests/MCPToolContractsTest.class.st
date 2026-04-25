@@ -885,6 +885,25 @@ MCPToolContractsTest >> testMethodToolTraitOwnsSharedMethodHelpers [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testMutatingToolsRequestImageSaveAfterSuccessfulExecution [
+
+	self deny:
+		MCPToolFindMethods new shouldSaveImageAfterSuccessfulExecution.
+	self deny:
+		MCPToolInspectClass new shouldSaveImageAfterSuccessfulExecution.
+	self assert:
+		MCPToolEditClass new shouldSaveImageAfterSuccessfulExecution.
+	self assert:
+		MCPToolEditMethod new shouldSaveImageAfterSuccessfulExecution.
+	self assert:
+		MCPToolRemoveClasses new shouldSaveImageAfterSuccessfulExecution.
+	self assert:
+		MCPToolRemoveMethods new shouldSaveImageAfterSuccessfulExecution.
+	self assert:
+		MCPToolEvaluate new shouldSaveImageAfterSuccessfulExecution
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable [
 
 	| editClassTool inspectClassTool inspectMethodTool editMethodTool findClassesTool findMethodsTool findPackagesTool removeClassesTool removeMethodsTool |

@@ -631,6 +631,12 @@ MCPToolEdit >> resolvedRefactoringScopeClassesFrom: classNames [
 			  ifAbsent: [ MCPCommandError signalMissingClassNamed: eachName ] ]
 ]
 
+{ #category : 'testing' }
+MCPToolEdit >> shouldSaveImageAfterSuccessfulExecution [
+
+	^ true
+]
+
 { #category : 'private - errors' }
 MCPToolEdit >> undeclaredVariableCauseMessageFor: anError [
 

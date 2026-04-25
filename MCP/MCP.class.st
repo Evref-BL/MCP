@@ -89,14 +89,16 @@ MCP >> rpcToolCall: name withParams: arguments [
 	toolsList
 		at: name
 		ifPresent: [ :tool |
-			| request result |
+			| request result toolResult |
 			request := tool requestFromToolCallArguments: arguments.
 			^ [
 			  result := tool executeWithRequest: request.
-			  ((result isKindOf: MCPStructureCallToolResult)
-				   ifTrue: [ result ]
-				   ifFalse: [ MCPStructureCallToolResult content: result ])
-				  asJRPCJSON ]
+			  toolResult := (result isKindOf: MCPStructureCallToolResult)
+				                ifTrue: [ result ]
+				                ifFalse: [
+				                MCPStructureCallToolResult content: result ].
+			  self saveImageAfterSuccessfulTool: tool result: toolResult.
+			  toolResult asJRPCJSON ]
 				  on: Error
 				  do: [ :error |
 					  (error isKindOf: JRPCError) ifTrue: [ error pass ].
@@ -109,6 +111,19 @@ MCP >> rpcToolsList [
 
 	<jrpc: #'tools/list'>
 	^ { (#tools -> toolsList values asArray) } asDictionary asJRPCJSON
+]
+
+{ #category : 'private - saving' }
+MCP >> saveImageAfterSuccessfulTool: aTool result: aResult [
+
+	(aTool shouldSaveImageAfterSuccessfulExecution and: [
+		 aResult isError not ]) ifTrue: [ self saveImageSession ]
+]
+
+{ #category : 'private - saving' }
+MCP >> saveImageSession [
+
+	^ Smalltalk saveSession
 ]
 
 { #category : 'accessing' }
