@@ -1,5 +1,7 @@
 "
-Result DTO produced by the run-tests command.
+Aggregate result DTO produced by the run-tests command.
+
+It carries structured per-selection results plus timeout state and unrun MCPTestRunRequest objects for resumable output.
 "
 Class {
 	#name : 'MCPRunTestsResult',
@@ -28,10 +30,10 @@ MCPRunTestsResult >> asDictionary [
 
 	| data |
 	data := Dictionary new.
-	data at: #results put: self results.
+	data at: #results put: self resultDictionaries.
 	self timedOut ifTrue: [
 		data at: #timedOut put: true.
-		data at: #unrunTests put: self unrunTests ].
+		data at: #unrunTests put: self unrunTestDictionaries ].
 	^ data
 ]
 
@@ -44,6 +46,12 @@ MCPRunTestsResult >> initializeResults: resultCollection timedOut: aBoolean unru
 	^ self
 ]
 
+{ #category : 'converting' }
+MCPRunTestsResult >> resultDictionaries [
+
+	^ (self results collect: [ :each | each asDictionary ]) asArray
+]
+
 { #category : 'accessing' }
 MCPRunTestsResult >> results [
 
@@ -54,6 +62,12 @@ MCPRunTestsResult >> results [
 MCPRunTestsResult >> timedOut [
 
 	^ timedOut
+]
+
+{ #category : 'converting' }
+MCPRunTestsResult >> unrunTestDictionaries [
+
+	^ (self unrunTests collect: [ :each | each asDictionary ]) asArray
 ]
 
 { #category : 'accessing' }

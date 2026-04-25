@@ -37,13 +37,14 @@ MCPToolEditMethodTest >> assertCompileForClassName: aClassName methodSource: aMe
 MCPToolEditMethodTest >> assertSuccessDataHasMethodShape: data [
 
 	| requiredKeys |
-	requiredKeys := #( 'selector' 'className' 'side' 'packageName'
+	requiredKeys := #( 'selector' 'className' 'classSide' 'packageName'
 	                   'isExtension' 'protocol' 'source' ) asSet.
 	self assert: (data keys asSet includesAll: requiredKeys).
+	self deny: (data includesKey: #side).
 	self assert: (data at: #className) isString.
 	self assert: (data at: #selector) isString.
 	self assert:
-		((data at: #side) = 'instance' or: [ (data at: #side) = 'class' ]).
+		((data at: #classSide) = true or: [ (data at: #classSide) = false ]).
 	self assert: (data at: #packageName) isString.
 	self assert:
 		((data at: #isExtension) = true or: [
@@ -306,7 +307,7 @@ MCPToolEditMethodTest >> testChangesClassSideMethodProtocol [
 	self
 		assert: (data at: #className)
 		equals: 'MCPToolEditMethodTestTarget'.
-	self assert: (data at: #side) equals: 'class'.
+	self assert: (data at: #classSide).
 	self
 		assert: (data at: #selector)
 		equals: self classProtocolSelector asString.
@@ -330,7 +331,7 @@ MCPToolEditMethodTest >> testChangesInstanceSideMethodProtocol [
 	self
 		assert: (data at: #className)
 		equals: 'MCPToolEditMethodTestTarget'.
-	self assert: (data at: #side) equals: 'instance'.
+	self deny: (data at: #classSide).
 	self
 		assert: (data at: #selector)
 		equals: self instanceProtocolSelector asString.
@@ -354,7 +355,7 @@ MCPToolEditMethodTest >> testChangingExtensionMethodProtocolUpdatesPackageMetada
 	self
 		assert: (data at: #className)
 		equals: 'MCPToolEditMethodTestTarget'.
-	self assert: (data at: #side) equals: 'instance'.
+	self deny: (data at: #classSide).
 	self
 		assert: (data at: #selector)
 		equals: self extensionProtocolSelector asString.
@@ -379,7 +380,7 @@ MCPToolEditMethodTest >> testCompileDefaultsToInstanceSideWhenClassSideIsOmitted
 	self deny: (MCPToolEditMethodTestTarget classSide includesSelector:
 			 #instanceAnswer).
 	self assertSuccessDataHasMethodShape: data.
-	self assert: (data at: #side) equals: 'instance'
+	self deny: (data at: #classSide)
 ]
 
 { #category : 'tests' }
@@ -554,7 +555,7 @@ MCPToolEditMethodTest >> testCompilesClassSideMethod [
 	self
 		assert: (data at: #className)
 		equals: 'MCPToolEditMethodTestTarget'.
-	self assert: (data at: #side) equals: 'class'.
+	self assert: (data at: #classSide).
 	self assert: (data at: #selector) equals: 'classAnswer'.
 	self assert: (data at: #protocol) equals: 'tests'.
 	self assert: (data at: #isExtension) equals: false
@@ -582,7 +583,7 @@ MCPToolEditMethodTest >> testCompilesInstanceSideMethod [
 	self
 		assert: (data at: #className)
 		equals: 'MCPToolEditMethodTestTarget'.
-	self assert: (data at: #side) equals: 'instance'.
+	self deny: (data at: #classSide).
 	self assert: (data at: #selector) equals: 'instanceAnswer'.
 	self assert: (data at: #protocol) equals: 'tests'.
 	self assert: (data at: #isExtension) equals: false
@@ -848,7 +849,7 @@ MCPToolEditMethodTest >> testRenamesClassSideMethodWithDefaultPermutation [
 	self
 		assert: (data at: #className)
 		equals: 'MCPToolEditMethodTestTarget'.
-	self assert: (data at: #side) equals: 'class'.
+	self assert: (data at: #classSide).
 	self
 		assert: (data at: #selector)
 		equals: self renamedClassSelector asString.
@@ -871,7 +872,7 @@ MCPToolEditMethodTest >> testRenamesInstanceMethodAndReturnsStructuredData [
 	self
 		assert: (data at: #className)
 		equals: 'MCPToolEditMethodTestTarget'.
-	self assert: (data at: #side) equals: 'instance'.
+	self deny: (data at: #classSide).
 	self
 		assert: (data at: #selector)
 		equals: self renamedInstanceSelector asString.

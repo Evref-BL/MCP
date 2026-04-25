@@ -107,6 +107,13 @@ MCPToolInspectClass >> classDescriptionRequiredFields [
 	     'instanceMethodCount' 'classMethodCount' )
 ]
 
+{ #category : 'private - errors' }
+MCPToolInspectClass >> classNameForErrorFromParsedRequest: inspectRequest rawRequest: rawRequest [
+
+	inspectRequest ifNotNil: [ ^ inspectRequest className ].
+	^ (rawRequest stringArgumentNamed: 'className') ifNil: [ '' ]
+]
+
 { #category : 'private - request' }
 MCPToolInspectClass >> classNameFromRequest: request [
 
@@ -249,21 +256,21 @@ MCPToolInspectClass >> errorResultForError: anError className: className [
 { #category : 'executing' }
 MCPToolInspectClass >> executeWithRequest: request [
 
-	| commandResult inspectRequest |
-	inspectRequest := self parsedRequestFromToolRequest: request.
-	^ [
-	  commandResult := (self commandForRequest: inspectRequest) execute.
-	  self
-		  successResultText: (self
-				   successSummaryForClassName: commandResult className
-				   superclasses: commandResult superclasses
-				   subclasses: commandResult subclasses)
-		  data: commandResult data ]
-		  on: Exception
-		  do: [ :error |
+	^ self
+		  executeParsedRequestFrom: request
+		  do: [ :inspectRequest |
+			  | commandResult |
+			  commandResult := (self commandForRequest: inspectRequest) execute.
 			  self
-				  errorResultForError: error
-				  className: inspectRequest className ]
+				  successResultText: (self
+						   successSummaryForClassName: commandResult className
+						   superclasses: commandResult superclasses
+						   subclasses: commandResult subclasses)
+				  data: commandResult data ]
+		  onError: [ :error :inspectRequest |
+			  self errorResultForError: error className: (self
+					   classNameForErrorFromParsedRequest: inspectRequest
+					   rawRequest: request) ]
 ]
 
 { #category : 'private' }
@@ -283,23 +290,6 @@ MCPToolInspectClass >> failureMessageForClassName: className error: anError [
 MCPToolInspectClass >> parsedRequestFromToolRequest: request [
 
 	^ MCPInspectClassRequest fromRequest: request tool: self
-]
-
-{ #category : 'private - hierarchy' }
-MCPToolInspectClass >> subclassesForClass: aClass request: request [
-
-	| subclassDepth subclasses |
-	subclassDepth := request
-		                 nonNegativeIntegerArgumentNamed: 'subclassDepth'
-		                 default: 0.
-	subclassDepth = 0 ifTrue: [ ^ #(  ) ].
-	subclasses := OrderedCollection new.
-	aClass
-		allSubclassesWithLevelDo: [ :eachClass :level |
-			(level between: 1 and: subclassDepth) ifTrue: [
-				subclasses add: eachClass ] ]
-		startingLevel: 0.
-	^ subclasses asArray
 ]
 
 { #category : 'private' }
@@ -326,21 +316,4 @@ MCPToolInspectClass >> successSummaryForClassName: className superclasses: super
 						   ifTrue: [ '' ]
 						   ifFalse: [ 'es' ]);
 				  nextPut: $. ] ]
-]
-
-{ #category : 'private - hierarchy' }
-MCPToolInspectClass >> superclassesForClass: aClass request: request [
-
-	| targetSuperclass targetSuperclassName |
-	targetSuperclassName := request stringArgumentNamed:
-		                        'upToSuperclassName'.
-	targetSuperclassName ifNil: [ ^ #(  ) ].
-	targetSuperclass := Smalltalk globals
-		                    at: targetSuperclassName asSymbol
-		                    ifAbsent: [
-			                    MCPCommandError
-				                    signalMissingSuperclassNamed:
-				                    targetSuperclassName
-				                    forClassNamed: aClass name asString ].
-	^ aClass allSuperclasses asArray copyUpTo: targetSuperclass
 ]

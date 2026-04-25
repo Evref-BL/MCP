@@ -166,8 +166,9 @@ MCPToolContractsTest >> testDictionaryShapedCommandResultsUseDTOClasses [
 		self assert:
 			(source includesSubstring: association value name asString) ].
 	self assert:
-		((MCPToolRunTests >> #aggregateDataForResults:timedOut:unrunTests:)
-			 sourceCode includesSubstring: MCPRunTestsResult name asString)
+		((MCPRunTestsCommand
+		  >> #aggregateDataForResults:timedOut:unrunTests:) sourceCode
+			 includesSubstring: MCPRunTestsResult name asString)
 ]
 
 { #category : 'tests' }
@@ -388,8 +389,9 @@ MCPToolContractsTest >> testEditMethodSchemaAdvertisesMethodState [
 		assert: propertyNames asSet
 		equals:
 			#( 'operation' 'updatePlan' 'appliedChange' 'selector' 'className'
-			   'side' 'packageName' 'isExtension' 'protocol' 'source' 'oldSelector'
-			   'newSelector' 'oldProtocol' 'newProtocol' 'critiques' ) asSet
+			   'classSide' 'packageName' 'isExtension' 'protocol' 'source'
+			   'oldSelector' 'newSelector' 'oldProtocol' 'newProtocol'
+			   'critiques' ) asSet
 ]
 
 { #category : 'tests' }
@@ -1250,6 +1252,42 @@ MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 		assert: ((resultsProperty at: #items) at: #type)
 		equals: 'object'.
 	self deny: (dataProperties includesKey: 'tests')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testRunTestsUsesNestedRequestDTOs [
+
+	| command parsedRequest rawRequest tool validatedRequests |
+	tool := MCPToolRunTests new.
+	rawRequest := tool requestFromToolCallArguments: { (#tests -> { {
+			               (#className -> 'MCPToolContractsTest').
+			               (#testMethodName
+			                ->
+			                'testRunTestToolsHaveAccurateNamesAndRequiredArguments') }
+			               asDictionary }) } asDictionary.
+	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
+	command := tool commandForRequest: parsedRequest.
+	validatedRequests := command validatedRequestsFrom:
+		                     parsedRequest testRequests.
+	self assert: parsedRequest class equals: MCPRunTestsRequest.
+	self
+		assert: parsedRequest testRequests first class
+		equals: MCPTestRunRequest.
+	self
+		assert: parsedRequest testRequests first className
+		equals: 'MCPToolContractsTest'.
+	self
+		assert: parsedRequest testRequests first testMethodName
+		equals: 'testRunTestToolsHaveAccurateNamesAndRequiredArguments'.
+	self
+		assert: validatedRequests first class
+		equals: MCPValidatedTestRunRequest.
+	self
+		assert: validatedRequests first testRunRequest
+		equals: parsedRequest testRequests first.
+	self
+		assert: validatedRequests first testClass
+		equals: MCPToolContractsTest
 ]
 
 { #category : 'tests' }

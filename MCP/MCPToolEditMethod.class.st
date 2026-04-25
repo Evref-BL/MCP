@@ -166,7 +166,7 @@ MCPToolEditMethod >> defaultOutputSchema [
 	^ self
 		  standardOutputSchemaForDataProperties: self methodDataProperties
 		  required:
-			  #( 'selector' 'className' 'side' 'packageName' 'isExtension'
+			  #( 'selector' 'className' 'classSide' 'packageName' 'isExtension'
 			     'protocol' 'source' )
 ]
 
@@ -335,12 +335,10 @@ MCPToolEditMethod >> methodDataProperties [
 			   schemaPropertyNamed: 'className'
 			   type: 'string'
 			   description: 'The class that defines the edited method.').
-		  ((self
-			    schemaPropertyNamed: 'side'
-			    type: 'string'
-			    description: 'The side on which the edited method is defined.')
-			   enum: #( 'instance' 'class' );
-			   yourself).
+		  (self
+			   schemaPropertyNamed: 'classSide'
+			   type: 'boolean'
+			   description: 'Whether the edited method is on the class side.').
 		  (self
 			   schemaPropertyNamed: 'packageName'
 			   type: 'string'

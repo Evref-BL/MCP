@@ -19,6 +19,20 @@ MCPToolInspectMethod >> bindingClassNameFor: aBinding [
 		  ifNotNil: [ :binding | binding class name asString ]
 ]
 
+{ #category : 'private - errors' }
+MCPToolInspectMethod >> classNameForErrorFromParsedRequest: inspectRequest rawRequest: rawRequest [
+
+	inspectRequest ifNotNil: [ ^ inspectRequest className ].
+	^ (rawRequest stringArgumentNamed: 'className') ifNil: [ '' ]
+]
+
+{ #category : 'private - errors' }
+MCPToolInspectMethod >> classSideForErrorFromParsedRequest: inspectRequest rawRequest: rawRequest [
+
+	inspectRequest ifNotNil: [ ^ inspectRequest classSide ].
+	^ rawRequest booleanArgumentNamed: 'classSide' default: false
+]
+
 { #category : 'private - execution' }
 MCPToolInspectMethod >> commandForRequest: inspectRequest [
 
@@ -136,24 +150,30 @@ MCPToolInspectMethod >> errorResultForError: anError className: className select
 { #category : 'executing' }
 MCPToolInspectMethod >> executeWithRequest: request [
 
-	| commandResult inspectRequest |
-	inspectRequest := self parsedRequestFromToolRequest: request.
-	^ [
-	  commandResult := (self commandForRequest: inspectRequest) execute.
-	  self
-		  successResultText: (self
-				   successSummaryForClassName: inspectRequest className
-				   selector: inspectRequest selectorString
-				   classSide: inspectRequest classSide
-				   externalVariableCount: commandResult externalVariableCount)
-		  data: commandResult data ]
-		  on: Error
-		  do: [ :error |
+	^ self
+		  executeParsedRequestFrom: request
+		  do: [ :inspectRequest |
+			  | commandResult |
+			  commandResult := (self commandForRequest: inspectRequest) execute.
+			  self
+				  successResultText: (self
+						   successSummaryForClassName: inspectRequest className
+						   selector: inspectRequest selectorString
+						   classSide: inspectRequest classSide
+						   externalVariableCount: commandResult externalVariableCount)
+				  data: commandResult data ]
+		  onError: [ :error :inspectRequest |
 			  self
 				  errorResultForError: error
-				  className: inspectRequest className
-				  selector: inspectRequest selectorString
-				  classSide: inspectRequest classSide ]
+				  className: (self
+						   classNameForErrorFromParsedRequest: inspectRequest
+						   rawRequest: request)
+				  selector: (self
+						   selectorForErrorFromParsedRequest: inspectRequest
+						   rawRequest: request)
+				  classSide: (self
+						   classSideForErrorFromParsedRequest: inspectRequest
+						   rawRequest: request) ]
 ]
 
 { #category : 'private - results' }
@@ -250,6 +270,13 @@ MCPToolInspectMethod >> ownerNameForNode: aVariableNode kind: aKind methodBehavi
 MCPToolInspectMethod >> parsedRequestFromToolRequest: request [
 
 	^ MCPInspectMethodRequest fromRequest: request tool: self
+]
+
+{ #category : 'private - errors' }
+MCPToolInspectMethod >> selectorForErrorFromParsedRequest: inspectRequest rawRequest: rawRequest [
+
+	inspectRequest ifNotNil: [ ^ inspectRequest selectorString ].
+	^ (rawRequest stringArgumentNamed: 'selector') ifNil: [ '' ]
 ]
 
 { #category : 'private - results' }

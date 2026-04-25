@@ -191,21 +191,21 @@ MCPToolQuery >> errorResultForQueryError: anError requestedContext: requestedCon
 { #category : 'executing' }
 MCPToolQuery >> executeWithRequest: request [
 
-	| command page queryRequest |
-	^ [
-	  queryRequest := self parsedRequestFromToolRequest: request.
-	  command := self commandForRequest: queryRequest.
-	  page := self
-		          queryPageForEntries: command execute
-		          limit: (self limitFromQueryRequest: queryRequest)
-		          offset: (self offsetFromQueryRequest: queryRequest).
-	  self
-		  successResultText:
-		  (self successSummaryForQueryRequest: queryRequest page: page)
-		  data:
-		  (self queryResultDataForQueryRequest: queryRequest page: page) ]
-		  on: Error
-		  do: [ :error |
+	^ self
+		  executeParsedRequestFrom: request
+		  do: [ :queryRequest |
+			  | command page |
+			  command := self commandForRequest: queryRequest.
+			  page := self
+				          queryPageForEntries: command execute
+				          limit: (self limitFromQueryRequest: queryRequest)
+				          offset: (self offsetFromQueryRequest: queryRequest).
+			  self
+				  successResultText:
+				  (self successSummaryForQueryRequest: queryRequest page: page)
+				  data:
+				  (self queryResultDataForQueryRequest: queryRequest page: page) ]
+		  onError: [ :error :ignored |
 			  self
 				  errorResultForQueryError: error
 				  requestedContext:
@@ -948,7 +948,7 @@ MCPToolQuery >> whereMethodFieldTextsForField: fieldName evaluation: evaluation 
 	(#( 'package' 'packageName' ) includes: fieldName) ifTrue: [
 		key := #packageName ].
 	fieldName = 'protocol' ifTrue: [ key := #protocol ].
-	fieldName = 'side' ifTrue: [ key := #side ].
+	fieldName = 'classSide' ifTrue: [ key := #classSide ].
 	fieldName = 'isExtension' ifTrue: [ key := #isExtension ].
 	fieldName = 'source' ifTrue: [
 		^ self whereTextArrayFrom:

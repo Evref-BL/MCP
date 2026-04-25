@@ -326,6 +326,19 @@ MCPTool >> errorStackTraceLimit [
 	^ 20
 ]
 
+{ #category : 'private - execution' }
+MCPTool >> executeParsedRequestFrom: request do: executionBlock onError: errorBlock [
+	"Parse the transport request inside the same exception boundary as execution.
+	The error block receives the error and the parsed request, or nil if parsing failed."
+
+	| parsedRequest |
+	^ [
+	  parsedRequest := self parsedRequestFromToolRequest: request.
+	  executionBlock value: parsedRequest ]
+		  on: Exception
+		  do: [ :error | errorBlock value: error value: parsedRequest ]
+]
+
 { #category : 'executing' }
 MCPTool >> executeWithRequest: aRequest [
 	"Subclasses may override me to manage execution directly."

@@ -11,6 +11,13 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'private - errors' }
+MCPToolRemoveClasses >> classNamesForErrorFromParsedRequest: removeRequest rawRequest: rawRequest [
+
+	removeRequest ifNotNil: [ ^ removeRequest classNames ].
+	^ rawRequest stringCollectionArgumentNamed: 'classNames'
+]
+
 { #category : 'private' }
 MCPToolRemoveClasses >> classNamesFromRequest: request [
 
@@ -212,23 +219,23 @@ MCPToolRemoveClasses >> errorResultForError: anError classNames: classNames [
 { #category : 'executing' }
 MCPToolRemoveClasses >> executeWithRequest: request [
 
-	| removeRequest result |
-	removeRequest := self parsedRequestFromToolRequest: request.
-	^ [
-	  result := (self commandForRequest: removeRequest) execute.
-	  self
-		  successResultText: (self
-				   successSummaryForClassNames: removeRequest classNames
-				   removedClasses: result removedClasses
-				   removedPackageNames: result removedPackageNames
-				   forced: result warningMessages notEmpty)
-		  data: result asDictionary
-		  warnings: result warningMessages ]
-		  on: Exception
-		  do: [ :error |
+	^ self
+		  executeParsedRequestFrom: request
+		  do: [ :removeRequest |
+			  | result |
+			  result := (self commandForRequest: removeRequest) execute.
 			  self
-				  errorResultForError: error
-				  classNames: removeRequest classNames ]
+				  successResultText: (self
+						   successSummaryForClassNames: removeRequest classNames
+						   removedClasses: result removedClasses
+						   removedPackageNames: result removedPackageNames
+						   forced: result warningMessages notEmpty)
+				  data: result asDictionary
+				  warnings: result warningMessages ]
+		  onError: [ :error :removeRequest |
+			  self errorResultForError: error classNames: (self
+					   classNamesForErrorFromParsedRequest: removeRequest
+					   rawRequest: request) ]
 ]
 
 { #category : 'private' }

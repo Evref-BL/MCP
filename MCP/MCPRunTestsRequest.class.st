@@ -1,5 +1,7 @@
 "
 Parsed run-tests tool request derived from one validated MCPToolRequest.
+
+It contains parsed MCPTestRunRequest entries and the timeout converted to milliseconds.
 "
 Class {
 	#name : 'MCPRunTestsRequest',
@@ -17,9 +19,31 @@ Class {
 MCPRunTestsRequest class >> fromRequest: aRequest tool: aTool [
 
 	^ self new
-		  initializeTestRequests: (aTool testRequestsFromRequest: aRequest)
-		  timeoutMilliseconds:
-		  (aTool timeoutMillisecondsFromRequest: aRequest)
+		  initializeTestRequests:
+		  (self testRequestsFromToolRequest: aRequest)
+		  timeoutMilliseconds: (self
+				   timeoutMillisecondsFromToolRequest: aRequest
+				   defaultSeconds: aTool defaultTimeoutSeconds)
+]
+
+{ #category : 'private - parsing' }
+MCPRunTestsRequest class >> testRequestsFromToolRequest: request [
+
+	| requests |
+	requests := request objectCollectionArgumentNamed: 'tests'.
+	requests ifEmpty: [
+		Error signal: 'tests must contain at least one test request.' ].
+	^ (requests collect: [ :each |
+		   MCPTestRunRequest fromValue: each usingToolRequest: request ])
+		  asArray
+]
+
+{ #category : 'private - parsing' }
+MCPRunTestsRequest class >> timeoutMillisecondsFromToolRequest: request defaultSeconds: defaultSeconds [
+
+	^ (request
+		   nonNegativeIntegerArgumentNamed: 'timeoutSeconds'
+		   default: defaultSeconds) * 1000
 ]
 
 { #category : 'initialization' }

@@ -14,7 +14,7 @@ MCPToolFindMethodsTest >> entryForReference: aReference in: methods [
 			  | reference |
 			  reference := String streamContents: [ :stream |
 				               stream nextPutAll: (each at: #className).
-				               (each at: #side) = 'class' ifTrue: [
+				               (each at: #classSide) ifTrue: [
 					               stream nextPutAll: ' class' ].
 				               stream
 					               nextPutAll: '>>';
@@ -92,8 +92,7 @@ MCPToolFindMethodsTest >> testCanFilterPaginateAndIncludeSource [
 	self assert: (data at: #totalCount) equals: 2.
 	self assert: (data at: #methods) size equals: 1.
 	self assert:
-		((data at: #methods) allSatisfy: [ :each |
-			 (each at: #side) = 'class' ]).
+		((data at: #methods) allSatisfy: [ :each | each at: #classSide ]).
 	self assert: ((data at: #methods) allSatisfy: [ :each |
 			 (each at: #protocol) includesSubstring: 'meta' ]).
 	self assert:

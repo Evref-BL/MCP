@@ -183,19 +183,33 @@ MCPToolEdit >> executeOperationRequest: editRequest [
 { #category : 'executing' }
 MCPToolEdit >> executeWithRequest: request [
 
-	| editRequest operation requestedContext |
-	[ editRequest := self parsedRequestFromToolRequest: request ]
-		on: MCPCommandError
-		do: [ :error |
-			operation := request
-				             stringArgumentNamed: 'operation'
-				             default: 'edit'.
-			requestedContext := request asDictionary copy.
-			^ self
-				  errorResultForCommandError: error
-				  operation: operation
-				  requestedContext: requestedContext ].
-	^ (self commandForRequest: editRequest) execute
+	^ self
+		  executeParsedRequestFrom: request
+		  do: [ :editRequest |
+		  (self commandForRequest: editRequest) execute ]
+		  onError: [ :error :editRequest |
+			  | operation requestedContext |
+			  operation := self
+				               operationForErrorFromParsedRequest: editRequest
+				               rawRequest: request.
+			  requestedContext := self
+				                      requestedContextForErrorFromParsedRequest:
+				                      editRequest
+				                      rawRequest: request.
+			  (error isKindOf: MCPCommandError)
+				  ifTrue: [
+					  self
+						  errorResultForCommandError: error
+						  operation: operation
+						  requestedContext: requestedContext ]
+				  ifFalse: [
+					  self
+						  errorResultForOperationFailure: error
+						  operation: operation
+						  requestedContext: requestedContext
+						  summary: (error messageText
+								   ifNil: [ error asString ]
+								   ifNotNil: [ :text | text ]) ] ]
 ]
 
 { #category : 'private - request' }
@@ -376,6 +390,14 @@ MCPToolEdit >> operationFailureErrorCodeFor: anError operation: operation [
 	(anError isKindOf: RBRefactoringError) ifTrue: [
 		^ prefix , 'RefactoringError' ].
 	^ prefix , 'ExecutionError'
+]
+
+{ #category : 'private - errors' }
+MCPToolEdit >> operationForErrorFromParsedRequest: editRequest rawRequest: rawRequest [
+
+	(editRequest notNil and: [ editRequest respondsTo: #operation ])
+		ifTrue: [ ^ editRequest operation ].
+	^ rawRequest stringArgumentNamed: 'operation' default: 'edit'
 ]
 
 { #category : 'private - request' }
@@ -586,6 +608,14 @@ MCPToolEdit >> refactoringWarningSummaryFor: aWarning operation: operation reque
 		  stream
 			  nextPutAll: ' ';
 			  nextPutAll: self howToProceedForRefactoringWarning ]
+]
+
+{ #category : 'private - errors' }
+MCPToolEdit >> requestedContextForErrorFromParsedRequest: editRequest rawRequest: rawRequest [
+
+	(editRequest notNil and: [ editRequest respondsTo: #requestedContext ])
+		ifTrue: [ ^ editRequest requestedContext ].
+	^ rawRequest asDictionary copy
 ]
 
 { #category : 'private - request' }

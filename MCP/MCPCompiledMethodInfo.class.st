@@ -1,19 +1,19 @@
 "
 DTO for compiled method metadata.
 
-It records selector, declaring class, side, protocol, package, extension status, and optionally formatted source text.
+It records selector, declaring class, class-side flag, protocol, package, extension status, and optionally formatted source text.
 "
 Class {
 	#name : 'MCPCompiledMethodInfo',
 	#superclass : 'Object',
 	#instVars : [
 		'className',
-		'side',
 		'selector',
 		'protocol',
 		'packageName',
 		'isExtension',
-		'source'
+		'source',
+		'classSide'
 	],
 	#category : 'MCP-DTOs',
 	#package : 'MCP',
@@ -33,7 +33,7 @@ MCPCompiledMethodInfo >> asDictionaryIncludingSource: includeSource [
 	data := {
 		        (#selector -> self selector).
 		        (#className -> self className).
-		        (#side -> self side).
+		        (#classSide -> self classSide).
 		        (#packageName -> self packageName).
 		        (#isExtension -> self isExtension).
 		        (#protocol -> self protocol) } asDictionary.
@@ -47,14 +47,24 @@ MCPCompiledMethodInfo >> className [
 	^ className
 ]
 
+{ #category : 'accessing' }
+MCPCompiledMethodInfo >> classSide [
+
+	^ classSide
+]
+
+{ #category : 'accessing' }
+MCPCompiledMethodInfo >> classSide: anObject [
+
+	classSide := anObject
+]
+
 { #category : 'initialization' }
 MCPCompiledMethodInfo >> initializeFromMethod: aCompiledMethod [
 
 	| classPackageName methodPackageName |
 	className := aCompiledMethod methodClass instanceSide name asString.
-	side := aCompiledMethod methodClass isMeta
-		        ifTrue: [ 'class' ]
-		        ifFalse: [ 'instance' ].
+	classSide := aCompiledMethod methodClass isMeta.
 	selector := aCompiledMethod selector asString.
 	protocol := aCompiledMethod protocol
 		            ifNil: [ '' ]
@@ -94,12 +104,6 @@ MCPCompiledMethodInfo >> protocol [
 MCPCompiledMethodInfo >> selector [
 
 	^ selector
-]
-
-{ #category : 'accessing' }
-MCPCompiledMethodInfo >> side [
-
-	^ side
 ]
 
 { #category : 'accessing' }

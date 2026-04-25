@@ -79,16 +79,27 @@ MCPToolEvaluate >> defaultTitle [
 { #category : 'executing' }
 MCPToolEvaluate >> executeWithRequest: request [
 
-	| commandResult evaluateRequest |
-	evaluateRequest := self parsedRequestFromToolRequest: request.
-	commandResult := (self commandForRequest: evaluateRequest) execute.
-	commandResult isError ifTrue: [
-		^ self
-			  errorResultText: commandResult summary
-			  details: commandResult errorDetails ].
 	^ self
-		  successResultText: 'Code evaluated successfully.'
-		  data: commandResult data
+		  executeParsedRequestFrom: request
+		  do: [ :evaluateRequest |
+			  | commandResult |
+			  commandResult := (self commandForRequest: evaluateRequest)
+				                   execute.
+			  commandResult isError
+				  ifTrue: [
+					  self
+						  errorResultText: commandResult summary
+						  details: commandResult errorDetails ]
+				  ifFalse: [
+					  self
+						  successResultText: 'Code evaluated successfully.'
+						  data: commandResult data ] ]
+		  onError: [ :error :ignored |
+			  self
+				  errorResultText: (error messageText
+						   ifNil: [ error asString ]
+						   ifNotNil: [ :text | text ])
+				  details: (self errorDetailsFor: error) ]
 ]
 
 { #category : 'private - request' }

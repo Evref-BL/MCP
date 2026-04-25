@@ -284,11 +284,11 @@ MCPToolFindMethods >> methodEntrySchemaNamed: entryName description: entryDescri
 					   description:
 						   'The base class that defines the ' , subjectDescription , '.').
 				  (self
-					   stringEnumSchemaPropertyNamed: 'side'
+					   schemaPropertyNamed: 'classSide'
+					   type: 'boolean'
 					   description:
-						   'The side on which the ' , subjectDescription
-						   , ' is defined.'
-					   values: #( 'instance' 'class' )).
+						   'Whether the ' , subjectDescription
+						   , ' is defined on the class side.').
 				  (self
 					   schemaPropertyNamed: 'packageName'
 					   type: 'string'
@@ -309,7 +309,7 @@ MCPToolFindMethods >> methodEntrySchemaNamed: entryName description: entryDescri
 					   type: 'string'
 					   description: sourceDescription) };
 		  required:
-			  #( 'selector' 'className' 'side' 'packageName' 'isExtension'
+			  #( 'selector' 'className' 'classSide' 'packageName' 'isExtension'
 			     'protocol' );
 		  additionalProperties: false;
 		  yourself

@@ -11,6 +11,20 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'private - errors' }
+MCPToolRemoveMethods >> classNameForErrorFromParsedRequest: removeRequest rawRequest: rawRequest [
+
+	removeRequest ifNotNil: [ ^ removeRequest className ].
+	^ (rawRequest stringArgumentNamed: 'className') ifNil: [ '' ]
+]
+
+{ #category : 'private - errors' }
+MCPToolRemoveMethods >> classSideForErrorFromParsedRequest: removeRequest rawRequest: rawRequest [
+
+	removeRequest ifNotNil: [ ^ removeRequest classSide ].
+	^ rawRequest booleanArgumentNamed: 'classSide' default: false
+]
+
 { #category : 'private - execution' }
 MCPToolRemoveMethods >> commandForRequest: removeRequest [
 
@@ -173,24 +187,30 @@ MCPToolRemoveMethods >> errorResultForError: anError className: className classS
 { #category : 'executing' }
 MCPToolRemoveMethods >> executeWithRequest: request [
 
-	| removeRequest result |
-	removeRequest := self parsedRequestFromToolRequest: request.
-	^ [
-	  result := (self commandForRequest: removeRequest) execute.
-	  self
-		  successResultText: (self
-				   successSummaryForClassName: result className
-				   classSide: result classSide
-				   selectors: result selectors)
-		  data: result asDictionary
-		  warnings: result warningMessages ]
-		  on: Exception
-		  do: [ :error |
+	^ self
+		  executeParsedRequestFrom: request
+		  do: [ :removeRequest |
+			  | result |
+			  result := (self commandForRequest: removeRequest) execute.
+			  self
+				  successResultText: (self
+						   successSummaryForClassName: result className
+						   classSide: result classSide
+						   selectors: result selectors)
+				  data: result asDictionary
+				  warnings: result warningMessages ]
+		  onError: [ :error :removeRequest |
 			  self
 				  errorResultForError: error
-				  className: removeRequest className
-				  classSide: removeRequest classSide
-				  selectors: removeRequest selectors ]
+				  className: (self
+						   classNameForErrorFromParsedRequest: removeRequest
+						   rawRequest: request)
+				  classSide: (self
+						   classSideForErrorFromParsedRequest: removeRequest
+						   rawRequest: request)
+				  selectors: (self
+						   selectorsForErrorFromParsedRequest: removeRequest
+						   rawRequest: request) ]
 ]
 
 { #category : 'private' }
@@ -228,6 +248,13 @@ MCPToolRemoveMethods >> forceRemoveSelectors: selectorSymbols from: aBehavior [
 MCPToolRemoveMethods >> parsedRequestFromToolRequest: request [
 
 	^ MCPRemoveMethodsRequest fromRequest: request tool: self
+]
+
+{ #category : 'private - errors' }
+MCPToolRemoveMethods >> selectorsForErrorFromParsedRequest: removeRequest rawRequest: rawRequest [
+
+	removeRequest ifNotNil: [ ^ removeRequest selectors ].
+	^ rawRequest stringCollectionArgumentNamed: 'selectors'
 ]
 
 { #category : 'private' }

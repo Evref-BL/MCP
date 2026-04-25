@@ -24,7 +24,7 @@ TMCPMethodTool >> methodEntryLabel: anEntry [
 	^ self
 		  methodReferenceForClassName: (anEntry at: #className)
 		  selector: (anEntry at: #selector)
-		  isClassSide: (anEntry at: #side) = 'class'
+		  isClassSide: (anEntry at: #classSide)
 ]
 
 { #category : 'private - methods' }

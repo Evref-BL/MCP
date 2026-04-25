@@ -211,6 +211,23 @@ MCPToolStructuredOutputTest >> testFindPackagesReturnsStructuredError [
 ]
 
 { #category : 'tests' }
+MCPToolStructuredOutputTest >> testInspectClassParseErrorReturnsStructuredToolError [
+
+	| error result structured |
+	result := self
+		          callToolNamed: 'inspect-class'
+		          withArguments: { (#className -> '') } asDictionary.
+	structured := self structuredContentFrom: result.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (structured at: #status) equals: 'error'.
+	self assert: (error at: #errorClass) equals: #Error.
+	self assert: (error at: #className) equals: ''.
+	self assert: ((error at: #message) includesSubstring:
+			 'className must be a non-empty string')
+]
+
+{ #category : 'tests' }
 MCPToolStructuredOutputTest >> testInspectClassReturnsStructuredError [
 
 	| error result structured |
@@ -431,6 +448,25 @@ MCPToolStructuredOutputTest >> testRunTestMethodReturnsStructuredIssues [
 	self deny: (methodResult includesKey: #failureCount).
 	self deny: (methodResult includesKey: #errorCount).
 	self deny: (methodResult includesKey: #failingTestNames)
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testRunTestsParseErrorReturnsStructuredToolError [
+
+	| error result structured |
+	result := self
+		          callToolNamed: 'run-tests'
+		          withArguments:
+		          { (#tests -> { { (#className -> '') } asDictionary }) }
+			          asDictionary.
+	structured := self structuredContentFrom: result.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (structured at: #status) equals: 'error'.
+	self assert: (error at: #errorClass) equals: #Error.
+	self assert: (error at: #tests) equals: #( '' ).
+	self assert: ((error at: #message) includesSubstring:
+			 'tests must contain only non-empty class names')
 ]
 
 { #category : 'tests' }
