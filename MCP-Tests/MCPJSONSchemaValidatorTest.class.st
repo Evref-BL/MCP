@@ -37,7 +37,7 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 		  (MCPToolFindClasses -> Dictionary new).
 		  (MCPToolFindPackages -> Dictionary new).
 		  (MCPToolEditClass -> {
-			   (#operation -> 'rename').
+			   (#operation -> 'update').
 			   (#className -> 'MCPTool').
 			   (#newClassName -> 'MCPToolRenamed') } asDictionary).
 		  (MCPToolEditMethod -> {
@@ -79,22 +79,22 @@ MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasAcceptRepresentativeArg
 { #category : 'tests' }
 MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasRejectInvalidBranchArguments [
 
-	| editClassViolations editMethodViolations findClassesViolations |
+	| editClassViolations editMethodViolations legacyScopeViolations |
 	editClassViolations := self
 		                       violationsFor: {
-				                       (#operation -> 'rename').
+				                       (#operation -> 'create').
 				                       (#className -> 'MCPTool') } asDictionary
 		                       schema: MCPToolEditClass new inputSchema.
 	self
 		assert: (self keywordsFrom: editClassViolations)
 		equals: #( 'oneOf' ).
-	findClassesViolations := self
+	legacyScopeViolations := self
 		                         violationsFor:
 		                         { (#scope -> 'packages') } asDictionary
 		                         schema: MCPToolFindClasses new inputSchema.
 	self
-		assert: (self keywordsFrom: findClassesViolations)
-		equals: #( 'oneOf' ).
+		assert: (self keywordsFrom: legacyScopeViolations)
+		equals: #( 'additionalProperties' ).
 	editMethodViolations := self
 		                        violationsFor: {
 				                        (#operation -> 'rename').

@@ -176,21 +176,23 @@ MCPToolContractsTest >> testEditClassDescriptionMentionsRecategorizationViaMove 
 	| description |
 	description := MCPToolEditClass new description.
 	self assert: (description includesSubstring: 'recategorize').
-	self assert: (description includesSubstring: 'operation=move').
-	self assert: (description includesSubstring: 'destination tag').
-	self assert: (description includesSubstring: 'omit packageName').
+	self assert: (description includesSubstring: 'operation=update').
+	self assert: (description includesSubstring: 'tag').
+	self assert: (description includesSubstring: 'Omit packageName').
 	self assert: (description includesSubstring: 'current package')
 ]
 
 { #category : 'tests' }
 MCPToolContractsTest >> testEditClassHasAccurateNameAndRequiredArguments [
 
-	| operationProperty propertyNames tool |
+	| operationProperty propertyNames slotActionProperty tool |
 	tool := MCPToolEditClass new.
 	propertyNames := tool inputSchema properties collect: [ :each |
 		                 each name ].
 	operationProperty := tool inputSchema properties detect: [ :each |
 		                     each name = 'operation' ].
+	slotActionProperty := tool inputSchema properties detect: [ :each |
+		                      each name = 'slotAction' ].
 	self assert: tool name equals: 'edit-class'.
 	self
 		assert: tool inputSchema required asSet
@@ -204,15 +206,75 @@ MCPToolContractsTest >> testEditClassHasAccurateNameAndRequiredArguments [
 	self assert: (propertyNames includes: 'scope').
 	self assert: (propertyNames includes: 'packageNames').
 	self assert: (propertyNames includes: 'classNames').
+	self assert: (propertyNames includes: 'slotAction').
 	self assert: (propertyNames includes: 'slotName').
 	self assert: (propertyNames includes: 'newSlotName').
 	self assert: (propertyNames includes: 'classSide').
 	self assert: (propertyNames includes: 'force').
 	self
 		assert: (operationProperty extraProperties at: #enum) asArray
-		equals:
-			#( 'create' 'move' 'rename' 'reparent' 'setComment' 'addSlot'
-			   'removeSlot' 'renameSlot' 'pullUpSlot' 'pushDownSlot' )
+		equals: #( 'create' 'update' ).
+	self
+		assert: (slotActionProperty extraProperties at: #enum) asArray
+		equals: #( 'add' 'remove' 'rename' 'pullUp' 'pushDown' )
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testEditClassOutputSchemaAdvertisesUpdateResultDTOs [
+
+	| dataProperties outputSchema |
+	outputSchema := MCPToolEditClass new outputSchema asJRPCJSON.
+	dataProperties := ((outputSchema at: #properties) at: 'data') at:
+		                  #properties.
+	self assert: (dataProperties includesKey: 'updatePlan').
+	self assert: (dataProperties includesKey: 'appliedChange').
+	self assert:
+		(((dataProperties at: 'updatePlan') at: #properties) includesKey:
+			 'commandClassName').
+	self assert:
+		(((dataProperties at: 'appliedChange') at: #properties)
+			 includesKey: 'resultClassName')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testEditClassSchemaDescriptionsExplainRecategorizationForceAndPatchSemantics [
+
+	| classCommentDescription forceDescription operationDescription packageDescription slotsDescription tagDescription tool |
+	tool := MCPToolEditClass new.
+	operationDescription := (self
+		                         inputPropertyNamed: 'operation'
+		                         inTool: tool) description.
+	packageDescription := (self
+		                       inputPropertyNamed: 'packageName'
+		                       inTool: tool) description.
+	tagDescription := (self inputPropertyNamed: 'tag' inTool: tool)
+		                  description.
+	forceDescription := (self inputPropertyNamed: 'force' inTool: tool)
+		                    description.
+	classCommentDescription := (self
+		                            inputPropertyNamed: 'classComment'
+		                            inTool: tool) description.
+	slotsDescription := (self inputPropertyNamed: 'slots' inTool: tool)
+		                    description.
+	self assert: (operationDescription includesSubstring: 'patch style').
+	self assert: (operationDescription includesSubstring: 'exactly one').
+	self assert: (packageDescription includesSubstring: 'recategorize').
+	self assert:
+		(packageDescription includesSubstring: 'Omit packageName').
+	self assert:
+		(packageDescription includesSubstring: 'current package').
+	self assert:
+		(tagDescription includesSubstring: 'recategorization patch').
+	self assert: (forceDescription includesSubstring: 'force=false').
+	self assert: (forceDescription includesSubstring: 'force=true').
+	self assert: (forceDescription includesSubstring: 'impactMessages').
+	self assert: (forceDescription includesSubstring: 'warnings').
+	self assert:
+		(classCommentDescription includesSubstring: 'set-comment patch').
+	self assert:
+		(classCommentDescription includesSubstring: 'do not combine').
+	self assert: (slotsDescription includesSubstring:
+			 'not an operation=update patch yet')
 ]
 
 { #category : 'tests' }
@@ -281,7 +343,7 @@ MCPToolContractsTest >> testEditMethodSchemaAdvertisesMethodState [
 { #category : 'tests' }
 MCPToolContractsTest >> testEditToolSchemasAdvertiseOperationBranches [
 
-	| addSlotBranch createBranch editClassBranches editMethodBranches moveBranch removeSlotBranch renameBranch renameSlotBranch |
+	| createBranch editClassBranches editMethodBranches renameBranch updateBranch |
 	editClassBranches := MCPToolEditClass new inputSchema asJRPCJSON at:
 		                     #oneOf.
 	editMethodBranches := MCPToolEditMethod new inputSchema asJRPCJSON
@@ -289,9 +351,7 @@ MCPToolContractsTest >> testEditToolSchemasAdvertiseOperationBranches [
 	self
 		assert: (editClassBranches collect: [ :each |
 				 ((each at: #properties) at: 'operation') at: #const ]) asArray
-		equals:
-			#( 'create' 'move' 'rename' 'reparent' 'setComment' 'addSlot'
-			   'removeSlot' 'renameSlot' 'pullUpSlot' 'pushDownSlot' ).
+		equals: #( 'create' 'update' ).
 	createBranch := editClassBranches detect: [ :each |
 		                (((each at: #properties) at: 'operation') at: #const)
 		                = 'create' ].
@@ -299,30 +359,12 @@ MCPToolContractsTest >> testEditToolSchemasAdvertiseOperationBranches [
 		assert: (createBranch at: #required) asSet
 		equals:
 		#( 'operation' 'className' 'superclassName' 'packageName' ) asSet.
-	moveBranch := editClassBranches detect: [ :each |
-		              (((each at: #properties) at: 'operation') at: #const)
-		              = 'move' ].
+	updateBranch := editClassBranches detect: [ :each |
+		                (((each at: #properties) at: 'operation') at: #const)
+		                = 'update' ].
 	self
-		assert: (moveBranch at: #required) asSet
+		assert: (updateBranch at: #required) asSet
 		equals: #( 'operation' 'className' ) asSet.
-	addSlotBranch := editClassBranches detect: [ :each |
-		                 (((each at: #properties) at: 'operation') at:
-			                  #const) = 'addSlot' ].
-	self
-		assert: (addSlotBranch at: #required) asSet
-		equals: #( 'operation' 'className' 'slotName' ) asSet.
-	removeSlotBranch := editClassBranches detect: [ :each |
-		                    (((each at: #properties) at: 'operation') at:
-			                     #const) = 'removeSlot' ].
-	self
-		assert: (removeSlotBranch at: #required) asSet
-		equals: #( 'operation' 'className' 'slotName' ) asSet.
-	renameSlotBranch := editClassBranches detect: [ :each |
-		                    (((each at: #properties) at: 'operation') at:
-			                     #const) = 'renameSlot' ].
-	self
-		assert: (renameSlotBranch at: #required) asSet
-		equals: #( 'operation' 'className' 'slotName' 'newSlotName' ) asSet.
 	self
 		assert: (editMethodBranches collect: [ :each |
 				 ((each at: #properties) at: 'operation') at: #const ]) asArray
@@ -351,7 +393,7 @@ MCPToolContractsTest >> testEditToolSchemasAdvertiseRenameScopeConditions [
 			                                                      at:
 			                                                      #properties.
 		                               ((conditionProperties at: 'operation')
-			                                at: #const) = 'rename' and: [
+			                                at: #const) = 'update' and: [
 			                               ((conditionProperties at: 'scope')
 				                                at: #const) = 'packages' ] ].
 	self
@@ -364,7 +406,7 @@ MCPToolContractsTest >> testEditToolSchemasAdvertiseRenameScopeConditions [
 			                                                      at:
 			                                                      #properties.
 		                               ((conditionProperties at: 'operation')
-			                                at: #const) = 'rename' and: [
+			                                at: #const) = 'update' and: [
 			                               ((conditionProperties at: 'scope')
 				                                at: #const) = 'classes' ] ].
 	self
@@ -378,7 +420,7 @@ MCPToolContractsTest >> testEditToolSchemasAdvertiseRenameScopeConditions [
 			                                                        #properties.
 		                                 ((conditionProperties at:
 			                                   'operation') at: #const)
-		                                 = 'rename' and: [
+		                                 = 'update' and: [
 			                                 ((conditionProperties at: 'scope')
 				                                  at: #const) = 'hierarchy' ] ].
 	self
@@ -1221,11 +1263,11 @@ MCPToolContractsTest >> toolFlowSpecs [
 		  {
 			  (#toolClass -> MCPToolEditClass).
 			  (#arguments -> {
-				   (#operation -> 'setComment').
+				   (#operation -> 'update').
 				   (#className -> 'Object').
 				   (#classComment -> '') } asDictionary).
 			  (#requestClass -> MCPEditToolRequest).
-			  (#commandClass -> MCPEditToolCommand) } asDictionary.
+			  (#commandClass -> MCPUpdateClassCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolRemoveClasses).
 			  (#arguments -> { (#classNames -> #( 'Object' )) } asDictionary).

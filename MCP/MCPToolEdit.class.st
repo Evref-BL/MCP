@@ -191,7 +191,7 @@ MCPToolEdit >> forceSchemaProperty [
 	^ self
 		  booleanSchemaPropertyNamed: 'force'
 		  description:
-		  'Controls refactoring warning handling. When false, the edit stops on RBRefactoringWarning and returns an error with impactMessages, howToProceed, and forceSupported=true. When true, the edit resumes past the warning and returns the warning text in warnings.'
+		  'Controls refactoring warning handling. force=false stops on RBRefactoringWarning and returns an error with impactMessages, howToProceed, and forceSupported=true. force=true resumes past the warning and returns the warning text in warnings.'
 		  default: false
 ]
 
