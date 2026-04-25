@@ -8,12 +8,19 @@ Class {
 	#superclass : 'Object',
 	#instVars : [
 		'server',
-		'toolsList'
+		'toolsList',
+		'monitoring'
 	],
 	#category : 'MCP-Server',
 	#package : 'MCP',
 	#tag : 'Server'
 }
+
+{ #category : 'monitoring' }
+MCP >> clearMonitoring [
+
+	self monitoring clear
+]
 
 { #category : 'configuration' }
 MCP >> configurePort: aPortNumber debugMode: aBoolean [
@@ -95,6 +102,48 @@ MCP >> localUrlString [
 	^ self server localUrl asString
 ]
 
+{ #category : 'accessing' }
+MCP >> monitoring [
+
+	^ monitoring ifNil: [ monitoring := MCPMonitoringState new ]
+]
+
+{ #category : 'monitoring' }
+MCP >> monitoringEnabled [
+
+	^ self monitoring enabled
+]
+
+{ #category : 'monitoring' }
+MCP >> monitoringEnabled: aBoolean [
+
+	self monitoring enabled: aBoolean
+]
+
+{ #category : 'monitoring' }
+MCP >> monitoringLogs [
+
+	^ self monitoring logs
+]
+
+{ #category : 'monitoring' }
+MCP >> monitoringMetrics [
+
+	^ self monitoring metrics
+]
+
+{ #category : 'monitoring' }
+MCP >> monitoringRecentCalls [
+
+	^ self monitoring recentCallRecords
+]
+
+{ #category : 'monitoring' }
+MCP >> monitoringStatusText [
+
+	^ self monitoring statusText
+]
+
 { #category : 'start' }
 MCP >> onInitialize: protocolVersion capabilities: capabilities clientInfo: clientInfo websiteUrl: websiteUrl [
 
@@ -168,20 +217,36 @@ MCP >> rpcToolCall: name withParams: arguments [
 	toolsList
 		at: name
 		ifPresent: [ :tool |
-			| request result toolResult |
-			request := tool requestFromToolCallArguments: arguments.
+			| monitorRecord request result toolResult |
+			monitorRecord := self monitoring recordToolCallStart: name.
 			^ [
+			  request := tool requestFromToolCallArguments: arguments.
 			  result := tool executeWithRequest: request.
 			  toolResult := (result isKindOf: MCPStructureCallToolResult)
 				                ifTrue: [ result ]
 				                ifFalse: [
 				                MCPStructureCallToolResult content: result ].
 			  self saveImageAfterSuccessfulTool: tool result: toolResult.
+			  self monitoring
+				  recordToolCallFinish: monitorRecord
+				  result: toolResult
+				  error: nil.
 			  toolResult asJRPCJSON ]
 				  on: Error
 				  do: [ :error |
-					  (error isKindOf: JRPCError) ifTrue: [ error pass ].
-					  (tool errorResultFor: error) asJRPCJSON ] ]
+					  | errorResult |
+					  (error isKindOf: JRPCError) ifTrue: [
+						  self monitoring
+							  recordToolCallFinish: monitorRecord
+							  result: nil
+							  error: error.
+						  error pass ].
+					  errorResult := tool errorResultFor: error.
+					  self monitoring
+						  recordToolCallFinish: monitorRecord
+						  result: errorResult
+						  error: error.
+					  errorResult asJRPCJSON ] ]
 		ifAbsent: [ JRPCNonExistentHandler signal: name ]
 ]
 

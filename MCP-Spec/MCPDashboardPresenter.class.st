@@ -18,7 +18,15 @@ Class {
 		'startButton',
 		'stopButton',
 		'restartButton',
-		'toolsTable'
+		'toolsTable',
+		'monitoringLabel',
+		'monitoringCheckBox',
+		'monitoringStatusLabel',
+		'clearMonitoringButton',
+		'metricsLabel',
+		'metricsTable',
+		'logsLabel',
+		'logsTable'
 	],
 	#category : 'MCP-Spec',
 	#package : 'MCP-Spec'
@@ -45,10 +53,18 @@ MCPDashboardPresenter >> applyConfiguration [
 	[
 	| newPort |
 	newPort := self readPortFromInput.
-	self model configurePort: newPort debugMode: debugCheckBox state ]
+	self model configurePort: newPort debugMode: debugCheckBox state.
+	self model monitoringEnabled: monitoringCheckBox state ]
 		on: Error
 		do: [ :error | UIManager default alert: error messageText ].
 
+	self refreshView
+]
+
+{ #category : 'actions' }
+MCPDashboardPresenter >> clearMonitoring [
+
+	self model clearMonitoring.
 	self refreshView
 ]
 
@@ -59,7 +75,8 @@ MCPDashboardPresenter >> connectPresenters [
 	refreshButton action: [ self refreshView ].
 	startButton action: [ self startServer ].
 	stopButton action: [ self stopServer ].
-	restartButton action: [ self restartServer ]
+	restartButton action: [ self restartServer ].
+	clearMonitoringButton action: [ self clearMonitoring ]
 ]
 
 { #category : 'layout' }
@@ -92,14 +109,30 @@ MCPDashboardPresenter >> defaultLayout [
 				   yourself)
 		  withConstraints: [ :constraints | constraints height: 30 ];
 		  add: toolsLabel expand: false;
-		  add: toolsTable;
+		  add: toolsTable
+		  withConstraints: [ :constraints | constraints height: 170 ];
+		  add: (SpBoxLayout newLeftToRight
+				   add: monitoringLabel expand: false;
+				   add: monitoringCheckBox
+				   withConstraints: [ :constraints | constraints width: 180 ];
+				   add: clearMonitoringButton
+				   withConstraints: [ :constraints | constraints width: 150 ];
+				   yourself)
+		  withConstraints: [ :constraints | constraints height: 30 ];
+		  add: monitoringStatusLabel expand: false;
+		  add: metricsLabel expand: false;
+		  add: metricsTable
+		  withConstraints: [ :constraints | constraints height: 150 ];
+		  add: logsLabel expand: false;
+		  add: logsTable
+		  withConstraints: [ :constraints | constraints height: 120 ];
 		  yourself
 ]
 
 { #category : 'api' }
 MCPDashboardPresenter >> initialExtent [
 
-	^ 940 @ 560
+	^ 1080 @ 760
 ]
 
 { #category : 'initialization' }
@@ -119,6 +152,14 @@ MCPDashboardPresenter >> initializePresenters [
 	stopButton := self instantiate: SpButtonPresenter.
 	restartButton := self instantiate: SpButtonPresenter.
 	toolsTable := self newTable.
+	monitoringLabel := self instantiate: SpLabelPresenter.
+	monitoringCheckBox := self instantiate: SpCheckBoxPresenter.
+	monitoringStatusLabel := self instantiate: SpLabelPresenter.
+	clearMonitoringButton := self instantiate: SpButtonPresenter.
+	metricsLabel := self instantiate: SpLabelPresenter.
+	metricsTable := self newTable.
+	logsLabel := self instantiate: SpLabelPresenter.
+	logsTable := self newTable.
 
 	portLabel label: 'Port:'.
 	debugCheckBox label: 'Debug mode'.
@@ -127,6 +168,9 @@ MCPDashboardPresenter >> initializePresenters [
 	startButton label: 'Start'.
 	stopButton label: 'Stop'.
 	restartButton label: 'Restart'.
+	monitoringLabel label: 'Monitoring:'.
+	monitoringCheckBox label: 'Extended monitoring'.
+	clearMonitoringButton label: 'Clear monitoring'.
 
 	toolsTable
 		addColumn: (SpStringTableColumn title: 'Tool' evaluated: #name);
@@ -139,6 +183,34 @@ MCPDashboardPresenter >> initializePresenters [
 		addColumn: (SpStringTableColumn
 				 title: 'Description'
 				 evaluated: [ :tool | tool description ifNil: [ '' ] ]);
+		beResizable.
+	metricsTable
+		addColumn: (SpStringTableColumn title: 'Tool' evaluated: #toolName);
+		addColumn: (SpStringTableColumn
+				 title: 'Calls'
+				 evaluated: [ :stats | stats callCount asString ]);
+		addColumn: (SpStringTableColumn
+				 title: 'Errors'
+				 evaluated: [ :stats | stats errorCount asString ]);
+		addColumn: (SpStringTableColumn
+				 title: 'Avg ms'
+				 evaluated: #displayAverageMilliseconds);
+		addColumn: (SpStringTableColumn
+				 title: 'Min ms'
+				 evaluated: #displayMinMilliseconds);
+		addColumn: (SpStringTableColumn
+				 title: 'Max ms'
+				 evaluated: #displayMaxMilliseconds);
+		addColumn: (SpStringTableColumn
+				 title: 'Last ms'
+				 evaluated: #displayLastMilliseconds);
+		addColumn: (SpStringTableColumn
+				 title: 'Outlier'
+				 evaluated: #displayOutlierExplanation);
+		beResizable.
+	logsTable
+		addColumn:
+			(SpStringTableColumn title: 'Log' evaluated: [ :line | line ]);
 		beResizable
 ]
 
@@ -170,9 +242,11 @@ MCPDashboardPresenter >> readPortFromInput [
 { #category : 'actions' }
 MCPDashboardPresenter >> refreshView [
 
-	| mcp tools |
+	| mcp tools metrics logs |
 	mcp := self model ifNil: [ ^ self ].
 	tools := mcp sortedTools.
+	metrics := mcp monitoringMetrics.
+	logs := mcp monitoringLogs.
 
 	summaryLabel label: self summaryText.
 	statusLabel label: ('HTTP: {1} | Listener: {2}' format: {
@@ -194,7 +268,17 @@ MCPDashboardPresenter >> refreshView [
 	debugCheckBox state: mcp debugMode.
 	toolsLabel label:
 		('Registered tools ({1})' format: { tools size asString }).
-	toolsTable items: tools
+	toolsTable items: tools.
+	monitoringCheckBox state: mcp monitoringEnabled.
+	monitoringStatusLabel label: mcp monitoringStatusText.
+	metricsLabel label:
+		('Tool call metrics ({1} tools, {2} calls)' format: {
+				 metrics size asString.
+				 mcp monitoring totalCallCount asString }).
+	metricsTable items: metrics.
+	logsLabel label:
+		('Monitoring log ({1})' format: { logs size asString }).
+	logsTable items: logs
 ]
 
 { #category : 'actions' }
