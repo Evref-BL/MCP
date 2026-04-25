@@ -692,6 +692,36 @@ MCPToolContractsTest >> testFindMethodsReturnsErrorResultForMissingClass [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testFindMethodsWhereSchemaAdvertisesEquivalentToMethodReference [
+
+	| classSideProperty equivalentToProperties equivalentToProperty nestedPropertyNames whereProperties whereProperty |
+	whereProperty := MCPToolFindMethods new inputSchema properties
+		                 detect: [ :each | each name = 'where' ].
+	whereProperties := whereProperty extraProperties at: #properties.
+	equivalentToProperty := whereProperties detect: [ :each |
+		                        each name = 'equivalentTo' ].
+	equivalentToProperties := equivalentToProperty extraProperties at:
+		                          #properties.
+	nestedPropertyNames := equivalentToProperties collect: [ :each |
+		                       each name ].
+	classSideProperty := equivalentToProperties detect: [ :each |
+		                     each name = 'classSide' ].
+	self assert: equivalentToProperty type equals: 'object'.
+	self assert:
+		(equivalentToProperty description includesSubstring:
+			 'equivalent AST').
+	self
+		assert: (equivalentToProperty extraProperties at: #required) asArray
+		equals: #( 'className' 'selector' ).
+	self assert: (nestedPropertyNames includes: 'className').
+	self assert: (nestedPropertyNames includes: 'selector').
+	self assert: (nestedPropertyNames includes: 'classSide').
+	self
+		assert: (classSideProperty extraProperties at: #default)
+		equals: false
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testFindPackagesHasAccurateNameAndSchema [
 
 	| propertyNames schema |

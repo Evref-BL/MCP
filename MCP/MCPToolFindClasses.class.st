@@ -187,14 +187,6 @@ MCPToolFindClasses >> defaultTitle [
 	^ 'Find Classes'
 ]
 
-{ #category : 'private - template' }
-MCPToolFindClasses >> failureMessageForRequestedContext: requestedContext error: anError [
-
-	^ self
-		  failureMessageForScope: (requestedContext at: #scope)
-		  error: anError
-]
-
 { #category : 'private - results' }
 MCPToolFindClasses >> failureMessageForScope: scopeSummary error: anError [
 

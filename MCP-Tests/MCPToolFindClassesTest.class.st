@@ -360,6 +360,25 @@ MCPToolFindClassesTest >> testWhereCanMatchRelatedMethods [
 		equals: #( 'MCPToolFindMethodsReferenceFixture' )
 ]
 
+{ #category : 'tests' }
+MCPToolFindClassesTest >> testWhereEquivalentToReturnsStructuredErrorForNonMethodPredicates [
+
+	| error result |
+	result := self callToolWith: {
+			          (#classNames -> #( 'MCPToolFindMethodsReferenceFixture' )).
+			          (#where -> { (#equivalentTo -> {
+				            (#className -> 'MCPToolFindMethodsReferenceFixture').
+				            (#selector -> 'sharedTarget') } asDictionary) }
+				           asDictionary) } asDictionary.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
+	self
+		assert: (error at: #errorCode)
+		equals: 'WhereEquivalentToRequiresMethodEntity'.
+	self assert: (error at: #entityKind) equals: 'class'
+]
+
 { #category : 'private - calling' }
 MCPToolFindClassesTest >> toolName [
 

@@ -109,14 +109,6 @@ MCPToolFindPackages >> defaultTitle [
 	^ 'Find Packages'
 ]
 
-{ #category : 'private - template' }
-MCPToolFindPackages >> failureMessageForRequestedContext: requestedContext error: anError [
-
-	^ self
-		  failureMessageForScope: (requestedContext at: #scope)
-		  error: anError
-]
-
 { #category : 'private - results' }
 MCPToolFindPackages >> failureMessageForScope: scopeSummary error: anError [
 

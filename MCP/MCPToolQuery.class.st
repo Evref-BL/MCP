@@ -102,7 +102,15 @@ MCPToolQuery >> executeWithRequest: request [
 { #category : 'private - template' }
 MCPToolQuery >> failureMessageForRequestedContext: requestedContext error: anError [
 
-	^ self subclassResponsibility
+	^ self
+		  failureMessageForScope: (requestedContext at: #scope)
+		  error: anError
+]
+
+{ #category : 'private - template' }
+MCPToolQuery >> failureMessageForScope: scopeSummary error: anError [
+
+	self subclassResponsibility
 ]
 
 { #category : 'private - request' }
@@ -378,6 +386,18 @@ MCPToolQuery >> whereClassFieldTextsForField: fieldName evaluation: evaluation [
 ]
 
 { #category : 'private - where' }
+MCPToolQuery >> whereCompiledMethodForReferenceSpec: methodReferenceSpec context: context [
+
+	| cache |
+	cache := context
+		         at: #methodReferenceCache
+		         ifAbsentPut: [ Dictionary new ].
+	^ cache
+		  at: methodReferenceSpec cacheKey
+		  ifAbsentPut: [ methodReferenceSpec compiledMethod ]
+]
+
+{ #category : 'private - where' }
 MCPToolQuery >> whereDefaultFilterTargetsForEntityKind: entityKind [
 
 	entityKind = #package ifTrue: [ ^ #( 'package' ) ].
@@ -408,6 +428,24 @@ MCPToolQuery >> whereEntryForEntityKind: entityKind object: object context: cont
 MCPToolQuery >> whereEntryValueAt: key in: entry [
 
 	^ entry at: key ifAbsent: [ nil ]
+]
+
+{ #category : 'private - where' }
+MCPToolQuery >> whereEquivalentToSpec: whereSpec matchesEvaluation: evaluation [
+
+	evaluation entityKind = #method ifFalse: [
+		MCPCommandError
+			signalErrorCode: #WhereEquivalentToRequiresMethodEntity
+			message:
+			'equivalentTo where predicates can only match method entries.'
+			details: {
+					(#entityKind -> evaluation entityKind asString).
+					(#equivalentTo -> whereSpec methodReferenceSpec asDictionary) }
+					asDictionary ].
+	^ evaluation object equivalentTo: (self
+			   whereCompiledMethodForReferenceSpec:
+			   whereSpec methodReferenceSpec
+			   context: evaluation context)
 ]
 
 { #category : 'private - where' }
@@ -623,7 +661,7 @@ MCPToolQuery >> wherePackageProjectNamesMapIn: context [
 { #category : 'private - schema' }
 MCPToolQuery >> wherePredicateSchemaProperty [
 
-	| anyItems allItems filterTargets notProperty nestedWhere whereProperty |
+	| anyItems allItems equivalentTo filterTargets notProperty nestedWhere whereProperty |
 	allItems := MCPStructureProperties new
 		            type: 'object';
 		            description: 'A nested where predicate.';
@@ -653,11 +691,34 @@ MCPToolQuery >> wherePredicateSchemaProperty [
 		                 description:
 		                 'Entry fields matched by a filter predicate.'
 		                 itemDescription: 'A filter target.'.
+	equivalentTo := MCPStructureProperties new
+		                name: 'equivalentTo';
+		                type: 'object';
+		                description:
+			                'Method reference used by method predicates to match methods with an equivalent AST.';
+		                properties: {
+				                (self
+					                 schemaPropertyNamed: 'className'
+					                 type: 'string'
+					                 description:
+						                 'The class that defines the referenced method.').
+				                (self
+					                 schemaPropertyNamed: 'selector'
+					                 type: 'string'
+					                 description: 'The referenced method selector.').
+				                (self
+					                 booleanSchemaPropertyNamed: 'classSide'
+					                 description:
+						                 'Whether the referenced method is on the class side.'
+					                 default: false) };
+		                required: #( 'className' 'selector' );
+		                additionalProperties: false;
+		                yourself.
 	whereProperty := self
 		                 schemaPropertyNamed: 'where'
 		                 type: 'object'
 		                 description:
-		                 'Optional recursive predicate applied before pagination. Use all, any, and not for boolean composition; field, value, and mode for field matching; filter, filterMode, and filterTargets for top-level-style filtering; exists or none with relation names and nested where for relation queries. Method predicates support selectorReference, classReference, and variableReference filterMode.'.
+		                 'Optional recursive predicate applied before pagination. Use all, any, and not for boolean composition; field, value, and mode for field matching; filter, filterMode, and filterTargets for top-level-style filtering; equivalentTo for AST equivalence to a referenced method; exists or none with relation names and nested where for relation queries. Method predicates support selectorReference, classReference, variableReference, and equivalentTo.'.
 	whereProperty
 		properties: {
 				((self
@@ -704,6 +765,7 @@ MCPToolQuery >> wherePredicateSchemaProperty [
 					 booleanSchemaPropertyNamed: 'caseSensitive'
 					 description: 'Whether text matching is case-sensitive.'
 					 default: true).
+				equivalentTo.
 				(self
 					 schemaPropertyNamed: 'exists'
 					 type: 'string'

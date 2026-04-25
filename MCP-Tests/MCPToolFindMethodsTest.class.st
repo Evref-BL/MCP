@@ -24,6 +24,15 @@ MCPToolFindMethodsTest >> entryForReference: aReference in: methods [
 ]
 
 { #category : 'private' }
+MCPToolFindMethodsTest >> equivalentToWhereForClassName: aClassName selector: aSelector classSide: aBoolean [
+
+	^ { (#equivalentTo -> {
+		   (#className -> aClassName).
+		   (#selector -> aSelector).
+		   (#classSide -> aBoolean) } asDictionary) } asDictionary
+]
+
+{ #category : 'private' }
 MCPToolFindMethodsTest >> targetClassName [
 
 	^ 'MCPToolFindMethodsTestTarget'
@@ -860,6 +869,217 @@ MCPToolFindMethodsTest >> testWhereCanFindMethodsSendingTwoSelectors [
 		'MCPToolFindMethodsReferenceFixture>>whereSendsSharedAndExtensionTarget'
 		in: (data at: #methods) ] ensure: [
 		self removeSelector: selector from: fixtureClass ]
+]
+
+{ #category : 'tests' }
+MCPToolFindMethodsTest >> testWhereEquivalentToComposesUnderAll [
+
+	| data result subclassName |
+	subclassName := 'MCPToolFindMethodsEquivalentAllFixture'.
+	self
+		createClassNamed: subclassName
+		superclassName: 'MCPToolFindMethodsReferenceFixture'
+		slots: #(  )
+		classSlots: #(  ).
+	[
+	self
+		ensureMethodSource: 'instanceSendShared
+
+	^ self sharedTarget'
+		protocol: 'testing'
+		on: (self classNamed: subclassName).
+	result := self callToolWith: {
+			          (#classNames -> { subclassName }).
+			          (#where -> { (#all -> {
+				            (self
+					             equivalentToWhereForClassName:
+					             'MCPToolFindMethodsReferenceFixture'
+					             selector: 'instanceSendShared'
+					             classSide: false).
+				            {
+					            (#filter -> 'sharedTarget').
+					            (#filterMode -> 'selectorReference') } asDictionary }) }
+				           asDictionary) } asDictionary.
+	data := self dataFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) equals: 1.
+	self
+		entryForReference: subclassName , '>>instanceSendShared'
+		in: (data at: #methods) ] ensure: [
+		self removeClassNamed: subclassName ]
+]
+
+{ #category : 'tests' }
+MCPToolFindMethodsTest >> testWhereEquivalentToDefaultsReferenceToInstanceSide [
+
+	| data result subclassName |
+	subclassName := 'MCPToolFindMethodsEquivalentDefaultSideFixture'.
+	self
+		createClassNamed: subclassName
+		superclassName: 'MCPToolFindMethodsReferenceFixture'
+		slots: #(  )
+		classSlots: #(  ).
+	[
+	self
+		ensureMethodSource: 'sharedTarget
+
+	^ ''instance-target'''
+		protocol: 'testing'
+		on: (self classNamed: subclassName).
+	result := self callToolWith: {
+			          (#classNames -> { subclassName }).
+			          (#where -> { (#equivalentTo -> {
+				            (#className -> 'MCPToolFindMethodsReferenceFixture').
+				            (#selector -> 'sharedTarget') } asDictionary) }
+				           asDictionary) } asDictionary.
+	data := self dataFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) equals: 1.
+	self
+		entryForReference: subclassName , '>>sharedTarget'
+		in: (data at: #methods) ] ensure: [
+		self removeClassNamed: subclassName ]
+]
+
+{ #category : 'tests' }
+MCPToolFindMethodsTest >> testWhereEquivalentToMatchesReferencedClassSideMethod [
+
+	| data result subclass subclassName |
+	subclassName := 'MCPToolFindMethodsEquivalentClassFixture'.
+	self
+		createClassNamed: subclassName
+		superclassName: 'MCPToolFindMethodsReferenceFixture'
+		slots: #(  )
+		classSlots: #(  ).
+	[
+	subclass := self classNamed: subclassName.
+	self
+		ensureMethodSource: 'sharedTarget
+
+	^ ''class-target'''
+		protocol: 'testing'
+		on: subclass classSide.
+	result := self callToolWith: {
+			          (#classNames -> { subclassName }).
+			          (#side -> 'class').
+			          (#where -> (self
+				            equivalentToWhereForClassName:
+				            'MCPToolFindMethodsReferenceFixture'
+				            selector: 'sharedTarget'
+				            classSide: true)) } asDictionary.
+	data := self dataFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) equals: 1.
+	self
+		entryForReference: subclassName , ' class>>sharedTarget'
+		in: (data at: #methods) ] ensure: [
+		self removeClassNamed: subclassName ]
+]
+
+{ #category : 'tests' }
+MCPToolFindMethodsTest >> testWhereEquivalentToMatchesReferencedInstanceSideMethod [
+
+	| data result subclassName |
+	subclassName := 'MCPToolFindMethodsEquivalentInstanceFixture'.
+	self
+		createClassNamed: subclassName
+		superclassName: 'MCPToolFindMethodsReferenceFixture'
+		slots: #(  )
+		classSlots: #(  ).
+	[
+	self
+		ensureMethodSource: 'sharedTarget
+
+	^ ''instance-target'''
+		protocol: 'testing'
+		on: (self classNamed: subclassName).
+	result := self callToolWith: {
+			          (#classNames -> { subclassName }).
+			          (#where -> (self
+				            equivalentToWhereForClassName:
+				            'MCPToolFindMethodsReferenceFixture'
+				            selector: 'sharedTarget'
+				            classSide: false)) } asDictionary.
+	data := self dataFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) equals: 1.
+	self
+		entryForReference: subclassName , '>>sharedTarget'
+		in: (data at: #methods) ] ensure: [
+		self removeClassNamed: subclassName ]
+]
+
+{ #category : 'tests' }
+MCPToolFindMethodsTest >> testWhereEquivalentToRejectsDifferentAst [
+
+	| data result subclassName |
+	subclassName := 'MCPToolFindMethodsDifferentAstFixture'.
+	self
+		createClassNamed: subclassName
+		superclassName: 'MCPToolFindMethodsReferenceFixture'
+		slots: #(  )
+		classSlots: #(  ).
+	[
+	self
+		ensureMethodSource: 'sharedTarget
+
+	^ ''different-target'''
+		protocol: 'testing'
+		on: (self classNamed: subclassName).
+	result := self callToolWith: {
+			          (#classNames -> { subclassName }).
+			          (#where -> (self
+				            equivalentToWhereForClassName:
+				            'MCPToolFindMethodsReferenceFixture'
+				            selector: 'sharedTarget'
+				            classSide: false)) } asDictionary.
+	data := self dataFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) equals: 0.
+	self assert: (data at: #methods) equals: #(  ) ] ensure: [
+		self removeClassNamed: subclassName ]
+]
+
+{ #category : 'tests' }
+MCPToolFindMethodsTest >> testWhereEquivalentToReturnsStructuredErrorWhenReferenceClassIsMissing [
+
+	| error result |
+	result := self callToolWith: {
+			          (#classNames -> #( 'MCPToolFindMethodsReferenceFixture' )).
+			          (#where -> (self
+				            equivalentToWhereForClassName:
+				            'MCPToolFindMethodsMissingReferenceClass'
+				            selector: 'sharedTarget'
+				            classSide: false)) } asDictionary.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
+	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
+	self
+		assert: (error at: #className)
+		equals: 'MCPToolFindMethodsMissingReferenceClass'
+]
+
+{ #category : 'tests' }
+MCPToolFindMethodsTest >> testWhereEquivalentToReturnsStructuredErrorWhenReferenceMethodIsMissing [
+
+	| error result |
+	result := self callToolWith: {
+			          (#classNames -> #( 'MCPToolFindMethodsReferenceFixture' )).
+			          (#where -> (self
+				            equivalentToWhereForClassName:
+				            'MCPToolFindMethodsReferenceFixture'
+				            selector: 'missingEquivalentTarget'
+				            classSide: false)) } asDictionary.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
+	self assert: (error at: #errorCode) equals: 'MethodNotFound'.
+	self
+		assert: (error at: #className)
+		equals: 'MCPToolFindMethodsReferenceFixture'.
+	self assert: (error at: #selector) equals: 'missingEquivalentTarget'.
+	self assert: (error at: #classSide) equals: false
 ]
 
 { #category : 'private - calling' }

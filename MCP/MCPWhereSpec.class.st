@@ -13,7 +13,8 @@ Class {
 		'caseSensitive',
 		'filterTargets',
 		'relation',
-		'whereSpec'
+		'whereSpec',
+		'methodReferenceSpec'
 	],
 	#category : 'MCP-Requests',
 	#package : 'MCP',
@@ -50,6 +51,26 @@ MCPWhereSpec class >> any: childSpecs [
 MCPWhereSpec class >> booleanValueNamed: aName in: aDictionary default: defaultValue [
 
 	^ self valueNamed: aName in: aDictionary ifAbsent: [ defaultValue ]
+]
+
+{ #category : 'instance creation' }
+MCPWhereSpec class >> equivalentTo: aMethodReferenceSpec [
+
+	^ self new
+		  kind: #equivalentTo;
+		  methodReferenceSpec: aMethodReferenceSpec;
+		  yourself
+]
+
+{ #category : 'private - parsing' }
+MCPWhereSpec class >> equivalentToSpecFrom: aDictionary [
+
+	^ self equivalentTo: (MCPMethodReferenceSpec fromValue: (self
+				    valueNamed: 'equivalentTo'
+				    in: aDictionary
+				    ifAbsent: [
+				    Error signal:
+					    'equivalentTo where predicate requires equivalentTo.' ]))
 ]
 
 { #category : 'instance creation' }
@@ -175,13 +196,15 @@ MCPWhereSpec class >> fromValue: rawValue [
 		^ self existsSpecFrom: rawValue ].
 	(self hasKey: 'none' in: rawValue) ifTrue: [
 		^ self noneSpecFrom: rawValue ].
+	(self hasKey: 'equivalentTo' in: rawValue) ifTrue: [
+		^ self equivalentToSpecFrom: rawValue ].
 	((self hasKey: 'filter' in: rawValue) or: [
 		 self hasKey: 'filterMode' in: rawValue ]) ifTrue: [
 		^ self filterSpecFrom: rawValue ].
 	(self hasKey: 'field' in: rawValue) ifTrue: [
 		^ self fieldSpecFrom: rawValue ].
 	Error signal:
-		'where predicate must use one of filter, field, all, any, not, exists, or none.'
+		'where predicate must use one of filter, field, equivalentTo, all, any, not, exists, or none.'
 ]
 
 { #category : 'private - parsing' }
@@ -420,6 +443,10 @@ MCPWhereSpec >> matchesEvaluation: evaluation [
 		^ evaluation tool
 			  whereFilterSpec: self
 			  matchesEvaluation: evaluation ].
+	self kind = #equivalentTo ifTrue: [
+		^ evaluation tool
+			  whereEquivalentToSpec: self
+			  matchesEvaluation: evaluation ].
 	self kind = #exists ifTrue: [
 		^ evaluation tool
 			  whereRelationSpec: self
@@ -432,6 +459,18 @@ MCPWhereSpec >> matchesEvaluation: evaluation [
 			  expectAny: false ].
 	Error signal:
 		'Unsupported where predicate kind: ' , self kind asString
+]
+
+{ #category : 'accessing' }
+MCPWhereSpec >> methodReferenceSpec [
+
+	^ methodReferenceSpec
+]
+
+{ #category : 'accessing' }
+MCPWhereSpec >> methodReferenceSpec: aMethodReferenceSpec [
+
+	methodReferenceSpec := aMethodReferenceSpec
 ]
 
 { #category : 'accessing' }

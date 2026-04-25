@@ -37,7 +37,7 @@ MCPToolFindMethods >> classReferenceEntriesForQueryRequest: queryRequest [
 { #category : 'defaults' }
 MCPToolFindMethods >> defaultDescription [
 
-	^ 'List methods and optionally filter returned method entries. Omit packageNames, classNames, and hierarchyClassNames to search all methods. Use packageNames for package-defined and extension methods, classNames for exact classes, and hierarchyClassNames for hierarchy roots. Multiple scope properties are unioned. Use filterMode=exact with filterTargets=selector and caseSensitive=true to find implementors. Use filterMode=selectorReference to find senders of the selector named by filter. Use filterMode=classReference to find methods that reference the class named by filter. Use filterMode=variableReference to find methods that reference the variable named by filter. Reference lookup modes require filter and ignore filterTargets. Use where for recursive boolean predicates and relation predicates.'
+	^ 'List methods and optionally filter returned method entries. Omit packageNames, classNames, and hierarchyClassNames to search all methods. Use packageNames for package-defined and extension methods, classNames for exact classes, and hierarchyClassNames for hierarchy roots. Multiple scope properties are unioned. Use filterMode=exact with filterTargets=selector and caseSensitive=true to find implementors. Use filterMode=selectorReference to find senders of the selector named by filter. Use filterMode=classReference to find methods that reference the class named by filter. Use filterMode=variableReference to find methods that reference the variable named by filter. Reference lookup modes require filter and ignore filterTargets. Use where for recursive boolean predicates and relation predicates; method predicates can use equivalentTo with a className/selector/classSide method reference to match AST-equivalent methods.'
 ]
 
 { #category : 'private - request' }
@@ -111,14 +111,6 @@ MCPToolFindMethods >> defaultOutputSchema [
 MCPToolFindMethods >> defaultTitle [
 
 	^ 'Find Methods'
-]
-
-{ #category : 'private - template' }
-MCPToolFindMethods >> failureMessageForRequestedContext: requestedContext error: anError [
-
-	^ self
-		  failureMessageForScope: (requestedContext at: #scope)
-		  error: anError
 ]
 
 { #category : 'private - results' }
