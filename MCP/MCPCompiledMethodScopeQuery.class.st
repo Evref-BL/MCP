@@ -1,26 +1,21 @@
+"
+Parsed scope query for method listings and reference lookup.
+
+It resolves packageNames, classNames, hierarchyClassNames, and side into a union of compiled methods.
+"
 Class {
 	#name : 'MCPCompiledMethodScopeQuery',
-	#superclass : 'MCPScopeQuery',
+	#superclass : 'Object',
 	#instVars : [
 		'packageNames',
 		'classNames',
-		'side'
+		'side',
+		'hierarchyClassNames'
 	],
 	#category : 'MCP-Queries',
 	#package : 'MCP',
 	#tag : 'Queries'
 }
-
-{ #category : 'instance creation' }
-MCPCompiledMethodScopeQuery class >> scope: aScope packageNames: somePackageNames classNames: someClassNames side: aSide [
-
-	^ self new
-		  scope: aScope;
-		  packageNames: somePackageNames;
-		  classNames: someClassNames;
-		  side: aSide;
-		  yourself
-]
 
 { #category : 'private - scope' }
 MCPCompiledMethodScopeQuery >> addBehaviorsForBaseClass: aClass to: behaviors [
@@ -64,12 +59,18 @@ MCPCompiledMethodScopeQuery >> allMethodsDo: aBlock [
 { #category : 'querying' }
 MCPCompiledMethodScopeQuery >> behaviors [
 
+	| behaviors hierarchyRoots |
 	self validate.
-	scope = 'image' ifTrue: [ ^ self allBehaviors ].
-	scope = 'packages' ifTrue: [ ^ self behaviorsForPackageNames ].
-	scope = 'classes' ifTrue: [ ^ self behaviorsForClassNames ].
-	scope = 'hierarchy' ifTrue: [ ^ self hierarchyBehaviorsForClassNames ].
-	Error signal: 'Unsupported scope: ' , scope
+	self usesImplicitImageScope ifTrue: [ ^ self allBehaviors ].
+	behaviors := IdentitySet new.
+	self packageNames ifNotEmpty: [
+		behaviors addAll: self behaviorsForPackageNames ].
+	self classNames ifNotEmpty: [
+		behaviors addAll: self behaviorsForClassNames ].
+	hierarchyRoots := self hierarchyClassNames.
+	hierarchyRoots ifNotEmpty: [
+		behaviors addAll: self hierarchyBehaviorsForClassNames ].
+	^ behaviors asArray
 ]
 
 { #category : 'private - scope' }
@@ -122,11 +123,11 @@ MCPCompiledMethodScopeQuery >> classNames: someNames [
 		              ifNotNil: [ someNames asArray ]
 ]
 
-{ #category : 'private - scope' }
+{ #category : 'private - source' }
 MCPCompiledMethodScopeQuery >> hierarchyBehaviorsForClassNames [
 
 	| baseClasses behaviors hierarchyClasses |
-	baseClasses := self classNames collect: [ :eachName |
+	baseClasses := self hierarchyClassNames collect: [ :eachName |
 		               (self classNamed: eachName) instanceSide ].
 	hierarchyClasses := IdentitySet new.
 	baseClasses do: [ :eachClass |
@@ -138,12 +139,27 @@ MCPCompiledMethodScopeQuery >> hierarchyBehaviorsForClassNames [
 	^ behaviors asArray
 ]
 
+{ #category : 'accessing' }
+MCPCompiledMethodScopeQuery >> hierarchyClassNames [
+
+	^ hierarchyClassNames ifNil: [ #(  ) ]
+]
+
+{ #category : 'accessing' }
+MCPCompiledMethodScopeQuery >> hierarchyClassNames: someNames [
+
+	hierarchyClassNames := someNames
+		                       ifNil: [ #(  ) ]
+		                       ifNotNil: [ someNames asArray ]
+]
+
 { #category : 'initialization' }
 MCPCompiledMethodScopeQuery >> initialize [
 
 	super initialize.
 	packageNames := #(  ).
 	classNames := #(  ).
+	hierarchyClassNames := #(  ).
 	side := 'both'
 ]
 
@@ -166,33 +182,33 @@ MCPCompiledMethodScopeQuery >> matchesSideForMethod: aCompiledMethod [
 { #category : 'querying' }
 MCPCompiledMethodScopeQuery >> methods [
 
+	| hierarchyRoots methods |
 	self validate.
-	scope = 'image' ifTrue: [ ^ self allMethods ].
-	scope = 'packages' ifTrue: [ ^ self methodsForPackageNames ].
-	scope = 'classes' ifTrue: [
-		^ self methodsForBehaviors: self behaviorsForClassNames ].
-	scope = 'hierarchy' ifTrue: [
-		^ self methodsForBehaviors:
-			  self hierarchyBehaviorsForClassNames ].
-	Error signal: 'Unsupported scope: ' , scope
+	self usesImplicitImageScope ifTrue: [ ^ self allMethods ].
+	methods := IdentitySet new.
+	self packageNames ifNotEmpty: [
+		methods addAll: self methodsForPackageNames ].
+	self classNames ifNotEmpty: [
+		methods addAll:
+			(self methodsForBehaviors: self behaviorsForClassNames) ].
+	hierarchyRoots := self hierarchyClassNames.
+	hierarchyRoots ifNotEmpty: [
+		methods addAll:
+			(self methodsForBehaviors: self hierarchyBehaviorsForClassNames) ].
+	^ methods asArray
 ]
 
 { #category : 'querying' }
 MCPCompiledMethodScopeQuery >> methodsDo: aBlock [
 
+	| seenMethods |
 	self validate.
-	scope = 'image' ifTrue: [ ^ self allMethodsDo: aBlock ].
-	scope = 'packages' ifTrue: [
-		^ self methodsForPackageNamesDo: aBlock ].
-	scope = 'classes' ifTrue: [
-		^ self
-			  methodsForBehaviors: self behaviorsForClassNames
-			  do: aBlock ].
-	scope = 'hierarchy' ifTrue: [
-		^ self
-			  methodsForBehaviors: self hierarchyBehaviorsForClassNames
-			  do: aBlock ].
-	Error signal: 'Unsupported scope: ' , scope
+	self usesImplicitImageScope ifTrue: [ ^ self allMethodsDo: aBlock ].
+	seenMethods := IdentitySet new.
+	self methods do: [ :eachMethod |
+		(seenMethods includes: eachMethod) ifFalse: [
+			seenMethods add: eachMethod.
+			aBlock value: eachMethod ] ]
 ]
 
 { #category : 'private - scope' }
@@ -297,17 +313,16 @@ MCPCompiledMethodScopeQuery >> side: aSide [
 	side := aSide ifNil: [ 'both' ] ifNotNil: [ aSide ]
 ]
 
+{ #category : 'private - source' }
+MCPCompiledMethodScopeQuery >> usesImplicitImageScope [
+
+	^ self packageNames isEmpty and: [
+		  self classNames isEmpty and: [ self hierarchyClassNames isEmpty ] ]
+]
+
 { #category : 'validating' }
 MCPCompiledMethodScopeQuery >> validate [
 
-	self validateScopeIsOneOf:
-		#( 'image' 'packages' 'hierarchy' 'classes' ).
 	(#( 'instance' 'class' 'both' ) includes: side) ifFalse: [
-		Error signal: 'side must be one of instance, class, or both.' ].
-	scope = 'packages' ifTrue: [
-		self packageNames ifEmpty: [
-			Error signal: 'packageNames is required when scope=packages.' ] ].
-	(scope = 'classes' or: [ scope = 'hierarchy' ]) ifTrue: [
-		self classNames ifEmpty: [
-			Error signal: 'classNames is required when scope=' , scope , '.' ] ]
+		Error signal: 'side must be one of instance, class, or both.' ]
 ]

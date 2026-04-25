@@ -14,20 +14,28 @@ Class {
 { #category : 'private - filtering' }
 MCPToolFindClasses >> classEntriesForRequest: queryRequest [
 
-	| entries matcher |
+	| entries matcher whereContext |
 	matcher := self
 		           matcherForPattern: queryRequest filterPattern
 		           mode: queryRequest filterMode
 		           caseSensitive: queryRequest caseSensitive.
+	whereContext := self newWhereContext.
 	entries := OrderedCollection new.
 	queryRequest scopeQuery classes do: [ :eachClass |
-		| entry |
+		| entry evaluation matchesFilter |
 		entry := (MCPClassInfo fromClass: eachClass) asQueryDictionary.
-		(queryRequest hasFilterPattern not or: [
-			 self
-				 matchesFilterOnClassEntry: entry
-				 matcher: matcher
-				 targets: queryRequest filterTargets ]) ifTrue: [
+		matchesFilter := queryRequest hasFilterPattern not or: [
+			                 self
+				                 matchesFilterOnClassEntry: entry
+				                 matcher: matcher
+				                 targets: queryRequest filterTargets ].
+		evaluation := self
+			              whereEvaluationForEntityKind: #class
+			              entry: entry
+			              object: eachClass
+			              context: whereContext.
+		(matchesFilter and: [
+			 queryRequest whereSpec matchesEvaluation: evaluation ]) ifTrue: [
 			entries add: entry ] ].
 	^ entries asArray
 ]
@@ -75,7 +83,7 @@ MCPToolFindClasses >> classInfoDataProperties [
 { #category : 'defaults' }
 MCPToolFindClasses >> defaultDescription [
 
-	^ 'List classes in a selected scope and optionally filter them by class metadata. scope=image searches all classes. scope=packages searches classes defined in packageNames. scope=classes restricts results to classNames. scope=hierarchy expands classNames to their superclasses and subclasses. Use inspect-class when you already know the class to inspect.'
+	^ 'List classes and optionally filter them by class metadata. Omit packageNames, classNames, and hierarchyClassNames to search all classes. Use packageNames for package-defined classes, classNames for exact classes, and hierarchyClassNames for hierarchy roots. Multiple scope properties are unioned. Use where for recursive boolean predicates and relation predicates. Use inspect-class when you already know the class to inspect.'
 ]
 
 { #category : 'private - request' }
@@ -93,45 +101,43 @@ MCPToolFindClasses >> defaultIcons [
 { #category : 'defaults' }
 MCPToolFindClasses >> defaultInputSchema [
 
-	| scopeProperty packageNamesProperty classNamesProperty filterModeProperty filterTargetsProperty |
-	scopeProperty := self
-		                 stringEnumSchemaPropertyNamed: 'scope'
-		                 description:
-		                 'Where to search for classes. Defaults to image.'
-		                 values:
-		                 #( 'image' 'packages' 'hierarchy' 'classes' )
-		                 default: 'image'.
+	| classNamesProperty filterModeProperty filterTargetsProperty hierarchyClassNamesProperty packageNamesProperty |
 	packageNamesProperty := self
 		                        stringArraySchemaNamed: 'packageNames'
 		                        description:
-		                        'The package names that define the packages scope. Required when scope=packages.'
+		                        'Class scope: package names whose defined classes are included. Omit all class scope properties to search all classes. Combine with classNames and hierarchyClassNames to union scopes.'
 		                        itemDescription: 'A package name.'.
 	classNamesProperty := self
 		                      stringArraySchemaNamed: 'classNames'
 		                      description:
-		                      'The class names that define the classes or hierarchy scope. Required when scope=classes or scope=hierarchy.'
+		                      'Class scope: exact class names to include. Omit all class scope properties to search all classes. Combine with packageNames and hierarchyClassNames to union scopes.'
 		                      itemDescription: 'A class name.'.
+	hierarchyClassNamesProperty := self
+		                               stringArraySchemaNamed:
+		                               'hierarchyClassNames'
+		                               description:
+		                               'Class scope: class names whose superclasses and subclasses are included. Omit all class scope properties to search all classes. Combine with packageNames and classNames to union scopes.'
+		                               itemDescription:
+		                               'A hierarchy root class name.'.
 	filterModeProperty := self
 		                      stringEnumSchemaPropertyNamed: 'filterMode'
-		                      description:
-			                      'How the filter is matched. Defaults to '
-			                      , self defaultFilterMode , '.'
+		                      description: 'How the filter is matched.'
 		                      values:
 		                      #( 'substring' 'prefix' 'exact' 'regex' )
 		                      default: self defaultFilterMode.
 	filterTargetsProperty := self
 		                         stringEnumArraySchemaNamed: 'filterTargets'
 		                         description:
-		                         'Optional class-entry fields matched by filter. Defaults to class.'
+		                         'Optional class-entry fields matched by filter.'
 		                         itemDescription: 'A filter target.'
 		                         values: self supportedFilterTargets
 		                         default: self defaultFilterTargets.
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties: {
-				  scopeProperty.
 				  packageNamesProperty.
 				  classNamesProperty.
+				  hierarchyClassNamesProperty.
 				  (self
 					   schemaPropertyNamed: 'filter'
 					   type: 'string'
@@ -139,23 +145,22 @@ MCPToolFindClasses >> defaultInputSchema [
 						   'Optional filter applied to the listed class-entry fields. Use filterTargets to choose which fields are matched.').
 				  filterTargetsProperty.
 				  filterModeProperty.
+				  self wherePredicateSchemaProperty.
 				  (self
 					   booleanSchemaPropertyNamed: 'caseSensitive'
-					   description:
-						   'Whether filter matching is case-sensitive. Defaults to true.'
+					   description: 'Whether filter matching is case-sensitive.'
 					   default: true).
 				  (self
 					   integerSchemaPropertyNamed: 'limit'
 					   description:
-						   'Maximum number of matching classes to return. Defaults to 100. Use 0 to request counts only.'
+						   'Maximum number of matching classes to return. Use 0 to request counts only.'
 					   default: 100).
 				  (self
 					   integerSchemaPropertyNamed: 'offset'
 					   description:
-						   'Zero-based pagination offset applied after filtering. Defaults to 0.'
+						   'Zero-based pagination offset applied after filtering.'
 					   default: 0) };
 		  required: #(  );
-		  oneOf: self scopeBranchSchemasForClassAndMethodQueries;
 		  yourself
 ]
 
@@ -191,11 +196,11 @@ MCPToolFindClasses >> failureMessageForRequestedContext: requestedContext error:
 ]
 
 { #category : 'private - results' }
-MCPToolFindClasses >> failureMessageForScope: scope error: anError [
+MCPToolFindClasses >> failureMessageForScope: scopeSummary error: anError [
 
 	^ self
 		  scopeQueryFailureMessageFor: 'classes'
-		  scope: scope
+		  scope: scopeSummary
 		  error: anError
 ]
 
@@ -245,8 +250,13 @@ MCPToolFindClasses >> queryResultDataForQueryRequest: queryRequest page: page [
 { #category : 'private - template' }
 MCPToolFindClasses >> requestedContextFromRequest: request [
 
-	^ { (#scope
-	   -> (request stringArgumentNamed: 'scope' default: 'image')) }
+	^ { (#scope -> (self
+		    classAndMethodScopeSummaryForPackageNames:
+		    (request stringCollectionArgumentNamed: 'packageNames')
+		    classNames:
+		    (request stringCollectionArgumentNamed: 'classNames')
+		    hierarchyClassNames:
+		    (request stringCollectionArgumentNamed: 'hierarchyClassNames'))) }
 		  asDictionary
 ]
 
@@ -254,21 +264,22 @@ MCPToolFindClasses >> requestedContextFromRequest: request [
 MCPToolFindClasses >> successSummaryForQueryRequest: queryRequest page: page [
 
 	^ self
-		  successSummaryForScope: queryRequest scopeQuery scope
-		  returnedCount: (page at: #returnedCount)
-		  totalCount: (page at: #totalCount)
-		  truncated: (page at: #truncated)
+		  successSummaryForScope: (self
+				   classAndMethodScopeSummaryForPackageNames:
+				   queryRequest scopeQuery packageNames
+				   classNames: queryRequest scopeQuery classNames
+				   hierarchyClassNames:
+				   queryRequest scopeQuery hierarchyClassNames)
+		  page: page
 ]
 
 { #category : 'private - results' }
-MCPToolFindClasses >> successSummaryForScope: scope returnedCount: returnedCount totalCount: totalCount truncated: truncated [
+MCPToolFindClasses >> successSummaryForScope: scopeSummary page: page [
 
 	^ self
 		  scopeQuerySuccessSummaryFor: 'classes'
-		  scope: scope
-		  returnedCount: returnedCount
-		  totalCount: totalCount
-		  truncated: truncated
+		  scope: scopeSummary
+		  page: page
 ]
 
 { #category : 'private - request' }

@@ -5,14 +5,15 @@ Class {
 	#name : 'MCPFindMethodsRequest',
 	#superclass : 'Object',
 	#instVars : [
-		'scopeQuery',
 		'filterPattern',
 		'filterTargets',
 		'filterMode',
 		'caseSensitive',
 		'includeSource',
 		'limit',
-		'offset'
+		'offset',
+		'scopeQuery',
+		'whereSpec'
 	],
 	#category : 'MCP-Requests',
 	#package : 'MCP',
@@ -27,6 +28,7 @@ MCPFindMethodsRequest class >> fromRequest: request tool: aTool [
 		  filterPattern: (request stringArgumentNamed: 'filter');
 		  filterMode: (aTool filterModeFromRequest: request);
 		  filterTargets: (aTool filterTargetsFromRequest: request);
+		  whereSpec: (MCPWhereSpec fromToolRequest: request);
 		  caseSensitive:
 			  (request booleanArgumentNamed: 'caseSensitive' default: true);
 		  includeSource:
@@ -151,9 +153,9 @@ MCPFindMethodsRequest >> scopeQuery [
 ]
 
 { #category : 'accessing' }
-MCPFindMethodsRequest >> scopeQuery: aScopeQuery [
+MCPFindMethodsRequest >> scopeQuery: anObject [
 
-	scopeQuery := aScopeQuery
+	scopeQuery := anObject
 ]
 
 { #category : 'testing' }
@@ -181,4 +183,16 @@ MCPFindMethodsRequest >> usesSelectorReferenceLookup [
 MCPFindMethodsRequest >> usesVariableReferenceLookup [
 
 	^ filterMode = 'variableReference'
+]
+
+{ #category : 'accessing' }
+MCPFindMethodsRequest >> whereSpec [
+
+	^ whereSpec ifNil: [ MCPWhereSpec absent ]
+]
+
+{ #category : 'accessing' }
+MCPFindMethodsRequest >> whereSpec: anObject [
+
+	whereSpec := anObject
 ]

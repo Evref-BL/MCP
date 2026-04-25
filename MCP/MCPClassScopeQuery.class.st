@@ -1,24 +1,20 @@
+"
+Parsed scope query for class listings.
+
+It resolves packageNames, classNames, and hierarchyClassNames into a union of classes. Empty scope properties mean image-wide class scope.
+"
 Class {
 	#name : 'MCPClassScopeQuery',
-	#superclass : 'MCPScopeQuery',
+	#superclass : 'Object',
 	#instVars : [
 		'packageNames',
-		'classNames'
+		'classNames',
+		'hierarchyClassNames'
 	],
 	#category : 'MCP-Queries',
 	#package : 'MCP',
 	#tag : 'Queries'
 }
-
-{ #category : 'instance creation' }
-MCPClassScopeQuery class >> scope: aScope packageNames: somePackageNames classNames: someClassNames [
-
-	^ self new
-		  scope: aScope;
-		  packageNames: somePackageNames;
-		  classNames: someClassNames;
-		  yourself
-]
 
 { #category : 'private - scope' }
 MCPClassScopeQuery >> allClasses [
@@ -47,13 +43,18 @@ MCPClassScopeQuery >> classNames: someClassNames [
 { #category : 'querying' }
 MCPClassScopeQuery >> classes [
 
+	| classes hierarchyRoots |
 	self validate.
-	scope = 'image' ifTrue: [ ^ self allClasses ].
-	scope = 'packages' ifTrue: [ ^ self classesForPackageNames ].
-	scope = 'classes' ifTrue: [ ^ self resolvedClassesNamed: classNames ].
-	scope = 'hierarchy' ifTrue: [
-		^ self hierarchyClassesNamed: classNames ].
-	Error signal: 'Unsupported scope: ' , scope
+	self usesImplicitImageScope ifTrue: [ ^ self allClasses ].
+	classes := IdentitySet new.
+	self packageNames ifNotEmpty: [
+		classes addAll: self classesForPackageNames ].
+	self classNames ifNotEmpty: [
+		classes addAll: (self resolvedClassesNamed: self classNames) ].
+	hierarchyRoots := self hierarchyClassNames.
+	hierarchyRoots ifNotEmpty: [
+		classes addAll: (self hierarchyClassesNamed: hierarchyRoots) ].
+	^ self sortedClassesByName: classes
 ]
 
 { #category : 'private - scope' }
@@ -65,6 +66,20 @@ MCPClassScopeQuery >> classesForPackageNames [
 		(self resolvedPackageNamed: eachName) classes do: [ :eachClass |
 			classes add: eachClass instanceSide ] ].
 	^ self sortedClassesByName: classes
+]
+
+{ #category : 'accessing' }
+MCPClassScopeQuery >> hierarchyClassNames [
+
+	^ hierarchyClassNames ifNil: [ #(  ) ]
+]
+
+{ #category : 'accessing' }
+MCPClassScopeQuery >> hierarchyClassNames: someClassNames [
+
+	hierarchyClassNames := someClassNames
+		                       ifNil: [ #(  ) ]
+		                       ifNotNil: [ someClassNames asArray ]
 ]
 
 { #category : 'private - scope' }
@@ -83,7 +98,8 @@ MCPClassScopeQuery >> initialize [
 
 	super initialize.
 	packageNames := #(  ).
-	classNames := #(  )
+	classNames := #(  ).
+	hierarchyClassNames := #(  )
 ]
 
 { #category : 'accessing' }
@@ -134,15 +150,15 @@ MCPClassScopeQuery >> sortedClassesByName: someClasses [
 		   left name <= right name ]) asArray
 ]
 
+{ #category : 'private - source' }
+MCPClassScopeQuery >> usesImplicitImageScope [
+
+	^ self packageNames isEmpty and: [
+		  self classNames isEmpty and: [ self hierarchyClassNames isEmpty ] ]
+]
+
 { #category : 'validating' }
 MCPClassScopeQuery >> validate [
 
-	self validateScopeIsOneOf:
-		#( 'image' 'packages' 'hierarchy' 'classes' ).
-	scope = 'packages' ifTrue: [
-		packageNames ifEmpty: [
-			Error signal: 'packageNames is required when scope=packages.' ] ].
-	(scope = 'classes' or: [ scope = 'hierarchy' ]) ifTrue: [
-		classNames ifEmpty: [
-			Error signal: 'classNames is required when scope=' , scope , '.' ] ]
+	^ self
 ]

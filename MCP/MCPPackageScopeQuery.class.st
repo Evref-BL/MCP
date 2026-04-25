@@ -1,22 +1,19 @@
+"
+Parsed scope query for package listings.
+
+It resolves projectNames and packageNames into a union of packages. Empty scope properties mean all packages in the image.
+"
 Class {
 	#name : 'MCPPackageScopeQuery',
-	#superclass : 'MCPScopeQuery',
+	#superclass : 'Object',
 	#instVars : [
-		'projectNames'
+		'projectNames',
+		'packageNames'
 	],
 	#category : 'MCP-Queries',
 	#package : 'MCP',
 	#tag : 'Queries'
 }
-
-{ #category : 'instance creation' }
-MCPPackageScopeQuery class >> scope: aScope projectNames: someProjectNames [
-
-	^ self new
-		  scope: aScope;
-		  projectNames: someProjectNames;
-		  yourself
-]
 
 { #category : 'private - scope' }
 MCPPackageScopeQuery >> allPackages [
@@ -28,7 +25,22 @@ MCPPackageScopeQuery >> allPackages [
 MCPPackageScopeQuery >> initialize [
 
 	super initialize.
-	projectNames := #(  )
+	projectNames := #(  ).
+	packageNames := #(  )
+]
+
+{ #category : 'accessing' }
+MCPPackageScopeQuery >> packageNames [
+
+	^ packageNames ifNil: [ #(  ) ]
+]
+
+{ #category : 'accessing' }
+MCPPackageScopeQuery >> packageNames: somePackageNames [
+
+	packageNames := somePackageNames
+		                ifNil: [ #(  ) ]
+		                ifNotNil: [ somePackageNames asArray ]
 ]
 
 { #category : 'private - querying' }
@@ -51,10 +63,25 @@ MCPPackageScopeQuery >> packageProjectNamesMap [
 { #category : 'querying' }
 MCPPackageScopeQuery >> packages [
 
+	| packages |
 	self validate.
-	scope = 'image' ifTrue: [ ^ self allPackages ].
-	scope = 'project' ifTrue: [ ^ self packagesForProjectNames ].
-	Error signal: 'Unsupported scope: ' , scope
+	self usesImplicitImageScope ifTrue: [ ^ self allPackages ].
+	packages := IdentitySet new.
+	self packageNames ifNotEmpty: [
+		packages addAll: self packagesForPackageNames ].
+	self projectNames ifNotEmpty: [
+		packages addAll: self packagesForProjectNames ].
+	^ self sortedPackagesByName: packages
+]
+
+{ #category : 'private - scope' }
+MCPPackageScopeQuery >> packagesForPackageNames [
+
+	| packages |
+	packages := IdentitySet new.
+	self packageNames do: [ :eachName |
+		packages add: (self resolvedPackageNamed: eachName) ].
+	^ self sortedPackagesByName: packages
 ]
 
 { #category : 'private - scope' }
@@ -98,6 +125,15 @@ MCPPackageScopeQuery >> projectsByName [
 ]
 
 { #category : 'private - resolution' }
+MCPPackageScopeQuery >> resolvedPackageNamed: packageName [
+
+	^ PackageOrganizer default
+		  packageNamed: packageName asSymbol
+		  ifAbsent: [
+		  MCPCommandError signalMissingPackageNamed: packageName ]
+]
+
+{ #category : 'private - resolution' }
 MCPPackageScopeQuery >> resolvedProjectsNamed: someProjectNames [
 
 	| projects projectsByName |
@@ -117,11 +153,14 @@ MCPPackageScopeQuery >> sortedPackagesByName: somePackages [
 		   left name <= right name ]) asArray
 ]
 
+{ #category : 'private - source' }
+MCPPackageScopeQuery >> usesImplicitImageScope [
+
+	^ self projectNames isEmpty and: [ self packageNames isEmpty ]
+]
+
 { #category : 'validating' }
 MCPPackageScopeQuery >> validate [
 
-	self validateScopeIsOneOf: #( 'image' 'project' ).
-	scope = 'project' ifTrue: [
-		projectNames ifEmpty: [
-			Error signal: 'projectNames is required when scope=project.' ] ]
+	^ self
 ]

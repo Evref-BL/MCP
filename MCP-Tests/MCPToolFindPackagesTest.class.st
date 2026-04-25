@@ -142,12 +142,25 @@ MCPToolFindPackagesTest >> testImageScopeFindsStructuredPackages [
 ]
 
 { #category : 'tests' }
-MCPToolFindPackagesTest >> testProjectScopeFindsPackagesForNamedProject [
+MCPToolFindPackagesTest >> testPackageNamesSelectExactPackages [
 
 	| data packageNames result |
-	result := self callToolWith: {
-			          (#scope -> 'project').
-			          (#projectNames -> #( 'MCP' )) } asDictionary.
+	result := self callToolWith:
+		          { (#packageNames -> #( 'MCP' 'MCP-Tests' )) } asDictionary.
+	data := self dataFrom: result.
+	packageNames := (data at: #packages) collect: [ :each |
+		                each at: #packageName ].
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) equals: 2.
+	self assert: packageNames equals: #( 'MCP' 'MCP-Tests' )
+]
+
+{ #category : 'tests' }
+MCPToolFindPackagesTest >> testProjectNamesFindPackagesForNamedProject [
+
+	| data packageNames result |
+	result := self callToolWith:
+		          { (#projectNames -> #( 'MCP' )) } asDictionary.
 	data := self dataFrom: result.
 	packageNames := (data at: #packages) collect: [ :each |
 		                each at: #packageName ].
@@ -159,22 +172,38 @@ MCPToolFindPackagesTest >> testProjectScopeFindsPackagesForNamedProject [
 ]
 
 { #category : 'tests' }
-MCPToolFindPackagesTest >> testProjectScopeReturnsStructuredErrorWhenProjectIsMissing [
+MCPToolFindPackagesTest >> testProjectNamesReturnStructuredErrorWhenProjectIsMissing [
 
 	| error result structured |
-	result := self callToolWith: {
-			          (#scope -> 'project').
-			          (#projectNames -> #( 'DefinitelyMissingProject' )) }
+	result := self callToolWith:
+		          { (#projectNames -> #( 'DefinitelyMissingProject' )) }
 			          asDictionary.
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #errorClass) equals: 'MCPCommandError'. self assert: (error at: #errorCode) equals: 'ProjectNotFound'.
+	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
+	self assert: (error at: #errorCode) equals: 'ProjectNotFound'.
 	self
 		assert: (error at: #projectName)
 		equals: 'DefinitelyMissingProject'.
-	self assert: (error at: #scope) equals: 'project'
+	self assert: (error at: #scope) equals: 'projects'
+]
+
+{ #category : 'tests' }
+MCPToolFindPackagesTest >> testProjectNamesSelectProjectScope [
+
+	| data packageNames result |
+	result := self callToolWith:
+		          { (#projectNames -> #( 'MCP' )) } asDictionary.
+	data := self dataFrom: result.
+	packageNames := (data at: #packages) collect: [ :each |
+		                each at: #packageName ].
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self
+		assert: (data at: #totalCount)
+		equals: self mcpProjectPackageNames size.
+	self assert: packageNames equals: self mcpProjectPackageNames
 ]
 
 { #category : 'tests' }
@@ -183,10 +212,30 @@ MCPToolFindPackagesTest >> testReturnsStructuredErrorForInvalidFilterTarget [
 	self
 		should: [
 			self callToolWith: {
-					(#scope -> 'image').
 					(#filter -> 'needle').
 					(#filterTargets -> #( 'definedClassCount' )) } asDictionary ]
 		raise: JRPCInvalidParameters
+]
+
+{ #category : 'tests' }
+MCPToolFindPackagesTest >> testWhereCanMatchRelatedClasses [
+
+	| data packageNames result |
+	result := self callToolWith: {
+			          (#packageNames -> #( 'MCP' 'MCP-Tests-Resources' )).
+			          (#where -> {
+				           (#exists -> 'classes').
+				           (#where -> {
+					            (#field -> 'class').
+					            (#value -> 'MCPToolFindMethodsReferenceFixture').
+					            (#mode -> 'exact') } asDictionary) } asDictionary) }
+			          asDictionary.
+	data := self dataFrom: result.
+	packageNames := (data at: #packages) collect: [ :each |
+		                each at: #packageName ].
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) equals: 1.
+	self assert: packageNames equals: #( 'MCP-Tests-Resources' )
 ]
 
 { #category : 'private - calling' }

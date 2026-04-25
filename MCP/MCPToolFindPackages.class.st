@@ -12,7 +12,7 @@ Class {
 { #category : 'defaults' }
 MCPToolFindPackages >> defaultDescription [
 
-	^ 'List packages and optionally filter them by package metadata. scope=image searches all packages in the image. scope=project searches packages belonging to projectNames.'
+	^ 'List packages and optionally filter them by package metadata. Omit projectNames and packageNames to search all packages. Use projectNames to include packages from projects and packageNames to include exact packages. Multiple scope properties are unioned. Use where for recursive boolean predicates and relation predicates.'
 ]
 
 { #category : 'private - request' }
@@ -30,18 +30,17 @@ MCPToolFindPackages >> defaultIcons [
 { #category : 'defaults' }
 MCPToolFindPackages >> defaultInputSchema [
 
-	| filterModeProperty filterTargetsProperty projectNamesProperty scopeProperty |
-	scopeProperty := self
-		                 stringEnumSchemaPropertyNamed: 'scope'
-		                 description:
-		                 'Where to search for packages. image=all packages in the image. project=packages belonging to projectNames.'
-		                 values: #( 'image' 'project' )
-		                 default: 'image'.
+	| filterModeProperty filterTargetsProperty packageNamesProperty projectNamesProperty |
 	projectNamesProperty := self
 		                        stringArraySchemaNamed: 'projectNames'
 		                        description:
-		                        'The project names that define the project scope. Required when scope=project. Results include packages belonging to any listed project.'
+		                        'Package scope: project names whose packages are included. Omit all package scope properties to search all packages. Combine with packageNames to union scopes.'
 		                        itemDescription: 'A project name.'.
+	packageNamesProperty := self
+		                        stringArraySchemaNamed: 'packageNames'
+		                        description:
+		                        'Package scope: exact package names to include. Omit all package scope properties to search all packages. Combine with projectNames to union scopes.'
+		                        itemDescription: 'A package name.'.
 	filterModeProperty := self
 		                      stringEnumSchemaPropertyNamed: 'filterMode'
 		                      description:
@@ -59,8 +58,8 @@ MCPToolFindPackages >> defaultInputSchema [
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties: {
-				  scopeProperty.
 				  projectNamesProperty.
+				  packageNamesProperty.
 				  (self
 					   schemaPropertyNamed: 'filter'
 					   type: 'string'
@@ -68,6 +67,7 @@ MCPToolFindPackages >> defaultInputSchema [
 						   'Optional filter applied to the listed package-entry fields. Use filterTargets to choose which fields are matched.').
 				  filterTargetsProperty.
 				  filterModeProperty.
+				  self wherePredicateSchemaProperty.
 				  (self
 					   booleanSchemaPropertyNamed: 'caseSensitive'
 					   description: 'Whether filter matching is case-sensitive.'
@@ -83,7 +83,6 @@ MCPToolFindPackages >> defaultInputSchema [
 						   'Zero-based pagination offset applied after filtering.'
 					   default: 0) };
 		  required: #(  );
-		  oneOf: self scopeBranchSchemasForPackageQueries;
 		  yourself
 ]
 
@@ -119,11 +118,11 @@ MCPToolFindPackages >> failureMessageForRequestedContext: requestedContext error
 ]
 
 { #category : 'private - results' }
-MCPToolFindPackages >> failureMessageForScope: scope error: anError [
+MCPToolFindPackages >> failureMessageForScope: scopeSummary error: anError [
 
 	^ self
 		  scopeQueryFailureMessageFor: 'packages'
-		  scope: scope
+		  scope: scopeSummary
 		  error: anError
 ]
 
@@ -161,25 +160,35 @@ MCPToolFindPackages >> packageEntriesForRequest: queryRequest [
 { #category : 'private - filtering' }
 MCPToolFindPackages >> packageEntriesFromPackages: packages projectNames: packageProjectNames usingRequest: queryRequest [
 
-	| entries matcher |
+	| entries matcher whereContext |
 	matcher := self
 		           matcherForPattern: queryRequest filterPattern
 		           mode: queryRequest filterMode
 		           caseSensitive: queryRequest caseSensitive.
+	whereContext := self newWhereContext
+		                at: #packageProjectNames put: packageProjectNames;
+		                yourself.
 	entries := OrderedCollection new.
 	packages do: [ :eachPackage |
-		| entry projectNames |
+		| entry evaluation matchesFilter projectNames |
 		projectNames := packageProjectNames
 			                at: eachPackage name asString
 			                ifAbsent: [ #(  ) ].
 		entry := (MCPPackageInfo
 			          fromPackage: eachPackage
 			          projectNames: projectNames) asQueryDictionary.
-		(queryRequest hasFilterPattern not or: [
-			 self
-				 matchesFilterOnPackageEntry: entry
-				 matcher: matcher
-				 targets: queryRequest filterTargets ]) ifTrue: [
+		matchesFilter := queryRequest hasFilterPattern not or: [
+			                 self
+				                 matchesFilterOnPackageEntry: entry
+				                 matcher: matcher
+				                 targets: queryRequest filterTargets ].
+		evaluation := self
+			              whereEvaluationForEntityKind: #package
+			              entry: entry
+			              object: eachPackage
+			              context: whereContext.
+		(matchesFilter and: [
+			 queryRequest whereSpec matchesEvaluation: evaluation ]) ifTrue: [
 			entries add: entry ] ].
 	^ entries asArray
 ]
@@ -236,8 +245,11 @@ MCPToolFindPackages >> queryResultDataForQueryRequest: queryRequest page: page [
 { #category : 'private - template' }
 MCPToolFindPackages >> requestedContextFromRequest: request [
 
-	^ { (#scope
-	   -> (request stringArgumentNamed: 'scope' default: 'image')) }
+	^ { (#scope -> (self
+		    packageScopeSummaryForProjectNames:
+		    (request stringCollectionArgumentNamed: 'projectNames')
+		    packageNames:
+		    (request stringCollectionArgumentNamed: 'packageNames'))) }
 		  asDictionary
 ]
 
@@ -245,21 +257,20 @@ MCPToolFindPackages >> requestedContextFromRequest: request [
 MCPToolFindPackages >> successSummaryForQueryRequest: queryRequest page: page [
 
 	^ self
-		  successSummaryForScope: queryRequest scopeQuery scope
-		  returnedCount: (page at: #returnedCount)
-		  totalCount: (page at: #totalCount)
-		  truncated: (page at: #truncated)
+		  successSummaryForScope: (self
+				   packageScopeSummaryForProjectNames:
+				   queryRequest scopeQuery projectNames
+				   packageNames: queryRequest scopeQuery packageNames)
+		  page: page
 ]
 
 { #category : 'private - results' }
-MCPToolFindPackages >> successSummaryForScope: scope returnedCount: returnedCount totalCount: totalCount truncated: truncated [
+MCPToolFindPackages >> successSummaryForScope: scopeSummary page: page [
 
 	^ self
 		  scopeQuerySuccessSummaryFor: 'packages'
-		  scope: scope
-		  returnedCount: returnedCount
-		  totalCount: totalCount
-		  truncated: truncated
+		  scope: scopeSummary
+		  page: page
 ]
 
 { #category : 'private - request' }

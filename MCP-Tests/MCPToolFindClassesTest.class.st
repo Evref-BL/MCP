@@ -96,14 +96,12 @@ MCPToolFindClassesTest >> tearDown [
 ]
 
 { #category : 'tests' }
-MCPToolFindClassesTest >> testClassesScopeReturnsExactClassInfos [
+MCPToolFindClassesTest >> testClassNamesReturnExactClassInfos [
 
 	| baseEntry data result |
-	result := self callToolWith: {
-			          (#scope -> 'classes').
-			          (#classNames -> {
-				           self childClassName.
-				           self baseClassName }) } asDictionary.
+	result := self callToolWith: { (#classNames -> {
+			           self childClassName.
+			           self baseClassName }) } asDictionary.
 	data := self dataFrom: result.
 	baseEntry := self
 		             entryNamed: self baseClassName
@@ -124,11 +122,27 @@ MCPToolFindClassesTest >> testClassesScopeReturnsExactClassInfos [
 ]
 
 { #category : 'tests' }
+MCPToolFindClassesTest >> testClassNamesSelectExactClassScope [
+
+	| classNames data result |
+	result := self callToolWith: { (#classNames -> {
+			           self childClassName.
+			           self baseClassName }) } asDictionary.
+	data := self dataFrom: result.
+	classNames := (data at: #classes) collect: [ :each |
+		              each at: #className ].
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) equals: 2.
+	self assert: classNames equals: {
+			self baseClassName.
+			self childClassName } asArray
+]
+
+{ #category : 'tests' }
 MCPToolFindClassesTest >> testDefaultFilterAppliesToClassOnly [
 
 	| classNames data result |
 	result := self callToolWith: {
-			          (#scope -> 'packages').
 			          (#packageNames -> #( 'MCP-Tests' )).
 			          (#filter -> self baseClassName).
 			          (#filterMode -> 'exact') } asDictionary.
@@ -145,7 +159,6 @@ MCPToolFindClassesTest >> testFilterCanMatchSlotNames [
 
 	| data result |
 	result := self callToolWith: {
-			          (#scope -> 'packages').
 			          (#packageNames -> #( 'MCP-Tests' )).
 			          (#filter -> 'alphaSlot').
 			          (#filterTargets -> #( 'instanceSlot' )) } asDictionary.
@@ -156,12 +169,30 @@ MCPToolFindClassesTest >> testFilterCanMatchSlotNames [
 ]
 
 { #category : 'tests' }
-MCPToolFindClassesTest >> testHierarchyScopeReturnsRelatedClasses [
+MCPToolFindClassesTest >> testHierarchyClassNamesReturnRelatedClasses [
 
 	| classNames data result |
 	result := self callToolWith: {
-			          (#scope -> 'hierarchy').
-			          (#classNames -> { self childClassName }).
+			          (#hierarchyClassNames -> { self childClassName }).
+			          (#filter -> self fixturePrefix).
+			          (#filterMode -> 'prefix') } asDictionary.
+	data := self dataFrom: result.
+	classNames := (data at: #classes) collect: [ :each |
+		              each at: #className ].
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) equals: 3.
+	self assert: classNames equals: {
+			self baseClassName.
+			self childClassName.
+			self grandchildClassName } asArray
+]
+
+{ #category : 'tests' }
+MCPToolFindClassesTest >> testHierarchyClassNamesSelectHierarchyScope [
+
+	| classNames data result |
+	result := self callToolWith: {
+			          (#hierarchyClassNames -> { self childClassName }).
 			          (#filter -> self fixturePrefix).
 			          (#filterMode -> 'prefix') } asDictionary.
 	data := self dataFrom: result.
@@ -196,11 +227,49 @@ MCPToolFindClassesTest >> testImageScopeCanFilterAndPaginate [
 ]
 
 { #category : 'tests' }
-MCPToolFindClassesTest >> testPackagesScopeReturnsPackageClasses [
+MCPToolFindClassesTest >> testMultipleScopesAreUnioned [
 
 	| classNames data result |
 	result := self callToolWith: {
-			          (#scope -> 'packages').
+			          (#classNames -> { self class name asString }).
+			          (#hierarchyClassNames -> { self childClassName }).
+			          (#filter -> 'MCPToolFindClasses').
+			          (#filterMode -> 'prefix') } asDictionary.
+	data := self dataFrom: result.
+	classNames := (data at: #classes) collect: [ :each |
+		              each at: #className ].
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) equals: 4.
+	self assert: classNames asSet equals: {
+			self baseClassName.
+			self childClassName.
+			self grandchildClassName.
+			self class name asString } asSet
+]
+
+{ #category : 'tests' }
+MCPToolFindClassesTest >> testPackageNamesReturnPackageClasses [
+
+	| classNames data result |
+	result := self callToolWith: {
+			          (#packageNames -> #( 'MCP-Tests' )).
+			          (#filter -> self fixturePrefix) } asDictionary.
+	data := self dataFrom: result.
+	classNames := (data at: #classes) collect: [ :each |
+		              each at: #className ].
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) equals: 3.
+	self assert: classNames equals: {
+			self baseClassName.
+			self childClassName.
+			self grandchildClassName } asArray
+]
+
+{ #category : 'tests' }
+MCPToolFindClassesTest >> testPackageNamesSelectPackageScope [
+
+	| classNames data result |
+	result := self callToolWith: {
 			          (#packageNames -> #( 'MCP-Tests' )).
 			          (#filter -> self fixturePrefix) } asDictionary.
 	data := self dataFrom: result.
@@ -220,7 +289,6 @@ MCPToolFindClassesTest >> testReturnsStructuredErrorForInvalidFilterTarget [
 	self
 		should: [
 			self callToolWith: {
-					(#scope -> 'packages').
 					(#packageNames -> #( 'MCP-Tests' )).
 					(#filter -> 'needle').
 					(#filterTargets -> #( 'bogus' )) } asDictionary ]
@@ -231,14 +299,15 @@ MCPToolFindClassesTest >> testReturnsStructuredErrorForInvalidFilterTarget [
 MCPToolFindClassesTest >> testReturnsStructuredErrorWhenClassIsMissing [
 
 	| error result structured |
-	result := self callToolWith: {
-			          (#scope -> 'classes').
-			          (#classNames -> { self missingClassName }) } asDictionary.
+	result := self callToolWith:
+		          { (#classNames -> { self missingClassName }) }
+			          asDictionary.
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #errorClass) equals: 'MCPCommandError'. self assert: (error at: #errorCode) equals: 'ClassNotFound'.
+	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
+	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
 	self assert: (error at: #className) equals: self missingClassName.
 	self assert: (error at: #scope) equals: 'classes'
 ]
@@ -247,15 +316,15 @@ MCPToolFindClassesTest >> testReturnsStructuredErrorWhenClassIsMissing [
 MCPToolFindClassesTest >> testReturnsStructuredErrorWhenPackageIsMissing [
 
 	| error result structured |
-	result := self callToolWith: {
-			          (#scope -> 'packages').
-			          (#packageNames -> #( 'MCP-Definitely-Missing' )) }
+	result := self callToolWith:
+		          { (#packageNames -> #( 'MCP-Definitely-Missing' )) }
 			          asDictionary.
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #errorClass) equals: 'MCPCommandError'. self assert: (error at: #errorCode) equals: 'PackageNotFound'.
+	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
+	self assert: (error at: #errorCode) equals: 'PackageNotFound'.
 	self
 		assert: (error at: #packageName)
 		equals: 'MCP-Definitely-Missing'.
@@ -266,6 +335,29 @@ MCPToolFindClassesTest >> testReturnsStructuredErrorWhenPackageIsMissing [
 MCPToolFindClassesTest >> testToolDoesNotRequireArgumentsInSchema [
 
 	self assert: MCPToolFindClasses new inputSchema required equals: #(  )
+]
+
+{ #category : 'tests' }
+MCPToolFindClassesTest >> testWhereCanMatchRelatedMethods [
+
+	| classNames data result |
+	result := self callToolWith: {
+			          (#classNames -> #( 'MCPToolFindMethodsReferenceFixture'
+			              'MCPToolFindMethodsReferenceTarget' )).
+			          (#where -> {
+				           (#exists -> 'methods').
+				           (#where -> {
+					            (#filter -> 'sharedTarget').
+					            (#filterMode -> 'selectorReference') } asDictionary) }
+				           asDictionary) } asDictionary.
+	data := self dataFrom: result.
+	classNames := (data at: #classes) collect: [ :each |
+		              each at: #className ].
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) equals: 1.
+	self
+		assert: classNames
+		equals: #( 'MCPToolFindMethodsReferenceFixture' )
 ]
 
 { #category : 'private - calling' }

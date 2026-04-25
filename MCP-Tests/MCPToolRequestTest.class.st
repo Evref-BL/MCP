@@ -81,7 +81,6 @@ MCPToolRequestTest >> testRequestAccessorsProvideDefaultsUniqueCollectionsSymbol
 
 	| nested request |
 	request := MCPToolRequest tool: MCPToolFindClasses new arguments: {
-			           (#scope -> 'packages').
 			           (#packageNames -> #( ' MCP ' '' 'MCP' )).
 			           (#filterTargets -> #( 'class' 'package' 'class' )) }
 			           asDictionary.
@@ -118,13 +117,9 @@ MCPToolRequestTest >> testValidRequestProvidesTypedAccessors [
 
 	| request |
 	request := MCPToolRequest tool: MCPToolFindClasses new arguments: {
-			           (#scope -> 'packages').
 			           (#packageNames -> #( 'MCP' )).
 			           (#caseSensitive -> true).
 			           (#limit -> 3) } asDictionary.
-	self
-		assert: (request stringArgumentNamed: 'scope')
-		equals: 'packages'.
 	self assert:
 		(request booleanArgumentNamed: 'caseSensitive' default: false).
 	self

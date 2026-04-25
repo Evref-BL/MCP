@@ -68,9 +68,10 @@ MCPToolStructuredOutputTest >> testEvaluateReturnsStructuredSuccess [
 MCPToolStructuredOutputTest >> testFindClassesReturnsStructuredArrayData [
 
 	| classNames data result |
-	result := self callToolNamed: 'find-classes' withArguments: {
-			          (#scope -> 'packages').
-			          (#packageNames -> #( 'MCP-Tests' )) } asDictionary.
+	result := self
+		          callToolNamed: 'find-classes'
+		          withArguments:
+		          { (#packageNames -> #( 'MCP-Tests' )) } asDictionary.
 	data := self dataFrom: result.
 	classNames := (data at: #classes) collect: [ :each |
 		              each at: #className ].
@@ -88,9 +89,10 @@ MCPToolStructuredOutputTest >> testFindClassesReturnsStructuredArrayData [
 MCPToolStructuredOutputTest >> testFindClassesReturnsStructuredError [
 
 	| result structured error |
-	result := self callToolNamed: 'find-classes' withArguments: {
-			          (#scope -> 'packages').
-			          (#packageNames -> #( 'MCP-Definitely-Missing' )) }
+	result := self
+		          callToolNamed: 'find-classes'
+		          withArguments:
+		          { (#packageNames -> #( 'MCP-Definitely-Missing' )) }
 			          asDictionary.
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
@@ -108,9 +110,10 @@ MCPToolStructuredOutputTest >> testFindClassesReturnsStructuredError [
 MCPToolStructuredOutputTest >> testFindMethodsReturnsStructuredArrayData [
 
 	| data result selectors |
-	result := self callToolNamed: 'find-methods' withArguments: {
-			          (#scope -> 'classes').
-			          (#classNames -> #( 'MCPToolFindMethodsTestTarget' )) }
+	result := self
+		          callToolNamed: 'find-methods'
+		          withArguments:
+		          { (#classNames -> #( 'MCPToolFindMethodsTestTarget' )) }
 			          asDictionary.
 	data := self dataFrom: result.
 	selectors := (data at: #methods) collect: [ :each |
@@ -130,9 +133,10 @@ MCPToolStructuredOutputTest >> testFindMethodsReturnsStructuredArrayData [
 MCPToolStructuredOutputTest >> testFindMethodsReturnsStructuredError [
 
 	| result structured error |
-	result := self callToolNamed: 'find-methods' withArguments: {
-			          (#scope -> 'packages').
-			          (#packageNames -> #( 'MCP-Definitely-Missing' )) }
+	result := self
+		          callToolNamed: 'find-methods'
+		          withArguments:
+		          { (#packageNames -> #( 'MCP-Definitely-Missing' )) }
 			          asDictionary.
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
@@ -147,7 +151,7 @@ MCPToolStructuredOutputTest >> testFindMethodsReturnsStructuredError [
 ]
 
 { #category : 'tests' }
-MCPToolStructuredOutputTest >> testFindPackagesDefaultsToImageScopeWhenScopeIsOmitted [
+MCPToolStructuredOutputTest >> testFindPackagesDefaultsToImageScopeWhenScopePropertiesAreOmitted [
 
 	| data packageNames result |
 	result := self callToolNamed: 'find-packages' withArguments: {
@@ -168,9 +172,10 @@ MCPToolStructuredOutputTest >> testFindPackagesDefaultsToImageScopeWhenScopeIsOm
 MCPToolStructuredOutputTest >> testFindPackagesReturnsStructuredArrayData [
 
 	| result data packageNames |
-	result := self callToolNamed: 'find-packages' withArguments: {
-			          (#scope -> 'project').
-			          (#projectNames -> #( 'MCP' )) } asDictionary.
+	result := self
+		          callToolNamed: 'find-packages'
+		          withArguments:
+		          { (#projectNames -> #( 'MCP' )) } asDictionary.
 	data := self dataFrom: result.
 	packageNames := (data at: #packages) collect: [ :each |
 		                each at: #packageName ].
@@ -188,9 +193,10 @@ MCPToolStructuredOutputTest >> testFindPackagesReturnsStructuredArrayData [
 MCPToolStructuredOutputTest >> testFindPackagesReturnsStructuredError [
 
 	| result structured error |
-	result := self callToolNamed: 'find-packages' withArguments: {
-			          (#scope -> 'project').
-			          (#projectNames -> #( 'DefinitelyMissingProject' )) }
+	result := self
+		          callToolNamed: 'find-packages'
+		          withArguments:
+		          { (#projectNames -> #( 'DefinitelyMissingProject' )) }
 			          asDictionary.
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
@@ -199,7 +205,7 @@ MCPToolStructuredOutputTest >> testFindPackagesReturnsStructuredError [
 	self
 		assert: (error at: #projectName)
 		equals: 'DefinitelyMissingProject'.
-	self assert: (error at: #scope) equals: 'project'.
+	self assert: (error at: #scope) equals: 'projects'.
 	self assert: ((error at: #message) includesSubstring:
 			 'Project DefinitelyMissingProject does not exist.')
 ]

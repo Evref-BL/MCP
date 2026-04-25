@@ -497,10 +497,11 @@ MCPToolContractsTest >> testFindClassesHasAccurateNameAndSchema [
 	propertyNames := schema properties collect: [ :each | each name ].
 	self assert: MCPToolFindClasses new name equals: 'find-classes'.
 	self assert: schema required equals: #(  ).
-	self assert: (propertyNames includes: 'scope').
+	self deny: (propertyNames includes: 'scope').
 	self deny: (propertyNames includes: 'packageName').
 	self assert: (propertyNames includes: 'packageNames').
 	self assert: (propertyNames includes: 'classNames').
+	self assert: (propertyNames includes: 'hierarchyClassNames').
 	self assert: (propertyNames includes: 'filter').
 	self assert: (propertyNames includes: 'filterTargets')
 ]
@@ -509,9 +510,10 @@ MCPToolContractsTest >> testFindClassesHasAccurateNameAndSchema [
 MCPToolContractsTest >> testFindClassesListsClassesForExistingPackage [
 
 	| classNames data result |
-	result := self callToolNamed: 'find-classes' withArguments: {
-			          (#scope -> 'packages').
-			          (#packageNames -> #( 'MCP-Tests' )) } asDictionary.
+	result := self
+		          callToolNamed: 'find-classes'
+		          withArguments:
+		          { (#packageNames -> #( 'MCP-Tests' )) } asDictionary.
 	data := (result at: #structuredContent) at: #data.
 	classNames := (data at: #classes) collect: [ :each |
 		              each at: #className ].
@@ -524,9 +526,10 @@ MCPToolContractsTest >> testFindClassesListsClassesForExistingPackage [
 MCPToolContractsTest >> testFindClassesReturnsErrorResultForMissingPackage [
 
 	| result text |
-	result := self callToolNamed: 'find-classes' withArguments: {
-			          (#scope -> 'packages').
-			          (#packageNames -> #( 'MCP-Definitely-Missing' )) }
+	result := self
+		          callToolNamed: 'find-classes'
+		          withArguments:
+		          { (#packageNames -> #( 'MCP-Definitely-Missing' )) }
 			          asDictionary.
 	text := self firstTextFromToolResult: result.
 	self assert: (result at: #isError).
@@ -572,9 +575,10 @@ MCPToolContractsTest >> testFindMethodsHasAccurateNameAndSchema [
 		                      each name = 'filterMode' ].
 	self assert: MCPToolFindMethods new name equals: 'find-methods'.
 	self assert: schema required equals: #(  ).
-	self assert: (propertyNames includes: 'scope').
+	self deny: (propertyNames includes: 'scope').
 	self assert: (propertyNames includes: 'packageNames').
 	self assert: (propertyNames includes: 'classNames').
+	self assert: (propertyNames includes: 'hierarchyClassNames').
 	self assert: (propertyNames includes: 'filter').
 	self assert: (propertyNames includes: 'filterTargets').
 	self
@@ -593,9 +597,10 @@ MCPToolContractsTest >> testFindMethodsHasAccurateNameAndSchema [
 MCPToolContractsTest >> testFindMethodsListsMethodsForExistingClassScope [
 
 	| data result selectors |
-	result := self callToolNamed: 'find-methods' withArguments: {
-			          (#scope -> 'classes').
-			          (#classNames -> #( 'MCPToolFindMethodsTestTarget' )) }
+	result := self
+		          callToolNamed: 'find-methods'
+		          withArguments:
+		          { (#classNames -> #( 'MCPToolFindMethodsTestTarget' )) }
 			          asDictionary.
 	data := (result at: #structuredContent) at: #data.
 	selectors := (data at: #methods) collect: [ :each |
@@ -631,11 +636,12 @@ MCPToolContractsTest >> testFindMethodsReferenceModesShareRequiredFilterConditio
 MCPToolContractsTest >> testFindMethodsReturnsErrorResultForMissingClass [
 
 	| result text |
-	result := self callToolNamed: 'find-methods' withArguments: {
-			          (#scope -> 'classes').
-			          (#classNames
+	result := self
+		          callToolNamed: 'find-methods'
+		          withArguments:
+			          { (#classNames
 			           -> #( 'MCPDefinitelyMissingFindMethodsClass' )) }
-			          asDictionary.
+				          asDictionary.
 	text := self firstTextFromToolResult: result.
 	self assert: (result at: #isError).
 	self assert: (text includesSubstring:
@@ -651,8 +657,9 @@ MCPToolContractsTest >> testFindPackagesHasAccurateNameAndSchema [
 	propertyNames := schema properties collect: [ :each | each name ].
 	self assert: MCPToolFindPackages new name equals: 'find-packages'.
 	self assert: schema required equals: #(  ).
-	self assert: (propertyNames includes: 'scope').
+	self deny: (propertyNames includes: 'scope').
 	self assert: (propertyNames includes: 'projectNames').
+	self assert: (propertyNames includes: 'packageNames').
 	self assert: (propertyNames includes: 'filter').
 	self assert: (propertyNames includes: 'filterTargets').
 	self assert: (propertyNames includes: 'filterMode')
@@ -662,9 +669,10 @@ MCPToolContractsTest >> testFindPackagesHasAccurateNameAndSchema [
 MCPToolContractsTest >> testFindPackagesListsPackagesForExistingProject [
 
 	| packageNames data result |
-	result := self callToolNamed: 'find-packages' withArguments: {
-			          (#scope -> 'project').
-			          (#projectNames -> #( 'MCP' )) } asDictionary.
+	result := self
+		          callToolNamed: 'find-packages'
+		          withArguments:
+		          { (#projectNames -> #( 'MCP' )) } asDictionary.
 	data := (result at: #structuredContent) at: #data.
 	packageNames := (data at: #packages) collect: [ :each |
 		                each at: #packageName ].
@@ -678,9 +686,10 @@ MCPToolContractsTest >> testFindPackagesListsPackagesForExistingProject [
 MCPToolContractsTest >> testFindPackagesReturnsErrorResultForMissingProject [
 
 	| result text |
-	result := self callToolNamed: 'find-packages' withArguments: {
-			          (#scope -> 'project').
-			          (#projectNames -> #( 'DefinitelyMissingProject' )) }
+	result := self
+		          callToolNamed: 'find-packages'
+		          withArguments:
+		          { (#projectNames -> #( 'DefinitelyMissingProject' )) }
 			          asDictionary.
 	text := self firstTextFromToolResult: result.
 	self assert: (result at: #isError).
@@ -731,13 +740,11 @@ MCPToolContractsTest >> testInitializeAdvertisesPharoServerIcon [
 { #category : 'tests' }
 MCPToolContractsTest >> testInputSchemaJSONOmitsDefaultSchemaNoise [
 
-	| condition imageBranch schema |
+	| condition schema |
 	schema := MCPToolFindMethods new inputSchema asJRPCJSON.
 	self deny: (schema includesKey: #required).
+	self deny: (schema includesKey: #oneOf).
 	self assert: (schema at: #additionalProperties) equals: false.
-	imageBranch := (schema at: #oneOf) first.
-	self deny: (imageBranch includesKey: #required).
-	self deny: (imageBranch includesKey: #additionalProperties).
 	condition := (schema at: #allOf) first.
 	self deny: (condition includesKey: #additionalProperties).
 	self deny: ((condition at: #if) includesKey: #additionalProperties).
@@ -854,10 +861,6 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 				 extraProperties at: #default)
 		equals: false.
 	self
-		assert: ((self inputPropertyNamed: 'scope' inTool: findClassesTool)
-				 extraProperties at: #default)
-		equals: 'image'.
-	self
 		assert:
 			((self inputPropertyNamed: 'filterTargets' inTool: findClassesTool)
 				 extraProperties at: #default)
@@ -896,11 +899,6 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 			((self inputPropertyNamed: 'includeSource' inTool: findMethodsTool)
 				 extraProperties at: #default)
 		equals: false.
-	self
-		assert:
-			((self inputPropertyNamed: 'scope' inTool: findPackagesTool)
-				 extraProperties at: #default)
-		equals: 'image'.
 	self
 		assert:
 			((self inputPropertyNamed: 'filterMode' inTool: findPackagesTool)
@@ -957,74 +955,44 @@ MCPToolContractsTest >> testParsedInputClassesUseRequestOrSpecSuffixes [
 { #category : 'tests' }
 MCPToolContractsTest >> testQueryScopeDescriptionsExplainScopeSemantics [
 
-	| classScopeDescription methodScopeDescription packageScopeDescription |
-	classScopeDescription := (self
-		                          inputPropertyNamed: 'scope'
-		                          inTool: MCPToolFindClasses new)
-		                         description.
-	methodScopeDescription := (self
-		                           inputPropertyNamed: 'scope'
-		                           inTool: MCPToolFindMethods new)
-		                          description.
-	packageScopeDescription := (self
-		                            inputPropertyNamed: 'scope'
-		                            inTool: MCPToolFindPackages new)
-		                           description.
+	| classDescription methodDescription packageDescription |
+	classDescription := (self
+		                     inputPropertyNamed: 'hierarchyClassNames'
+		                     inTool: MCPToolFindClasses new) description.
+	methodDescription := (self
+		                      inputPropertyNamed: 'packageNames'
+		                      inTool: MCPToolFindMethods new) description.
+	packageDescription := (self
+		                       inputPropertyNamed: 'projectNames'
+		                       inTool: MCPToolFindPackages new) description.
 	self assert:
-		(classScopeDescription includesSubstring: 'image=all classes').
+		(classDescription includesSubstring:
+			 'Omit all class scope properties').
+	self assert: (classDescription includesSubstring:
+			 'Combine with packageNames and classNames').
 	self assert:
-		(classScopeDescription includesSubstring: 'packages=classes defined').
+		(methodDescription includesSubstring: 'extension methods').
+	self assert: (methodDescription includesSubstring:
+			 'Omit all method scope properties').
+	self assert: (packageDescription includesSubstring:
+			 'project names whose packages are included').
 	self assert:
-		(classScopeDescription includesSubstring:
-			 'hierarchy=classNames plus').
-	self assert:
-		(methodScopeDescription includesSubstring: 'image=all methods').
-	self assert:
-		(methodScopeDescription includesSubstring: 'extension methods').
-	self assert: (methodScopeDescription includesSubstring:
-			 'classes=methods on classNames').
-	self assert: (packageScopeDescription includesSubstring:
-			 'project=packages belonging to projectNames')
+		(packageDescription includesSubstring: 'Combine with packageNames')
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testQueryToolSchemasAdvertiseScopeBranches [
+MCPToolContractsTest >> testQueryToolSchemasDoNotAdvertiseLegacyScopeBranches [
 
-	| classBranches methodBranches packageBranches projectBranch |
-	classBranches := MCPToolFindClasses new inputSchema asJRPCJSON at:
-		                 #oneOf.
-	methodBranches := MCPToolFindMethods new inputSchema asJRPCJSON at:
-		                  #oneOf.
-	packageBranches := MCPToolFindPackages new inputSchema asJRPCJSON
-		                   at: #oneOf.
-	self
-		assert: (classBranches collect: [ :each |
-				 ((each at: #properties) at: 'scope') at: #const ]) asArray
-		equals: #( 'image' 'packages' 'classes' 'hierarchy' ).
-	self
-		assert: ((classBranches detect: [ :each |
-				  (((each at: #properties) at: 'scope') at: #const) = 'packages' ])
-				 at: #required) asSet
-		equals: #( 'scope' 'packageNames' ) asSet.
-	self
-		assert: ((classBranches detect: [ :each |
-				  (((each at: #properties) at: 'scope') at: #const) = 'classes' ])
-				 at: #required) asSet
-		equals: #( 'scope' 'classNames' ) asSet.
-	self
-		assert: (methodBranches collect: [ :each |
-				 ((each at: #properties) at: 'scope') at: #const ]) asArray
-		equals: #( 'image' 'packages' 'classes' 'hierarchy' ).
-	self
-		assert: (packageBranches collect: [ :each |
-				 ((each at: #properties) at: 'scope') at: #const ]) asArray
-		equals: #( 'image' 'project' ).
-	projectBranch := packageBranches detect: [ :each |
-		                 (((each at: #properties) at: 'scope') at: #const)
-		                 = 'project' ].
-	self
-		assert: (projectBranch at: #required) asSet
-		equals: #( 'scope' 'projectNames' ) asSet
+	| classSchema methodSchema packageSchema |
+	classSchema := MCPToolFindClasses new inputSchema asJRPCJSON.
+	methodSchema := MCPToolFindMethods new inputSchema asJRPCJSON.
+	packageSchema := MCPToolFindPackages new inputSchema asJRPCJSON.
+	self deny: (classSchema includesKey: #oneOf).
+	self deny: (methodSchema includesKey: #oneOf).
+	self deny: (packageSchema includesKey: #oneOf).
+	self deny: ((classSchema at: #properties) includesKey: 'scope').
+	self deny: ((methodSchema at: #properties) includesKey: 'scope').
+	self deny: ((packageSchema at: #properties) includesKey: 'scope')
 ]
 
 { #category : 'tests' }
@@ -1137,7 +1105,7 @@ MCPToolContractsTest >> testRequestedToolIconsAreAdvertised [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testRpcToolCallSignalsInvalidParametersForConditionalSchemaFailure [
+MCPToolContractsTest >> testRpcToolCallRejectsLegacyScopeArgument [
 
 	self
 		should: [

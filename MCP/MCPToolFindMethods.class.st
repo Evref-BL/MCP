@@ -3,9 +3,8 @@ Lists methods in a chosen scope with optional filtering. It is the general metho
 "
 Class {
 	#name : 'MCPToolFindMethods',
-	#superclass : 'MCPToolMethodQuery',
+	#superclass : 'MCPToolQuery',
 	#traits : '{} + TMCPMethodTool',
-	#classTraits : '{} + TMCPMethodTool classTrait',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -38,7 +37,7 @@ MCPToolFindMethods >> classReferenceEntriesForQueryRequest: queryRequest [
 { #category : 'defaults' }
 MCPToolFindMethods >> defaultDescription [
 
-	^ 'List methods in a scope and optionally filter returned method entries. Use filterMode=exact with filterTargets=selector and caseSensitive=true to find implementors. Use filterMode=selectorReference to find senders of the selector named by filter. Use filterMode=classReference to find methods that reference the class named by filter. Use filterMode=variableReference to find methods that reference the variable named by filter. Reference lookup modes require filter and ignore filterTargets.'
+	^ 'List methods and optionally filter returned method entries. Omit packageNames, classNames, and hierarchyClassNames to search all methods. Use packageNames for package-defined and extension methods, classNames for exact classes, and hierarchyClassNames for hierarchy roots. Multiple scope properties are unioned. Use filterMode=exact with filterTargets=selector and caseSensitive=true to find implementors. Use filterMode=selectorReference to find senders of the selector named by filter. Use filterMode=classReference to find methods that reference the class named by filter. Use filterMode=variableReference to find methods that reference the variable named by filter. Reference lookup modes require filter and ignore filterTargets. Use where for recursive boolean predicates and relation predicates.'
 ]
 
 { #category : 'private - request' }
@@ -75,16 +74,17 @@ MCPToolFindMethods >> defaultInputSchema [
 		          properties:
 			          (self
 				           methodQueryScopeInputPropertiesWithScopeDescription:
-					           'Where to search for methods.') , (self
+					           'Method scope.') , (self
 					           methodQueryFilteringInputPropertiesWithFilterDescription:
 						           'For field filtering, the text matched against method-entry fields. For reference lookup modes, the referenced selector, class, or variable name; required when filterMode is selectorReference, classReference, or variableReference.'
-					           extraProperties: { filterTargetsProperty }
+					           extraProperties: {
+							           filterTargetsProperty.
+							           self wherePredicateSchemaProperty }
 					           includeSourceDescription:
 						           'Whether to include method source code in each result entry.'
 					           limitDescription:
 						           'Maximum number of matching methods to return. Use 0 to request counts only.');
 		          required: #(  );
-		          oneOf: self scopeBranchSchemasForClassAndMethodQueries;
 		          yourself.
 	schema allOf: self requiredFilterSchemasForReferenceModes.
 	^ schema
@@ -122,11 +122,11 @@ MCPToolFindMethods >> failureMessageForRequestedContext: requestedContext error:
 ]
 
 { #category : 'private - results' }
-MCPToolFindMethods >> failureMessageForScope: scope error: anError [
+MCPToolFindMethods >> failureMessageForScope: scopeSummary error: anError [
 
 	^ self
 		  scopeQueryFailureMessageFor: 'methods'
-		  scope: scope
+		  scope: scopeSummary
 		  error: anError
 ]
 
@@ -216,11 +216,12 @@ MCPToolFindMethods >> method: aCompiledMethod referencesAnyVariable: variables [
 { #category : 'private - methods' }
 MCPToolFindMethods >> methodEntriesFromMethods: compiledMethods queryRequest: queryRequest [
 
-	| entries needsSourceText |
+	| entries needsSourceText whereContext |
 	needsSourceText := queryRequest includeSource.
+	whereContext := self newWhereContext.
 	entries := OrderedCollection new.
 	compiledMethods do: [ :eachMethod |
-		| entry info sourceText |
+		| entry evaluation info sourceText |
 		info := MCPCompiledMethodInfo fromMethod: eachMethod.
 		sourceText := needsSourceText
 			              ifTrue: [ info source ]
@@ -229,33 +230,47 @@ MCPToolFindMethods >> methodEntriesFromMethods: compiledMethods queryRequest: qu
 			         queryRequest includeSource.
 		queryRequest includeSource ifTrue: [
 			entry at: #source put: sourceText ].
-		entries add: entry ].
+		evaluation := self
+			              whereEvaluationForEntityKind: #method
+			              entry: entry
+			              object: eachMethod
+			              context: whereContext.
+		(queryRequest whereSpec matchesEvaluation: evaluation) ifTrue: [
+			entries add: entry ] ].
 	^ self sortedMethodEntries: entries
 ]
 
 { #category : 'private - methods' }
 MCPToolFindMethods >> methodEntriesFromQueryRequest: queryRequest [
 
-	| entries matcher needsSourceForFiltering |
+	| entries matcher needsSourceForFiltering whereContext |
 	matcher := self
 		           matcherForPattern: queryRequest filterPattern
 		           mode: queryRequest filterMode
 		           caseSensitive: queryRequest caseSensitive.
 	needsSourceForFiltering := queryRequest needsSourceForFiltering.
+	whereContext := self newWhereContext.
 	entries := OrderedCollection new.
 	queryRequest scopeQuery methodsDo: [ :eachMethod |
-		| entry info sourceText |
+		| entry evaluation info matchesFilter sourceText |
 		info := MCPCompiledMethodInfo fromMethod: eachMethod.
 		entry := info asDictionaryIncludingSource: false.
 		sourceText := needsSourceForFiltering
 			              ifTrue: [ info source ]
 			              ifFalse: [ nil ].
-		(queryRequest hasFilterPattern not or: [
-			 self
-				 matchesFilterOnMethodEntry: entry
-				 sourceText: sourceText
-				 matcher: matcher
-				 targets: queryRequest filterTargets ]) ifTrue: [
+		matchesFilter := queryRequest hasFilterPattern not or: [
+			                 self
+				                 matchesFilterOnMethodEntry: entry
+				                 sourceText: sourceText
+				                 matcher: matcher
+				                 targets: queryRequest filterTargets ].
+		evaluation := self
+			              whereEvaluationForEntityKind: #method
+			              entry: entry
+			              object: eachMethod
+			              context: whereContext.
+		(matchesFilter and: [
+			 queryRequest whereSpec matchesEvaluation: evaluation ]) ifTrue: [
 			queryRequest includeSource ifTrue: [
 				sourceText ifNil: [ sourceText := info source ].
 				entry at: #source put: sourceText ].
@@ -273,6 +288,148 @@ MCPToolFindMethods >> methodEntrySchema [
 		  selectorDescription: 'The selector name.'
 		  sourceDescription:
 		  'The formatted source code of the method when includeSource=true.'
+]
+
+{ #category : 'private - schema' }
+MCPToolFindMethods >> methodEntrySchemaNamed: entryName description: entryDescription subjectDescription: subjectDescription selectorDescription: selectorDescription sourceDescription: sourceDescription [
+
+	^ MCPStructureProperties new
+		  name: entryName;
+		  type: 'object';
+		  description: entryDescription;
+		  properties: {
+				  (self
+					   schemaPropertyNamed: 'selector'
+					   type: 'string'
+					   description: selectorDescription).
+				  (self
+					   schemaPropertyNamed: 'className'
+					   type: 'string'
+					   description:
+						   'The base class that defines the ' , subjectDescription , '.').
+				  (self
+					   stringEnumSchemaPropertyNamed: 'side'
+					   description:
+						   'The side on which the ' , subjectDescription
+						   , ' is defined.'
+					   values: #( 'instance' 'class' )).
+				  (self
+					   schemaPropertyNamed: 'packageName'
+					   type: 'string'
+					   description:
+						   'The package that owns the ' , subjectDescription , '.').
+				  (self
+					   booleanSchemaPropertyNamed: 'isExtension'
+					   description: 'Whether the ' , subjectDescription
+						   , ' is an extension on its class package.').
+				  (self
+					   schemaPropertyNamed: 'protocol'
+					   type: 'string'
+					   description:
+						   'The protocol/category containing the ' , subjectDescription
+						   , '.').
+				  (self
+					   schemaPropertyNamed: 'source'
+					   type: 'string'
+					   description: sourceDescription) };
+		  required:
+			  #( 'selector' 'className' 'side' 'packageName' 'isExtension'
+			     'protocol' );
+		  additionalProperties: false;
+		  yourself
+]
+
+{ #category : 'private - schema' }
+MCPToolFindMethods >> methodQueryFilteringInputPropertiesWithFilterDescription: filterDescription extraProperties: extraProperties includeSourceDescription: includeSourceDescription limitDescription: limitDescription [
+
+	| properties |
+	properties := OrderedCollection new.
+	properties add: (self
+			 schemaPropertyNamed: 'filter'
+			 type: 'string'
+			 description: filterDescription).
+	extraProperties ifNotNil: [ properties addAll: extraProperties ].
+	properties add: (self
+			 stringEnumSchemaPropertyNamed: 'filterMode'
+			 description:
+			 'How the filter is matched or interpreted. Reference modes on find-methods are selectorReference for senders, classReference for class references, and variableReference for variable references.'
+			 values: self supportedFilterModes
+			 default: self defaultFilterMode).
+	properties add: (self
+			 booleanSchemaPropertyNamed: 'caseSensitive'
+			 description:
+			 'Whether filter matching is case-sensitive. Reference lookup modes ignore this option.'
+			 default: true).
+	properties add: (self
+			 booleanSchemaPropertyNamed: 'includeSource'
+			 description: includeSourceDescription
+			 default: false).
+	properties add: (self
+			 integerSchemaPropertyNamed: 'limit'
+			 description: limitDescription
+			 default: 100).
+	properties add: (self
+			 integerSchemaPropertyNamed: 'offset'
+			 description:
+			 'Zero-based pagination offset applied after filtering.'
+			 default: 0).
+	^ properties asArray
+]
+
+{ #category : 'private - results' }
+MCPToolFindMethods >> methodQueryResultDataForPage: page entriesKey: entriesKey [
+
+	^ self queryResultDataFrom: nil page: page entriesKey: entriesKey
+]
+
+{ #category : 'private - schema' }
+MCPToolFindMethods >> methodQueryScopeInputPropertiesWithScopeDescription: scopeDescription [
+
+	| classNamesProperty hierarchyClassNamesProperty packageNamesProperty sideProperty |
+	sideProperty := self
+		                stringEnumSchemaPropertyNamed: 'side'
+		                description:
+		                'Which method side to search. instance searches instance-side methods, class searches class-side methods, and both searches both sides.'
+		                values: #( 'instance' 'class' 'both' )
+		                default: 'both'.
+	packageNamesProperty := self
+		                        stringArraySchemaNamed: 'packageNames'
+		                        description: scopeDescription
+			                        ,
+			                        ' Package names whose defined methods and extension methods are included. Omit all method scope properties to search all methods. Combine with classNames and hierarchyClassNames to union scopes.'
+		                        itemDescription: 'A package name.'.
+	classNamesProperty := self
+		                      stringArraySchemaNamed: 'classNames'
+		                      description: scopeDescription
+			                      ,
+			                      ' Exact class names whose methods are included. Omit all method scope properties to search all methods. Combine with packageNames and hierarchyClassNames to union scopes.'
+		                      itemDescription: 'A class name.'.
+	hierarchyClassNamesProperty := self
+		                               stringArraySchemaNamed:
+		                               'hierarchyClassNames'
+		                               description: scopeDescription
+			                               ,
+			                               ' Class names whose superclasses and subclasses have their methods included. Omit all method scope properties to search all methods. Combine with packageNames and classNames to union scopes.'
+		                               itemDescription:
+		                               'A hierarchy root class name.'.
+	^ {
+		  sideProperty.
+		  packageNamesProperty.
+		  classNamesProperty.
+		  hierarchyClassNamesProperty }
+]
+
+{ #category : 'private - methods' }
+MCPToolFindMethods >> methodScopeQueryFromRequest: request [
+
+	^ MCPCompiledMethodScopeQuery new
+		  packageNames:
+			  (request stringCollectionArgumentNamed: 'packageNames');
+		  classNames: (request stringCollectionArgumentNamed: 'classNames');
+		  hierarchyClassNames:
+			  (request stringCollectionArgumentNamed: 'hierarchyClassNames');
+		  side: (request stringArgumentNamed: 'side' default: 'both');
+		  yourself
 ]
 
 { #category : 'private - template' }
@@ -310,8 +467,13 @@ MCPToolFindMethods >> referenceFilterModes [
 { #category : 'private - template' }
 MCPToolFindMethods >> requestedContextFromRequest: request [
 
-	^ { (#scope
-	   -> (request stringArgumentNamed: 'scope' default: 'image')) }
+	^ { (#scope -> (self
+		    classAndMethodScopeSummaryForPackageNames:
+		    (request stringCollectionArgumentNamed: 'packageNames')
+		    classNames:
+		    (request stringCollectionArgumentNamed: 'classNames')
+		    hierarchyClassNames:
+		    (request stringCollectionArgumentNamed: 'hierarchyClassNames'))) }
 		  asDictionary
 ]
 
@@ -358,27 +520,29 @@ MCPToolFindMethods >> sortedMethodEntries: entries [
 MCPToolFindMethods >> successSummaryForQueryRequest: queryRequest page: page [
 
 	^ self
-		  successSummaryForScope: queryRequest scopeQuery scope
-		  returnedCount: (page at: #returnedCount)
-		  totalCount: (page at: #totalCount)
-		  truncated: (page at: #truncated)
+		  successSummaryForScope: (self
+				   classAndMethodScopeSummaryForPackageNames:
+				   queryRequest scopeQuery packageNames
+				   classNames: queryRequest scopeQuery classNames
+				   hierarchyClassNames:
+				   queryRequest scopeQuery hierarchyClassNames)
+		  page: page
 ]
 
 { #category : 'private - results' }
-MCPToolFindMethods >> successSummaryForScope: scope returnedCount: returnedCount totalCount: totalCount truncated: truncated [
+MCPToolFindMethods >> successSummaryForScope: scopeSummary page: page [
 
 	^ self
 		  scopeQuerySuccessSummaryFor: 'methods'
-		  scope: scope
-		  returnedCount: returnedCount
-		  totalCount: totalCount
-		  truncated: truncated
+		  scope: scopeSummary
+		  page: page
 ]
 
 { #category : 'private - schema' }
 MCPToolFindMethods >> supportedFilterModes [
 
-	^ super supportedFilterModes , self referenceFilterModes
+	^ #( 'substring' 'prefix' 'exact' 'regex' )
+	  , self referenceFilterModes
 ]
 
 { #category : 'private - request' }

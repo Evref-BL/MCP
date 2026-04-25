@@ -5,13 +5,14 @@ Class {
 	#name : 'MCPFindPackagesRequest',
 	#superclass : 'Object',
 	#instVars : [
-		'scopeQuery',
 		'filterPattern',
 		'filterTargets',
 		'filterMode',
 		'caseSensitive',
 		'limit',
-		'offset'
+		'offset',
+		'scopeQuery',
+		'whereSpec'
 	],
 	#category : 'MCP-Requests',
 	#package : 'MCP',
@@ -22,16 +23,20 @@ Class {
 MCPFindPackagesRequest class >> fromRequest: request tool: aTool [
 
 	| scopeQuery |
-	scopeQuery := MCPPackageScopeQuery
-		              scope:
-		              (request stringArgumentNamed: 'scope' default: 'image')
+	scopeQuery := MCPPackageScopeQuery new
 		              projectNames:
-		              (request stringCollectionArgumentNamed: 'projectNames').
+			              (request stringCollectionArgumentNamed:
+					               'projectNames');
+		              packageNames:
+			              (request stringCollectionArgumentNamed:
+					               'packageNames');
+		              yourself.
 	^ self new
 		  scopeQuery: scopeQuery;
 		  filterPattern: (request stringArgumentNamed: 'filter');
 		  filterTargets: (aTool filterTargetsFromRequest: request);
 		  filterMode: (aTool filterModeFromRequest: request);
+		  whereSpec: (MCPWhereSpec fromToolRequest: request);
 		  caseSensitive:
 			  (request booleanArgumentNamed: 'caseSensitive' default: true);
 		  limit:
@@ -129,4 +134,16 @@ MCPFindPackagesRequest >> scopeQuery [
 MCPFindPackagesRequest >> scopeQuery: anObject [
 
 	scopeQuery := anObject
+]
+
+{ #category : 'accessing' }
+MCPFindPackagesRequest >> whereSpec [
+
+	^ whereSpec ifNil: [ MCPWhereSpec absent ]
+]
+
+{ #category : 'accessing' }
+MCPFindPackagesRequest >> whereSpec: anObject [
+
+	whereSpec := anObject
 ]
