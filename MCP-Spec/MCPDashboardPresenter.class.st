@@ -1,5 +1,5 @@
 "
-Spec presenter used by the inspector for an MCP server object. It shows server state, endpoint configuration, lifecycle controls, registered tools, monitoring metrics, and recent monitoring logs. The main dashboard widgets are arranged with draggable splitters and disclosure-style section headers so the tools, metrics, and log tables can be resized or collapsed while inspecting the server. Monitoring data can be refreshed manually or through the auto-refresh checkbox while the presenter is displayed.
+Spec presenter used by the inspector for an MCP server object. It shows server state, endpoint configuration, lifecycle controls, registered tools, observability metrics, and recent observability logs. The main dashboard widgets are arranged with draggable splitters and disclosure-style section headers so the tools, metrics, and log tables can be resized or collapsed while inspecting the server. Observability data can be refreshed manually or through the auto-refresh checkbox while the presenter is displayed.
 "
 Class {
 	#name : 'MCPDashboardPresenter',
@@ -20,9 +20,7 @@ Class {
 		'stopButton',
 		'restartButton',
 		'toolsTable',
-		'monitoringLabel',
 		'monitoringCheckBox',
-		'monitoringStatusLabel',
 		'clearMonitoringButton',
 		'metricsHeaderButton',
 		'metricsTable',
@@ -62,6 +60,18 @@ MCPDashboardPresenter >> addMonitoringWidgetsLayoutTo: aBoxLayout [
 ]
 
 { #category : 'layout' }
+MCPDashboardPresenter >> addPaddedCheckbox: aCheckBoxPresenter width: width to: aBoxLayout [
+
+	aBoxLayout
+		add: self newNullPresenter
+		withConstraints: [ :constraints | constraints width: 8 ].
+	aBoxLayout
+		add: aCheckBoxPresenter
+		withConstraints: [ :constraints | constraints width: width ].
+	^ aBoxLayout
+]
+
+{ #category : 'layout' }
 MCPDashboardPresenter >> addSectionLayout: aSectionLayout expanded: expanded to: aBoxLayout [
 
 	expanded
@@ -75,8 +85,7 @@ MCPDashboardPresenter >> applyConfiguration [
 	[
 	| newPort |
 	newPort := self readPortFromInput.
-	self model configurePort: newPort debugMode: debugCheckBox state.
-	self model monitoringEnabled: monitoringCheckBox state ]
+	self model configurePort: newPort debugMode: debugCheckBox state ]
 		on: Error
 		do: [ :error | UIManager default alert: error messageText ].
 
@@ -123,15 +132,17 @@ MCPDashboardPresenter >> clearMonitoring [
 { #category : 'layout' }
 MCPDashboardPresenter >> configurationLayout [
 
-	^ SpBoxLayout newLeftToRight
-		  add: portLabel expand: false;
-		  add: portInput
-		  withConstraints: [ :constraints | constraints width: 90 ];
-		  add: debugCheckBox
-		  withConstraints: [ :constraints | constraints width: 140 ];
-		  add: applyButton
-		  withConstraints: [ :constraints | constraints width: 110 ];
-		  yourself
+	| boxLayout |
+	boxLayout := SpBoxLayout newLeftToRight.
+	boxLayout
+		add: portLabel expand: false;
+		add: portInput
+		withConstraints: [ :constraints | constraints width: 90 ].
+	self addPaddedCheckbox: debugCheckBox width: 140 to: boxLayout.
+	boxLayout
+		add: applyButton
+		withConstraints: [ :constraints | constraints width: 110 ].
+	^ boxLayout
 ]
 
 { #category : 'initialization' }
@@ -141,6 +152,8 @@ MCPDashboardPresenter >> connectPresenters [
 	refreshButton action: [ self refreshView ].
 	autoRefreshCheckBox whenChangedDo: [ :enabled |
 		self autoRefreshChangedTo: enabled ].
+	monitoringCheckBox whenChangedDo: [ :enabled |
+		self observabilityChangedTo: enabled ].
 	toolsHeaderButton action: [ self toggleToolsSection ].
 	metricsHeaderButton action: [ self toggleMetricsSection ].
 	logsHeaderButton action: [ self toggleLogsSection ].
@@ -174,6 +187,12 @@ MCPDashboardPresenter >> dashboardWidgetsLayout [
 			  second: self monitoringWidgetsLayout;
 			  yourself ].
 	^ self dashboardWidgetsBoxLayout
+]
+
+{ #category : 'defaults' }
+MCPDashboardPresenter >> debugModeHelpText [
+
+	^ 'When enabled, server and JSON-RPC errors pass through to Pharo so a debugger can open instead of returning normal error responses. Use this while debugging tool or server failures.'
 ]
 
 { #category : 'layout' }
@@ -248,9 +267,7 @@ MCPDashboardPresenter >> initializePresenters [
 	stopButton := self instantiate: SpButtonPresenter.
 	restartButton := self instantiate: SpButtonPresenter.
 	toolsTable := self newTable.
-	monitoringLabel := self instantiate: SpLabelPresenter.
 	monitoringCheckBox := self instantiate: SpCheckBoxPresenter.
-	monitoringStatusLabel := self instantiate: SpLabelPresenter.
 	clearMonitoringButton := self instantiate: SpButtonPresenter.
 	metricsHeaderButton := self instantiate: SpButtonPresenter.
 	metricsTable := self newTable.
@@ -258,16 +275,17 @@ MCPDashboardPresenter >> initializePresenters [
 	logsTable := self newTable.
 
 	portLabel label: 'Port:'.
-	debugCheckBox label: 'Debug mode'.
+	debugCheckBox
+		label: 'Debug mode';
+		help: self debugModeHelpText.
 	applyButton label: 'Apply'.
 	refreshButton label: 'Refresh'.
 	autoRefreshCheckBox label: 'Auto-refresh'.
 	startButton label: 'Start'.
 	stopButton label: 'Stop'.
 	restartButton label: 'Restart'.
-	monitoringLabel label: 'Monitoring:'.
-	monitoringCheckBox label: 'Extended monitoring'.
-	clearMonitoringButton label: 'Clear monitoring'.
+	monitoringCheckBox label: 'Enable observability'.
+	clearMonitoringButton label: 'Clear'.
 
 	toolsTable
 		addColumn: (SpStringTableColumn title: 'Tool' evaluated: #name);
@@ -353,10 +371,6 @@ MCPDashboardPresenter >> isToolsSectionExpanded [
 MCPDashboardPresenter >> lifecycleActionsLayout [
 
 	^ SpBoxLayout newLeftToRight
-		  add: refreshButton
-		  withConstraints: [ :constraints | constraints width: 110 ];
-		  add: autoRefreshCheckBox
-		  withConstraints: [ :constraints | constraints width: 140 ];
 		  add: startButton
 		  withConstraints: [ :constraints | constraints width: 110 ];
 		  add: stopButton
@@ -402,13 +416,23 @@ MCPDashboardPresenter >> modelChanged [
 { #category : 'layout' }
 MCPDashboardPresenter >> monitoringControlsLayout [
 
-	^ SpBoxLayout newLeftToRight
-		  add: monitoringLabel expand: false;
-		  add: monitoringCheckBox
-		  withConstraints: [ :constraints | constraints width: 180 ];
-		  add: clearMonitoringButton
-		  withConstraints: [ :constraints | constraints width: 150 ];
-		  yourself
+	| controlsLayout |
+	controlsLayout := SpBoxLayout newLeftToRight.
+	self
+		addPaddedCheckbox: monitoringCheckBox
+		width: 190
+		to: controlsLayout.
+	controlsLayout
+		add: refreshButton
+		withConstraints: [ :constraints | constraints width: 110 ].
+	self
+		addPaddedCheckbox: autoRefreshCheckBox
+		width: 150
+		to: controlsLayout.
+	controlsLayout
+		add: clearMonitoringButton
+		withConstraints: [ :constraints | constraints width: 90 ].
+	^ controlsLayout
 ]
 
 { #category : 'layout' }
@@ -417,7 +441,6 @@ MCPDashboardPresenter >> monitoringHeaderLayout [
 	^ SpBoxLayout newTopToBottom
 		  add: self monitoringControlsLayout
 		  withConstraints: [ :constraints | constraints height: 30 ];
-		  add: monitoringStatusLabel expand: false;
 		  yourself
 ]
 
@@ -456,6 +479,16 @@ MCPDashboardPresenter >> monitoringWidgetsLayout [
 		  add: self monitoringHeaderLayout expand: false;
 		  add: self monitoringSectionsLayout;
 		  yourself
+]
+
+{ #category : 'actions' }
+MCPDashboardPresenter >> observabilityChangedTo: enabled [
+
+	| mcp |
+	mcp := self model ifNil: [ ^ self ].
+	mcp monitoringEnabled = enabled ifTrue: [ ^ self ].
+	mcp monitoringEnabled: enabled.
+	self refreshView
 ]
 
 { #category : 'private' }
@@ -517,14 +550,13 @@ MCPDashboardPresenter >> refreshView [
 			 expanded: self isToolsSectionExpanded).
 	toolsTable items: tools.
 	monitoringCheckBox state: mcp monitoringEnabled.
-	monitoringStatusLabel label: mcp monitoringStatusText.
 	metricsHeaderButton label: (self
-			 disclosureLabelFor: 'Tool call metrics'
+			 disclosureLabelFor: 'Tool metrics'
 			 count: metrics size
 			 expanded: self isMetricsSectionExpanded).
 	metricsTable items: metrics.
 	logsHeaderButton label: (self
-			 disclosureLabelFor: 'Monitoring log'
+			 disclosureLabelFor: 'Logs'
 			 count: logs size
 			 expanded: self isLogsSectionExpanded).
 	logsTable items: (self logsForDisplayFrom: logs)

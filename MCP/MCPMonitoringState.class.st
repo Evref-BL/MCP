@@ -62,7 +62,7 @@ MCPMonitoringState >> clear [
 	nextCallId := 0.
 	lastActivityAt := nil.
 	self clearLogs.
-	self recordLog: 'Monitoring cleared'
+	self recordLog: 'Observability cleared'
 ]
 
 { #category : 'logging' }
@@ -74,7 +74,7 @@ MCPMonitoringState >> clearLogs [
 { #category : 'activation' }
 MCPMonitoringState >> disable [
 
-	self enabled ifTrue: [ self recordLog: 'Monitoring disabled' ].
+	self enabled ifTrue: [ self recordLog: 'Observability disabled' ].
 	enabled := false.
 	self activeCalls removeAll
 ]
@@ -85,7 +85,7 @@ MCPMonitoringState >> enable [
 	enabled := true.
 	self ensureLogger.
 	lastActivityAt := DateAndTime now.
-	self recordLog: 'Monitoring enabled'
+	self recordLog: 'Observability enabled'
 ]
 
 { #category : 'accessing' }
@@ -345,11 +345,12 @@ MCPMonitoringState >> statusForResult: aToolResult error: anError [
 { #category : 'displaying' }
 MCPMonitoringState >> statusText [
 
-	self enabled ifFalse: [ ^ 'Monitoring disabled' ].
+	self enabled ifFalse: [ ^ 'Observability disabled' ].
 	self activeCalls isEmpty ifTrue: [
-		^ 'Monitoring enabled, idle. Calls: ' , self totalCallCount asString
-		  , ' | Errors: ' , self totalErrorCount asString ].
-	^ 'Monitoring enabled, running ' , self activeCalls size asString
+		^ 'Observability enabled, idle. Calls: '
+		  , self totalCallCount asString , ' | Errors: '
+		  , self totalErrorCount asString ].
+	^ 'Observability enabled, running ' , self activeCalls size asString
 	  , ' call(s): ' , self activeToolNamesText
 ]
 

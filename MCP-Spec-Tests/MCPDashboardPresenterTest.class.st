@@ -36,6 +36,29 @@ MCPDashboardPresenterTest >> testAutoRefreshIsDisabledByDefault [
 ]
 
 { #category : 'tests' }
+MCPDashboardPresenterTest >> testCheckboxRowsIncludeLeftPadding [
+
+	| configurationLayout observabilityLayout |
+	configurationLayout := MCPDashboardPresenter new configurationLayout.
+	observabilityLayout := MCPDashboardPresenter new
+		                       monitoringControlsLayout.
+
+	self assert: configurationLayout children size equals: 5.
+	self
+		assert: configurationLayout children third class
+		equals: SpNullPresenter.
+	self
+		assert: configurationLayout children fourth label
+		equals: 'Debug mode'.
+	self
+		assert: observabilityLayout children first class
+		equals: SpNullPresenter.
+	self
+		assert: observabilityLayout children fourth class
+		equals: SpNullPresenter
+]
+
+{ #category : 'tests' }
 MCPDashboardPresenterTest >> testCollapsedMetricsSectionKeepsHeaderVisible [
 
 	| presenter collapsedLayout |
@@ -152,34 +175,47 @@ MCPDashboardPresenterTest >> testDashboardWidgetsUseVerticalSplitters [
 ]
 
 { #category : 'tests' }
+MCPDashboardPresenterTest >> testDebugModeCheckboxExplainsBehavior [
+
+	| debugCheckBox presenter |
+	presenter := MCPDashboardPresenter new.
+	debugCheckBox := presenter instVarNamed: #debugCheckBox.
+
+	self assert: debugCheckBox label equals: 'Debug mode'.
+	self assert: (debugCheckBox help includesSubstring:
+			 'server and JSON-RPC errors pass through').
+	self assert:
+		(debugCheckBox help includesSubstring: 'debugger can open').
+	self assert:
+		(debugCheckBox help includesSubstring: 'normal error responses')
+]
+
+{ #category : 'tests' }
 MCPDashboardPresenterTest >> testDisclosureLabelsIncludeStateTitleAndCount [
 
 	| presenter |
 	presenter := MCPDashboardPresenter new.
 
 	self
-		assert: (presenter
-				 disclosureLabelFor: 'Monitoring log'
-				 count: 3
-				 expanded: true)
-		equals: '[-] Monitoring log (3)'.
+		assert:
+		(presenter disclosureLabelFor: 'Logs' count: 3 expanded: true)
+		equals: '[-] Logs (3)'.
 	self
-		assert: (presenter
-				 disclosureLabelFor: 'Monitoring log'
-				 count: 3
-				 expanded: false)
-		equals: '[+] Monitoring log (3)'
+		assert:
+		(presenter disclosureLabelFor: 'Logs' count: 3 expanded: false)
+		equals: '[+] Logs (3)'
 ]
 
 { #category : 'tests' }
-MCPDashboardPresenterTest >> testLifecycleActionsIncludeAutoRefreshControl [
+MCPDashboardPresenterTest >> testLifecycleActionsOnlyContainServerControls [
 
 	| layout |
 	layout := MCPDashboardPresenter new lifecycleActionsLayout.
 
-	self assert: layout children size equals: 5.
-	self assert: layout children first label equals: 'Refresh'.
-	self assert: layout children second label equals: 'Auto-refresh'
+	self assert: layout children size equals: 3.
+	self assert: layout children first label equals: 'Start'.
+	self assert: layout children second label equals: 'Stop'.
+	self assert: layout children third label equals: 'Restart'
 ]
 
 { #category : 'tests' }
@@ -191,4 +227,47 @@ MCPDashboardPresenterTest >> testLogsForDisplayAreTailFirst [
 		assert:
 		(presenter logsForDisplayFrom: #( 'oldest' 'middle' 'newest' ))
 		equals: #( 'newest' 'middle' 'oldest' )
+]
+
+{ #category : 'tests' }
+MCPDashboardPresenterTest >> testObservabilityControlsStartWithEnableRefreshAutoRefreshAndClear [
+
+	| layout |
+	layout := MCPDashboardPresenter new monitoringControlsLayout.
+
+	self assert: layout children size equals: 6.
+	self
+		assert: layout children second label
+		equals: 'Enable observability'.
+	self assert: layout children third label equals: 'Refresh'.
+	self assert: layout children fifth label equals: 'Auto-refresh'.
+	self assert: layout children sixth label equals: 'Clear'
+]
+
+{ #category : 'tests' }
+MCPDashboardPresenterTest >> testObservabilityToggleUpdatesModelImmediately [
+
+	| mcp presenter |
+	mcp := MCP new.
+	presenter := MCPDashboardPresenter on: mcp.
+
+	self deny: mcp monitoringEnabled.
+	presenter observabilityChangedTo: true.
+	self assert: mcp monitoringEnabled.
+	presenter observabilityChangedTo: false.
+	self deny: mcp monitoringEnabled
+]
+
+{ #category : 'tests' }
+MCPDashboardPresenterTest >> testRefreshViewUsesShortObservabilitySectionLabels [
+
+	| logsHeader metricsHeader mcp presenter |
+	mcp := MCP new.
+	presenter := MCPDashboardPresenter on: mcp.
+	presenter refreshView.
+	metricsHeader := presenter instVarNamed: #metricsHeaderButton.
+	logsHeader := presenter instVarNamed: #logsHeaderButton.
+
+	self assert: metricsHeader label equals: '[-] Tool metrics (0)'.
+	self assert: logsHeader label equals: '[-] Logs (0)'
 ]

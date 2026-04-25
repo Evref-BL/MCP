@@ -106,5 +106,5 @@ MCPMonitoringStateTest >> testRecordsSuccessfulCallMetricsAndLogs [
 	self assert: state recentCallRecords size equals: 1.
 	self assert: state logs size >= 2.
 	self assert:
-		(state statusText beginsWith: 'Monitoring enabled, idle')
+		(state statusText beginsWith: 'Observability enabled, idle')
 ]
