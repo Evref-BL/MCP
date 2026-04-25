@@ -89,3 +89,21 @@ MCPHTTPServer >> initialize [
 				 map: '/'
 				 to: [ :request :response | self answer: request with: response ])
 ]
+
+{ #category : 'testing' }
+MCPHTTPServer >> isListening [
+
+	^ server isListening
+]
+
+{ #category : 'testing' }
+MCPHTTPServer >> isRunning [
+
+	^ server isRunning
+]
+
+{ #category : 'accessing' }
+MCPHTTPServer >> localUrl [
+
+	^ server localUrl
+]

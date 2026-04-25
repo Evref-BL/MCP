@@ -1,3 +1,6 @@
+"
+Spec presenter used by the inspector for an MCP server object. It shows server state, endpoint configuration, lifecycle controls, and the currently registered tool list.
+"
 Class {
 	#name : 'MCPDashboardPresenter',
 	#superclass : 'SpPresenterWithModel',
@@ -96,7 +99,7 @@ MCPDashboardPresenter >> defaultLayout [
 { #category : 'api' }
 MCPDashboardPresenter >> initialExtent [
 
-	^ 780 @ 480
+	^ 940 @ 560
 ]
 
 { #category : 'initialization' }
@@ -117,18 +120,21 @@ MCPDashboardPresenter >> initializePresenters [
 	restartButton := self instantiate: SpButtonPresenter.
 	toolsTable := self newTable.
 
-	portLabel label: 'Port'.
-	debugCheckBox label: 'Mode debug'.
-	applyButton label: 'Appliquer'.
-	refreshButton label: 'Rafraichir'.
-	startButton label: 'Demarrer'.
-	stopButton label: 'Arreter'.
-	restartButton label: 'Redemarrer'.
+	portLabel label: 'Port:'.
+	debugCheckBox label: 'Debug mode'.
+	applyButton label: 'Apply'.
+	refreshButton label: 'Refresh'.
+	startButton label: 'Start'.
+	stopButton label: 'Stop'.
+	restartButton label: 'Restart'.
 
 	toolsTable
-		addColumn: (SpStringTableColumn title: 'Nom' evaluated: #name);
+		addColumn: (SpStringTableColumn title: 'Tool' evaluated: #name);
 		addColumn: (SpStringTableColumn
-				 title: 'Classe'
+				 title: 'Title'
+				 evaluated: [ :tool | tool title ifNil: [ '' ] ]);
+		addColumn: (SpStringTableColumn
+				 title: 'Class'
 				 evaluated: [ :tool | tool class name ]);
 		addColumn: (SpStringTableColumn
 				 title: 'Description'
@@ -145,19 +151,18 @@ MCPDashboardPresenter >> modelChanged [
 { #category : 'private' }
 MCPDashboardPresenter >> readPortFromInput [
 
-	| trimmedPort parsedPort |
+	| parsedPort trimmedPort |
 	trimmedPort := portInput text asString trimBoth.
 
-	trimmedPort isEmpty ifTrue: [
-		self error: 'Le port ne peut pas etre vide.' ].
+	trimmedPort isEmpty ifTrue: [ self error: 'Port cannot be empty.' ].
 
 	parsedPort := [ trimmedPort asInteger ]
 		              on: Error
 		              do: [ :error |
-		              self error: 'Le port doit etre un entier valide.' ].
+		              self error: 'Port must be a valid integer.' ].
 
 	(parsedPort between: 1 and: 65535) ifFalse: [
-		self error: 'Le port doit etre compris entre 1 et 65535.' ].
+		self error: 'Port must be between 1 and 65535.' ].
 
 	^ parsedPort
 ]
@@ -165,29 +170,31 @@ MCPDashboardPresenter >> readPortFromInput [
 { #category : 'actions' }
 MCPDashboardPresenter >> refreshView [
 
-	| mcp |
+	| mcp tools |
 	mcp := self model ifNil: [ ^ self ].
+	tools := mcp sortedTools.
 
-	summaryLabel label: mcp dashboardSummary.
-	statusLabel label: ('Etat HTTP: {1} | Ecoute: {2}' format: {
+	summaryLabel label: self summaryText.
+	statusLabel label: ('HTTP: {1} | Listener: {2}' format: {
 				 (mcp isRunning
-					  ifTrue: [ 'actif' ]
-					  ifFalse: [ 'arrete' ]).
+					  ifTrue: [ 'running' ]
+					  ifFalse: [ 'stopped' ]).
 				 (mcp isListening
-					  ifTrue: [ 'oui' ]
-					  ifFalse: [ 'non' ]) }).
-	urlLabel label: 'URL locale: ' , mcp localUrlString.
+					  ifTrue: [ 'listening' ]
+					  ifFalse: [ 'not listening' ]) }).
+	urlLabel label: 'Endpoint: ' , mcp localUrlString.
 	detailsLabel label:
-		('Handlers: {1} | Outils: {2} | Debug: {3}' format: {
+		('Handlers: {1} | Tools: {2} | Debug: {3}' format: {
 				 mcp handlersCount asString.
-				 mcp sortedTools size asString.
+				 tools size asString.
 				 (mcp debugMode
-					  ifTrue: [ 'oui' ]
-					  ifFalse: [ 'non' ]) }).
+					  ifTrue: [ 'enabled' ]
+					  ifFalse: [ 'disabled' ]) }).
 	portInput text: mcp port asString.
 	debugCheckBox state: mcp debugMode.
-	toolsLabel label: 'Outils exposes'.
-	toolsTable items: mcp sortedTools
+	toolsLabel label:
+		('Registered tools ({1})' format: { tools size asString }).
+	toolsTable items: tools
 ]
 
 { #category : 'actions' }
@@ -220,8 +227,23 @@ MCPDashboardPresenter >> stopServer [
 	self refreshView
 ]
 
+{ #category : 'private - text' }
+MCPDashboardPresenter >> summaryText [
+
+	| mcp |
+	mcp := self model.
+	^ String streamContents: [ :stream |
+		  stream
+			  nextPutAll: 'MCP server ';
+			  nextPutAll: (mcp isRunning
+					   ifTrue: [ 'running' ]
+					   ifFalse: [ 'stopped' ]);
+			  nextPutAll: ' on port ';
+			  print: mcp port ]
+]
+
 { #category : 'api' }
 MCPDashboardPresenter >> title [
 
-	^ 'MCP Dashboard'
+	^ 'MCP Server Dashboard'
 ]

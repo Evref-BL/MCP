@@ -15,11 +15,53 @@ Class {
 	#tag : 'Server'
 }
 
-{ #category : 'as yet unclassified' }
+{ #category : 'configuration' }
+MCP >> configurePort: aPortNumber debugMode: aBoolean [
+
+	| currentPort wasRunning |
+	currentPort := self port.
+	wasRunning := self isRunning.
+
+	wasRunning ifFalse: [
+		self port: aPortNumber.
+		self debugMode: aBoolean.
+		^ self ].
+
+	currentPort = aPortNumber ifTrue: [
+		self debugMode: aBoolean.
+		^ self ].
+
+	self stop.
+
+	[
+	self port: aPortNumber.
+	self debugMode: aBoolean.
+	self start ]
+		on: Error
+		do: [ :error |
+			self port: currentPort.
+			self debugMode: aBoolean.
+			self start.
+			error pass ]
+]
+
+{ #category : 'accessing' }
+MCP >> debugMode [
+
+	^ self server messageProcessor debugMode
+]
+
+{ #category : 'accessing' }
 MCP >> debugMode: aBoolean [
 
 	self server debugMode: aBoolean.
 	self server messageProcessor debugMode: aBoolean
+]
+
+{ #category : 'accessing' }
+MCP >> handlersCount [
+
+	^ self server messageProcessor handlersCount
 ]
 
 { #category : 'initialization' }
@@ -33,6 +75,24 @@ MCP >> initialize [
 		toolsList at: tool name put: tool ].
 	server := MCPHTTPServer new.
 	server addHandlersFromPragmasIn: self
+]
+
+{ #category : 'testing' }
+MCP >> isListening [
+
+	^ self server isListening
+]
+
+{ #category : 'testing' }
+MCP >> isRunning [
+
+	^ self server isRunning
+]
+
+{ #category : 'accessing' }
+MCP >> localUrlString [
+
+	^ self server localUrl asString
 ]
 
 { #category : 'start' }
@@ -52,6 +112,25 @@ MCP >> onInitialize: protocolVersion capabilities: capabilities clientInfo: clie
 				   websiteUrl: 'https://badetitou.fr';
 				   icons: { (MCPStructureIcon pngIconNamed: #pharo) };
 				   yourself)
+]
+
+{ #category : 'accessing' }
+MCP >> port [
+
+	^ self server port
+]
+
+{ #category : 'accessing' }
+MCP >> port: aPortNumber [
+
+	self server port: aPortNumber
+]
+
+{ #category : 'start' }
+MCP >> restart [
+
+	self stop.
+	^ self start
 ]
 
 { #category : 'as yet unclassified' }
@@ -130,6 +209,13 @@ MCP >> saveImageSession [
 MCP >> server [
 
 	^ server
+]
+
+{ #category : 'accessing' }
+MCP >> sortedTools [
+
+	^ self toolsList values asSortedCollection: [ :left :right |
+		  left name <= right name ]
 ]
 
 { #category : 'start' }
