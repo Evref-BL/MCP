@@ -4,6 +4,8 @@ Removes classes from the image in one batch. It surfaces safe-removal warnings b
 Class {
 	#name : 'MCPToolRemoveClasses',
 	#superclass : 'MCPTool',
+	#traits : '{} + TMCPClassTool',
+	#classTraits : '{} + TMCPClassTool classTrait',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -31,7 +33,7 @@ MCPToolRemoveClasses >> commandForRequest: removeRequest [
 { #category : 'defaults' }
 MCPToolRemoveClasses >> defaultDescription [
 
-	^ 'Remove classes as one batch. By default the tool respects safe-removal warnings. When force is true, it still removes the classes and returns those warnings.'
+	^ 'Remove classes as one batch. Safe-removal warnings stop the removal unless force is true. With force=true, the tool still returns those warnings.'
 ]
 
 { #category : 'defaults' }
@@ -59,7 +61,7 @@ MCPToolRemoveClasses >> defaultInputSchema [
 					   name: 'force';
 					   type: 'boolean';
 					   description:
-						   'When true, proceed even if safe-removal warnings are raised. Those warnings are returned in the tool result warnings. Defaults to false.';
+						   'When true, proceed even if safe-removal warnings are raised. Those warnings are returned in the tool result warnings.';
 					   default: false;
 					   yourself) };
 		  required: #( 'classNames' );
@@ -217,7 +219,7 @@ MCPToolRemoveClasses >> errorResultForError: anError classNames: classNames [
 MCPToolRemoveClasses >> executeWithRequest: request [
 
 	| removeRequest result |
-	removeRequest := self toolRequestFromRequest: request.
+	removeRequest := self parsedRequestFromToolRequest: request.
 	^ [
 	  result := (self commandForRequest: removeRequest) execute.
 	  self
@@ -246,6 +248,12 @@ MCPToolRemoveClasses >> failureMessageForClassNames: classNames error: anError [
 			  nextPutAll: anError class name;
 			  nextPutAll: '): ';
 			  nextPutAll: anError messageText ]
+]
+
+{ #category : 'private - request' }
+MCPToolRemoveClasses >> parsedRequestFromToolRequest: request [
+
+	^ MCPRemoveClassesRequest fromRequest: request tool: self
 ]
 
 { #category : 'private' }
@@ -299,10 +307,4 @@ MCPToolRemoveClasses >> successSummaryForClassNames: classNames removedClasses: 
 				  nextPutAll: 'Removed packages: ';
 				  nextPutAll: (', ' join: removedPackageNames);
 				  nextPut: $. ] ]
-]
-
-{ #category : 'private - request' }
-MCPToolRemoveClasses >> toolRequestFromRequest: request [
-
-	^ MCPRemoveClassesRequest fromRequest: request tool: self
 ]

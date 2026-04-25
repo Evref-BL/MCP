@@ -40,13 +40,10 @@ MCPRemoveMethodsCommand >> execute [
 					                                    selector: selector asString ].
 		                  tool dataForMethod: compiledMethod ].
 	tool forceRemoveSelectors: selectorSymbols from: behavior.
-	^ {
-		  (#data -> {
-			   (#className -> request className).
-			   (#classSide -> request classSide).
-			   (#selectors -> request selectors asArray).
-			   (#removedMethods -> removedMethods asArray) } asDictionary).
-		  (#warnings -> { warningMessage }) } asDictionary
+	^ MCPRemoveMethodsResult
+		  fromRequest: request
+		  removedMethods: removedMethods
+		  warningMessages: { warningMessage }
 ]
 
 { #category : 'initialization' }

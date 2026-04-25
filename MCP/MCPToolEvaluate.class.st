@@ -81,15 +81,21 @@ MCPToolEvaluate >> defaultTitle [
 MCPToolEvaluate >> executeWithRequest: request [
 
 	| commandResult evaluateRequest |
-	evaluateRequest := self toolRequestFromRequest: request.
+	evaluateRequest := self parsedRequestFromToolRequest: request.
 	commandResult := (self commandForRequest: evaluateRequest) execute.
-	(commandResult at: #status) = #error ifTrue: [
+	commandResult isError ifTrue: [
 		^ self
-			  errorResultText: (commandResult at: #summary)
-			  details: (commandResult at: #error) ].
+			  errorResultText: commandResult summary
+			  details: commandResult errorDetails ].
 	^ self
 		  successResultText: 'Code evaluated successfully.'
-		  data: (commandResult at: #data)
+		  data: commandResult data
+]
+
+{ #category : 'private - request' }
+MCPToolEvaluate >> parsedRequestFromToolRequest: request [
+
+	^ MCPEvaluateRequest fromRequest: request tool: self
 ]
 
 { #category : 'private' }
@@ -126,10 +132,4 @@ MCPToolEvaluate >> syntaxFailureMessageFor: aNotice [
 			  stream
 				  nextPutAll: ' Position: ';
 				  print: aNotice position ] ]
-]
-
-{ #category : 'private - request' }
-MCPToolEvaluate >> toolRequestFromRequest: request [
-
-	^ MCPEvaluateRequest fromRequest: request tool: self
 ]

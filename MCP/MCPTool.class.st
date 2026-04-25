@@ -466,6 +466,12 @@ MCPTool >> outputSchema: anObject [
 	outputSchema := anObject
 ]
 
+{ #category : 'private - request' }
+MCPTool >> parsedRequestFromToolRequest: request [
+
+	^ request
+]
+
 { #category : 'private - icons' }
 MCPTool >> pngCompositeBaseIconNamed: aBaseIconSymbol badgeIconNamed: aBadgeIconSymbol [
 
@@ -665,12 +671,6 @@ MCPTool >> title [
 MCPTool >> title: anObject [
 
 	title := anObject
-]
-
-{ #category : 'private - request' }
-MCPTool >> toolRequestFromRequest: request [
-
-	^ request
 ]
 
 { #category : 'private - schema' }

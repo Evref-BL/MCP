@@ -1,5 +1,5 @@
 Class {
-	#name : 'MCPClassDescription',
+	#name : 'MCPClassDescriptionInfo',
 	#superclass : 'Object',
 	#instVars : [
 		'className',
@@ -14,7 +14,9 @@ Class {
 		'instanceMethodCount',
 		'classMethodCount',
 		'layoutClassName',
-		'sharedVariableNames'
+		'sharedVariableNames',
+		'traitComposition',
+		'classTraitComposition'
 	],
 	#category : 'MCP-DTOs',
 	#package : 'MCP',
@@ -22,13 +24,13 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPClassDescription class >> fromClass: aClass [
+MCPClassDescriptionInfo class >> fromClass: aClass [
 
 	^ self new initializeFromClass: aClass
 ]
 
 { #category : 'converting' }
-MCPClassDescription >> asDictionary [
+MCPClassDescriptionInfo >> asDictionary [
 
 	^ {
 		  (#className -> className).
@@ -39,6 +41,8 @@ MCPClassDescription >> asDictionary [
 		  (#classSlotNames -> classSlotNames).
 		  (#traitNames -> traitNames).
 		  (#classTraitNames -> classTraitNames).
+		  (#traitComposition -> traitComposition).
+		  (#classTraitComposition -> classTraitComposition).
 		  (#sharedPoolNames -> sharedPoolNames).
 		  (#sharedVariableNames -> sharedVariableNames).
 		  (#layoutClassName -> layoutClassName).
@@ -47,7 +51,7 @@ MCPClassDescription >> asDictionary [
 ]
 
 { #category : 'initialization' }
-MCPClassDescription >> initializeFromClass: aClass [
+MCPClassDescriptionInfo >> initializeFromClass: aClass [
 
 	className := aClass name asString.
 	superclassName := aClass superclass
@@ -64,6 +68,8 @@ MCPClassDescription >> initializeFromClass: aClass [
 		              asArray.
 	classTraitNames := (aClass classSide traits collect: [ :each |
 		                    each name asString ]) asArray.
+	traitComposition := aClass traitCompositionString.
+	classTraitComposition := aClass classSide traitCompositionString.
 	sharedPoolNames := (aClass sharedPools collect: [ :each |
 		                    each name asString ]) asArray.
 	sharedVariableNames := (aClass classVarNames collect: [ :each |

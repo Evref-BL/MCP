@@ -4,6 +4,8 @@ Edits class structure and metadata in the running image. Use it for class-level 
 Class {
 	#name : 'MCPToolEditClass',
 	#superclass : 'MCPToolEdit',
+	#traits : '{} + TMCPClassTool',
+	#classTraits : '{} + TMCPClassTool classTrait',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -35,7 +37,7 @@ MCPToolEditClass >> dataForResult: aResult operation: operation [
 { #category : 'defaults' }
 MCPToolEditClass >> defaultDescription [
 
-	^ 'Create, move, recategorize, rename, or reparent classes; add, remove, rename, pull up, or push down slots; or set a class comment in the running image. Use operation=move with a destination tag to recategorize a class; omit packageName to keep the class in its current package. Use this for class-level definition and structural updates; use edit-method for methods and remove-classes for deletion.'
+	^ 'Create, move, recategorize, rename, or reparent classes; add, remove, rename, pull up, or push down slots; or set a class comment in the running image. Recategorize means changing the package tag. Use operation=move with a destination tag only to recategorize inside the current package. Use operation=move with packageName and optional tag to move to another package; omit packageName to keep the class in its current package. force=false stops on refactoring warnings and returns impactMessages plus howToProceed; force=true continues and returns warnings in the output.'
 ]
 
 { #category : 'defaults' }
@@ -52,7 +54,7 @@ MCPToolEditClass >> defaultInputSchema [
 		  properties: {
 				  (self
 					   operationSchemaPropertyWithDescription:
-						   'The class edit operation to perform.'
+						   'The class edit operation to perform. operation=move moves a class and can recategorize it by changing tag.'
 					   supportedValuesLeadIn: 'Supported values are').
 				  (MCPStructureProperties new
 					   name: 'className';
@@ -69,13 +71,13 @@ MCPToolEditClass >> defaultInputSchema [
 					   name: 'packageName';
 					   type: 'string';
 					   description:
-						   'The package to create into when operation=create, or the destination package when operation=move. When operation=move and packageName is omitted, the class stays in its current package. Missing destination packages are created automatically.';
+						   'The package to create into when operation=create. For operation=move, this is the destination package. Omit packageName during move to keep the class in its current package; combine that with tag to recategorize inside the current package. Missing destination packages are created automatically.';
 					   yourself).
 				  (MCPStructureProperties new
 					   name: 'tag';
 					   type: 'string';
 					   description:
-						   'An optional package tag for operation=create, or the destination tag when operation=move. For same-package recategorization, use operation=move with tag and omit packageName. Missing destination tags are created automatically.';
+						   'An optional package tag for operation=create. For operation=move, this is the destination tag. To recategorize without changing packages, set operation=move and tag, and omit packageName. Missing destination tags are created automatically.';
 					   yourself).
 				  (self
 					   stringArraySchemaNamed: 'slots'
@@ -554,7 +556,7 @@ MCPToolEditClass >> executeRenameSlotWithRequest: request [
 { #category : 'executing' }
 MCPToolEditClass >> executeRenameWithRequest: request [
 
-	| className force newClassName refactoringModel requestedContext result scopeParameters targetClass |
+	| className force newClassName refactoringModel requestedContext result scopeSpec targetClass |
 	className := request stringArgumentNamed: 'className'.
 	newClassName := request stringArgumentNamed: 'newClassName'.
 	force := self forceFromRequest: request.
@@ -566,10 +568,9 @@ MCPToolEditClass >> executeRenameWithRequest: request [
 		  force: force
 		  requestedContext: requestedContext
 		  work: [
-			  scopeParameters := self refactoringScopeParametersFromRequest:
-				                     request.
+			  scopeSpec := self refactoringScopeSpecFromRequest: request.
 			  self
-				  addRefactoringScopeContextFrom: scopeParameters
+				  addRefactoringScopeContextFromSpec: scopeSpec
 				  toRequestedContext: requestedContext.
 			  targetClass := Smalltalk globals
 				                 at: className asSymbol
@@ -577,8 +578,7 @@ MCPToolEditClass >> executeRenameWithRequest: request [
 				                 MCPCommandError signalMissingClassNamed:
 					                 className ].
 			  refactoringModel := self
-				                      refactoringModelForScopeParameters:
-				                      scopeParameters
+				                      refactoringModelForScopeSpec: scopeSpec
 				                      anchoredAtBehavior: targetClass.
 			  result := (MCPRenameClassCommand
 				             className: className

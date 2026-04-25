@@ -259,7 +259,12 @@ MCPToolInspectClassTest >> testIncludesTraitNamesForTraitUsingClass [
 	self assert: ((data at: #traitNames) anySatisfy: [ :each |
 			 each includesSubstring: 'TAbleToRotate' ]).
 	self assert: ((data at: #classTraitNames) anySatisfy: [ :each |
-			 each includesSubstring: 'TAbleToRotate' ])
+			 each includesSubstring: 'TAbleToRotate' ]).
+	self assert:
+		((data at: #traitComposition) includesSubstring: 'TAbleToRotate').
+	self assert:
+		((data at: #classTraitComposition) includesSubstring:
+			 'TAbleToRotate')
 ]
 
 { #category : 'tests' }
@@ -288,6 +293,8 @@ MCPToolInspectClassTest >> testInspectsClassMetadata [
 		equals: #( 'classBeta' 'classAlpha' ).
 	self assert: (data at: #traitNames) isEmpty.
 	self assert: (data at: #classTraitNames) isEmpty.
+	self assert: (data at: #traitComposition) equals: '{}'.
+	self assert: (data at: #classTraitComposition) equals: '{}'.
 	self assert: (data at: #sharedPoolNames) isEmpty.
 	self
 		assert: (data at: #sharedVariableNames)

@@ -22,13 +22,10 @@ MCPToolRunTests >> addTestCasesFrom: aTestOrSuite to: testCases [
 { #category : 'private' }
 MCPToolRunTests >> aggregateDataForResults: resultEntries timedOut: timedOut unrunTests: unrunTests [
 
-	| data |
-	data := Dictionary new.
-	data at: #results put: resultEntries asArray.
-	timedOut ifTrue: [
-		data at: #timedOut put: true.
-		data at: #unrunTests put: unrunTests asArray ].
-	^ data
+	^ MCPRunTestsResult
+		  results: resultEntries
+		  timedOut: timedOut
+		  unrunTests: unrunTests
 ]
 
 { #category : 'private - execution' }
@@ -78,7 +75,7 @@ MCPToolRunTests >> defaultInputSchema [
 				  (self
 					   integerSchemaPropertyNamed: 'timeoutSeconds'
 					   description:
-					   'Server-side timeout for the batch. Defaults to 90 seconds so partial results can be returned before the outer MCP call times out. Use 0 to return immediately with all tests listed in unrunTests.'
+					   'Server-side timeout for the batch. Use 0 to return immediately with all tests listed in unrunTests.'
 					   default: self defaultTimeoutSeconds) };
 		  required: #( 'tests' );
 		  yourself
@@ -149,13 +146,14 @@ MCPToolRunTests >> errorResultForError: anError tests: testRequests [
 { #category : 'executing' }
 MCPToolRunTests >> executeWithRequest: request [
 
-	| data runTestsRequest |
+	| data result runTestsRequest |
 	runTestsRequest := MCPRunTestsRequest new
 		                   initializeTestRequests: #(  )
 		                   timeoutMilliseconds: nil.
 	^ [
-	  runTestsRequest := self toolRequestFromRequest: request.
-	  data := (self commandForRequest: runTestsRequest) execute.
+	  runTestsRequest := self parsedRequestFromToolRequest: request.
+	  result := (self commandForRequest: runTestsRequest) execute.
+	  data := result asDictionary.
 	  self
 		  successResultText: (self successSummaryForData: data)
 		  data: data ]
@@ -197,6 +195,12 @@ MCPToolRunTests >> hasTimedOutAt: deadline [
 MCPToolRunTests >> millisecondsRemainingUntil: deadline [
 
 	^ 0 max: deadline - Time millisecondClockValue
+]
+
+{ #category : 'private - request' }
+MCPToolRunTests >> parsedRequestFromToolRequest: request [
+
+	^ MCPRunTestsRequest fromRequest: request tool: self
 ]
 
 { #category : 'private' }
@@ -547,12 +551,6 @@ MCPToolRunTests >> timeoutMillisecondsFromRequest: request [
 	^ (request
 		   nonNegativeIntegerArgumentNamed: 'timeoutSeconds'
 		   default: self defaultTimeoutSeconds) * 1000
-]
-
-{ #category : 'private - request' }
-MCPToolRunTests >> toolRequestFromRequest: request [
-
-	^ MCPRunTestsRequest fromRequest: request tool: self
 ]
 
 { #category : 'private' }

@@ -35,11 +35,11 @@ MCPInspectClassCommand >> execute [
 	data at: #subclasses put: (tool
 			 descriptionDictionariesForClasses: subclasses
 			 includeComment: request includeComment).
-	^ {
-		  (#className -> request className).
-		  (#data -> data).
-		  (#superclasses -> superclasses).
-		  (#subclasses -> subclasses) } asDictionary
+	^ MCPInspectClassResult
+		  className: request className
+		  data: data
+		  superclasses: superclasses
+		  subclasses: subclasses
 ]
 
 { #category : 'initialization' }

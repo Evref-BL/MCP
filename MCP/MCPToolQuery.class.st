@@ -61,16 +61,16 @@ MCPToolQuery >> executeWithRequest: request [
 	| command page queryRequest requestedContext |
 	requestedContext := self requestedContextFromRequest: request.
 	^ [
-	  queryRequest := self toolRequestFromRequest: request.
+	  queryRequest := self parsedRequestFromToolRequest: request.
 	  command := self commandForRequest: queryRequest.
 	  page := self
 		          queryPageForEntries: command execute
-		          limit: (self limitFromQuerySpec: queryRequest)
-		          offset: (self offsetFromQuerySpec: queryRequest).
+		          limit: (self limitFromQueryRequest: queryRequest)
+		          offset: (self offsetFromQueryRequest: queryRequest).
 	  self
 		  successResultText:
-		  (self successSummaryForQuerySpec: queryRequest page: page)
-		  data: (self queryResultDataForQuerySpec: queryRequest page: page) ]
+		  (self successSummaryForQueryRequest: queryRequest page: page)
+		  data: (self queryResultDataForQueryRequest: queryRequest page: page) ]
 		  on: Error
 		  do: [ :error |
 			  self
@@ -106,7 +106,7 @@ MCPToolQuery >> filterTargetsFromRequest: request [
 ]
 
 { #category : 'private - template' }
-MCPToolQuery >> limitFromQuerySpec: queryRequest [
+MCPToolQuery >> limitFromQueryRequest: queryRequest [
 
 	^ queryRequest limit
 ]
@@ -175,13 +175,19 @@ MCPToolQuery >> normalizeFilterString: aValue caseSensitive: aBoolean [
 ]
 
 { #category : 'private - template' }
-MCPToolQuery >> offsetFromQuerySpec: queryRequest [
+MCPToolQuery >> offsetFromQueryRequest: queryRequest [
 
 	^ queryRequest offset
 ]
 
+{ #category : 'private - request' }
+MCPToolQuery >> parsedRequestFromToolRequest: request [
+
+	^ self queryRequestFromToolRequest: request
+]
+
 { #category : 'private - template' }
-MCPToolQuery >> queryEntriesForQuerySpec: queryRequest [
+MCPToolQuery >> queryEntriesForQueryRequest: queryRequest [
 
 	self subclassResponsibility
 ]
@@ -208,7 +214,13 @@ MCPToolQuery >> queryPageForEntries: entries limit: limit offset: offset [
 ]
 
 { #category : 'private - template' }
-MCPToolQuery >> queryResultDataForQuerySpec: queryRequest page: page [
+MCPToolQuery >> queryRequestFromToolRequest: request [
+
+	self subclassResponsibility
+]
+
+{ #category : 'private - template' }
+MCPToolQuery >> queryResultDataForQueryRequest: queryRequest page: page [
 
 	self subclassResponsibility
 ]
@@ -219,12 +231,6 @@ MCPToolQuery >> queryResultDataFrom: baseData page: page entriesKey: entriesKey 
 	^ {
 		  (#totalCount -> (page at: #totalCount)).
 		  (entriesKey -> (page at: #entries)) } asDictionary
-]
-
-{ #category : 'private - template' }
-MCPToolQuery >> querySpecFromRequest: request [
-
-	self subclassResponsibility
 ]
 
 { #category : 'private - template' }
@@ -308,7 +314,7 @@ MCPToolQuery >> scopeQuerySuccessSummaryFor: resultKind scope: scope returnedCou
 ]
 
 { #category : 'private - template' }
-MCPToolQuery >> successSummaryForQuerySpec: queryRequest page: page [
+MCPToolQuery >> successSummaryForQueryRequest: queryRequest page: page [
 
 	self subclassResponsibility
 ]
@@ -317,10 +323,4 @@ MCPToolQuery >> successSummaryForQuerySpec: queryRequest page: page [
 MCPToolQuery >> supportedFilterTargets [
 
 	self subclassResponsibility
-]
-
-{ #category : 'private - request' }
-MCPToolQuery >> toolRequestFromRequest: request [
-
-	^ self querySpecFromRequest: request
 ]

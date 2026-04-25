@@ -12,7 +12,7 @@ Class {
 { #category : 'defaults' }
 MCPToolFindPackages >> defaultDescription [
 
-	^ 'List packages in the image or in a project and optionally filter them by package metadata.'
+	^ 'List packages and optionally filter them by package metadata. scope=image searches all packages in the image. scope=project searches packages belonging to projectNames.'
 ]
 
 { #category : 'private - request' }
@@ -34,26 +34,25 @@ MCPToolFindPackages >> defaultInputSchema [
 	scopeProperty := self
 		                 stringEnumSchemaPropertyNamed: 'scope'
 		                 description:
-		                 'Where to search for packages. Defaults to image.'
+		                 'Where to search for packages. image=all packages in the image. project=packages belonging to projectNames.'
 		                 values: #( 'image' 'project' )
 		                 default: 'image'.
 	projectNamesProperty := self
 		                        stringArraySchemaNamed: 'projectNames'
 		                        description:
-		                        'The project names that define the project scope. Required when scope=project.'
+		                        'The project names that define the project scope. Required when scope=project. Results include packages belonging to any listed project.'
 		                        itemDescription: 'A project name.'.
 	filterModeProperty := self
 		                      stringEnumSchemaPropertyNamed: 'filterMode'
 		                      description:
-			                      'How the package filter is matched. Defaults to '
-			                      , self defaultFilterMode , '.'
+		                      'How the package filter is matched.'
 		                      values:
 		                      #( 'substring' 'prefix' 'exact' 'regex' )
 		                      default: self defaultFilterMode.
 	filterTargetsProperty := self
 		                         stringEnumArraySchemaNamed: 'filterTargets'
 		                         description:
-		                         'Optional package-entry fields matched by filter. Defaults to package.'
+		                         'Optional package-entry fields matched by filter.'
 		                         itemDescription: 'A filter target.'
 		                         values: self supportedFilterTargets
 		                         default: self defaultFilterTargets.
@@ -71,18 +70,17 @@ MCPToolFindPackages >> defaultInputSchema [
 				  filterModeProperty.
 				  (self
 					   booleanSchemaPropertyNamed: 'caseSensitive'
-					   description:
-						   'Whether filter matching is case-sensitive. Defaults to true.'
+					   description: 'Whether filter matching is case-sensitive.'
 					   default: true).
 				  (self
 					   integerSchemaPropertyNamed: 'limit'
 					   description:
-						   'Maximum number of matching packages to return. Defaults to 100. Use 0 to request counts only.'
+						   'Maximum number of matching packages to return. Use 0 to request counts only.'
 					   default: 100).
 				  (self
 					   integerSchemaPropertyNamed: 'offset'
 					   description:
-						   'Zero-based pagination offset applied after filtering. Defaults to 0.'
+						   'Zero-based pagination offset applied after filtering.'
 					   default: 0) };
 		  required: #(  );
 		  oneOf: self scopeBranchSchemasForPackageQueries;
@@ -218,21 +216,21 @@ MCPToolFindPackages >> packageInfoDataProperties [
 ]
 
 { #category : 'private - template' }
-MCPToolFindPackages >> queryEntriesForQuerySpec: querySpec [
+MCPToolFindPackages >> queryEntriesForQueryRequest: queryRequest [
 
-	^ self packageEntriesForRequest: querySpec
+	^ self packageEntriesForRequest: queryRequest
 ]
 
 { #category : 'private - template' }
-MCPToolFindPackages >> queryResultDataForQuerySpec: queryRequest page: page [
-
-	^ self queryResultDataFrom: nil page: page entriesKey: #packages
-]
-
-{ #category : 'private - template' }
-MCPToolFindPackages >> querySpecFromRequest: request [
+MCPToolFindPackages >> queryRequestFromToolRequest: request [
 
 	^ MCPFindPackagesRequest fromRequest: request tool: self
+]
+
+{ #category : 'private - template' }
+MCPToolFindPackages >> queryResultDataForQueryRequest: queryRequest page: page [
+
+	^ self queryResultDataFrom: nil page: page entriesKey: #packages
 ]
 
 { #category : 'private - template' }
@@ -244,7 +242,7 @@ MCPToolFindPackages >> requestedContextFromRequest: request [
 ]
 
 { #category : 'private - template' }
-MCPToolFindPackages >> successSummaryForQuerySpec: queryRequest page: page [
+MCPToolFindPackages >> successSummaryForQueryRequest: queryRequest page: page [
 
 	^ self
 		  successSummaryForScope: queryRequest scopeQuery scope

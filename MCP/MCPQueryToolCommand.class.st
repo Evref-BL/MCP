@@ -25,7 +25,7 @@ MCPQueryToolCommand class >> tool: aTool request: aRequest [
 { #category : 'executing' }
 MCPQueryToolCommand >> execute [
 
-	^ tool queryEntriesForQuerySpec: request
+	^ tool queryEntriesForQueryRequest: request
 ]
 
 { #category : 'accessing' }

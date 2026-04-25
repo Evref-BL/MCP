@@ -37,13 +37,11 @@ MCPEvaluateCommand >> execute [
 		          on: Error
 		          do: [ :error | ^ self runtimeFailureFor: error ].
 	notice ifNotNil: [ ^ self syntaxFailureFor: notice ].
-	^ {
-		  (#status -> #ok).
-		  (#data -> {
-			   (#resultClassName -> answer class name asString).
-			   (#resultPrintString
-			    -> (answer printStringLimitedTo: resultPreviewCharacterLimit)) }
-			   asDictionary) } asDictionary
+	^ MCPEvaluateResult okData: {
+			  (#resultClassName -> answer class name asString).
+			  (#resultPrintString
+			   -> (answer printStringLimitedTo: resultPreviewCharacterLimit)) }
+			  asDictionary
 ]
 
 { #category : 'initialization' }
@@ -70,10 +68,9 @@ MCPEvaluateCommand >> resultPreviewCharacterLimit [
 { #category : 'private' }
 MCPEvaluateCommand >> runtimeFailureFor: anError [
 
-	^ {
-		  (#status -> #error).
-		  (#summary -> (tool runtimeFailureMessageFor: anError)).
-		  (#error -> (tool errorDetailsFor: anError)) } asDictionary
+	^ MCPEvaluateResult
+		  errorSummary: (tool runtimeFailureMessageFor: anError)
+		  details: (tool errorDetailsFor: anError)
 ]
 
 { #category : 'private' }
@@ -83,10 +80,9 @@ MCPEvaluateCommand >> syntaxFailureFor: aNotice [
 	details := tool errorDetailsFor: aNotice.
 	details at: #description put: 'Compilation failed before evaluation.'.
 	details at: #position put: aNotice position.
-	^ {
-		  (#status -> #error).
-		  (#summary -> (tool syntaxFailureMessageFor: aNotice)).
-		  (#error -> details) } asDictionary
+	^ MCPEvaluateResult
+		  errorSummary: (tool syntaxFailureMessageFor: aNotice)
+		  details: details
 ]
 
 { #category : 'accessing' }

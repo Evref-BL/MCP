@@ -4,6 +4,8 @@ Returns structured information for one method, including source and optional var
 Class {
 	#name : 'MCPToolInspectMethod',
 	#superclass : 'MCPTool',
+	#traits : '{} + TMCPMethodTool',
+	#classTraits : '{} + TMCPMethodTool classTrait',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -43,7 +45,7 @@ MCPToolInspectMethod >> defaultInputSchema [
 		                name: 'side';
 		                type: 'string';
 		                description:
-			                'Which side of the class defines the method. Defaults to instance.';
+			                'Which side of the class defines the method.';
 		                enum: #( 'instance' 'class' );
 		                default: 'instance';
 		                yourself.
@@ -51,7 +53,7 @@ MCPToolInspectMethod >> defaultInputSchema [
 		                                  name: 'includeVariableDetails';
 		                                  type: 'boolean';
 		                                  description:
-			                                  'Whether to include variable reference summaries and counts. Defaults to false.';
+			                                  'Whether to include variable reference summaries and counts.';
 		                                  default: false;
 		                                  yourself.
 	^ MCPStructureInputSchema new
@@ -136,7 +138,7 @@ MCPToolInspectMethod >> errorResultForError: anError className: className select
 MCPToolInspectMethod >> executeWithRequest: request [
 
 	| commandResult inspectRequest |
-	inspectRequest := self toolRequestFromRequest: request.
+	inspectRequest := self parsedRequestFromToolRequest: request.
 	^ [
 	  commandResult := (self commandForRequest: inspectRequest) execute.
 	  self
@@ -144,9 +146,8 @@ MCPToolInspectMethod >> executeWithRequest: request [
 				   successSummaryForClassName: inspectRequest className
 				   selector: inspectRequest selectorString
 				   side: inspectRequest side
-				   externalVariableCount:
-				   (commandResult at: #externalVariableCount ifAbsent: [ nil ]))
-		  data: (commandResult at: #data) ]
+				   externalVariableCount: commandResult externalVariableCount)
+		  data: commandResult data ]
 		  on: Error
 		  do: [ :error |
 			  self
@@ -188,33 +189,6 @@ MCPToolInspectMethod >> matchingSummaryForNodeName: aName kind: aKind ownerName:
 				  (each at: #kind) = aKind and: [
 					  (each at: #ownerName ifAbsent: [ nil ]) = anOwnerName ] ] ]
 		  ifNone: [ nil ]
-]
-
-{ #category : 'private - reading' }
-MCPToolInspectMethod >> methodBehaviorForClassNamed: className side: side [
-
-	| baseClass |
-	baseClass := self class environment
-		             at: className asSymbol
-		             ifAbsent: [
-		             MCPCommandError signalMissingClassNamed: className ].
-	^ side = 'class'
-		  ifTrue: [ baseClass classSide ]
-		  ifFalse: [ baseClass ]
-]
-
-{ #category : 'private - reading' }
-MCPToolInspectMethod >> methodForClassNamed: className selector: selectorString side: side [
-
-	| behavior selectorSymbol |
-	behavior := self methodBehaviorForClassNamed: className side: side.
-	selectorSymbol := selectorString asSymbol.
-	(behavior includesSelector: selectorSymbol) ifFalse: [
-		MCPCommandError
-			signalMissingMethodInClassName: className
-			classSide: side = 'class'
-			selector: selectorString ].
-	^ behavior compiledMethodAt: selectorSymbol
 ]
 
 { #category : 'private - analysis' }
@@ -274,9 +248,9 @@ MCPToolInspectMethod >> ownerNameForNode: aVariableNode kind: aKind methodBehavi
 ]
 
 { #category : 'private - request' }
-MCPToolInspectMethod >> selectorStringFromRequest: request [
+MCPToolInspectMethod >> parsedRequestFromToolRequest: request [
 
-	^ request stringArgumentNamed: 'selector'
+	^ MCPInspectMethodRequest fromRequest: request tool: self
 ]
 
 { #category : 'private - request' }
@@ -306,12 +280,6 @@ MCPToolInspectMethod >> successSummaryForClassName: className selector: selector
 						   ifTrue: [ '' ]
 						   ifFalse: [ 's' ]) ].
 		  stream nextPutAll: '.' ]
-]
-
-{ #category : 'private - request' }
-MCPToolInspectMethod >> toolRequestFromRequest: request [
-
-	^ MCPInspectMethodRequest fromRequest: request tool: self
 ]
 
 { #category : 'private - analysis' }

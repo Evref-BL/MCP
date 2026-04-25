@@ -4,6 +4,8 @@ Lists classes in a chosen scope with optional filtering. It is optimized for cla
 Class {
 	#name : 'MCPToolFindClasses',
 	#superclass : 'MCPToolQuery',
+	#traits : '{} + TMCPClassTool',
+	#classTraits : '{} + TMCPClassTool classTrait',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -73,7 +75,7 @@ MCPToolFindClasses >> classInfoDataProperties [
 { #category : 'defaults' }
 MCPToolFindClasses >> defaultDescription [
 
-	^ 'List classes in the selected scope and optionally filter them by class metadata. Use inspect-class when you already know the class to inspect.'
+	^ 'List classes in a selected scope and optionally filter them by class metadata. scope=image searches all classes. scope=packages searches classes defined in packageNames. scope=classes restricts results to classNames. scope=hierarchy expands classNames to their superclasses and subclasses. Use inspect-class when you already know the class to inspect.'
 ]
 
 { #category : 'private - request' }
@@ -223,21 +225,21 @@ MCPToolFindClasses >> matchesFilterOnClassEntry: anEntry matcher: aMatcher targe
 ]
 
 { #category : 'private - template' }
-MCPToolFindClasses >> queryEntriesForQuerySpec: querySpec [
+MCPToolFindClasses >> queryEntriesForQueryRequest: queryRequest [
 
-	^ self classEntriesForRequest: querySpec
+	^ self classEntriesForRequest: queryRequest
 ]
 
 { #category : 'private - template' }
-MCPToolFindClasses >> queryResultDataForQuerySpec: queryRequest page: page [
-
-	^ self queryResultDataFrom: nil page: page entriesKey: #classes
-]
-
-{ #category : 'private - template' }
-MCPToolFindClasses >> querySpecFromRequest: request [
+MCPToolFindClasses >> queryRequestFromToolRequest: request [
 
 	^ MCPFindClassesRequest fromRequest: request tool: self
+]
+
+{ #category : 'private - template' }
+MCPToolFindClasses >> queryResultDataForQueryRequest: queryRequest page: page [
+
+	^ self queryResultDataFrom: nil page: page entriesKey: #classes
 ]
 
 { #category : 'private - template' }
@@ -249,7 +251,7 @@ MCPToolFindClasses >> requestedContextFromRequest: request [
 ]
 
 { #category : 'private - template' }
-MCPToolFindClasses >> successSummaryForQuerySpec: queryRequest page: page [
+MCPToolFindClasses >> successSummaryForQueryRequest: queryRequest page: page [
 
 	^ self
 		  successSummaryForScope: queryRequest scopeQuery scope

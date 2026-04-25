@@ -42,9 +42,7 @@ MCPInspectMethodCommand >> execute [
 			                      variableSummariesForMethod: compiledMethod
 			                      methodBehavior: methodBehavior.
 		data at: #variableReferences put: variableReferences ].
-	^ {
-		  (#data -> data).
-		  (#externalVariableCount -> nil) } asDictionary
+	^ MCPInspectMethodResult data: data externalVariableCount: nil
 ]
 
 { #category : 'initialization' }

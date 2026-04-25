@@ -256,6 +256,8 @@ MCPToolStructuredOutputTest >> testInspectClassReturnsStructuredSuccess [
 		assert: (data at: #sharedVariableNames)
 		equals: expectedSharedVariableNames.
 	self assert: (data includesKey: #layoutClassName).
+	self assert: (data includesKey: #traitComposition).
+	self assert: (data includesKey: #classTraitComposition).
 	self deny: (data includesKey: #classComment).
 	self assert: (data at: #superclasses) isEmpty.
 	self assert: (data at: #subclasses) isEmpty

@@ -4,6 +4,8 @@ Edits one method in the running image. It handles compilation, renaming, protoco
 Class {
 	#name : 'MCPToolEditMethod',
 	#superclass : 'MCPToolEdit',
+	#traits : '{} + TMCPMethodTool',
+	#classTraits : '{} + TMCPMethodTool classTrait',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -18,16 +20,6 @@ MCPToolEditMethod >> allowedNonErrorCritiqueRuleClasses [
 		  ReReturnInEnsureRule.
 		  ReTempVarOverridesInstVarRule.
 		  ReUnaryAccessingMethodWithoutReturnRule }
-]
-
-{ #category : 'private - methods' }
-MCPToolEditMethod >> behaviorNamed: aClassName classSide: aBoolean [
-
-	| targetClass |
-	targetClass := self class environment at: aClassName asSymbol.
-	^ aBoolean
-		  ifTrue: [ targetClass classSide ]
-		  ifFalse: [ targetClass ]
 ]
 
 { #category : 'private' }
@@ -88,7 +80,7 @@ MCPToolEditMethod >> dataForMethodWithCritiques: aCompiledMethod [
 { #category : 'defaults' }
 MCPToolEditMethod >> defaultDescription [
 
-	^ 'Compile, rename, or recategorize one method on the instance side or class side of a class. Use remove-methods to delete methods.'
+	^ 'Compile, rename, or recategorize one method on the instance side or class side of a class. Use changeProtocol to recategorize a method. Rename can be scoped with scope, packageNames, or classNames. force=false stops on refactoring warnings and returns impactMessages plus howToProceed; force=true continues and returns warnings in the output. Use remove-methods to delete methods.'
 ]
 
 { #category : 'defaults' }
@@ -115,8 +107,7 @@ MCPToolEditMethod >> defaultInputSchema [
 				  (MCPStructureProperties new
 					   name: 'classSide';
 					   type: 'boolean';
-					   description:
-						   'Whether the target method is on the class side. Defaults to false.';
+					   description: 'Whether the target method is on the class side.';
 					   default: false;
 					   yourself).
 				  self forceSchemaProperty.
@@ -148,7 +139,7 @@ MCPToolEditMethod >> defaultInputSchema [
 					    name: 'permutation';
 					    type: 'array';
 					    description:
-						    'Optional 1-based argument permutation for operation=rename. Defaults to the identity permutation.')
+						    'Optional 1-based argument permutation for operation=rename. When omitted, the identity permutation is used.')
 					   items: (MCPStructureProperties new
 							    type: 'integer';
 							    description: 'A 1-based argument index.';
@@ -282,7 +273,7 @@ MCPToolEditMethod >> executeCompileWithRequest: request [
 { #category : 'executing' }
 MCPToolEditMethod >> executeRenameWithRequest: request [
 
-	| behavior className classSide force newCompiledMethod newSelector newSelectorSymbol oldMethodReference oldSelector oldSelectorSymbol permutation refactoring refactoringModel requestedContext scopeParameters |
+	| behavior className classSide force newCompiledMethod newSelector newSelectorSymbol oldMethodReference oldSelector oldSelectorSymbol permutation refactoring refactoringModel requestedContext scopeSpec |
 	className := request stringArgumentNamed: 'className'.
 	classSide := request booleanArgumentNamed: 'classSide' default: false.
 	force := self forceFromRequest: request.
@@ -303,10 +294,9 @@ MCPToolEditMethod >> executeRenameWithRequest: request [
 		  force: force
 		  requestedContext: requestedContext
 		  work: [
-			  scopeParameters := self refactoringScopeParametersFromRequest:
-				                     request.
+			  scopeSpec := self refactoringScopeSpecFromRequest: request.
 			  self
-				  addRefactoringScopeContextFrom: scopeParameters
+				  addRefactoringScopeContextFromSpec: scopeSpec
 				  toRequestedContext: requestedContext.
 			  behavior := self behaviorNamed: className classSide: classSide.
 			  behavior compiledMethodAt: oldSelectorSymbol ifAbsent: [
@@ -315,8 +305,7 @@ MCPToolEditMethod >> executeRenameWithRequest: request [
 					  classSide: classSide
 					  selector: oldSelector ].
 			  refactoringModel := self
-				                      refactoringModelForScopeParameters:
-				                      scopeParameters
+				                      refactoringModelForScopeSpec: scopeSpec
 				                      anchoredAtBehavior: behavior.
 			  oldMethodReference := self
 				                        methodReferenceForBehavior: behavior
@@ -500,15 +489,6 @@ MCPToolEditMethod >> methodDataProperties [
 		  self methodCritiquesSchemaProperty }
 ]
 
-{ #category : 'private - methods' }
-MCPToolEditMethod >> methodReferenceForBehavior: aBehavior selector: aSelector [
-
-	^ String streamContents: [ :stream |
-		  stream nextPutAll: (self targetNameForBehavior: aBehavior).
-		  stream nextPutAll: '>>'.
-		  stream nextPutAll: aSelector asString ]
-]
-
 { #category : 'private - operations' }
 MCPToolEditMethod >> operationSpecifications [
 
@@ -561,12 +541,6 @@ MCPToolEditMethod >> renameRefactoringForSelector: oldSelectorSymbol inBehavior:
 		  permutation: permutation
 ]
 
-{ #category : 'private - request' }
-MCPToolEditMethod >> selectorStringFromRequest: request [
-
-	^ request stringArgumentNamed: 'selector'
-]
-
 { #category : 'private' }
 MCPToolEditMethod >> shouldIncludeCritique: aCritique [
 
@@ -589,14 +563,6 @@ MCPToolEditMethod >> sourceIntervalForCritique: aCritique [
 	(sourceAnchor notNil and: [ sourceAnchor providesInterval ])
 		ifFalse: [ ^ nil ].
 	^ sourceAnchor interval
-]
-
-{ #category : 'private - methods' }
-MCPToolEditMethod >> targetNameForBehavior: aBehavior [
-
-	^ aBehavior isMeta
-		  ifTrue: [ aBehavior instanceSide name , ' class' ]
-		  ifFalse: [ aBehavior name ]
 ]
 
 { #category : 'private' }

@@ -4,6 +4,8 @@ Returns structured metadata for one class, with optional superclass and subclass
 Class {
 	#name : 'MCPToolInspectClass',
 	#superclass : 'MCPTool',
+	#traits : '{} + TMCPClassTool',
+	#classTraits : '{} + TMCPClassTool classTrait',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -46,6 +48,16 @@ MCPToolInspectClass >> classDescriptionDataProperties [
 			   stringArraySchemaNamed: 'classTraitNames'
 			   description: 'The traits used by the class side.'
 			   itemDescription: 'A class-side trait name.').
+		  (self
+			   schemaPropertyNamed: 'traitComposition'
+			   type: 'string'
+			   description:
+			   'The full instance-side trait composition expression, preserving aliases, exclusions, and compound compositions.').
+		  (self
+			   schemaPropertyNamed: 'classTraitComposition'
+			   type: 'string'
+			   description:
+			   'The full class-side trait composition expression, preserving aliases, exclusions, and compound compositions.').
 		  (self
 			   stringArraySchemaNamed: 'sharedPoolNames'
 			   description: 'The shared pools referenced by the class.'
@@ -90,6 +102,7 @@ MCPToolInspectClass >> classDescriptionRequiredFields [
 
 	^ #( 'className' 'superclassName' 'packageName' 'tag' 'instanceSlotNames'
 	     'classSlotNames' 'traitNames' 'classTraitNames'
+	     'traitComposition' 'classTraitComposition'
 	     'sharedPoolNames' 'sharedVariableNames' 'layoutClassName'
 	     'instanceMethodCount' 'classMethodCount' )
 ]
@@ -130,7 +143,7 @@ MCPToolInspectClass >> defaultInputSchema [
 		                          name: 'includeComment';
 		                          type: 'boolean';
 		                          description:
-			                          'Whether to include the class comment in returned class descriptions. Defaults to false.';
+			                          'Whether to include the class comment in returned class descriptions.';
 		                          default: false;
 		                          yourself.
 	upToSuperclassNameProperty := MCPStructureProperties new
@@ -143,7 +156,7 @@ MCPToolInspectClass >> defaultInputSchema [
 		                         name: 'subclassDepth';
 		                         type: 'integer';
 		                         description:
-			                         'How many subclass levels to include. Uses 0 by default, 1 for direct subclasses, 2 for grandchildren too, and so on.';
+			                         'How many subclass levels to include. 0 includes no subclasses, 1 includes direct subclasses, 2 includes grandchildren too, and so on.';
 		                         default: 0;
 		                         yourself.
 	^ MCPStructureInputSchema new
@@ -211,7 +224,7 @@ MCPToolInspectClass >> descriptionDictionariesForClasses: someClasses includeCom
 MCPToolInspectClass >> descriptionDictionaryForClass: aClass includeComment: includeComment [
 
 	| data |
-	data := (MCPClassDescription fromClass: aClass) asDictionary copy.
+	data := (MCPClassDescriptionInfo fromClass: aClass) asDictionary copy.
 	includeComment ifTrue: [
 		data at: #classComment put: (aClass comment ifNil: [ '' ]) ].
 	^ data
@@ -237,15 +250,15 @@ MCPToolInspectClass >> errorResultForError: anError className: className [
 MCPToolInspectClass >> executeWithRequest: request [
 
 	| commandResult inspectRequest |
-	inspectRequest := self toolRequestFromRequest: request.
+	inspectRequest := self parsedRequestFromToolRequest: request.
 	^ [
 	  commandResult := (self commandForRequest: inspectRequest) execute.
 	  self
 		  successResultText: (self
-				   successSummaryForClassName: inspectRequest className
-				   superclasses: (commandResult at: #superclasses)
-				   subclasses: (commandResult at: #subclasses))
-		  data: (commandResult at: #data) ]
+				   successSummaryForClassName: commandResult className
+				   superclasses: commandResult superclasses
+				   subclasses: commandResult subclasses)
+		  data: commandResult data ]
 		  on: Exception
 		  do: [ :error |
 			  self
@@ -266,19 +279,10 @@ MCPToolInspectClass >> failureMessageForClassName: className error: anError [
 			  nextPutAll: anError messageText ]
 ]
 
-{ #category : 'private - hierarchy' }
-MCPToolInspectClass >> resolvedClassNamed: className [
+{ #category : 'private - request' }
+MCPToolInspectClass >> parsedRequestFromToolRequest: request [
 
-	^ Smalltalk globals
-		  at: className asSymbol
-		  ifAbsent: [ MCPCommandError signalMissingClassNamed: className ]
-]
-
-{ #category : 'private - hierarchy' }
-MCPToolInspectClass >> sortedClassesByName: someClasses [
-
-	^ (someClasses asSortedCollection: [ :left :right |
-		   left name <= right name ]) asArray
+	^ MCPInspectClassRequest fromRequest: request tool: self
 ]
 
 { #category : 'private - hierarchy' }
@@ -339,10 +343,4 @@ MCPToolInspectClass >> superclassesForClass: aClass request: request [
 				                    targetSuperclassName
 				                    forClassNamed: aClass name asString ].
 	^ aClass allSuperclasses asArray copyUpTo: targetSuperclass
-]
-
-{ #category : 'private - request' }
-MCPToolInspectClass >> toolRequestFromRequest: request [
-
-	^ MCPInspectClassRequest fromRequest: request tool: self
 ]

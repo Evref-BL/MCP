@@ -4,20 +4,12 @@ Removes methods from one class in one batch. It is intentionally direct and does
 Class {
 	#name : 'MCPToolRemoveMethods',
 	#superclass : 'MCPTool',
+	#traits : '{} + TMCPMethodTool',
+	#classTraits : '{} + TMCPMethodTool classTrait',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
 }
-
-{ #category : 'private' }
-MCPToolRemoveMethods >> behaviorNamed: aClassName classSide: aBoolean [
-
-	| targetClass |
-	targetClass := self class environment at: aClassName asSymbol.
-	^ aBoolean
-		  ifTrue: [ targetClass classSide ]
-		  ifFalse: [ targetClass ]
-]
 
 { #category : 'private - execution' }
 MCPToolRemoveMethods >> commandForRequest: removeRequest [
@@ -64,8 +56,7 @@ MCPToolRemoveMethods >> defaultInputSchema [
 				  (MCPStructureProperties new
 					   name: 'classSide';
 					   type: 'boolean';
-					   description:
-						   'Whether to remove methods from the class side. Defaults to false.';
+					   description: 'Whether to remove methods from the class side.';
 					   default: false;
 					   yourself).
 				  ((MCPStructureProperties new
@@ -186,17 +177,17 @@ MCPToolRemoveMethods >> errorResultForError: anError className: className classS
 { #category : 'executing' }
 MCPToolRemoveMethods >> executeWithRequest: request [
 
-	| commandResult removeRequest |
-	removeRequest := self toolRequestFromRequest: request.
+	| removeRequest result |
+	removeRequest := self parsedRequestFromToolRequest: request.
 	^ [
-	  commandResult := (self commandForRequest: removeRequest) execute.
+	  result := (self commandForRequest: removeRequest) execute.
 	  self
 		  successResultText: (self
-				   successSummaryForClassName: removeRequest className
-				   classSide: removeRequest classSide
-				   selectors: removeRequest selectors)
-		  data: (commandResult at: #data)
-		  warnings: (commandResult at: #warnings) ]
+				   successSummaryForClassName: result className
+				   classSide: result classSide
+				   selectors: result selectors)
+		  data: result asDictionary
+		  warnings: result warningMessages ]
 		  on: Exception
 		  do: [ :error |
 			  self
@@ -237,6 +228,12 @@ MCPToolRemoveMethods >> forceRemoveSelectors: selectorSymbols from: aBehavior [
 	refactoring performChanges
 ]
 
+{ #category : 'private - request' }
+MCPToolRemoveMethods >> parsedRequestFromToolRequest: request [
+
+	^ MCPRemoveMethodsRequest fromRequest: request tool: self
+]
+
 { #category : 'private' }
 MCPToolRemoveMethods >> selectorsFromRequest: request [
 
@@ -256,10 +253,4 @@ MCPToolRemoveMethods >> successSummaryForClassName: className classSide: classSi
 		              ifFalse: [ className ].
 	^ 'Force-removed ' , selectors size asString , ' methods from '
 	  , targetName , ': ' , (', ' join: selectors) , '.'
-]
-
-{ #category : 'private - request' }
-MCPToolRemoveMethods >> toolRequestFromRequest: request [
-
-	^ MCPRemoveMethodsRequest fromRequest: request tool: self
 ]

@@ -4,6 +4,8 @@ Lists methods in a chosen scope with optional filtering. It is the general metho
 Class {
 	#name : 'MCPToolFindMethods',
 	#superclass : 'MCPToolMethodQuery',
+	#traits : '{} + TMCPMethodTool',
+	#classTraits : '{} + TMCPMethodTool classTrait',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -22,21 +24,21 @@ MCPToolFindMethods >> classBindingForClassName: aClassName [
 ]
 
 { #category : 'private - methods' }
-MCPToolFindMethods >> classReferenceEntriesForQuerySpec: querySpec [
+MCPToolFindMethods >> classReferenceEntriesForQueryRequest: queryRequest [
 
 	| className |
-	className := querySpec requiredFilterPatternForTool: self.
+	className := queryRequest requiredFilterPatternForTool: self.
 	^ self
 		  methodEntriesFromMethods: (self
 				   matchingClassReferencesForClassNamed: className
-				   inMethods: querySpec scopeQuery methods)
-		  querySpec: querySpec
+				   inMethods: queryRequest scopeQuery methods)
+		  queryRequest: queryRequest
 ]
 
 { #category : 'defaults' }
 MCPToolFindMethods >> defaultDescription [
 
-	^ 'List methods in a scope and optionally filter the returned method entries. With the default selector target, case-sensitive exact filters find implementors of that selector. Use filterMode=selectorReference to find methods that send the selector named by filter, filterMode=classReference to find methods that reference the class named by filter, or filterMode=variableReference to find methods that reference the variable named by filter. Set other filterModes or filterTargets to search method-entry fields differently.'
+	^ 'List methods in a scope and optionally filter returned method entries. Use filterMode=exact with filterTargets=selector and caseSensitive=true to find implementors. Use filterMode=selectorReference to find senders of the selector named by filter. Use filterMode=classReference to find methods that reference the class named by filter. Use filterMode=variableReference to find methods that reference the variable named by filter. Reference lookup modes require filter and ignore filterTargets.'
 ]
 
 { #category : 'private - request' }
@@ -64,7 +66,7 @@ MCPToolFindMethods >> defaultInputSchema [
 	filterTargetsProperty := self
 		                         stringEnumArraySchemaNamed: 'filterTargets'
 		                         description:
-		                         'Optional method-entry fields matched by filter. Defaults to selector. Ignored by reference filter modes.'
+		                         'Optional method-entry fields matched by filter for field filtering. Ignored by reference lookup modes: selectorReference, classReference, and variableReference.'
 		                         itemDescription: 'A filter target.'
 		                         values: self supportedFilterTargets
 		                         default: self defaultFilterTargets.
@@ -73,15 +75,14 @@ MCPToolFindMethods >> defaultInputSchema [
 		          properties:
 			          (self
 				           methodQueryScopeInputPropertiesWithScopeDescription:
-					           'Where to search for methods. Defaults to image.')
-			          , (self
+					           'Where to search for methods.') , (self
 					           methodQueryFilteringInputPropertiesWithFilterDescription:
-						           'Optional filter applied to the methods found in scope. Reference filter modes interpret filter as the referenced entity name.'
+						           'For field filtering, the text matched against method-entry fields. For reference lookup modes, the referenced selector, class, or variable name; required when filterMode is selectorReference, classReference, or variableReference.'
 					           extraProperties: { filterTargetsProperty }
 					           includeSourceDescription:
-						           'Whether to include method source code in each result entry. Defaults to false.'
+						           'Whether to include method source code in each result entry.'
 					           limitDescription:
-						           'Maximum number of matching methods to return. Defaults to 100. Use 0 to request counts only.');
+						           'Maximum number of matching methods to return. Use 0 to request counts only.');
 		          required: #(  );
 		          oneOf: self scopeBranchSchemasForClassAndMethodQueries;
 		          yourself.
@@ -144,15 +145,16 @@ MCPToolFindMethods >> filterTextsForMethodEntry: anEntry sourceText: sourceText 
 ]
 
 { #category : 'private - methods' }
-MCPToolFindMethods >> implementorEntriesForQuerySpec: querySpec [
+MCPToolFindMethods >> implementorEntriesForQueryRequest: queryRequest [
 
 	| compiledMethods selectorSymbol |
-	selectorSymbol := querySpec filterPattern asSymbol.
-	compiledMethods := querySpec scopeQuery methods select: [ :eachMethod |
+	selectorSymbol := queryRequest filterPattern asSymbol.
+	compiledMethods := queryRequest scopeQuery methods select: [
+		                   :eachMethod |
 		                   eachMethod selector = selectorSymbol ].
 	^ self
 		  methodEntriesFromMethods: compiledMethods asArray
-		  querySpec: querySpec
+		  queryRequest: queryRequest
 ]
 
 { #category : 'private - filtering' }
@@ -212,10 +214,10 @@ MCPToolFindMethods >> method: aCompiledMethod referencesAnyVariable: variables [
 ]
 
 { #category : 'private - methods' }
-MCPToolFindMethods >> methodEntriesFromMethods: compiledMethods querySpec: querySpec [
+MCPToolFindMethods >> methodEntriesFromMethods: compiledMethods queryRequest: queryRequest [
 
 	| entries needsSourceText |
-	needsSourceText := querySpec includeSource.
+	needsSourceText := queryRequest includeSource.
 	entries := OrderedCollection new.
 	compiledMethods do: [ :eachMethod |
 		| entry info sourceText |
@@ -223,49 +225,42 @@ MCPToolFindMethods >> methodEntriesFromMethods: compiledMethods querySpec: query
 		sourceText := needsSourceText
 			              ifTrue: [ info source ]
 			              ifFalse: [ nil ].
-		entry := info asDictionaryIncludingSource: querySpec includeSource.
-		querySpec includeSource ifTrue: [ entry at: #source put: sourceText ].
+		entry := info asDictionaryIncludingSource:
+			         queryRequest includeSource.
+		queryRequest includeSource ifTrue: [
+			entry at: #source put: sourceText ].
 		entries add: entry ].
 	^ self sortedMethodEntries: entries
 ]
 
 { #category : 'private - methods' }
-MCPToolFindMethods >> methodEntriesFromQuerySpec: querySpec [
+MCPToolFindMethods >> methodEntriesFromQueryRequest: queryRequest [
 
 	| entries matcher needsSourceForFiltering |
 	matcher := self
-		           matcherForPattern: querySpec filterPattern
-		           mode: querySpec filterMode
-		           caseSensitive: querySpec caseSensitive.
-	needsSourceForFiltering := querySpec needsSourceForFiltering.
+		           matcherForPattern: queryRequest filterPattern
+		           mode: queryRequest filterMode
+		           caseSensitive: queryRequest caseSensitive.
+	needsSourceForFiltering := queryRequest needsSourceForFiltering.
 	entries := OrderedCollection new.
-	querySpec scopeQuery methodsDo: [ :eachMethod |
+	queryRequest scopeQuery methodsDo: [ :eachMethod |
 		| entry info sourceText |
 		info := MCPCompiledMethodInfo fromMethod: eachMethod.
 		entry := info asDictionaryIncludingSource: false.
 		sourceText := needsSourceForFiltering
 			              ifTrue: [ info source ]
 			              ifFalse: [ nil ].
-		(querySpec hasFilterPattern not or: [
+		(queryRequest hasFilterPattern not or: [
 			 self
 				 matchesFilterOnMethodEntry: entry
 				 sourceText: sourceText
 				 matcher: matcher
-				 targets: querySpec filterTargets ]) ifTrue: [
-			querySpec includeSource ifTrue: [
+				 targets: queryRequest filterTargets ]) ifTrue: [
+			queryRequest includeSource ifTrue: [
 				sourceText ifNil: [ sourceText := info source ].
 				entry at: #source put: sourceText ].
 			entries add: entry ] ].
 	^ self sortedMethodEntries: entries
-]
-
-{ #category : 'private - methods' }
-MCPToolFindMethods >> methodEntryLabel: anEntry [
-
-	^ self
-		  methodReferenceForClassName: (anEntry at: #className)
-		  selector: (anEntry at: #selector)
-		  isClassSide: (anEntry at: #side) = 'class'
 ]
 
 { #category : 'private - schema' }
@@ -280,41 +275,30 @@ MCPToolFindMethods >> methodEntrySchema [
 		  'The formatted source code of the method when includeSource=true.'
 ]
 
-{ #category : 'private - methods' }
-MCPToolFindMethods >> methodReferenceForClassName: aClassName selector: aSelector isClassSide: isClassSide [
+{ #category : 'private - template' }
+MCPToolFindMethods >> queryEntriesForQueryRequest: queryRequest [
 
-	^ String streamContents: [ :stream |
-		  stream nextPutAll: aClassName.
-		  isClassSide ifTrue: [ stream nextPutAll: ' class' ].
-		  stream
-			  nextPutAll: '>>';
-			  nextPutAll: aSelector ]
+	queryRequest usesSelectorReferenceLookup ifTrue: [
+		^ self selectorReferenceEntriesForQueryRequest: queryRequest ].
+	queryRequest usesClassReferenceLookup ifTrue: [
+		^ self classReferenceEntriesForQueryRequest: queryRequest ].
+	queryRequest usesVariableReferenceLookup ifTrue: [
+		^ self variableReferenceEntriesForQueryRequest: queryRequest ].
+	queryRequest usesImplementorLookup ifTrue: [
+		^ self implementorEntriesForQueryRequest: queryRequest ].
+	^ self methodEntriesFromQueryRequest: queryRequest
 ]
 
 { #category : 'private - template' }
-MCPToolFindMethods >> queryEntriesForQuerySpec: querySpec [
-
-	querySpec usesSelectorReferenceLookup ifTrue: [
-		^ self selectorReferenceEntriesForQuerySpec: querySpec ].
-	querySpec usesClassReferenceLookup ifTrue: [
-		^ self classReferenceEntriesForQuerySpec: querySpec ].
-	querySpec usesVariableReferenceLookup ifTrue: [
-		^ self variableReferenceEntriesForQuerySpec: querySpec ].
-	querySpec usesImplementorLookup ifTrue: [
-		^ self implementorEntriesForQuerySpec: querySpec ].
-	^ self methodEntriesFromQuerySpec: querySpec
-]
-
-{ #category : 'private - template' }
-MCPToolFindMethods >> queryResultDataForQuerySpec: querySpec page: page [
-
-	^ self methodQueryResultDataForPage: page entriesKey: #methods
-]
-
-{ #category : 'private - template' }
-MCPToolFindMethods >> querySpecFromRequest: request [
+MCPToolFindMethods >> queryRequestFromToolRequest: request [
 
 	^ MCPFindMethodsRequest fromRequest: request tool: self
+]
+
+{ #category : 'private - template' }
+MCPToolFindMethods >> queryResultDataForQueryRequest: queryRequest page: page [
+
+	^ self methodQueryResultDataForPage: page entriesKey: #methods
 ]
 
 { #category : 'private - schema' }
@@ -339,7 +323,8 @@ MCPToolFindMethods >> requiredFilterSchemasForReferenceModes [
 		                   type: 'object';
 		                   properties: { (self
 				                    stringEnumSchemaPropertyNamed: 'filterMode'
-				                    description: 'A reference filter mode.'
+				                    description:
+					                    'A reference lookup mode. selectorReference finds senders, classReference finds class references, and variableReference finds variable references.'
 				                    values: self referenceFilterModes) };
 		                   required: #( 'filterMode' );
 		                   additionalProperties: true;
@@ -350,15 +335,15 @@ MCPToolFindMethods >> requiredFilterSchemasForReferenceModes [
 ]
 
 { #category : 'private - methods' }
-MCPToolFindMethods >> selectorReferenceEntriesForQuerySpec: querySpec [
+MCPToolFindMethods >> selectorReferenceEntriesForQueryRequest: queryRequest [
 
 	| selector |
-	selector := querySpec requiredFilterPatternForTool: self.
+	selector := queryRequest requiredFilterPatternForTool: self.
 	^ self
 		  methodEntriesFromMethods: (self
 				   matchingSelectorReferencesForSelector: selector asSymbol
-				   inMethods: querySpec scopeQuery methods)
-		  querySpec: querySpec
+				   inMethods: queryRequest scopeQuery methods)
+		  queryRequest: queryRequest
 ]
 
 { #category : 'private - methods' }
@@ -370,10 +355,10 @@ MCPToolFindMethods >> sortedMethodEntries: entries [
 ]
 
 { #category : 'private - template' }
-MCPToolFindMethods >> successSummaryForQuerySpec: querySpec page: page [
+MCPToolFindMethods >> successSummaryForQueryRequest: queryRequest page: page [
 
 	^ self
-		  successSummaryForScope: querySpec scopeQuery scope
+		  successSummaryForScope: queryRequest scopeQuery scope
 		  returnedCount: (page at: #returnedCount)
 		  totalCount: (page at: #totalCount)
 		  truncated: (page at: #truncated)
@@ -417,14 +402,14 @@ MCPToolFindMethods >> variableBindingsNamed: aVariableName inBehaviors: behavior
 ]
 
 { #category : 'private - methods' }
-MCPToolFindMethods >> variableReferenceEntriesForQuerySpec: querySpec [
+MCPToolFindMethods >> variableReferenceEntriesForQueryRequest: queryRequest [
 
 	| variableName |
-	variableName := querySpec requiredFilterPatternForTool: self.
+	variableName := queryRequest requiredFilterPatternForTool: self.
 	^ self
 		  methodEntriesFromMethods: (self
 				   matchingVariableReferencesNamed: variableName
-				   scopeQuery: querySpec scopeQuery
-				   inMethods: querySpec scopeQuery methods)
-		  querySpec: querySpec
+				   scopeQuery: queryRequest scopeQuery
+				   inMethods: queryRequest scopeQuery methods)
+		  queryRequest: queryRequest
 ]

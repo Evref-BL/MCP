@@ -77,14 +77,13 @@ MCPToolMethodQuery >> methodQueryFilteringInputPropertiesWithFilterDescription: 
 	properties add: (self
 			 stringEnumSchemaPropertyNamed: 'filterMode'
 			 description:
-				 'How the filter is matched or interpreted. Defaults to '
-				 , self defaultFilterMode , '.'
+			 'How the filter is matched or interpreted. Reference modes on find-methods are selectorReference for senders, classReference for class references, and variableReference for variable references.'
 			 values: self supportedFilterModes
 			 default: self defaultFilterMode).
 	properties add: (self
 			 booleanSchemaPropertyNamed: 'caseSensitive'
 			 description:
-			 'Whether filter matching is case-sensitive. Defaults to true.'
+			 'Whether filter matching is case-sensitive. Reference lookup modes ignore this option.'
 			 default: true).
 	properties add: (self
 			 booleanSchemaPropertyNamed: 'includeSource'
@@ -97,28 +96,9 @@ MCPToolMethodQuery >> methodQueryFilteringInputPropertiesWithFilterDescription: 
 	properties add: (self
 			 integerSchemaPropertyNamed: 'offset'
 			 description:
-			 'Zero-based pagination offset applied after filtering. Defaults to 0.'
+			 'Zero-based pagination offset applied after filtering.'
 			 default: 0).
 	^ properties asArray
-]
-
-{ #category : 'private - request' }
-MCPToolMethodQuery >> methodQueryParametersFromRequest: request [
-
-	^ {
-		  (#filterPattern -> (request stringArgumentNamed: 'filter')).
-		  (#filterMode -> (self filterModeFromRequest: request)).
-		  (#caseSensitive
-		   -> (request booleanArgumentNamed: 'caseSensitive' default: true)).
-		  (#includeSource
-		   -> (request booleanArgumentNamed: 'includeSource' default: false)).
-		  (#limit
-		   ->
-		   (request nonNegativeIntegerArgumentNamed: 'limit' default: 100)).
-		  (#offset
-		   -> (request nonNegativeIntegerArgumentNamed: 'offset' default: 0)).
-		  (#query -> (self methodScopeQueryFromRequest: request)) }
-		  asDictionary
 ]
 
 { #category : 'private - results' }
