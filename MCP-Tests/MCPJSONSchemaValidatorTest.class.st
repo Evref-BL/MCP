@@ -39,6 +39,11 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 			   (#operation -> 'update').
 			   (#repositoryName -> 'MCP').
 			   (#addPackageNames -> #( 'MCP' )) } asDictionary).
+		  (MCPToolLoadRepository -> {
+			   (#owner -> 'ExampleOwner').
+			   (#project -> 'ExampleProject').
+			   (#baseline -> 'ExampleBaseline').
+			   (#sourceDirectory -> 'src') } asDictionary).
 		  (MCPToolFindClasses -> Dictionary new).
 		  (MCPToolFindPackages -> Dictionary new).
 		  (MCPToolEditClass -> {

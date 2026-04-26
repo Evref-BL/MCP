@@ -107,7 +107,7 @@ MCPToolEditRepository >> dataForRepositoryUpdateResult: aResult [
 { #category : 'defaults' }
 MCPToolEditRepository >> defaultDescription [
 
-	^ 'Create, update, export, diff, commit, fetch, pull, push, create branches, or switch branches for Iceberg repositories registered in the image. Use repositoryName for existing repositories; add location only to create a repository or disambiguate duplicate names. operation=create registers a repository and can attach packages. operation=update changes image-side repository metadata or package membership without writing packages to files. operation=export writes image changes to disk and updates the Iceberg index without staging or committing. operation=diff reports IceRepository>>workingCopyDiff without writing files. operation=commit calls IceRepository>>commitWithMessage:. operation=fetch calls IceRepository>>fetch. operation=pull calls IceRepository>>pull. operation=push calls IceRepository>>push. operation=createBranch calls IceRepository>>createBranch: and switches to the new branch. operation=switchBranch calls IceRepository>>switchToBranchNamed: for an existing branch.'
+	^ 'Create, update, diff, export, commit, fetch, pull, push, create branches, or switch branches for Iceberg repositories registered in the image. Use repositoryName for existing repositories; add location only to create a repository or disambiguate duplicate names. operation=create registers a repository and can attach packages. operation=update changes image-side repository metadata or package membership without writing packages to files. operation=diff inspects IceRepository>>workingCopyDiff without writing files and should be preferred when you only need to see image-side changes. operation=export is an escape hatch that materializes image changes to disk for Tonel or Git workflows and updates the Iceberg index without staging or committing. operation=commit calls IceRepository>>commitWithMessage:. operation=fetch calls IceRepository>>fetch. operation=pull calls IceRepository>>pull. operation=push calls IceRepository>>push. operation=createBranch calls IceRepository>>createBranch: and switches to the new branch. operation=switchBranch calls IceRepository>>switchToBranchNamed: for an existing branch.'
 ]
 
 { #category : 'defaults' }
@@ -249,14 +249,14 @@ MCPToolEditRepository >> operationSpecifications [
 			  (#requiredProperties -> #( 'repositoryName' )).
 			  (#description
 			   ->
-			   'Write the image working-copy diff to disk and update the Iceberg index without committing.') }
+			   'Escape hatch: materialize the image working-copy diff to disk and update the Iceberg index without committing.') }
 			  asDictionary.
 		  {
 			  (#name -> 'diff').
 			  (#requiredProperties -> #( 'repositoryName' )).
 			  (#description
 			   ->
-			   'Report IceRepository>>workingCopyDiff without writing files.') }
+			   'Inspect IceRepository>>workingCopyDiff without writing files; prefer this when checking image-side changes.') }
 			  asDictionary.
 		  {
 			  (#name -> 'commit').

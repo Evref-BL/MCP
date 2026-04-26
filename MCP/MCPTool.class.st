@@ -49,7 +49,8 @@ MCPTool class >> toolGroups [
 	^ {
 		  (#Repositories -> {
 			   MCPToolFindRepositories.
-			   MCPToolEditRepository }).
+			   MCPToolEditRepository.
+			   MCPToolLoadRepository }).
 		  (#Packages -> { MCPToolFindPackages }).
 		  (#Classes -> {
 			   MCPToolFindClasses.

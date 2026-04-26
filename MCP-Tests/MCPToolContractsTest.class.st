@@ -121,6 +121,7 @@ MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 	self assert: orderedTools asArray equals: {
 			MCPToolFindRepositories.
 			MCPToolEditRepository.
+			MCPToolLoadRepository.
 			MCPToolFindPackages.
 			MCPToolFindClasses.
 			MCPToolInspectClass.
@@ -184,7 +185,11 @@ MCPToolContractsTest >> testDictionaryShapedCommandResultsUseDTOClasses [
 		                        (MCPCreateRepositoryBranchCommand
 		                         -> MCPRepositoryBranchResult).
 		                        (MCPSwitchRepositoryBranchCommand
-		                         -> MCPRepositoryBranchResult) }.
+		                         -> MCPRepositoryBranchResult).
+		                        (MCPLoadBaselineCommand
+		                         -> MCPLoadBaselineResult).
+		                        (MCPLoadRepositoryCommand
+		                         -> MCPLoadRepositoryResult) }.
 	commandResultClasses do: [ :association |
 		| source |
 		source := (association key >> #execute) sourceCode.
@@ -483,11 +488,13 @@ MCPToolContractsTest >> testEditRepositoryDescriptionExplainsPackageAndFilesyste
 		                                  'removePackageNames'
 		                                  inTool: tool) description.
 	self assert: (description includesSubstring: 'repositoryName').
-	self assert: (description includesSubstring: 'operation=export').
-	self assert:
-		(description includesSubstring: 'without staging or committing').
 	self assert: (description includesSubstring: 'operation=diff').
 	self assert: (description includesSubstring: 'without writing files').
+	self assert: (description includesSubstring: 'should be preferred').
+	self assert: (description includesSubstring: 'operation=export').
+	self assert: (description includesSubstring: 'escape hatch').
+	self assert:
+		(description includesSubstring: 'without staging or committing').
 	self assert: (description includesSubstring: 'operation=commit').
 	self assert:
 		(description includesSubstring: 'IceRepository>>commitWithMessage:').
@@ -1436,6 +1443,11 @@ MCPToolContractsTest >> testRequestedToolIconsAreAdvertised [
 				 compositeBaseIconNamed: #box
 				 badgeIconNamed: #edit) asJRPCJSON.
 	self
+		assert: (MCPToolLoadRepository new asJRPCJSON at: #icons) first
+		equals:
+			(MCPStructureIcon compositeBaseIconNamed: #box badgeIconNamed: #add)
+				asJRPCJSON.
+	self
 		assert: (MCPToolEditClass new asJRPCJSON at: #icons) first
 		equals:
 			(MCPStructureIcon
@@ -1646,6 +1658,15 @@ MCPToolContractsTest >> toolFlowSpecs [
 				   (#addPackageNames -> #( 'MCP' )) } asDictionary).
 			  (#requestClass -> MCPRepositoryUpdateRequest).
 			  (#commandClass -> MCPUpdateRepositoryCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolLoadRepository).
+			  (#arguments -> {
+				   (#owner -> 'ExampleOwner').
+				   (#project -> 'ExampleProject').
+				   (#baseline -> 'ExampleBaseline').
+				   (#sourceDirectory -> 'src') } asDictionary).
+			  (#requestClass -> MCPLoadRepositoryRequest).
+			  (#commandClass -> MCPLoadRepositoryCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolFindPackages).
 			  (#arguments -> Dictionary new).

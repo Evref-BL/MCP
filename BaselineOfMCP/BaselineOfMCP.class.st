@@ -25,7 +25,11 @@ BaselineOfMCP >> defineDependencies: spec [
 		import: 'JRPC'.
 	spec
 		baseline: 'TinyLogger'
-		with: [ spec repository: 'github://jecisc/TinyLogger:v1.x.x/src' ]
+		with: [ spec repository: 'github://jecisc/TinyLogger:v1.x.x/src' ].
+	spec baseline: 'Mocketry' with: [
+		spec
+			repository: 'github://dionisiydk/Mocketry:v7.0.2';
+			loads: #( 'Core' ) ]
 ]
 
 { #category : 'baselines' }
@@ -45,7 +49,8 @@ BaselineOfMCP >> definePackages: spec [
 		with: [ spec requires: #( 'MCP' ) ].
 	spec
 		package: 'MCP-Tests'
-		with: [ spec requires: #( 'MCP' 'MCP-Tests-Resources' ) ].
+		with: [ spec requires: #( 'MCP' 'MCP-Tests-Resources'
+		   'Mocketry' ) ].
 	spec
 		package: 'MCP-Tests-Resources-Extensions'
 		with: [ spec requires: #( 'MCP-Tests-Resources' ) ].
