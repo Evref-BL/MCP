@@ -4,8 +4,8 @@ Edits one method in the running image. It handles method creation or replacement
 Class {
 	#name : 'MCPToolEditMethod',
 	#superclass : 'MCPToolEdit',
-	#traits : '{} + TMCPMethodTool',
-	#classTraits : '{} + TMCPMethodTool classTrait',
+	#traits : 'TMCPMethodTool',
+	#classTraits : 'TMCPMethodTool classTrait',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'

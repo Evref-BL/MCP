@@ -4,8 +4,8 @@ Lists classes in a chosen scope with optional filtering. It is optimized for cla
 Class {
 	#name : 'MCPToolFindClasses',
 	#superclass : 'MCPToolQuery',
-	#traits : '{} + TMCPClassTool',
-	#classTraits : '{} + TMCPClassTool classTrait',
+	#traits : 'TMCPClassTool',
+	#classTraits : 'TMCPClassTool classTrait',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'

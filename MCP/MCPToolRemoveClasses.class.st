@@ -4,8 +4,8 @@ Removes classes from the image in one batch. It surfaces safe-removal warnings b
 Class {
 	#name : 'MCPToolRemoveClasses',
 	#superclass : 'MCPTool',
-	#traits : '{} + TMCPClassTool',
-	#classTraits : '{} + TMCPClassTool classTrait',
+	#traits : 'TMCPClassTool',
+	#classTraits : 'TMCPClassTool classTrait',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'

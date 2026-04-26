@@ -4,7 +4,7 @@ Lists methods in a chosen scope with optional filtering. It is the general metho
 Class {
 	#name : 'MCPToolFindMethods',
 	#superclass : 'MCPToolQuery',
-	#traits : '{} + TMCPMethodTool',
+	#traits : 'TMCPMethodTool',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'

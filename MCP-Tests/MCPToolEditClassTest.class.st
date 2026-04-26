@@ -288,10 +288,16 @@ MCPToolEditClassTest >> testCreateAcceptsDefinitionOptions [
 			 as: Array)
 		equals: #( 'TAbleToRotate' ).
 	self
+		assert: createdClass traitCompositionString
+		equals: 'TAbleToRotate'.
+	self
 		assert: (createdClass classSide traits
 				 collect: [ :each | each name asString ]
 				 as: Array)
 		equals: #( 'TAbleToRotate classTrait' ).
+	self
+		assert: createdClass classSide traitCompositionString
+		equals: 'TAbleToRotate classTrait'.
 	self
 		assert: createdClass classVarNames
 		equals: #( #AlphaShared #BetaShared ).
@@ -1507,6 +1513,9 @@ MCPToolEditClassTest >> testUpdateReplacesClassSideTraits [
 				 collect: [ :each | each name asString ]
 				 as: Array)
 		equals: #( 'TComparable classTrait' ).
+	self
+		assert: targetClass classSide traitCompositionString
+		equals: 'TComparable classTrait'.
 	self assert: (data at: #operation) equals: 'update'.
 	self assert: (data at: #updateAction) equals: 'replaceClassTraits'.
 	self
@@ -1718,6 +1727,10 @@ MCPToolEditClassTest >> testUpdateReplacesTraits [
 			 collect: [ :each | each name asString ]
 			 as: Array)
 		equals: #( 'TComparable' ).
+	self assert: targetClass traitCompositionString equals: 'TComparable'.
+	self
+		assert: targetClass classSide traitCompositionString
+		equals: 'TComparable classTrait'.
 	self assert: (data at: #operation) equals: 'update'.
 	self assert: (data at: #updateAction) equals: 'replaceTraits'.
 	self assert: (data at: #oldTraitNames) equals: #( 'TAbleToRotate' ).

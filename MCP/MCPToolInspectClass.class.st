@@ -4,8 +4,8 @@ Returns structured metadata for one class, with optional superclass and subclass
 Class {
 	#name : 'MCPToolInspectClass',
 	#superclass : 'MCPTool',
-	#traits : '{} + TMCPClassTool',
-	#classTraits : '{} + TMCPClassTool classTrait',
+	#traits : 'TMCPClassTool',
+	#classTraits : 'TMCPClassTool classTrait',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
