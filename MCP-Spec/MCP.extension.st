@@ -62,51 +62,8 @@ MCP >> inspectionDashboard: aBuilder [
 ]
 
 { #category : '*MCP-Spec' }
-MCP >> isListening [
+MCP >> inspectionToolCatalog [
 
-	^ self server isListening
-]
-
-{ #category : '*MCP-Spec' }
-MCP >> isRunning [
-
-	^ self server isRunning
-]
-
-{ #category : '*MCP-Spec' }
-MCP >> localUrlString [
-
-	^ self server localUrl asString
-]
-
-{ #category : '*MCP-Spec' }
-MCP >> openDashboard [
-
-	^ MCPDashboardPresenter openOn: self
-]
-
-{ #category : '*MCP-Spec' }
-MCP >> port [
-
-	^ self server port
-]
-
-{ #category : '*MCP-Spec' }
-MCP >> port: aPortNumber [
-
-	self server port: aPortNumber
-]
-
-{ #category : '*MCP-Spec' }
-MCP >> restart [
-
-	self stop.
-	^ self start
-]
-
-{ #category : '*MCP-Spec' }
-MCP >> sortedTools [
-
-	^ self toolsList values asSortedCollection: [ :left :right |
-		left name <= right name ]
+	<inspectorPresentationOrder: 1 title: 'Tool Catalog'>
+	^ MCPToolsCatalogPresenter new
 ]

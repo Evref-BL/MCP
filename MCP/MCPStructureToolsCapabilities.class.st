@@ -1,3 +1,8 @@
+"
+MCP protocol structure for the tools capability.
+
+It currently records whether the server can notify clients when the tool list changes.
+"
 Class {
 	#name : 'MCPStructureToolsCapabilities',
 	#superclass : 'Object',

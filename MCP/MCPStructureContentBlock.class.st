@@ -1,3 +1,8 @@
+"
+Base MCP protocol structure for content blocks.
+
+Subclasses provide concrete content payloads such as text while sharing the content block type field.
+"
 Class {
 	#name : 'MCPStructureContentBlock',
 	#superclass : 'Object',

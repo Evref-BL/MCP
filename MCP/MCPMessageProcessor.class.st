@@ -1,3 +1,8 @@
+"
+JSON-RPC message processor specialized for MCP.
+
+It collects handlers from jrpc pragmas and lets the base JSON-RPC processor dispatch incoming messages to those handlers.
+"
 Class {
 	#name : 'MCPMessageProcessor',
 	#superclass : 'JRPCMessageProcessor',
@@ -24,10 +29,4 @@ MCPMessageProcessor >> addHandlersFromPragmasIn: anObject [
 				 methodName: pragma arguments first;
 				 messageSelector: pragma methodSelector;
 				 yourself) ]
-]
-
-{ #category : 'as yet unclassified' }
-MCPMessageProcessor >> handleJRPCSuccessResponseObject: aJRPCSuccessResponseObject [
-
-	^ JRPCEmptyResponseObject new
 ]

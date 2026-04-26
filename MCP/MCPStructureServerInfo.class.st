@@ -1,3 +1,8 @@
+"
+MCP protocol structure for server identity metadata.
+
+It provides name, title, version, description, icons, website URL, and optional server instructions.
+"
 Class {
 	#name : 'MCPStructureServerInfo',
 	#superclass : 'Object',
