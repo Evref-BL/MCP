@@ -373,6 +373,21 @@ MCPToolFindMethodsTest >> testDirectionalScopesAreUnionedForMethods [
 ]
 
 { #category : 'tests' }
+MCPToolFindMethodsTest >> testExactEmptyFilterIsApplied [
+
+	| data result |
+	result := self callToolWith: {
+			          (#classNames -> { self targetClassName }).
+			          (#filter -> '').
+			          (#filterTargets -> #( 'protocol' )).
+			          (#filterMode -> 'exact') } asDictionary.
+	data := self dataFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) equals: 0.
+	self assert: (data at: #methods) isEmpty
+]
+
+{ #category : 'tests' }
 MCPToolFindMethodsTest >> testHierarchyClassNamesReturnWholeHierarchy [
 
 	| data result |
@@ -745,6 +760,20 @@ MCPToolFindMethodsTest >> testSelectorReferenceParentClassNamesSearchParents [
 	self
 		entryForReference: 'MCPToolHierarchyTestBase>>baseHierarchySender'
 		in: (data at: #methods)
+]
+
+{ #category : 'tests' }
+MCPToolFindMethodsTest >> testSelectorReferenceRejectsEmptyFilter [
+
+	| error result structured |
+	result := self callToolWith: {
+			          (#filter -> '').
+			          (#filterMode -> 'selectorReference') } asDictionary.
+	structured := self structuredContentFrom: result.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (structured at: #status) equals: 'error'.
+	self assert: (error at: #errorClass) equals: 'MCPInvalidToolInput'
 ]
 
 { #category : 'tests' }

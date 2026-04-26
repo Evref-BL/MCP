@@ -261,6 +261,15 @@ MCPToolQuery >> filterModeSchemaPropertyWithDescription: modeDescription values:
 		  default: self defaultFilterMode
 ]
 
+{ #category : 'private - request' }
+MCPToolQuery >> filterPatternFromRequest: request [
+
+	(request hasArgumentNamed: 'filter') ifFalse: [ ^ nil ].
+	^ (request argumentNamed: 'filter' ifAbsent: [ nil ])
+		  ifNil: [ nil ]
+		  ifNotNil: [ :value | value asString trimBoth ]
+]
+
 { #category : 'private - schema' }
 MCPToolQuery >> filterSchemaPropertyWithDescription: filterDescription [
 

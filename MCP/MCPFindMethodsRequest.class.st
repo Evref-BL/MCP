@@ -25,7 +25,7 @@ MCPFindMethodsRequest class >> fromRequest: request tool: aTool [
 
 	^ self new
 		  scopeQuery: (aTool methodScopeQueryFromRequest: request);
-		  filterPattern: (request stringArgumentNamed: 'filter');
+		  filterPattern: (aTool filterPatternFromRequest: request);
 		  filterMode: (aTool filterModeFromRequest: request);
 		  filterTargets: (aTool filterTargetsFromRequest: request);
 		  whereSpec: (MCPWhereSpec fromToolRequest: request);
@@ -139,7 +139,7 @@ MCPFindMethodsRequest >> offset: anInteger [
 { #category : 'validating' }
 MCPFindMethodsRequest >> requiredFilterPatternForTool: aTool [
 
-	filterPattern ifNil: [
+	(filterPattern isNil or: [ filterPattern isEmpty ]) ifTrue: [
 		^ MCPInvalidToolInput
 			  signalMissingRequiredArgumentNamed: 'filter'
 			  forTool: aTool ].

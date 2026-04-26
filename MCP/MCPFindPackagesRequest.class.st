@@ -33,7 +33,7 @@ MCPFindPackagesRequest class >> fromRequest: request tool: aTool [
 		              yourself.
 	^ self new
 		  scopeQuery: scopeQuery;
-		  filterPattern: (request stringArgumentNamed: 'filter');
+		  filterPattern: (aTool filterPatternFromRequest: request);
 		  filterTargets: (aTool filterTargetsFromRequest: request);
 		  filterMode: (aTool filterModeFromRequest: request);
 		  whereSpec: (MCPWhereSpec fromToolRequest: request);

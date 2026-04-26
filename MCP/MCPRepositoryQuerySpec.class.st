@@ -42,7 +42,7 @@ MCPRepositoryQuerySpec class >> fromRequest: request tool: aTool [
 			  (self
 				   optionalBooleanArgumentNamed: 'isMissing'
 				   fromRequest: request);
-		  filterPattern: (request stringArgumentNamed: 'filter');
+		  filterPattern: (aTool filterPatternFromRequest: request);
 		  filterTargets: (aTool filterTargetsFromRequest: request);
 		  filterMode: (aTool filterModeFromRequest: request);
 		  caseSensitive:
