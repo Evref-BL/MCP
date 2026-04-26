@@ -8,7 +8,7 @@ Class {
 	#package : 'MCP-Tests'
 }
 
-{ #category : 'as yet unclassified' }
+{ #category : 'accessing' }
 MCPRenameClassSlotSelectorsTemp class >> probe [
 
 	^ alpha

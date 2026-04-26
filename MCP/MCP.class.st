@@ -189,35 +189,35 @@ MCP >> restart [
 	^ self start
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'rpc' }
 MCP >> rpcNotificationInitialized [
 
 	<jrpc: #'notifications/initialized'>
 	^ nil
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'rpc' }
 MCP >> rpcPing [
 
 	<jrpc: #ping>
 	^ Dictionary new
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'rpc' }
 MCP >> rpcResourcesList [
 
 	<jrpc: #'resources/list'>
 	^ { (#resource -> {  }) } asDictionary
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'rpc' }
 MCP >> rpcResourcesTemplateList [
 
 	<jrpc: #'resources/templates/list'>
 	^ { (#resourceTemplates -> {  }) } asDictionary
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'rpc' }
 MCP >> rpcToolCall: name withParams: arguments [
 
 	<jrpc: #'tools/call'>
@@ -257,7 +257,7 @@ MCP >> rpcToolCall: name withParams: arguments [
 		ifAbsent: [ JRPCNonExistentHandler signal: name ]
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'rpc' }
 MCP >> rpcToolsList [
 
 	<jrpc: #'tools/list'>
