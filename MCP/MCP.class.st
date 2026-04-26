@@ -151,6 +151,12 @@ MCP >> monitoringStatusText [
 	^ self monitoring statusText
 ]
 
+{ #category : 'monitoring' }
+MCP >> monitoringTraces [
+
+	^ self monitoring traceRecords
+]
+
 { #category : 'start' }
 MCP >> onInitialize: protocolVersion capabilities: capabilities clientInfo: clientInfo websiteUrl: websiteUrl [
 
@@ -225,7 +231,9 @@ MCP >> rpcToolCall: name withParams: arguments [
 		at: name
 		ifPresent: [ :tool |
 			| monitorRecord request result toolResult |
-			monitorRecord := self monitoring recordToolCallStart: name.
+			monitorRecord := self monitoring
+				                 recordToolCallStart: name
+				                 input: arguments.
 			^ [
 			  request := tool requestFromToolCallArguments: arguments.
 			  result := tool executeWithRequest: request.

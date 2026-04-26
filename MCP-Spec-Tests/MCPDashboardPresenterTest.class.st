@@ -13,6 +13,7 @@ MCPDashboardPresenterTest >> testAllMonitoringSectionsCollapsedRemovesOuterSplit
 	presenter := MCPDashboardPresenter new.
 
 	presenter toggleMetricsSection.
+	presenter toggleTracesSection.
 	presenter toggleLogsSection.
 	layout := presenter dashboardWidgetsLayout.
 	monitoringLayout := layout children second.
@@ -22,7 +23,7 @@ MCPDashboardPresenterTest >> testAllMonitoringSectionsCollapsedRemovesOuterSplit
 	self assert: layout class equals: SpBoxLayout.
 	self assert: layout children size equals: 2.
 	self assert: monitoringLayout children size equals: 2.
-	self assert: sectionsLayout children size equals: 2
+	self assert: sectionsLayout children size equals: 3
 ]
 
 { #category : 'tests' }
@@ -87,9 +88,10 @@ MCPDashboardPresenterTest >> testCollapsedMonitoringSectionUsesFixedHeaderRow [
 	self assert: layout class equals: SpBoxLayout.
 	self assert: layout children size equals: 2.
 	self assert: sectionsLayout class equals: SpBoxLayout.
-	self assert: sectionsLayout children size equals: 2.
+	self assert: sectionsLayout children size equals: 3.
 	self assert: sectionsLayout children first children size equals: 1.
-	self assert: sectionsLayout children second children size equals: 2
+	self assert: sectionsLayout children second children size equals: 2.
+	self assert: sectionsLayout children third children size equals: 2
 ]
 
 { #category : 'tests' }
@@ -158,11 +160,12 @@ MCPDashboardPresenterTest >> testCollapsibleSectionsRemoveOnlyTheirBody [
 { #category : 'tests' }
 MCPDashboardPresenterTest >> testDashboardWidgetsUseVerticalSplitters [
 
-	| presenter layout monitoringLayout monitoringSectionsLayout |
+	| nestedSections presenter layout monitoringLayout monitoringSectionsLayout |
 	presenter := MCPDashboardPresenter new.
 	layout := presenter dashboardWidgetsLayout.
 	monitoringLayout := layout children second.
 	monitoringSectionsLayout := monitoringLayout children second.
+	nestedSections := monitoringSectionsLayout children second.
 
 	self assert: layout class equals: SpPanedLayout.
 	self assert: layout isVertical.
@@ -171,7 +174,10 @@ MCPDashboardPresenterTest >> testDashboardWidgetsUseVerticalSplitters [
 	self assert: monitoringLayout children size equals: 2.
 	self assert: monitoringSectionsLayout class equals: SpPanedLayout.
 	self assert: monitoringSectionsLayout isVertical.
-	self assert: monitoringSectionsLayout children size equals: 2
+	self assert: monitoringSectionsLayout children size equals: 2.
+	self assert: nestedSections class equals: SpPanedLayout.
+	self assert: nestedSections isVertical.
+	self assert: nestedSections children size equals: 2
 ]
 
 { #category : 'tests' }
@@ -270,4 +276,15 @@ MCPDashboardPresenterTest >> testRefreshViewUsesShortObservabilitySectionLabels 
 
 	self assert: metricsHeader label equals: '[-] Tool metrics (0)'.
 	self assert: logsHeader label equals: '[-] Logs (0)'
+]
+
+{ #category : 'tests' }
+MCPDashboardPresenterTest >> testTracesContextMenuCanBeBuilt [
+
+	| menu presenter |
+	presenter := MCPDashboardPresenter new.
+
+	menu := presenter tracesContextMenu.
+
+	self assert: menu class equals: SpMenuPresenter
 ]

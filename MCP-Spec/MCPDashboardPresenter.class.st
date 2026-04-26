@@ -1,5 +1,5 @@
 "
-Spec presenter used by the inspector for an MCP server object. It shows server state, endpoint configuration, lifecycle controls, registered tools, observability metrics, and recent observability logs. The main dashboard widgets are arranged with draggable splitters and disclosure-style section headers so the tools, metrics, and log tables can be resized or collapsed while inspecting the server. Observability data can be refreshed manually or through the auto-refresh checkbox while the presenter is displayed.
+Spec presenter used by the inspector for an MCP server object. It shows server state, endpoint configuration, lifecycle controls, registered tools, and observability data. The observability area separates aggregate tool metrics, trace records for errors and outliers, and recent logs. The main dashboard widgets are arranged with draggable splitters and disclosure-style section headers so the tools, metrics, traces, and log tables can be resized or collapsed while inspecting the server. Observability data can be refreshed manually or through the auto-refresh checkbox while the presenter is displayed.
 "
 Class {
 	#name : 'MCPDashboardPresenter',
@@ -24,11 +24,14 @@ Class {
 		'clearMonitoringButton',
 		'metricsHeaderButton',
 		'metricsTable',
+		'tracesHeaderButton',
+		'tracesTable',
 		'logsHeaderButton',
 		'logsTable',
 		'autoRefreshProcess',
 		'toolsSectionExpanded',
 		'metricsSectionExpanded',
+		'tracesSectionExpanded',
 		'logsSectionExpanded'
 	],
 	#category : 'MCP-Spec',
@@ -95,7 +98,8 @@ MCPDashboardPresenter >> applyConfiguration [
 { #category : 'collapsing' }
 MCPDashboardPresenter >> areAllMonitoringSectionsExpanded [
 
-	^ self isMetricsSectionExpanded and: [ self isLogsSectionExpanded ]
+	^ self isMetricsSectionExpanded and: [
+		  self isTracesSectionExpanded and: [ self isLogsSectionExpanded ] ]
 ]
 
 { #category : 'auto-refresh' }
@@ -156,7 +160,9 @@ MCPDashboardPresenter >> connectPresenters [
 		self observabilityChangedTo: enabled ].
 	toolsHeaderButton action: [ self toggleToolsSection ].
 	metricsHeaderButton action: [ self toggleMetricsSection ].
+	tracesHeaderButton action: [ self toggleTracesSection ].
 	logsHeaderButton action: [ self toggleLogsSection ].
+	tracesTable contextMenu: [ self tracesContextMenu ].
 	startButton action: [ self startServer ].
 	stopButton action: [ self stopServer ].
 	restartButton action: [ self restartServer ].
@@ -225,7 +231,8 @@ MCPDashboardPresenter >> disclosureLabelFor: title count: count expanded: expand
 { #category : 'collapsing' }
 MCPDashboardPresenter >> hasExpandedMonitoringSection [
 
-	^ self isMetricsSectionExpanded or: [ self isLogsSectionExpanded ]
+	^ self isMetricsSectionExpanded or: [
+		  self isTracesSectionExpanded or: [ self isLogsSectionExpanded ] ]
 ]
 
 { #category : 'layout' }
@@ -250,6 +257,7 @@ MCPDashboardPresenter >> initializePresenters [
 
 	toolsSectionExpanded := true.
 	metricsSectionExpanded := true.
+	tracesSectionExpanded := true.
 	logsSectionExpanded := true.
 
 	summaryLabel := self instantiate: SpLabelPresenter.
@@ -271,6 +279,8 @@ MCPDashboardPresenter >> initializePresenters [
 	clearMonitoringButton := self instantiate: SpButtonPresenter.
 	metricsHeaderButton := self instantiate: SpButtonPresenter.
 	metricsTable := self newTable.
+	tracesHeaderButton := self instantiate: SpButtonPresenter.
+	tracesTable := self newTable.
 	logsHeaderButton := self instantiate: SpButtonPresenter.
 	logsTable := self newTable.
 
@@ -323,6 +333,17 @@ MCPDashboardPresenter >> initializePresenters [
 				 title: 'Outlier'
 				 evaluated: #displayOutlierExplanation);
 		beResizable.
+	tracesTable
+		addColumn: (SpStringTableColumn title: 'Status' evaluated: #status);
+		addColumn: (SpStringTableColumn title: 'Tool' evaluated: #toolName);
+		addColumn: (SpStringTableColumn
+				 title: 'Duration ms'
+				 evaluated: #displayDurationMilliseconds);
+		addColumn:
+			(SpStringTableColumn title: 'Details' evaluated: #displaySummary);
+		addColumn:
+			(SpStringTableColumn title: 'Started' evaluated: #displayStartedAt);
+		beResizable.
 	logsTable
 		addColumn:
 			(SpStringTableColumn title: 'Log' evaluated: [ :line | line ]);
@@ -365,6 +386,12 @@ MCPDashboardPresenter >> isMetricsSectionExpanded [
 MCPDashboardPresenter >> isToolsSectionExpanded [
 
 	^ toolsSectionExpanded ifNil: [ true ]
+]
+
+{ #category : 'collapsing' }
+MCPDashboardPresenter >> isTracesSectionExpanded [
+
+	^ tracesSectionExpanded ifNil: [ true ]
 ]
 
 { #category : 'layout' }
@@ -449,9 +476,13 @@ MCPDashboardPresenter >> monitoringSectionsLayout [
 
 	self areAllMonitoringSectionsExpanded ifTrue: [
 		^ SpPanedLayout newTopToBottom
-			  positionOfSlider: 58 percent;
+			  positionOfSlider: 42 percent;
 			  first: self metricsWidgetLayout;
-			  second: self logsWidgetLayout;
+			  second: (SpPanedLayout newTopToBottom
+					   positionOfSlider: 45 percent;
+					   first: self tracesWidgetLayout;
+					   second: self logsWidgetLayout;
+					   yourself);
 			  yourself ].
 	^ self monitoringWidgetsBoxLayout
 ]
@@ -464,6 +495,10 @@ MCPDashboardPresenter >> monitoringWidgetsBoxLayout [
 	self
 		addSectionLayout: self metricsWidgetLayout
 		expanded: self isMetricsSectionExpanded
+		to: widgetLayout.
+	self
+		addSectionLayout: self tracesWidgetLayout
+		expanded: self isTracesSectionExpanded
 		to: widgetLayout.
 	self
 		addSectionLayout: self logsWidgetLayout
@@ -520,10 +555,11 @@ MCPDashboardPresenter >> refreshLayoutAfterSectionToggle [
 { #category : 'actions' }
 MCPDashboardPresenter >> refreshView [
 
-	| mcp tools metrics logs |
+	| logs mcp metrics tools traces |
 	mcp := self model ifNil: [ ^ self ].
 	tools := mcp sortedTools.
 	metrics := mcp monitoringMetrics.
+	traces := mcp monitoringTraces.
 	logs := mcp monitoringLogs.
 
 	summaryLabel label: self summaryText.
@@ -555,6 +591,11 @@ MCPDashboardPresenter >> refreshView [
 			 count: metrics size
 			 expanded: self isMetricsSectionExpanded).
 	metricsTable items: metrics.
+	tracesHeaderButton label: (self
+			 disclosureLabelFor: 'Traces'
+			 count: traces size
+			 expanded: self isTracesSectionExpanded).
+	tracesTable items: traces.
 	logsHeaderButton label: (self
 			 disclosureLabelFor: 'Logs'
 			 count: logs size
@@ -666,6 +707,13 @@ MCPDashboardPresenter >> toggleToolsSection [
 	self refreshLayoutAfterSectionToggle
 ]
 
+{ #category : 'collapsing' }
+MCPDashboardPresenter >> toggleTracesSection [
+
+	tracesSectionExpanded := self isTracesSectionExpanded not.
+	self refreshLayoutAfterSectionToggle
+]
+
 { #category : 'layout' }
 MCPDashboardPresenter >> toolsWidgetLayout [
 
@@ -673,5 +721,29 @@ MCPDashboardPresenter >> toolsWidgetLayout [
 	widgetLayout := SpBoxLayout newTopToBottom.
 	widgetLayout add: toolsHeaderButton expand: false.
 	self isToolsSectionExpanded ifTrue: [ widgetLayout add: toolsTable ].
+	^ widgetLayout
+]
+
+{ #category : 'private - menu' }
+MCPDashboardPresenter >> tracesContextMenu [
+
+	^ self newMenu
+		  addGroup: [ :group |
+			  group addItem: [ :item |
+					  item
+						  name: 'Inspect';
+						  description: 'Inspect the selected trace record';
+						  enabled: [ tracesTable selectedItem isNotNil ];
+						  action: [ tracesTable selectedItem inspect ] ] ];
+		  yourself
+]
+
+{ #category : 'layout' }
+MCPDashboardPresenter >> tracesWidgetLayout [
+
+	| widgetLayout |
+	widgetLayout := SpBoxLayout newTopToBottom.
+	widgetLayout add: tracesHeaderButton expand: false.
+	self isTracesSectionExpanded ifTrue: [ widgetLayout add: tracesTable ].
 	^ widgetLayout
 ]
