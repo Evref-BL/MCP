@@ -25,8 +25,7 @@ BaselineOfMCP >> defineDependencies: spec [
 		import: 'JRPC'.
 	spec
 		baseline: 'TinyLogger'
-		with: [ spec repository: 'github://jecisc/TinyLogger:v1.x.x/src' ];
-		import: 'TinyLogger'
+		with: [ spec repository: 'github://jecisc/TinyLogger:v1.x.x/src' ]
 ]
 
 { #category : 'baselines' }
@@ -39,7 +38,7 @@ BaselineOfMCP >> defineGroups: spec [
 BaselineOfMCP >> definePackages: spec [
 	"common"
 
-	spec package: 'MCP' with: [ spec requires: #( 'JRPC' ) ].
+	spec package: 'MCP' with: [ spec requires: #( 'JRPC' 'TinyLogger' ) ].
 	spec package: 'MCP-Spec' with: [ spec requires: #( 'MCP' ) ].
 	spec
 		package: 'MCP-Tests-Resources'

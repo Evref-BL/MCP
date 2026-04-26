@@ -4,8 +4,8 @@ Edits class structure and metadata in the running image. Use it for class-level 
 Class {
 	#name : 'MCPToolEditClass',
 	#superclass : 'MCPToolEdit',
-	#traits : '{} + TMCPClassTool',
-	#classTraits : '{} + TMCPClassTool classTrait',
+	#traits : 'TMCPClassTool',
+	#classTraits : 'TMCPClassTool classTrait',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'

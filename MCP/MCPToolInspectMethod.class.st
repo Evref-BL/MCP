@@ -4,8 +4,8 @@ Returns structured information for one method, including source and optional var
 Class {
 	#name : 'MCPToolInspectMethod',
 	#superclass : 'MCPTool',
-	#traits : '{} + TMCPMethodTool',
-	#classTraits : '{} + TMCPMethodTool classTrait',
+	#traits : 'TMCPMethodTool',
+	#classTraits : 'TMCPMethodTool classTrait',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'

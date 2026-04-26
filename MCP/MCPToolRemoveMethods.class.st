@@ -4,8 +4,8 @@ Removes methods from one class in one batch. It is intentionally direct and does
 Class {
 	#name : 'MCPToolRemoveMethods',
 	#superclass : 'MCPTool',
-	#traits : '{} + TMCPMethodTool',
-	#classTraits : '{} + TMCPMethodTool classTrait',
+	#traits : 'TMCPMethodTool',
+	#classTraits : 'TMCPMethodTool classTrait',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'

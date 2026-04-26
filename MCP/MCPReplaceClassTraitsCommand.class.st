@@ -40,7 +40,7 @@ MCPReplaceClassTraitsCommand >> execute [
 	| oldTraitNames targetClass |
 	targetClass := self targetClass.
 	oldTraitNames := self traitNamesFromClass: targetClass.
-	targetClass traitComposition: self resolvedTraits asTraitComposition.
+	targetClass setTraitComposition: self resolvedTraits.
 	^ MCPReplaceClassTraitsResult
 		  classInfo: (MCPClassInfo fromClass: targetClass)
 		  oldTraitNames: oldTraitNames
