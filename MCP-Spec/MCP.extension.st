@@ -8,7 +8,8 @@ MCP >> inspectionDashboard [
 ]
 
 { #category : '*MCP-Spec' }
-MCP >> openDashboard [
+MCP >> inspectionToolCatalog [
 
-	^ MCPDashboardPresenter openOn: self
+	<inspectorPresentationOrder: 1 title: 'Tool Catalog'>
+	^ MCPToolsCatalogPresenter new
 ]

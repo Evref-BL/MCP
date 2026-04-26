@@ -1,5 +1,5 @@
 "
-Runtime monitoring state for an MCP server. Extended monitoring is disabled by default; when enabled it records active calls, recent calls, TinyLogger-backed log lines, per-tool timing metrics, and outlier explanations.
+Runtime observability state for an MCP server. Observability is disabled by default; when enabled it records recent completed calls, TinyLogger-backed log lines, per-tool timing metrics, and outlier explanations.
 "
 Class {
 	#name : 'MCPMonitoringState',
@@ -10,7 +10,6 @@ Class {
 		'memoryLogger',
 		'statsByTool',
 		'recentCalls',
-		'activeCalls',
 		'nextCallId',
 		'maxRecentCalls',
 		'outlierFactor',
@@ -21,29 +20,6 @@ Class {
 	#package : 'MCP',
 	#tag : 'Monitoring'
 }
-
-{ #category : 'accessing' }
-MCPMonitoringState >> activeCallRecords [
-
-	^ self activeCalls values asArray
-]
-
-{ #category : 'accessing' }
-MCPMonitoringState >> activeCalls [
-
-	^ activeCalls ifNil: [ activeCalls := Dictionary new ]
-]
-
-{ #category : 'displaying' }
-MCPMonitoringState >> activeToolNamesText [
-
-	| names |
-	names := self activeCallRecords collect: [ :each | each toolName ].
-	^ String streamContents: [ :stream |
-		  names withIndexDo: [ :name :index |
-			  index > 1 ifTrue: [ stream nextPutAll: ', ' ].
-			  stream nextPutAll: name ] ]
-]
 
 { #category : 'private' }
 MCPMonitoringState >> addRecentCall: aRecord [
@@ -58,7 +34,6 @@ MCPMonitoringState >> clear [
 
 	self statsByTool removeAll.
 	self recentCalls removeAll.
-	self activeCalls removeAll.
 	nextCallId := 0.
 	lastActivityAt := nil.
 	self clearLogs.
@@ -75,8 +50,7 @@ MCPMonitoringState >> clearLogs [
 MCPMonitoringState >> disable [
 
 	self enabled ifTrue: [ self recordLog: 'Observability disabled' ].
-	enabled := false.
-	self activeCalls removeAll
+	enabled := false
 ]
 
 { #category : 'activation' }
@@ -126,23 +100,10 @@ MCPMonitoringState >> initialize [
 	enabled := false.
 	statsByTool := Dictionary new.
 	recentCalls := OrderedCollection new.
-	activeCalls := Dictionary new.
 	nextCallId := 0.
 	maxRecentCalls := 100.
 	outlierFactor := 3.
 	minimumOutlierMilliseconds := 250
-]
-
-{ #category : 'testing' }
-MCPMonitoringState >> isIdle [
-
-	^ self enabled and: [ self activeCalls isEmpty ]
-]
-
-{ #category : 'testing' }
-MCPMonitoringState >> isRunning [
-
-	^ self enabled and: [ self activeCalls notEmpty ]
 ]
 
 { #category : 'private' }
@@ -293,7 +254,6 @@ MCPMonitoringState >> recordToolCallFinish: aRecord result: aToolResult error: a
 	aRecord summary: (self summaryForResult: aToolResult).
 	aRecord outlierExplanation: explanation.
 	stats recordCall: aRecord.
-	self activeCalls removeKey: aRecord id ifAbsent: [  ].
 	self addRecentCall: aRecord.
 	lastActivityAt := finishTimestamp.
 	self recordLog: (self logMessageForRecord: aRecord).
@@ -311,7 +271,6 @@ MCPMonitoringState >> recordToolCallStart: aToolName [
 		          id: self nextCallId
 		          toolName: aToolName asString
 		          startedAt: startTimestamp.
-	self activeCalls at: record id put: record.
 	lastActivityAt := startTimestamp.
 	self recordLog:
 		'Begin tool ' , aToolName asString , ' #' , record id asString.
@@ -346,12 +305,8 @@ MCPMonitoringState >> statusForResult: aToolResult error: anError [
 MCPMonitoringState >> statusText [
 
 	self enabled ifFalse: [ ^ 'Observability disabled' ].
-	self activeCalls isEmpty ifTrue: [
-		^ 'Observability enabled, idle. Calls: '
-		  , self totalCallCount asString , ' | Errors: '
-		  , self totalErrorCount asString ].
-	^ 'Observability enabled, running ' , self activeCalls size asString
-	  , ' call(s): ' , self activeToolNamesText
+	^ 'Observability enabled. Calls: ' , self totalCallCount asString
+	  , ' | Errors: ' , self totalErrorCount asString
 ]
 
 { #category : 'private' }

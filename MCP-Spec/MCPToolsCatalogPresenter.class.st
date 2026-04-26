@@ -1,7 +1,7 @@
 "
 Spec presenter that displays the MCP tool catalog.
 
-Each row shows a compact tool identity cell with icon, title, tool name, and supported operations, plus an expanded description cell. The presenter is opened from MCP class>>displayTools so the server object keeps only the entry-point script while the UI lives in MCP-Spec.
+Each row shows a compact tool identity cell with icon, title, tool name, and supported operations, plus an expanded description cell. Long operation lists are summarized in the row and exposed in full through hover help.
 "
 Class {
 	#name : 'MCPToolsCatalogPresenter',
@@ -96,6 +96,12 @@ MCPToolsCatalogPresenter >> joinToolCatalogItems: strings [
 			  stream nextPutAll: each asString ] ]
 ]
 
+{ #category : 'accessing' }
+MCPToolsCatalogPresenter >> maximumVisibleOperationNames [
+
+	^ 2
+]
+
 { #category : 'layout' }
 MCPToolsCatalogPresenter >> toolCatalogCardFor: toolClass [
 
@@ -145,10 +151,17 @@ MCPToolsCatalogPresenter >> toolCatalogDescriptionPresenterFor: tool [
 	^ descriptionCell
 ]
 
+{ #category : 'accessing' }
+MCPToolsCatalogPresenter >> toolCatalogFullOperationSummaryFor: tool [
+
+	^ self joinToolCatalogItems:
+		  (self toolCatalogOperationNamesFor: tool)
+]
+
 { #category : 'layout' }
 MCPToolsCatalogPresenter >> toolCatalogLeftCellFor: tool [
 
-	| identifierLabel image labelLayout leftCell leftLayout operations title |
+	| identifierLabel image labelLayout leftCell leftLayout operationHelp operations title |
 	leftCell := self newPresenter.
 	image := self newImage.
 	image
@@ -162,6 +175,8 @@ MCPToolsCatalogPresenter >> toolCatalogLeftCellFor: tool [
 	identifierLabel label: tool name.
 	operations := self newLabel.
 	operations label: (self toolCatalogOperationSummaryFor: tool).
+	operationHelp := self toolCatalogOperationHelpFor: tool.
+	operationHelp ifNotNil: [ operations help: operationHelp ].
 	labelLayout := SpBoxLayout newTopToBottom
 		               spacing: 1;
 		               hAlignStart;
@@ -190,6 +205,16 @@ MCPToolsCatalogPresenter >> toolCatalogLeftColumnWidth [
 ]
 
 { #category : 'accessing' }
+MCPToolsCatalogPresenter >> toolCatalogOperationHelpFor: tool [
+
+	| operationNames |
+	operationNames := self toolCatalogOperationNamesFor: tool.
+	operationNames size <= self maximumVisibleOperationNames ifTrue: [
+		^ nil ].
+	^ 'Operations: ' , (self joinToolCatalogItems: operationNames)
+]
+
+{ #category : 'accessing' }
 MCPToolsCatalogPresenter >> toolCatalogOperationNamesFor: tool [
 
 	(tool respondsTo: #canonicalOperationNames) ifTrue: [
@@ -200,6 +225,12 @@ MCPToolsCatalogPresenter >> toolCatalogOperationNamesFor: tool [
 { #category : 'accessing' }
 MCPToolsCatalogPresenter >> toolCatalogOperationSummaryFor: tool [
 
-	^ self joinToolCatalogItems:
-		  (self toolCatalogOperationNamesFor: tool)
+	| operationNames visibleOperations |
+	operationNames := self toolCatalogOperationNamesFor: tool.
+	operationNames size <= self maximumVisibleOperationNames ifTrue: [
+		^ self joinToolCatalogItems: operationNames ].
+	visibleOperations := operationNames first:
+		                     self maximumVisibleOperationNames.
+	^ (self joinToolCatalogItems: visibleOperations) , ' | +'
+	  , (operationNames size - visibleOperations size) asString
 ]

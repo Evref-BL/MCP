@@ -1,5 +1,5 @@
 "
-MCP tool for mutating Iceberg repositories registered in the image. The public operations are operation=create and operation=update. Creation uses IceRepositoryCreator, registers the repository, and can attach initial packages to the working copy. Updates change repository metadata or package membership in the image only; writing packages to disk belongs to the dedicated repository write tool.
+MCP tool for mutating Iceberg repositories registered in the image. The public operations are create, update, export, diff, and commit. Creation registers a repository and can attach initial packages. Updates change repository metadata or package membership in the image. Export writes image changes to the repository working tree and index without committing. Diff reports pending image changes. Commit creates an Iceberg commit from the current working-copy diff.
 "
 Class {
 	#name : 'MCPToolEditRepository',
@@ -18,40 +18,96 @@ MCPToolEditRepository >> commandForRequest: editRequest [
 		^ MCPUpdateRepositoryCommand tool: self request: editRequest ].
 	(editRequest isKindOf: MCPRepositoryExportRequest) ifTrue: [
 		^ MCPExportRepositoryCommand tool: self request: editRequest ].
+	(editRequest isKindOf: MCPRepositoryDiffRequest) ifTrue: [
+		^ MCPRepositoryDiffCommand tool: self request: editRequest ].
+	(editRequest isKindOf: MCPRepositoryCommitRequest) ifTrue: [
+		^ MCPCommitRepositoryCommand tool: self request: editRequest ].
+	(editRequest isKindOf: MCPRepositoryFetchRequest) ifTrue: [
+		^ MCPFetchRepositoryCommand tool: self request: editRequest ].
+	(editRequest isKindOf: MCPRepositoryPullRequest) ifTrue: [
+		^ MCPPullRepositoryCommand tool: self request: editRequest ].
+	(editRequest isKindOf: MCPRepositoryPushRequest) ifTrue: [
+		^ MCPPushRepositoryCommand tool: self request: editRequest ].
+	(editRequest isKindOf: MCPRepositoryCreateBranchRequest) ifTrue: [
+		^ MCPCreateRepositoryBranchCommand tool: self request: editRequest ].
+	(editRequest isKindOf: MCPRepositorySwitchBranchRequest) ifTrue: [
+		^ MCPSwitchRepositoryBranchCommand tool: self request: editRequest ].
 	^ super commandForRequest: editRequest
+]
+
+{ #category : 'private - results' }
+MCPToolEditRepository >> dataForRepositoryCommitResult: aResult [
+
+	^ self dataForRepositoryResult: aResult action: 'commit'
+]
+
+{ #category : 'private - results' }
+MCPToolEditRepository >> dataForRepositoryCreateBranchResult: aResult [
+
+	^ self dataForRepositoryResult: aResult action: 'createBranch'
 ]
 
 { #category : 'private - results' }
 MCPToolEditRepository >> dataForRepositoryCreateResult: aResult [
 
-	| data |
-	data := aResult asDictionary copy.
-	data at: #operation put: 'create'.
-	^ data
+	^ self dataForRepositoryResult: aResult action: 'create'
+]
+
+{ #category : 'private - results' }
+MCPToolEditRepository >> dataForRepositoryDiffResult: aResult [
+
+	^ self dataForRepositoryResult: aResult action: 'diff'
 ]
 
 { #category : 'private - results' }
 MCPToolEditRepository >> dataForRepositoryExportResult: aResult [
 
+	^ self dataForRepositoryResult: aResult action: 'export'
+]
+
+{ #category : 'private - results' }
+MCPToolEditRepository >> dataForRepositoryFetchResult: aResult [
+
+	^ self dataForRepositoryResult: aResult action: 'fetch'
+]
+
+{ #category : 'private - results' }
+MCPToolEditRepository >> dataForRepositoryPullResult: aResult [
+
+	^ self dataForRepositoryResult: aResult action: 'pull'
+]
+
+{ #category : 'private - results' }
+MCPToolEditRepository >> dataForRepositoryPushResult: aResult [
+
+	^ self dataForRepositoryResult: aResult action: 'push'
+]
+
+{ #category : 'private - results' }
+MCPToolEditRepository >> dataForRepositoryResult: aResult action: actionName [
+
 	| data |
 	data := aResult asDictionary copy.
-	data at: #operation put: 'export'.
+	data at: #action put: actionName.
 	^ data
+]
+
+{ #category : 'private - results' }
+MCPToolEditRepository >> dataForRepositorySwitchBranchResult: aResult [
+
+	^ self dataForRepositoryResult: aResult action: 'switchBranch'
 ]
 
 { #category : 'private - results' }
 MCPToolEditRepository >> dataForRepositoryUpdateResult: aResult [
 
-	| data |
-	data := aResult asDictionary copy.
-	data at: #operation put: 'update'.
-	^ data
+	^ self dataForRepositoryResult: aResult action: 'update'
 ]
 
 { #category : 'defaults' }
 MCPToolEditRepository >> defaultDescription [
 
-	^ 'Create, update, or export Iceberg repositories registered in the image. operation=create uses IceRepositoryCreator, registers the repository, and can attach initial packages. operation=update changes repository subdirectory or package membership in the image only: addPackageNames adds packages with workingCopy addPackageNamed:, removePackageNames removes repository membership with IcePackage>>remove without unloading packages, and packageNames replaces membership through those same actions. operation=export writes the image working-copy diff to the repository location by updating the disk working copy and git index; it does not stage or commit.'
+	^ 'Create, update, export, diff, commit, fetch, pull, push, create branches, or switch branches for Iceberg repositories registered in the image. Use repositoryName for existing repositories; add location only to create a repository or disambiguate duplicate names. operation=create registers a repository and can attach packages. operation=update changes image-side repository metadata or package membership without writing packages to files. operation=export writes image changes to disk and updates the Iceberg index without staging or committing. operation=diff reports IceRepository>>workingCopyDiff without writing files. operation=commit calls IceRepository>>commitWithMessage:. operation=fetch calls IceRepository>>fetch. operation=pull calls IceRepository>>pull. operation=push calls IceRepository>>push. operation=createBranch calls IceRepository>>createBranch: and switches to the new branch. operation=switchBranch calls IceRepository>>switchToBranchNamed: for an existing branch.'
 ]
 
 { #category : 'defaults' }
@@ -68,23 +124,32 @@ MCPToolEditRepository >> defaultInputSchema [
 		  properties: {
 				  (self
 					   operationSchemaPropertyWithDescription:
-						   'The high-level repository edit operation. operation=create creates and registers a new Iceberg repository. operation=update changes the selected repository in the image without writing packages to files. operation=export writes the image working-copy diff to files and updates the repository index without staging or committing.'
+						   'Selects the repository action to execute. Each oneOf branch describes the required fields for its action.'
 					   supportedValuesLeadIn: 'Supported values are').
 				  (self
 					   schemaPropertyNamed: 'name'
 					   type: 'string'
 					   description:
-						   'The repository name to use during operation=create.').
+						   'Repository name to use when operation=create registers a new repository.').
 				  (self
 					   schemaPropertyNamed: 'repositoryName'
 					   type: 'string'
 					   description:
-						   'Exact registered repository name for operation=update or operation=export. Combine with location when names are ambiguous. Required for export.').
+						   'Registered repository name for operations targeting an existing repository. Combine with location only when names are ambiguous.').
 				  (self
 					   schemaPropertyNamed: 'location'
 					   type: 'string'
 					   description:
-						   'Filesystem path for operation=create, or an exact registered repository location used to select the repository during operation=update.').
+						   'Filesystem path for operation=create. For existing repositories, combine with repositoryName only to disambiguate duplicate names.').
+				  (self
+					   schemaPropertyNamed: 'message'
+					   type: 'string'
+					   description: 'Commit message required by operation=commit.').
+				  (self
+					   schemaPropertyNamed: 'branchName'
+					   type: 'string'
+					   description:
+						   'Branch name required by operation=createBranch and operation=switchBranch.').
 				  (self
 					   schemaPropertyNamed: 'subdirectory'
 					   type: 'string'
@@ -123,7 +188,7 @@ MCPToolEditRepository >> defaultOutputSchema [
 	^ self
 		  standardOutputSchemaForDataProperties:
 		  self repositoryEditDataProperties
-		  required: #( 'operation' 'repository' 'packages' 'packageNames' )
+		  required: #( 'action' 'repository' 'packages' 'packageNames' )
 ]
 
 { #category : 'defaults' }
@@ -132,15 +197,33 @@ MCPToolEditRepository >> defaultTitle [
 	^ 'Edit Repository'
 ]
 
+{ #category : 'private - errors' }
+MCPToolEditRepository >> errorResultForCommandError: anError operation: action requestedContext: requestedContext [
+
+	| details |
+	details := anError structuredDetails copy.
+	requestedContext ifNotNil: [
+		requestedContext keysAndValuesDo: [ :key :value |
+			value ifNotNil: [ details at: key ifAbsentPut: [ value ] ] ] ].
+	details at: #action put: action.
+	^ self errorResultText: anError messageText details: details
+]
+
 { #category : 'private - schema' }
 MCPToolEditRepository >> operationBranchSchemas [
 
 	^ (self operationSpecifications collect: [ :each |
-		   self
-			   inputSchemaBranchForStringDiscriminatorNamed: 'operation'
-			   value: (each at: #name)
-			   required: (each at: #requiredProperties)
-			   requireDiscriminator: true ]) asArray
+		   | branch operationProperty |
+		   branch := self
+			             inputSchemaBranchForStringDiscriminatorNamed:
+			             'operation'
+			             value: (each at: #name)
+			             required: (each at: #requiredProperties)
+			             requireDiscriminator: true.
+		   operationProperty := branch properties detect: [ :property |
+			                        property name = 'operation' ].
+		   operationProperty description: (each at: #description).
+		   branch ]) asArray
 ]
 
 { #category : 'private - operations' }
@@ -149,13 +232,63 @@ MCPToolEditRepository >> operationSpecifications [
 	^ {
 		  {
 			  (#name -> 'create').
-			  (#requiredProperties -> #( 'name' 'location' )) } asDictionary.
+			  (#requiredProperties -> #( 'name' 'location' )).
+			  (#description
+			   ->
+			   'Register a new Iceberg repository at location and optionally attach initial packages.') }
+			  asDictionary.
 		  {
 			  (#name -> 'update').
-			  (#requiredProperties -> #(  )) } asDictionary.
+			  (#requiredProperties -> #(  )).
+			  (#description
+			   ->
+			   'Change repository subdirectory or package membership in the image only.') }
+			  asDictionary.
 		  {
 			  (#name -> 'export').
-			  (#requiredProperties -> #( 'repositoryName' )) } asDictionary }
+			  (#requiredProperties -> #( 'repositoryName' )).
+			  (#description
+			   ->
+			   'Write the image working-copy diff to disk and update the Iceberg index without committing.') }
+			  asDictionary.
+		  {
+			  (#name -> 'diff').
+			  (#requiredProperties -> #( 'repositoryName' )).
+			  (#description
+			   ->
+			   'Report IceRepository>>workingCopyDiff without writing files.') }
+			  asDictionary.
+		  {
+			  (#name -> 'commit').
+			  (#requiredProperties -> #( 'repositoryName' 'message' )).
+			  (#description -> 'Commit the repository with message.') }
+			  asDictionary.
+		  {
+			  (#name -> 'fetch').
+			  (#requiredProperties -> #( 'repositoryName' )).
+			  (#description -> 'Fetch remote refs through Iceberg.') }
+			  asDictionary.
+		  {
+			  (#name -> 'pull').
+			  (#requiredProperties -> #( 'repositoryName' )).
+			  (#description -> 'Pull remote changes through Iceberg.') }
+			  asDictionary.
+		  {
+			  (#name -> 'push').
+			  (#requiredProperties -> #( 'repositoryName' )).
+			  (#description -> 'Push local commits through Iceberg.') }
+			  asDictionary.
+		  {
+			  (#name -> 'createBranch').
+			  (#requiredProperties -> #( 'repositoryName' 'branchName' )).
+			  (#description
+			   -> 'Create branchName from the current head and switch to it.') }
+			  asDictionary.
+		  {
+			  (#name -> 'switchBranch').
+			  (#requiredProperties -> #( 'repositoryName' 'branchName' )).
+			  (#description -> 'Switch to an existing branchName.') }
+			  asDictionary }
 ]
 
 { #category : 'private - request' }
@@ -172,6 +305,20 @@ MCPToolEditRepository >> parsedRequestFromToolRequest: request [
 		^ MCPRepositoryUpdateRequest fromRequest: request tool: self ].
 	operation = 'export' ifTrue: [
 		^ MCPRepositoryExportRequest fromRequest: request tool: self ].
+	operation = 'diff' ifTrue: [
+		^ MCPRepositoryDiffRequest fromRequest: request tool: self ].
+	operation = 'commit' ifTrue: [
+		^ MCPRepositoryCommitRequest fromRequest: request tool: self ].
+	operation = 'fetch' ifTrue: [
+		^ MCPRepositoryFetchRequest fromRequest: request tool: self ].
+	operation = 'pull' ifTrue: [
+		^ MCPRepositoryPullRequest fromRequest: request tool: self ].
+	operation = 'push' ifTrue: [
+		^ MCPRepositoryPushRequest fromRequest: request tool: self ].
+	operation = 'createBranch' ifTrue: [
+		^ MCPRepositoryCreateBranchRequest fromRequest: request tool: self ].
+	operation = 'switchBranch' ifTrue: [
+		^ MCPRepositorySwitchBranchRequest fromRequest: request tool: self ].
 	Error signal: self operationValidationErrorMessage
 ]
 
@@ -180,44 +327,94 @@ MCPToolEditRepository >> repositoryEditDataProperties [
 
 	^ {
 		  (self
-			   schemaPropertyNamed: 'operation'
+			   schemaPropertyNamed: 'action'
 			   type: 'string'
-			   description: 'The public edit operation that was applied.').
+			   description:
+			   'The repository action executed by the tool. Input uses operation to select this action.').
 		  self repositoryOutputSchemaProperty.
+		  (self
+			   schemaPropertyNamed: 'repositoryBefore'
+			   type: 'object'
+			   description:
+			   'Structured metadata for the repository before the action, when reported.').
 		  self repositoryPackagesOutputSchemaProperty.
 		  (self
 			   stringArraySchemaNamed: 'packageNames'
-			   description: 'The repository package names after the edit.'
+			   description: 'The repository package names after the action.'
 			   itemDescription: 'A package name.').
 		  (self
 			   stringArraySchemaNamed: 'updateActions'
 			   description:
-			   'Internal repository update actions applied for operation=update.'
+			   'Repository update actions applied when action=update.'
 			   itemDescription: 'An update action name.').
 		  (self
 			   stringArraySchemaNamed: 'addedPackageNames'
 			   description:
-			   'Package names added to repository membership during operation=update.'
+			   'Package names added to repository membership when action=update.'
 			   itemDescription: 'An added package name.').
 		  (self
 			   stringArraySchemaNamed: 'removedPackageNames'
 			   description:
-			   'Package names removed from repository membership during operation=update.'
+			   'Package names removed from repository membership when action=update.'
 			   itemDescription: 'A removed package name.').
 		  (self
 			   stringArraySchemaNamed: 'changedPackageNames'
 			   description:
-			   'Package names included in the exported working-copy diff.'
+			   'Package names included in the working-copy diff for action=export, action=diff, or before action=commit.'
 			   itemDescription: 'A changed package name.').
+		  (self
+			   stringArraySchemaNamed: 'modifiedPackageNames'
+			   description:
+			   'Package names reported modified by Iceberg after the action, when relevant.'
+			   itemDescription: 'A modified package name.').
 		  (self
 			   stringArraySchemaNamed: 'modifiedPaths'
 			   description:
-			   'Relative repository paths included in the exported diff when obtainable from Iceberg.'
+			   'Relative repository paths included in the working-copy diff when obtainable from Iceberg.'
 			   itemDescription: 'A relative repository path.').
+		  (self
+			   stringArraySchemaNamed: 'remoteNames'
+			   description: 'Repository remote names after the action.'
+			   itemDescription: 'A remote name.').
+		  (self
+			   schemaPropertyNamed: 'branchName'
+			   type: 'string'
+			   description: 'Current branch name after the action.').
+		  (self
+			   schemaPropertyNamed: 'previousBranchName'
+			   type: 'string'
+			   description: 'Branch name before a branch action.').
+		  (self
+			   schemaPropertyNamed: 'previousHeadDescription'
+			   type: 'string'
+			   description: 'Head description before a branch action.').
 		  (self
 			   booleanSchemaPropertyNamed: 'didChange'
 			   description:
 			   'Whether the export diff contained package or path changes.').
+		  (self
+			   integerSchemaPropertyNamed: 'changeCount'
+			   description:
+			   'Number of changed paths reported for action=diff, or changed packages when paths are unavailable.').
+		  (self
+			   booleanSchemaPropertyNamed: 'isEmpty'
+			   description:
+			   'Whether IceRepository>>workingCopyDiff reported an empty diff for action=diff.').
+		  (self
+			   schemaPropertyNamed: 'commitId'
+			   type: 'string'
+			   description:
+			   'Commit identifier returned by Iceberg for action=commit, when available.').
+		  (self
+			   schemaPropertyNamed: 'commitDescription'
+			   type: 'string'
+			   description:
+			   'Commit description returned by Iceberg for action=commit, when available.').
+		  (self
+			   schemaPropertyNamed: 'headDescription'
+			   type: 'string'
+			   description:
+			   'Repository head description after the action, when available.').
 		  (self
 			   schemaPropertyNamed: 'repositoryLocation'
 			   type: 'string'

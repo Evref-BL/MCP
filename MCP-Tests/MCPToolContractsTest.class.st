@@ -170,7 +170,21 @@ MCPToolContractsTest >> testDictionaryShapedCommandResultsUseDTOClasses [
 		                        (MCPUpdateRepositoryCommand
 		                         -> MCPRepositoryUpdateResult).
 		                        (MCPExportRepositoryCommand
-		                         -> MCPRepositoryExportResult) }.
+		                         -> MCPRepositoryExportResult).
+		                        (MCPRepositoryDiffCommand
+		                         -> MCPRepositoryDiffResult).
+		                        (MCPCommitRepositoryCommand
+		                         -> MCPRepositoryCommitResult).
+		                        (MCPFetchRepositoryCommand
+		                         -> MCPRepositoryFetchResult).
+		                        (MCPPullRepositoryCommand
+		                         -> MCPRepositoryPullResult).
+		                        (MCPPushRepositoryCommand
+		                         -> MCPRepositoryPushResult).
+		                        (MCPCreateRepositoryBranchCommand
+		                         -> MCPRepositoryBranchResult).
+		                        (MCPSwitchRepositoryBranchCommand
+		                         -> MCPRepositoryBranchResult) }.
 	commandResultClasses do: [ :association |
 		| source |
 		source := (association key >> #execute) sourceCode.
@@ -190,7 +204,7 @@ MCPToolContractsTest >> testDisplayToolsCatalogSummarizesToolOperations [
 	self
 		assert:
 		(presenter toolCatalogOperationSummaryFor: MCPToolEditRepository new)
-		equals: 'create | update | export'.
+		equals: 'create | update | +8'.
 	self
 		assert:
 		(presenter toolCatalogOperationSummaryFor: MCPToolEditMethod new)
@@ -211,15 +225,6 @@ MCPToolContractsTest >> testDisplayToolsCatalogSummarizesToolOperations [
 		assert:
 		(presenter toolCatalogOperationSummaryFor: MCPToolRemoveMethods new)
 		equals: 'remove'
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testDisplayToolsEntryPointBelongsToMCP [
-
-	self assert: (MCP class includesSelector: #openToolCatalog).
-	self deny: (MCPTool class includesSelector: #openToolCatalog).
-	self assert: (MCPToolsCatalogPresenter inheritsFrom: SpPresenter).
-	self assert: MCPToolsCatalogPresenter package name equals: 'MCP-Spec'
 ]
 
 { #category : 'tests' }
@@ -455,9 +460,21 @@ MCPToolContractsTest >> testEditMethodSchemaAdvertisesMethodState [
 { #category : 'tests' }
 MCPToolContractsTest >> testEditRepositoryDescriptionExplainsPackageAndFilesystemSemantics [
 
-	| description packageNamesDescription removePackageNamesDescription tool |
+	| branchNameDescription description locationDescription messageDescription packageNamesDescription removePackageNamesDescription repositoryNameDescription tool |
 	tool := MCPToolEditRepository new.
 	description := tool description.
+	messageDescription := (self
+		                       inputPropertyNamed: 'message'
+		                       inTool: tool) description.
+	branchNameDescription := (self
+		                          inputPropertyNamed: 'branchName'
+		                          inTool: tool) description.
+	repositoryNameDescription := (self
+		                              inputPropertyNamed: 'repositoryName'
+		                              inTool: tool) description.
+	locationDescription := (self
+		                        inputPropertyNamed: 'location'
+		                        inTool: tool) description.
 	packageNamesDescription := (self
 		                            inputPropertyNamed: 'packageNames'
 		                            inTool: tool) description.
@@ -465,14 +482,39 @@ MCPToolContractsTest >> testEditRepositoryDescriptionExplainsPackageAndFilesyste
 		                                  inputPropertyNamed:
 		                                  'removePackageNames'
 		                                  inTool: tool) description.
-	self assert: (description includesSubstring: 'IceRepositoryCreator').
-	self assert: (description includesSubstring: 'registers').
-	self assert: (description includesSubstring: 'IcePackage>>remove').
-	self assert: (description includesSubstring: 'without unloading').
+	self assert: (description includesSubstring: 'repositoryName').
 	self assert: (description includesSubstring: 'operation=export').
-	self assert: (description includesSubstring: 'git index').
 	self assert:
-		(description includesSubstring: 'does not stage or commit').
+		(description includesSubstring: 'without staging or committing').
+	self assert: (description includesSubstring: 'operation=diff').
+	self assert: (description includesSubstring: 'without writing files').
+	self assert: (description includesSubstring: 'operation=commit').
+	self assert:
+		(description includesSubstring: 'IceRepository>>commitWithMessage:').
+	self assert: (description includesSubstring: 'operation=fetch').
+	self assert: (description includesSubstring: 'IceRepository>>fetch').
+	self assert: (description includesSubstring: 'operation=pull').
+	self assert: (description includesSubstring: 'IceRepository>>pull').
+	self assert: (description includesSubstring: 'operation=push').
+	self assert: (description includesSubstring: 'IceRepository>>push').
+	self assert:
+		(description includesSubstring: 'operation=createBranch').
+	self assert:
+		(description includesSubstring: 'operation=switchBranch').
+	self assert:
+		(messageDescription includesSubstring: 'operation=commit').
+	self assert:
+		(branchNameDescription includesSubstring: 'operation=createBranch').
+	self assert:
+		(branchNameDescription includesSubstring: 'operation=switchBranch').
+	self assert:
+		(repositoryNameDescription includesSubstring: 'existing repository').
+	self assert:
+		(repositoryNameDescription includesSubstring:
+			 'Combine with location').
+	self assert:
+		(locationDescription includesSubstring: 'operation=create').
+	self assert: (locationDescription includesSubstring: 'disambiguate').
 	self assert: (packageNamesDescription includesSubstring:
 			 'replaces the full managed package list').
 	self assert:
@@ -495,61 +537,101 @@ MCPToolContractsTest >> testEditRepositoryHasAccurateNameAndRequiredArguments [
 	self assert: (propertyNames includes: 'name').
 	self assert: (propertyNames includes: 'repositoryName').
 	self assert: (propertyNames includes: 'location').
+	self assert: (propertyNames includes: 'message').
+	self assert: (propertyNames includes: 'branchName').
 	self assert: (propertyNames includes: 'subdirectory').
 	self assert: (propertyNames includes: 'packageNames').
 	self assert: (propertyNames includes: 'addPackageNames').
 	self assert: (propertyNames includes: 'removePackageNames').
 	self
 		assert: (operationProperty extraProperties at: #enum) asArray
-		equals: #( 'create' 'update' 'export' )
+		equals:
+			#( 'create' 'update' 'export' 'diff' 'commit' 'fetch' 'pull' 'push'
+			   'createBranch' 'switchBranch' )
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testEditRepositoryOutputSchemaUsesActionForExecutedAction [
+
+	| dataProperties outputSchema required |
+	outputSchema := MCPToolEditRepository new outputSchema asJRPCJSON.
+	dataProperties := ((outputSchema at: #properties) at: 'data') at:
+		                  #properties.
+	required := ((outputSchema at: #properties) at: 'data') at: #required.
+	self assert: (dataProperties includesKey: 'action').
+	self deny: (dataProperties includesKey: 'operation').
+	self assert: (required includes: 'action').
+	self deny: (required includes: 'operation')
 ]
 
 { #category : 'tests' }
 MCPToolContractsTest >> testEditToolSchemasAdvertiseOperationBranches [
 
-	| classCreateBranch editClassBranches editMethodBranches editRepositoryBranches methodCreateBranch repositoryCreateBranch repositoryExportBranch updateBranch |
+	| branchNamed classCreateBranch editClassBranches editMethodBranches editRepositoryBranches expectedRepositoryBranches methodCreateBranch updateBranch |
 	editRepositoryBranches := MCPToolEditRepository new inputSchema
 		                          asJRPCJSON at: #oneOf.
 	editClassBranches := MCPToolEditClass new inputSchema asJRPCJSON at:
 		                     #oneOf.
 	editMethodBranches := MCPToolEditMethod new inputSchema asJRPCJSON
 		                      at: #oneOf.
+	branchNamed := [ :branches :operationName |
+	               branches detect: [ :each |
+		               (((each at: #properties) at: 'operation') at: #const)
+		               = operationName ] ].
 	self
 		assert: (editRepositoryBranches collect: [ :each |
 				 ((each at: #properties) at: 'operation') at: #const ]) asArray
-		equals: #( 'create' 'update' 'export' ).
-	repositoryCreateBranch := editRepositoryBranches detect: [ :each |
-		                          (((each at: #properties) at: 'operation')
-			                           at: #const) = 'create' ].
-	self
-		assert: (repositoryCreateBranch at: #required) asSet
-		equals: #( 'operation' 'name' 'location' ) asSet.
-	updateBranch := editRepositoryBranches detect: [ :each |
-		                (((each at: #properties) at: 'operation') at: #const)
-		                = 'update' ].
-	self
-		assert: (updateBranch at: #required) asSet
-		equals: #( 'operation' ) asSet.
-	repositoryExportBranch := editRepositoryBranches detect: [ :each |
-		                          (((each at: #properties) at: 'operation')
-			                           at: #const) = 'export' ].
-	self
-		assert: (repositoryExportBranch at: #required) asSet
-		equals: #( 'operation' 'repositoryName' ) asSet.
+		equals:
+			#( 'create' 'update' 'export' 'diff' 'commit' 'fetch' 'pull' 'push'
+			   'createBranch' 'switchBranch' ).
+	expectedRepositoryBranches := {
+		                              ('create'
+		                               -> #( 'operation' 'name' 'location' )).
+		                              ('update' -> #( 'operation' )).
+		                              ('export'
+		                               -> #( 'operation' 'repositoryName' )).
+		                              ('diff'
+		                               -> #( 'operation' 'repositoryName' )).
+		                              ('commit'
+		                               ->
+		                               #( 'operation' 'repositoryName'
+		                                  'message' )).
+		                              ('fetch'
+		                               -> #( 'operation' 'repositoryName' )).
+		                              ('pull'
+		                               -> #( 'operation' 'repositoryName' )).
+		                              ('push'
+		                               -> #( 'operation' 'repositoryName' )).
+		                              ('createBranch'
+		                               ->
+		                               #( 'operation' 'repositoryName'
+		                                  'branchName' )).
+		                              ('switchBranch'
+		                               ->
+		                               #( 'operation' 'repositoryName'
+		                                  'branchName' )) }.
+	expectedRepositoryBranches do: [ :association |
+		| branch operationProperty |
+		branch := branchNamed
+			          value: editRepositoryBranches
+			          value: association key.
+		operationProperty := (branch at: #properties) at: 'operation'.
+		self
+			assert: (branch at: #required) asSet
+			equals: association value asSet.
+		self assert: (operationProperty at: #description) isEmptyOrNil not ].
 	self
 		assert: (editClassBranches collect: [ :each |
 				 ((each at: #properties) at: 'operation') at: #const ]) asArray
 		equals: #( 'create' 'update' ).
-	classCreateBranch := editClassBranches detect: [ :each |
-		                     (((each at: #properties) at: 'operation') at:
-			                      #const) = 'create' ].
+	classCreateBranch := branchNamed
+		                     value: editClassBranches
+		                     value: 'create'.
 	self
 		assert: (classCreateBranch at: #required) asSet
 		equals:
 		#( 'operation' 'className' 'superclassName' 'packageName' ) asSet.
-	updateBranch := editClassBranches detect: [ :each |
-		                (((each at: #properties) at: 'operation') at: #const)
-		                = 'update' ].
+	updateBranch := branchNamed value: editClassBranches value: 'update'.
 	self
 		assert: (updateBranch at: #required) asSet
 		equals: #( 'operation' 'className' ) asSet.
@@ -557,15 +639,13 @@ MCPToolContractsTest >> testEditToolSchemasAdvertiseOperationBranches [
 		assert: (editMethodBranches collect: [ :each |
 				 ((each at: #properties) at: 'operation') at: #const ]) asArray
 		equals: #( 'create' 'update' ).
-	methodCreateBranch := editMethodBranches detect: [ :each |
-		                      (((each at: #properties) at: 'operation') at:
-			                       #const) = 'create' ].
+	methodCreateBranch := branchNamed
+		                      value: editMethodBranches
+		                      value: 'create'.
 	self
 		assert: (methodCreateBranch at: #required) asSet
 		equals: #( 'operation' 'className' 'methodSource' 'protocol' ) asSet.
-	updateBranch := editMethodBranches detect: [ :each |
-		                (((each at: #properties) at: 'operation') at: #const)
-		                = 'update' ].
+	updateBranch := branchNamed value: editMethodBranches value: 'update'.
 	self
 		assert: (updateBranch at: #required) asSet
 		equals: #( 'operation' 'className' 'selector' ) asSet
