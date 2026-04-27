@@ -8,12 +8,10 @@ SmalltalkCISpec {
     }
   ],
   #testing : {
-    #include : {
-      #packages : [
-        'MCP-Tests',
-        'MCP-Spec-Tests'
-      ]
-    },
+    #packages : [
+      'MCP-Tests',
+      'MCP-Spec-Tests'
+    ],
     #coverage : {
       #packages : [
         'MCP',
