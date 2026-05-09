@@ -23,9 +23,10 @@ BaselineOfMCP >> defineDependencies: spec [
 				repository: 'github://juliendelplanque/JRPC:v3.2.1/src';
 				loads: #( 'Deployment' ) ];
 		import: 'JRPC'.
-	spec
-		baseline: 'TinyLogger'
-		with: [ spec repository: 'github://jecisc/TinyLogger:v1.x.x/src' ].
+	spec baseline: 'TinyLogger' with: [
+		spec
+			repository: 'github://jecisc/TinyLogger:v1.x.x/src';
+			loads: #( 'Core' ) ].
 	self defineMocketryDependency: spec
 ]
 
