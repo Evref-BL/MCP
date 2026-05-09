@@ -43,20 +43,14 @@ BaselineOfMCP >> defineGroups: spec [
 { #category : 'baselines' }
 BaselineOfMCP >> defineMocketryDependency: spec [
 
-	spec
-		for:
-			#( #'pharo6.x' #'pharo7.x' #'pharo8.x' #'pharo9.x' #'pharo10.x'
-			   #'pharo11.x' #'pharo12.x' )
-		do: [
-			spec baseline: 'Mocketry' with: [
-				spec
-					repository: 'github://dionisiydk/Mocketry:v7.0.2';
-					loads: #( 'Core' ) ] ].
-	spec for: #'pharo13.x' do: [
-		spec baseline: 'Mocketry' with: [
-			spec
-				repository: 'github://dionisiydk/Mocketry:master';
-				loads: #( 'Core' ) ] ]
+	| repository |
+	repository := SystemVersion current major >= 13
+		              ifTrue: [ 'github://dionisiydk/Mocketry:master' ]
+		              ifFalse: [ 'github://dionisiydk/Mocketry:v7.0.2' ].
+	spec baseline: 'Mocketry' with: [
+		spec
+			repository: repository;
+			loads: #( 'Core' ) ]
 ]
 
 { #category : 'baselines' }
