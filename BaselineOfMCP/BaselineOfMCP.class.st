@@ -32,7 +32,12 @@ BaselineOfMCP >> defineDependencies: spec [
 { #category : 'baselines' }
 BaselineOfMCP >> defineGroups: spec [
 
-	
+	spec
+		group: 'Core' with: #( 'MCP' 'MCP-Spec' );
+		group: 'Tests'
+		with:
+			#( 'MCP-Tests-Resources' 'MCP-Tests' 'MCP-Tests-Resources-Extensions'
+			   'MCP-Spec-Tests' )
 ]
 
 { #category : 'baselines' }
