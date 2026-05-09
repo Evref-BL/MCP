@@ -72,5 +72,5 @@ BaselineOfMCP >> definePackages: spec [
 		with: [ spec requires: #( 'MCP-Tests-Resources' ) ].
 	spec
 		package: 'MCP-Spec-Tests'
-		with: [ spec requires: #( 'MCP-Spec' ) ]
+		with: [ spec requires: #( 'MCP-Spec' 'MCP-Tests' ) ]
 ]
