@@ -223,6 +223,46 @@ MCPToolEditRepositoryTest >> testCommitRequestsImageSaveAfterSuccessfulExecution
 ]
 
 { #category : 'tests' }
+MCPToolEditRepositoryTest >> testCommitUsesFallbackGitIdentityWhenGitSignatureIsUnavailable [
+
+	| data location packageName repository repositoryName result |
+	repositoryName := 'MCP Edit Repository Commit Fallback Identity Test'.
+	packageName := 'MCPToolEditRepositoryCommitFallbackIdentityPackage'.
+	location := self temporaryRepositoryLocationNamed:
+		            'MCPToolEditRepositoryTestCommitFallbackIdentity'.
+	self
+		withExportPackageNamed: packageName
+		className: 'MCPToolEditRepositoryCommitFallbackIdentityClass'
+		do: [
+			self
+				withCleanRepositoryNamed: repositoryName
+				location: location
+				do: [
+					self callToolWith: {
+							(#operation -> 'create').
+							(#name -> repositoryName).
+							(#location -> location pathString).
+							(#packageNames -> { packageName }) } asDictionary.
+					repository := IceRepository repositories detect: [ :each |
+						              each name asString = repositoryName ].
+					repository repositoryHandle config
+						username: '';
+						email: ''.
+					result := self callToolWith: {
+							          (#operation -> 'commit').
+							          (#repositoryName -> repositoryName).
+							          (#message
+							           -> 'Commit with fallback identity from MCP test') }
+							          asDictionary.
+					self deny: (result at: #isError ifAbsent: [ false ]).
+					data := self dataFrom: result.
+					self
+						assert: (data at: #commitDescription)
+						equals: 'Commit with fallback identity from MCP test'.
+					self assert: repository headCommit author equals: 'MCP' ] ]
+]
+
+{ #category : 'tests' }
 MCPToolEditRepositoryTest >> testCreateBranchReturnsResultReportsErrorsAndRequestsImageSave [
 
 	| data duplicateResult failureResult repository result saveResult server |

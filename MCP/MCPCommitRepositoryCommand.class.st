@@ -44,8 +44,11 @@ MCPCommitRepositoryCommand >> execute [
 			  repository := self request repository.
 			  diff := repository workingCopyDiff.
 			  changedPackageNames := self changedPackageNamesFromDiff: diff.
-			  commit := self withNonInteractiveAuthorDuring: [
-				            repository commitWithMessage: self request message ].
+			  commit := self
+				            withNonInteractiveGitIdentityFor: repository
+				            during: [
+					            self withNonInteractiveAuthorDuring: [
+						            repository commitWithMessage: self request message ] ].
 			  result := MCPRepositoryCommitResult
 				            repository: repository
 				            changedPackageNames: changedPackageNames
@@ -59,6 +62,43 @@ MCPCommitRepositoryCommand >> execute [
 		  failureSummary: [ :error |
 			  'Failed to commit repository: '
 			  , (error messageText ifNil: [ error asString ]) ]
+]
+
+{ #category : 'private - git identity' }
+MCPCommitRepositoryCommand >> fallbackGitUserEmail [
+
+	^ 'mcp@example.invalid'
+]
+
+{ #category : 'private - git identity' }
+MCPCommitRepositoryCommand >> fallbackGitUserName [
+
+	^ 'MCP'
+]
+
+{ #category : 'private - git identity' }
+MCPCommitRepositoryCommand >> gitConfigValueMissingOrEmpty: key in: config [
+
+	^ [
+	  config
+		  getString: key
+		  ifPresent: [ :value | value isEmptyOrNil ]
+		  ifAbsent: [ true ] ]
+		  on: Error
+		  do: [ :ignored | true ]
+]
+
+{ #category : 'private - git identity' }
+MCPCommitRepositoryCommand >> gitSignatureMissingFor: anError [
+
+	| message |
+	message := anError messageText ifNil: [ '' ].
+	message := message asLowercase.
+	^ message = 'config value ''user.name'' was not found' or: [
+		  message = 'config value ''user.email'' was not found' or: [
+			  message
+			  =
+			  'failed to parse signature - signature cannot have an empty name or email' ] ]
 ]
 
 { #category : 'initialization' }
@@ -76,6 +116,27 @@ MCPCommitRepositoryCommand >> packageNameFromDiffPackageNode: aNode [
 	definition := aNode definition.
 	(definition respondsTo: #packageName) ifFalse: [ ^ nil ].
 	^ definition packageName asString
+]
+
+{ #category : 'private - git identity' }
+MCPCommitRepositoryCommand >> removeGitConfigKey: key from: config [
+
+	[ config unset: key ]
+		on: Error
+		do: [ :ignored | nil ]
+]
+
+{ #category : 'private - git identity' }
+MCPCommitRepositoryCommand >> repositoryHasDefaultGitSignature: aRepository [
+
+	^ [
+	  aRepository repositoryHandle defaultSignature.
+	  true ]
+		  on: LGit_GIT_ENOTFOUND , LGit_GIT_ERROR
+		  do: [ :error |
+			  (self gitSignatureMissingFor: error)
+				  ifTrue: [ false ]
+				  ifFalse: [ error pass ] ]
 ]
 
 { #category : 'accessing' }
@@ -103,4 +164,26 @@ MCPCommitRepositoryCommand >> withNonInteractiveAuthorDuring: aBlock [
 	^ Author fullNamePerSe isEmptyOrNil
 		  ifTrue: [ Author useAuthor: 'MCP' during: aBlock ]
 		  ifFalse: [ aBlock value ]
+]
+
+{ #category : 'private - git identity' }
+MCPCommitRepositoryCommand >> withNonInteractiveGitIdentityFor: aRepository during: aBlock [
+
+	| config shouldSetEmail shouldSetName |
+	(self repositoryHasDefaultGitSignature: aRepository) ifTrue: [
+		^ aBlock value ].
+	config := aRepository repositoryHandle config.
+	shouldSetName := self
+		                 gitConfigValueMissingOrEmpty: 'user.name'
+		                 in: config.
+	shouldSetEmail := self
+		                  gitConfigValueMissingOrEmpty: 'user.email'
+		                  in: config.
+	shouldSetName ifTrue: [ config username: self fallbackGitUserName ].
+	shouldSetEmail ifTrue: [ config email: self fallbackGitUserEmail ].
+	^ [ aBlock value ] ensure: [
+		  shouldSetName ifTrue: [
+			  self removeGitConfigKey: 'user.name' from: config ].
+		  shouldSetEmail ifTrue: [
+			  self removeGitConfigKey: 'user.email' from: config ] ]
 ]
