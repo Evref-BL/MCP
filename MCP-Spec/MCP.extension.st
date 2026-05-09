@@ -25,3 +25,10 @@ MCP >> inspectionToolCatalog [
 	<inspectorPresentationOrder: 1 title: 'Tool Catalog'>
 	^ MCPToolsCatalogPresenter new
 ]
+
+{ #category : '*MCP-Spec' }
+MCP class >> openToolCatalog [
+
+	<script>
+	^ MCPToolsCatalogPresenter open
+]
