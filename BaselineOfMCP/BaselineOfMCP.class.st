@@ -26,16 +26,32 @@ BaselineOfMCP >> defineDependencies: spec [
 	spec
 		baseline: 'TinyLogger'
 		with: [ spec repository: 'github://jecisc/TinyLogger:v1.x.x/src' ].
-	spec baseline: 'Mocketry' with: [
-		spec
-			repository: 'github://dionisiydk/Mocketry:v7.0.2';
-			loads: #( 'Core' ) ]
+	self defineMocketryDependency: spec
 ]
 
 { #category : 'baselines' }
 BaselineOfMCP >> defineGroups: spec [
 
 	
+]
+
+{ #category : 'baselines' }
+BaselineOfMCP >> defineMocketryDependency: spec [
+
+	spec
+		for:
+			#( #'pharo6.x' #'pharo7.x' #'pharo8.x' #'pharo9.x' #'pharo10.x'
+			   #'pharo11.x' #'pharo12.x' )
+		do: [
+			spec baseline: 'Mocketry' with: [
+				spec
+					repository: 'github://dionisiydk/Mocketry:v7.0.2';
+					loads: #( 'Core' ) ] ].
+	spec for: #'pharo13.x' do: [
+		spec baseline: 'Mocketry' with: [
+			spec
+				repository: 'github://dionisiydk/Mocketry:master';
+				loads: #( 'Core' ) ] ]
 ]
 
 { #category : 'baselines' }
