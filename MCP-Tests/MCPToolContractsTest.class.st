@@ -132,6 +132,7 @@ MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 			MCPToolEditMethod.
 			MCPToolRewriteMethods.
 			MCPToolRemoveMethods.
+			MCPToolManageChangeHistory.
 			MCPToolRunTests.
 			MCPToolEvaluate }
 ]
@@ -1730,6 +1731,13 @@ MCPToolContractsTest >> toolFlowSpecs [
 				   (#selectors -> #( 'class' )) } asDictionary).
 			  (#requestClass -> MCPRemoveMethodsRequest).
 			  (#commandClass -> MCPRemoveMethodsCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolManageChangeHistory).
+			  (#arguments -> {
+				   (#operation -> 'listFiles').
+				   (#includeEntryCounts -> false) } asDictionary).
+			  (#requestClass -> MCPChangeHistoryListLogsRequest).
+			  (#commandClass -> MCPListChangeHistoryLogsCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolRunTests).
 			  (#arguments -> { (#tests

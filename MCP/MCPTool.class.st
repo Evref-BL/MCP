@@ -63,6 +63,7 @@ MCPTool class >> toolGroups [
 			   MCPToolEditMethod.
 			   MCPToolRewriteMethods.
 			   MCPToolRemoveMethods }).
+		  (#History -> { MCPToolManageChangeHistory }).
 		  (#Tests -> { MCPToolRunTests }).
 		  (#Scripting -> { MCPToolEvaluate }) }
 ]
