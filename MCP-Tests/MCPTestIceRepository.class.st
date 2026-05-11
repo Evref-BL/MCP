@@ -16,7 +16,11 @@ Class {
 		'failCreateBranch',
 		'failSwitchBranch',
 		'knownBranchNames',
-		'modifiedPackages'
+		'modifiedPackages',
+		'headCommitId',
+		'isDetachedHead',
+		'upstreamRemoteName',
+		'upstreamBranchName'
 	],
 	#category : 'MCP-Tests-Internal',
 	#package : 'MCP-Tests',
@@ -132,6 +136,30 @@ MCPTestIceRepository >> failSwitchBranch: aBoolean [
 ]
 
 { #category : 'accessing' }
+MCPTestIceRepository >> head [
+
+	^ MCPTestRepositoryHead repository: self
+]
+
+{ #category : 'accessing' }
+MCPTestIceRepository >> headCommit [
+
+	^ MCPTestRepositoryCommit id: self headCommitId
+]
+
+{ #category : 'accessing' }
+MCPTestIceRepository >> headCommitId [
+
+	^ headCommitId ifNil: [ '' ]
+]
+
+{ #category : 'accessing' }
+MCPTestIceRepository >> headCommitId: aString [
+
+	headCommitId := aString
+]
+
+{ #category : 'accessing' }
 MCPTestIceRepository >> headDescription [
 
 	^ headDescription ifNil: [ '' ]
@@ -156,6 +184,18 @@ MCPTestIceRepository >> initialize [
 			 packageNames: #(  )
 			 modifiedPackages: #(  )).
 	^ self
+]
+
+{ #category : 'testing' }
+MCPTestIceRepository >> isDetachedHead [
+
+	^ isDetachedHead ifNil: [ false ]
+]
+
+{ #category : 'testing' }
+MCPTestIceRepository >> isDetachedHead: aBoolean [
+
+	isDetachedHead := aBoolean
 ]
 
 { #category : 'testing' }
@@ -261,4 +301,28 @@ MCPTestIceRepository >> switchToBranchNamed: aBranchName [
 	branchName := aBranchName.
 	headDescription := 'branch ' , aBranchName.
 	self recordAction: 'switchBranch:' , aBranchName
+]
+
+{ #category : 'accessing' }
+MCPTestIceRepository >> upstreamBranchName [
+
+	^ upstreamBranchName ifNil: [ '' ]
+]
+
+{ #category : 'accessing' }
+MCPTestIceRepository >> upstreamBranchName: aString [
+
+	upstreamBranchName := aString
+]
+
+{ #category : 'accessing' }
+MCPTestIceRepository >> upstreamRemoteName [
+
+	^ upstreamRemoteName ifNil: [ '' ]
+]
+
+{ #category : 'accessing' }
+MCPTestIceRepository >> upstreamRemoteName: aString [
+
+	upstreamRemoteName := aString
 ]

@@ -7,7 +7,8 @@ Class {
 	#instVars : [
 		'name',
 		'repository',
-		'shouldFail'
+		'shouldFail',
+		'url'
 	],
 	#category : 'MCP-Tests-Internal',
 	#package : 'MCP-Tests',
@@ -60,4 +61,16 @@ MCPTestRepositoryRemote >> shouldFail [
 MCPTestRepositoryRemote >> shouldFail: aBoolean [
 
 	shouldFail := aBoolean
+]
+
+{ #category : 'accessing' }
+MCPTestRepositoryRemote >> url [
+
+	^ url ifNil: [ 'memory://' , self name ]
+]
+
+{ #category : 'accessing' }
+MCPTestRepositoryRemote >> url: aString [
+
+	url := aString
 ]

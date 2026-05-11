@@ -14,7 +14,7 @@ Class {
 { #category : 'defaults' }
 MCPToolFindRepositories >> defaultDescription [
 
-	^ 'List Iceberg repositories registered in the image. Filter by repository name, location path, package name, modified state, missing state, or repository-entry fields. The tool is read-only and includes disk location, branch/head description, package names, modified package names, and read-only remote names.'
+	^ 'List Iceberg repositories registered in the image. Filter by repository name, location path, package name, modified state, missing state, or repository-entry fields. The tool is read-only and includes disk location, branch/head metadata, exact head commit id, detached-head state, package names, modified package names, structured remotes, and upstream branch details.'
 ]
 
 { #category : 'private - request' }
@@ -94,16 +94,36 @@ MCPToolFindRepositories >> filterTextsForRepositoryEntry: anEntry targets: filte
 		each = 'subdirectory' ifTrue: [
 			texts add: (anEntry at: #subdirectory) ].
 		each = 'branch' ifTrue: [ texts add: (anEntry at: #branchName) ].
-		each = 'head' ifTrue: [ texts add: (anEntry at: #headDescription) ].
+		each = 'head' ifTrue: [
+			texts add: (anEntry at: #headDescription).
+			texts add: (anEntry at: #headClassName).
+			texts add: (anEntry at: #headCommitId) ].
+		each = 'headClass' ifTrue: [
+			texts add: (anEntry at: #headClassName) ].
+		each = 'headCommit' ifTrue: [
+			texts add: (anEntry at: #headCommitId) ].
 		each = 'package' ifTrue: [
 			(anEntry at: #packageNames) do: [ :packageName |
 				texts add: packageName ] ].
 		each = 'modifiedPackage' ifTrue: [
 			(anEntry at: #modifiedPackageNames) do: [ :packageName |
 				texts add: packageName ] ].
-		each = 'remote' ifTrue: [
-			(anEntry at: #remoteNames) do: [ :remoteName |
-				texts add: remoteName ] ] ].
+		(each = 'remote' or: [ each = 'remoteName' ]) ifTrue: [
+			(anEntry at: #remotes) do: [ :remote |
+				texts add: (remote at: #name) ] ].
+		(each = 'remote' or: [ each = 'remoteUrl' ]) ifTrue: [
+			(anEntry at: #remotes) do: [ :remote |
+				texts add: (remote at: #url) ] ].
+		each = 'upstream' ifTrue: [
+			texts add: (anEntry at: #upstreamRemoteName).
+			texts add: (anEntry at: #upstreamBranchName).
+			texts add: (anEntry at: #upstreamRemoteUrl) ].
+		each = 'upstreamRemote' ifTrue: [
+			texts add: (anEntry at: #upstreamRemoteName) ].
+		each = 'upstreamBranch' ifTrue: [
+			texts add: (anEntry at: #upstreamBranchName) ].
+		each = 'upstreamRemoteUrl' ifTrue: [
+			texts add: (anEntry at: #upstreamRemoteUrl) ] ].
 	^ texts asArray
 ]
 
@@ -198,8 +218,10 @@ MCPToolFindRepositories >> repositoryEntrySchema [
 		  properties: self repositoryInfoDataProperties;
 		  required:
 			  #( 'name' 'className' 'location' 'subdirectory' 'branchName'
-			     'headDescription' 'isMissing' 'isModified' 'packageNames'
-			     'modifiedPackageNames' 'remoteNames' );
+			     'headDescription' 'headClassName' 'headCommitId'
+			     'isDetachedHead' 'isMissing' 'isModified' 'packageNames'
+			     'modifiedPackageNames' 'remotes' 'upstreamRemoteName'
+			     'upstreamBranchName' 'upstreamRemoteUrl' );
 		  additionalProperties: false;
 		  yourself
 ]
@@ -236,6 +258,13 @@ MCPToolFindRepositories >> repositoryFilterInputProperties [
 { #category : 'private - schema' }
 MCPToolFindRepositories >> repositoryInfoDataProperties [
 
+	| remotesProperty |
+	remotesProperty := self
+		                   schemaPropertyNamed: 'remotes'
+		                   type: 'array'
+		                   description:
+		                   'The configured repository remotes, including names and URLs.'.
+	remotesProperty items: self repositoryRemoteEntrySchema.
 	^ {
 		  (self
 			   schemaPropertyNamed: 'name'
@@ -258,12 +287,25 @@ MCPToolFindRepositories >> repositoryInfoDataProperties [
 		  (self
 			   schemaPropertyNamed: 'branchName'
 			   type: 'string'
-			   description: 'The current branch name, when available.').
+			   description: 'The current local branch name, when available.').
 		  (self
 			   schemaPropertyNamed: 'headDescription'
 			   type: 'string'
 			   description:
 			   'A short description of the current head, when available.').
+		  (self
+			   schemaPropertyNamed: 'headClassName'
+			   type: 'string'
+			   description:
+			   'The concrete class name of the current head reference, when available.').
+		  (self
+			   schemaPropertyNamed: 'headCommitId'
+			   type: 'string'
+			   description: 'The exact current head commit id, when available.').
+		  (self
+			   booleanSchemaPropertyNamed: 'isDetachedHead'
+			   description:
+			   'Whether the repository appears to be checked out at a detached commit.').
 		  (self
 			   booleanSchemaPropertyNamed: 'isMissing'
 			   description: 'Whether the repository location is missing.').
@@ -279,11 +321,44 @@ MCPToolFindRepositories >> repositoryInfoDataProperties [
 			   stringArraySchemaNamed: 'modifiedPackageNames'
 			   description: 'The managed package names with image changes.'
 			   itemDescription: 'A modified package name.').
+		  remotesProperty.
 		  (self
-			   stringArraySchemaNamed: 'remoteNames'
+			   schemaPropertyNamed: 'upstreamRemoteName'
+			   type: 'string'
 			   description:
-			   'Read-only remote names configured for the repository.'
-			   itemDescription: 'A remote name.') }
+			   'The upstream remote name for the current local branch, when available.').
+		  (self
+			   schemaPropertyNamed: 'upstreamBranchName'
+			   type: 'string'
+			   description:
+			   'The upstream branch name for the current local branch, when available.').
+		  (self
+			   schemaPropertyNamed: 'upstreamRemoteUrl'
+			   type: 'string'
+			   description:
+			   'The upstream remote URL for the current local branch, when available.') }
+]
+
+{ #category : 'private - schema' }
+MCPToolFindRepositories >> repositoryRemoteEntrySchema [
+
+	^ MCPStructureProperties new
+		  name: 'repositoryRemoteEntry';
+		  type: 'object';
+		  description:
+			  'Structured metadata for one configured repository remote.';
+		  properties: {
+				  (self
+					   schemaPropertyNamed: 'name'
+					   type: 'string'
+					   description: 'The remote name.').
+				  (self
+					   schemaPropertyNamed: 'url'
+					   type: 'string'
+					   description: 'The remote URL.') };
+		  required: #( 'name' 'url' );
+		  additionalProperties: false;
+		  yourself
 ]
 
 { #category : 'private - results' }
@@ -351,5 +426,7 @@ MCPToolFindRepositories >> successSummaryForScope: scopeSummary page: page [
 MCPToolFindRepositories >> supportedFilterTargets [
 
 	^ #( 'name' 'class' 'location' 'directory' 'subdirectory'
-	     'branch' 'head' 'package' 'modifiedPackage' 'remote' )
+	     'branch' 'head' 'headClass' 'headCommit' 'package' 'modifiedPackage'
+	     'remote' 'remoteName' 'remoteUrl' 'upstream' 'upstreamRemote'
+	     'upstreamBranch' 'upstreamRemoteUrl' )
 ]

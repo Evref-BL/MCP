@@ -1,7 +1,7 @@
 "
 DTO for registered Iceberg repository metadata.
 
-It is read-only and intended for find-repositories responses. The DTO normalizes repository state that may come from different Iceberg repository implementations and keeps tool output independent from Iceberg objects.
+It is read-only and intended for find-repositories responses and repository operation summaries. The DTO normalizes repository, head, remote, upstream, and package state from different Iceberg repository implementations while keeping tool output independent from Iceberg objects.
 "
 Class {
 	#name : 'MCPRepositoryInfo',
@@ -13,11 +13,17 @@ Class {
 		'subdirectory',
 		'branchName',
 		'headDescription',
+		'headClassName',
+		'headCommitId',
+		'isDetachedHead',
 		'isMissing',
 		'isModified',
 		'packageNames',
 		'modifiedPackageNames',
-		'remoteNames'
+		'remotes',
+		'upstreamRemoteName',
+		'upstreamBranchName',
+		'upstreamRemoteUrl'
 	],
 	#category : 'MCP-DTOs',
 	#package : 'MCP',
@@ -40,11 +46,17 @@ MCPRepositoryInfo >> asDictionary [
 		  (#subdirectory -> self subdirectory).
 		  (#branchName -> self branchName).
 		  (#headDescription -> self headDescription).
+		  (#headClassName -> self headClassName).
+		  (#headCommitId -> self headCommitId).
+		  (#isDetachedHead -> self isDetachedHead).
 		  (#isMissing -> self isMissing).
 		  (#isModified -> self isModified).
 		  (#packageNames -> self packageNames).
 		  (#modifiedPackageNames -> self modifiedPackageNames).
-		  (#remoteNames -> self remoteNames) } asDictionary
+		  (#remotes -> self remotes).
+		  (#upstreamRemoteName -> self upstreamRemoteName).
+		  (#upstreamBranchName -> self upstreamBranchName).
+		  (#upstreamRemoteUrl -> self upstreamRemoteUrl) } asDictionary
 ]
 
 { #category : 'converting' }
@@ -73,6 +85,27 @@ MCPRepositoryInfo >> className [
 	^ className
 ]
 
+{ #category : 'private' }
+MCPRepositoryInfo >> emptyUpstreamInfo [
+
+	^ {
+		  (#remoteName -> '').
+		  (#branchName -> '').
+		  (#remoteUrl -> '') } asDictionary
+]
+
+{ #category : 'accessing' }
+MCPRepositoryInfo >> headClassName [
+
+	^ headClassName ifNil: [ '' ]
+]
+
+{ #category : 'accessing' }
+MCPRepositoryInfo >> headCommitId [
+
+	^ headCommitId ifNil: [ '' ]
+]
+
 { #category : 'accessing' }
 MCPRepositoryInfo >> headDescription [
 
@@ -82,6 +115,7 @@ MCPRepositoryInfo >> headDescription [
 { #category : 'initialization' }
 MCPRepositoryInfo >> initializeFromRepository: aRepository [
 
+	| upstreamInfo |
 	name := self stringFrom: [ aRepository name ] default: ''.
 	className := aRepository class name asString.
 	location := self repositoryLocationFor: aRepository.
@@ -90,6 +124,9 @@ MCPRepositoryInfo >> initializeFromRepository: aRepository [
 	headDescription := self
 		                   stringFrom: [ aRepository headDescription ]
 		                   default: ''.
+	headClassName := self repositoryHeadClassNameFor: aRepository.
+	headCommitId := self repositoryHeadCommitIdFor: aRepository.
+	isDetachedHead := self repositoryIsDetachedHeadFor: aRepository.
 	isMissing := self
 		             booleanFrom: [
 			             (aRepository respondsTo: #isMissing)
@@ -102,8 +139,18 @@ MCPRepositoryInfo >> initializeFromRepository: aRepository [
 	packageNames := self repositoryPackageNamesFor: aRepository.
 	modifiedPackageNames := self repositoryModifiedPackageNamesFor:
 		                        aRepository.
-	remoteNames := self repositoryRemoteNamesFor: aRepository.
+	remotes := self repositoryRemotesFor: aRepository.
+	upstreamInfo := self repositoryUpstreamInfoFor: aRepository.
+	upstreamRemoteName := upstreamInfo at: #remoteName.
+	upstreamBranchName := upstreamInfo at: #branchName.
+	upstreamRemoteUrl := upstreamInfo at: #remoteUrl.
 	^ self
+]
+
+{ #category : 'accessing' }
+MCPRepositoryInfo >> isDetachedHead [
+
+	^ isDetachedHead ifNil: [ false ]
 ]
 
 { #category : 'accessing' }
@@ -142,10 +189,67 @@ MCPRepositoryInfo >> packageNames [
 	^ packageNames
 ]
 
+{ #category : 'private' }
+MCPRepositoryInfo >> remoteDictionaryFor: aRemote [
+
+	^ {
+		  (#name -> (self stringFrom: [ aRemote name ] default: '')).
+		  (#url -> (self stringFrom: [ aRemote url ] default: '')) }
+		  asDictionary
+]
+
 { #category : 'accessing' }
 MCPRepositoryInfo >> remoteNames [
 
-	^ remoteNames
+	^ ((self remotes collect: [ :each | each at: #name ifAbsent: [ '' ] ])
+		   reject: [ :each | each isEmpty ]) asArray
+]
+
+{ #category : 'private' }
+MCPRepositoryInfo >> remoteUrlNamed: aRemoteName in: aRepository [
+
+	| remote |
+	aRemoteName isEmpty ifTrue: [ ^ '' ].
+	remote := [
+	          aRepository remotes
+		          detect: [ :each |
+		          (self stringValue: each name default: '') = aRemoteName ]
+		          ifNone: [ nil ] ]
+		          on: Error
+		          do: [ :ignored | nil ].
+	remote ifNil: [ ^ '' ].
+	^ self stringFrom: [ remote url ] default: ''
+]
+
+{ #category : 'accessing' }
+MCPRepositoryInfo >> remotes [
+
+	^ remotes ifNil: [ #(  ) ]
+]
+
+{ #category : 'private' }
+MCPRepositoryInfo >> repositoryHeadClassNameFor: aRepository [
+
+	^ self stringFrom: [ aRepository head class name ] default: ''
+]
+
+{ #category : 'private' }
+MCPRepositoryInfo >> repositoryHeadCommitIdFor: aRepository [
+
+	^ self stringFrom: [ aRepository headCommit id ] default: ''
+]
+
+{ #category : 'private' }
+MCPRepositoryInfo >> repositoryIsDetachedHeadFor: aRepository [
+
+	^ self
+		  booleanFrom: [
+			  | head |
+			  head := aRepository head.
+			  (head respondsTo: #isDetached)
+				  ifTrue: [ head isDetached ]
+				  ifFalse: [ head class name asString = 'IceGitCommit' ] ]
+		  default: false
 ]
 
 { #category : 'private' }
@@ -179,12 +283,24 @@ MCPRepositoryInfo >> repositoryPackageNamesFor: aRepository [
 ]
 
 { #category : 'private' }
-MCPRepositoryInfo >> repositoryRemoteNamesFor: aRepository [
+MCPRepositoryInfo >> repositoryRemotesFor: aRepository [
 
-	^ self sortedStringsFrom: [
-		  (aRepository respondsTo: #remotes)
-			  ifTrue: [ aRepository remotes collect: [ :each | each name ] ]
-			  ifFalse: [ #(  ) ] ]
+	| normalized values |
+	values := [
+	          (aRepository respondsTo: #remotes)
+		          ifTrue: [ aRepository remotes ]
+		          ifFalse: [ #(  ) ] ]
+		          on: Error
+		          do: [ :ignored | #(  ) ].
+	normalized := OrderedCollection new.
+	values do: [ :each |
+		| remoteDictionary |
+		remoteDictionary := self remoteDictionaryFor: each.
+		((remoteDictionary at: #name) isEmpty and: [
+			 (remoteDictionary at: #url) isEmpty ]) not ifTrue: [
+			normalized add: remoteDictionary ] ].
+	^ (normalized asArray asSortedCollection: [ :left :right |
+		   (left at: #name) <= (right at: #name) ]) asArray
 ]
 
 { #category : 'private' }
@@ -196,6 +312,34 @@ MCPRepositoryInfo >> repositorySubdirectoryFor: aRepository [
 				  ifTrue: [ aRepository subdirectory ]
 				  ifFalse: [ '' ] ]
 		  default: ''
+]
+
+{ #category : 'private' }
+MCPRepositoryInfo >> repositoryUpstreamInfoFor: aRepository [
+
+	| head remoteName resolvedUpstreamBranchName upstream |
+	head := [ aRepository head ]
+		        on: Error
+		        do: [ :ignored | ^ self emptyUpstreamInfo ].
+	((head respondsTo: #hasUpstream) and: [
+		 [ head hasUpstream ]
+			 on: Error
+			 do: [ :ignored | false ] ]) ifFalse: [ ^ self emptyUpstreamInfo ].
+	upstream := [ head upstream ]
+		            on: Error
+		            do: [ :ignored | ^ self emptyUpstreamInfo ].
+	remoteName := self stringFrom: [ upstream remoteName ] default: ''.
+	resolvedUpstreamBranchName := self
+		                              stringFrom: [
+			                              (upstream respondsTo: #shortname)
+				                              ifTrue: [ upstream shortname ]
+				                              ifFalse: [ upstream name ] ]
+		                              default: ''.
+	^ {
+		  (#remoteName -> remoteName).
+		  (#branchName -> resolvedUpstreamBranchName).
+		  (#remoteUrl -> (self remoteUrlNamed: remoteName in: aRepository)) }
+		  asDictionary
 ]
 
 { #category : 'private' }
@@ -234,4 +378,22 @@ MCPRepositoryInfo >> stringValue: aValue default: defaultString [
 MCPRepositoryInfo >> subdirectory [
 
 	^ subdirectory
+]
+
+{ #category : 'accessing' }
+MCPRepositoryInfo >> upstreamBranchName [
+
+	^ upstreamBranchName ifNil: [ '' ]
+]
+
+{ #category : 'accessing' }
+MCPRepositoryInfo >> upstreamRemoteName [
+
+	^ upstreamRemoteName ifNil: [ '' ]
+]
+
+{ #category : 'accessing' }
+MCPRepositoryInfo >> upstreamRemoteUrl [
+
+	^ upstreamRemoteUrl ifNil: [ '' ]
 ]
