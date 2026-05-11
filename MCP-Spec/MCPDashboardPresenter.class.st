@@ -5,10 +5,8 @@ Class {
 	#name : 'MCPDashboardPresenter',
 	#superclass : 'SpPresenterWithModel',
 	#instVars : [
-		'summaryLabel',
 		'statusLabel',
 		'urlLabel',
-		'detailsLabel',
 		'toolsHeaderButton',
 		'portLabel',
 		'portInput',
@@ -32,7 +30,9 @@ Class {
 		'toolsSectionExpanded',
 		'metricsSectionExpanded',
 		'tracesSectionExpanded',
-		'logsSectionExpanded'
+		'logsSectionExpanded',
+		'statusIcon',
+		'statusValueLabel'
 	],
 	#category : 'MCP-Spec',
 	#package : 'MCP-Spec'
@@ -150,6 +150,13 @@ MCPDashboardPresenter >> configurationLayout [
 ]
 
 { #category : 'initialization' }
+MCPDashboardPresenter >> configureTracesTableMenu [
+
+	tracesTable ifNil: [ ^ self ].
+	tracesTable contextMenu: [ self tracesContextMenu ]
+]
+
+{ #category : 'initialization' }
 MCPDashboardPresenter >> connectPresenters [
 
 	applyButton action: [ self applyConfiguration ].
@@ -162,7 +169,7 @@ MCPDashboardPresenter >> connectPresenters [
 	metricsHeaderButton action: [ self toggleMetricsSection ].
 	tracesHeaderButton action: [ self toggleTracesSection ].
 	logsHeaderButton action: [ self toggleLogsSection ].
-	tracesTable contextMenu: [ self tracesContextMenu ].
+	self configureTracesTableMenu.
 	startButton action: [ self startServer ].
 	stopButton action: [ self stopServer ].
 	restartButton action: [ self restartServer ].
@@ -239,10 +246,9 @@ MCPDashboardPresenter >> hasExpandedMonitoringSection [
 MCPDashboardPresenter >> headerLayout [
 
 	^ SpBoxLayout newTopToBottom
-		  add: summaryLabel expand: false;
-		  add: statusLabel expand: false;
+		  spacing: 0;
+		  add: self statusRowLayout expand: false;
 		  add: urlLabel expand: false;
-		  add: detailsLabel expand: false;
 		  yourself
 ]
 
@@ -260,10 +266,10 @@ MCPDashboardPresenter >> initializePresenters [
 	tracesSectionExpanded := true.
 	logsSectionExpanded := true.
 
-	summaryLabel := self instantiate: SpLabelPresenter.
+	statusIcon := self instantiate: SpImagePresenter.
 	statusLabel := self instantiate: SpLabelPresenter.
+	statusValueLabel := self instantiate: SpLabelPresenter.
 	urlLabel := self instantiate: SpLabelPresenter.
-	detailsLabel := self instantiate: SpLabelPresenter.
 	toolsHeaderButton := self instantiate: SpButtonPresenter.
 	portLabel := self instantiate: SpLabelPresenter.
 	portInput := self instantiate: SpTextInputFieldPresenter.
@@ -284,6 +290,7 @@ MCPDashboardPresenter >> initializePresenters [
 	logsHeaderButton := self instantiate: SpButtonPresenter.
 	logsTable := self newTable.
 
+	statusLabel label: 'Status:'.
 	portLabel label: 'Port:'.
 	debugCheckBox
 		label: 'Debug mode';
@@ -302,9 +309,6 @@ MCPDashboardPresenter >> initializePresenters [
 		addColumn: (SpStringTableColumn
 				 title: 'Title'
 				 evaluated: [ :tool | tool title ifNil: [ '' ] ]);
-		addColumn: (SpStringTableColumn
-				 title: 'Class'
-				 evaluated: [ :tool | tool class name ]);
 		addColumn: (SpStringTableColumn
 				 title: 'Description'
 				 evaluated: [ :tool | tool description ifNil: [ '' ] ]);
@@ -329,10 +333,17 @@ MCPDashboardPresenter >> initializePresenters [
 		addColumn: (SpStringTableColumn
 				 title: 'Last ms'
 				 evaluated: #displayLastMilliseconds);
-		addColumn: (SpStringTableColumn
-				 title: 'Outlier'
-				 evaluated: #displayOutlierExplanation);
 		beResizable.
+	self initializeTracesTableColumns.
+	logsTable
+		addColumn:
+			(SpStringTableColumn title: 'Log' evaluated: [ :line | line ]);
+		beResizable
+]
+
+{ #category : 'initialization' }
+MCPDashboardPresenter >> initializeTracesTableColumns [
+
 	tracesTable
 		addColumn: (SpStringTableColumn title: 'Status' evaluated: #status);
 		addColumn: (SpStringTableColumn title: 'Tool' evaluated: #toolName);
@@ -343,10 +354,6 @@ MCPDashboardPresenter >> initializePresenters [
 			(SpStringTableColumn title: 'Details' evaluated: #displaySummary);
 		addColumn:
 			(SpStringTableColumn title: 'Started' evaluated: #displayStartedAt);
-		beResizable.
-	logsTable
-		addColumn:
-			(SpStringTableColumn title: 'Log' evaluated: [ :line | line ]);
 		beResizable
 ]
 
@@ -355,6 +362,19 @@ MCPDashboardPresenter >> initializeWindow: aWindowPresenter [
 
 	super initializeWindow: aWindowPresenter.
 	aWindowPresenter whenClosedDo: [ self stopAutoRefresh ]
+]
+
+{ #category : 'private - menu' }
+MCPDashboardPresenter >> inspectSelectedTraceRecord [
+
+	self inspectTraceRecord: tracesTable selectedItem
+]
+
+{ #category : 'private - menu' }
+MCPDashboardPresenter >> inspectTraceRecord: aTraceRecord [
+
+	aTraceRecord ifNil: [ ^ self ].
+	aTraceRecord inspect
 ]
 
 { #category : 'auto-refresh' }
@@ -555,39 +575,39 @@ MCPDashboardPresenter >> refreshLayoutAfterSectionToggle [
 { #category : 'actions' }
 MCPDashboardPresenter >> refreshView [
 
-	| logs mcp metrics tools traces |
+	| isListening isRunning logs mcp metrics statusText tools traces |
 	mcp := self model ifNil: [ ^ self ].
+	self configureTracesTableMenu.
 	tools := mcp sortedTools.
 	metrics := mcp monitoringMetrics.
 	traces := mcp monitoringTraces.
 	logs := mcp monitoringLogs.
+	isRunning := mcp isRunning.
+	isListening := mcp isListening.
+	statusText := self
+		              serverStatusLabelForRunning: isRunning
+		              listening: isListening.
 
-	summaryLabel label: self summaryText.
-	statusLabel label: ('HTTP: {1} | Listener: {2}' format: {
-				 (mcp isRunning
-					  ifTrue: [ 'running' ]
-					  ifFalse: [ 'stopped' ]).
-				 (mcp isListening
-					  ifTrue: [ 'listening' ]
-					  ifFalse: [ 'not listening' ]) }).
+	statusIcon
+		image: (self iconNamed:
+					 (self
+						  serverStatusIconNameForRunning: isRunning
+						  listening: isListening));
+		help: statusText.
+	statusLabel label: 'Status:'.
+	statusValueLabel label:
+		(self serverStatusValueForRunning: isRunning listening: isListening).
 	urlLabel label: 'Endpoint: ' , mcp localUrlString.
-	detailsLabel label:
-		('Handlers: {1} | Tools: {2} | Debug: {3}' format: {
-				 mcp handlersCount asString.
-				 tools size asString.
-				 (mcp debugMode
-					  ifTrue: [ 'enabled' ]
-					  ifFalse: [ 'disabled' ]) }).
 	portInput text: mcp port asString.
 	debugCheckBox state: mcp debugMode.
 	toolsHeaderButton label: (self
-			 disclosureLabelFor: 'Registered tools'
+			 disclosureLabelFor: 'Tools'
 			 count: tools size
 			 expanded: self isToolsSectionExpanded).
 	toolsTable items: tools.
 	monitoringCheckBox state: mcp monitoringEnabled.
 	metricsHeaderButton label: (self
-			 disclosureLabelFor: 'Tool metrics'
+			 disclosureLabelFor: 'Metrics'
 			 count: metrics size
 			 expanded: self isMetricsSectionExpanded).
 	metricsTable items: metrics.
@@ -611,6 +631,38 @@ MCPDashboardPresenter >> restartServer [
 		do: [ :error | UIManager default alert: error messageText ].
 
 	self refreshView
+]
+
+{ #category : 'private - text' }
+MCPDashboardPresenter >> serverStatusIconNameForRunning: isRunning listening: isListening [
+
+	isRunning ifFalse: [
+		^ isListening
+			  ifTrue: [ #testRed ]
+			  ifFalse: [ #testNotRun ] ].
+	^ isListening
+		  ifTrue: [ #testGreen ]
+		  ifFalse: [ #testRed ]
+]
+
+{ #category : 'private - text' }
+MCPDashboardPresenter >> serverStatusLabelForRunning: isRunning listening: isListening [
+
+	^ 'Status: '
+	  ,
+	  (self serverStatusValueForRunning: isRunning listening: isListening)
+]
+
+{ #category : 'private - text' }
+MCPDashboardPresenter >> serverStatusValueForRunning: isRunning listening: isListening [
+
+	isRunning ifFalse: [
+		^ isListening
+			  ifTrue: [ 'stopped, socket still listening' ]
+			  ifFalse: [ 'stopped' ] ].
+	^ isListening
+		  ifTrue: [ 'running' ]
+		  ifFalse: [ 'running, socket not listening' ]
 ]
 
 { #category : 'auto-refresh' }
@@ -638,6 +690,21 @@ MCPDashboardPresenter >> startServer [
 	self refreshView
 ]
 
+{ #category : 'layout' }
+MCPDashboardPresenter >> statusRowLayout [
+
+	^ SpBoxLayout newLeftToRight
+		  spacing: 6;
+		  vAlignCenter;
+		  add: statusLabel expand: false;
+		  add: statusIcon withConstraints: [ :constraints |
+			  constraints
+				  width: 18;
+				  height: 18 ];
+		  add: statusValueLabel expand: false;
+		  yourself
+]
+
 { #category : 'auto-refresh' }
 MCPDashboardPresenter >> stopAutoRefresh [
 
@@ -663,21 +730,6 @@ MCPDashboardPresenter >> stopServer [
 		do: [ :error | UIManager default alert: error messageText ].
 
 	self refreshView
-]
-
-{ #category : 'private - text' }
-MCPDashboardPresenter >> summaryText [
-
-	| mcp |
-	mcp := self model.
-	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: 'MCP server ';
-			  nextPutAll: (mcp isRunning
-					   ifTrue: [ 'running' ]
-					   ifFalse: [ 'stopped' ]);
-			  nextPutAll: ' on port ';
-			  print: mcp port ]
 ]
 
 { #category : 'api' }
@@ -734,7 +786,7 @@ MCPDashboardPresenter >> tracesContextMenu [
 						  name: 'Inspect';
 						  description: 'Inspect the selected trace record';
 						  enabled: [ tracesTable selectedItem isNotNil ];
-						  action: [ tracesTable selectedItem inspect ] ] ];
+						  action: [ self inspectSelectedTraceRecord ] ] ];
 		  yourself
 ]
 

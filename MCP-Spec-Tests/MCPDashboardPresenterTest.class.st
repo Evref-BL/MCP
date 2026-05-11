@@ -213,6 +213,34 @@ MCPDashboardPresenterTest >> testDisclosureLabelsIncludeStateTitleAndCount [
 ]
 
 { #category : 'tests' }
+MCPDashboardPresenterTest >> testHeaderLayoutUsesStatusAndEndpointRows [
+
+	| headerLayout presenter statusRow |
+	presenter := MCPDashboardPresenter new.
+	headerLayout := presenter headerLayout.
+	statusRow := headerLayout children first.
+
+	self assert: headerLayout class equals: SpBoxLayout.
+	self assert: headerLayout isVertical.
+	self assert: headerLayout children size equals: 2.
+	self assert: statusRow class equals: SpBoxLayout.
+	self assert: statusRow isHorizontal.
+	self assert: statusRow children size equals: 3.
+	self
+		assert: statusRow children first
+		identicalTo: (presenter instVarNamed: #statusLabel).
+	self
+		assert: statusRow children second
+		identicalTo: (presenter instVarNamed: #statusIcon).
+	self
+		assert: statusRow children third
+		identicalTo: (presenter instVarNamed: #statusValueLabel).
+	self
+		assert: headerLayout children second
+		identicalTo: (presenter instVarNamed: #urlLabel)
+]
+
+{ #category : 'tests' }
 MCPDashboardPresenterTest >> testLifecycleActionsOnlyContainServerControls [
 
 	| layout |
@@ -233,6 +261,21 @@ MCPDashboardPresenterTest >> testLogsForDisplayAreTailFirst [
 		assert:
 		(presenter logsForDisplayFrom: #( 'oldest' 'middle' 'newest' ))
 		equals: #( 'newest' 'middle' 'oldest' )
+]
+
+{ #category : 'tests' }
+MCPDashboardPresenterTest >> testMetricsTableDoesNotShowOutlierColumn [
+
+	| metricsTable presenter titles |
+	presenter := MCPDashboardPresenter new.
+	metricsTable := presenter instVarNamed: #metricsTable.
+	titles := metricsTable columns collect: [ :each | each title ].
+
+	self
+		assert: titles
+		equals:
+		#( 'Tool' 'Calls' 'Errors' 'Avg ms' 'Min ms' 'Max ms' 'Last ms' ).
+	self deny: (titles includes: 'Outlier')
 ]
 
 { #category : 'tests' }
@@ -265,17 +308,115 @@ MCPDashboardPresenterTest >> testObservabilityToggleUpdatesModelImmediately [
 ]
 
 { #category : 'tests' }
-MCPDashboardPresenterTest >> testRefreshViewUsesShortObservabilitySectionLabels [
+MCPDashboardPresenterTest >> testRefreshViewUpdatesStatusIcon [
 
-	| logsHeader metricsHeader mcp presenter |
+	| mcp presenter statusIcon statusLabel statusValueLabel |
 	mcp := MCP new.
 	presenter := MCPDashboardPresenter on: mcp.
 	presenter refreshView.
+	statusIcon := presenter instVarNamed: #statusIcon.
+	statusLabel := presenter instVarNamed: #statusLabel.
+	statusValueLabel := presenter instVarNamed: #statusValueLabel.
+
+	self
+		assert: statusIcon image
+		equals: (presenter iconNamed: #testNotRun).
+	self assert: statusIcon help equals: 'Status: stopped'.
+	self assert: statusLabel label equals: 'Status:'.
+	self assert: statusValueLabel label equals: 'stopped'
+]
+
+{ #category : 'tests' }
+MCPDashboardPresenterTest >> testRefreshViewUsesShortSectionLabels [
+
+	| logsHeader metricsHeader mcp presenter toolsHeader |
+	mcp := MCP new.
+	presenter := MCPDashboardPresenter on: mcp.
+	presenter refreshView.
+	toolsHeader := presenter instVarNamed: #toolsHeaderButton.
 	metricsHeader := presenter instVarNamed: #metricsHeaderButton.
 	logsHeader := presenter instVarNamed: #logsHeaderButton.
 
-	self assert: metricsHeader label equals: '[-] Tool metrics (0)'.
+	self
+		assert: toolsHeader label
+		equals:
+		('[-] Tools ({1})' format: { mcp sortedTools size asString }).
+	self assert: metricsHeader label equals: '[-] Metrics (0)'.
 	self assert: logsHeader label equals: '[-] Logs (0)'
+]
+
+{ #category : 'tests' }
+MCPDashboardPresenterTest >> testRefreshViewUsesSingleServerStatus [
+
+	| mcp presenter statusValueLabel |
+	mcp := MCP new.
+	presenter := MCPDashboardPresenter on: mcp.
+	presenter refreshView.
+	statusValueLabel := presenter instVarNamed: #statusValueLabel.
+
+	self assert: statusValueLabel label equals: 'stopped'.
+	self deny: (statusValueLabel label includesSubstring: 'HTTP:').
+	self deny: (statusValueLabel label includesSubstring: 'Listener:')
+]
+
+{ #category : 'tests' }
+MCPDashboardPresenterTest >> testServerStatusIconUsesTestIcons [
+
+	| presenter |
+	presenter := MCPDashboardPresenter new.
+
+	self
+		assert:
+		(presenter serverStatusIconNameForRunning: false listening: false)
+		equals: #testNotRun.
+	self
+		assert:
+		(presenter serverStatusIconNameForRunning: true listening: true)
+		equals: #testGreen.
+	self
+		assert:
+		(presenter serverStatusIconNameForRunning: true listening: false)
+		equals: #testRed.
+	self
+		assert:
+		(presenter serverStatusIconNameForRunning: false listening: true)
+		equals: #testRed
+]
+
+{ #category : 'tests' }
+MCPDashboardPresenterTest >> testServerStatusLabelShowsListenerOnlyWhenAnomalous [
+
+	| presenter |
+	presenter := MCPDashboardPresenter new.
+
+	self
+		assert:
+		(presenter serverStatusLabelForRunning: false listening: false)
+		equals: 'Status: stopped'.
+	self
+		assert:
+		(presenter serverStatusLabelForRunning: true listening: true)
+		equals: 'Status: running'.
+	self
+		assert:
+		(presenter serverStatusLabelForRunning: true listening: false)
+		equals: 'Status: running, socket not listening'.
+	self
+		assert:
+		(presenter serverStatusLabelForRunning: false listening: true)
+		equals: 'Status: stopped, socket still listening'
+]
+
+{ #category : 'tests' }
+MCPDashboardPresenterTest >> testToolsTableDoesNotShowImplementationClassColumn [
+
+	| presenter titles toolsTable |
+	presenter := MCPDashboardPresenter new.
+	toolsTable := presenter instVarNamed: #toolsTable.
+	titles := toolsTable columns collect: [ :each | each title ].
+
+	self assert: titles equals: #( 'Tool' 'Title' 'Description' ).
+	self deny: (titles includes: 'Class')
 ]
 
 { #category : 'tests' }

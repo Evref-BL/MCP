@@ -146,7 +146,7 @@ MCPMonitoringState >> logMessageForRecord: aRecord [
 
 	^ String streamContents: [ :stream |
 		  stream
-			  nextPutAll: aRecord status;
+			  nextPutAll: (self logStatusLabelForStatus: aRecord status);
 			  nextPutAll: ' tool ';
 			  nextPutAll: aRecord toolName;
 			  nextPutAll: ' #';
@@ -158,6 +158,14 @@ MCPMonitoringState >> logMessageForRecord: aRecord [
 			  stream
 				  nextPutAll: ' - ';
 				  nextPutAll: aRecord displaySummary ] ]
+]
+
+{ #category : 'private' }
+MCPMonitoringState >> logStatusLabelForStatus: statusString [
+
+	statusString = 'ok' ifTrue: [ ^ 'OK' ].
+	statusString = 'error' ifTrue: [ ^ 'Error' ].
+	^ statusString capitalized
 ]
 
 { #category : 'accessing' }

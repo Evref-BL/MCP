@@ -115,7 +115,11 @@ MCPMonitoringStateTest >> testRecordsErrorCall [
 	self
 		assert: (recentCall outputSnapshot at: #errorClass)
 		equals: 'Error'.
-	self assert: recentCall inputObject isNil
+	self assert: recentCall inputObject isNil.
+	self assert: (state logs anySatisfy: [ :each |
+			 each includesSubstring: 'Error tool edit-method #' ]).
+	self deny: (state logs anySatisfy: [ :each |
+			 each includesSubstring: 'error tool edit-method #' ])
 ]
 
 { #category : 'tests' }
@@ -138,6 +142,12 @@ MCPMonitoringStateTest >> testRecordsSuccessfulCallMetricsAndLogs [
 	self assert: stats errorCount equals: 0.
 	self assert: state recentCallRecords size equals: 1.
 	self assert: state logs size >= 2.
+	self assert: (state logs anySatisfy: [ :each |
+			 each includesSubstring: 'Begin tool find-methods #' ]).
+	self assert: (state logs anySatisfy: [ :each |
+			 each includesSubstring: 'OK tool find-methods #' ]).
+	self deny: (state logs anySatisfy: [ :each |
+			 each includesSubstring: 'ok tool find-methods #' ]).
 	self assert:
 		(state statusText beginsWith: 'Observability enabled. Calls: 1')
 ]
