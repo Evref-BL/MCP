@@ -177,7 +177,7 @@ MCPToolManageChangeHistory >> defaultDescription [
 { #category : 'defaults' }
 MCPToolManageChangeHistory >> defaultIcons [
 
-	^ { (self pngCompositeBaseIconNamed: #open badgeIconNamed: #search) }
+	^ { (self pngIconNamed: #recoverLostChanges) }
 ]
 
 { #category : 'defaults' }
