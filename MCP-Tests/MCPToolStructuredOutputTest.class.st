@@ -451,6 +451,95 @@ MCPToolStructuredOutputTest >> testRunTestMethodReturnsStructuredIssues [
 ]
 
 { #category : 'tests' }
+MCPToolStructuredOutputTest >> testRunTestsCoverageCanIncludeCoveredMethodsAndCapLists [
+
+	| coverage coveredSelectors data result |
+	result := self callToolNamed: 'run-tests' withArguments: {
+			          (#operation -> 'coverage').
+			          (#tests
+			           ->
+			           { { (#className -> 'MCPToolCoverageTargetTest') }
+				           asDictionary }).
+			          (#coverage -> {
+				           (#classNames -> #( 'MCPToolCoverageTarget' )).
+				           (#includeCoveredMethods -> true).
+				           (#methodLimit -> 1) } asDictionary) } asDictionary.
+	data := self dataFrom: result.
+	coverage := data at: #coverage.
+	coveredSelectors := (coverage at: #coveredMethods) collect: [ :each |
+		                    each at: #selector ].
+	self
+		assert: ((self structuredContentFrom: result) at: #status)
+		equals: 'ok'.
+	self assert: (coverage at: #coveredMethodCount) equals: 2.
+	self assert: (coverage at: #coveredMethods) size equals: 1.
+	self assert: (coverage at: #coveredMethodsTruncated).
+	self assert: coveredSelectors size equals: 1
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testRunTestsCoverageRequiresExplicitScope [
+
+	| error result |
+	result := self callToolNamed: 'run-tests' withArguments: {
+			          (#operation -> 'coverage').
+			          (#tests
+			           ->
+			           { { (#className -> 'MCPToolCoverageTargetTest') }
+				           asDictionary }).
+			          (#coverage -> Dictionary new) } asDictionary.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self
+		assert: ((self structuredContentFrom: result) at: #status)
+		equals: 'error'.
+	self assert: (error at: #errorCode) equals: 'CoverageScopeRequired'.
+	self assert:
+		((error at: #message) includesSubstring: 'explicit method scope')
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testRunTestsCoverageReturnsStructuredCoverage [
+
+	| coverage data partialSelectors result singleResult uncoveredSelectors |
+	result := self callToolNamed: 'run-tests' withArguments: {
+			          (#operation -> 'coverage').
+			          (#tests
+			           ->
+			           { { (#className -> 'MCPToolCoverageTargetTest') }
+				           asDictionary }).
+			          (#coverage -> {
+				           (#classNames -> #( 'MCPToolCoverageTarget' )).
+				           (#methodLimit -> 10) } asDictionary) } asDictionary.
+	data := self dataFrom: result.
+	coverage := data at: #coverage.
+	singleResult := (data at: #results) first.
+	uncoveredSelectors := (coverage at: #uncoveredMethods) collect: [
+		                      :each | each at: #selector ].
+	partialSelectors := (coverage at: #partiallyCoveredMethods) collect: [
+		                    :each | each at: #selector ].
+	self
+		assert: ((self structuredContentFrom: result) at: #status)
+		equals: 'ok'.
+	self assert:
+		((self summaryFrom: result) includesSubstring: 'Coverage:').
+	self assert: (singleResult at: #runCount) equals: 2.
+	self assert: (coverage at: #methodCount) equals: 3.
+	self assert: (coverage at: #coveredMethodCount) equals: 2.
+	self assert: (coverage at: #fullyCoveredMethodCount) equals: 1.
+	self assert: (coverage at: #uncoveredMethodCount) equals: 1.
+	self assert: (coverage at: #partiallyCoveredMethodCount) equals: 1.
+	self assert: (coverage at: #coveredNodeCount) equals: 3.
+	self assert: (coverage at: #nodeCount) equals: 5.
+	self assert: (coverage at: #percentage) equals: 60.0.
+	self assert: (uncoveredSelectors includes: 'uncoveredMethod').
+	self assert: (partialSelectors includes: 'partiallyCoveredMethod:').
+	self deny: (coverage includesKey: #coveredMethods).
+	self deny: (coverage at: #uncoveredMethodsTruncated).
+	self deny: (coverage at: #partiallyCoveredMethodsTruncated)
+]
+
+{ #category : 'tests' }
 MCPToolStructuredOutputTest >> testRunTestsParseErrorReturnsStructuredToolError [
 
 	| error result structured |

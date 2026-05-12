@@ -58,6 +58,8 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 		  (MCPToolRewriteMethods -> { (#rules -> { {
 			    (#lhs -> 'self').
 			    (#rhs -> 'self') } asDictionary }) } asDictionary).
+		  (MCPToolManageChangeHistory
+		   -> { (#operation -> 'listFiles') } asDictionary).
 		  (MCPToolFindMethods -> Dictionary new) } asDictionary
 ]
 
@@ -92,7 +94,7 @@ MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasAcceptRepresentativeArg
 { #category : 'tests' }
 MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasRejectInvalidBranchArguments [
 
-	| editClassViolations editMethodViolations legacyScopeViolations |
+	| editClassViolations editMethodViolations legacyScopeViolations runTestsViolations |
 	editClassViolations := self
 		                       violationsFor: {
 				                       (#operation -> 'create').
@@ -100,6 +102,17 @@ MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasRejectInvalidBranchArgu
 		                       schema: MCPToolEditClass new inputSchema.
 	self
 		assert: (self keywordsFrom: editClassViolations)
+		equals: #( 'oneOf' ).
+	runTestsViolations := self
+		                      violationsFor: {
+				                      (#operation -> 'coverage').
+				                      (#tests
+				                       ->
+				                       { { (#className -> 'MCPToolContractsTest') }
+					                       asDictionary }) } asDictionary
+		                      schema: MCPToolRunTests new inputSchema.
+	self
+		assert: (self keywordsFrom: runTestsViolations)
 		equals: #( 'oneOf' ).
 	legacyScopeViolations := self
 		                         violationsFor:

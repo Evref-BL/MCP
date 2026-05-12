@@ -1,7 +1,7 @@
 "
 Aggregate result DTO produced by the run-tests command.
 
-It carries structured per-selection results plus timeout state and unrun MCPTestRunRequest objects for resumable output.
+It carries structured per-selection results plus timeout state and unrun MCPTestRunRequest objects for resumable output. Coverage operation results additionally attach an MCPTestCoverageResult.
 "
 Class {
 	#name : 'MCPRunTestsResult',
@@ -9,7 +9,8 @@ Class {
 	#instVars : [
 		'results',
 		'timedOut',
-		'unrunTests'
+		'unrunTests',
+		'coverage'
 	],
 	#category : 'MCP-Results',
 	#package : 'MCP',
@@ -31,10 +32,24 @@ MCPRunTestsResult >> asDictionary [
 	| data |
 	data := Dictionary new.
 	data at: #results put: self resultDictionaries.
+	self coverage ifNotNil: [ :coverageResult |
+		data at: #coverage put: coverageResult asDictionary ].
 	self timedOut ifTrue: [
 		data at: #timedOut put: true.
 		data at: #unrunTests put: self unrunTestDictionaries ].
 	^ data
+]
+
+{ #category : 'accessing' }
+MCPRunTestsResult >> coverage [
+
+	^ coverage
+]
+
+{ #category : 'accessing' }
+MCPRunTestsResult >> coverage: aCoverageResult [
+
+	coverage := aCoverageResult
 ]
 
 { #category : 'initialization' }

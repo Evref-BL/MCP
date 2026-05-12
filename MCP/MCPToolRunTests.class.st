@@ -1,9 +1,13 @@
 "
-Runs test classes or selected test methods and returns structured results. It is the testing bridge for the MCP server.
+Runs test classes or selected test methods and returns structured results.
+
+The default operation is the testing bridge for the MCP server. The optional coverage operation runs the same test selection while measuring CoverageCollector method and node coverage for an explicit method scope.
 "
 Class {
 	#name : 'MCPToolRunTests',
 	#superclass : 'MCPTool',
+	#traits : 'TMCPMethodTool',
+	#classTraits : 'TMCPMethodTool classTrait',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -44,10 +48,173 @@ MCPToolRunTests >> compactTestNamesFrom: testRequests [
 		  asArray
 ]
 
+{ #category : 'private - coverage schema' }
+MCPToolRunTests >> coverageMethodArrayPropertyNamed: propertyName description: propertyDescription [
+
+	^ (self
+		   schemaPropertyNamed: propertyName
+		   type: 'array'
+		   description: propertyDescription)
+		  items: self coverageMethodObjectSchema;
+		  yourself
+]
+
+{ #category : 'private - coverage schema' }
+MCPToolRunTests >> coverageMethodObjectSchema [
+
+	^ MCPStructureProperties new
+		  type: 'object';
+		  description:
+			  'A compiled method entry included in a coverage method list.';
+		  properties: {
+				  (self
+					   schemaPropertyNamed: 'className'
+					   type: 'string'
+					   description: 'The method class name.').
+				  (self
+					   schemaPropertyNamed: 'selector'
+					   type: 'string'
+					   description: 'The method selector.').
+				  (self
+					   booleanSchemaPropertyNamed: 'classSide'
+					   description: 'Whether the method is on the class side.').
+				  (self
+					   schemaPropertyNamed: 'packageName'
+					   type: 'string'
+					   description: 'The package that defines the method.').
+				  (self
+					   booleanSchemaPropertyNamed: 'isExtension'
+					   description: 'Whether the method is an extension method.').
+				  (self
+					   schemaPropertyNamed: 'protocol'
+					   type: 'string'
+					   description: 'The method protocol.') };
+		  required:
+			  #( 'className' 'selector' 'classSide' 'packageName' 'isExtension'
+			     'protocol' );
+		  additionalProperties: false;
+		  yourself
+]
+
+{ #category : 'private - coverage schema' }
+MCPToolRunTests >> coverageOptionsObjectSchema [
+
+	| property |
+	property := self
+		            schemaPropertyNamed: 'coverage'
+		            type: 'object'
+		            description:
+		            'Coverage options for operation=coverage. At least one explicit method scope property is required when coverage is requested.'.
+	property
+		properties: self methodQueryScopeInputProperties , {
+					(self
+						 booleanSchemaPropertyNamed: 'includeCoveredMethods'
+						 description:
+							 'Whether to include capped coveredMethods details in the coverage result.'
+						 default: false).
+					(self
+						 integerSchemaPropertyNamed: 'methodLimit'
+						 description:
+							 'Maximum number of method entries returned in each coverage method list. Use 0 for counts only.'
+						 default: self defaultCoverageMethodLimit) };
+		additionalProperties: false.
+	^ property
+]
+
+{ #category : 'private - coverage' }
+MCPToolRunTests >> coveragePercentageTextFor: coverageData [
+
+	| percentage |
+	percentage := coverageData at: #percentage ifAbsent: [ nil ].
+	percentage ifNil: [ ^ 'n/a' ].
+	^ percentage printShowingDecimalPlaces: 2
+]
+
+{ #category : 'private - coverage schema' }
+MCPToolRunTests >> coverageResultObjectSchema [
+
+	| property |
+	property := self
+		            schemaPropertyNamed: 'coverage'
+		            type: 'object'
+		            description:
+		            'Coverage summary returned when operation=coverage.'.
+	property
+		properties: {
+				(self
+					 integerSchemaPropertyNamed: 'methodCount'
+					 description: 'The number of instrumented methods.').
+				(self
+					 integerSchemaPropertyNamed: 'coveredMethodCount'
+					 description:
+						 'The number of instrumented methods that executed at least once.').
+				(self
+					 integerSchemaPropertyNamed: 'fullyCoveredMethodCount'
+					 description:
+						 'The number of executed methods whose sequence nodes all executed.').
+				(self
+					 integerSchemaPropertyNamed: 'uncoveredMethodCount'
+					 description:
+						 'The number of instrumented methods that did not execute.').
+				(self
+					 integerSchemaPropertyNamed: 'partiallyCoveredMethodCount'
+					 description:
+						 'The number of executed methods with at least one unexecuted sequence node.').
+				(self
+					 integerSchemaPropertyNamed: 'nodeCount'
+					 description: 'The number of instrumented sequence nodes.').
+				(self
+					 integerSchemaPropertyNamed: 'coveredNodeCount'
+					 description: 'The number of executed sequence nodes.').
+				(self
+					 schemaPropertyNamed: 'percentage'
+					 type: #( 'number' 'null' )
+					 description:
+						 'Node coverage percentage, or null when no nodes were instrumented.').
+				(self
+					 coverageMethodArrayPropertyNamed: 'uncoveredMethods'
+					 description:
+						 'Capped list of instrumented methods that did not execute.').
+				(self
+					 coverageMethodArrayPropertyNamed: 'partiallyCoveredMethods'
+					 description:
+						 'Capped list of executed methods with at least one unexecuted sequence node.').
+				(self
+					 coverageMethodArrayPropertyNamed: 'coveredMethods'
+					 description:
+						 'Optional capped list of methods that executed at least once. Present only when includeCoveredMethods is true.').
+				(self
+					 booleanSchemaPropertyNamed: 'uncoveredMethodsTruncated'
+					 description:
+						 'Whether uncoveredMethods was capped by methodLimit.').
+				(self
+					 booleanSchemaPropertyNamed: 'partiallyCoveredMethodsTruncated'
+					 description:
+						 'Whether partiallyCoveredMethods was capped by methodLimit.').
+				(self
+					 booleanSchemaPropertyNamed: 'coveredMethodsTruncated'
+					 description:
+						 'Whether coveredMethods was capped by methodLimit. Present only when includeCoveredMethods is true.') };
+		required:
+			#( 'methodCount' 'coveredMethodCount' 'fullyCoveredMethodCount'
+			   'uncoveredMethodCount' 'partiallyCoveredMethodCount'
+			   'nodeCount' 'coveredNodeCount' 'percentage' 'uncoveredMethods'
+			   'partiallyCoveredMethods' 'uncoveredMethodsTruncated'
+			   'partiallyCoveredMethodsTruncated' );
+		additionalProperties: false.
+	^ property
+]
+
+{ #category : 'defaults' }
+MCPToolRunTests >> defaultCoverageMethodLimit [
+
+	^ 200
+]
+
 { #category : 'defaults' }
 MCPToolRunTests >> defaultDescription [
 
-	^ 'Run test classes or individual test methods as a batch and return aggregated results.'
+	^ 'Run test classes or individual test methods as a batch and return aggregated results. Use operation=coverage with an explicit coverage scope to collect method and node coverage for the same test run.'
 ]
 
 { #category : 'defaults' }
@@ -69,11 +236,19 @@ MCPToolRunTests >> defaultInputSchema [
 					   items: self testRequestObjectSchema;
 					   yourself).
 				  (self
+					   stringEnumSchemaPropertyNamed: 'operation'
+					   description:
+					   'Test runner operation. run executes tests normally; coverage executes tests while measuring coverage for the explicit coverage scope.'
+					   values: #( 'run' 'coverage' )
+					   default: 'run').
+				  self coverageOptionsObjectSchema.
+				  (self
 					   integerSchemaPropertyNamed: 'timeoutSeconds'
 					   description:
 					   'Server-side timeout for the batch. Use 0 to return immediately with all tests listed in unrunTests.'
 					   default: self defaultTimeoutSeconds) };
 		  required: #( 'tests' );
+		  oneOf: self operationBranchSchemas;
 		  yourself
 ]
 
@@ -86,7 +261,7 @@ MCPToolRunTests >> defaultName [
 { #category : 'defaults' }
 MCPToolRunTests >> defaultOutputSchema [
 
-	| resultsProperty unrunTestsProperty |
+	| coverageProperty resultsProperty unrunTestsProperty |
 	resultsProperty := self
 		                   schemaPropertyNamed: 'results'
 		                   type: 'array'
@@ -99,9 +274,11 @@ MCPToolRunTests >> defaultOutputSchema [
 		                      description:
 		                      'Test execution requests that did not run because the batch timed out. Pass this array to run-tests to continue from the timeout point.'.
 	unrunTestsProperty items: self testRequestObjectSchema.
+	coverageProperty := self coverageResultObjectSchema.
 	^ self
 		  standardOutputSchemaForDataProperties: {
 				  resultsProperty.
+				  coverageProperty.
 				  (self
 					   booleanSchemaPropertyNamed: 'timedOut'
 					   description:
@@ -171,6 +348,22 @@ MCPToolRunTests >> failureMessageForTests: testRequests error: anError [
 			  nextPutAll: anError messageText ]
 ]
 
+{ #category : 'private - schema' }
+MCPToolRunTests >> operationBranchSchemas [
+
+	^ {
+		  (self
+			   inputSchemaBranchForStringDiscriminatorNamed: 'operation'
+			   value: 'run'
+			   required: #(  )
+			   requireDiscriminator: false).
+		  (self
+			   inputSchemaBranchForStringDiscriminatorNamed: 'operation'
+			   value: 'coverage'
+			   required: #( 'coverage' )
+			   requireDiscriminator: true) }
+]
+
 { #category : 'private - request' }
 MCPToolRunTests >> parsedRequestFromToolRequest: request [
 
@@ -217,7 +410,7 @@ MCPToolRunTests >> standardTestRequiredFieldsIncludingMethodName: includeMethodN
 { #category : 'private' }
 MCPToolRunTests >> successSummaryForData: data [
 
-	| failureLikeCount results runCount selectionCount selectionWord timedOut unrunCount |
+	| coverage failureLikeCount results runCount selectionCount selectionWord timedOut unrunCount |
 	results := data at: #results.
 	selectionCount := results size.
 	selectionWord := selectionCount = 1
@@ -232,6 +425,7 @@ MCPToolRunTests >> successSummaryForData: data [
 				                     (issue at: #kind) ]) asInteger ].
 	timedOut := data at: #timedOut ifAbsent: [ false ].
 	unrunCount := (data at: #unrunTests ifAbsent: [ #(  ) ]) size.
+	coverage := data at: #coverage ifAbsent: [ nil ].
 	^ String streamContents: [ :stream |
 		  timedOut ifTrue: [ stream nextPutAll: 'Timed out. ' ].
 		  stream
@@ -251,7 +445,19 @@ MCPToolRunTests >> successSummaryForData: data [
 			  stream
 				  space;
 				  nextPutAll: unrunCount asString;
-				  nextPutAll: ' test requests remain in unrunTests.' ] ]
+				  nextPutAll: ' test requests remain in unrunTests.' ].
+		  coverage ifNotNil: [
+			  stream
+				  space;
+				  nextPutAll: 'Coverage: ';
+				  nextPutAll: (self coveragePercentageTextFor: coverage);
+				  nextPutAll: ' over ';
+				  nextPutAll: (coverage at: #methodCount) asString;
+				  nextPutAll: ' methods; ';
+				  nextPutAll: (coverage at: #uncoveredMethodCount) asString;
+				  nextPutAll: ' uncovered, ';
+				  nextPutAll: (coverage at: #partiallyCoveredMethodCount) asString;
+				  nextPutAll: ' partially covered.' ] ]
 ]
 
 { #category : 'private - tests' }

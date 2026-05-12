@@ -40,6 +40,32 @@ MCPRunTestsCommand >> aggregateDataForResults: resultEntries timedOut: timedOut 
 		  unrunTests: unrunTests
 ]
 
+{ #category : 'private - coverage' }
+MCPRunTestsCommand >> coverableMethodsForCoverageRequest: aCoverageRequest [
+
+	^ (aCoverageRequest scopeQuery methods reject: [ :method |
+		   self shouldIgnoreMethodForCoverage: method ]) asArray
+]
+
+{ #category : 'private - coverage' }
+MCPRunTestsCommand >> coverageCollectorClass [
+
+	^ Smalltalk globals at: #CoverageCollector ifAbsent: [
+		  MCPCommandError
+			  signalErrorCode: #CoverageUnavailable
+			  message: 'CoverageCollector is not available in this image.'
+			  details: Dictionary new ]
+]
+
+{ #category : 'private - coverage' }
+MCPRunTestsCommand >> coverageCollectorForMethods: methods [
+
+	| collector |
+	collector := self coverageCollectorClass new.
+	collector methods: methods.
+	^ collector
+]
+
 { #category : 'private - timeout' }
 MCPRunTestsCommand >> deadlineForTimeoutMilliseconds: timeoutMilliseconds [
 
@@ -53,7 +79,19 @@ MCPRunTestsCommand >> execute [
 	validatedRequests := self validatedRequestsFrom: request testRequests.
 	deadline := self deadlineForTimeoutMilliseconds:
 		            request timeoutMilliseconds.
+	request isCoverageOperation ifTrue: [
+		^ self
+			  runCoverageForValidatedRequests: validatedRequests
+			  deadline: deadline ].
 	^ self runValidatedRequests: validatedRequests deadline: deadline
+]
+
+{ #category : 'private - coverage' }
+MCPRunTestsCommand >> hasAllSequenceNodesCoveredIn: aCompiledMethod [
+
+	aCompiledMethod ast nodesDo: [ :node |
+		node isSequence ifTrue: [ node hasBeenExecuted ifFalse: [ ^ false ] ] ].
+	^ true
 ]
 
 { #category : 'private - timeout' }
@@ -74,6 +112,13 @@ MCPRunTestsCommand >> initializeTool: aTool request: aRequest [
 MCPRunTestsCommand >> millisecondsRemainingUntil: deadline [
 
 	^ 0 max: deadline - Time millisecondClockValue
+]
+
+{ #category : 'private - coverage' }
+MCPRunTestsCommand >> partiallyCoveredMethodsFromCoverageResult: coverageResult [
+
+	^ (coverageResult methods select: [ :method |
+		   (self hasAllSequenceNodesCoveredIn: method) not ]) asArray
 ]
 
 { #category : 'accessing' }
@@ -111,6 +156,32 @@ MCPRunTestsCommand >> resultForValidatedRequest: validatedRequest deadline: dead
 				   ifFalse: [ nil ])
 		  timedOut: timedOutIndex notNil
 		  unrunTestRequests: unrunTestRequests
+]
+
+{ #category : 'private - coverage' }
+MCPRunTestsCommand >> runCoverageForValidatedRequests: validatedRequests deadline: deadline [
+
+	| collector coverageRequest coverageResult methods partialMethods runResult |
+	coverageRequest := request coverageRequest.
+	methods := self coverableMethodsForCoverageRequest: coverageRequest.
+	collector := self coverageCollectorForMethods: methods.
+	[
+	collector installOn: [
+		collector reset.
+		runResult := self
+			             runValidatedRequests: validatedRequests
+			             deadline: deadline.
+		"Collect before resetting annotations so partial node coverage remains observable."
+		collector remapMethods.
+		coverageResult := collector basicCollectResult.
+		partialMethods := self partiallyCoveredMethodsFromCoverageResult:
+			                  coverageResult ] ] ensure: [ collector reset ].
+	runResult coverage: (MCPTestCoverageResult
+			 coverageResult: coverageResult
+			 includeCoveredMethods: coverageRequest includeCoveredMethods
+			 methodLimit: coverageRequest methodLimit
+			 partiallyCoveredMethods: partialMethods).
+	^ runResult
 ]
 
 { #category : 'private - timeout' }
@@ -155,6 +226,17 @@ MCPRunTestsCommand >> runValidatedRequests: validatedRequests deadline: deadline
 		  aggregateDataForResults: resultEntries
 		  timedOut: false
 		  unrunTests: #(  )
+]
+
+{ #category : 'private - coverage' }
+MCPRunTestsCommand >> shouldIgnoreMethodForCoverage: aCompiledMethod [
+
+	((aCompiledMethod respondsTo: #isTestMethod) and: [
+		 aCompiledMethod isTestMethod ]) ifTrue: [ ^ true ].
+	aCompiledMethod methodClass instanceSide isTestCase ifTrue: [ ^ true ].
+	((aCompiledMethod respondsTo: #isAbstract) and: [
+		 aCompiledMethod isAbstract ]) ifTrue: [ ^ true ].
+	^ aCompiledMethod hasPragmaNamed: #ignoreForCoverage
 ]
 
 { #category : 'private' }

@@ -1568,12 +1568,28 @@ MCPToolContractsTest >> testRpcToolCallSignalsInvalidParametersWhenRequiredArgum
 { #category : 'tests' }
 MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 
-	| dataProperties outputSchema resultsProperty |
-	self assert: MCPToolRunTests new name equals: 'run-tests'.
+	| coverageInputProperty dataProperties inputPropertyNames operationProperty outputSchema resultsProperty tool |
+	tool := MCPToolRunTests new.
+	self assert: tool name equals: 'run-tests'.
 	self
-		assert: MCPToolRunTests new inputSchema required asSet
+		assert: tool inputSchema required asSet
 		equals: #( 'tests' ) asSet.
-	outputSchema := MCPToolRunTests new outputSchema asJRPCJSON.
+	self assert: (tool inputSchema extraProperties includesKey: #oneOf).
+	inputPropertyNames := tool inputSchema properties collect: [ :each |
+		                      each name ].
+	operationProperty := tool inputSchema properties detect: [ :each |
+		                     each name = 'operation' ].
+	coverageInputProperty := tool inputSchema properties detect: [ :each |
+		                         each name = 'coverage' ].
+	self assert: (inputPropertyNames includes: 'operation').
+	self assert: (inputPropertyNames includes: 'coverage').
+	self
+		assert: (operationProperty extraProperties at: #enum) asArray
+		equals: #( 'run' 'coverage' ).
+	self assert:
+		(((coverageInputProperty extraProperties at: #properties) collect: [
+			  :each | each name ]) includes: 'packageNames').
+	outputSchema := tool outputSchema asJRPCJSON.
 	dataProperties := ((outputSchema at: #properties) at: 'data') at:
 		                  #properties.
 	resultsProperty := dataProperties at: 'results'.
@@ -1581,6 +1597,7 @@ MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 	self
 		assert: ((resultsProperty at: #items) at: #type)
 		equals: 'object'.
+	self assert: (dataProperties includesKey: 'coverage').
 	self deny: (dataProperties includesKey: 'tests')
 ]
 

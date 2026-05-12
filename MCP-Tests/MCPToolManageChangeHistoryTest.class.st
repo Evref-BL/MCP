@@ -9,6 +9,13 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'testing' }
+MCPToolManageChangeHistoryTest class >> shouldLogWithEpicea [
+	"These tests intentionally create recoverable code changes and then exercise the change-history apply/revert machinery."
+
+	^ true
+]
+
 { #category : 'private' }
 MCPToolManageChangeHistoryTest >> isRecoverableMethodEntry: anEntry forClass: aClass [
 
