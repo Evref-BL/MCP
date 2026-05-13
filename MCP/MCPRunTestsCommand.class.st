@@ -79,11 +79,15 @@ MCPRunTestsCommand >> execute [
 	validatedRequests := self validatedRequestsFrom: request testRequests.
 	deadline := self deadlineForTimeoutMilliseconds:
 		            request timeoutMilliseconds.
-	request isCoverageOperation ifTrue: [
-		^ self
-			  runCoverageForValidatedRequests: validatedRequests
-			  deadline: deadline ].
-	^ self runValidatedRequests: validatedRequests deadline: deadline
+	^ [
+	  request isCoverageOperation
+		  ifTrue: [
+			  self
+				  runCoverageForValidatedRequests: validatedRequests
+				  deadline: deadline ]
+		  ifFalse: [
+		  self runValidatedRequests: validatedRequests deadline: deadline ] ]
+		  ensure: [ self refreshRegisteredRepositoryDirtyPackages ]
 ]
 
 { #category : 'private - coverage' }
@@ -119,6 +123,16 @@ MCPRunTestsCommand >> partiallyCoveredMethodsFromCoverageResult: coverageResult 
 
 	^ (coverageResult methods select: [ :method |
 		   (self hasAllSequenceNodesCoveredIn: method) not ]) asArray
+]
+
+{ #category : 'private' }
+MCPRunTestsCommand >> refreshRegisteredRepositoryDirtyPackages [
+	"Refresh Iceberg dirty flags after tests create and remove code.
+	This keeps repository status aligned with the actual working-copy diff without hiding real changes."
+
+	IceRepository registry do: [ :repository |
+		((repository respondsTo: #isMissing) and: [ repository isMissing ])
+			ifFalse: [ repository workingCopy refreshDirtyPackages ] ]
 ]
 
 { #category : 'accessing' }
