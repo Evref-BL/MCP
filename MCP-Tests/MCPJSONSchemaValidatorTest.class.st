@@ -60,6 +60,7 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 			    (#rhs -> 'self') } asDictionary }) } asDictionary).
 		  (MCPToolManageChangeHistory
 		   -> { (#operation -> 'listFiles') } asDictionary).
+		  (MCPToolCaptureScreenshot -> { (#target -> 'world') } asDictionary).
 		  (MCPToolFindMethods -> Dictionary new) } asDictionary
 ]
 

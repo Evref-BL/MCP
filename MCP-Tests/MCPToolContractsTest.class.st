@@ -134,7 +134,36 @@ MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 			MCPToolRemoveMethods.
 			MCPToolManageChangeHistory.
 			MCPToolRunTests.
+			MCPToolCaptureScreenshot.
 			MCPToolEvaluate }
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testCaptureScreenshotHasAccurateNameAndSchemas [
+
+	| dataProperty inputPropertyNames outputPropertyNames targetProperty tool |
+	tool := MCPToolCaptureScreenshot new.
+	inputPropertyNames := tool inputSchema properties collect: [ :each |
+		                      each name ].
+	dataProperty := tool outputSchema properties detect: [ :each |
+		                each name = 'data' ].
+	outputPropertyNames := (dataProperty extraProperties at: #properties)
+		                       collect: [ :each | each name ].
+	targetProperty := self inputPropertyNamed: 'target' inTool: tool.
+	self assert: tool name equals: 'capture-screenshot'.
+	self assert: tool inputSchema required equals: #(  ).
+	self assert: (inputPropertyNames includes: 'target').
+	self assert: (inputPropertyNames includes: 'targetIdentifier').
+	self
+		assert: (targetProperty extraProperties at: #enum)
+		equals: #( 'world' ).
+	self
+		assert: (targetProperty extraProperties at: #default)
+		equals: 'world'.
+	self assert: (outputPropertyNames includes: 'target').
+	self assert: (outputPropertyNames includes: 'width').
+	self assert: (outputPropertyNames includes: 'height').
+	self assert: (outputPropertyNames includes: 'mimeType')
 ]
 
 { #category : 'tests' }
@@ -1029,6 +1058,19 @@ MCPToolContractsTest >> testHandleJSONReturnsMethodNotFoundForUnknownTool [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testImageContentSerializesNativeMCPImageBlock [
+
+	| content json |
+	content := MCPStructureImageContent
+		           data: 'abc123'
+		           mimeType: 'image/png'.
+	json := content asJRPCJSON.
+	self assert: (json at: #type) equals: 'image'.
+	self assert: (json at: #data) equals: 'abc123'.
+	self assert: (json at: #mimeType) equals: 'image/png'
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testInitializeAdvertisesPharoServerIcon [
 
 	| expectedIcon icon response serverInfo |
@@ -1500,6 +1542,9 @@ MCPToolContractsTest >> testRequestedToolIconsAreAdvertised [
 		assert: (MCPToolRunTests new asJRPCJSON at: #icons) first
 		equals: (MCPStructureIcon pngIconNamed: #testRunner) asJRPCJSON.
 	self
+		assert: (MCPToolCaptureScreenshot new asJRPCJSON at: #icons) first
+		equals: (MCPStructureIcon pngIconNamed: #smallScreenshot) asJRPCJSON.
+	self
 		assert: (MCPToolEvaluate new asJRPCJSON at: #icons) first
 		equals: (MCPStructureIcon pngIconNamed: #go) asJRPCJSON
 ]
@@ -1638,6 +1683,29 @@ MCPToolContractsTest >> testRunTestsUsesNestedRequestDTOs [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testScreenshotCommandPackagesProvidedFormAsImageContent [
+
+	| command form imageJSON request result |
+	form := Form extent: 2 @ 3 depth: 32.
+	request := MCPScreenshotRequest new
+		           initializeTarget: 'world'
+		           targetIdentifier: nil.
+	command := MCPScreenshotCommand
+		           tool: MCPToolCaptureScreenshot new
+		           request: request
+		           formProvider: [ form ].
+	result := command execute.
+	imageJSON := result imageContent asJRPCJSON.
+	self assert: result target equals: 'world'.
+	self assert: result width equals: 2.
+	self assert: result height equals: 3.
+	self assert: result imageContent mimeType equals: 'image/png'.
+	self assert: result imageContent data notEmpty.
+	self assert: (imageJSON at: #type) equals: 'image'.
+	self assert: (imageJSON at: #mimeType) equals: 'image/png'
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testToolFlowSelectorNamesSeparateTransportAndParsedInput [
 
 	| staleSelectors |
@@ -1762,6 +1830,11 @@ MCPToolContractsTest >> toolFlowSpecs [
 				   asDictionary).
 			  (#requestClass -> MCPRunTestsRequest).
 			  (#commandClass -> MCPRunTestsCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolCaptureScreenshot).
+			  (#arguments -> { (#target -> 'world') } asDictionary).
+			  (#requestClass -> MCPScreenshotRequest).
+			  (#commandClass -> MCPScreenshotCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolEvaluate).
 			  (#arguments -> { (#code -> '1') } asDictionary).

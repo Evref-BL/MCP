@@ -65,6 +65,7 @@ MCPTool class >> toolGroups [
 			   MCPToolRemoveMethods }).
 		  (#History -> { MCPToolManageChangeHistory }).
 		  (#Tests -> { MCPToolRunTests }).
+		  (#UI -> { MCPToolCaptureScreenshot }).
 		  (#Scripting -> { MCPToolEvaluate }) }
 ]
 
