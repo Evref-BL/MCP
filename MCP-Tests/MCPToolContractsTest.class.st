@@ -152,8 +152,7 @@ MCPToolContractsTest >> testCaptureScreenshotHasAccurateNameAndSchemas [
 	targetProperty := self inputPropertyNamed: 'target' inTool: tool.
 	self assert: tool name equals: 'capture-screenshot'.
 	self assert: tool inputSchema required equals: #(  ).
-	self assert: (inputPropertyNames includes: 'target').
-	self assert: (inputPropertyNames includes: 'targetIdentifier').
+	self assert: inputPropertyNames equals: #( 'target' ).
 	self
 		assert: (targetProperty extraProperties at: #enum)
 		equals: #( 'world' ).

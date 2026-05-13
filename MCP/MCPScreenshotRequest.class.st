@@ -1,7 +1,7 @@
 "
 Parsed request for the screenshot tool.
 
-For now the only supported target is the whole Morphic world. The target/targetIdentifier shape is deliberate so the tool can later address specific presenters, windows, or morphs without changing the command boundary.
+The current tool accepts the world target. targetIdentifier is optional and ignored for world captures.
 "
 Class {
 	#name : 'MCPScreenshotRequest',

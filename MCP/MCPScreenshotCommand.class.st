@@ -1,7 +1,7 @@
 "
-Command that captures a Morphic screenshot and packages it as MCP image content.
+Command that captures a screenshot Form and packages it as MCP image content.
 
-The command currently supports the whole world target. It routes capture through a target dispatch method and a form provider so later presenter/window/morph targets can be added without changing the tool execution contract.
+It supports the world target and uses an injectable form provider so tests can exercise PNG packaging without reading the live Morphic world.
 "
 Class {
 	#name : 'MCPScreenshotCommand',
@@ -19,10 +19,7 @@ Class {
 { #category : 'instance creation' }
 MCPScreenshotCommand class >> tool: aTool request: aRequest [
 
-	^ self
-		  tool: aTool
-		  request: aRequest
-		  formProvider: [ self new captureWorldForm ]
+	^ self new initializeTool: aTool request: aRequest formProvider: nil
 ]
 
 { #category : 'instance creation' }
@@ -60,7 +57,7 @@ MCPScreenshotCommand >> execute [
 
 { #category : 'private' }
 MCPScreenshotCommand >> formForRequest [
-	"Dispatch screenshot capture by target. Only the whole world is supported for now."
+	"Dispatch screenshot capture by target. Only the world target is accepted."
 
 	request isWorldTarget ifTrue: [ ^ self formProvider value ].
 	Error signal: 'Unsupported screenshot target: ' , request target
@@ -77,7 +74,7 @@ MCPScreenshotCommand >> initializeTool: aTool request: aRequest formProvider: aB
 
 	tool := aTool.
 	request := aRequest.
-	formProvider := aBlock.
+	formProvider := aBlock ifNil: [ [ self captureWorldForm ] ].
 	^ self
 ]
 

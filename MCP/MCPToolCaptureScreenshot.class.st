@@ -1,7 +1,7 @@
 "
-MCP tool that captures a Morphic screenshot and returns it as native MCP image content.
+MCP tool that captures the active Morphic world and returns it as native MCP image content.
 
-The first implementation captures the whole world. The input request already carries a target shape so later versions can target presenters, windows, or morphs without changing the tool/command boundary.
+The tool is read-only. A successful call produces a text summary, a PNG image content block, and structured metadata describing the captured image dimensions and MIME type.
 "
 Class {
 	#name : 'MCPToolCaptureScreenshot',
@@ -20,7 +20,7 @@ MCPToolCaptureScreenshot >> commandForRequest: screenshotRequest [
 { #category : 'defaults' }
 MCPToolCaptureScreenshot >> defaultDescription [
 
-	^ 'Capture a screenshot from the Pharo image and return it as MCP image content. For now the only supported target is the whole Morphic world; the request shape is prepared for future presenter, window, or morph targets.'
+	^ 'Capture the active Morphic world and return it as MCP image content.'
 ]
 
 { #category : 'defaults' }
@@ -34,19 +34,12 @@ MCPToolCaptureScreenshot >> defaultInputSchema [
 
 	^ MCPStructureInputSchema new
 		  type: 'object';
-		  properties: {
-				  (self
-					   stringEnumSchemaPropertyNamed: 'target'
-					   description:
-						   'The screenshot target. Currently only world is supported.'
-					   values: #( 'world' )
-					   default: 'world').
-				  (MCPStructureProperties new
-					   name: 'targetIdentifier';
-					   type: 'string';
-					   description:
-						   'Reserved for future presenter, window, or morph targets.';
-					   yourself) };
+		  properties: { (self
+				   stringEnumSchemaPropertyNamed: 'target'
+				   description:
+					   'The screenshot target. The only accepted value is world.'
+				   values: #( 'world' )
+				   default: 'world') };
 		  required: #(  );
 		  yourself
 ]
