@@ -474,3 +474,18 @@ MCPToolEditRepository >> repositoryPackagesOutputSchemaProperty [
 	property items: self repositoryPackageInfoOutputSchemaProperty.
 	^ property
 ]
+
+{ #category : 'testing' }
+MCPToolEditRepository >> shouldSaveImageAfterSuccessfulExecutionForResult: aResult [
+
+	| action data structuredContent |
+	(aResult isError or: [ aResult structuredContent isNil ]) ifTrue: [
+		^ false ].
+	structuredContent := aResult structuredContent.
+	data := structuredContent at: #data ifAbsent: [ ^ false ].
+	action := data
+		          at: #action
+		          ifAbsent: [
+		          ^ self shouldSaveImageAfterSuccessfulExecution ].
+	^ action ~= 'diff'
+]

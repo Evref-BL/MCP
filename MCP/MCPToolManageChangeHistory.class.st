@@ -534,6 +534,18 @@ MCPToolManageChangeHistory >> parsedRequestFromToolRequest: request [
 	self signalUnsupportedOperation: operation
 ]
 
+{ #category : 'testing' }
+MCPToolManageChangeHistory >> shouldSaveImageAfterSuccessfulExecutionForResult: aResult [
+
+	| data structuredContent |
+	(aResult isError or: [ aResult structuredContent isNil ]) ifTrue: [
+		^ false ].
+	structuredContent := aResult structuredContent.
+	data := structuredContent at: #data ifAbsent: [ ^ false ].
+	^ (data at: #performed ifAbsent: [ false ]) = true and: [
+		  (data at: #performedCount ifAbsent: [ 0 ]) > 0 ]
+]
+
 { #category : 'private - operations' }
 MCPToolManageChangeHistory >> signalUnsupportedOperation: operationName [
 

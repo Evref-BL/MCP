@@ -352,6 +352,35 @@ MCPToolManageChangeHistoryTest >> testRevertEntriesRevertsConfirmedChanges [
 		self deny: (class includesSelector: #rescuedValue) ]
 ]
 
+{ #category : 'tests' }
+MCPToolManageChangeHistoryTest >> testSelectionResultRequestsImageSaveOnlyAfterPerformedChanges [
+
+	| confirmedResult emptyConfirmedResult previewResult tool |
+	tool := MCPToolManageChangeHistory new.
+	previewResult := tool successResultText: 'preview' data: {
+			                 (#operation -> 'applyEntries').
+			                 (#performed -> false).
+			                 (#performedCount -> 0) } asDictionary.
+	emptyConfirmedResult := tool
+		                        successResultText: 'empty apply'
+		                        data: {
+				                        (#operation -> 'applyEntries').
+				                        (#performed -> true).
+				                        (#performedCount -> 0) } asDictionary.
+	confirmedResult := tool successResultText: 'confirmed apply' data: {
+			                   (#operation -> 'applyEntries').
+			                   (#performed -> true).
+			                   (#performedCount -> 1) } asDictionary.
+
+	self deny:
+		(tool shouldSaveImageAfterSuccessfulExecutionForResult:
+			 previewResult).
+	self deny: (tool shouldSaveImageAfterSuccessfulExecutionForResult:
+			 emptyConfirmedResult).
+	self assert: (tool shouldSaveImageAfterSuccessfulExecutionForResult:
+			 confirmedResult)
+]
+
 { #category : 'private - calling' }
 MCPToolManageChangeHistoryTest >> toolName [
 

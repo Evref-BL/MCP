@@ -356,6 +356,35 @@ MCPToolEditRepositoryTest >> testCreateCreatesAndRegistersRepository [
 ]
 
 { #category : 'tests' }
+MCPToolEditRepositoryTest >> testDiffDoesNotRequestImageSaveAfterSuccessfulExecution [
+
+	| location packageName repositoryName result server |
+	repositoryName := 'MCP Edit Repository Diff Save Test'.
+	packageName := 'MCPToolEditRepositoryDiffSavePackage'.
+	location := self temporaryRepositoryLocationNamed:
+		            'MCPToolEditRepositoryTestDiffSave'.
+	self
+		withExportPackageNamed: packageName
+		className: 'MCPToolEditRepositoryDiffSaveClass'
+		do: [
+			self
+				withCleanRepositoryNamed: repositoryName
+				location: location
+				do: [
+					self callToolWith: {
+							(#operation -> 'create').
+							(#name -> repositoryName).
+							(#location -> location pathString).
+							(#packageNames -> { packageName }) } asDictionary.
+					server := MCPSaveImageRecordingServer new.
+					result := server rpcToolCall: 'edit-repository' withParams: {
+							          (#operation -> 'diff').
+							          (#repositoryName -> repositoryName) } asDictionary.
+					self deny: (result at: #isError ifAbsent: [ false ]).
+					self deny: server didSaveImageSession ] ]
+]
+
+{ #category : 'tests' }
 MCPToolEditRepositoryTest >> testDiffParsesAndDispatchesToDiffCommand [
 
 	| command parsedRequest rawRequest tool |
