@@ -19,10 +19,9 @@ BaselineOfMCP >> defineDependencies: spec [
 
 	spec
 		baseline: 'JRPC' with: [
-				spec
-					repository: 'github://juliendelplanque/JRPC:v3.2.1/src';
-					loads: #( 'Deployment' ) ];
-		import: 'JRPC'
+			spec
+				repository: 'github://juliendelplanque/JRPC:v3.2.1/src';
+				loads: #( 'Deployment' ) ]
 ]
 
 { #category : 'baselines' }
