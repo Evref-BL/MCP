@@ -76,10 +76,7 @@ MCPMoveSlotCommand >> classSide: aBoolean [
 { #category : 'private' }
 MCPMoveSlotCommand >> currentClass [
 
-	^ Smalltalk globals
-		  at: self className asSymbol
-		  ifAbsent: [
-		  MCPCommandError signalMissingClassNamed: self className ]
+	^ MCPImageLookup classNamed: self className
 ]
 
 { #category : 'accessing' }

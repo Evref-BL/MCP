@@ -94,10 +94,7 @@ MCPRenameSlotCommand >> classSideSlotValuesForBehavior: aBehavior [
 { #category : 'private' }
 MCPRenameSlotCommand >> currentClass [
 
-	^ Smalltalk globals
-		  at: self className asSymbol
-		  ifAbsent: [
-		  MCPCommandError signalMissingClassNamed: self className ]
+	^ MCPImageLookup classNamed: self className
 ]
 
 { #category : 'executing' }

@@ -626,9 +626,7 @@ MCPToolEdit >> requestedContextForErrorFromParsedRequest: editRequest rawRequest
 MCPToolEdit >> resolvedRefactoringScopeClassesFrom: classNames [
 
 	^ classNames collect: [ :eachName |
-		  Smalltalk globals
-			  at: eachName asSymbol
-			  ifAbsent: [ MCPCommandError signalMissingClassNamed: eachName ] ]
+		  MCPImageLookup classNamed: eachName ]
 ]
 
 { #category : 'testing' }
@@ -672,9 +670,7 @@ MCPToolEdit >> unionRefactoringEnvironment: currentEnvironment with: addedEnviro
 { #category : 'private - request' }
 MCPToolEdit >> validateRefactoringScopePackageNamesExist: packageNames [
 
-	packageNames do: [ :eachName |
-		(PackageOrganizer default hasPackage: eachName) ifFalse: [
-			MCPCommandError signalMissingPackageNamed: eachName ] ]
+	packageNames do: [ :eachName | MCPImageLookup packageNamed: eachName ]
 ]
 
 { #category : 'private - request' }

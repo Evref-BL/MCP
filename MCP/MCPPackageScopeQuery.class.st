@@ -127,10 +127,7 @@ MCPPackageScopeQuery >> projectsByName [
 { #category : 'private - resolution' }
 MCPPackageScopeQuery >> resolvedPackageNamed: packageName [
 
-	^ PackageOrganizer default
-		  packageNamed: packageName asSymbol
-		  ifAbsent: [
-		  MCPCommandError signalMissingPackageNamed: packageName ]
+	^ MCPImageLookup packageNamed: packageName
 ]
 
 { #category : 'private - resolution' }

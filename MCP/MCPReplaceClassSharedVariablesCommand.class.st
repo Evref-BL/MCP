@@ -86,8 +86,5 @@ MCPReplaceClassSharedVariablesCommand >> sharedVariables [
 { #category : 'private' }
 MCPReplaceClassSharedVariablesCommand >> targetClass [
 
-	^ Smalltalk globals
-		  at: self className asSymbol
-		  ifAbsent: [
-		  MCPCommandError signalMissingClassNamed: self className ]
+	^ MCPImageLookup classNamed: self className
 ]

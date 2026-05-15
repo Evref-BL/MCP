@@ -56,11 +56,7 @@ MCPMoveClassCommand >> ensurePackageNamed: aPackageName [
 MCPMoveClassCommand >> execute [
 
 	| movedClass oldPackageName oldTag |
-	movedClass := Smalltalk globals
-		              at: self className asSymbol
-		              ifAbsent: [
-		              MCPCommandError signalMissingClassNamed:
-			              self className ].
+	movedClass := MCPImageLookup classNamed: self className.
 	self destinationValidation.
 	oldPackageName := movedClass packageName asString.
 	oldTag := movedClass packageTagName asString.
