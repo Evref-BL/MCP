@@ -1,7 +1,7 @@
 "
-Builds bounded, human-readable suggestions for unresolved scope names.
+Builds bounded suggestions for unresolved class or package names.
 
-Exploratory query tools use me when a requested class or package name cannot be resolved. I keep the output small and mildly diverse so agents get useful nearby names without receiving a long dump of image contents.
+It scores nearby names and limits repeated suggestions from the same package or naming group so query warnings stay concise.
 "
 Class {
 	#name : 'MCPScopeNameSuggester',

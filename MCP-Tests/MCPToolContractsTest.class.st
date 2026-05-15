@@ -1429,23 +1429,29 @@ MCPToolContractsTest >> testQueryScopeDescriptionsExplainScopeSemantics [
 		                       inTool: MCPToolFindPackages new) description.
 	self deny: (findClassesDescription includesSubstring: 'GUI').
 	self deny: (findMethodsDescription includesSubstring: 'GUI').
-	self assert: (classDescription includesSubstring:
-			 'If no class scope property is provided').
+	self assert:
+		(findClassesDescription includesSubstring: 'scopeMode=intersection').
+	self assert: (findMethodsDescription includesSubstring:
+			 'Missing class or package names').
+	self assert:
+		(classDescription includesSubstring:
+			 'Omit all class scope properties').
 	self assert: (classDescription includesSubstring:
 			 'its superclasses, and its subclasses').
 	self assert: (subclassDescription includesSubstring:
 			 'methods defined on subclasses').
 	self assert: (subclassDescription includesSubstring:
-			 'The named classes themselves are excluded').
+			 'The named classes are excluded').
 	self assert:
 		(parentDescription includesSubstring:
 			 'superclasses of these classes').
-	self assert: (parentDescription includesSubstring:
-			 'The named classes themselves are excluded').
+	self assert:
+		(parentDescription includesSubstring:
+			 'The named classes are excluded').
 	self assert:
 		(methodDescription includesSubstring: 'including extension methods').
 	self assert: (methodDescription includesSubstring:
-			 'If no method scope property is provided').
+			 'Omit all method scope properties').
 	self assert: (packageDescription includesSubstring:
 			 'project names whose packages are included').
 	self assert:
@@ -1503,6 +1509,35 @@ MCPToolContractsTest >> testQueryToolsUseTypedRequestObjects [
 	staleSelectors do: [ :selector |
 		self deny: (MCPToolQuery withAllSubclasses anySatisfy: [ :each |
 				 each includesSelector: selector ]) ]
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testRPCRefreshesCachedToolMetadata [
+
+	| mcp propertyNames result staleTool toolDefinition toolDefinitions |
+	mcp := MCP new.
+	staleTool := MCPToolFindClasses new.
+	staleTool inputSchema: (MCPStructureInputSchema new
+			 type: 'object';
+			 properties: #(  );
+			 required: #(  );
+			 additionalProperties: false;
+			 yourself).
+	mcp toolsList: (Dictionary new
+			 at: staleTool name put: staleTool;
+			 yourself).
+	toolDefinitions := mcp rpcToolsList at: #tools.
+	toolDefinition := toolDefinitions detect: [ :each |
+		                  (each at: #name) = 'find-classes' ].
+	propertyNames := ((toolDefinition at: #inputSchema) at: #properties)
+		                 keys.
+	self assert: (propertyNames includes: 'scopeMode').
+	result := mcp rpcToolCall: 'find-classes' withParams: {
+			          (#classNames -> #( 'MCPToolContractsTest' )).
+			          (#packageNames -> #( 'MCP-Tests' )).
+			          (#scopeMode -> 'intersection').
+			          (#limit -> 1) } asDictionary.
+	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
 { #category : 'tests' }

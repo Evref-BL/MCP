@@ -1,7 +1,7 @@
 "
-Parsed scope query for class listings.
+Resolves class-scope arguments into class sets.
 
-It resolves packageNames, classNames, hierarchyClassNames, subclassClassNames, and parentClassNames into class sets. Scope sets are unioned by default and can be intersected with scopeMode. Empty scope properties mean image-wide class scope. By default, missing scope entries produce warnings and contribute no classes so query tools can return partial results. Mutation tools can require a complete scope internally, which turns the same suggestions into a structured error. Directional subclass and parent scopes exclude their anchor classes.
+It handles packageNames, classNames, hierarchyClassNames, subclassClassNames, and parentClassNames. Scope sets are unioned by default and can be intersected with scopeMode. Query tools keep valid scopes and record warnings for missing names. Tools that mutate the image can require a complete scope; missing names then raise a structured error with the same suggestions. Directional subclass and parent scopes exclude their anchor classes.
 "
 Class {
 	#name : 'MCPClassScopeQuery',

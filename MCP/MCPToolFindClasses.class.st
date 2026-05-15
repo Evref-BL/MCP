@@ -83,7 +83,7 @@ MCPToolFindClasses >> classInfoDataProperties [
 { #category : 'defaults' }
 MCPToolFindClasses >> defaultDescription [
 
-	^ 'List classes and optionally filter them by class metadata. If no class scope properties are provided, the whole image is searched. Scope properties are unioned by default; pass scopeMode=intersection to keep only classes present in every non-empty scope dimension. Missing exploratory scope entries produce warnings and similar-name suggestions instead of failing the whole query. Use where for recursive boolean predicates and relation predicates. Use inspect-class when you already know the class to inspect.'
+	^ 'List classes and optionally filter them by class metadata. Omitting class scope searches the whole image. Multiple scope filters use union by default; set scopeMode=intersection to require all scopes. Missing class or package names return warnings with suggestions. Use where for recursive predicates, and use inspect-class when you know the class name.'
 ]
 
 { #category : 'private - request' }

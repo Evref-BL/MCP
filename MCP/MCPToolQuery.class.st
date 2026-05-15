@@ -104,7 +104,7 @@ MCPToolQuery >> classScopeClassNamesProperty [
 	^ self
 		  stringArraySchemaNamed: 'classNames'
 		  description:
-		  'Class scope: include these exact classes. If no class scope property is provided, all classes are searched. Scope properties use scopeMode, defaulting to union.'
+		  'Class scope: include these exact classes. Omit all class scope properties to search all classes.'
 		  itemDescription: 'A class name.'
 ]
 
@@ -114,7 +114,7 @@ MCPToolQuery >> classScopeHierarchyClassNamesProperty [
 	^ self
 		  stringArraySchemaNamed: 'hierarchyClassNames'
 		  description:
-		  'Class scope: include each named class, its superclasses, and its subclasses. If no class scope property is provided, all classes are searched. Scope properties use scopeMode, defaulting to union.'
+		  'Class scope: include each named class, its superclasses, and its subclasses. Omit all class scope properties to search all classes.'
 		  itemDescription: 'A hierarchy root class name.'
 ]
 
@@ -124,7 +124,7 @@ MCPToolQuery >> classScopePackageNamesProperty [
 	^ self
 		  stringArraySchemaNamed: 'packageNames'
 		  description:
-		  'Class scope: include classes defined in these packages. If no class scope property is provided, all classes are searched. Scope properties use scopeMode, defaulting to union.'
+		  'Class scope: include classes defined in these packages. Omit all class scope properties to search all classes.'
 		  itemDescription: 'A package name.'
 ]
 
@@ -134,7 +134,7 @@ MCPToolQuery >> classScopeParentClassNamesProperty [
 	^ self
 		  stringArraySchemaNamed: 'parentClassNames'
 		  description:
-		  'Class scope: include superclasses of these classes. The named classes themselves are excluded unless also listed in classNames. Scope properties use scopeMode, defaulting to union.'
+		  'Class scope: include superclasses of these classes. The named classes are excluded unless classNames also includes them.'
 		  itemDescription: 'A class name whose superclasses are included.'
 ]
 
@@ -144,7 +144,7 @@ MCPToolQuery >> classScopeSubclassClassNamesProperty [
 	^ self
 		  stringArraySchemaNamed: 'subclassClassNames'
 		  description:
-		  'Class scope: include subclasses of these classes. The named classes themselves are excluded unless also listed in classNames. Scope properties use scopeMode, defaulting to union.'
+		  'Class scope: include subclasses of these classes. The named classes are excluded unless classNames also includes them.'
 		  itemDescription: 'A class name whose subclasses are included.'
 ]
 
@@ -562,7 +562,7 @@ MCPToolQuery >> scopeModeSchemaProperty [
 	^ self
 		  stringEnumSchemaPropertyNamed: 'scopeMode'
 		  description:
-		  'How multiple non-empty scope properties are combined. union preserves the default behavior. intersection keeps only entities present in every non-empty scope dimension. If no scope property is provided, the whole image is searched.'
+		  'Combines multiple scope filters. union returns items from any non-empty scope. intersection keeps only items shared by every non-empty scope. Default: union.'
 		  values: #( 'union' 'intersection' )
 		  default: 'union'
 ]
