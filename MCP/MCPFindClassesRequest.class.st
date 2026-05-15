@@ -38,6 +38,10 @@ MCPFindClassesRequest class >> fromRequest: request tool: aTool [
 		              parentClassNames:
 			              (request stringCollectionArgumentNamed:
 					               'parentClassNames');
+		              scopeMode:
+			              (request
+				               stringArgumentNamed: 'scopeMode'
+				               default: 'union');
 		              yourself.
 	^ self new
 		  scopeQuery: scopeQuery;

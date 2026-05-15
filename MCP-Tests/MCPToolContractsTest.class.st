@@ -808,6 +808,7 @@ MCPToolContractsTest >> testFindClassesHasAccurateNameAndSchema [
 	self assert: (propertyNames includes: 'hierarchyClassNames').
 	self assert: (propertyNames includes: 'subclassClassNames').
 	self assert: (propertyNames includes: 'parentClassNames').
+	self assert: (propertyNames includes: 'scopeMode').
 	self assert: (propertyNames includes: 'filter').
 	self assert: (propertyNames includes: 'filterTargets')
 ]
@@ -829,19 +830,27 @@ MCPToolContractsTest >> testFindClassesListsClassesForExistingPackage [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testFindClassesReturnsErrorResultForMissingPackage [
+MCPToolContractsTest >> testFindClassesReturnsWarningResultForMissingPackage [
 
-	| result text |
+	| data result warnings |
 	result := self
 		          callToolNamed: 'find-classes'
 		          withArguments:
 		          { (#packageNames -> #( 'MCP-Definitely-Missing' )) }
 			          asDictionary.
-	text := self firstTextFromToolResult: result.
-	self assert: (result at: #isError).
-	self assert: (text includesSubstring:
-			 'Package MCP-Definitely-Missing does not exist.').
-	self deny: (text includesSubstring: 'Tool find-classes failed')
+	data := self dataFrom: result.
+	warnings := self warningsFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self
+		assert: ((self structuredContentFrom: result) at: #status)
+		equals: 'ok'.
+	self assert: (data at: #totalCount) equals: 0.
+	self assert: (data at: #classes) isEmpty.
+	self assert: warnings size equals: 1.
+	self assert:
+		(warnings first includesSubstring: 'MCP-Definitely-Missing').
+	self assert: (warnings first includesSubstring: 'packageNames scope').
+	self assert: (warnings first includesSubstring: 'Did you mean:')
 ]
 
 { #category : 'tests' }
@@ -886,6 +895,7 @@ MCPToolContractsTest >> testFindMethodsHasAccurateNameAndSchema [
 	self assert: (propertyNames includes: 'hierarchyClassNames').
 	self assert: (propertyNames includes: 'subclassClassNames').
 	self assert: (propertyNames includes: 'parentClassNames').
+	self assert: (propertyNames includes: 'scopeMode').
 	self assert: (propertyNames includes: 'filter').
 	self assert: (propertyNames includes: 'filterTargets').
 	self
@@ -940,20 +950,28 @@ MCPToolContractsTest >> testFindMethodsReferenceModesShareRequiredFilterConditio
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testFindMethodsReturnsErrorResultForMissingClass [
+MCPToolContractsTest >> testFindMethodsReturnsWarningResultForMissingClass [
 
-	| result text |
+	| data result warnings |
 	result := self
 		          callToolNamed: 'find-methods'
 		          withArguments:
 			          { (#classNames
 			           -> #( 'MCPDefinitelyMissingFindMethodsClass' )) }
 				          asDictionary.
-	text := self firstTextFromToolResult: result.
-	self assert: (result at: #isError).
-	self assert: (text includesSubstring:
-			 'Class MCPDefinitelyMissingFindMethodsClass does not exist.').
-	self deny: (text includesSubstring: 'Tool find-methods failed')
+	data := self dataFrom: result.
+	warnings := self warningsFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self
+		assert: ((self structuredContentFrom: result) at: #status)
+		equals: 'ok'.
+	self assert: (data at: #totalCount) equals: 0.
+	self assert: (data at: #methods) isEmpty.
+	self assert: warnings size equals: 1.
+	self assert: (warnings first includesSubstring:
+			 'MCPDefinitelyMissingFindMethodsClass').
+	self assert: (warnings first includesSubstring: 'classNames scope').
+	self assert: (warnings first includesSubstring: 'Did you mean:')
 ]
 
 { #category : 'tests' }

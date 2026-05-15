@@ -248,6 +248,43 @@ MCPToolFindClassesTest >> testImageScopeCanFilterAndPaginate [
 ]
 
 { #category : 'tests' }
+MCPToolFindClassesTest >> testIntersectionScopeKeepsOnlyClassesInEveryScopeDimension [
+
+	| classNames data result |
+	result := self callToolWith: {
+			          (#classNames -> { self childClassName }).
+			          (#hierarchyClassNames -> { self childClassName }).
+			          (#filter -> self fixturePrefix).
+			          (#filterMode -> 'prefix').
+			          (#scopeMode -> 'intersection') } asDictionary.
+	data := self dataFrom: result.
+	classNames := (data at: #classes) collect: [ :each |
+		              each at: #className ].
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) equals: 1.
+	self assert: classNames equals: { self childClassName } asArray
+]
+
+{ #category : 'tests' }
+MCPToolFindClassesTest >> testMissingClassScopeReturnsPartialResultsAndWarnings [
+
+	| classNames data result warnings |
+	result := self callToolWith: { (#classNames -> {
+			           self baseClassName.
+			           self missingClassName }) } asDictionary.
+	data := self dataFrom: result.
+	warnings := self warningsFrom: result.
+	classNames := (data at: #classes) collect: [ :each |
+		              each at: #className ].
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) equals: 1.
+	self assert: classNames equals: { self baseClassName } asArray.
+	self assert: warnings size equals: 1.
+	self assert:
+		(warnings first includesSubstring: self missingClassName)
+]
+
+{ #category : 'tests' }
 MCPToolFindClassesTest >> testMultipleScopesAreUnioned [
 
 	| classNames data result |
@@ -333,39 +370,38 @@ MCPToolFindClassesTest >> testReturnsStructuredErrorForInvalidFilterTarget [
 ]
 
 { #category : 'tests' }
-MCPToolFindClassesTest >> testReturnsStructuredErrorWhenClassIsMissing [
+MCPToolFindClassesTest >> testReturnsWarningsAndEmptyResultsWhenClassIsMissing [
 
-	| error result structured |
+	| data result warnings |
 	result := self callToolWith:
 		          { (#classNames -> { self missingClassName }) }
 			          asDictionary.
-	structured := self structuredContentFrom: result.
-	error := self errorFrom: result.
-	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
-	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
-	self assert: (error at: #className) equals: self missingClassName.
-	self assert: (error at: #scope) equals: 'classes'
+	data := self dataFrom: result.
+	warnings := self warningsFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) equals: 0.
+	self assert: (data at: #classes) isEmpty.
+	self assert: warnings size equals: 1.
+	self assert:
+		(warnings first includesSubstring: self missingClassName).
+	self assert: (warnings first includesSubstring: 'Did you mean:')
 ]
 
 { #category : 'tests' }
-MCPToolFindClassesTest >> testReturnsStructuredErrorWhenPackageIsMissing [
+MCPToolFindClassesTest >> testReturnsWarningsAndEmptyResultsWhenPackageIsMissing [
 
-	| error result structured |
+	| data result warnings |
 	result := self callToolWith:
 		          { (#packageNames -> #( 'MCP-Definitely-Missing' )) }
 			          asDictionary.
-	structured := self structuredContentFrom: result.
-	error := self errorFrom: result.
-	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
-	self assert: (error at: #errorCode) equals: 'PackageNotFound'.
-	self
-		assert: (error at: #packageName)
-		equals: 'MCP-Definitely-Missing'.
-	self assert: (error at: #scope) equals: 'packages'
+	data := self dataFrom: result.
+	warnings := self warningsFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) equals: 0.
+	self assert: (data at: #classes) isEmpty.
+	self assert: warnings size equals: 1.
+	self assert:
+		(warnings first includesSubstring: 'MCP-Definitely-Missing')
 ]
 
 { #category : 'tests' }

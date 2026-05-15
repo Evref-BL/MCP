@@ -83,7 +83,7 @@ MCPToolFindClasses >> classInfoDataProperties [
 { #category : 'defaults' }
 MCPToolFindClasses >> defaultDescription [
 
-	^ 'List classes and optionally filter them by class metadata. If no class scope properties are provided, the whole image is searched. Scope properties are unioned: packageNames includes classes defined in packages; classNames includes exact classes; hierarchyClassNames includes the named classes plus their superclasses and subclasses; subclassClassNames includes only subclasses of the named classes; parentClassNames includes only superclasses of the named classes. Use where for recursive boolean predicates and relation predicates. Use inspect-class when you already know the class to inspect.'
+	^ 'List classes and optionally filter them by class metadata. If no class scope properties are provided, the whole image is searched. Scope properties are unioned by default; pass scopeMode=intersection to keep only classes present in every non-empty scope dimension. Missing exploratory scope entries produce warnings and similar-name suggestions instead of failing the whole query. Use where for recursive boolean predicates and relation predicates. Use inspect-class when you already know the class to inspect.'
 ]
 
 { #category : 'private - request' }
@@ -102,7 +102,8 @@ MCPToolFindClasses >> defaultIcons [
 MCPToolFindClasses >> defaultInputSchema [
 
 	| properties |
-	properties := self classQueryScopeInputProperties , (self
+	properties := self classQueryScopeInputProperties
+	              , { self scopeModeSchemaProperty } , (self
 		               fieldFilteringInputPropertiesWithFilterDescription:
 		               'Optional filter applied to the listed class-entry fields. Use filterTargets to choose which fields are matched.'
 		               filterTargetsDescription:

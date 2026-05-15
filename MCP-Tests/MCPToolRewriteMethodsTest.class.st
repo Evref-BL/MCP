@@ -275,6 +275,32 @@ MCPToolRewriteMethodsTest >> testInvalidRhsPatternReportsRuleDiagnostics [
 ]
 
 { #category : 'tests' }
+MCPToolRewriteMethodsTest >> testMissingClassScopeRejectsRewriteBeforePartialPreview [
+
+	| error result rule suggestions |
+	rule := self rewriteRuleFrom: 'self oldValue' to: 'self newValue'.
+	result := self callToolWith: {
+			          (#rules -> { rule }).
+			          (#classNames -> {
+				           self targetClassName.
+				           'MCPDefinitelyMissingRewriteClass' }) } asDictionary.
+	error := self errorFrom: result.
+	suggestions := error at: #suggestions.
+	self assert: (result at: #isError).
+	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
+	self
+		assert: (error at: #className)
+		equals: 'MCPDefinitelyMissingRewriteClass'.
+	self assert: (error at: #scopeName) equals: 'classNames'.
+	self assert: suggestions size <= 5.
+	self assert:
+		((error at: #message) includesSubstring: 'Did you mean:').
+	self assert:
+		((self sourceForSelector: #previewTarget) includesSubstring:
+			 'oldValue')
+]
+
+{ #category : 'tests' }
 MCPToolRewriteMethodsTest >> testPreviewCanOmitSources [
 
 	| change data result rule |

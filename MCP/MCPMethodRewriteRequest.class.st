@@ -79,6 +79,7 @@ MCPMethodRewriteRequest >> initializeFromRequest: request tool: aTool [
 				                         default: nil ]
 		                         ifFalse: [ nil ].
 	scopeQuery := aTool methodScopeQueryFromRequest: request.
+	scopeQuery requireCompleteScope.
 	^ self
 ]
 

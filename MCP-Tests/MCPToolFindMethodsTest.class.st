@@ -448,6 +448,42 @@ MCPToolFindMethodsTest >> testImageScopeFindsInstanceAndClassImplementors [
 ]
 
 { #category : 'tests' }
+MCPToolFindMethodsTest >> testIntersectionScopeKeepsOnlyMethodsInEveryScopeDimension [
+
+	| data result selectors |
+	result := self callToolWith: {
+			          (#packageNames -> #( 'MCP-Tests-Resources' )).
+			          (#classNames -> { self targetClassName }).
+			          (#scopeMode -> 'intersection') } asDictionary.
+	data := self dataFrom: result.
+	selectors := (data at: #methods) collect: [ :each |
+		             each at: #selector ].
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) equals: 5.
+	self assert: (selectors includes: 'alphaNeedleSelector').
+	self assert: (selectors includes: 'classNeedleSelector')
+]
+
+{ #category : 'tests' }
+MCPToolFindMethodsTest >> testMissingClassScopeReturnsPartialResultsAndWarnings [
+
+	| data result selectors warnings |
+	result := self callToolWith: { (#classNames -> {
+			           self targetClassName.
+			           'MCPDefinitelyMissingFindMethodsClass' }) } asDictionary.
+	data := self dataFrom: result.
+	warnings := self warningsFrom: result.
+	selectors := (data at: #methods) collect: [ :each |
+		             each at: #selector ].
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) equals: 5.
+	self assert: (selectors includes: 'alphaNeedleSelector').
+	self assert: warnings size equals: 1.
+	self assert: (warnings first includesSubstring:
+			 'MCPDefinitelyMissingFindMethodsClass')
+]
+
+{ #category : 'tests' }
 MCPToolFindMethodsTest >> testMultipleScopesAreUnioned [
 
 	| data result |
@@ -555,42 +591,39 @@ MCPToolFindMethodsTest >> testReturnsStructuredErrorForInvalidRegex [
 ]
 
 { #category : 'tests' }
-MCPToolFindMethodsTest >> testReturnsStructuredErrorWhenClassIsMissing [
+MCPToolFindMethodsTest >> testReturnsWarningsAndEmptyResultsWhenClassIsMissing [
 
-	| error result structured |
+	| data result warnings |
 	result := self callToolWith:
 		          { (#classNames
 		           -> #( 'MCPDefinitelyMissingFindMethodsClass' )) }
 			          asDictionary.
-	structured := self structuredContentFrom: result.
-	error := self errorFrom: result.
-	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
-	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
-	self
-		assert: (error at: #className)
-		equals: 'MCPDefinitelyMissingFindMethodsClass'.
-	self assert: (error at: #scope) equals: 'classes'
+	data := self dataFrom: result.
+	warnings := self warningsFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) equals: 0.
+	self assert: (data at: #methods) isEmpty.
+	self assert: warnings size equals: 1.
+	self assert: (warnings first includesSubstring:
+			 'MCPDefinitelyMissingFindMethodsClass').
+	self assert: (warnings first includesSubstring: 'Did you mean:')
 ]
 
 { #category : 'tests' }
-MCPToolFindMethodsTest >> testReturnsStructuredErrorWhenPackageIsMissing [
+MCPToolFindMethodsTest >> testReturnsWarningsAndEmptyResultsWhenPackageIsMissing [
 
-	| error result structured |
+	| data result warnings |
 	result := self callToolWith:
 		          { (#packageNames -> #( 'MCP-Definitely-Missing' )) }
 			          asDictionary.
-	structured := self structuredContentFrom: result.
-	error := self errorFrom: result.
-	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
-	self assert: (error at: #errorCode) equals: 'PackageNotFound'.
-	self
-		assert: (error at: #packageName)
-		equals: 'MCP-Definitely-Missing'.
-	self assert: (error at: #scope) equals: 'packages'
+	data := self dataFrom: result.
+	warnings := self warningsFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) equals: 0.
+	self assert: (data at: #methods) isEmpty.
+	self assert: warnings size equals: 1.
+	self assert:
+		(warnings first includesSubstring: 'MCP-Definitely-Missing')
 ]
 
 { #category : 'tests' }

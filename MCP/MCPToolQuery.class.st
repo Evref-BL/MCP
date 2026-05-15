@@ -104,7 +104,7 @@ MCPToolQuery >> classScopeClassNamesProperty [
 	^ self
 		  stringArraySchemaNamed: 'classNames'
 		  description:
-		  'Class scope: include these exact classes. If no class scope property is provided, all classes are searched. Scope properties are unioned.'
+		  'Class scope: include these exact classes. If no class scope property is provided, all classes are searched. Scope properties use scopeMode, defaulting to union.'
 		  itemDescription: 'A class name.'
 ]
 
@@ -114,7 +114,7 @@ MCPToolQuery >> classScopeHierarchyClassNamesProperty [
 	^ self
 		  stringArraySchemaNamed: 'hierarchyClassNames'
 		  description:
-		  'Class scope: include each named class, its superclasses, and its subclasses. If no class scope property is provided, all classes are searched. Scope properties are unioned.'
+		  'Class scope: include each named class, its superclasses, and its subclasses. If no class scope property is provided, all classes are searched. Scope properties use scopeMode, defaulting to union.'
 		  itemDescription: 'A hierarchy root class name.'
 ]
 
@@ -124,7 +124,7 @@ MCPToolQuery >> classScopePackageNamesProperty [
 	^ self
 		  stringArraySchemaNamed: 'packageNames'
 		  description:
-		  'Class scope: include classes defined in these packages. If no class scope property is provided, all classes are searched. Scope properties are unioned.'
+		  'Class scope: include classes defined in these packages. If no class scope property is provided, all classes are searched. Scope properties use scopeMode, defaulting to union.'
 		  itemDescription: 'A package name.'
 ]
 
@@ -134,7 +134,7 @@ MCPToolQuery >> classScopeParentClassNamesProperty [
 	^ self
 		  stringArraySchemaNamed: 'parentClassNames'
 		  description:
-		  'Class scope: include superclasses of these classes. The named classes themselves are excluded unless also listed in classNames. Scope properties are unioned.'
+		  'Class scope: include superclasses of these classes. The named classes themselves are excluded unless also listed in classNames. Scope properties use scopeMode, defaulting to union.'
 		  itemDescription: 'A class name whose superclasses are included.'
 ]
 
@@ -144,7 +144,7 @@ MCPToolQuery >> classScopeSubclassClassNamesProperty [
 	^ self
 		  stringArraySchemaNamed: 'subclassClassNames'
 		  description:
-		  'Class scope: include subclasses of these classes. The named classes themselves are excluded unless also listed in classNames. Scope properties are unioned.'
+		  'Class scope: include subclasses of these classes. The named classes themselves are excluded unless also listed in classNames. Scope properties use scopeMode, defaulting to union.'
 		  itemDescription: 'A class name whose subclasses are included.'
 ]
 
@@ -204,7 +204,8 @@ MCPToolQuery >> executeWithRequest: request [
 				  successResultText:
 				  (self successSummaryForQueryRequest: queryRequest page: page)
 				  data:
-				  (self queryResultDataForQueryRequest: queryRequest page: page) ]
+				  (self queryResultDataForQueryRequest: queryRequest page: page)
+				  warnings: (self warningsForQueryRequest: queryRequest) ]
 		  onError: [ :error :ignored |
 			  self
 				  errorResultForQueryError: error
@@ -555,6 +556,17 @@ MCPToolQuery >> requestedContextFromRequest: request [
 	^ self subclassResponsibility
 ]
 
+{ #category : 'private - schema' }
+MCPToolQuery >> scopeModeSchemaProperty [
+
+	^ self
+		  stringEnumSchemaPropertyNamed: 'scopeMode'
+		  description:
+		  'How multiple non-empty scope properties are combined. union preserves the default behavior. intersection keeps only entities present in every non-empty scope dimension. If no scope property is provided, the whole image is searched.'
+		  values: #( 'union' 'intersection' )
+		  default: 'union'
+]
+
 { #category : 'private - results' }
 MCPToolQuery >> scopeQueryFailureMessageFor: resultKind scope: scopeSummary error: anError [
 
@@ -614,6 +626,15 @@ MCPToolQuery >> supportedFilterModes [
 MCPToolQuery >> supportedFilterTargets [
 
 	self subclassResponsibility
+]
+
+{ #category : 'private - results' }
+MCPToolQuery >> warningsForQueryRequest: queryRequest [
+
+	(queryRequest respondsTo: #scopeQuery) ifFalse: [ ^ #(  ) ].
+	queryRequest scopeQuery ifNil: [ ^ #(  ) ].
+	(queryRequest scopeQuery respondsTo: #warnings) ifFalse: [ ^ #(  ) ].
+	^ queryRequest scopeQuery warnings
 ]
 
 { #category : 'private - where' }
