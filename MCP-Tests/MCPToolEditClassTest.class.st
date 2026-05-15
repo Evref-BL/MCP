@@ -1790,20 +1790,25 @@ MCPToolEditClassTest >> testUpdateReturnsStructuredErrorWhenAddSlotClassIsMissin
 { #category : 'tests - update' }
 MCPToolEditClassTest >> testUpdateReturnsStructuredErrorWhenCommentClassIsMissing [
 
-	| error result |
+	| error result suggestions |
 	result := self callToolWith: {
 			          (#operation -> 'update').
 			          (#className -> 'MCPToolEditClassTestMissing').
 			          (#classComment -> 'ignored') } asDictionary.
 	error := self errorFrom: result.
+	suggestions := error at: #suggestions.
 	self assert: (result at: #isError).
 	self assert: (error at: #operation) equals: 'update'.
 	self assert: (error at: #updateAction) equals: 'setComment'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
 	self
-		assert: (error at: #message)
-		equals: 'Class MCPToolEditClassTestMissing does not exist.'
+		assert: (error at: #className)
+		equals: 'MCPToolEditClassTestMissing'.
+	self assert: (error at: #scopeName) equals: 'className'.
+	self assert: suggestions size <= 5.
+	self assert: ((error at: #message) includesSubstring:
+			 'MCPToolEditClassTestMissing does not exist')
 ]
 
 { #category : 'tests - update' }
@@ -1885,20 +1890,25 @@ MCPToolEditClassTest >> testUpdateReturnsStructuredErrorWhenRemoveSlotClassIsMis
 { #category : 'tests - update' }
 MCPToolEditClassTest >> testUpdateReturnsStructuredErrorWhenRenameClassIsMissing [
 
-	| error result |
+	| error result suggestions |
 	result := self callToolWith: {
 			          (#operation -> 'update').
 			          (#className -> 'MCPToolEditClassTestMissing').
 			          (#newClassName -> self renamedClassName) } asDictionary.
 	error := self errorFrom: result.
+	suggestions := error at: #suggestions.
 	self assert: (result at: #isError).
 	self assert: (error at: #operation) equals: 'update'.
 	self assert: (error at: #updateAction) equals: 'rename'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
 	self
-		assert: (error at: #message)
-		equals: 'Class MCPToolEditClassTestMissing does not exist.'
+		assert: (error at: #className)
+		equals: 'MCPToolEditClassTestMissing'.
+	self assert: (error at: #scopeName) equals: 'className'.
+	self assert: suggestions size <= 5.
+	self assert: ((error at: #message) includesSubstring:
+			 'MCPToolEditClassTestMissing does not exist')
 ]
 
 { #category : 'tests - update' }

@@ -15,6 +15,56 @@ Class {
 	#tag : 'Errors'
 }
 
+{ #category : 'private - suggestions' }
+MCPCommandError class >> detailsWith: associations suggestionsForClassNamed: className scopeName: scopeName [
+
+	| details suggestions |
+	details := associations asDictionary.
+	suggestions := MCPScopeNameSuggester classSuggestionsFor: className.
+	details
+		at: #className put: className;
+		at: #scopeName put: scopeName;
+		at: #suggestions put: suggestions.
+	^ details
+]
+
+{ #category : 'private - suggestions' }
+MCPCommandError class >> detailsWith: associations suggestionsForPackageNamed: packageName scopeName: scopeName [
+
+	| details suggestions |
+	details := associations asDictionary.
+	suggestions := MCPScopeNameSuggester packageSuggestionsFor:
+		               packageName.
+	details
+		at: #packageName put: packageName;
+		at: #scopeName put: scopeName;
+		at: #suggestions put: suggestions.
+	^ details
+]
+
+{ #category : 'private - suggestions' }
+MCPCommandError class >> messageForMissingKind: kind name: missingName scopeName: scopeName suggestions: suggestions [
+
+	^ String streamContents: [ :stream |
+		  stream
+			  nextPutAll: kind;
+			  space;
+			  nextPutAll: missingName asString;
+			  nextPutAll: ' does not exist'.
+		  scopeName ifNotNil: [
+			  stream
+				  nextPutAll: ' in ';
+				  nextPutAll: scopeName asString;
+				  nextPutAll: ' scope' ].
+		  stream nextPut: $..
+		  suggestions ifNotEmpty: [
+			  stream nextPutAll: ' Did you mean: '.
+			  suggestions
+				  do: [ :each | stream nextPutAll: each ]
+				  separatedBy: [ stream nextPutAll: ', ' ].
+			  stream nextPut: $. ] ]
+]
+
 { #category : 'signaling' }
 MCPCommandError class >> signalClassAlreadyExistsNamed: aClassName [
 
@@ -39,12 +89,39 @@ MCPCommandError class >> signalErrorCode: anErrorCode message: aMessage details:
 { #category : 'signaling' }
 MCPCommandError class >> signalMissingClassNamed: aClassName [
 
-	| message |
-	message := 'Class ' , aClassName , ' does not exist.'.
+	| details suggestions |
+	details := self
+		           detailsWith: #(  )
+		           suggestionsForClassNamed: aClassName
+		           scopeName: 'className'.
+	suggestions := details at: #suggestions.
 	^ self
 		  signalErrorCode: #ClassNotFound
-		  message: message
-		  details: { (#className -> aClassName) } asDictionary
+		  message: (self
+				   messageForMissingKind: 'Class'
+				   name: aClassName
+				   scopeName: nil
+				   suggestions: suggestions)
+		  details: details
+]
+
+{ #category : 'signaling' }
+MCPCommandError class >> signalMissingClassNamed: aClassName scopeName: scopeName [
+
+	| details suggestions |
+	details := self
+		           detailsWith: #(  )
+		           suggestionsForClassNamed: aClassName
+		           scopeName: scopeName.
+	suggestions := details at: #suggestions.
+	^ self
+		  signalErrorCode: #ClassNotFound
+		  message: (self
+				   messageForMissingKind: 'Class'
+				   name: aClassName
+				   scopeName: scopeName
+				   suggestions: suggestions)
+		  details: details
 ]
 
 { #category : 'signaling' }
@@ -64,22 +141,58 @@ MCPCommandError class >> signalMissingMethodInClassName: aClassName classSide: a
 { #category : 'signaling' }
 MCPCommandError class >> signalMissingPackageNamed: aPackageName [
 
-	| message |
-	message := 'Package ' , aPackageName , ' does not exist.'.
+	| details suggestions |
+	details := self
+		           detailsWith: #(  )
+		           suggestionsForPackageNamed: aPackageName
+		           scopeName: 'packageName'.
+	suggestions := details at: #suggestions.
 	^ self
 		  signalErrorCode: #PackageNotFound
-		  message: message
-		  details: { (#packageName -> aPackageName) } asDictionary
+		  message: (self
+				   messageForMissingKind: 'Package'
+				   name: aPackageName
+				   scopeName: nil
+				   suggestions: suggestions)
+		  details: details
 ]
 
 { #category : 'signaling' }
 MCPCommandError class >> signalMissingPackageNamed: aPackageName forClassNamed: aClassName [
 
-	| message |
-	message := 'Package ' , aPackageName , ' does not exist.'.
-	^ self signalErrorCode: #PackageNotFound message: message details: {
-			  (#className -> aClassName).
-			  (#packageName -> aPackageName) } asDictionary
+	| details suggestions |
+	details := self
+		           detailsWith: { (#className -> aClassName) }
+		           suggestionsForPackageNamed: aPackageName
+		           scopeName: 'packageName'.
+	suggestions := details at: #suggestions.
+	^ self
+		  signalErrorCode: #PackageNotFound
+		  message: (self
+				   messageForMissingKind: 'Package'
+				   name: aPackageName
+				   scopeName: nil
+				   suggestions: suggestions)
+		  details: details
+]
+
+{ #category : 'signaling' }
+MCPCommandError class >> signalMissingPackageNamed: aPackageName scopeName: scopeName [
+
+	| details suggestions |
+	details := self
+		           detailsWith: #(  )
+		           suggestionsForPackageNamed: aPackageName
+		           scopeName: scopeName.
+	suggestions := details at: #suggestions.
+	^ self
+		  signalErrorCode: #PackageNotFound
+		  message: (self
+				   messageForMissingKind: 'Package'
+				   name: aPackageName
+				   scopeName: scopeName
+				   suggestions: suggestions)
+		  details: details
 ]
 
 { #category : 'signaling' }

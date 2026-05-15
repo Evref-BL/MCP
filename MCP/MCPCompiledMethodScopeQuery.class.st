@@ -419,16 +419,8 @@ MCPCompiledMethodScopeQuery >> recordMissingClassNamed: className inScope: scope
 	suggestions := MCPScopeNameSuggester classSuggestionsFor: className.
 	self requiresCompleteScope ifTrue: [
 		^ MCPCommandError
-			  signalErrorCode: #ClassNotFound
-			  message: (MCPScopeNameSuggester
-					   missingNameWarningForKind: 'Class'
-					   name: className
-					   scope: scopeName
-					   suggestions: suggestions)
-			  details: {
-					  (#className -> className).
-					  (#scopeName -> scopeName).
-					  (#suggestions -> suggestions) } asDictionary ].
+			  signalMissingClassNamed: className
+			  scopeName: scopeName ].
 	warnings ifNil: [ self resetWarnings ].
 	warnings add: (MCPScopeNameSuggester
 			 missingNameWarningForKind: 'Class'
@@ -446,16 +438,8 @@ MCPCompiledMethodScopeQuery >> recordMissingPackageNamed: packageName inScope: s
 		               packageName.
 	self requiresCompleteScope ifTrue: [
 		^ MCPCommandError
-			  signalErrorCode: #PackageNotFound
-			  message: (MCPScopeNameSuggester
-					   missingNameWarningForKind: 'Package'
-					   name: packageName
-					   scope: scopeName
-					   suggestions: suggestions)
-			  details: {
-					  (#packageName -> packageName).
-					  (#scopeName -> scopeName).
-					  (#suggestions -> suggestions) } asDictionary ].
+			  signalMissingPackageNamed: packageName
+			  scopeName: scopeName ].
 	warnings ifNil: [ self resetWarnings ].
 	warnings add: (MCPScopeNameSuggester
 			 missingNameWarningForKind: 'Package'
