@@ -240,7 +240,7 @@ MCP >> rpcToolCall: name withParams: arguments [
 				  result: toolResult
 				  error: nil.
 			  toolResult asJRPCJSON ]
-				  on: Error
+				  on: Exception
 				  do: [ :error |
 					  | errorResult |
 					  (error isKindOf: JRPCError) ifTrue: [

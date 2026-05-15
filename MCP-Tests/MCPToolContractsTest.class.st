@@ -46,6 +46,12 @@ MCPToolContractsTest >> mcpClassesInPackageTagNamed: aTagName [
 		  asArray
 ]
 
+{ #category : 'private' }
+MCPToolContractsTest >> signalHaltForMCPMessageProcessorTest [
+
+	(Smalltalk globals at: #Halt) signal: 'mcp processor halt test'
+]
+
 { #category : 'tests' }
 MCPToolContractsTest >> testAllToolOutputSchemasAdvertiseStructuredSummaryWarningsAndStatus [
 
@@ -713,6 +719,22 @@ MCPToolContractsTest >> testEditToolSchemasAdvertiseRenameScopeConditions [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testEvaluateCatchesHaltAsRuntimeFailure [
+
+	| result text |
+	result := self
+		          callToolNamed: 'evaluate'
+		          withArguments:
+		          { (#code -> 'Halt signal: ''mcp halt test''') }
+			          asDictionary.
+	text := self firstTextFromToolResult: result.
+	self assert: (result at: #isError).
+	self assert: (text includesSubstring: 'failed during execution').
+	self assert: (text includesSubstring: 'Halt').
+	self assert: (text includesSubstring: 'mcp halt test')
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testEvaluateErrorSchemaAdvertisesStackTrace [
 
 	| errorProperties errorProperty propertyNames |
@@ -1032,6 +1054,24 @@ MCPToolContractsTest >> testFindRepositoriesHasAccurateNameAndSchema [
 	self assert: (propertyNames includes: 'filterMode').
 	self assert: (propertyNames includes: 'limit').
 	self assert: (propertyNames includes: 'offset')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testHandleJSONReturnsInternalErrorForUnhandledHalt [
+
+	| handler processor response |
+	processor := MCPMessageProcessor new.
+	handler := MCPMessageSendHandler new
+		           receiver: self;
+		           methodName: 'mcp/test-halt';
+		           messageSelector: #signalHaltForMCPMessageProcessorTest;
+		           yourself.
+	processor addHandler: handler.
+	response := processor handleJSON:
+		            '{"jsonrpc":"2.0","id":1,"method":"mcp/test-halt"}'.
+	self assert: (response includesSubstring: '"code":-32603').
+	self assert: (response includesSubstring: 'Halt').
+	self assert: (response includesSubstring: 'mcp processor halt test')
 ]
 
 { #category : 'tests' }
@@ -1553,6 +1593,28 @@ MCPToolContractsTest >> testRewriteMethodsIsMethodScopedCommandTool [
 
 	self assert: MCPToolRewriteMethods superclass equals: MCPTool.
 	self assert: (MCPToolRewriteMethods traits includes: TMCPMethodTool)
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testRpcToolCallCatchesUnhandledHaltFromTool [
+
+	| mcp result text tool tools |
+	tool := MCPTool basicNew
+		        name: 'halting-test-tool';
+		        handler: [ :request |
+			        (Smalltalk globals at: #Halt) signal: 'mcp tool halt test' ];
+		        yourself.
+	tools := Dictionary new
+		         at: tool name put: tool;
+		         yourself.
+	mcp := MCP new.
+	mcp instVarNamed: 'toolsList' put: tools.
+	result := mcp rpcToolCall: tool name withParams: Dictionary new.
+	text := self firstTextFromToolResult: result.
+	self assert: (result at: #isError).
+	self assert:
+		(text includesSubstring: 'Tool halting-test-tool failed (Halt)').
+	self assert: (text includesSubstring: 'mcp tool halt test')
 ]
 
 { #category : 'tests' }

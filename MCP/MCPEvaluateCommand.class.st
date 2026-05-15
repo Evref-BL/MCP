@@ -34,7 +34,7 @@ MCPEvaluateCommand >> execute [
 		notice := aNotice.
 		nil ].
 	answer := [ compiler evaluate: request code ]
-		          on: Error
+		          on: Exception
 		          do: [ :error | ^ self runtimeFailureFor: error ].
 	notice ifNotNil: [ ^ self syntaxFailureFor: notice ].
 	^ MCPEvaluateResult okData: {
