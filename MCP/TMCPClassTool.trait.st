@@ -11,9 +11,7 @@ Trait {
 { #category : 'private - classes' }
 TMCPClassTool >> resolvedClassNamed: className [
 
-	^ Smalltalk globals
-		  at: className asSymbol
-		  ifAbsent: [ MCPCommandError signalMissingClassNamed: className ]
+	^ MCPImageLookup classNamed: className
 ]
 
 { #category : 'private - classes' }

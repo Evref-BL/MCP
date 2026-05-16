@@ -35,23 +35,22 @@ MCPCompiledMethodScopeQueryTest >> testClassesScopeCollectsMethodsFromExactClass
 ]
 
 { #category : 'tests' }
-MCPCompiledMethodScopeQueryTest >> testClassesScopeSignalsCommandErrorWhenClassIsMissing [
+MCPCompiledMethodScopeQueryTest >> testClassesScopeReturnsPartialMethodsAndWarningsWhenClassIsMissing [
 
-	| error query |
+	| methodIdentities query |
 	query := MCPCompiledMethodScopeQuery new
 		         classNames:
-			         #( 'MCPDefinitelyMissingCompiledMethodScopeQueryClass' );
+			         #( 'MCPToolHierarchyTestChild' 'MCPDefinitelyMissingCompiledMethodScopeQueryClass' );
 		         side: 'instance';
 		         yourself.
-	error := [
-	         query methods.
-	         self fail: 'Expected MCPCommandError' ]
-		         on: MCPCommandError
-		         do: [ :caught | caught ].
-	self assert: error errorCode equals: #ClassNotFound.
-	self
-		assert: (error structuredDetails at: #className)
-		equals: 'MCPDefinitelyMissingCompiledMethodScopeQueryClass'
+	methodIdentities := self methodIdentitiesFor: query methods.
+	self assert: (methodIdentities includes:
+			 'MCPToolHierarchyTestChild>>hierarchyProbe').
+	self assert: query warnings size equals: 1.
+	self assert: (query warnings first includesSubstring:
+			 'MCPDefinitelyMissingCompiledMethodScopeQueryClass').
+	self assert:
+		(query warnings first includesSubstring: 'Did you mean:')
 ]
 
 { #category : 'tests' }
@@ -85,6 +84,24 @@ MCPCompiledMethodScopeQueryTest >> testImageScopeRespectsSideFiltering [
 ]
 
 { #category : 'tests' }
+MCPCompiledMethodScopeQueryTest >> testIntersectionScopeKeepsOnlyMethodsInEveryScopeDimension [
+
+	| methodIdentities query |
+	query := MCPCompiledMethodScopeQuery new
+		         packageNames: #( 'MCP-Tests-Resources' );
+		         classNames: #( 'MCPToolHierarchyTestChild' );
+		         side: 'instance';
+		         scopeMode: 'intersection';
+		         yourself.
+	methodIdentities := self methodIdentitiesFor: query methods.
+	self assert: (methodIdentities includes:
+			 'MCPToolHierarchyTestChild>>hierarchyProbe').
+	self deny:
+		(methodIdentities includes:
+			 'MCPToolHierarchyTestBase>>hierarchyProbe')
+]
+
+{ #category : 'tests' }
 MCPCompiledMethodScopeQueryTest >> testInvalidSideSignalsErrorWhenQuerying [
 
 	| error query |
@@ -115,22 +132,17 @@ MCPCompiledMethodScopeQueryTest >> testPackageScopeIncludesExtensionMethods [
 ]
 
 { #category : 'tests' }
-MCPCompiledMethodScopeQueryTest >> testPackageScopeSignalsCommandErrorWhenPackageIsMissing [
+MCPCompiledMethodScopeQueryTest >> testPackageScopeReturnsEmptyMethodsAndWarningsWhenPackageIsMissing [
 
-	| error query |
+	| query |
 	query := MCPCompiledMethodScopeQuery new
 		         packageNames: #( 'MCP-Definitely-Missing' );
 		         side: 'instance';
 		         yourself.
-	error := [
-	         query methods.
-	         self fail: 'Expected MCPCommandError' ]
-		         on: MCPCommandError
-		         do: [ :caught | caught ].
-	self assert: error errorCode equals: #PackageNotFound.
-	self
-		assert: (error structuredDetails at: #packageName)
-		equals: 'MCP-Definitely-Missing'
+	self assert: query methods isEmpty.
+	self assert: query warnings size equals: 1.
+	self assert:
+		(query warnings first includesSubstring: 'MCP-Definitely-Missing')
 ]
 
 { #category : 'tests' }

@@ -75,11 +75,7 @@ MCP >> handlersCount [
 MCP >> initialize [
 
 	super initialize.
-	toolsList := Dictionary new.
-	MCPTool concreteSubclasses do: [ :toolClass |
-		| tool |
-		tool := toolClass new.
-		toolsList at: tool name put: tool ].
+	self refreshToolsList.
 	server := MCPHTTPServer new.
 	server addHandlersFromPragmasIn: self
 ]
@@ -181,6 +177,17 @@ MCP >> port: aPortNumber [
 	self server port: aPortNumber
 ]
 
+{ #category : 'private - tools' }
+MCP >> refreshToolsList [
+
+	toolsList := Dictionary new.
+	MCPTool concreteSubclasses do: [ :toolClass |
+		| tool |
+		tool := toolClass new.
+		toolsList at: tool name put: tool ].
+	^ toolsList
+]
+
 { #category : 'start' }
 MCP >> restart [
 
@@ -240,7 +247,7 @@ MCP >> rpcToolCall: name withParams: arguments [
 				  result: toolResult
 				  error: nil.
 			  toolResult asJRPCJSON ]
-				  on: Error
+				  on: Exception
 				  do: [ :error |
 					  | errorResult |
 					  (error isKindOf: JRPCError) ifTrue: [
@@ -262,6 +269,7 @@ MCP >> rpcToolCall: name withParams: arguments [
 MCP >> rpcToolsList [
 
 	<jrpc: #'tools/list'>
+	self refreshToolsList.
 	^ { (#tools -> toolsList values asArray) } asDictionary asJRPCJSON
 ]
 
@@ -294,6 +302,7 @@ MCP >> sortedTools [
 { #category : 'start' }
 MCP >> start [
 
+	self refreshToolsList.
 	server start.
 	server addHandlersFromPragmasIn: self
 ]

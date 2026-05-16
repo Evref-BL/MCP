@@ -86,10 +86,7 @@ MCPReplaceClassTraitsCommand >> resolvedTraits [
 { #category : 'private' }
 MCPReplaceClassTraitsCommand >> targetClass [
 
-	^ Smalltalk globals
-		  at: self className asSymbol
-		  ifAbsent: [
-		  MCPCommandError signalMissingClassNamed: self className ]
+	^ MCPImageLookup classNamed: self className
 ]
 
 { #category : 'accessing' }

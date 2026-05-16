@@ -161,9 +161,9 @@ MCPCommitRepositoryCommand >> tool [
 { #category : 'private - execution' }
 MCPCommitRepositoryCommand >> withNonInteractiveAuthorDuring: aBlock [
 
-	^ Author fullNamePerSe isEmptyOrNil
-		  ifTrue: [ Author useAuthor: 'MCP' during: aBlock ]
-		  ifFalse: [ aBlock value ]
+	^ PharoCompatibility
+		  withNonInteractiveAuthorNamed: 'MCP'
+		  during: aBlock
 ]
 
 { #category : 'private - git identity' }

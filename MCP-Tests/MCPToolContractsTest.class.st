@@ -46,6 +46,12 @@ MCPToolContractsTest >> mcpClassesInPackageTagNamed: aTagName [
 		  asArray
 ]
 
+{ #category : 'private' }
+MCPToolContractsTest >> signalHaltForMCPMessageProcessorTest [
+
+	(Smalltalk globals at: #Halt) signal: 'mcp processor halt test'
+]
+
 { #category : 'tests' }
 MCPToolContractsTest >> testAllToolOutputSchemasAdvertiseStructuredSummaryWarningsAndStatus [
 
@@ -713,6 +719,22 @@ MCPToolContractsTest >> testEditToolSchemasAdvertiseRenameScopeConditions [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testEvaluateCatchesHaltAsRuntimeFailure [
+
+	| result text |
+	result := self
+		          callToolNamed: 'evaluate'
+		          withArguments:
+		          { (#code -> 'Halt signal: ''mcp halt test''') }
+			          asDictionary.
+	text := self firstTextFromToolResult: result.
+	self assert: (result at: #isError).
+	self assert: (text includesSubstring: 'failed during execution').
+	self assert: (text includesSubstring: 'Halt').
+	self assert: (text includesSubstring: 'mcp halt test')
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testEvaluateErrorSchemaAdvertisesStackTrace [
 
 	| errorProperties errorProperty propertyNames |
@@ -753,7 +775,8 @@ MCPToolContractsTest >> testEvaluateReturnsCompilationFailureInformation [
 	text := self firstTextFromToolResult: result.
 	self assert: (result at: #isError).
 	self assert: (text includesSubstring: 'failed during compilation').
-	self assert: (text includesSubstring: 'RBSyntaxErrorNotice').
+	self assert:
+		(text includesSubstring: self expectedSyntaxErrorNoticeClassName).
 	self assert: (text includesSubstring: 'Position: 4')
 ]
 
@@ -786,6 +809,7 @@ MCPToolContractsTest >> testFindClassesHasAccurateNameAndSchema [
 	self assert: (propertyNames includes: 'hierarchyClassNames').
 	self assert: (propertyNames includes: 'subclassClassNames').
 	self assert: (propertyNames includes: 'parentClassNames').
+	self assert: (propertyNames includes: 'scopeMode').
 	self assert: (propertyNames includes: 'filter').
 	self assert: (propertyNames includes: 'filterTargets')
 ]
@@ -807,19 +831,27 @@ MCPToolContractsTest >> testFindClassesListsClassesForExistingPackage [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testFindClassesReturnsErrorResultForMissingPackage [
+MCPToolContractsTest >> testFindClassesReturnsWarningResultForMissingPackage [
 
-	| result text |
+	| data result warnings |
 	result := self
 		          callToolNamed: 'find-classes'
 		          withArguments:
 		          { (#packageNames -> #( 'MCP-Definitely-Missing' )) }
 			          asDictionary.
-	text := self firstTextFromToolResult: result.
-	self assert: (result at: #isError).
-	self assert: (text includesSubstring:
-			 'Package MCP-Definitely-Missing does not exist.').
-	self deny: (text includesSubstring: 'Tool find-classes failed')
+	data := self dataFrom: result.
+	warnings := self warningsFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self
+		assert: ((self structuredContentFrom: result) at: #status)
+		equals: 'ok'.
+	self assert: (data at: #totalCount) equals: 0.
+	self assert: (data at: #classes) isEmpty.
+	self assert: warnings size equals: 1.
+	self assert:
+		(warnings first includesSubstring: 'MCP-Definitely-Missing').
+	self assert: (warnings first includesSubstring: 'packageNames scope').
+	self assert: (warnings first includesSubstring: 'Did you mean:')
 ]
 
 { #category : 'tests' }
@@ -864,6 +896,7 @@ MCPToolContractsTest >> testFindMethodsHasAccurateNameAndSchema [
 	self assert: (propertyNames includes: 'hierarchyClassNames').
 	self assert: (propertyNames includes: 'subclassClassNames').
 	self assert: (propertyNames includes: 'parentClassNames').
+	self assert: (propertyNames includes: 'scopeMode').
 	self assert: (propertyNames includes: 'filter').
 	self assert: (propertyNames includes: 'filterTargets').
 	self
@@ -918,20 +951,28 @@ MCPToolContractsTest >> testFindMethodsReferenceModesShareRequiredFilterConditio
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testFindMethodsReturnsErrorResultForMissingClass [
+MCPToolContractsTest >> testFindMethodsReturnsWarningResultForMissingClass [
 
-	| result text |
+	| data result warnings |
 	result := self
 		          callToolNamed: 'find-methods'
 		          withArguments:
 			          { (#classNames
 			           -> #( 'MCPDefinitelyMissingFindMethodsClass' )) }
 				          asDictionary.
-	text := self firstTextFromToolResult: result.
-	self assert: (result at: #isError).
-	self assert: (text includesSubstring:
-			 'Class MCPDefinitelyMissingFindMethodsClass does not exist.').
-	self deny: (text includesSubstring: 'Tool find-methods failed')
+	data := self dataFrom: result.
+	warnings := self warningsFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self
+		assert: ((self structuredContentFrom: result) at: #status)
+		equals: 'ok'.
+	self assert: (data at: #totalCount) equals: 0.
+	self assert: (data at: #methods) isEmpty.
+	self assert: warnings size equals: 1.
+	self assert: (warnings first includesSubstring:
+			 'MCPDefinitelyMissingFindMethodsClass').
+	self assert: (warnings first includesSubstring: 'classNames scope').
+	self assert: (warnings first includesSubstring: 'Did you mean:')
 ]
 
 { #category : 'tests' }
@@ -1032,6 +1073,24 @@ MCPToolContractsTest >> testFindRepositoriesHasAccurateNameAndSchema [
 	self assert: (propertyNames includes: 'filterMode').
 	self assert: (propertyNames includes: 'limit').
 	self assert: (propertyNames includes: 'offset')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testHandleJSONReturnsInternalErrorForUnhandledHalt [
+
+	| handler processor response |
+	processor := MCPMessageProcessor new.
+	handler := MCPMessageSendHandler new
+		           receiver: self;
+		           methodName: 'mcp/test-halt';
+		           messageSelector: #signalHaltForMCPMessageProcessorTest;
+		           yourself.
+	processor addHandler: handler.
+	response := processor handleJSON:
+		            '{"jsonrpc":"2.0","id":1,"method":"mcp/test-halt"}'.
+	self assert: (response includesSubstring: '"code":-32603').
+	self assert: (response includesSubstring: 'Halt').
+	self assert: (response includesSubstring: 'mcp processor halt test')
 ]
 
 { #category : 'tests' }
@@ -1371,23 +1430,29 @@ MCPToolContractsTest >> testQueryScopeDescriptionsExplainScopeSemantics [
 		                       inTool: MCPToolFindPackages new) description.
 	self deny: (findClassesDescription includesSubstring: 'GUI').
 	self deny: (findMethodsDescription includesSubstring: 'GUI').
-	self assert: (classDescription includesSubstring:
-			 'If no class scope property is provided').
+	self assert:
+		(findClassesDescription includesSubstring: 'scopeMode=intersection').
+	self assert: (findMethodsDescription includesSubstring:
+			 'Missing class or package names').
+	self assert:
+		(classDescription includesSubstring:
+			 'Omit all class scope properties').
 	self assert: (classDescription includesSubstring:
 			 'its superclasses, and its subclasses').
 	self assert: (subclassDescription includesSubstring:
 			 'methods defined on subclasses').
 	self assert: (subclassDescription includesSubstring:
-			 'The named classes themselves are excluded').
+			 'The named classes are excluded').
 	self assert:
 		(parentDescription includesSubstring:
 			 'superclasses of these classes').
-	self assert: (parentDescription includesSubstring:
-			 'The named classes themselves are excluded').
+	self assert:
+		(parentDescription includesSubstring:
+			 'The named classes are excluded').
 	self assert:
 		(methodDescription includesSubstring: 'including extension methods').
 	self assert: (methodDescription includesSubstring:
-			 'If no method scope property is provided').
+			 'Omit all method scope properties').
 	self assert: (packageDescription includesSubstring:
 			 'project names whose packages are included').
 	self assert:
@@ -1445,6 +1510,35 @@ MCPToolContractsTest >> testQueryToolsUseTypedRequestObjects [
 	staleSelectors do: [ :selector |
 		self deny: (MCPToolQuery withAllSubclasses anySatisfy: [ :each |
 				 each includesSelector: selector ]) ]
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testRPCRefreshesCachedToolMetadata [
+
+	| mcp propertyNames result staleTool toolDefinition toolDefinitions |
+	mcp := MCP new.
+	staleTool := MCPToolFindClasses new.
+	staleTool inputSchema: (MCPStructureInputSchema new
+			 type: 'object';
+			 properties: #(  );
+			 required: #(  );
+			 additionalProperties: false;
+			 yourself).
+	mcp toolsList: (Dictionary new
+			 at: staleTool name put: staleTool;
+			 yourself).
+	toolDefinitions := mcp rpcToolsList at: #tools.
+	toolDefinition := toolDefinitions detect: [ :each |
+		                  (each at: #name) = 'find-classes' ].
+	propertyNames := ((toolDefinition at: #inputSchema) at: #properties)
+		                 keys.
+	self assert: (propertyNames includes: 'scopeMode').
+	result := mcp rpcToolCall: 'find-classes' withParams: {
+			          (#classNames -> #( 'MCPToolContractsTest' )).
+			          (#packageNames -> #( 'MCP-Tests' )).
+			          (#scopeMode -> 'intersection').
+			          (#limit -> 1) } asDictionary.
+	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
 { #category : 'tests' }
@@ -1553,6 +1647,28 @@ MCPToolContractsTest >> testRewriteMethodsIsMethodScopedCommandTool [
 
 	self assert: MCPToolRewriteMethods superclass equals: MCPTool.
 	self assert: (MCPToolRewriteMethods traits includes: TMCPMethodTool)
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testRpcToolCallCatchesUnhandledHaltFromTool [
+
+	| mcp result text tool tools |
+	tool := MCPTool basicNew
+		        name: 'halting-test-tool';
+		        handler: [ :request |
+			        (Smalltalk globals at: #Halt) signal: 'mcp tool halt test' ];
+		        yourself.
+	tools := Dictionary new
+		         at: tool name put: tool;
+		         yourself.
+	mcp := MCP new.
+	mcp instVarNamed: 'toolsList' put: tools.
+	result := mcp rpcToolCall: tool name withParams: Dictionary new.
+	text := self firstTextFromToolResult: result.
+	self assert: (result at: #isError).
+	self assert:
+		(text includesSubstring: 'Tool halting-test-tool failed (Halt)').
+	self assert: (text includesSubstring: 'mcp tool halt test')
 ]
 
 { #category : 'tests' }

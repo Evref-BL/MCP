@@ -26,7 +26,9 @@ MCPToolStructuredOutputTest >> testEvaluateReturnsStructuredError [
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #errorClass) equals: 'RBSyntaxErrorNotice'.
+	self
+		assert: (error at: #errorClass)
+		equals: self expectedSyntaxErrorNoticeClassName.
 	self assert: ((error at: #message) includesSubstring: 'expected')
 ]
 
@@ -86,24 +88,27 @@ MCPToolStructuredOutputTest >> testFindClassesReturnsStructuredArrayData [
 ]
 
 { #category : 'tests' }
-MCPToolStructuredOutputTest >> testFindClassesReturnsStructuredError [
+MCPToolStructuredOutputTest >> testFindClassesReturnsStructuredWarnings [
 
-	| result structured error |
+	| data result structured warnings |
 	result := self
 		          callToolNamed: 'find-classes'
 		          withArguments:
 		          { (#packageNames -> #( 'MCP-Definitely-Missing' )) }
 			          asDictionary.
 	structured := self structuredContentFrom: result.
-	error := self errorFrom: result.
-	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
-	self
-		assert: (error at: #packageName)
-		equals: 'MCP-Definitely-Missing'.
-	self assert: (error at: #scope) equals: 'packages'.
-	self assert: ((error at: #message) includesSubstring:
-			 'Package MCP-Definitely-Missing does not exist.')
+	data := self dataFrom: result.
+	warnings := self warningsFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (structured at: #status) equals: 'ok'.
+	self assert: (structured includesKey: #error) not.
+	self assert: (data at: #totalCount) equals: 0.
+	self assert: (data at: #classes) isEmpty.
+	self assert: warnings size equals: 1.
+	self assert:
+		(warnings first includesSubstring: 'MCP-Definitely-Missing').
+	self assert: (warnings first includesSubstring: 'packageNames scope').
+	self assert: (warnings first includesSubstring: 'Did you mean:')
 ]
 
 { #category : 'tests' }
@@ -130,24 +135,27 @@ MCPToolStructuredOutputTest >> testFindMethodsReturnsStructuredArrayData [
 ]
 
 { #category : 'tests' }
-MCPToolStructuredOutputTest >> testFindMethodsReturnsStructuredError [
+MCPToolStructuredOutputTest >> testFindMethodsReturnsStructuredWarnings [
 
-	| result structured error |
+	| data result structured warnings |
 	result := self
 		          callToolNamed: 'find-methods'
 		          withArguments:
 		          { (#packageNames -> #( 'MCP-Definitely-Missing' )) }
 			          asDictionary.
 	structured := self structuredContentFrom: result.
-	error := self errorFrom: result.
-	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
-	self
-		assert: (error at: #packageName)
-		equals: 'MCP-Definitely-Missing'.
-	self assert: (error at: #scope) equals: 'packages'.
-	self assert: ((error at: #message) includesSubstring:
-			 'Package MCP-Definitely-Missing does not exist.')
+	data := self dataFrom: result.
+	warnings := self warningsFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (structured at: #status) equals: 'ok'.
+	self assert: (structured includesKey: #error) not.
+	self assert: (data at: #totalCount) equals: 0.
+	self assert: (data at: #methods) isEmpty.
+	self assert: warnings size equals: 1.
+	self assert:
+		(warnings first includesSubstring: 'MCP-Definitely-Missing').
+	self assert: (warnings first includesSubstring: 'packageNames scope').
+	self assert: (warnings first includesSubstring: 'Did you mean:')
 ]
 
 { #category : 'tests' }

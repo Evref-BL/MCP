@@ -113,10 +113,7 @@ MCPMethodReferenceSpec >> asDictionary [
 MCPMethodReferenceSpec >> behavior [
 
 	| baseClass |
-	baseClass := Smalltalk globals
-		             at: self className asSymbol
-		             ifAbsent: [
-		             MCPCommandError signalMissingClassNamed: self className ].
+	baseClass := MCPImageLookup classNamed: self className.
 	^ self classSide
 		  ifTrue: [ baseClass classSide ]
 		  ifFalse: [ baseClass ]

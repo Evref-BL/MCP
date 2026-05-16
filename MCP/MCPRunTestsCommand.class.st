@@ -332,11 +332,7 @@ MCPRunTestsCommand >> validatedRequestsFrom: testRequests [
 
 	^ testRequests collect: [ :each |
 		  | testClass |
-		  testClass := Smalltalk globals
-			               at: each className asSymbol
-			               ifAbsent: [
-			               MCPCommandError signalMissingClassNamed:
-				               each className ].
+		  testClass := MCPImageLookup classNamed: each className.
 		  each testMethodName ifNotNil: [ :testMethodName |
 			  testClass compiledMethodAt: testMethodName asSymbol ifAbsent: [
 				  MCPCommandError

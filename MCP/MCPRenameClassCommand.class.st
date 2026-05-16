@@ -51,9 +51,7 @@ MCPRenameClassCommand >> className: aString [
 MCPRenameClassCommand >> execute [
 
 	| renamedClass |
-	Smalltalk globals
-		at: self className asSymbol
-		ifAbsent: [ MCPCommandError signalMissingClassNamed: self className ].
+	MCPImageLookup classNamed: self className.
 	self refactoring execute.
 	renamedClass := Smalltalk globals at: self newClassName asSymbol.
 	^ MCPRenameClassResult

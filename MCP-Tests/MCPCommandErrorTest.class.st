@@ -36,20 +36,24 @@ MCPCommandErrorTest >> testClassAlreadyExistsErrorCarriesClassName [
 { #category : 'tests' }
 MCPCommandErrorTest >> testMissingClassErrorCarriesStructuredDetails [
 
-	| error details |
+	| details error suggestions |
 	error := self capture: [
 		         MCPCommandError signalMissingClassNamed:
 			         'MCPCommandErrorTestMissing' ].
 	details := error structuredDetails.
+	suggestions := details at: #suggestions.
 	self assert: error errorCode equals: #ClassNotFound.
 	self assert: (details at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (details at: #errorCode) equals: 'ClassNotFound'.
 	self
 		assert: (details at: #className)
 		equals: 'MCPCommandErrorTestMissing'.
-	self
-		assert: (details at: #message)
-		equals: 'Class MCPCommandErrorTestMissing does not exist.'
+	self assert: (details at: #scopeName) equals: 'className'.
+	self assert: suggestions size <= 5.
+	self assert: ((details at: #message) includesSubstring:
+			 'Class MCPCommandErrorTestMissing does not exist').
+	self assert:
+		((details at: #message) includesSubstring: 'Did you mean:')
 ]
 
 { #category : 'tests' }
@@ -80,15 +84,20 @@ MCPCommandErrorTest >> testMissingMethodErrorCarriesClassSideAndSelector [
 { #category : 'tests' }
 MCPCommandErrorTest >> testMissingPackageErrorCarriesPackageName [
 
-	| details error |
+	| details error suggestions |
 	error := self capture: [
 		         MCPCommandError signalMissingPackageNamed:
 			         'MCP-Tests-Missing' ].
 	details := error structuredDetails.
+	suggestions := details at: #suggestions.
 	self assert: error errorCode equals: #PackageNotFound.
 	self assert: (details at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (details at: #errorCode) equals: 'PackageNotFound'.
-	self assert: (details at: #packageName) equals: 'MCP-Tests-Missing'
+	self assert: (details at: #packageName) equals: 'MCP-Tests-Missing'.
+	self assert: (details at: #scopeName) equals: 'packageName'.
+	self assert: suggestions size <= 5.
+	self assert: ((details at: #message) includesSubstring:
+			 'Package MCP-Tests-Missing does not exist')
 ]
 
 { #category : 'tests' }

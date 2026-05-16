@@ -117,12 +117,16 @@ MCPToolEvaluate >> resultPreviewCharacterLimit [
 { #category : 'private' }
 MCPToolEvaluate >> runtimeFailureMessageFor: anError [
 
+	| message |
+	message := anError messageText
+		           ifNil: [ anError asString ]
+		           ifNotNil: [ :text | text asString ].
 	^ String streamContents: [ :stream |
 		  stream
 			  nextPutAll: 'Evaluation failed during execution (';
 			  nextPutAll: anError class name;
 			  nextPutAll: '): ';
-			  nextPutAll: anError messageText.
+			  nextPutAll: message.
 		  anError signalerContext ifNotNil: [ :context |
 			  stream
 				  nextPutAll: ' Signaler context: ';

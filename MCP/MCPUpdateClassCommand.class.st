@@ -241,11 +241,8 @@ MCPUpdateClassCommand >> executeRenameWithPlan: plan [
 		  force: self classRequest force
 		  requestedContext: plan requestedContext
 		  work: [
-			  targetClass := Smalltalk globals
-				                 at: self classRequest className asSymbol
-				                 ifAbsent: [
-					                 MCPCommandError signalMissingClassNamed:
-						                 self classRequest className ].
+			  targetClass := MCPImageLookup classNamed:
+				                 self classRequest className.
 			  refactoringModel := self tool
 				                      refactoringModelForScopeSpec:
 				                      self classRequest refactoringScopeSpec

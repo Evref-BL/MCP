@@ -23,8 +23,12 @@ Class {
 { #category : 'instance creation' }
 MCPFindMethodsRequest class >> fromRequest: request tool: aTool [
 
+	| scopeQuery |
+	scopeQuery := aTool methodScopeQueryFromRequest: request.
+	scopeQuery scopeMode:
+		(request stringArgumentNamed: 'scopeMode' default: 'union').
 	^ self new
-		  scopeQuery: (aTool methodScopeQueryFromRequest: request);
+		  scopeQuery: scopeQuery;
 		  filterPattern: (aTool filterPatternFromRequest: request);
 		  filterMode: (aTool filterModeFromRequest: request);
 		  filterTargets: (aTool filterTargetsFromRequest: request);

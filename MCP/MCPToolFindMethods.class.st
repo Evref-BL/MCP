@@ -37,7 +37,7 @@ MCPToolFindMethods >> classReferenceEntriesForQueryRequest: queryRequest [
 { #category : 'defaults' }
 MCPToolFindMethods >> defaultDescription [
 
-	^ 'List methods and optionally filter them by method metadata or code references. If no method scope properties are provided, the whole image is searched. Scope properties are unioned: packageNames includes defined and extension methods; classNames includes exact classes; hierarchyClassNames includes the named classes plus their superclasses and subclasses; subclassClassNames includes only subclasses of the named classes; parentClassNames includes only superclasses of the named classes. Use filterMode=exact with filterTargets=selector for implementors. Use filterMode=selectorReference to find senders, filterMode=classReference to find class references, and filterMode=variableReference to find variable references. Reference lookup modes require filter and ignore filterTargets. Use where for recursive boolean predicates; method predicates can use equivalentTo with a className/selector/classSide method reference to match AST-equivalent methods.'
+	^ 'List methods and optionally filter them by method metadata or code references. Omitting method scope searches the whole image. Multiple scope filters use union by default; set scopeMode=intersection to require all scopes. Missing class or package names return warnings with suggestions. Use filterMode=exact with filterTargets=selector for implementors. Use filterMode=selectorReference for senders, filterMode=classReference for class references, and filterMode=variableReference for variable references. Reference lookup modes require filter and ignore filterTargets. where can express recursive predicates; equivalentTo matches methods with an equivalent AST.'
 ]
 
 { #category : 'private - request' }
@@ -62,7 +62,8 @@ MCPToolFindMethods >> defaultIcons [
 MCPToolFindMethods >> defaultInputSchema [
 
 	| properties |
-	properties := self methodQueryScopeInputProperties , (self
+	properties := self methodQueryScopeInputProperties
+	              , { self scopeModeSchemaProperty } , (self
 		               methodFilteringInputPropertiesWithFilterDescription:
 		               'For field filtering, the text matched against method-entry fields. For reference lookup modes, the referenced selector, class, or variable name; required when filterMode is selectorReference, classReference, or variableReference.'
 		               includeSourceDescription:

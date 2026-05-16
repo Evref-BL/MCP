@@ -117,10 +117,7 @@ MCPRemoveClassesCommand >> removePackageIfNowEmptyNamed: aPackageName recordingI
 { #category : 'private' }
 MCPRemoveClassesCommand >> resolvedClasses [
 
-	^ self classNames collect: [ :each |
-		  Smalltalk globals
-			  at: each asSymbol
-			  ifAbsent: [ MCPCommandError signalMissingClassNamed: each ] ]
+	^ self classNames collect: [ :each | MCPImageLookup classNamed: each ]
 ]
 
 { #category : 'private' }
