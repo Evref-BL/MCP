@@ -44,9 +44,10 @@ MCPToolManageChangeHistoryTest >> latestRecoverableMethodEntryIndexFor: aClass [
 { #category : 'private' }
 MCPToolManageChangeHistoryTest >> recordMethodAdditionOn: aClass [
 
-	aClass compile: 'rescuedValue ^ 42' classified: 'testing'.
-	EpMonitor current sessionStore flush.
-	^ self latestRecoverableMethodEntryIndexFor: aClass
+	^ PharoCompatibility withNonInteractiveAuthorNamed: 'MCP' during: [
+		  aClass compile: 'rescuedValue ^ 42' classified: 'testing'.
+		  EpMonitor current sessionStore flush.
+		  self latestRecoverableMethodEntryIndexFor: aClass ]
 ]
 
 { #category : 'private' }
@@ -213,25 +214,27 @@ MCPToolManageChangeHistoryTest >> testListEntriesReportsUnreadableHistoryFile [
 { #category : 'tests' }
 MCPToolManageChangeHistoryTest >> testListEntriesReturnsGranularCodeChangeData [
 
-	| data entries firstEntry result |
-	result := self callToolWith: {
-			          (#operation -> 'listEntries').
-			          (#limit -> 5).
-			          (#newestFirst -> true).
-			          (#codeChangesOnly -> true) } asDictionary.
-	data := self dataFrom: result.
-	entries := data at: #entries.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #operation) equals: 'listEntries'.
-	self assert: (data at: #limit) equals: 5.
-	self assert: (data at: #codeChangesOnly).
-	self assert: (data at: #totalCount) >= entries size.
-	self assert: entries notEmpty.
-	firstEntry := entries first.
-	self assert: (firstEntry at: #isCodeChange).
-	self assert: (firstEntry includesKey: #index).
-	self assert: (firstEntry includesKey: #reference).
-	self assert: (firstEntry includesKey: #eventClassName)
+	self withTemporaryRecoveryClassDo: [ :class |
+		| data entries firstEntry result |
+		self recordMethodAdditionOn: class.
+		result := self callToolWith: {
+				          (#operation -> 'listEntries').
+				          (#limit -> 5).
+				          (#newestFirst -> true).
+				          (#codeChangesOnly -> true) } asDictionary.
+		data := self dataFrom: result.
+		entries := data at: #entries.
+		self deny: (result at: #isError ifAbsent: [ false ]).
+		self assert: (data at: #operation) equals: 'listEntries'.
+		self assert: (data at: #limit) equals: 5.
+		self assert: (data at: #codeChangesOnly).
+		self assert: (data at: #totalCount) >= entries size.
+		self assert: entries notEmpty.
+		firstEntry := entries first.
+		self assert: (firstEntry at: #isCodeChange).
+		self assert: (firstEntry includesKey: #index).
+		self assert: (firstEntry includesKey: #reference).
+		self assert: (firstEntry includesKey: #eventClassName) ]
 ]
 
 { #category : 'tests' }
