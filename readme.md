@@ -68,3 +68,9 @@ If you want to use opencode to manipulate Pharo, you can follow these steps:
 
 Once the server is started, AI interact with it via HTTP requests on the configured port (default: 4000).
 
+## DevNexus Verification Boundary
+
+DevNexus dogfood cycles that are not approved to launch a live image use
+[`docs/dev-nexus-verification-boundary.md`](docs/dev-nexus-verification-boundary.md)
+to distinguish static source inspection from checks that require an isolated
+PLexus runner.
