@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pharo CI Repro"
+  short_description: "Reproduce Pharo CI locally"
+  default_prompt: "Use $pharo-ci-repro to recreate a failing Pharo smalltalkCI run locally and capture logs."

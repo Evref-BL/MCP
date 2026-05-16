@@ -19,4 +19,8 @@ Use `evaluate` only for short one-off inspection or glue code when no dedicated 
 
 If a `pharo` tool fails or returns incomplete data, report that clearly instead of guessing or silently falling back.
 
+For local reproduction of GitHub/smalltalkCI failures in projects that use
+Pharo MCP, use the repo-local `pharo-ci-repro` skill in
+`user/skills/pharo-ci-repro`.
+
 The image is saved automatically after each tool call that can change the image state.
