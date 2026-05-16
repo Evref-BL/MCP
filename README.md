@@ -1,8 +1,12 @@
-# MCP (Model Context Protocol) Server for Pharo Smalltalk
+[![Pharo version](https://img.shields.io/badge/Pharo-12%20%7C%2013-%23aac9ff.svg)](https://github.com/pharo-project/Pharo)
+![Build Info](https://github.com/Evref-BL/MCP/workflows/CI/badge.svg)
+[![Coverage Status](https://coveralls.io/repos/github/Evref-BL/MCP/badge.svg?branch=main)](https://coveralls.io/github/Evref-BL/MCP?branch=main)
+
+# Model Context Protocol (MCP) Server for Pharo Smalltalk
 
 ## Overview
 
-This repository provides an implementation of an MCP (Model Context Protocol) server in Pharo Smalltalk. The server exposes a set of tools and capabilities for interacting with the Pharo image via HTTP.
+This repository provides an implementation of a Model Context Protocol (MCP) server in Pharo Smalltalk. The server exposes a set of tools and capabilities for interacting with the Pharo image via HTTP.
 
 ## Installation
 
@@ -10,17 +14,25 @@ This repository provides an implementation of an MCP (Model Context Protocol) se
 
 1. **Install Pharo**
 
- Download and install the latest version of [Pharo](https://pharo.org/download). Follow the instructions for your operating system.
+ Download and install [Pharo](https://pharo.org/download). This project currently supports Pharo 12 and Pharo 13.
 
 2. **Load the MCP Project**
 
- Open your Pharo image and load the MCP project. You can use the following snippet in a Playground or directly in the Pharo environment (adapt as needed for your loading method):
+ Open your Pharo image and load the MCP project. To load MCP directly in an image, use this snippet in a Playground or Workspace:
 
  ```smalltalk
  Metacello new
     baseline: 'MCP';
     repository: 'github://Evref-BL/MCP:main/src';
     load.
+ ```
+
+ To add MCP as a dependency of another project, reference the MCP baseline from that project's baseline:
+
+ ```smalltalk
+ spec
+    baseline: 'MCP'
+    with: [ spec repository: 'github://Evref-BL/MCP:main/src' ].
  ```
 
 ### Starting the Server
