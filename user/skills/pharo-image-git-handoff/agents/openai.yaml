@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pharo Image Git Handoff"
+  short_description: "Export Pharo image changes safely"
+  default_prompt: "Use $pharo-image-git-handoff to turn these Pharo image changes into clean Tonel/Git changes safely."

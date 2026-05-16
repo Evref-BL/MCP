@@ -19,6 +19,17 @@ Use `evaluate` only for short one-off inspection or glue code when no dedicated 
 
 If a `pharo` tool fails or returns incomplete data, report that clearly instead of guessing or silently falling back.
 
+For loading Pharo projects from Tonel/Metacello repositories, use the
+repo-local `pharo-project-load` skill in `user/skills/pharo-project-load`.
+
+For making Pharo projects run across supported Pharo versions with
+PharoCompatibility, use the repo-local `pharo-version-compat` skill in
+`user/skills/pharo-version-compat`.
+
+For turning image-side Pharo changes into clean Tonel/Git changes, use the
+repo-local `pharo-image-git-handoff` skill in
+`user/skills/pharo-image-git-handoff`.
+
 For local reproduction of GitHub/smalltalkCI failures in projects that use
 Pharo MCP, use the repo-local `pharo-ci-repro` skill in
 `user/skills/pharo-ci-repro`.
