@@ -13,7 +13,7 @@ These checks do not require a running Pharo image:
 - file layout inspection for expected package directories
 - review of `src/BaselineOfMCP/BaselineOfMCP.class.st`
 - search for expected tool classes and test classes in exported source files
-- review of `dev/AGENTS.md`, `user/AGENTS.md`, `readme.md`, and this document
+- review of `dev/AGENTS.md`, `user/AGENTS.md`, `README.md`, and this document
 - review of package dependencies, baseline groups, and test package names
 
 These checks can confirm that source files, package declarations, and
