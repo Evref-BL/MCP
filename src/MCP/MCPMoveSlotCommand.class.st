@@ -135,7 +135,7 @@ MCPMoveSlotCommand >> refactoringBehaviorForClass: aClass [
 MCPMoveSlotCommand >> refactoringForBehavior: aBehavior [
 
 	^ (self direction = 'pullUpSlot'
-		   ifTrue: [ RBPullUpInstanceVariableRefactoring ]
+		   ifTrue: [ RePullUpInstanceVariableRefactoring ]
 		   ifFalse: [
 			   self direction = 'pushDownSlot'
 				   ifTrue: [ RBPushDownInstanceVariableRefactoring ]

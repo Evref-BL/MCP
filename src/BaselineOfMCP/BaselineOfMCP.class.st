@@ -20,8 +20,8 @@ BaselineOfMCP >> defineDependencies: spec [
 	spec
 		baseline: 'PharoCompatibility' with: [
 			spec
-				repository: 'github://Evref-BL/PharoCompatibility:main/src';
-				loads: #( 'Pharo12Surface' ) ];
+				repository: 'github://Evref-BL/PharoCompatibility:develop/src';
+				loads: #( 'Pharo13Surface' ) ];
 		baseline: 'JRPC' with: [
 		spec
 			repository: 'github://juliendelplanque/JRPC:v3.2.1/src';

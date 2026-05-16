@@ -387,7 +387,7 @@ MCPToolEdit >> operationFailureErrorCodeFor: anError operation: operation [
 		^ prefix , 'UndeclaredVariable' ].
 	(anError isKindOf: RuntimeSyntaxError) ifTrue: [
 		^ prefix , 'SyntaxError' ].
-	(anError isKindOf: SyntaxErrorNotification) ifTrue: [
+	(anError isKindOf: OCSyntaxErrorNotice) ifTrue: [
 		^ prefix , 'SyntaxError' ].
 	(anError isKindOf: RBRefactoringWarning) ifTrue: [
 		^ prefix , 'RefactoringWarning' ].
