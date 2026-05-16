@@ -1,0 +1,191 @@
+"
+Tests for the in-memory MCP monitoring state and its integration at the MCP tool-call boundary.
+"
+Class {
+	#name : 'MCPMonitoringStateTest',
+	#superclass : 'MCPTestCase',
+	#category : 'MCP-Spec-Tests-Monitoring',
+	#package : 'MCP-Spec-Tests',
+	#tag : 'Monitoring'
+}
+
+{ #category : 'tests' }
+MCPMonitoringStateTest >> testDisabledByDefaultDoesNotRecord [
+
+	| state record |
+	state := MCPMonitoringState new.
+	record := state recordToolCallStart: 'find-methods'.
+	self deny: state enabled.
+	self assert: record isNil.
+	self assert: state totalCallCount equals: 0.
+	self assertEmpty: state logs
+]
+
+{ #category : 'tests' }
+MCPMonitoringStateTest >> testInputSnapshotRedactsSensitiveKeys [
+
+	| input record state |
+	state := MCPMonitoringState new.
+	state enable.
+	input := {
+		         (#limit -> 10).
+		         (#apiToken -> 'secret-token').
+		         (#nested
+		          -> { (#password -> 'secret-password') } asDictionary) }
+		         asDictionary.
+	record := state recordToolCallStart: 'find-methods' input: input.
+	state recordToolCallFinish: record result: nil error: Error new.
+
+	self assert: (record inputSnapshot at: #limit) equals: 10.
+	self
+		assert: (record inputSnapshot at: #apiToken)
+		equals: '<redacted>'.
+	self
+		assert: ((record inputSnapshot at: #nested) at: #password)
+		equals: '<redacted>'.
+	self assert: record inputObject isNil
+]
+
+{ #category : 'tests' }
+MCPMonitoringStateTest >> testMCPRecordsToolCallsWhenMonitoringIsEnabled [
+
+	| mcp record result stats |
+	mcp := MCP new.
+	mcp monitoringEnabled: true.
+	result := mcp
+		          rpcToolCall: 'find-packages'
+		          withParams: { (#limit -> 0) } asDictionary.
+	stats := mcp monitoringMetrics first.
+	record := mcp monitoring recentCallRecords first.
+
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: mcp monitoring totalCallCount equals: 1.
+	self assert: stats toolName equals: 'find-packages'.
+	self assert: stats successCount equals: 1.
+	self assert: record inputSnapshot isNil.
+	self assert: record outputSnapshot isNil.
+	self assert: record inputObject isNil.
+	self assert: mcp monitoringLogs notEmpty
+]
+
+{ #category : 'tests' }
+MCPMonitoringStateTest >> testOutlierExplanationUsesPriorAverage [
+
+	| state stats start record explanation |
+	state := MCPMonitoringState new.
+	state minimumOutlierMilliseconds: 1.
+	state outlierFactor: 2.
+	stats := MCPToolCallStats forToolNamed: 'slow-tool'.
+	start := DateAndTime now.
+	1 to: 3 do: [ :index |
+		record := MCPToolCallRecord
+			          id: index
+			          toolName: 'slow-tool'
+			          startedAt: start.
+		record finishAt: start durationMilliseconds: 10 status: 'ok'.
+		stats recordCall: record ].
+
+	explanation := state
+		               outlierExplanationForDurationMilliseconds: 25
+		               stats: stats.
+
+	self assert: (explanation beginsWith: '25 ms is').
+	self deny: (explanation beginsWith: 'Outlier:').
+	self assert:
+		(state outlierExplanationForDurationMilliseconds: 15 stats: stats)
+			isEmpty
+]
+
+{ #category : 'tests' }
+MCPMonitoringStateTest >> testRecordsErrorCall [
+
+	| recentCall record state stats |
+	state := MCPMonitoringState new.
+	state enable.
+	record := state recordToolCallStart: 'edit-method'.
+	state recordToolCallFinish: record result: nil error: Error new.
+	stats := state metrics first.
+	recentCall := state recentCallRecords first.
+
+	self assert: state totalCallCount equals: 1.
+	self assert: state totalErrorCount equals: 1.
+	self assert: stats errorCount equals: 1.
+	self assert: recentCall status equals: 'error'.
+	self assert: recentCall errorClass equals: 'Error'.
+	self
+		assert: (recentCall outputSnapshot at: #errorClass)
+		equals: 'Error'.
+	self assert: recentCall inputObject isNil.
+	self assert: (state logs anySatisfy: [ :each |
+			 each includesSubstring: 'Error tool edit-method #' ]).
+	self deny: (state logs anySatisfy: [ :each |
+			 each includesSubstring: 'error tool edit-method #' ])
+]
+
+{ #category : 'tests' }
+MCPMonitoringStateTest >> testRecordsSuccessfulCallMetricsAndLogs [
+
+	| state record result stats |
+	state := MCPMonitoringState new.
+	state enable.
+	record := state recordToolCallStart: 'find-methods'.
+	result := MCPStructureCallToolResult
+		          content: #(  )
+		          structuredContent:
+		          { (#summary -> 'Listed methods') } asDictionary.
+	state recordToolCallFinish: record result: result error: nil.
+	stats := state metrics first.
+
+	self assert: state totalCallCount equals: 1.
+	self assert: stats toolName equals: 'find-methods'.
+	self assert: stats successCount equals: 1.
+	self assert: stats errorCount equals: 0.
+	self assert: state recentCallRecords size equals: 1.
+	self assert: state logs size >= 2.
+	self assert: (state logs anySatisfy: [ :each |
+			 each includesSubstring: 'Begin tool find-methods #' ]).
+	self assert: (state logs anySatisfy: [ :each |
+			 each includesSubstring: 'OK tool find-methods #' ]).
+	self deny: (state logs anySatisfy: [ :each |
+			 each includesSubstring: 'ok tool find-methods #' ]).
+	self assert:
+		(state statusText beginsWith: 'Observability enabled. Calls: 1')
+]
+
+{ #category : 'tests' }
+MCPMonitoringStateTest >> testTraceRecordsIncludeErrorsAndOutliersOnly [
+
+	| error normal outlier start state traces |
+	state := MCPMonitoringState new.
+	start := DateAndTime now.
+	normal := MCPToolCallRecord
+		          id: 1
+		          toolName: 'find-methods'
+		          startedAt: start.
+	normal finishAt: start durationMilliseconds: 5 status: 'ok'.
+	error := MCPToolCallRecord
+		         id: 2
+		         toolName: 'edit-method'
+		         startedAt: start.
+	error finishAt: start durationMilliseconds: 7 status: 'error'.
+	outlier := MCPToolCallRecord
+		           id: 3
+		           toolName: 'rewrite-methods'
+		           startedAt: start.
+	outlier finishAt: start durationMilliseconds: 250 status: 'ok'.
+	outlier outlierExplanation:
+		'250 ms is 5.0x the prior average of 50.0 ms'.
+	state recentCalls addAll: {
+			outlier.
+			error.
+			normal }.
+
+	traces := state traceRecords.
+
+	self assert: traces asArray equals: {
+			outlier.
+			error }.
+	self deny: normal isTraceWorthy.
+	self assert: error isTraceWorthy.
+	self assert: outlier isTraceWorthy
+]
