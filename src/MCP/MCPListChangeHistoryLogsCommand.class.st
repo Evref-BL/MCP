@@ -65,9 +65,13 @@ MCPListChangeHistoryLogsCommand >> execute [
 	| currentFile directory files logs includeFile |
 	currentFile := self currentHistoryFileReference.
 	directory := self directoryForRequestWithCurrentFile: currentFile.
-	includeFile := request directoryPath
-		               ifNil: [ currentFile ]
-		               ifNotNil: [ nil ].
+	includeFile := (currentFile notNil and: [
+		                request directoryPath isNil or: [
+			                self
+				                sameFileReference: directory
+				                as: currentFile parent ] ])
+		               ifTrue: [ currentFile ]
+		               ifFalse: [ nil ].
 	files := self
 		         historyFileReferencesFrom: directory
 		         including: includeFile.
