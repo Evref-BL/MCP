@@ -22,12 +22,10 @@ BaselineOfMCP >> defineDependencies: spec [
 			spec
 				repository: 'github://Evref-BL/PharoCompatibility:main/src';
 				loads: #( 'Pharo12Surface' ) ];
-		import: 'PharoCompatibility';
 		baseline: 'JRPC' with: [
 		spec
 			repository: 'github://juliendelplanque/JRPC:v3.2.1/src';
-			loads: #( 'Deployment' ) ];
-		import: 'JRPC'.
+			loads: #( 'Deployment' ) ].
 	spec baseline: 'TinyLogger' with: [
 		spec
 			repository: 'github://jecisc/TinyLogger:v1.x.x/src';
