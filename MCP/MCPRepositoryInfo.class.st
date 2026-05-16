@@ -31,6 +31,17 @@ Class {
 }
 
 { #category : 'instance creation' }
+MCPRepositoryInfo class >> commitResultRepository: aRepository packageNames: packageNames modifiedPackageNames: modifiedPackageNames headCommitId: aHeadCommitId headDescription: aHeadDescription [
+
+	^ self new
+		  initializeCommitResultRepository: aRepository
+		  packageNames: packageNames
+		  modifiedPackageNames: modifiedPackageNames
+		  headCommitId: aHeadCommitId
+		  headDescription: aHeadDescription
+]
+
+{ #category : 'instance creation' }
 MCPRepositoryInfo class >> fromRepository: aRepository [
 
 	^ self new initializeFromRepository: aRepository
@@ -110,6 +121,30 @@ MCPRepositoryInfo >> headCommitId [
 MCPRepositoryInfo >> headDescription [
 
 	^ headDescription
+]
+
+{ #category : 'initialization' }
+MCPRepositoryInfo >> initializeCommitResultRepository: aRepository packageNames: repositoryPackageNames modifiedPackageNames: repositoryModifiedPackageNames headCommitId: aHeadCommitId headDescription: aHeadDescription [
+
+	name := self stringFrom: [ aRepository name ] default: ''.
+	className := aRepository class name asString.
+	location := self repositoryLocationFor: aRepository.
+	subdirectory := self repositorySubdirectoryFor: aRepository.
+	branchName := ''.
+	headDescription := aHeadDescription ifNil: [ '' ].
+	headClassName := ''.
+	headCommitId := aHeadCommitId ifNil: [ '' ].
+	isDetachedHead := false.
+	isMissing := false.
+	isModified := repositoryModifiedPackageNames notEmpty.
+	packageNames := repositoryPackageNames ifNil: [ #(  ) ].
+	modifiedPackageNames := repositoryModifiedPackageNames ifNil: [
+		                        #(  ) ].
+	remotes := #(  ).
+	upstreamRemoteName := ''.
+	upstreamBranchName := ''.
+	upstreamRemoteUrl := ''.
+	^ self
 ]
 
 { #category : 'initialization' }

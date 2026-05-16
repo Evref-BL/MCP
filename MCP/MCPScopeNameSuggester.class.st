@@ -12,6 +12,22 @@ Class {
 }
 
 { #category : 'suggesting' }
+MCPScopeNameSuggester class >> candidate: candidateDictionary matchesRequested: requestedName [
+
+	| candidate prefixSize requested |
+	requested := requestedName asString asLowercase.
+	requested isEmpty ifTrue: [ ^ true ].
+	candidate := (candidateDictionary at: #name) asString asLowercase.
+	candidate = requested ifTrue: [ ^ true ].
+	(candidate beginsWith: requested) ifTrue: [ ^ true ].
+	(requested beginsWith: candidate) ifTrue: [ ^ true ].
+	(candidate includesSubstring: requested) ifTrue: [ ^ true ].
+	(requested includesSubstring: candidate) ifTrue: [ ^ true ].
+	prefixSize := requested size min: 3.
+	^ candidate beginsWith: (requested first: prefixSize)
+]
+
+{ #category : 'suggesting' }
 MCPScopeNameSuggester class >> classSuggestionCandidates [
 
 	| candidates |
@@ -139,8 +155,13 @@ MCPScopeNameSuggester class >> scoreForRequested: requestedName candidate: candi
 { #category : 'suggesting' }
 MCPScopeNameSuggester class >> suggestionsFor: requestedName candidates: candidates max: maxCount [
 
-	| chosen chosenNames scored sorted bucketCounts |
-	scored := candidates collect: [ :eachCandidate |
+	| bucketCounts chosen chosenNames filtered scored sorted |
+	filtered := candidates select: [ :eachCandidate |
+		            self
+			            candidate: eachCandidate
+			            matchesRequested: requestedName ].
+	filtered isEmpty ifTrue: [ ^ #(  ) ].
+	scored := filtered collect: [ :eachCandidate |
 		          eachCandidate copy
 			          at: #score put: (self
 					           scoreForRequested: requestedName

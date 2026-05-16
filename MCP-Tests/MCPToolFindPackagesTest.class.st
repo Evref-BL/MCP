@@ -28,16 +28,22 @@ MCPToolFindPackagesTest >> entryNamed: aPackageName in: packageEntries [
 { #category : 'private' }
 MCPToolFindPackagesTest >> mcpProject [
 
-	^ ProjectManager new projects
-		  detect: [ :each | each name asString = 'MCP' ]
-		  ifNone: [ self fail: 'Missing MCP project fixture in image.' ]
+	^ MetacelloProjectRegistration registry
+		  registrationForClassNamed: 'BaselineOfMCP'
+		  ifAbsent: [ self fail: 'Missing MCP project fixture in image.' ]
 ]
 
 { #category : 'private' }
 MCPToolFindPackagesTest >> mcpProjectPackageNames [
 
-	^ (self mcpProject packages collect: [ :each | each name asString ])
-		  asArray asSortedCollection asArray
+	| packageNames |
+	packageNames := OrderedCollection new.
+	self mcpProject projectVersion packages do: [ :eachSpec |
+		(PackageOrganizer default
+			 packageNamed: eachSpec name asSymbol
+			 ifAbsent: [ nil ]) ifNotNil: [ :eachPackage |
+			packageNames add: eachPackage name asString ] ].
+	^ packageNames asArray asSortedCollection asArray
 ]
 
 { #category : 'tests' }

@@ -35,7 +35,7 @@ MCPCommitRepositoryCommand >> changedPackageNamesFromDiff: aDiff [
 { #category : 'executing' }
 MCPCommitRepositoryCommand >> execute [
 
-	| changedPackageNames commit diff repository result |
+	| changedPackageNames diff repository result |
 	^ self tool
 		  executeEditOperation: 'commit'
 		  force: false
@@ -44,15 +44,17 @@ MCPCommitRepositoryCommand >> execute [
 			  repository := self request repository.
 			  diff := repository workingCopyDiff.
 			  changedPackageNames := self changedPackageNamesFromDiff: diff.
-			  commit := self
+			  result := self
 				            withNonInteractiveGitIdentityFor: repository
 				            during: [
-					            self withNonInteractiveAuthorDuring: [
-						            repository commitWithMessage: self request message ] ].
-			  result := MCPRepositoryCommitResult
-				            repository: repository
-				            changedPackageNames: changedPackageNames
-				            commit: commit ]
+					            | commit |
+					            commit := self withNonInteractiveAuthorDuring: [
+						                      repository commitWithMessage:
+							                      self request message ].
+					            MCPRepositoryCommitResult
+						            repository: repository
+						            changedPackageNames: changedPackageNames
+						            commit: commit ] ]
 		  successResult: [ :warningMessages |
 			  self tool
 				  successResultText:
@@ -170,8 +172,7 @@ MCPCommitRepositoryCommand >> withNonInteractiveAuthorDuring: aBlock [
 MCPCommitRepositoryCommand >> withNonInteractiveGitIdentityFor: aRepository during: aBlock [
 
 	| config shouldSetEmail shouldSetName |
-	(self repositoryHasDefaultGitSignature: aRepository) ifTrue: [
-		^ aBlock value ].
+	PharoCompatibility isPharo13OrLater ifTrue: [ ^ aBlock value ].
 	config := aRepository repositoryHandle config.
 	shouldSetName := self
 		                 gitConfigValueMissingOrEmpty: 'user.name'
@@ -179,6 +180,7 @@ MCPCommitRepositoryCommand >> withNonInteractiveGitIdentityFor: aRepository duri
 	shouldSetEmail := self
 		                  gitConfigValueMissingOrEmpty: 'user.email'
 		                  in: config.
+	(shouldSetName or: [ shouldSetEmail ]) ifFalse: [ ^ aBlock value ].
 	shouldSetName ifTrue: [ config username: self fallbackGitUserName ].
 	shouldSetEmail ifTrue: [ config email: self fallbackGitUserEmail ].
 	^ [ aBlock value ] ensure: [

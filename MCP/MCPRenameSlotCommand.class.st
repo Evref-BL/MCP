@@ -108,7 +108,7 @@ MCPRenameSlotCommand >> execute [
 				                currentClass classSide.
 			                Smalltalk globals at: self className asSymbol ]
 		                ifFalse: [
-			                (self refactoringForBehavior: currentClass) execute.
+			                self renameInstanceSideSlotInBehavior: currentClass.
 			                Smalltalk globals at: self className asSymbol ].
 	^ MCPRenameSlotResult
 		  classInfo: (MCPClassInfo fromClass: updatedClass)
@@ -129,6 +129,34 @@ MCPRenameSlotCommand >> hierarchyDefinesSlotNamed: aSlotName inBehavior: aBehavi
 	(aBehavior hasSlotNamed: aSlotName asSymbol) ifTrue: [ ^ true ].
 	^ aBehavior allSubclasses anySatisfy: [ :each |
 		  self slotNamed: aSlotName isDefinedIn: each ]
+]
+
+{ #category : 'private' }
+MCPRenameSlotCommand >> instanceSideReferenceSelectorsInBehavior: aBehavior [
+
+	| selectors |
+	selectors := Set new.
+	selectors addAll:
+		((aBehavior whichMethodsAccess: self slotName) collect: #selector).
+	selectors addAll:
+		(aBehavior whichSelectorsReferTo: self slotName asSymbol).
+	selectors addAll:
+		(aBehavior whichSelectorsReferTo: (self slotName , ':') asSymbol).
+	^ selectors
+]
+
+{ #category : 'private' }
+MCPRenameSlotCommand >> instanceSideSlotValuesForBehavior: aBehavior [
+
+	| values |
+	(self slotNamed: self slotName isDefinedIn: aBehavior) ifFalse: [
+		^ #(  ) ].
+	values := OrderedCollection new.
+	aBehavior withAllSubclasses do: [ :eachBehavior |
+		eachBehavior allInstances do: [ :eachObject |
+			values add:
+				eachObject -> (eachObject instVarNamed: self slotName asString) ] ].
+	^ values asArray
 ]
 
 { #category : 'accessing' }
@@ -205,7 +233,42 @@ MCPRenameSlotCommand >> renameClassSideSlotInBehavior: aBehavior [
 ]
 
 { #category : 'private' }
+MCPRenameSlotCommand >> renameInstanceSideAccessorsInBehavior: aBehavior [
+
+	self
+		renameClassSideAccessor: self slotName asSymbol
+		to: self newSlotName asSymbol
+		source: self getterSourceForNewSlot
+		inBehavior: aBehavior.
+	self
+		renameClassSideAccessor: (self slotName , ':') asSymbol
+		to: (self newSlotName , ':') asSymbol
+		source: self setterSourceForNewSlot
+		inBehavior: aBehavior
+]
+
+{ #category : 'private' }
+MCPRenameSlotCommand >> renameInstanceSideSlotInBehavior: aBehavior [
+
+	| preservedValues |
+	self validateInstanceSideSlotRenameInBehavior: aBehavior.
+	preservedValues := self instanceSideSlotValuesForBehavior: aBehavior.
+	aBehavior addInstVarNamed: self newSlotName.
+	self restoreInstanceSideSlotValues: preservedValues.
+	self rewriteInstanceSideReferencesInBehavior: aBehavior.
+	self renameInstanceSideAccessorsInBehavior: aBehavior.
+	aBehavior removeInstVarNamed: self slotName
+]
+
+{ #category : 'private' }
 MCPRenameSlotCommand >> restoreClassSideSlotValues: someAssociations [
+
+	someAssociations do: [ :each |
+		each key instVarNamed: self newSlotName asString put: each value ]
+]
+
+{ #category : 'private' }
+MCPRenameSlotCommand >> restoreInstanceSideSlotValues: someAssociations [
 
 	someAssociations do: [ :each |
 		each key instVarNamed: self newSlotName asString put: each value ]
@@ -244,6 +307,38 @@ MCPRenameSlotCommand >> rewriteClassSideReferencesInBehavior: aBehavior [
 ]
 
 { #category : 'private' }
+MCPRenameSlotCommand >> rewriteInstanceSideReferencesForSelector: aSelector inBehavior: aBehavior [
+
+	| accessorRewriter changed parseTree protocol variableRewriter |
+	parseTree := aBehavior parseTreeForSelector: aSelector.
+	parseTree ifNil: [ ^ self ].
+	changed := false.
+	variableRewriter := self variableReferenceRewriterForSelector:
+		                    aSelector.
+	(variableRewriter executeTree: parseTree) ifTrue: [
+		parseTree := variableRewriter tree.
+		changed := true ].
+	accessorRewriter := self classSideAccessorMessageRewriter.
+	(accessorRewriter executeTree: parseTree) ifTrue: [
+		parseTree := accessorRewriter tree.
+		changed := true ].
+	changed ifFalse: [ ^ self ].
+	protocol := (aBehavior >> aSelector) protocol.
+	aBehavior compile: parseTree formattedCode classified: protocol
+]
+
+{ #category : 'private' }
+MCPRenameSlotCommand >> rewriteInstanceSideReferencesInBehavior: aBehavior [
+
+	aBehavior withAllSubclasses do: [ :eachBehavior |
+		(self instanceSideReferenceSelectorsInBehavior: eachBehavior) do: [
+			:eachSelector |
+			self
+				rewriteInstanceSideReferencesForSelector: eachSelector
+				inBehavior: eachBehavior ] ]
+]
+
+{ #category : 'private' }
 MCPRenameSlotCommand >> setterSourceForNewSlot [
 
 	^ self newSlotName , ': anObject' , String cr , String cr
@@ -271,6 +366,23 @@ MCPRenameSlotCommand >> slotNamed: aSlotName isDefinedIn: aBehavior [
 
 { #category : 'private' }
 MCPRenameSlotCommand >> validateClassSideSlotRenameInBehavior: aBehavior [
+
+	(self slotNamed: self slotName isDefinedIn: aBehavior) ifFalse: [
+		RBApplicabilityChecksFailedError signal:
+			'The variable ' , self slotName
+			, ' is not directly defined in the class '
+			, (self normalizedBehaviorNameFor: aBehavior) ].
+	(self
+		 hierarchyDefinesSlotNamed: self newSlotName
+		 inBehavior: aBehavior) ifTrue: [
+		RBApplicabilityChecksFailedError signal:
+			self newSlotName , ' is already defined in the class '
+			, (self normalizedBehaviorNameFor: aBehavior)
+			, ' or its hierarchy.' ]
+]
+
+{ #category : 'private' }
+MCPRenameSlotCommand >> validateInstanceSideSlotRenameInBehavior: aBehavior [
 
 	(self slotNamed: self slotName isDefinedIn: aBehavior) ifFalse: [
 		RBApplicabilityChecksFailedError signal:

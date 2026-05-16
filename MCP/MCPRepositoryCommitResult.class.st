@@ -117,18 +117,25 @@ MCPRepositoryCommitResult >> headDescription: aString [
 { #category : 'initialization' }
 MCPRepositoryCommitResult >> initializeRepository: aRepository changedPackageNames: packageNames commit: aCommit [
 
-	| packages |
-	repositoryInfo := MCPRepositoryInfo fromRepository: aRepository.
+	| packages repositoryPackageNames |
 	packages := aRepository workingCopy packages asArray
 		            asSortedCollection: [ :left :right |
 		            left name asString <= right name asString ].
 	packageInfos := packages collect: [ :each |
 		                MCPRepositoryPackageInfo fromPackage: each ].
+	repositoryPackageNames := (packages collect: [ :each |
+		                           each name asString ]) asArray.
 	changedPackageNames := packageNames ifNil: [ #(  ) ].
-	modifiedPackageNames := repositoryInfo modifiedPackageNames.
+	modifiedPackageNames := #(  ).
 	commitId := self commitIdFrom: aCommit.
 	commitDescription := self commitDescriptionFrom: aCommit.
-	headDescription := repositoryInfo headDescription.
+	headDescription := commitId.
+	repositoryInfo := MCPRepositoryInfo
+		                  commitResultRepository: aRepository
+		                  packageNames: repositoryPackageNames
+		                  modifiedPackageNames: modifiedPackageNames
+		                  headCommitId: commitId
+		                  headDescription: headDescription.
 	^ self
 ]
 

@@ -48,10 +48,11 @@ MCPPackageScopeQuery >> packageProjectNamesMap [
 
 	| packageProjects |
 	packageProjects := Dictionary new.
-	self projectManager projects do: [ :eachProject |
+	self projectRegistrations do: [ :eachProject |
 		| projectName |
-		projectName := eachProject name asString.
-		eachProject packages do: [ :eachPackage |
+		projectName := eachProject projectName asString.
+		(self packagesForProjectRegistration: eachProject) do: [
+			:eachPackage |
 			(packageProjects
 				 at: eachPackage name asString
 				 ifAbsentPut: [ OrderedCollection new ]) add: projectName ] ].
@@ -90,14 +91,22 @@ MCPPackageScopeQuery >> packagesForProjectNames [
 	| packages |
 	packages := IdentitySet new.
 	(self resolvedProjectsNamed: projectNames) do: [ :eachProject |
-		eachProject packages do: [ :eachPackage | packages add: eachPackage ] ].
+		packages addAll: (self packagesForProjectRegistration: eachProject) ].
 	^ self sortedPackagesByName: packages
 ]
 
 { #category : 'private - querying' }
-MCPPackageScopeQuery >> projectManager [
+MCPPackageScopeQuery >> packagesForProjectRegistration: aProjectRegistration [
 
-	^ ProjectManager new
+	| packages |
+	packages := OrderedCollection new.
+	aProjectRegistration projectVersion packages do: [ :eachSpec |
+		| package |
+		package := PackageOrganizer default
+			           packageNamed: eachSpec name asSymbol
+			           ifAbsent: [ nil ].
+		package ifNotNil: [ packages add: package ] ].
+	^ packages asArray
 ]
 
 { #category : 'accessing' }
@@ -115,12 +124,21 @@ MCPPackageScopeQuery >> projectNames: someProjectNames [
 ]
 
 { #category : 'private - querying' }
+MCPPackageScopeQuery >> projectRegistrations [
+
+	^ MetacelloProjectRegistration registry registrations select: [ :each |
+		  [ each loadedInImage ]
+			  on: Error
+			  do: [ :error | false ] ]
+]
+
+{ #category : 'private - querying' }
 MCPPackageScopeQuery >> projectsByName [
 
 	| projectsByName |
 	projectsByName := Dictionary new.
-	self projectManager projects do: [ :eachProject |
-		projectsByName at: eachProject name asString put: eachProject ].
+	self projectRegistrations do: [ :eachProject |
+		projectsByName at: eachProject projectName asString put: eachProject ].
 	^ projectsByName
 ]
 

@@ -74,12 +74,12 @@ MCPRepositoryReferenceSpec >> location [
 { #category : 'private - resolving' }
 MCPRepositoryReferenceSpec >> matchesRepository: aRepository [
 
-	| repositoryInfo |
-	repositoryInfo := MCPRepositoryInfo fromRepository: aRepository.
 	self hasName ifTrue: [
-		repositoryInfo name = self name ifFalse: [ ^ false ] ].
+		(self repositoryNameFor: aRepository) = self name ifFalse: [
+			^ false ] ].
 	self hasLocation ifTrue: [
-		repositoryInfo location = self location ifFalse: [ ^ false ] ].
+		(self repositoryLocationFor: aRepository) = self location ifFalse: [
+			^ false ] ].
 	^ true
 ]
 
@@ -99,6 +99,23 @@ MCPRepositoryReferenceSpec >> repository [
 	matches isEmpty ifTrue: [ self signalRepositoryNotFound ].
 	matches size > 1 ifTrue: [ self signalAmbiguousRepository: matches ].
 	^ matches anyOne
+]
+
+{ #category : 'private - resolving' }
+MCPRepositoryReferenceSpec >> repositoryLocationFor: aRepository [
+
+	^ self
+		  stringFrom: [
+			  (aRepository respondsTo: #location)
+				  ifTrue: [ aRepository location ]
+				  ifFalse: [ '' ] ]
+		  default: ''
+]
+
+{ #category : 'private - resolving' }
+MCPRepositoryReferenceSpec >> repositoryNameFor: aRepository [
+
+	^ self stringFrom: [ aRepository name ] default: ''
 ]
 
 { #category : 'converting' }
@@ -141,4 +158,21 @@ MCPRepositoryReferenceSpec >> signalRepositoryNotFound [
 		message:
 		'No registered Iceberg repository matches the requested repository reference.'
 		details: self requestedContext
+]
+
+{ #category : 'private - resolving' }
+MCPRepositoryReferenceSpec >> stringFrom: aBlock default: defaultString [
+
+	^ [ self stringValue: aBlock value default: defaultString ]
+		  on: Error
+		  do: [ :ignored | defaultString ]
+]
+
+{ #category : 'private - resolving' }
+MCPRepositoryReferenceSpec >> stringValue: aValue default: defaultString [
+
+	aValue ifNil: [ ^ defaultString ].
+	(aValue respondsTo: #pathString) ifTrue: [
+		^ aValue pathString asString ].
+	^ aValue asString
 ]
