@@ -129,6 +129,14 @@ MCPCommitRepositoryCommand >> removeGitConfigKey: key from: config [
 ]
 
 { #category : 'private - git identity' }
+MCPCommitRepositoryCommand >> removeTemporaryGitConfigKey: key from: config [
+
+	"Pharo 13 libgit2 can crash while deleting freshly-created repository config entries."
+	PharoCompatibility isPharo13OrLater ifTrue: [ ^ self ].
+	self removeGitConfigKey: key from: config
+]
+
+{ #category : 'private - git identity' }
 MCPCommitRepositoryCommand >> repositoryHasDefaultGitSignature: aRepository [
 
 	^ [
@@ -172,7 +180,6 @@ MCPCommitRepositoryCommand >> withNonInteractiveAuthorDuring: aBlock [
 MCPCommitRepositoryCommand >> withNonInteractiveGitIdentityFor: aRepository during: aBlock [
 
 	| config shouldSetEmail shouldSetName |
-	PharoCompatibility isPharo13OrLater ifTrue: [ ^ aBlock value ].
 	config := aRepository repositoryHandle config.
 	shouldSetName := self
 		                 gitConfigValueMissingOrEmpty: 'user.name'
@@ -185,7 +192,7 @@ MCPCommitRepositoryCommand >> withNonInteractiveGitIdentityFor: aRepository duri
 	shouldSetEmail ifTrue: [ config email: self fallbackGitUserEmail ].
 	^ [ aBlock value ] ensure: [
 		  shouldSetName ifTrue: [
-			  self removeGitConfigKey: 'user.name' from: config ].
+			  self removeTemporaryGitConfigKey: 'user.name' from: config ].
 		  shouldSetEmail ifTrue: [
-			  self removeGitConfigKey: 'user.email' from: config ] ]
+			  self removeTemporaryGitConfigKey: 'user.email' from: config ] ]
 ]
