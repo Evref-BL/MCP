@@ -25,23 +25,24 @@ This repository provides an implementation of an MCP (Model Context Protocol) se
 
 ### Starting the Server
 
-To start the MCP HTTP server, you must launch the Pharo image and execute the following code in a Playground or Workspace:
+To start the MCP HTTP server, launch the Pharo image and execute code like this in a Playground or Workspace:
 
  ```smalltalk
  mcp := MCP new.
- mcp server port: 4000.
+ mcp port: 4000.
  mcp start.
  ```
 
-This will start the MCP server on port 4000.
+This starts the MCP server on port 4000. You can use another available port if 4000 conflicts with another service.
 
 > The server will only run as long as the Pharo image is running. You must keep the image open for the server to remain available.
 
+In a graphical Pharo image, inspect the `mcp` object and open the Dashboard tab to monitor the server and control its lifecycle.
+
 ### Codex part
 
-If you want to use codex to manipulate Pharo. Codex is made to interact by default with files.
-So we advice you to create an empty folder and copy inside it the [.codex](.codex) folder of this repository as well as the AGENTS file.
-It will give to codex the default configuration of the MCP server.
+If you want to use Codex to manipulate Pharo, create an empty folder and copy inside it [user/codex/.codex](user/codex/.codex) as `.codex` and [user/AGENTS.md](user/AGENTS.md) as `AGENTS.md`.
+It will give Codex the default configuration of the MCP server on port 4000. If you started the server on another port, update the copied `.codex/config.toml` accordingly.
 
 ### OpenCode part
 
@@ -60,16 +61,10 @@ If you want to use opencode to manipulate Pharo, you can follow these steps:
   }
 }
 ```
-4. Close opencode and reopen it. You should see in the left bottom corner a green pointer for MCP indicating that the opencode is connected to MCP server (of course you should start it in Pharo before <img width="150" height="50" alt="Screenshot 2026-04-16 at 10 11 48 AM (2)" src="https://github.com/user-attachments/assets/6f50c4d9-ad34-441e-bdfe-7880c7f3b30b" />
-5. For more details about connected MCPs you can check the command /mcps <img width="600" height="530" alt="Screenshot 2026-04-16 at 10 11 59 AM (2)" src="https://github.com/user-attachments/assets/bc851534-e494-49fd-8bd7-b9c23c3ecd13" /> 
-6. You can follow this [documentation](https://opencode.ai/docs/mcp-servers/) to get more updates/explanation.
+3. Close opencode and reopen it. You should see in the left bottom corner a green pointer for MCP indicating that opencode is connected to the MCP server. Make sure you started it in Pharo first. <img width="150" height="50" alt="Screenshot 2026-04-16 at 10 11 48 AM (2)" src="https://github.com/user-attachments/assets/6f50c4d9-ad34-441e-bdfe-7880c7f3b30b" />
+4. For more details about connected MCPs you can check the command `/mcps`. <img width="600" height="530" alt="Screenshot 2026-04-16 at 10 11 59 AM (2)" src="https://github.com/user-attachments/assets/bc851534-e494-49fd-8bd7-b9c23c3ecd13" />
+5. You can follow this [documentation](https://opencode.ai/docs/mcp-servers/) to get more updates/explanation.
 
 ## Usage
 
-Once the server is started, AI interact with it via HTTP requests on the configured port (default: 4000).
-
-## Verification Boundary
-
-Use [`docs/verification-boundary.md`](docs/verification-boundary.md) to
-distinguish static source inspection from checks that require a live Pharo
-image.
+Once the server is started, AI clients interact with it via HTTP requests on the configured port (default: 4000).
