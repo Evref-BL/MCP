@@ -26,7 +26,9 @@ MCPToolStructuredOutputTest >> testEvaluateReturnsStructuredError [
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #errorClass) equals: 'RBSyntaxErrorNotice'.
+	self
+		assert: (error at: #errorClass)
+		equals: self expectedSyntaxErrorNoticeClassName.
 	self assert: ((error at: #message) includesSubstring: 'expected')
 ]
 

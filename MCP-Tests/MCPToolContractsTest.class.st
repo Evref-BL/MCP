@@ -775,7 +775,8 @@ MCPToolContractsTest >> testEvaluateReturnsCompilationFailureInformation [
 	text := self firstTextFromToolResult: result.
 	self assert: (result at: #isError).
 	self assert: (text includesSubstring: 'failed during compilation').
-	self assert: (text includesSubstring: 'RBSyntaxErrorNotice').
+	self assert:
+		(text includesSubstring: self expectedSyntaxErrorNoticeClassName).
 	self assert: (text includesSubstring: 'Position: 4')
 ]
 

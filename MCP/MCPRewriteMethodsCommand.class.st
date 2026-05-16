@@ -65,7 +65,8 @@ MCPRewriteMethodsCommand >> execute [
 	appliedCount := 0.
 	self request apply ifTrue: [
 		self validateExpectedChangeSetHash: changeSetHash.
-		StRewriterAbstractApplier applyTransformationChanges: changes.
+		PharoCompatibility resumeDeprecationsDuring: [
+			StRewriterAbstractApplier applyTransformationChanges: changes ].
 		appliedCount := changes size ].
 	report := MCPMethodRewriteReport
 		          request: self request

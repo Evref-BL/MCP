@@ -18,10 +18,15 @@ BaselineOfMCP >> baseline: spec [
 BaselineOfMCP >> defineDependencies: spec [
 
 	spec
-		baseline: 'JRPC' with: [
+		baseline: 'PharoCompatibility' with: [
 			spec
-				repository: 'github://juliendelplanque/JRPC:v3.2.1/src';
-				loads: #( 'Deployment' ) ];
+				repository: 'github://Evref-BL/PharoCompatibility:main/src';
+				loads: #( 'Pharo12Surface' ) ];
+		import: 'PharoCompatibility';
+		baseline: 'JRPC' with: [
+		spec
+			repository: 'github://juliendelplanque/JRPC:v3.2.1/src';
+			loads: #( 'Deployment' ) ];
 		import: 'JRPC'.
 	spec baseline: 'TinyLogger' with: [
 		spec
@@ -58,7 +63,10 @@ BaselineOfMCP >> defineMocketryDependency: spec [
 BaselineOfMCP >> definePackages: spec [
 	"common"
 
-	spec package: 'MCP' with: [ spec requires: #( 'JRPC' 'TinyLogger' ) ].
+	spec
+		package: 'MCP'
+		with: [
+		spec requires: #( 'PharoCompatibility' 'JRPC' 'TinyLogger' ) ].
 	spec package: 'MCP-Spec' with: [ spec requires: #( 'MCP' ) ].
 	spec
 		package: 'MCP-Tests-Resources'

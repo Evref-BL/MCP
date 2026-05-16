@@ -125,7 +125,7 @@ MCPExportRepositoryCommand >> tool [
 { #category : 'private - execution' }
 MCPExportRepositoryCommand >> withNonInteractiveAuthorDuring: aBlock [
 
-	^ Author fullNamePerSe isEmptyOrNil
-		  ifTrue: [ Author useAuthor: 'MCP' during: aBlock ]
-		  ifFalse: [ aBlock value ]
+	^ PharoCompatibility
+		  withNonInteractiveAuthorNamed: 'MCP'
+		  during: aBlock
 ]

@@ -1062,9 +1062,9 @@ MCPToolEditClassTest >> testUpdateRemoveSlotStopsOnRefactoringWarningByDefault [
 	self
 		assert: (error at: #errorCode)
 		equals: 'RemoveSlotRefactoringWarning'.
-	self
-		assert: (error at: #causeClass)
-		equals: 'RBBreakingChangeChecksFailedWarning'.
+	self assert:
+		(self expectedRefactoringWarningCauseClassNames includes:
+			 (error at: #causeClass)).
 	self
 		assert: (error at: #className)
 		equals: 'MCPToolEditClassTestWarningRemoveSlotTarget'.

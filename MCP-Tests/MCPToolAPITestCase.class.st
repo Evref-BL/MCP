@@ -37,6 +37,19 @@ MCPToolAPITestCase >> errorFrom: aResult [
 	^ (self structuredContentFrom: aResult) at: #error
 ]
 
+{ #category : 'private - compatibility' }
+MCPToolAPITestCase >> expectedRefactoringWarningCauseClassNames [
+
+	^ #( 'RBBreakingChangeChecksFailedWarning'
+	     'RBRefactoringWarning' )
+]
+
+{ #category : 'private - compatibility' }
+MCPToolAPITestCase >> expectedSyntaxErrorNoticeClassName [
+
+	^ PharoCompatibility syntaxErrorNoticeClassName
+]
+
 { #category : 'private - results' }
 MCPToolAPITestCase >> structuredContentFrom: aResult [
 
