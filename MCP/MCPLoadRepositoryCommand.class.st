@@ -22,9 +22,15 @@ MCPLoadRepositoryCommand class >> tool: aTool request: aRequest [
 { #category : 'private - executing' }
 MCPLoadRepositoryCommand >> baselineCommand [
 
-	^ MCPLoadBaselineCommand
+	^ self baselineCommandClass
 		  tool: self tool
 		  request: self request baselineRequest
+]
+
+{ #category : 'private - executing' }
+MCPLoadRepositoryCommand >> baselineCommandClass [
+
+	^ MCPLoadBaselineCommand
 ]
 
 { #category : 'executing' }
@@ -56,7 +62,7 @@ MCPLoadRepositoryCommand >> initializeTool: aTool request: aRequest [
 { #category : 'private - executing' }
 MCPLoadRepositoryCommand >> remoteBaselineCommandForRepositoryUrl: repositoryUrl [
 
-	^ MCPLoadBaselineCommand
+	^ self baselineCommandClass
 		  tool: self tool
 		  request: self request baselineRequest
 		  configureMetacello: [ :metacello |

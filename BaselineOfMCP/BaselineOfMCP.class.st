@@ -29,8 +29,7 @@ BaselineOfMCP >> defineDependencies: spec [
 	spec baseline: 'TinyLogger' with: [
 		spec
 			repository: 'github://jecisc/TinyLogger:v1.x.x/src';
-			loads: #( 'Core' ) ].
-	self defineMocketryDependency: spec
+			loads: #( 'Core' ) ]
 ]
 
 { #category : 'baselines' }
@@ -42,19 +41,6 @@ BaselineOfMCP >> defineGroups: spec [
 		with:
 			#( 'MCP-Tests-Resources' 'MCP-Tests' 'MCP-Tests-Resources-Extensions'
 			   'MCP-Spec-Tests' )
-]
-
-{ #category : 'baselines' }
-BaselineOfMCP >> defineMocketryDependency: spec [
-
-	| repository |
-	repository := SystemVersion current major >= 13
-		              ifTrue: [ 'github://dionisiydk/Mocketry:master' ]
-		              ifFalse: [ 'github://dionisiydk/Mocketry:v7.0.2' ].
-	spec baseline: 'Mocketry' with: [
-		spec
-			repository: repository;
-			loads: #( 'Core' ) ]
 ]
 
 { #category : 'baselines' }
@@ -71,8 +57,7 @@ BaselineOfMCP >> definePackages: spec [
 		with: [ spec requires: #( 'MCP' ) ].
 	spec
 		package: 'MCP-Tests'
-		with: [ spec requires: #( 'MCP' 'MCP-Tests-Resources'
-		   'Mocketry' ) ].
+		with: [ spec requires: #( 'MCP' 'MCP-Tests-Resources' ) ].
 	spec
 		package: 'MCP-Tests-Resources-Extensions'
 		with: [ spec requires: #( 'MCP-Tests-Resources' ) ].

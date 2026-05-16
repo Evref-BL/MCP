@@ -1,5 +1,5 @@
 "
-Tests for the load-repository tool and its Metacello command behavior. These tests use Mocketry to verify Metacello interactions without loading remote code.
+Tests for the load-repository tool and its Metacello command behavior. These tests use small recording doubles to verify Metacello interactions without loading remote code or an external mocking framework.
 "
 Class {
 	#name : 'MCPToolLoadRepositoryTest',
@@ -10,12 +10,29 @@ Class {
 }
 
 { #category : 'private' }
+MCPToolLoadRepositoryTest >> executeRecordingCommandForRequest: request [
+
+	| command |
+	MCPRecordingLoadBaselineCommand reset.
+	command := MCPRecordingLoadRepositoryCommand
+		           tool: MCPToolLoadRepository new
+		           request: request.
+	^ command execute
+]
+
+{ #category : 'private' }
 MCPToolLoadRepositoryTest >> loadRepositoryRequestFromArguments: associations [
 
 	| tool |
 	tool := MCPToolLoadRepository new.
 	^ tool parsedRequestFromToolRequest:
 		  (tool requestFromToolCallArguments: associations asDictionary)
+]
+
+{ #category : 'private' }
+MCPToolLoadRepositoryTest >> recordedMetacello [
+
+	^ MCPRecordingLoadBaselineCommand lastMetacello
 ]
 
 { #category : 'tests' }
@@ -58,53 +75,44 @@ MCPToolLoadRepositoryTest >> testBaselineModeUsesBaselineDefaults [
 { #category : 'tests' }
 MCPToolLoadRepositoryTest >> testCommandAppliesResumeWarningAndIncomingConflictPolicies [
 
-	| command metacello request |
+	| metacello request |
 	request := self loadRepositoryRequestFromArguments: {
 			           (#owner -> 'ExampleOwner').
 			           (#project -> 'ExampleProject').
 			           (#baseline -> 'ExampleBaseline').
 			           (#onWarning -> 'resume').
 			           (#onConflict -> 'useIncoming') }.
-	[
-	metacello := Mock named: 'metacello'.
-	Metacello stub new willReturn: metacello.
-	command := MCPLoadRepositoryCommand
-		           tool: MCPToolLoadRepository new
-		           request: request.
-	command execute.
-	metacello should receive onWarning: Any.
-	metacello should receive onConflictUseIncoming.
-	metacello should not receive onWarningLog.
-	metacello should not receive onConflictUseLoaded ] ensure: [
-		MockCurrentBehaviour value: nil ]
+	self executeRecordingCommandForRequest: request.
+	metacello := self recordedMetacello.
+	self assert: (metacello received: #onWarning:).
+	self assert: (metacello received: #onConflictUseIncoming).
+	self deny: (metacello received: #onWarningLog).
+	self deny: (metacello received: #onConflictUseLoaded)
 ]
 
 { #category : 'tests' }
 MCPToolLoadRepositoryTest >> testCommandConfiguresMetacelloAndLoadsDefaultGroup [
 
-	| command data load metacello repository request result |
+	| data load metacello repository request result |
 	request := self loadRepositoryRequestFromArguments: {
 			           (#owner -> 'ExampleOwner').
 			           (#project -> 'ExampleProject').
 			           (#baseline -> 'ExampleBaseline').
 			           (#sourceDirectory -> 'src') }.
-	[
-	metacello := Mock named: 'metacello'.
-	Metacello stub new willReturn: metacello.
-	command := MCPLoadRepositoryCommand
-		           tool: MCPToolLoadRepository new
-		           request: request.
-	result := command execute.
+	result := self executeRecordingCommandForRequest: request.
+	metacello := self recordedMetacello.
 	data := result asDictionary.
 	load := data at: #load.
 	repository := data at: #repository.
-	Metacello should receive new once.
-	metacello should receive baseline: 'ExampleBaseline'.
-	metacello should receive repository:
-		'github://ExampleOwner/ExampleProject:main/src'.
-	metacello should receive onWarningLog.
-	metacello should receive onConflictUseLoaded.
-	metacello should receive load.
+	self assert: (metacello messageCountFor: #baseline:) equals: 1.
+	self assert:
+		(metacello received: #baseline: withArguments: { 'ExampleBaseline' }).
+	self assert: (metacello
+			 received: #repository:
+			 withArguments: { 'github://ExampleOwner/ExampleProject:main/src' }).
+	self assert: (metacello received: #onWarningLog).
+	self assert: (metacello received: #onConflictUseLoaded).
+	self assert: (metacello received: #load).
 	self assert: result mode equals: 'remote'.
 	self
 		assert: result repositoryUrl
@@ -114,83 +122,66 @@ MCPToolLoadRepositoryTest >> testCommandConfiguresMetacelloAndLoadsDefaultGroup 
 		equals: result repositoryUrl.
 	self assert: (load at: #baseline) equals: 'ExampleBaseline'.
 	self assert: result newPackageNames isEmpty.
-	self assert: result repositoryInfos isEmpty ] ensure: [
-		MockCurrentBehaviour value: nil ]
+	self assert: result repositoryInfos isEmpty
 ]
 
 { #category : 'tests' }
 MCPToolLoadRepositoryTest >> testCommandLoadsExistingBaselineWithoutRepository [
 
-	| command data load metacello request result |
+	| data load metacello request result |
 	request := self loadRepositoryRequestFromArguments:
 		           { (#baseline -> 'ExampleBaseline') }.
-	[
-	metacello := Mock named: 'metacello'.
-	Metacello stub new willReturn: metacello.
-	command := MCPLoadRepositoryCommand
-		           tool: MCPToolLoadRepository new
-		           request: request.
-	result := command execute.
+	result := self executeRecordingCommandForRequest: request.
+	metacello := self recordedMetacello.
 	data := result asDictionary.
 	load := data at: #load.
-	Metacello should receive new once.
-	metacello should receive baseline: 'ExampleBaseline'.
-	metacello should not receive repository: Any.
-	metacello should receive onWarningLog.
-	metacello should receive onConflictUseLoaded.
-	metacello should receive load.
+	self assert: (metacello messageCountFor: #baseline:) equals: 1.
+	self assert:
+		(metacello received: #baseline: withArguments: { 'ExampleBaseline' }).
+	self deny: (metacello received: #repository:).
+	self assert: (metacello received: #onWarningLog).
+	self assert: (metacello received: #onConflictUseLoaded).
+	self assert: (metacello received: #load).
 	self assert: result mode equals: 'baseline'.
 	self deny: (data includesKey: #repository).
 	self assert: (load at: #baseline) equals: 'ExampleBaseline'.
 	self assert: result newPackageNames isEmpty.
-	self assert: result repositoryInfos isEmpty ] ensure: [
-		MockCurrentBehaviour value: nil ]
+	self assert: result repositoryInfos isEmpty
 ]
 
 { #category : 'tests' }
 MCPToolLoadRepositoryTest >> testCommandLoadsRequestedGroups [
 
-	| command metacello request |
+	| metacello request |
 	request := self loadRepositoryRequestFromArguments: {
 			           (#owner -> 'ExampleOwner').
 			           (#project -> 'ExampleProject').
 			           (#baseline -> 'ExampleBaseline').
 			           (#groups -> #( 'Core' 'Tests' )) }.
-	[
-	metacello := Mock named: 'metacello'.
-	Metacello stub new willReturn: metacello.
-	command := MCPLoadRepositoryCommand
-		           tool: MCPToolLoadRepository new
-		           request: request.
-	command execute.
-	metacello should receive load: #( 'Core' 'Tests' ).
-	metacello should not receive load ] ensure: [
-		MockCurrentBehaviour value: nil ]
+	self executeRecordingCommandForRequest: request.
+	metacello := self recordedMetacello.
+	self assert:
+		(metacello received: #load: withArguments: { #( 'Core' 'Tests' ) }).
+	self deny: (metacello received: #load)
 ]
 
 { #category : 'tests' }
 MCPToolLoadRepositoryTest >> testCommandPassPoliciesSkipMetacelloPolicyConfiguration [
 
-	| command metacello request |
+	| metacello request |
 	request := self loadRepositoryRequestFromArguments: {
 			           (#owner -> 'ExampleOwner').
 			           (#project -> 'ExampleProject').
 			           (#baseline -> 'ExampleBaseline').
 			           (#onWarning -> 'pass').
 			           (#onConflict -> 'pass') }.
-	[
-	metacello := Mock named: 'metacello'.
-	Metacello stub new willReturn: metacello.
-	command := MCPLoadRepositoryCommand
-		           tool: MCPToolLoadRepository new
-		           request: request.
-	command execute.
-	metacello should receive load.
-	metacello should not receive onWarningLog.
-	metacello should not receive onWarning: Any.
-	metacello should not receive onConflictUseLoaded.
-	metacello should not receive onConflictUseIncoming ] ensure: [
-		MockCurrentBehaviour value: nil ]
+	self executeRecordingCommandForRequest: request.
+	metacello := self recordedMetacello.
+	self assert: (metacello received: #load).
+	self deny: (metacello received: #onWarningLog).
+	self deny: (metacello received: #onWarning:).
+	self deny: (metacello received: #onConflictUseLoaded).
+	self deny: (metacello received: #onConflictUseIncoming)
 ]
 
 { #category : 'tests' }

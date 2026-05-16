@@ -71,7 +71,7 @@ MCPLoadBaselineCommand >> configureMetacello: metacello [
 MCPLoadBaselineCommand >> configuredMetacello [
 
 	| metacello |
-	metacello := Metacello new.
+	metacello := self metacello.
 	metacello baseline: self request baseline.
 	self applyWarningPolicyTo: metacello.
 	self applyConflictPolicyTo: metacello.
@@ -127,6 +127,12 @@ MCPLoadBaselineCommand >> loadMetacello: metacello [
 		ifFalse: [ metacello load: self request groups ] ]
 		on: MetacelloNotification
 		do: [ :notification | notification resume ]
+]
+
+{ #category : 'private - loading' }
+MCPLoadBaselineCommand >> metacello [
+
+	^ Metacello new
 ]
 
 { #category : 'private - image state' }
