@@ -44,6 +44,13 @@ MCPListChangeHistoryLogsCommand >> directoryForRequestWithCurrentFile: currentFi
 	request directoryPath ifNil: [
 		^ self historyDirectoryForCurrentFile: currentFile ].
 	directory := request directoryPath asFileReference.
+	(currentFile notNil and: [
+		 self sameFileReference: directory as: currentFile ]) ifTrue: [
+		MCPCommandError
+			signalErrorCode: #ChangeHistoryPathNotDirectory
+			message: 'Change history path ' , request directoryPath
+				, ' is not a directory.'
+			details: { (#directoryPath -> request directoryPath) } asDictionary ].
 	directory exists ifFalse: [
 		MCPCommandError
 			signalErrorCode: #ChangeHistoryDirectoryNotFound

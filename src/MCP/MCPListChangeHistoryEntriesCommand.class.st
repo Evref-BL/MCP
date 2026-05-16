@@ -107,9 +107,23 @@ MCPListChangeHistoryEntriesCommand >> isCodeChangeEntry: anEntry [
 ]
 
 { #category : 'private' }
+MCPListChangeHistoryEntriesCommand >> isCurrentHistoryFilePath: aPathString [
+
+	| currentFile requestedFile |
+	currentFile := self currentHistoryFileReference.
+	currentFile ifNil: [ ^ false ].
+	requestedFile := aPathString asFileReference.
+	^ [ requestedFile fullName = currentFile fullName ]
+		  on: Error
+		  do: [ :error | aPathString = currentFile fullName ]
+]
+
+{ #category : 'private' }
 MCPListChangeHistoryEntriesCommand >> logAndPathForRequest [
 
 	request historyFilePath ifNil: [ ^ self currentLogAndPath ].
+	(self isCurrentHistoryFilePath: request historyFilePath) ifTrue: [
+		^ self currentLogAndPath ].
 	^ self logAndPathFromFilePath: request historyFilePath
 ]
 
