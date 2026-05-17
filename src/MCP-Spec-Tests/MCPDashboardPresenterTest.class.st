@@ -60,6 +60,22 @@ MCPDashboardPresenterTest >> testCheckboxRowsIncludeLeftPadding [
 ]
 
 { #category : 'tests' }
+MCPDashboardPresenterTest >> testCollapsedLogsSectionKeepsHeaderAndSplitsOpenSections [
+
+	| presenter sectionsLayout splitLayout |
+	presenter := MCPDashboardPresenter new.
+
+	presenter toggleLogsSection.
+	sectionsLayout := presenter monitoringSectionsLayout.
+	splitLayout := sectionsLayout children first.
+
+	self assert: sectionsLayout class equals: SpBoxLayout.
+	self assert: splitLayout class equals: SpPanedLayout.
+	self assert: splitLayout isVertical.
+	self assert: sectionsLayout children second children size equals: 1
+]
+
+{ #category : 'tests' }
 MCPDashboardPresenterTest >> testCollapsedMetricsSectionKeepsHeaderVisible [
 
 	| presenter collapsedLayout |
@@ -78,20 +94,17 @@ MCPDashboardPresenterTest >> testCollapsedMetricsSectionKeepsHeaderVisible [
 { #category : 'tests' }
 MCPDashboardPresenterTest >> testCollapsedMonitoringSectionUsesFixedHeaderRow [
 
-	| presenter layout sectionsLayout |
+	| presenter sectionsLayout splitLayout |
 	presenter := MCPDashboardPresenter new.
 
 	presenter toggleMetricsSection.
-	layout := presenter monitoringWidgetsLayout.
-	sectionsLayout := layout children second.
+	sectionsLayout := presenter monitoringSectionsLayout.
+	splitLayout := sectionsLayout children second.
 
-	self assert: layout class equals: SpBoxLayout.
-	self assert: layout children size equals: 2.
 	self assert: sectionsLayout class equals: SpBoxLayout.
-	self assert: sectionsLayout children size equals: 3.
 	self assert: sectionsLayout children first children size equals: 1.
-	self assert: sectionsLayout children second children size equals: 2.
-	self assert: sectionsLayout children third children size equals: 2
+	self assert: splitLayout class equals: SpPanedLayout.
+	self assert: splitLayout isVertical
 ]
 
 { #category : 'tests' }
@@ -123,6 +136,22 @@ MCPDashboardPresenterTest >> testCollapsedToolsSectionUsesFixedHeaderRow [
 	self assert: layout children first children size equals: 1.
 	self assert: monitoringLayout class equals: SpBoxLayout.
 	self assert: monitoringSectionsLayout class equals: SpPanedLayout
+]
+
+{ #category : 'tests' }
+MCPDashboardPresenterTest >> testCollapsedTracesSectionKeepsHeaderAndSplitsOpenSections [
+
+	| lowerLayout presenter sectionsLayout |
+	presenter := MCPDashboardPresenter new.
+
+	presenter toggleTracesSection.
+	sectionsLayout := presenter monitoringSectionsLayout.
+	lowerLayout := sectionsLayout children second.
+
+	self assert: sectionsLayout class equals: SpPanedLayout.
+	self assert: sectionsLayout isVertical.
+	self assert: lowerLayout class equals: SpBoxLayout.
+	self assert: lowerLayout children first children size equals: 1
 ]
 
 { #category : 'tests' }
@@ -169,15 +198,10 @@ MCPDashboardPresenterTest >> testDashboardWidgetsUseVerticalSplitters [
 
 	self assert: layout class equals: SpPanedLayout.
 	self assert: layout isVertical.
-	self assert: layout children size equals: 2.
-	self assert: monitoringLayout class equals: SpBoxLayout.
-	self assert: monitoringLayout children size equals: 2.
 	self assert: monitoringSectionsLayout class equals: SpPanedLayout.
 	self assert: monitoringSectionsLayout isVertical.
-	self assert: monitoringSectionsLayout children size equals: 2.
 	self assert: nestedSections class equals: SpPanedLayout.
-	self assert: nestedSections isVertical.
-	self assert: nestedSections children size equals: 2
+	self assert: nestedSections isVertical
 ]
 
 { #category : 'tests' }

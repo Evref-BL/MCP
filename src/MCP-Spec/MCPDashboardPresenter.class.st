@@ -236,6 +236,17 @@ MCPDashboardPresenter >> disclosureLabelFor: title count: count expanded: expand
 ]
 
 { #category : 'collapsing' }
+MCPDashboardPresenter >> expandedMonitoringSectionCount [
+
+	| count |
+	count := 0.
+	self isMetricsSectionExpanded ifTrue: [ count := count + 1 ].
+	self isTracesSectionExpanded ifTrue: [ count := count + 1 ].
+	self isLogsSectionExpanded ifTrue: [ count := count + 1 ].
+	^ count
+]
+
+{ #category : 'collapsing' }
 MCPDashboardPresenter >> hasExpandedMonitoringSection [
 
 	^ self isMetricsSectionExpanded or: [
@@ -495,15 +506,16 @@ MCPDashboardPresenter >> monitoringHeaderLayout [
 MCPDashboardPresenter >> monitoringSectionsLayout [
 
 	self areAllMonitoringSectionsExpanded ifTrue: [
-		^ SpPanedLayout newTopToBottom
-			  positionOfSlider: 42 percent;
-			  first: self metricsWidgetLayout;
-			  second: (SpPanedLayout newTopToBottom
-					   positionOfSlider: 45 percent;
-					   first: self tracesWidgetLayout;
-					   second: self logsWidgetLayout;
-					   yourself);
-			  yourself ].
+			^ SpPanedLayout newTopToBottom
+				  positionOfSlider: 42 percent;
+				  first: self metricsWidgetLayout;
+				  second: (SpPanedLayout newTopToBottom
+						   positionOfSlider: 45 percent;
+						   first: self tracesWidgetLayout;
+						   second: self logsWidgetLayout;
+						   yourself);
+				  yourself ].
+	self expandedMonitoringSectionCount = 2 ifTrue: [ ^ self twoExpandedMonitoringSectionsLayout ].
 	^ self monitoringWidgetsBoxLayout
 ]
 
@@ -798,4 +810,37 @@ MCPDashboardPresenter >> tracesWidgetLayout [
 	widgetLayout add: tracesHeaderButton expand: false.
 	self isTracesSectionExpanded ifTrue: [ widgetLayout add: tracesTable ].
 	^ widgetLayout
+]
+
+{ #category : 'layout' }
+MCPDashboardPresenter >> twoExpandedMonitoringSectionsLayout [
+
+	self isMetricsSectionExpanded ifFalse: [
+			^ SpBoxLayout newTopToBottom
+				  add: self metricsWidgetLayout expand: false;
+				  add: (SpPanedLayout newTopToBottom
+						   positionOfSlider: 50 percent;
+						   first: self tracesWidgetLayout;
+						   second: self logsWidgetLayout;
+						   yourself);
+				  yourself ].
+	self isTracesSectionExpanded ifFalse: [
+			^ SpPanedLayout newTopToBottom
+				  positionOfSlider: 50 percent;
+				  first: self metricsWidgetLayout;
+				  second: (SpBoxLayout newTopToBottom
+						   add: self tracesWidgetLayout expand: false;
+						   add: self logsWidgetLayout;
+						   yourself);
+				  yourself ].
+	self isLogsSectionExpanded ifFalse: [
+			^ SpBoxLayout newTopToBottom
+				  add: (SpPanedLayout newTopToBottom
+						   positionOfSlider: 50 percent;
+						   first: self metricsWidgetLayout;
+						   second: self tracesWidgetLayout;
+						   yourself);
+				  add: self logsWidgetLayout expand: false;
+				  yourself ].
+	^ self monitoringWidgetsBoxLayout
 ]
