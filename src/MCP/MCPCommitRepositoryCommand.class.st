@@ -1,5 +1,5 @@
 "
-Command wrapper for edit-repository operation=commit. It captures the current IceRepository working-copy diff, commits it with IceRepository>>commitWithMessage:, and returns an MCPRepositoryCommitResult.
+Command wrapper for edit-repository operation=commit. It captures the current IceRepository working-copy diff, commits it, and returns an MCPRepositoryCommitResult.
 "
 Class {
 	#name : 'MCPCommitRepositoryCommand',
@@ -42,6 +42,9 @@ MCPCommitRepositoryCommand >> execute [
 		  requestedContext: self request requestedContext
 		  work: [
 			  repository := self request repository.
+			  ((self repositoryHasNoCommit: repository) not and: [
+				   (self repositoryHasModifiedPackages: repository) not ])
+				  ifTrue: [ IceNothingToCommit signal ].
 			  diff := repository workingCopyDiff.
 			  changedPackageNames := self changedPackageNamesFromDiff: diff.
 			  result := self
@@ -49,8 +52,9 @@ MCPCommitRepositoryCommand >> execute [
 				            during: [
 					            | commit |
 					            commit := self withNonInteractiveAuthorDuring: [
-						                      repository commitWithMessage:
-							                      self request message ].
+						                      repository workingCopy
+							                      commitChanges: diff
+							                      withMessage: self request message ].
 					            MCPRepositoryCommitResult
 						            repository: repository
 						            changedPackageNames: changedPackageNames
@@ -147,6 +151,27 @@ MCPCommitRepositoryCommand >> repositoryHasDefaultGitSignature: aRepository [
 			  (self gitSignatureMissingFor: error)
 				  ifTrue: [ false ]
 				  ifFalse: [ error pass ] ]
+]
+
+{ #category : 'private - diff' }
+MCPCommitRepositoryCommand >> repositoryHasModifiedPackages: aRepository [
+
+	^ [
+	  (aRepository respondsTo: #modifiedPackages) and: [
+		  aRepository modifiedPackages notEmpty ] ]
+		  on: Error
+		  do: [ :ignored | false ]
+]
+
+{ #category : 'private - diff' }
+MCPCommitRepositoryCommand >> repositoryHasNoCommit: aRepository [
+
+	^ [
+	  | headCommit |
+	  headCommit := aRepository headCommit.
+	  (headCommit respondsTo: #isNoCommit) and: [ headCommit isNoCommit ] ]
+		  on: Error
+		  do: [ :ignored | false ]
 ]
 
 { #category : 'accessing' }

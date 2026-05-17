@@ -15,6 +15,14 @@ MCPToolEditClassTest >> aroundToolCall: aBlock [
 	^ self withoutEpiceaDuring: aBlock
 ]
 
+{ #category : 'private - asserting' }
+MCPToolEditClassTest >> assertIncludesReferencedSlotWarning: warningMessages [
+
+	self assert: (warningMessages anySatisfy: [ :each |
+			 (each includesSubstring: 'referencedSlot') and: [
+				 each includesSubstring: 'referenced' ] ])
+]
+
 { #category : 'private' }
 MCPToolEditClassTest >> commentTargetClassName [
 
@@ -673,9 +681,7 @@ MCPToolEditClassTest >> testUpdateForceRemoveSlotContinuesPastRefactoringWarning
 	target := self classNamed:
 		          'MCPToolEditClassTestWarningRemoveSlotTarget'.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (warnings anySatisfy: [ :each |
-			 each includesSubstring:
-				 'Variable referencedSlot is still referenced' ]).
+	self assertIncludesReferencedSlotWarning: warnings.
 	self assert: (target slots collect: #name as: Array) equals: #(  ).
 	self assert: (data at: #operation) equals: 'update'.
 	self assert: (data at: #updateAction) equals: 'removeSlot'.
@@ -1073,9 +1079,8 @@ MCPToolEditClassTest >> testUpdateRemoveSlotStopsOnRefactoringWarningByDefault [
 	self assert: (error at: #forceSupported) equals: true.
 	self assert:
 		((error at: #howToProceed) includesSubstring: 'force=true').
-	self assert: ((error at: #impactMessages) anySatisfy: [ :each |
-			 each includesSubstring:
-				 'Variable referencedSlot is still referenced' ]).
+	self assertIncludesReferencedSlotWarning:
+		(error at: #impactMessages).
 	self
 		assert: (target slots collect: #name as: Array)
 		equals: #( #referencedSlot )

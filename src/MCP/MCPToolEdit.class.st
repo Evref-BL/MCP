@@ -31,20 +31,40 @@ MCPToolEdit >> addRefactoringScopeContextFromSpec: scopeSpec toRequestedContext:
 { #category : 'private - errors' }
 MCPToolEdit >> addSupplementalDetailsForOperationError: anError to: details [
 
-	| methodNode position selector variableName |
-	(anError respondsTo: #methodNode) ifTrue: [
-		methodNode := anError methodNode.
+	| cause methodNode position undeclaredVariableNode variableName |
+	cause := self operationFailureCauseFor: anError.
+	(cause respondsTo: #methodNode) ifTrue: [
+		methodNode := cause methodNode.
 		methodNode ifNotNil: [
-			selector := methodNode selector.
-			selector ifNotNil: [
-				details at: #selector ifAbsentPut: [ selector asString ] ] ] ].
-	(anError respondsTo: #position) ifTrue: [
-		position := anError position.
+			self addSupplementalSelectorFromMethodNode: methodNode to: details ] ].
+	(PharoCompatibility compilationAstFromException: cause) ifNotNil: [
+		:ast | self addSupplementalSelectorFromMethodNode: ast to: details ].
+	(anError == cause) ifFalse: [
+		(anError respondsTo: #methodNode) ifTrue: [
+			methodNode := anError methodNode.
+			methodNode ifNotNil: [
+				self addSupplementalSelectorFromMethodNode: methodNode to: details ] ].
+		(PharoCompatibility compilationAstFromException: anError) ifNotNil: [
+			:ast | self addSupplementalSelectorFromMethodNode: ast to: details ] ].
+	(cause respondsTo: #position) ifTrue: [
+		position := cause position.
 		position ifNotNil: [ details at: #position put: position ] ].
-	(anError isKindOf: OCUndeclaredVariableWarning) ifTrue: [
-		variableName := self undeclaredVariableNameFor: anError.
+	undeclaredVariableNode := self undeclaredVariableNodeFrom: cause.
+	undeclaredVariableNode ifNotNil: [
+		variableName := self undeclaredVariableNameFor: cause.
 		variableName ifNotNil: [
-			details at: #variableName put: variableName ] ]
+			details at: #variableName put: variableName ].
+		(undeclaredVariableNode respondsTo: #start) ifTrue: [
+			details at: #position put: undeclaredVariableNode start ] ]
+]
+
+{ #category : 'private - errors' }
+MCPToolEdit >> addSupplementalSelectorFromMethodNode: methodNode to: details [
+
+	| selector |
+	selector := methodNode selector.
+	selector ifNotNil: [
+		details at: #selector ifAbsentPut: [ selector asString ] ]
 ]
 
 { #category : 'private - operations' }
@@ -70,11 +90,12 @@ MCPToolEdit >> commandForRequest: editRequest [
 { #category : 'private - errors' }
 MCPToolEdit >> errorDetailsForRequestedContext: requestedContext causedBy: anError [
 
-	| details |
+	| cause details |
+	cause := self operationFailureCauseFor: anError.
 	details := requestedContext
 		           ifNil: [ Dictionary new ]
 		           ifNotNil: [ requestedContext copy ].
-	details at: #causeClass put: anError class name asString.
+	details at: #causeClass put: cause class name asString.
 	^ details
 ]
 
@@ -288,19 +309,20 @@ MCPToolEdit >> impactMessagesForRefactoringWarning: aWarning [
 { #category : 'private - errors' }
 MCPToolEdit >> normalizedCauseMessageForOperationError: anError [
 
-	| descriptionText message |
-	(anError isKindOf: OCUndeclaredVariableWarning) ifTrue: [
-		^ self undeclaredVariableCauseMessageFor: anError ].
-	message := anError messageText.
+	| cause descriptionText message |
+	cause := self operationFailureCauseFor: anError.
+	(self undeclaredVariableNodeFrom: cause) ifNotNil: [
+		^ self undeclaredVariableCauseMessageFor: cause ].
+	message := cause messageText.
 	message ifNil: [ message := '' ].
 	message := message asString.
 	message isEmpty ifFalse: [ ^ message ].
-	(anError respondsTo: #description) ifTrue: [
-		descriptionText := anError description.
+	(cause respondsTo: #description) ifTrue: [
+		descriptionText := cause description.
 		descriptionText ifNotNil: [
 			descriptionText := descriptionText asString.
 			descriptionText isEmpty ifFalse: [ ^ descriptionText ] ] ].
-	^ anError class name asString
+	^ cause class name asString
 ]
 
 { #category : 'private - errors' }
@@ -379,19 +401,34 @@ MCPToolEdit >> operationErrorCodePrefixFor: operation [
 ]
 
 { #category : 'private - errors' }
+MCPToolEdit >> operationFailureCauseFor: anError [
+
+	(PharoCompatibility
+		 noticeFromException: anError
+		 ifKindOfAnyNamed:
+			 #( OCUndeclaredVariableNotice OCUndeclaredVariableWarning
+			    OCSyntaxErrorNotice RBSyntaxErrorNotice SyntaxErrorNotification ))
+		ifNotNil: [ :notice | ^ notice ].
+	(anError respondsTo: #notice) ifTrue: [
+		anError notice ifNotNil: [ :notice | ^ notice ] ].
+	^ anError
+]
+
+{ #category : 'private - errors' }
 MCPToolEdit >> operationFailureErrorCodeFor: anError operation: operation [
 
-	| prefix |
+	| cause prefix |
+	cause := self operationFailureCauseFor: anError.
 	prefix := self operationErrorCodePrefixFor: operation.
-	(anError isKindOf: OCUndeclaredVariableWarning) ifTrue: [
+	(self undeclaredVariableNodeFrom: cause) ifNotNil: [
 		^ prefix , 'UndeclaredVariable' ].
-	(anError isKindOf: RuntimeSyntaxError) ifTrue: [
+	(cause isKindOf: RuntimeSyntaxError) ifTrue: [
 		^ prefix , 'SyntaxError' ].
-	(anError isKindOf: OCSyntaxErrorNotice) ifTrue: [
+	(cause isKindOf: OCSyntaxErrorNotice) ifTrue: [
 		^ prefix , 'SyntaxError' ].
-	(anError isKindOf: RBRefactoringWarning) ifTrue: [
+	(cause isKindOf: RBRefactoringWarning) ifTrue: [
 		^ prefix , 'RefactoringWarning' ].
-	(anError isKindOf: RBRefactoringError) ifTrue: [
+	(cause isKindOf: RBRefactoringError) ifTrue: [
 		^ prefix , 'RefactoringError' ].
 	^ prefix , 'ExecutionError'
 ]
@@ -646,11 +683,32 @@ MCPToolEdit >> undeclaredVariableCauseMessageFor: anError [
 ]
 
 { #category : 'private - errors' }
+MCPToolEdit >> undeclaredVariableNodeFrom: anError [
+
+	^ PharoCompatibility undeclaredVariableNodeFromException: anError
+]
+
+{ #category : 'private - errors' }
+MCPToolEdit >> undeclaredVariableNoticeFrom: anError [
+
+	(PharoCompatibility
+		 noticeFromException: anError
+		 ifKindOfAnyNamed:
+		 #( OCUndeclaredVariableNotice OCUndeclaredVariableWarning ))
+		ifNotNil: [ :notice | ^ notice ].
+	(#( 'OCUndeclaredVariableNotice' 'OCUndeclaredVariableWarning' )
+		 includes: anError class name asString) ifTrue: [ ^ anError ].
+	^ nil
+]
+
+{ #category : 'private - errors' }
 MCPToolEdit >> undeclaredVariableNameFor: anError [
 
 	| node notice |
-	(anError respondsTo: #notice) ifFalse: [ ^ nil ].
-	notice := anError notice.
+	node := self undeclaredVariableNodeFrom: anError.
+	(node notNil and: [ node respondsTo: #name ]) ifTrue: [
+		^ node name asString ].
+	notice := self undeclaredVariableNoticeFrom: anError.
 	notice ifNil: [ ^ nil ].
 	(notice respondsTo: #node) ifFalse: [ ^ nil ].
 	node := notice node.

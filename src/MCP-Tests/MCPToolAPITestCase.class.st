@@ -50,6 +50,13 @@ MCPToolAPITestCase >> expectedSyntaxErrorNoticeClassName [
 	^ PharoCompatibility syntaxErrorNoticeClassName
 ]
 
+{ #category : 'private - compatibility' }
+MCPToolAPITestCase >> expectedUndeclaredVariableNoticeClassNames [
+
+	^ #( 'OCUndeclaredVariableWarning' 'OCUndeclaredVariableNotice'
+	     'OCCompilationError' )
+]
+
 { #category : 'private - results' }
 MCPToolAPITestCase >> structuredContentFrom: aResult [
 

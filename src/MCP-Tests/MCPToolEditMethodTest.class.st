@@ -596,8 +596,8 @@ MCPToolEditMethodTest >> testCompileReturnsStructuredCommandErrorForUndeclaredVa
 		assert: (error at: #errorCode)
 		equals: 'CreateUndeclaredVariable'.
 	self
-		assert: (error at: #causeClass)
-		equals: 'OCUndeclaredVariableWarning'.
+		assert: (self expectedUndeclaredVariableNoticeClassNames includes:
+				 (error at: #causeClass)).
 	self
 		assert: (error at: #className)
 		equals: 'MCPToolEditMethodTestTarget'.
