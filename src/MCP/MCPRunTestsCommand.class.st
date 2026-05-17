@@ -24,7 +24,7 @@ MCPRunTestsCommand class >> tool: aTool request: aRequest [
 { #category : 'private' }
 MCPRunTestsCommand >> addTestCasesFrom: aTestOrSuite to: testCases [
 
-	(aTestOrSuite respondsTo: #tests) ifTrue: [
+	(aTestOrSuite isKindOf: TestSuite) ifTrue: [
 		aTestOrSuite tests do: [ :each |
 			self addTestCasesFrom: each to: testCases ].
 		^ self ].
@@ -256,11 +256,13 @@ MCPRunTestsCommand >> shouldIgnoreMethodForCoverage: aCompiledMethod [
 { #category : 'private' }
 MCPRunTestsCommand >> testCasesForValidatedRequest: validatedRequest [
 
-	| suite |
-	validatedRequest testMethodName ifNotNil: [ :testMethodName |
-		^ { (validatedRequest testClass selector: testMethodName asSymbol) } ].
+	| suite testCases testMethodSelector |
 	suite := validatedRequest testClass suite.
-	^ self testCasesFromSuite: suite
+	testCases := self testCasesFromSuite: suite.
+	validatedRequest testMethodName ifNotNil: [ :testMethodName |
+		testMethodSelector := testMethodName asSymbol.
+		^ testCases select: [ :each | each selector = testMethodSelector ] ].
+	^ testCases
 ]
 
 { #category : 'private' }

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pharo Version Compatibility"
+  short_description: "Use PharoCompatibility surfaces"
+  default_prompt: "Use $pharo-version-compat to make this Pharo project compatible across supported Pharo versions with PharoCompatibility."

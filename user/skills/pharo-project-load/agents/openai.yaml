@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pharo Project Load"
+  short_description: "Load Pharo Tonel projects"
+  default_prompt: "Use $pharo-project-load to load this Pharo project into an image and diagnose any Metacello or Tonel load failures."

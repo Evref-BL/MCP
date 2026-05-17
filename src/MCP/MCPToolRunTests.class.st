@@ -401,8 +401,7 @@ MCPToolRunTests >> standardTestDataPropertiesIncludingMethodName: includeMethodN
 MCPToolRunTests >> standardTestRequiredFieldsIncludingMethodName: includeMethodName [
 
 	| required |
-	required := OrderedCollection withAll:
-		            #( 'className' 'runCount' 'issues' ).
+	required := OrderedCollection withAll: #( 'className' 'runCount' ).
 	includeMethodName ifTrue: [ required add: 'testMethodName' ].
 	^ required asArray
 ]
@@ -420,9 +419,12 @@ MCPToolRunTests >> successSummaryForData: data [
 		            inject: 0
 		            into: [ :sum :each | sum + (each at: #runCount) ].
 	failureLikeCount := results inject: 0 into: [ :sum :each |
-		                    sum + ((each at: #issues) count: [ :issue |
-			                     #( 'failure' 'error' ) includes:
-				                     (issue at: #kind) ]) asInteger ].
+		                    sum
+		                    +
+			                    ((each at: #issues ifAbsent: [ #(  ) ]) count: [
+				                     :issue |
+				                     #( 'failure' 'error' ) includes:
+					                     (issue at: #kind) ]) asInteger ].
 	timedOut := data at: #timedOut ifAbsent: [ false ].
 	unrunCount := (data at: #unrunTests ifAbsent: [ #(  ) ]) size.
 	coverage := data at: #coverage ifAbsent: [ nil ].
@@ -484,6 +486,17 @@ MCPToolRunTests >> testIssueObjectSchema [
 					                  type: 'string'
 					                  description:
 						                  'The test method that produced the issue.').
+				                 (self
+					                  schemaPropertyNamed: 'testCaseName'
+					                  type: 'string'
+					                  description:
+						                  'The concrete test case name, including parameter values when available.').
+				                 (self
+					                  stringArraySchemaNamed: 'parameters'
+					                  description:
+						                  'Parameter bindings for the concrete test case when the issue came from a parameterized test.'
+					                  itemDescription:
+						                  'A printed parameter binding, such as #encoding->''UTF-16''.').
 				                 (self
 					                  schemaPropertyNamed: 'errorClass'
 					                  type: 'string'
