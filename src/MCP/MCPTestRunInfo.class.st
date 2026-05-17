@@ -36,7 +36,8 @@ MCPTestRunInfo >> asDictionary [
 	self testMethodName ifNotNil: [ :methodName |
 		data at: #testMethodName put: methodName ].
 	data at: #runCount put: self runCount.
-	data at: #issues put: self issues.
+	self issues ifNotEmpty: [ :issueDetails |
+		data at: #issues put: issueDetails ].
 	^ data
 ]
 

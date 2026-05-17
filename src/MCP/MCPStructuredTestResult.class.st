@@ -37,19 +37,30 @@ MCPStructuredTestResult >> issueKindFor: aTestCase [
 ]
 
 { #category : 'private' }
+MCPStructuredTestResult >> parametersForTestCase: aTestCase [
+
+	(aTestCase isKindOf: ParametrizedTestCase) ifFalse: [ ^ #(  ) ].
+	^ aTestCase parametersToUse collect: [ :each | each printString ]
+]
+
+{ #category : 'private' }
 MCPStructuredTestResult >> recordIssueFrom: anException forTestCase: aTestCase [
 
-	| detail message className methodName |
+	| detail message className methodName parameters testCaseName |
 	detail := Dictionary new.
 	message := anException messageText
 		           ifNil: [ '' ]
 		           ifNotNil: [ :text | text asString ].
 	className := aTestCase class name asString.
 	methodName := aTestCase selector asString.
+	testCaseName := self testCaseNameFor: aTestCase.
+	parameters := self parametersForTestCase: aTestCase.
 	detail at: #kind put: (self issueKindFor: aTestCase).
 	detail at: #className put: className.
 	detail at: #testMethodName put: methodName.
-	detail at: #testName put: className , '>>#' , methodName.
+	detail at: #testName put: testCaseName.
+	detail at: #testCaseName put: testCaseName.
+	parameters ifNotEmpty: [ detail at: #parameters put: parameters ].
 	detail at: #errorClass put: anException class name.
 	detail at: #message put: message.
 	(anException description ~= anException class name and: [
@@ -73,4 +84,10 @@ MCPStructuredTestResult >> runCase: aTestCase [
 		do: [ :ex |
 			ex sunitAnnounce: aTestCase toResult: self.
 			self recordIssueFrom: ex forTestCase: aTestCase ]
+]
+
+{ #category : 'private' }
+MCPStructuredTestResult >> testCaseNameFor: aTestCase [
+
+	^ aTestCase nameForReport
 ]

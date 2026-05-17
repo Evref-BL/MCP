@@ -548,6 +548,40 @@ MCPToolStructuredOutputTest >> testRunTestsCoverageReturnsStructuredCoverage [
 ]
 
 { #category : 'tests' }
+MCPToolStructuredOutputTest >> testRunTestsParameterizedMethodFailureIncludesCaseDetails [
+
+	| data issue methodResult result |
+	result := self
+		          callToolNamed: 'run-tests'
+		          withArguments: { (#tests -> { {
+				           (#className -> 'MCPToolRunTestsParameterizedTarget').
+				           (#testMethodName -> 'testFailsOnlyForUTF16') }
+				           asDictionary }) } asDictionary.
+	data := self dataFrom: result.
+	methodResult := (data at: #results) first.
+	issue := (methodResult at: #issues) first.
+	self
+		assert: ((self structuredContentFrom: result) at: #status)
+		equals: 'ok'.
+	self assert: (methodResult at: #runCount) equals: 3.
+	self
+		assert: (methodResult at: #testMethodName)
+		equals: 'testFailsOnlyForUTF16'.
+	self assert: (methodResult at: #issues) size equals: 1.
+	self
+		assert: (issue at: #testMethodName)
+		equals: 'testFailsOnlyForUTF16'.
+	self
+		assert: (issue at: #testCaseName)
+		equals: 'testFailsOnlyForUTF16(#encoding->''UTF-16'')'.
+	self
+		assert: (issue at: #parameters)
+		equals: #( '#encoding->''UTF-16''' ).
+	self assert: ((issue at: #message) includesSubstring: 'UTF-16').
+	self deny: (issue includesKey: #testName)
+]
+
+{ #category : 'tests' }
 MCPToolStructuredOutputTest >> testRunTestsParseErrorReturnsStructuredToolError [
 
 	| error result structured |
@@ -564,6 +598,25 @@ MCPToolStructuredOutputTest >> testRunTestsParseErrorReturnsStructuredToolError 
 	self assert: (error at: #tests) equals: #( '' ).
 	self assert: ((error at: #message) includesSubstring:
 			 'tests must contain only non-empty class names')
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testRunTestsSuccessfulResultOmitsEmptyIssues [
+
+	| data result singleResult |
+	result := self
+		          callToolNamed: 'run-tests'
+		          withArguments: { (#tests -> { {
+				           (#className -> 'MCPToolStructuredOutputTestTarget').
+				           (#testMethodName -> 'testPasses') } asDictionary }) }
+				          asDictionary.
+	data := self dataFrom: result.
+	singleResult := (data at: #results) first.
+	self
+		assert: ((self structuredContentFrom: result) at: #status)
+		equals: 'ok'.
+	self assert: (singleResult at: #runCount) equals: 1.
+	self deny: (singleResult includesKey: #issues)
 ]
 
 { #category : 'tests' }
