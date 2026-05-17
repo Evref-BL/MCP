@@ -1,4 +1,4 @@
-[![Pharo version](https://img.shields.io/badge/Pharo-12%20%7C%2013-%23aac9ff.svg)](https://github.com/pharo-project/Pharo)
+[![Pharo version](https://img.shields.io/badge/Pharo-12%20%7C%2013%20%7C%2014-%23aac9ff.svg)](https://github.com/pharo-project/Pharo)
 ![Build Info](https://github.com/Evref-BL/MCP/workflows/CI/badge.svg)
 [![Coverage Status](https://coveralls.io/repos/github/Evref-BL/MCP/badge.svg?branch=main)](https://coveralls.io/github/Evref-BL/MCP?branch=main)
 
@@ -8,13 +8,17 @@
 
 This repository provides an implementation of a Model Context Protocol (MCP) server in Pharo Smalltalk. The server exposes a set of tools and capabilities for interacting with the Pharo image via HTTP.
 
+## Supported Pharo Versions
+
+MCP supports Pharo 12, Pharo 13, and Pharo 14. Mainline development targets the Pharo 13 API surface; the project uses PharoCompatibility to keep the supported version range loadable and tested.
+
 ## Installation
 
 ### Smalltalk part
 
 1. **Install Pharo**
 
- Download and install [Pharo](https://pharo.org/download). This project currently supports Pharo 12 and Pharo 13.
+ Download and install [Pharo](https://pharo.org/download). This project currently supports Pharo 12, Pharo 13, and Pharo 14.
 
 2. **Load the MCP Project**
 
