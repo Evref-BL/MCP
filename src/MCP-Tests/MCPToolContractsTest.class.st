@@ -1146,6 +1146,49 @@ MCPToolContractsTest >> testInitializeAdvertisesPharoServerIcon [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testInitializeAdvertisesSupportedPharoVersions [
+
+	| metadata pharo response runtimeVersion serverInfo |
+	response := (MCP new
+		             onInitialize: nil
+		             capabilities: nil
+		             clientInfo: nil
+		             websiteUrl: nil) asJRPCJSON.
+	serverInfo := response at: #serverInfo.
+	self deny: (serverInfo includesKey: #_meta).
+	self assert: (response includesKey: #_meta).
+	metadata := response at: #_meta.
+	self assert: (metadata includesKey: #'io.github.evref-bl/pharo').
+	pharo := metadata at: #'io.github.evref-bl/pharo'.
+	self
+		assert: (pharo at: #supportedMajorVersions)
+		equals: #( 12 13 14 ).
+	self
+		assert: (pharo at: #supportedLauncherVersions)
+		equals: #( '120' '130' '140' ).
+	runtimeVersion := pharo at: #runtimeVersion.
+	self assert: runtimeVersion isString.
+	self deny: runtimeVersion isEmpty
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testInitializeResponseSerializesSupportedPharoVersions [
+
+	| response |
+	response := self handleJSON:
+		            '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{},"websiteUrl":null}}'.
+	self assert: (response includesSubstring: '"result"').
+	self assert: (response includesSubstring: '"_meta"').
+	self assert:
+		(response includesSubstring: '"io.github.evref-bl/pharo"').
+	self assert:
+		(response includesSubstring: '"supportedMajorVersions":[12,13,14]').
+	self assert: (response includesSubstring:
+			 '"supportedLauncherVersions":["120","130","140"]').
+	self assert: (response includesSubstring: '"runtimeVersion":"')
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testInputSchemaJSONOmitsDefaultSchemaNoise [
 
 	| condition schema |

@@ -146,6 +146,16 @@ MCP >> monitoringTraces [
 	^ self monitoring traceRecords
 ]
 
+{ #category : 'infrastructure metadata' }
+MCP >> pharoRuntimeMetadata [
+
+	^ {
+		  (#runtimeVersion -> PharoCompatibility runtimeVersionString).
+		  (#supportedMajorVersions -> self supportedPharoMajorVersions).
+		  (#supportedLauncherVersions -> self supportedPharoLauncherVersions) }
+		  asDictionary
+]
+
 { #category : 'start' }
 MCP >> onInitialize: protocolVersion capabilities: capabilities clientInfo: clientInfo websiteUrl: websiteUrl [
 
@@ -155,6 +165,7 @@ MCP >> onInitialize: protocolVersion capabilities: capabilities clientInfo: clie
 		  capabilities:
 			  (MCPStructureCapabilities new tools:
 					   MCPStructureToolsCapabilities new);
+		  metadata: self serverInfrastructureMetadata;
 		  serverInfo: (MCPStructureServerInfo new
 				   name: 'MCP Pharo';
 				   title: 'The MCP server for Pharo';
@@ -186,6 +197,25 @@ MCP >> refreshToolsList [
 		tool := toolClass new.
 		toolsList at: tool name put: tool ].
 	^ toolsList
+]
+
+{ #category : 'infrastructure metadata' }
+MCP >> serverInfrastructureMetadata [
+
+	^ { (#'io.github.evref-bl/pharo' -> self pharoRuntimeMetadata) }
+		  asDictionary
+]
+
+{ #category : 'infrastructure metadata' }
+MCP >> supportedPharoLauncherVersions [
+
+	^ #( '120' '130' '140' )
+]
+
+{ #category : 'infrastructure metadata' }
+MCP >> supportedPharoMajorVersions [
+
+	^ #( 12 13 14 )
 ]
 
 { #category : 'start' }
