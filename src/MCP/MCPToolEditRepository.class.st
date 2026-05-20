@@ -13,7 +13,9 @@ Class {
 MCPToolEditRepository >> commandForRequest: editRequest [
 
 	(editRequest isKindOf: MCPRepositoryCreateRequest) ifTrue: [
-		^ MCPCreateRepositoryCommand tool: self request: editRequest ].
+			(editRequest isKindOf: MCPRepositoryAttachRequest) ifTrue: [
+				^ MCPAttachRepositoryCommand tool: self request: editRequest ].
+			^ MCPCreateRepositoryCommand tool: self request: editRequest ].
 	(editRequest isKindOf: MCPRepositoryUpdateRequest) ifTrue: [
 		^ MCPUpdateRepositoryCommand tool: self request: editRequest ].
 	(editRequest isKindOf: MCPRepositoryExportRequest) ifTrue: [
@@ -33,6 +35,12 @@ MCPToolEditRepository >> commandForRequest: editRequest [
 	(editRequest isKindOf: MCPRepositorySwitchBranchRequest) ifTrue: [
 		^ MCPSwitchRepositoryBranchCommand tool: self request: editRequest ].
 	^ super commandForRequest: editRequest
+]
+
+{ #category : 'private - results' }
+MCPToolEditRepository >> dataForRepositoryAttachResult: aResult [
+
+	^ self dataForRepositoryResult: aResult action: 'attach'
 ]
 
 { #category : 'private - results' }
@@ -107,7 +115,7 @@ MCPToolEditRepository >> dataForRepositoryUpdateResult: aResult [
 { #category : 'defaults' }
 MCPToolEditRepository >> defaultDescription [
 
-	^ 'Create, update, diff, export, commit, fetch, pull, push, create branches, or switch branches for Iceberg repositories registered in the image. Use repositoryName for existing repositories; add location only to create a repository or disambiguate duplicate names. operation=create registers a repository and can attach packages. operation=update changes image-side repository metadata or package membership without writing packages to files. operation=diff inspects IceRepository>>workingCopyDiff without writing files and should be preferred when you only need to see image-side changes. operation=export is an escape hatch that materializes image changes to disk for Tonel or Git workflows and updates the Iceberg index without staging or committing. operation=commit calls IceRepository>>commitWithMessage:. operation=fetch calls IceRepository>>fetch. operation=pull calls IceRepository>>pull. operation=push calls IceRepository>>push. operation=createBranch calls IceRepository>>createBranch: and switches to the new branch. operation=switchBranch calls IceRepository>>switchToBranchNamed: for an existing branch.'
+	^ 'Create, attach, update, diff, export, commit, fetch, pull, push, create branches, or switch branches for Iceberg repositories registered in the image. Use repositoryName for existing repositories; add location only to create or attach a repository or disambiguate duplicate names. operation=create creates a new repository directory and can attach packages. operation=attach registers an existing Git checkout without creating or writing repository files and can attach packages. operation=update changes image-side repository metadata or package membership without writing packages to files. operation=diff inspects IceRepository>>workingCopyDiff without writing files and should be preferred when you only need to see image-side changes. operation=export is an escape hatch that materializes image changes to disk for Tonel or Git workflows and updates the Iceberg index without staging or committing. operation=commit calls IceRepository>>commitWithMessage:. operation=fetch calls IceRepository>>fetch. operation=pull calls IceRepository>>pull. operation=push calls IceRepository>>push. operation=createBranch calls IceRepository>>createBranch: and switches to the new branch. operation=switchBranch calls IceRepository>>switchToBranchNamed: for an existing branch.'
 ]
 
 { #category : 'defaults' }
@@ -130,7 +138,7 @@ MCPToolEditRepository >> defaultInputSchema [
 					   schemaPropertyNamed: 'name'
 					   type: 'string'
 					   description:
-						   'Repository name to use when operation=create registers a new repository.').
+						   'Repository name to use when operation=create creates a new repository or operation=attach registers an existing checkout.').
 				  (self
 					   schemaPropertyNamed: 'repositoryName'
 					   type: 'string'
@@ -140,7 +148,7 @@ MCPToolEditRepository >> defaultInputSchema [
 					   schemaPropertyNamed: 'location'
 					   type: 'string'
 					   description:
-						   'Filesystem path for operation=create. For existing repositories, combine with repositoryName only to disambiguate duplicate names.').
+						   'Filesystem path for operation=create or operation=attach. For existing repositories, combine with repositoryName only to disambiguate duplicate names.').
 				  (self
 					   schemaPropertyNamed: 'message'
 					   type: 'string'
@@ -154,11 +162,11 @@ MCPToolEditRepository >> defaultInputSchema [
 					   schemaPropertyNamed: 'subdirectory'
 					   type: 'string'
 					   description:
-						   'Optional source subdirectory for operation=create. During operation=update this sets the repository source subdirectory in the image.').
+						   'Optional source subdirectory for operation=create or operation=attach. During operation=update this sets the repository source subdirectory in the image.').
 				  (self
 					   stringArraySchemaNamed: 'packageNames'
 					   description:
-						   'Package names to manage initially during operation=create. During operation=update this replaces the full managed package list by adding and removing repository package membership without unloading packages or writing files.'
+						   'Package names to manage initially during operation=create or operation=attach. During operation=update this replaces the full managed package list by adding and removing repository package membership without unloading packages or writing files.'
 					   itemDescription: 'A package name.').
 				  (self
 					   stringArraySchemaNamed: 'addPackageNames'
@@ -235,7 +243,14 @@ MCPToolEditRepository >> operationSpecifications [
 			  (#requiredProperties -> #( 'name' 'location' )).
 			  (#description
 			   ->
-			   'Register a new Iceberg repository at location and optionally attach initial packages.') }
+			   'Create a new Iceberg repository at location and optionally attach initial packages.') }
+			  asDictionary.
+		  {
+			  (#name -> 'attach').
+			  (#requiredProperties -> #( 'name' 'location' )).
+			  (#description
+			   ->
+			   'Register an existing Git checkout at location and optionally attach initial packages without creating repository files.') }
 			  asDictionary.
 		  {
 			  (#name -> 'update').
@@ -301,6 +316,8 @@ MCPToolEditRepository >> parsedRequestFromToolRequest: request [
 		inRequest: request.
 	operation = 'create' ifTrue: [
 		^ MCPRepositoryCreateRequest fromRequest: request tool: self ].
+	operation = 'attach' ifTrue: [
+		^ MCPRepositoryAttachRequest fromRequest: request tool: self ].
 	operation = 'update' ifTrue: [
 		^ MCPRepositoryUpdateRequest fromRequest: request tool: self ].
 	operation = 'export' ifTrue: [
