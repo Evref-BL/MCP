@@ -248,7 +248,6 @@ MCPToolRunTests >> defaultInputSchema [
 					   'Server-side timeout for the batch. Use 0 to return immediately with all tests listed in unrunTests.'
 					   default: self defaultTimeoutSeconds) };
 		  required: #( 'tests' );
-		  oneOf: self operationBranchSchemas;
 		  yourself
 ]
 
@@ -348,20 +347,16 @@ MCPToolRunTests >> failureMessageForTests: testRequests error: anError [
 			  nextPutAll: anError messageText ]
 ]
 
-{ #category : 'private - schema' }
-MCPToolRunTests >> operationBranchSchemas [
+{ #category : 'validating' }
+MCPToolRunTests >> validateRequest: request [
 
-	^ {
-		  (self
-			   inputSchemaBranchForStringDiscriminatorNamed: 'operation'
-			   value: 'run'
-			   required: #(  )
-			   requireDiscriminator: false).
-		  (self
-			   inputSchemaBranchForStringDiscriminatorNamed: 'operation'
-			   value: 'coverage'
-			   required: #( 'coverage' )
-			   requireDiscriminator: true) }
+	| operation |
+	operation := request stringArgumentNamed: 'operation' default: 'run'.
+	operation = 'coverage' ifTrue: [
+		(request hasArgumentNamed: 'coverage') ifFalse: [
+			MCPInvalidToolInput
+				signalMissingRequiredArgumentNamed: 'coverage'
+				forTool: self ] ]
 ]
 
 { #category : 'private - request' }

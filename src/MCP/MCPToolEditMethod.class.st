@@ -183,7 +183,6 @@ MCPToolEditMethod >> defaultInputSchema [
 				  self refactoringScopeClassNamesSchemaProperty.
 				  self refactoringScopeHierarchyClassNamesSchemaProperty };
 		  required: #( 'operation' 'className' );
-		  oneOf: self operationBranchSchemas;
 		  additionalProperties: false;
 		  yourself
 ]

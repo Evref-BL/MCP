@@ -70,9 +70,7 @@ MCPToolFindMethods >> defaultInputSchema [
 		               'Whether to include method source code in each result entry.'
 		               limitDescription:
 		               'Maximum number of matching methods to return. Use 0 to request counts only.').
-	^ self
-		  queryInputSchemaWithProperties: properties
-		  allOf: self requiredFilterSchemasForReferenceModes
+	^ self queryInputSchemaWithProperties: properties
 ]
 
 { #category : 'defaults' }
@@ -361,25 +359,6 @@ MCPToolFindMethods >> requestedContextFromRequest: request [
 		  asDictionary
 ]
 
-{ #category : 'private - schema' }
-MCPToolFindMethods >> requiredFilterSchemasForReferenceModes [
-
-	| conditionSchema |
-	conditionSchema := MCPStructureInputSchema new
-		                   type: 'object';
-		                   properties: { (self
-				                    stringEnumSchemaPropertyNamed: 'filterMode'
-				                    description:
-					                    'A reference lookup mode. selectorReference finds senders, classReference finds class references, and variableReference finds variable references.'
-				                    values: self referenceFilterModes) };
-		                   required: #( 'filterMode' );
-		                   additionalProperties: true;
-		                   yourself.
-	^ { (self
-		   conditionalInputSchemaIf: conditionSchema
-		   thenRequired: #( 'filter' )) }
-]
-
 { #category : 'private - methods' }
 MCPToolFindMethods >> selectorReferenceEntriesForQueryRequest: queryRequest [
 
@@ -398,6 +377,18 @@ MCPToolFindMethods >> sortedMethodEntries: entries [
 	^ (entries asSortedCollection: [ :left :right |
 		   (self methodEntryLabel: left) <= (self methodEntryLabel: right) ])
 		  asArray
+]
+
+{ #category : 'validating' }
+MCPToolFindMethods >> validateRequest: request [
+
+	| filterMode |
+	filterMode := self filterModeFromRequest: request.
+	((self referenceFilterModes includes: filterMode) and: [
+		 (request hasArgumentNamed: 'filter') not ]) ifTrue: [
+		MCPInvalidToolInput
+			signalMissingRequiredArgumentNamed: 'filter'
+			forTool: self ]
 ]
 
 { #category : 'private - template' }

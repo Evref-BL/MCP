@@ -249,7 +249,6 @@ MCPToolManageChangeHistory >> defaultInputSchema [
 						   'For operation=applyEntries and operation=revertEntries, false previews the selected changes and true performs the previewed changes.'
 					   default: false) };
 		  required: #( 'operation' );
-		  oneOf: self operationBranchSchemas;
 		  additionalProperties: false;
 		  yourself
 ]
@@ -407,17 +406,6 @@ MCPToolManageChangeHistory >> integerArraySchemaNamed: aName description: aDescr
 		   description: aDescription)
 		  items: itemsProperty;
 		  yourself
-]
-
-{ #category : 'private - schema' }
-MCPToolManageChangeHistory >> operationBranchSchemas [
-
-	^ (self operationSpecifications collect: [ :each |
-		   self
-			   inputSchemaBranchForStringDiscriminatorNamed: 'operation'
-			   value: (each at: #name)
-			   required: (each at: #requiredProperties)
-			   requireDiscriminator: true ]) asArray
 ]
 
 { #category : 'private - request' }
@@ -597,4 +585,14 @@ MCPToolManageChangeHistory >> validateRequiredPropertiesForOperation: operation 
 			MCPInvalidToolInput
 				signalMissingRequiredArgumentNamed: each
 				forTool: self ] ]
+]
+
+{ #category : 'validating' }
+MCPToolManageChangeHistory >> validateRequest: request [
+
+	| operation |
+	operation := self operationFromRequest: request.
+	self
+		validateRequiredPropertiesForOperation: operation
+		inRequest: request
 ]

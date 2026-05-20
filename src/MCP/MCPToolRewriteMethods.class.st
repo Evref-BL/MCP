@@ -35,16 +35,12 @@ MCPToolRewriteMethods >> defaultIcons [
 { #category : 'defaults' }
 MCPToolRewriteMethods >> defaultInputSchema [
 
-	| schema |
-	schema := MCPStructureInputSchema new
-		          type: 'object';
-		          properties: self rewriteInputProperties;
-		          required: #( 'rules' );
-		          additionalProperties: false;
-		          yourself.
-	schema allOf:
-		{ self expectedChangeSetHashRequiredWhenApplyingSchema }.
-	^ schema
+	^ MCPStructureInputSchema new
+		  type: 'object';
+		  properties: self rewriteInputProperties;
+		  required: #( 'rules' );
+		  additionalProperties: false;
+		  yourself
 ]
 
 { #category : 'defaults' }
@@ -90,32 +86,6 @@ MCPToolRewriteMethods >> executeWithRequest: request [
 				  errorResultForRewriteError: error
 				  request: rewriteRequest
 				  rawRequest: request ]
-]
-
-{ #category : 'private - schema' }
-MCPToolRewriteMethods >> expectedChangeSetHashRequiredWhenApplyingSchema [
-
-	| conditionSchema expectedSchema |
-	conditionSchema := MCPStructureInputSchema new
-		                   type: 'object';
-		                   properties: { (MCPStructureProperties new
-				                    name: 'apply';
-				                    type: 'boolean';
-				                    const: true;
-				                    yourself) };
-		                   required: #( 'apply' );
-		                   additionalProperties: true;
-		                   yourself.
-	expectedSchema := MCPStructureInputSchema new
-		                  type: 'object';
-		                  required: #( 'expectedChangeSetHash' );
-		                  additionalProperties: true;
-		                  yourself.
-	^ MCPStructureInputSchema new
-		  additionalProperties: true;
-		  schemaKeyword: #if put: conditionSchema;
-		  schemaKeyword: #then put: expectedSchema;
-		  yourself
 ]
 
 { #category : 'private - execution' }
@@ -281,6 +251,16 @@ MCPToolRewriteMethods >> rewriteScopeSchemaProperty [
 		            'The normalized method scope used to calculate rewrite changes.'.
 	property additionalProperties: true.
 	^ property
+]
+
+{ #category : 'validating' }
+MCPToolRewriteMethods >> validateRequest: request [
+
+	((request booleanArgumentNamed: 'apply' default: false) and: [
+		 (request hasArgumentNamed: 'expectedChangeSetHash') not ]) ifTrue: [
+		MCPInvalidToolInput
+			signalMissingRequiredArgumentNamed: 'expectedChangeSetHash'
+			forTool: self ]
 ]
 
 { #category : 'testing' }

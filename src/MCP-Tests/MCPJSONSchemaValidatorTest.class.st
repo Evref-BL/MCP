@@ -93,28 +93,9 @@ MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasAcceptRepresentativeArg
 ]
 
 { #category : 'tests' }
-MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasRejectInvalidBranchArguments [
+MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasRejectInvalidShapeArguments [
 
-	| editClassViolations editMethodViolations legacyScopeViolations runTestsViolations |
-	editClassViolations := self
-		                       violationsFor: {
-				                       (#operation -> 'create').
-				                       (#className -> 'MCPTool') } asDictionary
-		                       schema: MCPToolEditClass new inputSchema.
-	self
-		assert: (self keywordsFrom: editClassViolations)
-		equals: #( 'oneOf' ).
-	runTestsViolations := self
-		                      violationsFor: {
-				                      (#operation -> 'coverage').
-				                      (#tests
-				                       ->
-				                       { { (#className -> 'MCPToolContractsTest') }
-					                       asDictionary }) } asDictionary
-		                      schema: MCPToolRunTests new inputSchema.
-	self
-		assert: (self keywordsFrom: runTestsViolations)
-		equals: #( 'oneOf' ).
+	| editMethodViolations legacyScopeViolations |
 	legacyScopeViolations := self
 		                         violationsFor:
 		                         { (#scope -> 'packages') } asDictionary
@@ -133,6 +114,45 @@ MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasRejectInvalidBranchArgu
 	self
 		assert: (self keywordsFrom: editMethodViolations)
 		equals: #( 'additionalProperties' )
+]
+
+{ #category : 'tests' }
+MCPJSONSchemaValidatorTest >> testCurrentToolRequestValidationRejectsOperationSpecificMissingArguments [
+
+	self
+		should: [
+			MCPToolEditClass new requestFromToolCallArguments: {
+					(#operation -> 'create').
+					(#className -> 'MCPTool') } asDictionary ]
+		raise: MCPInvalidToolInput.
+	self
+		should: [
+			MCPToolEditRepository new requestFromToolCallArguments: {
+					(#operation -> 'commit').
+					(#repositoryName -> 'MCP') } asDictionary ]
+		raise: MCPInvalidToolInput.
+	self
+		should: [
+			MCPToolRunTests new requestFromToolCallArguments: {
+					(#operation -> 'coverage').
+					(#tests
+					 ->
+					 { { (#className -> 'MCPToolContractsTest') } asDictionary }) }
+					asDictionary ]
+		raise: MCPInvalidToolInput.
+	self
+		should: [
+			MCPToolFindMethods new requestFromToolCallArguments:
+				{ (#filterMode -> 'selectorReference') } asDictionary ]
+		raise: MCPInvalidToolInput.
+	self
+		should: [
+			MCPToolRewriteMethods new requestFromToolCallArguments: {
+					(#apply -> true).
+					(#rules -> { {
+							      (#lhs -> 'self').
+							      (#rhs -> 'self') } asDictionary }) } asDictionary ]
+		raise: MCPInvalidToolInput
 ]
 
 { #category : 'tests' }

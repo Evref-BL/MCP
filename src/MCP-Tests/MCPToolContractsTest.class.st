@@ -20,6 +20,33 @@ MCPToolContractsTest >> assertToolFlowSpec: aSpec [
 ]
 
 { #category : 'private' }
+MCPToolContractsTest >> assertNoCompositionKeywordsIn: aValue [
+
+	self assertNoCompositionKeywordsIn: aValue path: #(  )
+]
+
+{ #category : 'private' }
+MCPToolContractsTest >> assertNoCompositionKeywordsIn: aValue path: path [
+
+	| compositionKeywords |
+	compositionKeywords := #( oneOf anyOf allOf ).
+	aValue isDictionary ifTrue: [
+		compositionKeywords do: [ :keyword |
+			self deny: (aValue includesKey: keyword).
+			self deny: (aValue includesKey: keyword asString) ].
+		aValue keysAndValuesDo: [ :key :nestedValue |
+			self
+				assertNoCompositionKeywordsIn: nestedValue
+				path: (path copyWith: key) ].
+		^ self ].
+	(aValue isCollection and: [ aValue isString not ]) ifTrue: [
+		aValue withIndexDo: [ :nestedValue :index |
+			self
+				assertNoCompositionKeywordsIn: nestedValue
+				path: (path copyWith: index) ] ]
+]
+
+{ #category : 'private' }
 MCPToolContractsTest >> firstTextFromToolResult: aResult [
 
 	^ (aResult at: #content) first at: #text
@@ -67,6 +94,14 @@ MCPToolContractsTest >> testAllToolOutputSchemasAdvertiseStructuredSummaryWarnin
 		self
 			assert: (statusProperty extraProperties at: #enum) asArray
 			equals: #( 'ok' 'error' ) ]
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testAllToolInputSchemasAvoidCompositionKeywords [
+
+	MCPTool concreteSubclasses do: [ :toolClass |
+		self assertNoCompositionKeywordsIn:
+			(toolClass new asJRPCJSON at: #inputSchema) ]
 ]
 
 { #category : 'tests' }
@@ -616,92 +651,44 @@ MCPToolContractsTest >> testEditRepositoryOutputSchemaUsesActionForExecutedActio
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testEditToolSchemasAdvertiseOperationBranches [
+MCPToolContractsTest >> testEditToolSchemasAdvertiseOperationEnumsWithoutComposition [
 
-	| branchNamed classCreateBranch editClassBranches editMethodBranches editRepositoryBranches expectedRepositoryBranches methodCreateBranch updateBranch |
-	editRepositoryBranches := MCPToolEditRepository new inputSchema
-		                          asJRPCJSON at: #oneOf.
-	editClassBranches := MCPToolEditClass new inputSchema asJRPCJSON at:
-		                     #oneOf.
-	editMethodBranches := MCPToolEditMethod new inputSchema asJRPCJSON
-		                      at: #oneOf.
-	branchNamed := [ :branches :operationName |
-		               branches detect: [ :each |
-			               (((each at: #properties) at: 'operation') at: #const)
-			               = operationName ] ].
+	| classOperationProperty editClass editMethod editRepository methodOperationProperty repositoryOperationProperty |
+	editRepository := MCPToolEditRepository new.
+	editClass := MCPToolEditClass new.
+	editMethod := MCPToolEditMethod new.
+	repositoryOperationProperty := self
+		                               inputPropertyNamed: 'operation'
+		                               inTool: editRepository.
+	classOperationProperty := self
+		                          inputPropertyNamed: 'operation'
+		                          inTool: editClass.
+	methodOperationProperty := self
+		                           inputPropertyNamed: 'operation'
+		                           inTool: editMethod.
+	self deny: (editRepository inputSchema asJRPCJSON includesKey: #oneOf).
+	self deny: (editClass inputSchema asJRPCJSON includesKey: #oneOf).
+	self deny: (editMethod inputSchema asJRPCJSON includesKey: #oneOf).
 	self
-		assert: (editRepositoryBranches collect: [ :each |
-				 ((each at: #properties) at: 'operation') at: #const ]) asArray
+		assert: editRepository inputSchema required asSet
+		equals: #( 'operation' ) asSet.
+	self
+		assert: editClass inputSchema required asSet
+		equals: #( 'operation' 'className' ) asSet.
+	self
+		assert: editMethod inputSchema required asSet
+		equals: #( 'operation' 'className' ) asSet.
+	self
+		assert: (repositoryOperationProperty extraProperties at: #enum) asArray
 		equals:
 			#( 'create' 'attach' 'update' 'export' 'diff' 'commit' 'fetch'
 			   'pull' 'push' 'createBranch' 'switchBranch' ).
-	expectedRepositoryBranches := {
-		                              ('create'
-		                               -> #( 'operation' 'name' 'location' )).
-		                              ('attach'
-		                               -> #( 'operation' 'name' 'location' )).
-		                              ('update' -> #( 'operation' )).
-		                              ('export'
-		                               -> #( 'operation' 'repositoryName' )).
-		                              ('diff'
-		                               -> #( 'operation' 'repositoryName' )).
-		                              ('commit'
-		                               ->
-		                               #( 'operation' 'repositoryName'
-		                                  'message' )).
-		                              ('fetch'
-		                               -> #( 'operation' 'repositoryName' )).
-		                              ('pull'
-		                               -> #( 'operation' 'repositoryName' )).
-		                              ('push'
-		                               -> #( 'operation' 'repositoryName' )).
-		                              ('createBranch'
-		                               ->
-		                               #( 'operation' 'repositoryName'
-		                                  'branchName' )).
-		                              ('switchBranch'
-		                               ->
-		                               #( 'operation' 'repositoryName'
-		                                  'branchName' )) }.
-	expectedRepositoryBranches do: [ :association |
-			| branch operationProperty |
-			branch := branchNamed
-				          value: editRepositoryBranches
-				          value: association key.
-			operationProperty := (branch at: #properties) at: 'operation'.
-			self
-				assert: (branch at: #required) asSet
-				equals: association value asSet.
-			self assert: (operationProperty at: #description) isEmptyOrNil not ].
 	self
-		assert: (editClassBranches collect: [ :each |
-				 ((each at: #properties) at: 'operation') at: #const ]) asArray
+		assert: (classOperationProperty extraProperties at: #enum) asArray
 		equals: #( 'create' 'update' ).
-	classCreateBranch := branchNamed
-		                     value: editClassBranches
-		                     value: 'create'.
-	updateBranch := branchNamed value: editClassBranches value: 'update'.
 	self
-		assert: (classCreateBranch at: #required) asSet
-		equals:
-		#( 'operation' 'className' 'superclassName' 'packageName' ) asSet.
-	self
-		assert: (updateBranch at: #required) asSet
-		equals: #( 'operation' 'className' ) asSet.
-	self
-		assert: (editMethodBranches collect: [ :each |
-				 ((each at: #properties) at: 'operation') at: #const ]) asArray
-		equals: #( 'create' 'update' ).
-	methodCreateBranch := branchNamed
-		                      value: editMethodBranches
-		                      value: 'create'.
-	updateBranch := branchNamed value: editMethodBranches value: 'update'.
-	self
-		assert: (methodCreateBranch at: #required) asSet
-		equals: #( 'operation' 'className' 'methodSource' 'protocol' ) asSet.
-	self
-		assert: (updateBranch at: #required) asSet
-		equals: #( 'operation' 'className' 'selector' ) asSet
+		assert: (methodOperationProperty extraProperties at: #enum) asArray
+		equals: #( 'create' 'update' )
 ]
 
 { #category : 'tests' }
@@ -941,24 +928,19 @@ MCPToolContractsTest >> testFindMethodsListsMethodsForExistingClassScope [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testFindMethodsReferenceModesShareRequiredFilterCondition [
+MCPToolContractsTest >> testFindMethodsReferenceModesAdvertiseFilterRequirement [
 
-	| condition filterModeProperty schema |
+	| filterModeEnum filterModeProperty filterProperty schema |
 	schema := MCPToolFindMethods new inputSchema asJRPCJSON.
-	self assert: (schema at: #allOf) size equals: 1.
-	condition := (schema at: #allOf) first.
-	filterModeProperty := ((condition at: #if) at: #properties) at:
-		                      'filterMode'.
-	self
-		assert: (filterModeProperty at: #enum) asArray
-		equals:
-		#( 'selectorReference' 'classReference' 'variableReference' ).
-	self
-		assert: ((condition at: #if) at: #required) asArray
-		equals: #( 'filterMode' ).
-	self
-		assert: ((condition at: #then) at: #required) asArray
-		equals: #( 'filter' )
+	self deny: (schema includesKey: #allOf).
+	filterModeProperty := (schema at: #properties) at: 'filterMode'.
+	filterProperty := (schema at: #properties) at: 'filter'.
+	filterModeEnum := (filterModeProperty at: #enum) asArray.
+	#( 'selectorReference' 'classReference' 'variableReference' ) do: [
+		:referenceMode |
+		self assert: (filterModeEnum includes: referenceMode) ].
+	self assert: ((filterProperty at: #description) includesSubstring:
+			 'required when filterMode is selectorReference')
 ]
 
 { #category : 'tests' }
@@ -1202,15 +1184,13 @@ MCPToolContractsTest >> testInitializeResponseSerializesSupportedPharoVersions [
 { #category : 'tests' }
 MCPToolContractsTest >> testInputSchemaJSONOmitsDefaultSchemaNoise [
 
-	| condition schema |
+	| schema |
 	schema := MCPToolFindMethods new inputSchema asJRPCJSON.
 	self deny: (schema includesKey: #required).
 	self deny: (schema includesKey: #oneOf).
-	self assert: (schema at: #additionalProperties) equals: false.
-	condition := (schema at: #allOf) first.
-	self deny: (condition includesKey: #additionalProperties).
-	self deny: ((condition at: #if) includesKey: #additionalProperties).
-	self deny: ((condition at: #then) includesKey: #additionalProperties)
+	self deny: (schema includesKey: #anyOf).
+	self deny: (schema includesKey: #allOf).
+	self assert: (schema at: #additionalProperties) equals: false
 ]
 
 { #category : 'tests' }
@@ -1788,7 +1768,7 @@ MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 	self
 		assert: tool inputSchema required asSet
 		equals: #( 'tests' ) asSet.
-	self assert: (tool inputSchema extraProperties includesKey: #oneOf).
+	self deny: (tool inputSchema extraProperties includesKey: #oneOf).
 	inputPropertyNames := tool inputSchema properties collect: [ :each |
 		                      each name ].
 	operationProperty := tool inputSchema properties detect: [ :each |
