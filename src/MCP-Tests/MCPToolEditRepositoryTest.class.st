@@ -92,6 +92,101 @@ MCPToolEditRepositoryTest >> temporaryRepositoryLocationNamed: aName [
 ]
 
 { #category : 'tests' }
+MCPToolEditRepositoryTest >> testAttachParsesAndDispatchesToAttachCommand [
+
+	| command parsedRequest rawRequest tool |
+	tool := MCPToolEditRepository new.
+	rawRequest := tool requestFromToolCallArguments: {
+			              (#operation -> 'attach').
+			              (#name -> 'MCP').
+			              (#location -> 'C:/src/MCP').
+			              (#packageNames -> #( 'MCP' )) } asDictionary.
+	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
+	command := tool commandForRequest: parsedRequest.
+
+	self assert: parsedRequest class equals: MCPRepositoryAttachRequest.
+	self assert: parsedRequest operation equals: 'attach'.
+	self assert: command class equals: MCPAttachRepositoryCommand
+]
+
+{ #category : 'tests' }
+MCPToolEditRepositoryTest >> testAttachRegistersExistingGitCheckout [
+
+	| data location packageName repository repositoryName result |
+	repositoryName := 'MCP Edit Repository Attach Test'.
+	packageName := 'MCPToolEditRepositoryAttachPackage'.
+	location := self temporaryRepositoryLocationNamed:
+		            'MCPToolEditRepositoryTestAttach'.
+	self
+		withExportPackageNamed: packageName
+		className: 'MCPToolEditRepositoryAttachClass'
+		do: [
+				self
+					withCleanRepositoryNamed: repositoryName
+					location: location
+					do: [
+							self callToolWith: {
+									(#operation -> 'create').
+									(#name -> repositoryName).
+									(#location -> location pathString).
+									(#subdirectory -> 'src').
+									(#packageNames -> { packageName }) } asDictionary.
+							self callToolWith: {
+									(#operation -> 'export').
+									(#repositoryName -> repositoryName) } asDictionary.
+							self callToolWith: {
+									(#operation -> 'commit').
+									(#repositoryName -> repositoryName).
+									(#message -> 'Prepare existing checkout for attach test') }
+									asDictionary.
+							self removeRegisteredRepositoriesNamed: repositoryName.
+							result := self callToolWith: {
+									          (#operation -> 'attach').
+									          (#name -> repositoryName).
+									          (#location -> location pathString).
+									          (#subdirectory -> 'src').
+									          (#packageNames -> { packageName }) } asDictionary.
+							data := self dataFrom: result.
+							repository := IceRepository repositories detect: [ :each |
+								              each name asString = repositoryName ].
+							self deny: (result at: #isError ifAbsent: [ false ]).
+							self
+								assert: repository location pathString
+								equals: location pathString.
+							self assert: repository subdirectory equals: 'src'.
+							self
+								assert: (self packageNamesIn: repository)
+								equals: { packageName }.
+							self assert: (data at: #action) equals: 'attach'.
+							self
+								assert: ((data at: #repository) at: #name)
+								equals: repositoryName.
+							self assert: (data at: #packageNames) equals: { packageName } ] ]
+]
+
+{ #category : 'tests' }
+MCPToolEditRepositoryTest >> testAttachReportsDuplicateRepository [
+
+	| location repository repositoryName result |
+	repositoryName := 'MCP Attach Duplicate Test Repository'.
+	location := self temporaryRepositoryLocationNamed:
+		            'MCPToolEditRepositoryTestAttachDuplicate'.
+	repository := self
+		              newRepositoryNamed: repositoryName
+		              location: location
+		              packageNames: #(  ).
+	self withRegisteredRepository: repository do: [
+			result := self callToolWith: {
+					          (#operation -> 'attach').
+					          (#name -> repositoryName).
+					          (#location -> location pathString) } asDictionary.
+			self assert: (result at: #isError ifAbsent: [ false ]).
+			self assert:
+				((self summaryFrom: result) includesSubstring:
+					 'already registered') ]
+]
+
+{ #category : 'tests' }
 MCPToolEditRepositoryTest >> testCommitCreatesCommitAndReturnsResult [
 
 	| data location packageName repositoryName result |

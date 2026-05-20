@@ -30,6 +30,27 @@ MCPRepositorySpecTest >> requestWithArguments: aDictionary [
 ]
 
 { #category : 'tests' }
+MCPRepositorySpecTest >> testRepositoryAttachRequestParsesTypedInput [
+
+	| attachRequest |
+	attachRequest := MCPRepositoryAttachRequest
+		                 fromRequest: (self requestWithArguments: {
+					                  (#name -> 'MCP Repo').
+					                  (#location -> 'C:/src/MCP').
+					                  (#subdirectory -> 'src').
+					                  (#packageNames -> #( 'MCP' 'MCP-Tests' )) }
+					                  asDictionary)
+		                 tool: nil.
+	self assert: attachRequest operation equals: 'attach'.
+	self assert: attachRequest name equals: 'MCP Repo'.
+	self assert: attachRequest location equals: 'C:/src/MCP'.
+	self assert: attachRequest subdirectory equals: 'src'.
+	self
+		assert: attachRequest packageNames
+		equals: #( 'MCP' 'MCP-Tests' )
+]
+
+{ #category : 'tests' }
 MCPRepositorySpecTest >> testRepositoryCommitResultReturnsDictionary [
 
 	| data repository result |

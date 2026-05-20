@@ -203,6 +203,8 @@ MCPToolContractsTest >> testDictionaryShapedCommandResultsUseDTOClasses [
 		                         -> MCPRemoveMethodsResult).
 		                        (MCPCreateRepositoryCommand
 		                         -> MCPRepositoryCreateResult).
+		                        (MCPAttachRepositoryCommand
+		                         -> MCPRepositoryCreateResult).
 		                        (MCPUpdateRepositoryCommand
 		                         -> MCPRepositoryUpdateResult).
 		                        (MCPExportRepositoryCommand
@@ -226,10 +228,10 @@ MCPToolContractsTest >> testDictionaryShapedCommandResultsUseDTOClasses [
 		                        (MCPLoadRepositoryCommand
 		                         -> MCPLoadRepositoryResult) }.
 	commandResultClasses do: [ :association |
-		| source |
-		source := (association key >> #execute) sourceCode.
-		self assert:
-			(source includesSubstring: association value name asString) ].
+			| source |
+			source := (association key >> #execute) sourceCode.
+			self assert:
+				(source includesSubstring: association value name asString) ].
 	self assert:
 		((MCPRunTestsCommand
 		  >> #aggregateDataForResults:timedOut:unrunTests:) sourceCode
@@ -244,7 +246,7 @@ MCPToolContractsTest >> testDisplayToolsCatalogSummarizesToolOperations [
 	self
 		assert:
 		(presenter toolCatalogOperationSummaryFor: MCPToolEditRepository new)
-		equals: 'create | update | +8'.
+		equals: 'create | attach | +9'.
 	self
 		assert:
 		(presenter toolCatalogOperationSummaryFor: MCPToolEditMethod new)
@@ -523,6 +525,9 @@ MCPToolContractsTest >> testEditRepositoryDescriptionExplainsPackageAndFilesyste
 		                                  'removePackageNames'
 		                                  inTool: tool) description.
 	self assert: (description includesSubstring: 'repositoryName').
+	self assert: (description includesSubstring: 'operation=attach').
+	self assert: (description includesSubstring: 'existing Git checkout').
+	self assert: (description includesSubstring: 'without creating').
 	self assert: (description includesSubstring: 'operation=diff').
 	self assert: (description includesSubstring: 'without writing files').
 	self assert: (description includesSubstring: 'should be preferred').
@@ -556,7 +561,11 @@ MCPToolContractsTest >> testEditRepositoryDescriptionExplainsPackageAndFilesyste
 			 'Combine with location').
 	self assert:
 		(locationDescription includesSubstring: 'operation=create').
+	self assert:
+		(locationDescription includesSubstring: 'operation=attach').
 	self assert: (locationDescription includesSubstring: 'disambiguate').
+	self assert: (packageNamesDescription includesSubstring:
+			 'operation=create or operation=attach').
 	self assert: (packageNamesDescription includesSubstring:
 			 'replaces the full managed package list').
 	self assert:
@@ -588,8 +597,8 @@ MCPToolContractsTest >> testEditRepositoryHasAccurateNameAndRequiredArguments [
 	self
 		assert: (operationProperty extraProperties at: #enum) asArray
 		equals:
-			#( 'create' 'update' 'export' 'diff' 'commit' 'fetch' 'pull' 'push'
-			   'createBranch' 'switchBranch' )
+			#( 'create' 'attach' 'update' 'export' 'diff' 'commit' 'fetch'
+			   'pull' 'push' 'createBranch' 'switchBranch' )
 ]
 
 { #category : 'tests' }
@@ -617,17 +626,19 @@ MCPToolContractsTest >> testEditToolSchemasAdvertiseOperationBranches [
 	editMethodBranches := MCPToolEditMethod new inputSchema asJRPCJSON
 		                      at: #oneOf.
 	branchNamed := [ :branches :operationName |
-	               branches detect: [ :each |
-		               (((each at: #properties) at: 'operation') at: #const)
-		               = operationName ] ].
+		               branches detect: [ :each |
+			               (((each at: #properties) at: 'operation') at: #const)
+			               = operationName ] ].
 	self
 		assert: (editRepositoryBranches collect: [ :each |
 				 ((each at: #properties) at: 'operation') at: #const ]) asArray
 		equals:
-			#( 'create' 'update' 'export' 'diff' 'commit' 'fetch' 'pull' 'push'
-			   'createBranch' 'switchBranch' ).
+			#( 'create' 'attach' 'update' 'export' 'diff' 'commit' 'fetch'
+			   'pull' 'push' 'createBranch' 'switchBranch' ).
 	expectedRepositoryBranches := {
 		                              ('create'
+		                               -> #( 'operation' 'name' 'location' )).
+		                              ('attach'
 		                               -> #( 'operation' 'name' 'location' )).
 		                              ('update' -> #( 'operation' )).
 		                              ('export'
@@ -653,15 +664,15 @@ MCPToolContractsTest >> testEditToolSchemasAdvertiseOperationBranches [
 		                               #( 'operation' 'repositoryName'
 		                                  'branchName' )) }.
 	expectedRepositoryBranches do: [ :association |
-		| branch operationProperty |
-		branch := branchNamed
-			          value: editRepositoryBranches
-			          value: association key.
-		operationProperty := (branch at: #properties) at: 'operation'.
-		self
-			assert: (branch at: #required) asSet
-			equals: association value asSet.
-		self assert: (operationProperty at: #description) isEmptyOrNil not ].
+			| branch operationProperty |
+			branch := branchNamed
+				          value: editRepositoryBranches
+				          value: association key.
+			operationProperty := (branch at: #properties) at: 'operation'.
+			self
+				assert: (branch at: #required) asSet
+				equals: association value asSet.
+			self assert: (operationProperty at: #description) isEmptyOrNil not ].
 	self
 		assert: (editClassBranches collect: [ :each |
 				 ((each at: #properties) at: 'operation') at: #const ]) asArray
@@ -669,11 +680,11 @@ MCPToolContractsTest >> testEditToolSchemasAdvertiseOperationBranches [
 	classCreateBranch := branchNamed
 		                     value: editClassBranches
 		                     value: 'create'.
+	updateBranch := branchNamed value: editClassBranches value: 'update'.
 	self
 		assert: (classCreateBranch at: #required) asSet
 		equals:
 		#( 'operation' 'className' 'superclassName' 'packageName' ) asSet.
-	updateBranch := branchNamed value: editClassBranches value: 'update'.
 	self
 		assert: (updateBranch at: #required) asSet
 		equals: #( 'operation' 'className' ) asSet.
@@ -684,10 +695,10 @@ MCPToolContractsTest >> testEditToolSchemasAdvertiseOperationBranches [
 	methodCreateBranch := branchNamed
 		                      value: editMethodBranches
 		                      value: 'create'.
+	updateBranch := branchNamed value: editMethodBranches value: 'update'.
 	self
 		assert: (methodCreateBranch at: #required) asSet
 		equals: #( 'operation' 'className' 'methodSource' 'protocol' ) asSet.
-	updateBranch := branchNamed value: editMethodBranches value: 'update'.
 	self
 		assert: (updateBranch at: #required) asSet
 		equals: #( 'operation' 'className' 'selector' ) asSet
