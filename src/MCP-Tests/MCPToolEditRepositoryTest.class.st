@@ -86,6 +86,20 @@ MCPToolEditRepositoryTest >> removeRegisteredRepositoriesNamed: aRepositoryName 
 ]
 
 { #category : 'private' }
+MCPToolEditRepositoryTest >> shellCommand: aCommandString [
+
+	| status |
+	status := LibC uniqueInstance system: aCommandString.
+	self assert: status equals: 0
+]
+
+{ #category : 'private' }
+MCPToolEditRepositoryTest >> shellQuote: aString [
+
+	^ '''' , (aString copyReplaceAll: '''' with: '''"''"''') , ''''
+]
+
+{ #category : 'private' }
 MCPToolEditRepositoryTest >> temporaryRepositoryLocationNamed: aName [
 
 	^ FileLocator imageDirectory / aName
@@ -162,6 +176,77 @@ MCPToolEditRepositoryTest >> testAttachRegistersExistingGitCheckout [
 								assert: ((data at: #repository) at: #name)
 								equals: repositoryName.
 							self assert: (data at: #packageNames) equals: { packageName } ] ]
+]
+
+{ #category : 'tests' }
+MCPToolEditRepositoryTest >> testAttachRegistersLinkedGitWorktreeCheckout [
+
+	| data linkedLocation location packageName repository repositoryName result |
+	repositoryName := 'MCP Edit Repository Attach Linked Test'.
+	packageName := 'MCPToolEditRepositoryAttachLinkedPackage'.
+	location := self temporaryRepositoryLocationNamed:
+		            'MCPToolEditRepositoryTestAttachLinkedBase'.
+	linkedLocation := self temporaryRepositoryLocationNamed:
+		                  'MCPToolEditRepositoryTestAttachLinkedWorktree'.
+	self
+		withExportPackageNamed: packageName
+		className: 'MCPToolEditRepositoryAttachLinkedClass'
+		do: [
+			self
+				withCleanRepositoryNamed: repositoryName
+				location: location
+				do: [
+					self deleteDirectoryIfExists: linkedLocation.
+					[
+					self callToolWith: {
+							(#operation -> 'create').
+							(#name -> repositoryName).
+							(#location -> location pathString).
+							(#subdirectory -> 'src').
+							(#packageNames -> { packageName }) } asDictionary.
+					self callToolWith: {
+							(#operation -> 'export').
+							(#repositoryName -> repositoryName) } asDictionary.
+					self callToolWith: {
+							(#operation -> 'commit').
+							(#repositoryName -> repositoryName).
+							(#message -> 'Prepare linked checkout for attach test') }
+							asDictionary.
+					self shellCommand:
+						'git -C ' , (self shellQuote: location pathString)
+						, ' worktree add -b attach-linked-test '
+						, (self shellQuote: linkedLocation pathString).
+					self removeRegisteredRepositoriesNamed: repositoryName.
+					result := self callToolWith: {
+							          (#operation -> 'attach').
+							          (#name -> repositoryName).
+							          (#location -> linkedLocation pathString).
+							          (#subdirectory -> 'src').
+							          (#packageNames -> { packageName }) } asDictionary.
+					self deny: (result at: #isError ifAbsent: [ false ]).
+					data := self dataFrom: result.
+					repository := IceRepository repositories detect: [ :each |
+						              each name asString = repositoryName ].
+					self
+						assert: repository location pathString
+						equals: linkedLocation pathString.
+					self assert: repository subdirectory equals: 'src'.
+					self
+						assert: (self packageNamesIn: repository)
+						equals: { packageName }.
+					self assert: (data at: #action) equals: 'attach'.
+					self
+						assert: ((data at: #repository) at: #name)
+						equals: repositoryName.
+					self assert: (data at: #packageNames) equals: { packageName } ]
+						ensure: [
+							self removeRegisteredRepositoriesNamed: repositoryName.
+							linkedLocation exists ifTrue: [
+								LibC uniqueInstance system:
+									'git -C ' , (self shellQuote: location pathString)
+									, ' worktree remove --force '
+									, (self shellQuote: linkedLocation pathString).
+								self deleteDirectoryIfExists: linkedLocation ] ] ] ]
 ]
 
 { #category : 'tests' }

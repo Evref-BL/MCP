@@ -12,17 +12,17 @@ Class {
 { #category : 'private' }
 MCPAttachRepositoryCommand >> createRepository [
 
-	| creator repository |
+	| repository |
 	self signalDuplicateRepositoryIfNeeded.
-	creator := IceRepositoryCreator new.
-	creator
-		repository: (IceLibgitRepository new
-				 name: self request name;
-				 yourself);
-		location: self locationReference.
-	repository := creator createRepository.
+	repository := IceLibgitRepository new
+		              name: self request name;
+		              location: self locationReference;
+		              yourself.
+	repository pluginManager repositoryWillBeCreated: repository.
+	repository workingCopy initializePackagesFromRepository.
 	self request subdirectory ifNotNil: [ :value |
 		repository subdirectory: value ].
+	repository pluginManager repositoryWasCreated: repository.
 	repository register.
 	^ repository
 ]
@@ -51,6 +51,41 @@ MCPAttachRepositoryCommand >> execute [
 ]
 
 { #category : 'private' }
+MCPAttachRepositoryCommand >> gitDirectoryReferenceFor: gitDirPath relativeTo: aLocation [
+
+	| reference |
+	reference := gitDirPath asFileReference.
+	^ reference isAbsolute
+		  ifTrue: [ reference ]
+		  ifFalse: [ aLocation / gitDirPath ]
+]
+
+{ #category : 'private' }
+MCPAttachRepositoryCommand >> isGitCheckoutRoot: aLocation [
+
+	^ (IceRepositoryCreator isGitRoot: aLocation) or: [
+		  self isLinkedGitWorktreeRoot: aLocation ]
+]
+
+{ #category : 'private' }
+MCPAttachRepositoryCommand >> isLinkedGitWorktreeRoot: aLocation [
+
+	| contents gitDirectoryPath gitFile |
+	aLocation isDirectory ifFalse: [ ^ false ].
+	gitFile := aLocation / '.git'.
+	(gitFile exists and: [ gitFile isFile ]) ifFalse: [ ^ false ].
+	contents := [ gitFile contents trimBoth ]
+		            on: Error
+		            do: [ :ignored | ^ false ].
+	(contents beginsWith: 'gitdir:') ifFalse: [ ^ false ].
+	gitDirectoryPath := (contents allButFirst: 'gitdir:' size) trimBoth.
+	gitDirectoryPath isEmpty ifTrue: [ ^ false ].
+	^ (self
+		   gitDirectoryReferenceFor: gitDirectoryPath
+		   relativeTo: aLocation) exists
+]
+
+{ #category : 'private' }
 MCPAttachRepositoryCommand >> locationReference [
 
 	| location |
@@ -60,7 +95,7 @@ MCPAttachRepositoryCommand >> locationReference [
 				signalErrorCode: #RepositoryLocationMissing
 				message: 'operation=attach requires location to exist.'
 				details: self request requestedContext ].
-	(IceRepositoryCreator isGitRoot: location) ifFalse: [
+	(self isGitCheckoutRoot: location) ifFalse: [
 			MCPCommandError
 				signalErrorCode: #RepositoryLocationNotGitRoot
 				message:
