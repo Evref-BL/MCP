@@ -492,15 +492,6 @@ MCPToolQuery >> queryInputSchemaWithProperties: inputProperties [
 		  yourself
 ]
 
-{ #category : 'private - schema' }
-MCPToolQuery >> queryInputSchemaWithProperties: inputProperties allOf: conditionSchemas [
-
-	| schema |
-	schema := self queryInputSchemaWithProperties: inputProperties.
-	conditionSchemas ifNotEmpty: [ schema allOf: conditionSchemas ].
-	^ schema
-]
-
 { #category : 'private - pagination' }
 MCPToolQuery >> queryPageForEntries: entries limit: limit offset: offset [
 

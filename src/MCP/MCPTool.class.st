@@ -118,22 +118,6 @@ MCPTool >> commandForRequest: aToolRequest [
 	self subclassResponsibility
 ]
 
-{ #category : 'private - schema' }
-MCPTool >> conditionalInputSchemaIf: conditionSchema thenRequired: requiredFields [
-
-	| thenSchema |
-	thenSchema := MCPStructureInputSchema new
-		              type: 'object';
-		              required: requiredFields;
-		              additionalProperties: true;
-		              yourself.
-	^ MCPStructureInputSchema new
-		  additionalProperties: true;
-		  schemaKeyword: #if put: conditionSchema;
-		  schemaKeyword: #then put: thenSchema;
-		  yourself
-]
-
 { #category : 'defaults' }
 MCPTool >> defaultDescription [
 
@@ -382,40 +366,6 @@ MCPTool >> inputSchema: anObject [
 ]
 
 { #category : 'private - schema' }
-MCPTool >> inputSchemaBranchForStringDiscriminatorNamed: propertyName value: propertyValue required: requiredFields requireDiscriminator: requireDiscriminator [
-
-	^ self
-		  inputSchemaBranchForStringDiscriminatorValues:
-		  { (propertyName -> propertyValue) }
-		  required: requiredFields
-		  requireDiscriminators: requireDiscriminator
-]
-
-{ #category : 'private - schema' }
-MCPTool >> inputSchemaBranchForStringDiscriminatorValues: discriminatorAssociations required: requiredFields requireDiscriminators: requireDiscriminators [
-
-	| discriminatorProperties required |
-	discriminatorProperties := discriminatorAssociations collect: [ :each |
-		                           MCPStructureProperties new
-			                           name: each key;
-			                           type: 'string';
-			                           const: each value;
-			                           yourself ].
-	required := OrderedCollection new.
-	requireDiscriminators ifTrue: [
-		discriminatorAssociations do: [ :each |
-			(required includes: each key) ifFalse: [ required add: each key ] ] ].
-	requiredFields do: [ :each |
-		(required includes: each) ifFalse: [ required add: each ] ].
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: discriminatorProperties asArray;
-		  required: required asArray;
-		  additionalProperties: true;
-		  yourself
-]
-
-{ #category : 'private - schema' }
 MCPTool >> integerSchemaPropertyNamed: propertyName description: propertyDescription [
 
 	^ self
@@ -497,6 +447,12 @@ MCPTool >> pngSizeStringForForm: aForm [
 MCPTool >> requestFromToolCallArguments: toolCallArguments [
 
 	^ MCPToolRequest tool: self arguments: toolCallArguments
+]
+
+{ #category : 'validating' }
+MCPTool >> validateRequest: aToolRequest [
+
+	^ self
 ]
 
 { #category : 'private - schema' }

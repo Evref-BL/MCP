@@ -132,7 +132,7 @@ MCPToolEditRepository >> defaultInputSchema [
 		  properties: {
 				  (self
 					   operationSchemaPropertyWithDescription:
-						   'Selects the repository action to execute. Each oneOf branch describes the required fields for its action.'
+						   'Selects the repository action to execute. Some actions require additional fields, such as name and location for create, repositoryName for repository actions, message for commit, and branchName for branch actions.'
 					   supportedValuesLeadIn: 'Supported values are').
 				  (self
 					   schemaPropertyNamed: 'name'
@@ -179,7 +179,6 @@ MCPToolEditRepository >> defaultInputSchema [
 						   'Package names to remove from repository membership during operation=update using IcePackage>>remove. This does not unload packages from the image.'
 					   itemDescription: 'A package name to remove.') };
 		  required: #( 'operation' );
-		  oneOf: self operationBranchSchemas;
 		  additionalProperties: false;
 		  yourself
 ]
@@ -215,23 +214,6 @@ MCPToolEditRepository >> errorResultForCommandError: anError operation: action r
 			value ifNotNil: [ details at: key ifAbsentPut: [ value ] ] ] ].
 	details at: #action put: action.
 	^ self errorResultText: anError messageText details: details
-]
-
-{ #category : 'private - schema' }
-MCPToolEditRepository >> operationBranchSchemas [
-
-	^ (self operationSpecifications collect: [ :each |
-		   | branch operationProperty |
-		   branch := self
-			             inputSchemaBranchForStringDiscriminatorNamed:
-			             'operation'
-			             value: (each at: #name)
-			             required: (each at: #requiredProperties)
-			             requireDiscriminator: true.
-		   operationProperty := branch properties detect: [ :property |
-			                        property name = 'operation' ].
-		   operationProperty description: (each at: #description).
-		   branch ]) asArray
 ]
 
 { #category : 'private - operations' }

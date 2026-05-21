@@ -206,7 +206,6 @@ MCPToolEditClass >> defaultInputSchema [
 						   'The class comment to assign during operation=create. During operation=update this is a set-comment patch action; use an empty string to clear the comment and do not combine it with another update action.';
 					   yourself) };
 		  required: #( 'operation' 'className' );
-		  oneOf: self operationBranchSchemas;
 		  additionalProperties: false;
 		  yourself
 ]

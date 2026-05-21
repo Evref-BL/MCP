@@ -381,17 +381,6 @@ MCPToolEdit >> normalizedSingleLineText: aString [
 	^ text trimBoth
 ]
 
-{ #category : 'private - schema' }
-MCPToolEdit >> operationBranchSchemas [
-
-	^ (self operationSpecifications collect: [ :each |
-		   self
-			   inputSchemaBranchForStringDiscriminatorNamed: 'operation'
-			   value: (each at: #name)
-			   required: { 'className' } , (each at: #requiredProperties)
-			   requireDiscriminator: true ]) asArray
-]
-
 { #category : 'private - errors' }
 MCPToolEdit >> operationErrorCodePrefixFor: operation [
 
@@ -742,4 +731,14 @@ MCPToolEdit >> validateRequiredPropertiesForOperation: operation inRequest: requ
 			MCPInvalidToolInput
 				signalMissingRequiredArgumentNamed: each
 				forTool: self ] ]
+]
+
+{ #category : 'validating' }
+MCPToolEdit >> validateRequest: request [
+
+	| operation |
+	operation := self operationFromRequest: request.
+	self
+		validateRequiredPropertiesForOperation: operation
+		inRequest: request
 ]

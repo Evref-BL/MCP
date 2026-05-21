@@ -248,6 +248,7 @@ MCPToolRequest >> validate [
 		              schema: self tool inputSchema.
 	violations ifNotEmpty: [
 		MCPInvalidToolInput signalForTool: self tool violations: violations ].
+	self tool validateRequest: self.
 	^ self
 ]
 
