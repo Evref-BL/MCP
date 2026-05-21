@@ -1,6 +1,6 @@
 # Tool Reference
 
-MCP Pharo exposes tools through `tools/list` and `tools/call`. Tool names use
+MCP exposes tools through `tools/list` and `tools/call`. Tool names use
 hyphenated MCP names.
 
 Every tool returns MCP call content plus structured content. Structured content

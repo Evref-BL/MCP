@@ -1,6 +1,6 @@
 # Getting Started
 
-This guide loads MCP Pharo into a Pharo image, starts the HTTP endpoint, and
+This guide loads MCP into a Pharo image, starts the HTTP endpoint, and
 connects an MCP client.
 
 ## Requirements
@@ -12,7 +12,7 @@ connects an MCP client.
 For local use, run the image and the client on the same machine and bind to
 `127.0.0.1`.
 
-## Load MCP Pharo
+## Load MCP
 
 Open a supported Pharo image and evaluate:
 
@@ -137,7 +137,7 @@ manage-change-history
 ```
 
 Use a copied or disposable image before asking an agent to make broad edits.
-MCP Pharo saves the image after successful mutating tools, so a successful
+MCP saves the image after successful mutating tools, so a successful
 operation changes the running image state.
 
 ## Dashboard

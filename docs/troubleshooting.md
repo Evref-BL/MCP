@@ -22,7 +22,7 @@ http://127.0.0.1:4000
 
 If you changed the port in Pharo, update the MCP client configuration.
 
-MCP Pharo currently handles MCP calls over HTTP POST. Unsupported HTTP methods
+MCP currently handles MCP calls over HTTP POST. Unsupported HTTP methods
 return method-not-allowed instead of hanging.
 
 ## `tools/list` Is Empty Or Stale
@@ -79,7 +79,7 @@ on the critique.
 
 ## Repository State Looks Wrong
 
-MCP Pharo reads repository state from Iceberg in the running image. The exported
+MCP reads repository state from Iceberg in the running image. The exported
 Tonel files, the image's loaded packages, and Iceberg's working-copy state can
 differ.
 

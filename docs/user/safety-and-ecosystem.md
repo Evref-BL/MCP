@@ -1,9 +1,9 @@
 # Safety And Ecosystem Integration
 
-MCP Pharo is safest when callers use the dedicated tools before falling back to
-raw evaluation. The tools are built around Pharo's normal development systems,
-so an agent works through image-aware operations instead of editing exported
-source text blindly.
+MCP is safest when callers use the dedicated tools before falling back to raw
+evaluation. The tools are built around Pharo's normal development systems, so an
+agent works through image-aware operations instead of editing exported source
+text blindly.
 
 ## Tool Boundary
 
@@ -126,7 +126,7 @@ edits to ask whether the relevant methods were exercised.
 
 ## Repository Work
 
-MCP Pharo uses Iceberg for repository state. The repository tools can:
+MCP uses Iceberg for repository state. The repository tools can:
 
 - list registered repositories and their branch, head, package, modified, and
   remote metadata
