@@ -2,72 +2,63 @@
 ![Build Info](https://github.com/Evref-BL/MCP/workflows/CI/badge.svg)
 [![Coverage Status](https://coveralls.io/repos/github/Evref-BL/MCP/badge.svg?branch=main)](https://coveralls.io/github/Evref-BL/MCP?branch=main)
 
-# Model Context Protocol (MCP) Server for Pharo Smalltalk
+# MCP for Pharo Smalltalk
 
-## Overview
+MCP is an in-image server for the Model Context Protocol in Pharo Smalltalk.
 
-This repository provides an implementation of a Model Context Protocol (MCP) server in Pharo Smalltalk. The server exposes a set of tools and capabilities for interacting with the Pharo image via HTTP.
+Load it into a Pharo image, start its HTTP server, and an MCP client can inspect and change the live image through Pharo-aware tools. The server exposes packages, classes, methods, tests, repositories, change history, screenshots, and a bounded `evaluate` escape hatch.
+
+The main design point is integration with the existing Pharo ecosystem. Edits use Pharo compilation, Refactoring Browser and Refactoring Engine operations, Renraku critiques, SUnit, CoverageCollector, Iceberg, Metacello, Epicea change history, Spec dashboards, and PharoCompatibility where those systems own the behavior. MCP is not a text patcher over Tonel files; it works with the running image and returns structured MCP results.
 
 ## Supported Pharo Versions
 
-MCP supports Pharo 12, Pharo 13, and Pharo 14. Mainline development targets the Pharo 13 API surface; the project uses PharoCompatibility to keep the supported version range loadable and tested.
+MCP supports Pharo 12, Pharo 13, and Pharo 14. Mainline development targets the Pharo 13 API surface and uses PharoCompatibility to keep the supported range loadable and tested.
 
-## Installation
+## Install
 
-### Smalltalk part
+Download and open a supported [Pharo](https://pharo.org/download) image, then load MCP:
 
-1. **Install Pharo**
+```smalltalk
+Metacello new
+   baseline: 'MCP';
+   repository: 'github://Evref-BL/MCP:main/src';
+   load.
+```
 
- Download and install [Pharo](https://pharo.org/download). This project currently supports Pharo 12, Pharo 13, and Pharo 14.
+To use MCP as a dependency, reference the baseline from your project:
 
-2. **Load the MCP Project**
+```smalltalk
+spec
+   baseline: 'MCP'
+   with: [ spec repository: 'github://Evref-BL/MCP:main/src' ].
+```
 
- Open your Pharo image and load the MCP project. To load MCP directly in an image, use this snippet in a Playground or Workspace:
+## Quick Start
 
- ```smalltalk
- Metacello new
-    baseline: 'MCP';
-    repository: 'github://Evref-BL/MCP:main/src';
-    load.
- ```
+Start the HTTP server from a Playground or Workspace:
 
- To add MCP as a dependency of another project, reference the MCP baseline from that project's baseline:
+```smalltalk
+mcp := MCP new.
+mcp port: 4000.
+mcp start.
+```
 
- ```smalltalk
- spec
-    baseline: 'MCP'
-    with: [ spec repository: 'github://Evref-BL/MCP:main/src' ].
- ```
+The server runs while the image runs. Stop it with:
 
-### Starting the Server
+```smalltalk
+mcp stop.
+```
 
-To start the MCP HTTP server, launch the Pharo image and execute code like this in a Playground or Workspace:
+Connect an MCP client to:
 
- ```smalltalk
- mcp := MCP new.
- mcp port: 4000.
- mcp start.
- ```
+```text
+http://127.0.0.1:4000
+```
 
-This starts the MCP server on port 4000. You can use another available port if 4000 conflicts with another service.
+A generic remote MCP client entry looks like this:
 
-> The server will only run as long as the Pharo image is running. You must keep the image open for the server to remain available.
-
-In a graphical Pharo image, inspect the `mcp` object and open the Dashboard tab to monitor the server and control its lifecycle.
-
-### Codex part
-
-If you want to use Codex to manipulate Pharo, create an empty folder and copy inside it [user/codex/.codex](user/codex/.codex) as `.codex` and [user/AGENTS.md](user/AGENTS.md) as `AGENTS.md`.
-It will give Codex the default configuration of the MCP server on port 4000. If you started the server on another port, update the copied `.codex/config.toml` accordingly.
-
-### OpenCode part
-
-If you want to use opencode to manipulate Pharo, you can follow these steps:
-1. Go to the configuration folder of opencode: open ~/.config/opencode/
-2. Edit file: opencode.json to add the below:
 ```json
 {
-  "$schema": "https://opencode.ai/config.json",
   "mcp": {
     "pharo": {
       "type": "remote",
@@ -77,10 +68,69 @@ If you want to use opencode to manipulate Pharo, you can follow these steps:
   }
 }
 ```
-3. Close opencode and reopen it. You should see in the left bottom corner a green pointer for MCP indicating that opencode is connected to the MCP server. Make sure you started it in Pharo first. <img width="150" height="50" alt="Screenshot 2026-04-16 at 10 11 48 AM (2)" src="https://github.com/user-attachments/assets/6f50c4d9-ad34-441e-bdfe-7880c7f3b30b" />
-4. For more details about connected MCPs you can check the command `/mcps`. <img width="600" height="530" alt="Screenshot 2026-04-16 at 10 11 59 AM (2)" src="https://github.com/user-attachments/assets/bc851534-e494-49fd-8bd7-b9c23c3ecd13" />
-5. You can follow this [documentation](https://opencode.ai/docs/mcp-servers/) to get more updates/explanation.
 
-## Usage
+For Codex, copy [user/codex/.codex](user/codex/.codex) into your agent workspace as `.codex`, and copy [user/AGENTS.md](user/AGENTS.md) as `AGENTS.md`. If you use a different port, update `.codex/config.toml`.
 
-Once the server is started, AI clients interact with it via HTTP requests on the configured port (default: 4000).
+## First Tools
+
+Start with read-only discovery:
+
+```text
+tools/list
+find-packages
+find-classes
+find-methods
+inspect-class
+inspect-method
+find-repositories
+```
+
+Then use dedicated operations before falling back to `evaluate`:
+
+```text
+edit-class
+edit-method
+rewrite-methods
+run-tests
+edit-repository
+manage-change-history
+capture-screenshot
+```
+
+`evaluate` can run arbitrary Smalltalk. Use it only for short inspection or glue code when no dedicated tool fits.
+
+## Safety Model
+
+The server keeps raw MCP arguments at the transport boundary. Each tool owns its JSON schema, parses requests into typed request objects, dispatches command or query objects, and returns structured content with `status`, `summary`, `warnings`, and either `data` or `error`.
+
+Image-changing tools save the image after a successful mutation. Read-only tools do not.
+
+The safer edit paths use Pharo facilities:
+
+- `edit-class` and `edit-method` use Refactoring Browser and Refactoring Engine operations for renames, slot changes, argument changes, moves, and removals where Pharo provides them.
+- `force=false` stops on `RBRefactoringWarning` and returns `impactMessages`, `howToProceed`, and `forceSupported=true`. Rerun with `force=true` only after reviewing the impact.
+- `edit-method` returns selected Renraku critiques after method compilation, including error-severity critiques and selected non-error rules.
+- `rewrite-methods` previews AST rewrite changes first and returns a `changeSetHash`; applying the rewrite requires `expectedChangeSetHash`.
+- `run-tests` uses SUnit and can collect CoverageCollector method and node coverage for an explicit method scope.
+- `edit-repository` works through Iceberg. Use `diff` to inspect image-side repository changes before exporting, committing, pulling, or pushing.
+- `manage-change-history` previews Epicea apply/revert operations and performs them only with `confirm=true`.
+
+This does not remove the normal responsibility of working in a safe image. Use disposable or copied images for automation and risky edits.
+
+## Dashboard
+
+Inspect an `MCP` instance in a graphical image and open the dashboard tab. The Spec dashboard shows server status, port and debug-mode controls, registered tools, optional observability, metrics, traces, and recent logs. The tool catalog uses the same tool metadata exposed to MCP clients.
+
+## Documentation
+
+- [Getting started](docs/user/getting-started.md) covers loading, starting, and connecting an MCP client.
+- [Safety and ecosystem integration](docs/user/safety-and-ecosystem.md) explains the refactoring, critique, test, repository, change-history, and dashboard boundaries.
+- [Tool reference](docs/reference/tools.md) lists the MCP tool groups and their intended use.
+- [Troubleshooting](docs/troubleshooting.md) maps common startup, connection, and image-state problems to checks.
+- [Source vs live image checks](docs/dev/source-vs-live-image-checks.md) explains what can be verified from exported source and what needs a live image.
+
+## Development
+
+CI loads the project with smalltalkCI and runs `MCP-Tests` and `MCP-Spec-Tests` on Pharo 12, 13, and 14.
+
+Static checks from source are useful for documentation and package layout, but tool execution must be verified in a live image. See [Source vs live image checks](docs/dev/source-vs-live-image-checks.md).
