@@ -1,4 +1,4 @@
-# Source vs Live Image Checks
+# Source Vs Live Image Checks
 
 This document maps which checks for this repository can run from source only
 and which checks require a live Pharo image. It does not define or depend on
@@ -13,7 +13,8 @@ These checks do not require a running Pharo image:
 - file layout inspection for expected package directories
 - review of `src/BaselineOfMCP/BaselineOfMCP.class.st`
 - search for expected tool classes and test classes in exported source files
-- review of `dev/AGENTS.md`, `user/AGENTS.md`, `README.md`, and this document
+- review of `dev/AGENTS.md`, `user/AGENTS.md`, `README.md`, `docs/`, and this
+  document
 - review of package dependencies, baseline groups, and test package names
 
 These checks can confirm that source files, package declarations, and
@@ -40,6 +41,7 @@ These checks require an explicitly approved disposable or safe live image:
 - package, class, method, or test queries against the running image
 - edit, rewrite, export, or repository mutation tools
 - image save or image-local Git operations
+- dashboard and observability behavior
 
 ## Disposable Inputs Required For Live Verification
 

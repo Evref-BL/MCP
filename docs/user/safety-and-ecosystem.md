@@ -1,0 +1,179 @@
+# Safety And Ecosystem Integration
+
+MCP Pharo is safest when callers use the dedicated tools before falling back to
+raw evaluation. The tools are built around Pharo's normal development systems,
+so an agent works through image-aware operations instead of editing exported
+source text blindly.
+
+## Tool Boundary
+
+Each tool owns its MCP metadata:
+
+- name and title
+- description
+- icon
+- input JSON schema
+- output JSON schema
+
+The execution path is:
+
+1. The HTTP endpoint receives a JSON-RPC `tools/call`.
+2. `MCPToolRequest` validates raw arguments against the tool input schema.
+3. The concrete tool parses the request into a typed request or spec object.
+4. The tool dispatches a command or query object.
+5. The command uses Pharo APIs to query or mutate the image.
+6. The tool returns structured content with `status`, `summary`, `warnings`,
+   and either `data` or `error`.
+
+This keeps transport parsing, schema validation, image operations, and result
+formatting in separate places.
+
+## Refactorings
+
+Class and method edits use Refactoring Browser and Refactoring Engine operations
+where Pharo owns the behavior.
+
+Examples include:
+
+- class rename with `ReRenameClassRefactoring`
+- class removal with `ReRemoveClassRefactoring`
+- method rename with `ReRenameMethodRefactoring`
+- argument add/remove with `RBAddParameterRefactoring` and
+  `RBRemoveParameterRefactoring`
+- slot add, remove, rename, pull-up, and push-down with the corresponding
+  instance-variable refactorings
+- method batch removal with `ReRemoveMethodsRefactoring`
+
+When a refactoring raises `RBRefactoringWarning`, the default behavior is to
+stop. The tool result includes:
+
+```text
+impactMessages
+howToProceed
+forceSupported: true
+```
+
+Review the impact and rerun the same request with `force=true` only when the
+warning is acceptable. When forced, the warning messages are returned in the
+normal `warnings` array.
+
+## Critiques
+
+`edit-method` compiles method source in the image and returns selected Renraku
+critiques in the structured result. It includes error-severity critiques and a
+small set of non-error rules that are useful after automated edits, such as
+excessive arguments, missing super sends, return in ensure, temporary variable
+overrides, and unary accessing methods without returns.
+
+Critiques include:
+
+- Renraku rule class
+- title
+- description
+- source interval when available
+
+The method may compile successfully and still return critiques. Treat critiques
+as follow-up review evidence, not as transport failures.
+
+## Rewrite Preview And Confirmation
+
+`rewrite-methods` uses Smalltalk AST rewrite rules. Patterns use RB AST pattern
+syntax, not regex.
+
+The default mode is preview:
+
+```json
+{
+  "rules": [
+    {
+      "lhs": "`@receiver ifTrue: [ `@body ]",
+      "rhs": "`@receiver ifTrue: [ `@body ]"
+    }
+  ],
+  "apply": false
+}
+```
+
+Preview mode returns calculated changes and a `changeSetHash`. Applying requires
+the hash from a preview of the same request:
+
+```json
+{
+  "rules": [
+    {
+      "lhs": "`@old",
+      "rhs": "`@new"
+    }
+  ],
+  "packageNames": ["MyPackage"],
+  "apply": true,
+  "expectedChangeSetHash": 123456
+}
+```
+
+Applying to the whole image also requires `force=true`. Prefer an explicit
+package, class, hierarchy, or method scope.
+
+## Tests And Coverage
+
+`run-tests` runs SUnit classes or individual methods and returns structured test
+results. With `operation=coverage`, the same test run can collect
+CoverageCollector method and node coverage for an explicit method scope.
+
+Coverage output includes method counts, node counts, uncovered methods,
+partially covered methods, and optional covered method details. Use it after
+edits to ask whether the relevant methods were exercised.
+
+## Repository Work
+
+MCP Pharo uses Iceberg for repository state. The repository tools can:
+
+- list registered repositories and their branch, head, package, modified, and
+  remote metadata
+- load Metacello baselines
+- create or update image-side repository registration
+- inspect `workingCopyDiff`
+- export image changes to Tonel files
+- commit, fetch, pull, push, create branches, and switch branches
+
+Use `find-repositories` and `edit-repository` with `operation=diff` before
+exporting or committing. Export writes image changes to disk and updates the
+Iceberg index; it does not stage or commit Git changes.
+
+## Change History
+
+`manage-change-history` uses Epicea change history. It can list `.ombu` files,
+list entries, preview applying entries, preview reverting entries, and perform
+the selected apply or revert only when `confirm=true`.
+
+Use this when recovering image-side changes or preparing a clean handoff from a
+live image back to Tonel/Git.
+
+## Evaluation Escape Hatch
+
+`evaluate` runs arbitrary Smalltalk and saves the image after a successful call.
+It is useful for short inspection or glue code when no dedicated tool exists.
+
+Prefer a dedicated tool when one exists, because the dedicated tools validate
+input, return structured result data, and often use safer Pharo APIs.
+
+## Observability And UI
+
+The Spec dashboard is available from an inspected `MCP` object. It shows:
+
+- server status and port
+- debug mode
+- registered tools and descriptions
+- optional observability
+- per-tool timing metrics
+- traces for errors and outliers
+- recent logs
+
+Observability is disabled by default. Enable it for a debugging session, then
+clear it when the session is done.
+
+## Version Compatibility
+
+The baseline loads PharoCompatibility, JRPC, and TinyLogger. CI covers Pharo 12,
+13, and 14. Code that depends on version-sensitive Pharo APIs should go through
+PharoCompatibility rather than assuming the Pharo 13 API is present everywhere.
