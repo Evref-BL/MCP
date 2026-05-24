@@ -57,6 +57,15 @@ MCPToolAPITestCase >> expectedUndeclaredVariableNoticeClassNames [
 	     'OCCompilationError' )
 ]
 
+{ #category : 'private - parsing' }
+MCPToolAPITestCase >> parsedRequestForTool: aTool arguments: someArguments [
+
+	^ aTool parsedRequestFromToolRequest:
+		  (self
+			   unvalidatedToolRequestForTool: aTool
+			   arguments: someArguments)
+]
+
 { #category : 'private - results' }
 MCPToolAPITestCase >> structuredContentFrom: aResult [
 
@@ -67,6 +76,15 @@ MCPToolAPITestCase >> structuredContentFrom: aResult [
 MCPToolAPITestCase >> summaryFrom: aResult [
 
 	^ (self structuredContentFrom: aResult) at: #summary
+]
+
+{ #category : 'private - parsing' }
+MCPToolAPITestCase >> unvalidatedToolRequestForTool: aTool arguments: someArguments [
+
+	^ MCPToolRequest new
+		  tool: aTool;
+		  arguments: someArguments asDictionary;
+		  yourself
 ]
 
 { #category : 'private - results' }
