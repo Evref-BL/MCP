@@ -246,6 +246,8 @@ MCPToolContractsTest >> testDictionaryShapedCommandResultsUseDTOClasses [
 		                         -> MCPRepositoryExportResult).
 		                        (MCPRepositoryDiffCommand
 		                         -> MCPRepositoryDiffResult).
+		                        (MCPRepositoryVerifyIdentityCommand
+		                         -> MCPRepositoryVerifyIdentityResult).
 		                        (MCPCommitRepositoryCommand
 		                         -> MCPRepositoryCommitResult).
 		                        (MCPAdoptRepositoryHeadCommand
@@ -283,7 +285,7 @@ MCPToolContractsTest >> testDisplayToolsCatalogSummarizesToolOperations [
 	self
 		assert:
 		(presenter toolCatalogOperationSummaryFor: MCPToolEditRepository new)
-		equals: 'create | attach | +10'.
+		equals: 'create | attach | +11'.
 	self
 		assert:
 		(presenter toolCatalogOperationSummaryFor: MCPToolEditMethod new)
@@ -539,7 +541,7 @@ MCPToolContractsTest >> testEditMethodSchemaAdvertisesMethodState [
 { #category : 'tests' }
 MCPToolContractsTest >> testEditRepositoryDescriptionDocumentsRepositoryOperations [
 
-	| branchNameDescription description locationDescription messageDescription packageNamesDescription removePackageNamesDescription repositoryNameDescription tool |
+	| branchNameDescription description isModifiedDescription locationDescription messageDescription modifiedPackageNamesDescription packageNamesDescription removePackageNamesDescription repositoryNameDescription subdirectoryDescription tool |
 	tool := MCPToolEditRepository new.
 	description := tool description.
 	messageDescription := (self
@@ -554,9 +556,19 @@ MCPToolContractsTest >> testEditRepositoryDescriptionDocumentsRepositoryOperatio
 	locationDescription := (self
 		                        inputPropertyNamed: 'location'
 		                        inTool: tool) description.
+	subdirectoryDescription := (self
+		                             inputPropertyNamed: 'subdirectory'
+		                             inTool: tool) description.
 	packageNamesDescription := (self
 		                            inputPropertyNamed: 'packageNames'
 		                            inTool: tool) description.
+	modifiedPackageNamesDescription := (self
+		                                    inputPropertyNamed:
+		                                    'modifiedPackageNames'
+		                                    inTool: tool) description.
+	isModifiedDescription := (self
+		                          inputPropertyNamed: 'isModified'
+		                          inTool: tool) description.
 	removePackageNamesDescription := (self
 		                                  inputPropertyNamed:
 		                                  'removePackageNames'
@@ -572,6 +584,11 @@ MCPToolContractsTest >> testEditRepositoryDescriptionDocumentsRepositoryOperatio
 	self assert: (description includesSubstring: 'escape hatch').
 	self assert:
 		(description includesSubstring: 'without staging or committing').
+	self assert: (description includesSubstring: 'operation=verifyIdentity').
+	self assert:
+		(description includesSubstring: 'asserts expected repository identity fields').
+	self assert:
+		(description includesSubstring: 'provide at least one expected field').
 	self assert: (description includesSubstring: 'operation=commit').
 	self assert:
 		(description includesSubstring: 'IceRepository>>commitWithMessage:').
@@ -599,6 +616,8 @@ MCPToolContractsTest >> testEditRepositoryDescriptionDocumentsRepositoryOperatio
 	self assert:
 		(branchNameDescription includesSubstring: 'operation=adoptHead').
 	self assert:
+		(branchNameDescription includesSubstring: 'operation=verifyIdentity').
+	self assert:
 		(repositoryNameDescription includesSubstring: 'existing repository').
 	self assert:
 		(repositoryNameDescription includesSubstring:
@@ -607,11 +626,22 @@ MCPToolContractsTest >> testEditRepositoryDescriptionDocumentsRepositoryOperatio
 		(locationDescription includesSubstring: 'operation=create').
 	self assert:
 		(locationDescription includesSubstring: 'operation=attach').
+	self assert:
+		(locationDescription includesSubstring: 'operation=verifyIdentity').
 	self assert: (locationDescription includesSubstring: 'disambiguate').
+	self assert:
+		(subdirectoryDescription includesSubstring: 'operation=verifyIdentity').
 	self assert: (packageNamesDescription includesSubstring:
 			 'operation=create or operation=attach').
 	self assert: (packageNamesDescription includesSubstring:
 			 'replaces the full managed package list').
+	self assert:
+		(packageNamesDescription includesSubstring: 'operation=verifyIdentity').
+	self assert:
+		(modifiedPackageNamesDescription includesSubstring:
+			 'operation=verifyIdentity').
+	self assert:
+		(isModifiedDescription includesSubstring: 'operation=verifyIdentity').
 	self assert:
 		(removePackageNamesDescription includesSubstring: 'does not unload')
 ]
@@ -709,13 +739,16 @@ MCPToolContractsTest >> testEditRepositoryHasAccurateNameAndRequiredArguments [
 	self assert: (propertyNames includes: 'branchName').
 	self assert: (propertyNames includes: 'subdirectory').
 	self assert: (propertyNames includes: 'packageNames').
+	self assert: (propertyNames includes: 'modifiedPackageNames').
+	self assert: (propertyNames includes: 'isModified').
 	self assert: (propertyNames includes: 'addPackageNames').
 	self assert: (propertyNames includes: 'removePackageNames').
 	self
 		assert: (operationProperty extraProperties at: #enum) asArray
 		equals:
-			#( 'create' 'attach' 'update' 'export' 'diff' 'commit' 'adoptHead'
-			   'fetch' 'pull' 'push' 'createBranch' 'switchBranch' )
+			#( 'create' 'attach' 'update' 'verifyIdentity' 'export' 'diff'
+			   'commit' 'adoptHead' 'fetch' 'pull' 'push' 'createBranch'
+			   'switchBranch' )
 ]
 
 { #category : 'tests' }
@@ -732,11 +765,13 @@ MCPToolContractsTest >> testEditRepositoryOutputSchemaUsesActionForExecutedActio
 		(dataProperties includesKey: 'modifiedPackageNamesBefore').
 	self assert:
 		(dataProperties includesKey: 'modifiedPackageNamesAfter').
+	self assert: (dataProperties includesKey: 'checkedFields').
 	self assert:
 		(dataProperties includesKey: 'previousReferenceCommitId').
 	self assert: (dataProperties includesKey: 'referenceCommitId').
 	self assert: (dataProperties includesKey: 'adoptedCommitId').
 	self assert: (dataProperties includesKey: 'didAdopt').
+	self assert: (dataProperties includesKey: 'matched').
 	self deny: (dataProperties includesKey: 'operation').
 	self assert: (required includes: 'action').
 	self deny: (required includes: 'operation')
@@ -775,8 +810,9 @@ MCPToolContractsTest >> testEditToolSchemasAdvertiseOperationEnumsWithoutComposi
 		assert:
 		(repositoryOperationProperty extraProperties at: #enum) asArray
 		equals:
-			#( 'create' 'attach' 'update' 'export' 'diff' 'commit' 'adoptHead'
-			   'fetch' 'pull' 'push' 'createBranch' 'switchBranch' ).
+			#( 'create' 'attach' 'update' 'verifyIdentity' 'export' 'diff'
+			   'commit' 'adoptHead' 'fetch' 'pull' 'push' 'createBranch'
+			   'switchBranch' ).
 	self
 		assert: (classOperationProperty extraProperties at: #enum) asArray
 		equals: #( 'create' 'update' ).

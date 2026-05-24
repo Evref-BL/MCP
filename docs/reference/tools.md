@@ -21,11 +21,15 @@ error: structured error payload
 | Tool | Use |
 | --- | --- |
 | `find-repositories` | List Iceberg repositories registered in the image, including location, branch/head metadata, exact head commit id, modified packages, remotes, and upstream details. |
-| `edit-repository` | Create, update, diff, export, commit, fetch, pull, push, create branches, or switch branches through Iceberg. |
+| `edit-repository` | Create, update, verifyIdentity, diff, export, commit, fetch, pull, push, create branches, or switch branches through Iceberg. |
 | `load-repository` | Load a Metacello baseline from a remote repository or an already-known baseline. |
 
-Use `edit-repository` with `operation=diff` before exporting or committing image
-changes.
+Use `edit-repository` with `operation=verifyIdentity` to assert repository identity
+before edits or exports, and `operation=diff` before exporting or committing
+image changes.
+`verifyIdentity` requires at least one expected identity field, such as
+`location`, `branchName`, `subdirectory`, `packageNames`,
+`modifiedPackageNames`, or `isModified`.
 
 ## Packages
 
@@ -112,7 +116,7 @@ manage-change-history when entries were performed
 evaluate
 ```
 
-`edit-repository` does not save for `operation=diff`.
+`edit-repository` does not save for `operation=verifyIdentity` or `operation=diff`.
 
 ## Refactoring Warnings
 

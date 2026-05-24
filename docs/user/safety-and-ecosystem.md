@@ -133,12 +133,13 @@ MCP uses Iceberg for repository state. The repository tools can:
 - load Metacello baselines
 - create or update image-side repository registration
 - inspect `workingCopyDiff`
+- verify expected repository identity before edits or exports
 - export image changes to Tonel files
 - commit, fetch, pull, push, create branches, and switch branches
 
-Use `find-repositories` and `edit-repository` with `operation=diff` before
-exporting or committing. Export writes image changes to disk and updates the
-Iceberg index; it does not stage or commit Git changes.
+Use `find-repositories` and `edit-repository` with `operation=verifyIdentity` and
+`operation=diff` before exporting or committing. Export writes image changes to
+disk and updates the Iceberg index; it does not stage or commit Git changes.
 
 ## Change History
 

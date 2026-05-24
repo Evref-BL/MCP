@@ -1,5 +1,5 @@
 "
-MCP tool for mutating Iceberg repositories registered in the image. The public operations are create, attach, update, diff, export, commit, adoptHead, fetch, pull, push, createBranch, and switchBranch. Creation registers a repository and can attach initial packages. Updates change repository metadata or package membership in the image. Export writes image changes to the repository working tree and index without committing. Diff reports pending image changes. Commit creates an Iceberg commit from the current working-copy diff. adoptHead refreshes the image working-copy reference commit to the repository HEAD for reliable same-image continuation after commits or fast-forwards.
+MCP tool for Iceberg repositories registered in the image. The public operations are create, attach, update, verifyIdentity, diff, export, commit, adoptHead, fetch, pull, push, createBranch, and switchBranch. Creation registers a repository and can attach initial packages. Updates change repository metadata or package membership in the image. verifyIdentity asserts expected repository identity fields without writing files. Export writes image changes to the repository working tree and index without committing. Diff reports pending image changes. Commit creates an Iceberg commit from the current working-copy diff. adoptHead refreshes the image working-copy reference commit to the repository HEAD for reliable same-image continuation after commits or fast-forwards.
 "
 Class {
 	#name : 'MCPToolEditRepository',
@@ -18,6 +18,8 @@ MCPToolEditRepository >> commandForRequest: editRequest [
 			^ MCPCreateRepositoryCommand tool: self request: editRequest ].
 	(editRequest isKindOf: MCPRepositoryUpdateRequest) ifTrue: [
 		^ MCPUpdateRepositoryCommand tool: self request: editRequest ].
+	(editRequest isKindOf: MCPRepositoryVerifyIdentityRequest) ifTrue: [
+		^ MCPRepositoryVerifyIdentityCommand tool: self request: editRequest ].
 	(editRequest isKindOf: MCPRepositoryExportRequest) ifTrue: [
 		^ MCPExportRepositoryCommand tool: self request: editRequest ].
 	(editRequest isKindOf: MCPRepositoryDiffRequest) ifTrue: [
@@ -94,6 +96,12 @@ MCPToolEditRepository >> dataForRepositoryPullResult: aResult [
 ]
 
 { #category : 'private - results' }
+MCPToolEditRepository >> dataForRepositoryVerifyIdentityResult: aResult [
+
+	^ self dataForRepositoryResult: aResult action: 'verifyIdentity'
+]
+
+{ #category : 'private - results' }
 MCPToolEditRepository >> dataForRepositoryPushResult: aResult [
 
 	^ self dataForRepositoryResult: aResult action: 'push'
@@ -123,7 +131,7 @@ MCPToolEditRepository >> dataForRepositoryUpdateResult: aResult [
 { #category : 'defaults' }
 MCPToolEditRepository >> defaultDescription [
 
-	^ 'Create, attach, update, diff, export, commit, adopt HEAD, fetch, pull, push, create branches, or switch branches for Iceberg repositories registered in the image. Use repositoryName for existing repositories; add location only to create or attach a repository or disambiguate duplicate names. operation=create creates a new repository directory and can attach packages. operation=attach registers an existing Git checkout without creating or writing repository files and can attach packages. operation=update changes image-side repository metadata or package membership without writing packages to files. operation=diff inspects IceRepository>>workingCopyDiff without writing files and should be preferred when you only need to see image-side changes. operation=export is an escape hatch that materializes image changes to disk for Tonel or Git workflows and updates the Iceberg index without staging or committing. operation=commit calls IceRepository>>commitWithMessage:. operation=adoptHead calls IceWorkingCopy>>adoptCommit: with the repository head commit and reports before/after modified packages. operation=fetch calls IceRepository>>fetch. operation=pull calls IceRepository>>pull. operation=push calls IceRepository>>push. operation=createBranch calls IceRepository>>createBranch: and switches to the new branch. operation=switchBranch calls IceRepository>>switchToBranchNamed: for an existing branch.'
+	^ 'Create, attach, update, verifyIdentity, diff, export, commit, adopt HEAD, fetch, pull, push, create branches, or switch branches for Iceberg repositories registered in the image. Use repositoryName for existing repositories; add location only to create or attach a repository, disambiguate duplicate names, or assert the expected location during operation=verifyIdentity. operation=create creates a new repository directory and can attach packages. operation=attach registers an existing Git checkout without creating or writing repository files and can attach packages. operation=update changes image-side repository metadata or package membership without writing packages to files. operation=verifyIdentity asserts expected repository identity fields without writing files; provide at least one expected field among location, branchName, subdirectory, packageNames, modifiedPackageNames, and isModified. operation=diff inspects IceRepository>>workingCopyDiff without writing files and should be preferred when you only need to see image-side changes. operation=export is an escape hatch that materializes image changes to disk for Tonel or Git workflows and updates the Iceberg index without staging or committing. operation=commit calls IceRepository>>commitWithMessage:. operation=adoptHead calls IceWorkingCopy>>adoptCommit: with the repository head commit and reports before/after modified packages. operation=fetch calls IceRepository>>fetch. operation=pull calls IceRepository>>pull. operation=push calls IceRepository>>push. operation=createBranch calls IceRepository>>createBranch: and switches to the new branch. operation=switchBranch calls IceRepository>>switchToBranchNamed: for an existing branch.'
 ]
 
 { #category : 'defaults' }
@@ -156,7 +164,7 @@ MCPToolEditRepository >> defaultInputSchema [
 					   schemaPropertyNamed: 'location'
 					   type: 'string'
 					   description:
-						   'Filesystem path for operation=create or operation=attach. For existing repositories, combine with repositoryName only to disambiguate duplicate names.').
+						   'Filesystem path for operation=create or operation=attach. For existing repositories, combine with repositoryName only to disambiguate duplicate names or assert expected location during operation=verifyIdentity.').
 				  (self
 					   schemaPropertyNamed: 'message'
 					   type: 'string'
@@ -165,17 +173,26 @@ MCPToolEditRepository >> defaultInputSchema [
 					   schemaPropertyNamed: 'branchName'
 					   type: 'string'
 					   description:
-						   'Branch name required by operation=createBranch and operation=switchBranch. For operation=adoptHead, this is an optional expected current branch guard.').
+						   'Branch name required by operation=createBranch and operation=switchBranch. For operation=adoptHead or operation=verifyIdentity, this is an optional expected current branch guard.').
 				  (self
 					   schemaPropertyNamed: 'subdirectory'
 					   type: 'string'
 					   description:
-						   'Optional source subdirectory for operation=create or operation=attach. During operation=update this sets the repository source subdirectory in the image.').
+						   'Optional source subdirectory for operation=create or operation=attach. During operation=update this sets the repository source subdirectory in the image. During operation=verifyIdentity this asserts the expected source subdirectory.').
 				  (self
 					   stringArraySchemaNamed: 'packageNames'
 					   description:
-						   'Package names to manage initially during operation=create or operation=attach. During operation=update this replaces the full managed package list by adding and removing repository package membership without unloading packages or writing files.'
+						   'Package names to manage initially during operation=create or operation=attach. During operation=update this replaces the full managed package list by adding and removing repository package membership without unloading packages or writing files. During operation=verifyIdentity this asserts the expected managed package names.'
 					   itemDescription: 'A package name.').
+				  (self
+					   stringArraySchemaNamed: 'modifiedPackageNames'
+					   description:
+						   'Package names expected to be modified during operation=verifyIdentity.'
+					   itemDescription: 'An expected modified package name.').
+				  (self
+					   booleanSchemaPropertyNamed: 'isModified'
+					   description:
+						   'Expected repository modified state during operation=verifyIdentity.').
 				  (self
 					   stringArraySchemaNamed: 'addPackageNames'
 					   description:
@@ -250,6 +267,13 @@ MCPToolEditRepository >> operationSpecifications [
 			   'Change repository subdirectory or package membership in the image only.') }
 			  asDictionary.
 		  {
+			  (#name -> 'verifyIdentity').
+			  (#requiredProperties -> #( 'repositoryName' )).
+			  (#description
+			   ->
+			   'Assert expected repository identity fields without writing files; at least one expected field is required.') }
+			  asDictionary.
+		  {
 			  (#name -> 'export').
 			  (#requiredProperties -> #( 'repositoryName' )).
 			  (#description
@@ -317,6 +341,8 @@ MCPToolEditRepository >> parsedRequestFromToolRequest: request [
 		^ MCPRepositoryAttachRequest fromRequest: request tool: self ].
 	operation = 'update' ifTrue: [
 		^ MCPRepositoryUpdateRequest fromRequest: request tool: self ].
+	operation = 'verifyIdentity' ifTrue: [
+		^ MCPRepositoryVerifyIdentityRequest fromRequest: request tool: self ].
 	operation = 'export' ifTrue: [
 		^ MCPRepositoryExportRequest fromRequest: request tool: self ].
 	operation = 'diff' ifTrue: [
@@ -394,6 +420,11 @@ MCPToolEditRepository >> repositoryEditDataProperties [
 			   'Package names reported modified by Iceberg after action=adoptHead.'
 			   itemDescription: 'A modified package name.').
 		  (self
+			   stringArraySchemaNamed: 'checkedFields'
+			   description:
+			   'Repository identity fields checked when action=verifyIdentity.'
+			   itemDescription: 'A checked repository identity field.').
+		  (self
 			   stringArraySchemaNamed: 'modifiedPaths'
 			   description:
 			   'Relative repository paths included in the working-copy diff when obtainable from Iceberg.'
@@ -450,6 +481,10 @@ MCPToolEditRepository >> repositoryEditDataProperties [
 			   booleanSchemaPropertyNamed: 'isEmpty'
 			   description:
 			   'Whether IceRepository>>workingCopyDiff reported an empty diff for action=diff.').
+		  (self
+			   booleanSchemaPropertyNamed: 'matched'
+			   description:
+			   'Whether the repository matched all expected identity fields when action=verifyIdentity.').
 		  (self
 			   schemaPropertyNamed: 'commitId'
 			   type: 'string'
@@ -537,5 +572,5 @@ MCPToolEditRepository >> shouldSaveImageAfterSuccessfulExecutionForResult: aResu
 		          at: #action
 		          ifAbsent: [
 		          ^ self shouldSaveImageAfterSuccessfulExecution ].
-	^ action ~= 'diff'
+	^ (#( 'diff' 'verifyIdentity' ) includes: action) not
 ]
