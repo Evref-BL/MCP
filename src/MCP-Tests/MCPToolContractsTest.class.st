@@ -1571,6 +1571,23 @@ MCPToolContractsTest >> testParsedInputClassesUseRequestOrSpecSuffixes [
 	self assert: invalidNames isEmpty
 ]
 
+{ #category : 'tests - tools - parsing' }
+MCPToolContractsTest >> testParserHelperBypassesSchemaValidation [
+
+	| arguments tool |
+	tool := MCPToolEditRepository new.
+	arguments := { (#operation -> 'notAnOperation') } asDictionary.
+	self
+		should: [ tool requestFromToolCallArguments: arguments ]
+		raise: MCPInvalidToolInput.
+	self
+		should: [ self parsedRequestForTool: tool arguments: arguments ]
+		raise: Error
+		whoseDescriptionIncludes: tool operationValidationErrorMessage
+		description:
+		'Parser helper should bypass transport schema validation.'
+]
+
 { #category : 'tests' }
 MCPToolContractsTest >> testQueryScopeDescriptionsExplainScopeSemantics [
 
