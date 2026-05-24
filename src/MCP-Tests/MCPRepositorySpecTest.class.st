@@ -30,6 +30,60 @@ MCPRepositorySpecTest >> requestWithArguments: aDictionary [
 ]
 
 { #category : 'tests' }
+MCPRepositorySpecTest >> testRepositoryAdoptHeadRequestParsesTypedInput [
+
+	| adoptHeadRequest |
+	adoptHeadRequest := MCPRepositoryAdoptHeadRequest
+		                    fromRequest: (self requestWithArguments: {
+					                     (#repositoryName -> 'MCP Repo').
+					                     (#branchName -> 'main') } asDictionary)
+		                    tool: nil.
+	self assert: adoptHeadRequest operation equals: 'adoptHead'.
+	self
+		assert: adoptHeadRequest repositoryReference name
+		equals: 'MCP Repo'.
+	self assert: adoptHeadRequest branchName equals: 'main'.
+	self
+		assert: (adoptHeadRequest requestedContext at: #branchName)
+		equals: 'main'
+]
+
+{ #category : 'tests' }
+MCPRepositorySpecTest >> testRepositoryAdoptHeadResultReturnsDictionary [
+
+	| data repository result |
+	repository := MCPTestIceRepository
+		              named: 'MCP Adopt Head Repository'
+		              location: 'memory://adopt-head'.
+	repository modifiedPackageNames: #( 'MCP' ).
+	repository workingCopy referenceCommit:
+		(MCPTestRepositoryCommit id: 'after').
+	result := MCPRepositoryAdoptHeadResult
+		          repositoryBefore:
+		          (MCPRepositoryInfo fromRepository: repository)
+		          after: repository
+		          previousReferenceCommit:
+		          (MCPTestRepositoryCommit id: 'before')
+		          adoptedCommit: (MCPTestRepositoryCommit id: 'after')
+		          didAdopt: true.
+	data := result asDictionary.
+	self
+		assert: ((data at: #repository) at: #name)
+		equals: 'MCP Adopt Head Repository'.
+	self assert: (data at: #previousReferenceCommitId) equals: 'before'.
+	self assert: (data at: #referenceCommitId) equals: 'after'.
+	self assert: (data at: #adoptedCommitId) equals: 'after'.
+	self assert: (data at: #didAdopt).
+	self
+		assert: (data at: #modifiedPackageNamesBefore)
+		equals: #( 'MCP' ).
+	self assert: (data at: #modifiedPackageNamesAfter) equals: #( 'MCP' ).
+	self
+		assert: (data at: #repositoryLocation)
+		equals: 'memory://adopt-head'
+]
+
+{ #category : 'tests' }
 MCPRepositorySpecTest >> testRepositoryAttachRequestParsesTypedInput [
 
 	| attachRequest |

@@ -106,6 +106,89 @@ MCPToolEditRepositoryTest >> temporaryRepositoryLocationNamed: aName [
 ]
 
 { #category : 'tests' }
+MCPToolEditRepositoryTest >> testAdoptHeadAdoptsRepositoryHeadAndReportsBeforeAfterModifiedPackages [
+
+	| data repository result |
+	repository := self newTestRepositoryNamed:
+		              'MCP Adopt Head Test Repository'.
+	repository headCommitId: 'head-2'.
+	repository headDescription: 'branch main'.
+	repository modifiedPackageNames: #( 'MCP' 'MCP-Tests' ).
+	repository workingCopy referenceCommit:
+		(MCPTestRepositoryCommit id: 'head-1').
+	self withRegisteredRepository: repository do: [
+			result := self callToolWith: {
+					          (#operation -> 'adoptHead').
+					          (#repositoryName -> repository name).
+					          (#branchName -> 'main') } asDictionary.
+			data := self dataFrom: result.
+			self deny: (result at: #isError ifAbsent: [ false ]).
+			self
+				assert: repository actionLog asArray
+				equals: #( 'adoptCommit:head-2' ).
+			self assert: (data at: #action) equals: 'adoptHead'.
+			self
+				assert: (data at: #modifiedPackageNamesBefore)
+				equals: #( 'MCP' 'MCP-Tests' ).
+			self assert: (data at: #modifiedPackageNamesAfter) equals: #(  ).
+			self assert: (data at: #modifiedPackageNames) equals: #(  ).
+			self assert: (data at: #previousReferenceCommitId) equals: 'head-1'.
+			self assert: (data at: #adoptedCommitId) equals: 'head-2'.
+			self assert: (data at: #referenceCommitId) equals: 'head-2'.
+			self assert: (data at: #didAdopt).
+			self
+				assert: ((data at: #repositoryBefore) at: #modifiedPackageNames)
+				equals: #( 'MCP' 'MCP-Tests' ).
+			self
+				assert: ((data at: #repository) at: #modifiedPackageNames)
+				equals: #(  ) ]
+]
+
+{ #category : 'tests' }
+MCPToolEditRepositoryTest >> testAdoptHeadOperationRequiresRepositoryAndParses [
+
+	| command parsedRequest rawRequest tool |
+	tool := MCPToolEditRepository new.
+	rawRequest := tool requestFromToolCallArguments: {
+			              (#operation -> 'adoptHead').
+			              (#repositoryName -> 'MCP').
+			              (#branchName -> 'main') } asDictionary.
+	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
+	command := tool commandForRequest: parsedRequest.
+	self
+		assert: parsedRequest class
+		equals: MCPRepositoryAdoptHeadRequest.
+	self assert: parsedRequest operation equals: 'adoptHead'.
+	self assert: parsedRequest branchName equals: 'main'.
+	self assert: command class equals: MCPAdoptRepositoryHeadCommand
+]
+
+{ #category : 'tests' }
+MCPToolEditRepositoryTest >> testAdoptHeadValidatesExpectedBranch [
+
+	| errorDetails repository result |
+	repository := self newTestRepositoryNamed:
+		              'MCP Adopt Head Branch Guard Test Repository'.
+	repository branchName: 'main'.
+	repository headCommitId: 'head-1'.
+	self withRegisteredRepository: repository do: [
+			result := self callToolWith: {
+					          (#operation -> 'adoptHead').
+					          (#repositoryName -> repository name).
+					          (#branchName -> 'feature') } asDictionary.
+			self assert: (result at: #isError ifAbsent: [ false ]).
+			self assert:
+				((self summaryFrom: result) includesSubstring: 'branch mismatch').
+			errorDetails := self errorFrom: result.
+			self assert: (errorDetails at: #action) equals: 'adoptHead'.
+			self
+				assert: (errorDetails at: #expectedBranchName)
+				equals: 'feature'.
+			self assert: (errorDetails at: #actualBranchName) equals: 'main'.
+			self assert: repository actionLog asArray equals: #(  ) ]
+]
+
+{ #category : 'tests' }
 MCPToolEditRepositoryTest >> testAttachParsesAndDispatchesToAttachCommand [
 
 	| command parsedRequest rawRequest tool |
