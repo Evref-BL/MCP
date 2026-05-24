@@ -179,6 +179,13 @@ MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 			MCPToolManageChangeHistory.
 			MCPToolRunTests.
 			MCPToolCaptureScreenshot.
+			MCPToolDebugSessions.
+			MCPToolDebugState.
+			MCPToolDebugVariables.
+			MCPToolDebugEvaluate.
+			MCPToolDebugControl.
+			MCPToolDebugBreakpoints.
+			MCPToolDebugCapture.
 			MCPToolEvaluate }
 ]
 
@@ -275,6 +282,30 @@ MCPToolContractsTest >> testConfiguredDiscoverableToolsAreNotDirectlyCallable [
 					rpcToolCall: 'find-packages'
 					withParams: { (#limit -> 1) } asDictionary ]
 		raise: JRPCNonExistentHandler
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testDebuggerToolsAreDiscoverableOnly [
+
+	| debugNames metadataByName result staticToolNames |
+	debugNames := #( 'debug-sessions' 'debug-state' 'debug-variables'
+	                 'debug-evaluate' 'debug-control' 'debug-breakpoints'
+	                 'debug-capture' ).
+	staticToolNames := MCPToolRegistry staticToolNames.
+	debugNames do: [ :each | self deny: (staticToolNames includes: each) ].
+	result := self
+		          callToolNamed: 'discover-tools'
+		          withArguments: { (#group -> 'debugging') } asDictionary.
+	metadataByName := (((self dataFrom: result) at: #tools) collect: [
+		                   :each | (each at: #name) -> each ]) asDictionary.
+	debugNames do: [ :each |
+			self assert: (metadataByName includesKey: each).
+			self
+				assert: ((metadataByName at: each) at: #exposure)
+				equals: 'discoverable'.
+			self
+				assert: ((metadataByName at: each) at: #group)
+				equals: 'debugging' ]
 ]
 
 { #category : 'tests' }
@@ -1876,7 +1907,9 @@ MCPToolContractsTest >> testRPCAdvertisesStaticToolSurfaceOnly [
 	self deny: (toolNames includes: 'find-repositories').
 	self deny: (toolNames includes: 'edit-repository').
 	self deny: (toolNames includes: 'manage-change-history').
-	self deny: (toolNames includes: 'capture-screenshot')
+	self deny: (toolNames includes: 'capture-screenshot').
+	self deny: (toolNames includes: 'debug-state').
+	self deny: (toolNames includes: 'debug-capture')
 ]
 
 { #category : 'tests' }
@@ -2312,7 +2345,9 @@ MCPToolContractsTest >> testToolRegistryNamesUseClassSideMetadata [
 		         each toolName ].
 	self assert: MCPToolRegistry publicToolNames equals: names.
 	self assert: MCPToolFindClasses toolName equals: 'find-classes'.
-	self assert: MCPToolRunTests toolName equals: 'run-tests'
+	self assert: MCPToolRunTests toolName equals: 'run-tests'.
+	self assert: MCPToolDebugState toolName equals: 'debug-state'.
+	self assert: MCPToolDebugCapture toolName equals: 'debug-capture'
 ]
 
 { #category : 'private' }
@@ -2423,6 +2458,49 @@ MCPToolContractsTest >> toolFlowSpecs [
 			  (#arguments -> { (#target -> 'world') } asDictionary).
 			  (#requestClass -> MCPScreenshotRequest).
 			  (#commandClass -> MCPScreenshotCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolDebugSessions).
+			  (#arguments -> { (#operation -> 'list') } asDictionary).
+			  (#requestClass -> MCPDebugSessionsRequest).
+			  (#commandClass -> MCPDebugSessionsCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolDebugState).
+			  (#arguments -> { (#sessionId -> 'debug-session-1') } asDictionary).
+			  (#requestClass -> MCPDebugStateRequest).
+			  (#commandClass -> MCPDebugStateCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolDebugVariables).
+			  (#arguments
+			   ->
+				   { (#variableRef
+				    -> 'debug-session-1/state-0/frame-0/scope-receiver') }
+					   asDictionary).
+			  (#requestClass -> MCPDebugVariablesRequest).
+			  (#commandClass -> MCPDebugVariablesCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolDebugEvaluate).
+			  (#arguments -> {
+				   (#sessionId -> 'debug-session-1').
+				   (#expression -> '1') } asDictionary).
+			  (#requestClass -> MCPDebugEvaluateRequest).
+			  (#commandClass -> MCPDebugEvaluateCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolDebugControl).
+			  (#arguments -> {
+				   (#sessionId -> 'debug-session-1').
+				   (#operation -> 'stepOver') } asDictionary).
+			  (#requestClass -> MCPDebugControlRequest).
+			  (#commandClass -> MCPDebugControlCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolDebugBreakpoints).
+			  (#arguments -> { (#operation -> 'list') } asDictionary).
+			  (#requestClass -> MCPDebugBreakpointsRequest).
+			  (#commandClass -> MCPDebugBreakpointsCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolDebugCapture).
+			  (#arguments -> { (#expression -> '1') } asDictionary).
+			  (#requestClass -> MCPDebugCaptureRequest).
+			  (#commandClass -> MCPDebugCaptureCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolEvaluate).
 			  (#arguments -> { (#code -> '1') } asDictionary).

@@ -45,7 +45,7 @@ MCPToolDiscoverTools >> defaultInputSchema [
 					   schemaPropertyNamed: 'group'
 					   type: 'string'
 					   description:
-						   'Optional tool group filter such as tool-catalog, repositories, packages, classes, methods, history, tests, ui, or image-runtime.').
+						   'Optional tool group filter such as tool-catalog, repositories, packages, classes, methods, history, tests, ui, debugging, or image-runtime.').
 				  (self
 					   booleanSchemaPropertyNamed: 'includeStatic'
 					   description:
