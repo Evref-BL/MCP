@@ -915,6 +915,41 @@ MCPToolEditRepositoryTest >> testRepositoryErrorDetailsUseActionNotOperation [
 ]
 
 { #category : 'tests' }
+MCPToolEditRepositoryTest >> testRestoreOrderOnlyTonelChurnRestoresOriginalFile [
+
+	| command file location packageDirectory repository restored snapshot |
+	location := self temporaryRepositoryLocationNamed:
+		            'MCPToolEditRepositoryTestOrderOnly'.
+	self deleteDirectoryIfExists: location.
+	[
+		packageDirectory := location / 'MCP-Order'.
+		packageDirectory ensureCreateDirectory.
+		file := packageDirectory / 'MCPOrderTestClass.class.st'.
+		file writeStreamDo: [ :stream |
+				stream nextPutAll:
+					(self tonelClassSourceWithMethods: #( 'alpha' 'beta' )) ].
+		repository := self
+			              newRepositoryNamed: 'MCP Order Only Test'
+			              location: location
+			              packageNames: #(  ).
+		command := MCPExportRepositoryCommand new.
+		snapshot := command snapshotTonelFilesFor: repository.
+		file writeStreamDo: [ :stream |
+				stream nextPutAll:
+					(self tonelClassSourceWithMethods: #( 'beta' 'alpha' )) ].
+		restored := command
+			            restoreOrderOnlyTonelChurnFor: repository
+			            fromSnapshot: snapshot.
+		self
+			assert: restored
+			equals: #( 'MCP-Order/MCPOrderTestClass.class.st' ).
+		self
+			assert: file contents
+			equals: (self tonelClassSourceWithMethods: #( 'alpha' 'beta' )) ]
+		ensure: [ self deleteDirectoryIfExists: location ]
+]
+
+{ #category : 'tests' }
 MCPToolEditRepositoryTest >> testSwitchBranchReturnsResultReportsErrorsAndRequestsImageSave [
 
 	| data conflictResult loadResult missingResult repository result saveResult server |
@@ -982,6 +1017,27 @@ MCPToolEditRepositoryTest >> testSwitchBranchReturnsResultReportsErrorsAndReques
 				 'Failed to switch repository branch').
 		self assert: ((self summaryFrom: loadResult) includesSubstring:
 				 'Iceberg load failed') ]
+]
+
+{ #category : 'tests' }
+MCPToolEditRepositoryTest >> testTonelMethodOrderComparisonIgnoresMethodChunkOrder [
+
+	| command original reordered |
+	command := MCPExportRepositoryCommand new.
+	original := self tonelClassSourceWithMethods: #( 'alpha' 'beta' ).
+	reordered := self tonelClassSourceWithMethods: #( 'beta' 'alpha' ).
+	self assert:
+		(command tonelMethodOrderEquivalent: original to: reordered)
+]
+
+{ #category : 'tests' }
+MCPToolEditRepositoryTest >> testTonelMethodOrderComparisonKeepsSemanticChanges [
+
+	| changed command original |
+	command := MCPExportRepositoryCommand new.
+	original := self tonelClassSourceWithMethods: #( 'alpha' 'beta' ).
+	changed := original copyReplaceAll: '^ #beta' with: '^ #changed'.
+	self deny: (command tonelMethodOrderEquivalent: original to: changed)
 ]
 
 { #category : 'tests' }
@@ -1070,6 +1126,40 @@ MCPToolEditRepositoryTest >> testUpdateRemovesPackageWithoutUnloading [
 		self assert: (data at: #addedPackageNames) equals: #(  ).
 		self assert: (data at: #removedPackageNames) equals: { packageName } ] ]
 		ensure: [ self removePackageNamed: packageName ]
+]
+
+{ #category : 'private - fixtures' }
+MCPToolEditRepositoryTest >> tonelClassSourceWithMethods: methodSelectors [
+
+	| stream |
+	stream := WriteStream on: String new.
+	stream
+		nextPutAll: '"Order-only Tonel fixture"';
+		nextPut: Character lf;
+		nextPutAll: 'Class {';
+		nextPut: Character lf;
+		nextPutAll: String tab , '#name : ''MCPOrderTestClass'',';
+		nextPut: Character lf;
+		nextPutAll: String tab , '#superclass : ''Object'',';
+		nextPut: Character lf;
+		nextPutAll: String tab , '#category : ''MCP-Order''';
+		nextPut: Character lf;
+		nextPutAll: '}';
+		nextPut: Character lf.
+	methodSelectors do: [ :selector |
+			stream
+				nextPut: Character lf;
+				nextPutAll: '{ #category : ''tests'' }';
+				nextPut: Character lf;
+				nextPutAll: 'MCPOrderTestClass >> ' , selector;
+				nextPut: Character lf;
+				nextPutAll: '[';
+				nextPut: Character lf;
+				nextPutAll: String tab , '^ #' , selector;
+				nextPut: Character lf;
+				nextPutAll: ']';
+				nextPut: Character lf ].
+	^ stream contents
 ]
 
 { #category : 'private - calling' }
