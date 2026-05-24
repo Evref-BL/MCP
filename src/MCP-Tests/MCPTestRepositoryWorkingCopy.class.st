@@ -7,7 +7,8 @@ Class {
 	#instVars : [
 		'repository',
 		'packageNames',
-		'modifiedPackages'
+		'modifiedPackages',
+		'referenceCommit'
 	],
 	#category : 'MCP-Tests-Internal',
 	#package : 'MCP-Tests',
@@ -21,6 +22,16 @@ MCPTestRepositoryWorkingCopy class >> packageNames: packageNameCollection modifi
 		  packageNames: packageNameCollection;
 		  modifiedPackages: modifiedPackageCollection;
 		  yourself
+]
+
+{ #category : 'API - commits' }
+MCPTestRepositoryWorkingCopy >> adoptCommit: aCommit [
+
+	self referenceCommit = aCommit ifTrue: [ ^ self ].
+	referenceCommit := aCommit.
+	self repository ifNotNil: [ :owningRepository |
+			owningRepository recordAction: 'adoptCommit:' , aCommit id asString.
+			owningRepository modifiedPackageNames: #(  ) ]
 ]
 
 { #category : 'testing' }
@@ -57,6 +68,18 @@ MCPTestRepositoryWorkingCopy >> packageNames: aCollection [
 MCPTestRepositoryWorkingCopy >> packages [
 
 	^ #(  )
+]
+
+{ #category : 'API - commits' }
+MCPTestRepositoryWorkingCopy >> referenceCommit [
+
+	^ referenceCommit ifNil: [ MCPTestRepositoryCommit id: '' ]
+]
+
+{ #category : 'accessing' }
+MCPTestRepositoryWorkingCopy >> referenceCommit: aCommit [
+
+	referenceCommit := aCommit
 ]
 
 { #category : 'accessing' }

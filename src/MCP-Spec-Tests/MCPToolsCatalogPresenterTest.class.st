@@ -16,7 +16,7 @@ MCPToolsCatalogPresenterTest >> testLongOperationListsAreSummarizedForCatalogRow
 	presenter := MCPToolsCatalogPresenter new.
 	summary := presenter toolCatalogOperationSummaryFor:
 		           MCPToolEditRepository new.
-	self assert: summary equals: 'create | attach | +9'.
+	self assert: summary equals: 'create | attach | +10'.
 	self assert: summary size < 24
 ]
 
@@ -48,5 +48,5 @@ MCPToolsCatalogPresenterTest >> testSummarizedOperationListsExposeFullOperationH
 		assert:
 		(presenter toolCatalogOperationHelpFor: MCPToolEditRepository new)
 		equals:
-		'Operations: create | attach | update | export | diff | commit | fetch | pull | push | createBranch | switchBranch'
+		'Operations: create | attach | update | export | diff | commit | adoptHead | fetch | pull | push | createBranch | switchBranch'
 ]

@@ -1,5 +1,5 @@
 "
-MCP tool for mutating Iceberg repositories registered in the image. The public operations are create, update, export, diff, and commit. Creation registers a repository and can attach initial packages. Updates change repository metadata or package membership in the image. Export writes image changes to the repository working tree and index without committing. Diff reports pending image changes. Commit creates an Iceberg commit from the current working-copy diff.
+MCP tool for mutating Iceberg repositories registered in the image. The public operations are create, attach, update, diff, export, commit, adoptHead, fetch, pull, push, createBranch, and switchBranch. Creation registers a repository and can attach initial packages. Updates change repository metadata or package membership in the image. Export writes image changes to the repository working tree and index without committing. Diff reports pending image changes. Commit creates an Iceberg commit from the current working-copy diff. adoptHead refreshes the image working-copy reference commit to the repository HEAD for reliable same-image continuation after commits or fast-forwards.
 "
 Class {
 	#name : 'MCPToolEditRepository',
@@ -24,6 +24,8 @@ MCPToolEditRepository >> commandForRequest: editRequest [
 		^ MCPRepositoryDiffCommand tool: self request: editRequest ].
 	(editRequest isKindOf: MCPRepositoryCommitRequest) ifTrue: [
 		^ MCPCommitRepositoryCommand tool: self request: editRequest ].
+	(editRequest isKindOf: MCPRepositoryAdoptHeadRequest) ifTrue: [
+		^ MCPAdoptRepositoryHeadCommand tool: self request: editRequest ].
 	(editRequest isKindOf: MCPRepositoryFetchRequest) ifTrue: [
 		^ MCPFetchRepositoryCommand tool: self request: editRequest ].
 	(editRequest isKindOf: MCPRepositoryPullRequest) ifTrue: [
@@ -35,6 +37,12 @@ MCPToolEditRepository >> commandForRequest: editRequest [
 	(editRequest isKindOf: MCPRepositorySwitchBranchRequest) ifTrue: [
 		^ MCPSwitchRepositoryBranchCommand tool: self request: editRequest ].
 	^ super commandForRequest: editRequest
+]
+
+{ #category : 'private - results' }
+MCPToolEditRepository >> dataForRepositoryAdoptHeadResult: aResult [
+
+	^ self dataForRepositoryResult: aResult action: 'adoptHead'
 ]
 
 { #category : 'private - results' }
@@ -115,7 +123,7 @@ MCPToolEditRepository >> dataForRepositoryUpdateResult: aResult [
 { #category : 'defaults' }
 MCPToolEditRepository >> defaultDescription [
 
-	^ 'Create, attach, update, diff, export, commit, fetch, pull, push, create branches, or switch branches for Iceberg repositories registered in the image. Use repositoryName for existing repositories; add location only to create or attach a repository or disambiguate duplicate names. operation=create creates a new repository directory and can attach packages. operation=attach registers an existing Git checkout without creating or writing repository files and can attach packages. operation=update changes image-side repository metadata or package membership without writing packages to files. operation=diff inspects IceRepository>>workingCopyDiff without writing files and should be preferred when you only need to see image-side changes. operation=export is an escape hatch that materializes image changes to disk for Tonel or Git workflows and updates the Iceberg index without staging or committing. operation=commit calls IceRepository>>commitWithMessage:. operation=fetch calls IceRepository>>fetch. operation=pull calls IceRepository>>pull. operation=push calls IceRepository>>push. operation=createBranch calls IceRepository>>createBranch: and switches to the new branch. operation=switchBranch calls IceRepository>>switchToBranchNamed: for an existing branch.'
+	^ 'Create, attach, update, diff, export, commit, adopt HEAD, fetch, pull, push, create branches, or switch branches for Iceberg repositories registered in the image. Use repositoryName for existing repositories; add location only to create or attach a repository or disambiguate duplicate names. operation=create creates a new repository directory and can attach packages. operation=attach registers an existing Git checkout without creating or writing repository files and can attach packages. operation=update changes image-side repository metadata or package membership without writing packages to files. operation=diff inspects IceRepository>>workingCopyDiff without writing files and should be preferred when you only need to see image-side changes. operation=export is an escape hatch that materializes image changes to disk for Tonel or Git workflows and updates the Iceberg index without staging or committing. operation=commit calls IceRepository>>commitWithMessage:. operation=adoptHead calls IceWorkingCopy>>adoptCommit: with the repository head commit and reports before/after modified packages. operation=fetch calls IceRepository>>fetch. operation=pull calls IceRepository>>pull. operation=push calls IceRepository>>push. operation=createBranch calls IceRepository>>createBranch: and switches to the new branch. operation=switchBranch calls IceRepository>>switchToBranchNamed: for an existing branch.'
 ]
 
 { #category : 'defaults' }
@@ -157,7 +165,7 @@ MCPToolEditRepository >> defaultInputSchema [
 					   schemaPropertyNamed: 'branchName'
 					   type: 'string'
 					   description:
-						   'Branch name required by operation=createBranch and operation=switchBranch.').
+						   'Branch name required by operation=createBranch and operation=switchBranch. For operation=adoptHead, this is an optional expected current branch guard.').
 				  (self
 					   schemaPropertyNamed: 'subdirectory'
 					   type: 'string'
@@ -261,6 +269,13 @@ MCPToolEditRepository >> operationSpecifications [
 			  (#description -> 'Commit the repository with message.') }
 			  asDictionary.
 		  {
+			  (#name -> 'adoptHead').
+			  (#requiredProperties -> #( 'repositoryName' )).
+			  (#description
+			   ->
+			   'Adopt the repository head commit as the image working-copy reference commit. Optional branchName validates the current branch before adopting.') }
+			  asDictionary.
+		  {
 			  (#name -> 'fetch').
 			  (#requiredProperties -> #( 'repositoryName' )).
 			  (#description -> 'Fetch remote refs through Iceberg.') }
@@ -308,6 +323,8 @@ MCPToolEditRepository >> parsedRequestFromToolRequest: request [
 		^ MCPRepositoryDiffRequest fromRequest: request tool: self ].
 	operation = 'commit' ifTrue: [
 		^ MCPRepositoryCommitRequest fromRequest: request tool: self ].
+	operation = 'adoptHead' ifTrue: [
+		^ MCPRepositoryAdoptHeadRequest fromRequest: request tool: self ].
 	operation = 'fetch' ifTrue: [
 		^ MCPRepositoryFetchRequest fromRequest: request tool: self ].
 	operation = 'pull' ifTrue: [
@@ -367,6 +384,16 @@ MCPToolEditRepository >> repositoryEditDataProperties [
 			   'Package names reported modified by Iceberg after the action, when relevant.'
 			   itemDescription: 'A modified package name.').
 		  (self
+			   stringArraySchemaNamed: 'modifiedPackageNamesBefore'
+			   description:
+			   'Package names reported modified by Iceberg before action=adoptHead.'
+			   itemDescription: 'A modified package name.').
+		  (self
+			   stringArraySchemaNamed: 'modifiedPackageNamesAfter'
+			   description:
+			   'Package names reported modified by Iceberg after action=adoptHead.'
+			   itemDescription: 'A modified package name.').
+		  (self
 			   stringArraySchemaNamed: 'modifiedPaths'
 			   description:
 			   'Relative repository paths included in the working-copy diff when obtainable from Iceberg.'
@@ -392,6 +419,25 @@ MCPToolEditRepository >> repositoryEditDataProperties [
 			   schemaPropertyNamed: 'previousHeadDescription'
 			   type: 'string'
 			   description: 'Head description before a branch action.').
+		  (self
+			   schemaPropertyNamed: 'previousReferenceCommitId'
+			   type: 'string'
+			   description:
+			   'Working-copy reference commit id before action=adoptHead.').
+		  (self
+			   schemaPropertyNamed: 'referenceCommitId'
+			   type: 'string'
+			   description:
+			   'Working-copy reference commit id after action=adoptHead.').
+		  (self
+			   schemaPropertyNamed: 'adoptedCommitId'
+			   type: 'string'
+			   description:
+			   'Repository head commit id adopted by action=adoptHead.').
+		  (self
+			   booleanSchemaPropertyNamed: 'didAdopt'
+			   description:
+			   'Whether action=adoptHead changed the working-copy reference commit.').
 		  (self
 			   booleanSchemaPropertyNamed: 'didChange'
 			   description:
