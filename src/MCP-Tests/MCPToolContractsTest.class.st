@@ -7,19 +7,6 @@ Class {
 }
 
 { #category : 'private' }
-MCPToolContractsTest >> assertToolFlowSpec: aSpec [
-
-	| command parsedRequest rawRequest tool |
-	tool := (aSpec at: #toolClass) new.
-	rawRequest := tool requestFromToolCallArguments:
-		              (aSpec at: #arguments).
-	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
-	command := tool commandForRequest: parsedRequest.
-	self assert: parsedRequest class equals: (aSpec at: #requestClass).
-	self assert: command class equals: (aSpec at: #commandClass)
-]
-
-{ #category : 'private' }
 MCPToolContractsTest >> assertNoCompositionKeywordsIn: aValue [
 
 	self assertNoCompositionKeywordsIn: aValue path: #(  )
@@ -44,6 +31,19 @@ MCPToolContractsTest >> assertNoCompositionKeywordsIn: aValue path: path [
 			self
 				assertNoCompositionKeywordsIn: nestedValue
 				path: (path copyWith: index) ] ]
+]
+
+{ #category : 'private' }
+MCPToolContractsTest >> assertToolFlowSpec: aSpec [
+
+	| command parsedRequest rawRequest tool |
+	tool := (aSpec at: #toolClass) new.
+	rawRequest := tool requestFromToolCallArguments:
+		              (aSpec at: #arguments).
+	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
+	command := tool commandForRequest: parsedRequest.
+	self assert: parsedRequest class equals: (aSpec at: #requestClass).
+	self assert: command class equals: (aSpec at: #commandClass)
 ]
 
 { #category : 'private' }
@@ -80,6 +80,14 @@ MCPToolContractsTest >> signalHaltForMCPMessageProcessorTest [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testAllToolInputSchemasAvoidCompositionKeywords [
+
+	MCPTool concreteSubclasses do: [ :toolClass |
+		self assertNoCompositionKeywordsIn:
+			(toolClass new asJRPCJSON at: #inputSchema) ]
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testAllToolOutputSchemasAdvertiseStructuredSummaryWarningsAndStatus [
 
 	MCPTool concreteSubclasses do: [ :toolClass |
@@ -94,14 +102,6 @@ MCPToolContractsTest >> testAllToolOutputSchemasAdvertiseStructuredSummaryWarnin
 		self
 			assert: (statusProperty extraProperties at: #enum) asArray
 			equals: #( 'ok' 'error' ) ]
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testAllToolInputSchemasAvoidCompositionKeywords [
-
-	MCPTool concreteSubclasses do: [ :toolClass |
-		self assertNoCompositionKeywordsIn:
-			(toolClass new asJRPCJSON at: #inputSchema) ]
 ]
 
 { #category : 'tests' }
@@ -645,6 +645,7 @@ MCPToolContractsTest >> testEditRepositoryOutputSchemaUsesActionForExecutedActio
 		                  #properties.
 	required := ((outputSchema at: #properties) at: 'data') at: #required.
 	self assert: (dataProperties includesKey: 'action').
+	self assert: (dataProperties includesKey: 'restoredOrderOnlyPaths').
 	self deny: (dataProperties includesKey: 'operation').
 	self assert: (required includes: 'action').
 	self deny: (required includes: 'operation')

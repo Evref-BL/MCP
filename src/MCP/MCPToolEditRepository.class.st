@@ -372,6 +372,11 @@ MCPToolEditRepository >> repositoryEditDataProperties [
 			   'Relative repository paths included in the working-copy diff when obtainable from Iceberg.'
 			   itemDescription: 'A relative repository path.').
 		  (self
+			   stringArraySchemaNamed: 'restoredOrderOnlyPaths'
+			   description:
+			   'Relative Tonel class or extension paths restored after export because their only disk change was method order churn.'
+			   itemDescription: 'A restored relative repository path.').
+		  (self
 			   stringArraySchemaNamed: 'remoteNames'
 			   description: 'Repository remote names after the action.'
 			   itemDescription: 'A remote name.').

@@ -1,5 +1,5 @@
 "
-Result DTO returned by edit-repository operation=export. It reports the repository synchronized to disk, changed package names, changed relative paths when Iceberg exposes them, and whether the diff contained changes.
+Result DTO returned by edit-repository operation=export. It reports the repository synchronized to disk, changed package names, changed relative paths when Iceberg exposes them, order-only Tonel paths restored after export, and whether the diff contained changes.
 "
 Class {
 	#name : 'MCPRepositoryExportResult',
@@ -9,7 +9,8 @@ Class {
 		'packageInfos',
 		'changedPackageNames',
 		'modifiedPaths',
-		'didChange'
+		'didChange',
+		'restoredOrderOnlyPaths'
 	],
 	#category : 'MCP-Results',
 	#package : 'MCP',
@@ -38,6 +39,7 @@ MCPRepositoryExportResult >> asDictionary [
 		  (#packageNames -> self repositoryInfo packageNames).
 		  (#changedPackageNames -> self changedPackageNames).
 		  (#modifiedPaths -> self modifiedPaths).
+		  (#restoredOrderOnlyPaths -> self restoredOrderOnlyPaths).
 		  (#didChange -> self didChange).
 		  (#repositoryLocation -> self repositoryInfo location) }
 		  asDictionary
@@ -118,4 +120,16 @@ MCPRepositoryExportResult >> repositoryInfo [
 MCPRepositoryExportResult >> repositoryInfo: aRepositoryInfo [
 
 	repositoryInfo := aRepositoryInfo
+]
+
+{ #category : 'accessing' }
+MCPRepositoryExportResult >> restoredOrderOnlyPaths [
+
+	^ restoredOrderOnlyPaths ifNil: [ #(  ) ]
+]
+
+{ #category : 'accessing' }
+MCPRepositoryExportResult >> restoredOrderOnlyPaths: aCollection [
+
+	restoredOrderOnlyPaths := aCollection ifNil: [ #(  ) ]
 ]
