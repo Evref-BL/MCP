@@ -13,6 +13,8 @@ Options:
   --attempts N       Number of attempts, default 1.
   --out DIR          Scratch/log directory, default /tmp/pharo-ci-repro-<timestamp>.
   --image IMAGE      Docker image, default hpiswa/smalltalkci:24.04.
+  --docker-platform PLATFORM
+                      Docker platform, default linux/amd64.
   --include-git      Copy .git into each scratch tree.
   --keep-going       Continue after failures instead of stopping at first one.
   --help             Show this help.
@@ -27,6 +29,7 @@ spec=".smalltalk.ston"
 attempts="1"
 out=""
 image="hpiswa/smalltalkci:24.04"
+docker_platform="linux/amd64"
 include_git="false"
 keep_going="false"
 
@@ -54,6 +57,10 @@ while [ "$#" -gt 0 ]; do
       ;;
     --image)
       image="${2:-}"
+      shift 2
+      ;;
+    --docker-platform)
+      docker_platform="${2:-}"
       shift 2
       ;;
     --include-git)
@@ -99,6 +106,17 @@ if [ "$attempts" -lt 1 ]; then
   exit 2
 fi
 
+if ! command -v docker >/dev/null 2>&1; then
+  echo "Docker CLI not found. Install a container runtime that provides the Docker CLI/API, or use a local smalltalkCI fallback." >&2
+  exit 69
+fi
+
+if ! docker info >/dev/null 2>&1; then
+  echo "Docker API is not reachable. Start or repair the local container runtime, then retry this command." >&2
+  echo "If container reproduction is not available and the failure is not OS/runtime-sensitive, use a local smalltalkCI fallback with isolated smalltalkCI homes for parallel jobs." >&2
+  exit 69
+fi
+
 if [ -z "$out" ]; then
   out="/tmp/pharo-ci-repro-$(date +%Y%m%d%H%M%S)"
 fi
@@ -110,6 +128,7 @@ echo "Platform: $platform"
 echo "Spec: $spec"
 echo "Attempts: $attempts"
 echo "Output: $out"
+echo "Docker platform: $docker_platform"
 echo
 
 status=0
@@ -129,7 +148,7 @@ while [ "$i" -le "$attempts" ]; do
   echo "=== Attempt $i/$attempts ==="
   echo "Log: $log"
 
-  docker run --rm --platform linux/amd64 \
+  docker run --rm --platform "$docker_platform" \
     -v "$work:/work/project" \
     -w /work/project \
     "$image" \

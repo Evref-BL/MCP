@@ -31,19 +31,30 @@ failure.
      accept that smalltalkCI may print harmless "not a git repository" messages
      if `.git` is excluded.
 
-3. Run a full local Docker reproduction:
+3. Run a full local container reproduction:
+   - Confirm the container runtime is installed and reachable before assuming
+     Docker reproduction is unavailable. If the CLI exists but the daemon/API is
+     not reachable, start or repair the local container runtime and retry once.
    - Use `scripts/run-smalltalkci-docker.sh` when available.
    - Store logs outside the repo, usually under `/tmp`.
    - Keep the first failing log; do not overwrite it during later narrowing.
 
-4. Narrow only after one faithful run:
+4. Fall back to local smalltalkCI only when the container runtime is unavailable
+   or the failure does not depend on matching the CI OS/runtime:
+   - Clone or use smalltalkCI outside the project checkout.
+   - Copy the working tree to a scratch directory before running tests.
+   - Run platform jobs serially, or give each parallel job a separate
+     smalltalkCI checkout/home. Shared local smalltalkCI homes can collide on
+     timestamped build directories.
+
+5. Narrow only after one faithful run:
    - Create a temporary `.smalltalk-*.ston` that loads the same baseline but
      runs a single suspect class or package.
    - Repeat the focused run a few times for flakes.
    - Compare crash stacks across failures. For VM crashes, the Smalltalk stack
      just before the native stack is often the clue.
 
-5. Decide the diagnosis class:
+6. Decide the diagnosis class:
    - Project failure: deterministic Smalltalk failure/error with useful stack.
    - Compatibility failure: load/test failure varies by Pharo version and names
      missing globals/selectors/classes.
@@ -52,7 +63,7 @@ failure.
    - External factor: download timeout, GitHub/network/auth/server issue before
      project code runs.
 
-6. Verify the fix against all relevant Pharo versions before reporting:
+7. Verify the fix against all relevant Pharo versions before reporting:
    - Run the fixed full suite for every CI platform touched by the change.
    - For flakes, also rerun the focused suspect class/method.
 
@@ -74,6 +85,7 @@ Useful flags:
 - `--include-git` to copy `.git` too. Use only for ordinary checkouts, not
   worktrees whose `.git` file points outside the copied tree.
 - `--keep-going` to continue after failures and collect several failing logs.
+- `--docker-platform linux/amd64` to match a CI runner architecture when needed.
 
 The script stops at the first failure by default and prints the log path.
 
@@ -84,8 +96,8 @@ especially for Pharo 13, Iceberg, libgit2, or image/cache issues.
 
 Watch for these local reproduction traps:
 
-- The Docker image `hpiswa/smalltalkci:24.04` may run as `linux/amd64`; on Apple
-  Silicon, pass Docker's `--platform linux/amd64`.
+- Match the container platform to CI when architecture can matter. The helper
+  defaults to `linux/amd64`, matching typical hosted Linux CI runners.
 - Missing SSH keys in Docker often produce Metacello/Iceberg auth warnings and
   HTTPS fallback. That can still match GitHub closely enough if dependencies
   load.
@@ -93,6 +105,9 @@ Watch for these local reproduction traps:
   starts. Treat them as noise unless the CI failure itself involves Git metadata.
 - smalltalkCI can reuse caches inside one container, but separate Docker runs
   usually redownload Pharo images/VMs. This is slower but closer to GitHub.
+- Local non-container smalltalkCI runs use host OS images and VMs. Treat them as
+  useful evidence, but prefer container reproduction for OS-sensitive, native,
+  FFI, libgit2, or VM failures.
 
 ## Reporting
 
