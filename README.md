@@ -112,7 +112,7 @@ The safer edit paths use Pharo facilities:
 - `edit-method` returns selected Renraku critiques after method compilation, including error-severity critiques and selected non-error rules.
 - `rewrite-methods` previews AST rewrite changes first and returns a `changeSetHash`; applying the rewrite requires `expectedChangeSetHash`.
 - `run-tests` uses SUnit and can collect CoverageCollector method and node coverage for an explicit method scope.
-- `edit-repository` works through Iceberg. Use `diff` to inspect image-side repository changes before exporting, committing, pulling, or pushing.
+- `edit-repository` works through Iceberg. Use `verifyIdentity` to assert repository identity before edits or exports, and `diff` to inspect image-side repository changes before exporting, committing, pulling, or pushing.
 - `manage-change-history` previews Epicea apply/revert operations and performs them only with `confirm=true`.
 
 This does not remove the normal responsibility of working in a safe image. Use disposable or copied images for automation and risky edits.
