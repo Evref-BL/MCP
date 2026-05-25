@@ -50,7 +50,7 @@ MCPToolInspectTool >> defaultName [
 { #category : 'defaults' }
 MCPToolInspectTool >> defaultOutputSchema [
 
-	| toolProperty schemaProperty examplesProperty requirementsProperty |
+	| examplesProperty requirementsProperty schemaProperty toolProperty |
 	schemaProperty := MCPStructureProperties new
 		                  type: 'object';
 		                  description: 'A JSON Schema object.';
@@ -96,7 +96,11 @@ MCPToolInspectTool >> defaultOutputSchema [
 				(self
 					 schemaPropertyNamed: 'group'
 					 type: 'string'
-					 description: 'Tool group.').
+					 description: 'Descriptive tool group.').
+				(self
+					 schemaPropertyNamed: 'exposure'
+					 type: 'string'
+					 description: 'Whether the tool is static or discoverable.').
 				(self
 					 schemaPropertyNamed: 'mutability'
 					 type: 'string'
@@ -110,9 +114,6 @@ MCPToolInspectTool >> defaultOutputSchema [
 					 description: 'Search keywords.'
 					 itemDescription: 'One keyword.').
 				(self
-					 booleanSchemaPropertyNamed: 'static'
-					 description: 'Whether tools/list advertises this tool.').
-				(self
 					 booleanSchemaPropertyNamed: 'schemaInspectionRequired'
 					 description: 'Whether schema inspection is expected before use.').
 				(schemaProperty
@@ -124,9 +125,9 @@ MCPToolInspectTool >> defaultOutputSchema [
 				examplesProperty.
 				requirementsProperty };
 		required:
-			#( 'name' 'title' 'description' 'group' 'mutability' 'risk' 'keywords'
-			   'static' 'schemaInspectionRequired' 'inputSchema' 'outputSchema'
-			   'examples' 'activationRequirements' );
+			#( 'name' 'title' 'description' 'group' 'exposure' 'mutability'
+			   'risk' 'keywords' 'schemaInspectionRequired'
+			   'inputSchema' 'outputSchema' 'examples' 'activationRequirements' );
 		additionalProperties: false.
 	^ self
 		  standardOutputSchemaForDataProperties: { toolProperty }

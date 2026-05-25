@@ -31,7 +31,7 @@ MCPToolAPITestCase >> aroundToolCall: aBlock [
 { #category : 'private - calling' }
 MCPToolAPITestCase >> callDiscoveredToolNamed: aToolName withArguments: someArguments [
 
-	^ self callRawToolNamed: 'dispatch-tool' withArguments: {
+	^ self callRawToolNamed: 'call-tool' withArguments: {
 			  (#toolName -> aToolName).
 			  (#arguments -> someArguments) } asDictionary
 ]
@@ -46,84 +46,17 @@ MCPToolAPITestCase >> callRawToolNamed: aToolName withArguments: someArguments [
 { #category : 'private - calling' }
 MCPToolAPITestCase >> callToolNamed: aToolName withArguments: someArguments [
 
-	| dispatchArguments dispatchToolName |
 	(MCPToolRegistry isStaticTool: aToolName) ifTrue: [
 		^ self callRawToolNamed: aToolName withArguments: someArguments ].
-	dispatchToolName := self
-		                    dispatchToolNameFor: aToolName
-		                    arguments: someArguments.
-	dispatchArguments := self
-		                     dispatchArgumentsForToolNamed: aToolName
-		                     arguments: someArguments.
-	^ self callRawToolNamed: 'dispatch-tool' withArguments: {
-			  (#toolName -> dispatchToolName).
-			  (#arguments -> dispatchArguments) } asDictionary
+	^ self
+		  callDiscoveredToolNamed: aToolName
+		  withArguments: someArguments
 ]
 
 { #category : 'private - results' }
 MCPToolAPITestCase >> dataFrom: aResult [
 
 	^ (self structuredContentFrom: aResult) at: #data
-]
-
-{ #category : 'private - calling' }
-MCPToolAPITestCase >> dispatchArgumentsForToolNamed: aToolName arguments: someArguments [
-
-	| normalized |
-	normalized := someArguments
-		              ifNil: [ Dictionary new ]
-		              ifNotNil: [ someArguments copy ].
-	({ 'edit-repository'. 'manage-change-history'. 'run-tests' }
-		 includes: aToolName) ifTrue: [
-			normalized removeKey: #operation ifAbsent: [ ].
-			normalized removeKey: 'operation' ifAbsent: [ ] ].
-	^ normalized
-]
-
-{ #category : 'private - calling' }
-MCPToolAPITestCase >> dispatchToolNameFor: aToolName arguments: someArguments [
-
-	| operation repositoryToolNames changeHistoryToolNames |
-	operation := self
-		             argumentNamed: 'operation'
-		             in: someArguments
-		             default: 'run'.
-	aToolName = 'run-tests' ifTrue: [
-			^ operation = 'coverage'
-				  ifTrue: [ 'run-test-coverage' ]
-				  ifFalse: [ 'run-test-batch' ] ].
-	aToolName = 'manage-change-history' ifTrue: [
-			changeHistoryToolNames := {
-				                          ('listFiles'
-				                           -> 'list-change-history-files').
-				                          ('listEntries'
-				                           -> 'list-change-history-entries').
-				                          ('applyEntries'
-				                           -> 'apply-change-history-entries').
-				                          ('revertEntries'
-				                           -> 'revert-change-history-entries') }
-				                          asDictionary.
-			^ changeHistoryToolNames at: operation ifAbsent: [ aToolName ] ].
-	aToolName = 'edit-repository' ifTrue: [
-			repositoryToolNames := {
-				                       ('create' -> 'create-repository').
-				                       ('attach' -> 'attach-repository').
-				                       ('update' -> 'update-repository').
-				                       ('verifyIdentity' -> 'verify-repository').
-				                       ('diff' -> 'diff-repository').
-				                       ('export' -> 'export-repository').
-				                       ('commit' -> 'commit-repository').
-				                       ('adoptHead' -> 'adopt-repository-head').
-				                       ('fetch' -> 'fetch-repository').
-				                       ('pull' -> 'pull-repository').
-				                       ('push' -> 'push-repository').
-				                       ('createBranch'
-				                        -> 'create-repository-branch').
-				                       ('switchBranch'
-				                        -> 'switch-repository-branch') }
-				                       asDictionary.
-			^ repositoryToolNames at: operation ifAbsent: [ aToolName ] ].
-	^ aToolName
 ]
 
 { #category : 'private - results' }

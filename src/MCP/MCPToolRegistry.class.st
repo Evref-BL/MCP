@@ -19,11 +19,18 @@ MCPToolRegistry class >> examplesForTool: aTool [
 ]
 
 { #category : 'tools' }
+MCPToolRegistry class >> exposureForTool: aTool [
+
+	^ (self isStaticTool: aTool)
+		  ifTrue: [ 'static' ]
+		  ifFalse: [ 'discoverable' ]
+]
+
+{ #category : 'tools' }
 MCPToolRegistry class >> groupNameForToolClass: aToolClass [
 
 	self publicToolGroups do: [ :group |
-			(group value includes: aToolClass) ifTrue: [
-				^ group key asString asLowercase ] ].
+		(group value includes: aToolClass) ifTrue: [ ^ group key ] ].
 	^ 'other'
 ]
 
@@ -71,10 +78,10 @@ MCPToolRegistry class >> metadataForTool: aTool [
 		  (#title -> aTool title).
 		  (#description -> aTool description).
 		  (#group -> (self groupNameForToolClass: aTool class)).
+		  (#exposure -> (self exposureForTool: aTool)).
 		  (#mutability -> (self mutabilityForTool: aTool)).
 		  (#risk -> (self riskForTool: aTool)).
 		  (#keywords -> (self keywordsForTool: aTool)).
-		  (#static -> (self isStaticTool: aTool)).
 		  (#schemaInspectionRequired
 		   -> (self schemaInspectionRequiredForTool: aTool)) } asDictionary
 ]
@@ -82,18 +89,14 @@ MCPToolRegistry class >> metadataForTool: aTool [
 { #category : 'tools' }
 MCPToolRegistry class >> mutabilityForTool: aTool [
 
-	| name readTools executeTools |
-	name := aTool name.
+	| executeTools readTools toolName |
+	toolName := aTool name.
 	readTools := #( 'discover-tools' 'inspect-tool' 'find-repositories'
-	                'verify-repository' 'diff-repository'
 	                'find-packages' 'find-classes' 'inspect-class'
-	                'find-methods' 'inspect-method' 'list-change-history-files'
-	                'list-change-history-entries'
-	                'capture-screenshot' ).
-	executeTools := #( 'dispatch-tool' 'run-test-batch' 'run-test-coverage'
-	                   'evaluate' ).
-	(readTools includes: name) ifTrue: [ ^ 'read' ].
-	(executeTools includes: name) ifTrue: [ ^ 'execute' ].
+	                'find-methods' 'inspect-method' 'capture-screenshot' ).
+	executeTools := #( 'call-tool' 'run-tests' 'evaluate' ).
+	(readTools includes: toolName) ifTrue: [ ^ 'read' ].
+	(executeTools includes: toolName) ifTrue: [ ^ 'execute' ].
 	^ 'write'
 ]
 
@@ -110,48 +113,30 @@ MCPToolRegistry class >> publicToolClasses [
 MCPToolRegistry class >> publicToolGroups [
 
 	^ {
-		  (#Discovery -> {
+		  ('tool-catalog' -> {
 			   MCPToolDiscoverTools.
 			   MCPToolInspectTool.
-			   MCPToolDispatchTool }).
-		  (#Repositories -> {
+			   MCPToolCallTool }).
+		  ('repositories' -> {
 			   MCPToolFindRepositories.
-			   MCPToolCreateRepository.
-			   MCPToolAttachRepository.
-			   MCPToolUpdateRepository.
-			   MCPToolVerifyRepository.
-			   MCPToolDiffRepository.
-			   MCPToolExportRepository.
-			   MCPToolCommitRepository.
-			   MCPToolAdoptRepositoryHead.
-			   MCPToolFetchRepository.
-			   MCPToolPullRepository.
-			   MCPToolPushRepository.
-			   MCPToolCreateRepositoryBranch.
-			   MCPToolSwitchRepositoryBranch.
+			   MCPToolEditRepository.
 			   MCPToolLoadRepository }).
-		  (#Packages -> { MCPToolFindPackages }).
-		  (#Classes -> {
+		  ('packages' -> { MCPToolFindPackages }).
+		  ('classes' -> {
 			   MCPToolFindClasses.
 			   MCPToolInspectClass.
 			   MCPToolEditClass.
 			   MCPToolRemoveClasses }).
-		  (#Methods -> {
+		  ('methods' -> {
 			   MCPToolFindMethods.
 			   MCPToolInspectMethod.
 			   MCPToolEditMethod.
 			   MCPToolRewriteMethods.
 			   MCPToolRemoveMethods }).
-		  (#History -> {
-			   MCPToolListChangeHistoryFiles.
-			   MCPToolListChangeHistoryEntries.
-			   MCPToolApplyChangeHistoryEntries.
-			   MCPToolRevertChangeHistoryEntries }).
-		  (#Tests -> {
-			   MCPToolRunTestBatch.
-			   MCPToolRunTestCoverage }).
-		  (#UI -> { MCPToolCaptureScreenshot }).
-		  (#Scripting -> { MCPToolEvaluate }) }
+		  ('history' -> { MCPToolManageChangeHistory }).
+		  ('tests' -> { MCPToolRunTests }).
+		  ('ui' -> { MCPToolCaptureScreenshot }).
+		  ('image-runtime' -> { MCPToolEvaluate }) }
 ]
 
 { #category : 'tools' }
@@ -163,19 +148,15 @@ MCPToolRegistry class >> publicTools [
 { #category : 'tools' }
 MCPToolRegistry class >> riskForTool: aTool [
 
-	| name lowRisk mediumRisk |
-	name := aTool name.
+	| lowRisk mediumRisk toolName |
+	toolName := aTool name.
 	lowRisk := #( 'discover-tools' 'inspect-tool' 'find-repositories'
-	              'verify-repository' 'diff-repository' 'find-packages'
-	              'find-classes' 'inspect-class' 'find-methods'
-	              'inspect-method' 'list-change-history-files'
-	              'list-change-history-entries'
-	              'capture-screenshot' ).
-	mediumRisk := #( 'dispatch-tool' 'load-repository' 'fetch-repository'
-	                 'pull-repository' 'adopt-repository-head'
-	                 'run-test-batch' 'run-test-coverage' ).
-	(lowRisk includes: name) ifTrue: [ ^ 'low' ].
-	(mediumRisk includes: name) ifTrue: [ ^ 'medium' ].
+	              'find-packages' 'find-classes' 'inspect-class'
+	              'find-methods' 'inspect-method' 'capture-screenshot' ).
+	mediumRisk := #( 'call-tool' 'load-repository' 'run-tests'
+	                 'evaluate' ).
+	(lowRisk includes: toolName) ifTrue: [ ^ 'low' ].
+	(mediumRisk includes: toolName) ifTrue: [ ^ 'medium' ].
 	^ 'high'
 ]
 
@@ -209,15 +190,16 @@ MCPToolRegistry class >> staticToolClasses [
 	^ {
 		  MCPToolDiscoverTools.
 		  MCPToolInspectTool.
-		  MCPToolDispatchTool.
-		  MCPToolFindRepositories.
+		  MCPToolCallTool.
 		  MCPToolFindPackages.
 		  MCPToolFindClasses.
 		  MCPToolInspectClass.
 		  MCPToolEditClass.
 		  MCPToolFindMethods.
 		  MCPToolInspectMethod.
-		  MCPToolEditMethod }
+		  MCPToolEditMethod.
+		  MCPToolEvaluate.
+		  MCPToolRunTests }
 ]
 
 { #category : 'tools' }

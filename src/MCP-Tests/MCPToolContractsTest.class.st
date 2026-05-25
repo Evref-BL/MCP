@@ -157,26 +157,14 @@ MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 	orderedTools := OrderedCollection new.
 	MCPTool toolGroups do: [ :group | orderedTools addAll: group value ].
 	self
-		assert: orderedTools asArray
-		equals: MCPToolRegistry publicToolClasses.
+		assert: orderedTools asSet
+		equals: MCPTool concreteSubclasses asSet.
 	self assert: orderedTools asArray equals: {
 			MCPToolDiscoverTools.
 			MCPToolInspectTool.
-			MCPToolDispatchTool.
+			MCPToolCallTool.
 			MCPToolFindRepositories.
-			MCPToolCreateRepository.
-			MCPToolAttachRepository.
-			MCPToolUpdateRepository.
-			MCPToolVerifyRepository.
-			MCPToolDiffRepository.
-			MCPToolExportRepository.
-			MCPToolCommitRepository.
-			MCPToolAdoptRepositoryHead.
-			MCPToolFetchRepository.
-			MCPToolPullRepository.
-			MCPToolPushRepository.
-			MCPToolCreateRepositoryBranch.
-			MCPToolSwitchRepositoryBranch.
+			MCPToolEditRepository.
 			MCPToolLoadRepository.
 			MCPToolFindPackages.
 			MCPToolFindClasses.
@@ -188,14 +176,27 @@ MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 			MCPToolEditMethod.
 			MCPToolRewriteMethods.
 			MCPToolRemoveMethods.
-			MCPToolListChangeHistoryFiles.
-			MCPToolListChangeHistoryEntries.
-			MCPToolApplyChangeHistoryEntries.
-			MCPToolRevertChangeHistoryEntries.
-			MCPToolRunTestBatch.
-			MCPToolRunTestCoverage.
+			MCPToolManageChangeHistory.
+			MCPToolRunTests.
 			MCPToolCaptureScreenshot.
 			MCPToolEvaluate }
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testCallToolInvokesTargetToolThroughServerPath [
+
+	| data result |
+	result := self callToolNamed: 'call-tool' withArguments: {
+			          (#toolName -> 'find-packages').
+			          (#arguments -> {
+				           (#filter -> 'MCP').
+				           (#filterMode -> 'substring').
+				           (#limit -> 1) } asDictionary) } asDictionary.
+	data := self dataFrom: result.
+	self assert: (data at: #packages) size equals: 1.
+	self assert:
+		(((data at: #packages) first at: #packageName) includesSubstring:
+			 'MCP')
 ]
 
 { #category : 'tests' }
@@ -299,53 +300,41 @@ MCPToolContractsTest >> testDictionaryShapedCommandResultsUseDTOClasses [
 { #category : 'tests' }
 MCPToolContractsTest >> testDiscoverToolsCanIncludeStaticSurface [
 
-	| names result |
+	| metadataByName result |
 	result := self callToolNamed: 'discover-tools' withArguments: {
 			          (#query -> 'classes').
 			          (#includeStatic -> true) } asDictionary.
-	names := ((self dataFrom: result) at: #tools) collect: [ :each |
-		         each at: #name ].
-	self assert: (names includes: 'find-classes')
+	metadataByName := (((self dataFrom: result) at: #tools) collect: [
+		                   :each | (each at: #name) -> each ]) asDictionary.
+	self assert: (metadataByName includesKey: 'find-classes').
+	self
+		assert: ((metadataByName at: 'find-classes') at: #exposure)
+		equals: 'static'
 ]
 
 { #category : 'tests' }
 MCPToolContractsTest >> testDiscoverToolsReturnsDiscoverableMetadata [
 
-	| data names result tools |
+	| data editRepositoryMetadata names result tools |
 	result := self
 		          callToolNamed: 'discover-tools'
 		          withArguments: { (#query -> 'repository') } asDictionary.
 	data := self dataFrom: result.
 	tools := data at: #tools.
 	names := tools collect: [ :each | each at: #name ].
-	self assert: (names includes: 'export-repository').
+	self assert: (names includes: 'find-repositories').
+	self assert: (names includes: 'edit-repository').
 	self assert: (names includes: 'load-repository').
-	self deny: (names includes: 'find-repositories').
+	self deny: (names includes: 'find-classes').
+	editRepositoryMetadata := tools detect: [ :each |
+		                          (each at: #name) = 'edit-repository' ].
 	self
-		assert:
-			((tools detect: [ :each | (each at: #name) = 'export-repository' ])
-				 at: #group)
+		assert: (editRepositoryMetadata at: #group)
 		equals: 'repositories'.
-	self assert:
-		((tools detect: [ :each | (each at: #name) = 'export-repository' ])
-			 at: #schemaInspectionRequired)
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testDispatchToolInvokesTargetToolThroughServerPath [
-
-	| data result |
-	result := self callToolNamed: 'dispatch-tool' withArguments: {
-			          (#toolName -> 'find-packages').
-			          (#arguments -> {
-				           (#filter -> 'MCP').
-				           (#filterMode -> 'substring').
-				           (#limit -> 1) } asDictionary) } asDictionary.
-	data := self dataFrom: result.
-	self assert: (data at: #packages) size equals: 1.
-	self assert:
-		(((data at: #packages) first at: #packageName) includesSubstring:
-			 'MCP')
+	self
+		assert: (editRepositoryMetadata at: #exposure)
+		equals: 'discoverable'.
+	self assert: (editRepositoryMetadata at: #schemaInspectionRequired)
 ]
 
 { #category : 'tests' }
@@ -1292,7 +1281,7 @@ MCPToolContractsTest >> testHandleJSONReturnsInvalidParamsForMissingRequiredArgu
 
 	| response |
 	response := self handleJSON:
-		            '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"dispatch-tool","arguments":{"toolName":"evaluate","arguments":{}}}}'.
+		            '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"call-tool","arguments":{"toolName":"evaluate","arguments":{}}}}'.
 	self assert: (response includesSubstring: '"code":-32602').
 	self assert: (response includesSubstring:
 			 '"message":"Invalid method parameter(s)."')
@@ -1444,15 +1433,16 @@ MCPToolContractsTest >> testInspectToolReturnsSchemaForDiscoveredTool [
 	result := self
 		          callToolNamed: 'inspect-tool'
 		          withArguments:
-		          { (#toolName -> 'export-repository') } asDictionary.
+		          { (#toolName -> 'edit-repository') } asDictionary.
 	inspected := (self dataFrom: result) at: #tool.
-	self assert: (inspected at: #name) equals: 'export-repository'.
+	self assert: (inspected at: #name) equals: 'edit-repository'.
 	self assert: (inspected at: #group) equals: 'repositories'.
+	self assert: (inspected at: #exposure) equals: 'discoverable'.
 	inputProperties := ((inspected at: #inputSchema) at: #properties)
 		                   keys.
-	self deny: (inputProperties includes: 'operation').
-	self assert: (((inspected at: #inputSchema) at: #required) includes:
-			 'repositoryName')
+	self assert: (inputProperties includes: 'operation').
+	self assert:
+		(((inspected at: #inputSchema) at: #required) includes: 'operation')
 ]
 
 { #category : 'tests' }
@@ -1792,11 +1782,16 @@ MCPToolContractsTest >> testRPCAdvertisesStaticToolSurfaceOnly [
 		assert: toolNames asSet
 		equals: MCPToolRegistry staticToolNames asSet.
 	self assert: (toolNames includes: 'discover-tools').
-	self assert: (toolNames includes: 'dispatch-tool').
+	self assert: (toolNames includes: 'inspect-tool').
+	self assert: (toolNames includes: 'call-tool').
 	self assert: (toolNames includes: 'edit-class').
+	self assert: (toolNames includes: 'edit-method').
+	self assert: (toolNames includes: 'evaluate').
+	self assert: (toolNames includes: 'run-tests').
+	self deny: (toolNames includes: 'find-repositories').
 	self deny: (toolNames includes: 'edit-repository').
-	self deny: (toolNames includes: 'export-repository').
-	self deny: (toolNames includes: 'run-tests')
+	self deny: (toolNames includes: 'manage-change-history').
+	self deny: (toolNames includes: 'capture-screenshot')
 ]
 
 { #category : 'tests' }
@@ -1844,22 +1839,6 @@ MCPToolContractsTest >> testRemoveMethodsHasAccurateNameAndRequiredArguments [
 	self
 		assert: MCPToolRemoveMethods new inputSchema required asSet
 		equals: #( 'className' 'selectors' ) asSet
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testRepositoryOperationWrappersInjectFixedOperation [
-
-	| parsedRequest propertyNames tool |
-	tool := MCPToolExportRepository new.
-	propertyNames := tool inputSchema properties collect: [ :each |
-		                 each name ].
-	self deny: (propertyNames includes: 'operation').
-	parsedRequest := self
-		                 parsedRequestForTool: tool
-		                 arguments:
-		                 { (#repositoryName -> 'MCP') } asDictionary.
-	self assert: parsedRequest class equals: MCPRepositoryExportRequest.
-	self assert: parsedRequest operation equals: 'export'
 ]
 
 { #category : 'tests' }
@@ -1991,7 +1970,7 @@ MCPToolContractsTest >> testRpcToolCallSignalsInvalidParametersForInvalidNestedA
 	self
 		should: [
 				self
-					callDiscoveredToolNamed: 'run-test-batch'
+					callToolNamed: 'run-tests'
 					withArguments:
 					{ (#tests -> #( 'MCPToolContractsTest' )) } asDictionary ]
 		raise: JRPCInvalidParameters
@@ -2165,88 +2144,6 @@ MCPToolContractsTest >> toolFlowSpecs [
 			  (#requestClass -> MCPRepositoryUpdateRequest).
 			  (#commandClass -> MCPUpdateRepositoryCommand) } asDictionary.
 		  {
-			  (#toolClass -> MCPToolCreateRepository).
-			  (#arguments -> {
-				   (#name -> 'MCP').
-				   (#location -> '/tmp/mcp') } asDictionary).
-			  (#requestClass -> MCPRepositoryCreateRequest).
-			  (#commandClass -> MCPCreateRepositoryCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolAttachRepository).
-			  (#arguments -> {
-				   (#name -> 'MCP').
-				   (#location -> '/tmp/mcp') } asDictionary).
-			  (#requestClass -> MCPRepositoryAttachRequest).
-			  (#commandClass -> MCPAttachRepositoryCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolUpdateRepository).
-			  (#arguments -> {
-				   (#repositoryName -> 'MCP').
-				   (#addPackageNames -> #( 'MCP' )) } asDictionary).
-			  (#requestClass -> MCPRepositoryUpdateRequest).
-			  (#commandClass -> MCPUpdateRepositoryCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolVerifyRepository).
-			  (#arguments -> {
-				   (#repositoryName -> 'MCP').
-				   (#branchName -> 'main') } asDictionary).
-			  (#requestClass -> MCPRepositoryVerifyIdentityRequest).
-			  (#commandClass -> MCPRepositoryVerifyIdentityCommand) }
-			  asDictionary.
-		  {
-			  (#toolClass -> MCPToolDiffRepository).
-			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
-			  (#requestClass -> MCPRepositoryDiffRequest).
-			  (#commandClass -> MCPRepositoryDiffCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolExportRepository).
-			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
-			  (#requestClass -> MCPRepositoryExportRequest).
-			  (#commandClass -> MCPExportRepositoryCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolCommitRepository).
-			  (#arguments -> {
-				   (#repositoryName -> 'MCP').
-				   (#message -> 'Test commit') } asDictionary).
-			  (#requestClass -> MCPRepositoryCommitRequest).
-			  (#commandClass -> MCPCommitRepositoryCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolAdoptRepositoryHead).
-			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
-			  (#requestClass -> MCPRepositoryAdoptHeadRequest).
-			  (#commandClass -> MCPAdoptRepositoryHeadCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolFetchRepository).
-			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
-			  (#requestClass -> MCPRepositoryFetchRequest).
-			  (#commandClass -> MCPFetchRepositoryCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolPullRepository).
-			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
-			  (#requestClass -> MCPRepositoryPullRequest).
-			  (#commandClass -> MCPPullRepositoryCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolPushRepository).
-			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
-			  (#requestClass -> MCPRepositoryPushRequest).
-			  (#commandClass -> MCPPushRepositoryCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolCreateRepositoryBranch).
-			  (#arguments -> {
-				   (#repositoryName -> 'MCP').
-				   (#branchName -> 'test-branch') } asDictionary).
-			  (#requestClass -> MCPRepositoryCreateBranchRequest).
-			  (#commandClass -> MCPCreateRepositoryBranchCommand) }
-			  asDictionary.
-		  {
-			  (#toolClass -> MCPToolSwitchRepositoryBranch).
-			  (#arguments -> {
-				   (#repositoryName -> 'MCP').
-				   (#branchName -> 'main') } asDictionary).
-			  (#requestClass -> MCPRepositorySwitchBranchRequest).
-			  (#commandClass -> MCPSwitchRepositoryBranchCommand) }
-			  asDictionary.
-		  {
 			  (#toolClass -> MCPToolLoadRepository).
 			  (#arguments -> {
 				   (#owner -> 'ExampleOwner').
@@ -2326,54 +2223,9 @@ MCPToolContractsTest >> toolFlowSpecs [
 			  (#requestClass -> MCPChangeHistoryListLogsRequest).
 			  (#commandClass -> MCPListChangeHistoryLogsCommand) } asDictionary.
 		  {
-			  (#toolClass -> MCPToolListChangeHistoryFiles).
-			  (#arguments -> { (#includeEntryCounts -> false) } asDictionary).
-			  (#requestClass -> MCPChangeHistoryListLogsRequest).
-			  (#commandClass -> MCPListChangeHistoryLogsCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolListChangeHistoryEntries).
-			  (#arguments -> Dictionary new).
-			  (#requestClass -> MCPChangeHistoryListEntriesRequest).
-			  (#commandClass -> MCPListChangeHistoryEntriesCommand) }
-			  asDictionary.
-		  {
-			  (#toolClass -> MCPToolApplyChangeHistoryEntries).
-			  (#arguments -> {
-				   (#latestCount -> 1).
-				   (#confirm -> false) } asDictionary).
-			  (#requestClass -> MCPChangeHistorySelectionRequest).
-			  (#commandClass -> MCPChangeHistorySelectionCommand) }
-			  asDictionary.
-		  {
-			  (#toolClass -> MCPToolRevertChangeHistoryEntries).
-			  (#arguments -> {
-				   (#latestCount -> 1).
-				   (#confirm -> false) } asDictionary).
-			  (#requestClass -> MCPChangeHistorySelectionRequest).
-			  (#commandClass -> MCPChangeHistorySelectionCommand) }
-			  asDictionary.
-		  {
 			  (#toolClass -> MCPToolRunTests).
 			  (#arguments -> { (#tests
 			    -> { { (#className -> 'MCPToolContractsTest') } asDictionary }) }
-				   asDictionary).
-			  (#requestClass -> MCPRunTestsRequest).
-			  (#commandClass -> MCPRunTestsCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolRunTestBatch).
-			  (#arguments -> { (#tests
-			    -> { { (#className -> 'MCPToolContractsTest') } asDictionary }) }
-				   asDictionary).
-			  (#requestClass -> MCPRunTestsRequest).
-			  (#commandClass -> MCPRunTestsCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolRunTestCoverage).
-			  (#arguments -> {
-				   (#tests
-				    -> { { (#className -> 'MCPToolContractsTest') } asDictionary }).
-				   (#coverage
-				    ->
-				    { (#classNames -> #( 'MCPToolContractsTest' )) } asDictionary) }
 				   asDictionary).
 			  (#requestClass -> MCPRunTestsRequest).
 			  (#commandClass -> MCPRunTestsCommand) } asDictionary.
@@ -2398,10 +2250,10 @@ MCPToolContractsTest >> toolFlowSpecs [
 			  (#requestClass -> MCPInspectToolRequest).
 			  (#commandClass -> MCPInspectToolCommand) } asDictionary.
 		  {
-			  (#toolClass -> MCPToolDispatchTool).
+			  (#toolClass -> MCPToolCallTool).
 			  (#arguments -> {
 				   (#toolName -> 'find-packages').
 				   (#arguments -> Dictionary new) } asDictionary).
-			  (#requestClass -> MCPDispatchToolRequest).
-			  (#commandClass -> MCPDispatchToolCommand) } asDictionary }
+			  (#requestClass -> MCPCallToolRequest).
+			  (#commandClass -> MCPCallToolCommand) } asDictionary }
 ]

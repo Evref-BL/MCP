@@ -39,11 +39,11 @@ MCPToolDiscoverTools >> defaultInputSchema [
 					   schemaPropertyNamed: 'group'
 					   type: 'string'
 					   description:
-						   'Optional tool group filter such as repositories, classes, methods, history, tests, ui, or scripting.').
+						   'Optional tool group filter such as tool-catalog, repositories, packages, classes, methods, history, tests, ui, or image-runtime.').
 				  (self
 					   booleanSchemaPropertyNamed: 'includeStatic'
 					   description:
-						   'Whether to include the small statically advertised tool surface in discovery results.'
+						   'Whether to include the statically advertised tool surface in discovery results.'
 					   default: false).
 				  (self
 					   integerSchemaPropertyNamed: 'limit'
@@ -137,7 +137,11 @@ MCPToolDiscoverTools >> toolMetadataObjectSchema [
 				  (self
 					   schemaPropertyNamed: 'group'
 					   type: 'string'
-					   description: 'Tool group identifier.').
+					   description: 'Descriptive tool group identifier.').
+				  (self
+					   schemaPropertyNamed: 'exposure'
+					   type: 'string'
+					   description: 'Whether the tool is static or discoverable.').
 				  (self
 					   schemaPropertyNamed: 'mutability'
 					   type: 'string'
@@ -152,16 +156,12 @@ MCPToolDiscoverTools >> toolMetadataObjectSchema [
 					   description: 'Search keywords for the tool.'
 					   itemDescription: 'One search keyword.').
 				  (self
-					   booleanSchemaPropertyNamed: 'static'
-					   description:
-						   'Whether tools/list advertises this tool directly.').
-				  (self
 					   booleanSchemaPropertyNamed: 'schemaInspectionRequired'
 					   description:
 						   'Whether callers should inspect the schema before calling the tool.') };
 		  required:
-			  #( 'name' 'title' 'description' 'group' 'mutability' 'risk'
-			     'keywords' 'static' 'schemaInspectionRequired' );
+			  #( 'name' 'title' 'description' 'group' 'exposure' 'mutability'
+			     'risk' 'keywords' 'schemaInspectionRequired' );
 		  additionalProperties: false;
 		  yourself
 ]

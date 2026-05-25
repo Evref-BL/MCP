@@ -183,16 +183,6 @@ MCP >> monitoringTraces [
 	^ self monitoring traceRecords
 ]
 
-{ #category : 'infrastructure metadata' }
-MCP >> pharoRuntimeMetadata [
-
-	^ {
-		  (#runtimeVersion -> PharoCompatibility runtimeVersionString).
-		  (#supportedMajorVersions -> self supportedPharoMajorVersions).
-		  (#supportedLauncherVersions -> self supportedPharoLauncherVersions) }
-		  asDictionary
-]
-
 { #category : 'start' }
 MCP >> onInitialize: protocolVersion capabilities: capabilities clientInfo: clientInfo websiteUrl: websiteUrl [
 
@@ -211,6 +201,16 @@ MCP >> onInitialize: protocolVersion capabilities: capabilities clientInfo: clie
 				   websiteUrl: 'https://badetitou.fr';
 				   icons: { (MCPStructureIcon pngIconNamed: #pharo) };
 				   yourself)
+]
+
+{ #category : 'infrastructure metadata' }
+MCP >> pharoRuntimeMetadata [
+
+	^ {
+		  (#runtimeVersion -> PharoCompatibility runtimeVersionString).
+		  (#supportedMajorVersions -> self supportedPharoMajorVersions).
+		  (#supportedLauncherVersions -> self supportedPharoLauncherVersions) }
+		  asDictionary
 ]
 
 { #category : 'accessing' }
@@ -232,25 +232,6 @@ MCP >> refreshToolsList [
 	^ toolsList
 ]
 
-{ #category : 'infrastructure metadata' }
-MCP >> serverInfrastructureMetadata [
-
-	^ { (#'io.github.evref-bl/pharo' -> self pharoRuntimeMetadata) }
-		  asDictionary
-]
-
-{ #category : 'infrastructure metadata' }
-MCP >> supportedPharoLauncherVersions [
-
-	^ #( '120' '130' '140' )
-]
-
-{ #category : 'infrastructure metadata' }
-MCP >> supportedPharoMajorVersions [
-
-	^ #( 12 13 14 )
-]
-
 { #category : 'start' }
 MCP >> restart [
 
@@ -259,30 +240,29 @@ MCP >> restart [
 ]
 
 { #category : 'private - tools' }
-MCP >> rpcDispatchToolCallWithParams: arguments [
+MCP >> rpcCallToolCallWithParams: arguments [
 
-	| dispatchRequest dispatchTool request targetTool |
-	dispatchTool := MCPToolDispatchTool new.
+	| callRequest callTool request targetTool |
+	callTool := MCPToolCallTool new.
 	^ [
-		  request := dispatchTool requestFromToolCallArguments: arguments.
-		  dispatchRequest := dispatchTool parsedRequestFromToolRequest:
-			                     request.
-		  dispatchRequest toolName = dispatchTool name ifTrue: [
-			  Error signal: 'dispatch-tool cannot dispatch itself.' ].
+		  request := callTool requestFromToolCallArguments: arguments.
+		  callRequest := callTool parsedRequestFromToolRequest: request.
+		  callRequest toolName = callTool name ifTrue: [
+			  Error signal: 'call-tool cannot call itself.' ].
 		  targetTool := MCPToolRegistry
-			                toolNamed: dispatchRequest toolName
+			                toolNamed: callRequest toolName
 			                ifAbsent: [
 			                Error signal:
-				                'Unknown MCP tool: ' , dispatchRequest toolName ].
+				                'Unknown MCP tool: ' , callRequest toolName ].
 		  self
 			  executeTool: targetTool
 			  named: targetTool name
-			  withParams: dispatchRequest arguments ]
+			  withParams: callRequest arguments ]
 		  on: Exception
 		  do: [ :error |
 				  | errorResult |
 				  (error isKindOf: JRPCError) ifTrue: [ error pass ].
-				  errorResult := dispatchTool errorResultFor: error.
+				  errorResult := callTool errorResultFor: error.
 				  errorResult asJRPCJSON ]
 ]
 
@@ -318,8 +298,8 @@ MCP >> rpcResourcesTemplateList [
 MCP >> rpcToolCall: name withParams: arguments [
 
 	<jrpc: #'tools/call'>
-	name = MCPToolDispatchTool new name ifTrue: [
-		^ self rpcDispatchToolCallWithParams: arguments ].
+	name = MCPToolCallTool new name ifTrue: [
+		^ self rpcCallToolCallWithParams: arguments ].
 	toolsList
 		at: name
 		ifPresent: [ :tool |
@@ -354,6 +334,13 @@ MCP >> server [
 	^ server
 ]
 
+{ #category : 'infrastructure metadata' }
+MCP >> serverInfrastructureMetadata [
+
+	^ { (#'io.github.evref-bl/pharo' -> self pharoRuntimeMetadata) }
+		  asDictionary
+]
+
 { #category : 'accessing' }
 MCP >> sortedTools [
 
@@ -373,6 +360,18 @@ MCP >> start [
 MCP >> stop [
 
 	server stop
+]
+
+{ #category : 'infrastructure metadata' }
+MCP >> supportedPharoLauncherVersions [
+
+	^ #( '120' '130' '140' )
+]
+
+{ #category : 'infrastructure metadata' }
+MCP >> supportedPharoMajorVersions [
+
+	^ #( 12 13 14 )
 ]
 
 { #category : 'accessing' }

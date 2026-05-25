@@ -1,5 +1,5 @@
 Class {
-	#name : 'MCPToolDispatchTool',
+	#name : 'MCPToolCallTool',
 	#superclass : 'MCPTool',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
@@ -7,25 +7,25 @@ Class {
 }
 
 { #category : 'private - execution' }
-MCPToolDispatchTool >> commandForRequest: dispatchRequest [
+MCPToolCallTool >> commandForRequest: callRequest [
 
-	^ MCPDispatchToolCommand tool: self request: dispatchRequest
+	^ MCPCallToolCommand tool: self request: callRequest
 ]
 
 { #category : 'defaults' }
-MCPToolDispatchTool >> defaultDescription [
+MCPToolCallTool >> defaultDescription [
 
 	^ 'Invoke one MCP-Pharo tool selected by name from the discoverable catalog. The target tool receives the nested arguments object and is validated through its own schema.'
 ]
 
 { #category : 'defaults' }
-MCPToolDispatchTool >> defaultIcons [
+MCPToolCallTool >> defaultIcons [
 
 	^ { (self pngIconNamed: #go) }
 ]
 
 { #category : 'defaults' }
-MCPToolDispatchTool >> defaultInputSchema [
+MCPToolCallTool >> defaultInputSchema [
 
 	| argumentsProperty toolNameProperty |
 	toolNameProperty := self
@@ -50,20 +50,20 @@ MCPToolDispatchTool >> defaultInputSchema [
 ]
 
 { #category : 'defaults' }
-MCPToolDispatchTool >> defaultName [
+MCPToolCallTool >> defaultName [
 
-	^ 'dispatch-tool'
+	^ 'call-tool'
 ]
 
 { #category : 'defaults' }
-MCPToolDispatchTool >> defaultOutputSchema [
+MCPToolCallTool >> defaultOutputSchema [
 
 	| resultProperty |
 	resultProperty := self
 		                  schemaPropertyNamed: 'result'
 		                  type: 'object'
 		                  description:
-		                  'The target tool result when dispatch-tool is executed outside MCP server fast-path dispatch.'.
+		                  'The target tool result when call-tool is executed outside the MCP server call path.'.
 	resultProperty additionalProperties: true.
 	^ self
 		  standardOutputSchemaForDataProperties: {
@@ -76,27 +76,25 @@ MCPToolDispatchTool >> defaultOutputSchema [
 ]
 
 { #category : 'defaults' }
-MCPToolDispatchTool >> defaultTitle [
+MCPToolCallTool >> defaultTitle [
 
-	^ 'Dispatch Tool'
+	^ 'Call Tool'
 ]
 
 { #category : 'executing' }
-MCPToolDispatchTool >> executeWithRequest: request [
+MCPToolCallTool >> executeWithRequest: request [
 
 	^ self
 		  executeParsedRequestFrom: request
-		  do: [ :dispatchRequest |
+		  do: [ :callRequest |
 				  self
-					  errorResultText:
-					  'dispatch-tool requires MCP server dispatch context.'
-					  details:
-					  { (#toolName -> dispatchRequest toolName) } asDictionary ]
+					  errorResultText: 'call-tool requires MCP server call context.'
+					  details: { (#toolName -> callRequest toolName) } asDictionary ]
 		  onError: [ :error :parsedRequest | self errorResultFor: error ]
 ]
 
 { #category : 'private - request' }
-MCPToolDispatchTool >> parsedRequestFromToolRequest: request [
+MCPToolCallTool >> parsedRequestFromToolRequest: request [
 
-	^ MCPDispatchToolRequest fromToolRequest: request
+	^ MCPCallToolRequest fromToolRequest: request
 ]

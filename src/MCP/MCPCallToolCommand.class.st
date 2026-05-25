@@ -1,5 +1,5 @@
 Class {
-	#name : 'MCPDispatchToolCommand',
+	#name : 'MCPCallToolCommand',
 	#superclass : 'Object',
 	#instVars : [
 		'tool',
@@ -11,7 +11,7 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPDispatchToolCommand class >> tool: aTool request: aRequest [
+MCPCallToolCommand class >> tool: aTool request: aRequest [
 
 	^ self new
 		  tool: aTool;
@@ -20,31 +20,31 @@ MCPDispatchToolCommand class >> tool: aTool request: aRequest [
 ]
 
 { #category : 'executing' }
-MCPDispatchToolCommand >> execute [
+MCPCallToolCommand >> execute [
 
-	Error signal: 'dispatch-tool requires MCP server dispatch context.'
+	Error signal: 'call-tool requires MCP server call context.'
 ]
 
 { #category : 'accessing' }
-MCPDispatchToolCommand >> request [
+MCPCallToolCommand >> request [
 
 	^ request
 ]
 
 { #category : 'accessing' }
-MCPDispatchToolCommand >> request: anObject [
+MCPCallToolCommand >> request: anObject [
 
 	request := anObject
 ]
 
 { #category : 'accessing' }
-MCPDispatchToolCommand >> tool [
+MCPCallToolCommand >> tool [
 
 	^ tool
 ]
 
 { #category : 'accessing' }
-MCPDispatchToolCommand >> tool: anObject [
+MCPCallToolCommand >> tool: anObject [
 
 	tool := anObject
 ]

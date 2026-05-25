@@ -1,5 +1,5 @@
 Class {
-	#name : 'MCPDispatchToolRequest',
+	#name : 'MCPCallToolRequest',
 	#superclass : 'Object',
 	#instVars : [
 		'toolName',
@@ -11,7 +11,7 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPDispatchToolRequest class >> fromToolRequest: aToolRequest [
+MCPCallToolRequest class >> fromToolRequest: aToolRequest [
 
 	^ self new
 		  toolName: (aToolRequest stringArgumentNamed: 'toolName');
@@ -23,25 +23,25 @@ MCPDispatchToolRequest class >> fromToolRequest: aToolRequest [
 ]
 
 { #category : 'accessing' }
-MCPDispatchToolRequest >> arguments [
+MCPCallToolRequest >> arguments [
 
 	^ arguments ifNil: [ Dictionary new ]
 ]
 
 { #category : 'accessing' }
-MCPDispatchToolRequest >> arguments: aDictionary [
+MCPCallToolRequest >> arguments: aDictionary [
 
 	arguments := aDictionary ifNil: [ Dictionary new ]
 ]
 
 { #category : 'accessing' }
-MCPDispatchToolRequest >> toolName [
+MCPCallToolRequest >> toolName [
 
 	^ toolName
 ]
 
 { #category : 'accessing' }
-MCPDispatchToolRequest >> toolName: aString [
+MCPCallToolRequest >> toolName: aString [
 
 	toolName := aString
 ]
