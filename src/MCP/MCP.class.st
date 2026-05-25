@@ -9,7 +9,8 @@ Class {
 	#instVars : [
 		'server',
 		'toolsList',
-		'monitoring'
+		'monitoring',
+		'toolExposurePolicy'
 	],
 	#category : 'MCP-Server',
 	#package : 'MCP',
@@ -228,7 +229,8 @@ MCP >> port: aPortNumber [
 { #category : 'private - tools' }
 MCP >> refreshToolsList [
 
-	toolsList := MCPToolRegistry staticToolsDictionary.
+	toolsList := MCPToolRegistry staticToolsDictionaryUsingPolicy:
+		             self toolExposurePolicy.
 	^ toolsList
 ]
 
@@ -243,7 +245,9 @@ MCP >> restart [
 MCP >> rpcCallToolCallWithParams: arguments [
 
 	| callRequest callTool request targetTool |
-	callTool := MCPToolCallTool new.
+	callTool := MCPToolCallTool new
+		            toolExposurePolicy: self toolExposurePolicy;
+		            yourself.
 	^ [
 		  request := callTool requestFromToolCallArguments: arguments.
 		  callRequest := callTool parsedRequestFromToolRequest: request.
@@ -253,7 +257,8 @@ MCP >> rpcCallToolCallWithParams: arguments [
 			                toolNamed: callRequest toolName
 			                ifAbsent: [
 			                Error signal:
-				                'Unknown MCP tool: ' , callRequest toolName ].
+				                'Unknown MCP tool: ' , callRequest toolName ]
+			                usingPolicy: self toolExposurePolicy.
 		  self
 			  executeTool: targetTool
 			  named: targetTool name
@@ -298,12 +303,12 @@ MCP >> rpcResourcesTemplateList [
 MCP >> rpcToolCall: name withParams: arguments [
 
 	<jrpc: #'tools/call'>
-	name = MCPToolCallTool new name ifTrue: [
-		^ self rpcCallToolCallWithParams: arguments ].
 	toolsList
 		at: name
 		ifPresent: [ :tool |
-		^ self executeTool: tool named: name withParams: arguments ]
+				name = MCPToolCallTool new name ifTrue: [
+					^ self rpcCallToolCallWithParams: arguments ].
+				^ self executeTool: tool named: name withParams: arguments ]
 		ifAbsent: [ JRPCNonExistentHandler signal: name ]
 ]
 
@@ -356,6 +361,20 @@ MCP >> start [
 	server addHandlersFromPragmasIn: self
 ]
 
+{ #category : 'configuration' }
+MCP >> staticToolNames [
+
+	^ self toolExposurePolicy staticToolNames
+]
+
+{ #category : 'configuration' }
+MCP >> staticToolNames: aCollection [
+
+	self toolExposurePolicy:
+		(MCPToolExposurePolicy staticToolNames: aCollection).
+	^ self
+]
+
 { #category : 'accessing' }
 MCP >> stop [
 
@@ -372,6 +391,22 @@ MCP >> supportedPharoLauncherVersions [
 MCP >> supportedPharoMajorVersions [
 
 	^ #( 12 13 14 )
+]
+
+{ #category : 'accessing' }
+MCP >> toolExposurePolicy [
+
+	^ toolExposurePolicy ifNil: [
+		  toolExposurePolicy := MCPToolExposurePolicy default ]
+]
+
+{ #category : 'accessing' }
+MCP >> toolExposurePolicy: aToolExposurePolicy [
+
+	toolExposurePolicy := aToolExposurePolicy ifNil: [
+		                      MCPToolExposurePolicy default ].
+	self refreshToolsList.
+	^ toolExposurePolicy
 ]
 
 { #category : 'accessing' }

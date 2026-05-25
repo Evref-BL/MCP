@@ -183,6 +183,26 @@ MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testCallToolInvokesDiscoverableToolAfterStaticConfiguration [
+
+	| data result server |
+	server := MCP new.
+	server staticToolNames:
+		#( 'discover-tools' 'inspect-tool' 'call-tool' ).
+	result := server rpcToolCall: 'call-tool' withParams: {
+			          (#toolName -> 'find-packages').
+			          (#arguments -> {
+				           (#filter -> 'MCP').
+				           (#filterMode -> 'substring').
+				           (#limit -> 1) } asDictionary) } asDictionary.
+	data := self dataFrom: result.
+	self assert: (data at: #packages) size equals: 1.
+	self assert:
+		(((data at: #packages) first at: #packageName) includesSubstring:
+			 'MCP')
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testCallToolInvokesTargetToolThroughServerPath [
 
 	| data result |
@@ -240,6 +260,21 @@ MCPToolContractsTest >> testClassToolTraitOwnsSharedClassHelpers [
 		self assert: (toolClass traits includes: TMCPClassTool).
 		sharedSelectors do: [ :selector |
 			self assert: (toolClass >> selector) origin equals: TMCPClassTool ] ]
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testConfiguredDiscoverableToolsAreNotDirectlyCallable [
+
+	| server |
+	server := MCP new.
+	server staticToolNames:
+		#( 'discover-tools' 'inspect-tool' 'call-tool' ).
+	self
+		should: [
+				server
+					rpcToolCall: 'find-packages'
+					withParams: { (#limit -> 1) } asDictionary ]
+		raise: JRPCNonExistentHandler
 ]
 
 { #category : 'tests' }
@@ -335,6 +370,26 @@ MCPToolContractsTest >> testDiscoverToolsReturnsDiscoverableMetadata [
 		assert: (editRepositoryMetadata at: #exposure)
 		equals: 'discoverable'.
 	self assert: (editRepositoryMetadata at: #schemaInspectionRequired)
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testDiscoveryUsesConfiguredStaticToolNames [
+
+	| metadataByName result server |
+	server := MCP new.
+	server staticToolNames:
+		#( 'discover-tools' 'inspect-tool' 'call-tool' 'find-repositories' ).
+	result := server rpcToolCall: 'discover-tools' withParams: {
+			          (#query -> 'repository').
+			          (#includeStatic -> true) } asDictionary.
+	metadataByName := (((self dataFrom: result) at: #tools) collect: [
+		                   :each | (each at: #name) -> each ]) asDictionary.
+	self
+		assert: ((metadataByName at: 'find-repositories') at: #exposure)
+		equals: 'static'.
+	self
+		assert: ((metadataByName at: 'edit-repository') at: #exposure)
+		equals: 'discoverable'
 ]
 
 { #category : 'tests' }
@@ -2102,6 +2157,32 @@ MCPToolContractsTest >> testScreenshotCommandPackagesProvidedFormAsImageContent 
 	self assert: result imageContent data notEmpty.
 	self assert: (imageJSON at: #type) equals: 'image'.
 	self assert: (imageJSON at: #mimeType) equals: 'image/png'
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testServerCanConfigureStaticToolNames [
+
+	| server toolNames |
+	server := MCP new.
+	server staticToolNames:
+		#( 'discover-tools' 'inspect-tool' 'call-tool' 'find-classes' ).
+	toolNames := (server rpcToolsList at: #tools) collect: [ :each |
+		             each at: #name ].
+	self
+		assert: toolNames asSet
+		equals:
+		#( 'discover-tools' 'inspect-tool' 'call-tool' 'find-classes' )
+			asSet.
+	self deny: (toolNames includes: 'edit-class')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testStaticToolConfigurationRejectsUnknownToolNames [
+
+	self
+		should: [
+		MCP new staticToolNames: #( 'discover-tools' 'not-a-tool' ) ]
+		raise: Error
 ]
 
 { #category : 'tests' }

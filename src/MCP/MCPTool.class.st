@@ -24,7 +24,8 @@ Class {
 		'icons',
 		'inputSchema',
 		'handler',
-		'outputSchema'
+		'outputSchema',
+		'toolExposurePolicy'
 	],
 	#category : 'MCP-Tools',
 	#package : 'MCP',
@@ -429,12 +430,6 @@ MCPTool >> requestFromToolCallArguments: toolCallArguments [
 	^ MCPToolRequest tool: self arguments: toolCallArguments
 ]
 
-{ #category : 'validating' }
-MCPTool >> validateRequest: aToolRequest [
-
-	^ self
-]
-
 { #category : 'private - schema' }
 MCPTool >> schemaPropertyNamed: aName type: aType description: aDescription [
 
@@ -611,6 +606,25 @@ MCPTool >> title [
 MCPTool >> title: anObject [
 
 	title := anObject
+]
+
+{ #category : 'accessing' }
+MCPTool >> toolExposurePolicy [
+
+	^ toolExposurePolicy ifNil: [ MCPToolExposurePolicy default ]
+]
+
+{ #category : 'accessing' }
+MCPTool >> toolExposurePolicy: aToolExposurePolicy [
+
+	toolExposurePolicy := aToolExposurePolicy ifNil: [
+		                      MCPToolExposurePolicy default ]
+]
+
+{ #category : 'validating' }
+MCPTool >> validateRequest: aToolRequest [
+
+	^ self
 ]
 
 { #category : 'private - schema' }

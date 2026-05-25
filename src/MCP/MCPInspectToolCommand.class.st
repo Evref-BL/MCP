@@ -27,9 +27,11 @@ MCPInspectToolCommand >> execute [
 		                 toolNamed: request toolName
 		                 ifAbsent: [
 		                 Error signal:
-			                 'Unknown MCP tool: ' , request toolName ].
-	^ { (#tool -> (MCPToolRegistry inspectionForTool: inspectedTool)) }
-		  asDictionary
+			                 'Unknown MCP tool: ' , request toolName ]
+		                 usingPolicy: tool toolExposurePolicy.
+	^ { (#tool -> (MCPToolRegistry
+		    inspectionForTool: inspectedTool
+		    usingPolicy: tool toolExposurePolicy)) } asDictionary
 ]
 
 { #category : 'accessing' }

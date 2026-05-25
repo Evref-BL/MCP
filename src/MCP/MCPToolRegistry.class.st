@@ -13,6 +13,12 @@ MCPToolRegistry class >> activationRequirementsForTool: aTool [
 ]
 
 { #category : 'tools' }
+MCPToolRegistry class >> defaultStaticToolNames [
+
+	^ self staticToolClasses collect: [ :each | each new name ]
+]
+
+{ #category : 'tools' }
 MCPToolRegistry class >> examplesForTool: aTool [
 
 	^ #(  )
@@ -21,9 +27,13 @@ MCPToolRegistry class >> examplesForTool: aTool [
 { #category : 'tools' }
 MCPToolRegistry class >> exposureForTool: aTool [
 
-	^ (self isStaticTool: aTool)
-		  ifTrue: [ 'static' ]
-		  ifFalse: [ 'discoverable' ]
+	^ self exposureForTool: aTool usingPolicy: aTool toolExposurePolicy
+]
+
+{ #category : 'tools' }
+MCPToolRegistry class >> exposureForTool: aTool usingPolicy: aToolExposurePolicy [
+
+	^ aToolExposurePolicy exposureForTool: aTool
 ]
 
 { #category : 'tools' }
@@ -34,11 +44,24 @@ MCPToolRegistry class >> groupNameForToolClass: aToolClass [
 	^ 'other'
 ]
 
+{ #category : 'testing' }
+MCPToolRegistry class >> includesToolNamed: aToolName [
+
+	^ self publicToolNames includes: aToolName asString
+]
+
 { #category : 'tools' }
 MCPToolRegistry class >> inspectionForTool: aTool [
 
+	^ self inspectionForTool: aTool usingPolicy: aTool toolExposurePolicy
+]
+
+{ #category : 'tools' }
+MCPToolRegistry class >> inspectionForTool: aTool usingPolicy: aToolExposurePolicy [
+
 	| data |
-	data := (self metadataForTool: aTool) copy.
+	data := (self metadataForTool: aTool usingPolicy: aToolExposurePolicy)
+		        copy.
 	data at: #inputSchema put: aTool inputSchema asJRPCJSON.
 	data at: #outputSchema put: aTool outputSchema asJRPCJSON.
 	data at: #examples put: (self examplesForTool: aTool).
@@ -51,11 +74,15 @@ MCPToolRegistry class >> inspectionForTool: aTool [
 { #category : 'testing' }
 MCPToolRegistry class >> isStaticTool: aToolOrName [
 
-	| toolName |
-	toolName := (aToolOrName isString or: [ aToolOrName isSymbol ])
-		            ifTrue: [ aToolOrName asString ]
-		            ifFalse: [ aToolOrName name ].
-	^ self staticToolNames includes: toolName
+	^ self
+		  isStaticTool: aToolOrName
+		  usingPolicy: MCPToolExposurePolicy default
+]
+
+{ #category : 'testing' }
+MCPToolRegistry class >> isStaticTool: aToolOrName usingPolicy: aToolExposurePolicy [
+
+	^ aToolExposurePolicy isStaticTool: aToolOrName
 ]
 
 { #category : 'tools' }
@@ -73,17 +100,25 @@ MCPToolRegistry class >> keywordsForTool: aTool [
 { #category : 'tools' }
 MCPToolRegistry class >> metadataForTool: aTool [
 
+	^ self metadataForTool: aTool usingPolicy: aTool toolExposurePolicy
+]
+
+{ #category : 'tools' }
+MCPToolRegistry class >> metadataForTool: aTool usingPolicy: aToolExposurePolicy [
+
 	^ {
 		  (#name -> aTool name).
 		  (#title -> aTool title).
 		  (#description -> aTool description).
 		  (#group -> (self groupNameForToolClass: aTool class)).
-		  (#exposure -> (self exposureForTool: aTool)).
+		  (#exposure
+		   -> (self exposureForTool: aTool usingPolicy: aToolExposurePolicy)).
 		  (#mutability -> (self mutabilityForTool: aTool)).
 		  (#risk -> (self riskForTool: aTool)).
 		  (#keywords -> (self keywordsForTool: aTool)).
-		  (#schemaInspectionRequired
-		   -> (self schemaInspectionRequiredForTool: aTool)) } asDictionary
+		  (#schemaInspectionRequired -> (self
+			    schemaInspectionRequiredForTool: aTool
+			    usingPolicy: aToolExposurePolicy)) } asDictionary
 ]
 
 { #category : 'tools' }
@@ -140,9 +175,24 @@ MCPToolRegistry class >> publicToolGroups [
 ]
 
 { #category : 'tools' }
+MCPToolRegistry class >> publicToolNames [
+
+	^ self publicToolClasses collect: [ :each | each new name ]
+]
+
+{ #category : 'tools' }
 MCPToolRegistry class >> publicTools [
 
-	^ self publicToolClasses collect: [ :each | each new ]
+	^ self publicToolsUsingPolicy: MCPToolExposurePolicy default
+]
+
+{ #category : 'tools' }
+MCPToolRegistry class >> publicToolsUsingPolicy: aToolExposurePolicy [
+
+	^ self publicToolClasses collect: [ :each |
+			  each new
+				  toolExposurePolicy: aToolExposurePolicy;
+				  yourself ]
 ]
 
 { #category : 'tools' }
@@ -163,7 +213,15 @@ MCPToolRegistry class >> riskForTool: aTool [
 { #category : 'tools' }
 MCPToolRegistry class >> schemaInspectionRequiredForTool: aTool [
 
-	^ (self isStaticTool: aTool) not
+	^ self
+		  schemaInspectionRequiredForTool: aTool
+		  usingPolicy: aTool toolExposurePolicy
+]
+
+{ #category : 'tools' }
+MCPToolRegistry class >> schemaInspectionRequiredForTool: aTool usingPolicy: aToolExposurePolicy [
+
+	^ (self isStaticTool: aTool usingPolicy: aToolExposurePolicy) not
 ]
 
 { #category : 'tools' }
@@ -205,30 +263,56 @@ MCPToolRegistry class >> staticToolClasses [
 { #category : 'tools' }
 MCPToolRegistry class >> staticToolNames [
 
-	^ self staticTools collect: [ :each | each name ]
+	^ self defaultStaticToolNames
 ]
 
 { #category : 'tools' }
 MCPToolRegistry class >> staticTools [
 
-	^ self staticToolClasses collect: [ :each | each new ]
+	^ self staticToolsUsingPolicy: MCPToolExposurePolicy default
 ]
 
 { #category : 'tools' }
 MCPToolRegistry class >> staticToolsDictionary [
 
+	^ self staticToolsDictionaryUsingPolicy:
+		  MCPToolExposurePolicy default
+]
+
+{ #category : 'tools' }
+MCPToolRegistry class >> staticToolsDictionaryUsingPolicy: aToolExposurePolicy [
+
 	| dictionary |
 	dictionary := Dictionary new.
-	self staticTools do: [ :tool | dictionary at: tool name put: tool ].
+	(self staticToolsUsingPolicy: aToolExposurePolicy) do: [ :tool |
+		dictionary at: tool name put: tool ].
 	^ dictionary
+]
+
+{ #category : 'tools' }
+MCPToolRegistry class >> staticToolsUsingPolicy: aToolExposurePolicy [
+
+	^ (self publicToolsUsingPolicy: aToolExposurePolicy) select: [ :tool |
+		  aToolExposurePolicy isStaticTool: tool ]
 ]
 
 { #category : 'tools' }
 MCPToolRegistry class >> tool: aTool matchesQuery: queryString group: groupString includeStatic: includeStatic [
 
+	^ self
+		  tool: aTool
+		  matchesQuery: queryString
+		  group: groupString
+		  includeStatic: includeStatic
+		  usingPolicy: aTool toolExposurePolicy
+]
+
+{ #category : 'tools' }
+MCPToolRegistry class >> tool: aTool matchesQuery: queryString group: groupString includeStatic: includeStatic usingPolicy: aToolExposurePolicy [
+
 	| group normalizedQuery |
-	(includeStatic not and: [ self isStaticTool: aTool ]) ifTrue: [
-		^ false ].
+	(includeStatic not and: [ aToolExposurePolicy isStaticTool: aTool ])
+		ifTrue: [ ^ false ].
 	group := groupString
 		         ifNil: [ nil ]
 		         ifNotNil: [ :value | value asString trimBoth asLowercase ].
@@ -248,23 +332,43 @@ MCPToolRegistry class >> tool: aTool matchesQuery: queryString group: groupStrin
 { #category : 'tools' }
 MCPToolRegistry class >> toolNamed: aToolName ifAbsent: absentBlock [
 
-	self publicToolClasses do: [ :toolClass |
-			| tool |
-			tool := toolClass new.
-			tool name = aToolName ifTrue: [ ^ tool ] ].
+	^ self
+		  toolNamed: aToolName
+		  ifAbsent: absentBlock
+		  usingPolicy: MCPToolExposurePolicy default
+]
+
+{ #category : 'tools' }
+MCPToolRegistry class >> toolNamed: aToolName ifAbsent: absentBlock usingPolicy: aToolExposurePolicy [
+
+	(self publicToolsUsingPolicy: aToolExposurePolicy) do: [ :tool |
+		tool name = aToolName ifTrue: [ ^ tool ] ].
 	^ absentBlock value
 ]
 
 { #category : 'tools' }
 MCPToolRegistry class >> toolsMatchingQuery: queryString group: groupString includeStatic: includeStatic limit: anInteger [
 
-	| matches limit |
-	matches := self publicTools select: [ :tool |
-			           self
-				           tool: tool
-				           matchesQuery: queryString
-				           group: groupString
-				           includeStatic: includeStatic ].
+	^ self
+		  toolsMatchingQuery: queryString
+		  group: groupString
+		  includeStatic: includeStatic
+		  limit: anInteger
+		  usingPolicy: MCPToolExposurePolicy default
+]
+
+{ #category : 'tools' }
+MCPToolRegistry class >> toolsMatchingQuery: queryString group: groupString includeStatic: includeStatic limit: anInteger usingPolicy: aToolExposurePolicy [
+
+	| limit matches |
+	matches := (self publicToolsUsingPolicy: aToolExposurePolicy)
+		           select: [ :tool |
+				           self
+					           tool: tool
+					           matchesQuery: queryString
+					           group: groupString
+					           includeStatic: includeStatic
+					           usingPolicy: aToolExposurePolicy ].
 	limit := anInteger ifNil: [ 100 ].
 	(limit > 0 and: [ matches size > limit ]) ifTrue: [
 		^ (matches first: limit) asArray ].

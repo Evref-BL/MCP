@@ -27,12 +27,13 @@ MCPDiscoverToolsCommand >> execute [
 		         toolsMatchingQuery: request query
 		         group: request group
 		         includeStatic: request includeStatic
-		         limit: request limit.
+		         limit: request limit
+		         usingPolicy: tool toolExposurePolicy.
 	^ {
-		  (#tools
-		   ->
-			   (tools collect: [ :each | MCPToolRegistry metadataForTool: each ])
-				   asArray).
+		  (#tools -> (tools collect: [ :each |
+				    MCPToolRegistry
+					    metadataForTool: each
+					    usingPolicy: tool toolExposurePolicy ]) asArray).
 		  (#totalCount -> tools size).
 		  (#query -> request query).
 		  (#group -> request group).
