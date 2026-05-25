@@ -46,27 +46,7 @@ MCPTool class >> isAbstract [
 { #category : 'scripts' }
 MCPTool class >> toolGroups [
 
-	^ {
-		  (#Repositories -> {
-			   MCPToolFindRepositories.
-			   MCPToolEditRepository.
-			   MCPToolLoadRepository }).
-		  (#Packages -> { MCPToolFindPackages }).
-		  (#Classes -> {
-			   MCPToolFindClasses.
-			   MCPToolInspectClass.
-			   MCPToolEditClass.
-			   MCPToolRemoveClasses }).
-		  (#Methods -> {
-			   MCPToolFindMethods.
-			   MCPToolInspectMethod.
-			   MCPToolEditMethod.
-			   MCPToolRewriteMethods.
-			   MCPToolRemoveMethods }).
-		  (#History -> { MCPToolManageChangeHistory }).
-		  (#Tests -> { MCPToolRunTests }).
-		  (#UI -> { MCPToolCaptureScreenshot }).
-		  (#Scripting -> { MCPToolEvaluate }) }
+	^ MCPToolRegistry publicToolGroups
 ]
 
 { #category : 'scripts' }

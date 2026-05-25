@@ -65,6 +65,43 @@ MCP >> debugMode: aBoolean [
 	self server messageProcessor debugMode: aBoolean
 ]
 
+{ #category : 'private - tools' }
+MCP >> executeTool: tool named: toolName withParams: arguments [
+
+	| monitorRecord request result toolResult |
+	monitorRecord := self monitoring
+		                 recordToolCallStart: toolName
+		                 input: arguments.
+	^ [
+		  request := tool requestFromToolCallArguments: arguments.
+		  result := tool executeWithRequest: request.
+		  toolResult := (result isKindOf: MCPStructureCallToolResult)
+			                ifTrue: [ result ]
+			                ifFalse: [
+			                MCPStructureCallToolResult content: result ].
+		  self saveImageAfterSuccessfulTool: tool result: toolResult.
+		  self monitoring
+			  recordToolCallFinish: monitorRecord
+			  result: toolResult
+			  error: nil.
+		  toolResult asJRPCJSON ]
+		  on: Exception
+		  do: [ :error |
+				  | errorResult |
+				  (error isKindOf: JRPCError) ifTrue: [
+						  self monitoring
+							  recordToolCallFinish: monitorRecord
+							  result: nil
+							  error: error.
+						  error pass ].
+				  errorResult := tool errorResultFor: error.
+				  self monitoring
+					  recordToolCallFinish: monitorRecord
+					  result: errorResult
+					  error: error.
+				  errorResult asJRPCJSON ]
+]
+
 { #category : 'accessing' }
 MCP >> handlersCount [
 
@@ -191,11 +228,7 @@ MCP >> port: aPortNumber [
 { #category : 'private - tools' }
 MCP >> refreshToolsList [
 
-	toolsList := Dictionary new.
-	MCPTool concreteSubclasses do: [ :toolClass |
-		| tool |
-		tool := toolClass new.
-		toolsList at: tool name put: tool ].
+	toolsList := MCPToolRegistry staticToolsDictionary.
 	^ toolsList
 ]
 
@@ -223,6 +256,34 @@ MCP >> restart [
 
 	self stop.
 	^ self start
+]
+
+{ #category : 'private - tools' }
+MCP >> rpcDispatchToolCallWithParams: arguments [
+
+	| dispatchRequest dispatchTool request targetTool |
+	dispatchTool := MCPToolDispatchTool new.
+	^ [
+		  request := dispatchTool requestFromToolCallArguments: arguments.
+		  dispatchRequest := dispatchTool parsedRequestFromToolRequest:
+			                     request.
+		  dispatchRequest toolName = dispatchTool name ifTrue: [
+			  Error signal: 'dispatch-tool cannot dispatch itself.' ].
+		  targetTool := MCPToolRegistry
+			                toolNamed: dispatchRequest toolName
+			                ifAbsent: [
+			                Error signal:
+				                'Unknown MCP tool: ' , dispatchRequest toolName ].
+		  self
+			  executeTool: targetTool
+			  named: targetTool name
+			  withParams: dispatchRequest arguments ]
+		  on: Exception
+		  do: [ :error |
+				  | errorResult |
+				  (error isKindOf: JRPCError) ifTrue: [ error pass ].
+				  errorResult := dispatchTool errorResultFor: error.
+				  errorResult asJRPCJSON ]
 ]
 
 { #category : 'rpc' }
@@ -257,41 +318,12 @@ MCP >> rpcResourcesTemplateList [
 MCP >> rpcToolCall: name withParams: arguments [
 
 	<jrpc: #'tools/call'>
+	name = MCPToolDispatchTool new name ifTrue: [
+		^ self rpcDispatchToolCallWithParams: arguments ].
 	toolsList
 		at: name
 		ifPresent: [ :tool |
-			| monitorRecord request result toolResult |
-			monitorRecord := self monitoring
-				                 recordToolCallStart: name
-				                 input: arguments.
-			^ [
-			  request := tool requestFromToolCallArguments: arguments.
-			  result := tool executeWithRequest: request.
-			  toolResult := (result isKindOf: MCPStructureCallToolResult)
-				                ifTrue: [ result ]
-				                ifFalse: [
-				                MCPStructureCallToolResult content: result ].
-			  self saveImageAfterSuccessfulTool: tool result: toolResult.
-			  self monitoring
-				  recordToolCallFinish: monitorRecord
-				  result: toolResult
-				  error: nil.
-			  toolResult asJRPCJSON ]
-				  on: Exception
-				  do: [ :error |
-					  | errorResult |
-					  (error isKindOf: JRPCError) ifTrue: [
-						  self monitoring
-							  recordToolCallFinish: monitorRecord
-							  result: nil
-							  error: error.
-						  error pass ].
-					  errorResult := tool errorResultFor: error.
-					  self monitoring
-						  recordToolCallFinish: monitorRecord
-						  result: errorResult
-						  error: error.
-					  errorResult asJRPCJSON ] ]
+		^ self executeTool: tool named: name withParams: arguments ]
 		ifAbsent: [ JRPCNonExistentHandler signal: name ]
 ]
 

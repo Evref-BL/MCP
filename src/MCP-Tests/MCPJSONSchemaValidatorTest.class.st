@@ -15,13 +15,23 @@ MCPJSONSchemaValidatorTest >> keywordsFrom: violations [
 	^ violations collect: [ :each | each keyword ]
 ]
 
-{ #category : 'private' }
+{ #category : 'private - fixtures' }
 MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 
 	^ {
 		  (MCPToolEvaluate -> { (#code -> '1 + 1') } asDictionary).
 		  (MCPToolRunTests -> { (#tests
 		    -> { { (#className -> 'MCPToolContractsTest') } asDictionary }) }
+			   asDictionary).
+		  (MCPToolRunTestBatch -> { (#tests
+		    -> { { (#className -> 'MCPToolContractsTest') } asDictionary }) }
+			   asDictionary).
+		  (MCPToolRunTestCoverage -> {
+			   (#tests
+			    -> { { (#className -> 'MCPToolContractsTest') } asDictionary }).
+			   (#coverage
+			    ->
+			    { (#classNames -> #( 'MCPToolContractsTest' )) } asDictionary) }
 			   asDictionary).
 		  (MCPToolInspectClass -> { (#className -> 'MCPTool') } asDictionary).
 		  (MCPToolInspectMethod -> {
@@ -39,6 +49,38 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 			   (#operation -> 'update').
 			   (#repositoryName -> 'MCP').
 			   (#addPackageNames -> #( 'MCP' )) } asDictionary).
+		  (MCPToolCreateRepository -> {
+			   (#name -> 'MCP').
+			   (#location -> '/tmp/mcp') } asDictionary).
+		  (MCPToolAttachRepository -> {
+			   (#name -> 'MCP').
+			   (#location -> '/tmp/mcp') } asDictionary).
+		  (MCPToolUpdateRepository -> {
+			   (#repositoryName -> 'MCP').
+			   (#addPackageNames -> #( 'MCP' )) } asDictionary).
+		  (MCPToolVerifyRepository
+		   -> { (#repositoryName -> 'MCP') } asDictionary).
+		  (MCPToolDiffRepository
+		   -> { (#repositoryName -> 'MCP') } asDictionary).
+		  (MCPToolExportRepository
+		   -> { (#repositoryName -> 'MCP') } asDictionary).
+		  (MCPToolCommitRepository -> {
+			   (#repositoryName -> 'MCP').
+			   (#message -> 'Test commit') } asDictionary).
+		  (MCPToolAdoptRepositoryHead
+		   -> { (#repositoryName -> 'MCP') } asDictionary).
+		  (MCPToolFetchRepository
+		   -> { (#repositoryName -> 'MCP') } asDictionary).
+		  (MCPToolPullRepository
+		   -> { (#repositoryName -> 'MCP') } asDictionary).
+		  (MCPToolPushRepository
+		   -> { (#repositoryName -> 'MCP') } asDictionary).
+		  (MCPToolCreateRepositoryBranch -> {
+			   (#repositoryName -> 'MCP').
+			   (#branchName -> 'test-branch') } asDictionary).
+		  (MCPToolSwitchRepositoryBranch -> {
+			   (#repositoryName -> 'MCP').
+			   (#branchName -> 'main') } asDictionary).
 		  (MCPToolLoadRepository -> {
 			   (#owner -> 'ExampleOwner').
 			   (#project -> 'ExampleProject').
@@ -60,8 +102,22 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 			    (#rhs -> 'self') } asDictionary }) } asDictionary).
 		  (MCPToolManageChangeHistory
 		   -> { (#operation -> 'listFiles') } asDictionary).
+		  (MCPToolListChangeHistoryFiles -> Dictionary new).
+		  (MCPToolListChangeHistoryEntries -> Dictionary new).
+		  (MCPToolApplyChangeHistoryEntries -> {
+			   (#latestCount -> 1).
+			   (#confirm -> false) } asDictionary).
+		  (MCPToolRevertChangeHistoryEntries -> {
+			   (#latestCount -> 1).
+			   (#confirm -> false) } asDictionary).
 		  (MCPToolCaptureScreenshot -> { (#target -> 'world') } asDictionary).
-		  (MCPToolFindMethods -> Dictionary new) } asDictionary
+		  (MCPToolFindMethods -> Dictionary new).
+		  (MCPToolDiscoverTools -> Dictionary new).
+		  (MCPToolInspectTool
+		   -> { (#toolName -> 'find-classes') } asDictionary).
+		  (MCPToolDispatchTool -> {
+			   (#toolName -> 'find-packages').
+			   (#arguments -> Dictionary new) } asDictionary) } asDictionary
 ]
 
 { #category : 'private' }
