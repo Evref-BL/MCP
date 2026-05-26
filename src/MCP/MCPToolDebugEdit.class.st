@@ -27,7 +27,7 @@ MCPToolDebugEdit >> commandForRequest: debugRequest [
 { #category : 'defaults' }
 MCPToolDebugEdit >> defaultDescription [
 
-	^ 'Create or hot-recompile the method implied by a paused Pharo DebugSession frame, including DNU and stub repairs, and return critiques plus a refreshed debug-state snapshot.'
+	^ 'Create or hot-recompile the method implied by a paused Pharo DebugSession frame, gate on critiques unless ignoreCritiques=true, then proceed the repaired computation when possible.'
 ]
 
 { #category : 'defaults' }
@@ -62,6 +62,11 @@ MCPToolDebugEdit >> defaultInputSchema [
 					   type: 'string'
 					   description:
 						   'Optional replacement method source. DNU and subclass responsibility repairs can use the image default when omitted.').
+				  (self
+					   booleanSchemaPropertyNamed: 'ignoreCritiques'
+					   description:
+						   'Whether debug-edit should proceed after a successful compile even when method critiques are reported.'
+					   default: false).
 				  (self
 					   integerSchemaPropertyNamed: 'sourceContextLines'
 					   description:
@@ -119,7 +124,7 @@ MCPToolDebugEdit >> defaultOutputSchema [
 				  (self
 					   schemaPropertyNamed: 'stateId'
 					   type: 'string'
-					   description: 'Debug state token after the edit.').
+					   description: 'Debug state token after the edit/proceed cycle.').
 				  (self
 					   schemaPropertyNamed: 'frameRef'
 					   type: 'string'
@@ -138,9 +143,36 @@ MCPToolDebugEdit >> defaultOutputSchema [
 					   type: 'array'
 					   description: 'Quality critiques for the compiled method.').
 				  (self
+					   booleanSchemaPropertyNamed: 'proceeded'
+					   description:
+					   'Whether debug-edit proceeded the debug process after compiling.').
+				  (self
+					   booleanSchemaPropertyNamed: 'blockedByCritiques'
+					   description:
+					   'Whether debug-edit stopped before proceeding because critiques were reported and ignoreCritiques was false.').
+				  (self
+					   schemaPropertyNamed: 'proceedOutcome'
+					   type: 'string'
+					   description:
+					   'Proceed result such as completed, paused, running, timedOut, unavailable, or blockedByCritiques.').
+				  (self
+					   schemaPropertyNamed: 'resultClassName'
+					   type: 'string'
+					   description:
+					   'Class name of the completed proceed result, or nil when no result is available.').
+				  (self
+					   schemaPropertyNamed: 'resultPrintString'
+					   type: 'string'
+					   description:
+					   'Bounded printString of the completed proceed result, or nil when no result is available.').
+				  (self
+					   booleanSchemaPropertyNamed: 'timedOut'
+					   description: 'Whether proceeding timed out.').
+				  (self
 					   schemaPropertyNamed: 'state'
 					   type: 'object'
-					   description: 'Debug-state snapshot after the edit.').
+					   description:
+					   'Debug-state snapshot after the edit/proceed cycle, or nil when execution completed or is running.').
 				  (self
 					   schemaPropertyNamed: 'repairActions'
 					   type: 'array'
@@ -156,8 +188,9 @@ MCPToolDebugEdit >> defaultOutputSchema [
 					   'Debug edit capability gates used for this response.') }
 		  required:
 			  #( 'sessionId' 'previousStateId' 'stateId' 'frameRef' 'editKind'
-			     'method' 'critiques' 'state' 'repairActions' 'warnings'
-			     'capabilities' )
+			     'method' 'critiques' 'proceeded' 'blockedByCritiques'
+			     'proceedOutcome' 'resultClassName' 'resultPrintString'
+			     'timedOut' 'state' 'repairActions' 'warnings' 'capabilities' )
 ]
 
 { #category : 'defaults' }
@@ -169,7 +202,7 @@ MCPToolDebugEdit >> defaultTitle [
 { #category : 'private - data' }
 MCPToolDebugEdit >> editWarnings [
 
-	^ #( 'debug-edit compiles Smalltalk code in the running image and may mutate a suspended debug process.' )
+	^ #( 'debug-edit compiles Smalltalk code in the running image and may mutate or resume a suspended debug process.' )
 ]
 
 { #category : 'executing' }

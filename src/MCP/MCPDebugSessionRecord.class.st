@@ -8,7 +8,8 @@ Class {
 		'status',
 		'reason',
 		'stateId',
-		'createdAt'
+		'createdAt',
+		'continuation'
 	],
 	#category : 'MCP-Debugging',
 	#package : 'MCP',
@@ -55,6 +56,19 @@ MCPDebugSessionRecord >> capabilities [
 		  (#control -> true).
 		  (#breakpoints -> true).
 		  (#capture -> true) } asDictionary
+]
+
+{ #category : 'accessing' }
+MCPDebugSessionRecord >> continuation [
+
+	^ continuation
+]
+
+{ #category : 'accessing' }
+MCPDebugSessionRecord >> continuation: aContinuation [
+
+	continuation := aContinuation.
+	^ self
 ]
 
 { #category : 'accessing' }

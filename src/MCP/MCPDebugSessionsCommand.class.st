@@ -59,6 +59,8 @@ MCPDebugSessionsCommand >> listSessions [
 { #category : 'private' }
 MCPDebugSessionsCommand >> terminateCapturedSessionForRecord: aRecord [
 
+	aRecord continuation ifNotNil: [ :continuation |
+		^ continuation terminateWorker ].
 	(aRecord reason = 'capturedException' and: [
 		 aRecord debugSession notNil ]) ifFalse: [ ^ false ].
 	[ aRecord debugSession terminate ]

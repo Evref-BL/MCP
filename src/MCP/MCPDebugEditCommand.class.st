@@ -20,6 +20,8 @@ MCPDebugEditCommand >> capabilities [
 		  (#methodRecompile -> true).
 		  (#stateRefresh -> true).
 		  (#methodCritiques -> true).
+		  (#critiqueGate -> true).
+		  (#autoProceed -> true).
 		  (#mutating -> true) } asDictionary
 ]
 
@@ -121,6 +123,7 @@ MCPDebugEditCommand >> compileSourceUsing: details [
 	record debugSession
 		updateContextTo: context;
 		contextChanged.
+	self prepareInterruptedProcessForContext: context record: record.
 	^ method
 ]
 
@@ -177,7 +180,7 @@ MCPDebugEditCommand >> editKindForRecord: aRecord [
 { #category : 'executing' }
 MCPDebugEditCommand >> execute [
 
-	| compiledMethod context data editKind frameIndex previousStateId record resultDetails selectedContext |
+	| compiledMethod context critiques data editKind frameIndex frameRef previousStateId proceedData record resultDetails selectedContext |
 	record := self sessionRecordWithMatchingState.
 	previousStateId := record stateId.
 	frameIndex := self selectedFrameIndex.
@@ -198,13 +201,24 @@ MCPDebugEditCommand >> execute [
 		                  context: context
 		                  editKind: editKind.
 	record advanceStateForStatus: 'paused' reason: 'debugEdit'.
+	frameRef := self frameRefForRecord: record frameIndex: frameIndex.
+	critiques := self critiqueDataForMethod: compiledMethod.
+	proceedData := (critiques notEmpty and: [
+		                request ignoreCritiques not ])
+		               ifTrue: [ self proceedDataBlockedByCritiques ]
+		               ifFalse: [ self proceedAfterEditForRecord: record ].
+	(proceedData at: #blockedByCritiques) ifTrue: [
+		record reason: 'debugEditCritiques' ].
 	resultDetails := {
 		                 (#method -> compiledMethod).
 		                 (#record -> record).
 		                 (#previousStateId -> previousStateId).
-		                 (#frameIndex -> frameIndex).
+		                 (#frameRef -> frameRef).
 		                 (#editKind -> editKind) } asDictionary.
-	data := self resultDataUsing: resultDetails.
+	data := self
+		        resultDataUsing: resultDetails
+		        critiques: critiques
+		        proceedData: proceedData.
 	^ MCPDebugToolResult
 		  okSummary:
 		  'Debug edit ' , editKind , ' applied to ' , record sessionId , '.'
@@ -229,6 +243,15 @@ MCPDebugEditCommand >> frameRefForRecord: aRecord frameIndex: frameIndex [
 	  , frameIndex asString
 ]
 
+{ #category : 'private - printing' }
+MCPDebugEditCommand >> limitedPrintStringOf: anObject limit: characterLimit [
+
+	anObject ifNil: [ ^ 'nil' ].
+	^ [ anObject printStringLimitedTo: characterLimit ]
+		  on: Error
+		  do: [ :error | anObject class name asString ]
+]
+
 { #category : 'private - data' }
 MCPDebugEditCommand >> methodDataFor: aCompiledMethod [
 
@@ -242,6 +265,120 @@ MCPDebugEditCommand >> methodSourceOrNil [
 	request methodSource ifNil: [ ^ nil ].
 	request methodSource trimBoth isEmpty ifTrue: [ ^ nil ].
 	^ request methodSource
+]
+
+{ #category : 'private - proceeding' }
+MCPDebugEditCommand >> prepareInterruptedProcessForContext: aContext record: aRecord [
+
+	| process |
+	process := self valueOrNil: [
+		           aRecord debugSession interruptedProcess ].
+	(process isNil or: [ process isTerminated ]) ifTrue: [ ^ self ].
+	process suspendedContext: aContext
+]
+
+{ #category : 'private - proceeding' }
+MCPDebugEditCommand >> proceedAfterEditForRecord: aRecord [
+
+	aRecord continuation ifNotNil: [ :continuation |
+		^ self proceedContinuation: continuation forRecord: aRecord ].
+	^ self proceedDebugSessionForRecord: aRecord
+]
+
+{ #category : 'private - proceeding' }
+MCPDebugEditCommand >> proceedContinuation: aContinuation forRecord: aRecord [
+
+	| answer status |
+	status := aContinuation proceed.
+	status = #completed ifTrue: [
+			answer := aContinuation completedAnswer.
+			aRecord
+				debugSession: nil;
+				continuation: nil;
+				advanceStateForStatus: 'completed' reason: 'debugEditProceed'.
+			^ self
+				  proceedDataForCompletedAnswer: answer
+				  limit: aContinuation resultPreviewCharacterLimit ].
+	status = #captured ifTrue: [
+			aRecord
+				debugSession: aContinuation capturedDebugSession;
+				advanceStateForStatus: 'paused' reason: 'capturedException'.
+			^ self proceedDataForOutcome: 'paused' timedOut: false ].
+	status = #timedOut ifTrue: [
+			aContinuation terminateWorker.
+			aRecord
+				continuation: nil;
+				advanceStateForStatus: 'timedOut'
+				reason: 'debugEditProceedTimeout'.
+			^ self proceedDataForOutcome: 'timedOut' timedOut: true ].
+	status = #terminated ifTrue: [
+			aRecord
+				continuation: nil;
+				advanceStateForStatus: 'terminated' reason: 'debugEditProceed'.
+			^ self proceedDataForOutcome: 'terminated' timedOut: false ].
+	^ self proceedDataForOutcome: status asString timedOut: false
+]
+
+{ #category : 'private - proceeding' }
+MCPDebugEditCommand >> proceedDataBlockedByCritiques [
+
+	^ {
+		  (#proceeded -> false).
+		  (#blockedByCritiques -> true).
+		  (#proceedOutcome -> 'blockedByCritiques').
+		  (#resultClassName -> nil).
+		  (#resultPrintString -> nil).
+		  (#timedOut -> false) } asDictionary
+]
+
+{ #category : 'private - proceeding' }
+MCPDebugEditCommand >> proceedDataForCompletedAnswer: answer [
+
+	^ self
+		  proceedDataForCompletedAnswer: answer
+		  limit: request resultPreviewCharacterLimit
+]
+
+{ #category : 'private - proceeding' }
+MCPDebugEditCommand >> proceedDataForCompletedAnswer: answer limit: characterLimit [
+
+	^ {
+		  (#proceeded -> true).
+		  (#blockedByCritiques -> false).
+		  (#proceedOutcome -> 'completed').
+		  (#resultClassName -> answer class name asString).
+		  (#resultPrintString
+		   -> (self limitedPrintStringOf: answer limit: characterLimit)).
+		  (#timedOut -> false) } asDictionary
+]
+
+{ #category : 'private - proceeding' }
+MCPDebugEditCommand >> proceedDataForOutcome: outcomeString timedOut: timedOutBoolean [
+
+	^ {
+		  (#proceeded -> true).
+		  (#blockedByCritiques -> false).
+		  (#proceedOutcome -> outcomeString).
+		  (#resultClassName -> nil).
+		  (#resultPrintString -> nil).
+		  (#timedOut -> timedOutBoolean) } asDictionary
+]
+
+{ #category : 'private - proceeding' }
+MCPDebugEditCommand >> proceedDebugSessionForRecord: aRecord [
+
+	aRecord debugSession ifNil: [
+		^ self proceedDataForOutcome: 'unavailable' timedOut: false ].
+	[
+		aRecord debugSession resume.
+		aRecord advanceStateForStatus: 'running' reason: 'debugEditProceed' ]
+		on: Exception
+		do: [ :error |
+				aRecord
+					advanceStateForStatus: 'paused'
+					reason: 'debugEditProceedError'.
+				^ self proceedDataForOutcome: 'failed' timedOut: false ].
+	^ self proceedDataForOutcome: 'running' timedOut: false
 ]
 
 { #category : 'private - compiling' }
@@ -277,29 +414,33 @@ MCPDebugEditCommand >> recompileContext: aContext record: aRecord editKind: edit
 ]
 
 { #category : 'private - data' }
-MCPDebugEditCommand >> resultDataUsing: details [
+MCPDebugEditCommand >> resultDataUsing: details critiques: critiques proceedData: proceedData [
 
-	| critiques methodData record state warnings |
+	| methodData record repairActions state warnings |
 	record := details at: #record.
-	state := (MCPDebugStateInfo fromRecord: record request: request)
-		         asDictionary.
+	state := self stateDataForRecord: record.
+	repairActions := state
+		                 ifNil: [ #(  ) ]
+		                 ifNotNil: [
+		                 state at: #repairActions ifAbsent: [ #(  ) ] ].
 	warnings := tool editWarnings.
 	methodData := self methodDataFor: (details at: #method).
-	critiques := self critiqueDataForMethod: (details at: #method).
 	^ {
 		  (#sessionId -> record sessionId).
 		  (#previousStateId -> (details at: #previousStateId)).
 		  (#stateId -> record stateId).
-		  (#frameRef
-		   ->
-		   (self
-			    frameRefForRecord: record
-			    frameIndex: (details at: #frameIndex))).
+		  (#frameRef -> (details at: #frameRef)).
 		  (#editKind -> (details at: #editKind)).
 		  (#method -> methodData).
 		  (#critiques -> critiques).
+		  (#proceeded -> (proceedData at: #proceeded)).
+		  (#blockedByCritiques -> (proceedData at: #blockedByCritiques)).
+		  (#proceedOutcome -> (proceedData at: #proceedOutcome)).
+		  (#resultClassName -> (proceedData at: #resultClassName)).
+		  (#resultPrintString -> (proceedData at: #resultPrintString)).
+		  (#timedOut -> (proceedData at: #timedOut)).
 		  (#state -> state).
-		  (#repairActions -> (state at: #repairActions ifAbsent: [ #(  ) ])).
+		  (#repairActions -> repairActions).
 		  (#warnings -> warnings).
 		  (#capabilities -> self capabilities) } asDictionary
 ]
@@ -412,6 +553,15 @@ MCPDebugEditCommand >> signalUnsupportedEditForRecord: aRecord editKind: editKin
 				  (#sessionId -> aRecord sessionId).
 				  (#stateId -> aRecord stateId).
 				  (#editKind -> editKind) } asDictionary
+]
+
+{ #category : 'private - data' }
+MCPDebugEditCommand >> stateDataForRecord: aRecord [
+
+	(aRecord status = 'paused' and: [ aRecord debugSession notNil ])
+		ifFalse: [ ^ nil ].
+	^ (MCPDebugStateInfo fromRecord: aRecord request: request)
+		  asDictionary
 ]
 
 { #category : 'private' }

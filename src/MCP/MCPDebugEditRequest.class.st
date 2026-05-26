@@ -2,7 +2,8 @@ Class {
 	#name : 'MCPDebugEditRequest',
 	#superclass : 'MCPDebugRequest',
 	#instVars : [
-		'methodSource'
+		'methodSource',
+		'ignoreCritiques'
 	],
 	#category : 'MCP-Requests',
 	#package : 'MCP',
@@ -18,6 +19,8 @@ MCPDebugEditRequest class >> fromRequest: aRequest tool: aTool [
 		  stateId: (aRequest stringArgumentNamed: 'stateId');
 		  frameRef: (aRequest stringArgumentNamed: 'frameRef');
 		  methodSource: (aRequest stringArgumentNamed: 'methodSource');
+		  ignoreCritiques:
+			  (aRequest booleanArgumentNamed: 'ignoreCritiques' default: false);
 		  sourceContextLines: (aRequest
 				   nonNegativeIntegerArgumentNamed: 'sourceContextLines'
 				   default: 5);
@@ -43,6 +46,19 @@ MCPDebugEditRequest class >> fromRequest: aRequest tool: aTool [
 ]
 
 { #category : 'accessing' }
+MCPDebugEditRequest >> ignoreCritiques [
+
+	^ ignoreCritiques ifNil: [ false ]
+]
+
+{ #category : 'accessing' }
+MCPDebugEditRequest >> ignoreCritiques: aBoolean [
+
+	ignoreCritiques := aBoolean.
+	^ self
+]
+
+{ #category : 'accessing' }
 MCPDebugEditRequest >> methodSource [
 
 	^ methodSource
@@ -52,4 +68,10 @@ MCPDebugEditRequest >> methodSource [
 MCPDebugEditRequest >> methodSource: aString [
 
 	methodSource := aString
+]
+
+{ #category : 'accessing' }
+MCPDebugEditRequest >> resultPreviewCharacterLimit [
+
+	^ 1000
 ]
