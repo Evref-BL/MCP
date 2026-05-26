@@ -11,6 +11,18 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'icons' }
+MCPToolFindClasses class >> toolIconSpec [
+
+	^ MCPToolIconSpec baseIconNamed: #class badgeIconNamed: #search
+]
+
+{ #category : 'defaults' }
+MCPToolFindClasses class >> toolName [
+
+	^ 'find-classes'
+]
+
 { #category : 'private - filtering' }
 MCPToolFindClasses >> classEntriesForRequest: queryRequest [
 
@@ -93,12 +105,6 @@ MCPToolFindClasses >> defaultFilterTargets [
 ]
 
 { #category : 'defaults' }
-MCPToolFindClasses >> defaultIcons [
-
-	^ { (self pngCompositeBaseIconNamed: #class badgeIconNamed: #search) }
-]
-
-{ #category : 'defaults' }
 MCPToolFindClasses >> defaultInputSchema [
 
 	| properties |
@@ -112,12 +118,6 @@ MCPToolFindClasses >> defaultInputSchema [
 		               limitDescription:
 		               'Maximum number of matching classes to return. Use 0 to request counts only.').
 	^ self queryInputSchemaWithProperties: properties
-]
-
-{ #category : 'defaults' }
-MCPToolFindClasses >> defaultName [
-
-	^ 'find-classes'
 ]
 
 { #category : 'defaults' }

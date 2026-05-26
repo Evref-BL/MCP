@@ -9,6 +9,18 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'icons' }
+MCPToolFindPackages class >> toolIconSpec [
+
+	^ MCPToolIconSpec baseIconNamed: #open badgeIconNamed: #search
+]
+
+{ #category : 'defaults' }
+MCPToolFindPackages class >> toolName [
+
+	^ 'find-packages'
+]
+
 { #category : 'defaults' }
 MCPToolFindPackages >> defaultDescription [
 
@@ -19,12 +31,6 @@ MCPToolFindPackages >> defaultDescription [
 MCPToolFindPackages >> defaultFilterTargets [
 
 	^ #( 'package' )
-]
-
-{ #category : 'defaults' }
-MCPToolFindPackages >> defaultIcons [
-
-	^ { (self pngCompositeBaseIconNamed: #open badgeIconNamed: #search) }
 ]
 
 { #category : 'defaults' }
@@ -41,12 +47,6 @@ MCPToolFindPackages >> defaultInputSchema [
 		               limitDescription:
 		               'Maximum number of matching packages to return. Use 0 to request counts only.').
 	^ self queryInputSchemaWithProperties: properties
-]
-
-{ #category : 'defaults' }
-MCPToolFindPackages >> defaultName [
-
-	^ 'find-packages'
 ]
 
 { #category : 'defaults' }

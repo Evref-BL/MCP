@@ -1354,6 +1354,36 @@ MCPToolContractsTest >> testHandleJSONReturnsMethodNotFoundForUnknownTool [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testImageCodeChangeTrackerFallsBackToChangedWhenSubscriptionFails [
+
+	| result tracker |
+	tracker := MCPImageCodeChangeTracker new.
+	tracker announcer: Object new.
+	result := tracker trackDuring: [ 42 ].
+	self assert: result equals: 42.
+	self assert: tracker hasChanges
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testImageCodeChangeTrackerPreservesResultForReadOnlyBlock [
+
+	| result tracker |
+	tracker := MCPImageCodeChangeTracker new.
+	result := tracker trackDuring: [ 42 ].
+	self assert: result equals: 42.
+	self deny: tracker hasChanges
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testImageCodeChangeTrackerRecordsCodeAnnouncements [
+
+	| tracker |
+	tracker := MCPImageCodeChangeTracker new.
+	tracker recordCodeChangeAnnouncement: MethodAdded new.
+	self assert: tracker hasChanges
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testImageContentSerializesNativeMCPImageBlock [
 
 	| content json |
@@ -2067,7 +2097,7 @@ MCPToolContractsTest >> testRpcToolCallSignalsInvalidParametersWhenRequiredArgum
 { #category : 'tests' }
 MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 
-	| coverageInputProperty dataProperties inputPropertyNames operationProperty outputSchema resultsProperty tool |
+	| coverageInputProperty dataProperties inputPropertyNames operationProperty outputSchema resultsProperty timeoutMillisecondsProperty tool |
 	tool := MCPToolRunTests new.
 	self assert: tool name equals: 'run-tests'.
 	self
@@ -2080,14 +2110,22 @@ MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 		                     each name = 'operation' ].
 	coverageInputProperty := tool inputSchema properties detect: [ :each |
 		                         each name = 'coverage' ].
+	timeoutMillisecondsProperty := tool inputSchema properties detect: [
+		                               :each |
+		                               each name = 'timeoutMilliseconds' ].
 	self assert: (inputPropertyNames includes: 'operation').
 	self assert: (inputPropertyNames includes: 'coverage').
+	self assert: (inputPropertyNames includes: 'timeoutSeconds').
+	self assert: (inputPropertyNames includes: 'timeoutMilliseconds').
 	self
 		assert: (operationProperty extraProperties at: #enum) asArray
 		equals: #( 'run' 'coverage' ).
 	self assert:
 		(((coverageInputProperty extraProperties at: #properties) collect: [
 			  :each | each name ]) includes: 'packageNames').
+	self assert:
+		(timeoutMillisecondsProperty description includesSubstring:
+			 'Cannot be combined with timeoutSeconds').
 	outputSchema := tool outputSchema asJRPCJSON.
 	dataProperties := ((outputSchema at: #properties) at: 'data') at:
 		                  #properties.
@@ -2098,6 +2136,45 @@ MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 		equals: 'object'.
 	self assert: (dataProperties includesKey: 'coverage').
 	self deny: (dataProperties includesKey: 'tests')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testRunTestsParsesTimeoutMilliseconds [
+
+	| parsedRequest rawRequest tool |
+	tool := MCPToolRunTests new.
+	rawRequest := tool requestFromToolCallArguments: {
+			              (#tests -> { {
+				               (#className -> 'MCPToolContractsTest').
+				               (#testMethodName
+				                ->
+				                'testRunTestToolsHaveAccurateNamesAndRequiredArguments') }
+				               asDictionary }).
+			              (#timeoutMilliseconds -> 25) } asDictionary.
+	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
+	self assert: parsedRequest timeoutMilliseconds equals: 25
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testRunTestsRejectsConflictingTimeoutUnits [
+
+	| rawRequest tool |
+	tool := MCPToolRunTests new.
+	rawRequest := tool requestFromToolCallArguments: {
+			              (#tests -> { {
+				               (#className -> 'MCPToolContractsTest').
+				               (#testMethodName
+				                ->
+				                'testRunTestToolsHaveAccurateNamesAndRequiredArguments') }
+				               asDictionary }).
+			              (#timeoutSeconds -> 1).
+			              (#timeoutMilliseconds -> 25) } asDictionary.
+	self
+		should: [ tool parsedRequestFromToolRequest: rawRequest ]
+		raise: Error
+		whoseDescriptionIncludes:
+		'timeoutSeconds and timeoutMilliseconds cannot both be provided'
+		description: 'Timeout requests should use one unit.'
 ]
 
 { #category : 'tests' }
@@ -2177,6 +2254,14 @@ MCPToolContractsTest >> testServerCanConfigureStaticToolNames [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testServerInitializationDoesNotRenderToolIcons [
+
+	MCPStructureIcon resetCaches.
+	MCP new.
+	self assert: MCPStructureIcon cachedRenderedIconCount equals: 0
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testStaticToolConfigurationRejectsUnknownToolNames [
 
 	self
@@ -2201,10 +2286,33 @@ MCPToolContractsTest >> testToolFlowSelectorNamesSeparateTransportAndParsedInput
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testToolIconsAreSharedByToolClass [
+
+	| firstIcons secondIcons |
+	MCPStructureIcon resetCaches.
+	firstIcons := MCPToolFindClasses new icons.
+	secondIcons := MCPToolFindClasses new icons.
+	self assert: firstIcons identicalTo: secondIcons.
+	self assert: firstIcons first identicalTo: secondIcons first.
+	self assert: MCPStructureIcon cachedRenderedIconCount equals: 1
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testToolNamesDoNotUsePharoPrefix [
 
 	self assert: (MCPTool concreteSubclasses noneSatisfy: [ :each |
 			 each new name includesSubstring: 'pharo-' ])
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testToolRegistryNamesUseClassSideMetadata [
+
+	| names |
+	names := MCPToolRegistry publicToolClasses collect: [ :each |
+		         each toolName ].
+	self assert: MCPToolRegistry publicToolNames equals: names.
+	self assert: MCPToolFindClasses toolName equals: 'find-classes'.
+	self assert: MCPToolRunTests toolName equals: 'run-tests'
 ]
 
 { #category : 'private' }

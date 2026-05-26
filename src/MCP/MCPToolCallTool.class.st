@@ -6,6 +6,18 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'icons' }
+MCPToolCallTool class >> toolIconSpec [
+
+	^ MCPToolIconSpec named: #go
+]
+
+{ #category : 'defaults' }
+MCPToolCallTool class >> toolName [
+
+	^ 'call-tool'
+]
+
 { #category : 'private - execution' }
 MCPToolCallTool >> commandForRequest: callRequest [
 
@@ -16,12 +28,6 @@ MCPToolCallTool >> commandForRequest: callRequest [
 MCPToolCallTool >> defaultDescription [
 
 	^ 'Invoke one MCP-Pharo tool selected by name from the discoverable catalog. The target tool receives the nested arguments object and is validated through its own schema.'
-]
-
-{ #category : 'defaults' }
-MCPToolCallTool >> defaultIcons [
-
-	^ { (self pngIconNamed: #go) }
 ]
 
 { #category : 'defaults' }
@@ -47,12 +53,6 @@ MCPToolCallTool >> defaultInputSchema [
 		  required: #( 'toolName' );
 		  additionalProperties: false;
 		  yourself
-]
-
-{ #category : 'defaults' }
-MCPToolCallTool >> defaultName [
-
-	^ 'call-tool'
 ]
 
 { #category : 'defaults' }

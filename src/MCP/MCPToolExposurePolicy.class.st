@@ -68,7 +68,9 @@ MCPToolExposurePolicy >> staticToolNames: aCollection [
 { #category : 'private' }
 MCPToolExposurePolicy >> toolNameFor: aToolOrName [
 
-	^ (aToolOrName isString or: [ aToolOrName isSymbol ])
-		  ifTrue: [ aToolOrName asString ]
-		  ifFalse: [ aToolOrName name ]
+	(aToolOrName isString or: [ aToolOrName isSymbol ]) ifTrue: [
+		^ aToolOrName asString ].
+	(aToolOrName isBehavior and: [ aToolOrName inheritsFrom: MCPTool ])
+		ifTrue: [ ^ aToolOrName toolName ].
+	^ aToolOrName name
 ]

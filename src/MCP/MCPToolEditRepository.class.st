@@ -9,6 +9,18 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'icons' }
+MCPToolEditRepository class >> toolIconSpec [
+
+	^ MCPToolIconSpec baseIconNamed: #box badgeIconNamed: #edit
+]
+
+{ #category : 'defaults' }
+MCPToolEditRepository class >> toolName [
+
+	^ 'edit-repository'
+]
+
 { #category : 'private - execution' }
 MCPToolEditRepository >> commandForRequest: editRequest [
 
@@ -96,12 +108,6 @@ MCPToolEditRepository >> dataForRepositoryPullResult: aResult [
 ]
 
 { #category : 'private - results' }
-MCPToolEditRepository >> dataForRepositoryVerifyIdentityResult: aResult [
-
-	^ self dataForRepositoryResult: aResult action: 'verifyIdentity'
-]
-
-{ #category : 'private - results' }
 MCPToolEditRepository >> dataForRepositoryPushResult: aResult [
 
 	^ self dataForRepositoryResult: aResult action: 'push'
@@ -128,16 +134,16 @@ MCPToolEditRepository >> dataForRepositoryUpdateResult: aResult [
 	^ self dataForRepositoryResult: aResult action: 'update'
 ]
 
+{ #category : 'private - results' }
+MCPToolEditRepository >> dataForRepositoryVerifyIdentityResult: aResult [
+
+	^ self dataForRepositoryResult: aResult action: 'verifyIdentity'
+]
+
 { #category : 'defaults' }
 MCPToolEditRepository >> defaultDescription [
 
 	^ 'Create, attach, update, verifyIdentity, diff, export, commit, adopt HEAD, fetch, pull, push, create branches, or switch branches for Iceberg repositories registered in the image. Use repositoryName for existing repositories; add location only to create or attach a repository, disambiguate duplicate names, or assert the expected location during operation=verifyIdentity. operation=create creates a new repository directory and can attach packages. operation=attach registers an existing Git checkout without creating or writing repository files and can attach packages. operation=update changes image-side repository metadata or package membership without writing packages to files. operation=verifyIdentity asserts expected repository identity fields without writing files; provide at least one expected field among location, branchName, subdirectory, packageNames, modifiedPackageNames, and isModified. operation=diff inspects IceRepository>>workingCopyDiff without writing files and should be preferred when you only need to see image-side changes. operation=export is an escape hatch that materializes image changes to disk for Tonel or Git workflows and updates the Iceberg index without staging or committing. operation=commit calls IceRepository>>commitWithMessage:. operation=adoptHead calls IceWorkingCopy>>adoptCommit: with the repository head commit and reports before/after modified packages. operation=fetch calls IceRepository>>fetch. operation=pull calls IceRepository>>pull. operation=push calls IceRepository>>push. operation=createBranch calls IceRepository>>createBranch: and switches to the new branch. operation=switchBranch calls IceRepository>>switchToBranchNamed: for an existing branch.'
-]
-
-{ #category : 'defaults' }
-MCPToolEditRepository >> defaultIcons [
-
-	^ { (self pngCompositeBaseIconNamed: #box badgeIconNamed: #edit) }
 ]
 
 { #category : 'defaults' }
@@ -206,12 +212,6 @@ MCPToolEditRepository >> defaultInputSchema [
 		  required: #( 'operation' );
 		  additionalProperties: false;
 		  yourself
-]
-
-{ #category : 'defaults' }
-MCPToolEditRepository >> defaultName [
-
-	^ 'edit-repository'
 ]
 
 { #category : 'defaults' }

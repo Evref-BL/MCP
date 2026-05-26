@@ -6,6 +6,18 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'icons' }
+MCPToolDiscoverTools class >> toolIconSpec [
+
+	^ MCPToolIconSpec baseIconNamed: #open badgeIconNamed: #search
+]
+
+{ #category : 'defaults' }
+MCPToolDiscoverTools class >> toolName [
+
+	^ 'discover-tools'
+]
+
 { #category : 'private - execution' }
 MCPToolDiscoverTools >> commandForRequest: discoverRequest [
 
@@ -16,12 +28,6 @@ MCPToolDiscoverTools >> commandForRequest: discoverRequest [
 MCPToolDiscoverTools >> defaultDescription [
 
 	^ 'Search the MCP-Pharo tool catalog by group, keyword, title, or description and return compact metadata for matching tools.'
-]
-
-{ #category : 'defaults' }
-MCPToolDiscoverTools >> defaultIcons [
-
-	^ { (self pngCompositeBaseIconNamed: #open badgeIconNamed: #search) }
 ]
 
 { #category : 'defaults' }
@@ -53,12 +59,6 @@ MCPToolDiscoverTools >> defaultInputSchema [
 		  required: #(  );
 		  additionalProperties: false;
 		  yourself
-]
-
-{ #category : 'defaults' }
-MCPToolDiscoverTools >> defaultName [
-
-	^ 'discover-tools'
 ]
 
 { #category : 'defaults' }

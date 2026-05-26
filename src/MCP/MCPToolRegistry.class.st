@@ -15,7 +15,7 @@ MCPToolRegistry class >> activationRequirementsForTool: aTool [
 { #category : 'tools' }
 MCPToolRegistry class >> defaultStaticToolNames [
 
-	^ self staticToolClasses collect: [ :each | each new name ]
+	^ self staticToolClasses collect: [ :each | each toolName ]
 ]
 
 { #category : 'tools' }
@@ -177,7 +177,7 @@ MCPToolRegistry class >> publicToolGroups [
 { #category : 'tools' }
 MCPToolRegistry class >> publicToolNames [
 
-	^ self publicToolClasses collect: [ :each | each new name ]
+	^ self publicToolClasses collect: [ :each | each toolName ]
 ]
 
 { #category : 'tools' }
@@ -292,8 +292,12 @@ MCPToolRegistry class >> staticToolsDictionaryUsingPolicy: aToolExposurePolicy [
 { #category : 'tools' }
 MCPToolRegistry class >> staticToolsUsingPolicy: aToolExposurePolicy [
 
-	^ (self publicToolsUsingPolicy: aToolExposurePolicy) select: [ :tool |
-		  aToolExposurePolicy isStaticTool: tool ]
+	^ ((self publicToolClasses select: [ :toolClass |
+		    aToolExposurePolicy isStaticTool: toolClass ]) collect: [
+			   :toolClass |
+			   toolClass new
+				   toolExposurePolicy: aToolExposurePolicy;
+				   yourself ]) asArray
 ]
 
 { #category : 'tools' }
@@ -341,8 +345,11 @@ MCPToolRegistry class >> toolNamed: aToolName ifAbsent: absentBlock [
 { #category : 'tools' }
 MCPToolRegistry class >> toolNamed: aToolName ifAbsent: absentBlock usingPolicy: aToolExposurePolicy [
 
-	(self publicToolsUsingPolicy: aToolExposurePolicy) do: [ :tool |
-		tool name = aToolName ifTrue: [ ^ tool ] ].
+	self publicToolClasses do: [ :toolClass |
+			toolClass toolName = aToolName ifTrue: [
+					^ toolClass new
+						  toolExposurePolicy: aToolExposurePolicy;
+						  yourself ] ].
 	^ absentBlock value
 ]
 

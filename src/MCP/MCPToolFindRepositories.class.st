@@ -11,6 +11,18 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'icons' }
+MCPToolFindRepositories class >> toolIconSpec [
+
+	^ MCPToolIconSpec baseIconNamed: #box badgeIconNamed: #search
+]
+
+{ #category : 'defaults' }
+MCPToolFindRepositories class >> toolName [
+
+	^ 'find-repositories'
+]
+
 { #category : 'defaults' }
 MCPToolFindRepositories >> defaultDescription [
 
@@ -21,12 +33,6 @@ MCPToolFindRepositories >> defaultDescription [
 MCPToolFindRepositories >> defaultFilterTargets [
 
 	^ #( 'name' )
-]
-
-{ #category : 'defaults' }
-MCPToolFindRepositories >> defaultIcons [
-
-	^ { (self pngCompositeBaseIconNamed: #box badgeIconNamed: #search) }
 ]
 
 { #category : 'defaults' }
@@ -46,12 +52,6 @@ MCPToolFindRepositories >> defaultInputSchema [
 	              , (self paginationInputPropertiesWithLimitDescription:
 			               'Maximum number of matching repositories to return. Use 0 to request counts only.').
 	^ self queryInputSchemaWithProperties: properties
-]
-
-{ #category : 'defaults' }
-MCPToolFindRepositories >> defaultName [
-
-	^ 'find-repositories'
 ]
 
 { #category : 'defaults' }

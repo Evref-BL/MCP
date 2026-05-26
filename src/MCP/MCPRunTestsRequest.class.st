@@ -60,6 +60,14 @@ MCPRunTestsRequest class >> testRequestsFromToolRequest: request [
 { #category : 'private - parsing' }
 MCPRunTestsRequest class >> timeoutMillisecondsFromToolRequest: request defaultSeconds: defaultSeconds [
 
+	((request hasArgumentNamed: 'timeoutSeconds') and: [
+		 request hasArgumentNamed: 'timeoutMilliseconds' ]) ifTrue: [
+			Error signal:
+				'timeoutSeconds and timeoutMilliseconds cannot both be provided.' ].
+	(request hasArgumentNamed: 'timeoutMilliseconds') ifTrue: [
+			^ request
+				  nonNegativeIntegerArgumentNamed: 'timeoutMilliseconds'
+				  default: defaultSeconds * 1000 ].
 	^ (request
 		   nonNegativeIntegerArgumentNamed: 'timeoutSeconds'
 		   default: defaultSeconds) * 1000

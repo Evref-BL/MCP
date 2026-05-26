@@ -632,7 +632,7 @@ MCPToolStructuredOutputTest >> testRunTestsTimeoutReturnsPartialResultsAndUnrunT
 					           (#testMethodName
 					            -> 'testValidRequestProvidesTypedAccessors') }
 					           asDictionary }).
-			          (#timeoutSeconds -> 1) } asDictionary.
+			          (#timeoutMilliseconds -> 100) } asDictionary.
 	data := self dataFrom: result.
 	self
 		assert: ((self structuredContentFrom: result) at: #status)
@@ -645,15 +645,15 @@ MCPToolStructuredOutputTest >> testRunTestsTimeoutReturnsPartialResultsAndUnrunT
 	self assert: (partialResult at: #runCount) equals: 1.
 	unrunTests := data at: #unrunTests.
 	self assert: (unrunTests anySatisfy: [ :each |
-			 (each at: #className) = 'MCPToolRunTestsTimeoutTarget' and: [
-				 (each at: #testMethodName) = 'testSlowPass' ] ]).
+				 (each at: #className) = 'MCPToolRunTestsTimeoutTarget' and: [
+					 (each at: #testMethodName) = 'testSlowPass' ] ]).
 	self assert: (unrunTests anySatisfy: [ :each |
-			 (each at: #className) = 'MCPToolRequestTest' and: [
-				 (each at: #testMethodName)
-				 = 'testValidRequestProvidesTypedAccessors' ] ]).
+				 (each at: #className) = 'MCPToolRequestTest' and: [
+					 (each at: #testMethodName)
+					 = 'testValidRequestProvidesTypedAccessors' ] ]).
 	resumedResult := self callToolNamed: 'run-tests' withArguments: {
 			                 (#tests -> unrunTests).
-			                 (#timeoutSeconds -> 5) } asDictionary.
+			                 (#timeoutMilliseconds -> 1000) } asDictionary.
 	resumedData := self dataFrom: resumedResult.
 	self
 		assert: ((self structuredContentFrom: resumedResult) at: #status)

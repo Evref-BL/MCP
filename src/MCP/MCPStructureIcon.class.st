@@ -12,16 +12,26 @@ Class {
 		'sizes',
 		'theme'
 	],
+	#classInstVars : [
+		'iconCache',
+		'toolIconCache'
+	],
 	#category : 'MCP-Structure',
 	#package : 'MCP',
 	#tag : 'Structure'
 }
 
+{ #category : 'cache' }
+MCPStructureIcon class >> cachedRenderedIconCount [
+
+	^ iconCache ifNil: [ 0 ] ifNotNil: [ iconCache size ]
+]
+
 { #category : 'instance creation' }
 MCPStructureIcon class >> compositeBaseIconNamed: aBaseIconSymbol badgeIconNamed: aBadgeIconSymbol [
 
-	^ self iconForForm: (self
-			   compositeFormBaseIconNamed: aBaseIconSymbol
+	^ self iconForSpec: (MCPToolIconSpec
+			   baseIconNamed: aBaseIconSymbol
 			   badgeIconNamed: aBadgeIconSymbol)
 ]
 
@@ -63,6 +73,12 @@ MCPStructureIcon class >> horizontallyFlippedPngIconNamed: anIconSymbol [
 		  (self highScaleFormNamed: anIconSymbol) deepCopy flipHorizontally
 ]
 
+{ #category : 'cache' }
+MCPStructureIcon class >> iconCache [
+
+	^ iconCache ifNil: [ iconCache := Dictionary new ]
+]
+
 { #category : 'instance creation' }
 MCPStructureIcon class >> iconForForm: aForm [
 
@@ -71,6 +87,22 @@ MCPStructureIcon class >> iconForForm: aForm [
 		  mimeType: 'image/png';
 		  sizes: { (self pngSizeStringForForm: aForm) };
 		  yourself
+]
+
+{ #category : 'cache' }
+MCPStructureIcon class >> iconForSpec: anIconSpec [
+
+	^ self iconCache
+		  at: anIconSpec cacheKey
+		  ifAbsentPut: [ anIconSpec renderUsing: self ]
+]
+
+{ #category : 'cache' }
+MCPStructureIcon class >> iconsForToolClass: aToolClass [
+
+	^ self toolIconCache
+		  at: aToolClass
+		  ifAbsentPut: [ { (self iconForSpec: aToolClass toolIconSpec) } ]
 ]
 
 { #category : 'instance creation' }
@@ -85,13 +117,26 @@ MCPStructureIcon class >> pngDataUriForForm: aForm [
 { #category : 'instance creation' }
 MCPStructureIcon class >> pngIconNamed: anIconSymbol [
 
-	^ self iconForForm: (self highScaleFormNamed: anIconSymbol)
+	^ self iconForSpec: (MCPToolIconSpec named: anIconSymbol)
 ]
 
 { #category : 'instance creation' }
 MCPStructureIcon class >> pngSizeStringForForm: aForm [
 
 	^ aForm width asString , 'x' , aForm height asString
+]
+
+{ #category : 'cache' }
+MCPStructureIcon class >> resetCaches [
+
+	iconCache := nil.
+	toolIconCache := nil
+]
+
+{ #category : 'cache' }
+MCPStructureIcon class >> toolIconCache [
+
+	^ toolIconCache ifNil: [ toolIconCache := IdentityDictionary new ]
 ]
 
 { #category : 'accessing' }

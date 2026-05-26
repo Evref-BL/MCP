@@ -11,6 +11,18 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'icons' }
+MCPToolInspectClass class >> toolIconSpec [
+
+	^ MCPToolIconSpec baseIconNamed: #class badgeIconNamed: #inspect
+]
+
+{ #category : 'defaults' }
+MCPToolInspectClass class >> toolName [
+
+	^ 'inspect-class'
+]
+
 { #category : 'private - schema' }
 MCPToolInspectClass >> classDescriptionDataProperties [
 
@@ -137,12 +149,6 @@ MCPToolInspectClass >> defaultDescription [
 ]
 
 { #category : 'defaults' }
-MCPToolInspectClass >> defaultIcons [
-
-	^ { (self pngCompositeBaseIconNamed: #class badgeIconNamed: #inspect) }
-]
-
-{ #category : 'defaults' }
 MCPToolInspectClass >> defaultInputSchema [
 
 	| includeCommentProperty upToSuperclassNameProperty subclassDepthProperty |
@@ -179,12 +185,6 @@ MCPToolInspectClass >> defaultInputSchema [
 				  subclassDepthProperty };
 		  required: #( 'className' );
 		  yourself
-]
-
-{ #category : 'defaults' }
-MCPToolInspectClass >> defaultName [
-
-	^ 'inspect-class'
 ]
 
 { #category : 'defaults' }

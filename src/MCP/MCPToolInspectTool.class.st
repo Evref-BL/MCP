@@ -6,6 +6,18 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'icons' }
+MCPToolInspectTool class >> toolIconSpec [
+
+	^ MCPToolIconSpec baseIconNamed: #open badgeIconNamed: #inspect
+]
+
+{ #category : 'defaults' }
+MCPToolInspectTool class >> toolName [
+
+	^ 'inspect-tool'
+]
+
 { #category : 'private - execution' }
 MCPToolInspectTool >> commandForRequest: inspectRequest [
 
@@ -16,12 +28,6 @@ MCPToolInspectTool >> commandForRequest: inspectRequest [
 MCPToolInspectTool >> defaultDescription [
 
 	^ 'Return full schema and metadata for one MCP-Pharo tool selected from the discoverable catalog.'
-]
-
-{ #category : 'defaults' }
-MCPToolInspectTool >> defaultIcons [
-
-	^ { (self pngCompositeBaseIconNamed: #open badgeIconNamed: #inspect) }
 ]
 
 { #category : 'defaults' }
@@ -39,12 +45,6 @@ MCPToolInspectTool >> defaultInputSchema [
 		  required: #( 'toolName' );
 		  additionalProperties: false;
 		  yourself
-]
-
-{ #category : 'defaults' }
-MCPToolInspectTool >> defaultName [
-
-	^ 'inspect-tool'
 ]
 
 { #category : 'defaults' }

@@ -57,6 +57,24 @@ MCPTool class >> toolIconFormOf: aToolClass [
 		  (aToolClass new icons first src copyAfter: $,)
 ]
 
+{ #category : 'icons' }
+MCPTool class >> toolIconSpec [
+
+	self subclassResponsibility
+]
+
+{ #category : 'icons' }
+MCPTool class >> toolIcons [
+
+	^ MCPStructureIcon iconsForToolClass: self
+]
+
+{ #category : 'defaults' }
+MCPTool class >> toolName [
+
+	self subclassResponsibility
+]
+
 { #category : 'accessing' }
 MCPTool >> asJRPCJSON [
 
@@ -114,7 +132,7 @@ MCPTool >> defaultHandler [
 { #category : 'defaults' }
 MCPTool >> defaultIcons [
 
-	self subclassResponsibility
+	^ self class toolIcons
 ]
 
 { #category : 'defaults' }
@@ -126,7 +144,7 @@ MCPTool >> defaultInputSchema [
 { #category : 'defaults' }
 MCPTool >> defaultName [
 
-	self subclassResponsibility
+	^ self class toolName
 ]
 
 { #category : 'defaults' }
@@ -312,7 +330,7 @@ MCPTool >> handler: anObject [
 { #category : 'accessing' }
 MCPTool >> icons [
 
-	^ icons
+	^ icons ifNil: [ icons := self class toolIcons ]
 ]
 
 { #category : 'accessing' }
@@ -325,13 +343,12 @@ MCPTool >> icons: anObject [
 MCPTool >> initialize [
 
 	super initialize.
-	name := self defaultName.
+	name := self class toolName.
 	title := self defaultTitle.
 	description := self defaultDescription.
 	handler := self defaultHandler.
 	inputSchema := self defaultInputSchema.
-	outputSchema := self defaultOutputSchema.
-	icons := self defaultIcons
+	outputSchema := self defaultOutputSchema
 ]
 
 { #category : 'accessing' }

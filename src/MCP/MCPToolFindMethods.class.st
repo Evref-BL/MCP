@@ -10,6 +10,18 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'icons' }
+MCPToolFindMethods class >> toolIconSpec [
+
+	^ MCPToolIconSpec baseIconNamed: #page badgeIconNamed: #search
+]
+
+{ #category : 'defaults' }
+MCPToolFindMethods class >> toolName [
+
+	^ 'find-methods'
+]
+
 { #category : 'private - searching' }
 MCPToolFindMethods >> classBindingForClassName: aClassName [
 
@@ -53,12 +65,6 @@ MCPToolFindMethods >> defaultFilterTargets [
 ]
 
 { #category : 'defaults' }
-MCPToolFindMethods >> defaultIcons [
-
-	^ { (self pngCompositeBaseIconNamed: #page badgeIconNamed: #search) }
-]
-
-{ #category : 'defaults' }
 MCPToolFindMethods >> defaultInputSchema [
 
 	| properties |
@@ -71,12 +77,6 @@ MCPToolFindMethods >> defaultInputSchema [
 		               limitDescription:
 		               'Maximum number of matching methods to return. Use 0 to request counts only.').
 	^ self queryInputSchemaWithProperties: properties
-]
-
-{ #category : 'defaults' }
-MCPToolFindMethods >> defaultName [
-
-	^ 'find-methods'
 ]
 
 { #category : 'defaults' }
@@ -379,18 +379,6 @@ MCPToolFindMethods >> sortedMethodEntries: entries [
 		  asArray
 ]
 
-{ #category : 'validating' }
-MCPToolFindMethods >> validateRequest: request [
-
-	| filterMode |
-	filterMode := self filterModeFromRequest: request.
-	((self referenceFilterModes includes: filterMode) and: [
-		 (request hasArgumentNamed: 'filter') not ]) ifTrue: [
-		MCPInvalidToolInput
-			signalMissingRequiredArgumentNamed: 'filter'
-			forTool: self ]
-]
-
 { #category : 'private - template' }
 MCPToolFindMethods >> successSummaryForQueryRequest: queryRequest page: page [
 
@@ -421,6 +409,18 @@ MCPToolFindMethods >> supportedFilterModes [
 MCPToolFindMethods >> supportedFilterTargets [
 
 	^ #( 'selector' 'class' 'package' 'protocol' 'source' )
+]
+
+{ #category : 'validating' }
+MCPToolFindMethods >> validateRequest: request [
+
+	| filterMode |
+	filterMode := self filterModeFromRequest: request.
+	((self referenceFilterModes includes: filterMode) and: [
+		 (request hasArgumentNamed: 'filter') not ]) ifTrue: [
+		MCPInvalidToolInput
+			signalMissingRequiredArgumentNamed: 'filter'
+			forTool: self ]
 ]
 
 { #category : 'private - searching' }

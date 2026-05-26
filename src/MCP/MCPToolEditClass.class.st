@@ -11,6 +11,18 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'icons' }
+MCPToolEditClass class >> toolIconSpec [
+
+	^ MCPToolIconSpec baseIconNamed: #class badgeIconNamed: #edit
+]
+
+{ #category : 'defaults' }
+MCPToolEditClass class >> toolName [
+
+	^ 'edit-class'
+]
+
 { #category : 'private - schema' }
 MCPToolEditClass >> appliedChangeOutputSchemaProperty [
 
@@ -89,12 +101,6 @@ MCPToolEditClass >> dataWithClassCommentFrom: aDictionary [
 MCPToolEditClass >> defaultDescription [
 
 	^ 'Create or update classes in the running image. Use operation=create for new class definitions. Use operation=update with fields such as newClassName, superclassName, packageName, tag, classComment, slots, classSlots, traits, classTraits, sharedVariables, sharedPools, layout, or slotAction to perform one class edit. Omit packageName with tag to recategorize inside the current package. force=false stops on refactoring warnings and returns impactMessages plus howToProceed; force=true continues and returns warnings in the output.'
-]
-
-{ #category : 'defaults' }
-MCPToolEditClass >> defaultIcons [
-
-	^ { (self pngCompositeBaseIconNamed: #class badgeIconNamed: #edit) }
 ]
 
 { #category : 'defaults' }
@@ -208,12 +214,6 @@ MCPToolEditClass >> defaultInputSchema [
 		  required: #( 'operation' 'className' );
 		  additionalProperties: false;
 		  yourself
-]
-
-{ #category : 'defaults' }
-MCPToolEditClass >> defaultName [
-
-	^ 'edit-class'
 ]
 
 { #category : 'defaults' }

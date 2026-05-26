@@ -11,6 +11,18 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'icons' }
+MCPToolCaptureScreenshot class >> toolIconSpec [
+
+	^ MCPToolIconSpec named: #smallScreenshot
+]
+
+{ #category : 'defaults' }
+MCPToolCaptureScreenshot class >> toolName [
+
+	^ 'capture-screenshot'
+]
+
 { #category : 'private - execution' }
 MCPToolCaptureScreenshot >> commandForRequest: screenshotRequest [
 
@@ -21,12 +33,6 @@ MCPToolCaptureScreenshot >> commandForRequest: screenshotRequest [
 MCPToolCaptureScreenshot >> defaultDescription [
 
 	^ 'Capture the active Morphic world and return it as MCP image content.'
-]
-
-{ #category : 'defaults' }
-MCPToolCaptureScreenshot >> defaultIcons [
-
-	^ { (self pngIconNamed: #smallScreenshot) }
 ]
 
 { #category : 'defaults' }
@@ -42,12 +48,6 @@ MCPToolCaptureScreenshot >> defaultInputSchema [
 				   default: 'world') };
 		  required: #(  );
 		  yourself
-]
-
-{ #category : 'defaults' }
-MCPToolCaptureScreenshot >> defaultName [
-
-	^ 'capture-screenshot'
 ]
 
 { #category : 'defaults' }

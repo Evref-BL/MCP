@@ -9,6 +9,18 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'icons' }
+MCPToolEvaluate class >> toolIconSpec [
+
+	^ MCPToolIconSpec named: #go
+]
+
+{ #category : 'defaults' }
+MCPToolEvaluate class >> toolName [
+
+	^ 'evaluate'
+]
+
 { #category : 'private - execution' }
 MCPToolEvaluate >> commandForRequest: evaluateRequest [
 
@@ -25,12 +37,6 @@ MCPToolEvaluate >> defaultDescription [
 ]
 
 { #category : 'defaults' }
-MCPToolEvaluate >> defaultIcons [
-
-	^ { (self pngIconNamed: #go) }
-]
-
-{ #category : 'defaults' }
 MCPToolEvaluate >> defaultInputSchema [
 
 	^ MCPStructureInputSchema new
@@ -43,12 +49,6 @@ MCPToolEvaluate >> defaultInputSchema [
 				   yourself) };
 		  required: #( 'code' );
 		  yourself
-]
-
-{ #category : 'defaults' }
-MCPToolEvaluate >> defaultName [
-
-	^ 'evaluate'
 ]
 
 { #category : 'defaults' }

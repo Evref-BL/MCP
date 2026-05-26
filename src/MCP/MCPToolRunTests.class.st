@@ -13,6 +13,18 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'icons' }
+MCPToolRunTests class >> toolIconSpec [
+
+	^ MCPToolIconSpec named: #testRunner
+]
+
+{ #category : 'defaults' }
+MCPToolRunTests class >> toolName [
+
+	^ 'run-tests'
+]
+
 { #category : 'private - execution' }
 MCPToolRunTests >> commandForRequest: runTestsRequest [
 
@@ -218,12 +230,6 @@ MCPToolRunTests >> defaultDescription [
 ]
 
 { #category : 'defaults' }
-MCPToolRunTests >> defaultIcons [
-
-	^ { (self pngIconNamed: #testRunner) }
-]
-
-{ #category : 'defaults' }
 MCPToolRunTests >> defaultInputSchema [
 
 	^ MCPStructureInputSchema new
@@ -245,16 +251,14 @@ MCPToolRunTests >> defaultInputSchema [
 				  (self
 					   integerSchemaPropertyNamed: 'timeoutSeconds'
 					   description:
-					   'Server-side timeout for the batch. Use 0 to return immediately with all tests listed in unrunTests.'
-					   default: self defaultTimeoutSeconds) };
+					   'Server-side timeout for the batch, in seconds. Use 0 to return immediately with all tests listed in unrunTests. Cannot be combined with timeoutMilliseconds.'
+					   default: self defaultTimeoutSeconds).
+				  (self
+					   integerSchemaPropertyNamed: 'timeoutMilliseconds'
+					   description:
+					   'Server-side timeout for the batch, in milliseconds. Use for sub-second test runner contracts. Cannot be combined with timeoutSeconds.') };
 		  required: #( 'tests' );
 		  yourself
-]
-
-{ #category : 'defaults' }
-MCPToolRunTests >> defaultName [
-
-	^ 'run-tests'
 ]
 
 { #category : 'defaults' }
@@ -345,18 +349,6 @@ MCPToolRunTests >> failureMessageForTests: testRequests error: anError [
 			  nextPutAll: anError class name;
 			  nextPutAll: '): ';
 			  nextPutAll: anError messageText ]
-]
-
-{ #category : 'validating' }
-MCPToolRunTests >> validateRequest: request [
-
-	| operation |
-	operation := request stringArgumentNamed: 'operation' default: 'run'.
-	operation = 'coverage' ifTrue: [
-		(request hasArgumentNamed: 'coverage') ifFalse: [
-			MCPInvalidToolInput
-				signalMissingRequiredArgumentNamed: 'coverage'
-				forTool: self ] ]
 ]
 
 { #category : 'private - request' }
@@ -576,4 +568,16 @@ MCPToolRunTests >> testResultObjectSchema [
 			  (self standardTestRequiredFieldsIncludingMethodName: false);
 		  additionalProperties: false;
 		  yourself
+]
+
+{ #category : 'validating' }
+MCPToolRunTests >> validateRequest: request [
+
+	| operation |
+	operation := request stringArgumentNamed: 'operation' default: 'run'.
+	operation = 'coverage' ifTrue: [
+		(request hasArgumentNamed: 'coverage') ifFalse: [
+			MCPInvalidToolInput
+				signalMissingRequiredArgumentNamed: 'coverage'
+				forTool: self ] ]
 ]
