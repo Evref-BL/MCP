@@ -13,16 +13,44 @@ MCPToolAPITestCase class >> isAbstract [
 ]
 
 { #category : 'private - calling' }
+MCPToolAPITestCase >> argumentNamed: anArgumentName in: aDictionary default: defaultValue [
+
+	aDictionary ifNil: [ ^ defaultValue ].
+	^ aDictionary
+		  at: anArgumentName asSymbol
+		  ifAbsent: [
+		  aDictionary at: anArgumentName asString ifAbsent: [ defaultValue ] ]
+]
+
+{ #category : 'private - calling' }
 MCPToolAPITestCase >> aroundToolCall: aBlock [
 
 	^ aBlock value
 ]
 
 { #category : 'private - calling' }
-MCPToolAPITestCase >> callToolNamed: aToolName withArguments: someArguments [
+MCPToolAPITestCase >> callDiscoveredToolNamed: aToolName withArguments: someArguments [
+
+	^ self callRawToolNamed: 'call-tool' withArguments: {
+			  (#toolName -> aToolName).
+			  (#arguments -> someArguments) } asDictionary
+]
+
+{ #category : 'private - calling' }
+MCPToolAPITestCase >> callRawToolNamed: aToolName withArguments: someArguments [
 
 	^ self aroundToolCall: [
 		  MCP new rpcToolCall: aToolName withParams: someArguments ]
+]
+
+{ #category : 'private - calling' }
+MCPToolAPITestCase >> callToolNamed: aToolName withArguments: someArguments [
+
+	(MCPToolRegistry isStaticTool: aToolName) ifTrue: [
+		^ self callRawToolNamed: aToolName withArguments: someArguments ].
+	^ self
+		  callDiscoveredToolNamed: aToolName
+		  withArguments: someArguments
 ]
 
 { #category : 'private - results' }

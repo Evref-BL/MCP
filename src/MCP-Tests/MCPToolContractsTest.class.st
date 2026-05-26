@@ -160,6 +160,9 @@ MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 		assert: orderedTools asSet
 		equals: MCPTool concreteSubclasses asSet.
 	self assert: orderedTools asArray equals: {
+			MCPToolDiscoverTools.
+			MCPToolInspectTool.
+			MCPToolCallTool.
 			MCPToolFindRepositories.
 			MCPToolEditRepository.
 			MCPToolLoadRepository.
@@ -177,6 +180,43 @@ MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 			MCPToolRunTests.
 			MCPToolCaptureScreenshot.
 			MCPToolEvaluate }
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testCallToolInvokesDiscoverableToolAfterStaticConfiguration [
+
+	| data result server |
+	server := MCP new.
+	server staticToolNames:
+		#( 'discover-tools' 'inspect-tool' 'call-tool' ).
+	result := server rpcToolCall: 'call-tool' withParams: {
+			          (#toolName -> 'find-packages').
+			          (#arguments -> {
+				           (#filter -> 'MCP').
+				           (#filterMode -> 'substring').
+				           (#limit -> 1) } asDictionary) } asDictionary.
+	data := self dataFrom: result.
+	self assert: (data at: #packages) size equals: 1.
+	self assert:
+		(((data at: #packages) first at: #packageName) includesSubstring:
+			 'MCP')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testCallToolInvokesTargetToolThroughServerPath [
+
+	| data result |
+	result := self callToolNamed: 'call-tool' withArguments: {
+			          (#toolName -> 'find-packages').
+			          (#arguments -> {
+				           (#filter -> 'MCP').
+				           (#filterMode -> 'substring').
+				           (#limit -> 1) } asDictionary) } asDictionary.
+	data := self dataFrom: result.
+	self assert: (data at: #packages) size equals: 1.
+	self assert:
+		(((data at: #packages) first at: #packageName) includesSubstring:
+			 'MCP')
 ]
 
 { #category : 'tests' }
@@ -220,6 +260,21 @@ MCPToolContractsTest >> testClassToolTraitOwnsSharedClassHelpers [
 		self assert: (toolClass traits includes: TMCPClassTool).
 		sharedSelectors do: [ :selector |
 			self assert: (toolClass >> selector) origin equals: TMCPClassTool ] ]
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testConfiguredDiscoverableToolsAreNotDirectlyCallable [
+
+	| server |
+	server := MCP new.
+	server staticToolNames:
+		#( 'discover-tools' 'inspect-tool' 'call-tool' ).
+	self
+		should: [
+				server
+					rpcToolCall: 'find-packages'
+					withParams: { (#limit -> 1) } asDictionary ]
+		raise: JRPCNonExistentHandler
 ]
 
 { #category : 'tests' }
@@ -275,6 +330,66 @@ MCPToolContractsTest >> testDictionaryShapedCommandResultsUseDTOClasses [
 		((MCPRunTestsCommand
 		  >> #aggregateDataForResults:timedOut:unrunTests:) sourceCode
 			 includesSubstring: MCPRunTestsResult name asString)
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testDiscoverToolsCanIncludeStaticSurface [
+
+	| metadataByName result |
+	result := self callToolNamed: 'discover-tools' withArguments: {
+			          (#query -> 'classes').
+			          (#includeStatic -> true) } asDictionary.
+	metadataByName := (((self dataFrom: result) at: #tools) collect: [
+		                   :each | (each at: #name) -> each ]) asDictionary.
+	self assert: (metadataByName includesKey: 'find-classes').
+	self
+		assert: ((metadataByName at: 'find-classes') at: #exposure)
+		equals: 'static'
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testDiscoverToolsReturnsDiscoverableMetadata [
+
+	| data editRepositoryMetadata names result tools |
+	result := self
+		          callToolNamed: 'discover-tools'
+		          withArguments: { (#query -> 'repository') } asDictionary.
+	data := self dataFrom: result.
+	tools := data at: #tools.
+	names := tools collect: [ :each | each at: #name ].
+	self assert: (names includes: 'find-repositories').
+	self assert: (names includes: 'edit-repository').
+	self assert: (names includes: 'load-repository').
+	self deny: (names includes: 'find-classes').
+	editRepositoryMetadata := tools detect: [ :each |
+		                          (each at: #name) = 'edit-repository' ].
+	self
+		assert: (editRepositoryMetadata at: #group)
+		equals: 'repositories'.
+	self
+		assert: (editRepositoryMetadata at: #exposure)
+		equals: 'discoverable'.
+	self assert: (editRepositoryMetadata at: #schemaInspectionRequired)
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testDiscoveryUsesConfiguredStaticToolNames [
+
+	| metadataByName result server |
+	server := MCP new.
+	server staticToolNames:
+		#( 'discover-tools' 'inspect-tool' 'call-tool' 'find-repositories' ).
+	result := server rpcToolCall: 'discover-tools' withParams: {
+			          (#query -> 'repository').
+			          (#includeStatic -> true) } asDictionary.
+	metadataByName := (((self dataFrom: result) at: #tools) collect: [
+		                   :each | (each at: #name) -> each ]) asDictionary.
+	self
+		assert: ((metadataByName at: 'find-repositories') at: #exposure)
+		equals: 'static'.
+	self
+		assert: ((metadataByName at: 'edit-repository') at: #exposure)
+		equals: 'discoverable'
 ]
 
 { #category : 'tests' }
@@ -846,12 +961,12 @@ MCPToolContractsTest >> testEditToolSchemasAdvertiseRenameScopeConditions [
 		equals: false
 ]
 
-{ #category : 'tests' }
+{ #category : 'tests - evaluate' }
 MCPToolContractsTest >> testEvaluateCatchesHaltAsRuntimeFailure [
 
 	| result text |
 	result := self
-		          callToolNamed: 'evaluate'
+		          callDiscoveredToolNamed: 'evaluate'
 		          withArguments:
 		          { (#code -> 'Halt signal: ''mcp halt test''') }
 			          asDictionary.
@@ -893,12 +1008,12 @@ MCPToolContractsTest >> testEvaluateRequiresCodeInSchema [
 		(MCPToolEvaluate new inputSchema required includes: 'code')
 ]
 
-{ #category : 'tests' }
+{ #category : 'tests - evaluate' }
 MCPToolContractsTest >> testEvaluateReturnsCompilationFailureInformation [
 
 	| result text |
 	result := self
-		          callToolNamed: 'evaluate'
+		          callDiscoveredToolNamed: 'evaluate'
 		          withArguments: { (#code -> '1 +') } asDictionary.
 	text := self firstTextFromToolResult: result.
 	self assert: (result at: #isError).
@@ -908,12 +1023,12 @@ MCPToolContractsTest >> testEvaluateReturnsCompilationFailureInformation [
 	self assert: (text includesSubstring: 'Position: 4')
 ]
 
-{ #category : 'tests' }
+{ #category : 'tests - evaluate' }
 MCPToolContractsTest >> testEvaluateReturnsRuntimeFailureInformation [
 
 	| result text |
 	result := self
-		          callToolNamed: 'evaluate'
+		          callDiscoveredToolNamed: 'evaluate'
 		          withArguments:
 		          { (#code -> 'Error signal: ''boom''') } asDictionary.
 	text := self firstTextFromToolResult: result.
@@ -1216,12 +1331,12 @@ MCPToolContractsTest >> testHandleJSONReturnsInternalErrorForUnhandledHalt [
 	self assert: (response includesSubstring: 'mcp processor halt test')
 ]
 
-{ #category : 'tests' }
+{ #category : 'tests - validation' }
 MCPToolContractsTest >> testHandleJSONReturnsInvalidParamsForMissingRequiredArguments [
 
 	| response |
 	response := self handleJSON:
-		            '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"evaluate","arguments":{}}}'.
+		            '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"call-tool","arguments":{"toolName":"evaluate","arguments":{}}}}'.
 	self assert: (response includesSubstring: '"code":-32602').
 	self assert: (response includesSubstring:
 			 '"message":"Invalid method parameter(s)."')
@@ -1236,6 +1351,36 @@ MCPToolContractsTest >> testHandleJSONReturnsMethodNotFoundForUnknownTool [
 	self assert: (response includesSubstring: '"code":-32601').
 	self assert: (response includesSubstring:
 			 '"message":"The method does not exist / is not available."')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testImageCodeChangeTrackerFallsBackToChangedWhenSubscriptionFails [
+
+	| result tracker |
+	tracker := MCPImageCodeChangeTracker new.
+	tracker announcer: Object new.
+	result := tracker trackDuring: [ 42 ].
+	self assert: result equals: 42.
+	self assert: tracker hasChanges
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testImageCodeChangeTrackerPreservesResultForReadOnlyBlock [
+
+	| result tracker |
+	tracker := MCPImageCodeChangeTracker new.
+	result := tracker trackDuring: [ 42 ].
+	self assert: result equals: 42.
+	self deny: tracker hasChanges
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testImageCodeChangeTrackerRecordsCodeAnnouncements [
+
+	| tracker |
+	tracker := MCPImageCodeChangeTracker new.
+	tracker recordCodeChangeAnnouncement: MethodAdded new.
+	self assert: tracker hasChanges
 ]
 
 { #category : 'tests' }
@@ -1364,6 +1509,25 @@ MCPToolContractsTest >> testInspectMethodHasAccurateNameAndRequiredArguments [
 	self deny: (variablePropertyNames includes: 'sourceIntervals').
 	self deny: (variablePropertyNames includes: 'external').
 	self deny: (variablePropertyNames includes: 'declaredInMethod')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testInspectToolReturnsSchemaForDiscoveredTool [
+
+	| inputProperties inspected result |
+	result := self
+		          callToolNamed: 'inspect-tool'
+		          withArguments:
+		          { (#toolName -> 'edit-repository') } asDictionary.
+	inspected := (self dataFrom: result) at: #tool.
+	self assert: (inspected at: #name) equals: 'edit-repository'.
+	self assert: (inspected at: #group) equals: 'repositories'.
+	self assert: (inspected at: #exposure) equals: 'discoverable'.
+	inputProperties := ((inspected at: #inputSchema) at: #properties)
+		                   keys.
+	self assert: (inputProperties includes: 'operation').
+	self assert:
+		(((inspected at: #inputSchema) at: #required) includes: 'operation')
 ]
 
 { #category : 'tests' }
@@ -1694,6 +1858,28 @@ MCPToolContractsTest >> testQueryToolsUseTypedRequestObjects [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testRPCAdvertisesStaticToolSurfaceOnly [
+
+	| toolNames |
+	toolNames := (MCP new rpcToolsList at: #tools) collect: [ :each |
+		             each at: #name ].
+	self
+		assert: toolNames asSet
+		equals: MCPToolRegistry staticToolNames asSet.
+	self assert: (toolNames includes: 'discover-tools').
+	self assert: (toolNames includes: 'inspect-tool').
+	self assert: (toolNames includes: 'call-tool').
+	self assert: (toolNames includes: 'edit-class').
+	self assert: (toolNames includes: 'edit-method').
+	self assert: (toolNames includes: 'evaluate').
+	self assert: (toolNames includes: 'run-tests').
+	self deny: (toolNames includes: 'find-repositories').
+	self deny: (toolNames includes: 'edit-repository').
+	self deny: (toolNames includes: 'manage-change-history').
+	self deny: (toolNames includes: 'capture-screenshot')
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testRPCRefreshesCachedToolMetadata [
 
 	| mcp propertyNames result staleTool toolDefinition toolDefinitions |
@@ -1863,26 +2049,26 @@ MCPToolContractsTest >> testRpcToolCallRejectsLegacyScopeArgument [
 		raise: JRPCInvalidParameters
 ]
 
-{ #category : 'tests' }
+{ #category : 'tests - validation' }
 MCPToolContractsTest >> testRpcToolCallSignalsInvalidParametersForInvalidNestedArrayItem [
 
 	self
 		should: [
-			self
-				callToolNamed: 'run-tests'
-				withArguments:
-				{ (#tests -> #( 'MCPToolContractsTest' )) } asDictionary ]
+				self
+					callToolNamed: 'run-tests'
+					withArguments:
+					{ (#tests -> #( 'MCPToolContractsTest' )) } asDictionary ]
 		raise: JRPCInvalidParameters
 ]
 
-{ #category : 'tests' }
+{ #category : 'tests - validation' }
 MCPToolContractsTest >> testRpcToolCallSignalsInvalidParametersForUnexpectedArgument [
 
 	self
 		should: [
-			self callToolNamed: 'evaluate' withArguments: {
-					(#code -> '1 + 1').
-					(#unexpected -> true) } asDictionary ]
+				self callDiscoveredToolNamed: 'evaluate' withArguments: {
+						(#code -> '1 + 1').
+						(#unexpected -> true) } asDictionary ]
 		raise: JRPCInvalidParameters
 ]
 
@@ -1897,19 +2083,21 @@ MCPToolContractsTest >> testRpcToolCallSignalsInvalidParametersForWrongArgumentT
 		raise: JRPCInvalidParameters
 ]
 
-{ #category : 'tests' }
+{ #category : 'tests - validation' }
 MCPToolContractsTest >> testRpcToolCallSignalsInvalidParametersWhenRequiredArgumentIsMissing [
 
 	self
 		should: [
-		self callToolNamed: 'evaluate' withArguments: Dictionary new ]
+			self
+				callDiscoveredToolNamed: 'evaluate'
+				withArguments: Dictionary new ]
 		raise: JRPCInvalidParameters
 ]
 
 { #category : 'tests' }
 MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 
-	| coverageInputProperty dataProperties inputPropertyNames operationProperty outputSchema resultsProperty tool |
+	| coverageInputProperty dataProperties inputPropertyNames operationProperty outputSchema resultsProperty timeoutMillisecondsProperty tool |
 	tool := MCPToolRunTests new.
 	self assert: tool name equals: 'run-tests'.
 	self
@@ -1922,14 +2110,22 @@ MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 		                     each name = 'operation' ].
 	coverageInputProperty := tool inputSchema properties detect: [ :each |
 		                         each name = 'coverage' ].
+	timeoutMillisecondsProperty := tool inputSchema properties detect: [
+		                               :each |
+		                               each name = 'timeoutMilliseconds' ].
 	self assert: (inputPropertyNames includes: 'operation').
 	self assert: (inputPropertyNames includes: 'coverage').
+	self assert: (inputPropertyNames includes: 'timeoutSeconds').
+	self assert: (inputPropertyNames includes: 'timeoutMilliseconds').
 	self
 		assert: (operationProperty extraProperties at: #enum) asArray
 		equals: #( 'run' 'coverage' ).
 	self assert:
 		(((coverageInputProperty extraProperties at: #properties) collect: [
 			  :each | each name ]) includes: 'packageNames').
+	self assert:
+		(timeoutMillisecondsProperty description includesSubstring:
+			 'Cannot be combined with timeoutSeconds').
 	outputSchema := tool outputSchema asJRPCJSON.
 	dataProperties := ((outputSchema at: #properties) at: 'data') at:
 		                  #properties.
@@ -1940,6 +2136,45 @@ MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 		equals: 'object'.
 	self assert: (dataProperties includesKey: 'coverage').
 	self deny: (dataProperties includesKey: 'tests')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testRunTestsParsesTimeoutMilliseconds [
+
+	| parsedRequest rawRequest tool |
+	tool := MCPToolRunTests new.
+	rawRequest := tool requestFromToolCallArguments: {
+			              (#tests -> { {
+				               (#className -> 'MCPToolContractsTest').
+				               (#testMethodName
+				                ->
+				                'testRunTestToolsHaveAccurateNamesAndRequiredArguments') }
+				               asDictionary }).
+			              (#timeoutMilliseconds -> 25) } asDictionary.
+	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
+	self assert: parsedRequest timeoutMilliseconds equals: 25
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testRunTestsRejectsConflictingTimeoutUnits [
+
+	| rawRequest tool |
+	tool := MCPToolRunTests new.
+	rawRequest := tool requestFromToolCallArguments: {
+			              (#tests -> { {
+				               (#className -> 'MCPToolContractsTest').
+				               (#testMethodName
+				                ->
+				                'testRunTestToolsHaveAccurateNamesAndRequiredArguments') }
+				               asDictionary }).
+			              (#timeoutSeconds -> 1).
+			              (#timeoutMilliseconds -> 25) } asDictionary.
+	self
+		should: [ tool parsedRequestFromToolRequest: rawRequest ]
+		raise: Error
+		whoseDescriptionIncludes:
+		'timeoutSeconds and timeoutMilliseconds cannot both be provided'
+		description: 'Timeout requests should use one unit.'
 ]
 
 { #category : 'tests' }
@@ -2002,6 +2237,40 @@ MCPToolContractsTest >> testScreenshotCommandPackagesProvidedFormAsImageContent 
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testServerCanConfigureStaticToolNames [
+
+	| server toolNames |
+	server := MCP new.
+	server staticToolNames:
+		#( 'discover-tools' 'inspect-tool' 'call-tool' 'find-classes' ).
+	toolNames := (server rpcToolsList at: #tools) collect: [ :each |
+		             each at: #name ].
+	self
+		assert: toolNames asSet
+		equals:
+		#( 'discover-tools' 'inspect-tool' 'call-tool' 'find-classes' )
+			asSet.
+	self deny: (toolNames includes: 'edit-class')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testServerInitializationDoesNotRenderToolIcons [
+
+	MCPStructureIcon resetCaches.
+	MCP new.
+	self assert: MCPStructureIcon cachedRenderedIconCount equals: 0
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testStaticToolConfigurationRejectsUnknownToolNames [
+
+	self
+		should: [
+		MCP new staticToolNames: #( 'discover-tools' 'not-a-tool' ) ]
+		raise: Error
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testToolFlowSelectorNamesSeparateTransportAndParsedInput [
 
 	| staleSelectors |
@@ -2017,10 +2286,33 @@ MCPToolContractsTest >> testToolFlowSelectorNamesSeparateTransportAndParsedInput
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testToolIconsAreSharedByToolClass [
+
+	| firstIcons secondIcons |
+	MCPStructureIcon resetCaches.
+	firstIcons := MCPToolFindClasses new icons.
+	secondIcons := MCPToolFindClasses new icons.
+	self assert: firstIcons identicalTo: secondIcons.
+	self assert: firstIcons first identicalTo: secondIcons first.
+	self assert: MCPStructureIcon cachedRenderedIconCount equals: 1
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testToolNamesDoNotUsePharoPrefix [
 
 	self assert: (MCPTool concreteSubclasses noneSatisfy: [ :each |
 			 each new name includesSubstring: 'pharo-' ])
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testToolRegistryNamesUseClassSideMetadata [
+
+	| names |
+	names := MCPToolRegistry publicToolClasses collect: [ :each |
+		         each toolName ].
+	self assert: MCPToolRegistry publicToolNames equals: names.
+	self assert: MCPToolFindClasses toolName equals: 'find-classes'.
+	self assert: MCPToolRunTests toolName equals: 'run-tests'
 ]
 
 { #category : 'private' }
@@ -2135,5 +2427,22 @@ MCPToolContractsTest >> toolFlowSpecs [
 			  (#toolClass -> MCPToolEvaluate).
 			  (#arguments -> { (#code -> '1') } asDictionary).
 			  (#requestClass -> MCPEvaluateRequest).
-			  (#commandClass -> MCPEvaluateCommand) } asDictionary }
+			  (#commandClass -> MCPEvaluateCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolDiscoverTools).
+			  (#arguments -> Dictionary new).
+			  (#requestClass -> MCPDiscoverToolsRequest).
+			  (#commandClass -> MCPDiscoverToolsCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolInspectTool).
+			  (#arguments -> { (#toolName -> 'find-classes') } asDictionary).
+			  (#requestClass -> MCPInspectToolRequest).
+			  (#commandClass -> MCPInspectToolCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolCallTool).
+			  (#arguments -> {
+				   (#toolName -> 'find-packages').
+				   (#arguments -> Dictionary new) } asDictionary).
+			  (#requestClass -> MCPCallToolRequest).
+			  (#commandClass -> MCPCallToolCommand) } asDictionary }
 ]

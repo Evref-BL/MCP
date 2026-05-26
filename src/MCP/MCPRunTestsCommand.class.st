@@ -75,19 +75,23 @@ MCPRunTestsCommand >> deadlineForTimeoutMilliseconds: timeoutMilliseconds [
 { #category : 'executing' }
 MCPRunTestsCommand >> execute [
 
-	| deadline validatedRequests |
+	| deadline tracker validatedRequests |
 	validatedRequests := self validatedRequestsFrom: request testRequests.
 	deadline := self deadlineForTimeoutMilliseconds:
 		            request timeoutMilliseconds.
+	tracker := MCPImageCodeChangeTracker new.
 	^ [
-	  request isCoverageOperation
-		  ifTrue: [
-			  self
-				  runCoverageForValidatedRequests: validatedRequests
-				  deadline: deadline ]
-		  ifFalse: [
-		  self runValidatedRequests: validatedRequests deadline: deadline ] ]
-		  ensure: [ self refreshRegisteredRepositoryDirtyPackages ]
+		  tracker trackDuring: [
+				  request isCoverageOperation
+					  ifTrue: [
+							  self
+								  runCoverageForValidatedRequests: validatedRequests
+								  deadline: deadline ]
+					  ifFalse: [
+					  self runValidatedRequests: validatedRequests deadline: deadline ] ] ]
+		  ensure: [
+				  tracker hasChanges ifTrue: [
+					  self refreshRegisteredRepositoryDirtyPackages ] ]
 ]
 
 { #category : 'private - coverage' }

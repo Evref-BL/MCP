@@ -12,6 +12,20 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'icons' }
+MCPToolRewriteMethods class >> toolIconSpec [
+
+	^ MCPToolIconSpec
+		  baseIconNamed: #page
+		  badgeIconNamed: #refreshCircling
+]
+
+{ #category : 'defaults' }
+MCPToolRewriteMethods class >> toolName [
+
+	^ 'rewrite-methods'
+]
+
 { #category : 'private - execution' }
 MCPToolRewriteMethods >> commandForRequest: rewriteRequest [
 
@@ -25,14 +39,6 @@ MCPToolRewriteMethods >> defaultDescription [
 ]
 
 { #category : 'defaults' }
-MCPToolRewriteMethods >> defaultIcons [
-
-	^ { (self
-		   pngCompositeBaseIconNamed: #page
-		   badgeIconNamed: #refreshCircling) }
-]
-
-{ #category : 'defaults' }
 MCPToolRewriteMethods >> defaultInputSchema [
 
 	^ MCPStructureInputSchema new
@@ -41,12 +47,6 @@ MCPToolRewriteMethods >> defaultInputSchema [
 		  required: #( 'rules' );
 		  additionalProperties: false;
 		  yourself
-]
-
-{ #category : 'defaults' }
-MCPToolRewriteMethods >> defaultName [
-
-	^ 'rewrite-methods'
 ]
 
 { #category : 'defaults' }
@@ -253,16 +253,6 @@ MCPToolRewriteMethods >> rewriteScopeSchemaProperty [
 	^ property
 ]
 
-{ #category : 'validating' }
-MCPToolRewriteMethods >> validateRequest: request [
-
-	((request booleanArgumentNamed: 'apply' default: false) and: [
-		 (request hasArgumentNamed: 'expectedChangeSetHash') not ]) ifTrue: [
-		MCPInvalidToolInput
-			signalMissingRequiredArgumentNamed: 'expectedChangeSetHash'
-			forTool: self ]
-]
-
 { #category : 'testing' }
 MCPToolRewriteMethods >> shouldSaveImageAfterSuccessfulExecutionForResult: aResult [
 
@@ -273,4 +263,14 @@ MCPToolRewriteMethods >> shouldSaveImageAfterSuccessfulExecutionForResult: aResu
 	data := structuredContent at: #data ifAbsent: [ ^ false ].
 	^ (data at: #apply ifAbsent: [ false ]) = true and: [
 		  (data at: #appliedCount ifAbsent: [ 0 ]) > 0 ]
+]
+
+{ #category : 'validating' }
+MCPToolRewriteMethods >> validateRequest: request [
+
+	((request booleanArgumentNamed: 'apply' default: false) and: [
+		 (request hasArgumentNamed: 'expectedChangeSetHash') not ]) ifTrue: [
+		MCPInvalidToolInput
+			signalMissingRequiredArgumentNamed: 'expectedChangeSetHash'
+			forTool: self ]
 ]

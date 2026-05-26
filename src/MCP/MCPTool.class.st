@@ -24,7 +24,8 @@ Class {
 		'icons',
 		'inputSchema',
 		'handler',
-		'outputSchema'
+		'outputSchema',
+		'toolExposurePolicy'
 	],
 	#category : 'MCP-Tools',
 	#package : 'MCP',
@@ -46,27 +47,7 @@ MCPTool class >> isAbstract [
 { #category : 'scripts' }
 MCPTool class >> toolGroups [
 
-	^ {
-		  (#Repositories -> {
-			   MCPToolFindRepositories.
-			   MCPToolEditRepository.
-			   MCPToolLoadRepository }).
-		  (#Packages -> { MCPToolFindPackages }).
-		  (#Classes -> {
-			   MCPToolFindClasses.
-			   MCPToolInspectClass.
-			   MCPToolEditClass.
-			   MCPToolRemoveClasses }).
-		  (#Methods -> {
-			   MCPToolFindMethods.
-			   MCPToolInspectMethod.
-			   MCPToolEditMethod.
-			   MCPToolRewriteMethods.
-			   MCPToolRemoveMethods }).
-		  (#History -> { MCPToolManageChangeHistory }).
-		  (#Tests -> { MCPToolRunTests }).
-		  (#UI -> { MCPToolCaptureScreenshot }).
-		  (#Scripting -> { MCPToolEvaluate }) }
+	^ MCPToolRegistry publicToolGroups
 ]
 
 { #category : 'scripts' }
@@ -74,6 +55,24 @@ MCPTool class >> toolIconFormOf: aToolClass [
 
 	^ Form fromBase64String:
 		  (aToolClass new icons first src copyAfter: $,)
+]
+
+{ #category : 'icons' }
+MCPTool class >> toolIconSpec [
+
+	self subclassResponsibility
+]
+
+{ #category : 'icons' }
+MCPTool class >> toolIcons [
+
+	^ MCPStructureIcon iconsForToolClass: self
+]
+
+{ #category : 'defaults' }
+MCPTool class >> toolName [
+
+	self subclassResponsibility
 ]
 
 { #category : 'accessing' }
@@ -133,7 +132,7 @@ MCPTool >> defaultHandler [
 { #category : 'defaults' }
 MCPTool >> defaultIcons [
 
-	self subclassResponsibility
+	^ self class toolIcons
 ]
 
 { #category : 'defaults' }
@@ -145,7 +144,7 @@ MCPTool >> defaultInputSchema [
 { #category : 'defaults' }
 MCPTool >> defaultName [
 
-	self subclassResponsibility
+	^ self class toolName
 ]
 
 { #category : 'defaults' }
@@ -331,7 +330,7 @@ MCPTool >> handler: anObject [
 { #category : 'accessing' }
 MCPTool >> icons [
 
-	^ icons
+	^ icons ifNil: [ icons := self class toolIcons ]
 ]
 
 { #category : 'accessing' }
@@ -344,13 +343,12 @@ MCPTool >> icons: anObject [
 MCPTool >> initialize [
 
 	super initialize.
-	name := self defaultName.
+	name := self class toolName.
 	title := self defaultTitle.
 	description := self defaultDescription.
 	handler := self defaultHandler.
 	inputSchema := self defaultInputSchema.
-	outputSchema := self defaultOutputSchema.
-	icons := self defaultIcons
+	outputSchema := self defaultOutputSchema
 ]
 
 { #category : 'accessing' }
@@ -447,12 +445,6 @@ MCPTool >> pngSizeStringForForm: aForm [
 MCPTool >> requestFromToolCallArguments: toolCallArguments [
 
 	^ MCPToolRequest tool: self arguments: toolCallArguments
-]
-
-{ #category : 'validating' }
-MCPTool >> validateRequest: aToolRequest [
-
-	^ self
 ]
 
 { #category : 'private - schema' }
@@ -631,6 +623,25 @@ MCPTool >> title [
 MCPTool >> title: anObject [
 
 	title := anObject
+]
+
+{ #category : 'accessing' }
+MCPTool >> toolExposurePolicy [
+
+	^ toolExposurePolicy ifNil: [ MCPToolExposurePolicy default ]
+]
+
+{ #category : 'accessing' }
+MCPTool >> toolExposurePolicy: aToolExposurePolicy [
+
+	toolExposurePolicy := aToolExposurePolicy ifNil: [
+		                      MCPToolExposurePolicy default ]
+]
+
+{ #category : 'validating' }
+MCPTool >> validateRequest: aToolRequest [
+
+	^ self
 ]
 
 { #category : 'private - schema' }

@@ -9,6 +9,18 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'icons' }
+MCPToolLoadRepository class >> toolIconSpec [
+
+	^ MCPToolIconSpec baseIconNamed: #box badgeIconNamed: #add
+]
+
+{ #category : 'defaults' }
+MCPToolLoadRepository class >> toolName [
+
+	^ 'load-repository'
+]
+
 { #category : 'private - execution' }
 MCPToolLoadRepository >> commandForRequest: loadRepositoryRequest [
 
@@ -47,12 +59,6 @@ MCPToolLoadRepository >> defaultHostUrl [
 ]
 
 { #category : 'defaults' }
-MCPToolLoadRepository >> defaultIcons [
-
-	^ { (self pngCompositeBaseIconNamed: #box badgeIconNamed: #add) }
-]
-
-{ #category : 'defaults' }
 MCPToolLoadRepository >> defaultInputSchema [
 
 	^ MCPStructureInputSchema new
@@ -80,12 +86,6 @@ MCPToolLoadRepository >> defaultInputSchema [
 		  required: #( 'baseline' );
 		  additionalProperties: false;
 		  yourself
-]
-
-{ #category : 'defaults' }
-MCPToolLoadRepository >> defaultName [
-
-	^ 'load-repository'
 ]
 
 { #category : 'defaults' }

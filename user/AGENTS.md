@@ -2,20 +2,24 @@
 
 Use the `pharo` MCP server for Pharo and Smalltalk work when the answer depends on the live image. Prefer dedicated `pharo` tools over memory or exported source files for image state.
 
-Use dedicated tools for:
-- listing repositories, packages, classes, and methods
-- inspecting classes and methods
-- finding implementors, senders, and selector/class/variable references
-- listing, diffing, exporting, and managing Git repositories
-- running tests
-- triggering actions already exposed by the server
+Use dedicated tools for common image work:
+- `find_repositories`, `find_packages`, `find_classes`, and `find_methods` for
+  image enumeration and search
+- `inspect_class` and `inspect_method` when a class or method is already known
+- `find_methods` reference modes for implementors, senders, and
+  selector/class/variable references
+- repository tools for listing, diffing, and managing Iceberg repositories
+- `run_tests` for class and method test execution
+- `discover_tools`, `inspect_tool`, and `call_tool` for tools outside the
+  static tool surface
 
 For method lookup:
 - use `find_methods` with exact selector filtering for implementors
 - use `filterMode: selectorReference` for senders
 - use `filterMode: classReference` or `variableReference` for class or variable references
 
-Use `evaluate` only for short one-off inspection or glue code when no dedicated `pharo` tool fits.
+Use `evaluate` only as an escape hatch when no dedicated or discoverable
+`pharo` tool fits. Keep snippets small and explain why a tool was not enough.
 
 If a `pharo` tool fails or returns incomplete data, report that clearly instead of guessing or silently falling back.
 

@@ -17,6 +17,6 @@ MCPToolRunTestsTimeoutTarget >> testFastPass [
 { #category : 'tests' }
 MCPToolRunTestsTimeoutTarget >> testSlowPass [
 
-	(Delay forMilliseconds: 2000) wait.
+	(Delay forMilliseconds: 300) wait.
 	self assert: true
 ]

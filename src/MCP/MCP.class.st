@@ -9,7 +9,8 @@ Class {
 	#instVars : [
 		'server',
 		'toolsList',
-		'monitoring'
+		'monitoring',
+		'toolExposurePolicy'
 	],
 	#category : 'MCP-Server',
 	#package : 'MCP',
@@ -63,6 +64,43 @@ MCP >> debugMode: aBoolean [
 
 	self server debugMode: aBoolean.
 	self server messageProcessor debugMode: aBoolean
+]
+
+{ #category : 'private - tools' }
+MCP >> executeTool: tool named: toolName withParams: arguments [
+
+	| monitorRecord request result toolResult |
+	monitorRecord := self monitoring
+		                 recordToolCallStart: toolName
+		                 input: arguments.
+	^ [
+		  request := tool requestFromToolCallArguments: arguments.
+		  result := tool executeWithRequest: request.
+		  toolResult := (result isKindOf: MCPStructureCallToolResult)
+			                ifTrue: [ result ]
+			                ifFalse: [
+			                MCPStructureCallToolResult content: result ].
+		  self saveImageAfterSuccessfulTool: tool result: toolResult.
+		  self monitoring
+			  recordToolCallFinish: monitorRecord
+			  result: toolResult
+			  error: nil.
+		  toolResult asJRPCJSON ]
+		  on: Exception
+		  do: [ :error |
+				  | errorResult |
+				  (error isKindOf: JRPCError) ifTrue: [
+						  self monitoring
+							  recordToolCallFinish: monitorRecord
+							  result: nil
+							  error: error.
+						  error pass ].
+				  errorResult := tool errorResultFor: error.
+				  self monitoring
+					  recordToolCallFinish: monitorRecord
+					  result: errorResult
+					  error: error.
+				  errorResult asJRPCJSON ]
 ]
 
 { #category : 'accessing' }
@@ -146,16 +184,6 @@ MCP >> monitoringTraces [
 	^ self monitoring traceRecords
 ]
 
-{ #category : 'infrastructure metadata' }
-MCP >> pharoRuntimeMetadata [
-
-	^ {
-		  (#runtimeVersion -> PharoCompatibility runtimeVersionString).
-		  (#supportedMajorVersions -> self supportedPharoMajorVersions).
-		  (#supportedLauncherVersions -> self supportedPharoLauncherVersions) }
-		  asDictionary
-]
-
 { #category : 'start' }
 MCP >> onInitialize: protocolVersion capabilities: capabilities clientInfo: clientInfo websiteUrl: websiteUrl [
 
@@ -176,6 +204,16 @@ MCP >> onInitialize: protocolVersion capabilities: capabilities clientInfo: clie
 				   yourself)
 ]
 
+{ #category : 'infrastructure metadata' }
+MCP >> pharoRuntimeMetadata [
+
+	^ {
+		  (#runtimeVersion -> PharoCompatibility runtimeVersionString).
+		  (#supportedMajorVersions -> self supportedPharoMajorVersions).
+		  (#supportedLauncherVersions -> self supportedPharoLauncherVersions) }
+		  asDictionary
+]
+
 { #category : 'accessing' }
 MCP >> port [
 
@@ -191,31 +229,9 @@ MCP >> port: aPortNumber [
 { #category : 'private - tools' }
 MCP >> refreshToolsList [
 
-	toolsList := Dictionary new.
-	MCPTool concreteSubclasses do: [ :toolClass |
-		| tool |
-		tool := toolClass new.
-		toolsList at: tool name put: tool ].
+	toolsList := MCPToolRegistry staticToolsDictionaryUsingPolicy:
+		             self toolExposurePolicy.
 	^ toolsList
-]
-
-{ #category : 'infrastructure metadata' }
-MCP >> serverInfrastructureMetadata [
-
-	^ { (#'io.github.evref-bl/pharo' -> self pharoRuntimeMetadata) }
-		  asDictionary
-]
-
-{ #category : 'infrastructure metadata' }
-MCP >> supportedPharoLauncherVersions [
-
-	^ #( '120' '130' '140' )
-]
-
-{ #category : 'infrastructure metadata' }
-MCP >> supportedPharoMajorVersions [
-
-	^ #( 12 13 14 )
 ]
 
 { #category : 'start' }
@@ -223,6 +239,36 @@ MCP >> restart [
 
 	self stop.
 	^ self start
+]
+
+{ #category : 'private - tools' }
+MCP >> rpcCallToolCallWithParams: arguments [
+
+	| callRequest callTool request targetTool |
+	callTool := MCPToolCallTool new
+		            toolExposurePolicy: self toolExposurePolicy;
+		            yourself.
+	^ [
+		  request := callTool requestFromToolCallArguments: arguments.
+		  callRequest := callTool parsedRequestFromToolRequest: request.
+		  callRequest toolName = callTool name ifTrue: [
+			  Error signal: 'call-tool cannot call itself.' ].
+		  targetTool := MCPToolRegistry
+			                toolNamed: callRequest toolName
+			                ifAbsent: [
+			                Error signal:
+				                'Unknown MCP tool: ' , callRequest toolName ]
+			                usingPolicy: self toolExposurePolicy.
+		  self
+			  executeTool: targetTool
+			  named: targetTool name
+			  withParams: callRequest arguments ]
+		  on: Exception
+		  do: [ :error |
+				  | errorResult |
+				  (error isKindOf: JRPCError) ifTrue: [ error pass ].
+				  errorResult := callTool errorResultFor: error.
+				  errorResult asJRPCJSON ]
 ]
 
 { #category : 'rpc' }
@@ -260,38 +306,9 @@ MCP >> rpcToolCall: name withParams: arguments [
 	toolsList
 		at: name
 		ifPresent: [ :tool |
-			| monitorRecord request result toolResult |
-			monitorRecord := self monitoring
-				                 recordToolCallStart: name
-				                 input: arguments.
-			^ [
-			  request := tool requestFromToolCallArguments: arguments.
-			  result := tool executeWithRequest: request.
-			  toolResult := (result isKindOf: MCPStructureCallToolResult)
-				                ifTrue: [ result ]
-				                ifFalse: [
-				                MCPStructureCallToolResult content: result ].
-			  self saveImageAfterSuccessfulTool: tool result: toolResult.
-			  self monitoring
-				  recordToolCallFinish: monitorRecord
-				  result: toolResult
-				  error: nil.
-			  toolResult asJRPCJSON ]
-				  on: Exception
-				  do: [ :error |
-					  | errorResult |
-					  (error isKindOf: JRPCError) ifTrue: [
-						  self monitoring
-							  recordToolCallFinish: monitorRecord
-							  result: nil
-							  error: error.
-						  error pass ].
-					  errorResult := tool errorResultFor: error.
-					  self monitoring
-						  recordToolCallFinish: monitorRecord
-						  result: errorResult
-						  error: error.
-					  errorResult asJRPCJSON ] ]
+				name = MCPToolCallTool new name ifTrue: [
+					^ self rpcCallToolCallWithParams: arguments ].
+				^ self executeTool: tool named: name withParams: arguments ]
 		ifAbsent: [ JRPCNonExistentHandler signal: name ]
 ]
 
@@ -322,6 +339,13 @@ MCP >> server [
 	^ server
 ]
 
+{ #category : 'infrastructure metadata' }
+MCP >> serverInfrastructureMetadata [
+
+	^ { (#'io.github.evref-bl/pharo' -> self pharoRuntimeMetadata) }
+		  asDictionary
+]
+
 { #category : 'accessing' }
 MCP >> sortedTools [
 
@@ -337,10 +361,52 @@ MCP >> start [
 	server addHandlersFromPragmasIn: self
 ]
 
+{ #category : 'configuration' }
+MCP >> staticToolNames [
+
+	^ self toolExposurePolicy staticToolNames
+]
+
+{ #category : 'configuration' }
+MCP >> staticToolNames: aCollection [
+
+	self toolExposurePolicy:
+		(MCPToolExposurePolicy staticToolNames: aCollection).
+	^ self
+]
+
 { #category : 'accessing' }
 MCP >> stop [
 
 	server stop
+]
+
+{ #category : 'infrastructure metadata' }
+MCP >> supportedPharoLauncherVersions [
+
+	^ #( '120' '130' '140' )
+]
+
+{ #category : 'infrastructure metadata' }
+MCP >> supportedPharoMajorVersions [
+
+	^ #( 12 13 14 )
+]
+
+{ #category : 'accessing' }
+MCP >> toolExposurePolicy [
+
+	^ toolExposurePolicy ifNil: [
+		  toolExposurePolicy := MCPToolExposurePolicy default ]
+]
+
+{ #category : 'accessing' }
+MCP >> toolExposurePolicy: aToolExposurePolicy [
+
+	toolExposurePolicy := aToolExposurePolicy ifNil: [
+		                      MCPToolExposurePolicy default ].
+	self refreshToolsList.
+	^ toolExposurePolicy
 ]
 
 { #category : 'accessing' }

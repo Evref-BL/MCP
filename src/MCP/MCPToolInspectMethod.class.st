@@ -11,6 +11,18 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'icons' }
+MCPToolInspectMethod class >> toolIconSpec [
+
+	^ MCPToolIconSpec baseIconNamed: #page badgeIconNamed: #inspect
+]
+
+{ #category : 'defaults' }
+MCPToolInspectMethod class >> toolName [
+
+	^ 'inspect-method'
+]
+
 { #category : 'private - analysis' }
 MCPToolInspectMethod >> bindingClassNameFor: aBinding [
 
@@ -43,12 +55,6 @@ MCPToolInspectMethod >> commandForRequest: inspectRequest [
 MCPToolInspectMethod >> defaultDescription [
 
 	^ 'Inspect one known method and return its source plus structured variable-reference context. Use find-methods or references to discover methods first.'
-]
-
-{ #category : 'defaults' }
-MCPToolInspectMethod >> defaultIcons [
-
-	^ { (self pngCompositeBaseIconNamed: #page badgeIconNamed: #inspect) }
 ]
 
 { #category : 'defaults' }
@@ -86,12 +92,6 @@ MCPToolInspectMethod >> defaultInputSchema [
 				  includeVariableDetailsProperty };
 		  required: #( 'className' 'selector' );
 		  yourself
-]
-
-{ #category : 'defaults' }
-MCPToolInspectMethod >> defaultName [
-
-	^ 'inspect-method'
 ]
 
 { #category : 'defaults' }

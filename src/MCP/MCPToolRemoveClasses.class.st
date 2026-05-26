@@ -11,6 +11,18 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'icons' }
+MCPToolRemoveClasses class >> toolIconSpec [
+
+	^ MCPToolIconSpec baseIconNamed: #class badgeIconNamed: #delete
+]
+
+{ #category : 'defaults' }
+MCPToolRemoveClasses class >> toolName [
+
+	^ 'remove-classes'
+]
+
 { #category : 'private - errors' }
 MCPToolRemoveClasses >> classNamesForErrorFromParsedRequest: removeRequest rawRequest: rawRequest [
 
@@ -44,12 +56,6 @@ MCPToolRemoveClasses >> defaultDescription [
 ]
 
 { #category : 'defaults' }
-MCPToolRemoveClasses >> defaultIcons [
-
-	^ { (self pngCompositeBaseIconNamed: #class badgeIconNamed: #delete) }
-]
-
-{ #category : 'defaults' }
 MCPToolRemoveClasses >> defaultInputSchema [
 
 	^ MCPStructureInputSchema new
@@ -73,12 +79,6 @@ MCPToolRemoveClasses >> defaultInputSchema [
 					   yourself) };
 		  required: #( 'classNames' );
 		  yourself
-]
-
-{ #category : 'defaults' }
-MCPToolRemoveClasses >> defaultName [
-
-	^ 'remove-classes'
 ]
 
 { #category : 'defaults' }

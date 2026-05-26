@@ -11,6 +11,18 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'icons' }
+MCPToolEditMethod class >> toolIconSpec [
+
+	^ MCPToolIconSpec baseIconNamed: #page badgeIconNamed: #edit
+]
+
+{ #category : 'defaults' }
+MCPToolEditMethod class >> toolName [
+
+	^ 'edit-method'
+]
+
 { #category : 'private - refactoring' }
 MCPToolEditMethod >> addParameterRefactoringForSelector: oldSelectorSymbol inBehavior: aBehavior to: newSelectorSymbol permutation: permutation newArgs: newArguments model: refactoringModel [
 
@@ -93,12 +105,6 @@ MCPToolEditMethod >> dataForMethod: aCompiledMethod [
 MCPToolEditMethod >> defaultDescription [
 
 	^ 'Create or update one method on the instance side or class side of a class. Use operation=create with methodSource and protocol to create or replace a method. Use operation=update with selector plus one patch field, such as newSelector or protocol. Rename updates can be scoped with packageNames, classNames, or hierarchyClassNames. force=false stops on refactoring warnings and returns impactMessages plus howToProceed; force=true continues and returns warnings in the output. Use remove-methods to delete methods.'
-]
-
-{ #category : 'defaults' }
-MCPToolEditMethod >> defaultIcons [
-
-	^ { (self pngCompositeBaseIconNamed: #page badgeIconNamed: #edit) }
 ]
 
 { #category : 'defaults' }
@@ -185,12 +191,6 @@ MCPToolEditMethod >> defaultInputSchema [
 		  required: #( 'operation' 'className' );
 		  additionalProperties: false;
 		  yourself
-]
-
-{ #category : 'defaults' }
-MCPToolEditMethod >> defaultName [
-
-	^ 'edit-method'
 ]
 
 { #category : 'defaults' }

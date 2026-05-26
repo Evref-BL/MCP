@@ -15,7 +15,7 @@ MCPJSONSchemaValidatorTest >> keywordsFrom: violations [
 	^ violations collect: [ :each | each keyword ]
 ]
 
-{ #category : 'private' }
+{ #category : 'private - fixtures' }
 MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 
 	^ {
@@ -61,7 +61,13 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 		  (MCPToolManageChangeHistory
 		   -> { (#operation -> 'listFiles') } asDictionary).
 		  (MCPToolCaptureScreenshot -> { (#target -> 'world') } asDictionary).
-		  (MCPToolFindMethods -> Dictionary new) } asDictionary
+		  (MCPToolFindMethods -> Dictionary new).
+		  (MCPToolDiscoverTools -> Dictionary new).
+		  (MCPToolInspectTool
+		   -> { (#toolName -> 'find-classes') } asDictionary).
+		  (MCPToolCallTool -> {
+			   (#toolName -> 'find-packages').
+			   (#arguments -> Dictionary new) } asDictionary) } asDictionary
 ]
 
 { #category : 'private' }

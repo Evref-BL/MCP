@@ -11,6 +11,18 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'icons' }
+MCPToolManageChangeHistory class >> toolIconSpec [
+
+	^ MCPToolIconSpec named: #recoverLostChanges
+]
+
+{ #category : 'defaults' }
+MCPToolManageChangeHistory class >> toolName [
+
+	^ 'manage-change-history'
+]
+
 { #category : 'private - operations' }
 MCPToolManageChangeHistory >> canonicalOperationNames [
 
@@ -175,12 +187,6 @@ MCPToolManageChangeHistory >> defaultDescription [
 ]
 
 { #category : 'defaults' }
-MCPToolManageChangeHistory >> defaultIcons [
-
-	^ { (self pngIconNamed: #recoverLostChanges) }
-]
-
-{ #category : 'defaults' }
 MCPToolManageChangeHistory >> defaultInputSchema [
 
 	^ MCPStructureInputSchema new
@@ -251,12 +257,6 @@ MCPToolManageChangeHistory >> defaultInputSchema [
 		  required: #( 'operation' );
 		  additionalProperties: false;
 		  yourself
-]
-
-{ #category : 'defaults' }
-MCPToolManageChangeHistory >> defaultName [
-
-	^ 'manage-change-history'
 ]
 
 { #category : 'defaults' }
@@ -574,6 +574,16 @@ MCPToolManageChangeHistory >> successSummaryForData: data operation: operation [
 	^ 'Change history operation completed.'
 ]
 
+{ #category : 'validating' }
+MCPToolManageChangeHistory >> validateRequest: request [
+
+	| operation |
+	operation := self operationFromRequest: request.
+	self
+		validateRequiredPropertiesForOperation: operation
+		inRequest: request
+]
+
 { #category : 'private - request' }
 MCPToolManageChangeHistory >> validateRequiredPropertiesForOperation: operation inRequest: request [
 
@@ -585,14 +595,4 @@ MCPToolManageChangeHistory >> validateRequiredPropertiesForOperation: operation 
 			MCPInvalidToolInput
 				signalMissingRequiredArgumentNamed: each
 				forTool: self ] ]
-]
-
-{ #category : 'validating' }
-MCPToolManageChangeHistory >> validateRequest: request [
-
-	| operation |
-	operation := self operationFromRequest: request.
-	self
-		validateRequiredPropertiesForOperation: operation
-		inRequest: request
 ]
