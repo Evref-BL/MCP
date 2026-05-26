@@ -142,6 +142,11 @@ MCPToolDebugState >> defaultOutputSchema [
 					   type: 'array'
 					   description: 'Visible call stack frames.').
 				  (self
+					   schemaPropertyNamed: 'repairActions'
+					   type: 'array'
+					   description:
+					   'Repair actions available for debugger-driven development, such as debug-edit arguments for a missing or stub method.').
+				  (self
 					   integerSchemaPropertyNamed: 'stackStart'
 					   description: 'Zero-based stack offset used for the response.').
 				  (self
@@ -160,8 +165,8 @@ MCPToolDebugState >> defaultOutputSchema [
 					   description: 'Snapshot-specific warnings.'
 					   itemDescription: 'A warning message.') }
 		  required:
-			  #( 'sessionId' 'stateId' 'status' 'callStack' 'capabilities'
-			     'warnings' )
+			  #( 'sessionId' 'stateId' 'status' 'callStack' 'repairActions'
+			     'capabilities' 'warnings' )
 ]
 
 { #category : 'defaults' }

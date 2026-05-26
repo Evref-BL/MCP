@@ -180,7 +180,8 @@ MCPToolRegistry class >> publicToolGroups [
 			   MCPToolDebugEvaluate.
 			   MCPToolDebugControl.
 			   MCPToolDebugBreakpoints.
-			   MCPToolDebugCapture }).
+			   MCPToolDebugCapture.
+			   MCPToolDebugEdit }).
 		  ('image-runtime' -> { MCPToolEvaluate }) }
 ]
 

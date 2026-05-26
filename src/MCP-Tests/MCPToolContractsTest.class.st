@@ -186,6 +186,7 @@ MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 			MCPToolDebugControl.
 			MCPToolDebugBreakpoints.
 			MCPToolDebugCapture.
+			MCPToolDebugEdit.
 			MCPToolEvaluate }
 ]
 
@@ -290,7 +291,7 @@ MCPToolContractsTest >> testDebuggerToolsAreDiscoverableOnly [
 	| debugNames metadataByName result staticToolNames |
 	debugNames := #( 'debug-sessions' 'debug-state' 'debug-variables'
 	                 'debug-evaluate' 'debug-control' 'debug-breakpoints'
-	                 'debug-capture' ).
+	                 'debug-capture' 'debug-edit' ).
 	staticToolNames := MCPToolRegistry staticToolNames.
 	debugNames do: [ :each | self deny: (staticToolNames includes: each) ].
 	result := self
@@ -2347,7 +2348,8 @@ MCPToolContractsTest >> testToolRegistryNamesUseClassSideMetadata [
 	self assert: MCPToolFindClasses toolName equals: 'find-classes'.
 	self assert: MCPToolRunTests toolName equals: 'run-tests'.
 	self assert: MCPToolDebugState toolName equals: 'debug-state'.
-	self assert: MCPToolDebugCapture toolName equals: 'debug-capture'
+	self assert: MCPToolDebugCapture toolName equals: 'debug-capture'.
+	self assert: MCPToolDebugEdit toolName equals: 'debug-edit'
 ]
 
 { #category : 'private' }
@@ -2501,6 +2503,11 @@ MCPToolContractsTest >> toolFlowSpecs [
 			  (#arguments -> { (#expression -> '1') } asDictionary).
 			  (#requestClass -> MCPDebugCaptureRequest).
 			  (#commandClass -> MCPDebugCaptureCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolDebugEdit).
+			  (#arguments -> { (#sessionId -> 'debug-session-1') } asDictionary).
+			  (#requestClass -> MCPDebugEditRequest).
+			  (#commandClass -> MCPDebugEditCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolEvaluate).
 			  (#arguments -> { (#code -> '1') } asDictionary).

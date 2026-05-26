@@ -22,7 +22,7 @@ MCPDebugStateInfo class >> fromRecord: aRecord request: aRequest [
 { #category : 'converting' }
 MCPDebugStateInfo >> asDictionary [
 
-	| rawContexts visibleContexts selectedIndex selectedContext warnings callStack selectedFrame |
+	| callStack rawContexts repairActions selectedContext selectedFrame selectedIndex visibleContexts warnings |
 	rawContexts := self rawContexts.
 	visibleContexts := self slicedContextsFrom: rawContexts.
 	selectedIndex := self selectedFrameIndexFrom: rawContexts.
@@ -46,6 +46,9 @@ MCPDebugStateInfo >> asDictionary [
 		                 self
 			                 frameInfoFor: selectedContext
 			                 index: selectedIndex ].
+	repairActions := (MCPDebugRepairAnalyzer
+		                  fromRecord: record
+		                  request: request) repairActions.
 	^ {
 		  (#sessionId -> record sessionId).
 		  (#stateId -> record stateId).
@@ -61,6 +64,7 @@ MCPDebugStateInfo >> asDictionary [
 		   ->
 		   (self scopesForContext: selectedContext frameIndex: selectedIndex)).
 		  (#callStack -> callStack asArray).
+		  (#repairActions -> repairActions).
 		  (#stackStart -> request stackStart).
 		  (#stackLimit -> request stackLimit).
 		  (#totalFrames -> rawContexts size).

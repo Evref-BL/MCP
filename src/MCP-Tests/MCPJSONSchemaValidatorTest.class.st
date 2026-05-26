@@ -61,6 +61,25 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 		  (MCPToolManageChangeHistory
 		   -> { (#operation -> 'listFiles') } asDictionary).
 		  (MCPToolCaptureScreenshot -> { (#target -> 'world') } asDictionary).
+		  (MCPToolDebugSessions -> { (#operation -> 'list') } asDictionary).
+		  (MCPToolDebugState
+		   -> { (#sessionId -> 'debug-session-1') } asDictionary).
+		  (MCPToolDebugVariables
+		   ->
+			   { (#variableRef
+			    -> 'debug-session-1/state-0/frame-0/scope-receiver') }
+				   asDictionary).
+		  (MCPToolDebugEvaluate -> {
+			   (#sessionId -> 'debug-session-1').
+			   (#expression -> '1') } asDictionary).
+		  (MCPToolDebugControl -> {
+			   (#sessionId -> 'debug-session-1').
+			   (#operation -> 'stepOver') } asDictionary).
+		  (MCPToolDebugBreakpoints
+		   -> { (#operation -> 'list') } asDictionary).
+		  (MCPToolDebugCapture -> { (#expression -> '1') } asDictionary).
+		  (MCPToolDebugEdit
+		   -> { (#sessionId -> 'debug-session-1') } asDictionary).
 		  (MCPToolFindMethods -> Dictionary new).
 		  (MCPToolDiscoverTools -> Dictionary new).
 		  (MCPToolInspectTool
