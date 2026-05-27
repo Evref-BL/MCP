@@ -59,6 +59,23 @@ MCPDebugAttachedContinuation >> currentStatus [
 	^ outcome at: #status ifAbsent: [ #missing ]
 ]
 
+{ #category : 'private' }
+MCPDebugAttachedContinuation >> debugController [
+
+	^ self debugControllerForSession: self debugSession
+]
+
+{ #category : 'private' }
+MCPDebugAttachedContinuation >> debugControllerForSession: aDebugSession [
+
+	(self shouldProceedUsingAttachedDebuggerFor: aDebugSession) ifTrue: [
+			^ MCPDebugAttachedDebuggerController
+				  debugger: debugger
+				  debugSession: aDebugSession
+				  onFailure: [ :error | self handleDeferredDebuggerError: error ] ].
+	^ MCPDebugSessionController debugSession: aDebugSession
+]
+
 { #category : 'accessing' }
 MCPDebugAttachedContinuation >> debugSession [
 
@@ -98,21 +115,12 @@ MCPDebugAttachedContinuation >> debuggerSession [
 ]
 
 { #category : 'private' }
-MCPDebugAttachedContinuation >> deferAttachedDebuggerAction: aBlock [
+MCPDebugAttachedContinuation >> handleDeferredDebuggerError: anError [
 
-	| deferredAction |
-	deferredAction := [
-		                  [ aBlock value ]
-			                  on: Exception
-			                  do: [ :error |
-					                  outcome
-						                  at: #status put: #failed;
-						                  at: #exception put: error.
-					                  self signal ] ].
-	debugger ifNotNil: [ :aDebugger |
-			(aDebugger respondsTo: #defer:) ifTrue: [
-				^ aDebugger defer: deferredAction ] ].
-	^ UIManager default defer: deferredAction
+	outcome
+		at: #status put: #failed;
+		at: #exception put: anError.
+	self signal
 ]
 
 { #category : 'accessing' }
@@ -125,37 +133,6 @@ MCPDebugAttachedContinuation >> outcome [
 MCPDebugAttachedContinuation >> outcome: aDictionary [
 
 	outcome := aDictionary
-]
-
-{ #category : 'private' }
-MCPDebugAttachedContinuation >> performAttachedDebuggerOperation: selector context: aContext [
-
-	selector = #resume ifTrue: [ ^ debugger proceedDebugSession ].
-	selector = #terminate ifTrue: [ ^ debugger close ].
-	selector = #restart: ifTrue: [
-		^ debugger debuggerActionModel restartContext: aContext ].
-	^ debugger debuggerActionModel perform: selector with: aContext
-]
-
-{ #category : 'private' }
-MCPDebugAttachedContinuation >> performDebugSessionOperation: selector context: aContext on: aDebugSession [
-
-	self shouldProceedUsingAttachedDebugger ifTrue: [
-			^ self deferAttachedDebuggerAction: [
-				  self
-					  performAttachedDebuggerOperation: selector
-					  context: aContext ] ].
-	^ self
-		  performDirectDebugSessionOperation: selector
-		  context: aContext
-		  on: aDebugSession
-]
-
-{ #category : 'private' }
-MCPDebugAttachedContinuation >> performDirectDebugSessionOperation: selector context: aContext on: aDebugSession [
-
-	selector numArgs = 0 ifTrue: [ ^ aDebugSession perform: selector ].
-	^ aDebugSession perform: selector with: aContext
 ]
 
 { #category : 'private' }
@@ -180,10 +157,7 @@ MCPDebugAttachedContinuation >> proceed [
 { #category : 'private' }
 MCPDebugAttachedContinuation >> proceedCurrentDebugSession [
 
-	^ self
-		  performDebugSessionOperation: #resume
-		  context: nil
-		  on: self debugSession
+	^ self debugController performOperation: #resume context: nil
 ]
 
 { #category : 'controlling' }
@@ -230,14 +204,19 @@ MCPDebugAttachedContinuation >> semaphore: aSemaphore [
 { #category : 'private' }
 MCPDebugAttachedContinuation >> shouldProceedUsingAttachedDebugger [
 
-	| currentSession visibleSession |
+	^ self shouldProceedUsingAttachedDebuggerFor: self debugSession
+]
+
+{ #category : 'private' }
+MCPDebugAttachedContinuation >> shouldProceedUsingAttachedDebuggerFor: aDebugSession [
+
+	| visibleSession |
 	(debugger notNil and: [ debugger respondsTo: #proceedDebugSession ])
 		ifFalse: [ ^ false ].
 	visibleSession := self debuggerSession.
 	visibleSession ifNil: [ ^ false ].
-	currentSession := self debugSession.
-	currentSession ifNil: [ ^ false ].
-	^ visibleSession == currentSession
+	aDebugSession ifNil: [ ^ false ].
+	^ visibleSession == aDebugSession
 ]
 
 { #category : 'controlling' }

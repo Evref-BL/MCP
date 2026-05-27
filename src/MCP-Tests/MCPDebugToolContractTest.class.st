@@ -152,9 +152,64 @@ MCPDebugToolContractTest >> terminateCapturedSessions [
 ]
 
 { #category : 'tests' }
+MCPDebugToolContractTest >> testAttachedContinuationBuildsAttachedDebuggerController [
+
+	| continuation continuationClass controller controllerClass debugger session |
+	controllerClass := Smalltalk globals
+		                   at: #MCPDebugAttachedDebuggerController
+		                   ifAbsent: [
+		                   self fail:
+			                   'Missing attached debugger controller.' ].
+	continuationClass := Smalltalk globals
+		                     at: #MCPDebugAttachedContinuation
+		                     ifAbsent: [
+		                     self fail:
+			                     'Missing attached debugger continuation.' ].
+	session := (self syntheticDebuggerNamed:
+		            'Attached controller debugger') session.
+	debugger := MCPDebugDeferredDebuggerStub new session: session.
+	continuation := continuationClass
+		                debugger: debugger
+		                timeoutMilliseconds: 25
+		                resultPreviewCharacterLimit: 1000.
+	controller := continuation debugControllerForSession: session.
+	self assert: controller class equals: controllerClass.
+	self assert: controller debugSession equals: session
+]
+
+{ #category : 'tests' }
+MCPDebugToolContractTest >> testAttachedContinuationBuildsSessionControllerForUnownedSession [
+
+	| continuation continuationClass controller controllerClass debugger replacementSession session |
+	controllerClass := Smalltalk globals
+		                   at: #MCPDebugSessionController
+		                   ifAbsent: [
+		                   self fail: 'Missing session controller.' ].
+	continuationClass := Smalltalk globals
+		                     at: #MCPDebugAttachedContinuation
+		                     ifAbsent: [
+		                     self fail:
+			                     'Missing attached debugger continuation.' ].
+	session := (self syntheticDebuggerNamed:
+		            'Attached controller visible debugger') session.
+	debugger := MCPDebugDeferredDebuggerStub new session: session.
+	replacementSession := (self syntheticDebuggerNamed:
+		                       'Attached controller replacement session')
+		                      session.
+	continuation := continuationClass
+		                debugger: debugger
+		                timeoutMilliseconds: 25
+		                resultPreviewCharacterLimit: 1000.
+	controller := continuation debugControllerForSession:
+		              replacementSession.
+	self assert: controller class equals: controllerClass.
+	self assert: controller debugSession equals: replacementSession
+]
+
+{ #category : 'tests' }
 MCPDebugToolContractTest >> testAttachedContinuationDefersRestartThroughDebuggerActionModel [
 
-	| context continuation continuationClass debugger session |
+	| context continuation continuationClass controller debugger session |
 	continuationClass := Smalltalk globals
 		                     at: #MCPDebugAttachedContinuation
 		                     ifAbsent: [
@@ -168,10 +223,8 @@ MCPDebugToolContractTest >> testAttachedContinuationDefersRestartThroughDebugger
 		                timeoutMilliseconds: 25
 		                resultPreviewCharacterLimit: 1000.
 	context := thisContext.
-	continuation
-		performDebugSessionOperation: #restart:
-		context: context
-		on: session.
+	controller := continuation debugControllerForSession: session.
+	controller performOperation: #restart: context: context.
 	self assert: debugger hasDeferredAction.
 	self assert: debugger operation equals: nil.
 	debugger runDeferredAction.

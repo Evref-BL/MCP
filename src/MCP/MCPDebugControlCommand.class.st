@@ -139,10 +139,10 @@ MCPDebugControlCommand >> performContinuationOperationForRecord: aRecord previou
 				  record: aRecord ].
 	status := [
 		          aRecord continuation proceedUsing: [
-				          aRecord continuation
-					          performDebugSessionOperation: selector
-					          context: context
-					          on: aRecord debugSession ] ]
+				          (aRecord continuation debugControllerForSession:
+					           aRecord debugSession)
+					          performOperation: selector
+					          context: context ] ]
 		          on: Exception
 		          do: [ :error |
 			          ^ self
