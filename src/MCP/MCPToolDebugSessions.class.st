@@ -85,8 +85,7 @@ MCPToolDebugSessions >> defaultOutputSchema [
 				  (self
 					   schemaPropertyNamed: 'candidates'
 					   type: 'array'
-					   description:
-					   'Unattached debugger candidates ordered from newest to oldest.').
+					   description: 'Unattached debugger candidates.').
 				  (self
 					   integerSchemaPropertyNamed: 'totalCount'
 					   description:

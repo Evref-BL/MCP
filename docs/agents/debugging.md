@@ -29,8 +29,8 @@ failure. If execution completes normally, there is no debugger session. If a
 runtime exception is captured, use the returned `sessionId` and `state`.
 
 Use `debug-sessions` with `operation=discover` when a human already opened a
-debugger. It returns unattached candidates newest first. Attach by passing the
-candidate's `candidateRef` to `operation=attach`.
+debugger. It returns unattached candidates with identifying details. Attach by
+passing the candidate's `candidateRef` to `operation=attach`.
 
 Use `debug-sessions` with `operation=forget` when you are done. Forgetting an
 agent-owned captured session can terminate its worker process. Forgetting an

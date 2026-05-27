@@ -104,6 +104,17 @@ MCPDebugRepairAnalyzer >> exception [
 	^ self valueOrNil: [ self debugSession exception ]
 ]
 
+{ #category : 'private - contexts' }
+MCPDebugRepairAnalyzer >> fallbackTargetContextForException: anException [
+
+	| context contexts |
+	context := self valueOrNil: [ self debugSession interruptedContext ].
+	context ifNotNil: [ ^ context ].
+	contexts := self rawContexts.
+	contexts isEmpty ifTrue: [ ^ nil ].
+	^ contexts first
+]
+
 { #category : 'private - actions' }
 MCPDebugRepairAnalyzer >> frameRefForContext: aContext [
 
@@ -141,9 +152,14 @@ MCPDebugRepairAnalyzer >> isSubclassResponsibilityException: anException [
 { #category : 'private - messages' }
 MCPDebugRepairAnalyzer >> messageForException: anException context: aContext [
 
+	| message |
 	(anException respondsTo: #messageToImplementInContext:) ifTrue: [
-			^ self valueOrNil: [
-				  anException messageToImplementInContext: aContext ] ].
+			message := self valueOrNil: [
+				           anException messageToImplementInContext: aContext ].
+			message ifNotNil: [ ^ message ] ].
+	(anException respondsTo: #message) ifTrue: [
+			message := self valueOrNil: [ anException message ].
+			message ifNotNil: [ ^ message ] ].
 	(anException respondsTo: #selector) ifTrue: [
 		^ Message
 			  selector: anException selector
@@ -333,13 +349,15 @@ MCPDebugRepairAnalyzer >> subclassResponsibilityActionFor: anException [
 { #category : 'private - contexts' }
 MCPDebugRepairAnalyzer >> targetContextForException: anException [
 
-	| methodImplementor |
-	(anException respondsTo: #contextForMethodImplementation:) ifFalse: [
-		^ nil ].
-	methodImplementor := self methodImplementor.
-	methodImplementor ifNil: [ ^ nil ].
-	^ self valueOrNil: [
-		  anException contextForMethodImplementation: methodImplementor ]
+	| context methodImplementor |
+	(anException respondsTo: #contextForMethodImplementation:) ifTrue: [
+			methodImplementor := self methodImplementor.
+			methodImplementor ifNotNil: [
+					context := self valueOrNil: [
+						           anException contextForMethodImplementation:
+							           methodImplementor ].
+					context ifNotNil: [ ^ context ] ] ].
+	^ self fallbackTargetContextForException: anException
 ]
 
 { #category : 'private' }
