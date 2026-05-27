@@ -57,10 +57,12 @@ MCPDebugAttachedDebuggerSelectionStrategy class >> activeContinuations [
 { #category : 'accessing' }
 MCPDebugAttachedDebuggerSelectionStrategy class >> continuationForProcess: aProcess ifPresent: presentBlock ifAbsent: absentBlock [
 
-	^ self activeContinuations
-		  at: aProcess
-		  ifPresent: presentBlock
-		  ifAbsent: absentBlock
+	| continuations |
+	continuations := self activeContinuations.
+	^ continuations at: aProcess ifPresent: presentBlock ifAbsent: [
+			  continuations size = 1
+				  ifTrue: [ presentBlock value: continuations values anyOne ]
+				  ifFalse: [ absentBlock value ] ]
 ]
 
 { #category : 'accessing' }

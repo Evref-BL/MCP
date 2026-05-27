@@ -175,6 +175,46 @@ MCPDebugToolContractTest >> testAttachedContinuationUsesVisibleDebuggerOnlyForOw
 ]
 
 { #category : 'tests' }
+MCPDebugToolContractTest >> testAttachedDebuggerSelectionStrategyCapturesSoleContinuationWhenProcessChanges [
+
+	| continuation continuationClass debugger debuggerCount exception newProcess newSession strategyClass |
+	strategyClass := Smalltalk globals
+		                 at: #MCPDebugAttachedDebuggerSelectionStrategy
+		                 ifAbsent: [
+		                 self fail:
+			                 'Missing attached debugger selection strategy.' ].
+	continuationClass := Smalltalk globals
+		                     at: #MCPDebugAttachedContinuation
+		                     ifAbsent: [
+		                     self fail:
+			                     'Missing attached debugger continuation.' ].
+	strategyClass reset.
+	debugger := self syntheticDebuggerNamed:
+		            'Attached original process debugger'.
+	continuation := continuationClass
+		                debugger: debugger
+		                timeoutMilliseconds: 25
+		                resultPreviewCharacterLimit: 1000.
+	newProcess := [ nil ] newProcess.
+	exception := (OupsNullException fromSignallerContext: thisContext)
+		             messageText: 'Attached different process session';
+		             yourself.
+	newSession := (DebugSession
+		               named: 'Attached different process session'
+		               on: newProcess
+		               startedAt: thisContext)
+		              exception: exception;
+		              yourself.
+	debuggerCount := StDebugger allInstances size.
+	strategyClass activate: continuation during: [
+			(strategyClass with: { StDebugger } asArray)
+				openDebuggerForSession: newSession ].
+	self assert: continuation capturedDebugSession equals: newSession.
+	self assert: continuation currentStatus equals: #captured.
+	self assert: StDebugger allInstances size equals: debuggerCount
+]
+
+{ #category : 'tests' }
 MCPDebugToolContractTest >> testAttachedDebuggerSelectionStrategyReusesAttachedDebugger [
 
 	| activeCount continuation continuationClass debugger debuggerCount newSession originalSession previousStrategy strategyClass |
@@ -940,7 +980,8 @@ MCPDebugToolContractTest >> testDebugSessionsAttachInstallsExternalContinuation 
 	self
 		assert: record continuation class name
 		equals: #MCPDebugAttachedContinuation.
-	self assert: record continuation debugger equals: debugger
+	self assert: record continuation debugger equals: debugger.
+	self assert: record continuation timeoutMilliseconds equals: 2000
 ]
 
 { #category : 'tests' }

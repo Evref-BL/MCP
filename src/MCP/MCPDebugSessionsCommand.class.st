@@ -32,7 +32,8 @@ MCPDebugSessionsCommand >> attachCandidate [
 	record continuation ifNil: [
 			record continuation: (MCPDebugAttachedContinuation
 					 debugger: candidate debugger
-					 timeoutMilliseconds: 250
+					 timeoutMilliseconds:
+					 self attachedContinuationTimeoutMilliseconds
 					 resultPreviewCharacterLimit: 1000) ].
 	state := (MCPDebugStateInfo fromRecord: record request: request)
 		         asDictionary.
@@ -47,6 +48,12 @@ MCPDebugSessionsCommand >> attachCandidate [
 				   -> (MCPDebugSessionInfo fromRecord: record) asDictionary).
 				  (#sessionId -> record sessionId).
 				  (#state -> state) } asDictionary
+]
+
+{ #category : 'private' }
+MCPDebugSessionsCommand >> attachedContinuationTimeoutMilliseconds [
+
+	^ 2000
 ]
 
 { #category : 'private - candidates' }
