@@ -1,3 +1,8 @@
+"
+Request object for inspecting one tool from the catalog.
+
+It carries the public tool name and leaves lookup, validation, and schema rendering to MCPInspectToolCommand.
+"
 Class {
 	#name : 'MCPInspectToolRequest',
 	#superclass : 'Object',

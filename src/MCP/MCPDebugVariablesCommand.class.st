@@ -1,3 +1,8 @@
+"
+Expands debugger variable and scope references returned by debug-state.
+
+It validates the state-scoped variable reference, resolves receiver or temporary values, and returns bounded child previews for instance variables and indexed contents.
+"
 Class {
 	#name : 'MCPDebugVariablesCommand',
 	#superclass : 'MCPDebugCommand',

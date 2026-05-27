@@ -1,3 +1,8 @@
+"
+Tracks image-side code changes that may affect registered tools.
+
+It listens to system announcements, records affected packages, and lets the server decide when tool metadata or catalog state should be refreshed.
+"
 Class {
 	#name : 'MCPImageCodeChangeTracker',
 	#superclass : 'Object',

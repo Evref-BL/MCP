@@ -1,3 +1,8 @@
+"
+In-image registry for transient MCP debugger breakpoints.
+
+It assigns public breakpoint ids, keeps the underlying DebugPoint instances reachable, and centralizes enable, disable, remove, and clear behavior.
+"
 Class {
 	#name : 'MCPDebugBreakpointRegistry',
 	#superclass : 'Object',

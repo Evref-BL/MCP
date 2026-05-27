@@ -1,3 +1,8 @@
+"
+Request object for debug-sessions operations.
+
+It extends the shared debugger request with the optional candidate reference used when attaching a discovered human-opened debugger.
+"
 Class {
 	#name : 'MCPDebugSessionsRequest',
 	#superclass : 'MCPDebugRequest',

@@ -1,3 +1,8 @@
+"
+DTO that renders the current state of a registered DebugSession.
+
+It builds state-scoped frame and variable references, stack summaries, source context, shallow scopes, exception details, and repair actions for agent consumption.
+"
 Class {
 	#name : 'MCPDebugStateInfo',
 	#superclass : 'Object',

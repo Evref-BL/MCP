@@ -1,3 +1,8 @@
+"
+Structured result wrapper used by debugger tools.
+
+It normalizes debugger success, warning, and error payloads before they are rendered into MCP text and structured content.
+"
 Class {
 	#name : 'MCPDebugToolResult',
 	#superclass : 'Object',

@@ -1,3 +1,8 @@
+"
+Evaluates Smalltalk in a bounded worker process and captures runtime exceptions as DebugSession records.
+
+This is the MCP-owned entry point for opening a debuggable session from arbitrary code without invoking the normal UI debugger.
+"
 Class {
 	#name : 'MCPDebugCaptureCommand',
 	#superclass : 'MCPDebugCommand',

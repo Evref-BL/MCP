@@ -1,3 +1,8 @@
+"
+Static bridge tool for reading a catalog tool's full contract.
+
+Agents use it after discover-tools and before call-tool when a discoverable tool requires exact schema inspection.
+"
 Class {
 	#name : 'MCPToolInspectTool',
 	#superclass : 'MCPTool',

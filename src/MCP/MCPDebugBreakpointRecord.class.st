@@ -1,3 +1,8 @@
+"
+Registry record for one transient debugger breakpoint.
+
+It tracks the public breakpoint id, underlying DebugPoint, target method or source interval, resolved node class, and creation time so breakpoints can be listed and cleaned up.
+"
 Class {
 	#name : 'MCPDebugBreakpointRecord',
 	#superclass : 'Object',

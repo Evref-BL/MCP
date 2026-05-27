@@ -1,3 +1,8 @@
+"
+DTO for summarizing one registered debug session.
+
+It exposes session id, lifecycle status, reason, exception summary, top-frame preview, capabilities, and current state token without exposing raw DebugSession objects.
+"
 Class {
 	#name : 'MCPDebugSessionInfo',
 	#superclass : 'Object',

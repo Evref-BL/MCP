@@ -150,6 +150,37 @@ MCPDebugToolContractTest >> terminateCapturedSessions [
 ]
 
 { #category : 'tests' }
+MCPDebugToolContractTest >> testAttachedDebuggerSelectionStrategyReusesAttachedDebugger [
+
+	| continuation continuationClass debugger debuggerCount newSession strategyClass |
+	strategyClass := Smalltalk globals
+		                 at: #MCPDebugAttachedDebuggerSelectionStrategy
+		                 ifAbsent: [
+		                 self fail:
+			                 'Missing attached debugger selection strategy.' ].
+	continuationClass := Smalltalk globals
+		                     at: #MCPDebugAttachedContinuation
+		                     ifAbsent: [
+		                     self fail:
+			                     'Missing attached debugger continuation.' ].
+	debugger := self syntheticDebuggerNamed: 'Attached strategy debugger'.
+	continuation := continuationClass
+		                debugger: debugger
+		                timeoutMilliseconds: 25
+		                resultPreviewCharacterLimit: 1000.
+	newSession := (self syntheticDebuggerNamed:
+		               'Attached replacement session') session.
+	debuggerCount := StDebugger allInstances size.
+	strategyClass activate: continuation during: [
+			(strategyClass with: { StDebugger } asArray)
+				openDebuggerForSession: newSession ].
+	self assert: debugger session equals: newSession.
+	self assert: continuation capturedDebugSession equals: newSession.
+	self assert: continuation currentStatus equals: #captured.
+	self assert: StDebugger allInstances size equals: debuggerCount
+]
+
+{ #category : 'tests' }
 MCPDebugToolContractTest >> testDebugBreakpointsCanDisableAndEnableBreakpoint [
 
 	| breakpointId data |
@@ -852,6 +883,30 @@ MCPDebugToolContractTest >> testDebugSessionRegistryAssignsStateScopedRecord [
 ]
 
 { #category : 'tests' }
+MCPDebugToolContractTest >> testDebugSessionsAttachInstallsExternalContinuation [
+
+	| data debugger record ref session |
+	Smalltalk garbageCollect.
+	debugger := self syntheticDebuggerNamed:
+		            'Attachable continuation debugger'.
+	ref := self candidateRefForDebugSession: debugger session.
+	data := self dataFrom:
+		        (self callToolNamed: 'debug-sessions' withArguments: {
+				         (#operation -> 'attach').
+				         (#candidateRef -> ref) } asDictionary).
+	session := data at: #session.
+	record := MCPDebugSessionRegistry default
+		          sessionRecordAt: (session at: #sessionId)
+		          ifAbsent: [
+		          self fail: 'Attached session was not registered.' ].
+	self assert: record continuation notNil.
+	self
+		assert: record continuation class name
+		equals: #MCPDebugAttachedContinuation.
+	self assert: record continuation debugger equals: debugger
+]
+
+{ #category : 'tests' }
 MCPDebugToolContractTest >> testDebugSessionsAttachRegistersDiscoveredDebugger [
 
 	| data debugger discoverData ref result session state |
@@ -985,6 +1040,31 @@ MCPDebugToolContractTest >> testDebugSessionsDiscoverSkipsAlreadyRegisteredDebug
 		assert: ((self structuredContentFrom: result) at: #status)
 		equals: 'ok'.
 	self deny: (refs includes: ref)
+]
+
+{ #category : 'tests' }
+MCPDebugToolContractTest >> testDebugSessionsForgetDoesNotTerminateAttachedDebuggerProcess [
+
+	| attachData debugger forgetData ref sessionId |
+	Smalltalk garbageCollect.
+	debugger := self syntheticDebuggerNamed:
+		            'Forget attached continuation debugger'.
+	ref := self candidateRefForDebugSession: debugger session.
+	attachData := self dataFrom:
+		              (self
+			               callToolNamed: 'debug-sessions'
+			               withArguments: {
+					               (#operation -> 'attach').
+					               (#candidateRef -> ref) } asDictionary).
+	sessionId := attachData at: #sessionId.
+	forgetData := self dataFrom:
+		              (self
+			               callToolNamed: 'debug-sessions'
+			               withArguments: {
+					               (#operation -> 'forget').
+					               (#sessionId -> sessionId) } asDictionary).
+	self assert: (forgetData at: #forgotten).
+	self deny: (forgetData at: #terminated)
 ]
 
 { #category : 'tests' }

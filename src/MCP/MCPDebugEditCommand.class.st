@@ -1,3 +1,8 @@
+"
+Creates or hot-recompiles a method from the current debugger frame.
+
+It supports debugger-driven development by deriving repair targets, compiling with critique feedback, and proceeding the paused computation when the edit is accepted.
+"
 Class {
 	#name : 'MCPDebugEditCommand',
 	#superclass : 'MCPDebugCommand',
@@ -304,6 +309,12 @@ MCPDebugEditCommand >> proceedContinuation: aContinuation forRecord: aRecord [
 				debugSession: aContinuation capturedDebugSession;
 				advanceStateForStatus: 'paused' reason: 'capturedException'.
 			^ self proceedDataForOutcome: 'paused' timedOut: false ].
+	status = #paused ifTrue: [
+			aRecord advanceStateForStatus: 'paused' reason: 'debugEditProceed'.
+			^ self proceedDataForOutcome: 'paused' timedOut: false ].
+	status = #running ifTrue: [
+			aRecord advanceStateForStatus: 'running' reason: 'debugEditProceed'.
+			^ self proceedDataForOutcome: 'running' timedOut: false ].
 	status = #timedOut ifTrue: [
 			aContinuation terminateWorker.
 			aRecord

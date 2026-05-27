@@ -1,3 +1,8 @@
+"
+Request object for expanding debugger variables.
+
+It carries the opaque variable reference plus flags controlling indexed children and instance-variable expansion.
+"
 Class {
 	#name : 'MCPDebugVariablesRequest',
 	#superclass : 'MCPDebugRequest',

@@ -1,3 +1,8 @@
+"
+Evaluates a Smalltalk expression in the selected debugger frame.
+
+The command compiles against the frame context so receiver and temporaries are visible, then returns structured success, syntax error, or runtime error details.
+"
 Class {
 	#name : 'MCPDebugEvaluateCommand',
 	#superclass : 'MCPDebugCommand',

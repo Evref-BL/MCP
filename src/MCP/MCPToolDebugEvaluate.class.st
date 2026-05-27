@@ -1,3 +1,8 @@
+"
+MCP tool for evaluating expressions in a debugger frame.
+
+The tool is intentionally scoped to a registered session and frame reference so evaluation happens in the live paused context.
+"
 Class {
 	#name : 'MCPToolDebugEvaluate',
 	#superclass : 'MCPTool',

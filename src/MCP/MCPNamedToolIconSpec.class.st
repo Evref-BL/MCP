@@ -1,3 +1,8 @@
+"
+Tool icon specification backed by one symbolic icon name.
+
+The concrete icon rendering is deferred to MCPStructureIcon so tool metadata can stay compact and stable.
+"
 Class {
 	#name : 'MCPNamedToolIconSpec',
 	#superclass : 'MCPToolIconSpec',

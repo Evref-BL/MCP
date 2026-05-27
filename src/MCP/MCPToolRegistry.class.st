@@ -1,3 +1,8 @@
+"
+Builds the concrete MCP tool set for a server instance.
+
+The registry centralizes tool construction, exposure policy defaults, and catalog membership so static and discoverable surfaces stay consistent.
+"
 Class {
 	#name : 'MCPToolRegistry',
 	#superclass : 'Object',

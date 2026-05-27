@@ -461,6 +461,22 @@ MCPToolEditMethodTest >> testCompileDefaultsToInstanceSideWhenClassSideIsOmitted
 ]
 
 { #category : 'tests' }
+MCPToolEditMethodTest >> testCompileReturnsAllowlistedEquivalentSuperclassMethodCritique [
+
+	| selector |
+	selector := #hierarchyTarget.
+	self removeSelector: selector from: MCPToolHierarchyTestChild.
+	[
+		self
+			assertCompileForClassName: 'MCPToolHierarchyTestChild'
+			methodSource: 'hierarchyTarget ^ ''base-target'''
+			protocol: 'tests'
+			returnsSingleCritiqueRuleClass: 'ReEquivalentSuperclassMethodsRule'
+			titledLike: 'Methods equivalently defined in superclass' ] ensure: [
+		self removeSelector: selector from: MCPToolHierarchyTestChild ]
+]
+
+{ #category : 'tests' }
 MCPToolEditMethodTest >> testCompileReturnsAllowlistedExcessiveArgumentsCritique [
 
 	| selector |
@@ -495,6 +511,38 @@ MCPToolEditMethodTest >> testCompileReturnsAllowlistedMissingSuperSendsCritique 
 		titledLike: 'Missing super sends' ] ensure: [
 		self removeSelector: #initialize from: MCPToolHierarchyTestBase.
 		self removeSelector: #initialize from: MCPToolHierarchyTestChild ]
+]
+
+{ #category : 'tests' }
+MCPToolEditMethodTest >> testCompileReturnsAllowlistedNotOptimizedIfCritique [
+
+	| selector |
+	selector := #notOptimizedIf.
+	self removeSelector: selector from: MCPToolInspectMethodTestTarget.
+	[
+		self
+			assertCompileForClassName: 'MCPToolInspectMethodTestTarget'
+			methodSource: 'notOptimizedIf [ true ] ifTrue: [ ^ 1 ]. ^ 2'
+			protocol: 'tests'
+			returnsSingleCritiqueRuleClass: 'ReNotOptimizedIfRule'
+			titledLike: 'ifTrue:' ] ensure: [
+		self removeSelector: selector from: MCPToolInspectMethodTestTarget ]
+]
+
+{ #category : 'tests' }
+MCPToolEditMethodTest >> testCompileReturnsAllowlistedNotOptimizedIfNilCritique [
+
+	| selector |
+	selector := #notOptimizedIfNil.
+	self removeSelector: selector from: MCPToolInspectMethodTestTarget.
+	[
+		self
+			assertCompileForClassName: 'MCPToolInspectMethodTestTarget'
+			methodSource: 'notOptimizedIfNil [ nil ] ifNil: [ ^ 1 ]. ^ 2'
+			protocol: 'tests'
+			returnsSingleCritiqueRuleClass: 'ReNotOptimizedIfNilRule'
+			titledLike: 'ifNil:' ] ensure: [
+		self removeSelector: selector from: MCPToolInspectMethodTestTarget ]
 ]
 
 { #category : 'tests' }

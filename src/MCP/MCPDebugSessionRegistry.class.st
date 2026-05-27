@@ -1,3 +1,8 @@
+"
+In-image registry of DebugSession records exposed through MCP.
+
+The registry assigns opaque session ids, tracks current records, deduplicates attached DebugSessions, and supports forgetting sessions when callers are done.
+"
 Class {
 	#name : 'MCPDebugSessionRegistry',
 	#superclass : 'Object',

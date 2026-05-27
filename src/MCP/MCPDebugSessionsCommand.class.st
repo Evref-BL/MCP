@@ -1,3 +1,8 @@
+"
+Implements debug-sessions operations.
+
+It lists and describes registered sessions, discovers unattached debugger candidates, attaches an external debugger to the MCP registry, and forgets sessions with the right ownership cleanup semantics.
+"
 Class {
 	#name : 'MCPDebugSessionsCommand',
 	#superclass : 'MCPDebugCommand',
@@ -23,6 +28,12 @@ MCPDebugSessionsCommand >> attachCandidate [
 					          named: candidate sessionName
 					          status: 'paused'
 					          reason: 'attachedDebugger' ].
+	record debugger: candidate debugger.
+	record continuation ifNil: [
+			record continuation: (MCPDebugAttachedContinuation
+					 debugger: candidate debugger
+					 timeoutMilliseconds: 250
+					 resultPreviewCharacterLimit: 1000) ].
 	state := (MCPDebugStateInfo fromRecord: record request: request)
 		         asDictionary.
 	^ MCPDebugToolResult

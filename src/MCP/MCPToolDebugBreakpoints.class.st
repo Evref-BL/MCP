@@ -1,3 +1,8 @@
+"
+MCP tool for transient Pharo DebugPoint breakpoints.
+
+It exposes method-entry and source-interval AST breakpoints for agent debugging, with explicit enable, disable, remove, and clear operations.
+"
 Class {
 	#name : 'MCPToolDebugBreakpoints',
 	#superclass : 'MCPTool',

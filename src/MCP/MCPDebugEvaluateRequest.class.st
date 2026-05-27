@@ -1,3 +1,8 @@
+"
+Request object for frame-scoped debugger evaluation.
+
+It carries the expression to evaluate and the preview limit used when rendering the result or error details.
+"
 Class {
 	#name : 'MCPDebugEvaluateRequest',
 	#superclass : 'MCPDebugRequest',

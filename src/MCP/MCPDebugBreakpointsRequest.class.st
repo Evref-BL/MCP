@@ -1,3 +1,8 @@
+"
+Request object for transient debugger breakpoint operations.
+
+It carries the operation, breakpoint id, target method identity, class side, target kind, and optional source interval for AST breakpoints.
+"
 Class {
 	#name : 'MCPDebugBreakpointsRequest',
 	#superclass : 'Object',

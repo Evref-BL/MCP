@@ -1,3 +1,8 @@
+"
+Static bridge tool for searching the discoverable tool catalog.
+
+It is intentionally kept on the fast path so agents can find optional or specialized tools without requiring those tools to be statically advertised.
+"
 Class {
 	#name : 'MCPToolDiscoverTools',
 	#superclass : 'MCPTool',

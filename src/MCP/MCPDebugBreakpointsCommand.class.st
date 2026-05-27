@@ -1,3 +1,8 @@
+"
+Implements transient debugger breakpoint operations.
+
+It creates method-entry or source-interval DebugPoint breakpoints, lists registry state, and handles enable, disable, remove, and clear cleanup.
+"
 Class {
 	#name : 'MCPDebugBreakpointsCommand',
 	#superclass : 'Object',

@@ -1,3 +1,8 @@
+"
+Request object for debug-capture.
+
+It carries the expression to run in a worker process, the session name to use if an exception is captured, timeout settings, and result preview limits.
+"
 Class {
 	#name : 'MCPDebugCaptureRequest',
 	#superclass : 'MCPDebugRequest',

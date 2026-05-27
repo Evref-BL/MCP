@@ -1,3 +1,8 @@
+"
+Applies conventional control operations to a registered DebugSession.
+
+It handles resume, terminate, restart, and stepping, invalidates stale state-scoped references, and keeps externally attached debugger sessions from spawning replacement debuggers during control.
+"
 Class {
 	#name : 'MCPDebugControlCommand',
 	#superclass : 'MCPDebugCommand',
@@ -56,6 +61,12 @@ MCPDebugControlCommand >> execute [
 	record := self sessionRecordWithMatchingState.
 	operationName := request operation.
 	previousStateId := record stateId.
+	(record continuation notNil and: [
+			 operationName = 'resume' or: [
+				 self operationRequiresContext: operationName ] ]) ifTrue: [
+			^ self
+				  performContinuationOperationForRecord: record
+				  previousStateId: previousStateId ].
 	frameIndex := nil.
 	context := nil.
 	(self operationRequiresContext: operationName) ifTrue: [
@@ -103,6 +114,56 @@ MCPDebugControlCommand >> operationRequiresContext: operationName [
 MCPDebugControlCommand >> pausedAfterOperation: operationName [
 
 	^ self contextOperations includes: operationName
+]
+
+{ #category : 'private - operations' }
+MCPDebugControlCommand >> performContinuationOperationForRecord: aRecord previousStateId: previousStateId [
+
+	| context data frameIndex operationName selector status |
+	operationName := request operation.
+	frameIndex := nil.
+	context := nil.
+	(self operationRequiresContext: operationName) ifTrue: [
+			frameIndex := self selectedFrameIndex.
+			context := self
+				           selectedContextForRecord: aRecord
+				           frameIndex: frameIndex ].
+	selector := self selectorForOperation: operationName.
+	selector ifNil: [ ^ self signalUnsupportedOperation: operationName ].
+	aRecord debugSession ifNil: [
+		^ self signalMissingDebugSessionForRecord: aRecord ].
+	(aRecord debugSession respondsTo: selector) ifFalse: [
+			^ self
+				  signalDebugSession: aRecord debugSession
+				  doesNotSupport: selector
+				  record: aRecord ].
+	status := [
+		          aRecord continuation proceedUsing: [
+				          selector numArgs = 0
+					          ifTrue: [ aRecord debugSession perform: selector ]
+					          ifFalse: [
+					          aRecord debugSession perform: selector with: context ] ] ]
+		          on: Exception
+		          do: [ :error |
+			          ^ self
+				            controlFailureFor: error
+				            record: aRecord
+				            frameIndex: frameIndex ].
+	self
+		updateRecord: aRecord
+		afterContinuationStatus: status
+		operation: operationName.
+	data := self
+		        resultDataForRecord: aRecord
+		        previousStateId: previousStateId
+		        frameIndex: frameIndex
+		        operation: operationName.
+	^ MCPDebugToolResult
+		  okSummary:
+			  'Debug control ' , operationName , ' applied to '
+			  , aRecord sessionId , '.'
+		  data: data
+		  warnings: (data at: #warnings)
 ]
 
 { #category : 'private - operations' }
@@ -261,7 +322,9 @@ MCPDebugControlCommand >> signalMissingFrameIndex: frameIndex record: aRecord [
 { #category : 'private - data' }
 MCPDebugControlCommand >> stateSnapshotForRecord: aRecord operation: operationName [
 
-	(self shouldReturnStateForOperation: operationName) ifFalse: [ ^ nil ].
+	(request returnState and: [
+			 (self pausedAfterOperation: operationName) or: [
+				 aRecord status = 'paused' ] ]) ifFalse: [ ^ nil ].
 	^ (MCPDebugStateInfo fromRecord: aRecord request: request)
 		  asDictionary
 ]
@@ -272,4 +335,26 @@ MCPDebugControlCommand >> statusAfterOperation: operationName [
 	operationName = 'resume' ifTrue: [ ^ 'running' ].
 	operationName = 'terminate' ifTrue: [ ^ 'terminated' ].
 	^ 'paused'
+]
+
+{ #category : 'private - operations' }
+MCPDebugControlCommand >> updateRecord: aRecord afterContinuationStatus: status operation: operationName [
+
+	status = #captured ifTrue: [
+			aRecord
+				debugSession: aRecord continuation capturedDebugSession;
+				advanceStateForStatus: 'paused' reason: 'capturedException'.
+			^ self ].
+	status = #paused ifTrue: [
+			aRecord advanceStateForStatus: 'paused' reason: operationName.
+			^ self ].
+	status = #running ifTrue: [
+			aRecord advanceStateForStatus: 'running' reason: operationName.
+			^ self ].
+	status = #terminated ifTrue: [
+			aRecord
+				continuation: nil;
+				advanceStateForStatus: 'terminated' reason: operationName.
+			^ self ].
+	aRecord advanceStateForStatus: status asString reason: operationName
 ]

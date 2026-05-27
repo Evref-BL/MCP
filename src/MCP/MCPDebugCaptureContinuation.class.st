@@ -1,3 +1,8 @@
+"
+Continuation object for debug-capture worker processes.
+
+It coordinates the suspended worker, captured exception state, timeout wait, resume/proceed behavior, result preview limits, and worker cleanup for MCP-owned captured sessions.
+"
 Class {
 	#name : 'MCPDebugCaptureContinuation',
 	#superclass : 'Object',

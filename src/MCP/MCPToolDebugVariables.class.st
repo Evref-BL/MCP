@@ -1,3 +1,8 @@
+"
+MCP tool for expanding debugger variables.
+
+It lets callers drill into state-scoped scope or variable references without refreshing the whole debug-state snapshot.
+"
 Class {
 	#name : 'MCPToolDebugVariables',
 	#superclass : 'MCPTool',

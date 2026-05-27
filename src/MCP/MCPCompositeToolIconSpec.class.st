@@ -1,3 +1,8 @@
+"
+Tool icon specification composed from a base icon and a badge icon.
+
+Use this when a tool should advertise a stable visual identity derived from two symbolic icons rather than a single named icon.
+"
 Class {
 	#name : 'MCPCompositeToolIconSpec',
 	#superclass : 'MCPToolIconSpec',

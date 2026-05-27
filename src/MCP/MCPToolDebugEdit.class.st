@@ -1,3 +1,8 @@
+"
+MCP tool for debugger-driven method editing.
+
+It creates missing methods or recompiles the selected frame method, reports critiques, and proceeds the computation only when the edit is accepted.
+"
 Class {
 	#name : 'MCPToolDebugEdit',
 	#superclass : 'MCPTool',

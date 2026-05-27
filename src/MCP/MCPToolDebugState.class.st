@@ -1,3 +1,8 @@
+"
+MCP tool for retrieving a composite debug-state snapshot.
+
+It is the primary read tool for debugger sessions, returning stack, selected source context, shallow scopes, exception metadata, and repair actions.
+"
 Class {
 	#name : 'MCPToolDebugState',
 	#superclass : 'MCPTool',

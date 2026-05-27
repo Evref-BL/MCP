@@ -1,3 +1,8 @@
+"
+MCP tool for conventional debugger control actions.
+
+It exposes resume, terminate, restart, and stepping through a single consolidated contract, returning updated state when control pauses again.
+"
 Class {
 	#name : 'MCPToolDebugControl',
 	#superclass : 'MCPTool',

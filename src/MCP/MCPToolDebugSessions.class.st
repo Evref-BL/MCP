@@ -1,3 +1,8 @@
+"
+MCP tool for managing debugger session inventory.
+
+It exposes listing, describing, forgetting, discovering external debuggers, and attaching discovered debuggers to the MCP registry.
+"
 Class {
 	#name : 'MCPToolDebugSessions',
 	#superclass : 'MCPTool',

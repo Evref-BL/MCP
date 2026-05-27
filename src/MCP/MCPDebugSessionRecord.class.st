@@ -1,9 +1,15 @@
+"
+Registry record for one MCP-visible DebugSession.
+
+The record owns the opaque session id, current DebugSession, optional attached debugger or continuation, lifecycle status, reason, state token, and creation time. State tokens make frame and variable references stale after control operations.
+"
 Class {
 	#name : 'MCPDebugSessionRecord',
 	#superclass : 'Object',
 	#instVars : [
 		'sessionId',
 		'debugSession',
+		'debugger',
 		'name',
 		'status',
 		'reason',
@@ -55,7 +61,8 @@ MCPDebugSessionRecord >> capabilities [
 		  (#evaluation -> true).
 		  (#control -> true).
 		  (#breakpoints -> true).
-		  (#capture -> true) } asDictionary
+		  (#capture -> true).
+		  (#attachedDebugger -> debugger notNil) } asDictionary
 ]
 
 { #category : 'accessing' }
@@ -95,6 +102,18 @@ MCPDebugSessionRecord >> debugSession: anObject [
 
 	debugSession := anObject.
 	^ self
+]
+
+{ #category : 'accessing' }
+MCPDebugSessionRecord >> debugger [
+
+	^ debugger
+]
+
+{ #category : 'accessing' }
+MCPDebugSessionRecord >> debugger: aDebugger [
+
+	debugger := aDebugger
 ]
 
 { #category : 'accessing' }

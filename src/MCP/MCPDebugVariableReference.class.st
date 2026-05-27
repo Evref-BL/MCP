@@ -1,3 +1,8 @@
+"
+Parser and value object for opaque debugger variable references.
+
+References encode session id, state id, frame index, scope name, variable name, and child path so variable expansion can reject stale or foreign requests.
+"
 Class {
 	#name : 'MCPDebugVariableReference',
 	#superclass : 'Object',

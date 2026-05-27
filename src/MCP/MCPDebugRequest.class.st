@@ -1,3 +1,8 @@
+"
+Base request object for debugger tools.
+
+It carries the common debugger request fields: session identity, optional state token, selected frame reference, stack bounds, and variable preview options.
+"
 Class {
 	#name : 'MCPDebugRequest',
 	#superclass : 'Object',

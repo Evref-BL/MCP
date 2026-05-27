@@ -1,3 +1,8 @@
+"
+MCP tool for capturing runtime exceptions from evaluated code.
+
+It runs code in a bounded worker process and registers a debugger session when execution raises a runtime exception.
+"
 Class {
 	#name : 'MCPToolDebugCapture',
 	#superclass : 'MCPTool',

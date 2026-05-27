@@ -39,8 +39,11 @@ MCPToolEditMethod >> addParameterRefactoringForSelector: oldSelectorSymbol inBeh
 MCPToolEditMethod >> allowedNonErrorCritiqueRuleClasses [
 
 	^ {
+		  ReEquivalentSuperclassMethodsRule.
 		  ReExcessiveArgumentsRule.
 		  ReMissingSuperSendsRule.
+		  ReNotOptimizedIfRule.
+		  ReNotOptimizedIfNilRule.
 		  ReReturnInEnsureRule.
 		  ReTempVarOverridesInstVarRule.
 		  ReUnaryAccessingMethodWithoutReturnRule }

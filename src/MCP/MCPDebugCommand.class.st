@@ -1,3 +1,8 @@
+"
+Abstract command base for debugger tools.
+
+It holds the tool, parsed request, and shared session registry, and provides common lookup and stale-state validation used by debugger commands.
+"
 Class {
 	#name : 'MCPDebugCommand',
 	#superclass : 'Object',

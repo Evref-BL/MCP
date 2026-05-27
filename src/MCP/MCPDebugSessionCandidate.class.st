@@ -1,3 +1,8 @@
+"
+Description of an open StDebugger that can be attached to MCP.
+
+Candidates are discovered from live debugger instances, rendered with stable identifying details, and converted to DebugSession records only when a caller explicitly attaches them.
+"
 Class {
 	#name : 'MCPDebugSessionCandidate',
 	#superclass : 'Object',

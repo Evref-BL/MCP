@@ -1,3 +1,8 @@
+"
+Request object for debugger-driven method creation or recompilation.
+
+It carries optional replacement source and the ignoreCritiques flag that lets a caller explicitly proceed despite method critique feedback.
+"
 Class {
 	#name : 'MCPDebugEditRequest',
 	#superclass : 'MCPDebugRequest',

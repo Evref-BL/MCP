@@ -1,3 +1,8 @@
+"
+Builds the primary debugger state snapshot for a registered session.
+
+It validates the requested state token, delegates state rendering to MCPDebugStateInfo, and returns the composite stack, source, scopes, and repair-action payload.
+"
 Class {
 	#name : 'MCPDebugStateCommand',
 	#superclass : 'MCPDebugCommand',
