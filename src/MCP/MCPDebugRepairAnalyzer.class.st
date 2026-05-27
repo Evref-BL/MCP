@@ -153,14 +153,13 @@ MCPDebugRepairAnalyzer >> isSubclassResponsibilityException: anException [
 MCPDebugRepairAnalyzer >> messageForException: anException context: aContext [
 
 	| message |
-	(anException respondsTo: #messageToImplementInContext:) ifTrue: [
+	(anException isKindOf: MessageNotUnderstood) ifTrue: [
 			message := self valueOrNil: [
 				           anException messageToImplementInContext: aContext ].
-			message ifNotNil: [ ^ message ] ].
-	(anException respondsTo: #message) ifTrue: [
+			message ifNotNil: [ ^ message ].
 			message := self valueOrNil: [ anException message ].
 			message ifNotNil: [ ^ message ] ].
-	(anException respondsTo: #selector) ifTrue: [
+	(anException isKindOf: SelectorException) ifTrue: [
 		^ Message
 			  selector: anException selector
 			  arguments: aContext arguments ].
@@ -288,7 +287,7 @@ MCPDebugRepairAnalyzer >> request: aRequest [
 MCPDebugRepairAnalyzer >> selectorContextForException: anException [
 
 	| selector |
-	(anException respondsTo: #selector) ifFalse: [ ^ nil ].
+	(anException isKindOf: SelectorException) ifFalse: [ ^ nil ].
 	selector := anException selector.
 	^ self rawContexts
 		  detect: [ :context |
@@ -350,7 +349,7 @@ MCPDebugRepairAnalyzer >> subclassResponsibilityActionFor: anException [
 MCPDebugRepairAnalyzer >> targetContextForException: anException [
 
 	| context methodImplementor |
-	(anException respondsTo: #contextForMethodImplementation:) ifTrue: [
+	(anException isKindOf: MessageNotUnderstood) ifTrue: [
 			methodImplementor := self methodImplementor.
 			methodImplementor ifNotNil: [
 					context := self valueOrNil: [
