@@ -152,6 +152,29 @@ MCPDebugToolContractTest >> terminateCapturedSessions [
 ]
 
 { #category : 'tests' }
+MCPDebugToolContractTest >> testAttachedContinuationUsesVisibleDebuggerOnlyForOwnedSession [
+
+	| continuation continuationClass debugger replacementSession |
+	continuationClass := Smalltalk globals
+		                     at: #MCPDebugAttachedContinuation
+		                     ifAbsent: [
+		                     self fail:
+			                     'Missing attached debugger continuation.' ].
+	debugger := self syntheticDebuggerNamed:
+		            'Attached continuation visible debugger'.
+	continuation := continuationClass
+		                debugger: debugger
+		                timeoutMilliseconds: 25
+		                resultPreviewCharacterLimit: 1000.
+	self assert: continuation shouldProceedUsingAttachedDebugger.
+	replacementSession := (self syntheticDebuggerNamed:
+		                       'Attached continuation replacement session')
+		                      session.
+	continuation debugSession: replacementSession.
+	self deny: continuation shouldProceedUsingAttachedDebugger
+]
+
+{ #category : 'tests' }
 MCPDebugToolContractTest >> testAttachedDebuggerSelectionStrategyReusesAttachedDebugger [
 
 	| activeCount continuation continuationClass debugger debuggerCount newSession originalSession previousStrategy strategyClass |

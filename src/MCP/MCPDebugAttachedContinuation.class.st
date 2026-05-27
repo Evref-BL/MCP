@@ -88,6 +88,15 @@ MCPDebugAttachedContinuation >> debugger: aDebugger [
 	debugger := aDebugger
 ]
 
+{ #category : 'private' }
+MCPDebugAttachedContinuation >> debuggerSession [
+
+	debugger ifNil: [ ^ nil ].
+	^ [ debugger session ]
+		  on: Error
+		  do: [ :ignored | nil ]
+]
+
 { #category : 'accessing' }
 MCPDebugAttachedContinuation >> outcome [
 
@@ -116,7 +125,15 @@ MCPDebugAttachedContinuation >> prepareExceptionForProceed [
 { #category : 'controlling' }
 MCPDebugAttachedContinuation >> proceed [
 
-	^ self proceedUsing: [ self debugSession resume ]
+	^ self proceedUsing: [ self proceedCurrentDebugSession ]
+]
+
+{ #category : 'private' }
+MCPDebugAttachedContinuation >> proceedCurrentDebugSession [
+
+	self shouldProceedUsingAttachedDebugger ifTrue: [
+		^ debugger proceedDebugSession ].
+	^ self debugSession resume
 ]
 
 { #category : 'controlling' }
@@ -158,6 +175,19 @@ MCPDebugAttachedContinuation >> semaphore [
 MCPDebugAttachedContinuation >> semaphore: aSemaphore [
 
 	semaphore := aSemaphore
+]
+
+{ #category : 'private' }
+MCPDebugAttachedContinuation >> shouldProceedUsingAttachedDebugger [
+
+	| currentSession visibleSession |
+	(debugger notNil and: [ debugger respondsTo: #proceedDebugSession ])
+		ifFalse: [ ^ false ].
+	visibleSession := self debuggerSession.
+	visibleSession ifNil: [ ^ false ].
+	currentSession := self debugSession.
+	currentSession ifNil: [ ^ false ].
+	^ visibleSession == currentSession
 ]
 
 { #category : 'controlling' }
