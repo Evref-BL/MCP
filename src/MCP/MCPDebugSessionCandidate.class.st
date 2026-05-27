@@ -15,9 +15,9 @@ Class {
 }
 
 { #category : 'accessing' }
-MCPDebugSessionCandidate class >> candidateRefForDebugSession: aDebugSession [
+MCPDebugSessionCandidate class >> candidateRefForDebugger: aDebugger [
 
-	^ 'debugger-candidate-' , aDebugSession identityHash asString
+	^ 'debugger-candidate-' , aDebugger identityHash asString
 ]
 
 { #category : 'instance creation' }
@@ -48,7 +48,7 @@ MCPDebugSessionCandidate >> asDictionary [
 { #category : 'accessing' }
 MCPDebugSessionCandidate >> candidateRef [
 
-	^ self class candidateRefForDebugSession: self debugSession
+	^ self class candidateRefForDebugger: debugger
 ]
 
 { #category : 'accessing' }

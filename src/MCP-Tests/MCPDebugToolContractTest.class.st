@@ -7,9 +7,9 @@ Class {
 }
 
 { #category : 'private' }
-MCPDebugToolContractTest >> candidateRefForDebugSession: aDebugSession [
+MCPDebugToolContractTest >> candidateRefForDebugger: aDebugger [
 
-	^ 'debugger-candidate-' , aDebugSession identityHash asString
+	^ 'debugger-candidate-' , aDebugger identityHash asString
 ]
 
 { #category : 'private' }
@@ -891,7 +891,7 @@ MCPDebugToolContractTest >> testDebugSessionsAttachInstallsExternalContinuation 
 	Smalltalk garbageCollect.
 	debugger := self syntheticDebuggerNamed:
 		            'Attachable continuation debugger'.
-	ref := self candidateRefForDebugSession: debugger session.
+	ref := self candidateRefForDebugger: debugger.
 	data := self dataFrom:
 		        (self callToolNamed: 'debug-sessions' withArguments: {
 				         (#operation -> 'attach').
@@ -914,7 +914,7 @@ MCPDebugToolContractTest >> testDebugSessionsAttachRegistersDiscoveredDebugger [
 	| data debugger discoverData ref result session state |
 	Smalltalk garbageCollect.
 	debugger := self syntheticDebuggerNamed: 'Attachable human debugger'.
-	ref := self candidateRefForDebugSession: debugger session.
+	ref := self candidateRefForDebugger: debugger.
 	discoverData := self dataFrom: (self
 			                 callToolNamed: 'debug-sessions'
 			                 withArguments:
@@ -966,6 +966,39 @@ MCPDebugToolContractTest >> testDebugSessionsAttachRejectsUnknownCandidateRef [
 ]
 
 { #category : 'tests' }
+MCPDebugToolContractTest >> testDebugSessionsAttachReusesRecordAfterRecordedSessionChanges [
+
+	| data debugger record ref replacementDebugger result session |
+	Smalltalk garbageCollect.
+	debugger := self syntheticDebuggerNamed: 'Attach evolving debugger'.
+	replacementDebugger := self syntheticDebuggerNamed:
+		                       'Attach replacement debugger'.
+	ref := self candidateRefForDebugger: debugger.
+	record := MCPDebugSessionRegistry default
+		          registerDebugSession: debugger session
+		          named: 'Attach evolving debugger'
+		          status: 'paused'
+		          reason: 'attachedDebugger'.
+	record
+		debugger: debugger;
+		debugSession: replacementDebugger session.
+
+	result := self callToolNamed: 'debug-sessions' withArguments: {
+			          (#operation -> 'attach').
+			          (#candidateRef -> ref) } asDictionary.
+	data := self dataFrom: result.
+	session := data at: #session.
+
+	self
+		assert: ((self structuredContentFrom: result) at: #status)
+		equals: 'ok'.
+	self assert: (data at: #alreadyAttached).
+	self assert: (data at: #sessionId) equals: record sessionId.
+	self assert: (session at: #sessionId) equals: record sessionId.
+	self assert: record debugSession equals: replacementDebugger session
+]
+
+{ #category : 'tests' }
 MCPDebugToolContractTest >> testDebugSessionsDescribeRegisteredSession [
 
 	| record result data session |
@@ -989,8 +1022,8 @@ MCPDebugToolContractTest >> testDebugSessionsDiscoverReturnsUnattachedDebuggerCa
 	Smalltalk garbageCollect.
 	older := self syntheticDebuggerNamed: 'Older human debugger'.
 	newer := self syntheticDebuggerNamed: 'Newer human debugger'.
-	olderRef := self candidateRefForDebugSession: older session.
-	newerRef := self candidateRefForDebugSession: newer session.
+	olderRef := self candidateRefForDebugger: older.
+	newerRef := self candidateRefForDebugger: newer.
 
 	result := self
 		          callToolNamed: 'debug-sessions'
@@ -1024,7 +1057,7 @@ MCPDebugToolContractTest >> testDebugSessionsDiscoverSkipsAlreadyRegisteredDebug
 	Smalltalk garbageCollect.
 	debugger := self syntheticDebuggerNamed:
 		            'Already attached human debugger'.
-	ref := self candidateRefForDebugSession: debugger session.
+	ref := self candidateRefForDebugger: debugger.
 	MCPDebugSessionRegistry default
 		registerDebugSession: debugger session
 		named: 'Already attached human debugger'
@@ -1045,13 +1078,46 @@ MCPDebugToolContractTest >> testDebugSessionsDiscoverSkipsAlreadyRegisteredDebug
 ]
 
 { #category : 'tests' }
+MCPDebugToolContractTest >> testDebugSessionsDiscoverSkipsAttachedDebuggerAfterRecordedSessionChanges [
+
+	| candidates data debugger record ref replacementDebugger replacementRef refs result |
+	Smalltalk garbageCollect.
+	debugger := self syntheticDebuggerNamed: 'Attached evolving debugger'.
+	replacementDebugger := self syntheticDebuggerNamed:
+		                       'Captured replacement debugger'.
+	ref := self candidateRefForDebugger: debugger.
+	replacementRef := self candidateRefForDebugger: replacementDebugger.
+	record := MCPDebugSessionRegistry default
+		          registerDebugSession: debugger session
+		          named: 'Attached evolving debugger'
+		          status: 'paused'
+		          reason: 'attachedDebugger'.
+	record
+		debugger: debugger;
+		debugSession: replacementDebugger session.
+
+	result := self
+		          callToolNamed: 'debug-sessions'
+		          withArguments: { (#operation -> 'discover') } asDictionary.
+	data := self dataFrom: result.
+	candidates := data at: #candidates.
+	refs := candidates collect: [ :each | each at: #candidateRef ].
+
+	self
+		assert: ((self structuredContentFrom: result) at: #status)
+		equals: 'ok'.
+	self deny: (refs includes: ref).
+	self deny: (refs includes: replacementRef)
+]
+
+{ #category : 'tests' }
 MCPDebugToolContractTest >> testDebugSessionsForgetDoesNotTerminateAttachedDebuggerProcess [
 
 	| attachData debugger forgetData ref sessionId |
 	Smalltalk garbageCollect.
 	debugger := self syntheticDebuggerNamed:
 		            'Forget attached continuation debugger'.
-	ref := self candidateRefForDebugSession: debugger session.
+	ref := self candidateRefForDebugger: debugger.
 	attachData := self dataFrom:
 		              (self
 			               callToolNamed: 'debug-sessions'

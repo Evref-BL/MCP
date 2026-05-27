@@ -41,8 +41,18 @@ MCPDebugSessionRegistry >> forgetSessionId: aSessionId [
 { #category : 'accessing' }
 MCPDebugSessionRegistry >> hasDebugSession: aDebugSession [
 
+	aDebugSession ifNil: [ ^ false ].
 	^ sessions values anySatisfy: [ :record |
 		  record debugSession == aDebugSession ]
+]
+
+{ #category : 'accessing' }
+MCPDebugSessionRegistry >> hasDebugger: aDebugger [
+
+	^ self
+		  recordForDebugger: aDebugger
+		  ifFound: [ :record | true ]
+		  ifAbsent: [ false ]
 ]
 
 { #category : 'initialization' }
@@ -66,6 +76,15 @@ MCPDebugSessionRegistry >> recordForDebugSession: aDebugSession ifFound: foundBl
 	sessions valuesDo: [ :record |
 			record debugSession == aDebugSession ifTrue: [
 				^ foundBlock value: record ] ].
+	^ absentBlock value
+]
+
+{ #category : 'accessing' }
+MCPDebugSessionRegistry >> recordForDebugger: aDebugger ifFound: foundBlock ifAbsent: absentBlock [
+
+	aDebugger ifNil: [ ^ absentBlock value ].
+	sessions valuesDo: [ :record |
+		record debugger == aDebugger ifTrue: [ ^ foundBlock value: record ] ].
 	^ absentBlock value
 ]
 

@@ -17,8 +17,8 @@ MCPDebugSessionsCommand >> attachCandidate [
 	| alreadyAttached candidate record state |
 	candidate := self candidateForReference: request candidateRef.
 	alreadyAttached := false.
-	record := registry
-		          recordForDebugSession: candidate debugSession
+	record := self
+		          recordForCandidate: candidate
 		          ifFound: [ :existing |
 				          alreadyAttached := true.
 				          existing ]
@@ -57,6 +57,13 @@ MCPDebugSessionsCommand >> candidateForReference: aCandidateRef [
 		  detect: [ :candidate |
 		  candidate matchesCandidateRef: aCandidateRef ]
 		  ifNone: [ self signalCandidateNotFound: aCandidateRef ]
+]
+
+{ #category : 'private - candidates' }
+MCPDebugSessionsCommand >> candidateIsAttached: aCandidate [
+
+	^ (registry hasDebugger: aCandidate debugger) or: [
+		  registry hasDebugSession: aCandidate debugSession ]
 ]
 
 { #category : 'private - candidates' }
@@ -142,6 +149,19 @@ MCPDebugSessionsCommand >> listSessions [
 				  (#totalCount -> sessions size) } asDictionary
 ]
 
+{ #category : 'private - candidates' }
+MCPDebugSessionsCommand >> recordForCandidate: aCandidate ifFound: foundBlock ifAbsent: absentBlock [
+
+	^ registry
+		  recordForDebugger: aCandidate debugger
+		  ifFound: foundBlock
+		  ifAbsent: [
+				  registry
+					  recordForDebugSession: aCandidate debugSession
+					  ifFound: foundBlock
+					  ifAbsent: absentBlock ]
+]
+
 { #category : 'private - errors' }
 MCPDebugSessionsCommand >> signalCandidateNotFound: aCandidateRef [
 
@@ -178,5 +198,5 @@ MCPDebugSessionsCommand >> terminateCapturedSessionForRecord: aRecord [
 MCPDebugSessionsCommand >> unattachedCandidates [
 
 	^ self debuggerCandidates reject: [ :candidate |
-		  registry hasDebugSession: candidate debugSession ]
+		  self candidateIsAttached: candidate ]
 ]
