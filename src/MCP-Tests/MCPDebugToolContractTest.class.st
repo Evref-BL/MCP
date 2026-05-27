@@ -152,6 +152,59 @@ MCPDebugToolContractTest >> terminateCapturedSessions [
 ]
 
 { #category : 'tests' }
+MCPDebugToolContractTest >> testAttachedContinuationDefersRestartThroughDebuggerActionModel [
+
+	| context continuation continuationClass debugger session |
+	continuationClass := Smalltalk globals
+		                     at: #MCPDebugAttachedContinuation
+		                     ifAbsent: [
+		                     self fail:
+			                     'Missing attached debugger continuation.' ].
+	session := (self syntheticDebuggerNamed:
+		            'Deferred attached restart debugger') session.
+	debugger := MCPDebugDeferredDebuggerStub new session: session.
+	continuation := continuationClass
+		                debugger: debugger
+		                timeoutMilliseconds: 25
+		                resultPreviewCharacterLimit: 1000.
+	context := thisContext.
+	continuation
+		performDebugSessionOperation: #restart:
+		context: context
+		on: session.
+	self assert: debugger hasDeferredAction.
+	self assert: debugger operation equals: nil.
+	debugger runDeferredAction.
+	self assert: debugger operation equals: #restartContext:.
+	self assert: debugger context equals: context
+]
+
+{ #category : 'tests' }
+MCPDebugToolContractTest >> testAttachedContinuationDefersVisibleDebuggerProceed [
+
+	| continuation continuationClass debugger session |
+	continuationClass := Smalltalk globals
+		                     at: #MCPDebugAttachedContinuation
+		                     ifAbsent: [
+		                     self fail:
+			                     'Missing attached debugger continuation.' ].
+	session := (self syntheticDebuggerNamed:
+		            'Deferred attached proceed debugger') session.
+	debugger := MCPDebugDeferredDebuggerStub new session: session.
+	continuation := continuationClass
+		                debugger: debugger
+		                timeoutMilliseconds: 25
+		                resultPreviewCharacterLimit: 1000.
+	self assert: continuation shouldProceedUsingAttachedDebugger.
+	continuation proceedCurrentDebugSession.
+	self assert: debugger hasDeferredAction.
+	self deny: debugger proceeded.
+	debugger runDeferredAction.
+	self assert: debugger proceeded.
+	self assert: debugger operation equals: #proceedDebugSession
+]
+
+{ #category : 'tests' }
 MCPDebugToolContractTest >> testAttachedContinuationUsesVisibleDebuggerOnlyForOwnedSession [
 
 	| continuation continuationClass debugger replacementSession |

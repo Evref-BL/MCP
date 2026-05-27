@@ -97,6 +97,24 @@ MCPDebugAttachedContinuation >> debuggerSession [
 		  do: [ :ignored | nil ]
 ]
 
+{ #category : 'private' }
+MCPDebugAttachedContinuation >> deferAttachedDebuggerAction: aBlock [
+
+	| deferredAction |
+	deferredAction := [
+		                  [ aBlock value ]
+			                  on: Exception
+			                  do: [ :error |
+					                  outcome
+						                  at: #status put: #failed;
+						                  at: #exception put: error.
+					                  self signal ] ].
+	debugger ifNotNil: [ :aDebugger |
+			(aDebugger respondsTo: #defer:) ifTrue: [
+				^ aDebugger defer: deferredAction ] ].
+	^ UIManager default defer: deferredAction
+]
+
 { #category : 'accessing' }
 MCPDebugAttachedContinuation >> outcome [
 
@@ -107,6 +125,37 @@ MCPDebugAttachedContinuation >> outcome [
 MCPDebugAttachedContinuation >> outcome: aDictionary [
 
 	outcome := aDictionary
+]
+
+{ #category : 'private' }
+MCPDebugAttachedContinuation >> performAttachedDebuggerOperation: selector context: aContext [
+
+	selector = #resume ifTrue: [ ^ debugger proceedDebugSession ].
+	selector = #terminate ifTrue: [ ^ debugger close ].
+	selector = #restart: ifTrue: [
+		^ debugger debuggerActionModel restartContext: aContext ].
+	^ debugger debuggerActionModel perform: selector with: aContext
+]
+
+{ #category : 'private' }
+MCPDebugAttachedContinuation >> performDebugSessionOperation: selector context: aContext on: aDebugSession [
+
+	self shouldProceedUsingAttachedDebugger ifTrue: [
+			^ self deferAttachedDebuggerAction: [
+				  self
+					  performAttachedDebuggerOperation: selector
+					  context: aContext ] ].
+	^ self
+		  performDirectDebugSessionOperation: selector
+		  context: aContext
+		  on: aDebugSession
+]
+
+{ #category : 'private' }
+MCPDebugAttachedContinuation >> performDirectDebugSessionOperation: selector context: aContext on: aDebugSession [
+
+	selector numArgs = 0 ifTrue: [ ^ aDebugSession perform: selector ].
+	^ aDebugSession perform: selector with: aContext
 ]
 
 { #category : 'private' }
@@ -131,9 +180,10 @@ MCPDebugAttachedContinuation >> proceed [
 { #category : 'private' }
 MCPDebugAttachedContinuation >> proceedCurrentDebugSession [
 
-	self shouldProceedUsingAttachedDebugger ifTrue: [
-		^ debugger proceedDebugSession ].
-	^ self debugSession resume
+	^ self
+		  performDebugSessionOperation: #resume
+		  context: nil
+		  on: self debugSession
 ]
 
 { #category : 'controlling' }
