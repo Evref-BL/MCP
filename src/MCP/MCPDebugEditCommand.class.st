@@ -117,7 +117,9 @@ MCPDebugEditCommand >> compileSourceUsing: details [
 				                    -> (self classSideForBehavior: behavior)) }
 				                   asDictionary.
 			^ self signalSelectorMismatchWithDetails: selectorDetails ].
-	method := behavior lookupSelector: actualSelector.
+	method := self
+		          formattedMethodForBehavior: behavior
+		          selector: actualSelector.
 	MethodClassifier classify: method.
 	context := details at: #context.
 	message := details at: #message.
@@ -229,6 +231,15 @@ MCPDebugEditCommand >> execute [
 		  'Debug edit ' , editKind , ' applied to ' , record sessionId , '.'
 		  data: data
 		  warnings: (data at: #warnings)
+]
+
+{ #category : 'private - compiling' }
+MCPDebugEditCommand >> formattedMethodForBehavior: aBehavior selector: aSelector [
+
+	| compiledMethod |
+	compiledMethod := aBehavior >> aSelector.
+	compiledMethod reformat.
+	^ aBehavior >> aSelector
 ]
 
 { #category : 'private - frames' }
@@ -421,6 +432,14 @@ MCPDebugEditCommand >> recompileContext: aContext record: aRecord editKind: edit
 				  signalRecompileFailedForRecord: aRecord
 				  frameIndex: frameIndex
 				  editKind: editKind ].
+	method := self
+		          formattedMethodForBehavior: method methodClass
+		          selector: method selector.
+	aContext privRefreshWith: method.
+	aRecord debugSession
+		updateContextTo: aContext;
+		contextChanged.
+	self prepareInterruptedProcessForContext: aContext record: aRecord.
 	^ method
 ]
 

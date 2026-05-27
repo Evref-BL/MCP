@@ -729,7 +729,7 @@ MCPDebugToolContractTest >> testDebugEditCanProceedAfterPriorCritiqueBlockWithIg
 { #category : 'tests' }
 MCPDebugToolContractTest >> testDebugEditCreatesMissingMethodFromRepairAction [
 
-	| action arguments captureData editData methodSource result state |
+	| action arguments captureData editData expectedSource methodSource result state |
 	captureData := self dataFrom:
 		               (self
 			                callToolNamed: 'debug-capture'
@@ -745,9 +745,14 @@ MCPDebugToolContractTest >> testDebugEditCreatesMissingMethodFromRepairAction [
 			                stream
 				                nextPutAll: 'mcpDebugEditGeneratedValue';
 				                cr;
-				                cr;
-				                tab;
-				                nextPutAll: '^ 42' ].
+				                nextPutAll: '^42' ].
+	expectedSource := String streamContents: [ :stream |
+			                  stream
+				                  nextPutAll: 'mcpDebugEditGeneratedValue';
+				                  cr;
+				                  cr;
+				                  tab;
+				                  nextPutAll: '^ 42' ].
 	arguments := (action at: #arguments) copy.
 	arguments at: #methodSource put: methodSource.
 	result := self callToolNamed: 'debug-edit' withArguments: arguments.
@@ -768,6 +773,9 @@ MCPDebugToolContractTest >> testDebugEditCreatesMissingMethodFromRepairAction [
 	self
 		assert: ((editData at: #method) at: #className)
 		equals: 'MCPDebugEditTestTarget'.
+	self
+		assert: ((editData at: #method) at: #source)
+		equals: expectedSource.
 	self
 		assert:
 		(MCPDebugEditTestTarget new perform: #mcpDebugEditGeneratedValue)
@@ -824,7 +832,7 @@ MCPDebugToolContractTest >> testDebugEditProceedsAfterCleanMissingMethodRepair [
 { #category : 'tests' }
 MCPDebugToolContractTest >> testDebugEditRecompilesNotYetImplementedFrame [
 
-	| action arguments captureData editData methodSource result state |
+	| action arguments captureData editData expectedSource methodSource result state |
 	self installDebugEditTemporaryStub.
 	captureData := self dataFrom:
 		               (self
@@ -845,9 +853,14 @@ MCPDebugToolContractTest >> testDebugEditRecompilesNotYetImplementedFrame [
 			                stream
 				                nextPutAll: 'mcpDebugEditTemporaryStub';
 				                cr;
-				                cr;
-				                tab;
-				                nextPutAll: '^ 43' ].
+				                nextPutAll: '^43' ].
+	expectedSource := String streamContents: [ :stream |
+			                  stream
+				                  nextPutAll: 'mcpDebugEditTemporaryStub';
+				                  cr;
+				                  cr;
+				                  tab;
+				                  nextPutAll: '^ 43' ].
 	arguments := (action at: #arguments) copy.
 	arguments at: #methodSource put: methodSource.
 	result := self callToolNamed: 'debug-edit' withArguments: arguments.
@@ -867,6 +880,9 @@ MCPDebugToolContractTest >> testDebugEditRecompilesNotYetImplementedFrame [
 	self
 		assert: ((editData at: #method) at: #selector)
 		equals: 'mcpDebugEditTemporaryStub'.
+	self
+		assert: ((editData at: #method) at: #source)
+		equals: expectedSource.
 	self assert: (editData at: #state) isNil
 ]
 
