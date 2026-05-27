@@ -79,6 +79,7 @@ MCPDebugToolContractTest >> selfVariableFromStateData: data [
 MCPDebugToolContractTest >> setUp [
 
 	super setUp.
+	MCPDebugAttachedDebuggerSelectionStrategy reset.
 	MCPDebugSessionRegistry resetDefault.
 	(Smalltalk globals includesKey: #MCPDebugBreakpointRegistry) ifTrue: [
 		MCPDebugBreakpointRegistry resetDefault ].
@@ -129,6 +130,7 @@ MCPDebugToolContractTest >> tearDown [
 	self terminateCapturedSessions.
 	self removeDebugEditTestMethods.
 	MCPDebugSessionRegistry resetDefault.
+	MCPDebugAttachedDebuggerSelectionStrategy reset.
 	super tearDown
 ]
 
@@ -152,7 +154,7 @@ MCPDebugToolContractTest >> terminateCapturedSessions [
 { #category : 'tests' }
 MCPDebugToolContractTest >> testAttachedDebuggerSelectionStrategyReusesAttachedDebugger [
 
-	| continuation continuationClass debugger debuggerCount newSession originalSession strategyClass |
+	| activeCount continuation continuationClass debugger debuggerCount newSession originalSession previousStrategy strategyClass |
 	strategyClass := Smalltalk globals
 		                 at: #MCPDebugAttachedDebuggerSelectionStrategy
 		                 ifAbsent: [
@@ -163,6 +165,10 @@ MCPDebugToolContractTest >> testAttachedDebuggerSelectionStrategyReusesAttachedD
 		                     ifAbsent: [
 		                     self fail:
 			                     'Missing attached debugger continuation.' ].
+	strategyClass reset.
+	previousStrategy := OupsDebuggerSelectionStrategy
+		                    debuggerSelectionStrategy.
+	activeCount := strategyClass activeContinuations size.
 	debugger := self syntheticDebuggerNamed: 'Attached strategy debugger'.
 	originalSession := debugger session.
 	continuation := continuationClass
@@ -179,7 +185,13 @@ MCPDebugToolContractTest >> testAttachedDebuggerSelectionStrategyReusesAttachedD
 	self assert: continuation debugSession equals: newSession.
 	self assert: continuation capturedDebugSession equals: newSession.
 	self assert: continuation currentStatus equals: #captured.
-	self assert: StDebugger allInstances size equals: debuggerCount
+	self assert: StDebugger allInstances size equals: debuggerCount.
+	self
+		assert: OupsDebuggerSelectionStrategy debuggerSelectionStrategy
+		equals: previousStrategy.
+	self
+		assert: strategyClass activeContinuations size
+		equals: activeCount
 ]
 
 { #category : 'tests' }

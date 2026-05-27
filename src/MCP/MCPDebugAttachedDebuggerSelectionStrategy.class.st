@@ -16,23 +16,42 @@ Class {
 { #category : 'controlling' }
 MCPDebugAttachedDebuggerSelectionStrategy class >> activate: aContinuation during: aBlock [
 
-	| previous process |
+	| continuations previous process |
 	process := aContinuation workerProcess.
 	process ifNil: [ ^ aBlock value ].
+	continuations := self activeContinuations.
 	previous := OupsDebuggerSelectionStrategy debuggerSelectionStrategy.
 	previous = self ifFalse: [ self previousStrategy: previous ].
-	self activeContinuations at: process put: aContinuation.
+	continuations at: process put: aContinuation.
 	OupsDebuggerSelectionStrategy debuggerSelectionStrategy: self.
 	^ aBlock ensure: [
-			  self activeContinuations removeKey: process ifAbsent: [ nil ].
-			  OupsDebuggerSelectionStrategy debuggerSelectionStrategy: previous.
-			  PreviousStrategy := nil ]
+			  continuations removeKey: process ifAbsent: [ nil ].
+			  continuations isEmpty
+				  ifTrue: [
+						  | restore |
+						  restore := PreviousStrategy ifNil: [ previous ].
+						  restore = self ifTrue: [
+								  restore := OupsDebuggerSelectionStrategy
+									             defaultDebuggerSelectionStrategy ].
+						  OupsDebuggerSelectionStrategy debuggerSelectionStrategy:
+							  restore.
+						  PreviousStrategy := nil ]
+				  ifFalse: [
+				  OupsDebuggerSelectionStrategy debuggerSelectionStrategy: self ] ]
 ]
 
 { #category : 'accessing' }
 MCPDebugAttachedDebuggerSelectionStrategy class >> activeContinuations [
 
-	^ ActiveContinuations ifNil: [ ActiveContinuations := Dictionary new ]
+	| migrated |
+	ActiveContinuations ifNil: [
+		ActiveContinuations := IdentityDictionary new ].
+	(ActiveContinuations isKindOf: IdentityDictionary) ifFalse: [
+			migrated := IdentityDictionary new.
+			ActiveContinuations associationsDo: [ :association |
+				migrated at: association key put: association value ].
+			ActiveContinuations := migrated ].
+	^ ActiveContinuations
 ]
 
 { #category : 'accessing' }
@@ -55,6 +74,24 @@ MCPDebugAttachedDebuggerSelectionStrategy class >> previousStrategy [
 MCPDebugAttachedDebuggerSelectionStrategy class >> previousStrategy: aStrategyClass [
 
 	PreviousStrategy := aStrategyClass
+]
+
+{ #category : 'controlling' }
+MCPDebugAttachedDebuggerSelectionStrategy class >> reset [
+
+	| fallback |
+	fallback := PreviousStrategy ifNil: [
+		            OupsDebuggerSelectionStrategy
+			            defaultDebuggerSelectionStrategy ].
+	fallback = self ifTrue: [
+			fallback := OupsDebuggerSelectionStrategy
+				            defaultDebuggerSelectionStrategy ].
+	ActiveContinuations := IdentityDictionary new.
+	PreviousStrategy := nil.
+	OupsDebuggerSelectionStrategy debuggerSelectionStrategy = self
+		ifTrue: [
+		OupsDebuggerSelectionStrategy debuggerSelectionStrategy: fallback ].
+	^ self
 ]
 
 { #category : 'debuggers' }
