@@ -19,6 +19,13 @@ client connection. Use these docs for the details behind each workflow.
 - [Troubleshooting](troubleshooting.md) covers startup, connection, schema,
   refactoring, repository, and image-state problems.
 
+## Agent Task Guides
+
+- [Debugging tools](agents/debugging.md) explains the discoverable debugger
+  tool family.
+- [Debugger-driven development](agents/debugger-driven-development.md) explains
+  live debugger repair workflows.
+
 ## Development
 
 - [Source vs live image checks](dev/source-vs-live-image-checks.md) separates
