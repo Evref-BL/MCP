@@ -152,7 +152,7 @@ MCPDebugToolContractTest >> terminateCapturedSessions [
 { #category : 'tests' }
 MCPDebugToolContractTest >> testAttachedDebuggerSelectionStrategyReusesAttachedDebugger [
 
-	| continuation continuationClass debugger debuggerCount newSession strategyClass |
+	| continuation continuationClass debugger debuggerCount newSession originalSession strategyClass |
 	strategyClass := Smalltalk globals
 		                 at: #MCPDebugAttachedDebuggerSelectionStrategy
 		                 ifAbsent: [
@@ -164,6 +164,7 @@ MCPDebugToolContractTest >> testAttachedDebuggerSelectionStrategyReusesAttachedD
 		                     self fail:
 			                     'Missing attached debugger continuation.' ].
 	debugger := self syntheticDebuggerNamed: 'Attached strategy debugger'.
+	originalSession := debugger session.
 	continuation := continuationClass
 		                debugger: debugger
 		                timeoutMilliseconds: 25
@@ -174,7 +175,8 @@ MCPDebugToolContractTest >> testAttachedDebuggerSelectionStrategyReusesAttachedD
 	strategyClass activate: continuation during: [
 			(strategyClass with: { StDebugger } asArray)
 				openDebuggerForSession: newSession ].
-	self assert: debugger session equals: newSession.
+	self assert: debugger session equals: originalSession.
+	self assert: continuation debugSession equals: newSession.
 	self assert: continuation capturedDebugSession equals: newSession.
 	self assert: continuation currentStatus equals: #captured.
 	self assert: StDebugger allInstances size equals: debuggerCount

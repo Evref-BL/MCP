@@ -1,5 +1,7 @@
 "
-Coordinates MCP control of a debugger that was opened outside MCP. While a resumed attached process is allowed to run, it temporarily redirects matching Oups debugger openings back into the already attached debugger instead of spawning a second debugger.
+Coordinates MCP control of a debugger that was opened outside MCP.
+
+When the attached process opens another debugger while MCP is controlling it, the continuation captures the new DebugSession for MCP state and suppresses replacement debugger windows. It intentionally does not retarget the visible debugger widget because updating Spec/Morphic debugger UI during exception handling can destabilize the image UI.
 "
 Class {
 	#name : 'MCPDebugAttachedContinuation',
@@ -36,10 +38,6 @@ MCPDebugAttachedContinuation >> captureDebugSession: aDebugSession [
 		at: #status put: #captured;
 		at: #debugSession put: aDebugSession;
 		at: #exception put: aDebugSession exception.
-	debugger ifNotNil: [
-			[ debugger session: aDebugSession ]
-				on: Error
-				do: [ :ignored | nil ] ].
 	self signal
 ]
 
@@ -64,10 +62,18 @@ MCPDebugAttachedContinuation >> currentStatus [
 { #category : 'accessing' }
 MCPDebugAttachedContinuation >> debugSession [
 
-	debugger ifNil: [ ^ nil ].
-	^ [ debugger session ]
-		  on: Error
-		  do: [ :ignored | nil ]
+	^ outcome at: #debugSession ifAbsent: [
+			  debugger ifNil: [ ^ nil ].
+			  [ debugger session ]
+				  on: Error
+				  do: [ :ignored | nil ] ]
+]
+
+{ #category : 'accessing' }
+MCPDebugAttachedContinuation >> debugSession: aDebugSession [
+
+	outcome at: #debugSession put: aDebugSession.
+	^ self
 ]
 
 { #category : 'accessing' }
