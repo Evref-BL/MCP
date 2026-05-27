@@ -1,6 +1,9 @@
 Class {
 	#name : 'MCPDebugSessionsRequest',
 	#superclass : 'MCPDebugRequest',
+	#instVars : [
+		'candidateRef'
+	],
 	#category : 'MCP-Requests',
 	#package : 'MCP',
 	#tag : 'Requests'
@@ -26,11 +29,24 @@ MCPDebugSessionsRequest class >> fromRequest: aRequest tool: aTool [
 	^ self new
 		  operation: operationName;
 		  sessionId: (aRequest stringArgumentNamed: 'sessionId');
+		  candidateRef: (aRequest stringArgumentNamed: 'candidateRef');
 		  yourself
 ]
 
 { #category : 'accessing' }
 MCPDebugSessionsRequest class >> supportedOperations [
 
-	^ #( 'list' 'describe' 'forget' )
+	^ #( 'list' 'describe' 'forget' 'discover' 'attach' )
+]
+
+{ #category : 'accessing' }
+MCPDebugSessionsRequest >> candidateRef [
+
+	^ candidateRef
+]
+
+{ #category : 'accessing' }
+MCPDebugSessionsRequest >> candidateRef: aString [
+
+	candidateRef := aString
 ]

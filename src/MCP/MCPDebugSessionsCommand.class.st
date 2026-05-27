@@ -7,6 +7,65 @@ Class {
 }
 
 { #category : 'private' }
+MCPDebugSessionsCommand >> attachCandidate [
+
+	| alreadyAttached candidate record state |
+	candidate := self candidateForReference: request candidateRef.
+	alreadyAttached := false.
+	record := registry
+		          recordForDebugSession: candidate debugSession
+		          ifFound: [ :existing |
+				          alreadyAttached := true.
+				          existing ]
+		          ifAbsent: [
+				          registry
+					          registerDebugSession: candidate debugSession
+					          named: candidate sessionName
+					          status: 'paused'
+					          reason: 'attachedDebugger' ].
+	state := (MCPDebugStateInfo fromRecord: record request: request)
+		         asDictionary.
+	^ MCPDebugToolResult
+		  okSummary:
+		  'Attached debug session candidate ' , candidate candidateRef , '.'
+		  data: {
+				  (#candidateRef -> candidate candidateRef).
+				  (#attached -> true).
+				  (#alreadyAttached -> alreadyAttached).
+				  (#session
+				   -> (MCPDebugSessionInfo fromRecord: record) asDictionary).
+				  (#sessionId -> record sessionId).
+				  (#state -> state) } asDictionary
+]
+
+{ #category : 'private - candidates' }
+MCPDebugSessionsCommand >> candidateForReference: aCandidateRef [
+
+	aCandidateRef ifNil: [ ^ self signalMissingCandidateRef ].
+	^ self debuggerCandidates
+		  detect: [ :candidate |
+		  candidate matchesCandidateRef: aCandidateRef ]
+		  ifNone: [ self signalCandidateNotFound: aCandidateRef ]
+]
+
+{ #category : 'private - candidates' }
+MCPDebugSessionsCommand >> debuggerCandidates [
+
+	| candidates debuggerClass reversed |
+	debuggerClass := Smalltalk globals
+		                 at: #StDebugger
+		                 ifAbsent: [ ^ #(  ) ].
+	candidates := OrderedCollection new.
+	debuggerClass allInstancesDo: [ :debugger |
+			| candidate |
+			candidate := MCPDebugSessionCandidate fromDebugger: debugger.
+			candidate isAttachable ifTrue: [ candidates add: candidate ] ].
+	reversed := OrderedCollection new.
+	candidates reverseDo: [ :each | reversed add: each ].
+	^ reversed asArray
+]
+
+{ #category : 'private' }
 MCPDebugSessionsCommand >> describeSession [
 
 	| record |
@@ -19,12 +78,28 @@ MCPDebugSessionsCommand >> describeSession [
 				  asDictionary
 ]
 
+{ #category : 'private' }
+MCPDebugSessionsCommand >> discoverCandidates [
+
+	| candidates |
+	candidates := self unattachedCandidates.
+	^ MCPDebugToolResult
+		  okSummary:
+		  candidates size asString , ' debug session candidates found.'
+		  data: {
+				  (#candidates
+				   -> (candidates collect: [ :each | each asDictionary ])).
+				  (#totalCount -> candidates size) } asDictionary
+]
+
 { #category : 'executing' }
 MCPDebugSessionsCommand >> execute [
 
 	request operation = 'list' ifTrue: [ ^ self listSessions ].
 	request operation = 'describe' ifTrue: [ ^ self describeSession ].
 	request operation = 'forget' ifTrue: [ ^ self forgetSession ].
+	request operation = 'discover' ifTrue: [ ^ self discoverCandidates ].
+	request operation = 'attach' ifTrue: [ ^ self attachCandidate ].
 	^ self signalUnsupportedOperation: request operation
 ]
 
@@ -56,6 +131,25 @@ MCPDebugSessionsCommand >> listSessions [
 				  (#totalCount -> sessions size) } asDictionary
 ]
 
+{ #category : 'private - errors' }
+MCPDebugSessionsCommand >> signalCandidateNotFound: aCandidateRef [
+
+	MCPCommandError
+		signalErrorCode: #DebugSessionCandidateNotFound
+		message: 'Debug session candidate ' , aCandidateRef asString
+			, ' was not found.'
+		details: { (#candidateRef -> aCandidateRef) } asDictionary
+]
+
+{ #category : 'private - errors' }
+MCPDebugSessionsCommand >> signalMissingCandidateRef [
+
+	MCPCommandError
+		signalErrorCode: #DebugSessionCandidateRefMissing
+		message: 'debug-sessions attach requires candidateRef.'
+		details: { (#operation -> request operation) } asDictionary
+]
+
 { #category : 'private' }
 MCPDebugSessionsCommand >> terminateCapturedSessionForRecord: aRecord [
 
@@ -67,4 +161,11 @@ MCPDebugSessionsCommand >> terminateCapturedSessionForRecord: aRecord [
 		on: Error
 		do: [ :ignored | ^ false ].
 	^ true
+]
+
+{ #category : 'private - candidates' }
+MCPDebugSessionsCommand >> unattachedCandidates [
+
+	^ self debuggerCandidates reject: [ :candidate |
+		  registry hasDebugSession: candidate debugSession ]
 ]

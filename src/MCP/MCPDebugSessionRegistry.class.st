@@ -33,6 +33,13 @@ MCPDebugSessionRegistry >> forgetSessionId: aSessionId [
 	^ sessions removeKey: aSessionId ifAbsent: [ nil ]
 ]
 
+{ #category : 'accessing' }
+MCPDebugSessionRegistry >> hasDebugSession: aDebugSession [
+
+	^ sessions values anySatisfy: [ :record |
+		  record debugSession == aDebugSession ]
+]
+
 { #category : 'initialization' }
 MCPDebugSessionRegistry >> initialize [
 
@@ -46,6 +53,15 @@ MCPDebugSessionRegistry >> nextSessionId [
 
 	nextSessionNumber := nextSessionNumber + 1.
 	^ 'debug-session-' , nextSessionNumber asString
+]
+
+{ #category : 'accessing' }
+MCPDebugSessionRegistry >> recordForDebugSession: aDebugSession ifFound: foundBlock ifAbsent: absentBlock [
+
+	sessions valuesDo: [ :record |
+			record debugSession == aDebugSession ifTrue: [
+				^ foundBlock value: record ] ].
+	^ absentBlock value
 ]
 
 { #category : 'registering' }
