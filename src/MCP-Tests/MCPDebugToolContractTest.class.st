@@ -7,6 +7,43 @@ Class {
 }
 
 { #category : 'private' }
+MCPDebugToolContractTest >> assertDebugTestStopAt: stopAt selects: selector [
+
+	| data exception method result selectedFrame session state |
+	result := self callToolNamed: 'debug-test' withArguments: {
+			          (#className -> 'MCPDebugTestToolTarget').
+			          (#testMethodName -> 'debugTestPassingCase').
+			          (#timeoutMilliseconds -> 1000).
+			          (#stopAt -> stopAt) } asDictionary.
+	data := self dataFrom: result.
+	session := data at: #session.
+	state := data at: #state.
+	selectedFrame := state at: #selectedFrame.
+	method := selectedFrame at: #method.
+	exception := state at: #exception.
+	self
+		assert: ((self structuredContentFrom: result) at: #status)
+		equals: 'ok'.
+	self assert: (data at: #captured).
+	self deny: (data at: #timedOut).
+	self deny: (data at: #passed).
+	self assert: (data at: #className) equals: 'MCPDebugTestToolTarget'.
+	self
+		assert: (data at: #testMethodName)
+		equals: 'debugTestPassingCase'.
+	self assert: (data at: #stopAt) equals: stopAt.
+	self assert: ((data at: #capabilities) at: #testExecution).
+	self assert: ((data at: #capabilities) at: #testPhaseBreakpoints).
+	self assert: (session at: #status) equals: 'paused'.
+	self assert: (session at: #reason) equals: 'debugStop'.
+	self assert: (state at: #sessionId) equals: (session at: #sessionId).
+	self assert: (state at: #reason) equals: 'debugStop'.
+	self assert: (exception at: #className) equals: 'Break'.
+	self assert: (method at: #className) equals: 'MCPDebugTestToolTarget'.
+	self assert: (method at: #selector) equals: selector asString
+]
+
+{ #category : 'private' }
 MCPDebugToolContractTest >> candidateRefForDebugger: aDebugger [
 
 	^ 'debugger-candidate-' , aDebugger identityHash asString
@@ -1531,54 +1568,33 @@ MCPDebugToolContractTest >> testDebugStateReturnsCompositeSnapshotForRegisteredS
 ]
 
 { #category : 'tests' }
-MCPDebugToolContractTest >> testDebugTestCapturesFailingTestMethodAsDebugSession [
+MCPDebugToolContractTest >> testDebugTestRejectsUnsupportedStopAt [
 
-	| data exception result session state |
-	result := self callToolNamed: 'debug-test' withArguments: {
-			          (#className -> 'MCPDebugTestToolTarget').
-			          (#testMethodName -> 'debugTestFailingCase').
-			          (#timeoutMilliseconds -> 1000) } asDictionary.
-	data := self dataFrom: result.
-	session := data at: #session.
-	state := data at: #state.
-	exception := state at: #exception.
 	self
-		assert: ((self structuredContentFrom: result) at: #status)
-		equals: 'ok'.
-	self assert: (data at: #captured).
-	self deny: (data at: #timedOut).
-	self deny: (data at: #passed).
-	self assert: (data at: #className) equals: 'MCPDebugTestToolTarget'.
-	self
-		assert: (data at: #testMethodName)
-		equals: 'debugTestFailingCase'.
-	self assert: ((data at: #capabilities) at: #testExecution).
-	self assert: (session at: #status) equals: 'paused'.
-	self assert: (session at: #reason) equals: 'testFailure'.
-	self assert: (state at: #sessionId) equals: (session at: #sessionId).
-	self assert: (exception at: #className) equals: 'TestFailure'
+		should: [
+				self callToolNamed: 'debug-test' withArguments: {
+						(#className -> 'MCPDebugTestToolTarget').
+						(#testMethodName -> 'debugTestPassingCase').
+						(#stopAt -> 'aroundEach') } asDictionary ]
+		raise: MCPInvalidToolInput
 ]
 
 { #category : 'tests' }
-MCPDebugToolContractTest >> testDebugTestReturnsPassedResultWithoutSession [
+MCPDebugToolContractTest >> testDebugTestStopsAtSetUp [
 
-	| data result |
-	result := self callToolNamed: 'debug-test' withArguments: {
-			          (#className -> 'MCPDebugTestToolTarget').
-			          (#testMethodName -> 'debugTestPassingCase').
-			          (#timeoutMilliseconds -> 1000) } asDictionary.
-	data := self dataFrom: result.
-	self
-		assert: ((self structuredContentFrom: result) at: #status)
-		equals: 'ok'.
-	self deny: (data at: #captured).
-	self deny: (data at: #timedOut).
-	self assert: (data at: #passed).
-	self assert: (data at: #className) equals: 'MCPDebugTestToolTarget'.
-	self
-		assert: (data at: #testMethodName)
-		equals: 'debugTestPassingCase'.
-	self assert: MCPDebugSessionRegistry default size equals: 0
+	self assertDebugTestStopAt: 'setUp' selects: #setUp
+]
+
+{ #category : 'tests' }
+MCPDebugToolContractTest >> testDebugTestStopsAtTearDown [
+
+	self assertDebugTestStopAt: 'tearDown' selects: #tearDown
+]
+
+{ #category : 'tests' }
+MCPDebugToolContractTest >> testDebugTestStopsAtTestMethodByDefault [
+
+	self assertDebugTestStopAt: 'test' selects: #debugTestPassingCase
 ]
 
 { #category : 'tests' }

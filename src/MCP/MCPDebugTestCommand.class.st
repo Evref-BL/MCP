@@ -1,7 +1,7 @@
 "
-Runs one SUnit test case in a bounded worker process and captures failures or errors as DebugSession records.
+Runs one SUnit test under debugger control in a bounded worker process.
 
-This gives agents debugger control over a failing test without evaluating arbitrary Smalltalk source.
+The command installs a temporary breakpoint on the requested test phase, runs the test through SUnit's debug path, and registers the stopped execution as an MCP DebugSession.
 "
 Class {
 	#name : 'MCPDebugTestCommand',
@@ -11,12 +11,28 @@ Class {
 	#tag : 'Commands'
 }
 
+{ #category : 'private - resolving' }
+MCPDebugTestCommand >> breakpointMethod [
+
+	^ self testClass lookupSelector: self breakpointSelector
+]
+
+{ #category : 'private - resolving' }
+MCPDebugTestCommand >> breakpointSelector [
+
+	request stopAt = 'test' ifTrue: [ ^ self testSelector ].
+	request stopAt = 'setUp' ifTrue: [ ^ #setUp ].
+	request stopAt = 'tearDown' ifTrue: [ ^ #tearDown ].
+	^ self signalUnsupportedStopPoint
+]
+
 { #category : 'private - data' }
 MCPDebugTestCommand >> capabilities [
 
 	^ {
 		  (#isolatedWorkerProcess -> true).
 		  (#testExecution -> true).
+		  (#testPhaseBreakpoints -> true).
 		  (#runtimeExceptionCapture -> true).
 		  (#syntaxErrorsCreateSessions -> false).
 		  (#timeoutTermination -> true).
@@ -28,15 +44,17 @@ MCPDebugTestCommand >> capabilities [
 MCPDebugTestCommand >> captureWarnings [
 
 	^ #( 'debug-test runs one SUnit test in a forked worker process and may mutate image state.'
-	     'Captured failures or errors leave the worker process suspended until debug-control resumes or terminates the session.' )
+	     'Captured debug stops, failures, or errors leave the worker process suspended until debug-control resumes or terminates the session.' )
 ]
 
 { #category : 'private - results' }
 MCPDebugTestCommand >> capturedReasonFor: aDebugSession [
 
-	^ (aDebugSession exception isKindOf: TestFailure)
-		  ifTrue: [ 'testFailure' ]
-		  ifFalse: [ 'testError' ]
+	| exception |
+	exception := aDebugSession exception.
+	(exception isKindOf: Break) ifTrue: [ ^ 'debugStop' ].
+	(exception isKindOf: TestFailure) ifTrue: [ ^ 'testFailure' ].
+	^ 'testError'
 ]
 
 { #category : 'private - results' }
@@ -89,16 +107,58 @@ MCPDebugTestCommand >> completedResultFor: ignored [
 		at: #warnings put: warnings;
 		at: #capabilities put: self capabilities.
 	^ MCPDebugToolResult
-		  okSummary: 'Debug test passed without a failure or error.'
+		  okSummary: 'Debug test completed without stopping or failing.'
 		  data: data
 		  warnings: warnings
+]
+
+{ #category : 'private - worker' }
+MCPDebugTestCommand >> debugStartContextFor: anException [
+
+	(anException isKindOf: Break) ifTrue: [
+		^ anException signalerContext sender ].
+	^ anException signalerContext
 ]
 
 { #category : 'executing' }
 MCPDebugTestCommand >> execute [
 
 	self testCase.
+	self breakpointMethod.
 	^ super execute
+]
+
+{ #category : 'private - debugging' }
+MCPDebugTestCommand >> installStopBreakpoint [
+
+	^ DebugPointManager
+		  installNew: BreakDebugPoint
+		  on: self breakpointMethod ast
+]
+
+{ #category : 'private - worker' }
+MCPDebugTestCommand >> recordCapturedException: anException inOutcome: outcome [
+
+	| debugSession |
+	debugSession := DebugSession
+		                named: request name
+		                on: Processor activeProcess
+		                startedAt: (self debugStartContextFor: anException).
+	debugSession exception: anException.
+	outcome
+		removeKey: #answer ifAbsent: [ nil ];
+		at: #status put: #captured;
+		at: #debugSession put: debugSession;
+		at: #exception put: anException
+]
+
+{ #category : 'private - debugging' }
+MCPDebugTestCommand >> removeBreakpoint: aDebugPoint [
+
+	aDebugPoint ifNil: [ ^ self ].
+	[ aDebugPoint remove ]
+		on: Error
+		do: [ :ignored | nil ]
 ]
 
 { #category : 'private - errors' }
@@ -111,6 +171,19 @@ MCPDebugTestCommand >> signalClassIsNotTestCase: aClass [
 				  (#className -> request className).
 				  (#actualClassName -> aClass name asString).
 				  (#expectedSuperclassName -> 'TestCase') } asDictionary
+]
+
+{ #category : 'private - errors' }
+MCPDebugTestCommand >> signalUnsupportedStopPoint [
+
+	^ MCPCommandError
+		  signalErrorCode: #DebugTestStopPointUnsupported
+		  message:
+		  'Unsupported debug test stopAt: ' , request stopAt asString , '.'
+		  details: {
+				  (#stopAt -> request stopAt).
+				  (#supportedStopPoints -> MCPDebugTestRequest supportedStopPoints) }
+				  asDictionary
 ]
 
 { #category : 'private - resolving' }
@@ -145,7 +218,8 @@ MCPDebugTestCommand >> testData [
 
 	^ {
 		  (#className -> request className).
-		  (#testMethodName -> request testMethodName) } asDictionary
+		  (#testMethodName -> request testMethodName).
+		  (#stopAt -> request stopAt) } asDictionary
 ]
 
 { #category : 'private - resolving' }
@@ -175,12 +249,14 @@ MCPDebugTestCommand >> timeoutResultForContinuation: aContinuation [
 MCPDebugTestCommand >> workerProcessForContinuation: aContinuation [
 
 	^ [
-		  | answer handled outcome |
+		  | answer breakpoint handled outcome |
 		  outcome := aContinuation outcome.
 		  handled := false.
+		  breakpoint := self installStopBreakpoint.
 		  answer := [
-			            self testCase runCase.
-			            true ]
+			            [
+				            self testClass debug: self testSelector.
+				            true ] ensure: [ self removeBreakpoint: breakpoint ] ]
 			            on: Exception
 			            do: [ :error |
 					            handled := true.

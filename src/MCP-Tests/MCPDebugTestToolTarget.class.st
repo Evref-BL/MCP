@@ -17,3 +17,15 @@ MCPDebugTestToolTarget >> debugTestPassingCase [
 
 	self assert: 6 * 7 equals: 42
 ]
+
+{ #category : 'running' }
+MCPDebugTestToolTarget >> setUp [
+
+	super setUp
+]
+
+{ #category : 'running' }
+MCPDebugTestToolTarget >> tearDown [
+
+	super tearDown
+]

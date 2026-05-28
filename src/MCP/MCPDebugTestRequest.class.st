@@ -1,7 +1,7 @@
 "
 Request object for debug-test.
 
-It identifies one SUnit test method to run under debugger capture, plus the timeout and returned debug-state shaping options.
+It identifies one SUnit test method and the test phase where debugger control should stop, plus timeout and returned debug-state shaping options.
 "
 Class {
 	#name : 'MCPDebugTestRequest',
@@ -11,7 +11,8 @@ Class {
 		'testMethodName',
 		'name',
 		'timeoutMilliseconds',
-		'resultPreviewCharacterLimit'
+		'resultPreviewCharacterLimit',
+		'stopAt'
 	],
 	#category : 'MCP-Requests',
 	#package : 'MCP',
@@ -33,11 +34,21 @@ MCPDebugTestRequest class >> defaultTimeoutMilliseconds [
 { #category : 'instance creation' }
 MCPDebugTestRequest class >> fromRequest: aRequest tool: aTool [
 
-	| timeout |
+	| timeout stopAtName |
 	timeout := aRequest
 		           nonNegativeIntegerArgumentNamed: 'timeoutMilliseconds'
 		           default: self defaultTimeoutMilliseconds.
 	timeout := timeout min: self maximumTimeoutMilliseconds.
+	stopAtName := aRequest stringArgumentNamed: 'stopAt' default: 'test'.
+	(self supportedStopPoints includes: stopAtName) ifFalse: [
+			MCPCommandError
+				signalErrorCode: #DebugTestStopPointUnsupported
+				message:
+				'Unsupported debug test stopAt: ' , stopAtName asString , '.'
+				details: {
+						(#stopAt -> stopAtName).
+						(#supportedStopPoints -> self supportedStopPoints) }
+						asDictionary ].
 	^ self new
 		  className: (aRequest stringArgumentNamed: 'className');
 		  testMethodName: (aRequest stringArgumentNamed: 'testMethodName');
@@ -70,6 +81,7 @@ MCPDebugTestRequest class >> fromRequest: aRequest tool: aTool [
 				   default: 50);
 		  includeReceiver:
 			  (aRequest booleanArgumentNamed: 'includeReceiver' default: true);
+		  stopAt: stopAtName;
 		  yourself
 ]
 
@@ -77,6 +89,12 @@ MCPDebugTestRequest class >> fromRequest: aRequest tool: aTool [
 MCPDebugTestRequest class >> maximumTimeoutMilliseconds [
 
 	^ MCPDebugCaptureRequest maximumTimeoutMilliseconds
+]
+
+{ #category : 'defaults' }
+MCPDebugTestRequest class >> supportedStopPoints [
+
+	^ #( 'test' 'setUp' 'tearDown' )
 ]
 
 { #category : 'accessing' }
@@ -113,6 +131,18 @@ MCPDebugTestRequest >> resultPreviewCharacterLimit [
 MCPDebugTestRequest >> resultPreviewCharacterLimit: anInteger [
 
 	resultPreviewCharacterLimit := anInteger
+]
+
+{ #category : 'accessing' }
+MCPDebugTestRequest >> stopAt [
+
+	^ stopAt
+]
+
+{ #category : 'accessing' }
+MCPDebugTestRequest >> stopAt: aString [
+
+	stopAt := aString
 ]
 
 { #category : 'accessing' }

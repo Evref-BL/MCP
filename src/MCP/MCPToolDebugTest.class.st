@@ -1,7 +1,7 @@
 "
-MCP tool for running one SUnit test under debugger capture.
+MCP tool for stopping an SUnit test under debugger control.
 
-A passing test returns a normal result, while a failing or erroring test registers a debuggable session with an immediate debug-state snapshot.
+It mirrors the Pharo browser's Debug tests and Debug test setup workflows, with an additional tearDown stop point for agent-driven inspection.
 "
 Class {
 	#name : 'MCPToolDebugTest',
@@ -32,7 +32,7 @@ MCPToolDebugTest >> commandForRequest: debugRequest [
 { #category : 'defaults' }
 MCPToolDebugTest >> defaultDescription [
 
-	^ 'Run one SUnit test method in a bounded worker process and capture failures or errors as tracked Pharo DebugSession records with an immediate debug-state snapshot.'
+	^ 'Run one SUnit test method under debugger control and stop at the requested test phase with an immediate debug-state snapshot.'
 ]
 
 { #category : 'defaults' }
@@ -48,8 +48,13 @@ MCPToolDebugTest >> defaultInputSchema [
 				  (self
 					   schemaPropertyNamed: 'testMethodName'
 					   type: 'string'
+					   description: 'Test method selector to debug.').
+				  (self
+					   stringEnumSchemaPropertyNamed: 'stopAt'
 					   description:
-						   'Test method selector to run under debugger capture.').
+						   'Test execution phase where debugger control should stop.'
+					   values: MCPDebugTestRequest supportedStopPoints
+					   default: 'test').
 				  (self
 					   schemaPropertyNamed: 'name'
 					   type: 'string'
@@ -115,7 +120,7 @@ MCPToolDebugTest >> defaultOutputSchema [
 				  (self
 					   booleanSchemaPropertyNamed: 'captured'
 					   description:
-					   'Whether test execution stopped on a captured failure or error.').
+					   'Whether test execution stopped in a debug session.').
 				  (self
 					   booleanSchemaPropertyNamed: 'timedOut'
 					   description:
@@ -123,7 +128,7 @@ MCPToolDebugTest >> defaultOutputSchema [
 				  (self
 					   booleanSchemaPropertyNamed: 'passed'
 					   description:
-					   'Whether the test completed without failure or error.').
+					   'Whether the test completed without stopping or failing.').
 				  (self
 					   schemaPropertyNamed: 'className'
 					   type: 'string'
@@ -132,6 +137,10 @@ MCPToolDebugTest >> defaultOutputSchema [
 					   schemaPropertyNamed: 'testMethodName'
 					   type: 'string'
 					   description: 'Executed test method selector.').
+				  (self
+					   stringEnumSchemaPropertyNamed: 'stopAt'
+					   description: 'Requested test execution phase.'
+					   values: MCPDebugTestRequest supportedStopPoints).
 				  (self
 					   schemaPropertyNamed: 'sessionId'
 					   type: 'string'
@@ -149,7 +158,7 @@ MCPToolDebugTest >> defaultOutputSchema [
 					   schemaPropertyNamed: 'state'
 					   type: 'object'
 					   description:
-					   'Immediate debug-state snapshot for captured failures or errors.').
+					   'Immediate debug-state snapshot for captured execution.').
 				  (self
 					   integerSchemaPropertyNamed: 'timeoutMilliseconds'
 					   description: 'Effective timeout used for this run.').
@@ -164,7 +173,7 @@ MCPToolDebugTest >> defaultOutputSchema [
 					   'Debug-test capability gates used for this response.') }
 		  required:
 			  #( 'captured' 'timedOut' 'passed' 'className' 'testMethodName'
-			     'timeoutMilliseconds' 'warnings' 'capabilities' )
+			     'stopAt' 'timeoutMilliseconds' 'warnings' 'capabilities' )
 ]
 
 { #category : 'defaults' }
