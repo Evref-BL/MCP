@@ -60,3 +60,9 @@ MCPRespondsToUsageRule >> check: aMethod forCritiquesDo: aCriticBlock [
 					 hint:
 					 'Use collaborator contracts, testing protocol, isKindOf:, or PharoCompatibility first.') ]
 ]
+
+{ #category : 'accessing' }
+MCPRespondsToUsageRule >> name [
+
+	^ self class ruleName
+]

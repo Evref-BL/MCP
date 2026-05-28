@@ -236,9 +236,10 @@ MCPDebugVariablesCommand >> resolveInstanceVariableNamed: variableName from: anO
 		^ self signalMissingVariableForReference: aReference ].
 	names := anObject class allInstVarNames collect: [ :each |
 		         each asString ].
-	index := names indexOf: variableName ifAbsent: [ 0 ].
-	index = 0 ifTrue: [
-		^ self signalMissingVariableForReference: aReference ].
+	index := names
+		         indexOf: variableName
+		         ifAbsent: [
+		         ^ self signalMissingVariableForReference: aReference ].
 	^ anObject instVarAt: index
 ]
 
@@ -280,14 +281,15 @@ MCPDebugVariablesCommand >> rootValueForVariableReference: aReference context: a
 	aReference variableName ifNil: [
 		^ self signalMissingVariableForReference: aReference ].
 	aReference scopeName = 'receiver' ifTrue: [
-			aReference variableName = 'self' ifTrue: [ ^ aContext receiver ].
-			^ self signalMissingVariableForReference: aReference ].
+		aReference variableName = 'self' ifTrue: [ ^ aContext receiver ].
+		^ self signalMissingVariableForReference: aReference ].
 	aReference scopeName = 'temporaries' ifTrue: [
-			names := aContext tempNames collect: [ :each | each asString ].
-			index := names indexOf: aReference variableName ifAbsent: [ 0 ].
-			index = 0 ifTrue: [
-				^ self signalMissingVariableForReference: aReference ].
-			^ aContext tempAt: index ].
+		names := aContext tempNames collect: [ :each | each asString ].
+		index := names
+			         indexOf: aReference variableName
+			         ifAbsent: [
+			         ^ self signalMissingVariableForReference: aReference ].
+		^ aContext tempAt: index ].
 	^ self
 		  signalMissingScopeNamed: aReference scopeName
 		  forReference: aReference
