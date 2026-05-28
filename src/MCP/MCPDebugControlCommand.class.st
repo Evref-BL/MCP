@@ -132,11 +132,6 @@ MCPDebugControlCommand >> performContinuationOperationForRecord: aRecord previou
 	selector ifNil: [ ^ self signalUnsupportedOperation: operationName ].
 	aRecord debugSession ifNil: [
 		^ self signalMissingDebugSessionForRecord: aRecord ].
-	(aRecord debugSession respondsTo: selector) ifFalse: [
-			^ self
-				  signalDebugSession: aRecord debugSession
-				  doesNotSupport: selector
-				  record: aRecord ].
 	status := [
 		          aRecord continuation proceedUsing: [
 				          (aRecord continuation debugControllerForSession:
@@ -175,15 +170,10 @@ MCPDebugControlCommand >> performOperationOn: aDebugSession context: aContext re
 	selector := self selectorForOperation: request operation.
 	selector ifNil: [
 		^ self signalUnsupportedOperation: request operation ].
-	(aDebugSession respondsTo: selector) ifFalse: [
-			^ self
-				  signalDebugSession: aDebugSession
-				  doesNotSupport: selector
-				  record: aRecord ].
 	^ [
-		  selector numArgs = 0
-			  ifTrue: [ aDebugSession perform: selector ]
-			  ifFalse: [ aDebugSession perform: selector with: aContext ].
+		  (MCPDebugSessionController debugSession: aDebugSession)
+			  performOperation: selector
+			  context: aContext.
 		  nil ]
 		  on: Exception
 		  do: [ :error |
@@ -262,22 +252,6 @@ MCPDebugControlCommand >> shouldReturnStateForOperation: operationName [
 
 	^ request returnState and: [
 		  self pausedAfterOperation: operationName ]
-]
-
-{ #category : 'private - errors' }
-MCPDebugControlCommand >> signalDebugSession: aDebugSession doesNotSupport: selector record: aRecord [
-
-	^ MCPCommandError
-		  signalErrorCode: #DebugControlUnsupported
-		  message:
-			  'Debug session ' , aRecord sessionId , ' does not support '
-			  , selector asString , '.'
-		  details: {
-				  (#sessionId -> aRecord sessionId).
-				  (#operation -> request operation).
-				  (#selector -> selector asString).
-				  (#debugSessionClassName -> aDebugSession class name asString) }
-				  asDictionary
 ]
 
 { #category : 'private - errors' }

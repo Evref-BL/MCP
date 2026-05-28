@@ -17,6 +17,8 @@ Use default static tools for common image work:
 
 Load the following instruction files based on your current task:
 
+- Before designing or editing **non-trivial Smalltalk code**: read
+  `docs/agents/smalltalk-practices.md`.
 - When working with **debuggers, debug sessions, breakpoints, or captured
   exceptions**: read `docs/agents/debugging.md`.
 - When using **debug-edit** for missing methods or stub-method repair: read

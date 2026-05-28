@@ -56,9 +56,7 @@ MCPDebugAttachedDebuggerController >> deferAction: aBlock [
 		                  [ aBlock value ]
 			                  on: Exception
 			                  do: [ :error | failureBlock value: error ] ].
-	(debugger respondsTo: #defer:) ifTrue: [
-		^ debugger defer: deferredAction ].
-	^ UIManager default defer: deferredAction
+	^ debugger defer: deferredAction
 ]
 
 { #category : 'accessing' }

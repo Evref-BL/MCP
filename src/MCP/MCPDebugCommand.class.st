@@ -62,10 +62,9 @@ MCPDebugCommand >> request [
 MCPDebugCommand >> requestedStateId [
 
 	request stateId ifNotNil: [ ^ request stateId ].
-	(request respondsTo: #frameRef) ifTrue: [
-			request frameRef ifNotNil: [
-				^ self stateIdFromReference: request frameRef ] ].
-	(request respondsTo: #variableRef) ifTrue: [
+	request frameRef ifNotNil: [
+		^ self stateIdFromReference: request frameRef ].
+	(request isKindOf: MCPDebugVariablesRequest) ifTrue: [
 			request variableRef ifNotNil: [
 				^ self stateIdFromReference: request variableRef ] ].
 	^ nil
@@ -167,7 +166,6 @@ MCPDebugCommand >> tool [
 MCPDebugCommand >> validateFrameReferenceForRecord: aRecord [
 
 	| frameIndex frameRef frameToken suffix tokens |
-	(request respondsTo: #frameRef) ifFalse: [ ^ self ].
 	frameRef := request frameRef.
 	frameRef ifNil: [ ^ self ].
 	tokens := frameRef findTokens: '/'.

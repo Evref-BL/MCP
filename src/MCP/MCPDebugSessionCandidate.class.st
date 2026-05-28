@@ -54,7 +54,7 @@ MCPDebugSessionCandidate >> candidateRef [
 { #category : 'accessing' }
 MCPDebugSessionCandidate >> debugSession [
 
-	^ self valueOrNil: [ debugger session ]
+	^ debugger session
 ]
 
 { #category : 'accessing' }
@@ -74,11 +74,9 @@ MCPDebugSessionCandidate >> debugger: aDebugger [
 MCPDebugSessionCandidate >> exceptionInfo [
 
 	| exception message |
-	exception := self valueOrNil: [ self debugSession exception ].
+	exception := self debugSession exception.
 	exception ifNil: [ ^ nil ].
-	message := (exception respondsTo: #messageText)
-		           ifTrue: [ exception messageText ]
-		           ifFalse: [ nil ].
+	message := exception messageText.
 	^ {
 		  (#className -> exception class name asString).
 		  (#message
@@ -90,24 +88,19 @@ MCPDebugSessionCandidate >> exceptionInfo [
 { #category : 'private - stack' }
 MCPDebugSessionCandidate >> frameInfoForContext: aContext [
 
-	| receiverClass |
 	aContext ifNil: [ ^ nil ].
-	receiverClass := self valueOrNil: [
-		                 aContext receiver class name asString ].
 	^ {
 		  (#displayString -> (self limitedPrintStringOf: aContext)).
 		  (#method -> (self methodInfoForContext: aContext)).
-		  (#pc -> (self valueOrNil: [ aContext pc ])).
-		  (#receiverClassName -> receiverClass) } asDictionary
+		  (#pc -> aContext pc).
+		  (#receiverClassName -> aContext receiver class name asString) }
+		  asDictionary
 ]
 
 { #category : 'testing' }
 MCPDebugSessionCandidate >> isAttachable [
 
-	| session |
-	session := self debugSession.
-	session ifNil: [ ^ false ].
-	^ (self valueOrNil: [ session interruptedContext ]) notNil
+	^ self debugSession interruptedContext notNil
 ]
 
 { #category : 'private' }
@@ -129,73 +122,47 @@ MCPDebugSessionCandidate >> matchesCandidateRef: aString [
 MCPDebugSessionCandidate >> methodInfoForContext: aContext [
 
 	| method methodClass selector |
-	method := self valueOrNil: [ aContext method ].
+	method := aContext method.
 	method ifNil: [ ^ Dictionary new ].
-	methodClass := self valueOrNil: [ method methodClass ].
-	selector := self valueOrNil: [ method selector ].
+	methodClass := method methodClass.
+	selector := method selector.
 	^ {
-		  (#className
-		   ->
-		   (methodClass
-			    ifNil: [ nil ]
-			    ifNotNil: [ methodClass name asString ])).
-		  (#selector
-		   -> (selector ifNil: [ nil ] ifNotNil: [ selector asString ])) }
-		  asDictionary
+		  (#className -> methodClass name asString).
+		  (#selector -> selector asString) } asDictionary
 ]
 
 { #category : 'private' }
 MCPDebugSessionCandidate >> processInfo [
 
 	| process status |
-	process := self valueOrNil: [ self debugSession interruptedProcess ].
+	process := self debugSession process.
 	process ifNil: [ ^ nil ].
-	status := (self valueOrNil: [ process isTerminated ]) = true
+	status := process isTerminated
 		          ifTrue: [ 'terminated' ]
 		          ifFalse: [
-				          (self valueOrNil: [ process isSuspended ]) = true
+				          process isSuspended
 					          ifTrue: [ 'suspended' ]
 					          ifFalse: [ 'active' ] ].
 	^ {
-		  (#name -> (self valueOrNil: [ process name ])).
+		  (#name -> process name).
 		  (#status -> status).
-		  (#priority -> (self valueOrNil: [ process priority ])) }
-		  asDictionary
+		  (#priority -> process priority) } asDictionary
 ]
 
 { #category : 'accessing' }
 MCPDebugSessionCandidate >> sessionName [
 
-	^ (self valueOrNil: [ self debugSession name ]) ifNil: [ '' ]
+	^ self debugSession name ifNil: [ '' ]
 ]
 
 { #category : 'private - stack' }
 MCPDebugSessionCandidate >> topContext [
 
-	| contexts session |
-	session := self debugSession.
-	session ifNil: [ ^ nil ].
-	contexts := (session respondsTo: #stackOfSize:)
-		            ifTrue: [ self valueOrNil: [ session stackOfSize: 1 ] ]
-		            ifFalse: [ nil ].
-	contexts ifNil: [
-			(session respondsTo: #stack) ifTrue: [
-				contexts := self valueOrNil: [ session stack ] ] ].
-	contexts ifNil: [ ^ nil ].
-	contexts isEmpty ifTrue: [ ^ nil ].
-	^ contexts asArray first
-]
-
-{ #category : 'private' }
-MCPDebugSessionCandidate >> valueOrNil: aBlock [
-
-	^ [ aBlock value ]
-		  on: Error
-		  do: [ :ignored | nil ]
+	^ self debugSession interruptedContext
 ]
 
 { #category : 'accessing' }
 MCPDebugSessionCandidate >> windowTitle [
 
-	^ (self valueOrNil: [ debugger windowTitle ]) ifNil: [ '' ]
+	^ self sessionName
 ]

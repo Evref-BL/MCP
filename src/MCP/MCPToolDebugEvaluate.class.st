@@ -221,9 +221,5 @@ MCPToolDebugEvaluate >> syntaxFailureMessageFor: aNotice [
 				  nextPutAll: 'Debug evaluation failed during compilation (';
 				  nextPutAll: aNotice class name;
 				  nextPutAll: '): ';
-				  nextPutAll: message.
-			  (aNotice respondsTo: #position) ifTrue: [
-					  stream
-						  nextPutAll: ' Position: ';
-						  print: aNotice position ] ]
+				  nextPutAll: message ]
 ]

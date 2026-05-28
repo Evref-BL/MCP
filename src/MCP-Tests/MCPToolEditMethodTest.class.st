@@ -624,6 +624,23 @@ MCPToolEditMethodTest >> testCompileReturnsErrorSeverityCritiquesOnly [
 ]
 
 { #category : 'tests' }
+MCPToolEditMethodTest >> testCompileReturnsRespondsToUsageCritique [
+
+	| selector |
+	selector := #respondsToProbe:.
+	self removeSelector: selector from: MCPToolInspectMethodTestTarget.
+	[
+		self
+			assertCompileForClassName: 'MCPToolInspectMethodTestTarget'
+			methodSource:
+			'respondsToProbe: anObject ^ anObject respondsTo: #size'
+			protocol: 'tests'
+			returnsSingleCritiqueRuleClass: 'MCPRespondsToUsageRule'
+			titledLike: 'Avoid respondsTo:' ] ensure: [
+		self removeSelector: selector from: MCPToolInspectMethodTestTarget ]
+]
+
+{ #category : 'tests' }
 MCPToolEditMethodTest >> testCompileReturnsStructuredCommandErrorForUndeclaredVariable [
 
 	| error result structured |

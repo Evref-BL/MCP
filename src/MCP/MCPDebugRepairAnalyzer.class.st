@@ -36,7 +36,7 @@ MCPDebugRepairAnalyzer >> addDefaultSource: sourceString requiresMethodSource: r
 { #category : 'private - methods' }
 MCPDebugRepairAnalyzer >> behaviorForContext: aContext [
 
-	^ self valueOrNil: [ aContext receiver class ]
+	^ aContext receiver class
 ]
 
 { #category : 'private - actions' }
@@ -73,8 +73,7 @@ MCPDebugRepairAnalyzer >> debugSession [
 MCPDebugRepairAnalyzer >> defaultSourceForMessage: aMessage behavior: aBehavior [
 
 	(aMessage isNil or: [ aBehavior isNil ]) ifTrue: [ ^ nil ].
-	^ self valueOrNil: [
-		  (DynamicMessageImplementor for: aMessage in: aBehavior) value ]
+	^ self generatedDefaultSourceForMessage: aMessage behavior: aBehavior
 ]
 
 { #category : 'private - actions' }
@@ -101,15 +100,17 @@ MCPDebugRepairAnalyzer >> descriptionForKind: kind behavior: aBehavior selector:
 { #category : 'private' }
 MCPDebugRepairAnalyzer >> exception [
 
-	^ self valueOrNil: [ self debugSession exception ]
+	self debugSession ifNil: [ ^ nil ].
+	^ self debugSession exception
 ]
 
 { #category : 'private - contexts' }
 MCPDebugRepairAnalyzer >> fallbackTargetContextForException: anException [
 
-	| context contexts |
-	context := self valueOrNil: [ self debugSession interruptedContext ].
-	context ifNotNil: [ ^ context ].
+	| contexts session |
+	session := self debugSession.
+	(session isKindOf: DebugSession) ifTrue: [
+		session interruptedContext ifNotNil: [ :context | ^ context ] ].
 	contexts := self rawContexts.
 	contexts isEmpty ifTrue: [ ^ nil ].
 	^ contexts first
@@ -123,6 +124,14 @@ MCPDebugRepairAnalyzer >> frameRefForContext: aContext [
 	frameIndex := (rawContexts indexOf: aContext ifAbsent: [ 1 ]) - 1.
 	^ record sessionId , '/' , record stateId , '/frame-'
 	  , frameIndex asString
+]
+
+{ #category : 'private - methods' }
+MCPDebugRepairAnalyzer >> generatedDefaultSourceForMessage: aMessage behavior: aBehavior [
+
+	^ [ (DynamicMessageImplementor for: aMessage in: aBehavior) value ]
+		  on: Error
+		  do: [ nil ]
 ]
 
 { #category : 'private - testing' }
@@ -152,13 +161,8 @@ MCPDebugRepairAnalyzer >> isSubclassResponsibilityException: anException [
 { #category : 'private - messages' }
 MCPDebugRepairAnalyzer >> messageForException: anException context: aContext [
 
-	| message |
 	(anException isKindOf: MessageNotUnderstood) ifTrue: [
-			message := self valueOrNil: [
-				           anException messageToImplementInContext: aContext ].
-			message ifNotNil: [ ^ message ].
-			message := self valueOrNil: [ anException message ].
-			message ifNotNil: [ ^ message ] ].
+		^ anException message ].
 	(anException isKindOf: SelectorException) ifTrue: [
 		^ Message
 			  selector: anException selector
@@ -169,15 +173,19 @@ MCPDebugRepairAnalyzer >> messageForException: anException context: aContext [
 { #category : 'private - methods' }
 MCPDebugRepairAnalyzer >> methodBehaviorForContext: aContext [
 
-	^ self valueOrNil: [ aContext method methodClass ]
+	^ aContext method methodClass
 ]
 
 { #category : 'private - contexts' }
 MCPDebugRepairAnalyzer >> methodImplementor [
 
-	self debugSession ifNil: [ ^ nil ].
-	^ self valueOrNil: [
-		  StDebuggerMethodImplementor forSession: self debugSession ]
+	| implementorClass session |
+	session := self debugSession.
+	session ifNil: [ ^ nil ].
+	implementorClass := Smalltalk globals
+		                    at: #StDebuggerMethodImplementor
+		                    ifAbsent: [ ^ nil ].
+	^ implementorClass forSession: session
 ]
 
 { #category : 'private - actions' }
@@ -290,15 +298,14 @@ MCPDebugRepairAnalyzer >> selectorContextForException: anException [
 	(anException isKindOf: SelectorException) ifFalse: [ ^ nil ].
 	selector := anException selector.
 	^ self rawContexts
-		  detect: [ :context |
-			  (self valueOrNil: [ context selector = selector ]) = true ]
+		  detect: [ :context | context selector = selector ]
 		  ifNone: [ nil ]
 ]
 
 { #category : 'private - methods' }
 MCPDebugRepairAnalyzer >> sourceForContext: aContext [
 
-	^ self valueOrNil: [ aContext sourceCode ]
+	^ aContext sourceCode
 ]
 
 { #category : 'private - actions' }
@@ -307,8 +314,7 @@ MCPDebugRepairAnalyzer >> stubActionFor: anException kind: kind [
 	| action behavior context selector source |
 	context := self selectorContextForException: anException.
 	context ifNil: [ ^ nil ].
-	selector := self valueOrNil: [ anException selector ].
-	selector ifNil: [ ^ nil ].
+	selector := anException selector.
 	behavior := self methodBehaviorForContext: context.
 	source := self sourceForContext: context.
 	action := self
@@ -352,17 +358,8 @@ MCPDebugRepairAnalyzer >> targetContextForException: anException [
 	(anException isKindOf: MessageNotUnderstood) ifTrue: [
 			methodImplementor := self methodImplementor.
 			methodImplementor ifNotNil: [
-					context := self valueOrNil: [
-						           anException contextForMethodImplementation:
-							           methodImplementor ].
+					context := anException contextForMethodImplementation:
+						           methodImplementor.
 					context ifNotNil: [ ^ context ] ] ].
 	^ self fallbackTargetContextForException: anException
-]
-
-{ #category : 'private' }
-MCPDebugRepairAnalyzer >> valueOrNil: aBlock [
-
-	^ [ aBlock value ]
-		  on: Error
-		  do: [ :error | nil ]
 ]

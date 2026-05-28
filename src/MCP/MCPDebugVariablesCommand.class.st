@@ -14,23 +14,18 @@ Class {
 { #category : 'private - children' }
 MCPDebugVariablesCommand >> addIndexedEntriesOf: anObject parentReference: parentReference to: entries [
 
-	| size maxIndex |
+	| maxIndex size |
 	anObject ifNil: [ ^ self ].
 	(self isAtomicObject: anObject) ifTrue: [ ^ self ].
-	((anObject respondsTo: #size) and: [ anObject respondsTo: #at: ])
-		ifFalse: [ ^ self ].
-	size := [ anObject size ]
-		        on: Error
-		        do: [ :error | ^ self ].
+	size := self indexedSlotCountOf: anObject.
+	size = 0 ifTrue: [ ^ self ].
 	maxIndex := size min: request variableLimit.
 	1 to: maxIndex do: [ :index |
 			entries size >= request variableLimit ifTrue: [ ^ self ].
 			entries add: (self
 					 variableEntryNamed: '[' , index asString , ']'
 					 kind: 'indexed'
-					 value: ([ anObject at: index ]
-							  on: Error
-							  do: [ :error | nil ])
+					 value: (anObject basicAt: index)
 					 reference: parentReference , '/index-' , index asString) ]
 ]
 
@@ -173,6 +168,13 @@ MCPDebugVariablesCommand >> execute [
 ]
 
 { #category : 'private - children' }
+MCPDebugVariablesCommand >> indexedSlotCountOf: anObject [
+
+	anObject ifNil: [ ^ 0 ].
+	^ anObject basicSize
+]
+
+{ #category : 'private - children' }
 MCPDebugVariablesCommand >> isAtomicObject: anObject [
 
 	anObject ifNil: [ ^ true ].
@@ -206,12 +208,8 @@ MCPDebugVariablesCommand >> potentialChildCountOf: anObject [
 	count := 0.
 	request includeInstanceVariables ifTrue: [
 		count := count + anObject class allInstVarNames size ].
-	(request includeIndexed and: [
-		 (anObject respondsTo: #size) and: [ anObject respondsTo: #at: ] ])
-		ifTrue: [
-				count := count + ([ anObject size ]
-					          on: Error
-					          do: [ :error | 0 ]) ].
+	request includeIndexed ifTrue: [
+		count := count + (self indexedSlotCountOf: anObject) ].
 	^ count
 ]
 
@@ -225,9 +223,9 @@ MCPDebugVariablesCommand >> resolveIndexedSlot: indexString from: anObject refer
 				         ^ self
 					           signalInvalidChildSegment: 'index-' , indexString
 					           forReference: aReference ].
-	^ [ anObject at: index ]
-		  on: Error
-		  do: [ :error | self signalMissingVariableForReference: aReference ]
+	(index between: 1 and: (self indexedSlotCountOf: anObject)) ifFalse: [
+		^ self signalMissingVariableForReference: aReference ].
+	^ anObject basicAt: index
 ]
 
 { #category : 'private - variables' }
@@ -285,7 +283,8 @@ MCPDebugVariablesCommand >> rootValueForVariableReference: aReference context: a
 			aReference variableName = 'self' ifTrue: [ ^ aContext receiver ].
 			^ self signalMissingVariableForReference: aReference ].
 	aReference scopeName = 'temporaries' ifTrue: [
-			names := aContext tempNames collect: [ :each | each asString ].
+			names := (PharoCompatibility temporaryNamesForContext: aContext)
+				         collect: [ :each | each asString ].
 			index := names indexOf: aReference variableName ifAbsent: [ 0 ].
 			index = 0 ifTrue: [
 				^ self signalMissingVariableForReference: aReference ].

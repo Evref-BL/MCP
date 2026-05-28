@@ -137,11 +137,7 @@ MCPDebugEditCommand >> compileSourceUsing: details [
 { #category : 'private - methods' }
 MCPDebugEditCommand >> compiledMethodForContext: aContext [
 
-	| behavior selector |
-	behavior := self valueOrNil: [ aContext method methodClass ].
-	selector := self valueOrNil: [ aContext selector ].
-	(behavior isNil or: [ selector isNil ]) ifTrue: [ ^ nil ].
-	^ behavior lookupSelector: selector
+	^ aContext method methodClass lookupSelector: aContext selector
 ]
 
 { #category : 'private - data' }
@@ -286,10 +282,11 @@ MCPDebugEditCommand >> methodSourceOrNil [
 { #category : 'private - proceeding' }
 MCPDebugEditCommand >> prepareInterruptedProcessForContext: aContext record: aRecord [
 
-	| process |
-	process := self valueOrNil: [
-		           aRecord debugSession interruptedProcess ].
-	(process isNil or: [ process isTerminated ]) ifTrue: [ ^ self ].
+	| process session |
+	session := aRecord debugSession.
+	(session isKindOf: DebugSession) ifFalse: [ ^ self ].
+	process := session interruptedProcess.
+	process isTerminated ifTrue: [ ^ self ].
 	process suspendedContext: aContext
 ]
 
@@ -592,12 +589,4 @@ MCPDebugEditCommand >> stateDataForRecord: aRecord [
 		ifFalse: [ ^ nil ].
 	^ (MCPDebugStateInfo fromRecord: aRecord request: request)
 		  asDictionary
-]
-
-{ #category : 'private' }
-MCPDebugEditCommand >> valueOrNil: aBlock [
-
-	^ [ aBlock value ]
-		  on: Error
-		  do: [ :error | nil ]
 ]

@@ -81,11 +81,9 @@ MCPDebugStateInfo >> asDictionary [
 MCPDebugStateInfo >> exceptionInfo [
 
 	| exception message |
-	exception := self valueOrNil: [ record debugSession exception ].
+	exception := record debugSession exception.
 	exception ifNil: [ ^ nil ].
-	message := (exception respondsTo: #messageText)
-		           ifTrue: [ exception messageText ]
-		           ifFalse: [ nil ].
+	message := exception messageText.
 	^ {
 		  (#className -> exception class name asString).
 		  (#message
@@ -97,16 +95,14 @@ MCPDebugStateInfo >> exceptionInfo [
 { #category : 'private - stack' }
 MCPDebugStateInfo >> frameInfoFor: aContext index: frameIndex [
 
-	| receiverClass |
-	receiverClass := self valueOrNil: [
-		                 aContext receiver class name asString ].
 	^ {
 		  (#frameRef -> (self frameRefForIndex: frameIndex)).
 		  (#index -> frameIndex).
 		  (#displayString -> (self limitedPrintStringOf: aContext)).
 		  (#method -> (self methodInfoForContext: aContext)).
-		  (#pc -> (self valueOrNil: [ aContext pc ])).
-		  (#receiverClassName -> receiverClass) } asDictionary
+		  (#pc -> aContext pc).
+		  (#receiverClassName -> aContext receiver class name asString) }
+		  asDictionary
 ]
 
 { #category : 'private - refs' }
@@ -132,44 +128,31 @@ MCPDebugStateInfo >> locationInfoForContext: aContext frameIndex: frameIndex [
 	^ {
 		  (#frameRef -> (self frameRefForIndex: frameIndex)).
 		  (#method -> (self methodInfoForContext: aContext)).
-		  (#pc -> (self valueOrNil: [ aContext pc ])) } asDictionary
+		  (#pc -> aContext pc) } asDictionary
 ]
 
 { #category : 'private - stack' }
 MCPDebugStateInfo >> methodInfoForContext: aContext [
 
 	| method methodClass selector |
-	method := self valueOrNil: [ aContext method ].
+	method := aContext method.
 	method ifNil: [ ^ Dictionary new ].
-	methodClass := self valueOrNil: [ method methodClass ].
-	selector := self valueOrNil: [ method selector ].
+	methodClass := method methodClass.
+	selector := method selector.
 	^ {
-		  (#className
-		   ->
-		   (methodClass
-			    ifNil: [ nil ]
-			    ifNotNil: [ methodClass name asString ])).
-		  (#selector
-		   -> (selector ifNil: [ nil ] ifNotNil: [ selector asString ])) }
-		  asDictionary
+		  (#className -> methodClass name asString).
+		  (#selector -> selector asString) } asDictionary
 ]
 
 { #category : 'private - stack' }
 MCPDebugStateInfo >> rawContexts [
 
-	| debugSession contexts |
+	| contexts debugSession |
 	debugSession := record debugSession.
 	debugSession ifNil: [ ^ #(  ) ].
-	contexts := (debugSession respondsTo: #stackOfSize:)
-		            ifTrue: [
-				            self valueOrNil: [
-					            debugSession stackOfSize:
-						            request stackStart + request stackLimit + 1 ] ]
-		            ifFalse: [ nil ].
-	contexts ifNil: [
-			(debugSession respondsTo: #stack) ifTrue: [
-				contexts := self valueOrNil: [ debugSession stack ] ] ].
-	^ contexts ifNil: [ #(  ) ] ifNotNil: [ contexts asArray ]
+	contexts := debugSession stackOfSize:
+		            request stackStart + request stackLimit + 1.
+	^ contexts asArray
 ]
 
 { #category : 'private - variables' }
@@ -178,7 +161,7 @@ MCPDebugStateInfo >> receiverVariablesForContext: aContext frameIndex: frameInde
 	aContext ifNil: [ ^ #(  ) ].
 	^ { (self
 		   variableInfoNamed: 'self'
-		   value: (self valueOrNil: [ aContext receiver ])
+		   value: aContext receiver
 		   frameIndex: frameIndex
 		   scopeName: 'receiver') }
 ]
@@ -243,6 +226,15 @@ MCPDebugStateInfo >> scopesForContext: aContext frameIndex: frameIndex [
 	^ scopes asArray
 ]
 
+{ #category : 'private - stack' }
+MCPDebugStateInfo >> selectedCodeRangeForContext: aContext [
+
+	| debugSession |
+	debugSession := record debugSession.
+	(debugSession isKindOf: DebugSession) ifFalse: [ ^ nil ].
+	^ debugSession selectedCodeRangeForContext: aContext
+]
+
 { #category : 'private - refs' }
 MCPDebugStateInfo >> selectedFrameIndexFrom: contextArray [
 
@@ -270,13 +262,11 @@ MCPDebugStateInfo >> slicedContextsFrom: contextArray [
 { #category : 'private - stack' }
 MCPDebugStateInfo >> sourceInfoForContext: aContext [
 
-	| source range |
+	| range |
 	aContext ifNil: [ ^ nil ].
-	source := self valueOrNil: [ aContext sourceCode ].
-	range := self valueOrNil: [
-		         record debugSession selectedCodeRangeForContext: aContext ].
+	range := self selectedCodeRangeForContext: aContext.
 	^ {
-		  (#sourceCode -> source).
+		  (#sourceCode -> aContext sourceCode).
 		  (#selectedRange -> (range ifNil: [ #(  ) ] ifNotNil: [
 				    {
 					    range first.
@@ -286,27 +276,18 @@ MCPDebugStateInfo >> sourceInfoForContext: aContext [
 { #category : 'private - variables' }
 MCPDebugStateInfo >> temporaryVariablesForContext: aContext frameIndex: frameIndex [
 
-	| names variables limit |
+	| limit names variables |
 	aContext ifNil: [ ^ #(  ) ].
-	names := self valueOrNil: [ aContext tempNames ].
-	names ifNil: [ ^ #(  ) ].
+	names := PharoCompatibility temporaryNamesForContext: aContext.
 	limit := names size min: request variableLimit.
 	variables := OrderedCollection new.
 	1 to: limit do: [ :index |
 			variables add: (self
 					 variableInfoNamed: (names at: index)
-					 value: (self valueOrNil: [ aContext tempAt: index ])
+					 value: (aContext tempAt: index)
 					 frameIndex: frameIndex
 					 scopeName: 'temporaries') ].
 	^ variables asArray
-]
-
-{ #category : 'private' }
-MCPDebugStateInfo >> valueOrNil: aBlock [
-
-	^ [ aBlock value ]
-		  on: Error
-		  do: [ :error | nil ]
 ]
 
 { #category : 'private - variables' }

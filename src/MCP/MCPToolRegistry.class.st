@@ -136,7 +136,7 @@ MCPToolRegistry class >> mutabilityForTool: aTool [
 	                'find-methods' 'inspect-method' 'capture-screenshot'
 	                'debug-state' 'debug-variables' ).
 	executeTools := #( 'call-tool' 'run-tests' 'evaluate' 'debug-evaluate'
-	                   'debug-capture' ).
+	                   'debug-capture' 'debug-test' ).
 	(readTools includes: toolName) ifTrue: [ ^ 'read' ].
 	(executeTools includes: toolName) ifTrue: [ ^ 'execute' ].
 	^ 'write'
@@ -186,6 +186,7 @@ MCPToolRegistry class >> publicToolGroups [
 			   MCPToolDebugControl.
 			   MCPToolDebugBreakpoints.
 			   MCPToolDebugCapture.
+			   MCPToolDebugTest.
 			   MCPToolDebugEdit }).
 		  ('image-runtime' -> { MCPToolEvaluate }) }
 ]
@@ -221,7 +222,8 @@ MCPToolRegistry class >> riskForTool: aTool [
 	              'find-methods' 'inspect-method' 'capture-screenshot'
 	              'debug-state' 'debug-variables' ).
 	mediumRisk := #( 'call-tool' 'load-repository' 'run-tests'
-	                 'evaluate' 'debug-evaluate' 'debug-capture' ).
+	                 'evaluate' 'debug-evaluate' 'debug-capture'
+	                 'debug-test' ).
 	(lowRisk includes: toolName) ifTrue: [ ^ 'low' ].
 	(mediumRisk includes: toolName) ifTrue: [ ^ 'medium' ].
 	^ 'high'

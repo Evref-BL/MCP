@@ -21,6 +21,8 @@ client connection. Use these docs for the details behind each workflow.
 
 ## Agent Task Guides
 
+- [Smalltalk practices](agents/smalltalk-practices.md) explains object-first
+  design, nil/precondition boundaries, and reflective-check guidance.
 - [Debugging tools](agents/debugging.md) explains the discoverable debugger
   tool family.
 - [Debugger-driven development](agents/debugger-driven-development.md) explains

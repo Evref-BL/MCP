@@ -1531,6 +1531,57 @@ MCPDebugToolContractTest >> testDebugStateReturnsCompositeSnapshotForRegisteredS
 ]
 
 { #category : 'tests' }
+MCPDebugToolContractTest >> testDebugTestCapturesFailingTestMethodAsDebugSession [
+
+	| data exception result session state |
+	result := self callToolNamed: 'debug-test' withArguments: {
+			          (#className -> 'MCPDebugTestToolTarget').
+			          (#testMethodName -> 'debugTestFailingCase').
+			          (#timeoutMilliseconds -> 1000) } asDictionary.
+	data := self dataFrom: result.
+	session := data at: #session.
+	state := data at: #state.
+	exception := state at: #exception.
+	self
+		assert: ((self structuredContentFrom: result) at: #status)
+		equals: 'ok'.
+	self assert: (data at: #captured).
+	self deny: (data at: #timedOut).
+	self deny: (data at: #passed).
+	self assert: (data at: #className) equals: 'MCPDebugTestToolTarget'.
+	self
+		assert: (data at: #testMethodName)
+		equals: 'debugTestFailingCase'.
+	self assert: ((data at: #capabilities) at: #testExecution).
+	self assert: (session at: #status) equals: 'paused'.
+	self assert: (session at: #reason) equals: 'testFailure'.
+	self assert: (state at: #sessionId) equals: (session at: #sessionId).
+	self assert: (exception at: #className) equals: 'TestFailure'
+]
+
+{ #category : 'tests' }
+MCPDebugToolContractTest >> testDebugTestReturnsPassedResultWithoutSession [
+
+	| data result |
+	result := self callToolNamed: 'debug-test' withArguments: {
+			          (#className -> 'MCPDebugTestToolTarget').
+			          (#testMethodName -> 'debugTestPassingCase').
+			          (#timeoutMilliseconds -> 1000) } asDictionary.
+	data := self dataFrom: result.
+	self
+		assert: ((self structuredContentFrom: result) at: #status)
+		equals: 'ok'.
+	self deny: (data at: #captured).
+	self deny: (data at: #timedOut).
+	self assert: (data at: #passed).
+	self assert: (data at: #className) equals: 'MCPDebugTestToolTarget'.
+	self
+		assert: (data at: #testMethodName)
+		equals: 'debugTestPassingCase'.
+	self assert: MCPDebugSessionRegistry default size equals: 0
+]
+
+{ #category : 'tests' }
 MCPDebugToolContractTest >> testDebugVariablesExpandsNestedChildReference [
 
 	| record data selfVariable result child childResult |

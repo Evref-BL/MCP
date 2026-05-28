@@ -47,6 +47,199 @@ MCPToolContractsTest >> assertToolFlowSpec: aSpec [
 ]
 
 { #category : 'private' }
+MCPToolContractsTest >> baseToolFlowSpecs [
+
+	^ {
+		  {
+			  (#toolClass -> MCPToolFindRepositories).
+			  (#arguments -> Dictionary new).
+			  (#requestClass -> MCPRepositoryQuerySpec).
+			  (#commandClass -> MCPQueryToolCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolEditRepository).
+			  (#arguments -> {
+				   (#operation -> 'update').
+				   (#repositoryName -> 'MCP').
+				   (#addPackageNames -> #( 'MCP' )) } asDictionary).
+			  (#requestClass -> MCPRepositoryUpdateRequest).
+			  (#commandClass -> MCPUpdateRepositoryCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolLoadRepository).
+			  (#arguments -> {
+				   (#owner -> 'ExampleOwner').
+				   (#project -> 'ExampleProject').
+				   (#baseline -> 'ExampleBaseline').
+				   (#sourceDirectory -> 'src') } asDictionary).
+			  (#requestClass -> MCPLoadRepositoryRequest).
+			  (#commandClass -> MCPLoadRepositoryCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolFindPackages).
+			  (#arguments -> Dictionary new).
+			  (#requestClass -> MCPFindPackagesRequest).
+			  (#commandClass -> MCPQueryToolCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolFindClasses).
+			  (#arguments -> Dictionary new).
+			  (#requestClass -> MCPFindClassesRequest).
+			  (#commandClass -> MCPQueryToolCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolInspectClass).
+			  (#arguments -> { (#className -> 'Object') } asDictionary).
+			  (#requestClass -> MCPInspectClassRequest).
+			  (#commandClass -> MCPInspectClassCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolEditClass).
+			  (#arguments -> {
+				   (#operation -> 'update').
+				   (#className -> 'Object').
+				   (#classComment -> '') } asDictionary).
+			  (#requestClass -> MCPClassUpdateRequest).
+			  (#commandClass -> MCPUpdateClassCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolRemoveClasses).
+			  (#arguments -> { (#classNames -> #( 'Object' )) } asDictionary).
+			  (#requestClass -> MCPRemoveClassesRequest).
+			  (#commandClass -> MCPRemoveClassesCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolFindMethods).
+			  (#arguments -> Dictionary new).
+			  (#requestClass -> MCPFindMethodsRequest).
+			  (#commandClass -> MCPQueryToolCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolInspectMethod).
+			  (#arguments -> {
+				   (#className -> 'Object').
+				   (#selector -> 'class') } asDictionary).
+			  (#requestClass -> MCPInspectMethodRequest).
+			  (#commandClass -> MCPInspectMethodCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolEditMethod).
+			  (#arguments -> {
+				   (#operation -> 'update').
+				   (#className -> 'Object').
+				   (#selector -> 'class').
+				   (#protocol -> 'accessing') } asDictionary).
+			  (#requestClass -> MCPMethodUpdateRequest).
+			  (#commandClass -> MCPUpdateMethodCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolRewriteMethods).
+			  (#arguments -> { (#rules -> { {
+				    (#lhs -> 'self').
+				    (#rhs -> 'self') } asDictionary }) } asDictionary).
+			  (#requestClass -> MCPMethodRewriteRequest).
+			  (#commandClass -> MCPRewriteMethodsCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolRemoveMethods).
+			  (#arguments -> {
+				   (#className -> 'Object').
+				   (#selectors -> #( 'class' )) } asDictionary).
+			  (#requestClass -> MCPRemoveMethodsRequest).
+			  (#commandClass -> MCPRemoveMethodsCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolManageChangeHistory).
+			  (#arguments -> {
+				   (#operation -> 'listFiles').
+				   (#includeEntryCounts -> false) } asDictionary).
+			  (#requestClass -> MCPChangeHistoryListLogsRequest).
+			  (#commandClass -> MCPListChangeHistoryLogsCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolRunTests).
+			  (#arguments -> { (#tests
+			    -> { { (#className -> 'MCPToolContractsTest') } asDictionary }) }
+				   asDictionary).
+			  (#requestClass -> MCPRunTestsRequest).
+			  (#commandClass -> MCPRunTestsCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolCaptureScreenshot).
+			  (#arguments -> { (#target -> 'world') } asDictionary).
+			  (#requestClass -> MCPScreenshotRequest).
+			  (#commandClass -> MCPScreenshotCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolDebugSessions).
+			  (#arguments -> { (#operation -> 'list') } asDictionary).
+			  (#requestClass -> MCPDebugSessionsRequest).
+			  (#commandClass -> MCPDebugSessionsCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolDebugState).
+			  (#arguments -> { (#sessionId -> 'debug-session-1') } asDictionary).
+			  (#requestClass -> MCPDebugStateRequest).
+			  (#commandClass -> MCPDebugStateCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolDebugVariables).
+			  (#arguments
+			   ->
+				   { (#variableRef
+				    -> 'debug-session-1/state-0/frame-0/scope-receiver') }
+					   asDictionary).
+			  (#requestClass -> MCPDebugVariablesRequest).
+			  (#commandClass -> MCPDebugVariablesCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolDebugEvaluate).
+			  (#arguments -> {
+				   (#sessionId -> 'debug-session-1').
+				   (#expression -> '1') } asDictionary).
+			  (#requestClass -> MCPDebugEvaluateRequest).
+			  (#commandClass -> MCPDebugEvaluateCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolDebugControl).
+			  (#arguments -> {
+				   (#sessionId -> 'debug-session-1').
+				   (#operation -> 'stepOver') } asDictionary).
+			  (#requestClass -> MCPDebugControlRequest).
+			  (#commandClass -> MCPDebugControlCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolDebugBreakpoints).
+			  (#arguments -> { (#operation -> 'list') } asDictionary).
+			  (#requestClass -> MCPDebugBreakpointsRequest).
+			  (#commandClass -> MCPDebugBreakpointsCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolDebugCapture).
+			  (#arguments -> { (#expression -> '1') } asDictionary).
+			  (#requestClass -> MCPDebugCaptureRequest).
+			  (#commandClass -> MCPDebugCaptureCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolDebugEdit).
+			  (#arguments -> { (#sessionId -> 'debug-session-1') } asDictionary).
+			  (#requestClass -> MCPDebugEditRequest).
+			  (#commandClass -> MCPDebugEditCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolEvaluate).
+			  (#arguments -> { (#code -> '1') } asDictionary).
+			  (#requestClass -> MCPEvaluateRequest).
+			  (#commandClass -> MCPEvaluateCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolDiscoverTools).
+			  (#arguments -> Dictionary new).
+			  (#requestClass -> MCPDiscoverToolsRequest).
+			  (#commandClass -> MCPDiscoverToolsCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolInspectTool).
+			  (#arguments -> { (#toolName -> 'find-classes') } asDictionary).
+			  (#requestClass -> MCPInspectToolRequest).
+			  (#commandClass -> MCPInspectToolCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolCallTool).
+			  (#arguments -> {
+				   (#toolName -> 'find-packages').
+				   (#arguments -> Dictionary new) } asDictionary).
+			  (#requestClass -> MCPCallToolRequest).
+			  (#commandClass -> MCPCallToolCommand) } asDictionary }
+]
+
+{ #category : 'private' }
+MCPToolContractsTest >> debugTestToolFlowSpec [
+
+	^ {
+		  (#toolClass -> MCPToolDebugTest).
+		  (#arguments -> {
+			   (#className -> 'MCPToolContractsTest').
+			   (#testMethodName -> 'testDebuggerToolsAreDiscoverableOnly') }
+			   asDictionary).
+		  (#requestClass -> MCPDebugTestRequest).
+		  (#commandClass -> MCPDebugTestCommand) } asDictionary
+]
+
+{ #category : 'private' }
 MCPToolContractsTest >> firstTextFromToolResult: aResult [
 
 	^ (aResult at: #content) first at: #text
@@ -186,6 +379,7 @@ MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 			MCPToolDebugControl.
 			MCPToolDebugBreakpoints.
 			MCPToolDebugCapture.
+			MCPToolDebugTest.
 			MCPToolDebugEdit.
 			MCPToolEvaluate }
 ]
@@ -291,7 +485,7 @@ MCPToolContractsTest >> testDebuggerToolsAreDiscoverableOnly [
 	| debugNames metadataByName result staticToolNames |
 	debugNames := #( 'debug-sessions' 'debug-state' 'debug-variables'
 	                 'debug-evaluate' 'debug-control' 'debug-breakpoints'
-	                 'debug-capture' 'debug-edit' ).
+	                 'debug-capture' 'debug-test' 'debug-edit' ).
 	staticToolNames := MCPToolRegistry staticToolNames.
 	debugNames do: [ :each | self deny: (staticToolNames includes: each) ].
 	result := self
@@ -2355,179 +2549,5 @@ MCPToolContractsTest >> testToolRegistryNamesUseClassSideMetadata [
 { #category : 'private' }
 MCPToolContractsTest >> toolFlowSpecs [
 
-	^ {
-		  {
-			  (#toolClass -> MCPToolFindRepositories).
-			  (#arguments -> Dictionary new).
-			  (#requestClass -> MCPRepositoryQuerySpec).
-			  (#commandClass -> MCPQueryToolCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolEditRepository).
-			  (#arguments -> {
-				   (#operation -> 'update').
-				   (#repositoryName -> 'MCP').
-				   (#addPackageNames -> #( 'MCP' )) } asDictionary).
-			  (#requestClass -> MCPRepositoryUpdateRequest).
-			  (#commandClass -> MCPUpdateRepositoryCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolLoadRepository).
-			  (#arguments -> {
-				   (#owner -> 'ExampleOwner').
-				   (#project -> 'ExampleProject').
-				   (#baseline -> 'ExampleBaseline').
-				   (#sourceDirectory -> 'src') } asDictionary).
-			  (#requestClass -> MCPLoadRepositoryRequest).
-			  (#commandClass -> MCPLoadRepositoryCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolFindPackages).
-			  (#arguments -> Dictionary new).
-			  (#requestClass -> MCPFindPackagesRequest).
-			  (#commandClass -> MCPQueryToolCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolFindClasses).
-			  (#arguments -> Dictionary new).
-			  (#requestClass -> MCPFindClassesRequest).
-			  (#commandClass -> MCPQueryToolCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolInspectClass).
-			  (#arguments -> { (#className -> 'Object') } asDictionary).
-			  (#requestClass -> MCPInspectClassRequest).
-			  (#commandClass -> MCPInspectClassCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolEditClass).
-			  (#arguments -> {
-				   (#operation -> 'update').
-				   (#className -> 'Object').
-				   (#classComment -> '') } asDictionary).
-			  (#requestClass -> MCPClassUpdateRequest).
-			  (#commandClass -> MCPUpdateClassCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolRemoveClasses).
-			  (#arguments -> { (#classNames -> #( 'Object' )) } asDictionary).
-			  (#requestClass -> MCPRemoveClassesRequest).
-			  (#commandClass -> MCPRemoveClassesCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolFindMethods).
-			  (#arguments -> Dictionary new).
-			  (#requestClass -> MCPFindMethodsRequest).
-			  (#commandClass -> MCPQueryToolCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolInspectMethod).
-			  (#arguments -> {
-				   (#className -> 'Object').
-				   (#selector -> 'class') } asDictionary).
-			  (#requestClass -> MCPInspectMethodRequest).
-			  (#commandClass -> MCPInspectMethodCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolEditMethod).
-			  (#arguments -> {
-				   (#operation -> 'update').
-				   (#className -> 'Object').
-				   (#selector -> 'class').
-				   (#protocol -> 'accessing') } asDictionary).
-			  (#requestClass -> MCPMethodUpdateRequest).
-			  (#commandClass -> MCPUpdateMethodCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolRewriteMethods).
-			  (#arguments -> { (#rules -> { {
-				    (#lhs -> 'self').
-				    (#rhs -> 'self') } asDictionary }) } asDictionary).
-			  (#requestClass -> MCPMethodRewriteRequest).
-			  (#commandClass -> MCPRewriteMethodsCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolRemoveMethods).
-			  (#arguments -> {
-				   (#className -> 'Object').
-				   (#selectors -> #( 'class' )) } asDictionary).
-			  (#requestClass -> MCPRemoveMethodsRequest).
-			  (#commandClass -> MCPRemoveMethodsCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolManageChangeHistory).
-			  (#arguments -> {
-				   (#operation -> 'listFiles').
-				   (#includeEntryCounts -> false) } asDictionary).
-			  (#requestClass -> MCPChangeHistoryListLogsRequest).
-			  (#commandClass -> MCPListChangeHistoryLogsCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolRunTests).
-			  (#arguments -> { (#tests
-			    -> { { (#className -> 'MCPToolContractsTest') } asDictionary }) }
-				   asDictionary).
-			  (#requestClass -> MCPRunTestsRequest).
-			  (#commandClass -> MCPRunTestsCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolCaptureScreenshot).
-			  (#arguments -> { (#target -> 'world') } asDictionary).
-			  (#requestClass -> MCPScreenshotRequest).
-			  (#commandClass -> MCPScreenshotCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolDebugSessions).
-			  (#arguments -> { (#operation -> 'list') } asDictionary).
-			  (#requestClass -> MCPDebugSessionsRequest).
-			  (#commandClass -> MCPDebugSessionsCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolDebugState).
-			  (#arguments -> { (#sessionId -> 'debug-session-1') } asDictionary).
-			  (#requestClass -> MCPDebugStateRequest).
-			  (#commandClass -> MCPDebugStateCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolDebugVariables).
-			  (#arguments
-			   ->
-				   { (#variableRef
-				    -> 'debug-session-1/state-0/frame-0/scope-receiver') }
-					   asDictionary).
-			  (#requestClass -> MCPDebugVariablesRequest).
-			  (#commandClass -> MCPDebugVariablesCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolDebugEvaluate).
-			  (#arguments -> {
-				   (#sessionId -> 'debug-session-1').
-				   (#expression -> '1') } asDictionary).
-			  (#requestClass -> MCPDebugEvaluateRequest).
-			  (#commandClass -> MCPDebugEvaluateCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolDebugControl).
-			  (#arguments -> {
-				   (#sessionId -> 'debug-session-1').
-				   (#operation -> 'stepOver') } asDictionary).
-			  (#requestClass -> MCPDebugControlRequest).
-			  (#commandClass -> MCPDebugControlCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolDebugBreakpoints).
-			  (#arguments -> { (#operation -> 'list') } asDictionary).
-			  (#requestClass -> MCPDebugBreakpointsRequest).
-			  (#commandClass -> MCPDebugBreakpointsCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolDebugCapture).
-			  (#arguments -> { (#expression -> '1') } asDictionary).
-			  (#requestClass -> MCPDebugCaptureRequest).
-			  (#commandClass -> MCPDebugCaptureCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolDebugEdit).
-			  (#arguments -> { (#sessionId -> 'debug-session-1') } asDictionary).
-			  (#requestClass -> MCPDebugEditRequest).
-			  (#commandClass -> MCPDebugEditCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolEvaluate).
-			  (#arguments -> { (#code -> '1') } asDictionary).
-			  (#requestClass -> MCPEvaluateRequest).
-			  (#commandClass -> MCPEvaluateCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolDiscoverTools).
-			  (#arguments -> Dictionary new).
-			  (#requestClass -> MCPDiscoverToolsRequest).
-			  (#commandClass -> MCPDiscoverToolsCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolInspectTool).
-			  (#arguments -> { (#toolName -> 'find-classes') } asDictionary).
-			  (#requestClass -> MCPInspectToolRequest).
-			  (#commandClass -> MCPInspectToolCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolCallTool).
-			  (#arguments -> {
-				   (#toolName -> 'find-packages').
-				   (#arguments -> Dictionary new) } asDictionary).
-			  (#requestClass -> MCPCallToolRequest).
-			  (#commandClass -> MCPCallToolCommand) } asDictionary }
+	^ self baseToolFlowSpecs copyWith: self debugTestToolFlowSpec
 ]

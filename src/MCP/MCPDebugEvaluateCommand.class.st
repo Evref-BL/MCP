@@ -218,8 +218,6 @@ MCPDebugEvaluateCommand >> syntaxFailureFor: aNotice record: aRecord frameIndex:
 	details
 		at: #errorCode put: 'DebugEvaluationSyntaxError';
 		at: #description put: 'Compilation failed before evaluation.'.
-	(aNotice respondsTo: #position) ifTrue: [
-		details at: #position put: aNotice position ].
 	^ MCPDebugToolResult
 		  errorSummary: (tool syntaxFailureMessageFor: aNotice)
 		  details: details

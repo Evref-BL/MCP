@@ -109,9 +109,7 @@ MCPDebugAttachedContinuation >> debugger: aDebugger [
 MCPDebugAttachedContinuation >> debuggerSession [
 
 	debugger ifNil: [ ^ nil ].
-	^ [ debugger session ]
-		  on: Error
-		  do: [ :ignored | nil ]
+	^ debugger session
 ]
 
 { #category : 'private' }
@@ -211,8 +209,6 @@ MCPDebugAttachedContinuation >> shouldProceedUsingAttachedDebugger [
 MCPDebugAttachedContinuation >> shouldProceedUsingAttachedDebuggerFor: aDebugSession [
 
 	| visibleSession |
-	(debugger notNil and: [ debugger respondsTo: #proceedDebugSession ])
-		ifFalse: [ ^ false ].
 	visibleSession := self debuggerSession.
 	visibleSession ifNil: [ ^ false ].
 	aDebugSession ifNil: [ ^ false ].

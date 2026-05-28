@@ -1,10 +1,10 @@
 "
-MCP tool for capturing runtime exceptions from evaluated code.
+MCP tool for running one SUnit test under debugger capture.
 
-It runs code in a bounded worker process and registers a debugger session when execution raises a runtime exception.
+A passing test returns a normal result, while a failing or erroring test registers a debuggable session with an immediate debug-state snapshot.
 "
 Class {
-	#name : 'MCPToolDebugCapture',
+	#name : 'MCPToolDebugTest',
 	#superclass : 'MCPTool',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
@@ -12,46 +12,44 @@ Class {
 }
 
 { #category : 'icons' }
-MCPToolDebugCapture class >> toolIconSpec [
+MCPToolDebugTest class >> toolIconSpec [
 
-	^ MCPToolIconSpec baseIconNamed: #go badgeIconNamed: #inspect
+	^ MCPToolIconSpec named: #testRunner
 ]
 
 { #category : 'defaults' }
-MCPToolDebugCapture class >> toolName [
+MCPToolDebugTest class >> toolName [
 
-	^ 'debug-capture'
+	^ 'debug-test'
 ]
 
 { #category : 'private - execution' }
-MCPToolDebugCapture >> commandForRequest: debugRequest [
+MCPToolDebugTest >> commandForRequest: debugRequest [
 
-	^ MCPDebugCaptureCommand tool: self request: debugRequest
+	^ MCPDebugTestCommand tool: self request: debugRequest
 ]
 
 { #category : 'defaults' }
-MCPToolDebugCapture >> defaultDescription [
+MCPToolDebugTest >> defaultDescription [
 
-	^ 'Evaluate Smalltalk in a bounded worker process and capture runtime exceptions as tracked Pharo DebugSession records with an immediate debug-state snapshot.'
+	^ 'Run one SUnit test method in a bounded worker process and capture failures or errors as tracked Pharo DebugSession records with an immediate debug-state snapshot.'
 ]
 
 { #category : 'defaults' }
-MCPToolDebugCapture >> defaultIcons [
-
-	^ { (self pngCompositeBaseIconNamed: #go badgeIconNamed: #inspect) }
-]
-
-{ #category : 'defaults' }
-MCPToolDebugCapture >> defaultInputSchema [
+MCPToolDebugTest >> defaultInputSchema [
 
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties: {
 				  (self
-					   schemaPropertyNamed: 'expression'
+					   schemaPropertyNamed: 'className'
+					   type: 'string'
+					   description: 'SUnit TestCase subclass name.').
+				  (self
+					   schemaPropertyNamed: 'testMethodName'
 					   type: 'string'
 					   description:
-						   'Smalltalk expression to evaluate in a forked worker process.').
+						   'Test method selector to run under debugger capture.').
 				  (self
 					   schemaPropertyNamed: 'name'
 					   type: 'string'
@@ -61,13 +59,13 @@ MCPToolDebugCapture >> defaultInputSchema [
 					   integerSchemaPropertyNamed: 'timeoutMilliseconds'
 					   description:
 						   'Maximum time to wait for completion or capture. Values above the implementation cap are reduced.'
-					   default: MCPDebugCaptureRequest defaultTimeoutMilliseconds).
+					   default: MCPDebugTestRequest defaultTimeoutMilliseconds).
 				  (self
 					   integerSchemaPropertyNamed: 'resultPreviewCharacterLimit'
 					   description:
 						   'Maximum number of characters returned in resultPrintString.'
 					   default:
-						   MCPDebugCaptureRequest defaultResultPreviewCharacterLimit).
+						   MCPDebugTestRequest defaultResultPreviewCharacterLimit).
 				  (self
 					   integerSchemaPropertyNamed: 'sourceContextLines'
 					   description:
@@ -98,30 +96,42 @@ MCPToolDebugCapture >> defaultInputSchema [
 					   description:
 						   'Whether returned state should include the receiver scope.'
 					   default: true) };
-		  required: #( 'expression' );
+		  required: #( 'className' 'testMethodName' );
 		  additionalProperties: false;
 		  yourself
 ]
 
 { #category : 'defaults' }
-MCPToolDebugCapture >> defaultName [
+MCPToolDebugTest >> defaultName [
 
-	^ 'debug-capture'
+	^ 'debug-test'
 ]
 
 { #category : 'defaults' }
-MCPToolDebugCapture >> defaultOutputSchema [
+MCPToolDebugTest >> defaultOutputSchema [
 
 	^ self
 		  standardOutputSchemaForDataProperties: {
 				  (self
 					   booleanSchemaPropertyNamed: 'captured'
 					   description:
-					   'Whether execution stopped on a captured runtime exception.').
+					   'Whether test execution stopped on a captured failure or error.').
 				  (self
 					   booleanSchemaPropertyNamed: 'timedOut'
 					   description:
-					   'Whether capture timed out before completion or exception capture.').
+					   'Whether test execution timed out before completion or capture.').
+				  (self
+					   booleanSchemaPropertyNamed: 'passed'
+					   description:
+					   'Whether the test completed without failure or error.').
+				  (self
+					   schemaPropertyNamed: 'className'
+					   type: 'string'
+					   description: 'SUnit TestCase subclass name.').
+				  (self
+					   schemaPropertyNamed: 'testMethodName'
+					   type: 'string'
+					   description: 'Executed test method selector.').
 				  (self
 					   schemaPropertyNamed: 'sessionId'
 					   type: 'string'
@@ -139,42 +149,32 @@ MCPToolDebugCapture >> defaultOutputSchema [
 					   schemaPropertyNamed: 'state'
 					   type: 'object'
 					   description:
-					   'Immediate debug-state snapshot for captured exceptions.').
-				  (self
-					   schemaPropertyNamed: 'resultClassName'
-					   type: 'string'
-					   description:
-					   'Result class name when execution completed normally.').
-				  (self
-					   schemaPropertyNamed: 'resultPrintString'
-					   type: 'string'
-					   description:
-					   'Bounded result printString when execution completed normally.').
+					   'Immediate debug-state snapshot for captured failures or errors.').
 				  (self
 					   integerSchemaPropertyNamed: 'timeoutMilliseconds'
-					   description: 'Effective timeout used for this capture.').
+					   description: 'Effective timeout used for this run.').
 				  (self
 					   stringArraySchemaNamed: 'warnings'
-					   description: 'Capture-specific warnings.'
+					   description: 'Debug-test-specific warnings.'
 					   itemDescription: 'A warning message.').
 				  (self
 					   schemaPropertyNamed: 'capabilities'
 					   type: 'object'
 					   description:
-					   'Capture capability gates used for this response.') }
+					   'Debug-test capability gates used for this response.') }
 		  required:
-		  #( 'captured' 'timedOut' 'timeoutMilliseconds'
-		     'warnings' 'capabilities' )
+			  #( 'captured' 'timedOut' 'passed' 'className' 'testMethodName'
+			     'timeoutMilliseconds' 'warnings' 'capabilities' )
 ]
 
 { #category : 'defaults' }
-MCPToolDebugCapture >> defaultTitle [
+MCPToolDebugTest >> defaultTitle [
 
-	^ 'Debug Capture'
+	^ 'Debug Test'
 ]
 
 { #category : 'executing' }
-MCPToolDebugCapture >> executeWithRequest: request [
+MCPToolDebugTest >> executeWithRequest: request [
 
 	^ self
 		  executeParsedRequestFrom: request
@@ -200,28 +200,13 @@ MCPToolDebugCapture >> executeWithRequest: request [
 ]
 
 { #category : 'private - request' }
-MCPToolDebugCapture >> parsedRequestFromToolRequest: request [
+MCPToolDebugTest >> parsedRequestFromToolRequest: request [
 
-	^ MCPDebugCaptureRequest fromRequest: request tool: self
+	^ MCPDebugTestRequest fromRequest: request tool: self
 ]
 
 { #category : 'testing' }
-MCPToolDebugCapture >> shouldSaveImageAfterSuccessfulExecution [
+MCPToolDebugTest >> shouldSaveImageAfterSuccessfulExecution [
 
 	^ true
-]
-
-{ #category : 'private' }
-MCPToolDebugCapture >> syntaxFailureMessageFor: aNotice [
-
-	| message |
-	message := aNotice messageText
-		           ifNil: [ aNotice asString ]
-		           ifNotNil: [ :text | text asString ].
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Debug capture failed during compilation (';
-				  nextPutAll: aNotice class name;
-				  nextPutAll: '): ';
-				  nextPutAll: message ]
 ]

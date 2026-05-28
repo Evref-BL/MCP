@@ -14,6 +14,7 @@ Start with:
 | Tool | Use |
 | --- | --- |
 | `debug-capture` | Evaluate a Smalltalk expression in a bounded worker process and capture runtime exceptions as tracked debug sessions. |
+| `debug-test` | Run one SUnit test method in a bounded worker process and capture failures or errors as tracked debug sessions. |
 | `debug-sessions` | List, describe, forget, discover, or attach tracked sessions and open debugger candidates. |
 | `debug-state` | Return the current session snapshot: stack, selected frame, source, scopes, repair actions, and state-scoped refs. |
 | `debug-variables` | Expand scope and variable refs returned by `debug-state`. |
@@ -27,6 +28,10 @@ Start with:
 Use `debug-capture` when the agent should run code and capture its own
 failure. If execution completes normally, there is no debugger session. If a
 runtime exception is captured, use the returned `sessionId` and `state`.
+
+Use `debug-test` when the failure is already expressed as one SUnit test method.
+If the test passes, there is no debugger session. If it fails or errors, use the
+returned `sessionId` and `state`.
 
 Use `debug-sessions` with `operation=discover` when a human already opened a
 debugger. It returns unattached candidates with identifying details. Attach by

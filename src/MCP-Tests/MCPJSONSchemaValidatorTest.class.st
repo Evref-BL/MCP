@@ -9,14 +9,8 @@ Class {
 	#tag : 'Internal'
 }
 
-{ #category : 'private' }
-MCPJSONSchemaValidatorTest >> keywordsFrom: violations [
-
-	^ violations collect: [ :each | each keyword ]
-]
-
 { #category : 'private - fixtures' }
-MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
+MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 
 	^ {
 		  (MCPToolEvaluate -> { (#code -> '1 + 1') } asDictionary).
@@ -90,6 +84,24 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 ]
 
 { #category : 'private' }
+MCPJSONSchemaValidatorTest >> keywordsFrom: violations [
+
+	^ violations collect: [ :each | each keyword ]
+]
+
+{ #category : 'private - fixtures' }
+MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
+
+	| arguments |
+	arguments := self baseRepresentativeArgumentsByToolClass.
+	arguments at: MCPToolDebugTest put: {
+			(#className -> 'MCPToolContractsTest').
+			(#testMethodName -> 'testDebuggerToolsAreDiscoverableOnly') }
+			asDictionary.
+	^ arguments
+]
+
+{ #category : 'private' }
 MCPJSONSchemaValidatorTest >> schemaPropertyType: typeName [
 
 	^ { (#type -> typeName) } asDictionary
@@ -101,20 +113,20 @@ MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasAcceptRepresentativeArg
 	| argumentsByTool |
 	argumentsByTool := self representativeArgumentsByToolClass.
 	MCPTool concreteSubclasses do: [ :toolClass |
-		| arguments violations |
-		arguments := argumentsByTool
-			             at: toolClass
-			             ifAbsent: [
-			             self fail:
-				             'Missing representative arguments for '
-				             , toolClass name ].
-		violations := self
-			              violationsFor: arguments
-			              schema: toolClass new inputSchema.
-		violations ifNotEmpty: [
-			self fail:
-				toolClass name , ' schema rejected representative arguments: '
-				, violations printString ] ]
+			| arguments violations |
+			arguments := argumentsByTool
+				             at: toolClass
+				             ifAbsent: [
+				             self fail:
+					             'Missing representative arguments for '
+					             , toolClass name ].
+			violations := self
+				              violationsFor: arguments
+				              schema: toolClass new inputSchema.
+			violations ifNotEmpty: [
+					self fail:
+						toolClass name , ' schema rejected representative arguments: '
+						, violations printString ] ]
 ]
 
 { #category : 'tests' }

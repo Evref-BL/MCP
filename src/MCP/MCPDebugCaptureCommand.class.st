@@ -177,8 +177,6 @@ MCPDebugCaptureCommand >> syntaxFailureFor: aNotice [
 		at: #description
 		put: 'Compilation failed before capture execution.';
 		at: #expression put: request expression.
-	(aNotice respondsTo: #position) ifTrue: [
-		details at: #position put: aNotice position ].
 	^ MCPDebugToolResult
 		  errorSummary: (tool syntaxFailureMessageFor: aNotice)
 		  details: details
