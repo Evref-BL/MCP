@@ -278,7 +278,7 @@ MCPDebugStateInfo >> temporaryVariablesForContext: aContext frameIndex: frameInd
 
 	| limit names variables |
 	aContext ifNil: [ ^ #(  ) ].
-	names := PharoCompatibility temporaryNamesForContext: aContext.
+	names := aContext tempNames.
 	limit := names size min: request variableLimit.
 	variables := OrderedCollection new.
 	1 to: limit do: [ :index |
