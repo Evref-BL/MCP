@@ -1,5 +1,5 @@
 [![Pharo version](https://img.shields.io/badge/Pharo-12%20%7C%2013%20%7C%2014-%23aac9ff.svg)](https://github.com/pharo-project/Pharo)
-![Build Info](https://github.com/Evref-BL/MCP/workflows/CI/badge.svg)
+![Build Info](https://github.com/Evref-BL/MCP/workflows/CI/badge.svg?branch=main)
 [![Coverage Status](https://coveralls.io/repos/github/Evref-BL/MCP/badge.svg?branch=main)](https://coveralls.io/github/Evref-BL/MCP?branch=main)
 
 # MCP for Pharo Smalltalk
