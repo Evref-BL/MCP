@@ -141,6 +141,10 @@ Inspect an `MCP` instance in a graphical image and open the dashboard tab. The S
 - [Using MCP from an agent](docs/user/using-pharo-mcp.md) explains tool
   discovery, image-state rules, and reusable agent skills.
 - [Safety and ecosystem integration](docs/user/safety-and-ecosystem.md) explains the refactoring, critique, test, repository, change-history, and dashboard boundaries.
+- [Pharo coding rules](docs/user/pharo-coding-rules.md) explains
+  object-first Smalltalk design and correctness-oriented review checks.
+- [Pharo coding style](docs/user/pharo-coding-style.md) explains readability
+  heuristics for expression shape, guards, temporaries, and conditions.
 - [Tool reference](docs/user/tool-reference.md) lists MCP tool groups and
   their intended use.
 - [Debugging with MCP](docs/user/debugging.md) explains debugger sessions,

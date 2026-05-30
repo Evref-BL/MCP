@@ -3,6 +3,10 @@
 Applies when using MCP to inspect, write, review, or refactor Pharo source in
 any project.
 
+This file covers object-design and correctness-oriented rules. For
+expression-level readability heuristics, also read
+[Pharo coding style](pharo-coding-style.md).
+
 ## First Principle
 
 Pharo code should communicate through messages and protocols. Prefer normal

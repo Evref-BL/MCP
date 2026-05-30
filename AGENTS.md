@@ -23,7 +23,8 @@ using a released MCP server from another workspace.
 - Before MCP source, test, schema, package, or developer-doc changes: read
   `docs/dev/developing-mcp.md`.
 - Before Pharo/Smalltalk source changes in this repository: read
-  `docs/user/pharo-coding-rules.md`.
+  `docs/user/pharo-coding-rules.md` and
+  `docs/user/pharo-coding-style.md`.
 - Before reasoning about source files vs loaded image state: read
   `docs/user/source-vs-live-image.md`.
 - Before debugger tool, debug-session, breakpoint, or debugger-driven repair

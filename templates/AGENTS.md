@@ -51,6 +51,11 @@ For Pharo source changes:
 - return empty collections, null objects, or structured errors instead of
   routine `nil`
 - keep methods small and give meaningful domain steps names
+- keep the main send visible and lift duplicated branch-invariant sends out of
+  conditionals
+- guard optional or invalid values before work that depends on them, without
+  treating guard order as a mechanical law
+- avoid assignment inside boolean conditions
 - initialize with `super initialize` and sensible defaults
 - use collection protocol and streams instead of index loops and repeated
   string concatenation

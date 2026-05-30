@@ -14,7 +14,9 @@ client connection. Use these docs for the details behind each workflow.
   MCP uses Pharo's existing refactoring, critique, test, repository,
   change-history, compatibility, and UI systems.
 - [Pharo coding rules](user/pharo-coding-rules.md) explains object-first
-  Smalltalk design and review checks.
+  Smalltalk design and correctness-oriented review checks.
+- [Pharo coding style](user/pharo-coding-style.md) explains readability
+  heuristics for expression shape, guards, temporaries, and conditions.
 - [Source vs live image](user/source-vs-live-image.md) separates source,
   image, Iceberg, and Git state.
 - [Debugging with MCP](user/debugging.md) explains the discoverable debugger
