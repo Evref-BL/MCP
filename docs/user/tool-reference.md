@@ -47,7 +47,8 @@ schema before invoking a discoverable tool.
 | `repository_branch_create` | Create and switch to a new repository branch through Iceberg. |
 | `repository_branch_switch` | Switch to an existing repository branch through Iceberg. |
 | `repository_head_adopt` | Adopt the current repository head as the Iceberg working-copy reference after verifying the image and Git state. |
-| `repository_load` | Load a Metacello baseline from a remote repository or an already-known baseline. |
+| `baseline_load` | Load an already-known Metacello baseline available in the image. |
+| `repository_load` | Load a Metacello baseline from a remote repository. |
 
 Use `repository_identity_verify` before edits or exports, and
 `repository_change_list` before exporting or committing image changes.
@@ -212,6 +213,7 @@ repository_push
 repository_branch_create
 repository_branch_switch
 repository_head_adopt
+baseline_load
 repository_load
 class_remove
 method_remove

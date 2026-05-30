@@ -36,43 +36,6 @@ MCPToolLoadRepositoryTest >> recordedMetacello [
 ]
 
 { #category : 'tests' }
-MCPToolLoadRepositoryTest >> testBaselineModeRejectsRemoteArguments [
-
-	| error tool |
-	tool := MCPToolLoadRepository new.
-	error := [
-	         tool parsedRequestFromToolRequest:
-		         (tool requestFromToolCallArguments: {
-				          (#mode -> 'baseline').
-				          (#baseline -> 'ExampleBaseline').
-				          (#owner -> 'ExampleOwner') } asDictionary) ]
-		         on: MCPCommandError
-		         do: [ :caught | caught ].
-	self
-		assert: error errorCode
-		equals: #UnexpectedLoadRepositoryRemoteArguments
-]
-
-{ #category : 'tests' }
-MCPToolLoadRepositoryTest >> testBaselineModeUsesBaselineDefaults [
-
-	| request tool |
-	tool := MCPToolLoadRepository new.
-	request := tool parsedRequestFromToolRequest:
-		           (tool requestFromToolCallArguments:
-			            { (#baseline -> 'ExampleBaseline') } asDictionary).
-	self assert: request mode equals: 'baseline'.
-	self assert: request hostUrl isNil.
-	self assert: request owner isNil.
-	self assert: request project isNil.
-	self assert: request commitish isNil.
-	self assert: request sourceDirectory isNil.
-	self assert: request groups equals: #(  ).
-	self assert: request onWarning equals: 'log'.
-	self assert: request onConflict equals: 'useLoaded'
-]
-
-{ #category : 'tests' }
 MCPToolLoadRepositoryTest >> testCommandAppliesResumeWarningAndIncomingConflictPolicies [
 
 	| metacello request |
@@ -126,30 +89,6 @@ MCPToolLoadRepositoryTest >> testCommandConfiguresMetacelloAndLoadsDefaultGroup 
 ]
 
 { #category : 'tests' }
-MCPToolLoadRepositoryTest >> testCommandLoadsExistingBaselineWithoutRepository [
-
-	| data load metacello request result |
-	request := self loadRepositoryRequestFromArguments:
-		           { (#baseline -> 'ExampleBaseline') }.
-	result := self executeRecordingCommandForRequest: request.
-	metacello := self recordedMetacello.
-	data := result asDictionary.
-	load := data at: #load.
-	self assert: (metacello messageCountFor: #baseline:) equals: 1.
-	self assert:
-		(metacello received: #baseline: withArguments: { 'ExampleBaseline' }).
-	self deny: (metacello received: #repository:).
-	self assert: (metacello received: #onWarningLog).
-	self assert: (metacello received: #onConflictUseLoaded).
-	self assert: (metacello received: #load).
-	self assert: result mode equals: 'baseline'.
-	self deny: (data includesKey: #repository).
-	self assert: (load at: #baseline) equals: 'ExampleBaseline'.
-	self assert: result newPackageNames isEmpty.
-	self assert: result repositoryInfos isEmpty
-]
-
-{ #category : 'tests' }
 MCPToolLoadRepositoryTest >> testCommandLoadsRequestedGroups [
 
 	| metacello request |
@@ -185,24 +124,19 @@ MCPToolLoadRepositoryTest >> testCommandPassPoliciesSkipMetacelloPolicyConfigura
 ]
 
 { #category : 'tests' }
-MCPToolLoadRepositoryTest >> testRemoteModeRequiresOwnerAndProject [
+MCPToolLoadRepositoryTest >> testRepositoryLoadRequiresOwnerAndProject [
 
-	| error tool |
+	| tool |
 	tool := MCPToolLoadRepository new.
-	error := [
-	         tool parsedRequestFromToolRequest:
-		         (tool requestFromToolCallArguments: {
-				          (#mode -> 'remote').
-				          (#baseline -> 'ExampleBaseline') } asDictionary) ]
-		         on: MCPCommandError
-		         do: [ :caught | caught ].
 	self
-		assert: error errorCode
-		equals: #MissingLoadRepositoryRemoteCoordinates
+		should: [
+				tool requestFromToolCallArguments:
+					{ (#baseline -> 'ExampleBaseline') } asDictionary ]
+		raise: MCPInvalidToolInput
 ]
 
 { #category : 'tests' }
-MCPToolLoadRepositoryTest >> testRemoteModeUsesGranularDefaults [
+MCPToolLoadRepositoryTest >> testRepositoryLoadUsesRemoteDefaults [
 
 	| request tool |
 	tool := MCPToolLoadRepository new.

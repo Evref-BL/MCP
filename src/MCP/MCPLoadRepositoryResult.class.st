@@ -20,14 +20,6 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPLoadRepositoryResult class >> baselineRequest: aRequest loadResult: aLoadResult [
-
-	^ self new
-		  initializeBaselineRequest: aRequest
-		  loadResult: aLoadResult
-]
-
-{ #category : 'instance creation' }
 MCPLoadRepositoryResult class >> remoteRequest: aRequest repositoryUrl: aRepositoryUrl loadResult: aLoadResult [
 
 	^ self new
@@ -70,14 +62,6 @@ MCPLoadRepositoryResult >> groups [
 MCPLoadRepositoryResult >> hostUrl [
 
 	^ hostUrl
-]
-
-{ #category : 'initialization' }
-MCPLoadRepositoryResult >> initializeBaselineRequest: aRequest loadResult: aLoadResult [
-
-	mode := 'baseline'.
-	loadResult := aLoadResult.
-	^ self
 ]
 
 { #category : 'initialization' }

@@ -227,6 +227,16 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 ]
 
 { #category : 'private' }
+MCPToolContractsTest >> baselineLoadToolFlowSpec [
+
+	^ {
+		  (#toolClass -> MCPToolLoadBaseline).
+		  (#arguments -> { (#baseline -> 'ExampleBaseline') } asDictionary).
+		  (#requestClass -> MCPLoadBaselineRequest).
+		  (#commandClass -> MCPLoadBaselineCommand) } asDictionary
+]
+
+{ #category : 'private' }
 MCPToolContractsTest >> debugTestToolFlowSpec [
 
 	^ {
@@ -795,6 +805,7 @@ MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 			MCPToolCreateRepositoryBranch.
 			MCPToolSwitchRepositoryBranch.
 			MCPToolAdoptRepositoryHead.
+			MCPToolLoadBaseline.
 			MCPToolLoadRepository.
 			MCPToolFindPackages.
 			MCPToolFindClasses.
@@ -3237,6 +3248,7 @@ MCPToolContractsTest >> toolFlowSpecs [
 		                  MCPToolDebugBreakpoints }.
 	specs removeAllSuchThat: [ :each |
 		oldToolClasses includes: (each at: #toolClass) ].
+	specs add: self baselineLoadToolFlowSpec.
 	specs addAll: self focusedClassEditToolFlowSpecs.
 	specs addAll: self focusedMethodLookupToolFlowSpecs.
 	specs addAll: self focusedMethodEditToolFlowSpecs.

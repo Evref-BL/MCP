@@ -51,17 +51,6 @@ MCPLoadRepositoryRequest >> groups [
 	^ groups ifNil: [ #(  ) ]
 ]
 
-{ #category : 'private - mode' }
-MCPLoadRepositoryRequest >> hasRemoteArguments [
-
-	^ {
-		  self hostUrl.
-		  self owner.
-		  self project.
-		  self commitish.
-		  self sourceDirectory } anySatisfy: [ :each | each notNil ]
-]
-
 { #category : 'accessing' }
 MCPLoadRepositoryRequest >> hostUrl [
 
@@ -86,16 +75,8 @@ MCPLoadRepositoryRequest >> initializeFromRequest: request tool: aTool [
 	project := request stringArgumentNamed: 'project'.
 	commitish := request stringArgumentNamed: 'commitish'.
 	sourceDirectory := request stringArgumentNamed: 'sourceDirectory'.
-	mode := self normalizedModeFrom:
-		        (request stringArgumentNamed: 'mode').
-	mode ifNil: [
-		mode := self hasRemoteArguments
-			        ifTrue: [ 'remote' ]
-			        ifFalse: [ 'baseline' ] ].
-	self validateMode.
-	self isRemoteLoad
-		ifTrue: [ self initializeRemoteDefaultsFromTool: aTool ]
-		ifFalse: [ self validateBaselineOnlyArguments ].
+	mode := 'remote'.
+	self initializeRemoteDefaultsFromTool: aTool.
 	^ self
 ]
 
@@ -103,10 +84,10 @@ MCPLoadRepositoryRequest >> initializeFromRequest: request tool: aTool [
 MCPLoadRepositoryRequest >> initializeRemoteDefaultsFromTool: aTool [
 
 	(owner isNil or: [ project isNil ]) ifTrue: [
-		MCPCommandError
-			signalErrorCode: #MissingLoadRepositoryRemoteCoordinates
-			message: 'owner and project are required when mode is remote.'
-			details: self requestedContext ].
+			MCPCommandError
+				signalErrorCode: #MissingLoadRepositoryRemoteCoordinates
+				message: 'owner and project are required for repository loads.'
+				details: self requestedContext ].
 	hostUrl ifNil: [ hostUrl := aTool defaultHostUrl ].
 	commitish ifNil: [ commitish := aTool defaultCommitish ].
 	sourceDirectory ifNil: [
@@ -123,15 +104,6 @@ MCPLoadRepositoryRequest >> isRemoteLoad [
 MCPLoadRepositoryRequest >> mode [
 
 	^ mode
-]
-
-{ #category : 'private - mode' }
-MCPLoadRepositoryRequest >> normalizedModeFrom: rawMode [
-
-	rawMode ifNil: [ ^ nil ].
-	rawMode asLowercase = 'remote' ifTrue: [ ^ 'remote' ].
-	rawMode asLowercase = 'baseline' ifTrue: [ ^ 'baseline' ].
-	^ rawMode asLowercase
 ]
 
 { #category : 'accessing' }
@@ -215,32 +187,27 @@ MCPLoadRepositoryRequest >> repositorySourceDirectorySegment [
 MCPLoadRepositoryRequest >> repositoryUrl [
 
 	| hostQualifier path scheme |
-	self isRemoteLoad ifFalse: [
-		MCPCommandError
-			signalErrorCode: #LoadRepositoryUrlUnavailable
-			message: 'repositoryUrl is only available when mode is remote.'
-			details: self requestedContext ].
 	scheme := self repositoryScheme.
 	hostQualifier := self repositoryHostQualifier.
 	path := self repositorySourceDirectorySegment.
 	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: scheme;
-			  nextPutAll: '://'.
-		  hostQualifier isEmpty ifFalse: [
 			  stream
-				  nextPutAll: hostQualifier;
-				  nextPut: $: ].
-		  stream
-			  nextPutAll: self owner;
-			  nextPut: $/;
-			  nextPutAll: self project;
-			  nextPut: $:;
-			  nextPutAll: self commitish.
-		  path isEmpty ifFalse: [
+				  nextPutAll: scheme;
+				  nextPutAll: '://'.
+			  hostQualifier isEmpty ifFalse: [
+					  stream
+						  nextPutAll: hostQualifier;
+						  nextPut: $: ].
 			  stream
+				  nextPutAll: self owner;
 				  nextPut: $/;
-				  nextPutAll: path ] ]
+				  nextPutAll: self project;
+				  nextPut: $:;
+				  nextPutAll: self commitish.
+			  path isEmpty ifFalse: [
+					  stream
+						  nextPut: $/;
+						  nextPutAll: path ] ]
 ]
 
 { #category : 'converting' }
@@ -268,25 +235,4 @@ MCPLoadRepositoryRequest >> requestedContext [
 MCPLoadRepositoryRequest >> sourceDirectory [
 
 	^ sourceDirectory
-]
-
-{ #category : 'private - mode' }
-MCPLoadRepositoryRequest >> validateBaselineOnlyArguments [
-
-	self hasRemoteArguments ifFalse: [ ^ self ].
-	MCPCommandError
-		signalErrorCode: #UnexpectedLoadRepositoryRemoteArguments
-		message:
-		'hostUrl, owner, project, commitish, and sourceDirectory are only valid when mode is remote.'
-		details: self requestedContext
-]
-
-{ #category : 'private - mode' }
-MCPLoadRepositoryRequest >> validateMode [
-
-	(#( 'remote' 'baseline' ) includes: self mode) ifTrue: [ ^ self ].
-	MCPCommandError
-		signalErrorCode: #UnsupportedLoadRepositoryMode
-		message: 'mode must be remote or baseline.'
-		details: self requestedContext
 ]

@@ -301,6 +301,7 @@ MCPToolRegistry class >> publicToolGroups [
 			   MCPToolCreateRepositoryBranch.
 			   MCPToolSwitchRepositoryBranch.
 			   MCPToolAdoptRepositoryHead.
+			   MCPToolLoadBaseline.
 			   MCPToolLoadRepository }).
 		  ('packages' -> { MCPToolFindPackages }).
 		  ('classes' -> {
@@ -407,8 +408,8 @@ MCPToolRegistry class >> riskForTool: aTool [
 	              'debug_session_get' 'debug_candidate_search'
 	              'debug_state_get' 'debug_variable_get'
 	              'debug_breakpoint_list' ).
-	mediumRisk := #( 'tool_call' 'repository_load' 'test_run' 'image_evaluate'
-	                 'debug_expression_evaluate'
+	mediumRisk := #( 'tool_call' 'baseline_load' 'repository_load'
+	                 'test_run' 'image_evaluate' 'debug_expression_evaluate'
 	                 'debug_capture' 'debug_test_run' ).
 	(lowRisk includes: toolName) ifTrue: [ ^ 'low' ].
 	(mediumRisk includes: toolName) ifTrue: [ ^ 'medium' ].

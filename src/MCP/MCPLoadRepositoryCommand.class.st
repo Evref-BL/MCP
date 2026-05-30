@@ -20,14 +20,6 @@ MCPLoadRepositoryCommand class >> tool: aTool request: aRequest [
 ]
 
 { #category : 'private - executing' }
-MCPLoadRepositoryCommand >> baselineCommand [
-
-	^ self baselineCommandClass
-		  tool: self tool
-		  request: self request baselineRequest
-]
-
-{ #category : 'private - executing' }
 MCPLoadRepositoryCommand >> baselineCommandClass [
 
 	^ MCPLoadBaselineCommand
@@ -37,11 +29,6 @@ MCPLoadRepositoryCommand >> baselineCommandClass [
 MCPLoadRepositoryCommand >> execute [
 
 	| loadResult repositoryUrl |
-	self request isRemoteLoad ifFalse: [
-		loadResult := self baselineCommand execute.
-		^ MCPLoadRepositoryResult
-			  baselineRequest: self request
-			  loadResult: loadResult ].
 	repositoryUrl := self request repositoryUrl.
 	loadResult := (self remoteBaselineCommandForRepositoryUrl:
 		               repositoryUrl) execute.

@@ -215,6 +215,8 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 				(#location -> '/tmp/mcp-test-repository') } asDictionary;
 		at: MCPToolUpdateRepository
 		put: { (#repositoryName -> 'MCP') } asDictionary;
+		at: MCPToolLoadBaseline
+		put: { (#baseline -> 'ExampleBaseline') } asDictionary;
 		at: MCPToolApplyChangeHistoryEntries
 		put: { (#latestCount -> 1) } asDictionary;
 		at: MCPToolRevertChangeHistoryEntries
