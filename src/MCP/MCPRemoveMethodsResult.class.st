@@ -1,5 +1,5 @@
 "
-Result DTO produced by the remove-methods command.
+Result DTO produced by the method_remove command.
 "
 Class {
 	#name : 'MCPRemoveMethodsResult',

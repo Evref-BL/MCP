@@ -9,7 +9,7 @@ Class {
 { #category : 'defaults' }
 MCPToolExportRepository class >> toolName [
 
-	^ 'export-repository'
+	^ 'repository_export'
 ]
 
 { #category : 'private - operations' }

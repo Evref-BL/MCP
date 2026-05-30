@@ -20,7 +20,7 @@ MCPToolRemoveClasses class >> toolIconSpec [
 { #category : 'defaults' }
 MCPToolRemoveClasses class >> toolName [
 
-	^ 'remove-classes'
+	^ 'class_remove'
 ]
 
 { #category : 'private - errors' }

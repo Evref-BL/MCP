@@ -1,5 +1,5 @@
 "
-MCP tool for retrieving a composite debug-state snapshot.
+MCP tool for retrieving a composite debug_state_get snapshot.
 
 It is the primary read tool for debugger sessions, returning stack, selected source context, shallow scopes, exception metadata, and repair actions.
 "
@@ -20,7 +20,7 @@ MCPToolDebugState class >> toolIconSpec [
 { #category : 'defaults' }
 MCPToolDebugState class >> toolName [
 
-	^ 'debug-state'
+	^ 'debug_state_get'
 ]
 
 { #category : 'private - execution' }
@@ -51,7 +51,7 @@ MCPToolDebugState >> defaultInputSchema [
 					   schemaPropertyNamed: 'sessionId'
 					   type: 'string'
 					   description:
-						   'Opaque debug session identifier returned by debug-sessions.').
+						   'Opaque debug session identifier returned by debug_session_manage.').
 				  (self
 					   schemaPropertyNamed: 'stateId'
 					   type: 'string'
@@ -96,7 +96,7 @@ MCPToolDebugState >> defaultInputSchema [
 { #category : 'defaults' }
 MCPToolDebugState >> defaultName [
 
-	^ 'debug-state'
+	^ 'debug_state_get'
 ]
 
 { #category : 'defaults' }
@@ -150,7 +150,7 @@ MCPToolDebugState >> defaultOutputSchema [
 					   schemaPropertyNamed: 'repairActions'
 					   type: 'array'
 					   description:
-					   'Repair actions available for debugger-driven development, such as debug-edit arguments for a missing or stub method.').
+					   'Repair actions available for debugger-driven development, such as debug_method_repair arguments for a missing or stub method.').
 				  (self
 					   integerSchemaPropertyNamed: 'stackStart'
 					   description: 'Zero-based stack offset used for the response.').
@@ -177,7 +177,7 @@ MCPToolDebugState >> defaultOutputSchema [
 { #category : 'defaults' }
 MCPToolDebugState >> defaultTitle [
 
-	^ 'Debug State'
+	^ 'Get Debug State'
 ]
 
 { #category : 'executing' }

@@ -20,7 +20,7 @@ MCPToolCallTool class >> toolIconSpec [
 { #category : 'defaults' }
 MCPToolCallTool class >> toolName [
 
-	^ 'call-tool'
+	^ 'tool_call'
 ]
 
 { #category : 'private - execution' }
@@ -68,7 +68,7 @@ MCPToolCallTool >> defaultOutputSchema [
 		                  schemaPropertyNamed: 'result'
 		                  type: 'object'
 		                  description:
-		                  'The target tool result when call-tool is executed outside the MCP server call path.'.
+		                  'The target tool result when tool_call is executed outside the MCP server call path.'.
 	resultProperty additionalProperties: true.
 	^ self
 		  standardOutputSchemaForDataProperties: {
@@ -93,7 +93,7 @@ MCPToolCallTool >> executeWithRequest: request [
 		  executeParsedRequestFrom: request
 		  do: [ :callRequest |
 				  self
-					  errorResultText: 'call-tool requires MCP server call context.'
+					  errorResultText: 'tool_call requires MCP server call context.'
 					  details: { (#toolName -> callRequest toolName) } asDictionary ]
 		  onError: [ :error :parsedRequest | self errorResultFor: error ]
 ]

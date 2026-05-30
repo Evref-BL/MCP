@@ -9,19 +9,19 @@ Class {
 { #category : 'defaults' }
 MCPToolFindMethodSenders class >> toolName [
 
-	^ 'find-method-senders'
+	^ 'method_sender_search'
 ]
 
 { #category : 'defaults' }
 MCPToolFindMethodSenders >> defaultDescription [
 
-	^ 'Find methods that send a selector. Use find-methods for general method metadata or source search.'
+	^ 'Search methods that send a selector. Use method_search for general method metadata or source search.'
 ]
 
 { #category : 'defaults' }
 MCPToolFindMethodSenders >> defaultTitle [
 
-	^ 'Find Method Senders'
+	^ 'Search Method Senders'
 ]
 
 { #category : 'private - schema' }

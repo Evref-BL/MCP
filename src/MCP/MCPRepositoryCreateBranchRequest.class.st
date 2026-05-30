@@ -1,5 +1,5 @@
 "
-Parsed input for edit-repository operation=createBranch. It resolves the registered Iceberg repository and carries the required branch name to create.
+Parsed input for repository_edit operation=createBranch. It resolves the registered Iceberg repository and carries the required branch name to create.
 "
 Class {
 	#name : 'MCPRepositoryCreateBranchRequest',

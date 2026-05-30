@@ -1,5 +1,5 @@
 "
-Parsed remove-methods tool request derived from one validated MCPToolRequest.
+Parsed method_remove tool request derived from one validated MCPToolRequest.
 "
 Class {
 	#name : 'MCPRemoveMethodsRequest',

@@ -1,5 +1,5 @@
 "
-Command wrapper for edit-class create requests. It owns tool-level execution concerns such as warning handling, class comments, output shaping, and failure messages while delegating class installation to MCPCreateClassCommand.
+Command wrapper for class_edit create requests. It owns tool-level execution concerns such as warning handling, class comments, output shaping, and failure messages while delegating class installation to MCPCreateClassCommand.
 "
 Class {
 	#name : 'MCPCreateClassToolCommand',

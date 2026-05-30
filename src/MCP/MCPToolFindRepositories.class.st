@@ -20,7 +20,7 @@ MCPToolFindRepositories class >> toolIconSpec [
 { #category : 'defaults' }
 MCPToolFindRepositories class >> toolName [
 
-	^ 'find-repositories'
+	^ 'repository_search'
 ]
 
 { #category : 'defaults' }
@@ -69,7 +69,7 @@ MCPToolFindRepositories >> defaultOutputSchema [
 { #category : 'defaults' }
 MCPToolFindRepositories >> defaultTitle [
 
-	^ 'Find Repositories'
+	^ 'Search Repositories'
 ]
 
 { #category : 'private - results' }

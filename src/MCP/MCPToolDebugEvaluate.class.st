@@ -20,7 +20,7 @@ MCPToolDebugEvaluate class >> toolIconSpec [
 { #category : 'defaults' }
 MCPToolDebugEvaluate class >> toolName [
 
-	^ 'debug-evaluate'
+	^ 'debug_expression_evaluate'
 ]
 
 { #category : 'private - execution' }
@@ -51,7 +51,7 @@ MCPToolDebugEvaluate >> defaultInputSchema [
 					   schemaPropertyNamed: 'sessionId'
 					   type: 'string'
 					   description:
-						   'Opaque debug session identifier returned by debug-sessions.').
+						   'Opaque debug session identifier returned by debug_session_manage.').
 				  (self
 					   schemaPropertyNamed: 'stateId'
 					   type: 'string'
@@ -61,7 +61,7 @@ MCPToolDebugEvaluate >> defaultInputSchema [
 					   schemaPropertyNamed: 'frameRef'
 					   type: 'string'
 					   description:
-						   'Optional state-scoped frame reference returned by debug-state. Defaults to the selected top frame.').
+						   'Optional state-scoped frame reference returned by debug_state_get. Defaults to the selected top frame.').
 				  (self
 					   schemaPropertyNamed: 'expression'
 					   type: 'string'
@@ -80,7 +80,7 @@ MCPToolDebugEvaluate >> defaultInputSchema [
 { #category : 'defaults' }
 MCPToolDebugEvaluate >> defaultName [
 
-	^ 'debug-evaluate'
+	^ 'debug_expression_evaluate'
 ]
 
 { #category : 'defaults' }
@@ -115,7 +115,7 @@ MCPToolDebugEvaluate >> defaultOutputSchema [
 				  (self
 					   booleanSchemaPropertyNamed: 'hasResultVariableRef'
 					   description:
-					   'Whether resultVariableRef can be expanded with debug-variables.').
+					   'Whether resultVariableRef can be expanded with debug_variable_get.').
 				  (self
 					   schemaPropertyNamed: 'resultVariableRef'
 					   type: 'string'

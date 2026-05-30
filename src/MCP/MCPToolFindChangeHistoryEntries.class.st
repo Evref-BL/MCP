@@ -9,7 +9,7 @@ Class {
 { #category : 'defaults' }
 MCPToolFindChangeHistoryEntries class >> toolName [
 
-	^ 'find-change-history-entries'
+	^ 'history_entry_list'
 ]
 
 { #category : 'private - execution' }
@@ -23,7 +23,7 @@ MCPToolFindChangeHistoryEntries >> commandForRequest: changeHistoryRequest [
 { #category : 'defaults' }
 MCPToolFindChangeHistoryEntries >> defaultDescription [
 
-	^ 'List granular entries from the current Pharo image change history or a selected .ombu file. Use find-change-history-files to locate files, and manage-change-history only when previewing or performing apply/revert.'
+	^ 'List granular entries from the current Pharo image change history or a selected .ombu file. Use history_file_list to locate files, and history_entry_manage only when previewing or performing apply/revert.'
 ]
 
 { #category : 'defaults' }
@@ -107,7 +107,7 @@ MCPToolFindChangeHistoryEntries >> defaultOutputSchema [
 { #category : 'defaults' }
 MCPToolFindChangeHistoryEntries >> defaultTitle [
 
-	^ 'Find Change History Entries'
+	^ 'List Change History Entries'
 ]
 
 { #category : 'private - request' }

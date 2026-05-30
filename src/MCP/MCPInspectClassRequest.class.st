@@ -1,5 +1,5 @@
 "
-Parsed inspect-class tool request derived from one validated MCPToolRequest.
+Parsed class_get tool request derived from one validated MCPToolRequest.
 "
 Class {
 	#name : 'MCPInspectClassRequest',

@@ -1,7 +1,7 @@
 "
 Request object for catalog discovery.
 
-It captures the optional search text, group filter, static-tool inclusion flag, and result limit used by discover-tools.
+It captures the optional search text, group filter, static-tool inclusion flag, and result limit used by tool_search.
 "
 Class {
 	#name : 'MCPDiscoverToolsRequest',

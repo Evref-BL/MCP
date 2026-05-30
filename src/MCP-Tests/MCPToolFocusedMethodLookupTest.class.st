@@ -34,11 +34,11 @@ MCPToolFocusedMethodLookupTest >> testFindClassReferencesMatchesClassReferenceLo
 
 	| data legacyData |
 	data := self
-		        toolNamed: 'find-class-references'
+		        toolNamed: 'method_class_reference_search'
 		        dataFromArguments:
 		        { (#className -> 'MCPToolFindMethodsReferenceTarget') }
 			        asDictionary.
-	legacyData := self toolNamed: 'find-methods' dataFromArguments: {
+	legacyData := self toolNamed: 'method_search' dataFromArguments: {
 			              (#filter -> 'MCPToolFindMethodsReferenceTarget').
 			              (#filterMode -> 'classReference') } asDictionary.
 	self
@@ -59,11 +59,11 @@ MCPToolFocusedMethodLookupTest >> testFindMethodImplementorsMatchesFindMethodsIm
 
 	| data legacyData |
 	data := self
-		        toolNamed: 'find-method-implementors'
+		        toolNamed: 'method_implementor_search'
 		        dataFromArguments: {
 				        (#selector -> 'alphaNeedleSelector').
 				        (#classNames -> { self targetClassName }) } asDictionary.
-	legacyData := self toolNamed: 'find-methods' dataFromArguments: {
+	legacyData := self toolNamed: 'method_search' dataFromArguments: {
 			              (#filter -> 'alphaNeedleSelector').
 			              (#classNames -> { self targetClassName }) }
 			              asDictionary.
@@ -80,10 +80,10 @@ MCPToolFocusedMethodLookupTest >> testFindMethodSendersMatchesSelectorReferenceL
 
 	| data legacyData |
 	data := self
-		        toolNamed: 'find-method-senders'
+		        toolNamed: 'method_sender_search'
 		        dataFromArguments:
 		        { (#selector -> 'sharedTarget') } asDictionary.
-	legacyData := self toolNamed: 'find-methods' dataFromArguments: {
+	legacyData := self toolNamed: 'method_search' dataFromArguments: {
 			              (#filter -> 'sharedTarget').
 			              (#filterMode -> 'selectorReference') } asDictionary.
 	self
@@ -104,14 +104,14 @@ MCPToolFocusedMethodLookupTest >> testFindVariableReferencesMatchesVariableRefer
 
 	| data legacyData |
 	data := self
-		        toolNamed: 'find-variable-references'
+		        toolNamed: 'method_variable_reference_search'
 		        dataFromArguments: {
 				        (#variableName -> 'trackedSlot').
 				        (#side -> 'instance').
 				        (#classNames
 				         -> #( 'MCPToolFindMethodsVariableReferenceTarget' )) }
 				        asDictionary.
-	legacyData := self toolNamed: 'find-methods' dataFromArguments: {
+	legacyData := self toolNamed: 'method_search' dataFromArguments: {
 			              (#filter -> 'trackedSlot').
 			              (#filterMode -> 'variableReference').
 			              (#side -> 'instance').
@@ -158,8 +158,8 @@ MCPToolFocusedMethodLookupTest >> testFocusedLookupSchemasRequireFocusedArgument
 MCPToolFocusedMethodLookupTest >> testFocusedLookupToolsArePublicStaticReadTools [
 
 	| names |
-	names := #( 'find-method-implementors' 'find-method-senders'
-	            'find-class-references' 'find-variable-references' ).
+	names := #( 'method_implementor_search' 'method_sender_search'
+	            'method_class_reference_search' 'method_variable_reference_search' ).
 	names do: [ :each |
 			| tool |
 			self assert: (MCPToolRegistry publicToolNames includes: each).

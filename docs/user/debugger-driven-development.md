@@ -14,10 +14,10 @@ repair action.
 
 ## Main Flow
 
-1. Get a state with `debug-state`, `debug-capture`, or `debug-sessions` with
+1. Get a state with `debug_state_get`, `debug_capture`, or `debug_session_manage` with
    `operation=attach`.
 2. Check `repairActions` before inventing an edit target.
-3. Call `debug-edit` with the action's `sessionId`, `stateId`, and `frameRef`.
+3. Call `debug_method_repair` with the action's `sessionId`, `stateId`, and `frameRef`.
 4. Review returned `critiques`.
 5. If the edit is blocked by critiques and the critiques are acceptable, retry
    with `ignoreCritiques=true`.
@@ -37,13 +37,14 @@ repair action.
 
 - Do not guess the receiver class, target behavior, selector, or class side for
   missing-method repair.
-- Do not use general `evaluate` code to mutate contexts or drive debugger UI.
+- Do not use general `image_evaluate` code to mutate contexts or drive
+  debugger UI.
 - Do not continue issuing frame commands when the repair outcome is running,
   timed out, completed, or blocked by critiques.
 
 ## Missing Methods
 
-For `MessageNotUnderstood`, `debug-edit` creates the method implied by the
+For `MessageNotUnderstood`, `debug_method_repair` creates the method implied by the
 paused message send. The target behavior, selector, class side, and frame are
 derived from the debug state; do not guess them in the request.
 
@@ -54,13 +55,13 @@ is formatted before it is returned or used to continue execution.
 ## Stub Methods
 
 For `subclassResponsibility`, `shouldBeImplemented`, and `notYetImplemented`,
-`debug-edit` recompiles the method associated with the selected repair frame.
+`debug_method_repair` recompiles the method associated with the selected repair frame.
 Use the repair action's frame reference instead of selecting a target class by
 hand.
 
 ## Critiques
 
-`debug-edit` uses the same critique gate expected from method-editing tools. It
+`debug_method_repair` uses the same critique gate expected from method-editing tools. It
 stops before proceeding when critiques are reported unless
 `ignoreCritiques=true`.
 
@@ -69,7 +70,7 @@ continuing the suspended computation is still the right next step.
 
 ## Proceeding
 
-After a successful accepted edit, `debug-edit` attempts to proceed the repaired
+After a successful accepted edit, `debug_method_repair` attempts to proceed the repaired
 computation. Outcomes include completed, paused, running, timed out, or blocked
 by critiques.
 
@@ -79,9 +80,9 @@ timed out, avoid issuing stale frame commands.
 
 ## Human-Owned Debuggers
 
-For debugger windows opened by a human, attach with `debug-sessions` and let
+For debugger windows opened by a human, attach with `debug_session_manage` and let
 the debugger controller perform control actions. The visible debugger remains
-the UI owner. Do not use general `evaluate` code to drive Morphic debugger
+the UI owner. Do not use general `image_evaluate` code to drive Morphic debugger
 widgets or mutate contexts directly.
 
 When the user asks you to perform a bounded action and give control back, run

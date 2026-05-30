@@ -1,7 +1,7 @@
 "
 DTO for registered Iceberg repository metadata.
 
-It is read-only and intended for find-repositories responses and repository operation summaries. The DTO normalizes repository, head, remote, upstream, and package state from different Iceberg repository implementations while keeping tool output independent from Iceberg objects.
+It is read-only and intended for repository_search responses and repository operation summaries. The DTO normalizes repository, head, remote, upstream, and package state from different Iceberg repository implementations while keeping tool output independent from Iceberg objects.
 "
 Class {
 	#name : 'MCPRepositoryInfo',

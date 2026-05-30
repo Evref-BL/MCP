@@ -1,5 +1,5 @@
 "
-Expands debugger variable and scope references returned by debug-state.
+Expands debugger variable and scope references returned by debug_state_get.
 
 It validates the state-scoped variable reference, resolves receiver or temporary values, and returns bounded child previews for instance variables and indexed contents.
 "

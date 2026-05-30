@@ -22,7 +22,7 @@ MCPToolRunTests class >> toolIconSpec [
 { #category : 'defaults' }
 MCPToolRunTests class >> toolName [
 
-	^ 'run-tests'
+	^ 'test_run'
 ]
 
 { #category : 'private - execution' }
@@ -275,7 +275,7 @@ MCPToolRunTests >> defaultOutputSchema [
 		                      schemaPropertyNamed: 'unrunTests'
 		                      type: 'array'
 		                      description:
-		                      'Test execution requests that did not run because the batch timed out. Pass this array to run-tests to continue from the timeout point.'.
+		                      'Test execution requests that did not run because the batch timed out. Pass this array to test_run to continue from the timeout point.'.
 	unrunTestsProperty items: self testRequestObjectSchema.
 	coverageProperty := self coverageResultObjectSchema.
 	^ self

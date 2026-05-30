@@ -23,7 +23,7 @@ MCPSaveImageRecordingServer >> rpcToolCall: aToolName withParams: someArguments 
 
 	(MCPToolRegistry isStaticTool: aToolName) ifTrue: [
 		^ super rpcToolCall: aToolName withParams: someArguments ].
-	^ super rpcToolCall: 'call-tool' withParams: {
+	^ super rpcToolCall: 'tool_call' withParams: {
 			  (#toolName -> aToolName).
 			  (#arguments -> someArguments) } asDictionary
 ]

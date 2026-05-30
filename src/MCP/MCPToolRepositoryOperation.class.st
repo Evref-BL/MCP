@@ -19,7 +19,7 @@ MCPToolRepositoryOperation >> branchNameSchemaProperty [
 		  schemaPropertyNamed: 'branchName'
 		  type: 'string'
 		  description:
-		  'Branch name for branch operations, or an optional expected current branch guard for adopt-repository-head and verify-repository-identity.'
+		  'Branch name for branch operations, or an optional expected current branch guard for repository_head_adopt and repository_identity_verify.'
 ]
 
 { #category : 'private - execution' }

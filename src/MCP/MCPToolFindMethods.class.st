@@ -19,7 +19,7 @@ MCPToolFindMethods class >> toolIconSpec [
 { #category : 'defaults' }
 MCPToolFindMethods class >> toolName [
 
-	^ 'find-methods'
+	^ 'method_search'
 ]
 
 { #category : 'private - searching' }
@@ -56,7 +56,7 @@ MCPToolFindMethods >> classReferenceEntriesForQueryRequest: queryRequest [
 { #category : 'defaults' }
 MCPToolFindMethods >> defaultDescription [
 
-	^ 'List and search methods by selector, class, package, protocol, source, scope, or recursive where predicates. Multiple scope filters use union by default; set scopeMode=intersection to require all scopes. Missing class or package names return warnings with suggestions. Use find-method-implementors for selector implementors, find-method-senders for selector sends, find-class-references for class binding references, and find-variable-references for variable references. Legacy compatibility remains supported: use filterMode=exact with filterTargets=selector for implementors, filterMode=selectorReference for senders, filterMode=classReference for class references, and filterMode=variableReference for variable references. equivalentTo matches methods with an equivalent AST.'
+	^ 'List and search methods by selector, class, package, protocol, source, scope, or recursive where predicates. Multiple scope filters use union by default; set scopeMode=intersection to require all scopes. Missing class or package names return warnings with suggestions. Use method_implementor_search for selector implementors, method_sender_search for selector sends, method_class_reference_search for class binding references, and method_variable_reference_search for variable references. For selector and reference lookups, use filterMode=exact with filterTargets=selector for implementors, filterMode=selectorReference for senders, filterMode=classReference for class references, and filterMode=variableReference for variable references. equivalentTo matches methods with an equivalent AST.'
 ]
 
 { #category : 'private - request' }
@@ -100,7 +100,7 @@ MCPToolFindMethods >> defaultOutputSchema [
 { #category : 'defaults' }
 MCPToolFindMethods >> defaultTitle [
 
-	^ 'Find Methods'
+	^ 'Search Methods'
 ]
 
 { #category : 'private - results' }

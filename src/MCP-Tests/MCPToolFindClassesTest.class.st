@@ -473,5 +473,5 @@ MCPToolFindClassesTest >> testWhereEquivalentToReturnsStructuredErrorForNonMetho
 { #category : 'private - calling' }
 MCPToolFindClassesTest >> toolName [
 
-	^ 'find-classes'
+	^ 'class_search'
 ]

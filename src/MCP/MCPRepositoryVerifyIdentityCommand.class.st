@@ -1,5 +1,5 @@
 "
-Command wrapper for edit-repository operation=verifyIdentity. It performs a read-only identity assertion over a registered Iceberg repository before later repository edits or exports run.
+Command wrapper for repository_edit operation=verifyIdentity. It performs a read-only identity assertion over a registered Iceberg repository before later repository edits or exports run.
 "
 Class {
 	#name : 'MCPRepositoryVerifyIdentityCommand',
@@ -28,41 +28,6 @@ MCPRepositoryVerifyIdentityCommand >> addMismatchIfExpected: expectedValue actua
 			(#field -> fieldName).
 			(#expected -> expectedValue).
 			(#actual -> actualValue) } asDictionary
-]
-
-{ #category : 'private - validation' }
-MCPRepositoryVerifyIdentityCommand >> checkedFieldsAndMismatchesFor: repositoryInfo [
-
-	| checkedFields mismatches |
-	checkedFields := OrderedCollection new.
-	mismatches := OrderedCollection new.
-	self
-		checkLocationFor: repositoryInfo
-		checkedFields: checkedFields
-		mismatches: mismatches.
-	self
-		checkBranchNameFor: repositoryInfo
-		checkedFields: checkedFields
-		mismatches: mismatches.
-	self
-		checkSubdirectoryFor: repositoryInfo
-		checkedFields: checkedFields
-		mismatches: mismatches.
-	self
-		checkPackageNamesFor: repositoryInfo
-		checkedFields: checkedFields
-		mismatches: mismatches.
-	self
-		checkModifiedPackageNamesFor: repositoryInfo
-		checkedFields: checkedFields
-		mismatches: mismatches.
-	self
-		checkIsModifiedFor: repositoryInfo
-		checkedFields: checkedFields
-		mismatches: mismatches.
-	^ {
-		  (#checkedFields -> checkedFields asArray).
-		  (#mismatches -> mismatches asArray) } asDictionary
 ]
 
 { #category : 'private - validation' }
@@ -139,6 +104,41 @@ MCPRepositoryVerifyIdentityCommand >> checkSubdirectoryFor: repositoryInfo check
 		mismatches: mismatches
 ]
 
+{ #category : 'private - validation' }
+MCPRepositoryVerifyIdentityCommand >> checkedFieldsAndMismatchesFor: repositoryInfo [
+
+	| checkedFields mismatches |
+	checkedFields := OrderedCollection new.
+	mismatches := OrderedCollection new.
+	self
+		checkLocationFor: repositoryInfo
+		checkedFields: checkedFields
+		mismatches: mismatches.
+	self
+		checkBranchNameFor: repositoryInfo
+		checkedFields: checkedFields
+		mismatches: mismatches.
+	self
+		checkSubdirectoryFor: repositoryInfo
+		checkedFields: checkedFields
+		mismatches: mismatches.
+	self
+		checkPackageNamesFor: repositoryInfo
+		checkedFields: checkedFields
+		mismatches: mismatches.
+	self
+		checkModifiedPackageNamesFor: repositoryInfo
+		checkedFields: checkedFields
+		mismatches: mismatches.
+	self
+		checkIsModifiedFor: repositoryInfo
+		checkedFields: checkedFields
+		mismatches: mismatches.
+	^ {
+		  (#checkedFields -> checkedFields asArray).
+		  (#mismatches -> mismatches asArray) } asDictionary
+]
+
 { #category : 'executing' }
 MCPRepositoryVerifyIdentityCommand >> execute [
 
@@ -194,13 +194,6 @@ MCPRepositoryVerifyIdentityCommand >> request [
 	^ request
 ]
 
-{ #category : 'private' }
-MCPRepositoryVerifyIdentityCommand >> sortedStringsFrom: aCollection [
-
-	^ (aCollection collect: [ :each | each asString ]) asSortedCollection
-		  asArray
-]
-
 { #category : 'private - resolving' }
 MCPRepositoryVerifyIdentityCommand >> shouldRetryByNameOnlyAfter: anError [
 
@@ -236,6 +229,13 @@ MCPRepositoryVerifyIdentityCommand >> signalMissingExpectedIdentityFields [
 				 #( 'location' 'branchName' 'subdirectory' 'packageNames'
 				    'modifiedPackageNames' 'isModified' );
 				 yourself)
+]
+
+{ #category : 'private' }
+MCPRepositoryVerifyIdentityCommand >> sortedStringsFrom: aCollection [
+
+	^ (aCollection collect: [ :each | each asString ]) asSortedCollection
+		  asArray
 ]
 
 { #category : 'accessing' }

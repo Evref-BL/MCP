@@ -20,7 +20,7 @@ MCPToolDebugSessions class >> toolIconSpec [
 { #category : 'defaults' }
 MCPToolDebugSessions class >> toolName [
 
-	^ 'debug-sessions'
+	^ 'debug_session_manage'
 ]
 
 { #category : 'private - execution' }
@@ -56,12 +56,12 @@ MCPToolDebugSessions >> defaultInputSchema [
 					   schemaPropertyNamed: 'sessionId'
 					   type: 'string'
 					   description:
-						   'Opaque debug session identifier returned by debug-sessions.').
+						   'Opaque debug session identifier returned by debug_session_manage.').
 				  (self
 					   schemaPropertyNamed: 'candidateRef'
 					   type: 'string'
 					   description:
-						   'Opaque debugger candidate reference returned by debug-sessions discover.') };
+						   'Opaque debugger candidate reference returned by debug_session_manage discover.') };
 		  required: #(  );
 		  additionalProperties: false;
 		  yourself
@@ -70,7 +70,7 @@ MCPToolDebugSessions >> defaultInputSchema [
 { #category : 'defaults' }
 MCPToolDebugSessions >> defaultName [
 
-	^ 'debug-sessions'
+	^ 'debug_session_manage'
 ]
 
 { #category : 'defaults' }

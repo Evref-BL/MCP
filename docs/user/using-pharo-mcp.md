@@ -62,7 +62,7 @@ Use single search terms like these to find the right tool:
 
 Prefer the least-mutating tool that answers the question. Use query or inspect
 tools before edit tools, preview or diff before export or commit operations,
-and use `evaluate` only when no dedicated tool covers the task.
+and use `image_evaluate` only when no dedicated tool covers the task.
 
 For debugger work, discover the `debugging` tool group and inspect the selected
 tool schema before invoking it. Read `debugging.md` before using debug
@@ -73,32 +73,31 @@ sessions, breakpoints, frame-scoped evaluation, or debugger-driven repair.
 For method lookup:
 
 - discover the method/reference tool from the current client;
-- use `find-method-implementors` for selector implementors;
-- use `find-method-senders` for selector sends;
-- use `find-class-references` for class binding references;
-- use `find-variable-references` for variable references;
-- use `find-methods` for method metadata/source search, `where` predicates,
+- use `method_implementor_search` for selector implementors;
+- use `method_sender_search` for selector sends;
+- use `method_class_reference_search` for class binding references;
+- use `method_variable_reference_search` for variable references;
+- use `method_search` for method metadata/source search, `where` predicates,
   and equivalent-AST matching.
 
-If a client does not expose the focused lookup tools yet, use the compatible
-`find-methods` modes: exact selector filtering for implementors,
-`selectorReference` for senders, `classReference` for class references, and
-`variableReference` for variable references.
+Use the broader `method_search` modes when one method search query is a better
+fit: exact selector filtering for implementors, `selectorReference` for
+senders, `classReference` for class references, and `variableReference` for
+variable references.
 
-For change history, use `find-change-history-files` to locate `.ombu` files
-and `find-change-history-entries` to browse entries. Use
-`manage-change-history` only when you need apply/revert preview or confirmed
+For change history, use `history_file_list` to locate `.ombu` files
+and `history_entry_list` to browse entries. Use
+`history_entry_manage` only when you need apply/revert preview or confirmed
 recovery.
 
-For repository work, use `find-repositories` to inspect registered Iceberg
-repositories, `verify-repository-identity` before changing repository state,
-and `find-repository-changes` before exporting or committing image changes.
-Prefer focused repository tools such as `export-repository`,
-`commit-repository`, `fetch-repository`, `pull-repository`, `push-repository`,
-`create-repository-branch`, `switch-repository-branch`, and
-`adopt-repository-head` when they exist. Use `edit-repository` for create,
-attach, update, or compatibility with clients that do not expose the focused
-tools yet.
+For repository work, use `repository_search` to inspect registered Iceberg
+repositories, `repository_identity_verify` before changing repository state,
+and `repository_change_list` before exporting or committing image changes.
+Prefer focused repository tools such as `repository_export`,
+`repository_commit`, `repository_fetch`, `repository_pull`, `repository_push`,
+`repository_branch_create`, `repository_branch_switch`, and
+`repository_head_adopt` when they exist. Use `repository_edit` for create,
+attach, and update workflows.
 
 Report incomplete or failing tool results clearly. Do not silently guess from
 memory or exported source when the question depends on image state.

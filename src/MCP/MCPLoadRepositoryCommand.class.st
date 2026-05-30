@@ -1,5 +1,5 @@
 "
-Command for load-repository. It dispatches baseline-only loads to MCPLoadBaselineCommand and remote loads to the same baseline command with repository URL configuration.
+Command for repository_load. It dispatches baseline-only loads to MCPLoadBaselineCommand and remote loads to the same baseline command with repository URL configuration.
 "
 Class {
 	#name : 'MCPLoadRepositoryCommand',

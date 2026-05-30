@@ -536,7 +536,7 @@ MCPDebugEditCommand >> signalRecompileFailedForRecord: aRecord frameIndex: frame
 	^ MCPCommandError
 		  signalErrorCode: #DebugEditRecompileFailed
 		  message:
-		  'debug-edit could not recompile the selected debug frame.'
+		  'debug_method_repair could not recompile the selected debug frame.'
 		  details: {
 				  (#sessionId -> aRecord sessionId).
 				  (#stateId -> aRecord stateId).
@@ -550,7 +550,8 @@ MCPDebugEditCommand >> signalRequiredMethodSourceForRecord: aRecord frameIndex: 
 
 	^ MCPCommandError
 		  signalErrorCode: #DebugEditMethodSourceRequired
-		  message: 'debug-edit requires methodSource for ' , editKind , '.'
+		  message:
+		  'debug_method_repair requires methodSource for ' , editKind , '.'
 		  details: {
 				  (#sessionId -> aRecord sessionId).
 				  (#stateId -> aRecord stateId).
@@ -564,7 +565,8 @@ MCPDebugEditCommand >> signalSelectorMismatchWithDetails: details [
 
 	^ MCPCommandError
 		  signalErrorCode: #DebugEditSelectorMismatch
-		  message: 'debug-edit compiled ' , (details at: #actualSelector)
+		  message:
+			  'debug_method_repair compiled ' , (details at: #actualSelector)
 			  , ' but the debug state expects '
 			  , (details at: #expectedSelector) , '.'
 		  details: details
@@ -575,7 +577,8 @@ MCPDebugEditCommand >> signalUnsupportedEditForRecord: aRecord editKind: editKin
 
 	^ MCPCommandError
 		  signalErrorCode: #DebugEditUnsupported
-		  message: 'debug-edit cannot repair the current debug state.'
+		  message:
+		  'debug_method_repair cannot repair the current debug state.'
 		  details: {
 				  (#sessionId -> aRecord sessionId).
 				  (#stateId -> aRecord stateId).

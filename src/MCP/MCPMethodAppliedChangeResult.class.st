@@ -1,5 +1,5 @@
 "
-Structured result DTO for edit-method update. It combines the selected update plan with the narrow change result returned by the internal action.
+Structured result DTO for method_edit update. It combines the selected update plan with the narrow change result returned by the internal action.
 "
 Class {
 	#name : 'MCPMethodAppliedChangeResult',

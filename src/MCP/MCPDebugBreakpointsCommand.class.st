@@ -236,7 +236,7 @@ MCPDebugBreakpointsCommand >> signalMissingBreakpointId [
 
 	^ MCPCommandError
 		  signalErrorCode: #DebugBreakpointIdRequired
-		  message: 'debug-breakpoints operation ' , request operation
+		  message: 'debug_breakpoint_manage operation ' , request operation
 			  , ' requires breakpointId.'
 		  details: { (#operation -> request operation) } asDictionary
 ]
@@ -246,9 +246,8 @@ MCPDebugBreakpointsCommand >> signalRequiredArgumentNamed: argumentName [
 
 	^ MCPCommandError
 		  signalErrorCode: #DebugBreakpointArgumentRequired
-		  message:
-			  'debug-breakpoints operation ' , request operation , ' requires '
-			  , argumentName , '.'
+		  message: 'debug_breakpoint_manage operation ' , request operation
+			  , ' requires ' , argumentName , '.'
 		  details: {
 				  (#operation -> request operation).
 				  (#argumentName -> argumentName) } asDictionary

@@ -1,7 +1,7 @@
 "
 Command that changes the class comment of one class.
 
-It records the previous comment and returns an MCPChangeClassCommentResult so edit-class can report exactly what changed.
+It records the previous comment and returns an MCPChangeClassCommentResult so class_edit can report exactly what changed.
 "
 Class {
 	#name : 'MCPChangeClassCommentCommand',

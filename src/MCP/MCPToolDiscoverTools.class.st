@@ -20,7 +20,7 @@ MCPToolDiscoverTools class >> toolIconSpec [
 { #category : 'defaults' }
 MCPToolDiscoverTools class >> toolName [
 
-	^ 'discover-tools'
+	^ 'tool_search'
 ]
 
 { #category : 'private - execution' }
@@ -94,7 +94,7 @@ MCPToolDiscoverTools >> defaultOutputSchema [
 { #category : 'defaults' }
 MCPToolDiscoverTools >> defaultTitle [
 
-	^ 'Discover Tools'
+	^ 'Search Tools'
 ]
 
 { #category : 'executing' }

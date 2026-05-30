@@ -20,7 +20,7 @@ MCPToolManageChangeHistory class >> toolIconSpec [
 { #category : 'defaults' }
 MCPToolManageChangeHistory class >> toolName [
 
-	^ 'manage-change-history'
+	^ 'history_entry_manage'
 ]
 
 { #category : 'private - operations' }

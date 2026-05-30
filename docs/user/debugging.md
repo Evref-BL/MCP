@@ -13,10 +13,10 @@ Debugger tools are discoverable, not part of the default static surface.
 
 ## Discovery Flow
 
-1. Use `discover-tools` with `group=debugging` to find available debugger
+1. Use `tool_search` with `group=debugging` to find available debugger
    tools.
-2. Use `inspect-tool` for the exact schema of the tool you plan to call.
-3. If the current client exposes a catalog bridge, use `call-tool` to invoke
+2. Use `tool_get` for the exact schema of the tool you plan to call.
+3. If the current client exposes a catalog bridge, use `tool_call` to invoke
    the selected debugger tool by name. Otherwise use the callable form exposed
    by the current client.
 
@@ -32,7 +32,7 @@ Debugger tools are discoverable, not part of the default static surface.
 
 ## Do Not
 
-- Do not drive debugger windows or mutate contexts through general `evaluate`
+- Do not drive debugger windows or mutate contexts through general `image_evaluate`
   code.
 - Do not reuse frame or variable references after stepping, restarting,
   resuming, terminating, or editing.
@@ -44,61 +44,61 @@ Debugger tools are discoverable, not part of the default static surface.
 
 | Tool | Use |
 | --- | --- |
-| `debug-capture` | Evaluate a Smalltalk expression in a bounded worker process and capture runtime exceptions as tracked debug sessions. |
-| `debug-test` | Run one SUnit test method in a bounded worker process and capture failures or errors as tracked debug sessions. |
-| `debug-sessions` | List, describe, forget, discover, or attach tracked sessions and open debugger candidates. |
-| `debug-state` | Return the current session snapshot: stack, selected frame, source, scopes, repair actions, and state-scoped refs. |
-| `debug-variables` | Expand scope and variable refs returned by `debug-state`. |
-| `debug-evaluate` | Evaluate a Smalltalk expression in a selected debug frame. |
-| `debug-control` | Step, restart, resume, or terminate a tracked session. |
-| `debug-breakpoints` | Manage transient DebugPoint breakpoints. |
-| `debug-edit` | Create or hot-recompile the method implied by a paused debug state, then proceed when possible. |
+| `debug_capture` | Evaluate a Smalltalk expression in a bounded worker process and capture runtime exceptions as tracked debug sessions. |
+| `debug_test_run` | Run one SUnit test method in a bounded worker process and capture failures or errors as tracked debug sessions. |
+| `debug_session_manage` | List, describe, forget, discover, or attach tracked sessions and open debugger candidates. |
+| `debug_state_get` | Return the current session snapshot: stack, selected frame, source, scopes, repair actions, and state-scoped refs. |
+| `debug_variable_get` | Expand scope and variable refs returned by `debug_state_get`. |
+| `debug_expression_evaluate` | Evaluate a Smalltalk expression in a selected debug frame. |
+| `debug_control` | Step, restart, resume, or terminate a tracked session. |
+| `debug_breakpoint_manage` | Manage transient DebugPoint breakpoints. |
+| `debug_method_repair` | Create or hot-recompile the method implied by a paused debug state, then proceed when possible. |
 
 ## Session Workflow
 
-Use `debug-capture` when the agent should run code and capture its own
+Use `debug_capture` when the agent should run code and capture its own
 failure. If execution completes normally, there is no debugger session. If a
 runtime exception is captured, use the returned `sessionId` and `state`.
 
-Use `debug-test` when the failure is already expressed as one SUnit test method.
+Use `debug_test_run` when the failure is already expressed as one SUnit test method.
 If the test passes, there is no debugger session. If it fails or errors, use the
 returned `sessionId` and `state`.
 
-Use `debug-sessions` with `operation=discover` when a human already opened a
+Use `debug_session_manage` with `operation=discover` when a human already opened a
 debugger. It returns unattached candidates with identifying details. Attach by
 passing the candidate's `candidateRef` to `operation=attach`.
 
-Use `debug-sessions` with `operation=forget` when you are done. Forgetting an
+Use `debug_session_manage` with `operation=forget` when you are done. Forgetting an
 agent-owned captured session can terminate its worker process. Forgetting an
 attached human debugger only removes it from the MCP registry.
 
 ## State And References
 
 Treat `stateId`, `frameRef`, and `variableRef` values as state-scoped opaque
-references. After `debug-control` or `debug-edit`, old frame and variable refs
+references. After `debug_control` or `debug_method_repair`, old frame and variable refs
 can be stale. Use the new returned state before evaluating, expanding
 variables, or controlling execution again.
 
-Use `debug-state` as the main context-loading tool. Keep stack and variable
-limits small first, then expand details with `debug-variables` only when needed.
+Use `debug_state_get` as the main context-loading tool. Keep stack and variable
+limits small first, then expand details with `debug_variable_get` only when needed.
 
-Use `debug-evaluate` only for expressions that need the selected frame's
+Use `debug_expression_evaluate` only for expressions that need the selected frame's
 receiver or temporaries. Prefer normal code tools for project edits.
 
 ## Control
 
-`debug-control` supports `stepInto`, `stepOver`, `stepThrough`, `restart`,
-`resume`, and `terminate`. It can return a post-action `debug-state` snapshot
+`debug_control` supports `stepInto`, `stepOver`, `stepThrough`, `restart`,
+`resume`, and `terminate`. It can return a post-action `debug_state_get` snapshot
 for paused operations. When the user asks for a bounded action, such as
 "step into twice", perform those control calls and stop.
 
 For externally attached debuggers, control should operate through the attached
 debugger controller so the visible debugger remains the owner of its UI. Do not
-manipulate debugger windows or contexts with general `evaluate` code.
+manipulate debugger windows or contexts with general `image_evaluate` code.
 
 ## Breakpoints
 
-Use `debug-breakpoints` for temporary method-entry or source-interval
+Use `debug_breakpoint_manage` for temporary method-entry or source-interval
 DebugPoint breakpoints. It supports `list`, `set`, `remove`, `enable`,
 `disable`, and `clear`. Clear breakpoints when the debugging task ends.
 
@@ -107,13 +107,13 @@ from the relevant method when source-interval precision is needed.
 
 ## Debugger-Driven Development
 
-When a debug state offers repair actions, prefer `debug-edit` over separate
+When a debug state offers repair actions, prefer `debug_method_repair` over separate
 manual edits. It can create missing methods or recompile stub/selected methods,
 formats the compiled method, reports critiques, and proceeds when the edit is
 accepted.
 
 Read [Debugger-Driven Development](debugger-driven-development.md) before using
-`debug-edit` for missing methods, `subclassResponsibility`,
+`debug_method_repair` for missing methods, `subclassResponsibility`,
 `shouldBeImplemented`, `notYetImplemented`, or iterative repair workflows.
 
 ## Reporting

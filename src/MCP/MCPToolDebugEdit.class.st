@@ -20,7 +20,7 @@ MCPToolDebugEdit class >> toolIconSpec [
 { #category : 'defaults' }
 MCPToolDebugEdit class >> toolName [
 
-	^ 'debug-edit'
+	^ 'debug_method_repair'
 ]
 
 { #category : 'private - execution' }
@@ -51,17 +51,17 @@ MCPToolDebugEdit >> defaultInputSchema [
 					   schemaPropertyNamed: 'sessionId'
 					   type: 'string'
 					   description:
-						   'Opaque debug session identifier returned by debug-sessions.').
+						   'Opaque debug session identifier returned by debug_session_manage.').
 				  (self
 					   schemaPropertyNamed: 'stateId'
 					   type: 'string'
 					   description:
-						   'Optional state token to reject stale debug-edit requests.').
+						   'Optional state token to reject stale debug_method_repair requests.').
 				  (self
 					   schemaPropertyNamed: 'frameRef'
 					   type: 'string'
 					   description:
-						   'Optional state-scoped frame reference returned by debug-state. Defaults to the selected top frame.').
+						   'Optional state-scoped frame reference returned by debug_state_get. Defaults to the selected top frame.').
 				  (self
 					   schemaPropertyNamed: 'methodSource'
 					   type: 'string'
@@ -70,7 +70,7 @@ MCPToolDebugEdit >> defaultInputSchema [
 				  (self
 					   booleanSchemaPropertyNamed: 'ignoreCritiques'
 					   description:
-						   'Whether debug-edit should proceed after a successful compile even when method critiques are reported.'
+						   'Whether debug_method_repair should proceed after a successful compile even when method critiques are reported.'
 					   default: false).
 				  (self
 					   integerSchemaPropertyNamed: 'sourceContextLines'
@@ -110,7 +110,7 @@ MCPToolDebugEdit >> defaultInputSchema [
 { #category : 'defaults' }
 MCPToolDebugEdit >> defaultName [
 
-	^ 'debug-edit'
+	^ 'debug_method_repair'
 ]
 
 { #category : 'defaults' }
@@ -150,11 +150,11 @@ MCPToolDebugEdit >> defaultOutputSchema [
 				  (self
 					   booleanSchemaPropertyNamed: 'proceeded'
 					   description:
-					   'Whether debug-edit proceeded the debug process after compiling.').
+					   'Whether debug_method_repair proceeded the debug process after compiling.').
 				  (self
 					   booleanSchemaPropertyNamed: 'blockedByCritiques'
 					   description:
-					   'Whether debug-edit stopped before proceeding because critiques were reported and ignoreCritiques was false.').
+					   'Whether debug_method_repair stopped before proceeding because critiques were reported and ignoreCritiques was false.').
 				  (self
 					   schemaPropertyNamed: 'proceedOutcome'
 					   type: 'string'
@@ -207,7 +207,7 @@ MCPToolDebugEdit >> defaultTitle [
 { #category : 'private - data' }
 MCPToolDebugEdit >> editWarnings [
 
-	^ #( 'debug-edit compiles Smalltalk code in the running image and may mutate or resume a suspended debug process.' )
+	^ #( 'debug_method_repair compiles Smalltalk code in the running image and may mutate or resume a suspended debug process.' )
 ]
 
 { #category : 'executing' }

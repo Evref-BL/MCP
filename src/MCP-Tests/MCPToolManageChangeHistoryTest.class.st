@@ -387,7 +387,7 @@ MCPToolManageChangeHistoryTest >> testSelectionResultRequestsImageSaveOnlyAfterP
 { #category : 'private - calling' }
 MCPToolManageChangeHistoryTest >> toolName [
 
-	^ 'manage-change-history'
+	^ 'history_entry_manage'
 ]
 
 { #category : 'private' }

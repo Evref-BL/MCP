@@ -43,7 +43,7 @@ MCPToolRequestTest >> testInvalidRequestRaisesToolInputErrorWithViolations [
 		on: MCPInvalidToolInput
 		do: [ :signalledError | error := signalledError ].
 	self assert: error isNotNil.
-	self assert: error toolName equals: 'find-classes'.
+	self assert: error toolName equals: 'class_search'.
 	self assert: error violations size equals: 1.
 	violation := error violations first.
 	self assert: violation path equals: #( 'caseSensitive' ).
@@ -68,7 +68,7 @@ MCPToolRequestTest >> testInvalidToolInputErrorResponseIncludesViolations [
 	violations := data at: 'violations'.
 	firstViolation := violations first.
 	self assert: (errorJson at: 'code') equals: -32602.
-	self assert: (data at: 'toolName') equals: 'find-classes'.
+	self assert: (data at: 'toolName') equals: 'class_search'.
 	self assert: (firstViolation at: #path) equals: #( 'caseSensitive' ).
 	self assert: (firstViolation at: #keyword) equals: 'type'.
 	self

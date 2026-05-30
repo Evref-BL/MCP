@@ -18,7 +18,7 @@ MCPToolFindPackages class >> toolIconSpec [
 { #category : 'defaults' }
 MCPToolFindPackages class >> toolName [
 
-	^ 'find-packages'
+	^ 'package_search'
 ]
 
 { #category : 'defaults' }
@@ -63,7 +63,7 @@ MCPToolFindPackages >> defaultOutputSchema [
 { #category : 'defaults' }
 MCPToolFindPackages >> defaultTitle [
 
-	^ 'Find Packages'
+	^ 'Search Packages'
 ]
 
 { #category : 'private - results' }

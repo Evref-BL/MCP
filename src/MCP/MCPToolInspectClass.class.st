@@ -20,7 +20,7 @@ MCPToolInspectClass class >> toolIconSpec [
 { #category : 'defaults' }
 MCPToolInspectClass class >> toolName [
 
-	^ 'inspect-class'
+	^ 'class_get'
 ]
 
 { #category : 'private - schema' }
@@ -145,7 +145,7 @@ MCPToolInspectClass >> commandForRequest: inspectRequest [
 { #category : 'defaults' }
 MCPToolInspectClass >> defaultDescription [
 
-	^ 'Inspect one class by name and return structured metadata, with optional superclass and subclass context. Use find-classes to discover candidate classes first.'
+	^ 'Inspect one class by name and return structured metadata, with optional superclass and subclass context. Use class_search to discover candidate classes first.'
 ]
 
 { #category : 'defaults' }
@@ -215,7 +215,7 @@ MCPToolInspectClass >> defaultOutputSchema [
 { #category : 'defaults' }
 MCPToolInspectClass >> defaultTitle [
 
-	^ 'Inspect Class'
+	^ 'Get Class'
 ]
 
 { #category : 'private - hierarchy' }

@@ -1,5 +1,5 @@
 "
-Tests for edit-repository create/update behavior. These tests execute the tool directly so temporary Iceberg repository registry changes are not saved by the MCP RPC wrapper.
+Tests for repository_edit create/update behavior. These tests execute the tool directly so temporary Iceberg repository registry changes are not saved by the MCP RPC wrapper.
 "
 Class {
 	#name : 'MCPToolEditRepositoryTest',
@@ -472,7 +472,7 @@ MCPToolEditRepositoryTest >> testCommitRequestsImageSaveAfterSuccessfulExecution
 							(#packageNames -> { packageName }) } asDictionary.
 					server := MCPSaveImageRecordingServer new.
 					self deny: server didSaveImageSession.
-					result := server rpcToolCall: 'edit-repository' withParams: {
+					result := server rpcToolCall: 'repository_edit' withParams: {
 							          (#operation -> 'commit').
 							          (#repositoryName -> repositoryName).
 							          (#message -> 'Commit and save from MCP test') }
@@ -546,7 +546,7 @@ MCPToolEditRepositoryTest >> testCreateBranchReturnsResultReportsErrorsAndReques
 		self assert: (data at: #branchName) equals: 'feature'.
 		self assert: (data at: #previousHeadDescription) equals: 'initial'.
 		self assert: (data at: #headDescription) equals: 'branch feature'.
-		saveResult := server rpcToolCall: 'edit-repository' withParams: {
+		saveResult := server rpcToolCall: 'repository_edit' withParams: {
 				              (#operation -> 'createBranch').
 				              (#repositoryName -> repository name).
 				              (#branchName -> 'feature-save') } asDictionary.
@@ -639,7 +639,7 @@ MCPToolEditRepositoryTest >> testDiffDoesNotRequestImageSaveAfterSuccessfulExecu
 							(#location -> location pathString).
 							(#packageNames -> { packageName }) } asDictionary.
 					server := MCPSaveImageRecordingServer new.
-					result := server rpcToolCall: 'edit-repository' withParams: {
+					result := server rpcToolCall: 'repository_edit' withParams: {
 							          (#operation -> 'diff').
 							          (#repositoryName -> repositoryName) } asDictionary.
 					self deny: (result at: #isError ifAbsent: [ false ]).
@@ -823,157 +823,6 @@ MCPToolEditRepositoryTest >> testPullReportsIcebergMergeAndLoadErrors [
 ]
 
 { #category : 'tests' }
-MCPToolEditRepositoryTest >> testVerifyIdentityDoesNotRequestImageSaveAfterSuccessfulExecution [
-
-	| repository result server |
-	repository := self newTestRepositoryNamed:
-		              'MCP VerifyIdentity Save Test Repository'.
-	self withRegisteredRepository: repository do: [
-		server := MCPSaveImageRecordingServer new.
-		result := server rpcToolCall: 'edit-repository' withParams: {
-				          (#operation -> 'verifyIdentity').
-				          (#repositoryName -> repository name).
-				          (#branchName -> 'main') } asDictionary.
-		self deny: (result at: #isError ifAbsent: [ false ]).
-		self deny: server didSaveImageSession ]
-]
-
-{ #category : 'tests' }
-MCPToolEditRepositoryTest >> testVerifyIdentityOperationRequiresRepositoryAndParses [
-
-	| command parsedRequest rawRequest tool |
-	tool := MCPToolEditRepository new.
-	rawRequest := tool requestFromToolCallArguments: {
-			              (#operation -> 'verifyIdentity').
-			              (#repositoryName -> 'MCP').
-			              (#branchName -> 'main').
-			              (#packageNames -> #( 'MCP' )).
-			              (#isModified -> false) } asDictionary.
-	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
-	command := tool commandForRequest: parsedRequest.
-
-	self assert: parsedRequest class equals: MCPRepositoryVerifyIdentityRequest.
-	self assert: parsedRequest operation equals: 'verifyIdentity'.
-	self assert: parsedRequest branchName equals: 'main'.
-	self assert: parsedRequest isModified equals: false.
-	self assert: command class equals: MCPRepositoryVerifyIdentityCommand
-]
-
-{ #category : 'tests' }
-MCPToolEditRepositoryTest >> testVerifyIdentityPassesWhenExpectedIdentityMatches [
-
-	| data repository result |
-	repository := self newTestRepositoryNamed:
-		              'MCP VerifyIdentity Match Test Repository'.
-	repository workingCopy packageNames: #( 'MCP-Tests' 'MCP' ).
-	repository modifiedPackageNames: #( 'MCP' ).
-	self withRegisteredRepository: repository do: [
-		result := self callToolWith: {
-				          (#operation -> 'verifyIdentity').
-				          (#repositoryName -> repository name).
-				          (#location -> repository location).
-				          (#branchName -> 'main').
-				          (#subdirectory -> '').
-				          (#packageNames -> #( 'MCP' 'MCP-Tests' )).
-				          (#modifiedPackageNames -> #( 'MCP' )).
-				          (#isModified -> true) } asDictionary.
-		data := self dataFrom: result.
-		self deny: (result at: #isError ifAbsent: [ false ]).
-		self assert: (data at: #action) equals: 'verifyIdentity'.
-		self assert: (data at: #matched).
-		self
-			assert: (data at: #checkedFields)
-			equals:
-			#( 'location' 'branchName' 'subdirectory' 'packageNames'
-			   'modifiedPackageNames' 'isModified' ).
-		self assert: (data at: #packageNames) equals: #( 'MCP' 'MCP-Tests' ).
-		self assert: (data at: #modifiedPackageNames) equals: #( 'MCP' ).
-		self assert: repository actionLog asArray equals: #(  ) ]
-]
-
-{ #category : 'tests' }
-MCPToolEditRepositoryTest >> testVerifyIdentityReportsStructuredMismatch [
-
-	| branchMismatch errorDetails mismatchFields repository result |
-	repository := self newTestRepositoryNamed:
-		              'MCP VerifyIdentity Mismatch Test Repository'.
-	repository workingCopy packageNames: #( 'MCP' ).
-	self withRegisteredRepository: repository do: [
-		result := self callToolWith: {
-				          (#operation -> 'verifyIdentity').
-				          (#repositoryName -> repository name).
-				          (#branchName -> 'feature').
-				          (#packageNames -> #( 'MCP' 'MCP-Tests' )).
-				          (#isModified -> true) } asDictionary.
-		self assert: (result at: #isError ifAbsent: [ false ]).
-		self assert:
-			((self summaryFrom: result) includesSubstring:
-				 'Repository identity verification failed').
-		errorDetails := self errorFrom: result.
-		self
-			assert: (errorDetails at: #errorCode)
-			equals: 'RepositoryIdentityMismatch'.
-		self assert: (errorDetails at: #action) equals: 'verifyIdentity'.
-		mismatchFields := (errorDetails at: #mismatches) collect: [
-			                  :each | each at: #field ].
-		self
-			assert: mismatchFields asArray asSortedCollection asArray
-			equals: #( 'branchName' 'isModified' 'packageNames' ).
-		branchMismatch := (errorDetails at: #mismatches) detect: [
-			                  :each | (each at: #field) = 'branchName' ].
-		self assert: (branchMismatch at: #expected) equals: 'feature'.
-		self assert: (branchMismatch at: #actual) equals: 'main'.
-		self assert: repository actionLog asArray equals: #(  ) ]
-]
-
-{ #category : 'tests' }
-MCPToolEditRepositoryTest >> testVerifyIdentityReportsWrongLocationAsIdentityMismatch [
-
-	| errorDetails locationMismatch repository result |
-	repository := self newTestRepositoryNamed:
-		              'MCP VerifyIdentity Location Mismatch Test Repository'.
-	self withRegisteredRepository: repository do: [
-		result := self callToolWith: {
-				          (#operation -> 'verifyIdentity').
-				          (#repositoryName -> repository name).
-				          (#location -> 'memory://different-location') }
-				          asDictionary.
-		self assert: (result at: #isError ifAbsent: [ false ]).
-		errorDetails := self errorFrom: result.
-		self
-			assert: (errorDetails at: #errorCode)
-			equals: 'RepositoryIdentityMismatch'.
-		locationMismatch := (errorDetails at: #mismatches) detect: [
-			                    :each | (each at: #field) = 'location' ].
-		self
-			assert: (locationMismatch at: #expected)
-			equals: 'memory://different-location'.
-		self
-			assert: (locationMismatch at: #actual)
-			equals: repository location ]
-]
-
-{ #category : 'tests' }
-MCPToolEditRepositoryTest >> testVerifyIdentityRequiresExpectedIdentityField [
-
-	| errorDetails repository result |
-	repository := self newTestRepositoryNamed:
-		              'MCP VerifyIdentity Missing Expected Field Test Repository'.
-	self withRegisteredRepository: repository do: [
-		result := self callToolWith: {
-				          (#operation -> 'verifyIdentity').
-				          (#repositoryName -> repository name) } asDictionary.
-		self assert: (result at: #isError ifAbsent: [ false ]).
-		errorDetails := self errorFrom: result.
-		self
-			assert: (errorDetails at: #errorCode)
-			equals: 'RepositoryIdentityExpectationRequired'.
-		self assert:
-			((self summaryFrom: result) includesSubstring:
-				 'requires at least one expected identity field') ]
-]
-
-{ #category : 'tests' }
 MCPToolEditRepositoryTest >> testPullReturnsResultReportsErrorsAndRequestsImageSave [
 
 	| data errorResult repository result saveResult server |
@@ -991,7 +840,7 @@ MCPToolEditRepositoryTest >> testPullReturnsResultReportsErrorsAndRequestsImageS
 		self
 			assert: (data at: #modifiedPackageNames)
 			equals: #( 'MCP-Test-Pulled' ).
-		saveResult := server rpcToolCall: 'edit-repository' withParams: {
+		saveResult := server rpcToolCall: 'repository_edit' withParams: {
 				              (#operation -> 'pull').
 				              (#repositoryName -> repository name) } asDictionary.
 		self deny: (saveResult at: #isError ifAbsent: [ false ]).
@@ -1062,7 +911,7 @@ MCPToolEditRepositoryTest >> testPushReturnsResultReportsErrorsAndRequestsImageS
 		self assert: (data at: #action) equals: 'push'.
 		self assert: (data at: #remoteNames) equals: #( 'origin' ).
 		self assert: (data at: #headDescription) equals: 'after push'.
-		saveResult := server rpcToolCall: 'edit-repository' withParams: {
+		saveResult := server rpcToolCall: 'repository_edit' withParams: {
 				              (#operation -> 'push').
 				              (#repositoryName -> repository name) } asDictionary.
 		self deny: (saveResult at: #isError ifAbsent: [ false ]).
@@ -1206,7 +1055,7 @@ MCPToolEditRepositoryTest >> testSwitchBranchReturnsResultReportsErrorsAndReques
 			assert: (data at: #previousHeadDescription)
 			equals: 'branch main'.
 		self assert: (data at: #headDescription) equals: 'branch feature'.
-		saveResult := server rpcToolCall: 'edit-repository' withParams: {
+		saveResult := server rpcToolCall: 'repository_edit' withParams: {
 				              (#operation -> 'switchBranch').
 				              (#repositoryName -> repository name).
 				              (#branchName -> 'main') } asDictionary.
@@ -1362,6 +1211,157 @@ MCPToolEditRepositoryTest >> testUpdateRemovesPackageWithoutUnloading [
 		ensure: [ self removePackageNamed: packageName ]
 ]
 
+{ #category : 'tests' }
+MCPToolEditRepositoryTest >> testVerifyIdentityDoesNotRequestImageSaveAfterSuccessfulExecution [
+
+	| repository result server |
+	repository := self newTestRepositoryNamed:
+		              'MCP VerifyIdentity Save Test Repository'.
+	self withRegisteredRepository: repository do: [
+		server := MCPSaveImageRecordingServer new.
+		result := server rpcToolCall: 'repository_edit' withParams: {
+				          (#operation -> 'verifyIdentity').
+				          (#repositoryName -> repository name).
+				          (#branchName -> 'main') } asDictionary.
+		self deny: (result at: #isError ifAbsent: [ false ]).
+		self deny: server didSaveImageSession ]
+]
+
+{ #category : 'tests' }
+MCPToolEditRepositoryTest >> testVerifyIdentityOperationRequiresRepositoryAndParses [
+
+	| command parsedRequest rawRequest tool |
+	tool := MCPToolEditRepository new.
+	rawRequest := tool requestFromToolCallArguments: {
+			              (#operation -> 'verifyIdentity').
+			              (#repositoryName -> 'MCP').
+			              (#branchName -> 'main').
+			              (#packageNames -> #( 'MCP' )).
+			              (#isModified -> false) } asDictionary.
+	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
+	command := tool commandForRequest: parsedRequest.
+
+	self assert: parsedRequest class equals: MCPRepositoryVerifyIdentityRequest.
+	self assert: parsedRequest operation equals: 'verifyIdentity'.
+	self assert: parsedRequest branchName equals: 'main'.
+	self assert: parsedRequest isModified equals: false.
+	self assert: command class equals: MCPRepositoryVerifyIdentityCommand
+]
+
+{ #category : 'tests' }
+MCPToolEditRepositoryTest >> testVerifyIdentityPassesWhenExpectedIdentityMatches [
+
+	| data repository result |
+	repository := self newTestRepositoryNamed:
+		              'MCP VerifyIdentity Match Test Repository'.
+	repository workingCopy packageNames: #( 'MCP-Tests' 'MCP' ).
+	repository modifiedPackageNames: #( 'MCP' ).
+	self withRegisteredRepository: repository do: [
+		result := self callToolWith: {
+				          (#operation -> 'verifyIdentity').
+				          (#repositoryName -> repository name).
+				          (#location -> repository location).
+				          (#branchName -> 'main').
+				          (#subdirectory -> '').
+				          (#packageNames -> #( 'MCP' 'MCP-Tests' )).
+				          (#modifiedPackageNames -> #( 'MCP' )).
+				          (#isModified -> true) } asDictionary.
+		data := self dataFrom: result.
+		self deny: (result at: #isError ifAbsent: [ false ]).
+		self assert: (data at: #action) equals: 'verifyIdentity'.
+		self assert: (data at: #matched).
+		self
+			assert: (data at: #checkedFields)
+			equals:
+			#( 'location' 'branchName' 'subdirectory' 'packageNames'
+			   'modifiedPackageNames' 'isModified' ).
+		self assert: (data at: #packageNames) equals: #( 'MCP' 'MCP-Tests' ).
+		self assert: (data at: #modifiedPackageNames) equals: #( 'MCP' ).
+		self assert: repository actionLog asArray equals: #(  ) ]
+]
+
+{ #category : 'tests' }
+MCPToolEditRepositoryTest >> testVerifyIdentityReportsStructuredMismatch [
+
+	| branchMismatch errorDetails mismatchFields repository result |
+	repository := self newTestRepositoryNamed:
+		              'MCP VerifyIdentity Mismatch Test Repository'.
+	repository workingCopy packageNames: #( 'MCP' ).
+	self withRegisteredRepository: repository do: [
+		result := self callToolWith: {
+				          (#operation -> 'verifyIdentity').
+				          (#repositoryName -> repository name).
+				          (#branchName -> 'feature').
+				          (#packageNames -> #( 'MCP' 'MCP-Tests' )).
+				          (#isModified -> true) } asDictionary.
+		self assert: (result at: #isError ifAbsent: [ false ]).
+		self assert:
+			((self summaryFrom: result) includesSubstring:
+				 'Repository identity verification failed').
+		errorDetails := self errorFrom: result.
+		self
+			assert: (errorDetails at: #errorCode)
+			equals: 'RepositoryIdentityMismatch'.
+		self assert: (errorDetails at: #action) equals: 'verifyIdentity'.
+		mismatchFields := (errorDetails at: #mismatches) collect: [
+			                  :each | each at: #field ].
+		self
+			assert: mismatchFields asArray asSortedCollection asArray
+			equals: #( 'branchName' 'isModified' 'packageNames' ).
+		branchMismatch := (errorDetails at: #mismatches) detect: [
+			                  :each | (each at: #field) = 'branchName' ].
+		self assert: (branchMismatch at: #expected) equals: 'feature'.
+		self assert: (branchMismatch at: #actual) equals: 'main'.
+		self assert: repository actionLog asArray equals: #(  ) ]
+]
+
+{ #category : 'tests' }
+MCPToolEditRepositoryTest >> testVerifyIdentityReportsWrongLocationAsIdentityMismatch [
+
+	| errorDetails locationMismatch repository result |
+	repository := self newTestRepositoryNamed:
+		              'MCP VerifyIdentity Location Mismatch Test Repository'.
+	self withRegisteredRepository: repository do: [
+		result := self callToolWith: {
+				          (#operation -> 'verifyIdentity').
+				          (#repositoryName -> repository name).
+				          (#location -> 'memory://different-location') }
+				          asDictionary.
+		self assert: (result at: #isError ifAbsent: [ false ]).
+		errorDetails := self errorFrom: result.
+		self
+			assert: (errorDetails at: #errorCode)
+			equals: 'RepositoryIdentityMismatch'.
+		locationMismatch := (errorDetails at: #mismatches) detect: [
+			                    :each | (each at: #field) = 'location' ].
+		self
+			assert: (locationMismatch at: #expected)
+			equals: 'memory://different-location'.
+		self
+			assert: (locationMismatch at: #actual)
+			equals: repository location ]
+]
+
+{ #category : 'tests' }
+MCPToolEditRepositoryTest >> testVerifyIdentityRequiresExpectedIdentityField [
+
+	| errorDetails repository result |
+	repository := self newTestRepositoryNamed:
+		              'MCP VerifyIdentity Missing Expected Field Test Repository'.
+	self withRegisteredRepository: repository do: [
+		result := self callToolWith: {
+				          (#operation -> 'verifyIdentity').
+				          (#repositoryName -> repository name) } asDictionary.
+		self assert: (result at: #isError ifAbsent: [ false ]).
+		errorDetails := self errorFrom: result.
+		self
+			assert: (errorDetails at: #errorCode)
+			equals: 'RepositoryIdentityExpectationRequired'.
+		self assert:
+			((self summaryFrom: result) includesSubstring:
+				 'requires at least one expected identity field') ]
+]
+
 { #category : 'private - fixtures' }
 MCPToolEditRepositoryTest >> tonelClassSourceWithMethods: methodSelectors [
 
@@ -1399,7 +1399,7 @@ MCPToolEditRepositoryTest >> tonelClassSourceWithMethods: methodSelectors [
 { #category : 'private - calling' }
 MCPToolEditRepositoryTest >> toolName [
 
-	^ 'edit-repository'
+	^ 'repository_edit'
 ]
 
 { #category : 'private' }

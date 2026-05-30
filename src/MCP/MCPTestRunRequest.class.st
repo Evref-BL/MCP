@@ -1,5 +1,5 @@
 "
-Parsed request DTO for one run-tests selection.
+Parsed request DTO for one test_run selection.
 
 It represents either a full test class run or one specific test method inside the batch.
 "

@@ -18,7 +18,7 @@ MCPToolLoadRepository class >> toolIconSpec [
 { #category : 'defaults' }
 MCPToolLoadRepository class >> toolName [
 
-	^ 'load-repository'
+	^ 'repository_load'
 ]
 
 { #category : 'private - execution' }

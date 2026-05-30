@@ -9,14 +9,14 @@ Class {
 { #category : 'defaults' }
 MCPToolFindRepositoryChanges class >> toolName [
 
-	^ 'find-repository-changes'
+	^ 'repository_change_list'
 ]
 
 { #category : 'private - operations' }
 MCPToolFindRepositoryChanges >> repositoryOperationSpec [
 
 	^ {
-		  (#title -> 'Find Repository Changes').
+		  (#title -> 'List Repository Changes').
 		  (#description
 		   ->
 		   'Inspect the image-side Iceberg working-copy diff for a registered repository without writing files.').

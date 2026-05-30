@@ -9,19 +9,19 @@ Class {
 { #category : 'defaults' }
 MCPToolFindMethodImplementors class >> toolName [
 
-	^ 'find-method-implementors'
+	^ 'method_implementor_search'
 ]
 
 { #category : 'defaults' }
 MCPToolFindMethodImplementors >> defaultDescription [
 
-	^ 'Find methods that implement a selector. Use find-methods for general method metadata or source search.'
+	^ 'Search methods that implement a selector. Use method_search for general method metadata or source search.'
 ]
 
 { #category : 'defaults' }
 MCPToolFindMethodImplementors >> defaultTitle [
 
-	^ 'Find Method Implementors'
+	^ 'Search Method Implementors'
 ]
 
 { #category : 'private - schema' }

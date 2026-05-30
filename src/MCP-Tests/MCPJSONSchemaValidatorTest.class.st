@@ -29,10 +29,34 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 			   (#className -> 'MCPTool').
 			   (#selectors -> #( 'temporarySelector' )) } asDictionary).
 		  (MCPToolFindRepositories -> Dictionary new).
+		  (MCPToolVerifyRepositoryIdentity -> {
+			   (#repositoryName -> 'MCP').
+			   (#branchName -> 'main') } asDictionary).
+		  (MCPToolFindRepositoryChanges
+		   -> { (#repositoryName -> 'MCP') } asDictionary).
 		  (MCPToolEditRepository -> {
 			   (#operation -> 'update').
 			   (#repositoryName -> 'MCP').
 			   (#addPackageNames -> #( 'MCP' )) } asDictionary).
+		  (MCPToolExportRepository
+		   -> { (#repositoryName -> 'MCP') } asDictionary).
+		  (MCPToolCommitRepository -> {
+			   (#repositoryName -> 'MCP').
+			   (#message -> 'Example commit') } asDictionary).
+		  (MCPToolFetchRepository
+		   -> { (#repositoryName -> 'MCP') } asDictionary).
+		  (MCPToolPullRepository
+		   -> { (#repositoryName -> 'MCP') } asDictionary).
+		  (MCPToolPushRepository
+		   -> { (#repositoryName -> 'MCP') } asDictionary).
+		  (MCPToolCreateRepositoryBranch -> {
+			   (#repositoryName -> 'MCP').
+			   (#branchName -> 'example-branch') } asDictionary).
+		  (MCPToolSwitchRepositoryBranch -> {
+			   (#repositoryName -> 'MCP').
+			   (#branchName -> 'main') } asDictionary).
+		  (MCPToolAdoptRepositoryHead
+		   -> { (#repositoryName -> 'MCP') } asDictionary).
 		  (MCPToolLoadRepository -> {
 			   (#owner -> 'ExampleOwner').
 			   (#project -> 'ExampleProject').
@@ -52,6 +76,16 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 		  (MCPToolRewriteMethods -> { (#rules -> { {
 			    (#lhs -> 'self').
 			    (#rhs -> 'self') } asDictionary }) } asDictionary).
+		  (MCPToolFindMethodImplementors
+		   -> { (#selector -> 'toolName') } asDictionary).
+		  (MCPToolFindMethodSenders
+		   -> { (#selector -> 'toolName') } asDictionary).
+		  (MCPToolFindClassReferences
+		   -> { (#className -> 'MCPTool') } asDictionary).
+		  (MCPToolFindVariableReferences
+		   -> { (#variableName -> 'toolName') } asDictionary).
+		  (MCPToolFindChangeHistoryFiles -> Dictionary new).
+		  (MCPToolFindChangeHistoryEntries -> Dictionary new).
 		  (MCPToolManageChangeHistory
 		   -> { (#operation -> 'listFiles') } asDictionary).
 		  (MCPToolCaptureScreenshot -> { (#target -> 'world') } asDictionary).
@@ -77,9 +111,9 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 		  (MCPToolFindMethods -> Dictionary new).
 		  (MCPToolDiscoverTools -> Dictionary new).
 		  (MCPToolInspectTool
-		   -> { (#toolName -> 'find-classes') } asDictionary).
+		   -> { (#toolName -> 'class_search') } asDictionary).
 		  (MCPToolCallTool -> {
-			   (#toolName -> 'find-packages').
+			   (#toolName -> 'package_search').
 			   (#arguments -> Dictionary new) } asDictionary) } asDictionary
 ]
 

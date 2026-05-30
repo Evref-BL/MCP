@@ -20,10 +20,10 @@ MCPToolFocusedChangeHistoryTest >> testFindChangeHistoryEntriesMatchesLegacyList
 		             (#limit -> 3).
 		             (#newestFirst -> true) } asDictionary.
 	focusedData := self
-		               toolNamed: 'find-change-history-entries'
+		               toolNamed: 'history_entry_list'
 		               dataFromArguments: arguments.
 	legacyData := self
-		              toolNamed: 'manage-change-history'
+		              toolNamed: 'history_entry_manage'
 		              dataFromArguments: (arguments copy
 				               at: #operation put: 'listEntries';
 				               yourself).
@@ -42,10 +42,10 @@ MCPToolFocusedChangeHistoryTest >> testFindChangeHistoryFilesMatchesLegacyListFi
 	| arguments focusedData legacyData |
 	arguments := { (#includeEntryCounts -> false) } asDictionary.
 	focusedData := self
-		               toolNamed: 'find-change-history-files'
+		               toolNamed: 'history_file_list'
 		               dataFromArguments: arguments.
 	legacyData := self
-		              toolNamed: 'manage-change-history'
+		              toolNamed: 'history_entry_manage'
 		              dataFromArguments: (arguments copy
 				               at: #operation put: 'listFiles';
 				               yourself).
@@ -85,12 +85,12 @@ MCPToolFocusedChangeHistoryTest >> testFocusedChangeHistoryToolsAreDiscoverableR
 
 	| metadataByName result toolNames |
 	result := self
-		          callToolNamed: 'discover-tools'
+		          callToolNamed: 'tool_search'
 		          withArguments: { (#group -> 'history') } asDictionary.
 	metadataByName := (((self dataFrom: result) at: #tools) collect: [
 		                   :each | (each at: #name) -> each ]) asDictionary.
 	toolNames := metadataByName keys.
-	#( 'find-change-history-files' 'find-change-history-entries' ) do: [
+	#( 'history_file_list' 'history_entry_list' ) do: [
 			:toolName |
 			| metadata |
 			self assert: (toolNames includes: toolName).
@@ -98,7 +98,7 @@ MCPToolFocusedChangeHistoryTest >> testFocusedChangeHistoryToolsAreDiscoverableR
 			self assert: (metadata at: #exposure) equals: 'discoverable'.
 			self assert: (metadata at: #mutability) equals: 'read'.
 			self assert: (metadata at: #risk) equals: 'low' ].
-	self assert: (metadataByName includesKey: 'manage-change-history')
+	self assert: (metadataByName includesKey: 'history_entry_manage')
 ]
 
 { #category : 'private' }

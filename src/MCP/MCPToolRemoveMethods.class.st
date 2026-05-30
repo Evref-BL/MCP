@@ -20,7 +20,7 @@ MCPToolRemoveMethods class >> toolIconSpec [
 { #category : 'defaults' }
 MCPToolRemoveMethods class >> toolName [
 
-	^ 'remove-methods'
+	^ 'method_remove'
 ]
 
 { #category : 'private - errors' }
@@ -59,7 +59,7 @@ MCPToolRemoveMethods >> dataForMethod: aCompiledMethod [
 { #category : 'defaults' }
 MCPToolRemoveMethods >> defaultDescription [
 
-	^ 'Remove methods from one class as a batch without sender safety checks. Use edit-method to create, rename, or recategorize methods instead.'
+	^ 'Remove methods from one class as a batch without sender safety checks. Use method_edit to create, rename, or recategorize methods instead.'
 ]
 
 { #category : 'defaults' }

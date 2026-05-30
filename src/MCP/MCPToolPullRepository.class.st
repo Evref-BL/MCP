@@ -9,7 +9,7 @@ Class {
 { #category : 'defaults' }
 MCPToolPullRepository class >> toolName [
 
-	^ 'pull-repository'
+	^ 'repository_pull'
 ]
 
 { #category : 'private - operations' }

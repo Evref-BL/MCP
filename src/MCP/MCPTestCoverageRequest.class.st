@@ -1,5 +1,5 @@
 "
-Parsed coverage options for the run-tests tool.
+Parsed coverage options for the test_run tool.
 
 Coverage is deliberately scoped by method scope properties such as packageNames or classNames. The request also controls whether covered method details are included and how many method entries each coverage list may return.
 "

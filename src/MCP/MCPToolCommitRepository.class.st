@@ -9,7 +9,7 @@ Class {
 { #category : 'defaults' }
 MCPToolCommitRepository class >> toolName [
 
-	^ 'commit-repository'
+	^ 'repository_commit'
 ]
 
 { #category : 'private - operations' }

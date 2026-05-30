@@ -9,7 +9,7 @@ Class {
 { #category : 'defaults' }
 MCPToolAdoptRepositoryHead class >> toolName [
 
-	^ 'adopt-repository-head'
+	^ 'repository_head_adopt'
 ]
 
 { #category : 'private - operations' }

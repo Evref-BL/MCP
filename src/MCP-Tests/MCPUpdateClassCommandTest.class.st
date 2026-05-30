@@ -1,5 +1,5 @@
 "
-Tests for the edit-class update command orchestrator.
+Tests for the class_edit update command orchestrator.
 "
 Class {
 	#name : 'MCPUpdateClassCommandTest',

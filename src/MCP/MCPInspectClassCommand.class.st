@@ -1,5 +1,5 @@
 "
-Command that inspects class metadata and returns DTO dictionaries for inspect-class.
+Command that inspects class metadata and returns DTO dictionaries for class_get.
 "
 Class {
 	#name : 'MCPInspectClassCommand',

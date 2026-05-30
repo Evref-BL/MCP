@@ -1,5 +1,5 @@
 "
-Request object for debug-sessions operations.
+Request object for debug_session_manage operations.
 
 It extends the shared debugger request with the optional candidate reference used when attaching a discovered human-opened debugger.
 "

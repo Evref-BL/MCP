@@ -23,7 +23,7 @@ MCPToolRewriteMethods class >> toolIconSpec [
 { #category : 'defaults' }
 MCPToolRewriteMethods class >> toolName [
 
-	^ 'rewrite-methods'
+	^ 'method_rewrite'
 ]
 
 { #category : 'private - execution' }
@@ -35,7 +35,7 @@ MCPToolRewriteMethods >> commandForRequest: rewriteRequest [
 { #category : 'defaults' }
 MCPToolRewriteMethods >> defaultDescription [
 
-	^ 'Preview or apply Smalltalk AST rewrite rules to methods in a scope. Patterns use RB AST pattern syntax, not regex; pattern variables such as ''`@node'' match AST nodes. By default apply=false returns a preview with changeSetHash and does not mutate the image. apply=true performs the rewrite and requires expectedChangeSetHash from a preview. Applying to the whole image also requires force=true. Scope properties are unioned and match find-methods semantics.'
+	^ 'Preview or apply Smalltalk AST rewrite rules to methods in a scope. Patterns use RB AST pattern syntax, not regex; pattern variables such as ''`@node'' match AST nodes. By default apply=false returns a preview with changeSetHash and does not mutate the image. apply=true performs the rewrite and requires expectedChangeSetHash from a preview. Applying to the whole image also requires force=true. Scope properties are unioned and match method_search semantics.'
 ]
 
 { #category : 'defaults' }

@@ -1,5 +1,5 @@
 "
-Command that validates and runs parsed run-tests selections.
+Command that validates and runs parsed test_run selections.
 
 It resolves MCPTestRunRequest objects to MCPValidatedTestRunRequest objects, executes them, and returns MCPRunTestsResult DTOs.
 "

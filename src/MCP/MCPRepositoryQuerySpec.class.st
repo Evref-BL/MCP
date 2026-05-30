@@ -1,5 +1,5 @@
 "
-Parsed find-repositories query spec derived from one MCPToolRequest.
+Parsed repository_search query spec derived from one MCPToolRequest.
 
 It keeps repository query execution away from raw argument dictionaries and distinguishes omitted optional boolean filters from explicit true or false filters.
 "

@@ -1,5 +1,5 @@
 "
-Parsed edit-method update request. It uses patch semantics: exactly one method update field selects the internal update action for an existing method. newSelector changes are classified by arity: same arity renames or reorders, higher arity adds arguments, and lower arity removes arguments.
+Parsed method_edit update request. It uses patch semantics: exactly one method update field selects the internal update action for an existing method. newSelector changes are classified by arity: same arity renames or reorders, higher arity adds arguments, and lower arity removes arguments.
 "
 Class {
 	#name : 'MCPMethodUpdateRequest',

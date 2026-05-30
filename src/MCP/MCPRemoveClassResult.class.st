@@ -1,5 +1,5 @@
 "
-Result DTO for one class removed as part of a remove-classes command.
+Result DTO for one class removed as part of a class_remove command.
 
 It records the removed class metadata and whether subclasses were reparented.
 "

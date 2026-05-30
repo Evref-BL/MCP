@@ -26,8 +26,8 @@ MCPDebugCaptureCommand >> capabilities [
 { #category : 'private - data' }
 MCPDebugCaptureCommand >> captureWarnings [
 
-	^ #( 'debug-capture evaluates arbitrary Smalltalk in a forked worker process and may mutate image state.'
-	     'Captured exceptions leave the worker process suspended until debug-control resumes or terminates the session.' )
+	^ #( 'debug_capture evaluates arbitrary Smalltalk in a forked worker process and may mutate image state.'
+	     'Captured exceptions leave the worker process suspended until debug_control resumes or terminates the session.' )
 ]
 
 { #category : 'private - results' }

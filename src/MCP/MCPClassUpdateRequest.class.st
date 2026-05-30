@@ -1,5 +1,5 @@
 "
-Parsed edit-class update request. It uses patch semantics: omitted properties are left unchanged, while supplied properties carry the requested replacement, metadata change, or slot edit. suppliedProperties preserves that distinction for empty collections and empty strings.
+Parsed class_edit update request. It uses patch semantics: omitted properties are left unchanged, while supplied properties carry the requested replacement, metadata change, or slot edit. suppliedProperties preserves that distinction for empty collections and empty strings.
 "
 Class {
 	#name : 'MCPClassUpdateRequest',

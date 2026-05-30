@@ -1,5 +1,5 @@
 "
-Tests for parsed edit-class request objects.
+Tests for parsed class_edit request objects.
 "
 Class {
 	#name : 'MCPClassEditRequestTest',

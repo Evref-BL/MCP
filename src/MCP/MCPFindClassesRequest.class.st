@@ -1,5 +1,5 @@
 "
-Parsed, validated find-classes request derived from one MCPToolRequest. It keeps class query execution away from raw argument dictionaries.
+Parsed, validated class_search request derived from one MCPToolRequest. It keeps class query execution away from raw argument dictionaries.
 "
 Class {
 	#name : 'MCPFindClassesRequest',

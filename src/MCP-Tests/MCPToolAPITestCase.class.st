@@ -31,7 +31,7 @@ MCPToolAPITestCase >> aroundToolCall: aBlock [
 { #category : 'private - calling' }
 MCPToolAPITestCase >> callDiscoveredToolNamed: aToolName withArguments: someArguments [
 
-	^ self callRawToolNamed: 'call-tool' withArguments: {
+	^ self callRawToolNamed: 'tool_call' withArguments: {
 			  (#toolName -> aToolName).
 			  (#arguments -> someArguments) } asDictionary
 ]

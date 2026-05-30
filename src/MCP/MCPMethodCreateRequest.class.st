@@ -1,5 +1,5 @@
 "
-Parsed edit-method create request. It captures the target behavior, source, protocol, and warning policy supplied by the MCP transport request so method creation or replacement can run without repeatedly reading raw arguments.
+Parsed method_edit create request. It captures the target behavior, source, protocol, and warning policy supplied by the MCP transport request so method creation or replacement can run without repeatedly reading raw arguments.
 "
 Class {
 	#name : 'MCPMethodCreateRequest',

@@ -1,5 +1,5 @@
 "
-Test fixture used by run-tests timeout coverage.
+Test fixture used by test_run timeout coverage.
 "
 Class {
 	#name : 'MCPToolRunTestsTimeoutTarget',

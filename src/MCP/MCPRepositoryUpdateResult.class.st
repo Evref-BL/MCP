@@ -1,5 +1,5 @@
 "
-Result DTO returned by edit-repository operation=update. It reports the repository after applying package membership or repository metadata changes, plus the package names added and removed during the update.
+Result DTO returned by repository_edit operation=update. It reports the repository after applying package membership or repository metadata changes, plus the package names added and removed during the update.
 "
 Class {
 	#name : 'MCPRepositoryUpdateResult',

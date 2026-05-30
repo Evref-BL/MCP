@@ -43,8 +43,8 @@ MCPDebugTestCommand >> capabilities [
 { #category : 'private - data' }
 MCPDebugTestCommand >> captureWarnings [
 
-	^ #( 'debug-test runs one SUnit test in a forked worker process and may mutate image state.'
-	     'Captured debug stops, failures, or errors leave the worker process suspended until debug-control resumes or terminates the session.' )
+	^ #( 'debug_test_run runs one SUnit test in a forked worker process and may mutate image state.'
+	     'Captured debug stops, failures, or errors leave the worker process suspended until debug_control resumes or terminates the session.' )
 ]
 
 { #category : 'private - results' }

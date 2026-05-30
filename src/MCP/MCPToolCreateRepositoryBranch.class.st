@@ -9,7 +9,7 @@ Class {
 { #category : 'defaults' }
 MCPToolCreateRepositoryBranch class >> toolName [
 
-	^ 'create-repository-branch'
+	^ 'repository_branch_create'
 ]
 
 { #category : 'private - operations' }

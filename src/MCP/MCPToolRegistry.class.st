@@ -22,76 +22,76 @@ MCPToolRegistry class >> additionalKeywordsForTool: aTool [
 
 	| toolName |
 	toolName := aTool name.
-	toolName = 'find-repositories' ifTrue: [
+	toolName = 'repository_search' ifTrue: [
 		^ #( 'repo' 'iceberg' 'git' 'branch' 'commit' 'remote' 'head' ) ].
-	toolName = 'verify-repository-identity' ifTrue: [
+	toolName = 'repository_identity_verify' ifTrue: [
 		^ #( 'repo' 'iceberg' 'git' 'guard' 'identity' ) ].
-	toolName = 'find-repository-changes' ifTrue: [
+	toolName = 'repository_change_list' ifTrue: [
 		^ #( 'repo' 'iceberg' 'git' 'diff' 'status' 'change' ) ].
-	toolName = 'edit-repository' ifTrue: [
+	toolName = 'repository_edit' ifTrue: [
 			^ #( 'repo' 'iceberg' 'tonel' 'git' 'export' 'diff' 'branch'
 			     'commit' 'pull' 'push' 'fetch' 'attach' 'adopt' 'identity' ) ].
-	toolName = 'export-repository' ifTrue: [
+	toolName = 'repository_export' ifTrue: [
 		^ #( 'repo' 'iceberg' 'tonel' 'export' 'write' ) ].
-	toolName = 'commit-repository' ifTrue: [
+	toolName = 'repository_commit' ifTrue: [
 		^ #( 'repo' 'iceberg' 'git' 'commit' ) ].
-	toolName = 'fetch-repository' ifTrue: [
+	toolName = 'repository_fetch' ifTrue: [
 		^ #( 'repo' 'iceberg' 'git' 'remote' 'fetch' ) ].
-	toolName = 'pull-repository' ifTrue: [
+	toolName = 'repository_pull' ifTrue: [
 		^ #( 'repo' 'iceberg' 'git' 'remote' 'pull' ) ].
-	toolName = 'push-repository' ifTrue: [
+	toolName = 'repository_push' ifTrue: [
 		^ #( 'repo' 'iceberg' 'git' 'remote' 'push' ) ].
-	toolName = 'create-repository-branch' ifTrue: [
+	toolName = 'repository_branch_create' ifTrue: [
 		^ #( 'repo' 'iceberg' 'git' 'branch' 'create' ) ].
-	toolName = 'switch-repository-branch' ifTrue: [
+	toolName = 'repository_branch_switch' ifTrue: [
 		^ #( 'repo' 'iceberg' 'git' 'branch' 'switch' ) ].
-	toolName = 'adopt-repository-head' ifTrue: [
+	toolName = 'repository_head_adopt' ifTrue: [
 		^ #( 'repo' 'iceberg' 'git' 'head' 'adopt' ) ].
-	toolName = 'load-repository' ifTrue: [
+	toolName = 'repository_load' ifTrue: [
 		^ #( 'baseline' 'metacello' 'load' 'package' ) ].
-	toolName = 'find-packages' ifTrue: [
+	toolName = 'package_search' ifTrue: [
 		^ #( 'package' 'project' 'tag' ) ].
-	toolName = 'find-classes' ifTrue: [
+	toolName = 'class_search' ifTrue: [
 		^ #( 'class' 'package' 'tag' 'slot' 'trait' 'hierarchy' ) ].
-	toolName = 'inspect-class' ifTrue: [
+	toolName = 'class_get' ifTrue: [
 		^ #( 'class' 'inspect' 'superclass' 'subclass' 'slot' 'trait'
 		     'comment' ) ].
-	toolName = 'edit-class' ifTrue: [
+	toolName = 'class_edit' ifTrue: [
 			^ #( 'class' 'create' 'update' 'rename' 'remove' 'superclass'
 			     'subclass' 'slot' 'trait' 'comment' ) ].
-	toolName = 'find-methods' ifTrue: [
+	toolName = 'method_search' ifTrue: [
 			^ #( 'method' 'selector' 'protocol' 'source' 'implementor'
 			     'sender' 'reference' 'variable' ) ].
-	toolName = 'find-method-implementors' ifTrue: [
+	toolName = 'method_implementor_search' ifTrue: [
 		^ #( 'method' 'selector' 'implementor' 'implementation' ) ].
-	toolName = 'find-method-senders' ifTrue: [
+	toolName = 'method_sender_search' ifTrue: [
 		^ #( 'method' 'selector' 'sender' 'send' 'reference' ) ].
-	toolName = 'find-class-references' ifTrue: [
+	toolName = 'method_class_reference_search' ifTrue: [
 		^ #( 'method' 'class' 'reference' 'binding' ) ].
-	toolName = 'find-variable-references' ifTrue: [
+	toolName = 'method_variable_reference_search' ifTrue: [
 		^ #( 'method' 'variable' 'reference' 'slot' 'binding' ) ].
-	toolName = 'inspect-method' ifTrue: [
+	toolName = 'method_get' ifTrue: [
 		^ #( 'method' 'selector' 'protocol' 'source' 'reference' 'variable' ) ].
-	toolName = 'edit-method' ifTrue: [
+	toolName = 'method_edit' ifTrue: [
 			^ #( 'method' 'selector' 'protocol' 'source' 'create' 'update'
 			     'rename' ) ].
-	toolName = 'rewrite-methods' ifTrue: [
+	toolName = 'method_rewrite' ifTrue: [
 		^ #( 'method' 'rewrite' 'preview' 'apply' 'ast' 'pattern' ) ].
-	toolName = 'run-tests' ifTrue: [
+	toolName = 'test_run' ifTrue: [
 		^ #( 'test' 'sunit' 'coverage' 'timeout' ) ].
-	toolName = 'find-change-history-files' ifTrue: [
+	toolName = 'history_file_list' ifTrue: [
 		^ #( 'history' 'change' 'file' 'list' 'ombu' 'epicea' ) ].
-	toolName = 'find-change-history-entries' ifTrue: [
+	toolName = 'history_entry_list' ifTrue: [
 			^ #( 'history' 'change' 'entry' 'browse' 'list' 'inspect' 'ombu'
 			     'epicea' ) ].
-	toolName = 'manage-change-history' ifTrue: [
+	toolName = 'history_entry_manage' ifTrue: [
 			^ #( 'history' 'change' 'entry' 'browse' 'list' 'inspect' 'preview'
 			     'apply' 'revert' 'recover' 'epicea' 'ombu' ) ].
-	toolName = 'capture-screenshot' ifTrue: [
+	toolName = 'screenshot_capture' ifTrue: [
 		^ #( 'screenshot' 'capture' 'window' 'display' 'world' 'ui' ) ].
-	toolName = 'evaluate' ifTrue: [
-		^ #( 'evaluate' 'expression' 'smalltalk' 'code' ) ].
-	(toolName beginsWith: 'debug-') ifTrue: [
+	toolName = 'image_evaluate' ifTrue: [
+		^ #( 'image_evaluate' 'expression' 'smalltalk' 'code' ) ].
+	(toolName beginsWith: 'debug_') ifTrue: [
 			^ #( 'debug' 'session' 'state' 'frame' 'variable' 'breakpoint'
 			     'capture' 'control' 'repair' 'exception' ) ].
 	^ #(  )
@@ -212,17 +212,17 @@ MCPToolRegistry class >> mutabilityForTool: aTool [
 
 	| executeTools readTools toolName |
 	toolName := aTool name.
-	readTools := #( 'discover-tools' 'inspect-tool' 'find-repositories'
-	                'verify-repository-identity'
-	                'find-repository-changes' 'find-packages'
-	                'find-classes' 'inspect-class' 'find-methods'
-	                'find-method-implementors' 'find-method-senders'
-	                'find-class-references' 'find-variable-references'
-	                'inspect-method' 'find-change-history-files'
-	                'find-change-history-entries'
-	                'capture-screenshot' 'debug-state' 'debug-variables' ).
-	executeTools := #( 'call-tool' 'run-tests' 'evaluate' 'debug-evaluate'
-	                   'debug-capture' 'debug-test' ).
+	readTools := #( 'tool_search' 'tool_get' 'repository_search'
+	                'repository_identity_verify'
+	                'repository_change_list' 'package_search'
+	                'class_search' 'class_get' 'method_search'
+	                'method_implementor_search' 'method_sender_search'
+	                'method_class_reference_search' 'method_variable_reference_search'
+	                'method_get' 'history_file_list'
+	                'history_entry_list'
+	                'screenshot_capture' 'debug_state_get' 'debug_variable_get' ).
+	executeTools := #( 'tool_call' 'test_run' 'image_evaluate' 'debug_expression_evaluate'
+	                   'debug_capture' 'debug_test_run' ).
 	(readTools includes: toolName) ifTrue: [ ^ 'read' ].
 	(executeTools includes: toolName) ifTrue: [ ^ 'execute' ].
 	^ 'write'
@@ -320,18 +320,18 @@ MCPToolRegistry class >> riskForTool: aTool [
 
 	| lowRisk mediumRisk toolName |
 	toolName := aTool name.
-	lowRisk := #( 'discover-tools' 'inspect-tool' 'find-repositories'
-	              'verify-repository-identity'
-	              'find-repository-changes' 'find-packages'
-	              'find-classes' 'inspect-class' 'find-methods'
-	              'find-method-implementors' 'find-method-senders'
-	              'find-class-references' 'find-variable-references'
-	              'inspect-method' 'find-change-history-files'
-	              'find-change-history-entries'
-	              'capture-screenshot' 'debug-state' 'debug-variables' ).
-	mediumRisk := #( 'call-tool' 'load-repository' 'run-tests'
-	                 'evaluate' 'debug-evaluate' 'debug-capture'
-	                 'debug-test' ).
+	lowRisk := #( 'tool_search' 'tool_get' 'repository_search'
+	              'repository_identity_verify'
+	              'repository_change_list' 'package_search'
+	              'class_search' 'class_get' 'method_search'
+	              'method_implementor_search' 'method_sender_search'
+	              'method_class_reference_search' 'method_variable_reference_search'
+	              'method_get' 'history_file_list'
+	              'history_entry_list'
+	              'screenshot_capture' 'debug_state_get' 'debug_variable_get' ).
+	mediumRisk := #( 'tool_call' 'repository_load' 'test_run'
+	                 'image_evaluate' 'debug_expression_evaluate' 'debug_capture'
+	                 'debug_test_run' ).
 	(lowRisk includes: toolName) ifTrue: [ ^ 'low' ].
 	(mediumRisk includes: toolName) ifTrue: [ ^ 'medium' ].
 	^ 'high'

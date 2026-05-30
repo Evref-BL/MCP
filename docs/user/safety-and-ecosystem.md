@@ -59,7 +59,7 @@ normal `warnings` array.
 
 ## Critiques
 
-`edit-method` compiles method source in the image and returns selected Renraku
+`method_edit` compiles method source in the image and returns selected Renraku
 critiques in the structured result. It includes error-severity critiques and a
 small set of non-error rules that are useful after automated edits, such as
 excessive arguments, missing super sends, return in ensure, temporary variable
@@ -77,7 +77,7 @@ as follow-up review evidence, not as transport failures.
 
 ## Rewrite Preview And Confirmation
 
-`rewrite-methods` uses Smalltalk AST rewrite rules. Patterns use RB AST pattern
+`method_rewrite` uses Smalltalk AST rewrite rules. Patterns use RB AST pattern
 syntax, not regex.
 
 The default mode is preview:
@@ -116,7 +116,7 @@ package, class, hierarchy, or method scope.
 
 ## Tests And Coverage
 
-`run-tests` runs SUnit classes or individual methods and returns structured test
+`test_run` runs SUnit classes or individual methods and returns structured test
 results. With `operation=coverage`, the same test run can collect
 CoverageCollector method and node coverage for an explicit method scope.
 
@@ -137,17 +137,16 @@ MCP uses Iceberg for repository state. The repository tools can:
 - export image changes to Tonel files
 - commit, fetch, pull, push, create branches, and switch branches
 
-Use `verify-repository-identity` before edits or exports, and
-`find-repository-changes` before exporting or committing. Prefer focused
-repository tools when they exist. Keep `edit-repository` for create, attach,
-update, and compatibility workflows. Export writes image changes to disk and
+Use `repository_identity_verify` before edits or exports, and
+`repository_change_list` before exporting or committing. Use `repository_edit`
+for create, attach, and update workflows. Export writes image changes to disk and
 updates the Iceberg index; it does not stage or commit Git changes.
 
 ## Change History
 
-MCP uses Epicea change history. `find-change-history-files` lists `.ombu`
-files, and `find-change-history-entries` lists entries from the current history
-or a selected file. `manage-change-history` previews applying or reverting
+MCP uses Epicea change history. `history_file_list` lists `.ombu`
+files, and `history_entry_list` lists entries from the current history
+or a selected file. `history_entry_manage` previews applying or reverting
 entries, and performs the selected apply or revert only when `confirm=true`.
 
 Use this when recovering image-side changes or preparing a clean handoff from a
@@ -164,14 +163,15 @@ Treat debugger state references as opaque and state-scoped. After stepping,
 resuming, restarting, terminating, or editing from a debug state, use the newly
 returned state before expanding variables or evaluating in a frame again.
 
-Use `debug-edit` only from a paused debug state and only after reading the
+Use `debug_method_repair` only from a paused debug state and only after reading the
 offered repair actions. It uses the same critique gate as method editing before
 proceeding a repaired computation.
 
 ## Evaluation Escape Hatch
 
-`evaluate` runs arbitrary Smalltalk and saves the image after a successful call.
-It is useful for short inspection or glue code when no dedicated tool exists.
+`image_evaluate` runs arbitrary Smalltalk and saves the image after a successful
+call. It is useful for short inspection or glue code when no dedicated tool
+exists.
 
 Prefer a dedicated tool when one exists, because the dedicated tools validate
 input, return structured result data, and often use safer Pharo APIs.

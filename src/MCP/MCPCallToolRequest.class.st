@@ -1,5 +1,5 @@
 "
-Request object for dynamic tool invocation through call-tool.
+Request object for dynamic tool invocation through tool_call.
 
 It carries the catalog tool name and the nested argument dictionary that will be validated by the selected tool's own schema.
 "

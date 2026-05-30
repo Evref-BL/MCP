@@ -1,5 +1,5 @@
 "
-Command wrapper for edit-repository operation=export. It calculates the repository working copy diff, updates the disk working copy and git index from that diff, and returns an MCPRepositoryExportResult.
+Command wrapper for repository_edit operation=export. It calculates the repository working copy diff, updates the disk working copy and git index from that diff, and returns an MCPRepositoryExportResult.
 "
 Class {
 	#name : 'MCPExportRepositoryCommand',

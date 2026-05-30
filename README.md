@@ -6,7 +6,7 @@
 
 MCP is an in-image server for the Model Context Protocol in Pharo Smalltalk.
 
-Load it into a Pharo image, start its HTTP server, and an MCP client can inspect and change the live image through Pharo-aware tools. The server exposes packages, classes, methods, tests, repositories, change history, screenshots, and a bounded `evaluate` escape hatch.
+Load it into a Pharo image, start its HTTP server, and an MCP client can inspect and change the live image through Pharo-aware tools. The server exposes packages, classes, methods, tests, repositories, change history, screenshots, and a bounded `image_evaluate` escape hatch.
 
 The main design point is integration with the existing Pharo ecosystem. Edits use Pharo compilation, Refactoring Browser and Refactoring Engine operations, Renraku critiques, SUnit, CoverageCollector, Iceberg, Metacello, Epicea change history, Spec dashboards, and PharoCompatibility where those systems own the behavior. MCP is not a text patcher over Tonel files; it works with the running image and returns structured MCP results.
 
@@ -86,42 +86,42 @@ Start with read-only discovery:
 
 ```text
 tools/list
-discover-tools
-inspect-tool
-find-packages
-find-classes
-find-methods
-find-method-implementors
-find-method-senders
-find-class-references
-find-variable-references
-inspect-class
-inspect-method
-find-repositories
-verify-repository-identity
-find-repository-changes
-find-change-history-files
-find-change-history-entries
+tool_search
+tool_get
+package_search
+class_search
+method_search
+method_implementor_search
+method_sender_search
+method_class_reference_search
+method_variable_reference_search
+class_get
+method_get
+repository_search
+repository_identity_verify
+repository_change_list
+history_file_list
+history_entry_list
 ```
 
-Use `discover-tools` with `group=debugging` to find debugger tools and inspect
+Use `tool_search` with `group=debugging` to find debugger tools and inspect
 their schemas before calling them.
 
-Then use dedicated operations before falling back to `evaluate`:
+Then use dedicated operations before falling back to `image_evaluate`:
 
 ```text
-edit-class
-edit-method
-rewrite-methods
-run-tests
-edit-repository
-export-repository
-commit-repository
-manage-change-history
-capture-screenshot
+class_edit
+method_edit
+method_rewrite
+test_run
+repository_edit
+repository_export
+repository_commit
+history_entry_manage
+screenshot_capture
 ```
 
-`evaluate` can run arbitrary Smalltalk. Use it only for short inspection or glue code when no dedicated tool fits.
+`image_evaluate` can run arbitrary Smalltalk. Use it only for short inspection or glue code when no dedicated tool fits.
 
 ## Safety Model
 
@@ -131,18 +131,17 @@ Image-changing tools save the image after a successful mutation. Read-only tools
 
 The safer edit paths use Pharo facilities:
 
-- `edit-class` and `edit-method` use Refactoring Browser and Refactoring Engine operations for renames, slot changes, argument changes, moves, and removals where Pharo provides them.
+- `class_edit` and `method_edit` use Refactoring Browser and Refactoring Engine operations for renames, slot changes, argument changes, moves, and removals where Pharo provides them.
 - `force=false` stops on `RBRefactoringWarning` and returns `impactMessages`, `howToProceed`, and `forceSupported=true`. Rerun with `force=true` only after reviewing the impact.
-- `edit-method` returns selected Renraku critiques after method compilation, including error-severity critiques and selected non-error rules.
-- `rewrite-methods` previews AST rewrite changes first and returns a `changeSetHash`; applying the rewrite requires `expectedChangeSetHash`.
-- `run-tests` uses SUnit and can collect CoverageCollector method and node coverage for an explicit method scope.
-- Repository tools work through Iceberg. Use `verify-repository-identity` to
+- `method_edit` returns selected Renraku critiques after method compilation, including error-severity critiques and selected non-error rules.
+- `method_rewrite` previews AST rewrite changes first and returns a `changeSetHash`; applying the rewrite requires `expectedChangeSetHash`.
+- `test_run` uses SUnit and can collect CoverageCollector method and node coverage for an explicit method scope.
+- Repository tools work through Iceberg. Use `repository_identity_verify` to
   assert repository identity before edits or exports, and
-  `find-repository-changes` to inspect image-side changes before exporting,
-  committing, pulling, or pushing. Prefer focused repository tools when they
-  exist; keep `edit-repository` for create, attach, update, and compatibility
-  workflows.
-- Use `find-change-history-files` and `find-change-history-entries` to browse Epicea history. `manage-change-history` previews apply/revert operations and performs them only with `confirm=true`.
+  `repository_change_list` to inspect image-side changes before exporting,
+  committing, pulling, or pushing. Use `repository_edit` for create, attach,
+  and update workflows.
+- Use `history_file_list` and `history_entry_list` to browse Epicea history. `history_entry_manage` previews apply/revert operations and performs them only with `confirm=true`.
 
 This does not remove the normal responsibility of working in a safe image. Use disposable or copied images for automation and risky edits.
 
@@ -163,7 +162,7 @@ Inspect an `MCP` instance in a graphical image and open the dashboard tab. The S
 - [Tool reference](docs/user/tool-reference.md) lists MCP tool groups and
   their intended use.
 - [Debugging with MCP](docs/user/debugging.md) explains debugger sessions,
-  breakpoints, debug-state references, and debugger-driven repair.
+  breakpoints, debug_state_get references, and debugger-driven repair.
 - [Troubleshooting](docs/user/troubleshooting.md) maps common startup,
   connection, and image-state problems to checks.
 - [Source vs live image](docs/user/source-vs-live-image.md) explains what can

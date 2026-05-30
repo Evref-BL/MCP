@@ -20,7 +20,7 @@ MCPToolDebugBreakpoints class >> toolIconSpec [
 { #category : 'defaults' }
 MCPToolDebugBreakpoints class >> toolName [
 
-	^ 'debug-breakpoints'
+	^ 'debug_breakpoint_manage'
 ]
 
 { #category : 'private - execution' }
@@ -94,7 +94,7 @@ MCPToolDebugBreakpoints >> defaultInputSchema [
 { #category : 'defaults' }
 MCPToolDebugBreakpoints >> defaultName [
 
-	^ 'debug-breakpoints'
+	^ 'debug_breakpoint_manage'
 ]
 
 { #category : 'defaults' }

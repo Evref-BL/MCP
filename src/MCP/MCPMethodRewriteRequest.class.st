@@ -1,5 +1,5 @@
 "
-Parsed input for rewrite-methods.
+Parsed input for method_rewrite.
 
 It owns raw tool argument parsing for rewrite rules, preview/apply flags, change-set hash confirmation, and method scope selection.
 "
@@ -55,16 +55,16 @@ MCPMethodRewriteRequest >> initializeFromRequest: request tool: aTool [
 	| ruleObjects |
 	ruleObjects := request objectCollectionArgumentNamed: 'rules'.
 	ruleObjects ifEmpty: [
-		MCPCommandError
-			signalErrorCode: #RewriteRulesRequired
-			message: 'rewrite-methods requires at least one rewrite rule.'
-			details: Dictionary new ].
+			MCPCommandError
+				signalErrorCode: #RewriteRulesRequired
+				message: 'method_rewrite requires at least one rewrite rule.'
+				details: Dictionary new ].
 	rules := OrderedCollection new.
 	ruleObjects doWithIndex: [ :eachRule :index |
-		rules add: (MCPMethodRewriteRuleSpec
-				 fromDictionary: eachRule
-				 request: request
-				 index: index) ].
+			rules add: (MCPMethodRewriteRuleSpec
+					 fromDictionary: eachRule
+					 request: request
+					 index: index) ].
 	apply := request booleanArgumentNamed: 'apply' default: false.
 	force := request booleanArgumentNamed: 'force' default: false.
 	includeSources := request
@@ -73,10 +73,10 @@ MCPMethodRewriteRequest >> initializeFromRequest: request tool: aTool [
 	expectedChangeSetHash := (request hasArgumentNamed:
 		                          'expectedChangeSetHash')
 		                         ifTrue: [
-			                         request
-				                         nonNegativeIntegerArgumentNamed:
-				                         'expectedChangeSetHash'
-				                         default: nil ]
+				                         request
+					                         nonNegativeIntegerArgumentNamed:
+					                         'expectedChangeSetHash'
+					                         default: nil ]
 		                         ifFalse: [ nil ].
 	scopeQuery := aTool methodScopeQueryFromRequest: request.
 	scopeQuery requireCompleteScope.

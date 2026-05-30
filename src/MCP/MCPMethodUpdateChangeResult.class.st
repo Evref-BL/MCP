@@ -1,5 +1,5 @@
 "
-DTO for the narrow method edit performed by an edit-method update request, such as a rename or protocol change.
+DTO for the narrow method edit performed by an method_edit update request, such as a rename or protocol change.
 "
 Class {
 	#name : 'MCPMethodUpdateChangeResult',

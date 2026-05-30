@@ -1,5 +1,5 @@
 "
-Tests the edit-class public contract. Create tests exercise operation=create requests. Update tests exercise operation=update patch requests and verify the structured result data produced by the internal narrow commands.
+Tests the class_edit public contract. Create tests exercise operation=create requests. Update tests exercise operation=update patch requests and verify the structured result data produced by the internal narrow commands.
 "
 Class {
 	#name : 'MCPToolEditClassTest',
@@ -2143,7 +2143,7 @@ MCPToolEditClassTest >> testUpdateSetsClassComment [
 { #category : 'private - calling' }
 MCPToolEditClassTest >> toolName [
 
-	^ 'edit-class'
+	^ 'class_edit'
 ]
 
 { #category : 'private - update' }

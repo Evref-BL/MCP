@@ -1,5 +1,5 @@
 "
-Tests for the load-repository tool and its Metacello command behavior. These tests use small recording doubles to verify Metacello interactions without loading remote code or an external mocking framework.
+Tests for the repository_load tool and its Metacello command behavior. These tests use small recording doubles to verify Metacello interactions without loading remote code or an external mocking framework.
 "
 Class {
 	#name : 'MCPToolLoadRepositoryTest',
@@ -246,5 +246,5 @@ MCPToolLoadRepositoryTest >> testRepositoryUrlIncludesSourceDirectoryAndCustomHo
 { #category : 'private - calling' }
 MCPToolLoadRepositoryTest >> toolName [
 
-	^ 'load-repository'
+	^ 'repository_load'
 ]

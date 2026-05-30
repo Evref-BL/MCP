@@ -247,7 +247,7 @@ MCPToolFindPackagesTest >> testWhereCanMatchRelatedClasses [
 { #category : 'private - calling' }
 MCPToolFindPackagesTest >> toolName [
 
-	^ 'find-packages'
+	^ 'package_search'
 ]
 
 { #category : 'private' }

@@ -20,7 +20,7 @@ MCPToolInspectMethod class >> toolIconSpec [
 { #category : 'defaults' }
 MCPToolInspectMethod class >> toolName [
 
-	^ 'inspect-method'
+	^ 'method_get'
 ]
 
 { #category : 'private - analysis' }
@@ -54,7 +54,7 @@ MCPToolInspectMethod >> commandForRequest: inspectRequest [
 { #category : 'defaults' }
 MCPToolInspectMethod >> defaultDescription [
 
-	^ 'Inspect one known method and return its source plus structured variable-reference context. Use find-methods or references to discover methods first.'
+	^ 'Inspect one known method and return its source plus structured variable-reference context. Use method_search or references to discover methods first.'
 ]
 
 { #category : 'defaults' }
@@ -120,7 +120,7 @@ MCPToolInspectMethod >> defaultOutputSchema [
 { #category : 'defaults' }
 MCPToolInspectMethod >> defaultTitle [
 
-	^ 'Inspect Method'
+	^ 'Get Method'
 ]
 
 { #category : 'private' }

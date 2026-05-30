@@ -1,5 +1,5 @@
 "
-Command for applying one high-level edit-method update patch. It selects an internal method update action, executes it, and returns structured method update DTOs.
+Command for applying one high-level method_edit update patch. It selects an internal method update action, executes it, and returns structured method update DTOs.
 "
 Class {
 	#name : 'MCPUpdateMethodCommand',

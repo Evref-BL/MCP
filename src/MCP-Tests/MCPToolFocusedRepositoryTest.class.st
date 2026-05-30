@@ -1,5 +1,5 @@
 "
-Tests for focused repository tools split from the broad edit-repository surface.
+Tests for focused repository tools split from the broad repository_edit surface.
 "
 Class {
 	#name : 'MCPToolFocusedRepositoryTest',
@@ -97,7 +97,7 @@ MCPToolFocusedRepositoryTest >> metadataByNameForRepositoryTools [
 
 	| result |
 	result := self
-		          callToolNamed: 'discover-tools'
+		          callToolNamed: 'tool_search'
 		          withArguments: { (#group -> 'repositories') } asDictionary.
 	^ (((self dataFrom: result) at: #tools) collect: [ :each |
 		   (each at: #name) -> each ]) asDictionary
@@ -170,24 +170,24 @@ MCPToolFocusedRepositoryTest >> testFocusedRepositoryToolsAreDiscoverableWithExp
 
 	| metadataByName |
 	metadataByName := self metadataByNameForRepositoryTools.
-	#( 'verify-repository-identity' 'find-repository-changes' ) do: [
+	#( 'repository_identity_verify' 'repository_change_list' ) do: [
 			:toolName |
 			| metadata |
 			metadata := metadataByName at: toolName.
 			self assert: (metadata at: #exposure) equals: 'discoverable'.
 			self assert: (metadata at: #mutability) equals: 'read'.
 			self assert: (metadata at: #risk) equals: 'low' ].
-	#( 'export-repository' 'commit-repository' 'fetch-repository'
-	   'pull-repository' 'push-repository' 'create-repository-branch'
-	   'switch-repository-branch' 'adopt-repository-head' ) do: [
+	#( 'repository_export' 'repository_commit' 'repository_fetch'
+	   'repository_pull' 'repository_push' 'repository_branch_create'
+	   'repository_branch_switch' 'repository_head_adopt' ) do: [
 			:toolName |
 			| metadata |
 			metadata := metadataByName at: toolName.
 			self assert: (metadata at: #exposure) equals: 'discoverable'.
 			self assert: (metadata at: #mutability) equals: 'write'.
 			self assert: (metadata at: #risk) equals: 'high' ].
-	self assert: (metadataByName includesKey: 'edit-repository').
-	self assert: (metadataByName includesKey: 'load-repository')
+	self assert: (metadataByName includesKey: 'repository_edit').
+	self assert: (metadataByName includesKey: 'repository_load')
 ]
 
 { #category : 'tests' }

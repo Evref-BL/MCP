@@ -1,5 +1,5 @@
 "
-Command wrapper for edit-repository operation=commit. It captures the current IceRepository working-copy diff, commits it, and returns an MCPRepositoryCommitResult.
+Command wrapper for repository_edit operation=commit. It captures the current IceRepository working-copy diff, commits it, and returns an MCPRepositoryCommitResult.
 "
 Class {
 	#name : 'MCPCommitRepositoryCommand',

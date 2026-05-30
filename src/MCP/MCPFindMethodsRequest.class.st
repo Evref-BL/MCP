@@ -1,5 +1,5 @@
 "
-Parsed, validated find-methods request derived from one MCPToolRequest. It keeps query execution away from raw argument dictionaries while preserving MCPToolRequest as the transport/schema boundary.
+Parsed, validated method_search request derived from one MCPToolRequest. It keeps query execution away from raw argument dictionaries while preserving MCPToolRequest as the transport/schema boundary.
 "
 Class {
 	#name : 'MCPFindMethodsRequest',

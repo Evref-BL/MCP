@@ -1,5 +1,5 @@
 "
-Result DTO for load-repository. It wraps the reusable baseline load result and includes repository coordinates only for remote loads.
+Result DTO for repository_load. It wraps the reusable baseline load result and includes repository coordinates only for remote loads.
 "
 Class {
 	#name : 'MCPLoadRepositoryResult',

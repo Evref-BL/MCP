@@ -1,5 +1,5 @@
 "
-Result DTO produced by the inspect-class command.
+Result DTO produced by the class_get command.
 "
 Class {
 	#name : 'MCPInspectClassResult',

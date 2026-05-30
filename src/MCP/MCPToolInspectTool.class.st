@@ -1,7 +1,7 @@
 "
 Static bridge tool for reading a catalog tool's full contract.
 
-Agents use it after discover-tools and before call-tool when a discoverable tool requires exact schema inspection.
+Agents use it after tool_search and before tool_call when a discoverable tool requires exact schema inspection.
 "
 Class {
 	#name : 'MCPToolInspectTool',
@@ -20,7 +20,7 @@ MCPToolInspectTool class >> toolIconSpec [
 { #category : 'defaults' }
 MCPToolInspectTool class >> toolName [
 
-	^ 'inspect-tool'
+	^ 'tool_get'
 ]
 
 { #category : 'private - execution' }
@@ -142,7 +142,7 @@ MCPToolInspectTool >> defaultOutputSchema [
 { #category : 'defaults' }
 MCPToolInspectTool >> defaultTitle [
 
-	^ 'Inspect Tool'
+	^ 'Get Tool'
 ]
 
 { #category : 'executing' }

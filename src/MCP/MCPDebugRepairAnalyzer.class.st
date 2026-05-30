@@ -1,7 +1,7 @@
 "
 Analyzes a paused debug session for repair actions.
 
-It recognizes repairable states such as missing methods and subclass-responsibility style exceptions, then produces debug-edit action payloads tied to the current state.
+It recognizes repairable states such as missing methods and subclass-responsibility style exceptions, then produces debug_method_repair action payloads tied to the current state.
 "
 Class {
 	#name : 'MCPDebugRepairAnalyzer',
@@ -246,7 +246,7 @@ MCPDebugRepairAnalyzer >> repairActionForContext: aContext behavior: aBehavior s
 			    descriptionForKind: kind
 			    behavior: aBehavior
 			    selector: aSelector)).
-		  (#toolName -> 'debug-edit').
+		  (#toolName -> 'debug_method_repair').
 		  (#sessionId -> record sessionId).
 		  (#stateId -> record stateId).
 		  (#frameRef -> frameRef).

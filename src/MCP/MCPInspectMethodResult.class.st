@@ -1,5 +1,5 @@
 "
-Result DTO produced by the inspect-method command.
+Result DTO produced by the method_get command.
 "
 Class {
 	#name : 'MCPInspectMethodResult',

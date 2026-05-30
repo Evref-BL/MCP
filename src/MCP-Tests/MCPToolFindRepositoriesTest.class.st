@@ -1,5 +1,5 @@
 "
-Tests for the read-only find-repositories tool.
+Tests for the read-only repository_search tool.
 "
 Class {
 	#name : 'MCPToolFindRepositoriesTest',
@@ -213,7 +213,7 @@ MCPToolFindRepositoriesTest >> testListsRichRepositoryMetadata [
 { #category : 'private - calling' }
 MCPToolFindRepositoriesTest >> toolName [
 
-	^ 'find-repositories'
+	^ 'repository_search'
 ]
 
 { #category : 'private' }

@@ -1,5 +1,5 @@
 "
-Parsed inspect-method tool request derived from one validated MCPToolRequest.
+Parsed method_get tool request derived from one validated MCPToolRequest.
 "
 Class {
 	#name : 'MCPInspectMethodRequest',

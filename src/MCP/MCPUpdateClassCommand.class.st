@@ -1,5 +1,5 @@
 "
-Orchestrates operation=update for edit-class. It receives one parsed MCPClassUpdateRequest, builds an MCPClassUpdatePlanInfo for the single internal update action, dispatches to the command that applies the change, and wraps the command result in MCPClassAppliedChangeResult for tool output. Slot edits and slot collection replacement are both parsed from the same update request.
+Orchestrates operation=update for class_edit. It receives one parsed MCPClassUpdateRequest, builds an MCPClassUpdatePlanInfo for the single internal update action, dispatches to the command that applies the change, and wraps the command result in MCPClassAppliedChangeResult for tool output. Slot edits and slot collection replacement are both parsed from the same update request.
 "
 Class {
 	#name : 'MCPUpdateClassCommand',

@@ -20,7 +20,7 @@ MCPToolDebugCapture class >> toolIconSpec [
 { #category : 'defaults' }
 MCPToolDebugCapture class >> toolName [
 
-	^ 'debug-capture'
+	^ 'debug_capture'
 ]
 
 { #category : 'private - execution' }
@@ -32,7 +32,7 @@ MCPToolDebugCapture >> commandForRequest: debugRequest [
 { #category : 'defaults' }
 MCPToolDebugCapture >> defaultDescription [
 
-	^ 'Evaluate Smalltalk in a bounded worker process and capture runtime exceptions as tracked Pharo DebugSession records with an immediate debug-state snapshot.'
+	^ 'Evaluate Smalltalk in a bounded worker process and capture runtime exceptions as tracked Pharo DebugSession records with an immediate debug_state_get snapshot.'
 ]
 
 { #category : 'defaults' }
@@ -106,7 +106,7 @@ MCPToolDebugCapture >> defaultInputSchema [
 { #category : 'defaults' }
 MCPToolDebugCapture >> defaultName [
 
-	^ 'debug-capture'
+	^ 'debug_capture'
 ]
 
 { #category : 'defaults' }
@@ -139,7 +139,7 @@ MCPToolDebugCapture >> defaultOutputSchema [
 					   schemaPropertyNamed: 'state'
 					   type: 'object'
 					   description:
-					   'Immediate debug-state snapshot for captured exceptions.').
+					   'Immediate debug_state_get snapshot for captured exceptions.').
 				  (self
 					   schemaPropertyNamed: 'resultClassName'
 					   type: 'string'

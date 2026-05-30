@@ -1234,5 +1234,5 @@ MCPToolFindMethodsTest >> testWhereEquivalentToReturnsStructuredErrorWhenReferen
 { #category : 'private - calling' }
 MCPToolFindMethodsTest >> toolName [
 
-	^ 'find-methods'
+	^ 'method_search'
 ]

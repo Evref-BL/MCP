@@ -1,5 +1,5 @@
 "
-Result DTO returned by edit-repository operation=export. It reports the repository synchronized to disk, changed package names, changed relative paths when Iceberg exposes them, order-only Tonel paths restored after export, and whether the diff contained changes.
+Result DTO returned by repository_edit operation=export. It reports the repository synchronized to disk, changed package names, changed relative paths when Iceberg exposes them, order-only Tonel paths restored after export, and whether the diff contained changes.
 "
 Class {
 	#name : 'MCPRepositoryExportResult',

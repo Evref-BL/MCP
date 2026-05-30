@@ -1,5 +1,5 @@
 "
-Result DTO returned by edit-repository branch operations. It reports repository metadata before and after the operation plus previous and current branch/head descriptions.
+Result DTO returned by repository_edit branch operations. It reports repository metadata before and after the operation plus previous and current branch/head descriptions.
 "
 Class {
 	#name : 'MCPRepositoryBranchResult',

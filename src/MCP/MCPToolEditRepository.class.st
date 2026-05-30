@@ -18,7 +18,7 @@ MCPToolEditRepository class >> toolIconSpec [
 { #category : 'defaults' }
 MCPToolEditRepository class >> toolName [
 
-	^ 'edit-repository'
+	^ 'repository_edit'
 ]
 
 { #category : 'private - execution' }

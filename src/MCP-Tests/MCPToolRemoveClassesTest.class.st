@@ -398,5 +398,5 @@ MCPToolRemoveClassesTest >> testToolRequiresClassNameInSchema [
 { #category : 'private - calling' }
 MCPToolRemoveClassesTest >> toolName [
 
-	^ 'remove-classes'
+	^ 'class_remove'
 ]

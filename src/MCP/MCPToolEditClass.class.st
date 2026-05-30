@@ -20,7 +20,7 @@ MCPToolEditClass class >> toolIconSpec [
 { #category : 'defaults' }
 MCPToolEditClass class >> toolName [
 
-	^ 'edit-class'
+	^ 'class_edit'
 ]
 
 { #category : 'private - schema' }

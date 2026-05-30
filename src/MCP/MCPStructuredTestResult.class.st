@@ -1,5 +1,5 @@
 "
-DTO used by run-tests structured output.
+DTO used by test_run structured output.
 
 It holds one test result plus normalized issue details for failures, errors, and warnings.
 "

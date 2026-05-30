@@ -1,5 +1,5 @@
 "
-Result DTO for replacing the shared pools of a class. It carries the class state after replacement and the old/new shared pool name lists for edit-class update output.
+Result DTO for replacing the shared pools of a class. It carries the class state after replacement and the old/new shared pool name lists for class_edit update output.
 "
 Class {
 	#name : 'MCPReplaceClassSharedPoolsResult',

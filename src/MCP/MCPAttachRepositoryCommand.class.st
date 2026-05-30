@@ -1,5 +1,5 @@
 "
-Command wrapper for edit-repository operation=attach. It registers an existing Git checkout through IceRepositoryCreator, attaches requested packages to the working copy, and returns an MCPRepositoryCreateResult-shaped payload.
+Command wrapper for repository_edit operation=attach. It registers an existing Git checkout through IceRepositoryCreator, attaches requested packages to the working copy, and returns an MCPRepositoryCreateResult-shaped payload.
 "
 Class {
 	#name : 'MCPAttachRepositoryCommand',

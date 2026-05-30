@@ -1,5 +1,5 @@
 "
-Result DTO for rewrite-methods.
+Result DTO for method_rewrite.
 
 It summarizes preview or apply mode, calculated and applied change counts, normalized scope, a change-set hash, and per-method change DTOs.
 "

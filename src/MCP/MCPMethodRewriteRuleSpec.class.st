@@ -1,5 +1,5 @@
 "
-Parsed rewrite rule for rewrite-methods.
+Parsed rewrite rule for method_rewrite.
 
 It holds one Smalltalk AST rewrite pattern pair and converts it to the NewTools rewriter rule holder used by the command.
 "

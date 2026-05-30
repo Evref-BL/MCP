@@ -9,19 +9,19 @@ Class {
 { #category : 'defaults' }
 MCPToolFindVariableReferences class >> toolName [
 
-	^ 'find-variable-references'
+	^ 'method_variable_reference_search'
 ]
 
 { #category : 'defaults' }
 MCPToolFindVariableReferences >> defaultDescription [
 
-	^ 'Find methods that reference a variable. Use find-methods for general method metadata or source search.'
+	^ 'Search methods that reference a variable. Use method_search for general method metadata or source search.'
 ]
 
 { #category : 'defaults' }
 MCPToolFindVariableReferences >> defaultTitle [
 
-	^ 'Find Variable References'
+	^ 'Search Variable References'
 ]
 
 { #category : 'private - schema' }

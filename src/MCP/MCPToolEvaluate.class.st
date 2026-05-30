@@ -18,7 +18,7 @@ MCPToolEvaluate class >> toolIconSpec [
 { #category : 'defaults' }
 MCPToolEvaluate class >> toolName [
 
-	^ 'evaluate'
+	^ 'image_evaluate'
 ]
 
 { #category : 'private - execution' }
@@ -73,7 +73,7 @@ MCPToolEvaluate >> defaultOutputSchema [
 { #category : 'defaults' }
 MCPToolEvaluate >> defaultTitle [
 
-	^ 'Evaluate Code'
+	^ 'Evaluate Image Code'
 ]
 
 { #category : 'executing' }

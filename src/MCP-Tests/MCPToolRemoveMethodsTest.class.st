@@ -360,5 +360,5 @@ MCPToolRemoveMethodsTest >> testToolRequiresSelectorsInSchema [
 { #category : 'private - calling' }
 MCPToolRemoveMethodsTest >> toolName [
 
-	^ 'remove-methods'
+	^ 'method_remove'
 ]

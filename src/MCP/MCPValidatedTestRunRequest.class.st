@@ -1,5 +1,5 @@
 "
-Validated run-tests selection.
+Validated test_run selection.
 
 It pairs the parsed test run request with the resolved test class that the command will execute.
 "

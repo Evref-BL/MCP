@@ -20,7 +20,7 @@ MCPToolFindClasses class >> toolIconSpec [
 { #category : 'defaults' }
 MCPToolFindClasses class >> toolName [
 
-	^ 'find-classes'
+	^ 'class_search'
 ]
 
 { #category : 'private - filtering' }
@@ -95,7 +95,7 @@ MCPToolFindClasses >> classInfoDataProperties [
 { #category : 'defaults' }
 MCPToolFindClasses >> defaultDescription [
 
-	^ 'List classes and optionally filter them by class metadata. Omitting class scope searches the whole image. Multiple scope filters use union by default; set scopeMode=intersection to require all scopes. Missing class or package names return warnings with suggestions. Use where for recursive predicates, and use inspect-class when you know the class name.'
+	^ 'List classes and optionally filter them by class metadata. Omitting class scope searches the whole image. Multiple scope filters use union by default; set scopeMode=intersection to require all scopes. Missing class or package names return warnings with suggestions. Use where for recursive predicates, and use class_get when you know the class name.'
 ]
 
 { #category : 'private - request' }
@@ -134,7 +134,7 @@ MCPToolFindClasses >> defaultOutputSchema [
 { #category : 'defaults' }
 MCPToolFindClasses >> defaultTitle [
 
-	^ 'Find Classes'
+	^ 'Search Classes'
 ]
 
 { #category : 'private - results' }

@@ -61,12 +61,13 @@ MCPToolsCatalogPresenter >> fallbackToolCatalogOperationNamesFor: tool [
 
 	| toolName |
 	toolName := tool name.
-	toolName = 'rewrite-methods' ifTrue: [ ^ #( 'preview' 'apply' ) ].
-	toolName = 'run-tests' ifTrue: [ ^ #( 'run' ) ].
-	toolName = 'evaluate' ifTrue: [ ^ #( 'evaluate' ) ].
-	(toolName beginsWith: 'find-') ifTrue: [ ^ #( 'query' ) ].
-	(toolName beginsWith: 'inspect-') ifTrue: [ ^ #( 'inspect' ) ].
-	(toolName beginsWith: 'remove-') ifTrue: [ ^ #( 'remove' ) ].
+	toolName = 'method_rewrite' ifTrue: [ ^ #( 'preview' 'apply' ) ].
+	toolName = 'test_run' ifTrue: [ ^ #( 'run' ) ].
+	toolName = 'image_evaluate' ifTrue: [ ^ #( 'evaluate' ) ].
+	(toolName endsWith: '_search') ifTrue: [ ^ #( 'query' ) ].
+	(toolName endsWith: '_get') ifTrue: [ ^ #( 'get' ) ].
+	(toolName endsWith: '_list') ifTrue: [ ^ #( 'list' ) ].
+	(toolName endsWith: '_remove') ifTrue: [ ^ #( 'remove' ) ].
 	^ #( 'call' )
 ]
 

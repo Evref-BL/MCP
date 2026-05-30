@@ -252,7 +252,7 @@ MCP >> rpcCallToolCallWithParams: arguments [
 		  request := callTool requestFromToolCallArguments: arguments.
 		  callRequest := callTool parsedRequestFromToolRequest: request.
 		  callRequest toolName = callTool name ifTrue: [
-			  Error signal: 'call-tool cannot call itself.' ].
+			  Error signal: 'tool_call cannot call itself.' ].
 		  targetTool := MCPToolRegistry
 			                toolNamed: callRequest toolName
 			                ifAbsent: [

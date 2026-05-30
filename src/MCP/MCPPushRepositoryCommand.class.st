@@ -1,5 +1,5 @@
 "
-Command wrapper for edit-repository operation=push. It calls IceRepository>>push and returns an MCPRepositoryPushResult.
+Command wrapper for repository_edit operation=push. It calls IceRepository>>push and returns an MCPRepositoryPushResult.
 "
 Class {
 	#name : 'MCPPushRepositoryCommand',

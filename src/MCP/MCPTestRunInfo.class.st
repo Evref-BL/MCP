@@ -1,5 +1,5 @@
 "
-DTO for one completed run-tests selection.
+DTO for one completed test_run selection.
 
 It records the selected test class or method, the number of executed tests, and structured issue dictionaries captured during the run.
 "

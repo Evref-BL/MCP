@@ -19,7 +19,7 @@ Class {
 MCPDebugEvaluateRequest class >> fromRequest: aRequest tool: aTool [
 
 	^ self new
-		  operation: 'evaluate';
+		  operation: 'image_evaluate';
 		  sessionId: (aRequest stringArgumentNamed: 'sessionId');
 		  stateId: (aRequest stringArgumentNamed: 'stateId');
 		  frameRef: (aRequest stringArgumentNamed: 'frameRef');

@@ -9,7 +9,7 @@ Class {
 { #category : 'defaults' }
 MCPToolSwitchRepositoryBranch class >> toolName [
 
-	^ 'switch-repository-branch'
+	^ 'repository_branch_switch'
 ]
 
 { #category : 'private - operations' }

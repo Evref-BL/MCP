@@ -1,5 +1,5 @@
 "
-Command wrapper for edit-repository operation=adoptHead. It asks the Iceberg working copy to adopt the repository head commit so same-image work can continue cleanly after Git commits or fast-forwards.
+Command wrapper for repository_edit operation=adoptHead. It asks the Iceberg working copy to adopt the repository head commit so same-image work can continue cleanly after Git commits or fast-forwards.
 "
 Class {
 	#name : 'MCPAdoptRepositoryHeadCommand',

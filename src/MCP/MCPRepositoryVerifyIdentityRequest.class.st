@@ -1,5 +1,5 @@
 "
-Parsed input for edit-repository operation=verifyIdentity. It resolves a registered Iceberg repository and records expected identity fields that should be asserted before image-side repository work continues.
+Parsed input for repository_edit operation=verifyIdentity. It resolves a registered Iceberg repository and records expected identity fields that should be asserted before image-side repository work continues.
 "
 Class {
 	#name : 'MCPRepositoryVerifyIdentityRequest',
@@ -34,12 +34,6 @@ MCPRepositoryVerifyIdentityRequest >> branchName [
 ]
 
 { #category : 'testing' }
-MCPRepositoryVerifyIdentityRequest >> hasExpectedIsModified [
-
-	^ hasIsModified ifNil: [ false ]
-]
-
-{ #category : 'testing' }
 MCPRepositoryVerifyIdentityRequest >> hasExpectedIdentityFields [
 
 	^ self repositoryReference hasLocation or: [
@@ -48,6 +42,12 @@ MCPRepositoryVerifyIdentityRequest >> hasExpectedIdentityFields [
 				  self hasExpectedPackageNames or: [
 					  self hasExpectedModifiedPackageNames or: [
 						  self hasExpectedIsModified ] ] ] ] ]
+]
+
+{ #category : 'testing' }
+MCPRepositoryVerifyIdentityRequest >> hasExpectedIsModified [
+
+	^ hasIsModified ifNil: [ false ]
 ]
 
 { #category : 'testing' }

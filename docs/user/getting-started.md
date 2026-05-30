@@ -106,51 +106,51 @@ catalog, start with tool discovery and schema inspection:
 
 ```text
 tools/list
-discover-tools
-inspect-tool
+tool_search
+tool_get
 ```
 
 Then inspect the image with read-only package, class, method, and repository
 tools:
 
 ```text
-find-packages
-find-classes
-find-methods
-find-method-implementors
-find-method-senders
-find-class-references
-find-variable-references
-inspect-class
-inspect-method
-find-repositories
-verify-repository-identity
-find-repository-changes
+package_search
+class_search
+method_search
+method_implementor_search
+method_sender_search
+method_class_reference_search
+method_variable_reference_search
+class_get
+method_get
+repository_search
+repository_identity_verify
+repository_change_list
 ```
 
 Useful first questions:
 
 - list packages loaded in the image
-- find implementors of a selector with `find-method-implementors`
-- find senders with `find-method-senders`
-- inspect one class before editing it
+- search implementors of a selector with `method_implementor_search`
+- search senders with `method_sender_search`
+- get one class before editing it
 - inspect repository status before exporting or committing
 - verify repository identity before changing repository state
 - browse change-history files and entries before recovering changes
 
 ## First Mutating Calls
 
-Prefer dedicated tools over `evaluate`:
+Prefer dedicated tools over `image_evaluate`:
 
 ```text
-edit-class
-edit-method
-rewrite-methods
-run-tests
-edit-repository
-export-repository
-commit-repository
-manage-change-history
+class_edit
+method_edit
+method_rewrite
+test_run
+repository_edit
+repository_export
+repository_commit
+history_entry_manage
 ```
 
 Use a copied or disposable image before asking an agent to make broad edits.

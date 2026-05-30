@@ -1,5 +1,5 @@
 "
-Parsed request for load-repository. It supports baseline-only loads for baselines already available in the image and remote loads that build a Metacello repository URL.
+Parsed request for repository_load. It supports baseline-only loads for baselines already available in the image and remote loads that build a Metacello repository URL.
 "
 Class {
 	#name : 'MCPLoadRepositoryRequest',

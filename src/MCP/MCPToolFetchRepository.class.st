@@ -9,7 +9,7 @@ Class {
 { #category : 'defaults' }
 MCPToolFetchRepository class >> toolName [
 
-	^ 'fetch-repository'
+	^ 'repository_fetch'
 ]
 
 { #category : 'private - operations' }

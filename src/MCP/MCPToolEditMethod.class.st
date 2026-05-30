@@ -20,7 +20,7 @@ MCPToolEditMethod class >> toolIconSpec [
 { #category : 'defaults' }
 MCPToolEditMethod class >> toolName [
 
-	^ 'edit-method'
+	^ 'method_edit'
 ]
 
 { #category : 'private - refactoring' }
@@ -108,7 +108,7 @@ MCPToolEditMethod >> dataForMethod: aCompiledMethod [
 { #category : 'defaults' }
 MCPToolEditMethod >> defaultDescription [
 
-	^ 'Create or update one method on the instance side or class side of a class. Use operation=create with methodSource and protocol to create or replace a method. Use operation=update with selector plus one patch field, such as newSelector or protocol. Rename updates can be scoped with packageNames, classNames, or hierarchyClassNames. force=false stops on refactoring warnings and returns impactMessages plus howToProceed; force=true continues and returns warnings in the output. Use remove-methods to delete methods.'
+	^ 'Create or update one method on the instance side or class side of a class. Use operation=create with methodSource and protocol to create or replace a method. Use operation=update with selector plus one patch field, such as newSelector or protocol. Rename updates can be scoped with packageNames, classNames, or hierarchyClassNames. force=false stops on refactoring warnings and returns impactMessages plus howToProceed; force=true continues and returns warnings in the output. Use method_remove to delete methods.'
 ]
 
 { #category : 'defaults' }

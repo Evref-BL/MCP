@@ -20,7 +20,7 @@ MCPToolCaptureScreenshot class >> toolIconSpec [
 { #category : 'defaults' }
 MCPToolCaptureScreenshot class >> toolName [
 
-	^ 'capture-screenshot'
+	^ 'screenshot_capture'
 ]
 
 { #category : 'private - execution' }

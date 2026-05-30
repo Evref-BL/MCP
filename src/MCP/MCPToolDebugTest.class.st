@@ -20,7 +20,7 @@ MCPToolDebugTest class >> toolIconSpec [
 { #category : 'defaults' }
 MCPToolDebugTest class >> toolName [
 
-	^ 'debug-test'
+	^ 'debug_test_run'
 ]
 
 { #category : 'private - execution' }
@@ -32,7 +32,7 @@ MCPToolDebugTest >> commandForRequest: debugRequest [
 { #category : 'defaults' }
 MCPToolDebugTest >> defaultDescription [
 
-	^ 'Run one SUnit test method under debugger control and stop at the requested test phase with an immediate debug-state snapshot.'
+	^ 'Run one SUnit test method under debugger control and stop at the requested test phase with an immediate debug_state_get snapshot.'
 ]
 
 { #category : 'defaults' }
@@ -109,7 +109,7 @@ MCPToolDebugTest >> defaultInputSchema [
 { #category : 'defaults' }
 MCPToolDebugTest >> defaultName [
 
-	^ 'debug-test'
+	^ 'debug_test_run'
 ]
 
 { #category : 'defaults' }
@@ -158,7 +158,7 @@ MCPToolDebugTest >> defaultOutputSchema [
 					   schemaPropertyNamed: 'state'
 					   type: 'object'
 					   description:
-					   'Immediate debug-state snapshot for captured execution.').
+					   'Immediate debug_state_get snapshot for captured execution.').
 				  (self
 					   integerSchemaPropertyNamed: 'timeoutMilliseconds'
 					   description: 'Effective timeout used for this run.').

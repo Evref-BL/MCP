@@ -351,5 +351,5 @@ MCPToolInspectClassTest >> testToolRequiresClassNameInSchema [
 { #category : 'private - calling' }
 MCPToolInspectClassTest >> toolName [
 
-	^ 'inspect-class'
+	^ 'class_get'
 ]

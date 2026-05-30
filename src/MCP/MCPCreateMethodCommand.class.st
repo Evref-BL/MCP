@@ -1,5 +1,5 @@
 "
-Command for creating or replacing one method from a parsed edit-method create request. The command compiles the supplied source and returns method metadata plus any included critiques.
+Command for creating or replacing one method from a parsed method_edit create request. The command compiles the supplied source and returns method metadata plus any included critiques.
 "
 Class {
 	#name : 'MCPCreateMethodCommand',

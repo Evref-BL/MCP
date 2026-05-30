@@ -1126,7 +1126,7 @@ MCPToolEditMethodTest >> testToolRequiresOperationAndClassNameInSchema [
 { #category : 'private - calling' }
 MCPToolEditMethodTest >> toolName [
 
-	^ 'edit-method'
+	^ 'method_edit'
 ]
 
 { #category : 'private' }

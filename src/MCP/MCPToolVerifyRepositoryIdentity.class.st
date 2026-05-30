@@ -9,7 +9,7 @@ Class {
 { #category : 'defaults' }
 MCPToolVerifyRepositoryIdentity class >> toolName [
 
-	^ 'verify-repository-identity'
+	^ 'repository_identity_verify'
 ]
 
 { #category : 'private - operations' }

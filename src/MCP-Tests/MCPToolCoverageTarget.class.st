@@ -1,5 +1,5 @@
 "
-Small production-like target used by MCP run-tests coverage tests.
+Small production-like target used by MCP test_run coverage tests.
 
 Its methods are intentionally simple and stable so coverage assertions can distinguish fully covered, uncovered, and partially covered methods.
 "

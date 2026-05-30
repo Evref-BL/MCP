@@ -1,5 +1,5 @@
 "
-Parsed, validated find-packages request derived from one MCPToolRequest. It keeps package query execution away from raw argument dictionaries.
+Parsed, validated package_search request derived from one MCPToolRequest. It keeps package query execution away from raw argument dictionaries.
 "
 Class {
 	#name : 'MCPFindPackagesRequest',

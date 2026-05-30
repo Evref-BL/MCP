@@ -20,7 +20,7 @@ MCPToolDebugControl class >> toolIconSpec [
 { #category : 'defaults' }
 MCPToolDebugControl class >> toolName [
 
-	^ 'debug-control'
+	^ 'debug_control'
 ]
 
 { #category : 'private - execution' }
@@ -53,7 +53,7 @@ MCPToolDebugControl >> controlFailureMessageFor: anError operation: operationNam
 { #category : 'defaults' }
 MCPToolDebugControl >> defaultDescription [
 
-	^ 'Apply one conventional control action to a tracked Pharo DebugSession, invalidate stale state-scoped refs, and optionally return the post-action debug-state snapshot.'
+	^ 'Apply one conventional control action to a tracked Pharo DebugSession, invalidate stale state-scoped refs, and optionally return the post-action debug_state_get snapshot.'
 ]
 
 { #category : 'defaults' }
@@ -72,7 +72,7 @@ MCPToolDebugControl >> defaultInputSchema [
 					   schemaPropertyNamed: 'sessionId'
 					   type: 'string'
 					   description:
-						   'Opaque debug session identifier returned by debug-sessions.').
+						   'Opaque debug session identifier returned by debug_session_manage.').
 				  (self
 					   stringEnumSchemaPropertyNamed: 'operation'
 					   description: 'Debug control operation to apply.'
@@ -90,7 +90,7 @@ MCPToolDebugControl >> defaultInputSchema [
 				  (self
 					   booleanSchemaPropertyNamed: 'returnState'
 					   description:
-						   'Whether paused operations should include a post-action debug-state snapshot.'
+						   'Whether paused operations should include a post-action debug_state_get snapshot.'
 					   default: true).
 				  (self
 					   integerSchemaPropertyNamed: 'sourceContextLines'
@@ -130,7 +130,7 @@ MCPToolDebugControl >> defaultInputSchema [
 { #category : 'defaults' }
 MCPToolDebugControl >> defaultName [
 
-	^ 'debug-control'
+	^ 'debug_control'
 ]
 
 { #category : 'defaults' }
@@ -171,7 +171,7 @@ MCPToolDebugControl >> defaultOutputSchema [
 					   schemaPropertyNamed: 'state'
 					   type: 'object'
 					   description:
-					   'Post-action debug-state snapshot for paused operations when requested.').
+					   'Post-action debug_state_get snapshot for paused operations when requested.').
 				  (self
 					   stringArraySchemaNamed: 'warnings'
 					   description: 'Control-specific warnings.'

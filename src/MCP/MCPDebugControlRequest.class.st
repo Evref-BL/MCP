@@ -1,7 +1,7 @@
 "
 Request object for debugger control operations.
 
-It extends the shared debugger request with the returnState flag that controls whether paused control results include a fresh debug-state snapshot.
+It extends the shared debugger request with the returnState flag that controls whether paused control results include a fresh debug_state_get snapshot.
 "
 Class {
 	#name : 'MCPDebugControlRequest',

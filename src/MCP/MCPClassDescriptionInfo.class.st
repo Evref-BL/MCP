@@ -1,5 +1,5 @@
 "
-DTO for rich class metadata used by inspect-class.
+DTO for rich class metadata used by class_get.
 
 It includes package, tag, layout, slots, traits, pools, shared variables, method counts, and trait composition strings.
 "

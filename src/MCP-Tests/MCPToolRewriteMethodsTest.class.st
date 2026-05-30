@@ -1,5 +1,5 @@
 "
-Tests for rewrite-methods preview/apply behavior, scope handling, and guardrails.
+Tests for method_rewrite preview/apply behavior, scope handling, and guardrails.
 "
 Class {
 	#name : 'MCPToolRewriteMethodsTest',
@@ -420,7 +420,7 @@ MCPToolRewriteMethodsTest >> testSchemaAdvertisesRewriteContract [
 	rhsProperty := ((rulesProperty extraProperties at: #items)
 		                extraProperties at: #properties) detect: [ :each |
 		               each name = 'rhs' ].
-	self assert: tool name equals: 'rewrite-methods'.
+	self assert: tool name equals: 'method_rewrite'.
 	self
 		assert: tool inputSchema required asSet
 		equals: #( 'rules' ) asSet.
@@ -448,5 +448,5 @@ MCPToolRewriteMethodsTest >> testSchemaAdvertisesRewriteContract [
 { #category : 'private' }
 MCPToolRewriteMethodsTest >> toolName [
 
-	^ 'rewrite-methods'
+	^ 'method_rewrite'
 ]

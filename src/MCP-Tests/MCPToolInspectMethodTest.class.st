@@ -133,7 +133,7 @@ MCPToolInspectMethodTest >> testToolRequiresClassNameAndSelectorInSchema [
 { #category : 'private - calling' }
 MCPToolInspectMethodTest >> toolName [
 
-	^ 'inspect-method'
+	^ 'method_get'
 ]
 
 { #category : 'private' }

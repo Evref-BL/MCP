@@ -1,5 +1,5 @@
 "
-Result DTO returned by edit-repository operation=push. It reports repository metadata, remote names, and branch/head state after the push.
+Result DTO returned by repository_edit operation=push. It reports repository metadata, remote names, and branch/head state after the push.
 "
 Class {
 	#name : 'MCPRepositoryPushResult',

@@ -358,7 +358,7 @@ MCPToolQuery >> methodFilteringInputPropertiesWithFilterDescription: filterDescr
 		   filterTargetsDescription:
 		   'Optional method-entry fields matched by filter for field filtering. Ignored by reference lookup modes: selectorReference, classReference, and variableReference.'
 		   filterModeDescription:
-		   'How the filter is matched or interpreted. Reference modes on find-methods are selectorReference for senders, classReference for class references, and variableReference for variable references.'
+		   'How the filter is matched or interpreted. Reference modes on method_search are selectorReference for senders, classReference for class references, and variableReference for variable references.'
 		   filterModeValues: self supportedFilterModes) , {
 		  self wherePredicateSchemaProperty.
 		  (self caseSensitiveSchemaPropertyWithDescription:

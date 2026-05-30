@@ -9,19 +9,19 @@ Class {
 { #category : 'defaults' }
 MCPToolFindClassReferences class >> toolName [
 
-	^ 'find-class-references'
+	^ 'method_class_reference_search'
 ]
 
 { #category : 'defaults' }
 MCPToolFindClassReferences >> defaultDescription [
 
-	^ 'Find methods that reference a class binding. Use find-methods for general method metadata or source search.'
+	^ 'Search methods that reference a class binding. Use method_search for general method metadata or source search.'
 ]
 
 { #category : 'defaults' }
 MCPToolFindClassReferences >> defaultTitle [
 
-	^ 'Find Class References'
+	^ 'Search Class References'
 ]
 
 { #category : 'private - schema' }

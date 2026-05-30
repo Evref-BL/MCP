@@ -1,5 +1,5 @@
 "
-Command that inspects method source and optional variable-reference DTOs for inspect-method.
+Command that inspects method source and optional variable-reference DTOs for method_get.
 "
 Class {
 	#name : 'MCPInspectMethodCommand',

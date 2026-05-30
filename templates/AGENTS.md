@@ -30,30 +30,29 @@ Use single search terms like:
 - evaluate, expression
 
 For method lookup, discover the method/reference tool from the current client.
-Use `find-method-implementors`, `find-method-senders`,
-`find-class-references`, and `find-variable-references` when available. Use
-`find-methods` for method metadata/source search, `where` predicates, and
-equivalent-AST matching. If the focused lookup tools are not available, use the
-compatible `find-methods` modes for implementors, senders, class references,
-and variable references.
+Use `method_implementor_search`, `method_sender_search`,
+`method_class_reference_search`, and `method_variable_reference_search` when available. Use
+`method_search` for method metadata/source search, `where` predicates, and
+equivalent-AST matching. Use the broader `method_search` modes for
+implementors, senders, class references, and variable references when a single
+method search query is a better fit.
 
-For change history, use `find-change-history-files` to locate `.ombu` files
-and `find-change-history-entries` to browse entries. Use
-`manage-change-history` only when you need apply/revert preview or confirmed
+For change history, use `history_file_list` to locate `.ombu` files
+and `history_entry_list` to browse entries. Use
+`history_entry_manage` only when you need apply/revert preview or confirmed
 recovery.
 
-For repository work, use `find-repositories` to inspect registered Iceberg
-repositories, `verify-repository-identity` before changing repository state,
-and `find-repository-changes` before exporting or committing image changes.
-Prefer focused repository tools such as `export-repository`,
-`commit-repository`, `fetch-repository`, `pull-repository`, `push-repository`,
-`create-repository-branch`, `switch-repository-branch`, and
-`adopt-repository-head` when available. Use `edit-repository` for create,
-attach, update, or compatibility with clients that do not expose the focused
-tools yet.
+For repository work, use `repository_search` to inspect registered Iceberg
+repositories, `repository_identity_verify` before changing repository state,
+and `repository_change_list` before exporting or committing image changes.
+Prefer focused repository tools such as `repository_export`,
+`repository_commit`, `repository_fetch`, `repository_pull`, `repository_push`,
+`repository_branch_create`, `repository_branch_switch`, and
+`repository_head_adopt` when available. Use `repository_edit` for create,
+attach, and update workflows.
 
-Use `evaluate` only for short one-off inspection or glue code when no dedicated
-`pharo` tool fits.
+Use `image_evaluate` only for short one-off inspection or glue code when no
+dedicated `pharo` tool fits.
 
 If a `pharo` tool fails or returns incomplete data, report that clearly instead
 of guessing or silently falling back.

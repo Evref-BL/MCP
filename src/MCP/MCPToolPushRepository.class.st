@@ -9,7 +9,7 @@ Class {
 { #category : 'defaults' }
 MCPToolPushRepository class >> toolName [
 
-	^ 'push-repository'
+	^ 'repository_push'
 ]
 
 { #category : 'private - operations' }
