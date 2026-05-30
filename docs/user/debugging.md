@@ -1,13 +1,44 @@
 # Debugging Tools
 
-Use this file when working with MCP-Pharo debugger tools. These tools are
-discoverable, not part of the default static surface.
+Applies when using MCP-Pharo to capture exceptions, inspect debug sessions,
+control paused execution, manage breakpoints, or repair code from a debugger
+state.
 
-Start with:
+## Goal
 
-1. `discover-tools` with `group=debugging` to find available debugger tools.
-2. `inspect-tool` for the exact schema of the tool you plan to call.
-3. `call-tool` to invoke the selected debugger tool by name.
+Use debugger tools without guessing from source, driving Morphic debugger UI by
+hand, or issuing stale frame and variable references.
+
+Debugger tools are discoverable, not part of the default static surface.
+
+## Discovery Flow
+
+1. Use `discover-tools` with `group=debugging` to find available debugger
+   tools.
+2. Use `inspect-tool` for the exact schema of the tool you plan to call.
+3. If the current client exposes a catalog bridge, use `call-tool` to invoke
+   the selected debugger tool by name. Otherwise use the callable form exposed
+   by the current client.
+
+## Must Do
+
+- Treat `stateId`, `frameRef`, and `variableRef` values as opaque and
+  state-scoped.
+- Use the newest returned state after every control or edit action.
+- Keep stack and variable limits small first, then expand only what is needed.
+- Clear temporary breakpoints and forget agent-owned sessions when the task is
+  done.
+- Report the exact debugger tool names used and the final session state.
+
+## Do Not
+
+- Do not drive debugger windows or mutate contexts through general `evaluate`
+  code.
+- Do not reuse frame or variable references after stepping, restarting,
+  resuming, terminating, or editing.
+- Do not leave breakpoints or captured sessions behind without reporting them.
+- Do not use debugger editing as a substitute for normal source tools when
+  there is no paused debugger state.
 
 ## Tool Map
 
@@ -84,3 +115,15 @@ accepted.
 Read [Debugger-Driven Development](debugger-driven-development.md) before using
 `debug-edit` for missing methods, `subclassResponsibility`,
 `shouldBeImplemented`, `notYetImplemented`, or iterative repair workflows.
+
+## Reporting
+
+When finishing debugger work, report:
+
+- how the session was obtained: capture, test, discovered debugger, or attached
+  debugger;
+- debugger tools called;
+- final session outcome: completed, paused, running, terminated, forgotten, or
+  still open;
+- breakpoints created, cleared, or left in place;
+- cleanup performed or still needed.

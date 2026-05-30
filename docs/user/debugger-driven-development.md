@@ -1,20 +1,45 @@
 # Debugger-Driven Development
 
-Use this file when using MCP-Pharo to repair code from a live debugger state.
+Applies when using MCP-Pharo to repair code from a live debugger state.
 
 Debugger-driven development keeps execution paused at the failure, edits the
 relevant method, and continues from the debugger instead of restarting the
 whole scenario.
 
+## Goal
+
+Repair code from the paused execution context while preserving the debugger as
+the source of truth for receiver, selector, class side, selected frame, and
+repair action.
+
 ## Main Flow
 
-1. Get a state with `debug-state`, or from `debug-capture` /
-   `debug-sessions attach`.
+1. Get a state with `debug-state`, `debug-capture`, or `debug-sessions` with
+   `operation=attach`.
 2. Check `repairActions` before inventing an edit target.
 3. Call `debug-edit` with the action's `sessionId`, `stateId`, and `frameRef`.
 4. Review returned `critiques`.
-5. If critiques are acceptable, retry with `ignoreCritiques=true`.
+5. If the edit is blocked by critiques and the critiques are acceptable, retry
+   with `ignoreCritiques=true`.
 6. Continue with the returned state when execution pauses again.
+
+## Must Do
+
+- Use the repair action's frame reference instead of selecting a target class or
+  method by hand.
+- Review critiques before allowing the repaired computation to proceed.
+- Treat returned states and references as fresh; discard older state-scoped
+  references after each edit or control action.
+- Stop after the bounded action the user requested and report the resulting
+  state.
+
+## Do Not
+
+- Do not guess the receiver class, target behavior, selector, or class side for
+  missing-method repair.
+- Do not use general `evaluate` code to mutate contexts or drive debugger UI.
+- Do not continue issuing frame commands when the repair outcome is running,
+  timed out, completed, or blocked by critiques.
 
 ## Missing Methods
 
@@ -61,3 +86,14 @@ widgets or mutate contexts directly.
 
 When the user asks you to perform a bounded action and give control back, run
 only the requested debugger calls, then stop and report the resulting state.
+
+## Reporting
+
+When finishing a debugger-driven repair, report:
+
+- repair action used;
+- method created or recompiled, when any;
+- critiques returned and whether they were accepted;
+- proceed outcome;
+- final state or why no fresh state is available;
+- cleanup still needed.
