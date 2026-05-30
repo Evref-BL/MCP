@@ -26,15 +26,19 @@ jobs:
         shell: bash
         timeout-minutes: 15
       - name: Coveralls
+        if: ${{ success() }}
         uses: coverallsapp/github-action@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          path-to-lcov: ./coverage/lcov.info
+          file: ./coverage/lcov.info
+          format: lcov
           parallel: true
           flag-name: ${{ matrix.smalltalk }}
 
   coveralls:
+    name: Coveralls finalize
     needs: build
+    # Always close the parallel Coveralls build after all matrix jobs finish.
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
