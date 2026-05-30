@@ -82,8 +82,11 @@ A generic remote MCP configuration looks like this:
 
 For Codex, copy the supplied support files into the agent workspace:
 
-- [../../user/codex/.codex](../../user/codex/.codex) as `.codex`
-- [../../user/AGENTS.md](../../user/AGENTS.md) as `AGENTS.md`
+```sh
+cp -R templates/. /path/to/your/project/
+```
+
+The template includes `AGENTS.md`, `.codex/config.toml`, and reusable skills.
 
 The supplied Codex config expects port `4000`:
 
@@ -98,13 +101,17 @@ If you started the server on another port, update the URL.
 
 ## First Read-Only Calls
 
-Ask the client to list tools first:
+Ask the client to list tools first. In clients that expose the discoverable
+catalog, start with tool discovery and schema inspection:
 
 ```text
 tools/list
+discover-tools
+inspect-tool
 ```
 
-Then inspect the image with read-only tools:
+Then inspect the image with read-only package, class, method, and repository
+tools:
 
 ```text
 find-packages

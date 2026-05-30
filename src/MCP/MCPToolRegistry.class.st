@@ -18,6 +18,54 @@ MCPToolRegistry class >> activationRequirementsForTool: aTool [
 ]
 
 { #category : 'tools' }
+MCPToolRegistry class >> additionalKeywordsForTool: aTool [
+
+	| toolName |
+	toolName := aTool name.
+	toolName = 'find-repositories' ifTrue: [
+		^ #( 'repo' 'iceberg' 'git' 'branch' 'commit' 'remote' 'head' ) ].
+	toolName = 'edit-repository' ifTrue: [
+		^ #( 'repo' 'iceberg' 'tonel' 'git' 'export' 'diff' 'branch'
+		     'commit' 'pull' 'push' 'fetch' 'attach' 'adopt' 'identity' ) ].
+	toolName = 'load-repository' ifTrue: [
+		^ #( 'baseline' 'metacello' 'load' 'package' ) ].
+	toolName = 'find-packages' ifTrue: [
+		^ #( 'package' 'project' 'tag' ) ].
+	toolName = 'find-classes' ifTrue: [
+		^ #( 'class' 'package' 'tag' 'slot' 'trait' 'hierarchy' ) ].
+	toolName = 'inspect-class' ifTrue: [
+		^ #( 'class' 'inspect' 'superclass' 'subclass' 'slot' 'trait'
+		     'comment' ) ].
+	toolName = 'edit-class' ifTrue: [
+		^ #( 'class' 'create' 'update' 'rename' 'remove' 'superclass'
+		     'subclass' 'slot' 'trait' 'comment' ) ].
+	toolName = 'find-methods' ifTrue: [
+		^ #( 'method' 'selector' 'protocol' 'source' 'implementor'
+		     'sender' 'reference' 'variable' ) ].
+	toolName = 'inspect-method' ifTrue: [
+		^ #( 'method' 'selector' 'protocol' 'source' 'reference'
+		     'variable' ) ].
+	toolName = 'edit-method' ifTrue: [
+		^ #( 'method' 'selector' 'protocol' 'source' 'create' 'update'
+		     'rename' ) ].
+	toolName = 'rewrite-methods' ifTrue: [
+		^ #( 'method' 'rewrite' 'preview' 'apply' 'ast' 'pattern' ) ].
+	toolName = 'run-tests' ifTrue: [
+		^ #( 'test' 'sunit' 'coverage' 'timeout' ) ].
+	toolName = 'manage-change-history' ifTrue: [
+		^ #( 'history' 'change' 'entry' 'browse' 'list' 'inspect'
+		     'preview' 'apply' 'revert' 'recover' 'epicea' 'ombu' ) ].
+	toolName = 'capture-screenshot' ifTrue: [
+		^ #( 'screenshot' 'capture' 'window' 'display' 'world' 'ui' ) ].
+	toolName = 'evaluate' ifTrue: [
+		^ #( 'evaluate' 'expression' 'smalltalk' 'code' ) ].
+	(toolName beginsWith: 'debug-') ifTrue: [
+		^ #( 'debug' 'session' 'state' 'frame' 'variable' 'breakpoint'
+		     'capture' 'control' 'repair' 'exception' ) ].
+	^ #(  )
+]
+
+{ #category : 'tools' }
 MCPToolRegistry class >> defaultStaticToolNames [
 
 	^ self staticToolClasses collect: [ :each | each toolName ]
@@ -98,6 +146,7 @@ MCPToolRegistry class >> keywordsForTool: aTool [
 	keywords addAll: (aTool name findTokens: '-').
 	keywords addAll: (aTool title findTokens: ' -').
 	keywords add: (self groupNameForToolClass: aTool class).
+	keywords addAll: (self additionalKeywordsForTool: aTool).
 	^ (keywords collect: [ :each | each asString asLowercase ]) asSet
 		  asArray
 ]

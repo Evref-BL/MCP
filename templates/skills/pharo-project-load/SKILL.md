@@ -33,7 +33,8 @@ only when no dedicated tool fits.
      metadata agree.
 
 3. Load the project:
-   - With Pharo MCP, use `load_repository` for remote Metacello loads.
+   - With Pharo MCP, discover the load tool from the current client with terms
+     such as `load`, `baseline`, `Metacello`, `repository`, and `package`.
    - For local Tonel paths, evaluate a small Metacello snippet if needed.
    - Prefer the default load first. Specify groups only when the task or project
      docs require them.

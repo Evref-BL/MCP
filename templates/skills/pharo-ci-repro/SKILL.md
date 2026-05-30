@@ -72,7 +72,7 @@ failure.
 Run:
 
 ```sh
-user/skills/pharo-ci-repro/scripts/run-smalltalkci-docker.sh \
+skills/pharo-ci-repro/scripts/run-smalltalkci-docker.sh \
   --repo /path/to/repo \
   --platform Pharo64-13 \
   --attempts 3
@@ -85,7 +85,8 @@ Useful flags:
 - `--include-git` to copy `.git` too. Use only for ordinary checkouts, not
   worktrees whose `.git` file points outside the copied tree.
 - `--keep-going` to continue after failures and collect several failing logs.
-- `--docker-platform linux/amd64` to match a CI runner architecture when needed.
+- `--docker-platform linux/amd64` to match a CI runner architecture when
+  needed.
 
 The script stops at the first failure by default and prints the log path.
 

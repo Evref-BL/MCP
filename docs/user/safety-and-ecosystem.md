@@ -150,6 +150,21 @@ the selected apply or revert only when `confirm=true`.
 Use this when recovering image-side changes or preparing a clean handoff from a
 live image back to Tonel/Git.
 
+## Debugging
+
+Debugger tools are discoverable through the `debugging` group. They work with
+tracked Pharo `DebugSession` records, captured worker-process exceptions,
+SUnit test failures, transient DebugPoint breakpoints, and attached human-opened
+debuggers.
+
+Treat debugger state references as opaque and state-scoped. After stepping,
+resuming, restarting, terminating, or editing from a debug state, use the newly
+returned state before expanding variables or evaluating in a frame again.
+
+Use `debug-edit` only from a paused debug state and only after reading the
+offered repair actions. It uses the same critique gate as method editing before
+proceeding a repaired computation.
+
 ## Evaluation Escape Hatch
 
 `evaluate` runs arbitrary Smalltalk and saves the image after a successful call.
