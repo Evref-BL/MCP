@@ -175,7 +175,7 @@ MCPToolRegistry class >> keywordsForTool: aTool [
 
 	| keywords |
 	keywords := OrderedCollection new.
-	keywords addAll: (aTool name findTokens: '-').
+	keywords addAll: (aTool name findTokens: '-_').
 	keywords addAll: (aTool title findTokens: ' -').
 	keywords add: (self groupNameForToolClass: aTool class).
 	keywords addAll: (self additionalKeywordsForTool: aTool).
@@ -216,12 +216,16 @@ MCPToolRegistry class >> mutabilityForTool: aTool [
 	                'repository_identity_verify'
 	                'repository_change_list' 'package_search'
 	                'class_search' 'class_get' 'method_search'
-	                'method_implementor_search' 'method_sender_search'
-	                'method_class_reference_search' 'method_variable_reference_search'
-	                'method_get' 'history_file_list'
-	                'history_entry_list'
-	                'screenshot_capture' 'debug_state_get' 'debug_variable_get' ).
-	executeTools := #( 'tool_call' 'test_run' 'image_evaluate' 'debug_expression_evaluate'
+	                'method_implementor_search'
+	                'method_sender_search' 'method_class_reference_search'
+	                'method_variable_reference_search'
+	                'method_get' 'history_file_list' 'history_entry_list'
+	                'screenshot_capture' 'debug_session_list'
+	                'debug_session_get' 'debug_candidate_search'
+	                'debug_state_get' 'debug_variable_get'
+	                'debug_breakpoint_list' ).
+	executeTools := #( 'tool_call' 'test_run' 'image_evaluate'
+	                   'debug_expression_evaluate'
 	                   'debug_capture' 'debug_test_run' ).
 	(readTools includes: toolName) ifTrue: [ ^ 'read' ].
 	(executeTools includes: toolName) ifTrue: [ ^ 'execute' ].
@@ -282,12 +286,21 @@ MCPToolRegistry class >> publicToolGroups [
 		  ('tests' -> { MCPToolRunTests }).
 		  ('ui' -> { MCPToolCaptureScreenshot }).
 		  ('debugging' -> {
-			   MCPToolDebugSessions.
+			   MCPToolListDebugSessions.
+			   MCPToolGetDebugSession.
+			   MCPToolRemoveDebugSession.
+			   MCPToolSearchDebugCandidates.
+			   MCPToolAttachDebugCandidate.
 			   MCPToolDebugState.
 			   MCPToolDebugVariables.
 			   MCPToolDebugEvaluate.
 			   MCPToolDebugControl.
-			   MCPToolDebugBreakpoints.
+			   MCPToolListDebugBreakpoints.
+			   MCPToolSetDebugBreakpoint.
+			   MCPToolRemoveDebugBreakpoint.
+			   MCPToolEnableDebugBreakpoint.
+			   MCPToolDisableDebugBreakpoint.
+			   MCPToolClearDebugBreakpoints.
 			   MCPToolDebugCapture.
 			   MCPToolDebugTest.
 			   MCPToolDebugEdit }).
@@ -325,13 +338,16 @@ MCPToolRegistry class >> riskForTool: aTool [
 	              'repository_change_list' 'package_search'
 	              'class_search' 'class_get' 'method_search'
 	              'method_implementor_search' 'method_sender_search'
-	              'method_class_reference_search' 'method_variable_reference_search'
-	              'method_get' 'history_file_list'
-	              'history_entry_list'
-	              'screenshot_capture' 'debug_state_get' 'debug_variable_get' ).
-	mediumRisk := #( 'tool_call' 'repository_load' 'test_run'
-	                 'image_evaluate' 'debug_expression_evaluate' 'debug_capture'
-	                 'debug_test_run' ).
+	              'method_class_reference_search'
+	              'method_variable_reference_search'
+	              'method_get' 'history_file_list' 'history_entry_list'
+	              'screenshot_capture' 'debug_session_list'
+	              'debug_session_get' 'debug_candidate_search'
+	              'debug_state_get' 'debug_variable_get'
+	              'debug_breakpoint_list' ).
+	mediumRisk := #( 'tool_call' 'repository_load' 'test_run' 'image_evaluate'
+	                 'debug_expression_evaluate'
+	                 'debug_capture' 'debug_test_run' ).
 	(lowRisk includes: toolName) ifTrue: [ ^ 'low' ].
 	(mediumRisk includes: toolName) ifTrue: [ ^ 'medium' ].
 	^ 'high'

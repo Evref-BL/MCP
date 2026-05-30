@@ -11,16 +11,16 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'testing' }
+MCPToolDebugBreakpoints class >> isAbstract [
+
+	^ self = MCPToolDebugBreakpoints
+]
+
 { #category : 'icons' }
 MCPToolDebugBreakpoints class >> toolIconSpec [
 
 	^ MCPToolIconSpec baseIconNamed: #bug badgeIconNamed: #breakpoint
-]
-
-{ #category : 'defaults' }
-MCPToolDebugBreakpoints class >> toolName [
-
-	^ 'debug_breakpoint_manage'
 ]
 
 { #category : 'private - execution' }
@@ -89,12 +89,6 @@ MCPToolDebugBreakpoints >> defaultInputSchema [
 		  required: #(  );
 		  additionalProperties: false;
 		  yourself
-]
-
-{ #category : 'defaults' }
-MCPToolDebugBreakpoints >> defaultName [
-
-	^ 'debug_breakpoint_manage'
 ]
 
 { #category : 'defaults' }

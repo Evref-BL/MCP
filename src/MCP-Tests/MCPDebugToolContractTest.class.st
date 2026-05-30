@@ -405,22 +405,23 @@ MCPDebugToolContractTest >> testDebugBreakpointsCanDisableAndEnableBreakpoint [
 
 	| breakpointId data |
 	data := self dataFrom:
-		        (self callToolNamed: 'debug_breakpoint_manage' withArguments: {
-				         (#operation -> 'set').
-				         (#className -> 'MCPDebugToolContractTest').
-				         (#selector -> 'syntheticDebugSession') } asDictionary).
+		        (self
+			         callToolNamed: 'debug_breakpoint_set'
+			         withArguments: {
+					         (#className -> 'MCPDebugToolContractTest').
+					         (#selector -> 'syntheticDebugSession') } asDictionary).
 	breakpointId := data at: #breakpointId.
 
-	data := self dataFrom:
-		        (self callToolNamed: 'debug_breakpoint_manage' withArguments: {
-				         (#operation -> 'disable').
-				         (#breakpointId -> breakpointId) } asDictionary).
+	data := self dataFrom: (self
+			         callToolNamed: 'debug_breakpoint_disable'
+			         withArguments:
+			         { (#breakpointId -> breakpointId) } asDictionary).
 	self deny: (data at: #enabled).
 
-	data := self dataFrom:
-		        (self callToolNamed: 'debug_breakpoint_manage' withArguments: {
-				         (#operation -> 'enable').
-				         (#breakpointId -> breakpointId) } asDictionary).
+	data := self dataFrom: (self
+			         callToolNamed: 'debug_breakpoint_enable'
+			         withArguments:
+			         { (#breakpointId -> breakpointId) } asDictionary).
 	self assert: (data at: #enabled)
 ]
 
@@ -428,11 +429,12 @@ MCPDebugToolContractTest >> testDebugBreakpointsCanDisableAndEnableBreakpoint [
 MCPDebugToolContractTest >> testDebugBreakpointsSetsListsAndRemovesMethodBreakpoint [
 
 	| breakpointId data listData removeData result |
-	result := self callToolNamed: 'debug_breakpoint_manage' withArguments: {
-			          (#operation -> 'set').
-			          (#className -> 'MCPDebugToolContractTest').
-			          (#selector -> 'syntheticDebugSession').
-			          (#targetKind -> 'method') } asDictionary.
+	result := self
+		          callToolNamed: 'debug_breakpoint_set'
+		          withArguments: {
+				          (#className -> 'MCPDebugToolContractTest').
+				          (#selector -> 'syntheticDebugSession').
+				          (#targetKind -> 'method') } asDictionary.
 	data := self dataFrom: result.
 	self assert: (data at: #targetKind) equals: 'method'.
 	self assert: (data at: #className) equals: 'MCPDebugToolContractTest'.
@@ -441,23 +443,21 @@ MCPDebugToolContractTest >> testDebugBreakpointsSetsListsAndRemovesMethodBreakpo
 	breakpointId := data at: #breakpointId.
 
 	listData := self dataFrom: (self
-			             callToolNamed: 'debug_breakpoint_manage'
-			             withArguments: { (#operation -> 'list') } asDictionary).
+			             callToolNamed: 'debug_breakpoint_list'
+			             withArguments: Dictionary new).
 	self assert: (listData at: #totalCount) equals: 1.
 	self
 		assert: ((listData at: #breakpoints) first at: #breakpointId)
 		equals: breakpointId.
 
-	removeData := self dataFrom:
-		              (self
-			               callToolNamed: 'debug_breakpoint_manage'
-			               withArguments: {
-					               (#operation -> 'remove').
-					               (#breakpointId -> breakpointId) } asDictionary).
+	removeData := self dataFrom: (self
+			               callToolNamed: 'debug_breakpoint_remove'
+			               withArguments:
+			               { (#breakpointId -> breakpointId) } asDictionary).
 	self assert: (removeData at: #removed).
 	listData := self dataFrom: (self
-			             callToolNamed: 'debug_breakpoint_manage'
-			             withArguments: { (#operation -> 'list') } asDictionary).
+			             callToolNamed: 'debug_breakpoint_list'
+			             withArguments: Dictionary new).
 	self assert: (listData at: #totalCount) equals: 0
 ]
 
@@ -470,13 +470,14 @@ MCPDebugToolContractTest >> testDebugBreakpointsSupportsSourceIntervalTarget [
 	start := source findString: 'thisContext'.
 	stop := start + 'thisContext' size - 1.
 	data := self dataFrom:
-		        (self callToolNamed: 'debug_breakpoint_manage' withArguments: {
-				         (#operation -> 'set').
-				         (#className -> 'MCPDebugToolContractTest').
-				         (#selector -> 'syntheticDebugSession').
-				         (#targetKind -> 'sourceInterval').
-				         (#sourceStart -> start).
-				         (#sourceStop -> stop) } asDictionary).
+		        (self
+			         callToolNamed: 'debug_breakpoint_set'
+			         withArguments: {
+					         (#className -> 'MCPDebugToolContractTest').
+					         (#selector -> 'syntheticDebugSession').
+					         (#targetKind -> 'sourceInterval').
+					         (#sourceStart -> start).
+					         (#sourceStop -> stop) } asDictionary).
 	nodeClassName := data at: #nodeClassName.
 	self assert: (data at: #targetKind) equals: 'sourceInterval'.
 	self assert: (data at: #sourceStart) equals: start.
@@ -1130,10 +1131,9 @@ MCPDebugToolContractTest >> testDebugSessionsAttachInstallsExternalContinuation 
 	debugger := self syntheticDebuggerNamed:
 		            'Attachable continuation debugger'.
 	ref := self candidateRefForDebugger: debugger.
-	data := self dataFrom:
-		        (self callToolNamed: 'debug_session_manage' withArguments: {
-				         (#operation -> 'attach').
-				         (#candidateRef -> ref) } asDictionary).
+	data := self dataFrom: (self
+			         callToolNamed: 'debug_candidate_attach'
+			         withArguments: { (#candidateRef -> ref) } asDictionary).
 	session := data at: #session.
 	record := MCPDebugSessionRegistry default
 		          sessionRecordAt: (session at: #sessionId)
@@ -1155,15 +1155,14 @@ MCPDebugToolContractTest >> testDebugSessionsAttachRegistersDiscoveredDebugger [
 	debugger := self syntheticDebuggerNamed: 'Attachable human debugger'.
 	ref := self candidateRefForDebugger: debugger.
 	discoverData := self dataFrom: (self
-			                 callToolNamed: 'debug_session_manage'
-			                 withArguments:
-			                 { (#operation -> 'discover') } asDictionary).
+			                 callToolNamed: 'debug_candidate_search'
+			                 withArguments: Dictionary new).
 	self assert: ((discoverData at: #candidates) anySatisfy: [ :each |
 			 (each at: #candidateRef) = ref ]).
 
-	result := self callToolNamed: 'debug_session_manage' withArguments: {
-			          (#operation -> 'attach').
-			          (#candidateRef -> ref) } asDictionary.
+	result := self
+		          callToolNamed: 'debug_candidate_attach'
+		          withArguments: { (#candidateRef -> ref) } asDictionary.
 	data := self dataFrom: result.
 	session := data at: #session.
 	state := data at: #state.
@@ -1188,9 +1187,10 @@ MCPDebugToolContractTest >> testDebugSessionsAttachRegistersDiscoveredDebugger [
 MCPDebugToolContractTest >> testDebugSessionsAttachRejectsUnknownCandidateRef [
 
 	| error result |
-	result := self callToolNamed: 'debug_session_manage' withArguments: {
-			          (#operation -> 'attach').
-			          (#candidateRef -> 'debugger-candidate-missing') }
+	result := self
+		          callToolNamed: 'debug_candidate_attach'
+		          withArguments:
+		          { (#candidateRef -> 'debugger-candidate-missing') }
 			          asDictionary.
 	error := self errorFrom: result.
 	self
@@ -1222,9 +1222,9 @@ MCPDebugToolContractTest >> testDebugSessionsAttachReusesRecordAfterRecordedSess
 		debugger: debugger;
 		debugSession: replacementDebugger session.
 
-	result := self callToolNamed: 'debug_session_manage' withArguments: {
-			          (#operation -> 'attach').
-			          (#candidateRef -> ref) } asDictionary.
+	result := self
+		          callToolNamed: 'debug_candidate_attach'
+		          withArguments: { (#candidateRef -> ref) } asDictionary.
 	data := self dataFrom: result.
 	session := data at: #session.
 
@@ -1242,9 +1242,10 @@ MCPDebugToolContractTest >> testDebugSessionsDescribeRegisteredSession [
 
 	| record result data session |
 	record := self registerSyntheticSession.
-	result := self callToolNamed: 'debug_session_manage' withArguments: {
-			          (#operation -> 'describe').
-			          (#sessionId -> record sessionId) } asDictionary.
+	result := self
+		          callToolNamed: 'debug_session_get'
+		          withArguments:
+		          { (#sessionId -> record sessionId) } asDictionary.
 	data := self dataFrom: result.
 	session := data at: #session.
 	self
@@ -1265,8 +1266,8 @@ MCPDebugToolContractTest >> testDebugSessionsDiscoverReturnsUnattachedDebuggerCa
 	newerRef := self candidateRefForDebugger: newer.
 
 	result := self
-		          callToolNamed: 'debug_session_manage'
-		          withArguments: { (#operation -> 'discover') } asDictionary.
+		          callToolNamed: 'debug_candidate_search'
+		          withArguments: Dictionary new.
 	data := self dataFrom: result.
 	candidates := data at: #candidates.
 	refs := candidates collect: [ :each | each at: #candidateRef ].
@@ -1301,8 +1302,8 @@ MCPDebugToolContractTest >> testDebugSessionsDiscoverSkipsAlreadyRegisteredDebug
 		reason: 'attachedDebugger'.
 
 	result := self
-		          callToolNamed: 'debug_session_manage'
-		          withArguments: { (#operation -> 'discover') } asDictionary.
+		          callToolNamed: 'debug_candidate_search'
+		          withArguments: Dictionary new.
 	data := self dataFrom: result.
 	candidates := data at: #candidates.
 	refs := candidates collect: [ :each | each at: #candidateRef ].
@@ -1333,8 +1334,8 @@ MCPDebugToolContractTest >> testDebugSessionsDiscoverSkipsAttachedDebuggerAfterR
 		debugSession: replacementDebugger session.
 
 	result := self
-		          callToolNamed: 'debug_session_manage'
-		          withArguments: { (#operation -> 'discover') } asDictionary.
+		          callToolNamed: 'debug_candidate_search'
+		          withArguments: Dictionary new.
 	data := self dataFrom: result.
 	candidates := data at: #candidates.
 	refs := candidates collect: [ :each | each at: #candidateRef ].
@@ -1354,19 +1355,15 @@ MCPDebugToolContractTest >> testDebugSessionsForgetDoesNotTerminateAttachedDebug
 	debugger := self syntheticDebuggerNamed:
 		            'Forget attached continuation debugger'.
 	ref := self candidateRefForDebugger: debugger.
-	attachData := self dataFrom:
-		              (self
-			               callToolNamed: 'debug_session_manage'
-			               withArguments: {
-					               (#operation -> 'attach').
-					               (#candidateRef -> ref) } asDictionary).
+	attachData := self dataFrom: (self
+			               callToolNamed: 'debug_candidate_attach'
+			               withArguments:
+			               { (#candidateRef -> ref) } asDictionary).
 	sessionId := attachData at: #sessionId.
-	forgetData := self dataFrom:
-		              (self
-			               callToolNamed: 'debug_session_manage'
-			               withArguments: {
-					               (#operation -> 'forget').
-					               (#sessionId -> sessionId) } asDictionary).
+	forgetData := self dataFrom: (self
+			               callToolNamed: 'debug_session_remove'
+			               withArguments:
+			               { (#sessionId -> sessionId) } asDictionary).
 	self assert: (forgetData at: #forgotten).
 	self deny: (forgetData at: #terminated)
 ]
@@ -1387,9 +1384,9 @@ MCPDebugToolContractTest >> testDebugSessionsForgetTerminatesCapturedSessionWork
 	process := record debugSession process.
 	self deny: process isTerminated.
 
-	result := self callToolNamed: 'debug_session_manage' withArguments: {
-			          (#operation -> 'forget').
-			          (#sessionId -> sessionId) } asDictionary.
+	result := self
+		          callToolNamed: 'debug_session_remove'
+		          withArguments: { (#sessionId -> sessionId) } asDictionary.
 	data := self dataFrom: result.
 	self
 		assert: ((self structuredContentFrom: result) at: #status)
@@ -1405,7 +1402,7 @@ MCPDebugToolContractTest >> testDebugSessionsListsEmptyRegistry [
 
 	| result data |
 	result := self
-		          callToolNamed: 'debug_session_manage'
+		          callToolNamed: 'debug_session_list'
 		          withArguments: Dictionary new.
 	data := self dataFrom: result.
 	self
@@ -1420,7 +1417,7 @@ MCPDebugToolContractTest >> testDebugSessionsRequestRejectsUnsupportedOperationW
 
 	| error request |
 	request := MCPToolRequest new
-		           tool: MCPToolDebugSessions new;
+		           tool: MCPToolListDebugSessions new;
 		           arguments: { (#operation -> 'wat') } asDictionary;
 		           yourself.
 	error := [

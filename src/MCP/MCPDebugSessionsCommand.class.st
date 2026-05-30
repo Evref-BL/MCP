@@ -1,7 +1,5 @@
 "
-Implements debug_session_manage operations.
-
-It lists and describes registered sessions, discovers unattached debugger candidates, attaches an external debugger to the MCP registry, and forgets sessions with the right ownership cleanup semantics.
+Implements focused debug session registry operations.
 "
 Class {
 	#name : 'MCPDebugSessionsCommand',
@@ -184,7 +182,7 @@ MCPDebugSessionsCommand >> signalMissingCandidateRef [
 
 	MCPCommandError
 		signalErrorCode: #DebugSessionCandidateRefMissing
-		message: 'debug_session_manage attach requires candidateRef.'
+		message: tool name , ' requires candidateRef.'
 		details: { (#operation -> request operation) } asDictionary
 ]
 

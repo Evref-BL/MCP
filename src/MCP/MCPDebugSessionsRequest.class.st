@@ -1,7 +1,5 @@
 "
-Request object for debug_session_manage operations.
-
-It extends the shared debugger request with the optional candidate reference used when attaching a discovered human-opened debugger.
+Request object for focused debug session registry operations.
 "
 Class {
 	#name : 'MCPDebugSessionsRequest',

@@ -14,8 +14,8 @@ repair action.
 
 ## Main Flow
 
-1. Get a state with `debug_state_get`, `debug_capture`, or `debug_session_manage` with
-   `operation=attach`.
+1. Get a state with `debug_state_get`, `debug_capture`, or
+   `debug_candidate_attach`.
 2. Check `repairActions` before inventing an edit target.
 3. Call `debug_method_repair` with the action's `sessionId`, `stateId`, and `frameRef`.
 4. Review returned `critiques`.
@@ -80,9 +80,10 @@ timed out, avoid issuing stale frame commands.
 
 ## Human-Owned Debuggers
 
-For debugger windows opened by a human, attach with `debug_session_manage` and let
-the debugger controller perform control actions. The visible debugger remains
-the UI owner. Do not use general `image_evaluate` code to drive Morphic debugger
+For debugger windows opened by a human, discover candidates with
+`debug_candidate_search`, attach with `debug_candidate_attach`, and let the
+debugger controller perform control actions. The visible debugger remains the
+UI owner. Do not use general `image_evaluate` code to drive Morphic debugger
 widgets or mutate contexts directly.
 
 When the user asks you to perform a bounded action and give control back, run

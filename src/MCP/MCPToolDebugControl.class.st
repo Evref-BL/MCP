@@ -72,7 +72,7 @@ MCPToolDebugControl >> defaultInputSchema [
 					   schemaPropertyNamed: 'sessionId'
 					   type: 'string'
 					   description:
-						   'Opaque debug session identifier returned by debug_session_manage.').
+						   'Opaque debug session identifier returned by debug_session_list, debug_capture, debug_test_run, or debug_candidate_attach.').
 				  (self
 					   stringEnumSchemaPropertyNamed: 'operation'
 					   description: 'Debug control operation to apply.'

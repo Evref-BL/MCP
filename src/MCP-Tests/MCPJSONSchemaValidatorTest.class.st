@@ -128,10 +128,32 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 
 	| arguments |
 	arguments := self baseRepresentativeArgumentsByToolClass.
-	arguments at: MCPToolDebugTest put: {
-			(#className -> 'MCPToolContractsTest').
-			(#testMethodName -> 'testDebuggerToolsAreDiscoverableOnly') }
-			asDictionary.
+	arguments removeKey: MCPToolDebugSessions ifAbsent: [ ].
+	arguments removeKey: MCPToolDebugBreakpoints ifAbsent: [ ].
+	arguments
+		at: MCPToolListDebugSessions put: Dictionary new;
+		at: MCPToolGetDebugSession
+		put: { (#sessionId -> 'debug-session-1') } asDictionary;
+		at: MCPToolRemoveDebugSession
+		put: { (#sessionId -> 'debug-session-1') } asDictionary;
+		at: MCPToolSearchDebugCandidates put: Dictionary new;
+		at: MCPToolAttachDebugCandidate
+		put: { (#candidateRef -> 'debugger-candidate-1') } asDictionary;
+		at: MCPToolListDebugBreakpoints put: Dictionary new;
+		at: MCPToolSetDebugBreakpoint put: {
+				(#className -> 'MCPJSONSchemaValidatorTest').
+				(#selector -> 'testCurrentToolSchemasValidate') } asDictionary;
+		at: MCPToolRemoveDebugBreakpoint
+		put: { (#breakpointId -> 'debug-breakpoint-1') } asDictionary;
+		at: MCPToolEnableDebugBreakpoint
+		put: { (#breakpointId -> 'debug-breakpoint-1') } asDictionary;
+		at: MCPToolDisableDebugBreakpoint
+		put: { (#breakpointId -> 'debug-breakpoint-1') } asDictionary;
+		at: MCPToolClearDebugBreakpoints put: Dictionary new;
+		at: MCPToolDebugTest put: {
+				(#className -> 'MCPToolContractsTest').
+				(#testMethodName -> 'testDebuggerToolsAreDiscoverableOnly') }
+				asDictionary.
 	^ arguments
 ]
 

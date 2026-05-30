@@ -11,16 +11,16 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'testing' }
+MCPToolDebugSessions class >> isAbstract [
+
+	^ self = MCPToolDebugSessions
+]
+
 { #category : 'icons' }
 MCPToolDebugSessions class >> toolIconSpec [
 
 	^ MCPToolIconSpec baseIconNamed: #bug badgeIconNamed: #book
-]
-
-{ #category : 'defaults' }
-MCPToolDebugSessions class >> toolName [
-
-	^ 'debug_session_manage'
 ]
 
 { #category : 'private - execution' }
@@ -56,21 +56,15 @@ MCPToolDebugSessions >> defaultInputSchema [
 					   schemaPropertyNamed: 'sessionId'
 					   type: 'string'
 					   description:
-						   'Opaque debug session identifier returned by debug_session_manage.').
+						   'Opaque debug session identifier returned by debug_session_list, debug_capture, debug_test_run, or debug_candidate_attach.').
 				  (self
 					   schemaPropertyNamed: 'candidateRef'
 					   type: 'string'
 					   description:
-						   'Opaque debugger candidate reference returned by debug_session_manage discover.') };
+						   'Opaque debugger candidate reference returned by debug_candidate_search.') };
 		  required: #(  );
 		  additionalProperties: false;
 		  yourself
-]
-
-{ #category : 'defaults' }
-MCPToolDebugSessions >> defaultName [
-
-	^ 'debug_session_manage'
 ]
 
 { #category : 'defaults' }

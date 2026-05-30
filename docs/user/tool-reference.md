@@ -131,12 +131,21 @@ The debugger tools are discoverable under the `debugging` group. Read
 | --- | --- |
 | `debug_capture` | Evaluate a Smalltalk expression in a bounded worker process and capture runtime exceptions as tracked debug sessions. |
 | `debug_test_run` | Run one SUnit test method under debugger control and capture failures or errors as tracked debug sessions. |
-| `debug_session_manage` | List, describe, forget, discover, or attach tracked sessions and open debugger candidates. |
+| `debug_session_list` | List tracked debug sessions. |
+| `debug_session_get` | Inspect one tracked debug session summary. |
+| `debug_session_remove` | Remove a tracked debug session from the registry. |
+| `debug_candidate_search` | Search unattached open debugger candidates. |
+| `debug_candidate_attach` | Attach an open debugger candidate and return its debug state. |
 | `debug_state_get` | Return a debug-session snapshot with stack, selected frame, source, scopes, repair actions, and state-scoped references. |
 | `debug_variable_get` | Expand scope and variable references returned by `debug_state_get`. |
 | `debug_expression_evaluate` | Evaluate a Smalltalk expression in a selected debug frame. |
 | `debug_control` | Step, restart, resume, or terminate a tracked debug session. |
-| `debug_breakpoint_manage` | Manage transient DebugPoint breakpoints. |
+| `debug_breakpoint_list` | List tracked transient DebugPoint breakpoints. |
+| `debug_breakpoint_set` | Install a transient method-entry or source-interval DebugPoint breakpoint. |
+| `debug_breakpoint_remove` | Remove one tracked transient DebugPoint breakpoint. |
+| `debug_breakpoint_enable` | Enable one tracked transient DebugPoint breakpoint. |
+| `debug_breakpoint_disable` | Disable one tracked transient DebugPoint breakpoint. |
+| `debug_breakpoint_clear` | Remove all tracked transient DebugPoint breakpoints. |
 | `debug_method_repair` | Create or hot-recompile the method implied by a paused debug state, then proceed when possible. |
 
 ## Scripting
@@ -172,8 +181,9 @@ class_remove
 method_remove
 method_rewrite when apply=true and changes were applied
 history_entry_manage when entries were performed
-debug_control
-debug_breakpoint_manage
+debug_expression_evaluate
+debug_capture
+debug_test_run
 debug_method_repair when a method is accepted
 image_evaluate
 ```

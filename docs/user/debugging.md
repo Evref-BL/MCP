@@ -46,12 +46,21 @@ Debugger tools are discoverable, not part of the default static surface.
 | --- | --- |
 | `debug_capture` | Evaluate a Smalltalk expression in a bounded worker process and capture runtime exceptions as tracked debug sessions. |
 | `debug_test_run` | Run one SUnit test method in a bounded worker process and capture failures or errors as tracked debug sessions. |
-| `debug_session_manage` | List, describe, forget, discover, or attach tracked sessions and open debugger candidates. |
+| `debug_session_list` | List tracked debug sessions. |
+| `debug_session_get` | Inspect one tracked debug session summary. |
+| `debug_session_remove` | Remove a tracked debug session from the registry. |
+| `debug_candidate_search` | Search unattached open debugger candidates. |
+| `debug_candidate_attach` | Attach an open debugger candidate and return its debug state. |
 | `debug_state_get` | Return the current session snapshot: stack, selected frame, source, scopes, repair actions, and state-scoped refs. |
 | `debug_variable_get` | Expand scope and variable refs returned by `debug_state_get`. |
 | `debug_expression_evaluate` | Evaluate a Smalltalk expression in a selected debug frame. |
 | `debug_control` | Step, restart, resume, or terminate a tracked session. |
-| `debug_breakpoint_manage` | Manage transient DebugPoint breakpoints. |
+| `debug_breakpoint_list` | List tracked transient DebugPoint breakpoints. |
+| `debug_breakpoint_set` | Install a transient method-entry or source-interval DebugPoint breakpoint. |
+| `debug_breakpoint_remove` | Remove one tracked transient DebugPoint breakpoint. |
+| `debug_breakpoint_enable` | Enable one tracked transient DebugPoint breakpoint. |
+| `debug_breakpoint_disable` | Disable one tracked transient DebugPoint breakpoint. |
+| `debug_breakpoint_clear` | Remove all tracked transient DebugPoint breakpoints. |
 | `debug_method_repair` | Create or hot-recompile the method implied by a paused debug state, then proceed when possible. |
 
 ## Session Workflow
@@ -64,13 +73,13 @@ Use `debug_test_run` when the failure is already expressed as one SUnit test met
 If the test passes, there is no debugger session. If it fails or errors, use the
 returned `sessionId` and `state`.
 
-Use `debug_session_manage` with `operation=discover` when a human already opened a
-debugger. It returns unattached candidates with identifying details. Attach by
-passing the candidate's `candidateRef` to `operation=attach`.
+Use `debug_candidate_search` when a human already opened a debugger. It returns
+unattached candidates with identifying details. Attach by passing the
+candidate's `candidateRef` to `debug_candidate_attach`.
 
-Use `debug_session_manage` with `operation=forget` when you are done. Forgetting an
-agent-owned captured session can terminate its worker process. Forgetting an
-attached human debugger only removes it from the MCP registry.
+Use `debug_session_remove` when you are done. Removing an agent-owned captured
+session can terminate its worker process. Removing an attached human debugger
+only removes it from the MCP registry.
 
 ## State And References
 
@@ -98,9 +107,9 @@ manipulate debugger windows or contexts with general `image_evaluate` code.
 
 ## Breakpoints
 
-Use `debug_breakpoint_manage` for temporary method-entry or source-interval
-DebugPoint breakpoints. It supports `list`, `set`, `remove`, `enable`,
-`disable`, and `clear`. Clear breakpoints when the debugging task ends.
+Use the focused `debug_breakpoint_*` tools for temporary method-entry or
+source-interval DebugPoint breakpoints. Clear breakpoints when the debugging
+task ends.
 
 File/line breakpoints are intentionally not emulated. Resolve source intervals
 from the relevant method when source-interval precision is needed.
