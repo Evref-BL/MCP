@@ -572,13 +572,14 @@ MCPDebugToolContractTest >> testDebugControlRejectsForeignFrameRef [
 	| error foreignRecord record result |
 	record := self registerControlSession.
 	foreignRecord := self registerSyntheticSession.
-	result := self callToolNamed: 'debug_control' withArguments: {
-			          (#sessionId -> record sessionId).
-			          (#operation -> 'stepOver').
-			          (#frameRef
-			           ->
-			           (foreignRecord sessionId , '/' , foreignRecord stateId
-			            , '/frame-0')) } asDictionary.
+	result := self
+		          callToolNamed: 'debug_session_step_over'
+		          withArguments: {
+				          (#sessionId -> record sessionId).
+				          (#frameRef
+				           ->
+				           (foreignRecord sessionId , '/' , foreignRecord stateId
+				            , '/frame-0')) } asDictionary.
 	error := self errorFrom: result.
 	self
 		assert: ((self structuredContentFrom: result) at: #status)
@@ -597,10 +598,12 @@ MCPDebugToolContractTest >> testDebugControlRejectsStaleFrameRef [
 
 	| error record result |
 	record := self registerControlSession.
-	result := self callToolNamed: 'debug_control' withArguments: {
-			          (#sessionId -> record sessionId).
-			          (#frameRef -> (record sessionId , '/old-state/frame-0')).
-			          (#operation -> 'stepInto') } asDictionary.
+	result := self
+		          callToolNamed: 'debug_session_step_into'
+		          withArguments: {
+				          (#sessionId -> record sessionId).
+				          (#frameRef -> (record sessionId , '/old-state/frame-0')) }
+				          asDictionary.
 	error := self errorFrom: result.
 	self
 		assert: ((self structuredContentFrom: result) at: #status)
@@ -615,9 +618,10 @@ MCPDebugToolContractTest >> testDebugControlResumeAdvancesStateWithoutSnapshot [
 	| record result resultData session |
 	record := self registerControlSession.
 	session := record debugSession.
-	result := self callToolNamed: 'debug_control' withArguments: {
-			          (#sessionId -> record sessionId).
-			          (#operation -> 'resume') } asDictionary.
+	result := self
+		          callToolNamed: 'debug_session_resume'
+		          withArguments:
+		          { (#sessionId -> record sessionId) } asDictionary.
 	resultData := self dataFrom: result.
 	self
 		assert: ((self structuredContentFrom: result) at: #status)
@@ -637,11 +641,12 @@ MCPDebugToolContractTest >> testDebugControlStepOverAdvancesStateAndReturnsSnaps
 	session := record debugSession.
 	data := self stateDataForRecord: record.
 	frameRef := (data at: #selectedFrame) at: #frameRef.
-	result := self callToolNamed: 'debug_control' withArguments: {
-			          (#sessionId -> record sessionId).
-			          (#stateId -> record stateId).
-			          (#frameRef -> frameRef).
-			          (#operation -> 'stepOver') } asDictionary.
+	result := self
+		          callToolNamed: 'debug_session_step_over'
+		          withArguments: {
+				          (#sessionId -> record sessionId).
+				          (#stateId -> record stateId).
+				          (#frameRef -> frameRef) } asDictionary.
 	resultData := self dataFrom: result.
 	self
 		assert: ((self structuredContentFrom: result) at: #status)

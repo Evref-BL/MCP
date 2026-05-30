@@ -1,5 +1,5 @@
 "
-Tests for focused repository tools split from the broad repository_edit surface.
+Tests for focused repository tools split from the broad repository operation surface.
 "
 Class {
 	#name : 'MCPToolFocusedRepositoryTest',
@@ -28,6 +28,30 @@ MCPToolFocusedRepositoryTest >> focusedToolSpecifications [
 			  (#operation -> 'diff').
 			  (#requestClass -> MCPRepositoryDiffRequest).
 			  (#commandClass -> MCPRepositoryDiffCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolCreateRepository).
+			  (#arguments -> {
+				   (#name -> 'MCP Test Repository').
+				   (#location -> '/tmp/mcp-test-repository') } asDictionary).
+			  (#operation -> 'create').
+			  (#requestClass -> MCPRepositoryCreateRequest).
+			  (#commandClass -> MCPCreateRepositoryCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolAttachRepository).
+			  (#arguments -> {
+				   (#name -> 'MCP Test Repository').
+				   (#location -> '/tmp/mcp-test-repository') } asDictionary).
+			  (#operation -> 'attach').
+			  (#requestClass -> MCPRepositoryAttachRequest).
+			  (#commandClass -> MCPAttachRepositoryCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolUpdateRepository).
+			  (#arguments -> {
+				   (#repositoryName -> 'MCP').
+				   (#addPackageNames -> #( 'MCP' )) } asDictionary).
+			  (#operation -> 'update').
+			  (#requestClass -> MCPRepositoryUpdateRequest).
+			  (#commandClass -> MCPUpdateRepositoryCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolExportRepository).
 			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
@@ -112,6 +136,9 @@ MCPToolFocusedRepositoryTest >> testFocusedRepositoryRequiredInputs [
 		                 -> #( 'repositoryName' )).
 		                (MCPToolFindRepositoryChanges
 		                 -> #( 'repositoryName' )).
+		                (MCPToolCreateRepository -> #( 'name' 'location' )).
+		                (MCPToolAttachRepository -> #( 'name' 'location' )).
+		                (MCPToolUpdateRepository -> #( 'repositoryName' )).
 		                (MCPToolExportRepository -> #( 'repositoryName' )).
 		                (MCPToolCommitRepository
 		                 -> #( 'repositoryName' 'message' )).
@@ -130,7 +157,7 @@ MCPToolFocusedRepositoryTest >> testFocusedRepositoryRequiredInputs [
 ]
 
 { #category : 'tests' }
-MCPToolFocusedRepositoryTest >> testFocusedRepositorySchemasOmitOperationAndBroadUpdateInputs [
+MCPToolFocusedRepositoryTest >> testFocusedRepositorySchemasOmitOperationAndUseFocusedInputs [
 
 	| expectations |
 	expectations := {
@@ -141,6 +168,17 @@ MCPToolFocusedRepositoryTest >> testFocusedRepositorySchemasOmitOperationAndBroa
 			                    'isModified' )).
 		                (MCPToolFindRepositoryChanges
 		                 -> #( 'repositoryName' 'location' )).
+		                (MCPToolCreateRepository
+		                 ->
+		                 #( 'name' 'location' 'subdirectory' 'packageNames' )).
+		                (MCPToolAttachRepository
+		                 ->
+		                 #( 'name' 'location' 'subdirectory' 'packageNames' )).
+		                (MCPToolUpdateRepository
+		                 ->
+			                 #( 'repositoryName' 'location' 'subdirectory'
+			                    'packageNames' 'addPackageNames'
+			                    'removePackageNames' )).
 		                (MCPToolExportRepository
 		                 -> #( 'repositoryName' 'location' )).
 		                (MCPToolCommitRepository
@@ -161,8 +199,7 @@ MCPToolFocusedRepositoryTest >> testFocusedRepositorySchemasOmitOperationAndBroa
 			| propertyNames |
 			propertyNames := self inputPropertyNamesFor: association key new.
 			self assert: propertyNames asArray equals: association value.
-			#( 'operation' 'name' 'addPackageNames' 'removePackageNames' ) do: [
-				:each | self deny: (propertyNames includes: each) ] ]
+			self deny: (propertyNames includes: 'operation') ]
 ]
 
 { #category : 'tests' }
@@ -177,7 +214,8 @@ MCPToolFocusedRepositoryTest >> testFocusedRepositoryToolsAreDiscoverableWithExp
 			self assert: (metadata at: #exposure) equals: 'discoverable'.
 			self assert: (metadata at: #mutability) equals: 'read'.
 			self assert: (metadata at: #risk) equals: 'low' ].
-	#( 'repository_export' 'repository_commit' 'repository_fetch'
+	#( 'repository_create' 'repository_attach' 'repository_update'
+	   'repository_export' 'repository_commit' 'repository_fetch'
 	   'repository_pull' 'repository_push' 'repository_branch_create'
 	   'repository_branch_switch' 'repository_head_adopt' ) do: [
 			:toolName |
@@ -186,7 +224,7 @@ MCPToolFocusedRepositoryTest >> testFocusedRepositoryToolsAreDiscoverableWithExp
 			self assert: (metadata at: #exposure) equals: 'discoverable'.
 			self assert: (metadata at: #mutability) equals: 'write'.
 			self assert: (metadata at: #risk) equals: 'high' ].
-	self assert: (metadataByName includesKey: 'repository_edit').
+	self deny: (metadataByName includesKey: 'repository_edit').
 	self assert: (metadataByName includesKey: 'repository_load')
 ]
 

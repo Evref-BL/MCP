@@ -1,5 +1,5 @@
 "
-Command wrapper for repository_edit operation=verifyIdentity. It performs a read-only identity assertion over a registered Iceberg repository before later repository edits or exports run.
+Command wrapper for repository_identity_verify. It performs a read-only identity assertion over a registered Iceberg repository before later repository edits or exports run.
 "
 Class {
 	#name : 'MCPRepositoryVerifyIdentityCommand',

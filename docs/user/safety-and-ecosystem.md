@@ -138,16 +138,18 @@ MCP uses Iceberg for repository state. The repository tools can:
 - commit, fetch, pull, push, create branches, and switch branches
 
 Use `repository_identity_verify` before edits or exports, and
-`repository_change_list` before exporting or committing. Use `repository_edit`
-for create, attach, and update workflows. Export writes image changes to disk and
-updates the Iceberg index; it does not stage or commit Git changes.
+`repository_change_list` before exporting or committing. Use
+`repository_create`, `repository_attach`, and `repository_update` for repository
+registration workflows. Export writes image changes to disk and updates the
+Iceberg index; it does not stage or commit Git changes.
 
 ## Change History
 
 MCP uses Epicea change history. `history_file_list` lists `.ombu`
 files, and `history_entry_list` lists entries from the current history
-or a selected file. `history_entry_manage` previews applying or reverting
-entries, and performs the selected apply or revert only when `confirm=true`.
+or a selected file. `history_entry_apply` and `history_entry_revert` preview
+selected entries, and perform the selected apply or revert only when
+`confirm=true`.
 
 Use this when recovering image-side changes or preparing a clean handoff from a
 live image back to Tonel/Git.

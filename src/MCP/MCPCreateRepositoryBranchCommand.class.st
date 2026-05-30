@@ -1,5 +1,5 @@
 "
-Command wrapper for repository_edit operation=createBranch. It calls IceRepository>>createBranch: and returns an MCPRepositoryBranchResult.
+Command wrapper for repository_branch_create. It calls IceRepository>>createBranch: and returns an MCPRepositoryBranchResult.
 "
 Class {
 	#name : 'MCPCreateRepositoryBranchCommand',

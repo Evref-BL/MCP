@@ -11,6 +11,12 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'testing' }
+MCPToolDebugControl class >> isAbstract [
+
+	^ self = MCPToolDebugControl
+]
+
 { #category : 'icons' }
 MCPToolDebugControl class >> toolIconSpec [
 
@@ -20,7 +26,7 @@ MCPToolDebugControl class >> toolIconSpec [
 { #category : 'defaults' }
 MCPToolDebugControl class >> toolName [
 
-	^ 'debug_control'
+	^ 'debug_session_control_operation'
 ]
 
 { #category : 'private - execution' }
@@ -130,7 +136,7 @@ MCPToolDebugControl >> defaultInputSchema [
 { #category : 'defaults' }
 MCPToolDebugControl >> defaultName [
 
-	^ 'debug_control'
+	^ 'debug_session_control_operation'
 ]
 
 { #category : 'defaults' }

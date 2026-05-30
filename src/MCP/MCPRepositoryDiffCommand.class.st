@@ -1,5 +1,5 @@
 "
-Command wrapper for repository_edit operation=diff. It calculates IceRepository>>workingCopyDiff and returns an MCPRepositoryDiffResult without writing the disk working copy or updating the repository index.
+Command wrapper for repository_change_list. It calculates IceRepository>>workingCopyDiff and returns an MCPRepositoryDiffResult without writing the disk working copy or updating the repository index.
 "
 Class {
 	#name : 'MCPRepositoryDiffCommand',

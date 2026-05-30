@@ -1,5 +1,5 @@
 "
-Result DTO returned by repository_edit operation=commit. It reports repository state after the commit, changed packages captured before committing, modified packages still reported by Iceberg afterward, and commit/head metadata when available.
+Result DTO returned by repository_commit. It reports repository state after the commit, changed packages captured before committing, modified packages still reported by Iceberg afterward, and commit/head metadata when available.
 "
 Class {
 	#name : 'MCPRepositoryCommitResult',

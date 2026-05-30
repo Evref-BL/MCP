@@ -114,10 +114,13 @@ class_edit
 method_edit
 method_rewrite
 test_run
-repository_edit
+repository_create
+repository_attach
+repository_update
 repository_export
 repository_commit
-history_entry_manage
+history_entry_apply
+history_entry_revert
 screenshot_capture
 ```
 
@@ -139,9 +142,12 @@ The safer edit paths use Pharo facilities:
 - Repository tools work through Iceberg. Use `repository_identity_verify` to
   assert repository identity before edits or exports, and
   `repository_change_list` to inspect image-side changes before exporting,
-  committing, pulling, or pushing. Use `repository_edit` for create, attach,
-  and update workflows.
-- Use `history_file_list` and `history_entry_list` to browse Epicea history. `history_entry_manage` previews apply/revert operations and performs them only with `confirm=true`.
+  committing, pulling, or pushing. Use `repository_create`,
+  `repository_attach`, and `repository_update` for repository registration
+  workflows.
+- Use `history_file_list` and `history_entry_list` to browse Epicea history.
+  `history_entry_apply` and `history_entry_revert` preview selected entries
+  and perform changes only with `confirm=true`.
 
 This does not remove the normal responsibility of working in a safe image. Use disposable or copied images for automation and risky edits.
 

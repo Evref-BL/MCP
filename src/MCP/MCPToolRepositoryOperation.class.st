@@ -60,7 +60,9 @@ MCPToolRepositoryOperation >> defaultTitle [
 { #category : 'private - schema' }
 MCPToolRepositoryOperation >> inputProperties [
 
-	^ self repositoryReferenceInputProperties
+	^ (self repositoryOperationSpec
+		   at: #referenceInputProperties
+		   ifAbsent: [ self repositoryReferenceInputProperties ])
 	  ,
 	  (self repositoryOperationSpec
 		   at: #inputProperties

@@ -1,5 +1,5 @@
 "
-Command wrapper for repository_edit operation=update. It applies repository package membership and metadata changes from a parsed MCPRepositoryUpdateRequest without writing the repository to disk.
+Command wrapper for repository_update. It applies repository package membership and metadata changes from a parsed MCPRepositoryUpdateRequest without writing the repository to disk.
 "
 Class {
 	#name : 'MCPUpdateRepositoryCommand',

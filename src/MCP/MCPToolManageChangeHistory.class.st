@@ -11,6 +11,12 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'testing' }
+MCPToolManageChangeHistory class >> isAbstract [
+
+	^ self = MCPToolManageChangeHistory
+]
+
 { #category : 'icons' }
 MCPToolManageChangeHistory class >> toolIconSpec [
 
@@ -20,7 +26,7 @@ MCPToolManageChangeHistory class >> toolIconSpec [
 { #category : 'defaults' }
 MCPToolManageChangeHistory class >> toolName [
 
-	^ 'history_entry_manage'
+	^ 'history_entry_operation'
 ]
 
 { #category : 'private - operations' }

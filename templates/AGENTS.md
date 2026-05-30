@@ -39,8 +39,8 @@ method search query is a better fit.
 
 For change history, use `history_file_list` to locate `.ombu` files
 and `history_entry_list` to browse entries. Use
-`history_entry_manage` only when you need apply/revert preview or confirmed
-recovery.
+`history_entry_apply` or `history_entry_revert` only when you need previewed or
+confirmed recovery.
 
 For repository work, use `repository_search` to inspect registered Iceberg
 repositories, `repository_identity_verify` before changing repository state,
@@ -48,8 +48,9 @@ and `repository_change_list` before exporting or committing image changes.
 Prefer focused repository tools such as `repository_export`,
 `repository_commit`, `repository_fetch`, `repository_pull`, `repository_push`,
 `repository_branch_create`, `repository_branch_switch`, and
-`repository_head_adopt` when available. Use `repository_edit` for create,
-attach, and update workflows.
+`repository_head_adopt` when available. Use `repository_create`,
+`repository_attach`, and `repository_update` for repository registration
+workflows.
 
 Use `image_evaluate` only for short one-off inspection or glue code when no
 dedicated `pharo` tool fits.

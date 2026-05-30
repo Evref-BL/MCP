@@ -1,5 +1,5 @@
 "
-Parsed input for repository_edit operation=fetch. It resolves the registered Iceberg repository whose remotes should be fetched.
+Parsed input for repository_fetch. It resolves the registered Iceberg repository whose remotes should be fetched.
 "
 Class {
 	#name : 'MCPRepositoryFetchRequest',

@@ -1,5 +1,5 @@
 "
-Result DTO returned by repository_edit operation=diff. It reports the repository working-copy diff from the image, including changed package names, relative paths when Iceberg exposes them, a change count, and whether the diff is empty.
+Result DTO returned by repository_change_list. It reports the repository working-copy diff from the image, including changed package names, relative paths when Iceberg exposes them, a change count, and whether the diff is empty.
 "
 Class {
 	#name : 'MCPRepositoryDiffResult',

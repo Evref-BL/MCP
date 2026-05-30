@@ -51,7 +51,7 @@ Common causes:
 - extra fields rejected by `additionalProperties: false`
 - `operation=update` with more than one patch action
 - `method_rewrite` with `apply=true` but no `expectedChangeSetHash`
-- `history_entry_manage` apply/revert without `confirm=true`
+- `history_entry_apply` or `history_entry_revert` without `confirm=true`
 
 ## A Refactoring Stops With A Warning
 
@@ -108,8 +108,9 @@ Image-changing tools save the image after successful mutation. If you are using
 an automation or agent, run it against a copied or disposable image.
 
 Use `history_file_list` and `history_entry_list` to inspect
-Epicea history. Apply or revert operations stay in `history_entry_manage`,
-where they can be previewed first and performed with `confirm=true`.
+Epicea history. Apply or revert operations stay in `history_entry_apply` and
+`history_entry_revert`, where they can be previewed first and performed with
+`confirm=true`.
 
 ## Debugger References Are Stale
 

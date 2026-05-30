@@ -54,7 +54,12 @@ Debugger tools are discoverable, not part of the default static surface.
 | `debug_state_get` | Return the current session snapshot: stack, selected frame, source, scopes, repair actions, and state-scoped refs. |
 | `debug_variable_get` | Expand scope and variable refs returned by `debug_state_get`. |
 | `debug_expression_evaluate` | Evaluate a Smalltalk expression in a selected debug frame. |
-| `debug_control` | Step, restart, resume, or terminate a tracked session. |
+| `debug_session_step_into` | Step into the selected frame of a tracked session. |
+| `debug_session_step_over` | Step over the selected frame of a tracked session. |
+| `debug_session_step_through` | Step through the selected frame of a tracked session. |
+| `debug_session_restart` | Restart the selected frame of a tracked session. |
+| `debug_session_resume` | Resume a tracked session. |
+| `debug_session_terminate` | Terminate a tracked session. |
 | `debug_breakpoint_list` | List tracked transient DebugPoint breakpoints. |
 | `debug_breakpoint_set` | Install a transient method-entry or source-interval DebugPoint breakpoint. |
 | `debug_breakpoint_remove` | Remove one tracked transient DebugPoint breakpoint. |
@@ -84,9 +89,9 @@ only removes it from the MCP registry.
 ## State And References
 
 Treat `stateId`, `frameRef`, and `variableRef` values as state-scoped opaque
-references. After `debug_control` or `debug_method_repair`, old frame and variable refs
-can be stale. Use the new returned state before evaluating, expanding
-variables, or controlling execution again.
+references. After a debug-session control tool or `debug_method_repair`, old
+frame and variable refs can be stale. Use the new returned state before
+evaluating, expanding variables, or controlling execution again.
 
 Use `debug_state_get` as the main context-loading tool. Keep stack and variable
 limits small first, then expand details with `debug_variable_get` only when needed.
@@ -96,10 +101,12 @@ receiver or temporaries. Prefer normal code tools for project edits.
 
 ## Control
 
-`debug_control` supports `stepInto`, `stepOver`, `stepThrough`, `restart`,
-`resume`, and `terminate`. It can return a post-action `debug_state_get` snapshot
-for paused operations. When the user asks for a bounded action, such as
-"step into twice", perform those control calls and stop.
+Use `debug_session_step_into`, `debug_session_step_over`,
+`debug_session_step_through`, `debug_session_restart`,
+`debug_session_resume`, and `debug_session_terminate` for control actions.
+Paused control actions can return a post-action `debug_state_get` snapshot. When
+the user asks for a bounded action, such as "step into twice", perform those
+control calls and stop.
 
 For externally attached debuggers, control should operate through the attached
 debugger controller so the visible debugger remains the owner of its UI. Do not

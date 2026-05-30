@@ -1,5 +1,5 @@
 "
-Command wrapper for repository_edit operation=switchBranch. It calls IceRepository>>switchToBranchNamed: and returns an MCPRepositoryBranchResult.
+Command wrapper for repository_branch_switch. It calls IceRepository>>switchToBranchNamed: and returns an MCPRepositoryBranchResult.
 "
 Class {
 	#name : 'MCPSwitchRepositoryBranchCommand',

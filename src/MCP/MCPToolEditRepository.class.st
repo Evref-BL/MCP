@@ -9,6 +9,12 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'testing' }
+MCPToolEditRepository class >> isAbstract [
+
+	^ self = MCPToolEditRepository
+]
+
 { #category : 'icons' }
 MCPToolEditRepository class >> toolIconSpec [
 
@@ -18,7 +24,7 @@ MCPToolEditRepository class >> toolIconSpec [
 { #category : 'defaults' }
 MCPToolEditRepository class >> toolName [
 
-	^ 'repository_edit'
+	^ 'repository_operation'
 ]
 
 { #category : 'private - execution' }

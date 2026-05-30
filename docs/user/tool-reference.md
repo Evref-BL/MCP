@@ -36,7 +36,9 @@ schema before invoking a discoverable tool.
 | `repository_search` | List Iceberg repositories registered in the image, including location, branch/head metadata, exact head commit id, modified packages, remotes, and upstream details. |
 | `repository_identity_verify` | Assert expected Iceberg repository identity fields before edits, exports, commits, pulls, or pushes. |
 | `repository_change_list` | Inspect Iceberg `workingCopyDiff` without writing files. |
-| `repository_edit` | Create, attach, update, or use the broad repository operation surface through Iceberg. |
+| `repository_create` | Create a new Iceberg repository directory and optionally attach initial packages. |
+| `repository_attach` | Register an existing Git checkout and optionally attach packages. |
+| `repository_update` | Change image-side repository subdirectory or package membership without exporting packages. |
 | `repository_export` | Export image-side package changes to Tonel files and update the Iceberg index without staging or committing Git changes. |
 | `repository_commit` | Commit Iceberg repository changes with a message. |
 | `repository_fetch` | Fetch repository remotes through Iceberg. |
@@ -105,10 +107,12 @@ they are relevant to review.
 | --- | --- |
 | `history_file_list` | List Epicea `.ombu` change-history files, including the current history file. |
 | `history_entry_list` | List entries from the current image change history or a selected `.ombu` file. |
-| `history_entry_manage` | Preview applying or reverting selected entries, and perform the selected action with `confirm=true`. |
+| `history_entry_apply` | Preview applying selected entries, and apply them with `confirm=true`. |
+| `history_entry_revert` | Preview reverting selected entries, and revert them with `confirm=true`. |
 
 Prefer the focused read-only tools when browsing history. Use
-`history_entry_manage` when you need apply/revert preview or confirmation.
+`history_entry_apply` or `history_entry_revert` when you need apply/revert
+preview or confirmation.
 
 ## Tests
 
@@ -139,7 +143,12 @@ The debugger tools are discoverable under the `debugging` group. Read
 | `debug_state_get` | Return a debug-session snapshot with stack, selected frame, source, scopes, repair actions, and state-scoped references. |
 | `debug_variable_get` | Expand scope and variable references returned by `debug_state_get`. |
 | `debug_expression_evaluate` | Evaluate a Smalltalk expression in a selected debug frame. |
-| `debug_control` | Step, restart, resume, or terminate a tracked debug session. |
+| `debug_session_step_into` | Step into the selected frame of a tracked debug session. |
+| `debug_session_step_over` | Step over the selected frame of a tracked debug session. |
+| `debug_session_step_through` | Step through the selected frame of a tracked debug session. |
+| `debug_session_restart` | Restart the selected frame of a tracked debug session. |
+| `debug_session_resume` | Resume a tracked debug session. |
+| `debug_session_terminate` | Terminate a tracked debug session. |
 | `debug_breakpoint_list` | List tracked transient DebugPoint breakpoints. |
 | `debug_breakpoint_set` | Install a transient method-entry or source-interval DebugPoint breakpoint. |
 | `debug_breakpoint_remove` | Remove one tracked transient DebugPoint breakpoint. |
@@ -167,7 +176,9 @@ Tools that can save after success include:
 ```text
 class_edit
 method_edit
-repository_edit
+repository_create
+repository_attach
+repository_update
 repository_export
 repository_commit
 repository_fetch
@@ -180,7 +191,8 @@ repository_load
 class_remove
 method_remove
 method_rewrite when apply=true and changes were applied
-history_entry_manage when entries were performed
+history_entry_apply when entries were performed
+history_entry_revert when entries were performed
 debug_expression_evaluate
 debug_capture
 debug_test_run

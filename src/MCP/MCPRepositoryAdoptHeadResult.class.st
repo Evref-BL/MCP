@@ -1,5 +1,5 @@
 "
-Result DTO returned by repository_edit operation=adoptHead. It reports repository metadata before and after adopting the head commit, before/after modified package names, the previous and adopted working-copy reference commit ids, and whether the working copy reference changed.
+Result DTO returned by repository_head_adopt. It reports repository metadata before and after adopting the head commit, before/after modified package names, the previous and adopted working-copy reference commit ids, and whether the working copy reference changed.
 "
 Class {
 	#name : 'MCPRepositoryAdoptHeadResult',

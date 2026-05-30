@@ -1,5 +1,5 @@
 "
-Result DTO returned by repository_edit operation=fetch. It reports repository metadata before and after fetching, remote names, and branch/head state after the fetch.
+Result DTO returned by repository_fetch. It reports repository metadata before and after fetching, remote names, and branch/head state after the fetch.
 "
 Class {
 	#name : 'MCPRepositoryFetchResult',

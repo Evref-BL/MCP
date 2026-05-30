@@ -1,5 +1,5 @@
 "
-Parsed input for repository_edit operation=verifyIdentity. It resolves a registered Iceberg repository and records expected identity fields that should be asserted before image-side repository work continues.
+Parsed input for repository_identity_verify. It resolves a registered Iceberg repository and records expected identity fields that should be asserted before image-side repository work continues.
 "
 Class {
 	#name : 'MCPRepositoryVerifyIdentityRequest',

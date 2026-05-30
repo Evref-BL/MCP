@@ -1,5 +1,5 @@
 "
-Result DTO returned by repository_edit operation=create. It reports the registered repository and the packages managed by its working copy after creation.
+Result DTO returned by repository_create or repository_attach. It reports the registered repository and the packages managed by its working copy after creation or attachment.
 "
 Class {
 	#name : 'MCPRepositoryCreateResult',

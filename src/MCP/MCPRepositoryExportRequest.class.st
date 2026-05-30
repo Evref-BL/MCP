@@ -1,5 +1,5 @@
 "
-Parsed input for repository_edit operation=export. It resolves the registered Iceberg repository that should be synchronized from the image working copy to files.
+Parsed input for repository_export. It resolves the registered Iceberg repository that should be synchronized from the image working copy to files.
 "
 Class {
 	#name : 'MCPRepositoryExportRequest',

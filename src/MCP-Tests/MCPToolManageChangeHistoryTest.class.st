@@ -16,6 +16,16 @@ MCPToolManageChangeHistoryTest class >> shouldLogWithEpicea [
 	^ true
 ]
 
+{ #category : 'private - calling' }
+MCPToolManageChangeHistoryTest >> callToolWith: someArguments [
+
+	| request result tool |
+	tool := MCPToolManageChangeHistory new.
+	request := tool requestFromToolCallArguments: someArguments.
+	result := tool executeWithRequest: request.
+	^ result asJRPCJSON
+]
+
 { #category : 'private' }
 MCPToolManageChangeHistoryTest >> isRecoverableMethodEntry: anEntry forClass: aClass [
 
@@ -387,7 +397,7 @@ MCPToolManageChangeHistoryTest >> testSelectionResultRequestsImageSaveOnlyAfterP
 { #category : 'private - calling' }
 MCPToolManageChangeHistoryTest >> toolName [
 
-	^ 'history_entry_manage'
+	self shouldNotImplement
 ]
 
 { #category : 'private' }

@@ -28,9 +28,12 @@ MCPToolRegistry class >> additionalKeywordsForTool: aTool [
 		^ #( 'repo' 'iceberg' 'git' 'guard' 'identity' ) ].
 	toolName = 'repository_change_list' ifTrue: [
 		^ #( 'repo' 'iceberg' 'git' 'diff' 'status' 'change' ) ].
-	toolName = 'repository_edit' ifTrue: [
-			^ #( 'repo' 'iceberg' 'tonel' 'git' 'export' 'diff' 'branch'
-			     'commit' 'pull' 'push' 'fetch' 'attach' 'adopt' 'identity' ) ].
+	toolName = 'repository_create' ifTrue: [
+		^ #( 'repo' 'iceberg' 'git' 'create' 'package' ) ].
+	toolName = 'repository_attach' ifTrue: [
+		^ #( 'repo' 'iceberg' 'git' 'attach' 'package' ) ].
+	toolName = 'repository_update' ifTrue: [
+		^ #( 'repo' 'iceberg' 'update' 'package' 'metadata' ) ].
 	toolName = 'repository_export' ifTrue: [
 		^ #( 'repo' 'iceberg' 'tonel' 'export' 'write' ) ].
 	toolName = 'repository_commit' ifTrue: [
@@ -84,9 +87,12 @@ MCPToolRegistry class >> additionalKeywordsForTool: aTool [
 	toolName = 'history_entry_list' ifTrue: [
 			^ #( 'history' 'change' 'entry' 'browse' 'list' 'inspect' 'ombu'
 			     'epicea' ) ].
-	toolName = 'history_entry_manage' ifTrue: [
-			^ #( 'history' 'change' 'entry' 'browse' 'list' 'inspect' 'preview'
-			     'apply' 'revert' 'recover' 'epicea' 'ombu' ) ].
+	toolName = 'history_entry_apply' ifTrue: [
+			^ #( 'history' 'change' 'entry' 'preview' 'apply' 'recover'
+			     'epicea' 'ombu' ) ].
+	toolName = 'history_entry_revert' ifTrue: [
+			^ #( 'history' 'change' 'entry' 'preview' 'revert' 'recover'
+			     'epicea' 'ombu' ) ].
 	toolName = 'screenshot_capture' ifTrue: [
 		^ #( 'screenshot' 'capture' 'window' 'display' 'world' 'ui' ) ].
 	toolName = 'image_evaluate' ifTrue: [
@@ -253,7 +259,9 @@ MCPToolRegistry class >> publicToolGroups [
 			   MCPToolFindRepositories.
 			   MCPToolVerifyRepositoryIdentity.
 			   MCPToolFindRepositoryChanges.
-			   MCPToolEditRepository.
+			   MCPToolCreateRepository.
+			   MCPToolAttachRepository.
+			   MCPToolUpdateRepository.
 			   MCPToolExportRepository.
 			   MCPToolCommitRepository.
 			   MCPToolFetchRepository.
@@ -282,7 +290,8 @@ MCPToolRegistry class >> publicToolGroups [
 		  ('history' -> {
 			   MCPToolFindChangeHistoryFiles.
 			   MCPToolFindChangeHistoryEntries.
-			   MCPToolManageChangeHistory }).
+			   MCPToolApplyChangeHistoryEntries.
+			   MCPToolRevertChangeHistoryEntries }).
 		  ('tests' -> { MCPToolRunTests }).
 		  ('ui' -> { MCPToolCaptureScreenshot }).
 		  ('debugging' -> {
@@ -294,7 +303,12 @@ MCPToolRegistry class >> publicToolGroups [
 			   MCPToolDebugState.
 			   MCPToolDebugVariables.
 			   MCPToolDebugEvaluate.
-			   MCPToolDebugControl.
+			   MCPToolStepIntoDebugSession.
+			   MCPToolStepOverDebugSession.
+			   MCPToolStepThroughDebugSession.
+			   MCPToolRestartDebugSession.
+			   MCPToolResumeDebugSession.
+			   MCPToolTerminateDebugSession.
 			   MCPToolListDebugBreakpoints.
 			   MCPToolSetDebugBreakpoint.
 			   MCPToolRemoveDebugBreakpoint.

@@ -259,6 +259,18 @@ MCPToolContractsTest >> focusedChangeHistoryToolFlowSpecs [
 			  (#arguments -> { (#limit -> 1) } asDictionary).
 			  (#requestClass -> MCPChangeHistoryListEntriesRequest).
 			  (#commandClass -> MCPListChangeHistoryEntriesCommand) }
+			  asDictionary.
+		  {
+			  (#toolClass -> MCPToolApplyChangeHistoryEntries).
+			  (#arguments -> { (#latestCount -> 1) } asDictionary).
+			  (#requestClass -> MCPChangeHistorySelectionRequest).
+			  (#commandClass -> MCPChangeHistorySelectionCommand) }
+			  asDictionary.
+		  {
+			  (#toolClass -> MCPToolRevertChangeHistoryEntries).
+			  (#arguments -> { (#latestCount -> 1) } asDictionary).
+			  (#requestClass -> MCPChangeHistorySelectionRequest).
+			  (#commandClass -> MCPChangeHistorySelectionCommand) }
 			  asDictionary }
 ]
 
@@ -302,6 +314,42 @@ MCPToolContractsTest >> focusedDebugBreakpointToolFlowSpecs [
 			  (#arguments -> Dictionary new).
 			  (#requestClass -> MCPDebugBreakpointsRequest).
 			  (#commandClass -> MCPDebugBreakpointsCommand) } asDictionary }
+]
+
+{ #category : 'private' }
+MCPToolContractsTest >> focusedDebugControlToolFlowSpecs [
+
+	^ {
+		  {
+			  (#toolClass -> MCPToolStepIntoDebugSession).
+			  (#arguments -> { (#sessionId -> 'debug-session-1') } asDictionary).
+			  (#requestClass -> MCPDebugControlRequest).
+			  (#commandClass -> MCPDebugControlCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolStepOverDebugSession).
+			  (#arguments -> { (#sessionId -> 'debug-session-1') } asDictionary).
+			  (#requestClass -> MCPDebugControlRequest).
+			  (#commandClass -> MCPDebugControlCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolStepThroughDebugSession).
+			  (#arguments -> { (#sessionId -> 'debug-session-1') } asDictionary).
+			  (#requestClass -> MCPDebugControlRequest).
+			  (#commandClass -> MCPDebugControlCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolRestartDebugSession).
+			  (#arguments -> { (#sessionId -> 'debug-session-1') } asDictionary).
+			  (#requestClass -> MCPDebugControlRequest).
+			  (#commandClass -> MCPDebugControlCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolResumeDebugSession).
+			  (#arguments -> { (#sessionId -> 'debug-session-1') } asDictionary).
+			  (#requestClass -> MCPDebugControlRequest).
+			  (#commandClass -> MCPDebugControlCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolTerminateDebugSession).
+			  (#arguments -> { (#sessionId -> 'debug-session-1') } asDictionary).
+			  (#requestClass -> MCPDebugControlRequest).
+			  (#commandClass -> MCPDebugControlCommand) } asDictionary }
 ]
 
 { #category : 'private' }
@@ -379,6 +427,27 @@ MCPToolContractsTest >> focusedRepositoryToolFlowSpecs [
 			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
 			  (#requestClass -> MCPRepositoryDiffRequest).
 			  (#commandClass -> MCPRepositoryDiffCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolCreateRepository).
+			  (#arguments -> {
+				   (#name -> 'MCP Test Repository').
+				   (#location -> '/tmp/mcp-test-repository') } asDictionary).
+			  (#requestClass -> MCPRepositoryCreateRequest).
+			  (#commandClass -> MCPCreateRepositoryCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolAttachRepository).
+			  (#arguments -> {
+				   (#name -> 'MCP Test Repository').
+				   (#location -> '/tmp/mcp-test-repository') } asDictionary).
+			  (#requestClass -> MCPRepositoryAttachRequest).
+			  (#commandClass -> MCPAttachRepositoryCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolUpdateRepository).
+			  (#arguments -> {
+				   (#repositoryName -> 'MCP').
+				   (#addPackageNames -> #( 'MCP' )) } asDictionary).
+			  (#requestClass -> MCPRepositoryUpdateRequest).
+			  (#commandClass -> MCPUpdateRepositoryCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolExportRepository).
 			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
@@ -543,7 +612,9 @@ MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 			MCPToolFindRepositories.
 			MCPToolVerifyRepositoryIdentity.
 			MCPToolFindRepositoryChanges.
-			MCPToolEditRepository.
+			MCPToolCreateRepository.
+			MCPToolAttachRepository.
+			MCPToolUpdateRepository.
 			MCPToolExportRepository.
 			MCPToolCommitRepository.
 			MCPToolFetchRepository.
@@ -569,7 +640,8 @@ MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 			MCPToolRemoveMethods.
 			MCPToolFindChangeHistoryFiles.
 			MCPToolFindChangeHistoryEntries.
-			MCPToolManageChangeHistory.
+			MCPToolApplyChangeHistoryEntries.
+			MCPToolRevertChangeHistoryEntries.
 			MCPToolRunTests.
 			MCPToolCaptureScreenshot.
 			MCPToolListDebugSessions.
@@ -580,7 +652,12 @@ MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 			MCPToolDebugState.
 			MCPToolDebugVariables.
 			MCPToolDebugEvaluate.
-			MCPToolDebugControl.
+			MCPToolStepIntoDebugSession.
+			MCPToolStepOverDebugSession.
+			MCPToolStepThroughDebugSession.
+			MCPToolRestartDebugSession.
+			MCPToolResumeDebugSession.
+			MCPToolTerminateDebugSession.
 			MCPToolListDebugBreakpoints.
 			MCPToolSetDebugBreakpoint.
 			MCPToolRemoveDebugBreakpoint.
@@ -696,7 +773,10 @@ MCPToolContractsTest >> testDebuggerToolsAreDiscoverableOnly [
 	                 'debug_session_remove' 'debug_candidate_search'
 	                 'debug_candidate_attach' 'debug_state_get'
 	                 'debug_variable_get' 'debug_expression_evaluate'
-	                 'debug_control' 'debug_breakpoint_list'
+	                 'debug_session_step_into' 'debug_session_step_over'
+	                 'debug_session_step_through'
+	                 'debug_session_restart' 'debug_session_resume'
+	                 'debug_session_terminate' 'debug_breakpoint_list'
 	                 'debug_breakpoint_set' 'debug_breakpoint_remove'
 	                 'debug_breakpoint_enable' 'debug_breakpoint_disable'
 	                 'debug_breakpoint_clear' 'debug_capture'
@@ -715,7 +795,8 @@ MCPToolContractsTest >> testDebuggerToolsAreDiscoverableOnly [
 				equals: 'discoverable'.
 			self
 				assert: ((metadataByName at: each) at: #group)
-				equals: 'debugging' ]
+				equals: 'debugging' ].
+	self deny: (metadataByName includesKey: 'debug_control')
 ]
 
 { #category : 'tests' }
@@ -799,7 +880,7 @@ MCPToolContractsTest >> testDiscoverToolsMatchesAgentGuidanceKeywords [
 		                ('SUnit' -> 'test_run').
 		                ('file' -> 'history_file_list').
 		                ('entry' -> 'history_entry_list').
-		                ('recover' -> 'history_entry_manage').
+		                ('recover' -> 'history_entry_apply').
 		                ('window' -> 'screenshot_capture').
 		                ('display' -> 'screenshot_capture').
 		                ('repair' -> 'debug_method_repair') }.
@@ -816,7 +897,7 @@ MCPToolContractsTest >> testDiscoverToolsMatchesAgentGuidanceKeywords [
 { #category : 'tests' }
 MCPToolContractsTest >> testDiscoverToolsReturnsDiscoverableMetadata [
 
-	| data editRepositoryMetadata names result tools |
+	| createRepositoryMetadata data names result tools |
 	result := self
 		          callToolNamed: 'tool_search'
 		          withArguments: { (#query -> 'repository') } asDictionary.
@@ -824,18 +905,21 @@ MCPToolContractsTest >> testDiscoverToolsReturnsDiscoverableMetadata [
 	tools := data at: #tools.
 	names := tools collect: [ :each | each at: #name ].
 	self assert: (names includes: 'repository_search').
-	self assert: (names includes: 'repository_edit').
+	self assert: (names includes: 'repository_create').
+	self assert: (names includes: 'repository_attach').
+	self assert: (names includes: 'repository_update').
 	self assert: (names includes: 'repository_load').
+	self deny: (names includes: 'repository_edit').
 	self deny: (names includes: 'class_search').
-	editRepositoryMetadata := tools detect: [ :each |
-		                          (each at: #name) = 'repository_edit' ].
+	createRepositoryMetadata := tools detect: [ :each |
+		                            (each at: #name) = 'repository_create' ].
 	self
-		assert: (editRepositoryMetadata at: #group)
+		assert: (createRepositoryMetadata at: #group)
 		equals: 'repositories'.
 	self
-		assert: (editRepositoryMetadata at: #exposure)
+		assert: (createRepositoryMetadata at: #exposure)
 		equals: 'discoverable'.
-	self assert: (editRepositoryMetadata at: #schemaInspectionRequired)
+	self assert: (createRepositoryMetadata at: #schemaInspectionRequired)
 ]
 
 { #category : 'tests' }
@@ -854,8 +938,9 @@ MCPToolContractsTest >> testDiscoveryUsesConfiguredStaticToolNames [
 		assert: ((metadataByName at: 'repository_search') at: #exposure)
 		equals: 'static'.
 	self
-		assert: ((metadataByName at: 'repository_edit') at: #exposure)
-		equals: 'discoverable'
+		assert: ((metadataByName at: 'repository_create') at: #exposure)
+		equals: 'discoverable'.
+	self deny: (metadataByName includesKey: 'repository_edit')
 ]
 
 { #category : 'tests' }
@@ -1298,38 +1383,6 @@ MCPToolContractsTest >> testEditRepositoryDescriptionExplainsPackageAndFilesyste
 			 'replaces the full managed package list').
 	self assert:
 		(removePackageNamesDescription includesSubstring: 'does not unload')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testEditRepositoryHasAccurateNameAndRequiredArguments [
-
-	| operationProperty propertyNames tool |
-	tool := MCPToolEditRepository new.
-	propertyNames := tool inputSchema properties collect: [ :each |
-		                 each name ].
-	operationProperty := tool inputSchema properties detect: [ :each |
-		                     each name = 'operation' ].
-	self assert: tool name equals: 'repository_edit'.
-	self
-		assert: tool inputSchema required asSet
-		equals: #( 'operation' ) asSet.
-	self assert: (propertyNames includes: 'name').
-	self assert: (propertyNames includes: 'repositoryName').
-	self assert: (propertyNames includes: 'location').
-	self assert: (propertyNames includes: 'message').
-	self assert: (propertyNames includes: 'branchName').
-	self assert: (propertyNames includes: 'subdirectory').
-	self assert: (propertyNames includes: 'packageNames').
-	self assert: (propertyNames includes: 'modifiedPackageNames').
-	self assert: (propertyNames includes: 'isModified').
-	self assert: (propertyNames includes: 'addPackageNames').
-	self assert: (propertyNames includes: 'removePackageNames').
-	self
-		assert: (operationProperty extraProperties at: #enum) asArray
-		equals:
-			#( 'create' 'attach' 'update' 'verifyIdentity' 'export' 'diff'
-			   'commit' 'adoptHead' 'fetch' 'pull' 'push' 'createBranch'
-			   'switchBranch' )
 ]
 
 { #category : 'tests' }
@@ -1780,6 +1833,41 @@ MCPToolContractsTest >> testFindRepositoriesHasAccurateNameAndSchema [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testFocusedRepositoryCreateAndUpdateRequiredArguments [
+
+	| createPropertyNames updatePropertyNames |
+	createPropertyNames := MCPToolCreateRepository new inputSchema
+		                       properties collect: [ :each | each name ].
+	updatePropertyNames := MCPToolUpdateRepository new inputSchema
+		                       properties collect: [ :each | each name ].
+	self
+		assert: MCPToolCreateRepository new name
+		equals: 'repository_create'.
+	self
+		assert: MCPToolAttachRepository new name
+		equals: 'repository_attach'.
+	self
+		assert: MCPToolUpdateRepository new name
+		equals: 'repository_update'.
+	self
+		assert: MCPToolCreateRepository new inputSchema required asArray
+		equals: #( 'name' 'location' ).
+	self
+		assert: MCPToolAttachRepository new inputSchema required asArray
+		equals: #( 'name' 'location' ).
+	self
+		assert: MCPToolUpdateRepository new inputSchema required asArray
+		equals: #( 'repositoryName' ).
+	#( 'name' 'location' 'subdirectory' 'packageNames' ) do: [ :each |
+		self assert: (createPropertyNames includes: each) ].
+	#( 'repositoryName' 'location' 'subdirectory' 'packageNames'
+	   'addPackageNames' 'removePackageNames' ) do: [ :each |
+		self assert: (updatePropertyNames includes: each) ].
+	self deny: (createPropertyNames includes: 'operation').
+	self deny: (updatePropertyNames includes: 'operation')
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testHandleJSONReturnsInternalErrorForUnhandledHalt [
 
 	| handler processor response |
@@ -1984,16 +2072,19 @@ MCPToolContractsTest >> testInspectToolReturnsSchemaForDiscoveredTool [
 	result := self
 		          callToolNamed: 'tool_get'
 		          withArguments:
-		          { (#toolName -> 'repository_edit') } asDictionary.
+		          { (#toolName -> 'repository_create') } asDictionary.
 	inspected := (self dataFrom: result) at: #tool.
-	self assert: (inspected at: #name) equals: 'repository_edit'.
+	self assert: (inspected at: #name) equals: 'repository_create'.
 	self assert: (inspected at: #group) equals: 'repositories'.
 	self assert: (inspected at: #exposure) equals: 'discoverable'.
 	inputProperties := ((inspected at: #inputSchema) at: #properties)
 		                   keys.
-	self assert: (inputProperties includes: 'operation').
-	self assert:
-		(((inspected at: #inputSchema) at: #required) includes: 'operation')
+	self assert: (inputProperties includes: 'name').
+	self assert: (inputProperties includes: 'location').
+	self deny: (inputProperties includes: 'operation').
+	self
+		assert: ((inspected at: #inputSchema) at: #required) asArray
+		equals: #( 'name' 'location' )
 ]
 
 { #category : 'tests' }
@@ -2340,12 +2431,13 @@ MCPToolContractsTest >> testRPCAdvertisesStaticToolSurfaceOnly [
 	self assert: (toolNames includes: 'image_evaluate').
 	self assert: (toolNames includes: 'test_run').
 	#( 'repository_search' 'repository_identity_verify'
-	   'repository_change_list' 'repository_edit' 'repository_export'
-	   'repository_commit' 'repository_fetch' 'repository_pull'
-	   'repository_push' 'repository_branch_create'
-	   'repository_branch_switch' 'repository_head_adopt'
-	   'history_file_list' 'history_entry_list'
-	   'history_entry_manage' 'screenshot_capture' 'debug_state_get'
+	   'repository_change_list' 'repository_create' 'repository_attach'
+	   'repository_update' 'repository_export' 'repository_commit'
+	   'repository_fetch' 'repository_pull' 'repository_push'
+	   'repository_branch_create' 'repository_branch_switch'
+	   'repository_head_adopt' 'history_file_list' 'history_entry_list'
+	   'history_entry_apply' 'history_entry_revert'
+	   'screenshot_capture' 'debug_state_get' 'debug_session_step_over'
 	   'debug_capture' ) do: [ :each |
 		self deny: (toolNames includes: each) ]
 ]
@@ -2791,6 +2883,15 @@ MCPToolContractsTest >> testToolRegistryNamesUseClassSideMetadata [
 		assert: MCPToolFindRepositoryChanges toolName
 		equals: 'repository_change_list'.
 	self
+		assert: MCPToolCreateRepository toolName
+		equals: 'repository_create'.
+	self
+		assert: MCPToolAttachRepository toolName
+		equals: 'repository_attach'.
+	self
+		assert: MCPToolUpdateRepository toolName
+		equals: 'repository_update'.
+	self
 		assert: MCPToolExportRepository toolName
 		equals: 'repository_export'.
 	self
@@ -2816,7 +2917,16 @@ MCPToolContractsTest >> testToolRegistryNamesUseClassSideMetadata [
 	self
 		assert: MCPToolFindChangeHistoryEntries toolName
 		equals: 'history_entry_list'.
+	self
+		assert: MCPToolApplyChangeHistoryEntries toolName
+		equals: 'history_entry_apply'.
+	self
+		assert: MCPToolRevertChangeHistoryEntries toolName
+		equals: 'history_entry_revert'.
 	self assert: MCPToolDebugState toolName equals: 'debug_state_get'.
+	self
+		assert: MCPToolStepOverDebugSession toolName
+		equals: 'debug_session_step_over'.
 	self assert: MCPToolDebugCapture toolName equals: 'debug_capture'.
 	self assert: MCPToolDebugEdit toolName equals: 'debug_method_repair'
 ]
@@ -2824,17 +2934,21 @@ MCPToolContractsTest >> testToolRegistryNamesUseClassSideMetadata [
 { #category : 'private' }
 MCPToolContractsTest >> toolFlowSpecs [
 
-	| specs oldDebugToolClasses |
+	| oldToolClasses specs |
 	specs := OrderedCollection withAll: self baseToolFlowSpecs.
-	oldDebugToolClasses := {
-		                       MCPToolDebugSessions.
-		                       MCPToolDebugBreakpoints }.
+	oldToolClasses := {
+		                  MCPToolEditRepository.
+		                  MCPToolManageChangeHistory.
+		                  MCPToolDebugSessions.
+		                  MCPToolDebugControl.
+		                  MCPToolDebugBreakpoints }.
 	specs removeAllSuchThat: [ :each |
-		oldDebugToolClasses includes: (each at: #toolClass) ].
+		oldToolClasses includes: (each at: #toolClass) ].
 	specs addAll: self focusedMethodLookupToolFlowSpecs.
 	specs addAll: self focusedChangeHistoryToolFlowSpecs.
 	specs addAll: self focusedRepositoryToolFlowSpecs.
 	specs addAll: self focusedDebugSessionToolFlowSpecs.
+	specs addAll: self focusedDebugControlToolFlowSpecs.
 	specs addAll: self focusedDebugBreakpointToolFlowSpecs.
 	specs add: self debugTestToolFlowSpec.
 	^ specs asArray

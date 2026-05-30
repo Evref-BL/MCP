@@ -1,5 +1,5 @@
 "
-Command wrapper for repository_edit operation=create. It creates an Iceberg repository through IceRepositoryCreator, registers it in the image, adds requested packages to the working copy, and returns an MCPRepositoryCreateResult.
+Command wrapper for repository_create. It creates an Iceberg repository through IceRepositoryCreator, registers it in the image, adds requested packages to the working copy, and returns an MCPRepositoryCreateResult.
 "
 Class {
 	#name : 'MCPCreateRepositoryCommand',

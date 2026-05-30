@@ -23,7 +23,7 @@ MCPToolFindChangeHistoryFiles >> commandForRequest: changeHistoryRequest [
 { #category : 'defaults' }
 MCPToolFindChangeHistoryFiles >> defaultDescription [
 
-	^ 'List Pharo image change history .ombu files. Use history_entry_list to inspect entries, and history_entry_manage only when previewing or performing apply/revert.'
+	^ 'List Pharo image change history .ombu files. Use history_entry_list to inspect entries, and history_entry_apply or history_entry_revert only when previewing or performing recovery changes.'
 ]
 
 { #category : 'defaults' }

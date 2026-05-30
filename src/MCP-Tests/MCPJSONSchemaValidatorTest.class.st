@@ -128,9 +128,24 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 
 	| arguments |
 	arguments := self baseRepresentativeArgumentsByToolClass.
+	arguments removeKey: MCPToolEditRepository ifAbsent: [ ].
+	arguments removeKey: MCPToolManageChangeHistory ifAbsent: [ ].
 	arguments removeKey: MCPToolDebugSessions ifAbsent: [ ].
+	arguments removeKey: MCPToolDebugControl ifAbsent: [ ].
 	arguments removeKey: MCPToolDebugBreakpoints ifAbsent: [ ].
 	arguments
+		at: MCPToolCreateRepository put: {
+				(#name -> 'MCP Test Repository').
+				(#location -> '/tmp/mcp-test-repository') } asDictionary;
+		at: MCPToolAttachRepository put: {
+				(#name -> 'MCP Test Repository').
+				(#location -> '/tmp/mcp-test-repository') } asDictionary;
+		at: MCPToolUpdateRepository
+		put: { (#repositoryName -> 'MCP') } asDictionary;
+		at: MCPToolApplyChangeHistoryEntries
+		put: { (#latestCount -> 1) } asDictionary;
+		at: MCPToolRevertChangeHistoryEntries
+		put: { (#latestCount -> 1) } asDictionary;
 		at: MCPToolListDebugSessions put: Dictionary new;
 		at: MCPToolGetDebugSession
 		put: { (#sessionId -> 'debug-session-1') } asDictionary;
@@ -139,6 +154,18 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 		at: MCPToolSearchDebugCandidates put: Dictionary new;
 		at: MCPToolAttachDebugCandidate
 		put: { (#candidateRef -> 'debugger-candidate-1') } asDictionary;
+		at: MCPToolStepIntoDebugSession
+		put: { (#sessionId -> 'debug-session-1') } asDictionary;
+		at: MCPToolStepOverDebugSession
+		put: { (#sessionId -> 'debug-session-1') } asDictionary;
+		at: MCPToolStepThroughDebugSession
+		put: { (#sessionId -> 'debug-session-1') } asDictionary;
+		at: MCPToolRestartDebugSession
+		put: { (#sessionId -> 'debug-session-1') } asDictionary;
+		at: MCPToolResumeDebugSession
+		put: { (#sessionId -> 'debug-session-1') } asDictionary;
+		at: MCPToolTerminateDebugSession
+		put: { (#sessionId -> 'debug-session-1') } asDictionary;
 		at: MCPToolListDebugBreakpoints put: Dictionary new;
 		at: MCPToolSetDebugBreakpoint put: {
 				(#className -> 'MCPJSONSchemaValidatorTest').
@@ -214,37 +241,35 @@ MCPJSONSchemaValidatorTest >> testCurrentToolRequestValidationRejectsOperationSp
 
 	self
 		should: [
-			MCPToolEditClass new requestFromToolCallArguments: {
-					(#operation -> 'create').
-					(#className -> 'MCPTool') } asDictionary ]
+				MCPToolEditClass new requestFromToolCallArguments: {
+						(#operation -> 'create').
+						(#className -> 'MCPTool') } asDictionary ]
 		raise: MCPInvalidToolInput.
 	self
 		should: [
-			MCPToolEditRepository new requestFromToolCallArguments: {
-					(#operation -> 'commit').
-					(#repositoryName -> 'MCP') } asDictionary ]
+				MCPToolCommitRepository new requestFromToolCallArguments:
+					{ (#repositoryName -> 'MCP') } asDictionary ]
 		raise: MCPInvalidToolInput.
 	self
 		should: [
-			MCPToolRunTests new requestFromToolCallArguments: {
-					(#operation -> 'coverage').
-					(#tests
-					 ->
-					 { { (#className -> 'MCPToolContractsTest') } asDictionary }) }
-					asDictionary ]
+				MCPToolRunTests new requestFromToolCallArguments: {
+						(#operation -> 'coverage').
+						(#tests
+						 -> { { (#className -> 'MCPToolContractsTest') } asDictionary }) }
+						asDictionary ]
 		raise: MCPInvalidToolInput.
 	self
 		should: [
-			MCPToolFindMethods new requestFromToolCallArguments:
-				{ (#filterMode -> 'selectorReference') } asDictionary ]
+				MCPToolFindMethods new requestFromToolCallArguments:
+					{ (#filterMode -> 'selectorReference') } asDictionary ]
 		raise: MCPInvalidToolInput.
 	self
 		should: [
-			MCPToolRewriteMethods new requestFromToolCallArguments: {
-					(#apply -> true).
-					(#rules -> { {
-							      (#lhs -> 'self').
-							      (#rhs -> 'self') } asDictionary }) } asDictionary ]
+				MCPToolRewriteMethods new requestFromToolCallArguments: {
+						(#apply -> true).
+						(#rules -> { {
+							 (#lhs -> 'self').
+							 (#rhs -> 'self') } asDictionary }) } asDictionary ]
 		raise: MCPInvalidToolInput
 ]
 

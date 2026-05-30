@@ -1,5 +1,5 @@
 "
-Tests for repository_edit create/update behavior. These tests execute the tool directly so temporary Iceberg repository registry changes are not saved by the MCP RPC wrapper.
+Tests for repository operation behavior. These tests execute the internal dispatcher directly so temporary Iceberg repository registry changes are not saved by the MCP RPC wrapper.
 "
 Class {
 	#name : 'MCPToolEditRepositoryTest',
@@ -461,24 +461,25 @@ MCPToolEditRepositoryTest >> testCommitRequestsImageSaveAfterSuccessfulExecution
 		withExportPackageNamed: packageName
 		className: 'MCPToolEditRepositoryCommitSaveClass'
 		do: [
-			self
-				withCleanRepositoryNamed: repositoryName
-				location: location
-				do: [
-					self callToolWith: {
-							(#operation -> 'create').
-							(#name -> repositoryName).
-							(#location -> location pathString).
-							(#packageNames -> { packageName }) } asDictionary.
-					server := MCPSaveImageRecordingServer new.
-					self deny: server didSaveImageSession.
-					result := server rpcToolCall: 'repository_edit' withParams: {
-							          (#operation -> 'commit').
-							          (#repositoryName -> repositoryName).
-							          (#message -> 'Commit and save from MCP test') }
-							          asDictionary.
-					self deny: (result at: #isError ifAbsent: [ false ]).
-					self assert: server didSaveImageSession ] ]
+				self
+					withCleanRepositoryNamed: repositoryName
+					location: location
+					do: [
+							self callToolWith: {
+									(#operation -> 'create').
+									(#name -> repositoryName).
+									(#location -> location pathString).
+									(#packageNames -> { packageName }) } asDictionary.
+							server := MCPSaveImageRecordingServer new.
+							self deny: server didSaveImageSession.
+							result := server
+								          rpcToolCall: 'repository_commit'
+								          withParams: {
+										          (#repositoryName -> repositoryName).
+										          (#message -> 'Commit and save from MCP test') }
+										          asDictionary.
+							self deny: (result at: #isError ifAbsent: [ false ]).
+							self assert: server didSaveImageSession ] ]
 ]
 
 { #category : 'tests' }
@@ -531,52 +532,53 @@ MCPToolEditRepositoryTest >> testCreateBranchReturnsResultReportsErrorsAndReques
 	repository := self newTestRepositoryNamed:
 		              'MCP Create Branch Test Repository'.
 	self withRegisteredRepository: repository do: [
-		server := MCPSaveImageRecordingServer new.
-		result := self callToolWith: {
-				          (#operation -> 'createBranch').
-				          (#repositoryName -> repository name).
-				          (#branchName -> 'feature') } asDictionary.
-		data := self dataFrom: result.
-		self deny: (result at: #isError ifAbsent: [ false ]).
-		self
-			assert: repository actionLog asArray
-			equals: #( 'createBranch:feature' ).
-		self assert: (data at: #action) equals: 'createBranch'.
-		self assert: (data at: #previousBranchName) equals: 'main'.
-		self assert: (data at: #branchName) equals: 'feature'.
-		self assert: (data at: #previousHeadDescription) equals: 'initial'.
-		self assert: (data at: #headDescription) equals: 'branch feature'.
-		saveResult := server rpcToolCall: 'repository_edit' withParams: {
-				              (#operation -> 'createBranch').
-				              (#repositoryName -> repository name).
-				              (#branchName -> 'feature-save') } asDictionary.
-		self deny: (saveResult at: #isError ifAbsent: [ false ]).
-		self assert: server didSaveImageSession.
-		duplicateResult := self callToolWith: {
-				                   (#operation -> 'createBranch').
-				                   (#repositoryName -> repository name).
-				                   (#branchName -> 'feature') } asDictionary.
-		self assert: (duplicateResult at: #isError ifAbsent: [ false ]).
-		self assert:
-			((self summaryFrom: duplicateResult) includesSubstring:
-				 'Failed to create repository branch').
-		self assert:
-			((self summaryFrom: duplicateResult) includesSubstring:
-				 'Branch already exists') ].
+			server := MCPSaveImageRecordingServer new.
+			result := self callToolWith: {
+					          (#operation -> 'createBranch').
+					          (#repositoryName -> repository name).
+					          (#branchName -> 'feature') } asDictionary.
+			data := self dataFrom: result.
+			self deny: (result at: #isError ifAbsent: [ false ]).
+			self
+				assert: repository actionLog asArray
+				equals: #( 'createBranch:feature' ).
+			self assert: (data at: #action) equals: 'createBranch'.
+			self assert: (data at: #previousBranchName) equals: 'main'.
+			self assert: (data at: #branchName) equals: 'feature'.
+			self assert: (data at: #previousHeadDescription) equals: 'initial'.
+			self assert: (data at: #headDescription) equals: 'branch feature'.
+			saveResult := server
+				              rpcToolCall: 'repository_branch_create'
+				              withParams: {
+						              (#repositoryName -> repository name).
+						              (#branchName -> 'feature-save') } asDictionary.
+			self deny: (saveResult at: #isError ifAbsent: [ false ]).
+			self assert: server didSaveImageSession.
+			duplicateResult := self callToolWith: {
+					                   (#operation -> 'createBranch').
+					                   (#repositoryName -> repository name).
+					                   (#branchName -> 'feature') } asDictionary.
+			self assert: (duplicateResult at: #isError ifAbsent: [ false ]).
+			self assert:
+				((self summaryFrom: duplicateResult) includesSubstring:
+					 'Failed to create repository branch').
+			self assert:
+				((self summaryFrom: duplicateResult) includesSubstring:
+					 'Branch already exists') ].
 	repository := self newTestRepositoryNamed:
 		              'MCP Create Branch Invalid Test Repository'.
 	repository failCreateBranch:
 		IceGenericError -> 'Invalid branch name for test repository'.
 	self withRegisteredRepository: repository do: [
-		failureResult := self callToolWith: {
-				                 (#operation -> 'createBranch').
-				                 (#repositoryName -> repository name).
-				                 (#branchName -> 'invalid') } asDictionary.
-		self assert: (failureResult at: #isError ifAbsent: [ false ]).
-		self assert: ((self summaryFrom: failureResult) includesSubstring:
-				 'Failed to create repository branch').
-		self assert: ((self summaryFrom: failureResult) includesSubstring:
-				 'Invalid branch name') ]
+			failureResult := self callToolWith: {
+					                 (#operation -> 'createBranch').
+					                 (#repositoryName -> repository name).
+					                 (#branchName -> 'invalid') } asDictionary.
+			self assert: (failureResult at: #isError ifAbsent: [ false ]).
+			self assert: ((self summaryFrom: failureResult) includesSubstring:
+					 'Failed to create repository branch').
+			self assert: ((self summaryFrom: failureResult) includesSubstring:
+					 'Invalid branch name') ]
 ]
 
 { #category : 'tests' }
@@ -629,21 +631,22 @@ MCPToolEditRepositoryTest >> testDiffDoesNotRequestImageSaveAfterSuccessfulExecu
 		withExportPackageNamed: packageName
 		className: 'MCPToolEditRepositoryDiffSaveClass'
 		do: [
-			self
-				withCleanRepositoryNamed: repositoryName
-				location: location
-				do: [
-					self callToolWith: {
-							(#operation -> 'create').
-							(#name -> repositoryName).
-							(#location -> location pathString).
-							(#packageNames -> { packageName }) } asDictionary.
-					server := MCPSaveImageRecordingServer new.
-					result := server rpcToolCall: 'repository_edit' withParams: {
-							          (#operation -> 'diff').
-							          (#repositoryName -> repositoryName) } asDictionary.
-					self deny: (result at: #isError ifAbsent: [ false ]).
-					self deny: server didSaveImageSession ] ]
+				self
+					withCleanRepositoryNamed: repositoryName
+					location: location
+					do: [
+							self callToolWith: {
+									(#operation -> 'create').
+									(#name -> repositoryName).
+									(#location -> location pathString).
+									(#packageNames -> { packageName }) } asDictionary.
+							server := MCPSaveImageRecordingServer new.
+							result := server
+								          rpcToolCall: 'repository_change_list'
+								          withParams:
+								          { (#repositoryName -> repositoryName) } asDictionary.
+							self deny: (result at: #isError ifAbsent: [ false ]).
+							self deny: server didSaveImageSession ] ]
 ]
 
 { #category : 'tests' }
@@ -828,33 +831,36 @@ MCPToolEditRepositoryTest >> testPullReturnsResultReportsErrorsAndRequestsImageS
 	| data errorResult repository result saveResult server |
 	repository := self newTestRepositoryNamed: 'MCP Pull Test Repository'.
 	self withRegisteredRepository: repository do: [
-		server := MCPSaveImageRecordingServer new.
-		result := self callToolWith: {
-				          (#operation -> 'pull').
-				          (#repositoryName -> repository name) } asDictionary.
-		data := self dataFrom: result.
-		self deny: (result at: #isError ifAbsent: [ false ]).
-		self assert: repository actionLog asArray equals: #( 'pull' ).
-		self assert: (data at: #action) equals: 'pull'.
-		self assert: (data at: #headDescription) equals: 'after pull'.
-		self
-			assert: (data at: #modifiedPackageNames)
-			equals: #( 'MCP-Test-Pulled' ).
-		saveResult := server rpcToolCall: 'repository_edit' withParams: {
-				              (#operation -> 'pull').
-				              (#repositoryName -> repository name) } asDictionary.
-		self deny: (saveResult at: #isError ifAbsent: [ false ]).
-		self assert: server didSaveImageSession ].
+			server := MCPSaveImageRecordingServer new.
+			result := self callToolWith: {
+					          (#operation -> 'pull').
+					          (#repositoryName -> repository name) } asDictionary.
+			data := self dataFrom: result.
+			self deny: (result at: #isError ifAbsent: [ false ]).
+			self assert: repository actionLog asArray equals: #( 'pull' ).
+			self assert: (data at: #action) equals: 'pull'.
+			self assert: (data at: #headDescription) equals: 'after pull'.
+			self
+				assert: (data at: #modifiedPackageNames)
+				equals: #( 'MCP-Test-Pulled' ).
+			saveResult := server
+				              rpcToolCall: 'repository_pull'
+				              withParams:
+				              { (#repositoryName -> repository name) }
+					              asDictionary.
+			self deny: (saveResult at: #isError ifAbsent: [ false ]).
+			self assert: server didSaveImageSession ].
 	repository := self newTestRepositoryNamed:
 		              'MCP Pull Error Test Repository'.
 	repository failPull: true.
 	self withRegisteredRepository: repository do: [
-		errorResult := self callToolWith: {
-				               (#operation -> 'pull').
-				               (#repositoryName -> repository name) } asDictionary.
-		self assert: (errorResult at: #isError ifAbsent: [ false ]).
-		self assert: ((self summaryFrom: errorResult) includesSubstring:
-				 'Failed to pull repository') ]
+			errorResult := self callToolWith: {
+					               (#operation -> 'pull').
+					               (#repositoryName -> repository name) }
+					               asDictionary.
+			self assert: (errorResult at: #isError ifAbsent: [ false ]).
+			self assert: ((self summaryFrom: errorResult) includesSubstring:
+					 'Failed to pull repository') ]
 ]
 
 { #category : 'tests' }
@@ -901,31 +907,34 @@ MCPToolEditRepositoryTest >> testPushReturnsResultReportsErrorsAndRequestsImageS
 	| data errorResult repository result saveResult server |
 	repository := self newTestRepositoryNamed: 'MCP Push Test Repository'.
 	self withRegisteredRepository: repository do: [
-		server := MCPSaveImageRecordingServer new.
-		result := self callToolWith: {
-				          (#operation -> 'push').
-				          (#repositoryName -> repository name) } asDictionary.
-		data := self dataFrom: result.
-		self deny: (result at: #isError ifAbsent: [ false ]).
-		self assert: repository actionLog asArray equals: #( 'push' ).
-		self assert: (data at: #action) equals: 'push'.
-		self assert: (data at: #remoteNames) equals: #( 'origin' ).
-		self assert: (data at: #headDescription) equals: 'after push'.
-		saveResult := server rpcToolCall: 'repository_edit' withParams: {
-				              (#operation -> 'push').
-				              (#repositoryName -> repository name) } asDictionary.
-		self deny: (saveResult at: #isError ifAbsent: [ false ]).
-		self assert: server didSaveImageSession ].
+			server := MCPSaveImageRecordingServer new.
+			result := self callToolWith: {
+					          (#operation -> 'push').
+					          (#repositoryName -> repository name) } asDictionary.
+			data := self dataFrom: result.
+			self deny: (result at: #isError ifAbsent: [ false ]).
+			self assert: repository actionLog asArray equals: #( 'push' ).
+			self assert: (data at: #action) equals: 'push'.
+			self assert: (data at: #remoteNames) equals: #( 'origin' ).
+			self assert: (data at: #headDescription) equals: 'after push'.
+			saveResult := server
+				              rpcToolCall: 'repository_push'
+				              withParams:
+				              { (#repositoryName -> repository name) }
+					              asDictionary.
+			self deny: (saveResult at: #isError ifAbsent: [ false ]).
+			self assert: server didSaveImageSession ].
 	repository := self newTestRepositoryNamed:
 		              'MCP Push Error Test Repository'.
 	repository failPush: true.
 	self withRegisteredRepository: repository do: [
-		errorResult := self callToolWith: {
-				               (#operation -> 'push').
-				               (#repositoryName -> repository name) } asDictionary.
-		self assert: (errorResult at: #isError ifAbsent: [ false ]).
-		self assert: ((self summaryFrom: errorResult) includesSubstring:
-				 'Failed to push repository') ]
+			errorResult := self callToolWith: {
+					               (#operation -> 'push').
+					               (#repositoryName -> repository name) }
+					               asDictionary.
+			self assert: (errorResult at: #isError ifAbsent: [ false ]).
+			self assert: ((self summaryFrom: errorResult) includesSubstring:
+					 'Failed to push repository') ]
 ]
 
 { #category : 'tests' }
@@ -1041,65 +1050,68 @@ MCPToolEditRepositoryTest >> testSwitchBranchReturnsResultReportsErrorsAndReques
 	repository createBranch: 'feature'.
 	repository switchToBranchNamed: 'main'.
 	self withRegisteredRepository: repository do: [
-		server := MCPSaveImageRecordingServer new.
-		result := self callToolWith: {
-				          (#operation -> 'switchBranch').
-				          (#repositoryName -> repository name).
-				          (#branchName -> 'feature') } asDictionary.
-		data := self dataFrom: result.
-		self deny: (result at: #isError ifAbsent: [ false ]).
-		self assert: (data at: #action) equals: 'switchBranch'.
-		self assert: (data at: #previousBranchName) equals: 'main'.
-		self assert: (data at: #branchName) equals: 'feature'.
-		self
-			assert: (data at: #previousHeadDescription)
-			equals: 'branch main'.
-		self assert: (data at: #headDescription) equals: 'branch feature'.
-		saveResult := server rpcToolCall: 'repository_edit' withParams: {
-				              (#operation -> 'switchBranch').
-				              (#repositoryName -> repository name).
-				              (#branchName -> 'main') } asDictionary.
-		self deny: (saveResult at: #isError ifAbsent: [ false ]).
-		self assert: server didSaveImageSession.
-		missingResult := self callToolWith: {
-				                 (#operation -> 'switchBranch').
-				                 (#repositoryName -> repository name).
-				                 (#branchName -> 'missing') } asDictionary.
-		self assert: (missingResult at: #isError ifAbsent: [ false ]).
-		self assert: ((self summaryFrom: missingResult) includesSubstring:
-				 'Failed to switch repository branch').
-		self assert: ((self summaryFrom: missingResult) includesSubstring:
-				 'Branch not found') ].
+			server := MCPSaveImageRecordingServer new.
+			result := self callToolWith: {
+					          (#operation -> 'switchBranch').
+					          (#repositoryName -> repository name).
+					          (#branchName -> 'feature') } asDictionary.
+			data := self dataFrom: result.
+			self deny: (result at: #isError ifAbsent: [ false ]).
+			self assert: (data at: #action) equals: 'switchBranch'.
+			self assert: (data at: #previousBranchName) equals: 'main'.
+			self assert: (data at: #branchName) equals: 'feature'.
+			self
+				assert: (data at: #previousHeadDescription)
+				equals: 'branch main'.
+			self assert: (data at: #headDescription) equals: 'branch feature'.
+			saveResult := server
+				              rpcToolCall: 'repository_branch_switch'
+				              withParams: {
+						              (#repositoryName -> repository name).
+						              (#branchName -> 'main') } asDictionary.
+			self deny: (saveResult at: #isError ifAbsent: [ false ]).
+			self assert: server didSaveImageSession.
+			missingResult := self callToolWith: {
+					                 (#operation -> 'switchBranch').
+					                 (#repositoryName -> repository name).
+					                 (#branchName -> 'missing') } asDictionary.
+			self assert: (missingResult at: #isError ifAbsent: [ false ]).
+			self assert: ((self summaryFrom: missingResult) includesSubstring:
+					 'Failed to switch repository branch').
+			self assert: ((self summaryFrom: missingResult) includesSubstring:
+					 'Branch not found') ].
 	repository := self newTestRepositoryNamed:
 		              'MCP Switch Branch Conflict Test Repository'.
 	repository createBranch: 'feature'.
 	repository failSwitchBranch: IceCheckoutConflictError
 		-> 'Iceberg checkout conflict for test repository'.
 	self withRegisteredRepository: repository do: [
-		conflictResult := self callToolWith: {
-				                  (#operation -> 'switchBranch').
-				                  (#repositoryName -> repository name).
-				                  (#branchName -> 'feature') } asDictionary.
-		self assert: (conflictResult at: #isError ifAbsent: [ false ]).
-		self assert: ((self summaryFrom: conflictResult) includesSubstring:
-				 'Failed to switch repository branch').
-		self assert: ((self summaryFrom: conflictResult) includesSubstring:
-				 'Iceberg checkout conflict') ].
+			conflictResult := self callToolWith: {
+					                  (#operation -> 'switchBranch').
+					                  (#repositoryName -> repository name).
+					                  (#branchName -> 'feature') } asDictionary.
+			self assert: (conflictResult at: #isError ifAbsent: [ false ]).
+			self assert:
+				((self summaryFrom: conflictResult) includesSubstring:
+					 'Failed to switch repository branch').
+			self assert:
+				((self summaryFrom: conflictResult) includesSubstring:
+					 'Iceberg checkout conflict') ].
 	repository := self newTestRepositoryNamed:
 		              'MCP Switch Branch Load Test Repository'.
 	repository createBranch: 'feature'.
 	repository failSwitchBranch:
 		IceGenericError -> 'Iceberg load failed for test repository'.
 	self withRegisteredRepository: repository do: [
-		loadResult := self callToolWith: {
-				              (#operation -> 'switchBranch').
-				              (#repositoryName -> repository name).
-				              (#branchName -> 'feature') } asDictionary.
-		self assert: (loadResult at: #isError ifAbsent: [ false ]).
-		self assert: ((self summaryFrom: loadResult) includesSubstring:
-				 'Failed to switch repository branch').
-		self assert: ((self summaryFrom: loadResult) includesSubstring:
-				 'Iceberg load failed') ]
+			loadResult := self callToolWith: {
+					              (#operation -> 'switchBranch').
+					              (#repositoryName -> repository name).
+					              (#branchName -> 'feature') } asDictionary.
+			self assert: (loadResult at: #isError ifAbsent: [ false ]).
+			self assert: ((self summaryFrom: loadResult) includesSubstring:
+					 'Failed to switch repository branch').
+			self assert: ((self summaryFrom: loadResult) includesSubstring:
+					 'Iceberg load failed') ]
 ]
 
 { #category : 'tests' }
@@ -1218,13 +1230,14 @@ MCPToolEditRepositoryTest >> testVerifyIdentityDoesNotRequestImageSaveAfterSucce
 	repository := self newTestRepositoryNamed:
 		              'MCP VerifyIdentity Save Test Repository'.
 	self withRegisteredRepository: repository do: [
-		server := MCPSaveImageRecordingServer new.
-		result := server rpcToolCall: 'repository_edit' withParams: {
-				          (#operation -> 'verifyIdentity').
-				          (#repositoryName -> repository name).
-				          (#branchName -> 'main') } asDictionary.
-		self deny: (result at: #isError ifAbsent: [ false ]).
-		self deny: server didSaveImageSession ]
+			server := MCPSaveImageRecordingServer new.
+			result := server
+				          rpcToolCall: 'repository_identity_verify'
+				          withParams: {
+						          (#repositoryName -> repository name).
+						          (#branchName -> 'main') } asDictionary.
+			self deny: (result at: #isError ifAbsent: [ false ]).
+			self deny: server didSaveImageSession ]
 ]
 
 { #category : 'tests' }
@@ -1399,7 +1412,7 @@ MCPToolEditRepositoryTest >> tonelClassSourceWithMethods: methodSelectors [
 { #category : 'private - calling' }
 MCPToolEditRepositoryTest >> toolName [
 
-	^ 'repository_edit'
+	self shouldNotImplement
 ]
 
 { #category : 'private' }

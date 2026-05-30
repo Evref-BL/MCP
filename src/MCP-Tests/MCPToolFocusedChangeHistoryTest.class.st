@@ -13,60 +13,46 @@ MCPToolFocusedChangeHistoryTest >> inputPropertyNamesFor: aTool [
 ]
 
 { #category : 'tests' }
-MCPToolFocusedChangeHistoryTest >> testFindChangeHistoryEntriesMatchesLegacyListEntries [
+MCPToolFocusedChangeHistoryTest >> testFindChangeHistoryEntriesReturnsEntries [
 
-	| arguments focusedData legacyData |
-	arguments := {
-		             (#limit -> 3).
-		             (#newestFirst -> true) } asDictionary.
-	focusedData := self
-		               toolNamed: 'history_entry_list'
-		               dataFromArguments: arguments.
-	legacyData := self
-		              toolNamed: 'history_entry_manage'
-		              dataFromArguments: (arguments copy
-				               at: #operation put: 'listEntries';
-				               yourself).
-	self assert: (focusedData at: #operation) equals: 'listEntries'.
-	self
-		assert: (focusedData at: #totalCount)
-		equals: (legacyData at: #totalCount).
-	self
-		assert: (focusedData at: #entries)
-		equals: (legacyData at: #entries)
+	| data |
+	data := self toolNamed: 'history_entry_list' dataFromArguments: {
+			        (#limit -> 3).
+			        (#newestFirst -> true) } asDictionary.
+	self assert: (data at: #operation) equals: 'listEntries'.
+	self assert: (data includesKey: #totalCount).
+	self assert: (data includesKey: #entries)
 ]
 
 { #category : 'tests' }
-MCPToolFocusedChangeHistoryTest >> testFindChangeHistoryFilesMatchesLegacyListFiles [
+MCPToolFocusedChangeHistoryTest >> testFindChangeHistoryFilesReturnsFiles [
 
-	| arguments focusedData legacyData |
-	arguments := { (#includeEntryCounts -> false) } asDictionary.
-	focusedData := self
-		               toolNamed: 'history_file_list'
-		               dataFromArguments: arguments.
-	legacyData := self
-		              toolNamed: 'history_entry_manage'
-		              dataFromArguments: (arguments copy
-				               at: #operation put: 'listFiles';
-				               yourself).
-	self assert: (focusedData at: #operation) equals: 'listFiles'.
-	self
-		assert: (focusedData at: #currentLogPath)
-		equals: (legacyData at: #currentLogPath).
-	self
-		assert: (focusedData at: #directoryPath)
-		equals: (legacyData at: #directoryPath).
-	self assert: (focusedData at: #files) equals: (legacyData at: #files)
+	| data |
+	data := self
+		        toolNamed: 'history_file_list'
+		        dataFromArguments:
+		        { (#includeEntryCounts -> false) } asDictionary.
+	self assert: (data at: #operation) equals: 'listFiles'.
+	self assert: (data includesKey: #currentLogPath).
+	self assert: (data includesKey: #directoryPath).
+	self assert: (data includesKey: #files)
 ]
 
 { #category : 'tests' }
-MCPToolFocusedChangeHistoryTest >> testFocusedChangeHistorySchemasOmitOperationAndMutatingInputs [
+MCPToolFocusedChangeHistoryTest >> testFocusedChangeHistorySchemasOmitOperationAndSeparateSelectionInputs [
 
-	| entryProperties fileProperties |
+	| applyProperties entryProperties fileProperties revertProperties selectionProperties |
 	fileProperties := self inputPropertyNamesFor:
 		                  MCPToolFindChangeHistoryFiles new.
 	entryProperties := self inputPropertyNamesFor:
 		                   MCPToolFindChangeHistoryEntries new.
+	applyProperties := self inputPropertyNamesFor:
+		                   MCPToolApplyChangeHistoryEntries new.
+	revertProperties := self inputPropertyNamesFor:
+		                    MCPToolRevertChangeHistoryEntries new.
+	selectionProperties := #( 'historyFilePath' 'indexes' 'entryReferences'
+	                          'startIndex' 'endIndex' 'latestCount'
+	                          'codeChangesOnly' 'confirm' ).
 	self
 		assert: fileProperties asArray
 		equals: #( 'includeEntryCounts' 'directoryPath' ).
@@ -74,14 +60,18 @@ MCPToolFocusedChangeHistoryTest >> testFocusedChangeHistorySchemasOmitOperationA
 		assert: entryProperties asArray
 		equals:
 		#( 'historyFilePath' 'limit' 'offset' 'newestFirst' 'codeChangesOnly' ).
-	#( 'operation' 'confirm' 'indexes' 'entryReferences'
-	   'startIndex' 'endIndex' 'latestCount' ) do: [ :each |
-			self deny: (fileProperties includes: each).
-			self deny: (entryProperties includes: each) ]
+	self assert: applyProperties asArray equals: selectionProperties.
+	self assert: revertProperties asArray equals: selectionProperties.
+	{
+		fileProperties.
+		entryProperties.
+		applyProperties.
+		revertProperties } do: [ :propertyNames |
+		self deny: (propertyNames includes: 'operation') ]
 ]
 
 { #category : 'tests' }
-MCPToolFocusedChangeHistoryTest >> testFocusedChangeHistoryToolsAreDiscoverableReadLowRisk [
+MCPToolFocusedChangeHistoryTest >> testFocusedChangeHistoryToolsAreDiscoverableWithExpectedRisk [
 
 	| metadataByName result toolNames |
 	result := self
@@ -90,15 +80,41 @@ MCPToolFocusedChangeHistoryTest >> testFocusedChangeHistoryToolsAreDiscoverableR
 	metadataByName := (((self dataFrom: result) at: #tools) collect: [
 		                   :each | (each at: #name) -> each ]) asDictionary.
 	toolNames := metadataByName keys.
-	#( 'history_file_list' 'history_entry_list' ) do: [
-			:toolName |
+	#( 'history_file_list' 'history_entry_list' ) do: [ :toolName |
 			| metadata |
 			self assert: (toolNames includes: toolName).
 			metadata := metadataByName at: toolName.
 			self assert: (metadata at: #exposure) equals: 'discoverable'.
 			self assert: (metadata at: #mutability) equals: 'read'.
 			self assert: (metadata at: #risk) equals: 'low' ].
-	self assert: (metadataByName includesKey: 'history_entry_manage')
+	#( 'history_entry_apply' 'history_entry_revert' ) do: [ :toolName |
+			| metadata |
+			self assert: (toolNames includes: toolName).
+			metadata := metadataByName at: toolName.
+			self assert: (metadata at: #exposure) equals: 'discoverable'.
+			self assert: (metadata at: #mutability) equals: 'write'.
+			self assert: (metadata at: #risk) equals: 'high' ].
+	self deny: (metadataByName includesKey: 'history_entry_manage')
+]
+
+{ #category : 'tests' }
+MCPToolFocusedChangeHistoryTest >> testSelectionToolsRouteToChangeHistorySelectionCommand [
+
+	{
+		(MCPToolApplyChangeHistoryEntries -> 'applyEntries').
+		(MCPToolRevertChangeHistoryEntries -> 'revertEntries') } do: [
+			:association |
+			| command parsedRequest rawRequest tool |
+			tool := association key new.
+			rawRequest := tool requestFromToolCallArguments:
+				              { (#latestCount -> 1) } asDictionary.
+			parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
+			command := tool commandForRequest: parsedRequest.
+			self
+				assert: parsedRequest class
+				equals: MCPChangeHistorySelectionRequest.
+			self assert: parsedRequest operation equals: association value.
+			self assert: command class equals: MCPChangeHistorySelectionCommand ]
 ]
 
 { #category : 'private' }

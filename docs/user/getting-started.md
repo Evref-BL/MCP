@@ -147,10 +147,13 @@ class_edit
 method_edit
 method_rewrite
 test_run
-repository_edit
+repository_create
+repository_attach
+repository_update
 repository_export
 repository_commit
-history_entry_manage
+history_entry_apply
+history_entry_revert
 ```
 
 Use a copied or disposable image before asking an agent to make broad edits.
