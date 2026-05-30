@@ -3,43 +3,11 @@ Command wrapper for repository_change_list. It calculates IceRepository>>working
 "
 Class {
 	#name : 'MCPRepositoryDiffCommand',
-	#superclass : 'Object',
-	#instVars : [
-		'tool',
-		'request'
-	],
+	#superclass : 'MCPRepositoryWorkingCopyCommand',
 	#category : 'MCP-Commands',
 	#package : 'MCP',
 	#tag : 'Commands'
 }
-
-{ #category : 'instance creation' }
-MCPRepositoryDiffCommand class >> tool: aTool request: aRequest [
-
-	^ self new initializeTool: aTool request: aRequest
-]
-
-{ #category : 'private - diff' }
-MCPRepositoryDiffCommand >> addModifiedPathsFromNode: aNode to: paths [
-
-	(aNode hasChanges and: [ aNode path segments notEmpty ]) ifTrue: [
-		paths add: aNode path pathString ].
-	aNode children do: [ :each |
-		self addModifiedPathsFromNode: each to: paths ]
-]
-
-{ #category : 'private - diff' }
-MCPRepositoryDiffCommand >> changedPackageNamesFromDiff: aDiff [
-
-	| names |
-	names := [
-	         aDiff packages collect: [ :each |
-		         self packageNameFromDiffPackageNode: each ] ]
-		         on: Error
-		         do: [ :ignored | #(  ) ].
-	^ self sortedStringsFrom:
-		  (names select: [ :each | each notNil and: [ each isEmpty not ] ])
-]
 
 { #category : 'executing' }
 MCPRepositoryDiffCommand >> execute [
@@ -69,51 +37,4 @@ MCPRepositoryDiffCommand >> execute [
 		  failureSummary: [ :error |
 			  'Failed to compute repository diff: '
 			  , (error messageText ifNil: [ error asString ]) ]
-]
-
-{ #category : 'initialization' }
-MCPRepositoryDiffCommand >> initializeTool: aTool request: aRequest [
-
-	tool := aTool.
-	request := aRequest.
-	^ self
-]
-
-{ #category : 'private - diff' }
-MCPRepositoryDiffCommand >> modifiedPathsFromDiff: aDiff [
-
-	| paths |
-	paths := OrderedCollection new.
-	[ self addModifiedPathsFromNode: aDiff tree to: paths ]
-		on: Error
-		do: [ :ignored | ^ #(  ) ].
-	^ self sortedStringsFrom: paths
-]
-
-{ #category : 'private - diff' }
-MCPRepositoryDiffCommand >> packageNameFromDiffPackageNode: aNode [
-
-	| definition |
-	definition := aNode definition.
-	(definition respondsTo: #packageName) ifFalse: [ ^ nil ].
-	^ definition packageName asString
-]
-
-{ #category : 'accessing' }
-MCPRepositoryDiffCommand >> request [
-
-	^ request
-]
-
-{ #category : 'private' }
-MCPRepositoryDiffCommand >> sortedStringsFrom: aCollection [
-
-	^ (aCollection collect: [ :each | each asString ]) asSet
-		  asSortedCollection asArray
-]
-
-{ #category : 'accessing' }
-MCPRepositoryDiffCommand >> tool [
-
-	^ tool
 ]

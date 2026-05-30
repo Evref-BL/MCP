@@ -3,34 +3,11 @@ Command wrapper for repository_commit. It captures the current IceRepository wor
 "
 Class {
 	#name : 'MCPCommitRepositoryCommand',
-	#superclass : 'Object',
-	#instVars : [
-		'tool',
-		'request'
-	],
+	#superclass : 'MCPRepositoryWorkingCopyCommand',
 	#category : 'MCP-Commands',
 	#package : 'MCP',
 	#tag : 'Commands'
 }
-
-{ #category : 'instance creation' }
-MCPCommitRepositoryCommand class >> tool: aTool request: aRequest [
-
-	^ self new initializeTool: aTool request: aRequest
-]
-
-{ #category : 'private - diff' }
-MCPCommitRepositoryCommand >> changedPackageNamesFromDiff: aDiff [
-
-	| names |
-	names := [
-	         aDiff packages collect: [ :each |
-		         self packageNameFromDiffPackageNode: each ] ]
-		         on: Error
-		         do: [ :ignored | #(  ) ].
-	^ self sortedStringsFrom:
-		  (names select: [ :each | each notNil and: [ each isEmpty not ] ])
-]
 
 { #category : 'executing' }
 MCPCommitRepositoryCommand >> execute [
@@ -107,23 +84,6 @@ MCPCommitRepositoryCommand >> gitSignatureMissingFor: anError [
 			  'failed to parse signature - signature cannot have an empty name or email' ] ]
 ]
 
-{ #category : 'initialization' }
-MCPCommitRepositoryCommand >> initializeTool: aTool request: aRequest [
-
-	tool := aTool.
-	request := aRequest.
-	^ self
-]
-
-{ #category : 'private - diff' }
-MCPCommitRepositoryCommand >> packageNameFromDiffPackageNode: aNode [
-
-	| definition |
-	definition := aNode definition.
-	(definition respondsTo: #packageName) ifFalse: [ ^ nil ].
-	^ definition packageName asString
-]
-
 { #category : 'private - git identity' }
 MCPCommitRepositoryCommand >> removeGitConfigKey: key from: config [
 
@@ -172,33 +132,6 @@ MCPCommitRepositoryCommand >> repositoryHasNoCommit: aRepository [
 	  (headCommit respondsTo: #isNoCommit) and: [ headCommit isNoCommit ] ]
 		  on: Error
 		  do: [ :ignored | false ]
-]
-
-{ #category : 'accessing' }
-MCPCommitRepositoryCommand >> request [
-
-	^ request
-]
-
-{ #category : 'private' }
-MCPCommitRepositoryCommand >> sortedStringsFrom: aCollection [
-
-	^ (aCollection collect: [ :each | each asString ]) asSet
-		  asSortedCollection asArray
-]
-
-{ #category : 'accessing' }
-MCPCommitRepositoryCommand >> tool [
-
-	^ tool
-]
-
-{ #category : 'private - execution' }
-MCPCommitRepositoryCommand >> withNonInteractiveAuthorDuring: aBlock [
-
-	^ PharoCompatibility
-		  withNonInteractiveAuthorNamed: 'MCP'
-		  during: aBlock
 ]
 
 { #category : 'private - git identity' }
