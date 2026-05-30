@@ -574,6 +574,28 @@ MCPToolContractsTest >> testDiscoverToolsCanIncludeStaticSurface [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testDiscoverToolsMatchesAgentGuidanceKeywords [
+
+	| expectations |
+	expectations := {
+		                ('repo' -> 'find-repositories').
+		                ('SUnit' -> 'run-tests').
+		                ('browse' -> 'manage-change-history').
+		                ('recover' -> 'manage-change-history').
+		                ('window' -> 'capture-screenshot').
+		                ('display' -> 'capture-screenshot').
+		                ('repair' -> 'debug-edit') }.
+	expectations do: [ :expectation |
+			| names result |
+			result := self callToolNamed: 'discover-tools' withArguments: {
+					          (#query -> expectation key).
+					          (#includeStatic -> true) } asDictionary.
+			names := ((self dataFrom: result) at: #tools) collect: [ :each |
+				         each at: #name ].
+			self assert: (names includes: expectation value) ]
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testDiscoverToolsReturnsDiscoverableMetadata [
 
 	| data editRepositoryMetadata names result tools |

@@ -69,7 +69,16 @@ A generic remote MCP client entry looks like this:
 }
 ```
 
-For Codex, copy [user/codex/.codex](user/codex/.codex) into your agent workspace as `.codex`, and copy [user/AGENTS.md](user/AGENTS.md) as `AGENTS.md`. If you use a different port, update `.codex/config.toml`.
+For Codex, copy the contents of [templates](templates) into your own project
+root:
+
+```sh
+cp -R templates/. /path/to/your/project/
+```
+
+The template includes `AGENTS.md`, `.codex/config.toml`, and reusable skills
+for Pharo MCP workflows. If you use a different port, update the copied
+`.codex/config.toml`.
 
 ## First Tools
 
@@ -77,6 +86,8 @@ Start with read-only discovery:
 
 ```text
 tools/list
+discover-tools
+inspect-tool
 find-packages
 find-classes
 find-methods
@@ -84,6 +95,9 @@ inspect-class
 inspect-method
 find-repositories
 ```
+
+Use `discover-tools` with `group=debugging` to find debugger tools and inspect
+their schemas before calling them.
 
 Then use dedicated operations before falling back to `evaluate`:
 
@@ -124,13 +138,36 @@ Inspect an `MCP` instance in a graphical image and open the dashboard tab. The S
 ## Documentation
 
 - [Getting started](docs/user/getting-started.md) covers loading, starting, and connecting an MCP client.
+- [Using MCP from an agent](docs/user/using-pharo-mcp.md) explains tool
+  discovery, image-state rules, and reusable agent skills.
 - [Safety and ecosystem integration](docs/user/safety-and-ecosystem.md) explains the refactoring, critique, test, repository, change-history, and dashboard boundaries.
-- [Tool reference](docs/reference/tools.md) lists the MCP tool groups and their intended use.
-- [Troubleshooting](docs/troubleshooting.md) maps common startup, connection, and image-state problems to checks.
-- [Source vs live image checks](docs/dev/source-vs-live-image-checks.md) explains what can be verified from exported source and what needs a live image.
+- [Tool reference](docs/user/tool-reference.md) lists MCP tool groups and
+  their intended use.
+- [Debugging with MCP](docs/user/debugging.md) explains debugger sessions,
+  breakpoints, debug-state references, and debugger-driven repair.
+- [Troubleshooting](docs/user/troubleshooting.md) maps common startup,
+  connection, and image-state problems to checks.
+- [Source vs live image](docs/user/source-vs-live-image.md) explains what can
+  be verified from exported source and what needs a live image.
+
+## Contributing
+
+Use Pharo 13 as the default development image for MCP changes. Keep Pharo 12
+and Pharo 14 compatibility intact, and run the supported-version matrix when a
+change touches compatibility-sensitive behavior.
+
+Agent-facing repository guidance is split by audience:
+
+- `templates/` contains copyable agent-client guidance for people using MCP
+  from their own project.
+- `docs/user/` explains how to use a running Pharo MCP server from an agent or
+  human client.
+- `AGENTS.md` and `docs/dev/` explain how to develop this MCP repository.
 
 ## Development
 
 CI loads the project with smalltalkCI and runs `MCP-Tests` and `MCP-Spec-Tests` on Pharo 12, 13, and 14.
 
-Static checks from source are useful for documentation and package layout, but tool execution must be verified in a live image. See [Source vs live image checks](docs/dev/source-vs-live-image-checks.md).
+Static checks from source are useful for documentation and package layout, but
+tool execution must be verified in a live image. See
+[MCP-Pharo verification](docs/dev/mcp-verification.md).

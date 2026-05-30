@@ -109,11 +109,21 @@ an automation or agent, run it against a copied or disposable image.
 Use `manage-change-history` to inspect Epicea history entries. Apply or revert
 operations can be previewed first and performed with `confirm=true`.
 
+## Debugger References Are Stale
+
+Debugger `stateId`, `frameRef`, and `variableRef` values are scoped to one
+debug-state snapshot. After a control action, debugger edit, or resume, discard
+old references and use the newly returned state.
+
+If a human opened the debugger, attach through the debugging tools and let the
+debugger controller own UI actions. Do not drive debugger windows with raw
+`evaluate` code.
+
 ## Source Checks Are Not Enough
 
 Exported source files can confirm package layout, class definitions, and docs.
 They cannot prove that the running image has loaded the latest code or that an
 MCP tool works over HTTP.
 
-Use [Source vs live image checks](dev/source-vs-live-image-checks.md) to decide
-which checks are valid for the current work boundary.
+Use [Source vs live image](source-vs-live-image.md) to decide which checks are
+valid for the current work boundary.

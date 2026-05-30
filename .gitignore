@@ -1,0 +1,5 @@
+.DS_Store
+
+# Local-only agent overrides
+AGENTS.local.md
+CLAUDE.local.md

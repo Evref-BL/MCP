@@ -1,7 +1,8 @@
 # Tool Reference
 
-MCP exposes tools through `tools/list` and `tools/call`. Tool names use
-hyphenated MCP names.
+MCP exposes tools through `tools/list` and `tools/call`. Common tools can be
+advertised directly; less common tools can be found through the catalog tools.
+Tool names use hyphenated MCP names.
 
 Every tool returns MCP call content plus structured content. Structured content
 uses this common shape:
@@ -15,6 +16,17 @@ error: structured error payload
 ```
 
 `data` is present on success. `error` is present on failure.
+
+## Tool Catalog
+
+| Tool | Use |
+| --- | --- |
+| `discover-tools` | Search the tool catalog by group, keyword, title, or description. |
+| `inspect-tool` | Return the full schema and metadata for one catalog tool. |
+| `call-tool` | Invoke a catalog tool that is not exposed directly by the current client. |
+
+Use `discover-tools` before calling less common or high-risk tools. Inspect the
+schema before invoking a discoverable tool.
 
 ## Repositories
 
@@ -88,6 +100,23 @@ they are relevant to review.
 | --- | --- |
 | `capture-screenshot` | Capture the active Morphic world and return MCP image content with dimensions and MIME type metadata. |
 
+## Debugging
+
+The debugger tools are discoverable under the `debugging` group. Read
+[Debugging with MCP](debugging.md) before using them.
+
+| Tool | Use |
+| --- | --- |
+| `debug-capture` | Evaluate a Smalltalk expression in a bounded worker process and capture runtime exceptions as tracked debug sessions. |
+| `debug-test` | Run one SUnit test method under debugger control and capture failures or errors as tracked debug sessions. |
+| `debug-sessions` | List, describe, forget, discover, or attach tracked sessions and open debugger candidates. |
+| `debug-state` | Return a debug-session snapshot with stack, selected frame, source, scopes, repair actions, and state-scoped references. |
+| `debug-variables` | Expand scope and variable references returned by `debug-state`. |
+| `debug-evaluate` | Evaluate a Smalltalk expression in a selected debug frame. |
+| `debug-control` | Step, restart, resume, or terminate a tracked debug session. |
+| `debug-breakpoints` | Manage transient DebugPoint breakpoints. |
+| `debug-edit` | Create or hot-recompile the method implied by a paused debug state, then proceed when possible. |
+
 ## Scripting
 
 | Tool | Use |
@@ -113,6 +142,9 @@ remove-classes
 remove-methods
 rewrite-methods when apply=true and changes were applied
 manage-change-history when entries were performed
+debug-control
+debug-breakpoints
+debug-edit when a method is accepted
 evaluate
 ```
 
