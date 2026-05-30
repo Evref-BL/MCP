@@ -1,3 +1,8 @@
+"
+Static bridge tool for searching the discoverable tool catalog.
+
+It is intentionally kept on the fast path so agents can find optional or specialized tools without requiring those tools to be statically advertised.
+"
 Class {
 	#name : 'MCPToolDiscoverTools',
 	#superclass : 'MCPTool',
@@ -45,7 +50,7 @@ MCPToolDiscoverTools >> defaultInputSchema [
 					   schemaPropertyNamed: 'group'
 					   type: 'string'
 					   description:
-						   'Optional tool group filter such as tool-catalog, repositories, packages, classes, methods, history, tests, ui, or image-runtime.').
+						   'Optional tool group filter such as tool-catalog, repositories, packages, classes, methods, history, tests, ui, debugging, or image-runtime.').
 				  (self
 					   booleanSchemaPropertyNamed: 'includeStatic'
 					   description:

@@ -3,9 +3,17 @@ Extension { #name : 'Exception' }
 { #category : '*MCP' }
 Exception >> asJRPCJSON [
 
-	| rawMessage rawTag title |
-	rawMessage := self messageText ifNil: [ '' ] ifNotNil: #asString.
-	rawTag := self tag ifNil: [ '' ] ifNotNil: #asString.
+	| rawMessage rawTag title signalerDescription signalerContextDescription |
+	rawMessage := self messageText
+		              ifNil: [ '' ]
+		              ifNotNil: [ :message | message asString ].
+	rawTag := self tag
+		          ifNil: [ '' ]
+		          ifNotNil: [ :tagValue | tagValue asString ].
+	signalerDescription := self signaler ifNotNil: [ :signalerObject |
+		                       signalerObject asString ].
+	signalerContextDescription := self signalerContext ifNotNil: [
+		                              :context | context asString ].
 	title := {
 		         rawTag.
 		         rawMessage.
@@ -19,9 +27,8 @@ Exception >> asJRPCJSON [
 		  ('messageText'
 		   -> (rawMessage ifEmpty: [ title ] ifNotEmpty: [ rawMessage ])).
 		  ('tag' -> (rawTag ifEmpty: [ title ] ifNotEmpty: [ rawTag ])).
-		  ('signaler' -> (self signaler ifNotNil: #asString)).
-		  ('signalerContext' -> (self signalerContext ifNotNil: #asString)) }
-		  asDictionary
+		  ('signaler' -> signalerDescription).
+		  ('signalerContext' -> signalerContextDescription) } asDictionary
 ]
 
 { #category : '*MCP' }

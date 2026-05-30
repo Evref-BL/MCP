@@ -1,3 +1,8 @@
+"
+Executes one tool selected from the discoverable MCP tool catalog.
+
+This command is the dynamic dispatch path behind call-tool: it validates the requested catalog entry, invokes the selected MCPTool with nested arguments, and preserves the selected tool's normal output contract.
+"
 Class {
 	#name : 'MCPCallToolCommand',
 	#superclass : 'Object',

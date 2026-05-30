@@ -1,3 +1,8 @@
+"
+Builds the concrete MCP tool set for a server instance.
+
+The registry centralizes tool construction, exposure policy defaults, and catalog membership so static and discoverable surfaces stay consistent.
+"
 Class {
 	#name : 'MCPToolRegistry',
 	#superclass : 'Object',
@@ -128,8 +133,10 @@ MCPToolRegistry class >> mutabilityForTool: aTool [
 	toolName := aTool name.
 	readTools := #( 'discover-tools' 'inspect-tool' 'find-repositories'
 	                'find-packages' 'find-classes' 'inspect-class'
-	                'find-methods' 'inspect-method' 'capture-screenshot' ).
-	executeTools := #( 'call-tool' 'run-tests' 'evaluate' ).
+	                'find-methods' 'inspect-method' 'capture-screenshot'
+	                'debug-state' 'debug-variables' ).
+	executeTools := #( 'call-tool' 'run-tests' 'evaluate' 'debug-evaluate'
+	                   'debug-capture' 'debug-test' ).
 	(readTools includes: toolName) ifTrue: [ ^ 'read' ].
 	(executeTools includes: toolName) ifTrue: [ ^ 'execute' ].
 	^ 'write'
@@ -171,6 +178,16 @@ MCPToolRegistry class >> publicToolGroups [
 		  ('history' -> { MCPToolManageChangeHistory }).
 		  ('tests' -> { MCPToolRunTests }).
 		  ('ui' -> { MCPToolCaptureScreenshot }).
+		  ('debugging' -> {
+			   MCPToolDebugSessions.
+			   MCPToolDebugState.
+			   MCPToolDebugVariables.
+			   MCPToolDebugEvaluate.
+			   MCPToolDebugControl.
+			   MCPToolDebugBreakpoints.
+			   MCPToolDebugCapture.
+			   MCPToolDebugTest.
+			   MCPToolDebugEdit }).
 		  ('image-runtime' -> { MCPToolEvaluate }) }
 ]
 
@@ -202,9 +219,11 @@ MCPToolRegistry class >> riskForTool: aTool [
 	toolName := aTool name.
 	lowRisk := #( 'discover-tools' 'inspect-tool' 'find-repositories'
 	              'find-packages' 'find-classes' 'inspect-class'
-	              'find-methods' 'inspect-method' 'capture-screenshot' ).
+	              'find-methods' 'inspect-method' 'capture-screenshot'
+	              'debug-state' 'debug-variables' ).
 	mediumRisk := #( 'call-tool' 'load-repository' 'run-tests'
-	                 'evaluate' ).
+	                 'evaluate' 'debug-evaluate' 'debug-capture'
+	                 'debug-test' ).
 	(lowRisk includes: toolName) ifTrue: [ ^ 'low' ].
 	(mediumRisk includes: toolName) ifTrue: [ ^ 'medium' ].
 	^ 'high'

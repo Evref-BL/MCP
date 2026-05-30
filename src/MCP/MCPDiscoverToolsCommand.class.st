@@ -1,3 +1,8 @@
+"
+Searches the tool catalog and returns compact metadata for matching tools.
+
+This command supports the discoverable-tool workflow: agents can search by text or group, then inspect a selected tool before invoking it.
+"
 Class {
 	#name : 'MCPDiscoverToolsCommand',
 	#superclass : 'Object',
