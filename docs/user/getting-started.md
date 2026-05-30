@@ -155,6 +155,7 @@ method_selector_update
 method_protocol_update
 method_rewrite
 test_run
+test_coverage_run
 repository_create
 repository_attach
 repository_update

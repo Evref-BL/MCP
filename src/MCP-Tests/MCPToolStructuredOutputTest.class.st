@@ -462,8 +462,7 @@ MCPToolStructuredOutputTest >> testRunTestMethodReturnsStructuredIssues [
 MCPToolStructuredOutputTest >> testRunTestsCoverageCanIncludeCoveredMethodsAndCapLists [
 
 	| coverage coveredSelectors data result |
-	result := self callToolNamed: 'test_run' withArguments: {
-			          (#operation -> 'coverage').
+	result := self callToolNamed: 'test_coverage_run' withArguments: {
 			          (#tests
 			           ->
 			           { { (#className -> 'MCPToolCoverageTargetTest') }
@@ -489,8 +488,7 @@ MCPToolStructuredOutputTest >> testRunTestsCoverageCanIncludeCoveredMethodsAndCa
 MCPToolStructuredOutputTest >> testRunTestsCoverageRequiresExplicitScope [
 
 	| error result |
-	result := self callToolNamed: 'test_run' withArguments: {
-			          (#operation -> 'coverage').
+	result := self callToolNamed: 'test_coverage_run' withArguments: {
 			          (#tests
 			           ->
 			           { { (#className -> 'MCPToolCoverageTargetTest') }
@@ -510,8 +508,7 @@ MCPToolStructuredOutputTest >> testRunTestsCoverageRequiresExplicitScope [
 MCPToolStructuredOutputTest >> testRunTestsCoverageReturnsStructuredCoverage [
 
 	| coverage data partialSelectors result singleResult uncoveredSelectors |
-	result := self callToolNamed: 'test_run' withArguments: {
-			          (#operation -> 'coverage').
+	result := self callToolNamed: 'test_coverage_run' withArguments: {
 			          (#tests
 			           ->
 			           { { (#className -> 'MCPToolCoverageTargetTest') }

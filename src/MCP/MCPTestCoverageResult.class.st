@@ -1,7 +1,5 @@
 "
-Structured coverage result DTO for the test_run coverage operation.
-
-It summarizes method and node coverage from CoverageCollector and emits capped method lists that are small enough for MCP responses.
+Structured coverage result DTO returned by test_coverage_run.
 "
 Class {
 	#name : 'MCPTestCoverageResult',

@@ -98,8 +98,8 @@ MCPTestCoverageRequest class >> signalMissingCoverageOptions [
 	^ MCPCommandError
 		  signalErrorCode: #CoverageOptionsRequired
 		  message:
-		  'coverage operation requires a coverage object with an explicit method scope.'
-		  details: { (#operation -> 'coverage') } asDictionary
+		  'test_coverage_run requires a coverage object with an explicit method scope.'
+		  details: { (#tool -> 'test_coverage_run') } asDictionary
 ]
 
 { #category : 'private - signaling' }
@@ -109,7 +109,7 @@ MCPTestCoverageRequest class >> signalMissingCoverageScope [
 		  signalErrorCode: #CoverageScopeRequired
 		  message:
 		  'coverage requires at least one explicit method scope: packageNames, classNames, hierarchyClassNames, subclassClassNames, or parentClassNames.'
-		  details: { (#operation -> 'coverage') } asDictionary
+		  details: { (#tool -> 'test_coverage_run') } asDictionary
 ]
 
 { #category : 'accessing' }

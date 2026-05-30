@@ -117,7 +117,7 @@ package, class, hierarchy, or method scope.
 ## Tests And Coverage
 
 `test_run` runs SUnit classes or individual methods and returns structured test
-results. With `operation=coverage`, the same test run can collect
+results. Use `test_coverage_run` when the same test run should collect
 CoverageCollector method and node coverage for an explicit method scope.
 
 Coverage output includes method counts, node counts, uncovered methods,

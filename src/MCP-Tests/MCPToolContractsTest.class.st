@@ -237,6 +237,22 @@ MCPToolContractsTest >> baselineLoadToolFlowSpec [
 ]
 
 { #category : 'private' }
+MCPToolContractsTest >> coverageToolFlowSpec [
+
+	^ {
+		  (#toolClass -> MCPToolRunTestCoverage).
+		  (#arguments -> {
+			   (#tests
+			    -> { { (#className -> 'MCPToolContractsTest') } asDictionary }).
+			   (#coverage
+			    ->
+			    { (#classNames -> #( 'MCPToolContractsTest' )) } asDictionary) }
+			   asDictionary).
+		  (#requestClass -> MCPRunTestsRequest).
+		  (#commandClass -> MCPRunTestsCommand) } asDictionary
+]
+
+{ #category : 'private' }
 MCPToolContractsTest >> debugTestToolFlowSpec [
 
 	^ {
@@ -843,6 +859,7 @@ MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 			MCPToolApplyChangeHistoryEntries.
 			MCPToolRevertChangeHistoryEntries.
 			MCPToolRunTests.
+			MCPToolRunTestCoverage.
 			MCPToolCaptureScreenshot.
 			MCPToolListDebugSessions.
 			MCPToolGetDebugSession.
@@ -1092,6 +1109,7 @@ MCPToolContractsTest >> testDiscoverToolsMatchesAgentGuidanceKeywords [
 		                ('identity' -> 'repository_identity_verify').
 		                ('diff' -> 'repository_change_list').
 		                ('SUnit' -> 'test_run').
+		                ('coverage' -> 'test_coverage_run').
 		                ('file' -> 'history_file_list').
 		                ('entry' -> 'history_entry_list').
 		                ('recover' -> 'history_entry_apply').
@@ -2674,7 +2692,7 @@ MCPToolContractsTest >> testRPCAdvertisesStaticToolSurfaceOnly [
 	   'class_layout_update' 'class_slot_add' 'class_slot_remove'
 	   'class_slot_name_update' 'class_slot_pull_up' 'class_slot_push_down'
 	   'method_create' 'method_selector_update' 'method_protocol_update'
-	   'image_evaluate' 'test_run' ) do: [ :each |
+	   'image_evaluate' 'test_run' 'test_coverage_run' ) do: [ :each |
 		self assert: (toolNames includes: each) ].
 	#( 'class_edit' 'method_edit' 'repository_search' 'repository_identity_verify'
 	   'repository_change_list' 'repository_create' 'repository_attach'
@@ -2909,9 +2927,43 @@ MCPToolContractsTest >> testRpcToolCallSignalsInvalidParametersWhenRequiredArgum
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testRunTestCoverageUsesNestedRequestDTOs [
+
+	| command parsedRequest rawRequest tool validatedRequests |
+	tool := MCPToolRunTestCoverage new.
+	rawRequest := tool requestFromToolCallArguments: {
+			              (#tests
+			               ->
+			               { { (#className -> 'MCPToolContractsTest') }
+				               asDictionary }).
+			              (#coverage
+			               ->
+			               { (#classNames -> #( 'MCPToolContractsTest' )) }
+				               asDictionary) } asDictionary.
+	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
+	command := tool commandForRequest: parsedRequest.
+	validatedRequests := command validatedRequestsFrom:
+		                     parsedRequest testRequests.
+	self assert: parsedRequest class equals: MCPRunTestsRequest.
+	self assert: parsedRequest isCoverageOperation.
+	self
+		assert: parsedRequest coverageRequest class
+		equals: MCPTestCoverageRequest.
+	self
+		assert: parsedRequest testRequests first class
+		equals: MCPTestRunRequest.
+	self
+		assert: validatedRequests first class
+		equals: MCPValidatedTestRunRequest.
+	self
+		assert: validatedRequests first testClass
+		equals: MCPToolContractsTest
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 
-	| coverageInputProperty dataProperties inputPropertyNames operationProperty outputSchema resultsProperty timeoutMillisecondsProperty tool |
+	| coverageDataProperties coverageInputProperty coverageOutputSchema coverageResultsProperty coverageTool dataProperties inputPropertyNames outputSchema resultsProperty timeoutMillisecondsProperty tool |
 	tool := MCPToolRunTests new.
 	self assert: tool name equals: 'test_run'.
 	self
@@ -2920,23 +2972,13 @@ MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 	self deny: (tool inputSchema extraProperties includesKey: #oneOf).
 	inputPropertyNames := tool inputSchema properties collect: [ :each |
 		                      each name ].
-	operationProperty := tool inputSchema properties detect: [ :each |
-		                     each name = 'operation' ].
-	coverageInputProperty := tool inputSchema properties detect: [ :each |
-		                         each name = 'coverage' ].
 	timeoutMillisecondsProperty := tool inputSchema properties detect: [
 		                               :each |
 		                               each name = 'timeoutMilliseconds' ].
-	self assert: (inputPropertyNames includes: 'operation').
-	self assert: (inputPropertyNames includes: 'coverage').
+	self deny: (inputPropertyNames includes: 'operation').
+	self deny: (inputPropertyNames includes: 'coverage').
 	self assert: (inputPropertyNames includes: 'timeoutSeconds').
 	self assert: (inputPropertyNames includes: 'timeoutMilliseconds').
-	self
-		assert: (operationProperty extraProperties at: #enum) asArray
-		equals: #( 'run' 'coverage' ).
-	self assert:
-		(((coverageInputProperty extraProperties at: #properties) collect: [
-			  :each | each name ]) includes: 'packageNames').
 	self assert:
 		(timeoutMillisecondsProperty description includesSubstring:
 			 'Cannot be combined with timeoutSeconds').
@@ -2948,8 +2990,32 @@ MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 	self
 		assert: ((resultsProperty at: #items) at: #type)
 		equals: 'object'.
-	self assert: (dataProperties includesKey: 'coverage').
-	self deny: (dataProperties includesKey: 'tests')
+	self deny: (dataProperties includesKey: 'coverage').
+	self deny: (dataProperties includesKey: 'tests').
+
+	coverageTool := MCPToolRunTestCoverage new.
+	self assert: coverageTool name equals: 'test_coverage_run'.
+	self
+		assert: coverageTool inputSchema required asSet
+		equals: #( 'tests' 'coverage' ) asSet.
+	inputPropertyNames := coverageTool inputSchema properties collect: [
+		                      :each | each name ].
+	coverageInputProperty := coverageTool inputSchema properties detect: [
+		                         :each | each name = 'coverage' ].
+	self deny: (inputPropertyNames includes: 'operation').
+	self assert: (inputPropertyNames includes: 'coverage').
+	self assert: (inputPropertyNames includes: 'timeoutSeconds').
+	self assert: (inputPropertyNames includes: 'timeoutMilliseconds').
+	self assert:
+		(((coverageInputProperty extraProperties at: #properties) collect: [
+			  :each | each name ]) includes: 'packageNames').
+	coverageOutputSchema := coverageTool outputSchema asJRPCJSON.
+	coverageDataProperties := ((coverageOutputSchema at: #properties)
+		                           at: 'data') at: #properties.
+	coverageResultsProperty := coverageDataProperties at: 'results'.
+	self assert: (coverageResultsProperty at: #type) equals: 'array'.
+	self assert: (coverageDataProperties includesKey: 'coverage').
+	self deny: (coverageDataProperties includesKey: 'tests')
 ]
 
 { #category : 'tests' }
@@ -3249,6 +3315,7 @@ MCPToolContractsTest >> toolFlowSpecs [
 	specs removeAllSuchThat: [ :each |
 		oldToolClasses includes: (each at: #toolClass) ].
 	specs add: self baselineLoadToolFlowSpec.
+	specs add: self coverageToolFlowSpec.
 	specs addAll: self focusedClassEditToolFlowSpecs.
 	specs addAll: self focusedMethodLookupToolFlowSpecs.
 	specs addAll: self focusedMethodEditToolFlowSpecs.

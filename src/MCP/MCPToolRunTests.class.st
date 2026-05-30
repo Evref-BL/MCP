@@ -1,7 +1,5 @@
 "
-Runs test classes or selected test methods and returns structured results.
-
-The default operation is the testing bridge for the MCP server. The optional coverage operation runs the same test selection while measuring CoverageCollector method and node coverage for an explicit method scope.
+Run SUnit test classes or individual methods and return structured per-selection results. Coverage is exposed by MCPToolRunTestCoverage while both tools share the same command pipeline.
 "
 Class {
 	#name : 'MCPToolRunTests',
@@ -116,7 +114,7 @@ MCPToolRunTests >> coverageOptionsObjectSchema [
 		            schemaPropertyNamed: 'coverage'
 		            type: 'object'
 		            description:
-		            'Coverage options for operation=coverage. At least one explicit method scope property is required when coverage is requested.'.
+		            'Coverage options. At least one explicit method scope property is required.'.
 	property
 		properties: self methodQueryScopeInputProperties , {
 					(self
@@ -150,7 +148,7 @@ MCPToolRunTests >> coverageResultObjectSchema [
 		            schemaPropertyNamed: 'coverage'
 		            type: 'object'
 		            description:
-		            'Coverage summary returned when operation=coverage.'.
+		            'Coverage summary returned by test_coverage_run.'.
 	property
 		properties: {
 				(self
@@ -226,7 +224,7 @@ MCPToolRunTests >> defaultCoverageMethodLimit [
 { #category : 'defaults' }
 MCPToolRunTests >> defaultDescription [
 
-	^ 'Run test classes or individual test methods as a batch and return aggregated results. Use operation=coverage with an explicit coverage scope to collect method and node coverage for the same test run.'
+	^ 'Run test classes or individual test methods as a batch and return aggregated results.'
 ]
 
 { #category : 'defaults' }
@@ -241,13 +239,6 @@ MCPToolRunTests >> defaultInputSchema [
 					    description: 'The test execution requests to run as a batch.')
 					   items: self testRequestObjectSchema;
 					   yourself).
-				  (self
-					   stringEnumSchemaPropertyNamed: 'operation'
-					   description:
-					   'Test runner operation. run executes tests normally; coverage executes tests while measuring coverage for the explicit coverage scope.'
-					   values: #( 'run' 'coverage' )
-					   default: 'run').
-				  self coverageOptionsObjectSchema.
 				  (self
 					   integerSchemaPropertyNamed: 'timeoutSeconds'
 					   description:
@@ -264,7 +255,7 @@ MCPToolRunTests >> defaultInputSchema [
 { #category : 'defaults' }
 MCPToolRunTests >> defaultOutputSchema [
 
-	| coverageProperty resultsProperty unrunTestsProperty |
+	| resultsProperty unrunTestsProperty |
 	resultsProperty := self
 		                   schemaPropertyNamed: 'results'
 		                   type: 'array'
@@ -277,11 +268,9 @@ MCPToolRunTests >> defaultOutputSchema [
 		                      description:
 		                      'Test execution requests that did not run because the batch timed out. Pass this array to test_run to continue from the timeout point.'.
 	unrunTestsProperty items: self testRequestObjectSchema.
-	coverageProperty := self coverageResultObjectSchema.
 	^ self
 		  standardOutputSchemaForDataProperties: {
 				  resultsProperty.
-				  coverageProperty.
 				  (self
 					   booleanSchemaPropertyNamed: 'timedOut'
 					   description:
@@ -354,7 +343,7 @@ MCPToolRunTests >> failureMessageForTests: testRequests error: anError [
 { #category : 'private - request' }
 MCPToolRunTests >> parsedRequestFromToolRequest: request [
 
-	^ MCPRunTestsRequest fromRequest: request tool: self
+	^ MCPRunTestsRequest fromRequest: request tool: self operation: 'run'
 ]
 
 { #category : 'private - tests' }
@@ -568,16 +557,4 @@ MCPToolRunTests >> testResultObjectSchema [
 			  (self standardTestRequiredFieldsIncludingMethodName: false);
 		  additionalProperties: false;
 		  yourself
-]
-
-{ #category : 'validating' }
-MCPToolRunTests >> validateRequest: request [
-
-	| operation |
-	operation := request stringArgumentNamed: 'operation' default: 'run'.
-	operation = 'coverage' ifTrue: [
-		(request hasArgumentNamed: 'coverage') ifFalse: [
-			MCPInvalidToolInput
-				signalMissingRequiredArgumentNamed: 'coverage'
-				forTool: self ] ]
 ]

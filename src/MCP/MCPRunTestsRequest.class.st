@@ -1,7 +1,5 @@
 "
-Parsed test_run tool request derived from one validated MCPToolRequest.
-
-It contains parsed MCPTestRunRequest entries, the timeout converted to milliseconds, and the selected operation. The default operation runs tests normally; the coverage operation also carries parsed MCPTestCoverageRequest options.
+Parsed request for the shared test runner command. It contains parsed test requests, the timeout converted to milliseconds, and the internal operation selected by the concrete tool. Coverage requests are supplied by MCPToolRunTestCoverage.
 "
 Class {
 	#name : 'MCPRunTestsRequest',
@@ -20,20 +18,29 @@ Class {
 { #category : 'instance creation' }
 MCPRunTestsRequest class >> fromRequest: aRequest tool: aTool [
 
-	| coverageRequest operation |
-	operation := aRequest stringArgumentNamed: 'operation' default: 'run'.
+	^ self
+		  fromRequest: aRequest
+		  tool: aTool
+		  operation:
+		  (aRequest stringArgumentNamed: 'operation' default: 'run')
+]
+
+{ #category : 'instance creation' }
+MCPRunTestsRequest class >> fromRequest: aRequest tool: aTool operation: operation [
+
+	| coverageRequest |
 	(#( 'run' 'coverage' ) includes: operation) ifFalse: [
 		Error signal: 'operation must be one of run or coverage.' ].
 	coverageRequest := operation = 'coverage'
 		                   ifTrue: [
-			                   MCPTestCoverageRequest
-				                   fromValue:
-				                   (aRequest
-					                    argumentNamed: 'coverage'
-					                    ifAbsent: [ nil ])
-				                   usingToolRequest: aRequest
-				                   defaultMethodLimit:
-				                   aTool defaultCoverageMethodLimit ]
+				                   MCPTestCoverageRequest
+					                   fromValue:
+					                   (aRequest
+						                    argumentNamed: 'coverage'
+						                    ifAbsent: [ nil ])
+					                   usingToolRequest: aRequest
+					                   defaultMethodLimit:
+					                   aTool defaultCoverageMethodLimit ]
 		                   ifFalse: [ nil ].
 	^ self new
 		  initializeTestRequests:

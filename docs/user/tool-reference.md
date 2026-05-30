@@ -136,7 +136,8 @@ preview or confirmation.
 
 | Tool | Use |
 | --- | --- |
-| `test_run` | Run SUnit test classes or individual methods. Use `operation=coverage` with an explicit method scope to collect method and node coverage. |
+| `test_run` | Run SUnit test classes or individual methods. |
+| `test_coverage_run` | Run SUnit test classes or individual methods while collecting method and node coverage for an explicit method scope. |
 
 ## UI
 

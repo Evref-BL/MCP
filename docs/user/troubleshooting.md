@@ -96,8 +96,8 @@ Export updates the Iceberg index but does not stage or commit Git changes.
 
 ## Tests Do Not Prove The Edited Scope
 
-`test_run` tells you whether selected tests passed. Use `operation=coverage`
-with an explicit coverage scope when you need to know whether the edited methods
+`test_run` tells you whether selected tests passed. Use `test_coverage_run` with
+an explicit coverage scope when you need to know whether the edited methods
 executed.
 
 Coverage scopes should be narrow: package, class, hierarchy, or method names.

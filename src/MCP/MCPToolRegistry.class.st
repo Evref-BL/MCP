@@ -50,8 +50,10 @@ MCPToolRegistry class >> additionalKeywordsForTool: aTool [
 		^ #( 'repo' 'iceberg' 'git' 'branch' 'switch' ) ].
 	toolName = 'repository_head_adopt' ifTrue: [
 		^ #( 'repo' 'iceberg' 'git' 'head' 'adopt' ) ].
-	toolName = 'repository_load' ifTrue: [
+	toolName = 'baseline_load' ifTrue: [
 		^ #( 'baseline' 'metacello' 'load' 'package' ) ].
+	toolName = 'repository_load' ifTrue: [
+		^ #( 'repo' 'baseline' 'metacello' 'load' 'package' ) ].
 	toolName = 'package_search' ifTrue: [
 		^ #( 'package' 'project' 'tag' ) ].
 	toolName = 'class_search' ifTrue: [
@@ -111,7 +113,8 @@ MCPToolRegistry class >> additionalKeywordsForTool: aTool [
 		^ #( 'method' 'protocol' 'category' 'update' ) ].
 	toolName = 'method_rewrite' ifTrue: [
 		^ #( 'method' 'rewrite' 'preview' 'apply' 'ast' 'pattern' ) ].
-	toolName = 'test_run' ifTrue: [
+	toolName = 'test_run' ifTrue: [ ^ #( 'test' 'sunit' 'timeout' ) ].
+	toolName = 'test_coverage_run' ifTrue: [
 		^ #( 'test' 'sunit' 'coverage' 'timeout' ) ].
 	toolName = 'history_file_list' ifTrue: [
 		^ #( 'history' 'change' 'file' 'list' 'ombu' 'epicea' ) ].
@@ -261,8 +264,8 @@ MCPToolRegistry class >> mutabilityForTool: aTool [
 	                'debug_session_get' 'debug_candidate_search'
 	                'debug_state_get' 'debug_variable_get'
 	                'debug_breakpoint_list' ).
-	executeTools := #( 'tool_call' 'test_run' 'image_evaluate'
-	                   'debug_expression_evaluate'
+	executeTools := #( 'tool_call' 'test_run' 'test_coverage_run'
+	                   'image_evaluate' 'debug_expression_evaluate'
 	                   'debug_capture' 'debug_test_run' ).
 	(readTools includes: toolName) ifTrue: [ ^ 'read' ].
 	(executeTools includes: toolName) ifTrue: [ ^ 'execute' ].
@@ -341,7 +344,9 @@ MCPToolRegistry class >> publicToolGroups [
 			   MCPToolFindChangeHistoryEntries.
 			   MCPToolApplyChangeHistoryEntries.
 			   MCPToolRevertChangeHistoryEntries }).
-		  ('tests' -> { MCPToolRunTests }).
+		  ('tests' -> {
+			   MCPToolRunTests.
+			   MCPToolRunTestCoverage }).
 		  ('ui' -> { MCPToolCaptureScreenshot }).
 		  ('debugging' -> {
 			   MCPToolListDebugSessions.
@@ -409,7 +414,8 @@ MCPToolRegistry class >> riskForTool: aTool [
 	              'debug_state_get' 'debug_variable_get'
 	              'debug_breakpoint_list' ).
 	mediumRisk := #( 'tool_call' 'baseline_load' 'repository_load'
-	                 'test_run' 'image_evaluate' 'debug_expression_evaluate'
+	                 'test_run' 'test_coverage_run' 'image_evaluate'
+	                 'debug_expression_evaluate'
 	                 'debug_capture' 'debug_test_run' ).
 	(lowRisk includes: toolName) ifTrue: [ ^ 'low' ].
 	(mediumRisk includes: toolName) ifTrue: [ ^ 'medium' ].
@@ -484,7 +490,8 @@ MCPToolRegistry class >> staticToolClasses [
 		  MCPToolUpdateMethodSelector.
 		  MCPToolUpdateMethodProtocol.
 		  MCPToolEvaluate.
-		  MCPToolRunTests }
+		  MCPToolRunTests.
+		  MCPToolRunTestCoverage }
 ]
 
 { #category : 'tools' }

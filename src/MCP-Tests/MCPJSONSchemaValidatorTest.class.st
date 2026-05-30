@@ -217,6 +217,12 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 		put: { (#repositoryName -> 'MCP') } asDictionary;
 		at: MCPToolLoadBaseline
 		put: { (#baseline -> 'ExampleBaseline') } asDictionary;
+		at: MCPToolRunTestCoverage put: {
+				(#tests
+				 -> { { (#className -> 'MCPToolContractsTest') } asDictionary }).
+				(#coverage
+				 -> { (#classNames -> #( 'MCPToolContractsTest' )) } asDictionary) }
+				asDictionary;
 		at: MCPToolApplyChangeHistoryEntries
 		put: { (#latestCount -> 1) } asDictionary;
 		at: MCPToolRevertChangeHistoryEntries
@@ -332,10 +338,9 @@ MCPJSONSchemaValidatorTest >> testCurrentToolRequestValidationRejectsOperationSp
 		raise: MCPInvalidToolInput.
 	self
 		should: [
-				MCPToolRunTests new requestFromToolCallArguments: {
-						(#operation -> 'coverage').
-						(#tests
-						 -> { { (#className -> 'MCPToolContractsTest') } asDictionary }) }
+				MCPToolRunTestCoverage new requestFromToolCallArguments:
+					{ (#tests
+					 -> { { (#className -> 'MCPToolContractsTest') } asDictionary }) }
 						asDictionary ]
 		raise: MCPInvalidToolInput.
 	self
