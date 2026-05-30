@@ -25,6 +25,12 @@ MCPRepositoryCreateBranchRequest >> branchName [
 	^ branchName ifNil: [ '' ]
 ]
 
+{ #category : 'converting' }
+MCPRepositoryCreateBranchRequest >> commandForTool: aTool [
+
+	^ MCPCreateRepositoryBranchCommand tool: aTool request: self
+]
+
 { #category : 'initialization' }
 MCPRepositoryCreateBranchRequest >> initializeFromRequest: request [
 

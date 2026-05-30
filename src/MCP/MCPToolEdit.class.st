@@ -84,7 +84,7 @@ MCPToolEdit >> classesRefactoringEnvironmentForClassNames: classNames baseEnviro
 { #category : 'private - execution' }
 MCPToolEdit >> commandForRequest: editRequest [
 
-	^ MCPEditToolCommand tool: self request: editRequest
+	^ editRequest commandForTool: self
 ]
 
 { #category : 'private - errors' }
@@ -672,6 +672,22 @@ MCPToolEdit >> undeclaredVariableCauseMessageFor: anError [
 ]
 
 { #category : 'private - errors' }
+MCPToolEdit >> undeclaredVariableNameFor: anError [
+
+	| node notice |
+	node := self undeclaredVariableNodeFrom: anError.
+	(node notNil and: [ node respondsTo: #name ]) ifTrue: [
+		^ node name asString ].
+	notice := self undeclaredVariableNoticeFrom: anError.
+	notice ifNil: [ ^ nil ].
+	(notice respondsTo: #node) ifFalse: [ ^ nil ].
+	node := notice node.
+	node ifNil: [ ^ nil ].
+	(node respondsTo: #name) ifFalse: [ ^ nil ].
+	^ node name asString
+]
+
+{ #category : 'private - errors' }
 MCPToolEdit >> undeclaredVariableNodeFrom: anError [
 
 	^ PharoCompatibility undeclaredVariableNodeFromException: anError
@@ -690,22 +706,6 @@ MCPToolEdit >> undeclaredVariableNoticeFrom: anError [
 	^ nil
 ]
 
-{ #category : 'private - errors' }
-MCPToolEdit >> undeclaredVariableNameFor: anError [
-
-	| node notice |
-	node := self undeclaredVariableNodeFrom: anError.
-	(node notNil and: [ node respondsTo: #name ]) ifTrue: [
-		^ node name asString ].
-	notice := self undeclaredVariableNoticeFrom: anError.
-	notice ifNil: [ ^ nil ].
-	(notice respondsTo: #node) ifFalse: [ ^ nil ].
-	node := notice node.
-	node ifNil: [ ^ nil ].
-	(node respondsTo: #name) ifFalse: [ ^ nil ].
-	^ node name asString
-]
-
 { #category : 'private - refactoring' }
 MCPToolEdit >> unionRefactoringEnvironment: currentEnvironment with: addedEnvironment [
 
@@ -720,6 +720,16 @@ MCPToolEdit >> validateRefactoringScopePackageNamesExist: packageNames [
 	packageNames do: [ :eachName | MCPImageLookup packageNamed: eachName ]
 ]
 
+{ #category : 'validating' }
+MCPToolEdit >> validateRequest: request [
+
+	| operation |
+	operation := self operationFromRequest: request.
+	self
+		validateRequiredPropertiesForOperation: operation
+		inRequest: request
+]
+
 { #category : 'private - request' }
 MCPToolEdit >> validateRequiredPropertiesForOperation: operation inRequest: request [
 
@@ -731,14 +741,4 @@ MCPToolEdit >> validateRequiredPropertiesForOperation: operation inRequest: requ
 			MCPInvalidToolInput
 				signalMissingRequiredArgumentNamed: each
 				forTool: self ] ]
-]
-
-{ #category : 'validating' }
-MCPToolEdit >> validateRequest: request [
-
-	| operation |
-	operation := self operationFromRequest: request.
-	self
-		validateRequiredPropertiesForOperation: operation
-		inRequest: request
 ]

@@ -25,6 +25,12 @@ MCPRepositoryAdoptHeadRequest >> branchName [
 	^ branchName ifNil: [ '' ]
 ]
 
+{ #category : 'converting' }
+MCPRepositoryAdoptHeadRequest >> commandForTool: aTool [
+
+	^ MCPAdoptRepositoryHeadCommand tool: aTool request: self
+]
+
 { #category : 'initialization' }
 MCPRepositoryAdoptHeadRequest >> initializeFromRequest: request [
 

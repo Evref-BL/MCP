@@ -64,16 +64,6 @@ MCPToolEditMethod >> classReferenceNameFor: className classSide: classSide [
 		  ifFalse: [ className ]
 ]
 
-{ #category : 'private - execution' }
-MCPToolEditMethod >> commandForRequest: methodRequest [
-
-	(methodRequest isKindOf: MCPMethodCreateRequest) ifTrue: [
-		^ MCPCreateMethodCommand tool: self request: methodRequest ].
-	(methodRequest isKindOf: MCPMethodUpdateRequest) ifTrue: [
-		^ MCPUpdateMethodCommand tool: self request: methodRequest ].
-	^ super commandForRequest: methodRequest
-]
-
 { #category : 'private' }
 MCPToolEditMethod >> critiqueDataFor: aCritique [
 

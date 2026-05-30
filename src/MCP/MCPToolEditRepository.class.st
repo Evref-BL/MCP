@@ -27,38 +27,6 @@ MCPToolEditRepository class >> toolName [
 	^ 'repository_operation'
 ]
 
-{ #category : 'private - execution' }
-MCPToolEditRepository >> commandForRequest: editRequest [
-
-	(editRequest isKindOf: MCPRepositoryCreateRequest) ifTrue: [
-			(editRequest isKindOf: MCPRepositoryAttachRequest) ifTrue: [
-				^ MCPAttachRepositoryCommand tool: self request: editRequest ].
-			^ MCPCreateRepositoryCommand tool: self request: editRequest ].
-	(editRequest isKindOf: MCPRepositoryUpdateRequest) ifTrue: [
-		^ MCPUpdateRepositoryCommand tool: self request: editRequest ].
-	(editRequest isKindOf: MCPRepositoryVerifyIdentityRequest) ifTrue: [
-		^ MCPRepositoryVerifyIdentityCommand tool: self request: editRequest ].
-	(editRequest isKindOf: MCPRepositoryExportRequest) ifTrue: [
-		^ MCPExportRepositoryCommand tool: self request: editRequest ].
-	(editRequest isKindOf: MCPRepositoryDiffRequest) ifTrue: [
-		^ MCPRepositoryDiffCommand tool: self request: editRequest ].
-	(editRequest isKindOf: MCPRepositoryCommitRequest) ifTrue: [
-		^ MCPCommitRepositoryCommand tool: self request: editRequest ].
-	(editRequest isKindOf: MCPRepositoryAdoptHeadRequest) ifTrue: [
-		^ MCPAdoptRepositoryHeadCommand tool: self request: editRequest ].
-	(editRequest isKindOf: MCPRepositoryFetchRequest) ifTrue: [
-		^ MCPFetchRepositoryCommand tool: self request: editRequest ].
-	(editRequest isKindOf: MCPRepositoryPullRequest) ifTrue: [
-		^ MCPPullRepositoryCommand tool: self request: editRequest ].
-	(editRequest isKindOf: MCPRepositoryPushRequest) ifTrue: [
-		^ MCPPushRepositoryCommand tool: self request: editRequest ].
-	(editRequest isKindOf: MCPRepositoryCreateBranchRequest) ifTrue: [
-		^ MCPCreateRepositoryBranchCommand tool: self request: editRequest ].
-	(editRequest isKindOf: MCPRepositorySwitchBranchRequest) ifTrue: [
-		^ MCPSwitchRepositoryBranchCommand tool: self request: editRequest ].
-	^ super commandForRequest: editRequest
-]
-
 { #category : 'private - results' }
 MCPToolEditRepository >> dataForRepositoryAdoptHeadResult: aResult [
 

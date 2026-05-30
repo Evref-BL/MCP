@@ -18,6 +18,12 @@ MCPRepositoryPushRequest class >> fromRequest: request tool: aTool [
 	^ self new initializeFromRequest: request
 ]
 
+{ #category : 'converting' }
+MCPRepositoryPushRequest >> commandForTool: aTool [
+
+	^ MCPPushRepositoryCommand tool: aTool request: self
+]
+
 { #category : 'initialization' }
 MCPRepositoryPushRequest >> initializeFromRequest: request [
 

@@ -33,6 +33,12 @@ MCPRepositoryVerifyIdentityRequest >> branchName [
 	^ branchName ifNil: [ '' ]
 ]
 
+{ #category : 'converting' }
+MCPRepositoryVerifyIdentityRequest >> commandForTool: aTool [
+
+	^ MCPRepositoryVerifyIdentityCommand tool: aTool request: self
+]
+
 { #category : 'testing' }
 MCPRepositoryVerifyIdentityRequest >> hasExpectedIdentityFields [
 

@@ -32,6 +32,12 @@ MCPRepositoryUpdateRequest >> addPackageNames [
 ]
 
 { #category : 'converting' }
+MCPRepositoryUpdateRequest >> commandForTool: aTool [
+
+	^ MCPUpdateRepositoryCommand tool: aTool request: self
+]
+
+{ #category : 'converting' }
 MCPRepositoryUpdateRequest >> contextValueForPropertyNamed: propertyName [
 
 	propertyName = 'subdirectory' ifTrue: [ ^ self subdirectory ].

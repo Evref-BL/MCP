@@ -94,6 +94,12 @@ MCPClassUpdateRequest >> classTraits [
 ]
 
 { #category : 'converting' }
+MCPClassUpdateRequest >> commandForTool: aTool [
+
+	^ MCPUpdateClassCommand tool: aTool request: self
+]
+
+{ #category : 'converting' }
 MCPClassUpdateRequest >> contextValueForPropertyNamed: propertyName [
 
 	propertyName = 'newClassName' ifTrue: [ ^ self newClassName ].

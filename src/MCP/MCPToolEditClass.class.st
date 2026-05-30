@@ -64,16 +64,6 @@ MCPToolEditClass >> appliedChangeOutputSchemaProperty [
 	^ property
 ]
 
-{ #category : 'private - execution' }
-MCPToolEditClass >> commandForRequest: editRequest [
-
-	(editRequest isKindOf: MCPClassCreateRequest) ifTrue: [
-		^ MCPCreateClassToolCommand tool: self request: editRequest ].
-	(editRequest isKindOf: MCPClassUpdateRequest) ifTrue: [
-		^ MCPUpdateClassCommand tool: self request: editRequest ].
-	^ super commandForRequest: editRequest
-]
-
 { #category : 'private' }
 MCPToolEditClass >> dataForAppliedUpdateResult: anAppliedUpdateResult [
 

@@ -24,6 +24,12 @@ MCPEditToolRequest class >> fromRequest: aRequest tool: aTool [
 	^ self new initializeRawRequest: aRequest operation: operation
 ]
 
+{ #category : 'converting' }
+MCPEditToolRequest >> commandForTool: aTool [
+
+	^ MCPEditToolCommand tool: aTool request: self
+]
+
 { #category : 'initialization' }
 MCPEditToolRequest >> initializeRawRequest: aRequest operation: anOperation [
 

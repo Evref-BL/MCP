@@ -19,6 +19,12 @@ MCPRepositoryCommitRequest class >> fromRequest: request tool: aTool [
 	^ self new initializeFromRequest: request
 ]
 
+{ #category : 'converting' }
+MCPRepositoryCommitRequest >> commandForTool: aTool [
+
+	^ MCPCommitRepositoryCommand tool: aTool request: self
+]
+
 { #category : 'initialization' }
 MCPRepositoryCommitRequest >> initializeFromRequest: request [
 

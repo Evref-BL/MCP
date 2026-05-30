@@ -99,6 +99,12 @@ MCPMethodUpdateRequest >> classSide [
 ]
 
 { #category : 'converting' }
+MCPMethodUpdateRequest >> commandForTool: aTool [
+
+	^ MCPUpdateMethodCommand tool: aTool request: self
+]
+
+{ #category : 'converting' }
 MCPMethodUpdateRequest >> contextValueForPropertyNamed: propertyName [
 
 	propertyName = 'newSelector' ifTrue: [ ^ self newSelector ].

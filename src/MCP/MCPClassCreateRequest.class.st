@@ -76,6 +76,12 @@ MCPClassCreateRequest >> classTraits [
 	^ self classTraitNames
 ]
 
+{ #category : 'converting' }
+MCPClassCreateRequest >> commandForTool: aTool [
+
+	^ MCPCreateClassToolCommand tool: aTool request: self
+]
+
 { #category : 'accessing' }
 MCPClassCreateRequest >> force [
 

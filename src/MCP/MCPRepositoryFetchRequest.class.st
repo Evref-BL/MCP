@@ -18,6 +18,12 @@ MCPRepositoryFetchRequest class >> fromRequest: request tool: aTool [
 	^ self new initializeFromRequest: request
 ]
 
+{ #category : 'converting' }
+MCPRepositoryFetchRequest >> commandForTool: aTool [
+
+	^ MCPFetchRepositoryCommand tool: aTool request: self
+]
+
 { #category : 'initialization' }
 MCPRepositoryFetchRequest >> initializeFromRequest: request [
 

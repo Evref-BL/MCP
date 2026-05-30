@@ -18,6 +18,12 @@ MCPRepositoryPullRequest class >> fromRequest: request tool: aTool [
 	^ self new initializeFromRequest: request
 ]
 
+{ #category : 'converting' }
+MCPRepositoryPullRequest >> commandForTool: aTool [
+
+	^ MCPPullRepositoryCommand tool: aTool request: self
+]
+
 { #category : 'initialization' }
 MCPRepositoryPullRequest >> initializeFromRequest: request [
 

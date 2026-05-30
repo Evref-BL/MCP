@@ -11,6 +11,12 @@ Class {
 	#tag : 'Requests'
 }
 
+{ #category : 'converting' }
+MCPRepositoryAttachRequest >> commandForTool: aTool [
+
+	^ MCPAttachRepositoryCommand tool: aTool request: self
+]
+
 { #category : 'accessing' }
 MCPRepositoryAttachRequest >> operation [
 

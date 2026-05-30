@@ -18,6 +18,12 @@ MCPRepositoryExportRequest class >> fromRequest: request tool: aTool [
 	^ self new initializeFromRequest: request
 ]
 
+{ #category : 'converting' }
+MCPRepositoryExportRequest >> commandForTool: aTool [
+
+	^ MCPExportRepositoryCommand tool: aTool request: self
+]
+
 { #category : 'initialization' }
 MCPRepositoryExportRequest >> initializeFromRequest: request [
 

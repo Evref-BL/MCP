@@ -34,6 +34,12 @@ MCPMethodCreateRequest >> classSide [
 	^ classSide = true
 ]
 
+{ #category : 'converting' }
+MCPMethodCreateRequest >> commandForTool: aTool [
+
+	^ MCPCreateMethodCommand tool: aTool request: self
+]
+
 { #category : 'accessing' }
 MCPMethodCreateRequest >> force [
 
