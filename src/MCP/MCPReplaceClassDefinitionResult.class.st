@@ -1,5 +1,7 @@
 "
-Result DTO for replacing the slot shape of a class. It carries the class state after replacement and the old/new instance-side and class-side slot name lists for class_edit update output.
+Result DTO for replacing the slot shape of a class.
+
+It carries the class state after replacement and the old/new instance-side and class-side slot name lists for focused class update output.
 "
 Class {
 	#name : 'MCPReplaceClassDefinitionResult',

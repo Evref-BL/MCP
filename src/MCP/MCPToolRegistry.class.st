@@ -59,9 +59,37 @@ MCPToolRegistry class >> additionalKeywordsForTool: aTool [
 	toolName = 'class_get' ifTrue: [
 		^ #( 'class' 'inspect' 'superclass' 'subclass' 'slot' 'trait'
 		     'comment' ) ].
-	toolName = 'class_edit' ifTrue: [
-			^ #( 'class' 'create' 'update' 'rename' 'remove' 'superclass'
-			     'subclass' 'slot' 'trait' 'comment' ) ].
+	toolName = 'class_create' ifTrue: [
+		^ #( 'class' 'create' 'package' 'superclass' 'slot' 'trait' ) ].
+	toolName = 'class_name_update' ifTrue: [
+		^ #( 'class' 'name' 'rename' 'update' ) ].
+	toolName = 'class_superclass_update' ifTrue: [
+		^ #( 'class' 'superclass' 'parent' 'update' ) ].
+	toolName = 'class_package_update' ifTrue: [
+		^ #( 'class' 'package' 'tag' 'category' 'move' 'update' ) ].
+	toolName = 'class_comment_update' ifTrue: [
+		^ #( 'class' 'comment' 'update' ) ].
+	toolName = 'class_slots_update' ifTrue: [
+		^ #( 'class' 'slot' 'definition' 'update' ) ].
+	toolName = 'class_traits_update' ifTrue: [
+		^ #( 'class' 'trait' 'update' ) ].
+	toolName = 'class_side_traits_update' ifTrue: [
+		^ #( 'class' 'trait' 'side' 'update' ) ].
+	toolName = 'class_shared_variables_update' ifTrue: [
+		^ #( 'class' 'variable' 'shared' 'update' ) ].
+	toolName = 'class_shared_pools_update' ifTrue: [
+		^ #( 'class' 'pool' 'shared' 'update' ) ].
+	toolName = 'class_layout_update' ifTrue: [
+		^ #( 'class' 'layout' 'update' ) ].
+	toolName = 'class_slot_add' ifTrue: [ ^ #( 'class' 'slot' 'add' ) ].
+	toolName = 'class_slot_remove' ifTrue: [
+		^ #( 'class' 'slot' 'remove' ) ].
+	toolName = 'class_slot_name_update' ifTrue: [
+		^ #( 'class' 'slot' 'name' 'rename' 'update' ) ].
+	toolName = 'class_slot_pull_up' ifTrue: [
+		^ #( 'class' 'slot' 'pull' 'up' ) ].
+	toolName = 'class_slot_push_down' ifTrue: [
+		^ #( 'class' 'slot' 'push' 'down' ) ].
 	toolName = 'method_search' ifTrue: [
 			^ #( 'method' 'selector' 'protocol' 'source' 'implementor'
 			     'sender' 'reference' 'variable' ) ].
@@ -278,7 +306,22 @@ MCPToolRegistry class >> publicToolGroups [
 		  ('classes' -> {
 			   MCPToolFindClasses.
 			   MCPToolInspectClass.
-			   MCPToolEditClass.
+			   MCPToolCreateClass.
+			   MCPToolUpdateClassName.
+			   MCPToolUpdateClassSuperclass.
+			   MCPToolUpdateClassPackage.
+			   MCPToolUpdateClassComment.
+			   MCPToolUpdateClassSlots.
+			   MCPToolUpdateClassTraits.
+			   MCPToolUpdateClassSideTraits.
+			   MCPToolUpdateClassSharedVariables.
+			   MCPToolUpdateClassSharedPools.
+			   MCPToolUpdateClassLayout.
+			   MCPToolAddClassSlot.
+			   MCPToolRemoveClassSlot.
+			   MCPToolUpdateClassSlotName.
+			   MCPToolPullUpClassSlot.
+			   MCPToolPushDownClassSlot.
 			   MCPToolRemoveClasses }).
 		  ('methods' -> {
 			   MCPToolFindMethods.
@@ -414,7 +457,22 @@ MCPToolRegistry class >> staticToolClasses [
 		  MCPToolFindPackages.
 		  MCPToolFindClasses.
 		  MCPToolInspectClass.
-		  MCPToolEditClass.
+		  MCPToolCreateClass.
+		  MCPToolUpdateClassName.
+		  MCPToolUpdateClassSuperclass.
+		  MCPToolUpdateClassPackage.
+		  MCPToolUpdateClassComment.
+		  MCPToolUpdateClassSlots.
+		  MCPToolUpdateClassTraits.
+		  MCPToolUpdateClassSideTraits.
+		  MCPToolUpdateClassSharedVariables.
+		  MCPToolUpdateClassSharedPools.
+		  MCPToolUpdateClassLayout.
+		  MCPToolAddClassSlot.
+		  MCPToolRemoveClassSlot.
+		  MCPToolUpdateClassSlotName.
+		  MCPToolPullUpClassSlot.
+		  MCPToolPushDownClassSlot.
 		  MCPToolFindMethods.
 		  MCPToolFindMethodImplementors.
 		  MCPToolFindMethodSenders.

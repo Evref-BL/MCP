@@ -1,5 +1,7 @@
 "
-Result DTO for an class_edit update after the selected narrow command has run. It carries the update plan and the narrow command result, and converts them to the flattened tool data shape plus nested updatePlan and appliedChange details.
+Result DTO for a class update after the selected narrow command has run.
+
+It carries the update plan and the narrow command result, and converts them to the flattened tool data shape plus nested updatePlan and appliedChange details.
 "
 Class {
 	#name : 'MCPClassAppliedChangeResult',

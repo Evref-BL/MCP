@@ -1,5 +1,7 @@
 "
-Parsed class_edit create request. It captures the class definition supplied by the MCP transport request so MCPToolEditClass can execute creation without repeatedly reading raw argument dictionaries.
+Parsed class creation request.
+
+It captures the class definition supplied by the MCP transport request so the shared class tool implementation can execute creation without repeatedly reading raw argument dictionaries.
 "
 Class {
 	#name : 'MCPClassCreateRequest',

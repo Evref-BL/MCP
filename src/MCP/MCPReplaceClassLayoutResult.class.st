@@ -1,5 +1,7 @@
 "
-Result DTO for replacing the layout of a class. It carries the class state after replacement and the old/new layout class names for class_edit update output.
+Result DTO for replacing the layout of a class.
+
+It carries the class state after replacement and the old/new layout class names for focused class update output.
 "
 Class {
 	#name : 'MCPReplaceClassLayoutResult',

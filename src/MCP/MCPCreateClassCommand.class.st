@@ -1,5 +1,5 @@
 "
-Command that creates a class from a parsed class_edit request.
+Command that creates a class from a parsed class creation request.
 
 It owns the class-builder interaction for superclass, package, tag, slots, traits, shared variables, pools, and layout, then returns an MCPCreateClassResult.
 "

@@ -1,5 +1,7 @@
 "
-Tests the class_edit public contract. Create tests exercise operation=create requests. Update tests exercise operation=update patch requests and verify the structured result data produced by the internal narrow commands.
+Tests the shared class-edit implementation used by focused class mutation tools.
+
+Create tests exercise operation=create requests. Update tests exercise operation=update patch requests and verify the structured result data produced by the internal narrow commands.
 "
 Class {
 	#name : 'MCPToolEditClassTest',
@@ -21,6 +23,16 @@ MCPToolEditClassTest >> assertIncludesReferencedSlotWarning: warningMessages [
 	self assert: (warningMessages anySatisfy: [ :each |
 			 (each includesSubstring: 'referencedSlot') and: [
 				 each includesSubstring: 'referenced' ] ])
+]
+
+{ #category : 'private - calling' }
+MCPToolEditClassTest >> callToolWith: someArguments [
+
+	| request result tool |
+	tool := MCPToolEditClass new.
+	request := tool requestFromToolCallArguments: someArguments.
+	result := tool executeWithRequest: request.
+	^ result asJRPCJSON
 ]
 
 { #category : 'private' }
@@ -488,37 +500,44 @@ MCPToolEditClassTest >> testCreateSetsClassComment [
 ]
 
 { #category : 'tests - schema' }
-MCPToolEditClassTest >> testSchemaRequiresOperationAndClassName [
+MCPToolEditClassTest >> testFocusedClassSchemasUseOperationSpecificRequiredArguments [
 
-	| operationProperty propertyNames slotActionProperty |
-	propertyNames := MCPToolEditClass new inputSchema properties
-		                 collect: [ :each | each name ].
-	operationProperty := MCPToolEditClass new inputSchema properties
-		                     detect: [ :each | each name = 'operation' ].
-	slotActionProperty := MCPToolEditClass new inputSchema properties
-		                      detect: [ :each | each name = 'slotAction' ].
+	| createProperties packageProperties renameProperties slotProperties |
+	createProperties := MCPToolCreateClass new inputSchema properties
+		                    collect: [ :each | each name ].
+	renameProperties := MCPToolUpdateClassName new inputSchema properties
+		                    collect: [ :each | each name ].
+	packageProperties := MCPToolUpdateClassPackage new inputSchema
+		                     properties collect: [ :each | each name ].
+	slotProperties := MCPToolAddClassSlot new inputSchema properties
+		                  collect: [ :each | each name ].
 	self
-		assert: MCPToolEditClass new inputSchema required asSet
-		equals: #( 'operation' 'className' ) asSet.
-	self assert: (propertyNames includes: 'classComment').
-	self assert: (propertyNames includes: 'traits').
-	self assert: (propertyNames includes: 'classTraits').
-	self assert: (propertyNames includes: 'sharedVariables').
-	self assert: (propertyNames includes: 'sharedPools').
-	self assert: (propertyNames includes: 'layout').
-	self assert: (propertyNames includes: 'packageNames').
-	self assert: (propertyNames includes: 'classNames').
-	self assert: (propertyNames includes: 'hierarchyClassNames').
-	self assert: (propertyNames includes: 'slotAction').
-	self assert: (propertyNames includes: 'slotName').
-	self assert: (propertyNames includes: 'newSlotName').
-	self assert: (propertyNames includes: 'classSide').
+		assert: MCPToolCreateClass new inputSchema required asSet
+		equals: #( 'className' 'superclassName' 'packageName' ) asSet.
+	self deny: (createProperties includes: 'operation').
+	self assert: (createProperties includes: 'classComment').
+	self assert: (createProperties includes: 'traits').
+	self assert: (createProperties includes: 'classTraits').
+	self assert: (createProperties includes: 'sharedVariables').
+	self assert: (createProperties includes: 'sharedPools').
+	self assert: (createProperties includes: 'layout').
 	self
-		assert: (operationProperty extraProperties at: #enum) asArray
-		equals: #( 'create' 'update' ).
+		assert: MCPToolUpdateClassName new inputSchema required asSet
+		equals: #( 'className' 'newClassName' ) asSet.
+	self assert: (renameProperties includes: 'packageNames').
+	self assert: (renameProperties includes: 'classNames').
+	self assert: (renameProperties includes: 'hierarchyClassNames').
 	self
-		assert: (slotActionProperty extraProperties at: #enum) asArray
-		equals: #( 'add' 'remove' 'rename' 'pullUp' 'pushDown' )
+		assert: MCPToolUpdateClassPackage new inputSchema required asSet
+		equals: #( 'className' ) asSet.
+	self assert: (packageProperties includes: 'packageName').
+	self assert: (packageProperties includes: 'tag').
+	self
+		assert: MCPToolAddClassSlot new inputSchema required asSet
+		equals: #( 'className' 'slotName' ) asSet.
+	self assert: (slotProperties includes: 'classSide').
+	self deny: (slotProperties includes: 'operation').
+	self deny: (slotProperties includes: 'slotAction')
 ]
 
 { #category : 'tests - update' }
@@ -2143,7 +2162,7 @@ MCPToolEditClassTest >> testUpdateSetsClassComment [
 { #category : 'private - calling' }
 MCPToolEditClassTest >> toolName [
 
-	^ 'class_edit'
+	self shouldNotImplement
 ]
 
 { #category : 'private - update' }

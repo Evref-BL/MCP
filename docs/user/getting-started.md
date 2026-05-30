@@ -143,7 +143,13 @@ Useful first questions:
 Prefer dedicated tools over `image_evaluate`:
 
 ```text
-class_edit
+class_create
+class_name_update
+class_package_update
+class_comment_update
+class_slot_add
+class_slot_remove
+class_slot_name_update
 method_create
 method_selector_update
 method_protocol_update

@@ -110,7 +110,22 @@ their schemas before calling them.
 Then use dedicated operations before falling back to `image_evaluate`:
 
 ```text
-class_edit
+class_create
+class_name_update
+class_superclass_update
+class_package_update
+class_comment_update
+class_slots_update
+class_traits_update
+class_side_traits_update
+class_shared_variables_update
+class_shared_pools_update
+class_layout_update
+class_slot_add
+class_slot_remove
+class_slot_name_update
+class_slot_pull_up
+class_slot_push_down
 method_create
 method_selector_update
 method_protocol_update
@@ -136,7 +151,9 @@ Image-changing tools save the image after a successful mutation. Read-only tools
 
 The safer edit paths use Pharo facilities:
 
-- `class_edit` uses Refactoring Browser and Refactoring Engine operations for class renames, slot changes, moves, and removals where Pharo provides them.
+- Focused `class_*` mutation tools use Refactoring Browser and Refactoring
+  Engine operations for class renames, slot changes, moves, and removals where
+  Pharo provides them.
 - `method_selector_update` uses the Refactoring Engine for selector renames, argument additions/removals, and argument reordering.
 - `method_protocol_update` recategorizes existing methods into regular or extension protocols.
 - `force=false` stops on `RBRefactoringWarning` and returns `impactMessages`, `howToProceed`, and `forceSupported=true`. Rerun with `force=true` only after reviewing the impact.

@@ -67,12 +67,27 @@ Identity verification requires at least one expected identity field, such as
 | --- | --- |
 | `class_search` | List classes and filter by class metadata, package, hierarchy, scope, and `where` predicates. |
 | `class_get` | Get one class by name and return structured class metadata with optional superclass and subclass context. |
-| `class_edit` | Create classes and apply one class update action at a time: rename, move, recategorize, reparent, edit comment, replace slots, replace traits, replace shared variables, replace shared pools, replace layout, or perform slot actions. |
+| `class_create` | Create one class definition. |
+| `class_name_update` | Rename one class through the Refactoring Engine. |
+| `class_superclass_update` | Change one class superclass. |
+| `class_package_update` | Move one class to a package and/or recategorize it under a package tag. |
+| `class_comment_update` | Set or clear one class comment. |
+| `class_slots_update` | Replace instance-side and/or class-side slot definitions. |
+| `class_traits_update` | Replace instance-side trait composition. |
+| `class_side_traits_update` | Replace class-side trait composition. |
+| `class_shared_variables_update` | Replace class variables. |
+| `class_shared_pools_update` | Replace shared pools. |
+| `class_layout_update` | Replace the layout class. |
+| `class_slot_add` | Add one instance-side or class-side slot. |
+| `class_slot_remove` | Remove one instance-side or class-side slot. |
+| `class_slot_name_update` | Rename one instance-side or class-side slot. |
+| `class_slot_pull_up` | Pull one instance-side or class-side slot up to a superclass. |
+| `class_slot_push_down` | Push one instance-side or class-side slot down to subclasses. |
 | `class_remove` | Remove classes as one batch. Refactoring warnings stop removal unless `force=true`. |
 
-`class_edit` and `class_remove` use Pharo refactoring support where available.
-With `force=false`, refactoring warnings return impact details instead of
-continuing.
+Focused class mutation tools and `class_remove` use Pharo refactoring support
+where available. With `force=false`, refactoring warnings return impact details
+instead of continuing.
 
 ## Methods
 
@@ -176,7 +191,13 @@ the image after a successful call.
 Tools that can save after success include:
 
 ```text
-class_edit
+class_create
+class_name_update
+class_package_update
+class_comment_update
+class_slot_add
+class_slot_remove
+class_slot_name_update
 method_create
 method_selector_update
 method_protocol_update

@@ -1,5 +1,5 @@
 "
-Edits class structure and metadata in the running image. Use it for class-level changes such as creation, moves, renames, reparenting, slot additions, removals, renames, pull-ups, push-downs, trait and layout replacement, shared variable and shared pool replacement, and comment updates.
+Shared implementation for focused class editing tools. It parses create/update class requests, dispatches class create/update commands, and returns structured class edit results.
 "
 Class {
 	#name : 'MCPToolEditClass',
@@ -11,6 +11,12 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'testing' }
+MCPToolEditClass class >> isAbstract [
+
+	^ self = MCPToolEditClass
+]
+
 { #category : 'icons' }
 MCPToolEditClass class >> toolIconSpec [
 
@@ -20,7 +26,7 @@ MCPToolEditClass class >> toolIconSpec [
 { #category : 'defaults' }
 MCPToolEditClass class >> toolName [
 
-	^ 'class_edit'
+	^ 'class_operation'
 ]
 
 { #category : 'private - schema' }
@@ -225,7 +231,7 @@ MCPToolEditClass >> defaultOutputSchema [
 					   schemaPropertyNamed: 'operation'
 					   type: 'string'
 					   description:
-					   'The public class edit operation that was performed: create or update.').
+					   'The class edit operation that was performed: create or update.').
 				  (self
 					   schemaPropertyNamed: 'updateAction'
 					   type: 'string'
