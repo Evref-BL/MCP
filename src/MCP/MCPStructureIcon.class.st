@@ -55,16 +55,13 @@ MCPStructureIcon class >> compositeFormBaseIconNamed: aBaseIconSymbol badgeIconN
 { #category : 'instance creation' }
 MCPStructureIcon class >> highScaleFormNamed: anIconSymbol [
 
-	| scaledIcons resolvedIconSymbol |
+	| scaledIcons |
 	scaledIcons := Smalltalk ui icons iconsPerScale
 		               at: 2.0
 		               ifAbsent: [
 		               self error: 'Missing precomputed scale 2.0 icons.' ].
-	resolvedIconSymbol := self
-		                      resolvedIconNameFor: anIconSymbol
-		                      in: scaledIcons.
 	^ scaledIcons
-		  at: resolvedIconSymbol
+		  at: anIconSymbol
 		  ifAbsent: [
 		  self error: 'Missing UI icon named ' , anIconSymbol asString ]
 ]
@@ -134,16 +131,6 @@ MCPStructureIcon class >> resetCaches [
 
 	iconCache := nil.
 	toolIconCache := nil
-]
-
-{ #category : 'instance creation' }
-MCPStructureIcon class >> resolvedIconNameFor: anIconSymbol in: scaledIcons [
-
-	(scaledIcons includesKey: anIconSymbol) ifTrue: [ ^ anIconSymbol ].
-	anIconSymbol = #instVarSelected ifTrue: [
-			(scaledIcons includesKey: #instVarsSelected) ifTrue: [
-				^ #instVarsSelected ] ].
-	^ anIconSymbol
 ]
 
 { #category : 'cache' }
