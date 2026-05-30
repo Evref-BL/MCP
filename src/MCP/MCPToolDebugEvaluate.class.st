@@ -5,7 +5,7 @@ The tool is intentionally scoped to a registered session and frame reference so 
 "
 Class {
 	#name : 'MCPToolDebugEvaluate',
-	#superclass : 'MCPTool',
+	#superclass : 'MCPToolDebug',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -144,32 +144,6 @@ MCPToolDebugEvaluate >> defaultOutputSchema [
 MCPToolDebugEvaluate >> defaultTitle [
 
 	^ 'Debug Evaluate'
-]
-
-{ #category : 'executing' }
-MCPToolDebugEvaluate >> executeWithRequest: request [
-
-	^ self
-		  executeParsedRequestFrom: request
-		  do: [ :debugRequest |
-				  | commandResult |
-				  commandResult := (self commandForRequest: debugRequest) execute.
-				  commandResult isError
-					  ifTrue: [
-							  self
-								  errorResultText: commandResult summary
-								  details: commandResult errorDetails ]
-					  ifFalse: [
-							  self
-								  successResultText: commandResult summary
-								  data: commandResult data
-								  warnings: commandResult warnings ] ]
-		  onError: [ :error :ignored |
-				  self
-					  errorResultText: (error messageText ifNil: [ error asString ])
-					  details: ((error isKindOf: MCPCommandError)
-							   ifTrue: [ error structuredDetails ]
-							   ifFalse: [ self errorDetailsFor: error ]) ]
 ]
 
 { #category : 'private - request' }

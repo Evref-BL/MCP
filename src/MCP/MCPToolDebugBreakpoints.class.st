@@ -5,7 +5,7 @@ It exposes method-entry and source-interval AST breakpoints for agent debugging,
 "
 Class {
 	#name : 'MCPToolDebugBreakpoints',
-	#superclass : 'MCPTool',
+	#superclass : 'MCPToolDebug',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -166,32 +166,6 @@ MCPToolDebugBreakpoints >> defaultOutputSchema [
 MCPToolDebugBreakpoints >> defaultTitle [
 
 	^ 'Debug Breakpoints'
-]
-
-{ #category : 'executing' }
-MCPToolDebugBreakpoints >> executeWithRequest: request [
-
-	^ self
-		  executeParsedRequestFrom: request
-		  do: [ :debugRequest |
-				  | commandResult |
-				  commandResult := (self commandForRequest: debugRequest) execute.
-				  commandResult isError
-					  ifTrue: [
-							  self
-								  errorResultText: commandResult summary
-								  details: commandResult errorDetails ]
-					  ifFalse: [
-							  self
-								  successResultText: commandResult summary
-								  data: commandResult data
-								  warnings: commandResult warnings ] ]
-		  onError: [ :error :ignored |
-				  self
-					  errorResultText: (error messageText ifNil: [ error asString ])
-					  details: ((error isKindOf: MCPCommandError)
-							   ifTrue: [ error structuredDetails ]
-							   ifFalse: [ self errorDetailsFor: error ]) ]
 ]
 
 { #category : 'private - request' }

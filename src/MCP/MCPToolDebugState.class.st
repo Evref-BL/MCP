@@ -5,7 +5,7 @@ It is the primary read tool for debugger sessions, returning stack, selected sou
 "
 Class {
 	#name : 'MCPToolDebugState',
-	#superclass : 'MCPTool',
+	#superclass : 'MCPToolDebug',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -178,32 +178,6 @@ MCPToolDebugState >> defaultOutputSchema [
 MCPToolDebugState >> defaultTitle [
 
 	^ 'Get Debug State'
-]
-
-{ #category : 'executing' }
-MCPToolDebugState >> executeWithRequest: request [
-
-	^ self
-		  executeParsedRequestFrom: request
-		  do: [ :debugRequest |
-				  | commandResult |
-				  commandResult := (self commandForRequest: debugRequest) execute.
-				  commandResult isError
-					  ifTrue: [
-							  self
-								  errorResultText: commandResult summary
-								  details: commandResult errorDetails ]
-					  ifFalse: [
-							  self
-								  successResultText: commandResult summary
-								  data: commandResult data
-								  warnings: commandResult warnings ] ]
-		  onError: [ :error :ignored |
-				  self
-					  errorResultText: (error messageText ifNil: [ error asString ])
-					  details: ((error isKindOf: MCPCommandError)
-							   ifTrue: [ error structuredDetails ]
-							   ifFalse: [ self errorDetailsFor: error ]) ]
 ]
 
 { #category : 'private - request' }

@@ -5,7 +5,7 @@ It mirrors the Pharo browser's Debug tests and Debug test setup workflows, with 
 "
 Class {
 	#name : 'MCPToolDebugTest',
-	#superclass : 'MCPTool',
+	#superclass : 'MCPToolDebug',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -180,32 +180,6 @@ MCPToolDebugTest >> defaultOutputSchema [
 MCPToolDebugTest >> defaultTitle [
 
 	^ 'Debug Test'
-]
-
-{ #category : 'executing' }
-MCPToolDebugTest >> executeWithRequest: request [
-
-	^ self
-		  executeParsedRequestFrom: request
-		  do: [ :debugRequest |
-				  | commandResult |
-				  commandResult := (self commandForRequest: debugRequest) execute.
-				  commandResult isError
-					  ifTrue: [
-							  self
-								  errorResultText: commandResult summary
-								  details: commandResult errorDetails ]
-					  ifFalse: [
-							  self
-								  successResultText: commandResult summary
-								  data: commandResult data
-								  warnings: commandResult warnings ] ]
-		  onError: [ :error :ignored |
-				  self
-					  errorResultText: (error messageText ifNil: [ error asString ])
-					  details: ((error isKindOf: MCPCommandError)
-							   ifTrue: [ error structuredDetails ]
-							   ifFalse: [ self errorDetailsFor: error ]) ]
 ]
 
 { #category : 'private - request' }

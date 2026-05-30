@@ -5,7 +5,7 @@ It creates missing methods or recompiles the selected frame method, reports crit
 "
 Class {
 	#name : 'MCPToolDebugEdit',
-	#superclass : 'MCPTool',
+	#superclass : 'MCPToolDebug',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -208,32 +208,6 @@ MCPToolDebugEdit >> defaultTitle [
 MCPToolDebugEdit >> editWarnings [
 
 	^ #( 'debug_method_repair compiles Smalltalk code in the running image and may mutate or resume a suspended debug process.' )
-]
-
-{ #category : 'executing' }
-MCPToolDebugEdit >> executeWithRequest: request [
-
-	^ self
-		  executeParsedRequestFrom: request
-		  do: [ :debugRequest |
-				  | commandResult |
-				  commandResult := (self commandForRequest: debugRequest) execute.
-				  commandResult isError
-					  ifTrue: [
-							  self
-								  errorResultText: commandResult summary
-								  details: commandResult errorDetails ]
-					  ifFalse: [
-							  self
-								  successResultText: commandResult summary
-								  data: commandResult data
-								  warnings: commandResult warnings ] ]
-		  onError: [ :error :ignored |
-				  self
-					  errorResultText: (error messageText ifNil: [ error asString ])
-					  details: ((error isKindOf: MCPCommandError)
-							   ifTrue: [ error structuredDetails ]
-							   ifFalse: [ self errorDetailsFor: error ]) ]
 ]
 
 { #category : 'private - request' }
