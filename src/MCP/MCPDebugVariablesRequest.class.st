@@ -86,6 +86,15 @@ MCPDebugVariablesRequest >> includeInstanceVariables: aBoolean [
 ]
 
 { #category : 'accessing' }
+MCPDebugVariablesRequest >> requestedStateId [
+
+	^ super requestedStateId ifNil: [
+			  self variableRef
+				  ifNil: [ nil ]
+				  ifNotNil: [ :reference | self stateIdFromReference: reference ] ]
+]
+
+{ #category : 'accessing' }
 MCPDebugVariablesRequest >> variableRef [
 
 	^ variableRef

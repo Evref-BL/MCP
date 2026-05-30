@@ -61,13 +61,7 @@ MCPDebugCommand >> request [
 { #category : 'private' }
 MCPDebugCommand >> requestedStateId [
 
-	request stateId ifNotNil: [ ^ request stateId ].
-	request frameRef ifNotNil: [
-		^ self stateIdFromReference: request frameRef ].
-	(request isKindOf: MCPDebugVariablesRequest) ifTrue: [
-			request variableRef ifNotNil: [
-				^ self stateIdFromReference: request variableRef ] ].
-	^ nil
+	^ request requestedStateId
 ]
 
 { #category : 'private' }
@@ -145,15 +139,6 @@ MCPDebugCommand >> signalUnsupportedOperation: operationName [
 		  message:
 		  'Unsupported debug operation: ' , operationName asString , '.'
 		  details: { (#operation -> operationName) } asDictionary
-]
-
-{ #category : 'private' }
-MCPDebugCommand >> stateIdFromReference: aReferenceString [
-
-	| tokens |
-	tokens := aReferenceString findTokens: '/'.
-	tokens size >= 2 ifFalse: [ ^ nil ].
-	^ tokens second
 ]
 
 { #category : 'accessing' }
