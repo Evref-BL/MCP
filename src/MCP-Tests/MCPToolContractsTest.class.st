@@ -246,6 +246,23 @@ MCPToolContractsTest >> firstTextFromToolResult: aResult [
 ]
 
 { #category : 'private' }
+MCPToolContractsTest >> focusedChangeHistoryToolFlowSpecs [
+
+	^ {
+		  {
+			  (#toolClass -> MCPToolFindChangeHistoryFiles).
+			  (#arguments -> { (#includeEntryCounts -> false) } asDictionary).
+			  (#requestClass -> MCPChangeHistoryListLogsRequest).
+			  (#commandClass -> MCPListChangeHistoryLogsCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolFindChangeHistoryEntries).
+			  (#arguments -> { (#limit -> 1) } asDictionary).
+			  (#requestClass -> MCPChangeHistoryListEntriesRequest).
+			  (#commandClass -> MCPListChangeHistoryEntriesCommand) }
+			  asDictionary }
+]
+
+{ #category : 'private' }
 MCPToolContractsTest >> focusedMethodLookupToolFlowSpecs [
 
 	^ {
@@ -269,6 +286,73 @@ MCPToolContractsTest >> focusedMethodLookupToolFlowSpecs [
 			  (#arguments -> { (#variableName -> 'instVarNamed') } asDictionary).
 			  (#requestClass -> MCPFindMethodsRequest).
 			  (#commandClass -> MCPQueryToolCommand) } asDictionary }
+]
+
+{ #category : 'private' }
+MCPToolContractsTest >> focusedRepositoryToolFlowSpecs [
+
+	^ {
+		  {
+			  (#toolClass -> MCPToolVerifyRepositoryIdentity).
+			  (#arguments -> {
+				   (#repositoryName -> 'MCP').
+				   (#branchName -> 'main') } asDictionary).
+			  (#requestClass -> MCPRepositoryVerifyIdentityRequest).
+			  (#commandClass -> MCPRepositoryVerifyIdentityCommand) }
+			  asDictionary.
+		  {
+			  (#toolClass -> MCPToolFindRepositoryChanges).
+			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
+			  (#requestClass -> MCPRepositoryDiffRequest).
+			  (#commandClass -> MCPRepositoryDiffCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolExportRepository).
+			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
+			  (#requestClass -> MCPRepositoryExportRequest).
+			  (#commandClass -> MCPExportRepositoryCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolCommitRepository).
+			  (#arguments -> {
+				   (#repositoryName -> 'MCP').
+				   (#message -> 'Commit from test') } asDictionary).
+			  (#requestClass -> MCPRepositoryCommitRequest).
+			  (#commandClass -> MCPCommitRepositoryCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolFetchRepository).
+			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
+			  (#requestClass -> MCPRepositoryFetchRequest).
+			  (#commandClass -> MCPFetchRepositoryCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolPullRepository).
+			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
+			  (#requestClass -> MCPRepositoryPullRequest).
+			  (#commandClass -> MCPPullRepositoryCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolPushRepository).
+			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
+			  (#requestClass -> MCPRepositoryPushRequest).
+			  (#commandClass -> MCPPushRepositoryCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolCreateRepositoryBranch).
+			  (#arguments -> {
+				   (#repositoryName -> 'MCP').
+				   (#branchName -> 'feature') } asDictionary).
+			  (#requestClass -> MCPRepositoryCreateBranchRequest).
+			  (#commandClass -> MCPCreateRepositoryBranchCommand) }
+			  asDictionary.
+		  {
+			  (#toolClass -> MCPToolSwitchRepositoryBranch).
+			  (#arguments -> {
+				   (#repositoryName -> 'MCP').
+				   (#branchName -> 'main') } asDictionary).
+			  (#requestClass -> MCPRepositorySwitchBranchRequest).
+			  (#commandClass -> MCPSwitchRepositoryBranchCommand) }
+			  asDictionary.
+		  {
+			  (#toolClass -> MCPToolAdoptRepositoryHead).
+			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
+			  (#requestClass -> MCPRepositoryAdoptHeadRequest).
+			  (#commandClass -> MCPAdoptRepositoryHeadCommand) } asDictionary }
 ]
 
 { #category : 'private' }
@@ -383,7 +467,17 @@ MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 			MCPToolInspectTool.
 			MCPToolCallTool.
 			MCPToolFindRepositories.
+			MCPToolVerifyRepositoryIdentity.
+			MCPToolFindRepositoryChanges.
 			MCPToolEditRepository.
+			MCPToolExportRepository.
+			MCPToolCommitRepository.
+			MCPToolFetchRepository.
+			MCPToolPullRepository.
+			MCPToolPushRepository.
+			MCPToolCreateRepositoryBranch.
+			MCPToolSwitchRepositoryBranch.
+			MCPToolAdoptRepositoryHead.
 			MCPToolLoadRepository.
 			MCPToolFindPackages.
 			MCPToolFindClasses.
@@ -399,6 +493,8 @@ MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 			MCPToolEditMethod.
 			MCPToolRewriteMethods.
 			MCPToolRemoveMethods.
+			MCPToolFindChangeHistoryFiles.
+			MCPToolFindChangeHistoryEntries.
 			MCPToolManageChangeHistory.
 			MCPToolRunTests.
 			MCPToolCaptureScreenshot.
@@ -609,8 +705,11 @@ MCPToolContractsTest >> testDiscoverToolsMatchesAgentGuidanceKeywords [
 	| expectations |
 	expectations := {
 		                ('repo' -> 'find-repositories').
+		                ('identity' -> 'verify-repository-identity').
+		                ('diff' -> 'find-repository-changes').
 		                ('SUnit' -> 'run-tests').
-		                ('browse' -> 'manage-change-history').
+		                ('file' -> 'find-change-history-files').
+		                ('entry' -> 'find-change-history-entries').
 		                ('recover' -> 'manage-change-history').
 		                ('window' -> 'capture-screenshot').
 		                ('display' -> 'capture-screenshot').
@@ -2151,12 +2250,15 @@ MCPToolContractsTest >> testRPCAdvertisesStaticToolSurfaceOnly [
 	self assert: (toolNames includes: 'edit-method').
 	self assert: (toolNames includes: 'evaluate').
 	self assert: (toolNames includes: 'run-tests').
-	self deny: (toolNames includes: 'find-repositories').
-	self deny: (toolNames includes: 'edit-repository').
-	self deny: (toolNames includes: 'manage-change-history').
-	self deny: (toolNames includes: 'capture-screenshot').
-	self deny: (toolNames includes: 'debug-state').
-	self deny: (toolNames includes: 'debug-capture')
+	#( 'find-repositories' 'verify-repository-identity'
+	   'find-repository-changes' 'edit-repository' 'export-repository'
+	   'commit-repository' 'fetch-repository' 'pull-repository'
+	   'push-repository' 'create-repository-branch'
+	   'switch-repository-branch' 'adopt-repository-head'
+	   'find-change-history-files' 'find-change-history-entries'
+	   'manage-change-history' 'capture-screenshot' 'debug-state'
+	   'debug-capture' ) do: [ :each |
+		self deny: (toolNames includes: each) ]
 ]
 
 { #category : 'tests' }
@@ -2593,6 +2695,38 @@ MCPToolContractsTest >> testToolRegistryNamesUseClassSideMetadata [
 	self assert: MCPToolRegistry publicToolNames equals: names.
 	self assert: MCPToolFindClasses toolName equals: 'find-classes'.
 	self assert: MCPToolRunTests toolName equals: 'run-tests'.
+	self
+		assert: MCPToolVerifyRepositoryIdentity toolName
+		equals: 'verify-repository-identity'.
+	self
+		assert: MCPToolFindRepositoryChanges toolName
+		equals: 'find-repository-changes'.
+	self
+		assert: MCPToolExportRepository toolName
+		equals: 'export-repository'.
+	self
+		assert: MCPToolCommitRepository toolName
+		equals: 'commit-repository'.
+	self
+		assert: MCPToolFetchRepository toolName
+		equals: 'fetch-repository'.
+	self assert: MCPToolPullRepository toolName equals: 'pull-repository'.
+	self assert: MCPToolPushRepository toolName equals: 'push-repository'.
+	self
+		assert: MCPToolCreateRepositoryBranch toolName
+		equals: 'create-repository-branch'.
+	self
+		assert: MCPToolSwitchRepositoryBranch toolName
+		equals: 'switch-repository-branch'.
+	self
+		assert: MCPToolAdoptRepositoryHead toolName
+		equals: 'adopt-repository-head'.
+	self
+		assert: MCPToolFindChangeHistoryFiles toolName
+		equals: 'find-change-history-files'.
+	self
+		assert: MCPToolFindChangeHistoryEntries toolName
+		equals: 'find-change-history-entries'.
 	self assert: MCPToolDebugState toolName equals: 'debug-state'.
 	self assert: MCPToolDebugCapture toolName equals: 'debug-capture'.
 	self assert: MCPToolDebugEdit toolName equals: 'debug-edit'
@@ -2604,6 +2738,8 @@ MCPToolContractsTest >> toolFlowSpecs [
 	| specs |
 	specs := OrderedCollection withAll: self baseToolFlowSpecs.
 	specs addAll: self focusedMethodLookupToolFlowSpecs.
+	specs addAll: self focusedChangeHistoryToolFlowSpecs.
+	specs addAll: self focusedRepositoryToolFlowSpecs.
 	specs add: self debugTestToolFlowSpec.
 	^ specs asArray
 ]

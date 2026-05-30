@@ -87,10 +87,11 @@ Start with:
 
 ```text
 find-repositories
-edit-repository operation=diff
+verify-repository-identity
+find-repository-changes
 ```
 
-Use `operation=export` only when you mean to write image changes to files.
+Use `export-repository` only when you mean to write image changes to files.
 Export updates the Iceberg index but does not stage or commit Git changes.
 
 ## Tests Do Not Prove The Edited Scope
@@ -106,8 +107,9 @@ Coverage scopes should be narrow: package, class, hierarchy, or method names.
 Image-changing tools save the image after successful mutation. If you are using
 an automation or agent, run it against a copied or disposable image.
 
-Use `manage-change-history` to inspect Epicea history entries. Apply or revert
-operations can be previewed first and performed with `confirm=true`.
+Use `find-change-history-files` and `find-change-history-entries` to inspect
+Epicea history. Apply or revert operations stay in `manage-change-history`,
+where they can be previewed first and performed with `confirm=true`.
 
 ## Debugger References Are Stale
 

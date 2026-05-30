@@ -24,7 +24,7 @@ Use single search terms like:
 - method, selector, protocol, source, implementor, sender, reference, variable
 - edit, create, update, rename, remove, rewrite, preview, apply
 - test, SUnit, coverage, timeout
-- history, change, entry, browse, list, apply, revert, recover
+- history, change, file, entry, browse, list, apply, revert, recover
 - screenshot, window, display
 - debug, session, state, variable, breakpoint, capture, control, repair
 - evaluate, expression
@@ -36,6 +36,21 @@ Use `find-method-implementors`, `find-method-senders`,
 equivalent-AST matching. If the focused lookup tools are not available, use the
 compatible `find-methods` modes for implementors, senders, class references,
 and variable references.
+
+For change history, use `find-change-history-files` to locate `.ombu` files
+and `find-change-history-entries` to browse entries. Use
+`manage-change-history` only when you need apply/revert preview or confirmed
+recovery.
+
+For repository work, use `find-repositories` to inspect registered Iceberg
+repositories, `verify-repository-identity` before changing repository state,
+and `find-repository-changes` before exporting or committing image changes.
+Prefer focused repository tools such as `export-repository`,
+`commit-repository`, `fetch-repository`, `pull-repository`, `push-repository`,
+`create-repository-branch`, `switch-repository-branch`, and
+`adopt-repository-head` when available. Use `edit-repository` for create,
+attach, update, or compatibility with clients that do not expose the focused
+tools yet.
 
 Use `evaluate` only for short one-off inspection or glue code when no dedicated
 `pharo` tool fits.

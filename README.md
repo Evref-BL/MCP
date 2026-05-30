@@ -98,6 +98,10 @@ find-variable-references
 inspect-class
 inspect-method
 find-repositories
+verify-repository-identity
+find-repository-changes
+find-change-history-files
+find-change-history-entries
 ```
 
 Use `discover-tools` with `group=debugging` to find debugger tools and inspect
@@ -111,6 +115,8 @@ edit-method
 rewrite-methods
 run-tests
 edit-repository
+export-repository
+commit-repository
 manage-change-history
 capture-screenshot
 ```
@@ -130,8 +136,13 @@ The safer edit paths use Pharo facilities:
 - `edit-method` returns selected Renraku critiques after method compilation, including error-severity critiques and selected non-error rules.
 - `rewrite-methods` previews AST rewrite changes first and returns a `changeSetHash`; applying the rewrite requires `expectedChangeSetHash`.
 - `run-tests` uses SUnit and can collect CoverageCollector method and node coverage for an explicit method scope.
-- `edit-repository` works through Iceberg. Use `verifyIdentity` to assert repository identity before edits or exports, and `diff` to inspect image-side repository changes before exporting, committing, pulling, or pushing.
-- `manage-change-history` previews Epicea apply/revert operations and performs them only with `confirm=true`.
+- Repository tools work through Iceberg. Use `verify-repository-identity` to
+  assert repository identity before edits or exports, and
+  `find-repository-changes` to inspect image-side changes before exporting,
+  committing, pulling, or pushing. Prefer focused repository tools when they
+  exist; keep `edit-repository` for create, attach, update, and compatibility
+  workflows.
+- Use `find-change-history-files` and `find-change-history-entries` to browse Epicea history. `manage-change-history` previews apply/revert operations and performs them only with `confirm=true`.
 
 This does not remove the normal responsibility of working in a safe image. Use disposable or copied images for automation and risky edits.
 

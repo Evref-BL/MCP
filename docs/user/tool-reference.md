@@ -33,13 +33,22 @@ schema before invoking a discoverable tool.
 | Tool | Use |
 | --- | --- |
 | `find-repositories` | List Iceberg repositories registered in the image, including location, branch/head metadata, exact head commit id, modified packages, remotes, and upstream details. |
-| `edit-repository` | Create, update, verifyIdentity, diff, export, commit, fetch, pull, push, create branches, or switch branches through Iceberg. |
+| `verify-repository-identity` | Assert expected Iceberg repository identity fields before edits, exports, commits, pulls, or pushes. |
+| `find-repository-changes` | Inspect Iceberg `workingCopyDiff` without writing files. |
+| `edit-repository` | Create, attach, update, or use the legacy broad repository operation surface through Iceberg. |
+| `export-repository` | Export image-side package changes to Tonel files and update the Iceberg index without staging or committing Git changes. |
+| `commit-repository` | Commit Iceberg repository changes with a message. |
+| `fetch-repository` | Fetch repository remotes through Iceberg. |
+| `pull-repository` | Pull through Iceberg. |
+| `push-repository` | Push through Iceberg. |
+| `create-repository-branch` | Create and switch to a new repository branch through Iceberg. |
+| `switch-repository-branch` | Switch to an existing repository branch through Iceberg. |
+| `adopt-repository-head` | Adopt the current repository head as the Iceberg working-copy reference after verifying the image and Git state. |
 | `load-repository` | Load a Metacello baseline from a remote repository or an already-known baseline. |
 
-Use `edit-repository` with `operation=verifyIdentity` to assert repository identity
-before edits or exports, and `operation=diff` before exporting or committing
-image changes.
-`verifyIdentity` requires at least one expected identity field, such as
+Use `verify-repository-identity` before edits or exports, and
+`find-repository-changes` before exporting or committing image changes.
+Identity verification requires at least one expected identity field, such as
 `location`, `branchName`, `subdirectory`, `packageNames`,
 `modifiedPackageNames`, or `isModified`.
 
@@ -93,7 +102,12 @@ they are relevant to review.
 
 | Tool | Use |
 | --- | --- |
-| `manage-change-history` | List Epicea `.ombu` files and entries, preview applying or reverting selected entries, and perform the selected action with `confirm=true`. |
+| `find-change-history-files` | List Epicea `.ombu` change-history files, including the current history file. |
+| `find-change-history-entries` | List entries from the current image change history or a selected `.ombu` file. |
+| `manage-change-history` | Preview applying or reverting selected entries, and perform the selected action with `confirm=true`. |
+
+Prefer the focused read-only tools when browsing history. Use
+`manage-change-history` when you need apply/revert preview or confirmation.
 
 ## Tests
 
@@ -144,6 +158,14 @@ Tools that can save after success include:
 edit-class
 edit-method
 edit-repository
+export-repository
+commit-repository
+fetch-repository
+pull-repository
+push-repository
+create-repository-branch
+switch-repository-branch
+adopt-repository-head
 load-repository
 remove-classes
 remove-methods
@@ -155,7 +177,7 @@ debug-edit when a method is accepted
 evaluate
 ```
 
-`edit-repository` does not save for `operation=verifyIdentity` or `operation=diff`.
+`verify-repository-identity` and `find-repository-changes` are read-only.
 
 ## Refactoring Warnings
 

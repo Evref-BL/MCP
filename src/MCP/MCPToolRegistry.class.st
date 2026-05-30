@@ -24,9 +24,29 @@ MCPToolRegistry class >> additionalKeywordsForTool: aTool [
 	toolName := aTool name.
 	toolName = 'find-repositories' ifTrue: [
 		^ #( 'repo' 'iceberg' 'git' 'branch' 'commit' 'remote' 'head' ) ].
+	toolName = 'verify-repository-identity' ifTrue: [
+		^ #( 'repo' 'iceberg' 'git' 'guard' 'identity' ) ].
+	toolName = 'find-repository-changes' ifTrue: [
+		^ #( 'repo' 'iceberg' 'git' 'diff' 'status' 'change' ) ].
 	toolName = 'edit-repository' ifTrue: [
 			^ #( 'repo' 'iceberg' 'tonel' 'git' 'export' 'diff' 'branch'
 			     'commit' 'pull' 'push' 'fetch' 'attach' 'adopt' 'identity' ) ].
+	toolName = 'export-repository' ifTrue: [
+		^ #( 'repo' 'iceberg' 'tonel' 'export' 'write' ) ].
+	toolName = 'commit-repository' ifTrue: [
+		^ #( 'repo' 'iceberg' 'git' 'commit' ) ].
+	toolName = 'fetch-repository' ifTrue: [
+		^ #( 'repo' 'iceberg' 'git' 'remote' 'fetch' ) ].
+	toolName = 'pull-repository' ifTrue: [
+		^ #( 'repo' 'iceberg' 'git' 'remote' 'pull' ) ].
+	toolName = 'push-repository' ifTrue: [
+		^ #( 'repo' 'iceberg' 'git' 'remote' 'push' ) ].
+	toolName = 'create-repository-branch' ifTrue: [
+		^ #( 'repo' 'iceberg' 'git' 'branch' 'create' ) ].
+	toolName = 'switch-repository-branch' ifTrue: [
+		^ #( 'repo' 'iceberg' 'git' 'branch' 'switch' ) ].
+	toolName = 'adopt-repository-head' ifTrue: [
+		^ #( 'repo' 'iceberg' 'git' 'head' 'adopt' ) ].
 	toolName = 'load-repository' ifTrue: [
 		^ #( 'baseline' 'metacello' 'load' 'package' ) ].
 	toolName = 'find-packages' ifTrue: [
@@ -59,6 +79,11 @@ MCPToolRegistry class >> additionalKeywordsForTool: aTool [
 		^ #( 'method' 'rewrite' 'preview' 'apply' 'ast' 'pattern' ) ].
 	toolName = 'run-tests' ifTrue: [
 		^ #( 'test' 'sunit' 'coverage' 'timeout' ) ].
+	toolName = 'find-change-history-files' ifTrue: [
+		^ #( 'history' 'change' 'file' 'list' 'ombu' 'epicea' ) ].
+	toolName = 'find-change-history-entries' ifTrue: [
+			^ #( 'history' 'change' 'entry' 'browse' 'list' 'inspect' 'ombu'
+			     'epicea' ) ].
 	toolName = 'manage-change-history' ifTrue: [
 			^ #( 'history' 'change' 'entry' 'browse' 'list' 'inspect' 'preview'
 			     'apply' 'revert' 'recover' 'epicea' 'ombu' ) ].
@@ -188,10 +213,13 @@ MCPToolRegistry class >> mutabilityForTool: aTool [
 	| executeTools readTools toolName |
 	toolName := aTool name.
 	readTools := #( 'discover-tools' 'inspect-tool' 'find-repositories'
-	                'find-packages' 'find-classes' 'inspect-class'
-	                'find-methods' 'find-method-implementors'
-	                'find-method-senders' 'find-class-references'
-	                'find-variable-references' 'inspect-method'
+	                'verify-repository-identity'
+	                'find-repository-changes' 'find-packages'
+	                'find-classes' 'inspect-class' 'find-methods'
+	                'find-method-implementors' 'find-method-senders'
+	                'find-class-references' 'find-variable-references'
+	                'inspect-method' 'find-change-history-files'
+	                'find-change-history-entries'
 	                'capture-screenshot' 'debug-state' 'debug-variables' ).
 	executeTools := #( 'call-tool' 'run-tests' 'evaluate' 'debug-evaluate'
 	                   'debug-capture' 'debug-test' ).
@@ -219,7 +247,17 @@ MCPToolRegistry class >> publicToolGroups [
 			   MCPToolCallTool }).
 		  ('repositories' -> {
 			   MCPToolFindRepositories.
+			   MCPToolVerifyRepositoryIdentity.
+			   MCPToolFindRepositoryChanges.
 			   MCPToolEditRepository.
+			   MCPToolExportRepository.
+			   MCPToolCommitRepository.
+			   MCPToolFetchRepository.
+			   MCPToolPullRepository.
+			   MCPToolPushRepository.
+			   MCPToolCreateRepositoryBranch.
+			   MCPToolSwitchRepositoryBranch.
+			   MCPToolAdoptRepositoryHead.
 			   MCPToolLoadRepository }).
 		  ('packages' -> { MCPToolFindPackages }).
 		  ('classes' -> {
@@ -237,7 +275,10 @@ MCPToolRegistry class >> publicToolGroups [
 			   MCPToolEditMethod.
 			   MCPToolRewriteMethods.
 			   MCPToolRemoveMethods }).
-		  ('history' -> { MCPToolManageChangeHistory }).
+		  ('history' -> {
+			   MCPToolFindChangeHistoryFiles.
+			   MCPToolFindChangeHistoryEntries.
+			   MCPToolManageChangeHistory }).
 		  ('tests' -> { MCPToolRunTests }).
 		  ('ui' -> { MCPToolCaptureScreenshot }).
 		  ('debugging' -> {
@@ -280,10 +321,13 @@ MCPToolRegistry class >> riskForTool: aTool [
 	| lowRisk mediumRisk toolName |
 	toolName := aTool name.
 	lowRisk := #( 'discover-tools' 'inspect-tool' 'find-repositories'
-	              'find-packages' 'find-classes' 'inspect-class'
-	              'find-methods' 'find-method-implementors'
-	              'find-method-senders' 'find-class-references'
-	              'find-variable-references' 'inspect-method'
+	              'verify-repository-identity'
+	              'find-repository-changes' 'find-packages'
+	              'find-classes' 'inspect-class' 'find-methods'
+	              'find-method-implementors' 'find-method-senders'
+	              'find-class-references' 'find-variable-references'
+	              'inspect-method' 'find-change-history-files'
+	              'find-change-history-entries'
 	              'capture-screenshot' 'debug-state' 'debug-variables' ).
 	mediumRisk := #( 'call-tool' 'load-repository' 'run-tests'
 	                 'evaluate' 'debug-evaluate' 'debug-capture'

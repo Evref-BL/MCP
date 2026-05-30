@@ -124,6 +124,8 @@ find-variable-references
 inspect-class
 inspect-method
 find-repositories
+verify-repository-identity
+find-repository-changes
 ```
 
 Useful first questions:
@@ -133,6 +135,8 @@ Useful first questions:
 - find senders with `find-method-senders`
 - inspect one class before editing it
 - inspect repository status before exporting or committing
+- verify repository identity before changing repository state
+- browse change-history files and entries before recovering changes
 
 ## First Mutating Calls
 
@@ -144,6 +148,8 @@ edit-method
 rewrite-methods
 run-tests
 edit-repository
+export-repository
+commit-repository
 manage-change-history
 ```
 

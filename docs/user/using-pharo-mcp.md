@@ -55,7 +55,7 @@ Use single search terms like these to find the right tool:
 | Method | method, selector, protocol, source, implementor, sender, reference, variable |
 | Edit | edit, create, update, rename, remove, rewrite, preview, apply |
 | Test | test, SUnit, coverage, timeout |
-| Code history | history, change, entry, browse, list, apply, revert, recover |
+| Code history | history, change, file, entry, browse, list, apply, revert, recover |
 | Screenshot | screenshot, window, display |
 | Debugging | debug, session, state, variable, breakpoint, capture, control, repair |
 | Evaluation | evaluate, expression |
@@ -84,6 +84,21 @@ If a client does not expose the focused lookup tools yet, use the compatible
 `find-methods` modes: exact selector filtering for implementors,
 `selectorReference` for senders, `classReference` for class references, and
 `variableReference` for variable references.
+
+For change history, use `find-change-history-files` to locate `.ombu` files
+and `find-change-history-entries` to browse entries. Use
+`manage-change-history` only when you need apply/revert preview or confirmed
+recovery.
+
+For repository work, use `find-repositories` to inspect registered Iceberg
+repositories, `verify-repository-identity` before changing repository state,
+and `find-repository-changes` before exporting or committing image changes.
+Prefer focused repository tools such as `export-repository`,
+`commit-repository`, `fetch-repository`, `pull-repository`, `push-repository`,
+`create-repository-branch`, `switch-repository-branch`, and
+`adopt-repository-head` when they exist. Use `edit-repository` for create,
+attach, update, or compatibility with clients that do not expose the focused
+tools yet.
 
 Report incomplete or failing tool results clearly. Do not silently guess from
 memory or exported source when the question depends on image state.
