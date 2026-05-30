@@ -1,0 +1,152 @@
+"
+Abstract base for image change-history commands.
+
+It centralizes command construction, current Epicea log access, history-file loading, and small reference predicates shared by change-history list and selection commands.
+"
+Class {
+	#name : 'MCPChangeHistoryCommand',
+	#superclass : 'Object',
+	#instVars : [
+		'tool',
+		'request'
+	],
+	#category : 'MCP-Commands',
+	#package : 'MCP',
+	#tag : 'Commands'
+}
+
+{ #category : 'testing' }
+MCPChangeHistoryCommand class >> isAbstract [
+
+	^ self = MCPChangeHistoryCommand
+]
+
+{ #category : 'instance creation' }
+MCPChangeHistoryCommand class >> tool: aTool request: aRequest [
+
+	^ self new
+		  initializeTool: aTool request: aRequest;
+		  yourself
+]
+
+{ #category : 'private - log' }
+MCPChangeHistoryCommand >> currentHistoryFileReference [
+
+	| store lowLevel |
+	EpMonitor hasCurrent ifFalse: [ ^ nil ].
+	EpMonitor current sessionStore flush.
+	store := EpMonitor current log store.
+	(store respondsTo: #writingFileReference) ifTrue: [
+		^ store writingFileReference ].
+	(store respondsTo: #lowLevelFileStoreIfNone:) ifFalse: [ ^ nil ].
+	lowLevel := store lowLevelFileStoreIfNone: [ nil ].
+	(lowLevel notNil and: [ lowLevel respondsTo: #writingFileReference ])
+		ifTrue: [ ^ lowLevel writingFileReference ].
+	^ nil
+]
+
+{ #category : 'private - log' }
+MCPChangeHistoryCommand >> currentLogAndPath [
+
+	| log currentFile path |
+	EpMonitor hasCurrent ifFalse: [
+			MCPCommandError
+				signalErrorCode: #ChangeHistoryUnavailable
+				message: 'No current Pharo change history monitor is available.'
+				details: Dictionary new ].
+	EpMonitor current sessionStore flush.
+	log := EpMonitor current log.
+	log refresh.
+	currentFile := self currentHistoryFileReference.
+	path := currentFile ifNotNil: [ currentFile fullName ].
+	^ {
+		  log.
+		  path }
+]
+
+{ #category : 'initialization' }
+MCPChangeHistoryCommand >> initializeTool: aTool request: aRequest [
+
+	tool := aTool.
+	request := aRequest.
+	^ self
+]
+
+{ #category : 'private - entries' }
+MCPChangeHistoryCommand >> isCodeChangeEntry: anEntry [
+
+	| content |
+	content := [ anEntry content ]
+		           on: Error
+		           do: [ :error | nil ].
+	^ content notNil and: [
+		  (content respondsTo: #isCodeChange) and: [ content isCodeChange ] ]
+]
+
+{ #category : 'private - log' }
+MCPChangeHistoryCommand >> logAndPathFromFilePath: aPathString [
+
+	| file log |
+	file := aPathString asFileReference.
+	file exists ifFalse: [
+			MCPCommandError
+				signalErrorCode: #ChangeHistoryFileNotFound
+				message: 'Change history file ' , aPathString , ' does not exist.'
+				details: { (#historyFilePath -> aPathString) } asDictionary ].
+	file isFile ifFalse: [
+			MCPCommandError
+				signalErrorCode: #ChangeHistoryPathNotFile
+				message: 'Change history path ' , aPathString , ' is not a file.'
+				details: { (#historyFilePath -> aPathString) } asDictionary ].
+	log := [
+		       | loadedLog |
+		       loadedLog := EpLog freshFromFile: file.
+		       loadedLog entries size.
+		       loadedLog ]
+		       on: Error
+		       do: [ :error |
+				       MCPCommandError
+					       signalErrorCode: #ChangeHistoryFileUnreadable
+					       message:
+					       'Change history file ' , file fullName
+					       , ' could not be loaded.'
+					       details: {
+							       (#historyFilePath -> file fullName).
+							       (#causeClass -> error class name).
+							       (#causeMessage
+							        -> (error messageText ifNil: [ error asString ])) }
+							       asDictionary ].
+	^ {
+		  log.
+		  file fullName }
+]
+
+{ #category : 'private - references' }
+MCPChangeHistoryCommand >> referenceStringFor: aReference [
+
+	aReference ifNil: [ ^ nil ].
+	(aReference respondsTo: #shortName) ifTrue: [
+		^ aReference shortName asString ].
+	^ aReference asString
+]
+
+{ #category : 'accessing' }
+MCPChangeHistoryCommand >> request [
+
+	^ request
+]
+
+{ #category : 'private - files' }
+MCPChangeHistoryCommand >> sameFileReference: firstFile as: secondFile [
+
+	(firstFile isNil or: [ secondFile isNil ]) ifTrue: [ ^ false ].
+	^ [ firstFile fullName = secondFile fullName ]
+		  on: Error
+		  do: [ :error | firstFile = secondFile ]
+]
+
+{ #category : 'accessing' }
+MCPChangeHistoryCommand >> tool [
+
+	^ tool
+]

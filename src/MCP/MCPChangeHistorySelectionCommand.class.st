@@ -3,23 +3,11 @@ Previews and applies selected image change history entries using Epicea's apply 
 "
 Class {
 	#name : 'MCPChangeHistorySelectionCommand',
-	#superclass : 'Object',
-	#instVars : [
-		'tool',
-		'request'
-	],
+	#superclass : 'MCPChangeHistoryCommand',
 	#category : 'MCP-Commands',
 	#package : 'MCP',
 	#tag : 'Commands'
 }
-
-{ #category : 'instance creation' }
-MCPChangeHistorySelectionCommand class >> tool: aTool request: aRequest [
-
-	^ self new
-		  initializeTool: aTool request: aRequest;
-		  yourself
-]
 
 { #category : 'private - selection' }
 MCPChangeHistorySelectionCommand >> addIndexSelectionsTo: pairs fromLog: aLog [
@@ -89,41 +77,6 @@ MCPChangeHistorySelectionCommand >> applyOrRevertEntries [
 		  previewLog: previewLog
 		  performed: request confirm
 		  performedCount: performedCount
-]
-
-{ #category : 'private - log' }
-MCPChangeHistorySelectionCommand >> currentHistoryFileReference [
-
-	| store lowLevel |
-	EpMonitor hasCurrent ifFalse: [ ^ nil ].
-	EpMonitor current sessionStore flush.
-	store := EpMonitor current log store.
-	(store respondsTo: #writingFileReference) ifTrue: [
-		^ store writingFileReference ].
-	(store respondsTo: #lowLevelFileStoreIfNone:) ifFalse: [ ^ nil ].
-	lowLevel := store lowLevelFileStoreIfNone: [ nil ].
-	(lowLevel notNil and: [ lowLevel respondsTo: #writingFileReference ])
-		ifTrue: [ ^ lowLevel writingFileReference ].
-	^ nil
-]
-
-{ #category : 'private - log' }
-MCPChangeHistorySelectionCommand >> currentLogAndPath [
-
-	| log currentFile path |
-	EpMonitor hasCurrent ifFalse: [
-		MCPCommandError
-			signalErrorCode: #ChangeHistoryUnavailable
-			message: 'No current Pharo change history monitor is available.'
-			details: Dictionary new ].
-	EpMonitor current sessionStore flush.
-	log := EpMonitor current log.
-	log refresh.
-	currentFile := self currentHistoryFileReference.
-	path := currentFile ifNotNil: [ currentFile fullName ].
-	^ {
-		  log.
-		  path }
 ]
 
 { #category : 'private - entries' }
@@ -207,68 +160,11 @@ MCPChangeHistorySelectionCommand >> headReferenceStringForLog: aLog [
 			   do: [ :error | nil ])
 ]
 
-{ #category : 'initialization' }
-MCPChangeHistorySelectionCommand >> initializeTool: aTool request: aRequest [
-
-	tool := aTool.
-	request := aRequest.
-	^ self
-]
-
-{ #category : 'private - entries' }
-MCPChangeHistorySelectionCommand >> isCodeChangeEntry: anEntry [
-
-	| content |
-	content := [ anEntry content ]
-		           on: Error
-		           do: [ :error | nil ].
-	^ content notNil and: [
-		  (content respondsTo: #isCodeChange) and: [ content isCodeChange ] ]
-]
-
 { #category : 'private - log' }
 MCPChangeHistorySelectionCommand >> logAndPathForRequest [
 
 	request historyFilePath ifNil: [ ^ self currentLogAndPath ].
 	^ self logAndPathFromFilePath: request historyFilePath
-]
-
-{ #category : 'private - log' }
-MCPChangeHistorySelectionCommand >> logAndPathFromFilePath: aPathString [
-
-	| file log |
-	file := aPathString asFileReference.
-	file exists ifFalse: [
-		MCPCommandError
-			signalErrorCode: #ChangeHistoryFileNotFound
-			message: 'Change history file ' , aPathString , ' does not exist.'
-			details: { (#historyFilePath -> aPathString) } asDictionary ].
-	file isFile ifFalse: [
-		MCPCommandError
-			signalErrorCode: #ChangeHistoryPathNotFile
-			message: 'Change history path ' , aPathString , ' is not a file.'
-			details: { (#historyFilePath -> aPathString) } asDictionary ].
-	log := [
-	       | loadedLog |
-	       loadedLog := EpLog freshFromFile: file.
-	       loadedLog entries size.
-	       loadedLog ]
-		       on: Error
-		       do: [ :error |
-			       MCPCommandError
-				       signalErrorCode: #ChangeHistoryFileUnreadable
-				       message:
-				       'Change history file ' , file fullName
-				       , ' could not be loaded.'
-				       details: {
-						       (#historyFilePath -> file fullName).
-						       (#causeClass -> error class name).
-						       (#causeMessage
-						        -> (error messageText ifNil: [ error asString ])) }
-						       asDictionary ].
-	^ {
-		  log.
-		  file fullName }
 ]
 
 { #category : 'private - apply' }
@@ -333,21 +229,6 @@ MCPChangeHistorySelectionCommand >> referenceCandidatesForEntry: anEntry inLog: 
 	^ candidates asArray
 ]
 
-{ #category : 'private - references' }
-MCPChangeHistorySelectionCommand >> referenceStringFor: aReference [
-
-	aReference ifNil: [ ^ nil ].
-	(aReference respondsTo: #shortName) ifTrue: [
-		^ aReference shortName asString ].
-	^ aReference asString
-]
-
-{ #category : 'accessing' }
-MCPChangeHistorySelectionCommand >> request [
-
-	^ request
-]
-
 { #category : 'private - result' }
 MCPChangeHistorySelectionCommand >> resultForLog: aLog path: path rawPairs: rawPairs selectedPairs: selectedPairs previewLog: previewLog performed: performedFlag performedCount: anInteger [
 
@@ -383,12 +264,6 @@ MCPChangeHistorySelectionCommand >> stringValueFrom: anObject selector: aSelecto
 		  ifNotNil: [ :value | value asString ] ]
 		  on: Error
 		  do: [ :error | nil ]
-]
-
-{ #category : 'accessing' }
-MCPChangeHistorySelectionCommand >> tool [
-
-	^ tool
 ]
 
 { #category : 'private - selection' }

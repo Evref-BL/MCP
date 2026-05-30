@@ -3,39 +3,11 @@ Command that lists change history files available to the running image.
 "
 Class {
 	#name : 'MCPListChangeHistoryLogsCommand',
-	#superclass : 'Object',
-	#instVars : [
-		'tool',
-		'request'
-	],
+	#superclass : 'MCPChangeHistoryCommand',
 	#category : 'MCP-Commands',
 	#package : 'MCP',
 	#tag : 'Commands'
 }
-
-{ #category : 'instance creation' }
-MCPListChangeHistoryLogsCommand class >> tool: aTool request: aRequest [
-
-	^ self new
-		  initializeTool: aTool request: aRequest;
-		  yourself
-]
-
-{ #category : 'private' }
-MCPListChangeHistoryLogsCommand >> currentHistoryFileReference [
-
-	| store lowLevel |
-	EpMonitor hasCurrent ifFalse: [ ^ nil ].
-	EpMonitor current sessionStore flush.
-	store := EpMonitor current log store.
-	(store respondsTo: #writingFileReference) ifTrue: [
-		^ store writingFileReference ].
-	(store respondsTo: #lowLevelFileStoreIfNone:) ifFalse: [ ^ nil ].
-	lowLevel := store lowLevelFileStoreIfNone: [ nil ].
-	(lowLevel notNil and: [ lowLevel respondsTo: #writingFileReference ])
-		ifTrue: [ ^ lowLevel writingFileReference ].
-	^ nil
-]
 
 { #category : 'private' }
 MCPListChangeHistoryLogsCommand >> directoryForRequestWithCurrentFile: currentFile [
@@ -118,35 +90,12 @@ MCPListChangeHistoryLogsCommand >> historyFileReferencesFrom: aDirectory includi
 		   self shouldSortFile: left before: right ]) asArray
 ]
 
-{ #category : 'initialization' }
-MCPListChangeHistoryLogsCommand >> initializeTool: aTool request: aRequest [
-
-	tool := aTool.
-	request := aRequest.
-	^ self
-]
-
 { #category : 'private' }
 MCPListChangeHistoryLogsCommand >> modificationTimeOf: aFileReference [
 
 	^ [ aFileReference modificationTime ]
 		  on: Error
 		  do: [ :error | nil ]
-]
-
-{ #category : 'accessing' }
-MCPListChangeHistoryLogsCommand >> request [
-
-	^ request
-]
-
-{ #category : 'private' }
-MCPListChangeHistoryLogsCommand >> sameFileReference: firstFile as: secondFile [
-
-	(firstFile isNil or: [ secondFile isNil ]) ifTrue: [ ^ false ].
-	^ [ firstFile fullName = secondFile fullName ]
-		  on: Error
-		  do: [ :error | firstFile = secondFile ]
 ]
 
 { #category : 'private' }
@@ -160,10 +109,4 @@ MCPListChangeHistoryLogsCommand >> shouldSortFile: leftFile before: rightFile [
 	leftTime ifNil: [ ^ false ].
 	rightTime ifNil: [ ^ true ].
 	^ leftTime >= rightTime
-]
-
-{ #category : 'accessing' }
-MCPListChangeHistoryLogsCommand >> tool [
-
-	^ tool
 ]
