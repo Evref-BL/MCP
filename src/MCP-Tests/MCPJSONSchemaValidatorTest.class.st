@@ -129,11 +129,24 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 	| arguments |
 	arguments := self baseRepresentativeArgumentsByToolClass.
 	arguments removeKey: MCPToolEditRepository ifAbsent: [ ].
+	arguments removeKey: MCPToolEditMethod ifAbsent: [ ].
 	arguments removeKey: MCPToolManageChangeHistory ifAbsent: [ ].
 	arguments removeKey: MCPToolDebugSessions ifAbsent: [ ].
 	arguments removeKey: MCPToolDebugControl ifAbsent: [ ].
 	arguments removeKey: MCPToolDebugBreakpoints ifAbsent: [ ].
 	arguments
+		at: MCPToolCreateMethod put: {
+				(#className -> 'MCPTool').
+				(#methodSource -> 'temporarySelector ^ self').
+				(#protocol -> 'tests') } asDictionary;
+		at: MCPToolUpdateMethodSelector put: {
+				(#className -> 'MCPTool').
+				(#selector -> 'defaultName').
+				(#newSelector -> 'defaultTitle') } asDictionary;
+		at: MCPToolUpdateMethodProtocol put: {
+				(#className -> 'MCPTool').
+				(#selector -> 'defaultName').
+				(#protocol -> 'accessing') } asDictionary;
 		at: MCPToolCreateRepository put: {
 				(#name -> 'MCP Test Repository').
 				(#location -> '/tmp/mcp-test-repository') } asDictionary;
@@ -215,7 +228,7 @@ MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasAcceptRepresentativeArg
 { #category : 'tests' }
 MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasRejectInvalidShapeArguments [
 
-	| editMethodViolations legacyScopeViolations |
+	| legacyScopeViolations selectorUpdateViolations |
 	legacyScopeViolations := self
 		                         violationsFor:
 		                         { (#scope -> 'packages') } asDictionary
@@ -223,16 +236,17 @@ MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasRejectInvalidShapeArgum
 	self
 		assert: (self keywordsFrom: legacyScopeViolations)
 		equals: #( 'additionalProperties' ).
-	editMethodViolations := self
-		                        violationsFor: {
-				                        (#operation -> 'update').
-				                        (#className -> 'MCPTool').
-				                        (#selector -> 'defaultName').
-				                        (#newSelector -> 'defaultTitle').
-				                        (#scope -> 'classes') } asDictionary
-		                        schema: MCPToolEditMethod new inputSchema.
+	selectorUpdateViolations := self
+		                            violationsFor: {
+				                            (#className -> 'MCPTool').
+				                            (#selector -> 'defaultName').
+				                            (#newSelector -> 'defaultTitle').
+				                            (#scope -> 'classes') } asDictionary
+		                            schema:
+		                            MCPToolUpdateMethodSelector new
+			                            inputSchema.
 	self
-		assert: (self keywordsFrom: editMethodViolations)
+		assert: (self keywordsFrom: selectorUpdateViolations)
 		equals: #( 'additionalProperties' )
 ]
 

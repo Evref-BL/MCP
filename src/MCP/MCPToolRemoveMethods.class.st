@@ -59,7 +59,7 @@ MCPToolRemoveMethods >> dataForMethod: aCompiledMethod [
 { #category : 'defaults' }
 MCPToolRemoveMethods >> defaultDescription [
 
-	^ 'Remove methods from one class as a batch without sender safety checks. Use method_edit to create, rename, or recategorize methods instead.'
+	^ 'Remove methods from one class as a batch without sender safety checks. Use method_create, method_selector_update, or method_protocol_update for method edits.'
 ]
 
 { #category : 'defaults' }

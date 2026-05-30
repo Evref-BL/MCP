@@ -1,5 +1,5 @@
 "
-Edits one method in the running image. It handles method creation or replacement, selector updates including argument add/remove refactorings, protocol changes, and returns post-create critiques when relevant.
+Shared implementation for focused method editing tools. It parses create/update method requests, dispatches method create/update commands, and returns post-create critiques when relevant.
 "
 Class {
 	#name : 'MCPToolEditMethod',
@@ -11,6 +11,12 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'testing' }
+MCPToolEditMethod class >> isAbstract [
+
+	^ self = MCPToolEditMethod
+]
+
 { #category : 'icons' }
 MCPToolEditMethod class >> toolIconSpec [
 
@@ -20,7 +26,7 @@ MCPToolEditMethod class >> toolIconSpec [
 { #category : 'defaults' }
 MCPToolEditMethod class >> toolName [
 
-	^ 'method_edit'
+	^ 'method_operation'
 ]
 
 { #category : 'private - refactoring' }

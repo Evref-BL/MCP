@@ -1,5 +1,5 @@
 "
-Structured result DTO for a successful method_edit create operation. It serializes the compiled method metadata and any included critiques.
+Structured result DTO for a successful method_create operation. It serializes the compiled method metadata and any included critiques.
 "
 Class {
 	#name : 'MCPMethodCreateResult',

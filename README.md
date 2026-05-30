@@ -111,7 +111,9 @@ Then use dedicated operations before falling back to `image_evaluate`:
 
 ```text
 class_edit
-method_edit
+method_create
+method_selector_update
+method_protocol_update
 method_rewrite
 test_run
 repository_create
@@ -134,9 +136,11 @@ Image-changing tools save the image after a successful mutation. Read-only tools
 
 The safer edit paths use Pharo facilities:
 
-- `class_edit` and `method_edit` use Refactoring Browser and Refactoring Engine operations for renames, slot changes, argument changes, moves, and removals where Pharo provides them.
+- `class_edit` uses Refactoring Browser and Refactoring Engine operations for class renames, slot changes, moves, and removals where Pharo provides them.
+- `method_selector_update` uses the Refactoring Engine for selector renames, argument additions/removals, and argument reordering.
+- `method_protocol_update` recategorizes existing methods into regular or extension protocols.
 - `force=false` stops on `RBRefactoringWarning` and returns `impactMessages`, `howToProceed`, and `forceSupported=true`. Rerun with `force=true` only after reviewing the impact.
-- `method_edit` returns selected Renraku critiques after method compilation, including error-severity critiques and selected non-error rules.
+- `method_create` returns selected Renraku critiques after method compilation, including error-severity critiques and selected non-error rules.
 - `method_rewrite` previews AST rewrite changes first and returns a `changeSetHash`; applying the rewrite requires `expectedChangeSetHash`.
 - `test_run` uses SUnit and can collect CoverageCollector method and node coverage for an explicit method scope.
 - Repository tools work through Iceberg. Use `repository_identity_verify` to

@@ -75,9 +75,12 @@ MCPToolRegistry class >> additionalKeywordsForTool: aTool [
 		^ #( 'method' 'variable' 'reference' 'slot' 'binding' ) ].
 	toolName = 'method_get' ifTrue: [
 		^ #( 'method' 'selector' 'protocol' 'source' 'reference' 'variable' ) ].
-	toolName = 'method_edit' ifTrue: [
-			^ #( 'method' 'selector' 'protocol' 'source' 'create' 'update'
-			     'rename' ) ].
+	toolName = 'method_create' ifTrue: [
+		^ #( 'method' 'source' 'protocol' 'create' 'compile' ) ].
+	toolName = 'method_selector_update' ifTrue: [
+		^ #( 'method' 'selector' 'signature' 'rename' 'update' ) ].
+	toolName = 'method_protocol_update' ifTrue: [
+		^ #( 'method' 'protocol' 'category' 'update' ) ].
 	toolName = 'method_rewrite' ifTrue: [
 		^ #( 'method' 'rewrite' 'preview' 'apply' 'ast' 'pattern' ) ].
 	toolName = 'test_run' ifTrue: [
@@ -284,7 +287,9 @@ MCPToolRegistry class >> publicToolGroups [
 			   MCPToolFindClassReferences.
 			   MCPToolFindVariableReferences.
 			   MCPToolInspectMethod.
-			   MCPToolEditMethod.
+			   MCPToolCreateMethod.
+			   MCPToolUpdateMethodSelector.
+			   MCPToolUpdateMethodProtocol.
 			   MCPToolRewriteMethods.
 			   MCPToolRemoveMethods }).
 		  ('history' -> {
@@ -416,7 +421,9 @@ MCPToolRegistry class >> staticToolClasses [
 		  MCPToolFindClassReferences.
 		  MCPToolFindVariableReferences.
 		  MCPToolInspectMethod.
-		  MCPToolEditMethod.
+		  MCPToolCreateMethod.
+		  MCPToolUpdateMethodSelector.
+		  MCPToolUpdateMethodProtocol.
 		  MCPToolEvaluate.
 		  MCPToolRunTests }
 ]

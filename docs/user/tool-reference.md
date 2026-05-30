@@ -84,7 +84,9 @@ continuing.
 | `method_class_reference_search` | Search methods that reference a class binding. |
 | `method_variable_reference_search` | Search methods that reference a variable. |
 | `method_get` | Get one known method and return source plus structured variable-reference context. |
-| `method_edit` | Create or update one method. Updates can rename selectors, add/remove arguments, reorder arguments, or recategorize protocols. |
+| `method_create` | Create or replace one method from source. |
+| `method_selector_update` | Rename selectors, add/remove arguments, or reorder arguments through the Refactoring Engine. |
+| `method_protocol_update` | Move one method to another regular or extension protocol. |
 | `method_rewrite` | Preview or apply AST rewrite rules across a method scope. Applying requires `expectedChangeSetHash` from a preview. |
 | `method_remove` | Remove methods from one class as a batch without sender safety checks. |
 
@@ -98,7 +100,7 @@ The broader `method_search` lookup modes remain available:
 - `filterMode=classReference` for class references
 - `filterMode=variableReference` for variable references
 
-`method_edit` returns selected Renraku critiques after method compilation when
+`method_create` returns selected Renraku critiques after method compilation when
 they are relevant to review.
 
 ## History
@@ -175,7 +177,9 @@ Tools that can save after success include:
 
 ```text
 class_edit
-method_edit
+method_create
+method_selector_update
+method_protocol_update
 repository_create
 repository_attach
 repository_update

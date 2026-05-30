@@ -70,12 +70,12 @@ Rerun with `force=true` only when the impact is acceptable.
 
 ## A Method Compiles But Returns Critiques
 
-`method_edit` can return Renraku critiques after compilation. The method exists,
+`method_create` can return Renraku critiques after compilation. The method exists,
 but Pharo found review issues. Inspect the critique rule class, title,
 description, and source interval if present.
 
-Use a follow-up `method_edit`, `test_run`, or `method_get` call depending
-on the critique.
+Use a follow-up `method_create`, `method_selector_update`, `test_run`, or
+`method_get` call depending on the critique.
 
 ## Repository State Looks Wrong
 

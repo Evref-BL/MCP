@@ -385,6 +385,36 @@ MCPToolContractsTest >> focusedDebugSessionToolFlowSpecs [
 ]
 
 { #category : 'private' }
+MCPToolContractsTest >> focusedMethodEditToolFlowSpecs [
+
+	^ {
+		  {
+			  (#toolClass -> MCPToolCreateMethod).
+			  (#arguments -> {
+				   (#className -> 'Object').
+				   (#methodSource -> 'mcpTemporaryMethod ^ self').
+				   (#protocol -> 'tests') } asDictionary).
+			  (#requestClass -> MCPMethodCreateRequest).
+			  (#commandClass -> MCPCreateMethodCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolUpdateMethodSelector).
+			  (#arguments -> {
+				   (#className -> 'Object').
+				   (#selector -> 'class').
+				   (#newSelector -> 'mcpClass') } asDictionary).
+			  (#requestClass -> MCPMethodUpdateRequest).
+			  (#commandClass -> MCPUpdateMethodCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolUpdateMethodProtocol).
+			  (#arguments -> {
+				   (#className -> 'Object').
+				   (#selector -> 'class').
+				   (#protocol -> 'accessing') } asDictionary).
+			  (#requestClass -> MCPMethodUpdateRequest).
+			  (#commandClass -> MCPUpdateMethodCommand) } asDictionary }
+]
+
+{ #category : 'private' }
 MCPToolContractsTest >> focusedMethodLookupToolFlowSpecs [
 
 	^ {
@@ -635,7 +665,9 @@ MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 			MCPToolFindClassReferences.
 			MCPToolFindVariableReferences.
 			MCPToolInspectMethod.
-			MCPToolEditMethod.
+			MCPToolCreateMethod.
+			MCPToolUpdateMethodSelector.
+			MCPToolUpdateMethodProtocol.
 			MCPToolRewriteMethods.
 			MCPToolRemoveMethods.
 			MCPToolFindChangeHistoryFiles.
@@ -954,8 +986,16 @@ MCPToolContractsTest >> testDisplayToolsCatalogSummarizesToolOperations [
 		equals: 'create | attach | +11'.
 	self
 		assert:
-		(presenter toolCatalogOperationSummaryFor: MCPToolEditMethod new)
-		equals: 'create | update'.
+		(presenter toolCatalogOperationSummaryFor: MCPToolCreateMethod new)
+		equals: 'create'.
+	self
+		assert: (presenter toolCatalogOperationSummaryFor:
+				 MCPToolUpdateMethodSelector new)
+		equals: 'update'.
+	self
+		assert: (presenter toolCatalogOperationSummaryFor:
+				 MCPToolUpdateMethodProtocol new)
+		equals: 'update'.
 	self
 		assert:
 		(presenter toolCatalogOperationSummaryFor: MCPToolRewriteMethods new)
@@ -1135,48 +1175,72 @@ MCPToolContractsTest >> testEditClassSchemaDescriptionsExplainRecategorizationFo
 { #category : 'tests' }
 MCPToolContractsTest >> testEditDescriptionsExplainForceWarningBehavior [
 
-	| classDescription forceDescription methodDescription |
+	| classDescription classForceDescription methodForceDescription |
 	classDescription := MCPToolEditClass new description.
-	methodDescription := MCPToolEditMethod new description.
-	forceDescription := (self
-		                     inputPropertyNamed: 'force'
-		                     inTool: MCPToolEditClass new) description.
+	classForceDescription := (self
+		                          inputPropertyNamed: 'force'
+		                          inTool: MCPToolEditClass new) description.
+	methodForceDescription := (self
+		                           inputPropertyNamed: 'force'
+		                           inTool: MCPToolUpdateMethodSelector new)
+		                          description.
 	self assert: (classDescription includesSubstring: 'force=false').
 	self assert: (classDescription includesSubstring: 'force=true').
-	self assert: (methodDescription includesSubstring: 'force=false').
-	self assert: (methodDescription includesSubstring: 'force=true').
-	self assert: (forceDescription includesSubstring: 'impactMessages').
-	self assert: (forceDescription includesSubstring: 'howToProceed').
-	self assert:
-		(forceDescription includesSubstring: 'forceSupported=true').
-	self assert: (forceDescription includesSubstring: 'warnings')
+	{
+		classForceDescription.
+		methodForceDescription } do: [ :each |
+			self assert: (each includesSubstring: 'impactMessages').
+			self assert: (each includesSubstring: 'howToProceed').
+			self assert: (each includesSubstring: 'forceSupported=true').
+			self assert: (each includesSubstring: 'warnings') ]
 ]
 
 { #category : 'tests' }
 MCPToolContractsTest >> testEditMethodHasAccurateNameAndRequiredArguments [
 
-	| propertyNames tool |
-	tool := MCPToolEditMethod new.
-	propertyNames := tool inputSchema properties collect: [ :each |
-		                 each name ].
-	self assert: tool name equals: 'method_edit'.
+	| createPropertyNames createTool protocolPropertyNames protocolTool selectorPropertyNames selectorTool |
+	createTool := MCPToolCreateMethod new.
+	selectorTool := MCPToolUpdateMethodSelector new.
+	protocolTool := MCPToolUpdateMethodProtocol new.
+	createPropertyNames := createTool inputSchema properties collect: [
+		                       :each | each name ].
+	selectorPropertyNames := selectorTool inputSchema properties
+		                         collect: [ :each | each name ].
+	protocolPropertyNames := protocolTool inputSchema properties
+		                         collect: [ :each | each name ].
+	self assert: createTool name equals: 'method_create'.
+	self assert: selectorTool name equals: 'method_selector_update'.
+	self assert: protocolTool name equals: 'method_protocol_update'.
 	self
-		assert: tool inputSchema required asSet
-		equals: #( 'operation' 'className' ) asSet.
-	self assert: (propertyNames includes: 'force').
-	self assert: (propertyNames includes: 'packageNames').
-	self assert: (propertyNames includes: 'classNames').
-	self assert: (propertyNames includes: 'hierarchyClassNames').
-	self deny: (propertyNames includes: 'projectNames')
+		assert: createTool inputSchema required asSet
+		equals: #( 'className' 'methodSource' 'protocol' ) asSet.
+	self
+		assert: selectorTool inputSchema required asSet
+		equals: #( 'className' 'selector' 'newSelector' ) asSet.
+	self
+		assert: protocolTool inputSchema required asSet
+		equals: #( 'className' 'selector' 'protocol' ) asSet.
+	{
+		createPropertyNames.
+		selectorPropertyNames.
+		protocolPropertyNames } do: [ :each |
+			self deny: (each includes: 'operation').
+			self assert: (each includes: 'classSide').
+			self assert: (each includes: 'force') ].
+	self assert: (selectorPropertyNames includes: 'packageNames').
+	self assert: (selectorPropertyNames includes: 'classNames').
+	self assert: (selectorPropertyNames includes: 'hierarchyClassNames').
+	self deny: (createPropertyNames includes: 'packageNames').
+	self deny: (protocolPropertyNames includes: 'packageNames')
 ]
 
 { #category : 'tests' }
 MCPToolContractsTest >> testEditMethodSchemaAdvertisesMethodState [
 
-	| argumentNamesProperty argumentValuesProperty dataProperties dataProperty operationProperty permutationProperty propertyNames tool |
-	tool := MCPToolEditMethod new.
-	operationProperty := tool inputSchema properties detect: [ :each |
-		                     each name = 'operation' ].
+	| argumentNamesProperty argumentValuesProperty dataProperties dataProperty permutationProperty propertyNames tool toolPropertyNames |
+	tool := MCPToolUpdateMethodSelector new.
+	toolPropertyNames := tool inputSchema properties collect: [ :each |
+		                     each name ].
 	permutationProperty := tool inputSchema properties detect: [ :each |
 		                       each name = 'permutation' ].
 	argumentNamesProperty := tool inputSchema properties detect: [ :each |
@@ -1187,9 +1251,7 @@ MCPToolContractsTest >> testEditMethodSchemaAdvertisesMethodState [
 		                each name = 'data' ].
 	dataProperties := dataProperty extraProperties at: #properties.
 	propertyNames := dataProperties collect: [ :each | each name ].
-	self
-		assert: (operationProperty extraProperties at: #enum) asArray
-		equals: #( 'create' 'update' ).
+	self deny: (toolPropertyNames includes: 'operation').
 	self assert:
 		(permutationProperty extraProperties at: #items) type = 'integer'.
 	self assert:
@@ -1414,31 +1476,33 @@ MCPToolContractsTest >> testEditRepositoryOutputSchemaUsesActionForExecutedActio
 { #category : 'tests' }
 MCPToolContractsTest >> testEditToolSchemasAdvertiseOperationEnumsWithoutComposition [
 
-	| classOperationProperty editClass editMethod editRepository methodOperationProperty repositoryOperationProperty |
+	| classOperationProperty editClass editRepository focusedMethodTools repositoryOperationProperty |
 	editRepository := MCPToolEditRepository new.
 	editClass := MCPToolEditClass new.
-	editMethod := MCPToolEditMethod new.
+	focusedMethodTools := {
+		                      MCPToolCreateMethod new.
+		                      MCPToolUpdateMethodSelector new.
+		                      MCPToolUpdateMethodProtocol new }.
 	repositoryOperationProperty := self
 		                               inputPropertyNamed: 'operation'
 		                               inTool: editRepository.
 	classOperationProperty := self
 		                          inputPropertyNamed: 'operation'
 		                          inTool: editClass.
-	methodOperationProperty := self
-		                           inputPropertyNamed: 'operation'
-		                           inTool: editMethod.
 	self deny:
 		(editRepository inputSchema asJRPCJSON includesKey: #oneOf).
 	self deny: (editClass inputSchema asJRPCJSON includesKey: #oneOf).
-	self deny: (editMethod inputSchema asJRPCJSON includesKey: #oneOf).
+	focusedMethodTools do: [ :each |
+			| propertyNames |
+			propertyNames := each inputSchema properties collect: [ :property |
+				                 property name ].
+			self deny: (each inputSchema asJRPCJSON includesKey: #oneOf).
+			self deny: (propertyNames includes: 'operation') ].
 	self
 		assert: editRepository inputSchema required asSet
 		equals: #( 'operation' ) asSet.
 	self
 		assert: editClass inputSchema required asSet
-		equals: #( 'operation' 'className' ) asSet.
-	self
-		assert: editMethod inputSchema required asSet
 		equals: #( 'operation' 'className' ) asSet.
 	self
 		assert:
@@ -1449,34 +1513,31 @@ MCPToolContractsTest >> testEditToolSchemasAdvertiseOperationEnumsWithoutComposi
 			   'switchBranch' ).
 	self
 		assert: (classOperationProperty extraProperties at: #enum) asArray
-		equals: #( 'create' 'update' ).
-	self
-		assert: (methodOperationProperty extraProperties at: #enum) asArray
 		equals: #( 'create' 'update' )
 ]
 
 { #category : 'tests' }
 MCPToolContractsTest >> testEditToolSchemasAdvertiseRenameScopeConditions [
 
-	| editClassInputSchema editClassPropertyNames editMethodInputSchema editMethodPropertyNames |
+	| editClassInputSchema editClassPropertyNames selectorInputSchema selectorPropertyNames |
 	editClassInputSchema := MCPToolEditClass new inputSchema.
-	editMethodInputSchema := MCPToolEditMethod new inputSchema.
+	selectorInputSchema := MCPToolUpdateMethodSelector new inputSchema.
 	editClassPropertyNames := editClassInputSchema properties collect: [
 		                          :each | each name ].
-	editMethodPropertyNames := editMethodInputSchema properties collect: [
-		                           :each | each name ].
+	selectorPropertyNames := selectorInputSchema properties collect: [
+		                         :each | each name ].
 	{
 		editClassPropertyNames.
-		editMethodPropertyNames } do: [ :propertyNames |
-		self deny: (propertyNames includes: 'scope').
-		self assert: (propertyNames includes: 'packageNames').
-		self assert: (propertyNames includes: 'classNames').
-		self assert: (propertyNames includes: 'hierarchyClassNames') ].
+		selectorPropertyNames } do: [ :propertyNames |
+			self deny: (propertyNames includes: 'scope').
+			self assert: (propertyNames includes: 'packageNames').
+			self assert: (propertyNames includes: 'classNames').
+			self assert: (propertyNames includes: 'hierarchyClassNames') ].
 	self
 		assert: (editClassInputSchema asJRPCJSON at: #additionalProperties)
 		equals: false.
 	self
-		assert: (editMethodInputSchema asJRPCJSON at: #additionalProperties)
+		assert: (selectorInputSchema asJRPCJSON at: #additionalProperties)
 		equals: false
 ]
 
@@ -2120,7 +2181,11 @@ MCPToolContractsTest >> testMutatingToolsRequestImageSaveAfterSuccessfulExecutio
 	self assert:
 		MCPToolEditClass new shouldSaveImageAfterSuccessfulExecution.
 	self assert:
-		MCPToolEditMethod new shouldSaveImageAfterSuccessfulExecution.
+		MCPToolCreateMethod new shouldSaveImageAfterSuccessfulExecution.
+	self assert: MCPToolUpdateMethodSelector new
+			shouldSaveImageAfterSuccessfulExecution.
+	self assert: MCPToolUpdateMethodProtocol new
+			shouldSaveImageAfterSuccessfulExecution.
 	self deny:
 		MCPToolRewriteMethods new shouldSaveImageAfterSuccessfulExecution.
 	self assert:
@@ -2134,11 +2199,11 @@ MCPToolContractsTest >> testMutatingToolsRequestImageSaveAfterSuccessfulExecutio
 { #category : 'tests' }
 MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable [
 
-	| editClassTool editMethodTool findClassesTool findMethodsTool findPackagesTool inspectClassTool inspectMethodTool removeClassesTool removeMethodsTool rewriteMethodsTool |
+	| editClassTool findClassesTool findMethodsTool findPackagesTool inspectClassTool inspectMethodTool removeClassesTool removeMethodsTool rewriteMethodsTool updateMethodTool |
 	editClassTool := MCPToolEditClass new.
 	inspectClassTool := MCPToolInspectClass new.
 	inspectMethodTool := MCPToolInspectMethod new.
-	editMethodTool := MCPToolEditMethod new.
+	updateMethodTool := MCPToolUpdateMethodSelector new.
 	rewriteMethodsTool := MCPToolRewriteMethods new.
 	findClassesTool := MCPToolFindClasses new.
 	findMethodsTool := MCPToolFindMethods new.
@@ -2172,11 +2237,12 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 		equals: false.
 	self
 		assert:
-			((self inputPropertyNamed: 'classSide' inTool: editMethodTool)
+			((self inputPropertyNamed: 'classSide' inTool: updateMethodTool)
 				 extraProperties at: #default)
 		equals: false.
 	self
-		assert: ((self inputPropertyNamed: 'force' inTool: editMethodTool)
+		assert:
+			((self inputPropertyNamed: 'force' inTool: updateMethodTool)
 				 extraProperties at: #default)
 		equals: false.
 	self
@@ -2427,7 +2493,10 @@ MCPToolContractsTest >> testRPCAdvertisesStaticToolSurfaceOnly [
 	self assert: (toolNames includes: 'tool_get').
 	self assert: (toolNames includes: 'tool_call').
 	self assert: (toolNames includes: 'class_edit').
-	self assert: (toolNames includes: 'method_edit').
+	self assert: (toolNames includes: 'method_create').
+	self assert: (toolNames includes: 'method_selector_update').
+	self assert: (toolNames includes: 'method_protocol_update').
+	self deny: (toolNames includes: 'method_edit').
 	self assert: (toolNames includes: 'image_evaluate').
 	self assert: (toolNames includes: 'test_run').
 	#( 'repository_search' 'repository_identity_verify'
@@ -2519,12 +2588,16 @@ MCPToolContractsTest >> testRequestedToolIconsAreAdvertised [
 			(MCPStructureIcon
 				 compositeBaseIconNamed: #class
 				 badgeIconNamed: #edit) asJRPCJSON.
-	self
-		assert: (MCPToolEditMethod new asJRPCJSON at: #icons) first
-		equals:
-			(MCPStructureIcon
-				 compositeBaseIconNamed: #page
-				 badgeIconNamed: #edit) asJRPCJSON.
+	{
+		MCPToolCreateMethod.
+		MCPToolUpdateMethodSelector.
+		MCPToolUpdateMethodProtocol } do: [ :toolClass |
+			self
+				assert: (toolClass new asJRPCJSON at: #icons) first
+				equals:
+					(MCPStructureIcon
+						 compositeBaseIconNamed: #page
+						 badgeIconNamed: #edit) asJRPCJSON ].
 	self
 		assert: (MCPToolRewriteMethods new asJRPCJSON at: #icons) first
 		equals: (MCPStructureIcon
@@ -2876,6 +2949,13 @@ MCPToolContractsTest >> testToolRegistryNamesUseClassSideMetadata [
 	self assert: MCPToolRegistry publicToolNames equals: names.
 	self assert: MCPToolFindClasses toolName equals: 'class_search'.
 	self assert: MCPToolRunTests toolName equals: 'test_run'.
+	self assert: MCPToolCreateMethod toolName equals: 'method_create'.
+	self
+		assert: MCPToolUpdateMethodSelector toolName
+		equals: 'method_selector_update'.
+	self
+		assert: MCPToolUpdateMethodProtocol toolName
+		equals: 'method_protocol_update'.
 	self
 		assert: MCPToolVerifyRepositoryIdentity toolName
 		equals: 'repository_identity_verify'.
@@ -2938,6 +3018,7 @@ MCPToolContractsTest >> toolFlowSpecs [
 	specs := OrderedCollection withAll: self baseToolFlowSpecs.
 	oldToolClasses := {
 		                  MCPToolEditRepository.
+		                  MCPToolEditMethod.
 		                  MCPToolManageChangeHistory.
 		                  MCPToolDebugSessions.
 		                  MCPToolDebugControl.
@@ -2945,6 +3026,7 @@ MCPToolContractsTest >> toolFlowSpecs [
 	specs removeAllSuchThat: [ :each |
 		oldToolClasses includes: (each at: #toolClass) ].
 	specs addAll: self focusedMethodLookupToolFlowSpecs.
+	specs addAll: self focusedMethodEditToolFlowSpecs.
 	specs addAll: self focusedChangeHistoryToolFlowSpecs.
 	specs addAll: self focusedRepositoryToolFlowSpecs.
 	specs addAll: self focusedDebugSessionToolFlowSpecs.

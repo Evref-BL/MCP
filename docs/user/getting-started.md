@@ -144,7 +144,9 @@ Prefer dedicated tools over `image_evaluate`:
 
 ```text
 class_edit
-method_edit
+method_create
+method_selector_update
+method_protocol_update
 method_rewrite
 test_run
 repository_create

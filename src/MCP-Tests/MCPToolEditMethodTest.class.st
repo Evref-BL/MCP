@@ -54,6 +54,16 @@ MCPToolEditMethodTest >> assertSuccessDataHasMethodShape: data [
 	self deny: (data at: #source) isEmpty
 ]
 
+{ #category : 'private - calling' }
+MCPToolEditMethodTest >> callToolWith: someArguments [
+
+	| request result tool |
+	tool := MCPToolEditMethod new.
+	request := tool requestFromToolCallArguments: someArguments.
+	result := tool executeWithRequest: request.
+	^ result asJRPCJSON
+]
+
 { #category : 'private' }
 MCPToolEditMethodTest >> classChangeArguments [
 
@@ -1011,11 +1021,15 @@ MCPToolEditMethodTest >> testRenameReturnsStructuredErrorWhenMethodIsMissing [
 { #category : 'tests' }
 MCPToolEditMethodTest >> testRenameReturnsStructuredErrorWhenScopeRequiresClassNames [
 
+	| arguments |
+	arguments := self instanceRenameArguments copy.
+	arguments removeKey: #operation ifAbsent: [ ].
+	arguments at: #scope put: 'classes'.
 	self
 		should: [
-			self callToolWith: (self instanceRenameArguments copy
-					 at: #scope put: 'classes';
-					 yourself) ]
+				self
+					callDiscoveredToolNamed: 'method_selector_update'
+					withArguments: arguments ]
 		raise: JRPCInvalidParameters
 ]
 
@@ -1113,11 +1127,17 @@ MCPToolEditMethodTest >> testRenamesInstanceMethodAndReturnsStructuredData [
 MCPToolEditMethodTest >> testToolRequiresOperationAndClassNameInSchema [
 
 	| classSideProperty |
-	classSideProperty := MCPToolEditMethod new inputSchema properties
+	classSideProperty := MCPToolCreateMethod new inputSchema properties
 		                     detect: [ :each | each name = 'classSide' ].
 	self
-		assert: MCPToolEditMethod new inputSchema required asSet
-		equals: #( 'operation' 'className' ) asSet.
+		assert: MCPToolCreateMethod new inputSchema required asSet
+		equals: #( 'className' 'methodSource' 'protocol' ) asSet.
+	self
+		assert: MCPToolUpdateMethodSelector new inputSchema required asSet
+		equals: #( 'className' 'selector' 'newSelector' ) asSet.
+	self
+		assert: MCPToolUpdateMethodProtocol new inputSchema required asSet
+		equals: #( 'className' 'selector' 'protocol' ) asSet.
 	self
 		assert: (classSideProperty extraProperties at: #default)
 		equals: false
@@ -1126,7 +1146,7 @@ MCPToolEditMethodTest >> testToolRequiresOperationAndClassNameInSchema [
 { #category : 'private - calling' }
 MCPToolEditMethodTest >> toolName [
 
-	^ 'method_edit'
+	self shouldNotImplement
 ]
 
 { #category : 'private' }
