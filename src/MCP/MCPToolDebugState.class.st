@@ -14,7 +14,7 @@ Class {
 { #category : 'icons' }
 MCPToolDebugState class >> toolIconSpec [
 
-	^ MCPToolIconSpec baseIconNamed: #page badgeIconNamed: #inspect
+	^ MCPToolIconSpec baseIconNamed: #bug badgeIconNamed: #inspect
 ]
 
 { #category : 'defaults' }
@@ -38,7 +38,7 @@ MCPToolDebugState >> defaultDescription [
 { #category : 'defaults' }
 MCPToolDebugState >> defaultIcons [
 
-	^ { (self pngCompositeBaseIconNamed: #page badgeIconNamed: #inspect) }
+	^ { (self pngCompositeBaseIconNamed: #bug badgeIconNamed: #inspect) }
 ]
 
 { #category : 'defaults' }

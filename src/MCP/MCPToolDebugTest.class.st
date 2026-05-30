@@ -14,7 +14,7 @@ Class {
 { #category : 'icons' }
 MCPToolDebugTest class >> toolIconSpec [
 
-	^ MCPToolIconSpec named: #testRunner
+	^ MCPToolIconSpec baseIconNamed: #bug badgeIconNamed: #testRunner
 ]
 
 { #category : 'defaults' }

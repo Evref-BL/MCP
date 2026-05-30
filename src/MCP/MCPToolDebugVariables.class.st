@@ -14,7 +14,9 @@ Class {
 { #category : 'icons' }
 MCPToolDebugVariables class >> toolIconSpec [
 
-	^ MCPToolIconSpec baseIconNamed: #open badgeIconNamed: #inspect
+	^ MCPToolIconSpec
+		  baseIconNamed: #bug
+		  badgeIconNamed: #instVarSelected
 ]
 
 { #category : 'defaults' }
@@ -38,7 +40,9 @@ MCPToolDebugVariables >> defaultDescription [
 { #category : 'defaults' }
 MCPToolDebugVariables >> defaultIcons [
 
-	^ { (self pngCompositeBaseIconNamed: #open badgeIconNamed: #inspect) }
+	^ { (self
+		   pngCompositeBaseIconNamed: #bug
+		   badgeIconNamed: #instVarSelected) }
 ]
 
 { #category : 'defaults' }

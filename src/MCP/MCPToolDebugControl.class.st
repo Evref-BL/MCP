@@ -14,7 +14,7 @@ Class {
 { #category : 'icons' }
 MCPToolDebugControl class >> toolIconSpec [
 
-	^ MCPToolIconSpec baseIconNamed: #go badgeIconNamed: #inspect
+	^ MCPToolIconSpec baseIconNamed: #bug badgeIconNamed: #into
 ]
 
 { #category : 'defaults' }
@@ -59,7 +59,7 @@ MCPToolDebugControl >> defaultDescription [
 { #category : 'defaults' }
 MCPToolDebugControl >> defaultIcons [
 
-	^ { (self pngCompositeBaseIconNamed: #go badgeIconNamed: #inspect) }
+	^ { (self pngCompositeBaseIconNamed: #bug badgeIconNamed: #into) }
 ]
 
 { #category : 'defaults' }

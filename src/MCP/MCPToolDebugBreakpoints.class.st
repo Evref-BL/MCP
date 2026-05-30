@@ -14,7 +14,7 @@ Class {
 { #category : 'icons' }
 MCPToolDebugBreakpoints class >> toolIconSpec [
 
-	^ MCPToolIconSpec baseIconNamed: #page badgeIconNamed: #inspect
+	^ MCPToolIconSpec baseIconNamed: #bug badgeIconNamed: #breakpoint
 ]
 
 { #category : 'defaults' }
@@ -38,7 +38,7 @@ MCPToolDebugBreakpoints >> defaultDescription [
 { #category : 'defaults' }
 MCPToolDebugBreakpoints >> defaultIcons [
 
-	^ { (self pngCompositeBaseIconNamed: #page badgeIconNamed: #inspect) }
+	^ { (self pngCompositeBaseIconNamed: #bug badgeIconNamed: #breakpoint) }
 ]
 
 { #category : 'defaults' }
