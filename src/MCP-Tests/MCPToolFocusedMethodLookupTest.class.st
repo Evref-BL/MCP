@@ -1,0 +1,181 @@
+Class {
+	#name : 'MCPToolFocusedMethodLookupTest',
+	#superclass : 'MCPToolAPITestCase',
+	#category : 'MCP-Tests-Tools',
+	#package : 'MCP-Tests',
+	#tag : 'Tools'
+}
+
+{ #category : 'private' }
+MCPToolFocusedMethodLookupTest >> entryForReference: aReference in: methods [
+
+	^ methods
+		  detect: [ :each |
+				  | reference |
+				  reference := String streamContents: [ :stream |
+						               stream nextPutAll: (each at: #className).
+						               (each at: #classSide) ifTrue: [
+							               stream nextPutAll: ' class' ].
+						               stream
+							               nextPutAll: '>>';
+							               nextPutAll: (each at: #selector) ].
+				  reference = aReference ]
+		  ifNone: [ self fail: 'Missing method ' , aReference ]
+]
+
+{ #category : 'private' }
+MCPToolFocusedMethodLookupTest >> targetClassName [
+
+	^ 'MCPToolFindMethodsTestTarget'
+]
+
+{ #category : 'tests' }
+MCPToolFocusedMethodLookupTest >> testFindClassReferencesMatchesClassReferenceLookup [
+
+	| data legacyData |
+	data := self
+		        toolNamed: 'find-class-references'
+		        dataFromArguments:
+		        { (#className -> 'MCPToolFindMethodsReferenceTarget') }
+			        asDictionary.
+	legacyData := self toolNamed: 'find-methods' dataFromArguments: {
+			              (#filter -> 'MCPToolFindMethodsReferenceTarget').
+			              (#filterMode -> 'classReference') } asDictionary.
+	self
+		assert: (data at: #totalCount)
+		equals: (legacyData at: #totalCount).
+	self
+		entryForReference:
+		'MCPToolFindMethodsReferenceFixture>>referenceExtensionTarget'
+		in: (data at: #methods).
+	self
+		entryForReference:
+		'MCPToolFindMethodsReferenceFixture class>>referenceExtensionTarget'
+		in: (data at: #methods)
+]
+
+{ #category : 'tests' }
+MCPToolFocusedMethodLookupTest >> testFindMethodImplementorsMatchesFindMethodsImplementorLookup [
+
+	| data legacyData |
+	data := self
+		        toolNamed: 'find-method-implementors'
+		        dataFromArguments: {
+				        (#selector -> 'alphaNeedleSelector').
+				        (#classNames -> { self targetClassName }) } asDictionary.
+	legacyData := self toolNamed: 'find-methods' dataFromArguments: {
+			              (#filter -> 'alphaNeedleSelector').
+			              (#classNames -> { self targetClassName }) }
+			              asDictionary.
+	self
+		assert: (data at: #totalCount)
+		equals: (legacyData at: #totalCount).
+	self
+		entryForReference: self targetClassName , '>>alphaNeedleSelector'
+		in: (data at: #methods)
+]
+
+{ #category : 'tests' }
+MCPToolFocusedMethodLookupTest >> testFindMethodSendersMatchesSelectorReferenceLookup [
+
+	| data legacyData |
+	data := self
+		        toolNamed: 'find-method-senders'
+		        dataFromArguments:
+		        { (#selector -> 'sharedTarget') } asDictionary.
+	legacyData := self toolNamed: 'find-methods' dataFromArguments: {
+			              (#filter -> 'sharedTarget').
+			              (#filterMode -> 'selectorReference') } asDictionary.
+	self
+		assert: (data at: #totalCount)
+		equals: (legacyData at: #totalCount).
+	self
+		entryForReference:
+		'MCPToolFindMethodsReferenceFixture>>instanceSendShared'
+		in: (data at: #methods).
+	self
+		entryForReference:
+		'MCPToolFindMethodsReferenceFixture class>>classSendShared'
+		in: (data at: #methods)
+]
+
+{ #category : 'tests' }
+MCPToolFocusedMethodLookupTest >> testFindVariableReferencesMatchesVariableReferenceLookup [
+
+	| data legacyData |
+	data := self
+		        toolNamed: 'find-variable-references'
+		        dataFromArguments: {
+				        (#variableName -> 'trackedSlot').
+				        (#side -> 'instance').
+				        (#classNames
+				         -> #( 'MCPToolFindMethodsVariableReferenceTarget' )) }
+				        asDictionary.
+	legacyData := self toolNamed: 'find-methods' dataFromArguments: {
+			              (#filter -> 'trackedSlot').
+			              (#filterMode -> 'variableReference').
+			              (#side -> 'instance').
+			              (#classNames
+			               -> #( 'MCPToolFindMethodsVariableReferenceTarget' )) }
+			              asDictionary.
+	self
+		assert: (data at: #totalCount)
+		equals: (legacyData at: #totalCount).
+	self
+		entryForReference:
+		'MCPToolFindMethodsVariableReferenceTarget>>readTrackedSlot'
+		in: (data at: #methods).
+	self
+		entryForReference:
+		'MCPToolFindMethodsVariableReferenceTarget>>writeTrackedSlot'
+		in: (data at: #methods)
+]
+
+{ #category : 'tests' }
+MCPToolFocusedMethodLookupTest >> testFocusedLookupSchemasRequireFocusedArguments [
+
+	| expectations |
+	expectations := {
+		                (MCPToolFindMethodImplementors -> 'selector').
+		                (MCPToolFindMethodSenders -> 'selector').
+		                (MCPToolFindClassReferences -> 'className').
+		                (MCPToolFindVariableReferences -> 'variableName') }.
+	expectations do: [ :expectation |
+			| propertyNames required schema |
+			schema := expectation key new inputSchema.
+			required := schema required asArray.
+			propertyNames := schema properties collect: [ :each | each name ].
+			self assert: required equals: { expectation value }.
+			self assert: (propertyNames includes: expectation value).
+			self assert: (propertyNames includes: 'includeSource').
+			self assert: (propertyNames includes: 'where').
+			self deny: (propertyNames includes: 'filter').
+			self deny: (propertyNames includes: 'filterMode').
+			self deny: (propertyNames includes: 'filterTargets') ]
+]
+
+{ #category : 'tests' }
+MCPToolFocusedMethodLookupTest >> testFocusedLookupToolsArePublicStaticReadTools [
+
+	| names |
+	names := #( 'find-method-implementors' 'find-method-senders'
+	            'find-class-references' 'find-variable-references' ).
+	names do: [ :each |
+			| tool |
+			self assert: (MCPToolRegistry publicToolNames includes: each).
+			self assert: (MCPToolRegistry staticToolNames includes: each).
+			tool := MCPToolRegistry
+				        toolNamed: each
+				        ifAbsent: [ self fail: 'Missing tool ' , each ].
+			self
+				assert: (MCPToolRegistry mutabilityForTool: tool)
+				equals: 'read'.
+			self assert: (MCPToolRegistry riskForTool: tool) equals: 'low' ]
+]
+
+{ #category : 'private' }
+MCPToolFocusedMethodLookupTest >> toolNamed: aToolName dataFromArguments: arguments [
+
+	^ self dataFrom:
+		  (self callToolNamed: aToolName withArguments: arguments)
+]

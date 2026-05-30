@@ -73,10 +73,17 @@ sessions, breakpoints, frame-scoped evaluation, or debugger-driven repair.
 For method lookup:
 
 - discover the method/reference tool from the current client;
-- use exact selector filtering for implementors;
-- use sender/reference filtering for senders;
-- use class-reference filtering for class references;
-- use variable-reference filtering for variable references.
+- use `find-method-implementors` for selector implementors;
+- use `find-method-senders` for selector sends;
+- use `find-class-references` for class binding references;
+- use `find-variable-references` for variable references;
+- use `find-methods` for method metadata/source search, `where` predicates,
+  and equivalent-AST matching.
+
+If a client does not expose the focused lookup tools yet, use the compatible
+`find-methods` modes: exact selector filtering for implementors,
+`selectorReference` for senders, `classReference` for class references, and
+`variableReference` for variable references.
 
 Report incomplete or failing tool results clearly. Do not silently guess from
 memory or exported source when the question depends on image state.

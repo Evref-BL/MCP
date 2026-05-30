@@ -30,9 +30,12 @@ Use single search terms like:
 - evaluate, expression
 
 For method lookup, discover the method/reference tool from the current client.
-Use exact selector filtering for implementors, sender/reference filtering for
-senders, class-reference filtering for class references, and variable-reference
-filtering for variable references.
+Use `find-method-implementors`, `find-method-senders`,
+`find-class-references`, and `find-variable-references` when available. Use
+`find-methods` for method metadata/source search, `where` predicates, and
+equivalent-AST matching. If the focused lookup tools are not available, use the
+compatible `find-methods` modes for implementors, senders, class references,
+and variable references.
 
 Use `evaluate` only for short one-off inspection or glue code when no dedicated
 `pharo` tool fits.

@@ -66,13 +66,20 @@ continuing.
 
 | Tool | Use |
 | --- | --- |
-| `find-methods` | List methods, find implementors, find senders, find class or variable references, query recursive predicates, or match equivalent ASTs. |
+| `find-methods` | List/search methods by selector, class, package, protocol, source, scope, recursive predicates, or equivalent ASTs. |
+| `find-method-implementors` | Find methods that implement a selector. |
+| `find-method-senders` | Find methods that send a selector. |
+| `find-class-references` | Find methods that reference a class binding. |
+| `find-variable-references` | Find methods that reference a variable. |
 | `inspect-method` | Inspect one known method and return source plus structured variable-reference context. |
 | `edit-method` | Create or update one method. Updates can rename selectors, add/remove arguments, reorder arguments, or recategorize protocols. |
 | `rewrite-methods` | Preview or apply AST rewrite rules across a method scope. Applying requires `expectedChangeSetHash` from a preview. |
 | `remove-methods` | Remove methods from one class as a batch without sender safety checks. |
 
-Use `find-methods` with:
+Prefer the focused lookup tools for navigation tasks. Keep `find-methods` for
+method metadata/source search, `where` predicates, and equivalent-AST matching.
+
+The legacy `find-methods` lookup modes remain supported for compatibility:
 
 - `filterMode=exact` and `filterTargets=selector` for implementors
 - `filterMode=selectorReference` for senders

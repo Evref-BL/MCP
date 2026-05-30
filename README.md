@@ -91,6 +91,10 @@ inspect-tool
 find-packages
 find-classes
 find-methods
+find-method-implementors
+find-method-senders
+find-class-references
+find-variable-references
 inspect-class
 inspect-method
 find-repositories

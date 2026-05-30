@@ -246,6 +246,32 @@ MCPToolContractsTest >> firstTextFromToolResult: aResult [
 ]
 
 { #category : 'private' }
+MCPToolContractsTest >> focusedMethodLookupToolFlowSpecs [
+
+	^ {
+		  {
+			  (#toolClass -> MCPToolFindMethodImplementors).
+			  (#arguments -> { (#selector -> 'class') } asDictionary).
+			  (#requestClass -> MCPFindMethodsRequest).
+			  (#commandClass -> MCPQueryToolCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolFindMethodSenders).
+			  (#arguments -> { (#selector -> 'class') } asDictionary).
+			  (#requestClass -> MCPFindMethodsRequest).
+			  (#commandClass -> MCPQueryToolCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolFindClassReferences).
+			  (#arguments -> { (#className -> 'Object') } asDictionary).
+			  (#requestClass -> MCPFindMethodsRequest).
+			  (#commandClass -> MCPQueryToolCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolFindVariableReferences).
+			  (#arguments -> { (#variableName -> 'instVarNamed') } asDictionary).
+			  (#requestClass -> MCPFindMethodsRequest).
+			  (#commandClass -> MCPQueryToolCommand) } asDictionary }
+]
+
+{ #category : 'private' }
 MCPToolContractsTest >> handleJSON: aJSONString [
 
 	^ MCP new server messageProcessor handleJSON: aJSONString
@@ -365,6 +391,10 @@ MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 			MCPToolEditClass.
 			MCPToolRemoveClasses.
 			MCPToolFindMethods.
+			MCPToolFindMethodImplementors.
+			MCPToolFindMethodSenders.
+			MCPToolFindClassReferences.
+			MCPToolFindVariableReferences.
 			MCPToolInspectMethod.
 			MCPToolEditMethod.
 			MCPToolRewriteMethods.
@@ -2571,5 +2601,9 @@ MCPToolContractsTest >> testToolRegistryNamesUseClassSideMetadata [
 { #category : 'private' }
 MCPToolContractsTest >> toolFlowSpecs [
 
-	^ self baseToolFlowSpecs copyWith: self debugTestToolFlowSpec
+	| specs |
+	specs := OrderedCollection withAll: self baseToolFlowSpecs.
+	specs addAll: self focusedMethodLookupToolFlowSpecs.
+	specs add: self debugTestToolFlowSpec.
+	^ specs asArray
 ]

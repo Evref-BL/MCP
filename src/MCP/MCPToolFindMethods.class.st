@@ -35,10 +35,8 @@ MCPToolFindMethods >> classBindingForClassName: aClassName [
 ]
 
 { #category : 'private - methods' }
-MCPToolFindMethods >> classReferenceEntriesForQueryRequest: queryRequest [
+MCPToolFindMethods >> classReferenceEntriesForClassNamed: className queryRequest: queryRequest [
 
-	| className |
-	className := queryRequest requiredFilterPatternForTool: self.
 	^ self
 		  methodEntriesFromMethods: (self
 				   matchingClassReferencesForClassNamed: className
@@ -46,10 +44,19 @@ MCPToolFindMethods >> classReferenceEntriesForQueryRequest: queryRequest [
 		  queryRequest: queryRequest
 ]
 
+{ #category : 'private - methods' }
+MCPToolFindMethods >> classReferenceEntriesForQueryRequest: queryRequest [
+
+	^ self
+		  classReferenceEntriesForClassNamed:
+		  (queryRequest requiredFilterPatternForTool: self)
+		  queryRequest: queryRequest
+]
+
 { #category : 'defaults' }
 MCPToolFindMethods >> defaultDescription [
 
-	^ 'List methods and optionally filter them by method metadata or code references. Omitting method scope searches the whole image. Multiple scope filters use union by default; set scopeMode=intersection to require all scopes. Missing class or package names return warnings with suggestions. Use filterMode=exact with filterTargets=selector for implementors. Use filterMode=selectorReference for senders, filterMode=classReference for class references, and filterMode=variableReference for variable references. Reference lookup modes require filter and ignore filterTargets. where can express recursive predicates; equivalentTo matches methods with an equivalent AST.'
+	^ 'List and search methods by selector, class, package, protocol, source, scope, or recursive where predicates. Multiple scope filters use union by default; set scopeMode=intersection to require all scopes. Missing class or package names return warnings with suggestions. Use find-method-implementors for selector implementors, find-method-senders for selector sends, find-class-references for class binding references, and find-variable-references for variable references. Legacy compatibility remains supported: use filterMode=exact with filterTargets=selector for implementors, filterMode=selectorReference for senders, filterMode=classReference for class references, and filterMode=variableReference for variable references. equivalentTo matches methods with an equivalent AST.'
 ]
 
 { #category : 'private - request' }
@@ -122,8 +129,16 @@ MCPToolFindMethods >> filterTextsForMethodEntry: anEntry sourceText: sourceText 
 { #category : 'private - methods' }
 MCPToolFindMethods >> implementorEntriesForQueryRequest: queryRequest [
 
+	^ self
+		  implementorEntriesForSelector: queryRequest filterPattern
+		  queryRequest: queryRequest
+]
+
+{ #category : 'private - methods' }
+MCPToolFindMethods >> implementorEntriesForSelector: selectorString queryRequest: queryRequest [
+
 	| compiledMethods selectorSymbol |
-	selectorSymbol := queryRequest filterPattern asSymbol.
+	selectorSymbol := selectorString asSymbol.
 	compiledMethods := queryRequest scopeQuery methods select: [
 		                   :eachMethod |
 		                   eachMethod selector = selectorSymbol ].
@@ -362,11 +377,18 @@ MCPToolFindMethods >> requestedContextFromRequest: request [
 { #category : 'private - methods' }
 MCPToolFindMethods >> selectorReferenceEntriesForQueryRequest: queryRequest [
 
-	| selector |
-	selector := queryRequest requiredFilterPatternForTool: self.
+	^ self
+		  selectorReferenceEntriesForSelector:
+		  (queryRequest requiredFilterPatternForTool: self)
+		  queryRequest: queryRequest
+]
+
+{ #category : 'private - methods' }
+MCPToolFindMethods >> selectorReferenceEntriesForSelector: selectorString queryRequest: queryRequest [
+
 	^ self
 		  methodEntriesFromMethods: (self
-				   matchingSelectorReferencesForSelector: selector asSymbol
+				   matchingSelectorReferencesForSelector: selectorString asSymbol
 				   inMethods: queryRequest scopeQuery methods)
 		  queryRequest: queryRequest
 ]
@@ -440,8 +462,15 @@ MCPToolFindMethods >> variableBindingsNamed: aVariableName inBehaviors: behavior
 { #category : 'private - methods' }
 MCPToolFindMethods >> variableReferenceEntriesForQueryRequest: queryRequest [
 
-	| variableName |
-	variableName := queryRequest requiredFilterPatternForTool: self.
+	^ self
+		  variableReferenceEntriesForVariableNamed:
+		  (queryRequest requiredFilterPatternForTool: self)
+		  queryRequest: queryRequest
+]
+
+{ #category : 'private - methods' }
+MCPToolFindMethods >> variableReferenceEntriesForVariableNamed: variableName queryRequest: queryRequest [
+
 	^ self
 		  methodEntriesFromMethods: (self
 				   matchingVariableReferencesNamed: variableName

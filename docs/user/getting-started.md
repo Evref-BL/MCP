@@ -117,6 +117,10 @@ tools:
 find-packages
 find-classes
 find-methods
+find-method-implementors
+find-method-senders
+find-class-references
+find-variable-references
 inspect-class
 inspect-method
 find-repositories
@@ -125,8 +129,8 @@ find-repositories
 Useful first questions:
 
 - list packages loaded in the image
-- find implementors of a selector with `find-methods`
-- find senders with `filterMode=selectorReference`
+- find implementors of a selector with `find-method-implementors`
+- find senders with `find-method-senders`
 - inspect one class before editing it
 - inspect repository status before exporting or committing
 

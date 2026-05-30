@@ -25,8 +25,8 @@ MCPToolRegistry class >> additionalKeywordsForTool: aTool [
 	toolName = 'find-repositories' ifTrue: [
 		^ #( 'repo' 'iceberg' 'git' 'branch' 'commit' 'remote' 'head' ) ].
 	toolName = 'edit-repository' ifTrue: [
-		^ #( 'repo' 'iceberg' 'tonel' 'git' 'export' 'diff' 'branch'
-		     'commit' 'pull' 'push' 'fetch' 'attach' 'adopt' 'identity' ) ].
+			^ #( 'repo' 'iceberg' 'tonel' 'git' 'export' 'diff' 'branch'
+			     'commit' 'pull' 'push' 'fetch' 'attach' 'adopt' 'identity' ) ].
 	toolName = 'load-repository' ifTrue: [
 		^ #( 'baseline' 'metacello' 'load' 'package' ) ].
 	toolName = 'find-packages' ifTrue: [
@@ -37,31 +37,38 @@ MCPToolRegistry class >> additionalKeywordsForTool: aTool [
 		^ #( 'class' 'inspect' 'superclass' 'subclass' 'slot' 'trait'
 		     'comment' ) ].
 	toolName = 'edit-class' ifTrue: [
-		^ #( 'class' 'create' 'update' 'rename' 'remove' 'superclass'
-		     'subclass' 'slot' 'trait' 'comment' ) ].
+			^ #( 'class' 'create' 'update' 'rename' 'remove' 'superclass'
+			     'subclass' 'slot' 'trait' 'comment' ) ].
 	toolName = 'find-methods' ifTrue: [
-		^ #( 'method' 'selector' 'protocol' 'source' 'implementor'
-		     'sender' 'reference' 'variable' ) ].
+			^ #( 'method' 'selector' 'protocol' 'source' 'implementor'
+			     'sender' 'reference' 'variable' ) ].
+	toolName = 'find-method-implementors' ifTrue: [
+		^ #( 'method' 'selector' 'implementor' 'implementation' ) ].
+	toolName = 'find-method-senders' ifTrue: [
+		^ #( 'method' 'selector' 'sender' 'send' 'reference' ) ].
+	toolName = 'find-class-references' ifTrue: [
+		^ #( 'method' 'class' 'reference' 'binding' ) ].
+	toolName = 'find-variable-references' ifTrue: [
+		^ #( 'method' 'variable' 'reference' 'slot' 'binding' ) ].
 	toolName = 'inspect-method' ifTrue: [
-		^ #( 'method' 'selector' 'protocol' 'source' 'reference'
-		     'variable' ) ].
+		^ #( 'method' 'selector' 'protocol' 'source' 'reference' 'variable' ) ].
 	toolName = 'edit-method' ifTrue: [
-		^ #( 'method' 'selector' 'protocol' 'source' 'create' 'update'
-		     'rename' ) ].
+			^ #( 'method' 'selector' 'protocol' 'source' 'create' 'update'
+			     'rename' ) ].
 	toolName = 'rewrite-methods' ifTrue: [
 		^ #( 'method' 'rewrite' 'preview' 'apply' 'ast' 'pattern' ) ].
 	toolName = 'run-tests' ifTrue: [
 		^ #( 'test' 'sunit' 'coverage' 'timeout' ) ].
 	toolName = 'manage-change-history' ifTrue: [
-		^ #( 'history' 'change' 'entry' 'browse' 'list' 'inspect'
-		     'preview' 'apply' 'revert' 'recover' 'epicea' 'ombu' ) ].
+			^ #( 'history' 'change' 'entry' 'browse' 'list' 'inspect' 'preview'
+			     'apply' 'revert' 'recover' 'epicea' 'ombu' ) ].
 	toolName = 'capture-screenshot' ifTrue: [
 		^ #( 'screenshot' 'capture' 'window' 'display' 'world' 'ui' ) ].
 	toolName = 'evaluate' ifTrue: [
 		^ #( 'evaluate' 'expression' 'smalltalk' 'code' ) ].
 	(toolName beginsWith: 'debug-') ifTrue: [
-		^ #( 'debug' 'session' 'state' 'frame' 'variable' 'breakpoint'
-		     'capture' 'control' 'repair' 'exception' ) ].
+			^ #( 'debug' 'session' 'state' 'frame' 'variable' 'breakpoint'
+			     'capture' 'control' 'repair' 'exception' ) ].
 	^ #(  )
 ]
 
@@ -182,8 +189,10 @@ MCPToolRegistry class >> mutabilityForTool: aTool [
 	toolName := aTool name.
 	readTools := #( 'discover-tools' 'inspect-tool' 'find-repositories'
 	                'find-packages' 'find-classes' 'inspect-class'
-	                'find-methods' 'inspect-method' 'capture-screenshot'
-	                'debug-state' 'debug-variables' ).
+	                'find-methods' 'find-method-implementors'
+	                'find-method-senders' 'find-class-references'
+	                'find-variable-references' 'inspect-method'
+	                'capture-screenshot' 'debug-state' 'debug-variables' ).
 	executeTools := #( 'call-tool' 'run-tests' 'evaluate' 'debug-evaluate'
 	                   'debug-capture' 'debug-test' ).
 	(readTools includes: toolName) ifTrue: [ ^ 'read' ].
@@ -220,6 +229,10 @@ MCPToolRegistry class >> publicToolGroups [
 			   MCPToolRemoveClasses }).
 		  ('methods' -> {
 			   MCPToolFindMethods.
+			   MCPToolFindMethodImplementors.
+			   MCPToolFindMethodSenders.
+			   MCPToolFindClassReferences.
+			   MCPToolFindVariableReferences.
 			   MCPToolInspectMethod.
 			   MCPToolEditMethod.
 			   MCPToolRewriteMethods.
@@ -268,8 +281,10 @@ MCPToolRegistry class >> riskForTool: aTool [
 	toolName := aTool name.
 	lowRisk := #( 'discover-tools' 'inspect-tool' 'find-repositories'
 	              'find-packages' 'find-classes' 'inspect-class'
-	              'find-methods' 'inspect-method' 'capture-screenshot'
-	              'debug-state' 'debug-variables' ).
+	              'find-methods' 'find-method-implementors'
+	              'find-method-senders' 'find-class-references'
+	              'find-variable-references' 'inspect-method'
+	              'capture-screenshot' 'debug-state' 'debug-variables' ).
 	mediumRisk := #( 'call-tool' 'load-repository' 'run-tests'
 	                 'evaluate' 'debug-evaluate' 'debug-capture'
 	                 'debug-test' ).
@@ -322,6 +337,10 @@ MCPToolRegistry class >> staticToolClasses [
 		  MCPToolInspectClass.
 		  MCPToolEditClass.
 		  MCPToolFindMethods.
+		  MCPToolFindMethodImplementors.
+		  MCPToolFindMethodSenders.
+		  MCPToolFindClassReferences.
+		  MCPToolFindVariableReferences.
 		  MCPToolInspectMethod.
 		  MCPToolEditMethod.
 		  MCPToolEvaluate.
