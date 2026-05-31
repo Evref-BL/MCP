@@ -1180,6 +1180,48 @@ MCPToolContractsTest >> testDiscoverToolsMatchesMultipleQueryTerms [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testDiscoverToolsMatchesPluralQueryTerms [
+
+	| expectations |
+	expectations := {
+		                ('classes' -> 'class_search').
+		                ('repositories' -> 'repository_search').
+		                ('traits' -> 'class_traits_update').
+		                ('variables' -> 'class_shared_variables_update').
+		                ('refactorings' -> 'class_slot_pull_up') }.
+	expectations do: [ :expectation |
+			| names result |
+			result := self callToolNamed: 'tool_search' withArguments: {
+					          (#query -> expectation key).
+					          (#includeStatic -> true).
+					          (#limit -> 200) } asDictionary.
+			names := ((self dataFrom: result) at: #tools) collect: [ :each |
+				         each at: #name ].
+			self assert: (names includes: expectation value) ]
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testDiscoverToolsMatchesSpecializedClassKeywords [
+
+	| expectations |
+	expectations := {
+		                ('trait composition' -> 'class_traits_update').
+		                ('metaclass trait' -> 'class_side_traits_update').
+		                ('classvar' -> 'class_shared_variables_update').
+		                ('pooldictionary' -> 'class_shared_pools_update').
+		                ('weak layout' -> 'class_layout_update') }.
+	expectations do: [ :expectation |
+			| names result |
+			result := self callToolNamed: 'tool_search' withArguments: {
+					          (#query -> expectation key).
+					          (#includeStatic -> true).
+					          (#limit -> 200) } asDictionary.
+			names := ((self dataFrom: result) at: #tools) collect: [ :each |
+				         each at: #name ].
+			self assert: (names includes: expectation value) ]
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testDiscoverToolsReturnsDiscoverableMetadata [
 
 	| createRepositoryMetadata data names result tools |

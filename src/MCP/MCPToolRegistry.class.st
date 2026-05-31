@@ -76,15 +76,18 @@ MCPToolRegistry class >> additionalKeywordsForTool: aTool [
 	toolName = 'class_slots_update' ifTrue: [
 		^ #( 'class' 'slot' 'definition' 'update' ) ].
 	toolName = 'class_traits_update' ifTrue: [
-		^ #( 'class' 'trait' 'update' ) ].
+		^ #( 'class' 'trait' 'composition' 'definition' 'update' ) ].
 	toolName = 'class_side_traits_update' ifTrue: [
-		^ #( 'class' 'trait' 'side' 'update' ) ].
+			^ #( 'class' 'trait' 'side' 'metaclass' 'composition' 'definition'
+			     'update' ) ].
 	toolName = 'class_shared_variables_update' ifTrue: [
-		^ #( 'class' 'variable' 'shared' 'update' ) ].
+		^ #( 'class' 'variable' 'shared' 'classvar' 'binding' 'update' ) ].
 	toolName = 'class_shared_pools_update' ifTrue: [
-		^ #( 'class' 'pool' 'shared' 'update' ) ].
+			^ #( 'class' 'pool' 'shared' 'pooldictionary' 'dictionary'
+			     'update' ) ].
 	toolName = 'class_layout_update' ifTrue: [
-		^ #( 'class' 'layout' 'update' ) ].
+			^ #( 'class' 'layout' 'shape' 'format' 'fixed' 'variable'
+			     'weak' 'immediate' 'word' 'byte' 'update' ) ].
 	toolName = 'class_slot_add' ifTrue: [
 		^ #( 'class' 'slot' 'add' 'refactor' 'refactoring' ) ].
 	toolName = 'class_slot_remove' ifTrue: [
@@ -102,7 +105,7 @@ MCPToolRegistry class >> additionalKeywordsForTool: aTool [
 	toolName = 'method_source_search' ifTrue: [
 		^ #( 'method' 'source' 'code' 'text' 'search' ) ].
 	toolName = 'method_equivalent_search' ifTrue: [
-		^ #( 'method' 'equivalent' 'ast' 'search' ) ].
+		^ #( 'method' 'equivalent' 'ast' 'duplicate' 'semantic' 'search' ) ].
 	toolName = 'method_implementor_search' ifTrue: [
 		^ #( 'method' 'selector' 'implementor' 'implementation' ) ].
 	toolName = 'method_sender_search' ifTrue: [
@@ -110,7 +113,8 @@ MCPToolRegistry class >> additionalKeywordsForTool: aTool [
 	toolName = 'method_class_reference_search' ifTrue: [
 		^ #( 'method' 'class' 'reference' 'binding' ) ].
 	toolName = 'method_variable_reference_search' ifTrue: [
-		^ #( 'method' 'variable' 'reference' 'slot' 'binding' ) ].
+			^ #( 'method' 'variable' 'reference' 'slot' 'temporary' 'classvar'
+			     'binding' ) ].
 	toolName = 'method_get' ifTrue: [
 		^ #( 'method' 'selector' 'protocol' 'source' 'reference' 'variable' ) ].
 	toolName = 'method_create' ifTrue: [
@@ -414,6 +418,17 @@ MCPToolRegistry class >> publicToolsUsingPolicy: aToolExposurePolicy [
 ]
 
 { #category : 'tools' }
+MCPToolRegistry class >> queryTermAlternativesFor: aTerm [
+
+	| alternatives singular term |
+	term := aTerm asString asLowercase.
+	alternatives := OrderedCollection with: term.
+	singular := self singularSearchTermFor: term.
+	singular = term ifFalse: [ alternatives add: singular ].
+	^ alternatives asSet asArray
+]
+
+{ #category : 'tools' }
 MCPToolRegistry class >> queryTermsFrom: queryString [
 
 	| normalized |
@@ -482,6 +497,21 @@ MCPToolRegistry class >> searchableTextForTool: aTool [
 					  stream
 						  space;
 						  nextPutAll: keyword ] ]
+]
+
+{ #category : 'tools' }
+MCPToolRegistry class >> singularSearchTermFor: aTerm [
+
+	| term |
+	term := aTerm asString asLowercase.
+	term = 'classes' ifTrue: [ ^ 'class' ].
+	term = 'repositories' ifTrue: [ ^ 'repository' ].
+	term = 'histories' ifTrue: [ ^ 'history' ].
+	(term endsWith: 'ies') ifTrue: [ ^ (term allButLast: 3) , 'y' ].
+	(term endsWith: 'ses') ifTrue: [ ^ term allButLast: 2 ].
+	((term endsWith: 's') and: [ (term endsWith: 'ss') not ]) ifTrue: [
+		^ term allButLast ].
+	^ term
 ]
 
 { #category : 'tools' }
@@ -584,7 +614,8 @@ MCPToolRegistry class >> tool: aTool matchesQuery: queryString group: groupStrin
 	queryTerms ifEmpty: [ ^ true ].
 	searchableText := (self searchableTextForTool: aTool) asLowercase.
 	^ queryTerms allSatisfy: [ :each |
-		  searchableText includesSubstring: each ]
+			  (self queryTermAlternativesFor: each) anySatisfy: [ :alternative |
+				  searchableText includesSubstring: alternative ] ]
 ]
 
 { #category : 'tools' }
