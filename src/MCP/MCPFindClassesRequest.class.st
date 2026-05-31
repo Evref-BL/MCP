@@ -5,8 +5,6 @@ Class {
 	#name : 'MCPFindClassesRequest',
 	#superclass : 'Object',
 	#instVars : [
-		'filterPattern',
-		'filterTargets',
 		'filterMode',
 		'caseSensitive',
 		'limit',
@@ -41,8 +39,6 @@ MCPFindClassesRequest class >> fromRequest: request tool: aTool [
 		              yourself.
 	^ self new
 		  scopeQuery: scopeQuery;
-		  filterPattern: (aTool filterPatternFromRequest: request);
-		  filterTargets: (aTool filterTargetsFromRequest: request);
 		  filterMode: (aTool filterModeFromRequest: request);
 		  fieldFilters: (aTool
 				   fieldFiltersFromRequest: request
@@ -92,40 +88,10 @@ MCPFindClassesRequest >> filterMode: anObject [
 	filterMode := anObject
 ]
 
-{ #category : 'accessing' }
-MCPFindClassesRequest >> filterPattern [
-
-	^ filterPattern
-]
-
-{ #category : 'accessing' }
-MCPFindClassesRequest >> filterPattern: anObject [
-
-	filterPattern := anObject
-]
-
-{ #category : 'accessing' }
-MCPFindClassesRequest >> filterTargets [
-
-	^ filterTargets
-]
-
-{ #category : 'accessing' }
-MCPFindClassesRequest >> filterTargets: anObject [
-
-	filterTargets := anObject
-]
-
 { #category : 'testing' }
 MCPFindClassesRequest >> hasFieldFilters [
 
 	^ self fieldFilters notEmpty
-]
-
-{ #category : 'testing' }
-MCPFindClassesRequest >> hasFilterPattern [
-
-	^ filterPattern notNil
 ]
 
 { #category : 'accessing' }

@@ -5,8 +5,6 @@ Class {
 	#name : 'MCPFindPackagesRequest',
 	#superclass : 'Object',
 	#instVars : [
-		'filterPattern',
-		'filterTargets',
 		'filterMode',
 		'caseSensitive',
 		'limit',
@@ -33,8 +31,6 @@ MCPFindPackagesRequest class >> fromRequest: request tool: aTool [
 		              yourself.
 	^ self new
 		  scopeQuery: scopeQuery;
-		  filterPattern: (aTool filterPatternFromRequest: request);
-		  filterTargets: (aTool filterTargetsFromRequest: request);
 		  filterMode: (aTool filterModeFromRequest: request);
 		  fieldFilters: (aTool
 				   fieldFiltersFromRequest: request
@@ -84,40 +80,10 @@ MCPFindPackagesRequest >> filterMode: anObject [
 	filterMode := anObject
 ]
 
-{ #category : 'accessing' }
-MCPFindPackagesRequest >> filterPattern [
-
-	^ filterPattern
-]
-
-{ #category : 'accessing' }
-MCPFindPackagesRequest >> filterPattern: anObject [
-
-	filterPattern := anObject
-]
-
-{ #category : 'accessing' }
-MCPFindPackagesRequest >> filterTargets [
-
-	^ filterTargets
-]
-
-{ #category : 'accessing' }
-MCPFindPackagesRequest >> filterTargets: anObject [
-
-	filterTargets := anObject
-]
-
 { #category : 'testing' }
 MCPFindPackagesRequest >> hasFieldFilters [
 
 	^ self fieldFilters notEmpty
-]
-
-{ #category : 'testing' }
-MCPFindPackagesRequest >> hasFilterPattern [
-
-	^ filterPattern notNil
 ]
 
 { #category : 'accessing' }

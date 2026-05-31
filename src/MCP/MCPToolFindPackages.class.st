@@ -27,12 +27,6 @@ MCPToolFindPackages >> defaultDescription [
 	^ 'List packages and optionally filter them by package metadata. Omit projectNames and packageNames to search all packages. Use projectNames to include packages from projects and packageNames to include exact packages. Multiple scope properties are unioned.'
 ]
 
-{ #category : 'private - request' }
-MCPToolFindPackages >> defaultFilterTargets [
-
-	^ #( 'package' )
-]
-
 { #category : 'defaults' }
 MCPToolFindPackages >> defaultInputSchema [
 
@@ -86,21 +80,6 @@ MCPToolFindPackages >> fieldTextsForPackageEntry: anEntry fieldName: fieldName [
 ]
 
 { #category : 'private - filtering' }
-MCPToolFindPackages >> filterTextsForPackageEntry: anEntry targets: filterTargets [
-
-	| texts |
-	texts := OrderedCollection new.
-	filterTargets do: [ :each |
-		each = 'package' ifTrue: [ texts add: (anEntry at: #packageName) ].
-		each = 'project' ifTrue: [
-			(anEntry at: #projectNames) do: [ :projectName |
-				texts add: projectName ] ].
-		each = 'tag' ifTrue: [
-			(anEntry at: #tagNames) do: [ :tagName | texts add: tagName ] ] ].
-	^ texts asArray
-]
-
-{ #category : 'private - filtering' }
 MCPToolFindPackages >> matchesFieldFiltersOnPackageEntry: anEntry queryRequest: queryRequest [
 
 	^ self
@@ -109,13 +88,6 @@ MCPToolFindPackages >> matchesFieldFiltersOnPackageEntry: anEntry queryRequest: 
 			  self fieldTextsForPackageEntry: anEntry fieldName: fieldName ]
 		  mode: queryRequest filterMode
 		  caseSensitive: queryRequest caseSensitive
-]
-
-{ #category : 'private - filtering' }
-MCPToolFindPackages >> matchesFilterOnPackageEntry: anEntry matcher: aMatcher targets: filterTargets [
-
-	^ (self filterTextsForPackageEntry: anEntry targets: filterTargets)
-		  anySatisfy: [ :each | aMatcher value: each ]
 ]
 
 { #category : 'private - filtering' }
@@ -130,29 +102,19 @@ MCPToolFindPackages >> packageEntriesForRequest: queryRequest [
 { #category : 'private - filtering' }
 MCPToolFindPackages >> packageEntriesFromPackages: packages projectNames: packageProjectNames usingRequest: queryRequest [
 
-	| entries matcher |
-	matcher := self
-		           matcherForPattern: queryRequest filterPattern
-		           mode: queryRequest filterMode
-		           caseSensitive: queryRequest caseSensitive.
+	| entries |
 	entries := OrderedCollection new.
 	packages do: [ :eachPackage |
-			| entry matchesFilter projectNames |
+			| entry projectNames |
 			projectNames := packageProjectNames
 				                at: eachPackage name asString
 				                ifAbsent: [ #(  ) ].
 			entry := (MCPPackageInfo
 				          fromPackage: eachPackage
 				          projectNames: projectNames) asQueryDictionary.
-			matchesFilter := (queryRequest hasFilterPattern not or: [
-					                  self
-						                  matchesFilterOnPackageEntry: entry
-						                  matcher: matcher
-						                  targets: queryRequest filterTargets ]) and: [
-					                 self
-						                 matchesFieldFiltersOnPackageEntry: entry
-						                 queryRequest: queryRequest ].
-			matchesFilter ifTrue: [ entries add: entry ] ].
+			(self
+				 matchesFieldFiltersOnPackageEntry: entry
+				 queryRequest: queryRequest) ifTrue: [ entries add: entry ] ].
 	^ entries asArray
 ]
 
