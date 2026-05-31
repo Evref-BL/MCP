@@ -11,12 +11,6 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'icons' }
-MCPToolCallTool class >> toolIconSpec [
-
-	^ MCPToolIconSpec named: #go
-]
-
 { #category : 'defaults' }
 MCPToolCallTool class >> toolName [
 

@@ -10,12 +10,6 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'icons' }
-MCPToolFindMethods class >> toolIconSpec [
-
-	^ MCPToolIconSpec baseIconNamed: #page badgeIconNamed: #search
-]
-
 { #category : 'defaults' }
 MCPToolFindMethods class >> toolName [
 

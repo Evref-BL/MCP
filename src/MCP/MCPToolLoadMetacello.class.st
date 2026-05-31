@@ -15,12 +15,6 @@ MCPToolLoadMetacello class >> isAbstract [
 	^ self = MCPToolLoadMetacello
 ]
 
-{ #category : 'icons' }
-MCPToolLoadMetacello class >> toolIconSpec [
-
-	^ MCPToolIconSpec baseIconNamed: #box badgeIconNamed: #add
-]
-
 { #category : 'private - execution' }
 MCPToolLoadMetacello >> commandForRequest: loadRequest [
 

@@ -2783,89 +2783,92 @@ MCPToolContractsTest >> testRemoveMethodsHasAccurateNameAndRequiredArguments [
 { #category : 'tests' }
 MCPToolContractsTest >> testRequestedToolIconsAreAdvertised [
 
+	MCPStructureIcon resetCaches.
 	self
 		assert: (MCPToolInspectClass new asJRPCJSON at: #icons) first
 		equals: (MCPStructureIcon
 				 compositeBaseIconNamed: #class
 				 badgeIconNamed: #inspect) asJRPCJSON.
 	self
-		assert: (MCPToolInspectMethod new asJRPCJSON at: #icons) first
+		assert:
+		(MCPToolCreateRepositoryBranch new asJRPCJSON at: #icons) first
+		equals: (MCPStructureIcon
+				 compositeBaseIconNamed: #git
+				 leftBadgeIconNamed: #branch
+				 rightBadgeIconNamed: #add) asJRPCJSON.
+	self
+		assert: (MCPToolFindMethodSource new asJRPCJSON at: #icons) first
 		equals: (MCPStructureIcon
 				 compositeBaseIconNamed: #page
-				 badgeIconNamed: #inspect) asJRPCJSON.
+				 leftBadgeIconNamed: #workspace
+				 rightBadgeIconNamed: #search) asJRPCJSON.
 	self
-		assert: (MCPToolEditRepository new asJRPCJSON at: #icons) first
-		equals:
-			(MCPStructureIcon
-				 compositeBaseIconNamed: #box
-				 badgeIconNamed: #edit) asJRPCJSON.
-	self
-		assert: (MCPToolLoadRepository new asJRPCJSON at: #icons) first
-		equals:
-			(MCPStructureIcon compositeBaseIconNamed: #box badgeIconNamed: #add)
-				asJRPCJSON.
-	self focusedClassEditToolClasses do: [ :toolClass |
-			self
-				assert: (toolClass new asJRPCJSON at: #icons) first
-				equals:
-					(MCPStructureIcon
-						 compositeBaseIconNamed: #class
-						 badgeIconNamed: #edit) asJRPCJSON ].
-	{
-		MCPToolCreateMethod.
-		MCPToolUpdateMethodSelector.
-		MCPToolUpdateMethodProtocol } do: [ :toolClass |
-			self
-				assert: (toolClass new asJRPCJSON at: #icons) first
-				equals:
-					(MCPStructureIcon
-						 compositeBaseIconNamed: #page
-						 badgeIconNamed: #edit) asJRPCJSON ].
-	self
-		assert: (MCPToolRewriteMethods new asJRPCJSON at: #icons) first
+		assert:
+		(MCPToolFindMethodImplementors new asJRPCJSON at: #icons) first
 		equals: (MCPStructureIcon
 				 compositeBaseIconNamed: #page
-				 badgeIconNamed: #refreshCircling) asJRPCJSON.
+				 leftBadgeIconNamed: #referencesUpsideDown
+				 rightBadgeIconNamed: #search) asJRPCJSON.
 	self
-		assert: (MCPToolFindClasses new asJRPCJSON at: #icons) first
+		assert:
+		(MCPToolUpdateMethodProtocol new asJRPCJSON at: #icons) first
+		equals: (MCPStructureIcon
+				 compositeBaseIconNamed: #page
+				 leftBadgeIconNamed: #protocolProtected
+				 rightBadgeIconNamed: #edit) asJRPCJSON.
+	self
+		assert: (MCPToolPullUpClassSlot new asJRPCJSON at: #icons) first
 		equals: (MCPStructureIcon
 				 compositeBaseIconNamed: #class
-				 badgeIconNamed: #search) asJRPCJSON.
+				 leftBadgeIconNamed: #instVarsSelected
+				 rightBadgeIconNamed: #up) asJRPCJSON.
 	self
-		assert: (MCPToolFindMethods new asJRPCJSON at: #icons) first
-		equals: (MCPStructureIcon
-				 compositeBaseIconNamed: #page
-				 badgeIconNamed: #search) asJRPCJSON.
-	self
-		assert: (MCPToolFindPackages new asJRPCJSON at: #icons) first
-		equals: (MCPStructureIcon
-				 compositeBaseIconNamed: #open
-				 badgeIconNamed: #search) asJRPCJSON.
-	self
-		assert: (MCPToolFindRepositories new asJRPCJSON at: #icons) first
-		equals:
-			(MCPStructureIcon
-				 compositeBaseIconNamed: #box
-				 badgeIconNamed: #search) asJRPCJSON.
-	self
-		assert: (MCPToolRemoveClasses new asJRPCJSON at: #icons) first
+		assert: (MCPToolPushDownClassSlot new asJRPCJSON at: #icons) first
 		equals: (MCPStructureIcon
 				 compositeBaseIconNamed: #class
-				 badgeIconNamed: #delete) asJRPCJSON.
+				 leftBadgeIconNamed: #instVarsSelected
+				 rightBadgeIconNamed: #down) asJRPCJSON.
 	self
-		assert: (MCPToolRemoveMethods new asJRPCJSON at: #icons) first
+		assert: (MCPToolUpdateClassLayout new asJRPCJSON at: #icons) first
 		equals: (MCPStructureIcon
-				 compositeBaseIconNamed: #page
-				 badgeIconNamed: #delete) asJRPCJSON.
+				 compositeBaseIconNamed: #class
+				 leftBadgeIconNamed: #objects
+				 rightBadgeIconNamed: #edit) asJRPCJSON.
 	self
-		assert: (MCPToolRunTests new asJRPCJSON at: #icons) first
-		equals: (MCPStructureIcon pngIconNamed: #testRunner) asJRPCJSON.
+		assert:
+		(MCPToolFindChangeHistoryEntries new asJRPCJSON at: #icons) first
+		equals: (MCPStructureIcon
+				 compositeBaseIconNamed: #history
+				 leftBadgeIconNamed: #changeUpdate
+				 rightBadgeIconNamed: #browse) asJRPCJSON.
+	self
+		assert: (MCPToolRunTestCoverage new asJRPCJSON at: #icons) first
+		equals: (MCPStructureIcon
+				 compositeBaseIconNamed: #testRunner
+				 leftBadgeIconNamed: #processBrowser
+				 rightBadgeIconNamed: #play) asJRPCJSON.
+	self
+		assert:
+		(MCPToolStepIntoDebugSession new asJRPCJSON at: #icons) first
+		equals: (MCPStructureIcon
+				 compositeBaseIconNamed: #bug
+				 leftBadgeIconNamed: #announcement
+				 rightBadgeIconNamed: #into) asJRPCJSON.
 	self
 		assert: (MCPToolCaptureScreenshot new asJRPCJSON at: #icons) first
-		equals: (MCPStructureIcon pngIconNamed: #smallScreenshot) asJRPCJSON.
+		equals: (MCPStructureIcon
+				 compositeBaseIconNamed: #window
+				 badgeIconNamed: #smallScreenshot) asJRPCJSON.
+	self
+		assert: (MCPToolRunTests new asJRPCJSON at: #icons) first
+		equals: (MCPStructureIcon
+				 compositeBaseIconNamed: #testRunner
+				 badgeIconNamed: #play) asJRPCJSON.
 	self
 		assert: (MCPToolEvaluate new asJRPCJSON at: #icons) first
-		equals: (MCPStructureIcon pngIconNamed: #go) asJRPCJSON
+		equals: (MCPStructureIcon
+				 compositeBaseIconNamed: #pharoHalfScale
+				 badgeIconNamed: #go) asJRPCJSON
 ]
 
 { #category : 'tests' }
@@ -3190,6 +3193,16 @@ MCPToolContractsTest >> testToolFlowSelectorNamesSeparateTransportAndParsedInput
 	staleSelectors do: [ :selector |
 		self deny: (MCPTool withAllSubclasses anySatisfy: [ :each |
 				 each includesSelector: selector ]) ]
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testToolIconSpecsAreDerivedFromToolNames [
+
+	self
+		assert: (MCPTool withAllSubclasses count: [ :each |
+				 each class includesSelector: #toolIconSpec ])
+		equals: 1.
+	self assert: (MCPTool class includesSelector: #toolIconSpec)
 ]
 
 { #category : 'tests' }

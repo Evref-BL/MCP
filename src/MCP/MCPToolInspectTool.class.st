@@ -11,12 +11,6 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'icons' }
-MCPToolInspectTool class >> toolIconSpec [
-
-	^ MCPToolIconSpec baseIconNamed: #open badgeIconNamed: #inspect
-]
-
 { #category : 'defaults' }
 MCPToolInspectTool class >> toolName [
 

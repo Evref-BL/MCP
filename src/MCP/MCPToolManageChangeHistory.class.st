@@ -17,12 +17,6 @@ MCPToolManageChangeHistory class >> isAbstract [
 	^ self = MCPToolManageChangeHistory
 ]
 
-{ #category : 'icons' }
-MCPToolManageChangeHistory class >> toolIconSpec [
-
-	^ MCPToolIconSpec named: #recoverLostChanges
-]
-
 { #category : 'defaults' }
 MCPToolManageChangeHistory class >> toolName [
 

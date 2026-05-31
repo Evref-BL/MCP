@@ -11,12 +11,6 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'icons' }
-MCPToolDebugEdit class >> toolIconSpec [
-
-	^ MCPToolIconSpec baseIconNamed: #bug badgeIconNamed: #edit
-]
-
 { #category : 'defaults' }
 MCPToolDebugEdit class >> toolName [
 

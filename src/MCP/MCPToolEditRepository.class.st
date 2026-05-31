@@ -15,12 +15,6 @@ MCPToolEditRepository class >> isAbstract [
 	^ self = MCPToolEditRepository
 ]
 
-{ #category : 'icons' }
-MCPToolEditRepository class >> toolIconSpec [
-
-	^ MCPToolIconSpec baseIconNamed: #box badgeIconNamed: #edit
-]
-
 { #category : 'defaults' }
 MCPToolEditRepository class >> toolName [
 

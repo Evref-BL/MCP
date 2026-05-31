@@ -17,12 +17,6 @@ MCPToolDebugSessions class >> isAbstract [
 	^ self = MCPToolDebugSessions
 ]
 
-{ #category : 'icons' }
-MCPToolDebugSessions class >> toolIconSpec [
-
-	^ MCPToolIconSpec baseIconNamed: #bug badgeIconNamed: #book
-]
-
 { #category : 'private - execution' }
 MCPToolDebugSessions >> commandForRequest: debugRequest [
 

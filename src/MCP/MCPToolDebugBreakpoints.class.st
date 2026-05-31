@@ -17,12 +17,6 @@ MCPToolDebugBreakpoints class >> isAbstract [
 	^ self = MCPToolDebugBreakpoints
 ]
 
-{ #category : 'icons' }
-MCPToolDebugBreakpoints class >> toolIconSpec [
-
-	^ MCPToolIconSpec baseIconNamed: #bug badgeIconNamed: #breakpoint
-]
-
 { #category : 'private - execution' }
 MCPToolDebugBreakpoints >> commandForRequest: debugRequest [
 

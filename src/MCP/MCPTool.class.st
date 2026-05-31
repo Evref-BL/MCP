@@ -60,7 +60,7 @@ MCPTool class >> toolIconFormOf: aToolClass [
 { #category : 'icons' }
 MCPTool class >> toolIconSpec [
 
-	self subclassResponsibility
+	^ MCPToolIconSpec forToolName: self toolName
 ]
 
 { #category : 'icons' }

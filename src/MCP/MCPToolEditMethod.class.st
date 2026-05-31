@@ -17,12 +17,6 @@ MCPToolEditMethod class >> isAbstract [
 	^ self = MCPToolEditMethod
 ]
 
-{ #category : 'icons' }
-MCPToolEditMethod class >> toolIconSpec [
-
-	^ MCPToolIconSpec baseIconNamed: #page badgeIconNamed: #edit
-]
-
 { #category : 'defaults' }
 MCPToolEditMethod class >> toolName [
 

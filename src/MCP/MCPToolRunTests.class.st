@@ -11,12 +11,6 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'icons' }
-MCPToolRunTests class >> toolIconSpec [
-
-	^ MCPToolIconSpec named: #testRunner
-]
-
 { #category : 'defaults' }
 MCPToolRunTests class >> toolName [
 

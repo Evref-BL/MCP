@@ -17,12 +17,6 @@ MCPToolDebugControl class >> isAbstract [
 	^ self = MCPToolDebugControl
 ]
 
-{ #category : 'icons' }
-MCPToolDebugControl class >> toolIconSpec [
-
-	^ MCPToolIconSpec baseIconNamed: #bug badgeIconNamed: #into
-]
-
 { #category : 'defaults' }
 MCPToolDebugControl class >> toolName [
 

@@ -9,12 +9,6 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'icons' }
-MCPToolEvaluate class >> toolIconSpec [
-
-	^ MCPToolIconSpec named: #go
-]
-
 { #category : 'defaults' }
 MCPToolEvaluate class >> toolName [
 

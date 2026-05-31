@@ -11,14 +11,6 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'icons' }
-MCPToolDebugVariables class >> toolIconSpec [
-
-	^ MCPToolIconSpec
-		  baseIconNamed: #bug
-		  badgeIconNamed: #instVarsSelected
-]
-
 { #category : 'defaults' }
 MCPToolDebugVariables class >> toolName [
 

@@ -11,12 +11,6 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'icons' }
-MCPToolCaptureScreenshot class >> toolIconSpec [
-
-	^ MCPToolIconSpec named: #smallScreenshot
-]
-
 { #category : 'defaults' }
 MCPToolCaptureScreenshot class >> toolName [
 

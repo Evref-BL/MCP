@@ -12,14 +12,6 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'icons' }
-MCPToolRewriteMethods class >> toolIconSpec [
-
-	^ MCPToolIconSpec
-		  baseIconNamed: #page
-		  badgeIconNamed: #refreshCircling
-]
-
 { #category : 'defaults' }
 MCPToolRewriteMethods class >> toolName [
 

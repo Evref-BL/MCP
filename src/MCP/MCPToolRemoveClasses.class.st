@@ -11,12 +11,6 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'icons' }
-MCPToolRemoveClasses class >> toolIconSpec [
-
-	^ MCPToolIconSpec baseIconNamed: #class badgeIconNamed: #delete
-]
-
 { #category : 'defaults' }
 MCPToolRemoveClasses class >> toolName [
 
