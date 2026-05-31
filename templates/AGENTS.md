@@ -33,9 +33,9 @@ For method lookup, discover the method/reference tool from the current client.
 Use `method_implementor_search`, `method_sender_search`,
 `method_class_reference_search`, and `method_variable_reference_search` when available. Use
 `method_search` for method metadata/source search, `where` predicates, and
-equivalent-AST matching. Use the broader `method_search` modes for
-implementors, senders, class references, and variable references when a single
-method search query is a better fit.
+equivalent-AST matching. Top-level `method_search` filtering is text matching
+only; use the focused method lookup tools for implementors, senders, class
+references, and variable references.
 
 For change history, use `history_file_list` to locate `.ombu` files
 and `history_entry_list` to browse entries. Use

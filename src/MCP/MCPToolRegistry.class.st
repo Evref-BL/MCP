@@ -93,8 +93,7 @@ MCPToolRegistry class >> additionalKeywordsForTool: aTool [
 	toolName = 'class_slot_push_down' ifTrue: [
 		^ #( 'class' 'slot' 'push' 'down' ) ].
 	toolName = 'method_search' ifTrue: [
-			^ #( 'method' 'selector' 'protocol' 'source' 'implementor'
-			     'sender' 'reference' 'variable' ) ].
+		^ #( 'method' 'selector' 'protocol' 'source' 'search' ) ].
 	toolName = 'method_implementor_search' ifTrue: [
 		^ #( 'method' 'selector' 'implementor' 'implementation' ) ].
 	toolName = 'method_sender_search' ifTrue: [

@@ -162,33 +162,6 @@ MCPFindMethodsRequest >> scopeQuery: anObject [
 	scopeQuery := anObject
 ]
 
-{ #category : 'testing' }
-MCPFindMethodsRequest >> usesClassReferenceLookup [
-
-	^ filterMode = 'classReference'
-]
-
-{ #category : 'testing' }
-MCPFindMethodsRequest >> usesImplementorLookup [
-
-	filterPattern ifNil: [ ^ false ].
-	filterMode = 'exact' ifFalse: [ ^ false ].
-	caseSensitive ifFalse: [ ^ false ].
-	^ filterTargets asArray = #( 'selector' )
-]
-
-{ #category : 'testing' }
-MCPFindMethodsRequest >> usesSelectorReferenceLookup [
-
-	^ filterMode = 'selectorReference'
-]
-
-{ #category : 'testing' }
-MCPFindMethodsRequest >> usesVariableReferenceLookup [
-
-	^ filterMode = 'variableReference'
-]
-
 { #category : 'accessing' }
 MCPFindMethodsRequest >> whereSpec [
 

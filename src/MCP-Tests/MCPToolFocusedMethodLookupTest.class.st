@@ -30,20 +30,15 @@ MCPToolFocusedMethodLookupTest >> targetClassName [
 ]
 
 { #category : 'tests' }
-MCPToolFocusedMethodLookupTest >> testFindClassReferencesMatchesClassReferenceLookup [
+MCPToolFocusedMethodLookupTest >> testFindClassReferencesReturnsClassBindingReferences [
 
-	| data legacyData |
+	| data |
 	data := self
 		        toolNamed: 'method_class_reference_search'
 		        dataFromArguments:
 		        { (#className -> 'MCPToolFindMethodsReferenceTarget') }
 			        asDictionary.
-	legacyData := self toolNamed: 'method_search' dataFromArguments: {
-			              (#filter -> 'MCPToolFindMethodsReferenceTarget').
-			              (#filterMode -> 'classReference') } asDictionary.
-	self
-		assert: (data at: #totalCount)
-		equals: (legacyData at: #totalCount).
+	self assert: (data at: #totalCount) equals: 2.
 	self
 		entryForReference:
 		'MCPToolFindMethodsReferenceFixture>>referenceExtensionTarget'
@@ -55,40 +50,29 @@ MCPToolFocusedMethodLookupTest >> testFindClassReferencesMatchesClassReferenceLo
 ]
 
 { #category : 'tests' }
-MCPToolFocusedMethodLookupTest >> testFindMethodImplementorsMatchesFindMethodsImplementorLookup [
+MCPToolFocusedMethodLookupTest >> testFindMethodImplementorsReturnsExactSelectorMatches [
 
-	| data legacyData |
+	| data |
 	data := self
 		        toolNamed: 'method_implementor_search'
 		        dataFromArguments: {
 				        (#selector -> 'alphaNeedleSelector').
 				        (#classNames -> { self targetClassName }) } asDictionary.
-	legacyData := self toolNamed: 'method_search' dataFromArguments: {
-			              (#filter -> 'alphaNeedleSelector').
-			              (#classNames -> { self targetClassName }) }
-			              asDictionary.
-	self
-		assert: (data at: #totalCount)
-		equals: (legacyData at: #totalCount).
+	self assert: (data at: #totalCount) equals: 1.
 	self
 		entryForReference: self targetClassName , '>>alphaNeedleSelector'
 		in: (data at: #methods)
 ]
 
 { #category : 'tests' }
-MCPToolFocusedMethodLookupTest >> testFindMethodSendersMatchesSelectorReferenceLookup [
+MCPToolFocusedMethodLookupTest >> testFindMethodSendersReturnsSelectorReferences [
 
-	| data legacyData |
+	| data |
 	data := self
 		        toolNamed: 'method_sender_search'
 		        dataFromArguments:
 		        { (#selector -> 'sharedTarget') } asDictionary.
-	legacyData := self toolNamed: 'method_search' dataFromArguments: {
-			              (#filter -> 'sharedTarget').
-			              (#filterMode -> 'selectorReference') } asDictionary.
-	self
-		assert: (data at: #totalCount)
-		equals: (legacyData at: #totalCount).
+	self assert: (data at: #totalCount) equals: 2.
 	self
 		entryForReference:
 		'MCPToolFindMethodsReferenceFixture>>instanceSendShared'
@@ -100,9 +84,9 @@ MCPToolFocusedMethodLookupTest >> testFindMethodSendersMatchesSelectorReferenceL
 ]
 
 { #category : 'tests' }
-MCPToolFocusedMethodLookupTest >> testFindVariableReferencesMatchesVariableReferenceLookup [
+MCPToolFocusedMethodLookupTest >> testFindVariableReferencesReturnsVariableReferences [
 
-	| data legacyData |
+	| data |
 	data := self
 		        toolNamed: 'method_variable_reference_search'
 		        dataFromArguments: {
@@ -111,16 +95,7 @@ MCPToolFocusedMethodLookupTest >> testFindVariableReferencesMatchesVariableRefer
 				        (#classNames
 				         -> #( 'MCPToolFindMethodsVariableReferenceTarget' )) }
 				        asDictionary.
-	legacyData := self toolNamed: 'method_search' dataFromArguments: {
-			              (#filter -> 'trackedSlot').
-			              (#filterMode -> 'variableReference').
-			              (#side -> 'instance').
-			              (#classNames
-			               -> #( 'MCPToolFindMethodsVariableReferenceTarget' )) }
-			              asDictionary.
-	self
-		assert: (data at: #totalCount)
-		equals: (legacyData at: #totalCount).
+	self assert: (data at: #totalCount) equals: 2.
 	self
 		entryForReference:
 		'MCPToolFindMethodsVariableReferenceTarget>>readTrackedSlot'

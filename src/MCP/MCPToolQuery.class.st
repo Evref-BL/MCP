@@ -356,13 +356,12 @@ MCPToolQuery >> methodFilteringInputPropertiesWithFilterDescription: filterDescr
 		   baseFilteringInputPropertiesWithFilterDescription:
 		   filterDescription
 		   filterTargetsDescription:
-		   'Optional method-entry fields matched by filter for field filtering. Ignored by reference lookup modes: selectorReference, classReference, and variableReference.'
-		   filterModeDescription:
-		   'How the filter is matched or interpreted. Reference modes on method_search are selectorReference for senders, classReference for class references, and variableReference for variable references.'
+		   'Optional method-entry fields matched by filter.'
+		   filterModeDescription: 'How text filtering is matched.'
 		   filterModeValues: self supportedFilterModes) , {
 		  self wherePredicateSchemaProperty.
 		  (self caseSensitiveSchemaPropertyWithDescription:
-			   'Whether filter matching is case-sensitive. Reference lookup modes ignore this option.').
+			   'Whether filter matching is case-sensitive.').
 		  (self includeSourceSchemaPropertyWithDescription:
 			   includeSourceDescription) }
 	  ,
@@ -617,6 +616,12 @@ MCPToolQuery >> supportedFilterModes [
 MCPToolQuery >> supportedFilterTargets [
 
 	self subclassResponsibility
+]
+
+{ #category : 'private - schema' }
+MCPToolQuery >> supportedWhereFilterModes [
+
+	^ self supportedFilterModes
 ]
 
 { #category : 'private - results' }
@@ -1040,7 +1045,7 @@ MCPToolQuery >> wherePredicateProperties [
 			   stringEnumSchemaPropertyNamed: 'filterMode'
 			   description:
 			   'How a filter predicate is matched. Reference modes apply to method predicates.'
-			   values: self supportedFilterModes
+			   values: self supportedWhereFilterModes
 			   default: self defaultFilterMode).
 		  self wherePredicateFilterTargetsSchemaProperty.
 		  (self

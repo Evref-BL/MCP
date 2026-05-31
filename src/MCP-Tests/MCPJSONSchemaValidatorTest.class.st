@@ -296,7 +296,7 @@ MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasAcceptRepresentativeArg
 { #category : 'tests' }
 MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasRejectInvalidShapeArguments [
 
-	| legacyScopeViolations selectorUpdateViolations |
+	| legacyScopeViolations methodSearchViolations selectorUpdateViolations |
 	legacyScopeViolations := self
 		                         violationsFor:
 		                         { (#scope -> 'packages') } asDictionary
@@ -304,6 +304,14 @@ MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasRejectInvalidShapeArgum
 	self
 		assert: (self keywordsFrom: legacyScopeViolations)
 		equals: #( 'additionalProperties' ).
+	methodSearchViolations := self
+		                          violationsFor:
+		                          { (#filterMode -> 'selectorReference') }
+			                          asDictionary
+		                          schema: MCPToolFindMethods new inputSchema.
+	self
+		assert: (self keywordsFrom: methodSearchViolations)
+		equals: #( 'enum' ).
 	selectorUpdateViolations := self
 		                            violationsFor: {
 				                            (#className -> 'MCPTool').
@@ -342,11 +350,6 @@ MCPJSONSchemaValidatorTest >> testCurrentToolRequestValidationRejectsOperationSp
 					{ (#tests
 					 -> { { (#className -> 'MCPToolContractsTest') } asDictionary }) }
 						asDictionary ]
-		raise: MCPInvalidToolInput.
-	self
-		should: [
-				MCPToolFindMethods new requestFromToolCallArguments:
-					{ (#filterMode -> 'selectorReference') } asDictionary ]
 		raise: MCPInvalidToolInput.
 	self
 		should: [

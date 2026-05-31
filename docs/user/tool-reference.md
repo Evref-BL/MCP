@@ -107,14 +107,10 @@ instead of continuing.
 | `method_remove` | Remove methods from one class as a batch without sender safety checks. |
 
 Prefer the focused lookup tools for navigation tasks. Keep `method_search` for
-method metadata/source search, `where` predicates, and equivalent-AST matching.
-
-The broader `method_search` lookup modes remain available:
-
-- `filterMode=exact` and `filterTargets=selector` for implementors
-- `filterMode=selectorReference` for senders
-- `filterMode=classReference` for class references
-- `filterMode=variableReference` for variable references
+method metadata/source text search, `where` predicates, and equivalent-AST
+matching. Top-level `method_search` filtering is text matching only
+(`substring`, `prefix`, `exact`, or `regex`); use the focused reference tools
+for implementors, senders, class references, and variable references.
 
 `method_create` returns selected Renraku critiques after method compilation when
 they are relevant to review.

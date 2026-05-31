@@ -80,10 +80,9 @@ For method lookup:
 - use `method_search` for method metadata/source search, `where` predicates,
   and equivalent-AST matching.
 
-Use the broader `method_search` modes when one method search query is a better
-fit: exact selector filtering for implementors, `selectorReference` for
-senders, `classReference` for class references, and `variableReference` for
-variable references.
+Top-level `method_search` filtering is text matching only. Use the focused
+method lookup tools for implementors, senders, class references, and variable
+references.
 
 For change history, use `history_file_list` to locate `.ombu` files
 and `history_entry_list` to browse entries. Use

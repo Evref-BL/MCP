@@ -56,7 +56,7 @@ MCPToolFindMethods >> classReferenceEntriesForQueryRequest: queryRequest [
 { #category : 'defaults' }
 MCPToolFindMethods >> defaultDescription [
 
-	^ 'List and search methods by selector, class, package, protocol, source, scope, or recursive where predicates. Multiple scope filters use union by default; set scopeMode=intersection to require all scopes. Missing class or package names return warnings with suggestions. Use method_implementor_search for selector implementors, method_sender_search for selector sends, method_class_reference_search for class binding references, and method_variable_reference_search for variable references. For selector and reference lookups, use filterMode=exact with filterTargets=selector for implementors, filterMode=selectorReference for senders, filterMode=classReference for class references, and filterMode=variableReference for variable references. equivalentTo matches methods with an equivalent AST.'
+	^ 'List and search methods by selector, class, package, protocol, source, scope, or recursive where predicates. Multiple scope filters use union by default; set scopeMode=intersection to require all scopes. Missing class or package names return warnings with suggestions. Use method_implementor_search for selector implementors, method_sender_search for selector sends, method_class_reference_search for class binding references, and method_variable_reference_search for variable references. equivalentTo matches methods with an equivalent AST inside where predicates.'
 ]
 
 { #category : 'private - request' }
@@ -78,7 +78,7 @@ MCPToolFindMethods >> defaultInputSchema [
 	properties := self methodQueryScopeInputProperties
 	              , { self scopeModeSchemaProperty } , (self
 		               methodFilteringInputPropertiesWithFilterDescription:
-		               'For field filtering, the text matched against method-entry fields. For reference lookup modes, the referenced selector, class, or variable name; required when filterMode is selectorReference, classReference, or variableReference.'
+		               'Optional text matched against selected method-entry fields.'
 		               includeSourceDescription:
 		               'Whether to include method source code in each result entry.'
 		               limitDescription:
@@ -338,14 +338,6 @@ MCPToolFindMethods >> methodQueryResultDataForPage: page entriesKey: entriesKey 
 { #category : 'private - template' }
 MCPToolFindMethods >> queryEntriesForQueryRequest: queryRequest [
 
-	queryRequest usesSelectorReferenceLookup ifTrue: [
-		^ self selectorReferenceEntriesForQueryRequest: queryRequest ].
-	queryRequest usesClassReferenceLookup ifTrue: [
-		^ self classReferenceEntriesForQueryRequest: queryRequest ].
-	queryRequest usesVariableReferenceLookup ifTrue: [
-		^ self variableReferenceEntriesForQueryRequest: queryRequest ].
-	queryRequest usesImplementorLookup ifTrue: [
-		^ self implementorEntriesForQueryRequest: queryRequest ].
 	^ self methodEntriesFromQueryRequest: queryRequest
 ]
 
@@ -359,12 +351,6 @@ MCPToolFindMethods >> queryRequestFromToolRequest: request [
 MCPToolFindMethods >> queryResultDataForQueryRequest: queryRequest page: page [
 
 	^ self methodQueryResultDataForPage: page entriesKey: #methods
-]
-
-{ #category : 'private - schema' }
-MCPToolFindMethods >> referenceFilterModes [
-
-	^ #( 'selectorReference' 'classReference' 'variableReference' )
 ]
 
 { #category : 'private - template' }
@@ -424,7 +410,6 @@ MCPToolFindMethods >> successSummaryForScope: scopeSummary page: page [
 MCPToolFindMethods >> supportedFilterModes [
 
 	^ #( 'substring' 'prefix' 'exact' 'regex' )
-	  , self referenceFilterModes
 ]
 
 { #category : 'private - request' }
@@ -433,16 +418,11 @@ MCPToolFindMethods >> supportedFilterTargets [
 	^ #( 'selector' 'class' 'package' 'protocol' 'source' )
 ]
 
-{ #category : 'validating' }
-MCPToolFindMethods >> validateRequest: request [
+{ #category : 'private - schema' }
+MCPToolFindMethods >> supportedWhereFilterModes [
 
-	| filterMode |
-	filterMode := self filterModeFromRequest: request.
-	((self referenceFilterModes includes: filterMode) and: [
-		 (request hasArgumentNamed: 'filter') not ]) ifTrue: [
-		MCPInvalidToolInput
-			signalMissingRequiredArgumentNamed: 'filter'
-			forTool: self ]
+	^ self basicFilterModes
+	  , #( 'selectorReference' 'classReference' 'variableReference' )
 ]
 
 { #category : 'private - searching' }

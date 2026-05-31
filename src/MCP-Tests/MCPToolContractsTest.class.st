@@ -1776,28 +1776,35 @@ MCPToolContractsTest >> testFindClassesReturnsWarningResultForMissingPackage [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testFindMethodsDescriptionMentionsReferenceLookupModes [
+MCPToolContractsTest >> testFindMethodsDescriptionPointsToFocusedReferenceTools [
 
 	| description filterDescription filterModeDescription tool |
 	tool := MCPToolFindMethods new.
 	description := tool description.
 	self assert:
+		(description includesSubstring: 'method_implementor_search').
+	self assert: (description includesSubstring: 'method_sender_search').
+	self assert:
+		(description includesSubstring: 'method_class_reference_search').
+	self assert:
+		(description includesSubstring: 'method_variable_reference_search').
+	self deny:
 		(description includesSubstring: 'filterMode=selectorReference').
-	self assert: (description includesSubstring: 'senders').
-	self assert:
+	self deny:
 		(description includesSubstring: 'filterMode=classReference').
-	self assert:
+	self deny:
 		(description includesSubstring: 'filterMode=variableReference').
-	self assert: (description includesSubstring: 'implementors').
 	filterDescription := (self inputPropertyNamed: 'filter' inTool: tool)
 		                     description.
 	filterModeDescription := (self
 		                          inputPropertyNamed: 'filterMode'
 		                          inTool: tool) description.
 	self assert:
-		(filterDescription includesSubstring: 'referenced selector').
-	self assert: (filterModeDescription includesSubstring:
-			 'selectorReference for senders')
+		(filterDescription includesSubstring: 'method-entry fields').
+	self assert:
+		(filterModeDescription includesSubstring: 'text filtering').
+	self deny:
+		(filterModeDescription includesSubstring: 'selectorReference')
 ]
 
 { #category : 'tests' }
@@ -1827,8 +1834,7 @@ MCPToolContractsTest >> testFindMethodsHasAccurateNameAndSchema [
 		equals: #( 'selector' 'class' 'package' 'protocol' 'source' ).
 	self
 		assert: (filterModeProperty extraProperties at: #enum) asArray
-		equals: #( 'substring' 'prefix' 'exact' 'regex' 'selectorReference'
-			   'classReference' 'variableReference' ).
+		equals: #( 'substring' 'prefix' 'exact' 'regex' ).
 	self deny: (propertyNames includes: 'className')
 ]
 
@@ -1848,22 +1854,6 @@ MCPToolContractsTest >> testFindMethodsListsMethodsForExistingClassScope [
 	self assert: (data at: #totalCount) equals: selectors size.
 	self assert: (selectors includes: 'alphaNeedleSelector').
 	self assert: (selectors includes: 'classNeedleSelector')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testFindMethodsReferenceModesAdvertiseFilterRequirement [
-
-	| filterModeEnum filterModeProperty filterProperty schema |
-	schema := MCPToolFindMethods new inputSchema asJRPCJSON.
-	self deny: (schema includesKey: #allOf).
-	filterModeProperty := (schema at: #properties) at: 'filterMode'.
-	filterProperty := (schema at: #properties) at: 'filter'.
-	filterModeEnum := (filterModeProperty at: #enum) asArray.
-	#( 'selectorReference' 'classReference' 'variableReference' ) do: [
-		:referenceMode |
-		self assert: (filterModeEnum includes: referenceMode) ].
-	self assert: ((filterProperty at: #description) includesSubstring:
-			 'required when filterMode is selectorReference')
 ]
 
 { #category : 'tests' }
@@ -1889,6 +1879,25 @@ MCPToolContractsTest >> testFindMethodsReturnsWarningResultForMissingClass [
 			 'MCPDefinitelyMissingFindMethodsClass').
 	self assert: (warnings first includesSubstring: 'classNames scope').
 	self assert: (warnings first includesSubstring: 'Did you mean:')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testFindMethodsTopLevelFilterModesAreTextOnly [
+
+	| filterModeEnum filterModeProperty filterProperty schema |
+	schema := MCPToolFindMethods new inputSchema asJRPCJSON.
+	self deny: (schema includesKey: #allOf).
+	filterModeProperty := (schema at: #properties) at: 'filterMode'.
+	filterProperty := (schema at: #properties) at: 'filter'.
+	filterModeEnum := (filterModeProperty at: #enum) asArray.
+	self
+		assert: filterModeEnum
+		equals: #( 'substring' 'prefix' 'exact' 'regex' ).
+	self assert:
+		((filterProperty at: #description) includesSubstring: 'text').
+	#( 'selectorReference' 'classReference' 'variableReference' ) do: [
+		:referenceMode |
+		self deny: (filterModeEnum includes: referenceMode) ]
 ]
 
 { #category : 'tests' }
