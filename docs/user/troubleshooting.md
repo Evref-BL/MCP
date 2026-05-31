@@ -47,9 +47,9 @@ inspect the tool's `inputSchema`.
 
 Common causes:
 
-- missing required operation fields
+- missing required fields for the selected focused tool
 - extra fields rejected by `additionalProperties: false`
-- `operation=update` with more than one patch action
+- passing arguments from a different focused tool
 - `method_rewrite` with `apply=true` but no `expectedChangeSetHash`
 - `history_entry_apply` or `history_entry_revert` without `confirm=true`
 

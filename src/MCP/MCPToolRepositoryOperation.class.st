@@ -19,7 +19,7 @@ MCPToolRepositoryOperation >> branchNameSchemaProperty [
 		  schemaPropertyNamed: 'branchName'
 		  type: 'string'
 		  description:
-		  'Branch name for branch operations, or an optional expected current branch guard for repository_head_adopt and repository_identity_verify.'
+		  'Branch name for repository_branch_create or repository_branch_switch, or an optional expected current branch guard for repository_head_adopt and repository_identity_verify.'
 ]
 
 { #category : 'private - execution' }
@@ -152,8 +152,7 @@ MCPToolRepositoryOperation >> repositoryReferenceInputProperties [
 		  (self
 			   schemaPropertyNamed: 'repositoryName'
 			   type: 'string'
-			   description:
-			   'Registered repository name for the repository operation.').
+			   description: 'Registered repository name to target.').
 		  (self
 			   schemaPropertyNamed: 'location'
 			   type: 'string'

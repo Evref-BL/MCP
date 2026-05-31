@@ -172,12 +172,12 @@ MCPToolDebugControl >> defaultOutputSchema [
 					   schemaPropertyNamed: 'frameRef'
 					   type: 'string'
 					   description:
-					   'Post-action state-scoped frame reference when the operation used a frame.').
+					   'State-scoped frame reference returned after a frame-targeted control request.').
 				  (self
 					   schemaPropertyNamed: 'state'
 					   type: 'object'
 					   description:
-					   'Post-action debug_state_get snapshot for paused operations when requested.').
+					   'debug_state_get snapshot returned when control pauses and returnState=true.').
 				  (self
 					   stringArraySchemaNamed: 'warnings'
 					   description: 'Control-specific warnings.'

@@ -104,9 +104,9 @@ receiver or temporaries. Prefer normal code tools for project edits.
 Use `debug_session_step_into`, `debug_session_step_over`,
 `debug_session_step_through`, `debug_session_restart`,
 `debug_session_resume`, and `debug_session_terminate` for control actions.
-Paused control actions can return a post-action `debug_state_get` snapshot. When
-the user asks for a bounded action, such as "step into twice", perform those
-control calls and stop.
+Control tools can return a `debug_state_get` snapshot when execution pauses.
+When the user asks for a bounded action, such as "step into twice", perform
+those control calls and stop.
 
 For externally attached debuggers, control should operate through the attached
 debugger controller so the visible debugger remains the owner of its UI. Do not

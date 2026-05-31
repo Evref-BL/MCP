@@ -131,7 +131,7 @@ MCP uses Iceberg for repository state. The repository tools can:
 - list registered repositories and their branch, head, package, modified, and
   remote metadata
 - load Metacello baselines
-- create or update image-side repository registration
+- create image-side repository registrations or update their metadata
 - inspect `workingCopyDiff`
 - verify expected repository identity before edits or exports
 - export image changes to Tonel files

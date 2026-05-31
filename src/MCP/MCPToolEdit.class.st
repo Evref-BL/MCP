@@ -582,7 +582,7 @@ MCPToolEdit >> refactoringScopeClassNamesSchemaProperty [
 	^ self
 		  stringArraySchemaNamed: 'classNames'
 		  description:
-		  'Exact class scope for scope-aware update actions. The refactoring is applied only inside these classes.'
+		  'Limit the refactoring model to these exact classes. The target class must be included when a target class is provided.'
 		  itemDescription: 'A class name.'
 ]
 
@@ -592,7 +592,7 @@ MCPToolEdit >> refactoringScopeHierarchyClassNamesSchemaProperty [
 	^ self
 		  stringArraySchemaNamed: 'hierarchyClassNames'
 		  description:
-		  'Class hierarchy scope for scope-aware update actions. Each named class contributes its superclass and subclass hierarchy.'
+		  'Limit the refactoring model to each named class, its superclasses, and its subclasses. The target class must be in the resulting scope.'
 		  itemDescription: 'A class name whose hierarchy is included.'
 ]
 
@@ -602,7 +602,7 @@ MCPToolEdit >> refactoringScopePackageNamesSchemaProperty [
 	^ self
 		  stringArraySchemaNamed: 'packageNames'
 		  description:
-		  'Package scope for scope-aware update actions. The refactoring is applied only inside these packages.'
+		  'Limit the refactoring model to classes and methods in these packages. The target class must be in the resulting scope.'
 		  itemDescription: 'A package name.'
 ]
 

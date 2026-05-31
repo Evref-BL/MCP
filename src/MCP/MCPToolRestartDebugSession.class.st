@@ -19,7 +19,7 @@ MCPToolRestartDebugSession >> controlOperationSpec [
 		  (#title -> 'Restart Debug Session').
 		  (#description
 		   ->
-		   'Restart the selected frame of a tracked Pharo DebugSession and optionally return the post-action debug_state_get snapshot.').
+		   'Restart the selected frame of a tracked Pharo DebugSession and optionally return a debug_state_get snapshot when execution pauses.').
 		  (#operation -> 'restart').
 		  (#usesFrameReference -> true) } asDictionary
 ]

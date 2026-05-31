@@ -19,7 +19,7 @@ MCPToolStepThroughDebugSession >> controlOperationSpec [
 		  (#title -> 'Step Through Debug Session').
 		  (#description
 		   ->
-		   'Step through the selected frame of a tracked Pharo DebugSession and optionally return the post-action debug_state_get snapshot.').
+		   'Step through the selected frame of a tracked Pharo DebugSession and optionally return a debug_state_get snapshot when execution pauses.').
 		  (#operation -> 'stepThrough').
 		  (#usesFrameReference -> true) } asDictionary
 ]

@@ -38,7 +38,7 @@ MCPToolClassOperation >> classNameSchemaProperty [
 	^ self
 		  schemaPropertyNamed: 'className'
 		  type: 'string'
-		  description: 'The class to create or update.'
+		  description: 'Class name targeted by this class tool.'
 ]
 
 { #category : 'private - operations' }
@@ -52,7 +52,7 @@ MCPToolClassOperation >> classSideSlotSchemaProperty [
 
 	^ self
 		  booleanSchemaPropertyNamed: 'classSide'
-		  description: 'Whether the slot action targets class-side slots.'
+		  description: 'Whether the slot edit targets class-side slots.'
 		  default: false
 ]
 

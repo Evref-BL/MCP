@@ -110,7 +110,7 @@ MCPToolDebugControlOperation >> stateSnapshotInputProperties [
 		  (self
 			   booleanSchemaPropertyNamed: 'returnState'
 			   description:
-			   'Whether paused operations should include a post-action debug_state_get snapshot.'
+			   'Whether to include a debug_state_get snapshot when control pauses after this tool runs.'
 			   default: true).
 		  (self
 			   integerSchemaPropertyNamed: 'sourceContextLines'
