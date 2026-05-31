@@ -82,6 +82,18 @@ MCPToolFindChangeHistoryFiles >> defaultTitle [
 	^ 'List Change History Files'
 ]
 
+{ #category : 'private - operations' }
+MCPToolFindChangeHistoryFiles >> operationName [
+
+	^ 'listFiles'
+]
+
+{ #category : 'private - operations' }
+MCPToolFindChangeHistoryFiles >> operationSpecifications [
+
+	^ { { (#name -> self operationName) } asDictionary }
+]
+
 { #category : 'private - request' }
 MCPToolFindChangeHistoryFiles >> parsedRequestFromToolRequest: request [
 

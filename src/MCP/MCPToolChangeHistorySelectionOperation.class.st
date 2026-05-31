@@ -116,6 +116,12 @@ MCPToolChangeHistorySelectionOperation >> operationName [
 	^ self changeHistoryOperationSpec at: #operation
 ]
 
+{ #category : 'private - operations' }
+MCPToolChangeHistorySelectionOperation >> operationSpecifications [
+
+	^ { { (#name -> self operationName) } asDictionary }
+]
+
 { #category : 'private - request' }
 MCPToolChangeHistorySelectionOperation >> parsedRequestFromToolRequest: request [
 

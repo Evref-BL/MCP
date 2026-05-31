@@ -110,6 +110,18 @@ MCPToolFindChangeHistoryEntries >> defaultTitle [
 	^ 'List Change History Entries'
 ]
 
+{ #category : 'private - operations' }
+MCPToolFindChangeHistoryEntries >> operationName [
+
+	^ 'listEntries'
+]
+
+{ #category : 'private - operations' }
+MCPToolFindChangeHistoryEntries >> operationSpecifications [
+
+	^ { { (#name -> self operationName) } asDictionary }
+]
+
 { #category : 'private - request' }
 MCPToolFindChangeHistoryEntries >> parsedRequestFromToolRequest: request [
 

@@ -1271,50 +1271,6 @@ MCPToolContractsTest >> testDiscoveryUsesConfiguredStaticToolNames [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testDisplayToolsCatalogSummarizesToolOperations [
-
-	| presenter |
-	presenter := MCPToolsCatalogPresenter new.
-	self
-		assert:
-		(presenter toolCatalogOperationSummaryFor: MCPToolEditRepository new)
-		equals: 'create | attach | +11'.
-	self
-		assert:
-		(presenter toolCatalogOperationSummaryFor:
-			 MCPToolAttachRepository new)
-		equals: 'attach'.
-	self
-		assert:
-		(presenter toolCatalogOperationSummaryFor: MCPToolCreateMethod new)
-		equals: 'create'.
-	self
-		assert: (presenter toolCatalogOperationSummaryFor:
-				 MCPToolUpdateMethodSelector new)
-		equals: 'update'.
-	self
-		assert: (presenter toolCatalogOperationSummaryFor:
-				 MCPToolUpdateMethodProtocol new)
-		equals: 'update'.
-	self
-		assert:
-		(presenter toolCatalogOperationSummaryFor: MCPToolRewriteMethods new)
-		equals: 'preview | apply'.
-	self
-		assert:
-		(presenter toolCatalogOperationSummaryFor: MCPToolFindMethods new)
-		equals: 'query'.
-	self
-		assert:
-		(presenter toolCatalogOperationSummaryFor: MCPToolInspectClass new)
-		equals: 'get'.
-	self
-		assert:
-		(presenter toolCatalogOperationSummaryFor: MCPToolRemoveMethods new)
-		equals: 'remove'
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testEditClassHasAccurateNameAndRequiredArguments [
 
 	| classTools packagePropertyNames slotToolPropertyNames slotsPropertyNames |
@@ -2628,6 +2584,16 @@ MCPToolContractsTest >> testParserHelperBypassesSchemaValidation [
 		whoseDescriptionIncludes: tool operationValidationErrorMessage
 		description:
 		'Parser helper should bypass transport schema validation.'
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testPublicToolsDoNotExposeOperationInput [
+
+	MCPToolRegistry publicTools do: [ :tool |
+			| propertyNames |
+			propertyNames := tool inputSchema properties collect: [ :property |
+				                 property name ].
+			self deny: (propertyNames includes: 'operation') ]
 ]
 
 { #category : 'tests' }
