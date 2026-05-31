@@ -19,42 +19,57 @@ MCPCreateMethodCommand class >> tool: aTool request: aRequest [
 	^ self new initializeTool: aTool request: aRequest
 ]
 
+{ #category : 'private' }
+MCPCreateMethodCommand >> changeSummaryVerbFor: changeKindString [
+
+	changeKindString = 'created' ifTrue: [ ^ 'Created' ].
+	changeKindString = 'replaced' ifTrue: [ ^ 'Replaced' ].
+	^ 'Changed'
+]
+
 { #category : 'executing' }
 MCPCreateMethodCommand >> execute [
 
-	| behavior compiledMethod methodReference result selector |
+	| behavior changeKind compiledMethod methodReference result selector |
 	^ self tool
 		  executeEditOperation: 'create'
 		  force: self request force
 		  requestedContext: self request requestedContext
 		  work: [
-			  behavior := self tool
-				              behaviorNamed: self request className
-				              classSide: self request classSide.
-			  selector := behavior
-				              compile: self request methodSource
-				              classified: self request protocol.
-			  compiledMethod := self tool
-				                    reformattedMethodForBehavior: behavior
-				                    selector: selector.
-			  methodReference := self tool
-				                     methodReferenceForBehavior: behavior
-				                     selector: selector.
-			  result := MCPMethodCreateResult
-				            method: compiledMethod
-				            critiques:
-				            (self tool critiqueDataForMethod: compiledMethod) ]
+				  behavior := self tool
+					              behaviorNamed: self request className
+					              classSide: self request classSide.
+				  selector := self selectorForMethodSource:
+					              self request methodSource.
+				  changeKind := (behavior includesSelector: selector)
+					                ifTrue: [ 'replaced' ]
+					                ifFalse: [ 'created' ].
+				  selector := behavior
+					              compile: self request methodSource
+					              classified: self request protocol.
+				  compiledMethod := self tool
+					                    reformattedMethodForBehavior: behavior
+					                    selector: selector.
+				  methodReference := self tool
+					                     methodReferenceForBehavior: behavior
+					                     selector: selector.
+				  result := MCPMethodCreateResult
+					            method: compiledMethod
+					            critiques:
+					            (self tool critiqueDataForMethod: compiledMethod)
+					            changeKind: changeKind ]
 		  successResult: [ :warningMessages |
-			  self tool
-				  successResultText:
-				  'Created or replaced ' , methodReference , '.'
-				  data: result asDictionary
-				  warnings: warningMessages ]
+				  self tool
+					  successResultText:
+						  (self changeSummaryVerbFor: result changeKind) , ' '
+						  , methodReference , '.'
+					  data: result asDictionary
+					  warnings: warningMessages ]
 		  failureSummary: [ :error |
-			  self tool
-				  failureMessageForCompileClassNamed: self request className
-				  classSide: self request classSide
-				  error: error ]
+				  self tool
+					  failureMessageForCompileClassNamed: self request className
+					  classSide: self request classSide
+					  error: error ]
 ]
 
 { #category : 'initialization' }
@@ -69,6 +84,12 @@ MCPCreateMethodCommand >> initializeTool: aTool request: aRequest [
 MCPCreateMethodCommand >> request [
 
 	^ request
+]
+
+{ #category : 'private' }
+MCPCreateMethodCommand >> selectorForMethodSource: methodSourceString [
+
+	^ (RBParser parseMethod: methodSourceString) selector
 ]
 
 { #category : 'accessing' }

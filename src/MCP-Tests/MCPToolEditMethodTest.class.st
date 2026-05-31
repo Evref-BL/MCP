@@ -41,6 +41,9 @@ MCPToolEditMethodTest >> assertSuccessDataHasMethodShape: data [
 	                   'isExtension' 'protocol' 'source' ) asSet.
 	self assert: (data keys asSet includesAll: requiredKeys).
 	self deny: (data includesKey: #side).
+	(data includesKey: #changeKind) ifTrue: [
+			self assert:
+				(#( 'created' 'replaced' ) includes: (data at: #changeKind)) ].
 	self assert: (data at: #className) isString.
 	self assert: (data at: #selector) isString.
 	self assert:
@@ -739,6 +742,59 @@ MCPToolEditMethodTest >> testCompilesInstanceSideMethod [
 	self assert: (data at: #selector) equals: 'instanceAnswer'.
 	self assert: (data at: #protocol) equals: 'tests'.
 	self assert: (data at: #isExtension) equals: false
+]
+
+{ #category : 'tests' }
+MCPToolEditMethodTest >> testCreateMethodReportsCreatedChangeKind [
+
+	| data result selector |
+	selector := #directCreateProbe.
+	self removeSelector: selector from: MCPToolEditMethodTestTarget.
+	[
+		result := self callToolNamed: 'method_create' withArguments: {
+				          (#className -> 'MCPToolEditMethodTestTarget').
+				          (#methodSource -> 'directCreateProbe ^ 11').
+				          (#protocol -> 'tests') } asDictionary.
+		data := self dataFrom: result.
+		self deny: (result at: #isError ifAbsent: [ false ]).
+		self
+			assert: (self summaryFrom: result)
+			equals: 'Created MCPToolEditMethodTestTarget>>directCreateProbe.'.
+		self assert: (data at: #operation) equals: 'create'.
+		self assert: (data at: #changeKind) equals: 'created'.
+		self assertSuccessDataHasMethodShape: data.
+		self
+			assert: MCPToolEditMethodTestTarget new directCreateProbe
+			equals: 11 ] ensure: [
+		self removeSelector: selector from: MCPToolEditMethodTestTarget ]
+]
+
+{ #category : 'tests' }
+MCPToolEditMethodTest >> testCreateMethodReportsReplacedChangeKind [
+
+	| data result selector |
+	selector := #directReplaceProbe.
+	self
+		ensureMethodSource: 'directReplaceProbe ^ 1'
+		protocol: 'tests'
+		on: MCPToolEditMethodTestTarget.
+	[
+		result := self callToolNamed: 'method_create' withArguments: {
+				          (#className -> 'MCPToolEditMethodTestTarget').
+				          (#methodSource -> 'directReplaceProbe ^ 2').
+				          (#protocol -> 'tests') } asDictionary.
+		data := self dataFrom: result.
+		self deny: (result at: #isError ifAbsent: [ false ]).
+		self
+			assert: (self summaryFrom: result)
+			equals: 'Replaced MCPToolEditMethodTestTarget>>directReplaceProbe.'.
+		self assert: (data at: #operation) equals: 'create'.
+		self assert: (data at: #changeKind) equals: 'replaced'.
+		self assertSuccessDataHasMethodShape: data.
+		self
+			assert: MCPToolEditMethodTestTarget new directReplaceProbe
+			equals: 2 ] ensure: [
+		self removeSelector: selector from: MCPToolEditMethodTestTarget ]
 ]
 
 { #category : 'tests' }

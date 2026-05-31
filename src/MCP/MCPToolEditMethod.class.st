@@ -383,6 +383,11 @@ MCPToolEditMethod >> methodDataProperties [
 			   description:
 			   'The public method edit operation that was performed: create or update.').
 		  (self
+			   schemaPropertyNamed: 'changeKind'
+			   type: 'string'
+			   description:
+			   'For method_create, whether the tool created a new method or replaced an existing method.').
+		  (self
 			   schemaPropertyNamed: 'updateAction'
 			   type: 'string'
 			   description:

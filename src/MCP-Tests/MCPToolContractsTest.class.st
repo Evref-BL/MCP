@@ -1411,10 +1411,11 @@ MCPToolContractsTest >> testEditMethodSchemaAdvertisesMethodState [
 		(argumentValuesProperty extraProperties at: #items) type = 'string'.
 	self
 		assert: propertyNames asSet
-		equals: #( 'operation' 'updateAction' 'updatePlan' 'appliedChange'
-			   'selector' 'className' 'classSide' 'packageName' 'isExtension'
-			   'protocol' 'source' 'oldSelector' 'newSelector' 'oldProtocol'
-			   'newProtocol' 'critiques' ) asSet
+		equals:
+			#( 'operation' 'changeKind' 'updateAction' 'updatePlan'
+			   'appliedChange' 'selector' 'className' 'classSide' 'packageName'
+			   'isExtension' 'protocol' 'source' 'oldSelector' 'newSelector'
+			   'oldProtocol' 'newProtocol' 'critiques' ) asSet
 ]
 
 { #category : 'tests' }

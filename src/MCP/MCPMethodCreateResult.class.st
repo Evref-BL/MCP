@@ -6,7 +6,8 @@ Class {
 	#superclass : 'Object',
 	#instVars : [
 		'methodInfo',
-		'critiques'
+		'critiques',
+		'changeKind'
 	],
 	#category : 'MCP-Results',
 	#package : 'MCP',
@@ -16,9 +17,19 @@ Class {
 { #category : 'instance creation' }
 MCPMethodCreateResult class >> method: aCompiledMethod critiques: critiqueDictionaries [
 
+	^ self
+		  method: aCompiledMethod
+		  critiques: critiqueDictionaries
+		  changeKind: 'created'
+]
+
+{ #category : 'instance creation' }
+MCPMethodCreateResult class >> method: aCompiledMethod critiques: critiqueDictionaries changeKind: changeKindString [
+
 	^ self new
 		  methodInfo: (MCPCompiledMethodInfo fromMethod: aCompiledMethod);
 		  critiques: critiqueDictionaries;
+		  changeKind: changeKindString;
 		  yourself
 ]
 
@@ -28,8 +39,21 @@ MCPMethodCreateResult >> asDictionary [
 	| data |
 	data := self methodInfo asDictionaryIncludingSource: true.
 	data at: #operation put: 'create'.
+	data at: #changeKind put: self changeKind.
 	self critiques ifNotEmpty: [ data at: #critiques put: self critiques ].
 	^ data
+]
+
+{ #category : 'accessing' }
+MCPMethodCreateResult >> changeKind [
+
+	^ changeKind
+]
+
+{ #category : 'accessing' }
+MCPMethodCreateResult >> changeKind: aString [
+
+	changeKind := aString
 ]
 
 { #category : 'accessing' }
