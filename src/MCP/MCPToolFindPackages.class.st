@@ -37,16 +37,14 @@ MCPToolFindPackages >> defaultFilterTargets [
 MCPToolFindPackages >> defaultInputSchema [
 
 	| properties |
-	properties := self packageQueryScopeInputProperties , (self
-		               baseFilteringInputPropertiesWithFilterDescription:
-		               'Optional filter applied to the listed package-entry fields. Use filterTargets to choose which fields are matched.'
-		               filterTargetsDescription:
-		               'Optional package-entry fields matched by filter.'
-		               filterModeDescription:
-		               'How the package filter is matched.'
-		               filterModeValues: self basicFilterModes)
-	              , { (self caseSensitiveSchemaPropertyWithDescription:
-			               'Whether filter matching is case-sensitive.') }
+	properties := self packageQueryScopeInputProperties
+	              , self packageFilterInputProperties , {
+		              (self
+			               filterModeSchemaPropertyWithDescription:
+			               'How package metadata filters are matched.'
+			               values: self basicFilterModes).
+		              (self caseSensitiveSchemaPropertyWithDescription:
+			               'Whether package metadata matching is case-sensitive.') }
 	              , (self paginationInputPropertiesWithLimitDescription:
 			               'Maximum number of matching packages to return. Use 0 to request counts only.').
 	^ self queryInputSchemaWithProperties: properties
@@ -79,6 +77,15 @@ MCPToolFindPackages >> failureMessageForScope: scopeSummary error: anError [
 ]
 
 { #category : 'private - filtering' }
+MCPToolFindPackages >> fieldTextsForPackageEntry: anEntry fieldName: fieldName [
+
+	fieldName = 'packageName' ifTrue: [ ^ { (anEntry at: #packageName) } ].
+	fieldName = 'projectName' ifTrue: [ ^ anEntry at: #projectNames ].
+	fieldName = 'tag' ifTrue: [ ^ anEntry at: #tagNames ].
+	^ #(  )
+]
+
+{ #category : 'private - filtering' }
 MCPToolFindPackages >> filterTextsForPackageEntry: anEntry targets: filterTargets [
 
 	| texts |
@@ -91,6 +98,17 @@ MCPToolFindPackages >> filterTextsForPackageEntry: anEntry targets: filterTarget
 		each = 'tag' ifTrue: [
 			(anEntry at: #tagNames) do: [ :tagName | texts add: tagName ] ] ].
 	^ texts asArray
+]
+
+{ #category : 'private - filtering' }
+MCPToolFindPackages >> matchesFieldFiltersOnPackageEntry: anEntry queryRequest: queryRequest [
+
+	^ self
+		  fieldFilters: queryRequest fieldFilters
+		  matchUsing: [ :fieldName |
+			  self fieldTextsForPackageEntry: anEntry fieldName: fieldName ]
+		  mode: queryRequest filterMode
+		  caseSensitive: queryRequest caseSensitive
 ]
 
 { #category : 'private - filtering' }
@@ -126,11 +144,14 @@ MCPToolFindPackages >> packageEntriesFromPackages: packages projectNames: packag
 			entry := (MCPPackageInfo
 				          fromPackage: eachPackage
 				          projectNames: projectNames) asQueryDictionary.
-			matchesFilter := queryRequest hasFilterPattern not or: [
+			matchesFilter := (queryRequest hasFilterPattern not or: [
+					                  self
+						                  matchesFilterOnPackageEntry: entry
+						                  matcher: matcher
+						                  targets: queryRequest filterTargets ]) and: [
 					                 self
-						                 matchesFilterOnPackageEntry: entry
-						                 matcher: matcher
-						                 targets: queryRequest filterTargets ].
+						                 matchesFieldFiltersOnPackageEntry: entry
+						                 queryRequest: queryRequest ].
 			matchesFilter ifTrue: [ entries add: entry ] ].
 	^ entries asArray
 ]
@@ -146,6 +167,33 @@ MCPToolFindPackages >> packageEntrySchema [
 		  required: #( 'packageName' 'projectNames' 'tagNames' );
 		  additionalProperties: false;
 		  yourself
+]
+
+{ #category : 'private - request' }
+MCPToolFindPackages >> packageFilterFieldNames [
+
+	^ #( 'packageName' 'projectName' 'tag' )
+]
+
+{ #category : 'private - schema' }
+MCPToolFindPackages >> packageFilterInputProperties [
+
+	^ {
+		  (self
+			   schemaPropertyNamed: 'packageName'
+			   type: 'string'
+			   description:
+			   'Optional package-name text matched against package names.').
+		  (self
+			   schemaPropertyNamed: 'projectName'
+			   type: 'string'
+			   description:
+			   'Optional project-name text matched against owning projects.').
+		  (self
+			   schemaPropertyNamed: 'tag'
+			   type: 'string'
+			   description:
+			   'Optional tag-name text matched against package tags.') }
 ]
 
 { #category : 'private - schema' }

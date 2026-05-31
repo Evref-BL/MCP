@@ -80,10 +80,12 @@ MCPToolRequestTest >> testInvalidToolInputErrorResponseIncludesViolations [
 MCPToolRequestTest >> testRequestAccessorsProvideDefaultsUniqueCollectionsSymbolsAndNestedStrings [
 
 	| nested request |
-	request := MCPToolRequest tool: MCPToolFindClasses new arguments: {
-			           (#packageNames -> #( ' MCP ' '' 'MCP' )).
-			           (#filterTargets -> #( 'class' 'package' 'class' )) }
-			           asDictionary.
+	request := MCPToolRequest
+		           tool: MCPToolFindRepositories new
+		           arguments: {
+				           (#packageNames -> #( ' MCP ' '' 'MCP' )).
+				           (#filterTargets -> #( 'class' 'package' 'class' )) }
+				           asDictionary.
 	self
 		assert: (request stringCollectionArgumentNamed: 'packageNames')
 		equals: #( 'MCP' 'MCP' ).

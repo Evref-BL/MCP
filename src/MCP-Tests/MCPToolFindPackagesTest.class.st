@@ -50,42 +50,43 @@ MCPToolFindPackagesTest >> mcpProjectPackageNames [
 MCPToolFindPackagesTest >> testCanFilterPackageEntriesByTagNamesUsingControlledPackages [
 
 	self withTemporaryTaggedPackagesDo: [ :packages :packageProjectNames |
-		| data entry queryRequest |
-		queryRequest := MCPFindPackagesRequest new
-			                filterPattern: 'FixtureBetaTag';
-			                filterTargets: #( 'tag' );
-			                filterMode: 'substring';
-			                caseSensitive: false;
-			                yourself.
-		data := MCPToolFindPackages new
-			        packageEntriesFromPackages: packages
-			        projectNames: packageProjectNames
-			        usingRequest: queryRequest.
-		self assert: data size equals: 1.
-		entry := self
-			         entryNamed: 'MCP-Tests-FindPackages-Temp-Beta'
-			         in: data.
-		self assert: (entry at: #projectNames) equals: #( 'FixtureProject' ).
-		self assert: (entry at: #tagNames) equals: #( 'FixtureBetaTag' ) ]
+			| data entry queryRequest |
+			queryRequest := MCPFindPackagesRequest new
+				                fieldFilters:
+					                { (#tag -> 'FixtureBetaTag') } asDictionary;
+				                filterMode: 'substring';
+				                caseSensitive: false;
+				                yourself.
+			data := MCPToolFindPackages new
+				        packageEntriesFromPackages: packages
+				        projectNames: packageProjectNames
+				        usingRequest: queryRequest.
+			self assert: data size equals: 1.
+			entry := self
+				         entryNamed: 'MCP-Tests-FindPackages-Temp-Beta'
+				         in: data.
+			self
+				assert: (entry at: #projectNames)
+				equals: #( 'FixtureProject' ).
+			self assert: (entry at: #tagNames) equals: #( 'FixtureBetaTag' ) ]
 ]
 
 { #category : 'tests' }
 MCPToolFindPackagesTest >> testImageScopeCanFilterPackagesByTagTarget [
 
 	self withTemporaryTaggedPackagesDo: [ :packages :packageProjectNames |
-		| data packageNames result |
-		result := self callToolWith: {
-				          (#filter -> 'FixtureBetaTag').
-				          (#filterTargets -> #( 'tag' )).
-				          (#filterMode -> 'exact') } asDictionary.
-		data := self dataFrom: result.
-		packageNames := (data at: #packages) collect: [ :each |
-			                each at: #packageName ].
-		self deny: (result at: #isError ifAbsent: [ false ]).
-		self assert: (data at: #totalCount) equals: 1.
-		self
-			assert: packageNames
-			equals: #( 'MCP-Tests-FindPackages-Temp-Beta' ) ]
+			| data packageNames result |
+			result := self callToolWith: {
+					          (#tag -> 'FixtureBetaTag').
+					          (#filterMode -> 'exact') } asDictionary.
+			data := self dataFrom: result.
+			packageNames := (data at: #packages) collect: [ :each |
+				                each at: #packageName ].
+			self deny: (result at: #isError ifAbsent: [ false ]).
+			self assert: (data at: #totalCount) equals: 1.
+			self
+				assert: packageNames
+				equals: #( 'MCP-Tests-FindPackages-Temp-Beta' ) ]
 ]
 
 { #category : 'tests' }
@@ -93,7 +94,7 @@ MCPToolFindPackagesTest >> testImageScopeCanPaginateFilteredPackages [
 
 	| data packageNames result expected |
 	result := self callToolWith: {
-			          (#filter -> 'MCP-').
+			          (#packageName -> 'MCP-').
 			          (#filterMode -> 'prefix').
 			          (#limit -> 2).
 			          (#offset -> 1) } asDictionary.
@@ -117,7 +118,7 @@ MCPToolFindPackagesTest >> testImageScopeFindsExactPackageNameMatch [
 
 	| data packageNames result |
 	result := self callToolWith: {
-			          (#filter -> 'MCP-Tests').
+			          (#packageName -> 'MCP-Tests').
 			          (#filterMode -> 'exact') } asDictionary.
 	data := self dataFrom: result.
 	packageNames := (data at: #packages) collect: [ :each |
@@ -133,8 +134,7 @@ MCPToolFindPackagesTest >> testImageScopeFindsStructuredPackages [
 
 	| data entry result |
 	result := self callToolWith: {
-			          (#filter -> 'MCP').
-			          (#filterTargets -> #( 'project' )).
+			          (#projectName -> 'MCP').
 			          (#filterMode -> 'exact') } asDictionary.
 	data := self dataFrom: result.
 	entry := self entryNamed: 'MCP' in: (data at: #packages).
@@ -227,7 +227,7 @@ MCPToolFindPackagesTest >> testReturnsStructuredErrorForInvalidFilterTarget [
 	self
 		should: [
 			self callToolWith: {
-					(#filter -> 'needle').
+					(#packageName -> 'needle').
 					(#filterTargets -> #( 'definedClassCount' )) } asDictionary ]
 		raise: JRPCInvalidParameters
 ]

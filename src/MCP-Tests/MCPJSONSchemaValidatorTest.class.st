@@ -301,7 +301,7 @@ MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasAcceptRepresentativeArg
 { #category : 'tests' }
 MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasRejectInvalidShapeArguments [
 
-	| classScopeModeViolations classWhereViolations legacyScopeViolations methodSearchModeViolations methodSearchScopeModeViolations methodSearchTargetViolations methodSearchWhereViolations packageWhereViolations selectorUpdateViolations |
+	| classFilterTargetViolations classScopeModeViolations classWhereViolations legacyScopeViolations methodSearchModeViolations methodSearchScopeModeViolations methodSearchTargetViolations methodSearchWhereViolations packageWhereViolations selectorUpdateViolations |
 	legacyScopeViolations := self
 		                         violationsFor:
 		                         { (#scope -> 'packages') } asDictionary
@@ -324,6 +324,15 @@ MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasRejectInvalidShapeArgum
 		                        schema: MCPToolFindClasses new inputSchema.
 	self
 		assert: (self keywordsFrom: classWhereViolations)
+		equals: #( 'additionalProperties' ).
+	classFilterTargetViolations := self
+		                               violationsFor:
+		                               { (#filterTargets -> #( 'class' )) }
+			                               asDictionary
+		                               schema:
+		                               MCPToolFindClasses new inputSchema.
+	self
+		assert: (self keywordsFrom: classFilterTargetViolations)
 		equals: #( 'additionalProperties' ).
 	packageWhereViolations := self
 		                          violationsFor:
@@ -351,7 +360,7 @@ MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasRejectInvalidShapeArgum
 		                                MCPToolFindMethods new inputSchema.
 	self
 		assert: (self keywordsFrom: methodSearchTargetViolations)
-		equals: #( 'enum' ).
+		equals: #( 'additionalProperties' ).
 	methodSearchScopeModeViolations := self
 		                                   violationsFor:
 		                                   { (#scopeMode -> 'intersection') }

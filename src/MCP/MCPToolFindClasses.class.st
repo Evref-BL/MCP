@@ -35,11 +35,14 @@ MCPToolFindClasses >> classEntriesForRequest: queryRequest [
 	queryRequest scopeQuery classes do: [ :eachClass |
 			| entry matchesFilter |
 			entry := (MCPClassInfo fromClass: eachClass) asQueryDictionary.
-			matchesFilter := queryRequest hasFilterPattern not or: [
-					                 self
-						                 matchesFilterOnClassEntry: entry
-						                 matcher: matcher
-						                 targets: queryRequest filterTargets ].
+			matchesFilter := (queryRequest hasFilterPattern not or: [
+					                  self
+						                  matchesFilterOnClassEntry: entry
+						                  matcher: matcher
+						                  targets: queryRequest filterTargets ]) and: [
+				                 self
+					                 matchesFieldFiltersOnClassEntry: entry
+					                 queryRequest: queryRequest ].
 			matchesFilter ifTrue: [ entries add: entry ] ].
 	^ entries asArray
 ]
@@ -56,6 +59,38 @@ MCPToolFindClasses >> classEntrySchema [
 			     'classSlotNames' );
 		  additionalProperties: false;
 		  yourself
+]
+
+{ #category : 'private - request' }
+MCPToolFindClasses >> classFilterFieldNames [
+
+	^ #( 'className' 'tag' 'instanceSlot' 'classSlot' )
+]
+
+{ #category : 'private - schema' }
+MCPToolFindClasses >> classFilterInputProperties [
+
+	^ {
+		  (self
+			   schemaPropertyNamed: 'className'
+			   type: 'string'
+			   description:
+			   'Optional class-name text matched against class names.').
+		  (self
+			   schemaPropertyNamed: 'tag'
+			   type: 'string'
+			   description:
+			   'Optional package-tag text matched against class tags.').
+		  (self
+			   schemaPropertyNamed: 'instanceSlot'
+			   type: 'string'
+			   description:
+			   'Optional slot-name text matched against instance-side slots.').
+		  (self
+			   schemaPropertyNamed: 'classSlot'
+			   type: 'string'
+			   description:
+			   'Optional slot-name text matched against class-side slots.') }
 ]
 
 { #category : 'private - schema' }
@@ -100,15 +135,14 @@ MCPToolFindClasses >> defaultFilterTargets [
 MCPToolFindClasses >> defaultInputSchema [
 
 	| properties |
-	properties := self classQueryScopeInputProperties , (self
-		               baseFilteringInputPropertiesWithFilterDescription:
-		               'Optional filter applied to the listed class-entry fields. Use filterTargets to choose which fields are matched.'
-		               filterTargetsDescription:
-		               'Optional class-entry fields matched by filter.'
-		               filterModeDescription: 'How the filter is matched.'
-		               filterModeValues: self basicFilterModes)
-	              , { (self caseSensitiveSchemaPropertyWithDescription:
-			               'Whether filter matching is case-sensitive.') }
+	properties := self classQueryScopeInputProperties
+	              , self classFilterInputProperties , {
+		              (self
+			               filterModeSchemaPropertyWithDescription:
+			               'How class metadata filters are matched.'
+			               values: self basicFilterModes).
+		              (self caseSensitiveSchemaPropertyWithDescription:
+			               'Whether class metadata matching is case-sensitive.') }
 	              , (self paginationInputPropertiesWithLimitDescription:
 			               'Maximum number of matching classes to return. Use 0 to request counts only.').
 	^ self queryInputSchemaWithProperties: properties
@@ -141,6 +175,17 @@ MCPToolFindClasses >> failureMessageForScope: scopeSummary error: anError [
 ]
 
 { #category : 'private - filtering' }
+MCPToolFindClasses >> fieldTextsForClassEntry: anEntry fieldName: fieldName [
+
+	fieldName = 'className' ifTrue: [ ^ { (anEntry at: #className) } ].
+	fieldName = 'tag' ifTrue: [ ^ { (anEntry at: #tag) } ].
+	fieldName = 'instanceSlot' ifTrue: [
+		^ anEntry at: #instanceSlotNames ].
+	fieldName = 'classSlot' ifTrue: [ ^ anEntry at: #classSlotNames ].
+	^ #(  )
+]
+
+{ #category : 'private - filtering' }
 MCPToolFindClasses >> filterTextsForClassEntry: anEntry targets: filterTargets [
 
 	| texts |
@@ -156,6 +201,17 @@ MCPToolFindClasses >> filterTextsForClassEntry: anEntry targets: filterTargets [
 			(anEntry at: #classSlotNames) do: [ :slotName |
 				texts add: slotName ] ] ].
 	^ texts asArray
+]
+
+{ #category : 'private - filtering' }
+MCPToolFindClasses >> matchesFieldFiltersOnClassEntry: anEntry queryRequest: queryRequest [
+
+	^ self
+		  fieldFilters: queryRequest fieldFilters
+		  matchUsing: [ :fieldName |
+			  self fieldTextsForClassEntry: anEntry fieldName: fieldName ]
+		  mode: queryRequest filterMode
+		  caseSensitive: queryRequest caseSensitive
 ]
 
 { #category : 'private - filtering' }

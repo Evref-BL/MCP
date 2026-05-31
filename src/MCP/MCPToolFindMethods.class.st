@@ -56,7 +56,7 @@ MCPToolFindMethods >> classReferenceEntriesForQueryRequest: queryRequest [
 { #category : 'defaults' }
 MCPToolFindMethods >> defaultDescription [
 
-	^ 'List and search methods by selector, class, package, protocol, or scope. Missing class or package names return warnings with suggestions. Use method_source_search for source text, method_equivalent_search for equivalent ASTs, method_implementor_search for selector implementors, method_sender_search for selector sends, method_class_reference_search for class binding references, and method_variable_reference_search for variable references.'
+	^ 'List and search methods by selector, protocol, class, package, or scope. Missing class or package names return warnings with suggestions. Use method_source_search for source text, method_equivalent_search for equivalent ASTs, method_implementor_search for selector implementors, method_sender_search for selector sends, method_class_reference_search for class binding references, and method_variable_reference_search for variable references.'
 ]
 
 { #category : 'private - request' }
@@ -75,16 +75,14 @@ MCPToolFindMethods >> defaultFilterTargets [
 MCPToolFindMethods >> defaultInputSchema [
 
 	| properties |
-	properties := self methodQueryScopeInputProperties , (self
-		               baseFilteringInputPropertiesWithFilterDescription:
-		               'Optional text matched against selected method metadata fields.'
-		               filterTargetsDescription:
-		               'Optional method metadata fields matched by filter.'
-		               filterModeDescription:
-		               'How text filtering is matched.'
-		               filterModeValues: self supportedFilterModes) , {
+	properties := self methodQueryScopeInputProperties
+	              , self metadataFilterInputProperties , {
+		              (self
+			               filterModeSchemaPropertyWithDescription:
+			               'How selector and protocol filters are matched.'
+			               values: self supportedFilterModes).
 		              (self caseSensitiveSchemaPropertyWithDescription:
-			               'Whether filter matching is case-sensitive.').
+			               'Whether selector and protocol matching is case-sensitive.').
 		              (self includeSourceSchemaPropertyWithDescription:
 			               'Whether to include method source code in each result entry.') }
 	              , (self paginationInputPropertiesWithLimitDescription:
@@ -116,6 +114,14 @@ MCPToolFindMethods >> failureMessageForScope: scopeSummary error: anError [
 		  scopeQueryFailureMessageFor: 'methods'
 		  scope: scopeSummary
 		  error: anError
+]
+
+{ #category : 'private - filtering' }
+MCPToolFindMethods >> fieldTextsForMethodEntry: anEntry sourceText: sourceText fieldName: fieldName [
+
+	fieldName = 'selector' ifTrue: [ ^ { (anEntry at: #selector) } ].
+	fieldName = 'protocol' ifTrue: [ ^ { (anEntry at: #protocol) } ].
+	^ #(  )
 ]
 
 { #category : 'private - filtering' }
@@ -151,6 +157,20 @@ MCPToolFindMethods >> implementorEntriesForSelector: selectorString queryRequest
 	^ self
 		  methodEntriesFromMethods: compiledMethods asArray
 		  queryRequest: queryRequest
+]
+
+{ #category : 'private - filtering' }
+MCPToolFindMethods >> matchesFieldFiltersOnMethodEntry: anEntry sourceText: sourceText queryRequest: queryRequest [
+
+	^ self
+		  fieldFilters: queryRequest fieldFilters
+		  matchUsing: [ :fieldName |
+				  self
+					  fieldTextsForMethodEntry: anEntry
+					  sourceText: sourceText
+					  fieldName: fieldName ]
+		  mode: queryRequest filterMode
+		  caseSensitive: queryRequest caseSensitive
 ]
 
 { #category : 'private - filtering' }
@@ -202,6 +222,28 @@ MCPToolFindMethods >> matchingVariableReferencesNamed: aVariableName scopeQuery:
 		  asArray
 ]
 
+{ #category : 'private - request' }
+MCPToolFindMethods >> metadataFilterFieldNames [
+
+	^ #( 'selector' 'protocol' )
+]
+
+{ #category : 'private - schema' }
+MCPToolFindMethods >> metadataFilterInputProperties [
+
+	^ {
+		  (self
+			   schemaPropertyNamed: 'selector'
+			   type: 'string'
+			   description:
+			   'Optional selector text matched against method selectors.').
+		  (self
+			   schemaPropertyNamed: 'protocol'
+			   type: 'string'
+			   description:
+			   'Optional protocol/category text matched against method protocols.') }
+]
+
 { #category : 'private - searching' }
 MCPToolFindMethods >> method: aCompiledMethod referencesAnyVariable: variables [
 
@@ -246,12 +288,16 @@ MCPToolFindMethods >> methodEntriesFromQueryRequest: queryRequest [
 			sourceText := needsSourceForFiltering
 				              ifTrue: [ info source ]
 				              ifFalse: [ nil ].
-			matchesFilter := queryRequest hasFilterPattern not or: [
+			matchesFilter := (queryRequest hasFilterPattern not or: [
+					                  self
+						                  matchesFilterOnMethodEntry: entry
+						                  sourceText: sourceText
+						                  matcher: matcher
+						                  targets: queryRequest filterTargets ]) and: [
 					                 self
-						                 matchesFilterOnMethodEntry: entry
+						                 matchesFieldFiltersOnMethodEntry: entry
 						                 sourceText: sourceText
-						                 matcher: matcher
-						                 targets: queryRequest filterTargets ].
+						                 queryRequest: queryRequest ].
 			matchesFilter ifTrue: [
 					queryRequest includeSource ifTrue: [
 							sourceText ifNil: [ sourceText := info source ].
@@ -336,7 +382,7 @@ MCPToolFindMethods >> queryEntriesForQueryRequest: queryRequest [
 { #category : 'private - template' }
 MCPToolFindMethods >> queryRequestFromToolRequest: request [
 
-	^ MCPFindMethodsRequest fromRequest: request tool: self
+	^ MCPFindMethodsRequest fromMetadataRequest: request tool: self
 ]
 
 { #category : 'private - template' }

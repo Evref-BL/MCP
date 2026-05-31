@@ -11,7 +11,8 @@ Class {
 		'caseSensitive',
 		'limit',
 		'offset',
-		'scopeQuery'
+		'scopeQuery',
+		'fieldFilters'
 	],
 	#category : 'MCP-Requests',
 	#package : 'MCP',
@@ -43,6 +44,9 @@ MCPFindClassesRequest class >> fromRequest: request tool: aTool [
 		  filterPattern: (aTool filterPatternFromRequest: request);
 		  filterTargets: (aTool filterTargetsFromRequest: request);
 		  filterMode: (aTool filterModeFromRequest: request);
+		  fieldFilters: (aTool
+				   fieldFiltersFromRequest: request
+				   fieldNames: aTool classFilterFieldNames);
 		  caseSensitive:
 			  (request booleanArgumentNamed: 'caseSensitive' default: true);
 		  limit:
@@ -62,6 +66,18 @@ MCPFindClassesRequest >> caseSensitive [
 MCPFindClassesRequest >> caseSensitive: anObject [
 
 	caseSensitive := anObject
+]
+
+{ #category : 'accessing' }
+MCPFindClassesRequest >> fieldFilters [
+
+	^ fieldFilters ifNil: [ Dictionary new ]
+]
+
+{ #category : 'accessing' }
+MCPFindClassesRequest >> fieldFilters: aDictionary [
+
+	fieldFilters := aDictionary
 ]
 
 { #category : 'accessing' }
@@ -98,6 +114,12 @@ MCPFindClassesRequest >> filterTargets [
 MCPFindClassesRequest >> filterTargets: anObject [
 
 	filterTargets := anObject
+]
+
+{ #category : 'testing' }
+MCPFindClassesRequest >> hasFieldFilters [
+
+	^ self fieldFilters notEmpty
 ]
 
 { #category : 'testing' }

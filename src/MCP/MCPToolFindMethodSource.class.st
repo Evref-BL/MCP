@@ -67,6 +67,12 @@ MCPToolFindMethodSource >> queryEntriesForQueryRequest: queryRequest [
 	^ super queryEntriesForQueryRequest: queryRequest
 ]
 
+{ #category : 'private - template' }
+MCPToolFindMethodSource >> queryRequestFromToolRequest: request [
+
+	^ MCPFindMethodsRequest fromRequest: request tool: self
+]
+
 { #category : 'private - request' }
 MCPToolFindMethodSource >> supportedFilterTargets [
 

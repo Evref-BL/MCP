@@ -60,13 +60,13 @@ Identity verification requires at least one expected identity field, such as
 
 | Tool | Use |
 | --- | --- |
-| `package_search` | List packages and filter by project names, package names, and metadata. |
+| `package_search` | List packages by project/package scope, with optional `packageName`, `projectName`, and `tag` filters. |
 
 ## Classes
 
 | Tool | Use |
 | --- | --- |
-| `class_search` | List classes and filter by class metadata, package, hierarchy, and scope. |
+| `class_search` | List classes by package/class/hierarchy scope, with optional `className`, `tag`, `instanceSlot`, and `classSlot` filters. |
 | `class_get` | Get one class by name and return structured class metadata with optional superclass and subclass context. |
 | `class_create` | Create one class definition. |
 | `class_name_update` | Rename one class through the Refactoring Engine. |
@@ -94,7 +94,7 @@ instead of continuing.
 
 | Tool | Use |
 | --- | --- |
-| `method_metadata_search` | List/search methods by selector, class, package, protocol, or scope. |
+| `method_metadata_search` | List/search methods by class/package/hierarchy scope, with optional `selector` and `protocol` filters. |
 | `method_source_search` | Search methods by source text. |
 | `method_equivalent_search` | Search methods whose AST is equivalent to a referenced method. |
 | `method_implementor_search` | Search methods that implement a selector. |
@@ -111,10 +111,10 @@ instead of continuing.
 Prefer the focused lookup tools for navigation tasks. Use
 `method_source_search` for source text and `method_equivalent_search` for
 equivalent-AST matches. Keep `method_metadata_search` for method metadata
-search. Top-level `method_metadata_search` filtering is metadata
-text matching only (`substring`, `prefix`, `exact`, or `regex`); use focused
-tools for source, equivalent methods, implementors, senders, class references,
-and variable references.
+search. Top-level `method_metadata_search` filtering is limited to `selector`
+and `protocol` fields (`substring`, `prefix`, `exact`, or `regex`); use
+focused tools for source, equivalent methods, implementors, senders, class
+references, and variable references.
 
 `method_create` returns selected Renraku critiques after method compilation when
 they are relevant to review.

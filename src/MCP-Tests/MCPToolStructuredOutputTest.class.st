@@ -163,8 +163,7 @@ MCPToolStructuredOutputTest >> testFindPackagesDefaultsToImageScopeWhenScopeProp
 
 	| data packageNames result |
 	result := self callToolNamed: 'package_search' withArguments: {
-			          (#filter -> 'MCP').
-			          (#filterTargets -> #( 'project' )).
+			          (#projectName -> 'MCP').
 			          (#filterMode -> 'exact') } asDictionary.
 	data := self dataFrom: result.
 	packageNames := (data at: #packages) collect: [ :each |

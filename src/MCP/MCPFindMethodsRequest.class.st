@@ -12,12 +12,24 @@ Class {
 		'includeSource',
 		'limit',
 		'offset',
-		'scopeQuery'
+		'scopeQuery',
+		'fieldFilters'
 	],
 	#category : 'MCP-Requests',
 	#package : 'MCP',
 	#tag : 'Requests'
 }
+
+{ #category : 'instance creation' }
+MCPFindMethodsRequest class >> fromMetadataRequest: request tool: aTool [
+
+	| queryRequest |
+	queryRequest := self fromRequest: request tool: aTool.
+	queryRequest fieldFilters: (aTool
+			 fieldFiltersFromRequest: request
+			 fieldNames: aTool metadataFilterFieldNames).
+	^ queryRequest
+]
 
 { #category : 'instance creation' }
 MCPFindMethodsRequest class >> fromRequest: request tool: aTool [
@@ -50,6 +62,18 @@ MCPFindMethodsRequest >> caseSensitive [
 MCPFindMethodsRequest >> caseSensitive: aBoolean [
 
 	caseSensitive := aBoolean
+]
+
+{ #category : 'accessing' }
+MCPFindMethodsRequest >> fieldFilters [
+
+	^ fieldFilters ifNil: [ Dictionary new ]
+]
+
+{ #category : 'accessing' }
+MCPFindMethodsRequest >> fieldFilters: aDictionary [
+
+	fieldFilters := aDictionary
 ]
 
 { #category : 'accessing' }
@@ -86,6 +110,12 @@ MCPFindMethodsRequest >> filterTargets [
 MCPFindMethodsRequest >> filterTargets: aCollection [
 
 	filterTargets := aCollection
+]
+
+{ #category : 'testing' }
+MCPFindMethodsRequest >> hasFieldFilters [
+
+	^ self fieldFilters notEmpty
 ]
 
 { #category : 'testing' }

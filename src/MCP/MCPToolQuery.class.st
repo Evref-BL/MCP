@@ -227,6 +227,37 @@ MCPToolQuery >> failureMessageForScope: scopeSummary error: anError [
 	self subclassResponsibility
 ]
 
+{ #category : 'private - filtering' }
+MCPToolQuery >> fieldFilters: fieldFilters matchUsing: fieldTextsBlock mode: filterMode caseSensitive: caseSensitive [
+
+	fieldFilters keysAndValuesDo: [ :fieldName :pattern |
+			| matcher |
+			matcher := self
+				           matcherForPattern: pattern
+				           mode: filterMode
+				           caseSensitive: caseSensitive.
+			((fieldTextsBlock value: fieldName) anySatisfy: [ :each |
+				 matcher value: each ]) ifFalse: [ ^ false ] ].
+	^ true
+]
+
+{ #category : 'private - request' }
+MCPToolQuery >> fieldFiltersFromRequest: request fieldNames: fieldNames [
+
+	| filters |
+	filters := Dictionary new.
+	fieldNames do: [ :fieldName |
+			(request hasArgumentNamed: fieldName) ifTrue: [
+					| value |
+					value := request stringArgumentNamed: fieldName.
+					(value isNil or: [ value trimBoth isEmpty ]) ifTrue: [
+							MCPInvalidToolInput
+								signalMissingRequiredArgumentNamed: fieldName
+								forTool: self ].
+					filters at: fieldName put: value trimBoth ] ].
+	^ filters
+]
+
 { #category : 'private - request' }
 MCPToolQuery >> filterModeFromRequest: request [
 

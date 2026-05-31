@@ -906,12 +906,11 @@ MCPToolContractsTest >> testCallToolInvokesDiscoverableToolAfterStaticConfigurat
 
 	| data result server |
 	server := MCP new.
-	server staticToolNames:
-		#( 'tool_search' 'tool_get' 'tool_call' ).
+	server staticToolNames: #( 'tool_search' 'tool_get' 'tool_call' ).
 	result := server rpcToolCall: 'tool_call' withParams: {
 			          (#toolName -> 'package_search').
 			          (#arguments -> {
-				           (#filter -> 'MCP').
+				           (#packageName -> 'MCP').
 				           (#filterMode -> 'substring').
 				           (#limit -> 1) } asDictionary) } asDictionary.
 	data := self dataFrom: result.
@@ -928,7 +927,7 @@ MCPToolContractsTest >> testCallToolInvokesTargetToolThroughServerPath [
 	result := self callToolNamed: 'tool_call' withArguments: {
 			          (#toolName -> 'package_search').
 			          (#arguments -> {
-				           (#filter -> 'MCP').
+				           (#packageName -> 'MCP').
 				           (#filterMode -> 'substring').
 				           (#limit -> 1) } asDictionary) } asDictionary.
 	data := self dataFrom: result.
@@ -1763,10 +1762,14 @@ MCPToolContractsTest >> testFindClassesHasAccurateNameAndSchema [
 	self assert: (propertyNames includes: 'hierarchyClassNames').
 	self assert: (propertyNames includes: 'subclassClassNames').
 	self assert: (propertyNames includes: 'parentClassNames').
+	self assert: (propertyNames includes: 'className').
+	self assert: (propertyNames includes: 'tag').
+	self assert: (propertyNames includes: 'instanceSlot').
+	self assert: (propertyNames includes: 'classSlot').
 	self deny: (propertyNames includes: 'scopeMode').
 	self deny: (propertyNames includes: 'where').
-	self assert: (propertyNames includes: 'filter').
-	self assert: (propertyNames includes: 'filterTargets').
+	self deny: (propertyNames includes: 'filter').
+	self deny: (propertyNames includes: 'filterTargets').
 	self assert: (propertyNames includes: 'filterMode').
 	self assert: (propertyNames includes: 'caseSensitive')
 ]
@@ -1814,7 +1817,7 @@ MCPToolContractsTest >> testFindClassesReturnsWarningResultForMissingPackage [
 { #category : 'tests' }
 MCPToolContractsTest >> testFindMethodsDescriptionPointsToFocusedReferenceTools [
 
-	| description filterDescription filterModeDescription tool |
+	| description filterModeDescription protocolDescription selectorDescription tool |
 	tool := MCPToolFindMethods new.
 	description := tool description.
 	self assert: (description includesSubstring: 'method_source_search').
@@ -1835,14 +1838,19 @@ MCPToolContractsTest >> testFindMethodsDescriptionPointsToFocusedReferenceTools 
 		(description includesSubstring: 'filterMode=classReference').
 	self deny:
 		(description includesSubstring: 'filterMode=variableReference').
-	filterDescription := (self inputPropertyNamed: 'filter' inTool: tool)
-		                     description.
+	selectorDescription := (self
+		                        inputPropertyNamed: 'selector'
+		                        inTool: tool) description.
+	protocolDescription := (self
+		                        inputPropertyNamed: 'protocol'
+		                        inTool: tool) description.
 	filterModeDescription := (self
 		                          inputPropertyNamed: 'filterMode'
 		                          inTool: tool) description.
-	self assert: (filterDescription includesSubstring: 'metadata fields').
+	self assert: (selectorDescription includesSubstring: 'selector').
+	self assert: (protocolDescription includesSubstring: 'protocol').
 	self assert:
-		(filterModeDescription includesSubstring: 'text filtering').
+		(filterModeDescription includesSubstring: 'selector and protocol').
 	self deny:
 		(filterModeDescription includesSubstring: 'selectorReference')
 ]
@@ -1850,11 +1858,9 @@ MCPToolContractsTest >> testFindMethodsDescriptionPointsToFocusedReferenceTools 
 { #category : 'tests' }
 MCPToolContractsTest >> testFindMethodsHasAccurateNameAndSchema [
 
-	| filterModeProperty filterTargetsProperty propertyNames schema |
+	| filterModeProperty propertyNames schema |
 	schema := MCPToolFindMethods new inputSchema.
 	propertyNames := schema properties collect: [ :each | each name ].
-	filterTargetsProperty := schema properties detect: [ :each |
-		                         each name = 'filterTargets' ].
 	filterModeProperty := schema properties detect: [ :each |
 		                      each name = 'filterMode' ].
 	self
@@ -1866,15 +1872,12 @@ MCPToolContractsTest >> testFindMethodsHasAccurateNameAndSchema [
 	self assert: (propertyNames includes: 'hierarchyClassNames').
 	self assert: (propertyNames includes: 'subclassClassNames').
 	self assert: (propertyNames includes: 'parentClassNames').
+	self assert: (propertyNames includes: 'selector').
+	self assert: (propertyNames includes: 'protocol').
 	self deny: (propertyNames includes: 'scopeMode').
 	self deny: (propertyNames includes: 'where').
-	self assert: (propertyNames includes: 'filter').
-	self assert: (propertyNames includes: 'filterTargets').
-	self
-		assert:
-			((filterTargetsProperty extraProperties at: #items) extraProperties
-				 at: #enum) asArray
-		equals: #( 'selector' 'class' 'package' 'protocol' ).
+	self deny: (propertyNames includes: 'filter').
+	self deny: (propertyNames includes: 'filterTargets').
 	self
 		assert: (filterModeProperty extraProperties at: #enum) asArray
 		equals: #( 'substring' 'prefix' 'exact' 'regex' ).
@@ -1927,20 +1930,22 @@ MCPToolContractsTest >> testFindMethodsReturnsWarningResultForMissingClass [
 { #category : 'tests' }
 MCPToolContractsTest >> testFindMethodsTopLevelFilterModesAreTextOnly [
 
-	| filterModeEnum filterModeProperty filterProperty propertyNames schema |
+	| filterModeEnum filterModeProperty propertyNames schema selectorProperty |
 	schema := MCPToolFindMethods new inputSchema asJRPCJSON.
 	propertyNames := (schema at: #properties) keys.
 	self deny: (schema includesKey: #allOf).
 	self deny: (propertyNames includes: 'scopeMode').
 	self deny: (propertyNames includes: 'where').
+	self deny: (propertyNames includes: 'filter').
+	self deny: (propertyNames includes: 'filterTargets').
 	filterModeProperty := (schema at: #properties) at: 'filterMode'.
-	filterProperty := (schema at: #properties) at: 'filter'.
+	selectorProperty := (schema at: #properties) at: 'selector'.
 	filterModeEnum := (filterModeProperty at: #enum) asArray.
 	self
 		assert: filterModeEnum
 		equals: #( 'substring' 'prefix' 'exact' 'regex' ).
 	self assert:
-		((filterProperty at: #description) includesSubstring: 'text').
+		((selectorProperty at: #description) includesSubstring: 'selector').
 	#( 'selectorReference' 'classReference' 'variableReference' ) do: [
 		:referenceMode |
 		self deny: (filterModeEnum includes: referenceMode) ]
@@ -1956,9 +1961,12 @@ MCPToolContractsTest >> testFindPackagesHasAccurateNameAndSchema [
 	self assert: schema required equals: #(  ).
 	self assert: (propertyNames includes: 'projectNames').
 	self assert: (propertyNames includes: 'packageNames').
+	self assert: (propertyNames includes: 'packageName').
+	self assert: (propertyNames includes: 'projectName').
+	self assert: (propertyNames includes: 'tag').
 	self deny: (propertyNames includes: 'where').
-	self assert: (propertyNames includes: 'filter').
-	self assert: (propertyNames includes: 'filterTargets').
+	self deny: (propertyNames includes: 'filter').
+	self deny: (propertyNames includes: 'filterTargets').
 	self assert: (propertyNames includes: 'filterMode').
 	self assert: (propertyNames includes: 'caseSensitive')
 ]
@@ -2490,11 +2498,6 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 		equals: 'both'.
 	self
 		assert:
-			((self inputPropertyNamed: 'filterTargets' inTool: findClassesTool)
-				 extraProperties at: #default)
-		equals: #( 'class' ).
-	self
-		assert:
 			((self inputPropertyNamed: 'filterMode' inTool: findClassesTool)
 				 extraProperties at: #default)
 		equals: 'substring'.
@@ -2507,11 +2510,6 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 		assert: ((self inputPropertyNamed: 'limit' inTool: findClassesTool)
 				 extraProperties at: #default)
 		equals: 100.
-	self
-		assert:
-			((self inputPropertyNamed: 'filterTargets' inTool: findMethodsTool)
-				 extraProperties at: #default)
-		equals: #( 'selector' ).
 	self
 		assert:
 			((self inputPropertyNamed: 'filterMode' inTool: findMethodsTool)

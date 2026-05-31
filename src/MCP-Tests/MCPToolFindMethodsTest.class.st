@@ -35,8 +35,7 @@ MCPToolFindMethodsTest >> testCanFilterAcrossExplicitProtocolTarget [
 	| data result selectors |
 	result := self callToolWith: {
 			          (#classNames -> { self targetClassName }).
-			          (#filter -> 'helpers').
-			          (#filterTargets -> #( 'protocol' )).
+			          (#protocol -> 'helpers').
 			          (#filterMode -> 'substring') } asDictionary.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	data := self dataFrom: result.
@@ -55,8 +54,7 @@ MCPToolFindMethodsTest >> testCanFilterPaginateAndIncludeSource [
 	result := self callToolWith: {
 			          (#classNames -> { self targetClassName }).
 			          (#side -> 'class').
-			          (#filter -> 'meta').
-			          (#filterTargets -> #( 'protocol' )).
+			          (#protocol -> 'meta').
 			          (#filterMode -> 'substring').
 			          (#includeSource -> true).
 			          (#limit -> 1) } asDictionary.
@@ -80,7 +78,7 @@ MCPToolFindMethodsTest >> testCanIncludeFormattedSourceForImplementorLookup [
 
 	| data method result |
 	result := self callToolWith: {
-			          (#filter -> 'sharedTarget').
+			          (#selector -> 'sharedTarget').
 			          (#side -> 'class').
 			          (#includeSource -> true).
 			          (#limit -> 1) } asDictionary.
@@ -103,7 +101,7 @@ MCPToolFindMethodsTest >> testCaseInsensitiveExactSelectorFilterKeepsGeneralFilt
 	| data result |
 	result := self callToolWith: {
 			          (#classNames -> { self targetClassName }).
-			          (#filter -> 'ALPHANEEDLESELECTOR').
+			          (#selector -> 'ALPHANEEDLESELECTOR').
 			          (#caseSensitive -> false) } asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
@@ -118,7 +116,7 @@ MCPToolFindMethodsTest >> testClassNamesLimitImplementorLookupToExactClasses [
 
 	| data result |
 	result := self callToolWith: {
-			          (#filter -> 'hierarchyProbe').
+			          (#selector -> 'hierarchyProbe').
 			          (#classNames -> #( 'MCPToolHierarchyTestChild' )) }
 			          asDictionary.
 	data := self dataFrom: result.
@@ -281,7 +279,7 @@ MCPToolFindMethodsTest >> testDefaultExactSelectorFilterFindsImplementors [
 	| data result |
 	result := self callToolWith: {
 			          (#classNames -> { self targetClassName }).
-			          (#filter -> 'alphaNeedleSelector') } asDictionary.
+			          (#selector -> 'alphaNeedleSelector') } asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #totalCount) equals: 1.
@@ -296,7 +294,7 @@ MCPToolFindMethodsTest >> testDefaultFilterAppliesToSelectorOnly [
 	| data result |
 	result := self callToolWith: {
 			          (#classNames -> { self targetClassName }).
-			          (#filter -> 'helpers') } asDictionary.
+			          (#selector -> 'helpers') } asDictionary.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	data := self dataFrom: result.
 	self assert: (data at: #totalCount) equals: 0.
@@ -311,7 +309,7 @@ MCPToolFindMethodsTest >> testDirectionalScopesAreUnionedForMethods [
 			          (#subclassClassNames -> #( 'MCPToolHierarchyTestMid' )).
 			          (#parentClassNames -> #( 'MCPToolHierarchyTestMid' )).
 			          (#side -> 'instance').
-			          (#filter -> 'hierarchyProbe') } asDictionary.
+			          (#selector -> 'hierarchyProbe') } asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #totalCount) equals: 2.
@@ -501,16 +499,16 @@ MCPToolFindMethodsTest >> testEquivalentSearchReturnsStructuredErrorWhenReferenc
 { #category : 'tests' }
 MCPToolFindMethodsTest >> testExactEmptyFilterIsApplied [
 
-	| data result |
+	| error result structured |
 	result := self callToolWith: {
 			          (#classNames -> { self targetClassName }).
-			          (#filter -> '').
-			          (#filterTargets -> #( 'protocol' )).
+			          (#protocol -> '').
 			          (#filterMode -> 'exact') } asDictionary.
-	data := self dataFrom: result.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #totalCount) equals: 0.
-	self assert: (data at: #methods) isEmpty
+	structured := self structuredContentFrom: result.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (structured at: #status) equals: 'error'.
+	self assert: (error at: #errorClass) equals: 'MCPInvalidToolInput'
 ]
 
 { #category : 'tests' }
@@ -520,7 +518,7 @@ MCPToolFindMethodsTest >> testHierarchyClassNamesReturnWholeHierarchy [
 	result := self callToolWith: {
 			          (#hierarchyClassNames -> #( 'MCPToolHierarchyTestMid' )).
 			          (#side -> 'instance').
-			          (#filter -> 'hierarchyProbe') } asDictionary.
+			          (#selector -> 'hierarchyProbe') } asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #totalCount) equals: 2.
@@ -539,7 +537,7 @@ MCPToolFindMethodsTest >> testHierarchyClassNamesSelectHierarchyScope [
 	result := self callToolWith: {
 			          (#hierarchyClassNames -> #( 'MCPToolHierarchyTestMid' )).
 			          (#side -> 'instance').
-			          (#filter -> 'hierarchyProbe') } asDictionary.
+			          (#selector -> 'hierarchyProbe') } asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #totalCount) equals: 2.
@@ -556,7 +554,7 @@ MCPToolFindMethodsTest >> testImageScopeFindsInstanceAndClassImplementors [
 
 	| data result |
 	result := self callToolWith:
-		          { (#filter -> 'sharedTarget') } asDictionary.
+		          { (#selector -> 'sharedTarget') } asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self
@@ -619,7 +617,7 @@ MCPToolFindMethodsTest >> testPackageNamesIncludeExtensionMethods [
 	| data method result |
 	result := self callToolWith: {
 			          (#packageNames -> #( 'MCP-Tests-Resources-Extensions' )).
-			          (#filter -> 'extensionProbe') } asDictionary.
+			          (#selector -> 'extensionProbe') } asDictionary.
 	data := self dataFrom: result.
 	method := self
 		          entryForReference:
@@ -639,7 +637,7 @@ MCPToolFindMethodsTest >> testPackageNamesSelectPackageScope [
 	| data method result |
 	result := self callToolWith: {
 			          (#packageNames -> #( 'MCP-Tests-Resources-Extensions' )).
-			          (#filter -> 'extensionProbe') } asDictionary.
+			          (#selector -> 'extensionProbe') } asDictionary.
 	data := self dataFrom: result.
 	method := self
 		          entryForReference:
@@ -660,7 +658,7 @@ MCPToolFindMethodsTest >> testParentClassNamesReturnParentMethods [
 	result := self callToolWith: {
 			          (#parentClassNames -> #( 'MCPToolHierarchyTestMid' )).
 			          (#side -> 'instance').
-			          (#filter -> 'hierarchyProbe') } asDictionary.
+			          (#selector -> 'hierarchyProbe') } asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #totalCount) equals: 1.
@@ -694,7 +692,7 @@ MCPToolFindMethodsTest >> testReturnsStructuredErrorForInvalidFilterTarget [
 		should: [
 			self callToolWith: {
 					(#classNames -> { self targetClassName }).
-					(#filter -> 'needle').
+					(#selector -> 'needle').
 					(#filterTargets -> #( 'bogus' )) } asDictionary ]
 		raise: JRPCInvalidParameters
 ]
@@ -705,7 +703,7 @@ MCPToolFindMethodsTest >> testReturnsStructuredErrorForInvalidRegex [
 	| error result structured |
 	result := self callToolWith: {
 			          (#classNames -> { self targetClassName }).
-			          (#filter -> '[').
+			          (#selector -> '[').
 			          (#filterMode -> 'regex') } asDictionary.
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
@@ -948,7 +946,7 @@ MCPToolFindMethodsTest >> testSubclassClassNamesReturnSubclassMethods [
 	result := self callToolWith: {
 			          (#subclassClassNames -> #( 'MCPToolHierarchyTestMid' )).
 			          (#side -> 'instance').
-			          (#filter -> 'hierarchyProbe') } asDictionary.
+			          (#selector -> 'hierarchyProbe') } asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #totalCount) equals: 1.

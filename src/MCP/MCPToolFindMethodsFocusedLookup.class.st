@@ -59,6 +59,12 @@ MCPToolFindMethodsFocusedLookup >> lookupArgumentSchemaProperty [
 		  yourself
 ]
 
+{ #category : 'private - template' }
+MCPToolFindMethodsFocusedLookup >> queryRequestFromToolRequest: request [
+
+	^ MCPFindMethodsRequest fromRequest: request tool: self
+]
+
 { #category : 'private - request' }
 MCPToolFindMethodsFocusedLookup >> requiredLookupPatternFromQueryRequest: queryRequest [
 
