@@ -179,7 +179,7 @@ The debugger tools are discoverable under the `debugging` group. Read
 | `debug_breakpoint_enable` | Enable one tracked transient DebugPoint breakpoint. |
 | `debug_breakpoint_disable` | Disable one tracked transient DebugPoint breakpoint. |
 | `debug_breakpoint_clear` | Remove all tracked transient DebugPoint breakpoints. |
-| `debug_method_repair` | Create or hot-recompile the method implied by a paused debug state, then proceed when possible. |
+| `debug_method_update` | Update the method associated with a paused debug state, then proceed when possible. |
 
 ## Scripting
 
@@ -229,7 +229,7 @@ history_entry_revert when entries were performed
 debug_expression_evaluate
 debug_capture
 debug_test_run
-debug_method_repair when a method is accepted
+debug_method_update when a method is accepted
 image_evaluate
 ```
 

@@ -66,7 +66,7 @@ Debugger tools are discoverable, not part of the default static surface.
 | `debug_breakpoint_enable` | Enable one tracked transient DebugPoint breakpoint. |
 | `debug_breakpoint_disable` | Disable one tracked transient DebugPoint breakpoint. |
 | `debug_breakpoint_clear` | Remove all tracked transient DebugPoint breakpoints. |
-| `debug_method_repair` | Create or hot-recompile the method implied by a paused debug state, then proceed when possible. |
+| `debug_method_update` | Update the method associated with a paused debug state, then proceed when possible. |
 
 ## Session Workflow
 
@@ -89,7 +89,7 @@ only removes it from the MCP registry.
 ## State And References
 
 Treat `stateId`, `frameRef`, and `variableRef` values as state-scoped opaque
-references. After a debug-session control tool or `debug_method_repair`, old
+references. After a debug-session control tool or `debug_method_update`, old
 frame and variable refs can be stale. Use the new returned state before
 evaluating, expanding variables, or controlling execution again.
 
@@ -123,13 +123,13 @@ from the relevant method when source-interval precision is needed.
 
 ## Debugger-Driven Development
 
-When a debug state offers repair actions, prefer `debug_method_repair` over separate
+When a debug state offers repair actions, prefer `debug_method_update` over separate
 manual edits. It can create missing methods or recompile stub/selected methods,
 formats the compiled method, reports critiques, and proceeds when the edit is
 accepted.
 
 Read [Debugger-Driven Development](debugger-driven-development.md) before using
-`debug_method_repair` for missing methods, `subclassResponsibility`,
+`debug_method_update` for missing methods, `subclassResponsibility`,
 `shouldBeImplemented`, `notYetImplemented`, or iterative repair workflows.
 
 ## Reporting

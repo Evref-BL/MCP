@@ -1024,7 +1024,7 @@ MCPToolContractsTest >> testDebuggerToolsAreDiscoverableOnly [
 	                 'debug_breakpoint_set' 'debug_breakpoint_remove'
 	                 'debug_breakpoint_enable' 'debug_breakpoint_disable'
 	                 'debug_breakpoint_clear' 'debug_capture'
-	                 'debug_test_run' 'debug_method_repair' ).
+	                 'debug_test_run' 'debug_method_update' ).
 	staticToolNames := MCPToolRegistry staticToolNames.
 	debugNames do: [ :each | self deny: (staticToolNames includes: each) ].
 	result := self
@@ -1147,7 +1147,7 @@ MCPToolContractsTest >> testDiscoverToolsMatchesAgentGuidanceKeywords [
 		                ('recover' -> 'history_entry_apply').
 		                ('window' -> 'screenshot_capture').
 		                ('display' -> 'screenshot_capture').
-		                ('repair' -> 'debug_method_repair') }.
+		                ('repair' -> 'debug_method_update') }.
 	expectations do: [ :expectation |
 			| names result |
 			result := self callToolNamed: 'tool_search' withArguments: {
@@ -2855,6 +2855,12 @@ MCPToolContractsTest >> testRequestedToolIconsAreAdvertised [
 				 leftBadgeIconNamed: #announcement
 				 rightBadgeIconNamed: #into) asJRPCJSON.
 	self
+		assert: (MCPToolDebugEdit new asJRPCJSON at: #icons) first
+		equals: (MCPStructureIcon
+				 compositeBaseIconNamed: #bug
+				 leftBadgeIconNamed: #page
+				 rightBadgeIconNamed: #edit) asJRPCJSON.
+	self
 		assert: (MCPToolCaptureScreenshot new asJRPCJSON at: #icons) first
 		equals: (MCPStructureIcon
 				 compositeBaseIconNamed: #window
@@ -3336,7 +3342,7 @@ MCPToolContractsTest >> testToolRegistryNamesUseClassSideMetadata [
 		assert: MCPToolStepOverDebugSession toolName
 		equals: 'debug_session_step_over'.
 	self assert: MCPToolDebugCapture toolName equals: 'debug_capture'.
-	self assert: MCPToolDebugEdit toolName equals: 'debug_method_repair'
+	self assert: MCPToolDebugEdit toolName equals: 'debug_method_update'
 ]
 
 { #category : 'private' }

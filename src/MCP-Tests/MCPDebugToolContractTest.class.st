@@ -693,7 +693,7 @@ MCPDebugToolContractTest >> testDebugEditCanIgnoreCritiquesAndProceed [
 	arguments
 		at: #methodSource put: methodSource;
 		at: #ignoreCritiques put: true.
-	result := self callToolNamed: 'debug_method_repair' withArguments: arguments.
+	result := self callToolNamed: 'debug_method_update' withArguments: arguments.
 	editData := self dataFrom: result.
 	self
 		assert: ((self structuredContentFrom: result) at: #status)
@@ -744,7 +744,7 @@ MCPDebugToolContractTest >> testDebugEditCanProceedAfterPriorCritiqueBlockWithIg
 	arguments at: #methodSource put: methodSource.
 	blockedData := self dataFrom:
 		               (self
-			                callToolNamed: 'debug_method_repair'
+			                callToolNamed: 'debug_method_update'
 			                withArguments: arguments).
 	self assert: (blockedData at: #blockedByCritiques).
 	arguments := {
@@ -753,7 +753,7 @@ MCPDebugToolContractTest >> testDebugEditCanProceedAfterPriorCritiqueBlockWithIg
 		             (#frameRef -> (blockedData at: #frameRef)).
 		             (#methodSource -> methodSource).
 		             (#ignoreCritiques -> true) } asDictionary.
-	result := self callToolNamed: 'debug_method_repair' withArguments: arguments.
+	result := self callToolNamed: 'debug_method_update' withArguments: arguments.
 	blockedData := self dataFrom: result.
 	self
 		assert: ((self structuredContentFrom: result) at: #status)
@@ -799,7 +799,7 @@ MCPDebugToolContractTest >> testDebugEditCreatesMissingMethodFromRepairAction [
 				                  nextPutAll: '^ 42' ].
 	arguments := (action at: #arguments) copy.
 	arguments at: #methodSource put: methodSource.
-	result := self callToolNamed: 'debug_method_repair' withArguments: arguments.
+	result := self callToolNamed: 'debug_method_update' withArguments: arguments.
 	editData := self dataFrom: result.
 	self
 		assert: ((self structuredContentFrom: result) at: #status)
@@ -856,7 +856,7 @@ MCPDebugToolContractTest >> testDebugEditProceedsAfterCleanMissingMethodRepair [
 				                nextPutAll: '^ 42' ].
 	arguments := (action at: #arguments) copy.
 	arguments at: #methodSource put: methodSource.
-	result := self callToolNamed: 'debug_method_repair' withArguments: arguments.
+	result := self callToolNamed: 'debug_method_update' withArguments: arguments.
 	editData := self dataFrom: result.
 	self
 		assert: ((self structuredContentFrom: result) at: #status)
@@ -907,7 +907,7 @@ MCPDebugToolContractTest >> testDebugEditRecompilesNotYetImplementedFrame [
 				                  nextPutAll: '^ 43' ].
 	arguments := (action at: #arguments) copy.
 	arguments at: #methodSource put: methodSource.
-	result := self callToolNamed: 'debug_method_repair' withArguments: arguments.
+	result := self callToolNamed: 'debug_method_update' withArguments: arguments.
 	editData := self dataFrom: result.
 	self
 		assert: ((self structuredContentFrom: result) at: #status)
@@ -959,7 +959,7 @@ MCPDebugToolContractTest >> testDebugEditStopsBeforeProceedingWhenCritiquesAreRe
 				                nextPutAll: '^ self mcpDebugEditStillMissing' ].
 	arguments := (action at: #arguments) copy.
 	arguments at: #methodSource put: methodSource.
-	result := self callToolNamed: 'debug_method_repair' withArguments: arguments.
+	result := self callToolNamed: 'debug_method_update' withArguments: arguments.
 	editData := self dataFrom: result.
 	self
 		assert: ((self structuredContentFrom: result) at: #status)
@@ -1455,7 +1455,7 @@ MCPDebugToolContractTest >> testDebugStateOffersMissingMethodRepairAction [
 	action := (state at: #repairActions) first.
 	arguments := action at: #arguments.
 	self assert: (action at: #kind) equals: 'missingMethod'.
-	self assert: (action at: #toolName) equals: 'debug_method_repair'.
+	self assert: (action at: #toolName) equals: 'debug_method_update'.
 	self
 		assert: (action at: #selector)
 		equals: 'mcpDebugEditGeneratedValue'.

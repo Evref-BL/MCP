@@ -28,7 +28,7 @@ using a released MCP server from another workspace.
 - Before reasoning about source files vs loaded image state: read
   `docs/user/source-vs-live-image.md`.
 - Before debugger tool, debug-session, breakpoint, or debugger-driven repair
-  work: read `docs/user/debugging.md`. For `debug_method_repair` repair flows, also
+  work: read `docs/user/debugging.md`. For `debug_method_update` repair flows, also
   read `docs/user/debugger-driven-development.md`.
 - Before verifying MCP repository changes: read `docs/dev/mcp-verification.md`.
 - Before project loading work: use

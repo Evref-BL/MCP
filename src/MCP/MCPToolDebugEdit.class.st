@@ -14,7 +14,7 @@ Class {
 { #category : 'defaults' }
 MCPToolDebugEdit class >> toolName [
 
-	^ 'debug_method_repair'
+	^ 'debug_method_update'
 ]
 
 { #category : 'private - execution' }
@@ -26,7 +26,7 @@ MCPToolDebugEdit >> commandForRequest: debugRequest [
 { #category : 'defaults' }
 MCPToolDebugEdit >> defaultDescription [
 
-	^ 'Create or hot-recompile the method implied by a paused Pharo DebugSession frame, gate on critiques unless ignoreCritiques=true, then proceed the repaired computation when possible.'
+	^ 'Update the method associated with a paused Pharo DebugSession frame. Supports normal debugger-time method updates and repair flows for resumable exceptions, gates on critiques unless ignoreCritiques=true, then proceeds the computation when possible.'
 ]
 
 { #category : 'defaults' }
@@ -50,7 +50,7 @@ MCPToolDebugEdit >> defaultInputSchema [
 					   schemaPropertyNamed: 'stateId'
 					   type: 'string'
 					   description:
-						   'Optional state token to reject stale debug_method_repair requests.').
+						   'Optional state token to reject stale debug_method_update requests.').
 				  (self
 					   schemaPropertyNamed: 'frameRef'
 					   type: 'string'
@@ -64,7 +64,7 @@ MCPToolDebugEdit >> defaultInputSchema [
 				  (self
 					   booleanSchemaPropertyNamed: 'ignoreCritiques'
 					   description:
-						   'Whether debug_method_repair should proceed after a successful compile even when method critiques are reported.'
+						   'Whether debug_method_update should proceed after a successful compile even when method critiques are reported.'
 					   default: false).
 				  (self
 					   integerSchemaPropertyNamed: 'sourceContextLines'
@@ -104,7 +104,7 @@ MCPToolDebugEdit >> defaultInputSchema [
 { #category : 'defaults' }
 MCPToolDebugEdit >> defaultName [
 
-	^ 'debug_method_repair'
+	^ 'debug_method_update'
 ]
 
 { #category : 'defaults' }
@@ -144,11 +144,11 @@ MCPToolDebugEdit >> defaultOutputSchema [
 				  (self
 					   booleanSchemaPropertyNamed: 'proceeded'
 					   description:
-					   'Whether debug_method_repair proceeded the debug process after compiling.').
+					   'Whether debug_method_update proceeded the debug process after compiling.').
 				  (self
 					   booleanSchemaPropertyNamed: 'blockedByCritiques'
 					   description:
-					   'Whether debug_method_repair stopped before proceeding because critiques were reported and ignoreCritiques was false.').
+					   'Whether debug_method_update stopped before proceeding because critiques were reported and ignoreCritiques was false.').
 				  (self
 					   schemaPropertyNamed: 'proceedOutcome'
 					   type: 'string'
@@ -195,13 +195,13 @@ MCPToolDebugEdit >> defaultOutputSchema [
 { #category : 'defaults' }
 MCPToolDebugEdit >> defaultTitle [
 
-	^ 'Debug Edit'
+	^ 'Update Debug Method'
 ]
 
 { #category : 'private - data' }
 MCPToolDebugEdit >> editWarnings [
 
-	^ #( 'debug_method_repair compiles Smalltalk code in the running image and may mutate or resume a suspended debug process.' )
+	^ #( 'debug_method_update compiles Smalltalk code in the running image and may mutate or resume a suspended debug process.' )
 ]
 
 { #category : 'private - request' }

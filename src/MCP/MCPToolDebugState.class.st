@@ -144,7 +144,7 @@ MCPToolDebugState >> defaultOutputSchema [
 					   schemaPropertyNamed: 'repairActions'
 					   type: 'array'
 					   description:
-					   'Repair actions available for debugger-driven development, such as debug_method_repair arguments for a missing or stub method.').
+					   'Repair actions available for debugger-driven development, such as debug_method_update arguments for a missing or stub method.').
 				  (self
 					   integerSchemaPropertyNamed: 'stackStart'
 					   description: 'Zero-based stack offset used for the response.').

@@ -165,7 +165,7 @@ Treat debugger state references as opaque and state-scoped. After stepping,
 resuming, restarting, terminating, or editing from a debug state, use the newly
 returned state before expanding variables or evaluating in a frame again.
 
-Use `debug_method_repair` only from a paused debug state and only after reading the
+Use `debug_method_update` only from a paused debug state and only after reading the
 offered repair actions. It uses the same critique gate as method editing before
 proceeding a repaired computation.
 

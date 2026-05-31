@@ -17,7 +17,7 @@ repair action.
 1. Get a state with `debug_state_get`, `debug_capture`, or
    `debug_candidate_attach`.
 2. Check `repairActions` before inventing an edit target.
-3. Call `debug_method_repair` with the action's `sessionId`, `stateId`, and `frameRef`.
+3. Call `debug_method_update` with the action's `sessionId`, `stateId`, and `frameRef`.
 4. Review returned `critiques`.
 5. If the edit is blocked by critiques and the critiques are acceptable, retry
    with `ignoreCritiques=true`.
@@ -44,7 +44,7 @@ repair action.
 
 ## Missing Methods
 
-For `MessageNotUnderstood`, `debug_method_repair` creates the method implied by the
+For `MessageNotUnderstood`, `debug_method_update` creates the method implied by the
 paused message send. The target behavior, selector, class side, and frame are
 derived from the debug state; do not guess them in the request.
 
@@ -55,13 +55,13 @@ is formatted before it is returned or used to continue execution.
 ## Stub Methods
 
 For `subclassResponsibility`, `shouldBeImplemented`, and `notYetImplemented`,
-`debug_method_repair` recompiles the method associated with the selected repair frame.
+`debug_method_update` recompiles the method associated with the selected repair frame.
 Use the repair action's frame reference instead of selecting a target class by
 hand.
 
 ## Critiques
 
-`debug_method_repair` uses the same critique gate expected from method-editing tools. It
+`debug_method_update` uses the same critique gate expected from method-editing tools. It
 stops before proceeding when critiques are reported unless
 `ignoreCritiques=true`.
 
@@ -70,7 +70,7 @@ continuing the suspended computation is still the right next step.
 
 ## Proceeding
 
-After a successful accepted edit, `debug_method_repair` attempts to proceed the repaired
+After a successful accepted edit, `debug_method_update` attempts to proceed the repaired
 computation. Outcomes include completed, paused, running, timed out, or blocked
 by critiques.
 
