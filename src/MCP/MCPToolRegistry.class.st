@@ -93,7 +93,11 @@ MCPToolRegistry class >> additionalKeywordsForTool: aTool [
 	toolName = 'class_slot_push_down' ifTrue: [
 		^ #( 'class' 'slot' 'push' 'down' ) ].
 	toolName = 'method_search' ifTrue: [
-		^ #( 'method' 'selector' 'protocol' 'source' 'search' ) ].
+		^ #( 'method' 'selector' 'protocol' 'metadata' 'search' ) ].
+	toolName = 'method_source_search' ifTrue: [
+		^ #( 'method' 'source' 'code' 'text' 'search' ) ].
+	toolName = 'method_equivalent_search' ifTrue: [
+		^ #( 'method' 'equivalent' 'ast' 'search' ) ].
 	toolName = 'method_implementor_search' ifTrue: [
 		^ #( 'method' 'selector' 'implementor' 'implementation' ) ].
 	toolName = 'method_sender_search' ifTrue: [
@@ -255,6 +259,7 @@ MCPToolRegistry class >> mutabilityForTool: aTool [
 	                'repository_identity_verify'
 	                'repository_change_list' 'package_search'
 	                'class_search' 'class_get' 'method_search'
+	                'method_source_search' 'method_equivalent_search'
 	                'method_implementor_search'
 	                'method_sender_search' 'method_class_reference_search'
 	                'method_variable_reference_search'
@@ -328,6 +333,8 @@ MCPToolRegistry class >> publicToolGroups [
 			   MCPToolRemoveClasses }).
 		  ('methods' -> {
 			   MCPToolFindMethods.
+			   MCPToolFindMethodSource.
+			   MCPToolFindEquivalentMethods.
 			   MCPToolFindMethodImplementors.
 			   MCPToolFindMethodSenders.
 			   MCPToolFindClassReferences.
@@ -396,6 +403,18 @@ MCPToolRegistry class >> publicToolsUsingPolicy: aToolExposurePolicy [
 ]
 
 { #category : 'tools' }
+MCPToolRegistry class >> queryTermsFrom: queryString [
+
+	| normalized |
+	normalized := queryString
+		              ifNil: [ ^ #(  ) ]
+		              ifNotNil: [ :value |
+		              value asString trimBoth asLowercase ].
+	normalized isEmpty ifTrue: [ ^ #(  ) ].
+	^ normalized findTokens: ' -_'
+]
+
+{ #category : 'tools' }
 MCPToolRegistry class >> riskForTool: aTool [
 
 	| lowRisk mediumRisk toolName |
@@ -404,6 +423,7 @@ MCPToolRegistry class >> riskForTool: aTool [
 	              'repository_identity_verify'
 	              'repository_change_list' 'package_search'
 	              'class_search' 'class_get' 'method_search'
+	              'method_source_search' 'method_equivalent_search'
 	              'method_implementor_search' 'method_sender_search'
 	              'method_class_reference_search'
 	              'method_variable_reference_search'
@@ -480,6 +500,8 @@ MCPToolRegistry class >> staticToolClasses [
 		  MCPToolPullUpClassSlot.
 		  MCPToolPushDownClassSlot.
 		  MCPToolFindMethods.
+		  MCPToolFindMethodSource.
+		  MCPToolFindEquivalentMethods.
 		  MCPToolFindMethodImplementors.
 		  MCPToolFindMethodSenders.
 		  MCPToolFindClassReferences.
@@ -547,7 +569,7 @@ MCPToolRegistry class >> tool: aTool matchesQuery: queryString group: groupStrin
 { #category : 'tools' }
 MCPToolRegistry class >> tool: aTool matchesQuery: queryString group: groupString includeStatic: includeStatic usingPolicy: aToolExposurePolicy [
 
-	| group normalizedQuery |
+	| group queryTerms searchableText |
 	(includeStatic not and: [ aToolExposurePolicy isStaticTool: aTool ])
 		ifTrue: [ ^ false ].
 	group := groupString
@@ -556,14 +578,11 @@ MCPToolRegistry class >> tool: aTool matchesQuery: queryString group: groupStrin
 	(group notNil and: [ group isEmpty not ]) ifTrue: [
 		group = (self groupNameForToolClass: aTool class) ifFalse: [
 			^ false ] ].
-	normalizedQuery := queryString
-		                   ifNil: [ nil ]
-		                   ifNotNil: [ :value |
-		                   value asString trimBoth asLowercase ].
-	(normalizedQuery isNil or: [ normalizedQuery isEmpty ]) ifTrue: [
-		^ true ].
-	^ (self searchableTextForTool: aTool) asLowercase includesSubstring:
-		  normalizedQuery
+	queryTerms := self queryTermsFrom: queryString.
+	queryTerms ifEmpty: [ ^ true ].
+	searchableText := (self searchableTextForTool: aTool) asLowercase.
+	^ queryTerms allSatisfy: [ :each |
+		  searchableText includesSubstring: each ]
 ]
 
 { #category : 'tools' }

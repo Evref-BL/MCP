@@ -15,7 +15,7 @@ MCPToolFindClassReferences class >> toolName [
 { #category : 'defaults' }
 MCPToolFindClassReferences >> defaultDescription [
 
-	^ 'Search methods that reference a class binding. Use method_search for general method metadata or source search.'
+	^ 'Search methods that reference a class binding. Use method_search for general method metadata, or method_source_search for source text.'
 ]
 
 { #category : 'defaults' }

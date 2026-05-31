@@ -195,6 +195,11 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 		keysAndValuesDo: [ :toolClass :representativeArguments |
 			arguments at: toolClass put: representativeArguments ].
 	arguments
+		at: MCPToolFindMethodSource
+		put: { (#filter -> 'method') } asDictionary;
+		at: MCPToolFindEquivalentMethods put: {
+				(#className -> 'Object').
+				(#selector -> 'class') } asDictionary;
 		at: MCPToolCreateMethod put: {
 				(#className -> 'MCPTool').
 				(#methodSource -> 'temporarySelector ^ self').
@@ -296,7 +301,7 @@ MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasAcceptRepresentativeArg
 { #category : 'tests' }
 MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasRejectInvalidShapeArguments [
 
-	| legacyScopeViolations methodSearchViolations selectorUpdateViolations |
+	| legacyScopeViolations methodSearchModeViolations methodSearchTargetViolations selectorUpdateViolations |
 	legacyScopeViolations := self
 		                         violationsFor:
 		                         { (#scope -> 'packages') } asDictionary
@@ -304,13 +309,23 @@ MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasRejectInvalidShapeArgum
 	self
 		assert: (self keywordsFrom: legacyScopeViolations)
 		equals: #( 'additionalProperties' ).
-	methodSearchViolations := self
-		                          violationsFor:
-		                          { (#filterMode -> 'selectorReference') }
-			                          asDictionary
-		                          schema: MCPToolFindMethods new inputSchema.
+	methodSearchModeViolations := self
+		                              violationsFor:
+		                              { (#filterMode -> 'selectorReference') }
+			                              asDictionary
+		                              schema:
+		                              MCPToolFindMethods new inputSchema.
 	self
-		assert: (self keywordsFrom: methodSearchViolations)
+		assert: (self keywordsFrom: methodSearchModeViolations)
+		equals: #( 'enum' ).
+	methodSearchTargetViolations := self
+		                                violationsFor:
+		                                { (#filterTargets -> #( 'source' )) }
+			                                asDictionary
+		                                schema:
+		                                MCPToolFindMethods new inputSchema.
+	self
+		assert: (self keywordsFrom: methodSearchTargetViolations)
 		equals: #( 'enum' ).
 	selectorUpdateViolations := self
 		                            violationsFor: {

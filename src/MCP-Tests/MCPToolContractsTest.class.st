@@ -587,6 +587,18 @@ MCPToolContractsTest >> focusedMethodLookupToolFlowSpecs [
 
 	^ {
 		  {
+			  (#toolClass -> MCPToolFindMethodSource).
+			  (#arguments -> { (#filter -> 'class') } asDictionary).
+			  (#requestClass -> MCPFindMethodsRequest).
+			  (#commandClass -> MCPQueryToolCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolFindEquivalentMethods).
+			  (#arguments -> {
+				   (#className -> 'Object').
+				   (#selector -> 'class') } asDictionary).
+			  (#requestClass -> MCPFindMethodsRequest).
+			  (#commandClass -> MCPQueryToolCommand) } asDictionary.
+		  {
 			  (#toolClass -> MCPToolFindMethodImplementors).
 			  (#arguments -> { (#selector -> 'class') } asDictionary).
 			  (#requestClass -> MCPFindMethodsRequest).
@@ -844,6 +856,8 @@ MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 			MCPToolPushDownClassSlot.
 			MCPToolRemoveClasses.
 			MCPToolFindMethods.
+			MCPToolFindMethodSource.
+			MCPToolFindEquivalentMethods.
 			MCPToolFindMethodImplementors.
 			MCPToolFindMethodSenders.
 			MCPToolFindClassReferences.
@@ -1124,6 +1138,25 @@ MCPToolContractsTest >> testDiscoverToolsMatchesAgentGuidanceKeywords [
 			names := ((self dataFrom: result) at: #tools) collect: [ :each |
 				         each at: #name ].
 			self assert: (names includes: expectation value) ]
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testDiscoverToolsMatchesMultipleQueryTerms [
+
+	| names result |
+	result := self callToolNamed: 'tool_search' withArguments: {
+			          (#query -> 'method source').
+			          (#includeStatic -> true) } asDictionary.
+	names := ((self dataFrom: result) at: #tools) collect: [ :each |
+		         each at: #name ].
+	self assert: (names includes: 'method_source_search').
+
+	result := self callToolNamed: 'tool_search' withArguments: {
+			          (#query -> 'method equivalent').
+			          (#includeStatic -> true) } asDictionary.
+	names := ((self dataFrom: result) at: #tools) collect: [ :each |
+		         each at: #name ].
+	self assert: (names includes: 'method_equivalent_search')
 ]
 
 { #category : 'tests' }
@@ -1781,6 +1814,9 @@ MCPToolContractsTest >> testFindMethodsDescriptionPointsToFocusedReferenceTools 
 	| description filterDescription filterModeDescription tool |
 	tool := MCPToolFindMethods new.
 	description := tool description.
+	self assert: (description includesSubstring: 'method_source_search').
+	self assert:
+		(description includesSubstring: 'method_equivalent_search').
 	self assert:
 		(description includesSubstring: 'method_implementor_search').
 	self assert: (description includesSubstring: 'method_sender_search').
@@ -1799,8 +1835,7 @@ MCPToolContractsTest >> testFindMethodsDescriptionPointsToFocusedReferenceTools 
 	filterModeDescription := (self
 		                          inputPropertyNamed: 'filterMode'
 		                          inTool: tool) description.
-	self assert:
-		(filterDescription includesSubstring: 'method-entry fields').
+	self assert: (filterDescription includesSubstring: 'metadata fields').
 	self assert:
 		(filterModeDescription includesSubstring: 'text filtering').
 	self deny:
@@ -1831,7 +1866,7 @@ MCPToolContractsTest >> testFindMethodsHasAccurateNameAndSchema [
 		assert:
 			((filterTargetsProperty extraProperties at: #items) extraProperties
 				 at: #enum) asArray
-		equals: #( 'selector' 'class' 'package' 'protocol' 'source' ).
+		equals: #( 'selector' 'class' 'package' 'protocol' ).
 	self
 		assert: (filterModeProperty extraProperties at: #enum) asArray
 		equals: #( 'substring' 'prefix' 'exact' 'regex' ).

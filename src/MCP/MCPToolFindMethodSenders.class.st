@@ -15,7 +15,7 @@ MCPToolFindMethodSenders class >> toolName [
 { #category : 'defaults' }
 MCPToolFindMethodSenders >> defaultDescription [
 
-	^ 'Search methods that send a selector. Use method_search for general method metadata or source search.'
+	^ 'Search methods that send a selector. Use method_search for general method metadata, or method_source_search for source text.'
 ]
 
 { #category : 'defaults' }

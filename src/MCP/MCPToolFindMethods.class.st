@@ -56,7 +56,7 @@ MCPToolFindMethods >> classReferenceEntriesForQueryRequest: queryRequest [
 { #category : 'defaults' }
 MCPToolFindMethods >> defaultDescription [
 
-	^ 'List and search methods by selector, class, package, protocol, source, scope, or recursive where predicates. Multiple scope filters use union by default; set scopeMode=intersection to require all scopes. Missing class or package names return warnings with suggestions. Use method_implementor_search for selector implementors, method_sender_search for selector sends, method_class_reference_search for class binding references, and method_variable_reference_search for variable references. equivalentTo matches methods with an equivalent AST inside where predicates.'
+	^ 'List and search methods by selector, class, package, protocol, scope, or recursive where predicates. Multiple scope filters use union by default; set scopeMode=intersection to require all scopes. Missing class or package names return warnings with suggestions. Use method_source_search for source text, method_equivalent_search for equivalent ASTs, method_implementor_search for selector implementors, method_sender_search for selector sends, method_class_reference_search for class binding references, and method_variable_reference_search for variable references.'
 ]
 
 { #category : 'private - request' }
@@ -78,7 +78,7 @@ MCPToolFindMethods >> defaultInputSchema [
 	properties := self methodQueryScopeInputProperties
 	              , { self scopeModeSchemaProperty } , (self
 		               methodFilteringInputPropertiesWithFilterDescription:
-		               'Optional text matched against selected method-entry fields.'
+		               'Optional text matched against selected method metadata fields.'
 		               includeSourceDescription:
 		               'Whether to include method source code in each result entry.'
 		               limitDescription:
@@ -415,7 +415,7 @@ MCPToolFindMethods >> supportedFilterModes [
 { #category : 'private - request' }
 MCPToolFindMethods >> supportedFilterTargets [
 
-	^ #( 'selector' 'class' 'package' 'protocol' 'source' )
+	^ #( 'selector' 'class' 'package' 'protocol' )
 ]
 
 { #category : 'private - schema' }

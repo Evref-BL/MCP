@@ -50,6 +50,42 @@ MCPToolFocusedMethodLookupTest >> testFindClassReferencesReturnsClassBindingRefe
 ]
 
 { #category : 'tests' }
+MCPToolFocusedMethodLookupTest >> testFindEquivalentMethodsReturnsEquivalentAstMatches [
+
+	| data methodSource subclassName |
+	subclassName := 'MCPToolFocusedEquivalentFixture'.
+	methodSource := String streamContents: [ :stream |
+			                stream
+				                nextPutAll: 'sharedTarget';
+				                cr;
+				                cr;
+				                tab;
+				                nextPutAll: '^ ''instance-target''' ].
+	self removeClassNamed: subclassName.
+	self
+		createClassNamed: subclassName
+		superclassName: 'MCPToolFindMethodsReferenceFixture'
+		slots: #(  )
+		classSlots: #(  ).
+	[
+		self
+			ensureMethodSource: methodSource
+			protocol: 'testing'
+			on: (self classNamed: subclassName).
+		data := self
+			        toolNamed: 'method_equivalent_search'
+			        dataFromArguments: {
+					        (#classNames -> { subclassName }).
+					        (#className -> 'MCPToolFindMethodsReferenceFixture').
+					        (#selector -> 'sharedTarget') } asDictionary.
+		self assert: (data at: #totalCount) equals: 1.
+		self
+			entryForReference: subclassName , '>>sharedTarget'
+			in: (data at: #methods) ] ensure: [
+		self removeClassNamed: subclassName ]
+]
+
+{ #category : 'tests' }
 MCPToolFocusedMethodLookupTest >> testFindMethodImplementorsReturnsExactSelectorMatches [
 
 	| data |
@@ -81,6 +117,24 @@ MCPToolFocusedMethodLookupTest >> testFindMethodSendersReturnsSelectorReferences
 		entryForReference:
 		'MCPToolFindMethodsReferenceFixture class>>classSendShared'
 		in: (data at: #methods)
+]
+
+{ #category : 'tests' }
+MCPToolFocusedMethodLookupTest >> testFindMethodSourceSearchesSourceText [
+
+	| data result |
+	result := self
+		          callToolNamed: 'method_source_search'
+		          withArguments: {
+				          (#classNames -> { self targetClassName }).
+				          (#filter -> 'gamma value') } asDictionary.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	data := self dataFrom: result.
+	self assert: (data at: #totalCount) equals: 1.
+	self
+		assert: ((data at: #methods) first at: #selector)
+		equals: 'gammaUtility'.
+	self deny: ((data at: #methods) first includesKey: #source)
 ]
 
 { #category : 'tests' }
@@ -133,8 +187,10 @@ MCPToolFocusedMethodLookupTest >> testFocusedLookupSchemasRequireFocusedArgument
 MCPToolFocusedMethodLookupTest >> testFocusedLookupToolsArePublicStaticReadTools [
 
 	| names |
-	names := #( 'method_implementor_search' 'method_sender_search'
-	            'method_class_reference_search' 'method_variable_reference_search' ).
+	names := #( 'method_source_search' 'method_equivalent_search'
+	            'method_implementor_search' 'method_sender_search'
+	            'method_class_reference_search'
+	            'method_variable_reference_search' ).
 	names do: [ :each |
 			| tool |
 			self assert: (MCPToolRegistry publicToolNames includes: each).
@@ -146,6 +202,36 @@ MCPToolFocusedMethodLookupTest >> testFocusedLookupToolsArePublicStaticReadTools
 				assert: (MCPToolRegistry mutabilityForTool: tool)
 				equals: 'read'.
 			self assert: (MCPToolRegistry riskForTool: tool) equals: 'low' ]
+]
+
+{ #category : 'tests' }
+MCPToolFocusedMethodLookupTest >> testSourceAndEquivalentSearchSchemasAreFocused [
+
+	| equivalentPropertyNames equivalentRequired equivalentSchema sourcePropertyNames sourceRequired sourceSchema |
+	sourceSchema := MCPToolFindMethodSource new inputSchema.
+	sourceRequired := sourceSchema required asArray.
+	sourcePropertyNames := sourceSchema properties collect: [ :each |
+		                       each name ].
+	self assert: sourceRequired equals: #( 'filter' ).
+	self assert: (sourcePropertyNames includes: 'filter').
+	self assert: (sourcePropertyNames includes: 'filterMode').
+	self assert: (sourcePropertyNames includes: 'includeSource').
+	self deny: (sourcePropertyNames includes: 'where').
+	self deny: (sourcePropertyNames includes: 'filterTargets').
+
+	equivalentSchema := MCPToolFindEquivalentMethods new inputSchema.
+	equivalentRequired := equivalentSchema required asArray.
+	equivalentPropertyNames := equivalentSchema properties collect: [
+		                           :each | each name ].
+	self assert: equivalentRequired equals: #( 'className' 'selector' ).
+	self assert: (equivalentPropertyNames includes: 'className').
+	self assert: (equivalentPropertyNames includes: 'selector').
+	self assert: (equivalentPropertyNames includes: 'classSide').
+	self assert: (equivalentPropertyNames includes: 'includeSource').
+	self deny: (equivalentPropertyNames includes: 'where').
+	self deny: (equivalentPropertyNames includes: 'filter').
+	self deny: (equivalentPropertyNames includes: 'filterMode').
+	self deny: (equivalentPropertyNames includes: 'filterTargets')
 ]
 
 { #category : 'private' }

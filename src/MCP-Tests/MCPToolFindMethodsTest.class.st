@@ -58,24 +58,6 @@ MCPToolFindMethodsTest >> testCanFilterAcrossExplicitProtocolTarget [
 ]
 
 { #category : 'tests' }
-MCPToolFindMethodsTest >> testCanFilterAcrossExplicitScopeWithoutIncludingSource [
-
-	| data result |
-	result := self callToolWith: {
-			          (#classNames -> { self targetClassName }).
-			          (#filter -> 'gamma value').
-			          (#filterTargets -> #( 'source' )).
-			          (#filterMode -> 'substring') } asDictionary.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	data := self dataFrom: result.
-	self assert: (data at: #totalCount) equals: 1.
-	self
-		assert: ((data at: #methods) first at: #selector)
-		equals: 'gammaUtility'.
-	self deny: ((data at: #methods) first includesKey: #source)
-]
-
-{ #category : 'tests' }
 MCPToolFindMethodsTest >> testCanFilterPaginateAndIncludeSource [
 
 	| data result |

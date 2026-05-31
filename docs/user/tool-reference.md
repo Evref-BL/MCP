@@ -94,7 +94,9 @@ instead of continuing.
 
 | Tool | Use |
 | --- | --- |
-| `method_search` | List/search methods by selector, class, package, protocol, source, scope, recursive predicates, or equivalent ASTs. |
+| `method_search` | List/search methods by selector, class, package, protocol, scope, or recursive predicates. |
+| `method_source_search` | Search methods by source text. |
+| `method_equivalent_search` | Search methods whose AST is equivalent to a referenced method. |
 | `method_implementor_search` | Search methods that implement a selector. |
 | `method_sender_search` | Search methods that send a selector. |
 | `method_class_reference_search` | Search methods that reference a class binding. |
@@ -106,11 +108,13 @@ instead of continuing.
 | `method_rewrite` | Preview or apply AST rewrite rules across a method scope. Applying requires `expectedChangeSetHash` from a preview. |
 | `method_remove` | Remove methods from one class as a batch without sender safety checks. |
 
-Prefer the focused lookup tools for navigation tasks. Keep `method_search` for
-method metadata/source text search, `where` predicates, and equivalent-AST
-matching. Top-level `method_search` filtering is text matching only
-(`substring`, `prefix`, `exact`, or `regex`); use the focused reference tools
-for implementors, senders, class references, and variable references.
+Prefer the focused lookup tools for navigation tasks. Use
+`method_source_search` for source text and `method_equivalent_search` for
+equivalent-AST matches. Keep `method_search` for method metadata search and
+recursive `where` predicates. Top-level `method_search` filtering is metadata
+text matching only (`substring`, `prefix`, `exact`, or `regex`); use focused
+tools for source, equivalent methods, implementors, senders, class references,
+and variable references.
 
 `method_create` returns selected Renraku critiques after method compilation when
 they are relevant to review.
