@@ -46,7 +46,7 @@ MCPToolContractsTest >> assertToolFlowSpec: aSpec [
 	self assert: command class equals: (aSpec at: #commandClass)
 ]
 
-{ #category : 'private' }
+{ #category : 'support' }
 MCPToolContractsTest >> baseToolFlowSpecs [
 
 	^ {
@@ -55,14 +55,6 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 			  (#arguments -> Dictionary new).
 			  (#requestClass -> MCPRepositoryQuerySpec).
 			  (#commandClass -> MCPQueryToolCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolEditRepository).
-			  (#arguments -> {
-				   (#operation -> 'update').
-				   (#repositoryName -> 'MCP').
-				   (#addPackageNames -> #( 'MCP' )) } asDictionary).
-			  (#requestClass -> MCPRepositoryUpdateRequest).
-			  (#commandClass -> MCPUpdateRepositoryCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolLoadRepository).
 			  (#arguments -> {
@@ -88,14 +80,6 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 			  (#requestClass -> MCPInspectClassRequest).
 			  (#commandClass -> MCPInspectClassCommand) } asDictionary.
 		  {
-			  (#toolClass -> MCPToolEditClass).
-			  (#arguments -> {
-				   (#operation -> 'update').
-				   (#className -> 'Object').
-				   (#classComment -> '') } asDictionary).
-			  (#requestClass -> MCPClassUpdateRequest).
-			  (#commandClass -> MCPUpdateClassCommand) } asDictionary.
-		  {
 			  (#toolClass -> MCPToolRemoveClasses).
 			  (#arguments -> { (#classNames -> #( 'Object' )) } asDictionary).
 			  (#requestClass -> MCPRemoveClassesRequest).
@@ -113,15 +97,6 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 			  (#requestClass -> MCPInspectMethodRequest).
 			  (#commandClass -> MCPInspectMethodCommand) } asDictionary.
 		  {
-			  (#toolClass -> MCPToolEditMethod).
-			  (#arguments -> {
-				   (#operation -> 'update').
-				   (#className -> 'Object').
-				   (#selector -> 'class').
-				   (#protocol -> 'accessing') } asDictionary).
-			  (#requestClass -> MCPMethodUpdateRequest).
-			  (#commandClass -> MCPUpdateMethodCommand) } asDictionary.
-		  {
 			  (#toolClass -> MCPToolRewriteMethods).
 			  (#arguments -> { (#rules -> { {
 				    (#lhs -> 'self').
@@ -136,13 +111,6 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 			  (#requestClass -> MCPRemoveMethodsRequest).
 			  (#commandClass -> MCPRemoveMethodsCommand) } asDictionary.
 		  {
-			  (#toolClass -> MCPToolManageChangeHistory).
-			  (#arguments -> {
-				   (#operation -> 'listFiles').
-				   (#includeEntryCounts -> false) } asDictionary).
-			  (#requestClass -> MCPChangeHistoryListLogsRequest).
-			  (#commandClass -> MCPListChangeHistoryLogsCommand) } asDictionary.
-		  {
 			  (#toolClass -> MCPToolRunTests).
 			  (#arguments -> { (#tests
 			    -> { { (#className -> 'MCPToolContractsTest') } asDictionary }) }
@@ -154,11 +122,6 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 			  (#arguments -> { (#target -> 'world') } asDictionary).
 			  (#requestClass -> MCPScreenshotRequest).
 			  (#commandClass -> MCPScreenshotCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolDebugSessions).
-			  (#arguments -> { (#operation -> 'list') } asDictionary).
-			  (#requestClass -> MCPDebugSessionsRequest).
-			  (#commandClass -> MCPDebugSessionsCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolDebugState).
 			  (#arguments -> { (#sessionId -> 'debug-session-1') } asDictionary).
@@ -180,18 +143,6 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 				   (#expression -> '1') } asDictionary).
 			  (#requestClass -> MCPDebugEvaluateRequest).
 			  (#commandClass -> MCPDebugEvaluateCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolDebugControl).
-			  (#arguments -> {
-				   (#sessionId -> 'debug-session-1').
-				   (#operation -> 'stepOver') } asDictionary).
-			  (#requestClass -> MCPDebugControlRequest).
-			  (#commandClass -> MCPDebugControlCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolDebugBreakpoints).
-			  (#arguments -> { (#operation -> 'list') } asDictionary).
-			  (#requestClass -> MCPDebugBreakpointsRequest).
-			  (#commandClass -> MCPDebugBreakpointsCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolDebugCapture).
 			  (#arguments -> { (#expression -> '1') } asDictionary).
@@ -224,6 +175,7 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 				   (#arguments -> Dictionary new) } asDictionary).
 			  (#requestClass -> MCPCallToolRequest).
 			  (#commandClass -> MCPCallToolCommand) } asDictionary }
+
 ]
 
 { #category : 'private' }
@@ -1407,7 +1359,7 @@ MCPToolContractsTest >> testEditMethodSchemaAdvertisesMethodState [
 		                each name = 'data' ].
 	dataProperties := dataProperty extraProperties at: #properties.
 	propertyNames := dataProperties collect: [ :each | each name ].
-	self deny: (toolPropertyNames includes: 'operation').
+	self deny: (toolPropertyNames includes: 'action').
 	self assert:
 		(permutationProperty extraProperties at: #items) type = 'integer'.
 	self assert:
@@ -1417,198 +1369,17 @@ MCPToolContractsTest >> testEditMethodSchemaAdvertisesMethodState [
 	self
 		assert: propertyNames asSet
 		equals:
-			#( 'operation' 'changeKind' 'updateAction' 'updatePlan'
+			#( 'action' 'changeKind' 'updateAction' 'updatePlan'
 			   'appliedChange' 'selector' 'className' 'classSide' 'packageName'
 			   'isExtension' 'protocol' 'source' 'oldSelector' 'newSelector'
 			   'oldProtocol' 'newProtocol' 'critiques' ) asSet
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testEditRepositoryDescriptionDocumentsRepositoryOperations [
-
-	| branchNameDescription description isModifiedDescription locationDescription messageDescription modifiedPackageNamesDescription packageNamesDescription removePackageNamesDescription repositoryNameDescription subdirectoryDescription tool |
-	tool := MCPToolEditRepository new.
-	description := tool description.
-	messageDescription := (self
-		                       inputPropertyNamed: 'message'
-		                       inTool: tool) description.
-	branchNameDescription := (self
-		                          inputPropertyNamed: 'branchName'
-		                          inTool: tool) description.
-	repositoryNameDescription := (self
-		                              inputPropertyNamed: 'repositoryName'
-		                              inTool: tool) description.
-	locationDescription := (self
-		                        inputPropertyNamed: 'location'
-		                        inTool: tool) description.
-	subdirectoryDescription := (self
-		                             inputPropertyNamed: 'subdirectory'
-		                             inTool: tool) description.
-	packageNamesDescription := (self
-		                            inputPropertyNamed: 'packageNames'
-		                            inTool: tool) description.
-	modifiedPackageNamesDescription := (self
-		                                    inputPropertyNamed:
-		                                    'modifiedPackageNames'
-		                                    inTool: tool) description.
-	isModifiedDescription := (self
-		                          inputPropertyNamed: 'isModified'
-		                          inTool: tool) description.
-	removePackageNamesDescription := (self
-		                                  inputPropertyNamed:
-		                                  'removePackageNames'
-		                                  inTool: tool) description.
-	self assert: (description includesSubstring: 'repositoryName').
-	self assert: (description includesSubstring: 'operation=attach').
-	self assert: (description includesSubstring: 'existing Git checkout').
-	self assert: (description includesSubstring: 'without creating').
-	self assert: (description includesSubstring: 'operation=diff').
-	self assert: (description includesSubstring: 'without writing files').
-	self assert: (description includesSubstring: 'should be preferred').
-	self assert: (description includesSubstring: 'operation=export').
-	self assert: (description includesSubstring: 'escape hatch').
-	self assert:
-		(description includesSubstring: 'without staging or committing').
-	self assert: (description includesSubstring: 'operation=verifyIdentity').
-	self assert:
-		(description includesSubstring: 'asserts expected repository identity fields').
-	self assert:
-		(description includesSubstring: 'provide at least one expected field').
-	self assert: (description includesSubstring: 'operation=commit').
-	self assert:
-		(description includesSubstring: 'IceRepository>>commitWithMessage:').
-	self assert: (description includesSubstring: 'operation=adoptHead').
-	self assert:
-		(description includesSubstring: 'IceWorkingCopy>>adoptCommit:').
-	self assert:
-		(description includesSubstring: 'before/after modified packages').
-	self assert: (description includesSubstring: 'operation=fetch').
-	self assert: (description includesSubstring: 'IceRepository>>fetch').
-	self assert: (description includesSubstring: 'operation=pull').
-	self assert: (description includesSubstring: 'IceRepository>>pull').
-	self assert: (description includesSubstring: 'operation=push').
-	self assert: (description includesSubstring: 'IceRepository>>push').
-	self assert:
-		(description includesSubstring: 'operation=createBranch').
-	self assert:
-		(description includesSubstring: 'operation=switchBranch').
-	self assert:
-		(messageDescription includesSubstring: 'operation=commit').
-	self assert:
-		(branchNameDescription includesSubstring: 'operation=createBranch').
-	self assert:
-		(branchNameDescription includesSubstring: 'operation=switchBranch').
-	self assert:
-		(branchNameDescription includesSubstring: 'operation=adoptHead').
-	self assert:
-		(branchNameDescription includesSubstring: 'operation=verifyIdentity').
-	self assert:
-		(repositoryNameDescription includesSubstring: 'existing repository').
-	self assert:
-		(repositoryNameDescription includesSubstring:
-			 'Combine with location').
-	self assert:
-		(locationDescription includesSubstring: 'operation=create').
-	self assert:
-		(locationDescription includesSubstring: 'operation=attach').
-	self assert:
-		(locationDescription includesSubstring: 'operation=verifyIdentity').
-	self assert: (locationDescription includesSubstring: 'disambiguate').
-	self assert:
-		(subdirectoryDescription includesSubstring: 'operation=verifyIdentity').
-	self assert: (packageNamesDescription includesSubstring:
-			 'operation=create or operation=attach').
-	self assert: (packageNamesDescription includesSubstring:
-			 'replaces the full managed package list').
-	self assert:
-		(packageNamesDescription includesSubstring: 'operation=verifyIdentity').
-	self assert:
-		(modifiedPackageNamesDescription includesSubstring:
-			 'operation=verifyIdentity').
-	self assert:
-		(isModifiedDescription includesSubstring: 'operation=verifyIdentity').
-	self assert:
-		(removePackageNamesDescription includesSubstring: 'does not unload')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testEditRepositoryDescriptionExplainsPackageAndFilesystemSemantics [
-
-	| branchNameDescription description locationDescription messageDescription packageNamesDescription removePackageNamesDescription repositoryNameDescription tool |
-	tool := MCPToolEditRepository new.
-	description := tool description.
-	messageDescription := (self
-		                       inputPropertyNamed: 'message'
-		                       inTool: tool) description.
-	branchNameDescription := (self
-		                          inputPropertyNamed: 'branchName'
-		                          inTool: tool) description.
-	repositoryNameDescription := (self
-		                              inputPropertyNamed: 'repositoryName'
-		                              inTool: tool) description.
-	locationDescription := (self
-		                        inputPropertyNamed: 'location'
-		                        inTool: tool) description.
-	packageNamesDescription := (self
-		                            inputPropertyNamed: 'packageNames'
-		                            inTool: tool) description.
-	removePackageNamesDescription := (self
-		                                  inputPropertyNamed:
-		                                  'removePackageNames'
-		                                  inTool: tool) description.
-	self assert: (description includesSubstring: 'repositoryName').
-	self assert: (description includesSubstring: 'operation=attach').
-	self assert: (description includesSubstring: 'existing Git checkout').
-	self assert: (description includesSubstring: 'without creating').
-	self assert: (description includesSubstring: 'operation=diff').
-	self assert: (description includesSubstring: 'without writing files').
-	self assert: (description includesSubstring: 'should be preferred').
-	self assert: (description includesSubstring: 'operation=export').
-	self assert: (description includesSubstring: 'escape hatch').
-	self assert:
-		(description includesSubstring: 'without staging or committing').
-	self assert: (description includesSubstring: 'operation=commit').
-	self assert:
-		(description includesSubstring: 'IceRepository>>commitWithMessage:').
-	self assert: (description includesSubstring: 'operation=fetch').
-	self assert: (description includesSubstring: 'IceRepository>>fetch').
-	self assert: (description includesSubstring: 'operation=pull').
-	self assert: (description includesSubstring: 'IceRepository>>pull').
-	self assert: (description includesSubstring: 'operation=push').
-	self assert: (description includesSubstring: 'IceRepository>>push').
-	self assert:
-		(description includesSubstring: 'operation=createBranch').
-	self assert:
-		(description includesSubstring: 'operation=switchBranch').
-	self assert:
-		(messageDescription includesSubstring: 'operation=commit').
-	self assert:
-		(branchNameDescription includesSubstring: 'operation=createBranch').
-	self assert:
-		(branchNameDescription includesSubstring: 'operation=switchBranch').
-	self assert:
-		(repositoryNameDescription includesSubstring: 'existing repository').
-	self assert:
-		(repositoryNameDescription includesSubstring:
-			 'Combine with location').
-	self assert:
-		(locationDescription includesSubstring: 'operation=create').
-	self assert:
-		(locationDescription includesSubstring: 'operation=attach').
-	self assert: (locationDescription includesSubstring: 'disambiguate').
-	self assert: (packageNamesDescription includesSubstring:
-			 'operation=create or operation=attach').
-	self assert: (packageNamesDescription includesSubstring:
-			 'replaces the full managed package list').
-	self assert:
-		(removePackageNamesDescription includesSubstring: 'does not unload')
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testEditRepositoryOutputSchemaUsesActionForExecutedAction [
 
 	| dataProperties outputSchema required |
-	outputSchema := MCPToolEditRepository new outputSchema asJRPCJSON.
+	outputSchema := MCPToolUpdateRepository new outputSchema asJRPCJSON.
 	dataProperties := ((outputSchema at: #properties) at: 'data') at:
 		                  #properties.
 	required := ((outputSchema at: #properties) at: 'data') at: #required.
@@ -1628,46 +1399,7 @@ MCPToolContractsTest >> testEditRepositoryOutputSchemaUsesActionForExecutedActio
 	self deny: (dataProperties includesKey: 'operation').
 	self assert: (required includes: 'action').
 	self deny: (required includes: 'operation')
-]
 
-{ #category : 'tests' }
-MCPToolContractsTest >> testEditToolSchemasAdvertiseOperationEnumsWithoutComposition [
-
-	| editRepository focusedMethodTools repositoryOperationProperty |
-	editRepository := MCPToolEditRepository new.
-	focusedMethodTools := {
-		                      MCPToolCreateMethod new.
-		                      MCPToolUpdateMethodSelector new.
-		                      MCPToolUpdateMethodProtocol new }.
-	repositoryOperationProperty := self
-		                               inputPropertyNamed: 'operation'
-		                               inTool: editRepository.
-	self deny:
-		(editRepository inputSchema asJRPCJSON includesKey: #oneOf).
-	self focusedClassEditToolClasses do: [ :toolClass |
-			| propertyNames tool |
-			tool := toolClass new.
-			propertyNames := tool inputSchema properties collect: [ :property |
-				                 property name ].
-			self deny: (tool inputSchema asJRPCJSON includesKey: #oneOf).
-			self deny: (propertyNames includes: 'operation').
-			self deny: (propertyNames includes: 'slotAction') ].
-	focusedMethodTools do: [ :tool |
-			| propertyNames |
-			propertyNames := tool inputSchema properties collect: [ :property |
-				                 property name ].
-			self deny: (tool inputSchema asJRPCJSON includesKey: #oneOf).
-			self deny: (propertyNames includes: 'operation') ].
-	self
-		assert: editRepository inputSchema required asSet
-		equals: #( 'operation' ) asSet.
-	self
-		assert:
-		(repositoryOperationProperty extraProperties at: #enum) asArray
-		equals:
-			#( 'create' 'attach' 'update' 'verifyIdentity' 'export' 'diff'
-			   'commit' 'adoptHead' 'fetch' 'pull' 'push' 'createBranch'
-			   'switchBranch' )
 ]
 
 { #category : 'tests' }
@@ -2368,20 +2100,25 @@ MCPToolContractsTest >> testMethodToolTraitOwnsSharedMethodHelpers [
 
 	| methodToolClasses sharedSelectors |
 	methodToolClasses := {
-		                     MCPToolFindMethods.
-		                     MCPToolInspectMethod.
-		                     MCPToolEditMethod.
-		                     MCPToolRewriteMethods.
-		                     MCPToolRemoveMethods }.
+			                     MCPToolFindMethods.
+			                     MCPToolInspectMethod.
+			                     MCPToolEditMethod.
+			                     MCPToolRewriteMethods.
+			                     MCPToolRemoveMethods }.
 	sharedSelectors := #( selectorStringFromRequest:
 	                      behaviorNamed:classSide:
 	                      methodReferenceForBehavior:selector:
 	                      methodReferenceForClassName:selector:isClassSide:
 	                      methodScopeQueryFromRequest: ).
 	methodToolClasses do: [ :toolClass |
-		self assert: (toolClass traits includes: TMCPMethodTool).
+		self assert: (toolClass withAllSuperclasses anySatisfy: [ :each |
+			each traits includes: TMCPMethodTool ]).
 		sharedSelectors do: [ :selector |
-			self assert: (toolClass >> selector) origin equals: TMCPMethodTool ] ]
+			| implementingClass |
+			implementingClass := toolClass whichClassIncludesSelector: selector.
+			self assert: implementingClass notNil.
+			self assert: (implementingClass >> selector) origin equals: TMCPMethodTool ] ]
+
 ]
 
 { #category : 'tests' }
@@ -2392,7 +2129,7 @@ MCPToolContractsTest >> testMutatingToolsRequestImageSaveAfterSuccessfulExecutio
 	self deny:
 		MCPToolInspectClass new shouldSaveImageAfterSuccessfulExecution.
 	self assert:
-		MCPToolEditRepository new shouldSaveImageAfterSuccessfulExecution.
+		MCPToolCreateRepository new shouldSaveImageAfterSuccessfulExecution.
 	self focusedClassEditToolClasses do: [ :toolClass |
 		self assert: toolClass new shouldSaveImageAfterSuccessfulExecution ].
 	self assert:
@@ -2409,6 +2146,7 @@ MCPToolContractsTest >> testMutatingToolsRequestImageSaveAfterSuccessfulExecutio
 		MCPToolRemoveMethods new shouldSaveImageAfterSuccessfulExecution.
 	self assert:
 		MCPToolEvaluate new shouldSaveImageAfterSuccessfulExecution
+
 ]
 
 { #category : 'tests' }
@@ -2567,23 +2305,6 @@ MCPToolContractsTest >> testParsedInputClassesUseRequestOrSpecSuffixes [
 			 MCPToolRequest).
 	self assert: parsedInputClasses notEmpty.
 	self assert: invalidNames isEmpty
-]
-
-{ #category : 'tests - tools - parsing' }
-MCPToolContractsTest >> testParserHelperBypassesSchemaValidation [
-
-	| arguments tool |
-	tool := MCPToolEditRepository new.
-	arguments := { (#operation -> 'notAnOperation') } asDictionary.
-	self
-		should: [ tool requestFromToolCallArguments: arguments ]
-		raise: MCPInvalidToolInput.
-	self
-		should: [ self parsedRequestForTool: tool arguments: arguments ]
-		raise: Error
-		whoseDescriptionIncludes: tool operationValidationErrorMessage
-		description:
-		'Parser helper should bypass transport schema validation.'
 ]
 
 { #category : 'tests' }
@@ -3408,21 +3129,11 @@ MCPToolContractsTest >> testToolRegistryNamesUseClassSideMetadata [
 	self assert: MCPToolDebugEdit toolName equals: 'debug_method_update'
 ]
 
-{ #category : 'private' }
+{ #category : 'support' }
 MCPToolContractsTest >> toolFlowSpecs [
 
-	| oldToolClasses specs |
+	| specs |
 	specs := OrderedCollection withAll: self baseToolFlowSpecs.
-	oldToolClasses := {
-		                  MCPToolEditRepository.
-		                  MCPToolEditClass.
-		                  MCPToolEditMethod.
-		                  MCPToolManageChangeHistory.
-		                  MCPToolDebugSessions.
-		                  MCPToolDebugControl.
-		                  MCPToolDebugBreakpoints }.
-	specs removeAllSuchThat: [ :each |
-		oldToolClasses includes: (each at: #toolClass) ].
 	specs add: self baselineLoadToolFlowSpec.
 	specs add: self coverageToolFlowSpec.
 	specs addAll: self focusedClassEditToolFlowSpecs.
@@ -3435,4 +3146,5 @@ MCPToolContractsTest >> toolFlowSpecs [
 	specs addAll: self focusedDebugBreakpointToolFlowSpecs.
 	specs add: self debugTestToolFlowSpec.
 	^ specs asArray
+
 ]

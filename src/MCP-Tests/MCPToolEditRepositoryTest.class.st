@@ -12,9 +12,28 @@ Class {
 { #category : 'private - calling' }
 MCPToolEditRepositoryTest >> callToolWith: someArguments [
 
-	| request result tool |
-	tool := MCPToolEditRepository new.
-	request := tool requestFromToolCallArguments: someArguments.
+	| action arguments request result tool toolClass |
+	arguments := someArguments copy.
+	action := arguments removeKey: #action ifAbsent: [
+		          arguments removeKey: #action ifAbsent: [ nil ] ].
+	toolClass := Dictionary new
+		             at: 'create' put: MCPToolCreateRepository;
+		             at: 'attach' put: MCPToolAttachRepository;
+		             at: 'update' put: MCPToolUpdateRepository;
+		             at: 'verifyIdentity' put: MCPToolVerifyRepositoryIdentity;
+		             at: 'diff' put: MCPToolFindRepositoryChanges;
+		             at: 'export' put: MCPToolExportRepository;
+		             at: 'commit' put: MCPToolCommitRepository;
+		             at: 'adoptHead' put: MCPToolAdoptRepositoryHead;
+		             at: 'fetch' put: MCPToolFetchRepository;
+		             at: 'pull' put: MCPToolPullRepository;
+		             at: 'push' put: MCPToolPushRepository;
+		             at: 'createBranch' put: MCPToolCreateRepositoryBranch;
+		             at: 'switchBranch' put: MCPToolSwitchRepositoryBranch;
+		             at: action
+		             ifAbsent: [ Error signal: 'Unknown repository action: ' , action asString ].
+	tool := toolClass new.
+	request := tool requestFromToolCallArguments: arguments.
 	result := tool executeWithRequest: request.
 	^ result asJRPCJSON
 ]
@@ -118,7 +137,7 @@ MCPToolEditRepositoryTest >> testAdoptHeadAdoptsRepositoryHeadAndReportsBeforeAf
 		(MCPTestRepositoryCommit id: 'head-1').
 	self withRegisteredRepository: repository do: [
 			result := self callToolWith: {
-					          (#operation -> 'adoptHead').
+					          (#action -> 'adoptHead').
 					          (#repositoryName -> repository name).
 					          (#branchName -> 'main') } asDictionary.
 			data := self dataFrom: result.
@@ -148,9 +167,8 @@ MCPToolEditRepositoryTest >> testAdoptHeadAdoptsRepositoryHeadAndReportsBeforeAf
 MCPToolEditRepositoryTest >> testAdoptHeadOperationRequiresRepositoryAndParses [
 
 	| command parsedRequest rawRequest tool |
-	tool := MCPToolEditRepository new.
+	tool := MCPToolAdoptRepositoryHead new.
 	rawRequest := tool requestFromToolCallArguments: {
-			              (#operation -> 'adoptHead').
 			              (#repositoryName -> 'MCP').
 			              (#branchName -> 'main') } asDictionary.
 	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
@@ -161,6 +179,7 @@ MCPToolEditRepositoryTest >> testAdoptHeadOperationRequiresRepositoryAndParses [
 	self assert: parsedRequest operation equals: 'adoptHead'.
 	self assert: parsedRequest branchName equals: 'main'.
 	self assert: command class equals: MCPAdoptRepositoryHeadCommand
+
 ]
 
 { #category : 'tests' }
@@ -173,7 +192,7 @@ MCPToolEditRepositoryTest >> testAdoptHeadValidatesExpectedBranch [
 	repository headCommitId: 'head-1'.
 	self withRegisteredRepository: repository do: [
 			result := self callToolWith: {
-					          (#operation -> 'adoptHead').
+					          (#action -> 'adoptHead').
 					          (#repositoryName -> repository name).
 					          (#branchName -> 'feature') } asDictionary.
 			self assert: (result at: #isError ifAbsent: [ false ]).
@@ -192,9 +211,8 @@ MCPToolEditRepositoryTest >> testAdoptHeadValidatesExpectedBranch [
 MCPToolEditRepositoryTest >> testAttachParsesAndDispatchesToAttachCommand [
 
 	| command parsedRequest rawRequest tool |
-	tool := MCPToolEditRepository new.
+	tool := MCPToolAttachRepository new.
 	rawRequest := tool requestFromToolCallArguments: {
-			              (#operation -> 'attach').
 			              (#name -> 'MCP').
 			              (#location -> 'C:/src/MCP').
 			              (#packageNames -> #( 'MCP' )) } asDictionary.
@@ -204,6 +222,7 @@ MCPToolEditRepositoryTest >> testAttachParsesAndDispatchesToAttachCommand [
 	self assert: parsedRequest class equals: MCPRepositoryAttachRequest.
 	self assert: parsedRequest operation equals: 'attach'.
 	self assert: command class equals: MCPAttachRepositoryCommand
+
 ]
 
 { #category : 'tests' }
@@ -223,22 +242,22 @@ MCPToolEditRepositoryTest >> testAttachRegistersExistingGitCheckout [
 					location: location
 					do: [
 							self callToolWith: {
-									(#operation -> 'create').
+									(#action -> 'create').
 									(#name -> repositoryName).
 									(#location -> location pathString).
 									(#subdirectory -> 'src').
 									(#packageNames -> { packageName }) } asDictionary.
 							self callToolWith: {
-									(#operation -> 'export').
+									(#action -> 'export').
 									(#repositoryName -> repositoryName) } asDictionary.
 							self callToolWith: {
-									(#operation -> 'commit').
+									(#action -> 'commit').
 									(#repositoryName -> repositoryName).
 									(#message -> 'Prepare existing checkout for attach test') }
 									asDictionary.
 							self removeRegisteredRepositoriesNamed: repositoryName.
 							result := self callToolWith: {
-									          (#operation -> 'attach').
+									          (#action -> 'attach').
 									          (#name -> repositoryName).
 									          (#location -> location pathString).
 									          (#subdirectory -> 'src').
@@ -282,16 +301,16 @@ MCPToolEditRepositoryTest >> testAttachRegistersLinkedGitWorktreeCheckout [
 					self deleteDirectoryIfExists: linkedLocation.
 					[
 					self callToolWith: {
-							(#operation -> 'create').
+							(#action -> 'create').
 							(#name -> repositoryName).
 							(#location -> location pathString).
 							(#subdirectory -> 'src').
 							(#packageNames -> { packageName }) } asDictionary.
 					self callToolWith: {
-							(#operation -> 'export').
+							(#action -> 'export').
 							(#repositoryName -> repositoryName) } asDictionary.
 					self callToolWith: {
-							(#operation -> 'commit').
+							(#action -> 'commit').
 							(#repositoryName -> repositoryName).
 							(#message -> 'Prepare linked checkout for attach test') }
 							asDictionary.
@@ -301,7 +320,7 @@ MCPToolEditRepositoryTest >> testAttachRegistersLinkedGitWorktreeCheckout [
 						, (self shellQuote: linkedLocation pathString).
 					self removeRegisteredRepositoriesNamed: repositoryName.
 					result := self callToolWith: {
-							          (#operation -> 'attach').
+							          (#action -> 'attach').
 							          (#name -> repositoryName).
 							          (#location -> linkedLocation pathString).
 							          (#subdirectory -> 'src').
@@ -345,7 +364,7 @@ MCPToolEditRepositoryTest >> testAttachReportsDuplicateRepository [
 		              packageNames: #(  ).
 	self withRegisteredRepository: repository do: [
 			result := self callToolWith: {
-					          (#operation -> 'attach').
+					          (#action -> 'attach').
 					          (#name -> repositoryName).
 					          (#location -> location pathString) } asDictionary.
 			self assert: (result at: #isError ifAbsent: [ false ]).
@@ -371,12 +390,12 @@ MCPToolEditRepositoryTest >> testCommitCreatesCommitAndReturnsResult [
 				location: location
 				do: [
 					self callToolWith: {
-							(#operation -> 'create').
+							(#action -> 'create').
 							(#name -> repositoryName).
 							(#location -> location pathString).
 							(#packageNames -> { packageName }) } asDictionary.
 					result := self callToolWith: {
-							          (#operation -> 'commit').
+							          (#action -> 'commit').
 							          (#repositoryName -> repositoryName).
 							          (#message -> 'Initial commit from MCP test') }
 							          asDictionary.
@@ -401,9 +420,8 @@ MCPToolEditRepositoryTest >> testCommitCreatesCommitAndReturnsResult [
 MCPToolEditRepositoryTest >> testCommitParsesAndDispatchesToCommitCommand [
 
 	| command parsedRequest rawRequest tool |
-	tool := MCPToolEditRepository new.
+	tool := MCPToolCommitRepository new.
 	rawRequest := tool requestFromToolCallArguments: {
-			              (#operation -> 'commit').
 			              (#repositoryName -> 'MCP').
 			              (#message -> 'Commit from test') } asDictionary.
 	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
@@ -411,7 +429,9 @@ MCPToolEditRepositoryTest >> testCommitParsesAndDispatchesToCommitCommand [
 
 	self assert: parsedRequest class equals: MCPRepositoryCommitRequest.
 	self assert: parsedRequest message equals: 'Commit from test'.
+	self assert: parsedRequest operation equals: 'commit'.
 	self assert: command class equals: MCPCommitRepositoryCommand
+
 ]
 
 { #category : 'tests' }
@@ -431,16 +451,16 @@ MCPToolEditRepositoryTest >> testCommitReportsIcebergRefusalErrors [
 				location: location
 				do: [
 					self callToolWith: {
-							(#operation -> 'create').
+							(#action -> 'create').
 							(#name -> repositoryName).
 							(#location -> location pathString).
 							(#packageNames -> { packageName }) } asDictionary.
 					self callToolWith: {
-							(#operation -> 'commit').
+							(#action -> 'commit').
 							(#repositoryName -> repositoryName).
 							(#message -> 'Initial commit from MCP test') } asDictionary.
 					result := self callToolWith: {
-							          (#operation -> 'commit').
+							          (#action -> 'commit').
 							          (#repositoryName -> repositoryName).
 							          (#message -> 'Second commit from MCP test') }
 							          asDictionary.
@@ -466,7 +486,7 @@ MCPToolEditRepositoryTest >> testCommitRequestsImageSaveAfterSuccessfulExecution
 					location: location
 					do: [
 							self callToolWith: {
-									(#operation -> 'create').
+									(#action -> 'create').
 									(#name -> repositoryName).
 									(#location -> location pathString).
 									(#packageNames -> { packageName }) } asDictionary.
@@ -502,7 +522,7 @@ MCPToolEditRepositoryTest >> testCommitUsesFallbackGitIdentityWhenGitSignatureIs
 				location: location
 				do: [
 					self callToolWith: {
-							(#operation -> 'create').
+							(#action -> 'create').
 							(#name -> repositoryName).
 							(#location -> location pathString).
 							(#packageNames -> { packageName }) } asDictionary.
@@ -512,7 +532,7 @@ MCPToolEditRepositoryTest >> testCommitUsesFallbackGitIdentityWhenGitSignatureIs
 						username: '';
 						email: ''.
 					result := self callToolWith: {
-							          (#operation -> 'commit').
+							          (#action -> 'commit').
 							          (#repositoryName -> repositoryName).
 							          (#message
 							           -> 'Commit with fallback identity from MCP test') }
@@ -534,7 +554,7 @@ MCPToolEditRepositoryTest >> testCreateBranchReturnsResultReportsErrorsAndReques
 	self withRegisteredRepository: repository do: [
 			server := MCPSaveImageRecordingServer new.
 			result := self callToolWith: {
-					          (#operation -> 'createBranch').
+					          (#action -> 'createBranch').
 					          (#repositoryName -> repository name).
 					          (#branchName -> 'feature') } asDictionary.
 			data := self dataFrom: result.
@@ -555,7 +575,7 @@ MCPToolEditRepositoryTest >> testCreateBranchReturnsResultReportsErrorsAndReques
 			self deny: (saveResult at: #isError ifAbsent: [ false ]).
 			self assert: server didSaveImageSession.
 			duplicateResult := self callToolWith: {
-					                   (#operation -> 'createBranch').
+					                   (#action -> 'createBranch').
 					                   (#repositoryName -> repository name).
 					                   (#branchName -> 'feature') } asDictionary.
 			self assert: (duplicateResult at: #isError ifAbsent: [ false ]).
@@ -571,7 +591,7 @@ MCPToolEditRepositoryTest >> testCreateBranchReturnsResultReportsErrorsAndReques
 		IceGenericError -> 'Invalid branch name for test repository'.
 	self withRegisteredRepository: repository do: [
 			failureResult := self callToolWith: {
-					                 (#operation -> 'createBranch').
+					                 (#action -> 'createBranch').
 					                 (#repositoryName -> repository name).
 					                 (#branchName -> 'invalid') } asDictionary.
 			self assert: (failureResult at: #isError ifAbsent: [ false ]).
@@ -593,7 +613,7 @@ MCPToolEditRepositoryTest >> testCreateCreatesAndRegistersRepository [
 		location: location
 		do: [
 			result := self callToolWith: {
-					          (#operation -> 'create').
+					          (#action -> 'create').
 					          (#name -> repositoryName).
 					          (#location -> location pathString).
 					          (#subdirectory -> 'src').
@@ -636,7 +656,7 @@ MCPToolEditRepositoryTest >> testDiffDoesNotRequestImageSaveAfterSuccessfulExecu
 					location: location
 					do: [
 							self callToolWith: {
-									(#operation -> 'create').
+									(#action -> 'create').
 									(#name -> repositoryName).
 									(#location -> location pathString).
 									(#packageNames -> { packageName }) } asDictionary.
@@ -653,15 +673,16 @@ MCPToolEditRepositoryTest >> testDiffDoesNotRequestImageSaveAfterSuccessfulExecu
 MCPToolEditRepositoryTest >> testDiffParsesAndDispatchesToDiffCommand [
 
 	| command parsedRequest rawRequest tool |
-	tool := MCPToolEditRepository new.
-	rawRequest := tool requestFromToolCallArguments: {
-			              (#operation -> 'diff').
-			              (#repositoryName -> 'MCP') } asDictionary.
+	tool := MCPToolFindRepositoryChanges new.
+	rawRequest := tool requestFromToolCallArguments:
+		              { (#repositoryName -> 'MCP') } asDictionary.
 	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
 	command := tool commandForRequest: parsedRequest.
 
 	self assert: parsedRequest class equals: MCPRepositoryDiffRequest.
+	self assert: parsedRequest operation equals: 'diff'.
 	self assert: command class equals: MCPRepositoryDiffCommand
+
 ]
 
 { #category : 'tests' }
@@ -681,7 +702,7 @@ MCPToolEditRepositoryTest >> testDiffReportsWorkingCopyDiffWithoutWriting [
 				location: location
 				do: [
 					self callToolWith: {
-							(#operation -> 'create').
+							(#action -> 'create').
 							(#name -> repositoryName).
 							(#location -> location pathString).
 							(#packageNames -> { packageName }) } asDictionary.
@@ -689,7 +710,7 @@ MCPToolEditRepositoryTest >> testDiffReportsWorkingCopyDiffWithoutWriting [
 						              each name asString = repositoryName ].
 					self assert: repository index isEmpty.
 					result := self callToolWith: {
-							          (#operation -> 'diff').
+							          (#action -> 'diff').
 							          (#repositoryName -> repositoryName) } asDictionary.
 					data := self dataFrom: result.
 					childNames := self directChildNamesOf: location.
@@ -727,7 +748,7 @@ MCPToolEditRepositoryTest >> testExportUpdatesDiskAndIndexWithoutCommitting [
 				location: location
 				do: [
 					self callToolWith: {
-							(#operation -> 'create').
+							(#action -> 'create').
 							(#name -> repositoryName).
 							(#location -> location pathString).
 							(#packageNames -> { packageName }) } asDictionary.
@@ -735,7 +756,7 @@ MCPToolEditRepositoryTest >> testExportUpdatesDiskAndIndexWithoutCommitting [
 						              each name asString = repositoryName ].
 					self assert: repository index isEmpty.
 					result := self callToolWith: {
-							          (#operation -> 'export').
+							          (#action -> 'export').
 							          (#repositoryName -> repositoryName) } asDictionary.
 					data := self dataFrom: result.
 					childNames := self directChildNamesOf: location.
@@ -763,7 +784,7 @@ MCPToolEditRepositoryTest >> testFetchReturnsResultShapeAndReportsErrors [
 		              'MCP Fetch Test Repository'.
 	self withRegisteredRepository: repository do: [
 		result := self callToolWith: {
-				          (#operation -> 'fetch').
+				          (#action -> 'fetch').
 				          (#repositoryName -> repository name) } asDictionary.
 		data := self dataFrom: result.
 		self deny: (result at: #isError ifAbsent: [ false ]).
@@ -779,7 +800,7 @@ MCPToolEditRepositoryTest >> testFetchReturnsResultShapeAndReportsErrors [
 	repository failFetch: true.
 	self withRegisteredRepository: repository do: [
 		errorResult := self callToolWith: {
-				               (#operation -> 'fetch').
+				               (#action -> 'fetch').
 				               (#repositoryName -> repository name) } asDictionary.
 		self assert: (errorResult at: #isError ifAbsent: [ false ]).
 		self assert: ((self summaryFrom: errorResult) includesSubstring:
@@ -796,7 +817,7 @@ MCPToolEditRepositoryTest >> testPullReportsIcebergMergeAndLoadErrors [
 		IceMergeAborted -> 'Iceberg merge failed for test repository'.
 	self withRegisteredRepository: repository do: [
 		mergeErrorResult := self callToolWith: {
-				                    (#operation -> 'pull').
+				                    (#action -> 'pull').
 				                    (#repositoryName -> repository name) }
 				                    asDictionary.
 		self assert: (mergeErrorResult at: #isError ifAbsent: [ false ]).
@@ -813,7 +834,7 @@ MCPToolEditRepositoryTest >> testPullReportsIcebergMergeAndLoadErrors [
 		-> 'Iceberg load failed for test repository'.
 	self withRegisteredRepository: repository do: [
 		loadErrorResult := self callToolWith: {
-				                   (#operation -> 'pull').
+				                   (#action -> 'pull').
 				                   (#repositoryName -> repository name) }
 				                   asDictionary.
 		self assert: (loadErrorResult at: #isError ifAbsent: [ false ]).
@@ -833,7 +854,7 @@ MCPToolEditRepositoryTest >> testPullReturnsResultReportsErrorsAndRequestsImageS
 	self withRegisteredRepository: repository do: [
 			server := MCPSaveImageRecordingServer new.
 			result := self callToolWith: {
-					          (#operation -> 'pull').
+					          (#action -> 'pull').
 					          (#repositoryName -> repository name) } asDictionary.
 			data := self dataFrom: result.
 			self deny: (result at: #isError ifAbsent: [ false ]).
@@ -855,7 +876,7 @@ MCPToolEditRepositoryTest >> testPullReturnsResultReportsErrorsAndRequestsImageS
 	repository failPull: true.
 	self withRegisteredRepository: repository do: [
 			errorResult := self callToolWith: {
-					               (#operation -> 'pull').
+					               (#action -> 'pull').
 					               (#repositoryName -> repository name) }
 					               asDictionary.
 			self assert: (errorResult at: #isError ifAbsent: [ false ]).
@@ -873,7 +894,7 @@ MCPToolEditRepositoryTest >> testPushReportsRemoteAndAuthenticationErrors [
 		-> 'Iceberg remote not found for test repository'.
 	self withRegisteredRepository: repository do: [
 		remoteErrorResult := self callToolWith: {
-				                     (#operation -> 'push').
+				                     (#action -> 'push').
 				                     (#repositoryName -> repository name) }
 				                     asDictionary.
 		self assert: (remoteErrorResult at: #isError ifAbsent: [ false ]).
@@ -889,7 +910,7 @@ MCPToolEditRepositoryTest >> testPushReportsRemoteAndAuthenticationErrors [
 		-> 'Iceberg authentication failed for test repository'.
 	self withRegisteredRepository: repository do: [
 		authErrorResult := self callToolWith: {
-				                   (#operation -> 'push').
+				                   (#action -> 'push').
 				                   (#repositoryName -> repository name) }
 				                   asDictionary.
 		self assert: (authErrorResult at: #isError ifAbsent: [ false ]).
@@ -909,7 +930,7 @@ MCPToolEditRepositoryTest >> testPushReturnsResultReportsErrorsAndRequestsImageS
 	self withRegisteredRepository: repository do: [
 			server := MCPSaveImageRecordingServer new.
 			result := self callToolWith: {
-					          (#operation -> 'push').
+					          (#action -> 'push').
 					          (#repositoryName -> repository name) } asDictionary.
 			data := self dataFrom: result.
 			self deny: (result at: #isError ifAbsent: [ false ]).
@@ -929,7 +950,7 @@ MCPToolEditRepositoryTest >> testPushReturnsResultReportsErrorsAndRequestsImageS
 	repository failPush: true.
 	self withRegisteredRepository: repository do: [
 			errorResult := self callToolWith: {
-					               (#operation -> 'push').
+					               (#action -> 'push').
 					               (#repositoryName -> repository name) }
 					               asDictionary.
 			self assert: (errorResult at: #isError ifAbsent: [ false ]).
@@ -940,29 +961,32 @@ MCPToolEditRepositoryTest >> testPushReturnsResultReportsErrorsAndRequestsImageS
 { #category : 'tests' }
 MCPToolEditRepositoryTest >> testRemoteAndBranchOperationsParseAndDispatch [
 
-	| cases tool |
-	tool := MCPToolEditRepository new.
+	| cases |
 	cases := {
 		         {
-			         (#operation -> 'fetch').
+			         (#toolClass -> MCPToolFetchRepository).
+			         (#action -> 'fetch').
 			         (#requestClass -> MCPRepositoryFetchRequest).
 			         (#commandClass -> MCPFetchRepositoryCommand).
 			         (#arguments -> { (#repositoryName -> 'MCP') } asDictionary) }
 			         asDictionary.
 		         {
-			         (#operation -> 'pull').
+			         (#toolClass -> MCPToolPullRepository).
+			         (#action -> 'pull').
 			         (#requestClass -> MCPRepositoryPullRequest).
 			         (#commandClass -> MCPPullRepositoryCommand).
 			         (#arguments -> { (#repositoryName -> 'MCP') } asDictionary) }
 			         asDictionary.
 		         {
-			         (#operation -> 'push').
+			         (#toolClass -> MCPToolPushRepository).
+			         (#action -> 'push').
 			         (#requestClass -> MCPRepositoryPushRequest).
 			         (#commandClass -> MCPPushRepositoryCommand).
 			         (#arguments -> { (#repositoryName -> 'MCP') } asDictionary) }
 			         asDictionary.
 		         {
-			         (#operation -> 'createBranch').
+			         (#toolClass -> MCPToolCreateRepositoryBranch).
+			         (#action -> 'createBranch').
 			         (#requestClass -> MCPRepositoryCreateBranchRequest).
 			         (#commandClass -> MCPCreateRepositoryBranchCommand).
 			         (#arguments -> {
@@ -970,22 +994,23 @@ MCPToolEditRepositoryTest >> testRemoteAndBranchOperationsParseAndDispatch [
 				          (#branchName -> 'feature') } asDictionary) }
 			         asDictionary.
 		         {
-			         (#operation -> 'switchBranch').
+			         (#toolClass -> MCPToolSwitchRepositoryBranch).
+			         (#action -> 'switchBranch').
 			         (#requestClass -> MCPRepositorySwitchBranchRequest).
 			         (#commandClass -> MCPSwitchRepositoryBranchCommand).
 			         (#arguments -> {
 				          (#repositoryName -> 'MCP').
 				          (#branchName -> 'main') } asDictionary) } asDictionary }.
 	cases do: [ :each |
-		| arguments command parsedRequest rawRequest |
-		arguments := (each at: #arguments) copy.
-		arguments at: #operation put: (each at: #operation).
-		rawRequest := tool requestFromToolCallArguments: arguments.
+		| command parsedRequest rawRequest tool |
+		tool := (each at: #toolClass) new.
+		rawRequest := tool requestFromToolCallArguments: (each at: #arguments).
 		parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
 		command := tool commandForRequest: parsedRequest.
 		self assert: parsedRequest class equals: (each at: #requestClass).
-		self assert: parsedRequest operation equals: (each at: #operation).
+		self assert: parsedRequest operation equals: (each at: #action).
 		self assert: command class equals: (each at: #commandClass) ]
+
 ]
 
 { #category : 'tests' }
@@ -997,13 +1022,14 @@ MCPToolEditRepositoryTest >> testRepositoryErrorDetailsUseActionNotOperation [
 	repository failPush: true.
 	self withRegisteredRepository: repository do: [
 		result := self callToolWith: {
-				          (#operation -> 'push').
+				          (#action -> 'push').
 				          (#repositoryName -> repository name) } asDictionary.
 		self assert: (result at: #isError ifAbsent: [ false ]).
 		errorDetails := self errorFrom: result.
 		self assert: (errorDetails at: #action) equals: 'push'.
 		self deny: (errorDetails includesKey: #operation).
 		self deny: (errorDetails includesKey: #updateAction) ]
+
 ]
 
 { #category : 'tests' }
@@ -1052,7 +1078,7 @@ MCPToolEditRepositoryTest >> testSwitchBranchReturnsResultReportsErrorsAndReques
 	self withRegisteredRepository: repository do: [
 			server := MCPSaveImageRecordingServer new.
 			result := self callToolWith: {
-					          (#operation -> 'switchBranch').
+					          (#action -> 'switchBranch').
 					          (#repositoryName -> repository name).
 					          (#branchName -> 'feature') } asDictionary.
 			data := self dataFrom: result.
@@ -1072,7 +1098,7 @@ MCPToolEditRepositoryTest >> testSwitchBranchReturnsResultReportsErrorsAndReques
 			self deny: (saveResult at: #isError ifAbsent: [ false ]).
 			self assert: server didSaveImageSession.
 			missingResult := self callToolWith: {
-					                 (#operation -> 'switchBranch').
+					                 (#action -> 'switchBranch').
 					                 (#repositoryName -> repository name).
 					                 (#branchName -> 'missing') } asDictionary.
 			self assert: (missingResult at: #isError ifAbsent: [ false ]).
@@ -1087,7 +1113,7 @@ MCPToolEditRepositoryTest >> testSwitchBranchReturnsResultReportsErrorsAndReques
 		-> 'Iceberg checkout conflict for test repository'.
 	self withRegisteredRepository: repository do: [
 			conflictResult := self callToolWith: {
-					                  (#operation -> 'switchBranch').
+					                  (#action -> 'switchBranch').
 					                  (#repositoryName -> repository name).
 					                  (#branchName -> 'feature') } asDictionary.
 			self assert: (conflictResult at: #isError ifAbsent: [ false ]).
@@ -1104,7 +1130,7 @@ MCPToolEditRepositoryTest >> testSwitchBranchReturnsResultReportsErrorsAndReques
 		IceGenericError -> 'Iceberg load failed for test repository'.
 	self withRegisteredRepository: repository do: [
 			loadResult := self callToolWith: {
-					              (#operation -> 'switchBranch').
+					              (#action -> 'switchBranch').
 					              (#repositoryName -> repository name).
 					              (#branchName -> 'feature') } asDictionary.
 			self assert: (loadResult at: #isError ifAbsent: [ false ]).
@@ -1146,7 +1172,7 @@ MCPToolEditRepositoryTest >> testUpdateAddsPackageToWorkingCopy [
 		              packageNames: #(  ).
 	self withRegisteredRepository: repository do: [
 		result := self callToolWith: {
-				          (#operation -> 'update').
+				          (#action -> 'update').
 				          (#repositoryName -> repository name).
 				          (#addPackageNames -> { packageName }) } asDictionary.
 		data := self dataFrom: result.
@@ -1172,7 +1198,7 @@ MCPToolEditRepositoryTest >> testUpdateCanReplacePackageMembership [
 		                 'MCPToolEditRepositoryOldB' ).
 	self withRegisteredRepository: repository do: [
 		result := self callToolWith: {
-				          (#operation -> 'update').
+				          (#action -> 'update').
 				          (#repositoryName -> repository name).
 				          (#packageNames
 				           ->
@@ -1209,7 +1235,7 @@ MCPToolEditRepositoryTest >> testUpdateRemovesPackageWithoutUnloading [
 		              packageNames: { packageName }.
 	self withRegisteredRepository: repository do: [
 		result := self callToolWith: {
-				          (#operation -> 'update').
+				          (#action -> 'update').
 				          (#repositoryName -> repository name).
 				          (#removePackageNames -> { packageName }) } asDictionary.
 		data := self dataFrom: result.
@@ -1244,9 +1270,8 @@ MCPToolEditRepositoryTest >> testVerifyIdentityDoesNotRequestImageSaveAfterSucce
 MCPToolEditRepositoryTest >> testVerifyIdentityOperationRequiresRepositoryAndParses [
 
 	| command parsedRequest rawRequest tool |
-	tool := MCPToolEditRepository new.
+	tool := MCPToolVerifyRepositoryIdentity new.
 	rawRequest := tool requestFromToolCallArguments: {
-			              (#operation -> 'verifyIdentity').
 			              (#repositoryName -> 'MCP').
 			              (#branchName -> 'main').
 			              (#packageNames -> #( 'MCP' )).
@@ -1259,6 +1284,7 @@ MCPToolEditRepositoryTest >> testVerifyIdentityOperationRequiresRepositoryAndPar
 	self assert: parsedRequest branchName equals: 'main'.
 	self assert: parsedRequest isModified equals: false.
 	self assert: command class equals: MCPRepositoryVerifyIdentityCommand
+
 ]
 
 { #category : 'tests' }
@@ -1271,7 +1297,7 @@ MCPToolEditRepositoryTest >> testVerifyIdentityPassesWhenExpectedIdentityMatches
 	repository modifiedPackageNames: #( 'MCP' ).
 	self withRegisteredRepository: repository do: [
 		result := self callToolWith: {
-				          (#operation -> 'verifyIdentity').
+				          (#action -> 'verifyIdentity').
 				          (#repositoryName -> repository name).
 				          (#location -> repository location).
 				          (#branchName -> 'main').
@@ -1302,7 +1328,7 @@ MCPToolEditRepositoryTest >> testVerifyIdentityReportsStructuredMismatch [
 	repository workingCopy packageNames: #( 'MCP' ).
 	self withRegisteredRepository: repository do: [
 		result := self callToolWith: {
-				          (#operation -> 'verifyIdentity').
+				          (#action -> 'verifyIdentity').
 				          (#repositoryName -> repository name).
 				          (#branchName -> 'feature').
 				          (#packageNames -> #( 'MCP' 'MCP-Tests' )).
@@ -1336,7 +1362,7 @@ MCPToolEditRepositoryTest >> testVerifyIdentityReportsWrongLocationAsIdentityMis
 		              'MCP VerifyIdentity Location Mismatch Test Repository'.
 	self withRegisteredRepository: repository do: [
 		result := self callToolWith: {
-				          (#operation -> 'verifyIdentity').
+				          (#action -> 'verifyIdentity').
 				          (#repositoryName -> repository name).
 				          (#location -> 'memory://different-location') }
 				          asDictionary.
@@ -1363,7 +1389,7 @@ MCPToolEditRepositoryTest >> testVerifyIdentityRequiresExpectedIdentityField [
 		              'MCP VerifyIdentity Missing Expected Field Test Repository'.
 	self withRegisteredRepository: repository do: [
 		result := self callToolWith: {
-				          (#operation -> 'verifyIdentity').
+				          (#action -> 'verifyIdentity').
 				          (#repositoryName -> repository name) } asDictionary.
 		self assert: (result at: #isError ifAbsent: [ false ]).
 		errorDetails := self errorFrom: result.

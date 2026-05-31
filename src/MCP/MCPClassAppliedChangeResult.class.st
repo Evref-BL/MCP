@@ -38,7 +38,7 @@ MCPClassAppliedChangeResult >> asDictionary [
 
 	| data |
 	data := self changeResult asDictionary copy.
-	data at: #operation put: 'update'.
+	data at: #action put: 'update'.
 	data at: #updateAction put: self updateAction.
 	data at: #updatePlan put: self updatePlan asDictionary.
 	data at: #appliedChange put: self appliedChangeDictionary.

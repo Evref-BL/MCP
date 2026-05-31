@@ -60,10 +60,10 @@ MCPToolFindChangeHistoryFiles >> defaultOutputSchema [
 	^ self
 		  standardOutputSchemaForDataProperties: {
 				  (self
-					   schemaPropertyNamed: 'operation'
+					   schemaPropertyNamed: 'action'
 					   type: 'string'
 					   description:
-					   'The change history operation that produced this result.').
+					   'The change history action that produced this result.').
 				  (self
 					   schemaPropertyNamed: 'currentLogPath'
 					   type: 'string'
@@ -73,25 +73,13 @@ MCPToolFindChangeHistoryFiles >> defaultOutputSchema [
 					   type: 'string'
 					   description: 'The directory scanned.').
 				  filesProperty }
-		  required: #( 'operation' )
+		  required: #( 'action' )
 ]
 
 { #category : 'defaults' }
 MCPToolFindChangeHistoryFiles >> defaultTitle [
 
 	^ 'List Change History Files'
-]
-
-{ #category : 'private - operations' }
-MCPToolFindChangeHistoryFiles >> operationName [
-
-	^ 'listFiles'
-]
-
-{ #category : 'private - operations' }
-MCPToolFindChangeHistoryFiles >> operationSpecifications [
-
-	^ { { (#name -> self operationName) } asDictionary }
 ]
 
 { #category : 'private - request' }

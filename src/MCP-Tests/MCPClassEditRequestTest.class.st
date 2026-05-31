@@ -14,21 +14,24 @@ MCPClassEditRequestTest >> testCreateRequestParsesDefinitionArguments [
 
 	| context request |
 	request := MCPClassCreateRequest
-		           fromRequest: (self toolRequestWithArguments: {
-					            (#className -> 'MCPGeneratedClass').
-					            (#superclassName -> 'Object').
-					            (#packageName -> 'MCP-Generated').
-					            (#tag -> 'Models').
-					            (#classComment -> 'Generated comment.').
-					            (#force -> true).
-					            (#slots -> #( 'firstName' 'lastName' )).
-					            (#classSlots -> #( 'defaultName' )).
-					            (#traits -> #( 'TComparable' )).
-					            (#classTraits -> #( 'TComparable classTrait' )).
-					            (#sharedVariables -> #( 'Current' )).
-					            (#sharedPools -> #( 'ChronologyConstants' )).
-					            (#layout -> 'WeakLayout') } asDictionary)
-		           tool: MCPToolEditClass new.
+		           fromRequest: (MCPToolRequest new
+			            tool: MCPToolCreateClass new;
+			            arguments: {
+				            (#className -> 'MCPGeneratedClass').
+				            (#superclassName -> 'Object').
+				            (#packageName -> 'MCP-Generated').
+				            (#tag -> 'Models').
+				            (#classComment -> 'Generated comment.').
+				            (#force -> true).
+				            (#slots -> #( 'firstName' 'lastName' )).
+				            (#classSlots -> #( 'defaultName' )).
+				            (#traits -> #( 'TComparable' )).
+				            (#classTraits -> #( 'TComparable classTrait' )).
+				            (#sharedVariables -> #( 'Current' )).
+				            (#sharedPools -> #( 'ChronologyConstants' )).
+				            (#layout -> 'WeakLayout') } asDictionary;
+			            yourself)
+		           tool: MCPToolCreateClass new.
 	self assert: request className equals: 'MCPGeneratedClass'.
 	self assert: request superclassName equals: 'Object'.
 	self assert: request packageName equals: 'MCP-Generated'.
@@ -56,11 +59,13 @@ MCPClassEditRequestTest >> testCreateRequestParsesDefinitionArguments [
 MCPClassEditRequestTest >> testUpdateCommandResolvesOmittedMovePackageName [
 
 	| command context editRequest request tool |
-	tool := MCPToolEditClass new.
-	request := self toolRequestWithArguments: {
-			           (#operation -> 'update').
+	tool := MCPToolUpdateClassPackage new.
+	request := MCPToolRequest new
+		           tool: tool;
+		           arguments: {
 			           (#className -> self class name asString).
-			           (#tag -> 'Requests') } asDictionary.
+			           (#tag -> 'Requests') } asDictionary;
+		           yourself.
 	editRequest := tool parsedRequestFromToolRequest: request.
 	command := tool commandForRequest: editRequest.
 	context := command moveRequestedContext.
@@ -79,7 +84,8 @@ MCPClassEditRequestTest >> testUpdateCommandResolvesOmittedMovePackageName [
 { #category : 'tests' }
 MCPClassEditRequestTest >> testUpdateRequestParsesSlotArguments [
 
-	| context request |
+	| context request tool |
+	tool := MCPToolUpdateClassSlotName new.
 	request := MCPClassUpdateRequest
 		           fromRequest: (self toolRequestWithArguments: {
 					            (#className -> 'ExistingClass').
@@ -88,7 +94,7 @@ MCPClassEditRequestTest >> testUpdateRequestParsesSlotArguments [
 					            (#newSlotName -> 'newName').
 					            (#classSide -> true).
 					            (#force -> true) } asDictionary)
-		           tool: MCPToolEditClass new.
+		           tool: tool.
 	self assert: request className equals: 'ExistingClass'.
 	self assert: request slotAction equals: 'rename'.
 	self assert: request slotName equals: 'oldName'.
@@ -101,12 +107,14 @@ MCPClassEditRequestTest >> testUpdateRequestParsesSlotArguments [
 	self assert: (context at: #slotName) equals: 'oldName'.
 	self assert: (context at: #newSlotName) equals: 'newName'.
 	self assert: (context at: #classSide)
+
 ]
 
 { #category : 'tests' }
 MCPClassEditRequestTest >> testUpdateRequestTracksSuppliedProperties [
 
-	| context request |
+	| context request tool |
+	tool := MCPToolUpdateClassSlots new.
 	request := MCPClassUpdateRequest
 		           fromRequest: (self toolRequestWithArguments: {
 					            (#className -> 'ExistingClass').
@@ -114,7 +122,7 @@ MCPClassEditRequestTest >> testUpdateRequestTracksSuppliedProperties [
 					            (#classComment -> '').
 					            (#force -> true).
 					            (#slots -> #(  )) } asDictionary)
-		           tool: MCPToolEditClass new.
+		           tool: tool.
 	self assert: request className equals: 'ExistingClass'.
 	self assert: request tag equals: 'Models'.
 	self assert: request classComment equals: ''.
@@ -131,29 +139,32 @@ MCPClassEditRequestTest >> testUpdateRequestTracksSuppliedProperties [
 	self assert: (context at: #classComment) equals: ''.
 	self assert: (context at: #slots) equals: #(  ).
 	self deny: (context includesKey: #classSlots)
+
 ]
 
 { #category : 'tests' }
 MCPClassEditRequestTest >> testUpdateRequestWithNoPatchArgumentsHasNoUpdates [
 
-	| context request |
+	| context request tool |
+	tool := MCPToolUpdateClassSlots new.
 	request := MCPClassUpdateRequest
 		           fromRequest: (self toolRequestWithArguments:
 				            { (#className -> 'ExistingClass') } asDictionary)
-		           tool: MCPToolEditClass new.
+		           tool: tool.
 	self assert: request className equals: 'ExistingClass'.
 	self deny: request hasUpdates.
 	self assert: request suppliedProperties isEmpty.
 	context := request requestedContext.
 	self assert: context size equals: 1.
 	self assert: (context at: #className) equals: 'ExistingClass'
+
 ]
 
 { #category : 'private' }
 MCPClassEditRequestTest >> toolRequestWithArguments: aDictionary [
 
 	^ MCPToolRequest new
-		  tool: MCPToolEditClass new;
+		  tool: MCPToolUpdateClassSlots new;
 		  arguments: aDictionary;
 		  yourself
 ]

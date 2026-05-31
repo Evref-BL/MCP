@@ -1,7 +1,5 @@
 "
-MCP tool for inspecting and later recovering code changes recorded in the image change history.
-
-The public API intentionally talks about change history rather than Epicea or Ombu. The implementation uses Epicea logs and .ombu files behind the scenes.
+Shared implementation for focused change-history tools. The public API talks about change history rather than Epicea or Ombu; the implementation uses Epicea logs and .ombu files behind the scenes.
 "
 Class {
 	#name : 'MCPToolManageChangeHistory',
@@ -15,19 +13,6 @@ Class {
 MCPToolManageChangeHistory class >> isAbstract [
 
 	^ self = MCPToolManageChangeHistory
-]
-
-{ #category : 'defaults' }
-MCPToolManageChangeHistory class >> toolName [
-
-	^ 'history_entry_operation'
-]
-
-{ #category : 'private - operations' }
-MCPToolManageChangeHistory >> canonicalOperationNames [
-
-	^ (self operationSpecifications collect: [ :each | each at: #name ])
-		  asArray
 ]
 
 { #category : 'private - schema' }
@@ -177,196 +162,15 @@ MCPToolManageChangeHistory >> commandForRequest: changeHistoryRequest [
 		^ MCPChangeHistorySelectionCommand
 			  tool: self
 			  request: changeHistoryRequest ].
-	self signalUnsupportedOperation: changeHistoryRequest operation
-]
+	MCPCommandError
+		signalErrorCode: #UnsupportedChangeHistoryAction
+		message: 'Unsupported change history action: ' , changeHistoryRequest operation
+		details: {
+				(#action -> changeHistoryRequest operation).
+				(#supportedActions
+				 -> #( 'listFiles' 'listEntries' 'applyEntries' 'revertEntries' )) }
+				asDictionary
 
-{ #category : 'defaults' }
-MCPToolManageChangeHistory >> defaultDescription [
-
-	^ 'List and inspect Pharo image change history, then preview or perform applying or reverting selected history entries. Use operation=listFiles to find .ombu history files, operation=listEntries to inspect granular entries, operation=applyEntries to apply selected entries to the current image, and operation=revertEntries to revert selected entries from the current image.'
-]
-
-{ #category : 'defaults' }
-MCPToolManageChangeHistory >> defaultInputSchema [
-
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: {
-				  self operationSchemaProperty.
-				  (self
-					   booleanSchemaPropertyNamed: 'includeEntryCounts'
-					   description:
-						   'For operation=listFiles, whether to open each history file and count entries. Disable for a faster filesystem-only listing.'
-					   default: true).
-				  (self
-					   schemaPropertyNamed: 'directoryPath'
-					   type: 'string'
-					   description:
-						   'For operation=listFiles, optional directory to scan for .ombu change history files. Omit to scan the current image change history directory.').
-				  (self
-					   schemaPropertyNamed: 'historyFilePath'
-					   type: 'string'
-					   description:
-						   'Optional path to a .ombu change history file. Omit to inspect or change from the current image change history.').
-				  (self
-					   integerSchemaPropertyNamed: 'limit'
-					   description:
-						   'For operation=listEntries, maximum number of entries to return. Use 0 to request counts only.'
-					   default: 100).
-				  (self
-					   integerSchemaPropertyNamed: 'offset'
-					   description:
-						   'For operation=listEntries, zero-based pagination offset after filtering and ordering.'
-					   default: 0).
-				  (self
-					   booleanSchemaPropertyNamed: 'newestFirst'
-					   description:
-						   'For operation=listEntries, return newest entries first instead of oldest first.'
-					   default: false).
-				  (self
-					   booleanSchemaPropertyNamed: 'codeChangesOnly'
-					   description:
-						   'For operation=listEntries, operation=applyEntries, and operation=revertEntries, include or select only entries that represent code changes. The default is false for listEntries and true for applyEntries/revertEntries.').
-				  (self
-					   integerArraySchemaNamed: 'indexes'
-					   description:
-						   'For operation=applyEntries and operation=revertEntries, one-based entry indexes returned by listEntries to select.'
-					   itemDescription: 'A one-based change history entry index.').
-				  (self
-					   stringArraySchemaNamed: 'entryReferences'
-					   description:
-						   'For operation=applyEntries and operation=revertEntries, entry references returned by listEntries. Short, global, and local reference strings are accepted.'
-					   itemDescription: 'A change history entry reference string.').
-				  (self
-					   integerSchemaPropertyNamed: 'startIndex'
-					   description:
-						   'For operation=applyEntries and operation=revertEntries, first one-based entry index in an inclusive range. Must be provided with endIndex.').
-				  (self
-					   integerSchemaPropertyNamed: 'endIndex'
-					   description:
-						   'For operation=applyEntries and operation=revertEntries, last one-based entry index in an inclusive range. Must be provided with startIndex.').
-				  (self
-					   integerSchemaPropertyNamed: 'latestCount'
-					   description:
-						   'For operation=applyEntries and operation=revertEntries, select the latest N entries from the chosen history. When codeChangesOnly=true, selects the latest N code changes.').
-				  (self
-					   booleanSchemaPropertyNamed: 'confirm'
-					   description:
-						   'For operation=applyEntries and operation=revertEntries, false previews the selected changes and true performs the previewed changes.'
-					   default: false) };
-		  required: #( 'operation' );
-		  additionalProperties: false;
-		  yourself
-]
-
-{ #category : 'defaults' }
-MCPToolManageChangeHistory >> defaultOutputSchema [
-
-	| filesProperty entriesProperty selectedEntriesProperty previewEntriesProperty |
-	filesProperty := self
-		                 schemaPropertyNamed: 'files'
-		                 type: 'array'
-		                 description:
-		                 'Change history files returned by operation=listFiles.'.
-	filesProperty items: self changeHistoryLogSchemaProperty.
-	entriesProperty := self
-		                   changeHistoryEntryArraySchemaNamed: 'entries'
-		                   description:
-		                   'Change history entries returned by operation=listEntries.'.
-	selectedEntriesProperty := self
-		                           changeHistoryEntryArraySchemaNamed:
-		                           'selectedEntries'
-		                           description:
-		                           'The selected source history entries resolved from indexes, entryReferences, range, or latestCount.'.
-	previewEntriesProperty := self
-		                          changeHistoryEntryArraySchemaNamed:
-		                          'previewEntries'
-		                          description:
-		                          'The current-image code changes Epicea would perform, or did perform, for the selected entries.'.
-	^ self
-		  standardOutputSchemaForDataProperties: {
-				  (self
-					   schemaPropertyNamed: 'operation'
-					   type: 'string'
-					   description:
-					   'The change history operation that produced this result.').
-				  (self
-					   schemaPropertyNamed: 'action'
-					   type: 'string'
-					   description:
-					   'For operation=applyEntries and operation=revertEntries, the performed or previewed action: apply or revert.').
-				  (self
-					   schemaPropertyNamed: 'currentLogPath'
-					   type: 'string'
-					   description: 'The current image change history file path.').
-				  (self
-					   schemaPropertyNamed: 'directoryPath'
-					   type: 'string'
-					   description: 'The directory scanned by operation=listFiles.').
-				  filesProperty.
-				  (self
-					   schemaPropertyNamed: 'historyFilePath'
-					   type: 'string'
-					   description: 'The history file inspected or selected from.').
-				  entriesProperty.
-				  (self
-					   integerSchemaPropertyNamed: 'totalCount'
-					   description: 'Total matching entry count before pagination.').
-				  (self
-					   integerSchemaPropertyNamed: 'limit'
-					   description: 'Pagination limit used by operation=listEntries.').
-				  (self
-					   integerSchemaPropertyNamed: 'offset'
-					   description:
-					   'Pagination offset used by operation=listEntries.').
-				  (self
-					   booleanSchemaPropertyNamed: 'newestFirst'
-					   description:
-					   'Whether operation=listEntries ordered entries newest first.').
-				  (self
-					   booleanSchemaPropertyNamed: 'codeChangesOnly'
-					   description:
-					   'Whether entries were filtered or selected to code changes.').
-				  (self
-					   schemaPropertyNamed: 'selectionCriteria'
-					   type: 'object'
-					   description:
-					   'The selection criteria used by operation=applyEntries or operation=revertEntries.').
-				  selectedEntriesProperty.
-				  previewEntriesProperty.
-				  (self
-					   integerSchemaPropertyNamed: 'selectedCount'
-					   description: 'Number of selected source history entries.').
-				  (self
-					   integerSchemaPropertyNamed: 'selectedCodeChangeCount'
-					   description:
-					   'Number of selected source entries that are code changes.').
-				  (self
-					   integerSchemaPropertyNamed: 'skippedNonCodeChangeCount'
-					   description:
-					   'Number of selected source entries skipped because codeChangesOnly=true.').
-				  (self
-					   integerSchemaPropertyNamed: 'previewCount'
-					   description: 'Number of previewed current-image changes.').
-				  (self
-					   booleanSchemaPropertyNamed: 'performed'
-					   description:
-					   'Whether operation=applyEntries or operation=revertEntries performed the previewed changes.').
-				  (self
-					   integerSchemaPropertyNamed: 'performedCount'
-					   description:
-					   'Number of previewed current-image changes performed.').
-				  (self
-					   schemaPropertyNamed: 'headReference'
-					   type: 'string'
-					   description: 'The history log head reference when known.') }
-		  required: #( 'operation' )
-]
-
-{ #category : 'defaults' }
-MCPToolManageChangeHistory >> defaultTitle [
-
-	^ 'Manage Change History'
 ]
 
 { #category : 'executing' }
@@ -408,120 +212,6 @@ MCPToolManageChangeHistory >> integerArraySchemaNamed: aName description: aDescr
 		  yourself
 ]
 
-{ #category : 'private - request' }
-MCPToolManageChangeHistory >> operationFromRequest: request [
-
-	| operation specification |
-	operation := request stringArgumentNamed: 'operation'.
-	operation ifNil: [
-		MCPInvalidToolInput
-			signalMissingRequiredArgumentNamed: 'operation'
-			forTool: self ].
-	specification := self operationSpecifications
-		                 detect: [ :each | (each at: #name) = operation ]
-		                 ifNone: [
-		                 self signalUnsupportedOperation: operation ].
-	^ specification at: #name
-]
-
-{ #category : 'private - operations' }
-MCPToolManageChangeHistory >> operationNameListText [
-
-	| operationNames |
-	operationNames := self canonicalOperationNames.
-	^ String streamContents: [ :stream |
-		  operationNames doWithIndex: [ :each :index |
-			  index > 1 ifTrue: [
-				  index = operationNames size
-					  ifTrue: [
-						  operationNames size > 2
-							  ifTrue: [ stream nextPutAll: ', or ' ]
-							  ifFalse: [ stream nextPutAll: ' or ' ] ]
-					  ifFalse: [ stream nextPutAll: ', ' ] ].
-			  stream nextPutAll: each ] ]
-]
-
-{ #category : 'private - schema' }
-MCPToolManageChangeHistory >> operationSchemaProperty [
-
-	^ (self
-		   schemaPropertyNamed: 'operation'
-		   type: 'string'
-		   description:
-			   'Selects the change history action to execute. Supported values are '
-			   , self operationNameListText , '.')
-		  enum: self canonicalOperationNames;
-		  yourself
-]
-
-{ #category : 'private - operations' }
-MCPToolManageChangeHistory >> operationSpecificationNamed: anOperationName [
-
-	^ self operationSpecifications
-		  detect: [ :each | (each at: #name) = anOperationName ]
-		  ifNone: [ self signalUnsupportedOperation: anOperationName ]
-]
-
-{ #category : 'private - operations' }
-MCPToolManageChangeHistory >> operationSpecifications [
-
-	^ {
-		  {
-			  (#name -> 'listFiles').
-			  (#requiredProperties -> #(  )).
-			  (#description
-			   ->
-			   'List .ombu change history files from directoryPath or the current image change history directory.') }
-			  asDictionary.
-		  {
-			  (#name -> 'listEntries').
-			  (#requiredProperties -> #(  )).
-			  (#description
-			   ->
-			   'List granular entries from the current image change history or from historyFilePath.') }
-			  asDictionary.
-		  {
-			  (#name -> 'applyEntries').
-			  (#requiredProperties -> #(  )).
-			  (#description
-			   ->
-			   'Preview or confirm applying selected history entries to the current image. Set confirm=true to perform the previewed changes.') }
-			  asDictionary.
-		  {
-			  (#name -> 'revertEntries').
-			  (#requiredProperties -> #(  )).
-			  (#description
-			   ->
-			   'Preview or confirm reverting selected history entries from the current image. Set confirm=true to perform the previewed changes.') }
-			  asDictionary }
-]
-
-{ #category : 'private - operations' }
-MCPToolManageChangeHistory >> operationValidationErrorMessage [
-
-	^ 'operation must be one of ' , self operationNameListText , '.'
-]
-
-{ #category : 'private - request' }
-MCPToolManageChangeHistory >> parsedRequestFromToolRequest: request [
-
-	| operation |
-	operation := self operationFromRequest: request.
-	self
-		validateRequiredPropertiesForOperation: operation
-		inRequest: request.
-	operation = 'listFiles' ifTrue: [
-		^ MCPChangeHistoryListLogsRequest fromRequest: request tool: self ].
-	operation = 'listEntries' ifTrue: [
-		^ MCPChangeHistoryListEntriesRequest fromRequest: request tool: self ].
-	(#( 'applyEntries' 'revertEntries' ) includes: operation) ifTrue: [
-		^ MCPChangeHistorySelectionRequest
-			  fromRequest: request
-			  tool: self
-			  operation: operation ].
-	self signalUnsupportedOperation: operation
-]
-
 { #category : 'testing' }
 MCPToolManageChangeHistory >> shouldSaveImageAfterSuccessfulExecutionForResult: aResult [
 
@@ -532,18 +222,6 @@ MCPToolManageChangeHistory >> shouldSaveImageAfterSuccessfulExecutionForResult: 
 	data := structuredContent at: #data ifAbsent: [ ^ false ].
 	^ (data at: #performed ifAbsent: [ false ]) = true and: [
 		  (data at: #performedCount ifAbsent: [ 0 ]) > 0 ]
-]
-
-{ #category : 'private - operations' }
-MCPToolManageChangeHistory >> signalUnsupportedOperation: operationName [
-
-	MCPCommandError
-		signalErrorCode: #UnsupportedChangeHistoryOperation
-		message: self operationValidationErrorMessage
-		details: {
-				(#operation -> operationName).
-				(#supportedOperations -> self canonicalOperationNames) }
-				asDictionary
 ]
 
 { #category : 'private - results' }
@@ -572,27 +250,4 @@ MCPToolManageChangeHistory >> successSummaryForData: data operation: operation [
 				  , ' applicable changes from ' , selectedCount asString
 				  , ' selected history entries.' ] ].
 	^ 'Change history operation completed.'
-]
-
-{ #category : 'validating' }
-MCPToolManageChangeHistory >> validateRequest: request [
-
-	| operation |
-	operation := self operationFromRequest: request.
-	self
-		validateRequiredPropertiesForOperation: operation
-		inRequest: request
-]
-
-{ #category : 'private - request' }
-MCPToolManageChangeHistory >> validateRequiredPropertiesForOperation: operation inRequest: request [
-
-	| specification |
-	specification := self operationSpecificationNamed: operation.
-	(specification at: #requiredProperties ifAbsent: [ #(  ) ]) do: [
-		:each |
-		(request argumentNamed: each ifAbsent: [ nil ]) ifNil: [
-			MCPInvalidToolInput
-				signalMissingRequiredArgumentNamed: each
-				forTool: self ] ]
 ]

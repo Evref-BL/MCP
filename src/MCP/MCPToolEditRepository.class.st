@@ -1,5 +1,5 @@
 "
-MCP tool for Iceberg repositories registered in the image. The public operations are create, attach, update, verifyIdentity, diff, export, commit, adoptHead, fetch, pull, push, createBranch, and switchBranch. Creation registers a repository and can attach initial packages. Updates change repository metadata or package membership in the image. verifyIdentity asserts expected repository identity fields without writing files. Export writes image changes to the repository working tree and index without committing. Diff reports pending image changes. Commit creates an Iceberg commit from the current working-copy diff. adoptHead refreshes the image working-copy reference commit to the repository HEAD for reliable same-image continuation after commits or fast-forwards.
+Shared implementation for focused Iceberg repository tools. It builds repository command requests, dispatches repository commands, and returns structured repository edit results for create, attach, update, identity verification, diff, export, commit, branch, and remote actions.
 "
 Class {
 	#name : 'MCPToolEditRepository',
@@ -13,12 +13,6 @@ Class {
 MCPToolEditRepository class >> isAbstract [
 
 	^ self = MCPToolEditRepository
-]
-
-{ #category : 'defaults' }
-MCPToolEditRepository class >> toolName [
-
-	^ 'repository_operation'
 ]
 
 { #category : 'private - results' }
@@ -109,92 +103,12 @@ MCPToolEditRepository >> dataForRepositoryVerifyIdentityResult: aResult [
 ]
 
 { #category : 'defaults' }
-MCPToolEditRepository >> defaultDescription [
-
-	^ 'Create, attach, update, verifyIdentity, diff, export, commit, adopt HEAD, fetch, pull, push, create branches, or switch branches for Iceberg repositories registered in the image. Use repositoryName for existing repositories; add location only to create or attach a repository, disambiguate duplicate names, or assert the expected location during operation=verifyIdentity. operation=create creates a new repository directory and can attach packages. operation=attach registers an existing Git checkout without creating or writing repository files and can attach packages. operation=update changes image-side repository metadata or package membership without writing packages to files. operation=verifyIdentity asserts expected repository identity fields without writing files; provide at least one expected field among location, branchName, subdirectory, packageNames, modifiedPackageNames, and isModified. operation=diff inspects IceRepository>>workingCopyDiff without writing files and should be preferred when you only need to see image-side changes. operation=export is an escape hatch that materializes image changes to disk for Tonel or Git workflows and updates the Iceberg index without staging or committing. operation=commit calls IceRepository>>commitWithMessage:. operation=adoptHead calls IceWorkingCopy>>adoptCommit: with the repository head commit and reports before/after modified packages. operation=fetch calls IceRepository>>fetch. operation=pull calls IceRepository>>pull. operation=push calls IceRepository>>push. operation=createBranch calls IceRepository>>createBranch: and switches to the new branch. operation=switchBranch calls IceRepository>>switchToBranchNamed: for an existing branch.'
-]
-
-{ #category : 'defaults' }
-MCPToolEditRepository >> defaultInputSchema [
-
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: {
-				  (self
-					   operationSchemaPropertyWithDescription:
-						   'Selects the repository action to execute. Some actions require additional fields, such as name and location for create, repositoryName for repository actions, message for commit, and branchName for branch actions.'
-					   supportedValuesLeadIn: 'Supported values are').
-				  (self
-					   schemaPropertyNamed: 'name'
-					   type: 'string'
-					   description:
-						   'Repository name to use when operation=create creates a new repository or operation=attach registers an existing checkout.').
-				  (self
-					   schemaPropertyNamed: 'repositoryName'
-					   type: 'string'
-					   description:
-						   'Registered repository name for operations targeting an existing repository. Combine with location only when names are ambiguous.').
-				  (self
-					   schemaPropertyNamed: 'location'
-					   type: 'string'
-					   description:
-						   'Filesystem path for operation=create or operation=attach. For existing repositories, combine with repositoryName only to disambiguate duplicate names or assert expected location during operation=verifyIdentity.').
-				  (self
-					   schemaPropertyNamed: 'message'
-					   type: 'string'
-					   description: 'Commit message required by operation=commit.').
-				  (self
-					   schemaPropertyNamed: 'branchName'
-					   type: 'string'
-					   description:
-						   'Branch name required by operation=createBranch and operation=switchBranch. For operation=adoptHead or operation=verifyIdentity, this is an optional expected current branch guard.').
-				  (self
-					   schemaPropertyNamed: 'subdirectory'
-					   type: 'string'
-					   description:
-						   'Optional source subdirectory for operation=create or operation=attach. During operation=update this sets the repository source subdirectory in the image. During operation=verifyIdentity this asserts the expected source subdirectory.').
-				  (self
-					   stringArraySchemaNamed: 'packageNames'
-					   description:
-						   'Package names to manage initially during operation=create or operation=attach. During operation=update this replaces the full managed package list by adding and removing repository package membership without unloading packages or writing files. During operation=verifyIdentity this asserts the expected managed package names.'
-					   itemDescription: 'A package name.').
-				  (self
-					   stringArraySchemaNamed: 'modifiedPackageNames'
-					   description:
-						   'Package names expected to be modified during operation=verifyIdentity.'
-					   itemDescription: 'An expected modified package name.').
-				  (self
-					   booleanSchemaPropertyNamed: 'isModified'
-					   description:
-						   'Expected repository modified state during operation=verifyIdentity.').
-				  (self
-					   stringArraySchemaNamed: 'addPackageNames'
-					   description:
-						   'Package names to add to the repository working copy during operation=update. This does not write packages to files.'
-					   itemDescription: 'A package name to add.').
-				  (self
-					   stringArraySchemaNamed: 'removePackageNames'
-					   description:
-						   'Package names to remove from repository membership during operation=update using IcePackage>>remove. This does not unload packages from the image.'
-					   itemDescription: 'A package name to remove.') };
-		  required: #( 'operation' );
-		  additionalProperties: false;
-		  yourself
-]
-
-{ #category : 'defaults' }
 MCPToolEditRepository >> defaultOutputSchema [
 
 	^ self
 		  standardOutputSchemaForDataProperties:
 		  self repositoryEditDataProperties
 		  required: #( 'action' 'repository' 'packages' 'packageNames' )
-]
-
-{ #category : 'defaults' }
-MCPToolEditRepository >> defaultTitle [
-
-	^ 'Edit Repository'
 ]
 
 { #category : 'private - errors' }
@@ -207,129 +121,6 @@ MCPToolEditRepository >> errorResultForCommandError: anError operation: action r
 			value ifNotNil: [ details at: key ifAbsentPut: [ value ] ] ] ].
 	details at: #action put: action.
 	^ self errorResultText: anError messageText details: details
-]
-
-{ #category : 'private - operations' }
-MCPToolEditRepository >> operationSpecifications [
-
-	^ {
-		  {
-			  (#name -> 'create').
-			  (#requiredProperties -> #( 'name' 'location' )).
-			  (#description
-			   ->
-			   'Create a new Iceberg repository at location and optionally attach initial packages.') }
-			  asDictionary.
-		  {
-			  (#name -> 'attach').
-			  (#requiredProperties -> #( 'name' 'location' )).
-			  (#description
-			   ->
-			   'Register an existing Git checkout at location and optionally attach initial packages without creating repository files.') }
-			  asDictionary.
-		  {
-			  (#name -> 'update').
-			  (#requiredProperties -> #(  )).
-			  (#description
-			   ->
-			   'Change repository subdirectory or package membership in the image only.') }
-			  asDictionary.
-		  {
-			  (#name -> 'verifyIdentity').
-			  (#requiredProperties -> #( 'repositoryName' )).
-			  (#description
-			   ->
-			   'Assert expected repository identity fields without writing files; at least one expected field is required.') }
-			  asDictionary.
-		  {
-			  (#name -> 'export').
-			  (#requiredProperties -> #( 'repositoryName' )).
-			  (#description
-			   ->
-			   'Escape hatch: materialize the image working-copy diff to disk and update the Iceberg index without committing.') }
-			  asDictionary.
-		  {
-			  (#name -> 'diff').
-			  (#requiredProperties -> #( 'repositoryName' )).
-			  (#description
-			   ->
-			   'Inspect IceRepository>>workingCopyDiff without writing files; prefer this when checking image-side changes.') }
-			  asDictionary.
-		  {
-			  (#name -> 'commit').
-			  (#requiredProperties -> #( 'repositoryName' 'message' )).
-			  (#description -> 'Commit the repository with message.') }
-			  asDictionary.
-		  {
-			  (#name -> 'adoptHead').
-			  (#requiredProperties -> #( 'repositoryName' )).
-			  (#description
-			   ->
-			   'Adopt the repository head commit as the image working-copy reference commit. Optional branchName validates the current branch before adopting.') }
-			  asDictionary.
-		  {
-			  (#name -> 'fetch').
-			  (#requiredProperties -> #( 'repositoryName' )).
-			  (#description -> 'Fetch remote refs through Iceberg.') }
-			  asDictionary.
-		  {
-			  (#name -> 'pull').
-			  (#requiredProperties -> #( 'repositoryName' )).
-			  (#description -> 'Pull remote changes through Iceberg.') }
-			  asDictionary.
-		  {
-			  (#name -> 'push').
-			  (#requiredProperties -> #( 'repositoryName' )).
-			  (#description -> 'Push local commits through Iceberg.') }
-			  asDictionary.
-		  {
-			  (#name -> 'createBranch').
-			  (#requiredProperties -> #( 'repositoryName' 'branchName' )).
-			  (#description
-			   -> 'Create branchName from the current head and switch to it.') }
-			  asDictionary.
-		  {
-			  (#name -> 'switchBranch').
-			  (#requiredProperties -> #( 'repositoryName' 'branchName' )).
-			  (#description -> 'Switch to an existing branchName.') }
-			  asDictionary }
-]
-
-{ #category : 'private - request' }
-MCPToolEditRepository >> parsedRequestFromToolRequest: request [
-
-	| operation |
-	operation := self operationFromRequest: request.
-	self
-		validateRequiredPropertiesForOperation: operation
-		inRequest: request.
-	operation = 'create' ifTrue: [
-		^ MCPRepositoryCreateRequest fromRequest: request tool: self ].
-	operation = 'attach' ifTrue: [
-		^ MCPRepositoryAttachRequest fromRequest: request tool: self ].
-	operation = 'update' ifTrue: [
-		^ MCPRepositoryUpdateRequest fromRequest: request tool: self ].
-	operation = 'verifyIdentity' ifTrue: [
-		^ MCPRepositoryVerifyIdentityRequest fromRequest: request tool: self ].
-	operation = 'export' ifTrue: [
-		^ MCPRepositoryExportRequest fromRequest: request tool: self ].
-	operation = 'diff' ifTrue: [
-		^ MCPRepositoryDiffRequest fromRequest: request tool: self ].
-	operation = 'commit' ifTrue: [
-		^ MCPRepositoryCommitRequest fromRequest: request tool: self ].
-	operation = 'adoptHead' ifTrue: [
-		^ MCPRepositoryAdoptHeadRequest fromRequest: request tool: self ].
-	operation = 'fetch' ifTrue: [
-		^ MCPRepositoryFetchRequest fromRequest: request tool: self ].
-	operation = 'pull' ifTrue: [
-		^ MCPRepositoryPullRequest fromRequest: request tool: self ].
-	operation = 'push' ifTrue: [
-		^ MCPRepositoryPushRequest fromRequest: request tool: self ].
-	operation = 'createBranch' ifTrue: [
-		^ MCPRepositoryCreateBranchRequest fromRequest: request tool: self ].
-	operation = 'switchBranch' ifTrue: [
-		^ MCPRepositorySwitchBranchRequest fromRequest: request tool: self ].
-	Error signal: self operationValidationErrorMessage
 ]
 
 { #category : 'private - schema' }

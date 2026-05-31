@@ -143,7 +143,8 @@ MCPDebugEditCommand >> compiledMethodForContext: aContext [
 { #category : 'private - data' }
 MCPDebugEditCommand >> critiqueDataForMethod: aCompiledMethod [
 
-	^ MCPToolEditMethod new critiqueDataForMethod: aCompiledMethod
+	^ MCPToolCreateMethod new critiqueDataForMethod: aCompiledMethod
+
 ]
 
 { #category : 'private - actions' }

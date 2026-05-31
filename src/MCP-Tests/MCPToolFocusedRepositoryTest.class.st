@@ -18,14 +18,14 @@ MCPToolFocusedRepositoryTest >> focusedToolSpecifications [
 			  (#arguments -> {
 				   (#repositoryName -> 'MCP').
 				   (#branchName -> 'main') } asDictionary).
-			  (#operation -> 'verifyIdentity').
+			  (#action -> 'verifyIdentity').
 			  (#requestClass -> MCPRepositoryVerifyIdentityRequest).
 			  (#commandClass -> MCPRepositoryVerifyIdentityCommand) }
 			  asDictionary.
 		  {
 			  (#toolClass -> MCPToolFindRepositoryChanges).
 			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
-			  (#operation -> 'diff').
+			  (#action -> 'diff').
 			  (#requestClass -> MCPRepositoryDiffRequest).
 			  (#commandClass -> MCPRepositoryDiffCommand) } asDictionary.
 		  {
@@ -33,7 +33,7 @@ MCPToolFocusedRepositoryTest >> focusedToolSpecifications [
 			  (#arguments -> {
 				   (#name -> 'MCP Test Repository').
 				   (#location -> '/tmp/mcp-test-repository') } asDictionary).
-			  (#operation -> 'create').
+			  (#action -> 'create').
 			  (#requestClass -> MCPRepositoryCreateRequest).
 			  (#commandClass -> MCPCreateRepositoryCommand) } asDictionary.
 		  {
@@ -41,7 +41,7 @@ MCPToolFocusedRepositoryTest >> focusedToolSpecifications [
 			  (#arguments -> {
 				   (#name -> 'MCP Test Repository').
 				   (#location -> '/tmp/mcp-test-repository') } asDictionary).
-			  (#operation -> 'attach').
+			  (#action -> 'attach').
 			  (#requestClass -> MCPRepositoryAttachRequest).
 			  (#commandClass -> MCPAttachRepositoryCommand) } asDictionary.
 		  {
@@ -49,13 +49,13 @@ MCPToolFocusedRepositoryTest >> focusedToolSpecifications [
 			  (#arguments -> {
 				   (#repositoryName -> 'MCP').
 				   (#addPackageNames -> #( 'MCP' )) } asDictionary).
-			  (#operation -> 'update').
+			  (#action -> 'update').
 			  (#requestClass -> MCPRepositoryUpdateRequest).
 			  (#commandClass -> MCPUpdateRepositoryCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolExportRepository).
 			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
-			  (#operation -> 'export').
+			  (#action -> 'export').
 			  (#requestClass -> MCPRepositoryExportRequest).
 			  (#commandClass -> MCPExportRepositoryCommand) } asDictionary.
 		  {
@@ -63,25 +63,25 @@ MCPToolFocusedRepositoryTest >> focusedToolSpecifications [
 			  (#arguments -> {
 				   (#repositoryName -> 'MCP').
 				   (#message -> 'Commit from test') } asDictionary).
-			  (#operation -> 'commit').
+			  (#action -> 'commit').
 			  (#requestClass -> MCPRepositoryCommitRequest).
 			  (#commandClass -> MCPCommitRepositoryCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolFetchRepository).
 			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
-			  (#operation -> 'fetch').
+			  (#action -> 'fetch').
 			  (#requestClass -> MCPRepositoryFetchRequest).
 			  (#commandClass -> MCPFetchRepositoryCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolPullRepository).
 			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
-			  (#operation -> 'pull').
+			  (#action -> 'pull').
 			  (#requestClass -> MCPRepositoryPullRequest).
 			  (#commandClass -> MCPPullRepositoryCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolPushRepository).
 			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
-			  (#operation -> 'push').
+			  (#action -> 'push').
 			  (#requestClass -> MCPRepositoryPushRequest).
 			  (#commandClass -> MCPPushRepositoryCommand) } asDictionary.
 		  {
@@ -89,7 +89,7 @@ MCPToolFocusedRepositoryTest >> focusedToolSpecifications [
 			  (#arguments -> {
 				   (#repositoryName -> 'MCP').
 				   (#branchName -> 'feature') } asDictionary).
-			  (#operation -> 'createBranch').
+			  (#action -> 'createBranch').
 			  (#requestClass -> MCPRepositoryCreateBranchRequest).
 			  (#commandClass -> MCPCreateRepositoryBranchCommand) }
 			  asDictionary.
@@ -98,14 +98,14 @@ MCPToolFocusedRepositoryTest >> focusedToolSpecifications [
 			  (#arguments -> {
 				   (#repositoryName -> 'MCP').
 				   (#branchName -> 'main') } asDictionary).
-			  (#operation -> 'switchBranch').
+			  (#action -> 'switchBranch').
 			  (#requestClass -> MCPRepositorySwitchBranchRequest).
 			  (#commandClass -> MCPSwitchRepositoryBranchCommand) }
 			  asDictionary.
 		  {
 			  (#toolClass -> MCPToolAdoptRepositoryHead).
 			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
-			  (#operation -> 'adoptHead').
+			  (#action -> 'adoptHead').
 			  (#requestClass -> MCPRepositoryAdoptHeadRequest).
 			  (#commandClass -> MCPAdoptRepositoryHeadCommand) } asDictionary }
 ]
@@ -243,7 +243,7 @@ MCPToolFocusedRepositoryTest >> testFocusedRepositoryToolsRouteToRepositoryComma
 				equals: (specification at: #requestClass).
 			self
 				assert: parsedRequest operation
-				equals: (specification at: #operation).
+				equals: (specification at: #action).
 			self
 				assert: command class
 				equals: (specification at: #commandClass) ]

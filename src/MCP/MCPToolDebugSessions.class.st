@@ -1,7 +1,5 @@
 "
-MCP tool for managing debugger session inventory.
-
-It exposes listing, describing, forgetting, discovering external debuggers, and attaching discovered debuggers to the MCP registry.
+Shared implementation for focused debugger-session tools. It supports listing, describing, forgetting, discovering external debuggers, and attaching discovered debuggers to the MCP registry.
 "
 Class {
 	#name : 'MCPToolDebugSessions',
@@ -21,44 +19,6 @@ MCPToolDebugSessions class >> isAbstract [
 MCPToolDebugSessions >> commandForRequest: debugRequest [
 
 	^ MCPDebugSessionsCommand tool: self request: debugRequest
-]
-
-{ #category : 'defaults' }
-MCPToolDebugSessions >> defaultDescription [
-
-	^ 'List, describe, forget, discover, or attach Pharo DebugSession records tracked by the MCP debugger registry. Discover returns unattached open debugger candidates; attach imports one by candidateRef.'
-]
-
-{ #category : 'defaults' }
-MCPToolDebugSessions >> defaultIcons [
-
-	^ { (self pngCompositeBaseIconNamed: #bug badgeIconNamed: #book) }
-]
-
-{ #category : 'defaults' }
-MCPToolDebugSessions >> defaultInputSchema [
-
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: {
-				  (self
-					   stringEnumSchemaPropertyNamed: 'operation'
-					   description: 'Session registry operation to perform.'
-					   values: MCPDebugSessionsRequest supportedOperations
-					   default: 'list').
-				  (self
-					   schemaPropertyNamed: 'sessionId'
-					   type: 'string'
-					   description:
-						   'Opaque debug session identifier returned by debug_session_list, debug_capture, debug_test_run, or debug_candidate_attach.').
-				  (self
-					   schemaPropertyNamed: 'candidateRef'
-					   type: 'string'
-					   description:
-						   'Opaque debugger candidate reference returned by debug_candidate_search.') };
-		  required: #(  );
-		  additionalProperties: false;
-		  yourself
 ]
 
 { #category : 'defaults' }
@@ -113,16 +73,4 @@ MCPToolDebugSessions >> defaultOutputSchema [
 					   description:
 					   'Whether forgetting the session also terminated an owned captured worker process.') }
 		  required: #(  )
-]
-
-{ #category : 'defaults' }
-MCPToolDebugSessions >> defaultTitle [
-
-	^ 'Debug Sessions'
-]
-
-{ #category : 'private - request' }
-MCPToolDebugSessions >> parsedRequestFromToolRequest: request [
-
-	^ MCPDebugSessionsRequest fromRequest: request tool: self
 ]

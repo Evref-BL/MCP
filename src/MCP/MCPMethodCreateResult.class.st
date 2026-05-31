@@ -38,7 +38,7 @@ MCPMethodCreateResult >> asDictionary [
 
 	| data |
 	data := self methodInfo asDictionaryIncludingSource: true.
-	data at: #operation put: 'create'.
+	data at: #action put: 'create'.
 	data at: #changeKind put: self changeKind.
 	self critiques ifNotEmpty: [ data at: #critiques put: self critiques ].
 	^ data

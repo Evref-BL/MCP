@@ -19,11 +19,21 @@ MCPToolManageChangeHistoryTest class >> shouldLogWithEpicea [
 { #category : 'private - calling' }
 MCPToolManageChangeHistoryTest >> callToolWith: someArguments [
 
-	| request result tool |
-	tool := MCPToolManageChangeHistory new.
-	request := tool requestFromToolCallArguments: someArguments.
+	| action arguments request result tool toolClass |
+	arguments := someArguments copy.
+	action := arguments removeKey: #action ifAbsent: [ nil ].
+	toolClass := Dictionary new
+		             at: 'listFiles' put: MCPToolFindChangeHistoryFiles;
+		             at: 'listEntries' put: MCPToolFindChangeHistoryEntries;
+		             at: 'applyEntries' put: MCPToolApplyChangeHistoryEntries;
+		             at: 'revertEntries' put: MCPToolRevertChangeHistoryEntries;
+		             at: action
+		             ifAbsent: [ Error signal: 'Unknown change history action: ' , action asString ].
+	tool := toolClass new.
+	request := tool requestFromToolCallArguments: arguments.
 	result := tool executeWithRequest: request.
 	^ result asJRPCJSON
+
 ]
 
 { #category : 'private' }
@@ -77,12 +87,11 @@ MCPToolManageChangeHistoryTest >> testApplyEntriesAppliesConfirmedChanges [
 		entryIndex := self recordRecoverableMethodAdditionOn: class.
 		self deny: (class includesSelector: #rescuedValue).
 		result := self callToolWith: {
-				          (#operation -> 'applyEntries').
+				          (#action -> 'applyEntries').
 				          (#indexes -> { entryIndex }).
 				          (#confirm -> true) } asDictionary.
 		data := self dataFrom: result.
 		self deny: (result at: #isError ifAbsent: [ false ]).
-		self assert: (data at: #operation) equals: 'applyEntries'.
 		self assert: (data at: #action) equals: 'apply'.
 		self assert: (data at: #performed).
 		self assert: (data at: #performedCount) equals: 1.
@@ -99,11 +108,10 @@ MCPToolManageChangeHistoryTest >> testApplyEntriesPreviewsChanges [
 		| data entryIndex previewEntry result |
 		entryIndex := self recordRecoverableMethodAdditionOn: class.
 		result := self callToolWith: {
-				          (#operation -> 'applyEntries').
+				          (#action -> 'applyEntries').
 				          (#indexes -> { entryIndex }) } asDictionary.
 		data := self dataFrom: result.
 		self deny: (result at: #isError ifAbsent: [ false ]).
-		self assert: (data at: #operation) equals: 'applyEntries'.
 		self assert: (data at: #action) equals: 'apply'.
 		self assert: (data at: #selectedCount) equals: 1.
 		self assert: (data at: #previewCount) equals: 1.
@@ -117,7 +125,7 @@ MCPToolManageChangeHistoryTest >> testApplyEntriesRejectsIncompleteRange [
 
 	| error result |
 	result := self callToolWith: {
-			          (#operation -> 'applyEntries').
+			          (#action -> 'applyEntries').
 			          (#startIndex -> 1) } asDictionary.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
@@ -133,7 +141,7 @@ MCPToolManageChangeHistoryTest >> testApplyEntriesRejectsNonPositiveIndex [
 
 	| error result |
 	result := self callToolWith: {
-			          (#operation -> 'applyEntries').
+			          (#action -> 'applyEntries').
 			          (#indexes -> #( 0 )) } asDictionary.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
@@ -149,7 +157,7 @@ MCPToolManageChangeHistoryTest >> testApplyEntriesRequiresSelectionCriteria [
 
 	| error result |
 	result := self callToolWith:
-		          { (#operation -> 'applyEntries') } asDictionary.
+		          { (#action -> 'applyEntries') } asDictionary.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self
@@ -165,12 +173,11 @@ MCPToolManageChangeHistoryTest >> testApplyEntriesWithoutConfirmOnlyPreviews [
 		entryIndex := self recordRecoverableMethodAdditionOn: class.
 		self deny: (class includesSelector: #rescuedValue).
 		result := self callToolWith: {
-				          (#operation -> 'applyEntries').
+				          (#action -> 'applyEntries').
 				          (#indexes -> { entryIndex }).
 				          (#confirm -> false) } asDictionary.
 		data := self dataFrom: result.
 		self deny: (result at: #isError ifAbsent: [ false ]).
-		self assert: (data at: #operation) equals: 'applyEntries'.
 		self assert: (data at: #action) equals: 'apply'.
 		self deny: (data at: #performed).
 		self assert: (data at: #performedCount) equals: 0.
@@ -183,11 +190,11 @@ MCPToolManageChangeHistoryTest >> testListEntriesReportsDirectoryPathAsNotFile [
 
 	| data directoryPath error result |
 	data := self dataFrom: (self callToolWith: {
-				         (#operation -> 'listFiles').
+				         (#action -> 'listFiles').
 				         (#includeEntryCounts -> false) } asDictionary).
 	directoryPath := data at: #directoryPath.
 	result := self callToolWith: {
-			          (#operation -> 'listEntries').
+			          (#action -> 'listEntries').
 			          (#historyFilePath -> directoryPath) } asDictionary.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
@@ -209,7 +216,7 @@ MCPToolManageChangeHistoryTest >> testListEntriesReportsUnreadableHistoryFile [
 	file writeStreamDo: [ :stream |
 		stream nextPutAll: 'not an ombu history file' ].
 	result := self callToolWith: {
-			          (#operation -> 'listEntries').
+			          (#action -> 'listEntries').
 			          (#historyFilePath -> file fullName) } asDictionary.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
@@ -228,14 +235,14 @@ MCPToolManageChangeHistoryTest >> testListEntriesReturnsGranularCodeChangeData [
 		| data entries firstEntry result |
 		self recordMethodAdditionOn: class.
 		result := self callToolWith: {
-				          (#operation -> 'listEntries').
+				          (#action -> 'listEntries').
 				          (#limit -> 5).
 				          (#newestFirst -> true).
 				          (#codeChangesOnly -> true) } asDictionary.
 		data := self dataFrom: result.
 		entries := data at: #entries.
 		self deny: (result at: #isError ifAbsent: [ false ]).
-		self assert: (data at: #operation) equals: 'listEntries'.
+		self assert: (data at: #action) equals: 'listEntries'.
 		self assert: (data at: #limit) equals: 5.
 		self assert: (data at: #codeChangesOnly).
 		self assert: (data at: #totalCount) >= entries size.
@@ -252,12 +259,12 @@ MCPToolManageChangeHistoryTest >> testListEntriesSupportsHistoryFilePath [
 
 	| data entries files path result filesResult |
 	filesResult := self callToolWith: {
-			               (#operation -> 'listFiles').
+			               (#action -> 'listFiles').
 			               (#includeEntryCounts -> false) } asDictionary.
 	files := (self dataFrom: filesResult) at: #files.
 	path := (files detect: [ :each | each at: #isCurrent ]) at: #path.
 	result := self callToolWith: {
-			          (#operation -> 'listEntries').
+			          (#action -> 'listEntries').
 			          (#historyFilePath -> path).
 			          (#limit -> 1) } asDictionary.
 	data := self dataFrom: result.
@@ -273,11 +280,11 @@ MCPToolManageChangeHistoryTest >> testListFilesReportsFilePathAsNotDirectory [
 
 	| data error filePath result |
 	data := self dataFrom: (self callToolWith: {
-				         (#operation -> 'listFiles').
+				         (#action -> 'listFiles').
 				         (#includeEntryCounts -> false) } asDictionary).
 	filePath := data at: #currentLogPath.
 	result := self callToolWith: {
-			          (#operation -> 'listFiles').
+			          (#action -> 'listFiles').
 			          (#directoryPath -> filePath) } asDictionary.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
@@ -295,7 +302,7 @@ MCPToolManageChangeHistoryTest >> testListFilesReportsMissingDirectoryPath [
 	                / ('mcp-missing-change-history-' , UUID new asString))
 		               fullName.
 	result := self callToolWith: {
-			          (#operation -> 'listFiles').
+			          (#action -> 'listFiles').
 			          (#directoryPath -> missingPath) } asDictionary.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
@@ -310,12 +317,12 @@ MCPToolManageChangeHistoryTest >> testListFilesReturnsCurrentHistoryFile [
 
 	| data files result |
 	result := self callToolWith: {
-			          (#operation -> 'listFiles').
+			          (#action -> 'listFiles').
 			          (#includeEntryCounts -> false) } asDictionary.
 	data := self dataFrom: result.
 	files := data at: #files.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #operation) equals: 'listFiles'.
+	self assert: (data at: #action) equals: 'listFiles'.
 	self assert: (data at: #currentLogPath) notNil.
 	self assert: (data at: #directoryPath) notNil.
 	self assert: files notEmpty.
@@ -329,17 +336,17 @@ MCPToolManageChangeHistoryTest >> testListFilesSupportsDirectoryPath [
 
 	| baseData data directoryPath files result |
 	baseData := self dataFrom: (self callToolWith: {
-				             (#operation -> 'listFiles').
+				             (#action -> 'listFiles').
 				             (#includeEntryCounts -> false) } asDictionary).
 	directoryPath := baseData at: #directoryPath.
 	result := self callToolWith: {
-			          (#operation -> 'listFiles').
+			          (#action -> 'listFiles').
 			          (#directoryPath -> directoryPath).
 			          (#includeEntryCounts -> false) } asDictionary.
 	data := self dataFrom: result.
 	files := data at: #files.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #operation) equals: 'listFiles'.
+	self assert: (data at: #action) equals: 'listFiles'.
 	self assert: (data at: #directoryPath) equals: directoryPath.
 	self assert: files notEmpty.
 	self assert: (files anySatisfy: [ :each | each at: #isCurrent ])
@@ -353,12 +360,11 @@ MCPToolManageChangeHistoryTest >> testRevertEntriesRevertsConfirmedChanges [
 		entryIndex := self recordMethodAdditionOn: class.
 		self assert: (class includesSelector: #rescuedValue).
 		result := self callToolWith: {
-				          (#operation -> 'revertEntries').
+				          (#action -> 'revertEntries').
 				          (#indexes -> { entryIndex }).
 				          (#confirm -> true) } asDictionary.
 		data := self dataFrom: result.
 		self deny: (result at: #isError ifAbsent: [ false ]).
-		self assert: (data at: #operation) equals: 'revertEntries'.
 		self assert: (data at: #action) equals: 'revert'.
 		self assert: (data at: #performed).
 		self assert: (data at: #performedCount) equals: 1.
@@ -369,19 +375,19 @@ MCPToolManageChangeHistoryTest >> testRevertEntriesRevertsConfirmedChanges [
 MCPToolManageChangeHistoryTest >> testSelectionResultRequestsImageSaveOnlyAfterPerformedChanges [
 
 	| confirmedResult emptyConfirmedResult previewResult tool |
-	tool := MCPToolManageChangeHistory new.
+	tool := MCPToolApplyChangeHistoryEntries new.
 	previewResult := tool successResultText: 'preview' data: {
-			                 (#operation -> 'applyEntries').
+			                 (#action -> 'apply').
 			                 (#performed -> false).
 			                 (#performedCount -> 0) } asDictionary.
 	emptyConfirmedResult := tool
 		                        successResultText: 'empty apply'
 		                        data: {
-				                        (#operation -> 'applyEntries').
+				                        (#action -> 'apply').
 				                        (#performed -> true).
 				                        (#performedCount -> 0) } asDictionary.
 	confirmedResult := tool successResultText: 'confirmed apply' data: {
-			                   (#operation -> 'applyEntries').
+			                   (#action -> 'apply').
 			                   (#performed -> true).
 			                   (#performedCount -> 1) } asDictionary.
 
@@ -392,6 +398,7 @@ MCPToolManageChangeHistoryTest >> testSelectionResultRequestsImageSaveOnlyAfterP
 			 emptyConfirmedResult).
 	self assert: (tool shouldSaveImageAfterSuccessfulExecutionForResult:
 			 confirmedResult)
+
 ]
 
 { #category : 'private - calling' }

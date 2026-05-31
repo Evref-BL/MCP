@@ -1439,6 +1439,7 @@ MCPDebugToolContractTest >> testDebugSessionsRequestRejectsUnsupportedOperationW
 	self assert: (error details at: #operation) equals: 'wat'.
 	self assert:
 		((error details at: #supportedOperations) includes: 'list')
+
 ]
 
 { #category : 'tests' }

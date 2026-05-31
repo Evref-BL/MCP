@@ -73,10 +73,10 @@ MCPToolFindChangeHistoryEntries >> defaultOutputSchema [
 	^ self
 		  standardOutputSchemaForDataProperties: {
 				  (self
-					   schemaPropertyNamed: 'operation'
+					   schemaPropertyNamed: 'action'
 					   type: 'string'
 					   description:
-					   'The change history operation that produced this result.').
+					   'The change history action that produced this result.').
 				  (self
 					   schemaPropertyNamed: 'historyFilePath'
 					   type: 'string'
@@ -101,25 +101,13 @@ MCPToolFindChangeHistoryEntries >> defaultOutputSchema [
 					   schemaPropertyNamed: 'headReference'
 					   type: 'string'
 					   description: 'The history log head reference when known.') }
-		  required: #( 'operation' )
+		  required: #( 'action' )
 ]
 
 { #category : 'defaults' }
 MCPToolFindChangeHistoryEntries >> defaultTitle [
 
 	^ 'List Change History Entries'
-]
-
-{ #category : 'private - operations' }
-MCPToolFindChangeHistoryEntries >> operationName [
-
-	^ 'listEntries'
-]
-
-{ #category : 'private - operations' }
-MCPToolFindChangeHistoryEntries >> operationSpecifications [
-
-	^ { { (#name -> self operationName) } asDictionary }
 ]
 
 { #category : 'private - request' }

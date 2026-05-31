@@ -1,5 +1,5 @@
 "
-Abstract base for focused class editing tools. It removes public operation and action selector arguments while reusing MCPToolEditClass request parsing and command dispatch internally.
+Abstract base for focused class editing tools. It defines per-tool class inputs while reusing MCPToolEditClass request parsing and command dispatch internally.
 "
 Class {
 	#name : 'MCPToolClassOperation',

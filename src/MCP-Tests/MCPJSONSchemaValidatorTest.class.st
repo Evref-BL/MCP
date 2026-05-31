@@ -35,7 +35,7 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 		  (MCPToolFindRepositoryChanges
 		   -> { (#repositoryName -> 'MCP') } asDictionary).
 		  (MCPToolEditRepository -> {
-			   (#operation -> 'update').
+			   (#action -> 'update').
 			   (#repositoryName -> 'MCP').
 			   (#addPackageNames -> #( 'MCP' )) } asDictionary).
 		  (MCPToolExportRepository
@@ -65,11 +65,11 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 		  (MCPToolFindClasses -> Dictionary new).
 		  (MCPToolFindPackages -> Dictionary new).
 		  (MCPToolEditClass -> {
-			   (#operation -> 'update').
+			   (#action -> 'update').
 			   (#className -> 'MCPTool').
 			   (#newClassName -> 'MCPToolRenamed') } asDictionary).
 		  (MCPToolEditMethod -> {
-			   (#operation -> 'create').
+			   (#action -> 'create').
 			   (#className -> 'MCPTool').
 			   (#methodSource -> 'temporarySelector ^ self').
 			   (#protocol -> 'tests') } asDictionary).
@@ -87,9 +87,9 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 		  (MCPToolFindChangeHistoryFiles -> Dictionary new).
 		  (MCPToolFindChangeHistoryEntries -> Dictionary new).
 		  (MCPToolManageChangeHistory
-		   -> { (#operation -> 'listFiles') } asDictionary).
+		   -> { (#action -> 'listFiles') } asDictionary).
 		  (MCPToolCaptureScreenshot -> { (#target -> 'world') } asDictionary).
-		  (MCPToolDebugSessions -> { (#operation -> 'list') } asDictionary).
+		  (MCPToolDebugSessions -> { (#action -> 'list') } asDictionary).
 		  (MCPToolDebugState
 		   -> { (#sessionId -> 'debug-session-1') } asDictionary).
 		  (MCPToolDebugVariables
@@ -102,9 +102,9 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 			   (#expression -> '1') } asDictionary).
 		  (MCPToolDebugControl -> {
 			   (#sessionId -> 'debug-session-1').
-			   (#operation -> 'stepOver') } asDictionary).
+			   (#action -> 'stepOver') } asDictionary).
 		  (MCPToolDebugBreakpoints
-		   -> { (#operation -> 'list') } asDictionary).
+		   -> { (#action -> 'list') } asDictionary).
 		  (MCPToolDebugCapture -> { (#expression -> '1') } asDictionary).
 		  (MCPToolDebugEdit
 		   -> { (#sessionId -> 'debug-session-1') } asDictionary).
@@ -419,6 +419,7 @@ MCPJSONSchemaValidatorTest >> testValidatesAllOfAndIfThen [
 	keywords := self keywordsFrom:
 		            (self violationsFor: arguments schema: schema).
 	self assert: keywords equals: #( 'required' )
+
 ]
 
 { #category : 'tests' }
@@ -446,6 +447,7 @@ MCPJSONSchemaValidatorTest >> testValidatesArrayItemsEnumAndConst [
 	self
 		assert: (self keywordsFrom: violations) asBag
 		equals: #( 'enum' 'const' 'type' ) asBag
+
 ]
 
 { #category : 'tests' }

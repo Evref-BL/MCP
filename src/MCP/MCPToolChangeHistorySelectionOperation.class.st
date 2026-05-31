@@ -52,11 +52,6 @@ MCPToolChangeHistorySelectionOperation >> defaultOutputSchema [
 	^ self
 		  standardOutputSchemaForDataProperties: {
 				  (self
-					   schemaPropertyNamed: 'operation'
-					   type: 'string'
-					   description:
-					   'The change history operation that produced this result.').
-				  (self
 					   schemaPropertyNamed: 'action'
 					   type: 'string'
 					   description:
@@ -98,10 +93,11 @@ MCPToolChangeHistorySelectionOperation >> defaultOutputSchema [
 					   type: 'string'
 					   description: 'The history log head reference when known.') }
 		  required:
-			  #( 'operation' 'action' 'selectionCriteria' 'selectedEntries'
+			  #( 'action' 'selectionCriteria' 'selectedEntries'
 			     'previewEntries' 'selectedCount' 'selectedCodeChangeCount'
 			     'skippedNonCodeChangeCount' 'previewCount' 'performed'
 			     'performedCount' )
+
 ]
 
 { #category : 'defaults' }
@@ -114,12 +110,6 @@ MCPToolChangeHistorySelectionOperation >> defaultTitle [
 MCPToolChangeHistorySelectionOperation >> operationName [
 
 	^ self changeHistoryOperationSpec at: #operation
-]
-
-{ #category : 'private - operations' }
-MCPToolChangeHistorySelectionOperation >> operationSpecifications [
-
-	^ { { (#name -> self operationName) } asDictionary }
 ]
 
 { #category : 'private - request' }

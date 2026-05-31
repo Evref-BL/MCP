@@ -60,9 +60,17 @@ MCPToolEditMethodTest >> assertSuccessDataHasMethodShape: data [
 { #category : 'private - calling' }
 MCPToolEditMethodTest >> callToolWith: someArguments [
 
-	| request result tool |
-	tool := MCPToolEditMethod new.
-	request := tool requestFromToolCallArguments: someArguments.
+	| arguments request result tool toolClass |
+	arguments := someArguments copy.
+	arguments removeKey: #action ifAbsent: [  ].
+	toolClass := (arguments includesKey: #methodSource)
+		             ifTrue: [ MCPToolCreateMethod ]
+		             ifFalse: [
+			             (arguments includesKey: #newSelector)
+				             ifTrue: [ MCPToolUpdateMethodSelector ]
+				             ifFalse: [ MCPToolUpdateMethodProtocol ] ].
+	tool := toolClass new.
+	request := tool requestFromToolCallArguments: arguments.
 	result := tool executeWithRequest: request.
 	^ result asJRPCJSON
 ]
@@ -71,7 +79,7 @@ MCPToolEditMethodTest >> callToolWith: someArguments [
 MCPToolEditMethodTest >> classChangeArguments [
 
 	^ {
-		  (#operation -> 'update').
+		  (#action -> 'update').
 		  (#className -> 'MCPToolEditMethodTestTarget').
 		  (#classSide -> true).
 		  (#selector -> self classProtocolSelector asString).
@@ -88,7 +96,7 @@ MCPToolEditMethodTest >> classProtocolSelector [
 MCPToolEditMethodTest >> classRenameArguments [
 
 	^ {
-		  (#operation -> 'update').
+		  (#action -> 'update').
 		  (#className -> 'MCPToolEditMethodTestTarget').
 		  (#classSide -> true).
 		  (#selector -> self classSelector asString).
@@ -106,7 +114,7 @@ MCPToolEditMethodTest >> classSelector [
 MCPToolEditMethodTest >> compileArgumentsForClassName: aClassName classSide: aBoolean methodSource: aMethodSource protocol: aProtocol [
 
 	^ {
-		  (#operation -> 'create').
+		  (#action -> 'create').
 		  (#className -> aClassName).
 		  (#classSide -> aBoolean).
 		  (#methodSource -> aMethodSource).
@@ -127,7 +135,7 @@ MCPToolEditMethodTest >> createRenameScopeFixtureClassNamed: aClassName packageN
 MCPToolEditMethodTest >> extensionChangeArguments [
 
 	^ {
-		  (#operation -> 'update').
+		  (#action -> 'update').
 		  (#className -> 'MCPToolEditMethodTestTarget').
 		  (#classSide -> false).
 		  (#selector -> self extensionProtocolSelector asString).
@@ -144,7 +152,7 @@ MCPToolEditMethodTest >> extensionProtocolSelector [
 MCPToolEditMethodTest >> instanceChangeArguments [
 
 	^ {
-		  (#operation -> 'update').
+		  (#action -> 'update').
 		  (#className -> 'MCPToolEditMethodTestTarget').
 		  (#classSide -> false).
 		  (#selector -> self instanceProtocolSelector asString).
@@ -161,7 +169,7 @@ MCPToolEditMethodTest >> instanceProtocolSelector [
 MCPToolEditMethodTest >> instanceRenameArguments [
 
 	^ {
-		  (#operation -> 'update').
+		  (#action -> 'update').
 		  (#className -> 'MCPToolEditMethodTestTarget').
 		  (#classSide -> false).
 		  (#selector -> self instanceSelector asString).
@@ -291,7 +299,7 @@ MCPToolEditMethodTest >> testAddArgumentsUpdatesClassSideSenders [
 
 	| data result senderSource |
 	result := self callToolWith: {
-			          (#operation -> 'update').
+			          (#action -> 'update').
 			          (#className -> 'MCPToolEditMethodTestTarget').
 			          (#classSide -> true).
 			          (#selector -> 'buildValue:').
@@ -302,7 +310,7 @@ MCPToolEditMethodTest >> testAddArgumentsUpdatesClassSideSenders [
 	senderSource := (MCPToolEditMethodTestSender >> #callClassTarget)
 		                sourceCode.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #operation) equals: 'update'.
+	self assert: (data at: #action) equals: 'update'.
 	self assert: (data at: #updateAction) equals: 'addArguments'.
 	self assert: (data at: #classSide) equals: true.
 	self assert:
@@ -319,7 +327,7 @@ MCPToolEditMethodTest >> testAddArgumentsUpdatesSendersAndReportsAction [
 
 	| data result senderSource targetSource |
 	result := self callToolWith: {
-			          (#operation -> 'update').
+			          (#action -> 'update').
 			          (#className -> 'MCPToolEditMethodTestTarget').
 			          (#classSide -> false).
 			          (#selector -> 'combine:with:').
@@ -337,7 +345,7 @@ MCPToolEditMethodTest >> testAddArgumentsUpdatesSendersAndReportsAction [
 	senderSource := (MCPToolEditMethodTestSender >> #callInstanceTarget)
 		                sourceCode.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #operation) equals: 'update'.
+	self assert: (data at: #action) equals: 'update'.
 	self assert: (data at: #updateAction) equals: 'addArguments'.
 	self assert: (data at: #oldSelector) equals: 'combine:with:'.
 	self
@@ -362,7 +370,7 @@ MCPToolEditMethodTest >> testChangeProtocolReturnsStructuredErrorWhenMethodIsMis
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #operation) equals: 'update'.
+	self assert: (error at: #action) equals: 'update'.
 	self assert: (error at: #updateAction) equals: 'changeProtocol'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'MethodNotFound'.
@@ -377,7 +385,7 @@ MCPToolEditMethodTest >> testChangeProtocolReturnsStructuredErrorWhenMethodIsMis
 	self
 		assert: error keys asSet
 		equals:
-			#( operation updateAction errorClass errorCode message className
+			#( action updateAction errorClass errorCode message className
 			   classSide selector protocol ) asSet
 ]
 
@@ -459,7 +467,7 @@ MCPToolEditMethodTest >> testCompileDefaultsToInstanceSideWhenClassSideIsOmitted
 
 	| data result |
 	result := self callToolWith: {
-			          (#operation -> 'create').
+			          (#action -> 'create').
 			          (#className -> 'MCPToolEditMethodTestTarget').
 			          (#methodSource -> 'instanceAnswer ^ 42').
 			          (#protocol -> 'tests') } asDictionary.
@@ -668,7 +676,7 @@ MCPToolEditMethodTest >> testCompileReturnsStructuredCommandErrorForUndeclaredVa
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #operation) equals: 'create'.
+	self assert: (error at: #action) equals: 'create'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self
 		assert: (error at: #errorCode)
@@ -760,7 +768,7 @@ MCPToolEditMethodTest >> testCreateMethodReportsCreatedChangeKind [
 		self
 			assert: (self summaryFrom: result)
 			equals: 'Created MCPToolEditMethodTestTarget>>directCreateProbe.'.
-		self assert: (data at: #operation) equals: 'create'.
+		self assert: (data at: #action) equals: 'create'.
 		self assert: (data at: #changeKind) equals: 'created'.
 		self assertSuccessDataHasMethodShape: data.
 		self
@@ -788,7 +796,7 @@ MCPToolEditMethodTest >> testCreateMethodReportsReplacedChangeKind [
 		self
 			assert: (self summaryFrom: result)
 			equals: 'Replaced MCPToolEditMethodTestTarget>>directReplaceProbe.'.
-		self assert: (data at: #operation) equals: 'create'.
+		self assert: (data at: #action) equals: 'create'.
 		self assert: (data at: #changeKind) equals: 'replaced'.
 		self assertSuccessDataHasMethodShape: data.
 		self
@@ -849,7 +857,7 @@ MCPToolEditMethodTest >> testRemoveArgumentsFailsWhenRemovedArgumentIsReferenced
 		protocol: 'tests'
 		on: MCPToolEditMethodTestTarget.
 	result := self callToolWith: {
-			          (#operation -> 'update').
+			          (#action -> 'update').
 			          (#className -> 'MCPToolEditMethodTestTarget').
 			          (#classSide -> false).
 			          (#selector -> oldSelector asString).
@@ -858,7 +866,7 @@ MCPToolEditMethodTest >> testRemoveArgumentsFailsWhenRemovedArgumentIsReferenced
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #operation) equals: 'update'.
+	self assert: (error at: #action) equals: 'update'.
 	self assert: (error at: #updateAction) equals: 'removeArguments'.
 	self
 		assert: (error at: #className)
@@ -891,7 +899,7 @@ MCPToolEditMethodTest >> testRemoveArgumentsUpdatesSendersAndReportsAction [
 		protocol: 'tests'
 		on: MCPToolEditMethodTestSender.
 	result := self callToolWith: {
-			          (#operation -> 'update').
+			          (#action -> 'update').
 			          (#className -> 'MCPToolEditMethodTestTarget').
 			          (#classSide -> false).
 			          (#selector -> oldSelector asString).
@@ -900,7 +908,7 @@ MCPToolEditMethodTest >> testRemoveArgumentsUpdatesSendersAndReportsAction [
 	senderSource := (MCPToolEditMethodTestSender
 	                 >> #callRemoveArgumentTarget) sourceCode.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #operation) equals: 'update'.
+	self assert: (data at: #action) equals: 'update'.
 	self assert: (data at: #updateAction) equals: 'removeArguments'.
 	self assert: (data at: #oldSelector) equals: oldSelector asString.
 	self assert: (data at: #newSelector) equals: newSelector asString.
@@ -925,7 +933,7 @@ MCPToolEditMethodTest >> testRenameCanLimitRefactoringToNamedClasses [
 	self withRenameScopeFixturesDo: [ :fixtures |
 		| data result senderAClass senderASource senderBClass senderBSource targetAClass targetBClass |
 		result := self callToolWith: {
-				          (#operation -> 'update').
+				          (#action -> 'update').
 				          (#className -> (fixtures at: #targetAClassName)).
 				          (#classSide -> false).
 				          (#selector -> 'scopeSharedTarget').
@@ -955,7 +963,7 @@ MCPToolEditMethodTest >> testRenameCanLimitRefactoringToNamedClasses [
 		self assert: (senderBSource includesSubstring: 'scopeSharedTarget').
 		self deny: (senderBSource includesSubstring: 'scopedSharedTarget').
 		self assertSuccessDataHasMethodShape: data.
-		self assert: (data at: #operation) equals: 'update'.
+		self assert: (data at: #action) equals: 'update'.
 		self assert: (data at: #updateAction) equals: 'rename'.
 		self assert: (data at: #selector) equals: 'scopedSharedTarget'.
 		self
@@ -969,7 +977,7 @@ MCPToolEditMethodTest >> testRenameCanLimitRefactoringToNamedPackages [
 	self withRenameScopeFixturesDo: [ :fixtures |
 		| data result senderAClass senderASource senderBClass senderBSource targetAClass targetBClass |
 		result := self callToolWith: {
-				          (#operation -> 'update').
+				          (#action -> 'update').
 				          (#className -> (fixtures at: #targetAClassName)).
 				          (#classSide -> false).
 				          (#selector -> 'scopeSharedTarget').
@@ -998,7 +1006,7 @@ MCPToolEditMethodTest >> testRenameCanLimitRefactoringToNamedPackages [
 		self assert: (senderBSource includesSubstring: 'scopeSharedTarget').
 		self deny: (senderBSource includesSubstring: 'scopedSharedTarget').
 		self assertSuccessDataHasMethodShape: data.
-		self assert: (data at: #operation) equals: 'update'.
+		self assert: (data at: #action) equals: 'update'.
 		self assert: (data at: #updateAction) equals: 'rename'.
 		self assert: (data at: #selector) equals: 'scopedSharedTarget'.
 		self
@@ -1019,7 +1027,7 @@ MCPToolEditMethodTest >> testRenameReturnsFormattedSourceForRenamedMethod [
 		protocol: 'tests'
 		on: MCPToolEditMethodTestTarget.
 	result := self callToolWith: {
-			          (#operation -> 'update').
+			          (#action -> 'update').
 			          (#className -> 'MCPToolEditMethodTestTarget').
 			          (#classSide -> false).
 			          (#selector -> oldSelector asString).
@@ -1028,7 +1036,7 @@ MCPToolEditMethodTest >> testRenameReturnsFormattedSourceForRenamedMethod [
 	data := self dataFrom: result.
 	renamedSource := (MCPToolEditMethodTestTarget >> newSelector)
 		                 sourceCode.
-	self assert: (data at: #operation) equals: 'update'.
+	self assert: (data at: #action) equals: 'update'.
 	self assert: (data at: #updateAction) equals: 'rename'.
 	self assert: (data at: #source) equals: renamedSource.
 	self assert:
@@ -1052,7 +1060,7 @@ MCPToolEditMethodTest >> testRenameReturnsStructuredErrorWhenMethodIsMissing [
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #operation) equals: 'update'.
+	self assert: (error at: #action) equals: 'update'.
 	self assert: (error at: #updateAction) equals: 'rename'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'MethodNotFound'.
@@ -1070,7 +1078,7 @@ MCPToolEditMethodTest >> testRenameReturnsStructuredErrorWhenMethodIsMissing [
 	self
 		assert: error keys asSet
 		equals:
-			#( operation updateAction errorClass errorCode message className
+			#( action updateAction errorClass errorCode message className
 			   classSide selector newSelector permutation ) asSet
 ]
 
@@ -1079,7 +1087,7 @@ MCPToolEditMethodTest >> testRenameReturnsStructuredErrorWhenScopeRequiresClassN
 
 	| arguments |
 	arguments := self instanceRenameArguments copy.
-	arguments removeKey: #operation ifAbsent: [ ].
+	arguments removeKey: #action ifAbsent: [ ].
 	arguments at: #scope put: 'classes'.
 	self
 		should: [
@@ -1100,7 +1108,7 @@ MCPToolEditMethodTest >> testRenameReturnsStructuredErrorWhenScopedPackageIsMiss
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #operation) equals: 'update'.
+	self assert: (error at: #action) equals: 'update'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'PackageNotFound'.
 	self

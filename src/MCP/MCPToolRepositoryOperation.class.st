@@ -1,3 +1,6 @@
+"
+Abstract base for focused repository tools. It defines per-tool repository inputs while reusing MCPToolEditRepository command dispatch and output shaping internally.
+"
 Class {
 	#name : 'MCPToolRepositoryOperation',
 	#superclass : 'MCPToolEditRepository',

@@ -36,7 +36,7 @@ MCPDebugControlCommand >> controlFailureFor: anError record: aRecord frameIndex:
 		at: #errorCode put: 'DebugControlFailed';
 		at: #sessionId put: aRecord sessionId;
 		at: #stateId put: aRecord stateId;
-		at: #operation put: request operation;
+		at: #action put: request operation;
 		at: #frameRef
 		put: (self frameRefForRecord: aRecord frameIndex: frameIndex);
 		at: #controlErrorClass put: anError class name.
@@ -193,7 +193,7 @@ MCPDebugControlCommand >> resultDataForRecord: aRecord previousStateId: previous
 	warnings := self controlWarnings.
 	^ {
 		  (#sessionId -> aRecord sessionId).
-		  (#operation -> operationName).
+		  (#action -> operationName).
 		  (#previousStateId -> previousStateId).
 		  (#stateId -> aRecord stateId).
 		  (#status -> aRecord status).

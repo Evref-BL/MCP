@@ -17,12 +17,6 @@ MCPToolEditClass class >> isAbstract [
 	^ self = MCPToolEditClass
 ]
 
-{ #category : 'defaults' }
-MCPToolEditClass class >> toolName [
-
-	^ 'class_operation'
-]
-
 { #category : 'private - schema' }
 MCPToolEditClass >> appliedChangeOutputSchemaProperty [
 
@@ -65,12 +59,13 @@ MCPToolEditClass >> dataForAppliedUpdateResult: anAppliedUpdateResult [
 ]
 
 { #category : 'private' }
-MCPToolEditClass >> dataForResult: aResult operation: operation [
+MCPToolEditClass >> dataForResult: aResult action: actionName [
 
 	| data |
 	data := aResult asDictionary copy.
-	data at: #operation put: operation.
+	data at: #action put: actionName.
 	^ self dataWithClassCommentFrom: data
+
 ]
 
 { #category : 'private' }
@@ -88,173 +83,54 @@ MCPToolEditClass >> dataWithClassCommentFrom: aDictionary [
 ]
 
 { #category : 'defaults' }
-MCPToolEditClass >> defaultDescription [
-
-	^ 'Create or update classes in the running image. Use operation=create for new class definitions. Use operation=update with fields such as newClassName, superclassName, packageName, tag, classComment, slots, classSlots, traits, classTraits, sharedVariables, sharedPools, layout, or slotAction to perform one class edit. Omit packageName with tag to recategorize inside the current package. force=false stops on refactoring warnings and returns impactMessages plus howToProceed; force=true continues and returns warnings in the output.'
-]
-
-{ #category : 'defaults' }
-MCPToolEditClass >> defaultInputSchema [
-
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: {
-				  (self
-					   operationSchemaPropertyWithDescription:
-						   'The high-level class edit operation. operation=create defines a new class. operation=update is patch style: provide exactly one update action field, such as newClassName, superclassName, packageName or tag, classComment, slots and/or classSlots, traits, classTraits, sharedVariables, sharedPools, layout, or slotAction.'
-					   supportedValuesLeadIn: 'Supported values are').
-				  (MCPStructureProperties new
-					   name: 'className';
-					   type: 'string';
-					   description:
-						   'The existing class to patch during operation=update, or the new class name for operation=create.';
-					   yourself).
-				  (MCPStructureProperties new
-					   name: 'superclassName';
-					   type: 'string';
-					   description:
-						   'The superclass for operation=create. During operation=update this is a reparent patch action; do not combine it with another update action.';
-					   yourself).
-				  (MCPStructureProperties new
-					   name: 'packageName';
-					   type: 'string';
-					   description:
-						   'The package to create into, or the destination package for an operation=update move patch. Combine with tag to move or recategorize to a package tag. Omit packageName and provide tag to recategorize the class inside its current package. Missing destination packages are created automatically.';
-					   yourself).
-				  (MCPStructureProperties new
-					   name: 'tag';
-					   type: 'string';
-					   description:
-						   'Optional package tag for creation. During operation=update this is a move or recategorization patch: tag with packageName moves to that package tag, while tag without packageName recategorizes inside the current package.';
-					   yourself).
-				  (self
-					   stringArraySchemaNamed: 'slots'
-					   description:
-					   'Optional instance-side slot names for operation=create. During operation=update this replaces the full instance-side slot list; use an empty array to remove all instance-side slots. May be combined with classSlots because together they are one definition replacement action. Do not combine with another update action.'
-					   itemDescription: 'An instance-side slot name.').
-				  (self
-					   stringArraySchemaNamed: 'classSlots'
-					   description:
-					   'Optional class-side slot names for operation=create. During operation=update this replaces the full class-side slot list; use an empty array to remove all class-side slots. May be combined with slots because together they are one definition replacement action. Do not combine with another update action.'
-					   itemDescription: 'A class-side slot name.').
-				  (self
-					   stringArraySchemaNamed: 'traits'
-					   description:
-					   'Optional instance-side trait names for operation=create. During operation=update this replaces the full instance-side trait list; use an empty array to remove all instance-side traits. Do not combine with another update action.'
-					   itemDescription: 'A trait name.').
-				  (self
-					   stringArraySchemaNamed: 'classTraits'
-					   description:
-					   'Optional class-side trait names for operation=create. Use names like TraitName classTrait or TraitName. During operation=update this replaces the full class-side trait list; use an empty array to remove all class-side traits. Do not combine with another update action.'
-					   itemDescription: 'A class-side trait name.').
-				  (self
-					   stringArraySchemaNamed: 'sharedVariables'
-					   description:
-					   'Optional class variable names for operation=create. During operation=update this replaces the full class variable list; use an empty array to remove all class variables. Do not combine with another update action.'
-					   itemDescription: 'A class variable name.').
-				  (self
-					   stringArraySchemaNamed: 'sharedPools'
-					   description:
-					   'Optional shared pool names for operation=create. During operation=update this replaces the full shared pool list; use an empty array to remove all shared pools. Each name must resolve to SharedPool or one of its subclasses. Do not combine with another update action.'
-					   itemDescription: 'A shared pool name.').
-				  (MCPStructureProperties new
-					   name: 'layout';
-					   type: 'string';
-					   description:
-						   'Optional layout class name for operation=create. During operation=update this replaces the layout class; the name must resolve to AbstractLayout or one of its subclasses. Do not combine with another update action.';
-					   yourself).
-				  (MCPStructureProperties new
-					   name: 'newClassName';
-					   type: 'string';
-					   description:
-						   'The new class name for an operation=update rename patch; do not combine it with another update action.';
-					   yourself).
-				  self refactoringScopePackageNamesSchemaProperty.
-				  self refactoringScopeClassNamesSchemaProperty.
-				  self refactoringScopeHierarchyClassNamesSchemaProperty.
-				  (self
-					   stringEnumSchemaPropertyNamed: 'slotAction'
-					   description:
-					   'The slot patch action for operation=update. Requires slotName. Use add, remove, rename, pullUp, or pushDown, and do not combine with another update action.'
-					   values: #( 'add' 'remove' 'rename' 'pullUp' 'pushDown' )).
-				  (MCPStructureProperties new
-					   name: 'slotName';
-					   type: 'string';
-					   description:
-						   'The slot name targeted by slotAction during an operation=update slot patch.';
-					   yourself).
-				  (MCPStructureProperties new
-					   name: 'newSlotName';
-					   type: 'string';
-					   description:
-						   'The replacement slot name when slotAction=rename. Supports instance-side and class-side slot renames; class-side renames preserve existing class object values.';
-					   yourself).
-				  (self
-					   booleanSchemaPropertyNamed: 'classSide'
-					   description:
-					   'Whether slotAction targets class-side slots instead of instance-side slots.'
-					   default: false).
-				  self forceSchemaProperty.
-				  (MCPStructureProperties new
-					   name: 'classComment';
-					   type: 'string';
-					   description:
-						   'The class comment to assign during operation=create. During operation=update this is a set-comment patch action; use an empty string to clear the comment and do not combine it with another update action.';
-					   yourself) };
-		  required: #( 'operation' 'className' );
-		  additionalProperties: false;
-		  yourself
-]
-
-{ #category : 'defaults' }
 MCPToolEditClass >> defaultOutputSchema [
 
 	^ self
 		  standardOutputSchemaForDataProperties: {
 				  (self
-					   schemaPropertyNamed: 'operation'
+					   schemaPropertyNamed: 'action'
 					   type: 'string'
 					   description:
-					   'The class edit operation that was performed: create or update.').
+					   'The class edit action that was performed: create or update.').
 				  (self
 					   schemaPropertyNamed: 'updateAction'
 					   type: 'string'
 					   description:
-					   'The update action performed when operation=update.').
+					   'The update action performed when action=update.').
 				  self updatePlanOutputSchemaProperty.
 				  self appliedChangeOutputSchemaProperty.
 				  (self
 					   schemaPropertyNamed: 'className'
 					   type: 'string'
-					   description: 'The class name after the operation completes.').
+					   description: 'The class name after the action completes.').
 				  (self
 					   schemaPropertyNamed: 'superclassName'
 					   type: 'string'
 					   description:
-					   'The superclass of the class after the operation.').
+					   'The superclass of the class after the action.').
 				  (self
 					   schemaPropertyNamed: 'packageName'
 					   type: 'string'
 					   description:
-					   'The owning package of the class after the operation.').
+					   'The owning package of the class after the action.').
 				  (self
 					   schemaPropertyNamed: 'tag'
 					   type: 'string'
 					   description:
-					   'The package tag assigned to the class after the operation.').
+					   'The package tag assigned to the class after the action.').
 				  (self
 					   schemaPropertyNamed: 'classComment'
 					   type: 'string'
-					   description: 'The class comment after the operation.').
+					   description: 'The class comment after the action.').
 				  (self
 					   stringArraySchemaNamed: 'instanceSlotNames'
 					   description:
-					   'The instance-side slots present on the class after the operation.'
+					   'The instance-side slots present on the class after the action.'
 					   itemDescription: 'An instance-side slot name.').
 				  (self
 					   stringArraySchemaNamed: 'classSlotNames'
 					   description:
-					   'The class-side slots present on the class after the operation.'
+					   'The class-side slots present on the class after the action.'
 					   itemDescription: 'A class-side slot name.').
 				  (self
 					   stringArraySchemaNamed: 'oldInstanceSlotNames'
@@ -279,7 +155,7 @@ MCPToolEditClass >> defaultOutputSchema [
 				  (self
 					   stringArraySchemaNamed: 'traitNames'
 					   description:
-					   'The traits used by the class after the operation.'
+					   'The traits used by the class after the action.'
 					   itemDescription: 'A trait name.').
 				  (self
 					   stringArraySchemaNamed: 'oldTraitNames'
@@ -294,7 +170,7 @@ MCPToolEditClass >> defaultOutputSchema [
 				  (self
 					   stringArraySchemaNamed: 'classTraitNames'
 					   description:
-					   'The traits used by the class side after the operation.'
+					   'The traits used by the class side after the action.'
 					   itemDescription: 'A class-side trait name.').
 				  (self
 					   stringArraySchemaNamed: 'oldClassTraitNames'
@@ -309,7 +185,7 @@ MCPToolEditClass >> defaultOutputSchema [
 				  (self
 					   stringArraySchemaNamed: 'sharedVariableNames'
 					   description:
-					   'The class variables defined on the class after the operation.'
+					   'The class variables defined on the class after the action.'
 					   itemDescription: 'A class variable name.').
 				  (self
 					   stringArraySchemaNamed: 'oldSharedVariableNames'
@@ -324,7 +200,7 @@ MCPToolEditClass >> defaultOutputSchema [
 				  (self
 					   stringArraySchemaNamed: 'sharedPoolNames'
 					   description:
-					   'The shared pools referenced by the class after the operation.'
+					   'The shared pools referenced by the class after the action.'
 					   itemDescription: 'A shared pool name.').
 				  (self
 					   stringArraySchemaNamed: 'oldSharedPoolNames'
@@ -340,7 +216,7 @@ MCPToolEditClass >> defaultOutputSchema [
 					   schemaPropertyNamed: 'layoutClassName'
 					   type: 'string'
 					   description:
-					   'The layout class used by the class after the operation.').
+					   'The layout class used by the class after the action.').
 				  (self
 					   schemaPropertyNamed: 'oldLayoutClassName'
 					   type: 'string'
@@ -384,7 +260,7 @@ MCPToolEditClass >> defaultOutputSchema [
 					    schemaPropertyNamed: 'subclassNames'
 					    type: 'array'
 					    description:
-						    'The direct subclasses of the class after the operation.')
+						    'The direct subclasses of the class after the action.')
 					   items: (MCPStructureProperties new
 							    type: 'string';
 							    description: 'A direct subclass name.';
@@ -424,16 +300,10 @@ MCPToolEditClass >> defaultOutputSchema [
 					   description:
 					   'The new class comment when updateAction=setComment.') }
 		  required:
-			  #( 'operation' 'className' 'superclassName' 'packageName'
+			  #( 'action' 'className' 'superclassName' 'packageName'
 			     'tag' 'classComment' 'instanceSlotNames' 'classSlotNames'
 			     'traitNames' 'classTraitNames' 'sharedVariableNames'
 			     'sharedPoolNames' 'layoutClassName' 'subclassNames' )
-]
-
-{ #category : 'defaults' }
-MCPToolEditClass >> defaultTitle [
-
-	^ 'Edit Class'
 ]
 
 { #category : 'private' }

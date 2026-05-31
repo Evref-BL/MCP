@@ -17,12 +17,6 @@ MCPToolEditMethod class >> isAbstract [
 	^ self = MCPToolEditMethod
 ]
 
-{ #category : 'defaults' }
-MCPToolEditMethod class >> toolName [
-
-	^ 'method_operation'
-]
-
 { #category : 'private - refactoring' }
 MCPToolEditMethod >> addParameterRefactoringForSelector: oldSelectorSymbol inBehavior: aBehavior to: newSelectorSymbol permutation: permutation newArgs: newArguments model: refactoringModel [
 
@@ -96,98 +90,6 @@ MCPToolEditMethod >> dataForMethod: aCompiledMethod [
 ]
 
 { #category : 'defaults' }
-MCPToolEditMethod >> defaultDescription [
-
-	^ 'Create or update one method on the instance side or class side of a class. Use operation=create with methodSource and protocol to create or replace a method. Use operation=update with selector plus one patch field, such as newSelector or protocol. Rename updates can be scoped with packageNames, classNames, or hierarchyClassNames. force=false stops on refactoring warnings and returns impactMessages plus howToProceed; force=true continues and returns warnings in the output. Use method_remove to delete methods.'
-]
-
-{ #category : 'defaults' }
-MCPToolEditMethod >> defaultInputSchema [
-
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: {
-				  (self
-					   operationSchemaPropertyWithDescription:
-						   'The high-level method edit operation. operation=create creates or replaces a method. operation=update applies exactly one patch to an existing method, such as selector change or protocol change.'
-					   supportedValuesLeadIn: 'Supported values are').
-				  (MCPStructureProperties new
-					   name: 'className';
-					   type: 'string';
-					   description: 'The class whose method will be edited.';
-					   yourself).
-				  (MCPStructureProperties new
-					   name: 'classSide';
-					   type: 'boolean';
-					   description: 'Whether the target method is on the class side.';
-					   default: false;
-					   yourself).
-				  self forceSchemaProperty.
-				  (MCPStructureProperties new
-					   name: 'selector';
-					   type: 'string';
-					   description:
-						   'The existing selector to patch during operation=update. Not used for operation=create.';
-					   yourself).
-				  (MCPStructureProperties new
-					   name: 'methodSource';
-					   type: 'string';
-					   description:
-						   'The full method source to compile when operation=create.';
-					   yourself).
-				  (MCPStructureProperties new
-					   name: 'protocol';
-					   type: 'string';
-					   description:
-						   'The target protocol for operation=create. During operation=update this is a recategorization patch; do not combine it with another update action. For extension methods, use an extension protocol such as *Package-Name.';
-					   yourself).
-				  (MCPStructureProperties new
-					   name: 'newSelector';
-					   type: 'string';
-					   description:
-						   'The target selector for an operation=update selector patch. Same arity renames or reorders arguments; higher arity adds arguments; lower arity removes arguments.';
-					   yourself).
-				  ((MCPStructureProperties new
-					    name: 'permutation';
-					    type: 'array';
-					    description:
-						    'Optional target-argument map for newSelector. Positive entries are 1-based indexes into the old selector arguments. Negative entries mark newly added argument positions. For removal, list the kept old argument indexes.')
-					   items: (MCPStructureProperties new
-							    type: 'integer';
-							    description:
-								    'An old argument index, or a negative placeholder for an added argument.';
-							    yourself);
-					   yourself).
-				  ((MCPStructureProperties new
-					    name: 'argumentNames';
-					    type: 'array';
-					    description:
-						    'Target selector argument names in order. Required when newSelector adds arguments. Existing argument positions can reuse their current names.')
-					   items: (MCPStructureProperties new
-							    type: 'string';
-							    description: 'An argument name in target selector order.';
-							    yourself);
-					   yourself).
-				  ((MCPStructureProperties new
-					    name: 'argumentValueExpressions';
-					    type: 'array';
-					    description:
-						    'Default call expressions for newly added arguments, in the order the added arguments appear in newSelector. Omit to use nil for each added argument.')
-					   items: (MCPStructureProperties new
-							    type: 'string';
-							    description:
-								    'A Smalltalk expression inserted at sender call sites for a newly added argument.';
-							    yourself);
-					   yourself).
-				  self refactoringScopePackageNamesSchemaProperty.
-				  self refactoringScopeClassNamesSchemaProperty.
-				  self refactoringScopeHierarchyClassNamesSchemaProperty };
-		  required: #( 'operation' 'className' );
-		  additionalProperties: false;
-		  yourself
-]
-
-{ #category : 'defaults' }
 MCPToolEditMethod >> defaultOutputSchema [
 
 	^ self
@@ -195,12 +97,6 @@ MCPToolEditMethod >> defaultOutputSchema [
 		  required:
 			  #( 'selector' 'className' 'classSide' 'packageName' 'isExtension'
 			     'protocol' 'source' )
-]
-
-{ #category : 'defaults' }
-MCPToolEditMethod >> defaultTitle [
-
-	^ 'Edit Method'
 ]
 
 { #category : 'private' }
@@ -372,10 +268,10 @@ MCPToolEditMethod >> methodDataProperties [
 
 	^ {
 		  (self
-			   schemaPropertyNamed: 'operation'
+			   schemaPropertyNamed: 'action'
 			   type: 'string'
 			   description:
-			   'The public method edit operation that was performed: create or update.').
+			   'The public method edit action that was performed: create or update.').
 		  (self
 			   schemaPropertyNamed: 'changeKind'
 			   type: 'string'
@@ -385,7 +281,7 @@ MCPToolEditMethod >> methodDataProperties [
 			   schemaPropertyNamed: 'updateAction'
 			   type: 'string'
 			   description:
-			   'The update action performed when operation=update.').
+			   'The update action performed when action=update.').
 		  self methodUpdatePlanOutputSchemaProperty.
 		  self methodAppliedChangeOutputSchemaProperty.
 		  (self
@@ -414,12 +310,12 @@ MCPToolEditMethod >> methodDataProperties [
 			   schemaPropertyNamed: 'protocol'
 			   type: 'string'
 			   description:
-			   'The protocol/category containing the edited method after the operation.').
+			   'The protocol/category containing the edited method after the action.').
 		  (self
 			   schemaPropertyNamed: 'source'
 			   type: 'string'
 			   description:
-			   'The formatted source code of the edited method after the operation.').
+			   'The formatted source code of the edited method after the action.').
 		  (self
 			   schemaPropertyNamed: 'oldSelector'
 			   type: 'string'

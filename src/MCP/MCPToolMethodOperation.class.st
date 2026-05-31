@@ -1,5 +1,5 @@
 "
-Abstract base for focused method editing tools. It removes the public operation argument while reusing MCPToolEditMethod request parsing and command dispatch internally.
+Abstract base for focused method editing tools. It defines per-tool method inputs while reusing MCPToolEditMethod request parsing and command dispatch internally.
 "
 Class {
 	#name : 'MCPToolMethodOperation',

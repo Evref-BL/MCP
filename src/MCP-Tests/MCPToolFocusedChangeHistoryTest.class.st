@@ -19,7 +19,7 @@ MCPToolFocusedChangeHistoryTest >> testFindChangeHistoryEntriesReturnsEntries [
 	data := self toolNamed: 'history_entry_list' dataFromArguments: {
 			        (#limit -> 3).
 			        (#newestFirst -> true) } asDictionary.
-	self assert: (data at: #operation) equals: 'listEntries'.
+	self assert: (data at: #action) equals: 'listEntries'.
 	self assert: (data includesKey: #totalCount).
 	self assert: (data includesKey: #entries)
 ]
@@ -32,7 +32,7 @@ MCPToolFocusedChangeHistoryTest >> testFindChangeHistoryFilesReturnsFiles [
 		        toolNamed: 'history_file_list'
 		        dataFromArguments:
 		        { (#includeEntryCounts -> false) } asDictionary.
-	self assert: (data at: #operation) equals: 'listFiles'.
+	self assert: (data at: #action) equals: 'listFiles'.
 	self assert: (data includesKey: #currentLogPath).
 	self assert: (data includesKey: #directoryPath).
 	self assert: (data includesKey: #files)

@@ -38,7 +38,7 @@ MCPChangeHistoryListEntriesResult class >> historyFilePath: aPath entries: entry
 MCPChangeHistoryListEntriesResult >> asDictionary [
 
 	^ {
-		  (#operation -> 'listEntries').
+		  (#action -> 'listEntries').
 		  (#historyFilePath -> historyFilePath).
 		  (#entries
 		   ->

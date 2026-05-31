@@ -50,7 +50,7 @@ MCPCreateClassToolCommand >> execute [
 			  self tool
 				  successResultText:
 				  'Created class ' , self request className , '.'
-				  data: (self tool dataForResult: result operation: 'create')
+				  data: (self tool dataForResult: result action: 'create')
 				  warnings: warningMessages ]
 		  failureSummary: [ :error |
 			  self tool
@@ -58,6 +58,7 @@ MCPCreateClassToolCommand >> execute [
 				  superclassName: self request superclassName
 				  packageName: self request packageName
 				  error: error ]
+
 ]
 
 { #category : 'initialization' }
