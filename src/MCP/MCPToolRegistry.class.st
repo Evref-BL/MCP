@@ -525,26 +525,16 @@ MCPToolRegistry class >> staticToolClasses [
 		  MCPToolFindClasses.
 		  MCPToolInspectClass.
 		  MCPToolCreateClass.
-		  MCPToolUpdateClassName.
-		  MCPToolUpdateClassSuperclass.
-		  MCPToolUpdateClassPackage.
-		  MCPToolUpdateClassComment.
-		  MCPToolUpdateClassSlots.
-		  MCPToolAddClassSlot.
-		  MCPToolRemoveClassSlot.
-		  MCPToolUpdateClassSlotName.
 		  MCPToolFindMethods.
 		  MCPToolFindMethodSource.
 		  MCPToolFindMethodImplementors.
 		  MCPToolFindMethodSenders.
-		  MCPToolFindClassReferences.
 		  MCPToolInspectMethod.
 		  MCPToolCreateMethod.
 		  MCPToolUpdateMethodSelector.
 		  MCPToolUpdateMethodProtocol.
 		  MCPToolEvaluate.
-		  MCPToolRunTests.
-		  MCPToolRunTestCoverage }
+		  MCPToolRunTests }
 ]
 
 { #category : 'tools' }

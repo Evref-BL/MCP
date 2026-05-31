@@ -2751,19 +2751,22 @@ MCPToolContractsTest >> testRPCAdvertisesStaticToolSurfaceOnly [
 	self
 		assert: toolNames asSet
 		equals: MCPToolRegistry staticToolNames asSet.
-	#( 'tool_search' 'tool_get' 'tool_call' 'class_search' 'class_get'
-	   'class_create' 'class_name_update' 'class_superclass_update'
+	#( 'tool_search' 'tool_get' 'tool_call' 'package_search'
+	   'class_search' 'class_get' 'class_create' 'method_metadata_search'
+	   'method_source_search' 'method_implementor_search'
+	   'method_sender_search' 'method_get' 'method_create'
+	   'method_selector_update' 'method_protocol_update'
+	   'image_evaluate' 'test_run' ) do: [ :each |
+		self assert: (toolNames includes: each) ].
+	#( 'class_edit' 'method_edit' 'class_name_update' 'class_superclass_update'
 	   'class_package_update' 'class_comment_update'
-	   'class_slots_update' 'class_slot_add' 'class_slot_remove'
-	   'class_slot_name_update' 'method_create' 'method_selector_update'
-	   'method_protocol_update' 'image_evaluate' 'test_run' 'test_coverage_run' )
-		do: [ :each | self assert: (toolNames includes: each) ].
-	#( 'class_edit' 'method_edit' 'class_traits_update'
-	   'class_side_traits_update' 'class_shared_variables_update'
-	   'class_shared_pools_update' 'class_layout_update'
-	   'class_slot_pull_up' 'class_slot_push_down' 'method_equivalent_search'
+	   'class_slots_update' 'class_traits_update' 'class_side_traits_update'
+	   'class_shared_variables_update' 'class_shared_pools_update'
+	   'class_layout_update' 'class_slot_add' 'class_slot_remove'
+	   'class_slot_name_update' 'class_slot_pull_up' 'class_slot_push_down'
+	   'method_equivalent_search' 'method_class_reference_search'
 	   'method_variable_reference_search'
-	   'repository_search' 'repository_identity_verify'
+	   'test_coverage_run' 'repository_search' 'repository_identity_verify'
 	   'repository_change_list' 'repository_create' 'repository_attach'
 	   'repository_update' 'repository_export' 'repository_commit'
 	   'repository_fetch' 'repository_pull' 'repository_push'
@@ -3227,14 +3230,21 @@ MCPToolContractsTest >> testServerInitializationDoesNotRenderToolIcons [
 MCPToolContractsTest >> testSpecializedClassAndMethodToolsAreDiscoverableOnly [
 
 	| discoverableOnlyNames metadataByName result |
-	discoverableOnlyNames := #( 'class_traits_update'
+	discoverableOnlyNames := #( 'class_name_update' 'class_superclass_update'
+	                            'class_package_update'
+	                            'class_comment_update'
+	                            'class_slots_update' 'class_traits_update'
 	                            'class_side_traits_update'
 	                            'class_shared_variables_update'
 	                            'class_shared_pools_update'
 	                            'class_layout_update'
+	                            'class_slot_add' 'class_slot_remove'
+	                            'class_slot_name_update'
 	                            'class_slot_pull_up' 'class_slot_push_down'
 	                            'method_equivalent_search'
-	                            'method_variable_reference_search' ).
+	                            'method_class_reference_search'
+	                            'method_variable_reference_search'
+	                            'test_coverage_run' ).
 	result := self callToolNamed: 'tool_search' withArguments: {
 			          (#includeStatic -> true).
 			          (#limit -> 200) } asDictionary.

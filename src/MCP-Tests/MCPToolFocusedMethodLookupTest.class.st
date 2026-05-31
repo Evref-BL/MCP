@@ -189,8 +189,9 @@ MCPToolFocusedMethodLookupTest >> testFocusedLookupToolsArePublicStaticReadTools
 
 	| discoverableNames staticNames |
 	staticNames := #( 'method_source_search' 'method_implementor_search'
-	                  'method_sender_search' 'method_class_reference_search' ).
+	                  'method_sender_search' ).
 	discoverableNames := #( 'method_equivalent_search'
+	                        'method_class_reference_search'
 	                        'method_variable_reference_search' ).
 	staticNames do: [ :each |
 			| tool |

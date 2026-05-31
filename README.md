@@ -94,50 +94,27 @@ method_metadata_search
 method_source_search
 method_implementor_search
 method_sender_search
-method_class_reference_search
 class_get
 method_get
-repository_search
-repository_identity_verify
-repository_change_list
-history_file_list
-history_entry_list
 ```
 
-Use `tool_search` with `group=debugging` to find debugger tools and inspect
-their schemas before calling them.
+Use `tool_search` to find repository, history, debugger, UI, coverage, and
+specialized reference tools. Inspect their schemas before calling them.
 
 Then use dedicated operations before falling back to `image_evaluate`:
 
 ```text
 class_create
-class_name_update
-class_superclass_update
-class_package_update
-class_comment_update
-class_slots_update
-class_slot_add
-class_slot_remove
-class_slot_name_update
 method_create
 method_selector_update
 method_protocol_update
-method_rewrite
 test_run
-repository_create
-repository_attach
-repository_update
-repository_export
-repository_commit
-history_entry_apply
-history_entry_revert
-screenshot_capture
 ```
 
 Use `tool_search` for specialized tools that are not day-to-day operations,
-including equivalent-AST or variable-reference method searches, trait/shared
-variable/shared pool/layout class updates, and slot pull-up or push-down
-refactorings.
+including class-structure refactorings, equivalent-AST/class-reference/
+variable-reference method searches, coverage runs, repository operations,
+change-history recovery, screenshots, and debugger tools.
 
 `image_evaluate` can run arbitrary Smalltalk. Use it only for short inspection or glue code when no dedicated tool fits.
 

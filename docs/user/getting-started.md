@@ -118,16 +118,10 @@ package_search
 class_search
 method_metadata_search
 method_source_search
-method_equivalent_search
 method_implementor_search
 method_sender_search
-method_class_reference_search
-method_variable_reference_search
 class_get
 method_get
-repository_search
-repository_identity_verify
-repository_change_list
 ```
 
 Useful first questions:
@@ -136,9 +130,8 @@ Useful first questions:
 - search implementors of a selector with `method_implementor_search`
 - search senders with `method_sender_search`
 - get one class before editing it
-- inspect repository status before exporting or committing
-- verify repository identity before changing repository state
-- browse change-history files and entries before recovering changes
+- discover repository tools before exporting or committing
+- discover change-history tools before recovering changes
 
 ## First Mutating Calls
 
@@ -146,26 +139,14 @@ Prefer dedicated tools over `image_evaluate`:
 
 ```text
 class_create
-class_name_update
-class_package_update
-class_comment_update
-class_slot_add
-class_slot_remove
-class_slot_name_update
 method_create
 method_selector_update
 method_protocol_update
-method_rewrite
 test_run
-test_coverage_run
-repository_create
-repository_attach
-repository_update
-repository_export
-repository_commit
-history_entry_apply
-history_entry_revert
 ```
+
+Use `tool_search` for less common class-structure changes, method reference
+lookups, coverage, repository operations, and change-history recovery.
 
 Use a copied or disposable image before asking an agent to make broad edits.
 MCP saves the image after successful mutating tools, so a successful
