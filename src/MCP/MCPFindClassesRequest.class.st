@@ -11,8 +11,7 @@ Class {
 		'caseSensitive',
 		'limit',
 		'offset',
-		'scopeQuery',
-		'whereSpec'
+		'scopeQuery'
 	],
 	#category : 'MCP-Requests',
 	#package : 'MCP',
@@ -38,17 +37,12 @@ MCPFindClassesRequest class >> fromRequest: request tool: aTool [
 		              parentClassNames:
 			              (request stringCollectionArgumentNamed:
 					               'parentClassNames');
-		              scopeMode:
-			              (request
-				               stringArgumentNamed: 'scopeMode'
-				               default: 'union');
 		              yourself.
 	^ self new
 		  scopeQuery: scopeQuery;
 		  filterPattern: (aTool filterPatternFromRequest: request);
 		  filterTargets: (aTool filterTargetsFromRequest: request);
 		  filterMode: (aTool filterModeFromRequest: request);
-		  whereSpec: (MCPWhereSpec fromToolRequest: request);
 		  caseSensitive:
 			  (request booleanArgumentNamed: 'caseSensitive' default: true);
 		  limit:
@@ -146,16 +140,4 @@ MCPFindClassesRequest >> scopeQuery [
 MCPFindClassesRequest >> scopeQuery: anObject [
 
 	scopeQuery := anObject
-]
-
-{ #category : 'accessing' }
-MCPFindClassesRequest >> whereSpec [
-
-	^ whereSpec ifNil: [ MCPWhereSpec absent ]
-]
-
-{ #category : 'accessing' }
-MCPFindClassesRequest >> whereSpec: anObject [
-
-	whereSpec := anObject
 ]

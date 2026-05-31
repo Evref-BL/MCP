@@ -60,13 +60,13 @@ Identity verification requires at least one expected identity field, such as
 
 | Tool | Use |
 | --- | --- |
-| `package_search` | List packages and filter by project names, package names, metadata, and recursive `where` predicates. |
+| `package_search` | List packages and filter by project names, package names, and metadata. |
 
 ## Classes
 
 | Tool | Use |
 | --- | --- |
-| `class_search` | List classes and filter by class metadata, package, hierarchy, scope, and `where` predicates. |
+| `class_search` | List classes and filter by class metadata, package, hierarchy, and scope. |
 | `class_get` | Get one class by name and return structured class metadata with optional superclass and subclass context. |
 | `class_create` | Create one class definition. |
 | `class_name_update` | Rename one class through the Refactoring Engine. |

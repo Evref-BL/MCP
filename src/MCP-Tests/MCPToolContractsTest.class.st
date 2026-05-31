@@ -1763,9 +1763,12 @@ MCPToolContractsTest >> testFindClassesHasAccurateNameAndSchema [
 	self assert: (propertyNames includes: 'hierarchyClassNames').
 	self assert: (propertyNames includes: 'subclassClassNames').
 	self assert: (propertyNames includes: 'parentClassNames').
-	self assert: (propertyNames includes: 'scopeMode').
+	self deny: (propertyNames includes: 'scopeMode').
+	self deny: (propertyNames includes: 'where').
 	self assert: (propertyNames includes: 'filter').
-	self assert: (propertyNames includes: 'filterTargets')
+	self assert: (propertyNames includes: 'filterTargets').
+	self assert: (propertyNames includes: 'filterMode').
+	self assert: (propertyNames includes: 'caseSensitive')
 ]
 
 { #category : 'tests' }
@@ -1953,9 +1956,11 @@ MCPToolContractsTest >> testFindPackagesHasAccurateNameAndSchema [
 	self assert: schema required equals: #(  ).
 	self assert: (propertyNames includes: 'projectNames').
 	self assert: (propertyNames includes: 'packageNames').
+	self deny: (propertyNames includes: 'where').
 	self assert: (propertyNames includes: 'filter').
 	self assert: (propertyNames includes: 'filterTargets').
-	self assert: (propertyNames includes: 'filterMode')
+	self assert: (propertyNames includes: 'filterMode').
+	self assert: (propertyNames includes: 'caseSensitive')
 ]
 
 { #category : 'tests' }
@@ -2595,9 +2600,10 @@ MCPToolContractsTest >> testParserHelperBypassesSchemaValidation [
 { #category : 'tests' }
 MCPToolContractsTest >> testQueryScopeDescriptionsExplainScopeSemantics [
 
-	| classDescription findClassesDescription findMethodsDescription methodDescription packageDescription parentDescription subclassDescription |
+	| classDescription findClassesDescription findMethodsDescription findPackagesDescription methodDescription packageDescription parentDescription subclassDescription |
 	findClassesDescription := MCPToolFindClasses new description.
 	findMethodsDescription := MCPToolFindMethods new description.
+	findPackagesDescription := MCPToolFindPackages new description.
 	classDescription := (self
 		                     inputPropertyNamed: 'hierarchyClassNames'
 		                     inTool: MCPToolFindClasses new) description.
@@ -2615,8 +2621,9 @@ MCPToolContractsTest >> testQueryScopeDescriptionsExplainScopeSemantics [
 		                       inTool: MCPToolFindPackages new) description.
 	self deny: (findClassesDescription includesSubstring: 'GUI').
 	self deny: (findMethodsDescription includesSubstring: 'GUI').
-	self assert:
-		(findClassesDescription includesSubstring: 'scopeMode=intersection').
+	self deny: (findClassesDescription includesSubstring: 'scopeMode').
+	self deny: (findClassesDescription includesSubstring: 'where').
+	self deny: (findPackagesDescription includesSubstring: 'where').
 	self assert: (findMethodsDescription includesSubstring:
 			 'Missing class or package names').
 	self assert:
@@ -2748,11 +2755,13 @@ MCPToolContractsTest >> testRPCRefreshesCachedToolMetadata [
 		                  (each at: #name) = 'class_search' ].
 	propertyNames := ((toolDefinition at: #inputSchema) at: #properties)
 		                 keys.
-	self assert: (propertyNames includes: 'scopeMode').
+	self assert: (propertyNames includes: 'classNames').
+	self assert: (propertyNames includes: 'packageNames').
+	self deny: (propertyNames includes: 'scopeMode').
+	self deny: (propertyNames includes: 'where').
 	result := mcp rpcToolCall: 'class_search' withParams: {
 			          (#classNames -> #( 'MCPToolContractsTest' )).
 			          (#packageNames -> #( 'MCP-Tests' )).
-			          (#scopeMode -> 'intersection').
 			          (#limit -> 1) } asDictionary.
 	self deny: (result at: #isError ifAbsent: [ false ])
 ]

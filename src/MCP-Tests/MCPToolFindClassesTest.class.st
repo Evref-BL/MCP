@@ -248,24 +248,6 @@ MCPToolFindClassesTest >> testImageScopeCanFilterAndPaginate [
 ]
 
 { #category : 'tests' }
-MCPToolFindClassesTest >> testIntersectionScopeKeepsOnlyClassesInEveryScopeDimension [
-
-	| classNames data result |
-	result := self callToolWith: {
-			          (#classNames -> { self childClassName }).
-			          (#hierarchyClassNames -> { self childClassName }).
-			          (#filter -> self fixturePrefix).
-			          (#filterMode -> 'prefix').
-			          (#scopeMode -> 'intersection') } asDictionary.
-	data := self dataFrom: result.
-	classNames := (data at: #classes) collect: [ :each |
-		              each at: #className ].
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #totalCount) equals: 1.
-	self assert: classNames equals: { self childClassName } asArray
-]
-
-{ #category : 'tests' }
 MCPToolFindClassesTest >> testMissingClassScopeReturnsPartialResultsAndWarnings [
 
 	| classNames data result warnings |
@@ -358,6 +340,24 @@ MCPToolFindClassesTest >> testParentClassNamesReturnParentsOnly [
 ]
 
 { #category : 'tests' }
+MCPToolFindClassesTest >> testPublicToolRejectsScopeMode [
+
+	self
+		should: [
+		self callToolWith: { (#scopeMode -> 'intersection') } asDictionary ]
+		raise: JRPCInvalidParameters
+]
+
+{ #category : 'tests' }
+MCPToolFindClassesTest >> testPublicToolRejectsWhere [
+
+	self
+		should: [
+		self callToolWith: { (#where -> Dictionary new) } asDictionary ]
+		raise: JRPCInvalidParameters
+]
+
+{ #category : 'tests' }
 MCPToolFindClassesTest >> testReturnsStructuredErrorForInvalidFilterTarget [
 
 	self
@@ -426,48 +426,6 @@ MCPToolFindClassesTest >> testToolDoesNotRequireArgumentsInSchema [
 	self
 		assert: MCPToolFindClasses new inputSchema required
 		equals: #(  )
-]
-
-{ #category : 'tests' }
-MCPToolFindClassesTest >> testWhereCanMatchRelatedMethods [
-
-	| classNames data result |
-	result := self callToolWith: {
-			          (#classNames -> #( 'MCPToolFindMethodsReferenceFixture'
-			              'MCPToolFindMethodsReferenceTarget' )).
-			          (#where -> {
-				           (#exists -> 'methods').
-				           (#where -> {
-					            (#filter -> 'sharedTarget').
-					            (#filterMode -> 'selectorReference') } asDictionary) }
-				           asDictionary) } asDictionary.
-	data := self dataFrom: result.
-	classNames := (data at: #classes) collect: [ :each |
-		              each at: #className ].
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #totalCount) equals: 1.
-	self
-		assert: classNames
-		equals: #( 'MCPToolFindMethodsReferenceFixture' )
-]
-
-{ #category : 'tests' }
-MCPToolFindClassesTest >> testWhereEquivalentToReturnsStructuredErrorForNonMethodPredicates [
-
-	| error result |
-	result := self callToolWith: {
-			          (#classNames -> #( 'MCPToolFindMethodsReferenceFixture' )).
-			          (#where -> { (#equivalentTo -> {
-				            (#className -> 'MCPToolFindMethodsReferenceFixture').
-				            (#selector -> 'sharedTarget') } asDictionary) }
-				           asDictionary) } asDictionary.
-	error := self errorFrom: result.
-	self assert: (result at: #isError).
-	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
-	self
-		assert: (error at: #errorCode)
-		equals: 'WhereEquivalentToRequiresMethodEntity'.
-	self assert: (error at: #entityKind) equals: 'class'
 ]
 
 { #category : 'private - calling' }

@@ -301,13 +301,38 @@ MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasAcceptRepresentativeArg
 { #category : 'tests' }
 MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasRejectInvalidShapeArguments [
 
-	| legacyScopeViolations methodSearchModeViolations methodSearchScopeModeViolations methodSearchTargetViolations methodSearchWhereViolations selectorUpdateViolations |
+	| classScopeModeViolations classWhereViolations legacyScopeViolations methodSearchModeViolations methodSearchScopeModeViolations methodSearchTargetViolations methodSearchWhereViolations packageWhereViolations selectorUpdateViolations |
 	legacyScopeViolations := self
 		                         violationsFor:
 		                         { (#scope -> 'packages') } asDictionary
 		                         schema: MCPToolFindClasses new inputSchema.
 	self
 		assert: (self keywordsFrom: legacyScopeViolations)
+		equals: #( 'additionalProperties' ).
+	classScopeModeViolations := self
+		                            violationsFor:
+		                            { (#scopeMode -> 'intersection') }
+			                            asDictionary
+		                            schema:
+		                            MCPToolFindClasses new inputSchema.
+	self
+		assert: (self keywordsFrom: classScopeModeViolations)
+		equals: #( 'additionalProperties' ).
+	classWhereViolations := self
+		                        violationsFor:
+		                        { (#where -> Dictionary new) } asDictionary
+		                        schema: MCPToolFindClasses new inputSchema.
+	self
+		assert: (self keywordsFrom: classWhereViolations)
+		equals: #( 'additionalProperties' ).
+	packageWhereViolations := self
+		                          violationsFor:
+		                          { (#where -> Dictionary new) }
+			                          asDictionary
+		                          schema:
+		                          MCPToolFindPackages new inputSchema.
+	self
+		assert: (self keywordsFrom: packageWhereViolations)
 		equals: #( 'additionalProperties' ).
 	methodSearchModeViolations := self
 		                              violationsFor:

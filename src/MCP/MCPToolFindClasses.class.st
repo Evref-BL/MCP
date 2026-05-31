@@ -26,29 +26,21 @@ MCPToolFindClasses class >> toolName [
 { #category : 'private - filtering' }
 MCPToolFindClasses >> classEntriesForRequest: queryRequest [
 
-	| entries matcher whereContext |
+	| entries matcher |
 	matcher := self
 		           matcherForPattern: queryRequest filterPattern
 		           mode: queryRequest filterMode
 		           caseSensitive: queryRequest caseSensitive.
-	whereContext := self newWhereContext.
 	entries := OrderedCollection new.
 	queryRequest scopeQuery classes do: [ :eachClass |
-		| entry evaluation matchesFilter |
-		entry := (MCPClassInfo fromClass: eachClass) asQueryDictionary.
-		matchesFilter := queryRequest hasFilterPattern not or: [
-			                 self
-				                 matchesFilterOnClassEntry: entry
-				                 matcher: matcher
-				                 targets: queryRequest filterTargets ].
-		evaluation := self
-			              whereEvaluationForEntityKind: #class
-			              entry: entry
-			              object: eachClass
-			              context: whereContext.
-		(matchesFilter and: [
-			 queryRequest whereSpec matchesEvaluation: evaluation ]) ifTrue: [
-			entries add: entry ] ].
+			| entry matchesFilter |
+			entry := (MCPClassInfo fromClass: eachClass) asQueryDictionary.
+			matchesFilter := queryRequest hasFilterPattern not or: [
+					                 self
+						                 matchesFilterOnClassEntry: entry
+						                 matcher: matcher
+						                 targets: queryRequest filterTargets ].
+			matchesFilter ifTrue: [ entries add: entry ] ].
 	^ entries asArray
 ]
 
@@ -95,7 +87,7 @@ MCPToolFindClasses >> classInfoDataProperties [
 { #category : 'defaults' }
 MCPToolFindClasses >> defaultDescription [
 
-	^ 'List classes and optionally filter them by class metadata. Omitting class scope searches the whole image. Multiple scope filters use union by default; set scopeMode=intersection to require all scopes. Missing class or package names return warnings with suggestions. Use where for recursive predicates, and use class_get when you know the class name.'
+	^ 'List classes and optionally filter them by class metadata. Omitting class scope searches the whole image. Multiple scope filters are unioned. Missing class or package names return warnings with suggestions. Use class_get when you know the class name.'
 ]
 
 { #category : 'private - request' }
@@ -108,15 +100,17 @@ MCPToolFindClasses >> defaultFilterTargets [
 MCPToolFindClasses >> defaultInputSchema [
 
 	| properties |
-	properties := self classQueryScopeInputProperties
-	              , { self scopeModeSchemaProperty } , (self
-		               fieldFilteringInputPropertiesWithFilterDescription:
+	properties := self classQueryScopeInputProperties , (self
+		               baseFilteringInputPropertiesWithFilterDescription:
 		               'Optional filter applied to the listed class-entry fields. Use filterTargets to choose which fields are matched.'
 		               filterTargetsDescription:
 		               'Optional class-entry fields matched by filter.'
 		               filterModeDescription: 'How the filter is matched.'
-		               limitDescription:
-		               'Maximum number of matching classes to return. Use 0 to request counts only.').
+		               filterModeValues: self basicFilterModes)
+	              , { (self caseSensitiveSchemaPropertyWithDescription:
+			               'Whether filter matching is case-sensitive.') }
+	              , (self paginationInputPropertiesWithLimitDescription:
+			               'Maximum number of matching classes to return. Use 0 to request counts only.').
 	^ self queryInputSchemaWithProperties: properties
 ]
 

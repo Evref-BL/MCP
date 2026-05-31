@@ -213,6 +213,15 @@ MCPToolFindPackagesTest >> testProjectNamesSelectProjectScope [
 ]
 
 { #category : 'tests' }
+MCPToolFindPackagesTest >> testPublicToolRejectsWhere [
+
+	self
+		should: [
+		self callToolWith: { (#where -> Dictionary new) } asDictionary ]
+		raise: JRPCInvalidParameters
+]
+
+{ #category : 'tests' }
 MCPToolFindPackagesTest >> testReturnsStructuredErrorForInvalidFilterTarget [
 
 	self
@@ -221,27 +230,6 @@ MCPToolFindPackagesTest >> testReturnsStructuredErrorForInvalidFilterTarget [
 					(#filter -> 'needle').
 					(#filterTargets -> #( 'definedClassCount' )) } asDictionary ]
 		raise: JRPCInvalidParameters
-]
-
-{ #category : 'tests' }
-MCPToolFindPackagesTest >> testWhereCanMatchRelatedClasses [
-
-	| data packageNames result |
-	result := self callToolWith: {
-			          (#packageNames -> #( 'MCP' 'MCP-Tests-Resources' )).
-			          (#where -> {
-				           (#exists -> 'classes').
-				           (#where -> {
-					            (#field -> 'class').
-					            (#value -> 'MCPToolFindMethodsReferenceFixture').
-					            (#mode -> 'exact') } asDictionary) } asDictionary) }
-			          asDictionary.
-	data := self dataFrom: result.
-	packageNames := (data at: #packages) collect: [ :each |
-		                each at: #packageName ].
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #totalCount) equals: 1.
-	self assert: packageNames equals: #( 'MCP-Tests-Resources' )
 ]
 
 { #category : 'private - calling' }

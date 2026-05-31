@@ -227,23 +227,6 @@ MCPToolQuery >> failureMessageForScope: scopeSummary error: anError [
 	self subclassResponsibility
 ]
 
-{ #category : 'private - schema' }
-MCPToolQuery >> fieldFilteringInputPropertiesWithFilterDescription: filterDescription filterTargetsDescription: targetsDescription filterModeDescription: modeDescription limitDescription: limitDescription [
-
-	^ (self
-		   baseFilteringInputPropertiesWithFilterDescription:
-		   filterDescription
-		   filterTargetsDescription: targetsDescription
-		   filterModeDescription: modeDescription
-		   filterModeValues: self basicFilterModes) , {
-		  self wherePredicateSchemaProperty.
-		  (self caseSensitiveSchemaPropertyWithDescription:
-			   'Whether filter matching is case-sensitive.') }
-	  ,
-	  (self paginationInputPropertiesWithLimitDescription:
-		   limitDescription)
-]
-
 { #category : 'private - request' }
 MCPToolQuery >> filterModeFromRequest: request [
 
@@ -347,26 +330,6 @@ MCPToolQuery >> matcherForPattern: aPattern mode: aMode caseSensitive: aBoolean 
 		  (self normalizeFilterString: candidate caseSensitive: aBoolean)
 		  = normalizedPattern ] ].
 	Error signal: 'Unsupported filter mode: ' , aMode
-]
-
-{ #category : 'private - schema' }
-MCPToolQuery >> methodFilteringInputPropertiesWithFilterDescription: filterDescription includeSourceDescription: includeSourceDescription limitDescription: limitDescription [
-
-	^ (self
-		   baseFilteringInputPropertiesWithFilterDescription:
-		   filterDescription
-		   filterTargetsDescription:
-		   'Optional method-entry fields matched by filter.'
-		   filterModeDescription: 'How text filtering is matched.'
-		   filterModeValues: self supportedFilterModes) , {
-		  self wherePredicateSchemaProperty.
-		  (self caseSensitiveSchemaPropertyWithDescription:
-			   'Whether filter matching is case-sensitive.').
-		  (self includeSourceSchemaPropertyWithDescription:
-			   includeSourceDescription) }
-	  ,
-	  (self paginationInputPropertiesWithLimitDescription:
-		   limitDescription)
 ]
 
 { #category : 'private - schema' }
@@ -546,17 +509,6 @@ MCPToolQuery >> requestedContextFromRequest: request [
 	^ self subclassResponsibility
 ]
 
-{ #category : 'private - schema' }
-MCPToolQuery >> scopeModeSchemaProperty [
-
-	^ self
-		  stringEnumSchemaPropertyNamed: 'scopeMode'
-		  description:
-		  'Combines multiple scope filters. union returns items from any non-empty scope. intersection keeps only items shared by every non-empty scope. Default: union.'
-		  values: #( 'union' 'intersection' )
-		  default: 'union'
-]
-
 { #category : 'private - results' }
 MCPToolQuery >> scopeQueryFailureMessageFor: resultKind scope: scopeSummary error: anError [
 
@@ -712,33 +664,6 @@ MCPToolQuery >> whereEntryForEntityKind: entityKind object: object context: cont
 MCPToolQuery >> whereEntryValueAt: key in: entry [
 
 	^ entry at: key ifAbsent: [ nil ]
-]
-
-{ #category : 'private - schema' }
-MCPToolQuery >> whereEquivalentToSchemaProperty [
-
-	^ MCPStructureProperties new
-		  name: 'equivalentTo';
-		  type: 'object';
-		  description:
-			  'Method reference used by method predicates to match methods with an equivalent AST.';
-		  properties: {
-				  (self
-					   schemaPropertyNamed: 'className'
-					   type: 'string'
-					   description: 'The class that defines the referenced method.').
-				  (self
-					   schemaPropertyNamed: 'selector'
-					   type: 'string'
-					   description: 'The referenced method selector.').
-				  (self
-					   booleanSchemaPropertyNamed: 'classSide'
-					   description:
-						   'Whether the referenced method is on the class side.'
-					   default: false) };
-		  required: #( 'className' 'selector' );
-		  additionalProperties: false;
-		  yourself
 ]
 
 { #category : 'private - where' }
@@ -937,27 +862,6 @@ MCPToolQuery >> whereMethodsForPackage: aPackage [
 	^ methods asArray
 ]
 
-{ #category : 'private - schema' }
-MCPToolQuery >> whereNestedPredicatePropertyNamed: propertyName description: propertyDescription [
-
-	^ MCPStructureProperties new
-		  name: propertyName;
-		  type: 'object';
-		  description: propertyDescription;
-		  additionalProperties: true;
-		  yourself
-]
-
-{ #category : 'private - schema' }
-MCPToolQuery >> whereNestedPredicateSchema [
-
-	^ MCPStructureProperties new
-		  type: 'object';
-		  description: 'A nested where predicate.';
-		  additionalProperties: true;
-		  yourself
-]
-
 { #category : 'private - where' }
 MCPToolQuery >> wherePackageFieldTextsForField: fieldName evaluation: evaluation [
 
@@ -988,100 +892,6 @@ MCPToolQuery >> wherePackageProjectNamesMapIn: context [
 	^ context
 		  at: #packageProjectNames
 		  ifAbsentPut: [ MCPPackageScopeQuery new packageProjectNamesMap ]
-]
-
-{ #category : 'private - schema' }
-MCPToolQuery >> wherePredicateArrayPropertyNamed: propertyName description: propertyDescription [
-
-	^ (self
-		   schemaPropertyNamed: propertyName
-		   type: 'array'
-		   description: propertyDescription)
-		  items: self whereNestedPredicateSchema;
-		  yourself
-]
-
-{ #category : 'private - schema' }
-MCPToolQuery >> wherePredicateFilterTargetsSchemaProperty [
-
-	^ self
-		  stringArraySchemaNamed: 'filterTargets'
-		  description: 'Entry fields matched by a filter predicate.'
-		  itemDescription: 'A filter target.'
-]
-
-{ #category : 'private - schema' }
-MCPToolQuery >> wherePredicateProperties [
-
-	^ {
-		  (self
-			   wherePredicateArrayPropertyNamed: 'all'
-			   description: 'All nested predicates must match.').
-		  (self
-			   wherePredicateArrayPropertyNamed: 'any'
-			   description: 'At least one nested predicate must match.').
-		  (self
-			   whereNestedPredicatePropertyNamed: 'not'
-			   description: 'A nested predicate whose match is negated.').
-		  (self
-			   schemaPropertyNamed: 'field'
-			   type: 'string'
-			   description: 'Entry field name to match.').
-		  (self
-			   schemaPropertyNamed: 'value'
-			   type: 'string'
-			   description: 'Text matched by a field predicate.').
-		  (self
-			   stringEnumSchemaPropertyNamed: 'mode'
-			   description: 'How a field predicate is matched.'
-			   values: self basicFilterModes
-			   default: self defaultFilterMode).
-		  (self
-			   schemaPropertyNamed: 'filter'
-			   type: 'string'
-			   description:
-			   'Text matched by a filter predicate or reference lookup predicate.').
-		  (self
-			   stringEnumSchemaPropertyNamed: 'filterMode'
-			   description:
-			   'How a filter predicate is matched. Reference modes apply to method predicates.'
-			   values: self supportedWhereFilterModes
-			   default: self defaultFilterMode).
-		  self wherePredicateFilterTargetsSchemaProperty.
-		  (self
-			   booleanSchemaPropertyNamed: 'caseSensitive'
-			   description: 'Whether text matching is case-sensitive.'
-			   default: true).
-		  self whereEquivalentToSchemaProperty.
-		  (self
-			   schemaPropertyNamed: 'exists'
-			   type: 'string'
-			   description:
-			   'Relation name for which at least one related entity must match nested where.').
-		  (self
-			   schemaPropertyNamed: 'none'
-			   type: 'string'
-			   description:
-			   'Relation name for which no related entity may match nested where.').
-		  (self
-			   whereNestedPredicatePropertyNamed: 'where'
-			   description:
-			   'Nested predicate used by exists and none relation predicates.') }
-]
-
-{ #category : 'private - schema' }
-MCPToolQuery >> wherePredicateSchemaProperty [
-
-	| whereProperty |
-	whereProperty := self
-		                 schemaPropertyNamed: 'where'
-		                 type: 'object'
-		                 description:
-		                 'Optional recursive predicate applied before pagination. Use all, any, and not for boolean composition; field, value, and mode for field matching; filter, filterMode, and filterTargets for top-level-style filtering; equivalentTo for AST equivalence to a referenced method; exists or none with relation names and nested where for relation queries. Method predicates support selectorReference, classReference, variableReference, and equivalentTo.'.
-	whereProperty
-		properties: self wherePredicateProperties;
-		additionalProperties: true.
-	^ whereProperty
 ]
 
 { #category : 'private - where' }

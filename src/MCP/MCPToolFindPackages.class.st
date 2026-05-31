@@ -24,7 +24,7 @@ MCPToolFindPackages class >> toolName [
 { #category : 'defaults' }
 MCPToolFindPackages >> defaultDescription [
 
-	^ 'List packages and optionally filter them by package metadata. Omit projectNames and packageNames to search all packages. Use projectNames to include packages from projects and packageNames to include exact packages. Multiple scope properties are unioned. Use where for recursive boolean predicates and relation predicates.'
+	^ 'List packages and optionally filter them by package metadata. Omit projectNames and packageNames to search all packages. Use projectNames to include packages from projects and packageNames to include exact packages. Multiple scope properties are unioned.'
 ]
 
 { #category : 'private - request' }
@@ -38,14 +38,17 @@ MCPToolFindPackages >> defaultInputSchema [
 
 	| properties |
 	properties := self packageQueryScopeInputProperties , (self
-		               fieldFilteringInputPropertiesWithFilterDescription:
+		               baseFilteringInputPropertiesWithFilterDescription:
 		               'Optional filter applied to the listed package-entry fields. Use filterTargets to choose which fields are matched.'
 		               filterTargetsDescription:
 		               'Optional package-entry fields matched by filter.'
 		               filterModeDescription:
 		               'How the package filter is matched.'
-		               limitDescription:
-		               'Maximum number of matching packages to return. Use 0 to request counts only.').
+		               filterModeValues: self basicFilterModes)
+	              , { (self caseSensitiveSchemaPropertyWithDescription:
+			               'Whether filter matching is case-sensitive.') }
+	              , (self paginationInputPropertiesWithLimitDescription:
+			               'Maximum number of matching packages to return. Use 0 to request counts only.').
 	^ self queryInputSchemaWithProperties: properties
 ]
 
@@ -109,36 +112,26 @@ MCPToolFindPackages >> packageEntriesForRequest: queryRequest [
 { #category : 'private - filtering' }
 MCPToolFindPackages >> packageEntriesFromPackages: packages projectNames: packageProjectNames usingRequest: queryRequest [
 
-	| entries matcher whereContext |
+	| entries matcher |
 	matcher := self
 		           matcherForPattern: queryRequest filterPattern
 		           mode: queryRequest filterMode
 		           caseSensitive: queryRequest caseSensitive.
-	whereContext := self newWhereContext
-		                at: #packageProjectNames put: packageProjectNames;
-		                yourself.
 	entries := OrderedCollection new.
 	packages do: [ :eachPackage |
-		| entry evaluation matchesFilter projectNames |
-		projectNames := packageProjectNames
-			                at: eachPackage name asString
-			                ifAbsent: [ #(  ) ].
-		entry := (MCPPackageInfo
-			          fromPackage: eachPackage
-			          projectNames: projectNames) asQueryDictionary.
-		matchesFilter := queryRequest hasFilterPattern not or: [
-			                 self
-				                 matchesFilterOnPackageEntry: entry
-				                 matcher: matcher
-				                 targets: queryRequest filterTargets ].
-		evaluation := self
-			              whereEvaluationForEntityKind: #package
-			              entry: entry
-			              object: eachPackage
-			              context: whereContext.
-		(matchesFilter and: [
-			 queryRequest whereSpec matchesEvaluation: evaluation ]) ifTrue: [
-			entries add: entry ] ].
+			| entry matchesFilter projectNames |
+			projectNames := packageProjectNames
+				                at: eachPackage name asString
+				                ifAbsent: [ #(  ) ].
+			entry := (MCPPackageInfo
+				          fromPackage: eachPackage
+				          projectNames: projectNames) asQueryDictionary.
+			matchesFilter := queryRequest hasFilterPattern not or: [
+					                 self
+						                 matchesFilterOnPackageEntry: entry
+						                 matcher: matcher
+						                 targets: queryRequest filterTargets ].
+			matchesFilter ifTrue: [ entries add: entry ] ].
 	^ entries asArray
 ]
 

@@ -11,8 +11,7 @@ Class {
 		'caseSensitive',
 		'limit',
 		'offset',
-		'scopeQuery',
-		'whereSpec'
+		'scopeQuery'
 	],
 	#category : 'MCP-Requests',
 	#package : 'MCP',
@@ -36,7 +35,6 @@ MCPFindPackagesRequest class >> fromRequest: request tool: aTool [
 		  filterPattern: (aTool filterPatternFromRequest: request);
 		  filterTargets: (aTool filterTargetsFromRequest: request);
 		  filterMode: (aTool filterModeFromRequest: request);
-		  whereSpec: (MCPWhereSpec fromToolRequest: request);
 		  caseSensitive:
 			  (request booleanArgumentNamed: 'caseSensitive' default: true);
 		  limit:
@@ -134,16 +132,4 @@ MCPFindPackagesRequest >> scopeQuery [
 MCPFindPackagesRequest >> scopeQuery: anObject [
 
 	scopeQuery := anObject
-]
-
-{ #category : 'accessing' }
-MCPFindPackagesRequest >> whereSpec [
-
-	^ whereSpec ifNil: [ MCPWhereSpec absent ]
-]
-
-{ #category : 'accessing' }
-MCPFindPackagesRequest >> whereSpec: anObject [
-
-	whereSpec := anObject
 ]
