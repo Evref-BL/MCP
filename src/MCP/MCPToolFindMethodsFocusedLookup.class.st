@@ -17,9 +17,7 @@ MCPToolFindMethodsFocusedLookup >> defaultInputSchema [
 
 	| properties |
 	properties := self methodQueryScopeInputProperties , {
-		              self scopeModeSchemaProperty.
 		              self lookupArgumentSchemaProperty.
-		              self wherePredicateSchemaProperty.
 		              (self includeSourceSchemaPropertyWithDescription:
 			               'Whether to include method source code in each result entry.') }
 	              , (self paginationInputPropertiesWithLimitDescription:

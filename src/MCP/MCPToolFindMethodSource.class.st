@@ -15,7 +15,7 @@ MCPToolFindMethodSource class >> toolName [
 { #category : 'defaults' }
 MCPToolFindMethodSource >> defaultDescription [
 
-	^ 'Search methods by source text. Use method_search for method metadata queries and recursive where predicates; use method_equivalent_search for equivalent AST matches.'
+	^ 'Search methods by source text. Use method_metadata_search for method metadata queries; use method_equivalent_search for equivalent AST matches.'
 ]
 
 { #category : 'private - request' }
@@ -35,7 +35,6 @@ MCPToolFindMethodSource >> defaultInputSchema [
 
 	| properties |
 	properties := self methodQueryScopeInputProperties , {
-		              self scopeModeSchemaProperty.
 		              (self filterSchemaPropertyWithDescription:
 			               'Source text to match in method bodies.').
 		              (self

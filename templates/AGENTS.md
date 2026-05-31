@@ -34,8 +34,8 @@ Use `method_source_search` for source text, `method_equivalent_search` for
 equivalent-AST matching, and `method_implementor_search`,
 `method_sender_search`, `method_class_reference_search`, and
 `method_variable_reference_search` for focused reference lookups. Use
-`method_search` for method metadata search and advanced `where` predicates.
-Top-level `method_search` filtering is metadata text matching only; use the
+`method_metadata_search` for method metadata search. Top-level
+`method_metadata_search` filtering is metadata text matching only; use the
 focused method lookup tools for source, equivalent methods, implementors,
 senders, class references, and variable references.
 

@@ -15,7 +15,7 @@ MCPToolFindMethodImplementors class >> toolName [
 { #category : 'defaults' }
 MCPToolFindMethodImplementors >> defaultDescription [
 
-	^ 'Search methods that implement a selector. Use method_search for general method metadata, or method_source_search for source text.'
+	^ 'Search methods that implement a selector. Use method_metadata_search for general method metadata, or method_source_search for source text.'
 ]
 
 { #category : 'defaults' }

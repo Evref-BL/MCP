@@ -15,7 +15,7 @@ MCPToolFindEquivalentMethods class >> toolName [
 { #category : 'defaults' }
 MCPToolFindEquivalentMethods >> defaultDescription [
 
-	^ 'Search methods whose AST is equivalent to a referenced method. Use method_search only when you need recursive where composition.'
+	^ 'Search methods whose AST is equivalent to a referenced method.'
 ]
 
 { #category : 'defaults' }
@@ -23,7 +23,6 @@ MCPToolFindEquivalentMethods >> defaultInputSchema [
 
 	| properties |
 	properties := self methodQueryScopeInputProperties , {
-		              self scopeModeSchemaProperty.
 		              (self
 			               schemaPropertyNamed: 'className'
 			               type: 'string'

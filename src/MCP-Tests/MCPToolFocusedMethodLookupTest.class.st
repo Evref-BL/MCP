@@ -177,7 +177,8 @@ MCPToolFocusedMethodLookupTest >> testFocusedLookupSchemasRequireFocusedArgument
 			self assert: required equals: { expectation value }.
 			self assert: (propertyNames includes: expectation value).
 			self assert: (propertyNames includes: 'includeSource').
-			self assert: (propertyNames includes: 'where').
+			self deny: (propertyNames includes: 'scopeMode').
+			self deny: (propertyNames includes: 'where').
 			self deny: (propertyNames includes: 'filter').
 			self deny: (propertyNames includes: 'filterMode').
 			self deny: (propertyNames includes: 'filterTargets') ]
@@ -216,6 +217,7 @@ MCPToolFocusedMethodLookupTest >> testSourceAndEquivalentSearchSchemasAreFocused
 	self assert: (sourcePropertyNames includes: 'filter').
 	self assert: (sourcePropertyNames includes: 'filterMode').
 	self assert: (sourcePropertyNames includes: 'includeSource').
+	self deny: (sourcePropertyNames includes: 'scopeMode').
 	self deny: (sourcePropertyNames includes: 'where').
 	self deny: (sourcePropertyNames includes: 'filterTargets').
 
@@ -228,6 +230,7 @@ MCPToolFocusedMethodLookupTest >> testSourceAndEquivalentSearchSchemasAreFocused
 	self assert: (equivalentPropertyNames includes: 'selector').
 	self assert: (equivalentPropertyNames includes: 'classSide').
 	self assert: (equivalentPropertyNames includes: 'includeSource').
+	self deny: (equivalentPropertyNames includes: 'scopeMode').
 	self deny: (equivalentPropertyNames includes: 'where').
 	self deny: (equivalentPropertyNames includes: 'filter').
 	self deny: (equivalentPropertyNames includes: 'filterMode').

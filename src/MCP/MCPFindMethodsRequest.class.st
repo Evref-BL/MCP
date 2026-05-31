@@ -1,5 +1,5 @@
 "
-Parsed, validated method_search request derived from one MCPToolRequest. It keeps query execution away from raw argument dictionaries while preserving MCPToolRequest as the transport/schema boundary.
+Parsed, validated method metadata and focused method lookup request derived from one MCPToolRequest. It keeps query execution away from raw argument dictionaries while preserving MCPToolRequest as the transport/schema boundary.
 "
 Class {
 	#name : 'MCPFindMethodsRequest',
@@ -25,14 +25,11 @@ MCPFindMethodsRequest class >> fromRequest: request tool: aTool [
 
 	| scopeQuery |
 	scopeQuery := aTool methodScopeQueryFromRequest: request.
-	scopeQuery scopeMode:
-		(request stringArgumentNamed: 'scopeMode' default: 'union').
 	^ self new
 		  scopeQuery: scopeQuery;
 		  filterPattern: (aTool filterPatternFromRequest: request);
 		  filterMode: (aTool filterModeFromRequest: request);
 		  filterTargets: (aTool filterTargetsFromRequest: request);
-		  whereSpec: (MCPWhereSpec fromToolRequest: request);
 		  caseSensitive:
 			  (request booleanArgumentNamed: 'caseSensitive' default: true);
 		  includeSource:

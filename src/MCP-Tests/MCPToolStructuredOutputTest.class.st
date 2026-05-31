@@ -116,7 +116,7 @@ MCPToolStructuredOutputTest >> testFindMethodsReturnsStructuredArrayData [
 
 	| data result selectors |
 	result := self
-		          callToolNamed: 'method_search'
+		          callToolNamed: 'method_metadata_search'
 		          withArguments:
 		          { (#classNames -> #( 'MCPToolFindMethodsTestTarget' )) }
 			          asDictionary.
@@ -128,9 +128,9 @@ MCPToolStructuredOutputTest >> testFindMethodsReturnsStructuredArrayData [
 		equals: 'ok'.
 	self assert: (data at: #totalCount) equals: selectors size.
 	self assert: ((data at: #methods) allSatisfy: [ :each |
-			 (each includesKey: #selector) and: [
-				 (each includesKey: #className) and: [
-					 each includesKey: #packageName ] ] ]).
+				 (each includesKey: #selector) and: [
+					 (each includesKey: #className) and: [
+						 each includesKey: #packageName ] ] ]).
 	self assert: (selectors includes: 'alphaNeedleSelector')
 ]
 
@@ -139,7 +139,7 @@ MCPToolStructuredOutputTest >> testFindMethodsReturnsStructuredWarnings [
 
 	| data result structured warnings |
 	result := self
-		          callToolNamed: 'method_search'
+		          callToolNamed: 'method_metadata_search'
 		          withArguments:
 		          { (#packageNames -> #( 'MCP-Definitely-Missing' )) }
 			          asDictionary.

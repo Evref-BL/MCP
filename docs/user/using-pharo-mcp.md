@@ -79,12 +79,11 @@ For method lookup:
 - use `method_variable_reference_search` for variable references;
 - use `method_source_search` for source text;
 - use `method_equivalent_search` for equivalent-AST matching;
-- use `method_search` for method metadata search and advanced `where`
-  predicates.
+- use `method_metadata_search` for method metadata search.
 
-Top-level `method_search` filtering is metadata text matching only. Use the
-focused method lookup tools for source, equivalent methods, implementors,
-senders, class references, and variable references.
+Top-level `method_metadata_search` filtering is metadata text matching only.
+Use the focused method lookup tools for source, equivalent methods,
+implementors, senders, class references, and variable references.
 
 For change history, use `history_file_list` to locate `.ombu` files
 and `history_entry_list` to browse entries. Use

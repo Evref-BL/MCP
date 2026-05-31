@@ -1824,6 +1824,8 @@ MCPToolContractsTest >> testFindMethodsDescriptionPointsToFocusedReferenceTools 
 		(description includesSubstring: 'method_class_reference_search').
 	self assert:
 		(description includesSubstring: 'method_variable_reference_search').
+	self deny: (description includesSubstring: 'where').
+	self deny: (description includesSubstring: 'scopeMode').
 	self deny:
 		(description includesSubstring: 'filterMode=selectorReference').
 	self deny:
@@ -1852,14 +1854,17 @@ MCPToolContractsTest >> testFindMethodsHasAccurateNameAndSchema [
 		                         each name = 'filterTargets' ].
 	filterModeProperty := schema properties detect: [ :each |
 		                      each name = 'filterMode' ].
-	self assert: MCPToolFindMethods new name equals: 'method_search'.
+	self
+		assert: MCPToolFindMethods new name
+		equals: 'method_metadata_search'.
 	self assert: schema required equals: #(  ).
 	self assert: (propertyNames includes: 'packageNames').
 	self assert: (propertyNames includes: 'classNames').
 	self assert: (propertyNames includes: 'hierarchyClassNames').
 	self assert: (propertyNames includes: 'subclassClassNames').
 	self assert: (propertyNames includes: 'parentClassNames').
-	self assert: (propertyNames includes: 'scopeMode').
+	self deny: (propertyNames includes: 'scopeMode').
+	self deny: (propertyNames includes: 'where').
 	self assert: (propertyNames includes: 'filter').
 	self assert: (propertyNames includes: 'filterTargets').
 	self
@@ -1878,7 +1883,7 @@ MCPToolContractsTest >> testFindMethodsListsMethodsForExistingClassScope [
 
 	| data result selectors |
 	result := self
-		          callToolNamed: 'method_search'
+		          callToolNamed: 'method_metadata_search'
 		          withArguments:
 		          { (#classNames -> #( 'MCPToolFindMethodsTestTarget' )) }
 			          asDictionary.
@@ -1896,7 +1901,7 @@ MCPToolContractsTest >> testFindMethodsReturnsWarningResultForMissingClass [
 
 	| data result warnings |
 	result := self
-		          callToolNamed: 'method_search'
+		          callToolNamed: 'method_metadata_search'
 		          withArguments:
 			          { (#classNames
 			           -> #( 'MCPDefinitelyMissingFindMethodsClass' )) }
@@ -1919,9 +1924,12 @@ MCPToolContractsTest >> testFindMethodsReturnsWarningResultForMissingClass [
 { #category : 'tests' }
 MCPToolContractsTest >> testFindMethodsTopLevelFilterModesAreTextOnly [
 
-	| filterModeEnum filterModeProperty filterProperty schema |
+	| filterModeEnum filterModeProperty filterProperty propertyNames schema |
 	schema := MCPToolFindMethods new inputSchema asJRPCJSON.
+	propertyNames := (schema at: #properties) keys.
 	self deny: (schema includesKey: #allOf).
+	self deny: (propertyNames includes: 'scopeMode').
+	self deny: (propertyNames includes: 'where').
 	filterModeProperty := (schema at: #properties) at: 'filterMode'.
 	filterProperty := (schema at: #properties) at: 'filter'.
 	filterModeEnum := (filterModeProperty at: #enum) asArray.
@@ -1933,36 +1941,6 @@ MCPToolContractsTest >> testFindMethodsTopLevelFilterModesAreTextOnly [
 	#( 'selectorReference' 'classReference' 'variableReference' ) do: [
 		:referenceMode |
 		self deny: (filterModeEnum includes: referenceMode) ]
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testFindMethodsWhereSchemaAdvertisesEquivalentToMethodReference [
-
-	| classSideProperty equivalentToProperties equivalentToProperty nestedPropertyNames whereProperties whereProperty |
-	whereProperty := MCPToolFindMethods new inputSchema properties
-		                 detect: [ :each | each name = 'where' ].
-	whereProperties := whereProperty extraProperties at: #properties.
-	equivalentToProperty := whereProperties detect: [ :each |
-		                        each name = 'equivalentTo' ].
-	equivalentToProperties := equivalentToProperty extraProperties at:
-		                          #properties.
-	nestedPropertyNames := equivalentToProperties collect: [ :each |
-		                       each name ].
-	classSideProperty := equivalentToProperties detect: [ :each |
-		                     each name = 'classSide' ].
-	self assert: equivalentToProperty type equals: 'object'.
-	self assert:
-		(equivalentToProperty description includesSubstring:
-			 'equivalent AST').
-	self
-		assert: (equivalentToProperty extraProperties at: #required) asArray
-		equals: #( 'className' 'selector' ).
-	self assert: (nestedPropertyNames includes: 'className').
-	self assert: (nestedPropertyNames includes: 'selector').
-	self assert: (nestedPropertyNames includes: 'classSide').
-	self
-		assert: (classSideProperty extraProperties at: #default)
-		equals: false
 ]
 
 { #category : 'tests' }

@@ -90,7 +90,7 @@ tool_search
 tool_get
 package_search
 class_search
-method_search
+method_metadata_search
 method_source_search
 method_equivalent_search
 method_implementor_search

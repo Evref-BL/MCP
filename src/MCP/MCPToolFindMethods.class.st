@@ -19,7 +19,7 @@ MCPToolFindMethods class >> toolIconSpec [
 { #category : 'defaults' }
 MCPToolFindMethods class >> toolName [
 
-	^ 'method_search'
+	^ 'method_metadata_search'
 ]
 
 { #category : 'private - searching' }
@@ -56,7 +56,7 @@ MCPToolFindMethods >> classReferenceEntriesForQueryRequest: queryRequest [
 { #category : 'defaults' }
 MCPToolFindMethods >> defaultDescription [
 
-	^ 'List and search methods by selector, class, package, protocol, scope, or recursive where predicates. Multiple scope filters use union by default; set scopeMode=intersection to require all scopes. Missing class or package names return warnings with suggestions. Use method_source_search for source text, method_equivalent_search for equivalent ASTs, method_implementor_search for selector implementors, method_sender_search for selector sends, method_class_reference_search for class binding references, and method_variable_reference_search for variable references.'
+	^ 'List and search methods by selector, class, package, protocol, or scope. Missing class or package names return warnings with suggestions. Use method_source_search for source text, method_equivalent_search for equivalent ASTs, method_implementor_search for selector implementors, method_sender_search for selector sends, method_class_reference_search for class binding references, and method_variable_reference_search for variable references.'
 ]
 
 { #category : 'private - request' }
@@ -75,14 +75,20 @@ MCPToolFindMethods >> defaultFilterTargets [
 MCPToolFindMethods >> defaultInputSchema [
 
 	| properties |
-	properties := self methodQueryScopeInputProperties
-	              , { self scopeModeSchemaProperty } , (self
-		               methodFilteringInputPropertiesWithFilterDescription:
+	properties := self methodQueryScopeInputProperties , (self
+		               baseFilteringInputPropertiesWithFilterDescription:
 		               'Optional text matched against selected method metadata fields.'
-		               includeSourceDescription:
-		               'Whether to include method source code in each result entry.'
-		               limitDescription:
-		               'Maximum number of matching methods to return. Use 0 to request counts only.').
+		               filterTargetsDescription:
+		               'Optional method metadata fields matched by filter.'
+		               filterModeDescription:
+		               'How text filtering is matched.'
+		               filterModeValues: self supportedFilterModes) , {
+		              (self caseSensitiveSchemaPropertyWithDescription:
+			               'Whether filter matching is case-sensitive.').
+		              (self includeSourceSchemaPropertyWithDescription:
+			               'Whether to include method source code in each result entry.') }
+	              , (self paginationInputPropertiesWithLimitDescription:
+			               'Maximum number of matching methods to return. Use 0 to request counts only.').
 	^ self queryInputSchemaWithProperties: properties
 ]
 
@@ -100,7 +106,7 @@ MCPToolFindMethods >> defaultOutputSchema [
 { #category : 'defaults' }
 MCPToolFindMethods >> defaultTitle [
 
-	^ 'Search Methods'
+	^ 'Search Method Metadata'
 ]
 
 { #category : 'private - results' }

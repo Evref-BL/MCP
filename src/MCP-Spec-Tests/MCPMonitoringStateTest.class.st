@@ -14,7 +14,7 @@ MCPMonitoringStateTest >> testDisabledByDefaultDoesNotRecord [
 
 	| state record |
 	state := MCPMonitoringState new.
-	record := state recordToolCallStart: 'method_search'.
+	record := state recordToolCallStart: 'method_metadata_search'.
 	self deny: state enabled.
 	self assert: record isNil.
 	self assert: state totalCallCount equals: 0.
@@ -33,7 +33,9 @@ MCPMonitoringStateTest >> testInputSnapshotRedactsSensitiveKeys [
 		         (#nested
 		          -> { (#password -> 'secret-password') } asDictionary) }
 		         asDictionary.
-	record := state recordToolCallStart: 'method_search' input: input.
+	record := state
+		          recordToolCallStart: 'method_metadata_search'
+		          input: input.
 	state recordToolCallFinish: record result: nil error: Error new.
 
 	self assert: (record inputSnapshot at: #limit) equals: 10.
@@ -128,7 +130,7 @@ MCPMonitoringStateTest >> testRecordsSuccessfulCallMetricsAndLogs [
 	| state record result stats |
 	state := MCPMonitoringState new.
 	state enable.
-	record := state recordToolCallStart: 'method_search'.
+	record := state recordToolCallStart: 'method_metadata_search'.
 	result := MCPStructureCallToolResult
 		          content: #(  )
 		          structuredContent:
@@ -137,17 +139,17 @@ MCPMonitoringStateTest >> testRecordsSuccessfulCallMetricsAndLogs [
 	stats := state metrics first.
 
 	self assert: state totalCallCount equals: 1.
-	self assert: stats toolName equals: 'method_search'.
+	self assert: stats toolName equals: 'method_metadata_search'.
 	self assert: stats successCount equals: 1.
 	self assert: stats errorCount equals: 0.
 	self assert: state recentCallRecords size equals: 1.
 	self assert: state logs size >= 2.
 	self assert: (state logs anySatisfy: [ :each |
-			 each includesSubstring: 'Begin tool method_search #' ]).
+			 each includesSubstring: 'Begin tool method_metadata_search #' ]).
 	self assert: (state logs anySatisfy: [ :each |
-			 each includesSubstring: 'OK tool method_search #' ]).
+			 each includesSubstring: 'OK tool method_metadata_search #' ]).
 	self deny: (state logs anySatisfy: [ :each |
-			 each includesSubstring: 'ok tool method_search #' ]).
+			 each includesSubstring: 'ok tool method_metadata_search #' ]).
 	self assert:
 		(state statusText beginsWith: 'Observability enabled. Calls: 1')
 ]
@@ -160,7 +162,7 @@ MCPMonitoringStateTest >> testTraceRecordsIncludeErrorsAndOutliersOnly [
 	start := DateAndTime now.
 	normal := MCPToolCallRecord
 		          id: 1
-		          toolName: 'method_search'
+		          toolName: 'method_metadata_search'
 		          startedAt: start.
 	normal finishAt: start durationMilliseconds: 5 status: 'ok'.
 	error := MCPToolCallRecord

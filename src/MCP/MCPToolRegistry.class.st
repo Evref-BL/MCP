@@ -92,7 +92,7 @@ MCPToolRegistry class >> additionalKeywordsForTool: aTool [
 		^ #( 'class' 'slot' 'pull' 'up' ) ].
 	toolName = 'class_slot_push_down' ifTrue: [
 		^ #( 'class' 'slot' 'push' 'down' ) ].
-	toolName = 'method_search' ifTrue: [
+	toolName = 'method_metadata_search' ifTrue: [
 		^ #( 'method' 'selector' 'protocol' 'metadata' 'search' ) ].
 	toolName = 'method_source_search' ifTrue: [
 		^ #( 'method' 'source' 'code' 'text' 'search' ) ].
@@ -258,7 +258,7 @@ MCPToolRegistry class >> mutabilityForTool: aTool [
 	readTools := #( 'tool_search' 'tool_get' 'repository_search'
 	                'repository_identity_verify'
 	                'repository_change_list' 'package_search'
-	                'class_search' 'class_get' 'method_search'
+	                'class_search' 'class_get' 'method_metadata_search'
 	                'method_source_search' 'method_equivalent_search'
 	                'method_implementor_search'
 	                'method_sender_search' 'method_class_reference_search'
@@ -422,7 +422,7 @@ MCPToolRegistry class >> riskForTool: aTool [
 	lowRisk := #( 'tool_search' 'tool_get' 'repository_search'
 	              'repository_identity_verify'
 	              'repository_change_list' 'package_search'
-	              'class_search' 'class_get' 'method_search'
+	              'class_search' 'class_get' 'method_metadata_search'
 	              'method_source_search' 'method_equivalent_search'
 	              'method_implementor_search' 'method_sender_search'
 	              'method_class_reference_search'

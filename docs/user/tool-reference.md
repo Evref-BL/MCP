@@ -94,7 +94,7 @@ instead of continuing.
 
 | Tool | Use |
 | --- | --- |
-| `method_search` | List/search methods by selector, class, package, protocol, scope, or recursive predicates. |
+| `method_metadata_search` | List/search methods by selector, class, package, protocol, or scope. |
 | `method_source_search` | Search methods by source text. |
 | `method_equivalent_search` | Search methods whose AST is equivalent to a referenced method. |
 | `method_implementor_search` | Search methods that implement a selector. |
@@ -110,8 +110,8 @@ instead of continuing.
 
 Prefer the focused lookup tools for navigation tasks. Use
 `method_source_search` for source text and `method_equivalent_search` for
-equivalent-AST matches. Keep `method_search` for method metadata search and
-recursive `where` predicates. Top-level `method_search` filtering is metadata
+equivalent-AST matches. Keep `method_metadata_search` for method metadata
+search. Top-level `method_metadata_search` filtering is metadata
 text matching only (`substring`, `prefix`, `exact`, or `regex`); use focused
 tools for source, equivalent methods, implementors, senders, class references,
 and variable references.
