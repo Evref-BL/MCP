@@ -109,6 +109,12 @@ MCPToolRepositoryOperation >> operationName [
 	^ self repositoryOperationSpec at: #operation
 ]
 
+{ #category : 'private - operations' }
+MCPToolRepositoryOperation >> operationSpecifications [
+
+	^ { { (#name -> self operationName) } asDictionary }
+]
+
 { #category : 'private - schema' }
 MCPToolRepositoryOperation >> packageNamesSchemaProperty [
 

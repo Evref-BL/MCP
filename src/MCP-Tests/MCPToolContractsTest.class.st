@@ -1281,6 +1281,11 @@ MCPToolContractsTest >> testDisplayToolsCatalogSummarizesToolOperations [
 		equals: 'create | attach | +11'.
 	self
 		assert:
+		(presenter toolCatalogOperationSummaryFor:
+			 MCPToolAttachRepository new)
+		equals: 'attach'.
+	self
+		assert:
 		(presenter toolCatalogOperationSummaryFor: MCPToolCreateMethod new)
 		equals: 'create'.
 	self

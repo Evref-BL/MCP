@@ -10,6 +10,19 @@ Class {
 }
 
 { #category : 'tests' }
+MCPToolsCatalogPresenterTest >> testFocusedRepositoryOperationsShowSingleOperation [
+
+	| presenter summary |
+	presenter := MCPToolsCatalogPresenter new.
+	summary := presenter toolCatalogOperationSummaryFor:
+		           MCPToolAttachRepository new.
+	self assert: summary equals: 'attach'.
+	self assert:
+		(presenter toolCatalogOperationHelpFor: MCPToolAttachRepository new)
+			isNil
+]
+
+{ #category : 'tests' }
 MCPToolsCatalogPresenterTest >> testLongOperationListsAreSummarizedForCatalogRows [
 
 	| presenter summary |
