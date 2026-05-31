@@ -212,65 +212,51 @@ MCPToolFindMethods >> method: aCompiledMethod referencesAnyVariable: variables [
 { #category : 'private - methods' }
 MCPToolFindMethods >> methodEntriesFromMethods: compiledMethods queryRequest: queryRequest [
 
-	| entries needsSourceText whereContext |
+	| entries needsSourceText |
 	needsSourceText := queryRequest includeSource.
-	whereContext := self newWhereContext.
 	entries := OrderedCollection new.
 	compiledMethods do: [ :eachMethod |
-		| entry evaluation info sourceText |
-		info := MCPCompiledMethodInfo fromMethod: eachMethod.
-		sourceText := needsSourceText
-			              ifTrue: [ info source ]
-			              ifFalse: [ nil ].
-		entry := info asDictionaryIncludingSource:
-			         queryRequest includeSource.
-		queryRequest includeSource ifTrue: [
-			entry at: #source put: sourceText ].
-		evaluation := self
-			              whereEvaluationForEntityKind: #method
-			              entry: entry
-			              object: eachMethod
-			              context: whereContext.
-		(queryRequest whereSpec matchesEvaluation: evaluation) ifTrue: [
-			entries add: entry ] ].
+			| entry info sourceText |
+			info := MCPCompiledMethodInfo fromMethod: eachMethod.
+			sourceText := needsSourceText
+				              ifTrue: [ info source ]
+				              ifFalse: [ nil ].
+			entry := info asDictionaryIncludingSource:
+				         queryRequest includeSource.
+			queryRequest includeSource ifTrue: [
+				entry at: #source put: sourceText ].
+			entries add: entry ].
 	^ self sortedMethodEntries: entries
 ]
 
 { #category : 'private - methods' }
 MCPToolFindMethods >> methodEntriesFromQueryRequest: queryRequest [
 
-	| entries matcher needsSourceForFiltering whereContext |
+	| entries matcher needsSourceForFiltering |
 	matcher := self
 		           matcherForPattern: queryRequest filterPattern
 		           mode: queryRequest filterMode
 		           caseSensitive: queryRequest caseSensitive.
 	needsSourceForFiltering := queryRequest needsSourceForFiltering.
-	whereContext := self newWhereContext.
 	entries := OrderedCollection new.
 	queryRequest scopeQuery methodsDo: [ :eachMethod |
-		| entry evaluation info matchesFilter sourceText |
-		info := MCPCompiledMethodInfo fromMethod: eachMethod.
-		entry := info asDictionaryIncludingSource: false.
-		sourceText := needsSourceForFiltering
-			              ifTrue: [ info source ]
-			              ifFalse: [ nil ].
-		matchesFilter := queryRequest hasFilterPattern not or: [
-			                 self
-				                 matchesFilterOnMethodEntry: entry
-				                 sourceText: sourceText
-				                 matcher: matcher
-				                 targets: queryRequest filterTargets ].
-		evaluation := self
-			              whereEvaluationForEntityKind: #method
-			              entry: entry
-			              object: eachMethod
-			              context: whereContext.
-		(matchesFilter and: [
-			 queryRequest whereSpec matchesEvaluation: evaluation ]) ifTrue: [
-			queryRequest includeSource ifTrue: [
-				sourceText ifNil: [ sourceText := info source ].
-				entry at: #source put: sourceText ].
-			entries add: entry ] ].
+			| entry info matchesFilter sourceText |
+			info := MCPCompiledMethodInfo fromMethod: eachMethod.
+			entry := info asDictionaryIncludingSource: false.
+			sourceText := needsSourceForFiltering
+				              ifTrue: [ info source ]
+				              ifFalse: [ nil ].
+			matchesFilter := queryRequest hasFilterPattern not or: [
+					                 self
+						                 matchesFilterOnMethodEntry: entry
+						                 sourceText: sourceText
+						                 matcher: matcher
+						                 targets: queryRequest filterTargets ].
+			matchesFilter ifTrue: [
+					queryRequest includeSource ifTrue: [
+							sourceText ifNil: [ sourceText := info source ].
+							entry at: #source put: sourceText ].
+					entries add: entry ] ].
 	^ self sortedMethodEntries: entries
 ]
 
@@ -422,13 +408,6 @@ MCPToolFindMethods >> supportedFilterModes [
 MCPToolFindMethods >> supportedFilterTargets [
 
 	^ #( 'selector' 'class' 'package' 'protocol' )
-]
-
-{ #category : 'private - schema' }
-MCPToolFindMethods >> supportedWhereFilterModes [
-
-	^ self basicFilterModes
-	  , #( 'selectorReference' 'classReference' 'variableReference' )
 ]
 
 { #category : 'private - searching' }

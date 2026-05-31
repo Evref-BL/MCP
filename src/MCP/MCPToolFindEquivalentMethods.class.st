@@ -54,6 +54,18 @@ MCPToolFindEquivalentMethods >> defaultTitle [
 	^ 'Search Equivalent Methods'
 ]
 
+{ #category : 'private - methods' }
+MCPToolFindEquivalentMethods >> equivalentEntriesForQueryRequest: queryRequest [
+
+	| referenceMethod |
+	referenceMethod := queryRequest referenceMethod.
+	^ self
+		  methodEntriesFromMethods:
+			  (queryRequest scopeQuery methods select: [ :eachMethod |
+				   eachMethod equivalentTo: referenceMethod ]) asArray
+		  queryRequest: queryRequest
+]
+
 { #category : 'private - request' }
 MCPToolFindEquivalentMethods >> methodReferenceSpecFromToolRequest: request [
 
@@ -76,11 +88,13 @@ MCPToolFindEquivalentMethods >> methodReferenceSpecFromToolRequest: request [
 ]
 
 { #category : 'private - template' }
+MCPToolFindEquivalentMethods >> queryEntriesForQueryRequest: queryRequest [
+
+	^ self equivalentEntriesForQueryRequest: queryRequest
+]
+
+{ #category : 'private - template' }
 MCPToolFindEquivalentMethods >> queryRequestFromToolRequest: request [
 
-	| queryRequest |
-	queryRequest := super queryRequestFromToolRequest: request.
-	queryRequest whereSpec: (MCPWhereSpec equivalentTo:
-			 (self methodReferenceSpecFromToolRequest: request)).
-	^ queryRequest
+	^ MCPFindEquivalentMethodsRequest fromRequest: request tool: self
 ]

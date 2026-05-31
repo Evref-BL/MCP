@@ -1,7 +1,7 @@
 "
 Resolves method-scope arguments into compiled methods or behavior sets.
 
-It handles packageNames, classNames, hierarchyClassNames, subclassClassNames, parentClassNames, and side. Scope sets are unioned by default and can be intersected with scopeMode. Query tools keep valid scopes and record warnings for missing names. Tools that mutate the image can require a complete scope; missing names then raise a structured error with the same suggestions. Directional subclass and parent scopes exclude their anchor classes.
+It handles packageNames, classNames, hierarchyClassNames, subclassClassNames, parentClassNames, and side. Scope sets are unioned. Query tools keep valid scopes and record warnings for missing names. Tools that mutate the image can require a complete scope; missing names then raise a structured error with the same suggestions. Directional subclass and parent scopes exclude their anchor classes.
 "
 Class {
 	#name : 'MCPCompiledMethodScopeQuery',
@@ -13,7 +13,6 @@ Class {
 		'hierarchyClassNames',
 		'subclassClassNames',
 		'parentClassNames',
-		'scopeMode',
 		'warnings',
 		'requiresCompleteScope'
 	],
@@ -96,8 +95,6 @@ MCPCompiledMethodScopeQuery >> behaviors [
 	self validate.
 	self resetWarnings.
 	self usesImplicitImageScope ifTrue: [ ^ self allBehaviors ].
-	self scopeMode = 'intersection' ifTrue: [
-		^ self intersectionBehaviors ].
 	^ self unionBehaviors
 ]
 
@@ -197,33 +194,8 @@ MCPCompiledMethodScopeQuery >> initialize [
 	subclassClassNames := #(  ).
 	parentClassNames := #(  ).
 	side := 'both'.
-	scopeMode := 'union'.
 	warnings := OrderedCollection new.
 	requiresCompleteScope := false
-]
-
-{ #category : 'private - scope' }
-MCPCompiledMethodScopeQuery >> intersectionBehaviors [
-
-	^ (self intersectionOfSets: self behaviorScopeSets) asArray
-]
-
-{ #category : 'private - scope' }
-MCPCompiledMethodScopeQuery >> intersectionMethods [
-
-	^ (self intersectionOfSets: self methodScopeSets) asArray
-]
-
-{ #category : 'private - scope' }
-MCPCompiledMethodScopeQuery >> intersectionOfSets: sets [
-
-	| result |
-	sets ifEmpty: [ ^ IdentitySet new ].
-	result := sets first asIdentitySet.
-	sets allButFirst do: [ :eachSet |
-		result := result select: [ :eachElement |
-			          eachSet includes: eachElement ] ].
-	^ result
 ]
 
 { #category : 'private - scope' }
@@ -269,7 +241,6 @@ MCPCompiledMethodScopeQuery >> methods [
 	self validate.
 	self resetWarnings.
 	self usesImplicitImageScope ifTrue: [ ^ self allMethods ].
-	self scopeMode = 'intersection' ifTrue: [ ^ self intersectionMethods ].
 	^ self unionMethods
 ]
 
@@ -474,18 +445,6 @@ MCPCompiledMethodScopeQuery >> resetWarnings [
 ]
 
 { #category : 'accessing' }
-MCPCompiledMethodScopeQuery >> scopeMode [
-
-	^ scopeMode ifNil: [ 'union' ]
-]
-
-{ #category : 'accessing' }
-MCPCompiledMethodScopeQuery >> scopeMode: aString [
-
-	scopeMode := aString ifNil: [ 'union' ] ifNotNil: [ aString ]
-]
-
-{ #category : 'accessing' }
 MCPCompiledMethodScopeQuery >> side [
 
 	^ side
@@ -559,9 +518,7 @@ MCPCompiledMethodScopeQuery >> usesImplicitImageScope [
 MCPCompiledMethodScopeQuery >> validate [
 
 	(#( 'instance' 'class' 'both' ) includes: side) ifFalse: [
-		Error signal: 'side must be one of instance, class, or both.' ].
-	(#( 'union' 'intersection' ) includes: self scopeMode) ifFalse: [
-		Error signal: 'scopeMode must be one of union or intersection.' ]
+		Error signal: 'side must be one of instance, class, or both.' ]
 ]
 
 { #category : 'accessing' }

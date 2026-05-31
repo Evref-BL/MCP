@@ -12,8 +12,7 @@ Class {
 		'includeSource',
 		'limit',
 		'offset',
-		'scopeQuery',
-		'whereSpec'
+		'scopeQuery'
 	],
 	#category : 'MCP-Requests',
 	#package : 'MCP',
@@ -157,16 +156,4 @@ MCPFindMethodsRequest >> scopeQuery [
 MCPFindMethodsRequest >> scopeQuery: anObject [
 
 	scopeQuery := anObject
-]
-
-{ #category : 'accessing' }
-MCPFindMethodsRequest >> whereSpec [
-
-	^ whereSpec ifNil: [ MCPWhereSpec absent ]
-]
-
-{ #category : 'accessing' }
-MCPFindMethodsRequest >> whereSpec: anObject [
-
-	whereSpec := anObject
 ]

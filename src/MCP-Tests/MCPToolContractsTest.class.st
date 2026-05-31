@@ -594,9 +594,9 @@ MCPToolContractsTest >> focusedMethodLookupToolFlowSpecs [
 		  {
 			  (#toolClass -> MCPToolFindEquivalentMethods).
 			  (#arguments -> {
-				   (#className -> 'Object').
-				   (#selector -> 'class') } asDictionary).
-			  (#requestClass -> MCPFindMethodsRequest).
+				   (#className -> 'MCPTool').
+				   (#selector -> 'defaultName') } asDictionary).
+			  (#requestClass -> MCPFindEquivalentMethodsRequest).
 			  (#commandClass -> MCPQueryToolCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolFindMethodImplementors).
