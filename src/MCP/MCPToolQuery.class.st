@@ -22,18 +22,6 @@ MCPToolQuery >> addScopeLabel: aString to: labels [
 ]
 
 { #category : 'private - schema' }
-MCPToolQuery >> baseFilteringInputPropertiesWithFilterDescription: filterDescription filterTargetsDescription: targetsDescription filterModeDescription: modeDescription filterModeValues: modeValues [
-
-	^ {
-		  (self filterSchemaPropertyWithDescription: filterDescription).
-		  (self filterTargetsSchemaPropertyWithDescription:
-			   targetsDescription).
-		  (self
-			   filterModeSchemaPropertyWithDescription: modeDescription
-			   values: modeValues) }
-]
-
-{ #category : 'private - schema' }
 MCPToolQuery >> basicFilterModes [
 
 	^ #( 'substring' 'prefix' 'exact' 'regex' )
@@ -158,12 +146,6 @@ MCPToolQuery >> commandForRequest: queryRequest [
 MCPToolQuery >> defaultFilterMode [
 
 	^ 'substring'
-]
-
-{ #category : 'private - request' }
-MCPToolQuery >> defaultFilterTargets [
-
-	self subclassResponsibility
 ]
 
 { #category : 'private - results' }
@@ -292,30 +274,6 @@ MCPToolQuery >> filterSchemaPropertyWithDescription: filterDescription [
 		  schemaPropertyNamed: 'filter'
 		  type: 'string'
 		  description: filterDescription
-]
-
-{ #category : 'private - request' }
-MCPToolQuery >> filterTargetsFromRequest: request [
-
-	| filterTargets |
-	filterTargets := request
-		                 uniqueStringCollectionArgumentNamed:
-		                 'filterTargets'
-		                 default: self defaultFilterTargets.
-	filterTargets ifEmpty: [
-		Error signal: 'filterTargets must contain at least one target.' ].
-	^ filterTargets
-]
-
-{ #category : 'private - schema' }
-MCPToolQuery >> filterTargetsSchemaPropertyWithDescription: targetsDescription [
-
-	^ self
-		  stringEnumArraySchemaNamed: 'filterTargets'
-		  description: targetsDescription
-		  itemDescription: 'A filter target.'
-		  values: self supportedFilterTargets
-		  default: self defaultFilterTargets
 ]
 
 { #category : 'private - schema' }
@@ -587,12 +545,6 @@ MCPToolQuery >> successSummaryForQueryRequest: queryRequest page: page [
 MCPToolQuery >> supportedFilterModes [
 
 	^ self basicFilterModes
-]
-
-{ #category : 'private - request' }
-MCPToolQuery >> supportedFilterTargets [
-
-	self subclassResponsibility
 ]
 
 { #category : 'private - results' }

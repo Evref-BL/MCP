@@ -24,12 +24,6 @@ MCPToolFindMethodSource >> defaultFilterMode [
 	^ 'substring'
 ]
 
-{ #category : 'private - request' }
-MCPToolFindMethodSource >> defaultFilterTargets [
-
-	^ #( 'source' )
-]
-
 { #category : 'defaults' }
 MCPToolFindMethodSource >> defaultInputSchema [
 
@@ -60,6 +54,18 @@ MCPToolFindMethodSource >> defaultTitle [
 	^ 'Search Method Source'
 ]
 
+{ #category : 'private - filtering' }
+MCPToolFindMethodSource >> filterTextsForMethodEntry: anEntry sourceText: sourceText [
+
+	^ { sourceText }
+]
+
+{ #category : 'private - filtering' }
+MCPToolFindMethodSource >> needsSourceForFiltering [
+
+	^ true
+]
+
 { #category : 'private - template' }
 MCPToolFindMethodSource >> queryEntriesForQueryRequest: queryRequest [
 
@@ -71,10 +77,4 @@ MCPToolFindMethodSource >> queryEntriesForQueryRequest: queryRequest [
 MCPToolFindMethodSource >> queryRequestFromToolRequest: request [
 
 	^ MCPFindMethodsRequest fromRequest: request tool: self
-]
-
-{ #category : 'private - request' }
-MCPToolFindMethodSource >> supportedFilterTargets [
-
-	^ #( 'source' )
 ]

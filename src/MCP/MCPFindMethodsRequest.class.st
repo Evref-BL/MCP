@@ -6,7 +6,6 @@ Class {
 	#superclass : 'Object',
 	#instVars : [
 		'filterPattern',
-		'filterTargets',
 		'filterMode',
 		'caseSensitive',
 		'includeSource',
@@ -40,7 +39,6 @@ MCPFindMethodsRequest class >> fromRequest: request tool: aTool [
 		  scopeQuery: scopeQuery;
 		  filterPattern: (aTool filterPatternFromRequest: request);
 		  filterMode: (aTool filterModeFromRequest: request);
-		  filterTargets: (aTool filterTargetsFromRequest: request);
 		  caseSensitive:
 			  (request booleanArgumentNamed: 'caseSensitive' default: true);
 		  includeSource:
@@ -100,18 +98,6 @@ MCPFindMethodsRequest >> filterPattern: aString [
 	filterPattern := aString
 ]
 
-{ #category : 'accessing' }
-MCPFindMethodsRequest >> filterTargets [
-
-	^ filterTargets
-]
-
-{ #category : 'accessing' }
-MCPFindMethodsRequest >> filterTargets: aCollection [
-
-	filterTargets := aCollection
-]
-
 { #category : 'testing' }
 MCPFindMethodsRequest >> hasFieldFilters [
 
@@ -146,12 +132,6 @@ MCPFindMethodsRequest >> limit [
 MCPFindMethodsRequest >> limit: anInteger [
 
 	limit := anInteger
-]
-
-{ #category : 'testing' }
-MCPFindMethodsRequest >> needsSourceForFiltering [
-
-	^ filterPattern notNil and: [ filterTargets includes: 'source' ]
 ]
 
 { #category : 'accessing' }

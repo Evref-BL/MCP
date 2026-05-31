@@ -65,12 +65,6 @@ MCPToolFindMethods >> defaultFilterMode [
 	^ 'exact'
 ]
 
-{ #category : 'private - request' }
-MCPToolFindMethods >> defaultFilterTargets [
-
-	^ #( 'selector' )
-]
-
 { #category : 'defaults' }
 MCPToolFindMethods >> defaultInputSchema [
 
@@ -125,17 +119,9 @@ MCPToolFindMethods >> fieldTextsForMethodEntry: anEntry sourceText: sourceText f
 ]
 
 { #category : 'private - filtering' }
-MCPToolFindMethods >> filterTextsForMethodEntry: anEntry sourceText: sourceText targets: filterTargets [
+MCPToolFindMethods >> filterTextsForMethodEntry: anEntry sourceText: sourceText [
 
-	| texts |
-	texts := OrderedCollection new.
-	filterTargets do: [ :each |
-		each = 'selector' ifTrue: [ texts add: (anEntry at: #selector) ].
-		each = 'class' ifTrue: [ texts add: (anEntry at: #className) ].
-		each = 'package' ifTrue: [ texts add: (anEntry at: #packageName) ].
-		each = 'protocol' ifTrue: [ texts add: (anEntry at: #protocol) ].
-		each = 'source' ifTrue: [ texts add: sourceText ] ].
-	^ texts asArray
+	^ #(  )
 ]
 
 { #category : 'private - methods' }
@@ -174,13 +160,10 @@ MCPToolFindMethods >> matchesFieldFiltersOnMethodEntry: anEntry sourceText: sour
 ]
 
 { #category : 'private - filtering' }
-MCPToolFindMethods >> matchesFilterOnMethodEntry: anEntry sourceText: sourceText matcher: aMatcher targets: filterTargets [
+MCPToolFindMethods >> matchesFilterOnMethodEntry: anEntry sourceText: sourceText matcher: aMatcher [
 
-	^ (self
-		   filterTextsForMethodEntry: anEntry
-		   sourceText: sourceText
-		   targets: filterTargets) anySatisfy: [ :each |
-		  aMatcher value: each ]
+	^ (self filterTextsForMethodEntry: anEntry sourceText: sourceText)
+		  anySatisfy: [ :each | aMatcher value: each ]
 ]
 
 { #category : 'private - searching' }
@@ -279,7 +262,7 @@ MCPToolFindMethods >> methodEntriesFromQueryRequest: queryRequest [
 		           matcherForPattern: queryRequest filterPattern
 		           mode: queryRequest filterMode
 		           caseSensitive: queryRequest caseSensitive.
-	needsSourceForFiltering := queryRequest needsSourceForFiltering.
+	needsSourceForFiltering := self needsSourceForFiltering.
 	entries := OrderedCollection new.
 	queryRequest scopeQuery methodsDo: [ :eachMethod |
 			| entry info matchesFilter sourceText |
@@ -292,8 +275,7 @@ MCPToolFindMethods >> methodEntriesFromQueryRequest: queryRequest [
 					                  self
 						                  matchesFilterOnMethodEntry: entry
 						                  sourceText: sourceText
-						                  matcher: matcher
-						                  targets: queryRequest filterTargets ]) and: [
+						                  matcher: matcher ]) and: [
 					                 self
 						                 matchesFieldFiltersOnMethodEntry: entry
 						                 sourceText: sourceText
@@ -373,6 +355,12 @@ MCPToolFindMethods >> methodQueryResultDataForPage: page entriesKey: entriesKey 
 	^ self queryResultDataFrom: nil page: page entriesKey: entriesKey
 ]
 
+{ #category : 'private - filtering' }
+MCPToolFindMethods >> needsSourceForFiltering [
+
+	^ false
+]
+
 { #category : 'private - template' }
 MCPToolFindMethods >> queryEntriesForQueryRequest: queryRequest [
 
@@ -448,12 +436,6 @@ MCPToolFindMethods >> successSummaryForScope: scopeSummary page: page [
 MCPToolFindMethods >> supportedFilterModes [
 
 	^ #( 'substring' 'prefix' 'exact' 'regex' )
-]
-
-{ #category : 'private - request' }
-MCPToolFindMethods >> supportedFilterTargets [
-
-	^ #( 'selector' 'class' 'package' 'protocol' )
 ]
 
 { #category : 'private - searching' }
