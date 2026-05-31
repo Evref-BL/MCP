@@ -92,11 +92,9 @@ package_search
 class_search
 method_metadata_search
 method_source_search
-method_equivalent_search
 method_implementor_search
 method_sender_search
 method_class_reference_search
-method_variable_reference_search
 class_get
 method_get
 repository_search
@@ -118,16 +116,9 @@ class_superclass_update
 class_package_update
 class_comment_update
 class_slots_update
-class_traits_update
-class_side_traits_update
-class_shared_variables_update
-class_shared_pools_update
-class_layout_update
 class_slot_add
 class_slot_remove
 class_slot_name_update
-class_slot_pull_up
-class_slot_push_down
 method_create
 method_selector_update
 method_protocol_update
@@ -142,6 +133,11 @@ history_entry_apply
 history_entry_revert
 screenshot_capture
 ```
+
+Use `tool_search` for specialized tools that are not day-to-day operations,
+including equivalent-AST or variable-reference method searches, trait/shared
+variable/shared pool/layout class updates, and slot pull-up or push-down
+refactorings.
 
 `image_evaluate` can run arbitrary Smalltalk. Use it only for short inspection or glue code when no dedicated tool fits.
 

@@ -187,18 +187,35 @@ MCPToolFocusedMethodLookupTest >> testFocusedLookupSchemasRequireFocusedArgument
 { #category : 'tests' }
 MCPToolFocusedMethodLookupTest >> testFocusedLookupToolsArePublicStaticReadTools [
 
-	| names |
-	names := #( 'method_source_search' 'method_equivalent_search'
-	            'method_implementor_search' 'method_sender_search'
-	            'method_class_reference_search'
-	            'method_variable_reference_search' ).
-	names do: [ :each |
+	| discoverableNames staticNames |
+	staticNames := #( 'method_source_search' 'method_implementor_search'
+	                  'method_sender_search' 'method_class_reference_search' ).
+	discoverableNames := #( 'method_equivalent_search'
+	                        'method_variable_reference_search' ).
+	staticNames do: [ :each |
 			| tool |
 			self assert: (MCPToolRegistry publicToolNames includes: each).
 			self assert: (MCPToolRegistry staticToolNames includes: each).
 			tool := MCPToolRegistry
 				        toolNamed: each
 				        ifAbsent: [ self fail: 'Missing tool ' , each ].
+			self
+				assert: (MCPToolRegistry exposureForTool: tool)
+				equals: 'static'.
+			self
+				assert: (MCPToolRegistry mutabilityForTool: tool)
+				equals: 'read'.
+			self assert: (MCPToolRegistry riskForTool: tool) equals: 'low' ].
+	discoverableNames do: [ :each |
+			| tool |
+			self assert: (MCPToolRegistry publicToolNames includes: each).
+			self deny: (MCPToolRegistry staticToolNames includes: each).
+			tool := MCPToolRegistry
+				        toolNamed: each
+				        ifAbsent: [ self fail: 'Missing tool ' , each ].
+			self
+				assert: (MCPToolRegistry exposureForTool: tool)
+				equals: 'discoverable'.
 			self
 				assert: (MCPToolRegistry mutabilityForTool: tool)
 				equals: 'read'.

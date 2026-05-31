@@ -64,11 +64,13 @@ MCPToolRegistry class >> additionalKeywordsForTool: aTool [
 	toolName = 'class_create' ifTrue: [
 		^ #( 'class' 'create' 'package' 'superclass' 'slot' 'trait' ) ].
 	toolName = 'class_name_update' ifTrue: [
-		^ #( 'class' 'name' 'rename' 'update' ) ].
+		^ #( 'class' 'name' 'rename' 'update' 'refactor' 'refactoring' ) ].
 	toolName = 'class_superclass_update' ifTrue: [
-		^ #( 'class' 'superclass' 'parent' 'update' ) ].
+			^ #( 'class' 'superclass' 'parent' 'update' 'reparent' 'refactor'
+			     'refactoring' ) ].
 	toolName = 'class_package_update' ifTrue: [
-		^ #( 'class' 'package' 'tag' 'category' 'move' 'update' ) ].
+			^ #( 'class' 'package' 'tag' 'category' 'move' 'update' 'refactor'
+			     'refactoring' ) ].
 	toolName = 'class_comment_update' ifTrue: [
 		^ #( 'class' 'comment' 'update' ) ].
 	toolName = 'class_slots_update' ifTrue: [
@@ -83,15 +85,18 @@ MCPToolRegistry class >> additionalKeywordsForTool: aTool [
 		^ #( 'class' 'pool' 'shared' 'update' ) ].
 	toolName = 'class_layout_update' ifTrue: [
 		^ #( 'class' 'layout' 'update' ) ].
-	toolName = 'class_slot_add' ifTrue: [ ^ #( 'class' 'slot' 'add' ) ].
+	toolName = 'class_slot_add' ifTrue: [
+		^ #( 'class' 'slot' 'add' 'refactor' 'refactoring' ) ].
 	toolName = 'class_slot_remove' ifTrue: [
-		^ #( 'class' 'slot' 'remove' ) ].
+		^ #( 'class' 'slot' 'remove' 'refactor' 'refactoring' ) ].
 	toolName = 'class_slot_name_update' ifTrue: [
-		^ #( 'class' 'slot' 'name' 'rename' 'update' ) ].
+		^ #( 'class' 'slot' 'name' 'rename' 'update' 'refactor' 'refactoring' ) ].
 	toolName = 'class_slot_pull_up' ifTrue: [
-		^ #( 'class' 'slot' 'pull' 'up' ) ].
+		^ #( 'class' 'slot' 'pull' 'up' 'refactor' 'refactoring' ) ].
 	toolName = 'class_slot_push_down' ifTrue: [
-		^ #( 'class' 'slot' 'push' 'down' ) ].
+		^ #( 'class' 'slot' 'push' 'down' 'refactor' 'refactoring' ) ].
+	toolName = 'class_remove' ifTrue: [
+		^ #( 'class' 'remove' 'refactor' 'refactoring' ) ].
 	toolName = 'method_metadata_search' ifTrue: [
 		^ #( 'method' 'selector' 'protocol' 'metadata' 'search' ) ].
 	toolName = 'method_source_search' ifTrue: [
@@ -111,11 +116,13 @@ MCPToolRegistry class >> additionalKeywordsForTool: aTool [
 	toolName = 'method_create' ifTrue: [
 		^ #( 'method' 'source' 'protocol' 'create' 'compile' ) ].
 	toolName = 'method_selector_update' ifTrue: [
-		^ #( 'method' 'selector' 'signature' 'rename' 'update' ) ].
+			^ #( 'method' 'selector' 'signature' 'rename' 'update' 'refactor'
+			     'refactoring' ) ].
 	toolName = 'method_protocol_update' ifTrue: [
 		^ #( 'method' 'protocol' 'category' 'update' ) ].
 	toolName = 'method_rewrite' ifTrue: [
-		^ #( 'method' 'rewrite' 'preview' 'apply' 'ast' 'pattern' ) ].
+			^ #( 'method' 'rewrite' 'preview' 'apply' 'ast' 'pattern' 'refactor'
+			     'refactoring' ) ].
 	toolName = 'test_run' ifTrue: [ ^ #( 'test' 'sunit' 'timeout' ) ].
 	toolName = 'test_coverage_run' ifTrue: [
 		^ #( 'test' 'sunit' 'coverage' 'timeout' ) ].
@@ -493,23 +500,14 @@ MCPToolRegistry class >> staticToolClasses [
 		  MCPToolUpdateClassPackage.
 		  MCPToolUpdateClassComment.
 		  MCPToolUpdateClassSlots.
-		  MCPToolUpdateClassTraits.
-		  MCPToolUpdateClassSideTraits.
-		  MCPToolUpdateClassSharedVariables.
-		  MCPToolUpdateClassSharedPools.
-		  MCPToolUpdateClassLayout.
 		  MCPToolAddClassSlot.
 		  MCPToolRemoveClassSlot.
 		  MCPToolUpdateClassSlotName.
-		  MCPToolPullUpClassSlot.
-		  MCPToolPushDownClassSlot.
 		  MCPToolFindMethods.
 		  MCPToolFindMethodSource.
-		  MCPToolFindEquivalentMethods.
 		  MCPToolFindMethodImplementors.
 		  MCPToolFindMethodSenders.
 		  MCPToolFindClassReferences.
-		  MCPToolFindVariableReferences.
 		  MCPToolInspectMethod.
 		  MCPToolCreateMethod.
 		  MCPToolUpdateMethodSelector.

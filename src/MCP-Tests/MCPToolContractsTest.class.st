@@ -1147,7 +1147,9 @@ MCPToolContractsTest >> testDiscoverToolsMatchesAgentGuidanceKeywords [
 		                ('recover' -> 'history_entry_apply').
 		                ('window' -> 'screenshot_capture').
 		                ('display' -> 'screenshot_capture').
-		                ('repair' -> 'debug_method_update') }.
+		                ('repair' -> 'debug_method_update').
+		                ('refactor' -> 'class_slot_pull_up').
+		                ('refactoring' -> 'method_selector_update') }.
 	expectations do: [ :expectation |
 			| names result |
 			result := self callToolNamed: 'tool_search' withArguments: {
@@ -2710,14 +2712,16 @@ MCPToolContractsTest >> testRPCAdvertisesStaticToolSurfaceOnly [
 	#( 'tool_search' 'tool_get' 'tool_call' 'class_search' 'class_get'
 	   'class_create' 'class_name_update' 'class_superclass_update'
 	   'class_package_update' 'class_comment_update'
-	   'class_slots_update' 'class_traits_update' 'class_side_traits_update'
-	   'class_shared_variables_update' 'class_shared_pools_update'
-	   'class_layout_update' 'class_slot_add' 'class_slot_remove'
-	   'class_slot_name_update' 'class_slot_pull_up' 'class_slot_push_down'
-	   'method_create' 'method_selector_update' 'method_protocol_update'
-	   'image_evaluate' 'test_run' 'test_coverage_run' ) do: [ :each |
-		self assert: (toolNames includes: each) ].
-	#( 'class_edit' 'method_edit' 'repository_search' 'repository_identity_verify'
+	   'class_slots_update' 'class_slot_add' 'class_slot_remove'
+	   'class_slot_name_update' 'method_create' 'method_selector_update'
+	   'method_protocol_update' 'image_evaluate' 'test_run' 'test_coverage_run' )
+		do: [ :each | self assert: (toolNames includes: each) ].
+	#( 'class_edit' 'method_edit' 'class_traits_update'
+	   'class_side_traits_update' 'class_shared_variables_update'
+	   'class_shared_pools_update' 'class_layout_update'
+	   'class_slot_pull_up' 'class_slot_push_down' 'method_equivalent_search'
+	   'method_variable_reference_search'
+	   'repository_search' 'repository_identity_verify'
 	   'repository_change_list' 'repository_create' 'repository_attach'
 	   'repository_update' 'repository_export' 'repository_commit'
 	   'repository_fetch' 'repository_pull' 'repository_push'
@@ -3175,6 +3179,42 @@ MCPToolContractsTest >> testServerInitializationDoesNotRenderToolIcons [
 	MCPStructureIcon resetCaches.
 	MCP new.
 	self assert: MCPStructureIcon cachedRenderedIconCount equals: 0
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testSpecializedClassAndMethodToolsAreDiscoverableOnly [
+
+	| discoverableOnlyNames metadataByName result |
+	discoverableOnlyNames := #( 'class_traits_update'
+	                            'class_side_traits_update'
+	                            'class_shared_variables_update'
+	                            'class_shared_pools_update'
+	                            'class_layout_update'
+	                            'class_slot_pull_up' 'class_slot_push_down'
+	                            'method_equivalent_search'
+	                            'method_variable_reference_search' ).
+	result := self callToolNamed: 'tool_search' withArguments: {
+			          (#includeStatic -> true).
+			          (#limit -> 200) } asDictionary.
+	metadataByName := Dictionary new.
+	((self dataFrom: result) at: #tools) do: [ :each |
+		metadataByName at: (each at: #name) put: each ].
+	discoverableOnlyNames do: [ :each |
+			| metadata tool |
+			self assert: (MCPToolRegistry publicToolNames includes: each).
+			self deny: (MCPToolRegistry staticToolNames includes: each).
+			tool := MCPToolRegistry
+				        toolNamed: each
+				        ifAbsent: [ self fail: 'Missing tool ' , each ].
+			self
+				assert: (MCPToolRegistry exposureForTool: tool)
+				equals: 'discoverable'.
+			metadata := metadataByName
+				            at: each
+				            ifAbsent: [
+				            self fail: 'Missing discoverable metadata for ' , each ].
+			self assert: (metadata at: #exposure) equals: 'discoverable'.
+			self assert: (metadata at: #schemaInspectionRequired) ]
 ]
 
 { #category : 'tests' }
