@@ -224,9 +224,3 @@ MCPToolFindPackages >> successSummaryForScope: scopeSummary page: page [
 		  scope: scopeSummary
 		  page: page
 ]
-
-{ #category : 'private - request' }
-MCPToolFindPackages >> supportedFilterTargets [
-
-	^ #( 'package' 'project' 'tag' )
-]

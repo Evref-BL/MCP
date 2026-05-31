@@ -33,7 +33,7 @@ MCPToolCreateRepository >> repositoryOperationSpec [
 				    schemaPropertyNamed: 'location'
 				    type: 'string'
 				    description:
-				    'Filesystem path where the new repository will be created.').
+				    'Filesystem path where the new repository directory is created.').
 			   (self
 				    schemaPropertyNamed: 'subdirectory'
 				    type: 'string'

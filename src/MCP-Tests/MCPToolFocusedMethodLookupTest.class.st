@@ -163,7 +163,11 @@ MCPToolFocusedMethodLookupTest >> testFindVariableReferencesReturnsVariableRefer
 { #category : 'tests' }
 MCPToolFocusedMethodLookupTest >> testFocusedLookupSchemasRequireFocusedArguments [
 
-	| expectations |
+	| commonProperties expectations |
+	commonProperties := #( 'classNames' 'hierarchyClassNames'
+	                       'parentClassNames' 'side' 'includeSource'
+	                       'packageNames' 'subclassClassNames'
+	                       'limit' 'offset' ).
 	expectations := {
 		                (MCPToolFindMethodImplementors -> 'selector').
 		                (MCPToolFindMethodSenders -> 'selector').
@@ -175,13 +179,9 @@ MCPToolFocusedMethodLookupTest >> testFocusedLookupSchemasRequireFocusedArgument
 			required := schema required asArray.
 			propertyNames := schema properties collect: [ :each | each name ].
 			self assert: required equals: { expectation value }.
-			self assert: (propertyNames includes: expectation value).
-			self assert: (propertyNames includes: 'includeSource').
-			self deny: (propertyNames includes: 'scopeMode').
-			self deny: (propertyNames includes: 'where').
-			self deny: (propertyNames includes: 'filter').
-			self deny: (propertyNames includes: 'filterMode').
-			self deny: (propertyNames includes: 'filterTargets') ]
+			self
+				assert: propertyNames asSet
+				equals: (commonProperties , { expectation value }) asSet ]
 ]
 
 { #category : 'tests' }
@@ -214,27 +214,23 @@ MCPToolFocusedMethodLookupTest >> testSourceAndEquivalentSearchSchemasAreFocused
 	sourcePropertyNames := sourceSchema properties collect: [ :each |
 		                       each name ].
 	self assert: sourceRequired equals: #( 'filter' ).
-	self assert: (sourcePropertyNames includes: 'filter').
-	self assert: (sourcePropertyNames includes: 'filterMode').
-	self assert: (sourcePropertyNames includes: 'includeSource').
-	self deny: (sourcePropertyNames includes: 'scopeMode').
-	self deny: (sourcePropertyNames includes: 'where').
-	self deny: (sourcePropertyNames includes: 'filterTargets').
+	self
+		assert: sourcePropertyNames asSet
+		equals: #( 'caseSensitive' 'classNames' 'hierarchyClassNames'
+			   'parentClassNames' 'side' 'includeSource' 'filter' 'packageNames'
+			   'filterMode' 'subclassClassNames' 'limit' 'offset' ) asSet.
 
 	equivalentSchema := MCPToolFindEquivalentMethods new inputSchema.
 	equivalentRequired := equivalentSchema required asArray.
 	equivalentPropertyNames := equivalentSchema properties collect: [
 		                           :each | each name ].
 	self assert: equivalentRequired equals: #( 'className' 'selector' ).
-	self assert: (equivalentPropertyNames includes: 'className').
-	self assert: (equivalentPropertyNames includes: 'selector').
-	self assert: (equivalentPropertyNames includes: 'classSide').
-	self assert: (equivalentPropertyNames includes: 'includeSource').
-	self deny: (equivalentPropertyNames includes: 'scopeMode').
-	self deny: (equivalentPropertyNames includes: 'where').
-	self deny: (equivalentPropertyNames includes: 'filter').
-	self deny: (equivalentPropertyNames includes: 'filterMode').
-	self deny: (equivalentPropertyNames includes: 'filterTargets')
+	self
+		assert: equivalentPropertyNames asSet
+		equals:
+			#( 'classNames' 'hierarchyClassNames' 'classSide' 'selector'
+			   'parentClassNames' 'side' 'className' 'includeSource'
+			   'packageNames' 'subclassClassNames' 'limit' 'offset' ) asSet
 ]
 
 { #category : 'private' }

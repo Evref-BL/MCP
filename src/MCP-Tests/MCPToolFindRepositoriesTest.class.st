@@ -107,23 +107,21 @@ MCPToolFindRepositoriesTest >> testCanFilterByRemoteUrlAndHeadCommit [
 				alpha.
 				beta }
 		do: [
-			result := self callToolWith: {
-					          (#filter -> 'abc123').
-					          (#filterTargets -> #( 'headCommit' )) } asDictionary.
-			data := self dataFrom: result.
-			repositoryNames := (data at: #repositories) collect: [ :each |
-				                   each at: #name ].
-			self deny: (result at: #isError ifAbsent: [ false ]).
-			self assert: repositoryNames equals: #( 'MCP Alpha Repository' ).
+				result := self callToolWith:
+					          { (#headCommitId -> 'abc123') } asDictionary.
+				data := self dataFrom: result.
+				repositoryNames := (data at: #repositories) collect: [ :each |
+					                   each at: #name ].
+				self deny: (result at: #isError ifAbsent: [ false ]).
+				self assert: repositoryNames equals: #( 'MCP Alpha Repository' ).
 
-			result := self callToolWith: {
-					          (#filter -> 'memory://backup').
-					          (#filterTargets -> #( 'remoteUrl' )) } asDictionary.
-			data := self dataFrom: result.
-			repositoryNames := (data at: #repositories) collect: [ :each |
-				                   each at: #name ].
-			self deny: (result at: #isError ifAbsent: [ false ]).
-			self assert: repositoryNames equals: #( 'MCP Beta Repository' ) ]
+				result := self callToolWith:
+					          { (#remoteUrl -> 'memory://backup') } asDictionary.
+				data := self dataFrom: result.
+				repositoryNames := (data at: #repositories) collect: [ :each |
+					                   each at: #name ].
+				self deny: (result at: #isError ifAbsent: [ false ]).
+				self assert: repositoryNames equals: #( 'MCP Beta Repository' ) ]
 ]
 
 { #category : 'tests' }

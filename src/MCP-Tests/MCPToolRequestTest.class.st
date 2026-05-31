@@ -84,15 +84,15 @@ MCPToolRequestTest >> testRequestAccessorsProvideDefaultsUniqueCollectionsSymbol
 		           tool: MCPToolFindRepositories new
 		           arguments: {
 				           (#packageNames -> #( ' MCP ' '' 'MCP' )).
-				           (#filterTargets -> #( 'class' 'package' 'class' )) }
+				           (#repositoryNames -> #( 'MCP' 'Other' 'MCP' )) }
 				           asDictionary.
 	self
 		assert: (request stringCollectionArgumentNamed: 'packageNames')
 		equals: #( 'MCP' 'MCP' ).
 	self
 		assert:
-		(request uniqueStringCollectionArgumentNamed: 'filterTargets')
-		equals: #( 'class' 'package' ).
+		(request uniqueStringCollectionArgumentNamed: 'repositoryNames')
+		equals: #( 'MCP' 'Other' ).
 	self
 		assert: (request stringArgumentNamed: 'missing' default: 'image')
 		equals: 'image'.

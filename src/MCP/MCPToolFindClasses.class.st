@@ -223,9 +223,3 @@ MCPToolFindClasses >> successSummaryForScope: scopeSummary page: page [
 		  scope: scopeSummary
 		  page: page
 ]
-
-{ #category : 'private - request' }
-MCPToolFindClasses >> supportedFilterTargets [
-
-	^ #( 'class' 'package' 'tag' 'instanceSlot' 'classSlot' )
-]

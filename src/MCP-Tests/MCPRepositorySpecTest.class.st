@@ -84,70 +84,6 @@ MCPRepositorySpecTest >> testRepositoryAdoptHeadResultReturnsDictionary [
 ]
 
 { #category : 'tests' }
-MCPRepositorySpecTest >> testRepositoryVerifyIdentityRequestParsesTypedInput [
-
-	| context verifyIdentityRequest |
-	verifyIdentityRequest := MCPRepositoryVerifyIdentityRequest
-		                    fromRequest: (self requestWithArguments: {
-					                     (#repositoryName -> 'MCP Repo').
-					                     (#location -> '/tmp/MCP').
-					                     (#branchName -> 'main').
-					                     (#subdirectory -> 'src').
-					                     (#packageNames -> #( 'MCP' 'MCP-Tests' )).
-					                     (#modifiedPackageNames -> #( 'MCP' )).
-					                     (#isModified -> true) } asDictionary)
-		                    tool: nil.
-	context := verifyIdentityRequest requestedContext.
-	self assert: verifyIdentityRequest operation equals: 'verifyIdentity'.
-	self
-		assert: verifyIdentityRequest repositoryReference name
-		equals: 'MCP Repo'.
-	self
-		assert: verifyIdentityRequest repositoryReference location
-		equals: '/tmp/MCP'.
-	self assert: verifyIdentityRequest branchName equals: 'main'.
-	self assert: verifyIdentityRequest subdirectory equals: 'src'.
-	self
-		assert: verifyIdentityRequest packageNames
-		equals: #( 'MCP' 'MCP-Tests' ).
-	self
-		assert: verifyIdentityRequest modifiedPackageNames
-		equals: #( 'MCP' ).
-	self assert: verifyIdentityRequest isModified equals: true.
-	self assert: (context at: #branchName) equals: 'main'.
-	self assert: (context at: #subdirectory) equals: 'src'.
-	self assert: (context at: #isModified) equals: true
-]
-
-{ #category : 'tests' }
-MCPRepositorySpecTest >> testRepositoryVerifyIdentityResultReturnsDictionary [
-
-	| data repository result |
-	repository := MCPTestIceRepository
-		              named: 'MCP VerifyIdentity Repository'
-		              location: 'memory://verifyIdentity'.
-	repository workingCopy packageNames: #( 'MCP-Tests' 'MCP' ).
-	repository modifiedPackageNames: #( 'MCP' ).
-	result := MCPRepositoryVerifyIdentityResult
-		          repository: repository
-		          checkedFields:
-		          #( 'branchName' 'packageNames' 'isModified' ).
-	data := result asDictionary.
-	self
-		assert: ((data at: #repository) at: #name)
-		equals: 'MCP VerifyIdentity Repository'.
-	self assert: (data at: #packageNames) equals: #( 'MCP' 'MCP-Tests' ).
-	self assert: (data at: #modifiedPackageNames) equals: #( 'MCP' ).
-	self
-		assert: (data at: #checkedFields)
-		equals: #( 'branchName' 'packageNames' 'isModified' ).
-	self assert: (data at: #matched).
-	self
-		assert: (data at: #repositoryLocation)
-		equals: 'memory://verifyIdentity'
-]
-
-{ #category : 'tests' }
 MCPRepositorySpecTest >> testRepositoryAttachRequestParsesTypedInput [
 
 	| attachRequest |
@@ -372,15 +308,13 @@ MCPRepositorySpecTest >> testRepositoryQuerySpecParsesOptionalBooleanFilters [
 	tool := MCPToolFindRepositories new.
 	request := MCPToolRequest tool: tool arguments: {
 			           (#isModified -> false).
-			           (#filter -> 'MCP').
-			           (#filterTargets -> #( 'name' )).
+			           (#repositoryName -> 'MCP').
 			           (#limit -> 5) } asDictionary.
 	spec := tool queryRequestFromToolRequest: request.
 	self assert: spec class equals: MCPRepositoryQuerySpec.
 	self assert: spec isModified equals: false.
 	self assert: spec isMissing isNil.
-	self assert: spec filterPattern equals: 'MCP'.
-	self assert: spec filterTargets equals: #( 'name' ).
+	self assert: (spec fieldFilters at: 'repositoryName') equals: 'MCP'.
 	self assert: spec limit equals: 5.
 	self assert: spec offset equals: 0
 ]
@@ -450,6 +384,70 @@ MCPRepositorySpecTest >> testRepositoryRemoteAndBranchResultsReturnDictionaries 
 		assert: (branchData at: #previousHeadDescription)
 		equals: 'initial'.
 	self assert: (branchData at: #headDescription) equals: 'after'
+]
+
+{ #category : 'tests' }
+MCPRepositorySpecTest >> testRepositoryVerifyIdentityRequestParsesTypedInput [
+
+	| context verifyIdentityRequest |
+	verifyIdentityRequest := MCPRepositoryVerifyIdentityRequest
+		                    fromRequest: (self requestWithArguments: {
+					                     (#repositoryName -> 'MCP Repo').
+					                     (#location -> '/tmp/MCP').
+					                     (#branchName -> 'main').
+					                     (#subdirectory -> 'src').
+					                     (#packageNames -> #( 'MCP' 'MCP-Tests' )).
+					                     (#modifiedPackageNames -> #( 'MCP' )).
+					                     (#isModified -> true) } asDictionary)
+		                    tool: nil.
+	context := verifyIdentityRequest requestedContext.
+	self assert: verifyIdentityRequest operation equals: 'verifyIdentity'.
+	self
+		assert: verifyIdentityRequest repositoryReference name
+		equals: 'MCP Repo'.
+	self
+		assert: verifyIdentityRequest repositoryReference location
+		equals: '/tmp/MCP'.
+	self assert: verifyIdentityRequest branchName equals: 'main'.
+	self assert: verifyIdentityRequest subdirectory equals: 'src'.
+	self
+		assert: verifyIdentityRequest packageNames
+		equals: #( 'MCP' 'MCP-Tests' ).
+	self
+		assert: verifyIdentityRequest modifiedPackageNames
+		equals: #( 'MCP' ).
+	self assert: verifyIdentityRequest isModified equals: true.
+	self assert: (context at: #branchName) equals: 'main'.
+	self assert: (context at: #subdirectory) equals: 'src'.
+	self assert: (context at: #isModified) equals: true
+]
+
+{ #category : 'tests' }
+MCPRepositorySpecTest >> testRepositoryVerifyIdentityResultReturnsDictionary [
+
+	| data repository result |
+	repository := MCPTestIceRepository
+		              named: 'MCP VerifyIdentity Repository'
+		              location: 'memory://verifyIdentity'.
+	repository workingCopy packageNames: #( 'MCP-Tests' 'MCP' ).
+	repository modifiedPackageNames: #( 'MCP' ).
+	result := MCPRepositoryVerifyIdentityResult
+		          repository: repository
+		          checkedFields:
+		          #( 'branchName' 'packageNames' 'isModified' ).
+	data := result asDictionary.
+	self
+		assert: ((data at: #repository) at: #name)
+		equals: 'MCP VerifyIdentity Repository'.
+	self assert: (data at: #packageNames) equals: #( 'MCP' 'MCP-Tests' ).
+	self assert: (data at: #modifiedPackageNames) equals: #( 'MCP' ).
+	self
+		assert: (data at: #checkedFields)
+		equals: #( 'branchName' 'packageNames' 'isModified' ).
+	self assert: (data at: #matched).
+	self
+		assert: (data at: #repositoryLocation)
+		equals: 'memory://verifyIdentity'
 ]
 
 { #category : 'private' }

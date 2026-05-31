@@ -133,7 +133,7 @@ MCPToolRegistry class >> additionalKeywordsForTool: aTool [
 	toolName = 'screenshot_capture' ifTrue: [
 		^ #( 'screenshot' 'capture' 'window' 'display' 'world' 'ui' ) ].
 	toolName = 'image_evaluate' ifTrue: [
-		^ #( 'image_evaluate' 'expression' 'smalltalk' 'code' ) ].
+		^ #( 'expression' 'smalltalk' 'code' ) ].
 	(toolName beginsWith: 'debug_') ifTrue: [
 			^ #( 'debug' 'session' 'state' 'frame' 'variable' 'breakpoint'
 			     'capture' 'control' 'repair' 'exception' ) ].
@@ -216,13 +216,17 @@ MCPToolRegistry class >> isStaticTool: aToolOrName usingPolicy: aToolExposurePol
 { #category : 'tools' }
 MCPToolRegistry class >> keywordsForTool: aTool [
 
-	| keywords |
+	| keywords normalizedKeywords |
 	keywords := OrderedCollection new.
 	keywords addAll: (aTool name findTokens: '-_').
 	keywords addAll: (aTool title findTokens: ' -').
-	keywords add: (self groupNameForToolClass: aTool class).
+	keywords addAll:
+		((self groupNameForToolClass: aTool class) findTokens: '-_').
 	keywords addAll: (self additionalKeywordsForTool: aTool).
-	^ (keywords collect: [ :each | each asString asLowercase ]) asSet
+	normalizedKeywords := OrderedCollection new.
+	keywords do: [ :each |
+		normalizedKeywords addAll: (each asString findTokens: '-_ ') ].
+	^ (normalizedKeywords collect: [ :each | each asLowercase ]) asSet
 		  asArray
 ]
 

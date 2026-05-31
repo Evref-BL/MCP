@@ -93,6 +93,9 @@ confirmed recovery.
 For repository work, use `repository_search` to inspect registered Iceberg
 repositories, `repository_identity_verify` before changing repository state,
 and `repository_change_list` before exporting or committing image changes.
+Use exact plural filters for known repository names, locations, or package
+names; use singular text filters such as `branchName`, `headCommitId`, and
+`remoteUrl` when searching repository metadata.
 Prefer focused repository tools such as `repository_export`,
 `repository_commit`, `repository_fetch`, `repository_pull`, `repository_push`,
 `repository_branch_create`, `repository_branch_switch`, and

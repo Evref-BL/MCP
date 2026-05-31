@@ -56,6 +56,11 @@ Identity verification requires at least one expected identity field, such as
 `location`, `branchName`, `subdirectory`, `packageNames`,
 `modifiedPackageNames`, or `isModified`.
 
+Use plural fields such as `repositoryNames`, `directoryPaths`, and
+`packageNames` for exact repository scope. Use singular text filters such as
+`repositoryName`, `branchName`, `headCommitId`, `remoteUrl`, and
+`upstreamBranchName` for field-specific matching.
+
 ## Packages
 
 | Tool | Use |

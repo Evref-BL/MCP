@@ -668,36 +668,6 @@ MCPToolFindMethodsTest >> testParentClassNamesReturnParentMethods [
 ]
 
 { #category : 'tests' }
-MCPToolFindMethodsTest >> testPublicToolRejectsScopeMode [
-
-	self
-		should: [
-		self callToolWith: { (#scopeMode -> 'intersection') } asDictionary ]
-		raise: JRPCInvalidParameters
-]
-
-{ #category : 'tests' }
-MCPToolFindMethodsTest >> testPublicToolRejectsWhere [
-
-	self
-		should: [
-		self callToolWith: { (#where -> Dictionary new) } asDictionary ]
-		raise: JRPCInvalidParameters
-]
-
-{ #category : 'tests' }
-MCPToolFindMethodsTest >> testReturnsStructuredErrorForInvalidFilterTarget [
-
-	self
-		should: [
-			self callToolWith: {
-					(#classNames -> { self targetClassName }).
-					(#selector -> 'needle').
-					(#filterTargets -> #( 'bogus' )) } asDictionary ]
-		raise: JRPCInvalidParameters
-]
-
-{ #category : 'tests' }
 MCPToolFindMethodsTest >> testReturnsStructuredErrorForInvalidRegex [
 
 	| error result structured |

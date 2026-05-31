@@ -26,29 +26,21 @@ MCPToolFindRepositories class >> toolName [
 { #category : 'defaults' }
 MCPToolFindRepositories >> defaultDescription [
 
-	^ 'List Iceberg repositories registered in the image. Filter by repository name, location path, package name, modified state, missing state, or repository-entry fields. The tool is read-only and includes disk location, branch/head metadata, exact head commit id, detached-head state, package names, modified package names, structured remotes, and upstream branch details.'
-]
-
-{ #category : 'private - request' }
-MCPToolFindRepositories >> defaultFilterTargets [
-
-	^ #( 'name' )
+	^ 'List Iceberg repositories registered in the image. Filter by exact repository names, locations, packages, modified/missing state, or field-specific text filters. Returns disk location, branch/head metadata, exact head commit id, modified packages, remotes, and upstream details.'
 ]
 
 { #category : 'defaults' }
 MCPToolFindRepositories >> defaultInputSchema [
 
 	| properties |
-	properties := self repositoryFilterInputProperties , (self
-		               baseFilteringInputPropertiesWithFilterDescription:
-		               'Optional filter applied to the listed repository-entry fields. Use filterTargets to choose which fields are matched.'
-		               filterTargetsDescription:
-		               'Optional repository-entry fields matched by filter.'
-		               filterModeDescription:
-		               'How the repository filter is matched.'
-		               filterModeValues: self basicFilterModes)
-	              , { (self caseSensitiveSchemaPropertyWithDescription:
-			               'Whether filter matching is case-sensitive.') }
+	properties := self repositoryFilterInputProperties
+	              , self repositoryFieldFilterInputProperties , {
+		              (self
+			               filterModeSchemaPropertyWithDescription:
+			               'How repository text filters are matched.'
+			               values: self basicFilterModes).
+		              (self caseSensitiveSchemaPropertyWithDescription:
+			               'Whether repository text matching is case-sensitive.') }
 	              , (self paginationInputPropertiesWithLimitDescription:
 			               'Maximum number of matching repositories to return. Use 0 to request counts only.').
 	^ self queryInputSchemaWithProperties: properties
@@ -82,56 +74,46 @@ MCPToolFindRepositories >> failureMessageForScope: scopeSummary error: anError [
 ]
 
 { #category : 'private - filtering' }
-MCPToolFindRepositories >> filterTextsForRepositoryEntry: anEntry targets: filterTargets [
+MCPToolFindRepositories >> fieldTextsForRepositoryEntry: anEntry fieldName: fieldName [
 
-	| texts |
-	texts := OrderedCollection new.
-	filterTargets do: [ :each |
-		each = 'name' ifTrue: [ texts add: (anEntry at: #name) ].
-		each = 'class' ifTrue: [ texts add: (anEntry at: #className) ].
-		(each = 'location' or: [ each = 'directory' ]) ifTrue: [
-			texts add: (anEntry at: #location) ].
-		each = 'subdirectory' ifTrue: [
-			texts add: (anEntry at: #subdirectory) ].
-		each = 'branch' ifTrue: [ texts add: (anEntry at: #branchName) ].
-		each = 'head' ifTrue: [
-			texts add: (anEntry at: #headDescription).
-			texts add: (anEntry at: #headClassName).
-			texts add: (anEntry at: #headCommitId) ].
-		each = 'headClass' ifTrue: [
-			texts add: (anEntry at: #headClassName) ].
-		each = 'headCommit' ifTrue: [
-			texts add: (anEntry at: #headCommitId) ].
-		each = 'package' ifTrue: [
-			(anEntry at: #packageNames) do: [ :packageName |
-				texts add: packageName ] ].
-		each = 'modifiedPackage' ifTrue: [
-			(anEntry at: #modifiedPackageNames) do: [ :packageName |
-				texts add: packageName ] ].
-		(each = 'remote' or: [ each = 'remoteName' ]) ifTrue: [
-			(anEntry at: #remotes) do: [ :remote |
-				texts add: (remote at: #name) ] ].
-		(each = 'remote' or: [ each = 'remoteUrl' ]) ifTrue: [
-			(anEntry at: #remotes) do: [ :remote |
-				texts add: (remote at: #url) ] ].
-		each = 'upstream' ifTrue: [
-			texts add: (anEntry at: #upstreamRemoteName).
-			texts add: (anEntry at: #upstreamBranchName).
-			texts add: (anEntry at: #upstreamRemoteUrl) ].
-		each = 'upstreamRemote' ifTrue: [
-			texts add: (anEntry at: #upstreamRemoteName) ].
-		each = 'upstreamBranch' ifTrue: [
-			texts add: (anEntry at: #upstreamBranchName) ].
-		each = 'upstreamRemoteUrl' ifTrue: [
-			texts add: (anEntry at: #upstreamRemoteUrl) ] ].
-	^ texts asArray
+	fieldName = 'repositoryName' ifTrue: [ ^ { (anEntry at: #name) } ].
+	fieldName = 'repositoryClassName' ifTrue: [
+		^ { (anEntry at: #className) } ].
+	fieldName = 'location' ifTrue: [ ^ { (anEntry at: #location) } ].
+	fieldName = 'subdirectory' ifTrue: [
+		^ { (anEntry at: #subdirectory) } ].
+	fieldName = 'branchName' ifTrue: [ ^ { (anEntry at: #branchName) } ].
+	fieldName = 'headDescription' ifTrue: [
+		^ { (anEntry at: #headDescription) } ].
+	fieldName = 'headClassName' ifTrue: [
+		^ { (anEntry at: #headClassName) } ].
+	fieldName = 'headCommitId' ifTrue: [
+		^ { (anEntry at: #headCommitId) } ].
+	fieldName = 'packageName' ifTrue: [ ^ anEntry at: #packageNames ].
+	fieldName = 'modifiedPackageName' ifTrue: [
+		^ anEntry at: #modifiedPackageNames ].
+	fieldName = 'remoteName' ifTrue: [
+		^ (anEntry at: #remotes) collect: [ :remote | remote at: #name ] ].
+	fieldName = 'remoteUrl' ifTrue: [
+		^ (anEntry at: #remotes) collect: [ :remote | remote at: #url ] ].
+	fieldName = 'upstreamRemoteName' ifTrue: [
+		^ { (anEntry at: #upstreamRemoteName) } ].
+	fieldName = 'upstreamBranchName' ifTrue: [
+		^ { (anEntry at: #upstreamBranchName) } ].
+	fieldName = 'upstreamRemoteUrl' ifTrue: [
+		^ { (anEntry at: #upstreamRemoteUrl) } ].
+	^ #(  )
 ]
 
 { #category : 'private - filtering' }
-MCPToolFindRepositories >> matchesFilterOnRepositoryEntry: anEntry matcher: aMatcher targets: filterTargets [
+MCPToolFindRepositories >> matchesFieldFiltersOnRepositoryEntry: anEntry queryRequest: queryRequest [
 
-	^ (self filterTextsForRepositoryEntry: anEntry targets: filterTargets)
-		  anySatisfy: [ :each | aMatcher value: each ]
+	^ self
+		  fieldFilters: queryRequest fieldFilters
+		  matchUsing: [ :fieldName |
+			  self fieldTextsForRepositoryEntry: anEntry fieldName: fieldName ]
+		  mode: queryRequest filterMode
+		  caseSensitive: queryRequest caseSensitive
 ]
 
 { #category : 'private - template' }
@@ -155,20 +137,14 @@ MCPToolFindRepositories >> queryResultDataForQueryRequest: queryRequest page: pa
 { #category : 'private - filtering' }
 MCPToolFindRepositories >> repositoryEntriesForRequest: queryRequest [
 
-	| entries matcher sortedEntries |
-	matcher := self
-		           matcherForPattern: queryRequest filterPattern
-		           mode: queryRequest filterMode
-		           caseSensitive: queryRequest caseSensitive.
+	| entries sortedEntries |
 	entries := OrderedCollection new.
 	IceRepository repositories do: [ :eachRepository |
-		| entry |
-		entry := (MCPRepositoryInfo fromRepository: eachRepository)
-			         asQueryDictionary.
-		(self
-			 repositoryEntry: entry
-			 matchesRequest: queryRequest
-			 matcher: matcher) ifTrue: [ entries add: entry ] ].
+			| entry |
+			entry := (MCPRepositoryInfo fromRepository: eachRepository)
+				         asQueryDictionary.
+			(self repositoryEntry: entry matchesRequest: queryRequest) ifTrue: [
+				entries add: entry ] ].
 	sortedEntries := entries asArray asSortedCollection: [ :left :right |
 		                 (left at: #name) <= (right at: #name) ].
 	^ sortedEntries asArray
@@ -195,16 +171,14 @@ MCPToolFindRepositories >> repositoryEntry: anEntry matchesDirectFiltersFromRequ
 ]
 
 { #category : 'private - filtering' }
-MCPToolFindRepositories >> repositoryEntry: anEntry matchesRequest: queryRequest matcher: matcher [
+MCPToolFindRepositories >> repositoryEntry: anEntry matchesRequest: queryRequest [
 
 	(self
 		 repositoryEntry: anEntry
 		 matchesDirectFiltersFromRequest: queryRequest) ifFalse: [ ^ false ].
-	queryRequest hasFilterPattern ifFalse: [ ^ true ].
 	^ self
-		  matchesFilterOnRepositoryEntry: anEntry
-		  matcher: matcher
-		  targets: queryRequest filterTargets
+		  matchesFieldFiltersOnRepositoryEntry: anEntry
+		  queryRequest: queryRequest
 ]
 
 { #category : 'private - schema' }
@@ -224,6 +198,81 @@ MCPToolFindRepositories >> repositoryEntrySchema [
 			     'upstreamBranchName' 'upstreamRemoteUrl' );
 		  additionalProperties: false;
 		  yourself
+]
+
+{ #category : 'private - schema' }
+MCPToolFindRepositories >> repositoryFieldFilterInputProperties [
+
+	^ {
+		  (self
+			   repositoryTextFilterPropertyNamed: 'repositoryName'
+			   description:
+			   'Optional repository-name text matched against repository names.').
+		  (self
+			   repositoryTextFilterPropertyNamed: 'repositoryClassName'
+			   description:
+			   'Optional class-name text matched against concrete Iceberg repository class names.').
+		  (self
+			   repositoryTextFilterPropertyNamed: 'location'
+			   description:
+			   'Optional path text matched against repository locations.').
+		  (self
+			   repositoryTextFilterPropertyNamed: 'subdirectory'
+			   description:
+			   'Optional path text matched against repository source subdirectories.').
+		  (self
+			   repositoryTextFilterPropertyNamed: 'branchName'
+			   description:
+			   'Optional branch-name text matched against current local branches.').
+		  (self
+			   repositoryTextFilterPropertyNamed: 'headDescription'
+			   description:
+			   'Optional text matched against repository head descriptions.').
+		  (self
+			   repositoryTextFilterPropertyNamed: 'headClassName'
+			   description:
+			   'Optional class-name text matched against repository head reference classes.').
+		  (self
+			   repositoryTextFilterPropertyNamed: 'headCommitId'
+			   description:
+			   'Optional commit-id text matched against exact head commit ids.').
+		  (self
+			   repositoryTextFilterPropertyNamed: 'packageName'
+			   description:
+			   'Optional package-name text matched against managed package names.').
+		  (self
+			   repositoryTextFilterPropertyNamed: 'modifiedPackageName'
+			   description:
+			   'Optional package-name text matched against modified package names.').
+		  (self
+			   repositoryTextFilterPropertyNamed: 'remoteName'
+			   description:
+			   'Optional remote-name text matched against configured remotes.').
+		  (self
+			   repositoryTextFilterPropertyNamed: 'remoteUrl'
+			   description:
+			   'Optional URL text matched against configured remotes.').
+		  (self
+			   repositoryTextFilterPropertyNamed: 'upstreamRemoteName'
+			   description:
+			   'Optional remote-name text matched against upstream remotes.').
+		  (self
+			   repositoryTextFilterPropertyNamed: 'upstreamBranchName'
+			   description:
+			   'Optional branch-name text matched against upstream branches.').
+		  (self
+			   repositoryTextFilterPropertyNamed: 'upstreamRemoteUrl'
+			   description:
+			   'Optional URL text matched against upstream remote URLs.') }
+]
+
+{ #category : 'private - request' }
+MCPToolFindRepositories >> repositoryFilterFieldNames [
+
+	^ #( 'repositoryName' 'repositoryClassName' 'location' 'subdirectory'
+	     'branchName' 'headDescription' 'headClassName' 'headCommitId'
+	     'packageName' 'modifiedPackageName' 'remoteName' 'remoteUrl'
+	     'upstreamRemoteName' 'upstreamBranchName' 'upstreamRemoteUrl' )
 ]
 
 { #category : 'private - schema' }
@@ -380,7 +429,17 @@ MCPToolFindRepositories >> repositoryScopeSummaryForRequest: queryRequest [
 			  ('directories' -> queryRequest directoryPaths notEmpty).
 			  ('packages' -> queryRequest packageNames notEmpty).
 			  ('modified-state' -> queryRequest isModified notNil).
-			  ('missing-state' -> queryRequest isMissing notNil) }
+			  ('missing-state' -> queryRequest isMissing notNil).
+			  ('field-filters' -> queryRequest hasFieldFilters) }
+]
+
+{ #category : 'private - schema' }
+MCPToolFindRepositories >> repositoryTextFilterPropertyNamed: propertyName description: descriptionString [
+
+	^ self
+		  schemaPropertyNamed: propertyName
+		  type: 'string'
+		  description: descriptionString
 ]
 
 { #category : 'private - template' }
@@ -400,8 +459,11 @@ MCPToolFindRepositories >> requestedContextFromRequest: request [
 			     (request stringCollectionArgumentNamed: 'packageNames')
 				     notEmpty).
 			    ('modified-state' -> (request hasArgumentNamed: 'isModified')).
-			    ('missing-state' -> (request hasArgumentNamed: 'isMissing')) })) }
-		  asDictionary
+			    ('missing-state' -> (request hasArgumentNamed: 'isMissing')).
+			    ('field-filters'
+			     ->
+				     (self repositoryFilterFieldNames anySatisfy: [ :fieldName |
+					      request hasArgumentNamed: fieldName ])) })) } asDictionary
 ]
 
 { #category : 'private - template' }
@@ -420,13 +482,4 @@ MCPToolFindRepositories >> successSummaryForScope: scopeSummary page: page [
 		  scopeQuerySuccessSummaryFor: 'repositories'
 		  scope: scopeSummary
 		  page: page
-]
-
-{ #category : 'private - request' }
-MCPToolFindRepositories >> supportedFilterTargets [
-
-	^ #( 'name' 'class' 'location' 'directory' 'subdirectory'
-	     'branch' 'head' 'headClass' 'headCommit' 'package' 'modifiedPackage'
-	     'remote' 'remoteName' 'remoteUrl' 'upstream' 'upstreamRemote'
-	     'upstreamBranch' 'upstreamRemoteUrl' )
 ]

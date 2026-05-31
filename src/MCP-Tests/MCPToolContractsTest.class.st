@@ -1114,6 +1114,25 @@ MCPToolContractsTest >> testDiscoverToolsCanIncludeStaticSurface [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testDiscoverToolsKeywordsAreSingleSearchTerms [
+
+	| metadataByName result |
+	result := self callToolNamed: 'tool_search' withArguments: {
+			          (#includeStatic -> true).
+			          (#limit -> 200) } asDictionary.
+	metadataByName := (((self dataFrom: result) at: #tools) collect: [
+		                   :each | (each at: #name) -> each ]) asDictionary.
+	self
+		assert: ((metadataByName at: 'tool_search') at: #keywords) asSet
+		equals: #( 'tool' 'catalog' 'search' 'tools' ) asSet.
+	self
+		assert: ((metadataByName at: 'image_evaluate') at: #keywords) asSet
+		equals:
+			#( 'image' 'evaluate' 'runtime' 'expression' 'smalltalk'
+			   'code' ) asSet
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testDiscoverToolsMatchesAgentGuidanceKeywords [
 
 	| expectations |
@@ -1756,22 +1775,12 @@ MCPToolContractsTest >> testFindClassesHasAccurateNameAndSchema [
 	propertyNames := schema properties collect: [ :each | each name ].
 	self assert: MCPToolFindClasses new name equals: 'class_search'.
 	self assert: schema required equals: #(  ).
-	self deny: (propertyNames includes: 'packageName').
-	self assert: (propertyNames includes: 'packageNames').
-	self assert: (propertyNames includes: 'classNames').
-	self assert: (propertyNames includes: 'hierarchyClassNames').
-	self assert: (propertyNames includes: 'subclassClassNames').
-	self assert: (propertyNames includes: 'parentClassNames').
-	self assert: (propertyNames includes: 'className').
-	self assert: (propertyNames includes: 'tag').
-	self assert: (propertyNames includes: 'instanceSlot').
-	self assert: (propertyNames includes: 'classSlot').
-	self deny: (propertyNames includes: 'scopeMode').
-	self deny: (propertyNames includes: 'where').
-	self deny: (propertyNames includes: 'filter').
-	self deny: (propertyNames includes: 'filterTargets').
-	self assert: (propertyNames includes: 'filterMode').
-	self assert: (propertyNames includes: 'caseSensitive')
+	self
+		assert: propertyNames asSet
+		equals: #( 'packageNames' 'classNames' 'hierarchyClassNames'
+			   'subclassClassNames' 'parentClassNames' 'className' 'tag' 'instanceSlot'
+			   'classSlot' 'filterMode' 'caseSensitive' 'limit' 'offset' )
+				asSet
 ]
 
 { #category : 'tests' }
@@ -1817,7 +1826,7 @@ MCPToolContractsTest >> testFindClassesReturnsWarningResultForMissingPackage [
 { #category : 'tests' }
 MCPToolContractsTest >> testFindMethodsDescriptionPointsToFocusedReferenceTools [
 
-	| description filterModeDescription protocolDescription selectorDescription tool |
+	| description filterModeDescription filterModeProperty protocolDescription selectorDescription tool |
 	tool := MCPToolFindMethods new.
 	description := tool description.
 	self assert: (description includesSubstring: 'method_source_search').
@@ -1830,29 +1839,23 @@ MCPToolContractsTest >> testFindMethodsDescriptionPointsToFocusedReferenceTools 
 		(description includesSubstring: 'method_class_reference_search').
 	self assert:
 		(description includesSubstring: 'method_variable_reference_search').
-	self deny: (description includesSubstring: 'where').
-	self deny: (description includesSubstring: 'scopeMode').
-	self deny:
-		(description includesSubstring: 'filterMode=selectorReference').
-	self deny:
-		(description includesSubstring: 'filterMode=classReference').
-	self deny:
-		(description includesSubstring: 'filterMode=variableReference').
 	selectorDescription := (self
 		                        inputPropertyNamed: 'selector'
 		                        inTool: tool) description.
 	protocolDescription := (self
 		                        inputPropertyNamed: 'protocol'
 		                        inTool: tool) description.
-	filterModeDescription := (self
-		                          inputPropertyNamed: 'filterMode'
-		                          inTool: tool) description.
+	filterModeProperty := self
+		                      inputPropertyNamed: 'filterMode'
+		                      inTool: tool.
+	filterModeDescription := filterModeProperty description.
 	self assert: (selectorDescription includesSubstring: 'selector').
 	self assert: (protocolDescription includesSubstring: 'protocol').
 	self assert:
 		(filterModeDescription includesSubstring: 'selector and protocol').
-	self deny:
-		(filterModeDescription includesSubstring: 'selectorReference')
+	self
+		assert: (filterModeProperty extraProperties at: #enum) asArray
+		equals: #( 'substring' 'prefix' 'exact' 'regex' )
 ]
 
 { #category : 'tests' }
@@ -1867,21 +1870,15 @@ MCPToolContractsTest >> testFindMethodsHasAccurateNameAndSchema [
 		assert: MCPToolFindMethods new name
 		equals: 'method_metadata_search'.
 	self assert: schema required equals: #(  ).
-	self assert: (propertyNames includes: 'packageNames').
-	self assert: (propertyNames includes: 'classNames').
-	self assert: (propertyNames includes: 'hierarchyClassNames').
-	self assert: (propertyNames includes: 'subclassClassNames').
-	self assert: (propertyNames includes: 'parentClassNames').
-	self assert: (propertyNames includes: 'selector').
-	self assert: (propertyNames includes: 'protocol').
-	self deny: (propertyNames includes: 'scopeMode').
-	self deny: (propertyNames includes: 'where').
-	self deny: (propertyNames includes: 'filter').
-	self deny: (propertyNames includes: 'filterTargets').
+	self
+		assert: propertyNames asSet
+		equals: #( 'packageNames' 'classNames' 'hierarchyClassNames'
+			   'subclassClassNames' 'parentClassNames' 'selector' 'protocol'
+			   'filterMode' 'side' 'includeSource' 'limit' 'offset' 'caseSensitive' )
+				asSet.
 	self
 		assert: (filterModeProperty extraProperties at: #enum) asArray
-		equals: #( 'substring' 'prefix' 'exact' 'regex' ).
-	self deny: (propertyNames includes: 'className')
+		equals: #( 'substring' 'prefix' 'exact' 'regex' )
 ]
 
 { #category : 'tests' }
@@ -1930,25 +1927,18 @@ MCPToolContractsTest >> testFindMethodsReturnsWarningResultForMissingClass [
 { #category : 'tests' }
 MCPToolContractsTest >> testFindMethodsTopLevelFilterModesAreTextOnly [
 
-	| filterModeEnum filterModeProperty propertyNames schema selectorProperty |
+	| filterModeEnum filterModeProperty schema selectorProperty |
 	schema := MCPToolFindMethods new inputSchema asJRPCJSON.
-	propertyNames := (schema at: #properties) keys.
-	self deny: (schema includesKey: #allOf).
-	self deny: (propertyNames includes: 'scopeMode').
-	self deny: (propertyNames includes: 'where').
-	self deny: (propertyNames includes: 'filter').
-	self deny: (propertyNames includes: 'filterTargets').
 	filterModeProperty := (schema at: #properties) at: 'filterMode'.
 	selectorProperty := (schema at: #properties) at: 'selector'.
 	filterModeEnum := (filterModeProperty at: #enum) asArray.
+	self assert: (schema at: #type) equals: 'object'.
+	self assert: (schema at: #additionalProperties) equals: false.
 	self
 		assert: filterModeEnum
 		equals: #( 'substring' 'prefix' 'exact' 'regex' ).
 	self assert:
-		((selectorProperty at: #description) includesSubstring: 'selector').
-	#( 'selectorReference' 'classReference' 'variableReference' ) do: [
-		:referenceMode |
-		self deny: (filterModeEnum includes: referenceMode) ]
+		((selectorProperty at: #description) includesSubstring: 'selector')
 ]
 
 { #category : 'tests' }
@@ -1959,16 +1949,11 @@ MCPToolContractsTest >> testFindPackagesHasAccurateNameAndSchema [
 	propertyNames := schema properties collect: [ :each | each name ].
 	self assert: MCPToolFindPackages new name equals: 'package_search'.
 	self assert: schema required equals: #(  ).
-	self assert: (propertyNames includes: 'projectNames').
-	self assert: (propertyNames includes: 'packageNames').
-	self assert: (propertyNames includes: 'packageName').
-	self assert: (propertyNames includes: 'projectName').
-	self assert: (propertyNames includes: 'tag').
-	self deny: (propertyNames includes: 'where').
-	self deny: (propertyNames includes: 'filter').
-	self deny: (propertyNames includes: 'filterTargets').
-	self assert: (propertyNames includes: 'filterMode').
-	self assert: (propertyNames includes: 'caseSensitive')
+	self
+		assert: propertyNames asSet
+		equals:
+			#( 'projectNames' 'packageNames' 'packageName' 'projectName'
+			   'tag' 'filterMode' 'caseSensitive' 'limit' 'offset' ) asSet
 ]
 
 { #category : 'tests' }
@@ -2014,16 +1999,16 @@ MCPToolContractsTest >> testFindRepositoriesHasAccurateNameAndSchema [
 		assert: MCPToolFindRepositories new name
 		equals: 'repository_search'.
 	self assert: schema required equals: #(  ).
-	self assert: (propertyNames includes: 'repositoryNames').
-	self assert: (propertyNames includes: 'directoryPaths').
-	self assert: (propertyNames includes: 'packageNames').
-	self assert: (propertyNames includes: 'isModified').
-	self assert: (propertyNames includes: 'isMissing').
-	self assert: (propertyNames includes: 'filter').
-	self assert: (propertyNames includes: 'filterTargets').
-	self assert: (propertyNames includes: 'filterMode').
-	self assert: (propertyNames includes: 'limit').
-	self assert: (propertyNames includes: 'offset')
+	self
+		assert: propertyNames asSet
+		equals:
+			#( 'repositoryNames' 'directoryPaths' 'packageNames' 'isModified'
+			   'isMissing' 'repositoryName' 'repositoryClassName'
+			   'location' 'subdirectory' 'branchName' 'headDescription'
+			   'headClassName' 'headCommitId' 'packageName' 'modifiedPackageName'
+			   'remoteName' 'remoteUrl' 'upstreamRemoteName'
+			   'upstreamBranchName' 'upstreamRemoteUrl' 'filterMode'
+			   'caseSensitive' 'limit' 'offset' ) asSet
 ]
 
 { #category : 'tests' }
@@ -2598,10 +2583,8 @@ MCPToolContractsTest >> testParserHelperBypassesSchemaValidation [
 { #category : 'tests' }
 MCPToolContractsTest >> testQueryScopeDescriptionsExplainScopeSemantics [
 
-	| classDescription findClassesDescription findMethodsDescription findPackagesDescription methodDescription packageDescription parentDescription subclassDescription |
-	findClassesDescription := MCPToolFindClasses new description.
+	| classDescription findMethodsDescription methodDescription packageDescription parentDescription subclassDescription |
 	findMethodsDescription := MCPToolFindMethods new description.
-	findPackagesDescription := MCPToolFindPackages new description.
 	classDescription := (self
 		                     inputPropertyNamed: 'hierarchyClassNames'
 		                     inTool: MCPToolFindClasses new) description.
@@ -2617,11 +2600,6 @@ MCPToolContractsTest >> testQueryScopeDescriptionsExplainScopeSemantics [
 	packageDescription := (self
 		                       inputPropertyNamed: 'projectNames'
 		                       inTool: MCPToolFindPackages new) description.
-	self deny: (findClassesDescription includesSubstring: 'GUI').
-	self deny: (findMethodsDescription includesSubstring: 'GUI').
-	self deny: (findClassesDescription includesSubstring: 'scopeMode').
-	self deny: (findClassesDescription includesSubstring: 'where').
-	self deny: (findPackagesDescription includesSubstring: 'where').
 	self assert: (findMethodsDescription includesSubstring:
 			 'Missing class or package names').
 	self assert:
@@ -2650,18 +2628,35 @@ MCPToolContractsTest >> testQueryScopeDescriptionsExplainScopeSemantics [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testQueryToolSchemasDoNotAdvertiseLegacyScopeBranches [
+MCPToolContractsTest >> testQueryToolSchemasAdvertiseFlatFieldProperties [
 
-	| classSchema methodSchema packageSchema |
+	| classProperties classSchema methodProperties methodSchema packageProperties packageSchema |
 	classSchema := MCPToolFindClasses new inputSchema asJRPCJSON.
 	methodSchema := MCPToolFindMethods new inputSchema asJRPCJSON.
 	packageSchema := MCPToolFindPackages new inputSchema asJRPCJSON.
-	self deny: (classSchema includesKey: #oneOf).
-	self deny: (methodSchema includesKey: #oneOf).
-	self deny: (packageSchema includesKey: #oneOf).
-	self deny: ((classSchema at: #properties) includesKey: 'scope').
-	self deny: ((methodSchema at: #properties) includesKey: 'scope').
-	self deny: ((packageSchema at: #properties) includesKey: 'scope')
+	classProperties := (classSchema at: #properties) keys asSet.
+	methodProperties := (methodSchema at: #properties) keys asSet.
+	packageProperties := (packageSchema at: #properties) keys asSet.
+	self assert: (classSchema at: #type) equals: 'object'.
+	self assert: (methodSchema at: #type) equals: 'object'.
+	self assert: (packageSchema at: #type) equals: 'object'.
+	self
+		assert: classProperties
+		equals: #( 'packageNames' 'classNames' 'hierarchyClassNames'
+			   'subclassClassNames' 'parentClassNames' 'className' 'tag' 'instanceSlot'
+			   'classSlot' 'filterMode' 'caseSensitive' 'limit' 'offset' )
+				asSet.
+	self
+		assert: methodProperties
+		equals: #( 'packageNames' 'classNames' 'hierarchyClassNames'
+			   'subclassClassNames' 'parentClassNames' 'selector' 'protocol'
+			   'filterMode' 'side' 'includeSource' 'limit' 'offset' 'caseSensitive' )
+				asSet.
+	self
+		assert: packageProperties
+		equals:
+			#( 'projectNames' 'packageNames' 'packageName' 'projectName'
+			   'tag' 'filterMode' 'caseSensitive' 'limit' 'offset' ) asSet
 ]
 
 { #category : 'tests' }
@@ -2752,11 +2747,13 @@ MCPToolContractsTest >> testRPCRefreshesCachedToolMetadata [
 	toolDefinition := toolDefinitions detect: [ :each |
 		                  (each at: #name) = 'class_search' ].
 	propertyNames := ((toolDefinition at: #inputSchema) at: #properties)
-		                 keys.
-	self assert: (propertyNames includes: 'classNames').
-	self assert: (propertyNames includes: 'packageNames').
-	self deny: (propertyNames includes: 'scopeMode').
-	self deny: (propertyNames includes: 'where').
+		                 keys asSet.
+	self
+		assert: propertyNames
+		equals: #( 'packageNames' 'classNames' 'hierarchyClassNames'
+			   'subclassClassNames' 'parentClassNames' 'className' 'tag' 'instanceSlot'
+			   'classSlot' 'filterMode' 'caseSensitive' 'limit' 'offset' )
+				asSet.
 	result := mcp rpcToolCall: 'class_search' withParams: {
 			          (#classNames -> #( 'MCPToolContractsTest' )).
 			          (#packageNames -> #( 'MCP-Tests' )).

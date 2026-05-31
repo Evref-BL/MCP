@@ -339,36 +339,6 @@ MCPToolFindClassesTest >> testParentClassNamesReturnParentsOnly [
 ]
 
 { #category : 'tests' }
-MCPToolFindClassesTest >> testPublicToolRejectsScopeMode [
-
-	self
-		should: [
-		self callToolWith: { (#scopeMode -> 'intersection') } asDictionary ]
-		raise: JRPCInvalidParameters
-]
-
-{ #category : 'tests' }
-MCPToolFindClassesTest >> testPublicToolRejectsWhere [
-
-	self
-		should: [
-		self callToolWith: { (#where -> Dictionary new) } asDictionary ]
-		raise: JRPCInvalidParameters
-]
-
-{ #category : 'tests' }
-MCPToolFindClassesTest >> testReturnsStructuredErrorForInvalidFilterTarget [
-
-	self
-		should: [
-			self callToolWith: {
-					(#packageNames -> #( 'MCP-Tests' )).
-					(#className -> 'needle').
-					(#filterTargets -> #( 'bogus' )) } asDictionary ]
-		raise: JRPCInvalidParameters
-]
-
-{ #category : 'tests' }
 MCPToolFindClassesTest >> testReturnsWarningsAndEmptyResultsWhenClassIsMissing [
 
 	| data result warnings |

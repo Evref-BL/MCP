@@ -299,99 +299,43 @@ MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasAcceptRepresentativeArg
 ]
 
 { #category : 'tests' }
-MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasRejectInvalidShapeArguments [
+MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasAdvertiseFlatShapes [
 
-	| classFilterTargetViolations classScopeModeViolations classWhereViolations legacyScopeViolations methodSearchModeViolations methodSearchScopeModeViolations methodSearchTargetViolations methodSearchWhereViolations packageWhereViolations selectorUpdateViolations |
-	legacyScopeViolations := self
-		                         violationsFor:
-		                         { (#scope -> 'packages') } asDictionary
-		                         schema: MCPToolFindClasses new inputSchema.
+	| classSchema methodFilterMode methodSchema packageSchema selectorSchema |
+	classSchema := MCPToolFindClasses new inputSchema asJRPCJSON.
+	methodSchema := MCPToolFindMethods new inputSchema asJRPCJSON.
+	packageSchema := MCPToolFindPackages new inputSchema asJRPCJSON.
+	selectorSchema := MCPToolUpdateMethodSelector new inputSchema
+		                  asJRPCJSON.
+	methodFilterMode := ((methodSchema at: #properties) at: 'filterMode')
+		                    at: #enum.
+	self assert: (classSchema at: #additionalProperties) equals: false.
+	self assert: (methodSchema at: #additionalProperties) equals: false.
+	self assert: (packageSchema at: #additionalProperties) equals: false.
+	self assert: (selectorSchema at: #additionalProperties) equals: false.
 	self
-		assert: (self keywordsFrom: legacyScopeViolations)
-		equals: #( 'additionalProperties' ).
-	classScopeModeViolations := self
-		                            violationsFor:
-		                            { (#scopeMode -> 'intersection') }
-			                            asDictionary
-		                            schema:
-		                            MCPToolFindClasses new inputSchema.
+		assert: (classSchema at: #properties) keys asSet
+		equals: #( 'packageNames' 'classNames' 'hierarchyClassNames'
+			   'subclassClassNames' 'parentClassNames' 'className' 'tag' 'instanceSlot'
+			   'classSlot' 'filterMode' 'caseSensitive' 'limit' 'offset' )
+				asSet.
 	self
-		assert: (self keywordsFrom: classScopeModeViolations)
-		equals: #( 'additionalProperties' ).
-	classWhereViolations := self
-		                        violationsFor:
-		                        { (#where -> Dictionary new) } asDictionary
-		                        schema: MCPToolFindClasses new inputSchema.
+		assert: (methodSchema at: #properties) keys asSet
+		equals: #( 'packageNames' 'classNames' 'hierarchyClassNames'
+			   'subclassClassNames' 'parentClassNames' 'selector' 'protocol'
+			   'filterMode' 'side' 'includeSource' 'limit' 'offset' 'caseSensitive' )
+				asSet.
 	self
-		assert: (self keywordsFrom: classWhereViolations)
-		equals: #( 'additionalProperties' ).
-	classFilterTargetViolations := self
-		                               violationsFor:
-		                               { (#filterTargets -> #( 'class' )) }
-			                               asDictionary
-		                               schema:
-		                               MCPToolFindClasses new inputSchema.
+		assert: (packageSchema at: #properties) keys asSet
+		equals:
+			#( 'projectNames' 'packageNames' 'packageName' 'projectName'
+			   'tag' 'filterMode' 'caseSensitive' 'limit' 'offset' ) asSet.
 	self
-		assert: (self keywordsFrom: classFilterTargetViolations)
-		equals: #( 'additionalProperties' ).
-	packageWhereViolations := self
-		                          violationsFor:
-		                          { (#where -> Dictionary new) }
-			                          asDictionary
-		                          schema:
-		                          MCPToolFindPackages new inputSchema.
+		assert: methodFilterMode asArray
+		equals: #( 'substring' 'prefix' 'exact' 'regex' ).
 	self
-		assert: (self keywordsFrom: packageWhereViolations)
-		equals: #( 'additionalProperties' ).
-	methodSearchModeViolations := self
-		                              violationsFor:
-		                              { (#filterMode -> 'selectorReference') }
-			                              asDictionary
-		                              schema:
-		                              MCPToolFindMethods new inputSchema.
-	self
-		assert: (self keywordsFrom: methodSearchModeViolations)
-		equals: #( 'enum' ).
-	methodSearchTargetViolations := self
-		                                violationsFor:
-		                                { (#filterTargets -> #( 'source' )) }
-			                                asDictionary
-		                                schema:
-		                                MCPToolFindMethods new inputSchema.
-	self
-		assert: (self keywordsFrom: methodSearchTargetViolations)
-		equals: #( 'additionalProperties' ).
-	methodSearchScopeModeViolations := self
-		                                   violationsFor:
-		                                   { (#scopeMode -> 'intersection') }
-			                                   asDictionary
-		                                   schema:
-		                                   MCPToolFindMethods new
-			                                   inputSchema.
-	self
-		assert: (self keywordsFrom: methodSearchScopeModeViolations)
-		equals: #( 'additionalProperties' ).
-	methodSearchWhereViolations := self
-		                               violationsFor:
-		                               { (#where -> Dictionary new) }
-			                               asDictionary
-		                               schema:
-		                               MCPToolFindMethods new inputSchema.
-	self
-		assert: (self keywordsFrom: methodSearchWhereViolations)
-		equals: #( 'additionalProperties' ).
-	selectorUpdateViolations := self
-		                            violationsFor: {
-				                            (#className -> 'MCPTool').
-				                            (#selector -> 'defaultName').
-				                            (#newSelector -> 'defaultTitle').
-				                            (#scope -> 'classes') } asDictionary
-		                            schema:
-		                            MCPToolUpdateMethodSelector new
-			                            inputSchema.
-	self
-		assert: (self keywordsFrom: selectorUpdateViolations)
-		equals: #( 'additionalProperties' )
+		assert: (selectorSchema at: #required) asArray asSet
+		equals: #( 'className' 'selector' 'newSelector' ) asSet
 ]
 
 { #category : 'tests' }

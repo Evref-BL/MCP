@@ -212,26 +212,6 @@ MCPToolFindPackagesTest >> testProjectNamesSelectProjectScope [
 	self assert: packageNames equals: self mcpProjectPackageNames
 ]
 
-{ #category : 'tests' }
-MCPToolFindPackagesTest >> testPublicToolRejectsWhere [
-
-	self
-		should: [
-		self callToolWith: { (#where -> Dictionary new) } asDictionary ]
-		raise: JRPCInvalidParameters
-]
-
-{ #category : 'tests' }
-MCPToolFindPackagesTest >> testReturnsStructuredErrorForInvalidFilterTarget [
-
-	self
-		should: [
-			self callToolWith: {
-					(#packageName -> 'needle').
-					(#filterTargets -> #( 'definedClassCount' )) } asDictionary ]
-		raise: JRPCInvalidParameters
-]
-
 { #category : 'private - calling' }
 MCPToolFindPackagesTest >> toolName [
 
