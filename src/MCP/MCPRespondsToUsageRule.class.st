@@ -56,15 +56,13 @@ MCPRespondsToUsageRule class >> uniqueIdentifierName [
 { #category : 'running' }
 MCPRespondsToUsageRule >> check: aMethod forCritiquesDo: aCriticBlock [
 
-	| respondsToSends |
-	respondsToSends := aMethod sendNodes select: [ :sendNode |
-		                   sendNode selector = #respondsTo: ].
-	respondsToSends do: [ :sendNode |
-			aCriticBlock cull: (self
-					 createTrivialCritiqueOn: aMethod
-					 intervalOf: sendNode
-					 hint:
-					 'Use collaborator contracts, testing protocol, or PharoCompatibility first.') ]
+	aMethod sendNodes do: [ :sendNode |
+			sendNode selector = self class forbiddenSelector ifTrue: [
+					aCriticBlock cull: (self
+							 createTrivialCritiqueOn: aMethod
+							 intervalOf: sendNode
+							 hint:
+							 'Use collaborator contracts, testing protocol, or PharoCompatibility first.') ] ]
 ]
 
 { #category : 'accessing' }

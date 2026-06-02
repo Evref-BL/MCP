@@ -53,8 +53,9 @@ MCPLoadBaselineCommand >> configuredMetacello [
 { #category : 'private - image state' }
 MCPLoadBaselineCommand >> currentPackageNames [
 
-	^ (PackageOrganizer default packageNames collect: [ :each |
-		   each asString ]) asArray asSortedCollection asArray
+	^ (PackageOrganizer default packageNames
+		   collect: [ :each | each asString ]
+		   as: Array) sort
 ]
 
 { #category : 'private - image state' }
@@ -111,7 +112,7 @@ MCPLoadBaselineCommand >> newPackageNamesAfter: beforePackageNames [
 	| beforeSet |
 	beforeSet := beforePackageNames asSet.
 	^ (self currentPackageNames reject: [ :each |
-		   beforeSet includes: each ]) asArray asSortedCollection asArray
+		   beforeSet includes: each ]) asArray sort
 ]
 
 { #category : 'private - image state' }
@@ -120,9 +121,10 @@ MCPLoadBaselineCommand >> newRepositoryInfosAfter: beforeRepositories [
 	| beforeSet |
 	beforeSet := IdentitySet new.
 	beforeSet addAll: beforeRepositories.
-	^ ((self currentRepositories reject: [ :each |
-		    beforeSet includes: each ]) collect: [ :each |
-		   MCPRepositoryInfo fromRepository: each ]) asArray
+	^ (self currentRepositories
+		   reject: [ :each | beforeSet includes: each ]
+		   thenCollect: [ :each | MCPRepositoryInfo fromRepository: each ])
+		  asArray
 ]
 
 { #category : 'accessing' }

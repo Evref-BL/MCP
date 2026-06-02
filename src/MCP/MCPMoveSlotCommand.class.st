@@ -34,19 +34,19 @@ MCPMoveSlotCommand >> affectedClassNamesFor: aBehavior [
 	| behaviors |
 	behaviors := self direction = 'pullUpSlot'
 		             ifTrue: [
-			             aBehavior allSubclasses select: [ :each |
-				             self
-					             directlyDefinesSlotNamed: self slotName
-					             inBehavior: each ] ]
+				             aBehavior allSubclasses select: [ :each |
+					             self
+						             directlyDefinesSlotNamed: self slotName
+						             inBehavior: each ] ]
 		             ifFalse: [
-			             self direction = 'pushDownSlot'
-				             ifTrue: [ aBehavior subclasses ]
-				             ifFalse: [
-				             Error signal:
-					             'direction must be pullUpSlot or pushDownSlot.' ] ].
-	^ ((behaviors collect: [ :each |
-		    self normalizedAffectedClassNameFor: each ])
-		   asSortedCollection: [ :left :right | left <= right ]) asArray
+				             self direction = 'pushDownSlot'
+					             ifTrue: [ aBehavior subclasses ]
+					             ifFalse: [
+					             Error signal:
+						             'direction must be pullUpSlot or pushDownSlot.' ] ].
+	^ (behaviors
+		   collect: [ :each | self normalizedAffectedClassNameFor: each ]
+		   as: Array) sort: [ :left :right | left <= right ]
 ]
 
 { #category : 'accessing' }

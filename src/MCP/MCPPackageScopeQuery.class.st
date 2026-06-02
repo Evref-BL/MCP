@@ -101,11 +101,9 @@ MCPPackageScopeQuery >> packagesForProjectRegistration: aProjectRegistration [
 	| packages |
 	packages := OrderedCollection new.
 	aProjectRegistration projectVersion packages do: [ :eachSpec |
-		| package |
-		package := PackageOrganizer default
-			           packageNamed: eachSpec name asSymbol
-			           ifAbsent: [ nil ].
-		package ifNotNil: [ packages add: package ] ].
+			PackageOrganizer default
+				packageNamed: eachSpec name asSymbol
+				ifPresent: [ :package | packages add: package ] ].
 	^ packages asArray
 ]
 
@@ -164,8 +162,8 @@ MCPPackageScopeQuery >> resolvedProjectsNamed: someProjectNames [
 { #category : 'private - scope' }
 MCPPackageScopeQuery >> sortedPackagesByName: somePackages [
 
-	^ (somePackages asSortedCollection: [ :left :right |
-		   left name <= right name ]) asArray
+	^ somePackages asArray sort: [ :left :right |
+		  left name <= right name ]
 ]
 
 { #category : 'private - source' }

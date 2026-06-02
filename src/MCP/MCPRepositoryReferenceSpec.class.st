@@ -124,12 +124,12 @@ MCPRepositoryReferenceSpec >> requestedContext [
 { #category : 'private - signaling' }
 MCPRepositoryReferenceSpec >> signalAmbiguousRepository: repositories [
 
-	| details |
+	| details matchingRepositoryNames |
 	details := self requestedContext copy.
-	details
-		at: #matchingRepositoryNames
-		put: (repositories collect: [ :each | each name asString ]) asArray
-				asSortedCollection asArray.
+	matchingRepositoryNames := (repositories
+		                            collect: [ :each | each name asString ]
+		                            as: Array) sort.
+	details at: #matchingRepositoryNames put: matchingRepositoryNames.
 	MCPCommandError
 		signalErrorCode: #RepositoryReferenceAmbiguous
 		message:

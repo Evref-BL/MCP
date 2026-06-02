@@ -572,9 +572,10 @@ MCPToolRegistry class >> staticToolsDictionaryUsingPolicy: aToolExposurePolicy [
 { #category : 'tools' }
 MCPToolRegistry class >> staticToolsUsingPolicy: aToolExposurePolicy [
 
-	^ ((self publicToolClasses select: [ :toolClass |
-		    aToolExposurePolicy isStaticTool: toolClass toolName ])
-		   collect: [ :toolClass |
+	^ (self publicToolClasses
+		   select: [ :toolClass |
+		   aToolExposurePolicy isStaticTool: toolClass toolName ]
+		   thenCollect: [ :toolClass |
 				   toolClass new
 					   toolExposurePolicy: aToolExposurePolicy;
 					   yourself ]) asArray

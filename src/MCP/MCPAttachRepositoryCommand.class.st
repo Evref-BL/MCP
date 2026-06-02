@@ -125,16 +125,17 @@ MCPAttachRepositoryCommand >> repositoryLocationPathFor: aRepository [
 { #category : 'private - signaling' }
 MCPAttachRepositoryCommand >> signalDuplicateRepositoryIfNeeded [
 
-	| matches |
+	| matchingRepositoryNames matches |
 	matches := self matchingRegisteredRepositories.
 	matches isEmpty ifTrue: [ ^ self ].
+	matchingRepositoryNames := (matches
+		                            collect: [ :each | each name asString ]
+		                            as: Array) sort.
 	MCPCommandError
 		signalErrorCode: #RepositoryAlreadyRegistered
 		message:
 		'Repository name or location is already registered in Iceberg.'
 		details: (self request requestedContext copy
-				 at: #matchingRepositoryNames
-				 put: (matches collect: [ :each | each name asString ]) asArray
-						 asSortedCollection asArray;
+				 at: #matchingRepositoryNames put: matchingRepositoryNames;
 				 yourself)
 ]

@@ -106,8 +106,7 @@ MCPToolRepositoryOperationTest >> newTestRepositoryNamed: aRepositoryName [
 { #category : 'private' }
 MCPToolRepositoryOperationTest >> packageNamesIn: aRepository [
 
-	^ aRepository workingCopy packageNames asArray asSortedCollection
-		  asArray
+	^ aRepository workingCopy packageNames asArray sort
 ]
 
 { #category : 'private' }
@@ -1343,31 +1342,30 @@ MCPToolRepositoryOperationTest >> testVerifyIdentityReportsStructuredMismatch [
 		              'MCP VerifyIdentity Mismatch Test Repository'.
 	repository workingCopy packageNames: #( 'MCP' ).
 	self withRegisteredRepository: repository do: [
-		result := self callToolWith: {
-				          (#action -> 'verifyIdentity').
-				          (#repositoryName -> repository name).
-				          (#branchName -> 'feature').
-				          (#packageNames -> #( 'MCP' 'MCP-Tests' )).
-				          (#isModified -> true) } asDictionary.
-		self assert: (result at: #isError ifAbsent: [ false ]).
-		self assert:
-			((self summaryFrom: result) includesSubstring:
-				 'Repository identity verification failed').
-		errorDetails := self errorFrom: result.
-		self
-			assert: (errorDetails at: #errorCode)
-			equals: 'RepositoryIdentityMismatch'.
-		self assert: (errorDetails at: #action) equals: 'verifyIdentity'.
-		mismatchFields := (errorDetails at: #mismatches) collect: [
-			                  :each | each at: #field ].
-		self
-			assert: mismatchFields asArray asSortedCollection asArray
-			equals: #( 'branchName' 'isModified' 'packageNames' ).
-		branchMismatch := (errorDetails at: #mismatches) detect: [
-			                  :each | (each at: #field) = 'branchName' ].
-		self assert: (branchMismatch at: #expected) equals: 'feature'.
-		self assert: (branchMismatch at: #actual) equals: 'main'.
-		self assert: repository actionLog asArray equals: #(  ) ]
+			result := self callToolWith: {
+					          (#action -> 'verifyIdentity').
+					          (#repositoryName -> repository name).
+					          (#branchName -> 'feature').
+					          (#packageNames -> #( 'MCP' 'MCP-Tests' )).
+					          (#isModified -> true) } asDictionary.
+			self assert: (result at: #isError ifAbsent: [ false ]).
+			self assert: ((self summaryFrom: result) includesSubstring:
+					 'Repository identity verification failed').
+			errorDetails := self errorFrom: result.
+			self
+				assert: (errorDetails at: #errorCode)
+				equals: 'RepositoryIdentityMismatch'.
+			self assert: (errorDetails at: #action) equals: 'verifyIdentity'.
+			mismatchFields := (errorDetails at: #mismatches) collect: [ :each |
+				                  each at: #field ].
+			self
+				assert: mismatchFields asArray sort
+				equals: #( 'branchName' 'isModified' 'packageNames' ).
+			branchMismatch := (errorDetails at: #mismatches) detect: [ :each |
+				                  (each at: #field) = 'branchName' ].
+			self assert: (branchMismatch at: #expected) equals: 'feature'.
+			self assert: (branchMismatch at: #actual) equals: 'main'.
+			self assert: repository actionLog asArray equals: #(  ) ]
 ]
 
 { #category : 'tests' }

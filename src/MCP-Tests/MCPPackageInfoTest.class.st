@@ -21,8 +21,7 @@ MCPPackageInfoTest >> testBuildsPackageMetadataSnapshot [
 	self assert: info projectNames equals: #( 'AProject' 'ZProject' ).
 	self
 		assert: info tagNames
-		equals:
-		(package tagNames collect: #asString) asSortedCollection asArray.
+		equals: (package tagNames collect: #asString as: Array) sort.
 	self
 		assert: info definedClassCount
 		equals: package definedClasses size.

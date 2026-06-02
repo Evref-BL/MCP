@@ -35,8 +35,14 @@ MCPToolMethodMutation >> addParameterRefactoringForSelector: oldSelectorSymbol i
 MCPToolMethodMutation >> allowedNonErrorCritiqueRuleClasses [
 
 	^ {
+		  MCPCollectionThenDoRule.
+		  MCPFilteredEmptinessRule.
+		  MCPFilterThenCollectRule.
 		  MCPMessageNotUnderstoodHandlerRule.
+		  MCPNilOnlyConditionalRule.
 		  MCPRespondsToUsageRule.
+		  MCPSelectSizeCountRule.
+		  MCPSortedCollectionConversionRule.
 		  ReEquivalentSuperclassMethodsRule.
 		  ReExcessiveArgumentsRule.
 		  ReMissingSuperSendsRule.
@@ -78,11 +84,11 @@ MCPToolMethodMutation >> critiqueDataForMethod: aCompiledMethod [
 	| critiques |
 	critiques := aCompiledMethod critiques select: [ :each |
 		             self shouldIncludeCritique: each ].
-	^ ((critiques asSortedCollection: [ :left :right |
-		    left title = right title
-			    ifTrue: [ left rule class name < right rule class name ]
-			    ifFalse: [ left title < right title ] ]) collect: [ :each |
-		   self critiqueDataFor: each ]) asArray
+	^ (critiques asArray sort: [ :left :right |
+			   left title = right title
+				   ifTrue: [ left rule class name < right rule class name ]
+				   ifFalse: [ left title < right title ] ]) collect: [ :each |
+		  self critiqueDataFor: each ]
 ]
 
 { #category : 'private' }

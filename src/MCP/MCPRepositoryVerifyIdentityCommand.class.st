@@ -235,8 +235,7 @@ MCPRepositoryVerifyIdentityCommand >> signalMissingExpectedIdentityFields [
 { #category : 'private' }
 MCPRepositoryVerifyIdentityCommand >> sortedStringsFrom: aCollection [
 
-	^ (aCollection collect: [ :each | each asString ]) asSortedCollection
-		  asArray
+	^ (aCollection collect: [ :each | each asString ] as: Array) sort
 ]
 
 { #category : 'accessing' }

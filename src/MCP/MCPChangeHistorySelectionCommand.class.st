@@ -266,6 +266,6 @@ MCPChangeHistorySelectionCommand >> uniqueSortedPairsFrom: pairs [
 	| byIndex |
 	byIndex := Dictionary new.
 	pairs do: [ :pair | byIndex at: pair first ifAbsentPut: [ pair ] ].
-	^ (byIndex values asSortedCollection: [ :left :right |
-		   left first < right first ]) asArray
+	^ byIndex values asArray sort: [ :left :right |
+		  left first < right first ]
 ]

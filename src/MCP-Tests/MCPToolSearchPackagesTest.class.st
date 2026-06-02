@@ -39,14 +39,12 @@ MCPToolSearchPackagesTest >> mcpProject [
 { #category : 'private' }
 MCPToolSearchPackagesTest >> mcpProjectPackageNames [
 
-	| packageNames |
-	packageNames := OrderedCollection new.
-	self mcpProject projectVersion packages do: [ :eachSpec |
-		(PackageOrganizer default
-			 packageNamed: eachSpec name asSymbol
-			 ifAbsent: [ nil ]) ifNotNil: [ :eachPackage |
-			packageNames add: eachPackage name asString ] ].
-	^ packageNames asArray asSortedCollection asArray
+	^ (Array streamContents: [ :stream |
+			   self mcpProject projectVersion packages do: [ :eachSpec |
+					   PackageOrganizer default
+						   packageNamed: eachSpec name asSymbol
+						   ifPresent: [ :package |
+						   stream nextPut: package name asString ] ] ]) sort
 ]
 
 { #category : 'tests' }
@@ -104,10 +102,11 @@ MCPToolSearchPackagesTest >> testImageScopeCanPaginateFilteredPackages [
 	data := self dataFrom: result.
 	packageNames := (data at: #packages) collect: [ :each |
 		                each at: #packageName ].
-	expected := ((PackageOrganizer default packages select: [ :each |
-		              each name asString beginsWith: 'MCP-' ])
-		             collect: [ :each | each name asString ]
-		             as: Array) asSortedCollection asArray.
+	expected := (PackageOrganizer default packages
+		             select: [ :each |
+		             each name asString beginsWith: 'MCP-' ]
+		             thenCollect: [ :each | each name asString ]) asArray
+		            sort.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #totalCount) equals: expected size.
 	self assert: packageNames size equals: 2.

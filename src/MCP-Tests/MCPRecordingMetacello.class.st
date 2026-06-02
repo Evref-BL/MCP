@@ -54,7 +54,7 @@ MCPRecordingMetacello >> load: groups [
 { #category : 'testing' }
 MCPRecordingMetacello >> messageCountFor: selector [
 
-	^ (messages select: [ :each | (each at: #selector) = selector ]) size
+	^ messages count: [ :each | (each at: #selector) = selector ]
 ]
 
 { #category : 'accessing' }

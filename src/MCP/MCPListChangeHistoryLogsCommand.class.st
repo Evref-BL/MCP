@@ -95,8 +95,8 @@ MCPListChangeHistoryLogsCommand >> historyFileReferencesFrom: aDirectory includi
 			(files anySatisfy: [ :each |
 				 self sameFileReference: each as: currentFile ]) ifFalse: [
 				files := files copyWith: currentFile ] ].
-	^ (files asSortedCollection: [ :left :right |
-		   self shouldSortFile: left before: right ]) asArray
+	^ files asArray sort: [ :left :right |
+		  self shouldSortFile: left before: right ]
 ]
 
 { #category : 'private' }

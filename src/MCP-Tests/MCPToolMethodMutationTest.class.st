@@ -516,6 +516,59 @@ MCPToolMethodMutationTest >> testChangingExtensionMethodProtocolUpdatesPackageMe
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testCollectionStyleCritiquesProvideAutomaticChanges [
+
+	| samples |
+	samples := {
+		           {
+			           #nilOnlyConditionalProbe:.
+			           'nilOnlyConditionalProbe: value ^ value ifNil: [ nil ] ifNotNil: [ :present | present asString ]'.
+			           MCPNilOnlyConditionalRule }.
+		           {
+			           #selectSizeProbe:.
+			           'selectSizeProbe: collection ^ (collection select: [ :each | each odd ]) size'.
+			           MCPSelectSizeCountRule }.
+		           {
+			           #filteredEmptinessProbe:.
+			           'filteredEmptinessProbe: collection ^ (collection select: [ :each | each odd ]) isEmpty'.
+			           MCPFilteredEmptinessRule }.
+		           {
+			           #filterThenCollectProbe:.
+			           'filterThenCollectProbe: collection ^ (collection select: [ :each | each odd ]) collect: [ :each | each asString ]'.
+			           MCPFilterThenCollectRule }.
+		           {
+			           #collectionThenDoProbe:.
+			           'collectionThenDoProbe: collection | sum | sum := 0. (collection select: [ :each | each odd ]) do: [ :each | sum := sum + each ]. ^ sum'.
+			           MCPCollectionThenDoRule }.
+		           {
+			           #sortedCollectionConversionProbe:.
+			           'sortedCollectionConversionProbe: collection ^ collection asSortedCollection asArray'.
+			           MCPSortedCollectionConversionRule } }.
+	samples do: [ :sample |
+			| change critique method ruleClass selector source |
+			selector := sample first.
+			source := sample second.
+			ruleClass := sample third.
+			self removeSelector: selector from: MCPToolGetMethodTestTarget.
+			[
+				self
+					ensureMethodSource: source
+					protocol: 'tests'
+					on: MCPToolGetMethodTestTarget.
+				method := MCPToolGetMethodTestTarget >> selector.
+				critique := method critiques
+					            detect: [ :each | each rule class = ruleClass ]
+					            ifNone: [
+					            self fail: 'Expected critique from ' , ruleClass name ].
+				self assert: critique providesChange.
+				change := critique change.
+				self assert:
+					(change class name asString includesSubstring: 'AddMethodChange') ]
+				ensure: [
+				self removeSelector: selector from: MCPToolGetMethodTestTarget ] ]
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testCompileDefaultsToInstanceSideWhenClassSideIsOmitted [
 
 	| data result |
@@ -670,6 +723,23 @@ MCPToolMethodMutationTest >> testCompileReturnsAllowlistedWarningCritiques [
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileReturnsCollectionThenDoCritique [
+
+	| selector |
+	selector := #collectionThenDoProbe:.
+	self removeSelector: selector from: MCPToolGetMethodTestTarget.
+	[
+		self
+			assertCompileForClassName: 'MCPToolGetMethodTestTarget'
+			methodSource:
+			'collectionThenDoProbe: collection | sum | sum := 0. (collection select: [ :each | each odd ]) do: [ :each | sum := sum + each ]. ^ sum'
+			protocol: 'tests'
+			returnsSingleCritiqueRuleClass: 'MCPCollectionThenDoRule'
+			titledLike: MCPCollectionThenDoRule ruleName ] ensure: [
+		self removeSelector: selector from: MCPToolGetMethodTestTarget ]
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testCompileReturnsErrorSeverityCritiquesOnly [
 
 	| critique critiques data result |
@@ -698,6 +768,40 @@ MCPToolMethodMutationTest >> testCompileReturnsErrorSeverityCritiquesOnly [
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileReturnsFilterThenCollectCritique [
+
+	| selector |
+	selector := #filterThenCollectProbe:.
+	self removeSelector: selector from: MCPToolGetMethodTestTarget.
+	[
+		self
+			assertCompileForClassName: 'MCPToolGetMethodTestTarget'
+			methodSource:
+			'filterThenCollectProbe: collection ^ (collection select: [ :each | each odd ]) collect: [ :each | each asString ]'
+			protocol: 'tests'
+			returnsSingleCritiqueRuleClass: 'MCPFilterThenCollectRule'
+			titledLike: MCPFilterThenCollectRule ruleName ] ensure: [
+		self removeSelector: selector from: MCPToolGetMethodTestTarget ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileReturnsFilteredEmptinessCritique [
+
+	| selector |
+	selector := #filteredEmptinessProbe:.
+	self removeSelector: selector from: MCPToolGetMethodTestTarget.
+	[
+		self
+			assertCompileForClassName: 'MCPToolGetMethodTestTarget'
+			methodSource:
+			'filteredEmptinessProbe: collection ^ (collection select: [ :each | each odd ]) isEmpty'
+			protocol: 'tests'
+			returnsSingleCritiqueRuleClass: 'MCPFilteredEmptinessRule'
+			titledLike: MCPFilteredEmptinessRule ruleName ] ensure: [
+		self removeSelector: selector from: MCPToolGetMethodTestTarget ]
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testCompileReturnsMessageNotUnderstoodHandlerCritique [
 
 	| selector |
@@ -716,6 +820,23 @@ MCPToolMethodMutationTest >> testCompileReturnsMessageNotUnderstoodHandlerCritiq
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileReturnsNilOnlyConditionalCritique [
+
+	| selector |
+	selector := #nilOnlyConditionalProbe:.
+	self removeSelector: selector from: MCPToolGetMethodTestTarget.
+	[
+		self
+			assertCompileForClassName: 'MCPToolGetMethodTestTarget'
+			methodSource:
+			'nilOnlyConditionalProbe: value ^ value ifNil: [ nil ] ifNotNil: [ :present | present asString ]'
+			protocol: 'tests'
+			returnsSingleCritiqueRuleClass: 'MCPNilOnlyConditionalRule'
+			titledLike: MCPNilOnlyConditionalRule ruleName ] ensure: [
+		self removeSelector: selector from: MCPToolGetMethodTestTarget ]
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testCompileReturnsRespondsToUsageCritique [
 
 	| selector |
@@ -729,6 +850,40 @@ MCPToolMethodMutationTest >> testCompileReturnsRespondsToUsageCritique [
 			protocol: 'tests'
 			returnsSingleCritiqueRuleClass: 'MCPRespondsToUsageRule'
 			titledLike: MCPRespondsToUsageRule ruleName ] ensure: [
+		self removeSelector: selector from: MCPToolGetMethodTestTarget ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileReturnsSelectSizeCountCritique [
+
+	| selector |
+	selector := #selectSizeProbe:.
+	self removeSelector: selector from: MCPToolGetMethodTestTarget.
+	[
+		self
+			assertCompileForClassName: 'MCPToolGetMethodTestTarget'
+			methodSource:
+			'selectSizeProbe: collection ^ (collection select: [ :each | each odd ]) size'
+			protocol: 'tests'
+			returnsSingleCritiqueRuleClass: 'MCPSelectSizeCountRule'
+			titledLike: MCPSelectSizeCountRule ruleName ] ensure: [
+		self removeSelector: selector from: MCPToolGetMethodTestTarget ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileReturnsSortedCollectionConversionCritique [
+
+	| selector |
+	selector := #sortedCollectionConversionProbe:.
+	self removeSelector: selector from: MCPToolGetMethodTestTarget.
+	[
+		self
+			assertCompileForClassName: 'MCPToolGetMethodTestTarget'
+			methodSource:
+			'sortedCollectionConversionProbe: collection ^ collection asSortedCollection asArray'
+			protocol: 'tests'
+			returnsSingleCritiqueRuleClass: 'MCPSortedCollectionConversionRule'
+			titledLike: MCPSortedCollectionConversionRule ruleName ] ensure: [
 		self removeSelector: selector from: MCPToolGetMethodTestTarget ]
 ]
 

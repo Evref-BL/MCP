@@ -56,15 +56,13 @@ MCPMessageNotUnderstoodHandlerRule class >> uniqueIdentifierName [
 { #category : 'running' }
 MCPMessageNotUnderstoodHandlerRule >> check: aMethod forCritiquesDo: aCriticBlock [
 
-	| handlerSends |
-	handlerSends := aMethod sendNodes select: [ :sendNode |
-		                self isMessageNotUnderstoodHandlerSend: sendNode ].
-	handlerSends do: [ :sendNode |
-		aCriticBlock cull: (self
-				 createTrivialCritiqueOn: aMethod
-				 intervalOf: sendNode
-				 hint:
-				 'Use explicit dispatch or an MCP compatibility message instead of catching MessageNotUnderstood.') ]
+	aMethod sendNodes do: [ :sendNode |
+			(self isMessageNotUnderstoodHandlerSend: sendNode) ifTrue: [
+					aCriticBlock cull: (self
+							 createTrivialCritiqueOn: aMethod
+							 intervalOf: sendNode
+							 hint:
+							 'Use explicit dispatch or an MCP compatibility message instead of catching MessageNotUnderstood.') ] ]
 ]
 
 { #category : 'private' }
