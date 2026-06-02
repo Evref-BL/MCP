@@ -1,3 +1,6 @@
+"
+Concrete debug_session_list tool. It lists DebugSession records tracked by the MCP debugger registry through MCPToolDebugSessionOperation.
+"
 Class {
 	#name : 'MCPToolListDebugSessions',
 	#superclass : 'MCPToolDebugSessionOperation',
@@ -12,13 +15,13 @@ MCPToolListDebugSessions class >> toolName [
 	^ 'debug_session_list'
 ]
 
-{ #category : 'private - operations' }
-MCPToolListDebugSessions >> sessionOperationSpec [
+{ #category : 'private - specs' }
+MCPToolListDebugSessions >> sessionToolSpec [
 
 	^ {
 		  (#title -> 'List Debug Sessions').
 		  (#description
 		   ->
 		   'List Pharo DebugSession records tracked by the MCP debugger registry.').
-		  (#operation -> 'list') } asDictionary
+		  (#action -> 'list') } asDictionary
 ]

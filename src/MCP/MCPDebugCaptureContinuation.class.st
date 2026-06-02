@@ -69,10 +69,8 @@ MCPDebugCaptureContinuation >> outcome: aDictionary [
 { #category : 'private' }
 MCPDebugCaptureContinuation >> prepareExceptionForProceed [
 
-	| exception |
-	exception := self capturedException.
-	(exception isKindOf: MessageNotUnderstood) ifTrue: [
-		exception mcpPrepareToResend ]
+	self capturedException ifNotNil: [ :exception |
+		exception mcpPrepareForProceed ]
 ]
 
 { #category : 'controlling' }

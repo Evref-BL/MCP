@@ -32,7 +32,7 @@ MCPAttachRepositoryCommand >> execute [
 
 	| repository result |
 	^ self tool
-		  executeEditOperation: 'attach'
+		  executeMutationAction: 'attach'
 		  force: false
 		  requestedContext: self request requestedContext
 		  work: [
@@ -93,13 +93,13 @@ MCPAttachRepositoryCommand >> locationReference [
 	location exists ifFalse: [
 			MCPCommandError
 				signalErrorCode: #RepositoryLocationMissing
-				message: 'operation=attach requires location to exist.'
+				message: 'repository_attach requires location to exist.'
 				details: self request requestedContext ].
 	(self isGitCheckoutRoot: location) ifFalse: [
 			MCPCommandError
 				signalErrorCode: #RepositoryLocationNotGitRoot
 				message:
-				'operation=attach requires location to be an existing Git repository root.'
+				'repository_attach requires location to be an existing Git repository root.'
 				details: self request requestedContext ].
 	^ location
 ]
@@ -117,10 +117,7 @@ MCPAttachRepositoryCommand >> matchingRegisteredRepositories [
 { #category : 'private' }
 MCPAttachRepositoryCommand >> repositoryLocationPathFor: aRepository [
 
-	^ [
-		  (aRepository respondsTo: #location)
-			  ifTrue: [ aRepository location pathString ]
-			  ifFalse: [ '' ] ]
+	^ [ aRepository location mcpRepositoryLocationString ]
 		  on: Error
 		  do: [ :ignored | '' ]
 ]

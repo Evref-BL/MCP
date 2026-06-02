@@ -73,11 +73,7 @@ MCPRepositoryAdoptHeadResult >> branchName [
 { #category : 'private' }
 MCPRepositoryAdoptHeadResult >> commitIdFrom: aCommit [
 
-	aCommit ifNil: [ ^ '' ].
-	(aCommit respondsTo: #id) ifTrue: [ ^ aCommit id asString ].
-	(aCommit respondsTo: #commitId) ifTrue: [
-		^ aCommit commitId asString ].
-	^ aCommit asString
+	^ MCPIcebergCommitInfo idStringFrom: aCommit
 ]
 
 { #category : 'accessing' }

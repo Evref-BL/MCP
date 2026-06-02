@@ -63,9 +63,8 @@ MCPDebugRequest >> operation: aString [
 MCPDebugRequest >> requestedStateId [
 
 	self stateId ifNotNil: [ ^ self stateId ].
-	^ self frameRef
-		  ifNil: [ nil ]
-		  ifNotNil: [ :reference | self stateIdFromReference: reference ]
+	^ self frameRef ifNotNil: [ :reference |
+		  self stateIdFromReference: reference ]
 ]
 
 { #category : 'accessing' }

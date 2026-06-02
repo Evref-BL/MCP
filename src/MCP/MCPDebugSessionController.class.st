@@ -33,8 +33,37 @@ MCPDebugSessionController >> debugSession: aDebugSession [
 ]
 
 { #category : 'controlling' }
-MCPDebugSessionController >> performOperation: selector context: aContext [
+MCPDebugSessionController >> restartContext: aContext [
 
-	selector numArgs = 0 ifTrue: [ ^ debugSession perform: selector ].
-	^ debugSession perform: selector with: aContext
+	^ self debugSession restart: aContext
+]
+
+{ #category : 'controlling' }
+MCPDebugSessionController >> resume [
+
+	^ self debugSession resume
+]
+
+{ #category : 'controlling' }
+MCPDebugSessionController >> stepIntoContext: aContext [
+
+	^ self debugSession stepInto: aContext
+]
+
+{ #category : 'controlling' }
+MCPDebugSessionController >> stepOverContext: aContext [
+
+	^ self debugSession stepOver: aContext
+]
+
+{ #category : 'controlling' }
+MCPDebugSessionController >> stepThroughContext: aContext [
+
+	^ self debugSession stepThrough: aContext
+]
+
+{ #category : 'controlling' }
+MCPDebugSessionController >> terminate [
+
+	^ self debugSession terminate
 ]

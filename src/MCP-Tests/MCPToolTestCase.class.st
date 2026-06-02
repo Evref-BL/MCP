@@ -1,3 +1,6 @@
+"
+Common base class for MCP tool invocation tests.
+"
 Class {
 	#name : 'MCPToolTestCase',
 	#superclass : 'MCPToolAPITestCase',

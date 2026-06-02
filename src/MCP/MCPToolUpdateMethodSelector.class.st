@@ -1,9 +1,9 @@
 "
-Focused tool that updates a method selector or signature using the Pharo refactoring engine.
+Tool that updates a method selector or signature using the Pharo refactoring engine.
 "
 Class {
 	#name : 'MCPToolUpdateMethodSelector',
-	#superclass : 'MCPToolMethodOperation',
+	#superclass : 'MCPToolMethodMutation',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -15,15 +15,15 @@ MCPToolUpdateMethodSelector class >> toolName [
 	^ 'method_selector_update'
 ]
 
-{ #category : 'private - operations' }
-MCPToolUpdateMethodSelector >> methodOperationSpec [
+{ #category : 'private - specs' }
+MCPToolUpdateMethodSelector >> methodToolSpec [
 
 	^ {
 		  (#title -> 'Update Method Selector').
 		  (#description
 		   ->
 		   'Rename, reorder, add, or remove method selector arguments using the Pharo refactoring engine.').
-		  (#operation -> 'update').
+		  (#action -> 'update').
 		  (#inputProperties -> {
 			   (MCPStructureProperties new
 				    name: 'className';

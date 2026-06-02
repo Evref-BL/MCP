@@ -1,5 +1,5 @@
 "
-DTO for the focused method update action selected from an update request before the action is applied. It records the selected update action and the request context used for validation and error reporting.
+DTO for the method update action selected from an update request before the action is applied. It records the selected update action and the request context used for validation and error reporting.
 "
 Class {
 	#name : 'MCPMethodUpdatePlanInfo',

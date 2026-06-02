@@ -162,7 +162,7 @@ MCPToolCallRecord >> isRunning [
 { #category : 'testing' }
 MCPToolCallRecord >> isTraceWorthy [
 
-	^ self status = 'error' or: [ self outlierExplanation isEmpty not ]
+	^ self status = 'error' or: [ self outlierExplanation isNotEmpty ]
 ]
 
 { #category : 'accessing' }

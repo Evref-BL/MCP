@@ -24,7 +24,7 @@ MCPFetchRepositoryCommand >> execute [
 
 	| beforeInfo repository result |
 	^ self tool
-		  executeEditOperation: 'fetch'
+		  executeMutationAction: 'fetch'
 		  force: false
 		  requestedContext: self request requestedContext
 		  work: [

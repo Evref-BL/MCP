@@ -90,8 +90,5 @@ MCPChangeHistoryLogInfo >> loadEntryMetadataFromFileReference: aFileReference [
 { #category : 'private' }
 MCPChangeHistoryLogInfo >> stringFromReference: aReference [
 
-	aReference ifNil: [ ^ nil ].
-	(aReference respondsTo: #shortName) ifTrue: [
-		^ aReference shortName asString ].
-	^ aReference asString
+	^ MCPChangeHistoryValueExtractor referenceStringFrom: aReference
 ]

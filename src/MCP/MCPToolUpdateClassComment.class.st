@@ -1,9 +1,9 @@
 "
-Focused tool that sets or clears one class comment.
+Tool that sets or clears one class comment.
 "
 Class {
 	#name : 'MCPToolUpdateClassComment',
-	#superclass : 'MCPToolClassOperation',
+	#superclass : 'MCPToolClassMutation',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -15,8 +15,8 @@ MCPToolUpdateClassComment class >> toolName [
 	^ 'class_comment_update'
 ]
 
-{ #category : 'private - operations' }
-MCPToolUpdateClassComment >> classOperationSpec [
+{ #category : 'private - specs' }
+MCPToolUpdateClassComment >> classToolSpec [
 
 	^ {
 		  (#title -> 'Update Class Comment').

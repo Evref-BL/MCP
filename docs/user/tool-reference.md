@@ -91,7 +91,7 @@ Use plural fields such as `repositoryNames`, `directoryPaths`, and
 | `class_slot_push_down` | Push one instance-side or class-side slot down to subclasses. |
 | `class_remove` | Remove classes as one batch. Refactoring warnings stop removal unless `force=true`. |
 
-Focused class mutation tools and `class_remove` use Pharo refactoring support
+Class mutation tools and `class_remove` use Pharo refactoring support
 where available. With `force=false`, refactoring warnings return impact details
 instead of continuing.
 
@@ -113,12 +113,12 @@ instead of continuing.
 | `method_rewrite` | Preview or apply AST rewrite rules across a method scope. Applying requires `expectedChangeSetHash` from a preview. |
 | `method_remove` | Remove methods from one class as a batch without sender safety checks. |
 
-Prefer the focused lookup tools for navigation tasks. Use
+Prefer the specialized lookup tools for navigation tasks. Use
 `method_source_search` for source text and `method_equivalent_search` for
 equivalent-AST matches. Keep `method_metadata_search` for method metadata
 search. Top-level `method_metadata_search` filtering is limited to `selector`
 and `protocol` fields (`substring`, `prefix`, `exact`, or `regex`); use
-focused tools for source, equivalent methods, implementors, senders, class
+specialized tools for source, equivalent methods, implementors, senders, class
 references, and variable references.
 
 `method_create` returns selected Renraku critiques after method compilation when
@@ -133,7 +133,7 @@ they are relevant to review.
 | `history_entry_apply` | Preview applying selected entries, and apply them with `confirm=true`. |
 | `history_entry_revert` | Preview reverting selected entries, and revert them with `confirm=true`. |
 
-Prefer the focused read-only tools when browsing history. Use
+Prefer the read-only tools when browsing history. Use
 `history_entry_apply` or `history_entry_revert` when you need apply/revert
 preview or confirmation.
 
@@ -192,8 +192,8 @@ mutate and save the image.
 
 ## Mutation And Saving
 
-Most query tools are read-only and do not save the image. Mutating tools save
-the image after a successful call.
+Most search and inspection tools are read-only and do not save the image.
+Mutating tools save the image after a successful call.
 
 Tools that can save after success include:
 

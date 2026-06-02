@@ -1,9 +1,9 @@
 "
-Focused tool that creates one class definition without exposing the broader class edit operation selector.
+Tool that creates one class definition without exposing a combined class-mutation selector.
 "
 Class {
 	#name : 'MCPToolCreateClass',
-	#superclass : 'MCPToolClassOperation',
+	#superclass : 'MCPToolClassMutation',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -15,14 +15,14 @@ MCPToolCreateClass class >> toolName [
 	^ 'class_create'
 ]
 
-{ #category : 'private - operations' }
-MCPToolCreateClass >> classOperationSpec [
+{ #category : 'private - specs' }
+MCPToolCreateClass >> classToolSpec [
 
 	^ {
 		  (#title -> 'Create Class').
 		  (#description
 		   -> 'Create one class definition in the running image.').
-		  (#operation -> 'create').
+		  (#action -> 'create').
 		  (#inputProperties -> {
 			   self classNameSchemaProperty.
 			   self superclassNameSchemaProperty.

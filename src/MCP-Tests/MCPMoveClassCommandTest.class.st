@@ -1,3 +1,6 @@
+"
+Tests command-level class movement between packages and tags.
+"
 Class {
 	#name : 'MCPMoveClassCommandTest',
 	#superclass : 'MCPCommandTestCase',

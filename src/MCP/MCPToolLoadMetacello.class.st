@@ -37,9 +37,10 @@ MCPToolLoadMetacello >> defaultOnWarning [
 MCPToolLoadMetacello >> errorDetailsForError: anError loadRequest: loadRequest rawRequest: rawRequest [
 
 	| context details |
-	details := (anError isKindOf: MCPCommandError)
-		           ifTrue: [ anError structuredDetails copy ]
-		           ifFalse: [ self errorDetailsFor: anError ].
+	details := anError
+		           mcpCommandErrorDo: [ :commandError |
+		           commandError structuredDetails copy ]
+		           otherwise: [ self errorDetailsFor: anError ].
 	context := self
 		           requestedContextForErrorFromLoadRequest: loadRequest
 		           rawRequest: rawRequest.

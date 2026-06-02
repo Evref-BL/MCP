@@ -268,6 +268,21 @@ MCPCommandError >> errorCode: anObject [
 	errorCode := anObject
 ]
 
+{ #category : 'dispatching' }
+MCPCommandError >> mcpCommandErrorDo: commandBlock otherwise: fallbackBlock [
+
+	^ commandBlock cull: self
+]
+
+{ #category : 'dispatching' }
+MCPCommandError >> mcpErrorResultForMutationTool: aTool action: action requestedContext: requestedContext summary: summary [
+
+	^ aTool
+		  errorResultForCommandError: self
+		  action: action
+		  requestedContext: requestedContext
+]
+
 { #category : 'accessing' }
 MCPCommandError >> structuredDetails [
 

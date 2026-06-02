@@ -179,3 +179,9 @@ MCPPackageScopeQuery >> validate [
 
 	^ self
 ]
+
+{ #category : 'accessing' }
+MCPPackageScopeQuery >> warnings [
+
+	^ #(  )
+]

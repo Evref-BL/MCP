@@ -1,3 +1,6 @@
+"
+Concrete debug_breakpoint_set tool. It installs a transient DebugPoint breakpoint on a method or source interval through MCPToolDebugBreakpointOperation.
+"
 Class {
 	#name : 'MCPToolSetDebugBreakpoint',
 	#superclass : 'MCPToolDebugBreakpointOperation',
@@ -12,15 +15,15 @@ MCPToolSetDebugBreakpoint class >> toolName [
 	^ 'debug_breakpoint_set'
 ]
 
-{ #category : 'private - operations' }
-MCPToolSetDebugBreakpoint >> breakpointOperationSpec [
+{ #category : 'private - specs' }
+MCPToolSetDebugBreakpoint >> breakpointToolSpec [
 
 	^ {
 		  (#title -> 'Set Debug Breakpoint').
 		  (#description
 		   ->
 		   'Install a transient Pharo DebugPoint breakpoint on a method or source interval.').
-		  (#operation -> 'set').
+		  (#action -> 'set').
 		  (#inputProperties -> self breakpointTargetInputProperties).
 		  (#requiredProperties -> #( 'className' 'selector' )) }
 		  asDictionary

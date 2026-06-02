@@ -186,3 +186,9 @@ MCPRepositoryQuerySpec >> repositoryNames: aCollection [
 
 	repositoryNames := aCollection
 ]
+
+{ #category : 'accessing' }
+MCPRepositoryQuerySpec >> warnings [
+
+	^ #(  )
+]

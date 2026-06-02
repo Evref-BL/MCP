@@ -55,9 +55,18 @@ over duplicating the same `transform:` send inside both conditional branches.
 - Keep questions pure: predicates should answer questions, not mutate state.
 - Use `ifNotNil:` for local nil traversal when a boundary API can genuinely
   return `nil` and the next step is asking the non-nil object for a value.
+- Keep simple boolean predicates simple. Expressions such as
+  `value notNil and: [ value isReady ]` are idiomatic when the result is a
+  boolean. Do not rewrite them into `ifNil:/ifNotNil:` only to return a
+  boolean literal from one branch.
+- Remove nil-only branches from nil traversal. Both `receiver ifNil: [ nil ]
+  ifNotNil: [ ... ]` and `receiver ifNotNil: [ ... ] ifNil: [ nil ]` should
+  normally become `receiver ifNotNil: [ ... ]`.
 - Avoid defensive type or protocol checks in private helpers unless the helper
   is an explicit boundary. Let incorrect callers fail or validate at the
   boundary with a named policy.
+- Prefer a direct send to a known collaborator over a defensive wrapper. Add a
+  wrapper or extension after concrete variation appears, not before.
 
 ## Review Smells
 
@@ -69,6 +78,12 @@ Scan for:
 - assignment embedded inside boolean conditions;
 - repeated `isNotNil` checks where `ifNotNil:` would express local nil
   traversal;
+- `ifNil:/ifNotNil:` expressions that return only `true` or `false` from one
+  branch and would read more directly as a boolean condition;
+- `ifNil: [ nil ] ifNotNil: [...]` or `ifNotNil: [...] ifNil: [ nil ]`
+  branches where plain `ifNotNil:` communicates the same behavior;
 - defensive type checks in private helpers that hide caller bugs;
+- wrapper methods or extensions that exist only because a collaborator might be
+  wrong someday;
 - dense nested expressions that would be clearer with a temporary or extracted
   method.

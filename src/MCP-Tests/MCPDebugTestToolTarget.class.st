@@ -1,3 +1,6 @@
+"
+SUnit target used by debugger test-running tool tests.
+"
 Class {
 	#name : 'MCPDebugTestToolTarget',
 	#superclass : 'TestCase',

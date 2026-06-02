@@ -1,7 +1,7 @@
 "
-Mass-edits methods by applying Smalltalk AST rewrite rules in a method scope.
+Mass-updates methods by applying Smalltalk AST rewrite rules in a method scope.
 
-It is a method-scoped command tool, not a query tool: preview mode calculates ordered rewrite changes and a changeSetHash, while apply mode mutates the image only after expectedChangeSetHash confirmation.
+It is a method-scoped command tool, not a search tool: preview mode calculates ordered rewrite changes and a changeSetHash, while apply mode mutates the image only after expectedChangeSetHash confirmation.
 "
 Class {
 	#name : 'MCPToolRewriteMethods',
@@ -59,11 +59,12 @@ MCPToolRewriteMethods >> defaultTitle [
 { #category : 'error handling' }
 MCPToolRewriteMethods >> errorResultForRewriteError: anError request: rewriteRequest rawRequest: rawRequest [
 
-	(anError isKindOf: MCPCommandError) ifTrue: [
-		^ self
-			  errorResultText: anError messageText
-			  details: anError structuredDetails ].
-	^ self errorResultFor: anError
+	^ anError
+		  mcpCommandErrorDo: [ :commandError |
+				  self
+					  errorResultText: commandError messageText
+					  details: commandError structuredDetails ]
+		  otherwise: [ :toolError | self errorResultFor: toolError ]
 ]
 
 { #category : 'executing' }
@@ -248,12 +249,11 @@ MCPToolRewriteMethods >> rewriteScopeSchemaProperty [
 { #category : 'testing' }
 MCPToolRewriteMethods >> shouldSaveImageAfterSuccessfulExecutionForResult: aResult [
 
-	| data structuredContent |
-	aResult isError ifTrue: [ ^ false ].
-	structuredContent := aResult structuredContent.
-	structuredContent ifNil: [ ^ false ].
-	data := structuredContent at: #data ifAbsent: [ ^ false ].
-	^ (data at: #apply ifAbsent: [ false ]) = true and: [
+	| data |
+	data := self
+		        successfulStructuredDataFromResult: aResult
+		        ifAbsent: [ ^ false ].
+	^ (data at: #apply ifAbsent: [ false ]) == true and: [
 		  (data at: #appliedCount ifAbsent: [ 0 ]) > 0 ]
 ]
 

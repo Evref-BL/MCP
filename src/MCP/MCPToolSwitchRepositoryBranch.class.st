@@ -1,3 +1,6 @@
+"
+Concrete repository_branch_switch tool. It switches a registered Iceberg repository to an existing branch through MCPToolRepositoryOperation.
+"
 Class {
 	#name : 'MCPToolSwitchRepositoryBranch',
 	#superclass : 'MCPToolRepositoryOperation',
@@ -12,15 +15,15 @@ MCPToolSwitchRepositoryBranch class >> toolName [
 	^ 'repository_branch_switch'
 ]
 
-{ #category : 'private - operations' }
-MCPToolSwitchRepositoryBranch >> repositoryOperationSpec [
+{ #category : 'private - specs' }
+MCPToolSwitchRepositoryBranch >> repositoryToolSpec [
 
 	^ {
 		  (#title -> 'Switch Repository Branch').
 		  (#description
 		   ->
 		   'Switch a registered Iceberg repository to an existing branch.').
-		  (#operation -> 'switchBranch').
+		  (#action -> 'switchBranch').
 		  (#requestClass -> MCPRepositorySwitchBranchRequest).
 		  (#commandClass -> MCPSwitchRepositoryBranchCommand).
 		  (#inputProperties -> { self branchNameSchemaProperty }).

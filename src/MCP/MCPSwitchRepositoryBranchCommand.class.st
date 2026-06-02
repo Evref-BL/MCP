@@ -24,7 +24,7 @@ MCPSwitchRepositoryBranchCommand >> execute [
 
 	| beforeInfo repository result |
 	^ self tool
-		  executeEditOperation: 'switchBranch'
+		  executeMutationAction: 'switchBranch'
 		  force: false
 		  requestedContext: self request requestedContext
 		  work: [

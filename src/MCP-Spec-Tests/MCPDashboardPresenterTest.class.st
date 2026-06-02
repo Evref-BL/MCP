@@ -1,3 +1,6 @@
+"
+Tests the MCP Spec dashboard presenter layout, actions, and refresh behavior.
+"
 Class {
 	#name : 'MCPDashboardPresenterTest',
 	#superclass : 'MCPTestCase',

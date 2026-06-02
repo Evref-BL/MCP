@@ -108,10 +108,9 @@ MCPDebugEvaluateCommand >> frameRefForRecord: aRecord frameIndex: frameIndex [
 { #category : 'private - printing' }
 MCPDebugEvaluateCommand >> limitedPrintStringOf: anObject [
 
-	^ [
-	  anObject printStringLimitedTo: request resultPreviewCharacterLimit ]
-		  on: Error
-		  do: [ :error | anObject class name asString ]
+	^ self
+		  limitedPrintStringOf: anObject
+		  limit: request resultPreviewCharacterLimit
 ]
 
 { #category : 'private - data' }
@@ -160,35 +159,6 @@ MCPDebugEvaluateCommand >> selectedContextForRecord: aRecord frameIndex: frameIn
 		  at: frameIndex + 1
 		  ifAbsent: [
 		  self signalMissingFrameIndex: frameIndex record: aRecord ]
-]
-
-{ #category : 'private - frames' }
-MCPDebugEvaluateCommand >> selectedFrameIndex [
-
-	| frameToken index suffix tokens |
-	request frameRef ifNil: [ ^ 0 ].
-	tokens := request frameRef findTokens: '/'.
-	tokens size >= 3 ifFalse: [ ^ self signalInvalidFrameReference ].
-	frameToken := tokens third.
-	(frameToken beginsWith: 'frame-') ifFalse: [
-		^ self signalInvalidFrameReference ].
-	suffix := frameToken allButFirst: 6.
-	index := [ suffix asInteger ]
-		         on: Error
-		         do: [ :error | ^ self signalInvalidFrameReference ].
-	index < 0 ifTrue: [ ^ self signalInvalidFrameReference ].
-	^ index
-]
-
-{ #category : 'private - errors' }
-MCPDebugEvaluateCommand >> signalInvalidFrameReference [
-
-	^ MCPCommandError
-		  signalErrorCode: #DebugFrameReferenceInvalid
-		  message:
-		  'Invalid debug frame reference: ' , request frameRef asString
-		  , '.'
-		  details: { (#frameRef -> request frameRef) } asDictionary
 ]
 
 { #category : 'private - errors' }

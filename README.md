@@ -126,7 +126,7 @@ Image-changing tools save the image after a successful mutation. Read-only tools
 
 The safer edit paths use Pharo facilities:
 
-- Focused `class_*` mutation tools use Refactoring Browser and Refactoring
+- `class_*` mutation tools use Refactoring Browser and Refactoring
   Engine operations for class renames, slot changes, moves, and removals where
   Pharo provides them.
 - `method_selector_update` uses the Refactoring Engine for selector renames, argument additions/removals, and argument reordering.
@@ -134,7 +134,8 @@ The safer edit paths use Pharo facilities:
 - `force=false` stops on `RBRefactoringWarning` and returns `impactMessages`, `howToProceed`, and `forceSupported=true`. Rerun with `force=true` only after reviewing the impact.
 - `method_create` returns selected Renraku critiques after method compilation, including error-severity critiques and selected non-error rules.
 - `method_rewrite` previews AST rewrite changes first and returns a `changeSetHash`; applying the rewrite requires `expectedChangeSetHash`.
-- `test_run` uses SUnit and can collect CoverageCollector method and node coverage for an explicit method scope.
+- `test_run` uses SUnit for focused test execution. `test_coverage_run` uses
+  CoverageCollector for explicit method and node coverage scopes.
 - Repository tools work through Iceberg. Use `repository_identity_verify` to
   assert repository identity before edits or exports, and
   `repository_change_list` to inspect image-side changes before exporting,

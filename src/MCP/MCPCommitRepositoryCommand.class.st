@@ -14,37 +14,36 @@ MCPCommitRepositoryCommand >> execute [
 
 	| changedPackageNames diff repository result |
 	^ self tool
-		  executeEditOperation: 'commit'
+		  executeMutationAction: 'commit'
 		  force: false
 		  requestedContext: self request requestedContext
 		  work: [
-			  repository := self request repository.
-			  ((self repositoryHasNoCommit: repository) not and: [
-				   (self repositoryHasModifiedPackages: repository) not ])
-				  ifTrue: [ IceNothingToCommit signal ].
-			  diff := repository workingCopyDiff.
-			  changedPackageNames := self changedPackageNamesFromDiff: diff.
-			  result := self
-				            withNonInteractiveGitIdentityFor: repository
-				            during: [
-					            | commit |
-					            commit := self withNonInteractiveAuthorDuring: [
-						                      repository workingCopy
-							                      commitChanges: diff
-							                      withMessage: self request message ].
-					            MCPRepositoryCommitResult
-						            repository: repository
-						            changedPackageNames: changedPackageNames
-						            commit: commit ] ]
+				  repository := self request repository.
+				  (self repositoryHasChangesToCommit: repository) ifFalse: [
+					  IceNothingToCommit signal ].
+				  diff := repository workingCopyDiff.
+				  changedPackageNames := self changedPackageNamesFromDiff: diff.
+				  result := self
+					            withNonInteractiveGitIdentityFor: repository
+					            during: [
+							            | commit |
+							            commit := self withNonInteractiveAuthorDuring: [
+									                      repository workingCopy
+										                      commitChanges: diff
+										                      withMessage: self request message ].
+							            MCPRepositoryCommitResult
+								            repository: repository
+								            changedPackageNames: changedPackageNames
+								            commit: commit ] ]
 		  successResult: [ :warningMessages |
-			  self tool
-				  successResultText:
-				  'Committed repository ' , result repositoryInfo name , '.'
-				  data: (self tool dataForRepositoryCommitResult: result)
-				  warnings: warningMessages ]
+				  self tool
+					  successResultText:
+					  'Committed repository ' , result repositoryInfo name , '.'
+					  data: (self tool dataForRepositoryCommitResult: result)
+					  warnings: warningMessages ]
 		  failureSummary: [ :error |
-			  'Failed to commit repository: '
-			  , (error messageText ifNil: [ error asString ]) ]
+				  'Failed to commit repository: '
+				  , (error messageText ifNil: [ error asString ]) ]
 ]
 
 { #category : 'private - git identity' }
@@ -100,6 +99,13 @@ MCPCommitRepositoryCommand >> removeTemporaryGitConfigKey: key from: config [
 	self removeGitConfigKey: key from: config
 ]
 
+{ #category : 'private - diff' }
+MCPCommitRepositoryCommand >> repositoryHasChangesToCommit: aRepository [
+
+	(self repositoryHasNoCommit: aRepository) ifTrue: [ ^ true ].
+	^ self repositoryHasModifiedPackages: aRepository
+]
+
 { #category : 'private - git identity' }
 MCPCommitRepositoryCommand >> repositoryHasDefaultGitSignature: aRepository [
 
@@ -116,9 +122,7 @@ MCPCommitRepositoryCommand >> repositoryHasDefaultGitSignature: aRepository [
 { #category : 'private - diff' }
 MCPCommitRepositoryCommand >> repositoryHasModifiedPackages: aRepository [
 
-	^ [
-	  (aRepository respondsTo: #modifiedPackages) and: [
-		  aRepository modifiedPackages notEmpty ] ]
+	^ [ aRepository modifiedPackages notEmpty ]
 		  on: Error
 		  do: [ :ignored | false ]
 ]
@@ -126,10 +130,7 @@ MCPCommitRepositoryCommand >> repositoryHasModifiedPackages: aRepository [
 { #category : 'private - diff' }
 MCPCommitRepositoryCommand >> repositoryHasNoCommit: aRepository [
 
-	^ [
-	  | headCommit |
-	  headCommit := aRepository headCommit.
-	  (headCommit respondsTo: #isNoCommit) and: [ headCommit isNoCommit ] ]
+	^ [ MCPIcebergCommitInfo isNoCommit: aRepository headCommit ]
 		  on: Error
 		  do: [ :ignored | false ]
 ]

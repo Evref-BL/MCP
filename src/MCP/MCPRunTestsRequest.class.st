@@ -16,32 +16,20 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPRunTestsRequest class >> fromRequest: aRequest tool: aTool [
-
-	^ self
-		  fromRequest: aRequest
-		  tool: aTool
-		  operation:
-		  (aRequest stringArgumentNamed: 'operation' default: 'run')
-]
-
-{ #category : 'instance creation' }
 MCPRunTestsRequest class >> fromRequest: aRequest tool: aTool operation: operation [
 
 	| coverageRequest |
 	(#( 'run' 'coverage' ) includes: operation) ifFalse: [
 		Error signal: 'operation must be one of run or coverage.' ].
-	coverageRequest := operation = 'coverage'
-		                   ifTrue: [
-				                   MCPTestCoverageRequest
-					                   fromValue:
-					                   (aRequest
-						                    argumentNamed: 'coverage'
-						                    ifAbsent: [ nil ])
-					                   usingToolRequest: aRequest
-					                   defaultMethodLimit:
-					                   aTool defaultCoverageMethodLimit ]
-		                   ifFalse: [ nil ].
+	coverageRequest := operation = 'coverage' ifTrue: [
+			                   MCPTestCoverageRequest
+				                   fromValue:
+				                   (aRequest
+					                    argumentNamed: 'coverage'
+					                    ifAbsent: [ nil ])
+				                   usingToolRequest: aRequest
+				                   defaultMethodLimit:
+				                   aTool defaultCoverageMethodLimit ].
 	^ self new
 		  initializeTestRequests:
 		  (self testRequestsFromToolRequest: aRequest)

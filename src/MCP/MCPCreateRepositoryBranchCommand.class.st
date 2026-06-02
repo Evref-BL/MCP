@@ -24,7 +24,7 @@ MCPCreateRepositoryBranchCommand >> execute [
 
 	| beforeInfo repository result |
 	^ self tool
-		  executeEditOperation: 'createBranch'
+		  executeMutationAction: 'createBranch'
 		  force: false
 		  requestedContext: self request requestedContext
 		  work: [

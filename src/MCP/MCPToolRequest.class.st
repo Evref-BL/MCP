@@ -42,9 +42,7 @@ MCPToolRequest >> arguments [
 { #category : 'accessing' }
 MCPToolRequest >> arguments: aDictionary [
 
-	arguments := aDictionary
-		             ifNil: [ Dictionary new ]
-		             ifNotNil: [ aDictionary ]
+	arguments := aDictionary ifNil: [ Dictionary new ]
 ]
 
 { #category : 'accessing' }
@@ -133,9 +131,7 @@ MCPToolRequest >> stringArgumentNamed: anArgumentName [
 { #category : 'accessing' }
 MCPToolRequest >> stringArgumentNamed: anArgumentName default: defaultValue [
 
-	^ (self stringArgumentNamed: anArgumentName)
-		  ifNil: [ defaultValue ]
-		  ifNotNil: [ :value | value ]
+	^ (self stringArgumentNamed: anArgumentName) ifNil: [ defaultValue ]
 ]
 
 { #category : 'accessing' }
@@ -151,9 +147,8 @@ MCPToolRequest >> stringArgumentNamed: anArgumentName in: aDictionary [
 { #category : 'accessing' }
 MCPToolRequest >> stringArgumentNamed: anArgumentName in: aDictionary default: defaultValue [
 
-	^ (self stringArgumentNamed: anArgumentName in: aDictionary)
-		  ifNil: [ defaultValue ]
-		  ifNotNil: [ :value | value ]
+	^ (self stringArgumentNamed: anArgumentName in: aDictionary) ifNil: [
+		  defaultValue ]
 ]
 
 { #category : 'accessing' }

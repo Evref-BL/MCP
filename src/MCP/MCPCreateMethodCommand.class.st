@@ -32,7 +32,7 @@ MCPCreateMethodCommand >> execute [
 
 	| behavior changeKind compiledMethod methodReference result selector |
 	^ self tool
-		  executeEditOperation: 'create'
+		  executeMutationAction: 'create'
 		  force: self request force
 		  requestedContext: self request requestedContext
 		  work: [

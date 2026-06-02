@@ -51,6 +51,14 @@ MCPLoadRepositoryRequest >> groups [
 	^ groups ifNil: [ #(  ) ]
 ]
 
+{ #category : 'private - mode' }
+MCPLoadRepositoryRequest >> hasRemoteCoordinates [
+
+	owner ifNil: [ ^ false ].
+	project ifNil: [ ^ false ].
+	^ true
+]
+
 { #category : 'accessing' }
 MCPLoadRepositoryRequest >> hostUrl [
 
@@ -83,7 +91,7 @@ MCPLoadRepositoryRequest >> initializeFromRequest: request tool: aTool [
 { #category : 'private - mode' }
 MCPLoadRepositoryRequest >> initializeRemoteDefaultsFromTool: aTool [
 
-	(owner isNil or: [ project isNil ]) ifTrue: [
+	self hasRemoteCoordinates ifFalse: [
 			MCPCommandError
 				signalErrorCode: #MissingLoadRepositoryRemoteCoordinates
 				message: 'owner and project are required for repository loads.'
@@ -226,8 +234,8 @@ MCPLoadRepositoryRequest >> requestedContext [
 	commitish ifNotNil: [ context at: #commitish put: self commitish ].
 	sourceDirectory ifNotNil: [
 		context at: #sourceDirectory put: self sourceDirectory ].
-	(self isRemoteLoad and: [ owner notNil and: [ project notNil ] ])
-		ifTrue: [ context at: #repositoryUrl put: self repositoryUrl ].
+	(self isRemoteLoad and: [ self hasRemoteCoordinates ]) ifTrue: [
+		context at: #repositoryUrl put: self repositoryUrl ].
 	^ context
 ]
 

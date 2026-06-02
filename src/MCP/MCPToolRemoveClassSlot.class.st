@@ -1,9 +1,9 @@
 "
-Focused tool that removes one instance-side or class-side slot from a class.
+Tool that removes one instance-side or class-side slot from a class.
 "
 Class {
 	#name : 'MCPToolRemoveClassSlot',
-	#superclass : 'MCPToolClassOperation',
+	#superclass : 'MCPToolClassMutation',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -15,8 +15,8 @@ MCPToolRemoveClassSlot class >> toolName [
 	^ 'class_slot_remove'
 ]
 
-{ #category : 'private - operations' }
-MCPToolRemoveClassSlot >> classOperationSpec [
+{ #category : 'private - specs' }
+MCPToolRemoveClassSlot >> classToolSpec [
 
 	^ {
 		  (#title -> 'Remove Class Slot').

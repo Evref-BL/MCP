@@ -71,13 +71,11 @@ MCPMethodRewriteRequest >> initializeFromRequest: request tool: aTool [
 		                  booleanArgumentNamed: 'includeSources'
 		                  default: true.
 	expectedChangeSetHash := (request hasArgumentNamed:
-		                          'expectedChangeSetHash')
-		                         ifTrue: [
-				                         request
-					                         nonNegativeIntegerArgumentNamed:
-					                         'expectedChangeSetHash'
-					                         default: nil ]
-		                         ifFalse: [ nil ].
+		                          'expectedChangeSetHash') ifTrue: [
+			                         request
+				                         nonNegativeIntegerArgumentNamed:
+				                         'expectedChangeSetHash'
+				                         default: nil ].
 	scopeQuery := aTool methodScopeQueryFromRequest: request.
 	scopeQuery requireCompleteScope.
 	^ self

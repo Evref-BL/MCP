@@ -106,11 +106,9 @@ MCPDebugCaptureCommand >> execute [
 { #category : 'private - printing' }
 MCPDebugCaptureCommand >> limitedPrintStringOf: anObject [
 
-	anObject ifNil: [ ^ 'nil' ].
-	^ [
-	  anObject printStringLimitedTo: request resultPreviewCharacterLimit ]
-		  on: Error
-		  do: [ :error | anObject class name asString ]
+	^ self
+		  limitedPrintStringOf: anObject
+		  limit: request resultPreviewCharacterLimit
 ]
 
 { #category : 'private - worker' }

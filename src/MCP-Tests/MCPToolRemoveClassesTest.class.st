@@ -1,3 +1,6 @@
+"
+Tests the class_remove tool.
+"
 Class {
 	#name : 'MCPToolRemoveClassesTest',
 	#superclass : 'MCPToolTestCase',

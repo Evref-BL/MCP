@@ -1,6 +1,9 @@
+"
+Concrete history_entry_revert tool. It previews or confirms reverting selected Pharo change-history entries through MCPToolChangeHistoryOperation.
+"
 Class {
 	#name : 'MCPToolRevertChangeHistoryEntries',
-	#superclass : 'MCPToolChangeHistorySelectionOperation',
+	#superclass : 'MCPToolChangeHistoryOperation',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -12,13 +15,13 @@ MCPToolRevertChangeHistoryEntries class >> toolName [
 	^ 'history_entry_revert'
 ]
 
-{ #category : 'private - operations' }
-MCPToolRevertChangeHistoryEntries >> changeHistoryOperationSpec [
+{ #category : 'private - specs' }
+MCPToolRevertChangeHistoryEntries >> changeHistoryToolSpec [
 
 	^ {
 		  (#title -> 'Revert Change History Entries').
 		  (#description
 		   ->
 		   'Preview or confirm reverting selected Pharo change history entries from the current image. Set confirm=true to perform the previewed changes.').
-		  (#operation -> 'revertEntries') } asDictionary
+		  (#action -> 'revertEntries') } asDictionary
 ]

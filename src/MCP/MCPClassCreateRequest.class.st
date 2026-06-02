@@ -95,9 +95,8 @@ MCPClassCreateRequest >> initializeFromRequest: request [
 	superclassName := request stringArgumentNamed: 'superclassName'.
 	packageName := request stringArgumentNamed: 'packageName'.
 	tag := request stringArgumentNamed: 'tag'.
-	classComment := (request hasArgumentNamed: 'classComment')
-		                ifTrue: [ self classCommentFromRequest: request ]
-		                ifFalse: [ nil ].
+	classComment := (request hasArgumentNamed: 'classComment') ifTrue: [
+		                self classCommentFromRequest: request ].
 	force := request booleanArgumentNamed: 'force' default: false.
 	slotNames := request stringCollectionArgumentNamed: 'slots'.
 	classSlotNames := request stringCollectionArgumentNamed: 'classSlots'.
@@ -131,18 +130,15 @@ MCPClassCreateRequest >> requestedContext [
 		  (#className -> self className).
 		  (#superclassName -> self superclassName).
 		  (#packageName -> self packageName).
-		  (#tag -> (self tag ifNil: [ '' ] ifNotNil: [ self tag ])).
-		  (#classComment
-		   ->
-		   (self classComment ifNil: [ '' ] ifNotNil: [ self classComment ])).
+		  (#tag -> (self tag ifNil: [ '' ])).
+		  (#classComment -> (self classComment ifNil: [ '' ])).
 		  (#slots -> self slotNames).
 		  (#classSlots -> self classSlotNames).
 		  (#traits -> self traitNames).
 		  (#classTraits -> self classTraitNames).
 		  (#sharedVariables -> self sharedVariableNames).
 		  (#sharedPools -> self sharedPoolNames).
-		  (#layout -> (self layout ifNil: [ '' ] ifNotNil: [ self layout ])) }
-		  asDictionary
+		  (#layout -> (self layout ifNil: [ '' ])) } asDictionary
 ]
 
 { #category : 'accessing' }

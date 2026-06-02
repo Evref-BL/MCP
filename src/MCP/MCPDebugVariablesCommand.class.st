@@ -187,10 +187,7 @@ MCPDebugVariablesCommand >> isAtomicObject: anObject [
 { #category : 'private - printing' }
 MCPDebugVariablesCommand >> limitedPrintStringOf: anObject [
 
-	anObject ifNil: [ ^ 'nil' ].
-	^ [ anObject printStringLimitedTo: 500 ]
-		  on: Error
-		  do: [ :error | anObject class name asString ]
+	^ self limitedPrintStringOf: anObject limit: 500
 ]
 
 { #category : 'private - children' }

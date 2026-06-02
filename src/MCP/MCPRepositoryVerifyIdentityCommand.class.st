@@ -1,5 +1,7 @@
 "
-Command wrapper for repository_identity_verify. It performs a read-only identity assertion over a registered Iceberg repository before later repository edits or exports run.
+Command wrapper for repository_identity_verify.
+
+It performs a read-only identity assertion over a registered Iceberg repository before later repository commands or exports run.
 "
 Class {
 	#name : 'MCPRepositoryVerifyIdentityCommand',
@@ -144,7 +146,7 @@ MCPRepositoryVerifyIdentityCommand >> execute [
 
 	| repository result validation |
 	^ self tool
-		  executeEditOperation: 'verifyIdentity'
+		  executeMutationAction: 'verifyIdentity'
 		  force: false
 		  requestedContext: self request requestedContext
 		  work: [
@@ -222,12 +224,11 @@ MCPRepositoryVerifyIdentityCommand >> signalMissingExpectedIdentityFields [
 	MCPCommandError
 		signalErrorCode: #RepositoryIdentityExpectationRequired
 		message:
-			'operation=verifyIdentity requires at least one expected identity field besides repositoryName.'
+		'repository_identity_verify requires at least one expected identity field besides repositoryName.'
 		details: (self request requestedContext copy
 				 at: #expectedFields
-				 put:
-				 #( 'location' 'branchName' 'subdirectory' 'packageNames'
-				    'modifiedPackageNames' 'isModified' );
+				 put: #( 'location' 'branchName' 'subdirectory' 'packageNames'
+					    'modifiedPackageNames' 'isModified' );
 				 yourself)
 ]
 

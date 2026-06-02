@@ -5,7 +5,6 @@ Class {
 	#name : 'MCPChangeHistorySelectionResult',
 	#superclass : 'Object',
 	#instVars : [
-		'operation',
 		'historyFilePath',
 		'selectionCriteria',
 		'selectedEntries',
@@ -25,11 +24,10 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPChangeHistorySelectionResult class >> operation: operationName action: actionName historyFilePath: aPath selectionCriteria: criteriaDictionary selectedEntries: selectedEntryInfos previewEntries: previewEntryInfos skippedNonCodeChangeCount: skippedCount performed: performedFlag performedCount: performedEntryCount headReference: aReferenceString [
+MCPChangeHistorySelectionResult class >> action: actionName historyFilePath: aPath selectionCriteria: criteriaDictionary selectedEntries: selectedEntryInfos previewEntries: previewEntryInfos skippedNonCodeChangeCount: skippedCount performed: performedFlag performedCount: performedEntryCount headReference: aReferenceString [
 
 	^ self new
-		  initializeOperation: operationName
-		  action: actionName
+		  initializeAction: actionName
 		  historyFilePath: aPath
 		  selectionCriteria: criteriaDictionary
 		  selectedEntries: selectedEntryInfos
@@ -56,7 +54,6 @@ MCPChangeHistorySelectionResult >> action: anObject [
 MCPChangeHistorySelectionResult >> asDictionary [
 
 	^ {
-		  (#operation -> operation).
 		  (#action -> action).
 		  (#historyFilePath -> historyFilePath).
 		  (#selectionCriteria -> selectionCriteria).
@@ -80,9 +77,8 @@ MCPChangeHistorySelectionResult >> entryDictionariesFrom: entryInfos [
 ]
 
 { #category : 'initialization' }
-MCPChangeHistorySelectionResult >> initializeOperation: operationName action: actionName historyFilePath: aPath selectionCriteria: criteriaDictionary selectedEntries: selectedEntryInfos previewEntries: previewEntryInfos skippedNonCodeChangeCount: skippedCount performed: performedFlag performedCount: performedEntryCount headReference: aReferenceString [
+MCPChangeHistorySelectionResult >> initializeAction: actionName historyFilePath: aPath selectionCriteria: criteriaDictionary selectedEntries: selectedEntryInfos previewEntries: previewEntryInfos skippedNonCodeChangeCount: skippedCount performed: performedFlag performedCount: performedEntryCount headReference: aReferenceString [
 
-	operation := operationName.
 	action := actionName.
 	historyFilePath := aPath.
 	selectionCriteria := criteriaDictionary ifNil: [ Dictionary new ].
@@ -92,7 +88,7 @@ MCPChangeHistorySelectionResult >> initializeOperation: operationName action: ac
 	selectedCodeChangeCount := selectedEntries count: [ :each |
 		                           (each asDictionary
 			                            at: #isCodeChange
-			                            ifAbsent: [ false ]) = true ].
+			                            ifAbsent: [ false ]) == true ].
 	skippedNonCodeChangeCount := skippedCount ifNil: [ 0 ].
 	previewCount := previewEntries size.
 	performed := performedFlag.

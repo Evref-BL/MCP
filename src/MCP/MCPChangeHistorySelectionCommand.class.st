@@ -233,7 +233,6 @@ MCPChangeHistorySelectionCommand >> referenceCandidatesForEntry: anEntry inLog: 
 MCPChangeHistorySelectionCommand >> resultForLog: aLog path: path rawPairs: rawPairs selectedPairs: selectedPairs previewLog: previewLog performed: performedFlag performedCount: anInteger [
 
 	^ MCPChangeHistorySelectionResult
-		  operation: request operation
 		  action: request action
 		  historyFilePath: path
 		  selectionCriteria: request selectionCriteria
@@ -256,14 +255,9 @@ MCPChangeHistorySelectionCommand >> selectedEntryPairsFromRawPairs: rawPairs [
 { #category : 'private - references' }
 MCPChangeHistorySelectionCommand >> stringValueFrom: anObject selector: aSelector [
 
-	(anObject notNil and: [ anObject respondsTo: aSelector ]) ifFalse: [
-		^ nil ].
-	^ [
-	  (anObject perform: aSelector)
-		  ifNil: [ nil ]
-		  ifNotNil: [ :value | value asString ] ]
-		  on: Error
-		  do: [ :error | nil ]
+	^ MCPChangeHistoryValueExtractor
+		  stringValueFrom: anObject
+		  selector: aSelector
 ]
 
 { #category : 'private - selection' }

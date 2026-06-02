@@ -24,7 +24,7 @@ MCPPullRepositoryCommand >> execute [
 
 	| beforeInfo repository result |
 	^ self tool
-		  executeEditOperation: 'pull'
+		  executeMutationAction: 'pull'
 		  force: false
 		  requestedContext: self request requestedContext
 		  work: [

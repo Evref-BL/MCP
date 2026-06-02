@@ -1,7 +1,7 @@
 "
 Result DTO for replacing the class-side traits of a class.
 
-It carries the class state after replacement and the old/new class-side trait name lists for focused class update output.
+It carries the class state after replacement and the old/new class-side trait name lists for class update output.
 "
 Class {
 	#name : 'MCPReplaceClassSideTraitsResult',

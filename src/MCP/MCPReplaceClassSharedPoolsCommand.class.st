@@ -63,21 +63,20 @@ MCPReplaceClassSharedPoolsCommand >> resolvedSharedPoolNamed: aSharedPoolName [
 	behavior := Smalltalk globals
 		            at: sharedPoolName asSymbol
 		            ifAbsent: [
-			            MCPCommandError
-				            signalErrorCode: #SharedPoolNotFound
-				            message:
-				            'Shared pool ' , sharedPoolName , ' does not exist.'
-				            details: {
-						            (#className -> self className).
-						            (#sharedPoolName -> sharedPoolName) } asDictionary ].
-	((behavior isBehavior and: [ behavior inheritsFrom: SharedPool ])
-		 or: [ behavior = SharedPool ]) ifFalse: [
-		MCPCommandError
-			signalErrorCode: #InvalidSharedPool
-			message: sharedPoolName , ' is not a shared pool.'
-			details: {
-					(#className -> self className).
-					(#sharedPoolName -> sharedPoolName) } asDictionary ].
+				            MCPCommandError
+					            signalErrorCode: #SharedPoolNotFound
+					            message:
+					            'Shared pool ' , sharedPoolName , ' does not exist.'
+					            details: {
+							            (#className -> self className).
+							            (#sharedPoolName -> sharedPoolName) } asDictionary ].
+	(SharedPool withAllSubclasses includes: behavior) ifFalse: [
+			MCPCommandError
+				signalErrorCode: #InvalidSharedPool
+				message: sharedPoolName , ' is not a shared pool.'
+				details: {
+						(#className -> self className).
+						(#sharedPoolName -> sharedPoolName) } asDictionary ].
 	^ behavior
 ]
 

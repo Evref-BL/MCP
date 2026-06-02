@@ -1,7 +1,7 @@
 "
 Resolves required image objects for MCP tools and commands.
 
-Use this for strict lookups where a missing class or package should stop the operation and return the shared missing-name suggestion payload. Query scope objects keep their own permissive lookup path because they can return partial results.
+Use this for strict lookups where a missing class or package should stop the operation and return the shared missing-name suggestion payload. Search scope objects keep their own permissive lookup path because they can return partial results.
 "
 Class {
 	#name : 'MCPImageLookup',

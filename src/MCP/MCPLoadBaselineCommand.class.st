@@ -88,9 +88,7 @@ MCPLoadBaselineCommand >> currentPackageNames [
 { #category : 'private - image state' }
 MCPLoadBaselineCommand >> currentRepositories [
 
-	^ [ IceRepository repositories asArray ]
-		  on: Error
-		  do: [ :ignored | #(  ) ]
+	^ IceRepository repositories asArray
 ]
 
 { #category : 'executing' }

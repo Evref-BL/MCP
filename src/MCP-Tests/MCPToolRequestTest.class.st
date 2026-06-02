@@ -27,7 +27,7 @@ MCPToolRequestTest >> testInvalidRequestRaisesInvalidParameters [
 	self
 		should: [
 			MCPToolRequest
-				tool: MCPToolFindClasses new
+				tool: MCPToolSearchClasses new
 				arguments: { (#caseSensitive -> 'true') } asDictionary ]
 		raise: JRPCInvalidParameters
 ]
@@ -38,7 +38,7 @@ MCPToolRequestTest >> testInvalidRequestRaisesToolInputErrorWithViolations [
 	| error violation |
 	[
 	MCPToolRequest
-		tool: MCPToolFindClasses new
+		tool: MCPToolSearchClasses new
 		arguments: { (#caseSensitive -> 'true') } asDictionary ]
 		on: MCPInvalidToolInput
 		do: [ :signalledError | error := signalledError ].
@@ -58,7 +58,7 @@ MCPToolRequestTest >> testInvalidToolInputErrorResponseIncludesViolations [
 	| data error errorJson firstViolation response violations |
 	[
 	MCPToolRequest
-		tool: MCPToolFindClasses new
+		tool: MCPToolSearchClasses new
 		arguments: { (#caseSensitive -> 'true') } asDictionary ]
 		on: MCPInvalidToolInput
 		do: [ :signalledError | error := signalledError ].
@@ -81,7 +81,7 @@ MCPToolRequestTest >> testRequestAccessorsProvideDefaultsUniqueCollectionsSymbol
 
 	| nested request |
 	request := MCPToolRequest
-		           tool: MCPToolFindRepositories new
+		           tool: MCPToolSearchRepositories new
 		           arguments: {
 				           (#packageNames -> #( ' MCP ' '' 'MCP' )).
 				           (#repositoryNames -> #( 'MCP' 'Other' 'MCP' )) }
@@ -118,7 +118,7 @@ MCPToolRequestTest >> testRequestAccessorsProvideDefaultsUniqueCollectionsSymbol
 MCPToolRequestTest >> testValidRequestProvidesTypedAccessors [
 
 	| request |
-	request := MCPToolRequest tool: MCPToolFindClasses new arguments: {
+	request := MCPToolRequest tool: MCPToolSearchClasses new arguments: {
 			           (#packageNames -> #( 'MCP' )).
 			           (#caseSensitive -> true).
 			           (#limit -> 3) } asDictionary.

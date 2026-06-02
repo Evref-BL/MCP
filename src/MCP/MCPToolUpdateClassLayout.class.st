@@ -1,9 +1,9 @@
 "
-Focused tool that replaces the layout class used by one class.
+Tool that replaces the layout class used by one class.
 "
 Class {
 	#name : 'MCPToolUpdateClassLayout',
-	#superclass : 'MCPToolClassOperation',
+	#superclass : 'MCPToolClassMutation',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -15,8 +15,8 @@ MCPToolUpdateClassLayout class >> toolName [
 	^ 'class_layout_update'
 ]
 
-{ #category : 'private - operations' }
-MCPToolUpdateClassLayout >> classOperationSpec [
+{ #category : 'private - specs' }
+MCPToolUpdateClassLayout >> classToolSpec [
 
 	^ {
 		  (#title -> 'Update Class Layout').

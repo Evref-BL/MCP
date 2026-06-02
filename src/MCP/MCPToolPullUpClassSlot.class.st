@@ -1,9 +1,9 @@
 "
-Focused tool that pulls one instance-side or class-side slot up to a superclass.
+Tool that pulls one instance-side or class-side slot up to a superclass.
 "
 Class {
 	#name : 'MCPToolPullUpClassSlot',
-	#superclass : 'MCPToolClassOperation',
+	#superclass : 'MCPToolClassMutation',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -15,8 +15,8 @@ MCPToolPullUpClassSlot class >> toolName [
 	^ 'class_slot_pull_up'
 ]
 
-{ #category : 'private - operations' }
-MCPToolPullUpClassSlot >> classOperationSpec [
+{ #category : 'private - specs' }
+MCPToolPullUpClassSlot >> classToolSpec [
 
 	^ {
 		  (#title -> 'Pull Up Class Slot').

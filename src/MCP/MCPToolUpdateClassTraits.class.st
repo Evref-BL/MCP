@@ -1,9 +1,9 @@
 "
-Focused tool that replaces the instance-side trait composition of one class.
+Tool that replaces the instance-side trait composition of one class.
 "
 Class {
 	#name : 'MCPToolUpdateClassTraits',
-	#superclass : 'MCPToolClassOperation',
+	#superclass : 'MCPToolClassMutation',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -15,8 +15,8 @@ MCPToolUpdateClassTraits class >> toolName [
 	^ 'class_traits_update'
 ]
 
-{ #category : 'private - operations' }
-MCPToolUpdateClassTraits >> classOperationSpec [
+{ #category : 'private - specs' }
+MCPToolUpdateClassTraits >> classToolSpec [
 
 	^ {
 		  (#title -> 'Update Class Traits').

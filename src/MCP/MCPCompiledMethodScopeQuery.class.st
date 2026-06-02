@@ -1,7 +1,7 @@
 "
 Resolves method-scope arguments into compiled methods or behavior sets.
 
-It handles packageNames, classNames, hierarchyClassNames, subclassClassNames, parentClassNames, and side. Scope sets are unioned. Query tools keep valid scopes and record warnings for missing names. Tools that mutate the image can require a complete scope; missing names then raise a structured error with the same suggestions. Directional subclass and parent scopes exclude their anchor classes.
+It handles packageNames, classNames, hierarchyClassNames, subclassClassNames, parentClassNames, and side. Scope sets are unioned. Search tools keep valid scopes and record warnings for missing names. Tools that mutate the image can require a complete scope; missing names then raise a structured error with the same suggestions. Directional subclass and parent scopes exclude their anchor classes.
 "
 Class {
 	#name : 'MCPCompiledMethodScopeQuery',
@@ -24,9 +24,9 @@ Class {
 { #category : 'private - scope' }
 MCPCompiledMethodScopeQuery >> addBehaviorsForBaseClass: aClass to: behaviors [
 
-	(side = 'instance' or: [ side = 'both' ]) ifTrue: [
+	self includesInstanceSide ifTrue: [
 		behaviors add: aClass instanceSide ].
-	(side = 'class' or: [ side = 'both' ]) ifTrue: [
+	self includesClassSide ifTrue: [
 		behaviors add: aClass instanceSide classSide ]
 ]
 
@@ -184,6 +184,18 @@ MCPCompiledMethodScopeQuery >> hierarchyClassNames: someNames [
 		                       ifNotNil: [ someNames asArray ]
 ]
 
+{ #category : 'private - scope' }
+MCPCompiledMethodScopeQuery >> includesClassSide [
+
+	^ side = 'class' or: [ side = 'both' ]
+]
+
+{ #category : 'private - scope' }
+MCPCompiledMethodScopeQuery >> includesInstanceSide [
+
+	^ side = 'instance' or: [ side = 'both' ]
+]
+
 { #category : 'initialization' }
 MCPCompiledMethodScopeQuery >> initialize [
 
@@ -201,17 +213,16 @@ MCPCompiledMethodScopeQuery >> initialize [
 { #category : 'private - scope' }
 MCPCompiledMethodScopeQuery >> matchesSideForBehavior: aBehavior [
 
-	side = 'both' ifTrue: [ ^ true ].
-	side = 'class' ifTrue: [ ^ aBehavior isMeta ].
-	^ aBehavior isMeta not
+	aBehavior isMeta ifTrue: [ ^ self includesClassSide ].
+	^ self includesInstanceSide
 ]
 
 { #category : 'private - scope' }
 MCPCompiledMethodScopeQuery >> matchesSideForMethod: aCompiledMethod [
 
-	side = 'both' ifTrue: [ ^ true ].
-	side = 'class' ifTrue: [ ^ aCompiledMethod methodClass isMeta ].
-	^ aCompiledMethod methodClass isMeta not
+	aCompiledMethod methodClass isMeta ifTrue: [
+		^ self includesClassSide ].
+	^ self includesInstanceSide
 ]
 
 { #category : 'private - scope' }
@@ -285,17 +296,18 @@ MCPCompiledMethodScopeQuery >> methodsForPackageNames [
 	| methods |
 	methods := IdentitySet new.
 	self packageNames do: [ :eachName |
-		(self packageNamed: eachName inScope: 'packageNames') ifNotNil: [
-			:package |
-			package definedClasses do: [ :aClass |
-				(side = 'instance' or: [ side = 'both' ]) ifTrue: [
-					aClass localMethods do: [ :eachMethod | methods add: eachMethod ] ].
-				(side = 'class' or: [ side = 'both' ]) ifTrue: [
-					aClass classSide localMethods do: [ :eachMethod |
-						methods add: eachMethod ] ] ].
-			package extensionMethods do: [ :eachMethod |
-				(self matchesSideForMethod: eachMethod) ifTrue: [
-					methods add: eachMethod ] ] ] ].
+			(self packageNamed: eachName inScope: 'packageNames') ifNotNil: [
+					:package |
+					package definedClasses do: [ :aClass |
+							self includesInstanceSide ifTrue: [
+								aClass localMethods do: [ :eachMethod |
+									methods add: eachMethod ] ].
+							self includesClassSide ifTrue: [
+									aClass classSide localMethods do: [ :eachMethod |
+										methods add: eachMethod ] ] ].
+					package extensionMethods do: [ :eachMethod |
+							(self matchesSideForMethod: eachMethod) ifTrue: [
+								methods add: eachMethod ] ] ] ].
 	^ methods asArray
 ]
 
@@ -305,24 +317,24 @@ MCPCompiledMethodScopeQuery >> methodsForPackageNamesDo: aBlock [
 	| seenMethods |
 	seenMethods := IdentitySet new.
 	self packageNames do: [ :eachName |
-		| package |
-		package := self packageNamed: eachName.
-		package definedClasses do: [ :aClass |
-			(side = 'instance' or: [ side = 'both' ]) ifTrue: [
-				aClass localMethods do: [ :eachMethod |
-					(seenMethods includes: eachMethod) ifFalse: [
-						seenMethods add: eachMethod.
-						aBlock value: eachMethod ] ] ].
-			(side = 'class' or: [ side = 'both' ]) ifTrue: [
-				aClass classSide localMethods do: [ :eachMethod |
-					(seenMethods includes: eachMethod) ifFalse: [
-						seenMethods add: eachMethod.
-						aBlock value: eachMethod ] ] ] ].
-		package extensionMethods do: [ :eachMethod |
-			(self matchesSideForMethod: eachMethod) ifTrue: [
-				(seenMethods includes: eachMethod) ifFalse: [
-					seenMethods add: eachMethod.
-					aBlock value: eachMethod ] ] ] ]
+			| package |
+			package := self packageNamed: eachName.
+			package definedClasses do: [ :aClass |
+					self includesInstanceSide ifTrue: [
+							aClass localMethods do: [ :eachMethod |
+									(seenMethods includes: eachMethod) ifFalse: [
+											seenMethods add: eachMethod.
+											aBlock value: eachMethod ] ] ].
+					self includesClassSide ifTrue: [
+							aClass classSide localMethods do: [ :eachMethod |
+									(seenMethods includes: eachMethod) ifFalse: [
+											seenMethods add: eachMethod.
+											aBlock value: eachMethod ] ] ] ].
+			package extensionMethods do: [ :eachMethod |
+					(self matchesSideForMethod: eachMethod) ifTrue: [
+							(seenMethods includes: eachMethod) ifFalse: [
+									seenMethods add: eachMethod.
+									aBlock value: eachMethod ] ] ] ]
 ]
 
 { #category : 'private - resolution' }
@@ -453,7 +465,7 @@ MCPCompiledMethodScopeQuery >> side [
 { #category : 'accessing' }
 MCPCompiledMethodScopeQuery >> side: aSide [
 
-	side := aSide ifNil: [ 'both' ] ifNotNil: [ aSide ]
+	side := aSide ifNil: [ 'both' ]
 ]
 
 { #category : 'private - scope' }

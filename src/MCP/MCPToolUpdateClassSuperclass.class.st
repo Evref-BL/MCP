@@ -1,9 +1,9 @@
 "
-Focused tool that changes the superclass of one class.
+Tool that changes the superclass of one class.
 "
 Class {
 	#name : 'MCPToolUpdateClassSuperclass',
-	#superclass : 'MCPToolClassOperation',
+	#superclass : 'MCPToolClassMutation',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -15,8 +15,8 @@ MCPToolUpdateClassSuperclass class >> toolName [
 	^ 'class_superclass_update'
 ]
 
-{ #category : 'private - operations' }
-MCPToolUpdateClassSuperclass >> classOperationSpec [
+{ #category : 'private - specs' }
+MCPToolUpdateClassSuperclass >> classToolSpec [
 
 	^ {
 		  (#title -> 'Update Class Superclass').

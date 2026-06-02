@@ -54,7 +54,7 @@ MCPUpdateRepositoryCommand >> execute [
 
 	| repository result |
 	^ self tool
-		  executeEditOperation: 'update'
+		  executeMutationAction: 'update'
 		  force: false
 		  requestedContext: self request requestedContext
 		  work: [
@@ -146,12 +146,6 @@ MCPUpdateRepositoryCommand >> request [
 { #category : 'private - metadata' }
 MCPUpdateRepositoryCommand >> setSubdirectoryOn: aRepository [
 
-	(aRepository respondsTo: #subdirectory:) ifFalse: [
-		MCPCommandError
-			signalErrorCode: #RepositorySubdirectoryUnsupported
-			message:
-			'The selected Iceberg repository cannot store a subdirectory.'
-			details: self request requestedContext ].
 	aRepository subdirectory: (self request subdirectory ifNil: [ '' ])
 ]
 
@@ -161,7 +155,7 @@ MCPUpdateRepositoryCommand >> signalNoUpdateRequested [
 	MCPCommandError
 		signalErrorCode: #NoRepositoryUpdateRequested
 		message:
-		'operation=update requires subdirectory, packageNames, addPackageNames, or removePackageNames.'
+		'repository_update requires subdirectory, packageNames, addPackageNames, or removePackageNames.'
 		details: self request requestedContext
 ]
 

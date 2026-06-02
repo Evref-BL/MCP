@@ -1,3 +1,6 @@
+"
+Concrete debug_session_get tool. It returns the registry summary for one tracked DebugSession through MCPToolDebugSessionOperation.
+"
 Class {
 	#name : 'MCPToolGetDebugSession',
 	#superclass : 'MCPToolDebugSessionOperation',
@@ -12,15 +15,15 @@ MCPToolGetDebugSession class >> toolName [
 	^ 'debug_session_get'
 ]
 
-{ #category : 'private - operations' }
-MCPToolGetDebugSession >> sessionOperationSpec [
+{ #category : 'private - specs' }
+MCPToolGetDebugSession >> sessionToolSpec [
 
 	^ {
 		  (#title -> 'Get Debug Session').
 		  (#description
 		   ->
 		   'Return the registry summary for one tracked Pharo DebugSession.').
-		  (#operation -> 'describe').
+		  (#action -> 'get').
 		  (#inputProperties -> { self sessionIdSchemaProperty }).
 		  (#requiredProperties -> #( 'sessionId' )) } asDictionary
 ]

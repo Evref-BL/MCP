@@ -1,5 +1,7 @@
 "
-Shared method-domain helper behavior for MCP tools. Kept as a trait so method tools can combine it with query or edit tool behavior.
+Shared method-domain helper behavior for MCP tools.
+
+Kept as a trait so method tools can combine it with query or mutation behavior.
 "
 Trait {
 	#name : 'TMCPMethodTool',

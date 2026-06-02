@@ -1,3 +1,6 @@
+"
+Concrete repository_pull tool. It pulls remote changes for a registered Iceberg repository through MCPToolRepositoryOperation.
+"
 Class {
 	#name : 'MCPToolPullRepository',
 	#superclass : 'MCPToolRepositoryOperation',
@@ -12,14 +15,14 @@ MCPToolPullRepository class >> toolName [
 	^ 'repository_pull'
 ]
 
-{ #category : 'private - operations' }
-MCPToolPullRepository >> repositoryOperationSpec [
+{ #category : 'private - specs' }
+MCPToolPullRepository >> repositoryToolSpec [
 
 	^ {
 		  (#title -> 'Pull Repository').
 		  (#description
 		   -> 'Pull remote changes for a registered Iceberg repository.').
-		  (#operation -> 'pull').
+		  (#action -> 'pull').
 		  (#requestClass -> MCPRepositoryPullRequest).
 		  (#commandClass -> MCPPullRepositoryCommand) } asDictionary
 ]

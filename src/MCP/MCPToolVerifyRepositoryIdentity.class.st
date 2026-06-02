@@ -1,3 +1,6 @@
+"
+Concrete repository_identity_verify tool. It verifies expected Iceberg repository identity fields through MCPToolRepositoryOperation without writing files.
+"
 Class {
 	#name : 'MCPToolVerifyRepositoryIdentity',
 	#superclass : 'MCPToolRepositoryOperation',
@@ -12,15 +15,15 @@ MCPToolVerifyRepositoryIdentity class >> toolName [
 	^ 'repository_identity_verify'
 ]
 
-{ #category : 'private - operations' }
-MCPToolVerifyRepositoryIdentity >> repositoryOperationSpec [
+{ #category : 'private - specs' }
+MCPToolVerifyRepositoryIdentity >> repositoryToolSpec [
 
 	^ {
 		  (#title -> 'Verify Repository Identity').
 		  (#description
 		   ->
 		   'Assert expected Iceberg repository identity fields without writing files. Provide at least one expected field such as location, branchName, subdirectory, packageNames, modifiedPackageNames, or isModified.').
-		  (#operation -> 'verifyIdentity').
+		  (#action -> 'verifyIdentity').
 		  (#requestClass -> MCPRepositoryVerifyIdentityRequest).
 		  (#commandClass -> MCPRepositoryVerifyIdentityCommand).
 		  (#inputProperties -> {

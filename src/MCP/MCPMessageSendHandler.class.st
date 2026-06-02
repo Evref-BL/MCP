@@ -11,32 +11,33 @@ Class {
 	#tag : 'Server'
 }
 
+{ #category : 'private' }
+MCPMessageSendHandler >> argumentsFromParameters: parameters [
+
+	parameters ifNil: [ ^ #(  ) ].
+	parameters isDictionary ifFalse: [ ^ parameters ].
+	^ (self parametersNames collect: [ :name |
+		   parameters at: name ifAbsent: [ nil ] ]) asArray
+]
+
 { #category : 'parameters-checking' }
 MCPMessageSendHandler >> checkParametersForRequest: aJRPCRequestObject [
 
-	aJRPCRequestObject params ifNil: [
-		self parametersCount = 0 ifFalse: [ JRPCInvalidParameters signal ] ].
-
-	(aJRPCRequestObject params isDictionary or: [
-		 aJRPCRequestObject params isNil ]) ifFalse: [
-		JRPCInvalidParameters signal ]
+	| params |
+	params := aJRPCRequestObject params.
+	params ifNil: [
+			self parametersCount = 0 ifFalse: [ JRPCInvalidParameters signal ].
+			^ self ].
+	params isDictionary ifFalse: [ JRPCInvalidParameters signal ]
 ]
 
 { #category : 'evaluation' }
-MCPMessageSendHandler >> executeWithArguments: anArrayOrDictionary [
+MCPMessageSendHandler >> executeWithArguments: parameters [
 
-	| arguments |
-	arguments := anArrayOrDictionary.
-
-	anArrayOrDictionary ifNil: [ arguments := #(  ) ].
-
-	anArrayOrDictionary isDictionary ifTrue: [
-		arguments := OrderedCollection new.
-		arguments addAll: (self parametersNames collect: [ :name |
-				 anArrayOrDictionary at: name ifAbsent: [ nil ] ]).
-		arguments := arguments asArray ].
-
-	^ self send: self messageSelector to: self receiver with: arguments
+	^ self
+		  send: self messageSelector
+		  to: self receiver
+		  with: (self argumentsFromParameters: parameters)
 ]
 
 { #category : 'accessing' }

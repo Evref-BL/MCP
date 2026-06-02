@@ -136,14 +136,16 @@ MCPToolEvaluate >> shouldSaveImageAfterSuccessfulExecution [
 { #category : 'private' }
 MCPToolEvaluate >> syntaxFailureMessageFor: aNotice [
 
+	| position |
+	position := aNotice position.
 	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: 'Evaluation failed during compilation (';
-			  nextPutAll: aNotice class name;
-			  nextPutAll: '): ';
-			  nextPutAll: aNotice messageText.
-		  (aNotice respondsTo: #position) ifTrue: [
 			  stream
-				  nextPutAll: ' Position: ';
-				  print: aNotice position ] ]
+				  nextPutAll: 'Evaluation failed during compilation (';
+				  nextPutAll: aNotice class name;
+				  nextPutAll: '): ';
+				  nextPutAll: aNotice messageText.
+			  position ifNotNil: [
+					  stream
+						  nextPutAll: ' Position: ';
+						  print: position ] ]
 ]

@@ -1,9 +1,9 @@
 "
-Focused tool that pushes one instance-side or class-side slot down to subclasses.
+Tool that pushes one instance-side or class-side slot down to subclasses.
 "
 Class {
 	#name : 'MCPToolPushDownClassSlot',
-	#superclass : 'MCPToolClassOperation',
+	#superclass : 'MCPToolClassMutation',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -15,8 +15,8 @@ MCPToolPushDownClassSlot class >> toolName [
 	^ 'class_slot_push_down'
 ]
 
-{ #category : 'private - operations' }
-MCPToolPushDownClassSlot >> classOperationSpec [
+{ #category : 'private - specs' }
+MCPToolPushDownClassSlot >> classToolSpec [
 
 	^ {
 		  (#title -> 'Push Down Class Slot').

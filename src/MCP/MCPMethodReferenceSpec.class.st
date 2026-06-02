@@ -1,5 +1,5 @@
 "
-Parsed method reference used by focused method lookup tools. It identifies one compiled method by class name, selector, and whether the class side should be used.
+Parsed method reference used by specialized method lookup tools. It identifies one compiled method by class name, selector, and whether the class side should be used.
 "
 Class {
 	#name : 'MCPMethodReferenceSpec',

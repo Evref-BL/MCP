@@ -1,9 +1,9 @@
 "
-Focused tool that renames one class through the Pharo refactoring engine.
+Tool that renames one class through the Pharo refactoring engine.
 "
 Class {
 	#name : 'MCPToolUpdateClassName',
-	#superclass : 'MCPToolClassOperation',
+	#superclass : 'MCPToolClassMutation',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -15,8 +15,8 @@ MCPToolUpdateClassName class >> toolName [
 	^ 'class_name_update'
 ]
 
-{ #category : 'private - operations' }
-MCPToolUpdateClassName >> classOperationSpec [
+{ #category : 'private - specs' }
+MCPToolUpdateClassName >> classToolSpec [
 
 	^ {
 		  (#title -> 'Update Class Name').

@@ -47,9 +47,7 @@ MCPListChangeHistoryEntriesCommand >> isCurrentHistoryFilePath: aPathString [
 	currentFile := self currentHistoryFileReference.
 	currentFile ifNil: [ ^ false ].
 	requestedFile := aPathString asFileReference.
-	^ [ requestedFile fullName = currentFile fullName ]
-		  on: Error
-		  do: [ :error | aPathString = currentFile fullName ]
+	^ requestedFile fullName = currentFile fullName
 ]
 
 { #category : 'private' }

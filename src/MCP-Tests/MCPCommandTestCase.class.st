@@ -1,3 +1,6 @@
+"
+Common base class for command tests that create and clean up temporary source artifacts.
+"
 Class {
 	#name : 'MCPCommandTestCase',
 	#superclass : 'MCPTestCase',

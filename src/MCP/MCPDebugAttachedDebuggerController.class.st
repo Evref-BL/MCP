@@ -72,18 +72,44 @@ MCPDebugAttachedDebuggerController >> failureBlock: aBlock [
 ]
 
 { #category : 'controlling' }
-MCPDebugAttachedDebuggerController >> performOperation: selector context: aContext [
+MCPDebugAttachedDebuggerController >> performOperationNamed: operationName context: aContext [
 
 	^ self deferAction: [
-		  self performVisibleDebuggerOperation: selector context: aContext ]
+		  self dispatchOperationNamed: operationName context: aContext ]
 ]
 
 { #category : 'controlling' }
-MCPDebugAttachedDebuggerController >> performVisibleDebuggerOperation: selector context: aContext [
+MCPDebugAttachedDebuggerController >> restartContext: aContext [
 
-	selector = #resume ifTrue: [ ^ debugger proceedDebugSession ].
-	selector = #terminate ifTrue: [ ^ debugger close ].
-	selector = #restart: ifTrue: [
-		^ debugger debuggerActionModel restartContext: aContext ].
-	^ debugger debuggerActionModel perform: selector with: aContext
+	^ self debugger debuggerActionModel restartContext: aContext
+]
+
+{ #category : 'controlling' }
+MCPDebugAttachedDebuggerController >> resume [
+
+	^ self debugger proceedDebugSession
+]
+
+{ #category : 'controlling' }
+MCPDebugAttachedDebuggerController >> stepIntoContext: aContext [
+
+	^ self debugger debuggerActionModel stepInto: aContext
+]
+
+{ #category : 'controlling' }
+MCPDebugAttachedDebuggerController >> stepOverContext: aContext [
+
+	^ self debugger debuggerActionModel stepOver: aContext
+]
+
+{ #category : 'controlling' }
+MCPDebugAttachedDebuggerController >> stepThroughContext: aContext [
+
+	^ self debugger debuggerActionModel stepThrough: aContext
+]
+
+{ #category : 'controlling' }
+MCPDebugAttachedDebuggerController >> terminate [
+
+	^ self debugger close
 ]

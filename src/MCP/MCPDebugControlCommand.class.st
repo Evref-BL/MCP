@@ -21,7 +21,7 @@ MCPDebugControlCommand >> capabilities [
 		  (#mutating -> true) } asDictionary
 ]
 
-{ #category : 'private - operations' }
+{ #category : 'private - actions' }
 MCPDebugControlCommand >> contextOperations [
 
 	^ #( 'stepInto' 'stepOver' 'stepThrough' 'restart' )
@@ -61,12 +61,12 @@ MCPDebugControlCommand >> execute [
 	record := self sessionRecordWithMatchingState.
 	operationName := request operation.
 	previousStateId := record stateId.
-	(record continuation notNil and: [
-			 operationName = 'resume' or: [
-				 self operationRequiresContext: operationName ] ]) ifTrue: [
-			^ self
-				  performContinuationOperationForRecord: record
-				  previousStateId: previousStateId ].
+	record continuation ifNotNil: [
+			(operationName = 'resume' or: [
+				 self operationRequiresContext: operationName ]) ifTrue: [
+					^ self
+						  performContinuationOperationForRecord: record
+						  previousStateId: previousStateId ] ].
 	frameIndex := nil.
 	context := nil.
 	(self operationRequiresContext: operationName) ifTrue: [
@@ -104,22 +104,22 @@ MCPDebugControlCommand >> frameRefForRecord: aRecord frameIndex: frameIndex [
 	  , frameIndex asString
 ]
 
-{ #category : 'private - operations' }
+{ #category : 'private - actions' }
 MCPDebugControlCommand >> operationRequiresContext: operationName [
 
 	^ self contextOperations includes: operationName
 ]
 
-{ #category : 'private - operations' }
+{ #category : 'private - actions' }
 MCPDebugControlCommand >> pausedAfterOperation: operationName [
 
 	^ self contextOperations includes: operationName
 ]
 
-{ #category : 'private - operations' }
+{ #category : 'private - actions' }
 MCPDebugControlCommand >> performContinuationOperationForRecord: aRecord previousStateId: previousStateId [
 
-	| context data frameIndex operationName selector status |
+	| context data frameIndex operationName status |
 	operationName := request operation.
 	frameIndex := nil.
 	context := nil.
@@ -128,15 +128,13 @@ MCPDebugControlCommand >> performContinuationOperationForRecord: aRecord previou
 			context := self
 				           selectedContextForRecord: aRecord
 				           frameIndex: frameIndex ].
-	selector := self selectorForOperation: operationName.
-	selector ifNil: [ ^ self signalUnsupportedOperation: operationName ].
 	aRecord debugSession ifNil: [
 		^ self signalMissingDebugSessionForRecord: aRecord ].
 	status := [
 		          aRecord continuation proceedUsing: [
 				          (aRecord continuation debugControllerForSession:
 					           aRecord debugSession)
-					          performOperation: selector
+					          performOperationNamed: operationName
 					          context: context ] ]
 		          on: Exception
 		          do: [ :error |
@@ -161,18 +159,14 @@ MCPDebugControlCommand >> performContinuationOperationForRecord: aRecord previou
 		  warnings: (data at: #warnings)
 ]
 
-{ #category : 'private - operations' }
+{ #category : 'private - actions' }
 MCPDebugControlCommand >> performOperationOn: aDebugSession context: aContext record: aRecord frameIndex: frameIndex [
 
-	| selector |
 	aDebugSession ifNil: [
 		^ self signalMissingDebugSessionForRecord: aRecord ].
-	selector := self selectorForOperation: request operation.
-	selector ifNil: [
-		^ self signalUnsupportedOperation: request operation ].
 	^ [
 		  (MCPDebugSessionController debugSession: aDebugSession)
-			  performOperation: selector
+			  performOperationNamed: request operation
 			  context: aContext.
 		  nil ]
 		  on: Exception
@@ -217,52 +211,12 @@ MCPDebugControlCommand >> selectedContextForRecord: aRecord frameIndex: frameInd
 		  self signalMissingFrameIndex: frameIndex record: aRecord ]
 ]
 
-{ #category : 'private - frames' }
-MCPDebugControlCommand >> selectedFrameIndex [
-
-	| frameToken index suffix tokens |
-	request frameRef ifNil: [ ^ 0 ].
-	tokens := request frameRef findTokens: '/'.
-	tokens size >= 3 ifFalse: [ ^ self signalInvalidFrameReference ].
-	frameToken := tokens third.
-	(frameToken beginsWith: 'frame-') ifFalse: [
-		^ self signalInvalidFrameReference ].
-	suffix := frameToken allButFirst: 6.
-	index := [ suffix asInteger ]
-		         on: Error
-		         do: [ :error | ^ self signalInvalidFrameReference ].
-	index < 0 ifTrue: [ ^ self signalInvalidFrameReference ].
-	^ index
-]
-
-{ #category : 'private - operations' }
-MCPDebugControlCommand >> selectorForOperation: operationName [
-
-	operationName = 'stepInto' ifTrue: [ ^ #stepInto: ].
-	operationName = 'stepOver' ifTrue: [ ^ #stepOver: ].
-	operationName = 'stepThrough' ifTrue: [ ^ #stepThrough: ].
-	operationName = 'restart' ifTrue: [ ^ #restart: ].
-	operationName = 'resume' ifTrue: [ ^ #resume ].
-	operationName = 'terminate' ifTrue: [ ^ #terminate ].
-	^ nil
-]
-
 { #category : 'private - data' }
-MCPDebugControlCommand >> shouldReturnStateForOperation: operationName [
+MCPDebugControlCommand >> shouldReturnStateForRecord: aRecord operation: operationName [
 
-	^ request returnState and: [
-		  self pausedAfterOperation: operationName ]
-]
-
-{ #category : 'private - errors' }
-MCPDebugControlCommand >> signalInvalidFrameReference [
-
-	^ MCPCommandError
-		  signalErrorCode: #DebugFrameReferenceInvalid
-		  message:
-		  'Invalid debug frame reference: ' , request frameRef asString
-		  , '.'
-		  details: { (#frameRef -> request frameRef) } asDictionary
+	request returnState ifFalse: [ ^ false ].
+	(self pausedAfterOperation: operationName) ifTrue: [ ^ true ].
+	^ aRecord status = 'paused'
 ]
 
 { #category : 'private - errors' }
@@ -296,14 +250,13 @@ MCPDebugControlCommand >> signalMissingFrameIndex: frameIndex record: aRecord [
 { #category : 'private - data' }
 MCPDebugControlCommand >> stateSnapshotForRecord: aRecord operation: operationName [
 
-	(request returnState and: [
-			 (self pausedAfterOperation: operationName) or: [
-				 aRecord status = 'paused' ] ]) ifFalse: [ ^ nil ].
+	(self shouldReturnStateForRecord: aRecord operation: operationName)
+		ifFalse: [ ^ nil ].
 	^ (MCPDebugStateInfo fromRecord: aRecord request: request)
 		  asDictionary
 ]
 
-{ #category : 'private - operations' }
+{ #category : 'private - actions' }
 MCPDebugControlCommand >> statusAfterOperation: operationName [
 
 	operationName = 'resume' ifTrue: [ ^ 'running' ].
@@ -311,7 +264,7 @@ MCPDebugControlCommand >> statusAfterOperation: operationName [
 	^ 'paused'
 ]
 
-{ #category : 'private - operations' }
+{ #category : 'private - actions' }
 MCPDebugControlCommand >> updateRecord: aRecord afterContinuationStatus: status operation: operationName [
 
 	status = #captured ifTrue: [

@@ -1,7 +1,7 @@
 "
 Result DTO for a class comment change.
 
-It carries the updated class info and both the old and new comments so the tool can report the edit precisely.
+It carries the updated class info and both the old and new comments so the tool can report the change precisely.
 "
 Class {
 	#name : 'MCPChangeClassCommentResult',
@@ -57,7 +57,7 @@ MCPChangeClassCommentResult >> newClassComment [
 { #category : 'accessing' }
 MCPChangeClassCommentResult >> newClassComment: aString [
 
-	newClassComment := aString ifNil: [ '' ] ifNotNil: [ aString ]
+	newClassComment := aString ifNil: [ '' ]
 ]
 
 { #category : 'accessing' }
@@ -69,5 +69,5 @@ MCPChangeClassCommentResult >> oldClassComment [
 { #category : 'accessing' }
 MCPChangeClassCommentResult >> oldClassComment: aString [
 
-	oldClassComment := aString ifNil: [ '' ] ifNotNil: [ aString ]
+	oldClassComment := aString ifNil: [ '' ]
 ]

@@ -1,3 +1,6 @@
+"
+Middle fixture class in the hierarchy used by scope and lookup tests.
+"
 Class {
 	#name : 'MCPToolHierarchyTestMid',
 	#superclass : 'MCPToolHierarchyTestBase',

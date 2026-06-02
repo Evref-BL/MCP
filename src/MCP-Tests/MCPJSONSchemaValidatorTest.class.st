@@ -17,8 +17,8 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 		  (MCPToolRunTests -> { (#tests
 		    -> { { (#className -> 'MCPToolContractsTest') } asDictionary }) }
 			   asDictionary).
-		  (MCPToolInspectClass -> { (#className -> 'MCPTool') } asDictionary).
-		  (MCPToolInspectMethod -> {
+		  (MCPToolGetClass -> { (#className -> 'MCPTool') } asDictionary).
+		  (MCPToolGetMethod -> {
 			   (#className -> 'MCPTool').
 			   (#selector -> 'defaultName') } asDictionary).
 		  (MCPToolRemoveClasses
@@ -28,13 +28,13 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 		  (MCPToolRemoveMethods -> {
 			   (#className -> 'MCPTool').
 			   (#selectors -> #( 'temporarySelector' )) } asDictionary).
-		  (MCPToolFindRepositories -> Dictionary new).
+		  (MCPToolSearchRepositories -> Dictionary new).
 		  (MCPToolVerifyRepositoryIdentity -> {
 			   (#repositoryName -> 'MCP').
 			   (#branchName -> 'main') } asDictionary).
-		  (MCPToolFindRepositoryChanges
+		  (MCPToolListRepositoryChanges
 		   -> { (#repositoryName -> 'MCP') } asDictionary).
-		  (MCPToolEditRepository -> {
+		  (MCPToolRepositoryOperation -> {
 			   (#action -> 'update').
 			   (#repositoryName -> 'MCP').
 			   (#addPackageNames -> #( 'MCP' )) } asDictionary).
@@ -62,13 +62,13 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 			   (#project -> 'ExampleProject').
 			   (#baseline -> 'ExampleBaseline').
 			   (#sourceDirectory -> 'src') } asDictionary).
-		  (MCPToolFindClasses -> Dictionary new).
-		  (MCPToolFindPackages -> Dictionary new).
-		  (MCPToolEditClass -> {
+		  (MCPToolSearchClasses -> Dictionary new).
+		  (MCPToolSearchPackages -> Dictionary new).
+		  (MCPToolClassMutation -> {
 			   (#action -> 'update').
 			   (#className -> 'MCPTool').
 			   (#newClassName -> 'MCPToolRenamed') } asDictionary).
-		  (MCPToolEditMethod -> {
+		  (MCPToolMethodMutation -> {
 			   (#action -> 'create').
 			   (#className -> 'MCPTool').
 			   (#methodSource -> 'temporarySelector ^ self').
@@ -76,20 +76,20 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 		  (MCPToolRewriteMethods -> { (#rules -> { {
 			    (#lhs -> 'self').
 			    (#rhs -> 'self') } asDictionary }) } asDictionary).
-		  (MCPToolFindMethodImplementors
+		  (MCPToolSearchMethodImplementors
 		   -> { (#selector -> 'toolName') } asDictionary).
-		  (MCPToolFindMethodSenders
+		  (MCPToolSearchMethodSenders
 		   -> { (#selector -> 'toolName') } asDictionary).
-		  (MCPToolFindClassReferences
+		  (MCPToolSearchClassReferences
 		   -> { (#className -> 'MCPTool') } asDictionary).
-		  (MCPToolFindVariableReferences
+		  (MCPToolSearchVariableReferences
 		   -> { (#variableName -> 'toolName') } asDictionary).
-		  (MCPToolFindChangeHistoryFiles -> Dictionary new).
-		  (MCPToolFindChangeHistoryEntries -> Dictionary new).
-		  (MCPToolManageChangeHistory
+		  (MCPToolListChangeHistoryFiles -> Dictionary new).
+		  (MCPToolListChangeHistoryEntries -> Dictionary new).
+		  (MCPToolChangeHistory
 		   -> { (#action -> 'listFiles') } asDictionary).
 		  (MCPToolCaptureScreenshot -> { (#target -> 'world') } asDictionary).
-		  (MCPToolDebugSessions -> { (#action -> 'list') } asDictionary).
+		  (MCPToolDebugSessionOperation -> { (#action -> 'list') } asDictionary).
 		  (MCPToolDebugState
 		   -> { (#sessionId -> 'debug-session-1') } asDictionary).
 		  (MCPToolDebugVariables
@@ -100,17 +100,17 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 		  (MCPToolDebugEvaluate -> {
 			   (#sessionId -> 'debug-session-1').
 			   (#expression -> '1') } asDictionary).
-		  (MCPToolDebugControl -> {
+		  (MCPToolDebugSessionControlOperation -> {
 			   (#sessionId -> 'debug-session-1').
 			   (#action -> 'stepOver') } asDictionary).
-		  (MCPToolDebugBreakpoints
+		  (MCPToolDebugBreakpointOperation
 		   -> { (#action -> 'list') } asDictionary).
 		  (MCPToolDebugCapture -> { (#expression -> '1') } asDictionary).
-		  (MCPToolDebugEdit
+		  (MCPToolUpdateDebugMethod
 		   -> { (#sessionId -> 'debug-session-1') } asDictionary).
-		  (MCPToolFindMethods -> Dictionary new).
-		  (MCPToolDiscoverTools -> Dictionary new).
-		  (MCPToolInspectTool
+		  (MCPToolSearchMethodMetadata -> Dictionary new).
+		  (MCPToolSearchTools -> Dictionary new).
+		  (MCPToolGetTool
 		   -> { (#toolName -> 'class_search') } asDictionary).
 		  (MCPToolCallTool -> {
 			   (#toolName -> 'package_search').
@@ -118,7 +118,7 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 ]
 
 { #category : 'private - fixtures' }
-MCPJSONSchemaValidatorTest >> focusedClassEditRepresentativeArgumentsByToolClass [
+MCPJSONSchemaValidatorTest >> classMutationRepresentativeArgumentsByToolClass [
 
 	^ {
 		  (MCPToolCreateClass -> {
@@ -184,20 +184,20 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 
 	| arguments |
 	arguments := self baseRepresentativeArgumentsByToolClass.
-	arguments removeKey: MCPToolEditRepository ifAbsent: [ ].
-	arguments removeKey: MCPToolEditClass ifAbsent: [ ].
-	arguments removeKey: MCPToolEditMethod ifAbsent: [ ].
-	arguments removeKey: MCPToolManageChangeHistory ifAbsent: [ ].
-	arguments removeKey: MCPToolDebugSessions ifAbsent: [ ].
-	arguments removeKey: MCPToolDebugControl ifAbsent: [ ].
-	arguments removeKey: MCPToolDebugBreakpoints ifAbsent: [ ].
-	self focusedClassEditRepresentativeArgumentsByToolClass
+	arguments removeKey: MCPToolRepositoryOperation ifAbsent: [ ].
+	arguments removeKey: MCPToolClassMutation ifAbsent: [ ].
+	arguments removeKey: MCPToolMethodMutation ifAbsent: [ ].
+	arguments removeKey: MCPToolChangeHistory ifAbsent: [ ].
+	arguments removeKey: MCPToolDebugSessionOperation ifAbsent: [ ].
+	arguments removeKey: MCPToolDebugSessionControlOperation ifAbsent: [ ].
+	arguments removeKey: MCPToolDebugBreakpointOperation ifAbsent: [ ].
+	self classMutationRepresentativeArgumentsByToolClass
 		keysAndValuesDo: [ :toolClass :representativeArguments |
 			arguments at: toolClass put: representativeArguments ].
 	arguments
-		at: MCPToolFindMethodSource
+		at: MCPToolSearchMethodSource
 		put: { (#filter -> 'method') } asDictionary;
-		at: MCPToolFindEquivalentMethods put: {
+		at: MCPToolSearchEquivalentMethods put: {
 				(#className -> 'Object').
 				(#selector -> 'class') } asDictionary;
 		at: MCPToolCreateMethod put: {
@@ -302,9 +302,9 @@ MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasAcceptRepresentativeArg
 MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasAdvertiseFlatShapes [
 
 	| classSchema methodFilterMode methodSchema packageSchema selectorSchema |
-	classSchema := MCPToolFindClasses new inputSchema asJRPCJSON.
-	methodSchema := MCPToolFindMethods new inputSchema asJRPCJSON.
-	packageSchema := MCPToolFindPackages new inputSchema asJRPCJSON.
+	classSchema := MCPToolSearchClasses new inputSchema asJRPCJSON.
+	methodSchema := MCPToolSearchMethodMetadata new inputSchema asJRPCJSON.
+	packageSchema := MCPToolSearchPackages new inputSchema asJRPCJSON.
 	selectorSchema := MCPToolUpdateMethodSelector new inputSchema
 		                  asJRPCJSON.
 	methodFilterMode := ((methodSchema at: #properties) at: 'filterMode')

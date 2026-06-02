@@ -39,8 +39,7 @@ MCPStructuredTestResult >> issueKindFor: aTestCase [
 { #category : 'private' }
 MCPStructuredTestResult >> parametersForTestCase: aTestCase [
 
-	(aTestCase isKindOf: ParametrizedTestCase) ifFalse: [ ^ #(  ) ].
-	^ aTestCase parametersToUse collect: [ :each | each printString ]
+	^ aTestCase mcpParameterPrintStrings
 ]
 
 { #category : 'private' }

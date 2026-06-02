@@ -1,3 +1,6 @@
+"
+Common base class for tests that exercise MCP tools through their public API.
+"
 Class {
 	#name : 'MCPToolAPITestCase',
 	#superclass : 'MCPTestCase',

@@ -1,3 +1,6 @@
+"
+Tests method scope query behavior for classes, packages, and sides.
+"
 Class {
 	#name : 'MCPCompiledMethodScopeQueryTest',
 	#superclass : 'MCPTestCase',
@@ -78,9 +81,9 @@ MCPCompiledMethodScopeQueryTest >> testImageScopeRespectsSideFiltering [
 		         yourself.
 	methodIdentities := self methodIdentitiesFor: query methods.
 	self assert: (methodIdentities includes:
-			 'MCPToolFindMethodsReferenceFixture class>>sharedTarget').
+			 'MCPToolMethodSearchReferenceFixture class>>sharedTarget').
 	self deny: (methodIdentities includes:
-			 'MCPToolFindMethodsReferenceFixture>>sharedTarget')
+			 'MCPToolMethodSearchReferenceFixture>>sharedTarget')
 ]
 
 { #category : 'tests' }
@@ -110,7 +113,7 @@ MCPCompiledMethodScopeQueryTest >> testPackageScopeIncludesExtensionMethods [
 		         yourself.
 	methodIdentities := self methodIdentitiesFor: query methods.
 	self assert: (methodIdentities includes:
-			 'MCPToolFindMethodsReferenceTarget>>extensionProbe')
+			 'MCPToolMethodSearchReferenceTarget>>extensionProbe')
 ]
 
 { #category : 'tests' }

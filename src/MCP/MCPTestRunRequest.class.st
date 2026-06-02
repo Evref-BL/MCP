@@ -27,9 +27,6 @@ MCPTestRunRequest class >> className: aClassName testMethodName: aTestMethodName
 MCPTestRunRequest class >> fromValue: rawValue usingToolRequest: toolRequest [
 
 	| className testMethodName |
-	(rawValue respondsTo: #at:ifAbsent:) ifFalse: [
-		Error signal:
-			'tests must contain only objects with className and optional testMethodName.' ].
 	className := toolRequest
 		             stringArgumentNamed: 'className'
 		             in: rawValue.

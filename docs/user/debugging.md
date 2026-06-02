@@ -114,7 +114,7 @@ manipulate debugger windows or contexts with general `image_evaluate` code.
 
 ## Breakpoints
 
-Use the focused `debug_breakpoint_*` tools for temporary method-entry or
+Use the `debug_breakpoint_*` tools for temporary method-entry or
 source-interval DebugPoint breakpoints. Clear breakpoints when the debugging
 task ends.
 

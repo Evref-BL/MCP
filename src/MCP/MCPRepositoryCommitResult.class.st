@@ -74,10 +74,7 @@ MCPRepositoryCommitResult >> commitDescription: aString [
 { #category : 'private' }
 MCPRepositoryCommitResult >> commitDescriptionFrom: aCommit [
 
-	aCommit ifNil: [ ^ '' ].
-	(aCommit respondsTo: #comment) ifTrue: [
-		^ aCommit comment ifNil: [ '' ] ].
-	^ ''
+	^ MCPIcebergCommitInfo commentStringFrom: aCommit
 ]
 
 { #category : 'accessing' }
@@ -95,11 +92,7 @@ MCPRepositoryCommitResult >> commitId: aString [
 { #category : 'private' }
 MCPRepositoryCommitResult >> commitIdFrom: aCommit [
 
-	aCommit ifNil: [ ^ '' ].
-	(aCommit respondsTo: #id) ifTrue: [ ^ aCommit id asString ].
-	(aCommit respondsTo: #commitId) ifTrue: [
-		^ aCommit commitId asString ].
-	^ aCommit asString
+	^ MCPIcebergCommitInfo idStringFrom: aCommit
 ]
 
 { #category : 'accessing' }

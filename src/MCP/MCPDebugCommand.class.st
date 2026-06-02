@@ -40,6 +40,15 @@ MCPDebugCommand >> initializeTool: aTool request: aRequest registry: aRegistry [
 	^ self
 ]
 
+{ #category : 'private - printing' }
+MCPDebugCommand >> limitedPrintStringOf: anObject limit: characterLimit [
+
+	anObject ifNil: [ ^ 'nil' ].
+	^ [ anObject printStringLimitedTo: characterLimit ]
+		  on: Error
+		  do: [ :error | anObject class name asString ]
+]
+
 { #category : 'accessing' }
 MCPDebugCommand >> registry [
 
@@ -64,16 +73,36 @@ MCPDebugCommand >> requestedStateId [
 	^ request requestedStateId
 ]
 
+{ #category : 'private - frames' }
+MCPDebugCommand >> selectedFrameIndex [
+
+	| frameRef frameToken index suffix tokens |
+	frameRef := request frameRef.
+	frameRef ifNil: [ ^ 0 ].
+	tokens := frameRef findTokens: '/'.
+	tokens size >= 3 ifFalse: [ ^ self signalInvalidFrameReference ].
+	frameToken := tokens third.
+	(frameToken beginsWith: 'frame-') ifFalse: [
+		^ self signalInvalidFrameReference ].
+	suffix := frameToken allButFirst: 6.
+	index := [ suffix asInteger ]
+		         on: Error
+		         do: [ :error | ^ self signalInvalidFrameReference ].
+	index < 0 ifTrue: [ ^ self signalInvalidFrameReference ].
+	^ index
+]
+
 { #category : 'private' }
 MCPDebugCommand >> sessionRecord [
 
-	request sessionId ifNil: [ ^ self signalMissingSession ].
-	^ registry sessionRecordAt: request sessionId ifAbsent: [
+	| sessionId |
+	sessionId := request sessionId.
+	sessionId ifNil: [ ^ self signalMissingSession ].
+	^ registry sessionRecordAt: sessionId ifAbsent: [
 			  MCPCommandError
 				  signalErrorCode: #DebugSessionNotFound
-				  message:
-				  'Debug session ' , request sessionId , ' was not found.'
-				  details: { (#sessionId -> request sessionId) } asDictionary ]
+				  message: 'Debug session ' , sessionId , ' was not found.'
+				  details: { (#sessionId -> sessionId) } asDictionary ]
 ]
 
 { #category : 'private' }
@@ -87,6 +116,18 @@ MCPDebugCommand >> sessionRecordWithMatchingState [
 			requestedState = record stateId ifFalse: [
 				self signalStaleState: requestedState forRecord: record ] ].
 	^ record
+]
+
+{ #category : 'private - errors' }
+MCPDebugCommand >> signalInvalidFrameReference [
+
+	| frameRef |
+	frameRef := request frameRef.
+	^ MCPCommandError
+		  signalErrorCode: #DebugFrameReferenceInvalid
+		  message:
+		  'Invalid debug frame reference: ' , frameRef asString , '.'
+		  details: { (#frameRef -> frameRef) } asDictionary
 ]
 
 { #category : 'private - errors' }

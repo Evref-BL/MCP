@@ -42,13 +42,11 @@ MCPRepositoryWorkingCopyCommand >> addModifiedPathsFromNode: aNode to: paths [
 MCPRepositoryWorkingCopyCommand >> changedPackageNamesFromDiff: aDiff [
 
 	| names |
-	names := [
-		         aDiff packages collect: [ :each |
-			         self packageNameFromDiffPackageNode: each ] ]
-		         on: Error
-		         do: [ :ignored | #(  ) ].
-	^ self sortedStringsFrom:
-		  (names select: [ :each | each notNil and: [ each isEmpty not ] ])
+	names := OrderedCollection new.
+	aDiff packages do: [ :each |
+			(self packageNameFromDiffPackageNode: each) ifNotNil: [ :name |
+				name isEmpty ifFalse: [ names add: name ] ] ].
+	^ self sortedStringsFrom: names
 ]
 
 { #category : 'initialization' }
@@ -73,10 +71,7 @@ MCPRepositoryWorkingCopyCommand >> modifiedPathsFromDiff: aDiff [
 { #category : 'private - diff' }
 MCPRepositoryWorkingCopyCommand >> packageNameFromDiffPackageNode: aNode [
 
-	| definition |
-	definition := aNode definition.
-	(definition respondsTo: #packageName) ifFalse: [ ^ nil ].
-	^ definition packageName asString
+	^ aNode mcpDiffPackageName
 ]
 
 { #category : 'accessing' }

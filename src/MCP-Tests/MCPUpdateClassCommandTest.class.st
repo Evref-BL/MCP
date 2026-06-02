@@ -1,5 +1,5 @@
 "
-Tests the class update command orchestrator used behind focused class mutation tools.
+Tests the class update command orchestrator used behind class mutation tools.
 "
 Class {
 	#name : 'MCPUpdateClassCommandTest',
@@ -34,7 +34,7 @@ MCPUpdateClassCommandTest >> classToolClassForArguments: arguments slotAction: s
 { #category : 'private' }
 MCPUpdateClassCommandTest >> commandForArguments: arguments [
 
-	| editRequest rawArguments slotAction tool toolClass toolRequest |
+	| mutationRequest rawArguments slotAction tool toolClass toolRequest |
 	rawArguments := arguments copy.
 	rawArguments removeKey: #action ifAbsent: [  ].
 	slotAction := rawArguments removeKey: #slotAction ifAbsent: [ nil ].
@@ -43,8 +43,8 @@ MCPUpdateClassCommandTest >> commandForArguments: arguments [
 		             slotAction: slotAction.
 	tool := toolClass new.
 	toolRequest := tool requestFromToolCallArguments: rawArguments.
-	editRequest := tool parsedRequestFromToolRequest: toolRequest.
-	^ tool commandForRequest: editRequest
+	mutationRequest := tool parsedRequestFromToolRequest: toolRequest.
+	^ tool commandForRequest: mutationRequest
 ]
 
 { #category : 'tests' }
@@ -272,17 +272,17 @@ MCPUpdateClassCommandTest >> testMapsSlotActionsToUpdateActions [
 { #category : 'tests' }
 MCPUpdateClassCommandTest >> testToolBuildsUpdateClassCommand [
 
-	| command editRequest tool toolRequest |
+	| command mutationRequest tool toolRequest |
 	tool := MCPToolUpdateClassComment new.
 	toolRequest := tool requestFromToolCallArguments:
 		               { (#className -> 'Object'). (#classComment -> 'updated') }
 		               asDictionary.
-	editRequest := tool parsedRequestFromToolRequest: toolRequest.
-	command := tool commandForRequest: editRequest.
-	self assert: editRequest class equals: MCPClassUpdateRequest.
+	mutationRequest := tool parsedRequestFromToolRequest: toolRequest.
+	command := tool commandForRequest: mutationRequest.
+	self assert: mutationRequest class equals: MCPClassUpdateRequest.
 	self assert: command class equals: MCPUpdateClassCommand.
 	self assert: command tool identicalTo: tool.
-	self assert: command classRequest identicalTo: editRequest.
+	self assert: command classRequest identicalTo: mutationRequest.
 	self assert: command classRequest className equals: 'Object'.
 	self assert: command classRequest classComment equals: 'updated'
 ]

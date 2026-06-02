@@ -1,3 +1,6 @@
+"
+Concrete repository_create tool. It creates a new Iceberg repository directory and optional initial package membership through MCPToolRepositoryOperation.
+"
 Class {
 	#name : 'MCPToolCreateRepository',
 	#superclass : 'MCPToolRepositoryOperation',
@@ -12,15 +15,15 @@ MCPToolCreateRepository class >> toolName [
 	^ 'repository_create'
 ]
 
-{ #category : 'private - operations' }
-MCPToolCreateRepository >> repositoryOperationSpec [
+{ #category : 'private - specs' }
+MCPToolCreateRepository >> repositoryToolSpec [
 
 	^ {
 		  (#title -> 'Create Repository').
 		  (#description
 		   ->
 		   'Create a new Iceberg repository directory and optionally attach initial packages.').
-		  (#operation -> 'create').
+		  (#action -> 'create').
 		  (#requestClass -> MCPRepositoryCreateRequest).
 		  (#commandClass -> MCPCreateRepositoryCommand).
 		  (#referenceInputProperties -> #(  )).

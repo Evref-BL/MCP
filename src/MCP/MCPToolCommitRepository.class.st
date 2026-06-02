@@ -1,3 +1,6 @@
+"
+Concrete repository_commit tool. It creates an Iceberg commit for a registered repository through MCPToolRepositoryOperation.
+"
 Class {
 	#name : 'MCPToolCommitRepository',
 	#superclass : 'MCPToolRepositoryOperation',
@@ -12,15 +15,15 @@ MCPToolCommitRepository class >> toolName [
 	^ 'repository_commit'
 ]
 
-{ #category : 'private - operations' }
-MCPToolCommitRepository >> repositoryOperationSpec [
+{ #category : 'private - specs' }
+MCPToolCommitRepository >> repositoryToolSpec [
 
 	^ {
 		  (#title -> 'Commit Repository').
 		  (#description
 		   ->
 		   'Create an Iceberg commit for a registered repository using the provided commit message.').
-		  (#operation -> 'commit').
+		  (#action -> 'commit').
 		  (#requestClass -> MCPRepositoryCommitRequest).
 		  (#commandClass -> MCPCommitRepositoryCommand).
 		  (#inputProperties -> { self messageSchemaProperty }).

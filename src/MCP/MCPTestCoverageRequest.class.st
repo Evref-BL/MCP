@@ -21,8 +21,6 @@ MCPTestCoverageRequest class >> fromValue: rawValue usingToolRequest: toolReques
 
 	| includeCovered methodLimit scopeQuery |
 	rawValue ifNil: [ self signalMissingCoverageOptions ].
-	(rawValue respondsTo: #at:ifAbsent:) ifFalse: [
-		Error signal: 'coverage must be an object.' ].
 	scopeQuery := self
 		              scopeQueryFromValue: rawValue
 		              usingToolRequest: toolRequest.

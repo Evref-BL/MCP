@@ -43,14 +43,8 @@ MCPDebugAttachedDebuggerSelectionStrategy class >> activate: aContinuation durin
 { #category : 'accessing' }
 MCPDebugAttachedDebuggerSelectionStrategy class >> activeContinuations [
 
-	| migrated |
 	ActiveContinuations ifNil: [
 		ActiveContinuations := IdentityDictionary new ].
-	(ActiveContinuations isKindOf: IdentityDictionary) ifFalse: [
-			migrated := IdentityDictionary new.
-			ActiveContinuations associationsDo: [ :association |
-				migrated at: association key put: association value ].
-			ActiveContinuations := migrated ].
 	^ ActiveContinuations
 ]
 

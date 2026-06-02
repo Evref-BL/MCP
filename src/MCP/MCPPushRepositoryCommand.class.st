@@ -24,7 +24,7 @@ MCPPushRepositoryCommand >> execute [
 
 	| repository result |
 	^ self tool
-		  executeEditOperation: 'push'
+		  executeMutationAction: 'push'
 		  force: false
 		  requestedContext: self request requestedContext
 		  work: [

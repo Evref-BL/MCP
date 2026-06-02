@@ -33,10 +33,10 @@ For method lookup, discover the method/reference tool from the current client.
 Use `method_source_search` for source text, `method_equivalent_search` for
 equivalent-AST matching, and `method_implementor_search`,
 `method_sender_search`, `method_class_reference_search`, and
-`method_variable_reference_search` for focused reference lookups. Use
+`method_variable_reference_search` for specific reference lookups. Use
 `method_metadata_search` for method metadata search. Top-level
 `method_metadata_search` filtering is metadata text matching only; use the
-focused method lookup tools for source, equivalent methods, implementors,
+specialized method lookup tools for source, equivalent methods, implementors,
 senders, class references, and variable references.
 
 For change history, use `history_file_list` to locate `.ombu` files
@@ -47,7 +47,7 @@ confirmed recovery.
 For repository work, use `repository_search` to inspect registered Iceberg
 repositories, `repository_identity_verify` before changing repository state,
 and `repository_change_list` before exporting or committing image changes.
-Prefer focused repository tools such as `repository_export`,
+Prefer repository tools such as `repository_export`,
 `repository_commit`, `repository_fetch`, `repository_pull`, `repository_push`,
 `repository_branch_create`, `repository_branch_switch`, and
 `repository_head_adopt` when available. Use `repository_create`,

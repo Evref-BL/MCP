@@ -53,7 +53,7 @@ MCPToolRemoveMethods >> dataForMethod: aCompiledMethod [
 { #category : 'defaults' }
 MCPToolRemoveMethods >> defaultDescription [
 
-	^ 'Remove methods from one class as a batch without sender safety checks. Use method_create, method_selector_update, or method_protocol_update for method edits.'
+	^ 'Remove methods from one class as a batch without sender safety checks. Use method_create, method_selector_update, or method_protocol_update for method updates.'
 ]
 
 { #category : 'defaults' }
@@ -160,22 +160,24 @@ MCPToolRemoveMethods >> defaultTitle [
 { #category : 'private' }
 MCPToolRemoveMethods >> errorResultForError: anError className: className classSide: classSide selectors: selectors [
 
-	(anError isKindOf: MCPCommandError) ifTrue: [
-		^ self
-			  errorResultText: anError messageText
-			  details: anError structuredDetails ].
-	^ self
-		  errorResultText: (self
-				   failureMessageForClassNamed: className
-				   classSide: classSide
-				   selectors: selectors
-				   error: anError)
-		  details: {
-				  (#errorClass -> anError class name).
-				  (#message -> anError messageText).
-				  (#className -> className).
-				  (#classSide -> classSide).
-				  (#selectors -> selectors asArray) } asDictionary
+	^ anError
+		  mcpCommandErrorDo: [ :commandError |
+				  self
+					  errorResultText: commandError messageText
+					  details: commandError structuredDetails ]
+		  otherwise: [ :toolError |
+				  self
+					  errorResultText: (self
+							   failureMessageForClassNamed: className
+							   classSide: classSide
+							   selectors: selectors
+							   error: toolError)
+					  details: {
+							  (#errorClass -> toolError class name).
+							  (#message -> toolError messageText).
+							  (#className -> className).
+							  (#classSide -> classSide).
+							  (#selectors -> selectors asArray) } asDictionary ]
 ]
 
 { #category : 'executing' }
@@ -233,7 +235,6 @@ MCPToolRemoveMethods >> forceRemoveSelectors: selectorSymbols from: aBehavior [
 	refactoring := ReRemoveMethodsRefactoring
 		               selectors: selectorSymbols
 		               from: aBehavior.
-	refactoring checkSuperMethods.
 	refactoring removeMethodChanges.
 	refactoring performChanges
 ]

@@ -1,0 +1,83 @@
+"
+Concrete method_source_search tool. It searches methods by source text through MCPToolMethodSearch.
+"
+Class {
+	#name : 'MCPToolSearchMethodSource',
+	#superclass : 'MCPToolMethodSearch',
+	#category : 'MCP-Tools',
+	#package : 'MCP',
+	#tag : 'Tools'
+}
+
+{ #category : 'defaults' }
+MCPToolSearchMethodSource class >> toolName [
+
+	^ 'method_source_search'
+]
+
+{ #category : 'defaults' }
+MCPToolSearchMethodSource >> defaultDescription [
+
+	^ 'Search methods by source text. Use method_metadata_search for method metadata queries; use method_equivalent_search for equivalent AST matches.'
+]
+
+{ #category : 'private - request' }
+MCPToolSearchMethodSource >> defaultFilterMode [
+
+	^ 'substring'
+]
+
+{ #category : 'defaults' }
+MCPToolSearchMethodSource >> defaultInputSchema [
+
+	| properties |
+	properties := self methodQueryScopeInputProperties , {
+		              (self filterSchemaPropertyWithDescription:
+			               'Source text to match in method bodies.').
+		              (self
+			               filterModeSchemaPropertyWithDescription:
+			               'How source text filtering is matched.'
+			               values: self supportedFilterModes).
+		              (self caseSensitiveSchemaPropertyWithDescription:
+			               'Whether source text matching is case-sensitive.').
+		              (self includeSourceSchemaPropertyWithDescription:
+			               'Whether to include method source code in each result entry.') }
+	              , (self paginationInputPropertiesWithLimitDescription:
+			               'Maximum number of matching methods to return. Use 0 to request counts only.').
+	^ MCPStructureInputSchema new
+		  type: 'object';
+		  properties: properties;
+		  required: #( 'filter' );
+		  yourself
+]
+
+{ #category : 'defaults' }
+MCPToolSearchMethodSource >> defaultTitle [
+
+	^ 'Search Method Source'
+]
+
+{ #category : 'private - filtering' }
+MCPToolSearchMethodSource >> filterTextsForMethodEntry: anEntry sourceText: sourceText [
+
+	^ { sourceText }
+]
+
+{ #category : 'private - filtering' }
+MCPToolSearchMethodSource >> needsSourceForFiltering [
+
+	^ true
+]
+
+{ #category : 'private - template' }
+MCPToolSearchMethodSource >> queryEntriesForQueryRequest: queryRequest [
+
+	queryRequest requiredFilterPatternForTool: self.
+	^ super queryEntriesForQueryRequest: queryRequest
+]
+
+{ #category : 'private - template' }
+MCPToolSearchMethodSource >> searchRequestFromToolRequest: request [
+
+	^ MCPMethodSearchRequest fromRequest: request tool: self
+]

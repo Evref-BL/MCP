@@ -26,7 +26,7 @@ MCPCreateClassToolCommand >> execute [
 
 	| result |
 	^ self tool
-		  executeEditOperation: 'create'
+		  executeMutationAction: 'create'
 		  force: self request force
 		  requestedContext: self request requestedContext
 		  work: [

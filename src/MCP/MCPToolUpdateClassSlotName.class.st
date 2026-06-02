@@ -1,9 +1,9 @@
 "
-Focused tool that renames one instance-side or class-side slot in a class.
+Tool that renames one instance-side or class-side slot in a class.
 "
 Class {
 	#name : 'MCPToolUpdateClassSlotName',
-	#superclass : 'MCPToolClassOperation',
+	#superclass : 'MCPToolClassMutation',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -15,8 +15,8 @@ MCPToolUpdateClassSlotName class >> toolName [
 	^ 'class_slot_name_update'
 ]
 
-{ #category : 'private - operations' }
-MCPToolUpdateClassSlotName >> classOperationSpec [
+{ #category : 'private - specs' }
+MCPToolUpdateClassSlotName >> classToolSpec [
 
 	^ {
 		  (#title -> 'Update Class Slot Name').

@@ -1,9 +1,9 @@
 "
-Focused tool that moves or recategorizes one class package/tag assignment.
+Tool that moves or recategorizes one class package/tag assignment.
 "
 Class {
 	#name : 'MCPToolUpdateClassPackage',
-	#superclass : 'MCPToolClassOperation',
+	#superclass : 'MCPToolClassMutation',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -15,8 +15,8 @@ MCPToolUpdateClassPackage class >> toolName [
 	^ 'class_package_update'
 ]
 
-{ #category : 'private - operations' }
-MCPToolUpdateClassPackage >> classOperationSpec [
+{ #category : 'private - specs' }
+MCPToolUpdateClassPackage >> classToolSpec [
 
 	^ {
 		  (#title -> 'Update Class Package').

@@ -1,9 +1,9 @@
 "
-Focused tool that replaces the class variables of one class.
+Tool that replaces the class variables of one class.
 "
 Class {
 	#name : 'MCPToolUpdateClassSharedVariables',
-	#superclass : 'MCPToolClassOperation',
+	#superclass : 'MCPToolClassMutation',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -15,8 +15,8 @@ MCPToolUpdateClassSharedVariables class >> toolName [
 	^ 'class_shared_variables_update'
 ]
 
-{ #category : 'private - operations' }
-MCPToolUpdateClassSharedVariables >> classOperationSpec [
+{ #category : 'private - specs' }
+MCPToolUpdateClassSharedVariables >> classToolSpec [
 
 	^ {
 		  (#title -> 'Update Class Shared Variables').

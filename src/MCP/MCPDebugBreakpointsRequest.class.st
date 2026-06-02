@@ -22,12 +22,9 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPDebugBreakpointsRequest class >> fromRequest: aRequest tool: aTool [
+MCPDebugBreakpointsRequest class >> fromRequest: aRequest tool: aTool operation: operationName [
 
-	| operationName targetKindName |
-	operationName := aRequest
-		                 stringArgumentNamed: 'operation'
-		                 default: 'list'.
+	| targetKindName |
 	(self supportedOperations includes: operationName) ifFalse: [
 			MCPCommandError
 				signalErrorCode: #DebugBreakpointOperationUnsupported

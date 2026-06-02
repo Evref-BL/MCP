@@ -1,3 +1,6 @@
+"
+Common base class for MCP SUnit tests.
+"
 Class {
 	#name : 'MCPTestCase',
 	#superclass : 'TestCase',

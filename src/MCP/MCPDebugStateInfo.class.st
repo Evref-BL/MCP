@@ -30,7 +30,7 @@ MCPDebugStateInfo >> asDictionary [
 	| callStack rawContexts repairActions selectedContext selectedFrame selectedIndex visibleContexts warnings |
 	rawContexts := self rawContexts.
 	visibleContexts := self slicedContextsFrom: rawContexts.
-	selectedIndex := self selectedFrameIndexFrom: rawContexts.
+	selectedIndex := self selectedFrameIndex.
 	selectedContext := rawContexts
 		                   at: selectedIndex + 1
 		                   ifAbsent: [ nil ].
@@ -45,9 +45,7 @@ MCPDebugStateInfo >> asDictionary [
 	visibleContexts withIndexDo: [ :context :index |
 			callStack add:
 				(self frameInfoFor: context index: request stackStart + index - 1) ].
-	selectedFrame := selectedContext
-		                 ifNil: [ nil ]
-		                 ifNotNil: [
+	selectedFrame := selectedContext ifNotNil: [
 		                 self
 			                 frameInfoFor: selectedContext
 			                 index: selectedIndex ].
@@ -231,16 +229,17 @@ MCPDebugStateInfo >> selectedCodeRangeForContext: aContext [
 
 	| debugSession |
 	debugSession := record debugSession.
-	(debugSession isKindOf: DebugSession) ifFalse: [ ^ nil ].
+	debugSession ifNil: [ ^ nil ].
 	^ debugSession selectedCodeRangeForContext: aContext
 ]
 
 { #category : 'private - refs' }
-MCPDebugStateInfo >> selectedFrameIndexFrom: contextArray [
+MCPDebugStateInfo >> selectedFrameIndex [
 
-	| suffix |
-	request frameRef ifNil: [ ^ 0 ].
-	suffix := request frameRef copyAfterLast: $-.
+	| frameRef suffix |
+	frameRef := request frameRef.
+	frameRef ifNil: [ ^ 0 ].
+	suffix := frameRef copyAfterLast: $-.
 	^ [ suffix asInteger ]
 		  on: Error
 		  do: [ :error | 0 ]

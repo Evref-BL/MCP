@@ -16,7 +16,59 @@ MCPDebugController >> debugSession [
 ]
 
 { #category : 'controlling' }
-MCPDebugController >> performOperation: selector context: aContext [
+MCPDebugController >> dispatchOperationNamed: operationName context: aContext [
+
+	operationName = 'stepInto' ifTrue: [
+		^ self stepIntoContext: aContext ].
+	operationName = 'stepOver' ifTrue: [
+		^ self stepOverContext: aContext ].
+	operationName = 'stepThrough' ifTrue: [
+		^ self stepThroughContext: aContext ].
+	operationName = 'restart' ifTrue: [ ^ self restartContext: aContext ].
+	operationName = 'resume' ifTrue: [ ^ self resume ].
+	operationName = 'terminate' ifTrue: [ ^ self terminate ].
+	self error:
+		'Unsupported debug control operation: ' , operationName asString
+]
+
+{ #category : 'controlling' }
+MCPDebugController >> performOperationNamed: operationName context: aContext [
+
+	^ self dispatchOperationNamed: operationName context: aContext
+]
+
+{ #category : 'controlling' }
+MCPDebugController >> restartContext: aContext [
+
+	self subclassResponsibility
+]
+
+{ #category : 'controlling' }
+MCPDebugController >> resume [
+
+	self subclassResponsibility
+]
+
+{ #category : 'controlling' }
+MCPDebugController >> stepIntoContext: aContext [
+
+	self subclassResponsibility
+]
+
+{ #category : 'controlling' }
+MCPDebugController >> stepOverContext: aContext [
+
+	self subclassResponsibility
+]
+
+{ #category : 'controlling' }
+MCPDebugController >> stepThroughContext: aContext [
+
+	self subclassResponsibility
+]
+
+{ #category : 'controlling' }
+MCPDebugController >> terminate [
 
 	self subclassResponsibility
 ]
@@ -24,10 +76,6 @@ MCPDebugController >> performOperation: selector context: aContext [
 { #category : 'accessing' }
 MCPDebugController >> workerProcess [
 
-	| session |
-	session := self debugSession.
-	session ifNil: [ ^ nil ].
-	^ [ session interruptedProcess ]
-		  on: Error
-		  do: [ :ignored | nil ]
+	^ self debugSession ifNotNil: [ :session |
+		  session interruptedProcess ]
 ]

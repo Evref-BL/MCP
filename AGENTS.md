@@ -10,7 +10,7 @@ using a released MCP server from another workspace.
 - Do not claim live-image behavior is verified from Tonel/source inspection
   alone.
 - Prefer dedicated `pharo` MCP tools over `image_evaluate` when a tool exists.
-- Do not launch or mutate live images, run image-local repository mutation
+- Do not launch or mutate live images, run image-local repository operation
   tools, or trigger externally mutating workflows unless the current task has
   an approved safe image and cleanup boundary.
 

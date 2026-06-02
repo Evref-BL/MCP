@@ -1,3 +1,6 @@
+"
+Fixture test case used by parameterized test-running tool tests.
+"
 Class {
 	#name : 'MCPToolRunTestsParameterizedTarget',
 	#superclass : 'ParametrizedTestCase',

@@ -21,6 +21,12 @@ MCPTestRepositoryCommit class >> id: aString [
 ]
 
 { #category : 'accessing' }
+MCPTestRepositoryCommit >> comment [
+
+	^ ''
+]
+
+{ #category : 'accessing' }
 MCPTestRepositoryCommit >> id [
 
 	^ id ifNil: [ '' ]
@@ -30,4 +36,10 @@ MCPTestRepositoryCommit >> id [
 MCPTestRepositoryCommit >> id: aString [
 
 	id := aString
+]
+
+{ #category : 'testing' }
+MCPTestRepositoryCommit >> isNoCommit [
+
+	^ false
 ]

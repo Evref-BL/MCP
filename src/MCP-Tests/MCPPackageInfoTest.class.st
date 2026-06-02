@@ -1,3 +1,6 @@
+"
+Tests package metadata snapshots returned by MCPPackageInfo.
+"
 Class {
 	#name : 'MCPPackageInfoTest',
 	#superclass : 'MCPTestCase',

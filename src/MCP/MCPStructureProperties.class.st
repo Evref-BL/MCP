@@ -88,9 +88,7 @@ MCPStructureProperties >> items: aSchema [
 MCPStructureProperties >> jsonValueForKey: aKey value: aValue [
 
 	aKey = #properties ifTrue: [ ^ self propertiesAsJRPCJSON: aValue ].
-	^ (aValue respondsTo: #asJRPCJSON)
-		  ifTrue: [ aValue asJRPCJSON ]
-		  ifFalse: [ aValue ]
+	^ aValue asJRPCJSON
 ]
 
 { #category : 'accessing' }

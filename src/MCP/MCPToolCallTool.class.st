@@ -1,7 +1,7 @@
 "
 Static bridge tool that invokes tools from the discoverable catalog.
 
-The tool keeps the advertised static surface small while still allowing agents to call less common tools after discovery and inspection.
+The tool keeps the advertised static surface small while still allowing agents to call less common tools after discovery and contract lookup.
 "
 Class {
 	#name : 'MCPToolCallTool',

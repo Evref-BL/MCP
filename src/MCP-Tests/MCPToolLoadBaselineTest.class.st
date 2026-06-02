@@ -1,3 +1,6 @@
+"
+Tests baseline-loading tool behavior.
+"
 Class {
 	#name : 'MCPToolLoadBaselineTest',
 	#superclass : 'MCPToolTestCase',

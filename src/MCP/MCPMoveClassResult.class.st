@@ -57,7 +57,7 @@ MCPMoveClassResult >> oldPackageName [
 { #category : 'accessing' }
 MCPMoveClassResult >> oldPackageName: aString [
 
-	oldPackageName := aString ifNil: [ '' ] ifNotNil: [ aString ]
+	oldPackageName := aString ifNil: [ '' ]
 ]
 
 { #category : 'accessing' }
@@ -69,5 +69,5 @@ MCPMoveClassResult >> oldTag [
 { #category : 'accessing' }
 MCPMoveClassResult >> oldTag: aString [
 
-	oldTag := aString ifNil: [ '' ] ifNotNil: [ aString ]
+	oldTag := aString ifNil: [ '' ]
 ]

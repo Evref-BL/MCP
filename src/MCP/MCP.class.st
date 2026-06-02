@@ -76,10 +76,7 @@ MCP >> executeTool: tool named: toolName withParams: arguments [
 	^ [
 		  request := tool requestFromToolCallArguments: arguments.
 		  result := tool executeWithRequest: request.
-		  toolResult := (result isKindOf: MCPStructureCallToolResult)
-			                ifTrue: [ result ]
-			                ifFalse: [
-			                MCPStructureCallToolResult content: result ].
+		  toolResult := result asMCPStructureCallToolResult.
 		  self saveImageAfterSuccessfulTool: tool result: toolResult.
 		  self monitoring
 			  recordToolCallFinish: monitorRecord
@@ -89,7 +86,7 @@ MCP >> executeTool: tool named: toolName withParams: arguments [
 		  on: Exception
 		  do: [ :error |
 				  | errorResult |
-				  (error isKindOf: JRPCError) ifTrue: [
+				  error mcpIsJRPCError ifTrue: [
 						  self monitoring
 							  recordToolCallFinish: monitorRecord
 							  result: nil
@@ -266,7 +263,7 @@ MCP >> rpcCallToolCallWithParams: arguments [
 		  on: Exception
 		  do: [ :error |
 				  | errorResult |
-				  (error isKindOf: JRPCError) ifTrue: [ error pass ].
+				  error mcpIsJRPCError ifTrue: [ error pass ].
 				  errorResult := callTool errorResultFor: error.
 				  errorResult asJRPCJSON ]
 ]
@@ -323,8 +320,9 @@ MCP >> rpcToolsList [
 { #category : 'private - saving' }
 MCP >> saveImageAfterSuccessfulTool: aTool result: aResult [
 
-	((aTool shouldSaveImageAfterSuccessfulExecutionForResult: aResult)
-		 and: [ aResult isError not ]) ifTrue: [ self saveImageSession ]
+	aResult isError ifTrue: [ ^ self ].
+	(aTool shouldSaveImageAfterSuccessfulExecutionForResult: aResult)
+		ifTrue: [ self saveImageSession ]
 ]
 
 { #category : 'private - saving' }

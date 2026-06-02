@@ -1,3 +1,6 @@
+"
+Concrete debug_breakpoint_clear tool. It removes all tracked transient DebugPoint breakpoints through MCPToolDebugBreakpointOperation.
+"
 Class {
 	#name : 'MCPToolClearDebugBreakpoints',
 	#superclass : 'MCPToolDebugBreakpointOperation',
@@ -12,12 +15,12 @@ MCPToolClearDebugBreakpoints class >> toolName [
 	^ 'debug_breakpoint_clear'
 ]
 
-{ #category : 'private - operations' }
-MCPToolClearDebugBreakpoints >> breakpointOperationSpec [
+{ #category : 'private - specs' }
+MCPToolClearDebugBreakpoints >> breakpointToolSpec [
 
 	^ {
 		  (#title -> 'Clear Debug Breakpoints').
 		  (#description
 		   -> 'Remove all tracked transient Pharo DebugPoint breakpoints.').
-		  (#operation -> 'clear') } asDictionary
+		  (#action -> 'clear') } asDictionary
 ]

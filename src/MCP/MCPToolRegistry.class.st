@@ -22,6 +22,8 @@ MCPToolRegistry class >> additionalKeywordsForTool: aTool [
 
 	| toolName |
 	toolName := aTool name.
+	toolName = 'tool_get' ifTrue: [
+		^ #( 'tool' 'catalog' 'contract' 'schema' 'metadata' ) ].
 	toolName = 'repository_search' ifTrue: [
 		^ #( 'repo' 'iceberg' 'git' 'branch' 'commit' 'remote' 'head' ) ].
 	toolName = 'repository_identity_verify' ifTrue: [
@@ -152,6 +154,27 @@ MCPToolRegistry class >> additionalKeywordsForTool: aTool [
 ]
 
 { #category : 'tools' }
+MCPToolRegistry class >> contractForTool: aTool [
+
+	^ self contractForTool: aTool usingPolicy: aTool toolExposurePolicy
+]
+
+{ #category : 'tools' }
+MCPToolRegistry class >> contractForTool: aTool usingPolicy: aToolExposurePolicy [
+
+	| data |
+	data := (self metadataForTool: aTool usingPolicy: aToolExposurePolicy)
+		        copy.
+	data at: #inputSchema put: aTool inputSchema asJRPCJSON.
+	data at: #outputSchema put: aTool outputSchema asJRPCJSON.
+	data at: #examples put: (self examplesForTool: aTool).
+	data
+		at: #activationRequirements
+		put: (self activationRequirementsForTool: aTool).
+	^ data
+]
+
+{ #category : 'tools' }
 MCPToolRegistry class >> defaultStaticToolNames [
 
 	^ self staticToolClasses collect: [ :each | each toolName ]
@@ -189,39 +212,18 @@ MCPToolRegistry class >> includesToolNamed: aToolName [
 	^ self publicToolNames includes: aToolName asString
 ]
 
-{ #category : 'tools' }
-MCPToolRegistry class >> inspectionForTool: aTool [
-
-	^ self inspectionForTool: aTool usingPolicy: aTool toolExposurePolicy
-]
-
-{ #category : 'tools' }
-MCPToolRegistry class >> inspectionForTool: aTool usingPolicy: aToolExposurePolicy [
-
-	| data |
-	data := (self metadataForTool: aTool usingPolicy: aToolExposurePolicy)
-		        copy.
-	data at: #inputSchema put: aTool inputSchema asJRPCJSON.
-	data at: #outputSchema put: aTool outputSchema asJRPCJSON.
-	data at: #examples put: (self examplesForTool: aTool).
-	data
-		at: #activationRequirements
-		put: (self activationRequirementsForTool: aTool).
-	^ data
-]
-
 { #category : 'testing' }
-MCPToolRegistry class >> isStaticTool: aToolOrName [
+MCPToolRegistry class >> isStaticTool: aToolName [
 
 	^ self
-		  isStaticTool: aToolOrName
+		  isStaticTool: aToolName
 		  usingPolicy: MCPToolExposurePolicy default
 ]
 
 { #category : 'testing' }
-MCPToolRegistry class >> isStaticTool: aToolOrName usingPolicy: aToolExposurePolicy [
+MCPToolRegistry class >> isStaticTool: aToolName usingPolicy: aToolExposurePolicy [
 
-	^ aToolExposurePolicy isStaticTool: aToolOrName
+	^ aToolExposurePolicy isStaticTool: aToolName
 ]
 
 { #category : 'tools' }
@@ -305,13 +307,13 @@ MCPToolRegistry class >> publicToolGroups [
 
 	^ {
 		  ('tool-catalog' -> {
-			   MCPToolDiscoverTools.
-			   MCPToolInspectTool.
+			   MCPToolSearchTools.
+			   MCPToolGetTool.
 			   MCPToolCallTool }).
 		  ('repositories' -> {
-			   MCPToolFindRepositories.
+			   MCPToolSearchRepositories.
 			   MCPToolVerifyRepositoryIdentity.
-			   MCPToolFindRepositoryChanges.
+			   MCPToolListRepositoryChanges.
 			   MCPToolCreateRepository.
 			   MCPToolAttachRepository.
 			   MCPToolUpdateRepository.
@@ -325,10 +327,10 @@ MCPToolRegistry class >> publicToolGroups [
 			   MCPToolAdoptRepositoryHead.
 			   MCPToolLoadBaseline.
 			   MCPToolLoadRepository }).
-		  ('packages' -> { MCPToolFindPackages }).
+		  ('packages' -> { MCPToolSearchPackages }).
 		  ('classes' -> {
-			   MCPToolFindClasses.
-			   MCPToolInspectClass.
+			   MCPToolSearchClasses.
+			   MCPToolGetClass.
 			   MCPToolCreateClass.
 			   MCPToolUpdateClassName.
 			   MCPToolUpdateClassSuperclass.
@@ -347,22 +349,22 @@ MCPToolRegistry class >> publicToolGroups [
 			   MCPToolPushDownClassSlot.
 			   MCPToolRemoveClasses }).
 		  ('methods' -> {
-			   MCPToolFindMethods.
-			   MCPToolFindMethodSource.
-			   MCPToolFindEquivalentMethods.
-			   MCPToolFindMethodImplementors.
-			   MCPToolFindMethodSenders.
-			   MCPToolFindClassReferences.
-			   MCPToolFindVariableReferences.
-			   MCPToolInspectMethod.
+			   MCPToolSearchMethodMetadata.
+			   MCPToolSearchMethodSource.
+			   MCPToolSearchEquivalentMethods.
+			   MCPToolSearchMethodImplementors.
+			   MCPToolSearchMethodSenders.
+			   MCPToolSearchClassReferences.
+			   MCPToolSearchVariableReferences.
+			   MCPToolGetMethod.
 			   MCPToolCreateMethod.
 			   MCPToolUpdateMethodSelector.
 			   MCPToolUpdateMethodProtocol.
 			   MCPToolRewriteMethods.
 			   MCPToolRemoveMethods }).
 		  ('history' -> {
-			   MCPToolFindChangeHistoryFiles.
-			   MCPToolFindChangeHistoryEntries.
+			   MCPToolListChangeHistoryFiles.
+			   MCPToolListChangeHistoryEntries.
 			   MCPToolApplyChangeHistoryEntries.
 			   MCPToolRevertChangeHistoryEntries }).
 		  ('tests' -> {
@@ -392,7 +394,7 @@ MCPToolRegistry class >> publicToolGroups [
 			   MCPToolClearDebugBreakpoints.
 			   MCPToolDebugCapture.
 			   MCPToolDebugTest.
-			   MCPToolDebugEdit }).
+			   MCPToolUpdateDebugMethod }).
 		  ('image-runtime' -> { MCPToolEvaluate }) }
 ]
 
@@ -478,7 +480,8 @@ MCPToolRegistry class >> schemaInspectionRequiredForTool: aTool [
 { #category : 'tools' }
 MCPToolRegistry class >> schemaInspectionRequiredForTool: aTool usingPolicy: aToolExposurePolicy [
 
-	^ (self isStaticTool: aTool usingPolicy: aToolExposurePolicy) not
+	^ (self isStaticTool: aTool name usingPolicy: aToolExposurePolicy)
+		  not
 ]
 
 { #category : 'tools' }
@@ -518,18 +521,18 @@ MCPToolRegistry class >> singularSearchTermFor: aTerm [
 MCPToolRegistry class >> staticToolClasses [
 
 	^ {
-		  MCPToolDiscoverTools.
-		  MCPToolInspectTool.
+		  MCPToolSearchTools.
+		  MCPToolGetTool.
 		  MCPToolCallTool.
-		  MCPToolFindPackages.
-		  MCPToolFindClasses.
-		  MCPToolInspectClass.
+		  MCPToolSearchPackages.
+		  MCPToolSearchClasses.
+		  MCPToolGetClass.
 		  MCPToolCreateClass.
-		  MCPToolFindMethods.
-		  MCPToolFindMethodSource.
-		  MCPToolFindMethodImplementors.
-		  MCPToolFindMethodSenders.
-		  MCPToolInspectMethod.
+		  MCPToolSearchMethodMetadata.
+		  MCPToolSearchMethodSource.
+		  MCPToolSearchMethodImplementors.
+		  MCPToolSearchMethodSenders.
+		  MCPToolGetMethod.
 		  MCPToolCreateMethod.
 		  MCPToolUpdateMethodSelector.
 		  MCPToolUpdateMethodProtocol.
@@ -570,11 +573,11 @@ MCPToolRegistry class >> staticToolsDictionaryUsingPolicy: aToolExposurePolicy [
 MCPToolRegistry class >> staticToolsUsingPolicy: aToolExposurePolicy [
 
 	^ ((self publicToolClasses select: [ :toolClass |
-		    aToolExposurePolicy isStaticTool: toolClass ]) collect: [
-			   :toolClass |
-			   toolClass new
-				   toolExposurePolicy: aToolExposurePolicy;
-				   yourself ]) asArray
+		    aToolExposurePolicy isStaticTool: toolClass toolName ])
+		   collect: [ :toolClass |
+				   toolClass new
+					   toolExposurePolicy: aToolExposurePolicy;
+					   yourself ]) asArray
 ]
 
 { #category : 'tools' }
@@ -592,14 +595,14 @@ MCPToolRegistry class >> tool: aTool matchesQuery: queryString group: groupStrin
 MCPToolRegistry class >> tool: aTool matchesQuery: queryString group: groupString includeStatic: includeStatic usingPolicy: aToolExposurePolicy [
 
 	| group queryTerms searchableText |
-	(includeStatic not and: [ aToolExposurePolicy isStaticTool: aTool ])
-		ifTrue: [ ^ false ].
-	group := groupString
-		         ifNil: [ nil ]
-		         ifNotNil: [ :value | value asString trimBoth asLowercase ].
-	(group notNil and: [ group isEmpty not ]) ifTrue: [
-		group = (self groupNameForToolClass: aTool class) ifFalse: [
-			^ false ] ].
+	(includeStatic not and: [
+		 aToolExposurePolicy isStaticTool: aTool name ]) ifTrue: [ ^ false ].
+	group := groupString ifNotNil: [ :value |
+		         value asString trimBoth asLowercase ].
+	group ifNotNil: [
+			group isEmpty ifFalse: [
+				group = (self groupNameForToolClass: aTool class) ifFalse: [
+					^ false ] ] ].
 	queryTerms := self queryTermsFrom: queryString.
 	queryTerms ifEmpty: [ ^ true ].
 	searchableText := (self searchableTextForTool: aTool) asLowercase.

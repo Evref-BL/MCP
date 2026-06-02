@@ -1,7 +1,7 @@
 "
 In-image registry of DebugSession records exposed through MCP.
 
-The registry assigns opaque session ids, tracks current records, deduplicates attached DebugSessions, and supports forgetting sessions when callers are done.
+The registry assigns opaque session ids, tracks current records, deduplicates attached DebugSessions, and supports removing tracked sessions when callers are done.
 "
 Class {
 	#name : 'MCPDebugSessionRegistry',
@@ -30,12 +30,6 @@ MCPDebugSessionRegistry class >> resetDefault [
 
 	Default := nil.
 	^ self
-]
-
-{ #category : 'accessing' }
-MCPDebugSessionRegistry >> forgetSessionId: aSessionId [
-
-	^ sessions removeKey: aSessionId ifAbsent: [ nil ]
 ]
 
 { #category : 'accessing' }
@@ -112,6 +106,12 @@ MCPDebugSessionRegistry >> registerDebugSession: aDebugSession named: aName stat
 		          createdAt: DateAndTime now.
 	sessions at: record sessionId put: record.
 	^ record
+]
+
+{ #category : 'accessing' }
+MCPDebugSessionRegistry >> removeSessionId: aSessionId [
+
+	^ sessions removeKey: aSessionId ifAbsent: [ nil ]
 ]
 
 { #category : 'accessing' }

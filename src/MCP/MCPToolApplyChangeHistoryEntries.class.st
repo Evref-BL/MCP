@@ -1,6 +1,9 @@
+"
+Concrete history_entry_apply tool. It previews or confirms applying selected Pharo change-history entries through MCPToolChangeHistoryOperation.
+"
 Class {
 	#name : 'MCPToolApplyChangeHistoryEntries',
-	#superclass : 'MCPToolChangeHistorySelectionOperation',
+	#superclass : 'MCPToolChangeHistoryOperation',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -12,13 +15,13 @@ MCPToolApplyChangeHistoryEntries class >> toolName [
 	^ 'history_entry_apply'
 ]
 
-{ #category : 'private - operations' }
-MCPToolApplyChangeHistoryEntries >> changeHistoryOperationSpec [
+{ #category : 'private - specs' }
+MCPToolApplyChangeHistoryEntries >> changeHistoryToolSpec [
 
 	^ {
 		  (#title -> 'Apply Change History Entries').
 		  (#description
 		   ->
 		   'Preview or confirm applying selected Pharo change history entries to the current image. Set confirm=true to perform the previewed changes.').
-		  (#operation -> 'applyEntries') } asDictionary
+		  (#action -> 'applyEntries') } asDictionary
 ]

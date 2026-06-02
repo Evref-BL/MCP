@@ -51,11 +51,9 @@ MCPTestRepositoryBranch >> repository: aRepository [
 MCPTestRepositoryBranch >> signalFailureIfNeeded: failure defaultMessage: aString [
 
 	failure ifNil: [ ^ self ].
-	failure = false ifTrue: [ ^ self ].
+	failure == false ifTrue: [ ^ self ].
 	failure == true ifTrue: [ Error signal: aString ].
-	(failure isAssociation and: [ failure key isBehavior ]) ifTrue: [
-		failure key signal: failure value ].
+	failure isAssociation ifTrue: [ failure key signal: failure value ].
 	failure isString ifTrue: [ Error signal: failure ].
-	(failure isKindOf: Exception) ifTrue: [ failure signal ].
 	Error signal: failure asString
 ]

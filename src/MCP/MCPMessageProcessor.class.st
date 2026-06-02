@@ -71,9 +71,8 @@ MCPMessageProcessor >> handleJSON: aJSONString [
 MCPMessageProcessor >> responseForException: anException request: aJRPCRequestObject [
 
 	aJRPCRequestObject isNotification ifTrue: [
-		((anException respondsTo: #isIncorrectJSON) and: [
-			 anException isIncorrectJSON ]) ifTrue: [
-			^ anException asJRPCResponseWithId: aJRPCRequestObject id ].
-		^ JRPCEmptyResponseObject new ].
+			anException isIncorrectJSON ifTrue: [
+				^ anException asJRPCResponseWithId: aJRPCRequestObject id ].
+			^ JRPCEmptyResponseObject new ].
 	^ anException asJRPCResponseWithId: aJRPCRequestObject id
 ]

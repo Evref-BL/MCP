@@ -34,11 +34,7 @@ MCPAdoptRepositoryHeadCommand >> commit: leftCommit equals: rightCommit [
 { #category : 'private' }
 MCPAdoptRepositoryHeadCommand >> commitIdFrom: aCommit [
 
-	aCommit ifNil: [ ^ '' ].
-	(aCommit respondsTo: #id) ifTrue: [ ^ aCommit id asString ].
-	(aCommit respondsTo: #commitId) ifTrue: [
-		^ aCommit commitId asString ].
-	^ aCommit asString
+	^ MCPIcebergCommitInfo idStringFrom: aCommit
 ]
 
 { #category : 'executing' }
@@ -46,7 +42,7 @@ MCPAdoptRepositoryHeadCommand >> execute [
 
 	| beforeInfo didAdopt headCommit previousReferenceCommit repository result |
 	^ self tool
-		  executeEditOperation: 'adoptHead'
+		  executeMutationAction: 'adoptHead'
 		  force: false
 		  requestedContext: self request requestedContext
 		  work: [
@@ -100,6 +96,18 @@ MCPAdoptRepositoryHeadCommand >> request [
 	^ request
 ]
 
+{ #category : 'private - validation' }
+MCPAdoptRepositoryHeadCommand >> signalMissingHeadCommitFor: aRepository [
+
+	MCPCommandError
+		signalErrorCode: #RepositoryHeadCommitRequired
+		message:
+		'Cannot adopt repository HEAD because the repository has no head commit.'
+		details: (self request requestedContext copy
+				 at: #repositoryName put: aRepository name asString;
+				 yourself)
+]
+
 { #category : 'accessing' }
 MCPAdoptRepositoryHeadCommand >> tool [
 
@@ -130,14 +138,8 @@ MCPAdoptRepositoryHeadCommand >> validateExpectedBranchFor: aRepository [
 { #category : 'private - validation' }
 MCPAdoptRepositoryHeadCommand >> validateHeadCommit: headCommit for: aRepository [
 
-	(headCommit isNil or: [
-		 (headCommit respondsTo: #isNoCommit) and: [ headCommit isNoCommit ] ])
-		ifFalse: [ ^ self ].
-	MCPCommandError
-		signalErrorCode: #RepositoryHeadCommitRequired
-		message:
-		'Cannot adopt repository HEAD because the repository has no head commit.'
-		details: (self request requestedContext copy
-				 at: #repositoryName put: aRepository name asString;
-				 yourself)
+	headCommit ifNil: [ ^ self signalMissingHeadCommitFor: aRepository ].
+	(MCPIcebergCommitInfo isNoCommit: headCommit) ifTrue: [
+		^ self signalMissingHeadCommitFor: aRepository ].
+	^ self
 ]

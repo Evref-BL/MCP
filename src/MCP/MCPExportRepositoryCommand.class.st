@@ -14,7 +14,7 @@ MCPExportRepositoryCommand >> execute [
 
 	| changedPackageNames diff modifiedPaths repository result restoredOrderOnlyPaths tonelSnapshot |
 	^ self tool
-		  executeEditOperation: 'export'
+		  executeMutationAction: 'export'
 		  force: false
 		  requestedContext: self request requestedContext
 		  work: [
@@ -87,11 +87,9 @@ MCPExportRepositoryCommand >> repositorySourceDirectoryFor: aRepository [
 
 	| location subdirectory |
 	location := aRepository location asFileReference.
-	subdirectory := [ aRepository subdirectory ]
-		                on: Error
-		                do: [ :ignored | nil ].
-	(subdirectory isNil or: [ subdirectory asString isEmpty ]) ifTrue: [
-		^ location ].
+	subdirectory := aRepository subdirectory.
+	subdirectory ifNil: [ ^ location ].
+	subdirectory asString isEmpty ifTrue: [ ^ location ].
 	^ location / subdirectory asString
 ]
 

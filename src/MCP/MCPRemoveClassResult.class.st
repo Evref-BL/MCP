@@ -76,9 +76,7 @@ MCPRemoveClassResult >> reparentedToSuperclassName [
 { #category : 'accessing' }
 MCPRemoveClassResult >> reparentedToSuperclassName: aString [
 
-	reparentedToSuperclassName := aString
-		                              ifNil: [ '' ]
-		                              ifNotNil: [ aString ]
+	reparentedToSuperclassName := aString ifNil: [ '' ]
 ]
 
 { #category : 'accessing' }

@@ -1,3 +1,6 @@
+"
+Concrete repository_update tool. It changes image-side repository subdirectory or package membership through MCPToolRepositoryOperation without writing packages to files.
+"
 Class {
 	#name : 'MCPToolUpdateRepository',
 	#superclass : 'MCPToolRepositoryOperation',
@@ -12,15 +15,15 @@ MCPToolUpdateRepository class >> toolName [
 	^ 'repository_update'
 ]
 
-{ #category : 'private - operations' }
-MCPToolUpdateRepository >> repositoryOperationSpec [
+{ #category : 'private - specs' }
+MCPToolUpdateRepository >> repositoryToolSpec [
 
 	^ {
 		  (#title -> 'Update Repository').
 		  (#description
 		   ->
 		   'Change image-side repository subdirectory or package membership without writing packages to files.').
-		  (#operation -> 'update').
+		  (#action -> 'update').
 		  (#requestClass -> MCPRepositoryUpdateRequest).
 		  (#commandClass -> MCPUpdateRepositoryCommand).
 		  (#inputProperties -> {

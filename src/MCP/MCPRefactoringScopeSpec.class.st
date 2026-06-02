@@ -1,5 +1,5 @@
 "
-Parsed refactoring scope input shared by edit tools.
+Parsed refactoring scope input shared by mutation tools.
 "
 Class {
 	#name : 'MCPRefactoringScopeSpec',

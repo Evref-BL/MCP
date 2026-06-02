@@ -197,17 +197,19 @@ MCPToolRemoveClasses >> defaultTitle [
 { #category : 'private' }
 MCPToolRemoveClasses >> errorResultForError: anError classNames: classNames [
 
-	(anError isKindOf: MCPCommandError) ifTrue: [
-		^ self
-			  errorResultText: anError messageText
-			  details: anError structuredDetails ].
-	^ self
-		  errorResultText:
-		  (self failureMessageForClassNames: classNames error: anError)
-		  details: {
-				  (#errorClass -> anError class name).
-				  (#message -> anError messageText).
-				  (#classNames -> classNames asArray) } asDictionary
+	^ anError
+		  mcpCommandErrorDo: [ :commandError |
+				  self
+					  errorResultText: commandError messageText
+					  details: commandError structuredDetails ]
+		  otherwise: [ :toolError |
+				  self
+					  errorResultText:
+					  (self failureMessageForClassNames: classNames error: toolError)
+					  details: {
+							  (#errorClass -> toolError class name).
+							  (#message -> toolError messageText).
+							  (#classNames -> classNames asArray) } asDictionary ]
 ]
 
 { #category : 'executing' }

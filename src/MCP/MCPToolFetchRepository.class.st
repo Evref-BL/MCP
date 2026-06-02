@@ -1,3 +1,6 @@
+"
+Concrete repository_fetch tool. It fetches remote refs for a registered Iceberg repository through MCPToolRepositoryOperation.
+"
 Class {
 	#name : 'MCPToolFetchRepository',
 	#superclass : 'MCPToolRepositoryOperation',
@@ -12,14 +15,14 @@ MCPToolFetchRepository class >> toolName [
 	^ 'repository_fetch'
 ]
 
-{ #category : 'private - operations' }
-MCPToolFetchRepository >> repositoryOperationSpec [
+{ #category : 'private - specs' }
+MCPToolFetchRepository >> repositoryToolSpec [
 
 	^ {
 		  (#title -> 'Fetch Repository').
 		  (#description
 		   -> 'Fetch remote refs for a registered Iceberg repository.').
-		  (#operation -> 'fetch').
+		  (#action -> 'fetch').
 		  (#requestClass -> MCPRepositoryFetchRequest).
 		  (#commandClass -> MCPFetchRepositoryCommand) } asDictionary
 ]

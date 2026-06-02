@@ -23,35 +23,6 @@ MCPToolRunTests >> commandForRequest: runTestsRequest [
 	^ MCPRunTestsCommand tool: self request: runTestsRequest
 ]
 
-{ #category : 'private - errors' }
-MCPToolRunTests >> compactTestNameFrom: testRequest [
-
-	| className testMethodName |
-	(testRequest respondsTo: #displayName) ifTrue: [
-		^ testRequest displayName ].
-	(testRequest respondsTo: #at:ifAbsent:) ifFalse: [
-		^ testRequest asString ].
-	className := testRequest
-		             at: #className
-		             ifAbsent: [
-		             testRequest at: 'className' ifAbsent: [ nil ] ].
-	className ifNil: [ ^ testRequest asString ].
-	testMethodName := testRequest
-		                  at: #testMethodName
-		                  ifAbsent: [
-		                  testRequest at: 'testMethodName' ifAbsent: [ nil ] ].
-	^ testMethodName
-		  ifNil: [ className asString ]
-		  ifNotNil: [ className asString , '>>' , testMethodName asString ]
-]
-
-{ #category : 'private' }
-MCPToolRunTests >> compactTestNamesFrom: testRequests [
-
-	^ (testRequests collect: [ :each | self compactTestNameFrom: each ])
-		  asArray
-]
-
 { #category : 'private - coverage schema' }
 MCPToolRunTests >> coverageMethodArrayPropertyNamed: propertyName description: propertyDescription [
 
@@ -286,20 +257,21 @@ MCPToolRunTests >> defaultTitle [
 ]
 
 { #category : 'private' }
-MCPToolRunTests >> errorResultForError: anError tests: testRequests [
+MCPToolRunTests >> errorResultForError: anError testNames: testNames [
 
-	(anError isKindOf: MCPCommandError) ifTrue: [
-		^ self
-			  errorResultText: anError messageText
-			  details: anError structuredDetails ].
-	^ self
-		  errorResultText:
-		  (self failureMessageForTests: testRequests error: anError)
-		  details: {
-				  (#errorClass -> anError class name).
-				  (#message -> anError messageText).
-				  (#tests -> (self compactTestNamesFrom: testRequests)) }
-				  asDictionary
+	^ anError
+		  mcpCommandErrorDo: [ :commandError |
+				  self
+					  errorResultText: commandError messageText
+					  details: commandError structuredDetails ]
+		  otherwise: [ :toolError |
+				  self
+					  errorResultText:
+					  (self failureMessageForTestNames: testNames error: toolError)
+					  details: {
+							  (#errorClass -> toolError class name).
+							  (#message -> toolError messageText).
+							  (#tests -> testNames) } asDictionary ]
 ]
 
 { #category : 'executing' }
@@ -308,30 +280,29 @@ MCPToolRunTests >> executeWithRequest: request [
 	^ self
 		  executeParsedRequestFrom: request
 		  do: [ :runTestsRequest |
-			  | data result |
-			  result := (self commandForRequest: runTestsRequest) execute.
-			  data := result asDictionary.
-			  self
-				  successResultText: (self successSummaryForData: data)
-				  data: data ]
+				  | data result |
+				  result := (self commandForRequest: runTestsRequest) execute.
+				  data := result asDictionary.
+				  self
+					  successResultText: (self successSummaryForData: data)
+					  data: data ]
 		  onError: [ :error :runTestsRequest |
-			  self errorResultForError: error tests: (self
-					   testRequestsForErrorFromParsedRequest: runTestsRequest
-					   rawRequest: request) ]
+				  self errorResultForError: error testNames: (self
+						   testNamesForErrorFromParsedRequest: runTestsRequest
+						   rawRequest: request) ]
 ]
 
 { #category : 'private' }
-MCPToolRunTests >> failureMessageForTests: testRequests error: anError [
+MCPToolRunTests >> failureMessageForTestNames: testNames error: anError [
 
 	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: 'Unable to run tests: ';
-			  nextPutAll:
-				  (', ' join: (self compactTestNamesFrom: testRequests));
-			  nextPutAll: ' (';
-			  nextPutAll: anError class name;
-			  nextPutAll: '): ';
-			  nextPutAll: anError messageText ]
+			  stream
+				  nextPutAll: 'Unable to run tests: ';
+				  nextPutAll: (', ' join: testNames);
+				  nextPutAll: ' (';
+				  nextPutAll: anError class name;
+				  nextPutAll: '): ';
+				  nextPutAll: anError messageText ]
 ]
 
 { #category : 'private - request' }
@@ -495,6 +466,42 @@ MCPToolRunTests >> testIssueObjectSchema [
 	^ issueProperty
 ]
 
+{ #category : 'private - errors' }
+MCPToolRunTests >> testNameFromRawTestValue: rawValue request: rawRequest [
+
+	| className testMethodName |
+	rawValue isDictionary ifFalse: [ ^ rawValue asString ].
+	className := rawRequest
+		             valueNamed: 'className'
+		             in: rawValue
+		             ifAbsent: [ ^ rawValue asString ].
+	className ifNil: [ ^ rawValue asString ].
+	testMethodName := rawRequest
+		                  valueNamed: 'testMethodName'
+		                  in: rawValue
+		                  ifAbsent: [ nil ].
+	^ testMethodName
+		  ifNil: [ className asString ]
+		  ifNotNil: [ :methodName |
+		  className asString , '>>' , methodName asString ]
+]
+
+{ #category : 'private - errors' }
+MCPToolRunTests >> testNamesForErrorFromParsedRequest: runTestsRequest rawRequest: rawRequest [
+
+	runTestsRequest ifNotNil: [
+		^ self testNamesFromRequests: runTestsRequest testRequests ].
+	^ ((rawRequest objectCollectionArgumentNamed: 'tests') collect: [
+		   :each | self testNameFromRawTestValue: each request: rawRequest ])
+		  asArray
+]
+
+{ #category : 'private - errors' }
+MCPToolRunTests >> testNamesFromRequests: testRequests [
+
+	^ (testRequests collect: [ :each | each displayName ]) asArray
+]
+
 { #category : 'private' }
 MCPToolRunTests >> testRequestObjectSchema [
 
@@ -514,20 +521,6 @@ MCPToolRunTests >> testRequestObjectSchema [
 		  required: #( 'className' );
 		  additionalProperties: false;
 		  yourself
-]
-
-{ #category : 'private - errors' }
-MCPToolRunTests >> testRequestsForErrorFromParsedRequest: runTestsRequest rawRequest: rawRequest [
-
-	runTestsRequest ifNotNil: [ ^ runTestsRequest testRequests ].
-	^ [
-	  (rawRequest objectCollectionArgumentNamed: 'tests') collect: [
-		  :each |
-		  [ MCPTestRunRequest fromValue: each usingToolRequest: rawRequest ]
-			  on: Exception
-			  do: [ :ignored | each ] ] ]
-		  on: Exception
-		  do: [ :ignored | #(  ) ]
 ]
 
 { #category : 'private' }

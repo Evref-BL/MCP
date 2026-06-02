@@ -54,5 +54,5 @@ MCPReparentClassResult >> oldSuperclassName [
 { #category : 'accessing' }
 MCPReparentClassResult >> oldSuperclassName: aString [
 
-	oldSuperclassName := aString ifNil: [ '' ] ifNotNil: [ aString ]
+	oldSuperclassName := aString ifNil: [ '' ]
 ]

@@ -32,17 +32,9 @@ MCPChangeHistoryCommand class >> tool: aTool request: aRequest [
 { #category : 'private - log' }
 MCPChangeHistoryCommand >> currentHistoryFileReference [
 
-	| store lowLevel |
 	EpMonitor hasCurrent ifFalse: [ ^ nil ].
 	EpMonitor current sessionStore flush.
-	store := EpMonitor current log store.
-	(store respondsTo: #writingFileReference) ifTrue: [
-		^ store writingFileReference ].
-	(store respondsTo: #lowLevelFileStoreIfNone:) ifFalse: [ ^ nil ].
-	lowLevel := store lowLevelFileStoreIfNone: [ nil ].
-	(lowLevel notNil and: [ lowLevel respondsTo: #writingFileReference ])
-		ifTrue: [ ^ lowLevel writingFileReference ].
-	^ nil
+	^ EpMonitor current log store writingFileReference
 ]
 
 { #category : 'private - log' }
@@ -78,9 +70,9 @@ MCPChangeHistoryCommand >> isCodeChangeEntry: anEntry [
 	| content |
 	content := [ anEntry content ]
 		           on: Error
-		           do: [ :error | nil ].
-	^ content notNil and: [
-		  (content respondsTo: #isCodeChange) and: [ content isCodeChange ] ]
+		           do: [ :error | ^ false ].
+	content ifNil: [ ^ false ].
+	^ content isCodeChange
 ]
 
 { #category : 'private - log' }
@@ -124,10 +116,7 @@ MCPChangeHistoryCommand >> logAndPathFromFilePath: aPathString [
 { #category : 'private - references' }
 MCPChangeHistoryCommand >> referenceStringFor: aReference [
 
-	aReference ifNil: [ ^ nil ].
-	(aReference respondsTo: #shortName) ifTrue: [
-		^ aReference shortName asString ].
-	^ aReference asString
+	^ MCPChangeHistoryValueExtractor referenceStringFrom: aReference
 ]
 
 { #category : 'accessing' }
@@ -139,10 +128,9 @@ MCPChangeHistoryCommand >> request [
 { #category : 'private - files' }
 MCPChangeHistoryCommand >> sameFileReference: firstFile as: secondFile [
 
-	(firstFile isNil or: [ secondFile isNil ]) ifTrue: [ ^ false ].
-	^ [ firstFile fullName = secondFile fullName ]
-		  on: Error
-		  do: [ :error | firstFile = secondFile ]
+	firstFile ifNil: [ ^ false ].
+	secondFile ifNil: [ ^ false ].
+	^ firstFile fullName = secondFile fullName
 ]
 
 { #category : 'accessing' }

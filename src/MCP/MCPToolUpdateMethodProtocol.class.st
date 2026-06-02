@@ -1,9 +1,9 @@
 "
-Focused tool that recategorizes one method into a protocol without exposing the broader method edit operation selector.
+Tool that recategorizes one method into a protocol without exposing a combined method-mutation selector.
 "
 Class {
 	#name : 'MCPToolUpdateMethodProtocol',
-	#superclass : 'MCPToolMethodOperation',
+	#superclass : 'MCPToolMethodMutation',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -15,14 +15,14 @@ MCPToolUpdateMethodProtocol class >> toolName [
 	^ 'method_protocol_update'
 ]
 
-{ #category : 'private - operations' }
-MCPToolUpdateMethodProtocol >> methodOperationSpec [
+{ #category : 'private - specs' }
+MCPToolUpdateMethodProtocol >> methodToolSpec [
 
 	^ {
 		  (#title -> 'Update Method Protocol').
 		  (#description
 		   -> 'Move one method to another protocol or extension protocol.').
-		  (#operation -> 'update').
+		  (#action -> 'update').
 		  (#inputProperties -> {
 			   (MCPStructureProperties new
 				    name: 'className';

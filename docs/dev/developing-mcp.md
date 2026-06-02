@@ -73,9 +73,9 @@ Live checks require an approved safe image boundary:
 
 - loading `BaselineOfMCP` into a clean image;
 - starting `MCP` over HTTP;
-- verifying MCP tool listing and focused tool calls;
+- verifying MCP tool listing and specific tool calls;
 - running `MCP-Tests` or `MCP-Spec-Tests` in the image;
-- exercising edit/export/repository mutation tools;
+- exercising edit/export/repository operation tools;
 - exercising debugger tools against a captured or attached debug session when
   debugger behavior changes.
 

@@ -51,9 +51,8 @@ MCPDebugVariableReference class >> fromString: aReferenceString [
 		  stateId: tokens second
 		  frameIndex: frameIndex
 		  scopeName: (scopeToken allButFirst: 6)
-		  variableName: (variableToken
-				   ifNil: [ nil ]
-				   ifNotNil: [ variableToken allButFirst: 4 ])
+		  variableName:
+		  (variableToken ifNotNil: [ variableToken allButFirst: 4 ])
 		  pathSegments: pathSegments asArray
 ]
 

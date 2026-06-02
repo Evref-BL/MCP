@@ -50,11 +50,7 @@ MCPDebugTestCommand >> captureWarnings [
 { #category : 'private - results' }
 MCPDebugTestCommand >> capturedReasonFor: aDebugSession [
 
-	| exception |
-	exception := aDebugSession exception.
-	(exception isKindOf: Break) ifTrue: [ ^ 'debugStop' ].
-	(exception isKindOf: TestFailure) ifTrue: [ ^ 'testFailure' ].
-	^ 'testError'
+	^ aDebugSession exception mcpDebugCapturedReason
 ]
 
 { #category : 'private - results' }
@@ -115,9 +111,7 @@ MCPDebugTestCommand >> completedResultFor: ignored [
 { #category : 'private - worker' }
 MCPDebugTestCommand >> debugStartContextFor: anException [
 
-	(anException isKindOf: Break) ifTrue: [
-		^ anException signalerContext sender ].
-	^ anException signalerContext
+	^ anException mcpDebugStartContext
 ]
 
 { #category : 'executing' }
@@ -208,7 +202,7 @@ MCPDebugTestCommand >> testClass [
 		         at: request className asSymbol
 		         ifAbsent: [
 		         MCPCommandError signalMissingClassNamed: request className ].
-	(class = TestCase or: [ class inheritsFrom: TestCase ]) ifFalse: [
+	(TestCase withAllSubclasses includes: class) ifFalse: [
 		self signalClassIsNotTestCase: class ].
 	^ class
 ]

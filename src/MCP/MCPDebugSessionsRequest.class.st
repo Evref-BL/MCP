@@ -1,5 +1,5 @@
 "
-Request object for focused debug session registry operations.
+Request object for debug session registry operations.
 "
 Class {
 	#name : 'MCPDebugSessionsRequest',
@@ -13,12 +13,8 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPDebugSessionsRequest class >> fromRequest: aRequest tool: aTool [
+MCPDebugSessionsRequest class >> fromRequest: aRequest tool: aTool operation: operationName [
 
-	| operationName |
-	operationName := aRequest
-		                 stringArgumentNamed: 'operation'
-		                 default: 'list'.
 	(self supportedOperations includes: operationName) ifFalse: [
 			MCPCommandError
 				signalErrorCode: #DebugSessionsOperationUnsupported
@@ -39,7 +35,7 @@ MCPDebugSessionsRequest class >> fromRequest: aRequest tool: aTool [
 { #category : 'accessing' }
 MCPDebugSessionsRequest class >> supportedOperations [
 
-	^ #( 'list' 'describe' 'forget' 'discover' 'attach' )
+	^ #( 'list' 'get' 'remove' 'search' 'attach' )
 ]
 
 { #category : 'accessing' }

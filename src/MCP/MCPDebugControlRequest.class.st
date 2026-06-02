@@ -15,10 +15,8 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPDebugControlRequest class >> fromRequest: aRequest tool: aTool [
+MCPDebugControlRequest class >> fromRequest: aRequest tool: aTool operation: operationName [
 
-	| operationName |
-	operationName := aRequest stringArgumentNamed: 'operation'.
 	(self supportedOperations includes: operationName) ifFalse: [
 			MCPCommandError
 				signalErrorCode: #DebugControlOperationUnsupported

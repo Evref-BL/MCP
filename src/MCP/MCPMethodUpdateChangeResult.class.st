@@ -1,5 +1,5 @@
 "
-DTO for the narrow method update performed by a focused update request, such as a rename or protocol change.
+DTO for the narrow method update performed by a method update request, such as a rename or protocol change.
 "
 Class {
 	#name : 'MCPMethodUpdateChangeResult',

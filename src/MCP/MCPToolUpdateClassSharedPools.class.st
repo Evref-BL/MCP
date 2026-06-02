@@ -1,9 +1,9 @@
 "
-Focused tool that replaces the shared pools referenced by one class.
+Tool that replaces the shared pools referenced by one class.
 "
 Class {
 	#name : 'MCPToolUpdateClassSharedPools',
-	#superclass : 'MCPToolClassOperation',
+	#superclass : 'MCPToolClassMutation',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -15,8 +15,8 @@ MCPToolUpdateClassSharedPools class >> toolName [
 	^ 'class_shared_pools_update'
 ]
 
-{ #category : 'private - operations' }
-MCPToolUpdateClassSharedPools >> classOperationSpec [
+{ #category : 'private - specs' }
+MCPToolUpdateClassSharedPools >> classToolSpec [
 
 	^ {
 		  (#title -> 'Update Class Shared Pools').

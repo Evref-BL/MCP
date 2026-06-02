@@ -44,7 +44,7 @@ MCPCreateRepositoryCommand >> execute [
 
 	| repository result |
 	^ self tool
-		  executeEditOperation: 'create'
+		  executeMutationAction: 'create'
 		  force: false
 		  requestedContext: self request requestedContext
 		  work: [

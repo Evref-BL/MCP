@@ -14,7 +14,7 @@ MCPRepositoryDiffCommand >> execute [
 
 	| changedPackageNames diff modifiedPaths repository result |
 	^ self tool
-		  executeEditOperation: 'diff'
+		  executeMutationAction: 'diff'
 		  force: false
 		  requestedContext: self request requestedContext
 		  work: [

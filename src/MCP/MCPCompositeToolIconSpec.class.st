@@ -78,9 +78,8 @@ MCPCompositeToolIconSpec >> leftBadgeIconSymbol [
 { #category : 'accessing' }
 MCPCompositeToolIconSpec >> leftBadgeIconSymbol: anIconSymbol [
 
-	leftBadgeIconSymbol := anIconSymbol
-		                       ifNil: [ nil ]
-		                       ifNotNil: [ anIconSymbol asSymbol ]
+	leftBadgeIconSymbol := anIconSymbol ifNotNil: [
+		                       anIconSymbol asSymbol ]
 ]
 
 { #category : 'rendering' }

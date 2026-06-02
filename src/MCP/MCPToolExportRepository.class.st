@@ -1,3 +1,6 @@
+"
+Concrete repository_export tool. It materializes image-side repository changes to Tonel files through MCPToolRepositoryOperation without staging or committing Git changes.
+"
 Class {
 	#name : 'MCPToolExportRepository',
 	#superclass : 'MCPToolRepositoryOperation',
@@ -12,15 +15,15 @@ MCPToolExportRepository class >> toolName [
 	^ 'repository_export'
 ]
 
-{ #category : 'private - operations' }
-MCPToolExportRepository >> repositoryOperationSpec [
+{ #category : 'private - specs' }
+MCPToolExportRepository >> repositoryToolSpec [
 
 	^ {
 		  (#title -> 'Export Repository').
 		  (#description
 		   ->
 		   'Materialize image-side repository changes to Tonel files through Iceberg without staging or committing Git changes.').
-		  (#operation -> 'export').
+		  (#action -> 'export').
 		  (#requestClass -> MCPRepositoryExportRequest).
 		  (#commandClass -> MCPExportRepositoryCommand) } asDictionary
 ]

@@ -1,3 +1,6 @@
+"
+Tests compiled-method metadata extraction.
+"
 Class {
 	#name : 'MCPCompiledMethodInfoTest',
 	#superclass : 'MCPTestCase',

@@ -82,7 +82,7 @@ For method lookup:
 - use `method_metadata_search` for method metadata search.
 
 Top-level `method_metadata_search` filtering is limited to `selector` and
-`protocol` fields. Use the focused method lookup tools for source, equivalent
+`protocol` fields. Use the specialized method lookup tools for source, equivalent
 methods, implementors, senders, class references, and variable references.
 
 For change history, use `history_file_list` to locate `.ombu` files
@@ -96,7 +96,7 @@ and `repository_change_list` before exporting or committing image changes.
 Use exact plural filters for known repository names, locations, or package
 names; use singular text filters such as `branchName`, `headCommitId`, and
 `remoteUrl` when searching repository metadata.
-Prefer focused repository tools such as `repository_export`,
+Prefer repository tools such as `repository_export`,
 `repository_commit`, `repository_fetch`, `repository_pull`, `repository_push`,
 `repository_branch_create`, `repository_branch_switch`, and
 `repository_head_adopt` when they exist. Use `repository_create`,

@@ -1,9 +1,9 @@
 "
-Focused tool that creates or replaces one method from source without exposing the broader method edit operation selector.
+Tool that creates or replaces one method from source without exposing a combined method-mutation selector.
 "
 Class {
 	#name : 'MCPToolCreateMethod',
-	#superclass : 'MCPToolMethodOperation',
+	#superclass : 'MCPToolMethodMutation',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -15,15 +15,15 @@ MCPToolCreateMethod class >> toolName [
 	^ 'method_create'
 ]
 
-{ #category : 'private - operations' }
-MCPToolCreateMethod >> methodOperationSpec [
+{ #category : 'private - specs' }
+MCPToolCreateMethod >> methodToolSpec [
 
 	^ {
 		  (#title -> 'Create Method').
 		  (#description
 		   ->
 		   'Create or replace one method on the instance side or class side of a class.').
-		  (#operation -> 'create').
+		  (#action -> 'create').
 		  (#inputProperties -> {
 			   (MCPStructureProperties new
 				    name: 'className';

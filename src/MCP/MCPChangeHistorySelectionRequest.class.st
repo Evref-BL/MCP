@@ -62,7 +62,9 @@ MCPChangeHistorySelectionRequest >> entryReferences [
 { #category : 'testing' }
 MCPChangeHistorySelectionRequest >> hasRangeSelection [
 
-	^ startIndex notNil or: [ endIndex notNil ]
+	startIndex ifNotNil: [ ^ true ].
+	endIndex ifNotNil: [ ^ true ].
+	^ false
 ]
 
 { #category : 'testing' }
@@ -186,6 +188,17 @@ MCPChangeHistorySelectionRequest >> selectionCriteria [
 	^ criteria
 ]
 
+{ #category : 'private - validation' }
+MCPChangeHistorySelectionRequest >> signalIncompleteRangeSelection [
+
+	self
+		signalInvalidSelection:
+		'startIndex and endIndex must be provided together for range selection.'
+		details: {
+				(#startIndex -> startIndex).
+				(#endIndex -> endIndex) } asDictionary
+]
+
 { #category : 'private' }
 MCPChangeHistorySelectionRequest >> signalInvalidSelection: aMessage details: aDictionary [
 
@@ -205,24 +218,19 @@ MCPChangeHistorySelectionRequest >> startIndex [
 MCPChangeHistorySelectionRequest >> validateSelectionCriteria [
 
 	self hasRangeSelection ifTrue: [
-		(startIndex isNil or: [ endIndex isNil ]) ifTrue: [
-			self
-				signalInvalidSelection:
-				'startIndex and endIndex must be provided together for range selection.'
-				details: {
-						(#startIndex -> startIndex).
-						(#endIndex -> endIndex) } asDictionary ].
-		startIndex > endIndex ifTrue: [
-			self
-				signalInvalidSelection:
-				'startIndex must be less than or equal to endIndex.'
-				details: {
-						(#startIndex -> startIndex).
-						(#endIndex -> endIndex) } asDictionary ] ].
+			startIndex ifNil: [ self signalIncompleteRangeSelection ].
+			endIndex ifNil: [ self signalIncompleteRangeSelection ].
+			startIndex > endIndex ifTrue: [
+					self
+						signalInvalidSelection:
+						'startIndex must be less than or equal to endIndex.'
+						details: {
+								(#startIndex -> startIndex).
+								(#endIndex -> endIndex) } asDictionary ] ].
 	self hasSelectionCriteria ifFalse: [
-		self
-			signalInvalidSelection:
-			'Provide at least one selection criterion: indexes, entryReferences, startIndex/endIndex, or latestCount.'
-			details: Dictionary new ].
+			self
+				signalInvalidSelection:
+				'Provide at least one selection criterion: indexes, entryReferences, startIndex/endIndex, or latestCount.'
+				details: Dictionary new ].
 	^ self
 ]

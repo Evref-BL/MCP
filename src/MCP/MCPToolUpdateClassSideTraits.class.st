@@ -1,9 +1,9 @@
 "
-Focused tool that replaces the class-side trait composition of one class.
+Tool that replaces the class-side trait composition of one class.
 "
 Class {
 	#name : 'MCPToolUpdateClassSideTraits',
-	#superclass : 'MCPToolClassOperation',
+	#superclass : 'MCPToolClassMutation',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -15,8 +15,8 @@ MCPToolUpdateClassSideTraits class >> toolName [
 	^ 'class_side_traits_update'
 ]
 
-{ #category : 'private - operations' }
-MCPToolUpdateClassSideTraits >> classOperationSpec [
+{ #category : 'private - specs' }
+MCPToolUpdateClassSideTraits >> classToolSpec [
 
 	^ {
 		  (#title -> 'Update Class-Side Traits').

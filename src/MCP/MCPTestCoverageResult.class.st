@@ -169,13 +169,12 @@ MCPTestCoverageResult >> partiallyCoveredMethods [
 	^ partiallyCoveredMethods ifNil: [ #(  ) ]
 ]
 
-{ #category : 'private - coverage' }
+{ #category : 'accessing' }
 MCPTestCoverageResult >> percentage [
 
 	| percentage |
 	percentage := self coverageResult percentage.
-	((percentage respondsTo: #isNaN) and: [ percentage isNaN ]) ifTrue: [
-		^ nil ].
+	percentage isNaN ifTrue: [ ^ nil ].
 	^ percentage asFloat
 ]
 

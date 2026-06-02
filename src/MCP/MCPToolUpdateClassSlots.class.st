@@ -1,9 +1,9 @@
 "
-Focused tool that replaces the instance-side and/or class-side slot definition of one class.
+Tool that replaces the instance-side and/or class-side slot definition of one class.
 "
 Class {
 	#name : 'MCPToolUpdateClassSlots',
-	#superclass : 'MCPToolClassOperation',
+	#superclass : 'MCPToolClassMutation',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -15,8 +15,8 @@ MCPToolUpdateClassSlots class >> toolName [
 	^ 'class_slots_update'
 ]
 
-{ #category : 'private - operations' }
-MCPToolUpdateClassSlots >> classOperationSpec [
+{ #category : 'private - specs' }
+MCPToolUpdateClassSlots >> classToolSpec [
 
 	^ {
 		  (#title -> 'Update Class Slots').

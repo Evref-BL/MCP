@@ -57,7 +57,7 @@ MCPRenameClassResult >> newClassName [
 { #category : 'accessing' }
 MCPRenameClassResult >> newClassName: aString [
 
-	newClassName := aString ifNil: [ '' ] ifNotNil: [ aString ]
+	newClassName := aString ifNil: [ '' ]
 ]
 
 { #category : 'accessing' }
@@ -69,5 +69,5 @@ MCPRenameClassResult >> oldClassName [
 { #category : 'accessing' }
 MCPRenameClassResult >> oldClassName: aString [
 
-	oldClassName := aString ifNil: [ '' ] ifNotNil: [ aString ]
+	oldClassName := aString ifNil: [ '' ]
 ]
