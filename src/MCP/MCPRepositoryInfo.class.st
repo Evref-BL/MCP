@@ -296,7 +296,7 @@ MCPRepositoryInfo >> sortedStringsFrom: aBlock [
 			| string |
 			string := self stringValue: each default: ''.
 			string isEmpty ifFalse: [ normalized add: string ] ].
-	^ normalized asArray asSortedCollection asArray
+	^ normalized asArray sort
 ]
 
 { #category : 'private' }

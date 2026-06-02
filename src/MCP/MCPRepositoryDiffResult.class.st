@@ -83,7 +83,7 @@ MCPRepositoryDiffResult >> initializeRepository: aRepository changedPackageNames
 	| packages |
 	repositoryInfo := MCPRepositoryInfo fromRepository: aRepository.
 	packages := aRepository workingCopy packages asArray
-		            asSortedCollection: [ :left :right |
+		            sort: [ :left :right |
 		            left name asString <= right name asString ].
 	packageInfos := packages collect: [ :each |
 		                MCPRepositoryPackageInfo fromPackage: each ].

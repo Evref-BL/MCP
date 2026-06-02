@@ -226,8 +226,8 @@ MCPGitRepositoryMetadata >> remoteDictionaries [
 							remotes add: {
 									(#name -> remoteName).
 									(#url -> remoteUrl) } asDictionary ] ] ].
-	^ (remotes asArray asSortedCollection: [ :left :right |
-		   (left at: #name) <= (right at: #name) ]) asArray
+	^ remotes asArray sort: [ :left :right |
+		  (left at: #name) <= (right at: #name) ]
 ]
 
 { #category : 'accessing' }

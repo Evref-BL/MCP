@@ -19,6 +19,5 @@ TMCPClassTool >> resolvedClassNamed: className [
 { #category : 'private - classes' }
 TMCPClassTool >> sortedClassesByName: someClasses [
 
-	^ (someClasses asSortedCollection: [ :left :right |
-		   left name <= right name ]) asArray
+	^ someClasses asArray sort: [ :left :right | left name <= right name ]
 ]

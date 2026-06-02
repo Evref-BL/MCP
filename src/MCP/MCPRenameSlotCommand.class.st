@@ -56,10 +56,10 @@ MCPRenameSlotCommand >> classSideAccessorMessageRewriter [
 	| rewriter |
 	rewriter := RBParseTreeRewriter new.
 	rewriter
-		replace: '``@receiver ' , self slotName , ': ``@value'
-		with: '``@receiver ' , self newSlotName , ': ``@value';
-		replace: '``@receiver ' , self slotName
-		with: '``@receiver ' , self newSlotName.
+		replace: '`@receiver ' , self slotName , ': `@value'
+		with: '`@receiver ' , self newSlotName , ': `@value';
+		replace: '`@receiver ' , self slotName
+		with: '`@receiver ' , self newSlotName.
 	^ rewriter
 ]
 

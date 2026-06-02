@@ -42,7 +42,7 @@ MCPMethodUpdateRequest class >> fromRequest: request tool: aTool [
 { #category : 'accessing' }
 MCPMethodUpdateRequest >> addedArgumentCount [
 
-	^ (self permutation select: [ :each | each <= 0 ]) size
+	^ self permutation count: [ :each | each <= 0 ]
 ]
 
 { #category : 'accessing' }
@@ -231,15 +231,15 @@ MCPMethodUpdateRequest >> newArgumentSpecs [
 
 	| newArgumentIndex |
 	newArgumentIndex := 0.
-	^ ((1 to: self permutation size) select: [ :targetIndex |
-		   (self permutation at: targetIndex) <= 0 ]) collect: [
-		  :targetIndex |
-		  | argumentName defaultExpression |
-		  newArgumentIndex := newArgumentIndex + 1.
-		  argumentName := self argumentNames at: targetIndex.
-		  defaultExpression := self argumentValueExpressionAt:
-			                       newArgumentIndex.
-		  RBArgumentName name: argumentName value: defaultExpression ]
+	^ (1 to: self permutation size)
+		  select: [ :targetIndex | (self permutation at: targetIndex) <= 0 ]
+		  thenCollect: [ :targetIndex |
+				  | argumentName defaultExpression |
+				  newArgumentIndex := newArgumentIndex + 1.
+				  argumentName := self argumentNames at: targetIndex.
+				  defaultExpression := self argumentValueExpressionAt:
+					                       newArgumentIndex.
+				  RBArgumentName name: argumentName value: defaultExpression ]
 ]
 
 { #category : 'accessing' }
@@ -315,8 +315,8 @@ MCPMethodUpdateRequest >> removedArgumentIndexes [
 { #category : 'accessing' }
 MCPMethodUpdateRequest >> removedArgumentIndexesInRemovalOrder [
 
-	^ (self removedArgumentIndexes asSortedCollection: [ :left :right |
-		   left > right ]) asArray
+	^ self removedArgumentIndexes asArray sort: [ :left :right |
+		  left > right ]
 ]
 
 { #category : 'accessing' }

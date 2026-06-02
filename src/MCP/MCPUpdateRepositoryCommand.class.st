@@ -96,8 +96,8 @@ MCPUpdateRepositoryCommand >> initializeTool: aTool request: aRequest [
 { #category : 'private' }
 MCPUpdateRepositoryCommand >> normalizedPackageNames: packageNames [
 
-	^ (packageNames collect: [ :each | each asString ]) asSet
-		  asSortedCollection asArray
+	^ (packageNames collect: [ :each | each asString ]) asSet asArray
+		  sort
 ]
 
 { #category : 'private - packages' }
@@ -131,10 +131,12 @@ MCPUpdateRepositoryCommand >> replacePackagesIn: aRepository [
 	desiredPackages := self normalizedPackageNames:
 		                   self request packageNames.
 	currentPackages := self currentPackageNamesIn: aRepository.
-	(currentPackages reject: [ :each | desiredPackages includes: each ])
-		do: [ :each | self removePackageNamed: each from: aRepository ].
-	(desiredPackages reject: [ :each | currentPackages includes: each ])
-		do: [ :each | self addPackageNamed: each to: aRepository ]
+	currentPackages
+		reject: [ :each | desiredPackages includes: each ]
+		thenDo: [ :each | self removePackageNamed: each from: aRepository ].
+	desiredPackages
+		reject: [ :each | currentPackages includes: each ]
+		thenDo: [ :each | self addPackageNamed: each to: aRepository ]
 ]
 
 { #category : 'accessing' }

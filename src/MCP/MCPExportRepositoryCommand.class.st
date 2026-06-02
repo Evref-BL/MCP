@@ -180,5 +180,5 @@ MCPExportRepositoryCommand >> tonelMethodOrderSignatureFor: contents [
 	currentChunk ifNotNil: [ chunks add: currentChunk contents trimBoth ].
 	^ {
 		  (#preamble -> preamble contents trimBoth).
-		  (#methods -> chunks asSortedCollection asArray) } asDictionary
+		  (#methods -> chunks asArray sort) } asDictionary
 ]

@@ -123,8 +123,8 @@ MCPDebugSessionRegistry >> sessionRecordAt: aSessionId ifAbsent: absentBlock [
 { #category : 'accessing' }
 MCPDebugSessionRegistry >> sessionRecords [
 
-	^ (sessions values asSortedCollection: [ :left :right |
-		   left sessionId <= right sessionId ]) asArray
+	^ sessions values asArray sort: [ :left :right |
+		  left sessionId <= right sessionId ]
 ]
 
 { #category : 'accessing' }

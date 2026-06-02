@@ -133,9 +133,9 @@ MCPToolSearchRepositories >> repositoryEntriesForRequest: queryRequest [
 				         asQueryDictionary.
 			(self repositoryEntry: entry matchesRequest: queryRequest) ifTrue: [
 				entries add: entry ] ].
-	sortedEntries := entries asArray asSortedCollection: [ :left :right |
+	sortedEntries := entries asArray sort: [ :left :right |
 		                 (left at: #name) <= (right at: #name) ].
-	^ sortedEntries asArray
+	^ sortedEntries
 ]
 
 { #category : 'private - filtering' }

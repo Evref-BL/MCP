@@ -83,8 +83,7 @@ MCPRepositoryWorkingCopyCommand >> request [
 { #category : 'private' }
 MCPRepositoryWorkingCopyCommand >> sortedStringsFrom: aCollection [
 
-	^ (aCollection collect: [ :each | each asString ]) asSet
-		  asSortedCollection asArray
+	^ (aCollection collect: [ :each | each asString ]) asSet asArray sort
 ]
 
 { #category : 'accessing' }

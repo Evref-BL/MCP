@@ -76,7 +76,7 @@ MCPRepositoryVerifyIdentityResult >> packageInfosFromRepository: aRepository [
 
 	| packages |
 	packages := aRepository workingCopy packages asArray
-		            asSortedCollection: [ :left :right |
+		            sort: [ :left :right |
 		            left name asString <= right name asString ].
 	^ packages collect: [ :each |
 		  MCPRepositoryPackageInfo fromPackage: each ]

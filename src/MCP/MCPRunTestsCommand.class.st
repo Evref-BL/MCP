@@ -324,7 +324,7 @@ MCPRunTestsCommand >> testRequestsForTestCases: testCases startingAt: startIndex
 MCPRunTestsCommand >> testRunInfoForTestResult: aResult validatedRequest: validatedRequest selectedTestCount: selectedTestCount [
 
 	| issues |
-	issues := (aResult issueDetails asSortedCollection: [ :left :right |
+	issues := (aResult issueDetails asArray sort: [ :left :right |
 		           (left at: #testName) <= (right at: #testName) ])
 		          collect: [ :each |
 				          | issue |
@@ -335,7 +335,7 @@ MCPRunTestsCommand >> testRunInfoForTestResult: aResult validatedRequest: valida
 		  validatedRequest: validatedRequest
 		  selectedTestCount: selectedTestCount
 		  result: aResult
-		  issues: issues asArray
+		  issues: issues
 ]
 
 { #category : 'accessing' }

@@ -276,8 +276,7 @@ MCPClassScopeQuery >> resolvedPackageNamed: packageName inScope: scopeName [
 { #category : 'private - scope' }
 MCPClassScopeQuery >> sortedClassesByName: someClasses [
 
-	^ (someClasses asSortedCollection: [ :left :right |
-		   left name <= right name ]) asArray
+	^ someClasses asArray sort: [ :left :right | left name <= right name ]
 ]
 
 { #category : 'accessing' }

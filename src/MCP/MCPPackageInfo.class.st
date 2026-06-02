@@ -66,9 +66,10 @@ MCPPackageInfo >> initializeFromPackage: aPackage projectNames: someProjectNames
 	packageName := aPackage name asString.
 	projectNames := ((someProjectNames ifNil: [ #(  ) ])
 		                 collect: [ :each | each asString ]
-		                 as: Array) asSortedCollection asArray.
-	tagNames := (aPackage tagNames collect: [ :each | each asString ])
-		            asArray asSortedCollection asArray.
+		                 as: Array) sort.
+	tagNames := (aPackage tagNames
+		             collect: [ :each | each asString ]
+		             as: Array) sort.
 	definedClassCount := aPackage definedClasses size.
 	extensionMethodCount := aPackage extensionMethods size.
 	isUndefined := aPackage isUndefined.

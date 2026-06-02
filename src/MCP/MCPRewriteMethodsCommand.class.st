@@ -149,8 +149,8 @@ MCPRewriteMethodsCommand >> ruleHolders [
 { #category : 'private - rewriting' }
 MCPRewriteMethodsCommand >> sortedChanges: changes [
 
-	^ (changes asSortedCollection: [ :left :right |
-		   self sortsChange: left before: right ]) asArray
+	^ changes asArray sort: [ :left :right |
+		  self sortsChange: left before: right ]
 ]
 
 { #category : 'private - rewriting' }

@@ -332,9 +332,8 @@ MCPToolMethodSearch >> selectorReferenceEntriesForSelector: selectorString query
 { #category : 'private - methods' }
 MCPToolMethodSearch >> sortedMethodEntries: entries [
 
-	^ (entries asSortedCollection: [ :left :right |
-		   (self methodEntryLabel: left) <= (self methodEntryLabel: right) ])
-		  asArray
+	^ entries asArray sort: [ :left :right |
+		  (self methodEntryLabel: left) <= (self methodEntryLabel: right) ]
 ]
 
 { #category : 'private - template' }
