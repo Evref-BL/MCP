@@ -32,7 +32,8 @@ Class {
 		'tracesSectionExpanded',
 		'logsSectionExpanded',
 		'statusIcon',
-		'statusValueLabel'
+		'statusValueLabel',
+		'sectionExpansionInitialized'
 	],
 	#category : 'MCP-Spec',
 	#package : 'MCP-Spec'
@@ -276,6 +277,7 @@ MCPDashboardPresenter >> initializePresenters [
 	metricsSectionExpanded := true.
 	tracesSectionExpanded := true.
 	logsSectionExpanded := true.
+	sectionExpansionInitialized := false.
 
 	statusIcon := self instantiate: SpImagePresenter.
 	statusLabel := self instantiate: SpLabelPresenter.
@@ -350,6 +352,20 @@ MCPDashboardPresenter >> initializePresenters [
 		addColumn:
 			(SpStringTableColumn title: 'Log' evaluated: [ :line | line ]);
 		beResizable
+]
+
+{ #category : 'collapsing' }
+MCPDashboardPresenter >> initializeSectionExpansionFor: mcp [
+
+	sectionExpansionInitialized ifTrue: [ ^ self ].
+	toolsSectionExpanded := mcp sortedTools notEmpty.
+	metricsSectionExpanded := mcp monitoringEnabled or: [
+		                          mcp monitoringMetrics notEmpty ].
+	tracesSectionExpanded := mcp monitoringEnabled or: [
+		                         mcp monitoringTraces notEmpty ].
+	logsSectionExpanded := mcp monitoringEnabled or: [
+		                       mcp monitoringLogs notEmpty ].
+	sectionExpansionInitialized := true
 ]
 
 { #category : 'initialization' }
@@ -468,6 +484,7 @@ MCPDashboardPresenter >> metricsWidgetLayout [
 { #category : 'updating' }
 MCPDashboardPresenter >> modelChanged [
 
+	sectionExpansionInitialized := false.
 	self refreshView
 ]
 
@@ -590,6 +607,7 @@ MCPDashboardPresenter >> refreshView [
 	| isListening isRunning logs mcp metrics statusText tools traces |
 	mcp := self model ifNil: [ ^ self ].
 	self configureTracesTableMenu.
+	self initializeSectionExpansionFor: mcp.
 	tools := mcp sortedTools.
 	metrics := mcp monitoringMetrics.
 	traces := mcp monitoringTraces.

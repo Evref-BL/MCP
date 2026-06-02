@@ -240,6 +240,25 @@ MCPDashboardPresenterTest >> testDisclosureLabelsIncludeStateTitleAndCount [
 ]
 
 { #category : 'tests' }
+MCPDashboardPresenterTest >> testFreshMCPWithObservabilityDisabledCollapsesEmptyMonitoringSections [
+
+	| mcp presenter |
+	mcp := MCP new.
+	presenter := MCPDashboardPresenter on: mcp.
+	presenter refreshView.
+
+	self deny: mcp monitoringEnabled.
+	self assert: presenter isToolsSectionExpanded.
+	self deny: presenter isMetricsSectionExpanded.
+	self deny: presenter isTracesSectionExpanded.
+	self deny: presenter isLogsSectionExpanded.
+	self assert: presenter toolsWidgetLayout children size equals: 2.
+	self assert: presenter metricsWidgetLayout children size equals: 1.
+	self assert: presenter tracesWidgetLayout children size equals: 1.
+	self assert: presenter logsWidgetLayout children size equals: 1
+]
+
+{ #category : 'tests' }
 MCPDashboardPresenterTest >> testHeaderLayoutUsesStatusAndEndpointRows [
 
 	| headerLayout presenter statusRow |
@@ -268,6 +287,44 @@ MCPDashboardPresenterTest >> testHeaderLayoutUsesStatusAndEndpointRows [
 ]
 
 { #category : 'tests' }
+MCPDashboardPresenterTest >> testInitialSectionsOpenForObservabilityEnabled [
+
+	| mcp presenter |
+	mcp := MCP new.
+	mcp monitoringEnabled: true.
+	presenter := MCPDashboardPresenter on: mcp.
+	presenter refreshView.
+
+	self assert: presenter isMetricsSectionExpanded.
+	self assert: presenter isTracesSectionExpanded.
+	self assert: presenter isLogsSectionExpanded.
+	self assert: presenter metricsWidgetLayout children size equals: 2.
+	self assert: presenter tracesWidgetLayout children size equals: 2.
+	self assert: presenter logsWidgetLayout children size equals: 2
+]
+
+{ #category : 'tests' }
+MCPDashboardPresenterTest >> testInitialSectionsOpenForStoredMonitoringData [
+
+	| mcp presenter record |
+	mcp := MCP new.
+	mcp monitoringEnabled: true.
+	record := mcp monitoring recordToolCallStart: 'failing-tool'.
+	mcp monitoring
+		recordToolCallFinish: record
+		result: (MCPStructureErrorToolResult content: #(  ))
+		error: Error new.
+	mcp monitoringEnabled: false.
+	presenter := MCPDashboardPresenter on: mcp.
+	presenter refreshView.
+
+	self deny: mcp monitoringEnabled.
+	self assert: presenter isMetricsSectionExpanded.
+	self assert: presenter isTracesSectionExpanded.
+	self assert: presenter isLogsSectionExpanded
+]
+
+{ #category : 'tests' }
 MCPDashboardPresenterTest >> testLifecycleActionsOnlyContainServerControls [
 
 	| layout |
@@ -288,6 +345,22 @@ MCPDashboardPresenterTest >> testLogsForDisplayAreTailFirst [
 		assert:
 		(presenter logsForDisplayFrom: #( 'oldest' 'middle' 'newest' ))
 		equals: #( 'newest' 'middle' 'oldest' )
+]
+
+{ #category : 'tests' }
+MCPDashboardPresenterTest >> testManualExpansionWorksAfterInitialStateIsChosen [
+
+	| mcp presenter |
+	mcp := MCP new.
+	presenter := MCPDashboardPresenter on: mcp.
+	presenter refreshView.
+
+	self deny: presenter isMetricsSectionExpanded.
+	presenter toggleMetricsSection.
+	presenter refreshView.
+
+	self assert: presenter isMetricsSectionExpanded.
+	self assert: presenter metricsWidgetLayout children size equals: 2
 ]
 
 { #category : 'tests' }
@@ -356,20 +429,22 @@ MCPDashboardPresenterTest >> testRefreshViewUpdatesStatusIcon [
 { #category : 'tests' }
 MCPDashboardPresenterTest >> testRefreshViewUsesShortSectionLabels [
 
-	| logsHeader metricsHeader mcp presenter toolsHeader |
+	| logsHeader metricsHeader mcp presenter toolsHeader tracesHeader |
 	mcp := MCP new.
 	presenter := MCPDashboardPresenter on: mcp.
 	presenter refreshView.
 	toolsHeader := presenter instVarNamed: #toolsHeaderButton.
 	metricsHeader := presenter instVarNamed: #metricsHeaderButton.
+	tracesHeader := presenter instVarNamed: #tracesHeaderButton.
 	logsHeader := presenter instVarNamed: #logsHeaderButton.
 
 	self
 		assert: toolsHeader label
 		equals:
 		('[-] Tools ({1})' format: { mcp sortedTools size asString }).
-	self assert: metricsHeader label equals: '[-] Metrics (0)'.
-	self assert: logsHeader label equals: '[-] Logs (0)'
+	self assert: metricsHeader label equals: '[+] Metrics (0)'.
+	self assert: tracesHeader label equals: '[+] Traces (0)'.
+	self assert: logsHeader label equals: '[+] Logs (0)'
 ]
 
 { #category : 'tests' }
@@ -432,6 +507,19 @@ MCPDashboardPresenterTest >> testServerStatusLabelShowsListenerOnlyWhenAnomalous
 		assert:
 		(presenter serverStatusLabelForRunning: false listening: true)
 		equals: 'Status: stopped, socket still listening'
+]
+
+{ #category : 'tests' }
+MCPDashboardPresenterTest >> testToolsSectionCollapsesWhenToolCatalogIsEmpty [
+
+	| mcp presenter |
+	mcp := MCP new.
+	mcp toolsList: Dictionary new.
+	presenter := MCPDashboardPresenter on: mcp.
+	presenter refreshView.
+
+	self deny: presenter isToolsSectionExpanded.
+	self assert: presenter toolsWidgetLayout children size equals: 1
 ]
 
 { #category : 'tests' }
