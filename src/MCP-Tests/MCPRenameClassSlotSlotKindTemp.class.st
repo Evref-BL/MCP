@@ -1,3 +1,6 @@
+"
+Temporary fixture class used to verify slot-kind handling during rename tests.
+"
 Class {
 	#name : 'MCPRenameClassSlotSlotKindTemp',
 	#superclass : 'Object',

@@ -1,7 +1,5 @@
 "
-Structured coverage result DTO for the run-tests coverage operation.
-
-It summarizes method and node coverage from CoverageCollector and emits capped method lists that are small enough for MCP responses.
+Structured coverage result DTO returned by test_coverage_run.
 "
 Class {
 	#name : 'MCPTestCoverageResult',
@@ -171,13 +169,12 @@ MCPTestCoverageResult >> partiallyCoveredMethods [
 	^ partiallyCoveredMethods ifNil: [ #(  ) ]
 ]
 
-{ #category : 'private - coverage' }
+{ #category : 'accessing' }
 MCPTestCoverageResult >> percentage [
 
 	| percentage |
 	percentage := self coverageResult percentage.
-	((percentage respondsTo: #isNaN) and: [ percentage isNaN ]) ifTrue: [
-		^ nil ].
+	percentage isNaN ifTrue: [ ^ nil ].
 	^ percentage asFloat
 ]
 

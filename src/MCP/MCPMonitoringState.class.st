@@ -385,10 +385,8 @@ MCPMonitoringState >> summaryForResult: aToolResult [
 
 	| structuredContent |
 	aToolResult ifNil: [ ^ '' ].
-	(aToolResult respondsTo: #structuredContent) ifFalse: [ ^ '' ].
 	structuredContent := aToolResult structuredContent.
 	structuredContent ifNil: [ ^ '' ].
-	(structuredContent respondsTo: #at:ifAbsent:) ifFalse: [ ^ '' ].
 	^ (structuredContent
 		   at: #summary
 		   ifAbsent: [ structuredContent at: 'summary' ifAbsent: [ '' ] ])
@@ -430,16 +428,12 @@ MCPMonitoringState >> traceSnapshotFor: anObject depth: depth [
 	anObject isCharacter ifTrue: [ ^ anObject asString ].
 	depth >= self maxTraceDepth ifTrue: [
 		^ self traceStringSnapshotFor: anObject printString ].
-	(anObject isKindOf: Association) ifTrue: [
+	anObject isAssociation ifTrue: [
 		^ self traceSnapshotForAssociation: anObject depth: depth ].
-	(anObject isKindOf: Dictionary) ifTrue: [
+	anObject isDictionary ifTrue: [
 		^ self traceSnapshotForDictionary: anObject depth: depth ].
 	(anObject isCollection and: [ anObject isString not ]) ifTrue: [
 		^ self traceSnapshotForCollection: anObject depth: depth ].
-	(anObject respondsTo: #asDictionary) ifTrue: [
-		[ ^ self traceSnapshotFor: anObject asDictionary depth: depth + 1 ]
-			on: Error
-			do: [ :ignored | nil ] ].
 	^ self traceStringSnapshotFor: anObject printString
 ]
 

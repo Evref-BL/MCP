@@ -60,7 +60,7 @@ MCPTool class >> toolIconFormOf: aToolClass [
 { #category : 'icons' }
 MCPTool class >> toolIconSpec [
 
-	self subclassResponsibility
+	^ MCPToolIconSpec forToolName: self toolName
 ]
 
 { #category : 'icons' }
@@ -174,26 +174,22 @@ MCPTool >> description: anObject [
 { #category : 'private - results' }
 MCPTool >> errorDetailsFor: anError [
 
-	| descriptionText details message stackTrace |
+	| context descriptionText details message stackTrace |
 	details := Dictionary new.
-	message := (anError respondsTo: #messageText)
-		           ifTrue: [
-			           anError messageText
-				           ifNil: [ '' ]
-				           ifNotNil: [ :text | text asString ] ]
-		           ifFalse: [ anError asString ].
+	message := anError messageText
+		           ifNil: [ '' ]
+		           ifNotNil: [ :text | text asString ].
 	details at: #errorClass put: anError class name.
 	details at: #message put: message.
-	(anError respondsTo: #description) ifTrue: [
-		descriptionText := anError description.
-		(descriptionText ~= anError class name and: [
-			 descriptionText ~= message ]) ifTrue: [
-			details at: #description put: descriptionText ] ].
-	(anError respondsTo: #signalerContext) ifTrue: [
-		anError signalerContext ifNotNil: [ :context |
+	descriptionText := anError description.
+	(descriptionText ~= anError class name and: [
+		 descriptionText ~= message ]) ifTrue: [
+		details at: #description put: descriptionText ].
+	context := anError mcpSignalerContext.
+	context ifNotNil: [
 			details at: #signalerContext put: context printString.
 			stackTrace := self errorStackTraceForContext: context.
-			stackTrace ifNotEmpty: [ details at: #stackTrace put: stackTrace ] ] ].
+			stackTrace ifNotEmpty: [ details at: #stackTrace put: stackTrace ] ].
 	^ details
 ]
 
@@ -605,6 +601,16 @@ MCPTool >> successResultText: aSummary data: aDictionary warnings: warningString
 				  (#summary -> normalizedSummary).
 				  (#warnings -> warnings).
 				  (#data -> aDictionary) } asDictionary
+]
+
+{ #category : 'private' }
+MCPTool >> successfulStructuredDataFromResult: aResult ifAbsent: absentBlock [
+
+	| structuredContent |
+	aResult isError ifTrue: [ ^ absentBlock value ].
+	structuredContent := aResult structuredContent.
+	structuredContent ifNil: [ ^ absentBlock value ].
+	^ structuredContent at: #data ifAbsent: absentBlock
 ]
 
 { #category : 'private - results' }

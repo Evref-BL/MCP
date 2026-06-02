@@ -1,5 +1,5 @@
 "
-Command wrapper for edit-repository operation=fetch. It calls IceRepository>>fetch and returns an MCPRepositoryFetchResult.
+Command wrapper for repository_fetch. It calls IceRepository>>fetch and returns an MCPRepositoryFetchResult.
 "
 Class {
 	#name : 'MCPFetchRepositoryCommand',
@@ -24,7 +24,7 @@ MCPFetchRepositoryCommand >> execute [
 
 	| beforeInfo repository result |
 	^ self tool
-		  executeEditOperation: 'fetch'
+		  executeMutationAction: 'fetch'
 		  force: false
 		  requestedContext: self request requestedContext
 		  work: [

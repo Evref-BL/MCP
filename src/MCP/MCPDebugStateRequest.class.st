@@ -1,7 +1,7 @@
 "
-Request object for the primary debug-state snapshot.
+Request object for the primary debug_state_get snapshot.
 
-It currently uses only the common debugger request fields but remains separate so debug-state can evolve without changing other debugger requests.
+It currently uses only the common debugger request fields but remains separate so debug_state_get can evolve without changing other debugger requests.
 "
 Class {
 	#name : 'MCPDebugStateRequest',

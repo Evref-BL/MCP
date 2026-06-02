@@ -1,28 +1,20 @@
 "
 MCP tool for expanding debugger variables.
 
-It lets callers drill into state-scoped scope or variable references without refreshing the whole debug-state snapshot.
+It lets callers drill into state-scoped scope or variable references without refreshing the whole debug_state_get snapshot.
 "
 Class {
 	#name : 'MCPToolDebugVariables',
-	#superclass : 'MCPTool',
+	#superclass : 'MCPToolDebug',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
 }
 
-{ #category : 'icons' }
-MCPToolDebugVariables class >> toolIconSpec [
-
-	^ MCPToolIconSpec
-		  baseIconNamed: #bug
-		  badgeIconNamed: #instVarsSelected
-]
-
 { #category : 'defaults' }
 MCPToolDebugVariables class >> toolName [
 
-	^ 'debug-variables'
+	^ 'debug_variable_get'
 ]
 
 { #category : 'private - execution' }
@@ -34,7 +26,7 @@ MCPToolDebugVariables >> commandForRequest: debugRequest [
 { #category : 'defaults' }
 MCPToolDebugVariables >> defaultDescription [
 
-	^ 'Expand a state-scoped debug variable or scope reference returned by debug-state. Supports receiver, temporaries, instance-variable children, and indexed children with bounded previews.'
+	^ 'Expand a state-scoped debug variable or scope reference returned by debug_state_get. Supports receiver, temporaries, instance-variable children, and indexed children with bounded previews.'
 ]
 
 { #category : 'defaults' }
@@ -55,7 +47,7 @@ MCPToolDebugVariables >> defaultInputSchema [
 					   schemaPropertyNamed: 'variableRef'
 					   type: 'string'
 					   description:
-						   'Opaque state-scoped scope or variable reference returned by debug-state or debug-variables.').
+						   'Opaque state-scoped scope or variable reference returned by debug_state_get or debug_variable_get.').
 				  (self
 					   schemaPropertyNamed: 'stateId'
 					   type: 'string'
@@ -87,7 +79,7 @@ MCPToolDebugVariables >> defaultInputSchema [
 { #category : 'defaults' }
 MCPToolDebugVariables >> defaultName [
 
-	^ 'debug-variables'
+	^ 'debug_variable_get'
 ]
 
 { #category : 'defaults' }
@@ -156,33 +148,7 @@ MCPToolDebugVariables >> defaultOutputSchema [
 { #category : 'defaults' }
 MCPToolDebugVariables >> defaultTitle [
 
-	^ 'Debug Variables'
-]
-
-{ #category : 'executing' }
-MCPToolDebugVariables >> executeWithRequest: request [
-
-	^ self
-		  executeParsedRequestFrom: request
-		  do: [ :debugRequest |
-				  | commandResult |
-				  commandResult := (self commandForRequest: debugRequest) execute.
-				  commandResult isError
-					  ifTrue: [
-							  self
-								  errorResultText: commandResult summary
-								  details: commandResult errorDetails ]
-					  ifFalse: [
-							  self
-								  successResultText: commandResult summary
-								  data: commandResult data
-								  warnings: commandResult warnings ] ]
-		  onError: [ :error :ignored |
-				  self
-					  errorResultText: (error messageText ifNil: [ error asString ])
-					  details: ((error isKindOf: MCPCommandError)
-							   ifTrue: [ error structuredDetails ]
-							   ifFalse: [ self errorDetailsFor: error ]) ]
+	^ 'Get Debug Variables'
 ]
 
 { #category : 'private - request' }

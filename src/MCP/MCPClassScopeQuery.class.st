@@ -1,7 +1,7 @@
 "
 Resolves class-scope arguments into class sets.
 
-It handles packageNames, classNames, hierarchyClassNames, subclassClassNames, and parentClassNames. Scope sets are unioned by default and can be intersected with scopeMode. Query tools keep valid scopes and record warnings for missing names. Tools that mutate the image can require a complete scope; missing names then raise a structured error with the same suggestions. Directional subclass and parent scopes exclude their anchor classes.
+It handles packageNames, classNames, hierarchyClassNames, subclassClassNames, and parentClassNames. Scope sets are unioned. Search tools keep valid scopes and record warnings for missing names. Tools that mutate the image can require a complete scope; missing names then raise a structured error with the same suggestions. Directional subclass and parent scopes exclude their anchor classes.
 "
 Class {
 	#name : 'MCPClassScopeQuery',
@@ -12,7 +12,6 @@ Class {
 		'hierarchyClassNames',
 		'subclassClassNames',
 		'parentClassNames',
-		'scopeMode',
 		'warnings',
 		'requiresCompleteScope'
 	],
@@ -67,10 +66,8 @@ MCPClassScopeQuery >> classScopeSets [
 { #category : 'querying' }
 MCPClassScopeQuery >> classes [
 
-	self validate.
 	self resetWarnings.
 	self usesImplicitImageScope ifTrue: [ ^ self allClasses ].
-	self scopeMode = 'intersection' ifTrue: [ ^ self intersectionClasses ].
 	^ self unionClasses
 ]
 
@@ -123,28 +120,8 @@ MCPClassScopeQuery >> initialize [
 	hierarchyClassNames := #(  ).
 	subclassClassNames := #(  ).
 	parentClassNames := #(  ).
-	scopeMode := 'union'.
 	warnings := OrderedCollection new.
 	requiresCompleteScope := false
-]
-
-{ #category : 'private - scope' }
-MCPClassScopeQuery >> intersectionClasses [
-
-	^ self sortedClassesByName:
-		  (self intersectionOfSets: self classScopeSets)
-]
-
-{ #category : 'private - scope' }
-MCPClassScopeQuery >> intersectionOfSets: sets [
-
-	| result |
-	sets ifEmpty: [ ^ IdentitySet new ].
-	result := sets first asIdentitySet.
-	sets allButFirst do: [ :eachSet |
-		result := result select: [ :eachElement |
-			          eachSet includes: eachElement ] ].
-	^ result
 ]
 
 { #category : 'accessing' }
@@ -296,18 +273,6 @@ MCPClassScopeQuery >> resolvedPackageNamed: packageName inScope: scopeName [
 		  self recordMissingPackageNamed: packageName inScope: scopeName ]
 ]
 
-{ #category : 'accessing' }
-MCPClassScopeQuery >> scopeMode [
-
-	^ scopeMode ifNil: [ 'union' ]
-]
-
-{ #category : 'accessing' }
-MCPClassScopeQuery >> scopeMode: aString [
-
-	scopeMode := aString ifNil: [ 'union' ] ifNotNil: [ aString ]
-]
-
 { #category : 'private - scope' }
 MCPClassScopeQuery >> sortedClassesByName: someClasses [
 
@@ -359,13 +324,6 @@ MCPClassScopeQuery >> usesImplicitImageScope [
 			  self hierarchyClassNames isEmpty and: [
 				  self subclassClassNames isEmpty and: [
 					  self parentClassNames isEmpty ] ] ] ]
-]
-
-{ #category : 'validating' }
-MCPClassScopeQuery >> validate [
-
-	(#( 'union' 'intersection' ) includes: self scopeMode) ifFalse: [
-		Error signal: 'scopeMode must be one of union or intersection.' ]
 ]
 
 { #category : 'accessing' }

@@ -1,7 +1,7 @@
 "
 Request object for debugger control operations.
 
-It extends the shared debugger request with the returnState flag that controls whether paused control results include a fresh debug-state snapshot.
+It extends the shared debugger request with the returnState flag that controls whether paused control results include a fresh debug_state_get snapshot.
 "
 Class {
 	#name : 'MCPDebugControlRequest',
@@ -15,10 +15,8 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPDebugControlRequest class >> fromRequest: aRequest tool: aTool [
+MCPDebugControlRequest class >> fromRequest: aRequest tool: aTool operation: operationName [
 
-	| operationName |
-	operationName := aRequest stringArgumentNamed: 'operation'.
 	(self supportedOperations includes: operationName) ifFalse: [
 			MCPCommandError
 				signalErrorCode: #DebugControlOperationUnsupported

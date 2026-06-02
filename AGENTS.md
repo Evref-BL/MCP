@@ -9,8 +9,8 @@ using a released MCP server from another workspace.
 - Preserve unrelated local changes.
 - Do not claim live-image behavior is verified from Tonel/source inspection
   alone.
-- Prefer dedicated `pharo` MCP tools over `evaluate` when a tool exists.
-- Do not launch or mutate live images, run image-local repository mutation
+- Prefer dedicated `pharo` MCP tools over `image_evaluate` when a tool exists.
+- Do not launch or mutate live images, run image-local repository operation
   tools, or trigger externally mutating workflows unless the current task has
   an approved safe image and cleanup boundary.
 
@@ -23,11 +23,12 @@ using a released MCP server from another workspace.
 - Before MCP source, test, schema, package, or developer-doc changes: read
   `docs/dev/developing-mcp.md`.
 - Before Pharo/Smalltalk source changes in this repository: read
-  `docs/user/pharo-coding-rules.md`.
+  `docs/user/pharo-coding-rules.md` and
+  `docs/user/pharo-coding-style.md`.
 - Before reasoning about source files vs loaded image state: read
   `docs/user/source-vs-live-image.md`.
 - Before debugger tool, debug-session, breakpoint, or debugger-driven repair
-  work: read `docs/user/debugging.md`. For `debug-edit` repair flows, also
+  work: read `docs/user/debugging.md`. For `debug_method_update` repair flows, also
   read `docs/user/debugger-driven-development.md`.
 - Before verifying MCP repository changes: read `docs/dev/mcp-verification.md`.
 - Before project loading work: use

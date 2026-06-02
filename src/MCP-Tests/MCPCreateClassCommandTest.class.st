@@ -1,3 +1,6 @@
+"
+Tests command-level class creation behavior.
+"
 Class {
 	#name : 'MCPCreateClassCommandTest',
 	#superclass : 'MCPCommandTestCase',

@@ -1,5 +1,5 @@
 "
-Request object for debug-capture.
+Request object for debug_capture.
 
 It carries the expression to run in a worker process, the session name to use if an exception is captured, timeout settings, and result preview limits.
 "

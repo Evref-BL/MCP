@@ -1,5 +1,5 @@
 "
-Command for applying one high-level edit-method update patch. It selects an internal method update action, executes it, and returns structured method update DTOs.
+Command for applying one method update patch. It selects an internal method update action, executes it, and returns structured method update DTOs.
 "
 Class {
 	#name : 'MCPUpdateMethodCommand',
@@ -36,7 +36,7 @@ MCPUpdateMethodCommand >> execute [
 		do: [ :error |
 			^ self tool
 				  errorResultForCommandError: error
-				  operation: 'update'
+				  action: 'update'
 				  requestedContext: self request requestedContext ].
 	^ self executePlan: plan
 ]
@@ -48,7 +48,7 @@ MCPUpdateMethodCommand >> executeAddArgumentsWithPlan: plan [
 	oldSelectorSymbol := self request selector asSymbol.
 	newSelectorSymbol := self request newSelector asSymbol.
 	^ self tool
-		  executeEditOperation: 'addArguments'
+		  executeMutationAction: 'addArguments'
 		  force: self request force
 		  requestedContext: plan requestedContext
 		  work: [
@@ -108,13 +108,27 @@ MCPUpdateMethodCommand >> executeAddArgumentsWithPlan: plan [
 				  error: error ]
 ]
 
+{ #category : 'private - planning' }
+MCPUpdateMethodCommand >> executeBlockForAction: action [
+
+	^ {
+		  ('rename' -> [ :plan | self executeRenameWithPlan: plan ]).
+		  ('addArguments'
+		   -> [ :plan | self executeAddArgumentsWithPlan: plan ]).
+		  ('removeArguments'
+		   -> [ :plan | self executeRemoveArgumentsWithPlan: plan ]).
+		  ('changeProtocol'
+		   -> [ :plan | self executeChangeProtocolWithPlan: plan ]) }
+		  asDictionary at: action ifAbsent: [ nil ]
+]
+
 { #category : 'executing - method' }
 MCPUpdateMethodCommand >> executeChangeProtocolWithPlan: plan [
 
 	| behavior changeResult newCompiledMethod oldCompiledMethod oldProtocol selectorSymbol |
 	selectorSymbol := self request selector asSymbol.
 	^ self tool
-		  executeEditOperation: 'changeProtocol'
+		  executeMutationAction: 'changeProtocol'
 		  force: self request force
 		  requestedContext: plan requestedContext
 		  work: [
@@ -165,9 +179,9 @@ MCPUpdateMethodCommand >> executeChangeProtocolWithPlan: plan [
 { #category : 'executing' }
 MCPUpdateMethodCommand >> executePlan: plan [
 
-	| selector |
-	selector := self executeSelectorForAction: plan updateAction.
-	selector ifNotNil: [ ^ self perform: selector with: plan ].
+	| actionBlock |
+	actionBlock := self executeBlockForAction: plan updateAction.
+	actionBlock ifNotNil: [ ^ actionBlock value: plan ].
 	^ self tool
 		  errorResultForCommandError: (MCPCommandError new
 				   errorCode: #UnknownMethodUpdateAction;
@@ -175,7 +189,7 @@ MCPUpdateMethodCommand >> executePlan: plan [
 					   'Unknown method update action: ' , plan updateAction;
 				   details: plan requestedContext;
 				   yourself)
-		  operation: 'update'
+		  action: 'update'
 		  requestedContext: plan requestedContext
 ]
 
@@ -186,7 +200,7 @@ MCPUpdateMethodCommand >> executeRemoveArgumentsWithPlan: plan [
 	oldSelectorSymbol := self request selector asSymbol.
 	newSelectorSymbol := self request newSelector asSymbol.
 	^ self tool
-		  executeEditOperation: 'removeArguments'
+		  executeMutationAction: 'removeArguments'
 		  force: self request force
 		  requestedContext: plan requestedContext
 		  work: [
@@ -267,7 +281,7 @@ MCPUpdateMethodCommand >> executeRenameWithPlan: plan [
 	oldSelectorSymbol := self request selector asSymbol.
 	newSelectorSymbol := self request newSelector asSymbol.
 	^ self tool
-		  executeEditOperation: 'rename'
+		  executeMutationAction: 'rename'
 		  force: self request force
 		  requestedContext: plan requestedContext
 		  work: [
@@ -321,19 +335,6 @@ MCPUpdateMethodCommand >> executeRenameWithPlan: plan [
 				  selector: self request selector
 				  newSelector: self request newSelector
 				  error: error ]
-]
-
-{ #category : 'private - planning' }
-MCPUpdateMethodCommand >> executeSelectorForAction: action [
-
-	| selectors |
-	selectors := {
-		             ('rename' -> #executeRenameWithPlan:).
-		             ('addArguments' -> #executeAddArgumentsWithPlan:).
-		             ('removeArguments' -> #executeRemoveArgumentsWithPlan:).
-		             ('changeProtocol' -> #executeChangeProtocolWithPlan:) }
-		             asDictionary.
-	^ selectors at: action ifAbsent: [ nil ]
 ]
 
 { #category : 'initialization' }
@@ -396,7 +397,7 @@ MCPUpdateMethodCommand >> signalAmbiguousUpdateActions: actions [
 	^ MCPCommandError
 		  signalErrorCode: #AmbiguousMethodUpdateRequest
 		  message:
-		  'update accepts one method edit action per request. Split multiple edits into separate requests.'
+		  'update accepts one method update action per request. Split multiple updates into separate requests.'
 		  details: (self request requestedContext
 				   at: #updateActions put: actions;
 				   yourself)
@@ -408,7 +409,7 @@ MCPUpdateMethodCommand >> signalNoUpdateRequested [
 	^ MCPCommandError
 		  signalErrorCode: #NoMethodUpdateRequested
 		  message:
-		  'operation=update requires one method update field such as newSelector or protocol.'
+		  'Method update requires one method update field such as newSelector or protocol.'
 		  details: self request requestedContext
 ]
 

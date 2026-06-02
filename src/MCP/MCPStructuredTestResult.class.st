@@ -1,5 +1,5 @@
 "
-DTO used by run-tests structured output.
+DTO used by test_run structured output.
 
 It holds one test result plus normalized issue details for failures, errors, and warnings.
 "
@@ -39,8 +39,7 @@ MCPStructuredTestResult >> issueKindFor: aTestCase [
 { #category : 'private' }
 MCPStructuredTestResult >> parametersForTestCase: aTestCase [
 
-	(aTestCase isKindOf: ParametrizedTestCase) ifFalse: [ ^ #(  ) ].
-	^ aTestCase parametersToUse collect: [ :each | each printString ]
+	^ aTestCase mcpParameterPrintStrings
 ]
 
 { #category : 'private' }

@@ -59,7 +59,7 @@ normal `warnings` array.
 
 ## Critiques
 
-`edit-method` compiles method source in the image and returns selected Renraku
+`method_create` compiles method source in the image and returns selected Renraku
 critiques in the structured result. It includes error-severity critiques and a
 small set of non-error rules that are useful after automated edits, such as
 excessive arguments, missing super sends, return in ensure, temporary variable
@@ -77,7 +77,7 @@ as follow-up review evidence, not as transport failures.
 
 ## Rewrite Preview And Confirmation
 
-`rewrite-methods` uses Smalltalk AST rewrite rules. Patterns use RB AST pattern
+`method_rewrite` uses Smalltalk AST rewrite rules. Patterns use RB AST pattern
 syntax, not regex.
 
 The default mode is preview:
@@ -116,8 +116,8 @@ package, class, hierarchy, or method scope.
 
 ## Tests And Coverage
 
-`run-tests` runs SUnit classes or individual methods and returns structured test
-results. With `operation=coverage`, the same test run can collect
+`test_run` runs SUnit classes or individual methods and returns structured test
+results. Use `test_coverage_run` when the same test run should collect
 CoverageCollector method and node coverage for an explicit method scope.
 
 Coverage output includes method counts, node counts, uncovered methods,
@@ -131,21 +131,25 @@ MCP uses Iceberg for repository state. The repository tools can:
 - list registered repositories and their branch, head, package, modified, and
   remote metadata
 - load Metacello baselines
-- create or update image-side repository registration
+- create image-side repository registrations or update their metadata
 - inspect `workingCopyDiff`
 - verify expected repository identity before edits or exports
 - export image changes to Tonel files
 - commit, fetch, pull, push, create branches, and switch branches
 
-Use `find-repositories` and `edit-repository` with `operation=verifyIdentity` and
-`operation=diff` before exporting or committing. Export writes image changes to
-disk and updates the Iceberg index; it does not stage or commit Git changes.
+Use `repository_identity_verify` before edits or exports, and
+`repository_change_list` before exporting or committing. Use
+`repository_create`, `repository_attach`, and `repository_update` for repository
+registration workflows. Export writes image changes to disk and updates the
+Iceberg index; it does not stage or commit Git changes.
 
 ## Change History
 
-`manage-change-history` uses Epicea change history. It can list `.ombu` files,
-list entries, preview applying entries, preview reverting entries, and perform
-the selected apply or revert only when `confirm=true`.
+MCP uses Epicea change history. `history_file_list` lists `.ombu`
+files, and `history_entry_list` lists entries from the current history
+or a selected file. `history_entry_apply` and `history_entry_revert` preview
+selected entries, and perform the selected apply or revert only when
+`confirm=true`.
 
 Use this when recovering image-side changes or preparing a clean handoff from a
 live image back to Tonel/Git.
@@ -161,14 +165,15 @@ Treat debugger state references as opaque and state-scoped. After stepping,
 resuming, restarting, terminating, or editing from a debug state, use the newly
 returned state before expanding variables or evaluating in a frame again.
 
-Use `debug-edit` only from a paused debug state and only after reading the
+Use `debug_method_update` only from a paused debug state and only after reading the
 offered repair actions. It uses the same critique gate as method editing before
 proceeding a repaired computation.
 
 ## Evaluation Escape Hatch
 
-`evaluate` runs arbitrary Smalltalk and saves the image after a successful call.
-It is useful for short inspection or glue code when no dedicated tool exists.
+`image_evaluate` runs arbitrary Smalltalk and saves the image after a successful
+call. It is useful for short inspection or glue code when no dedicated tool
+exists.
 
 Prefer a dedicated tool when one exists, because the dedicated tools validate
 input, return structured result data, and often use safer Pharo APIs.

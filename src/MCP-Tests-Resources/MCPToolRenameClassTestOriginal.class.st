@@ -1,3 +1,6 @@
+"
+Fixture class renamed by class rename tests.
+"
 Class {
 	#name : 'MCPToolRenameClassTestOriginal',
 	#superclass : 'Object',

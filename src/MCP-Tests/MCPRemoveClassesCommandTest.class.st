@@ -1,3 +1,6 @@
+"
+Tests command-level class removal and related package cleanup.
+"
 Class {
 	#name : 'MCPRemoveClassesCommandTest',
 	#superclass : 'MCPCommandTestCase',

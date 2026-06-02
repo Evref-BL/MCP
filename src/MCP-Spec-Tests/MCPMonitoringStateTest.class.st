@@ -14,7 +14,7 @@ MCPMonitoringStateTest >> testDisabledByDefaultDoesNotRecord [
 
 	| state record |
 	state := MCPMonitoringState new.
-	record := state recordToolCallStart: 'find-methods'.
+	record := state recordToolCallStart: 'method_metadata_search'.
 	self deny: state enabled.
 	self assert: record isNil.
 	self assert: state totalCallCount equals: 0.
@@ -33,7 +33,9 @@ MCPMonitoringStateTest >> testInputSnapshotRedactsSensitiveKeys [
 		         (#nested
 		          -> { (#password -> 'secret-password') } asDictionary) }
 		         asDictionary.
-	record := state recordToolCallStart: 'find-methods' input: input.
+	record := state
+		          recordToolCallStart: 'method_metadata_search'
+		          input: input.
 	state recordToolCallFinish: record result: nil error: Error new.
 
 	self assert: (record inputSnapshot at: #limit) equals: 10.
@@ -53,14 +55,14 @@ MCPMonitoringStateTest >> testMCPRecordsToolCallsWhenMonitoringIsEnabled [
 	mcp := MCP new.
 	mcp monitoringEnabled: true.
 	result := mcp
-		          rpcToolCall: 'find-packages'
+		          rpcToolCall: 'package_search'
 		          withParams: { (#limit -> 0) } asDictionary.
 	stats := mcp monitoringMetrics first.
 	record := mcp monitoring recentCallRecords first.
 
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: mcp monitoring totalCallCount equals: 1.
-	self assert: stats toolName equals: 'find-packages'.
+	self assert: stats toolName equals: 'package_search'.
 	self assert: stats successCount equals: 1.
 	self assert: record inputSnapshot isNil.
 	self assert: record outputSnapshot isNil.
@@ -102,7 +104,7 @@ MCPMonitoringStateTest >> testRecordsErrorCall [
 	| recentCall record state stats |
 	state := MCPMonitoringState new.
 	state enable.
-	record := state recordToolCallStart: 'edit-method'.
+	record := state recordToolCallStart: 'method_create'.
 	state recordToolCallFinish: record result: nil error: Error new.
 	stats := state metrics first.
 	recentCall := state recentCallRecords first.
@@ -117,9 +119,9 @@ MCPMonitoringStateTest >> testRecordsErrorCall [
 		equals: 'Error'.
 	self assert: recentCall inputObject isNil.
 	self assert: (state logs anySatisfy: [ :each |
-			 each includesSubstring: 'Error tool edit-method #' ]).
+			 each includesSubstring: 'Error tool method_create #' ]).
 	self deny: (state logs anySatisfy: [ :each |
-			 each includesSubstring: 'error tool edit-method #' ])
+			 each includesSubstring: 'error tool method_create #' ])
 ]
 
 { #category : 'tests' }
@@ -128,7 +130,7 @@ MCPMonitoringStateTest >> testRecordsSuccessfulCallMetricsAndLogs [
 	| state record result stats |
 	state := MCPMonitoringState new.
 	state enable.
-	record := state recordToolCallStart: 'find-methods'.
+	record := state recordToolCallStart: 'method_metadata_search'.
 	result := MCPStructureCallToolResult
 		          content: #(  )
 		          structuredContent:
@@ -137,17 +139,17 @@ MCPMonitoringStateTest >> testRecordsSuccessfulCallMetricsAndLogs [
 	stats := state metrics first.
 
 	self assert: state totalCallCount equals: 1.
-	self assert: stats toolName equals: 'find-methods'.
+	self assert: stats toolName equals: 'method_metadata_search'.
 	self assert: stats successCount equals: 1.
 	self assert: stats errorCount equals: 0.
 	self assert: state recentCallRecords size equals: 1.
 	self assert: state logs size >= 2.
 	self assert: (state logs anySatisfy: [ :each |
-			 each includesSubstring: 'Begin tool find-methods #' ]).
+			 each includesSubstring: 'Begin tool method_metadata_search #' ]).
 	self assert: (state logs anySatisfy: [ :each |
-			 each includesSubstring: 'OK tool find-methods #' ]).
+			 each includesSubstring: 'OK tool method_metadata_search #' ]).
 	self deny: (state logs anySatisfy: [ :each |
-			 each includesSubstring: 'ok tool find-methods #' ]).
+			 each includesSubstring: 'ok tool method_metadata_search #' ]).
 	self assert:
 		(state statusText beginsWith: 'Observability enabled. Calls: 1')
 ]
@@ -160,17 +162,17 @@ MCPMonitoringStateTest >> testTraceRecordsIncludeErrorsAndOutliersOnly [
 	start := DateAndTime now.
 	normal := MCPToolCallRecord
 		          id: 1
-		          toolName: 'find-methods'
+		          toolName: 'method_metadata_search'
 		          startedAt: start.
 	normal finishAt: start durationMilliseconds: 5 status: 'ok'.
 	error := MCPToolCallRecord
 		         id: 2
-		         toolName: 'edit-method'
+		         toolName: 'method_create'
 		         startedAt: start.
 	error finishAt: start durationMilliseconds: 7 status: 'error'.
 	outlier := MCPToolCallRecord
 		           id: 3
-		           toolName: 'rewrite-methods'
+		           toolName: 'method_rewrite'
 		           startedAt: start.
 	outlier finishAt: start durationMilliseconds: 250 status: 'ok'.
 	outlier outlierExplanation:

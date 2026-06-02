@@ -1,5 +1,5 @@
 "
-Parsed request DTO for one run-tests selection.
+Parsed request DTO for one test_run selection.
 
 It represents either a full test class run or one specific test method inside the batch.
 "
@@ -27,9 +27,6 @@ MCPTestRunRequest class >> className: aClassName testMethodName: aTestMethodName
 MCPTestRunRequest class >> fromValue: rawValue usingToolRequest: toolRequest [
 
 	| className testMethodName |
-	(rawValue respondsTo: #at:ifAbsent:) ifFalse: [
-		Error signal:
-			'tests must contain only objects with className and optional testMethodName.' ].
 	className := toolRequest
 		             stringArgumentNamed: 'className'
 		             in: rawValue.

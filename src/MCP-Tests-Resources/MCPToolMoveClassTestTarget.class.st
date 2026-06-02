@@ -1,3 +1,6 @@
+"
+Fixture class moved by class movement tool tests.
+"
 Class {
 	#name : 'MCPToolMoveClassTestTarget',
 	#superclass : 'Object',

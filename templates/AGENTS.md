@@ -24,18 +24,38 @@ Use single search terms like:
 - method, selector, protocol, source, implementor, sender, reference, variable
 - edit, create, update, rename, remove, rewrite, preview, apply
 - test, SUnit, coverage, timeout
-- history, change, entry, browse, list, apply, revert, recover
+- history, change, file, entry, browse, list, apply, revert, recover
 - screenshot, window, display
 - debug, session, state, variable, breakpoint, capture, control, repair
 - evaluate, expression
 
 For method lookup, discover the method/reference tool from the current client.
-Use exact selector filtering for implementors, sender/reference filtering for
-senders, class-reference filtering for class references, and variable-reference
-filtering for variable references.
+Use `method_source_search` for source text, `method_equivalent_search` for
+equivalent-AST matching, and `method_implementor_search`,
+`method_sender_search`, `method_class_reference_search`, and
+`method_variable_reference_search` for specific reference lookups. Use
+`method_metadata_search` for method metadata search. Top-level
+`method_metadata_search` filtering is metadata text matching only; use the
+specialized method lookup tools for source, equivalent methods, implementors,
+senders, class references, and variable references.
 
-Use `evaluate` only for short one-off inspection or glue code when no dedicated
-`pharo` tool fits.
+For change history, use `history_file_list` to locate `.ombu` files
+and `history_entry_list` to browse entries. Use
+`history_entry_apply` or `history_entry_revert` only when you need previewed or
+confirmed recovery.
+
+For repository work, use `repository_search` to inspect registered Iceberg
+repositories, `repository_identity_verify` before changing repository state,
+and `repository_change_list` before exporting or committing image changes.
+Prefer repository tools such as `repository_export`,
+`repository_commit`, `repository_fetch`, `repository_pull`, `repository_push`,
+`repository_branch_create`, `repository_branch_switch`, and
+`repository_head_adopt` when available. Use `repository_create`,
+`repository_attach`, and `repository_update` for repository registration
+workflows.
+
+Use `image_evaluate` only for short one-off inspection or glue code when no
+dedicated `pharo` tool fits.
 
 If a `pharo` tool fails or returns incomplete data, report that clearly instead
 of guessing or silently falling back.
@@ -51,6 +71,11 @@ For Pharo source changes:
 - return empty collections, null objects, or structured errors instead of
   routine `nil`
 - keep methods small and give meaningful domain steps names
+- keep the main send visible and lift duplicated branch-invariant sends out of
+  conditionals
+- guard optional or invalid values before work that depends on them, without
+  treating guard order as a mechanical law
+- avoid assignment inside boolean conditions
 - initialize with `super initialize` and sensible defaults
 - use collection protocol and streams instead of index loops and repeated
   string concatenation

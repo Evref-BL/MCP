@@ -1,7 +1,7 @@
 "
 DTO for registered Iceberg repository metadata.
 
-It is read-only and intended for find-repositories responses and repository operation summaries. The DTO normalizes repository, head, remote, upstream, and package state from different Iceberg repository implementations while keeping tool output independent from Iceberg objects.
+It is read-only and intended for repository_search responses and repository operation summaries. The DTO normalizes repository, head, remote, upstream, and package state from different Iceberg repository implementations while keeping tool output independent from Iceberg objects.
 "
 Class {
 	#name : 'MCPRepositoryInfo',
@@ -163,10 +163,7 @@ MCPRepositoryInfo >> initializeFromRepository: aRepository [
 	headCommitId := self repositoryHeadCommitIdFor: aRepository.
 	isDetachedHead := self repositoryIsDetachedHeadFor: aRepository.
 	isMissing := self
-		             booleanFrom: [
-			             (aRepository respondsTo: #isMissing)
-				             ifTrue: [ aRepository isMissing ]
-				             ifFalse: [ false ] ]
+		             booleanFrom: [ aRepository isMissing ]
 		             default: false.
 	isModified := self
 		              booleanFrom: [ aRepository isModified ]
@@ -245,13 +242,10 @@ MCPRepositoryInfo >> remoteUrlNamed: aRemoteName in: aRepository [
 
 	| remote |
 	aRemoteName isEmpty ifTrue: [ ^ '' ].
-	remote := [
-	          aRepository remotes
+	remote := aRepository remotes
 		          detect: [ :each |
 		          (self stringValue: each name default: '') = aRemoteName ]
-		          ifNone: [ nil ] ]
-		          on: Error
-		          do: [ :ignored | nil ].
+		          ifNone: [ nil ].
 	remote ifNil: [ ^ '' ].
 	^ self stringFrom: [ remote url ] default: ''
 ]
@@ -277,24 +271,14 @@ MCPRepositoryInfo >> repositoryHeadCommitIdFor: aRepository [
 { #category : 'private' }
 MCPRepositoryInfo >> repositoryIsDetachedHeadFor: aRepository [
 
-	^ self
-		  booleanFrom: [
-			  | head |
-			  head := aRepository head.
-			  (head respondsTo: #isDetached)
-				  ifTrue: [ head isDetached ]
-				  ifFalse: [ head class name asString = 'IceGitCommit' ] ]
-		  default: false
+	^ self booleanFrom: [ aRepository head isDetached ] default: false
 ]
 
 { #category : 'private' }
 MCPRepositoryInfo >> repositoryLocationFor: aRepository [
 
 	^ self
-		  stringFrom: [
-			  (aRepository respondsTo: #location)
-				  ifTrue: [ aRepository location ]
-				  ifFalse: [ '' ] ]
+		  stringFrom: [ aRepository location mcpRepositoryLocationString ]
 		  default: ''
 ]
 
@@ -302,38 +286,29 @@ MCPRepositoryInfo >> repositoryLocationFor: aRepository [
 MCPRepositoryInfo >> repositoryModifiedPackageNamesFor: aRepository [
 
 	^ self sortedStringsFrom: [
-		  (aRepository respondsTo: #modifiedPackages)
-			  ifTrue: [
-			  aRepository modifiedPackages collect: [ :each | each name ] ]
-			  ifFalse: [ #(  ) ] ]
+		  aRepository modifiedPackages collect: [ :each | each name ] ]
 ]
 
 { #category : 'private' }
 MCPRepositoryInfo >> repositoryPackageNamesFor: aRepository [
 
-	^ self sortedStringsFrom: [
-		  (aRepository respondsTo: #workingCopy)
-			  ifTrue: [ aRepository workingCopy packageNames ]
-			  ifFalse: [ #(  ) ] ]
+	^ self sortedStringsFrom: [ aRepository workingCopy packageNames ]
 ]
 
 { #category : 'private' }
 MCPRepositoryInfo >> repositoryRemotesFor: aRepository [
 
 	| normalized values |
-	values := [
-	          (aRepository respondsTo: #remotes)
-		          ifTrue: [ aRepository remotes ]
-		          ifFalse: [ #(  ) ] ]
+	values := [ aRepository remotes ]
 		          on: Error
 		          do: [ :ignored | #(  ) ].
 	normalized := OrderedCollection new.
 	values do: [ :each |
-		| remoteDictionary |
-		remoteDictionary := self remoteDictionaryFor: each.
-		((remoteDictionary at: #name) isEmpty and: [
-			 (remoteDictionary at: #url) isEmpty ]) not ifTrue: [
-			normalized add: remoteDictionary ] ].
+			| remoteDictionary |
+			remoteDictionary := self remoteDictionaryFor: each.
+			((remoteDictionary at: #name) isEmpty and: [
+				 (remoteDictionary at: #url) isEmpty ]) not ifTrue: [
+				normalized add: remoteDictionary ] ].
 	^ (normalized asArray asSortedCollection: [ :left :right |
 		   (left at: #name) <= (right at: #name) ]) asArray
 ]
@@ -341,12 +316,7 @@ MCPRepositoryInfo >> repositoryRemotesFor: aRepository [
 { #category : 'private' }
 MCPRepositoryInfo >> repositorySubdirectoryFor: aRepository [
 
-	^ self
-		  stringFrom: [
-			  (aRepository respondsTo: #subdirectory)
-				  ifTrue: [ aRepository subdirectory ]
-				  ifFalse: [ '' ] ]
-		  default: ''
+	^ self stringFrom: [ aRepository subdirectory ] default: ''
 ]
 
 { #category : 'private' }
@@ -356,19 +326,15 @@ MCPRepositoryInfo >> repositoryUpstreamInfoFor: aRepository [
 	head := [ aRepository head ]
 		        on: Error
 		        do: [ :ignored | ^ self emptyUpstreamInfo ].
-	((head respondsTo: #hasUpstream) and: [
-		 [ head hasUpstream ]
-			 on: Error
-			 do: [ :ignored | false ] ]) ifFalse: [ ^ self emptyUpstreamInfo ].
+	([ head hasUpstream ]
+		 on: Error
+		 do: [ :ignored | false ]) ifFalse: [ ^ self emptyUpstreamInfo ].
 	upstream := [ head upstream ]
 		            on: Error
 		            do: [ :ignored | ^ self emptyUpstreamInfo ].
 	remoteName := self stringFrom: [ upstream remoteName ] default: ''.
 	resolvedUpstreamBranchName := self
-		                              stringFrom: [
-			                              (upstream respondsTo: #shortname)
-				                              ifTrue: [ upstream shortname ]
-				                              ifFalse: [ upstream name ] ]
+		                              stringFrom: [ upstream shortname ]
 		                              default: ''.
 	^ {
 		  (#remoteName -> remoteName).
@@ -386,9 +352,9 @@ MCPRepositoryInfo >> sortedStringsFrom: aBlock [
 		          do: [ :ignored | #(  ) ].
 	normalized := OrderedCollection new.
 	values do: [ :each |
-		| string |
-		string := self stringValue: each default: ''.
-		string isEmpty ifFalse: [ normalized add: string ] ].
+			| string |
+			string := self stringValue: each default: ''.
+			string isEmpty ifFalse: [ normalized add: string ] ].
 	^ normalized asArray asSortedCollection asArray
 ]
 
@@ -404,8 +370,6 @@ MCPRepositoryInfo >> stringFrom: aBlock default: defaultString [
 MCPRepositoryInfo >> stringValue: aValue default: defaultString [
 
 	aValue ifNil: [ ^ defaultString ].
-	(aValue respondsTo: #pathString) ifTrue: [
-		^ aValue pathString asString ].
 	^ aValue asString
 ]
 

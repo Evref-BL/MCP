@@ -1,5 +1,5 @@
 "
-Captures the updated class state after a slot edit.
+Captures the updated class state after a slot update.
 "
 Class {
 	#name : 'MCPSlotResult',

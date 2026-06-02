@@ -5,22 +5,16 @@ The tool is intentionally scoped to a registered session and frame reference so 
 "
 Class {
 	#name : 'MCPToolDebugEvaluate',
-	#superclass : 'MCPTool',
+	#superclass : 'MCPToolDebug',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
 }
 
-{ #category : 'icons' }
-MCPToolDebugEvaluate class >> toolIconSpec [
-
-	^ MCPToolIconSpec baseIconNamed: #bug badgeIconNamed: #go
-]
-
 { #category : 'defaults' }
 MCPToolDebugEvaluate class >> toolName [
 
-	^ 'debug-evaluate'
+	^ 'debug_expression_evaluate'
 ]
 
 { #category : 'private - execution' }
@@ -51,7 +45,7 @@ MCPToolDebugEvaluate >> defaultInputSchema [
 					   schemaPropertyNamed: 'sessionId'
 					   type: 'string'
 					   description:
-						   'Opaque debug session identifier returned by debug-sessions.').
+						   'Opaque debug session identifier returned by debug_session_list, debug_capture, debug_test_run, or debug_candidate_attach.').
 				  (self
 					   schemaPropertyNamed: 'stateId'
 					   type: 'string'
@@ -61,7 +55,7 @@ MCPToolDebugEvaluate >> defaultInputSchema [
 					   schemaPropertyNamed: 'frameRef'
 					   type: 'string'
 					   description:
-						   'Optional state-scoped frame reference returned by debug-state. Defaults to the selected top frame.').
+						   'Optional state-scoped frame reference returned by debug_state_get. Defaults to the selected top frame.').
 				  (self
 					   schemaPropertyNamed: 'expression'
 					   type: 'string'
@@ -80,7 +74,7 @@ MCPToolDebugEvaluate >> defaultInputSchema [
 { #category : 'defaults' }
 MCPToolDebugEvaluate >> defaultName [
 
-	^ 'debug-evaluate'
+	^ 'debug_expression_evaluate'
 ]
 
 { #category : 'defaults' }
@@ -115,7 +109,7 @@ MCPToolDebugEvaluate >> defaultOutputSchema [
 				  (self
 					   booleanSchemaPropertyNamed: 'hasResultVariableRef'
 					   description:
-					   'Whether resultVariableRef can be expanded with debug-variables.').
+					   'Whether resultVariableRef can be expanded with debug_variable_get.').
 				  (self
 					   schemaPropertyNamed: 'resultVariableRef'
 					   type: 'string'
@@ -144,32 +138,6 @@ MCPToolDebugEvaluate >> defaultOutputSchema [
 MCPToolDebugEvaluate >> defaultTitle [
 
 	^ 'Debug Evaluate'
-]
-
-{ #category : 'executing' }
-MCPToolDebugEvaluate >> executeWithRequest: request [
-
-	^ self
-		  executeParsedRequestFrom: request
-		  do: [ :debugRequest |
-				  | commandResult |
-				  commandResult := (self commandForRequest: debugRequest) execute.
-				  commandResult isError
-					  ifTrue: [
-							  self
-								  errorResultText: commandResult summary
-								  details: commandResult errorDetails ]
-					  ifFalse: [
-							  self
-								  successResultText: commandResult summary
-								  data: commandResult data
-								  warnings: commandResult warnings ] ]
-		  onError: [ :error :ignored |
-				  self
-					  errorResultText: (error messageText ifNil: [ error asString ])
-					  details: ((error isKindOf: MCPCommandError)
-							   ifTrue: [ error structuredDetails ]
-							   ifFalse: [ self errorDetailsFor: error ]) ]
 ]
 
 { #category : 'private - request' }

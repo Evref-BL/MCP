@@ -1,5 +1,5 @@
 "
-Command that validates and runs parsed run-tests selections.
+Command that validates and runs parsed test_run selections.
 
 It resolves MCPTestRunRequest objects to MCPValidatedTestRunRequest objects, executes them, and returns MCPRunTestsResult DTOs.
 "
@@ -24,11 +24,7 @@ MCPRunTestsCommand class >> tool: aTool request: aRequest [
 { #category : 'private' }
 MCPRunTestsCommand >> addTestCasesFrom: aTestOrSuite to: testCases [
 
-	(aTestOrSuite isKindOf: TestSuite) ifTrue: [
-		aTestOrSuite tests do: [ :each |
-			self addTestCasesFrom: each to: testCases ].
-		^ self ].
-	testCases add: aTestOrSuite
+	aTestOrSuite mcpAddTestCasesTo: testCases using: self
 ]
 
 { #category : 'private' }
@@ -131,12 +127,10 @@ MCPRunTestsCommand >> partiallyCoveredMethodsFromCoverageResult: coverageResult 
 
 { #category : 'private' }
 MCPRunTestsCommand >> refreshRegisteredRepositoryDirtyPackages [
-	"Refresh Iceberg dirty flags after tests create and remove code.
-	This keeps repository status aligned with the actual working-copy diff without hiding real changes."
 
 	IceRepository registry do: [ :repository |
-		((repository respondsTo: #isMissing) and: [ repository isMissing ])
-			ifFalse: [ repository workingCopy refreshDirtyPackages ] ]
+			repository isMissing ifFalse: [
+				repository workingCopy refreshDirtyPackages ] ]
 ]
 
 { #category : 'accessing' }
@@ -148,17 +142,21 @@ MCPRunTestsCommand >> request [
 { #category : 'private' }
 MCPRunTestsCommand >> resultForValidatedRequest: validatedRequest deadline: deadline [
 
-	| includeResult result testCases timedOutIndex unrunTestRequests |
+	| includeResult result resultInfo testCases timedOutIndex unrunTestRequests |
 	testCases := self testCasesForValidatedRequest: validatedRequest.
 	result := MCPStructuredTestResult new.
 	timedOutIndex := nil.
 	testCases doWithIndex: [ :testCase :index |
-		timedOutIndex ifNil: [
-			(self runTestCase: testCase into: result deadline: deadline)
-				ifTrue: [ timedOutIndex := index ] ] ].
-	includeResult := timedOutIndex isNil or: [
-		                 result runCount > 0 or: [
-			                 result issueDetails notEmpty ] ].
+			timedOutIndex ifNil: [
+					(self runTestCase: testCase into: result deadline: deadline)
+						ifTrue: [ timedOutIndex := index ] ] ].
+	includeResult := self
+		                 shouldIncludeTestResult: result
+		                 timedOutIndex: timedOutIndex.
+	resultInfo := includeResult ifTrue: [
+			              self
+				              testRunInfoForTestResult: result
+				              validatedRequest: validatedRequest ].
 	unrunTestRequests := timedOutIndex
 		                     ifNil: [ #(  ) ]
 		                     ifNotNil: [
@@ -166,12 +164,7 @@ MCPRunTestsCommand >> resultForValidatedRequest: validatedRequest deadline: dead
 			                     testRequestsForTestCases: testCases
 			                     startingAt: timedOutIndex ].
 	^ MCPTestRunResult
-		  resultInfo: (includeResult
-				   ifTrue: [
-					   self
-						   testRunInfoForTestResult: result
-						   validatedRequest: validatedRequest ]
-				   ifFalse: [ nil ])
+		  resultInfo: resultInfo
 		  timedOut: timedOutIndex notNil
 		  unrunTestRequests: unrunTestRequests
 ]
@@ -249,12 +242,18 @@ MCPRunTestsCommand >> runValidatedRequests: validatedRequests deadline: deadline
 { #category : 'private - coverage' }
 MCPRunTestsCommand >> shouldIgnoreMethodForCoverage: aCompiledMethod [
 
-	((aCompiledMethod respondsTo: #isTestMethod) and: [
-		 aCompiledMethod isTestMethod ]) ifTrue: [ ^ true ].
+	aCompiledMethod isTestMethod ifTrue: [ ^ true ].
 	aCompiledMethod methodClass instanceSide isTestCase ifTrue: [ ^ true ].
-	((aCompiledMethod respondsTo: #isAbstract) and: [
-		 aCompiledMethod isAbstract ]) ifTrue: [ ^ true ].
+	aCompiledMethod isAbstract ifTrue: [ ^ true ].
 	^ aCompiledMethod hasPragmaNamed: #ignoreForCoverage
+]
+
+{ #category : 'private' }
+MCPRunTestsCommand >> shouldIncludeTestResult: aResult timedOutIndex: timedOutIndex [
+
+	timedOutIndex ifNil: [ ^ true ].
+	aResult runCount > 0 ifTrue: [ ^ true ].
+	^ aResult issueDetails notEmpty
 ]
 
 { #category : 'private' }

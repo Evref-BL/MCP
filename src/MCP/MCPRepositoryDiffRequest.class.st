@@ -1,5 +1,5 @@
 "
-Parsed input for edit-repository operation=diff. It resolves the registered Iceberg repository whose image working-copy diff should be reported without writing files or updating the git index.
+Parsed input for repository_change_list. It resolves the registered Iceberg repository whose image working-copy diff should be reported without writing files or updating the git index.
 "
 Class {
 	#name : 'MCPRepositoryDiffRequest',
@@ -16,6 +16,12 @@ Class {
 MCPRepositoryDiffRequest class >> fromRequest: request tool: aTool [
 
 	^ self new initializeFromRequest: request
+]
+
+{ #category : 'converting' }
+MCPRepositoryDiffRequest >> commandForTool: aTool [
+
+	^ MCPRepositoryDiffCommand tool: aTool request: self
 ]
 
 { #category : 'initialization' }

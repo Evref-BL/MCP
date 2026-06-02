@@ -1,5 +1,5 @@
 "
-Parsed find-repositories query spec derived from one MCPToolRequest.
+Parsed repository_search query spec derived from one MCPToolRequest.
 
 It keeps repository query execution away from raw argument dictionaries and distinguishes omitted optional boolean filters from explicit true or false filters.
 "
@@ -12,8 +12,7 @@ Class {
 		'packageNames',
 		'isModified',
 		'isMissing',
-		'filterPattern',
-		'filterTargets',
+		'fieldFilters',
 		'filterMode',
 		'caseSensitive',
 		'limit',
@@ -42,8 +41,9 @@ MCPRepositoryQuerySpec class >> fromRequest: request tool: aTool [
 			  (self
 				   optionalBooleanArgumentNamed: 'isMissing'
 				   fromRequest: request);
-		  filterPattern: (aTool filterPatternFromRequest: request);
-		  filterTargets: (aTool filterTargetsFromRequest: request);
+		  fieldFilters: (aTool
+				   fieldFiltersFromRequest: request
+				   fieldNames: aTool repositoryFilterFieldNames);
 		  filterMode: (aTool filterModeFromRequest: request);
 		  caseSensitive:
 			  (request booleanArgumentNamed: 'caseSensitive' default: true);
@@ -86,6 +86,18 @@ MCPRepositoryQuerySpec >> directoryPaths: aCollection [
 ]
 
 { #category : 'accessing' }
+MCPRepositoryQuerySpec >> fieldFilters [
+
+	^ fieldFilters ifNil: [ Dictionary new ]
+]
+
+{ #category : 'accessing' }
+MCPRepositoryQuerySpec >> fieldFilters: aDictionary [
+
+	fieldFilters := aDictionary
+]
+
+{ #category : 'accessing' }
 MCPRepositoryQuerySpec >> filterMode [
 
 	^ filterMode
@@ -97,34 +109,10 @@ MCPRepositoryQuerySpec >> filterMode: aString [
 	filterMode := aString
 ]
 
-{ #category : 'accessing' }
-MCPRepositoryQuerySpec >> filterPattern [
-
-	^ filterPattern
-]
-
-{ #category : 'accessing' }
-MCPRepositoryQuerySpec >> filterPattern: aStringOrNil [
-
-	filterPattern := aStringOrNil
-]
-
-{ #category : 'accessing' }
-MCPRepositoryQuerySpec >> filterTargets [
-
-	^ filterTargets
-]
-
-{ #category : 'accessing' }
-MCPRepositoryQuerySpec >> filterTargets: aCollection [
-
-	filterTargets := aCollection
-]
-
 { #category : 'testing' }
-MCPRepositoryQuerySpec >> hasFilterPattern [
+MCPRepositoryQuerySpec >> hasFieldFilters [
 
-	^ filterPattern notNil
+	^ self fieldFilters notEmpty
 ]
 
 { #category : 'accessing' }
@@ -197,4 +185,10 @@ MCPRepositoryQuerySpec >> repositoryNames [
 MCPRepositoryQuerySpec >> repositoryNames: aCollection [
 
 	repositoryNames := aCollection
+]
+
+{ #category : 'accessing' }
+MCPRepositoryQuerySpec >> warnings [
+
+	^ #(  )
 ]

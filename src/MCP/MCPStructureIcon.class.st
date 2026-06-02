@@ -36,6 +36,15 @@ MCPStructureIcon class >> compositeBaseIconNamed: aBaseIconSymbol badgeIconNamed
 ]
 
 { #category : 'instance creation' }
+MCPStructureIcon class >> compositeBaseIconNamed: aBaseIconSymbol leftBadgeIconNamed: aLeftBadgeIconSymbol rightBadgeIconNamed: aRightBadgeIconSymbol [
+
+	^ self iconForSpec: (MCPToolIconSpec
+			   baseIconNamed: aBaseIconSymbol
+			   leftBadgeIconNamed: aLeftBadgeIconSymbol
+			   rightBadgeIconNamed: aRightBadgeIconSymbol)
+]
+
+{ #category : 'instance creation' }
 MCPStructureIcon class >> compositeFormBaseIconNamed: aBaseIconSymbol badgeIconNamed: aBadgeIconSymbol [
 
 	| baseForm badgeForm badgeSize canvas composite |
@@ -53,9 +62,38 @@ MCPStructureIcon class >> compositeFormBaseIconNamed: aBaseIconSymbol badgeIconN
 ]
 
 { #category : 'instance creation' }
+MCPStructureIcon class >> compositeFormBaseIconNamed: aBaseIconSymbol leftBadgeIconNamed: aLeftBadgeIconSymbol rightBadgeIconNamed: aRightBadgeIconSymbol [
+
+	| badgeSize baseForm canvas composite leftBadgeForm rightBadgeForm |
+	baseForm := self highScaleFormNamed: aBaseIconSymbol.
+	badgeSize := baseForm width // 2 @ (baseForm height // 2).
+	leftBadgeForm := (self highScaleFormNamed: aLeftBadgeIconSymbol)
+		                 scaledToSize: badgeSize.
+	rightBadgeForm := (self highScaleFormNamed: aRightBadgeIconSymbol)
+		                  scaledToSize: badgeSize.
+	composite := Form extent: baseForm extent depth: 32.
+	canvas := composite getCanvas.
+	canvas translucentImage: baseForm at: 0 @ 0.
+	canvas
+		translucentImage: leftBadgeForm
+		at: 0 @ (composite height - leftBadgeForm height).
+	canvas
+		translucentImage: rightBadgeForm
+		at: composite extent - rightBadgeForm extent.
+	^ composite
+]
+
+{ #category : 'instance creation' }
 MCPStructureIcon class >> highScaleFormNamed: anIconSymbol [
 
 	| scaledIcons |
+	anIconSymbol = #pharoHalfScale ifTrue: [
+			| pharoForm |
+			pharoForm := self highScaleFormNamed: #pharo.
+			^ pharoForm scaledToSize:
+				  pharoForm width // 2 @ (pharoForm height // 2) ].
+	anIconSymbol = #referencesUpsideDown ifTrue: [
+		^ (self highScaleFormNamed: #references) rotateBy: 180 ].
 	scaledIcons := Smalltalk ui icons iconsPerScale
 		               at: 2.0
 		               ifAbsent: [

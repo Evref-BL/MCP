@@ -1,3 +1,6 @@
+"
+Tests method scope query behavior for classes, packages, and sides.
+"
 Class {
 	#name : 'MCPCompiledMethodScopeQueryTest',
 	#superclass : 'MCPTestCase',
@@ -78,27 +81,9 @@ MCPCompiledMethodScopeQueryTest >> testImageScopeRespectsSideFiltering [
 		         yourself.
 	methodIdentities := self methodIdentitiesFor: query methods.
 	self assert: (methodIdentities includes:
-			 'MCPToolFindMethodsReferenceFixture class>>sharedTarget').
+			 'MCPToolMethodSearchReferenceFixture class>>sharedTarget').
 	self deny: (methodIdentities includes:
-			 'MCPToolFindMethodsReferenceFixture>>sharedTarget')
-]
-
-{ #category : 'tests' }
-MCPCompiledMethodScopeQueryTest >> testIntersectionScopeKeepsOnlyMethodsInEveryScopeDimension [
-
-	| methodIdentities query |
-	query := MCPCompiledMethodScopeQuery new
-		         packageNames: #( 'MCP-Tests-Resources' );
-		         classNames: #( 'MCPToolHierarchyTestChild' );
-		         side: 'instance';
-		         scopeMode: 'intersection';
-		         yourself.
-	methodIdentities := self methodIdentitiesFor: query methods.
-	self assert: (methodIdentities includes:
-			 'MCPToolHierarchyTestChild>>hierarchyProbe').
-	self deny:
-		(methodIdentities includes:
-			 'MCPToolHierarchyTestBase>>hierarchyProbe')
+			 'MCPToolMethodSearchReferenceFixture>>sharedTarget')
 ]
 
 { #category : 'tests' }
@@ -128,7 +113,7 @@ MCPCompiledMethodScopeQueryTest >> testPackageScopeIncludesExtensionMethods [
 		         yourself.
 	methodIdentities := self methodIdentitiesFor: query methods.
 	self assert: (methodIdentities includes:
-			 'MCPToolFindMethodsReferenceTarget>>extensionProbe')
+			 'MCPToolMethodSearchReferenceTarget>>extensionProbe')
 ]
 
 { #category : 'tests' }

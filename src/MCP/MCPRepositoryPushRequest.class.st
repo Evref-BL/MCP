@@ -1,5 +1,5 @@
 "
-Parsed input for edit-repository operation=push. It resolves the registered Iceberg repository whose current branch should push to its configured remote.
+Parsed input for repository_push. It resolves the registered Iceberg repository whose current branch should push to its configured remote.
 "
 Class {
 	#name : 'MCPRepositoryPushRequest',
@@ -16,6 +16,12 @@ Class {
 MCPRepositoryPushRequest class >> fromRequest: request tool: aTool [
 
 	^ self new initializeFromRequest: request
+]
+
+{ #category : 'converting' }
+MCPRepositoryPushRequest >> commandForTool: aTool [
+
+	^ MCPPushRepositoryCommand tool: aTool request: self
 ]
 
 { #category : 'initialization' }

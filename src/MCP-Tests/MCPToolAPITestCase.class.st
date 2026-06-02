@@ -1,3 +1,6 @@
+"
+Common base class for tests that exercise MCP tools through their public API.
+"
 Class {
 	#name : 'MCPToolAPITestCase',
 	#superclass : 'MCPTestCase',
@@ -31,7 +34,7 @@ MCPToolAPITestCase >> aroundToolCall: aBlock [
 { #category : 'private - calling' }
 MCPToolAPITestCase >> callDiscoveredToolNamed: aToolName withArguments: someArguments [
 
-	^ self callRawToolNamed: 'call-tool' withArguments: {
+	^ self callRawToolNamed: 'tool_call' withArguments: {
 			  (#toolName -> aToolName).
 			  (#arguments -> someArguments) } asDictionary
 ]

@@ -1,3 +1,6 @@
+"
+Tests shared MCP tool contracts and catalog metadata.
+"
 Class {
 	#name : 'MCPToolContractsTest',
 	#superclass : 'MCPToolAPITestCase',
@@ -46,23 +49,15 @@ MCPToolContractsTest >> assertToolFlowSpec: aSpec [
 	self assert: command class equals: (aSpec at: #commandClass)
 ]
 
-{ #category : 'private' }
+{ #category : 'support' }
 MCPToolContractsTest >> baseToolFlowSpecs [
 
 	^ {
 		  {
-			  (#toolClass -> MCPToolFindRepositories).
+			  (#toolClass -> MCPToolSearchRepositories).
 			  (#arguments -> Dictionary new).
 			  (#requestClass -> MCPRepositoryQuerySpec).
-			  (#commandClass -> MCPQueryToolCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolEditRepository).
-			  (#arguments -> {
-				   (#operation -> 'update').
-				   (#repositoryName -> 'MCP').
-				   (#addPackageNames -> #( 'MCP' )) } asDictionary).
-			  (#requestClass -> MCPRepositoryUpdateRequest).
-			  (#commandClass -> MCPUpdateRepositoryCommand) } asDictionary.
+			  (#commandClass -> MCPSearchToolCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolLoadRepository).
 			  (#arguments -> {
@@ -73,54 +68,37 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 			  (#requestClass -> MCPLoadRepositoryRequest).
 			  (#commandClass -> MCPLoadRepositoryCommand) } asDictionary.
 		  {
-			  (#toolClass -> MCPToolFindPackages).
+			  (#toolClass -> MCPToolSearchPackages).
 			  (#arguments -> Dictionary new).
-			  (#requestClass -> MCPFindPackagesRequest).
-			  (#commandClass -> MCPQueryToolCommand) } asDictionary.
+			  (#requestClass -> MCPSearchPackagesRequest).
+			  (#commandClass -> MCPSearchToolCommand) } asDictionary.
 		  {
-			  (#toolClass -> MCPToolFindClasses).
+			  (#toolClass -> MCPToolSearchClasses).
 			  (#arguments -> Dictionary new).
-			  (#requestClass -> MCPFindClassesRequest).
-			  (#commandClass -> MCPQueryToolCommand) } asDictionary.
+			  (#requestClass -> MCPSearchClassesRequest).
+			  (#commandClass -> MCPSearchToolCommand) } asDictionary.
 		  {
-			  (#toolClass -> MCPToolInspectClass).
+			  (#toolClass -> MCPToolGetClass).
 			  (#arguments -> { (#className -> 'Object') } asDictionary).
-			  (#requestClass -> MCPInspectClassRequest).
-			  (#commandClass -> MCPInspectClassCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolEditClass).
-			  (#arguments -> {
-				   (#operation -> 'update').
-				   (#className -> 'Object').
-				   (#classComment -> '') } asDictionary).
-			  (#requestClass -> MCPClassUpdateRequest).
-			  (#commandClass -> MCPUpdateClassCommand) } asDictionary.
+			  (#requestClass -> MCPGetClassRequest).
+			  (#commandClass -> MCPGetClassCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolRemoveClasses).
 			  (#arguments -> { (#classNames -> #( 'Object' )) } asDictionary).
 			  (#requestClass -> MCPRemoveClassesRequest).
 			  (#commandClass -> MCPRemoveClassesCommand) } asDictionary.
 		  {
-			  (#toolClass -> MCPToolFindMethods).
+			  (#toolClass -> MCPToolSearchMethodMetadata).
 			  (#arguments -> Dictionary new).
-			  (#requestClass -> MCPFindMethodsRequest).
-			  (#commandClass -> MCPQueryToolCommand) } asDictionary.
+			  (#requestClass -> MCPMethodSearchRequest).
+			  (#commandClass -> MCPSearchToolCommand) } asDictionary.
 		  {
-			  (#toolClass -> MCPToolInspectMethod).
+			  (#toolClass -> MCPToolGetMethod).
 			  (#arguments -> {
 				   (#className -> 'Object').
 				   (#selector -> 'class') } asDictionary).
-			  (#requestClass -> MCPInspectMethodRequest).
-			  (#commandClass -> MCPInspectMethodCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolEditMethod).
-			  (#arguments -> {
-				   (#operation -> 'update').
-				   (#className -> 'Object').
-				   (#selector -> 'class').
-				   (#protocol -> 'accessing') } asDictionary).
-			  (#requestClass -> MCPMethodUpdateRequest).
-			  (#commandClass -> MCPUpdateMethodCommand) } asDictionary.
+			  (#requestClass -> MCPGetMethodRequest).
+			  (#commandClass -> MCPGetMethodCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolRewriteMethods).
 			  (#arguments -> { (#rules -> { {
@@ -136,13 +114,6 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 			  (#requestClass -> MCPRemoveMethodsRequest).
 			  (#commandClass -> MCPRemoveMethodsCommand) } asDictionary.
 		  {
-			  (#toolClass -> MCPToolManageChangeHistory).
-			  (#arguments -> {
-				   (#operation -> 'listFiles').
-				   (#includeEntryCounts -> false) } asDictionary).
-			  (#requestClass -> MCPChangeHistoryListLogsRequest).
-			  (#commandClass -> MCPListChangeHistoryLogsCommand) } asDictionary.
-		  {
 			  (#toolClass -> MCPToolRunTests).
 			  (#arguments -> { (#tests
 			    -> { { (#className -> 'MCPToolContractsTest') } asDictionary }) }
@@ -154,11 +125,6 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 			  (#arguments -> { (#target -> 'world') } asDictionary).
 			  (#requestClass -> MCPScreenshotRequest).
 			  (#commandClass -> MCPScreenshotCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolDebugSessions).
-			  (#arguments -> { (#operation -> 'list') } asDictionary).
-			  (#requestClass -> MCPDebugSessionsRequest).
-			  (#commandClass -> MCPDebugSessionsCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolDebugState).
 			  (#arguments -> { (#sessionId -> 'debug-session-1') } asDictionary).
@@ -181,49 +147,345 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 			  (#requestClass -> MCPDebugEvaluateRequest).
 			  (#commandClass -> MCPDebugEvaluateCommand) } asDictionary.
 		  {
-			  (#toolClass -> MCPToolDebugControl).
-			  (#arguments -> {
-				   (#sessionId -> 'debug-session-1').
-				   (#operation -> 'stepOver') } asDictionary).
-			  (#requestClass -> MCPDebugControlRequest).
-			  (#commandClass -> MCPDebugControlCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolDebugBreakpoints).
-			  (#arguments -> { (#operation -> 'list') } asDictionary).
-			  (#requestClass -> MCPDebugBreakpointsRequest).
-			  (#commandClass -> MCPDebugBreakpointsCommand) } asDictionary.
-		  {
 			  (#toolClass -> MCPToolDebugCapture).
 			  (#arguments -> { (#expression -> '1') } asDictionary).
 			  (#requestClass -> MCPDebugCaptureRequest).
 			  (#commandClass -> MCPDebugCaptureCommand) } asDictionary.
 		  {
-			  (#toolClass -> MCPToolDebugEdit).
+			  (#toolClass -> MCPToolUpdateDebugMethod).
 			  (#arguments -> { (#sessionId -> 'debug-session-1') } asDictionary).
-			  (#requestClass -> MCPDebugEditRequest).
-			  (#commandClass -> MCPDebugEditCommand) } asDictionary.
+			  (#requestClass -> MCPUpdateDebugMethodRequest).
+			  (#commandClass -> MCPUpdateDebugMethodCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolEvaluate).
 			  (#arguments -> { (#code -> '1') } asDictionary).
 			  (#requestClass -> MCPEvaluateRequest).
 			  (#commandClass -> MCPEvaluateCommand) } asDictionary.
 		  {
-			  (#toolClass -> MCPToolDiscoverTools).
+			  (#toolClass -> MCPToolSearchTools).
 			  (#arguments -> Dictionary new).
-			  (#requestClass -> MCPDiscoverToolsRequest).
-			  (#commandClass -> MCPDiscoverToolsCommand) } asDictionary.
+			  (#requestClass -> MCPSearchToolsRequest).
+			  (#commandClass -> MCPSearchToolsCommand) } asDictionary.
 		  {
-			  (#toolClass -> MCPToolInspectTool).
-			  (#arguments -> { (#toolName -> 'find-classes') } asDictionary).
-			  (#requestClass -> MCPInspectToolRequest).
-			  (#commandClass -> MCPInspectToolCommand) } asDictionary.
+			  (#toolClass -> MCPToolGetTool).
+			  (#arguments -> { (#toolName -> 'class_search') } asDictionary).
+			  (#requestClass -> MCPGetToolRequest).
+			  (#commandClass -> MCPGetToolCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolCallTool).
 			  (#arguments -> {
-				   (#toolName -> 'find-packages').
+				   (#toolName -> 'package_search').
 				   (#arguments -> Dictionary new) } asDictionary).
 			  (#requestClass -> MCPCallToolRequest).
 			  (#commandClass -> MCPCallToolCommand) } asDictionary }
+
+]
+
+{ #category : 'private' }
+MCPToolContractsTest >> baselineLoadToolFlowSpec [
+
+	^ {
+		  (#toolClass -> MCPToolLoadBaseline).
+		  (#arguments -> { (#baseline -> 'ExampleBaseline') } asDictionary).
+		  (#requestClass -> MCPLoadBaselineRequest).
+		  (#commandClass -> MCPLoadBaselineCommand) } asDictionary
+]
+
+{ #category : 'private' }
+MCPToolContractsTest >> changeHistoryToolFlowSpecs [
+
+	^ {
+		  {
+			  (#toolClass -> MCPToolListChangeHistoryFiles).
+			  (#arguments -> { (#includeEntryCounts -> false) } asDictionary).
+			  (#requestClass -> MCPChangeHistoryListLogsRequest).
+			  (#commandClass -> MCPListChangeHistoryLogsCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolListChangeHistoryEntries).
+			  (#arguments -> { (#limit -> 1) } asDictionary).
+			  (#requestClass -> MCPChangeHistoryListEntriesRequest).
+			  (#commandClass -> MCPListChangeHistoryEntriesCommand) }
+			  asDictionary.
+		  {
+			  (#toolClass -> MCPToolApplyChangeHistoryEntries).
+			  (#arguments -> { (#latestCount -> 1) } asDictionary).
+			  (#requestClass -> MCPChangeHistorySelectionRequest).
+			  (#commandClass -> MCPChangeHistorySelectionCommand) }
+			  asDictionary.
+		  {
+			  (#toolClass -> MCPToolRevertChangeHistoryEntries).
+			  (#arguments -> { (#latestCount -> 1) } asDictionary).
+			  (#requestClass -> MCPChangeHistorySelectionRequest).
+			  (#commandClass -> MCPChangeHistorySelectionCommand) }
+			  asDictionary }
+]
+
+{ #category : 'private' }
+MCPToolContractsTest >> classMutationToolClasses [
+
+	^ {
+		  MCPToolCreateClass.
+		  MCPToolUpdateClassName.
+		  MCPToolUpdateClassSuperclass.
+		  MCPToolUpdateClassPackage.
+		  MCPToolUpdateClassComment.
+		  MCPToolUpdateClassSlots.
+		  MCPToolUpdateClassTraits.
+		  MCPToolUpdateClassSideTraits.
+		  MCPToolUpdateClassSharedVariables.
+		  MCPToolUpdateClassSharedPools.
+		  MCPToolUpdateClassLayout.
+		  MCPToolAddClassSlot.
+		  MCPToolRemoveClassSlot.
+		  MCPToolUpdateClassSlotName.
+		  MCPToolPullUpClassSlot.
+		  MCPToolPushDownClassSlot }
+]
+
+{ #category : 'private' }
+MCPToolContractsTest >> classMutationToolFlowSpecs [
+
+	^ {
+		  {
+			  (#toolClass -> MCPToolCreateClass).
+			  (#arguments -> {
+				   (#className -> 'MCPTemporaryClass').
+				   (#superclassName -> 'Object').
+				   (#packageName -> 'MCP-Tests') } asDictionary).
+			  (#requestClass -> MCPClassCreateRequest).
+			  (#commandClass -> MCPCreateClassToolCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolUpdateClassName).
+			  (#arguments -> {
+				   (#className -> 'Object').
+				   (#newClassName -> 'MCPObject') } asDictionary).
+			  (#requestClass -> MCPClassUpdateRequest).
+			  (#commandClass -> MCPUpdateClassCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolUpdateClassSuperclass).
+			  (#arguments -> {
+				   (#className -> 'Object').
+				   (#superclassName -> 'ProtoObject') } asDictionary).
+			  (#requestClass -> MCPClassUpdateRequest).
+			  (#commandClass -> MCPUpdateClassCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolUpdateClassPackage).
+			  (#arguments -> {
+				   (#className -> 'Object').
+				   (#tag -> 'Kernel') } asDictionary).
+			  (#requestClass -> MCPClassUpdateRequest).
+			  (#commandClass -> MCPUpdateClassCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolUpdateClassComment).
+			  (#arguments -> {
+				   (#className -> 'Object').
+				   (#classComment -> '') } asDictionary).
+			  (#requestClass -> MCPClassUpdateRequest).
+			  (#commandClass -> MCPUpdateClassCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolUpdateClassSlots).
+			  (#arguments -> {
+				   (#className -> 'Object').
+				   (#slots -> #(  )) } asDictionary).
+			  (#requestClass -> MCPClassUpdateRequest).
+			  (#commandClass -> MCPUpdateClassCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolUpdateClassTraits).
+			  (#arguments -> {
+				   (#className -> 'Object').
+				   (#traits -> #(  )) } asDictionary).
+			  (#requestClass -> MCPClassUpdateRequest).
+			  (#commandClass -> MCPUpdateClassCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolUpdateClassSideTraits).
+			  (#arguments -> {
+				   (#className -> 'Object').
+				   (#classTraits -> #(  )) } asDictionary).
+			  (#requestClass -> MCPClassUpdateRequest).
+			  (#commandClass -> MCPUpdateClassCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolUpdateClassSharedVariables).
+			  (#arguments -> {
+				   (#className -> 'Object').
+				   (#sharedVariables -> #(  )) } asDictionary).
+			  (#requestClass -> MCPClassUpdateRequest).
+			  (#commandClass -> MCPUpdateClassCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolUpdateClassSharedPools).
+			  (#arguments -> {
+				   (#className -> 'Object').
+				   (#sharedPools -> #(  )) } asDictionary).
+			  (#requestClass -> MCPClassUpdateRequest).
+			  (#commandClass -> MCPUpdateClassCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolUpdateClassLayout).
+			  (#arguments -> {
+				   (#className -> 'Object').
+				   (#layout -> 'FixedLayout') } asDictionary).
+			  (#requestClass -> MCPClassUpdateRequest).
+			  (#commandClass -> MCPUpdateClassCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolAddClassSlot).
+			  (#arguments -> {
+				   (#className -> 'Object').
+				   (#slotName -> 'temporarySlot') } asDictionary).
+			  (#requestClass -> MCPClassUpdateRequest).
+			  (#commandClass -> MCPUpdateClassCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolRemoveClassSlot).
+			  (#arguments -> {
+				   (#className -> 'Object').
+				   (#slotName -> 'temporarySlot') } asDictionary).
+			  (#requestClass -> MCPClassUpdateRequest).
+			  (#commandClass -> MCPUpdateClassCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolUpdateClassSlotName).
+			  (#arguments -> {
+				   (#className -> 'Object').
+				   (#slotName -> 'temporarySlot').
+				   (#newSlotName -> 'renamedTemporarySlot') } asDictionary).
+			  (#requestClass -> MCPClassUpdateRequest).
+			  (#commandClass -> MCPUpdateClassCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolPullUpClassSlot).
+			  (#arguments -> {
+				   (#className -> 'Object').
+				   (#slotName -> 'temporarySlot') } asDictionary).
+			  (#requestClass -> MCPClassUpdateRequest).
+			  (#commandClass -> MCPUpdateClassCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolPushDownClassSlot).
+			  (#arguments -> {
+				   (#className -> 'Object').
+				   (#slotName -> 'temporarySlot') } asDictionary).
+			  (#requestClass -> MCPClassUpdateRequest).
+			  (#commandClass -> MCPUpdateClassCommand) } asDictionary }
+]
+
+{ #category : 'private' }
+MCPToolContractsTest >> coverageToolFlowSpec [
+
+	^ {
+		  (#toolClass -> MCPToolRunTestCoverage).
+		  (#arguments -> {
+			   (#tests
+			    -> { { (#className -> 'MCPToolContractsTest') } asDictionary }).
+			   (#coverage
+			    ->
+			    { (#classNames -> #( 'MCPToolContractsTest' )) } asDictionary) }
+			   asDictionary).
+		  (#requestClass -> MCPRunTestsRequest).
+		  (#commandClass -> MCPRunTestsCommand) } asDictionary
+]
+
+{ #category : 'private' }
+MCPToolContractsTest >> debugBreakpointToolFlowSpecs [
+
+	^ {
+		  {
+			  (#toolClass -> MCPToolListDebugBreakpoints).
+			  (#arguments -> Dictionary new).
+			  (#requestClass -> MCPDebugBreakpointsRequest).
+			  (#commandClass -> MCPDebugBreakpointsCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolSetDebugBreakpoint).
+			  (#arguments -> {
+				   (#className -> 'MCPToolContractsTest').
+				   (#selector -> 'testDebuggerToolsAreDiscoverableOnly') }
+				   asDictionary).
+			  (#requestClass -> MCPDebugBreakpointsRequest).
+			  (#commandClass -> MCPDebugBreakpointsCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolRemoveDebugBreakpoint).
+			  (#arguments
+			   -> { (#breakpointId -> 'debug-breakpoint-1') } asDictionary).
+			  (#requestClass -> MCPDebugBreakpointsRequest).
+			  (#commandClass -> MCPDebugBreakpointsCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolEnableDebugBreakpoint).
+			  (#arguments
+			   -> { (#breakpointId -> 'debug-breakpoint-1') } asDictionary).
+			  (#requestClass -> MCPDebugBreakpointsRequest).
+			  (#commandClass -> MCPDebugBreakpointsCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolDisableDebugBreakpoint).
+			  (#arguments
+			   -> { (#breakpointId -> 'debug-breakpoint-1') } asDictionary).
+			  (#requestClass -> MCPDebugBreakpointsRequest).
+			  (#commandClass -> MCPDebugBreakpointsCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolClearDebugBreakpoints).
+			  (#arguments -> Dictionary new).
+			  (#requestClass -> MCPDebugBreakpointsRequest).
+			  (#commandClass -> MCPDebugBreakpointsCommand) } asDictionary }
+]
+
+{ #category : 'private' }
+MCPToolContractsTest >> debugControlToolFlowSpecs [
+
+	^ {
+		  {
+			  (#toolClass -> MCPToolStepIntoDebugSession).
+			  (#arguments -> { (#sessionId -> 'debug-session-1') } asDictionary).
+			  (#requestClass -> MCPDebugControlRequest).
+			  (#commandClass -> MCPDebugControlCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolStepOverDebugSession).
+			  (#arguments -> { (#sessionId -> 'debug-session-1') } asDictionary).
+			  (#requestClass -> MCPDebugControlRequest).
+			  (#commandClass -> MCPDebugControlCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolStepThroughDebugSession).
+			  (#arguments -> { (#sessionId -> 'debug-session-1') } asDictionary).
+			  (#requestClass -> MCPDebugControlRequest).
+			  (#commandClass -> MCPDebugControlCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolRestartDebugSession).
+			  (#arguments -> { (#sessionId -> 'debug-session-1') } asDictionary).
+			  (#requestClass -> MCPDebugControlRequest).
+			  (#commandClass -> MCPDebugControlCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolResumeDebugSession).
+			  (#arguments -> { (#sessionId -> 'debug-session-1') } asDictionary).
+			  (#requestClass -> MCPDebugControlRequest).
+			  (#commandClass -> MCPDebugControlCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolTerminateDebugSession).
+			  (#arguments -> { (#sessionId -> 'debug-session-1') } asDictionary).
+			  (#requestClass -> MCPDebugControlRequest).
+			  (#commandClass -> MCPDebugControlCommand) } asDictionary }
+]
+
+{ #category : 'private' }
+MCPToolContractsTest >> debugSessionToolFlowSpecs [
+
+	^ {
+		  {
+			  (#toolClass -> MCPToolListDebugSessions).
+			  (#arguments -> Dictionary new).
+			  (#requestClass -> MCPDebugSessionsRequest).
+			  (#commandClass -> MCPDebugSessionsCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolGetDebugSession).
+			  (#arguments -> { (#sessionId -> 'debug-session-1') } asDictionary).
+			  (#requestClass -> MCPDebugSessionsRequest).
+			  (#commandClass -> MCPDebugSessionsCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolRemoveDebugSession).
+			  (#arguments -> { (#sessionId -> 'debug-session-1') } asDictionary).
+			  (#requestClass -> MCPDebugSessionsRequest).
+			  (#commandClass -> MCPDebugSessionsCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolSearchDebugCandidates).
+			  (#arguments -> Dictionary new).
+			  (#requestClass -> MCPDebugSessionsRequest).
+			  (#commandClass -> MCPDebugSessionsCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolAttachDebugCandidate).
+			  (#arguments
+			   -> { (#candidateRef -> 'debugger-candidate-1') } asDictionary).
+			  (#requestClass -> MCPDebugSessionsRequest).
+			  (#commandClass -> MCPDebugSessionsCommand) } asDictionary }
 ]
 
 { #category : 'private' }
@@ -264,6 +526,162 @@ MCPToolContractsTest >> mcpClassesInPackageTagNamed: aTagName [
 	^ ((PackageOrganizer default packageNamed: #MCP) definedClasses
 		   select: [ :each | each packageTagName asString = aTagName ])
 		  asArray
+]
+
+{ #category : 'private' }
+MCPToolContractsTest >> methodLookupToolFlowSpecs [
+
+	^ {
+		  {
+			  (#toolClass -> MCPToolSearchMethodSource).
+			  (#arguments -> { (#filter -> 'class') } asDictionary).
+			  (#requestClass -> MCPMethodSearchRequest).
+			  (#commandClass -> MCPSearchToolCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolSearchEquivalentMethods).
+			  (#arguments -> {
+				   (#className -> 'MCPTool').
+				   (#selector -> 'defaultName') } asDictionary).
+			  (#requestClass -> MCPSearchEquivalentMethodsRequest).
+			  (#commandClass -> MCPSearchToolCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolSearchMethodImplementors).
+			  (#arguments -> { (#selector -> 'class') } asDictionary).
+			  (#requestClass -> MCPMethodSearchRequest).
+			  (#commandClass -> MCPSearchToolCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolSearchMethodSenders).
+			  (#arguments -> { (#selector -> 'class') } asDictionary).
+			  (#requestClass -> MCPMethodSearchRequest).
+			  (#commandClass -> MCPSearchToolCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolSearchClassReferences).
+			  (#arguments -> { (#className -> 'Object') } asDictionary).
+			  (#requestClass -> MCPMethodSearchRequest).
+			  (#commandClass -> MCPSearchToolCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolSearchVariableReferences).
+			  (#arguments -> { (#variableName -> 'instVarNamed') } asDictionary).
+			  (#requestClass -> MCPMethodSearchRequest).
+			  (#commandClass -> MCPSearchToolCommand) } asDictionary }
+]
+
+{ #category : 'private' }
+MCPToolContractsTest >> methodMutationToolFlowSpecs [
+
+	^ {
+		  {
+			  (#toolClass -> MCPToolCreateMethod).
+			  (#arguments -> {
+				   (#className -> 'Object').
+				   (#methodSource -> 'mcpTemporaryMethod ^ self').
+				   (#protocol -> 'tests') } asDictionary).
+			  (#requestClass -> MCPMethodCreateRequest).
+			  (#commandClass -> MCPCreateMethodCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolUpdateMethodSelector).
+			  (#arguments -> {
+				   (#className -> 'Object').
+				   (#selector -> 'class').
+				   (#newSelector -> 'mcpClass') } asDictionary).
+			  (#requestClass -> MCPMethodUpdateRequest).
+			  (#commandClass -> MCPUpdateMethodCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolUpdateMethodProtocol).
+			  (#arguments -> {
+				   (#className -> 'Object').
+				   (#selector -> 'class').
+				   (#protocol -> 'accessing') } asDictionary).
+			  (#requestClass -> MCPMethodUpdateRequest).
+			  (#commandClass -> MCPUpdateMethodCommand) } asDictionary }
+]
+
+{ #category : 'private' }
+MCPToolContractsTest >> repositoryToolFlowSpecs [
+
+	^ {
+		  {
+			  (#toolClass -> MCPToolVerifyRepositoryIdentity).
+			  (#arguments -> {
+				   (#repositoryName -> 'MCP').
+				   (#branchName -> 'main') } asDictionary).
+			  (#requestClass -> MCPRepositoryVerifyIdentityRequest).
+			  (#commandClass -> MCPRepositoryVerifyIdentityCommand) }
+			  asDictionary.
+		  {
+			  (#toolClass -> MCPToolListRepositoryChanges).
+			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
+			  (#requestClass -> MCPRepositoryDiffRequest).
+			  (#commandClass -> MCPRepositoryDiffCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolCreateRepository).
+			  (#arguments -> {
+				   (#name -> 'MCP Test Repository').
+				   (#location -> '/tmp/mcp-test-repository') } asDictionary).
+			  (#requestClass -> MCPRepositoryCreateRequest).
+			  (#commandClass -> MCPCreateRepositoryCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolAttachRepository).
+			  (#arguments -> {
+				   (#name -> 'MCP Test Repository').
+				   (#location -> '/tmp/mcp-test-repository') } asDictionary).
+			  (#requestClass -> MCPRepositoryAttachRequest).
+			  (#commandClass -> MCPAttachRepositoryCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolUpdateRepository).
+			  (#arguments -> {
+				   (#repositoryName -> 'MCP').
+				   (#addPackageNames -> #( 'MCP' )) } asDictionary).
+			  (#requestClass -> MCPRepositoryUpdateRequest).
+			  (#commandClass -> MCPUpdateRepositoryCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolExportRepository).
+			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
+			  (#requestClass -> MCPRepositoryExportRequest).
+			  (#commandClass -> MCPExportRepositoryCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolCommitRepository).
+			  (#arguments -> {
+				   (#repositoryName -> 'MCP').
+				   (#message -> 'Commit from test') } asDictionary).
+			  (#requestClass -> MCPRepositoryCommitRequest).
+			  (#commandClass -> MCPCommitRepositoryCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolFetchRepository).
+			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
+			  (#requestClass -> MCPRepositoryFetchRequest).
+			  (#commandClass -> MCPFetchRepositoryCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolPullRepository).
+			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
+			  (#requestClass -> MCPRepositoryPullRequest).
+			  (#commandClass -> MCPPullRepositoryCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolPushRepository).
+			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
+			  (#requestClass -> MCPRepositoryPushRequest).
+			  (#commandClass -> MCPPushRepositoryCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolCreateRepositoryBranch).
+			  (#arguments -> {
+				   (#repositoryName -> 'MCP').
+				   (#branchName -> 'feature') } asDictionary).
+			  (#requestClass -> MCPRepositoryCreateBranchRequest).
+			  (#commandClass -> MCPCreateRepositoryBranchCommand) }
+			  asDictionary.
+		  {
+			  (#toolClass -> MCPToolSwitchRepositoryBranch).
+			  (#arguments -> {
+				   (#repositoryName -> 'MCP').
+				   (#branchName -> 'main') } asDictionary).
+			  (#requestClass -> MCPRepositorySwitchBranchRequest).
+			  (#commandClass -> MCPSwitchRepositoryBranchCommand) }
+			  asDictionary.
+		  {
+			  (#toolClass -> MCPToolAdoptRepositoryHead).
+			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
+			  (#requestClass -> MCPRepositoryAdoptHeadRequest).
+			  (#commandClass -> MCPAdoptRepositoryHeadCommand) } asDictionary }
 ]
 
 { #category : 'private' }
@@ -353,34 +771,88 @@ MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 		assert: orderedTools asSet
 		equals: MCPTool concreteSubclasses asSet.
 	self assert: orderedTools asArray equals: {
-			MCPToolDiscoverTools.
-			MCPToolInspectTool.
+			MCPToolSearchTools.
+			MCPToolGetTool.
 			MCPToolCallTool.
-			MCPToolFindRepositories.
-			MCPToolEditRepository.
+			MCPToolSearchRepositories.
+			MCPToolVerifyRepositoryIdentity.
+			MCPToolListRepositoryChanges.
+			MCPToolCreateRepository.
+			MCPToolAttachRepository.
+			MCPToolUpdateRepository.
+			MCPToolExportRepository.
+			MCPToolCommitRepository.
+			MCPToolFetchRepository.
+			MCPToolPullRepository.
+			MCPToolPushRepository.
+			MCPToolCreateRepositoryBranch.
+			MCPToolSwitchRepositoryBranch.
+			MCPToolAdoptRepositoryHead.
+			MCPToolLoadBaseline.
 			MCPToolLoadRepository.
-			MCPToolFindPackages.
-			MCPToolFindClasses.
-			MCPToolInspectClass.
-			MCPToolEditClass.
+			MCPToolSearchPackages.
+			MCPToolSearchClasses.
+			MCPToolGetClass.
+			MCPToolCreateClass.
+			MCPToolUpdateClassName.
+			MCPToolUpdateClassSuperclass.
+			MCPToolUpdateClassPackage.
+			MCPToolUpdateClassComment.
+			MCPToolUpdateClassSlots.
+			MCPToolUpdateClassTraits.
+			MCPToolUpdateClassSideTraits.
+			MCPToolUpdateClassSharedVariables.
+			MCPToolUpdateClassSharedPools.
+			MCPToolUpdateClassLayout.
+			MCPToolAddClassSlot.
+			MCPToolRemoveClassSlot.
+			MCPToolUpdateClassSlotName.
+			MCPToolPullUpClassSlot.
+			MCPToolPushDownClassSlot.
 			MCPToolRemoveClasses.
-			MCPToolFindMethods.
-			MCPToolInspectMethod.
-			MCPToolEditMethod.
+			MCPToolSearchMethodMetadata.
+			MCPToolSearchMethodSource.
+			MCPToolSearchEquivalentMethods.
+			MCPToolSearchMethodImplementors.
+			MCPToolSearchMethodSenders.
+			MCPToolSearchClassReferences.
+			MCPToolSearchVariableReferences.
+			MCPToolGetMethod.
+			MCPToolCreateMethod.
+			MCPToolUpdateMethodSelector.
+			MCPToolUpdateMethodProtocol.
 			MCPToolRewriteMethods.
 			MCPToolRemoveMethods.
-			MCPToolManageChangeHistory.
+			MCPToolListChangeHistoryFiles.
+			MCPToolListChangeHistoryEntries.
+			MCPToolApplyChangeHistoryEntries.
+			MCPToolRevertChangeHistoryEntries.
 			MCPToolRunTests.
+			MCPToolRunTestCoverage.
 			MCPToolCaptureScreenshot.
-			MCPToolDebugSessions.
+			MCPToolListDebugSessions.
+			MCPToolGetDebugSession.
+			MCPToolRemoveDebugSession.
+			MCPToolSearchDebugCandidates.
+			MCPToolAttachDebugCandidate.
 			MCPToolDebugState.
 			MCPToolDebugVariables.
 			MCPToolDebugEvaluate.
-			MCPToolDebugControl.
-			MCPToolDebugBreakpoints.
+			MCPToolStepIntoDebugSession.
+			MCPToolStepOverDebugSession.
+			MCPToolStepThroughDebugSession.
+			MCPToolRestartDebugSession.
+			MCPToolResumeDebugSession.
+			MCPToolTerminateDebugSession.
+			MCPToolListDebugBreakpoints.
+			MCPToolSetDebugBreakpoint.
+			MCPToolRemoveDebugBreakpoint.
+			MCPToolEnableDebugBreakpoint.
+			MCPToolDisableDebugBreakpoint.
+			MCPToolClearDebugBreakpoints.
 			MCPToolDebugCapture.
 			MCPToolDebugTest.
-			MCPToolDebugEdit.
+			MCPToolUpdateDebugMethod.
 			MCPToolEvaluate }
 ]
 
@@ -389,12 +861,11 @@ MCPToolContractsTest >> testCallToolInvokesDiscoverableToolAfterStaticConfigurat
 
 	| data result server |
 	server := MCP new.
-	server staticToolNames:
-		#( 'discover-tools' 'inspect-tool' 'call-tool' ).
-	result := server rpcToolCall: 'call-tool' withParams: {
-			          (#toolName -> 'find-packages').
+	server staticToolNames: #( 'tool_search' 'tool_get' 'tool_call' ).
+	result := server rpcToolCall: 'tool_call' withParams: {
+			          (#toolName -> 'package_search').
 			          (#arguments -> {
-				           (#filter -> 'MCP').
+				           (#packageName -> 'MCP').
 				           (#filterMode -> 'substring').
 				           (#limit -> 1) } asDictionary) } asDictionary.
 	data := self dataFrom: result.
@@ -408,10 +879,10 @@ MCPToolContractsTest >> testCallToolInvokesDiscoverableToolAfterStaticConfigurat
 MCPToolContractsTest >> testCallToolInvokesTargetToolThroughServerPath [
 
 	| data result |
-	result := self callToolNamed: 'call-tool' withArguments: {
-			          (#toolName -> 'find-packages').
+	result := self callToolNamed: 'tool_call' withArguments: {
+			          (#toolName -> 'package_search').
 			          (#arguments -> {
-				           (#filter -> 'MCP').
+				           (#packageName -> 'MCP').
 				           (#filterMode -> 'substring').
 				           (#limit -> 1) } asDictionary) } asDictionary.
 	data := self dataFrom: result.
@@ -433,7 +904,7 @@ MCPToolContractsTest >> testCaptureScreenshotHasAccurateNameAndSchemas [
 	outputPropertyNames := (dataProperty extraProperties at: #properties)
 		                       collect: [ :each | each name ].
 	targetProperty := self inputPropertyNamed: 'target' inTool: tool.
-	self assert: tool name equals: 'capture-screenshot'.
+	self assert: tool name equals: 'screenshot_capture'.
 	self assert: tool inputSchema required equals: #(  ).
 	self assert: inputPropertyNames equals: #( 'target' ).
 	self
@@ -449,19 +920,184 @@ MCPToolContractsTest >> testCaptureScreenshotHasAccurateNameAndSchemas [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testClassMutationToolsHaveAccurateNamesAndRequiredArguments [
+
+	| classTools packagePropertyNames slotToolPropertyNames slotsPropertyNames |
+	classTools := {
+		              (MCPToolCreateClass -> 'class_create').
+		              (MCPToolUpdateClassName -> 'class_name_update').
+		              (MCPToolUpdateClassSuperclass
+		               -> 'class_superclass_update').
+		              (MCPToolUpdateClassPackage -> 'class_package_update').
+		              (MCPToolUpdateClassComment -> 'class_comment_update').
+		              (MCPToolUpdateClassSlots -> 'class_slots_update').
+		              (MCPToolUpdateClassTraits -> 'class_traits_update').
+		              (MCPToolUpdateClassSideTraits
+		               -> 'class_side_traits_update').
+		              (MCPToolUpdateClassSharedVariables
+		               -> 'class_shared_variables_update').
+		              (MCPToolUpdateClassSharedPools
+		               -> 'class_shared_pools_update').
+		              (MCPToolUpdateClassLayout -> 'class_layout_update').
+		              (MCPToolAddClassSlot -> 'class_slot_add').
+		              (MCPToolRemoveClassSlot -> 'class_slot_remove').
+		              (MCPToolUpdateClassSlotName
+		               -> 'class_slot_name_update').
+		              (MCPToolPullUpClassSlot -> 'class_slot_pull_up').
+		              (MCPToolPushDownClassSlot -> 'class_slot_push_down') }.
+	classTools do: [ :association |
+			| propertyNames tool |
+			tool := association key new.
+			propertyNames := tool inputSchema properties collect: [ :each |
+				                 each name ].
+			self assert: tool name equals: association value.
+			self deny: (propertyNames includes: 'operation') ].
+	self
+		assert: MCPToolCreateClass new inputSchema required asSet
+		equals: #( 'className' 'superclassName' 'packageName' ) asSet.
+	self
+		assert: MCPToolUpdateClassName new inputSchema required asSet
+		equals: #( 'className' 'newClassName' ) asSet.
+	self
+		assert: MCPToolUpdateClassComment new inputSchema required asSet
+		equals: #( 'className' 'classComment' ) asSet.
+	self
+		assert: MCPToolUpdateClassSlotName new inputSchema required asSet
+		equals: #( 'className' 'slotName' 'newSlotName' ) asSet.
+	packagePropertyNames := MCPToolUpdateClassPackage new inputSchema
+		                        properties collect: [ :each | each name ].
+	slotsPropertyNames := MCPToolUpdateClassSlots new inputSchema
+		                      properties collect: [ :each | each name ].
+	slotToolPropertyNames := MCPToolAddClassSlot new inputSchema
+		                         properties collect: [ :each | each name ].
+	self assert: (packagePropertyNames includes: 'packageName').
+	self assert: (packagePropertyNames includes: 'tag').
+	self assert: (slotsPropertyNames includes: 'slots').
+	self assert: (slotsPropertyNames includes: 'classSlots').
+	self deny: (slotToolPropertyNames includes: 'slotAction').
+	self assert: (slotToolPropertyNames includes: 'classSide').
+	self assert: (slotToolPropertyNames includes: 'force')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testClassPackageUpdateDescriptionMentionsRecategorization [
+
+	| description |
+	description := MCPToolUpdateClassPackage new description.
+	self assert: (description includesSubstring: 'recategorize').
+	self assert: (description includesSubstring: 'tag').
+	self assert: (description includesSubstring: 'Omit packageName').
+	self assert: (description includesSubstring: 'current package')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testClassToolSchemaDescriptionsExplainRecategorizationForceAndReplacementSemantics [
+
+	| classSlotsDescription classTraitsDescription forceDescription layoutDescription packageDescription sharedPoolsDescription sharedVariablesDescription slotsDescription tagDescription traitsDescription |
+	packageDescription := (self
+		                       inputPropertyNamed: 'packageName'
+		                       inTool: MCPToolUpdateClassPackage new)
+		                      description.
+	tagDescription := (self
+		                   inputPropertyNamed: 'tag'
+		                   inTool: MCPToolUpdateClassPackage new)
+		                  description.
+	forceDescription := (self
+		                     inputPropertyNamed: 'force'
+		                     inTool: MCPToolUpdateClassPackage new)
+		                    description.
+	slotsDescription := (self
+		                     inputPropertyNamed: 'slots'
+		                     inTool: MCPToolUpdateClassSlots new)
+		                    description.
+	classSlotsDescription := (self
+		                          inputPropertyNamed: 'classSlots'
+		                          inTool: MCPToolUpdateClassSlots new)
+		                         description.
+	traitsDescription := (self
+		                      inputPropertyNamed: 'traits'
+		                      inTool: MCPToolUpdateClassTraits new)
+		                     description.
+	classTraitsDescription := (self
+		                           inputPropertyNamed: 'classTraits'
+		                           inTool: MCPToolUpdateClassSideTraits new)
+		                          description.
+	sharedVariablesDescription := (self
+		                               inputPropertyNamed: 'sharedVariables'
+		                               inTool:
+		                               MCPToolUpdateClassSharedVariables new)
+		                              description.
+	sharedPoolsDescription := (self
+		                           inputPropertyNamed: 'sharedPools'
+		                           inTool: MCPToolUpdateClassSharedPools new)
+		                          description.
+	layoutDescription := (self
+		                      inputPropertyNamed: 'layout'
+		                      inTool: MCPToolUpdateClassLayout new)
+		                     description.
+	self assert: (packageDescription includesSubstring: 'recategorize').
+	self assert:
+		(packageDescription includesSubstring: 'omit packageName').
+	self assert:
+		(packageDescription includesSubstring: 'current package').
+	self assert: (tagDescription includesSubstring: 'recategorizes').
+	self assert: (forceDescription includesSubstring: 'force=false').
+	self assert: (forceDescription includesSubstring: 'force=true').
+	self assert: (forceDescription includesSubstring: 'impactMessages').
+	self assert: (forceDescription includesSubstring: 'warnings').
+	self assert: (slotsDescription includesSubstring: 'empty array').
+	self assert: (slotsDescription includesSubstring: 'classSlots').
+	self assert: (classSlotsDescription includesSubstring: 'empty array').
+	self assert: (classSlotsDescription includesSubstring: 'slots').
+	self assert: (traitsDescription includesSubstring: 'empty array').
+	self assert:
+		(classTraitsDescription includesSubstring: 'empty array').
+	self assert:
+		(sharedVariablesDescription includesSubstring: 'empty array').
+	self assert:
+		(sharedPoolsDescription includesSubstring: 'empty array').
+	self assert:
+		(sharedPoolsDescription includesSubstring: 'shared pool').
+	self assert: (layoutDescription includesSubstring: 'layout class').
+	self assert: (layoutDescription includesSubstring: 'AbstractLayout')
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testClassToolTraitOwnsSharedClassHelpers [
 
 	| classToolClasses sharedSelectors |
 	classToolClasses := {
-		                    MCPToolFindClasses.
-		                    MCPToolInspectClass.
-		                    MCPToolEditClass.
-		                    MCPToolRemoveClasses }.
+		                    MCPToolSearchClasses.
+		                    MCPToolGetClass }
+	                    , self classMutationToolClasses
+	                    , { MCPToolRemoveClasses }.
 	sharedSelectors := #( resolvedClassNamed: sortedClassesByName: ).
 	classToolClasses do: [ :toolClass |
-		self assert: (toolClass traits includes: TMCPClassTool).
-		sharedSelectors do: [ :selector |
-			self assert: (toolClass >> selector) origin equals: TMCPClassTool ] ]
+			self assert: (toolClass withAllSuperclasses anySatisfy: [ :each |
+					 each traits includes: TMCPClassTool ]).
+			sharedSelectors do: [ :selector |
+					self
+						assert: (toolClass lookupSelector: selector) origin
+						equals: TMCPClassTool ] ]
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testClassToolsOutputSchemaAdvertisesUpdateResultDTOs [
+
+	| dataProperties outputSchema updatePlanProperties |
+	outputSchema := MCPToolUpdateClassName new outputSchema asJRPCJSON.
+	dataProperties := ((outputSchema at: #properties) at: 'data') at:
+		                  #properties.
+	updatePlanProperties := (dataProperties at: 'updatePlan') at:
+		                        #properties.
+	self assert: (dataProperties includesKey: 'updatePlan').
+	self assert: (dataProperties includesKey: 'appliedChange').
+	self assert: (updatePlanProperties includesKey: 'updateAction').
+	self assert: (updatePlanProperties includesKey: 'requestedContext').
+	self deny: (updatePlanProperties includesKey: 'commandClassName').
+	self assert:
+		(((dataProperties at: 'appliedChange') at: #properties)
+			 includesKey: 'resultClassName')
 ]
 
 { #category : 'tests' }
@@ -470,11 +1106,11 @@ MCPToolContractsTest >> testConfiguredDiscoverableToolsAreNotDirectlyCallable [
 	| server |
 	server := MCP new.
 	server staticToolNames:
-		#( 'discover-tools' 'inspect-tool' 'call-tool' ).
+		#( 'tool_search' 'tool_get' 'tool_call' ).
 	self
 		should: [
 				server
-					rpcToolCall: 'find-packages'
+					rpcToolCall: 'package_search'
 					withParams: { (#limit -> 1) } asDictionary ]
 		raise: JRPCNonExistentHandler
 ]
@@ -483,13 +1119,22 @@ MCPToolContractsTest >> testConfiguredDiscoverableToolsAreNotDirectlyCallable [
 MCPToolContractsTest >> testDebuggerToolsAreDiscoverableOnly [
 
 	| debugNames metadataByName result staticToolNames |
-	debugNames := #( 'debug-sessions' 'debug-state' 'debug-variables'
-	                 'debug-evaluate' 'debug-control' 'debug-breakpoints'
-	                 'debug-capture' 'debug-test' 'debug-edit' ).
+	debugNames := #( 'debug_session_list' 'debug_session_get'
+	                 'debug_session_remove' 'debug_candidate_search'
+	                 'debug_candidate_attach' 'debug_state_get'
+	                 'debug_variable_get' 'debug_expression_evaluate'
+	                 'debug_session_step_into' 'debug_session_step_over'
+	                 'debug_session_step_through'
+	                 'debug_session_restart' 'debug_session_resume'
+	                 'debug_session_terminate' 'debug_breakpoint_list'
+	                 'debug_breakpoint_set' 'debug_breakpoint_remove'
+	                 'debug_breakpoint_enable' 'debug_breakpoint_disable'
+	                 'debug_breakpoint_clear' 'debug_capture'
+	                 'debug_test_run' 'debug_method_update' ).
 	staticToolNames := MCPToolRegistry staticToolNames.
 	debugNames do: [ :each | self deny: (staticToolNames includes: each) ].
 	result := self
-		          callToolNamed: 'discover-tools'
+		          callToolNamed: 'tool_search'
 		          withArguments: { (#group -> 'debugging') } asDictionary.
 	metadataByName := (((self dataFrom: result) at: #tools) collect: [
 		                   :each | (each at: #name) -> each ]) asDictionary.
@@ -509,10 +1154,10 @@ MCPToolContractsTest >> testDictionaryShapedCommandResultsUseDTOClasses [
 	| commandResultClasses |
 	commandResultClasses := {
 		                        (MCPEvaluateCommand -> MCPEvaluateResult).
-		                        (MCPInspectClassCommand
-		                         -> MCPInspectClassResult).
-		                        (MCPInspectMethodCommand
-		                         -> MCPInspectMethodResult).
+		                        (MCPGetClassCommand
+		                         -> MCPGetClassResult).
+		                        (MCPGetMethodCommand
+		                         -> MCPGetMethodResult).
 		                        (MCPRewriteMethodsCommand
 		                         -> MCPMethodRewriteReport).
 		                        (MCPRemoveMethodsCommand
@@ -559,654 +1204,23 @@ MCPToolContractsTest >> testDictionaryShapedCommandResultsUseDTOClasses [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testDiscoverToolsCanIncludeStaticSurface [
-
-	| metadataByName result |
-	result := self callToolNamed: 'discover-tools' withArguments: {
-			          (#query -> 'classes').
-			          (#includeStatic -> true) } asDictionary.
-	metadataByName := (((self dataFrom: result) at: #tools) collect: [
-		                   :each | (each at: #name) -> each ]) asDictionary.
-	self assert: (metadataByName includesKey: 'find-classes').
-	self
-		assert: ((metadataByName at: 'find-classes') at: #exposure)
-		equals: 'static'
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testDiscoverToolsMatchesAgentGuidanceKeywords [
-
-	| expectations |
-	expectations := {
-		                ('repo' -> 'find-repositories').
-		                ('SUnit' -> 'run-tests').
-		                ('browse' -> 'manage-change-history').
-		                ('recover' -> 'manage-change-history').
-		                ('window' -> 'capture-screenshot').
-		                ('display' -> 'capture-screenshot').
-		                ('repair' -> 'debug-edit') }.
-	expectations do: [ :expectation |
-			| names result |
-			result := self callToolNamed: 'discover-tools' withArguments: {
-					          (#query -> expectation key).
-					          (#includeStatic -> true) } asDictionary.
-			names := ((self dataFrom: result) at: #tools) collect: [ :each |
-				         each at: #name ].
-			self assert: (names includes: expectation value) ]
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testDiscoverToolsReturnsDiscoverableMetadata [
-
-	| data editRepositoryMetadata names result tools |
-	result := self
-		          callToolNamed: 'discover-tools'
-		          withArguments: { (#query -> 'repository') } asDictionary.
-	data := self dataFrom: result.
-	tools := data at: #tools.
-	names := tools collect: [ :each | each at: #name ].
-	self assert: (names includes: 'find-repositories').
-	self assert: (names includes: 'edit-repository').
-	self assert: (names includes: 'load-repository').
-	self deny: (names includes: 'find-classes').
-	editRepositoryMetadata := tools detect: [ :each |
-		                          (each at: #name) = 'edit-repository' ].
-	self
-		assert: (editRepositoryMetadata at: #group)
-		equals: 'repositories'.
-	self
-		assert: (editRepositoryMetadata at: #exposure)
-		equals: 'discoverable'.
-	self assert: (editRepositoryMetadata at: #schemaInspectionRequired)
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testDiscoveryUsesConfiguredStaticToolNames [
 
 	| metadataByName result server |
 	server := MCP new.
 	server staticToolNames:
-		#( 'discover-tools' 'inspect-tool' 'call-tool' 'find-repositories' ).
-	result := server rpcToolCall: 'discover-tools' withParams: {
+		#( 'tool_search' 'tool_get' 'tool_call' 'repository_search' ).
+	result := server rpcToolCall: 'tool_search' withParams: {
 			          (#query -> 'repository').
 			          (#includeStatic -> true) } asDictionary.
 	metadataByName := (((self dataFrom: result) at: #tools) collect: [
 		                   :each | (each at: #name) -> each ]) asDictionary.
 	self
-		assert: ((metadataByName at: 'find-repositories') at: #exposure)
+		assert: ((metadataByName at: 'repository_search') at: #exposure)
 		equals: 'static'.
 	self
-		assert: ((metadataByName at: 'edit-repository') at: #exposure)
+		assert: ((metadataByName at: 'repository_create') at: #exposure)
 		equals: 'discoverable'
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testDisplayToolsCatalogSummarizesToolOperations [
-
-	| presenter |
-	presenter := MCPToolsCatalogPresenter new.
-	self
-		assert:
-		(presenter toolCatalogOperationSummaryFor: MCPToolEditRepository new)
-		equals: 'create | attach | +11'.
-	self
-		assert:
-		(presenter toolCatalogOperationSummaryFor: MCPToolEditMethod new)
-		equals: 'create | update'.
-	self
-		assert:
-		(presenter toolCatalogOperationSummaryFor: MCPToolRewriteMethods new)
-		equals: 'preview | apply'.
-	self
-		assert:
-		(presenter toolCatalogOperationSummaryFor: MCPToolFindMethods new)
-		equals: 'query'.
-	self
-		assert:
-		(presenter toolCatalogOperationSummaryFor: MCPToolInspectClass new)
-		equals: 'inspect'.
-	self
-		assert:
-		(presenter toolCatalogOperationSummaryFor: MCPToolRemoveMethods new)
-		equals: 'remove'
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testEditClassDescriptionMentionsRecategorizationViaMove [
-
-	| description |
-	description := MCPToolEditClass new description.
-	self assert: (description includesSubstring: 'recategorize').
-	self assert: (description includesSubstring: 'operation=update').
-	self assert: (description includesSubstring: 'tag').
-	self assert: (description includesSubstring: 'Omit packageName').
-	self assert: (description includesSubstring: 'current package')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testEditClassHasAccurateNameAndRequiredArguments [
-
-	| operationProperty propertyNames slotActionProperty tool |
-	tool := MCPToolEditClass new.
-	propertyNames := tool inputSchema properties collect: [ :each |
-		                 each name ].
-	operationProperty := tool inputSchema properties detect: [ :each |
-		                     each name = 'operation' ].
-	slotActionProperty := tool inputSchema properties detect: [ :each |
-		                      each name = 'slotAction' ].
-	self assert: tool name equals: 'edit-class'.
-	self
-		assert: tool inputSchema required asSet
-		equals: #( 'operation' 'className' ) asSet.
-	self assert: (propertyNames includes: 'classComment').
-	self assert: (propertyNames includes: 'traits').
-	self assert: (propertyNames includes: 'classTraits').
-	self assert: (propertyNames includes: 'sharedVariables').
-	self assert: (propertyNames includes: 'sharedPools').
-	self assert: (propertyNames includes: 'layout').
-	self assert: (propertyNames includes: 'packageNames').
-	self assert: (propertyNames includes: 'classNames').
-	self assert: (propertyNames includes: 'hierarchyClassNames').
-	self assert: (propertyNames includes: 'slotAction').
-	self assert: (propertyNames includes: 'slotName').
-	self assert: (propertyNames includes: 'newSlotName').
-	self assert: (propertyNames includes: 'classSide').
-	self assert: (propertyNames includes: 'force').
-	self
-		assert: (operationProperty extraProperties at: #enum) asArray
-		equals: #( 'create' 'update' ).
-	self
-		assert: (slotActionProperty extraProperties at: #enum) asArray
-		equals: #( 'add' 'remove' 'rename' 'pullUp' 'pushDown' )
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testEditClassOutputSchemaAdvertisesUpdateResultDTOs [
-
-	| dataProperties outputSchema updatePlanProperties |
-	outputSchema := MCPToolEditClass new outputSchema asJRPCJSON.
-	dataProperties := ((outputSchema at: #properties) at: 'data') at:
-		                  #properties.
-	updatePlanProperties := (dataProperties at: 'updatePlan') at:
-		                        #properties.
-	self assert: (dataProperties includesKey: 'updatePlan').
-	self assert: (dataProperties includesKey: 'appliedChange').
-	self assert: (updatePlanProperties includesKey: 'updateAction').
-	self assert: (updatePlanProperties includesKey: 'requestedContext').
-	self deny: (updatePlanProperties includesKey: 'commandClassName').
-	self assert:
-		(((dataProperties at: 'appliedChange') at: #properties)
-			 includesKey: 'resultClassName')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testEditClassSchemaDescriptionsExplainRecategorizationForceAndPatchSemantics [
-
-	| classCommentDescription classSlotsDescription classTraitsDescription forceDescription layoutDescription operationDescription packageDescription sharedPoolsDescription sharedVariablesDescription slotsDescription tagDescription tool traitsDescription |
-	tool := MCPToolEditClass new.
-	operationDescription := (self
-		                         inputPropertyNamed: 'operation'
-		                         inTool: tool) description.
-	packageDescription := (self
-		                       inputPropertyNamed: 'packageName'
-		                       inTool: tool) description.
-	tagDescription := (self inputPropertyNamed: 'tag' inTool: tool)
-		                  description.
-	forceDescription := (self inputPropertyNamed: 'force' inTool: tool)
-		                    description.
-	classCommentDescription := (self
-		                            inputPropertyNamed: 'classComment'
-		                            inTool: tool) description.
-	slotsDescription := (self inputPropertyNamed: 'slots' inTool: tool)
-		                    description.
-	classSlotsDescription := (self
-		                          inputPropertyNamed: 'classSlots'
-		                          inTool: tool) description.
-	traitsDescription := (self inputPropertyNamed: 'traits' inTool: tool)
-		                     description.
-	classTraitsDescription := (self
-		                           inputPropertyNamed: 'classTraits'
-		                           inTool: tool) description.
-	sharedVariablesDescription := (self
-		                               inputPropertyNamed: 'sharedVariables'
-		                               inTool: tool) description.
-	sharedPoolsDescription := (self
-		                           inputPropertyNamed: 'sharedPools'
-		                           inTool: tool) description.
-	layoutDescription := (self inputPropertyNamed: 'layout' inTool: tool)
-		                     description.
-	self assert: (operationDescription includesSubstring: 'patch style').
-	self assert: (operationDescription includesSubstring: 'exactly one').
-	self assert: (operationDescription includesSubstring: 'traits').
-	self assert: (operationDescription includesSubstring: 'classTraits').
-	self assert:
-		(operationDescription includesSubstring: 'sharedVariables').
-	self assert: (operationDescription includesSubstring: 'sharedPools').
-	self assert: (operationDescription includesSubstring: 'layout').
-	self assert: (packageDescription includesSubstring: 'recategorize').
-	self assert:
-		(packageDescription includesSubstring: 'Omit packageName').
-	self assert:
-		(packageDescription includesSubstring: 'current package').
-	self assert:
-		(tagDescription includesSubstring: 'recategorization patch').
-	self assert: (forceDescription includesSubstring: 'force=false').
-	self assert: (forceDescription includesSubstring: 'force=true').
-	self assert: (forceDescription includesSubstring: 'impactMessages').
-	self assert: (forceDescription includesSubstring: 'warnings').
-	self assert:
-		(classCommentDescription includesSubstring: 'set-comment patch').
-	self assert:
-		(classCommentDescription includesSubstring: 'do not combine').
-	self assert: (slotsDescription includesSubstring:
-			 'replaces the full instance-side slot list').
-	self assert:
-		(slotsDescription includesSubstring:
-			 'May be combined with classSlots').
-	self assert: (classSlotsDescription includesSubstring:
-			 'replaces the full class-side slot list').
-	self assert:
-		(classSlotsDescription includesSubstring:
-			 'May be combined with slots').
-	self assert: (traitsDescription includesSubstring:
-			 'replaces the full instance-side trait list').
-	self assert: (traitsDescription includesSubstring: 'empty array').
-	self assert: (classTraitsDescription includesSubstring:
-			 'replaces the full class-side trait list').
-	self assert:
-		(classTraitsDescription includesSubstring: 'empty array').
-	self assert: (sharedVariablesDescription includesSubstring:
-			 'replaces the full class variable list').
-	self assert:
-		(sharedVariablesDescription includesSubstring: 'empty array').
-	self assert: (sharedPoolsDescription includesSubstring:
-			 'replaces the full shared pool list').
-	self assert:
-		(sharedPoolsDescription includesSubstring: 'empty array').
-	self assert: (sharedPoolsDescription includesSubstring: 'SharedPool').
-	self assert:
-		(layoutDescription includesSubstring: 'replaces the layout class').
-	self assert: (layoutDescription includesSubstring: 'AbstractLayout')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testEditDescriptionsExplainForceWarningBehavior [
-
-	| classDescription forceDescription methodDescription |
-	classDescription := MCPToolEditClass new description.
-	methodDescription := MCPToolEditMethod new description.
-	forceDescription := (self
-		                     inputPropertyNamed: 'force'
-		                     inTool: MCPToolEditClass new) description.
-	self assert: (classDescription includesSubstring: 'force=false').
-	self assert: (classDescription includesSubstring: 'force=true').
-	self assert: (methodDescription includesSubstring: 'force=false').
-	self assert: (methodDescription includesSubstring: 'force=true').
-	self assert: (forceDescription includesSubstring: 'impactMessages').
-	self assert: (forceDescription includesSubstring: 'howToProceed').
-	self assert:
-		(forceDescription includesSubstring: 'forceSupported=true').
-	self assert: (forceDescription includesSubstring: 'warnings')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testEditMethodHasAccurateNameAndRequiredArguments [
-
-	| propertyNames tool |
-	tool := MCPToolEditMethod new.
-	propertyNames := tool inputSchema properties collect: [ :each |
-		                 each name ].
-	self assert: tool name equals: 'edit-method'.
-	self
-		assert: tool inputSchema required asSet
-		equals: #( 'operation' 'className' ) asSet.
-	self assert: (propertyNames includes: 'force').
-	self assert: (propertyNames includes: 'packageNames').
-	self assert: (propertyNames includes: 'classNames').
-	self assert: (propertyNames includes: 'hierarchyClassNames').
-	self deny: (propertyNames includes: 'projectNames')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testEditMethodSchemaAdvertisesMethodState [
-
-	| argumentNamesProperty argumentValuesProperty dataProperties dataProperty operationProperty permutationProperty propertyNames tool |
-	tool := MCPToolEditMethod new.
-	operationProperty := tool inputSchema properties detect: [ :each |
-		                     each name = 'operation' ].
-	permutationProperty := tool inputSchema properties detect: [ :each |
-		                       each name = 'permutation' ].
-	argumentNamesProperty := tool inputSchema properties detect: [ :each |
-		                         each name = 'argumentNames' ].
-	argumentValuesProperty := tool inputSchema properties detect: [ :each |
-		                          each name = 'argumentValueExpressions' ].
-	dataProperty := tool outputSchema properties detect: [ :each |
-		                each name = 'data' ].
-	dataProperties := dataProperty extraProperties at: #properties.
-	propertyNames := dataProperties collect: [ :each | each name ].
-	self
-		assert: (operationProperty extraProperties at: #enum) asArray
-		equals: #( 'create' 'update' ).
-	self assert:
-		(permutationProperty extraProperties at: #items) type = 'integer'.
-	self assert:
-		(argumentNamesProperty extraProperties at: #items) type = 'string'.
-	self assert:
-		(argumentValuesProperty extraProperties at: #items) type = 'string'.
-	self
-		assert: propertyNames asSet
-		equals: #( 'operation' 'updateAction' 'updatePlan' 'appliedChange'
-			   'selector' 'className' 'classSide' 'packageName' 'isExtension'
-			   'protocol' 'source' 'oldSelector' 'newSelector' 'oldProtocol'
-			   'newProtocol' 'critiques' ) asSet
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testEditRepositoryDescriptionDocumentsRepositoryOperations [
-
-	| branchNameDescription description isModifiedDescription locationDescription messageDescription modifiedPackageNamesDescription packageNamesDescription removePackageNamesDescription repositoryNameDescription subdirectoryDescription tool |
-	tool := MCPToolEditRepository new.
-	description := tool description.
-	messageDescription := (self
-		                       inputPropertyNamed: 'message'
-		                       inTool: tool) description.
-	branchNameDescription := (self
-		                          inputPropertyNamed: 'branchName'
-		                          inTool: tool) description.
-	repositoryNameDescription := (self
-		                              inputPropertyNamed: 'repositoryName'
-		                              inTool: tool) description.
-	locationDescription := (self
-		                        inputPropertyNamed: 'location'
-		                        inTool: tool) description.
-	subdirectoryDescription := (self
-		                             inputPropertyNamed: 'subdirectory'
-		                             inTool: tool) description.
-	packageNamesDescription := (self
-		                            inputPropertyNamed: 'packageNames'
-		                            inTool: tool) description.
-	modifiedPackageNamesDescription := (self
-		                                    inputPropertyNamed:
-		                                    'modifiedPackageNames'
-		                                    inTool: tool) description.
-	isModifiedDescription := (self
-		                          inputPropertyNamed: 'isModified'
-		                          inTool: tool) description.
-	removePackageNamesDescription := (self
-		                                  inputPropertyNamed:
-		                                  'removePackageNames'
-		                                  inTool: tool) description.
-	self assert: (description includesSubstring: 'repositoryName').
-	self assert: (description includesSubstring: 'operation=attach').
-	self assert: (description includesSubstring: 'existing Git checkout').
-	self assert: (description includesSubstring: 'without creating').
-	self assert: (description includesSubstring: 'operation=diff').
-	self assert: (description includesSubstring: 'without writing files').
-	self assert: (description includesSubstring: 'should be preferred').
-	self assert: (description includesSubstring: 'operation=export').
-	self assert: (description includesSubstring: 'escape hatch').
-	self assert:
-		(description includesSubstring: 'without staging or committing').
-	self assert: (description includesSubstring: 'operation=verifyIdentity').
-	self assert:
-		(description includesSubstring: 'asserts expected repository identity fields').
-	self assert:
-		(description includesSubstring: 'provide at least one expected field').
-	self assert: (description includesSubstring: 'operation=commit').
-	self assert:
-		(description includesSubstring: 'IceRepository>>commitWithMessage:').
-	self assert: (description includesSubstring: 'operation=adoptHead').
-	self assert:
-		(description includesSubstring: 'IceWorkingCopy>>adoptCommit:').
-	self assert:
-		(description includesSubstring: 'before/after modified packages').
-	self assert: (description includesSubstring: 'operation=fetch').
-	self assert: (description includesSubstring: 'IceRepository>>fetch').
-	self assert: (description includesSubstring: 'operation=pull').
-	self assert: (description includesSubstring: 'IceRepository>>pull').
-	self assert: (description includesSubstring: 'operation=push').
-	self assert: (description includesSubstring: 'IceRepository>>push').
-	self assert:
-		(description includesSubstring: 'operation=createBranch').
-	self assert:
-		(description includesSubstring: 'operation=switchBranch').
-	self assert:
-		(messageDescription includesSubstring: 'operation=commit').
-	self assert:
-		(branchNameDescription includesSubstring: 'operation=createBranch').
-	self assert:
-		(branchNameDescription includesSubstring: 'operation=switchBranch').
-	self assert:
-		(branchNameDescription includesSubstring: 'operation=adoptHead').
-	self assert:
-		(branchNameDescription includesSubstring: 'operation=verifyIdentity').
-	self assert:
-		(repositoryNameDescription includesSubstring: 'existing repository').
-	self assert:
-		(repositoryNameDescription includesSubstring:
-			 'Combine with location').
-	self assert:
-		(locationDescription includesSubstring: 'operation=create').
-	self assert:
-		(locationDescription includesSubstring: 'operation=attach').
-	self assert:
-		(locationDescription includesSubstring: 'operation=verifyIdentity').
-	self assert: (locationDescription includesSubstring: 'disambiguate').
-	self assert:
-		(subdirectoryDescription includesSubstring: 'operation=verifyIdentity').
-	self assert: (packageNamesDescription includesSubstring:
-			 'operation=create or operation=attach').
-	self assert: (packageNamesDescription includesSubstring:
-			 'replaces the full managed package list').
-	self assert:
-		(packageNamesDescription includesSubstring: 'operation=verifyIdentity').
-	self assert:
-		(modifiedPackageNamesDescription includesSubstring:
-			 'operation=verifyIdentity').
-	self assert:
-		(isModifiedDescription includesSubstring: 'operation=verifyIdentity').
-	self assert:
-		(removePackageNamesDescription includesSubstring: 'does not unload')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testEditRepositoryDescriptionExplainsPackageAndFilesystemSemantics [
-
-	| branchNameDescription description locationDescription messageDescription packageNamesDescription removePackageNamesDescription repositoryNameDescription tool |
-	tool := MCPToolEditRepository new.
-	description := tool description.
-	messageDescription := (self
-		                       inputPropertyNamed: 'message'
-		                       inTool: tool) description.
-	branchNameDescription := (self
-		                          inputPropertyNamed: 'branchName'
-		                          inTool: tool) description.
-	repositoryNameDescription := (self
-		                              inputPropertyNamed: 'repositoryName'
-		                              inTool: tool) description.
-	locationDescription := (self
-		                        inputPropertyNamed: 'location'
-		                        inTool: tool) description.
-	packageNamesDescription := (self
-		                            inputPropertyNamed: 'packageNames'
-		                            inTool: tool) description.
-	removePackageNamesDescription := (self
-		                                  inputPropertyNamed:
-		                                  'removePackageNames'
-		                                  inTool: tool) description.
-	self assert: (description includesSubstring: 'repositoryName').
-	self assert: (description includesSubstring: 'operation=attach').
-	self assert: (description includesSubstring: 'existing Git checkout').
-	self assert: (description includesSubstring: 'without creating').
-	self assert: (description includesSubstring: 'operation=diff').
-	self assert: (description includesSubstring: 'without writing files').
-	self assert: (description includesSubstring: 'should be preferred').
-	self assert: (description includesSubstring: 'operation=export').
-	self assert: (description includesSubstring: 'escape hatch').
-	self assert:
-		(description includesSubstring: 'without staging or committing').
-	self assert: (description includesSubstring: 'operation=commit').
-	self assert:
-		(description includesSubstring: 'IceRepository>>commitWithMessage:').
-	self assert: (description includesSubstring: 'operation=fetch').
-	self assert: (description includesSubstring: 'IceRepository>>fetch').
-	self assert: (description includesSubstring: 'operation=pull').
-	self assert: (description includesSubstring: 'IceRepository>>pull').
-	self assert: (description includesSubstring: 'operation=push').
-	self assert: (description includesSubstring: 'IceRepository>>push').
-	self assert:
-		(description includesSubstring: 'operation=createBranch').
-	self assert:
-		(description includesSubstring: 'operation=switchBranch').
-	self assert:
-		(messageDescription includesSubstring: 'operation=commit').
-	self assert:
-		(branchNameDescription includesSubstring: 'operation=createBranch').
-	self assert:
-		(branchNameDescription includesSubstring: 'operation=switchBranch').
-	self assert:
-		(repositoryNameDescription includesSubstring: 'existing repository').
-	self assert:
-		(repositoryNameDescription includesSubstring:
-			 'Combine with location').
-	self assert:
-		(locationDescription includesSubstring: 'operation=create').
-	self assert:
-		(locationDescription includesSubstring: 'operation=attach').
-	self assert: (locationDescription includesSubstring: 'disambiguate').
-	self assert: (packageNamesDescription includesSubstring:
-			 'operation=create or operation=attach').
-	self assert: (packageNamesDescription includesSubstring:
-			 'replaces the full managed package list').
-	self assert:
-		(removePackageNamesDescription includesSubstring: 'does not unload')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testEditRepositoryHasAccurateNameAndRequiredArguments [
-
-	| operationProperty propertyNames tool |
-	tool := MCPToolEditRepository new.
-	propertyNames := tool inputSchema properties collect: [ :each |
-		                 each name ].
-	operationProperty := tool inputSchema properties detect: [ :each |
-		                     each name = 'operation' ].
-	self assert: tool name equals: 'edit-repository'.
-	self
-		assert: tool inputSchema required asSet
-		equals: #( 'operation' ) asSet.
-	self assert: (propertyNames includes: 'name').
-	self assert: (propertyNames includes: 'repositoryName').
-	self assert: (propertyNames includes: 'location').
-	self assert: (propertyNames includes: 'message').
-	self assert: (propertyNames includes: 'branchName').
-	self assert: (propertyNames includes: 'subdirectory').
-	self assert: (propertyNames includes: 'packageNames').
-	self assert: (propertyNames includes: 'modifiedPackageNames').
-	self assert: (propertyNames includes: 'isModified').
-	self assert: (propertyNames includes: 'addPackageNames').
-	self assert: (propertyNames includes: 'removePackageNames').
-	self
-		assert: (operationProperty extraProperties at: #enum) asArray
-		equals:
-			#( 'create' 'attach' 'update' 'verifyIdentity' 'export' 'diff'
-			   'commit' 'adoptHead' 'fetch' 'pull' 'push' 'createBranch'
-			   'switchBranch' )
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testEditRepositoryOutputSchemaUsesActionForExecutedAction [
-
-	| dataProperties outputSchema required |
-	outputSchema := MCPToolEditRepository new outputSchema asJRPCJSON.
-	dataProperties := ((outputSchema at: #properties) at: 'data') at:
-		                  #properties.
-	required := ((outputSchema at: #properties) at: 'data') at: #required.
-	self assert: (dataProperties includesKey: 'action').
-	self assert: (dataProperties includesKey: 'restoredOrderOnlyPaths').
-	self assert:
-		(dataProperties includesKey: 'modifiedPackageNamesBefore').
-	self assert:
-		(dataProperties includesKey: 'modifiedPackageNamesAfter').
-	self assert: (dataProperties includesKey: 'checkedFields').
-	self assert:
-		(dataProperties includesKey: 'previousReferenceCommitId').
-	self assert: (dataProperties includesKey: 'referenceCommitId').
-	self assert: (dataProperties includesKey: 'adoptedCommitId').
-	self assert: (dataProperties includesKey: 'didAdopt').
-	self assert: (dataProperties includesKey: 'matched').
-	self deny: (dataProperties includesKey: 'operation').
-	self assert: (required includes: 'action').
-	self deny: (required includes: 'operation')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testEditToolSchemasAdvertiseOperationEnumsWithoutComposition [
-
-	| classOperationProperty editClass editMethod editRepository methodOperationProperty repositoryOperationProperty |
-	editRepository := MCPToolEditRepository new.
-	editClass := MCPToolEditClass new.
-	editMethod := MCPToolEditMethod new.
-	repositoryOperationProperty := self
-		                               inputPropertyNamed: 'operation'
-		                               inTool: editRepository.
-	classOperationProperty := self
-		                          inputPropertyNamed: 'operation'
-		                          inTool: editClass.
-	methodOperationProperty := self
-		                           inputPropertyNamed: 'operation'
-		                           inTool: editMethod.
-	self deny:
-		(editRepository inputSchema asJRPCJSON includesKey: #oneOf).
-	self deny: (editClass inputSchema asJRPCJSON includesKey: #oneOf).
-	self deny: (editMethod inputSchema asJRPCJSON includesKey: #oneOf).
-	self
-		assert: editRepository inputSchema required asSet
-		equals: #( 'operation' ) asSet.
-	self
-		assert: editClass inputSchema required asSet
-		equals: #( 'operation' 'className' ) asSet.
-	self
-		assert: editMethod inputSchema required asSet
-		equals: #( 'operation' 'className' ) asSet.
-	self
-		assert:
-		(repositoryOperationProperty extraProperties at: #enum) asArray
-		equals:
-			#( 'create' 'attach' 'update' 'verifyIdentity' 'export' 'diff'
-			   'commit' 'adoptHead' 'fetch' 'pull' 'push' 'createBranch'
-			   'switchBranch' ).
-	self
-		assert: (classOperationProperty extraProperties at: #enum) asArray
-		equals: #( 'create' 'update' ).
-	self
-		assert: (methodOperationProperty extraProperties at: #enum) asArray
-		equals: #( 'create' 'update' )
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testEditToolSchemasAdvertiseRenameScopeConditions [
-
-	| editClassInputSchema editClassPropertyNames editMethodInputSchema editMethodPropertyNames |
-	editClassInputSchema := MCPToolEditClass new inputSchema.
-	editMethodInputSchema := MCPToolEditMethod new inputSchema.
-	editClassPropertyNames := editClassInputSchema properties collect: [
-		                          :each | each name ].
-	editMethodPropertyNames := editMethodInputSchema properties collect: [
-		                           :each | each name ].
-	{
-		editClassPropertyNames.
-		editMethodPropertyNames } do: [ :propertyNames |
-		self deny: (propertyNames includes: 'scope').
-		self assert: (propertyNames includes: 'packageNames').
-		self assert: (propertyNames includes: 'classNames').
-		self assert: (propertyNames includes: 'hierarchyClassNames') ].
-	self
-		assert: (editClassInputSchema asJRPCJSON at: #additionalProperties)
-		equals: false.
-	self
-		assert: (editMethodInputSchema asJRPCJSON at: #additionalProperties)
-		equals: false
 ]
 
 { #category : 'tests - evaluate' }
@@ -1214,7 +1228,7 @@ MCPToolContractsTest >> testEvaluateCatchesHaltAsRuntimeFailure [
 
 	| result text |
 	result := self
-		          callDiscoveredToolNamed: 'evaluate'
+		          callDiscoveredToolNamed: 'image_evaluate'
 		          withArguments:
 		          { (#code -> 'Halt signal: ''mcp halt test''') }
 			          asDictionary.
@@ -1242,7 +1256,7 @@ MCPToolContractsTest >> testEvaluateIsMarkedAsAdvancedEscapeHatch [
 	| description |
 	self
 		assert: (MCPToolEvaluate new asJRPCJSON at: #name)
-		equals: 'evaluate'.
+		equals: 'image_evaluate'.
 	description := MCPToolEvaluate new description.
 	self assert: (description includesSubstring: 'escape hatch').
 	self assert:
@@ -1261,7 +1275,7 @@ MCPToolContractsTest >> testEvaluateReturnsCompilationFailureInformation [
 
 	| result text |
 	result := self
-		          callDiscoveredToolNamed: 'evaluate'
+		          callDiscoveredToolNamed: 'image_evaluate'
 		          withArguments: { (#code -> '1 +') } asDictionary.
 	text := self firstTextFromToolResult: result.
 	self assert: (result at: #isError).
@@ -1276,7 +1290,7 @@ MCPToolContractsTest >> testEvaluateReturnsRuntimeFailureInformation [
 
 	| result text |
 	result := self
-		          callDiscoveredToolNamed: 'evaluate'
+		          callDiscoveredToolNamed: 'image_evaluate'
 		          withArguments:
 		          { (#code -> 'Error signal: ''boom''') } asDictionary.
 	text := self firstTextFromToolResult: result.
@@ -1287,278 +1301,67 @@ MCPToolContractsTest >> testEvaluateReturnsRuntimeFailureInformation [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testFindClassesHasAccurateNameAndSchema [
+MCPToolContractsTest >> testGetClassHasAccurateNameAndRequiredArguments [
 
-	| propertyNames schema |
-	schema := MCPToolFindClasses new inputSchema.
-	propertyNames := schema properties collect: [ :each | each name ].
-	self assert: MCPToolFindClasses new name equals: 'find-classes'.
-	self assert: schema required equals: #(  ).
-	self deny: (propertyNames includes: 'packageName').
-	self assert: (propertyNames includes: 'packageNames').
-	self assert: (propertyNames includes: 'classNames').
-	self assert: (propertyNames includes: 'hierarchyClassNames').
-	self assert: (propertyNames includes: 'subclassClassNames').
-	self assert: (propertyNames includes: 'parentClassNames').
-	self assert: (propertyNames includes: 'scopeMode').
-	self assert: (propertyNames includes: 'filter').
-	self assert: (propertyNames includes: 'filterTargets')
+	| inputPropertyNames outputDataProperty outputPropertyNames tool |
+	tool := MCPToolGetClass new.
+	inputPropertyNames := tool inputSchema properties collect: [ :each |
+		                      each name ].
+	outputDataProperty := tool outputSchema properties detect: [ :each |
+		                      each name = 'data' ].
+	outputPropertyNames := (outputDataProperty extraProperties at:
+		                        #properties) collect: [ :each | each name ].
+	self assert: tool name equals: 'class_get'.
+	self
+		assert: tool inputSchema required asSet
+		equals: #( 'className' ) asSet.
+	self assert: (inputPropertyNames includes: 'includeComment').
+	self assert: (outputPropertyNames includes: 'traitComposition').
+	self assert: (outputPropertyNames includes: 'classTraitComposition')
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testFindClassesListsClassesForExistingPackage [
+MCPToolContractsTest >> testGetMethodHasAccurateNameAndRequiredArguments [
 
-	| classNames data result |
+	| propertyNames variablePropertyNames |
+	propertyNames := MCPToolGetMethod new inputSchema properties
+		                 collect: [ :each | each name ].
+	variablePropertyNames := (MCPToolGetMethod new
+		                          variableReferenceSchema extraProperties
+		                          at: #properties) collect: [ :each |
+		                         each name ].
+	self assert: MCPToolGetMethod new name equals: 'method_get'.
+	self
+		assert: MCPToolGetMethod new inputSchema required asSet
+		equals: #( 'className' 'selector' ) asSet.
+	self assert: (propertyNames includes: 'className').
+	self assert: (propertyNames includes: 'selector').
+	self assert: (propertyNames includes: 'classSide').
+	self assert: (propertyNames includes: 'includeVariableDetails').
+	self deny: (variablePropertyNames includes: 'sourceIntervals').
+	self deny: (variablePropertyNames includes: 'external').
+	self deny: (variablePropertyNames includes: 'declaredInMethod')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testGetToolReturnsSchemaForCatalogTool [
+
+	| contract inputProperties result |
 	result := self
-		          callToolNamed: 'find-classes'
+		          callToolNamed: 'tool_get'
 		          withArguments:
-		          { (#packageNames -> #( 'MCP-Tests' )) } asDictionary.
-	data := (result at: #structuredContent) at: #data.
-	classNames := (data at: #classes) collect: [ :each |
-		              each at: #className ].
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #totalCount) > 0.
-	self assert: (classNames includes: 'MCPToolEditMethodTest')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testFindClassesReturnsWarningResultForMissingPackage [
-
-	| data result warnings |
-	result := self
-		          callToolNamed: 'find-classes'
-		          withArguments:
-		          { (#packageNames -> #( 'MCP-Definitely-Missing' )) }
-			          asDictionary.
-	data := self dataFrom: result.
-	warnings := self warningsFrom: result.
-	self deny: (result at: #isError ifAbsent: [ false ]).
+		          { (#toolName -> 'repository_create') } asDictionary.
+	contract := (self dataFrom: result) at: #tool.
+	self assert: (contract at: #name) equals: 'repository_create'.
+	self assert: (contract at: #group) equals: 'repositories'.
+	self assert: (contract at: #exposure) equals: 'discoverable'.
+	inputProperties := ((contract at: #inputSchema) at: #properties) keys.
+	self assert: (inputProperties includes: 'name').
+	self assert: (inputProperties includes: 'location').
+	self deny: (inputProperties includes: 'operation').
 	self
-		assert: ((self structuredContentFrom: result) at: #status)
-		equals: 'ok'.
-	self assert: (data at: #totalCount) equals: 0.
-	self assert: (data at: #classes) isEmpty.
-	self assert: warnings size equals: 1.
-	self assert:
-		(warnings first includesSubstring: 'MCP-Definitely-Missing').
-	self assert: (warnings first includesSubstring: 'packageNames scope').
-	self assert: (warnings first includesSubstring: 'Did you mean:')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testFindMethodsDescriptionMentionsReferenceLookupModes [
-
-	| description filterDescription filterModeDescription tool |
-	tool := MCPToolFindMethods new.
-	description := tool description.
-	self assert:
-		(description includesSubstring: 'filterMode=selectorReference').
-	self assert: (description includesSubstring: 'senders').
-	self assert:
-		(description includesSubstring: 'filterMode=classReference').
-	self assert:
-		(description includesSubstring: 'filterMode=variableReference').
-	self assert: (description includesSubstring: 'implementors').
-	filterDescription := (self inputPropertyNamed: 'filter' inTool: tool)
-		                     description.
-	filterModeDescription := (self
-		                          inputPropertyNamed: 'filterMode'
-		                          inTool: tool) description.
-	self assert:
-		(filterDescription includesSubstring: 'referenced selector').
-	self assert: (filterModeDescription includesSubstring:
-			 'selectorReference for senders')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testFindMethodsHasAccurateNameAndSchema [
-
-	| filterModeProperty filterTargetsProperty propertyNames schema |
-	schema := MCPToolFindMethods new inputSchema.
-	propertyNames := schema properties collect: [ :each | each name ].
-	filterTargetsProperty := schema properties detect: [ :each |
-		                         each name = 'filterTargets' ].
-	filterModeProperty := schema properties detect: [ :each |
-		                      each name = 'filterMode' ].
-	self assert: MCPToolFindMethods new name equals: 'find-methods'.
-	self assert: schema required equals: #(  ).
-	self assert: (propertyNames includes: 'packageNames').
-	self assert: (propertyNames includes: 'classNames').
-	self assert: (propertyNames includes: 'hierarchyClassNames').
-	self assert: (propertyNames includes: 'subclassClassNames').
-	self assert: (propertyNames includes: 'parentClassNames').
-	self assert: (propertyNames includes: 'scopeMode').
-	self assert: (propertyNames includes: 'filter').
-	self assert: (propertyNames includes: 'filterTargets').
-	self
-		assert:
-			((filterTargetsProperty extraProperties at: #items) extraProperties
-				 at: #enum) asArray
-		equals: #( 'selector' 'class' 'package' 'protocol' 'source' ).
-	self
-		assert: (filterModeProperty extraProperties at: #enum) asArray
-		equals: #( 'substring' 'prefix' 'exact' 'regex' 'selectorReference'
-			   'classReference' 'variableReference' ).
-	self deny: (propertyNames includes: 'className')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testFindMethodsListsMethodsForExistingClassScope [
-
-	| data result selectors |
-	result := self
-		          callToolNamed: 'find-methods'
-		          withArguments:
-		          { (#classNames -> #( 'MCPToolFindMethodsTestTarget' )) }
-			          asDictionary.
-	data := (result at: #structuredContent) at: #data.
-	selectors := (data at: #methods) collect: [ :each |
-		             each at: #selector ].
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #totalCount) equals: selectors size.
-	self assert: (selectors includes: 'alphaNeedleSelector').
-	self assert: (selectors includes: 'classNeedleSelector')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testFindMethodsReferenceModesAdvertiseFilterRequirement [
-
-	| filterModeEnum filterModeProperty filterProperty schema |
-	schema := MCPToolFindMethods new inputSchema asJRPCJSON.
-	self deny: (schema includesKey: #allOf).
-	filterModeProperty := (schema at: #properties) at: 'filterMode'.
-	filterProperty := (schema at: #properties) at: 'filter'.
-	filterModeEnum := (filterModeProperty at: #enum) asArray.
-	#( 'selectorReference' 'classReference' 'variableReference' ) do: [
-		:referenceMode |
-		self assert: (filterModeEnum includes: referenceMode) ].
-	self assert: ((filterProperty at: #description) includesSubstring:
-			 'required when filterMode is selectorReference')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testFindMethodsReturnsWarningResultForMissingClass [
-
-	| data result warnings |
-	result := self
-		          callToolNamed: 'find-methods'
-		          withArguments:
-			          { (#classNames
-			           -> #( 'MCPDefinitelyMissingFindMethodsClass' )) }
-				          asDictionary.
-	data := self dataFrom: result.
-	warnings := self warningsFrom: result.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self
-		assert: ((self structuredContentFrom: result) at: #status)
-		equals: 'ok'.
-	self assert: (data at: #totalCount) equals: 0.
-	self assert: (data at: #methods) isEmpty.
-	self assert: warnings size equals: 1.
-	self assert: (warnings first includesSubstring:
-			 'MCPDefinitelyMissingFindMethodsClass').
-	self assert: (warnings first includesSubstring: 'classNames scope').
-	self assert: (warnings first includesSubstring: 'Did you mean:')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testFindMethodsWhereSchemaAdvertisesEquivalentToMethodReference [
-
-	| classSideProperty equivalentToProperties equivalentToProperty nestedPropertyNames whereProperties whereProperty |
-	whereProperty := MCPToolFindMethods new inputSchema properties
-		                 detect: [ :each | each name = 'where' ].
-	whereProperties := whereProperty extraProperties at: #properties.
-	equivalentToProperty := whereProperties detect: [ :each |
-		                        each name = 'equivalentTo' ].
-	equivalentToProperties := equivalentToProperty extraProperties at:
-		                          #properties.
-	nestedPropertyNames := equivalentToProperties collect: [ :each |
-		                       each name ].
-	classSideProperty := equivalentToProperties detect: [ :each |
-		                     each name = 'classSide' ].
-	self assert: equivalentToProperty type equals: 'object'.
-	self assert:
-		(equivalentToProperty description includesSubstring:
-			 'equivalent AST').
-	self
-		assert: (equivalentToProperty extraProperties at: #required) asArray
-		equals: #( 'className' 'selector' ).
-	self assert: (nestedPropertyNames includes: 'className').
-	self assert: (nestedPropertyNames includes: 'selector').
-	self assert: (nestedPropertyNames includes: 'classSide').
-	self
-		assert: (classSideProperty extraProperties at: #default)
-		equals: false
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testFindPackagesHasAccurateNameAndSchema [
-
-	| propertyNames schema |
-	schema := MCPToolFindPackages new inputSchema.
-	propertyNames := schema properties collect: [ :each | each name ].
-	self assert: MCPToolFindPackages new name equals: 'find-packages'.
-	self assert: schema required equals: #(  ).
-	self assert: (propertyNames includes: 'projectNames').
-	self assert: (propertyNames includes: 'packageNames').
-	self assert: (propertyNames includes: 'filter').
-	self assert: (propertyNames includes: 'filterTargets').
-	self assert: (propertyNames includes: 'filterMode')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testFindPackagesListsPackagesForExistingProject [
-
-	| packageNames data result |
-	result := self
-		          callToolNamed: 'find-packages'
-		          withArguments:
-		          { (#projectNames -> #( 'MCP' )) } asDictionary.
-	data := (result at: #structuredContent) at: #data.
-	packageNames := (data at: #packages) collect: [ :each |
-		                each at: #packageName ].
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #totalCount) equals: packageNames size.
-	self assert: (packageNames includes: 'MCP').
-	self assert: (packageNames includes: 'MCP-Tests')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testFindPackagesReturnsErrorResultForMissingProject [
-
-	| result text |
-	result := self
-		          callToolNamed: 'find-packages'
-		          withArguments:
-		          { (#projectNames -> #( 'DefinitelyMissingProject' )) }
-			          asDictionary.
-	text := self firstTextFromToolResult: result.
-	self assert: (result at: #isError).
-	self assert: (text includesSubstring:
-			 'Project DefinitelyMissingProject does not exist.').
-	self deny: (text includesSubstring: 'Tool find-packages failed')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testFindRepositoriesHasAccurateNameAndSchema [
-
-	| propertyNames schema |
-	schema := MCPToolFindRepositories new inputSchema.
-	propertyNames := schema properties collect: [ :each | each name ].
-	self
-		assert: MCPToolFindRepositories new name
-		equals: 'find-repositories'.
-	self assert: schema required equals: #(  ).
-	self assert: (propertyNames includes: 'repositoryNames').
-	self assert: (propertyNames includes: 'directoryPaths').
-	self assert: (propertyNames includes: 'packageNames').
-	self assert: (propertyNames includes: 'isModified').
-	self assert: (propertyNames includes: 'isMissing').
-	self assert: (propertyNames includes: 'filter').
-	self assert: (propertyNames includes: 'filterTargets').
-	self assert: (propertyNames includes: 'filterMode').
-	self assert: (propertyNames includes: 'limit').
-	self assert: (propertyNames includes: 'offset')
+		assert: ((contract at: #inputSchema) at: #required) asArray
+		equals: #( 'name' 'location' )
 ]
 
 { #category : 'tests' }
@@ -1584,7 +1387,7 @@ MCPToolContractsTest >> testHandleJSONReturnsInvalidParamsForMissingRequiredArgu
 
 	| response |
 	response := self handleJSON:
-		            '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"call-tool","arguments":{"toolName":"evaluate","arguments":{}}}}'.
+		            '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"tool_call","arguments":{"toolName":"image_evaluate","arguments":{}}}}'.
 	self assert: (response includesSubstring: '"code":-32602').
 	self assert: (response includesSubstring:
 			 '"message":"Invalid method parameter(s)."')
@@ -1708,7 +1511,7 @@ MCPToolContractsTest >> testInitializeResponseSerializesSupportedPharoVersions [
 MCPToolContractsTest >> testInputSchemaJSONOmitsDefaultSchemaNoise [
 
 	| schema |
-	schema := MCPToolFindMethods new inputSchema asJRPCJSON.
+	schema := MCPToolSearchMethodMetadata new inputSchema asJRPCJSON.
 	self deny: (schema includesKey: #required).
 	self deny: (schema includesKey: #oneOf).
 	self deny: (schema includesKey: #anyOf).
@@ -1717,65 +1520,193 @@ MCPToolContractsTest >> testInputSchemaJSONOmitsDefaultSchemaNoise [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testInspectClassHasAccurateNameAndRequiredArguments [
+MCPToolContractsTest >> testMethodMetadataSearchDescriptionPointsToSpecializedReferenceTools [
 
-	| inputPropertyNames outputDataProperty outputPropertyNames tool |
-	tool := MCPToolInspectClass new.
-	inputPropertyNames := tool inputSchema properties collect: [ :each |
-		                      each name ].
-	outputDataProperty := tool outputSchema properties detect: [ :each |
-		                      each name = 'data' ].
-	outputPropertyNames := (outputDataProperty extraProperties at:
-		                        #properties) collect: [ :each | each name ].
-	self assert: tool name equals: 'inspect-class'.
-	self
-		assert: tool inputSchema required asSet
-		equals: #( 'className' ) asSet.
-	self assert: (inputPropertyNames includes: 'includeComment').
-	self assert: (outputPropertyNames includes: 'traitComposition').
-	self assert: (outputPropertyNames includes: 'classTraitComposition')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testInspectMethodHasAccurateNameAndRequiredArguments [
-
-	| propertyNames variablePropertyNames |
-	propertyNames := MCPToolInspectMethod new inputSchema properties
-		                 collect: [ :each | each name ].
-	variablePropertyNames := (MCPToolInspectMethod new
-		                          variableReferenceSchema extraProperties
-		                          at: #properties) collect: [ :each |
-		                         each name ].
-	self assert: MCPToolInspectMethod new name equals: 'inspect-method'.
-	self
-		assert: MCPToolInspectMethod new inputSchema required asSet
-		equals: #( 'className' 'selector' ) asSet.
-	self assert: (propertyNames includes: 'className').
-	self assert: (propertyNames includes: 'selector').
-	self assert: (propertyNames includes: 'classSide').
-	self assert: (propertyNames includes: 'includeVariableDetails').
-	self deny: (variablePropertyNames includes: 'sourceIntervals').
-	self deny: (variablePropertyNames includes: 'external').
-	self deny: (variablePropertyNames includes: 'declaredInMethod')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testInspectToolReturnsSchemaForDiscoveredTool [
-
-	| inputProperties inspected result |
-	result := self
-		          callToolNamed: 'inspect-tool'
-		          withArguments:
-		          { (#toolName -> 'edit-repository') } asDictionary.
-	inspected := (self dataFrom: result) at: #tool.
-	self assert: (inspected at: #name) equals: 'edit-repository'.
-	self assert: (inspected at: #group) equals: 'repositories'.
-	self assert: (inspected at: #exposure) equals: 'discoverable'.
-	inputProperties := ((inspected at: #inputSchema) at: #properties)
-		                   keys.
-	self assert: (inputProperties includes: 'operation').
+	| description filterModeDescription filterModeProperty protocolDescription selectorDescription tool |
+	tool := MCPToolSearchMethodMetadata new.
+	description := tool description.
+	self assert: (description includesSubstring: 'method_source_search').
 	self assert:
-		(((inspected at: #inputSchema) at: #required) includes: 'operation')
+		(description includesSubstring: 'method_equivalent_search').
+	self assert:
+		(description includesSubstring: 'method_implementor_search').
+	self assert: (description includesSubstring: 'method_sender_search').
+	self assert:
+		(description includesSubstring: 'method_class_reference_search').
+	self assert:
+		(description includesSubstring: 'method_variable_reference_search').
+	selectorDescription := (self
+		                        inputPropertyNamed: 'selector'
+		                        inTool: tool) description.
+	protocolDescription := (self
+		                        inputPropertyNamed: 'protocol'
+		                        inTool: tool) description.
+	filterModeProperty := self
+		                      inputPropertyNamed: 'filterMode'
+		                      inTool: tool.
+	filterModeDescription := filterModeProperty description.
+	self assert: (selectorDescription includesSubstring: 'selector').
+	self assert: (protocolDescription includesSubstring: 'protocol').
+	self assert:
+		(filterModeDescription includesSubstring: 'selector and protocol').
+	self
+		assert: (filterModeProperty extraProperties at: #enum) asArray
+		equals: #( 'substring' 'prefix' 'exact' 'regex' )
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testMethodMetadataSearchHasAccurateNameAndSchema [
+
+	| filterModeProperty propertyNames schema |
+	schema := MCPToolSearchMethodMetadata new inputSchema.
+	propertyNames := schema properties collect: [ :each | each name ].
+	filterModeProperty := schema properties detect: [ :each |
+		                      each name = 'filterMode' ].
+	self
+		assert: MCPToolSearchMethodMetadata new name
+		equals: 'method_metadata_search'.
+	self assert: schema required equals: #(  ).
+	self
+		assert: propertyNames asSet
+		equals: #( 'packageNames' 'classNames' 'hierarchyClassNames'
+			   'subclassClassNames' 'parentClassNames' 'selector' 'protocol'
+			   'filterMode' 'side' 'includeSource' 'limit' 'offset' 'caseSensitive' )
+				asSet.
+	self
+		assert: (filterModeProperty extraProperties at: #enum) asArray
+		equals: #( 'substring' 'prefix' 'exact' 'regex' )
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testMethodMetadataSearchListsMethodsForExistingClassScope [
+
+	| data result selectors |
+	result := self
+		          callToolNamed: 'method_metadata_search'
+		          withArguments:
+		          { (#classNames -> #( 'MCPToolMethodSearchTestTarget' )) }
+			          asDictionary.
+	data := (result at: #structuredContent) at: #data.
+	selectors := (data at: #methods) collect: [ :each |
+		             each at: #selector ].
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) equals: selectors size.
+	self assert: (selectors includes: 'alphaNeedleSelector').
+	self assert: (selectors includes: 'classNeedleSelector')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testMethodMetadataSearchReturnsWarningResultForMissingClass [
+
+	| data result warnings |
+	result := self
+		          callToolNamed: 'method_metadata_search'
+		          withArguments:
+			          { (#classNames
+			           -> #( 'MCPDefinitelyMissingMethodSearchClass' )) }
+				          asDictionary.
+	data := self dataFrom: result.
+	warnings := self warningsFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self
+		assert: ((self structuredContentFrom: result) at: #status)
+		equals: 'ok'.
+	self assert: (data at: #totalCount) equals: 0.
+	self assert: (data at: #methods) isEmpty.
+	self assert: warnings size equals: 1.
+	self assert: (warnings first includesSubstring:
+			 'MCPDefinitelyMissingMethodSearchClass').
+	self assert: (warnings first includesSubstring: 'classNames scope').
+	self assert: (warnings first includesSubstring: 'Did you mean:')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testMethodMetadataSearchTopLevelFilterModesAreTextOnly [
+
+	| filterModeEnum filterModeProperty schema selectorProperty |
+	schema := MCPToolSearchMethodMetadata new inputSchema asJRPCJSON.
+	filterModeProperty := (schema at: #properties) at: 'filterMode'.
+	selectorProperty := (schema at: #properties) at: 'selector'.
+	filterModeEnum := (filterModeProperty at: #enum) asArray.
+	self assert: (schema at: #type) equals: 'object'.
+	self assert: (schema at: #additionalProperties) equals: false.
+	self
+		assert: filterModeEnum
+		equals: #( 'substring' 'prefix' 'exact' 'regex' ).
+	self assert:
+		((selectorProperty at: #description) includesSubstring: 'selector')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testMethodMutationSchemaAdvertisesMethodState [
+
+	| argumentNamesProperty argumentValuesProperty dataProperties dataProperty permutationProperty propertyNames tool toolPropertyNames |
+	tool := MCPToolUpdateMethodSelector new.
+	toolPropertyNames := tool inputSchema properties collect: [ :each |
+		                     each name ].
+	permutationProperty := tool inputSchema properties detect: [ :each |
+		                       each name = 'permutation' ].
+	argumentNamesProperty := tool inputSchema properties detect: [ :each |
+		                         each name = 'argumentNames' ].
+	argumentValuesProperty := tool inputSchema properties detect: [ :each |
+		                          each name = 'argumentValueExpressions' ].
+	dataProperty := tool outputSchema properties detect: [ :each |
+		                each name = 'data' ].
+	dataProperties := dataProperty extraProperties at: #properties.
+	propertyNames := dataProperties collect: [ :each | each name ].
+	self deny: (toolPropertyNames includes: 'action').
+	self assert:
+		(permutationProperty extraProperties at: #items) type = 'integer'.
+	self assert:
+		(argumentNamesProperty extraProperties at: #items) type = 'string'.
+	self assert:
+		(argumentValuesProperty extraProperties at: #items) type = 'string'.
+	self
+		assert: propertyNames asSet
+		equals:
+			#( 'action' 'changeKind' 'updateAction' 'updatePlan' 'appliedChange'
+			   'selector' 'className' 'classSide' 'packageName' 'isExtension'
+			   'protocol' 'source' 'oldSelector' 'newSelector' 'oldProtocol'
+			   'newProtocol' 'critiques' ) asSet
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testMethodMutationToolsHaveAccurateNamesAndRequiredArguments [
+
+	| createPropertyNames createTool protocolPropertyNames protocolTool selectorPropertyNames selectorTool |
+	createTool := MCPToolCreateMethod new.
+	selectorTool := MCPToolUpdateMethodSelector new.
+	protocolTool := MCPToolUpdateMethodProtocol new.
+	createPropertyNames := createTool inputSchema properties collect: [
+		                       :each | each name ].
+	selectorPropertyNames := selectorTool inputSchema properties
+		                         collect: [ :each | each name ].
+	protocolPropertyNames := protocolTool inputSchema properties
+		                         collect: [ :each | each name ].
+	self assert: createTool name equals: 'method_create'.
+	self assert: selectorTool name equals: 'method_selector_update'.
+	self assert: protocolTool name equals: 'method_protocol_update'.
+	self
+		assert: createTool inputSchema required asSet
+		equals: #( 'className' 'methodSource' 'protocol' ) asSet.
+	self
+		assert: selectorTool inputSchema required asSet
+		equals: #( 'className' 'selector' 'newSelector' ) asSet.
+	self
+		assert: protocolTool inputSchema required asSet
+		equals: #( 'className' 'selector' 'protocol' ) asSet.
+	{
+		createPropertyNames.
+		selectorPropertyNames.
+		protocolPropertyNames } do: [ :each |
+			self deny: (each includes: 'operation').
+			self assert: (each includes: 'classSide').
+			self assert: (each includes: 'force') ].
+	self assert: (selectorPropertyNames includes: 'packageNames').
+	self assert: (selectorPropertyNames includes: 'classNames').
+	self assert: (selectorPropertyNames includes: 'hierarchyClassNames').
+	self deny: (createPropertyNames includes: 'packageNames').
+	self deny: (protocolPropertyNames includes: 'packageNames')
 ]
 
 { #category : 'tests' }
@@ -1783,35 +1714,44 @@ MCPToolContractsTest >> testMethodToolTraitOwnsSharedMethodHelpers [
 
 	| methodToolClasses sharedSelectors |
 	methodToolClasses := {
-		                     MCPToolFindMethods.
-		                     MCPToolInspectMethod.
-		                     MCPToolEditMethod.
-		                     MCPToolRewriteMethods.
-		                     MCPToolRemoveMethods }.
+			                     MCPToolMethodSearch.
+			                     MCPToolGetMethod.
+			                     MCPToolMethodMutation.
+			                     MCPToolRewriteMethods.
+			                     MCPToolRemoveMethods }.
 	sharedSelectors := #( selectorStringFromRequest:
 	                      behaviorNamed:classSide:
 	                      methodReferenceForBehavior:selector:
 	                      methodReferenceForClassName:selector:isClassSide:
 	                      methodScopeQueryFromRequest: ).
 	methodToolClasses do: [ :toolClass |
-		self assert: (toolClass traits includes: TMCPMethodTool).
+		self assert: (toolClass withAllSuperclasses anySatisfy: [ :each |
+			each traits includes: TMCPMethodTool ]).
 		sharedSelectors do: [ :selector |
-			self assert: (toolClass >> selector) origin equals: TMCPMethodTool ] ]
+			| implementingClass |
+			implementingClass := toolClass whichClassIncludesSelector: selector.
+			self assert: implementingClass notNil.
+			self assert: (implementingClass >> selector) origin equals: TMCPMethodTool ] ]
+
 ]
 
 { #category : 'tests' }
 MCPToolContractsTest >> testMutatingToolsRequestImageSaveAfterSuccessfulExecution [
 
 	self deny:
-		MCPToolFindMethods new shouldSaveImageAfterSuccessfulExecution.
+		MCPToolSearchMethodMetadata new shouldSaveImageAfterSuccessfulExecution.
 	self deny:
-		MCPToolInspectClass new shouldSaveImageAfterSuccessfulExecution.
+		MCPToolGetClass new shouldSaveImageAfterSuccessfulExecution.
 	self assert:
-		MCPToolEditRepository new shouldSaveImageAfterSuccessfulExecution.
+		MCPToolCreateRepository new shouldSaveImageAfterSuccessfulExecution.
+	self classMutationToolClasses do: [ :toolClass |
+		self assert: toolClass new shouldSaveImageAfterSuccessfulExecution ].
 	self assert:
-		MCPToolEditClass new shouldSaveImageAfterSuccessfulExecution.
-	self assert:
-		MCPToolEditMethod new shouldSaveImageAfterSuccessfulExecution.
+		MCPToolCreateMethod new shouldSaveImageAfterSuccessfulExecution.
+	self assert: MCPToolUpdateMethodSelector new
+			shouldSaveImageAfterSuccessfulExecution.
+	self assert: MCPToolUpdateMethodProtocol new
+			shouldSaveImageAfterSuccessfulExecution.
 	self deny:
 		MCPToolRewriteMethods new shouldSaveImageAfterSuccessfulExecution.
 	self assert:
@@ -1820,54 +1760,108 @@ MCPToolContractsTest >> testMutatingToolsRequestImageSaveAfterSuccessfulExecutio
 		MCPToolRemoveMethods new shouldSaveImageAfterSuccessfulExecution.
 	self assert:
 		MCPToolEvaluate new shouldSaveImageAfterSuccessfulExecution
+
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testMutationDescriptionsExplainForceWarningBehavior [
+
+	| classForceDescription methodForceDescription |
+	classForceDescription := (self
+		                          inputPropertyNamed: 'force'
+		                          inTool: MCPToolUpdateClassName new)
+		                         description.
+	methodForceDescription := (self
+		                           inputPropertyNamed: 'force'
+		                           inTool: MCPToolUpdateMethodSelector new)
+		                          description.
+	{
+		classForceDescription.
+		methodForceDescription } do: [ :each |
+			self assert: (each includesSubstring: 'impactMessages').
+			self assert: (each includesSubstring: 'howToProceed').
+			self assert: (each includesSubstring: 'forceSupported=true').
+			self assert: (each includesSubstring: 'warnings') ]
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testMutationToolSchemasAdvertiseRenameScopeConditions [
+
+	| classRenameInputSchema classRenamePropertyNames selectorInputSchema selectorPropertyNames |
+	classRenameInputSchema := MCPToolUpdateClassName new inputSchema.
+	selectorInputSchema := MCPToolUpdateMethodSelector new inputSchema.
+	classRenamePropertyNames := classRenameInputSchema properties
+		                            collect: [ :each | each name ].
+	selectorPropertyNames := selectorInputSchema properties collect: [
+		                         :each | each name ].
+	{
+		classRenamePropertyNames.
+		selectorPropertyNames } do: [ :propertyNames |
+			self deny: (propertyNames includes: 'scope').
+			self assert: (propertyNames includes: 'packageNames').
+			self assert: (propertyNames includes: 'classNames').
+			self assert: (propertyNames includes: 'hierarchyClassNames') ].
+	self
+		assert:
+		(classRenameInputSchema asJRPCJSON at: #additionalProperties)
+		equals: false.
+	self
+		assert: (selectorInputSchema asJRPCJSON at: #additionalProperties)
+		equals: false
 ]
 
 { #category : 'tests' }
 MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable [
 
-	| editClassTool editMethodTool findClassesTool findMethodsTool findPackagesTool inspectClassTool inspectMethodTool removeClassesTool removeMethodsTool rewriteMethodsTool |
-	editClassTool := MCPToolEditClass new.
-	inspectClassTool := MCPToolInspectClass new.
-	inspectMethodTool := MCPToolInspectMethod new.
-	editMethodTool := MCPToolEditMethod new.
+	| classSlotTool classUpdateTool searchClassesTool methodMetadataTool searchPackagesTool getClassTool getMethodTool removeClassesTool removeMethodsTool rewriteMethodsTool updateMethodTool |
+	classUpdateTool := MCPToolUpdateClassName new.
+	classSlotTool := MCPToolAddClassSlot new.
+	getClassTool := MCPToolGetClass new.
+	getMethodTool := MCPToolGetMethod new.
+	updateMethodTool := MCPToolUpdateMethodSelector new.
 	rewriteMethodsTool := MCPToolRewriteMethods new.
-	findClassesTool := MCPToolFindClasses new.
-	findMethodsTool := MCPToolFindMethods new.
-	findPackagesTool := MCPToolFindPackages new.
+	searchClassesTool := MCPToolSearchClasses new.
+	methodMetadataTool := MCPToolSearchMethodMetadata new.
+	searchPackagesTool := MCPToolSearchPackages new.
 	removeClassesTool := MCPToolRemoveClasses new.
 	removeMethodsTool := MCPToolRemoveMethods new.
 	self
-		assert: ((self inputPropertyNamed: 'force' inTool: editClassTool)
+		assert: ((self inputPropertyNamed: 'force' inTool: classUpdateTool)
 				 extraProperties at: #default)
 		equals: false.
 	self
 		assert:
-			((self
-				  inputPropertyNamed: 'includeComment'
-				  inTool: inspectClassTool) extraProperties at: #default)
+			((self inputPropertyNamed: 'classSide' inTool: classSlotTool)
+				 extraProperties at: #default)
 		equals: false.
 	self
 		assert:
-			((self inputPropertyNamed: 'subclassDepth' inTool: inspectClassTool)
+			((self inputPropertyNamed: 'includeComment' inTool: getClassTool)
+				 extraProperties at: #default)
+		equals: false.
+	self
+		assert:
+			((self inputPropertyNamed: 'subclassDepth' inTool: getClassTool)
 				 extraProperties at: #default)
 		equals: 0.
 	self
 		assert:
-			((self inputPropertyNamed: 'classSide' inTool: inspectMethodTool)
+			((self inputPropertyNamed: 'classSide' inTool: getMethodTool)
 				 extraProperties at: #default)
 		equals: false.
 	self
 		assert: ((self
 				  inputPropertyNamed: 'includeVariableDetails'
-				  inTool: inspectMethodTool) extraProperties at: #default)
+				  inTool: getMethodTool) extraProperties at: #default)
 		equals: false.
 	self
 		assert:
-			((self inputPropertyNamed: 'classSide' inTool: editMethodTool)
+			((self inputPropertyNamed: 'classSide' inTool: updateMethodTool)
 				 extraProperties at: #default)
 		equals: false.
 	self
-		assert: ((self inputPropertyNamed: 'force' inTool: editMethodTool)
+		assert:
+			((self inputPropertyNamed: 'force' inTool: updateMethodTool)
 				 extraProperties at: #default)
 		equals: false.
 	self
@@ -1893,52 +1887,47 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 		equals: 'both'.
 	self
 		assert:
-			((self inputPropertyNamed: 'filterTargets' inTool: findClassesTool)
-				 extraProperties at: #default)
-		equals: #( 'class' ).
-	self
-		assert:
-			((self inputPropertyNamed: 'filterMode' inTool: findClassesTool)
+			((self inputPropertyNamed: 'filterMode' inTool: searchClassesTool)
 				 extraProperties at: #default)
 		equals: 'substring'.
 	self
 		assert:
-			((self inputPropertyNamed: 'caseSensitive' inTool: findClassesTool)
-				 extraProperties at: #default)
+			((self
+				  inputPropertyNamed: 'caseSensitive'
+				  inTool: searchClassesTool) extraProperties at: #default)
 		equals: true.
 	self
-		assert: ((self inputPropertyNamed: 'limit' inTool: findClassesTool)
+		assert:
+			((self inputPropertyNamed: 'limit' inTool: searchClassesTool)
 				 extraProperties at: #default)
 		equals: 100.
 	self
 		assert:
-			((self inputPropertyNamed: 'filterTargets' inTool: findMethodsTool)
-				 extraProperties at: #default)
-		equals: #( 'selector' ).
-	self
-		assert:
-			((self inputPropertyNamed: 'filterMode' inTool: findMethodsTool)
+			((self inputPropertyNamed: 'filterMode' inTool: methodMetadataTool)
 				 extraProperties at: #default)
 		equals: 'exact'.
 	self
 		assert:
-			((self inputPropertyNamed: 'caseSensitive' inTool: findMethodsTool)
-				 extraProperties at: #default)
+			((self
+				  inputPropertyNamed: 'caseSensitive'
+				  inTool: methodMetadataTool) extraProperties at: #default)
 		equals: true.
 	self
 		assert:
-			((self inputPropertyNamed: 'includeSource' inTool: findMethodsTool)
-				 extraProperties at: #default)
+			((self
+				  inputPropertyNamed: 'includeSource'
+				  inTool: methodMetadataTool) extraProperties at: #default)
 		equals: false.
 	self
 		assert:
-			((self inputPropertyNamed: 'filterMode' inTool: findPackagesTool)
+			((self inputPropertyNamed: 'filterMode' inTool: searchPackagesTool)
 				 extraProperties at: #default)
 		equals: 'substring'.
 	self
 		assert:
-			((self inputPropertyNamed: 'caseSensitive' inTool: findPackagesTool)
-				 extraProperties at: #default)
+			((self
+				  inputPropertyNamed: 'caseSensitive'
+				  inTool: searchPackagesTool) extraProperties at: #default)
 		equals: true.
 	self
 		assert:
@@ -1983,49 +1972,75 @@ MCPToolContractsTest >> testParsedInputClassesUseRequestOrSpecSuffixes [
 	self assert: invalidNames isEmpty
 ]
 
-{ #category : 'tests - tools - parsing' }
-MCPToolContractsTest >> testParserHelperBypassesSchemaValidation [
+{ #category : 'tests' }
+MCPToolContractsTest >> testProjectMethodsDoNotHandleMessageNotUnderstoodAsControlFlow [
 
-	| arguments tool |
-	tool := MCPToolEditRepository new.
-	arguments := { (#operation -> 'notAnOperation') } asDictionary.
+	| methods offendingMethods rule |
+	rule := MCPMessageNotUnderstoodHandlerRule new.
+	methods := #( 'MCP' 'MCP-Tests' ) flatCollect: [ :packageName |
+		           (PackageOrganizer default packageNamed: packageName)
+			           methods ].
+	offendingMethods := methods select: [ :method |
+			                    method sendNodes anySatisfy: [ :sendNode |
+				                    rule isMessageNotUnderstoodHandlerSend:
+					                    sendNode ] ].
 	self
-		should: [ tool requestFromToolCallArguments: arguments ]
-		raise: MCPInvalidToolInput.
+		assert: offendingMethods isEmpty
+		description: ('Methods handling MessageNotUnderstood: {1}' format:
+				 { (offendingMethods collect: [ :method | method printString ])
+					 asArray printString })
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testProjectMethodsDoNotSendReflectiveProtocolChecks [
+
+	| forbiddenSelector methods offendingMethods |
+	forbiddenSelector := MCPRespondsToUsageRule forbiddenSelector.
+	methods := #( 'MCP' 'MCP-Tests' ) flatCollect: [ :packageName |
+		           (PackageOrganizer default packageNamed: packageName)
+			           methods ].
+	offendingMethods := methods select: [ :method |
+			                    method sendNodes anySatisfy: [ :sendNode |
+				                    sendNode selector = forbiddenSelector ] ].
 	self
-		should: [ self parsedRequestForTool: tool arguments: arguments ]
-		raise: Error
-		whoseDescriptionIncludes: tool operationValidationErrorMessage
-		description:
-		'Parser helper should bypass transport schema validation.'
+		assert: offendingMethods isEmpty
+		description: ('Methods sending {1}: {2}' format: {
+					 forbiddenSelector.
+					 (offendingMethods collect: [ :method | method printString ])
+						 asArray printString })
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testPublicToolsDoNotExposeOperationInput [
+
+	MCPToolRegistry publicTools do: [ :tool |
+			| propertyNames |
+			propertyNames := tool inputSchema properties collect: [ :property |
+				                 property name ].
+			self deny: (propertyNames includes: 'operation') ]
 ]
 
 { #category : 'tests' }
 MCPToolContractsTest >> testQueryScopeDescriptionsExplainScopeSemantics [
 
-	| classDescription findClassesDescription findMethodsDescription methodDescription packageDescription parentDescription subclassDescription |
-	findClassesDescription := MCPToolFindClasses new description.
-	findMethodsDescription := MCPToolFindMethods new description.
+	| classDescription methodMetadataDescription methodDescription packageDescription parentDescription subclassDescription |
+	methodMetadataDescription := MCPToolSearchMethodMetadata new description.
 	classDescription := (self
 		                     inputPropertyNamed: 'hierarchyClassNames'
-		                     inTool: MCPToolFindClasses new) description.
+		                     inTool: MCPToolSearchClasses new) description.
 	subclassDescription := (self
 		                        inputPropertyNamed: 'subclassClassNames'
-		                        inTool: MCPToolFindMethods new) description.
+		                        inTool: MCPToolSearchMethodMetadata new) description.
 	parentDescription := (self
 		                      inputPropertyNamed: 'parentClassNames'
-		                      inTool: MCPToolFindClasses new) description.
+		                      inTool: MCPToolSearchClasses new) description.
 	methodDescription := (self
 		                      inputPropertyNamed: 'packageNames'
-		                      inTool: MCPToolFindMethods new) description.
+		                      inTool: MCPToolSearchMethodMetadata new) description.
 	packageDescription := (self
 		                       inputPropertyNamed: 'projectNames'
-		                       inTool: MCPToolFindPackages new) description.
-	self deny: (findClassesDescription includesSubstring: 'GUI').
-	self deny: (findMethodsDescription includesSubstring: 'GUI').
-	self assert:
-		(findClassesDescription includesSubstring: 'scopeMode=intersection').
-	self assert: (findMethodsDescription includesSubstring:
+		                       inTool: MCPToolSearchPackages new) description.
+	self assert: (methodMetadataDescription includesSubstring:
 			 'Missing class or package names').
 	self assert:
 		(classDescription includesSubstring:
@@ -2053,59 +2068,6 @@ MCPToolContractsTest >> testQueryScopeDescriptionsExplainScopeSemantics [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testQueryToolSchemasDoNotAdvertiseLegacyScopeBranches [
-
-	| classSchema methodSchema packageSchema |
-	classSchema := MCPToolFindClasses new inputSchema asJRPCJSON.
-	methodSchema := MCPToolFindMethods new inputSchema asJRPCJSON.
-	packageSchema := MCPToolFindPackages new inputSchema asJRPCJSON.
-	self deny: (classSchema includesKey: #oneOf).
-	self deny: (methodSchema includesKey: #oneOf).
-	self deny: (packageSchema includesKey: #oneOf).
-	self deny: ((classSchema at: #properties) includesKey: 'scope').
-	self deny: ((methodSchema at: #properties) includesKey: 'scope').
-	self deny: ((packageSchema at: #properties) includesKey: 'scope')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testQueryToolsUseTypedRequestObjects [
-
-	| classRequest methodRequest packageRequest repositoryRequest staleSelectors |
-	repositoryRequest := MCPToolFindRepositories new
-		                     queryRequestFromToolRequest: (MCPToolRequest
-				                      tool: MCPToolFindRepositories new
-				                      arguments: Dictionary new).
-	classRequest := MCPToolFindClasses new queryRequestFromToolRequest:
-		                (MCPToolRequest
-			                 tool: MCPToolFindClasses new
-			                 arguments: Dictionary new).
-	methodRequest := MCPToolFindMethods new queryRequestFromToolRequest:
-		                 (MCPToolRequest
-			                  tool: MCPToolFindMethods new
-			                  arguments: Dictionary new).
-	packageRequest := MCPToolFindPackages new
-		                  queryRequestFromToolRequest: (MCPToolRequest
-				                   tool: MCPToolFindPackages new
-				                   arguments: Dictionary new).
-	self
-		assert: repositoryRequest class
-		equals: MCPRepositoryQuerySpec.
-	self assert: classRequest class equals: MCPFindClassesRequest.
-	self assert: methodRequest class equals: MCPFindMethodsRequest.
-	self assert: packageRequest class equals: MCPFindPackagesRequest.
-	staleSelectors := #( queryParametersFromRequest:
-	                     queryEntriesForParameters:
-	                     successSummaryForParameters:page:
-	                     queryResultDataForParameters:page:
-	                     querySpecFromRequest: queryEntriesForQuerySpec:
-	                     successSummaryForQuerySpec:page:
-	                     queryResultDataForQuerySpec:page: ).
-	staleSelectors do: [ :selector |
-		self deny: (MCPToolQuery withAllSubclasses anySatisfy: [ :each |
-				 each includesSelector: selector ]) ]
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testRPCAdvertisesStaticToolSurfaceOnly [
 
 	| toolNames |
@@ -2114,19 +2076,31 @@ MCPToolContractsTest >> testRPCAdvertisesStaticToolSurfaceOnly [
 	self
 		assert: toolNames asSet
 		equals: MCPToolRegistry staticToolNames asSet.
-	self assert: (toolNames includes: 'discover-tools').
-	self assert: (toolNames includes: 'inspect-tool').
-	self assert: (toolNames includes: 'call-tool').
-	self assert: (toolNames includes: 'edit-class').
-	self assert: (toolNames includes: 'edit-method').
-	self assert: (toolNames includes: 'evaluate').
-	self assert: (toolNames includes: 'run-tests').
-	self deny: (toolNames includes: 'find-repositories').
-	self deny: (toolNames includes: 'edit-repository').
-	self deny: (toolNames includes: 'manage-change-history').
-	self deny: (toolNames includes: 'capture-screenshot').
-	self deny: (toolNames includes: 'debug-state').
-	self deny: (toolNames includes: 'debug-capture')
+	#( 'tool_search' 'tool_get' 'tool_call' 'package_search'
+	   'class_search' 'class_get' 'class_create' 'method_metadata_search'
+	   'method_source_search' 'method_implementor_search'
+	   'method_sender_search' 'method_get' 'method_create'
+	   'method_selector_update' 'method_protocol_update'
+	   'image_evaluate' 'test_run' ) do: [ :each |
+		self assert: (toolNames includes: each) ].
+	#( 'class_name_update' 'class_superclass_update'
+	   'class_package_update' 'class_comment_update'
+	   'class_slots_update' 'class_traits_update' 'class_side_traits_update'
+	   'class_shared_variables_update' 'class_shared_pools_update'
+	   'class_layout_update' 'class_slot_add' 'class_slot_remove'
+	   'class_slot_name_update' 'class_slot_pull_up' 'class_slot_push_down'
+	   'method_equivalent_search' 'method_class_reference_search'
+	   'method_variable_reference_search'
+	   'test_coverage_run' 'repository_search' 'repository_identity_verify'
+	   'repository_change_list' 'repository_create' 'repository_attach'
+	   'repository_update' 'repository_export' 'repository_commit'
+	   'repository_fetch' 'repository_pull' 'repository_push'
+	   'repository_branch_create' 'repository_branch_switch'
+	   'repository_head_adopt' 'history_file_list' 'history_entry_list'
+	   'history_entry_apply' 'history_entry_revert'
+	   'screenshot_capture' 'debug_state_get' 'debug_session_step_over'
+	   'debug_capture' ) do: [ :each |
+		self deny: (toolNames includes: each) ]
 ]
 
 { #category : 'tests' }
@@ -2134,7 +2108,7 @@ MCPToolContractsTest >> testRPCRefreshesCachedToolMetadata [
 
 	| mcp propertyNames result staleTool toolDefinition toolDefinitions |
 	mcp := MCP new.
-	staleTool := MCPToolFindClasses new.
+	staleTool := MCPToolSearchClasses new.
 	staleTool inputSchema: (MCPStructureInputSchema new
 			 type: 'object';
 			 properties: #(  );
@@ -2146,14 +2120,18 @@ MCPToolContractsTest >> testRPCRefreshesCachedToolMetadata [
 			 yourself).
 	toolDefinitions := mcp rpcToolsList at: #tools.
 	toolDefinition := toolDefinitions detect: [ :each |
-		                  (each at: #name) = 'find-classes' ].
+		                  (each at: #name) = 'class_search' ].
 	propertyNames := ((toolDefinition at: #inputSchema) at: #properties)
-		                 keys.
-	self assert: (propertyNames includes: 'scopeMode').
-	result := mcp rpcToolCall: 'find-classes' withParams: {
+		                 keys asSet.
+	self
+		assert: propertyNames
+		equals: #( 'packageNames' 'classNames' 'hierarchyClassNames'
+			   'subclassClassNames' 'parentClassNames' 'className' 'tag' 'instanceSlot'
+			   'classSlot' 'filterMode' 'caseSensitive' 'limit' 'offset' )
+				asSet.
+	result := mcp rpcToolCall: 'class_search' withParams: {
 			          (#classNames -> #( 'MCPToolContractsTest' )).
 			          (#packageNames -> #( 'MCP-Tests' )).
-			          (#scopeMode -> 'intersection').
 			          (#limit -> 1) } asDictionary.
 	self deny: (result at: #isError ifAbsent: [ false ])
 ]
@@ -2161,7 +2139,7 @@ MCPToolContractsTest >> testRPCRefreshesCachedToolMetadata [
 { #category : 'tests' }
 MCPToolContractsTest >> testRemoveClassHasAccurateNameAndRequiredArguments [
 
-	self assert: MCPToolRemoveClasses new name equals: 'remove-classes'.
+	self assert: MCPToolRemoveClasses new name equals: 'class_remove'.
 	self
 		assert: MCPToolRemoveClasses new inputSchema required asSet
 		equals: #( 'classNames' ) asSet
@@ -2170,93 +2148,168 @@ MCPToolContractsTest >> testRemoveClassHasAccurateNameAndRequiredArguments [
 { #category : 'tests' }
 MCPToolContractsTest >> testRemoveMethodsHasAccurateNameAndRequiredArguments [
 
-	self assert: MCPToolRemoveMethods new name equals: 'remove-methods'.
+	self assert: MCPToolRemoveMethods new name equals: 'method_remove'.
 	self
 		assert: MCPToolRemoveMethods new inputSchema required asSet
 		equals: #( 'className' 'selectors' ) asSet
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testRepositoryCreateAndUpdateRequiredArguments [
+
+	| createPropertyNames updatePropertyNames |
+	createPropertyNames := MCPToolCreateRepository new inputSchema
+		                       properties collect: [ :each | each name ].
+	updatePropertyNames := MCPToolUpdateRepository new inputSchema
+		                       properties collect: [ :each | each name ].
+	self
+		assert: MCPToolCreateRepository new name
+		equals: 'repository_create'.
+	self
+		assert: MCPToolAttachRepository new name
+		equals: 'repository_attach'.
+	self
+		assert: MCPToolUpdateRepository new name
+		equals: 'repository_update'.
+	self
+		assert: MCPToolCreateRepository new inputSchema required asArray
+		equals: #( 'name' 'location' ).
+	self
+		assert: MCPToolAttachRepository new inputSchema required asArray
+		equals: #( 'name' 'location' ).
+	self
+		assert: MCPToolUpdateRepository new inputSchema required asArray
+		equals: #( 'repositoryName' ).
+	#( 'name' 'location' 'subdirectory' 'packageNames' ) do: [ :each |
+		self assert: (createPropertyNames includes: each) ].
+	#( 'repositoryName' 'location' 'subdirectory' 'packageNames'
+	   'addPackageNames' 'removePackageNames' ) do: [ :each |
+		self assert: (updatePropertyNames includes: each) ].
+	self deny: (createPropertyNames includes: 'operation').
+	self deny: (updatePropertyNames includes: 'operation')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testRepositoryOperationOutputSchemaUsesActionForExecutedAction [
+
+	| dataProperties outputSchema required |
+	outputSchema := MCPToolUpdateRepository new outputSchema asJRPCJSON.
+	dataProperties := ((outputSchema at: #properties) at: 'data') at:
+		                  #properties.
+	required := ((outputSchema at: #properties) at: 'data') at: #required.
+	self assert: (dataProperties includesKey: 'action').
+	self assert: (dataProperties includesKey: 'restoredOrderOnlyPaths').
+	self assert:
+		(dataProperties includesKey: 'modifiedPackageNamesBefore').
+	self assert:
+		(dataProperties includesKey: 'modifiedPackageNamesAfter').
+	self assert: (dataProperties includesKey: 'checkedFields').
+	self assert:
+		(dataProperties includesKey: 'previousReferenceCommitId').
+	self assert: (dataProperties includesKey: 'referenceCommitId').
+	self assert: (dataProperties includesKey: 'adoptedCommitId').
+	self assert: (dataProperties includesKey: 'didAdopt').
+	self assert: (dataProperties includesKey: 'matched').
+	self deny: (dataProperties includesKey: 'operation').
+	self assert: (required includes: 'action').
+	self deny: (required includes: 'operation')
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testRequestedToolIconsAreAdvertised [
 
+	MCPStructureIcon resetCaches.
 	self
-		assert: (MCPToolInspectClass new asJRPCJSON at: #icons) first
+		assert: (MCPToolGetClass new asJRPCJSON at: #icons) first
 		equals: (MCPStructureIcon
 				 compositeBaseIconNamed: #class
 				 badgeIconNamed: #inspect) asJRPCJSON.
 	self
-		assert: (MCPToolInspectMethod new asJRPCJSON at: #icons) first
+		assert:
+		(MCPToolCreateRepositoryBranch new asJRPCJSON at: #icons) first
+		equals: (MCPStructureIcon
+				 compositeBaseIconNamed: #git
+				 leftBadgeIconNamed: #branch
+				 rightBadgeIconNamed: #add) asJRPCJSON.
+	self
+		assert: (MCPToolSearchMethodSource new asJRPCJSON at: #icons) first
 		equals: (MCPStructureIcon
 				 compositeBaseIconNamed: #page
-				 badgeIconNamed: #inspect) asJRPCJSON.
+				 leftBadgeIconNamed: #workspace
+				 rightBadgeIconNamed: #search) asJRPCJSON.
 	self
-		assert: (MCPToolEditRepository new asJRPCJSON at: #icons) first
-		equals:
-			(MCPStructureIcon
-				 compositeBaseIconNamed: #box
-				 badgeIconNamed: #edit) asJRPCJSON.
-	self
-		assert: (MCPToolLoadRepository new asJRPCJSON at: #icons) first
-		equals:
-			(MCPStructureIcon compositeBaseIconNamed: #box badgeIconNamed: #add)
-				asJRPCJSON.
-	self
-		assert: (MCPToolEditClass new asJRPCJSON at: #icons) first
-		equals:
-			(MCPStructureIcon
-				 compositeBaseIconNamed: #class
-				 badgeIconNamed: #edit) asJRPCJSON.
-	self
-		assert: (MCPToolEditMethod new asJRPCJSON at: #icons) first
-		equals:
-			(MCPStructureIcon
-				 compositeBaseIconNamed: #page
-				 badgeIconNamed: #edit) asJRPCJSON.
-	self
-		assert: (MCPToolRewriteMethods new asJRPCJSON at: #icons) first
+		assert:
+		(MCPToolSearchMethodImplementors new asJRPCJSON at: #icons) first
 		equals: (MCPStructureIcon
 				 compositeBaseIconNamed: #page
-				 badgeIconNamed: #refreshCircling) asJRPCJSON.
+				 leftBadgeIconNamed: #referencesUpsideDown
+				 rightBadgeIconNamed: #search) asJRPCJSON.
 	self
-		assert: (MCPToolFindClasses new asJRPCJSON at: #icons) first
+		assert:
+		(MCPToolUpdateMethodProtocol new asJRPCJSON at: #icons) first
+		equals: (MCPStructureIcon
+				 compositeBaseIconNamed: #page
+				 leftBadgeIconNamed: #protocolProtected
+				 rightBadgeIconNamed: #edit) asJRPCJSON.
+	self
+		assert: (MCPToolPullUpClassSlot new asJRPCJSON at: #icons) first
 		equals: (MCPStructureIcon
 				 compositeBaseIconNamed: #class
-				 badgeIconNamed: #search) asJRPCJSON.
+				 leftBadgeIconNamed: #instVarsSelected
+				 rightBadgeIconNamed: #up) asJRPCJSON.
 	self
-		assert: (MCPToolFindMethods new asJRPCJSON at: #icons) first
-		equals: (MCPStructureIcon
-				 compositeBaseIconNamed: #page
-				 badgeIconNamed: #search) asJRPCJSON.
-	self
-		assert: (MCPToolFindPackages new asJRPCJSON at: #icons) first
-		equals: (MCPStructureIcon
-				 compositeBaseIconNamed: #open
-				 badgeIconNamed: #search) asJRPCJSON.
-	self
-		assert: (MCPToolFindRepositories new asJRPCJSON at: #icons) first
-		equals:
-			(MCPStructureIcon
-				 compositeBaseIconNamed: #box
-				 badgeIconNamed: #search) asJRPCJSON.
-	self
-		assert: (MCPToolRemoveClasses new asJRPCJSON at: #icons) first
+		assert: (MCPToolPushDownClassSlot new asJRPCJSON at: #icons) first
 		equals: (MCPStructureIcon
 				 compositeBaseIconNamed: #class
-				 badgeIconNamed: #delete) asJRPCJSON.
+				 leftBadgeIconNamed: #instVarsSelected
+				 rightBadgeIconNamed: #down) asJRPCJSON.
 	self
-		assert: (MCPToolRemoveMethods new asJRPCJSON at: #icons) first
+		assert: (MCPToolUpdateClassLayout new asJRPCJSON at: #icons) first
 		equals: (MCPStructureIcon
-				 compositeBaseIconNamed: #page
-				 badgeIconNamed: #delete) asJRPCJSON.
+				 compositeBaseIconNamed: #class
+				 leftBadgeIconNamed: #objects
+				 rightBadgeIconNamed: #edit) asJRPCJSON.
 	self
-		assert: (MCPToolRunTests new asJRPCJSON at: #icons) first
-		equals: (MCPStructureIcon pngIconNamed: #testRunner) asJRPCJSON.
+		assert:
+		(MCPToolListChangeHistoryEntries new asJRPCJSON at: #icons) first
+		equals: (MCPStructureIcon
+				 compositeBaseIconNamed: #history
+				 leftBadgeIconNamed: #changeUpdate
+				 rightBadgeIconNamed: #browse) asJRPCJSON.
+	self
+		assert: (MCPToolRunTestCoverage new asJRPCJSON at: #icons) first
+		equals: (MCPStructureIcon
+				 compositeBaseIconNamed: #testRunner
+				 leftBadgeIconNamed: #processBrowser
+				 rightBadgeIconNamed: #play) asJRPCJSON.
+	self
+		assert:
+		(MCPToolStepIntoDebugSession new asJRPCJSON at: #icons) first
+		equals: (MCPStructureIcon
+				 compositeBaseIconNamed: #bug
+				 leftBadgeIconNamed: #announcement
+				 rightBadgeIconNamed: #into) asJRPCJSON.
+	self
+		assert: (MCPToolUpdateDebugMethod new asJRPCJSON at: #icons) first
+		equals: (MCPStructureIcon
+				 compositeBaseIconNamed: #bug
+				 leftBadgeIconNamed: #page
+				 rightBadgeIconNamed: #edit) asJRPCJSON.
 	self
 		assert: (MCPToolCaptureScreenshot new asJRPCJSON at: #icons) first
-		equals: (MCPStructureIcon pngIconNamed: #smallScreenshot) asJRPCJSON.
+		equals: (MCPStructureIcon
+				 compositeBaseIconNamed: #window
+				 badgeIconNamed: #smallScreenshot) asJRPCJSON.
+	self
+		assert: (MCPToolRunTests new asJRPCJSON at: #icons) first
+		equals: (MCPStructureIcon
+				 compositeBaseIconNamed: #testRunner
+				 badgeIconNamed: #play) asJRPCJSON.
 	self
 		assert: (MCPToolEvaluate new asJRPCJSON at: #icons) first
-		equals: (MCPStructureIcon pngIconNamed: #go) asJRPCJSON
+		equals: (MCPStructureIcon
+				 compositeBaseIconNamed: #pharoHalfScale
+				 badgeIconNamed: #go) asJRPCJSON
 ]
 
 { #category : 'tests' }
@@ -2294,7 +2347,7 @@ MCPToolContractsTest >> testRpcToolCallRejectsLegacyScopeArgument [
 	self
 		should: [
 			self
-				callToolNamed: 'find-classes'
+				callToolNamed: 'class_search'
 				withArguments: { (#scope -> 'packages') } asDictionary ]
 		raise: JRPCInvalidParameters
 ]
@@ -2305,7 +2358,7 @@ MCPToolContractsTest >> testRpcToolCallSignalsInvalidParametersForInvalidNestedA
 	self
 		should: [
 				self
-					callToolNamed: 'run-tests'
+					callToolNamed: 'test_run'
 					withArguments:
 					{ (#tests -> #( 'MCPToolContractsTest' )) } asDictionary ]
 		raise: JRPCInvalidParameters
@@ -2316,7 +2369,7 @@ MCPToolContractsTest >> testRpcToolCallSignalsInvalidParametersForUnexpectedArgu
 
 	self
 		should: [
-				self callDiscoveredToolNamed: 'evaluate' withArguments: {
+				self callDiscoveredToolNamed: 'image_evaluate' withArguments: {
 						(#code -> '1 + 1').
 						(#unexpected -> true) } asDictionary ]
 		raise: JRPCInvalidParameters
@@ -2328,7 +2381,7 @@ MCPToolContractsTest >> testRpcToolCallSignalsInvalidParametersForWrongArgumentT
 	self
 		should: [
 			self
-				callToolNamed: 'find-classes'
+				callToolNamed: 'class_search'
 				withArguments: { (#caseSensitive -> 'true') } asDictionary ]
 		raise: JRPCInvalidParameters
 ]
@@ -2339,40 +2392,64 @@ MCPToolContractsTest >> testRpcToolCallSignalsInvalidParametersWhenRequiredArgum
 	self
 		should: [
 			self
-				callDiscoveredToolNamed: 'evaluate'
+				callDiscoveredToolNamed: 'image_evaluate'
 				withArguments: Dictionary new ]
 		raise: JRPCInvalidParameters
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testRunTestCoverageUsesNestedRequestDTOs [
+
+	| command parsedRequest rawRequest tool validatedRequests |
+	tool := MCPToolRunTestCoverage new.
+	rawRequest := tool requestFromToolCallArguments: {
+			              (#tests
+			               ->
+			               { { (#className -> 'MCPToolContractsTest') }
+				               asDictionary }).
+			              (#coverage
+			               ->
+			               { (#classNames -> #( 'MCPToolContractsTest' )) }
+				               asDictionary) } asDictionary.
+	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
+	command := tool commandForRequest: parsedRequest.
+	validatedRequests := command validatedRequestsFrom:
+		                     parsedRequest testRequests.
+	self assert: parsedRequest class equals: MCPRunTestsRequest.
+	self assert: parsedRequest isCoverageOperation.
+	self
+		assert: parsedRequest coverageRequest class
+		equals: MCPTestCoverageRequest.
+	self
+		assert: parsedRequest testRequests first class
+		equals: MCPTestRunRequest.
+	self
+		assert: validatedRequests first class
+		equals: MCPValidatedTestRunRequest.
+	self
+		assert: validatedRequests first testClass
+		equals: MCPToolContractsTest
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 
-	| coverageInputProperty dataProperties inputPropertyNames operationProperty outputSchema resultsProperty timeoutMillisecondsProperty tool |
+	| coverageDataProperties coverageInputProperty coverageOutputSchema coverageResultsProperty coverageTool dataProperties inputPropertyNames outputSchema resultsProperty timeoutMillisecondsProperty tool |
 	tool := MCPToolRunTests new.
-	self assert: tool name equals: 'run-tests'.
+	self assert: tool name equals: 'test_run'.
 	self
 		assert: tool inputSchema required asSet
 		equals: #( 'tests' ) asSet.
 	self deny: (tool inputSchema extraProperties includesKey: #oneOf).
 	inputPropertyNames := tool inputSchema properties collect: [ :each |
 		                      each name ].
-	operationProperty := tool inputSchema properties detect: [ :each |
-		                     each name = 'operation' ].
-	coverageInputProperty := tool inputSchema properties detect: [ :each |
-		                         each name = 'coverage' ].
 	timeoutMillisecondsProperty := tool inputSchema properties detect: [
 		                               :each |
 		                               each name = 'timeoutMilliseconds' ].
-	self assert: (inputPropertyNames includes: 'operation').
-	self assert: (inputPropertyNames includes: 'coverage').
+	self deny: (inputPropertyNames includes: 'operation').
+	self deny: (inputPropertyNames includes: 'coverage').
 	self assert: (inputPropertyNames includes: 'timeoutSeconds').
 	self assert: (inputPropertyNames includes: 'timeoutMilliseconds').
-	self
-		assert: (operationProperty extraProperties at: #enum) asArray
-		equals: #( 'run' 'coverage' ).
-	self assert:
-		(((coverageInputProperty extraProperties at: #properties) collect: [
-			  :each | each name ]) includes: 'packageNames').
 	self assert:
 		(timeoutMillisecondsProperty description includesSubstring:
 			 'Cannot be combined with timeoutSeconds').
@@ -2384,8 +2461,32 @@ MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 	self
 		assert: ((resultsProperty at: #items) at: #type)
 		equals: 'object'.
-	self assert: (dataProperties includesKey: 'coverage').
-	self deny: (dataProperties includesKey: 'tests')
+	self deny: (dataProperties includesKey: 'coverage').
+	self deny: (dataProperties includesKey: 'tests').
+
+	coverageTool := MCPToolRunTestCoverage new.
+	self assert: coverageTool name equals: 'test_coverage_run'.
+	self
+		assert: coverageTool inputSchema required asSet
+		equals: #( 'tests' 'coverage' ) asSet.
+	inputPropertyNames := coverageTool inputSchema properties collect: [
+		                      :each | each name ].
+	coverageInputProperty := coverageTool inputSchema properties detect: [
+		                         :each | each name = 'coverage' ].
+	self deny: (inputPropertyNames includes: 'operation').
+	self assert: (inputPropertyNames includes: 'coverage').
+	self assert: (inputPropertyNames includes: 'timeoutSeconds').
+	self assert: (inputPropertyNames includes: 'timeoutMilliseconds').
+	self assert:
+		(((coverageInputProperty extraProperties at: #properties) collect: [
+			  :each | each name ]) includes: 'packageNames').
+	coverageOutputSchema := coverageTool outputSchema asJRPCJSON.
+	coverageDataProperties := ((coverageOutputSchema at: #properties)
+		                           at: 'data') at: #properties.
+	coverageResultsProperty := coverageDataProperties at: 'results'.
+	self assert: (coverageResultsProperty at: #type) equals: 'array'.
+	self assert: (coverageDataProperties includesKey: 'coverage').
+	self deny: (coverageDataProperties includesKey: 'tests')
 ]
 
 { #category : 'tests' }
@@ -2487,20 +2588,355 @@ MCPToolContractsTest >> testScreenshotCommandPackagesProvidedFormAsImageContent 
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testSearchClassesHasAccurateNameAndSchema [
+
+	| propertyNames schema |
+	schema := MCPToolSearchClasses new inputSchema.
+	propertyNames := schema properties collect: [ :each | each name ].
+	self assert: MCPToolSearchClasses new name equals: 'class_search'.
+	self assert: schema required equals: #(  ).
+	self
+		assert: propertyNames asSet
+		equals: #( 'packageNames' 'classNames' 'hierarchyClassNames'
+			   'subclassClassNames' 'parentClassNames' 'className' 'tag' 'instanceSlot'
+			   'classSlot' 'filterMode' 'caseSensitive' 'limit' 'offset' )
+				asSet
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testSearchClassesListsClassesForExistingPackage [
+
+	| classNames data result |
+	result := self
+		          callToolNamed: 'class_search'
+		          withArguments:
+		          { (#packageNames -> #( 'MCP-Tests' )) } asDictionary.
+	data := (result at: #structuredContent) at: #data.
+	classNames := (data at: #classes) collect: [ :each |
+		              each at: #className ].
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) > 0.
+	self assert: (classNames includes: 'MCPToolMethodMutationTest')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testSearchClassesReturnsWarningResultForMissingPackage [
+
+	| data result warnings |
+	result := self
+		          callToolNamed: 'class_search'
+		          withArguments:
+		          { (#packageNames -> #( 'MCP-Definitely-Missing' )) }
+			          asDictionary.
+	data := self dataFrom: result.
+	warnings := self warningsFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self
+		assert: ((self structuredContentFrom: result) at: #status)
+		equals: 'ok'.
+	self assert: (data at: #totalCount) equals: 0.
+	self assert: (data at: #classes) isEmpty.
+	self assert: warnings size equals: 1.
+	self assert:
+		(warnings first includesSubstring: 'MCP-Definitely-Missing').
+	self assert: (warnings first includesSubstring: 'packageNames scope').
+	self assert: (warnings first includesSubstring: 'Did you mean:')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testSearchPackagesHasAccurateNameAndSchema [
+
+	| propertyNames schema |
+	schema := MCPToolSearchPackages new inputSchema.
+	propertyNames := schema properties collect: [ :each | each name ].
+	self assert: MCPToolSearchPackages new name equals: 'package_search'.
+	self assert: schema required equals: #(  ).
+	self
+		assert: propertyNames asSet
+		equals:
+			#( 'projectNames' 'packageNames' 'packageName' 'projectName'
+			   'tag' 'filterMode' 'caseSensitive' 'limit' 'offset' ) asSet
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testSearchPackagesListsPackagesForExistingProject [
+
+	| packageNames data result |
+	result := self
+		          callToolNamed: 'package_search'
+		          withArguments:
+		          { (#projectNames -> #( 'MCP' )) } asDictionary.
+	data := (result at: #structuredContent) at: #data.
+	packageNames := (data at: #packages) collect: [ :each |
+		                each at: #packageName ].
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) equals: packageNames size.
+	self assert: (packageNames includes: 'MCP').
+	self assert: (packageNames includes: 'MCP-Tests')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testSearchPackagesReturnsErrorResultForMissingProject [
+
+	| result text |
+	result := self
+		          callToolNamed: 'package_search'
+		          withArguments:
+		          { (#projectNames -> #( 'DefinitelyMissingProject' )) }
+			          asDictionary.
+	text := self firstTextFromToolResult: result.
+	self assert: (result at: #isError).
+	self assert: (text includesSubstring:
+			 'Project DefinitelyMissingProject does not exist.').
+	self deny: (text includesSubstring: 'Tool package_search failed')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testSearchRepositoriesHasAccurateNameAndSchema [
+
+	| propertyNames schema |
+	schema := MCPToolSearchRepositories new inputSchema.
+	propertyNames := schema properties collect: [ :each | each name ].
+	self
+		assert: MCPToolSearchRepositories new name
+		equals: 'repository_search'.
+	self assert: schema required equals: #(  ).
+	self
+		assert: propertyNames asSet
+		equals:
+			#( 'repositoryNames' 'directoryPaths' 'packageNames' 'isModified'
+			   'isMissing' 'repositoryName' 'repositoryClassName'
+			   'location' 'subdirectory' 'branchName' 'headDescription'
+			   'headClassName' 'headCommitId' 'packageName' 'modifiedPackageName'
+			   'remoteName' 'remoteUrl' 'upstreamRemoteName'
+			   'upstreamBranchName' 'upstreamRemoteUrl' 'filterMode'
+			   'caseSensitive' 'limit' 'offset' ) asSet
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testSearchToolSchemasAdvertiseFlatFieldProperties [
+
+	| classProperties classSchema methodProperties methodSchema packageProperties packageSchema |
+	classSchema := MCPToolSearchClasses new inputSchema asJRPCJSON.
+	methodSchema := MCPToolSearchMethodMetadata new inputSchema
+		                asJRPCJSON.
+	packageSchema := MCPToolSearchPackages new inputSchema asJRPCJSON.
+	classProperties := (classSchema at: #properties) keys asSet.
+	methodProperties := (methodSchema at: #properties) keys asSet.
+	packageProperties := (packageSchema at: #properties) keys asSet.
+	self assert: (classSchema at: #type) equals: 'object'.
+	self assert: (methodSchema at: #type) equals: 'object'.
+	self assert: (packageSchema at: #type) equals: 'object'.
+	self
+		assert: classProperties
+		equals: #( 'packageNames' 'classNames' 'hierarchyClassNames'
+			   'subclassClassNames' 'parentClassNames' 'className' 'tag' 'instanceSlot'
+			   'classSlot' 'filterMode' 'caseSensitive' 'limit' 'offset' )
+				asSet.
+	self
+		assert: methodProperties
+		equals: #( 'packageNames' 'classNames' 'hierarchyClassNames'
+			   'subclassClassNames' 'parentClassNames' 'selector' 'protocol'
+			   'filterMode' 'side' 'includeSource' 'limit' 'offset' 'caseSensitive' )
+				asSet.
+	self
+		assert: packageProperties
+		equals:
+			#( 'projectNames' 'packageNames' 'packageName' 'projectName'
+			   'tag' 'filterMode' 'caseSensitive' 'limit' 'offset' ) asSet
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testSearchToolsCanIncludeStaticSurface [
+
+	| metadataByName result |
+	result := self callToolNamed: 'tool_search' withArguments: {
+			          (#query -> 'classes').
+			          (#includeStatic -> true) } asDictionary.
+	metadataByName := (((self dataFrom: result) at: #tools) collect: [
+		                   :each | (each at: #name) -> each ]) asDictionary.
+	self assert: (metadataByName includesKey: 'class_search').
+	self
+		assert: ((metadataByName at: 'class_search') at: #exposure)
+		equals: 'static'
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testSearchToolsKeywordsAreSingleSearchTerms [
+
+	| metadataByName result |
+	result := self callToolNamed: 'tool_search' withArguments: {
+			          (#includeStatic -> true).
+			          (#limit -> 200) } asDictionary.
+	metadataByName := (((self dataFrom: result) at: #tools) collect: [
+		                   :each | (each at: #name) -> each ]) asDictionary.
+	self
+		assert: ((metadataByName at: 'tool_search') at: #keywords) asSet
+		equals: #( 'tool' 'catalog' 'search' ) asSet.
+	self
+		assert: ((metadataByName at: 'image_evaluate') at: #keywords) asSet
+		equals:
+			#( 'image' 'evaluate' 'runtime' 'expression' 'smalltalk'
+			   'code' ) asSet
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testSearchToolsMatchesAgentGuidanceKeywords [
+
+	| expectations |
+	expectations := {
+		                ('repo' -> 'repository_search').
+		                ('identity' -> 'repository_identity_verify').
+		                ('diff' -> 'repository_change_list').
+		                ('SUnit' -> 'test_run').
+		                ('coverage' -> 'test_coverage_run').
+		                ('file' -> 'history_file_list').
+		                ('entry' -> 'history_entry_list').
+		                ('recover' -> 'history_entry_apply').
+		                ('window' -> 'screenshot_capture').
+		                ('display' -> 'screenshot_capture').
+		                ('repair' -> 'debug_method_update').
+		                ('refactor' -> 'class_slot_pull_up').
+		                ('refactoring' -> 'method_selector_update') }.
+	expectations do: [ :expectation |
+			| names result |
+			result := self callToolNamed: 'tool_search' withArguments: {
+					          (#query -> expectation key).
+					          (#includeStatic -> true) } asDictionary.
+			names := ((self dataFrom: result) at: #tools) collect: [ :each |
+				         each at: #name ].
+			self assert: (names includes: expectation value) ]
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testSearchToolsMatchesMultipleQueryTerms [
+
+	| names result |
+	result := self callToolNamed: 'tool_search' withArguments: {
+			          (#query -> 'method source').
+			          (#includeStatic -> true) } asDictionary.
+	names := ((self dataFrom: result) at: #tools) collect: [ :each |
+		         each at: #name ].
+	self assert: (names includes: 'method_source_search').
+
+	result := self callToolNamed: 'tool_search' withArguments: {
+			          (#query -> 'method equivalent').
+			          (#includeStatic -> true) } asDictionary.
+	names := ((self dataFrom: result) at: #tools) collect: [ :each |
+		         each at: #name ].
+	self assert: (names includes: 'method_equivalent_search')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testSearchToolsMatchesPluralQueryTerms [
+
+	| expectations |
+	expectations := {
+		                ('classes' -> 'class_search').
+		                ('repositories' -> 'repository_search').
+		                ('traits' -> 'class_traits_update').
+		                ('variables' -> 'class_shared_variables_update').
+		                ('refactorings' -> 'class_slot_pull_up') }.
+	expectations do: [ :expectation |
+			| names result |
+			result := self callToolNamed: 'tool_search' withArguments: {
+					          (#query -> expectation key).
+					          (#includeStatic -> true).
+					          (#limit -> 200) } asDictionary.
+			names := ((self dataFrom: result) at: #tools) collect: [ :each |
+				         each at: #name ].
+			self assert: (names includes: expectation value) ]
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testSearchToolsMatchesSpecializedClassKeywords [
+
+	| expectations |
+	expectations := {
+		                ('trait composition' -> 'class_traits_update').
+		                ('metaclass trait' -> 'class_side_traits_update').
+		                ('classvar' -> 'class_shared_variables_update').
+		                ('pooldictionary' -> 'class_shared_pools_update').
+		                ('weak layout' -> 'class_layout_update') }.
+	expectations do: [ :expectation |
+			| names result |
+			result := self callToolNamed: 'tool_search' withArguments: {
+					          (#query -> expectation key).
+					          (#includeStatic -> true).
+					          (#limit -> 200) } asDictionary.
+			names := ((self dataFrom: result) at: #tools) collect: [ :each |
+				         each at: #name ].
+			self assert: (names includes: expectation value) ]
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testSearchToolsReturnsDiscoverableMetadata [
+
+	| createRepositoryMetadata data names result tools |
+	result := self
+		          callToolNamed: 'tool_search'
+		          withArguments: { (#query -> 'repository') } asDictionary.
+	data := self dataFrom: result.
+	tools := data at: #tools.
+	names := tools collect: [ :each | each at: #name ].
+	self assert: (names includes: 'repository_search').
+	self assert: (names includes: 'repository_create').
+	self assert: (names includes: 'repository_attach').
+	self assert: (names includes: 'repository_update').
+	self assert: (names includes: 'repository_load').
+	self deny: (names includes: 'class_search').
+	createRepositoryMetadata := tools detect: [ :each |
+		                            (each at: #name) = 'repository_create' ].
+	self
+		assert: (createRepositoryMetadata at: #group)
+		equals: 'repositories'.
+	self
+		assert: (createRepositoryMetadata at: #exposure)
+		equals: 'discoverable'.
+	self assert: (createRepositoryMetadata at: #schemaInspectionRequired)
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testSearchToolsUseTypedRequestObjects [
+
+	| classRequest methodRequest packageRequest repositoryRequest |
+	repositoryRequest := MCPToolSearchRepositories new
+		                     searchRequestFromToolRequest: (MCPToolRequest
+				                      tool: MCPToolSearchRepositories new
+				                      arguments: Dictionary new).
+	classRequest := MCPToolSearchClasses new
+		                searchRequestFromToolRequest: (MCPToolRequest
+				                 tool: MCPToolSearchClasses new
+				                 arguments: Dictionary new).
+	methodRequest := MCPToolSearchMethodMetadata new
+		                 searchRequestFromToolRequest: (MCPToolRequest
+				                  tool: MCPToolSearchMethodMetadata new
+				                  arguments: Dictionary new).
+	packageRequest := MCPToolSearchPackages new
+		                  searchRequestFromToolRequest: (MCPToolRequest
+				                   tool: MCPToolSearchPackages new
+				                   arguments: Dictionary new).
+	self assert: repositoryRequest class equals: MCPRepositoryQuerySpec.
+	self assert: classRequest class equals: MCPSearchClassesRequest.
+	self assert: methodRequest class equals: MCPMethodSearchRequest.
+	self assert: packageRequest class equals: MCPSearchPackagesRequest
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testServerCanConfigureStaticToolNames [
 
 	| server toolNames |
 	server := MCP new.
 	server staticToolNames:
-		#( 'discover-tools' 'inspect-tool' 'call-tool' 'find-classes' ).
+		#( 'tool_search' 'tool_get' 'tool_call' 'class_search' ).
 	toolNames := (server rpcToolsList at: #tools) collect: [ :each |
 		             each at: #name ].
 	self
 		assert: toolNames asSet
 		equals:
-		#( 'discover-tools' 'inspect-tool' 'call-tool' 'find-classes' )
+		#( 'tool_search' 'tool_get' 'tool_call' 'class_search' )
 			asSet.
-	self deny: (toolNames includes: 'edit-class')
+	self deny: (toolNames includes: 'class_name_update')
 ]
 
 { #category : 'tests' }
@@ -2512,11 +2948,54 @@ MCPToolContractsTest >> testServerInitializationDoesNotRenderToolIcons [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testSpecializedClassAndMethodToolsAreDiscoverableOnly [
+
+	| discoverableOnlyNames metadataByName result |
+	discoverableOnlyNames := #( 'class_name_update' 'class_superclass_update'
+	                            'class_package_update'
+	                            'class_comment_update'
+	                            'class_slots_update' 'class_traits_update'
+	                            'class_side_traits_update'
+	                            'class_shared_variables_update'
+	                            'class_shared_pools_update'
+	                            'class_layout_update'
+	                            'class_slot_add' 'class_slot_remove'
+	                            'class_slot_name_update'
+	                            'class_slot_pull_up' 'class_slot_push_down'
+	                            'method_equivalent_search'
+	                            'method_class_reference_search'
+	                            'method_variable_reference_search'
+	                            'test_coverage_run' ).
+	result := self callToolNamed: 'tool_search' withArguments: {
+			          (#includeStatic -> true).
+			          (#limit -> 200) } asDictionary.
+	metadataByName := Dictionary new.
+	((self dataFrom: result) at: #tools) do: [ :each |
+		metadataByName at: (each at: #name) put: each ].
+	discoverableOnlyNames do: [ :each |
+			| metadata tool |
+			self assert: (MCPToolRegistry publicToolNames includes: each).
+			self deny: (MCPToolRegistry staticToolNames includes: each).
+			tool := MCPToolRegistry
+				        toolNamed: each
+				        ifAbsent: [ self fail: 'Missing tool ' , each ].
+			self
+				assert: (MCPToolRegistry exposureForTool: tool)
+				equals: 'discoverable'.
+			metadata := metadataByName
+				            at: each
+				            ifAbsent: [
+				            self fail: 'Missing discoverable metadata for ' , each ].
+			self assert: (metadata at: #exposure) equals: 'discoverable'.
+			self assert: (metadata at: #schemaInspectionRequired) ]
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testStaticToolConfigurationRejectsUnknownToolNames [
 
 	self
 		should: [
-		MCP new staticToolNames: #( 'discover-tools' 'not-a-tool' ) ]
+		MCP new staticToolNames: #( 'tool_search' 'not-a-tool' ) ]
 		raise: Error
 ]
 
@@ -2536,12 +3015,22 @@ MCPToolContractsTest >> testToolFlowSelectorNamesSeparateTransportAndParsedInput
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testToolIconSpecsAreDerivedFromToolNames [
+
+	self
+		assert: (MCPTool withAllSubclasses count: [ :each |
+				 each class includesSelector: #toolIconSpec ])
+		equals: 1.
+	self assert: (MCPTool class includesSelector: #toolIconSpec)
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testToolIconsAreSharedByToolClass [
 
 	| firstIcons secondIcons |
 	MCPStructureIcon resetCaches.
-	firstIcons := MCPToolFindClasses new icons.
-	secondIcons := MCPToolFindClasses new icons.
+	firstIcons := MCPToolSearchClasses new icons.
+	secondIcons := MCPToolSearchClasses new icons.
 	self assert: firstIcons identicalTo: secondIcons.
 	self assert: firstIcons first identicalTo: secondIcons first.
 	self assert: MCPStructureIcon cachedRenderedIconCount equals: 1
@@ -2561,15 +3050,130 @@ MCPToolContractsTest >> testToolRegistryNamesUseClassSideMetadata [
 	names := MCPToolRegistry publicToolClasses collect: [ :each |
 		         each toolName ].
 	self assert: MCPToolRegistry publicToolNames equals: names.
-	self assert: MCPToolFindClasses toolName equals: 'find-classes'.
-	self assert: MCPToolRunTests toolName equals: 'run-tests'.
-	self assert: MCPToolDebugState toolName equals: 'debug-state'.
-	self assert: MCPToolDebugCapture toolName equals: 'debug-capture'.
-	self assert: MCPToolDebugEdit toolName equals: 'debug-edit'
+	self assert: MCPToolSearchClasses toolName equals: 'class_search'.
+	self assert: MCPToolCreateClass toolName equals: 'class_create'.
+	self
+		assert: MCPToolUpdateClassName toolName
+		equals: 'class_name_update'.
+	self
+		assert: MCPToolUpdateClassSuperclass toolName
+		equals: 'class_superclass_update'.
+	self
+		assert: MCPToolUpdateClassPackage toolName
+		equals: 'class_package_update'.
+	self
+		assert: MCPToolUpdateClassComment toolName
+		equals: 'class_comment_update'.
+	self
+		assert: MCPToolUpdateClassSlots toolName
+		equals: 'class_slots_update'.
+	self
+		assert: MCPToolUpdateClassTraits toolName
+		equals: 'class_traits_update'.
+	self
+		assert: MCPToolUpdateClassSideTraits toolName
+		equals: 'class_side_traits_update'.
+	self
+		assert: MCPToolUpdateClassSharedVariables toolName
+		equals: 'class_shared_variables_update'.
+	self
+		assert: MCPToolUpdateClassSharedPools toolName
+		equals: 'class_shared_pools_update'.
+	self
+		assert: MCPToolUpdateClassLayout toolName
+		equals: 'class_layout_update'.
+	self assert: MCPToolAddClassSlot toolName equals: 'class_slot_add'.
+	self
+		assert: MCPToolRemoveClassSlot toolName
+		equals: 'class_slot_remove'.
+	self
+		assert: MCPToolUpdateClassSlotName toolName
+		equals: 'class_slot_name_update'.
+	self
+		assert: MCPToolPullUpClassSlot toolName
+		equals: 'class_slot_pull_up'.
+	self
+		assert: MCPToolPushDownClassSlot toolName
+		equals: 'class_slot_push_down'.
+	self assert: MCPToolRunTests toolName equals: 'test_run'.
+	self assert: MCPToolCreateMethod toolName equals: 'method_create'.
+	self
+		assert: MCPToolUpdateMethodSelector toolName
+		equals: 'method_selector_update'.
+	self
+		assert: MCPToolUpdateMethodProtocol toolName
+		equals: 'method_protocol_update'.
+	self
+		assert: MCPToolVerifyRepositoryIdentity toolName
+		equals: 'repository_identity_verify'.
+	self
+		assert: MCPToolListRepositoryChanges toolName
+		equals: 'repository_change_list'.
+	self
+		assert: MCPToolCreateRepository toolName
+		equals: 'repository_create'.
+	self
+		assert: MCPToolAttachRepository toolName
+		equals: 'repository_attach'.
+	self
+		assert: MCPToolUpdateRepository toolName
+		equals: 'repository_update'.
+	self
+		assert: MCPToolExportRepository toolName
+		equals: 'repository_export'.
+	self
+		assert: MCPToolCommitRepository toolName
+		equals: 'repository_commit'.
+	self
+		assert: MCPToolFetchRepository toolName
+		equals: 'repository_fetch'.
+	self assert: MCPToolPullRepository toolName equals: 'repository_pull'.
+	self assert: MCPToolPushRepository toolName equals: 'repository_push'.
+	self
+		assert: MCPToolCreateRepositoryBranch toolName
+		equals: 'repository_branch_create'.
+	self
+		assert: MCPToolSwitchRepositoryBranch toolName
+		equals: 'repository_branch_switch'.
+	self
+		assert: MCPToolAdoptRepositoryHead toolName
+		equals: 'repository_head_adopt'.
+	self
+		assert: MCPToolListChangeHistoryFiles toolName
+		equals: 'history_file_list'.
+	self
+		assert: MCPToolListChangeHistoryEntries toolName
+		equals: 'history_entry_list'.
+	self
+		assert: MCPToolApplyChangeHistoryEntries toolName
+		equals: 'history_entry_apply'.
+	self
+		assert: MCPToolRevertChangeHistoryEntries toolName
+		equals: 'history_entry_revert'.
+	self assert: MCPToolDebugState toolName equals: 'debug_state_get'.
+	self
+		assert: MCPToolStepOverDebugSession toolName
+		equals: 'debug_session_step_over'.
+	self assert: MCPToolDebugCapture toolName equals: 'debug_capture'.
+	self assert: MCPToolUpdateDebugMethod toolName equals: 'debug_method_update'
 ]
 
-{ #category : 'private' }
+{ #category : 'support' }
 MCPToolContractsTest >> toolFlowSpecs [
 
-	^ self baseToolFlowSpecs copyWith: self debugTestToolFlowSpec
+	| specs |
+	specs := OrderedCollection withAll: self baseToolFlowSpecs.
+	specs add: self baselineLoadToolFlowSpec.
+	specs add: self coverageToolFlowSpec.
+	specs addAll: self classMutationToolFlowSpecs.
+	specs addAll: self methodLookupToolFlowSpecs.
+	specs addAll: self methodMutationToolFlowSpecs.
+	specs addAll: self changeHistoryToolFlowSpecs.
+	specs addAll: self repositoryToolFlowSpecs.
+	specs addAll: self debugSessionToolFlowSpecs.
+	specs addAll: self debugControlToolFlowSpecs.
+	specs addAll: self debugBreakpointToolFlowSpecs.
+	specs add: self debugTestToolFlowSpec.
+	^ specs asArray
+
 ]

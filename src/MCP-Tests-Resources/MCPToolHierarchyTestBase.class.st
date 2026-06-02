@@ -1,3 +1,6 @@
+"
+Base fixture class in the hierarchy used by scope and lookup tests.
+"
 Class {
 	#name : 'MCPToolHierarchyTestBase',
 	#superclass : 'Object',

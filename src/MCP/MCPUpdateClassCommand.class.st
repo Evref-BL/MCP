@@ -1,5 +1,7 @@
 "
-Orchestrates operation=update for edit-class. It receives one parsed MCPClassUpdateRequest, builds an MCPClassUpdatePlanInfo for the single internal update action, dispatches to the command that applies the change, and wraps the command result in MCPClassAppliedChangeResult for tool output. Slot edits and slot collection replacement are both parsed from the same update request.
+Orchestrates one parsed class update request.
+
+It builds an MCPClassUpdatePlanInfo for the selected internal update action, dispatches to the command that applies the change, and wraps the command result in MCPClassAppliedChangeResult for tool output. Slot updates and slot collection replacement are both parsed from the same update request.
 "
 Class {
 	#name : 'MCPUpdateClassCommand',
@@ -42,7 +44,7 @@ MCPUpdateClassCommand >> execute [
 		do: [ :error |
 			^ self tool
 				  errorResultForCommandError: error
-				  operation: 'update'
+				  action: 'update'
 				  requestedContext: self validationContext ].
 	^ self executePlan: plan
 ]
@@ -52,7 +54,7 @@ MCPUpdateClassCommand >> executeAddSlotWithPlan: plan [
 
 	| result |
 	^ self tool
-		  executeEditOperation: 'addSlot'
+		  executeMutationAction: 'addSlot'
 		  force: self classRequest force
 		  requestedContext: plan requestedContext
 		  work: [
@@ -79,12 +81,41 @@ MCPUpdateClassCommand >> executeAddSlotWithPlan: plan [
 				  error: error ]
 ]
 
+{ #category : 'private - planning' }
+MCPUpdateClassCommand >> executeBlockForAction: action [
+
+	^ {
+		  ('move' -> [ :plan | self executeMoveWithPlan: plan ]).
+		  ('rename' -> [ :plan | self executeRenameWithPlan: plan ]).
+		  ('reparent' -> [ :plan | self executeReparentWithPlan: plan ]).
+		  ('setComment' -> [ :plan | self executeSetCommentWithPlan: plan ]).
+		  ('replaceTraits'
+		   -> [ :plan | self executeReplaceTraitsWithPlan: plan ]).
+		  ('replaceClassTraits'
+		   -> [ :plan | self executeReplaceClassTraitsWithPlan: plan ]).
+		  ('replaceSharedVariables'
+		   -> [ :plan | self executeReplaceSharedVariablesWithPlan: plan ]).
+		  ('replaceSharedPools'
+		   -> [ :plan | self executeReplaceSharedPoolsWithPlan: plan ]).
+		  ('replaceLayout'
+		   -> [ :plan | self executeReplaceLayoutWithPlan: plan ]).
+		  ('replaceDefinition'
+		   -> [ :plan | self executeReplaceDefinitionWithPlan: plan ]).
+		  ('addSlot' -> [ :plan | self executeAddSlotWithPlan: plan ]).
+		  ('removeSlot' -> [ :plan | self executeRemoveSlotWithPlan: plan ]).
+		  ('renameSlot' -> [ :plan | self executeRenameSlotWithPlan: plan ]).
+		  ('pullUpSlot' -> [ :plan | self executePullUpSlotWithPlan: plan ]).
+		  ('pushDownSlot'
+		   -> [ :plan | self executePushDownSlotWithPlan: plan ]) }
+		  asDictionary at: action ifAbsent: [ nil ]
+]
+
 { #category : 'executing - slot' }
 MCPUpdateClassCommand >> executeMoveSlotAction: operation withPlan: plan [
 
 	| result |
 	^ self tool
-		  executeEditOperation: operation
+		  executeMutationAction: operation
 		  force: self classRequest force
 		  requestedContext: plan requestedContext
 		  work: [
@@ -115,7 +146,7 @@ MCPUpdateClassCommand >> executeMoveWithPlan: plan [
 	| packageName result |
 	packageName := self movePackageName.
 	^ self tool
-		  executeEditOperation: 'move'
+		  executeMutationAction: 'move'
 		  force: self classRequest force
 		  requestedContext: plan requestedContext
 		  work: [
@@ -142,9 +173,9 @@ MCPUpdateClassCommand >> executeMoveWithPlan: plan [
 { #category : 'executing' }
 MCPUpdateClassCommand >> executePlan: plan [
 
-	| selector |
-	selector := self executeSelectorForAction: plan updateAction.
-	selector ifNotNil: [ ^ self perform: selector with: plan ].
+	| actionBlock |
+	actionBlock := self executeBlockForAction: plan updateAction.
+	actionBlock ifNotNil: [ ^ actionBlock value: plan ].
 	^ self tool
 		  errorResultForCommandError: (MCPCommandError new
 				   errorCode: #UnknownClassUpdateAction;
@@ -152,7 +183,7 @@ MCPUpdateClassCommand >> executePlan: plan [
 					   'Unknown class update action: ' , plan updateAction;
 				   details: plan requestedContext;
 				   yourself)
-		  operation: 'update'
+		  action: 'update'
 		  requestedContext: plan requestedContext
 ]
 
@@ -173,7 +204,7 @@ MCPUpdateClassCommand >> executeRemoveSlotWithPlan: plan [
 
 	| result |
 	^ self tool
-		  executeEditOperation: 'removeSlot'
+		  executeMutationAction: 'removeSlot'
 		  force: self classRequest force
 		  requestedContext: plan requestedContext
 		  work: [
@@ -205,7 +236,7 @@ MCPUpdateClassCommand >> executeRenameSlotWithPlan: plan [
 
 	| result |
 	^ self tool
-		  executeEditOperation: 'renameSlot'
+		  executeMutationAction: 'renameSlot'
 		  force: self classRequest force
 		  requestedContext: plan requestedContext
 		  work: [
@@ -237,7 +268,7 @@ MCPUpdateClassCommand >> executeRenameWithPlan: plan [
 
 	| refactoringModel result targetClass |
 	^ self tool
-		  executeEditOperation: 'rename'
+		  executeMutationAction: 'rename'
 		  force: self classRequest force
 		  requestedContext: plan requestedContext
 		  work: [
@@ -271,7 +302,7 @@ MCPUpdateClassCommand >> executeReparentWithPlan: plan [
 
 	| result |
 	^ self tool
-		  executeEditOperation: 'reparent'
+		  executeMutationAction: 'reparent'
 		  force: self classRequest force
 		  requestedContext: plan requestedContext
 		  work: [
@@ -299,7 +330,7 @@ MCPUpdateClassCommand >> executeReplaceClassTraitsWithPlan: plan [
 
 	| result |
 	^ self tool
-		  executeEditOperation: 'replaceClassTraits'
+		  executeMutationAction: 'replaceClassTraits'
 		  force: self classRequest force
 		  requestedContext: plan requestedContext
 		  work: [
@@ -335,7 +366,7 @@ MCPUpdateClassCommand >> executeReplaceDefinitionWithPlan: plan [
 		replaceClassSlots:
 			(self classRequest hasSuppliedPropertyNamed: 'classSlots').
 	^ self tool
-		  executeEditOperation: 'replaceDefinition'
+		  executeMutationAction: 'replaceDefinition'
 		  force: self classRequest force
 		  requestedContext: plan requestedContext
 		  work: [ result := command execute ]
@@ -359,7 +390,7 @@ MCPUpdateClassCommand >> executeReplaceLayoutWithPlan: plan [
 
 	| result |
 	^ self tool
-		  executeEditOperation: 'replaceLayout'
+		  executeMutationAction: 'replaceLayout'
 		  force: self classRequest force
 		  requestedContext: plan requestedContext
 		  work: [
@@ -385,7 +416,7 @@ MCPUpdateClassCommand >> executeReplaceSharedPoolsWithPlan: plan [
 
 	| result |
 	^ self tool
-		  executeEditOperation: 'replaceSharedPools'
+		  executeMutationAction: 'replaceSharedPools'
 		  force: self classRequest force
 		  requestedContext: plan requestedContext
 		  work: [
@@ -413,7 +444,7 @@ MCPUpdateClassCommand >> executeReplaceSharedVariablesWithPlan: plan [
 
 	| result |
 	^ self tool
-		  executeEditOperation: 'replaceSharedVariables'
+		  executeMutationAction: 'replaceSharedVariables'
 		  force: self classRequest force
 		  requestedContext: plan requestedContext
 		  work: [
@@ -441,7 +472,7 @@ MCPUpdateClassCommand >> executeReplaceTraitsWithPlan: plan [
 
 	| result |
 	^ self tool
-		  executeEditOperation: 'replaceTraits'
+		  executeMutationAction: 'replaceTraits'
 		  force: self classRequest force
 		  requestedContext: plan requestedContext
 		  work: [
@@ -462,40 +493,12 @@ MCPUpdateClassCommand >> executeReplaceTraitsWithPlan: plan [
 				  error: error ]
 ]
 
-{ #category : 'private - planning' }
-MCPUpdateClassCommand >> executeSelectorForAction: action [
-
-	| selectors |
-	selectors := {
-		             ('move' -> #executeMoveWithPlan:).
-		             ('rename' -> #executeRenameWithPlan:).
-		             ('reparent' -> #executeReparentWithPlan:).
-		             ('setComment' -> #executeSetCommentWithPlan:).
-		             ('replaceTraits' -> #executeReplaceTraitsWithPlan:).
-		             ('replaceClassTraits'
-		              -> #executeReplaceClassTraitsWithPlan:).
-		             ('replaceSharedVariables'
-		              -> #executeReplaceSharedVariablesWithPlan:).
-		             ('replaceSharedPools'
-		              -> #executeReplaceSharedPoolsWithPlan:).
-		             ('replaceLayout' -> #executeReplaceLayoutWithPlan:).
-		             ('replaceDefinition'
-		              -> #executeReplaceDefinitionWithPlan:).
-		             ('addSlot' -> #executeAddSlotWithPlan:).
-		             ('removeSlot' -> #executeRemoveSlotWithPlan:).
-		             ('renameSlot' -> #executeRenameSlotWithPlan:).
-		             ('pullUpSlot' -> #executePullUpSlotWithPlan:).
-		             ('pushDownSlot' -> #executePushDownSlotWithPlan:) }
-		             asDictionary.
-	^ selectors at: action ifAbsent: [ nil ]
-]
-
 { #category : 'executing - class' }
 MCPUpdateClassCommand >> executeSetCommentWithPlan: plan [
 
 	| result |
 	^ self tool
-		  executeEditOperation: 'setComment'
+		  executeMutationAction: 'setComment'
 		  force: self classRequest force
 		  requestedContext: plan requestedContext
 		  work: [
@@ -538,9 +541,7 @@ MCPUpdateClassCommand >> moveRequestedContext [
 	^ {
 		  (#className -> self classRequest className).
 		  (#packageName -> self movePackageName).
-		  (#tag -> (self classRequest tag
-			    ifNil: [ '' ]
-			    ifNotNil: [ self classRequest tag ])) } asDictionary
+		  (#tag -> (self classRequest tag ifNil: [ '' ])) } asDictionary
 ]
 
 { #category : 'private - planning' }
@@ -568,7 +569,7 @@ MCPUpdateClassCommand >> signalAmbiguousUpdateActions: actions [
 	^ MCPCommandError
 		  signalErrorCode: #AmbiguousClassUpdateRequest
 		  message:
-		  'update accepts one class edit action per request. Split multiple edits into separate requests.'
+		  'update accepts one class update action per request. Split multiple updates into separate requests.'
 		  details: (self validationContext
 				   at: #updateActions put: actions;
 				   yourself)
@@ -580,7 +581,7 @@ MCPUpdateClassCommand >> signalNoUpdateRequested [
 	^ MCPCommandError
 		  signalErrorCode: #NoClassUpdateRequested
 		  message:
-		  'operation=update requires one update field such as newClassName, superclassName, packageName, tag, classComment, slots, classSlots, traits, classTraits, sharedVariables, sharedPools, layout, or slotAction.'
+		  'Class update requires one update field such as newClassName, superclassName, packageName, tag, classComment, slots, classSlots, traits, classTraits, sharedVariables, sharedPools, layout, or slotAction.'
 		  details: self validationContext
 ]
 

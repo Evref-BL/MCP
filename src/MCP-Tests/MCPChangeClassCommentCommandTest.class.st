@@ -1,3 +1,6 @@
+"
+Tests command-level class comment updates.
+"
 Class {
 	#name : 'MCPChangeClassCommentCommandTest',
 	#superclass : 'MCPCommandTestCase',

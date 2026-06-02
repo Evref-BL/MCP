@@ -22,47 +22,156 @@ MCPToolRegistry class >> additionalKeywordsForTool: aTool [
 
 	| toolName |
 	toolName := aTool name.
-	toolName = 'find-repositories' ifTrue: [
+	toolName = 'tool_get' ifTrue: [
+		^ #( 'tool' 'catalog' 'contract' 'schema' 'metadata' ) ].
+	toolName = 'repository_search' ifTrue: [
 		^ #( 'repo' 'iceberg' 'git' 'branch' 'commit' 'remote' 'head' ) ].
-	toolName = 'edit-repository' ifTrue: [
-		^ #( 'repo' 'iceberg' 'tonel' 'git' 'export' 'diff' 'branch'
-		     'commit' 'pull' 'push' 'fetch' 'attach' 'adopt' 'identity' ) ].
-	toolName = 'load-repository' ifTrue: [
+	toolName = 'repository_identity_verify' ifTrue: [
+		^ #( 'repo' 'iceberg' 'git' 'guard' 'identity' ) ].
+	toolName = 'repository_change_list' ifTrue: [
+		^ #( 'repo' 'iceberg' 'git' 'diff' 'status' 'change' ) ].
+	toolName = 'repository_create' ifTrue: [
+		^ #( 'repo' 'iceberg' 'git' 'create' 'package' ) ].
+	toolName = 'repository_attach' ifTrue: [
+		^ #( 'repo' 'iceberg' 'git' 'attach' 'package' ) ].
+	toolName = 'repository_update' ifTrue: [
+		^ #( 'repo' 'iceberg' 'update' 'package' 'metadata' ) ].
+	toolName = 'repository_export' ifTrue: [
+		^ #( 'repo' 'iceberg' 'tonel' 'export' 'write' ) ].
+	toolName = 'repository_commit' ifTrue: [
+		^ #( 'repo' 'iceberg' 'git' 'commit' ) ].
+	toolName = 'repository_fetch' ifTrue: [
+		^ #( 'repo' 'iceberg' 'git' 'remote' 'fetch' ) ].
+	toolName = 'repository_pull' ifTrue: [
+		^ #( 'repo' 'iceberg' 'git' 'remote' 'pull' ) ].
+	toolName = 'repository_push' ifTrue: [
+		^ #( 'repo' 'iceberg' 'git' 'remote' 'push' ) ].
+	toolName = 'repository_branch_create' ifTrue: [
+		^ #( 'repo' 'iceberg' 'git' 'branch' 'create' ) ].
+	toolName = 'repository_branch_switch' ifTrue: [
+		^ #( 'repo' 'iceberg' 'git' 'branch' 'switch' ) ].
+	toolName = 'repository_head_adopt' ifTrue: [
+		^ #( 'repo' 'iceberg' 'git' 'head' 'adopt' ) ].
+	toolName = 'baseline_load' ifTrue: [
 		^ #( 'baseline' 'metacello' 'load' 'package' ) ].
-	toolName = 'find-packages' ifTrue: [
+	toolName = 'repository_load' ifTrue: [
+		^ #( 'repo' 'baseline' 'metacello' 'load' 'package' ) ].
+	toolName = 'package_search' ifTrue: [
 		^ #( 'package' 'project' 'tag' ) ].
-	toolName = 'find-classes' ifTrue: [
+	toolName = 'class_search' ifTrue: [
 		^ #( 'class' 'package' 'tag' 'slot' 'trait' 'hierarchy' ) ].
-	toolName = 'inspect-class' ifTrue: [
+	toolName = 'class_get' ifTrue: [
 		^ #( 'class' 'inspect' 'superclass' 'subclass' 'slot' 'trait'
 		     'comment' ) ].
-	toolName = 'edit-class' ifTrue: [
-		^ #( 'class' 'create' 'update' 'rename' 'remove' 'superclass'
-		     'subclass' 'slot' 'trait' 'comment' ) ].
-	toolName = 'find-methods' ifTrue: [
-		^ #( 'method' 'selector' 'protocol' 'source' 'implementor'
-		     'sender' 'reference' 'variable' ) ].
-	toolName = 'inspect-method' ifTrue: [
-		^ #( 'method' 'selector' 'protocol' 'source' 'reference'
-		     'variable' ) ].
-	toolName = 'edit-method' ifTrue: [
-		^ #( 'method' 'selector' 'protocol' 'source' 'create' 'update'
-		     'rename' ) ].
-	toolName = 'rewrite-methods' ifTrue: [
-		^ #( 'method' 'rewrite' 'preview' 'apply' 'ast' 'pattern' ) ].
-	toolName = 'run-tests' ifTrue: [
+	toolName = 'class_create' ifTrue: [
+		^ #( 'class' 'create' 'package' 'superclass' 'slot' 'trait' ) ].
+	toolName = 'class_name_update' ifTrue: [
+		^ #( 'class' 'name' 'rename' 'update' 'refactor' 'refactoring' ) ].
+	toolName = 'class_superclass_update' ifTrue: [
+			^ #( 'class' 'superclass' 'parent' 'update' 'reparent' 'refactor'
+			     'refactoring' ) ].
+	toolName = 'class_package_update' ifTrue: [
+			^ #( 'class' 'package' 'tag' 'category' 'move' 'update' 'refactor'
+			     'refactoring' ) ].
+	toolName = 'class_comment_update' ifTrue: [
+		^ #( 'class' 'comment' 'update' ) ].
+	toolName = 'class_slots_update' ifTrue: [
+		^ #( 'class' 'slot' 'definition' 'update' ) ].
+	toolName = 'class_traits_update' ifTrue: [
+		^ #( 'class' 'trait' 'composition' 'definition' 'update' ) ].
+	toolName = 'class_side_traits_update' ifTrue: [
+			^ #( 'class' 'trait' 'side' 'metaclass' 'composition' 'definition'
+			     'update' ) ].
+	toolName = 'class_shared_variables_update' ifTrue: [
+		^ #( 'class' 'variable' 'shared' 'classvar' 'binding' 'update' ) ].
+	toolName = 'class_shared_pools_update' ifTrue: [
+			^ #( 'class' 'pool' 'shared' 'pooldictionary' 'dictionary'
+			     'update' ) ].
+	toolName = 'class_layout_update' ifTrue: [
+			^ #( 'class' 'layout' 'shape' 'format' 'fixed' 'variable'
+			     'weak' 'immediate' 'word' 'byte' 'update' ) ].
+	toolName = 'class_slot_add' ifTrue: [
+		^ #( 'class' 'slot' 'add' 'refactor' 'refactoring' ) ].
+	toolName = 'class_slot_remove' ifTrue: [
+		^ #( 'class' 'slot' 'remove' 'refactor' 'refactoring' ) ].
+	toolName = 'class_slot_name_update' ifTrue: [
+		^ #( 'class' 'slot' 'name' 'rename' 'update' 'refactor' 'refactoring' ) ].
+	toolName = 'class_slot_pull_up' ifTrue: [
+		^ #( 'class' 'slot' 'pull' 'up' 'refactor' 'refactoring' ) ].
+	toolName = 'class_slot_push_down' ifTrue: [
+		^ #( 'class' 'slot' 'push' 'down' 'refactor' 'refactoring' ) ].
+	toolName = 'class_remove' ifTrue: [
+		^ #( 'class' 'remove' 'refactor' 'refactoring' ) ].
+	toolName = 'method_metadata_search' ifTrue: [
+		^ #( 'method' 'selector' 'protocol' 'metadata' 'search' ) ].
+	toolName = 'method_source_search' ifTrue: [
+		^ #( 'method' 'source' 'code' 'text' 'search' ) ].
+	toolName = 'method_equivalent_search' ifTrue: [
+		^ #( 'method' 'equivalent' 'ast' 'duplicate' 'semantic' 'search' ) ].
+	toolName = 'method_implementor_search' ifTrue: [
+		^ #( 'method' 'selector' 'implementor' 'implementation' ) ].
+	toolName = 'method_sender_search' ifTrue: [
+		^ #( 'method' 'selector' 'sender' 'send' 'reference' ) ].
+	toolName = 'method_class_reference_search' ifTrue: [
+		^ #( 'method' 'class' 'reference' 'binding' ) ].
+	toolName = 'method_variable_reference_search' ifTrue: [
+			^ #( 'method' 'variable' 'reference' 'slot' 'temporary' 'classvar'
+			     'binding' ) ].
+	toolName = 'method_get' ifTrue: [
+		^ #( 'method' 'selector' 'protocol' 'source' 'reference' 'variable' ) ].
+	toolName = 'method_create' ifTrue: [
+		^ #( 'method' 'source' 'protocol' 'create' 'compile' ) ].
+	toolName = 'method_selector_update' ifTrue: [
+			^ #( 'method' 'selector' 'signature' 'rename' 'update' 'refactor'
+			     'refactoring' ) ].
+	toolName = 'method_protocol_update' ifTrue: [
+		^ #( 'method' 'protocol' 'category' 'update' ) ].
+	toolName = 'method_rewrite' ifTrue: [
+			^ #( 'method' 'rewrite' 'preview' 'apply' 'ast' 'pattern' 'refactor'
+			     'refactoring' ) ].
+	toolName = 'test_run' ifTrue: [ ^ #( 'test' 'sunit' 'timeout' ) ].
+	toolName = 'test_coverage_run' ifTrue: [
 		^ #( 'test' 'sunit' 'coverage' 'timeout' ) ].
-	toolName = 'manage-change-history' ifTrue: [
-		^ #( 'history' 'change' 'entry' 'browse' 'list' 'inspect'
-		     'preview' 'apply' 'revert' 'recover' 'epicea' 'ombu' ) ].
-	toolName = 'capture-screenshot' ifTrue: [
+	toolName = 'history_file_list' ifTrue: [
+		^ #( 'history' 'change' 'file' 'list' 'ombu' 'epicea' ) ].
+	toolName = 'history_entry_list' ifTrue: [
+			^ #( 'history' 'change' 'entry' 'browse' 'list' 'inspect' 'ombu'
+			     'epicea' ) ].
+	toolName = 'history_entry_apply' ifTrue: [
+			^ #( 'history' 'change' 'entry' 'preview' 'apply' 'recover'
+			     'epicea' 'ombu' ) ].
+	toolName = 'history_entry_revert' ifTrue: [
+			^ #( 'history' 'change' 'entry' 'preview' 'revert' 'recover'
+			     'epicea' 'ombu' ) ].
+	toolName = 'screenshot_capture' ifTrue: [
 		^ #( 'screenshot' 'capture' 'window' 'display' 'world' 'ui' ) ].
-	toolName = 'evaluate' ifTrue: [
-		^ #( 'evaluate' 'expression' 'smalltalk' 'code' ) ].
-	(toolName beginsWith: 'debug-') ifTrue: [
-		^ #( 'debug' 'session' 'state' 'frame' 'variable' 'breakpoint'
-		     'capture' 'control' 'repair' 'exception' ) ].
+	toolName = 'image_evaluate' ifTrue: [
+		^ #( 'expression' 'smalltalk' 'code' ) ].
+	(toolName beginsWith: 'debug_') ifTrue: [
+			^ #( 'debug' 'session' 'state' 'frame' 'variable' 'breakpoint'
+			     'capture' 'control' 'repair' 'exception' ) ].
 	^ #(  )
+]
+
+{ #category : 'tools' }
+MCPToolRegistry class >> contractForTool: aTool [
+
+	^ self contractForTool: aTool usingPolicy: aTool toolExposurePolicy
+]
+
+{ #category : 'tools' }
+MCPToolRegistry class >> contractForTool: aTool usingPolicy: aToolExposurePolicy [
+
+	| data |
+	data := (self metadataForTool: aTool usingPolicy: aToolExposurePolicy)
+		        copy.
+	data at: #inputSchema put: aTool inputSchema asJRPCJSON.
+	data at: #outputSchema put: aTool outputSchema asJRPCJSON.
+	data at: #examples put: (self examplesForTool: aTool).
+	data
+		at: #activationRequirements
+		put: (self activationRequirementsForTool: aTool).
+	^ data
 ]
 
 { #category : 'tools' }
@@ -103,51 +212,34 @@ MCPToolRegistry class >> includesToolNamed: aToolName [
 	^ self publicToolNames includes: aToolName asString
 ]
 
-{ #category : 'tools' }
-MCPToolRegistry class >> inspectionForTool: aTool [
-
-	^ self inspectionForTool: aTool usingPolicy: aTool toolExposurePolicy
-]
-
-{ #category : 'tools' }
-MCPToolRegistry class >> inspectionForTool: aTool usingPolicy: aToolExposurePolicy [
-
-	| data |
-	data := (self metadataForTool: aTool usingPolicy: aToolExposurePolicy)
-		        copy.
-	data at: #inputSchema put: aTool inputSchema asJRPCJSON.
-	data at: #outputSchema put: aTool outputSchema asJRPCJSON.
-	data at: #examples put: (self examplesForTool: aTool).
-	data
-		at: #activationRequirements
-		put: (self activationRequirementsForTool: aTool).
-	^ data
-]
-
 { #category : 'testing' }
-MCPToolRegistry class >> isStaticTool: aToolOrName [
+MCPToolRegistry class >> isStaticTool: aToolName [
 
 	^ self
-		  isStaticTool: aToolOrName
+		  isStaticTool: aToolName
 		  usingPolicy: MCPToolExposurePolicy default
 ]
 
 { #category : 'testing' }
-MCPToolRegistry class >> isStaticTool: aToolOrName usingPolicy: aToolExposurePolicy [
+MCPToolRegistry class >> isStaticTool: aToolName usingPolicy: aToolExposurePolicy [
 
-	^ aToolExposurePolicy isStaticTool: aToolOrName
+	^ aToolExposurePolicy isStaticTool: aToolName
 ]
 
 { #category : 'tools' }
 MCPToolRegistry class >> keywordsForTool: aTool [
 
-	| keywords |
+	| keywords normalizedKeywords |
 	keywords := OrderedCollection new.
-	keywords addAll: (aTool name findTokens: '-').
+	keywords addAll: (aTool name findTokens: '-_').
 	keywords addAll: (aTool title findTokens: ' -').
-	keywords add: (self groupNameForToolClass: aTool class).
+	keywords addAll:
+		((self groupNameForToolClass: aTool class) findTokens: '-_').
 	keywords addAll: (self additionalKeywordsForTool: aTool).
-	^ (keywords collect: [ :each | each asString asLowercase ]) asSet
+	normalizedKeywords := OrderedCollection new.
+	keywords do: [ :each |
+		normalizedKeywords addAll: (each asString findTokens: '-_ ') ].
+	^ (normalizedKeywords collect: [ :each | each asLowercase ]) asSet
 		  asArray
 ]
 
@@ -180,12 +272,22 @@ MCPToolRegistry class >> mutabilityForTool: aTool [
 
 	| executeTools readTools toolName |
 	toolName := aTool name.
-	readTools := #( 'discover-tools' 'inspect-tool' 'find-repositories'
-	                'find-packages' 'find-classes' 'inspect-class'
-	                'find-methods' 'inspect-method' 'capture-screenshot'
-	                'debug-state' 'debug-variables' ).
-	executeTools := #( 'call-tool' 'run-tests' 'evaluate' 'debug-evaluate'
-	                   'debug-capture' 'debug-test' ).
+	readTools := #( 'tool_search' 'tool_get' 'repository_search'
+	                'repository_identity_verify'
+	                'repository_change_list' 'package_search'
+	                'class_search' 'class_get' 'method_metadata_search'
+	                'method_source_search' 'method_equivalent_search'
+	                'method_implementor_search'
+	                'method_sender_search' 'method_class_reference_search'
+	                'method_variable_reference_search'
+	                'method_get' 'history_file_list' 'history_entry_list'
+	                'screenshot_capture' 'debug_session_list'
+	                'debug_session_get' 'debug_candidate_search'
+	                'debug_state_get' 'debug_variable_get'
+	                'debug_breakpoint_list' ).
+	executeTools := #( 'tool_call' 'test_run' 'test_coverage_run'
+	                   'image_evaluate' 'debug_expression_evaluate'
+	                   'debug_capture' 'debug_test_run' ).
 	(readTools includes: toolName) ifTrue: [ ^ 'read' ].
 	(executeTools includes: toolName) ifTrue: [ ^ 'execute' ].
 	^ 'write'
@@ -205,38 +307,94 @@ MCPToolRegistry class >> publicToolGroups [
 
 	^ {
 		  ('tool-catalog' -> {
-			   MCPToolDiscoverTools.
-			   MCPToolInspectTool.
+			   MCPToolSearchTools.
+			   MCPToolGetTool.
 			   MCPToolCallTool }).
 		  ('repositories' -> {
-			   MCPToolFindRepositories.
-			   MCPToolEditRepository.
+			   MCPToolSearchRepositories.
+			   MCPToolVerifyRepositoryIdentity.
+			   MCPToolListRepositoryChanges.
+			   MCPToolCreateRepository.
+			   MCPToolAttachRepository.
+			   MCPToolUpdateRepository.
+			   MCPToolExportRepository.
+			   MCPToolCommitRepository.
+			   MCPToolFetchRepository.
+			   MCPToolPullRepository.
+			   MCPToolPushRepository.
+			   MCPToolCreateRepositoryBranch.
+			   MCPToolSwitchRepositoryBranch.
+			   MCPToolAdoptRepositoryHead.
+			   MCPToolLoadBaseline.
 			   MCPToolLoadRepository }).
-		  ('packages' -> { MCPToolFindPackages }).
+		  ('packages' -> { MCPToolSearchPackages }).
 		  ('classes' -> {
-			   MCPToolFindClasses.
-			   MCPToolInspectClass.
-			   MCPToolEditClass.
+			   MCPToolSearchClasses.
+			   MCPToolGetClass.
+			   MCPToolCreateClass.
+			   MCPToolUpdateClassName.
+			   MCPToolUpdateClassSuperclass.
+			   MCPToolUpdateClassPackage.
+			   MCPToolUpdateClassComment.
+			   MCPToolUpdateClassSlots.
+			   MCPToolUpdateClassTraits.
+			   MCPToolUpdateClassSideTraits.
+			   MCPToolUpdateClassSharedVariables.
+			   MCPToolUpdateClassSharedPools.
+			   MCPToolUpdateClassLayout.
+			   MCPToolAddClassSlot.
+			   MCPToolRemoveClassSlot.
+			   MCPToolUpdateClassSlotName.
+			   MCPToolPullUpClassSlot.
+			   MCPToolPushDownClassSlot.
 			   MCPToolRemoveClasses }).
 		  ('methods' -> {
-			   MCPToolFindMethods.
-			   MCPToolInspectMethod.
-			   MCPToolEditMethod.
+			   MCPToolSearchMethodMetadata.
+			   MCPToolSearchMethodSource.
+			   MCPToolSearchEquivalentMethods.
+			   MCPToolSearchMethodImplementors.
+			   MCPToolSearchMethodSenders.
+			   MCPToolSearchClassReferences.
+			   MCPToolSearchVariableReferences.
+			   MCPToolGetMethod.
+			   MCPToolCreateMethod.
+			   MCPToolUpdateMethodSelector.
+			   MCPToolUpdateMethodProtocol.
 			   MCPToolRewriteMethods.
 			   MCPToolRemoveMethods }).
-		  ('history' -> { MCPToolManageChangeHistory }).
-		  ('tests' -> { MCPToolRunTests }).
+		  ('history' -> {
+			   MCPToolListChangeHistoryFiles.
+			   MCPToolListChangeHistoryEntries.
+			   MCPToolApplyChangeHistoryEntries.
+			   MCPToolRevertChangeHistoryEntries }).
+		  ('tests' -> {
+			   MCPToolRunTests.
+			   MCPToolRunTestCoverage }).
 		  ('ui' -> { MCPToolCaptureScreenshot }).
 		  ('debugging' -> {
-			   MCPToolDebugSessions.
+			   MCPToolListDebugSessions.
+			   MCPToolGetDebugSession.
+			   MCPToolRemoveDebugSession.
+			   MCPToolSearchDebugCandidates.
+			   MCPToolAttachDebugCandidate.
 			   MCPToolDebugState.
 			   MCPToolDebugVariables.
 			   MCPToolDebugEvaluate.
-			   MCPToolDebugControl.
-			   MCPToolDebugBreakpoints.
+			   MCPToolStepIntoDebugSession.
+			   MCPToolStepOverDebugSession.
+			   MCPToolStepThroughDebugSession.
+			   MCPToolRestartDebugSession.
+			   MCPToolResumeDebugSession.
+			   MCPToolTerminateDebugSession.
+			   MCPToolListDebugBreakpoints.
+			   MCPToolSetDebugBreakpoint.
+			   MCPToolRemoveDebugBreakpoint.
+			   MCPToolEnableDebugBreakpoint.
+			   MCPToolDisableDebugBreakpoint.
+			   MCPToolClearDebugBreakpoints.
 			   MCPToolDebugCapture.
 			   MCPToolDebugTest.
-			   MCPToolDebugEdit }).
+			   MCPToolUpdateDebugMethod }).
 		  ('image-runtime' -> { MCPToolEvaluate }) }
 ]
 
@@ -262,17 +420,50 @@ MCPToolRegistry class >> publicToolsUsingPolicy: aToolExposurePolicy [
 ]
 
 { #category : 'tools' }
+MCPToolRegistry class >> queryTermAlternativesFor: aTerm [
+
+	| alternatives singular term |
+	term := aTerm asString asLowercase.
+	alternatives := OrderedCollection with: term.
+	singular := self singularSearchTermFor: term.
+	singular = term ifFalse: [ alternatives add: singular ].
+	^ alternatives asSet asArray
+]
+
+{ #category : 'tools' }
+MCPToolRegistry class >> queryTermsFrom: queryString [
+
+	| normalized |
+	normalized := queryString
+		              ifNil: [ ^ #(  ) ]
+		              ifNotNil: [ :value |
+		              value asString trimBoth asLowercase ].
+	normalized isEmpty ifTrue: [ ^ #(  ) ].
+	^ normalized findTokens: ' -_'
+]
+
+{ #category : 'tools' }
 MCPToolRegistry class >> riskForTool: aTool [
 
 	| lowRisk mediumRisk toolName |
 	toolName := aTool name.
-	lowRisk := #( 'discover-tools' 'inspect-tool' 'find-repositories'
-	              'find-packages' 'find-classes' 'inspect-class'
-	              'find-methods' 'inspect-method' 'capture-screenshot'
-	              'debug-state' 'debug-variables' ).
-	mediumRisk := #( 'call-tool' 'load-repository' 'run-tests'
-	                 'evaluate' 'debug-evaluate' 'debug-capture'
-	                 'debug-test' ).
+	lowRisk := #( 'tool_search' 'tool_get' 'repository_search'
+	              'repository_identity_verify'
+	              'repository_change_list' 'package_search'
+	              'class_search' 'class_get' 'method_metadata_search'
+	              'method_source_search' 'method_equivalent_search'
+	              'method_implementor_search' 'method_sender_search'
+	              'method_class_reference_search'
+	              'method_variable_reference_search'
+	              'method_get' 'history_file_list' 'history_entry_list'
+	              'screenshot_capture' 'debug_session_list'
+	              'debug_session_get' 'debug_candidate_search'
+	              'debug_state_get' 'debug_variable_get'
+	              'debug_breakpoint_list' ).
+	mediumRisk := #( 'tool_call' 'baseline_load' 'repository_load'
+	                 'test_run' 'test_coverage_run' 'image_evaluate'
+	                 'debug_expression_evaluate'
+	                 'debug_capture' 'debug_test_run' ).
 	(lowRisk includes: toolName) ifTrue: [ ^ 'low' ].
 	(mediumRisk includes: toolName) ifTrue: [ ^ 'medium' ].
 	^ 'high'
@@ -289,7 +480,8 @@ MCPToolRegistry class >> schemaInspectionRequiredForTool: aTool [
 { #category : 'tools' }
 MCPToolRegistry class >> schemaInspectionRequiredForTool: aTool usingPolicy: aToolExposurePolicy [
 
-	^ (self isStaticTool: aTool usingPolicy: aToolExposurePolicy) not
+	^ (self isStaticTool: aTool name usingPolicy: aToolExposurePolicy)
+		  not
 ]
 
 { #category : 'tools' }
@@ -311,19 +503,39 @@ MCPToolRegistry class >> searchableTextForTool: aTool [
 ]
 
 { #category : 'tools' }
+MCPToolRegistry class >> singularSearchTermFor: aTerm [
+
+	| term |
+	term := aTerm asString asLowercase.
+	term = 'classes' ifTrue: [ ^ 'class' ].
+	term = 'repositories' ifTrue: [ ^ 'repository' ].
+	term = 'histories' ifTrue: [ ^ 'history' ].
+	(term endsWith: 'ies') ifTrue: [ ^ (term allButLast: 3) , 'y' ].
+	(term endsWith: 'ses') ifTrue: [ ^ term allButLast: 2 ].
+	((term endsWith: 's') and: [ (term endsWith: 'ss') not ]) ifTrue: [
+		^ term allButLast ].
+	^ term
+]
+
+{ #category : 'tools' }
 MCPToolRegistry class >> staticToolClasses [
 
 	^ {
-		  MCPToolDiscoverTools.
-		  MCPToolInspectTool.
+		  MCPToolSearchTools.
+		  MCPToolGetTool.
 		  MCPToolCallTool.
-		  MCPToolFindPackages.
-		  MCPToolFindClasses.
-		  MCPToolInspectClass.
-		  MCPToolEditClass.
-		  MCPToolFindMethods.
-		  MCPToolInspectMethod.
-		  MCPToolEditMethod.
+		  MCPToolSearchPackages.
+		  MCPToolSearchClasses.
+		  MCPToolGetClass.
+		  MCPToolCreateClass.
+		  MCPToolSearchMethodMetadata.
+		  MCPToolSearchMethodSource.
+		  MCPToolSearchMethodImplementors.
+		  MCPToolSearchMethodSenders.
+		  MCPToolGetMethod.
+		  MCPToolCreateMethod.
+		  MCPToolUpdateMethodSelector.
+		  MCPToolUpdateMethodProtocol.
 		  MCPToolEvaluate.
 		  MCPToolRunTests }
 ]
@@ -361,11 +573,11 @@ MCPToolRegistry class >> staticToolsDictionaryUsingPolicy: aToolExposurePolicy [
 MCPToolRegistry class >> staticToolsUsingPolicy: aToolExposurePolicy [
 
 	^ ((self publicToolClasses select: [ :toolClass |
-		    aToolExposurePolicy isStaticTool: toolClass ]) collect: [
-			   :toolClass |
-			   toolClass new
-				   toolExposurePolicy: aToolExposurePolicy;
-				   yourself ]) asArray
+		    aToolExposurePolicy isStaticTool: toolClass toolName ])
+		   collect: [ :toolClass |
+				   toolClass new
+					   toolExposurePolicy: aToolExposurePolicy;
+					   yourself ]) asArray
 ]
 
 { #category : 'tools' }
@@ -382,23 +594,21 @@ MCPToolRegistry class >> tool: aTool matchesQuery: queryString group: groupStrin
 { #category : 'tools' }
 MCPToolRegistry class >> tool: aTool matchesQuery: queryString group: groupString includeStatic: includeStatic usingPolicy: aToolExposurePolicy [
 
-	| group normalizedQuery |
-	(includeStatic not and: [ aToolExposurePolicy isStaticTool: aTool ])
-		ifTrue: [ ^ false ].
-	group := groupString
-		         ifNil: [ nil ]
-		         ifNotNil: [ :value | value asString trimBoth asLowercase ].
-	(group notNil and: [ group isEmpty not ]) ifTrue: [
-		group = (self groupNameForToolClass: aTool class) ifFalse: [
-			^ false ] ].
-	normalizedQuery := queryString
-		                   ifNil: [ nil ]
-		                   ifNotNil: [ :value |
-		                   value asString trimBoth asLowercase ].
-	(normalizedQuery isNil or: [ normalizedQuery isEmpty ]) ifTrue: [
-		^ true ].
-	^ (self searchableTextForTool: aTool) asLowercase includesSubstring:
-		  normalizedQuery
+	| group queryTerms searchableText |
+	(includeStatic not and: [
+		 aToolExposurePolicy isStaticTool: aTool name ]) ifTrue: [ ^ false ].
+	group := groupString ifNotNil: [ :value |
+		         value asString trimBoth asLowercase ].
+	group ifNotNil: [
+			group isEmpty ifFalse: [
+				group = (self groupNameForToolClass: aTool class) ifFalse: [
+					^ false ] ] ].
+	queryTerms := self queryTermsFrom: queryString.
+	queryTerms ifEmpty: [ ^ true ].
+	searchableText := (self searchableTextForTool: aTool) asLowercase.
+	^ queryTerms allSatisfy: [ :each |
+			  (self queryTermAlternativesFor: each) anySatisfy: [ :alternative |
+				  searchableText includesSubstring: alternative ] ]
 ]
 
 { #category : 'tools' }

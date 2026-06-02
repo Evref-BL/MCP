@@ -1,5 +1,7 @@
 "
-Command wrapper for edit-class create requests. It owns tool-level execution concerns such as warning handling, class comments, output shaping, and failure messages while delegating class installation to MCPCreateClassCommand.
+Command wrapper for class creation requests.
+
+It owns tool-level execution concerns such as warning handling, class comments, output shaping, and failure messages while delegating class installation to MCPCreateClassCommand.
 "
 Class {
 	#name : 'MCPCreateClassToolCommand',
@@ -24,7 +26,7 @@ MCPCreateClassToolCommand >> execute [
 
 	| result |
 	^ self tool
-		  executeEditOperation: 'create'
+		  executeMutationAction: 'create'
 		  force: self request force
 		  requestedContext: self request requestedContext
 		  work: [
@@ -48,7 +50,7 @@ MCPCreateClassToolCommand >> execute [
 			  self tool
 				  successResultText:
 				  'Created class ' , self request className , '.'
-				  data: (self tool dataForResult: result operation: 'create')
+				  data: (self tool dataForResult: result action: 'create')
 				  warnings: warningMessages ]
 		  failureSummary: [ :error |
 			  self tool
@@ -56,6 +58,7 @@ MCPCreateClassToolCommand >> execute [
 				  superclassName: self request superclassName
 				  packageName: self request packageName
 				  error: error ]
+
 ]
 
 { #category : 'initialization' }

@@ -1,3 +1,6 @@
+"
+Tests class metadata snapshots returned by MCPClassInfo.
+"
 Class {
 	#name : 'MCPClassInfoTest',
 	#superclass : 'MCPTestCase',

@@ -1,3 +1,6 @@
+"
+Fixture class that sends references used by class-removal tests.
+"
 Class {
 	#name : 'MCPRemoveClassProbeSender',
 	#superclass : 'Object',

@@ -1,3 +1,6 @@
+"
+Tests the method_remove tool.
+"
 Class {
 	#name : 'MCPToolRemoveMethodsTest',
 	#superclass : 'MCPToolTestCase',
@@ -271,6 +274,28 @@ MCPToolRemoveMethodsTest >> testForceRemovesMethodsEvenWhenExternalSendersExistA
 ]
 
 { #category : 'tests' }
+MCPToolRemoveMethodsTest >> testForceRemovesSuperOnlyOverride [
+
+	| result |
+	self
+		ensureMethodSource: 'printString ^ super printString'
+		protocol: 'tests'
+		on: MCPToolRemoveMethodsTestTarget.
+	[
+		result := self callToolWith: {
+				          (#className -> 'MCPToolRemoveMethodsTestTarget').
+				          (#classSide -> false).
+				          (#selectors -> #( 'printString' )) } asDictionary.
+		self deny: (result at: #isError ifAbsent: [ false ]).
+		self deny:
+			(MCPToolRemoveMethodsTestTarget includesSelector: #printString) ]
+		ensure: [
+			self
+				removeSelector: #printString
+				from: MCPToolRemoveMethodsTestTarget ]
+]
+
+{ #category : 'tests' }
 MCPToolRemoveMethodsTest >> testRemovesBatchOfClassSideMethods [
 
 	| data result |
@@ -360,5 +385,5 @@ MCPToolRemoveMethodsTest >> testToolRequiresSelectorsInSchema [
 { #category : 'private - calling' }
 MCPToolRemoveMethodsTest >> toolName [
 
-	^ 'remove-methods'
+	^ 'method_remove'
 ]

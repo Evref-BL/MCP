@@ -1,3 +1,6 @@
+"
+Tests command-level class rename behavior.
+"
 Class {
 	#name : 'MCPRenameClassCommandTest',
 	#superclass : 'MCPCommandTestCase',

@@ -1,5 +1,5 @@
 "
-Result DTO for remove-classes.
+Result DTO for class_remove.
 
 It groups per-class removal results, package names removed as cleanup, and warning messages produced by safe-removal checks.
 "

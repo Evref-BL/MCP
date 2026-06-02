@@ -3,6 +3,10 @@
 Applies when using MCP to inspect, write, review, or refactor Pharo source in
 any project.
 
+This file covers object-design and correctness-oriented rules. For
+expression-level readability heuristics, also read
+[Pharo coding style](pharo-coding-style.md).
+
 ## First Principle
 
 Pharo code should communicate through messages and protocols. Prefer normal
@@ -59,6 +63,13 @@ over clients branching on concrete classes or internal fields.
 - Keep block bodies short; move domain logic from blocks into methods.
 - Do not add wrappers that only rename obvious library calls unless the wrapper
   captures a domain concept or extension hook.
+- Trust collaborators first. Prefer direct sends to the documented protocol of
+  the object you were given; add adapters or project-specific extensions only
+  when the code truly accepts multiple concrete framework shapes or compatibility
+  differences.
+- Be especially conservative with extensions on broad system classes such as
+  `Object`, `Behavior`, `String`, or `Exception`. They should model a real
+  boundary protocol, not hypothetical defense against wrong callers.
 
 ## Nil And Error Handling
 
@@ -123,6 +134,8 @@ Before finishing a Pharo source change, scan for:
 - normal control flow through `nil`;
 - repeated client-side extraction from an object;
 - long methods or blocks hiding named domain steps;
+- project-specific extensions on broad system classes that only defend
+  hypothetical collaborators;
 - missing `super initialize`;
 - stream/file cleanup without `ensure:`;
 - string concatenation in loops;

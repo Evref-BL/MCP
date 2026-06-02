@@ -79,11 +79,7 @@ MCPDebugAttachedContinuation >> debugControllerForSession: aDebugSession [
 { #category : 'accessing' }
 MCPDebugAttachedContinuation >> debugSession [
 
-	^ outcome at: #debugSession ifAbsent: [
-			  debugger ifNil: [ ^ nil ].
-			  [ debugger session ]
-				  on: Error
-				  do: [ :ignored | nil ] ]
+	^ outcome at: #debugSession ifAbsent: [ self debuggerSession ]
 ]
 
 { #category : 'accessing' }
@@ -136,14 +132,9 @@ MCPDebugAttachedContinuation >> outcome: aDictionary [
 { #category : 'private' }
 MCPDebugAttachedContinuation >> prepareExceptionForProceed [
 
-	| exception session |
-	session := self debugSession.
-	session ifNil: [ ^ self ].
-	exception := [ session exception ]
-		             on: Error
-		             do: [ :ignored | nil ].
-	(exception isKindOf: MessageNotUnderstood) ifTrue: [
-		exception mcpPrepareToResend ]
+	self debugSession ifNotNil: [ :session |
+			session exception ifNotNil: [ :exception |
+				exception mcpPrepareForProceed ] ]
 ]
 
 { #category : 'controlling' }
@@ -155,7 +146,7 @@ MCPDebugAttachedContinuation >> proceed [
 { #category : 'private' }
 MCPDebugAttachedContinuation >> proceedCurrentDebugSession [
 
-	^ self debugController performOperation: #resume context: nil
+	^ self debugController performOperationNamed: 'resume' context: nil
 ]
 
 { #category : 'controlling' }
@@ -223,7 +214,7 @@ MCPDebugAttachedContinuation >> signal [
 
 { #category : 'controlling' }
 MCPDebugAttachedContinuation >> terminateWorker [
-	"Attached sessions are owned by the human/debugger process, not MCP. Forgetting the MCP record must not terminate that process."
+	"Attached sessions are owned by the human/debugger process, not MCP. Removing the MCP record must not terminate that process."
 
 	^ false
 ]
@@ -249,10 +240,6 @@ MCPDebugAttachedContinuation >> waitForSignal [
 { #category : 'accessing' }
 MCPDebugAttachedContinuation >> workerProcess [
 
-	| session |
-	session := self debugSession.
-	session ifNil: [ ^ nil ].
-	^ [ session interruptedProcess ]
-		  on: Error
-		  do: [ :ignored | nil ]
+	^ self debugSession ifNotNil: [ :session |
+		  session interruptedProcess ]
 ]

@@ -55,14 +55,14 @@ Use single search terms like these to find the right tool:
 | Method | method, selector, protocol, source, implementor, sender, reference, variable |
 | Edit | edit, create, update, rename, remove, rewrite, preview, apply |
 | Test | test, SUnit, coverage, timeout |
-| Code history | history, change, entry, browse, list, apply, revert, recover |
+| Code history | history, change, file, entry, browse, list, apply, revert, recover |
 | Screenshot | screenshot, window, display |
 | Debugging | debug, session, state, variable, breakpoint, capture, control, repair |
 | Evaluation | evaluate, expression |
 
 Prefer the least-mutating tool that answers the question. Use query or inspect
 tools before edit tools, preview or diff before export or commit operations,
-and use `evaluate` only when no dedicated tool covers the task.
+and use `image_evaluate` only when no dedicated tool covers the task.
 
 For debugger work, discover the `debugging` tool group and inspect the selected
 tool schema before invoking it. Read `debugging.md` before using debug
@@ -73,10 +73,35 @@ sessions, breakpoints, frame-scoped evaluation, or debugger-driven repair.
 For method lookup:
 
 - discover the method/reference tool from the current client;
-- use exact selector filtering for implementors;
-- use sender/reference filtering for senders;
-- use class-reference filtering for class references;
-- use variable-reference filtering for variable references.
+- use `method_implementor_search` for selector implementors;
+- use `method_sender_search` for selector sends;
+- use `method_class_reference_search` for class binding references;
+- use `method_variable_reference_search` for variable references;
+- use `method_source_search` for source text;
+- use `method_equivalent_search` for equivalent-AST matching;
+- use `method_metadata_search` for method metadata search.
+
+Top-level `method_metadata_search` filtering is limited to `selector` and
+`protocol` fields. Use the specialized method lookup tools for source, equivalent
+methods, implementors, senders, class references, and variable references.
+
+For change history, use `history_file_list` to locate `.ombu` files
+and `history_entry_list` to browse entries. Use
+`history_entry_apply` or `history_entry_revert` only when you need previewed or
+confirmed recovery.
+
+For repository work, use `repository_search` to inspect registered Iceberg
+repositories, `repository_identity_verify` before changing repository state,
+and `repository_change_list` before exporting or committing image changes.
+Use exact plural filters for known repository names, locations, or package
+names; use singular text filters such as `branchName`, `headCommitId`, and
+`remoteUrl` when searching repository metadata.
+Prefer repository tools such as `repository_export`,
+`repository_commit`, `repository_fetch`, `repository_pull`, `repository_push`,
+`repository_branch_create`, `repository_branch_switch`, and
+`repository_head_adopt` when they exist. Use `repository_create`,
+`repository_attach`, and `repository_update` for repository registration
+workflows.
 
 Report incomplete or failing tool results clearly. Do not silently guess from
 memory or exported source when the question depends on image state.

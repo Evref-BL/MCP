@@ -1,5 +1,5 @@
 "
-Result DTO for load-repository. It wraps the reusable baseline load result and includes repository coordinates only for remote loads.
+Result DTO for repository_load. It wraps the reusable baseline load result and includes repository coordinates only for remote loads.
 "
 Class {
 	#name : 'MCPLoadRepositoryResult',
@@ -18,14 +18,6 @@ Class {
 	#package : 'MCP',
 	#tag : 'Results'
 }
-
-{ #category : 'instance creation' }
-MCPLoadRepositoryResult class >> baselineRequest: aRequest loadResult: aLoadResult [
-
-	^ self new
-		  initializeBaselineRequest: aRequest
-		  loadResult: aLoadResult
-]
 
 { #category : 'instance creation' }
 MCPLoadRepositoryResult class >> remoteRequest: aRequest repositoryUrl: aRepositoryUrl loadResult: aLoadResult [
@@ -70,14 +62,6 @@ MCPLoadRepositoryResult >> groups [
 MCPLoadRepositoryResult >> hostUrl [
 
 	^ hostUrl
-]
-
-{ #category : 'initialization' }
-MCPLoadRepositoryResult >> initializeBaselineRequest: aRequest loadResult: aLoadResult [
-
-	mode := 'baseline'.
-	loadResult := aLoadResult.
-	^ self
 ]
 
 { #category : 'initialization' }

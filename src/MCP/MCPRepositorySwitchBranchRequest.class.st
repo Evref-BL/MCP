@@ -1,5 +1,5 @@
 "
-Parsed input for edit-repository operation=switchBranch. It resolves the registered Iceberg repository and carries the required branch name to switch to.
+Parsed input for repository_branch_switch. It resolves the registered Iceberg repository and carries the required branch name to switch to.
 "
 Class {
 	#name : 'MCPRepositorySwitchBranchRequest',
@@ -23,6 +23,12 @@ MCPRepositorySwitchBranchRequest class >> fromRequest: request tool: aTool [
 MCPRepositorySwitchBranchRequest >> branchName [
 
 	^ branchName ifNil: [ '' ]
+]
+
+{ #category : 'converting' }
+MCPRepositorySwitchBranchRequest >> commandForTool: aTool [
+
+	^ MCPSwitchRepositoryBranchCommand tool: aTool request: self
 ]
 
 { #category : 'initialization' }

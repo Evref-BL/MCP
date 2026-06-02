@@ -1,5 +1,7 @@
 "
-Parsed edit-class create request. It captures the class definition supplied by the MCP transport request so MCPToolEditClass can execute creation without repeatedly reading raw argument dictionaries.
+Parsed class creation request.
+
+It captures the class definition supplied by the MCP transport request so the shared class tool implementation can execute creation without repeatedly reading raw argument dictionaries.
 "
 Class {
 	#name : 'MCPClassCreateRequest',
@@ -74,6 +76,12 @@ MCPClassCreateRequest >> classTraits [
 	^ self classTraitNames
 ]
 
+{ #category : 'converting' }
+MCPClassCreateRequest >> commandForTool: aTool [
+
+	^ MCPCreateClassToolCommand tool: aTool request: self
+]
+
 { #category : 'accessing' }
 MCPClassCreateRequest >> force [
 
@@ -87,9 +95,8 @@ MCPClassCreateRequest >> initializeFromRequest: request [
 	superclassName := request stringArgumentNamed: 'superclassName'.
 	packageName := request stringArgumentNamed: 'packageName'.
 	tag := request stringArgumentNamed: 'tag'.
-	classComment := (request hasArgumentNamed: 'classComment')
-		                ifTrue: [ self classCommentFromRequest: request ]
-		                ifFalse: [ nil ].
+	classComment := (request hasArgumentNamed: 'classComment') ifTrue: [
+		                self classCommentFromRequest: request ].
 	force := request booleanArgumentNamed: 'force' default: false.
 	slotNames := request stringCollectionArgumentNamed: 'slots'.
 	classSlotNames := request stringCollectionArgumentNamed: 'classSlots'.
@@ -123,18 +130,15 @@ MCPClassCreateRequest >> requestedContext [
 		  (#className -> self className).
 		  (#superclassName -> self superclassName).
 		  (#packageName -> self packageName).
-		  (#tag -> (self tag ifNil: [ '' ] ifNotNil: [ self tag ])).
-		  (#classComment
-		   ->
-		   (self classComment ifNil: [ '' ] ifNotNil: [ self classComment ])).
+		  (#tag -> (self tag ifNil: [ '' ])).
+		  (#classComment -> (self classComment ifNil: [ '' ])).
 		  (#slots -> self slotNames).
 		  (#classSlots -> self classSlotNames).
 		  (#traits -> self traitNames).
 		  (#classTraits -> self classTraitNames).
 		  (#sharedVariables -> self sharedVariableNames).
 		  (#sharedPools -> self sharedPoolNames).
-		  (#layout -> (self layout ifNil: [ '' ] ifNotNil: [ self layout ])) }
-		  asDictionary
+		  (#layout -> (self layout ifNil: [ '' ])) } asDictionary
 ]
 
 { #category : 'accessing' }

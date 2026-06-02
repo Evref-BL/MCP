@@ -1,5 +1,5 @@
 "
-Parsed input for edit-repository operation=pull. It resolves the registered Iceberg repository whose current branch should pull from its configured remote.
+Parsed input for repository_pull. It resolves the registered Iceberg repository whose current branch should pull from its configured remote.
 "
 Class {
 	#name : 'MCPRepositoryPullRequest',
@@ -16,6 +16,12 @@ Class {
 MCPRepositoryPullRequest class >> fromRequest: request tool: aTool [
 
 	^ self new initializeFromRequest: request
+]
+
+{ #category : 'converting' }
+MCPRepositoryPullRequest >> commandForTool: aTool [
+
+	^ MCPPullRepositoryCommand tool: aTool request: self
 ]
 
 { #category : 'initialization' }

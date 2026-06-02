@@ -37,7 +37,7 @@ MCPChangeHistoryListLogsResult class >> currentLogPath: aPath logs: logInfos [
 MCPChangeHistoryListLogsResult >> asDictionary [
 
 	^ {
-		  (#operation -> 'listFiles').
+		  (#action -> 'listFiles').
 		  (#currentLogPath -> self currentLogPath).
 		  (#directoryPath -> self directoryPath).
 		  (#files

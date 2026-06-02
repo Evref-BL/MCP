@@ -5,22 +5,16 @@ It runs code in a bounded worker process and registers a debugger session when e
 "
 Class {
 	#name : 'MCPToolDebugCapture',
-	#superclass : 'MCPTool',
+	#superclass : 'MCPToolDebug',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
 }
 
-{ #category : 'icons' }
-MCPToolDebugCapture class >> toolIconSpec [
-
-	^ MCPToolIconSpec baseIconNamed: #bug badgeIconNamed: #rightSide
-]
-
 { #category : 'defaults' }
 MCPToolDebugCapture class >> toolName [
 
-	^ 'debug-capture'
+	^ 'debug_capture'
 ]
 
 { #category : 'private - execution' }
@@ -32,7 +26,7 @@ MCPToolDebugCapture >> commandForRequest: debugRequest [
 { #category : 'defaults' }
 MCPToolDebugCapture >> defaultDescription [
 
-	^ 'Evaluate Smalltalk in a bounded worker process and capture runtime exceptions as tracked Pharo DebugSession records with an immediate debug-state snapshot.'
+	^ 'Evaluate Smalltalk in a bounded worker process and capture runtime exceptions as tracked Pharo DebugSession records with an immediate debug_state_get snapshot.'
 ]
 
 { #category : 'defaults' }
@@ -106,7 +100,7 @@ MCPToolDebugCapture >> defaultInputSchema [
 { #category : 'defaults' }
 MCPToolDebugCapture >> defaultName [
 
-	^ 'debug-capture'
+	^ 'debug_capture'
 ]
 
 { #category : 'defaults' }
@@ -139,7 +133,7 @@ MCPToolDebugCapture >> defaultOutputSchema [
 					   schemaPropertyNamed: 'state'
 					   type: 'object'
 					   description:
-					   'Immediate debug-state snapshot for captured exceptions.').
+					   'Immediate debug_state_get snapshot for captured exceptions.').
 				  (self
 					   schemaPropertyNamed: 'resultClassName'
 					   type: 'string'
@@ -171,32 +165,6 @@ MCPToolDebugCapture >> defaultOutputSchema [
 MCPToolDebugCapture >> defaultTitle [
 
 	^ 'Debug Capture'
-]
-
-{ #category : 'executing' }
-MCPToolDebugCapture >> executeWithRequest: request [
-
-	^ self
-		  executeParsedRequestFrom: request
-		  do: [ :debugRequest |
-				  | commandResult |
-				  commandResult := (self commandForRequest: debugRequest) execute.
-				  commandResult isError
-					  ifTrue: [
-							  self
-								  errorResultText: commandResult summary
-								  details: commandResult errorDetails ]
-					  ifFalse: [
-							  self
-								  successResultText: commandResult summary
-								  data: commandResult data
-								  warnings: commandResult warnings ] ]
-		  onError: [ :error :ignored |
-				  self
-					  errorResultText: (error messageText ifNil: [ error asString ])
-					  details: ((error isKindOf: MCPCommandError)
-							   ifTrue: [ error structuredDetails ]
-							   ifFalse: [ self errorDetailsFor: error ]) ]
 ]
 
 { #category : 'private - request' }

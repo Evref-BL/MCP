@@ -43,18 +43,14 @@ MCPDebugTestCommand >> capabilities [
 { #category : 'private - data' }
 MCPDebugTestCommand >> captureWarnings [
 
-	^ #( 'debug-test runs one SUnit test in a forked worker process and may mutate image state.'
-	     'Captured debug stops, failures, or errors leave the worker process suspended until debug-control resumes or terminates the session.' )
+	^ #( 'debug_test_run runs one SUnit test in a forked worker process and may mutate image state.'
+	     'Captured debug stops, failures, or errors leave the worker process suspended until debug_session_resume or debug_session_terminate controls the session.' )
 ]
 
 { #category : 'private - results' }
 MCPDebugTestCommand >> capturedReasonFor: aDebugSession [
 
-	| exception |
-	exception := aDebugSession exception.
-	(exception isKindOf: Break) ifTrue: [ ^ 'debugStop' ].
-	(exception isKindOf: TestFailure) ifTrue: [ ^ 'testFailure' ].
-	^ 'testError'
+	^ aDebugSession exception mcpDebugCapturedReason
 ]
 
 { #category : 'private - results' }
@@ -115,9 +111,7 @@ MCPDebugTestCommand >> completedResultFor: ignored [
 { #category : 'private - worker' }
 MCPDebugTestCommand >> debugStartContextFor: anException [
 
-	(anException isKindOf: Break) ifTrue: [
-		^ anException signalerContext sender ].
-	^ anException signalerContext
+	^ anException mcpDebugStartContext
 ]
 
 { #category : 'executing' }
@@ -208,7 +202,7 @@ MCPDebugTestCommand >> testClass [
 		         at: request className asSymbol
 		         ifAbsent: [
 		         MCPCommandError signalMissingClassNamed: request className ].
-	(class = TestCase or: [ class inheritsFrom: TestCase ]) ifFalse: [
+	(TestCase withAllSubclasses includes: class) ifFalse: [
 		self signalClassIsNotTestCase: class ].
 	^ class
 ]

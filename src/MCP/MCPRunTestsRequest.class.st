@@ -1,7 +1,5 @@
 "
-Parsed run-tests tool request derived from one validated MCPToolRequest.
-
-It contains parsed MCPTestRunRequest entries, the timeout converted to milliseconds, and the selected operation. The default operation runs tests normally; the coverage operation also carries parsed MCPTestCoverageRequest options.
+Parsed request for the shared test runner command. It contains parsed test requests, the timeout converted to milliseconds, and the internal operation selected by the concrete tool. Coverage requests are supplied by MCPToolRunTestCoverage.
 "
 Class {
 	#name : 'MCPRunTestsRequest',
@@ -18,14 +16,12 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPRunTestsRequest class >> fromRequest: aRequest tool: aTool [
+MCPRunTestsRequest class >> fromRequest: aRequest tool: aTool operation: operation [
 
-	| coverageRequest operation |
-	operation := aRequest stringArgumentNamed: 'operation' default: 'run'.
+	| coverageRequest |
 	(#( 'run' 'coverage' ) includes: operation) ifFalse: [
 		Error signal: 'operation must be one of run or coverage.' ].
-	coverageRequest := operation = 'coverage'
-		                   ifTrue: [
+	coverageRequest := operation = 'coverage' ifTrue: [
 			                   MCPTestCoverageRequest
 				                   fromValue:
 				                   (aRequest
@@ -33,8 +29,7 @@ MCPRunTestsRequest class >> fromRequest: aRequest tool: aTool [
 					                    ifAbsent: [ nil ])
 				                   usingToolRequest: aRequest
 				                   defaultMethodLimit:
-				                   aTool defaultCoverageMethodLimit ]
-		                   ifFalse: [ nil ].
+				                   aTool defaultCoverageMethodLimit ].
 	^ self new
 		  initializeTestRequests:
 		  (self testRequestsFromToolRequest: aRequest)

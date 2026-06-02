@@ -1,5 +1,5 @@
 "
-Result DTO returned by edit-repository operation=adoptHead. It reports repository metadata before and after adopting the head commit, before/after modified package names, the previous and adopted working-copy reference commit ids, and whether the working copy reference changed.
+Result DTO returned by repository_head_adopt. It reports repository metadata before and after adopting the head commit, before/after modified package names, the previous and adopted working-copy reference commit ids, and whether the working copy reference changed.
 "
 Class {
 	#name : 'MCPRepositoryAdoptHeadResult',
@@ -73,11 +73,7 @@ MCPRepositoryAdoptHeadResult >> branchName [
 { #category : 'private' }
 MCPRepositoryAdoptHeadResult >> commitIdFrom: aCommit [
 
-	aCommit ifNil: [ ^ '' ].
-	(aCommit respondsTo: #id) ifTrue: [ ^ aCommit id asString ].
-	(aCommit respondsTo: #commitId) ifTrue: [
-		^ aCommit commitId asString ].
-	^ aCommit asString
+	^ MCPIcebergCommitInfo idStringFrom: aCommit
 ]
 
 { #category : 'accessing' }

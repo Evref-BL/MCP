@@ -1,73 +1,49 @@
 "
-Command wrapper for edit-repository operation=commit. It captures the current IceRepository working-copy diff, commits it, and returns an MCPRepositoryCommitResult.
+Command wrapper for repository_commit. It captures the current IceRepository working-copy diff, commits it, and returns an MCPRepositoryCommitResult.
 "
 Class {
 	#name : 'MCPCommitRepositoryCommand',
-	#superclass : 'Object',
-	#instVars : [
-		'tool',
-		'request'
-	],
+	#superclass : 'MCPRepositoryWorkingCopyCommand',
 	#category : 'MCP-Commands',
 	#package : 'MCP',
 	#tag : 'Commands'
 }
-
-{ #category : 'instance creation' }
-MCPCommitRepositoryCommand class >> tool: aTool request: aRequest [
-
-	^ self new initializeTool: aTool request: aRequest
-]
-
-{ #category : 'private - diff' }
-MCPCommitRepositoryCommand >> changedPackageNamesFromDiff: aDiff [
-
-	| names |
-	names := [
-	         aDiff packages collect: [ :each |
-		         self packageNameFromDiffPackageNode: each ] ]
-		         on: Error
-		         do: [ :ignored | #(  ) ].
-	^ self sortedStringsFrom:
-		  (names select: [ :each | each notNil and: [ each isEmpty not ] ])
-]
 
 { #category : 'executing' }
 MCPCommitRepositoryCommand >> execute [
 
 	| changedPackageNames diff repository result |
 	^ self tool
-		  executeEditOperation: 'commit'
+		  executeMutationAction: 'commit'
 		  force: false
 		  requestedContext: self request requestedContext
 		  work: [
-			  repository := self request repository.
-			  ((self repositoryHasNoCommit: repository) not and: [
-				   (self repositoryHasModifiedPackages: repository) not ])
-				  ifTrue: [ IceNothingToCommit signal ].
-			  diff := repository workingCopyDiff.
-			  changedPackageNames := self changedPackageNamesFromDiff: diff.
-			  result := self
-				            withNonInteractiveGitIdentityFor: repository
-				            during: [
-					            | commit |
-					            commit := self withNonInteractiveAuthorDuring: [
-						                      repository workingCopy
-							                      commitChanges: diff
-							                      withMessage: self request message ].
-					            MCPRepositoryCommitResult
-						            repository: repository
-						            changedPackageNames: changedPackageNames
-						            commit: commit ] ]
+				  repository := self request repository.
+				  (self repositoryHasChangesToCommit: repository) ifFalse: [
+					  IceNothingToCommit signal ].
+				  diff := repository workingCopyDiff.
+				  changedPackageNames := self changedPackageNamesFromDiff: diff.
+				  result := self
+					            withNonInteractiveGitIdentityFor: repository
+					            during: [
+							            | commit |
+							            commit := self withNonInteractiveAuthorDuring: [
+									                      repository workingCopy
+										                      commitChanges: diff
+										                      withMessage: self request message ].
+							            MCPRepositoryCommitResult
+								            repository: repository
+								            changedPackageNames: changedPackageNames
+								            commit: commit ] ]
 		  successResult: [ :warningMessages |
-			  self tool
-				  successResultText:
-				  'Committed repository ' , result repositoryInfo name , '.'
-				  data: (self tool dataForRepositoryCommitResult: result)
-				  warnings: warningMessages ]
+				  self tool
+					  successResultText:
+					  'Committed repository ' , result repositoryInfo name , '.'
+					  data: (self tool dataForRepositoryCommitResult: result)
+					  warnings: warningMessages ]
 		  failureSummary: [ :error |
-			  'Failed to commit repository: '
-			  , (error messageText ifNil: [ error asString ]) ]
+				  'Failed to commit repository: '
+				  , (error messageText ifNil: [ error asString ]) ]
 ]
 
 { #category : 'private - git identity' }
@@ -107,23 +83,6 @@ MCPCommitRepositoryCommand >> gitSignatureMissingFor: anError [
 			  'failed to parse signature - signature cannot have an empty name or email' ] ]
 ]
 
-{ #category : 'initialization' }
-MCPCommitRepositoryCommand >> initializeTool: aTool request: aRequest [
-
-	tool := aTool.
-	request := aRequest.
-	^ self
-]
-
-{ #category : 'private - diff' }
-MCPCommitRepositoryCommand >> packageNameFromDiffPackageNode: aNode [
-
-	| definition |
-	definition := aNode definition.
-	(definition respondsTo: #packageName) ifFalse: [ ^ nil ].
-	^ definition packageName asString
-]
-
 { #category : 'private - git identity' }
 MCPCommitRepositoryCommand >> removeGitConfigKey: key from: config [
 
@@ -138,6 +97,13 @@ MCPCommitRepositoryCommand >> removeTemporaryGitConfigKey: key from: config [
 	"Pharo 13 libgit2 can crash while deleting freshly-created repository config entries."
 	PharoCompatibility isPharo13OrLater ifTrue: [ ^ self ].
 	self removeGitConfigKey: key from: config
+]
+
+{ #category : 'private - diff' }
+MCPCommitRepositoryCommand >> repositoryHasChangesToCommit: aRepository [
+
+	(self repositoryHasNoCommit: aRepository) ifTrue: [ ^ true ].
+	^ self repositoryHasModifiedPackages: aRepository
 ]
 
 { #category : 'private - git identity' }
@@ -156,9 +122,7 @@ MCPCommitRepositoryCommand >> repositoryHasDefaultGitSignature: aRepository [
 { #category : 'private - diff' }
 MCPCommitRepositoryCommand >> repositoryHasModifiedPackages: aRepository [
 
-	^ [
-	  (aRepository respondsTo: #modifiedPackages) and: [
-		  aRepository modifiedPackages notEmpty ] ]
+	^ [ aRepository modifiedPackages notEmpty ]
 		  on: Error
 		  do: [ :ignored | false ]
 ]
@@ -166,39 +130,9 @@ MCPCommitRepositoryCommand >> repositoryHasModifiedPackages: aRepository [
 { #category : 'private - diff' }
 MCPCommitRepositoryCommand >> repositoryHasNoCommit: aRepository [
 
-	^ [
-	  | headCommit |
-	  headCommit := aRepository headCommit.
-	  (headCommit respondsTo: #isNoCommit) and: [ headCommit isNoCommit ] ]
+	^ [ MCPIcebergCommitInfo isNoCommit: aRepository headCommit ]
 		  on: Error
 		  do: [ :ignored | false ]
-]
-
-{ #category : 'accessing' }
-MCPCommitRepositoryCommand >> request [
-
-	^ request
-]
-
-{ #category : 'private' }
-MCPCommitRepositoryCommand >> sortedStringsFrom: aCollection [
-
-	^ (aCollection collect: [ :each | each asString ]) asSet
-		  asSortedCollection asArray
-]
-
-{ #category : 'accessing' }
-MCPCommitRepositoryCommand >> tool [
-
-	^ tool
-]
-
-{ #category : 'private - execution' }
-MCPCommitRepositoryCommand >> withNonInteractiveAuthorDuring: aBlock [
-
-	^ PharoCompatibility
-		  withNonInteractiveAuthorNamed: 'MCP'
-		  during: aBlock
 ]
 
 { #category : 'private - git identity' }

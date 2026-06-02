@@ -79,21 +79,20 @@ MCPReplaceClassLayoutCommand >> resolvedLayoutClass [
 	| behavior |
 	self layout ifNil: [ ^ nil ].
 	behavior := Smalltalk globals at: self layout asSymbol ifAbsent: [
-		            MCPCommandError
-			            signalErrorCode: #LayoutClassNotFound
-			            message:
-			            'Layout class ' , self layout , ' does not exist.'
-			            details: {
-					            (#className -> self className).
-					            (#layout -> self layout) } asDictionary ].
-	((behavior isBehavior and: [ behavior inheritsFrom: AbstractLayout ])
-		 or: [ behavior = AbstractLayout ]) ifFalse: [
-		MCPCommandError
-			signalErrorCode: #InvalidLayoutClass
-			message: self layout , ' is not a layout class.'
-			details: {
-					(#className -> self className).
-					(#layout -> self layout) } asDictionary ].
+			            MCPCommandError
+				            signalErrorCode: #LayoutClassNotFound
+				            message:
+				            'Layout class ' , self layout , ' does not exist.'
+				            details: {
+						            (#className -> self className).
+						            (#layout -> self layout) } asDictionary ].
+	(AbstractLayout withAllSubclasses includes: behavior) ifFalse: [
+			MCPCommandError
+				signalErrorCode: #InvalidLayoutClass
+				message: self layout , ' is not a layout class.'
+				details: {
+						(#className -> self className).
+						(#layout -> self layout) } asDictionary ].
 	^ behavior
 ]
 

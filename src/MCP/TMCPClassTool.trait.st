@@ -1,5 +1,7 @@
 "
-Shared class-domain helper behavior for MCP tools. Kept as a trait so class tools can combine it with query or edit tool behavior.
+Shared class-domain helper behavior for MCP tools.
+
+Kept as a trait so class tools can combine it with query or mutation behavior.
 "
 Trait {
 	#name : 'TMCPClassTool',

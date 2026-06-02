@@ -35,15 +35,15 @@ MCPToolExposurePolicy class >> staticToolNames: aCollection [
 { #category : 'tools' }
 MCPToolExposurePolicy >> exposureForTool: aTool [
 
-	^ (self isStaticTool: aTool)
+	^ (self isStaticTool: aTool name)
 		  ifTrue: [ 'static' ]
 		  ifFalse: [ 'discoverable' ]
 ]
 
 { #category : 'testing' }
-MCPToolExposurePolicy >> isStaticTool: aToolOrName [
+MCPToolExposurePolicy >> isStaticTool: aToolName [
 
-	^ self staticToolNames includes: (self toolNameFor: aToolOrName)
+	^ self staticToolNames includes: aToolName asString
 ]
 
 { #category : 'accessing' }
@@ -56,21 +56,11 @@ MCPToolExposurePolicy >> staticToolNames [
 MCPToolExposurePolicy >> staticToolNames: aCollection [
 
 	| normalized unknown |
-	normalized := aCollection collect: [ :each | self toolNameFor: each ].
+	normalized := aCollection collect: [ :each | each asString ].
 	unknown := normalized reject: [ :each |
 		           MCPToolRegistry includesToolNamed: each ].
 	unknown ifNotEmpty: [
 			Error signal: 'Unknown MCP tool(s) in exposure policy: '
 				, unknown asArray printString ].
 	staticToolNames := normalized asOrderedCollection
-]
-
-{ #category : 'private' }
-MCPToolExposurePolicy >> toolNameFor: aToolOrName [
-
-	(aToolOrName isString or: [ aToolOrName isSymbol ]) ifTrue: [
-		^ aToolOrName asString ].
-	(aToolOrName isBehavior and: [ aToolOrName inheritsFrom: MCPTool ])
-		ifTrue: [ ^ aToolOrName toolName ].
-	^ aToolOrName name
 ]

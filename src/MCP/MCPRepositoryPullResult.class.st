@@ -1,5 +1,5 @@
 "
-Result DTO returned by edit-repository operation=pull. It reports repository metadata before and after pulling, branch/head state after the pull, and modified packages afterward.
+Result DTO returned by repository_pull. It reports repository metadata before and after pulling, branch/head state after the pull, and modified packages afterward.
 "
 Class {
 	#name : 'MCPRepositoryPullResult',

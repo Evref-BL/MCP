@@ -1,3 +1,6 @@
+"
+Fixture class that defines methods used by compiled-method metadata tests.
+"
 Class {
 	#name : 'MCPCompiledMethodInfoTestTarget',
 	#superclass : 'Object',

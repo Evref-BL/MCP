@@ -1,7 +1,5 @@
 "
-Runs test classes or selected test methods and returns structured results.
-
-The default operation is the testing bridge for the MCP server. The optional coverage operation runs the same test selection while measuring CoverageCollector method and node coverage for an explicit method scope.
+Run SUnit test classes or individual methods and return structured per-selection results. Coverage is exposed by MCPToolRunTestCoverage while both tools share the same command pipeline.
 "
 Class {
 	#name : 'MCPToolRunTests',
@@ -13,51 +11,16 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'icons' }
-MCPToolRunTests class >> toolIconSpec [
-
-	^ MCPToolIconSpec named: #testRunner
-]
-
 { #category : 'defaults' }
 MCPToolRunTests class >> toolName [
 
-	^ 'run-tests'
+	^ 'test_run'
 ]
 
 { #category : 'private - execution' }
 MCPToolRunTests >> commandForRequest: runTestsRequest [
 
 	^ MCPRunTestsCommand tool: self request: runTestsRequest
-]
-
-{ #category : 'private - errors' }
-MCPToolRunTests >> compactTestNameFrom: testRequest [
-
-	| className testMethodName |
-	(testRequest respondsTo: #displayName) ifTrue: [
-		^ testRequest displayName ].
-	(testRequest respondsTo: #at:ifAbsent:) ifFalse: [
-		^ testRequest asString ].
-	className := testRequest
-		             at: #className
-		             ifAbsent: [
-		             testRequest at: 'className' ifAbsent: [ nil ] ].
-	className ifNil: [ ^ testRequest asString ].
-	testMethodName := testRequest
-		                  at: #testMethodName
-		                  ifAbsent: [
-		                  testRequest at: 'testMethodName' ifAbsent: [ nil ] ].
-	^ testMethodName
-		  ifNil: [ className asString ]
-		  ifNotNil: [ className asString , '>>' , testMethodName asString ]
-]
-
-{ #category : 'private' }
-MCPToolRunTests >> compactTestNamesFrom: testRequests [
-
-	^ (testRequests collect: [ :each | self compactTestNameFrom: each ])
-		  asArray
 ]
 
 { #category : 'private - coverage schema' }
@@ -116,7 +79,7 @@ MCPToolRunTests >> coverageOptionsObjectSchema [
 		            schemaPropertyNamed: 'coverage'
 		            type: 'object'
 		            description:
-		            'Coverage options for operation=coverage. At least one explicit method scope property is required when coverage is requested.'.
+		            'Coverage options. At least one explicit method scope property is required.'.
 	property
 		properties: self methodQueryScopeInputProperties , {
 					(self
@@ -150,7 +113,7 @@ MCPToolRunTests >> coverageResultObjectSchema [
 		            schemaPropertyNamed: 'coverage'
 		            type: 'object'
 		            description:
-		            'Coverage summary returned when operation=coverage.'.
+		            'Coverage summary returned by test_coverage_run.'.
 	property
 		properties: {
 				(self
@@ -226,7 +189,7 @@ MCPToolRunTests >> defaultCoverageMethodLimit [
 { #category : 'defaults' }
 MCPToolRunTests >> defaultDescription [
 
-	^ 'Run test classes or individual test methods as a batch and return aggregated results. Use operation=coverage with an explicit coverage scope to collect method and node coverage for the same test run.'
+	^ 'Run test classes or individual test methods as a batch and return aggregated results.'
 ]
 
 { #category : 'defaults' }
@@ -241,13 +204,6 @@ MCPToolRunTests >> defaultInputSchema [
 					    description: 'The test execution requests to run as a batch.')
 					   items: self testRequestObjectSchema;
 					   yourself).
-				  (self
-					   stringEnumSchemaPropertyNamed: 'operation'
-					   description:
-					   'Test runner operation. run executes tests normally; coverage executes tests while measuring coverage for the explicit coverage scope.'
-					   values: #( 'run' 'coverage' )
-					   default: 'run').
-				  self coverageOptionsObjectSchema.
 				  (self
 					   integerSchemaPropertyNamed: 'timeoutSeconds'
 					   description:
@@ -264,7 +220,7 @@ MCPToolRunTests >> defaultInputSchema [
 { #category : 'defaults' }
 MCPToolRunTests >> defaultOutputSchema [
 
-	| coverageProperty resultsProperty unrunTestsProperty |
+	| resultsProperty unrunTestsProperty |
 	resultsProperty := self
 		                   schemaPropertyNamed: 'results'
 		                   type: 'array'
@@ -275,13 +231,11 @@ MCPToolRunTests >> defaultOutputSchema [
 		                      schemaPropertyNamed: 'unrunTests'
 		                      type: 'array'
 		                      description:
-		                      'Test execution requests that did not run because the batch timed out. Pass this array to run-tests to continue from the timeout point.'.
+		                      'Test execution requests that did not run because the batch timed out. Pass this array to test_run to continue from the timeout point.'.
 	unrunTestsProperty items: self testRequestObjectSchema.
-	coverageProperty := self coverageResultObjectSchema.
 	^ self
 		  standardOutputSchemaForDataProperties: {
 				  resultsProperty.
-				  coverageProperty.
 				  (self
 					   booleanSchemaPropertyNamed: 'timedOut'
 					   description:
@@ -303,20 +257,21 @@ MCPToolRunTests >> defaultTitle [
 ]
 
 { #category : 'private' }
-MCPToolRunTests >> errorResultForError: anError tests: testRequests [
+MCPToolRunTests >> errorResultForError: anError testNames: testNames [
 
-	(anError isKindOf: MCPCommandError) ifTrue: [
-		^ self
-			  errorResultText: anError messageText
-			  details: anError structuredDetails ].
-	^ self
-		  errorResultText:
-		  (self failureMessageForTests: testRequests error: anError)
-		  details: {
-				  (#errorClass -> anError class name).
-				  (#message -> anError messageText).
-				  (#tests -> (self compactTestNamesFrom: testRequests)) }
-				  asDictionary
+	^ anError
+		  mcpCommandErrorDo: [ :commandError |
+				  self
+					  errorResultText: commandError messageText
+					  details: commandError structuredDetails ]
+		  otherwise: [ :toolError |
+				  self
+					  errorResultText:
+					  (self failureMessageForTestNames: testNames error: toolError)
+					  details: {
+							  (#errorClass -> toolError class name).
+							  (#message -> toolError messageText).
+							  (#tests -> testNames) } asDictionary ]
 ]
 
 { #category : 'executing' }
@@ -325,36 +280,35 @@ MCPToolRunTests >> executeWithRequest: request [
 	^ self
 		  executeParsedRequestFrom: request
 		  do: [ :runTestsRequest |
-			  | data result |
-			  result := (self commandForRequest: runTestsRequest) execute.
-			  data := result asDictionary.
-			  self
-				  successResultText: (self successSummaryForData: data)
-				  data: data ]
+				  | data result |
+				  result := (self commandForRequest: runTestsRequest) execute.
+				  data := result asDictionary.
+				  self
+					  successResultText: (self successSummaryForData: data)
+					  data: data ]
 		  onError: [ :error :runTestsRequest |
-			  self errorResultForError: error tests: (self
-					   testRequestsForErrorFromParsedRequest: runTestsRequest
-					   rawRequest: request) ]
+				  self errorResultForError: error testNames: (self
+						   testNamesForErrorFromParsedRequest: runTestsRequest
+						   rawRequest: request) ]
 ]
 
 { #category : 'private' }
-MCPToolRunTests >> failureMessageForTests: testRequests error: anError [
+MCPToolRunTests >> failureMessageForTestNames: testNames error: anError [
 
 	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: 'Unable to run tests: ';
-			  nextPutAll:
-				  (', ' join: (self compactTestNamesFrom: testRequests));
-			  nextPutAll: ' (';
-			  nextPutAll: anError class name;
-			  nextPutAll: '): ';
-			  nextPutAll: anError messageText ]
+			  stream
+				  nextPutAll: 'Unable to run tests: ';
+				  nextPutAll: (', ' join: testNames);
+				  nextPutAll: ' (';
+				  nextPutAll: anError class name;
+				  nextPutAll: '): ';
+				  nextPutAll: anError messageText ]
 ]
 
 { #category : 'private - request' }
 MCPToolRunTests >> parsedRequestFromToolRequest: request [
 
-	^ MCPRunTestsRequest fromRequest: request tool: self
+	^ MCPRunTestsRequest fromRequest: request tool: self operation: 'run'
 ]
 
 { #category : 'private - tests' }
@@ -512,6 +466,42 @@ MCPToolRunTests >> testIssueObjectSchema [
 	^ issueProperty
 ]
 
+{ #category : 'private - errors' }
+MCPToolRunTests >> testNameFromRawTestValue: rawValue request: rawRequest [
+
+	| className testMethodName |
+	rawValue isDictionary ifFalse: [ ^ rawValue asString ].
+	className := rawRequest
+		             valueNamed: 'className'
+		             in: rawValue
+		             ifAbsent: [ ^ rawValue asString ].
+	className ifNil: [ ^ rawValue asString ].
+	testMethodName := rawRequest
+		                  valueNamed: 'testMethodName'
+		                  in: rawValue
+		                  ifAbsent: [ nil ].
+	^ testMethodName
+		  ifNil: [ className asString ]
+		  ifNotNil: [ :methodName |
+		  className asString , '>>' , methodName asString ]
+]
+
+{ #category : 'private - errors' }
+MCPToolRunTests >> testNamesForErrorFromParsedRequest: runTestsRequest rawRequest: rawRequest [
+
+	runTestsRequest ifNotNil: [
+		^ self testNamesFromRequests: runTestsRequest testRequests ].
+	^ ((rawRequest objectCollectionArgumentNamed: 'tests') collect: [
+		   :each | self testNameFromRawTestValue: each request: rawRequest ])
+		  asArray
+]
+
+{ #category : 'private - errors' }
+MCPToolRunTests >> testNamesFromRequests: testRequests [
+
+	^ (testRequests collect: [ :each | each displayName ]) asArray
+]
+
 { #category : 'private' }
 MCPToolRunTests >> testRequestObjectSchema [
 
@@ -531,20 +521,6 @@ MCPToolRunTests >> testRequestObjectSchema [
 		  required: #( 'className' );
 		  additionalProperties: false;
 		  yourself
-]
-
-{ #category : 'private - errors' }
-MCPToolRunTests >> testRequestsForErrorFromParsedRequest: runTestsRequest rawRequest: rawRequest [
-
-	runTestsRequest ifNotNil: [ ^ runTestsRequest testRequests ].
-	^ [
-	  (rawRequest objectCollectionArgumentNamed: 'tests') collect: [
-		  :each |
-		  [ MCPTestRunRequest fromValue: each usingToolRequest: rawRequest ]
-			  on: Exception
-			  do: [ :ignored | each ] ] ]
-		  on: Exception
-		  do: [ :ignored | #(  ) ]
 ]
 
 { #category : 'private' }
@@ -568,16 +544,4 @@ MCPToolRunTests >> testResultObjectSchema [
 			  (self standardTestRequiredFieldsIncludingMethodName: false);
 		  additionalProperties: false;
 		  yourself
-]
-
-{ #category : 'validating' }
-MCPToolRunTests >> validateRequest: request [
-
-	| operation |
-	operation := request stringArgumentNamed: 'operation' default: 'run'.
-	operation = 'coverage' ifTrue: [
-		(request hasArgumentNamed: 'coverage') ifFalse: [
-			MCPInvalidToolInput
-				signalMissingRequiredArgumentNamed: 'coverage'
-				forTool: self ] ]
 ]

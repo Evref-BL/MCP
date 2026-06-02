@@ -173,6 +173,7 @@ MCPTestIceRepository >> headDescription: aString [
 
 { #category : 'initialization' }
 MCPTestIceRepository >> initialize [
+	"Super initialization reaches libgit-backed Iceberg state; keep this test double in memory."
 
 	branchName := 'main'.
 	headDescription := 'initial'.
@@ -275,12 +276,10 @@ MCPTestIceRepository >> remotes [
 MCPTestIceRepository >> signalFailureIfNeeded: failure defaultMessage: aString [
 
 	failure ifNil: [ ^ self ].
-	failure = false ifTrue: [ ^ self ].
+	failure == false ifTrue: [ ^ self ].
 	failure == true ifTrue: [ Error signal: aString ].
-	(failure isAssociation and: [ failure key isBehavior ]) ifTrue: [
-		failure key signal: failure value ].
+	failure isAssociation ifTrue: [ failure key signal: failure value ].
 	failure isString ifTrue: [ Error signal: failure ].
-	(failure isKindOf: Exception) ifTrue: [ failure signal ].
 	Error signal: failure asString
 ]
 

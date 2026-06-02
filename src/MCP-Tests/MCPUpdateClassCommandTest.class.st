@@ -1,5 +1,5 @@
 "
-Tests for the edit-class update command orchestrator.
+Tests the class update command orchestrator used behind class mutation tools.
 "
 Class {
 	#name : 'MCPUpdateClassCommandTest',
@@ -10,13 +10,41 @@ Class {
 }
 
 { #category : 'private' }
+MCPUpdateClassCommandTest >> classToolClassForArguments: arguments slotAction: slotAction [
+
+	((arguments includesKey: #superclassName) and: [ arguments includesKey: #packageName ]) ifTrue: [ ^ MCPToolCreateClass ].
+	slotAction = 'add' ifTrue: [ ^ MCPToolAddClassSlot ].
+	slotAction = 'remove' ifTrue: [ ^ MCPToolRemoveClassSlot ].
+	slotAction = 'rename' ifTrue: [ ^ MCPToolUpdateClassSlotName ].
+	slotAction = 'pullUp' ifTrue: [ ^ MCPToolPullUpClassSlot ].
+	slotAction = 'pushDown' ifTrue: [ ^ MCPToolPushDownClassSlot ].
+	(arguments includesKey: #newClassName) ifTrue: [ ^ MCPToolUpdateClassName ].
+	(arguments includesKey: #classComment) ifTrue: [ ^ MCPToolUpdateClassComment ].
+	(arguments includesKey: #traits) ifTrue: [ ^ MCPToolUpdateClassTraits ].
+	(arguments includesKey: #classTraits) ifTrue: [ ^ MCPToolUpdateClassSideTraits ].
+	(arguments includesKey: #sharedVariables) ifTrue: [ ^ MCPToolUpdateClassSharedVariables ].
+	(arguments includesKey: #sharedPools) ifTrue: [ ^ MCPToolUpdateClassSharedPools ].
+	(arguments includesKey: #layout) ifTrue: [ ^ MCPToolUpdateClassLayout ].
+	((arguments includesKey: #slots) or: [ arguments includesKey: #classSlots ]) ifTrue: [ ^ MCPToolUpdateClassSlots ].
+	(arguments includesKey: #superclassName) ifTrue: [ ^ MCPToolUpdateClassSuperclass ].
+	((arguments includesKey: #packageName) or: [ arguments includesKey: #tag ]) ifTrue: [ ^ MCPToolUpdateClassPackage ].
+	^ MCPToolUpdateClassComment
+]
+
+{ #category : 'private' }
 MCPUpdateClassCommandTest >> commandForArguments: arguments [
 
-	| editRequest tool toolRequest |
-	tool := MCPToolEditClass new.
-	toolRequest := tool requestFromToolCallArguments: arguments.
-	editRequest := tool parsedRequestFromToolRequest: toolRequest.
-	^ tool commandForRequest: editRequest
+	| mutationRequest rawArguments slotAction tool toolClass toolRequest |
+	rawArguments := arguments copy.
+	rawArguments removeKey: #action ifAbsent: [  ].
+	slotAction := rawArguments removeKey: #slotAction ifAbsent: [ nil ].
+	toolClass := self
+		             classToolClassForArguments: rawArguments
+		             slotAction: slotAction.
+	tool := toolClass new.
+	toolRequest := tool requestFromToolCallArguments: rawArguments.
+	mutationRequest := tool parsedRequestFromToolRequest: toolRequest.
+	^ tool commandForRequest: mutationRequest
 ]
 
 { #category : 'tests' }
@@ -34,7 +62,7 @@ MCPUpdateClassCommandTest >> testAppliedChangeResultWrapsPlanAndResult [
 		                 updatePlan: plan
 		                 changeResult: changeResult.
 	data := appliedChange asDictionary.
-	self assert: (data at: #operation) equals: 'update'.
+	self assert: (data at: #action) equals: 'update'.
 	self assert: (data at: #updateAction) equals: 'setComment'.
 	self
 		assert: ((data at: #updatePlan) at: #updateAction)
@@ -242,56 +270,19 @@ MCPUpdateClassCommandTest >> testMapsSlotActionsToUpdateActions [
 ]
 
 { #category : 'tests' }
-MCPUpdateClassCommandTest >> testRejectsAmbiguousUpdateActions [
-
-	| error |
-	error := self captureCommandError: [
-		         (self commandForArguments: (self updateArgumentsWith: {
-					           (#newClassName -> 'ObjectRenamed').
-					           (#classComment -> 'updated') })) updateAction ].
-	self assert: error errorCode equals: #AmbiguousClassUpdateRequest.
-	self assert: ((error details at: #updateActions) includes: 'rename').
-	self assert:
-		((error details at: #updateActions) includes: 'setComment')
-]
-
-{ #category : 'tests' }
-MCPUpdateClassCommandTest >> testRejectsMissingUpdateAction [
-
-	| error |
-	error := self captureCommandError: [
-		         (self commandForArguments:
-			          (self updateArgumentsWith: #(  ))) updateAction ].
-	self assert: error errorCode equals: #NoClassUpdateRequested.
-	self assert: (error details at: #className) equals: 'Object'
-]
-
-{ #category : 'tests' }
-MCPUpdateClassCommandTest >> testRequiresExplicitSlotAction [
-
-	| error |
-	error := self captureCommandError: [
-		         (self commandForArguments: (self updateArgumentsWith: {
-					           (#slotName -> 'oldSlot').
-					           (#newSlotName -> 'newSlot') })) updateAction ].
-	self assert: error errorCode equals: #SlotActionRequired.
-	self assert: (error details at: #slotName) equals: 'oldSlot'
-]
-
-{ #category : 'tests' }
 MCPUpdateClassCommandTest >> testToolBuildsUpdateClassCommand [
 
-	| command editRequest tool toolRequest |
-	tool := MCPToolEditClass new.
+	| command mutationRequest tool toolRequest |
+	tool := MCPToolUpdateClassComment new.
 	toolRequest := tool requestFromToolCallArguments:
-		               (self updateArgumentsWith:
-			                { (#classComment -> 'updated') }).
-	editRequest := tool parsedRequestFromToolRequest: toolRequest.
-	command := tool commandForRequest: editRequest.
-	self assert: editRequest class equals: MCPClassUpdateRequest.
+		               { (#className -> 'Object'). (#classComment -> 'updated') }
+		               asDictionary.
+	mutationRequest := tool parsedRequestFromToolRequest: toolRequest.
+	command := tool commandForRequest: mutationRequest.
+	self assert: mutationRequest class equals: MCPClassUpdateRequest.
 	self assert: command class equals: MCPUpdateClassCommand.
 	self assert: command tool identicalTo: tool.
-	self assert: command classRequest identicalTo: editRequest.
+	self assert: command classRequest identicalTo: mutationRequest.
 	self assert: command classRequest className equals: 'Object'.
 	self assert: command classRequest classComment equals: 'updated'
 ]
@@ -301,7 +292,7 @@ MCPUpdateClassCommandTest >> updateArgumentsWith: associations [
 
 	| arguments |
 	arguments := {
-		             (#operation -> 'update').
+		             (#action -> 'update').
 		             (#className -> 'Object') } asDictionary.
 	associations do: [ :each | arguments at: each key put: each value ].
 	^ arguments

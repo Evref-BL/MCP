@@ -1,5 +1,7 @@
 "
-Result DTO for an edit-class update after the selected narrow command has run. It carries the update plan and the narrow command result, and converts them to the flattened tool data shape plus nested updatePlan and appliedChange details.
+Result DTO for a class update after the selected narrow command has run.
+
+It carries the update plan and the narrow command result, and converts them to the flattened tool data shape plus nested updatePlan and appliedChange details.
 "
 Class {
 	#name : 'MCPClassAppliedChangeResult',
@@ -36,7 +38,7 @@ MCPClassAppliedChangeResult >> asDictionary [
 
 	| data |
 	data := self changeResult asDictionary copy.
-	data at: #operation put: 'update'.
+	data at: #action put: 'update'.
 	data at: #updateAction put: self updateAction.
 	data at: #updatePlan put: self updatePlan asDictionary.
 	data at: #appliedChange put: self appliedChangeDictionary.

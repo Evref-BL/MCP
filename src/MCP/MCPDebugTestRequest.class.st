@@ -1,7 +1,7 @@
 "
-Request object for debug-test.
+Request object for debug_test_run.
 
-It identifies one SUnit test method and the test phase where debugger control should stop, plus timeout and returned debug-state shaping options.
+It identifies one SUnit test method and the test phase where debugger control should stop, plus timeout and returned debug_state_get shaping options.
 "
 Class {
 	#name : 'MCPDebugTestRequest',

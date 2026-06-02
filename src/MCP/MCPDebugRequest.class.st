@@ -60,6 +60,14 @@ MCPDebugRequest >> operation: aString [
 ]
 
 { #category : 'accessing' }
+MCPDebugRequest >> requestedStateId [
+
+	self stateId ifNotNil: [ ^ self stateId ].
+	^ self frameRef ifNotNil: [ :reference |
+		  self stateIdFromReference: reference ]
+]
+
+{ #category : 'accessing' }
 MCPDebugRequest >> sessionId [
 
 	^ sessionId
@@ -117,6 +125,15 @@ MCPDebugRequest >> stateId [
 MCPDebugRequest >> stateId: aString [
 
 	stateId := aString
+]
+
+{ #category : 'private' }
+MCPDebugRequest >> stateIdFromReference: aReferenceString [
+
+	| tokens |
+	tokens := aReferenceString findTokens: '/'.
+	tokens size >= 2 ifFalse: [ ^ nil ].
+	^ tokens second
 ]
 
 { #category : 'accessing' }

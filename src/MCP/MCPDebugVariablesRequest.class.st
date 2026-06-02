@@ -24,17 +24,17 @@ MCPDebugVariablesRequest class >> fromRequest: aRequest tool: aTool [
 	reference := MCPDebugVariableReference fromString:
 		             (aRequest stringArgumentNamed: 'variableRef').
 	suppliedStateId := aRequest stringArgumentNamed: 'stateId'.
-	(suppliedStateId notNil and: [ suppliedStateId ~= reference stateId ])
-		ifTrue: [
-				MCPCommandError
-					signalErrorCode: #DebugStateStale
-					message: 'Debug state ' , suppliedStateId
-						, ' does not match variable reference state '
-						, reference stateId , '.'
-					details: {
-							(#requestedStateId -> suppliedStateId).
-							(#referenceStateId -> reference stateId).
-							(#variableRef -> reference rawReference) } asDictionary ].
+	suppliedStateId ifNotNil: [ :requestedStateId |
+			requestedStateId ~= reference stateId ifTrue: [
+					MCPCommandError
+						signalErrorCode: #DebugStateStale
+						message: 'Debug state ' , requestedStateId
+							, ' does not match variable reference state '
+							, reference stateId , '.'
+						details: {
+								(#requestedStateId -> requestedStateId).
+								(#referenceStateId -> reference stateId).
+								(#variableRef -> reference rawReference) } asDictionary ] ].
 	^ self new
 		  variableRef: reference rawReference;
 		  variableReference: reference;
@@ -83,6 +83,14 @@ MCPDebugVariablesRequest >> includeInstanceVariables [
 MCPDebugVariablesRequest >> includeInstanceVariables: aBoolean [
 
 	includeInstanceVariables := aBoolean
+]
+
+{ #category : 'accessing' }
+MCPDebugVariablesRequest >> requestedStateId [
+
+	^ super requestedStateId ifNil: [
+			  self variableRef ifNotNil: [ :reference |
+				  self stateIdFromReference: reference ] ]
 ]
 
 { #category : 'accessing' }

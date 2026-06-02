@@ -1,5 +1,5 @@
 "
-Command that creates a class from a parsed edit-class request.
+Command that creates a class from a parsed class creation request.
 
 It owns the class-builder interaction for superclass, package, tag, slots, traits, shared variables, pools, and layout, then returns an MCPCreateClassResult.
 "
@@ -203,21 +203,20 @@ MCPCreateClassCommand >> resolvedLayoutClass [
 	| behavior |
 	self layout ifNil: [ ^ nil ].
 	behavior := Smalltalk globals at: self layout asSymbol ifAbsent: [
-		            MCPCommandError
-			            signalErrorCode: #LayoutClassNotFound
-			            message:
-			            'Layout class ' , self layout , ' does not exist.'
-			            details: {
-					            (#className -> self className).
-					            (#layout -> self layout) } asDictionary ].
-	((behavior isBehavior and: [ behavior inheritsFrom: AbstractLayout ])
-		 or: [ behavior = AbstractLayout ]) ifFalse: [
-		MCPCommandError
-			signalErrorCode: #InvalidLayoutClass
-			message: self layout , ' is not a layout class.'
-			details: {
-					(#className -> self className).
-					(#layout -> self layout) } asDictionary ].
+			            MCPCommandError
+				            signalErrorCode: #LayoutClassNotFound
+				            message:
+				            'Layout class ' , self layout , ' does not exist.'
+				            details: {
+						            (#className -> self className).
+						            (#layout -> self layout) } asDictionary ].
+	(AbstractLayout withAllSubclasses includes: behavior) ifFalse: [
+			MCPCommandError
+				signalErrorCode: #InvalidLayoutClass
+				message: self layout , ' is not a layout class.'
+				details: {
+						(#className -> self className).
+						(#layout -> self layout) } asDictionary ].
 	^ behavior
 ]
 
@@ -229,21 +228,20 @@ MCPCreateClassCommand >> resolvedSharedPoolNamed: aSharedPoolName [
 	behavior := Smalltalk globals
 		            at: sharedPoolName asSymbol
 		            ifAbsent: [
-			            MCPCommandError
-				            signalErrorCode: #SharedPoolNotFound
-				            message:
-				            'Shared pool ' , sharedPoolName , ' does not exist.'
-				            details: {
-						            (#className -> self className).
-						            (#sharedPoolName -> sharedPoolName) } asDictionary ].
-	((behavior isBehavior and: [ behavior inheritsFrom: SharedPool ])
-		 or: [ behavior = SharedPool ]) ifFalse: [
-		MCPCommandError
-			signalErrorCode: #InvalidSharedPool
-			message: sharedPoolName , ' is not a shared pool.'
-			details: {
-					(#className -> self className).
-					(#sharedPoolName -> sharedPoolName) } asDictionary ].
+				            MCPCommandError
+					            signalErrorCode: #SharedPoolNotFound
+					            message:
+					            'Shared pool ' , sharedPoolName , ' does not exist.'
+					            details: {
+							            (#className -> self className).
+							            (#sharedPoolName -> sharedPoolName) } asDictionary ].
+	(SharedPool withAllSubclasses includes: behavior) ifFalse: [
+			MCPCommandError
+				signalErrorCode: #InvalidSharedPool
+				message: sharedPoolName , ' is not a shared pool.'
+				details: {
+						(#className -> self className).
+						(#sharedPoolName -> sharedPoolName) } asDictionary ].
 	^ behavior
 ]
 

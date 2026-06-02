@@ -1,3 +1,6 @@
+"
+Tests the class_remove tool.
+"
 Class {
 	#name : 'MCPToolRemoveClassesTest',
 	#superclass : 'MCPToolTestCase',
@@ -398,5 +401,5 @@ MCPToolRemoveClassesTest >> testToolRequiresClassNameInSchema [
 { #category : 'private - calling' }
 MCPToolRemoveClassesTest >> toolName [
 
-	^ 'remove-classes'
+	^ 'class_remove'
 ]

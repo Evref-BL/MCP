@@ -1,7 +1,7 @@
 "
 Spec presenter that displays the MCP tool catalog.
 
-Each row shows a compact tool identity cell with icon, title, tool name, and supported operations, plus an expanded description cell. Long operation lists are summarized in the row and exposed in full through hover help.
+Each row shows a compact tool identity cell with icon, title, and tool name, plus an expanded description cell.
 "
 Class {
 	#name : 'MCPToolsCatalogPresenter',
@@ -56,20 +56,6 @@ MCPToolsCatalogPresenter >> defaultLayout [
 	^ SpScrollableLayout with: contentPresenter
 ]
 
-{ #category : 'accessing' }
-MCPToolsCatalogPresenter >> fallbackToolCatalogOperationNamesFor: tool [
-
-	| toolName |
-	toolName := tool name.
-	toolName = 'rewrite-methods' ifTrue: [ ^ #( 'preview' 'apply' ) ].
-	toolName = 'run-tests' ifTrue: [ ^ #( 'run' ) ].
-	toolName = 'evaluate' ifTrue: [ ^ #( 'evaluate' ) ].
-	(toolName beginsWith: 'find-') ifTrue: [ ^ #( 'query' ) ].
-	(toolName beginsWith: 'inspect-') ifTrue: [ ^ #( 'inspect' ) ].
-	(toolName beginsWith: 'remove-') ifTrue: [ ^ #( 'remove' ) ].
-	^ #( 'call' )
-]
-
 { #category : 'initialization' }
 MCPToolsCatalogPresenter >> initializePresenters [
 
@@ -84,22 +70,6 @@ MCPToolsCatalogPresenter >> initializeWindow: aWindowPresenter [
 	aWindowPresenter
 		title: 'MCP Tool Catalog';
 		initialExtent: 1000 @ 760
-]
-
-{ #category : 'accessing' }
-MCPToolsCatalogPresenter >> joinToolCatalogItems: strings [
-
-	strings isEmpty ifTrue: [ ^ 'call' ].
-	^ String streamContents: [ :stream |
-		  strings doWithIndex: [ :each :index |
-			  index > 1 ifTrue: [ stream nextPutAll: ' | ' ].
-			  stream nextPutAll: each asString ] ]
-]
-
-{ #category : 'accessing' }
-MCPToolsCatalogPresenter >> maximumVisibleOperationNames [
-
-	^ 2
 ]
 
 { #category : 'layout' }
@@ -151,17 +121,10 @@ MCPToolsCatalogPresenter >> toolCatalogDescriptionPresenterFor: tool [
 	^ descriptionCell
 ]
 
-{ #category : 'accessing' }
-MCPToolsCatalogPresenter >> toolCatalogFullOperationSummaryFor: tool [
-
-	^ self joinToolCatalogItems:
-		  (self toolCatalogOperationNamesFor: tool)
-]
-
 { #category : 'layout' }
 MCPToolsCatalogPresenter >> toolCatalogLeftCellFor: tool [
 
-	| identifierLabel image labelLayout leftCell leftLayout operationHelp operations title |
+	| identifierLabel image labelLayout leftCell leftLayout title |
 	leftCell := self newPresenter.
 	image := self newImage.
 	image
@@ -173,18 +136,13 @@ MCPToolsCatalogPresenter >> toolCatalogLeftCellFor: tool [
 		displayBold: [ :ignored | true ].
 	identifierLabel := self newLabel.
 	identifierLabel label: tool name.
-	operations := self newLabel.
-	operations label: (self toolCatalogOperationSummaryFor: tool).
-	operationHelp := self toolCatalogOperationHelpFor: tool.
-	operationHelp ifNotNil: [ operations help: operationHelp ].
 	labelLayout := SpBoxLayout newTopToBottom
 		               spacing: 1;
 		               hAlignStart;
 		               yourself.
 	labelLayout
 		add: title expand: false;
-		add: identifierLabel expand: false;
-		add: operations expand: false.
+		add: identifierLabel expand: false.
 	leftLayout := SpBoxLayout newLeftToRight
 		              spacing: 8;
 		              borderWidth: 0;
@@ -202,35 +160,4 @@ MCPToolsCatalogPresenter >> toolCatalogLeftCellFor: tool [
 MCPToolsCatalogPresenter >> toolCatalogLeftColumnWidth [
 
 	^ 180
-]
-
-{ #category : 'accessing' }
-MCPToolsCatalogPresenter >> toolCatalogOperationHelpFor: tool [
-
-	| operationNames |
-	operationNames := self toolCatalogOperationNamesFor: tool.
-	operationNames size <= self maximumVisibleOperationNames ifTrue: [
-		^ nil ].
-	^ 'Operations: ' , (self joinToolCatalogItems: operationNames)
-]
-
-{ #category : 'accessing' }
-MCPToolsCatalogPresenter >> toolCatalogOperationNamesFor: tool [
-
-	(tool respondsTo: #canonicalOperationNames) ifTrue: [
-		^ tool canonicalOperationNames ].
-	^ self fallbackToolCatalogOperationNamesFor: tool
-]
-
-{ #category : 'accessing' }
-MCPToolsCatalogPresenter >> toolCatalogOperationSummaryFor: tool [
-
-	| operationNames visibleOperations |
-	operationNames := self toolCatalogOperationNamesFor: tool.
-	operationNames size <= self maximumVisibleOperationNames ifTrue: [
-		^ self joinToolCatalogItems: operationNames ].
-	visibleOperations := operationNames first:
-		                     self maximumVisibleOperationNames.
-	^ (self joinToolCatalogItems: visibleOperations) , ' | +'
-	  , (operationNames size - visibleOperations size) asString
 ]

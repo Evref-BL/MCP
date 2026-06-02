@@ -1,5 +1,5 @@
 "
-Command wrapper for edit-repository operation=pull. It calls IceRepository>>pull and returns an MCPRepositoryPullResult.
+Command wrapper for repository_pull. It calls IceRepository>>pull and returns an MCPRepositoryPullResult.
 "
 Class {
 	#name : 'MCPPullRepositoryCommand',
@@ -24,7 +24,7 @@ MCPPullRepositoryCommand >> execute [
 
 	| beforeInfo repository result |
 	^ self tool
-		  executeEditOperation: 'pull'
+		  executeMutationAction: 'pull'
 		  force: false
 		  requestedContext: self request requestedContext
 		  work: [

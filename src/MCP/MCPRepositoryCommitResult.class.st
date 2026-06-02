@@ -1,5 +1,5 @@
 "
-Result DTO returned by edit-repository operation=commit. It reports repository state after the commit, changed packages captured before committing, modified packages still reported by Iceberg afterward, and commit/head metadata when available.
+Result DTO returned by repository_commit. It reports repository state after the commit, changed packages captured before committing, modified packages still reported by Iceberg afterward, and commit/head metadata when available.
 "
 Class {
 	#name : 'MCPRepositoryCommitResult',
@@ -74,10 +74,7 @@ MCPRepositoryCommitResult >> commitDescription: aString [
 { #category : 'private' }
 MCPRepositoryCommitResult >> commitDescriptionFrom: aCommit [
 
-	aCommit ifNil: [ ^ '' ].
-	(aCommit respondsTo: #comment) ifTrue: [
-		^ aCommit comment ifNil: [ '' ] ].
-	^ ''
+	^ MCPIcebergCommitInfo commentStringFrom: aCommit
 ]
 
 { #category : 'accessing' }
@@ -95,11 +92,7 @@ MCPRepositoryCommitResult >> commitId: aString [
 { #category : 'private' }
 MCPRepositoryCommitResult >> commitIdFrom: aCommit [
 
-	aCommit ifNil: [ ^ '' ].
-	(aCommit respondsTo: #id) ifTrue: [ ^ aCommit id asString ].
-	(aCommit respondsTo: #commitId) ifTrue: [
-		^ aCommit commitId asString ].
-	^ aCommit asString
+	^ MCPIcebergCommitInfo idStringFrom: aCommit
 ]
 
 { #category : 'accessing' }

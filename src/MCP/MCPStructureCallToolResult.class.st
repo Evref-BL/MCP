@@ -44,6 +44,12 @@ MCPStructureCallToolResult >> asJRPCJSON [
 	^ dic
 ]
 
+{ #category : 'converting' }
+MCPStructureCallToolResult >> asMCPStructureCallToolResult [
+
+	^ self
+]
+
 { #category : 'accessing' }
 MCPStructureCallToolResult >> content [
 

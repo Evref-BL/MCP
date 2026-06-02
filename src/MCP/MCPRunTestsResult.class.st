@@ -1,5 +1,5 @@
 "
-Aggregate result DTO produced by the run-tests command.
+Aggregate result DTO produced by the test_run command.
 
 It carries structured per-selection results plus timeout state and unrun MCPTestRunRequest objects for resumable output. Coverage operation results additionally attach an MCPTestCoverageResult.
 "

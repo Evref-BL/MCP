@@ -1,5 +1,5 @@
 "
-Parsed coverage options for the run-tests tool.
+Parsed coverage options for the test_run tool.
 
 Coverage is deliberately scoped by method scope properties such as packageNames or classNames. The request also controls whether covered method details are included and how many method entries each coverage list may return.
 "
@@ -21,8 +21,6 @@ MCPTestCoverageRequest class >> fromValue: rawValue usingToolRequest: toolReques
 
 	| includeCovered methodLimit scopeQuery |
 	rawValue ifNil: [ self signalMissingCoverageOptions ].
-	(rawValue respondsTo: #at:ifAbsent:) ifFalse: [
-		Error signal: 'coverage must be an object.' ].
 	scopeQuery := self
 		              scopeQueryFromValue: rawValue
 		              usingToolRequest: toolRequest.
@@ -98,8 +96,8 @@ MCPTestCoverageRequest class >> signalMissingCoverageOptions [
 	^ MCPCommandError
 		  signalErrorCode: #CoverageOptionsRequired
 		  message:
-		  'coverage operation requires a coverage object with an explicit method scope.'
-		  details: { (#operation -> 'coverage') } asDictionary
+		  'test_coverage_run requires a coverage object with an explicit method scope.'
+		  details: { (#tool -> 'test_coverage_run') } asDictionary
 ]
 
 { #category : 'private - signaling' }
@@ -109,7 +107,7 @@ MCPTestCoverageRequest class >> signalMissingCoverageScope [
 		  signalErrorCode: #CoverageScopeRequired
 		  message:
 		  'coverage requires at least one explicit method scope: packageNames, classNames, hierarchyClassNames, subclassClassNames, or parentClassNames.'
-		  details: { (#operation -> 'coverage') } asDictionary
+		  details: { (#tool -> 'test_coverage_run') } asDictionary
 ]
 
 { #category : 'accessing' }

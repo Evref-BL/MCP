@@ -1,3 +1,6 @@
+"
+Test double for DebugSession control operations.
+"
 Class {
 	#name : 'MCPDebugControlTestSession',
 	#superclass : 'Object',
@@ -68,6 +71,12 @@ MCPDebugControlTestSession >> restart: aContext [
 MCPDebugControlTestSession >> resume [
 
 	self recordOperation: 'resume' context: nil
+]
+
+{ #category : 'debugging' }
+MCPDebugControlTestSession >> selectedCodeRangeForContext: aContext [
+
+	^ nil
 ]
 
 { #category : 'debugging' }

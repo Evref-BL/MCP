@@ -27,7 +27,7 @@ MCPToolRequestTest >> testInvalidRequestRaisesInvalidParameters [
 	self
 		should: [
 			MCPToolRequest
-				tool: MCPToolFindClasses new
+				tool: MCPToolSearchClasses new
 				arguments: { (#caseSensitive -> 'true') } asDictionary ]
 		raise: JRPCInvalidParameters
 ]
@@ -38,12 +38,12 @@ MCPToolRequestTest >> testInvalidRequestRaisesToolInputErrorWithViolations [
 	| error violation |
 	[
 	MCPToolRequest
-		tool: MCPToolFindClasses new
+		tool: MCPToolSearchClasses new
 		arguments: { (#caseSensitive -> 'true') } asDictionary ]
 		on: MCPInvalidToolInput
 		do: [ :signalledError | error := signalledError ].
 	self assert: error isNotNil.
-	self assert: error toolName equals: 'find-classes'.
+	self assert: error toolName equals: 'class_search'.
 	self assert: error violations size equals: 1.
 	violation := error violations first.
 	self assert: violation path equals: #( 'caseSensitive' ).
@@ -58,7 +58,7 @@ MCPToolRequestTest >> testInvalidToolInputErrorResponseIncludesViolations [
 	| data error errorJson firstViolation response violations |
 	[
 	MCPToolRequest
-		tool: MCPToolFindClasses new
+		tool: MCPToolSearchClasses new
 		arguments: { (#caseSensitive -> 'true') } asDictionary ]
 		on: MCPInvalidToolInput
 		do: [ :signalledError | error := signalledError ].
@@ -68,7 +68,7 @@ MCPToolRequestTest >> testInvalidToolInputErrorResponseIncludesViolations [
 	violations := data at: 'violations'.
 	firstViolation := violations first.
 	self assert: (errorJson at: 'code') equals: -32602.
-	self assert: (data at: 'toolName') equals: 'find-classes'.
+	self assert: (data at: 'toolName') equals: 'class_search'.
 	self assert: (firstViolation at: #path) equals: #( 'caseSensitive' ).
 	self assert: (firstViolation at: #keyword) equals: 'type'.
 	self
@@ -80,17 +80,19 @@ MCPToolRequestTest >> testInvalidToolInputErrorResponseIncludesViolations [
 MCPToolRequestTest >> testRequestAccessorsProvideDefaultsUniqueCollectionsSymbolsAndNestedStrings [
 
 	| nested request |
-	request := MCPToolRequest tool: MCPToolFindClasses new arguments: {
-			           (#packageNames -> #( ' MCP ' '' 'MCP' )).
-			           (#filterTargets -> #( 'class' 'package' 'class' )) }
-			           asDictionary.
+	request := MCPToolRequest
+		           tool: MCPToolSearchRepositories new
+		           arguments: {
+				           (#packageNames -> #( ' MCP ' '' 'MCP' )).
+				           (#repositoryNames -> #( 'MCP' 'Other' 'MCP' )) }
+				           asDictionary.
 	self
 		assert: (request stringCollectionArgumentNamed: 'packageNames')
 		equals: #( 'MCP' 'MCP' ).
 	self
 		assert:
-		(request uniqueStringCollectionArgumentNamed: 'filterTargets')
-		equals: #( 'class' 'package' ).
+		(request uniqueStringCollectionArgumentNamed: 'repositoryNames')
+		equals: #( 'MCP' 'Other' ).
 	self
 		assert: (request stringArgumentNamed: 'missing' default: 'image')
 		equals: 'image'.
@@ -116,7 +118,7 @@ MCPToolRequestTest >> testRequestAccessorsProvideDefaultsUniqueCollectionsSymbol
 MCPToolRequestTest >> testValidRequestProvidesTypedAccessors [
 
 	| request |
-	request := MCPToolRequest tool: MCPToolFindClasses new arguments: {
+	request := MCPToolRequest tool: MCPToolSearchClasses new arguments: {
 			           (#packageNames -> #( 'MCP' )).
 			           (#caseSensitive -> true).
 			           (#limit -> 3) } asDictionary.

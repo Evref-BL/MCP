@@ -1,5 +1,5 @@
 "
-Command wrapper for edit-repository operation=push. It calls IceRepository>>push and returns an MCPRepositoryPushResult.
+Command wrapper for repository_push. It calls IceRepository>>push and returns an MCPRepositoryPushResult.
 "
 Class {
 	#name : 'MCPPushRepositoryCommand',
@@ -24,7 +24,7 @@ MCPPushRepositoryCommand >> execute [
 
 	| repository result |
 	^ self tool
-		  executeEditOperation: 'push'
+		  executeMutationAction: 'push'
 		  force: false
 		  requestedContext: self request requestedContext
 		  work: [

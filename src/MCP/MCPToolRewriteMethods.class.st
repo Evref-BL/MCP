@@ -1,7 +1,7 @@
 "
-Mass-edits methods by applying Smalltalk AST rewrite rules in a method scope.
+Mass-updates methods by applying Smalltalk AST rewrite rules in a method scope.
 
-It is a method-scoped command tool, not a query tool: preview mode calculates ordered rewrite changes and a changeSetHash, while apply mode mutates the image only after expectedChangeSetHash confirmation.
+It is a method-scoped command tool, not a search tool: preview mode calculates ordered rewrite changes and a changeSetHash, while apply mode mutates the image only after expectedChangeSetHash confirmation.
 "
 Class {
 	#name : 'MCPToolRewriteMethods',
@@ -12,18 +12,10 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'icons' }
-MCPToolRewriteMethods class >> toolIconSpec [
-
-	^ MCPToolIconSpec
-		  baseIconNamed: #page
-		  badgeIconNamed: #refreshCircling
-]
-
 { #category : 'defaults' }
 MCPToolRewriteMethods class >> toolName [
 
-	^ 'rewrite-methods'
+	^ 'method_rewrite'
 ]
 
 { #category : 'private - execution' }
@@ -35,7 +27,7 @@ MCPToolRewriteMethods >> commandForRequest: rewriteRequest [
 { #category : 'defaults' }
 MCPToolRewriteMethods >> defaultDescription [
 
-	^ 'Preview or apply Smalltalk AST rewrite rules to methods in a scope. Patterns use RB AST pattern syntax, not regex; pattern variables such as ''`@node'' match AST nodes. By default apply=false returns a preview with changeSetHash and does not mutate the image. apply=true performs the rewrite and requires expectedChangeSetHash from a preview. Applying to the whole image also requires force=true. Scope properties are unioned and match find-methods semantics.'
+	^ 'Preview or apply Smalltalk AST rewrite rules to methods in a scope. Patterns use RB AST pattern syntax, not regex; pattern variables such as ''`@node'' match AST nodes. By default apply=false returns a preview with changeSetHash and does not mutate the image. apply=true performs the rewrite and requires expectedChangeSetHash from a preview. Applying to the whole image also requires force=true. Scope properties are unioned and match method_metadata_search semantics.'
 ]
 
 { #category : 'defaults' }
@@ -67,11 +59,12 @@ MCPToolRewriteMethods >> defaultTitle [
 { #category : 'error handling' }
 MCPToolRewriteMethods >> errorResultForRewriteError: anError request: rewriteRequest rawRequest: rawRequest [
 
-	(anError isKindOf: MCPCommandError) ifTrue: [
-		^ self
-			  errorResultText: anError messageText
-			  details: anError structuredDetails ].
-	^ self errorResultFor: anError
+	^ anError
+		  mcpCommandErrorDo: [ :commandError |
+				  self
+					  errorResultText: commandError messageText
+					  details: commandError structuredDetails ]
+		  otherwise: [ :toolError | self errorResultFor: toolError ]
 ]
 
 { #category : 'executing' }
@@ -256,12 +249,11 @@ MCPToolRewriteMethods >> rewriteScopeSchemaProperty [
 { #category : 'testing' }
 MCPToolRewriteMethods >> shouldSaveImageAfterSuccessfulExecutionForResult: aResult [
 
-	| data structuredContent |
-	aResult isError ifTrue: [ ^ false ].
-	structuredContent := aResult structuredContent.
-	structuredContent ifNil: [ ^ false ].
-	data := structuredContent at: #data ifAbsent: [ ^ false ].
-	^ (data at: #apply ifAbsent: [ false ]) = true and: [
+	| data |
+	data := self
+		        successfulStructuredDataFromResult: aResult
+		        ifAbsent: [ ^ false ].
+	^ (data at: #apply ifAbsent: [ false ]) == true and: [
 		  (data at: #appliedCount ifAbsent: [ 0 ]) > 0 ]
 ]
 

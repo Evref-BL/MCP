@@ -1,3 +1,6 @@
+"
+Fixture class whose methods are removed by method-removal tests.
+"
 Class {
 	#name : 'MCPToolRemoveMethodsTestTarget',
 	#superclass : 'Object',

@@ -1,7 +1,7 @@
 "
-Renraku rule that warns when MCP-authored methods use respondsTo:.
+Renraku rule that warns when MCP-authored production methods use respondsTo:.
 
-In ordinary Smalltalk code, collaborators and internal APIs should be modeled directly instead of guarded reflectively. Version drift belongs in PharoCompatibility, and external APIs should prefer testing protocol or class hierarchy checks before falling back to respondsTo:.
+In ordinary Smalltalk code, collaborators and internal APIs should be modeled directly instead of guarded reflectively. Version drift belongs in PharoCompatibility, and external APIs should prefer testing protocol or explicit capability messages before falling back to reflective selector probes.
 "
 Class {
 	#name : 'MCPRespondsToUsageRule',
@@ -18,6 +18,12 @@ MCPRespondsToUsageRule class >> checksMethod [
 ]
 
 { #category : 'accessing' }
+MCPRespondsToUsageRule class >> forbiddenSelector [
+
+	^ #respondsTo:
+]
+
+{ #category : 'accessing' }
 MCPRespondsToUsageRule class >> group [
 
 	^ self designFlawGroup
@@ -26,7 +32,7 @@ MCPRespondsToUsageRule class >> group [
 { #category : 'accessing' }
 MCPRespondsToUsageRule class >> rationale [
 
-	^ 'Avoid respondsTo: in ordinary Smalltalk code. Prefer clear collaborator contracts, testing protocol, isKindOf:, or PharoCompatibility for version differences; use respondsTo: only for truly reflective external APIs.'
+	^ 'Avoid respondsTo: in ordinary Smalltalk production code. Prefer clear collaborator contracts, testing protocol, or PharoCompatibility for version differences; reserve reflective selector probes for true meta-programming boundaries.'
 ]
 
 { #category : 'accessing' }
@@ -58,7 +64,7 @@ MCPRespondsToUsageRule >> check: aMethod forCritiquesDo: aCriticBlock [
 					 createTrivialCritiqueOn: aMethod
 					 intervalOf: sendNode
 					 hint:
-					 'Use collaborator contracts, testing protocol, isKindOf:, or PharoCompatibility first.') ]
+					 'Use collaborator contracts, testing protocol, or PharoCompatibility first.') ]
 ]
 
 { #category : 'accessing' }

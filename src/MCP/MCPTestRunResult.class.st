@@ -1,5 +1,5 @@
 "
-Result DTO for one run-tests selection.
+Result DTO for one test_run selection.
 
 It carries the structured result entry when any tests ran, timeout state, and remaining test requests for resume output.
 "

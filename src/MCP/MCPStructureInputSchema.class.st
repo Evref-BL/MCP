@@ -45,21 +45,23 @@ MCPStructureInputSchema >> anyOf: aCollection [
 { #category : 'accessing' }
 MCPStructureInputSchema >> asJRPCJSON [
 
-	| dic |
-	dic := Dictionary new.
-	self type ifNotNil: [ dic at: #type put: self type asJRPCJSON ].
+	| dictionary |
+	dictionary := Dictionary new.
+	self type ifNotNil: [ :schemaType |
+		dictionary at: #type put: schemaType asJRPCJSON ].
 	self properties ifNotNil: [
-		dic at: #properties put: self propertiesAsJRPCJSON ].
-	(self required notNil and: [ self required notEmpty ]) ifTrue: [
-		dic at: #required put: self required asJRPCJSON ].
-	(self additionalProperties notNil and: [
-		 self additionalProperties ~~ true ]) ifTrue: [
-		dic
-			at: #additionalProperties
-			put: self additionalProperties asJRPCJSON ].
+		dictionary at: #properties put: self propertiesAsJRPCJSON ].
+	self required ifNotNil: [ :requiredProperties |
+			requiredProperties ifNotEmpty: [
+				dictionary at: #required put: requiredProperties asJRPCJSON ] ].
+	self additionalProperties ifNotNil: [ :additionalPropertiesValue |
+			additionalPropertiesValue ~~ true ifTrue: [
+					dictionary
+						at: #additionalProperties
+						put: additionalPropertiesValue asJRPCJSON ] ].
 	self extraProperties keysAndValuesDo: [ :key :value |
-		dic at: key put: (self jsonValueForKey: key value: value) ].
-	^ dic
+		dictionary at: key put: (self jsonValueForKey: key value: value) ].
+	^ dictionary
 ]
 
 { #category : 'accessing' }
@@ -87,9 +89,7 @@ MCPStructureInputSchema >> initialize [
 { #category : 'private' }
 MCPStructureInputSchema >> jsonValueForKey: aKey value: aValue [
 
-	^ (aValue respondsTo: #asJRPCJSON)
-		  ifTrue: [ aValue asJRPCJSON ]
-		  ifFalse: [ aValue ]
+	^ aValue asJRPCJSON
 ]
 
 { #category : 'accessing' }

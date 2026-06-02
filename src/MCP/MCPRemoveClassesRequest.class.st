@@ -1,5 +1,5 @@
 "
-Parsed remove-classes tool request derived from one validated MCPToolRequest.
+Parsed class_remove tool request derived from one validated MCPToolRequest.
 "
 Class {
 	#name : 'MCPRemoveClassesRequest',

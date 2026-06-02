@@ -1,5 +1,5 @@
 "
-Continuation object for debug-capture worker processes.
+Continuation object for debug_capture worker processes.
 
 It coordinates the suspended worker, captured exception state, timeout wait, resume/proceed behavior, result preview limits, and worker cleanup for MCP-owned captured sessions.
 "
@@ -69,10 +69,8 @@ MCPDebugCaptureContinuation >> outcome: aDictionary [
 { #category : 'private' }
 MCPDebugCaptureContinuation >> prepareExceptionForProceed [
 
-	| exception |
-	exception := self capturedException.
-	(exception isKindOf: MessageNotUnderstood) ifTrue: [
-		exception mcpPrepareToResend ]
+	self capturedException ifNotNil: [ :exception |
+		exception mcpPrepareForProceed ]
 ]
 
 { #category : 'controlling' }

@@ -1,5 +1,5 @@
 "
-Parsed input for edit-repository operation=adoptHead. It resolves the registered Iceberg repository whose image working copy should adopt the repository HEAD commit, with an optional expected branch guard.
+Parsed input for repository_head_adopt. It resolves the registered Iceberg repository whose image working copy should adopt the repository HEAD commit, with an optional expected branch guard.
 "
 Class {
 	#name : 'MCPRepositoryAdoptHeadRequest',
@@ -23,6 +23,12 @@ MCPRepositoryAdoptHeadRequest class >> fromRequest: request tool: aTool [
 MCPRepositoryAdoptHeadRequest >> branchName [
 
 	^ branchName ifNil: [ '' ]
+]
+
+{ #category : 'converting' }
+MCPRepositoryAdoptHeadRequest >> commandForTool: aTool [
+
+	^ MCPAdoptRepositoryHeadCommand tool: aTool request: self
 ]
 
 { #category : 'initialization' }

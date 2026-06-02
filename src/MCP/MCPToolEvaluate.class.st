@@ -9,16 +9,10 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'icons' }
-MCPToolEvaluate class >> toolIconSpec [
-
-	^ MCPToolIconSpec named: #go
-]
-
 { #category : 'defaults' }
 MCPToolEvaluate class >> toolName [
 
-	^ 'evaluate'
+	^ 'image_evaluate'
 ]
 
 { #category : 'private - execution' }
@@ -73,7 +67,7 @@ MCPToolEvaluate >> defaultOutputSchema [
 { #category : 'defaults' }
 MCPToolEvaluate >> defaultTitle [
 
-	^ 'Evaluate Code'
+	^ 'Evaluate Image Code'
 ]
 
 { #category : 'executing' }
@@ -142,14 +136,16 @@ MCPToolEvaluate >> shouldSaveImageAfterSuccessfulExecution [
 { #category : 'private' }
 MCPToolEvaluate >> syntaxFailureMessageFor: aNotice [
 
+	| position |
+	position := aNotice position.
 	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: 'Evaluation failed during compilation (';
-			  nextPutAll: aNotice class name;
-			  nextPutAll: '): ';
-			  nextPutAll: aNotice messageText.
-		  (aNotice respondsTo: #position) ifTrue: [
 			  stream
-				  nextPutAll: ' Position: ';
-				  print: aNotice position ] ]
+				  nextPutAll: 'Evaluation failed during compilation (';
+				  nextPutAll: aNotice class name;
+				  nextPutAll: '): ';
+				  nextPutAll: aNotice messageText.
+			  position ifNotNil: [
+					  stream
+						  nextPutAll: ' Position: ';
+						  print: position ] ]
 ]

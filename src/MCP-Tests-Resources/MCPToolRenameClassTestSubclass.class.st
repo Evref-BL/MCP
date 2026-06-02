@@ -1,3 +1,6 @@
+"
+Fixture subclass used by class rename tests.
+"
 Class {
 	#name : 'MCPToolRenameClassTestSubclass',
 	#superclass : 'MCPToolRenameClassTestOriginal',

@@ -1,7 +1,5 @@
 "
-Request object for debug-sessions operations.
-
-It extends the shared debugger request with the optional candidate reference used when attaching a discovered human-opened debugger.
+Request object for debug session registry operations.
 "
 Class {
 	#name : 'MCPDebugSessionsRequest',
@@ -15,12 +13,8 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPDebugSessionsRequest class >> fromRequest: aRequest tool: aTool [
+MCPDebugSessionsRequest class >> fromRequest: aRequest tool: aTool operation: operationName [
 
-	| operationName |
-	operationName := aRequest
-		                 stringArgumentNamed: 'operation'
-		                 default: 'list'.
 	(self supportedOperations includes: operationName) ifFalse: [
 			MCPCommandError
 				signalErrorCode: #DebugSessionsOperationUnsupported
@@ -41,7 +35,7 @@ MCPDebugSessionsRequest class >> fromRequest: aRequest tool: aTool [
 { #category : 'accessing' }
 MCPDebugSessionsRequest class >> supportedOperations [
 
-	^ #( 'list' 'describe' 'forget' 'discover' 'attach' )
+	^ #( 'list' 'get' 'remove' 'search' 'attach' )
 ]
 
 { #category : 'accessing' }

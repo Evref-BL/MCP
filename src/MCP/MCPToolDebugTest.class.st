@@ -5,22 +5,16 @@ It mirrors the Pharo browser's Debug tests and Debug test setup workflows, with 
 "
 Class {
 	#name : 'MCPToolDebugTest',
-	#superclass : 'MCPTool',
+	#superclass : 'MCPToolDebug',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
 }
 
-{ #category : 'icons' }
-MCPToolDebugTest class >> toolIconSpec [
-
-	^ MCPToolIconSpec baseIconNamed: #bug badgeIconNamed: #testRunner
-]
-
 { #category : 'defaults' }
 MCPToolDebugTest class >> toolName [
 
-	^ 'debug-test'
+	^ 'debug_test_run'
 ]
 
 { #category : 'private - execution' }
@@ -32,7 +26,7 @@ MCPToolDebugTest >> commandForRequest: debugRequest [
 { #category : 'defaults' }
 MCPToolDebugTest >> defaultDescription [
 
-	^ 'Run one SUnit test method under debugger control and stop at the requested test phase with an immediate debug-state snapshot.'
+	^ 'Run one SUnit test method under debugger control and stop at the requested test phase with an immediate debug_state_get snapshot.'
 ]
 
 { #category : 'defaults' }
@@ -109,7 +103,7 @@ MCPToolDebugTest >> defaultInputSchema [
 { #category : 'defaults' }
 MCPToolDebugTest >> defaultName [
 
-	^ 'debug-test'
+	^ 'debug_test_run'
 ]
 
 { #category : 'defaults' }
@@ -158,7 +152,7 @@ MCPToolDebugTest >> defaultOutputSchema [
 					   schemaPropertyNamed: 'state'
 					   type: 'object'
 					   description:
-					   'Immediate debug-state snapshot for captured execution.').
+					   'Immediate debug_state_get snapshot for captured execution.').
 				  (self
 					   integerSchemaPropertyNamed: 'timeoutMilliseconds'
 					   description: 'Effective timeout used for this run.').
@@ -180,32 +174,6 @@ MCPToolDebugTest >> defaultOutputSchema [
 MCPToolDebugTest >> defaultTitle [
 
 	^ 'Debug Test'
-]
-
-{ #category : 'executing' }
-MCPToolDebugTest >> executeWithRequest: request [
-
-	^ self
-		  executeParsedRequestFrom: request
-		  do: [ :debugRequest |
-				  | commandResult |
-				  commandResult := (self commandForRequest: debugRequest) execute.
-				  commandResult isError
-					  ifTrue: [
-							  self
-								  errorResultText: commandResult summary
-								  details: commandResult errorDetails ]
-					  ifFalse: [
-							  self
-								  successResultText: commandResult summary
-								  data: commandResult data
-								  warnings: commandResult warnings ] ]
-		  onError: [ :error :ignored |
-				  self
-					  errorResultText: (error messageText ifNil: [ error asString ])
-					  details: ((error isKindOf: MCPCommandError)
-							   ifTrue: [ error structuredDetails ]
-							   ifFalse: [ self errorDetailsFor: error ]) ]
 ]
 
 { #category : 'private - request' }

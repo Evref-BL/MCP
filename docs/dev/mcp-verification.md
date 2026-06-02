@@ -53,7 +53,7 @@ These checks require an explicitly approved disposable or safe live image:
 - package, class, method, or test queries against the running image;
 - debugger capture, attach, state, control, breakpoint, and repair smoke calls
   when debugger behavior changes;
-- edit, rewrite, export, or repository mutation tools;
+- edit, rewrite, export, or repository operation tools;
 - image save or image-local Git operations.
 
 ## Disposable Inputs Required For Live Verification

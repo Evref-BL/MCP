@@ -1,5 +1,5 @@
 "
-Parsed input for edit-repository operation=commit. It resolves the registered Iceberg repository to commit and carries the required commit message.
+Parsed input for repository_commit. It resolves the registered Iceberg repository to commit and carries the required commit message.
 "
 Class {
 	#name : 'MCPRepositoryCommitRequest',
@@ -17,6 +17,12 @@ Class {
 MCPRepositoryCommitRequest class >> fromRequest: request tool: aTool [
 
 	^ self new initializeFromRequest: request
+]
+
+{ #category : 'converting' }
+MCPRepositoryCommitRequest >> commandForTool: aTool [
+
+	^ MCPCommitRepositoryCommand tool: aTool request: self
 ]
 
 { #category : 'initialization' }

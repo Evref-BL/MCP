@@ -10,43 +10,21 @@ Class {
 }
 
 { #category : 'tests' }
-MCPToolsCatalogPresenterTest >> testLongOperationListsAreSummarizedForCatalogRows [
+MCPToolsCatalogPresenterTest >> testCatalogCardRendersFocusedToolIdentity [
 
-	| presenter summary |
+	| card presenter |
 	presenter := MCPToolsCatalogPresenter new.
-	summary := presenter toolCatalogOperationSummaryFor:
-		           MCPToolEditRepository new.
-	self assert: summary equals: 'create | attach | +11'.
-	self assert: summary size < 24
+	card := presenter toolCatalogCardFor: MCPToolAttachRepository.
+	self assert: card isNotNil
 ]
 
 { #category : 'tests' }
-MCPToolsCatalogPresenterTest >> testShortOperationListsAreShownCompletely [
+MCPToolsCatalogPresenterTest >> testCatalogPresenterDoesNotExposeOperationSummarySelectors [
 
-	| presenter summary |
-	presenter := MCPToolsCatalogPresenter new.
-	summary := presenter toolCatalogOperationSummaryFor:
-		           MCPToolEditClass new.
-	self assert: summary equals: 'create | update'
-]
-
-{ #category : 'tests' }
-MCPToolsCatalogPresenterTest >> testShortOperationListsDoNotExposeRedundantOperationHelp [
-
-	| presenter |
-	presenter := MCPToolsCatalogPresenter new.
-	self assert:
-		(presenter toolCatalogOperationHelpFor: MCPToolEditClass new) isNil
-]
-
-{ #category : 'tests' }
-MCPToolsCatalogPresenterTest >> testSummarizedOperationListsExposeFullOperationHelp [
-
-	| presenter |
-	presenter := MCPToolsCatalogPresenter new.
-	self
-		assert:
-		(presenter toolCatalogOperationHelpFor: MCPToolEditRepository new)
-		equals:
-		'Operations: create | attach | update | verifyIdentity | export | diff | commit | adoptHead | fetch | pull | push | createBranch | switchBranch'
+	self deny: (MCPToolsCatalogPresenter includesSelector:
+			 #toolCatalogOperationSummaryFor:).
+	self deny: (MCPToolsCatalogPresenter includesSelector:
+			 #toolCatalogOperationHelpFor:).
+	self deny: (MCPToolsCatalogPresenter includesSelector:
+			 #toolCatalogOperationNamesFor:)
 ]

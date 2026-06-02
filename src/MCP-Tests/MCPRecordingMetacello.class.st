@@ -1,5 +1,5 @@
 "
-Test double that records the Metacello messages sent by load-repository command tests without loading an external mocking framework.
+Test double that records the Metacello messages sent by repository_load command tests without loading an external mocking framework.
 "
 Class {
 	#name : 'MCPRecordingMetacello',

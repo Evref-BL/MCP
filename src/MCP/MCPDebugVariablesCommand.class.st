@@ -1,5 +1,5 @@
 "
-Expands debugger variable and scope references returned by debug-state.
+Expands debugger variable and scope references returned by debug_state_get.
 
 It validates the state-scoped variable reference, resolves receiver or temporary values, and returns bounded child previews for instance variables and indexed contents.
 "
@@ -187,10 +187,7 @@ MCPDebugVariablesCommand >> isAtomicObject: anObject [
 { #category : 'private - printing' }
 MCPDebugVariablesCommand >> limitedPrintStringOf: anObject [
 
-	anObject ifNil: [ ^ 'nil' ].
-	^ [ anObject printStringLimitedTo: 500 ]
-		  on: Error
-		  do: [ :error | anObject class name asString ]
+	^ self limitedPrintStringOf: anObject limit: 500
 ]
 
 { #category : 'private - children' }

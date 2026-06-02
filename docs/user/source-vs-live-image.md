@@ -41,8 +41,8 @@ Use live image checks when the answer depends on image state:
 - applying image-side edits;
 - exporting image-side changes to Tonel or Git.
 
-Prefer dedicated `pharo` MCP tools for these checks. Use `evaluate` only when
-no dedicated tool fits.
+Prefer dedicated `pharo` MCP tools for these checks. Use `image_evaluate` only
+when no dedicated tool fits.
 
 ## Iceberg And Git
 

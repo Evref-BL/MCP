@@ -46,17 +46,8 @@ MCPImageCodeChangeTracker >> initialize [
 { #category : 'tracking' }
 MCPImageCodeChangeTracker >> recordAffectedPackagesFrom: anAnnouncement [
 
-	[
-		(anAnnouncement respondsTo: #packagesAffected) ifTrue: [
-				anAnnouncement packagesAffected do: [ :package |
-					package ifNotNil: [ self recordPackageName: package name ] ].
-				^ self ].
-		(anAnnouncement respondsTo: #package) ifTrue: [
-				| package |
-				package := anAnnouncement package.
-				package ifNotNil: [ self recordPackageName: package name ] ] ]
-		on: Error
-		do: [ :error | self ]
+	anAnnouncement mcpAffectedPackages do: [ :package |
+		package ifNotNil: [ self recordPackageName: package name ] ]
 ]
 
 { #category : 'tracking' }

@@ -106,42 +106,47 @@ catalog, start with tool discovery and schema inspection:
 
 ```text
 tools/list
-discover-tools
-inspect-tool
+tool_search
+tool_get
 ```
 
 Then inspect the image with read-only package, class, method, and repository
 tools:
 
 ```text
-find-packages
-find-classes
-find-methods
-inspect-class
-inspect-method
-find-repositories
+package_search
+class_search
+method_metadata_search
+method_source_search
+method_implementor_search
+method_sender_search
+class_get
+method_get
 ```
 
 Useful first questions:
 
 - list packages loaded in the image
-- find implementors of a selector with `find-methods`
-- find senders with `filterMode=selectorReference`
-- inspect one class before editing it
-- inspect repository status before exporting or committing
+- search implementors of a selector with `method_implementor_search`
+- search senders with `method_sender_search`
+- get one class before editing it
+- discover repository tools before exporting or committing
+- discover change-history tools before recovering changes
 
 ## First Mutating Calls
 
-Prefer dedicated tools over `evaluate`:
+Prefer dedicated tools over `image_evaluate`:
 
 ```text
-edit-class
-edit-method
-rewrite-methods
-run-tests
-edit-repository
-manage-change-history
+class_create
+method_create
+method_selector_update
+method_protocol_update
+test_run
 ```
+
+Use `tool_search` for less common class-structure changes, method reference
+lookups, coverage, repository operations, and change-history recovery.
 
 Use a copied or disposable image before asking an agent to make broad edits.
 MCP saves the image after successful mutating tools, so a successful

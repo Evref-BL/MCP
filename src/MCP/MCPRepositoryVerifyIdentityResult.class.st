@@ -1,5 +1,5 @@
 "
-Result DTO returned by edit-repository operation=verifyIdentity. It reports the repository snapshot that matched the caller's expected identity fields.
+Result DTO returned by repository_identity_verify. It reports the repository snapshot that matched the caller's expected identity fields.
 "
 Class {
 	#name : 'MCPRepositoryVerifyIdentityResult',

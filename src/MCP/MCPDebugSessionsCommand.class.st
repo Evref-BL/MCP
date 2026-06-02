@@ -1,7 +1,5 @@
 "
-Implements debug-sessions operations.
-
-It lists and describes registered sessions, discovers unattached debugger candidates, attaches an external debugger to the MCP registry, and forgets sessions with the right ownership cleanup semantics.
+Implements debug session registry operations.
 "
 Class {
 	#name : 'MCPDebugSessionsCommand',
@@ -90,8 +88,19 @@ MCPDebugSessionsCommand >> debuggerCandidates [
 	^ reversed asArray
 ]
 
+{ #category : 'executing' }
+MCPDebugSessionsCommand >> execute [
+
+	request operation = 'list' ifTrue: [ ^ self listSessions ].
+	request operation = 'get' ifTrue: [ ^ self getSession ].
+	request operation = 'remove' ifTrue: [ ^ self removeSession ].
+	request operation = 'search' ifTrue: [ ^ self searchCandidates ].
+	request operation = 'attach' ifTrue: [ ^ self attachCandidate ].
+	^ self signalUnsupportedOperation: request operation
+]
+
 { #category : 'private' }
-MCPDebugSessionsCommand >> describeSession [
+MCPDebugSessionsCommand >> getSession [
 
 	| record |
 	record := self sessionRecord.
@@ -101,46 +110,6 @@ MCPDebugSessionsCommand >> describeSession [
 			  { (#session
 			   -> (MCPDebugSessionInfo fromRecord: record) asDictionary) }
 				  asDictionary
-]
-
-{ #category : 'private' }
-MCPDebugSessionsCommand >> discoverCandidates [
-
-	| candidates |
-	candidates := self unattachedCandidates.
-	^ MCPDebugToolResult
-		  okSummary:
-		  candidates size asString , ' debug session candidates found.'
-		  data: {
-				  (#candidates
-				   -> (candidates collect: [ :each | each asDictionary ])).
-				  (#totalCount -> candidates size) } asDictionary
-]
-
-{ #category : 'executing' }
-MCPDebugSessionsCommand >> execute [
-
-	request operation = 'list' ifTrue: [ ^ self listSessions ].
-	request operation = 'describe' ifTrue: [ ^ self describeSession ].
-	request operation = 'forget' ifTrue: [ ^ self forgetSession ].
-	request operation = 'discover' ifTrue: [ ^ self discoverCandidates ].
-	request operation = 'attach' ifTrue: [ ^ self attachCandidate ].
-	^ self signalUnsupportedOperation: request operation
-]
-
-{ #category : 'private' }
-MCPDebugSessionsCommand >> forgetSession [
-
-	| record terminated |
-	record := self sessionRecord.
-	terminated := self terminateCapturedSessionForRecord: record.
-	registry forgetSessionId: record sessionId.
-	^ MCPDebugToolResult
-		  okSummary: 'Forgot debug session ' , record sessionId , '.'
-		  data: {
-				  (#sessionId -> record sessionId).
-				  (#forgotten -> true).
-				  (#terminated -> terminated) } asDictionary
 ]
 
 { #category : 'private' }
@@ -169,6 +138,35 @@ MCPDebugSessionsCommand >> recordForCandidate: aCandidate ifFound: foundBlock if
 					  ifAbsent: absentBlock ]
 ]
 
+{ #category : 'private' }
+MCPDebugSessionsCommand >> removeSession [
+
+	| record terminated |
+	record := self sessionRecord.
+	terminated := self terminateCapturedSessionForRecord: record.
+	registry removeSessionId: record sessionId.
+	^ MCPDebugToolResult
+		  okSummary: 'Removed debug session ' , record sessionId , '.'
+		  data: {
+				  (#sessionId -> record sessionId).
+				  (#removed -> true).
+				  (#terminated -> terminated) } asDictionary
+]
+
+{ #category : 'private' }
+MCPDebugSessionsCommand >> searchCandidates [
+
+	| candidates |
+	candidates := self unattachedCandidates.
+	^ MCPDebugToolResult
+		  okSummary:
+		  candidates size asString , ' debug session candidates found.'
+		  data: {
+				  (#candidates
+				   -> (candidates collect: [ :each | each asDictionary ])).
+				  (#totalCount -> candidates size) } asDictionary
+]
+
 { #category : 'private - errors' }
 MCPDebugSessionsCommand >> signalCandidateNotFound: aCandidateRef [
 
@@ -184,18 +182,20 @@ MCPDebugSessionsCommand >> signalMissingCandidateRef [
 
 	MCPCommandError
 		signalErrorCode: #DebugSessionCandidateRefMissing
-		message: 'debug-sessions attach requires candidateRef.'
+		message: tool name , ' requires candidateRef.'
 		details: { (#operation -> request operation) } asDictionary
 ]
 
 { #category : 'private' }
 MCPDebugSessionsCommand >> terminateCapturedSessionForRecord: aRecord [
 
+	| session |
 	aRecord continuation ifNotNil: [ :continuation |
 		^ continuation terminateWorker ].
-	(aRecord reason = 'capturedException' and: [
-		 aRecord debugSession notNil ]) ifFalse: [ ^ false ].
-	[ aRecord debugSession terminate ]
+	aRecord reason = 'capturedException' ifFalse: [ ^ false ].
+	session := aRecord debugSession.
+	session ifNil: [ ^ false ].
+	[ session terminate ]
 		on: Error
 		do: [ :ignored | ^ false ].
 	^ true

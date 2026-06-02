@@ -1,3 +1,6 @@
+"
+Fixture class that keeps senders for forced method-removal tests.
+"
 Class {
 	#name : 'MCPToolRemoveMethodsTestSender',
 	#superclass : 'Object',

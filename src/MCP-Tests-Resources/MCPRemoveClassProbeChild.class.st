@@ -1,3 +1,6 @@
+"
+Child fixture class used by class-removal tests.
+"
 Class {
 	#name : 'MCPRemoveClassProbeChild',
 	#superclass : 'Object',

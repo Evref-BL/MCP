@@ -1,7 +1,7 @@
 "
 Static bridge tool that invokes tools from the discoverable catalog.
 
-The tool keeps the advertised static surface small while still allowing agents to call less common tools after discovery and inspection.
+The tool keeps the advertised static surface small while still allowing agents to call less common tools after discovery and contract lookup.
 "
 Class {
 	#name : 'MCPToolCallTool',
@@ -11,16 +11,10 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'icons' }
-MCPToolCallTool class >> toolIconSpec [
-
-	^ MCPToolIconSpec named: #go
-]
-
 { #category : 'defaults' }
 MCPToolCallTool class >> toolName [
 
-	^ 'call-tool'
+	^ 'tool_call'
 ]
 
 { #category : 'private - execution' }
@@ -68,7 +62,7 @@ MCPToolCallTool >> defaultOutputSchema [
 		                  schemaPropertyNamed: 'result'
 		                  type: 'object'
 		                  description:
-		                  'The target tool result when call-tool is executed outside the MCP server call path.'.
+		                  'The target tool result when tool_call is executed outside the MCP server call path.'.
 	resultProperty additionalProperties: true.
 	^ self
 		  standardOutputSchemaForDataProperties: {
@@ -93,7 +87,7 @@ MCPToolCallTool >> executeWithRequest: request [
 		  executeParsedRequestFrom: request
 		  do: [ :callRequest |
 				  self
-					  errorResultText: 'call-tool requires MCP server call context.'
+					  errorResultText: 'tool_call requires MCP server call context.'
 					  details: { (#toolName -> callRequest toolName) } asDictionary ]
 		  onError: [ :error :parsedRequest | self errorResultFor: error ]
 ]

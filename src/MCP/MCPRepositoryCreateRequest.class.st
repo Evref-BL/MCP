@@ -23,6 +23,12 @@ MCPRepositoryCreateRequest class >> fromRequest: request tool: aTool [
 	^ self new initializeFromRequest: request
 ]
 
+{ #category : 'converting' }
+MCPRepositoryCreateRequest >> commandForTool: aTool [
+
+	^ MCPCreateRepositoryCommand tool: aTool request: self
+]
+
 { #category : 'initialization' }
 MCPRepositoryCreateRequest >> initializeFromRequest: request [
 

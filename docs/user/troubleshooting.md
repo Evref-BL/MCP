@@ -47,11 +47,11 @@ inspect the tool's `inputSchema`.
 
 Common causes:
 
-- missing required operation fields
+- missing required fields for the selected tool
 - extra fields rejected by `additionalProperties: false`
-- `operation=update` with more than one patch action
-- `rewrite-methods` with `apply=true` but no `expectedChangeSetHash`
-- `manage-change-history` apply/revert without `confirm=true`
+- passing arguments from a different tool
+- `method_rewrite` with `apply=true` but no `expectedChangeSetHash`
+- `history_entry_apply` or `history_entry_revert` without `confirm=true`
 
 ## A Refactoring Stops With A Warning
 
@@ -70,12 +70,12 @@ Rerun with `force=true` only when the impact is acceptable.
 
 ## A Method Compiles But Returns Critiques
 
-`edit-method` can return Renraku critiques after compilation. The method exists,
+`method_create` can return Renraku critiques after compilation. The method exists,
 but Pharo found review issues. Inspect the critique rule class, title,
 description, and source interval if present.
 
-Use a follow-up `edit-method`, `run-tests`, or `inspect-method` call depending
-on the critique.
+Use a follow-up `method_create`, `method_selector_update`, `test_run`, or
+`method_get` call depending on the critique.
 
 ## Repository State Looks Wrong
 
@@ -86,17 +86,18 @@ differ.
 Start with:
 
 ```text
-find-repositories
-edit-repository operation=diff
+repository_search
+repository_identity_verify
+repository_change_list
 ```
 
-Use `operation=export` only when you mean to write image changes to files.
+Use `repository_export` only when you mean to write image changes to files.
 Export updates the Iceberg index but does not stage or commit Git changes.
 
 ## Tests Do Not Prove The Edited Scope
 
-`run-tests` tells you whether selected tests passed. Use `operation=coverage`
-with an explicit coverage scope when you need to know whether the edited methods
+`test_run` tells you whether selected tests passed. Use `test_coverage_run` with
+an explicit coverage scope when you need to know whether the edited methods
 executed.
 
 Coverage scopes should be narrow: package, class, hierarchy, or method names.
@@ -106,18 +107,20 @@ Coverage scopes should be narrow: package, class, hierarchy, or method names.
 Image-changing tools save the image after successful mutation. If you are using
 an automation or agent, run it against a copied or disposable image.
 
-Use `manage-change-history` to inspect Epicea history entries. Apply or revert
-operations can be previewed first and performed with `confirm=true`.
+Use `history_file_list` and `history_entry_list` to inspect
+Epicea history. Apply or revert operations stay in `history_entry_apply` and
+`history_entry_revert`, where they can be previewed first and performed with
+`confirm=true`.
 
 ## Debugger References Are Stale
 
 Debugger `stateId`, `frameRef`, and `variableRef` values are scoped to one
-debug-state snapshot. After a control action, debugger edit, or resume, discard
+debug_state_get snapshot. After a control action, debugger edit, or resume, discard
 old references and use the newly returned state.
 
 If a human opened the debugger, attach through the debugging tools and let the
 debugger controller own UI actions. Do not drive debugger windows with raw
-`evaluate` code.
+`image_evaluate` code.
 
 ## Source Checks Are Not Enough
 

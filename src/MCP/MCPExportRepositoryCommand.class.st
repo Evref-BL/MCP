@@ -1,52 +1,20 @@
 "
-Command wrapper for edit-repository operation=export. It calculates the repository working copy diff, updates the disk working copy and git index from that diff, and returns an MCPRepositoryExportResult.
+Command wrapper for repository_export. It calculates the repository working copy diff, updates the disk working copy and git index from that diff, and returns an MCPRepositoryExportResult.
 "
 Class {
 	#name : 'MCPExportRepositoryCommand',
-	#superclass : 'Object',
-	#instVars : [
-		'tool',
-		'request'
-	],
+	#superclass : 'MCPRepositoryWorkingCopyCommand',
 	#category : 'MCP-Commands',
 	#package : 'MCP',
 	#tag : 'Commands'
 }
-
-{ #category : 'instance creation' }
-MCPExportRepositoryCommand class >> tool: aTool request: aRequest [
-
-	^ self new initializeTool: aTool request: aRequest
-]
-
-{ #category : 'private - diff' }
-MCPExportRepositoryCommand >> addModifiedPathsFromNode: aNode to: paths [
-
-	(aNode hasChanges and: [ aNode path segments notEmpty ]) ifTrue: [
-		paths add: aNode path pathString ].
-	aNode children do: [ :each |
-		self addModifiedPathsFromNode: each to: paths ]
-]
-
-{ #category : 'private - diff' }
-MCPExportRepositoryCommand >> changedPackageNamesFromDiff: aDiff [
-
-	| names |
-	names := [
-	         aDiff packages collect: [ :each |
-		         self packageNameFromDiffPackageNode: each ] ]
-		         on: Error
-		         do: [ :ignored | #(  ) ].
-	^ self sortedStringsFrom:
-		  (names select: [ :each | each notNil and: [ each isEmpty not ] ])
-]
 
 { #category : 'executing' }
 MCPExportRepositoryCommand >> execute [
 
 	| changedPackageNames diff modifiedPaths repository result restoredOrderOnlyPaths tonelSnapshot |
 	^ self tool
-		  executeEditOperation: 'export'
+		  executeMutationAction: 'export'
 		  force: false
 		  requestedContext: self request requestedContext
 		  work: [
@@ -80,14 +48,6 @@ MCPExportRepositoryCommand >> execute [
 				  , (error messageText ifNil: [ error asString ]) ]
 ]
 
-{ #category : 'initialization' }
-MCPExportRepositoryCommand >> initializeTool: aTool request: aRequest [
-
-	tool := aTool.
-	request := aRequest.
-	^ self
-]
-
 { #category : 'private - tonel order' }
 MCPExportRepositoryCommand >> isTonelMethodOrderFile: aFileReference [
 
@@ -106,26 +66,6 @@ MCPExportRepositoryCommand >> isTonelMethodStartAt: anIndex in: lines [
 	(line beginsWith: '{ #category') ifFalse: [ ^ false ].
 	nextLine := lines at: anIndex + 1.
 	^ nextLine includesSubstring: ' >> '
-]
-
-{ #category : 'private - diff' }
-MCPExportRepositoryCommand >> modifiedPathsFromDiff: aDiff [
-
-	| paths |
-	paths := OrderedCollection new.
-	[ self addModifiedPathsFromNode: aDiff tree to: paths ]
-		on: Error
-		do: [ :ignored | ^ #(  ) ].
-	^ self sortedStringsFrom: paths
-]
-
-{ #category : 'private - diff' }
-MCPExportRepositoryCommand >> packageNameFromDiffPackageNode: aNode [
-
-	| definition |
-	definition := aNode definition.
-	(definition respondsTo: #packageName) ifFalse: [ ^ nil ].
-	^ definition packageName asString
 ]
 
 { #category : 'private - tonel order' }
@@ -147,18 +87,10 @@ MCPExportRepositoryCommand >> repositorySourceDirectoryFor: aRepository [
 
 	| location subdirectory |
 	location := aRepository location asFileReference.
-	subdirectory := [ aRepository subdirectory ]
-		                on: Error
-		                do: [ :ignored | nil ].
-	(subdirectory isNil or: [ subdirectory asString isEmpty ]) ifTrue: [
-		^ location ].
+	subdirectory := aRepository subdirectory.
+	subdirectory ifNil: [ ^ location ].
+	subdirectory asString isEmpty ifTrue: [ ^ location ].
 	^ location / subdirectory asString
-]
-
-{ #category : 'accessing' }
-MCPExportRepositoryCommand >> request [
-
-	^ request
 ]
 
 { #category : 'private - tonel order' }
@@ -195,13 +127,6 @@ MCPExportRepositoryCommand >> snapshotTonelFilesFor: aRepository [
 				at: (self relativePathFor: file under: sourceDirectory)
 				put: file contents ].
 	^ snapshot
-]
-
-{ #category : 'private' }
-MCPExportRepositoryCommand >> sortedStringsFrom: aCollection [
-
-	^ (aCollection collect: [ :each | each asString ]) asSet
-		  asSortedCollection asArray
 ]
 
 { #category : 'private - tonel order' }
@@ -256,18 +181,4 @@ MCPExportRepositoryCommand >> tonelMethodOrderSignatureFor: contents [
 	^ {
 		  (#preamble -> preamble contents trimBoth).
 		  (#methods -> chunks asSortedCollection asArray) } asDictionary
-]
-
-{ #category : 'accessing' }
-MCPExportRepositoryCommand >> tool [
-
-	^ tool
-]
-
-{ #category : 'private - execution' }
-MCPExportRepositoryCommand >> withNonInteractiveAuthorDuring: aBlock [
-
-	^ PharoCompatibility
-		  withNonInteractiveAuthorNamed: 'MCP'
-		  during: aBlock
 ]

@@ -1,3 +1,6 @@
+"
+Temporary fixture class used to verify slot selector rewrites during rename tests.
+"
 Class {
 	#name : 'MCPRenameClassSlotSelectorsTemp',
 	#superclass : 'Object',

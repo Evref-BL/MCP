@@ -1,5 +1,7 @@
 "
-Result DTO for replacing the class variables of a class. It carries the class state after replacement and the old/new shared variable name lists for edit-class update output.
+Result DTO for replacing the class variables of a class.
+
+It carries the class state after replacement and the old/new shared variable name lists for class update output.
 "
 Class {
 	#name : 'MCPReplaceClassSharedVariablesResult',

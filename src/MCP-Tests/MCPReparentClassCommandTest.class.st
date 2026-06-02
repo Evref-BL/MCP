@@ -1,3 +1,6 @@
+"
+Tests command-level class reparenting behavior.
+"
 Class {
 	#name : 'MCPReparentClassCommandTest',
 	#superclass : 'MCPCommandTestCase',

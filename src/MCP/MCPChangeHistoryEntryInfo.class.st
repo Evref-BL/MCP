@@ -82,21 +82,18 @@ MCPChangeHistoryEntryInfo >> initializeFromEntry: anEntry index: anInteger log: 
 	localName := self localNameFromReference: referenceObject.
 	eventClassName := event ifNotNil: [ event class name asString ].
 	summary := event ifNotNil: [ event printString ].
-	isCodeChange := event notNil and: [
-		                (event respondsTo: #isCodeChange) and: [
-			                event isCodeChange ] ].
+	isCodeChange := event notNil and: [ event isCodeChange ].
 	time := [
-	        (aLog timeAt: anEntry ifAbsent: [ nil ])
-		        ifNil: [ nil ]
-		        ifNotNil: [ :value | value asString ] ]
+		        (aLog timeAt: anEntry ifAbsent: [ nil ]) ifNotNil: [ :value |
+			        value asString ] ]
 		        on: Error
 		        do: [ :error | nil ].
 	triggerReference := [
-	                    aLog
-		                    triggererReferenceOf: anEntry
-		                    ifPresent: [ :aReference |
-		                    self stringFromReference: aReference ]
-		                    ifAbsent: [ nil ] ]
+		                    aLog
+			                    triggererReferenceOf: anEntry
+			                    ifPresent: [ :aReference |
+			                    self stringFromReference: aReference ]
+			                    ifAbsent: [ nil ] ]
 		                    on: Error
 		                    do: [ :error | nil ].
 	packageName := self
@@ -127,23 +124,15 @@ MCPChangeHistoryEntryInfo >> localNameFromReference: aReference [
 { #category : 'private' }
 MCPChangeHistoryEntryInfo >> stringFromReference: aReference [
 
-	aReference ifNil: [ ^ nil ].
-	(aReference respondsTo: #shortName) ifTrue: [
-		^ aReference shortName asString ].
-	^ aReference asString
+	^ MCPChangeHistoryValueExtractor referenceStringFrom: aReference
 ]
 
 { #category : 'private' }
 MCPChangeHistoryEntryInfo >> stringValueFrom: anObject selector: aSelector [
 
-	(anObject notNil and: [ anObject respondsTo: aSelector ]) ifFalse: [
-		^ nil ].
-	^ [
-	  (anObject perform: aSelector)
-		  ifNil: [ nil ]
-		  ifNotNil: [ :value | value asString ] ]
-		  on: Error
-		  do: [ :error | nil ]
+	^ MCPChangeHistoryValueExtractor
+		  stringValueFrom: anObject
+		  selector: aSelector
 ]
 
 { #category : 'private' }

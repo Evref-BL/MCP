@@ -144,8 +144,9 @@ MCPRemoveClassesCommand >> resultForRemovedClass: aClass [
 { #category : 'private' }
 MCPRemoveClassesCommand >> shouldReparentSubclassesWhenRemoving: aClass wasEmpty: wasEmpty [
 
-	^ aClass subclasses notEmpty and: [
-		  aClass superclass notNil and: [ self force or: [ wasEmpty ] ] ]
+	aClass subclasses ifEmpty: [ ^ false ].
+	aClass superclass ifNil: [ ^ false ].
+	^ self force or: [ wasEmpty ]
 ]
 
 { #category : 'private' }

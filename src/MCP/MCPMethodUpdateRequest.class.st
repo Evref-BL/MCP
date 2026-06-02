@@ -1,5 +1,5 @@
 "
-Parsed edit-method update request. It uses patch semantics: exactly one method update field selects the internal update action for an existing method. newSelector changes are classified by arity: same arity renames or reorders, higher arity adds arguments, and lower arity removes arguments.
+Parsed method update request. It uses patch semantics: exactly one method update field selects the internal update action for an existing method. newSelector changes are classified by arity: same arity renames or reorders, higher arity adds arguments, and lower arity removes arguments.
 "
 Class {
 	#name : 'MCPMethodUpdateRequest',
@@ -99,6 +99,12 @@ MCPMethodUpdateRequest >> classSide [
 ]
 
 { #category : 'converting' }
+MCPMethodUpdateRequest >> commandForTool: aTool [
+
+	^ MCPUpdateMethodCommand tool: aTool request: self
+]
+
+{ #category : 'converting' }
 MCPMethodUpdateRequest >> contextValueForPropertyNamed: propertyName [
 
 	propertyName = 'newSelector' ifTrue: [ ^ self newSelector ].
@@ -193,9 +199,7 @@ MCPMethodUpdateRequest >> initializeFromRequest: request [
 		               permutationFromRequest: request
 		               selector: selector asSymbol
 		               newSelector:
-		               (newSelector
-			                ifNil: [ nil ]
-			                ifNotNil: [ newSelector asSymbol ]).
+		               (newSelector ifNotNil: [ newSelector asSymbol ]).
 	force := request booleanArgumentNamed: 'force' default: false.
 	^ self
 ]

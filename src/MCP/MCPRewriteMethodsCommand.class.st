@@ -219,19 +219,19 @@ MCPRewriteMethodsCommand >> tool [
 MCPRewriteMethodsCommand >> validateExpectedChangeSetHash: changeSetHashInteger [
 
 	self request expectedChangeSetHash ifNil: [
-		MCPCommandError
-			signalErrorCode: #RewriteExpectedChangeSetHashRequired
-			message:
-			'Applying rewrite-methods requires expectedChangeSetHash from a preview.'
-			details: self request requestedContext ].
+			MCPCommandError
+				signalErrorCode: #RewriteExpectedChangeSetHashRequired
+				message:
+				'Applying method_rewrite requires expectedChangeSetHash from a preview.'
+				details: self request requestedContext ].
 	self request expectedChangeSetHash = changeSetHashInteger ifFalse: [
-		MCPCommandError
-			signalErrorCode: #RewriteChangeSetHashMismatch
-			message:
-			'Rewrite change set hash does not match expectedChangeSetHash.'
-			details: (self request requestedContext
-					 at: #actualChangeSetHash put: changeSetHashInteger;
-					 yourself) ]
+			MCPCommandError
+				signalErrorCode: #RewriteChangeSetHashMismatch
+				message:
+				'Rewrite change set hash does not match expectedChangeSetHash.'
+				details: (self request requestedContext
+						 at: #actualChangeSetHash put: changeSetHashInteger;
+						 yourself) ]
 ]
 
 { #category : 'private - validating' }
@@ -239,11 +239,11 @@ MCPRewriteMethodsCommand >> validateExplicitApplyScope [
 
 	(self request scopeQuery usesImplicitImageScope and: [
 		 self request force not ]) ifTrue: [
-		MCPCommandError
-			signalErrorCode: #RewriteApplyRequiresExplicitScope
-			message:
-			'Applying rewrite-methods to the whole image requires force=true. Prefer packageNames, classNames, hierarchyClassNames, subclassClassNames, or parentClassNames.'
-			details: self request requestedContext ]
+			MCPCommandError
+				signalErrorCode: #RewriteApplyRequiresExplicitScope
+				message:
+				'Applying method_rewrite to the whole image requires force=true. Prefer packageNames, classNames, hierarchyClassNames, subclassClassNames, or parentClassNames.'
+				details: self request requestedContext ]
 ]
 
 { #category : 'private - validating' }

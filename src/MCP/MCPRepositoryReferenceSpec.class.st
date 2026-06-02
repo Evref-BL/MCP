@@ -105,10 +105,7 @@ MCPRepositoryReferenceSpec >> repository [
 MCPRepositoryReferenceSpec >> repositoryLocationFor: aRepository [
 
 	^ self
-		  stringFrom: [
-			  (aRepository respondsTo: #location)
-				  ifTrue: [ aRepository location ]
-				  ifFalse: [ '' ] ]
+		  stringFrom: [ aRepository location mcpRepositoryLocationString ]
 		  default: ''
 ]
 
@@ -172,7 +169,5 @@ MCPRepositoryReferenceSpec >> stringFrom: aBlock default: defaultString [
 MCPRepositoryReferenceSpec >> stringValue: aValue default: defaultString [
 
 	aValue ifNil: [ ^ defaultString ].
-	(aValue respondsTo: #pathString) ifTrue: [
-		^ aValue pathString asString ].
 	^ aValue asString
 ]

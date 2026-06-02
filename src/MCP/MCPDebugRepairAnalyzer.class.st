@@ -1,7 +1,7 @@
 "
-Analyzes a paused debug session for repair actions.
+Analyzes a captured debug session state and derives debugger-driven method update actions.
 
-It recognizes repairable states such as missing methods and subclass-responsibility style exceptions, then produces debug-edit action payloads tied to the current state.
+It recognizes repairable states such as missing methods and subclass-responsibility style exceptions, then produces debug_method_update action payloads tied to the current state.
 "
 Class {
 	#name : 'MCPDebugRepairAnalyzer',
@@ -51,11 +51,12 @@ MCPDebugRepairAnalyzer >> classNameForBehavior: aBehavior [
 { #category : 'private - actions' }
 MCPDebugRepairAnalyzer >> classSideForBehavior: aBehavior [
 
-	^ aBehavior notNil and: [ aBehavior isMeta ]
+	aBehavior ifNil: [ ^ false ].
+	^ aBehavior isMeta
 ]
 
 { #category : 'private - actions' }
-MCPDebugRepairAnalyzer >> debugEditArgumentsForFrameRef: frameRef [
+MCPDebugRepairAnalyzer >> debugMethodUpdateArgumentsForFrameRef: frameRef [
 
 	^ {
 		  (#sessionId -> record sessionId).
@@ -66,13 +67,14 @@ MCPDebugRepairAnalyzer >> debugEditArgumentsForFrameRef: frameRef [
 { #category : 'private' }
 MCPDebugRepairAnalyzer >> debugSession [
 
-	^ record ifNil: [ nil ] ifNotNil: [ record debugSession ]
+	^ record ifNotNil: [ record debugSession ]
 ]
 
 { #category : 'private - methods' }
 MCPDebugRepairAnalyzer >> defaultSourceForMessage: aMessage behavior: aBehavior [
 
-	(aMessage isNil or: [ aBehavior isNil ]) ifTrue: [ ^ nil ].
+	aMessage ifNil: [ ^ nil ].
+	aBehavior ifNil: [ ^ nil ].
 	^ self generatedDefaultSourceForMessage: aMessage behavior: aBehavior
 ]
 
@@ -81,7 +83,7 @@ MCPDebugRepairAnalyzer >> descriptionForKind: kind behavior: aBehavior selector:
 
 	| targetName |
 	targetName := self classNameForBehavior: aBehavior.
-	(aBehavior notNil and: [ aBehavior isMeta ]) ifTrue: [
+	(self classSideForBehavior: aBehavior) ifTrue: [
 		targetName := targetName , ' class' ].
 	^ String streamContents: [ :stream |
 			  kind = 'missingMethod'
@@ -90,7 +92,7 @@ MCPDebugRepairAnalyzer >> descriptionForKind: kind behavior: aBehavior selector:
 						  kind = 'subclassResponsibility'
 							  ifTrue: [
 							  stream nextPutAll: 'Implement subclass responsibility ' ]
-							  ifFalse: [ stream nextPutAll: 'Edit method ' ] ].
+							  ifFalse: [ stream nextPutAll: 'Update method ' ] ].
 			  stream
 				  nextPutAll: targetName asString;
 				  nextPutAll: '>>';
@@ -100,8 +102,7 @@ MCPDebugRepairAnalyzer >> descriptionForKind: kind behavior: aBehavior selector:
 { #category : 'private' }
 MCPDebugRepairAnalyzer >> exception [
 
-	self debugSession ifNil: [ ^ nil ].
-	^ self debugSession exception
+	^ self debugSession ifNotNil: [ :session | session exception ]
 ]
 
 { #category : 'private - contexts' }
@@ -109,7 +110,7 @@ MCPDebugRepairAnalyzer >> fallbackTargetContextForException: anException [
 
 	| contexts session |
 	session := self debugSession.
-	(session isKindOf: DebugSession) ifTrue: [
+	session ifNotNil: [
 		session interruptedContext ifNotNil: [ :context | ^ context ] ].
 	contexts := self rawContexts.
 	contexts isEmpty ifTrue: [ ^ nil ].
@@ -134,40 +135,10 @@ MCPDebugRepairAnalyzer >> generatedDefaultSourceForMessage: aMessage behavior: a
 		  do: [ nil ]
 ]
 
-{ #category : 'private - testing' }
-MCPDebugRepairAnalyzer >> isMissingMethodException: anException [
-
-	^ anException isKindOf: MessageNotUnderstood
-]
-
-{ #category : 'private - testing' }
-MCPDebugRepairAnalyzer >> isNotYetImplementedException: anException [
-
-	^ anException isKindOf: NotYetImplemented
-]
-
-{ #category : 'private - testing' }
-MCPDebugRepairAnalyzer >> isShouldBeImplementedException: anException [
-
-	^ anException isKindOf: ShouldBeImplemented
-]
-
-{ #category : 'private - testing' }
-MCPDebugRepairAnalyzer >> isSubclassResponsibilityException: anException [
-
-	^ anException isKindOf: SubclassResponsibility
-]
-
 { #category : 'private - messages' }
 MCPDebugRepairAnalyzer >> messageForException: anException context: aContext [
 
-	(anException isKindOf: MessageNotUnderstood) ifTrue: [
-		^ anException message ].
-	(anException isKindOf: SelectorException) ifTrue: [
-		^ Message
-			  selector: anException selector
-			  arguments: aContext arguments ].
-	^ nil
+	^ anException mcpRepairMessageForContext: aContext
 ]
 
 { #category : 'private - methods' }
@@ -246,36 +217,24 @@ MCPDebugRepairAnalyzer >> repairActionForContext: aContext behavior: aBehavior s
 			    descriptionForKind: kind
 			    behavior: aBehavior
 			    selector: aSelector)).
-		  (#toolName -> 'debug-edit').
+		  (#toolName -> 'debug_method_update').
 		  (#sessionId -> record sessionId).
 		  (#stateId -> record stateId).
 		  (#frameRef -> frameRef).
 		  (#selector -> aSelector asString).
 		  (#targetClassName -> (self classNameForBehavior: aBehavior)).
 		  (#classSide -> (self classSideForBehavior: aBehavior)).
-		  (#arguments -> (self debugEditArgumentsForFrameRef: frameRef)) }
+		  (#arguments -> (self debugMethodUpdateArgumentsForFrameRef: frameRef)) }
 		  asDictionary
 ]
 
 { #category : 'repairing' }
 MCPDebugRepairAnalyzer >> repairActions [
 
-	| action exception |
-	exception := self exception.
-	exception ifNil: [ ^ #(  ) ].
-	(self isMissingMethodException: exception) ifTrue: [
-			action := self missingMethodActionFor: exception.
-			^ action ifNil: [ #(  ) ] ifNotNil: [ { action } ] ].
-	(self isSubclassResponsibilityException: exception) ifTrue: [
-			action := self subclassResponsibilityActionFor: exception.
-			^ action ifNil: [ #(  ) ] ifNotNil: [ { action } ] ].
-	(self isShouldBeImplementedException: exception) ifTrue: [
-			action := self stubActionFor: exception kind: 'shouldBeImplemented'.
-			^ action ifNil: [ #(  ) ] ifNotNil: [ { action } ] ].
-	(self isNotYetImplementedException: exception) ifTrue: [
-			action := self stubActionFor: exception kind: 'notYetImplemented'.
-			^ action ifNil: [ #(  ) ] ifNotNil: [ { action } ] ].
-	^ #(  )
+	^ self exception
+		  ifNil: [ #(  ) ]
+		  ifNotNil: [ :anException |
+		  anException mcpDebugRepairActionsFor: self ]
 ]
 
 { #category : 'accessing' }
@@ -295,8 +254,8 @@ MCPDebugRepairAnalyzer >> request: aRequest [
 MCPDebugRepairAnalyzer >> selectorContextForException: anException [
 
 	| selector |
-	(anException isKindOf: SelectorException) ifFalse: [ ^ nil ].
-	selector := anException selector.
+	selector := anException mcpSelectorForContextLookup.
+	selector ifNil: [ ^ nil ].
 	^ self rawContexts
 		  detect: [ :context | context selector = selector ]
 		  ifNone: [ nil ]
@@ -355,11 +314,10 @@ MCPDebugRepairAnalyzer >> subclassResponsibilityActionFor: anException [
 MCPDebugRepairAnalyzer >> targetContextForException: anException [
 
 	| context methodImplementor |
-	(anException isKindOf: MessageNotUnderstood) ifTrue: [
-			methodImplementor := self methodImplementor.
-			methodImplementor ifNotNil: [
-					context := anException contextForMethodImplementation:
-						           methodImplementor.
-					context ifNotNil: [ ^ context ] ] ].
+	methodImplementor := self methodImplementor.
+	methodImplementor ifNotNil: [
+			context := anException mcpRepairContextForMethodImplementation:
+				           methodImplementor.
+			context ifNotNil: [ ^ context ] ].
 	^ self fallbackTargetContextForException: anException
 ]

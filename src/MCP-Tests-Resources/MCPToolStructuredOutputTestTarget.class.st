@@ -1,3 +1,6 @@
+"
+Fixture class used by structured output tests.
+"
 Class {
 	#name : 'MCPToolStructuredOutputTestTarget',
 	#superclass : 'TestCase',

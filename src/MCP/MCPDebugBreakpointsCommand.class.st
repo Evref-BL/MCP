@@ -38,7 +38,7 @@ MCPDebugBreakpointsCommand >> capabilities [
 		  asDictionary
 ]
 
-{ #category : 'private - operations' }
+{ #category : 'private - actions' }
 MCPDebugBreakpointsCommand >> clearBreakpoints [
 
 	| removedCount |
@@ -62,7 +62,7 @@ MCPDebugBreakpointsCommand >> dataForBreakpointRecord: aRecord [
 	^ data
 ]
 
-{ #category : 'private - operations' }
+{ #category : 'private - actions' }
 MCPDebugBreakpointsCommand >> disableBreakpoint [
 
 	| record |
@@ -74,7 +74,7 @@ MCPDebugBreakpointsCommand >> disableBreakpoint [
 		  data: (self dataForBreakpointRecord: record)
 ]
 
-{ #category : 'private - operations' }
+{ #category : 'private - actions' }
 MCPDebugBreakpointsCommand >> enableBreakpoint [
 
 	| record |
@@ -106,7 +106,7 @@ MCPDebugBreakpointsCommand >> initializeTool: aTool request: aRequest registry: 
 	^ self
 ]
 
-{ #category : 'private - operations' }
+{ #category : 'private - actions' }
 MCPDebugBreakpointsCommand >> listBreakpoints [
 
 	^ MCPDebugToolResult
@@ -138,7 +138,7 @@ MCPDebugBreakpointsCommand >> registry: aRegistry [
 	registry := aRegistry
 ]
 
-{ #category : 'private - operations' }
+{ #category : 'private - actions' }
 MCPDebugBreakpointsCommand >> removeBreakpoint [
 
 	| data record |
@@ -199,7 +199,7 @@ MCPDebugBreakpointsCommand >> requiredBreakpointRecord [
 		  ifAbsent: [ self signalBreakpointNotFound ]
 ]
 
-{ #category : 'private - operations' }
+{ #category : 'private - actions' }
 MCPDebugBreakpointsCommand >> setBreakpoint [
 
 	| method node debugPoint interval record |
@@ -236,8 +236,7 @@ MCPDebugBreakpointsCommand >> signalMissingBreakpointId [
 
 	^ MCPCommandError
 		  signalErrorCode: #DebugBreakpointIdRequired
-		  message: 'debug-breakpoints operation ' , request operation
-			  , ' requires breakpointId.'
+		  message: tool name , ' requires breakpointId.'
 		  details: { (#operation -> request operation) } asDictionary
 ]
 
@@ -246,9 +245,7 @@ MCPDebugBreakpointsCommand >> signalRequiredArgumentNamed: argumentName [
 
 	^ MCPCommandError
 		  signalErrorCode: #DebugBreakpointArgumentRequired
-		  message:
-			  'debug-breakpoints operation ' , request operation , ' requires '
-			  , argumentName , '.'
+		  message: tool name , ' requires ' , argumentName , '.'
 		  details: {
 				  (#operation -> request operation).
 				  (#argumentName -> argumentName) } asDictionary

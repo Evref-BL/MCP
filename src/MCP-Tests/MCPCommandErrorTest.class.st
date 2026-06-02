@@ -1,3 +1,6 @@
+"
+Tests structured command error payloads and JSON-RPC conversion.
+"
 Class {
 	#name : 'MCPCommandErrorTest',
 	#superclass : 'MCPTestCase',

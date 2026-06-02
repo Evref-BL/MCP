@@ -26,8 +26,8 @@ MCPDebugCaptureCommand >> capabilities [
 { #category : 'private - data' }
 MCPDebugCaptureCommand >> captureWarnings [
 
-	^ #( 'debug-capture evaluates arbitrary Smalltalk in a forked worker process and may mutate image state.'
-	     'Captured exceptions leave the worker process suspended until debug-control resumes or terminates the session.' )
+	^ #( 'debug_capture evaluates arbitrary Smalltalk in a forked worker process and may mutate image state.'
+	     'Captured exceptions leave the worker process suspended until debug_session_resume or debug_session_terminate controls the session.' )
 ]
 
 { #category : 'private - results' }
@@ -106,11 +106,9 @@ MCPDebugCaptureCommand >> execute [
 { #category : 'private - printing' }
 MCPDebugCaptureCommand >> limitedPrintStringOf: anObject [
 
-	anObject ifNil: [ ^ 'nil' ].
-	^ [
-	  anObject printStringLimitedTo: request resultPreviewCharacterLimit ]
-		  on: Error
-		  do: [ :error | anObject class name asString ]
+	^ self
+		  limitedPrintStringOf: anObject
+		  limit: request resultPreviewCharacterLimit
 ]
 
 { #category : 'private - worker' }

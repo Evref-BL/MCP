@@ -125,9 +125,7 @@ MCPJSONSchemaValidator >> schemaDictionaryFrom: aSchemaObject [
 
 	aSchemaObject ifNil: [ ^ nil ].
 	aSchemaObject isDictionary ifTrue: [ ^ aSchemaObject ].
-	(aSchemaObject respondsTo: #asJRPCJSON) ifTrue: [
-		^ aSchemaObject asJRPCJSON ].
-	^ nil
+	^ aSchemaObject asJRPCJSON
 ]
 
 { #category : 'private - testing' }
@@ -210,22 +208,23 @@ MCPJSONSchemaValidator >> validateArray: aCollection againstSchema: schema atPat
 		               keywordNamed: #minItems
 		               in: schema
 		               ifAbsent: [ nil ].
-	(minimumSize notNil and: [ aCollection size < minimumSize ]) ifTrue: [
-		self
-			addViolationAt: path
-			keyword: #minItems
-			message: 'Array has too few items.'
-			expected: minimumSize
-			actual: aCollection size ].
+	minimumSize ifNotNil: [ :requiredSize |
+			aCollection size < requiredSize ifTrue: [
+					self
+						addViolationAt: path
+						keyword: #minItems
+						message: 'Array has too few items.'
+						expected: requiredSize
+						actual: aCollection size ] ].
 	itemSchema := self
 		              keywordNamed: #items
 		              in: schema
 		              ifAbsent: [ ^ self ].
 	aCollection withIndexDo: [ :each :index |
-		self
-			validateValue: each
-			againstSchema: itemSchema
-			atPath: (path copyWith: index) ]
+			self
+				validateValue: each
+				againstSchema: itemSchema
+				atPath: (path copyWith: index) ]
 ]
 
 { #category : 'private - validating' }
@@ -375,13 +374,14 @@ MCPJSONSchemaValidator >> validateString: aString againstSchema: schema atPath: 
 		                 keywordNamed: #minLength
 		                 in: schema
 		                 ifAbsent: [ nil ].
-	(minimumLength notNil and: [ aString size < minimumLength ]) ifTrue: [
-		self
-			addViolationAt: path
-			keyword: #minLength
-			message: 'String is too short.'
-			expected: minimumLength
-			actual: aString size ]
+	minimumLength ifNotNil: [ :requiredLength |
+			aString size < requiredLength ifTrue: [
+					self
+						addViolationAt: path
+						keyword: #minLength
+						message: 'String is too short.'
+						expected: requiredLength
+						actual: aString size ] ]
 ]
 
 { #category : 'private - validating' }

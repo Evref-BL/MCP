@@ -1,5 +1,7 @@
 "
-Result DTO for replacing the instance-side trait composition of a class. It carries the class state after replacement and the old/new trait name lists for edit-class update output.
+Result DTO for replacing the instance-side trait composition of a class.
+
+It carries the class state after replacement and the old/new trait name lists for class update output.
 "
 Class {
 	#name : 'MCPReplaceClassTraitsResult',
