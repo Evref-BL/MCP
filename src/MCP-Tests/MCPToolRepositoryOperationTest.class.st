@@ -56,6 +56,16 @@ MCPToolRepositoryOperationTest >> deleteDirectoryIfExists: aFileReference [
 ]
 
 { #category : 'private' }
+MCPToolRepositoryOperationTest >> deleteTemporaryMetadataRepositoryFor: aRepository [
+
+	| location |
+	location := aRepository location asFileReference.
+	(location basename beginsWith: 'mcp-test-repository-metadata-')
+		ifFalse: [ ^ self ].
+	location exists ifTrue: [ location deleteAll ]
+]
+
+{ #category : 'private' }
 MCPToolRepositoryOperationTest >> directChildNamesOf: aFileReference [
 
 	^ aFileReference exists
@@ -79,10 +89,16 @@ MCPToolRepositoryOperationTest >> newRepositoryNamed: aRepositoryName location: 
 { #category : 'private' }
 MCPToolRepositoryOperationTest >> newTestRepositoryNamed: aRepositoryName [
 
-	| repository |
+	| location repository |
+	location := FileLocator temp asFileReference
+	            / ('mcp-test-repository-metadata-' , UUID new asString).
+	location ensureCreateDirectory.
+	MCPTestGitRepositoryFixture
+		writeConfig: MCPTestGitRepositoryFixture standardConfig
+		in: location.
 	repository := MCPTestIceRepository
 		              named: aRepositoryName
-		              location: 'memory://' , aRepositoryName.
+		              location: location pathString.
 	repository remoteNames: #( 'origin' ).
 	^ repository
 ]
@@ -1471,5 +1487,6 @@ MCPToolRepositoryOperationTest >> withRegisteredRepository: aRepository do: aBlo
 	registry := IceRepository registry.
 	registry add: aRepository.
 	[ aBlock value ] ensure: [
-		registry remove: aRepository ifAbsent: [  ] ]
+			registry remove: aRepository ifAbsent: [ ].
+			self deleteTemporaryMetadataRepositoryFor: aRepository ]
 ]

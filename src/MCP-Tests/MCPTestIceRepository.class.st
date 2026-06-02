@@ -220,7 +220,7 @@ MCPTestIceRepository >> knownBranchNames [
 { #category : 'accessing' }
 MCPTestIceRepository >> location [
 
-	^ location ifNil: [ '' ]
+	^ location
 ]
 
 { #category : 'accessing' }

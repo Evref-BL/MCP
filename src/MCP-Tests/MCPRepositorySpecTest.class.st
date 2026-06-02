@@ -329,47 +329,49 @@ MCPRepositorySpecTest >> testRepositoryReferenceResolvesByNameAndLocation [
 { #category : 'tests' }
 MCPRepositorySpecTest >> testRepositoryRemoteAndBranchResultsReturnDictionaries [
 
-	| branchData branchResult fetchData fetchResult pullData pullResult pushData pushResult repository beforeInfo |
-	repository := MCPTestIceRepository
-		              named: 'MCP Remote Repository'
-		              location: 'memory://remote'.
-	repository remoteNames: #( 'origin' ).
-	repository modifiedPackageNames: #( 'MCP-Modified' ).
-	beforeInfo := MCPRepositoryInfo fromRepository: repository.
-	repository branchName: 'feature'.
-	repository headDescription: 'after'.
-	fetchResult := MCPRepositoryFetchResult
-		               repositoryBefore: beforeInfo
-		               after: repository.
-	fetchData := fetchResult asDictionary.
-	self
-		assert: ((fetchData at: #repository) at: #name)
-		equals: repository name.
-	self assert: (fetchData at: #remoteNames) equals: #( 'origin' ).
-	self assert: (fetchData at: #branchName) equals: 'feature'.
-	self assert: (fetchData includesKey: #repositoryBefore).
-	pullResult := MCPRepositoryPullResult
-		              repositoryBefore: beforeInfo
-		              after: repository.
-	pullData := pullResult asDictionary.
-	self
-		assert: (pullData at: #modifiedPackageNames)
-		equals: #( 'MCP-Modified' ).
-	self assert: (pullData at: #headDescription) equals: 'after'.
-	pushResult := MCPRepositoryPushResult repository: repository.
-	pushData := pushResult asDictionary.
-	self assert: (pushData at: #remoteNames) equals: #( 'origin' ).
-	self assert: (pushData at: #branchName) equals: 'feature'.
-	branchResult := MCPRepositoryBranchResult
-		                repositoryBefore: beforeInfo
-		                after: repository.
-	branchData := branchResult asDictionary.
-	self assert: (branchData at: #previousBranchName) equals: 'main'.
-	self assert: (branchData at: #branchName) equals: 'feature'.
-	self
-		assert: (branchData at: #previousHeadDescription)
-		equals: 'initial'.
-	self assert: (branchData at: #headDescription) equals: 'after'
+	MCPTestGitRepositoryFixture
+		withConfig: MCPTestGitRepositoryFixture standardConfig
+		do: [ :repositoryDirectory |
+				| branchData branchResult beforeInfo fetchData fetchResult pullData pullResult pushData pushResult repository |
+				repository := MCPTestIceRepository
+					              named: 'MCP Remote Repository'
+					              location: repositoryDirectory pathString.
+				repository modifiedPackageNames: #( 'MCP-Modified' ).
+				beforeInfo := MCPRepositoryInfo fromRepository: repository.
+				repository branchName: 'feature'.
+				repository headDescription: 'after'.
+				fetchResult := MCPRepositoryFetchResult
+					               repositoryBefore: beforeInfo
+					               after: repository.
+				fetchData := fetchResult asDictionary.
+				self
+					assert: ((fetchData at: #repository) at: #name)
+					equals: repository name.
+				self assert: (fetchData at: #remoteNames) equals: #( 'origin' ).
+				self assert: (fetchData at: #branchName) equals: 'feature'.
+				self assert: (fetchData includesKey: #repositoryBefore).
+				pullResult := MCPRepositoryPullResult
+					              repositoryBefore: beforeInfo
+					              after: repository.
+				pullData := pullResult asDictionary.
+				self
+					assert: (pullData at: #modifiedPackageNames)
+					equals: #( 'MCP-Modified' ).
+				self assert: (pullData at: #headDescription) equals: 'after'.
+				pushResult := MCPRepositoryPushResult repository: repository.
+				pushData := pushResult asDictionary.
+				self assert: (pushData at: #remoteNames) equals: #( 'origin' ).
+				self assert: (pushData at: #branchName) equals: 'feature'.
+				branchResult := MCPRepositoryBranchResult
+					                repositoryBefore: beforeInfo
+					                after: repository.
+				branchData := branchResult asDictionary.
+				self assert: (branchData at: #previousBranchName) equals: 'main'.
+				self assert: (branchData at: #branchName) equals: 'feature'.
+				self
+					assert: (branchData at: #previousHeadDescription)
+					equals: 'initial'.
+				self assert: (branchData at: #headDescription) equals: 'after' ]
 ]
 
 { #category : 'tests' }
