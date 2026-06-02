@@ -96,15 +96,6 @@ MCPRepositoryInfo >> className [
 	^ className
 ]
 
-{ #category : 'private' }
-MCPRepositoryInfo >> emptyUpstreamInfo [
-
-	^ {
-		  (#remoteName -> '').
-		  (#branchName -> '').
-		  (#remoteUrl -> '') } asDictionary
-]
-
 { #category : 'accessing' }
 MCPRepositoryInfo >> headClassName [
 
@@ -221,33 +212,11 @@ MCPRepositoryInfo >> packageNames [
 	^ packageNames
 ]
 
-{ #category : 'private' }
-MCPRepositoryInfo >> remoteDictionaryFor: aRemote [
-
-	^ {
-		  (#name -> (self stringFrom: [ aRemote name ] default: '')).
-		  (#url -> (self stringFrom: [ aRemote url ] default: '')) }
-		  asDictionary
-]
-
 { #category : 'accessing' }
 MCPRepositoryInfo >> remoteNames [
 
 	^ ((self remotes collect: [ :each | each at: #name ifAbsent: [ '' ] ])
 		   reject: [ :each | each isEmpty ]) asArray
-]
-
-{ #category : 'private' }
-MCPRepositoryInfo >> remoteUrlNamed: aRemoteName in: aRepository [
-
-	| remote |
-	aRemoteName isEmpty ifTrue: [ ^ '' ].
-	remote := aRepository remotes
-		          detect: [ :each |
-		          (self stringValue: each name default: '') = aRemoteName ]
-		          ifNone: [ nil ].
-	remote ifNil: [ ^ '' ].
-	^ self stringFrom: [ remote url ] default: ''
 ]
 
 { #category : 'accessing' }
@@ -298,19 +267,8 @@ MCPRepositoryInfo >> repositoryPackageNamesFor: aRepository [
 { #category : 'private' }
 MCPRepositoryInfo >> repositoryRemotesFor: aRepository [
 
-	| normalized values |
-	values := [ aRepository remotes ]
-		          on: Error
-		          do: [ :ignored | #(  ) ].
-	normalized := OrderedCollection new.
-	values do: [ :each |
-			| remoteDictionary |
-			remoteDictionary := self remoteDictionaryFor: each.
-			((remoteDictionary at: #name) isEmpty and: [
-				 (remoteDictionary at: #url) isEmpty ]) not ifTrue: [
-				normalized add: remoteDictionary ] ].
-	^ (normalized asArray asSortedCollection: [ :left :right |
-		   (left at: #name) <= (right at: #name) ]) asArray
+	^ (MCPGitRepositoryMetadata forRepository: aRepository)
+		  remoteDictionaries
 ]
 
 { #category : 'private' }
@@ -322,25 +280,8 @@ MCPRepositoryInfo >> repositorySubdirectoryFor: aRepository [
 { #category : 'private' }
 MCPRepositoryInfo >> repositoryUpstreamInfoFor: aRepository [
 
-	| head remoteName resolvedUpstreamBranchName upstream |
-	head := [ aRepository head ]
-		        on: Error
-		        do: [ :ignored | ^ self emptyUpstreamInfo ].
-	([ head hasUpstream ]
-		 on: Error
-		 do: [ :ignored | false ]) ifFalse: [ ^ self emptyUpstreamInfo ].
-	upstream := [ head upstream ]
-		            on: Error
-		            do: [ :ignored | ^ self emptyUpstreamInfo ].
-	remoteName := self stringFrom: [ upstream remoteName ] default: ''.
-	resolvedUpstreamBranchName := self
-		                              stringFrom: [ upstream shortname ]
-		                              default: ''.
-	^ {
-		  (#remoteName -> remoteName).
-		  (#branchName -> resolvedUpstreamBranchName).
-		  (#remoteUrl -> (self remoteUrlNamed: remoteName in: aRepository)) }
-		  asDictionary
+	^ (MCPGitRepositoryMetadata forRepository: aRepository)
+		  upstreamInfoForBranchNamed: self branchName
 ]
 
 { #category : 'private' }

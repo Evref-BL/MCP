@@ -91,37 +91,45 @@ MCPToolSearchRepositoriesTest >> testCanFilterByPackageNameAndModifiedState [
 { #category : 'tests' }
 MCPToolSearchRepositoriesTest >> testCanFilterByRemoteUrlAndHeadCommit [
 
-	| alpha beta data repositoryNames result |
-	alpha := MCPTestIceRepository
-		         named: 'MCP Alpha Repository'
-		         location: 'memory://alpha'.
-	alpha remoteNames: #( 'origin' ).
-	alpha headCommitId: 'abc123'.
-	beta := MCPTestIceRepository
-		        named: 'MCP Beta Repository'
-		        location: 'memory://beta'.
-	beta remoteNames: #( 'backup' ).
-	beta headCommitId: 'def456'.
-	self
-		withRepositories: {
-				alpha.
-				beta }
-		do: [
-				result := self callToolWith:
-					          { (#headCommitId -> 'abc123') } asDictionary.
-				data := self dataFrom: result.
-				repositoryNames := (data at: #repositories) collect: [ :each |
-					                   each at: #name ].
-				self deny: (result at: #isError ifAbsent: [ false ]).
-				self assert: repositoryNames equals: #( 'MCP Alpha Repository' ).
-
-				result := self callToolWith:
-					          { (#remoteUrl -> 'memory://backup') } asDictionary.
-				data := self dataFrom: result.
-				repositoryNames := (data at: #repositories) collect: [ :each |
-					                   each at: #name ].
-				self deny: (result at: #isError ifAbsent: [ false ]).
-				self assert: repositoryNames equals: #( 'MCP Beta Repository' ) ]
+	MCPTestGitRepositoryFixture
+		withConfig: MCPTestGitRepositoryFixture standardConfig
+		do: [ :alphaDirectory |
+				MCPTestGitRepositoryFixture
+					withConfig: MCPTestGitRepositoryFixture backupConfig
+					do: [ :betaDirectory |
+							| alpha beta data repositoryNames result |
+							alpha := MCPTestIceRepository
+								         named: 'MCP Alpha Repository'
+								         location: alphaDirectory pathString.
+							alpha headCommitId: 'abc123'.
+							beta := MCPTestIceRepository
+								        named: 'MCP Beta Repository'
+								        location: betaDirectory pathString.
+							beta headCommitId: 'def456'.
+							self
+								withRepositories: {
+										alpha.
+										beta }
+								do: [
+										result := self callToolWith:
+											          { (#headCommitId -> 'abc123') } asDictionary.
+										data := self dataFrom: result.
+										repositoryNames := (data at: #repositories) collect: [ :each |
+											                   each at: #name ].
+										self deny: (result at: #isError ifAbsent: [ false ]).
+										self
+											assert: repositoryNames
+											equals: #( 'MCP Alpha Repository' ).
+										result := self callToolWith:
+											          { (#remoteUrl -> 'memory://backup') }
+												          asDictionary.
+										data := self dataFrom: result.
+										repositoryNames := (data at: #repositories) collect: [ :each |
+											                   each at: #name ].
+										self deny: (result at: #isError ifAbsent: [ false ]).
+										self
+											assert: repositoryNames
+											equals: #( 'MCP Beta Repository' ) ] ] ]
 ]
 
 { #category : 'tests' }
@@ -171,41 +179,41 @@ MCPToolSearchRepositoriesTest >> testListsRegisteredRepositoriesWithStructuredDa
 { #category : 'tests' }
 MCPToolSearchRepositoriesTest >> testListsRichRepositoryMetadata [
 
-	| data entry remotes repository result |
-	repository := MCPTestIceRepository
-		              named: 'MCP Rich Repository'
-		              location: 'memory://rich'.
-	repository workingCopy packageNames: #( 'MCP' ).
-	repository remoteNames: #( 'origin' 'backup' ).
-	repository headDescription: 'rich head'.
-	repository headCommitId: 'abc123'.
-	repository isDetachedHead: true.
-	repository upstreamRemoteName: 'origin'.
-	repository upstreamBranchName: 'main'.
-	self withRepositories: { repository } do: [
-		result := self callToolWith: Dictionary new.
-		data := self dataFrom: result.
-		self deny: (result at: #isError ifAbsent: [ false ]).
-		entry := self
-			         entryNamed: 'MCP Rich Repository'
-			         in: (data at: #repositories).
-		self assert: (entry at: #headDescription) equals: 'rich head'.
-		self
-			assert: (entry at: #headClassName)
-			equals: 'MCPTestRepositoryHead'.
-		self assert: (entry at: #headCommitId) equals: 'abc123'.
-		self assert: (entry at: #isDetachedHead) equals: true.
-		remotes := entry at: #remotes.
-		self assert: remotes size equals: 2.
-		self assert: (remotes first at: #name) equals: 'backup'.
-		self assert: (remotes first at: #url) equals: 'memory://backup'.
-		self assert: (remotes second at: #name) equals: 'origin'.
-		self assert: (remotes second at: #url) equals: 'memory://origin'.
-		self assert: (entry at: #upstreamRemoteName) equals: 'origin'.
-		self assert: (entry at: #upstreamBranchName) equals: 'main'.
-		self
-			assert: (entry at: #upstreamRemoteUrl)
-			equals: 'memory://origin' ]
+	MCPTestGitRepositoryFixture
+		withConfig: MCPTestGitRepositoryFixture richConfig
+		do: [ :repositoryDirectory |
+				| data entry remotes repository result |
+				repository := MCPTestIceRepository
+					              named: 'MCP Rich Repository'
+					              location: repositoryDirectory pathString.
+				repository workingCopy packageNames: #( 'MCP' ).
+				repository headDescription: 'rich head'.
+				repository headCommitId: 'abc123'.
+				repository isDetachedHead: true.
+				self withRepositories: { repository } do: [
+						result := self callToolWith: Dictionary new.
+						data := self dataFrom: result.
+						self deny: (result at: #isError ifAbsent: [ false ]).
+						entry := self
+							         entryNamed: 'MCP Rich Repository'
+							         in: (data at: #repositories).
+						self assert: (entry at: #headDescription) equals: 'rich head'.
+						self
+							assert: (entry at: #headClassName)
+							equals: 'MCPTestRepositoryHead'.
+						self assert: (entry at: #headCommitId) equals: 'abc123'.
+						self assert: (entry at: #isDetachedHead) equals: true.
+						remotes := entry at: #remotes.
+						self assert: remotes size equals: 2.
+						self assert: (remotes first at: #name) equals: 'backup'.
+						self assert: (remotes first at: #url) equals: 'memory://backup'.
+						self assert: (remotes second at: #name) equals: 'origin'.
+						self assert: (remotes second at: #url) equals: 'memory://origin'.
+						self assert: (entry at: #upstreamRemoteName) equals: 'origin'.
+						self assert: (entry at: #upstreamBranchName) equals: 'main'.
+						self
+							assert: (entry at: #upstreamRemoteUrl)
+							equals: 'memory://origin' ] ]
 ]
 
 { #category : 'private - calling' }
