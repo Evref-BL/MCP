@@ -15,6 +15,18 @@ MCPToolLoadRepository class >> toolName [
 	^ 'repository_load'
 ]
 
+{ #category : 'private - schema' }
+MCPToolLoadRepository >> checkoutPathSchemaProperty [
+
+	^ (self
+		   schemaPropertyNamed: 'checkoutPath'
+		   type: 'string'
+		   description:
+			   'Filesystem path of a local checkout. Combined with sourceDirectory to build a tonel:// repository URL.')
+		  minLength: 1;
+		  yourself
+]
+
 { #category : 'private - execution' }
 MCPToolLoadRepository >> commandForRequest: loadRepositoryRequest [
 
@@ -28,7 +40,7 @@ MCPToolLoadRepository >> commitishSchemaProperty [
 		   schemaPropertyNamed: 'commitish'
 		   type: 'string'
 		   description:
-			   'Branch, tag, or commitish to load. Defaults to main.')
+			   'Branch, tag, or commitish to load. Defaults to main. Slashes are escaped when building Metacello remote URLs.')
 		  default: self defaultCommitish;
 		  minLength: 1;
 		  yourself
@@ -43,7 +55,7 @@ MCPToolLoadRepository >> defaultCommitish [
 { #category : 'defaults' }
 MCPToolLoadRepository >> defaultDescription [
 
-	^ 'Load a Metacello baseline from a remote Git repository into the image. The tool builds a Metacello repository URL from hostUrl, owner, project, commitish, and sourceDirectory before loading the baseline. hostUrl defaults to github and may identify github, gitlab, or bitbucket; custom hosts can use values such as gitlab://git.example.com. commitish defaults to main, sourceDirectory defaults to ., omitting groups calls Metacello>>load, onWarning defaults to log, and onConflict defaults to useLoaded.'
+	^ 'Load a Metacello baseline from a repository source into the image. Use owner/project for hosted remote repositories, repositoryUrl for an explicit Metacello URL such as tonel://, checkoutPath for a local checkout, or repositoryName/location for a registered Iceberg repository. sourceDirectory defaults to . where applicable. Supports Metacello warning, conflict, upgrade, downgrade, and lock policies.'
 ]
 
 { #category : 'defaults' }
@@ -58,6 +70,10 @@ MCPToolLoadRepository >> defaultInputSchema [
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties: {
+				  self repositoryUrlSchemaProperty.
+				  self checkoutPathSchemaProperty.
+				  self repositoryNameSchemaProperty.
+				  self locationSchemaProperty.
 				  self hostUrlSchemaProperty.
 				  (self
 					   nonEmptyStringSchemaPropertyNamed: 'owner'
@@ -72,10 +88,9 @@ MCPToolLoadRepository >> defaultInputSchema [
 					   nonEmptyStringSchemaPropertyNamed: 'baseline'
 					   description:
 						   'Metacello baseline name without the BaselineOf prefix, for example SmallDoc.').
-				  self groupsSchemaProperty.
-				  self onWarningSchemaProperty.
-				  self onConflictSchemaProperty };
-		  required: #( 'owner' 'project' 'baseline' );
+				  self groupsSchemaProperty }
+			  , self loadPolicyInputSchemaProperties;
+		  required: #( 'baseline' );
 		  additionalProperties: false;
 		  yourself
 ]
@@ -151,12 +166,24 @@ MCPToolLoadRepository >> loadRepositoryDataProperties [
 ]
 
 { #category : 'private - schema' }
+MCPToolLoadRepository >> locationSchemaProperty [
+
+	^ (self
+		   schemaPropertyNamed: 'location'
+		   type: 'string'
+		   description:
+			   'Filesystem location of an Iceberg repository already registered in the image. May be combined with repositoryName to disambiguate.')
+		  minLength: 1;
+		  yourself
+]
+
+{ #category : 'private - schema' }
 MCPToolLoadRepository >> modeOutputSchemaProperty [
 
 	^ self
 		  stringEnumSchemaPropertyNamed: 'mode'
-		  description: 'The repository-backed load path used by this tool.'
-		  values: #( 'remote' )
+		  description: 'The repository source mode used by this tool.'
+		  values: #( 'remote' 'url' 'local' 'iceberg' )
 		  default: 'remote'
 ]
 
@@ -193,7 +220,33 @@ MCPToolLoadRepository >> repositoryDataProperties [
 		  (self
 			   schemaPropertyNamed: 'sourceDirectory'
 			   type: 'string'
-			   description: 'The requested repository source directory.') }
+			   description: 'The requested repository source directory.').
+		  (self
+			   schemaPropertyNamed: 'checkoutPath'
+			   type: 'string'
+			   description: 'The local checkout path used for local mode.').
+		  (self
+			   schemaPropertyNamed: 'repositoryName'
+			   type: 'string'
+			   description:
+			   'The registered Iceberg repository name used for iceberg mode.').
+		  (self
+			   schemaPropertyNamed: 'location'
+			   type: 'string'
+			   description:
+			   'The registered Iceberg repository location used for iceberg mode.') }
+]
+
+{ #category : 'private - schema' }
+MCPToolLoadRepository >> repositoryNameSchemaProperty [
+
+	^ (self
+		   schemaPropertyNamed: 'repositoryName'
+		   type: 'string'
+		   description:
+			   'Name of an Iceberg repository already registered in the image. Combined with its location and sourceDirectory/subdirectory to build a local tonel:// URL.')
+		  minLength: 1;
+		  yourself
 ]
 
 { #category : 'private - schema' }
@@ -202,12 +255,22 @@ MCPToolLoadRepository >> repositoryOutputSchemaProperty [
 	^ (self
 		   schemaPropertyNamed: 'repository'
 		   type: 'object'
-		   description: 'Remote repository coordinates used for the load.')
+		   description: 'Repository source used for the load.')
 		  properties: self repositoryDataProperties;
-		  required:
-			  #( 'repositoryUrl' 'hostUrl' 'owner' 'project' 'commitish'
-			     'sourceDirectory' );
+		  required: #( 'repositoryUrl' );
 		  additionalProperties: false;
+		  yourself
+]
+
+{ #category : 'private - schema' }
+MCPToolLoadRepository >> repositoryUrlSchemaProperty [
+
+	^ (self
+		   schemaPropertyNamed: 'repositoryUrl'
+		   type: 'string'
+		   description:
+			   'Explicit Metacello repository URL to load from, for example tonel:///path/to/checkout/src.')
+		  minLength: 1;
 		  yourself
 ]
 
@@ -224,7 +287,7 @@ MCPToolLoadRepository >> sourceDirectorySchemaProperty [
 		   schemaPropertyNamed: 'sourceDirectory'
 		   type: 'string'
 		   description:
-			   'Repository path containing the baseline. Defaults to . for the repository root.')
+			   'Repository path containing the baseline. Defaults to . for remote/local sources and to the registered Iceberg subdirectory for iceberg mode.')
 		  default: self defaultSourceDirectory;
 		  minLength: 1;
 		  yourself
@@ -234,17 +297,15 @@ MCPToolLoadRepository >> sourceDirectorySchemaProperty [
 MCPToolLoadRepository >> successSummaryForResult: aResult [
 
 	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: 'Loaded baseline ';
-			  nextPutAll: aResult baseline.
-		  aResult isRemoteLoad ifTrue: [
 			  stream
+				  nextPutAll: 'Loaded baseline ';
+				  nextPutAll: aResult baseline;
 				  nextPutAll: ' from ';
-				  nextPutAll: aResult repositoryUrl ].
-		  stream nextPut: $..
-		  aResult newPackageNames isEmpty ifFalse: [
-			  stream
-				  space;
-				  nextPutAll: aResult newPackageNames size asString;
-				  nextPutAll: ' new packages were detected.' ] ]
+				  nextPutAll: aResult repositoryUrl;
+				  nextPut: $..
+			  aResult newPackageNames isEmpty ifFalse: [
+					  stream
+						  space;
+						  nextPutAll: aResult newPackageNames size asString;
+						  nextPutAll: ' new packages were detected.' ] ]
 ]

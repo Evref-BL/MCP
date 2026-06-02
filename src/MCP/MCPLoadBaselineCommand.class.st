@@ -33,33 +33,6 @@ MCPLoadBaselineCommand class >> tool: aTool request: aRequest configureMetacello
 ]
 
 { #category : 'private - loading' }
-MCPLoadBaselineCommand >> applyConflictPolicyTo: metacello [
-
-	self request onConflict = 'useLoaded' ifTrue: [
-		^ metacello onConflictUseLoaded ].
-	self request onConflict = 'useIncoming' ifTrue: [
-		^ metacello onConflictUseIncoming ].
-	self request onConflict = 'pass' ifTrue: [ ^ self ].
-	MCPCommandError
-		signalErrorCode: #UnsupportedLoadBaselineConflictPolicy
-		message: 'onConflict must be useLoaded, useIncoming, or pass.'
-		details: self request requestedContext
-]
-
-{ #category : 'private - loading' }
-MCPLoadBaselineCommand >> applyWarningPolicyTo: metacello [
-
-	self request onWarning = 'log' ifTrue: [ ^ metacello onWarningLog ].
-	self request onWarning = 'resume' ifTrue: [
-		^ metacello onWarning: [ :warning | warning resume ] ].
-	self request onWarning = 'pass' ifTrue: [ ^ self ].
-	MCPCommandError
-		signalErrorCode: #UnsupportedLoadBaselineWarningPolicy
-		message: 'onWarning must be log, resume, or pass.'
-		details: self request requestedContext
-]
-
-{ #category : 'private - loading' }
 MCPLoadBaselineCommand >> configureMetacello: metacello [
 
 	configureMetacelloBlock ifNotNil: [
@@ -73,8 +46,7 @@ MCPLoadBaselineCommand >> configuredMetacello [
 	| metacello |
 	metacello := self metacello.
 	metacello baseline: self request baseline.
-	self applyWarningPolicyTo: metacello.
-	self applyConflictPolicyTo: metacello.
+	self request loadPolicy applyTo: metacello.
 	^ metacello
 ]
 

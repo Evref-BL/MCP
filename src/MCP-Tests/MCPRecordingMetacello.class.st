@@ -70,9 +70,53 @@ MCPRecordingMetacello >> onConflictUseIncoming [
 ]
 
 { #category : 'metacello protocol' }
+MCPRecordingMetacello >> onConflictUseIncoming: incomingProjects useLoaded: loadedProjects [
+
+	^ self record: #onConflictUseIncoming:useLoaded: arguments: {
+			  incomingProjects.
+			  loadedProjects }
+]
+
+{ #category : 'metacello protocol' }
 MCPRecordingMetacello >> onConflictUseLoaded [
 
 	^ self record: #onConflictUseLoaded arguments: #(  )
+]
+
+{ #category : 'metacello protocol' }
+MCPRecordingMetacello >> onDowngradeUseIncoming [
+
+	^ self record: #onDowngradeUseIncoming arguments: #(  )
+]
+
+{ #category : 'metacello protocol' }
+MCPRecordingMetacello >> onDowngradeUseIncoming: projectNames [
+
+	^ self record: #onDowngradeUseIncoming: arguments: { projectNames }
+]
+
+{ #category : 'metacello protocol' }
+MCPRecordingMetacello >> onLockBreak [
+
+	^ self record: #onLockBreak arguments: #(  )
+]
+
+{ #category : 'metacello protocol' }
+MCPRecordingMetacello >> onLockBreak: projectNames [
+
+	^ self record: #onLockBreak: arguments: { projectNames }
+]
+
+{ #category : 'metacello protocol' }
+MCPRecordingMetacello >> onUpgradeUseLoaded [
+
+	^ self record: #onUpgradeUseLoaded arguments: #(  )
+]
+
+{ #category : 'metacello protocol' }
+MCPRecordingMetacello >> onUpgradeUseLoaded: projectNames [
+
+	^ self record: #onUpgradeUseLoaded: arguments: { projectNames }
 ]
 
 { #category : 'metacello protocol' }

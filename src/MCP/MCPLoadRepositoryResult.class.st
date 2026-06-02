@@ -1,5 +1,5 @@
 "
-Result DTO for repository_load. It wraps the reusable baseline load result and includes repository coordinates only for remote loads.
+Result DTO for repository_load. It wraps the reusable baseline load result and reports the resolved repository URL plus source fields relevant to the selected source mode.
 "
 Class {
 	#name : 'MCPLoadRepositoryResult',
@@ -12,6 +12,9 @@ Class {
 		'project',
 		'commitish',
 		'sourceDirectory',
+		'checkoutPath',
+		'repositoryName',
+		'location',
 		'loadResult'
 	],
 	#category : 'MCP-Results',
@@ -20,10 +23,10 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPLoadRepositoryResult class >> remoteRequest: aRequest repositoryUrl: aRepositoryUrl loadResult: aLoadResult [
+MCPLoadRepositoryResult class >> request: aRequest repositoryUrl: aRepositoryUrl loadResult: aLoadResult [
 
 	^ self new
-		  initializeRemoteRequest: aRequest
+		  initializeRequest: aRequest
 		  repositoryUrl: aRepositoryUrl
 		  loadResult: aLoadResult
 ]
@@ -31,19 +34,22 @@ MCPLoadRepositoryResult class >> remoteRequest: aRequest repositoryUrl: aReposit
 { #category : 'converting' }
 MCPLoadRepositoryResult >> asDictionary [
 
-	| dictionary |
-	dictionary := {
-		              (#mode -> self mode).
-		              (#load -> self loadResult asDictionary) } asDictionary.
-	self isRemoteLoad ifTrue: [
-		dictionary at: #repository put: self repositoryDictionary ].
-	^ dictionary
+	^ {
+		  (#mode -> self mode).
+		  (#repository -> self repositoryDictionary).
+		  (#load -> self loadResult asDictionary) } asDictionary
 ]
 
 { #category : 'accessing' }
 MCPLoadRepositoryResult >> baseline [
 
 	^ self loadResult baseline
+]
+
+{ #category : 'accessing' }
+MCPLoadRepositoryResult >> checkoutPath [
+
+	^ checkoutPath
 ]
 
 { #category : 'accessing' }
@@ -65,29 +71,32 @@ MCPLoadRepositoryResult >> hostUrl [
 ]
 
 { #category : 'initialization' }
-MCPLoadRepositoryResult >> initializeRemoteRequest: aRequest repositoryUrl: aRepositoryUrl loadResult: aLoadResult [
+MCPLoadRepositoryResult >> initializeRequest: aRequest repositoryUrl: aRepositoryUrl loadResult: aLoadResult [
 
-	mode := 'remote'.
+	mode := aRequest mode.
 	repositoryUrl := aRepositoryUrl.
 	hostUrl := aRequest hostUrl.
 	owner := aRequest owner.
 	project := aRequest project.
 	commitish := aRequest commitish.
 	sourceDirectory := aRequest sourceDirectory.
+	checkoutPath := aRequest checkoutPath.
+	repositoryName := aRequest repositoryName.
+	location := aRequest location.
 	loadResult := aLoadResult.
 	^ self
-]
-
-{ #category : 'accessing' }
-MCPLoadRepositoryResult >> isRemoteLoad [
-
-	^ self mode = 'remote'
 ]
 
 { #category : 'accessing' }
 MCPLoadRepositoryResult >> loadResult [
 
 	^ loadResult
+]
+
+{ #category : 'accessing' }
+MCPLoadRepositoryResult >> location [
+
+	^ location
 ]
 
 { #category : 'accessing' }
@@ -129,19 +138,34 @@ MCPLoadRepositoryResult >> project [
 { #category : 'converting' }
 MCPLoadRepositoryResult >> repositoryDictionary [
 
-	^ {
-		  (#hostUrl -> self hostUrl).
-		  (#owner -> self owner).
-		  (#project -> self project).
-		  (#commitish -> self commitish).
-		  (#sourceDirectory -> self sourceDirectory).
-		  (#repositoryUrl -> self repositoryUrl) } asDictionary
+	| dictionary |
+	dictionary := { (#repositoryUrl -> self repositoryUrl) } asDictionary.
+	self hostUrl ifNotNil: [ :value | dictionary at: #hostUrl put: value ].
+	self owner ifNotNil: [ :value | dictionary at: #owner put: value ].
+	self project ifNotNil: [ :value | dictionary at: #project put: value ].
+	self commitish ifNotNil: [ :value |
+		dictionary at: #commitish put: value ].
+	self sourceDirectory ifNotNil: [ :value |
+		dictionary at: #sourceDirectory put: value ].
+	self checkoutPath ifNotNil: [ :value |
+		dictionary at: #checkoutPath put: value ].
+	self repositoryName ifNotNil: [ :value |
+		dictionary at: #repositoryName put: value ].
+	self location ifNotNil: [ :value |
+		dictionary at: #location put: value ].
+	^ dictionary
 ]
 
 { #category : 'accessing' }
 MCPLoadRepositoryResult >> repositoryInfos [
 
 	^ self loadResult repositoryInfos
+]
+
+{ #category : 'accessing' }
+MCPLoadRepositoryResult >> repositoryName [
+
+	^ repositoryName
 ]
 
 { #category : 'accessing' }

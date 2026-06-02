@@ -36,6 +36,36 @@ MCPToolLoadBaselineTest >> recordedMetacello [
 ]
 
 { #category : 'tests' }
+MCPToolLoadBaselineTest >> testCommandAppliesProjectSpecificLoadPolicies [
+
+	| metacello request |
+	request := self baselineRequestFromArguments: {
+			           (#baseline -> 'ExampleBaseline').
+			           (#onConflictUseIncoming -> #( 'IncomingProject' )).
+			           (#onConflictUseLoaded -> #( 'LoadedProject' )).
+			           (#onUpgradeUseLoaded -> #( 'UpgradeProject' )).
+			           (#onDowngradeUseIncoming -> #( 'DowngradeProject' )).
+			           (#onLockBreak -> #( 'LockedProject' )) }.
+	self executeRecordingCommandForRequest: request.
+	metacello := self recordedMetacello.
+	self assert: (metacello
+			 received: #onConflictUseIncoming:useLoaded:
+			 withArguments: {
+					 #( 'IncomingProject' ).
+					 #( 'LoadedProject' ) }).
+	self assert: (metacello
+			 received: #onUpgradeUseLoaded:
+			 withArguments: { #( 'UpgradeProject' ) }).
+	self assert: (metacello
+			 received: #onDowngradeUseIncoming:
+			 withArguments: { #( 'DowngradeProject' ) }).
+	self assert: (metacello
+			 received: #onLockBreak:
+			 withArguments: { #( 'LockedProject' ) }).
+	self deny: (metacello received: #onConflictUseLoaded)
+]
+
+{ #category : 'tests' }
 MCPToolLoadBaselineTest >> testCommandAppliesResumeWarningAndIncomingConflictPolicies [
 
 	| metacello request |
@@ -49,6 +79,22 @@ MCPToolLoadBaselineTest >> testCommandAppliesResumeWarningAndIncomingConflictPol
 	self assert: (metacello received: #onConflictUseIncoming).
 	self deny: (metacello received: #onWarningLog).
 	self deny: (metacello received: #onConflictUseLoaded)
+]
+
+{ #category : 'tests' }
+MCPToolLoadBaselineTest >> testCommandAppliesUpgradeDowngradeAndLockPolicies [
+
+	| metacello request |
+	request := self baselineRequestFromArguments: {
+			           (#baseline -> 'ExampleBaseline').
+			           (#onUpgrade -> 'useLoaded').
+			           (#onDowngrade -> 'useIncoming').
+			           (#onLock -> 'break') }.
+	self executeRecordingCommandForRequest: request.
+	metacello := self recordedMetacello.
+	self assert: (metacello received: #onUpgradeUseLoaded).
+	self assert: (metacello received: #onDowngradeUseIncoming).
+	self assert: (metacello received: #onLockBreak)
 ]
 
 { #category : 'tests' }

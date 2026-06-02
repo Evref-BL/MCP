@@ -1,5 +1,5 @@
 "
-Parsed request for loading an existing Metacello baseline. It contains only baseline load options and is reused by repository-backed loads.
+Parsed request for loading an existing Metacello baseline. It stores baseline groups and the shared Metacello load policy used by direct baseline and repository-backed loads.
 "
 Class {
 	#name : 'MCPLoadBaselineRequest',
@@ -7,8 +7,7 @@ Class {
 	#instVars : [
 		'baseline',
 		'groups',
-		'onWarning',
-		'onConflict'
+		'loadPolicy'
 	],
 	#category : 'MCP-Requests',
 	#package : 'MCP',
@@ -16,13 +15,12 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPLoadBaselineRequest class >> baseline: baselineName groups: groupNames onWarning: warningPolicy onConflict: conflictPolicy [
+MCPLoadBaselineRequest class >> baseline: baselineName groups: groupNames loadPolicy: aLoadPolicy [
 
 	^ self new
 		  initializeBaseline: baselineName
 		  groups: groupNames
-		  onWarning: warningPolicy
-		  onConflict: conflictPolicy
+		  loadPolicy: aLoadPolicy
 ]
 
 { #category : 'instance creation' }
@@ -31,8 +29,7 @@ MCPLoadBaselineRequest class >> fromLoadRepositoryRequest: aRequest [
 	^ self
 		  baseline: aRequest baseline
 		  groups: aRequest groups
-		  onWarning: aRequest onWarning
-		  onConflict: aRequest onConflict
+		  loadPolicy: aRequest loadPolicy
 ]
 
 { #category : 'instance creation' }
@@ -44,12 +41,7 @@ MCPLoadBaselineRequest class >> fromRequest: request tool: aTool [
 		  (request
 			   uniqueStringCollectionArgumentNamed: 'groups'
 			   default: #(  ))
-		  onWarning: (request
-				   stringArgumentNamed: 'onWarning'
-				   default: aTool defaultOnWarning)
-		  onConflict: (request
-				   stringArgumentNamed: 'onConflict'
-				   default: aTool defaultOnConflict)
+		  loadPolicy: (MCPLoadPolicySpec fromRequest: request tool: aTool)
 ]
 
 { #category : 'accessing' }
@@ -65,25 +57,30 @@ MCPLoadBaselineRequest >> groups [
 ]
 
 { #category : 'initialization' }
-MCPLoadBaselineRequest >> initializeBaseline: baselineName groups: groupNames onWarning: warningPolicy onConflict: conflictPolicy [
+MCPLoadBaselineRequest >> initializeBaseline: baselineName groups: groupNames loadPolicy: aLoadPolicy [
 
 	baseline := baselineName.
 	groups := groupNames ifNil: [ #(  ) ].
-	onWarning := warningPolicy.
-	onConflict := conflictPolicy.
+	loadPolicy := aLoadPolicy.
 	^ self
+]
+
+{ #category : 'accessing' }
+MCPLoadBaselineRequest >> loadPolicy [
+
+	^ loadPolicy
 ]
 
 { #category : 'accessing' }
 MCPLoadBaselineRequest >> onConflict [
 
-	^ onConflict
+	^ self loadPolicy onConflict
 ]
 
 { #category : 'accessing' }
 MCPLoadBaselineRequest >> onWarning [
 
-	^ onWarning
+	^ self loadPolicy onWarning
 ]
 
 { #category : 'converting' }
@@ -93,5 +90,6 @@ MCPLoadBaselineRequest >> requestedContext [
 		  (#baseline -> self baseline).
 		  (#groups -> self groups).
 		  (#onWarning -> self onWarning).
-		  (#onConflict -> self onConflict) } asDictionary
+		  (#onConflict -> self onConflict).
+		  (#policy -> self loadPolicy asDictionary) } asDictionary
 ]

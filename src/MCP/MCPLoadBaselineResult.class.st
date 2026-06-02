@@ -1,5 +1,5 @@
 "
-Result DTO for the reusable Metacello baseline load core. It reports baseline options and newly observed packages and Iceberg repositories.
+Result DTO for the reusable Metacello baseline load core. It reports baseline groups, the applied load policy, newly observed packages, and newly registered Iceberg repositories.
 "
 Class {
 	#name : 'MCPLoadBaselineResult',
@@ -7,8 +7,7 @@ Class {
 	#instVars : [
 		'baseline',
 		'groups',
-		'onWarning',
-		'onConflict',
+		'loadPolicy',
 		'newPackageNames',
 		'repositoryInfos'
 	],
@@ -34,6 +33,7 @@ MCPLoadBaselineResult >> asDictionary [
 		  (#groups -> self groups).
 		  (#onWarning -> self onWarning).
 		  (#onConflict -> self onConflict).
+		  (#policy -> self loadPolicy asDictionary).
 		  (#newPackageNames -> self newPackageNames).
 		  (#repositories -> self repositoryDictionaries) } asDictionary
 ]
@@ -55,11 +55,16 @@ MCPLoadBaselineResult >> initializeRequest: aRequest newPackageNames: packageNam
 
 	baseline := aRequest baseline.
 	groups := aRequest groups.
-	onWarning := aRequest onWarning.
-	onConflict := aRequest onConflict.
+	loadPolicy := aRequest loadPolicy.
 	newPackageNames := packageNames asArray.
 	repositoryInfos := repositories asArray.
 	^ self
+]
+
+{ #category : 'accessing' }
+MCPLoadBaselineResult >> loadPolicy [
+
+	^ loadPolicy
 ]
 
 { #category : 'accessing' }
@@ -71,13 +76,13 @@ MCPLoadBaselineResult >> newPackageNames [
 { #category : 'accessing' }
 MCPLoadBaselineResult >> onConflict [
 
-	^ onConflict
+	^ self loadPolicy onConflict
 ]
 
 { #category : 'accessing' }
 MCPLoadBaselineResult >> onWarning [
 
-	^ onWarning
+	^ self loadPolicy onWarning
 ]
 
 { #category : 'converting' }
