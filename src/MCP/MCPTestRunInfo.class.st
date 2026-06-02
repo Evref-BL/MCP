@@ -9,7 +9,12 @@ Class {
 	#instVars : [
 		'className',
 		'testMethodName',
+		'selectedTestCount',
 		'runCount',
+		'passedCount',
+		'skippedCount',
+		'failureCount',
+		'errorCount',
 		'issues'
 	],
 	#category : 'MCP-DTOs',
@@ -18,12 +23,12 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPTestRunInfo class >> className: aClassName testMethodName: aTestMethodName runCount: anInteger issues: issueCollection [
+MCPTestRunInfo class >> validatedRequest: validatedRequest selectedTestCount: selectedCount result: aResult issues: issueCollection [
 
 	^ self new
-		  initializeClassName: aClassName
-		  testMethodName: aTestMethodName
-		  runCount: anInteger
+		  initializeValidatedRequest: validatedRequest
+		  selectedTestCount: selectedCount
+		  result: aResult
 		  issues: issueCollection
 ]
 
@@ -35,7 +40,12 @@ MCPTestRunInfo >> asDictionary [
 	data at: #className put: self className.
 	self testMethodName ifNotNil: [ :methodName |
 		data at: #testMethodName put: methodName ].
+	data at: #selectedTestCount put: self selectedTestCount.
 	data at: #runCount put: self runCount.
+	data at: #passedCount put: self passedCount.
+	data at: #skippedCount put: self skippedCount.
+	data at: #failureCount put: self failureCount.
+	data at: #errorCount put: self errorCount.
 	self issues ifNotEmpty: [ :issueDetails |
 		data at: #issues put: issueDetails ].
 	^ data
@@ -47,12 +57,29 @@ MCPTestRunInfo >> className [
 	^ className
 ]
 
-{ #category : 'initialization' }
-MCPTestRunInfo >> initializeClassName: aClassName testMethodName: aTestMethodName runCount: anInteger issues: issueCollection [
+{ #category : 'accessing' }
+MCPTestRunInfo >> errorCount [
 
-	className := aClassName.
-	testMethodName := aTestMethodName.
-	runCount := anInteger.
+	^ errorCount ifNil: [ 0 ]
+]
+
+{ #category : 'accessing' }
+MCPTestRunInfo >> failureCount [
+
+	^ failureCount ifNil: [ 0 ]
+]
+
+{ #category : 'initialization' }
+MCPTestRunInfo >> initializeValidatedRequest: validatedRequest selectedTestCount: selectedCount result: aResult issues: issueCollection [
+
+	className := validatedRequest className.
+	testMethodName := validatedRequest testMethodName.
+	selectedTestCount := selectedCount.
+	runCount := aResult runCount.
+	passedCount := aResult passedCount.
+	skippedCount := aResult skippedCount.
+	failureCount := aResult failureCount.
+	errorCount := aResult errorCount.
 	issues := issueCollection ifNil: [ #(  ) ].
 	^ self
 ]
@@ -64,9 +91,27 @@ MCPTestRunInfo >> issues [
 ]
 
 { #category : 'accessing' }
+MCPTestRunInfo >> passedCount [
+
+	^ passedCount ifNil: [ 0 ]
+]
+
+{ #category : 'accessing' }
 MCPTestRunInfo >> runCount [
 
 	^ runCount ifNil: [ 0 ]
+]
+
+{ #category : 'accessing' }
+MCPTestRunInfo >> selectedTestCount [
+
+	^ selectedTestCount ifNil: [ 0 ]
+]
+
+{ #category : 'accessing' }
+MCPTestRunInfo >> skippedCount [
+
+	^ skippedCount ifNil: [ 0 ]
 ]
 
 { #category : 'accessing' }

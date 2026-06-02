@@ -25,3 +25,9 @@ MCPToolStructuredOutputTestTarget >> testPasses [
 
 	self assert: true
 ]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTestTarget >> testSkips [
+
+	self skip: 'skip probe'
+]

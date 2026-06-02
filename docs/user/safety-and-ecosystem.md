@@ -119,6 +119,9 @@ package, class, hierarchy, or method scope.
 `test_run` runs SUnit classes or individual methods and returns structured test
 results. Use `test_coverage_run` when the same test run should collect
 CoverageCollector method and node coverage for an explicit method scope.
+`test_run` deduplicates concrete test cases across a batch. Use
+`selectedTestCount` for selected unique tests, `runCount` for non-skipped
+executed tests, and `skippedCount` for skipped tests.
 
 Coverage output includes method counts, node counts, uncovered methods,
 partially covered methods, and optional covered method details. Use it after

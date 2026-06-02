@@ -284,10 +284,16 @@ MCPToolStructuredOutputTest >> testRunTestClassReturnsStructuredIssues [
 	self
 		assert: (singleResult at: #className)
 		equals: 'MCPToolStructuredOutputTestTarget'.
+	self assert: (singleResult at: #selectedTestCount) equals: 4.
 	self assert: (singleResult at: #runCount) equals: 3.
-	self assert: (singleResult at: #issues) size equals: 2.
+	self assert: (singleResult at: #passedCount) equals: 1.
+	self assert: (singleResult at: #skippedCount) equals: 1.
+	self assert: (singleResult at: #failureCount) equals: 1.
+	self assert: (singleResult at: #errorCount) equals: 1.
+	self assert: (singleResult at: #issues) size equals: 3.
 	self assert: (issueMethodNames includes: 'testFails').
 	self assert: (issueMethodNames includes: 'testErrors').
+	self assert: (issueMethodNames includes: 'testSkips').
 	self assert: (firstIssue includesKey: #message).
 	self
 		assert: (firstIssue at: #className)
@@ -301,12 +307,7 @@ MCPToolStructuredOutputTest >> testRunTestClassReturnsStructuredIssues [
 	self deny: (data includesKey: #failureCount).
 	self deny: (data includesKey: #errorCount).
 	self deny: (data includesKey: #failingTestNames).
-	self deny: (data includesKey: #issues).
-	self deny: (singleResult includesKey: #passedCount).
-	self deny: (singleResult includesKey: #skippedCount).
-	self deny: (singleResult includesKey: #failureCount).
-	self deny: (singleResult includesKey: #errorCount).
-	self deny: (singleResult includesKey: #failingTestNames)
+	self deny: (data includesKey: #issues)
 ]
 
 { #category : 'tests' }
@@ -315,24 +316,24 @@ MCPToolStructuredOutputTest >> testRunTestMethodReturnsStructuredIssues [
 	| data firstIssue methodResult result |
 	result := self
 		          callToolNamed: 'test_run'
-		          withArguments: { (#tests -> {
-				           { (#className -> 'MCPToolStructuredOutputTestTarget') }
-					           asDictionary.
-				           {
-					           (#className -> 'MCPToolStructuredOutputTestTarget').
-					           (#testMethodName -> 'testFails') } asDictionary }) }
+		          withArguments: { (#tests -> { {
+				           (#className -> 'MCPToolStructuredOutputTestTarget').
+				           (#testMethodName -> 'testFails') } asDictionary }) }
 				          asDictionary.
 	data := self dataFrom: result.
-	methodResult := (data at: #results) detect: [ :each |
-		                (each at: #testMethodName ifAbsent: [ nil ])
-		                = 'testFails' ].
+	methodResult := (data at: #results) first.
 	firstIssue := (methodResult at: #issues) first.
 	self
 		assert: ((self structuredContentFrom: result) at: #status)
 		equals: 'ok'.
 	self assert: data keys asSet equals: #( #results ) asSet.
-	self assert: (data at: #results) size equals: 2.
+	self assert: (data at: #results) size equals: 1.
+	self assert: (methodResult at: #selectedTestCount) equals: 1.
 	self assert: (methodResult at: #runCount) equals: 1.
+	self assert: (methodResult at: #passedCount) equals: 0.
+	self assert: (methodResult at: #skippedCount) equals: 0.
+	self assert: (methodResult at: #failureCount) equals: 1.
+	self assert: (methodResult at: #errorCount) equals: 0.
 	self assert: (methodResult at: #testMethodName) equals: 'testFails'.
 	self assert: (methodResult at: #issues) size equals: 1.
 	self assert: (firstIssue at: #testMethodName) equals: 'testFails'.
@@ -348,12 +349,7 @@ MCPToolStructuredOutputTest >> testRunTestMethodReturnsStructuredIssues [
 	self deny: (data includesKey: #failureCount).
 	self deny: (data includesKey: #errorCount).
 	self deny: (data includesKey: #failingTestNames).
-	self deny: (data includesKey: #issues).
-	self deny: (methodResult includesKey: #passedCount).
-	self deny: (methodResult includesKey: #skippedCount).
-	self deny: (methodResult includesKey: #failureCount).
-	self deny: (methodResult includesKey: #errorCount).
-	self deny: (methodResult includesKey: #failingTestNames)
+	self deny: (data includesKey: #issues)
 ]
 
 { #category : 'tests' }
@@ -443,6 +439,65 @@ MCPToolStructuredOutputTest >> testRunTestsCoverageReturnsStructuredCoverage [
 ]
 
 { #category : 'tests' }
+MCPToolStructuredOutputTest >> testRunTestsDeduplicatesConcreteCasesAcrossSelections [
+
+	| data result singleResult |
+	result := self
+		          callToolNamed: 'test_run'
+		          withArguments: { (#tests -> {
+				           { (#className -> 'MCPToolStructuredOutputTestTarget') }
+					           asDictionary.
+				           {
+					           (#className -> 'MCPToolStructuredOutputTestTarget').
+					           (#testMethodName -> 'testFails') } asDictionary.
+				           { (#className -> 'MCPToolStructuredOutputTestTarget') }
+					           asDictionary }) } asDictionary.
+	data := self dataFrom: result.
+	singleResult := (data at: #results) first.
+	self
+		assert: ((self structuredContentFrom: result) at: #status)
+		equals: 'ok'.
+	self assert: (data at: #results) size equals: 1.
+	self
+		assert: (singleResult at: #className)
+		equals: 'MCPToolStructuredOutputTestTarget'.
+	self assert: (singleResult at: #selectedTestCount) equals: 4.
+	self assert: (singleResult at: #runCount) equals: 3.
+	self assert: (singleResult at: #passedCount) equals: 1.
+	self assert: (singleResult at: #skippedCount) equals: 1.
+	self assert: (singleResult at: #failureCount) equals: 1.
+	self assert: (singleResult at: #errorCount) equals: 1
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testRunTestsDeduplicatesUnrunCasesAcrossSelections [
+
+	| data result unrunMethodNames |
+	result := self callToolNamed: 'test_run' withArguments: {
+			          (#tests -> {
+				           { (#className -> 'MCPToolStructuredOutputTestTarget') }
+					           asDictionary.
+				           {
+					           (#className -> 'MCPToolStructuredOutputTestTarget').
+					           (#testMethodName -> 'testFails') } asDictionary.
+				           { (#className -> 'MCPToolStructuredOutputTestTarget') }
+					           asDictionary }).
+			          (#timeoutSeconds -> 0) } asDictionary.
+	data := self dataFrom: result.
+	unrunMethodNames := ((data at: #unrunTests) collect: [ :each |
+		                     each at: #testMethodName ]) asSet.
+	self
+		assert: ((self structuredContentFrom: result) at: #status)
+		equals: 'ok'.
+	self assert: (data at: #timedOut) equals: true.
+	self assert: (data at: #results) isEmpty.
+	self assert: (data at: #unrunTests) size equals: 4.
+	self
+		assert: unrunMethodNames
+		equals: #( 'testErrors' 'testFails' 'testPasses' 'testSkips' ) asSet
+]
+
+{ #category : 'tests' }
 MCPToolStructuredOutputTest >> testRunTestsParameterizedMethodFailureIncludesCaseDetails [
 
 	| data issue methodResult result |
@@ -493,6 +548,34 @@ MCPToolStructuredOutputTest >> testRunTestsParseErrorReturnsStructuredToolError 
 	self assert: (error at: #tests) equals: #( '' ).
 	self assert: ((error at: #message) includesSubstring:
 			 'tests must contain only non-empty class names')
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testRunTestsSkippedMethodReportsExplicitCounts [
+
+	| data issue result singleResult |
+	result := self
+		          callToolNamed: 'test_run'
+		          withArguments: { (#tests -> { {
+				           (#className -> 'MCPToolStructuredOutputTestTarget').
+				           (#testMethodName -> 'testSkips') } asDictionary }) }
+				          asDictionary.
+	data := self dataFrom: result.
+	singleResult := (data at: #results) first.
+	issue := (singleResult at: #issues) first.
+	self
+		assert: ((self structuredContentFrom: result) at: #status)
+		equals: 'ok'.
+	self assert: (data at: #results) size equals: 1.
+	self assert: (singleResult at: #selectedTestCount) equals: 1.
+	self assert: (singleResult at: #runCount) equals: 0.
+	self assert: (singleResult at: #passedCount) equals: 0.
+	self assert: (singleResult at: #skippedCount) equals: 1.
+	self assert: (singleResult at: #failureCount) equals: 0.
+	self assert: (singleResult at: #errorCount) equals: 0.
+	self assert: (singleResult at: #testMethodName) equals: 'testSkips'.
+	self assert: (issue at: #kind) equals: 'skipped'.
+	self assert: (issue at: #testMethodName) equals: 'testSkips'
 ]
 
 { #category : 'tests' }
