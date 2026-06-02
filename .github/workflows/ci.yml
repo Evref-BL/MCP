@@ -25,25 +25,16 @@ jobs:
       - run: smalltalkci -s ${{ matrix.smalltalk }}
         shell: bash
         timeout-minutes: 15
+      - name: Verify coverage report
+        if: ${{ success() && matrix.smalltalk == 'Pharo64-13' }}
+        run: test -s ./coverage/lcov.info
+        shell: bash
       - name: Coveralls
-        if: ${{ success() }}
+        if: ${{ success() && matrix.smalltalk == 'Pharo64-13' }}
         uses: coverallsapp/github-action@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           file: ./coverage/lcov.info
           format: lcov
-          parallel: true
-          flag-name: ${{ matrix.smalltalk }}
-
-  coveralls:
-    name: Coveralls finalize
-    needs: build
-    # Always close the parallel Coveralls build after all matrix jobs finish.
-    if: ${{ always() }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Finish Coveralls parallel build
-        uses: coverallsapp/github-action@v2
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          parallel-finished: true
+          flag-name: Pharo64-13
+          fail-on-error: false
