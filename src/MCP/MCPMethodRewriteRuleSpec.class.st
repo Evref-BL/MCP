@@ -66,8 +66,10 @@ MCPMethodRewriteRuleSpec >> initializeFromDictionary: aDictionary request: reque
 		        stringArgumentNamed: 'name'
 		        in: aDictionary
 		        default: 'rule-' , index asString.
-	lhs := request stringArgumentNamed: 'lhs' in: aDictionary.
-	rhs := request stringArgumentNamed: 'rhs' in: aDictionary.
+	lhs := (request stringArgumentNamed: 'lhs' in: aDictionary)
+		       withInternalLineEndings.
+	rhs := (request stringArgumentNamed: 'rhs' in: aDictionary)
+		       withInternalLineEndings.
 	isForMethod := request
 		               booleanArgumentNamed: 'isForMethod'
 		               in: aDictionary

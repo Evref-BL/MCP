@@ -196,11 +196,13 @@ MCPRenameSlotCommand >> renameClassSideAccessor: oldSelector to: newSelector sou
 	(aBehavior includesLocalSelector: oldSelector) ifFalse: [ ^ self ].
 	protocol := (aBehavior >> oldSelector) protocol.
 	(aBehavior includesLocalSelector: newSelector) ifTrue: [
-		RBRefactoringError signal:
-			'Cannot rename accessor ' , oldSelector asString , ' to '
-			, newSelector asString
-			, ' because the target selector already exists.' ].
-	aBehavior compile: sourceString classified: protocol.
+			RBRefactoringError signal:
+				'Cannot rename accessor ' , oldSelector asString , ' to '
+				, newSelector asString
+				, ' because the target selector already exists.' ].
+	aBehavior
+		compile: sourceString withInternalLineEndings
+		classified: protocol.
 	aBehavior removeSelector: oldSelector
 ]
 
@@ -277,22 +279,23 @@ MCPRenameSlotCommand >> restoreInstanceSideSlotValues: someAssociations [
 { #category : 'private' }
 MCPRenameSlotCommand >> rewriteClassSideReferencesForSelector: aSelector inBehavior: aBehavior [
 
-	| accessorRewriter changed parseTree protocol variableRewriter |
+	| accessorRewriter changed parseTree protocol source variableRewriter |
 	parseTree := aBehavior parseTreeForSelector: aSelector.
 	parseTree ifNil: [ ^ self ].
 	changed := false.
 	variableRewriter := self variableReferenceRewriterForSelector:
 		                    aSelector.
 	(variableRewriter executeTree: parseTree) ifTrue: [
-		parseTree := variableRewriter tree.
-		changed := true ].
+			parseTree := variableRewriter tree.
+			changed := true ].
 	accessorRewriter := self classSideAccessorMessageRewriter.
 	(accessorRewriter executeTree: parseTree) ifTrue: [
-		parseTree := accessorRewriter tree.
-		changed := true ].
+			parseTree := accessorRewriter tree.
+			changed := true ].
 	changed ifFalse: [ ^ self ].
 	protocol := (aBehavior >> aSelector) protocol.
-	aBehavior compile: parseTree formattedCode classified: protocol
+	source := parseTree formattedCode withInternalLineEndings.
+	aBehavior compile: source classified: protocol
 ]
 
 { #category : 'private' }
@@ -309,22 +312,23 @@ MCPRenameSlotCommand >> rewriteClassSideReferencesInBehavior: aBehavior [
 { #category : 'private' }
 MCPRenameSlotCommand >> rewriteInstanceSideReferencesForSelector: aSelector inBehavior: aBehavior [
 
-	| accessorRewriter changed parseTree protocol variableRewriter |
+	| accessorRewriter changed parseTree protocol source variableRewriter |
 	parseTree := aBehavior parseTreeForSelector: aSelector.
 	parseTree ifNil: [ ^ self ].
 	changed := false.
 	variableRewriter := self variableReferenceRewriterForSelector:
 		                    aSelector.
 	(variableRewriter executeTree: parseTree) ifTrue: [
-		parseTree := variableRewriter tree.
-		changed := true ].
+			parseTree := variableRewriter tree.
+			changed := true ].
 	accessorRewriter := self classSideAccessorMessageRewriter.
 	(accessorRewriter executeTree: parseTree) ifTrue: [
-		parseTree := accessorRewriter tree.
-		changed := true ].
+			parseTree := accessorRewriter tree.
+			changed := true ].
 	changed ifFalse: [ ^ self ].
 	protocol := (aBehavior >> aSelector) protocol.
-	aBehavior compile: parseTree formattedCode classified: protocol
+	source := parseTree formattedCode withInternalLineEndings.
+	aBehavior compile: source classified: protocol
 ]
 
 { #category : 'private' }

@@ -187,6 +187,51 @@ MCPToolMethodMutationTest >> instanceSelector [
 ]
 
 { #category : 'private' }
+MCPToolMethodMutationTest >> mcpPackageNames [
+
+	^ #( 'BaselineOfMCP' 'MCP' 'MCP-Spec' 'MCP-Spec-Tests'
+	     'MCP-Tests' 'MCP-Tests-Resources' 'MCP-Tests-Resources-Extensions' )
+]
+
+{ #category : 'private' }
+MCPToolMethodMutationTest >> methodDefinitionsInPackageNamed: packageName [
+
+	^ (MCPackage named: packageName) snapshot definitions select: [
+		  :definition | definition isMethodDefinition ]
+]
+
+{ #category : 'private' }
+MCPToolMethodMutationTest >> methodSourceLineFeedOffenderNameFor: aMethodDefinition [
+
+	^ aMethodDefinition className asString
+	  , (aMethodDefinition classIsMeta
+			   ifTrue: [ ' class>>' ]
+			   ifFalse: [ '>>' ]) , aMethodDefinition selector asString
+]
+
+{ #category : 'private' }
+MCPToolMethodMutationTest >> methodSourceLineFeedOffenders [
+
+	| offenders |
+	offenders := Array streamContents: [ :stream |
+			             self mcpPackageNames do: [ :packageName |
+					             self
+						             methodSourceLineFeedOffendersInPackageNamed:
+						             packageName
+						             do: [ :offender | stream nextPut: offender ] ] ].
+	^ offenders sort
+]
+
+{ #category : 'private' }
+MCPToolMethodMutationTest >> methodSourceLineFeedOffendersInPackageNamed: packageName do: aBlock [
+
+	(self methodDefinitionsInPackageNamed: packageName) do: [ :definition |
+			(definition source includes: Character lf) ifTrue: [
+				aBlock value:
+					(self methodSourceLineFeedOffenderNameFor: definition) ] ]
+]
+
+{ #category : 'private' }
 MCPToolMethodMutationTest >> renamedClassSelector [
 
 	^ ('make' , 'Value:') asSymbol
@@ -210,7 +255,12 @@ MCPToolMethodMutationTest >> restoreFixtureMethods [
 	self
 		removeSelector: #multilineAnswer
 		from: MCPToolMethodMutationTestTarget.
-	self removeSelector: #uglyAnswer from: MCPToolMethodMutationTestTarget.
+	self
+		removeSelector: #multilineStringAnswer
+		from: MCPToolMethodMutationTestTarget.
+	self
+		removeSelector: #uglyAnswer
+		from: MCPToolMethodMutationTestTarget.
 	self
 		removeSelector: self instanceSelector
 		from: MCPToolMethodMutationTestTarget.
@@ -827,6 +877,17 @@ MCPToolMethodMutationTest >> testCreateMethodReportsReplacedChangeKind [
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testMCPPackageMethodSourcesDoNotContainLineFeeds [
+
+	| offenders |
+	offenders := self methodSourceLineFeedOffenders.
+	self
+		assert: offenders isEmpty
+		description: 'MCP method source must not contain Character lf: '
+			, offenders printString
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testMethodToolSchemasDeclareExpectedInputs [
 
 	| classSideProperty createPropertyNames protocolPropertyNames selectorPropertyNames |
@@ -882,6 +943,32 @@ MCPToolMethodMutationTest >> testNormalizesLineEndingsBeforeCompilation [
 	self
 		assert: MCPToolMethodMutationTestTarget new multilineAnswer
 		equals: 42
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testNormalizesLineFeedStringLiteralBeforeCompilation [
+
+	| literal normalizedSource source |
+	source := 'multilineStringAnswer' , String lf , '^ ''line one'
+	          , String lf , 'line two'''.
+	[
+		self callToolWith: (self
+				 compileArgumentsForClassName: 'MCPToolMethodMutationTestTarget'
+				 classSide: false
+				 methodSource: source
+				 protocol: 'tests').
+		normalizedSource := (MCPToolMethodMutationTestTarget
+		                     >> #multilineStringAnswer) sourceCode.
+		literal := MCPToolMethodMutationTestTarget new multilineStringAnswer.
+		self deny: (normalizedSource includes: Character lf).
+		self deny: (literal includes: Character lf).
+		self assert: (normalizedSource includes: Character cr).
+		self assert: (literal includes: Character cr).
+		self assert: literal equals: 'line one' , String cr , 'line two' ]
+		ensure: [
+				self
+					removeSelector: #multilineStringAnswer
+					from: MCPToolMethodMutationTestTarget ]
 ]
 
 { #category : 'tests' }

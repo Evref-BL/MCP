@@ -403,6 +403,25 @@ MCPToolRewriteMethodsTest >> testPreviewReturnsChangesWithoutMutatingMethod [
 ]
 
 { #category : 'tests' }
+MCPToolRewriteMethodsTest >> testRewriteRuleNormalizesLineFeedsInPatterns [
+
+	| parsedRequest rule source tool |
+	source := '''line one' , String lf , 'line two'''.
+	tool := MCPToolRewriteMethods new.
+	parsedRequest := self parsedRequestForTool: tool arguments: {
+			                 (#rules -> { {
+				                  (#lhs -> source).
+				                  (#rhs -> source) } asDictionary }).
+			                 (#classNames -> { self targetClassName }) }
+			                 asDictionary.
+	rule := parsedRequest rules first.
+	self deny: (rule lhs includes: Character lf).
+	self deny: (rule rhs includes: Character lf).
+	self assert: (rule lhs includes: Character cr).
+	self assert: (rule rhs includes: Character cr)
+]
+
+{ #category : 'tests' }
 MCPToolRewriteMethodsTest >> testSchemaAdvertisesRewriteContract [
 
 	| lhsProperty propertyNames rhsProperty ruleProperties rulesProperty tool |
