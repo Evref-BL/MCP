@@ -30,7 +30,7 @@ MCPCreateMethodCommand >> changeSummaryVerbFor: changeKindString [
 { #category : 'executing' }
 MCPCreateMethodCommand >> execute [
 
-	| behavior changeKind compiledMethod methodReference result selector |
+	| behavior changeKind compiledMethod methodReference methodSource result selector |
 	^ self tool
 		  executeMutationAction: 'create'
 		  force: self request force
@@ -39,13 +39,14 @@ MCPCreateMethodCommand >> execute [
 				  behavior := self tool
 					              behaviorNamed: self request className
 					              classSide: self request classSide.
-				  selector := self selectorForMethodSource:
-					              self request methodSource.
+				  methodSource := self request methodSource
+					                  withInternalLineEndings.
+				  selector := self selectorForMethodSource: methodSource.
 				  changeKind := (behavior includesSelector: selector)
 					                ifTrue: [ 'replaced' ]
 					                ifFalse: [ 'created' ].
 				  selector := behavior
-					              compile: self request methodSource
+					              compile: methodSource
 					              classified: self request protocol.
 				  compiledMethod := self tool
 					                    reformattedMethodForBehavior: behavior

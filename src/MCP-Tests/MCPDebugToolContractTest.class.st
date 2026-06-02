@@ -1209,6 +1209,20 @@ MCPDebugToolContractTest >> testDebugMethodUpdateRecompilesNotYetImplementedFram
 ]
 
 { #category : 'tests' }
+MCPDebugToolContractTest >> testDebugMethodUpdateRequestNormalizesMethodSourceLineFeeds [
+
+	| parsedRequest source tool |
+	source := 'mcpDebugNormalizedSource' , String lf , '^ ''line one'
+	          , String lf , 'line two'''.
+	tool := MCPToolUpdateDebugMethod new.
+	parsedRequest := self parsedRequestForTool: tool arguments: {
+			                 (#sessionId -> 'debug-session-1').
+			                 (#methodSource -> source) } asDictionary.
+	self deny: (parsedRequest methodSource includes: Character lf).
+	self assert: (parsedRequest methodSource includes: Character cr)
+]
+
+{ #category : 'tests' }
 MCPDebugToolContractTest >> testDebugMethodUpdateStopsBeforeProceedingWhenCritiquesAreReported [
 
 	| action arguments captureData updateData expression methodSource result state |

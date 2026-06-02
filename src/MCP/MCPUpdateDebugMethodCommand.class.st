@@ -98,7 +98,7 @@ MCPUpdateDebugMethodCommand >> compileImplementationForRecord: aRecord context: 
 { #category : 'private - compiling' }
 MCPUpdateDebugMethodCommand >> compileSourceUsing: details [
 
-	| actualSelector behavior context expectedSelector message method record selectorDetails |
+	| actualSelector behavior context expectedSelector message method record selectorDetails source |
 	record := details at: #record.
 	behavior := details at: #behavior.
 	behavior ifNil: [
@@ -106,7 +106,8 @@ MCPUpdateDebugMethodCommand >> compileSourceUsing: details [
 				  signalUnsupportedUpdateForRecord: record
 				  updateKind: (details at: #updateKind) ].
 	expectedSelector := details at: #expectedSelector.
-	actualSelector := behavior compile: (details at: #source).
+	source := (details at: #source) withInternalLineEndings.
+	actualSelector := behavior compile: source.
 	actualSelector = expectedSelector ifFalse: [
 			selectorDetails := {
 				                   (#sessionId -> record sessionId).
