@@ -321,13 +321,34 @@ MCPToolRunTests >> standardTestDataPropertiesIncludingMethodName: includeMethodN
 				               type: 'string'
 				               description: 'The test class that was executed.').
 			              (self
+				               integerSchemaPropertyNamed: 'selectedTestCount'
+				               description:
+				               'The number of unique concrete test cases selected for this request after batch deduplication.').
+			              (self
 				               integerSchemaPropertyNamed: 'runCount'
-				               description: 'The number of tests that ran.') }.
+				               description:
+				               'The number of non-skipped test cases that ran.').
+			              (self
+				               integerSchemaPropertyNamed: 'passedCount'
+				               description:
+				               'The number of test cases that passed.').
+			              (self
+				               integerSchemaPropertyNamed: 'skippedCount'
+				               description:
+				               'The number of test cases that were skipped.').
+			              (self
+				               integerSchemaPropertyNamed: 'failureCount'
+				               description:
+				               'The number of test cases that failed assertions.').
+			              (self
+				               integerSchemaPropertyNamed: 'errorCount'
+				               description:
+				               'The number of test cases that raised errors.') }.
 	includeMethodName ifTrue: [
-		properties add: (self
-				 schemaPropertyNamed: 'testMethodName'
-				 type: 'string'
-				 description: 'The single test method that was executed.') ].
+			properties add: (self
+					 schemaPropertyNamed: 'testMethodName'
+					 type: 'string'
+					 description: 'The single test method that was executed.') ].
 	issuesProperty := self
 		                  schemaPropertyNamed: 'issues'
 		                  type: 'array'
@@ -342,7 +363,9 @@ MCPToolRunTests >> standardTestDataPropertiesIncludingMethodName: includeMethodN
 MCPToolRunTests >> standardTestRequiredFieldsIncludingMethodName: includeMethodName [
 
 	| required |
-	required := OrderedCollection withAll: #( 'className' 'runCount' ).
+	required := OrderedCollection withAll:
+		            #( 'className' 'selectedTestCount' 'runCount' 'passedCount'
+		               'skippedCount' 'failureCount' 'errorCount' ).
 	includeMethodName ifTrue: [ required add: 'testMethodName' ].
 	^ required asArray
 ]
@@ -350,57 +373,75 @@ MCPToolRunTests >> standardTestRequiredFieldsIncludingMethodName: includeMethodN
 { #category : 'private' }
 MCPToolRunTests >> successSummaryForData: data [
 
-	| coverage failureLikeCount results runCount selectionCount selectionWord timedOut unrunCount |
+	| coverage errorCount failureCount failureLikeCount results runCount selectedTestCount selectionCount selectionWord skippedCount timedOut unrunCount |
 	results := data at: #results.
 	selectionCount := results size.
 	selectionWord := selectionCount = 1
 		                 ifTrue: [ 'test selection' ]
 		                 ifFalse: [ 'test selections' ].
+	selectedTestCount := results
+		                     inject: 0
+		                     into: [ :sum :each |
+		                     sum + (each at: #selectedTestCount) ].
 	runCount := results
 		            inject: 0
 		            into: [ :sum :each | sum + (each at: #runCount) ].
-	failureLikeCount := results inject: 0 into: [ :sum :each |
-		                    sum
-		                    +
-			                    ((each at: #issues ifAbsent: [ #(  ) ]) count: [
-				                     :issue |
-				                     #( 'failure' 'error' ) includes:
-					                     (issue at: #kind) ]) asInteger ].
+	skippedCount := results
+		                inject: 0
+		                into: [ :sum :each | sum + (each at: #skippedCount) ].
+	failureCount := results
+		                inject: 0
+		                into: [ :sum :each | sum + (each at: #failureCount) ].
+	errorCount := results
+		              inject: 0
+		              into: [ :sum :each | sum + (each at: #errorCount) ].
+	failureLikeCount := failureCount + errorCount.
 	timedOut := data at: #timedOut ifAbsent: [ false ].
 	unrunCount := (data at: #unrunTests ifAbsent: [ #(  ) ]) size.
 	coverage := data at: #coverage ifAbsent: [ nil ].
 	^ String streamContents: [ :stream |
-		  timedOut ifTrue: [ stream nextPutAll: 'Timed out. ' ].
-		  stream
-			  nextPutAll: 'Executed ';
-			  nextPutAll: selectionCount asString;
-			  nextPutAll: ' ';
-			  nextPutAll: selectionWord;
-			  nextPutAll: ' covering ';
-			  nextPutAll: runCount asString;
-			  nextPutAll: ' tests.'.
-		  failureLikeCount > 0 ifTrue: [
+			  timedOut ifTrue: [ stream nextPutAll: 'Timed out. ' ].
 			  stream
-				  space;
-				  nextPutAll: failureLikeCount asString;
-				  nextPutAll: ' failures/errors were reported.' ].
-		  timedOut ifTrue: [
-			  stream
-				  space;
-				  nextPutAll: unrunCount asString;
-				  nextPutAll: ' test requests remain in unrunTests.' ].
-		  coverage ifNotNil: [
-			  stream
-				  space;
-				  nextPutAll: 'Coverage: ';
-				  nextPutAll: (self coveragePercentageTextFor: coverage);
-				  nextPutAll: ' over ';
-				  nextPutAll: (coverage at: #methodCount) asString;
-				  nextPutAll: ' methods; ';
-				  nextPutAll: (coverage at: #uncoveredMethodCount) asString;
-				  nextPutAll: ' uncovered, ';
-				  nextPutAll: (coverage at: #partiallyCoveredMethodCount) asString;
-				  nextPutAll: ' partially covered.' ] ]
+				  nextPutAll: 'Executed ';
+				  nextPutAll: selectionCount asString;
+				  nextPutAll: ' ';
+				  nextPutAll: selectionWord;
+				  nextPutAll: ' covering ';
+				  nextPutAll: selectedTestCount asString;
+				  nextPutAll: ' unique tests (';
+				  nextPutAll: runCount asString;
+				  nextPutAll: ' ran'.
+			  skippedCount > 0 ifTrue: [
+					  stream
+						  nextPutAll: ', ';
+						  nextPutAll: skippedCount asString;
+						  nextPutAll: ' skipped' ].
+			  stream nextPutAll: ').'.
+			  failureLikeCount > 0 ifTrue: [
+					  stream
+						  space;
+						  nextPutAll: failureCount asString;
+						  nextPutAll: ' failures and ';
+						  nextPutAll: errorCount asString;
+						  nextPutAll: ' errors were reported.' ].
+			  timedOut ifTrue: [
+					  stream
+						  space;
+						  nextPutAll: unrunCount asString;
+						  nextPutAll: ' test requests remain in unrunTests.' ].
+			  coverage ifNotNil: [
+					  stream
+						  space;
+						  nextPutAll: 'Coverage: ';
+						  nextPutAll: (self coveragePercentageTextFor: coverage);
+						  nextPutAll: ' over ';
+						  nextPutAll: (coverage at: #methodCount) asString;
+						  nextPutAll: ' methods; ';
+						  nextPutAll: (coverage at: #uncoveredMethodCount) asString;
+						  nextPutAll: ' uncovered, ';
+						  nextPutAll:
+							  (coverage at: #partiallyCoveredMethodCount) asString;
+						  nextPutAll: ' partially covered.' ] ]
 ]
 
 { #category : 'private - tests' }
