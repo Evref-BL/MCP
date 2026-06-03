@@ -101,7 +101,9 @@ Prefer repository tools such as `repository_export`,
 `repository_branch_create`, `repository_branch_switch`, and
 `repository_head_adopt` when they exist. Use `repository_create`,
 `repository_attach`, and `repository_update` for repository registration
-workflows.
+workflows. `repository_attach` can attach either a normal Git checkout root or
+a linked Git worktree root whose `.git` file points to the worktree Git
+directory.
 
 Report incomplete or failing tool results clearly. Do not silently guess from
 memory or exported source when the question depends on image state.

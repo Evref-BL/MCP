@@ -16,6 +16,8 @@ but distinct.
 - Iceberg tracks package membership, source directory, repository metadata, and
   the image-side loaded version.
 - Git tracks files, commits, branches, remotes, and upstreams.
+- A linked Git worktree has a `.git` file that points to the actual worktree
+  Git directory instead of a `.git` directory at the checkout root.
 - `.project` records project/package metadata that should agree with the
   Iceberg source directory and disk layout.
 

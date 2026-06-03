@@ -37,7 +37,7 @@ schema before invoking a discoverable tool.
 | `repository_identity_verify` | Assert expected Iceberg repository identity fields before edits, exports, commits, pulls, or pushes. |
 | `repository_change_list` | Inspect Iceberg `workingCopyDiff` without writing files. |
 | `repository_create` | Create a new Iceberg repository directory and optionally attach initial packages. |
-| `repository_attach` | Register an existing Git checkout and optionally attach packages. |
+| `repository_attach` | Register an existing Git checkout, including a linked Git worktree checkout, and optionally attach packages. |
 | `repository_update` | Change image-side repository subdirectory or package membership without exporting packages. |
 | `repository_export` | Export image-side package changes to Tonel files and update the Iceberg index without staging or committing Git changes. |
 | `repository_commit` | Commit Iceberg repository changes with a message. |
