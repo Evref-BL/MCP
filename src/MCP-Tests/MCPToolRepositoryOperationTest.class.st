@@ -119,6 +119,16 @@ MCPToolRepositoryOperationTest >> removeRegisteredRepositoriesNamed: aRepository
 	repositories do: [ :each | registry remove: each ifAbsent: [  ] ]
 ]
 
+{ #category : 'private - calling' }
+MCPToolRepositoryOperationTest >> searchRepositoriesWith: someArguments [
+
+	| request result tool |
+	tool := MCPToolSearchRepositories new.
+	request := tool requestFromToolCallArguments: someArguments.
+	result := tool executeWithRequest: request.
+	^ result asJRPCJSON
+]
+
 { #category : 'private' }
 MCPToolRepositoryOperationTest >> shellCommand: aCommandString [
 
@@ -820,6 +830,113 @@ MCPToolRepositoryOperationTest >> testFetchReturnsResultShapeAndReportsErrors [
 		self assert: (errorResult at: #isError ifAbsent: [ false ]).
 		self assert: ((self summaryFrom: errorResult) includesSubstring:
 				 'Failed to fetch repository') ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testLinkedWorktreeAttachReportsGitMetadataAndExportsOnLinkedBranch [
+
+	| repositoryName packageName initialClassName exportedClassName location linkedLocation branchName createResult exportResult commitResult repository headCommitId attachResult searchResult searchData entry exportedClassFile |
+	repositoryName := 'MCP Repository Command Linked Worktree Contract Test'.
+	packageName := 'MCPToolRepositoryOperationLinkedWorktreePackage'.
+	initialClassName := 'MCPToolRepositoryOperationLinkedWorktreeClass'.
+	exportedClassName := 'MCPToolRepositoryOperationLinkedWorktreeExportClass'.
+	location := self temporaryRepositoryLocationNamed:
+		            'MCPToolRepositoryOperationTestLinkedWorktreeBase'.
+	linkedLocation := self temporaryRepositoryLocationNamed:
+		                  'MCPToolRepositoryOperationTestLinkedWorktree'.
+	branchName := 'attach-linked-test'.
+	exportedClassFile := linkedLocation / 'src' / packageName
+	                     / (exportedClassName , '.class.st').
+	self
+		withExportPackageNamed: packageName
+		className: initialClassName
+		do: [
+				self
+					withCleanRepositoryNamed: repositoryName
+					location: location
+					do: [
+							linkedLocation exists ifTrue: [ linkedLocation deleteAll ].
+							createResult := self callToolWith: {
+									                (#action -> 'create').
+									                (#name -> repositoryName).
+									                (#location -> location pathString).
+									                (#subdirectory -> 'src').
+									                (#packageNames -> { packageName }) }
+									                asDictionary.
+							self deny: (createResult at: #isError ifAbsent: [ false ]).
+							exportResult := self callToolWith: {
+									                (#action -> 'export').
+									                (#repositoryName -> repositoryName) }
+									                asDictionary.
+							self deny: (exportResult at: #isError ifAbsent: [ false ]).
+							commitResult := self callToolWith: {
+									                (#action -> 'commit').
+									                (#repositoryName -> repositoryName).
+									                (#message
+									                 -> 'Prepare linked checkout contract test') }
+									                asDictionary.
+							self deny: (commitResult at: #isError ifAbsent: [ false ]).
+							repository := IceRepository registry detect: [ :each |
+								              each name = repositoryName ].
+							headCommitId := MCPIcebergCommitInfo idStringFrom:
+								                repository headCommit.
+							self shellCommand:
+								'git -C ' , (self shellQuote: location pathString)
+								, ' remote add origin https://example.com/worktree.git'.
+							self shellCommand:
+								'git -C ' , (self shellQuote: location pathString)
+								, ' worktree add -b ' , branchName , ' '
+								, (self shellQuote: linkedLocation pathString).
+							[
+								self shellCommand:
+									'git -C ' , (self shellQuote: linkedLocation pathString)
+									, ' config branch.' , branchName , '.remote origin'.
+								self shellCommand:
+									'git -C ' , (self shellQuote: linkedLocation pathString)
+									, ' config branch.' , branchName , '.merge refs/heads/'
+									, branchName.
+								self removeRegisteredRepositoriesNamed: repositoryName.
+								attachResult := self callToolWith: {
+										                (#action -> 'attach').
+										                (#name -> repositoryName).
+										                (#location -> linkedLocation pathString).
+										                (#subdirectory -> 'src').
+										                (#packageNames -> { packageName }) }
+										                asDictionary.
+								self deny: (attachResult at: #isError ifAbsent: [ false ]).
+								searchResult := self searchRepositoriesWith:
+									                { (#repositoryNames -> { repositoryName }) }
+										                asDictionary.
+								self deny: (searchResult at: #isError ifAbsent: [ false ]).
+								searchData := self dataFrom: searchResult.
+								entry := (searchData at: #repositories) anyOne.
+								self
+									assert: (entry at: #location)
+									equals: linkedLocation pathString.
+								self assert: (entry at: #branchName) equals: branchName.
+								self assert: (entry at: #headCommitId) equals: headCommitId.
+								self assert: (entry at: #upstreamRemoteName) equals: 'origin'.
+								self
+									assert: (entry at: #upstreamBranchName)
+									equals: branchName.
+								self
+									assert: (entry at: #upstreamRemoteUrl)
+									equals: 'https://example.com/worktree.git'.
+								self
+									createClassNamed: exportedClassName
+									inPackageNamed: packageName.
+								exportResult := self callToolWith: {
+										                (#action -> 'export').
+										                (#repositoryName -> repositoryName) }
+										                asDictionary.
+								self deny: (exportResult at: #isError ifAbsent: [ false ]).
+								self assert: exportedClassFile exists ] ensure: [
+									self removeClassNamed: exportedClassName.
+									self shellCommand:
+										'git -C ' , (self shellQuote: location pathString)
+										, ' worktree remove --force '
+										, (self shellQuote: linkedLocation pathString).
+									linkedLocation exists ifTrue: [ linkedLocation deleteAll ] ] ] ]
 ]
 
 { #category : 'tests' }

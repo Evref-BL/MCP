@@ -141,7 +141,8 @@ The safer edit paths use Pharo facilities:
   `repository_change_list` to inspect image-side changes before exporting,
   committing, pulling, or pushing. Use `repository_create`,
   `repository_attach`, and `repository_update` for repository registration
-  workflows.
+  workflows. `repository_attach` accepts normal Git checkout roots and linked
+  Git worktree roots whose `.git` file points to a Git worktree directory.
 - Use `history_file_list` and `history_entry_list` to browse Epicea history.
   `history_entry_apply` and `history_entry_revert` preview selected entries
   and perform changes only with `confirm=true`.
