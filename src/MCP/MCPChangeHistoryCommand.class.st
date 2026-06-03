@@ -66,12 +66,7 @@ MCPChangeHistoryCommand >> initializeTool: aTool request: aRequest [
 { #category : 'private - entries' }
 MCPChangeHistoryCommand >> isCodeChangeEntry: anEntry [
 
-	| content |
-	content := [ anEntry content ]
-		           on: Error
-		           do: [ :error | ^ false ].
-	content ifNil: [ ^ false ].
-	^ content isCodeChange
+	^ anEntry content isCodeChange
 ]
 
 { #category : 'private - log' }
@@ -115,7 +110,8 @@ MCPChangeHistoryCommand >> logAndPathFromFilePath: aPathString [
 { #category : 'private - references' }
 MCPChangeHistoryCommand >> referenceStringFor: aReference [
 
-	^ aReference ifNotNil: [ aReference shortName asString ]
+	aReference isNull ifTrue: [ ^ nil ].
+	^ aReference shortName asString
 ]
 
 { #category : 'accessing' }

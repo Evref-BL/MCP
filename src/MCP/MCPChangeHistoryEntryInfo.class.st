@@ -145,24 +145,19 @@ MCPChangeHistoryEntryInfo >> initializeReferenceFieldsFrom: aReference [
 { #category : 'private - initialization' }
 MCPChangeHistoryEntryInfo >> initializeTimeFromEntry: anEntry log: aLog [
 
-	time := [
-		        (aLog timeAt: anEntry ifAbsent: [ nil ]) ifNotNil: [ :value |
-			        value asString ] ]
-		        on: Error
-		        do: [ :error | nil ]
+	time := (aLog timeAt: anEntry ifAbsent: [ nil ]) ifNotNil: [ :value |
+		        value asString ]
 ]
 
 { #category : 'private - initialization' }
 MCPChangeHistoryEntryInfo >> initializeTriggerReferenceFromEntry: anEntry log: aLog [
 
-	triggerReference := [
-		                    aLog
-			                    triggererReferenceOf: anEntry
-			                    ifPresent: [ :aReference |
-			                    self stringFromReference: aReference ]
-			                    ifAbsent: [ nil ] ]
-		                    on: Error
-		                    do: [ :error | nil ]
+	triggerReference := nil.
+	aLog
+		triggererReferenceOf: anEntry
+		ifPresent: [ :aReference |
+			triggerReference := self stringFromReference: aReference ]
+		ifAbsent: [ ]
 ]
 
 { #category : 'accessing' }
@@ -186,5 +181,6 @@ MCPChangeHistoryEntryInfo >> stringFrom: aValue [
 { #category : 'private - converting' }
 MCPChangeHistoryEntryInfo >> stringFromReference: aReference [
 
-	^ aReference ifNotNil: [ aReference shortName asString ]
+	aReference isNull ifTrue: [ ^ nil ].
+	^ aReference shortName asString
 ]
