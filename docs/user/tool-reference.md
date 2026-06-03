@@ -45,7 +45,8 @@ schema before invoking a discoverable tool.
 | `repository_pull` | Pull through Iceberg. |
 | `repository_push` | Push through Iceberg. |
 | `repository_branch_create` | Create and switch to a new repository branch through Iceberg. |
-| `repository_branch_switch` | Switch to an existing repository branch through Iceberg. |
+| `repository_branch_switch` | Switch the Iceberg repository head to an existing branch without loading package changes into the image. |
+| `repository_branch_checkout` | Check out an existing repository branch and load changes for packages already loaded in the image. |
 | `repository_head_adopt` | Adopt the current repository head as the Iceberg working-copy reference after verifying the image and Git state. |
 | `baseline_load` | Load an already-known Metacello baseline available in the image. |
 | `repository_load` | Load a Metacello baseline from a remote repository. |
@@ -218,6 +219,7 @@ repository_pull
 repository_push
 repository_branch_create
 repository_branch_switch
+repository_branch_checkout
 repository_head_adopt
 baseline_load
 repository_load

@@ -99,7 +99,10 @@ names; use singular text filters such as `branchName`, `headCommitId`, and
 Prefer repository tools such as `repository_export`,
 `repository_commit`, `repository_fetch`, `repository_pull`, `repository_push`,
 `repository_branch_create`, `repository_branch_switch`, and
-`repository_head_adopt` when they exist. Use `repository_create`,
+`repository_branch_checkout`, and `repository_head_adopt` when they exist.
+Use `repository_branch_switch` for repository-head-only movement and
+`repository_branch_checkout` when branch verification needs the image packages
+to match the target branch. Use `repository_create`,
 `repository_attach`, and `repository_update` for repository registration
 workflows. `repository_attach` can attach either a normal Git checkout root or
 a linked Git worktree root whose `.git` file points to the worktree Git

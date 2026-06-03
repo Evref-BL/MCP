@@ -1,5 +1,5 @@
 "
-Result DTO returned by repository_branch_create and repository_branch_switch. It reports repository metadata before and after the operation plus previous and current branch/head descriptions.
+Result DTO returned by repository branch tools. It reports repository metadata before and after the operation plus previous and current branch/head descriptions.
 "
 Class {
 	#name : 'MCPRepositoryBranchResult',

@@ -10,17 +10,32 @@ Class {
 }
 
 { #category : 'private - calling' }
+MCPToolRepositoryOperationTest >> callToolNamed: aToolName with: someArguments [
+
+	| request result tool |
+	tool := MCPToolRegistry
+		        toolNamed: aToolName
+		        ifAbsent: [ Error signal: 'Unknown MCP tool: ' , aToolName ].
+	request := tool requestFromToolCallArguments: someArguments.
+	result := tool executeWithRequest: request.
+	^ result asJRPCJSON
+]
+
+{ #category : 'private - calling' }
 MCPToolRepositoryOperationTest >> callToolWith: someArguments [
 
 	| action arguments request result tool toolClass |
 	arguments := someArguments copy.
-	action := arguments removeKey: #action ifAbsent: [
+	action := arguments
+		          removeKey: #action
+		          ifAbsent: [
 		          arguments removeKey: #action ifAbsent: [ nil ] ].
 	toolClass := Dictionary new
 		             at: 'create' put: MCPToolCreateRepository;
 		             at: 'attach' put: MCPToolAttachRepository;
 		             at: 'update' put: MCPToolUpdateRepository;
-		             at: 'verifyIdentity' put: MCPToolVerifyRepositoryIdentity;
+		             at: 'verifyIdentity'
+		             put: MCPToolVerifyRepositoryIdentity;
 		             at: 'diff' put: MCPToolListRepositoryChanges;
 		             at: 'export' put: MCPToolExportRepository;
 		             at: 'commit' put: MCPToolCommitRepository;
@@ -30,12 +45,29 @@ MCPToolRepositoryOperationTest >> callToolWith: someArguments [
 		             at: 'push' put: MCPToolPushRepository;
 		             at: 'createBranch' put: MCPToolCreateRepositoryBranch;
 		             at: 'switchBranch' put: MCPToolSwitchRepositoryBranch;
+		             at: 'checkoutBranch'
+		             put: MCPToolCheckoutRepositoryBranch;
 		             at: action
-		             ifAbsent: [ Error signal: 'Unknown repository action: ' , action asString ].
+		             ifAbsent: [
+			             Error signal:
+					             'Unknown repository action: ' , action asString ].
 	tool := toolClass new.
 	request := tool requestFromToolCallArguments: arguments.
 	result := tool executeWithRequest: request.
 	^ result asJRPCJSON
+]
+
+{ #category : 'private' }
+MCPToolRepositoryOperationTest >> commitAllIn: aRepositoryLocation message: aMessage [
+
+	self shellCommand:
+		'git -C ' , (self shellQuote: aRepositoryLocation pathString)
+		, ' add .'.
+	self shellCommand:
+		'git -C ' , (self shellQuote: aRepositoryLocation pathString)
+		, ' -c user.name=' , (self shellQuote: 'MCP Test')
+		, ' -c user.email=' , (self shellQuote: 'mcp-test@example.com')
+		, ' commit -m ' , (self shellQuote: aMessage)
 ]
 
 { #category : 'private - classes' }
@@ -396,6 +428,66 @@ MCPToolRepositoryOperationTest >> testAttachReportsDuplicateRepository [
 			self assert:
 				((self summaryFrom: result) includesSubstring:
 					 'already registered') ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testCheckoutBranchLoadsTargetBranchSnapshot [
+
+	| baseBranch checkoutResult className extraSelector featureBranch location packageName repository repositoryName |
+	repositoryName := 'MCP Repository Command Checkout Branch Test'.
+	packageName := 'MCPToolRepositoryOperationCheckoutPackage'.
+	className := 'MCPToolRepositoryOperationCheckoutClass'.
+	extraSelector := #staleBranchOnlyValue.
+	featureBranch := 'feature-with-stale-method'.
+	location := self temporaryRepositoryLocationNamed:
+		            'MCPToolRepositoryOperationTestCheckoutBranch'.
+	self withExportPackageNamed: packageName className: className do: [
+			self
+				withCleanRepositoryNamed: repositoryName
+				location: location
+				do: [
+						self callToolWith: {
+								(#action -> 'create').
+								(#name -> repositoryName).
+								(#location -> location pathString).
+								(#packageNames -> { packageName }) } asDictionary.
+						self callToolWith: {
+								(#action -> 'export').
+								(#repositoryName -> repositoryName) } asDictionary.
+						self
+							commitAllIn: location
+							message: 'Prepare checkout base branch'.
+						repository := IceRepository repositories detect: [ :each |
+							              each name asString = repositoryName ].
+						baseBranch := repository branchName.
+						self shellCommand:
+							'git -C ' , (self shellQuote: location pathString)
+							, ' checkout -b ' , (self shellQuote: featureBranch).
+						(Smalltalk at: className asSymbol)
+							compile: 'staleBranchOnlyValue ^ 42'
+							classified: 'tests'.
+						self callToolWith: {
+								(#action -> 'export').
+								(#repositoryName -> repositoryName) } asDictionary.
+						self commitAllIn: location message: 'Add branch-only method'.
+						self removeRegisteredRepositoriesNamed: repositoryName.
+						self callToolWith: {
+								(#action -> 'attach').
+								(#name -> repositoryName).
+								(#location -> location pathString).
+								(#packageNames -> { packageName }) } asDictionary.
+						self assert:
+							((Smalltalk at: className asSymbol) includesSelector:
+								 extraSelector).
+						checkoutResult := self
+							                  callToolNamed: 'repository_branch_checkout'
+							                  with: {
+									                  (#repositoryName -> repositoryName).
+									                  (#branchName -> baseBranch) } asDictionary.
+						self deny: (checkoutResult at: #isError ifAbsent: [ false ]).
+						self deny:
+							((Smalltalk at: className asSymbol) includesSelector:
+								 extraSelector) ] ]
 ]
 
 { #category : 'tests' }
@@ -1132,17 +1224,25 @@ MCPToolRepositoryOperationTest >> testRemoteAndBranchOperationsParseAndDispatch 
 			         (#commandClass -> MCPSwitchRepositoryBranchCommand).
 			         (#arguments -> {
 				          (#repositoryName -> 'MCP').
+				          (#branchName -> 'main') } asDictionary) } asDictionary.
+		         {
+			         (#toolClass -> MCPToolCheckoutRepositoryBranch).
+			         (#action -> 'checkoutBranch').
+			         (#requestClass -> MCPRepositoryCheckoutBranchRequest).
+			         (#commandClass -> MCPCheckoutRepositoryBranchCommand).
+			         (#arguments -> {
+				          (#repositoryName -> 'MCP').
 				          (#branchName -> 'main') } asDictionary) } asDictionary }.
 	cases do: [ :each |
-		| command parsedRequest rawRequest tool |
-		tool := (each at: #toolClass) new.
-		rawRequest := tool requestFromToolCallArguments: (each at: #arguments).
-		parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
-		command := tool commandForRequest: parsedRequest.
-		self assert: parsedRequest class equals: (each at: #requestClass).
-		self assert: parsedRequest operation equals: (each at: #action).
-		self assert: command class equals: (each at: #commandClass) ]
-
+			| command parsedRequest rawRequest tool |
+			tool := (each at: #toolClass) new.
+			rawRequest := tool requestFromToolCallArguments:
+				              (each at: #arguments).
+			parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
+			command := tool commandForRequest: parsedRequest.
+			self assert: parsedRequest class equals: (each at: #requestClass).
+			self assert: parsedRequest operation equals: (each at: #action).
+			self assert: command class equals: (each at: #commandClass) ]
 ]
 
 { #category : 'tests' }

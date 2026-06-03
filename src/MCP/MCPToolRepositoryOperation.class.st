@@ -24,7 +24,7 @@ MCPToolRepositoryOperation >> branchNameSchemaProperty [
 		  schemaPropertyNamed: 'branchName'
 		  type: 'string'
 		  description:
-		  'Branch name for repository_branch_create or repository_branch_switch, or an optional expected current branch guard for repository_head_adopt and repository_identity_verify.'
+		  'Branch name for repository_branch_create, repository_branch_switch, or repository_branch_checkout, or an optional expected current branch guard for repository_head_adopt and repository_identity_verify.'
 ]
 
 { #category : 'private - execution' }
@@ -49,6 +49,12 @@ MCPToolRepositoryOperation >> dataForRepositoryAdoptHeadResult: aResult [
 MCPToolRepositoryOperation >> dataForRepositoryAttachResult: aResult [
 
 	^ self dataForRepositoryResult: aResult action: 'attach'
+]
+
+{ #category : 'private - results' }
+MCPToolRepositoryOperation >> dataForRepositoryCheckoutBranchResult: aResult [
+
+	^ self dataForRepositoryResult: aResult action: 'checkoutBranch'
 ]
 
 { #category : 'private - results' }

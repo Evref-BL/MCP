@@ -50,7 +50,10 @@ and `repository_change_list` before exporting or committing image changes.
 Prefer repository tools such as `repository_export`,
 `repository_commit`, `repository_fetch`, `repository_pull`, `repository_push`,
 `repository_branch_create`, `repository_branch_switch`, and
-`repository_head_adopt` when available. Use `repository_create`,
+`repository_branch_checkout`, and `repository_head_adopt` when available.
+Use `repository_branch_switch` for repository-head-only movement and
+`repository_branch_checkout` when branch verification needs the image packages
+to match the target branch. Use `repository_create`,
 `repository_attach`, and `repository_update` for repository registration
 workflows.
 

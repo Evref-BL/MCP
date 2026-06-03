@@ -38,6 +38,7 @@ MCPToolIconSpec class >> actionIconMap [
 			  ('pull' -> #down).
 			  ('push' -> #up).
 			  ('switch' -> #refreshCircling).
+			  ('checkout' -> #openFromUrl).
 			  ('adopt' -> #accept).
 			  ('load' -> #openFromUrl).
 			  ('remove' -> #delete).
