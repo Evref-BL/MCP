@@ -22,13 +22,11 @@ MCPListChangeHistoryEntriesCommand >> execute [
 		        offset: request offset
 		        limit: request limit.
 	entryInfos := page collect: [ :pair |
-		              MCPChangeHistoryEntryInfo
-			              fromEntry: pair second
-			              index: pair first
-			              log: log ].
-	headReference := self referenceStringFor: ([ log headReference ]
-			                  on: Error
-			                  do: [ :error | nil ]).
+			              MCPChangeHistoryEntryInfo
+				              fromEntry: pair second
+				              index: pair first
+				              log: log ].
+	headReference := self referenceStringFor: log headReference.
 	^ MCPChangeHistoryListEntriesResult
 		  historyFilePath: path
 		  entries: entryInfos

@@ -77,9 +77,7 @@ MCPChangeHistoryLogInfo >> loadEntryMetadataFromFileReference: aFileReference [
 		| log |
 		log := EpLog freshFromFile: aFileReference.
 		entriesCount := log entries size.
-		headReference := self stringFromReference: ([ log headReference ]
-				                  on: Error
-				                  do: [ :error | nil ]) ]
+		headReference := self stringFromReference: log headReference ]
 		on: Error
 		do: [ :error |
 		loadError := error messageText ifNil: [ error asString ] ]
@@ -88,5 +86,6 @@ MCPChangeHistoryLogInfo >> loadEntryMetadataFromFileReference: aFileReference [
 { #category : 'private' }
 MCPChangeHistoryLogInfo >> stringFromReference: aReference [
 
-	^ aReference ifNotNil: [ aReference shortName asString ]
+	aReference isNull ifTrue: [ ^ nil ].
+	^ aReference shortName asString
 ]

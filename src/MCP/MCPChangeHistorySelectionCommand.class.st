@@ -155,9 +155,7 @@ MCPChangeHistorySelectionCommand >> execute [
 { #category : 'private - result' }
 MCPChangeHistorySelectionCommand >> headReferenceStringForLog: aLog [
 
-	^ self referenceStringFor: ([ aLog headReference ]
-			   on: Error
-			   do: [ :error | nil ])
+	^ self referenceStringFor: aLog headReference
 ]
 
 { #category : 'private - log' }
@@ -215,10 +213,7 @@ MCPChangeHistorySelectionCommand >> rawSelectedEntryPairsFrom: aLog [
 MCPChangeHistorySelectionCommand >> referenceCandidatesForEntry: anEntry inLog: aLog [
 
 	| reference |
-	reference := [ aLog referenceTo: anEntry ]
-		             on: Error
-		             do: [ :error | nil ].
-	reference ifNil: [ ^ #(  ) ].
+	reference := aLog referenceTo: anEntry.
 	^ Array streamContents: [ :stream |
 			  (self referenceStringFor: reference) ifNotNil: [ :value |
 				  stream nextPut: value ].
