@@ -120,6 +120,15 @@ MCPToolRepositoryToolsTest >> repositoryToolSpecifications [
 			  (#commandClass -> MCPSwitchRepositoryBranchCommand) }
 			  asDictionary.
 		  {
+			  (#toolClass -> MCPToolCheckoutRepositoryBranch).
+			  (#arguments -> {
+				   (#repositoryName -> 'MCP').
+				   (#branchName -> 'main') } asDictionary).
+			  (#action -> 'checkoutBranch').
+			  (#requestClass -> MCPRepositoryCheckoutBranchRequest).
+			  (#commandClass -> MCPCheckoutRepositoryBranchCommand) }
+			  asDictionary.
+		  {
 			  (#toolClass -> MCPToolAdoptRepositoryHead).
 			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
 			  (#action -> 'adoptHead').
@@ -142,8 +151,8 @@ MCPToolRepositoryToolsTest >> testRepositoryToolsAreDiscoverableWithExpectedRisk
 	#( 'repository_create' 'repository_attach' 'repository_update'
 	   'repository_export' 'repository_commit' 'repository_fetch'
 	   'repository_pull' 'repository_push' 'repository_branch_create'
-	   'repository_branch_switch' 'repository_head_adopt' ) do: [
-			:toolName |
+	   'repository_branch_switch' 'repository_branch_checkout'
+	   'repository_head_adopt' ) do: [ :toolName |
 			| metadata |
 			metadata := metadataByName at: toolName.
 			self assert: (metadata at: #exposure) equals: 'discoverable'.
@@ -173,6 +182,8 @@ MCPToolRepositoryToolsTest >> testRepositoryToolsRequiredInputs [
 		                (MCPToolCreateRepositoryBranch
 		                 -> #( 'repositoryName' 'branchName' )).
 		                (MCPToolSwitchRepositoryBranch
+		                 -> #( 'repositoryName' 'branchName' )).
+		                (MCPToolCheckoutRepositoryBranch
 		                 -> #( 'repositoryName' 'branchName' )).
 		                (MCPToolAdoptRepositoryHead -> #( 'repositoryName' )) }.
 	expectations do: [ :association |
@@ -238,6 +249,8 @@ MCPToolRepositoryToolsTest >> testRepositoryToolsUseDedicatedInputs [
 		                (MCPToolCreateRepositoryBranch
 		                 -> #( 'repositoryName' 'location' 'branchName' )).
 		                (MCPToolSwitchRepositoryBranch
+		                 -> #( 'repositoryName' 'location' 'branchName' )).
+		                (MCPToolCheckoutRepositoryBranch
 		                 -> #( 'repositoryName' 'location' 'branchName' )).
 		                (MCPToolAdoptRepositoryHead
 		                 -> #( 'repositoryName' 'location' 'branchName' )) }.

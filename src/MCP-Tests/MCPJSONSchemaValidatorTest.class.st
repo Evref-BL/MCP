@@ -55,6 +55,9 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 		  (MCPToolSwitchRepositoryBranch -> {
 			   (#repositoryName -> 'MCP').
 			   (#branchName -> 'main') } asDictionary).
+		  (MCPToolCheckoutRepositoryBranch -> {
+			   (#repositoryName -> 'MCP').
+			   (#branchName -> 'main') } asDictionary).
 		  (MCPToolAdoptRepositoryHead
 		   -> { (#repositoryName -> 'MCP') } asDictionary).
 		  (MCPToolLoadRepository -> {
@@ -86,10 +89,10 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 		   -> { (#variableName -> 'toolName') } asDictionary).
 		  (MCPToolListChangeHistoryFiles -> Dictionary new).
 		  (MCPToolListChangeHistoryEntries -> Dictionary new).
-		  (MCPToolChangeHistory
-		   -> { (#action -> 'listFiles') } asDictionary).
+		  (MCPToolChangeHistory -> { (#action -> 'listFiles') } asDictionary).
 		  (MCPToolCaptureScreenshot -> { (#target -> 'world') } asDictionary).
-		  (MCPToolDebugSessionOperation -> { (#action -> 'list') } asDictionary).
+		  (MCPToolDebugSessionOperation
+		   -> { (#action -> 'list') } asDictionary).
 		  (MCPToolDebugState
 		   -> { (#sessionId -> 'debug-session-1') } asDictionary).
 		  (MCPToolDebugVariables
@@ -110,8 +113,7 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 		   -> { (#sessionId -> 'debug-session-1') } asDictionary).
 		  (MCPToolSearchMethodMetadata -> Dictionary new).
 		  (MCPToolSearchTools -> Dictionary new).
-		  (MCPToolGetTool
-		   -> { (#toolName -> 'class_search') } asDictionary).
+		  (MCPToolGetTool -> { (#toolName -> 'class_search') } asDictionary).
 		  (MCPToolCallTool -> {
 			   (#toolName -> 'package_search').
 			   (#arguments -> Dictionary new) } asDictionary) } asDictionary

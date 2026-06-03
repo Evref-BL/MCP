@@ -678,6 +678,14 @@ MCPToolContractsTest >> repositoryToolFlowSpecs [
 			  (#commandClass -> MCPSwitchRepositoryBranchCommand) }
 			  asDictionary.
 		  {
+			  (#toolClass -> MCPToolCheckoutRepositoryBranch).
+			  (#arguments -> {
+				   (#repositoryName -> 'MCP').
+				   (#branchName -> 'main') } asDictionary).
+			  (#requestClass -> MCPRepositoryCheckoutBranchRequest).
+			  (#commandClass -> MCPCheckoutRepositoryBranchCommand) }
+			  asDictionary.
+		  {
 			  (#toolClass -> MCPToolAdoptRepositoryHead).
 			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
 			  (#requestClass -> MCPRepositoryAdoptHeadRequest).
@@ -787,6 +795,7 @@ MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 			MCPToolPushRepository.
 			MCPToolCreateRepositoryBranch.
 			MCPToolSwitchRepositoryBranch.
+			MCPToolCheckoutRepositoryBranch.
 			MCPToolAdoptRepositoryHead.
 			MCPToolLoadBaseline.
 			MCPToolLoadRepository.
@@ -2155,6 +2164,26 @@ MCPToolContractsTest >> testRemoveMethodsHasAccurateNameAndRequiredArguments [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testRepositoryBranchCheckoutIconUsesBranchObjectBadge [
+
+	self
+		assert:
+		(MCPToolCheckoutRepositoryBranch new asJRPCJSON at: #icons) first
+		equals: (MCPStructureIcon
+				 compositeBaseIconNamed: #git
+				 leftBadgeIconNamed: #branch
+				 rightBadgeIconNamed: #openFromUrl) asJRPCJSON
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testRepositoryBranchCheckoutToolName [
+
+	self
+		assert: MCPToolCheckoutRepositoryBranch toolName
+		equals: 'repository_branch_checkout'
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testRepositoryCreateAndUpdateRequiredArguments [
 
 	| createPropertyNames updatePropertyNames |
@@ -2788,6 +2817,7 @@ MCPToolContractsTest >> testSearchToolsMatchesAgentGuidanceKeywords [
 		                ('repo' -> 'repository_search').
 		                ('identity' -> 'repository_identity_verify').
 		                ('diff' -> 'repository_change_list').
+		                ('stale' -> 'repository_branch_checkout').
 		                ('SUnit' -> 'test_run').
 		                ('coverage' -> 'test_coverage_run').
 		                ('file' -> 'history_file_list').
