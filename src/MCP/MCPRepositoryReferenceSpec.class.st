@@ -105,7 +105,9 @@ MCPRepositoryReferenceSpec >> repository [
 MCPRepositoryReferenceSpec >> repositoryLocationFor: aRepository [
 
 	^ self
-		  stringFrom: [ aRepository location mcpRepositoryLocationString ]
+		  stringFrom: [
+				  aRepository location ifNotNil: [ :repositoryLocation |
+					  repositoryLocation mcpRepositoryLocationString ] ]
 		  default: ''
 ]
 
@@ -160,9 +162,7 @@ MCPRepositoryReferenceSpec >> signalRepositoryNotFound [
 { #category : 'private - resolving' }
 MCPRepositoryReferenceSpec >> stringFrom: aBlock default: defaultString [
 
-	^ [ self stringValue: aBlock value default: defaultString ]
-		  on: Error
-		  do: [ :ignored | defaultString ]
+	^ self stringValue: aBlock value default: defaultString
 ]
 
 { #category : 'private - resolving' }

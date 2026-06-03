@@ -117,9 +117,10 @@ MCPAttachRepositoryCommand >> matchingRegisteredRepositories [
 { #category : 'private' }
 MCPAttachRepositoryCommand >> repositoryLocationPathFor: aRepository [
 
-	^ [ aRepository location mcpRepositoryLocationString ]
-		  on: Error
-		  do: [ :ignored | '' ]
+	^ aRepository location
+		  ifNil: [ '' ]
+		  ifNotNil: [ :repositoryLocation |
+			  repositoryLocation mcpRepositoryLocationString ]
 ]
 
 { #category : 'private - signaling' }

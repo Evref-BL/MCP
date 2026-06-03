@@ -40,6 +40,15 @@ MCPDebugCommand >> initializeTool: aTool request: aRequest registry: aRegistry [
 	^ self
 ]
 
+{ #category : 'private' }
+MCPDebugCommand >> integerFromString: aString ifInvalid: invalidBlock [
+
+	(aString isEmpty or: [
+		 aString anySatisfy: [ :character | character isDigit not ] ])
+		ifTrue: [ ^ invalidBlock value ].
+	^ aString asInteger
+]
+
 { #category : 'private - printing' }
 MCPDebugCommand >> limitedPrintStringOf: anObject limit: characterLimit [
 
@@ -76,7 +85,7 @@ MCPDebugCommand >> requestedStateId [
 { #category : 'private - frames' }
 MCPDebugCommand >> selectedFrameIndex [
 
-	| frameRef frameToken index suffix tokens |
+	| frameRef frameToken suffix tokens |
 	frameRef := request frameRef.
 	frameRef ifNil: [ ^ 0 ].
 	tokens := frameRef findTokens: '/'.
@@ -85,11 +94,9 @@ MCPDebugCommand >> selectedFrameIndex [
 	(frameToken beginsWith: 'frame-') ifFalse: [
 		^ self signalInvalidFrameReference ].
 	suffix := frameToken allButFirst: 6.
-	index := [ suffix asInteger ]
-		         on: Error
-		         do: [ :error | ^ self signalInvalidFrameReference ].
-	index < 0 ifTrue: [ ^ self signalInvalidFrameReference ].
-	^ index
+	^ self
+		  integerFromString: suffix
+		  ifInvalid: [ ^ self signalInvalidFrameReference ]
 ]
 
 { #category : 'private' }
@@ -191,7 +198,7 @@ MCPDebugCommand >> tool [
 { #category : 'private' }
 MCPDebugCommand >> validateFrameReferenceForRecord: aRecord [
 
-	| frameIndex frameRef frameToken suffix tokens |
+	| frameRef frameToken suffix tokens |
 	frameRef := request frameRef.
 	frameRef ifNil: [ ^ self ].
 	tokens := frameRef findTokens: '/'.
@@ -212,22 +219,10 @@ MCPDebugCommand >> validateFrameReferenceForRecord: aRecord [
 					  (#referenceStateId -> tokens second).
 					  (#currentStateId -> aRecord stateId) } ].
 	suffix := frameToken allButFirst: 6.
-	frameIndex := [ suffix asInteger ]
-		              on: Error
-		              do: [ :error |
-				              ^ self
-					                signalInvalidFrameReference: frameRef
-					                details: {
-							                (#sessionId -> aRecord sessionId).
-							                (#referenceSessionId -> tokens first).
-							                (#referenceStateId -> tokens second).
-							                (#currentStateId -> aRecord stateId) } ].
-	frameIndex < 0 ifTrue: [
+	self integerFromString: suffix ifInvalid: [
 			^ self signalInvalidFrameReference: frameRef details: {
 					  (#sessionId -> aRecord sessionId).
 					  (#referenceSessionId -> tokens first).
 					  (#referenceStateId -> tokens second).
-					  (#currentStateId -> aRecord stateId).
-					  (#frameIndex -> frameIndex) } ].
-	^ self
+					  (#currentStateId -> aRecord stateId) } ]
 ]

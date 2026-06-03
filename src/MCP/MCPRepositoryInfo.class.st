@@ -79,9 +79,7 @@ MCPRepositoryInfo >> asQueryDictionary [
 { #category : 'private' }
 MCPRepositoryInfo >> booleanFrom: aBlock default: defaultBoolean [
 
-	^ [ aBlock value ifNil: [ defaultBoolean ] ]
-		  on: Error
-		  do: [ :ignored | defaultBoolean ]
+	^ aBlock value ifNil: [ defaultBoolean ]
 ]
 
 { #category : 'accessing' }
@@ -134,8 +132,7 @@ MCPRepositoryInfo >> initializeCommitResultRepository: aRepository packageNames:
 	remotes := #(  ).
 	upstreamRemoteName := ''.
 	upstreamBranchName := ''.
-	upstreamRemoteUrl := ''.
-	^ self
+	upstreamRemoteUrl := ''
 ]
 
 { #category : 'initialization' }
@@ -146,10 +143,8 @@ MCPRepositoryInfo >> initializeFromRepository: aRepository [
 	className := aRepository class name asString.
 	location := self repositoryLocationFor: aRepository.
 	subdirectory := self repositorySubdirectoryFor: aRepository.
-	branchName := self stringFrom: [ aRepository branchName ] default: ''.
-	headDescription := self
-		                   stringFrom: [ aRepository headDescription ]
-		                   default: ''.
+	branchName := self repositoryBranchNameFor: aRepository.
+	headDescription := self repositoryHeadDescriptionFor: aRepository.
 	headClassName := self repositoryHeadClassNameFor: aRepository.
 	headCommitId := self repositoryHeadCommitIdFor: aRepository.
 	isDetachedHead := self repositoryIsDetachedHeadFor: aRepository.
@@ -166,8 +161,7 @@ MCPRepositoryInfo >> initializeFromRepository: aRepository [
 	upstreamInfo := self repositoryUpstreamInfoFor: aRepository.
 	upstreamRemoteName := upstreamInfo at: #remoteName.
 	upstreamBranchName := upstreamInfo at: #branchName.
-	upstreamRemoteUrl := upstreamInfo at: #remoteUrl.
-	^ self
+	upstreamRemoteUrl := upstreamInfo at: #remoteUrl
 ]
 
 { #category : 'accessing' }
@@ -226,28 +220,60 @@ MCPRepositoryInfo >> remotes [
 ]
 
 { #category : 'private' }
+MCPRepositoryInfo >> repositoryBranchNameFor: aRepository [
+
+	aRepository location ifNil: [ ^ '' ].
+	^ [
+		  aRepository head isDetached
+			  ifTrue: [ '' ]
+			  ifFalse: [ self stringValue: aRepository branchName default: '' ] ]
+		  on: NotFound
+		  do: [ :ignored | '' ]
+]
+
+{ #category : 'private' }
 MCPRepositoryInfo >> repositoryHeadClassNameFor: aRepository [
 
-	^ self stringFrom: [ aRepository head class name ] default: ''
+	aRepository location ifNil: [ ^ '' ].
+	^ [ self stringFrom: [ aRepository head class name ] default: '' ]
+		  on: NotFound
+		  do: [ :ignored | '' ]
 ]
 
 { #category : 'private' }
 MCPRepositoryInfo >> repositoryHeadCommitIdFor: aRepository [
 
-	^ self stringFrom: [ aRepository headCommit id ] default: ''
+	aRepository location ifNil: [ ^ '' ].
+	^ [ MCPIcebergCommitInfo idStringFrom: aRepository headCommit ]
+		  on: NotFound
+		  do: [ :ignored | '' ]
+]
+
+{ #category : 'private' }
+MCPRepositoryInfo >> repositoryHeadDescriptionFor: aRepository [
+
+	aRepository location ifNil: [ ^ '' ].
+	^ [ self stringFrom: [ aRepository headDescription ] default: '' ]
+		  on: NotFound
+		  do: [ :ignored | '' ]
 ]
 
 { #category : 'private' }
 MCPRepositoryInfo >> repositoryIsDetachedHeadFor: aRepository [
 
-	^ self booleanFrom: [ aRepository head isDetached ] default: false
+	aRepository location ifNil: [ ^ false ].
+	^ [ self booleanFrom: [ aRepository head isDetached ] default: false ]
+		  on: NotFound
+		  do: [ :ignored | false ]
 ]
 
 { #category : 'private' }
 MCPRepositoryInfo >> repositoryLocationFor: aRepository [
 
 	^ self
-		  stringFrom: [ aRepository location mcpRepositoryLocationString ]
+		  stringFrom: [
+				  aRepository location ifNotNil: [ :repositoryLocation |
+					  repositoryLocation mcpRepositoryLocationString ] ]
 		  default: ''
 ]
 
@@ -287,24 +313,19 @@ MCPRepositoryInfo >> repositoryUpstreamInfoFor: aRepository [
 { #category : 'private' }
 MCPRepositoryInfo >> sortedStringsFrom: aBlock [
 
-	| normalized values |
-	values := [ aBlock value ifNil: [ #(  ) ] ]
-		          on: Error
-		          do: [ :ignored | #(  ) ].
-	normalized := OrderedCollection new.
-	values do: [ :each |
-			| string |
-			string := self stringValue: each default: ''.
-			string isEmpty ifFalse: [ normalized add: string ] ].
-	^ normalized asArray sort
+	| values |
+	values := aBlock value ifNil: [ #(  ) ].
+	^ (Array streamContents: [ :stream |
+			   values do: [ :each |
+					   | string |
+					   string := self stringValue: each default: ''.
+					   string isEmpty ifFalse: [ stream nextPut: string ] ] ]) sort
 ]
 
 { #category : 'private' }
 MCPRepositoryInfo >> stringFrom: aBlock default: defaultString [
 
-	^ [ self stringValue: aBlock value default: defaultString ]
-		  on: Error
-		  do: [ :ignored | defaultString ]
+	^ self stringValue: aBlock value default: defaultString
 ]
 
 { #category : 'private' }

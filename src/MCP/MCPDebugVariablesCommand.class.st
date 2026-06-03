@@ -214,12 +214,13 @@ MCPDebugVariablesCommand >> potentialChildCountOf: anObject [
 MCPDebugVariablesCommand >> resolveIndexedSlot: indexString from: anObject reference: aReference [
 
 	| index |
-	index := [ indexString asInteger ]
-		         on: Error
-		         do: [ :error |
-				         ^ self
-					           signalInvalidChildSegment: 'index-' , indexString
-					           forReference: aReference ].
+	(indexString isEmpty or: [
+		 indexString anySatisfy: [ :character | character isDigit not ] ])
+		ifTrue: [
+				^ self
+					  signalInvalidChildSegment: 'index-' , indexString
+					  forReference: aReference ].
+	index := indexString asInteger.
 	(index between: 1 and: (self indexedSlotCountOf: anObject)) ifFalse: [
 		^ self signalMissingVariableForReference: aReference ].
 	^ anObject basicAt: index
