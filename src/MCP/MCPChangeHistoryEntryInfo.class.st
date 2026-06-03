@@ -33,6 +33,55 @@ MCPChangeHistoryEntryInfo class >> fromEntry: anEntry index: anInteger log: aLog
 		  yourself
 ]
 
+{ #category : 'instance creation' }
+MCPChangeHistoryEntryInfo class >> fromEvent: anEvent [
+
+	^ self new
+		  initializeFromEvent: anEvent;
+		  yourself
+]
+
+{ #category : 'adding' }
+MCPChangeHistoryEntryInfo >> addBehaviorChangeInfoFrom: aBehaviorChange [
+
+	self addCodeChangeInfoFrom: aBehaviorChange.
+	self addBehaviorNameFrom: aBehaviorChange
+]
+
+{ #category : 'adding' }
+MCPChangeHistoryEntryInfo >> addBehaviorNameFrom: aBehaviorChange [
+
+	behaviorName := self stringFrom: aBehaviorChange behaviorAffectedName.
+	classSide := self classSideFromBehaviorName: behaviorName
+]
+
+{ #category : 'adding' }
+MCPChangeHistoryEntryInfo >> addCodeChangeInfoFrom: aCodeChange [
+
+	packageName := self stringFrom: aCodeChange affectedPackageName
+]
+
+{ #category : 'adding' }
+MCPChangeHistoryEntryInfo >> addMethodChangeInfoFrom: aMethodChange [
+
+	self addCodeChangeInfoFrom: aMethodChange.
+	self addBehaviorNameFrom: aMethodChange.
+	selector := self stringFrom: aMethodChange methodAffectedSelector.
+	protocol := self stringFrom: aMethodChange methodAffectedProtocol
+]
+
+{ #category : 'adding' }
+MCPChangeHistoryEntryInfo >> addPackageChangeInfoFrom: aPackageChange [
+
+	packageName := self stringFrom: aPackageChange packageName
+]
+
+{ #category : 'adding' }
+MCPChangeHistoryEntryInfo >> addPackageTagChangeInfoFrom: aPackageTagChange [
+
+	packageName := self stringFrom: aPackageTagChange packageName
+]
+
 { #category : 'converting' }
 MCPChangeHistoryEntryInfo >> asDictionary [
 
@@ -60,34 +109,52 @@ MCPChangeHistoryEntryInfo >> classSideFromBehaviorName: aString [
 	^ aString endsWith: ' class'
 ]
 
-{ #category : 'private' }
-MCPChangeHistoryEntryInfo >> globalNameFromReference: aReference [
+{ #category : 'private - initialization' }
+MCPChangeHistoryEntryInfo >> initializeEventFieldsFrom: anEvent [
 
-	^ self stringValueFrom: aReference selector: #globalName
+	eventClassName := anEvent class name asString.
+	summary := anEvent printString.
+	isCodeChange := anEvent isCodeChange.
+	isCodeChange ifTrue: [ anEvent mcpAddChangeHistoryInfoTo: self ]
 ]
 
 { #category : 'initialization' }
 MCPChangeHistoryEntryInfo >> initializeFromEntry: anEntry index: anInteger log: aLog [
 
-	| event referenceObject |
 	index := anInteger.
-	event := [ anEntry content ]
-		         on: Error
-		         do: [ :error | nil ].
-	referenceObject := [ aLog referenceTo: anEntry ]
-		                   on: Error
-		                   do: [ :error | nil ].
-	reference := self stringFromReference: referenceObject.
-	globalName := self globalNameFromReference: referenceObject.
-	localName := self localNameFromReference: referenceObject.
-	eventClassName := event ifNotNil: [ event class name asString ].
-	summary := event ifNotNil: [ event printString ].
-	isCodeChange := event notNil and: [ event isCodeChange ].
+	self initializeReferenceFieldsFrom: (aLog referenceTo: anEntry).
+	self initializeEventFieldsFrom: anEntry content.
+	self initializeTimeFromEntry: anEntry log: aLog.
+	self initializeTriggerReferenceFromEntry: anEntry log: aLog
+]
+
+{ #category : 'initialization' }
+MCPChangeHistoryEntryInfo >> initializeFromEvent: anEvent [
+
+	self initializeEventFieldsFrom: anEvent
+]
+
+{ #category : 'private - initialization' }
+MCPChangeHistoryEntryInfo >> initializeReferenceFieldsFrom: aReference [
+
+	reference := self stringFromReference: aReference.
+	globalName := self stringFrom: aReference globalName.
+	localName := self stringFrom: aReference localName
+]
+
+{ #category : 'private - initialization' }
+MCPChangeHistoryEntryInfo >> initializeTimeFromEntry: anEntry log: aLog [
+
 	time := [
 		        (aLog timeAt: anEntry ifAbsent: [ nil ]) ifNotNil: [ :value |
 			        value asString ] ]
 		        on: Error
-		        do: [ :error | nil ].
+		        do: [ :error | nil ]
+]
+
+{ #category : 'private - initialization' }
+MCPChangeHistoryEntryInfo >> initializeTriggerReferenceFromEntry: anEntry log: aLog [
+
 	triggerReference := [
 		                    aLog
 			                    triggererReferenceOf: anEntry
@@ -95,52 +162,29 @@ MCPChangeHistoryEntryInfo >> initializeFromEntry: anEntry index: anInteger log: 
 			                    self stringFromReference: aReference ]
 			                    ifAbsent: [ nil ] ]
 		                    on: Error
-		                    do: [ :error | nil ].
-	packageName := self
-		               stringValueFrom: event
-		               selectors: #( affectedPackageName packageName ).
-	behaviorName := self
-		                stringValueFrom: event
-		                selectors:
-		                #( behaviorAffectedName behaviorName className ).
-	classSide := self classSideFromBehaviorName: behaviorName.
-	selector := self
-		            stringValueFrom: event
-		            selectors: #( methodAffectedSelector
-		               selector ).
-	protocol := self
-		            stringValueFrom: event
-		            selectors: #( methodAffectedProtocol
-		               protocol ).
-	^ self
+		                    do: [ :error | nil ]
 ]
 
-{ #category : 'private' }
-MCPChangeHistoryEntryInfo >> localNameFromReference: aReference [
+{ #category : 'accessing' }
+MCPChangeHistoryEntryInfo >> isCodeChange [
 
-	^ self stringValueFrom: aReference selector: #localName
+	^ isCodeChange
 ]
 
-{ #category : 'private' }
+{ #category : 'testing' }
+MCPChangeHistoryEntryInfo >> isMethodChangeForSelector: aSelector inBehaviorNamed: aBehaviorName [
+
+	^ selector = aSelector asString and: [ behaviorName = aBehaviorName ]
+]
+
+{ #category : 'private - converting' }
+MCPChangeHistoryEntryInfo >> stringFrom: aValue [
+
+	^ aValue ifNotNil: [ aValue asString ]
+]
+
+{ #category : 'private - converting' }
 MCPChangeHistoryEntryInfo >> stringFromReference: aReference [
 
-	^ MCPChangeHistoryValueExtractor referenceStringFrom: aReference
-]
-
-{ #category : 'private' }
-MCPChangeHistoryEntryInfo >> stringValueFrom: anObject selector: aSelector [
-
-	^ MCPChangeHistoryValueExtractor
-		  stringValueFrom: anObject
-		  selector: aSelector
-]
-
-{ #category : 'private' }
-MCPChangeHistoryEntryInfo >> stringValueFrom: anObject selectors: selectorCollection [
-
-	| value |
-	selectorCollection do: [ :each |
-		value := self stringValueFrom: anObject selector: each.
-		value ifNotNil: [ ^ value ] ].
-	^ nil
+	^ aReference ifNotNil: [ aReference shortName asString ]
 ]

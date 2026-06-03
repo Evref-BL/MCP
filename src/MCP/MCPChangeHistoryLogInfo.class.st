@@ -67,28 +67,26 @@ MCPChangeHistoryLogInfo >> initializeFromFileReference: aFileReference isCurrent
 		                    do: [ :error | nil ].
 	isCurrent := aBoolean.
 	includeCounts ifTrue: [
-		self loadEntryMetadataFromFileReference: aFileReference ].
-	^ self
+		self loadEntryMetadataFromFileReference: aFileReference ]
 ]
 
 { #category : 'private' }
 MCPChangeHistoryLogInfo >> loadEntryMetadataFromFileReference: aFileReference [
 
 	[
-	| log |
-	log := EpLog freshFromFile: aFileReference.
-	entriesCount := log entries size.
-	headReference := self stringFromReference: ([ log headReference ]
-			                  on: Error
-			                  do: [ :error | nil ]) ]
+		| log |
+		log := EpLog freshFromFile: aFileReference.
+		entriesCount := log entries size.
+		headReference := self stringFromReference: ([ log headReference ]
+				                  on: Error
+				                  do: [ :error | nil ]) ]
 		on: Error
 		do: [ :error |
-		loadError := error messageText ifNil: [ error asString ] ].
-	^ self
+		loadError := error messageText ifNil: [ error asString ] ]
 ]
 
 { #category : 'private' }
 MCPChangeHistoryLogInfo >> stringFromReference: aReference [
 
-	^ MCPChangeHistoryValueExtractor referenceStringFrom: aReference
+	^ aReference ifNotNil: [ aReference shortName asString ]
 ]

@@ -1,9 +1,7 @@
 Extension { #name : 'EpCodeChange' }
 
 { #category : '*MCP' }
-EpCodeChange >> mcpChangeHistoryValueForSelector: aSelector [
+EpCodeChange >> mcpAddChangeHistoryInfoTo: anEntryInfo [
 
-	aSelector = #affectedPackageName ifTrue: [
-		^ self affectedPackageName ].
-	^ super mcpChangeHistoryValueForSelector: aSelector
+	anEntryInfo addCodeChangeInfoFrom: self
 ]

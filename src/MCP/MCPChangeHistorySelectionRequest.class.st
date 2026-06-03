@@ -110,8 +110,7 @@ MCPChangeHistorySelectionRequest >> initializeFromRequest: aRequest operation: o
 		                   booleanArgumentNamed: 'codeChangesOnly'
 		                   default: true.
 	confirm := aRequest booleanArgumentNamed: 'confirm' default: false.
-	self validateSelectionCriteria.
-	^ self
+	self validateSelectionCriteria
 ]
 
 { #category : 'testing' }
@@ -231,6 +230,5 @@ MCPChangeHistorySelectionRequest >> validateSelectionCriteria [
 			self
 				signalInvalidSelection:
 				'Provide at least one selection criterion: indexes, entryReferences, startIndex/endIndex, or latestCount.'
-				details: Dictionary new ].
-	^ self
+				details: Dictionary new ]
 ]

@@ -214,19 +214,18 @@ MCPChangeHistorySelectionCommand >> rawSelectedEntryPairsFrom: aLog [
 { #category : 'private - references' }
 MCPChangeHistorySelectionCommand >> referenceCandidatesForEntry: anEntry inLog: aLog [
 
-	| candidates reference |
-	candidates := OrderedCollection new.
+	| reference |
 	reference := [ aLog referenceTo: anEntry ]
 		             on: Error
 		             do: [ :error | nil ].
-	reference ifNotNil: [
-		(self referenceStringFor: reference) ifNotNil: [ :value |
-			candidates add: value ].
-		(self stringValueFrom: reference selector: #globalName) ifNotNil: [
-			:value | candidates add: value ].
-		(self stringValueFrom: reference selector: #localName) ifNotNil: [
-			:value | candidates add: value ] ].
-	^ candidates asArray
+	reference ifNil: [ ^ #(  ) ].
+	^ Array streamContents: [ :stream |
+			  (self referenceStringFor: reference) ifNotNil: [ :value |
+				  stream nextPut: value ].
+			  reference globalName ifNotNil: [ :value |
+				  stream nextPut: value asString ].
+			  reference localName ifNotNil: [ :value |
+				  stream nextPut: value asString ] ]
 ]
 
 { #category : 'private - result' }
@@ -250,14 +249,6 @@ MCPChangeHistorySelectionCommand >> selectedEntryPairsFromRawPairs: rawPairs [
 
 	request codeChangesOnly ifFalse: [ ^ rawPairs ].
 	^ rawPairs select: [ :pair | self isCodeChangeEntry: pair second ]
-]
-
-{ #category : 'private - references' }
-MCPChangeHistorySelectionCommand >> stringValueFrom: anObject selector: aSelector [
-
-	^ MCPChangeHistoryValueExtractor
-		  stringValueFrom: anObject
-		  selector: aSelector
 ]
 
 { #category : 'private - selection' }

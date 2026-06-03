@@ -1,8 +1,7 @@
 Extension { #name : 'EpPackageTagChange' }
 
 { #category : '*MCP' }
-EpPackageTagChange >> mcpChangeHistoryValueForSelector: aSelector [
+EpPackageTagChange >> mcpAddChangeHistoryInfoTo: anEntryInfo [
 
-	aSelector = #packageName ifTrue: [ ^ self packageName ].
-	^ super mcpChangeHistoryValueForSelector: aSelector
+	anEntryInfo addPackageTagChangeInfoFrom: self
 ]
