@@ -39,13 +39,9 @@ MCPToolChangeHistoryTest >> callToolWith: someArguments [
 { #category : 'private' }
 MCPToolChangeHistoryTest >> isRecoverableMethodEntry: anEntry forClass: aClass [
 
-	| event |
-	event := anEntry content.
-	event isCodeChange ifFalse: [ ^ false ].
-	^ (event mcpChangeHistoryValueForSelector: #methodAffectedSelector)
-	  = #rescuedValue and: [
-			  (event mcpChangeHistoryValueForSelector: #behaviorAffectedName)
-			  = aClass name ]
+	^ (MCPChangeHistoryEntryInfo fromEvent: anEntry content)
+		  isMethodChangeForSelector: #rescuedValue
+		  inBehaviorNamed: aClass name
 ]
 
 { #category : 'private' }

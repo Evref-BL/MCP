@@ -7,19 +7,6 @@ Object >> asMCPStructureCallToolResult [
 ]
 
 { #category : '*MCP' }
-Object >> mcpChangeHistoryReferenceString [
-
-	^ self asString
-]
-
-{ #category : '*MCP' }
-Object >> mcpChangeHistoryValueForSelector: aSelector [
-
-	aSelector = #className ifTrue: [ ^ self className ].
-	^ nil
-]
-
-{ #category : '*MCP' }
 Object >> mcpDiffPackageName [
 
 	^ nil

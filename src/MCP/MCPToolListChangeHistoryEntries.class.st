@@ -118,9 +118,3 @@ MCPToolListChangeHistoryEntries >> parsedRequestFromToolRequest: request [
 
 	^ MCPChangeHistoryListEntriesRequest fromRequest: request tool: self
 ]
-
-{ #category : 'validating' }
-MCPToolListChangeHistoryEntries >> validateRequest: request [
-
-	^ self
-]

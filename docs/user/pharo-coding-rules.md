@@ -85,6 +85,9 @@ over clients branching on concrete classes or internal fields.
 
 - Instance-side `initialize` starts with `super initialize`.
 - Initialize sensible defaults.
+- Methods without an explicit return answer `self`. Do not add a trailing
+  `^ self` to initializers or mutators only to return the receiver; keep
+  explicit returns for early exits or non-self results.
 - Do not redefine class-side `new` just to call `initialize`.
 - Use class-side creation messages such as `on:`, `with:`, or domain-specific
   constructors when required data exists.

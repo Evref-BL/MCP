@@ -166,9 +166,3 @@ MCPToolChangeHistoryOperation >> selectionInputProperties [
 			   'False previews the selected changes; true performs the previewed changes.'
 			   default: false) }
 ]
-
-{ #category : 'validating' }
-MCPToolChangeHistoryOperation >> validateRequest: request [
-
-	^ self
-]

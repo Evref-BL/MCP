@@ -1,9 +1,7 @@
 Extension { #name : 'EpBehaviorChange' }
 
 { #category : '*MCP' }
-EpBehaviorChange >> mcpChangeHistoryValueForSelector: aSelector [
+EpBehaviorChange >> mcpAddChangeHistoryInfoTo: anEntryInfo [
 
-	aSelector = #behaviorAffectedName ifTrue: [
-		^ self behaviorAffectedName ].
-	^ super mcpChangeHistoryValueForSelector: aSelector
+	anEntryInfo addBehaviorChangeInfoFrom: self
 ]

@@ -60,8 +60,7 @@ MCPChangeHistoryCommand >> currentLogAndPath [
 MCPChangeHistoryCommand >> initializeTool: aTool request: aRequest [
 
 	tool := aTool.
-	request := aRequest.
-	^ self
+	request := aRequest
 ]
 
 { #category : 'private - entries' }
@@ -116,7 +115,7 @@ MCPChangeHistoryCommand >> logAndPathFromFilePath: aPathString [
 { #category : 'private - references' }
 MCPChangeHistoryCommand >> referenceStringFor: aReference [
 
-	^ MCPChangeHistoryValueExtractor referenceStringFrom: aReference
+	^ aReference ifNotNil: [ aReference shortName asString ]
 ]
 
 { #category : 'accessing' }

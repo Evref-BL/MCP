@@ -86,15 +86,12 @@ MCPChangeHistorySelectionResult >> initializeAction: actionName historyFilePath:
 	previewEntries := previewEntryInfos ifNil: [ #(  ) ].
 	selectedCount := selectedEntries size.
 	selectedCodeChangeCount := selectedEntries count: [ :each |
-		                           (each asDictionary
-			                            at: #isCodeChange
-			                            ifAbsent: [ false ]) == true ].
+		                           each isCodeChange ].
 	skippedNonCodeChangeCount := skippedCount ifNil: [ 0 ].
 	previewCount := previewEntries size.
 	performed := performedFlag.
 	performedCount := performedEntryCount ifNil: [ 0 ].
-	headReference := aReferenceString.
-	^ self
+	headReference := aReferenceString
 ]
 
 { #category : 'accessing' }
