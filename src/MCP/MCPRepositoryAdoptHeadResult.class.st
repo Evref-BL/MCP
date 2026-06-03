@@ -149,9 +149,7 @@ MCPRepositoryAdoptHeadResult >> referenceCommitId [
 { #category : 'private' }
 MCPRepositoryAdoptHeadResult >> referenceCommitIdForRepository: aRepository [
 
-	^ [ self commitIdFrom: aRepository workingCopy referenceCommit ]
-		  on: Error
-		  do: [ :ignored | '' ]
+	^ self commitIdFrom: aRepository workingCopy referenceCommit
 ]
 
 { #category : 'accessing' }

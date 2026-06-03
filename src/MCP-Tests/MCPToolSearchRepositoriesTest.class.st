@@ -189,7 +189,7 @@ MCPToolSearchRepositoriesTest >> testListsRichRepositoryMetadata [
 				repository workingCopy packageNames: #( 'MCP' ).
 				repository headDescription: 'rich head'.
 				repository headCommitId: 'abc123'.
-				repository isDetachedHead: true.
+				repository isDetachedHead: false.
 				self withRepositories: { repository } do: [
 						result := self callToolWith: Dictionary new.
 						data := self dataFrom: result.
@@ -202,7 +202,7 @@ MCPToolSearchRepositoriesTest >> testListsRichRepositoryMetadata [
 							assert: (entry at: #headClassName)
 							equals: 'MCPTestRepositoryHead'.
 						self assert: (entry at: #headCommitId) equals: 'abc123'.
-						self assert: (entry at: #isDetachedHead) equals: true.
+						self assert: (entry at: #isDetachedHead) equals: false.
 						remotes := entry at: #remotes.
 						self assert: remotes size equals: 2.
 						self assert: (remotes first at: #name) equals: 'backup'.

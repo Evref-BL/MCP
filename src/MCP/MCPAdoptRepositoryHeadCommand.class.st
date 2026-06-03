@@ -24,11 +24,7 @@ MCPAdoptRepositoryHeadCommand >> commit: leftCommit equals: rightCommit [
 
 	leftCommit ifNil: [ ^ rightCommit isNil ].
 	rightCommit ifNil: [ ^ false ].
-	^ [ leftCommit = rightCommit ]
-		  on: Error
-		  do: [ :ignored |
-			  (self commitIdFrom: leftCommit)
-			  = (self commitIdFrom: rightCommit) ]
+	^ (self commitIdFrom: leftCommit) = (self commitIdFrom: rightCommit)
 ]
 
 { #category : 'private' }
@@ -85,9 +81,7 @@ MCPAdoptRepositoryHeadCommand >> initializeTool: aTool request: aRequest [
 { #category : 'private' }
 MCPAdoptRepositoryHeadCommand >> referenceCommitFor: aRepository [
 
-	^ [ aRepository workingCopy referenceCommit ]
-		  on: Error
-		  do: [ :ignored | nil ]
+	^ aRepository workingCopy referenceCommit
 ]
 
 { #category : 'accessing' }
@@ -120,9 +114,7 @@ MCPAdoptRepositoryHeadCommand >> validateExpectedBranchFor: aRepository [
 	| actualBranchName expectedBranchName |
 	expectedBranchName := self request branchName.
 	expectedBranchName ifEmpty: [ ^ self ].
-	actualBranchName := [ aRepository branchName asString ]
-		                    on: Error
-		                    do: [ :ignored | '' ].
+	actualBranchName := aRepository branchName asString.
 	actualBranchName = expectedBranchName ifTrue: [ ^ self ].
 	MCPCommandError
 		signalErrorCode: #RepositoryBranchMismatch

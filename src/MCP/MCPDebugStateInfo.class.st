@@ -240,9 +240,10 @@ MCPDebugStateInfo >> selectedFrameIndex [
 	frameRef := request frameRef.
 	frameRef ifNil: [ ^ 0 ].
 	suffix := frameRef copyAfterLast: $-.
-	^ [ suffix asInteger ]
-		  on: Error
-		  do: [ :error | 0 ]
+	(suffix isEmpty or: [
+		 suffix anySatisfy: [ :character | character isDigit not ] ])
+		ifTrue: [ ^ 0 ].
+	^ suffix asInteger
 ]
 
 { #category : 'private - stack' }

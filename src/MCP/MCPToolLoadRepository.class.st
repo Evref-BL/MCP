@@ -125,9 +125,9 @@ MCPToolLoadRepository >> failureSummaryForError: anError loadRequest: loadReques
 		           ifNotNil: [ :text | text asString ].
 	loadRequest ifNil: [ ^ 'Failed to load repository: ' , message ].
 	baseline := loadRequest baseline ifNil: [ '' ].
-	repositoryUrl := [ loadRequest repositoryUrl ]
-		                 on: Error
-		                 do: [ :ignored | '' ].
+	repositoryUrl := loadRequest canResolveRepositoryUrl
+		                 ifTrue: [ loadRequest repositoryUrl ]
+		                 ifFalse: [ '' ].
 	^ String streamContents: [ :stream |
 			  stream nextPutAll: 'Failed to load baseline'.
 			  baseline isEmpty ifFalse: [

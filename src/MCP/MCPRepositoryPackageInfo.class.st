@@ -36,9 +36,7 @@ MCPRepositoryPackageInfo >> asDictionary [
 { #category : 'private' }
 MCPRepositoryPackageInfo >> booleanFrom: aBlock default: defaultBoolean [
 
-	^ [ aBlock value ifNil: [ defaultBoolean ] ]
-		  on: Error
-		  do: [ :ignored | defaultBoolean ]
+	^ aBlock value ifNil: [ defaultBoolean ]
 ]
 
 { #category : 'accessing' }
@@ -51,16 +49,13 @@ MCPRepositoryPackageInfo >> directoryName [
 MCPRepositoryPackageInfo >> initializeFromPackage: anIcePackage [
 
 	name := self stringFrom: [ anIcePackage name ] default: ''.
-	directoryName := self
-		                 stringFrom: [ anIcePackage directoryName ]
-		                 default: ''.
+	directoryName := ''.
 	isLoaded := self
 		            booleanFrom: [ anIcePackage isLoaded ]
 		            default: false.
 	isModified := self
 		              booleanFrom: [ anIcePackage isModified ]
-		              default: false.
-	^ self
+		              default: false
 ]
 
 { #category : 'accessing' }
@@ -84,10 +79,7 @@ MCPRepositoryPackageInfo >> name [
 { #category : 'private' }
 MCPRepositoryPackageInfo >> stringFrom: aBlock default: defaultString [
 
-	^ [
-	  aBlock value
+	^ aBlock value
 		  ifNil: [ defaultString ]
-		  ifNotNil: [ :value | value asString ] ]
-		  on: Error
-		  do: [ :ignored | defaultString ]
+		  ifNotNil: [ :value | value asString ]
 ]

@@ -15,6 +15,7 @@ Class {
 MCPIcebergCommitInfo class >> commentStringFrom: aCommit [
 
 	aCommit ifNil: [ ^ '' ].
+	(self isNoCommit: aCommit) ifTrue: [ ^ '' ].
 	^ aCommit comment ifNil: [ '' ]
 ]
 
@@ -22,6 +23,7 @@ MCPIcebergCommitInfo class >> commentStringFrom: aCommit [
 MCPIcebergCommitInfo class >> idStringFrom: aCommit [
 
 	aCommit ifNil: [ ^ '' ].
+	(self isNoCommit: aCommit) ifTrue: [ ^ '' ].
 	^ aCommit id asString
 ]
 

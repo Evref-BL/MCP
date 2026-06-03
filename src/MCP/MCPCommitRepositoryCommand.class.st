@@ -61,13 +61,10 @@ MCPCommitRepositoryCommand >> fallbackGitUserName [
 { #category : 'private - git identity' }
 MCPCommitRepositoryCommand >> gitConfigValueMissingOrEmpty: key in: config [
 
-	^ [
-	  config
+	^ config
 		  getString: key
 		  ifPresent: [ :value | value isEmptyOrNil ]
-		  ifAbsent: [ true ] ]
-		  on: Error
-		  do: [ :ignored | true ]
+		  ifAbsent: [ true ]
 ]
 
 { #category : 'private - git identity' }
@@ -86,9 +83,10 @@ MCPCommitRepositoryCommand >> gitSignatureMissingFor: anError [
 { #category : 'private - git identity' }
 MCPCommitRepositoryCommand >> removeGitConfigKey: key from: config [
 
-	[ config unset: key ]
-		on: Error
-		do: [ :ignored | nil ]
+	config
+		getString: key
+		ifPresent: [ :ignored | config unset: key ]
+		ifAbsent: [ ]
 ]
 
 { #category : 'private - git identity' }
@@ -122,17 +120,13 @@ MCPCommitRepositoryCommand >> repositoryHasDefaultGitSignature: aRepository [
 { #category : 'private - diff' }
 MCPCommitRepositoryCommand >> repositoryHasModifiedPackages: aRepository [
 
-	^ [ aRepository modifiedPackages notEmpty ]
-		  on: Error
-		  do: [ :ignored | false ]
+	^ aRepository modifiedPackages notEmpty
 ]
 
 { #category : 'private - diff' }
 MCPCommitRepositoryCommand >> repositoryHasNoCommit: aRepository [
 
-	^ [ MCPIcebergCommitInfo isNoCommit: aRepository headCommit ]
-		  on: Error
-		  do: [ :ignored | false ]
+	^ MCPIcebergCommitInfo isNoCommit: aRepository headCommit
 ]
 
 { #category : 'private - git identity' }

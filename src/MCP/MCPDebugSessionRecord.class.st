@@ -43,13 +43,13 @@ MCPDebugSessionRecord >> advanceStateForStatus: statusString reason: reasonStrin
 	suffix := stateId
 		          ifNil: [ '0' ]
 		          ifNotNil: [ stateId copyAfterLast: $- ].
-	nextNumber := [ suffix asInteger + 1 ]
-		              on: Error
-		              do: [ :error | 1 ].
+	nextNumber := (suffix notEmpty and: [
+		               suffix allSatisfy: [ :character | character isDigit ] ])
+		              ifTrue: [ suffix asInteger + 1 ]
+		              ifFalse: [ 1 ].
 	stateId := 'state-' , nextNumber asString.
 	status := statusString.
-	reason := reasonString.
-	^ self
+	reason := reasonString
 ]
 
 { #category : 'accessing' }

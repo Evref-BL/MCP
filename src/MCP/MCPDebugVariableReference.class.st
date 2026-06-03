@@ -23,7 +23,7 @@ Class {
 { #category : 'instance creation' }
 MCPDebugVariableReference class >> fromString: aReferenceString [
 
-	| tokens frameToken scopeToken variableToken frameIndex pathSegments |
+	| frameIndex frameToken frameTokenSuffix pathSegments scopeToken tokens variableToken |
 	tokens := aReferenceString findTokens: '/'.
 	tokens size >= 4 ifFalse: [
 		^ self signalInvalidReference: aReferenceString ].
@@ -33,10 +33,11 @@ MCPDebugVariableReference class >> fromString: aReferenceString [
 	scopeToken := tokens fourth.
 	(scopeToken beginsWith: 'scope-') ifFalse: [
 		^ self signalInvalidReference: aReferenceString ].
-	frameIndex := [ (frameToken allButFirst: 6) asInteger ]
-		              on: Error
-		              do: [ :error |
-		              ^ self signalInvalidReference: aReferenceString ].
+	frameTokenSuffix := frameToken allButFirst: 6.
+	(frameTokenSuffix isEmpty or: [
+		 frameTokenSuffix anySatisfy: [ :character | character isDigit not ] ])
+		ifTrue: [ ^ self signalInvalidReference: aReferenceString ].
+	frameIndex := frameTokenSuffix asInteger.
 	pathSegments := OrderedCollection new.
 	variableToken := nil.
 	tokens size >= 5 ifTrue: [
