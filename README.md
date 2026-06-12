@@ -77,8 +77,8 @@ cp -R templates/. /path/to/your/project/
 ```
 
 The template includes `AGENTS.md`, `.codex/config.toml`, and reusable skills
-for Pharo MCP workflows. If you use a different port, update the copied
-`.codex/config.toml`.
+for Pharo MCP workflows, including standalone image recovery. If you use a
+different port, update the copied `.codex/config.toml`.
 
 ## First Tools
 

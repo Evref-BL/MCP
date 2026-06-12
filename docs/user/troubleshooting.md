@@ -4,6 +4,11 @@ Most failures fall into one of three groups: the image is not reachable, the
 requested tool input is invalid, or the live image state differs from what the
 caller expected.
 
+For standalone image crashes or stopped servers, the copyable template skill
+`templates/skills/pharo-mcp-recovery` gives agents a recovery workflow for
+preserving evidence, restarting or replacing the image, reloading projects, and
+recovering change history.
+
 ## The Client Cannot Connect
 
 Check the server in the image:

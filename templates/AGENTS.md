@@ -99,5 +99,8 @@ For local reproduction of GitHub/smalltalkCI failures in projects that use
 Pharo MCP, use the repo-local `pharo-ci-repro` skill in
 `skills/pharo-ci-repro`.
 
+For standalone image crashes or stopped Pharo MCP servers, use the repo-local
+`pharo-mcp-recovery` skill in `skills/pharo-mcp-recovery`.
+
 The image is saved automatically after each tool call that can change image
 state.
