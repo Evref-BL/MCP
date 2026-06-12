@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pharo MCP Recovery"
+  short_description: "Recover a stopped Pharo MCP image"
+  default_prompt: "Use $pharo-mcp-recovery to restart Pharo MCP and recover image changes."
