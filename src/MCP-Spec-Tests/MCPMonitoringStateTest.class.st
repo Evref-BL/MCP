@@ -22,6 +22,16 @@ MCPMonitoringStateTest >> testDisabledByDefaultDoesNotRecord [
 ]
 
 { #category : 'tests' }
+MCPMonitoringStateTest >> testExportDisabledByDefault [
+
+	| state |
+	state := MCPMonitoringState new.
+	self deny: state exportEnabled.
+	self assert: state exportDirectory isNil.
+	self assert: state exportInstanceDirectory isNil
+]
+
+{ #category : 'tests' }
 MCPMonitoringStateTest >> testInputSnapshotRedactsSensitiveKeys [
 
 	| input record state |
@@ -78,6 +88,24 @@ MCPMonitoringStateTest >> testLargeOutputExceedingBudgetBecomesTraceAndGuidance 
 	self assert: (state statusText includesSubstring: 'Output budget:').
 	self assert:
 		(state outputBudgetGuidance includesSubstring: 'pagination')
+]
+
+{ #category : 'tests' }
+MCPMonitoringStateTest >> testMCPConfiguresMonitoringExportDirectory [
+
+	| directory mcp |
+	directory := FileLocator temp asFileReference
+	             / ('mcp-observability-' , UUID new asString).
+	[
+		mcp := MCP new.
+		mcp monitoringExportDirectory: directory.
+		self assert: mcp monitoringExportDirectory equals: directory.
+		self
+			assert: (mcp monitoring resourceMetadata at: #'pharo.majorVersion')
+			equals: PharoCompatibility currentMajorVersion.
+		self assert:
+			(mcp monitoring resourceMetadata includesKey: #'mcp.port') ]
+		ensure: [ directory exists ifTrue: [ directory deleteAll ] ]
 ]
 
 { #category : 'tests' }
@@ -221,6 +249,80 @@ MCPMonitoringStateTest >> testRecordsSuccessfulCallMetricsAndLogs [
 			 each includesSubstring: 'ok tool method_metadata_search #' ]).
 	self assert:
 		(state statusText beginsWith: 'Observability enabled. Calls: 1')
+]
+
+{ #category : 'tests' }
+MCPMonitoringStateTest >> testTraceExportSkipsNonTraceRecords [
+
+	| directory record result state |
+	directory := FileLocator temp asFileReference
+	             / ('mcp-observability-' , UUID new asString).
+	[
+		directory exists ifTrue: [ directory deleteAll ].
+		state := MCPMonitoringState new.
+		state exportDirectory: directory.
+		state outputBudgetBytes: 10000.
+		state enable.
+		record := state recordToolCallStart: 'package_search'.
+		result := MCPStructureCallToolResult
+			          content: #(  )
+			          structuredContent:
+			          { (#summary -> 'Small output') } asDictionary.
+		state recordToolCallFinish: record result: result error: nil.
+		self deny: directory exists ] ensure: [
+		directory exists ifTrue: [ directory deleteAll ] ]
+]
+
+{ #category : 'tests' }
+MCPMonitoringStateTest >> testTraceExportWritesOverBudgetRecordAsJSONLine [
+
+	| directory input line output payload record resource result state traceFile |
+	directory := FileLocator temp asFileReference
+	             / ('mcp-observability-' , UUID new asString).
+	[
+		directory exists ifTrue: [ directory deleteAll ].
+		state := MCPMonitoringState new.
+		state resourceMetadata: {
+				(#'pharo.majorVersion' -> 13).
+				(#'mcp.port' -> 9013) } asDictionary.
+		state outputBudgetBytes: 80.
+		state exportDirectory: directory.
+		state enable.
+		input := {
+			         (#limit -> 1).
+			         (#apiToken -> 'secret-token') } asDictionary.
+		record := state
+			          recordToolCallStart: 'method_source_search'
+			          input: input.
+		result := MCPStructureCallToolResult
+			          content: #(  )
+			          structuredContent: {
+					          (#summary -> 'Large output').
+					          (#items -> { (String new: 200 withAll: $x) }) }
+					          asDictionary.
+		state recordToolCallFinish: record result: result error: nil.
+		self assert: state exportInstanceDirectory exists.
+		self assert: state resourceFileReference exists.
+		resource := STONJSON fromString:
+			            state resourceFileReference contents.
+		self assert: (resource at: 'service.name') equals: 'mcp-pharo'.
+		self assert: (resource at: 'pharo.majorVersion') equals: 13.
+		traceFile := state traceFileReference.
+		self assert: traceFile exists.
+		line := traceFile contents lines first.
+		payload := STONJSON fromString: line.
+		self
+			assert: (payload at: 'event.name')
+			equals: 'mcp.tool_call.output_budget_exceeded'.
+		self assert: (payload at: 'toolName') equals: 'method_source_search'.
+		self assert: (payload at: 'outputBudgetExceeded').
+		self
+			assert: ((payload at: 'input') at: 'apiToken')
+			equals: '<redacted>'.
+		output := payload at: 'output'.
+		self assert: (output at: 'summary') equals: 'Large output'.
+		self assert: (output at: 'items') first size equals: 200 ] ensure: [
+		directory exists ifTrue: [ directory deleteAll ] ]
 ]
 
 { #category : 'tests' }

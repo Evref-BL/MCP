@@ -15,7 +15,11 @@ Class {
 		'outlierFactor',
 		'minimumOutlierMilliseconds',
 		'outputBudgetBytes',
-		'lastActivityAt'
+		'lastActivityAt',
+		'traceLogger',
+		'exportDirectory',
+		'exportInstanceDirectory',
+		'resourceMetadata'
 	],
 	#category : 'MCP-Monitoring',
 	#package : 'MCP',
@@ -140,11 +144,86 @@ MCPMonitoringState >> ensureLogger [
 	^ logger
 ]
 
+{ #category : 'private - tracing' }
+MCPMonitoringState >> ensureTraceLogger [
+
+	traceLogger ifNil: [
+			traceLogger := TinyLogger new.
+			traceLogger addLogger:
+				(MCPTraceFileTinyLogger named: self traceFileReference pathString) ].
+	^ traceLogger
+]
+
 { #category : 'private' }
 MCPMonitoringState >> errorClassNameFor: anError [
 
 	anError ifNil: [ ^ '' ].
 	^ anError class name asString
+]
+
+{ #category : 'accessing' }
+MCPMonitoringState >> exportDirectory [
+
+	^ exportDirectory
+]
+
+{ #category : 'accessing' }
+MCPMonitoringState >> exportDirectory: aPath [
+
+	exportDirectory := aPath ifNotNil: [ :path | path asFileReference ].
+	exportInstanceDirectory := nil.
+	traceLogger := nil
+]
+
+{ #category : 'testing' }
+MCPMonitoringState >> exportEnabled [
+
+	^ self exportDirectory notNil
+]
+
+{ #category : 'accessing' }
+MCPMonitoringState >> exportInstanceDirectory [
+
+	| directory |
+	self exportEnabled ifFalse: [ ^ nil ].
+	exportInstanceDirectory ifNil: [
+			directory := self exportDirectory
+			             / self exportInstanceDirectoryName.
+			directory ensureCreateDirectory.
+			exportInstanceDirectory := directory.
+			self writeResourceMetadata ].
+	^ exportInstanceDirectory
+]
+
+{ #category : 'private - exporting' }
+MCPMonitoringState >> exportInstanceDirectoryName [
+
+	| instanceId metadata port suffix version |
+	metadata := self resourceMetadata.
+	version := metadata at: #'pharo.majorVersion' ifAbsent: [ 'unknown' ].
+	port := metadata at: #'mcp.port' ifAbsent: [ 'unknown' ].
+	instanceId := (metadata at: #'service.instance.id') asString.
+	suffix := instanceId first: (8 min: instanceId size).
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: 'mcp-pharo-';
+				  nextPutAll: version asString;
+				  nextPut: $-;
+				  nextPutAll: port asString;
+				  nextPut: $-;
+				  nextPutAll: suffix ]
+]
+
+{ #category : 'private - tracing' }
+MCPMonitoringState >> exportTraceRecord: aRecord [
+
+	(self exportEnabled and: [ aRecord isTraceWorthy ]) ifFalse: [
+		^ self ].
+	[
+	self ensureTraceLogger record: [ self traceRecordJSONFor: aRecord ] ]
+		on: Error
+		do: [ :error |
+			self recordLog: 'Trace export failed: ' , error class name asString ]
 ]
 
 { #category : 'initialization' }
@@ -267,6 +346,16 @@ MCPMonitoringState >> minimumOutlierMilliseconds [
 MCPMonitoringState >> minimumOutlierMilliseconds: anInteger [
 
 	minimumOutlierMilliseconds := anInteger
+]
+
+{ #category : 'private - exporting' }
+MCPMonitoringState >> newResourceMetadata [
+
+	^ {
+		  (#schemaVersion -> 1).
+		  (#'service.name' -> 'mcp-pharo').
+		  (#'service.instance.id' -> UUID new asString).
+		  (#createdAt -> DateAndTime now asString) } asDictionary
 ]
 
 { #category : 'accessing' }
@@ -420,6 +509,7 @@ MCPMonitoringState >> recordToolCallFinish: aRecord result: aToolResult error: a
 		captureTraceSnapshotsFor: aRecord
 		result: aToolResult
 		error: anError.
+	self exportTraceRecord: aRecord.
 	stats recordCall: aRecord.
 	self addRecentCall: aRecord.
 	lastActivityAt := finishTimestamp.
@@ -449,6 +539,33 @@ MCPMonitoringState >> recordToolCallStart: aToolName input: inputObject [
 	self recordLog:
 		'Begin tool ' , aToolName asString , ' #' , record id asString.
 	^ record
+]
+
+{ #category : 'accessing' }
+MCPMonitoringState >> resourceFileReference [
+
+	^ self exportInstanceDirectory ifNotNil: [ :directory |
+		  directory / 'resource.json' ]
+]
+
+{ #category : 'accessing' }
+MCPMonitoringState >> resourceMetadata [
+
+	^ resourceMetadata ifNil: [
+		  resourceMetadata := self newResourceMetadata ]
+]
+
+{ #category : 'accessing' }
+MCPMonitoringState >> resourceMetadata: aDictionary [
+
+	| metadata |
+	metadata := self resourceMetadata copy.
+	aDictionary ifNotNil: [
+			aDictionary keysAndValuesDo: [ :key :value |
+				metadata at: key put: value ] ].
+	resourceMetadata := metadata.
+	exportInstanceDirectory := nil.
+	traceLogger := nil
 ]
 
 { #category : 'accessing' }
@@ -539,6 +656,42 @@ MCPMonitoringState >> totalOutputBudgetExceededCount [
 		  into: [ :sum :each | sum + each outputBudgetExceededCount ]
 ]
 
+{ #category : 'private - tracing' }
+MCPMonitoringState >> traceEventNameForRecord: aRecord [
+
+	aRecord outputBudgetExceeded ifTrue: [
+		^ 'mcp.tool_call.output_budget_exceeded' ].
+	aRecord status = 'error' ifTrue: [ ^ 'mcp.tool_call.error' ].
+	aRecord outlierExplanation isNotEmpty ifTrue: [
+		^ 'mcp.tool_call.duration_outlier' ].
+	^ 'mcp.tool_call.trace'
+]
+
+{ #category : 'accessing' }
+MCPMonitoringState >> traceFileReference [
+
+	^ self exportInstanceDirectory ifNotNil: [ :directory |
+		  directory / 'traces.jsonl' ]
+]
+
+{ #category : 'private - tracing' }
+MCPMonitoringState >> traceRecordDictionaryFor: aRecord [
+
+	| dictionary |
+	dictionary := aRecord asDictionary copy.
+	dictionary at: #schemaVersion put: 1.
+	dictionary
+		at: #'event.name'
+		put: (self traceEventNameForRecord: aRecord).
+	^ dictionary
+]
+
+{ #category : 'private - tracing' }
+MCPMonitoringState >> traceRecordJSONFor: aRecord [
+
+	^ STONJSON toString: (self traceRecordDictionaryFor: aRecord)
+]
+
 { #category : 'accessing' }
 MCPMonitoringState >> traceRecords [
 
@@ -620,9 +773,7 @@ MCPMonitoringState >> traceSnapshotForDictionary: aDictionary depth: depth [
 MCPMonitoringState >> traceSnapshotForResult: aToolResult error: anError [
 
 	aToolResult ifNotNil: [
-		^ self traceSnapshotFor: ([ aToolResult asJRPCJSON ]
-				   on: Error
-				   do: [ :ignored | aToolResult asString ]) ].
+		^ self traceSnapshotFor: aToolResult structuredContent ].
 	anError ifNil: [ ^ nil ].
 	^ self traceSnapshotFor: {
 			  (#errorClass -> anError class name asString).
@@ -637,4 +788,11 @@ MCPMonitoringState >> traceStringSnapshotFor: aString [
 	text := aString asString.
 	text size <= self maxTraceStringLength ifTrue: [ ^ text ].
 	^ (text first: self maxTraceStringLength) , '... <truncated>'
+]
+
+{ #category : 'private - exporting' }
+MCPMonitoringState >> writeResourceMetadata [
+
+	self resourceFileReference writeStreamDo: [ :stream |
+		stream nextPutAll: (STONJSON toString: self resourceMetadata) ]
 ]
