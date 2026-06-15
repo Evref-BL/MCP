@@ -1,5 +1,5 @@
 "
-Aggregated monitoring metrics for one MCP tool. It tracks call counts, success/error counts, timing totals, min/max/last duration, and the last outlier explanation.
+Aggregated monitoring metrics for one MCP tool. It tracks call counts, success/error counts, timing totals, min/max/last duration, output-size totals and maxima, output-budget overruns, and the last outlier explanation.
 "
 Class {
 	#name : 'MCPToolCallStats',
@@ -15,7 +15,12 @@ Class {
 		'lastMilliseconds',
 		'lastStartedAt',
 		'lastFinishedAt',
-		'lastOutlierExplanation'
+		'lastOutlierExplanation',
+		'totalOutputBytes',
+		'maxOutputBytes',
+		'lastOutputBytes',
+		'lastApproximateOutputTokens',
+		'outputBudgetExceededCount'
 	],
 	#category : 'MCP-Monitoring',
 	#package : 'MCP',
@@ -42,6 +47,12 @@ MCPToolCallStats >> asDictionary [
 		  (#minMilliseconds -> (self minMilliseconds ifNil: [ 0 ])).
 		  (#maxMilliseconds -> (self maxMilliseconds ifNil: [ 0 ])).
 		  (#lastMilliseconds -> (self lastMilliseconds ifNil: [ 0 ])).
+		  (#averageOutputBytes -> self averageOutputBytes asFloat).
+		  (#maxOutputBytes -> self maxOutputBytes).
+		  (#lastOutputBytes -> self lastOutputBytes).
+		  (#lastApproximateOutputTokens -> self lastApproximateOutputTokens).
+		  (#outputBudgetExceededCount -> self outputBudgetExceededCount).
+		  (#outputBudgetGuidance -> self outputBudgetGuidance).
 		  (#lastOutlierExplanation
 		   -> (self lastOutlierExplanation ifNil: [ '' ])) } asDictionary
 ]
@@ -51,6 +62,13 @@ MCPToolCallStats >> averageMilliseconds [
 
 	self callCount = 0 ifTrue: [ ^ 0 ].
 	^ self totalMilliseconds / self callCount
+]
+
+{ #category : 'accessing' }
+MCPToolCallStats >> averageOutputBytes [
+
+	self callCount = 0 ifTrue: [ ^ 0 ].
+	^ self totalOutputBytes / self callCount
 ]
 
 { #category : 'accessing' }
@@ -66,15 +84,33 @@ MCPToolCallStats >> displayAverageMilliseconds [
 ]
 
 { #category : 'displaying' }
+MCPToolCallStats >> displayAverageOutputBytes [
+
+	^ self averageOutputBytes asFloat printShowingDecimalPlaces: 1
+]
+
+{ #category : 'displaying' }
 MCPToolCallStats >> displayLastMilliseconds [
 
 	^ (self lastMilliseconds ifNil: [ 0 ]) asString
 ]
 
 { #category : 'displaying' }
+MCPToolCallStats >> displayLastOutputBytes [
+
+	^ self lastOutputBytes asString
+]
+
+{ #category : 'displaying' }
 MCPToolCallStats >> displayMaxMilliseconds [
 
 	^ (self maxMilliseconds ifNil: [ 0 ]) asString
+]
+
+{ #category : 'displaying' }
+MCPToolCallStats >> displayMaxOutputBytes [
+
+	^ self maxOutputBytes asString
 ]
 
 { #category : 'displaying' }
@@ -87,6 +123,12 @@ MCPToolCallStats >> displayMinMilliseconds [
 MCPToolCallStats >> displayOutlierExplanation [
 
 	^ self lastOutlierExplanation ifNil: [ '' ]
+]
+
+{ #category : 'displaying' }
+MCPToolCallStats >> displayOutputBudgetExceededCount [
+
+	^ self outputBudgetExceededCount asString
 ]
 
 { #category : 'accessing' }
@@ -109,7 +151,15 @@ MCPToolCallStats >> initialize [
 	callCount := 0.
 	successCount := 0.
 	errorCount := 0.
-	totalMilliseconds := 0
+	totalMilliseconds := 0.
+	totalOutputBytes := 0.
+	outputBudgetExceededCount := 0
+]
+
+{ #category : 'accessing' }
+MCPToolCallStats >> lastApproximateOutputTokens [
+
+	^ lastApproximateOutputTokens ifNil: [ 0 ]
 ]
 
 { #category : 'accessing' }
@@ -125,9 +175,21 @@ MCPToolCallStats >> lastOutlierExplanation [
 ]
 
 { #category : 'accessing' }
+MCPToolCallStats >> lastOutputBytes [
+
+	^ lastOutputBytes ifNil: [ 0 ]
+]
+
+{ #category : 'accessing' }
 MCPToolCallStats >> maxMilliseconds [
 
 	^ maxMilliseconds
+]
+
+{ #category : 'accessing' }
+MCPToolCallStats >> maxOutputBytes [
+
+	^ maxOutputBytes ifNil: [ 0 ]
 ]
 
 { #category : 'accessing' }
@@ -136,12 +198,37 @@ MCPToolCallStats >> minMilliseconds [
 	^ minMilliseconds
 ]
 
+{ #category : 'accessing' }
+MCPToolCallStats >> outputBudgetExceededCount [
+
+	^ outputBudgetExceededCount ifNil: [ 0 ]
+]
+
+{ #category : 'displaying' }
+MCPToolCallStats >> outputBudgetGuidance [
+
+	self outputBudgetExceededCount = 0 ifTrue: [ ^ '' ].
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: self toolName;
+				  nextPutAll: ' exceeded output budget ';
+				  print: self outputBudgetExceededCount;
+				  nextPutAll: ' time'.
+			  self outputBudgetExceededCount = 1 ifFalse: [ stream nextPut: $s ].
+			  stream
+				  nextPutAll: ' (max ';
+				  print: self maxOutputBytes;
+				  nextPutAll:
+					  ' bytes). Prefer pagination, handles, or summary-first output.' ]
+]
+
 { #category : 'recording' }
 MCPToolCallStats >> recordCall: aRecord [
 
-	| duration statusString |
+	| duration outputBytes statusString |
 	duration := aRecord durationMilliseconds.
 	statusString := aRecord status.
+	outputBytes := aRecord outputByteCount.
 	callCount := self callCount + 1.
 	statusString = 'ok'
 		ifTrue: [ successCount := self successCount + 1 ]
@@ -153,6 +240,12 @@ MCPToolCallStats >> recordCall: aRecord [
 	maxMilliseconds := self maxMilliseconds
 		                   ifNil: [ duration ]
 		                   ifNotNil: [ :current | current max: duration ].
+	totalOutputBytes := self totalOutputBytes + outputBytes.
+	maxOutputBytes := self maxOutputBytes max: outputBytes.
+	lastOutputBytes := outputBytes.
+	lastApproximateOutputTokens := aRecord approximateOutputTokenCount.
+	aRecord outputBudgetExceeded ifTrue: [
+		outputBudgetExceededCount := self outputBudgetExceededCount + 1 ].
 	lastMilliseconds := duration.
 	lastStartedAt := aRecord startedAt.
 	lastFinishedAt := aRecord finishedAt.
@@ -181,4 +274,10 @@ MCPToolCallStats >> toolName: aString [
 MCPToolCallStats >> totalMilliseconds [
 
 	^ totalMilliseconds ifNil: [ 0 ]
+]
+
+{ #category : 'accessing' }
+MCPToolCallStats >> totalOutputBytes [
+
+	^ totalOutputBytes ifNil: [ 0 ]
 ]

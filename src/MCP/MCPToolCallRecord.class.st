@@ -1,5 +1,5 @@
 "
-Monitoring DTO for one MCP tool call. Active records have no finishedAt or duration yet. Completed records store status, timing, optional error class, optional outlier explanation, and bounded redacted input/output snapshots only when the call is trace-worthy. The raw input object is held transiently while the call is active and cleared when recording finishes.
+Monitoring DTO for one MCP tool call. Active records have no finishedAt duration yet. Completed records store status, timing, compact output-budget metadata, optional error class, optional outlier explanation, and bounded redacted input/output snapshots only when the call is trace-worthy. The raw input object is held transiently while the call is active and cleared when recording finishes.
 "
 Class {
 	#name : 'MCPToolCallRecord',
@@ -16,7 +16,12 @@ Class {
 		'outlierExplanation',
 		'inputSnapshot',
 		'outputSnapshot',
-		'inputObject'
+		'inputObject',
+		'outputByteCount',
+		'approximateOutputTokenCount',
+		'outputBudgetBytes',
+		'outputBudgetExceeded',
+		'outputBudgetExplanation'
 	],
 	#category : 'MCP-Monitoring',
 	#package : 'MCP',
@@ -34,6 +39,18 @@ MCPToolCallRecord class >> id: anInteger toolName: aToolName startedAt: startTim
 		  yourself
 ]
 
+{ #category : 'accessing' }
+MCPToolCallRecord >> approximateOutputTokenCount [
+
+	^ approximateOutputTokenCount ifNil: [ 0 ]
+]
+
+{ #category : 'accessing' }
+MCPToolCallRecord >> approximateOutputTokenCount: anInteger [
+
+	approximateOutputTokenCount := anInteger
+]
+
 { #category : 'converting' }
 MCPToolCallRecord >> asDictionary [
 
@@ -46,6 +63,11 @@ MCPToolCallRecord >> asDictionary [
 		  (#errorClass -> self errorClass).
 		  (#summary -> self summary).
 		  (#outlierExplanation -> self outlierExplanation).
+		  (#outputBytes -> self outputByteCount).
+		  (#approximateOutputTokens -> self approximateOutputTokenCount).
+		  (#outputBudgetBytes -> self outputBudgetBytes).
+		  (#outputBudgetExceeded -> self outputBudgetExceeded).
+		  (#outputBudgetExplanation -> self outputBudgetExplanation).
 		  (#input -> self inputSnapshot).
 		  (#output -> self outputSnapshot) } asDictionary
 ]
@@ -68,6 +90,8 @@ MCPToolCallRecord >> displayStartedAt [
 { #category : 'displaying' }
 MCPToolCallRecord >> displaySummary [
 
+	self outputBudgetExplanation isEmpty ifFalse: [
+		^ self outputBudgetExplanation ].
 	self outlierExplanation isEmpty ifFalse: [ ^ self outlierExplanation ].
 	self summary isEmpty ifFalse: [ ^ self summary ].
 	^ self errorClass
@@ -162,7 +186,9 @@ MCPToolCallRecord >> isRunning [
 { #category : 'testing' }
 MCPToolCallRecord >> isTraceWorthy [
 
-	^ self status = 'error' or: [ self outlierExplanation isNotEmpty ]
+	^ self status = 'error' or: [
+		  self outlierExplanation isNotEmpty or: [
+			  self outputBudgetExceeded ] ]
 ]
 
 { #category : 'accessing' }
@@ -178,6 +204,54 @@ MCPToolCallRecord >> outlierExplanation: aString [
 ]
 
 { #category : 'accessing' }
+MCPToolCallRecord >> outputBudgetBytes [
+
+	^ outputBudgetBytes ifNil: [ 0 ]
+]
+
+{ #category : 'accessing' }
+MCPToolCallRecord >> outputBudgetBytes: anInteger [
+
+	outputBudgetBytes := anInteger
+]
+
+{ #category : 'testing' }
+MCPToolCallRecord >> outputBudgetExceeded [
+
+	^ outputBudgetExceeded ifNil: [ false ]
+]
+
+{ #category : 'accessing' }
+MCPToolCallRecord >> outputBudgetExceeded: aBoolean [
+
+	outputBudgetExceeded := aBoolean
+]
+
+{ #category : 'accessing' }
+MCPToolCallRecord >> outputBudgetExplanation [
+
+	^ outputBudgetExplanation ifNil: [ '' ]
+]
+
+{ #category : 'accessing' }
+MCPToolCallRecord >> outputBudgetExplanation: aString [
+
+	outputBudgetExplanation := aString
+]
+
+{ #category : 'accessing' }
+MCPToolCallRecord >> outputByteCount [
+
+	^ outputByteCount ifNil: [ 0 ]
+]
+
+{ #category : 'accessing' }
+MCPToolCallRecord >> outputByteCount: anInteger [
+
+	outputByteCount := anInteger
+]
+
+{ #category : 'accessing' }
 MCPToolCallRecord >> outputSnapshot [
 
 	^ outputSnapshot
@@ -187,6 +261,18 @@ MCPToolCallRecord >> outputSnapshot [
 MCPToolCallRecord >> outputSnapshot: anObject [
 
 	outputSnapshot := anObject
+]
+
+{ #category : 'recording' }
+MCPToolCallRecord >> recordOutputBudget: budgetData [
+
+	self outputByteCount: (budgetData at: #outputBytes).
+	self approximateOutputTokenCount:
+		(budgetData at: #approximateOutputTokens).
+	self outputBudgetBytes: (budgetData at: #outputBudgetBytes).
+	self outputBudgetExceeded: (budgetData at: #outputBudgetExceeded).
+	self outputBudgetExplanation:
+		(budgetData at: #outputBudgetExplanation)
 ]
 
 { #category : 'accessing' }
