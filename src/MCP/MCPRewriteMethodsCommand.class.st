@@ -21,6 +21,15 @@ MCPRewriteMethodsCommand class >> tool: aTool request: aRequest [
 	^ self new initializeTool: aTool request: aRequest
 ]
 
+{ #category : 'private - rewriting' }
+MCPRewriteMethodsCommand >> applyChanges: changes [
+
+	| changeManager |
+	changeManager := self refactoringChangeManager.
+	PharoCompatibility resumeDeprecationsDuring: [
+		changes do: [ :change | changeManager performChange: change ] ]
+]
+
 { #category : 'private - results' }
 MCPRewriteMethodsCommand >> changeInfosForChanges: changes [
 
@@ -64,10 +73,9 @@ MCPRewriteMethodsCommand >> execute [
 	changeInfos := self changeInfosForChanges: changes.
 	appliedCount := 0.
 	self request apply ifTrue: [
-		self validateExpectedChangeSetHash: changeSetHash.
-		PharoCompatibility resumeDeprecationsDuring: [
-			StRewriterAbstractApplier applyTransformationChanges: changes ].
-		appliedCount := changes size ].
+			self validateExpectedChangeSetHash: changeSetHash.
+			self applyChanges: changes.
+			appliedCount := changes size ].
 	report := MCPMethodRewriteReport
 		          request: self request
 		          changeInfos: changeInfos
@@ -109,6 +117,12 @@ MCPRewriteMethodsCommand >> initializeTool: aTool request: aRequest [
 	tool := aTool.
 	request := aRequest.
 	^ self
+]
+
+{ #category : 'private - rewriting' }
+MCPRewriteMethodsCommand >> refactoringChangeManager [
+
+	^ PharoCompatibility refactoringChangeManagerClass instance
 ]
 
 { #category : 'accessing' }
