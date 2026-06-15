@@ -152,6 +152,25 @@ MCP >> monitoringEnabled: aBoolean [
 ]
 
 { #category : 'monitoring' }
+MCP >> monitoringExportDirectory [
+
+	^ self monitoring exportDirectory
+]
+
+{ #category : 'monitoring' }
+MCP >> monitoringExportDirectory: aPath [
+
+	self monitoring resourceMetadata: self monitoringResourceMetadata.
+	self monitoring exportDirectory: aPath
+]
+
+{ #category : 'monitoring' }
+MCP >> monitoringExportInstanceDirectory [
+
+	^ self monitoring exportInstanceDirectory
+]
+
+{ #category : 'monitoring' }
 MCP >> monitoringLogs [
 
 	^ self monitoring logs
@@ -167,6 +186,18 @@ MCP >> monitoringMetrics [
 MCP >> monitoringRecentCalls [
 
 	^ self monitoring recentCallRecords
+]
+
+{ #category : 'monitoring' }
+MCP >> monitoringResourceMetadata [
+
+	| metadata |
+	metadata := self monitoring resourceMetadata copy.
+	metadata
+		at: #'pharo.majorVersion'
+		put: PharoCompatibility currentMajorVersion.
+	metadata at: #'mcp.port' put: self port.
+	^ metadata
 ]
 
 { #category : 'monitoring' }

@@ -196,6 +196,8 @@ The Spec dashboard is available from an inspected `MCP` object. It shows:
 
 Observability is disabled by default. Enable it for a debugging session, then
 clear it when the session is done.
+Configure `mcp monitoringExportDirectory: aDirectory` to export instance
+metadata and trace-worthy calls as JSON files for offline payload analysis.
 
 ## Version Compatibility
 

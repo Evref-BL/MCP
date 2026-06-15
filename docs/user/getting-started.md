@@ -160,3 +160,5 @@ observability, metrics, traces, and recent logs.
 
 Enable observability only when you need call timing, traces, and logs for the
 current image session.
+Configure `mcp monitoringExportDirectory: aDirectory` to export instance
+metadata and trace-worthy calls as JSON files for offline payload analysis.
