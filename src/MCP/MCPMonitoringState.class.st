@@ -1,5 +1,5 @@
 "
-Runtime observability state for an MCP server. Observability is disabled by default; when enabled it records TinyLogger-backed log lines, per-tool timing metrics, recent completed calls, and trace-worthy call records for errors and outliers.
+Runtime observability state for an MCP server. Observability is disabled by default; when enabled, it records TinyLogger-backed log lines, per-tool timing and output-size metrics, recent completed calls, and trace-worthy call records for errors, timing outliers, or output-budget overruns.
 "
 Class {
 	#name : 'MCPMonitoringState',
@@ -14,6 +14,7 @@ Class {
 		'maxRecentCalls',
 		'outlierFactor',
 		'minimumOutlierMilliseconds',
+		'outputBudgetBytes',
 		'lastActivityAt'
 	],
 	#category : 'MCP-Monitoring',
@@ -27,6 +28,34 @@ MCPMonitoringState >> addRecentCall: aRecord [
 	self recentCalls addFirst: aRecord.
 	[ self recentCalls size > self maxRecentCalls ] whileTrue: [
 		self recentCalls removeLast ]
+]
+
+{ #category : 'private - budgets' }
+MCPMonitoringState >> approximateOutputBytesForObject: anObject [
+
+	| jsonString |
+	jsonString := [ STONJSON toString: anObject ]
+		              on: Error
+		              do: [ :ignored | anObject asString ].
+	^ jsonString utf8Encoded size
+]
+
+{ #category : 'private - budgets' }
+MCPMonitoringState >> approximateOutputBytesForResult: aToolResult error: anError [
+
+	aToolResult ifNotNil: [
+		^ self approximateOutputBytesForObject: aToolResult asJRPCJSON ].
+	anError ifNil: [ ^ 0 ].
+	^ self approximateOutputBytesForObject: {
+			  (#errorClass -> anError class name asString).
+			  (#message -> (anError messageText ifNil: [ anError asString ])) }
+			  asDictionary
+]
+
+{ #category : 'private - budgets' }
+MCPMonitoringState >> approximateOutputTokensForBytes: byteCount [
+
+	^ byteCount + 3 // 4
 ]
 
 { #category : 'private - tracing' }
@@ -128,7 +157,8 @@ MCPMonitoringState >> initialize [
 	nextCallId := 0.
 	maxRecentCalls := 100.
 	outlierFactor := 3.
-	minimumOutlierMilliseconds := 250
+	minimumOutlierMilliseconds := 250.
+	outputBudgetBytes := 32768
 ]
 
 { #category : 'private - tracing' }
@@ -145,19 +175,22 @@ MCPMonitoringState >> isSensitiveTraceKey: aKey [
 MCPMonitoringState >> logMessageForRecord: aRecord [
 
 	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: (self logStatusLabelForStatus: aRecord status);
-			  nextPutAll: ' tool ';
-			  nextPutAll: aRecord toolName;
-			  nextPutAll: ' #';
-			  print: aRecord id;
-			  nextPutAll: ' in ';
-			  print: aRecord durationMilliseconds;
-			  nextPutAll: ' ms'.
-		  aRecord displaySummary isEmpty ifFalse: [
 			  stream
-				  nextPutAll: ' - ';
-				  nextPutAll: aRecord displaySummary ] ]
+				  nextPutAll: (self logStatusLabelForStatus: aRecord status);
+				  nextPutAll: ' tool ';
+				  nextPutAll: aRecord toolName;
+				  nextPutAll: ' #';
+				  print: aRecord id;
+				  nextPutAll: ' in ';
+				  print: aRecord durationMilliseconds;
+				  nextPutAll: ' ms';
+				  nextPutAll: ' | out ';
+				  print: aRecord outputByteCount;
+				  nextPutAll: ' bytes'.
+			  aRecord displaySummary isEmpty ifFalse: [
+					  stream
+						  nextPutAll: ' - ';
+						  nextPutAll: aRecord displaySummary ] ]
 ]
 
 { #category : 'private' }
@@ -275,6 +308,65 @@ MCPMonitoringState >> outlierFactor: aNumber [
 ]
 
 { #category : 'accessing' }
+MCPMonitoringState >> outputBudgetBytes [
+
+	^ outputBudgetBytes ifNil: [ 32768 ]
+]
+
+{ #category : 'accessing' }
+MCPMonitoringState >> outputBudgetBytes: anInteger [
+
+	outputBudgetBytes := anInteger
+]
+
+{ #category : 'private - budgets' }
+MCPMonitoringState >> outputBudgetDataForResult: aToolResult error: anError [
+
+	| byteCount explanation |
+	byteCount := self
+		             approximateOutputBytesForResult: aToolResult
+		             error: anError.
+	explanation := self outputBudgetExplanationForByteCount: byteCount.
+	^ {
+		  (#outputBytes -> byteCount).
+		  (#approximateOutputTokens
+		   -> (self approximateOutputTokensForBytes: byteCount)).
+		  (#outputBudgetBytes -> self outputBudgetBytes).
+		  (#outputBudgetExceeded -> explanation isNotEmpty).
+		  (#outputBudgetExplanation -> explanation) } asDictionary
+]
+
+{ #category : 'private - budgets' }
+MCPMonitoringState >> outputBudgetExplanationForByteCount: byteCount [
+
+	byteCount <= self outputBudgetBytes ifTrue: [ ^ '' ].
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: 'Output ';
+				  print: byteCount;
+				  nextPutAll: ' bytes exceeds budget ';
+				  print: self outputBudgetBytes;
+				  nextPutAll:
+					  ' bytes; consider pagination, handles, or summary-first output' ]
+]
+
+{ #category : 'displaying' }
+MCPMonitoringState >> outputBudgetGuidance [
+
+	| attentionStats displayedCount |
+	attentionStats := self statsNeedingOutputBudgetAttention.
+	attentionStats isEmpty ifTrue: [ ^ '' ].
+	displayedCount := 0.
+	^ String streamContents: [ :stream |
+			  stream nextPutAll: 'Output budget: '.
+			  attentionStats do: [ :stats |
+					  displayedCount < 3 ifTrue: [
+							  displayedCount > 0 ifTrue: [ stream nextPutAll: ' | ' ].
+							  stream nextPutAll: stats outputBudgetGuidance.
+							  displayedCount := displayedCount + 1 ] ] ]
+]
+
+{ #category : 'accessing' }
 MCPMonitoringState >> recentCallRecords [
 
 	^ self recentCalls asArray
@@ -291,6 +383,13 @@ MCPMonitoringState >> recordLog: aString [
 
 	self enabled ifFalse: [ ^ self ].
 	self ensureLogger record: aString
+]
+
+{ #category : 'private - budgets' }
+MCPMonitoringState >> recordOutputBudgetFor: aRecord result: aToolResult error: anError [
+
+	aRecord recordOutputBudget:
+		(self outputBudgetDataForResult: aToolResult error: anError)
 ]
 
 { #category : 'recording' }
@@ -313,6 +412,10 @@ MCPMonitoringState >> recordToolCallFinish: aRecord result: aToolResult error: a
 	aRecord errorClass: (self errorClassNameFor: anError).
 	aRecord summary: (self summaryForResult: aToolResult).
 	aRecord outlierExplanation: explanation.
+	self
+		recordOutputBudgetFor: aRecord
+		result: aToolResult
+		error: anError.
 	self
 		captureTraceSnapshotsFor: aRecord
 		result: aToolResult
@@ -362,6 +465,17 @@ MCPMonitoringState >> statsForToolNamed: aToolName [
 		  ifAbsentPut: [ MCPToolCallStats forToolNamed: aToolName asString ]
 ]
 
+{ #category : 'private - budgets' }
+MCPMonitoringState >> statsNeedingOutputBudgetAttention [
+
+	^ (self metrics select: [ :each | each outputBudgetExceededCount > 0 ])
+		  asArray sort: [ :left :right |
+			  left outputBudgetExceededCount = right outputBudgetExceededCount
+				  ifTrue: [ left maxOutputBytes >= right maxOutputBytes ]
+				  ifFalse: [
+				  left outputBudgetExceededCount > right outputBudgetExceededCount ] ]
+]
+
 { #category : 'private' }
 MCPMonitoringState >> statusForResult: aToolResult error: anError [
 
@@ -375,9 +489,21 @@ MCPMonitoringState >> statusForResult: aToolResult error: anError [
 { #category : 'displaying' }
 MCPMonitoringState >> statusText [
 
+	| guidance |
 	self enabled ifFalse: [ ^ 'Observability disabled' ].
-	^ 'Observability enabled. Calls: ' , self totalCallCount asString
-	  , ' | Errors: ' , self totalErrorCount asString
+	guidance := self outputBudgetGuidance.
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: 'Observability enabled. Calls: ';
+				  print: self totalCallCount;
+				  nextPutAll: ' | Errors: ';
+				  print: self totalErrorCount;
+				  nextPutAll: ' | Output overruns: ';
+				  print: self totalOutputBudgetExceededCount.
+			  guidance isEmpty ifFalse: [
+					  stream
+						  nextPutAll: ' | ';
+						  nextPutAll: guidance ] ]
 ]
 
 { #category : 'private' }
@@ -403,6 +529,14 @@ MCPMonitoringState >> totalCallCount [
 MCPMonitoringState >> totalErrorCount [
 
 	^ self metrics inject: 0 into: [ :sum :each | sum + each errorCount ]
+]
+
+{ #category : 'accessing' }
+MCPMonitoringState >> totalOutputBudgetExceededCount [
+
+	^ self metrics
+		  inject: 0
+		  into: [ :sum :each | sum + each outputBudgetExceededCount ]
 ]
 
 { #category : 'accessing' }

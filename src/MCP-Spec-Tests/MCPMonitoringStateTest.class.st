@@ -49,6 +49,38 @@ MCPMonitoringStateTest >> testInputSnapshotRedactsSensitiveKeys [
 ]
 
 { #category : 'tests' }
+MCPMonitoringStateTest >> testLargeOutputExceedingBudgetBecomesTraceAndGuidance [
+
+	| budgetBytes exceedsBudget largeText record result state stats |
+	state := MCPMonitoringState new.
+	state outputBudgetBytes: 80.
+	state enable.
+	largeText := String new: 200 withAll: $x.
+	record := state recordToolCallStart: 'method_source_search'.
+	result := MCPStructureCallToolResult
+		          content: #(  )
+		          structuredContent: {
+				          (#summary -> 'Large output').
+				          (#items -> { largeText }) } asDictionary.
+	state recordToolCallFinish: record result: result error: nil.
+	stats := state metrics first.
+	budgetBytes := state outputBudgetBytes.
+	exceedsBudget := (record outputByteCount - budgetBytes) positive.
+
+	self assert: exceedsBudget.
+	self assert: record outputBudgetExceeded.
+	self assert: record outputBudgetExplanation isNotEmpty.
+	self assert: record isTraceWorthy.
+	self assert: state traceRecords asArray equals: { record }.
+	self assert: record outputSnapshot notNil.
+	self assert: stats outputBudgetExceededCount equals: 1.
+	self assert: stats maxOutputBytes equals: record outputByteCount.
+	self assert: (state statusText includesSubstring: 'Output budget:').
+	self assert:
+		(state outputBudgetGuidance includesSubstring: 'pagination')
+]
+
+{ #category : 'tests' }
 MCPMonitoringStateTest >> testMCPRecordsToolCallsWhenMonitoringIsEnabled [
 
 	| mcp record result stats |
@@ -122,6 +154,43 @@ MCPMonitoringStateTest >> testRecordsErrorCall [
 			 each includesSubstring: 'Error tool method_create #' ]).
 	self deny: (state logs anySatisfy: [ :each |
 			 each includesSubstring: 'error tool method_create #' ])
+]
+
+{ #category : 'tests' }
+MCPMonitoringStateTest >> testRecordsOutputBudgetMetadata [
+
+	| record result state stats recordData statsData |
+	state := MCPMonitoringState new.
+	state enable.
+	record := state recordToolCallStart: 'method_metadata_search'.
+	result := MCPStructureCallToolResult
+		          content: #(  )
+		          structuredContent:
+		          { (#summary -> 'Small output') } asDictionary.
+	state recordToolCallFinish: record result: result error: nil.
+	stats := state metrics first.
+	recordData := record asDictionary.
+	statsData := stats asDictionary.
+
+	self assert: record outputByteCount > 0.
+	self
+		assert: record approximateOutputTokenCount
+		equals:
+		(state approximateOutputTokensForBytes: record outputByteCount).
+	self deny: record outputBudgetExceeded.
+	self assert: record outputBudgetExplanation isEmpty.
+	self assert: record outputSnapshot isNil.
+	self assert: stats lastOutputBytes equals: record outputByteCount.
+	self assert: stats outputBudgetExceededCount equals: 0.
+	self
+		assert: (recordData at: #outputBytes)
+		equals: record outputByteCount.
+	self
+		assert: (recordData at: #approximateOutputTokens)
+		equals: record approximateOutputTokenCount.
+	self
+		assert: (statsData at: #lastOutputBytes)
+		equals: record outputByteCount
 ]
 
 { #category : 'tests' }

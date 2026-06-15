@@ -377,6 +377,9 @@ MCPDashboardPresenter >> initializeTracesTableColumns [
 		addColumn: (SpStringTableColumn
 				 title: 'Duration ms'
 				 evaluated: #displayDurationMilliseconds);
+		addColumn: (SpStringTableColumn
+				 title: 'Output bytes'
+				 evaluated: [ :record | record outputByteCount asString ]);
 		addColumn:
 			(SpStringTableColumn title: 'Details' evaluated: #displaySummary);
 		addColumn:
