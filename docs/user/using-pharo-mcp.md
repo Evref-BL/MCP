@@ -85,6 +85,11 @@ Top-level `method_metadata_search` filtering is limited to `selector` and
 `protocol` fields. Use the specialized method lookup tools for source, equivalent
 methods, implementors, senders, class references, and variable references.
 
+For high-cardinality tools, start with a small `limit`, inspect summaries and
+opaque references, then ask for the next page or one detail object. Paged
+results report `totalCount`, `returnedCount`, `omittedCount`, `limit`,
+`offset`, and `hasMore` when the tool supports pagination.
+
 For change history, use `history_file_list` to locate `.ombu` files
 and `history_entry_list` to browse entries. Use
 `history_entry_apply` or `history_entry_revert` only when you need previewed or
