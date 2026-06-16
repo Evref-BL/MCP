@@ -183,7 +183,7 @@ MCPToolRunTests >> coverageResultObjectSchema [
 { #category : 'defaults' }
 MCPToolRunTests >> defaultCoverageMethodLimit [
 
-	^ 200
+	^ 50
 ]
 
 { #category : 'defaults' }

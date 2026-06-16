@@ -7,11 +7,7 @@ Class {
 	#instVars : [
 		'historyFilePath',
 		'entries',
-		'totalCount',
-		'limit',
-		'offset',
-		'newestFirst',
-		'codeChangesOnly',
+		'nextOffset',
 		'headReference'
 	],
 	#category : 'MCP-Results',
@@ -20,16 +16,12 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPChangeHistoryListEntriesResult class >> historyFilePath: aPath entries: entryInfos totalCount: total limit: aLimit offset: anOffset newestFirst: newestFirstFlag codeChangesOnly: codeChangesOnlyFlag headReference: aReferenceString [
+MCPChangeHistoryListEntriesResult class >> historyFilePath: aPath page: aPage headReference: aReferenceString [
 
 	^ self new
 		  historyFilePath: aPath;
-		  entries: entryInfos;
-		  totalCount: total;
-		  limit: aLimit;
-		  offset: anOffset;
-		  newestFirst: newestFirstFlag;
-		  codeChangesOnly: codeChangesOnlyFlag;
+		  entries: aPage entries;
+		  nextOffset: aPage nextOffset;
 		  headReference: aReferenceString;
 		  yourself
 ]
@@ -37,26 +29,18 @@ MCPChangeHistoryListEntriesResult class >> historyFilePath: aPath entries: entry
 { #category : 'converting' }
 MCPChangeHistoryListEntriesResult >> asDictionary [
 
-	^ {
-		  (#action -> 'listEntries').
-		  (#historyFilePath -> historyFilePath).
-		  (#entries
-		   -> (self entries collect: [ :each | each asDictionary ]) asArray).
-		  (#totalCount -> totalCount).
-		  (#returnedCount -> self returnedCount).
-		  (#omittedCount -> self omittedCount).
-		  (#limit -> limit).
-		  (#offset -> offset).
-		  (#hasMore -> self hasMore).
-		  (#newestFirst -> newestFirst).
-		  (#codeChangesOnly -> codeChangesOnly).
-		  (#headReference -> headReference) } asDictionary
-]
-
-{ #category : 'accessing' }
-MCPChangeHistoryListEntriesResult >> codeChangesOnly: aBoolean [
-
-	codeChangesOnly := aBoolean
+	| data |
+	data := Dictionary new.
+	data
+		at: #entries
+		put:
+		((self entries collect: [ :each | each asDictionary ]) as: Array).
+	historyFilePath ifNotNil: [
+		data at: #historyFilePath put: historyFilePath ].
+	self nextOffset ifNotNil: [ :offset |
+		data at: #nextOffset put: offset ].
+	headReference ifNotNil: [ data at: #headReference put: headReference ].
+	^ data
 ]
 
 { #category : 'accessing' }
@@ -69,12 +53,6 @@ MCPChangeHistoryListEntriesResult >> entries [
 MCPChangeHistoryListEntriesResult >> entries: aCollection [
 
 	entries := aCollection ifNil: [ #(  ) ]
-]
-
-{ #category : 'testing' }
-MCPChangeHistoryListEntriesResult >> hasMore [
-
-	^ offset + self returnedCount < totalCount
 ]
 
 { #category : 'accessing' }
@@ -90,37 +68,13 @@ MCPChangeHistoryListEntriesResult >> historyFilePath: aPath [
 ]
 
 { #category : 'accessing' }
-MCPChangeHistoryListEntriesResult >> limit: anInteger [
+MCPChangeHistoryListEntriesResult >> nextOffset [
 
-	limit := anInteger
+	^ nextOffset
 ]
 
 { #category : 'accessing' }
-MCPChangeHistoryListEntriesResult >> newestFirst: aBoolean [
+MCPChangeHistoryListEntriesResult >> nextOffset: anIntegerOrNil [
 
-	newestFirst := aBoolean
-]
-
-{ #category : 'accessing' }
-MCPChangeHistoryListEntriesResult >> offset: anInteger [
-
-	offset := anInteger
-]
-
-{ #category : 'accessing' }
-MCPChangeHistoryListEntriesResult >> omittedCount [
-
-	^ totalCount - self returnedCount
-]
-
-{ #category : 'accessing' }
-MCPChangeHistoryListEntriesResult >> returnedCount [
-
-	^ self entries size
-]
-
-{ #category : 'accessing' }
-MCPChangeHistoryListEntriesResult >> totalCount: anInteger [
-
-	totalCount := anInteger
+	nextOffset := anIntegerOrNil
 ]

@@ -230,25 +230,32 @@ MCPToolChangeHistory >> successSummaryForData: data operation: operation [
 
 	| action selectedCount performedCount previewCount |
 	operation = 'listFiles' ifTrue: [
-		^ 'Listed ' , (data at: #files ifAbsent: [ #(  ) ]) size asString
-		  , ' change history files.' ].
+			^ 'Listed ' , (data at: #files ifAbsent: [ #(  ) ]) size asString
+			  , ' change history files.' ].
 	operation = 'listEntries' ifTrue: [
-		^ 'Listed ' , (data at: #entries ifAbsent: [ #(  ) ]) size asString
-		  , ' of ' , (data at: #totalCount ifAbsent: [ 0 ]) asString
-		  , ' matching change history entries.' ].
+			^ String streamContents: [ :stream |
+					  stream
+						  nextPutAll: 'Listed ';
+						  print: (data at: #entries ifAbsent: [ #(  ) ]) size;
+						  nextPutAll: ' change history entries'.
+					  data at: #nextOffset ifPresent: [ :offset |
+							  stream
+								  nextPutAll: '. More available at offset ';
+								  print: offset ].
+					  stream nextPut: $. ] ].
 	(#( 'applyEntries' 'revertEntries' ) includes: operation) ifTrue: [
-		action := data at: #action ifAbsent: [ 'apply' ].
-		selectedCount := data at: #selectedCount ifAbsent: [ 0 ].
-		(data at: #performed ifAbsent: [ false ])
-			ifTrue: [
-				performedCount := data at: #performedCount ifAbsent: [ 0 ].
-				^ 'Performed ' , action , ' for ' , performedCount asString
-				  , ' previewed changes from ' , selectedCount asString
-				  , ' selected history entries.' ]
-			ifFalse: [
-				previewCount := data at: #previewCount ifAbsent: [ 0 ].
-				^ 'Previewed ' , action , ' for ' , previewCount asString
-				  , ' applicable changes from ' , selectedCount asString
-				  , ' selected history entries.' ] ].
+			action := data at: #action ifAbsent: [ 'apply' ].
+			selectedCount := data at: #selectedCount ifAbsent: [ 0 ].
+			(data at: #performed ifAbsent: [ false ])
+				ifTrue: [
+						performedCount := data at: #performedCount ifAbsent: [ 0 ].
+						^ 'Performed ' , action , ' for ' , performedCount asString
+						  , ' previewed changes from ' , selectedCount asString
+						  , ' selected history entries.' ]
+				ifFalse: [
+						previewCount := data at: #previewCount ifAbsent: [ 0 ].
+						^ 'Previewed ' , action , ' for ' , previewCount asString
+						  , ' applicable changes from ' , selectedCount asString
+						  , ' selected history entries.' ] ].
 	^ 'Change history operation completed.'
 ]

@@ -38,7 +38,7 @@ MCPToolSearchMethodMetadata >> defaultInputSchema [
 		              (self includeSourceSchemaPropertyWithDescription:
 			               'Whether to include method source code in each result entry.') }
 	              , (self paginationInputPropertiesWithLimitDescription:
-			               'Maximum number of matching methods to return. Use 0 to request counts only.').
+			               'Maximum number of matching methods to return. Use 0 to return no entries.').
 	^ self queryInputSchemaWithProperties: properties
 ]
 

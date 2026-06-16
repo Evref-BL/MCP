@@ -110,7 +110,7 @@ MCPToolSearchClassesTest >> testClassNamesReturnExactClassInfos [
 		             entryNamed: self baseClassName
 		             in: (data at: #classes).
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #totalCount) equals: 2.
+	self assert: (data at: #classes) size equals: 2.
 	self assert: (data at: #classes) size equals: 2.
 	self assert: (baseEntry at: #packageName) equals: 'MCP-Tests'.
 	self assert: (baseEntry at: #tag) equals: 'Internal'.
@@ -135,7 +135,7 @@ MCPToolSearchClassesTest >> testClassNamesSelectExactClassScope [
 	classNames := (data at: #classes) collect: [ :each |
 		              each at: #className ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #totalCount) equals: 2.
+	self assert: (data at: #classes) size equals: 2.
 	self assert: classNames equals: {
 			self baseClassName.
 			self childClassName } asArray
@@ -153,7 +153,7 @@ MCPToolSearchClassesTest >> testDefaultFilterAppliesToClassOnly [
 	data := self dataFrom: result.
 	classNames := (data at: #classes) collect: [ :each |
 		              each at: #className ].
-	self assert: (data at: #totalCount) equals: 1.
+	self assert: (data at: #classes) size equals: 1.
 	self assert: classNames equals: { self baseClassName } asArray
 ]
 
@@ -171,7 +171,7 @@ MCPToolSearchClassesTest >> testDirectionalScopesAreUnionedWithExactClassNames [
 	classNames := (data at: #classes) collect: [ :each |
 		              each at: #className ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #totalCount) equals: 3.
+	self assert: (data at: #classes) size equals: 3.
 	self assert: classNames equals: {
 			self baseClassName.
 			self childClassName.
@@ -187,7 +187,7 @@ MCPToolSearchClassesTest >> testFilterCanMatchSlotNames [
 			          (#instanceSlot -> 'alphaSlot') } asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #totalCount) equals: 1.
+	self assert: (data at: #classes) size equals: 1.
 	self entryNamed: self baseClassName in: (data at: #classes)
 ]
 
@@ -203,7 +203,7 @@ MCPToolSearchClassesTest >> testHierarchyClassNamesReturnRelatedClasses [
 	classNames := (data at: #classes) collect: [ :each |
 		              each at: #className ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #totalCount) equals: 3.
+	self assert: (data at: #classes) size equals: 3.
 	self assert: classNames equals: {
 			self baseClassName.
 			self childClassName.
@@ -222,7 +222,7 @@ MCPToolSearchClassesTest >> testHierarchyClassNamesSelectHierarchyScope [
 	classNames := (data at: #classes) collect: [ :each |
 		              each at: #className ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #totalCount) equals: 3.
+	self assert: (data at: #classes) size equals: 3.
 	self assert: classNames equals: {
 			self baseClassName.
 			self childClassName.
@@ -242,8 +242,8 @@ MCPToolSearchClassesTest >> testImageScopeCanFilterAndPaginate [
 	classNames := (data at: #classes) collect: [ :each |
 		              each at: #className ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #totalCount) equals: 3.
 	self assert: classNames size equals: 2.
+	self deny: (data includesKey: #nextOffset).
 	self assert: classNames equals: {
 			self childClassName.
 			self grandchildClassName } asArray
@@ -261,7 +261,7 @@ MCPToolSearchClassesTest >> testMissingClassScopeReturnsPartialResultsAndWarning
 	classNames := (data at: #classes) collect: [ :each |
 		              each at: #className ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #totalCount) equals: 1.
+	self assert: (data at: #classes) size equals: 1.
 	self assert: classNames equals: { self baseClassName } asArray.
 	self assert: warnings size equals: 1.
 	self assert:
@@ -281,7 +281,7 @@ MCPToolSearchClassesTest >> testMultipleScopesAreUnioned [
 	classNames := (data at: #classes) collect: [ :each |
 		              each at: #className ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #totalCount) equals: 4.
+	self assert: (data at: #classes) size equals: 4.
 	self assert: classNames asSet equals: {
 			self baseClassName.
 			self childClassName.
@@ -300,7 +300,7 @@ MCPToolSearchClassesTest >> testPackageNamesReturnPackageClasses [
 	classNames := (data at: #classes) collect: [ :each |
 		              each at: #className ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #totalCount) equals: 3.
+	self assert: (data at: #classes) size equals: 3.
 	self assert: classNames equals: {
 			self baseClassName.
 			self childClassName.
@@ -318,7 +318,7 @@ MCPToolSearchClassesTest >> testPackageNamesSelectPackageScope [
 	classNames := (data at: #classes) collect: [ :each |
 		              each at: #className ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #totalCount) equals: 3.
+	self assert: (data at: #classes) size equals: 3.
 	self assert: classNames equals: {
 			self baseClassName.
 			self childClassName.
@@ -337,7 +337,7 @@ MCPToolSearchClassesTest >> testParentClassNamesReturnParentsOnly [
 	classNames := (data at: #classes) collect: [ :each |
 		              each at: #className ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #totalCount) equals: 1.
+	self assert: (data at: #classes) size equals: 1.
 	self assert: classNames equals: { self baseClassName } asArray
 ]
 
@@ -351,7 +351,7 @@ MCPToolSearchClassesTest >> testReturnsWarningsAndEmptyResultsWhenClassIsMissing
 	data := self dataFrom: result.
 	warnings := self warningsFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #totalCount) equals: 0.
+	self assert: (data at: #classes) size equals: 0.
 	self assert: (data at: #classes) isEmpty.
 	self assert: warnings size equals: 1.
 	self assert:
@@ -369,7 +369,7 @@ MCPToolSearchClassesTest >> testReturnsWarningsAndEmptyResultsWhenPackageIsMissi
 	data := self dataFrom: result.
 	warnings := self warningsFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #totalCount) equals: 0.
+	self assert: (data at: #classes) size equals: 0.
 	self assert: (data at: #classes) isEmpty.
 	self assert: warnings size equals: 1.
 	self assert:
@@ -388,7 +388,7 @@ MCPToolSearchClassesTest >> testSubclassClassNamesReturnSubclassesOnly [
 	classNames := (data at: #classes) collect: [ :each |
 		              each at: #className ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #totalCount) equals: 1.
+	self assert: (data at: #classes) size equals: 1.
 	self assert: classNames equals: { self grandchildClassName } asArray
 ]
 

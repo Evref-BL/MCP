@@ -142,7 +142,7 @@ MCPTestCoverageResult >> methodDictionaryFor: aCompiledMethod [
 { #category : 'accessing' }
 MCPTestCoverageResult >> methodLimit [
 
-	^ methodLimit ifNil: [ 200 ]
+	^ methodLimit ifNil: [ 50 ]
 ]
 
 { #category : 'private - methods' }

@@ -21,8 +21,9 @@ MCPChangeHistoryListEntriesRequest class >> fromRequest: request tool: aTool [
 
 	^ self new
 		  historyFilePath: (request stringArgumentNamed: 'historyFilePath');
-		  limit:
-			  (request nonNegativeIntegerArgumentNamed: 'limit' default: 100);
+		  limit: (request
+				   nonNegativeIntegerArgumentNamed: 'limit'
+				   default: aTool defaultEntryLimit);
 		  offset:
 			  (request nonNegativeIntegerArgumentNamed: 'offset' default: 0);
 		  newestFirst:
@@ -59,7 +60,7 @@ MCPChangeHistoryListEntriesRequest >> historyFilePath: aString [
 { #category : 'accessing' }
 MCPChangeHistoryListEntriesRequest >> limit [
 
-	^ limit ifNil: [ 100 ]
+	^ limit ifNil: [ 25 ]
 ]
 
 { #category : 'accessing' }
