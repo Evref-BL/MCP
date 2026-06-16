@@ -30,6 +30,12 @@ MCPToolListChangeHistoryEntries >> defaultDescription [
 ]
 
 { #category : 'defaults' }
+MCPToolListChangeHistoryEntries >> defaultEntryLimit [
+
+	^ 25
+]
+
+{ #category : 'defaults' }
 MCPToolListChangeHistoryEntries >> defaultInputSchema [
 
 	^ MCPStructureInputSchema new
@@ -43,12 +49,12 @@ MCPToolListChangeHistoryEntries >> defaultInputSchema [
 				  (self
 					   integerSchemaPropertyNamed: 'limit'
 					   description:
-						   'Maximum number of entries to return. Use 0 to request counts only.'
-					   default: 100).
+						   'Maximum number of entries to return. Use 0 to return no entries.'
+					   default: self defaultEntryLimit).
 				  (self
 					   integerSchemaPropertyNamed: 'offset'
 					   description:
-						   'Zero-based pagination offset after filtering and ordering.'
+						   'Zero-based pagination offset applied after filtering and ordering.'
 					   default: 0).
 				  (self
 					   booleanSchemaPropertyNamed: 'newestFirst'
@@ -57,8 +63,7 @@ MCPToolListChangeHistoryEntries >> defaultInputSchema [
 					   default: false).
 				  (self
 					   booleanSchemaPropertyNamed: 'codeChangesOnly'
-					   description:
-						   'Include only entries that represent code changes.'
+					   description: 'Include only entries that are code changes.'
 					   default: false) };
 		  required: #(  );
 		  additionalProperties: false;
@@ -68,63 +73,27 @@ MCPToolListChangeHistoryEntries >> defaultInputSchema [
 { #category : 'defaults' }
 MCPToolListChangeHistoryEntries >> defaultOutputSchema [
 
-	| dataProperties entriesProperty |
+	| entriesProperty |
 	entriesProperty := self
 		                   changeHistoryEntryArraySchemaNamed: 'entries'
 		                   description:
-		                   'Change history entries returned by tool.'.
-	dataProperties := {
-		                  (self
-			                   schemaPropertyNamed: 'action'
-			                   type: 'string'
-			                   description:
-			                   'The change history action produced result.').
-		                  (self
-			                   schemaPropertyNamed: 'historyFilePath'
-			                   type: 'string'
-			                   description: 'The history file inspected.').
-		                  entriesProperty.
-		                  (self
-			                   integerSchemaPropertyNamed: 'totalCount'
-			                   description:
-			                   'Total matching entry count before pagination.').
-		                  (self
-			                   integerSchemaPropertyNamed: 'returnedCount'
-			                   description:
-			                   'Number of entries returned in this response.').
-		                  (self
-			                   integerSchemaPropertyNamed: 'omittedCount'
-			                   description:
-			                   'Number of matching entries omitted from this response.').
-		                  (self
-			                   integerSchemaPropertyNamed: 'limit'
-			                   description: 'Pagination limit used by tool.').
-		                  (self
-			                   integerSchemaPropertyNamed: 'offset'
-			                   description: 'Pagination offset used by tool.').
-		                  (self
-			                   booleanSchemaPropertyNamed: 'hasMore'
-			                   description:
-			                   'Whether another page is available after this response.').
-		                  (self
-			                   booleanSchemaPropertyNamed: 'newestFirst'
-			                   description:
-			                   'Whether entries ordered newest first.').
-		                  (self
-			                   booleanSchemaPropertyNamed: 'codeChangesOnly'
-			                   description:
-			                   'Whether entries filtered code changes.').
-		                  (self
-			                   schemaPropertyNamed: 'headReference'
-			                   type: 'string'
-			                   description:
-			                   'The history log head reference when known.') }.
+		                   'Change history entries returned by the tool.'.
 	^ self
-		  standardOutputSchemaForDataProperties: dataProperties
-		  required:
-			  #( 'action' 'historyFilePath' 'entries' 'totalCount' 'returnedCount'
-			     'omittedCount' 'limit' 'offset' 'hasMore' 'newestFirst'
-			     'codeChangesOnly' )
+		  standardOutputSchemaForDataProperties: {
+				  (self
+					   schemaPropertyNamed: 'historyFilePath'
+					   type: 'string'
+					   description: 'The history file inspected.').
+				  entriesProperty.
+				  (self
+					   integerSchemaPropertyNamed: 'nextOffset'
+					   description:
+					   'Zero-based offset for the next page. Omitted when this is the final page.').
+				  (self
+					   schemaPropertyNamed: 'headReference'
+					   type: 'string'
+					   description: 'The history log head reference when known.') }
+		  required: #( 'entries' )
 ]
 
 { #category : 'defaults' }

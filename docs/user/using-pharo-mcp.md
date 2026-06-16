@@ -64,6 +64,10 @@ Prefer the least-mutating tool that answers the question. Use query or inspect
 tools before edit tools, preview or diff before export or commit operations,
 and use `image_evaluate` only when no dedicated tool covers the task.
 
+Keep list and search calls compact. Start with the default page or a small
+`limit`, inspect returned entries, and continue only when `nextOffset` is
+present. Do not request large pages just to discover whether more results exist.
+
 For debugger work, discover the `debugging` tool group and inspect the selected
 tool schema before invoking it. Read `debugging.md` before using debug
 sessions, breakpoints, frame-scoped evaluation, or debugger-driven repair.

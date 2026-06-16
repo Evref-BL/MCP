@@ -198,20 +198,20 @@ MCPToolStructuredOutputTest >> testGetMethodReturnsStructuredSuccess [
 { #category : 'tests' }
 MCPToolStructuredOutputTest >> testMethodMetadataSearchReturnsStructuredArrayData [
 
-	| data result selectors |
+	| data methods result selectors |
 	result := self
 		          callToolNamed: 'method_metadata_search'
 		          withArguments:
 		          { (#classNames -> #( 'MCPToolMethodSearchTestTarget' )) }
 			          asDictionary.
 	data := self dataFrom: result.
-	selectors := (data at: #methods) collect: [ :each |
-		             each at: #selector ].
+	methods := data at: #methods.
+	selectors := methods collect: [ :each | each at: #selector ].
 	self
 		assert: ((self structuredContentFrom: result) at: #status)
 		equals: 'ok'.
-	self assert: (data at: #totalCount) equals: selectors size.
-	self assert: ((data at: #methods) allSatisfy: [ :each |
+	self assert: methods notEmpty.
+	self assert: (methods allSatisfy: [ :each |
 				 (each includesKey: #selector) and: [
 					 (each includesKey: #className) and: [
 						 each includesKey: #packageName ] ] ]).
@@ -233,7 +233,6 @@ MCPToolStructuredOutputTest >> testMethodMetadataSearchReturnsStructuredWarnings
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (structured at: #status) equals: 'ok'.
 	self assert: (structured includesKey: #error) not.
-	self assert: (data at: #totalCount) equals: 0.
 	self assert: (data at: #methods) isEmpty.
 	self assert: warnings size equals: 1.
 	self assert:
@@ -646,19 +645,20 @@ MCPToolStructuredOutputTest >> testRunTestsTimeoutReturnsPartialResultsAndUnrunT
 { #category : 'tests' }
 MCPToolStructuredOutputTest >> testSearchClassesReturnsStructuredArrayData [
 
-	| classNames data result |
+	| classNames classes data result |
 	result := self
 		          callToolNamed: 'class_search'
 		          withArguments:
-		          { (#packageNames -> #( 'MCP-Tests' )) } asDictionary.
+		          { (#classNames -> #( 'MCPToolContractsTest' )) }
+			          asDictionary.
 	data := self dataFrom: result.
-	classNames := (data at: #classes) collect: [ :each |
-		              each at: #className ].
+	classes := data at: #classes.
+	classNames := classes collect: [ :each | each at: #className ].
 	self
 		assert: ((self structuredContentFrom: result) at: #status)
 		equals: 'ok'.
-	self assert: (data at: #totalCount) equals: classNames size.
-	self assert: ((data at: #classes) allSatisfy: [ :each |
+	self assert: classes size equals: 1.
+	self assert: (classes allSatisfy: [ :each |
 			 (each includesKey: #className) and: [
 				 each includesKey: #packageName ] ]).
 	self assert: (classNames includes: 'MCPToolContractsTest')
@@ -679,7 +679,6 @@ MCPToolStructuredOutputTest >> testSearchClassesReturnsStructuredWarnings [
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (structured at: #status) equals: 'ok'.
 	self assert: (structured includesKey: #error) not.
-	self assert: (data at: #totalCount) equals: 0.
 	self assert: (data at: #classes) isEmpty.
 	self assert: warnings size equals: 1.
 	self assert:
@@ -691,38 +690,38 @@ MCPToolStructuredOutputTest >> testSearchClassesReturnsStructuredWarnings [
 { #category : 'tests' }
 MCPToolStructuredOutputTest >> testSearchPackagesDefaultsToImageScopeWhenScopePropertiesAreOmitted [
 
-	| data packageNames result |
+	| data packageNames packages result |
 	result := self callToolNamed: 'package_search' withArguments: {
 			          (#projectName -> 'MCP').
 			          (#filterMode -> 'exact') } asDictionary.
 	data := self dataFrom: result.
-	packageNames := (data at: #packages) collect: [ :each |
-		                each at: #packageName ].
+	packages := data at: #packages.
+	packageNames := packages collect: [ :each | each at: #packageName ].
 	self
 		assert: ((self structuredContentFrom: result) at: #status)
 		equals: 'ok'.
-	self assert: (data at: #totalCount) > 0.
+	self assert: packages notEmpty.
 	self assert: (packageNames includes: 'MCP')
 ]
 
 { #category : 'tests' }
 MCPToolStructuredOutputTest >> testSearchPackagesReturnsStructuredArrayData [
 
-	| result data packageNames |
+	| data packageNames packages result |
 	result := self
 		          callToolNamed: 'package_search'
 		          withArguments:
 		          { (#projectNames -> #( 'MCP' )) } asDictionary.
 	data := self dataFrom: result.
-	packageNames := (data at: #packages) collect: [ :each |
-		                each at: #packageName ].
+	packages := data at: #packages.
+	packageNames := packages collect: [ :each | each at: #packageName ].
 	self
 		assert: ((self structuredContentFrom: result) at: #status)
 		equals: 'ok'.
-	self assert: (data at: #totalCount) equals: packageNames size.
-	self assert: ((data at: #packages) allSatisfy: [ :each |
-			 (each includesKey: #packageName) and: [
-				 each includesKey: #projectNames ] ]).
+	self assert: packages notEmpty.
+	self assert: (packages allSatisfy: [ :each |
+				 (each includesKey: #packageName) and: [
+					 each includesKey: #projectNames ] ]).
 	self assert: (packageNames includes: 'MCP')
 ]
 

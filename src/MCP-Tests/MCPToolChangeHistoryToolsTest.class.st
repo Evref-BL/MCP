@@ -74,9 +74,8 @@ MCPToolChangeHistoryToolsTest >> testListChangeHistoryEntriesReturnsEntries [
 	data := self toolNamed: 'history_entry_list' dataFromArguments: {
 			        (#limit -> 3).
 			        (#newestFirst -> true) } asDictionary.
-	self assert: (data at: #action) equals: 'listEntries'.
-	self assert: (data includesKey: #totalCount).
-	self assert: (data includesKey: #entries)
+	self assert: (data includesKey: #entries).
+	self assert: (data at: #entries) size <= 3
 ]
 
 { #category : 'tests' }

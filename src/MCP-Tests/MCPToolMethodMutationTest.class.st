@@ -525,6 +525,10 @@ MCPToolMethodMutationTest >> testCollectionStyleCritiquesProvideAutomaticChanges
 			           'nilOnlyConditionalProbe: value ^ value ifNil: [ nil ] ifNotNil: [ :present | present asString ]'.
 			           MCPNilOnlyConditionalRule }.
 		           {
+			           #dictionaryAtIfPresentProbe:.
+			           'dictionaryAtIfPresentProbe: dictionary | result | result := OrderedCollection new. (dictionary at: #name ifAbsent: [ nil ]) ifNotNil: [ :value | result add: value ]. ^ result'.
+			           MCPDictionaryAtIfPresentRule }.
+		           {
 			           #selectSizeProbe:.
 			           'selectSizeProbe: collection ^ (collection select: [ :each | each odd ]) size'.
 			           MCPSelectSizeCountRule }.

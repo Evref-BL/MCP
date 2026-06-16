@@ -106,7 +106,7 @@ MCPToolMethodLookupTest >> testMethodSourceSearchSearchesSourceText [
 				          (#filter -> 'gamma value') } asDictionary.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	data := self dataFrom: result.
-	self assert: (data at: #totalCount) equals: 1.
+	self assert: (data at: #methods) size equals: 1.
 	self
 		assert: ((data at: #methods) first at: #selector)
 		equals: 'gammaUtility'.
@@ -122,7 +122,7 @@ MCPToolMethodLookupTest >> testSearchClassReferencesReturnsClassBindingReference
 		        dataFromArguments:
 		        { (#className -> 'MCPToolMethodSearchReferenceTarget') }
 			        asDictionary.
-	self assert: (data at: #totalCount) equals: 2.
+	self assert: (data at: #methods) size equals: 2.
 	self
 		entryForReference:
 		'MCPToolMethodSearchReferenceFixture>>referenceExtensionTarget'
@@ -162,7 +162,7 @@ MCPToolMethodLookupTest >> testSearchEquivalentMethodsReturnsEquivalentAstMatche
 					        (#classNames -> { subclassName }).
 					        (#className -> 'MCPToolMethodSearchReferenceFixture').
 					        (#selector -> 'sharedTarget') } asDictionary.
-		self assert: (data at: #totalCount) equals: 1.
+		self assert: (data at: #methods) size equals: 1.
 		self
 			entryForReference: subclassName , '>>sharedTarget'
 			in: (data at: #methods) ] ensure: [
@@ -178,7 +178,7 @@ MCPToolMethodLookupTest >> testSearchMethodImplementorsReturnsExactSelectorMatch
 		        dataFromArguments: {
 				        (#selector -> 'alphaNeedleSelector').
 				        (#classNames -> { self targetClassName }) } asDictionary.
-	self assert: (data at: #totalCount) equals: 1.
+	self assert: (data at: #methods) size equals: 1.
 	self
 		entryForReference: self targetClassName , '>>alphaNeedleSelector'
 		in: (data at: #methods)
@@ -192,7 +192,7 @@ MCPToolMethodLookupTest >> testSearchMethodSendersReturnsSelectorReferences [
 		        toolNamed: 'method_sender_search'
 		        dataFromArguments:
 		        { (#selector -> 'sharedTarget') } asDictionary.
-	self assert: (data at: #totalCount) equals: 2.
+	self assert: (data at: #methods) size equals: 2.
 	self
 		entryForReference:
 		'MCPToolMethodSearchReferenceFixture>>instanceSendShared'
@@ -215,7 +215,7 @@ MCPToolMethodLookupTest >> testSearchVariableReferencesReturnsVariableReferences
 				        (#classNames
 				         -> #( 'MCPToolMethodSearchVariableReferenceTarget' )) }
 				        asDictionary.
-	self assert: (data at: #totalCount) equals: 2.
+	self assert: (data at: #methods) size equals: 2.
 	self
 		entryForReference:
 		'MCPToolMethodSearchVariableReferenceTarget>>readTrackedSlot'

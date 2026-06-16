@@ -36,7 +36,7 @@ MCPToolSearchRepositories >> defaultInputSchema [
 		              (self caseSensitiveSchemaPropertyWithDescription:
 			               'Whether repository text matching is case-sensitive.') }
 	              , (self paginationInputPropertiesWithLimitDescription:
-			               'Maximum number of matching repositories to return. Use 0 to request counts only.').
+			               'Maximum number of matching repositories to return. Use 0 to return no entries.').
 	^ self queryInputSchemaWithProperties: properties
 ]
 
@@ -50,6 +50,12 @@ MCPToolSearchRepositories >> defaultOutputSchema [
 		  'The repository entries returned for the requested page.'
 		  entrySchema: self repositoryEntrySchema
 		  itemNounPhrase: 'repository entries'
+]
+
+{ #category : 'defaults' }
+MCPToolSearchRepositories >> defaultPageLimit [
+
+	^ 10
 ]
 
 { #category : 'defaults' }

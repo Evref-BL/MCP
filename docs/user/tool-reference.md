@@ -18,20 +18,17 @@ error: structured error payload
 
 `data` is present on success. `error` is present on failure.
 
-## Compact Exploration
+## Compact Paging
 
-High-cardinality tools return bounded pages by default. Start with a small
-`limit`, inspect summaries and references, then request the next page or a
-detail tool only when needed. Paged result data reports `totalCount`,
-`returnedCount`, `omittedCount`, `limit`, `offset`, and `hasMore`.
+List and search tools are optimized for low token usage. Broad tools return a
+small page by default and put only the entry array in `data`. When another page
+exists, `data` includes `nextOffset`; call the same tool again with that
+`offset` to continue.
 
-Prefer summary-first calls before raw detail: search methods/classes/packages
-with small limits, then call `method_get` or `class_get` for the selected
-object; list history entries with `history_entry_list`, then apply or revert
-only selected entry references; inspect debugger state with small stack and
-variable limits, then expand one variable with `debug_variable_get`; keep
-coverage and repository-diff details bounded, and follow returned references
-instead of requesting every raw detail at once.
+Do not expect `totalCount`, echoed `limit`, echoed `offset`, `returnedCount`,
+`omittedCount`, or `hasMore` in paged tool results. Use the returned array size
+for the current page and follow `nextOffset` when present. Request larger pages
+only when the next step truly needs more entries.
 
 ## Tool Catalog
 

@@ -43,8 +43,9 @@ MCPMethodSearchRequest class >> fromRequest: request tool: aTool [
 			  (request booleanArgumentNamed: 'caseSensitive' default: true);
 		  includeSource:
 			  (request booleanArgumentNamed: 'includeSource' default: false);
-		  limit:
-			  (request nonNegativeIntegerArgumentNamed: 'limit' default: 100);
+		  limit: (request
+				   nonNegativeIntegerArgumentNamed: 'limit'
+				   default: aTool defaultPageLimit);
 		  offset:
 			  (request nonNegativeIntegerArgumentNamed: 'offset' default: 0);
 		  yourself

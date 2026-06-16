@@ -232,24 +232,12 @@ MCPToolChangeHistoryTest >> testListEntriesReturnsGranularCodeChangeData [
 			self recordMethodAdditionOn: class.
 			result := self callToolWith: {
 					          (#action -> 'listEntries').
-					          (#limit -> 1).
+					          (#limit -> 5).
 					          (#newestFirst -> true).
 					          (#codeChangesOnly -> true) } asDictionary.
 			data := self dataFrom: result.
 			entries := data at: #entries.
 			self deny: (result at: #isError ifAbsent: [ false ]).
-			self assert: (data at: #action) equals: 'listEntries'.
-			self assert: (data at: #limit) equals: 1.
-			self assert: (data at: #offset) equals: 0.
-			self assert: (data at: #codeChangesOnly).
-			self assert: (data at: #totalCount) >= entries size.
-			self assert: (data at: #returnedCount) equals: entries size.
-			self
-				assert: (data at: #omittedCount)
-				equals: (data at: #totalCount) - entries size.
-			self
-				assert: (data at: #hasMore)
-				equals: (data at: #totalCount) > entries size.
 			self assert: entries notEmpty.
 			firstEntry := entries first.
 			self assert: (firstEntry at: #isCodeChange).
@@ -261,7 +249,7 @@ MCPToolChangeHistoryTest >> testListEntriesReturnsGranularCodeChangeData [
 { #category : 'tests' }
 MCPToolChangeHistoryTest >> testListEntriesSupportsHistoryFilePath [
 
-	| data entries files path result filesResult |
+	| data entries files filesResult path result |
 	filesResult := self callToolWith: {
 			               (#action -> 'listFiles').
 			               (#includeEntryCounts -> false) } asDictionary.
@@ -275,8 +263,7 @@ MCPToolChangeHistoryTest >> testListEntriesSupportsHistoryFilePath [
 	entries := data at: #entries.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #historyFilePath) equals: path.
-	self assert: entries size <= 1.
-	self assert: (data at: #totalCount) >= entries size
+	self assert: entries size <= 1
 ]
 
 { #category : 'tests' }

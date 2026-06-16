@@ -37,8 +37,9 @@ MCPSearchPackagesRequest class >> fromRequest: request tool: aTool [
 				   fieldNames: aTool packageFilterFieldNames);
 		  caseSensitive:
 			  (request booleanArgumentNamed: 'caseSensitive' default: true);
-		  limit:
-			  (request nonNegativeIntegerArgumentNamed: 'limit' default: 100);
+		  limit: (request
+				   nonNegativeIntegerArgumentNamed: 'limit'
+				   default: aTool defaultPageLimit);
 		  offset:
 			  (request nonNegativeIntegerArgumentNamed: 'offset' default: 0);
 		  yourself

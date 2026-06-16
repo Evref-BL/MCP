@@ -12,29 +12,26 @@ Class {
 { #category : 'execution' }
 MCPListChangeHistoryEntriesCommand >> execute [
 
-	| logAndPath log path pairs page entryInfos headReference |
+	| entryInfos headReference log logAndPath page path resultPage |
 	logAndPath := self logAndPathForRequest.
 	log := logAndPath first.
 	path := logAndPath second.
-	pairs := self matchingEntryPairsFrom: log.
 	page := self
-		        pageFrom: pairs
+		        pageFrom: (self matchingEntryPairsFrom: log)
 		        offset: request offset
 		        limit: request limit.
-	entryInfos := page collect: [ :pair |
+	entryInfos := page entries collect: [ :pair |
 			              MCPChangeHistoryEntryInfo
 				              fromEntry: pair second
 				              index: pair first
 				              log: log ].
+	resultPage := MCPPaginationResult
+		              entries: entryInfos
+		              nextOffset: page nextOffset.
 	headReference := self referenceStringFor: log headReference.
 	^ MCPChangeHistoryListEntriesResult
 		  historyFilePath: path
-		  entries: entryInfos
-		  totalCount: pairs size
-		  limit: request limit
-		  offset: request offset
-		  newestFirst: request newestFirst
-		  codeChangesOnly: request codeChangesOnly
+		  page: resultPage
 		  headReference: headReference
 ]
 
@@ -75,10 +72,8 @@ MCPListChangeHistoryEntriesCommand >> matchingEntryPairsFrom: aLog [
 { #category : 'private' }
 MCPListChangeHistoryEntriesCommand >> pageFrom: entryPairs offset: anOffset limit: aLimit [
 
-	| start stop |
-	aLimit = 0 ifTrue: [ ^ #(  ) ].
-	anOffset >= entryPairs size ifTrue: [ ^ #(  ) ].
-	start := anOffset + 1.
-	stop := anOffset + aLimit min: entryPairs size.
-	^ entryPairs copyFrom: start to: stop
+	^ MCPPaginationResult
+		  fromEntries: entryPairs
+		  limit: aLimit
+		  offset: anOffset
 ]

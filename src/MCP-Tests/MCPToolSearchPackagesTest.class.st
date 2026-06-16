@@ -84,7 +84,7 @@ MCPToolSearchPackagesTest >> testImageScopeCanFilterPackagesByTagTarget [
 			packageNames := (data at: #packages) collect: [ :each |
 				                each at: #packageName ].
 			self deny: (result at: #isError ifAbsent: [ false ]).
-			self assert: (data at: #totalCount) equals: 1.
+			self assert: (data at: #packages) size equals: 1.
 			self
 				assert: packageNames
 				equals: #( 'MCP-Tests-SearchPackages-Temp-Beta' ) ]
@@ -93,7 +93,7 @@ MCPToolSearchPackagesTest >> testImageScopeCanFilterPackagesByTagTarget [
 { #category : 'tests' }
 MCPToolSearchPackagesTest >> testImageScopeCanPaginateFilteredPackages [
 
-	| data packageNames result expected |
+	| data expected packageNames result |
 	result := self callToolWith: {
 			          (#packageName -> 'MCP-').
 			          (#filterMode -> 'prefix').
@@ -108,8 +108,8 @@ MCPToolSearchPackagesTest >> testImageScopeCanPaginateFilteredPackages [
 		             thenCollect: [ :each | each name asString ]) asArray
 		            sort.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #totalCount) equals: expected size.
 	self assert: packageNames size equals: 2.
+	self assert: (data at: #nextOffset) equals: 3.
 	self
 		assert: packageNames
 		equals: (expected copyFrom: 2 to: 3) asArray
@@ -127,21 +127,22 @@ MCPToolSearchPackagesTest >> testImageScopeReturnsExactPackageNameMatch [
 		                each at: #packageName ].
 
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #totalCount) equals: 1.
+	self assert: (data at: #packages) size equals: 1.
 	self assert: packageNames equals: #( 'MCP-Tests' )
 ]
 
 { #category : 'tests' }
 MCPToolSearchPackagesTest >> testImageScopeReturnsStructuredPackages [
 
-	| data entry result |
+	| data entry packages result |
 	result := self callToolWith: {
 			          (#projectName -> 'MCP').
 			          (#filterMode -> 'exact') } asDictionary.
 	data := self dataFrom: result.
-	entry := self entryNamed: 'MCP' in: (data at: #packages).
+	packages := data at: #packages.
+	entry := self entryNamed: 'MCP' in: packages.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #totalCount) > 0.
+	self assert: packages notEmpty.
 	self assert: (entry at: #projectNames) equals: #( 'MCP' ).
 	self assert: ((entry at: #tagNames) includes: 'Tools').
 	self deny: (entry includesKey: #definedClassCount).
@@ -159,7 +160,7 @@ MCPToolSearchPackagesTest >> testPackageNamesSelectExactPackages [
 	packageNames := (data at: #packages) collect: [ :each |
 		                each at: #packageName ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #totalCount) equals: 2.
+	self assert: (data at: #packages) size equals: 2.
 	self assert: packageNames equals: #( 'MCP' 'MCP-Tests' )
 ]
 
@@ -193,7 +194,7 @@ MCPToolSearchPackagesTest >> testProjectNamesSearchPackagesForNamedProject [
 		                each at: #packageName ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self
-		assert: (data at: #totalCount)
+		assert: (data at: #packages) size
 		equals: self mcpProjectPackageNames size.
 	self assert: packageNames equals: self mcpProjectPackageNames
 ]
@@ -209,7 +210,7 @@ MCPToolSearchPackagesTest >> testProjectNamesSelectProjectScope [
 		                each at: #packageName ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self
-		assert: (data at: #totalCount)
+		assert: (data at: #packages) size
 		equals: self mcpProjectPackageNames size.
 	self assert: packageNames equals: self mcpProjectPackageNames
 ]

@@ -1589,17 +1589,17 @@ MCPToolContractsTest >> testMethodMetadataSearchHasAccurateNameAndSchema [
 { #category : 'tests' }
 MCPToolContractsTest >> testMethodMetadataSearchListsMethodsForExistingClassScope [
 
-	| data result selectors |
+	| data methods result selectors |
 	result := self
 		          callToolNamed: 'method_metadata_search'
 		          withArguments:
 		          { (#classNames -> #( 'MCPToolMethodSearchTestTarget' )) }
 			          asDictionary.
 	data := (result at: #structuredContent) at: #data.
-	selectors := (data at: #methods) collect: [ :each |
-		             each at: #selector ].
+	methods := data at: #methods.
+	selectors := methods collect: [ :each | each at: #selector ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #totalCount) equals: selectors size.
+	self assert: methods notEmpty.
 	self assert: (selectors includes: 'alphaNeedleSelector').
 	self assert: (selectors includes: 'classNeedleSelector')
 ]
@@ -1620,7 +1620,6 @@ MCPToolContractsTest >> testMethodMetadataSearchReturnsWarningResultForMissingCl
 	self
 		assert: ((self structuredContentFrom: result) at: #status)
 		equals: 'ok'.
-	self assert: (data at: #totalCount) equals: 0.
 	self assert: (data at: #methods) isEmpty.
 	self assert: warnings size equals: 1.
 	self assert: (warnings first includesSubstring:
@@ -1909,7 +1908,7 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 		assert:
 			((self inputPropertyNamed: 'limit' inTool: searchClassesTool)
 				 extraProperties at: #default)
-		equals: 100.
+		equals: 25.
 	self
 		assert:
 			((self inputPropertyNamed: 'filterMode' inTool: methodMetadataTool)
@@ -2635,16 +2634,15 @@ MCPToolContractsTest >> testSearchClassesHasAccurateNameAndSchema [
 { #category : 'tests' }
 MCPToolContractsTest >> testSearchClassesListsClassesForExistingPackage [
 
-	| classNames data result |
-	result := self
-		          callToolNamed: 'class_search'
-		          withArguments:
-		          { (#packageNames -> #( 'MCP-Tests' )) } asDictionary.
+	| classNames classes data result |
+	result := self callToolNamed: 'class_search' withArguments: {
+			          (#packageNames -> #( 'MCP-Tests' )).
+			          (#limit -> 100) } asDictionary.
 	data := (result at: #structuredContent) at: #data.
-	classNames := (data at: #classes) collect: [ :each |
-		              each at: #className ].
+	classes := data at: #classes.
+	classNames := classes collect: [ :each | each at: #className ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #totalCount) > 0.
+	self assert: classes notEmpty.
 	self assert: (classNames includes: 'MCPToolMethodMutationTest')
 ]
 
@@ -2663,7 +2661,6 @@ MCPToolContractsTest >> testSearchClassesReturnsWarningResultForMissingPackage [
 	self
 		assert: ((self structuredContentFrom: result) at: #status)
 		equals: 'ok'.
-	self assert: (data at: #totalCount) equals: 0.
 	self assert: (data at: #classes) isEmpty.
 	self assert: warnings size equals: 1.
 	self assert:
@@ -2690,16 +2687,16 @@ MCPToolContractsTest >> testSearchPackagesHasAccurateNameAndSchema [
 { #category : 'tests' }
 MCPToolContractsTest >> testSearchPackagesListsPackagesForExistingProject [
 
-	| packageNames data result |
+	| data packageNames packages result |
 	result := self
 		          callToolNamed: 'package_search'
 		          withArguments:
 		          { (#projectNames -> #( 'MCP' )) } asDictionary.
 	data := (result at: #structuredContent) at: #data.
-	packageNames := (data at: #packages) collect: [ :each |
-		                each at: #packageName ].
+	packages := data at: #packages.
+	packageNames := packages collect: [ :each | each at: #packageName ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #totalCount) equals: packageNames size.
+	self assert: packages notEmpty.
 	self assert: (packageNames includes: 'MCP').
 	self assert: (packageNames includes: 'MCP-Tests')
 ]

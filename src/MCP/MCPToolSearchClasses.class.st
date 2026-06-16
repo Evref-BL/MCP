@@ -122,7 +122,7 @@ MCPToolSearchClasses >> defaultInputSchema [
 		              (self caseSensitiveSchemaPropertyWithDescription:
 			               'Whether class metadata matching is case-sensitive.') }
 	              , (self paginationInputPropertiesWithLimitDescription:
-			               'Maximum number of matching classes to return. Use 0 to request counts only.').
+			               'Maximum number of matching classes to return. Use 0 to return no entries.').
 	^ self queryInputSchemaWithProperties: properties
 ]
 

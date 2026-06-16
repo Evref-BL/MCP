@@ -34,7 +34,7 @@ MCPToolSearchPackages >> defaultInputSchema [
 		              (self caseSensitiveSchemaPropertyWithDescription:
 			               'Whether package metadata matching is case-sensitive.') }
 	              , (self paginationInputPropertiesWithLimitDescription:
-			               'Maximum number of matching packages to return. Use 0 to request counts only.').
+			               'Maximum number of matching packages to return. Use 0 to return no entries.').
 	^ self queryInputSchemaWithProperties: properties
 ]
 

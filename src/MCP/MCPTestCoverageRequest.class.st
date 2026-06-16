@@ -128,7 +128,7 @@ MCPTestCoverageRequest >> initializeScopeQuery: aScopeQuery includeCoveredMethod
 { #category : 'accessing' }
 MCPTestCoverageRequest >> methodLimit [
 
-	^ methodLimit ifNil: [ 200 ]
+	^ methodLimit ifNil: [ 50 ]
 ]
 
 { #category : 'accessing' }

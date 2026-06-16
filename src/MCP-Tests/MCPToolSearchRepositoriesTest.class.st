@@ -49,15 +49,15 @@ MCPToolSearchRepositoriesTest >> testCanFilterByMissingStateAndDirectory [
 				missing.
 				present }
 		do: [
-			result := self callToolWith: {
-					          (#directoryPaths -> { missingLocation pathString }).
-					          (#isMissing -> true) } asDictionary.
-			data := self dataFrom: result.
-			repositoryNames := (data at: #repositories) collect: [ :each |
-				                   each at: #name ].
-			self deny: (result at: #isError ifAbsent: [ false ]).
-			self assert: (data at: #totalCount) equals: 1.
-			self assert: repositoryNames equals: #( 'MCP Missing Repository' ) ]
+				result := self callToolWith: {
+						          (#directoryPaths -> { missingLocation pathString }).
+						          (#isMissing -> true) } asDictionary.
+				data := self dataFrom: result.
+				repositoryNames := (data at: #repositories) collect: [ :each |
+					                   each at: #name ].
+				self deny: (result at: #isError ifAbsent: [ false ]).
+				self assert: (data at: #repositories) size equals: 1.
+				self assert: repositoryNames equals: #( 'MCP Missing Repository' ) ]
 ]
 
 { #category : 'tests' }
@@ -77,15 +77,15 @@ MCPToolSearchRepositoriesTest >> testCanFilterByPackageNameAndModifiedState [
 				alpha.
 				beta }
 		do: [
-			result := self callToolWith: {
-					          (#packageNames -> #( 'MCP' )).
-					          (#isModified -> true) } asDictionary.
-			data := self dataFrom: result.
-			repositoryNames := (data at: #repositories) collect: [ :each |
-				                   each at: #name ].
-			self deny: (result at: #isError ifAbsent: [ false ]).
-			self assert: (data at: #totalCount) equals: 1.
-			self assert: repositoryNames equals: #( 'MCP Alpha Repository' ) ]
+				result := self callToolWith: {
+						          (#packageNames -> #( 'MCP' )).
+						          (#isModified -> true) } asDictionary.
+				data := self dataFrom: result.
+				repositoryNames := (data at: #repositories) collect: [ :each |
+					                   each at: #name ].
+				self deny: (result at: #isError ifAbsent: [ false ]).
+				self assert: (data at: #repositories) size equals: 1.
+				self assert: repositoryNames equals: #( 'MCP Alpha Repository' ) ]
 ]
 
 { #category : 'tests' }
@@ -149,31 +149,31 @@ MCPToolSearchRepositoriesTest >> testListsRegisteredRepositoriesWithStructuredDa
 				alpha.
 				beta }
 		do: [
-			result := self callToolWith: Dictionary new.
-			data := self dataFrom: result.
-			self deny: (result at: #isError ifAbsent: [ false ]).
-			self assert: (data at: #totalCount) equals: 2.
-			entry := self
-				         entryNamed: 'MCP Alpha Repository'
-				         in: (data at: #repositories).
-			self assert: (entry at: #className) equals: 'IceLibgitRepository'.
-			self
-				assert: (entry at: #location)
-				equals: FileLocator imageDirectory pathString.
-			self assert: (entry at: #isMissing) equals: false.
-			self assert: (entry at: #isModified) equals: true.
-			self
-				assert: (entry at: #packageNames)
-				equals: #( 'MCP' 'MCP-Tests' ).
-			self assert: (entry includesKey: #headClassName).
-			self assert: (entry includesKey: #headCommitId).
-			self assert: (entry includesKey: #isDetachedHead).
-			self assert: (entry includesKey: #modifiedPackageNames).
-			self assert: (entry includesKey: #remotes).
-			self assert: (entry includesKey: #upstreamRemoteName).
-			self assert: (entry includesKey: #upstreamBranchName).
-			self assert: (entry includesKey: #upstreamRemoteUrl).
-			self deny: (entry includesKey: #remoteNames) ]
+				result := self callToolWith: Dictionary new.
+				data := self dataFrom: result.
+				self deny: (result at: #isError ifAbsent: [ false ]).
+				self assert: (data at: #repositories) size equals: 2.
+				entry := self
+					         entryNamed: 'MCP Alpha Repository'
+					         in: (data at: #repositories).
+				self assert: (entry at: #className) equals: 'IceLibgitRepository'.
+				self
+					assert: (entry at: #location)
+					equals: FileLocator imageDirectory pathString.
+				self assert: (entry at: #isMissing) equals: false.
+				self assert: (entry at: #isModified) equals: true.
+				self
+					assert: (entry at: #packageNames)
+					equals: #( 'MCP' 'MCP-Tests' ).
+				self assert: (entry includesKey: #headClassName).
+				self assert: (entry includesKey: #headCommitId).
+				self assert: (entry includesKey: #isDetachedHead).
+				self assert: (entry includesKey: #modifiedPackageNames).
+				self assert: (entry includesKey: #remotes).
+				self assert: (entry includesKey: #upstreamRemoteName).
+				self assert: (entry includesKey: #upstreamBranchName).
+				self assert: (entry includesKey: #upstreamRemoteUrl).
+				self deny: (entry includesKey: #remoteNames) ]
 ]
 
 { #category : 'tests' }
