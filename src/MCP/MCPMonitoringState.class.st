@@ -104,6 +104,13 @@ MCPMonitoringState >> clearLogs [
 	memoryLogger ifNotNil: [ memoryLogger clearLog ]
 ]
 
+{ #category : 'private - defaults' }
+MCPMonitoringState >> defaultOutputBudgetBytes [
+	"32 KiB is about 8k tokens with the monitoring estimate of four bytes per token. It is only the default trace threshold; callers can override it with outputBudgetBytes:."
+
+	^ 32 * 1024
+]
+
 { #category : 'activation' }
 MCPMonitoringState >> disable [
 
@@ -237,7 +244,7 @@ MCPMonitoringState >> initialize [
 	maxRecentCalls := 100.
 	outlierFactor := 3.
 	minimumOutlierMilliseconds := 250.
-	outputBudgetBytes := 32768
+	outputBudgetBytes := self defaultOutputBudgetBytes
 ]
 
 { #category : 'private - tracing' }
@@ -399,7 +406,7 @@ MCPMonitoringState >> outlierFactor: aNumber [
 { #category : 'accessing' }
 MCPMonitoringState >> outputBudgetBytes [
 
-	^ outputBudgetBytes ifNil: [ 32768 ]
+	^ outputBudgetBytes ifNil: [ self defaultOutputBudgetBytes ]
 ]
 
 { #category : 'accessing' }

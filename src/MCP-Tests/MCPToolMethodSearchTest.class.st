@@ -734,6 +734,25 @@ MCPToolMethodSearchTest >> testScopeArgumentIsRejected [
 ]
 
 { #category : 'tests' }
+MCPToolMethodSearchTest >> testSearchResultsReportPaginationMetadata [
+
+	| data result |
+	result := self callToolWith: {
+			          (#classNames -> { self targetClassName }).
+			          (#limit -> 2).
+			          (#offset -> 1) } asDictionary.
+	data := self dataFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #totalCount) equals: 5.
+	self assert: (data at: #returnedCount) equals: 2.
+	self assert: (data at: #omittedCount) equals: 3.
+	self assert: (data at: #limit) equals: 2.
+	self assert: (data at: #offset) equals: 1.
+	self assert: (data at: #hasMore).
+	self assert: (data at: #methods) size equals: 2
+]
+
+{ #category : 'tests' }
 MCPToolMethodSearchTest >> testSelectorReferenceCanIncludeFormattedSource [
 
 	| data method result |

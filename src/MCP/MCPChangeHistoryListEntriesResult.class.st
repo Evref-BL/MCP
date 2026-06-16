@@ -41,11 +41,13 @@ MCPChangeHistoryListEntriesResult >> asDictionary [
 		  (#action -> 'listEntries').
 		  (#historyFilePath -> historyFilePath).
 		  (#entries
-		   ->
-		   ((self entries collect: [ :each | each asDictionary ]) as: Array)).
+		   -> (self entries collect: [ :each | each asDictionary ]) asArray).
 		  (#totalCount -> totalCount).
+		  (#returnedCount -> self returnedCount).
+		  (#omittedCount -> self omittedCount).
 		  (#limit -> limit).
 		  (#offset -> offset).
+		  (#hasMore -> self hasMore).
 		  (#newestFirst -> newestFirst).
 		  (#codeChangesOnly -> codeChangesOnly).
 		  (#headReference -> headReference) } asDictionary
@@ -67,6 +69,12 @@ MCPChangeHistoryListEntriesResult >> entries [
 MCPChangeHistoryListEntriesResult >> entries: aCollection [
 
 	entries := aCollection ifNil: [ #(  ) ]
+]
+
+{ #category : 'testing' }
+MCPChangeHistoryListEntriesResult >> hasMore [
+
+	^ offset + self returnedCount < totalCount
 ]
 
 { #category : 'accessing' }
@@ -97,6 +105,18 @@ MCPChangeHistoryListEntriesResult >> newestFirst: aBoolean [
 MCPChangeHistoryListEntriesResult >> offset: anInteger [
 
 	offset := anInteger
+]
+
+{ #category : 'accessing' }
+MCPChangeHistoryListEntriesResult >> omittedCount [
+
+	^ totalCount - self returnedCount
+]
+
+{ #category : 'accessing' }
+MCPChangeHistoryListEntriesResult >> returnedCount [
+
+	^ self entries size
 ]
 
 { #category : 'accessing' }

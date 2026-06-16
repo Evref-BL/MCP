@@ -68,43 +68,63 @@ MCPToolListChangeHistoryEntries >> defaultInputSchema [
 { #category : 'defaults' }
 MCPToolListChangeHistoryEntries >> defaultOutputSchema [
 
-	| entriesProperty |
+	| dataProperties entriesProperty |
 	entriesProperty := self
 		                   changeHistoryEntryArraySchemaNamed: 'entries'
 		                   description:
-		                   'Change history entries returned by this tool.'.
+		                   'Change history entries returned by tool.'.
+	dataProperties := {
+		                  (self
+			                   schemaPropertyNamed: 'action'
+			                   type: 'string'
+			                   description:
+			                   'The change history action produced result.').
+		                  (self
+			                   schemaPropertyNamed: 'historyFilePath'
+			                   type: 'string'
+			                   description: 'The history file inspected.').
+		                  entriesProperty.
+		                  (self
+			                   integerSchemaPropertyNamed: 'totalCount'
+			                   description:
+			                   'Total matching entry count before pagination.').
+		                  (self
+			                   integerSchemaPropertyNamed: 'returnedCount'
+			                   description:
+			                   'Number of entries returned in this response.').
+		                  (self
+			                   integerSchemaPropertyNamed: 'omittedCount'
+			                   description:
+			                   'Number of matching entries omitted from this response.').
+		                  (self
+			                   integerSchemaPropertyNamed: 'limit'
+			                   description: 'Pagination limit used by tool.').
+		                  (self
+			                   integerSchemaPropertyNamed: 'offset'
+			                   description: 'Pagination offset used by tool.').
+		                  (self
+			                   booleanSchemaPropertyNamed: 'hasMore'
+			                   description:
+			                   'Whether another page is available after this response.').
+		                  (self
+			                   booleanSchemaPropertyNamed: 'newestFirst'
+			                   description:
+			                   'Whether entries ordered newest first.').
+		                  (self
+			                   booleanSchemaPropertyNamed: 'codeChangesOnly'
+			                   description:
+			                   'Whether entries filtered code changes.').
+		                  (self
+			                   schemaPropertyNamed: 'headReference'
+			                   type: 'string'
+			                   description:
+			                   'The history log head reference when known.') }.
 	^ self
-		  standardOutputSchemaForDataProperties: {
-				  (self
-					   schemaPropertyNamed: 'action'
-					   type: 'string'
-					   description:
-					   'The change history action that produced this result.').
-				  (self
-					   schemaPropertyNamed: 'historyFilePath'
-					   type: 'string'
-					   description: 'The history file inspected.').
-				  entriesProperty.
-				  (self
-					   integerSchemaPropertyNamed: 'totalCount'
-					   description: 'Total matching entry count before pagination.').
-				  (self
-					   integerSchemaPropertyNamed: 'limit'
-					   description: 'Pagination limit used by this tool.').
-				  (self
-					   integerSchemaPropertyNamed: 'offset'
-					   description: 'Pagination offset used by this tool.').
-				  (self
-					   booleanSchemaPropertyNamed: 'newestFirst'
-					   description: 'Whether entries were ordered newest first.').
-				  (self
-					   booleanSchemaPropertyNamed: 'codeChangesOnly'
-					   description: 'Whether entries were filtered to code changes.').
-				  (self
-					   schemaPropertyNamed: 'headReference'
-					   type: 'string'
-					   description: 'The history log head reference when known.') }
-		  required: #( 'action' )
+		  standardOutputSchemaForDataProperties: dataProperties
+		  required:
+			  #( 'action' 'historyFilePath' 'entries' 'totalCount' 'returnedCount'
+			     'omittedCount' 'limit' 'offset' 'hasMore' 'newestFirst'
+			     'codeChangesOnly' )
 ]
 
 { #category : 'defaults' }

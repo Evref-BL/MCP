@@ -332,22 +332,21 @@ MCPToolSearch >> matcherForPattern: aPattern mode: aMode caseSensitive: aBoolean
 { #category : 'private - schema' }
 MCPToolSearch >> minimalPagedQueryOutputSchemaForEntriesPropertyNamed: entriesPropertyName entriesDescription: entriesDescription entrySchema: entrySchema itemNounPhrase: itemNounPhrase [
 
-	| entriesProperty |
+	| dataProperties entriesProperty requiredProperties |
 	entriesProperty := self
 		                   schemaPropertyNamed: entriesPropertyName
 		                   type: 'array'
 		                   description: entriesDescription.
 	entriesProperty items: entrySchema.
+	dataProperties := (self
+		                   paginationOutputSchemaPropertiesForItemNounPhrase:
+		                   itemNounPhrase) copyWith: entriesProperty.
+	requiredProperties := #( 'totalCount' 'returnedCount' 'omittedCount'
+	                         'limit' 'offset' 'hasMore' ) copyWith:
+		                      entriesPropertyName.
 	^ self
-		  standardOutputSchemaForDataProperties: {
-				  (self
-					   integerSchemaPropertyNamed: 'totalCount'
-					   description: 'The total number of matching ' , itemNounPhrase
-						   , ' before pagination.').
-				  entriesProperty }
-		  required: {
-				  'totalCount'.
-				  entriesPropertyName }
+		  standardOutputSchemaForDataProperties: dataProperties
+		  required: requiredProperties
 ]
 
 { #category : 'private - filtering' }
@@ -423,6 +422,35 @@ MCPToolSearch >> paginationInputPropertiesWithLimitDescription: limitDescription
 			   default: 0) }
 ]
 
+{ #category : 'private - schema' }
+MCPToolSearch >> paginationOutputSchemaPropertiesForItemNounPhrase: itemNounPhrase [
+
+	^ {
+		  (self
+			   integerSchemaPropertyNamed: 'totalCount'
+			   description:
+			   'The total number matching ' , itemNounPhrase
+			   , ' before pagination.').
+		  (self
+			   integerSchemaPropertyNamed: 'returnedCount'
+			   description: 'Number of entries returned in this response.').
+		  (self
+			   integerSchemaPropertyNamed: 'omittedCount'
+			   description:
+			   'Number of matching entries omitted from this response.').
+		  (self
+			   integerSchemaPropertyNamed: 'limit'
+			   description: 'Pagination limit used by this response.').
+		  (self
+			   integerSchemaPropertyNamed: 'offset'
+			   description:
+			   'Zero-based pagination offset used by this response.').
+		  (self
+			   booleanSchemaPropertyNamed: 'hasMore'
+			   description:
+			   'Whether another page is available after this response.') }
+]
+
 { #category : 'private - request' }
 MCPToolSearch >> parsedRequestFromToolRequest: request [
 
@@ -448,22 +476,26 @@ MCPToolSearch >> queryInputSchemaWithProperties: inputProperties [
 { #category : 'private - pagination' }
 MCPToolSearch >> queryPageForEntries: entries limit: limit offset: offset [
 
-	| endIndex pagedEntries startIndex totalCount truncated |
+	| endIndex hasMore omittedCount pagedEntries startIndex totalCount |
 	totalCount := entries size.
 	startIndex := offset + 1.
 	pagedEntries := (startIndex > totalCount or: [ limit = 0 ])
 		                ifTrue: [ #(  ) ]
 		                ifFalse: [
-			                endIndex := totalCount min: offset + limit.
-			                (entries copyFrom: startIndex to: endIndex) asArray ].
-	truncated := offset + pagedEntries size < totalCount.
+				                endIndex := totalCount min: offset + limit.
+				                (entries copyFrom: startIndex to: endIndex)
+					                asArray ].
+	hasMore := offset + pagedEntries size < totalCount.
+	omittedCount := totalCount - pagedEntries size.
 	^ {
 		  (#entries -> pagedEntries).
 		  (#returnedCount -> pagedEntries size).
 		  (#totalCount -> totalCount).
 		  (#offset -> offset).
 		  (#limit -> limit).
-		  (#truncated -> truncated) } asDictionary
+		  (#omittedCount -> omittedCount).
+		  (#hasMore -> hasMore).
+		  (#truncated -> hasMore) } asDictionary
 ]
 
 { #category : 'private - template' }
@@ -475,9 +507,19 @@ MCPToolSearch >> queryResultDataForQueryRequest: queryRequest page: page [
 { #category : 'private - pagination' }
 MCPToolSearch >> queryResultDataFrom: baseData page: page entriesKey: entriesKey [
 
-	^ {
-		  (#totalCount -> (page at: #totalCount)).
-		  (entriesKey -> (page at: #entries)) } asDictionary
+	| data |
+	data := baseData
+		        ifNil: [ Dictionary new ]
+		        ifNotNil: [ baseData copy ].
+	^ data
+		  at: #totalCount put: (page at: #totalCount);
+		  at: #returnedCount put: (page at: #returnedCount);
+		  at: #omittedCount put: (page at: #omittedCount);
+		  at: #limit put: (page at: #limit);
+		  at: #offset put: (page at: #offset);
+		  at: #hasMore put: (page at: #hasMore);
+		  at: entriesKey put: (page at: #entries);
+		  yourself
 ]
 
 { #category : 'private - results' }
