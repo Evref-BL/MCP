@@ -20,41 +20,6 @@ MCPToolClassMutation class >> isAbstract [
 ]
 
 { #category : 'private - schema' }
-MCPToolClassMutation >> appliedChangeOutputSchemaProperty [
-
-	| property resultClassProperty resultProperty updateActionProperty |
-	updateActionProperty := self
-		                        schemaPropertyNamed: 'updateAction'
-		                        type: 'string'
-		                        description:
-		                        'The update action that produced the applied change.'.
-	resultClassProperty := self
-		                       schemaPropertyNamed: 'resultClassName'
-		                       type: 'string'
-		                       description:
-		                       'The result DTO class returned by the update action.'.
-	resultProperty := self
-		                  schemaPropertyNamed: 'result'
-		                  type: 'object'
-		                  description:
-		                  'The update result DTO serialized as a dictionary.'.
-	resultProperty additionalProperties: true.
-	property := self
-		            schemaPropertyNamed: 'appliedChange'
-		            type: 'object'
-		            description:
-		            'The applied update change and its result DTO.'.
-	property
-		properties: {
-				updateActionProperty.
-				resultClassProperty.
-				resultProperty };
-		required: #( 'updateAction' 'resultClassName' 'result' );
-		additionalProperties: false.
-	^ property
-]
-
-{ #category : 'private - schema' }
 MCPToolClassMutation >> atLeastOneInputProperties [
 
 	^ self classToolSpec
@@ -127,7 +92,6 @@ MCPToolClassMutation >> dataForResult: aResult action: actionName [
 	data := aResult asDictionary copy.
 	data at: #action put: actionName.
 	^ self dataWithClassCommentFrom: data
-
 ]
 
 { #category : 'private' }
@@ -136,8 +100,8 @@ MCPToolClassMutation >> dataWithClassCommentFrom: aDictionary [
 	| class data |
 	data := aDictionary copy.
 	class := Smalltalk globals
-		         at: (data at: #className) asSymbol
-		         ifAbsent: [ nil ].
+		at: (data at: #className) asSymbol
+		ifAbsent: [ nil ].
 	data
 		at: #classComment
 		put: (class ifNil: [ '' ] ifNotNil: [ class comment ]).
@@ -164,225 +128,28 @@ MCPToolClassMutation >> defaultInputSchema [
 { #category : 'defaults' }
 MCPToolClassMutation >> defaultOutputSchema [
 
+	| properties |
+	properties := OrderedCollection new.
+	properties add: (self
+		schemaPropertyNamed: 'action'
+		type: 'string'
+		description: 'Class mutation action.').
+	#( className updateAction superclassName packageName tag classComment oldClassComment newClassComment oldPackageName oldTag slotName oldSlotName newSlotName oldClassName newClassName oldSuperclassName layoutClassName oldLayoutClassName newLayoutClassName ) do: [ :name |
+		properties add: (self
+			schemaPropertyNamed: name asString
+			type: 'string'
+			description: name asString) ].
+	#( instanceSlotNames classSlotNames oldInstanceSlotNames newInstanceSlotNames oldClassSlotNames newClassSlotNames traitNames oldTraitNames newTraitNames classTraitNames oldClassTraitNames newClassTraitNames sharedVariableNames oldSharedVariableNames newSharedVariableNames sharedPoolNames oldSharedPoolNames newSharedPoolNames subclassNames affectedClassNames ) do: [ :name |
+		properties add: (self
+			stringArraySchemaNamed: name asString
+			description: name asString
+			itemDescription: '') ].
+	properties add: (self
+		booleanSchemaPropertyNamed: 'classSide'
+		description: 'Slot side.').
 	^ self
-		  standardOutputSchemaForDataProperties: {
-				  (self
-					   schemaPropertyNamed: 'action'
-					   type: 'string'
-					   description:
-					   'The class mutation action that was performed: create or update.').
-				  (self
-					   schemaPropertyNamed: 'updateAction'
-					   type: 'string'
-					   description:
-					   'The update action performed when action=update.').
-				  self updatePlanOutputSchemaProperty.
-				  self appliedChangeOutputSchemaProperty.
-				  (self
-					   schemaPropertyNamed: 'className'
-					   type: 'string'
-					   description: 'The class name after the action completes.').
-				  (self
-					   schemaPropertyNamed: 'superclassName'
-					   type: 'string'
-					   description:
-					   'The superclass of the class after the action.').
-				  (self
-					   schemaPropertyNamed: 'packageName'
-					   type: 'string'
-					   description:
-					   'The owning package of the class after the action.').
-				  (self
-					   schemaPropertyNamed: 'tag'
-					   type: 'string'
-					   description:
-					   'The package tag assigned to the class after the action.').
-				  (self
-					   schemaPropertyNamed: 'classComment'
-					   type: 'string'
-					   description: 'The class comment after the action.').
-				  (self
-					   stringArraySchemaNamed: 'instanceSlotNames'
-					   description:
-					   'The instance-side slots present on the class after the action.'
-					   itemDescription: 'An instance-side slot name.').
-				  (self
-					   stringArraySchemaNamed: 'classSlotNames'
-					   description:
-					   'The class-side slots present on the class after the action.'
-					   itemDescription: 'A class-side slot name.').
-				  (self
-					   stringArraySchemaNamed: 'oldInstanceSlotNames'
-					   description:
-					   'The instance-side slots present before updateAction=replaceDefinition.'
-					   itemDescription: 'A previous instance-side slot name.').
-				  (self
-					   stringArraySchemaNamed: 'newInstanceSlotNames'
-					   description:
-					   'The instance-side slots requested by updateAction=replaceDefinition.'
-					   itemDescription: 'A new instance-side slot name.').
-				  (self
-					   stringArraySchemaNamed: 'oldClassSlotNames'
-					   description:
-					   'The class-side slots present before updateAction=replaceDefinition.'
-					   itemDescription: 'A previous class-side slot name.').
-				  (self
-					   stringArraySchemaNamed: 'newClassSlotNames'
-					   description:
-					   'The class-side slots requested by updateAction=replaceDefinition.'
-					   itemDescription: 'A new class-side slot name.').
-				  (self
-					   stringArraySchemaNamed: 'traitNames'
-					   description:
-					   'The traits used by the class after the action.'
-					   itemDescription: 'A trait name.').
-				  (self
-					   stringArraySchemaNamed: 'oldTraitNames'
-					   description:
-					   'The instance-side traits used before updateAction=replaceTraits.'
-					   itemDescription: 'A previous trait name.').
-				  (self
-					   stringArraySchemaNamed: 'newTraitNames'
-					   description:
-					   'The instance-side traits requested by updateAction=replaceTraits.'
-					   itemDescription: 'A new trait name.').
-				  (self
-					   stringArraySchemaNamed: 'classTraitNames'
-					   description:
-					   'The traits used by the class side after the action.'
-					   itemDescription: 'A class-side trait name.').
-				  (self
-					   stringArraySchemaNamed: 'oldClassTraitNames'
-					   description:
-					   'The class-side traits used before updateAction=replaceClassTraits.'
-					   itemDescription: 'A previous class-side trait name.').
-				  (self
-					   stringArraySchemaNamed: 'newClassTraitNames'
-					   description:
-					   'The class-side traits requested by updateAction=replaceClassTraits.'
-					   itemDescription: 'A new class-side trait name.').
-				  (self
-					   stringArraySchemaNamed: 'sharedVariableNames'
-					   description:
-					   'The class variables defined on the class after the action.'
-					   itemDescription: 'A class variable name.').
-				  (self
-					   stringArraySchemaNamed: 'oldSharedVariableNames'
-					   description:
-					   'The class variables defined before updateAction=replaceSharedVariables.'
-					   itemDescription: 'A previous class variable name.').
-				  (self
-					   stringArraySchemaNamed: 'newSharedVariableNames'
-					   description:
-					   'The class variables requested by updateAction=replaceSharedVariables.'
-					   itemDescription: 'A new class variable name.').
-				  (self
-					   stringArraySchemaNamed: 'sharedPoolNames'
-					   description:
-					   'The shared pools referenced by the class after the action.'
-					   itemDescription: 'A shared pool name.').
-				  (self
-					   stringArraySchemaNamed: 'oldSharedPoolNames'
-					   description:
-					   'The shared pools referenced before updateAction=replaceSharedPools.'
-					   itemDescription: 'A previous shared pool name.').
-				  (self
-					   stringArraySchemaNamed: 'newSharedPoolNames'
-					   description:
-					   'The shared pools requested by updateAction=replaceSharedPools.'
-					   itemDescription: 'A new shared pool name.').
-				  (self
-					   schemaPropertyNamed: 'layoutClassName'
-					   type: 'string'
-					   description:
-					   'The layout class used by the class after the action.').
-				  (self
-					   schemaPropertyNamed: 'oldLayoutClassName'
-					   type: 'string'
-					   description:
-					   'The layout class used before updateAction=replaceLayout.').
-				  (self
-					   schemaPropertyNamed: 'newLayoutClassName'
-					   type: 'string'
-					   description:
-					   'The layout class requested by updateAction=replaceLayout.').
-				  (self
-					   schemaPropertyNamed: 'slotName'
-					   type: 'string'
-					   description:
-					   'The slot name that was added, removed, pulled up, or pushed down when updateAction=addSlot, updateAction=removeSlot, updateAction=pullUpSlot, or updateAction=pushDownSlot.').
-				  (self
-					   schemaPropertyNamed: 'oldSlotName'
-					   type: 'string'
-					   description:
-					   'The previous slot name when updateAction=renameSlot.').
-				  (self
-					   schemaPropertyNamed: 'newSlotName'
-					   type: 'string'
-					   description: 'The new slot name when updateAction=renameSlot.').
-				  (self
-					   booleanSchemaPropertyNamed: 'classSide'
-					   description:
-					   'Whether the slot update targeted class-side slots instead of instance-side slots.'
-					   default: false).
-				  ((self
-					    schemaPropertyNamed: 'affectedClassNames'
-					    type: 'array'
-					    description:
-						    'The other classes whose slot definitions were changed by updateAction=pullUpSlot or updateAction=pushDownSlot.')
-					   items: (MCPStructureProperties new
-							    type: 'string';
-							    description: 'An affected class name.';
-							    yourself);
-					   yourself).
-				  ((self
-					    schemaPropertyNamed: 'subclassNames'
-					    type: 'array'
-					    description:
-						    'The direct subclasses of the class after the action.')
-					   items: (MCPStructureProperties new
-							    type: 'string';
-							    description: 'A direct subclass name.';
-							    yourself);
-					   yourself).
-				  (self
-					   schemaPropertyNamed: 'oldPackageName'
-					   type: 'string'
-					   description: 'The previous package when updateAction=move.').
-				  (self
-					   schemaPropertyNamed: 'oldTag'
-					   type: 'string'
-					   description:
-					   'The previous package tag when updateAction=move.').
-				  (self
-					   schemaPropertyNamed: 'oldClassName'
-					   type: 'string'
-					   description:
-					   'The previous class name when updateAction=rename.').
-				  (self
-					   schemaPropertyNamed: 'newClassName'
-					   type: 'string'
-					   description: 'The new class name when updateAction=rename.').
-				  (self
-					   schemaPropertyNamed: 'oldSuperclassName'
-					   type: 'string'
-					   description:
-					   'The previous superclass when updateAction=reparent.').
-				  (self
-					   schemaPropertyNamed: 'oldClassComment'
-					   type: 'string'
-					   description:
-					   'The previous class comment when updateAction=setComment.').
-				  (self
-					   schemaPropertyNamed: 'newClassComment'
-					   type: 'string'
-					   description:
-					   'The new class comment when updateAction=setComment.') }
-		  required:
-			  #( 'action' 'className' 'superclassName' 'packageName'
-			     'tag' 'classComment' 'instanceSlotNames' 'classSlotNames'
-			     'traitNames' 'classTraitNames' 'sharedVariableNames'
-			     'sharedPoolNames' 'layoutClassName' 'subclassNames' )
+		standardOutputSchemaForDataProperties: properties asArray
+		required: #( 'action' 'className' )
 ]
 
 { #category : 'defaults' }
@@ -746,35 +513,6 @@ MCPToolClassMutation >> traitsSchemaProperty [
 		  description:
 		  'Instance-side traits; empty array means none/removal.'
 		  itemDescription: 'Trait name.'
-]
-
-{ #category : 'private - schema' }
-MCPToolClassMutation >> updatePlanOutputSchemaProperty [
-
-	| property requestedContextProperty updateActionProperty |
-	updateActionProperty := self
-		                        schemaPropertyNamed: 'updateAction'
-		                        type: 'string'
-		                        description:
-		                        'The class update action selected by the tool request.'.
-	requestedContextProperty := self
-		                            schemaPropertyNamed: 'requestedContext'
-		                            type: 'object'
-		                            description:
-		                            'The normalized request context used to execute the update.'.
-	requestedContextProperty additionalProperties: true.
-	property := self
-		            schemaPropertyNamed: 'updatePlan'
-		            type: 'object'
-		            description:
-		            'The planned update action before it is executed.'.
-	property
-		properties: {
-				updateActionProperty.
-				requestedContextProperty };
-		required: #( 'updateAction' 'requestedContext' );
-		additionalProperties: false.
-	^ property
 ]
 
 { #category : 'validating' }

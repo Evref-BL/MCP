@@ -1084,22 +1084,15 @@ MCPToolContractsTest >> testClassToolTraitOwnsSharedClassHelpers [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testClassToolsOutputSchemaAdvertisesUpdateResultDTOs [
+MCPToolContractsTest >> testClassToolsOutputSchemaAdvertisesFlattenedMutationResult [
 
-	| dataProperties outputSchema updatePlanProperties |
+	| dataProperties outputSchema |
 	outputSchema := MCPToolUpdateClassName new outputSchema asJRPCJSON.
-	dataProperties := ((outputSchema at: #properties) at: 'data') at:
-		                  #properties.
-	updatePlanProperties := (dataProperties at: 'updatePlan') at:
-		                        #properties.
-	self assert: (dataProperties includesKey: 'updatePlan').
-	self assert: (dataProperties includesKey: 'appliedChange').
-	self assert: (updatePlanProperties includesKey: 'updateAction').
-	self assert: (updatePlanProperties includesKey: 'requestedContext').
-	self deny: (updatePlanProperties includesKey: 'commandClassName').
-	self assert:
-		(((dataProperties at: 'appliedChange') at: #properties)
-			 includesKey: 'resultClassName')
+	dataProperties := ((outputSchema at: #properties) at: 'data') at: #properties.
+	self assert: (dataProperties includesKey: 'action').
+	self assert: (dataProperties includesKey: 'className').
+	self assert: (dataProperties includesKey: 'updateAction').
+	self assert: (dataProperties includesKey: 'slotName')
 ]
 
 { #category : 'tests' }
