@@ -574,7 +574,7 @@ MCPToolContractsTest >> methodMutationToolFlowSpecs [
 			  (#toolClass -> MCPToolCreateMethod).
 			  (#arguments -> {
 				   (#className -> 'Object').
-				   (#methodSource -> 'mcpTemporaryMethod ^ self').
+				   (#source -> 'mcpTemporaryMethod ^ self').
 				   (#protocol -> 'tests') } asDictionary).
 			  (#requestClass -> MCPMethodCreateRequest).
 			  (#commandClass -> MCPCreateMethodCommand) } asDictionary.
@@ -1695,7 +1695,7 @@ MCPToolContractsTest >> testMethodMutationToolsHaveAccurateNamesAndRequiredArgum
 	self assert: protocolTool name equals: 'method_protocol_update'.
 	self
 		assert: createTool inputSchema required asSet
-		equals: #( 'className' 'methodSource' 'protocol' ) asSet.
+		equals: #( 'className' 'source' 'protocol' ) asSet.
 	self
 		assert: selectorTool inputSchema required asSet
 		equals: #( 'className' 'selector' 'newSelector' ) asSet.
@@ -1890,9 +1890,9 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 	self
 		assert:
 			((self
-				  inputPropertyNamed: 'includeSources'
+				  inputPropertyNamed: 'includeSource'
 				  inTool: rewriteMethodsTool) extraProperties at: #default)
-		equals: true.
+		equals: false.
 	self
 		assert:
 			((self inputPropertyNamed: 'side' inTool: rewriteMethodsTool)

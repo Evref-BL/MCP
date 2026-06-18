@@ -24,8 +24,8 @@ MCPUpdateDebugMethodRequest class >> fromRequest: aRequest tool: aTool [
 		  stateId: (aRequest stringArgumentNamed: 'stateId');
 		  frameRef: (aRequest stringArgumentNamed: 'frameRef');
 		  methodSource:
-			  ((aRequest stringArgumentNamed: 'methodSource') ifNotNil: [
-					   :source | source withInternalLineEndings ]);
+			  ((aRequest stringArgumentNamed: 'source') ifNotNil: [ :source |
+					   source withInternalLineEndings ]);
 		  ignoreCritiques:
 			  (aRequest booleanArgumentNamed: 'ignoreCritiques' default: false);
 		  sourceContextLines: (aRequest

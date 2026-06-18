@@ -169,22 +169,22 @@ MCPToolRewriteMethods >> rewriteInputProperties [
 		  (self
 			   booleanSchemaPropertyNamed: 'apply'
 			   description:
-			   'Whether to apply the rewrite changes. false previews changes without mutation; true mutates matching methods after expectedChangeSetHash validation.'
+			   'Whether to apply rewrite changes. false previews changes; true mutates matching methods after expectedChangeSetHash validation.'
 			   default: false).
 		  (self
 			   integerSchemaPropertyNamed: 'expectedChangeSetHash'
 			   description:
-			   'Required when apply=true. Use the changeSetHash returned by a preview of the same rewrite request.').
+			   'Required when apply=true. Use the changeSetHash returned by previewing the same rewrite request.').
 		  (self
 			   booleanSchemaPropertyNamed: 'force'
 			   description:
-			   'Allows apply=true with implicit whole-image scope. Prefer an explicit method scope for rewrite application.'
+			   'Allow apply=true with implicit whole-image scope. Prefer an explicit method scope.'
 			   default: false).
 		  (self
-			   booleanSchemaPropertyNamed: 'includeSources'
+			   booleanSchemaPropertyNamed: 'includeSource'
 			   description:
-			   'Whether each change includes oldSource and newSource in the output.'
-			   default: true) } , self methodQueryScopeInputProperties
+			   'Include source code. Use only for small result sets.'
+			   default: false) } , self methodQueryScopeInputProperties
 ]
 
 { #category : 'private - schema' }

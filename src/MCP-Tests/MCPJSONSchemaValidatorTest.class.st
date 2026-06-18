@@ -74,7 +74,7 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 		  (MCPToolMethodMutation -> {
 			   (#action -> 'create').
 			   (#className -> 'MCPTool').
-			   (#methodSource -> 'temporarySelector ^ self').
+			   (#source -> 'temporarySelector ^ self').
 			   (#protocol -> 'tests') } asDictionary).
 		  (MCPToolRewriteMethods -> { (#rules -> { {
 			    (#lhs -> 'self').
@@ -191,7 +191,9 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 	arguments removeKey: MCPToolMethodMutation ifAbsent: [ ].
 	arguments removeKey: MCPToolChangeHistory ifAbsent: [ ].
 	arguments removeKey: MCPToolDebugSessionOperation ifAbsent: [ ].
-	arguments removeKey: MCPToolDebugSessionControlOperation ifAbsent: [ ].
+	arguments
+		removeKey: MCPToolDebugSessionControlOperation
+		ifAbsent: [ ].
 	arguments removeKey: MCPToolDebugBreakpointOperation ifAbsent: [ ].
 	self classMutationRepresentativeArgumentsByToolClass
 		keysAndValuesDo: [ :toolClass :representativeArguments |
@@ -204,7 +206,7 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 				(#selector -> 'class') } asDictionary;
 		at: MCPToolCreateMethod put: {
 				(#className -> 'MCPTool').
-				(#methodSource -> 'temporarySelector ^ self').
+				(#source -> 'temporarySelector ^ self').
 				(#protocol -> 'tests') } asDictionary;
 		at: MCPToolUpdateMethodSelector put: {
 				(#className -> 'MCPTool').

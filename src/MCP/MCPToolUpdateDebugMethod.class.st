@@ -50,36 +50,35 @@ MCPToolUpdateDebugMethod >> defaultInputSchema [
 					   schemaPropertyNamed: 'stateId'
 					   type: 'string'
 					   description:
-						   'Optional state token to reject stale debug_method_update requests.').
+						   'Optional state token rejecting stale debug_method_update requests.').
 				  (self
 					   schemaPropertyNamed: 'frameRef'
 					   type: 'string'
 					   description:
 						   'Optional state-scoped frame reference returned by debug_state_get. Defaults to the selected top frame.').
 				  (self
-					   schemaPropertyNamed: 'methodSource'
+					   schemaPropertyNamed: 'source'
 					   type: 'string'
 					   description:
-						   'Optional replacement method source. DNU and subclass responsibility repairs can use the image default when omitted.').
+						   'Optional replacement source. DNU and subclass responsibility repairs use the default when omitted.').
 				  (self
 					   booleanSchemaPropertyNamed: 'ignoreCritiques'
 					   description:
-						   'Whether debug_method_update should proceed after a successful compile even when method critiques are reported.'
+						   'Proceed after successful compile even when critiques are reported.'
 					   default: false).
 				  (self
 					   integerSchemaPropertyNamed: 'sourceContextLines'
 					   description:
-						   'Number of source context lines requested in returned state.'
+						   'Number of source lines requested in returned state.'
 					   default: 5).
 				  (self
 					   integerSchemaPropertyNamed: 'stackStart'
 					   description:
-						   'Zero-based stack frame offset for returned state.'
+						   'Zero-based stack frame offset returned in state.'
 					   default: 0).
 				  (self
 					   integerSchemaPropertyNamed: 'stackLimit'
-					   description:
-						   'Maximum number of stack frames in returned state.'
+					   description: 'Maximum stack frames returned in state.'
 					   default: 20).
 				  (self
 					   integerSchemaPropertyNamed: 'variableDepth'
@@ -88,13 +87,11 @@ MCPToolUpdateDebugMethod >> defaultInputSchema [
 					   default: 1).
 				  (self
 					   integerSchemaPropertyNamed: 'variableLimit'
-					   description:
-						   'Maximum number of variables to preview in returned state.'
+					   description: 'Maximum variable previews returned in state.'
 					   default: 50).
 				  (self
 					   booleanSchemaPropertyNamed: 'includeReceiver'
-					   description:
-						   'Whether returned state should include the receiver scope.'
+					   description: 'Include receiver scope in returned state.'
 					   default: true) };
 		  required: #( 'sessionId' );
 		  additionalProperties: false;

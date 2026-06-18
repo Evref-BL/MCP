@@ -492,7 +492,7 @@ MCPUpdateDebugMethodCommand >> signalRequiredMethodSourceForRecord: aRecord fram
 	^ MCPCommandError
 		  signalErrorCode: #DebugMethodUpdateMethodSourceRequired
 		  message:
-		  'debug_method_update requires methodSource for ' , updateKind , '.'
+		  'debug_method_update requires source for ' , updateKind , '.'
 		  details: {
 				  (#sessionId -> aRecord sessionId).
 				  (#stateId -> aRecord stateId).

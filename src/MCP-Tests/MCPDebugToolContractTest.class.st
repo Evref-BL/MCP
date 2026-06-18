@@ -958,10 +958,11 @@ MCPDebugToolContractTest >> testDebugMethodUpdateCanIgnoreCritiquesAndProceed [
 				                cr;
 				                cr;
 				                tab;
-				                nextPutAll: '^ self mcpDebugMethodUpdateStillMissing' ].
+				                nextPutAll:
+					                '^ self mcpDebugMethodUpdateStillMissing' ].
 	arguments := (action at: #arguments) copy.
 	arguments
-		at: #methodSource put: methodSource;
+		at: #source put: methodSource;
 		at: #ignoreCritiques put: true.
 	result := self
 		          callToolNamed: 'debug_method_update'
@@ -980,8 +981,9 @@ MCPDebugToolContractTest >> testDebugMethodUpdateCanIgnoreCritiquesAndProceed [
 		assert: ((updateData at: #repairActions) first at: #selector)
 		equals: 'mcpDebugMethodUpdateStillMissing'.
 	self
-		assert:
-		(Smalltalk globals at: #MCPDebugMethodUpdateProceedCounter ifAbsent: [ 0 ])
+		assert: (Smalltalk globals
+				 at: #MCPDebugMethodUpdateProceedCounter
+				 ifAbsent: [ 0 ])
 		equals: 1
 ]
 
@@ -1011,9 +1013,10 @@ MCPDebugToolContractTest >> testDebugMethodUpdateCanProceedAfterPriorCritiqueBlo
 				                cr;
 				                cr;
 				                tab;
-				                nextPutAll: '^ self mcpDebugMethodUpdateStillMissing' ].
+				                nextPutAll:
+					                '^ self mcpDebugMethodUpdateStillMissing' ].
 	arguments := (action at: #arguments) copy.
-	arguments at: #methodSource put: methodSource.
+	arguments at: #source put: methodSource.
 	blockedData := self dataFrom:
 		               (self
 			                callToolNamed: 'debug_method_update'
@@ -1023,7 +1026,7 @@ MCPDebugToolContractTest >> testDebugMethodUpdateCanProceedAfterPriorCritiqueBlo
 		             (#sessionId -> (blockedData at: #sessionId)).
 		             (#stateId -> (blockedData at: #stateId)).
 		             (#frameRef -> (blockedData at: #frameRef)).
-		             (#methodSource -> methodSource).
+		             (#source -> methodSource).
 		             (#ignoreCritiques -> true) } asDictionary.
 	result := self
 		          callToolNamed: 'debug_method_update'
@@ -1039,8 +1042,9 @@ MCPDebugToolContractTest >> testDebugMethodUpdateCanProceedAfterPriorCritiqueBlo
 		assert: ((blockedData at: #repairActions) first at: #selector)
 		equals: 'mcpDebugMethodUpdateStillMissing'.
 	self
-		assert:
-		(Smalltalk globals at: #MCPDebugMethodUpdateProceedCounter ifAbsent: [ 0 ])
+		assert: (Smalltalk globals
+				 at: #MCPDebugMethodUpdateProceedCounter
+				 ifAbsent: [ 0 ])
 		equals: 1
 ]
 
@@ -1072,7 +1076,7 @@ MCPDebugToolContractTest >> testDebugMethodUpdateCreatesMissingMethodFromRepairA
 				                  tab;
 				                  nextPutAll: '^ 42' ].
 	arguments := (action at: #arguments) copy.
-	arguments at: #methodSource put: methodSource.
+	arguments at: #source put: methodSource.
 	result := self
 		          callToolNamed: 'debug_method_update'
 		          withArguments: arguments.
@@ -1130,7 +1134,7 @@ MCPDebugToolContractTest >> testDebugMethodUpdateProceedsAfterCleanMissingMethod
 				                tab;
 				                nextPutAll: '^ 42' ].
 	arguments := (action at: #arguments) copy.
-	arguments at: #methodSource put: methodSource.
+	arguments at: #source put: methodSource.
 	result := self
 		          callToolNamed: 'debug_method_update'
 		          withArguments: arguments.
@@ -1145,8 +1149,9 @@ MCPDebugToolContractTest >> testDebugMethodUpdateProceedsAfterCleanMissingMethod
 	self assert: (updateData at: #resultClassName) equals: 'SmallInteger'.
 	self assert: (updateData at: #resultPrintString) equals: '42'.
 	self
-		assert:
-		(Smalltalk globals at: #MCPDebugMethodUpdateProceedCounter ifAbsent: [ 0 ])
+		assert: (Smalltalk globals
+				 at: #MCPDebugMethodUpdateProceedCounter
+				 ifAbsent: [ 0 ])
 		equals: 1
 ]
 
@@ -1183,7 +1188,7 @@ MCPDebugToolContractTest >> testDebugMethodUpdateRecompilesNotYetImplementedFram
 				                  tab;
 				                  nextPutAll: '^ 43' ].
 	arguments := (action at: #arguments) copy.
-	arguments at: #methodSource put: methodSource.
+	arguments at: #source put: methodSource.
 	result := self
 		          callToolNamed: 'debug_method_update'
 		          withArguments: arguments.
@@ -1217,7 +1222,7 @@ MCPDebugToolContractTest >> testDebugMethodUpdateRequestNormalizesMethodSourceLi
 	tool := MCPToolUpdateDebugMethod new.
 	parsedRequest := self parsedRequestForTool: tool arguments: {
 			                 (#sessionId -> 'debug-session-1').
-			                 (#methodSource -> source) } asDictionary.
+			                 (#source -> source) } asDictionary.
 	self deny: (parsedRequest methodSource includes: Character lf).
 	self assert: (parsedRequest methodSource includes: Character cr)
 ]
@@ -1248,9 +1253,10 @@ MCPDebugToolContractTest >> testDebugMethodUpdateStopsBeforeProceedingWhenCritiq
 				                cr;
 				                cr;
 				                tab;
-				                nextPutAll: '^ self mcpDebugMethodUpdateStillMissing' ].
+				                nextPutAll:
+					                '^ self mcpDebugMethodUpdateStillMissing' ].
 	arguments := (action at: #arguments) copy.
-	arguments at: #methodSource put: methodSource.
+	arguments at: #source put: methodSource.
 	result := self
 		          callToolNamed: 'debug_method_update'
 		          withArguments: arguments.
@@ -1266,8 +1272,9 @@ MCPDebugToolContractTest >> testDebugMethodUpdateStopsBeforeProceedingWhenCritiq
 		equals: 'blockedByCritiques'.
 	self deny: (updateData at: #critiques) isEmpty.
 	self
-		assert:
-		(Smalltalk globals at: #MCPDebugMethodUpdateProceedCounter ifAbsent: [ 0 ])
+		assert: (Smalltalk globals
+				 at: #MCPDebugMethodUpdateProceedCounter
+				 ifAbsent: [ 0 ])
 		equals: 1
 ]
 

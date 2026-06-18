@@ -50,13 +50,13 @@ MCPToolMethodMutationTest >> callToolWith: someArguments [
 
 	| arguments request result tool toolClass |
 	arguments := someArguments copy.
-	arguments removeKey: #action ifAbsent: [  ].
-	toolClass := (arguments includesKey: #methodSource)
+	arguments removeKey: #action ifAbsent: [ ].
+	toolClass := (arguments includesKey: #source)
 		             ifTrue: [ MCPToolCreateMethod ]
 		             ifFalse: [
-			             (arguments includesKey: #newSelector)
-				             ifTrue: [ MCPToolUpdateMethodSelector ]
-				             ifFalse: [ MCPToolUpdateMethodProtocol ] ].
+				             (arguments includesKey: #newSelector)
+					             ifTrue: [ MCPToolUpdateMethodSelector ]
+					             ifFalse: [ MCPToolUpdateMethodProtocol ] ].
 	tool := toolClass new.
 	request := tool requestFromToolCallArguments: arguments.
 	result := tool executeWithRequest: request.
@@ -105,7 +105,7 @@ MCPToolMethodMutationTest >> compileArgumentsForClassName: aClassName classSide:
 		  (#action -> 'create').
 		  (#className -> aClassName).
 		  (#classSide -> aBoolean).
-		  (#methodSource -> aMethodSource).
+		  (#source -> aMethodSource).
 		  (#protocol -> aProtocol) } asDictionary
 ]
 
@@ -530,7 +530,7 @@ MCPToolMethodMutationTest >> testCompileDefaultsToInstanceSideWhenClassSideIsOmi
 	result := self callToolWith: {
 			          (#action -> 'create').
 			          (#className -> 'MCPToolMethodMutationTestTarget').
-			          (#methodSource -> 'instanceAnswer ^ 42').
+			          (#source -> 'instanceAnswer ^ 42').
 			          (#protocol -> 'tests') } asDictionary.
 	data := self dataFrom: result.
 	self
@@ -933,7 +933,7 @@ MCPToolMethodMutationTest >> testCreateMethodReportsCreatedChangeKind [
 	[
 		result := self callToolNamed: 'method_create' withArguments: {
 				          (#className -> 'MCPToolMethodMutationTestTarget').
-				          (#methodSource -> 'directCreateProbe ^ 11').
+				          (#source -> 'directCreateProbe ^ 11').
 				          (#protocol -> 'tests') } asDictionary.
 		data := self dataFrom: result.
 		self deny: (result at: #isError ifAbsent: [ false ]).
@@ -962,7 +962,7 @@ MCPToolMethodMutationTest >> testCreateMethodReportsReplacedChangeKind [
 	[
 		result := self callToolNamed: 'method_create' withArguments: {
 				          (#className -> 'MCPToolMethodMutationTestTarget').
-				          (#methodSource -> 'directReplaceProbe ^ 2').
+				          (#source -> 'directReplaceProbe ^ 2').
 				          (#protocol -> 'tests') } asDictionary.
 		data := self dataFrom: result.
 		self deny: (result at: #isError ifAbsent: [ false ]).
@@ -1005,7 +1005,7 @@ MCPToolMethodMutationTest >> testMethodToolSchemasDeclareExpectedInputs [
 	self
 		assert: createPropertyNames asArray
 		equals:
-		#( 'className' 'classSide' 'force' 'methodSource' 'protocol' ).
+		#( 'className' 'classSide' 'force' 'source' 'protocol' ).
 	self
 		assert: selectorPropertyNames asArray
 		equals: #( 'className' 'classSide' 'force' 'selector' 'newSelector'
@@ -1016,7 +1016,7 @@ MCPToolMethodMutationTest >> testMethodToolSchemasDeclareExpectedInputs [
 		equals: #( 'className' 'classSide' 'force' 'selector' 'protocol' ).
 	self
 		assert: MCPToolCreateMethod new inputSchema required asSet
-		equals: #( 'className' 'methodSource' 'protocol' ) asSet.
+		equals: #( 'className' 'source' 'protocol' ) asSet.
 	self
 		assert: MCPToolUpdateMethodSelector new inputSchema required asSet
 		equals: #( 'className' 'selector' 'newSelector' ) asSet.

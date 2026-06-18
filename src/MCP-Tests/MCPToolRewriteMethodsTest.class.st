@@ -30,7 +30,8 @@ MCPToolRewriteMethodsTest >> previewArgumentsForRule: aRule [
 
 	^ {
 		  (#rules -> { aRule }).
-		  (#classNames -> { self targetClassName }) } asDictionary
+		  (#classNames -> { self targetClassName }).
+		  (#includeSource -> true) } asDictionary
 ]
 
 { #category : 'private' }
@@ -202,7 +203,8 @@ MCPToolRewriteMethodsTest >> testClassSideScopeRewritesOnlyClassSideMethod [
 	result := self callToolWith: {
 			          (#rules -> { rule }).
 			          (#classNames -> { self targetClassName }).
-			          (#side -> 'class') } asDictionary.
+			          (#side -> 'class').
+			          (#includeSource -> true) } asDictionary.
 	data := self dataFrom: result.
 	change := (data at: #changes) first.
 	self deny: (result at: #isError ifAbsent: [ false ]).
@@ -308,7 +310,7 @@ MCPToolRewriteMethodsTest >> testPreviewCanOmitSources [
 	result := self callToolWith: {
 			          (#rules -> { rule }).
 			          (#classNames -> { self targetClassName }).
-			          (#includeSources -> false) } asDictionary.
+			          (#includeSource -> false) } asDictionary.
 	data := self dataFrom: result.
 	change := (data at: #changes) first.
 	self deny: (result at: #isError ifAbsent: [ false ]).
@@ -452,7 +454,7 @@ MCPToolRewriteMethodsTest >> testSchemaAdvertisesRewriteContract [
 	self assert: (propertyNames includes: 'apply').
 	self assert: (propertyNames includes: 'expectedChangeSetHash').
 	self assert: (propertyNames includes: 'force').
-	self assert: (propertyNames includes: 'includeSources').
+	self assert: (propertyNames includes: 'includeSource').
 	self assert: (propertyNames includes: 'packageNames').
 	self assert: (propertyNames includes: 'classNames').
 	self assert: (propertyNames includes: 'hierarchyClassNames').

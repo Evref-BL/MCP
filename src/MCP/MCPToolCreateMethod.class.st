@@ -39,7 +39,7 @@ MCPToolCreateMethod >> methodToolSpec [
 				    yourself).
 			   self forceSchemaProperty.
 			   (MCPStructureProperties new
-				    name: 'methodSource';
+				    name: 'source';
 				    type: 'string';
 				    description: 'The full method source to compile.';
 				    yourself).
@@ -49,6 +49,6 @@ MCPToolCreateMethod >> methodToolSpec [
 				    description:
 					    'The target protocol. For extension methods, use an extension protocol such as *Package-Name.';
 				    yourself) }).
-		  (#requiredProperties -> #( 'className' 'methodSource'
+		  (#requiredProperties -> #( 'className' 'source'
 		      'protocol' )) } asDictionary
 ]
