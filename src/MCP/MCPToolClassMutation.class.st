@@ -95,8 +95,8 @@ MCPToolClassMutation >> classSlotsSchemaProperty [
 	^ self
 		  stringArraySchemaNamed: 'classSlots'
 		  description:
-		  'Class-side slot names. Use an empty array to define no class-side slots or remove all class-side slots during replacement. May be combined with slots.'
-		  itemDescription: 'A class-side slot name.'
+		  'Class-side slots; empty array means none/removal. May combine with slots.'
+		  itemDescription: 'Class-side slot name.'
 ]
 
 { #category : 'private - specs' }
@@ -110,9 +110,8 @@ MCPToolClassMutation >> classTraitsSchemaProperty [
 
 	^ self
 		  stringArraySchemaNamed: 'classTraits'
-		  description:
-		  'Class-side trait names. Use names like TraitName classTrait or TraitName. Use an empty array to remove all class-side traits.'
-		  itemDescription: 'A class-side trait name.'
+		  description: 'Class-side traits; empty array means none/removal.'
+		  itemDescription: 'Trait name.'
 ]
 
 { #category : 'private' }
@@ -598,7 +597,7 @@ MCPToolClassMutation >> layoutSchemaProperty [
 		  schemaPropertyNamed: 'layout'
 		  type: 'string'
 		  description:
-		  'The layout class name. It must resolve to AbstractLayout or one of its subclasses.'
+		  'Class layout class; must be AbstractLayout subclass.'
 ]
 
 { #category : 'private - actions' }
@@ -646,7 +645,7 @@ MCPToolClassMutation >> packageNameSchemaProperty [
 		  schemaPropertyNamed: 'packageName'
 		  type: 'string'
 		  description:
-		  'The package name for class creation or movement. When moving a class, omit packageName and provide tag to recategorize inside the current package.'
+		  'Package for creation/move; omit packageName with tag to recategorize current package.'
 ]
 
 { #category : 'private - request' }
@@ -680,8 +679,8 @@ MCPToolClassMutation >> sharedPoolsSchemaProperty [
 	^ self
 		  stringArraySchemaNamed: 'sharedPools'
 		  description:
-		  'Shared pool names. Use an empty array to remove all shared pools.'
-		  itemDescription: 'A shared pool name.'
+		  'Shared pool names; empty array removes shared pools.'
+		  itemDescription: 'Shared pool name.'
 ]
 
 { #category : 'private - schema' }
@@ -689,9 +688,8 @@ MCPToolClassMutation >> sharedVariablesSchemaProperty [
 
 	^ self
 		  stringArraySchemaNamed: 'sharedVariables'
-		  description:
-		  'Class variable names. Use an empty array to remove all class variables.'
-		  itemDescription: 'A class variable name.'
+		  description: 'Class variable names; empty array removes.'
+		  itemDescription: 'Class variable name.'
 ]
 
 { #category : 'private' }
@@ -717,8 +715,8 @@ MCPToolClassMutation >> slotsSchemaProperty [
 	^ self
 		  stringArraySchemaNamed: 'slots'
 		  description:
-		  'Instance-side slot names. Use an empty array to define no instance-side slots or remove all instance-side slots during replacement. May be combined with classSlots.'
-		  itemDescription: 'An instance-side slot name.'
+		  'Instance-side slots; empty array means none/removal. May combine with classSlots.'
+		  itemDescription: 'Slot name.'
 ]
 
 { #category : 'private - schema' }
@@ -737,7 +735,7 @@ MCPToolClassMutation >> tagSchemaProperty [
 		  schemaPropertyNamed: 'tag'
 		  type: 'string'
 		  description:
-		  'The package tag or class category. When updating package assignment, tag recategorizes a class; omit packageName to use the current package.'
+		  'Package tag; recategorizes inside current package when packageName is omitted.'
 ]
 
 { #category : 'private - schema' }
@@ -746,8 +744,8 @@ MCPToolClassMutation >> traitsSchemaProperty [
 	^ self
 		  stringArraySchemaNamed: 'traits'
 		  description:
-		  'Instance-side trait names. Use an empty array to remove all instance-side traits.'
-		  itemDescription: 'A trait name.'
+		  'Instance-side traits; empty array means none/removal.'
+		  itemDescription: 'Trait name.'
 ]
 
 { #category : 'private - schema' }
