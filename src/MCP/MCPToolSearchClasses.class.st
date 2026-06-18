@@ -37,10 +37,9 @@ MCPToolSearchClasses >> classEntrySchema [
 	^ MCPStructureProperties new
 		  name: 'classEntry';
 		  type: 'object';
-		  description: 'Structured metadata for one queried class.';
+		  description: 'One class search result.';
 		  properties: self classInfoDataProperties;
-		  required: #( 'className' 'packageName' 'tag' 'instanceSlotNames'
-			     'classSlotNames' );
+		  required: #( 'className' 'packageName' 'tag' );
 		  additionalProperties: false;
 		  yourself
 ]
@@ -84,23 +83,15 @@ MCPToolSearchClasses >> classInfoDataProperties [
 		  (self
 			   schemaPropertyNamed: 'className'
 			   type: 'string'
-			   description: 'The class name.').
+			   description: 'Class name.').
 		  (self
 			   schemaPropertyNamed: 'packageName'
 			   type: 'string'
-			   description: 'The package that defines the class.').
+			   description: 'Defining package.').
 		  (self
 			   schemaPropertyNamed: 'tag'
 			   type: 'string'
-			   description: 'The package tag assigned to the class.').
-		  (self
-			   stringArraySchemaNamed: 'instanceSlotNames'
-			   description: 'The instance-side slots defined on the class.'
-			   itemDescription: 'An instance-side slot name.').
-		  (self
-			   stringArraySchemaNamed: 'classSlotNames'
-			   description: 'The class-side slots defined on the class.'
-			   itemDescription: 'A class-side slot name.') }
+			   description: 'Package tag.') }
 ]
 
 { #category : 'defaults' }
@@ -183,7 +174,23 @@ MCPToolSearchClasses >> queryEntriesForQueryRequest: queryRequest [
 { #category : 'private - template' }
 MCPToolSearchClasses >> queryResultDataForQueryRequest: queryRequest page: page [
 
-	^ self queryResultDataFrom: nil page: page entriesKey: #classes
+	| data |
+	data := Dictionary new.
+	data at: #classes put: (page entries
+			 collect: [ :each | self queryResultEntryFromClassEntry: each ]
+			 as: Array).
+	page nextOffset ifNotNil: [ :offset |
+		data at: #nextOffset put: offset ].
+	^ data
+]
+
+{ #category : 'private - results' }
+MCPToolSearchClasses >> queryResultEntryFromClassEntry: anEntry [
+
+	^ {
+		  (#className -> (anEntry at: #className)).
+		  (#packageName -> (anEntry at: #packageName)).
+		  (#tag -> (anEntry at: #tag)) } asDictionary
 ]
 
 { #category : 'private - template' }

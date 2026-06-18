@@ -111,15 +111,10 @@ MCPToolSearchClassesTest >> testClassNamesReturnExactClassInfos [
 		             in: (data at: #classes).
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #classes) size equals: 2.
-	self assert: (data at: #classes) size equals: 2.
 	self assert: (baseEntry at: #packageName) equals: 'MCP-Tests'.
 	self assert: (baseEntry at: #tag) equals: 'Internal'.
-	self
-		assert: (baseEntry at: #instanceSlotNames)
-		equals: #( 'betaSlot' 'alphaSlot' ).
-	self
-		assert: (baseEntry at: #classSlotNames)
-		equals: #( 'classBeta' 'classAlpha' ).
+	self deny: (baseEntry includesKey: #instanceSlotNames).
+	self deny: (baseEntry includesKey: #classSlotNames).
 	self deny: (baseEntry includesKey: #superclassName).
 	self deny: (baseEntry includesKey: #subclassNames)
 ]
