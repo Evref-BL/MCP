@@ -1574,21 +1574,36 @@ MCPToolContractsTest >> testMethodMetadataSearchDescriptionPointsToSpecializedRe
 { #category : 'tests' }
 MCPToolContractsTest >> testMethodMetadataSearchHasAccurateNameAndSchema [
 
-	| filterModeProperty propertyNames schema |
+	| filterModeProperty propertyNames schema scopeProperty scopePropertyNames |
 	schema := MCPToolSearchMethodMetadata new inputSchema.
 	propertyNames := schema properties collect: [ :each | each name ].
 	filterModeProperty := schema properties detect: [ :each |
 		                      each name = 'filterMode' ].
+	scopeProperty := schema properties detect: [ :each |
+		                 each name = 'scope' ].
+	scopePropertyNames := (scopeProperty extraProperties at: #properties)
+		                      collect: [ :each | each name ].
 	self
 		assert: MCPToolSearchMethodMetadata new name
 		equals: 'method_metadata_search'.
 	self assert: schema required equals: #(  ).
 	self
 		assert: propertyNames asSet
-		equals: #( 'packageNames' 'classNames' 'hierarchyClassNames'
-			   'subclassClassNames' 'parentClassNames' 'selector' 'protocol'
-			   'filterMode' 'side' 'includeSource' 'limit' 'offset' 'caseSensitive' )
-				asSet.
+		equals:
+			#( 'scope' 'selector' 'protocol' 'filterMode' 'side' 'includeSource'
+			   'limit' 'offset' 'caseSensitive' ) asSet.
+	self
+		assert: scopeProperty description
+		equals:
+		'Optional search scope. If omitted, searches all matching entities.'.
+	self
+		assert: (scopeProperty extraProperties at: #additionalProperties)
+		equals: false.
+	self
+		assert: scopePropertyNames asSet
+		equals:
+			#( 'classes' 'packages' 'superclassesOf' 'subclassesOf'
+			   'hierarchies' ) asSet.
 	self
 		assert: (filterModeProperty extraProperties at: #enum) asArray
 		equals: #( 'substring' 'prefix' 'exact' 'regex' )
@@ -1600,9 +1615,9 @@ MCPToolContractsTest >> testMethodMetadataSearchListsMethodsForExistingClassScop
 	| data methods result selectors |
 	result := self
 		          callToolNamed: 'method_metadata_search'
-		          withArguments:
-		          { (#classNames -> #( 'MCPToolMethodSearchTestTarget' )) }
-			          asDictionary.
+		          withArguments: { (self searchScope:
+				           { (#classes -> #( 'MCPToolMethodSearchTestTarget' )) }) }
+				          asDictionary.
 	data := (result at: #structuredContent) at: #data.
 	methods := data at: #methods.
 	selectors := methods collect: [ :each | each at: #selector ].
@@ -1618,9 +1633,9 @@ MCPToolContractsTest >> testMethodMetadataSearchReturnsWarningResultForMissingCl
 	| data result warnings |
 	result := self
 		          callToolNamed: 'method_metadata_search'
-		          withArguments:
-			          { (#classNames
-			           -> #( 'MCPDefinitelyMissingMethodSearchClass' )) }
+		          withArguments: { (self searchScope:
+				           { (#classes
+				            -> #( 'MCPDefinitelyMissingMethodSearchClass' )) }) }
 				          asDictionary.
 	data := self dataFrom: result.
 	warnings := self warningsFrom: result.
@@ -1633,7 +1648,7 @@ MCPToolContractsTest >> testMethodMetadataSearchReturnsWarningResultForMissingCl
 	self assert: (warnings first includesSubstring:
 			 'MCPDefinitelyMissingMethodSearchClass').
 	self assert: (warnings first includesSubstring: 'classNames scope').
-	self assert: (warnings first includesSubstring: 'Did you mean:')
+	self assert: (warnings first includesSubstring: 'Did you mean')
 ]
 
 { #category : 'tests' }
@@ -1730,25 +1745,33 @@ MCPToolContractsTest >> testMethodToolTraitOwnsSharedMethodHelpers [
 
 	| methodToolClasses sharedSelectors |
 	methodToolClasses := {
-			                     MCPToolMethodSearch.
-			                     MCPToolGetMethod.
-			                     MCPToolMethodMutation.
-			                     MCPToolRewriteMethods.
-			                     MCPToolRemoveMethods }.
+		                     MCPToolGetMethod.
+		                     MCPToolMethodMutation.
+		                     MCPToolRewriteMethods.
+		                     MCPToolRemoveMethods }.
 	sharedSelectors := #( selectorStringFromRequest:
 	                      behaviorNamed:classSide:
 	                      methodReferenceForBehavior:selector:
 	                      methodReferenceForClassName:selector:isClassSide:
 	                      methodScopeQueryFromRequest: ).
+	self assert:
+		(MCPToolMethodSearch withAllSuperclasses anySatisfy: [ :each |
+			 each traits includes: TMCPMethodTool ]).
+	self
+		assert:
+		(MCPToolMethodSearch >> #methodScopeQueryFromRequest:) origin
+		equals: MCPToolMethodSearch.
 	methodToolClasses do: [ :toolClass |
-		self assert: (toolClass withAllSuperclasses anySatisfy: [ :each |
-			each traits includes: TMCPMethodTool ]).
-		sharedSelectors do: [ :selector |
-			| implementingClass |
-			implementingClass := toolClass whichClassIncludesSelector: selector.
-			self assert: implementingClass notNil.
-			self assert: (implementingClass >> selector) origin equals: TMCPMethodTool ] ]
-
+			self assert: (toolClass withAllSuperclasses anySatisfy: [ :each |
+					 each traits includes: TMCPMethodTool ]).
+			sharedSelectors do: [ :selector |
+					| implementingClass |
+					implementingClass := toolClass whichClassIncludesSelector:
+						                     selector.
+					self assert: implementingClass notNil.
+					self
+						assert: (implementingClass >> selector) origin
+						equals: TMCPMethodTool ] ]
 ]
 
 { #category : 'tests' }
@@ -2037,45 +2060,34 @@ MCPToolContractsTest >> testPublicToolsDoNotExposeOperationInput [
 { #category : 'tests' }
 MCPToolContractsTest >> testQueryScopeDescriptionsExplainScopeSemantics [
 
-	| classDescription methodMetadataDescription methodDescription packageDescription parentDescription subclassDescription |
-	methodMetadataDescription := MCPToolSearchMethodMetadata new
-		                             description.
-	classDescription := (self
-		                     inputPropertyNamed: 'hierarchyClassNames'
-		                     inTool: MCPToolSearchClasses new) description.
-	subclassDescription := (self
-		                        inputPropertyNamed: 'subclassClassNames'
-		                        inTool: MCPToolSearchMethodMetadata new)
-		                       description.
-	parentDescription := (self
-		                      inputPropertyNamed: 'parentClassNames'
-		                      inTool: MCPToolSearchClasses new) description.
-	methodDescription := (self
-		                      inputPropertyNamed: 'packageNames'
-		                      inTool: MCPToolSearchMethodMetadata new)
-		                     description.
-	packageDescription := (self
-		                       inputPropertyNamed: 'projectNames'
-		                       inTool: MCPToolSearchPackages new)
-		                      description.
+	| classScope methodScope scopePropertyNames |
+	classScope := self
+		              inputPropertyNamed: 'scope'
+		              inTool: MCPToolSearchClasses new.
+	methodScope := self
+		               inputPropertyNamed: 'scope'
+		               inTool: MCPToolSearchMethodMetadata new.
+	scopePropertyNames := (classScope extraProperties at: #properties)
+		                      collect: [ :each | each name ].
+	self
+		assert: classScope description
+		equals:
+		'Optional search scope. If omitted, searches all matching entities.'.
+	self assert: methodScope description equals: classScope description.
+	self
+		assert: (classScope extraProperties at: #additionalProperties)
+		equals: false.
+	self
+		assert: (methodScope extraProperties at: #additionalProperties)
+		equals: false.
+	self
+		assert: scopePropertyNames asSet
+		equals:
+			#( 'classes' 'packages' 'superclassesOf' 'subclassesOf'
+			   'hierarchies' ) asSet.
 	self assert:
-		(methodMetadataDescription includesSubstring: 'selector').
-	self assert: (methodMetadataDescription includesSubstring: 'scope').
-	self assert:
-		(classDescription includesSubstring: 'superclasses and subclasses').
-	self assert:
-		(subclassDescription includesSubstring:
-			 'Subclasses of these classes').
-	self assert:
-		(subclassDescription includesSubstring: 'roots excluded').
-	self assert:
-		(parentDescription includesSubstring:
-			 'Superclasses of these classes').
-	self assert: (parentDescription includesSubstring: 'roots excluded').
-	self assert:
-		(methodDescription includesSubstring: 'including extensions').
-	self assert: (packageDescription includesSubstring:
-			 'Projects whose packages are included')
+		((classScope extraProperties at: #properties) allSatisfy: [ :each |
+			 each description isNil ])
 ]
 
 { #category : 'tests' }
@@ -2136,13 +2148,13 @@ MCPToolContractsTest >> testRPCRefreshesCachedToolMetadata [
 		                 keys asSet.
 	self
 		assert: propertyNames
-		equals: #( 'packageNames' 'classNames' 'hierarchyClassNames'
-			   'subclassClassNames' 'parentClassNames' 'className' 'tag' 'instanceSlot'
-			   'classSlot' 'filterMode' 'caseSensitive' 'limit' 'offset' )
-				asSet.
+		equals:
+			#( 'scope' 'className' 'tag' 'instanceSlot' 'classSlot' 'filterMode'
+			   'caseSensitive' 'limit' 'offset' ) asSet.
 	result := mcp rpcToolCall: 'class_search' withParams: {
-			          (#classNames -> #( 'MCPToolContractsTest' )).
-			          (#packageNames -> #( 'MCP-Tests' )).
+			          (self searchScope: {
+					           (#classes -> #( 'MCPToolContractsTest' )).
+					           (#packages -> #( 'MCP-Tests' )) }).
 			          (#limit -> 1) } asDictionary.
 	self deny: (result at: #isError ifAbsent: [ false ])
 ]
@@ -2615,17 +2627,29 @@ MCPToolContractsTest >> testScreenshotCommandPackagesProvidedFormAsImageContent 
 { #category : 'tests' }
 MCPToolContractsTest >> testSearchClassesHasAccurateNameAndSchema [
 
-	| propertyNames schema |
+	| propertyNames schema scopeProperty scopePropertyNames |
 	schema := MCPToolSearchClasses new inputSchema.
 	propertyNames := schema properties collect: [ :each | each name ].
+	scopeProperty := schema properties detect: [ :each |
+		                 each name = 'scope' ].
+	scopePropertyNames := (scopeProperty extraProperties at: #properties)
+		                      collect: [ :each | each name ].
 	self assert: MCPToolSearchClasses new name equals: 'class_search'.
 	self assert: schema required equals: #(  ).
 	self
 		assert: propertyNames asSet
-		equals: #( 'packageNames' 'classNames' 'hierarchyClassNames'
-			   'subclassClassNames' 'parentClassNames' 'className' 'tag' 'instanceSlot'
-			   'classSlot' 'filterMode' 'caseSensitive' 'limit' 'offset' )
-				asSet
+		equals:
+			#( 'scope' 'className' 'tag' 'instanceSlot' 'classSlot' 'filterMode'
+			   'caseSensitive' 'limit' 'offset' ) asSet.
+	self
+		assert: scopeProperty description
+		equals:
+		'Optional search scope. If omitted, searches all matching entities.'.
+	self
+		assert: scopePropertyNames asSet
+		equals:
+			#( 'classes' 'packages' 'superclassesOf' 'subclassesOf'
+			   'hierarchies' ) asSet
 ]
 
 { #category : 'tests' }
@@ -2633,7 +2657,7 @@ MCPToolContractsTest >> testSearchClassesListsClassesForExistingPackage [
 
 	| classNames classes data result |
 	result := self callToolNamed: 'class_search' withArguments: {
-			          (#packageNames -> #( 'MCP-Tests' )).
+			          (self searchScope: { (#packages -> #( 'MCP-Tests' )) }).
 			          (#limit -> 100) } asDictionary.
 	data := (result at: #structuredContent) at: #data.
 	classes := data at: #classes.
@@ -2650,8 +2674,9 @@ MCPToolContractsTest >> testSearchClassesReturnsWarningResultForMissingPackage [
 	result := self
 		          callToolNamed: 'class_search'
 		          withArguments:
-		          { (#packageNames -> #( 'MCP-Definitely-Missing' )) }
-			          asDictionary.
+			          { (self searchScope:
+				           { (#packages -> #( 'MCP-Definitely-Missing' )) }) }
+				          asDictionary.
 	data := self dataFrom: result.
 	warnings := self warningsFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
@@ -2761,36 +2786,35 @@ MCPToolContractsTest >> testSearchToolPaginationSchemasAdvertiseBounds [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testSearchToolSchemasAdvertiseFlatFieldProperties [
+MCPToolContractsTest >> testSearchToolSchemasAdvertiseGroupedScopeProperties [
 
-	| classProperties classSchema methodProperties methodSchema packageProperties packageSchema |
-	classSchema := MCPToolSearchClasses new inputSchema asJRPCJSON.
-	methodSchema := MCPToolSearchMethodMetadata new inputSchema
-		                asJRPCJSON.
-	packageSchema := MCPToolSearchPackages new inputSchema asJRPCJSON.
-	classProperties := (classSchema at: #properties) keys asSet.
-	methodProperties := (methodSchema at: #properties) keys asSet.
-	packageProperties := (packageSchema at: #properties) keys asSet.
-	self assert: (classSchema at: #type) equals: 'object'.
-	self assert: (methodSchema at: #type) equals: 'object'.
-	self assert: (packageSchema at: #type) equals: 'object'.
-	self
-		assert: classProperties
-		equals: #( 'packageNames' 'classNames' 'hierarchyClassNames'
-			   'subclassClassNames' 'parentClassNames' 'className' 'tag' 'instanceSlot'
-			   'classSlot' 'filterMode' 'caseSensitive' 'limit' 'offset' )
-				asSet.
-	self
-		assert: methodProperties
-		equals: #( 'packageNames' 'classNames' 'hierarchyClassNames'
-			   'subclassClassNames' 'parentClassNames' 'selector' 'protocol'
-			   'filterMode' 'side' 'includeSource' 'limit' 'offset' 'caseSensitive' )
-				asSet.
-	self
-		assert: packageProperties
-		equals:
-			#( 'projectNames' 'packageNames' 'packageName' 'projectName'
-			   'tag' 'filterMode' 'caseSensitive' 'limit' 'offset' ) asSet
+	| oldScopePropertyNames searchTools scopePropertyNames |
+	oldScopePropertyNames := #( 'packageNames' 'classNames' 'hierarchyClassNames'
+	                            'subclassClassNames' 'parentClassNames' ).
+	searchTools := {
+		               MCPToolSearchClasses new.
+		               MCPToolSearchMethodMetadata new.
+		               MCPToolSearchMethodSource new.
+		               MCPToolSearchMethodSenders new.
+		               MCPToolSearchMethodImplementors new.
+		               MCPToolSearchEquivalentMethods new.
+		               MCPToolSearchClassReferences new.
+		               MCPToolSearchVariableReferences new }.
+	searchTools do: [ :tool |
+			| propertyNames scopeProperty |
+			propertyNames := tool inputSchema properties collect: [ :each |
+				                 each name ].
+			scopeProperty := self inputPropertyNamed: 'scope' inTool: tool.
+			scopePropertyNames := (scopeProperty extraProperties at:
+				                       #properties) collect: [ :each | each name ].
+			self assert: (propertyNames includes: 'scope').
+			oldScopePropertyNames do: [ :each |
+				self deny: (propertyNames includes: each) ].
+			self
+				assert: scopePropertyNames asSet
+				equals:
+					#( 'classes' 'packages' 'superclassesOf' 'subclassesOf'
+					   'hierarchies' ) asSet ]
 ]
 
 { #category : 'tests' }

@@ -522,6 +522,15 @@ MCPTool >> standardOutputSchemaForDataProperties: dataProperties required: requi
 ]
 
 { #category : 'private - schema' }
+MCPTool >> stringArraySchemaNamed: aName [
+
+	^ self
+		  stringArraySchemaNamed: aName
+		  description: nil
+		  itemDescription: nil
+]
+
+{ #category : 'private - schema' }
 MCPTool >> stringArraySchemaNamed: aName description: aDescription itemDescription: anItemDescription [
 
 	| itemsProperty |

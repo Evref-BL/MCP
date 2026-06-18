@@ -192,9 +192,9 @@ MCPToolStructuredOutputTest >> testMethodMetadataSearchReturnsStructuredArrayDat
 	| data methods result selectors |
 	result := self
 		          callToolNamed: 'method_metadata_search'
-		          withArguments:
-		          { (#classNames -> #( 'MCPToolMethodSearchTestTarget' )) }
-			          asDictionary.
+		          withArguments: { (self searchScope:
+				           { (#classes -> #( 'MCPToolMethodSearchTestTarget' )) }) }
+				          asDictionary.
 	data := self dataFrom: result.
 	methods := data at: #methods.
 	selectors := methods collect: [ :each | each at: #selector ].
@@ -216,8 +216,9 @@ MCPToolStructuredOutputTest >> testMethodMetadataSearchReturnsStructuredWarnings
 	result := self
 		          callToolNamed: 'method_metadata_search'
 		          withArguments:
-		          { (#packageNames -> #( 'MCP-Definitely-Missing' )) }
-			          asDictionary.
+			          { (self searchScope:
+				           { (#packages -> #( 'MCP-Definitely-Missing' )) }) }
+				          asDictionary.
 	structured := self structuredContentFrom: result.
 	data := self dataFrom: result.
 	warnings := self warningsFrom: result.
@@ -640,8 +641,9 @@ MCPToolStructuredOutputTest >> testSearchClassesReturnsStructuredArrayData [
 	result := self
 		          callToolNamed: 'class_search'
 		          withArguments:
-		          { (#classNames -> #( 'MCPToolContractsTest' )) }
-			          asDictionary.
+			          { (self searchScope:
+				           { (#classes -> #( 'MCPToolContractsTest' )) }) }
+				          asDictionary.
 	data := self dataFrom: result.
 	classes := data at: #classes.
 	classNames := classes collect: [ :each | each at: #className ].
@@ -662,8 +664,9 @@ MCPToolStructuredOutputTest >> testSearchClassesReturnsStructuredWarnings [
 	result := self
 		          callToolNamed: 'class_search'
 		          withArguments:
-		          { (#packageNames -> #( 'MCP-Definitely-Missing' )) }
-			          asDictionary.
+			          { (self searchScope:
+				           { (#packages -> #( 'MCP-Definitely-Missing' )) }) }
+				          asDictionary.
 	structured := self structuredContentFrom: result.
 	data := self dataFrom: result.
 	warnings := self warningsFrom: result.

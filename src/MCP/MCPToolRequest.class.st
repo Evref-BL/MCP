@@ -166,6 +166,16 @@ MCPToolRequest >> stringCollectionArgumentNamed: anArgumentName default: default
 	^ self stringCollectionArgumentNamed: anArgumentName
 ]
 
+{ #category : 'accessing' }
+MCPToolRequest >> stringCollectionArgumentNamed: anArgumentName in: aDictionary [
+
+	^ self stringCollectionFrom:
+		  (self
+			   valueNamed: anArgumentName
+			   in: aDictionary
+			   ifAbsent: [ ^ #(  ) ])
+]
+
 { #category : 'private - accessing' }
 MCPToolRequest >> stringCollectionFrom: aValue [
 

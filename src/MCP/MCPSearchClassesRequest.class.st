@@ -20,25 +20,8 @@ Class {
 { #category : 'instance creation' }
 MCPSearchClassesRequest class >> fromRequest: request tool: aTool [
 
-	| scopeQuery |
-	scopeQuery := MCPClassScopeQuery new
-		              packageNames:
-			              (request stringCollectionArgumentNamed:
-					               'packageNames');
-		              classNames:
-			              (request stringCollectionArgumentNamed: 'classNames');
-		              hierarchyClassNames:
-			              (request stringCollectionArgumentNamed:
-					               'hierarchyClassNames');
-		              subclassClassNames:
-			              (request stringCollectionArgumentNamed:
-					               'subclassClassNames');
-		              parentClassNames:
-			              (request stringCollectionArgumentNamed:
-					               'parentClassNames');
-		              yourself.
 	^ self new
-		  scopeQuery: scopeQuery;
+		  scopeQuery: (aTool classScopeQueryFromRequest: request);
 		  filterMode: (aTool filterModeFromRequest: request);
 		  fieldFilters: (aTool
 				   fieldFiltersFromRequest: request

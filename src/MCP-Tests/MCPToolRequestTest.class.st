@@ -117,11 +117,14 @@ MCPToolRequestTest >> testRequestAccessorsProvideDefaultsUniqueCollectionsSymbol
 { #category : 'tests' }
 MCPToolRequestTest >> testValidRequestProvidesTypedAccessors [
 
-	| request |
-	request := MCPToolRequest tool: MCPToolSearchClasses new arguments: {
-			           (#packageNames -> #( 'MCP' )).
-			           (#caseSensitive -> true).
-			           (#limit -> 3) } asDictionary.
+	| request scope |
+	scope := { (#packages -> #( 'MCP' )) } asDictionary.
+	request := MCPToolRequest
+		           tool: MCPToolSearchClasses new
+		           arguments: {
+				           (#scope -> scope).
+				           (#caseSensitive -> true).
+				           (#limit -> 3) } asDictionary.
 	self assert:
 		(request booleanArgumentNamed: 'caseSensitive' default: false).
 	self
@@ -129,7 +132,8 @@ MCPToolRequestTest >> testValidRequestProvidesTypedAccessors [
 		(request nonNegativeIntegerArgumentNamed: 'limit' default: 100)
 		equals: 3.
 	self
-		assert: (request stringCollectionArgumentNamed: 'packageNames')
+		assert:
+		(request stringCollectionArgumentNamed: 'packages' in: scope)
 		equals: #( 'MCP' ).
 	self assert: (request stringArgumentNamed: 'missing') isNil.
 	self

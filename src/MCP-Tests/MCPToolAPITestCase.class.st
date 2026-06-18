@@ -97,6 +97,12 @@ MCPToolAPITestCase >> parsedRequestForTool: aTool arguments: someArguments [
 			   arguments: someArguments)
 ]
 
+{ #category : 'support' }
+MCPToolAPITestCase >> searchScope: scopeAssociations [
+
+	^ #scope -> scopeAssociations asDictionary
+]
+
 { #category : 'private - results' }
 MCPToolAPITestCase >> structuredContentFrom: aResult [
 

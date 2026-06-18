@@ -301,43 +301,38 @@ MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasAcceptRepresentativeArg
 ]
 
 { #category : 'tests' }
-MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasAdvertiseFlatShapes [
+MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasAdvertiseGroupedSearchScope [
 
-	| classSchema methodFilterMode methodSchema packageSchema selectorSchema |
-	classSchema := MCPToolSearchClasses new inputSchema asJRPCJSON.
-	methodSchema := MCPToolSearchMethodMetadata new inputSchema asJRPCJSON.
-	packageSchema := MCPToolSearchPackages new inputSchema asJRPCJSON.
-	selectorSchema := MCPToolUpdateMethodSelector new inputSchema
-		                  asJRPCJSON.
-	methodFilterMode := ((methodSchema at: #properties) at: 'filterMode')
-		                    at: #enum.
-	self assert: (classSchema at: #additionalProperties) equals: false.
-	self assert: (methodSchema at: #additionalProperties) equals: false.
-	self assert: (packageSchema at: #additionalProperties) equals: false.
-	self assert: (selectorSchema at: #additionalProperties) equals: false.
+	| classProperties classScopeProperties methodProperties methodScopeProperties |
+	classProperties := MCPToolSearchClasses new inputSchema properties.
+	methodProperties := MCPToolSearchMethodMetadata new inputSchema
+		                    properties.
+	classScopeProperties := ((classProperties detect: [ :each |
+		                          each name = 'scope' ]) extraProperties
+		                         at: #properties) collect: [ :each |
+		                        each name ].
+	methodScopeProperties := ((methodProperties detect: [ :each |
+		                           each name = 'scope' ]) extraProperties
+		                          at: #properties) collect: [ :each |
+		                         each name ].
 	self
-		assert: (classSchema at: #properties) keys asSet
-		equals: #( 'packageNames' 'classNames' 'hierarchyClassNames'
-			   'subclassClassNames' 'parentClassNames' 'className' 'tag' 'instanceSlot'
-			   'classSlot' 'filterMode' 'caseSensitive' 'limit' 'offset' )
-				asSet.
-	self
-		assert: (methodSchema at: #properties) keys asSet
-		equals: #( 'packageNames' 'classNames' 'hierarchyClassNames'
-			   'subclassClassNames' 'parentClassNames' 'selector' 'protocol'
-			   'filterMode' 'side' 'includeSource' 'limit' 'offset' 'caseSensitive' )
-				asSet.
-	self
-		assert: (packageSchema at: #properties) keys asSet
+		assert: (classProperties collect: [ :each | each name ]) asSet
 		equals:
-			#( 'projectNames' 'packageNames' 'packageName' 'projectName'
-			   'tag' 'filterMode' 'caseSensitive' 'limit' 'offset' ) asSet.
+			#( 'scope' 'className' 'tag' 'instanceSlot' 'classSlot' 'filterMode'
+			   'caseSensitive' 'limit' 'offset' ) asSet.
 	self
-		assert: methodFilterMode asArray
-		equals: #( 'substring' 'prefix' 'exact' 'regex' ).
+		assert: (methodProperties collect: [ :each | each name ]) asSet
+		equals:
+			#( 'scope' 'selector' 'protocol' 'filterMode' 'side' 'includeSource'
+			   'limit' 'offset' 'caseSensitive' ) asSet.
 	self
-		assert: (selectorSchema at: #required) asArray asSet
-		equals: #( 'className' 'selector' 'newSelector' ) asSet
+		assert: classScopeProperties asSet
+		equals:
+			#( 'classes' 'packages' 'superclassesOf' 'subclassesOf'
+			   'hierarchies' ) asSet.
+	self
+		assert: methodScopeProperties asSet
+		equals: classScopeProperties asSet
 ]
 
 { #category : 'tests' }
