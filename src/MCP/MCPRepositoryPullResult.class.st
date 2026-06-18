@@ -26,20 +26,14 @@ MCPRepositoryPullResult class >> repositoryBefore: beforeInfo after: aRepository
 { #category : 'converting' }
 MCPRepositoryPullResult >> asDictionary [
 
-	^ {
-		  (#repositoryBefore -> self repositoryInfoBefore asDictionary).
-		  (#repository -> self repositoryInfo asDictionary).
-		  (#packages
-		   ->
-		   (self packageInfos
-			    collect: [ :each | each asDictionary ]
-			    as: Array)).
-		  (#packageNames -> self repositoryInfo packageNames).
-		  (#modifiedPackageNames -> self modifiedPackageNames).
-		  (#branchName -> self branchName).
-		  (#headDescription -> self headDescription).
-		  (#repositoryLocation -> self repositoryInfo location) }
-		  asDictionary
+	| data |
+	data := Dictionary new.
+	self branchName ifNotEmpty: [ :name | data at: #branchName put: name ].
+	self headDescription ifNotEmpty: [ :description |
+		data at: #headDescription put: description ].
+	self modifiedPackageNames ifNotEmpty: [ :names |
+		data at: #modifiedPackageNames put: names ].
+	^ data
 ]
 
 { #category : 'accessing' }

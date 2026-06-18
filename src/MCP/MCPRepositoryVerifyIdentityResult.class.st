@@ -26,21 +26,7 @@ MCPRepositoryVerifyIdentityResult class >> repository: aRepository checkedFields
 { #category : 'converting' }
 MCPRepositoryVerifyIdentityResult >> asDictionary [
 
-	^ {
-		  (#repository -> self repositoryInfo asDictionary).
-		  (#packages
-		   ->
-		   (self packageInfos
-			    collect: [ :each | each asDictionary ]
-			    as: Array)).
-		  (#packageNames -> self repositoryInfo packageNames).
-		  (#modifiedPackageNames -> self repositoryInfo modifiedPackageNames).
-		  (#checkedFields -> self checkedFields).
-		  (#matched -> self matched).
-		  (#branchName -> self repositoryInfo branchName).
-		  (#headDescription -> self repositoryInfo headDescription).
-		  (#repositoryLocation -> self repositoryInfo location) }
-		  asDictionary
+	^ { (#matched -> self matched) } asDictionary
 ]
 
 { #category : 'accessing' }

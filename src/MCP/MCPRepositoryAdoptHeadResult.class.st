@@ -42,26 +42,23 @@ MCPRepositoryAdoptHeadResult >> adoptedCommitId [
 { #category : 'converting' }
 MCPRepositoryAdoptHeadResult >> asDictionary [
 
-	^ {
-		  (#repositoryBefore -> self repositoryInfoBefore asDictionary).
-		  (#repository -> self repositoryInfo asDictionary).
-		  (#packages
-		   ->
-		   (self packageInfos
-			    collect: [ :each | each asDictionary ]
-			    as: Array)).
-		  (#packageNames -> self repositoryInfo packageNames).
-		  (#modifiedPackageNamesBefore -> self modifiedPackageNamesBefore).
-		  (#modifiedPackageNamesAfter -> self modifiedPackageNamesAfter).
-		  (#modifiedPackageNames -> self modifiedPackageNamesAfter).
-		  (#previousReferenceCommitId -> self previousReferenceCommitId).
-		  (#referenceCommitId -> self referenceCommitId).
-		  (#adoptedCommitId -> self adoptedCommitId).
-		  (#didAdopt -> self didAdopt).
-		  (#branchName -> self branchName).
-		  (#headDescription -> self headDescription).
-		  (#repositoryLocation -> self repositoryInfo location) }
-		  asDictionary
+	| data |
+	data := Dictionary new.
+	data at: #didAdopt put: self didAdopt.
+	self previousReferenceCommitId ifNotEmpty: [ :id |
+		data at: #previousReferenceCommitId put: id ].
+	self referenceCommitId ifNotEmpty: [ :id |
+		data at: #referenceCommitId put: id ].
+	self adoptedCommitId ifNotEmpty: [ :id |
+		data at: #adoptedCommitId put: id ].
+	self modifiedPackageNamesBefore ifNotEmpty: [ :names |
+		data at: #modifiedPackageNamesBefore put: names ].
+	self modifiedPackageNamesAfter ifNotEmpty: [ :names |
+		data at: #modifiedPackageNamesAfter put: names ].
+	self branchName ifNotEmpty: [ :name | data at: #branchName put: name ].
+	self headDescription ifNotEmpty: [ :description |
+		data at: #headDescription put: description ].
+	^ data
 ]
 
 { #category : 'accessing' }

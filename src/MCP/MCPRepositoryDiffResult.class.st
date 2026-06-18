@@ -30,20 +30,16 @@ MCPRepositoryDiffResult class >> repository: aRepository changedPackageNames: pa
 { #category : 'converting' }
 MCPRepositoryDiffResult >> asDictionary [
 
-	^ {
-		  (#repository -> self repositoryInfo asDictionary).
-		  (#packages
-		   ->
-		   (self packageInfos
-			    collect: [ :each | each asDictionary ]
-			    as: Array)).
-		  (#packageNames -> self repositoryInfo packageNames).
-		  (#changedPackageNames -> self changedPackageNames).
-		  (#modifiedPaths -> self modifiedPaths).
-		  (#changeCount -> self changeCount).
-		  (#isEmpty -> self isEmpty).
-		  (#repositoryLocation -> self repositoryInfo location) }
-		  asDictionary
+	| data |
+	data := Dictionary new.
+	data
+		at: #changeCount put: self changeCount;
+		at: #isEmpty put: self isEmpty.
+	self changedPackageNames ifNotEmpty: [ :names |
+		data at: #changedPackageNames put: names ].
+	self modifiedPaths ifNotEmpty: [ :paths |
+		data at: #modifiedPaths put: paths ].
+	^ data
 ]
 
 { #category : 'accessing' }

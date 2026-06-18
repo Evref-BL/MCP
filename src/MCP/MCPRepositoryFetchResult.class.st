@@ -26,20 +26,12 @@ MCPRepositoryFetchResult class >> repositoryBefore: beforeInfo after: aRepositor
 { #category : 'converting' }
 MCPRepositoryFetchResult >> asDictionary [
 
-	^ {
-		  (#repositoryBefore -> self repositoryInfoBefore asDictionary).
-		  (#repository -> self repositoryInfo asDictionary).
-		  (#packages
-		   ->
-		   (self packageInfos
-			    collect: [ :each | each asDictionary ]
-			    as: Array)).
-		  (#packageNames -> self repositoryInfo packageNames).
-		  (#remoteNames -> self remoteNames).
-		  (#branchName -> self branchName).
-		  (#headDescription -> self headDescription).
-		  (#repositoryLocation -> self repositoryInfo location) }
-		  asDictionary
+	| data |
+	data := Dictionary new.
+	self branchName ifNotEmpty: [ :name | data at: #branchName put: name ].
+	self headDescription ifNotEmpty: [ :description |
+		data at: #headDescription put: description ].
+	^ data
 ]
 
 { #category : 'accessing' }

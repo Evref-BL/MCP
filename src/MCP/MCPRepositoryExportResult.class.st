@@ -29,20 +29,16 @@ MCPRepositoryExportResult class >> repository: aRepository changedPackageNames: 
 { #category : 'converting' }
 MCPRepositoryExportResult >> asDictionary [
 
-	^ {
-		  (#repository -> self repositoryInfo asDictionary).
-		  (#packages
-		   ->
-		   (self packageInfos
-			    collect: [ :each | each asDictionary ]
-			    as: Array)).
-		  (#packageNames -> self repositoryInfo packageNames).
-		  (#changedPackageNames -> self changedPackageNames).
-		  (#modifiedPaths -> self modifiedPaths).
-		  (#restoredOrderOnlyPaths -> self restoredOrderOnlyPaths).
-		  (#didChange -> self didChange).
-		  (#repositoryLocation -> self repositoryInfo location) }
-		  asDictionary
+	| data |
+	data := Dictionary new.
+	data at: #didChange put: self didChange.
+	self changedPackageNames ifNotEmpty: [ :names |
+		data at: #changedPackageNames put: names ].
+	self modifiedPaths ifNotEmpty: [ :paths |
+		data at: #modifiedPaths put: paths ].
+	self restoredOrderOnlyPaths ifNotEmpty: [ :paths |
+		data at: #restoredOrderOnlyPaths put: paths ].
+	^ data
 ]
 
 { #category : 'accessing' }

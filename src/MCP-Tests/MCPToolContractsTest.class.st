@@ -2205,29 +2205,26 @@ MCPToolContractsTest >> testRepositoryCreateAndUpdateRequiredArguments [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testRepositoryOperationOutputSchemaUsesActionForExecutedAction [
+MCPToolContractsTest >> testRepositoryOperationOutputSchemaUsesCompactOutcomeFields [
 
-	| dataProperties outputSchema required |
+	| dataProperties expectedFields outputSchema required |
 	outputSchema := MCPToolUpdateRepository new outputSchema asJRPCJSON.
 	dataProperties := ((outputSchema at: #properties) at: 'data') at:
 		                  #properties.
 	required := ((outputSchema at: #properties) at: 'data') at: #required.
-	self assert: (dataProperties includesKey: 'action').
-	self assert: (dataProperties includesKey: 'restoredOrderOnlyPaths').
-	self assert:
-		(dataProperties includesKey: 'modifiedPackageNamesBefore').
-	self assert:
-		(dataProperties includesKey: 'modifiedPackageNamesAfter').
-	self assert: (dataProperties includesKey: 'checkedFields').
-	self assert:
-		(dataProperties includesKey: 'previousReferenceCommitId').
-	self assert: (dataProperties includesKey: 'referenceCommitId').
-	self assert: (dataProperties includesKey: 'adoptedCommitId').
-	self assert: (dataProperties includesKey: 'didAdopt').
-	self assert: (dataProperties includesKey: 'matched').
-	self deny: (dataProperties includesKey: 'operation').
-	self assert: (required includes: 'action').
-	self deny: (required includes: 'operation')
+	expectedFields := #( 'matched' 'updateActions' 'addedPackageNames'
+	                     'removedPackageNames' 'changedPackageNames'
+	                     'modifiedPackageNames' 'modifiedPackageNamesBefore'
+	                     'modifiedPackageNamesAfter'
+	                     'modifiedPaths' 'restoredOrderOnlyPaths'
+	                     'changeCount' 'isEmpty' 'didChange' 'didAdopt'
+	                     'commitId' 'commitDescription'
+	                     'branchName' 'previousBranchName'
+	                     'headDescription' 'previousHeadDescription'
+	                     'previousReferenceCommitId'
+	                     'referenceCommitId' 'adoptedCommitId' ).
+	self assert: dataProperties keys asSet equals: expectedFields asSet.
+	self assert: required equals: #(  )
 ]
 
 { #category : 'tests' }

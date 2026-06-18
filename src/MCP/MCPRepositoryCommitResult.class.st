@@ -30,21 +30,18 @@ MCPRepositoryCommitResult class >> repository: aRepository changedPackageNames: 
 { #category : 'converting' }
 MCPRepositoryCommitResult >> asDictionary [
 
-	^ {
-		  (#repository -> self repositoryInfo asDictionary).
-		  (#packages
-		   ->
-		   (self packageInfos
-			    collect: [ :each | each asDictionary ]
-			    as: Array)).
-		  (#packageNames -> self repositoryInfo packageNames).
-		  (#changedPackageNames -> self changedPackageNames).
-		  (#modifiedPackageNames -> self modifiedPackageNames).
-		  (#commitId -> self commitId).
-		  (#commitDescription -> self commitDescription).
-		  (#headDescription -> self headDescription).
-		  (#repositoryLocation -> self repositoryInfo location) }
-		  asDictionary
+	| data |
+	data := Dictionary new.
+	self commitId ifNotEmpty: [ :id | data at: #commitId put: id ].
+	self commitDescription ifNotEmpty: [ :description |
+		data at: #commitDescription put: description ].
+	self headDescription ifNotEmpty: [ :description |
+		data at: #headDescription put: description ].
+	self changedPackageNames ifNotEmpty: [ :names |
+		data at: #changedPackageNames put: names ].
+	self modifiedPackageNames ifNotEmpty: [ :names |
+		data at: #modifiedPackageNames put: names ].
+	^ data
 ]
 
 { #category : 'accessing' }

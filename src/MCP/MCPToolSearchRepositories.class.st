@@ -20,7 +20,7 @@ MCPToolSearchRepositories class >> toolName [
 { #category : 'defaults' }
 MCPToolSearchRepositories >> defaultDescription [
 
-	^ 'List Iceberg repositories registered in the image. Filter by exact repository names, locations, packages, modified/missing state, or field-specific text filters. Returns disk location, branch/head metadata, exact head commit id, modified packages, remotes, and upstream details.'
+	^ 'List Iceberg repositories registered in image. Filter by repository identity, package, branch, modified state, or field-specific text.'
 ]
 
 { #category : 'defaults' }
@@ -128,11 +128,11 @@ MCPToolSearchRepositories >> repositoryEntriesForRequest: queryRequest [
 	| entries sortedEntries |
 	entries := OrderedCollection new.
 	IceRepository repositories do: [ :eachRepository |
-			| entry |
-			entry := (MCPRepositoryInfo fromRepository: eachRepository)
-				         asQueryDictionary.
-			(self repositoryEntry: entry matchesRequest: queryRequest) ifTrue: [
-				entries add: entry ] ].
+			| repositoryInfo queryEntry |
+			repositoryInfo := MCPRepositoryInfo fromRepository: eachRepository.
+			queryEntry := repositoryInfo asQueryDictionary.
+			(self repositoryEntry: queryEntry matchesRequest: queryRequest)
+				ifTrue: [ entries add: repositoryInfo asSearchDictionary ] ].
 	sortedEntries := entries asArray sort: [ :left :right |
 		                 (left at: #name) <= (right at: #name) ].
 	^ sortedEntries
@@ -176,14 +176,9 @@ MCPToolSearchRepositories >> repositoryEntrySchema [
 		  name: 'repositoryEntry';
 		  type: 'object';
 		  description:
-			  'Structured metadata for one registered Iceberg repository.';
+			  'Compact metadata for one registered Iceberg repository.';
 		  properties: self repositoryInfoDataProperties;
-		  required:
-			  #( 'name' 'className' 'location' 'subdirectory' 'branchName'
-			     'headDescription' 'headClassName' 'headCommitId'
-			     'isDetachedHead' 'isMissing' 'isModified' 'packageNames'
-			     'modifiedPackageNames' 'remotes' 'upstreamRemoteName'
-			     'upstreamBranchName' 'upstreamRemoteUrl' );
+		  required: #( 'name' 'location' 'isModified' 'isMissing' );
 		  additionalProperties: false;
 		  yourself
 ]
@@ -295,85 +290,60 @@ MCPToolSearchRepositories >> repositoryFilterInputProperties [
 { #category : 'private - schema' }
 MCPToolSearchRepositories >> repositoryInfoDataProperties [
 
-	| remotesProperty |
-	remotesProperty := self
-		                   schemaPropertyNamed: 'remotes'
-		                   type: 'array'
-		                   description:
-		                   'The configured repository remotes, including names and URLs.'.
-	remotesProperty items: self repositoryRemoteEntrySchema.
 	^ {
 		  (self
 			   schemaPropertyNamed: 'name'
 			   type: 'string'
-			   description: 'The Iceberg repository name in the image.').
-		  (self
-			   schemaPropertyNamed: 'className'
-			   type: 'string'
-			   description: 'The concrete Iceberg repository class name.').
+			   description: 'Repository name.').
 		  (self
 			   schemaPropertyNamed: 'location'
 			   type: 'string'
-			   description:
-			   'The repository location path on disk, when available.').
+			   description: 'Repository directory.').
 		  (self
 			   schemaPropertyNamed: 'subdirectory'
 			   type: 'string'
-			   description:
-			   'The repository subdirectory used for packages, when any.').
+			   description: 'Repository source subdirectory.').
 		  (self
 			   schemaPropertyNamed: 'branchName'
 			   type: 'string'
-			   description: 'The current local branch name, when available.').
+			   description: 'Current branch.').
 		  (self
 			   schemaPropertyNamed: 'headDescription'
 			   type: 'string'
-			   description:
-			   'A short description of the current head, when available.').
-		  (self
-			   schemaPropertyNamed: 'headClassName'
-			   type: 'string'
-			   description:
-			   'The concrete class name of the current head reference, when available.').
+			   description: 'Current HEAD description.').
 		  (self
 			   schemaPropertyNamed: 'headCommitId'
 			   type: 'string'
-			   description: 'The exact current head commit id, when available.').
-		  (self
-			   booleanSchemaPropertyNamed: 'isDetachedHead'
-			   description:
-			   'Whether the repository appears to be checked out at a detached commit.').
-		  (self
-			   booleanSchemaPropertyNamed: 'isMissing'
-			   description: 'Whether the repository location is missing.').
+			   description: 'Current HEAD commit id.').
 		  (self
 			   booleanSchemaPropertyNamed: 'isModified'
-			   description:
-			   'Whether the image working copy has repository changes.').
+			   description: 'Whether repository has image-side modifications.').
+		  (self
+			   booleanSchemaPropertyNamed: 'isMissing'
+			   description: 'Whether repository directory is missing.').
+		  (self
+			   booleanSchemaPropertyNamed: 'isDetachedHead'
+			   description: 'Whether repository is detached.').
 		  (self
 			   stringArraySchemaNamed: 'packageNames'
-			   description: 'The package names managed by the repository.'
-			   itemDescription: 'A package name.').
+			   description: 'Managed packages.'
+			   itemDescription: 'Package name.').
 		  (self
 			   stringArraySchemaNamed: 'modifiedPackageNames'
-			   description: 'The managed package names with image changes.'
-			   itemDescription: 'A modified package name.').
-		  remotesProperty.
+			   description: 'Modified packages.'
+			   itemDescription: 'Package name.').
 		  (self
 			   schemaPropertyNamed: 'upstreamRemoteName'
 			   type: 'string'
-			   description:
-			   'The upstream remote name for the current local branch, when available.').
+			   description: 'Upstream remote name when configured.').
 		  (self
 			   schemaPropertyNamed: 'upstreamBranchName'
 			   type: 'string'
-			   description:
-			   'The upstream branch name for the current local branch, when available.').
+			   description: 'Upstream branch when configured.').
 		  (self
 			   schemaPropertyNamed: 'upstreamRemoteUrl'
 			   type: 'string'
-			   description:
-			   'The upstream remote URL for the current local branch, when available.') }
+			   description: 'Upstream remote URL when configured.') }
 ]
 
 { #category : 'private - schema' }

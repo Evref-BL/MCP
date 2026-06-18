@@ -22,14 +22,7 @@ MCPRepositoryCreateResult class >> fromRepository: aRepository [
 { #category : 'converting' }
 MCPRepositoryCreateResult >> asDictionary [
 
-	^ {
-		  (#repository -> self repositoryInfo asDictionary).
-		  (#packages
-		   ->
-		   (self packageInfos
-			    collect: [ :each | each asDictionary ]
-			    as: Array)).
-		  (#packageNames -> self repositoryInfo packageNames) } asDictionary
+	^ Dictionary new
 ]
 
 { #category : 'initialization' }

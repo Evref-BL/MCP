@@ -42,94 +42,91 @@ MCPToolRepositoryOperation >> commandForRequest: repositoryRequest [
 { #category : 'private - results' }
 MCPToolRepositoryOperation >> dataForRepositoryAdoptHeadResult: aResult [
 
-	^ self dataForRepositoryResult: aResult action: 'adoptHead'
+	^ self dataForRepositoryResult: aResult
 ]
 
 { #category : 'private - results' }
 MCPToolRepositoryOperation >> dataForRepositoryAttachResult: aResult [
 
-	^ self dataForRepositoryResult: aResult action: 'attach'
+	^ self dataForRepositoryResult: aResult
 ]
 
 { #category : 'private - results' }
 MCPToolRepositoryOperation >> dataForRepositoryCheckoutBranchResult: aResult [
 
-	^ self dataForRepositoryResult: aResult action: 'checkoutBranch'
+	^ self dataForRepositoryResult: aResult
 ]
 
 { #category : 'private - results' }
 MCPToolRepositoryOperation >> dataForRepositoryCommitResult: aResult [
 
-	^ self dataForRepositoryResult: aResult action: 'commit'
+	^ self dataForRepositoryResult: aResult
 ]
 
 { #category : 'private - results' }
 MCPToolRepositoryOperation >> dataForRepositoryCreateBranchResult: aResult [
 
-	^ self dataForRepositoryResult: aResult action: 'createBranch'
+	^ self dataForRepositoryResult: aResult
 ]
 
 { #category : 'private - results' }
 MCPToolRepositoryOperation >> dataForRepositoryCreateResult: aResult [
 
-	^ self dataForRepositoryResult: aResult action: 'create'
+	^ self dataForRepositoryResult: aResult
 ]
 
 { #category : 'private - results' }
 MCPToolRepositoryOperation >> dataForRepositoryDiffResult: aResult [
 
-	^ self dataForRepositoryResult: aResult action: 'diff'
+	^ self dataForRepositoryResult: aResult
 ]
 
 { #category : 'private - results' }
 MCPToolRepositoryOperation >> dataForRepositoryExportResult: aResult [
 
-	^ self dataForRepositoryResult: aResult action: 'export'
+	^ self dataForRepositoryResult: aResult
 ]
 
 { #category : 'private - results' }
 MCPToolRepositoryOperation >> dataForRepositoryFetchResult: aResult [
 
-	^ self dataForRepositoryResult: aResult action: 'fetch'
+	^ self dataForRepositoryResult: aResult
 ]
 
 { #category : 'private - results' }
 MCPToolRepositoryOperation >> dataForRepositoryPullResult: aResult [
 
-	^ self dataForRepositoryResult: aResult action: 'pull'
+	^ self dataForRepositoryResult: aResult
 ]
 
 { #category : 'private - results' }
 MCPToolRepositoryOperation >> dataForRepositoryPushResult: aResult [
 
-	^ self dataForRepositoryResult: aResult action: 'push'
+	^ self dataForRepositoryResult: aResult
 ]
 
 { #category : 'private - results' }
-MCPToolRepositoryOperation >> dataForRepositoryResult: aResult action: actionName [
+MCPToolRepositoryOperation >> dataForRepositoryResult: aResult [
 
-	| data |
-	data := aResult asDictionary copy.
-	data at: #action put: actionName.
-	^ data
+	^ aResult asDictionary
 ]
 
 { #category : 'private - results' }
 MCPToolRepositoryOperation >> dataForRepositorySwitchBranchResult: aResult [
 
-	^ self dataForRepositoryResult: aResult action: 'switchBranch'
+	^ self dataForRepositoryResult: aResult
 ]
 
 { #category : 'private - results' }
 MCPToolRepositoryOperation >> dataForRepositoryUpdateResult: aResult [
 
-	^ self dataForRepositoryResult: aResult action: 'update'
+	^ self dataForRepositoryResult: aResult
 ]
 
 { #category : 'private - results' }
 MCPToolRepositoryOperation >> dataForRepositoryVerifyIdentityResult: aResult [
 
-	^ self dataForRepositoryResult: aResult action: 'verifyIdentity'
+	^ self dataForRepositoryResult: aResult
 ]
 
 { #category : 'defaults' }
@@ -155,7 +152,7 @@ MCPToolRepositoryOperation >> defaultOutputSchema [
 	^ self
 		  standardOutputSchemaForDataProperties:
 		  self repositoryOperationDataProperties
-		  required: #( 'action' 'repository' 'packages' 'packageNames' )
+		  required: #(  )
 ]
 
 { #category : 'defaults' }
@@ -249,141 +246,93 @@ MCPToolRepositoryOperation >> repositoryOperationDataProperties [
 
 	^ {
 		  (self
-			   schemaPropertyNamed: 'action'
-			   type: 'string'
-			   description:
-			   'The repository action executed by this repository tool.').
-		  self repositoryOutputSchemaProperty.
-		  (self
-			   schemaPropertyNamed: 'repositoryBefore'
-			   type: 'object'
-			   description:
-			   'Structured metadata for the repository before the action, when reported.').
-		  self repositoryPackagesOutputSchemaProperty.
-		  (self
-			   stringArraySchemaNamed: 'packageNames'
-			   description: 'The repository package names after the action.'
-			   itemDescription: 'A package name.').
+			   booleanSchemaPropertyNamed: 'matched'
+			   description: 'Whether identity verification passed.').
 		  (self
 			   stringArraySchemaNamed: 'updateActions'
-			   description:
-			   'Repository update actions applied when action=update.'
-			   itemDescription: 'An update action name.').
+			   description: 'Repository update actions applied.'
+			   itemDescription: 'Update action.').
 		  (self
 			   stringArraySchemaNamed: 'addedPackageNames'
-			   description:
-			   'Package names added to repository membership when action=update.'
-			   itemDescription: 'An added package name.').
+			   description: 'Packages added repository membership.'
+			   itemDescription: 'Package name.').
 		  (self
 			   stringArraySchemaNamed: 'removedPackageNames'
-			   description:
-			   'Package names removed from repository membership when action=update.'
-			   itemDescription: 'A removed package name.').
+			   description: 'Packages removed repository membership.'
+			   itemDescription: 'Package name.').
 		  (self
 			   stringArraySchemaNamed: 'changedPackageNames'
-			   description:
-			   'Package names included in the working-copy diff for action=export, action=diff, or before action=commit.'
-			   itemDescription: 'A changed package name.').
+			   description: 'Packages with changed files.'
+			   itemDescription: 'Package name.').
 		  (self
 			   stringArraySchemaNamed: 'modifiedPackageNames'
-			   description:
-			   'Package names reported modified by Iceberg after the action, when relevant.'
-			   itemDescription: 'A modified package name.').
+			   description: 'Packages still modified after operation.'
+			   itemDescription: 'Package name.').
 		  (self
 			   stringArraySchemaNamed: 'modifiedPackageNamesBefore'
-			   description:
-			   'Package names reported modified by Iceberg before action=adoptHead.'
-			   itemDescription: 'A modified package name.').
+			   description: 'Packages modified before adopt-head.'
+			   itemDescription: 'Package name.').
 		  (self
 			   stringArraySchemaNamed: 'modifiedPackageNamesAfter'
-			   description:
-			   'Package names reported modified by Iceberg after action=adoptHead.'
-			   itemDescription: 'A modified package name.').
-		  (self
-			   stringArraySchemaNamed: 'checkedFields'
-			   description:
-			   'Repository identity fields checked when action=verifyIdentity.'
-			   itemDescription: 'A checked repository identity field.').
+			   description: 'Packages modified after adopt-head.'
+			   itemDescription: 'Package name.').
 		  (self
 			   stringArraySchemaNamed: 'modifiedPaths'
-			   description:
-			   'Relative repository paths included in the working-copy diff when obtainable from Iceberg.'
-			   itemDescription: 'A relative repository path.').
+			   description: 'Changed repository paths.'
+			   itemDescription: 'Path.').
 		  (self
 			   stringArraySchemaNamed: 'restoredOrderOnlyPaths'
 			   description:
-			   'Relative Tonel class or extension paths restored after export because their only disk change was method order churn.'
-			   itemDescription: 'A restored relative repository path.').
-		  (self
-			   stringArraySchemaNamed: 'remoteNames'
-			   description: 'Repository remote names after the action.'
-			   itemDescription: 'A remote name.').
-		  (self
-			   schemaPropertyNamed: 'branchName'
-			   type: 'string'
-			   description: 'Current branch name after the action.').
-		  (self
-			   schemaPropertyNamed: 'previousBranchName'
-			   type: 'string'
-			   description: 'Branch name before a branch action.').
-		  (self
-			   schemaPropertyNamed: 'previousHeadDescription'
-			   type: 'string'
-			   description: 'Head description before a branch action.').
-		  (self
-			   schemaPropertyNamed: 'previousReferenceCommitId'
-			   type: 'string'
-			   description:
-			   'Working-copy reference commit id before action=adoptHead.').
-		  (self
-			   schemaPropertyNamed: 'referenceCommitId'
-			   type: 'string'
-			   description:
-			   'Working-copy reference commit id after action=adoptHead.').
-		  (self
-			   schemaPropertyNamed: 'adoptedCommitId'
-			   type: 'string'
-			   description:
-			   'Repository head commit id adopted by action=adoptHead.').
-		  (self
-			   booleanSchemaPropertyNamed: 'didAdopt'
-			   description:
-			   'Whether action=adoptHead changed the working-copy reference commit.').
-		  (self
-			   booleanSchemaPropertyNamed: 'didChange'
-			   description:
-			   'Whether the export diff contained package or path changes.').
+			   'Tonel paths restored because only method order changed.'
+			   itemDescription: 'Path.').
 		  (self
 			   integerSchemaPropertyNamed: 'changeCount'
-			   description:
-			   'Number of changed paths reported for action=diff, or changed packages when paths are unavailable.').
+			   description: 'Number of changed paths.').
 		  (self
 			   booleanSchemaPropertyNamed: 'isEmpty'
-			   description:
-			   'Whether IceRepository>>workingCopyDiff reported an empty diff for action=diff.').
+			   description: 'Whether the repository diff is empty.').
 		  (self
-			   booleanSchemaPropertyNamed: 'matched'
-			   description:
-			   'Whether the repository matched all expected identity fields when action=verifyIdentity.').
+			   booleanSchemaPropertyNamed: 'didChange'
+			   description: 'Whether export changed files.').
+		  (self
+			   booleanSchemaPropertyNamed: 'didAdopt'
+			   description: 'Whether adopt-head changed image reference.').
 		  (self
 			   schemaPropertyNamed: 'commitId'
 			   type: 'string'
-			   description:
-			   'Commit identifier returned by Iceberg for action=commit, when available.').
+			   description: 'Commit id created by commit operation.').
 		  (self
 			   schemaPropertyNamed: 'commitDescription'
 			   type: 'string'
-			   description:
-			   'Commit description returned by Iceberg for action=commit, when available.').
+			   description: 'Commit description created by commit operation.').
+		  (self
+			   schemaPropertyNamed: 'branchName'
+			   type: 'string'
+			   description: 'Current branch after operation.').
+		  (self
+			   schemaPropertyNamed: 'previousBranchName'
+			   type: 'string'
+			   description: 'Branch before branch operation.').
 		  (self
 			   schemaPropertyNamed: 'headDescription'
 			   type: 'string'
-			   description:
-			   'Repository head description after the action, when available.').
+			   description: 'Current HEAD description after operation.').
 		  (self
-			   schemaPropertyNamed: 'repositoryLocation'
+			   schemaPropertyNamed: 'previousHeadDescription'
 			   type: 'string'
-			   description: 'The repository location on disk.') }
+			   description: 'HEAD description before branch operation.').
+		  (self
+			   schemaPropertyNamed: 'previousReferenceCommitId'
+			   type: 'string'
+			   description: 'Reference commit before adopt-head.').
+		  (self
+			   schemaPropertyNamed: 'referenceCommitId'
+			   type: 'string'
+			   description: 'Reference commit after adopt-head.').
+		  (self
+			   schemaPropertyNamed: 'adoptedCommitId'
+			   type: 'string'
+			   description: 'Commit adopted by adopt-head.') }
 ]
 
 { #category : 'private - schema' }
@@ -478,15 +427,7 @@ MCPToolRepositoryOperation >> requiredInputProperties [
 { #category : 'testing' }
 MCPToolRepositoryOperation >> shouldSaveImageAfterSuccessfulExecutionForResult: aResult [
 
-	| action data |
-	data := self
-		        successfulStructuredDataFromResult: aResult
-		        ifAbsent: [ ^ false ].
-	action := data
-		          at: #action
-		          ifAbsent: [
-		          ^ self shouldSaveImageAfterSuccessfulExecution ].
-	^ (#( 'diff' 'verifyIdentity' ) includes: action) not
+	^ (#( 'diff' 'verifyIdentity' ) includes: self operationAction) not
 ]
 
 { #category : 'private - schema' }
