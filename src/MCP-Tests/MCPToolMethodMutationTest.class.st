@@ -524,6 +524,21 @@ MCPToolMethodMutationTest >> testCollectionStyleCritiquesProvideAutomaticChanges
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileCanReplaceMethodOnToolClass [
+
+	| data method result |
+	method := MCPHaltingTestTool >> #defaultTitle.
+	result := self callToolNamed: 'method_compile' withArguments: {
+			          (#className -> 'MCPHaltingTestTool').
+			          (#source -> method sourceCode).
+			          (#protocol -> method protocol name asString) }
+			          asDictionary.
+	data := self dataFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #changeKind) equals: 'replaced'
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testCompileDefaultsToInstanceSideWhenClassSideIsOmitted [
 
 	| data result |

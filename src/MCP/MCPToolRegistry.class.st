@@ -520,7 +520,7 @@ MCPToolRegistry class >> singularSearchTermFor: aTerm [
 	^ term
 ]
 
-{ #category : 'tools' }
+{ #category : 'accessing' }
 MCPToolRegistry class >> staticToolClasses [
 
 	^ {
@@ -538,7 +538,6 @@ MCPToolRegistry class >> staticToolClasses [
 		  MCPToolGetMethod.
 		  MCPToolCompileMethod.
 		  MCPToolUpdateMethodSelector.
-		  MCPToolUpdateMethodProtocol.
 		  MCPToolEvaluate.
 		  MCPToolRunTests }
 ]

@@ -164,7 +164,7 @@ MCPMonitoringStateTest >> testRecordsErrorCall [
 	| recentCall record state stats |
 	state := MCPMonitoringState new.
 	state enable.
-	record := state recordToolCallStart: 'method_create'.
+	record := state recordToolCallStart: 'method_compile'.
 	state recordToolCallFinish: record result: nil error: Error new.
 	stats := state metrics first.
 	recentCall := state recentCallRecords first.
@@ -179,9 +179,9 @@ MCPMonitoringStateTest >> testRecordsErrorCall [
 		equals: 'Error'.
 	self assert: recentCall inputObject isNil.
 	self assert: (state logs anySatisfy: [ :each |
-			 each includesSubstring: 'Error tool method_create #' ]).
+			 each includesSubstring: 'Error tool method_compile #' ]).
 	self deny: (state logs anySatisfy: [ :each |
-			 each includesSubstring: 'error tool method_create #' ])
+			 each includesSubstring: 'error tool method_compile #' ])
 ]
 
 { #category : 'tests' }
@@ -338,7 +338,7 @@ MCPMonitoringStateTest >> testTraceRecordsIncludeErrorsAndOutliersOnly [
 	normal finishAt: start durationMilliseconds: 5 status: 'ok'.
 	error := MCPToolCallRecord
 		         id: 2
-		         toolName: 'method_create'
+		         toolName: 'method_compile'
 		         startedAt: start.
 	error finishAt: start durationMilliseconds: 7 status: 'error'.
 	outlier := MCPToolCallRecord

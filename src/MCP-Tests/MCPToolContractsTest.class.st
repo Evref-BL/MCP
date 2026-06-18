@@ -2069,37 +2069,34 @@ MCPToolContractsTest >> testQueryScopeDescriptionsExplainScopeSemantics [
 { #category : 'tests' }
 MCPToolContractsTest >> testRPCAdvertisesStaticToolSurfaceOnly [
 
-	| toolNames |
+	| discoverableToolNames expectedStaticToolNames toolNames |
 	toolNames := (MCP new rpcToolsList at: #tools) collect: [ :each |
 		             each at: #name ].
+	expectedStaticToolNames := #( 'tool_search' 'tool_get' 'tool_call'
+	                              'package_search' 'class_search'
+	                              'class_get' 'class_create'
+	                              'method_metadata_search'
+	                              'method_source_search'
+	                              'method_implementor_search'
+	                              'method_sender_search'
+	                              'method_get' 'method_compile'
+	                              'method_selector_update'
+	                              'image_evaluate' 'test_run' ).
+	discoverableToolNames := MCPToolRegistry publicToolNames difference:
+		                         MCPToolRegistry staticToolNames.
 	self
 		assert: toolNames asSet
 		equals: MCPToolRegistry staticToolNames asSet.
-	#( 'tool_search' 'tool_get' 'tool_call' 'package_search'
-	   'class_search' 'class_get' 'class_create' 'method_metadata_search'
-	   'method_source_search' 'method_implementor_search'
-	   'method_sender_search' 'method_get' 'method_compile'
-	   'method_selector_update' 'method_protocol_update'
-	   'image_evaluate' 'test_run' ) do: [ :each |
+	self
+		assert: MCPToolRegistry staticToolNames asSet
+		equals: expectedStaticToolNames asSet.
+	expectedStaticToolNames do: [ :each |
 		self assert: (toolNames includes: each) ].
-	#( 'class_name_update' 'class_superclass_update'
-	   'class_package_update' 'class_comment_update'
-	   'class_slots_update' 'class_traits_update' 'class_side_traits_update'
-	   'class_shared_variables_update' 'class_shared_pools_update'
-	   'class_layout_update' 'class_slot_add' 'class_slot_remove'
-	   'class_slot_name_update' 'class_slot_pull_up' 'class_slot_push_down'
-	   'method_equivalent_search' 'method_class_reference_search'
-	   'method_variable_reference_search'
-	   'test_coverage_run' 'repository_search' 'repository_identity_verify'
-	   'repository_change_list' 'repository_create' 'repository_attach'
-	   'repository_update' 'repository_export' 'repository_commit'
-	   'repository_fetch' 'repository_pull' 'repository_push'
-	   'repository_branch_create' 'repository_branch_switch'
-	   'repository_head_adopt' 'history_file_list' 'history_entry_list'
-	   'history_entry_apply' 'history_entry_revert'
-	   'screenshot_capture' 'debug_state_get' 'debug_session_step_over'
-	   'debug_capture' ) do: [ :each |
-		self deny: (toolNames includes: each) ]
+	discoverableToolNames do: [ :each |
+		self deny: (toolNames includes: each) ].
+	self assert:
+		(MCPToolRegistry publicToolNames includes: 'method_protocol_update').
+	self deny: (toolNames includes: 'method_protocol_update')
 ]
 
 { #category : 'tests' }
