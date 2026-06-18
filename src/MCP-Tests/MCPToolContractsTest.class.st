@@ -2032,47 +2032,43 @@ MCPToolContractsTest >> testPublicToolsDoNotExposeOperationInput [
 MCPToolContractsTest >> testQueryScopeDescriptionsExplainScopeSemantics [
 
 	| classDescription methodMetadataDescription methodDescription packageDescription parentDescription subclassDescription |
-	methodMetadataDescription := MCPToolSearchMethodMetadata new description.
+	methodMetadataDescription := MCPToolSearchMethodMetadata new
+		                             description.
 	classDescription := (self
 		                     inputPropertyNamed: 'hierarchyClassNames'
 		                     inTool: MCPToolSearchClasses new) description.
 	subclassDescription := (self
 		                        inputPropertyNamed: 'subclassClassNames'
-		                        inTool: MCPToolSearchMethodMetadata new) description.
+		                        inTool: MCPToolSearchMethodMetadata new)
+		                       description.
 	parentDescription := (self
 		                      inputPropertyNamed: 'parentClassNames'
 		                      inTool: MCPToolSearchClasses new) description.
 	methodDescription := (self
 		                      inputPropertyNamed: 'packageNames'
-		                      inTool: MCPToolSearchMethodMetadata new) description.
+		                      inTool: MCPToolSearchMethodMetadata new)
+		                     description.
 	packageDescription := (self
 		                       inputPropertyNamed: 'projectNames'
-		                       inTool: MCPToolSearchPackages new) description.
+		                       inTool: MCPToolSearchPackages new)
+		                      description.
 	self assert: (methodMetadataDescription includesSubstring:
 			 'Missing class or package names').
 	self assert:
-		(classDescription includesSubstring:
-			 'Omit all class scope properties').
-	self assert: (classDescription includesSubstring:
-			 'its superclasses, and its subclasses').
-	self assert: (subclassDescription includesSubstring:
-			 'methods defined on subclasses').
-	self assert: (subclassDescription includesSubstring:
-			 'The named classes are excluded').
+		(classDescription includesSubstring: 'superclasses and subclasses').
+	self assert:
+		(subclassDescription includesSubstring:
+			 'Subclasses of these classes').
+	self assert:
+		(subclassDescription includesSubstring: 'roots excluded').
 	self assert:
 		(parentDescription includesSubstring:
-			 'superclasses of these classes').
+			 'Superclasses of these classes').
+	self assert: (parentDescription includesSubstring: 'roots excluded').
 	self assert:
-		(parentDescription includesSubstring:
-			 'The named classes are excluded').
-	self assert:
-		(methodDescription includesSubstring: 'including extension methods').
-	self assert: (methodDescription includesSubstring:
-			 'Omit all method scope properties').
+		(methodDescription includesSubstring: 'including extensions').
 	self assert: (packageDescription includesSubstring:
-			 'project names whose packages are included').
-	self assert:
-		(packageDescription includesSubstring: 'Combine with packageNames')
+			 'Projects whose packages are included')
 ]
 
 { #category : 'tests' }

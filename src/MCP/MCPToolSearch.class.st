@@ -91,9 +91,8 @@ MCPToolSearch >> classScopeClassNamesProperty [
 
 	^ self
 		  stringArraySchemaNamed: 'classNames'
-		  description:
-		  'Class scope: include these exact classes. Omit all class scope properties to search all classes.'
-		  itemDescription: 'A class name.'
+		  description: 'Exact classes.'
+		  itemDescription: 'Class name.'
 ]
 
 { #category : 'private - schema' }
@@ -101,9 +100,8 @@ MCPToolSearch >> classScopeHierarchyClassNamesProperty [
 
 	^ self
 		  stringArraySchemaNamed: 'hierarchyClassNames'
-		  description:
-		  'Class scope: include each named class, its superclasses, and its subclasses. Omit all class scope properties to search all classes.'
-		  itemDescription: 'A hierarchy root class name.'
+		  description: 'Classes plus superclasses and subclasses.'
+		  itemDescription: 'Hierarchy root class.'
 ]
 
 { #category : 'private - schema' }
@@ -111,9 +109,8 @@ MCPToolSearch >> classScopePackageNamesProperty [
 
 	^ self
 		  stringArraySchemaNamed: 'packageNames'
-		  description:
-		  'Class scope: include classes defined in these packages. Omit all class scope properties to search all classes.'
-		  itemDescription: 'A package name.'
+		  description: 'Packages to include.'
+		  itemDescription: 'Package name.'
 ]
 
 { #category : 'private - schema' }
@@ -121,9 +118,8 @@ MCPToolSearch >> classScopeParentClassNamesProperty [
 
 	^ self
 		  stringArraySchemaNamed: 'parentClassNames'
-		  description:
-		  'Class scope: include superclasses of these classes. The named classes are excluded unless classNames also includes them.'
-		  itemDescription: 'A class name whose superclasses are included.'
+		  description: 'Superclasses of these classes; roots excluded.'
+		  itemDescription: 'Subclass name.'
 ]
 
 { #category : 'private - schema' }
@@ -131,9 +127,8 @@ MCPToolSearch >> classScopeSubclassClassNamesProperty [
 
 	^ self
 		  stringArraySchemaNamed: 'subclassClassNames'
-		  description:
-		  'Class scope: include subclasses of these classes. The named classes are excluded unless classNames also includes them.'
-		  itemDescription: 'A class name whose subclasses are included.'
+		  description: 'Subclasses of these classes; roots excluded.'
+		  itemDescription: 'Superclass name.'
 ]
 
 { #category : 'private - execution' }
@@ -385,9 +380,8 @@ MCPToolSearch >> packageScopePackageNamesProperty [
 
 	^ self
 		  stringArraySchemaNamed: 'packageNames'
-		  description:
-		  'Package scope: exact package names to include. Omit all package scope properties to search all packages. Combine with projectNames to union scopes.'
-		  itemDescription: 'A package name.'
+		  description: 'Exact packages.'
+		  itemDescription: 'Package name.'
 ]
 
 { #category : 'private - schema' }
@@ -395,9 +389,8 @@ MCPToolSearch >> packageScopeProjectNamesProperty [
 
 	^ self
 		  stringArraySchemaNamed: 'projectNames'
-		  description:
-		  'Package scope: project names whose packages are included. Omit all package scope properties to search all packages. Combine with packageNames to union scopes.'
-		  itemDescription: 'A project name.'
+		  description: 'Projects whose packages are included.'
+		  itemDescription: 'Project name.'
 ]
 
 { #category : 'private - results' }

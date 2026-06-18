@@ -80,9 +80,8 @@ TMCPMethodTool >> methodScopeClassNamesProperty [
 
 	^ self
 		  stringArraySchemaNamed: 'classNames'
-		  description:
-		  'Method scope: include methods defined on these exact classes. Omit all method scope properties to search all methods.'
-		  itemDescription: 'A class name.'
+		  description: 'Exact defining classes.'
+		  itemDescription: 'Class name.'
 ]
 
 { #category : 'private - schema' }
@@ -90,9 +89,8 @@ TMCPMethodTool >> methodScopeHierarchyClassNamesProperty [
 
 	^ self
 		  stringArraySchemaNamed: 'hierarchyClassNames'
-		  description:
-		  'Method scope: include methods from each named class, its superclasses, and its subclasses. Omit all method scope properties to search all methods.'
-		  itemDescription: 'A hierarchy root class name.'
+		  description: 'Classes plus superclasses and subclasses.'
+		  itemDescription: 'Hierarchy root class.'
 ]
 
 { #category : 'private - schema' }
@@ -100,9 +98,8 @@ TMCPMethodTool >> methodScopePackageNamesProperty [
 
 	^ self
 		  stringArraySchemaNamed: 'packageNames'
-		  description:
-		  'Method scope: include methods defined in these packages, including extension methods. Omit all method scope properties to search all methods.'
-		  itemDescription: 'A package name.'
+		  description: 'Packages to include, including extensions.'
+		  itemDescription: 'Package name.'
 ]
 
 { #category : 'private - schema' }
@@ -110,9 +107,8 @@ TMCPMethodTool >> methodScopeParentClassNamesProperty [
 
 	^ self
 		  stringArraySchemaNamed: 'parentClassNames'
-		  description:
-		  'Method scope: include methods defined on superclasses of these classes. The named classes are excluded unless classNames also includes them.'
-		  itemDescription: 'A class name whose superclasses are included.'
+		  description: 'Superclasses of these classes; roots excluded.'
+		  itemDescription: 'Subclass name.'
 ]
 
 { #category : 'private - methods' }
@@ -137,9 +133,8 @@ TMCPMethodTool >> methodScopeSubclassClassNamesProperty [
 
 	^ self
 		  stringArraySchemaNamed: 'subclassClassNames'
-		  description:
-		  'Method scope: include methods defined on subclasses of these classes. The named classes are excluded unless classNames also includes them.'
-		  itemDescription: 'A class name whose subclasses are included.'
+		  description: 'Subclasses of these classes; roots excluded.'
+		  itemDescription: 'Superclass name.'
 ]
 
 { #category : 'private - schema' }
@@ -147,8 +142,7 @@ TMCPMethodTool >> methodSideSchemaProperty [
 
 	^ self
 		  stringEnumSchemaPropertyNamed: 'side'
-		  description:
-		  'Which method side to search. instance searches instance-side methods, class searches class-side methods, and both searches both sides.'
+		  description: 'Method side to search.'
 		  values: #( 'instance' 'class' 'both' )
 		  default: 'both'
 ]
