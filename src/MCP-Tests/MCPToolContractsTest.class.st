@@ -2360,11 +2360,7 @@ MCPToolContractsTest >> testRewriteMethodsIsMethodScopedCommandTool [
 MCPToolContractsTest >> testRpcToolCallCatchesUnhandledHaltFromTool [
 
 	| mcp result text tool tools |
-	tool := MCPTool basicNew
-		        name: 'halting-test-tool';
-		        handler: [ :request |
-			        (Smalltalk globals at: #Halt) signal: 'mcp tool halt test' ];
-		        yourself.
+	tool := MCPHaltingTestTool new.
 	tools := Dictionary new
 		         at: tool name put: tool;
 		         yourself.

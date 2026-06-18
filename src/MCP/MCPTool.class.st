@@ -23,7 +23,6 @@ Class {
 		'description',
 		'icons',
 		'inputSchema',
-		'handler',
 		'outputSchema',
 		'toolExposurePolicy'
 	],
@@ -118,12 +117,6 @@ MCPTool >> commandForRequest: aToolRequest [
 MCPTool >> defaultDescription [
 
 	self subclassResponsibility
-]
-
-{ #category : 'defaults' }
-MCPTool >> defaultHandler [
-
-	^ [ :request |  ]
 ]
 
 { #category : 'defaults' }
@@ -283,9 +276,8 @@ MCPTool >> executeParsedRequestFrom: request do: executionBlock onError: errorBl
 
 { #category : 'executing' }
 MCPTool >> executeWithRequest: aRequest [
-	"Subclasses may override me to manage execution directly."
 
-	^ handler value: aRequest
+	self subclassResponsibility
 ]
 
 { #category : 'error handling' }
@@ -309,18 +301,6 @@ MCPTool >> failureMessageFor: anError [
 ]
 
 { #category : 'accessing' }
-MCPTool >> handler [
-
-	^ handler
-]
-
-{ #category : 'accessing' }
-MCPTool >> handler: anObject [
-
-	handler := anObject
-]
-
-{ #category : 'accessing' }
 MCPTool >> icons [
 
 	^ icons ifNil: [ icons := self class toolIcons ]
@@ -339,7 +319,6 @@ MCPTool >> initialize [
 	name := self class toolName.
 	title := self defaultTitle.
 	description := self defaultDescription.
-	handler := self defaultHandler.
 	inputSchema := self defaultInputSchema.
 	outputSchema := self defaultOutputSchema
 ]
