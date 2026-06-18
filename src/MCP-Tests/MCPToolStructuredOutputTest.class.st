@@ -187,6 +187,37 @@ MCPToolStructuredOutputTest >> testGetMethodReturnsStructuredSuccess [
 ]
 
 { #category : 'tests' }
+MCPToolStructuredOutputTest >> testGetToolIncludesOutputSchemaWhenRequested [
+
+	| result tool |
+	result := self callToolNamed: 'tool_get' withArguments: {
+			          (#toolName -> 'class_search').
+			          (#includeOutputSchema -> true) } asDictionary.
+	tool := (self dataFrom: result) at: #tool.
+	self
+		assert: ((self structuredContentFrom: result) at: #status)
+		equals: 'ok'.
+	self assert: (tool includesKey: #inputSchema).
+	self assert: (tool includesKey: #outputSchema)
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testGetToolOmitsOutputSchemaByDefault [
+
+	| result tool |
+	result := self
+		          callToolNamed: 'tool_get'
+		          withArguments:
+		          { (#toolName -> 'class_search') } asDictionary.
+	tool := (self dataFrom: result) at: #tool.
+	self
+		assert: ((self structuredContentFrom: result) at: #status)
+		equals: 'ok'.
+	self assert: (tool includesKey: #inputSchema).
+	self deny: (tool includesKey: #outputSchema)
+]
+
+{ #category : 'tests' }
 MCPToolStructuredOutputTest >> testMethodMetadataSearchReturnsStructuredArrayData [
 
 	| data methods result selectors |

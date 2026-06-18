@@ -164,15 +164,26 @@ MCPToolRegistry class >> contractForTool: aTool [
 { #category : 'tools' }
 MCPToolRegistry class >> contractForTool: aTool usingPolicy: aToolExposurePolicy [
 
-	| data |
+	^ self
+		  contractForTool: aTool
+		  usingPolicy: aToolExposurePolicy
+		  includeOutputSchema: true
+]
+
+{ #category : 'tools' }
+MCPToolRegistry class >> contractForTool: aTool usingPolicy: aToolExposurePolicy includeOutputSchema: includeOutputSchema [
+
+	| activationRequirements data examples |
 	data := (self metadataForTool: aTool usingPolicy: aToolExposurePolicy)
 		        copy.
 	data at: #inputSchema put: aTool inputSchema asJRPCJSON.
-	data at: #outputSchema put: aTool outputSchema asJRPCJSON.
-	data at: #examples put: (self examplesForTool: aTool).
-	data
-		at: #activationRequirements
-		put: (self activationRequirementsForTool: aTool).
+	includeOutputSchema ifTrue: [
+		data at: #outputSchema put: aTool outputSchema asJRPCJSON ].
+	examples := self examplesForTool: aTool.
+	examples ifNotEmpty: [ data at: #examples put: examples ].
+	activationRequirements := self activationRequirementsForTool: aTool.
+	activationRequirements ifNotEmpty: [
+		data at: #activationRequirements put: activationRequirements ].
 	^ data
 ]
 
