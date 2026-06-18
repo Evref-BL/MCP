@@ -18,7 +18,7 @@ MCPToolSearchPackages class >> toolName [
 { #category : 'defaults' }
 MCPToolSearchPackages >> defaultDescription [
 
-	^ 'List packages and optionally filter them by package metadata. Omit projectNames and packageNames to search all packages. Use projectNames to include packages from projects and packageNames to include exact packages. Multiple scope properties are unioned.'
+	^ 'Search packages by name, project, or tag.'
 ]
 
 { #category : 'defaults' }

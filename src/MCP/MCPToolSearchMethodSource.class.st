@@ -18,7 +18,7 @@ MCPToolSearchMethodSource class >> toolName [
 { #category : 'defaults' }
 MCPToolSearchMethodSource >> defaultDescription [
 
-	^ 'Search methods by source text. Use method_metadata_search for method metadata queries; use method_equivalent_search for equivalent AST matches.'
+	^ 'Search methods by source text. Use method_metadata_search for selector, protocol, class, or package metadata.'
 ]
 
 { #category : 'private - request' }

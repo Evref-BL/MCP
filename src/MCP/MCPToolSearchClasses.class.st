@@ -106,7 +106,7 @@ MCPToolSearchClasses >> classInfoDataProperties [
 { #category : 'defaults' }
 MCPToolSearchClasses >> defaultDescription [
 
-	^ 'List classes and optionally filter them by class metadata. Omitting class scope searches the whole image. Multiple scope filters are unioned. Missing class or package names return warnings with suggestions. Use class_get when you know the class name.'
+	^ 'Search classes by name, package, tag, hierarchy, or slot. Use class_get when you already know the class name.'
 ]
 
 { #category : 'defaults' }

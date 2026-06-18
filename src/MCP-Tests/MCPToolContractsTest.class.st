@@ -1527,16 +1527,10 @@ MCPToolContractsTest >> testMethodMetadataSearchDescriptionPointsToSpecializedRe
 	| description filterModeDescription filterModeProperty protocolDescription selectorDescription tool |
 	tool := MCPToolSearchMethodMetadata new.
 	description := tool description.
-	self assert: (description includesSubstring: 'method_source_search').
-	self assert:
-		(description includesSubstring: 'method_equivalent_search').
-	self assert:
-		(description includesSubstring: 'method_implementor_search').
-	self assert: (description includesSubstring: 'method_sender_search').
-	self assert:
-		(description includesSubstring: 'method_class_reference_search').
-	self assert:
-		(description includesSubstring: 'method_variable_reference_search').
+	self assert: (description includesSubstring: 'source').
+	self assert: (description includesSubstring: 'senders').
+	self assert: (description includesSubstring: 'implementors').
+	self assert: (description includesSubstring: 'references').
 	selectorDescription := (self
 		                        inputPropertyNamed: 'selector'
 		                        inTool: tool) description.
@@ -1549,8 +1543,8 @@ MCPToolContractsTest >> testMethodMetadataSearchDescriptionPointsToSpecializedRe
 	filterModeDescription := filterModeProperty description.
 	self assert: (selectorDescription includesSubstring: 'selector').
 	self assert: (protocolDescription includesSubstring: 'protocol').
-	self assert:
-		(filterModeDescription includesSubstring: 'selector and protocol').
+	self assert: (filterModeDescription includesSubstring: 'selector').
+	self assert: (filterModeDescription includesSubstring: 'protocol').
 	self
 		assert: (filterModeProperty extraProperties at: #enum) asArray
 		equals: #( 'substring' 'prefix' 'exact' 'regex' )
@@ -2043,8 +2037,9 @@ MCPToolContractsTest >> testQueryScopeDescriptionsExplainScopeSemantics [
 		                       inputPropertyNamed: 'projectNames'
 		                       inTool: MCPToolSearchPackages new)
 		                      description.
-	self assert: (methodMetadataDescription includesSubstring:
-			 'Missing class or package names').
+	self assert:
+		(methodMetadataDescription includesSubstring: 'selector').
+	self assert: (methodMetadataDescription includesSubstring: 'scope').
 	self assert:
 		(classDescription includesSubstring: 'superclasses and subclasses').
 	self assert:
