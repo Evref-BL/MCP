@@ -745,5 +745,6 @@ MCPToolStructuredOutputTest >> testToolsListAdvertisesInputSchemaWithoutOutputSc
 	self assert:
 		(tools allSatisfy: [ :each | each includesKey: #inputSchema ]).
 	self deny:
-		(tools anySatisfy: [ :each | each includesKey: #outputSchema ])
+		(tools anySatisfy: [ :each | each includesKey: #outputSchema ]).
+	self deny: (tools anySatisfy: [ :each | each includesKey: #icons ])
 ]

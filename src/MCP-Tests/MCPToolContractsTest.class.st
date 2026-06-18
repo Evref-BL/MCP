@@ -724,23 +724,17 @@ MCPToolContractsTest >> testAllToolOutputSchemasAdvertiseStructuredSummaryWarnin
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testAllToolsAdvertisePngIconsWithDataUris [
+MCPToolContractsTest >> testAllToolsHavePngIconsWithDataUris [
 
-	| toolDefinitions |
-	toolDefinitions := MCPTool concreteSubclasses collect: [ :each |
-		                   each new asJRPCJSON ].
-	toolDefinitions do: [ :definition |
-		| icon icons |
-		icons := definition
-			         at: #icons
-			         ifAbsent: [
-			         self fail: 'Missing icons for tool definition.' ].
-		self deny: icons isEmpty.
-		icon := icons first.
-		self assert: (icon at: #mimeType) equals: 'image/png'.
-		self assert: ((icon at: #src) beginsWith: 'data:image/png;base64,').
-		self assert: (icon at: #sizes) size equals: 1.
-		self assert: ((icon at: #sizes) first includesSubstring: 'x') ]
+	MCPTool concreteSubclasses do: [ :toolClass |
+			| icon icons |
+			icons := toolClass new icons.
+			self deny: icons isEmpty.
+			icon := icons first.
+			self assert: icon mimeType equals: 'image/png'.
+			self assert: (icon src beginsWith: 'data:image/png;base64,').
+			self assert: icon sizes size equals: 1.
+			self assert: (icon sizes first includesSubstring: 'x') ]
 ]
 
 { #category : 'tests' }
@@ -2159,8 +2153,7 @@ MCPToolContractsTest >> testRemoveMethodsHasAccurateNameAndRequiredArguments [
 MCPToolContractsTest >> testRepositoryBranchCheckoutIconUsesBranchObjectBadge [
 
 	self
-		assert:
-		(MCPToolCheckoutRepositoryBranch new asJRPCJSON at: #icons) first
+		assert: MCPToolCheckoutRepositoryBranch new icons first asJRPCJSON
 		equals: (MCPStructureIcon
 				 compositeBaseIconNamed: #git
 				 leftBadgeIconNamed: #branch
@@ -2237,97 +2230,92 @@ MCPToolContractsTest >> testRepositoryOperationOutputSchemaUsesActionForExecuted
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testRequestedToolIconsAreAdvertised [
+MCPToolContractsTest >> testRequestedToolIconsAreSelected [
 
 	MCPStructureIcon resetCaches.
 	self
-		assert: (MCPToolGetClass new asJRPCJSON at: #icons) first
+		assert: MCPToolGetClass new icons first asJRPCJSON
 		equals: (MCPStructureIcon
 				 compositeBaseIconNamed: #class
 				 badgeIconNamed: #inspect) asJRPCJSON.
 	self
-		assert:
-		(MCPToolCreateRepositoryBranch new asJRPCJSON at: #icons) first
+		assert: MCPToolCreateRepositoryBranch new icons first asJRPCJSON
 		equals: (MCPStructureIcon
 				 compositeBaseIconNamed: #git
 				 leftBadgeIconNamed: #branch
 				 rightBadgeIconNamed: #add) asJRPCJSON.
 	self
-		assert: (MCPToolSearchMethodSource new asJRPCJSON at: #icons) first
+		assert: MCPToolSearchMethodSource new icons first asJRPCJSON
 		equals: (MCPStructureIcon
 				 compositeBaseIconNamed: #page
 				 leftBadgeIconNamed: #workspace
 				 rightBadgeIconNamed: #search) asJRPCJSON.
 	self
-		assert:
-		(MCPToolSearchMethodImplementors new asJRPCJSON at: #icons) first
+		assert: MCPToolSearchMethodImplementors new icons first asJRPCJSON
 		equals: (MCPStructureIcon
 				 compositeBaseIconNamed: #page
 				 leftBadgeIconNamed: #referencesUpsideDown
 				 rightBadgeIconNamed: #search) asJRPCJSON.
 	self
-		assert:
-		(MCPToolUpdateMethodProtocol new asJRPCJSON at: #icons) first
+		assert: MCPToolUpdateMethodProtocol new icons first asJRPCJSON
 		equals: (MCPStructureIcon
 				 compositeBaseIconNamed: #page
 				 leftBadgeIconNamed: #protocolProtected
 				 rightBadgeIconNamed: #edit) asJRPCJSON.
 	self
-		assert: (MCPToolPullUpClassSlot new asJRPCJSON at: #icons) first
+		assert: MCPToolPullUpClassSlot new icons first asJRPCJSON
 		equals: (MCPStructureIcon
 				 compositeBaseIconNamed: #class
 				 leftBadgeIconNamed: #instVarsSelected
 				 rightBadgeIconNamed: #up) asJRPCJSON.
 	self
-		assert: (MCPToolPushDownClassSlot new asJRPCJSON at: #icons) first
+		assert: MCPToolPushDownClassSlot new icons first asJRPCJSON
 		equals: (MCPStructureIcon
 				 compositeBaseIconNamed: #class
 				 leftBadgeIconNamed: #instVarsSelected
 				 rightBadgeIconNamed: #down) asJRPCJSON.
 	self
-		assert: (MCPToolUpdateClassLayout new asJRPCJSON at: #icons) first
+		assert: MCPToolUpdateClassLayout new icons first asJRPCJSON
 		equals: (MCPStructureIcon
 				 compositeBaseIconNamed: #class
 				 leftBadgeIconNamed: #objects
 				 rightBadgeIconNamed: #edit) asJRPCJSON.
 	self
-		assert:
-		(MCPToolListChangeHistoryEntries new asJRPCJSON at: #icons) first
+		assert: MCPToolListChangeHistoryEntries new icons first asJRPCJSON
 		equals: (MCPStructureIcon
 				 compositeBaseIconNamed: #history
 				 leftBadgeIconNamed: #changeUpdate
 				 rightBadgeIconNamed: #browse) asJRPCJSON.
 	self
-		assert: (MCPToolRunTestCoverage new asJRPCJSON at: #icons) first
+		assert: MCPToolRunTestCoverage new icons first asJRPCJSON
 		equals: (MCPStructureIcon
 				 compositeBaseIconNamed: #testRunner
 				 leftBadgeIconNamed: #processBrowser
 				 rightBadgeIconNamed: #play) asJRPCJSON.
 	self
-		assert:
-		(MCPToolStepIntoDebugSession new asJRPCJSON at: #icons) first
+		assert: MCPToolStepIntoDebugSession new icons first asJRPCJSON
 		equals: (MCPStructureIcon
 				 compositeBaseIconNamed: #bug
 				 leftBadgeIconNamed: #announcement
 				 rightBadgeIconNamed: #into) asJRPCJSON.
 	self
-		assert: (MCPToolUpdateDebugMethod new asJRPCJSON at: #icons) first
+		assert: MCPToolUpdateDebugMethod new icons first asJRPCJSON
 		equals: (MCPStructureIcon
 				 compositeBaseIconNamed: #bug
 				 leftBadgeIconNamed: #page
 				 rightBadgeIconNamed: #edit) asJRPCJSON.
 	self
-		assert: (MCPToolCaptureScreenshot new asJRPCJSON at: #icons) first
+		assert: MCPToolCaptureScreenshot new icons first asJRPCJSON
 		equals: (MCPStructureIcon
 				 compositeBaseIconNamed: #window
 				 badgeIconNamed: #smallScreenshot) asJRPCJSON.
 	self
-		assert: (MCPToolRunTests new asJRPCJSON at: #icons) first
+		assert: MCPToolRunTests new icons first asJRPCJSON
 		equals: (MCPStructureIcon
 				 compositeBaseIconNamed: #testRunner
 				 badgeIconNamed: #play) asJRPCJSON.
 	self
-		assert: (MCPToolEvaluate new asJRPCJSON at: #icons) first
+		assert: MCPToolEvaluate new icons first asJRPCJSON
 		equals: (MCPStructureIcon
 				 compositeBaseIconNamed: #pharoHalfScale
 				 badgeIconNamed: #go) asJRPCJSON

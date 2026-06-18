@@ -82,7 +82,6 @@ MCPTool >> asJRPCJSON [
 	dic := Dictionary new.
 	self description ifNotNil: [
 		dic at: #description put: self description asJRPCJSON ].
-	self icons ifNotNil: [ dic at: #icons put: self icons asJRPCJSON ].
 	self inputSchema ifNotNil: [
 		dic at: #inputSchema put: self inputSchema asJRPCJSON ].
 	self name ifNotNil: [ dic at: #name put: self name asJRPCJSON ].
