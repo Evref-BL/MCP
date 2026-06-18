@@ -1050,10 +1050,9 @@ MCPToolContractsTest >> testClassToolSchemaDescriptionsExplainRecategorizationFo
 	self assert:
 		(packageDescription includesSubstring: 'current package').
 	self assert: (tagDescription includesSubstring: 'recategorizes').
-	self assert: (forceDescription includesSubstring: 'force=false').
-	self assert: (forceDescription includesSubstring: 'force=true').
-	self assert: (forceDescription includesSubstring: 'impactMessages').
-	self assert: (forceDescription includesSubstring: 'warnings').
+	self assert:
+		(forceDescription includesSubstring: 'refactoring warnings').
+	self assert: (forceDescription includesSubstring: 'stopping').
 	self assert: (slotsDescription includesSubstring: 'empty array').
 	self assert: (slotsDescription includesSubstring: 'classSlots').
 	self assert: (classSlotsDescription includesSubstring: 'empty array').
@@ -1786,10 +1785,8 @@ MCPToolContractsTest >> testMutationDescriptionsExplainForceWarningBehavior [
 	{
 		classForceDescription.
 		methodForceDescription } do: [ :each |
-			self assert: (each includesSubstring: 'impactMessages').
-			self assert: (each includesSubstring: 'howToProceed').
-			self assert: (each includesSubstring: 'forceSupported=true').
-			self assert: (each includesSubstring: 'warnings') ]
+			self assert: (each includesSubstring: 'refactoring warnings').
+			self assert: (each includesSubstring: 'stopping') ]
 ]
 
 { #category : 'tests' }

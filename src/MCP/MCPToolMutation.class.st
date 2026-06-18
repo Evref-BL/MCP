@@ -238,7 +238,7 @@ MCPToolMutation >> forceSchemaProperty [
 	^ self
 		  booleanSchemaPropertyNamed: 'force'
 		  description:
-		  'Controls refactoring warning handling. force=false stops on RBRefactoringWarning and returns an error with impactMessages, howToProceed, and forceSupported=true. force=true resumes past the warning and returns the warning text in warnings.'
+		  'Resume through refactoring warnings instead of stopping.'
 		  default: false
 ]
 
@@ -456,8 +456,8 @@ MCPToolMutation >> refactoringScopeClassNamesSchemaProperty [
 	^ self
 		  stringArraySchemaNamed: 'classNames'
 		  description:
-		  'Limit the refactoring model to these exact classes. The target class must be included when a target class is provided.'
-		  itemDescription: 'A class name.'
+		  'Refactoring scope exact classes; target class must be included.'
+		  itemDescription: 'Class name.'
 ]
 
 { #category : 'private - schema' }
@@ -466,8 +466,8 @@ MCPToolMutation >> refactoringScopeHierarchyClassNamesSchemaProperty [
 	^ self
 		  stringArraySchemaNamed: 'hierarchyClassNames'
 		  description:
-		  'Limit the refactoring model to each named class, its superclasses, and its subclasses. The target class must be in the resulting scope.'
-		  itemDescription: 'A class name whose hierarchy is included.'
+		  'Refactoring scope hierarchies; target class must be included.'
+		  itemDescription: 'Hierarchy root class.'
 ]
 
 { #category : 'private - schema' }
@@ -476,8 +476,8 @@ MCPToolMutation >> refactoringScopePackageNamesSchemaProperty [
 	^ self
 		  stringArraySchemaNamed: 'packageNames'
 		  description:
-		  'Limit the refactoring model to classes and methods in these packages. The target class must be in the resulting scope.'
-		  itemDescription: 'A package name.'
+		  'Refactoring scope packages; target class must be included.'
+		  itemDescription: 'Package name.'
 ]
 
 { #category : 'private - request' }

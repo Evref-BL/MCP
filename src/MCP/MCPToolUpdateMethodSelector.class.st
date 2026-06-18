@@ -21,64 +21,59 @@ MCPToolUpdateMethodSelector >> methodToolSpec [
 	^ {
 		  (#title -> 'Update Method Selector').
 		  (#description
-		   ->
-		   'Rename, reorder, add, or remove method selector arguments using the Pharo refactoring engine.').
+		   -> 'Rename or reshape a method selector and update senders.').
 		  (#action -> 'update').
 		  (#inputProperties -> {
 			   (MCPStructureProperties new
 				    name: 'className';
 				    type: 'string';
-				    description:
-					    'The class whose method selector will be updated.';
+				    description: 'Class defining the method.';
 				    yourself).
 			   (MCPStructureProperties new
 				    name: 'classSide';
 				    type: 'boolean';
-				    description: 'Whether the target method is on the class side.';
+				    description: 'Whether target is class-side.';
 				    default: false;
 				    yourself).
 			   self forceSchemaProperty.
 			   (MCPStructureProperties new
 				    name: 'selector';
 				    type: 'string';
-				    description: 'The existing selector to update.';
+				    description: 'Existing selector.';
 				    yourself).
 			   (MCPStructureProperties new
 				    name: 'newSelector';
 				    type: 'string';
-				    description:
-					    'The target selector. Same arity renames or reorders arguments; higher arity adds arguments; lower arity removes arguments.';
+				    description: 'Target selector.';
 				    yourself).
 			   ((MCPStructureProperties new
 				     name: 'permutation';
 				     type: 'array';
 				     description:
-					     'Optional target-argument map for newSelector. Positive entries are 1-based indexes into old selector arguments. Negative entries mark newly added argument positions. For removal, list the kept old argument indexes.')
+					     'Optional map from target arguments to old 1-based indexes; negative values are new arguments.')
 				    items: (MCPStructureProperties new
 						     type: 'integer';
-						     description:
-							     'An old argument index, or a negative placeholder for an added argument.';
+						     description: 'Old index or negative new slot.';
 						     yourself);
 				    yourself).
 			   ((MCPStructureProperties new
 				     name: 'argumentNames';
 				     type: 'array';
 				     description:
-					     'Target selector argument names in order. Required when newSelector adds arguments. Existing argument positions can reuse their current names.')
+					     'Argument names in target selector order; required when adding.')
 				    items: (MCPStructureProperties new
 						     type: 'string';
-						     description: 'An argument name in target selector order.';
+						     description: 'Argument name.';
 						     yourself);
 				    yourself).
 			   ((MCPStructureProperties new
 				     name: 'argumentValueExpressions';
 				     type: 'array';
 				     description:
-					     'Default call expressions for newly added arguments, in the order the added arguments appear in newSelector. Omit to use nil for each added argument.')
+					     'Call-site expressions for added arguments; defaults to nil.')
 				    items: (MCPStructureProperties new
 						     type: 'string';
-						     description:
-							     'A Smalltalk expression inserted at sender call sites for a newly added argument.';
+						     description: 'Smalltalk expression.';
 						     yourself);
 				    yourself).
 			   self refactoringScopePackageNamesSchemaProperty.
