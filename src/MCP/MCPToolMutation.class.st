@@ -238,7 +238,7 @@ MCPToolMutation >> forceSchemaProperty [
 	^ self
 		  booleanSchemaPropertyNamed: 'force'
 		  description:
-		  'Resume through refactoring warnings instead of stopping.'
+		  'Continue through refactoring warnings instead of stopping.'
 		  default: false
 ]
 
@@ -464,8 +464,7 @@ MCPToolMutation >> refactoringScopeClassNamesSchemaProperty [
 
 	^ self
 		  stringArraySchemaNamed: 'classNames'
-		  description:
-		  'Refactoring scope exact classes; target class must be included.'
+		  description: 'Scope classes; include target.'
 		  itemDescription: 'Class name.'
 ]
 
@@ -474,9 +473,8 @@ MCPToolMutation >> refactoringScopeHierarchyClassNamesSchemaProperty [
 
 	^ self
 		  stringArraySchemaNamed: 'hierarchyClassNames'
-		  description:
-		  'Refactoring scope hierarchies; target class must be included.'
-		  itemDescription: 'Hierarchy root class.'
+		  description: 'Scope hierarchies; include target.'
+		  itemDescription: 'Hierarchy root.'
 ]
 
 { #category : 'private - schema' }
@@ -484,8 +482,7 @@ MCPToolMutation >> refactoringScopePackageNamesSchemaProperty [
 
 	^ self
 		  stringArraySchemaNamed: 'packageNames'
-		  description:
-		  'Refactoring scope packages; target class must be included.'
+		  description: 'Scope packages; include target.'
 		  itemDescription: 'Package name.'
 ]
 

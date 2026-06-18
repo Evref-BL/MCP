@@ -27,40 +27,39 @@ MCPToolUpdateMethodSelector >> methodToolSpec [
 			   (MCPStructureProperties new
 				    name: 'className';
 				    type: 'string';
-				    description: 'Class defining the method.';
+				    description: 'Class name.';
 				    yourself).
 			   (MCPStructureProperties new
 				    name: 'classSide';
 				    type: 'boolean';
-				    description: 'Whether target is class-side.';
+				    description: 'Class-side method.';
 				    default: false;
 				    yourself).
 			   self forceSchemaProperty.
 			   (MCPStructureProperties new
 				    name: 'selector';
 				    type: 'string';
-				    description: 'Existing selector.';
+				    description: 'Old selector.';
 				    yourself).
 			   (MCPStructureProperties new
 				    name: 'newSelector';
 				    type: 'string';
-				    description: 'Target selector.';
+				    description: 'New selector.';
 				    yourself).
 			   ((MCPStructureProperties new
 				     name: 'permutation';
 				     type: 'array';
 				     description:
-					     'Optional map from target arguments to old 1-based indexes; negative values are new arguments.')
+					     'Target argument map; old indexes positive, new args negative.')
 				    items: (MCPStructureProperties new
 						     type: 'integer';
-						     description: 'Old index or negative new slot.';
+						     description: 'Argument index.';
 						     yourself);
 				    yourself).
 			   ((MCPStructureProperties new
 				     name: 'argumentNames';
 				     type: 'array';
-				     description:
-					     'Argument names in target selector order; required when adding.')
+				     description: 'Names for target arguments.')
 				    items: (MCPStructureProperties new
 						     type: 'string';
 						     yourself);
@@ -68,8 +67,7 @@ MCPToolUpdateMethodSelector >> methodToolSpec [
 			   ((MCPStructureProperties new
 				     name: 'argumentValueExpressions';
 				     type: 'array';
-				     description:
-					     'Call-site expressions for added arguments; defaults to nil.')
+				     description: 'Expressions for added arguments.')
 				    items: (MCPStructureProperties new
 						     type: 'string';
 						     description: 'Smalltalk expression.';
