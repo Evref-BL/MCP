@@ -53,12 +53,6 @@ MCPToolSearchRepositories >> defaultOutputSchema [
 ]
 
 { #category : 'defaults' }
-MCPToolSearchRepositories >> defaultPageLimit [
-
-	^ 10
-]
-
-{ #category : 'defaults' }
 MCPToolSearchRepositories >> defaultTitle [
 
 	^ 'Search Repositories'

@@ -92,6 +92,12 @@ MCPStructureProperties >> jsonValueForKey: aKey value: aValue [
 ]
 
 { #category : 'accessing' }
+MCPStructureProperties >> maximum: aNumber [
+
+	self extraProperties at: #maximum put: aNumber
+]
+
+{ #category : 'accessing' }
 MCPStructureProperties >> metaDescription [
 
 	| schema |
@@ -114,6 +120,12 @@ MCPStructureProperties >> minItems: anInteger [
 MCPStructureProperties >> minLength: anInteger [
 
 	self extraProperties at: #minLength put: anInteger
+]
+
+{ #category : 'accessing' }
+MCPStructureProperties >> minimum: aNumber [
+
+	self extraProperties at: #minimum put: aNumber
 ]
 
 { #category : 'accessing' }

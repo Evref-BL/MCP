@@ -290,7 +290,8 @@ MCPToolSearch >> includeSourceSchemaPropertyWithDescription: includeSourceDescri
 
 	^ self
 		  booleanSchemaPropertyNamed: 'includeSource'
-		  description: includeSourceDescription
+		  description:
+		  'Include source code. Use only for small result sets.'
 		  default: false
 ]
 
@@ -408,16 +409,22 @@ MCPToolSearch >> packageScopeSummaryForProjectNames: projectNames packageNames: 
 { #category : 'private - schema' }
 MCPToolSearch >> paginationInputPropertiesWithLimitDescription: limitDescription [
 
+	| limitProperty offsetProperty |
+	limitProperty := self
+		                 integerSchemaPropertyNamed: 'limit'
+		                 description: limitDescription
+		                 default: self defaultPageLimit.
+	limitProperty
+		minimum: 0;
+		maximum: 100.
+	offsetProperty := self
+		                  integerSchemaPropertyNamed: 'offset'
+		                  description: 'Zero-based pagination offset.'
+		                  default: 0.
+	offsetProperty minimum: 0.
 	^ {
-		  (self
-			   integerSchemaPropertyNamed: 'limit'
-			   description: limitDescription
-			   default: self defaultPageLimit).
-		  (self
-			   integerSchemaPropertyNamed: 'offset'
-			   description:
-			   'Zero-based pagination offset applied after filtering.'
-			   default: 0) }
+		  limitProperty.
+		  offsetProperty }
 ]
 
 { #category : 'private - request' }

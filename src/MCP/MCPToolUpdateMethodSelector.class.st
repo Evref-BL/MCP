@@ -63,7 +63,6 @@ MCPToolUpdateMethodSelector >> methodToolSpec [
 					     'Argument names in target selector order; required when adding.')
 				    items: (MCPStructureProperties new
 						     type: 'string';
-						     description: 'Argument name.';
 						     yourself);
 				    yourself).
 			   ((MCPStructureProperties new

@@ -450,6 +450,21 @@ MCPTool >> schemaPropertyNamed: aName type: aType description: aDescription [
 		  yourself
 ]
 
+{ #category : 'private - schema' }
+MCPTool >> shouldAdvertiseStringArrayItemDescription: anItemDescription [
+
+	| itemDescriptionString |
+	itemDescriptionString := anItemDescription
+		                         ifNil: [ ^ false ]
+		                         ifNotNil: [ :value |
+		                         value asString trimBoth ].
+	itemDescriptionString isEmpty ifTrue: [ ^ false ].
+	(itemDescriptionString endsWith: ' name.') ifTrue: [ ^ false ].
+	(#( 'Hierarchy root class.' ) includes: itemDescriptionString)
+		ifTrue: [ ^ false ].
+	^ true
+]
+
 { #category : 'testing' }
 MCPTool >> shouldSaveImageAfterSuccessfulExecution [
 
@@ -512,8 +527,9 @@ MCPTool >> stringArraySchemaNamed: aName description: aDescription itemDescripti
 	| itemsProperty |
 	itemsProperty := MCPStructureProperties new
 		                 type: 'string';
-		                 description: anItemDescription;
 		                 yourself.
+	(self shouldAdvertiseStringArrayItemDescription: anItemDescription)
+		ifTrue: [ itemsProperty description: anItemDescription ].
 	^ (self
 		   schemaPropertyNamed: aName
 		   type: 'array'

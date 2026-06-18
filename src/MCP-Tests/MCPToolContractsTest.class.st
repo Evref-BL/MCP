@@ -1450,6 +1450,27 @@ MCPToolContractsTest >> testImageContentSerializesNativeMCPImageBlock [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testIncludeSourceFlagsWarnAboutCost [
+
+	| descriptions |
+	descriptions := OrderedCollection new.
+	MCPTool concreteSubclasses do: [ :toolClass |
+			| tool |
+			tool := toolClass new.
+			tool inputSchema properties do: [ :property |
+					property name = 'includeSource' ifTrue: [
+							descriptions add: property description.
+							self
+								assert: (property extraProperties at: #default)
+								equals: false ] ] ].
+	self assert: descriptions notEmpty.
+	descriptions do: [ :each |
+			self
+				assert: each
+				equals: 'Include source code. Use only for small result sets.' ]
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testInitializeAdvertisesPharoServerIcon [
 
 	| expectedIcon icon response serverInfo |
@@ -2716,6 +2737,30 @@ MCPToolContractsTest >> testSearchRepositoriesHasAccurateNameAndSchema [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testSearchToolPaginationSchemasAdvertiseBounds [
+
+	MCPToolSearch concreteSubclasses do: [ :toolClass |
+			| limitProperty offsetProperty tool |
+			tool := toolClass new.
+			limitProperty := self inputPropertyNamed: 'limit' inTool: tool.
+			offsetProperty := self inputPropertyNamed: 'offset' inTool: tool.
+			self assert: (limitProperty extraProperties at: #minimum) equals: 0.
+			self
+				assert: (limitProperty extraProperties at: #maximum)
+				equals: 100.
+			self
+				assert: (limitProperty extraProperties at: #default)
+				equals: 25.
+			self
+				assert: (offsetProperty extraProperties at: #minimum)
+				equals: 0.
+			self deny: (offsetProperty extraProperties includesKey: #maximum).
+			self
+				assert: (offsetProperty extraProperties at: #default)
+				equals: 0 ]
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testSearchToolSchemasAdvertiseFlatFieldProperties [
 
 	| classProperties classSchema methodProperties methodSchema packageProperties packageSchema |
@@ -3004,6 +3049,24 @@ MCPToolContractsTest >> testStaticToolConfigurationRejectsUnknownToolNames [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testStringArrayItemDescriptionsStayUseful [
+
+	| compactProperty usefulProperty |
+	compactProperty := MCPToolSearchClasses new
+		                   stringArraySchemaNamed: 'packageNames'
+		                   description: 'Packages to search.'
+		                   itemDescription: 'Package name.'.
+	self deny:
+		((compactProperty asJRPCJSON at: #items) includesKey: #description).
+	usefulProperty := self
+		                  inputPropertyNamed: 'argumentValueExpressions'
+		                  inTool: MCPToolUpdateMethodSelector new.
+	self
+		assert: ((usefulProperty asJRPCJSON at: #items) at: #description)
+		equals: 'Smalltalk expression.'
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testToolFlowSelectorNamesSeparateTransportAndParsedInput [
 
 	| staleSelectors |
@@ -3160,6 +3223,18 @@ MCPToolContractsTest >> testToolRegistryNamesUseClassSideMetadata [
 		equals: 'debug_session_step_over'.
 	self assert: MCPToolDebugCapture toolName equals: 'debug_capture'.
 	self assert: MCPToolUpdateDebugMethod toolName equals: 'debug_method_update'
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testToolSearchLimitSchemaAdvertisesBounds [
+
+	| limitProperty |
+	limitProperty := self
+		                 inputPropertyNamed: 'limit'
+		                 inTool: MCPToolSearchTools new.
+	self assert: (limitProperty extraProperties at: #minimum) equals: 0.
+	self assert: (limitProperty extraProperties at: #maximum) equals: 100.
+	self assert: (limitProperty extraProperties at: #default) equals: 25
 ]
 
 { #category : 'support' }

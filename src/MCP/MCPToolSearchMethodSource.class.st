@@ -52,12 +52,6 @@ MCPToolSearchMethodSource >> defaultInputSchema [
 ]
 
 { #category : 'defaults' }
-MCPToolSearchMethodSource >> defaultPageLimit [
-
-	^ 10
-]
-
-{ #category : 'defaults' }
 MCPToolSearchMethodSource >> defaultTitle [
 
 	^ 'Search Method Source'

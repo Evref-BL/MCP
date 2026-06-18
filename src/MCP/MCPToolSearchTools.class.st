@@ -37,8 +37,9 @@ MCPToolSearchTools >> defaultInputSchema [
 		                 integerSchemaPropertyNamed: 'limit'
 		                 description: 'Maximum tools to return.'
 		                 default: 25.
-	limitProperty extraProperties at: #minimum put: 0.
-	limitProperty extraProperties at: #maximum put: 100.
+	limitProperty
+		minimum: 0;
+		maximum: 100.
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties: {

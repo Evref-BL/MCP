@@ -486,6 +486,30 @@ MCPJSONSchemaValidatorTest >> testValidatesMinItemsAndMinLength [
 ]
 
 { #category : 'tests' }
+MCPJSONSchemaValidatorTest >> testValidatesMinimumAndMaximum [
+
+	| schema violations |
+	schema := {
+		          (#type -> 'object').
+		          (#properties -> { ('count' -> {
+			            (#type -> 'integer').
+			            (#minimum -> 0).
+			            (#maximum -> 100) } asDictionary) } asDictionary) }
+		          asDictionary.
+	self assert:
+		(self violationsFor: { (#count -> 25) } asDictionary schema: schema)
+			isEmpty.
+	violations := self
+		              violationsFor: { (#count -> -1) } asDictionary
+		              schema: schema.
+	self assert: (self keywordsFrom: violations) equals: #( 'minimum' ).
+	violations := self
+		              violationsFor: { (#count -> 101) } asDictionary
+		              schema: schema.
+	self assert: (self keywordsFrom: violations) equals: #( 'maximum' )
+]
+
+{ #category : 'tests' }
 MCPJSONSchemaValidatorTest >> testValidatesNot [
 
 	| allowedArguments conflictingArguments directSchema schema violations |
