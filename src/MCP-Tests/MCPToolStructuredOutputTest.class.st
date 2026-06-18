@@ -10,15 +10,6 @@ Class {
 }
 
 { #category : 'tests' }
-MCPToolStructuredOutputTest >> testAllToolsAdvertiseOutputSchema [
-
-	| tools |
-	tools := MCP new rpcToolsList at: #tools.
-	self assert:
-		(tools allSatisfy: [ :each | each includesKey: #outputSchema ])
-]
-
-{ #category : 'tests' }
 MCPToolStructuredOutputTest >> testEvaluateReturnsStructuredError [
 
 	| result structured error |
@@ -744,4 +735,15 @@ MCPToolStructuredOutputTest >> testSearchPackagesReturnsStructuredError [
 	self assert: (error at: #scope) equals: 'projects'.
 	self assert: ((error at: #message) includesSubstring:
 			 'Project DefinitelyMissingProject does not exist.')
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testToolsListAdvertisesInputSchemaWithoutOutputSchema [
+
+	| tools |
+	tools := MCP new rpcToolsList at: #tools.
+	self assert:
+		(tools allSatisfy: [ :each | each includesKey: #inputSchema ]).
+	self deny:
+		(tools anySatisfy: [ :each | each includesKey: #outputSchema ])
 ]
