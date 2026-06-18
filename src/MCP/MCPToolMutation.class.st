@@ -110,19 +110,19 @@ MCPToolMutation >> errorResultForActionFailure: anError action: action requested
 		  summary: summary
 ]
 
-{ #category : 'private' }
+{ #category : 'private - errors' }
 MCPToolMutation >> errorResultForCommandError: anError action: action requestedContext: requestedContext [
 
 	| details |
 	details := anError structuredDetails copy.
 	requestedContext ifNotNil: [
-			requestedContext keysAndValuesDo: [ :key :value |
-				value ifNotNil: [ details at: key ifAbsentPut: [ value ] ] ] ].
-	(#( 'create' 'update' ) includes: action)
+		requestedContext keysAndValuesDo: [ :key :value |
+			value ifNotNil: [ details at: key ifAbsentPut: [ value ] ] ] ].
+	(#( 'compile' 'create' 'update' ) includes: action)
 		ifTrue: [ details at: #action put: action ]
 		ifFalse: [
-				details at: #action put: 'update'.
-				details at: #updateAction put: action ].
+			details at: #action put: 'update'.
+			details at: #updateAction put: action ].
 	^ self errorResultText: anError messageText details: details
 ]
 

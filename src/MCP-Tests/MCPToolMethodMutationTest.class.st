@@ -52,7 +52,7 @@ MCPToolMethodMutationTest >> callToolWith: someArguments [
 	arguments := someArguments copy.
 	arguments removeKey: #action ifAbsent: [ ].
 	toolClass := (arguments includesKey: #source)
-		             ifTrue: [ MCPToolCreateMethod ]
+		             ifTrue: [ MCPToolCompileMethod ]
 		             ifFalse: [
 				             (arguments includesKey: #newSelector)
 					             ifTrue: [ MCPToolUpdateMethodSelector ]
@@ -544,6 +544,61 @@ MCPToolMethodMutationTest >> testCompileDefaultsToInstanceSideWhenClassSideIsOmi
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileMethodReportsCreatedChangeKind [
+
+	| data result selector |
+	selector := #directCreateProbe.
+	self removeSelector: selector from: MCPToolMethodMutationTestTarget.
+	[
+		result := self callToolNamed: 'method_compile' withArguments: {
+				          (#className -> 'MCPToolMethodMutationTestTarget').
+				          (#source -> 'directCreateProbe ^ 11').
+				          (#protocol -> 'tests') } asDictionary.
+		data := self dataFrom: result.
+		self deny: (result at: #isError ifAbsent: [ false ]).
+		self
+			assert: (self summaryFrom: result)
+			equals:
+			'Created MCPToolMethodMutationTestTarget>>directCreateProbe.'.
+		self deny: (result at: #isError ifAbsent: [ false ]).
+		self assert: (data at: #changeKind) equals: 'created'.
+		self assertSuccessDataHasMethodShape: data.
+		self
+			assert: MCPToolMethodMutationTestTarget new directCreateProbe
+			equals: 11 ] ensure: [
+		self removeSelector: selector from: MCPToolMethodMutationTestTarget ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileMethodReportsReplacedChangeKind [
+
+	| data result selector |
+	selector := #directReplaceProbe.
+	self
+		ensureMethodSource: 'directReplaceProbe ^ 1'
+		protocol: 'tests'
+		on: MCPToolMethodMutationTestTarget.
+	[
+		result := self callToolNamed: 'method_compile' withArguments: {
+				          (#className -> 'MCPToolMethodMutationTestTarget').
+				          (#source -> 'directReplaceProbe ^ 2').
+				          (#protocol -> 'tests') } asDictionary.
+		data := self dataFrom: result.
+		self deny: (result at: #isError ifAbsent: [ false ]).
+		self
+			assert: (self summaryFrom: result)
+			equals:
+			'Replaced MCPToolMethodMutationTestTarget>>directReplaceProbe.'.
+		self deny: (result at: #isError ifAbsent: [ false ]).
+		self assert: (data at: #changeKind) equals: 'replaced'.
+		self assertSuccessDataHasMethodShape: data.
+		self
+			assert: MCPToolMethodMutationTestTarget new directReplaceProbe
+			equals: 2 ] ensure: [
+		self removeSelector: selector from: MCPToolMethodMutationTestTarget ]
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testCompileReturnsAllowlistedEquivalentSuperclassMethodCritique [
 
 	| selector |
@@ -847,7 +902,9 @@ MCPToolMethodMutationTest >> testCompileReturnsSortedCollectionConversionCritiqu
 MCPToolMethodMutationTest >> testCompileReturnsStructuredCommandErrorForUndeclaredVariable [
 
 	| error result structured |
-	self removeSelector: #brokenMethod from: MCPToolMethodMutationTestTarget.
+	self
+		removeSelector: #brokenMethod
+		from: MCPToolMethodMutationTestTarget.
 	result := self callToolWith: (self
 			           compileArgumentsForClassName:
 			           'MCPToolMethodMutationTestTarget'
@@ -858,14 +915,14 @@ MCPToolMethodMutationTest >> testCompileReturnsStructuredCommandErrorForUndeclar
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #action) equals: 'create'.
+	self assert: (error at: #action) equals: 'compile'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self
 		assert: (error at: #errorCode)
-		equals: 'CreateUndeclaredVariable'.
-	self
-		assert: (self expectedUndeclaredVariableNoticeClassNames includes:
-				 (error at: #causeClass)).
+		equals: 'CompileUndeclaredVariable'.
+	self assert:
+		(self expectedUndeclaredVariableNoticeClassNames includes:
+			 (error at: #causeClass)).
 	self
 		assert: (error at: #className)
 		equals: 'MCPToolMethodMutationTestTarget'.
@@ -925,61 +982,6 @@ MCPToolMethodMutationTest >> testCompilesInstanceSideMethod [
 ]
 
 { #category : 'tests' }
-MCPToolMethodMutationTest >> testCreateMethodReportsCreatedChangeKind [
-
-	| data result selector |
-	selector := #directCreateProbe.
-	self removeSelector: selector from: MCPToolMethodMutationTestTarget.
-	[
-		result := self callToolNamed: 'method_create' withArguments: {
-				          (#className -> 'MCPToolMethodMutationTestTarget').
-				          (#source -> 'directCreateProbe ^ 11').
-				          (#protocol -> 'tests') } asDictionary.
-		data := self dataFrom: result.
-		self deny: (result at: #isError ifAbsent: [ false ]).
-		self
-			assert: (self summaryFrom: result)
-			equals:
-			'Created MCPToolMethodMutationTestTarget>>directCreateProbe.'.
-		self deny: (result at: #isError ifAbsent: [ false ]).
-		self assert: (data at: #changeKind) equals: 'created'.
-		self assertSuccessDataHasMethodShape: data.
-		self
-			assert: MCPToolMethodMutationTestTarget new directCreateProbe
-			equals: 11 ] ensure: [
-		self removeSelector: selector from: MCPToolMethodMutationTestTarget ]
-]
-
-{ #category : 'tests' }
-MCPToolMethodMutationTest >> testCreateMethodReportsReplacedChangeKind [
-
-	| data result selector |
-	selector := #directReplaceProbe.
-	self
-		ensureMethodSource: 'directReplaceProbe ^ 1'
-		protocol: 'tests'
-		on: MCPToolMethodMutationTestTarget.
-	[
-		result := self callToolNamed: 'method_create' withArguments: {
-				          (#className -> 'MCPToolMethodMutationTestTarget').
-				          (#source -> 'directReplaceProbe ^ 2').
-				          (#protocol -> 'tests') } asDictionary.
-		data := self dataFrom: result.
-		self deny: (result at: #isError ifAbsent: [ false ]).
-		self
-			assert: (self summaryFrom: result)
-			equals:
-			'Replaced MCPToolMethodMutationTestTarget>>directReplaceProbe.'.
-		self deny: (result at: #isError ifAbsent: [ false ]).
-		self assert: (data at: #changeKind) equals: 'replaced'.
-		self assertSuccessDataHasMethodShape: data.
-		self
-			assert: MCPToolMethodMutationTestTarget new directReplaceProbe
-			equals: 2 ] ensure: [
-		self removeSelector: selector from: MCPToolMethodMutationTestTarget ]
-]
-
-{ #category : 'tests' }
 MCPToolMethodMutationTest >> testMCPPackageMethodSourcesDoNotContainLineFeeds [
 
 	| offenders |
@@ -994,13 +996,13 @@ MCPToolMethodMutationTest >> testMCPPackageMethodSourcesDoNotContainLineFeeds [
 MCPToolMethodMutationTest >> testMethodToolSchemasDeclareExpectedInputs [
 
 	| classSideProperty createPropertyNames protocolPropertyNames selectorPropertyNames |
-	createPropertyNames := MCPToolCreateMethod new inputSchema properties
+	createPropertyNames := MCPToolCompileMethod new inputSchema properties
 		                       collect: [ :each | each name ].
 	selectorPropertyNames := MCPToolUpdateMethodSelector new inputSchema
 		                         properties collect: [ :each | each name ].
 	protocolPropertyNames := MCPToolUpdateMethodProtocol new inputSchema
 		                         properties collect: [ :each | each name ].
-	classSideProperty := MCPToolCreateMethod new inputSchema properties
+	classSideProperty := MCPToolCompileMethod new inputSchema properties
 		                     detect: [ :each | each name = 'classSide' ].
 	self
 		assert: createPropertyNames asArray
@@ -1015,7 +1017,7 @@ MCPToolMethodMutationTest >> testMethodToolSchemasDeclareExpectedInputs [
 		assert: protocolPropertyNames asArray
 		equals: #( 'className' 'classSide' 'force' 'selector' 'protocol' ).
 	self
-		assert: MCPToolCreateMethod new inputSchema required asSet
+		assert: MCPToolCompileMethod new inputSchema required asSet
 		equals: #( 'className' 'source' 'protocol' ) asSet.
 	self
 		assert: MCPToolUpdateMethodSelector new inputSchema required asSet

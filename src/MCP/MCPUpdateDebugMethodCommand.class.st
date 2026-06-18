@@ -147,7 +147,7 @@ MCPUpdateDebugMethodCommand >> compiledMethodForContext: aContext [
 { #category : 'private - data' }
 MCPUpdateDebugMethodCommand >> critiqueDataForMethod: aCompiledMethod [
 
-	^ MCPToolCreateMethod new critiqueDataForMethod: aCompiledMethod
+	^ MCPToolCompileMethod new critiqueDataForMethod: aCompiledMethod
 
 ]
 

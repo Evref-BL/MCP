@@ -571,13 +571,13 @@ MCPToolContractsTest >> methodMutationToolFlowSpecs [
 
 	^ {
 		  {
-			  (#toolClass -> MCPToolCreateMethod).
+			  (#toolClass -> MCPToolCompileMethod).
 			  (#arguments -> {
 				   (#className -> 'Object').
 				   (#source -> 'mcpTemporaryMethod ^ self').
 				   (#protocol -> 'tests') } asDictionary).
-			  (#requestClass -> MCPMethodCreateRequest).
-			  (#commandClass -> MCPCreateMethodCommand) } asDictionary.
+			  (#requestClass -> MCPMethodCompileRequest).
+			  (#commandClass -> MCPCompileMethodCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolUpdateMethodSelector).
 			  (#arguments -> {
@@ -821,7 +821,7 @@ MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 			MCPToolSearchClassReferences.
 			MCPToolSearchVariableReferences.
 			MCPToolGetMethod.
-			MCPToolCreateMethod.
+			MCPToolCompileMethod.
 			MCPToolUpdateMethodSelector.
 			MCPToolUpdateMethodProtocol.
 			MCPToolRewriteMethods.
@@ -1681,7 +1681,7 @@ MCPToolContractsTest >> testMethodMutationSchemaAdvertisesOnlyNonInputOutcomes [
 MCPToolContractsTest >> testMethodMutationToolsHaveAccurateNamesAndRequiredArguments [
 
 	| createPropertyNames createTool protocolPropertyNames protocolTool selectorPropertyNames selectorTool |
-	createTool := MCPToolCreateMethod new.
+	createTool := MCPToolCompileMethod new.
 	selectorTool := MCPToolUpdateMethodSelector new.
 	protocolTool := MCPToolUpdateMethodProtocol new.
 	createPropertyNames := createTool inputSchema properties collect: [
@@ -1690,7 +1690,7 @@ MCPToolContractsTest >> testMethodMutationToolsHaveAccurateNamesAndRequiredArgum
 		                         collect: [ :each | each name ].
 	protocolPropertyNames := protocolTool inputSchema properties
 		                         collect: [ :each | each name ].
-	self assert: createTool name equals: 'method_create'.
+	self assert: createTool name equals: 'method_compile'.
 	self assert: selectorTool name equals: 'method_selector_update'.
 	self assert: protocolTool name equals: 'method_protocol_update'.
 	self
@@ -1762,7 +1762,7 @@ MCPToolContractsTest >> testMutatingToolsRequestImageSaveAfterSuccessfulExecutio
 	self classMutationToolClasses do: [ :toolClass |
 		self assert: toolClass new shouldSaveImageAfterSuccessfulExecution ].
 	self assert:
-		MCPToolCreateMethod new shouldSaveImageAfterSuccessfulExecution.
+		MCPToolCompileMethod new shouldSaveImageAfterSuccessfulExecution.
 	self assert: MCPToolUpdateMethodSelector new
 			shouldSaveImageAfterSuccessfulExecution.
 	self assert: MCPToolUpdateMethodProtocol new
@@ -2078,7 +2078,7 @@ MCPToolContractsTest >> testRPCAdvertisesStaticToolSurfaceOnly [
 	#( 'tool_search' 'tool_get' 'tool_call' 'package_search'
 	   'class_search' 'class_get' 'class_create' 'method_metadata_search'
 	   'method_source_search' 'method_implementor_search'
-	   'method_sender_search' 'method_get' 'method_create'
+	   'method_sender_search' 'method_get' 'method_compile'
 	   'method_selector_update' 'method_protocol_update'
 	   'image_evaluate' 'test_run' ) do: [ :each |
 		self assert: (toolNames includes: each) ].
@@ -3159,7 +3159,7 @@ MCPToolContractsTest >> testToolRegistryNamesUseClassSideMetadata [
 		assert: MCPToolPushDownClassSlot toolName
 		equals: 'class_slot_push_down'.
 	self assert: MCPToolRunTests toolName equals: 'test_run'.
-	self assert: MCPToolCreateMethod toolName equals: 'method_create'.
+	self assert: MCPToolCompileMethod toolName equals: 'method_compile'.
 	self
 		assert: MCPToolUpdateMethodSelector toolName
 		equals: 'method_selector_update'.

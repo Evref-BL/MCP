@@ -204,7 +204,7 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 		at: MCPToolSearchEquivalentMethods put: {
 				(#className -> 'Object').
 				(#selector -> 'class') } asDictionary;
-		at: MCPToolCreateMethod put: {
+		at: MCPToolCompileMethod put: {
 				(#className -> 'MCPTool').
 				(#source -> 'temporarySelector ^ self').
 				(#protocol -> 'tests') } asDictionary;

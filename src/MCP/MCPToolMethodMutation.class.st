@@ -113,14 +113,10 @@ MCPToolMethodMutation >> defaultInputSchema [
 MCPToolMethodMutation >> defaultOutputSchema [
 
 	^ self
-		  standardOutputSchemaForDataProperties: {
-				  (self
-					   schemaPropertyNamed: 'changeKind'
-					   type: 'string'
-					   description:
-					   'Whether method_create created or replaced a method.').
-				  self methodCritiquesSchemaProperty }
-		  required: #(  )
+		standardOutputSchemaForDataProperties: {
+			(self schemaPropertyNamed: 'changeKind' type: 'string' description: 'Whether method_compile created or replaced a method.').
+			self methodCritiquesSchemaProperty }
+		required: #(  )
 ]
 
 { #category : 'defaults' }
@@ -282,13 +278,13 @@ MCPToolMethodMutation >> mutationActionForErrorFromParsedRequest: mutationReques
 	^ self mutationAction
 ]
 
-{ #category : 'private - request' }
+{ #category : 'private - execution' }
 MCPToolMethodMutation >> parsedRequestFromToolRequest: request [
 
 	| requestClass |
-	requestClass := self mutationAction = 'create'
-		                ifTrue: [ MCPMethodCreateRequest ]
-		                ifFalse: [ MCPMethodUpdateRequest ].
+	requestClass := self mutationAction = 'compile'
+		ifTrue: [ MCPMethodCompileRequest ]
+		ifFalse: [ MCPMethodUpdateRequest ].
 	^ requestClass fromRequest: request tool: self
 ]
 

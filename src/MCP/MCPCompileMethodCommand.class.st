@@ -1,8 +1,10 @@
 "
-Command for creating or replacing one method from a parsed method_create request. The command compiles the supplied source and returns method metadata plus any included critiques.
+Command that compiles one method source from a parsed method_compile request.
+
+It reports whether compilation created a new method or replaced an existing method, and includes any method critiques produced after compilation.
 "
 Class {
-	#name : 'MCPCreateMethodCommand',
+	#name : 'MCPCompileMethodCommand',
 	#superclass : 'Object',
 	#instVars : [
 		'tool',
@@ -14,13 +16,13 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPCreateMethodCommand class >> tool: aTool request: aRequest [
+MCPCompileMethodCommand class >> tool: aTool request: aRequest [
 
 	^ self new initializeTool: aTool request: aRequest
 ]
 
 { #category : 'private' }
-MCPCreateMethodCommand >> changeSummaryVerbFor: changeKindString [
+MCPCompileMethodCommand >> changeSummaryVerbFor: changeKindString [
 
 	changeKindString = 'created' ifTrue: [ ^ 'Created' ].
 	changeKindString = 'replaced' ifTrue: [ ^ 'Replaced' ].
@@ -28,11 +30,11 @@ MCPCreateMethodCommand >> changeSummaryVerbFor: changeKindString [
 ]
 
 { #category : 'executing' }
-MCPCreateMethodCommand >> execute [
+MCPCompileMethodCommand >> execute [
 
 	| behavior changeKind compiledMethod methodReference methodSource result selector |
 	^ self tool
-		  executeMutationAction: 'create'
+		  executeMutationAction: 'compile'
 		  force: self request force
 		  requestedContext: self request requestedContext
 		  work: [
@@ -54,7 +56,7 @@ MCPCreateMethodCommand >> execute [
 				  methodReference := self tool
 					                     methodReferenceForBehavior: behavior
 					                     selector: selector.
-				  result := MCPMethodCreateResult
+				  result := MCPMethodCompileResult
 					            method: compiledMethod
 					            critiques:
 					            (self tool critiqueDataForMethod: compiledMethod)
@@ -74,7 +76,7 @@ MCPCreateMethodCommand >> execute [
 ]
 
 { #category : 'initialization' }
-MCPCreateMethodCommand >> initializeTool: aTool request: aRequest [
+MCPCompileMethodCommand >> initializeTool: aTool request: aRequest [
 
 	tool := aTool.
 	request := aRequest.
@@ -82,19 +84,19 @@ MCPCreateMethodCommand >> initializeTool: aTool request: aRequest [
 ]
 
 { #category : 'accessing' }
-MCPCreateMethodCommand >> request [
+MCPCompileMethodCommand >> request [
 
 	^ request
 ]
 
 { #category : 'private' }
-MCPCreateMethodCommand >> selectorForMethodSource: methodSourceString [
+MCPCompileMethodCommand >> selectorForMethodSource: methodSourceString [
 
 	^ (RBParser parseMethod: methodSourceString) selector
 ]
 
 { #category : 'accessing' }
-MCPCreateMethodCommand >> tool [
+MCPCompileMethodCommand >> tool [
 
 	^ tool
 ]

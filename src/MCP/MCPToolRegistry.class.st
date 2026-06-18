@@ -121,7 +121,7 @@ MCPToolRegistry class >> additionalKeywordsForTool: aTool [
 			     'binding' ) ].
 	toolName = 'method_get' ifTrue: [
 		^ #( 'method' 'selector' 'protocol' 'source' 'reference' 'variable' ) ].
-	toolName = 'method_create' ifTrue: [
+	toolName = 'method_compile' ifTrue: [
 		^ #( 'method' 'source' 'protocol' 'create' 'compile' ) ].
 	toolName = 'method_selector_update' ifTrue: [
 			^ #( 'method' 'selector' 'signature' 'rename' 'update' 'refactor'
@@ -360,7 +360,7 @@ MCPToolRegistry class >> publicToolGroups [
 			   MCPToolSearchClassReferences.
 			   MCPToolSearchVariableReferences.
 			   MCPToolGetMethod.
-			   MCPToolCreateMethod.
+			   MCPToolCompileMethod.
 			   MCPToolUpdateMethodSelector.
 			   MCPToolUpdateMethodProtocol.
 			   MCPToolRewriteMethods.
@@ -536,7 +536,7 @@ MCPToolRegistry class >> staticToolClasses [
 		  MCPToolSearchMethodImplementors.
 		  MCPToolSearchMethodSenders.
 		  MCPToolGetMethod.
-		  MCPToolCreateMethod.
+		  MCPToolCompileMethod.
 		  MCPToolUpdateMethodSelector.
 		  MCPToolUpdateMethodProtocol.
 		  MCPToolEvaluate.
