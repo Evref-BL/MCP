@@ -22,28 +22,25 @@ MCPRemoveMethodsCommand class >> tool: aTool request: aRequest [
 { #category : 'executing' }
 MCPRemoveMethodsCommand >> execute [
 
-	| behavior removedMethods selectorSymbols warningMessage |
-	selectorSymbols := request selectors collect: #asSymbol.
+	| behavior selectorSymbols warningMessage |
+	selectorSymbols := self request selectors collect: #asSymbol.
 	warningMessage := 'This bypasses sender checks and may leave broken senders.'.
-	behavior := tool
-		            behaviorNamed: request className
-		            classSide: request classSide.
-	removedMethods := selectorSymbols collect: [ :selector |
-		                  | compiledMethod |
-		                  compiledMethod := behavior
-			                                    compiledMethodAt: selector
-			                                    ifAbsent: [
-				                                    MCPCommandError
-					                                    signalMissingMethodInClassName:
-					                                    request className
-					                                    classSide: request classSide
-					                                    selector: selector asString ].
-		                  tool dataForMethod: compiledMethod ].
-	tool forceRemoveSelectors: selectorSymbols from: behavior.
+	behavior := self tool
+		behaviorNamed: self request className
+		classSide: self request classSide.
+	selectorSymbols do: [ :selector |
+		behavior
+			compiledMethodAt: selector
+			ifAbsent: [
+				MCPCommandError
+					signalMissingMethodInClassName: self request className
+					classSide: self request classSide
+					selector: selector asString ] ].
+	self tool forceRemoveSelectors: selectorSymbols from: behavior.
 	^ MCPRemoveMethodsResult
-		  fromRequest: request
-		  removedMethods: removedMethods
-		  warningMessages: { warningMessage }
+		fromRequest: self request
+		removedMethods: #(  )
+		warningMessages: { warningMessage }
 ]
 
 { #category : 'initialization' }

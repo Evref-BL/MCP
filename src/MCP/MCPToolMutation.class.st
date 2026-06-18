@@ -267,8 +267,9 @@ MCPToolMutation >> impactMessageForRefactoringCondition: aCondition [
 
 	| message |
 	message := String streamContents: [ :stream |
-		           aCondition violationMessageOn: stream ].
-	^ self normalizedSingleLineText: message
+		aCondition violationMessageOn: stream ].
+	^ self normalizedRefactoringConditionMessage:
+		(self normalizedSingleLineText: message)
 ]
 
 { #category : 'private - warnings' }
@@ -374,6 +375,14 @@ MCPToolMutation >> normalizedCommandErrorForRefactoringWarning: aWarning action:
 		  details: details;
 		  messageText: summary;
 		  yourself
+]
+
+{ #category : 'private - warnings' }
+MCPToolMutation >> normalizedRefactoringConditionMessage: aString [
+
+	(aString beginsWith: 'NOT ') ifTrue: [
+		^ (aString allButFirst: 4) trimBoth ].
+	^ aString
 ]
 
 { #category : 'private - warnings' }

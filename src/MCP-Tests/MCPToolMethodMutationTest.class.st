@@ -39,25 +39,10 @@ MCPToolMethodMutationTest >> assertCompileForClassName: aClassName methodSource:
 { #category : 'private' }
 MCPToolMethodMutationTest >> assertSuccessDataHasMethodShape: data [
 
-	| requiredKeys |
-	requiredKeys := #( 'selector' 'className' 'classSide' 'packageName'
-	                   'isExtension' 'protocol' 'source' ) asSet.
-	self assert: (data keys asSet includesAll: requiredKeys).
-	self deny: (data includesKey: #side).
+	#( selector className classSide packageName isExtension protocol source side action updateAction oldSelector newSelector oldProtocol newProtocol ) do: [ :key |
+		self deny: (data includesKey: key) ].
 	(data includesKey: #changeKind) ifTrue: [
-			self assert:
-				(#( 'created' 'replaced' ) includes: (data at: #changeKind)) ].
-	self assert: (data at: #className) isString.
-	self assert: (data at: #selector) isString.
-	self assert:
-		((data at: #classSide) = true or: [ (data at: #classSide) = false ]).
-	self assert: (data at: #packageName) isString.
-	self assert:
-		((data at: #isExtension) = true or: [
-			 (data at: #isExtension) = false ]).
-	self assert: (data at: #protocol) isString.
-	self assert: (data at: #source) isString.
-	self deny: (data at: #source) isEmpty
+		self assert: (#( 'created' 'replaced' ) includes: (data at: #changeKind)) ]
 ]
 
 { #category : 'private - calling' }
@@ -363,9 +348,6 @@ MCPToolMethodMutationTest >> testAddArgumentsUpdatesClassSideSenders [
 	senderSource := (MCPToolMethodMutationTestSender >> #callClassTarget)
 		                sourceCode.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #action) equals: 'update'.
-	self assert: (data at: #updateAction) equals: 'addArguments'.
-	self assert: (data at: #classSide) equals: true.
 	self assert:
 		(MCPToolMethodMutationTestTarget classSide includesSelector:
 			 #buildValue:prefix:).
@@ -373,6 +355,7 @@ MCPToolMethodMutationTest >> testAddArgumentsUpdatesClassSideSenders [
 	self
 		assert: MCPToolMethodMutationTestSender new callClassTarget
 		equals: 'Class-value'
+
 ]
 
 { #category : 'tests' }
@@ -388,27 +371,22 @@ MCPToolMethodMutationTest >> testAddArgumentsUpdatesSendersAndReportsAction [
 			          (#argumentNames -> #( 'first' 'second' 'separator' )).
 			          (#argumentValueExpressions
 			           -> (Array with: (String streamContents: [ :stream |
-						             stream
-							             nextPut: $';
-							             nextPut: $|;
-							             nextPut: $' ]))) } asDictionary.
+							             stream
+								             nextPut: $';
+								             nextPut: $|;
+								             nextPut: $' ]))) } asDictionary.
 	data := self dataFrom: result.
 	targetSource := (MCPToolMethodMutationTestTarget
 	                 >> #combine:with:separator:) sourceCode.
-	senderSource := (MCPToolMethodMutationTestSender >> #callInstanceTarget)
-		                sourceCode.
+	senderSource := (MCPToolMethodMutationTestSender
+	                 >> #callInstanceTarget) sourceCode.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #action) equals: 'update'.
-	self assert: (data at: #updateAction) equals: 'addArguments'.
-	self assert: (data at: #oldSelector) equals: 'combine:with:'.
-	self
-		assert: (data at: #newSelector)
-		equals: 'combine:with:separator:'.
 	self assert: (targetSource includesSubstring: 'separator: separator').
 	self assert: (senderSource includesSubstring: 'separator: ''|''').
 	self
 		assert: MCPToolMethodMutationTestSender new callInstanceTarget
 		equals: 'first-second'
+
 ]
 
 { #category : 'tests' }
@@ -450,20 +428,12 @@ MCPToolMethodMutationTest >> testChangesClassSideMethodProtocol [
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self
-		assert:
-			(MCPToolMethodMutationTestTarget classSide
+		assert: (MCPToolMethodMutationTestTarget classSide
 			 >> self classProtocolSelector) protocol name asString
 		equals: 'instance creation'.
 	self assertSuccessDataHasMethodShape: data.
-	self
-		assert: (data at: #className)
-		equals: 'MCPToolMethodMutationTestTarget'.
-	self assert: (data at: #classSide).
-	self
-		assert: (data at: #selector)
-		equals: self classProtocolSelector asString.
-	self assert: (data at: #protocol) equals: 'instance creation'.
-	self assert: (data at: #isExtension) equals: false
+	self deny: (result at: #isError ifAbsent: [ false ]).
+
 ]
 
 { #category : 'tests' }
@@ -479,15 +449,8 @@ MCPToolMethodMutationTest >> testChangesInstanceSideMethodProtocol [
 				protocol name asString
 		equals: 'accessing'.
 	self assertSuccessDataHasMethodShape: data.
-	self
-		assert: (data at: #className)
-		equals: 'MCPToolMethodMutationTestTarget'.
-	self deny: (data at: #classSide).
-	self
-		assert: (data at: #selector)
-		equals: self instanceProtocolSelector asString.
-	self assert: (data at: #protocol) equals: 'accessing'.
-	self assert: (data at: #isExtension) equals: false
+	self deny: (result at: #isError ifAbsent: [ false ]).
+
 ]
 
 { #category : 'tests' }
@@ -498,21 +461,9 @@ MCPToolMethodMutationTest >> testChangingExtensionMethodProtocolUpdatesPackageMe
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self
-		assert:
-			(MCPToolMethodMutationTestTarget >> self extensionProtocolSelector)
-				protocol name asString
+		assert: (MCPToolMethodMutationTestTarget >> self extensionProtocolSelector) protocol name asString
 		equals: 'tests'.
-	self assertSuccessDataHasMethodShape: data.
-	self
-		assert: (data at: #className)
-		equals: 'MCPToolMethodMutationTestTarget'.
-	self deny: (data at: #classSide).
-	self
-		assert: (data at: #selector)
-		equals: self extensionProtocolSelector asString.
-	self assert: (data at: #protocol) equals: 'tests'.
-	self assert: ((data at: #source) includesSubstring:
-			 self extensionProtocolSelector asString)
+	self assertSuccessDataHasMethodShape: data
 ]
 
 { #category : 'tests' }
@@ -585,10 +536,11 @@ MCPToolMethodMutationTest >> testCompileDefaultsToInstanceSideWhenClassSideIsOmi
 	self
 		assert: MCPToolMethodMutationTestTarget new instanceAnswer
 		equals: 42.
-	self deny: (MCPToolMethodMutationTestTarget classSide includesSelector:
+	self deny:
+		(MCPToolMethodMutationTestTarget classSide includesSelector:
 			 #instanceAnswer).
 	self assertSuccessDataHasMethodShape: data.
-	self deny: (data at: #classSide)
+	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
 { #category : 'tests' }
@@ -941,17 +893,12 @@ MCPToolMethodMutationTest >> testCompilesClassSideMethod [
 	self assert: MCPToolMethodMutationTestTarget classAnswer equals: 7.
 	self
 		assert:
-		(MCPToolMethodMutationTestTarget classSide >> #classAnswer) protocol
-			name
+			(MCPToolMethodMutationTestTarget classSide >> #classAnswer)
+				protocol name
 		equals: #tests.
 	self assertSuccessDataHasMethodShape: data.
-	self
-		assert: (data at: #className)
-		equals: 'MCPToolMethodMutationTestTarget'.
-	self assert: (data at: #classSide).
-	self assert: (data at: #selector) equals: 'classAnswer'.
-	self assert: (data at: #protocol) equals: 'tests'.
-	self assert: (data at: #isExtension) equals: false
+	self deny: (result at: #isError ifAbsent: [ false ]).
+
 ]
 
 { #category : 'tests' }
@@ -973,13 +920,8 @@ MCPToolMethodMutationTest >> testCompilesInstanceSideMethod [
 		(MCPToolMethodMutationTestTarget >> #instanceAnswer) protocol name
 		equals: #tests.
 	self assertSuccessDataHasMethodShape: data.
-	self
-		assert: (data at: #className)
-		equals: 'MCPToolMethodMutationTestTarget'.
-	self deny: (data at: #classSide).
-	self assert: (data at: #selector) equals: 'instanceAnswer'.
-	self assert: (data at: #protocol) equals: 'tests'.
-	self assert: (data at: #isExtension) equals: false
+	self deny: (result at: #isError ifAbsent: [ false ]).
+
 ]
 
 { #category : 'tests' }
@@ -997,8 +939,9 @@ MCPToolMethodMutationTest >> testCreateMethodReportsCreatedChangeKind [
 		self deny: (result at: #isError ifAbsent: [ false ]).
 		self
 			assert: (self summaryFrom: result)
-			equals: 'Created MCPToolMethodMutationTestTarget>>directCreateProbe.'.
-		self assert: (data at: #action) equals: 'create'.
+			equals:
+			'Created MCPToolMethodMutationTestTarget>>directCreateProbe.'.
+		self deny: (result at: #isError ifAbsent: [ false ]).
 		self assert: (data at: #changeKind) equals: 'created'.
 		self assertSuccessDataHasMethodShape: data.
 		self
@@ -1025,8 +968,9 @@ MCPToolMethodMutationTest >> testCreateMethodReportsReplacedChangeKind [
 		self deny: (result at: #isError ifAbsent: [ false ]).
 		self
 			assert: (self summaryFrom: result)
-			equals: 'Replaced MCPToolMethodMutationTestTarget>>directReplaceProbe.'.
-		self assert: (data at: #action) equals: 'create'.
+			equals:
+			'Replaced MCPToolMethodMutationTestTarget>>directReplaceProbe.'.
+		self deny: (result at: #isError ifAbsent: [ false ]).
 		self assert: (data at: #changeKind) equals: 'replaced'.
 		self assertSuccessDataHasMethodShape: data.
 		self
@@ -1144,7 +1088,7 @@ MCPToolMethodMutationTest >> testReformatsMethod [
 	data := self dataFrom: result.
 	reformattedSource := (MCPToolMethodMutationTestTarget >> #uglyAnswer)
 		                     sourceCode.
-	self assert: (data at: #source) equals: reformattedSource.
+	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (reformattedSource includesSubstring: '1 + 2').
 	self assert: MCPToolMethodMutationTestTarget new uglyAnswer equals: 3
 ]
@@ -1194,129 +1138,121 @@ MCPToolMethodMutationTest >> testRemoveArgumentsUpdatesSendersAndReportsAction [
 	oldSelector := ('keep:' , 'unused:') asSymbol.
 	newSelector := #keep:.
 	[
-	self
-		ensureMethodSource: 'keep: first unused: ignored ^ first'
-		protocol: 'tests'
-		on: MCPToolMethodMutationTestTarget.
-	self
-		ensureMethodSource:
-		'callRemoveArgumentTarget ^ MCPToolMethodMutationTestTarget new keep: ''value'' unused: ''ignored'''
-		protocol: 'tests'
-		on: MCPToolMethodMutationTestSender.
-	result := self callToolWith: {
-			          (#action -> 'update').
-			          (#className -> 'MCPToolMethodMutationTestTarget').
-			          (#classSide -> false).
-			          (#selector -> oldSelector asString).
-			          (#newSelector -> newSelector asString) } asDictionary.
-	data := self dataFrom: result.
-	senderSource := (MCPToolMethodMutationTestSender
-	                 >> #callRemoveArgumentTarget) sourceCode.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #action) equals: 'update'.
-	self assert: (data at: #updateAction) equals: 'removeArguments'.
-	self assert: (data at: #oldSelector) equals: oldSelector asString.
-	self assert: (data at: #newSelector) equals: newSelector asString.
-	self deny:
-		(MCPToolMethodMutationTestTarget includesSelector: oldSelector).
-	self assert:
-		(MCPToolMethodMutationTestTarget includesSelector: newSelector).
-	self deny: (senderSource includesSubstring: 'unused:').
-	self
-		assert: MCPToolMethodMutationTestSender new callRemoveArgumentTarget
-		equals: 'value' ] ensure: [
-		self removeSelector: oldSelector from: MCPToolMethodMutationTestTarget.
-		self removeSelector: newSelector from: MCPToolMethodMutationTestTarget.
 		self
-			removeSelector: #callRemoveArgumentTarget
-			from: MCPToolMethodMutationTestSender ]
+			ensureMethodSource: 'keep: first unused: ignored ^ first'
+			protocol: 'tests'
+			on: MCPToolMethodMutationTestTarget.
+		self
+			ensureMethodSource:
+			'callRemoveArgumentTarget ^ MCPToolMethodMutationTestTarget new keep: ''value'' unused: ''ignored'''
+			protocol: 'tests'
+			on: MCPToolMethodMutationTestSender.
+		result := self callToolWith: {
+				          (#action -> 'update').
+				          (#className -> 'MCPToolMethodMutationTestTarget').
+				          (#classSide -> false).
+				          (#selector -> oldSelector asString).
+				          (#newSelector -> newSelector asString) } asDictionary.
+		data := self dataFrom: result.
+		senderSource := (MCPToolMethodMutationTestSender
+		                 >> #callRemoveArgumentTarget) sourceCode.
+		self deny: (result at: #isError ifAbsent: [ false ]).
+		self deny:
+			(MCPToolMethodMutationTestTarget includesSelector: oldSelector).
+		self assert:
+			(MCPToolMethodMutationTestTarget includesSelector: newSelector).
+		self deny: (senderSource includesSubstring: 'unused:').
+		self
+			assert:
+			MCPToolMethodMutationTestSender new callRemoveArgumentTarget
+			equals: 'value' ] ensure: [
+			self
+				removeSelector: oldSelector
+				from: MCPToolMethodMutationTestTarget.
+			self
+				removeSelector: newSelector
+				from: MCPToolMethodMutationTestTarget.
+			self
+				removeSelector: #callRemoveArgumentTarget
+				from: MCPToolMethodMutationTestSender ]
+
 ]
 
 { #category : 'tests' }
 MCPToolMethodMutationTest >> testRenameCanLimitRefactoringToNamedClasses [
 
 	self withRenameScopeFixturesDo: [ :fixtures |
-		| data result senderAClass senderASource senderBClass senderBSource targetAClass targetBClass |
-		result := self callToolWith: {
-				          (#action -> 'update').
-				          (#className -> (fixtures at: #targetAClassName)).
-				          (#classSide -> false).
-				          (#selector -> 'scopeSharedTarget').
-				          (#newSelector -> 'scopedSharedTarget').
-				          (#classNames -> {
-					           (fixtures at: #targetAClassName).
-					           (fixtures at: #senderAClassName) }) } asDictionary.
-		data := self dataFrom: result.
-		targetAClass := Smalltalk globals at:
-			                (fixtures at: #targetAClassName) asSymbol.
-		targetBClass := Smalltalk globals at:
-			                (fixtures at: #targetBClassName) asSymbol.
-		senderAClass := Smalltalk globals at:
-			                (fixtures at: #senderAClassName) asSymbol.
-		senderBClass := Smalltalk globals at:
-			                (fixtures at: #senderBClassName) asSymbol.
-		self deny: (result at: #isError ifAbsent: [ false ]).
-		self deny: (targetAClass includesSelector: #scopeSharedTarget).
-		self assert: (targetAClass includesSelector: #scopedSharedTarget).
-		self assert: (targetBClass includesSelector: #scopeSharedTarget).
-		self deny: (targetBClass includesSelector: #scopedSharedTarget).
-		self assert: senderAClass new callScopedTarget equals: 'A'.
-		self assert: senderBClass new callScopedTarget equals: 'B'.
-		senderASource := (senderAClass >> #callScopedTarget) sourceCode.
-		senderBSource := (senderBClass >> #callScopedTarget) sourceCode.
-		self assert: (senderASource includesSubstring: 'scopedSharedTarget').
-		self assert: (senderBSource includesSubstring: 'scopeSharedTarget').
-		self deny: (senderBSource includesSubstring: 'scopedSharedTarget').
-		self assertSuccessDataHasMethodShape: data.
-		self assert: (data at: #action) equals: 'update'.
-		self assert: (data at: #updateAction) equals: 'rename'.
-		self assert: (data at: #selector) equals: 'scopedSharedTarget'.
-		self
-			assert: (data at: #packageName)
-			equals: (fixtures at: #packageAName) ]
+			| data result senderAClass senderASource senderBClass senderBSource targetAClass targetBClass |
+			result := self callToolWith: {
+					          (#action -> 'update').
+					          (#className -> (fixtures at: #targetAClassName)).
+					          (#classSide -> false).
+					          (#selector -> 'scopeSharedTarget').
+					          (#newSelector -> 'scopedSharedTarget').
+					          (#classNames -> {
+						           (fixtures at: #targetAClassName).
+						           (fixtures at: #senderAClassName) }) } asDictionary.
+			data := self dataFrom: result.
+			targetAClass := Smalltalk globals at:
+				                (fixtures at: #targetAClassName) asSymbol.
+			targetBClass := Smalltalk globals at:
+				                (fixtures at: #targetBClassName) asSymbol.
+			senderAClass := Smalltalk globals at:
+				                (fixtures at: #senderAClassName) asSymbol.
+			senderBClass := Smalltalk globals at:
+				                (fixtures at: #senderBClassName) asSymbol.
+			self deny: (result at: #isError ifAbsent: [ false ]).
+			self deny: (targetAClass includesSelector: #scopeSharedTarget).
+			self assert: (targetAClass includesSelector: #scopedSharedTarget).
+			self assert: (targetBClass includesSelector: #scopeSharedTarget).
+			self deny: (targetBClass includesSelector: #scopedSharedTarget).
+			self assert: senderAClass new callScopedTarget equals: 'A'.
+			self assert: senderBClass new callScopedTarget equals: 'B'.
+			senderASource := (senderAClass >> #callScopedTarget) sourceCode.
+			senderBSource := (senderBClass >> #callScopedTarget) sourceCode.
+			self assert:
+				(senderASource includesSubstring: 'scopedSharedTarget').
+			self assert: (senderBSource includesSubstring: 'scopeSharedTarget').
+			self deny: (senderBSource includesSubstring: 'scopedSharedTarget').
+			self assertSuccessDataHasMethodShape: data ]
 ]
 
 { #category : 'tests' }
 MCPToolMethodMutationTest >> testRenameCanLimitRefactoringToNamedPackages [
 
 	self withRenameScopeFixturesDo: [ :fixtures |
-		| data result senderAClass senderASource senderBClass senderBSource targetAClass targetBClass |
-		result := self callToolWith: {
-				          (#action -> 'update').
-				          (#className -> (fixtures at: #targetAClassName)).
-				          (#classSide -> false).
-				          (#selector -> 'scopeSharedTarget').
-				          (#newSelector -> 'scopedSharedTarget').
-				          (#packageNames -> { (fixtures at: #packageAName) }) }
-				          asDictionary.
-		data := self dataFrom: result.
-		targetAClass := Smalltalk globals at:
-			                (fixtures at: #targetAClassName) asSymbol.
-		targetBClass := Smalltalk globals at:
-			                (fixtures at: #targetBClassName) asSymbol.
-		senderAClass := Smalltalk globals at:
-			                (fixtures at: #senderAClassName) asSymbol.
-		senderBClass := Smalltalk globals at:
-			                (fixtures at: #senderBClassName) asSymbol.
-		self deny: (result at: #isError ifAbsent: [ false ]).
-		self deny: (targetAClass includesSelector: #scopeSharedTarget).
-		self assert: (targetAClass includesSelector: #scopedSharedTarget).
-		self assert: (targetBClass includesSelector: #scopeSharedTarget).
-		self deny: (targetBClass includesSelector: #scopedSharedTarget).
-		self assert: senderAClass new callScopedTarget equals: 'A'.
-		self assert: senderBClass new callScopedTarget equals: 'B'.
-		senderASource := (senderAClass >> #callScopedTarget) sourceCode.
-		senderBSource := (senderBClass >> #callScopedTarget) sourceCode.
-		self assert: (senderASource includesSubstring: 'scopedSharedTarget').
-		self assert: (senderBSource includesSubstring: 'scopeSharedTarget').
-		self deny: (senderBSource includesSubstring: 'scopedSharedTarget').
-		self assertSuccessDataHasMethodShape: data.
-		self assert: (data at: #action) equals: 'update'.
-		self assert: (data at: #updateAction) equals: 'rename'.
-		self assert: (data at: #selector) equals: 'scopedSharedTarget'.
-		self
-			assert: (data at: #packageName)
-			equals: (fixtures at: #packageAName) ]
+			| data result senderAClass senderASource senderBClass senderBSource targetAClass targetBClass |
+			result := self callToolWith: {
+					          (#action -> 'update').
+					          (#className -> (fixtures at: #targetAClassName)).
+					          (#classSide -> false).
+					          (#selector -> 'scopeSharedTarget').
+					          (#newSelector -> 'scopedSharedTarget').
+					          (#packageNames -> { (fixtures at: #packageAName) }) }
+					          asDictionary.
+			data := self dataFrom: result.
+			targetAClass := Smalltalk globals at:
+				                (fixtures at: #targetAClassName) asSymbol.
+			targetBClass := Smalltalk globals at:
+				                (fixtures at: #targetBClassName) asSymbol.
+			senderAClass := Smalltalk globals at:
+				                (fixtures at: #senderAClassName) asSymbol.
+			senderBClass := Smalltalk globals at:
+				                (fixtures at: #senderBClassName) asSymbol.
+			self deny: (result at: #isError ifAbsent: [ false ]).
+			self deny: (targetAClass includesSelector: #scopeSharedTarget).
+			self assert: (targetAClass includesSelector: #scopedSharedTarget).
+			self assert: (targetBClass includesSelector: #scopeSharedTarget).
+			self deny: (targetBClass includesSelector: #scopedSharedTarget).
+			self assert: senderAClass new callScopedTarget equals: 'A'.
+			self assert: senderBClass new callScopedTarget equals: 'B'.
+			senderASource := (senderAClass >> #callScopedTarget) sourceCode.
+			senderBSource := (senderBClass >> #callScopedTarget) sourceCode.
+			self assert:
+				(senderASource includesSubstring: 'scopedSharedTarget').
+			self assert: (senderBSource includesSubstring: 'scopeSharedTarget').
+			self deny: (senderBSource includesSubstring: 'scopedSharedTarget').
+			self assertSuccessDataHasMethodShape: data ]
 ]
 
 { #category : 'tests' }
@@ -1326,31 +1262,34 @@ MCPToolMethodMutationTest >> testRenameReturnsFormattedSourceForRenamedMethod [
 	oldSelector := ('uglyRename:' , 'with:') asSymbol.
 	newSelector := ('with:' , 'uglyRename:') asSymbol.
 	[
-	self
-		ensureMethodSource:
-		'uglyRename: first  with:second ^first,''-'',second'
-		protocol: 'tests'
-		on: MCPToolMethodMutationTestTarget.
-	result := self callToolWith: {
-			          (#action -> 'update').
-			          (#className -> 'MCPToolMethodMutationTestTarget').
-			          (#classSide -> false).
-			          (#selector -> oldSelector asString).
-			          (#newSelector -> newSelector asString).
-			          (#permutation -> #( 2 1 )) } asDictionary.
-	data := self dataFrom: result.
-	renamedSource := (MCPToolMethodMutationTestTarget >> newSelector)
-		                 sourceCode.
-	self assert: (data at: #action) equals: 'update'.
-	self assert: (data at: #updateAction) equals: 'rename'.
-	self assert: (data at: #source) equals: renamedSource.
-	self assert:
-		(renamedSource includesSubstring: 'with: second uglyRename: first').
-	self assert:
-		(renamedSource includesSubstring: '^ first , ''-'' , second') ]
+		self
+			ensureMethodSource:
+			'uglyRename: first  with:second ^first,''-'',second'
+			protocol: 'tests'
+			on: MCPToolMethodMutationTestTarget.
+		result := self callToolWith: {
+				          (#action -> 'update').
+				          (#className -> 'MCPToolMethodMutationTestTarget').
+				          (#classSide -> false).
+				          (#selector -> oldSelector asString).
+				          (#newSelector -> newSelector asString).
+				          (#permutation -> #( 2 1 )) } asDictionary.
+		data := self dataFrom: result.
+		renamedSource := (MCPToolMethodMutationTestTarget >> newSelector)
+			                 sourceCode.
+		self deny: (result at: #isError ifAbsent: [ false ]).
+		self assert:
+			(renamedSource includesSubstring: 'with: second uglyRename: first').
+		self assert:
+			(renamedSource includesSubstring: '^ first , ''-'' , second') ]
 		ensure: [
-			self removeSelector: oldSelector from: MCPToolMethodMutationTestTarget.
-			self removeSelector: newSelector from: MCPToolMethodMutationTestTarget ]
+				self
+					removeSelector: oldSelector
+					from: MCPToolMethodMutationTestTarget.
+				self
+					removeSelector: newSelector
+					from: MCPToolMethodMutationTestTarget ]
+
 ]
 
 { #category : 'tests' }
@@ -1449,7 +1388,8 @@ MCPToolMethodMutationTest >> testRenamesClassSideMethodWithDefaultPermutation [
 	result := self callToolWith: self classRenameArguments.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self deny: (MCPToolMethodMutationTestTarget classSide includesSelector:
+	self deny:
+		(MCPToolMethodMutationTestTarget classSide includesSelector:
 			 self classSelector).
 	self assert:
 		(MCPToolMethodMutationTestTarget classSide includesSelector:
@@ -1458,15 +1398,8 @@ MCPToolMethodMutationTest >> testRenamesClassSideMethodWithDefaultPermutation [
 		assert: MCPToolMethodMutationTestSender new callClassTarget
 		equals: 'Class-value'.
 	self assertSuccessDataHasMethodShape: data.
-	self
-		assert: (data at: #className)
-		equals: 'MCPToolMethodMutationTestTarget'.
-	self assert: (data at: #classSide).
-	self
-		assert: (data at: #selector)
-		equals: self renamedClassSelector asString.
-	self assert: (data at: #protocol) equals: 'tests'.
-	self assert: (data at: #isExtension) equals: false
+	self deny: (result at: #isError ifAbsent: [ false ]).
+
 ]
 
 { #category : 'tests' }
@@ -1476,20 +1409,13 @@ MCPToolMethodMutationTest >> testRenamesInstanceMethodAndReturnsStructuredData [
 	result := self callToolWith: self instanceRenameArguments.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self deny:
-		(MCPToolMethodMutationTestTarget includesSelector: self instanceSelector).
+	self deny: (MCPToolMethodMutationTestTarget includesSelector:
+			 self instanceSelector).
 	self assert: (MCPToolMethodMutationTestTarget includesSelector:
 			 self renamedInstanceSelector).
 	self assertSuccessDataHasMethodShape: data.
-	self
-		assert: (data at: #className)
-		equals: 'MCPToolMethodMutationTestTarget'.
-	self deny: (data at: #classSide).
-	self
-		assert: (data at: #selector)
-		equals: self renamedInstanceSelector asString.
-	self assert: (data at: #protocol) equals: 'tests'.
-	self assert: (data at: #isExtension) equals: false
+	self deny: (result at: #isError ifAbsent: [ false ]).
+
 ]
 
 { #category : 'private - calling' }

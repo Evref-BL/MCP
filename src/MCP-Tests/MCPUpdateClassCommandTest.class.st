@@ -62,10 +62,7 @@ MCPUpdateClassCommandTest >> testAppliedChangeResultWrapsPlanAndResult [
 		updatePlan: plan
 		changeResult: changeResult.
 	data := appliedChange asDictionary.
-	self assert: (data at: #action) equals: 'update'.
-	self assert: (data at: #updateAction) equals: 'setComment'.
-	self assert: (data at: #oldClassComment) equals: 'old'.
-	self assert: (data at: #newClassComment) equals: 'new'
+	self assert: data isEmpty
 ]
 
 { #category : 'tests' }

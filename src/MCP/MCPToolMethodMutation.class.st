@@ -92,13 +92,6 @@ MCPToolMethodMutation >> critiqueDataForMethod: aCompiledMethod [
 		  self critiqueDataFor: each ]
 ]
 
-{ #category : 'private' }
-MCPToolMethodMutation >> dataForMethod: aCompiledMethod [
-
-	^ (MCPCompiledMethodInfo fromMethod: aCompiledMethod)
-		  asDictionaryIncludingSource: true
-]
-
 { #category : 'defaults' }
 MCPToolMethodMutation >> defaultDescription [
 
@@ -120,10 +113,14 @@ MCPToolMethodMutation >> defaultInputSchema [
 MCPToolMethodMutation >> defaultOutputSchema [
 
 	^ self
-		  standardOutputSchemaForDataProperties: self methodDataProperties
-		  required:
-			  #( 'selector' 'className' 'classSide' 'packageName' 'isExtension'
-			     'protocol' 'source' )
+		  standardOutputSchemaForDataProperties: {
+				  (self
+					   schemaPropertyNamed: 'changeKind'
+					   type: 'string'
+					   description:
+					   'Whether method_create created or replaced a method.').
+				  self methodCritiquesSchemaProperty }
+		  required: #(  )
 ]
 
 { #category : 'defaults' }
@@ -220,41 +217,6 @@ MCPToolMethodMutation >> inputProperties [
 ]
 
 { #category : 'private - schema' }
-MCPToolMethodMutation >> methodAppliedChangeOutputSchemaProperty [
-
-	| property resultClassProperty resultProperty updateActionProperty |
-	updateActionProperty := self
-		                        schemaPropertyNamed: 'updateAction'
-		                        type: 'string'
-		                        description:
-		                        'The method update action that produced the applied change.'.
-	resultClassProperty := self
-		                       schemaPropertyNamed: 'resultClassName'
-		                       type: 'string'
-		                       description:
-		                       'The result DTO class returned by the method update action.'.
-	resultProperty := self
-		                  schemaPropertyNamed: 'result'
-		                  type: 'object'
-		                  description:
-		                  'The method update result DTO serialized as a dictionary.'.
-	resultProperty additionalProperties: true.
-	property := self
-		            schemaPropertyNamed: 'appliedChange'
-		            type: 'object'
-		            description:
-		            'The applied method update change and its result DTO.'.
-	property
-		properties: {
-				updateActionProperty.
-				resultClassProperty.
-				resultProperty };
-		required: #( 'updateAction' 'resultClassName' 'result' );
-		additionalProperties: false.
-	^ property
-]
-
-{ #category : 'private - schema' }
 MCPToolMethodMutation >> methodCritiqueSchema [
 
 	^ MCPStructureProperties new
@@ -302,115 +264,10 @@ MCPToolMethodMutation >> methodCritiquesSchemaProperty [
 		  yourself
 ]
 
-{ #category : 'private - schema' }
-MCPToolMethodMutation >> methodDataProperties [
-
-	^ {
-		  (self
-			   schemaPropertyNamed: 'action'
-			   type: 'string'
-			   description:
-			   'The public method mutation action that was performed: create or update.').
-		  (self
-			   schemaPropertyNamed: 'changeKind'
-			   type: 'string'
-			   description:
-			   'For method_create, whether the tool created a new method or replaced an existing method.').
-		  (self
-			   schemaPropertyNamed: 'updateAction'
-			   type: 'string'
-			   description:
-			   'The update action performed when action=update.').
-		  self methodUpdatePlanOutputSchemaProperty.
-		  self methodAppliedChangeOutputSchemaProperty.
-		  (self
-			   schemaPropertyNamed: 'selector'
-			   type: 'string'
-			   description:
-			   'The selector of the method after the update completes.').
-		  (self
-			   schemaPropertyNamed: 'className'
-			   type: 'string'
-			   description: 'The class that defines the updated method.').
-		  (self
-			   schemaPropertyNamed: 'classSide'
-			   type: 'boolean'
-			   description: 'Whether the updated method is on the class side.').
-		  (self
-			   schemaPropertyNamed: 'packageName'
-			   type: 'string'
-			   description: 'The package that owns the updated method.').
-		  (self
-			   schemaPropertyNamed: 'isExtension'
-			   type: 'boolean'
-			   description:
-			   'Whether the updated method is an extension on its class package.').
-		  (self
-			   schemaPropertyNamed: 'protocol'
-			   type: 'string'
-			   description:
-			   'The protocol/category containing the updated method after the action.').
-		  (self
-			   schemaPropertyNamed: 'source'
-			   type: 'string'
-			   description:
-			   'The formatted source code of the updated method after the action.').
-		  (self
-			   schemaPropertyNamed: 'oldSelector'
-			   type: 'string'
-			   description:
-			   'The previous selector when updateAction changes the selector.').
-		  (self
-			   schemaPropertyNamed: 'newSelector'
-			   type: 'string'
-			   description:
-			   'The target selector when updateAction changes the selector.').
-		  (self
-			   schemaPropertyNamed: 'oldProtocol'
-			   type: 'string'
-			   description:
-			   'The previous protocol when the update action is changeProtocol.').
-		  (self
-			   schemaPropertyNamed: 'newProtocol'
-			   type: 'string'
-			   description:
-			   'The new protocol when the update action is changeProtocol.').
-		  self methodCritiquesSchemaProperty }
-]
-
 { #category : 'private - specs' }
 MCPToolMethodMutation >> methodToolSpec [
 
 	self subclassResponsibility
-]
-
-{ #category : 'private - schema' }
-MCPToolMethodMutation >> methodUpdatePlanOutputSchemaProperty [
-
-	| property requestedContextProperty updateActionProperty |
-	updateActionProperty := self
-		                        schemaPropertyNamed: 'updateAction'
-		                        type: 'string'
-		                        description:
-		                        'The method update action selected by the tool request.'.
-	requestedContextProperty := self
-		                            schemaPropertyNamed: 'requestedContext'
-		                            type: 'object'
-		                            description:
-		                            'The normalized request context used to execute the update.'.
-	requestedContextProperty additionalProperties: true.
-	property := self
-		            schemaPropertyNamed: 'updatePlan'
-		            type: 'object'
-		            description:
-		            'The planned method update action before it is executed.'.
-	property
-		properties: {
-				updateActionProperty.
-				requestedContextProperty };
-		required: #( 'updateAction' 'requestedContext' );
-		additionalProperties: false.
-	^ property
 ]
 
 { #category : 'private - actions' }

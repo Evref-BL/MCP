@@ -29,18 +29,7 @@ MCPMethodUpdateChangeResult class >> updateAction: anUpdateAction method: aCompi
 { #category : 'converting' }
 MCPMethodUpdateChangeResult >> asDictionary [
 
-	| data |
-	data := self methodInfo asDictionaryIncludingSource: true.
-	data at: #updateAction put: self updateAction.
-	self oldSelector ifNotNil: [
-		data at: #oldSelector put: self oldSelector ].
-	self newSelector ifNotNil: [
-		data at: #newSelector put: self newSelector ].
-	self oldProtocol ifNotNil: [
-		data at: #oldProtocol put: self oldProtocol ].
-	self newProtocol ifNotNil: [
-		data at: #newProtocol put: self newProtocol ].
-	^ data
+	^ Dictionary new
 ]
 
 { #category : 'accessing' }

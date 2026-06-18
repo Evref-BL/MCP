@@ -82,30 +82,13 @@ MCPToolClassMutation >> classTraitsSchemaProperty [
 { #category : 'private' }
 MCPToolClassMutation >> dataForAppliedUpdateResult: anAppliedUpdateResult [
 
-	^ self dataWithClassCommentFrom: anAppliedUpdateResult asDictionary
+	^ anAppliedUpdateResult asDictionary
 ]
 
 { #category : 'private' }
 MCPToolClassMutation >> dataForResult: aResult action: actionName [
 
-	| data |
-	data := aResult asDictionary copy.
-	data at: #action put: actionName.
-	^ self dataWithClassCommentFrom: data
-]
-
-{ #category : 'private' }
-MCPToolClassMutation >> dataWithClassCommentFrom: aDictionary [
-
-	| class data |
-	data := aDictionary copy.
-	class := Smalltalk globals
-		at: (data at: #className) asSymbol
-		ifAbsent: [ nil ].
-	data
-		at: #classComment
-		put: (class ifNil: [ '' ] ifNotNil: [ class comment ]).
-	^ data
+	^ Dictionary new
 ]
 
 { #category : 'defaults' }
@@ -128,28 +111,7 @@ MCPToolClassMutation >> defaultInputSchema [
 { #category : 'defaults' }
 MCPToolClassMutation >> defaultOutputSchema [
 
-	| properties |
-	properties := OrderedCollection new.
-	properties add: (self
-		schemaPropertyNamed: 'action'
-		type: 'string'
-		description: 'Class mutation action.').
-	#( className updateAction superclassName packageName tag classComment oldClassComment newClassComment oldPackageName oldTag slotName oldSlotName newSlotName oldClassName newClassName oldSuperclassName layoutClassName oldLayoutClassName newLayoutClassName ) do: [ :name |
-		properties add: (self
-			schemaPropertyNamed: name asString
-			type: 'string'
-			description: name asString) ].
-	#( instanceSlotNames classSlotNames oldInstanceSlotNames newInstanceSlotNames oldClassSlotNames newClassSlotNames traitNames oldTraitNames newTraitNames classTraitNames oldClassTraitNames newClassTraitNames sharedVariableNames oldSharedVariableNames newSharedVariableNames sharedPoolNames oldSharedPoolNames newSharedPoolNames subclassNames affectedClassNames ) do: [ :name |
-		properties add: (self
-			stringArraySchemaNamed: name asString
-			description: name asString
-			itemDescription: '') ].
-	properties add: (self
-		booleanSchemaPropertyNamed: 'classSide'
-		description: 'Slot side.').
-	^ self
-		standardOutputSchemaForDataProperties: properties asArray
-		required: #( 'action' 'className' )
+	^ self standardOutputSchemaForDataProperties: #(  ) required: #(  )
 ]
 
 { #category : 'defaults' }

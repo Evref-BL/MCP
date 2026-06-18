@@ -25,12 +25,7 @@ MCPClassAppliedChangeResult class >> updatePlan: anUpdatePlan changeResult: aCha
 { #category : 'converting' }
 MCPClassAppliedChangeResult >> asDictionary [
 
-	| data |
-	data := self changeResult asDictionary copy.
-	data
-		at: #action put: 'update';
-		at: #updateAction put: self updateAction.
-	^ data
+	^ Dictionary new
 ]
 
 { #category : 'accessing' }

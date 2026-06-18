@@ -1084,15 +1084,12 @@ MCPToolContractsTest >> testClassToolTraitOwnsSharedClassHelpers [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testClassToolsOutputSchemaAdvertisesFlattenedMutationResult [
+MCPToolContractsTest >> testClassToolsOutputSchemaAdvertisesMinimalMutationResult [
 
 	| dataProperties outputSchema |
 	outputSchema := MCPToolUpdateClassName new outputSchema asJRPCJSON.
 	dataProperties := ((outputSchema at: #properties) at: 'data') at: #properties.
-	self assert: (dataProperties includesKey: 'action').
-	self assert: (dataProperties includesKey: 'className').
-	self assert: (dataProperties includesKey: 'updateAction').
-	self assert: (dataProperties includesKey: 'slotName')
+	self assert: dataProperties isEmpty
 ]
 
 { #category : 'tests' }
@@ -1662,36 +1659,22 @@ MCPToolContractsTest >> testMethodMetadataSearchTopLevelFilterModesAreTextOnly [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testMethodMutationSchemaAdvertisesMethodState [
+MCPToolContractsTest >> testMethodMutationSchemaAdvertisesOnlyNonInputOutcomes [
 
 	| argumentNamesProperty argumentValuesProperty dataProperties dataProperty permutationProperty propertyNames tool toolPropertyNames |
 	tool := MCPToolUpdateMethodSelector new.
-	toolPropertyNames := tool inputSchema properties collect: [ :each |
-		                     each name ].
-	permutationProperty := tool inputSchema properties detect: [ :each |
-		                       each name = 'permutation' ].
-	argumentNamesProperty := tool inputSchema properties detect: [ :each |
-		                         each name = 'argumentNames' ].
-	argumentValuesProperty := tool inputSchema properties detect: [ :each |
-		                          each name = 'argumentValueExpressions' ].
-	dataProperty := tool outputSchema properties detect: [ :each |
-		                each name = 'data' ].
+	toolPropertyNames := tool inputSchema properties collect: [ :each | each name ].
+	permutationProperty := tool inputSchema properties detect: [ :each | each name = 'permutation' ].
+	argumentNamesProperty := tool inputSchema properties detect: [ :each | each name = 'argumentNames' ].
+	argumentValuesProperty := tool inputSchema properties detect: [ :each | each name = 'argumentValueExpressions' ].
+	dataProperty := tool outputSchema properties detect: [ :each | each name = 'data' ].
 	dataProperties := dataProperty extraProperties at: #properties.
 	propertyNames := dataProperties collect: [ :each | each name ].
 	self deny: (toolPropertyNames includes: 'action').
-	self assert:
-		(permutationProperty extraProperties at: #items) type = 'integer'.
-	self assert:
-		(argumentNamesProperty extraProperties at: #items) type = 'string'.
-	self assert:
-		(argumentValuesProperty extraProperties at: #items) type = 'string'.
-	self
-		assert: propertyNames asSet
-		equals:
-			#( 'action' 'changeKind' 'updateAction' 'updatePlan' 'appliedChange'
-			   'selector' 'className' 'classSide' 'packageName' 'isExtension'
-			   'protocol' 'source' 'oldSelector' 'newSelector' 'oldProtocol'
-			   'newProtocol' 'critiques' ) asSet
+	self assert: (permutationProperty extraProperties at: #items) type equals: 'integer'.
+	self assert: (argumentNamesProperty extraProperties at: #items) type equals: 'string'.
+	self assert: (argumentValuesProperty extraProperties at: #items) type equals: 'string'.
+	self assert: propertyNames asSet equals: #( 'changeKind' 'critiques' ) asSet
 ]
 
 { #category : 'tests' }

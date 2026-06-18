@@ -28,11 +28,7 @@ MCPRemoveMethodsResult class >> fromRequest: aRequest removedMethods: methodColl
 { #category : 'converting' }
 MCPRemoveMethodsResult >> asDictionary [
 
-	^ {
-		  (#className -> self className).
-		  (#classSide -> self classSide).
-		  (#selectors -> self selectors asArray).
-		  (#removedMethods -> self removedMethods asArray) } asDictionary
+	^ Dictionary new
 ]
 
 { #category : 'accessing' }
