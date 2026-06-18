@@ -23,6 +23,42 @@ Class {
 	#tag : 'Requests'
 }
 
+{ #category : 'defaults' }
+MCPDebugRequest class >> defaultIncludeReceiver [
+
+	^ false
+]
+
+{ #category : 'defaults' }
+MCPDebugRequest class >> defaultSourceContextLines [
+
+	^ 2
+]
+
+{ #category : 'defaults' }
+MCPDebugRequest class >> defaultStackLimit [
+
+	^ 5
+]
+
+{ #category : 'defaults' }
+MCPDebugRequest class >> defaultStackStart [
+
+	^ 0
+]
+
+{ #category : 'defaults' }
+MCPDebugRequest class >> defaultVariableDepth [
+
+	^ 1
+]
+
+{ #category : 'defaults' }
+MCPDebugRequest class >> defaultVariableLimit [
+
+	^ 10
+]
+
 { #category : 'accessing' }
 MCPDebugRequest >> frameRef [
 
@@ -38,7 +74,7 @@ MCPDebugRequest >> frameRef: aString [
 { #category : 'accessing' }
 MCPDebugRequest >> includeReceiver [
 
-	^ includeReceiver ifNil: [ true ]
+	^ includeReceiver ifNil: [ self class defaultIncludeReceiver ]
 ]
 
 { #category : 'accessing' }
@@ -82,7 +118,7 @@ MCPDebugRequest >> sessionId: aString [
 { #category : 'accessing' }
 MCPDebugRequest >> sourceContextLines [
 
-	^ sourceContextLines ifNil: [ 5 ]
+	^ sourceContextLines ifNil: [ self class defaultSourceContextLines ]
 ]
 
 { #category : 'accessing' }
@@ -94,7 +130,7 @@ MCPDebugRequest >> sourceContextLines: anInteger [
 { #category : 'accessing' }
 MCPDebugRequest >> stackLimit [
 
-	^ stackLimit ifNil: [ 20 ]
+	^ stackLimit ifNil: [ self class defaultStackLimit ]
 ]
 
 { #category : 'accessing' }
@@ -106,7 +142,7 @@ MCPDebugRequest >> stackLimit: anInteger [
 { #category : 'accessing' }
 MCPDebugRequest >> stackStart [
 
-	^ stackStart ifNil: [ 0 ]
+	^ stackStart ifNil: [ self class defaultStackStart ]
 ]
 
 { #category : 'accessing' }
@@ -139,7 +175,7 @@ MCPDebugRequest >> stateIdFromReference: aReferenceString [
 { #category : 'accessing' }
 MCPDebugRequest >> variableDepth [
 
-	^ variableDepth ifNil: [ 1 ]
+	^ variableDepth ifNil: [ self class defaultVariableDepth ]
 ]
 
 { #category : 'accessing' }
@@ -151,7 +187,7 @@ MCPDebugRequest >> variableDepth: anInteger [
 { #category : 'accessing' }
 MCPDebugRequest >> variableLimit [
 
-	^ variableLimit ifNil: [ 50 ]
+	^ variableLimit ifNil: [ self class defaultVariableLimit ]
 ]
 
 { #category : 'accessing' }

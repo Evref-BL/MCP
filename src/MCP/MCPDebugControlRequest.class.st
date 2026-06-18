@@ -14,6 +14,12 @@ Class {
 	#tag : 'Requests'
 }
 
+{ #category : 'defaults' }
+MCPDebugControlRequest class >> defaultReturnState [
+
+	^ false
+]
+
 { #category : 'instance creation' }
 MCPDebugControlRequest class >> fromRequest: aRequest tool: aTool operation: operationName [
 
@@ -21,8 +27,7 @@ MCPDebugControlRequest class >> fromRequest: aRequest tool: aTool operation: ope
 			MCPCommandError
 				signalErrorCode: #DebugControlOperationUnsupported
 				message:
-				'Unsupported debug control operation: ' , operationName asString
-				, '.'
+				'Unsupported debug operation: ' , operationName asString , '.'
 				details: {
 						(#operation -> operationName).
 						(#supportedOperations -> self supportedOperations) }
@@ -32,29 +37,27 @@ MCPDebugControlRequest class >> fromRequest: aRequest tool: aTool operation: ope
 		  sessionId: (aRequest stringArgumentNamed: 'sessionId');
 		  stateId: (aRequest stringArgumentNamed: 'stateId');
 		  frameRef: (aRequest stringArgumentNamed: 'frameRef');
-		  returnState:
-			  (aRequest booleanArgumentNamed: 'returnState' default: true);
+		  returnState: (aRequest
+				   booleanArgumentNamed: 'returnState'
+				   default: self defaultReturnState);
 		  sourceContextLines: (aRequest
 				   nonNegativeIntegerArgumentNamed: 'sourceContextLines'
-				   default: 5);
-		  stackStart:
-			  (aRequest
+				   default: self defaultSourceContextLines);
+		  stackStart: (aRequest
 				   nonNegativeIntegerArgumentNamed: 'stackStart'
-				   default: 0);
-		  stackLimit:
-			  (aRequest
+				   default: self defaultStackStart);
+		  stackLimit: (aRequest
 				   nonNegativeIntegerArgumentNamed: 'stackLimit'
-				   default: 20);
-		  variableDepth:
-			  (aRequest
+				   default: self defaultStackLimit);
+		  variableDepth: (aRequest
 				   nonNegativeIntegerArgumentNamed: 'variableDepth'
-				   default: 1);
-		  variableLimit:
-			  (aRequest
+				   default: self defaultVariableDepth);
+		  variableLimit: (aRequest
 				   nonNegativeIntegerArgumentNamed: 'variableLimit'
-				   default: 50);
-		  includeReceiver:
-			  (aRequest booleanArgumentNamed: 'includeReceiver' default: true);
+				   default: self defaultVariableLimit);
+		  includeReceiver: (aRequest
+				   booleanArgumentNamed: 'includeReceiver'
+				   default: self defaultIncludeReceiver);
 		  yourself
 ]
 
@@ -67,7 +70,7 @@ MCPDebugControlRequest class >> supportedOperations [
 { #category : 'accessing' }
 MCPDebugControlRequest >> returnState [
 
-	^ returnState ifNil: [ true ]
+	^ returnState ifNil: [ self class defaultReturnState ]
 ]
 
 { #category : 'accessing' }

@@ -26,7 +26,7 @@ MCPToolDebugTest >> commandForRequest: debugRequest [
 { #category : 'defaults' }
 MCPToolDebugTest >> defaultDescription [
 
-	^ 'Run one SUnit test method under debugger control and stop at the requested test phase with an immediate debug_state_get snapshot.'
+	^ 'Run one SUnit test method under debugger control and stop at the requested phase.'
 ]
 
 { #category : 'defaults' }
@@ -38,63 +38,53 @@ MCPToolDebugTest >> defaultInputSchema [
 				  (self
 					   schemaPropertyNamed: 'className'
 					   type: 'string'
-					   description: 'SUnit TestCase subclass name.').
+					   description: 'SUnit TestCase subclass.').
 				  (self
 					   schemaPropertyNamed: 'testMethodName'
 					   type: 'string'
-					   description: 'Test method selector to debug.').
+					   description: 'Test method selector.').
 				  (self
 					   stringEnumSchemaPropertyNamed: 'stopAt'
-					   description:
-						   'Test execution phase where debugger control should stop.'
+					   description: 'Test phase to stop at.'
 					   values: MCPDebugTestRequest supportedStopPoints
 					   default: 'test').
 				  (self
 					   schemaPropertyNamed: 'name'
 					   type: 'string'
-					   description:
-						   'Optional human-readable name for a captured debug session.').
+					   description: 'Optional debug session name.').
 				  (self
 					   integerSchemaPropertyNamed: 'timeoutMilliseconds'
-					   description:
-						   'Maximum time to wait for completion or capture. Values above the implementation cap are reduced.'
+					   description: 'Maximum wait before timeout.'
 					   default: MCPDebugTestRequest defaultTimeoutMilliseconds).
 				  (self
 					   integerSchemaPropertyNamed: 'resultPreviewCharacterLimit'
-					   description:
-						   'Maximum number of characters returned in resultPrintString.'
+					   description: 'Maximum completed-result preview characters.'
 					   default:
 						   MCPDebugTestRequest defaultResultPreviewCharacterLimit).
 				  (self
 					   integerSchemaPropertyNamed: 'sourceContextLines'
-					   description:
-						   'Number of source context lines requested in returned state.'
-					   default: 5).
+					   description: 'Source lines around selected frame.'
+					   default: MCPDebugRequest defaultSourceContextLines).
 				  (self
 					   integerSchemaPropertyNamed: 'stackStart'
-					   description:
-						   'Zero-based stack frame offset for returned state.'
-					   default: 0).
+					   description: 'Zero-based stack offset.'
+					   default: MCPDebugRequest defaultStackStart).
 				  (self
 					   integerSchemaPropertyNamed: 'stackLimit'
-					   description:
-						   'Maximum number of stack frames in returned state.'
-					   default: 20).
+					   description: 'Maximum stack frames.'
+					   default: MCPDebugRequest defaultStackLimit).
 				  (self
 					   integerSchemaPropertyNamed: 'variableDepth'
-					   description:
-						   'Inline variable preview depth in returned state.'
-					   default: 1).
+					   description: 'Inline variable preview depth.'
+					   default: MCPDebugRequest defaultVariableDepth).
 				  (self
 					   integerSchemaPropertyNamed: 'variableLimit'
-					   description:
-						   'Maximum number of variables to preview in returned state.'
-					   default: 50).
+					   description: 'Maximum variables per scope.'
+					   default: MCPDebugRequest defaultVariableLimit).
 				  (self
 					   booleanSchemaPropertyNamed: 'includeReceiver'
-					   description:
-						   'Whether returned state should include the receiver scope.'
-					   default: true) };
+					   description: 'Include receiver scope.'
+					   default: MCPDebugRequest defaultIncludeReceiver) };
 		  required: #( 'className' 'testMethodName' );
 		  additionalProperties: false;
 		  yourself

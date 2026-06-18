@@ -191,35 +191,32 @@ MCPToolDebugSessionControlOperation >> stateSnapshotInputProperties [
 		  (self
 			   booleanSchemaPropertyNamed: 'returnState'
 			   description:
-			   'Whether to include a debug_state_get snapshot when control pauses after this tool runs.'
-			   default: true).
+			   'Return a debug_state_get snapshot when control stops.'
+			   default: MCPDebugControlRequest defaultReturnState).
 		  (self
 			   integerSchemaPropertyNamed: 'sourceContextLines'
-			   description:
-			   'Number of source context lines requested in returned state.'
-			   default: 5).
+			   description: 'Source lines around selected frame.'
+			   default: MCPDebugRequest defaultSourceContextLines).
 		  (self
 			   integerSchemaPropertyNamed: 'stackStart'
-			   description: 'Zero-based stack frame offset for returned state.'
-			   default: 0).
+			   description: 'Zero-based stack offset.'
+			   default: MCPDebugRequest defaultStackStart).
 		  (self
 			   integerSchemaPropertyNamed: 'stackLimit'
-			   description: 'Maximum number of stack frames in returned state.'
-			   default: 20).
+			   description: 'Maximum stack frames.'
+			   default: MCPDebugRequest defaultStackLimit).
 		  (self
 			   integerSchemaPropertyNamed: 'variableDepth'
-			   description: 'Inline variable preview depth in returned state.'
-			   default: 1).
+			   description: 'Inline variable preview depth.'
+			   default: MCPDebugRequest defaultVariableDepth).
 		  (self
 			   integerSchemaPropertyNamed: 'variableLimit'
-			   description:
-			   'Maximum number of variables to preview in returned state.'
-			   default: 50).
+			   description: 'Maximum variables per scope.'
+			   default: MCPDebugRequest defaultVariableLimit).
 		  (self
 			   booleanSchemaPropertyNamed: 'includeReceiver'
-			   description:
-			   'Whether returned state should include the receiver scope.'
-			   default: true) }
+			   description: 'Include receiver scope.'
+			   default: MCPDebugRequest defaultIncludeReceiver) }
 ]
 
 { #category : 'private - specs' }

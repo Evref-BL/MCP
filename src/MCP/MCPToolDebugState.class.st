@@ -26,7 +26,7 @@ MCPToolDebugState >> commandForRequest: debugRequest [
 { #category : 'defaults' }
 MCPToolDebugState >> defaultDescription [
 
-	^ 'Return a composite snapshot of one Pharo DebugSession, including state-scoped frame and variable references, selected source context, stack, and shallow scope previews.'
+	^ 'Return a compact snapshot of one tracked Pharo debug session: selected frame, source, stack, shallow scopes, and repair actions.'
 ]
 
 { #category : 'defaults' }
@@ -44,44 +44,40 @@ MCPToolDebugState >> defaultInputSchema [
 				  (self
 					   schemaPropertyNamed: 'sessionId'
 					   type: 'string'
-					   description:
-						   'Opaque debug session identifier returned by debug_session_list, debug_capture, debug_test_run, or debug_candidate_attach.').
+					   description: 'Debug session identifier.').
 				  (self
 					   schemaPropertyNamed: 'stateId'
 					   type: 'string'
 					   description:
-						   'Optional state token to reject stale frame and variable references.').
+						   'Optional state token for stale-reference checks.').
 				  (self
 					   schemaPropertyNamed: 'frameRef'
 					   type: 'string'
-					   description:
-						   'Optional state-scoped frame reference to select.').
+					   description: 'Optional state-scoped frame reference.').
 				  (self
 					   integerSchemaPropertyNamed: 'sourceContextLines'
-					   description:
-						   'Number of source context lines requested around the selected expression.'
-					   default: 5).
+					   description: 'Source lines around selected frame.'
+					   default: MCPDebugRequest defaultSourceContextLines).
 				  (self
 					   integerSchemaPropertyNamed: 'stackStart'
-					   description: 'Zero-based stack frame offset.'
-					   default: 0).
+					   description: 'Zero-based stack offset.'
+					   default: MCPDebugRequest defaultStackStart).
 				  (self
 					   integerSchemaPropertyNamed: 'stackLimit'
-					   description: 'Maximum number of stack frames to return.'
-					   default: 20).
+					   description: 'Maximum stack frames.'
+					   default: MCPDebugRequest defaultStackLimit).
 				  (self
 					   integerSchemaPropertyNamed: 'variableDepth'
-					   description: 'Requested inline variable preview depth.'
-					   default: 1).
+					   description: 'Inline variable preview depth.'
+					   default: MCPDebugRequest defaultVariableDepth).
 				  (self
 					   integerSchemaPropertyNamed: 'variableLimit'
-					   description:
-						   'Maximum number of variables to preview in each scope.'
-					   default: 50).
+					   description: 'Maximum variables per scope.'
+					   default: MCPDebugRequest defaultVariableLimit).
 				  (self
 					   booleanSchemaPropertyNamed: 'includeReceiver'
-					   description: 'Whether to include the receiver scope.'
-					   default: true) };
+					   description: 'Include receiver scope.'
+					   default: MCPDebugRequest defaultIncludeReceiver) };
 		  required: #( 'sessionId' );
 		  additionalProperties: false;
 		  yourself

@@ -26,7 +26,7 @@ MCPToolDebugVariables >> commandForRequest: debugRequest [
 { #category : 'defaults' }
 MCPToolDebugVariables >> defaultDescription [
 
-	^ 'Expand a state-scoped debug variable or scope reference returned by debug_state_get. Supports receiver, temporaries, instance-variable children, and indexed children with bounded previews.'
+	^ 'Expand one state-scoped variable or scope reference returned by debug_state_get.'
 ]
 
 { #category : 'defaults' }
@@ -46,30 +46,27 @@ MCPToolDebugVariables >> defaultInputSchema [
 				  (self
 					   schemaPropertyNamed: 'variableRef'
 					   type: 'string'
-					   description:
-						   'Opaque state-scoped scope or variable reference returned by debug_state_get or debug_variable_get.').
+					   description: 'State-scoped variable or scope reference.').
 				  (self
 					   schemaPropertyNamed: 'stateId'
 					   type: 'string'
 					   description:
-						   'Optional state token; when supplied it must match the token embedded in variableRef.').
+						   'Optional state token for stale-reference checks.').
 				  (self
 					   integerSchemaPropertyNamed: 'variableDepth'
-					   description:
-						   'Requested expansion depth. Use 0 to describe the variable without returning children.'
-					   default: 1).
+					   description: 'Expansion depth; use 0 for metadata only.'
+					   default: MCPDebugRequest defaultVariableDepth).
 				  (self
 					   integerSchemaPropertyNamed: 'variableLimit'
-					   description: 'Maximum number of child variables to return.'
-					   default: 50).
+					   description: 'Maximum child variables.'
+					   default: MCPDebugRequest defaultVariableLimit).
 				  (self
 					   booleanSchemaPropertyNamed: 'includeIndexed'
-					   description:
-						   'Whether to include indexed child slots when the object supports at:.'
+					   description: 'Include indexed children.'
 					   default: true).
 				  (self
 					   booleanSchemaPropertyNamed: 'includeInstanceVariables'
-					   description: 'Whether to include named instance variables.'
+					   description: 'Include instance variables.'
 					   default: true) };
 		  required: #( 'variableRef' );
 		  additionalProperties: false;

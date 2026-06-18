@@ -130,10 +130,9 @@ MCPDebugToolContractTest >> setUp [
 MCPDebugToolContractTest >> stateDataForRecord: record [
 
 	| result |
-	result := self
-		          callToolNamed: 'debug_state_get'
-		          withArguments:
-		          { (#sessionId -> record sessionId) } asDictionary.
+	result := self callToolNamed: 'debug_state_get' withArguments: {
+			          (#sessionId -> record sessionId).
+			          (#includeReceiver -> true) } asDictionary.
 	^ self dataFrom: result
 ]
 
@@ -777,7 +776,8 @@ MCPDebugToolContractTest >> testDebugControlStepOverAdvancesStateAndReturnsSnaps
 		          withArguments: {
 				          (#sessionId -> record sessionId).
 				          (#stateId -> record stateId).
-				          (#frameRef -> frameRef) } asDictionary.
+				          (#frameRef -> frameRef).
+				          (#returnState -> true) } asDictionary.
 	resultData := self dataFrom: result.
 	self
 		assert: ((self structuredContentFrom: result) at: #status)
@@ -791,6 +791,27 @@ MCPDebugToolContractTest >> testDebugControlStepOverAdvancesStateAndReturnsSnaps
 	self
 		assert: (((resultData at: #state) at: #selectedFrame) at: #frameRef)
 		equals: record sessionId , '/state-1/frame-0'
+]
+
+{ #category : 'tests' }
+MCPDebugToolContractTest >> testDebugControlStepOverAdvancesStateWithoutSnapshotByDefault [
+
+	| record result resultData session |
+	record := self registerControlSession.
+	session := record debugSession.
+	result := self
+		          callToolNamed: 'debug_session_step_over'
+		          withArguments:
+		          { (#sessionId -> record sessionId) } asDictionary.
+	resultData := self dataFrom: result.
+	self
+		assert: ((self structuredContentFrom: result) at: #status)
+		equals: 'ok'.
+	self assert: session operationNames asArray equals: #( 'stepOver' ).
+	self assert: (resultData at: #previousStateId) equals: 'state-0'.
+	self assert: (resultData at: #stateId) equals: 'state-1'.
+	self assert: (resultData at: #status) equals: 'paused'.
+	self deny: (resultData at: #state) notNil
 ]
 
 { #category : 'tests' }
