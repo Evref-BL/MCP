@@ -26,12 +26,19 @@ MCPToolSearchTools >> commandForRequest: searchRequest [
 { #category : 'defaults' }
 MCPToolSearchTools >> defaultDescription [
 
-	^ 'Search the MCP-Pharo tool catalog by group, keyword, title, or description and return compact metadata for matching tools.'
+	^ 'Search all MCP-Pharo tools. Use to discover tool names before tool_get or tool_call.'
 ]
 
 { #category : 'defaults' }
 MCPToolSearchTools >> defaultInputSchema [
 
+	| limitProperty |
+	limitProperty := self
+		                 integerSchemaPropertyNamed: 'limit'
+		                 description: 'Maximum tools to return.'
+		                 default: 25.
+	limitProperty extraProperties at: #minimum put: 0.
+	limitProperty extraProperties at: #maximum put: 100.
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties: {
@@ -39,22 +46,12 @@ MCPToolSearchTools >> defaultInputSchema [
 					   schemaPropertyNamed: 'query'
 					   type: 'string'
 					   description:
-						   'Optional search text matched against tool names, titles, descriptions, groups, and keywords.').
+						   'Search text for names, titles, descriptions, groups, or keywords.').
 				  (self
 					   schemaPropertyNamed: 'group'
 					   type: 'string'
-					   description:
-						   'Optional tool group filter such as tool-catalog, repositories, packages, classes, methods, history, tests, ui, debugging, or image-runtime.').
-				  (self
-					   booleanSchemaPropertyNamed: 'includeStatic'
-					   description:
-						   'Whether to include the statically advertised tool surface in search results.'
-					   default: false).
-				  (self
-					   integerSchemaPropertyNamed: 'limit'
-					   description:
-						   'Maximum number of tool metadata entries to return.'
-					   default: 100) };
+					   description: 'Optional tool group filter.').
+				  limitProperty };
 		  required: #(  );
 		  additionalProperties: false;
 		  yourself
@@ -64,25 +61,9 @@ MCPToolSearchTools >> defaultInputSchema [
 MCPToolSearchTools >> defaultOutputSchema [
 
 	^ self
-		  standardOutputSchemaForDataProperties: {
-				  self toolsArraySchemaProperty.
-				  (self
-					   integerSchemaPropertyNamed: 'totalCount'
-					   description: 'Number of returned tool metadata entries.').
-				  (self
-					   schemaPropertyNamed: 'query'
-					   type: 'string'
-					   description: 'The normalized query, or an empty string.').
-				  (self
-					   schemaPropertyNamed: 'group'
-					   type: 'string'
-					   description:
-					   'The normalized group filter, or an empty string.').
-				  (self
-					   booleanSchemaPropertyNamed: 'includeStatic'
-					   description: 'Whether static tools were included.') }
-		  required:
-		  #( 'tools' 'totalCount' 'query' 'group' 'includeStatic' )
+		  standardOutputSchemaForDataProperties:
+		  { self toolsArraySchemaProperty }
+		  required: #( 'tools' )
 ]
 
 { #category : 'defaults' }
@@ -99,11 +80,9 @@ MCPToolSearchTools >> executeWithRequest: request [
 		  do: [ :searchRequest |
 				  | data |
 				  data := (self commandForRequest: searchRequest) execute.
-				  data at: #query put: (searchRequest query ifNil: [ '' ]).
-				  data at: #group put: (searchRequest group ifNil: [ '' ]).
 				  self
 					  successResultText:
-					  (data at: #totalCount) asString , ' tools found.'
+					  (data at: #tools) size asString , ' tools found.'
 					  data: data ]
 		  onError: [ :error :parsedRequest | self errorResultFor: error ]
 ]

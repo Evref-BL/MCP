@@ -585,28 +585,25 @@ MCPToolRegistry class >> staticToolsUsingPolicy: aToolExposurePolicy [
 ]
 
 { #category : 'tools' }
-MCPToolRegistry class >> tool: aTool matchesQuery: queryString group: groupString includeStatic: includeStatic [
+MCPToolRegistry class >> tool: aTool matchesQuery: queryString group: groupString [
 
 	^ self
 		  tool: aTool
 		  matchesQuery: queryString
 		  group: groupString
-		  includeStatic: includeStatic
 		  usingPolicy: aTool toolExposurePolicy
 ]
 
 { #category : 'tools' }
-MCPToolRegistry class >> tool: aTool matchesQuery: queryString group: groupString includeStatic: includeStatic usingPolicy: aToolExposurePolicy [
+MCPToolRegistry class >> tool: aTool matchesQuery: queryString group: groupString usingPolicy: aToolExposurePolicy [
 
 	| group queryTerms searchableText |
-	(includeStatic not and: [
-		 aToolExposurePolicy isStaticTool: aTool name ]) ifTrue: [ ^ false ].
 	group := groupString ifNotNil: [ :value |
 		         value asString trimBoth asLowercase ].
-	group ifNotNil: [
-			group isEmpty ifFalse: [
-				group = (self groupNameForToolClass: aTool class) ifFalse: [
-					^ false ] ] ].
+	(group isNotNil and: [
+			 group isNotEmpty and: [
+				 group ~= (self groupNameForToolClass: aTool class) ] ]) ifTrue: [
+		^ false ].
 	queryTerms := self queryTermsFrom: queryString.
 	queryTerms ifEmpty: [ ^ true ].
 	searchableText := (self searchableTextForTool: aTool) asLowercase.
@@ -636,18 +633,17 @@ MCPToolRegistry class >> toolNamed: aToolName ifAbsent: absentBlock usingPolicy:
 ]
 
 { #category : 'tools' }
-MCPToolRegistry class >> toolsMatchingQuery: queryString group: groupString includeStatic: includeStatic limit: anInteger [
+MCPToolRegistry class >> toolsMatchingQuery: queryString group: groupString limit: anInteger [
 
 	^ self
 		  toolsMatchingQuery: queryString
 		  group: groupString
-		  includeStatic: includeStatic
 		  limit: anInteger
 		  usingPolicy: MCPToolExposurePolicy default
 ]
 
 { #category : 'tools' }
-MCPToolRegistry class >> toolsMatchingQuery: queryString group: groupString includeStatic: includeStatic limit: anInteger usingPolicy: aToolExposurePolicy [
+MCPToolRegistry class >> toolsMatchingQuery: queryString group: groupString limit: anInteger usingPolicy: aToolExposurePolicy [
 
 	| limit matches |
 	matches := (self publicToolsUsingPolicy: aToolExposurePolicy)
@@ -656,9 +652,8 @@ MCPToolRegistry class >> toolsMatchingQuery: queryString group: groupString incl
 					           tool: tool
 					           matchesQuery: queryString
 					           group: groupString
-					           includeStatic: includeStatic
 					           usingPolicy: aToolExposurePolicy ].
-	limit := anInteger ifNil: [ 100 ].
+	limit := anInteger ifNil: [ 25 ].
 	(limit > 0 and: [ matches size > limit ]) ifTrue: [
 		^ (matches first: limit) asArray ].
 	^ matches asArray

@@ -1212,9 +1212,9 @@ MCPToolContractsTest >> testDiscoveryUsesConfiguredStaticToolNames [
 	server := MCP new.
 	server staticToolNames:
 		#( 'tool_search' 'tool_get' 'tool_call' 'repository_search' ).
-	result := server rpcToolCall: 'tool_search' withParams: {
-			          (#query -> 'repository').
-			          (#includeStatic -> true) } asDictionary.
+	result := server
+		          rpcToolCall: 'tool_search'
+		          withParams: { (#query -> 'repository') } asDictionary.
 	metadataByName := (((self dataFrom: result) at: #tools) collect: [
 		                   :each | (each at: #name) -> each ]) asDictionary.
 	self
@@ -2754,12 +2754,12 @@ MCPToolContractsTest >> testSearchToolSchemasAdvertiseFlatFieldProperties [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testSearchToolsCanIncludeStaticSurface [
+MCPToolContractsTest >> testSearchToolsIncludesStaticSurface [
 
 	| metadataByName result |
-	result := self callToolNamed: 'tool_search' withArguments: {
-			          (#query -> 'classes').
-			          (#includeStatic -> true) } asDictionary.
+	result := self
+		          callToolNamed: 'tool_search'
+		          withArguments: { (#query -> 'classes') } asDictionary.
 	metadataByName := (((self dataFrom: result) at: #tools) collect: [
 		                   :each | (each at: #name) -> each ]) asDictionary.
 	self assert: (metadataByName includesKey: 'class_search').
@@ -2772,9 +2772,9 @@ MCPToolContractsTest >> testSearchToolsCanIncludeStaticSurface [
 MCPToolContractsTest >> testSearchToolsKeywordsAreSingleSearchTerms [
 
 	| metadataByName result |
-	result := self callToolNamed: 'tool_search' withArguments: {
-			          (#includeStatic -> true).
-			          (#limit -> 200) } asDictionary.
+	result := self
+		          callToolNamed: 'tool_search'
+		          withArguments: { (#limit -> 100) } asDictionary.
 	metadataByName := (((self dataFrom: result) at: #tools) collect: [
 		                   :each | (each at: #name) -> each ]) asDictionary.
 	self
@@ -2808,9 +2808,10 @@ MCPToolContractsTest >> testSearchToolsMatchesAgentGuidanceKeywords [
 		                ('refactoring' -> 'method_selector_update') }.
 	expectations do: [ :expectation |
 			| names result |
-			result := self callToolNamed: 'tool_search' withArguments: {
-					          (#query -> expectation key).
-					          (#includeStatic -> true) } asDictionary.
+			result := self
+				          callToolNamed: 'tool_search'
+				          withArguments:
+				          { (#query -> expectation key) } asDictionary.
 			names := ((self dataFrom: result) at: #tools) collect: [ :each |
 				         each at: #name ].
 			self assert: (names includes: expectation value) ]
@@ -2820,16 +2821,18 @@ MCPToolContractsTest >> testSearchToolsMatchesAgentGuidanceKeywords [
 MCPToolContractsTest >> testSearchToolsMatchesMultipleQueryTerms [
 
 	| names result |
-	result := self callToolNamed: 'tool_search' withArguments: {
-			          (#query -> 'method source').
-			          (#includeStatic -> true) } asDictionary.
+	result := self
+		          callToolNamed: 'tool_search'
+		          withArguments:
+		          { (#query -> 'method source') } asDictionary.
 	names := ((self dataFrom: result) at: #tools) collect: [ :each |
 		         each at: #name ].
 	self assert: (names includes: 'method_source_search').
 
-	result := self callToolNamed: 'tool_search' withArguments: {
-			          (#query -> 'method equivalent').
-			          (#includeStatic -> true) } asDictionary.
+	result := self
+		          callToolNamed: 'tool_search'
+		          withArguments:
+		          { (#query -> 'method equivalent') } asDictionary.
 	names := ((self dataFrom: result) at: #tools) collect: [ :each |
 		         each at: #name ].
 	self assert: (names includes: 'method_equivalent_search')
@@ -2849,8 +2852,7 @@ MCPToolContractsTest >> testSearchToolsMatchesPluralQueryTerms [
 			| names result |
 			result := self callToolNamed: 'tool_search' withArguments: {
 					          (#query -> expectation key).
-					          (#includeStatic -> true).
-					          (#limit -> 200) } asDictionary.
+					          (#limit -> 100) } asDictionary.
 			names := ((self dataFrom: result) at: #tools) collect: [ :each |
 				         each at: #name ].
 			self assert: (names includes: expectation value) ]
@@ -2870,8 +2872,7 @@ MCPToolContractsTest >> testSearchToolsMatchesSpecializedClassKeywords [
 			| names result |
 			result := self callToolNamed: 'tool_search' withArguments: {
 					          (#query -> expectation key).
-					          (#includeStatic -> true).
-					          (#limit -> 200) } asDictionary.
+					          (#limit -> 100) } asDictionary.
 			names := ((self dataFrom: result) at: #tools) collect: [ :each |
 				         each at: #name ].
 			self assert: (names includes: expectation value) ]
@@ -2974,9 +2975,9 @@ MCPToolContractsTest >> testSpecializedClassAndMethodToolsAreDiscoverableOnly [
 	                            'method_class_reference_search'
 	                            'method_variable_reference_search'
 	                            'test_coverage_run' ).
-	result := self callToolNamed: 'tool_search' withArguments: {
-			          (#includeStatic -> true).
-			          (#limit -> 200) } asDictionary.
+	result := self
+		          callToolNamed: 'tool_search'
+		          withArguments: { (#limit -> 100) } asDictionary.
 	metadataByName := Dictionary new.
 	((self dataFrom: result) at: #tools) do: [ :each |
 		metadataByName at: (each at: #name) put: each ].
