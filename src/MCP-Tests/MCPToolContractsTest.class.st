@@ -1554,8 +1554,7 @@ MCPToolContractsTest >> testMethodMetadataSearchDescriptionPointsToSpecializedRe
 	filterModeDescription := filterModeProperty description.
 	self assert: (selectorDescription includesSubstring: 'selector').
 	self assert: (protocolDescription includesSubstring: 'protocol').
-	self assert: (filterModeDescription includesSubstring: 'selector').
-	self assert: (filterModeDescription includesSubstring: 'protocol').
+	self assert: (filterModeDescription includesSubstring: 'match mode').
 	self
 		assert: (filterModeProperty extraProperties at: #enum) asArray
 		equals: #( 'substring' 'prefix' 'exact' 'regex' )

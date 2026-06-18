@@ -32,7 +32,7 @@ MCPToolSearch >> caseSensitiveSchemaPropertyWithDescription: caseSensitiveDescri
 
 	^ self
 		  booleanSchemaPropertyNamed: 'caseSensitive'
-		  description: caseSensitiveDescription
+		  description: 'Case-sensitive matching.'
 		  default: true
 ]
 
@@ -242,7 +242,7 @@ MCPToolSearch >> filterModeSchemaPropertyWithDescription: modeDescription values
 
 	^ self
 		  stringEnumSchemaPropertyNamed: 'filterMode'
-		  description: modeDescription
+		  description: 'Filter match mode.'
 		  values: modeValues
 		  default: self defaultFilterMode
 ]
@@ -391,14 +391,14 @@ MCPToolSearch >> paginationInputPropertiesWithLimitDescription: limitDescription
 	| limitProperty offsetProperty |
 	limitProperty := self
 		                 integerSchemaPropertyNamed: 'limit'
-		                 description: limitDescription
+		                 description: 'Maximum results.'
 		                 default: self defaultPageLimit.
 	limitProperty
 		minimum: 0;
 		maximum: 100.
 	offsetProperty := self
 		                  integerSchemaPropertyNamed: 'offset'
-		                  description: 'Zero-based pagination offset.'
+		                  description: 'Pagination offset.'
 		                  default: 0.
 	offsetProperty minimum: 0.
 	^ {

@@ -156,7 +156,6 @@ MCPToolSearchRepositoriesTest >> testListsRegisteredRepositoriesWithStructuredDa
 				entry := self
 					         entryNamed: 'MCP Alpha Repository'
 					         in: (data at: #repositories).
-				self assert: (entry at: #className) equals: 'IceLibgitRepository'.
 				self
 					assert: (entry at: #location)
 					equals: FileLocator imageDirectory pathString.
@@ -165,14 +164,9 @@ MCPToolSearchRepositoriesTest >> testListsRegisteredRepositoriesWithStructuredDa
 				self
 					assert: (entry at: #packageNames)
 					equals: #( 'MCP' 'MCP-Tests' ).
-				self assert: (entry includesKey: #headClassName).
-				self assert: (entry includesKey: #headCommitId).
-				self assert: (entry includesKey: #isDetachedHead).
-				self assert: (entry includesKey: #modifiedPackageNames).
-				self assert: (entry includesKey: #remotes).
-				self assert: (entry includesKey: #upstreamRemoteName).
-				self assert: (entry includesKey: #upstreamBranchName).
-				self assert: (entry includesKey: #upstreamRemoteUrl).
+				self deny: (entry includesKey: #className).
+				self deny: (entry includesKey: #headClassName).
+				self deny: (entry includesKey: #remotes).
 				self deny: (entry includesKey: #remoteNames) ]
 ]
 
@@ -182,7 +176,7 @@ MCPToolSearchRepositoriesTest >> testListsRichRepositoryMetadata [
 	MCPTestGitRepositoryFixture
 		withConfig: MCPTestGitRepositoryFixture richConfig
 		do: [ :repositoryDirectory |
-				| data entry remotes repository result |
+				| entry repository result |
 				repository := MCPTestIceRepository
 					              named: 'MCP Rich Repository'
 					              location: repositoryDirectory pathString.
@@ -191,6 +185,7 @@ MCPToolSearchRepositoriesTest >> testListsRichRepositoryMetadata [
 				repository headCommitId: 'abc123'.
 				repository isDetachedHead: false.
 				self withRepositories: { repository } do: [
+						| data |
 						result := self callToolWith: Dictionary new.
 						data := self dataFrom: result.
 						self deny: (result at: #isError ifAbsent: [ false ]).
@@ -198,22 +193,15 @@ MCPToolSearchRepositoriesTest >> testListsRichRepositoryMetadata [
 							         entryNamed: 'MCP Rich Repository'
 							         in: (data at: #repositories).
 						self assert: (entry at: #headDescription) equals: 'rich head'.
-						self
-							assert: (entry at: #headClassName)
-							equals: 'MCPTestRepositoryHead'.
 						self assert: (entry at: #headCommitId) equals: 'abc123'.
-						self assert: (entry at: #isDetachedHead) equals: false.
-						remotes := entry at: #remotes.
-						self assert: remotes size equals: 2.
-						self assert: (remotes first at: #name) equals: 'backup'.
-						self assert: (remotes first at: #url) equals: 'memory://backup'.
-						self assert: (remotes second at: #name) equals: 'origin'.
-						self assert: (remotes second at: #url) equals: 'memory://origin'.
 						self assert: (entry at: #upstreamRemoteName) equals: 'origin'.
 						self assert: (entry at: #upstreamBranchName) equals: 'main'.
 						self
 							assert: (entry at: #upstreamRemoteUrl)
-							equals: 'memory://origin' ] ]
+							equals: 'memory://origin'.
+						self deny: (entry includesKey: #isDetachedHead).
+						self deny: (entry includesKey: #headClassName).
+						self deny: (entry includesKey: #remotes) ] ]
 ]
 
 { #category : 'private - calling' }
