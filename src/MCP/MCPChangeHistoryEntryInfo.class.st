@@ -9,6 +9,7 @@ Class {
 		'eventClassName',
 		'summary',
 		'isCodeChange',
+		'entryKind',
 		'time',
 		'triggerReference',
 		'packageName',
@@ -87,8 +88,9 @@ MCPChangeHistoryEntryInfo >> asDictionary [
 	index ifNotNil: [ data at: #index put: index ].
 	eventClassName ifNotNil: [
 		data at: #eventClassName put: eventClassName ].
-	summary ifNotNil: [ data at: #summary put: summary ].
-	isCodeChange ifNotNil: [ data at: #isCodeChange put: isCodeChange ].
+	(summary notNil and: [ summary ~= ('an ' , eventClassName) ])
+		ifTrue: [ data at: #summary put: summary ].
+	entryKind ifNotNil: [ data at: #entryKind put: entryKind ].
 	time ifNotNil: [ data at: #time put: time ].
 	triggerReference ifNotNil: [
 		data at: #triggerReference put: triggerReference ].
@@ -113,7 +115,9 @@ MCPChangeHistoryEntryInfo >> initializeEventFieldsFrom: anEvent [
 	eventClassName := anEvent class name asString.
 	summary := anEvent printString.
 	isCodeChange := anEvent isCodeChange.
-	isCodeChange ifTrue: [ anEvent mcpAddChangeHistoryInfoTo: self ]
+	isCodeChange
+		ifTrue: [ anEvent mcpAddChangeHistoryInfoTo: self ]
+		ifFalse: [ entryKind := anEvent mcpChangeHistoryEntryKind ]
 ]
 
 { #category : 'initialization' }

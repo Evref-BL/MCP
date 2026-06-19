@@ -71,6 +71,26 @@ MCPToolChangeHistoryToolsTest >> testChangeHistoryToolsDeclareExpectedInputs [
 ]
 
 { #category : 'tests' }
+MCPToolChangeHistoryToolsTest >> testEntryListSchemaAdvertisesNonCodeEntryKind [
+
+	| entriesProperty entryKindProperty entrySchema tool |
+	tool := MCPToolListChangeHistoryEntries new.
+	entriesProperty := ((tool outputSchema properties detect: [ :each |
+		                     each name = 'data' ]) extraProperties at:
+		                    #properties) detect: [ :each |
+		                   each name = 'entries' ].
+	entrySchema := entriesProperty extraProperties at: #items.
+	entryKindProperty := (entrySchema extraProperties at: #properties)
+		                     detect: [ :each | each name = 'entryKind' ].
+	self
+		assert: (entryKindProperty extraProperties at: #enum) asArray
+		equals: #( 'code' 'session' 'other' ).
+	self
+		assert: (entryKindProperty extraProperties at: #default)
+		equals: 'code'
+]
+
+{ #category : 'tests' }
 MCPToolChangeHistoryToolsTest >> testListChangeHistoryEntriesReturnsEntries [
 
 	| data |
@@ -113,7 +133,6 @@ MCPToolChangeHistoryToolsTest >> testListChangeHistoryFilesReturnsFiles [
 	files := data at: #files.
 	allowedFileKeys := #( fileName exists fileSize modificationTime
 	                      isCurrent ) asSet.
-	self assert: (data includesKey: #directoryPath).
 	self assert: files notEmpty.
 	self assert: (files allSatisfy: [ :each |
 				 (each includesKey: #fileName) and: [

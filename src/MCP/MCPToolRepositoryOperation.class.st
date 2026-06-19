@@ -23,8 +23,7 @@ MCPToolRepositoryOperation >> branchNameSchemaProperty [
 	^ self
 		  schemaPropertyNamed: 'branchName'
 		  type: 'string'
-		  description:
-		  'Branch name for repository_branch_create, repository_branch_switch, or repository_branch_checkout, or an optional expected current branch guard for repository_head_adopt and repository_identity_verify.'
+		  description: 'Branch name.'
 ]
 
 { #category : 'private - execution' }
@@ -396,12 +395,11 @@ MCPToolRepositoryOperation >> repositoryReferenceInputProperties [
 		  (self
 			   schemaPropertyNamed: 'repositoryName'
 			   type: 'string'
-			   description: 'Registered repository name to target.').
+			   description: 'Registered repository name.').
 		  (self
 			   schemaPropertyNamed: 'location'
 			   type: 'string'
-			   description:
-			   'Optional filesystem path used with repositoryName to disambiguate or guard the selected registered repository.') }
+			   description: 'Repository location disambiguator.') }
 ]
 
 { #category : 'private - specs' }

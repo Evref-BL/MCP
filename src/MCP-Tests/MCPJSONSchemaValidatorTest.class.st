@@ -375,7 +375,7 @@ MCPJSONSchemaValidatorTest >> testCurrentToolRequestValidationRejectsOperationSp
 { #category : 'tests' }
 MCPJSONSchemaValidatorTest >> testReportsRequiredTypeAndAdditionalPropertiesViolations [
 
-	| arguments keywords schema violations |
+	| additionalPropertyViolation arguments keywords schema violations |
 	schema := {
 		          (#type -> 'object').
 		          (#required -> #( 'name' )).
@@ -391,7 +391,16 @@ MCPJSONSchemaValidatorTest >> testReportsRequiredTypeAndAdditionalPropertiesViol
 	keywords := self keywordsFrom: violations.
 	self assert: (keywords includes: 'required').
 	self assert: (keywords includes: 'type').
-	self assert: (keywords includes: 'additionalProperties')
+	self assert: (keywords includes: 'additionalProperties').
+	additionalPropertyViolation := (violations detect: [ :each |
+		                                each keyword
+		                                = 'additionalProperties' ])
+		                               asDictionary.
+	self assert: additionalPropertyViolation equals: {
+			(#path -> #( 'extra' )).
+			(#keyword -> 'additionalProperties').
+			(#message -> 'Object contains an unexpected property.').
+			(#actual -> 'extra') } asDictionary
 ]
 
 { #category : 'tests' }

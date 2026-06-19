@@ -723,17 +723,19 @@ MCPToolContractsTest >> testAllToolInputSchemasAvoidCompositionKeywords [
 MCPToolContractsTest >> testAllToolOutputSchemasAdvertiseStructuredSummaryWarningsAndStatus [
 
 	MCPTool concreteSubclasses do: [ :toolClass |
-		| outputSchema propertyNames statusProperty |
-		outputSchema := toolClass new outputSchema.
-		propertyNames := outputSchema properties collect: [ :each |
-			                 each name ].
-		statusProperty := outputSchema properties detect: [ :each |
-			                  each name = 'status' ].
-		self assert: (propertyNames includes: 'summary').
-		self assert: (propertyNames includes: 'warnings').
-		self
-			assert: (statusProperty extraProperties at: #enum) asArray
-			equals: #( 'ok' 'error' ) ]
+			| outputSchema propertyNames requiredNames statusProperty |
+			outputSchema := toolClass new outputSchema.
+			propertyNames := outputSchema properties collect: [ :each |
+				                 each name ].
+			requiredNames := outputSchema required asSet.
+			statusProperty := outputSchema properties detect: [ :each |
+				                  each name = 'status' ].
+			self assert: (propertyNames includes: 'summary').
+			self assert: (propertyNames includes: 'warnings').
+			self assert: requiredNames equals: #( 'status' 'summary' ) asSet.
+			self
+				assert: (statusProperty extraProperties at: #enum) asArray
+				equals: #( 'ok' 'error' ) ]
 ]
 
 { #category : 'tests' }
@@ -2526,7 +2528,7 @@ MCPToolContractsTest >> testRunTestCoverageUsesNestedRequestDTOs [
 { #category : 'tests' }
 MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 
-	| coverageDataProperties coverageInputProperty coverageOutputSchema coverageResultsProperty coverageScopeProperty coverageScopePropertyNames coverageTool dataProperties inputPropertyNames outputSchema resultsProperty timeoutMillisecondsProperty tool |
+	| coverageInputProperties coverageInputProperty coverageScopeProperty coverageScopePropertyNames coverageTool inputPropertyNames methodLimitProperty outputSchema dataProperties resultsProperty timeoutMillisecondsProperty tool |
 	tool := MCPToolRunTests new.
 	self assert: tool name equals: 'test_run'.
 	self
@@ -2542,9 +2544,9 @@ MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 	self deny: (inputPropertyNames includes: 'coverage').
 	self assert: (inputPropertyNames includes: 'timeoutSeconds').
 	self assert: (inputPropertyNames includes: 'timeoutMilliseconds').
-	self assert:
-		(timeoutMillisecondsProperty description includesSubstring:
-			 'Cannot be combined with timeoutSeconds').
+	self
+		assert: timeoutMillisecondsProperty description
+		equals: 'Timeout in milliseconds.'.
 	outputSchema := tool outputSchema asJRPCJSON.
 	dataProperties := ((outputSchema at: #properties) at: 'data') at:
 		                  #properties.
@@ -2564,12 +2566,21 @@ MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 		                      :each | each name ].
 	coverageInputProperty := coverageTool inputSchema properties detect: [
 		                         :each | each name = 'coverage' ].
+	coverageInputProperties := coverageInputProperty extraProperties at:
+		                           #properties.
+	methodLimitProperty := coverageInputProperties detect: [ :each |
+		                       each name = 'methodLimit' ].
 	self deny: (inputPropertyNames includes: 'operation').
 	self assert: (inputPropertyNames includes: 'coverage').
 	self assert: (inputPropertyNames includes: 'timeoutSeconds').
 	self assert: (inputPropertyNames includes: 'timeoutMilliseconds').
-	coverageScopeProperty := (coverageInputProperty extraProperties at:
-		                          #properties) detect: [ :each |
+	self
+		assert: (methodLimitProperty extraProperties at: #minimum)
+		equals: 0.
+	self
+		assert: (methodLimitProperty extraProperties at: #default)
+		equals: 50.
+	coverageScopeProperty := coverageInputProperties detect: [ :each |
 		                         each name = 'scope' ].
 	coverageScopePropertyNames := (coverageScopeProperty extraProperties
 		                               at: #properties) collect: [ :each |
@@ -2577,14 +2588,7 @@ MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 	self assert: (coverageScopePropertyNames includes: 'packages').
 	self assert: (coverageScopePropertyNames includes: 'classes').
 	self deny: (coverageScopePropertyNames includes: 'packageNames').
-	self deny: (coverageScopePropertyNames includes: 'classNames').
-	coverageOutputSchema := coverageTool outputSchema asJRPCJSON.
-	coverageDataProperties := ((coverageOutputSchema at: #properties)
-		                           at: 'data') at: #properties.
-	coverageResultsProperty := coverageDataProperties at: 'results'.
-	self assert: (coverageResultsProperty at: #type) equals: 'array'.
-	self assert: (coverageDataProperties includesKey: 'coverage').
-	self deny: (coverageDataProperties includesKey: 'tests')
+	self deny: (coverageScopePropertyNames includes: 'classNames')
 ]
 
 { #category : 'tests' }

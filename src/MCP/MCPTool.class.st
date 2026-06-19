@@ -464,8 +464,7 @@ MCPTool >> standardOutputSchemaForDataProperties: dataProperties required: requi
 	dataProperty := self
 		                schemaPropertyNamed: 'data'
 		                type: 'object'
-		                description:
-		                'The structured success payload returned by the tool when status=ok.'.
+		                description: 'Structured success payload.'.
 	dataProperty
 		properties: dataProperties;
 		required: requiredFields;
@@ -473,21 +472,19 @@ MCPTool >> standardOutputSchemaForDataProperties: dataProperties required: requi
 	errorProperty := self
 		                 schemaPropertyNamed: 'error'
 		                 type: 'object'
-		                 description:
-		                 'Structured error information when status=error.'.
+		                 description: 'Structured error information.'.
 	errorProperty
 		properties: self errorSchemaProperties;
 		required: #( 'message' );
 		additionalProperties: true.
 	statusProperty := self
 		                  stringEnumSchemaPropertyNamed: 'status'
-		                  description: 'The tool result status.'
+		                  description: 'Tool result status.'
 		                  values: #( 'ok' 'error' ).
 	summaryProperty := self
 		                   schemaPropertyNamed: 'summary'
 		                   type: 'string'
-		                   description:
-		                   'A concise human-readable summary of the tool result.'.
+		                   description: 'Human-readable result summary.'.
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties: {
@@ -496,7 +493,7 @@ MCPTool >> standardOutputSchemaForDataProperties: dataProperties required: requi
 				  self warningsSchemaProperty.
 				  dataProperty.
 				  errorProperty };
-		  required: #( 'status' 'summary' 'warnings' );
+		  required: #( 'status' 'summary' );
 		  additionalProperties: false;
 		  yourself
 ]
@@ -659,7 +656,6 @@ MCPTool >> warningsSchemaProperty [
 
 	^ self
 		  stringArraySchemaNamed: 'warnings'
-		  description:
-		  'Human-readable warnings associated with the tool result. Empty when no warnings were produced.'
-		  itemDescription: 'A warning message.'
+		  description: 'Warnings produced by the tool.'
+		  itemDescription: 'Warning message.'
 ]

@@ -27,7 +27,7 @@ MCPToolRewriteMethods >> commandForRequest: rewriteRequest [
 { #category : 'defaults' }
 MCPToolRewriteMethods >> defaultDescription [
 
-	^ 'Preview or apply Smalltalk AST rewrite rules to methods in a scope. Patterns use RB AST pattern syntax, not regex; pattern variables such as ''`@node'' match AST nodes. By default apply=false returns a preview with changeSetHash and does not mutate the image. apply=true performs the rewrite and requires expectedChangeSetHash from a preview. Applying to the whole image also requires force=true. Scope properties are unioned and match method_metadata_search semantics.'
+	^ 'Preview or apply Smalltalk AST rewrite rules for scoped methods.'
 ]
 
 { #category : 'defaults' }
@@ -168,17 +168,14 @@ MCPToolRewriteMethods >> rewriteInputProperties [
 		  self rewriteRulesSchemaProperty.
 		  (self
 			   booleanSchemaPropertyNamed: 'apply'
-			   description:
-			   'Whether to apply rewrite changes. false previews changes; true mutates matching methods after expectedChangeSetHash validation.'
+			   description: 'Apply changes instead of preview.'
 			   default: false).
 		  (self
 			   integerSchemaPropertyNamed: 'expectedChangeSetHash'
-			   description:
-			   'Required when apply=true. Use the changeSetHash returned by previewing the same rewrite request.').
+			   description: 'Required when apply=true.').
 		  (self
 			   booleanSchemaPropertyNamed: 'force'
-			   description:
-			   'Allow apply=true with implicit whole-image scope. Prefer an explicit method scope.'
+			   description: 'Allow whole-image apply scope.'
 			   default: false).
 		  (self
 			   booleanSchemaPropertyNamed: 'includeSource'
@@ -192,28 +189,27 @@ MCPToolRewriteMethods >> rewriteRuleSchema [
 
 	^ MCPStructureProperties new
 		  type: 'object';
-		  description: 'One method rewrite rule.';
+		  description: 'Rewrite rule.';
 		  properties: {
 				  (self
 					   schemaPropertyNamed: 'name'
 					   type: 'string'
-					   description: 'Optional rule name used for diagnostics.').
+					   description: 'Diagnostic name.').
 				  ((self
 					    schemaPropertyNamed: 'lhs'
 					    type: 'string'
-					    description: 'The left-hand pattern to find.')
+					    description: 'Pattern to match.')
 					   minLength: 1;
 					   yourself).
 				  ((self
 					    schemaPropertyNamed: 'rhs'
 					    type: 'string'
-					    description: 'The replacement pattern.')
+					    description: 'Replacement pattern.')
 					   minLength: 1;
 					   yourself).
 				  (self
 					   booleanSchemaPropertyNamed: 'isForMethod'
-					   description:
-					   'Whether lhs and rhs are whole-method patterns instead of expression patterns.'
+					   description: 'Match whole methods.'
 					   default: false) };
 		  required: #( 'lhs' 'rhs' );
 		  additionalProperties: false;
@@ -226,8 +222,7 @@ MCPToolRewriteMethods >> rewriteRulesSchemaProperty [
 	^ (self
 		   schemaPropertyNamed: 'rules'
 		   type: 'array'
-		   description:
-			   'One or more method rewrite rules applied with the NewTools rewriter backend.')
+		   description: 'Rewrite rules.')
 		  minItems: 1;
 		  items: self rewriteRuleSchema;
 		  yourself

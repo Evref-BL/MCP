@@ -46,10 +46,12 @@ MCPToolChangeHistory >> changeHistoryEntrySchemaProperty [
 				  (self
 					   schemaPropertyNamed: 'summary'
 					   type: 'string'
-					   description: 'Entry summary.').
+					   description: 'Specific entry summary.').
 				  (self
-					   booleanSchemaPropertyNamed: 'isCodeChange'
-					   description: 'Whether entry changes code.').
+					   stringEnumSchemaPropertyNamed: 'entryKind'
+					   description: 'Entry kind.'
+					   values: #( 'code' 'session' 'other' )
+					   default: 'code').
 				  (self
 					   schemaPropertyNamed: 'time'
 					   type: 'string'
@@ -57,7 +59,7 @@ MCPToolChangeHistory >> changeHistoryEntrySchemaProperty [
 				  (self
 					   schemaPropertyNamed: 'triggerReference'
 					   type: 'string'
-					   description: 'Trigger reference when known.').
+					   description: 'Trigger reference.').
 				  (self
 					   schemaPropertyNamed: 'packageName'
 					   type: 'string'
@@ -77,7 +79,7 @@ MCPToolChangeHistory >> changeHistoryEntrySchemaProperty [
 					   schemaPropertyNamed: 'protocol'
 					   type: 'string'
 					   description: 'Method protocol.') };
-		  required: #( 'index' 'eventClassName' 'summary' 'isCodeChange' );
+		  required: #( 'index' 'eventClassName' );
 		  additionalProperties: false;
 		  yourself
 ]

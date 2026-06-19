@@ -30,20 +30,17 @@ MCPToolRunTestCoverage >> defaultInputSchema [
 				  ((MCPStructureProperties new
 					    name: 'tests';
 					    type: 'array';
-					    description:
-						    'The test execution requests to run under coverage as a batch.')
+					    description: 'Test requests.')
 					   items: self testRequestObjectSchema;
 					   yourself).
 				  self coverageOptionsObjectSchema.
 				  (self
 					   integerSchemaPropertyNamed: 'timeoutSeconds'
-					   description:
-					   'Server-side timeout for the batch, in seconds. Use 0 to return immediately with all tests listed in unrunTests. Cannot be combined with timeoutMilliseconds.'
+					   description: 'Timeout in seconds; 0 returns immediately.'
 					   default: self defaultTimeoutSeconds).
 				  (self
 					   integerSchemaPropertyNamed: 'timeoutMilliseconds'
-					   description:
-					   'Server-side timeout for the batch, in milliseconds. Use for sub-second test runner contracts. Cannot be combined with timeoutSeconds.') };
+					   description: 'Timeout in milliseconds.') };
 		  required: #( 'tests' 'coverage' );
 		  yourself
 ]

@@ -82,8 +82,8 @@ MCPToolLoadRepositoryTest >> testCommandConfiguresMetacelloAndLoadsDefaultGroup 
 		assert: result repositoryUrl
 		equals: 'github://ExampleOwner/ExampleProject:main/src'.
 	self
-		assert: (repository at: #repositoryUrl)
-		equals: result repositoryUrl.
+		assert: repository
+		equals: { (#repositoryUrl -> result repositoryUrl) } asDictionary.
 	self assert: (load at: #baseline) equals: 'ExampleBaseline'.
 	self assert: result newPackageNames isEmpty.
 	self assert: result repositoryInfos isEmpty

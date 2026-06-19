@@ -76,12 +76,7 @@ MCPToolListChangeHistoryFiles >> defaultOutputSchema [
 		                 description: 'Change history files.'.
 	filesProperty items: self changeHistoryLogSchemaProperty.
 	^ self
-		  standardOutputSchemaForDataProperties: {
-				  (self
-					   schemaPropertyNamed: 'directoryPath'
-					   type: 'string'
-					   description: 'Scanned directory.').
-				  filesProperty }
+		  standardOutputSchemaForDataProperties: { filesProperty }
 		  required: #( 'files' )
 ]
 

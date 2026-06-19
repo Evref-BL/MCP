@@ -160,20 +160,20 @@ MCPJSONSchemaValidator >> validateAdditionalPropertiesIn: aDictionary againstSch
 	additionalProperties == true ifTrue: [ ^ self ].
 	propertyNames := self propertyNamesIn: schema.
 	aDictionary keysAndValuesDo: [ :key :value |
-		(propertyNames includes: key asString) ifFalse: [
-			additionalProperties == false
-				ifTrue: [
-					self
-						addViolationAt: (path copyWith: key asString)
-						keyword: #additionalProperties
-						message: 'Object contains an unexpected property.'
-						expected: propertyNames asArray
-						actual: key asString ]
-				ifFalse: [
-					self
-						validateValue: value
-						againstSchema: additionalProperties
-						atPath: (path copyWith: key asString) ] ] ]
+			(propertyNames includes: key asString) ifFalse: [
+					additionalProperties == false
+						ifTrue: [
+								self
+									addViolationAt: (path copyWith: key asString)
+									keyword: #additionalProperties
+									message: 'Object contains an unexpected property.'
+									expected: nil
+									actual: key asString ]
+						ifFalse: [
+								self
+									validateValue: value
+									againstSchema: additionalProperties
+									atPath: (path copyWith: key asString) ] ] ]
 ]
 
 { #category : 'private - combinators' }

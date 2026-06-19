@@ -20,7 +20,7 @@ MCPToolSearchRepositories class >> toolName [
 { #category : 'defaults' }
 MCPToolSearchRepositories >> defaultDescription [
 
-	^ 'List Iceberg repositories registered in image. Filter by repository identity, package, branch, modified state, or field-specific text.'
+	^ 'Search registered Iceberg repositories.'
 ]
 
 { #category : 'defaults' }
@@ -42,8 +42,7 @@ MCPToolSearchRepositories >> defaultInputSchema [
 			               'Case-sensitive matching.').
 		              (self
 			               booleanSchemaPropertyNamed: 'includeDetails'
-			               description:
-			               'Include path, package, head, upstream metadata.'
+			               description: 'Include detailed metadata.'
 			               default: false) }
 	              , (self paginationInputPropertiesWithLimitDescription:
 			               'Maximum results.').
@@ -180,67 +179,8 @@ MCPToolSearchRepositories >> repositoryEntrySchema [
 { #category : 'private - schema' }
 MCPToolSearchRepositories >> repositoryFieldFilterInputProperties [
 
-	^ {
-		  (self
-			   repositoryTextFilterPropertyNamed: 'repositoryName'
-			   description:
-			   'Optional repository-name text matched against repository names.').
-		  (self
-			   repositoryTextFilterPropertyNamed: 'repositoryClassName'
-			   description:
-			   'Optional class-name text matched against concrete Iceberg repository class names.').
-		  (self
-			   repositoryTextFilterPropertyNamed: 'location'
-			   description:
-			   'Optional path text matched against repository locations.').
-		  (self
-			   repositoryTextFilterPropertyNamed: 'subdirectory'
-			   description:
-			   'Optional path text matched against repository source subdirectories.').
-		  (self
-			   repositoryTextFilterPropertyNamed: 'branchName'
-			   description:
-			   'Optional branch-name text matched against current local branches.').
-		  (self
-			   repositoryTextFilterPropertyNamed: 'headDescription'
-			   description:
-			   'Optional text matched against repository head descriptions.').
-		  (self
-			   repositoryTextFilterPropertyNamed: 'headClassName'
-			   description:
-			   'Optional class-name text matched against repository head reference classes.').
-		  (self
-			   repositoryTextFilterPropertyNamed: 'headCommitId'
-			   description:
-			   'Optional commit-id text matched against exact head commit ids.').
-		  (self
-			   repositoryTextFilterPropertyNamed: 'packageName'
-			   description:
-			   'Optional package-name text matched against managed package names.').
-		  (self
-			   repositoryTextFilterPropertyNamed: 'modifiedPackageName'
-			   description:
-			   'Optional package-name text matched against modified package names.').
-		  (self
-			   repositoryTextFilterPropertyNamed: 'remoteName'
-			   description:
-			   'Optional remote-name text matched against configured remotes.').
-		  (self
-			   repositoryTextFilterPropertyNamed: 'remoteUrl'
-			   description:
-			   'Optional URL text matched against configured remotes.').
-		  (self
-			   repositoryTextFilterPropertyNamed: 'upstreamRemoteName'
-			   description:
-			   'Optional remote-name text matched against upstream remotes.').
-		  (self
-			   repositoryTextFilterPropertyNamed: 'upstreamBranchName'
-			   description:
-			   'Optional branch-name text matched against upstream branches.').
-		  (self
-			   repositoryTextFilterPropertyNamed: 'upstreamRemoteUrl'
-			   description:
-			   'Optional URL text matched against upstream remote URLs.') }
+	^ self repositoryFilterFieldNames collect: [ :fieldName |
+		  self repositoryTextFilterPropertyNamed: fieldName description: nil ]
 ]
 
 { #category : 'private - request' }

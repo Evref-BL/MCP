@@ -29,7 +29,6 @@ MCPChangeHistoryListLogsResult >> asDictionary [
 
 	| data |
 	data := Dictionary new.
-	directoryPath ifNotNil: [ data at: #directoryPath put: directoryPath ].
 	data
 		at: #files
 		put: ((self logs collect: [ :each | each asDictionary ]) as: Array).
