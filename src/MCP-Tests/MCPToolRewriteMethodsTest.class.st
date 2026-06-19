@@ -14,7 +14,7 @@ MCPToolRewriteMethodsTest >> applyArgumentsForRule: aRule expectedChangeSetHash:
 
 	^ {
 		  (#rules -> { aRule }).
-		  (#classNames -> { self targetClassName }).
+		  (#scope -> { (#classes -> { self targetClassName }) } asDictionary).
 		  (#apply -> true).
 		  (#expectedChangeSetHash -> expectedHash) } asDictionary
 ]
@@ -30,7 +30,8 @@ MCPToolRewriteMethodsTest >> previewArgumentsForRule: aRule [
 
 	^ {
 		  (#rules -> { aRule }).
-		  (#classNames -> { self targetClassName }) } asDictionary
+		  (#scope -> { (#classes -> { self targetClassName }) } asDictionary).
+		  (#includeSource -> true) } asDictionary
 ]
 
 { #category : 'private' }
@@ -201,8 +202,11 @@ MCPToolRewriteMethodsTest >> testClassSideScopeRewritesOnlyClassSideMethod [
 		        to: 'self newSideValue'.
 	result := self callToolWith: {
 			          (#rules -> { rule }).
-			          (#classNames -> { self targetClassName }).
-			          (#side -> 'class') } asDictionary.
+			          (#scope
+			           ->
+			           { (#classes -> { self targetClassName }) } asDictionary).
+			          (#side -> 'class').
+			          (#includeSource -> true) } asDictionary.
 	data := self dataFrom: result.
 	change := (data at: #changes) first.
 	self deny: (result at: #isError ifAbsent: [ false ]).
@@ -234,7 +238,10 @@ MCPToolRewriteMethodsTest >> testInvalidLhsPatternReportsRuleDiagnostics [
 					           (#lhs -> 'self +').
 					           (#rhs -> 'self newValue').
 					           (#isForMethod -> false) } asDictionary }).
-			          (#classNames -> { self targetClassName }) } asDictionary.
+			          (#scope
+			           ->
+			           { (#classes -> { self targetClassName }) } asDictionary) }
+			          asDictionary.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self
@@ -259,7 +266,10 @@ MCPToolRewriteMethodsTest >> testInvalidRhsPatternReportsRuleDiagnostics [
 				           (#lhs -> 'self oldValue').
 				           (#rhs -> 'self +').
 				           (#isForMethod -> false) } asDictionary }).
-			          (#classNames -> { self targetClassName }) } asDictionary.
+			          (#scope
+			           ->
+			           { (#classes -> { self targetClassName }) } asDictionary) }
+			          asDictionary.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self
@@ -281,9 +291,10 @@ MCPToolRewriteMethodsTest >> testMissingClassScopeRejectsRewriteBeforePartialPre
 	rule := self rewriteRuleFrom: 'self oldValue' to: 'self newValue'.
 	result := self callToolWith: {
 			          (#rules -> { rule }).
-			          (#classNames -> {
-				           self targetClassName.
-				           'MCPDefinitelyMissingRewriteClass' }) } asDictionary.
+			          (#scope -> { (#classes -> {
+				            self targetClassName.
+				            'MCPDefinitelyMissingRewriteClass' }) } asDictionary) }
+			          asDictionary.
 	error := self errorFrom: result.
 	suggestions := error at: #suggestions.
 	self assert: (result at: #isError).
@@ -307,8 +318,10 @@ MCPToolRewriteMethodsTest >> testPreviewCanOmitSources [
 	rule := self rewriteRuleFrom: 'self oldValue' to: 'self newValue'.
 	result := self callToolWith: {
 			          (#rules -> { rule }).
-			          (#classNames -> { self targetClassName }).
-			          (#includeSources -> false) } asDictionary.
+			          (#scope
+			           ->
+			           { (#classes -> { self targetClassName }) } asDictionary).
+			          (#includeSource -> false) } asDictionary.
 	data := self dataFrom: result.
 	change := (data at: #changes) first.
 	self deny: (result at: #isError ifAbsent: [ false ]).
@@ -346,16 +359,17 @@ MCPToolRewriteMethodsTest >> testPreviewChangesAreSortedByClassNameClassSideAndS
 	rule := self rewriteRuleFrom: 'self oldValue' to: 'self newValue'.
 	result := self callToolWith: {
 			          (#rules -> { rule }).
-			          (#classNames -> {
-				           self targetClassName.
-				           self secondaryTargetClassName }) } asDictionary.
+			          (#scope -> { (#classes -> {
+				            self targetClassName.
+				            self secondaryTargetClassName }) } asDictionary) }
+			          asDictionary.
 	data := self dataFrom: result.
 	changes := data at: #changes.
 	triples := changes collect: [ :each |
-		           {
-			           (each at: #className).
-			           (each at: #classSide).
-			           (each at: #selector) } ].
+			           {
+				           (each at: #className).
+				           (each at: #classSide).
+				           (each at: #selector) } ].
 	self assert: triples asArray equals: {
 			{
 				self secondaryTargetClassName.
@@ -412,8 +426,10 @@ MCPToolRewriteMethodsTest >> testRewriteRuleNormalizesLineFeedsInPatterns [
 			                 (#rules -> { {
 				                  (#lhs -> source).
 				                  (#rhs -> source) } asDictionary }).
-			                 (#classNames -> { self targetClassName }) }
-			                 asDictionary.
+			                 (#scope
+			                  ->
+			                  { (#classes -> { self targetClassName }) }
+				                  asDictionary) } asDictionary.
 	rule := parsedRequest rules first.
 	self deny: (rule lhs includes: Character lf).
 	self deny: (rule rhs includes: Character lf).
@@ -424,7 +440,7 @@ MCPToolRewriteMethodsTest >> testRewriteRuleNormalizesLineFeedsInPatterns [
 { #category : 'tests' }
 MCPToolRewriteMethodsTest >> testSchemaAdvertisesRewriteContract [
 
-	| lhsProperty propertyNames rhsProperty ruleProperties rulesProperty tool |
+	| lhsProperty propertyNames rhsProperty ruleProperties rulesProperty scopeProperty scopePropertyNames tool |
 	tool := MCPToolRewriteMethods new.
 	propertyNames := tool inputSchema properties collect: [ :each |
 		                 each name ].
@@ -439,26 +455,31 @@ MCPToolRewriteMethodsTest >> testSchemaAdvertisesRewriteContract [
 	rhsProperty := ((rulesProperty extraProperties at: #items)
 		                extraProperties at: #properties) detect: [ :each |
 		               each name = 'rhs' ].
+	scopeProperty := tool inputSchema properties detect: [ :each |
+		                 each name = 'scope' ].
+	scopePropertyNames := (scopeProperty extraProperties at: #properties)
+		                      collect: [ :each | each name ].
+
 	self assert: tool name equals: 'method_rewrite'.
 	self
 		assert: tool inputSchema required asSet
 		equals: #( 'rules' ) asSet.
 	self assert:
-		(tool description includesSubstring: 'RB AST pattern syntax').
+		(tool description includesSubstring: 'Smalltalk AST pattern syntax').
 	self assert: (tool description includesSubstring: 'not regex').
 	self assert: (rulesProperty extraProperties at: #minItems) equals: 1.
 	self assert: (lhsProperty extraProperties at: #minLength) equals: 1.
 	self assert: (rhsProperty extraProperties at: #minLength) equals: 1.
-	self assert: (propertyNames includes: 'apply').
-	self assert: (propertyNames includes: 'expectedChangeSetHash').
-	self assert: (propertyNames includes: 'force').
-	self assert: (propertyNames includes: 'includeSources').
-	self assert: (propertyNames includes: 'packageNames').
-	self assert: (propertyNames includes: 'classNames').
-	self assert: (propertyNames includes: 'hierarchyClassNames').
-	self assert: (propertyNames includes: 'subclassClassNames').
-	self assert: (propertyNames includes: 'parentClassNames').
-	self assert: (propertyNames includes: 'side').
+	self
+		assert: propertyNames asSet
+		equals:
+			#( 'rules' 'apply' 'expectedChangeSetHash' 'force' 'includeSource'
+			   'scope' 'side' ) asSet.
+	self
+		assert: scopePropertyNames asSet
+		equals:
+			#( 'packages' 'classes' 'hierarchies' 'subclassesOf' 'superclassesOf' )
+				asSet.
 	self assert: (ruleProperties includes: 'lhs').
 	self assert: (ruleProperties includes: 'rhs').
 	self assert: (ruleProperties includes: 'isForMethod')

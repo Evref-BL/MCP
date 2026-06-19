@@ -28,9 +28,9 @@ MCPDebugVariablesRequest class >> fromRequest: aRequest tool: aTool [
 			requestedStateId ~= reference stateId ifTrue: [
 					MCPCommandError
 						signalErrorCode: #DebugStateStale
-						message: 'Debug state ' , requestedStateId
-							, ' does not match variable reference state '
-							, reference stateId , '.'
+						message:
+							'Debug state ' , requestedStateId
+							, ' does not reference state ' , reference stateId , '.'
 						details: {
 								(#requestedStateId -> requestedStateId).
 								(#referenceStateId -> reference stateId).
@@ -45,14 +45,14 @@ MCPDebugVariablesRequest class >> fromRequest: aRequest tool: aTool [
 			  , reference frameIndex asString;
 		  stackStart: 0;
 		  stackLimit: reference frameIndex + 1;
-		  variableDepth:
-			  (aRequest
+		  variableDepth: (aRequest
 				   nonNegativeIntegerArgumentNamed: 'variableDepth'
-				   default: 1);
-		  variableLimit:
-			  (aRequest
+				   default: self defaultVariableDepth
+				   maximum: self maximumVariableDepth);
+		  variableLimit: (aRequest
 				   nonNegativeIntegerArgumentNamed: 'variableLimit'
-				   default: 50);
+				   default: self defaultVariableLimit
+				   maximum: self maximumVariableLimit);
 		  includeIndexed:
 			  (aRequest booleanArgumentNamed: 'includeIndexed' default: true);
 		  includeInstanceVariables: (aRequest

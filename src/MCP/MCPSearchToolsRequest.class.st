@@ -1,7 +1,5 @@
 "
-Request object for tool catalog searches.
-
-It captures the optional search text, group filter, static-tool inclusion flag, and result limit used by tool_search.
+Request object for tool catalog searches. It captures optional search text, group filter, and result limit used by tool_search.
 "
 Class {
 	#name : 'MCPSearchToolsRequest',
@@ -9,7 +7,6 @@ Class {
 	#instVars : [
 		'query',
 		'group',
-		'includeStatic',
 		'limit'
 	],
 	#category : 'MCP-Requests',
@@ -23,14 +20,10 @@ MCPSearchToolsRequest class >> fromToolRequest: aToolRequest [
 	^ self new
 		  query: (aToolRequest stringArgumentNamed: 'query');
 		  group: (aToolRequest stringArgumentNamed: 'group');
-		  includeStatic:
-			  (aToolRequest
-				   booleanArgumentNamed: 'includeStatic'
-				   default: false);
 		  limit:
-			  (aToolRequest
-				   nonNegativeIntegerArgumentNamed: 'limit'
-				   default: 100);
+			  ((aToolRequest
+				    nonNegativeIntegerArgumentNamed: 'limit'
+				    default: 25) min: 100);
 		  yourself
 ]
 
@@ -44,18 +37,6 @@ MCPSearchToolsRequest >> group [
 MCPSearchToolsRequest >> group: anObject [
 
 	group := anObject
-]
-
-{ #category : 'accessing' }
-MCPSearchToolsRequest >> includeStatic [
-
-	^ includeStatic
-]
-
-{ #category : 'accessing' }
-MCPSearchToolsRequest >> includeStatic: aBoolean [
-
-	includeStatic := aBoolean
 ]
 
 { #category : 'accessing' }

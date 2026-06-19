@@ -23,7 +23,6 @@ Class {
 		'description',
 		'icons',
 		'inputSchema',
-		'handler',
 		'outputSchema',
 		'toolExposurePolicy'
 	],
@@ -82,11 +81,8 @@ MCPTool >> asJRPCJSON [
 	dic := Dictionary new.
 	self description ifNotNil: [
 		dic at: #description put: self description asJRPCJSON ].
-	self icons ifNotNil: [ dic at: #icons put: self icons asJRPCJSON ].
 	self inputSchema ifNotNil: [
 		dic at: #inputSchema put: self inputSchema asJRPCJSON ].
-	self outputSchema ifNotNil: [
-		dic at: #outputSchema put: self outputSchema asJRPCJSON ].
 	self name ifNotNil: [ dic at: #name put: self name asJRPCJSON ].
 	self title ifNotNil: [ dic at: #title put: self title asJRPCJSON ].
 	^ dic
@@ -121,12 +117,6 @@ MCPTool >> commandForRequest: aToolRequest [
 MCPTool >> defaultDescription [
 
 	self subclassResponsibility
-]
-
-{ #category : 'defaults' }
-MCPTool >> defaultHandler [
-
-	^ [ :request |  ]
 ]
 
 { #category : 'defaults' }
@@ -204,7 +194,7 @@ MCPTool >> errorResultFor: anError [
 { #category : 'error handling' }
 MCPTool >> errorResultText: aString details: aDictionary [
 
-	| details normalizedSummary |
+	| details normalizedSummary structuredContent |
 	normalizedSummary := aString
 		                     ifNil: [ '' ]
 		                     ifNotNil: [ aString asString ].
@@ -213,13 +203,14 @@ MCPTool >> errorResultText: aString details: aDictionary [
 		           ifNotNil: [ aDictionary copy ].
 	details at: #message ifAbsentPut: [ normalizedSummary ].
 	details at: #errorClass ifAbsentPut: [ 'ToolError' ].
+	structuredContent := Dictionary new
+		                     at: #status put: 'error';
+		                     at: #summary put: normalizedSummary;
+		                     at: #error put: details;
+		                     yourself.
 	^ MCPStructureErrorToolResult
 		  content: { (self textContent: normalizedSummary) }
-		  structuredContent: {
-				  (#status -> 'error').
-				  (#summary -> normalizedSummary).
-				  (#warnings -> #(  )).
-				  (#error -> details) } asDictionary
+		  structuredContent: structuredContent
 ]
 
 { #category : 'private - schema' }
@@ -286,9 +277,8 @@ MCPTool >> executeParsedRequestFrom: request do: executionBlock onError: errorBl
 
 { #category : 'executing' }
 MCPTool >> executeWithRequest: aRequest [
-	"Subclasses may override me to manage execution directly."
 
-	^ handler value: aRequest
+	self subclassResponsibility
 ]
 
 { #category : 'error handling' }
@@ -312,18 +302,6 @@ MCPTool >> failureMessageFor: anError [
 ]
 
 { #category : 'accessing' }
-MCPTool >> handler [
-
-	^ handler
-]
-
-{ #category : 'accessing' }
-MCPTool >> handler: anObject [
-
-	handler := anObject
-]
-
-{ #category : 'accessing' }
 MCPTool >> icons [
 
 	^ icons ifNil: [ icons := self class toolIcons ]
@@ -342,7 +320,6 @@ MCPTool >> initialize [
 	name := self class toolName.
 	title := self defaultTitle.
 	description := self defaultDescription.
-	handler := self defaultHandler.
 	inputSchema := self defaultInputSchema.
 	outputSchema := self defaultOutputSchema
 ]
@@ -453,6 +430,21 @@ MCPTool >> schemaPropertyNamed: aName type: aType description: aDescription [
 		  yourself
 ]
 
+{ #category : 'private - schema' }
+MCPTool >> shouldAdvertiseStringArrayItemDescription: anItemDescription [
+
+	| itemDescriptionString |
+	itemDescriptionString := anItemDescription
+		                         ifNil: [ ^ false ]
+		                         ifNotNil: [ :value |
+		                         value asString trimBoth ].
+	itemDescriptionString isEmpty ifTrue: [ ^ false ].
+	(itemDescriptionString endsWith: ' name.') ifTrue: [ ^ false ].
+	(#( 'Hierarchy root class.' ) includes: itemDescriptionString)
+		ifTrue: [ ^ false ].
+	^ true
+]
+
 { #category : 'testing' }
 MCPTool >> shouldSaveImageAfterSuccessfulExecution [
 
@@ -472,8 +464,7 @@ MCPTool >> standardOutputSchemaForDataProperties: dataProperties required: requi
 	dataProperty := self
 		                schemaPropertyNamed: 'data'
 		                type: 'object'
-		                description:
-		                'The structured success payload returned by the tool when status=ok.'.
+		                description: 'Structured success payload.'.
 	dataProperty
 		properties: dataProperties;
 		required: requiredFields;
@@ -481,21 +472,19 @@ MCPTool >> standardOutputSchemaForDataProperties: dataProperties required: requi
 	errorProperty := self
 		                 schemaPropertyNamed: 'error'
 		                 type: 'object'
-		                 description:
-		                 'Structured error information when status=error.'.
+		                 description: 'Structured error information.'.
 	errorProperty
 		properties: self errorSchemaProperties;
 		required: #( 'message' );
 		additionalProperties: true.
 	statusProperty := self
 		                  stringEnumSchemaPropertyNamed: 'status'
-		                  description: 'The tool result status.'
+		                  description: 'Tool result status.'
 		                  values: #( 'ok' 'error' ).
 	summaryProperty := self
 		                   schemaPropertyNamed: 'summary'
 		                   type: 'string'
-		                   description:
-		                   'A concise human-readable summary of the tool result.'.
+		                   description: 'Human-readable result summary.'.
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties: {
@@ -504,9 +493,18 @@ MCPTool >> standardOutputSchemaForDataProperties: dataProperties required: requi
 				  self warningsSchemaProperty.
 				  dataProperty.
 				  errorProperty };
-		  required: #( 'status' 'summary' 'warnings' );
+		  required: #( 'status' 'summary' );
 		  additionalProperties: false;
 		  yourself
+]
+
+{ #category : 'private - schema' }
+MCPTool >> stringArraySchemaNamed: aName [
+
+	^ self
+		  stringArraySchemaNamed: aName
+		  description: nil
+		  itemDescription: nil
 ]
 
 { #category : 'private - schema' }
@@ -515,8 +513,9 @@ MCPTool >> stringArraySchemaNamed: aName description: aDescription itemDescripti
 	| itemsProperty |
 	itemsProperty := MCPStructureProperties new
 		                 type: 'string';
-		                 description: anItemDescription;
 		                 yourself.
+	(self shouldAdvertiseStringArrayItemDescription: anItemDescription)
+		ifTrue: [ itemsProperty description: anItemDescription ].
 	^ (self
 		   schemaPropertyNamed: aName
 		   type: 'array'
@@ -585,7 +584,7 @@ MCPTool >> successResultText: aSummary data: aDictionary [
 { #category : 'private - results' }
 MCPTool >> successResultText: aSummary data: aDictionary warnings: warningStrings [
 
-	| normalizedSummary warnings |
+	| normalizedSummary structuredContent warnings |
 	normalizedSummary := aSummary
 		                     ifNil: [ '' ]
 		                     ifNotNil: [ aSummary asString ].
@@ -594,13 +593,15 @@ MCPTool >> successResultText: aSummary data: aDictionary warnings: warningString
 		            ifNotNil: [
 		            (warningStrings collect: [ :each | each asString ])
 			            asArray ].
+	structuredContent := Dictionary new
+		                     at: #status put: 'ok';
+		                     at: #summary put: normalizedSummary;
+		                     at: #data put: aDictionary;
+		                     yourself.
+	warnings ifNotEmpty: [ structuredContent at: #warnings put: warnings ].
 	^ MCPStructureCallToolResult
 		  content: { (self textContent: normalizedSummary) }
-		  structuredContent: {
-				  (#status -> 'ok').
-				  (#summary -> normalizedSummary).
-				  (#warnings -> warnings).
-				  (#data -> aDictionary) } asDictionary
+		  structuredContent: structuredContent
 ]
 
 { #category : 'private' }
@@ -655,7 +656,6 @@ MCPTool >> warningsSchemaProperty [
 
 	^ self
 		  stringArraySchemaNamed: 'warnings'
-		  description:
-		  'Human-readable warnings associated with the tool result. Empty when no warnings were produced.'
-		  itemDescription: 'A warning message.'
+		  description: 'Warnings produced by the tool.'
+		  itemDescription: 'Warning message.'
 ]

@@ -7,16 +7,14 @@ Class {
 	#name : 'MCPRepositoryQuerySpec',
 	#superclass : 'Object',
 	#instVars : [
-		'repositoryNames',
-		'directoryPaths',
-		'packageNames',
 		'isModified',
 		'isMissing',
 		'fieldFilters',
 		'filterMode',
 		'caseSensitive',
 		'limit',
-		'offset'
+		'offset',
+		'includeDetails'
 	],
 	#category : 'MCP-Requests',
 	#package : 'MCP',
@@ -27,12 +25,6 @@ Class {
 MCPRepositoryQuerySpec class >> fromRequest: request tool: aTool [
 
 	^ self new
-		  repositoryNames:
-			  (request uniqueStringCollectionArgumentNamed: 'repositoryNames');
-		  directoryPaths:
-			  (request uniqueStringCollectionArgumentNamed: 'directoryPaths');
-		  packageNames:
-			  (request uniqueStringCollectionArgumentNamed: 'packageNames');
 		  isModified:
 			  (self
 				   optionalBooleanArgumentNamed: 'isModified'
@@ -47,6 +39,8 @@ MCPRepositoryQuerySpec class >> fromRequest: request tool: aTool [
 		  filterMode: (aTool filterModeFromRequest: request);
 		  caseSensitive:
 			  (request booleanArgumentNamed: 'caseSensitive' default: true);
+		  includeDetails:
+			  (request booleanArgumentNamed: 'includeDetails' default: false);
 		  limit: (request
 				   nonNegativeIntegerArgumentNamed: 'limit'
 				   default: aTool defaultPageLimit);
@@ -72,18 +66,6 @@ MCPRepositoryQuerySpec >> caseSensitive [
 MCPRepositoryQuerySpec >> caseSensitive: aBoolean [
 
 	caseSensitive := aBoolean
-]
-
-{ #category : 'accessing' }
-MCPRepositoryQuerySpec >> directoryPaths [
-
-	^ directoryPaths
-]
-
-{ #category : 'accessing' }
-MCPRepositoryQuerySpec >> directoryPaths: aCollection [
-
-	directoryPaths := aCollection
 ]
 
 { #category : 'accessing' }
@@ -114,6 +96,18 @@ MCPRepositoryQuerySpec >> filterMode: aString [
 MCPRepositoryQuerySpec >> hasFieldFilters [
 
 	^ self fieldFilters notEmpty
+]
+
+{ #category : 'accessing' }
+MCPRepositoryQuerySpec >> includeDetails [
+
+	^ includeDetails
+]
+
+{ #category : 'accessing' }
+MCPRepositoryQuerySpec >> includeDetails: aBoolean [
+
+	includeDetails := aBoolean
 ]
 
 { #category : 'accessing' }
@@ -162,30 +156,6 @@ MCPRepositoryQuerySpec >> offset [
 MCPRepositoryQuerySpec >> offset: anInteger [
 
 	offset := anInteger
-]
-
-{ #category : 'accessing' }
-MCPRepositoryQuerySpec >> packageNames [
-
-	^ packageNames
-]
-
-{ #category : 'accessing' }
-MCPRepositoryQuerySpec >> packageNames: aCollection [
-
-	packageNames := aCollection
-]
-
-{ #category : 'accessing' }
-MCPRepositoryQuerySpec >> repositoryNames [
-
-	^ repositoryNames
-]
-
-{ #category : 'accessing' }
-MCPRepositoryQuerySpec >> repositoryNames: aCollection [
-
-	repositoryNames := aCollection
 ]
 
 { #category : 'accessing' }

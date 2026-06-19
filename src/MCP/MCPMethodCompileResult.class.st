@@ -1,8 +1,10 @@
 "
-Structured result DTO for a successful method_create operation. It serializes the compiled method metadata and any included critiques.
+Compact public result for method compilation.
+
+It reports whether compiling the source created a new method or replaced an existing method, plus optional critiques.
 "
 Class {
-	#name : 'MCPMethodCreateResult',
+	#name : 'MCPMethodCompileResult',
 	#superclass : 'Object',
 	#instVars : [
 		'methodInfo',
@@ -15,7 +17,7 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPMethodCreateResult class >> method: aCompiledMethod critiques: critiqueDictionaries [
+MCPMethodCompileResult class >> method: aCompiledMethod critiques: critiqueDictionaries [
 
 	^ self
 		  method: aCompiledMethod
@@ -24,7 +26,7 @@ MCPMethodCreateResult class >> method: aCompiledMethod critiques: critiqueDictio
 ]
 
 { #category : 'instance creation' }
-MCPMethodCreateResult class >> method: aCompiledMethod critiques: critiqueDictionaries changeKind: changeKindString [
+MCPMethodCompileResult class >> method: aCompiledMethod critiques: critiqueDictionaries changeKind: changeKindString [
 
 	^ self new
 		  methodInfo: (MCPCompiledMethodInfo fromMethod: aCompiledMethod);
@@ -34,48 +36,47 @@ MCPMethodCreateResult class >> method: aCompiledMethod critiques: critiqueDictio
 ]
 
 { #category : 'converting' }
-MCPMethodCreateResult >> asDictionary [
+MCPMethodCompileResult >> asDictionary [
 
 	| data |
-	data := self methodInfo asDictionaryIncludingSource: true.
-	data at: #action put: 'create'.
+	data := Dictionary new.
 	data at: #changeKind put: self changeKind.
 	self critiques ifNotEmpty: [ data at: #critiques put: self critiques ].
 	^ data
 ]
 
 { #category : 'accessing' }
-MCPMethodCreateResult >> changeKind [
+MCPMethodCompileResult >> changeKind [
 
 	^ changeKind
 ]
 
 { #category : 'accessing' }
-MCPMethodCreateResult >> changeKind: aString [
+MCPMethodCompileResult >> changeKind: aString [
 
 	changeKind := aString
 ]
 
 { #category : 'accessing' }
-MCPMethodCreateResult >> critiques [
+MCPMethodCompileResult >> critiques [
 
 	^ critiques ifNil: [ #(  ) ]
 ]
 
 { #category : 'accessing' }
-MCPMethodCreateResult >> critiques: critiqueDictionaries [
+MCPMethodCompileResult >> critiques: critiqueDictionaries [
 
 	critiques := critiqueDictionaries ifNil: [ #(  ) ]
 ]
 
 { #category : 'accessing' }
-MCPMethodCreateResult >> methodInfo [
+MCPMethodCompileResult >> methodInfo [
 
 	^ methodInfo
 ]
 
 { #category : 'accessing' }
-MCPMethodCreateResult >> methodInfo: aMethodInfo [
+MCPMethodCompileResult >> methodInfo: aMethodInfo [
 
 	methodInfo := aMethodInfo
 ]

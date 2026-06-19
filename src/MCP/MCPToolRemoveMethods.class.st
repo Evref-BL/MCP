@@ -37,23 +37,10 @@ MCPToolRemoveMethods >> commandForRequest: removeRequest [
 	^ MCPRemoveMethodsCommand tool: self request: removeRequest
 ]
 
-{ #category : 'private' }
-MCPToolRemoveMethods >> dataForMethod: aCompiledMethod [
-
-	| info |
-	info := MCPCompiledMethodInfo fromMethod: aCompiledMethod.
-	^ {
-		  (#selector -> info selector).
-		  (#protocol -> info protocol).
-		  (#packageName -> info packageName).
-		  (#isExtension -> info isExtension).
-		  (#source -> info source) } asDictionary
-]
-
 { #category : 'defaults' }
 MCPToolRemoveMethods >> defaultDescription [
 
-	^ 'Remove methods from one class as a batch without sender safety checks. Use method_create, method_selector_update, or method_protocol_update for method updates.'
+	^ 'Remove methods from one class as a batch without sender safety checks. Use method_compile, method_selector_update, or method_protocol_update for method updates.'
 ]
 
 { #category : 'defaults' }
@@ -90,65 +77,7 @@ MCPToolRemoveMethods >> defaultInputSchema [
 { #category : 'defaults' }
 MCPToolRemoveMethods >> defaultOutputSchema [
 
-	^ self
-		  standardOutputSchemaForDataProperties: {
-				  (self
-					   schemaPropertyNamed: 'className'
-					   type: 'string'
-					   description: 'The class from which methods were removed.').
-				  (self
-					   schemaPropertyNamed: 'classSide'
-					   type: 'boolean'
-					   description:
-					   'Whether the removed methods were on the class side.').
-				  ((self
-					    schemaPropertyNamed: 'selectors'
-					    type: 'array'
-					    description: 'The selectors removed by the batch operation.')
-					   items: (MCPStructureProperties new
-							    type: 'string';
-							    description: 'A removed selector.';
-							    yourself);
-					   yourself).
-				  ((self
-					    schemaPropertyNamed: 'removedMethods'
-					    type: 'array'
-					    description:
-						    'Structured details for each removed method in the batch.')
-					   items: (MCPStructureProperties new
-							    type: 'object';
-							    properties: {
-									    (self
-										     schemaPropertyNamed: 'selector'
-										     type: 'string'
-										     description: 'The selector that was removed.').
-									    (self
-										     schemaPropertyNamed: 'protocol'
-										     type: 'string'
-										     description:
-											     'The protocol that contained the removed method.').
-									    (self
-										     schemaPropertyNamed: 'packageName'
-										     type: 'string'
-										     description:
-											     'The package that owned the removed method.').
-									    (self
-										     schemaPropertyNamed: 'isExtension'
-										     type: 'boolean'
-										     description:
-											     'Whether the removed method was an extension method.').
-									    (self
-										     schemaPropertyNamed: 'source'
-										     type: 'string'
-										     description: 'The source code of the removed method.') };
-							    required:
-								    #( 'selector' 'protocol' 'packageName' 'isExtension'
-								       'source' );
-							    additionalProperties: false;
-							    yourself);
-					   yourself) }
-		  required:
-		  #( 'className' 'classSide' 'selectors' 'removedMethods' )
+	^ self standardOutputSchemaForDataProperties: #(  ) required: #(  )
 ]
 
 { #category : 'defaults' }

@@ -6,9 +6,9 @@ Class {
 	#superclass : 'Object',
 	#instVars : [
 		'operation',
-		'historyFilePath',
+		'directoryPath',
+		'historyFileName',
 		'indexes',
-		'entryReferences',
 		'startIndex',
 		'endIndex',
 		'latestCount',
@@ -48,15 +48,21 @@ MCPChangeHistorySelectionRequest >> confirm [
 ]
 
 { #category : 'accessing' }
-MCPChangeHistorySelectionRequest >> endIndex [
+MCPChangeHistorySelectionRequest >> directoryPath [
 
-	^ endIndex
+	^ directoryPath
 ]
 
 { #category : 'accessing' }
-MCPChangeHistorySelectionRequest >> entryReferences [
+MCPChangeHistorySelectionRequest >> directoryPath: aString [
 
-	^ entryReferences ifNil: [ #(  ) ]
+	directoryPath := aString
+]
+
+{ #category : 'accessing' }
+MCPChangeHistorySelectionRequest >> endIndex [
+
+	^ endIndex
 ]
 
 { #category : 'testing' }
@@ -71,14 +77,19 @@ MCPChangeHistorySelectionRequest >> hasRangeSelection [
 MCPChangeHistorySelectionRequest >> hasSelectionCriteria [
 
 	^ self indexes notEmpty or: [
-		  self entryReferences notEmpty or: [
-			  self hasRangeSelection or: [ self latestCount notNil ] ] ]
+		  self hasRangeSelection or: [ self latestCount notNil ] ]
 ]
 
 { #category : 'accessing' }
-MCPChangeHistorySelectionRequest >> historyFilePath [
+MCPChangeHistorySelectionRequest >> historyFileName [
 
-	^ historyFilePath
+	^ historyFileName
+]
+
+{ #category : 'accessing' }
+MCPChangeHistorySelectionRequest >> historyFileName: aString [
+
+	historyFileName := aString
 ]
 
 { #category : 'accessing' }
@@ -91,12 +102,11 @@ MCPChangeHistorySelectionRequest >> indexes [
 MCPChangeHistorySelectionRequest >> initializeFromRequest: aRequest operation: operationName [
 
 	operation := operationName.
-	historyFilePath := aRequest stringArgumentNamed: 'historyFilePath'.
+	directoryPath := aRequest stringArgumentNamed: 'directoryPath'.
+	historyFileName := aRequest stringArgumentNamed: 'historyFileName'.
 	indexes := self
 		           positiveIntegerCollectionArgumentNamed: 'indexes'
 		           fromRequest: aRequest.
-	entryReferences := aRequest stringCollectionArgumentNamed:
-		                   'entryReferences'.
 	startIndex := self
 		              optionalPositiveIntegerArgumentNamed: 'startIndex'
 		              fromRequest: aRequest.
@@ -176,11 +186,9 @@ MCPChangeHistorySelectionRequest >> selectionCriteria [
 	criteria := Dictionary new.
 	self indexes ifNotEmpty: [ :values |
 		criteria at: #indexes put: values ].
-	self entryReferences ifNotEmpty: [ :values |
-		criteria at: #entryReferences put: values ].
 	self hasRangeSelection ifTrue: [
-		criteria at: #startIndex put: self startIndex.
-		criteria at: #endIndex put: self endIndex ].
+			criteria at: #startIndex put: self startIndex.
+			criteria at: #endIndex put: self endIndex ].
 	self latestCount ifNotNil: [ :value |
 		criteria at: #latestCount put: value ].
 	criteria at: #codeChangesOnly put: self codeChangesOnly.
@@ -229,6 +237,6 @@ MCPChangeHistorySelectionRequest >> validateSelectionCriteria [
 	self hasSelectionCriteria ifFalse: [
 			self
 				signalInvalidSelection:
-				'Provide at least one selection criterion: indexes, entryReferences, startIndex/endIndex, or latestCount.'
+				'Provide at least one selection criterion: indexes, startIndex/endIndex, or latestCount.'
 				details: Dictionary new ]
 ]

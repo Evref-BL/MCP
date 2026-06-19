@@ -35,7 +35,9 @@ MCPGetToolCommand >> execute [
 		               usingPolicy: tool toolExposurePolicy.
 	^ { (#tool -> (MCPToolRegistry
 		    contractForTool: catalogTool
-		    usingPolicy: tool toolExposurePolicy)) } asDictionary
+		    usingPolicy: tool toolExposurePolicy
+		    includeOutputSchema: request includeOutputSchema)) }
+		  asDictionary
 ]
 
 { #category : 'accessing' }

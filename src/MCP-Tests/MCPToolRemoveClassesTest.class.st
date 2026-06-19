@@ -218,58 +218,35 @@ MCPToolRemoveClassesTest >> tearDown [
 { #category : 'tests' }
 MCPToolRemoveClassesTest >> testForceRemovesNonEmptyClassAndReparentsSubclassesWithWarnings [
 
-	| removedClass result structured warnings |
-	result := self callToolWith: (self
-			           argumentsForClassNames: { self nonEmptyParentClassName }
-			           force: true).
+	| data result structured warnings |
+	result := self callToolWith: (self argumentsForClassNames: { self nonEmptyParentClassName } force: true).
 	structured := self structuredContentFrom: result.
-	removedClass := (self removedClassesFrom: result) first.
+	data := self dataFrom: result.
 	warnings := structured at: #warnings.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self deny: (self class environment includesKey:
-			 self nonEmptyParentClassName asSymbol).
+	self deny: (self class environment includesKey: self nonEmptyParentClassName asSymbol).
 	self
-		assert:
-			(self classNamed: self nonEmptyChildClassName) superclass name
-				asString
+		assert: (self classNamed: self nonEmptyChildClassName) superclass name asString
 		equals: 'Object'.
-	self deny: (removedClass at: #wasEmpty).
 	self
-		assert: (removedClass at: #reparentedSubclassNames)
+		assert: (data at: #reparentedSubclassNames ifAbsent: [ #(  ) ])
 		equals: { self nonEmptyChildClassName } asArray.
 	self assert: warnings size equals: 1.
-	self assert:
-		(warnings first includesSubstring: self nonEmptyParentClassName)
+	self assert: (warnings first includesSubstring: self nonEmptyParentClassName)
 ]
 
 { #category : 'tests' }
 MCPToolRemoveClassesTest >> testForceRemovesReferencedClassAndReturnsWarnings [
 
-	| data removedClass result structured warnings |
-	result := self callToolWith:
-		          (self
-			           argumentsForClassNames: { self referencedClassName }
-			           force: true).
+	| result structured warnings |
+	result := self callToolWith: (self argumentsForClassNames: { self referencedClassName } force: true).
 	structured := self structuredContentFrom: result.
-	data := self dataFrom: result.
-	removedClass := (self removedClassesFrom: result) first.
 	warnings := structured at: #warnings.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self deny:
-		(self class environment includesKey:
-			 self referencedClassName asSymbol).
-	self assert:
-		((self classNamed: self senderClassName) includesSelector:
-			 #useReferencedClass).
-	self
-		assert: (data at: #classNames)
-		equals: { self referencedClassName } asArray.
-	self
-		assert: (removedClass at: #className)
-		equals: self referencedClassName.
+	self deny: (self class environment includesKey: self referencedClassName asSymbol).
+	self assert: ((self classNamed: self senderClassName) includesSelector: #useReferencedClass).
 	self assert: warnings size equals: 1.
-	self assert:
-		(warnings first includesSubstring: self referencedClassName)
+	self assert: (warnings first includesSubstring: self referencedClassName)
 ]
 
 { #category : 'tests' }
@@ -334,58 +311,32 @@ MCPToolRemoveClassesTest >> testReturnsStructuredErrorWhenNonEmptyClassHasSubcla
 { #category : 'tests' }
 MCPToolRemoveClassesTest >> testSafelyRemovesEmptyClassAndReparentsDirectSubclasses [
 
-	| data removedClass result |
-	result := self callToolWith:
-		          (self argumentsForClassNames:
-			           { self emptyParentClassName }).
+	| data result |
+	result := self callToolWith: (self argumentsForClassNames: { self emptyParentClassName }).
 	data := self dataFrom: result.
-	removedClass := (self removedClassesFrom: result) first.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self deny: (self class environment includesKey:
-			 self emptyParentClassName asSymbol).
+	self deny: (self class environment includesKey: self emptyParentClassName asSymbol).
 	self
-		assert:
-		(self classNamed: self emptyChildClassName) superclass name asString
+		assert: (self classNamed: self emptyChildClassName) superclass name asString
 		equals: 'Object'.
-	self assert: (removedClass at: #wasEmpty).
 	self
-		assert: (removedClass at: #subclassNames)
-		equals: { self emptyChildClassName } asArray.
-	self
-		assert: (removedClass at: #reparentedSubclassNames)
-		equals: { self emptyChildClassName } asArray.
-	self
-		assert: (removedClass at: #reparentedToSuperclassName)
-		equals: 'Object'.
-	self assert: (data at: #removedPackageNames) isEmpty
+		assert: (data at: #reparentedSubclassNames ifAbsent: [ #(  ) ])
+		equals: { self emptyChildClassName } asArray
 ]
 
 { #category : 'tests' }
 MCPToolRemoveClassesTest >> testSafelyRemovesSimpleClass [
 
-	| data removedClass result |
-	result := self callToolWith:
-		          (self argumentsForClassNames: self batchClassNames).
+	| data result |
+	result := self callToolWith: (self argumentsForClassNames: self batchClassNames).
 	data := self dataFrom: result.
-	removedClass := (self removedClassesFrom: result) detect: [ :each |
-		                (each at: #className) = self simpleClassName ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self deny:
-		(self class environment includesKey: self simpleClassName asSymbol).
-	self deny: (self class environment includesKey:
-			 self packageCleanupClassName asSymbol).
-	self deny:
-		(PackageOrganizer default hasPackage: self packageCleanupPackageName).
-	self assert: (data at: #classNames) equals: self batchClassNames.
+	self deny: (self class environment includesKey: self simpleClassName asSymbol).
+	self deny: (self class environment includesKey: self packageCleanupClassName asSymbol).
+	self deny: (PackageOrganizer default hasPackage: self packageCleanupPackageName).
 	self
-		assert: (data at: #removedPackageNames)
-		equals: { self packageCleanupPackageName } asArray.
-	self
-		assert: (removedClass at: #className)
-		equals: self simpleClassName.
-	self assert: (removedClass at: #wasEmpty).
-	self assert: (removedClass at: #subclassNames) isEmpty.
-	self assert: (removedClass at: #reparentedSubclassNames) isEmpty
+		assert: (data at: #removedPackageNames ifAbsent: [ #(  ) ])
+		equals: { self packageCleanupPackageName } asArray
 ]
 
 { #category : 'tests' }

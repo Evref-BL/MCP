@@ -26,7 +26,7 @@ MCPToolDebugCapture >> commandForRequest: debugRequest [
 { #category : 'defaults' }
 MCPToolDebugCapture >> defaultDescription [
 
-	^ 'Evaluate Smalltalk in a bounded worker process and capture runtime exceptions as tracked Pharo DebugSession records with an immediate debug_state_get snapshot.'
+	^ 'Evaluate Smalltalk in a bounded worker process and capture runtime exceptions as tracked debug sessions.'
 ]
 
 { #category : 'defaults' }
@@ -44,54 +44,44 @@ MCPToolDebugCapture >> defaultInputSchema [
 				  (self
 					   schemaPropertyNamed: 'expression'
 					   type: 'string'
-					   description:
-						   'Smalltalk expression to evaluate in a forked worker process.').
+					   description: 'Smalltalk expression to evaluate.').
 				  (self
 					   schemaPropertyNamed: 'name'
 					   type: 'string'
-					   description:
-						   'Optional human-readable name for a captured debug session.').
+					   description: 'Optional debug session name.').
 				  (self
 					   integerSchemaPropertyNamed: 'timeoutMilliseconds'
-					   description:
-						   'Maximum time to wait for completion or capture. Values above the implementation cap are reduced.'
+					   description: 'Maximum wait before timeout.'
 					   default: MCPDebugCaptureRequest defaultTimeoutMilliseconds).
 				  (self
 					   integerSchemaPropertyNamed: 'resultPreviewCharacterLimit'
-					   description:
-						   'Maximum number of characters returned in resultPrintString.'
+					   description: 'Maximum completed-result preview characters.'
 					   default:
 						   MCPDebugCaptureRequest defaultResultPreviewCharacterLimit).
 				  (self
-					   integerSchemaPropertyNamed: 'sourceContextLines'
-					   description:
-						   'Number of source context lines requested in returned state.'
-					   default: 5).
+					   sourceContextLinesSchemaPropertyWithDescription:
+						   'Source lines around selected frame.'
+					   default: MCPDebugRequest defaultSourceContextLines).
 				  (self
-					   integerSchemaPropertyNamed: 'stackStart'
-					   description:
-						   'Zero-based stack frame offset for returned state.'
-					   default: 0).
+					   stackStartSchemaPropertyWithDescription:
+						   'Zero-based stack offset.'
+					   default: MCPDebugRequest defaultStackStart).
 				  (self
-					   integerSchemaPropertyNamed: 'stackLimit'
-					   description:
-						   'Maximum number of stack frames in returned state.'
-					   default: 20).
+					   stackLimitSchemaPropertyWithDescription:
+						   'Maximum stack frames.'
+					   default: MCPDebugRequest defaultStackLimit).
 				  (self
-					   integerSchemaPropertyNamed: 'variableDepth'
-					   description:
-						   'Inline variable preview depth in returned state.'
-					   default: 1).
+					   variableDepthSchemaPropertyWithDescription:
+						   'Inline variable preview depth.'
+					   default: MCPDebugRequest defaultVariableDepth).
 				  (self
-					   integerSchemaPropertyNamed: 'variableLimit'
-					   description:
-						   'Maximum number of variables to preview in returned state.'
-					   default: 50).
+					   variableLimitSchemaPropertyWithDescription:
+						   'Maximum variables per scope.'
+					   default: MCPDebugRequest defaultVariableLimit).
 				  (self
 					   booleanSchemaPropertyNamed: 'includeReceiver'
-					   description:
-						   'Whether returned state should include the receiver scope.'
-					   default: true) };
+					   description: 'Include receiver scope.'
+					   default: MCPDebugRequest defaultIncludeReceiver) };
 		  required: #( 'expression' );
 		  additionalProperties: false;
 		  yourself

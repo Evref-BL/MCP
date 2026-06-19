@@ -180,23 +180,24 @@ MCPDebugControlCommand >> performOperationOn: aDebugSession context: aContext re
 { #category : 'private - data' }
 MCPDebugControlCommand >> resultDataForRecord: aRecord previousStateId: previousStateId frameIndex: frameIndex operation: operationName [
 
-	| state warnings |
+	| data state warnings |
 	state := self
 		         stateSnapshotForRecord: aRecord
 		         operation: operationName.
 	warnings := self controlWarnings.
-	^ {
-		  (#sessionId -> aRecord sessionId).
-		  (#action -> operationName).
-		  (#previousStateId -> previousStateId).
-		  (#stateId -> aRecord stateId).
-		  (#status -> aRecord status).
-		  (#reason -> aRecord reason).
-		  (#frameRef
-		   -> (self frameRefForRecord: aRecord frameIndex: frameIndex)).
-		  (#state -> state).
-		  (#warnings -> warnings).
-		  (#capabilities -> self capabilities) } asDictionary
+	data := {
+		        (#sessionId -> aRecord sessionId).
+		        (#action -> operationName).
+		        (#previousStateId -> previousStateId).
+		        (#stateId -> aRecord stateId).
+		        (#status -> aRecord status).
+		        (#reason -> aRecord reason).
+		        (#frameRef
+		         -> (self frameRefForRecord: aRecord frameIndex: frameIndex)).
+		        (#state -> state).
+		        (#capabilities -> self capabilities) } asDictionary.
+	warnings ifNotEmpty: [ data at: #warnings put: warnings ].
+	^ data
 ]
 
 { #category : 'private - frames' }

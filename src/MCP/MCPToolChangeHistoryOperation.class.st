@@ -51,62 +51,51 @@ MCPToolChangeHistoryOperation >> defaultOutputSchema [
 	selectedEntriesProperty := self
 		                           changeHistoryEntryArraySchemaNamed:
 		                           'selectedEntries'
-		                           description:
-		                           'The selected source history entries resolved from indexes, entryReferences, range, or latestCount.'.
+		                           description: 'Selected source entries.'.
 	previewEntriesProperty := self
 		                          changeHistoryEntryArraySchemaNamed:
 		                          'previewEntries'
 		                          description:
-		                          'The current-image code changes Epicea would perform, or did perform, for the selected entries.'.
+		                          'Previewed current-image changes.'.
 	^ self
 		  standardOutputSchemaForDataProperties: {
 				  (self
 					   schemaPropertyNamed: 'action'
 					   type: 'string'
-					   description:
-					   'The performed or previewed action: apply or revert.').
+					   description: 'apply or revert.').
 				  (self
-					   schemaPropertyNamed: 'historyFilePath'
+					   schemaPropertyNamed: 'historyFileName'
 					   type: 'string'
-					   description: 'The history file selected from.').
+					   description: 'Selected history file name.').
 				  (self
 					   schemaPropertyNamed: 'selectionCriteria'
 					   type: 'object'
-					   description: 'The selection criteria used by this tool.').
+					   description: 'Normalized selection criteria.').
 				  selectedEntriesProperty.
 				  previewEntriesProperty.
 				  (self
 					   integerSchemaPropertyNamed: 'selectedCount'
-					   description: 'Number of selected source history entries.').
+					   description: 'Selected source entries.').
 				  (self
 					   integerSchemaPropertyNamed: 'selectedCodeChangeCount'
-					   description:
-					   'Number of selected source entries that are code changes.').
+					   description: 'Selected code changes.').
 				  (self
 					   integerSchemaPropertyNamed: 'skippedNonCodeChangeCount'
-					   description:
-					   'Number of selected source entries skipped because codeChangesOnly=true.').
+					   description: 'Skipped non-code entries.').
 				  (self
 					   integerSchemaPropertyNamed: 'previewCount'
-					   description: 'Number of previewed current-image changes.').
+					   description: 'Previewed changes.').
 				  (self
 					   booleanSchemaPropertyNamed: 'performed'
-					   description:
-					   'Whether this tool performed the previewed changes.').
+					   description: 'Whether changes were performed.').
 				  (self
 					   integerSchemaPropertyNamed: 'performedCount'
-					   description:
-					   'Number of previewed current-image changes performed.').
-				  (self
-					   schemaPropertyNamed: 'headReference'
-					   type: 'string'
-					   description: 'The history log head reference when known.') }
+					   description: 'Performed changes.') }
 		  required:
 			  #( 'action' 'selectionCriteria' 'selectedEntries'
 			     'previewEntries' 'selectedCount' 'selectedCodeChangeCount'
 			     'skippedNonCodeChangeCount' 'previewCount' 'performed'
 			     'performedCount' )
-
 ]
 
 { #category : 'defaults' }
@@ -129,40 +118,33 @@ MCPToolChangeHistoryOperation >> selectionInputProperties [
 
 	^ {
 		  (self
-			   schemaPropertyNamed: 'historyFilePath'
+			   schemaPropertyNamed: 'directoryPath'
 			   type: 'string'
-			   description:
-			   'Optional path to a .ombu change history file. Omit to use the current image change history.').
+			   description: 'Optional .ombu directory.').
+		  (self
+			   schemaPropertyNamed: 'historyFileName'
+			   type: 'string'
+			   description: 'Optional .ombu file name from history_file_list.').
 		  (self
 			   integerArraySchemaNamed: 'indexes'
 			   description:
-			   'One-based entry indexes returned by history_entry_list to select.'
-			   itemDescription: 'A one-based change history entry index.').
-		  (self
-			   stringArraySchemaNamed: 'entryReferences'
-			   description:
-			   'Entry references returned by history_entry_list. Short, global, and local reference strings are accepted.'
-			   itemDescription: 'A change history entry reference string.').
+			   'One-based entry indexes returned by history_entry_list.'
+			   itemDescription: 'Entry index.').
 		  (self
 			   integerSchemaPropertyNamed: 'startIndex'
-			   description:
-			   'First one-based entry index in an inclusive range. Must be provided with endIndex.').
+			   description: 'First one-based entry index in range.').
 		  (self
 			   integerSchemaPropertyNamed: 'endIndex'
-			   description:
-			   'Last one-based entry index in an inclusive range. Must be provided with startIndex.').
+			   description: 'Last one-based entry index in range.').
 		  (self
 			   integerSchemaPropertyNamed: 'latestCount'
-			   description:
-			   'Select the latest N entries from the chosen history. When codeChangesOnly=true, selects the latest N code changes.').
+			   description: 'Select latest N entries.').
 		  (self
 			   booleanSchemaPropertyNamed: 'codeChangesOnly'
-			   description:
-			   'Whether to select only entries that represent code changes.'
+			   description: 'Select only code changes.'
 			   default: true).
 		  (self
 			   booleanSchemaPropertyNamed: 'confirm'
-			   description:
-			   'False previews the selected changes; true performs the previewed changes.'
+			   description: 'False previews; true performs.'
 			   default: false) }
 ]

@@ -110,19 +110,19 @@ MCPToolMutation >> errorResultForActionFailure: anError action: action requested
 		  summary: summary
 ]
 
-{ #category : 'private' }
+{ #category : 'private - errors' }
 MCPToolMutation >> errorResultForCommandError: anError action: action requestedContext: requestedContext [
 
 	| details |
 	details := anError structuredDetails copy.
 	requestedContext ifNotNil: [
-			requestedContext keysAndValuesDo: [ :key :value |
-				value ifNotNil: [ details at: key ifAbsentPut: [ value ] ] ] ].
-	(#( 'create' 'update' ) includes: action)
+		requestedContext keysAndValuesDo: [ :key :value |
+			value ifNotNil: [ details at: key ifAbsentPut: [ value ] ] ] ].
+	(#( 'compile' 'create' 'update' ) includes: action)
 		ifTrue: [ details at: #action put: action ]
 		ifFalse: [
-				details at: #action put: 'update'.
-				details at: #updateAction put: action ].
+			details at: #action put: 'update'.
+			details at: #updateAction put: action ].
 	^ self errorResultText: anError messageText details: details
 ]
 
@@ -238,7 +238,7 @@ MCPToolMutation >> forceSchemaProperty [
 	^ self
 		  booleanSchemaPropertyNamed: 'force'
 		  description:
-		  'Controls refactoring warning handling. force=false stops on RBRefactoringWarning and returns an error with impactMessages, howToProceed, and forceSupported=true. force=true resumes past the warning and returns the warning text in warnings.'
+		  'Continue through refactoring warnings instead of stopping.'
 		  default: false
 ]
 
@@ -267,8 +267,9 @@ MCPToolMutation >> impactMessageForRefactoringCondition: aCondition [
 
 	| message |
 	message := String streamContents: [ :stream |
-		           aCondition violationMessageOn: stream ].
-	^ self normalizedSingleLineText: message
+		aCondition violationMessageOn: stream ].
+	^ self normalizedRefactoringConditionMessage:
+		(self normalizedSingleLineText: message)
 ]
 
 { #category : 'private - warnings' }
@@ -377,6 +378,14 @@ MCPToolMutation >> normalizedCommandErrorForRefactoringWarning: aWarning action:
 ]
 
 { #category : 'private - warnings' }
+MCPToolMutation >> normalizedRefactoringConditionMessage: aString [
+
+	(aString beginsWith: 'NOT ') ifTrue: [
+		^ (aString allButFirst: 4) trimBoth ].
+	^ aString
+]
+
+{ #category : 'private - warnings' }
 MCPToolMutation >> normalizedSingleLineText: aString [
 
 	| text |
@@ -455,9 +464,8 @@ MCPToolMutation >> refactoringScopeClassNamesSchemaProperty [
 
 	^ self
 		  stringArraySchemaNamed: 'classNames'
-		  description:
-		  'Limit the refactoring model to these exact classes. The target class must be included when a target class is provided.'
-		  itemDescription: 'A class name.'
+		  description: 'Scope classes; include target.'
+		  itemDescription: 'Class name.'
 ]
 
 { #category : 'private - schema' }
@@ -465,9 +473,8 @@ MCPToolMutation >> refactoringScopeHierarchyClassNamesSchemaProperty [
 
 	^ self
 		  stringArraySchemaNamed: 'hierarchyClassNames'
-		  description:
-		  'Limit the refactoring model to each named class, its superclasses, and its subclasses. The target class must be in the resulting scope.'
-		  itemDescription: 'A class name whose hierarchy is included.'
+		  description: 'Scope hierarchies; include target.'
+		  itemDescription: 'Hierarchy root.'
 ]
 
 { #category : 'private - schema' }
@@ -475,9 +482,8 @@ MCPToolMutation >> refactoringScopePackageNamesSchemaProperty [
 
 	^ self
 		  stringArraySchemaNamed: 'packageNames'
-		  description:
-		  'Limit the refactoring model to classes and methods in these packages. The target class must be in the resulting scope.'
-		  itemDescription: 'A package name.'
+		  description: 'Scope packages; include target.'
+		  itemDescription: 'Package name.'
 ]
 
 { #category : 'private - request' }

@@ -34,65 +34,52 @@ MCPToolChangeHistory >> changeHistoryEntrySchemaProperty [
 
 	^ MCPStructureProperties new
 		  type: 'object';
-		  description: 'Structured metadata for one change history entry.';
+		  description: 'Change history entry.';
 		  properties: {
 				  (self
 					   integerSchemaPropertyNamed: 'index'
-					   description:
-						   'The one-based entry index in the source history log.').
-				  (self
-					   schemaPropertyNamed: 'reference'
-					   type: 'string'
-					   description:
-						   'A short entry reference accepted by entryReferences.').
-				  (self
-					   schemaPropertyNamed: 'globalName'
-					   type: 'string'
-					   description: 'The global entry reference name when available.').
-				  (self
-					   schemaPropertyNamed: 'localName'
-					   type: 'string'
-					   description: 'The local entry reference name when available.').
+					   description: 'One-based entry index.').
 				  (self
 					   schemaPropertyNamed: 'eventClassName'
 					   type: 'string'
-					   description: 'The Epicea event class name.').
+					   description: 'Event class name.').
 				  (self
 					   schemaPropertyNamed: 'summary'
 					   type: 'string'
-					   description: 'A printable event summary.').
+					   description: 'Specific entry summary.').
 				  (self
-					   booleanSchemaPropertyNamed: 'isCodeChange'
-					   description: 'Whether the entry represents a code change.').
+					   stringEnumSchemaPropertyNamed: 'entryKind'
+					   description: 'Entry kind.'
+					   values: #( 'code' 'session' 'other' )
+					   default: 'code').
 				  (self
 					   schemaPropertyNamed: 'time'
 					   type: 'string'
-					   description: 'The entry timestamp when available.').
+					   description: 'Entry time.').
 				  (self
 					   schemaPropertyNamed: 'triggerReference'
 					   type: 'string'
-					   description: 'The triggerer entry reference when available.').
+					   description: 'Trigger reference.').
 				  (self
 					   schemaPropertyNamed: 'packageName'
 					   type: 'string'
-					   description: 'The affected package name when available.').
+					   description: 'Package name.').
 				  (self
 					   schemaPropertyNamed: 'behaviorName'
 					   type: 'string'
-					   description:
-						   'The affected behavior or class name when available.').
+					   description: 'Class or trait name.').
 				  (self
 					   booleanSchemaPropertyNamed: 'classSide'
-					   description:
-						   'Whether the affected behavior is class-side when known.').
+					   description: 'Whether method is class-side.').
 				  (self
 					   schemaPropertyNamed: 'selector'
 					   type: 'string'
-					   description: 'The affected selector when available.').
+					   description: 'Method selector.').
 				  (self
 					   schemaPropertyNamed: 'protocol'
 					   type: 'string'
-					   description: 'The affected method protocol when available.') };
+					   description: 'Method protocol.') };
+		  required: #( 'index' 'eventClassName' );
 		  additionalProperties: false;
 		  yourself
 ]
@@ -102,48 +89,26 @@ MCPToolChangeHistory >> changeHistoryLogSchemaProperty [
 
 	^ MCPStructureProperties new
 		  type: 'object';
-		  description: 'Structured metadata for one change history file.';
+		  description: 'Change history file.';
 		  properties: {
-				  (self
-					   schemaPropertyNamed: 'path'
-					   type: 'string'
-					   description: 'The absolute file path.').
 				  (self
 					   schemaPropertyNamed: 'fileName'
 					   type: 'string'
-					   description: 'The history file basename.').
-				  (self
-					   schemaPropertyNamed: 'storeName'
-					   type: 'string'
-					   description: 'The Epicea store name, currently the file name.').
+					   description: 'File name.').
 				  (self
 					   booleanSchemaPropertyNamed: 'exists'
-					   description: 'Whether the file exists.').
+					   description: 'False when listed file is missing.').
 				  (self
 					   integerSchemaPropertyNamed: 'fileSize'
-					   description: 'The file size in bytes when known.').
+					   description: 'File size in bytes.').
 				  (self
 					   schemaPropertyNamed: 'modificationTime'
 					   type: 'string'
-					   description: 'The file modification time when known.').
-				  (self
-					   integerSchemaPropertyNamed: 'entriesCount'
-					   description:
-						   'The number of history entries when includeEntryCounts=true and the file can be loaded.').
-				  (self
-					   schemaPropertyNamed: 'headReference'
-					   type: 'string'
-					   description:
-						   'The head entry reference when includeEntryCounts=true and the file can be loaded.').
+					   description: 'Modification time.').
 				  (self
 					   booleanSchemaPropertyNamed: 'isCurrent'
-					   description:
-						   'Whether this file is the current image change history file.').
-				  (self
-					   schemaPropertyNamed: 'loadError'
-					   type: 'string'
-					   description:
-						   'The load error text when includeEntryCounts=true and the file cannot be loaded.') };
+					   description: 'True for current image history file.') };
+		  required: #( 'fileName' );
 		  additionalProperties: false;
 		  yourself
 ]

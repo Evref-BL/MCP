@@ -29,12 +29,14 @@ MCPGetClassCommand >> execute [
 	data := tool
 		        descriptionDictionaryForClass: targetClass
 		        includeComment: request includeComment.
-	data at: #superclasses put: (tool
-			 descriptionDictionariesForClasses: superclasses
-			 includeComment: request includeComment).
-	data at: #subclasses put: (tool
-			 descriptionDictionariesForClasses: subclasses
-			 includeComment: request includeComment).
+	superclasses ifNotEmpty: [
+			data at: #superclasses put: (tool
+					 descriptionDictionariesForClasses: superclasses
+					 includeComment: request includeComment) ].
+	subclasses ifNotEmpty: [
+			data at: #subclasses put: (tool
+					 descriptionDictionariesForClasses: subclasses
+					 includeComment: request includeComment) ].
 	^ MCPGetClassResult
 		  className: request className
 		  data: data

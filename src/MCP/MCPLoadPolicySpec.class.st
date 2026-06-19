@@ -69,6 +69,21 @@ MCPLoadPolicySpec class >> signalIfGlobalField: fieldName isCombinedIn: request 
 		details: { (#field -> fieldName) } asDictionary
 ]
 
+{ #category : 'private - parsing' }
+MCPLoadPolicySpec class >> signalIfPolicyField: fieldName isPresentIn: policy withAny: projectCollections [
+
+	(((policy includesKey: fieldName asSymbol) or: [
+		  policy includesKey: fieldName asString ]) and: [
+		 projectCollections anySatisfy: [ :each | each notEmpty ] ])
+		ifFalse: [ ^ self ].
+	MCPCommandError
+		signalErrorCode: #AmbiguousLoadPolicy
+		message: fieldName
+			,
+			' cannot be combined with project-specific Metacello policy lists.'
+		details: { (#field -> fieldName) } asDictionary
+]
+
 { #category : 'private - applying' }
 MCPLoadPolicySpec >> applyConflictPolicyTo: metacello [
 
@@ -82,7 +97,7 @@ MCPLoadPolicySpec >> applyConflictPolicyTo: metacello [
 		^ metacello onConflictUseIncoming ].
 	self onConflict = 'pass' ifTrue: [ ^ self ].
 	self
-		signalUnsupportedPolicyNamed: 'onConflict'
+		signalUnsupportedPolicyNamed: 'conflict'
 		allowedValues: #( 'useLoaded' 'useIncoming' 'pass' )
 ]
 
@@ -95,7 +110,7 @@ MCPLoadPolicySpec >> applyDowngradePolicyTo: metacello [
 		^ metacello onDowngradeUseIncoming ].
 	self onDowngrade = 'pass' ifTrue: [ ^ self ].
 	self
-		signalUnsupportedPolicyNamed: 'onDowngrade'
+		signalUnsupportedPolicyNamed: 'downgrade'
 		allowedValues: #( 'useIncoming' 'pass' )
 ]
 
@@ -107,7 +122,7 @@ MCPLoadPolicySpec >> applyLockPolicyTo: metacello [
 	self onLock = 'break' ifTrue: [ ^ metacello onLockBreak ].
 	self onLock = 'pass' ifTrue: [ ^ self ].
 	self
-		signalUnsupportedPolicyNamed: 'onLock'
+		signalUnsupportedPolicyNamed: 'lock'
 		allowedValues: #( 'break' 'pass' )
 ]
 
@@ -131,7 +146,7 @@ MCPLoadPolicySpec >> applyUpgradePolicyTo: metacello [
 		^ metacello onUpgradeUseLoaded ].
 	self onUpgrade = 'pass' ifTrue: [ ^ self ].
 	self
-		signalUnsupportedPolicyNamed: 'onUpgrade'
+		signalUnsupportedPolicyNamed: 'upgrade'
 		allowedValues: #( 'useLoaded' 'pass' )
 ]
 
@@ -143,24 +158,36 @@ MCPLoadPolicySpec >> applyWarningPolicyTo: metacello [
 		^ metacello onWarning: [ :warning | warning resume ] ].
 	self onWarning = 'pass' ifTrue: [ ^ self ].
 	self
-		signalUnsupportedPolicyNamed: 'onWarning'
+		signalUnsupportedPolicyNamed: 'warning'
 		allowedValues: #( 'log' 'resume' 'pass' )
 ]
 
 { #category : 'converting' }
 MCPLoadPolicySpec >> asDictionary [
 
-	^ {
-		  (#onWarning -> self onWarning).
-		  (#onConflict -> self onConflict).
-		  (#onConflictUseIncoming -> self onConflictUseIncoming).
-		  (#onConflictUseLoaded -> self onConflictUseLoaded).
-		  (#onUpgrade -> self onUpgrade).
-		  (#onUpgradeUseLoaded -> self onUpgradeUseLoaded).
-		  (#onDowngrade -> self onDowngrade).
-		  (#onDowngradeUseIncoming -> self onDowngradeUseIncoming).
-		  (#onLock -> self onLock).
-		  (#onLockBreak -> self onLockBreak) } asDictionary
+	| data |
+	data := Dictionary new.
+	self onWarning = 'log' ifFalse: [
+		data at: #warning put: self onWarning ].
+	self onConflict = 'useLoaded' ifFalse: [
+		data at: #conflict put: self onConflict ].
+	self onConflictUseIncoming ifNotEmpty: [ :projects |
+		data at: #conflictUseIncoming put: projects ].
+	self onConflictUseLoaded ifNotEmpty: [ :projects |
+		data at: #conflictUseLoaded put: projects ].
+	self onUpgrade = self class defaultOnUpgrade ifFalse: [
+		data at: #upgrade put: self onUpgrade ].
+	self onUpgradeUseLoaded ifNotEmpty: [ :projects |
+		data at: #upgradeUseLoaded put: projects ].
+	self onDowngrade = self class defaultOnDowngrade ifFalse: [
+		data at: #downgrade put: self onDowngrade ].
+	self onDowngradeUseIncoming ifNotEmpty: [ :projects |
+		data at: #downgradeUseIncoming put: projects ].
+	self onLock = self class defaultOnLock ifFalse: [
+		data at: #lock put: self onLock ].
+	self onLockBreak ifNotEmpty: [ :projects |
+		data at: #lockBreak put: projects ].
+	^ data
 ]
 
 { #category : 'testing' }
@@ -191,61 +218,76 @@ MCPLoadPolicySpec >> hasProjectSpecificUpgradePolicy [
 { #category : 'initialization' }
 MCPLoadPolicySpec >> initializeFromRequest: request tool: aTool [
 
-	onConflictUseIncoming := request
-		                         uniqueStringCollectionArgumentNamed:
-		                         'onConflictUseIncoming'
-		                         default: #(  ).
-	onConflictUseLoaded := request
-		                       uniqueStringCollectionArgumentNamed:
-		                       'onConflictUseLoaded'
-		                       default: #(  ).
-	onUpgradeUseLoaded := request
-		                      uniqueStringCollectionArgumentNamed:
-		                      'onUpgradeUseLoaded'
-		                      default: #(  ).
-	onDowngradeUseIncoming := request
-		                          uniqueStringCollectionArgumentNamed:
-		                          'onDowngradeUseIncoming'
-		                          default: #(  ).
-	onLockBreak := request
-		               uniqueStringCollectionArgumentNamed: 'onLockBreak'
-		               default: #(  ).
+	| policy |
+	policy := request
+		          argumentNamed: 'policy'
+		          ifAbsent: [ Dictionary new ].
+	onConflictUseIncoming := request uniqueStringCollectionFrom:
+		                         (request
+			                          stringCollectionArgumentNamed:
+			                          'conflictUseIncoming'
+			                          in: policy).
+	onConflictUseLoaded := request uniqueStringCollectionFrom:
+		                       (request
+			                        stringCollectionArgumentNamed:
+			                        'conflictUseLoaded'
+			                        in: policy).
+	onUpgradeUseLoaded := request uniqueStringCollectionFrom:
+		                      (request
+			                       stringCollectionArgumentNamed:
+			                       'upgradeUseLoaded'
+			                       in: policy).
+	onDowngradeUseIncoming := request uniqueStringCollectionFrom:
+		                          (request
+			                           stringCollectionArgumentNamed:
+			                           'downgradeUseIncoming'
+			                           in: policy).
+	onLockBreak := request uniqueStringCollectionFrom:
+		               (request
+			                stringCollectionArgumentNamed: 'lockBreak'
+			                in: policy).
 	self class
-		signalIfGlobalField: 'onConflict'
-		isCombinedIn: request
+		signalIfPolicyField: 'conflict'
+		isPresentIn: policy
 		withAny: {
 				onConflictUseIncoming.
 				onConflictUseLoaded }.
 	self class
-		signalIfGlobalField: 'onUpgrade'
-		isCombinedIn: request
+		signalIfPolicyField: 'upgrade'
+		isPresentIn: policy
 		withAny: { onUpgradeUseLoaded }.
 	self class
-		signalIfGlobalField: 'onDowngrade'
-		isCombinedIn: request
+		signalIfPolicyField: 'downgrade'
+		isPresentIn: policy
 		withAny: { onDowngradeUseIncoming }.
 	self class
-		signalIfGlobalField: 'onLock'
-		isCombinedIn: request
+		signalIfPolicyField: 'lock'
+		isPresentIn: policy
 		withAny: { onLockBreak }.
 	onWarning := request
-		             stringArgumentNamed: 'onWarning'
+		             stringArgumentNamed: 'warning'
+		             in: policy
 		             default: aTool defaultOnWarning.
-	onConflict := self class
-		              conflictPolicyFromRequest: request
-		              tool: aTool
-		              useIncoming: onConflictUseIncoming
-		              useLoaded: onConflictUseLoaded.
+	onConflict := (onConflictUseIncoming isEmpty and: [
+		               onConflictUseLoaded isEmpty ])
+		              ifTrue: [
+				              request
+					              stringArgumentNamed: 'conflict'
+					              in: policy
+					              default: aTool defaultOnConflict ]
+		              ifFalse: [ 'pass' ].
 	onUpgrade := request
-		             stringArgumentNamed: 'onUpgrade'
+		             stringArgumentNamed: 'upgrade'
+		             in: policy
 		             default: self class defaultOnUpgrade.
 	onDowngrade := request
-		               stringArgumentNamed: 'onDowngrade'
+		               stringArgumentNamed: 'downgrade'
+		               in: policy
 		               default: self class defaultOnDowngrade.
 	onLock := request
-		          stringArgumentNamed: 'onLock'
-		          default: self class defaultOnLock.
-	^ self
+		          stringArgumentNamed: 'lock'
+		          in: policy
+		          default: self class defaultOnLock
 ]
 
 { #category : 'accessing' }

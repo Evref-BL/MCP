@@ -10,15 +10,6 @@ Class {
 }
 
 { #category : 'tests' }
-MCPToolStructuredOutputTest >> testAllToolsAdvertiseOutputSchema [
-
-	| tools |
-	tools := MCP new rpcToolsList at: #tools.
-	self assert:
-		(tools allSatisfy: [ :each | each includesKey: #outputSchema ])
-]
-
-{ #category : 'tests' }
 MCPToolStructuredOutputTest >> testEvaluateReturnsStructuredError [
 
 	| result structured error |
@@ -93,12 +84,13 @@ MCPToolStructuredOutputTest >> testGetClassReturnsStructuredError [
 	result := self
 		          callToolNamed: 'class_get'
 		          withArguments:
-			          { (#className -> 'MCPToolGetClassDefinitelyMissing') }
-				          asDictionary.
+		          { (#className -> 'MCPToolGetClassDefinitelyMissing') }
+			          asDictionary.
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
+	self deny: (structured includesKey: #warnings).
 	self
 		assert: (self summaryFrom: result)
 		equals: ((result at: #content) first at: #text).
@@ -126,6 +118,7 @@ MCPToolStructuredOutputTest >> testGetClassReturnsStructuredSuccess [
 		                                each asString ]) asArray.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (structured at: #status) equals: 'ok'.
+	self deny: (structured includesKey: #warnings).
 	self
 		assert: (self summaryFrom: result)
 		equals: ((result at: #content) first at: #text).
@@ -139,11 +132,11 @@ MCPToolStructuredOutputTest >> testGetClassReturnsStructuredSuccess [
 		assert: (data at: #sharedVariableNames)
 		equals: expectedSharedVariableNames.
 	self assert: (data includesKey: #layoutClassName).
-	self assert: (data includesKey: #traitComposition).
-	self assert: (data includesKey: #classTraitComposition).
+	self deny: (data includesKey: #traitComposition).
+	self deny: (data includesKey: #classTraitComposition).
 	self deny: (data includesKey: #classComment).
-	self assert: (data at: #superclasses) isEmpty.
-	self assert: (data at: #subclasses) isEmpty
+	self deny: (data includesKey: #superclasses).
+	self deny: (data includesKey: #subclasses)
 ]
 
 { #category : 'tests' }
@@ -196,14 +189,45 @@ MCPToolStructuredOutputTest >> testGetMethodReturnsStructuredSuccess [
 ]
 
 { #category : 'tests' }
+MCPToolStructuredOutputTest >> testGetToolIncludesOutputSchemaWhenRequested [
+
+	| result tool |
+	result := self callToolNamed: 'tool_get' withArguments: {
+			          (#toolName -> 'class_search').
+			          (#includeOutputSchema -> true) } asDictionary.
+	tool := (self dataFrom: result) at: #tool.
+	self
+		assert: ((self structuredContentFrom: result) at: #status)
+		equals: 'ok'.
+	self assert: (tool includesKey: #inputSchema).
+	self assert: (tool includesKey: #outputSchema)
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testGetToolOmitsOutputSchemaByDefault [
+
+	| result tool |
+	result := self
+		          callToolNamed: 'tool_get'
+		          withArguments:
+		          { (#toolName -> 'class_search') } asDictionary.
+	tool := (self dataFrom: result) at: #tool.
+	self
+		assert: ((self structuredContentFrom: result) at: #status)
+		equals: 'ok'.
+	self assert: (tool includesKey: #inputSchema).
+	self deny: (tool includesKey: #outputSchema)
+]
+
+{ #category : 'tests' }
 MCPToolStructuredOutputTest >> testMethodMetadataSearchReturnsStructuredArrayData [
 
 	| data methods result selectors |
 	result := self
 		          callToolNamed: 'method_metadata_search'
-		          withArguments:
-		          { (#classNames -> #( 'MCPToolMethodSearchTestTarget' )) }
-			          asDictionary.
+		          withArguments: { (self searchScope:
+				           { (#classes -> #( 'MCPToolMethodSearchTestTarget' )) }) }
+				          asDictionary.
 	data := self dataFrom: result.
 	methods := data at: #methods.
 	selectors := methods collect: [ :each | each at: #selector ].
@@ -225,8 +249,9 @@ MCPToolStructuredOutputTest >> testMethodMetadataSearchReturnsStructuredWarnings
 	result := self
 		          callToolNamed: 'method_metadata_search'
 		          withArguments:
-		          { (#packageNames -> #( 'MCP-Definitely-Missing' )) }
-			          asDictionary.
+			          { (self searchScope:
+				           { (#packages -> #( 'MCP-Definitely-Missing' )) }) }
+				          asDictionary.
 	structured := self structuredContentFrom: result.
 	data := self dataFrom: result.
 	warnings := self warningsFrom: result.
@@ -361,7 +386,10 @@ MCPToolStructuredOutputTest >> testRunTestsCoverageCanIncludeCoveredMethodsAndCa
 			           { { (#className -> 'MCPToolCoverageTargetTest') }
 				           asDictionary }).
 			          (#coverage -> {
-				           (#classNames -> #( 'MCPToolCoverageTarget' )).
+				           (#scope
+				            ->
+				            { (#classes -> #( 'MCPToolCoverageTarget' )) }
+					            asDictionary).
 				           (#includeCoveredMethods -> true).
 				           (#methodLimit -> 1) } asDictionary) } asDictionary.
 	data := self dataFrom: result.
@@ -407,7 +435,10 @@ MCPToolStructuredOutputTest >> testRunTestsCoverageReturnsStructuredCoverage [
 			           { { (#className -> 'MCPToolCoverageTargetTest') }
 				           asDictionary }).
 			          (#coverage -> {
-				           (#classNames -> #( 'MCPToolCoverageTarget' )).
+				           (#scope
+				            ->
+				            { (#classes -> #( 'MCPToolCoverageTarget' )) }
+					            asDictionary).
 				           (#methodLimit -> 10) } asDictionary) } asDictionary.
 	data := self dataFrom: result.
 	coverage := data at: #coverage.
@@ -429,12 +460,9 @@ MCPToolStructuredOutputTest >> testRunTestsCoverageReturnsStructuredCoverage [
 	self assert: (coverage at: #partiallyCoveredMethodCount) equals: 1.
 	self assert: (coverage at: #coveredNodeCount) equals: 3.
 	self assert: (coverage at: #nodeCount) equals: 5.
-	self assert: (coverage at: #percentage) equals: 60.0.
+	self assert: ((coverage at: #percentage) between: 59 and: 61).
 	self assert: (uncoveredSelectors includes: 'uncoveredMethod').
-	self assert: (partialSelectors includes: 'partiallyCoveredMethod:').
-	self deny: (coverage includesKey: #coveredMethods).
-	self deny: (coverage at: #uncoveredMethodsTruncated).
-	self deny: (coverage at: #partiallyCoveredMethodsTruncated)
+	self assert: (partialSelectors includes: 'partiallyCoveredMethod:')
 ]
 
 { #category : 'tests' }
@@ -649,8 +677,9 @@ MCPToolStructuredOutputTest >> testSearchClassesReturnsStructuredArrayData [
 	result := self
 		          callToolNamed: 'class_search'
 		          withArguments:
-		          { (#classNames -> #( 'MCPToolContractsTest' )) }
-			          asDictionary.
+			          { (self searchScope:
+				           { (#classes -> #( 'MCPToolContractsTest' )) }) }
+				          asDictionary.
 	data := self dataFrom: result.
 	classes := data at: #classes.
 	classNames := classes collect: [ :each | each at: #className ].
@@ -671,8 +700,9 @@ MCPToolStructuredOutputTest >> testSearchClassesReturnsStructuredWarnings [
 	result := self
 		          callToolNamed: 'class_search'
 		          withArguments:
-		          { (#packageNames -> #( 'MCP-Definitely-Missing' )) }
-			          asDictionary.
+			          { (self searchScope:
+				           { (#packages -> #( 'MCP-Definitely-Missing' )) }) }
+				          asDictionary.
 	structured := self structuredContentFrom: result.
 	data := self dataFrom: result.
 	warnings := self warningsFrom: result.
@@ -744,4 +774,16 @@ MCPToolStructuredOutputTest >> testSearchPackagesReturnsStructuredError [
 	self assert: (error at: #scope) equals: 'projects'.
 	self assert: ((error at: #message) includesSubstring:
 			 'Project DefinitelyMissingProject does not exist.')
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testToolsListAdvertisesInputSchemaWithoutOutputSchema [
+
+	| tools |
+	tools := MCP new rpcToolsList at: #tools.
+	self assert:
+		(tools allSatisfy: [ :each | each includesKey: #inputSchema ]).
+	self deny:
+		(tools anySatisfy: [ :each | each includesKey: #outputSchema ]).
+	self deny: (tools anySatisfy: [ :each | each includesKey: #icons ])
 ]

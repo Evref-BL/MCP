@@ -1,5 +1,5 @@
 "
-Structured result DTO for a method update. It combines the selected update plan with the narrow change result returned by the internal action.
+Compact public result for a method update selected and executed by a method mutation tool.
 "
 Class {
 	#name : 'MCPMethodAppliedChangeResult',
@@ -23,24 +23,9 @@ MCPMethodAppliedChangeResult class >> updatePlan: anUpdatePlan changeResult: aCh
 ]
 
 { #category : 'converting' }
-MCPMethodAppliedChangeResult >> appliedChangeDictionary [
-
-	^ {
-		  (#updateAction -> self updateAction).
-		  (#resultClassName -> self changeResult class name asString).
-		  (#result -> self changeResult asDictionary) } asDictionary
-]
-
-{ #category : 'converting' }
 MCPMethodAppliedChangeResult >> asDictionary [
 
-	| data |
-	data := self changeResult asDictionary copy.
-	data at: #action put: 'update'.
-	data at: #updateAction put: self updateAction.
-	data at: #updatePlan put: self updatePlan asDictionary.
-	data at: #appliedChange put: self appliedChangeDictionary.
-	^ data
+	^ self changeResult asDictionary copy
 ]
 
 { #category : 'accessing' }

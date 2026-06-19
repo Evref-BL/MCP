@@ -5,9 +5,9 @@ Class {
 	#name : 'MCPChangeHistoryListLogsResult',
 	#superclass : 'Object',
 	#instVars : [
-		'currentLogPath',
 		'logs',
-		'directoryPath'
+		'directoryPath',
+		'nextOffset'
 	],
 	#category : 'MCP-Results',
 	#package : 'MCP',
@@ -15,46 +15,25 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPChangeHistoryListLogsResult class >> currentLogPath: currentPath directoryPath: scannedPath logs: logInfos [
+MCPChangeHistoryListLogsResult class >> directoryPath: scannedPath page: aPage [
 
 	^ self new
-		  currentLogPath: currentPath;
 		  directoryPath: scannedPath;
-		  logs: logInfos;
-		  yourself
-]
-
-{ #category : 'instance creation' }
-MCPChangeHistoryListLogsResult class >> currentLogPath: aPath logs: logInfos [
-
-	^ self new
-		  currentLogPath: aPath;
-		  logs: logInfos;
+		  logs: aPage entries;
+		  nextOffset: aPage nextOffset;
 		  yourself
 ]
 
 { #category : 'converting' }
 MCPChangeHistoryListLogsResult >> asDictionary [
 
-	^ {
-		  (#action -> 'listFiles').
-		  (#currentLogPath -> self currentLogPath).
-		  (#directoryPath -> self directoryPath).
-		  (#files
-		   -> ((self logs collect: [ :each | each asDictionary ]) as: Array)) }
-		  asDictionary
-]
-
-{ #category : 'accessing' }
-MCPChangeHistoryListLogsResult >> currentLogPath [
-
-	^ currentLogPath
-]
-
-{ #category : 'accessing' }
-MCPChangeHistoryListLogsResult >> currentLogPath: aPath [
-
-	currentLogPath := aPath
+	| data |
+	data := Dictionary new.
+	data
+		at: #files
+		put: ((self logs collect: [ :each | each asDictionary ]) as: Array).
+	nextOffset ifNotNil: [ :offset | data at: #nextOffset put: offset ].
+	^ data
 ]
 
 { #category : 'accessing' }
@@ -79,4 +58,16 @@ MCPChangeHistoryListLogsResult >> logs [
 MCPChangeHistoryListLogsResult >> logs: aCollection [
 
 	logs := aCollection ifNil: [ #(  ) ]
+]
+
+{ #category : 'accessing' }
+MCPChangeHistoryListLogsResult >> nextOffset [
+
+	^ nextOffset
+]
+
+{ #category : 'accessing' }
+MCPChangeHistoryListLogsResult >> nextOffset: anIntegerOrNil [
+
+	nextOffset := anIntegerOrNil
 ]

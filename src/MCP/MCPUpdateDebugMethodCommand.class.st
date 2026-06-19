@@ -147,7 +147,7 @@ MCPUpdateDebugMethodCommand >> compiledMethodForContext: aContext [
 { #category : 'private - data' }
 MCPUpdateDebugMethodCommand >> critiqueDataForMethod: aCompiledMethod [
 
-	^ MCPToolCreateMethod new critiqueDataForMethod: aCompiledMethod
+	^ MCPToolCompileMethod new critiqueDataForMethod: aCompiledMethod
 
 ]
 
@@ -406,7 +406,7 @@ MCPUpdateDebugMethodCommand >> recompileContext: aContext record: aRecord update
 { #category : 'private - data' }
 MCPUpdateDebugMethodCommand >> resultDataUsing: details critiques: critiques proceedData: proceedData [
 
-	| methodData record repairActions state warnings |
+	| data methodData record repairActions state warnings |
 	record := details at: #record.
 	state := self stateDataForRecord: record.
 	repairActions := state
@@ -415,24 +415,26 @@ MCPUpdateDebugMethodCommand >> resultDataUsing: details critiques: critiques pro
 		                 state at: #repairActions ifAbsent: [ #(  ) ] ].
 	warnings := tool updateWarnings.
 	methodData := self methodDataFor: (details at: #method).
-	^ {
-		  (#sessionId -> record sessionId).
-		  (#previousStateId -> (details at: #previousStateId)).
-		  (#stateId -> record stateId).
-		  (#frameRef -> (details at: #frameRef)).
-		  (#updateKind -> (details at: #updateKind)).
-		  (#method -> methodData).
-		  (#critiques -> critiques).
-		  (#proceeded -> (proceedData at: #proceeded)).
-		  (#blockedByCritiques -> (proceedData at: #blockedByCritiques)).
-		  (#proceedOutcome -> (proceedData at: #proceedOutcome)).
-		  (#resultClassName -> (proceedData at: #resultClassName)).
-		  (#resultPrintString -> (proceedData at: #resultPrintString)).
-		  (#timedOut -> (proceedData at: #timedOut)).
-		  (#state -> state).
-		  (#repairActions -> repairActions).
-		  (#warnings -> warnings).
-		  (#capabilities -> self capabilities) } asDictionary
+	data := {
+		        (#sessionId -> record sessionId).
+		        (#previousStateId -> (details at: #previousStateId)).
+		        (#stateId -> record stateId).
+		        (#frameRef -> (details at: #frameRef)).
+		        (#updateKind -> (details at: #updateKind)).
+		        (#method -> methodData).
+		        (#critiques -> critiques).
+		        (#proceeded -> (proceedData at: #proceeded)).
+		        (#blockedByCritiques
+		         -> (proceedData at: #blockedByCritiques)).
+		        (#proceedOutcome -> (proceedData at: #proceedOutcome)).
+		        (#resultClassName -> (proceedData at: #resultClassName)).
+		        (#resultPrintString -> (proceedData at: #resultPrintString)).
+		        (#timedOut -> (proceedData at: #timedOut)).
+		        (#state -> state).
+		        (#repairActions -> repairActions).
+		        (#capabilities -> self capabilities) } asDictionary.
+	warnings ifNotEmpty: [ data at: #warnings put: warnings ].
+	^ data
 ]
 
 { #category : 'private - frames' }
@@ -492,7 +494,7 @@ MCPUpdateDebugMethodCommand >> signalRequiredMethodSourceForRecord: aRecord fram
 	^ MCPCommandError
 		  signalErrorCode: #DebugMethodUpdateMethodSourceRequired
 		  message:
-		  'debug_method_update requires methodSource for ' , updateKind , '.'
+		  'debug_method_update requires source for ' , updateKind , '.'
 		  details: {
 				  (#sessionId -> aRecord sessionId).
 				  (#stateId -> aRecord stateId).

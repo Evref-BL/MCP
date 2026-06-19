@@ -6,12 +6,10 @@ Class {
 	#superclass : 'Object',
 	#instVars : [
 		'index',
-		'reference',
-		'globalName',
-		'localName',
 		'eventClassName',
 		'summary',
 		'isCodeChange',
+		'entryKind',
 		'time',
 		'triggerReference',
 		'packageName',
@@ -85,21 +83,23 @@ MCPChangeHistoryEntryInfo >> addPackageTagChangeInfoFrom: aPackageTagChange [
 { #category : 'converting' }
 MCPChangeHistoryEntryInfo >> asDictionary [
 
-	^ {
-		  (#index -> index).
-		  (#reference -> reference).
-		  (#globalName -> globalName).
-		  (#localName -> localName).
-		  (#eventClassName -> eventClassName).
-		  (#summary -> summary).
-		  (#isCodeChange -> isCodeChange).
-		  (#time -> time).
-		  (#triggerReference -> triggerReference).
-		  (#packageName -> packageName).
-		  (#behaviorName -> behaviorName).
-		  (#classSide -> classSide).
-		  (#selector -> selector).
-		  (#protocol -> protocol) } asDictionary
+	| data |
+	data := Dictionary new.
+	index ifNotNil: [ data at: #index put: index ].
+	eventClassName ifNotNil: [
+		data at: #eventClassName put: eventClassName ].
+	(summary notNil and: [ summary ~= ('an ' , eventClassName) ])
+		ifTrue: [ data at: #summary put: summary ].
+	entryKind ifNotNil: [ data at: #entryKind put: entryKind ].
+	time ifNotNil: [ data at: #time put: time ].
+	triggerReference ifNotNil: [
+		data at: #triggerReference put: triggerReference ].
+	packageName ifNotNil: [ data at: #packageName put: packageName ].
+	behaviorName ifNotNil: [ data at: #behaviorName put: behaviorName ].
+	classSide ifNotNil: [ data at: #classSide put: classSide ].
+	selector ifNotNil: [ data at: #selector put: selector ].
+	protocol ifNotNil: [ data at: #protocol put: protocol ].
+	^ data
 ]
 
 { #category : 'private' }
@@ -115,14 +115,15 @@ MCPChangeHistoryEntryInfo >> initializeEventFieldsFrom: anEvent [
 	eventClassName := anEvent class name asString.
 	summary := anEvent printString.
 	isCodeChange := anEvent isCodeChange.
-	isCodeChange ifTrue: [ anEvent mcpAddChangeHistoryInfoTo: self ]
+	isCodeChange
+		ifTrue: [ anEvent mcpAddChangeHistoryInfoTo: self ]
+		ifFalse: [ entryKind := anEvent mcpChangeHistoryEntryKind ]
 ]
 
 { #category : 'initialization' }
 MCPChangeHistoryEntryInfo >> initializeFromEntry: anEntry index: anInteger log: aLog [
 
 	index := anInteger.
-	self initializeReferenceFieldsFrom: (aLog referenceTo: anEntry).
 	self initializeEventFieldsFrom: anEntry content.
 	self initializeTimeFromEntry: anEntry log: aLog.
 	self initializeTriggerReferenceFromEntry: anEntry log: aLog
@@ -132,14 +133,6 @@ MCPChangeHistoryEntryInfo >> initializeFromEntry: anEntry index: anInteger log: 
 MCPChangeHistoryEntryInfo >> initializeFromEvent: anEvent [
 
 	self initializeEventFieldsFrom: anEvent
-]
-
-{ #category : 'private - initialization' }
-MCPChangeHistoryEntryInfo >> initializeReferenceFieldsFrom: aReference [
-
-	reference := self stringFromReference: aReference.
-	globalName := self stringFrom: aReference globalName.
-	localName := self stringFrom: aReference localName
 ]
 
 { #category : 'private - initialization' }

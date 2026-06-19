@@ -77,28 +77,50 @@ MCPToolRequestTest >> testInvalidToolInputErrorResponseIncludesViolations [
 ]
 
 { #category : 'tests' }
+MCPToolRequestTest >> testNonNegativeIntegerArgumentRejectsValuesAboveMaximum [
+
+	| request |
+	request := MCPToolRequest new
+		           tool: MCPToolDebugState new;
+		           arguments: { (#stackLimit -> 51) } asDictionary;
+		           yourself.
+	self
+		should: [
+				request
+					nonNegativeIntegerArgumentNamed: 'stackLimit'
+					default: 5
+					maximum: 50 ]
+		raise: Error
+		withExceptionDo: [ :error |
+				self
+					assert: error messageText
+					equals: 'stackLimit must be no greater than 50.' ]
+]
+
+{ #category : 'tests' }
 MCPToolRequestTest >> testRequestAccessorsProvideDefaultsUniqueCollectionsSymbolsAndNestedStrings [
 
 	| nested request |
 	request := MCPToolRequest
-		           tool: MCPToolSearchRepositories new
+		           tool: MCPToolCreateRepository new
 		           arguments: {
-				           (#packageNames -> #( ' MCP ' '' 'MCP' )).
-				           (#repositoryNames -> #( 'MCP' 'Other' 'MCP' )) }
+				           (#name -> 'Example').
+				           (#location -> FileLocator imageDirectory fullName).
+				           (#packageNames -> #( ' MCP ' '' 'MCP' 'Other' )) }
 				           asDictionary.
 	self
 		assert: (request stringCollectionArgumentNamed: 'packageNames')
-		equals: #( 'MCP' 'MCP' ).
+		equals: #( 'MCP' 'MCP' 'Other' ).
 	self
 		assert:
-		(request uniqueStringCollectionArgumentNamed: 'repositoryNames')
+		(request uniqueStringCollectionArgumentNamed: 'packageNames')
 		equals: #( 'MCP' 'Other' ).
 	self
 		assert: (request stringArgumentNamed: 'missing' default: 'image')
 		equals: 'image'.
 	self
 		assert: (request symbolCollectionArgumentNamed: 'packageNames')
-		equals: #( #MCP #MCP ).
+		equals: #( #MCP #MCP #Other ).
 	nested := {
 		          (#className -> ' MCPToolRequestTest ').
 		          (#testMethodName
@@ -117,11 +139,14 @@ MCPToolRequestTest >> testRequestAccessorsProvideDefaultsUniqueCollectionsSymbol
 { #category : 'tests' }
 MCPToolRequestTest >> testValidRequestProvidesTypedAccessors [
 
-	| request |
-	request := MCPToolRequest tool: MCPToolSearchClasses new arguments: {
-			           (#packageNames -> #( 'MCP' )).
-			           (#caseSensitive -> true).
-			           (#limit -> 3) } asDictionary.
+	| request scope |
+	scope := { (#packages -> #( 'MCP' )) } asDictionary.
+	request := MCPToolRequest
+		           tool: MCPToolSearchClasses new
+		           arguments: {
+				           (#scope -> scope).
+				           (#caseSensitive -> true).
+				           (#limit -> 3) } asDictionary.
 	self assert:
 		(request booleanArgumentNamed: 'caseSensitive' default: false).
 	self
@@ -129,7 +154,8 @@ MCPToolRequestTest >> testValidRequestProvidesTypedAccessors [
 		(request nonNegativeIntegerArgumentNamed: 'limit' default: 100)
 		equals: 3.
 	self
-		assert: (request stringCollectionArgumentNamed: 'packageNames')
+		assert:
+		(request stringCollectionArgumentNamed: 'packages' in: scope)
 		equals: #( 'MCP' ).
 	self assert: (request stringArgumentNamed: 'missing') isNil.
 	self

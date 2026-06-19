@@ -12,10 +12,13 @@ Class {
 { #category : 'execution' }
 MCPListChangeHistoryEntriesCommand >> execute [
 
-	| entryInfos headReference log logAndPath page path resultPage |
-	logAndPath := self logAndPathForRequest.
-	log := logAndPath first.
-	path := logAndPath second.
+	| entryInfos fileName log logAndFileName page resultPage |
+	logAndFileName := self
+		                  logAndFileNameFromDirectoryPath:
+		                  request directoryPath
+		                  fileName: request historyFileName.
+	log := logAndFileName first.
+	fileName := logAndFileName second.
 	page := self
 		        pageFrom: (self matchingEntryPairsFrom: log)
 		        offset: request offset
@@ -28,30 +31,9 @@ MCPListChangeHistoryEntriesCommand >> execute [
 	resultPage := MCPPaginationResult
 		              entries: entryInfos
 		              nextOffset: page nextOffset.
-	headReference := self referenceStringFor: log headReference.
 	^ MCPChangeHistoryListEntriesResult
-		  historyFilePath: path
+		  historyFileName: fileName
 		  page: resultPage
-		  headReference: headReference
-]
-
-{ #category : 'private' }
-MCPListChangeHistoryEntriesCommand >> isCurrentHistoryFilePath: aPathString [
-
-	| currentFile requestedFile |
-	currentFile := self currentHistoryFileReference.
-	currentFile ifNil: [ ^ false ].
-	requestedFile := aPathString asFileReference.
-	^ requestedFile fullName = currentFile fullName
-]
-
-{ #category : 'private' }
-MCPListChangeHistoryEntriesCommand >> logAndPathForRequest [
-
-	request historyFilePath ifNil: [ ^ self currentLogAndPath ].
-	(self isCurrentHistoryFilePath: request historyFilePath) ifTrue: [
-		^ self currentLogAndPath ].
-	^ self logAndPathFromFilePath: request historyFilePath
 ]
 
 { #category : 'private' }

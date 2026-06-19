@@ -151,7 +151,7 @@ This does not remove the normal responsibility of working in a safe image. Use d
 
 ## Dashboard
 
-Inspect an `MCP` instance in a graphical image and open the dashboard tab. The Spec dashboard shows server status, port and debug-mode controls, registered tools, optional observability, metrics, traces, and recent logs. Configure `mcp monitoringExportDirectory: aDirectory` to export instance metadata and trace-worthy calls as JSON files for offline payload analysis. The tool catalog uses the same tool metadata exposed to MCP clients.
+Inspect an `MCP` instance in a graphical image and open the dashboard tab. The Spec dashboard shows server status, port and debug-mode controls, registered tools, observability, metrics, traces, and recent logs. Observability is enabled by default. Configure `mcp monitoringExportDirectory: aDirectory` to override the default `~/pharo-mcp-observability` export root for instance metadata, `logs.jsonl`, `metrics.json`, and `traces.jsonl`. The tool catalog uses the same tool metadata exposed to MCP clients.
 
 ## Documentation
 

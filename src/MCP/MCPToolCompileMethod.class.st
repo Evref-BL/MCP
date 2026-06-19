@@ -1,8 +1,10 @@
 "
-Tool that creates or replaces one method from source without exposing a combined method-mutation selector.
+Tool that compiles one method source into a class.
+
+The compile operation creates the method when its selector is absent and replaces the existing method when the selector is already defined.
 "
 Class {
-	#name : 'MCPToolCreateMethod',
+	#name : 'MCPToolCompileMethod',
 	#superclass : 'MCPToolMethodMutation',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
@@ -10,36 +12,35 @@ Class {
 }
 
 { #category : 'defaults' }
-MCPToolCreateMethod class >> toolName [
+MCPToolCompileMethod class >> toolName [
 
-	^ 'method_create'
+	^ 'method_compile'
 ]
 
 { #category : 'private - specs' }
-MCPToolCreateMethod >> methodToolSpec [
+MCPToolCompileMethod >> methodToolSpec [
 
 	^ {
-		  (#title -> 'Create Method').
+		  (#title -> 'Compile Method').
 		  (#description
 		   ->
-		   'Create or replace one method on the instance side or class side of a class.').
-		  (#action -> 'create').
+		   'Compile method source into a class. Creates the method when absent and replaces it when the selector already exists.').
+		  (#action -> 'compile').
 		  (#inputProperties -> {
 			   (MCPStructureProperties new
 				    name: 'className';
 				    type: 'string';
-				    description:
-					    'The class whose method will be created or replaced.';
+				    description: 'The class to compile the method into.';
 				    yourself).
 			   (MCPStructureProperties new
 				    name: 'classSide';
 				    type: 'boolean';
-				    description: 'Whether the target method is on the class side.';
+				    description: 'Whether to compile on the class side.';
 				    default: false;
 				    yourself).
 			   self forceSchemaProperty.
 			   (MCPStructureProperties new
-				    name: 'methodSource';
+				    name: 'source';
 				    type: 'string';
 				    description: 'The full method source to compile.';
 				    yourself).
@@ -49,6 +50,6 @@ MCPToolCreateMethod >> methodToolSpec [
 				    description:
 					    'The target protocol. For extension methods, use an extension protocol such as *Package-Name.';
 				    yourself) }).
-		  (#requiredProperties -> #( 'className' 'methodSource'
-		      'protocol' )) } asDictionary
+		  (#requiredProperties -> #( 'className' 'source' 'protocol' )) }
+		  asDictionary
 ]

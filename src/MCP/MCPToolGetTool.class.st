@@ -26,22 +26,29 @@ MCPToolGetTool >> commandForRequest: getRequest [
 { #category : 'defaults' }
 MCPToolGetTool >> defaultDescription [
 
-	^ 'Return the full callable contract, schema, and metadata for one MCP-Pharo tool selected from the catalog.'
+	^ 'Return one tool contract with metadata and input schema. Set includeOutputSchema only when response validation needs it.'
 ]
 
 { #category : 'defaults' }
 MCPToolGetTool >> defaultInputSchema [
 
-	| toolNameProperty |
+	| includeOutputSchemaProperty toolNameProperty |
 	toolNameProperty := self
 		                    schemaPropertyNamed: 'toolName'
 		                    type: 'string'
-		                    description:
-		                    'The MCP tool name whose contract should be returned.'.
+		                    description: 'Tool name.'.
 	toolNameProperty minLength: 1.
+	includeOutputSchemaProperty := self
+		                               booleanSchemaPropertyNamed:
+		                               'includeOutputSchema'
+		                               description:
+		                               'Include response schema; use only for response validation.'
+		                               default: false.
 	^ MCPStructureInputSchema new
 		  type: 'object';
-		  properties: { toolNameProperty };
+		  properties: {
+				  toolNameProperty.
+				  includeOutputSchemaProperty };
 		  required: #( 'toolName' );
 		  additionalProperties: false;
 		  yourself
@@ -50,84 +57,60 @@ MCPToolGetTool >> defaultInputSchema [
 { #category : 'defaults' }
 MCPToolGetTool >> defaultOutputSchema [
 
-	| examplesProperty requirementsProperty schemaProperty toolProperty |
+	| activationRequirementsProperty examplesProperty inputSchemaProperty outputSchemaProperty schemaProperty toolProperty |
 	schemaProperty := MCPStructureProperties new
 		                  type: 'object';
-		                  description: 'A JSON Schema object.';
+		                  description: 'JSON Schema object.';
 		                  additionalProperties: true;
 		                  yourself.
+	inputSchemaProperty := schemaProperty copy
+		                       name: 'inputSchema';
+		                       yourself.
+	outputSchemaProperty := schemaProperty copy
+		                        name: 'outputSchema';
+		                        yourself.
 	examplesProperty := (self
 		                     schemaPropertyNamed: 'examples'
 		                     type: 'array'
-		                     description: 'Example calls for this tool.')
+		                     description: 'Example calls.')
 		                    items: (MCPStructureProperties new
 				                     type: 'object';
 				                     additionalProperties: true;
 				                     yourself);
 		                    yourself.
-	requirementsProperty := (self
-		                         schemaPropertyNamed:
-			                         'activationRequirements'
-		                         type: 'array'
-		                         description:
-			                         'Requirements that must be satisfied before calling the tool.')
-		                        items: (MCPStructureProperties new
-				                         type: 'string';
-				                         yourself);
-		                        yourself.
+	activationRequirementsProperty := (self
+		                                   schemaPropertyNamed:
+			                                   'activationRequirements'
+		                                   type: 'array'
+		                                   description:
+			                                   'Requirements before calling tool.')
+		                                  items:
+			                                  (MCPStructureProperties new
+				                                   type: 'string';
+				                                   yourself);
+		                                  yourself.
 	toolProperty := self
 		                schemaPropertyNamed: 'tool'
 		                type: 'object'
-		                description: 'Full tool metadata and schemas.'.
+		                description: 'Tool contract.'.
 	toolProperty
 		properties: {
 				(self
 					 schemaPropertyNamed: 'name'
 					 type: 'string'
-					 description: 'The MCP tool name.').
-				(self
-					 schemaPropertyNamed: 'title'
-					 type: 'string'
-					 description: 'Human-readable title.').
+					 description: 'Tool name.').
 				(self
 					 schemaPropertyNamed: 'description'
 					 type: 'string'
 					 description: 'Tool description.').
 				(self
-					 schemaPropertyNamed: 'group'
-					 type: 'string'
-					 description: 'Descriptive tool group.').
-				(self
-					 schemaPropertyNamed: 'exposure'
-					 type: 'string'
-					 description: 'Whether the tool is static or discoverable.').
-				(self
-					 schemaPropertyNamed: 'mutability'
-					 type: 'string'
-					 description: 'Mutability classification.').
-				(self
-					 schemaPropertyNamed: 'risk'
-					 type: 'string'
-					 description: 'Risk classification.').
-				(self
-					 stringArraySchemaNamed: 'keywords'
-					 description: 'Search keywords.'
-					 itemDescription: 'One keyword.').
-				(self
 					 booleanSchemaPropertyNamed: 'schemaInspectionRequired'
-					 description: 'Whether schema inspection is expected before use.').
-				(schemaProperty
-					 name: 'inputSchema';
-					 yourself).
-				(schemaProperty copy
-					 name: 'outputSchema';
-					 yourself).
+					 description: 'Inspect schema before calling.').
+				inputSchemaProperty.
+				outputSchemaProperty.
 				examplesProperty.
-				requirementsProperty };
-		required:
-			#( 'name' 'title' 'description' 'group' 'exposure' 'mutability'
-			   'risk' 'keywords' 'schemaInspectionRequired'
-			   'inputSchema' 'outputSchema' 'examples' 'activationRequirements' );
+				activationRequirementsProperty };
+		required: #( 'name' 'description' 'inputSchema' );
 		additionalProperties: false.
 	^ self
 		  standardOutputSchemaForDataProperties: { toolProperty }

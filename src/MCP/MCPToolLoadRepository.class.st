@@ -21,8 +21,7 @@ MCPToolLoadRepository >> checkoutPathSchemaProperty [
 	^ (self
 		   schemaPropertyNamed: 'checkoutPath'
 		   type: 'string'
-		   description:
-			   'Filesystem path of a local checkout. Combined with sourceDirectory to build a tonel:// repository URL.')
+		   description: 'Local checkout path.')
 		  minLength: 1;
 		  yourself
 ]
@@ -39,8 +38,7 @@ MCPToolLoadRepository >> commitishSchemaProperty [
 	^ (self
 		   schemaPropertyNamed: 'commitish'
 		   type: 'string'
-		   description:
-			   'Branch, tag, or commitish to load. Defaults to main. Slashes are escaped when building Metacello remote URLs.')
+		   description: 'Branch, tag, or commitish.')
 		  default: self defaultCommitish;
 		  minLength: 1;
 		  yourself
@@ -55,7 +53,7 @@ MCPToolLoadRepository >> defaultCommitish [
 { #category : 'defaults' }
 MCPToolLoadRepository >> defaultDescription [
 
-	^ 'Load a Metacello baseline from a repository source into the image. Use owner/project for hosted remote repositories, repositoryUrl for an explicit Metacello URL such as tonel://, checkoutPath for a local checkout, or repositoryName/location for a registered Iceberg repository. sourceDirectory defaults to . where applicable. Supports Metacello warning, conflict, upgrade, downgrade, and lock policies.'
+	^ 'Load a Metacello baseline from a repository source into the image.'
 ]
 
 { #category : 'defaults' }
@@ -77,17 +75,15 @@ MCPToolLoadRepository >> defaultInputSchema [
 				  self hostUrlSchemaProperty.
 				  (self
 					   nonEmptyStringSchemaPropertyNamed: 'owner'
-					   description:
-						   'Repository owner or namespace, for example Gabriel-Darbord.').
+					   description: 'Repository owner or namespace.').
 				  (self
 					   nonEmptyStringSchemaPropertyNamed: 'project'
-					   description: 'Repository project name, for example SmallDoc.').
+					   description: 'Repository project.').
 				  self commitishSchemaProperty.
 				  self sourceDirectorySchemaProperty.
 				  (self
 					   nonEmptyStringSchemaPropertyNamed: 'baseline'
-					   description:
-						   'Metacello baseline name without the BaselineOf prefix, for example SmallDoc.').
+					   description: 'Baseline name without BaselineOf prefix.').
 				  self groupsSchemaProperty }
 			  , self loadPolicyInputSchemaProperties;
 		  required: #( 'baseline' );
@@ -149,8 +145,7 @@ MCPToolLoadRepository >> hostUrlSchemaProperty [
 	^ (self
 		   schemaPropertyNamed: 'hostUrl'
 		   type: 'string'
-		   description:
-			   'Repository host URL or host kind. Use github, gitlab, bitbucket, or a Metacello host URL such as gitlab://git.example.com. Defaults to github.')
+		   description: 'Repository host URL or kind.')
 		  default: self defaultHostUrl;
 		  minLength: 1;
 		  yourself
@@ -171,8 +166,7 @@ MCPToolLoadRepository >> locationSchemaProperty [
 	^ (self
 		   schemaPropertyNamed: 'location'
 		   type: 'string'
-		   description:
-			   'Filesystem location of an Iceberg repository already registered in the image. May be combined with repositoryName to disambiguate.')
+		   description: 'Registered repository filesystem location.')
 		  minLength: 1;
 		  yourself
 ]
@@ -196,45 +190,10 @@ MCPToolLoadRepository >> parsedRequestFromToolRequest: request [
 { #category : 'private - schema' }
 MCPToolLoadRepository >> repositoryDataProperties [
 
-	^ {
-		  (self
-			   schemaPropertyNamed: 'repositoryUrl'
-			   type: 'string'
-			   description: 'The Metacello repository URL used for the load.').
-		  (self
-			   schemaPropertyNamed: 'hostUrl'
-			   type: 'string'
-			   description: 'The requested repository host URL or host kind.').
-		  (self
-			   schemaPropertyNamed: 'owner'
-			   type: 'string'
-			   description: 'The requested repository owner or namespace.').
-		  (self
-			   schemaPropertyNamed: 'project'
-			   type: 'string'
-			   description: 'The requested repository project/name segment.').
-		  (self
-			   schemaPropertyNamed: 'commitish'
-			   type: 'string'
-			   description: 'The requested branch, tag, or commitish.').
-		  (self
-			   schemaPropertyNamed: 'sourceDirectory'
-			   type: 'string'
-			   description: 'The requested repository source directory.').
-		  (self
-			   schemaPropertyNamed: 'checkoutPath'
-			   type: 'string'
-			   description: 'The local checkout path used for local mode.').
-		  (self
-			   schemaPropertyNamed: 'repositoryName'
-			   type: 'string'
-			   description:
-			   'The registered Iceberg repository name used for iceberg mode.').
-		  (self
-			   schemaPropertyNamed: 'location'
-			   type: 'string'
-			   description:
-			   'The registered Iceberg repository location used for iceberg mode.') }
+	^ { (self
+		   schemaPropertyNamed: 'repositoryUrl'
+		   type: 'string'
+		   description: 'Resolved Metacello repository URL.') }
 ]
 
 { #category : 'private - schema' }
@@ -243,8 +202,7 @@ MCPToolLoadRepository >> repositoryNameSchemaProperty [
 	^ (self
 		   schemaPropertyNamed: 'repositoryName'
 		   type: 'string'
-		   description:
-			   'Name of an Iceberg repository already registered in the image. Combined with its location and sourceDirectory/subdirectory to build a local tonel:// URL.')
+		   description: 'Registered Iceberg repository name.')
 		  minLength: 1;
 		  yourself
 ]
@@ -268,8 +226,7 @@ MCPToolLoadRepository >> repositoryUrlSchemaProperty [
 	^ (self
 		   schemaPropertyNamed: 'repositoryUrl'
 		   type: 'string'
-		   description:
-			   'Explicit Metacello repository URL to load from, for example tonel:///path/to/checkout/src.')
+		   description: 'Explicit Metacello repository URL.')
 		  minLength: 1;
 		  yourself
 ]
@@ -286,8 +243,7 @@ MCPToolLoadRepository >> sourceDirectorySchemaProperty [
 	^ (self
 		   schemaPropertyNamed: 'sourceDirectory'
 		   type: 'string'
-		   description:
-			   'Repository path containing the baseline. Defaults to . for remote/local sources and to the registered Iceberg subdirectory for iceberg mode.')
+		   description: 'Repository path containing the baseline.')
 		  default: self defaultSourceDirectory;
 		  minLength: 1;
 		  yourself

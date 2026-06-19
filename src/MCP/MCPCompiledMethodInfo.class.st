@@ -33,10 +33,10 @@ MCPCompiledMethodInfo >> asDictionaryIncludingSource: includeSource [
 	data := {
 		        (#selector -> self selector).
 		        (#className -> self className).
-		        (#classSide -> self classSide).
 		        (#packageName -> self packageName).
-		        (#isExtension -> self isExtension).
 		        (#protocol -> self protocol) } asDictionary.
+	self classSide ifTrue: [ data at: #classSide put: true ].
+	self isExtension ifTrue: [ data at: #isExtension put: true ].
 	includeSource ifTrue: [ data at: #source put: self source ].
 	^ data
 ]

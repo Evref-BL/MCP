@@ -17,6 +17,18 @@ MCPToolDebug class >> isAbstract [
 	^ self = MCPToolDebug
 ]
 
+{ #category : 'private - schema' }
+MCPToolDebug >> boundedIntegerSchemaPropertyNamed: propertyName description: propertyDescription default: defaultValue maximum: maximumValue [
+
+	| property |
+	property := self
+		            nonNegativeIntegerSchemaPropertyNamed: propertyName
+		            description: propertyDescription
+		            default: defaultValue.
+	property maximum: maximumValue.
+	^ property
+]
+
 { #category : 'private - execution' }
 MCPToolDebug >> commandForRequest: debugRequest [
 
@@ -53,6 +65,18 @@ MCPToolDebug >> executeWithRequest: request [
 		  onError: [ :error :ignored | self errorResultForDebugError: error ]
 ]
 
+{ #category : 'private - schema' }
+MCPToolDebug >> nonNegativeIntegerSchemaPropertyNamed: propertyName description: propertyDescription default: defaultValue [
+
+	| property |
+	property := self
+		            integerSchemaPropertyNamed: propertyName
+		            description: propertyDescription
+		            default: defaultValue.
+	property minimum: 0.
+	^ property
+]
+
 { #category : 'private - execution' }
 MCPToolDebug >> resultForCommandResult: commandResult [
 
@@ -64,4 +88,53 @@ MCPToolDebug >> resultForCommandResult: commandResult [
 		  successResultText: commandResult summary
 		  data: commandResult data
 		  warnings: commandResult warnings
+]
+
+{ #category : 'private - schema' }
+MCPToolDebug >> sourceContextLinesSchemaPropertyWithDescription: aDescription default: defaultValue [
+
+	^ self
+		  boundedIntegerSchemaPropertyNamed: 'sourceContextLines'
+		  description: aDescription
+		  default: defaultValue
+		  maximum: MCPDebugRequest maximumSourceContextLines
+]
+
+{ #category : 'private - schema' }
+MCPToolDebug >> stackLimitSchemaPropertyWithDescription: aDescription default: defaultValue [
+
+	^ self
+		  boundedIntegerSchemaPropertyNamed: 'stackLimit'
+		  description: aDescription
+		  default: defaultValue
+		  maximum: MCPDebugRequest maximumStackLimit
+]
+
+{ #category : 'private - schema' }
+MCPToolDebug >> stackStartSchemaPropertyWithDescription: aDescription default: defaultValue [
+
+	^ self
+		  nonNegativeIntegerSchemaPropertyNamed: 'stackStart'
+		  description: aDescription
+		  default: defaultValue
+]
+
+{ #category : 'private - schema' }
+MCPToolDebug >> variableDepthSchemaPropertyWithDescription: aDescription default: defaultValue [
+
+	^ self
+		  boundedIntegerSchemaPropertyNamed: 'variableDepth'
+		  description: aDescription
+		  default: defaultValue
+		  maximum: MCPDebugRequest maximumVariableDepth
+]
+
+{ #category : 'private - schema' }
+MCPToolDebug >> variableLimitSchemaPropertyWithDescription: aDescription default: defaultValue [
+
+	^ self
+		  boundedIntegerSchemaPropertyNamed: 'variableLimit'
+		  description: aDescription
+		  default: defaultValue
+		  maximum: MCPDebugRequest maximumVariableLimit
 ]

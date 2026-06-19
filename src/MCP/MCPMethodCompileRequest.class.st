@@ -1,8 +1,10 @@
 "
-Parsed method_create request. It captures the target behavior, source, protocol, and warning policy supplied by the MCP transport request so method creation or replacement can run without repeatedly reading raw arguments.
+Parsed method_compile request.
+
+It captures the target behavior, source, protocol, and warning policy supplied by the MCP transport request so compilation can run without repeatedly reading raw arguments.
 "
 Class {
-	#name : 'MCPMethodCreateRequest',
+	#name : 'MCPMethodCompileRequest',
 	#superclass : 'Object',
 	#instVars : [
 		'className',
@@ -17,44 +19,44 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPMethodCreateRequest class >> fromRequest: request tool: aTool [
+MCPMethodCompileRequest class >> fromRequest: request tool: aTool [
 
 	^ self new initializeFromRequest: request tool: aTool
 ]
 
 { #category : 'accessing' }
-MCPMethodCreateRequest >> className [
+MCPMethodCompileRequest >> className [
 
 	^ className
 ]
 
 { #category : 'accessing' }
-MCPMethodCreateRequest >> classSide [
+MCPMethodCompileRequest >> classSide [
 
 	^ classSide = true
 ]
 
 { #category : 'converting' }
-MCPMethodCreateRequest >> commandForTool: aTool [
+MCPMethodCompileRequest >> commandForTool: aTool [
 
-	^ MCPCreateMethodCommand tool: aTool request: self
+	^ MCPCompileMethodCommand tool: aTool request: self
 ]
 
 { #category : 'accessing' }
-MCPMethodCreateRequest >> force [
+MCPMethodCompileRequest >> force [
 
 	^ force = true
 ]
 
 { #category : 'initialization' }
-MCPMethodCreateRequest >> initializeFromRequest: request tool: aTool [
+MCPMethodCompileRequest >> initializeFromRequest: request tool: aTool [
 
 	className := request stringArgumentNamed: 'className'.
 	classSide := request booleanArgumentNamed: 'classSide' default: false.
-	methodSource := (request argumentNamed: 'methodSource' ifAbsent: [
+	methodSource := (request argumentNamed: 'source' ifAbsent: [
 			                 MCPInvalidToolInput
 				                 signalMissingRequiredArgumentNamed:
-				                 'methodSource'
+				                 'source'
 				                 forTool: aTool ]) withInternalLineEndings.
 	protocol := request stringArgumentNamed: 'protocol'.
 	force := request booleanArgumentNamed: 'force' default: false.
@@ -62,19 +64,19 @@ MCPMethodCreateRequest >> initializeFromRequest: request tool: aTool [
 ]
 
 { #category : 'accessing' }
-MCPMethodCreateRequest >> methodSource [
+MCPMethodCompileRequest >> methodSource [
 
 	^ methodSource
 ]
 
 { #category : 'accessing' }
-MCPMethodCreateRequest >> protocol [
+MCPMethodCompileRequest >> protocol [
 
 	^ protocol
 ]
 
 { #category : 'converting' }
-MCPMethodCreateRequest >> requestedContext [
+MCPMethodCompileRequest >> requestedContext [
 
 	^ {
 		  (#className -> self className).

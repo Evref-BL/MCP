@@ -68,8 +68,8 @@ MCPMethodRewriteRequest >> initializeFromRequest: request tool: aTool [
 	apply := request booleanArgumentNamed: 'apply' default: false.
 	force := request booleanArgumentNamed: 'force' default: false.
 	includeSources := request
-		                  booleanArgumentNamed: 'includeSources'
-		                  default: true.
+		                  booleanArgumentNamed: 'includeSource'
+		                  default: false.
 	expectedChangeSetHash := (request hasArgumentNamed:
 		                          'expectedChangeSetHash') ifTrue: [
 			                         request
@@ -77,8 +77,7 @@ MCPMethodRewriteRequest >> initializeFromRequest: request tool: aTool [
 				                         'expectedChangeSetHash'
 				                         default: nil ].
 	scopeQuery := aTool methodScopeQueryFromRequest: request.
-	scopeQuery requireCompleteScope.
-	^ self
+	scopeQuery requireCompleteScope
 ]
 
 { #category : 'converting' }
@@ -90,7 +89,7 @@ MCPMethodRewriteRequest >> requestedContext [
 	self expectedChangeSetHash ifNotNil: [ :hash |
 		context at: #expectedChangeSetHash put: hash ].
 	context at: #force put: self force.
-	context at: #includeSources put: self includeSources.
+	context at: #includeSource put: self includeSources.
 	context at: #scope put: self scopeQuery asDictionary.
 	context at: #rules put: self ruleDictionaries.
 	^ context

@@ -173,11 +173,11 @@ MCPToolGetClassTest >> testGetsClassMetadata [
 	self
 		assert: (data at: #classSlotNames)
 		equals: #( 'classBeta' 'classAlpha' ).
-	self assert: (data at: #traitNames) isEmpty.
-	self assert: (data at: #classTraitNames) isEmpty.
-	self assert: (data at: #traitComposition) equals: '{}'.
-	self assert: (data at: #classTraitComposition) equals: '{}'.
-	self assert: (data at: #sharedPoolNames) isEmpty.
+	self deny: (data includesKey: #traitNames).
+	self deny: (data includesKey: #classTraitNames).
+	self deny: (data includesKey: #traitComposition).
+	self deny: (data includesKey: #classTraitComposition).
+	self deny: (data includesKey: #sharedPoolNames).
 	self
 		assert: (data at: #sharedVariableNames)
 		equals: #( 'AlphaShared' 'BetaShared' ).
@@ -186,21 +186,20 @@ MCPToolGetClassTest >> testGetsClassMetadata [
 		equals: expectedLayoutClassName.
 	self assert: (data at: #instanceMethodCount) equals: 1.
 	self assert: (data at: #classMethodCount) equals: 1.
-	self assert: (data at: #superclasses) isEmpty.
-	self assert: (data at: #subclasses) isEmpty
+	self deny: (data includesKey: #superclasses).
+	self deny: (data includesKey: #subclasses)
 ]
 
 { #category : 'tests' }
 MCPToolGetClassTest >> testIncludesClassCommentsWhenRequested [
 
-	| data result subclasses superclasses |
+	| data result subclasses |
 	result := self callToolWith: {
 			          (#className -> self childZClassName).
 			          (#includeComment -> true).
 			          (#upToSuperclassName -> self baseClassName).
 			          (#subclassDepth -> 1) } asDictionary.
 	data := self dataFrom: result.
-	superclasses := data at: #superclasses.
 	subclasses := data at: #subclasses.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self
@@ -209,7 +208,7 @@ MCPToolGetClassTest >> testIncludesClassCommentsWhenRequested [
 	self
 		assert: (data at: #classComment)
 		equals: 'Child Z fixture class comment.'.
-	self assert: superclasses isEmpty.
+	self deny: (data includesKey: #superclasses).
 	self assert: subclasses size equals: 1.
 	self
 		assert: (subclasses first at: #className)
@@ -314,18 +313,23 @@ MCPToolGetClassTest >> testIncludesTraitNamesForTraitUsingClass [
 { #category : 'tests' }
 MCPToolGetClassTest >> testRejectsNegativeSubclassDepth [
 
-	| error result structured |
-	result := self callToolWith: {
-			          (#className -> self baseClassName).
-			          (#subclassDepth -> -1) } asDictionary.
-	structured := self structuredContentFrom: result.
-	error := self errorFrom: result.
-	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #errorClass) equals: 'Error'.
 	self
-		assert: (error at: #message)
-		equals: 'subclassDepth must be a non-negative integer.'
+		should: [
+				self callToolWith: {
+						(#className -> self baseClassName).
+						(#subclassDepth -> -1) } asDictionary ]
+		raise: MCPInvalidToolInput
+]
+
+{ #category : 'tests' }
+MCPToolGetClassTest >> testRejectsSubclassDepthAboveMaximum [
+
+	self
+		should: [
+				self callToolWith: {
+						(#className -> self baseClassName).
+						(#subclassDepth -> 4) } asDictionary ]
+		raise: MCPInvalidToolInput
 ]
 
 { #category : 'tests' }

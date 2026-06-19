@@ -105,6 +105,8 @@ Use `debug_session_step_into`, `debug_session_step_over`,
 `debug_session_step_through`, `debug_session_restart`,
 `debug_session_resume`, and `debug_session_terminate` for control actions.
 Control tools can return a `debug_state_get` snapshot when execution pauses.
+Set `returnState=true` when the next step needs that snapshot inline;
+otherwise call `debug_state_get` after the control action.
 When the user asks for a bounded action, such as "step into twice", perform
 those control calls and stop.
 

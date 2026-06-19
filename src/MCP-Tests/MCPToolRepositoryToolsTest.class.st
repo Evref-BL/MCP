@@ -141,23 +141,24 @@ MCPToolRepositoryToolsTest >> testRepositoryToolsAreDiscoverableWithExpectedRisk
 
 	| metadataByName |
 	metadataByName := self metadataByNameForRepositoryTools.
-	#( 'repository_identity_verify' 'repository_change_list' ) do: [
-			:toolName |
-			| metadata |
-			metadata := metadataByName at: toolName.
-			self assert: (metadata at: #exposure) equals: 'discoverable'.
-			self assert: (metadata at: #mutability) equals: 'read'.
-			self assert: (metadata at: #risk) equals: 'low' ].
-	#( 'repository_create' 'repository_attach' 'repository_update'
+	#( 'repository_identity_verify' 'repository_change_list'
+	   'repository_create' 'repository_attach' 'repository_update'
 	   'repository_export' 'repository_commit' 'repository_fetch'
 	   'repository_pull' 'repository_push' 'repository_branch_create'
 	   'repository_branch_switch' 'repository_branch_checkout'
 	   'repository_head_adopt' ) do: [ :toolName |
-			| metadata |
+			| metadata tool |
 			metadata := metadataByName at: toolName.
-			self assert: (metadata at: #exposure) equals: 'discoverable'.
-			self assert: (metadata at: #mutability) equals: 'write'.
-			self assert: (metadata at: #risk) equals: 'high' ].
+			tool := MCPToolRegistry
+				        toolNamed: toolName
+				        ifAbsent: [ self fail: 'Missing tool ' , toolName ].
+			self
+				assert: (MCPToolRegistry exposureForTool: tool)
+				equals: 'discoverable'.
+			self
+				assert: metadata keys asSet
+				equals: #( name description schemaInspectionRequired ) asSet.
+			self assert: (metadata at: #schemaInspectionRequired) ].
 	self assert: (metadataByName includesKey: 'repository_load')
 ]
 

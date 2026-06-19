@@ -48,25 +48,26 @@ MCPDebugCaptureRequest class >> fromRequest: aRequest tool: aTool [
 				   default: self defaultResultPreviewCharacterLimit);
 		  sourceContextLines: (aRequest
 				   nonNegativeIntegerArgumentNamed: 'sourceContextLines'
-				   default: 5);
-		  stackStart:
-			  (aRequest
+				   default: self defaultSourceContextLines
+				   maximum: self maximumSourceContextLines);
+		  stackStart: (aRequest
 				   nonNegativeIntegerArgumentNamed: 'stackStart'
-				   default: 0);
-		  stackLimit:
-			  (aRequest
+				   default: self defaultStackStart);
+		  stackLimit: (aRequest
 				   nonNegativeIntegerArgumentNamed: 'stackLimit'
-				   default: 20);
-		  variableDepth:
-			  (aRequest
+				   default: self defaultStackLimit
+				   maximum: self maximumStackLimit);
+		  variableDepth: (aRequest
 				   nonNegativeIntegerArgumentNamed: 'variableDepth'
-				   default: 1);
-		  variableLimit:
-			  (aRequest
+				   default: self defaultVariableDepth
+				   maximum: self maximumVariableDepth);
+		  variableLimit: (aRequest
 				   nonNegativeIntegerArgumentNamed: 'variableLimit'
-				   default: 50);
-		  includeReceiver:
-			  (aRequest booleanArgumentNamed: 'includeReceiver' default: true);
+				   default: self defaultVariableLimit
+				   maximum: self maximumVariableLimit);
+		  includeReceiver: (aRequest
+				   booleanArgumentNamed: 'includeReceiver'
+				   default: self defaultIncludeReceiver);
 		  yourself
 ]
 

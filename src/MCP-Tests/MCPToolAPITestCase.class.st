@@ -43,7 +43,9 @@ MCPToolAPITestCase >> callDiscoveredToolNamed: aToolName withArguments: someArgu
 MCPToolAPITestCase >> callRawToolNamed: aToolName withArguments: someArguments [
 
 	^ self aroundToolCall: [
-		  MCP new rpcToolCall: aToolName withParams: someArguments ]
+			  self mcpWithoutObservabilityExport
+				  rpcToolCall: aToolName
+				  withParams: someArguments ]
 ]
 
 { #category : 'private - calling' }
@@ -97,6 +99,12 @@ MCPToolAPITestCase >> parsedRequestForTool: aTool arguments: someArguments [
 			   arguments: someArguments)
 ]
 
+{ #category : 'support' }
+MCPToolAPITestCase >> searchScope: scopeAssociations [
+
+	^ #scope -> scopeAssociations asDictionary
+]
+
 { #category : 'private - results' }
 MCPToolAPITestCase >> structuredContentFrom: aResult [
 
@@ -121,5 +129,7 @@ MCPToolAPITestCase >> unvalidatedToolRequestForTool: aTool arguments: someArgume
 { #category : 'private - results' }
 MCPToolAPITestCase >> warningsFrom: aResult [
 
-	^ (self structuredContentFrom: aResult) at: #warnings
+	^ (self structuredContentFrom: aResult)
+		  at: #warnings
+		  ifAbsent: [ #(  ) ]
 ]

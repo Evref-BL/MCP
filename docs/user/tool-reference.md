@@ -35,7 +35,7 @@ only when the next step truly needs more entries.
 | Tool | Use |
 | --- | --- |
 | `tool_search` | Search the tool catalog by group, keyword, title, or description. |
-| `tool_get` | Return the full schema and metadata for one catalog tool. |
+| `tool_get` | Return input schema and metadata for one catalog tool; request output schema only when needed. |
 | `tool_call` | Invoke a catalog tool that is not exposed directly by the current client. |
 
 Use `tool_search` before calling less common or high-risk tools. Inspect the

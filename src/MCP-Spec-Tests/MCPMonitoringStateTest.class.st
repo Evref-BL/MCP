@@ -10,15 +10,15 @@ Class {
 }
 
 { #category : 'tests' }
-MCPMonitoringStateTest >> testDisabledByDefaultDoesNotRecord [
+MCPMonitoringStateTest >> testEnabledByDefaultRecords [
 
-	| state record |
+	| record state |
 	state := MCPMonitoringState new.
 	record := state recordToolCallStart: 'method_metadata_search'.
-	self deny: state enabled.
-	self assert: record isNil.
+	self assert: state enabled.
+	self assert: record notNil.
 	self assert: state totalCallCount equals: 0.
-	self assertEmpty: state logs
+	self assert: state logs notEmpty
 ]
 
 { #category : 'tests' }
@@ -93,11 +93,14 @@ MCPMonitoringStateTest >> testLargeOutputExceedingBudgetBecomesTraceAndGuidance 
 { #category : 'tests' }
 MCPMonitoringStateTest >> testMCPConfiguresMonitoringExportDirectory [
 
-	| directory mcp |
+	| defaultDirectory directory mcp |
 	directory := FileLocator temp asFileReference
 	             / ('mcp-observability-' , UUID new asString).
 	[
 		mcp := MCP new.
+		defaultDirectory := MCPMonitoringState defaultExportDirectory.
+		self assert: mcp monitoringEnabled.
+		self assert: mcp monitoringExportDirectory equals: defaultDirectory.
 		mcp monitoringExportDirectory: directory.
 		self assert: mcp monitoringExportDirectory equals: directory.
 		self
@@ -111,23 +114,30 @@ MCPMonitoringStateTest >> testMCPConfiguresMonitoringExportDirectory [
 { #category : 'tests' }
 MCPMonitoringStateTest >> testMCPRecordsToolCallsWhenMonitoringIsEnabled [
 
-	| mcp record result stats |
-	mcp := MCP new.
-	mcp monitoringEnabled: true.
-	result := mcp
-		          rpcToolCall: 'package_search'
-		          withParams: { (#limit -> 0) } asDictionary.
-	stats := mcp monitoringMetrics first.
-	record := mcp monitoring recentCallRecords first.
+	| directory mcp record result stats |
+	directory := FileLocator temp asFileReference
+	             / ('mcp-observability-' , UUID new asString).
+	[
+		directory exists ifTrue: [ directory deleteAll ].
+		mcp := MCP new.
+		mcp monitoringExportDirectory: directory.
+		result := mcp
+			          rpcToolCall: 'package_search'
+			          withParams: { (#limit -> 0) } asDictionary.
+		stats := mcp monitoringMetrics first.
+		record := mcp monitoring recentCallRecords first.
 
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: mcp monitoring totalCallCount equals: 1.
-	self assert: stats toolName equals: 'package_search'.
-	self assert: stats successCount equals: 1.
-	self assert: record inputSnapshot isNil.
-	self assert: record outputSnapshot isNil.
-	self assert: record inputObject isNil.
-	self assert: mcp monitoringLogs notEmpty
+		self deny: (result at: #isError ifAbsent: [ false ]).
+		self assert: mcp monitoring totalCallCount equals: 1.
+		self assert: stats toolName equals: 'package_search'.
+		self assert: stats successCount equals: 1.
+		self assert: record inputSnapshot isNil.
+		self assert: record outputSnapshot isNil.
+		self assert: record inputObject isNil.
+		self assert: mcp monitoringLogs notEmpty.
+		self assert: mcp monitoring logFileReference exists.
+		self assert: mcp monitoring metricsFileReference exists ] ensure: [
+		directory exists ifTrue: [ directory deleteAll ] ]
 ]
 
 { #category : 'tests' }
@@ -164,7 +174,7 @@ MCPMonitoringStateTest >> testRecordsErrorCall [
 	| recentCall record state stats |
 	state := MCPMonitoringState new.
 	state enable.
-	record := state recordToolCallStart: 'method_create'.
+	record := state recordToolCallStart: 'method_compile'.
 	state recordToolCallFinish: record result: nil error: Error new.
 	stats := state metrics first.
 	recentCall := state recentCallRecords first.
@@ -179,9 +189,9 @@ MCPMonitoringStateTest >> testRecordsErrorCall [
 		equals: 'Error'.
 	self assert: recentCall inputObject isNil.
 	self assert: (state logs anySatisfy: [ :each |
-			 each includesSubstring: 'Error tool method_create #' ]).
+			 each includesSubstring: 'Error tool method_compile #' ]).
 	self deny: (state logs anySatisfy: [ :each |
-			 each includesSubstring: 'error tool method_create #' ])
+			 each includesSubstring: 'error tool method_compile #' ])
 ]
 
 { #category : 'tests' }
@@ -262,14 +272,16 @@ MCPMonitoringStateTest >> testTraceExportSkipsNonTraceRecords [
 		state := MCPMonitoringState new.
 		state exportDirectory: directory.
 		state outputBudgetBytes: 10000.
-		state enable.
 		record := state recordToolCallStart: 'package_search'.
 		result := MCPStructureCallToolResult
 			          content: #(  )
 			          structuredContent:
 			          { (#summary -> 'Small output') } asDictionary.
 		state recordToolCallFinish: record result: result error: nil.
-		self deny: directory exists ] ensure: [
+		self assert: directory exists.
+		self deny: state traceFileReference exists.
+		self assert: state logFileReference exists.
+		self assert: state metricsFileReference exists ] ensure: [
 		directory exists ifTrue: [ directory deleteAll ] ]
 ]
 
@@ -287,7 +299,6 @@ MCPMonitoringStateTest >> testTraceExportWritesOverBudgetRecordAsJSONLine [
 				(#'mcp.port' -> 9013) } asDictionary.
 		state outputBudgetBytes: 80.
 		state exportDirectory: directory.
-		state enable.
 		input := {
 			         (#limit -> 1).
 			         (#apiToken -> 'secret-token') } asDictionary.
@@ -302,7 +313,12 @@ MCPMonitoringStateTest >> testTraceExportWritesOverBudgetRecordAsJSONLine [
 					          asDictionary.
 		state recordToolCallFinish: record result: result error: nil.
 		self assert: state exportInstanceDirectory exists.
+		self assert:
+			(state exportInstanceDirectory basename beginsWith:
+				 'pharo-13-9013-').
 		self assert: state resourceFileReference exists.
+		self assert: state logFileReference exists.
+		self assert: state metricsFileReference exists.
 		resource := STONJSON fromString:
 			            state resourceFileReference contents.
 		self assert: (resource at: 'service.name') equals: 'mcp-pharo'.
@@ -315,7 +331,9 @@ MCPMonitoringStateTest >> testTraceExportWritesOverBudgetRecordAsJSONLine [
 			assert: (payload at: 'event.name')
 			equals: 'mcp.tool_call.output_budget_exceeded'.
 		self assert: (payload at: 'toolName') equals: 'method_source_search'.
-		self assert: (payload at: 'outputBudgetExceeded').
+		self assert: (payload at: 'outputBudgetBytes') equals: 80.
+		self deny: (payload includesKey: 'outputBudgetExceeded').
+		self deny: (payload includesKey: 'summary').
 		self
 			assert: ((payload at: 'input') at: 'apiToken')
 			equals: '<redacted>'.
@@ -338,7 +356,7 @@ MCPMonitoringStateTest >> testTraceRecordsIncludeErrorsAndOutliersOnly [
 	normal finishAt: start durationMilliseconds: 5 status: 'ok'.
 	error := MCPToolCallRecord
 		         id: 2
-		         toolName: 'method_create'
+		         toolName: 'method_compile'
 		         startedAt: start.
 	error finishAt: start durationMilliseconds: 7 status: 'error'.
 	outlier := MCPToolCallRecord
@@ -361,4 +379,38 @@ MCPMonitoringStateTest >> testTraceRecordsIncludeErrorsAndOutliersOnly [
 	self deny: normal isTraceWorthy.
 	self assert: error isTraceWorthy.
 	self assert: outlier isTraceWorthy
+]
+
+{ #category : 'tests' }
+MCPMonitoringStateTest >> testTraceSnapshotForCollectionAddsTruncationMarker [
+
+	| snapshot state |
+	state := MCPMonitoringState new.
+	snapshot := state traceSnapshotFor:
+		            (1 to: state maxTraceCollectionItems + 2) asArray.
+	self assert: snapshot size equals: state maxTraceCollectionItems + 1.
+	self assert: snapshot last equals: 'truncated 2 items omitted'
+]
+
+{ #category : 'tests' }
+MCPMonitoringStateTest >> testTraceSnapshotOmitsVerboseErrorFields [
+
+	| errorData output record result state |
+	state := MCPMonitoringState new.
+	state outputBudgetBytes: 10000.
+	record := state recordToolCallStart: 'image_evaluate'.
+	errorData := {
+		             (#message -> 'failed').
+		             (#stackTrace -> #( 'frame one' 'frame two' )).
+		             (#signalerContext -> 'a context') } asDictionary.
+	result := MCPStructureCallToolResult
+		          content: #(  )
+		          structuredContent: {
+				          (#summary -> 'failed').
+				          (#error -> errorData) } asDictionary.
+	state recordToolCallFinish: record result: result error: Error new.
+	output := record outputSnapshot.
+	self assert: ((output at: #error) at: #message) equals: 'failed'.
+	self deny: ((output at: #error) includesKey: #stackTrace).
+	self deny: ((output at: #error) includesKey: #signalerContext)
 ]

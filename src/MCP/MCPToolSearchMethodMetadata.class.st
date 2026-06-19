@@ -20,7 +20,7 @@ MCPToolSearchMethodMetadata class >> toolName [
 { #category : 'defaults' }
 MCPToolSearchMethodMetadata >> defaultDescription [
 
-	^ 'List and search methods by selector, protocol, class, package, or scope. Missing class or package names return warnings with suggestions. Use method_source_search for source text, method_equivalent_search for equivalent ASTs, method_implementor_search for selector implementors, method_sender_search for selector sends, method_class_reference_search for class binding references, and method_variable_reference_search for variable references.'
+	^ 'Search method metadata by selector, protocol, class, package, or scope. Use specialized method search tools for source, senders, implementors, and references.'
 ]
 
 { #category : 'defaults' }

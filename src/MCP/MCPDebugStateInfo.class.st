@@ -27,7 +27,7 @@ MCPDebugStateInfo class >> fromRecord: aRecord request: aRequest [
 { #category : 'converting' }
 MCPDebugStateInfo >> asDictionary [
 
-	| callStack rawContexts repairActions selectedContext selectedFrame selectedIndex visibleContexts warnings |
+	| callStack data rawContexts repairActions selectedContext selectedFrame selectedIndex visibleContexts warnings |
 	rawContexts := self rawContexts.
 	visibleContexts := self slicedContextsFrom: rawContexts.
 	selectedIndex := self selectedFrameIndex.
@@ -37,10 +37,9 @@ MCPDebugStateInfo >> asDictionary [
 	warnings := OrderedCollection new.
 	record debugSession ifNil: [
 			warnings add:
-				'No DebugSession object is attached to this debug session record.' ].
+				'No DebugSession object attached this debug session record.' ].
 	selectedContext ifNil: [
-		warnings add:
-			'No stack context was available for the selected frame.' ].
+		warnings add: 'No stack context was available for selected frame.' ].
 	callStack := OrderedCollection new.
 	visibleContexts withIndexDo: [ :context :index |
 			callStack add:
@@ -52,27 +51,30 @@ MCPDebugStateInfo >> asDictionary [
 	repairActions := (MCPDebugRepairAnalyzer
 		                  fromRecord: record
 		                  request: request) repairActions.
-	^ {
-		  (#sessionId -> record sessionId).
-		  (#stateId -> record stateId).
-		  (#status -> record status).
-		  (#reason -> record reason).
-		  (#exception -> self exceptionInfo).
-		  (#location -> (self
-			    locationInfoForContext: selectedContext
-			    frameIndex: selectedIndex)).
-		  (#source -> (self sourceInfoForContext: selectedContext)).
-		  (#selectedFrame -> selectedFrame).
-		  (#scopes
-		   ->
-		   (self scopesForContext: selectedContext frameIndex: selectedIndex)).
-		  (#callStack -> callStack asArray).
-		  (#repairActions -> repairActions).
-		  (#stackStart -> request stackStart).
-		  (#stackLimit -> request stackLimit).
-		  (#totalFrames -> rawContexts size).
-		  (#capabilities -> record capabilities).
-		  (#warnings -> warnings asArray) } asDictionary
+	data := {
+		        (#sessionId -> record sessionId).
+		        (#stateId -> record stateId).
+		        (#status -> record status).
+		        (#reason -> record reason).
+		        (#exception -> self exceptionInfo).
+		        (#location -> (self
+			          locationInfoForContext: selectedContext
+			          frameIndex: selectedIndex)).
+		        (#source -> (self sourceInfoForContext: selectedContext)).
+		        (#selectedFrame -> selectedFrame).
+		        (#scopes
+		         ->
+		         (self
+			          scopesForContext: selectedContext
+			          frameIndex: selectedIndex)).
+		        (#callStack -> callStack asArray).
+		        (#repairActions -> repairActions).
+		        (#stackStart -> request stackStart).
+		        (#stackLimit -> request stackLimit).
+		        (#totalFrames -> rawContexts size).
+		        (#capabilities -> record capabilities) } asDictionary.
+	warnings ifNotEmpty: [ data at: #warnings put: warnings asArray ].
+	^ data
 ]
 
 { #category : 'private' }

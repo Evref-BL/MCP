@@ -124,9 +124,8 @@ MCPToolLoadMetacello >> groupsSchemaProperty [
 
 	^ self
 		  stringArraySchemaNamed: 'groups'
-		  description:
-		  'Optional Metacello load groups. Omit or pass an empty array to call Metacello>>load.'
-		  itemDescription: 'A Metacello group name.'
+		  description: 'Metacello load groups.'
+		  itemDescription: nil
 ]
 
 { #category : 'private - schema' }
@@ -136,24 +135,11 @@ MCPToolLoadMetacello >> loadBaselineDataProperties [
 		  (self
 			   schemaPropertyNamed: 'baseline'
 			   type: 'string'
-			   description: 'The Metacello baseline name requested.').
-		  (self
-			   stringArraySchemaNamed: 'groups'
-			   description: 'Metacello load groups requested.'
-			   itemDescription: 'A Metacello group name.').
-		  (self
-			   schemaPropertyNamed: 'onWarning'
-			   type: 'string'
-			   description: 'The warning policy used.').
-		  (self
-			   schemaPropertyNamed: 'onConflict'
-			   type: 'string'
-			   description: 'The conflict policy used.').
+			   description: 'The Metacello baseline name loaded.').
 		  self loadPolicyOutputSchemaProperty.
 		  (self
 			   stringArraySchemaNamed: 'newPackageNames'
-			   description:
-			   'Packages that appeared in the image after the load and were not present before it started.'
+			   description: 'Packages that appeared in the image after load.'
 			   itemDescription: 'A package name.').
 		  self repositoriesOutputSchemaProperty }
 ]
@@ -164,11 +150,9 @@ MCPToolLoadMetacello >> loadBaselineOutputSchemaProperty [
 	^ (self
 		   schemaPropertyNamed: 'load'
 		   type: 'object'
-		   description: 'Baseline load details for the Metacello load.')
+		   description: 'Baseline load details for Metacello load.')
 		  properties: self loadBaselineDataProperties;
-		  required:
-			  #( 'baseline' 'groups' 'onWarning' 'onConflict' 'policy' 'newPackageNames'
-			     'repositories' );
+		  required: #( 'baseline' );
 		  additionalProperties: false;
 		  yourself
 ]
@@ -178,61 +162,58 @@ MCPToolLoadMetacello >> loadPolicyDataProperties [
 
 	^ {
 		  (self
-			   schemaPropertyNamed: 'onWarning'
+			   schemaPropertyNamed: 'warning'
 			   type: 'string'
-			   description: 'The warning policy used.').
+			   description: 'Warning policy used.').
 		  (self
-			   schemaPropertyNamed: 'onConflict'
+			   schemaPropertyNamed: 'conflict'
 			   type: 'string'
-			   description: 'The conflict policy used.').
+			   description: 'Conflict policy used.').
+		  (self stringArraySchemaNamed: 'conflictUseIncoming').
+		  (self stringArraySchemaNamed: 'conflictUseLoaded').
 		  (self
-			   stringArraySchemaNamed: 'onConflictUseIncoming'
-			   description: 'Project-specific incoming conflict policy used.'
-			   itemDescription: 'A Metacello project name.').
-		  (self
-			   stringArraySchemaNamed: 'onConflictUseLoaded'
-			   description: 'Project-specific loaded conflict policy used.'
-			   itemDescription: 'A Metacello project name.').
-		  (self
-			   schemaPropertyNamed: 'onUpgrade'
+			   schemaPropertyNamed: 'upgrade'
 			   type: 'string'
-			   description: 'The upgrade policy used.').
+			   description: 'Upgrade policy used.').
+		  (self stringArraySchemaNamed: 'upgradeUseLoaded').
 		  (self
-			   stringArraySchemaNamed: 'onUpgradeUseLoaded'
-			   description: 'Project-specific loaded upgrade policy used.'
-			   itemDescription: 'A Metacello project name.').
-		  (self
-			   schemaPropertyNamed: 'onDowngrade'
+			   schemaPropertyNamed: 'downgrade'
 			   type: 'string'
-			   description: 'The downgrade policy used.').
+			   description: 'Downgrade policy used.').
+		  (self stringArraySchemaNamed: 'downgradeUseIncoming').
 		  (self
-			   stringArraySchemaNamed: 'onDowngradeUseIncoming'
-			   description: 'Project-specific incoming downgrade policy used.'
-			   itemDescription: 'A Metacello project name.').
-		  (self
-			   schemaPropertyNamed: 'onLock'
+			   schemaPropertyNamed: 'lock'
 			   type: 'string'
-			   description: 'The lock policy used.').
-		  (self
-			   stringArraySchemaNamed: 'onLockBreak'
-			   description: 'Project-specific lock break policy used.'
-			   itemDescription: 'A Metacello project name.') }
+			   description: 'Lock policy used.').
+		  (self stringArraySchemaNamed: 'lockBreak') }
 ]
 
 { #category : 'private - schema' }
 MCPToolLoadMetacello >> loadPolicyInputSchemaProperties [
 
-	^ {
-		  self onWarningSchemaProperty.
-		  self onConflictSchemaProperty.
-		  self onConflictUseIncomingSchemaProperty.
-		  self onConflictUseLoadedSchemaProperty.
-		  self onUpgradeSchemaProperty.
-		  self onUpgradeUseLoadedSchemaProperty.
-		  self onDowngradeSchemaProperty.
-		  self onDowngradeUseIncomingSchemaProperty.
-		  self onLockSchemaProperty.
-		  self onLockBreakSchemaProperty }
+	^ { self loadPolicyInputSchemaProperty }
+]
+
+{ #category : 'private - schema' }
+MCPToolLoadMetacello >> loadPolicyInputSchemaProperty [
+
+	^ (self
+		   schemaPropertyNamed: 'policy'
+		   type: 'object'
+		   description: 'Metacello load policy.')
+		  properties: {
+				  self onWarningSchemaProperty.
+				  self onConflictSchemaProperty.
+				  self onConflictUseIncomingSchemaProperty.
+				  self onConflictUseLoadedSchemaProperty.
+				  self onUpgradeSchemaProperty.
+				  self onUpgradeUseLoadedSchemaProperty.
+				  self onDowngradeSchemaProperty.
+				  self onDowngradeUseIncomingSchemaProperty.
+				  self onLockSchemaProperty.
+				  self onLockBreakSchemaProperty };
+		  additionalProperties: false;
+		  yourself
 ]
 
 { #category : 'private - schema' }
@@ -242,12 +223,8 @@ MCPToolLoadMetacello >> loadPolicyOutputSchemaProperty [
 		   schemaPropertyNamed: 'policy'
 		   type: 'object'
 		   description:
-			   'Complete Metacello load policy used for this request.')
+			   'Metacello load policy values that differ from defaults.')
 		  properties: self loadPolicyDataProperties;
-		  required: #( 'onWarning' 'onConflict' 'onConflictUseIncoming'
-			     'onConflictUseLoaded' 'onUpgrade' 'onUpgradeUseLoaded'
-			     'onDowngrade' 'onDowngradeUseIncoming'
-			     'onLock' 'onLockBreak' );
 		  additionalProperties: false;
 		  yourself
 ]
@@ -267,9 +244,8 @@ MCPToolLoadMetacello >> nonEmptyStringSchemaPropertyNamed: propertyName descript
 MCPToolLoadMetacello >> onConflictSchemaProperty [
 
 	^ self
-		  stringEnumSchemaPropertyNamed: 'onConflict'
-		  description:
-		  'Metacello project conflict handling policy. useLoaded keeps the loaded registration, useIncoming accepts the incoming registration, and pass leaves Metacello default conflict handling.'
+		  stringEnumSchemaPropertyNamed: 'conflict'
+		  description: 'Conflict policy.'
 		  values: #( 'useLoaded' 'useIncoming' 'pass' )
 		  default: self defaultOnConflict
 ]
@@ -278,29 +254,26 @@ MCPToolLoadMetacello >> onConflictSchemaProperty [
 MCPToolLoadMetacello >> onConflictUseIncomingSchemaProperty [
 
 	^ self
-		  stringArraySchemaNamed: 'onConflictUseIncoming'
-		  description:
-		  'Project names that should use incoming registrations when Metacello reports a conflict. Cannot be combined with onConflict.'
-		  itemDescription: 'A Metacello project name.'
+		  stringArraySchemaNamed: 'conflictUseIncoming'
+		  description: 'Projects using incoming registrations on conflict.'
+		  itemDescription: nil
 ]
 
 { #category : 'private - schema' }
 MCPToolLoadMetacello >> onConflictUseLoadedSchemaProperty [
 
 	^ self
-		  stringArraySchemaNamed: 'onConflictUseLoaded'
-		  description:
-		  'Project names that should keep loaded registrations when Metacello reports a conflict. Cannot be combined with onConflict.'
-		  itemDescription: 'A Metacello project name.'
+		  stringArraySchemaNamed: 'conflictUseLoaded'
+		  description: 'Projects keeping loaded registrations on conflict.'
+		  itemDescription: nil
 ]
 
 { #category : 'private - schema' }
 MCPToolLoadMetacello >> onDowngradeSchemaProperty [
 
 	^ self
-		  stringEnumSchemaPropertyNamed: 'onDowngrade'
-		  description:
-		  'Metacello downgrade policy. useIncoming accepts the incoming registration, and pass leaves Metacello default downgrade handling.'
+		  stringEnumSchemaPropertyNamed: 'downgrade'
+		  description: 'Downgrade policy.'
 		  values: #( 'useIncoming' 'pass' )
 		  default: self defaultOnDowngrade
 ]
@@ -309,29 +282,26 @@ MCPToolLoadMetacello >> onDowngradeSchemaProperty [
 MCPToolLoadMetacello >> onDowngradeUseIncomingSchemaProperty [
 
 	^ self
-		  stringArraySchemaNamed: 'onDowngradeUseIncoming'
-		  description:
-		  'Project names that should use incoming registrations when Metacello reports a downgrade. Cannot be combined with onDowngrade.'
-		  itemDescription: 'A Metacello project name.'
+		  stringArraySchemaNamed: 'downgradeUseIncoming'
+		  description: 'Projects using incoming registrations on downgrade.'
+		  itemDescription: nil
 ]
 
 { #category : 'private - schema' }
 MCPToolLoadMetacello >> onLockBreakSchemaProperty [
 
 	^ self
-		  stringArraySchemaNamed: 'onLockBreak'
-		  description:
-		  'Project names whose Metacello locks should be broken. Cannot be combined with onLock.'
-		  itemDescription: 'A Metacello project name.'
+		  stringArraySchemaNamed: 'lockBreak'
+		  description: 'Projects with locks to break.'
+		  itemDescription: nil
 ]
 
 { #category : 'private - schema' }
 MCPToolLoadMetacello >> onLockSchemaProperty [
 
 	^ self
-		  stringEnumSchemaPropertyNamed: 'onLock'
-		  description:
-		  'Metacello lock policy. break breaks matching project locks, and pass leaves Metacello default lock handling.'
+		  stringEnumSchemaPropertyNamed: 'lock'
+		  description: 'Lock policy.'
 		  values: #( 'break' 'pass' )
 		  default: self defaultOnLock
 ]
@@ -340,9 +310,8 @@ MCPToolLoadMetacello >> onLockSchemaProperty [
 MCPToolLoadMetacello >> onUpgradeSchemaProperty [
 
 	^ self
-		  stringEnumSchemaPropertyNamed: 'onUpgrade'
-		  description:
-		  'Metacello upgrade policy. useLoaded keeps the loaded registration, and pass leaves Metacello default upgrade handling.'
+		  stringEnumSchemaPropertyNamed: 'upgrade'
+		  description: 'Upgrade policy.'
 		  values: #( 'useLoaded' 'pass' )
 		  default: self defaultOnUpgrade
 ]
@@ -351,19 +320,17 @@ MCPToolLoadMetacello >> onUpgradeSchemaProperty [
 MCPToolLoadMetacello >> onUpgradeUseLoadedSchemaProperty [
 
 	^ self
-		  stringArraySchemaNamed: 'onUpgradeUseLoaded'
-		  description:
-		  'Project names that should keep loaded registrations when Metacello reports an upgrade. Cannot be combined with onUpgrade.'
-		  itemDescription: 'A Metacello project name.'
+		  stringArraySchemaNamed: 'upgradeUseLoaded'
+		  description: 'Projects keeping loaded registrations on upgrade.'
+		  itemDescription: nil
 ]
 
 { #category : 'private - schema' }
 MCPToolLoadMetacello >> onWarningSchemaProperty [
 
 	^ self
-		  stringEnumSchemaPropertyNamed: 'onWarning'
-		  description:
-		  'Metacello warning handling policy. log records and resumes warnings, resume resumes without logging, and pass leaves Metacello default warning handling.'
+		  stringEnumSchemaPropertyNamed: 'warning'
+		  description: 'Warning policy.'
 		  values: #( 'log' 'resume' 'pass' )
 		  default: self defaultOnWarning
 ]

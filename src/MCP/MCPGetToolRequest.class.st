@@ -7,7 +7,8 @@ Class {
 	#name : 'MCPGetToolRequest',
 	#superclass : 'Object',
 	#instVars : [
-		'toolName'
+		'toolName',
+		'includeOutputSchema'
 	],
 	#category : 'MCP-Requests',
 	#package : 'MCP',
@@ -19,7 +20,22 @@ MCPGetToolRequest class >> fromToolRequest: aToolRequest [
 
 	^ self new
 		  toolName: (aToolRequest stringArgumentNamed: 'toolName');
+		  includeOutputSchema: (aToolRequest
+				   booleanArgumentNamed: 'includeOutputSchema'
+				   default: false);
 		  yourself
+]
+
+{ #category : 'accessing' }
+MCPGetToolRequest >> includeOutputSchema [
+
+	^ includeOutputSchema ifNil: [ false ]
+]
+
+{ #category : 'accessing' }
+MCPGetToolRequest >> includeOutputSchema: aBoolean [
+
+	includeOutputSchema := aBoolean
 ]
 
 { #category : 'accessing' }

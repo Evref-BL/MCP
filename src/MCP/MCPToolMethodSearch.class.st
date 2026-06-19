@@ -285,6 +285,38 @@ MCPToolMethodSearch >> methodQueryResultDataForPage: page entriesKey: entriesKey
 	^ self queryResultDataFrom: nil page: page entriesKey: entriesKey
 ]
 
+{ #category : 'private - schema' }
+MCPToolMethodSearch >> methodQueryScopeInputProperties [
+
+	^ {
+		  self methodSideSchemaProperty.
+		  self searchScopeSchemaProperty }
+]
+
+{ #category : 'private - methods' }
+MCPToolMethodSearch >> methodScopeQueryFromRequest: request [
+
+	^ MCPCompiledMethodScopeQuery new
+		  packageNames: (self
+				   searchScopeStringCollectionNamed: 'packages'
+				   fromRequest: request);
+		  classNames:
+			  (self
+				   searchScopeStringCollectionNamed: 'classes'
+				   fromRequest: request);
+		  hierarchyClassNames: (self
+				   searchScopeStringCollectionNamed: 'hierarchies'
+				   fromRequest: request);
+		  subclassClassNames: (self
+				   searchScopeStringCollectionNamed: 'subclassesOf'
+				   fromRequest: request);
+		  parentClassNames: (self
+				   searchScopeStringCollectionNamed: 'superclassesOf'
+				   fromRequest: request);
+		  side: (request stringArgumentNamed: 'side' default: 'both');
+		  yourself
+]
+
 { #category : 'private - filtering' }
 MCPToolMethodSearch >> needsSourceForFiltering [
 

@@ -77,8 +77,8 @@ MCPDebugTestCommand >> capturedResultFor: aDebugSession continuation: aContinuat
 		put: (MCPDebugSessionInfo fromRecord: record) asDictionary;
 		at: #state put: state;
 		at: #timeoutMilliseconds put: request timeoutMilliseconds;
-		at: #warnings put: warnings;
 		at: #capabilities put: self capabilities.
+	warnings ifNotEmpty: [ data at: #warnings put: warnings ].
 	^ MCPDebugToolResult
 		  okSummary: 'Debug test registered ' , record sessionId , '.'
 		  data: data
@@ -100,8 +100,8 @@ MCPDebugTestCommand >> completedResultFor: ignored [
 		at: #session put: nil;
 		at: #state put: nil;
 		at: #timeoutMilliseconds put: request timeoutMilliseconds;
-		at: #warnings put: warnings;
 		at: #capabilities put: self capabilities.
+	warnings ifNotEmpty: [ data at: #warnings put: warnings ].
 	^ MCPDebugToolResult
 		  okSummary: 'Debug test completed without stopping or failing.'
 		  data: data

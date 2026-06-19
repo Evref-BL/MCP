@@ -25,20 +25,21 @@ MCPToolChangeHistoryToolsTest >> testChangeHistoryToolsAreDiscoverableWithExpect
 	metadataByName := (((self dataFrom: result) at: #tools) collect: [
 		                   :each | (each at: #name) -> each ]) asDictionary.
 	toolNames := metadataByName keys.
-	#( 'history_file_list' 'history_entry_list' ) do: [ :toolName |
-			| metadata |
+	#( 'history_file_list' 'history_entry_list' 'history_entry_apply'
+	   'history_entry_revert' ) do: [ :toolName |
+			| metadata tool |
 			self assert: (toolNames includes: toolName).
+			tool := MCPToolRegistry
+				        toolNamed: toolName
+				        ifAbsent: [ self fail: 'Missing tool ' , toolName ].
+			self
+				assert: (MCPToolRegistry exposureForTool: tool)
+				equals: 'discoverable'.
 			metadata := metadataByName at: toolName.
-			self assert: (metadata at: #exposure) equals: 'discoverable'.
-			self assert: (metadata at: #mutability) equals: 'read'.
-			self assert: (metadata at: #risk) equals: 'low' ].
-	#( 'history_entry_apply' 'history_entry_revert' ) do: [ :toolName |
-			| metadata |
-			self assert: (toolNames includes: toolName).
-			metadata := metadataByName at: toolName.
-			self assert: (metadata at: #exposure) equals: 'discoverable'.
-			self assert: (metadata at: #mutability) equals: 'write'.
-			self assert: (metadata at: #risk) equals: 'high' ]
+			self
+				assert: metadata keys asSet
+				equals: #( name description schemaInspectionRequired ) asSet.
+			self assert: (metadata at: #schemaInspectionRequired) ]
 ]
 
 { #category : 'tests' }
@@ -53,18 +54,40 @@ MCPToolChangeHistoryToolsTest >> testChangeHistoryToolsDeclareExpectedInputs [
 		                   MCPToolApplyChangeHistoryEntries new.
 	revertProperties := self inputPropertyNamesFor:
 		                    MCPToolRevertChangeHistoryEntries new.
-	selectionProperties := #( 'historyFilePath' 'indexes' 'entryReferences'
-	                          'startIndex' 'endIndex' 'latestCount'
-	                          'codeChangesOnly' 'confirm' ).
+	selectionProperties := #( 'directoryPath' 'historyFileName'
+	                          'indexes' 'startIndex' 'endIndex'
+	                          'latestCount' 'codeChangesOnly'
+	                          'confirm' ).
 	self
 		assert: fileProperties asArray
-		equals: #( 'includeEntryCounts' 'directoryPath' ).
+		equals: #( 'directoryPath' 'limit' 'offset' ).
 	self
 		assert: entryProperties asArray
 		equals:
-		#( 'historyFilePath' 'limit' 'offset' 'newestFirst' 'codeChangesOnly' ).
+			#( 'directoryPath' 'historyFileName' 'limit' 'offset' 'newestFirst'
+			   'codeChangesOnly' ).
 	self assert: applyProperties asArray equals: selectionProperties.
 	self assert: revertProperties asArray equals: selectionProperties
+]
+
+{ #category : 'tests' }
+MCPToolChangeHistoryToolsTest >> testEntryListSchemaAdvertisesNonCodeEntryKind [
+
+	| entriesProperty entryKindProperty entrySchema tool |
+	tool := MCPToolListChangeHistoryEntries new.
+	entriesProperty := ((tool outputSchema properties detect: [ :each |
+		                     each name = 'data' ]) extraProperties at:
+		                    #properties) detect: [ :each |
+		                   each name = 'entries' ].
+	entrySchema := entriesProperty extraProperties at: #items.
+	entryKindProperty := (entrySchema extraProperties at: #properties)
+		                     detect: [ :each | each name = 'entryKind' ].
+	self
+		assert: (entryKindProperty extraProperties at: #enum) asArray
+		equals: #( 'code' 'session' 'other' ).
+	self
+		assert: (entryKindProperty extraProperties at: #default)
+		equals: 'code'
 ]
 
 { #category : 'tests' }
@@ -79,17 +102,41 @@ MCPToolChangeHistoryToolsTest >> testListChangeHistoryEntriesReturnsEntries [
 ]
 
 { #category : 'tests' }
+MCPToolChangeHistoryToolsTest >> testListChangeHistoryFilesPaginatesFiles [
+
+	| data directory files nextOffset |
+	directory := FileLocator temp asFileReference
+	             / ('mcp-history-files-' , UUID new asString).
+	[
+		directory ensureCreateDirectory.
+		directory / 'a.ombu' writeStreamDo: [ :stream |
+			stream nextPutAll: 'a' ].
+		directory / 'b.ombu' writeStreamDo: [ :stream |
+			stream nextPutAll: 'b' ].
+		data := self toolNamed: 'history_file_list' dataFromArguments: {
+				        (#directoryPath -> directory fullName).
+				        (#limit -> 1) } asDictionary.
+		files := data at: #files.
+		nextOffset := data at: #nextOffset.
+		self assert: files size equals: 1.
+		self assert: nextOffset equals: 1 ] ensure: [
+		directory ensureDeleteAll ]
+]
+
+{ #category : 'tests' }
 MCPToolChangeHistoryToolsTest >> testListChangeHistoryFilesReturnsFiles [
 
-	| data |
+	| allowedFileKeys data files |
 	data := self
 		        toolNamed: 'history_file_list'
-		        dataFromArguments:
-		        { (#includeEntryCounts -> false) } asDictionary.
-	self assert: (data at: #action) equals: 'listFiles'.
-	self assert: (data includesKey: #currentLogPath).
-	self assert: (data includesKey: #directoryPath).
-	self assert: (data includesKey: #files)
+		        dataFromArguments: Dictionary new.
+	files := data at: #files.
+	allowedFileKeys := #( fileName exists fileSize modificationTime
+	                      isCurrent ) asSet.
+	self assert: files notEmpty.
+	self assert: (files allSatisfy: [ :each |
+				 (each includesKey: #fileName) and: [
+					 each keys allSatisfy: [ :key | allowedFileKeys includes: key ] ] ])
 ]
 
 { #category : 'tests' }
@@ -98,16 +145,16 @@ MCPToolChangeHistoryToolsTest >> testSelectionResultDataUsesActionNotOperation [
 	| data result |
 	result := MCPChangeHistorySelectionResult
 		          action: 'apply'
-		          historyFilePath: 'memory.ombu'
+		          historyFileName: 'memory.ombu'
 		          selectionCriteria: Dictionary new
 		          selectedEntries: #(  )
 		          previewEntries: #(  )
 		          skippedNonCodeChangeCount: 0
 		          performed: false
-		          performedCount: 0
-		          headReference: nil.
+		          performedCount: 0.
 	data := result asDictionary.
 	self assert: (data at: #action) equals: 'apply'.
+	self assert: (data at: #historyFileName) equals: 'memory.ombu'.
 	self deny: (data includesKey: #operation)
 ]
 

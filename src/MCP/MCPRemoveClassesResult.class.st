@@ -38,15 +38,17 @@ MCPRemoveClassesResult class >> removedClasses: someRemovedClasses removedPackag
 { #category : 'converting' }
 MCPRemoveClassesResult >> asDictionary [
 
-	^ {
-		  (#classNames
-		   ->
-			   (self removedClasses collect: [ :each |
-				    each classInfo className ]) asArray).
-		  (#removedClasses
-		   -> (self removedClasses collect: #asDictionary) asArray).
-		  (#removedPackageNames -> self removedPackageNames asArray) }
-		  asDictionary
+	| data reparentedSubclassNames |
+	data := Dictionary new.
+	self removedPackageNames ifNotEmpty: [
+		data at: #removedPackageNames put: self removedPackageNames asArray ].
+	reparentedSubclassNames := Array streamContents: [ :stream |
+		self removedClasses do: [ :each |
+			each reparentedSubclassNames do: [ :subclassName |
+				stream nextPut: subclassName ] ] ].
+	reparentedSubclassNames ifNotEmpty: [
+		data at: #reparentedSubclassNames put: reparentedSubclassNames ].
+	^ data
 ]
 
 { #category : 'accessing' }

@@ -202,11 +202,14 @@ MCPRemoveClassesCommandTest >> testMissingClassSignalsCommandError [
 { #category : 'tests' }
 MCPRemoveClassesCommandTest >> testRemovesSimpleClassAndReturnsSnapshot [
 
-	| removedClass result |
+	| removedClass removedClassNames result |
 	result := (MCPRemoveClassesCommand classNames: self batchClassNames)
 		          execute.
 	removedClass := result removedClasses detect: [ :each |
 		                each classInfo className = self simpleClassName ].
+	removedClassNames := result removedClasses
+		                     collect: [ :each | each classInfo className ]
+		                     as: Array.
 	self deny:
 		(Smalltalk globals includesKey: self simpleClassName asSymbol).
 	self deny:
@@ -214,8 +217,8 @@ MCPRemoveClassesCommandTest >> testRemovesSimpleClassAndReturnsSnapshot [
 			 self packageCleanupClassName asSymbol).
 	self assert: result warningMessages isEmpty.
 	self
-		assert: (result asDictionary at: #classNames)
-		equals: self batchClassNames.
+		assert: removedClassNames asSet
+		equals: self batchClassNames asSet.
 	self assert: removedClass wasEmpty.
 	self
 		assert: removedClass classInfo className

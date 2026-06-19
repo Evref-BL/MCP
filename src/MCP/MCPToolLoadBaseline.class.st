@@ -24,7 +24,7 @@ MCPToolLoadBaseline >> commandForRequest: loadBaselineRequest [
 { #category : 'defaults' }
 MCPToolLoadBaseline >> defaultDescription [
 
-	^ 'Load an existing Metacello baseline already available in the image. Omit groups to call Metacello>>load. Supports Metacello warning, conflict, upgrade, downgrade, and lock policies. onWarning defaults to log, onConflict defaults to useLoaded, and upgrade/downgrade/lock default to pass.'
+	^ 'Load an existing Metacello baseline in the image.'
 ]
 
 { #category : 'defaults' }
@@ -35,8 +35,7 @@ MCPToolLoadBaseline >> defaultInputSchema [
 		  properties: {
 				  (self
 					   nonEmptyStringSchemaPropertyNamed: 'baseline'
-					   description:
-						   'Metacello baseline name without the BaselineOf prefix, for example SmallDoc.').
+					   description: 'Baseline name without BaselineOf prefix.').
 				  self groupsSchemaProperty }
 			  , self loadPolicyInputSchemaProperties;
 		  required: #( 'baseline' );

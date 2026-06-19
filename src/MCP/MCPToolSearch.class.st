@@ -32,7 +32,7 @@ MCPToolSearch >> caseSensitiveSchemaPropertyWithDescription: caseSensitiveDescri
 
 	^ self
 		  booleanSchemaPropertyNamed: 'caseSensitive'
-		  description: caseSensitiveDescription
+		  description: 'Case-sensitive matching.'
 		  default: true
 ]
 
@@ -42,9 +42,9 @@ MCPToolSearch >> classAndMethodScopeSummaryForScopeQuery: scopeQuery [
 	^ self classAndMethodScopeSummaryFromAssociations: {
 			  ('packages' -> scopeQuery packageNames).
 			  ('classes' -> scopeQuery classNames).
-			  ('hierarchy' -> scopeQuery hierarchyClassNames).
+			  ('hierarchies' -> scopeQuery hierarchyClassNames).
 			  ('subclasses' -> scopeQuery subclassClassNames).
-			  ('parents' -> scopeQuery parentClassNames) }
+			  ('superclasses' -> scopeQuery parentClassNames) }
 ]
 
 { #category : 'private - results' }
@@ -62,78 +62,52 @@ MCPToolSearch >> classAndMethodScopeSummaryFromAssociations: scopeAssociations [
 MCPToolSearch >> classAndMethodScopeSummaryFromRequest: request [
 
 	^ self classAndMethodScopeSummaryFromAssociations: {
-			  ('packages'
-			   -> (request stringCollectionArgumentNamed: 'packageNames')).
+			  ('packages' -> (self
+				    searchScopeStringCollectionNamed: 'packages'
+				    fromRequest: request)).
 			  ('classes'
-			   -> (request stringCollectionArgumentNamed: 'classNames')).
-			  ('hierarchy'
 			   ->
-			   (request stringCollectionArgumentNamed: 'hierarchyClassNames')).
-			  ('subclasses'
-			   -> (request stringCollectionArgumentNamed: 'subclassClassNames')).
-			  ('parents'
-			   -> (request stringCollectionArgumentNamed: 'parentClassNames')) }
+			   (self
+				    searchScopeStringCollectionNamed: 'classes'
+				    fromRequest: request)).
+			  ('hierarchies' -> (self
+				    searchScopeStringCollectionNamed: 'hierarchies'
+				    fromRequest: request)).
+			  ('subclasses' -> (self
+				    searchScopeStringCollectionNamed: 'subclassesOf'
+				    fromRequest: request)).
+			  ('superclasses' -> (self
+				    searchScopeStringCollectionNamed: 'superclassesOf'
+				    fromRequest: request)) }
 ]
 
 { #category : 'private - schema' }
 MCPToolSearch >> classQueryScopeInputProperties [
 
-	^ {
-		  self classScopePackageNamesProperty.
-		  self classScopeClassNamesProperty.
-		  self classScopeHierarchyClassNamesProperty.
-		  self classScopeSubclassClassNamesProperty.
-		  self classScopeParentClassNamesProperty }
+	^ { self searchScopeSchemaProperty }
 ]
 
-{ #category : 'private - schema' }
-MCPToolSearch >> classScopeClassNamesProperty [
+{ #category : 'private - request' }
+MCPToolSearch >> classScopeQueryFromRequest: request [
 
-	^ self
-		  stringArraySchemaNamed: 'classNames'
-		  description:
-		  'Class scope: include these exact classes. Omit all class scope properties to search all classes.'
-		  itemDescription: 'A class name.'
-]
-
-{ #category : 'private - schema' }
-MCPToolSearch >> classScopeHierarchyClassNamesProperty [
-
-	^ self
-		  stringArraySchemaNamed: 'hierarchyClassNames'
-		  description:
-		  'Class scope: include each named class, its superclasses, and its subclasses. Omit all class scope properties to search all classes.'
-		  itemDescription: 'A hierarchy root class name.'
-]
-
-{ #category : 'private - schema' }
-MCPToolSearch >> classScopePackageNamesProperty [
-
-	^ self
-		  stringArraySchemaNamed: 'packageNames'
-		  description:
-		  'Class scope: include classes defined in these packages. Omit all class scope properties to search all classes.'
-		  itemDescription: 'A package name.'
-]
-
-{ #category : 'private - schema' }
-MCPToolSearch >> classScopeParentClassNamesProperty [
-
-	^ self
-		  stringArraySchemaNamed: 'parentClassNames'
-		  description:
-		  'Class scope: include superclasses of these classes. The named classes are excluded unless classNames also includes them.'
-		  itemDescription: 'A class name whose superclasses are included.'
-]
-
-{ #category : 'private - schema' }
-MCPToolSearch >> classScopeSubclassClassNamesProperty [
-
-	^ self
-		  stringArraySchemaNamed: 'subclassClassNames'
-		  description:
-		  'Class scope: include subclasses of these classes. The named classes are excluded unless classNames also includes them.'
-		  itemDescription: 'A class name whose subclasses are included.'
+	^ MCPClassScopeQuery new
+		  packageNames: (self
+				   searchScopeStringCollectionNamed: 'packages'
+				   fromRequest: request);
+		  classNames:
+			  (self
+				   searchScopeStringCollectionNamed: 'classes'
+				   fromRequest: request);
+		  hierarchyClassNames: (self
+				   searchScopeStringCollectionNamed: 'hierarchies'
+				   fromRequest: request);
+		  subclassClassNames: (self
+				   searchScopeStringCollectionNamed: 'subclassesOf'
+				   fromRequest: request);
+		  parentClassNames: (self
+				   searchScopeStringCollectionNamed: 'superclassesOf'
+				   fromRequest: request);
+		  yourself
 ]
 
 { #category : 'private - execution' }
@@ -268,7 +242,7 @@ MCPToolSearch >> filterModeSchemaPropertyWithDescription: modeDescription values
 
 	^ self
 		  stringEnumSchemaPropertyNamed: 'filterMode'
-		  description: modeDescription
+		  description: 'Filter match mode.'
 		  values: modeValues
 		  default: self defaultFilterMode
 ]
@@ -295,7 +269,8 @@ MCPToolSearch >> includeSourceSchemaPropertyWithDescription: includeSourceDescri
 
 	^ self
 		  booleanSchemaPropertyNamed: 'includeSource'
-		  description: includeSourceDescription
+		  description:
+		  'Include source code. Use only for small result sets.'
 		  default: false
 ]
 
@@ -385,9 +360,8 @@ MCPToolSearch >> packageScopePackageNamesProperty [
 
 	^ self
 		  stringArraySchemaNamed: 'packageNames'
-		  description:
-		  'Package scope: exact package names to include. Omit all package scope properties to search all packages. Combine with projectNames to union scopes.'
-		  itemDescription: 'A package name.'
+		  description: 'Exact packages.'
+		  itemDescription: 'Package name.'
 ]
 
 { #category : 'private - schema' }
@@ -395,9 +369,8 @@ MCPToolSearch >> packageScopeProjectNamesProperty [
 
 	^ self
 		  stringArraySchemaNamed: 'projectNames'
-		  description:
-		  'Package scope: project names whose packages are included. Omit all package scope properties to search all packages. Combine with packageNames to union scopes.'
-		  itemDescription: 'A project name.'
+		  description: 'Projects whose packages are included.'
+		  itemDescription: 'Project name.'
 ]
 
 { #category : 'private - results' }
@@ -415,16 +388,22 @@ MCPToolSearch >> packageScopeSummaryForProjectNames: projectNames packageNames: 
 { #category : 'private - schema' }
 MCPToolSearch >> paginationInputPropertiesWithLimitDescription: limitDescription [
 
+	| limitProperty offsetProperty |
+	limitProperty := self
+		                 integerSchemaPropertyNamed: 'limit'
+		                 description: 'Maximum results.'
+		                 default: self defaultPageLimit.
+	limitProperty
+		minimum: 0;
+		maximum: 100.
+	offsetProperty := self
+		                  integerSchemaPropertyNamed: 'offset'
+		                  description: 'Pagination offset.'
+		                  default: 0.
+	offsetProperty minimum: 0.
 	^ {
-		  (self
-			   integerSchemaPropertyNamed: 'limit'
-			   description: limitDescription
-			   default: self defaultPageLimit).
-		  (self
-			   integerSchemaPropertyNamed: 'offset'
-			   description:
-			   'Zero-based pagination offset applied after filtering.'
-			   default: 0) }
+		  limitProperty.
+		  offsetProperty }
 ]
 
 { #category : 'private - request' }
@@ -528,6 +507,44 @@ MCPToolSearch >> scopeSummaryFromLabels: labels [
 MCPToolSearch >> searchRequestFromToolRequest: request [
 
 	self subclassResponsibility
+]
+
+{ #category : 'private - request' }
+MCPToolSearch >> searchScopeFromRequest: request [
+
+	^ request argumentNamed: 'scope' ifAbsent: [ Dictionary new ]
+]
+
+{ #category : 'private - schema' }
+MCPToolSearch >> searchScopeSchemaProperties [
+
+	^ {
+		  (self stringArraySchemaNamed: 'classes').
+		  (self stringArraySchemaNamed: 'packages').
+		  (self stringArraySchemaNamed: 'superclassesOf').
+		  (self stringArraySchemaNamed: 'subclassesOf').
+		  (self stringArraySchemaNamed: 'hierarchies') }
+]
+
+{ #category : 'private - schema' }
+MCPToolSearch >> searchScopeSchemaProperty [
+
+	^ MCPStructureProperties new
+		  name: 'scope';
+		  type: 'object';
+		  description:
+			  'Optional search scope. If omitted, searches all matching entities.';
+		  properties: self searchScopeSchemaProperties;
+		  additionalProperties: false;
+		  yourself
+]
+
+{ #category : 'private - request' }
+MCPToolSearch >> searchScopeStringCollectionNamed: aName fromRequest: request [
+
+	^ request
+		  stringCollectionArgumentNamed: aName
+		  in: (self searchScopeFromRequest: request)
 ]
 
 { #category : 'private - template' }

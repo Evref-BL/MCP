@@ -74,24 +74,25 @@ MCPToolRunTests >> coverageMethodObjectSchema [
 { #category : 'private - coverage schema' }
 MCPToolRunTests >> coverageOptionsObjectSchema [
 
-	| property |
+	| methodLimitProperty property |
+	methodLimitProperty := self
+		                       integerSchemaPropertyNamed: 'methodLimit'
+		                       description:
+		                       'Maximum method entries per coverage list.'
+		                       default: self defaultCoverageMethodLimit.
+	methodLimitProperty minimum: 0.
 	property := self
 		            schemaPropertyNamed: 'coverage'
 		            type: 'object'
 		            description:
-		            'Coverage options. At least one explicit method scope property is required.'.
+		            'Coverage options. Requires explicit method scope.'.
 	property
 		properties: self methodQueryScopeInputProperties , {
 					(self
 						 booleanSchemaPropertyNamed: 'includeCoveredMethods'
-						 description:
-							 'Whether to include capped coveredMethods details in the coverage result.'
+						 description: 'Include covered method details.'
 						 default: false).
-					(self
-						 integerSchemaPropertyNamed: 'methodLimit'
-						 description:
-							 'Maximum number of method entries returned in each coverage method list. Use 0 for counts only.'
-						 default: self defaultCoverageMethodLimit) };
+					methodLimitProperty };
 		additionalProperties: false.
 	^ property
 ]
@@ -201,18 +202,16 @@ MCPToolRunTests >> defaultInputSchema [
 				  ((MCPStructureProperties new
 					    name: 'tests';
 					    type: 'array';
-					    description: 'The test execution requests to run as a batch.')
+					    description: 'Test requests.')
 					   items: self testRequestObjectSchema;
 					   yourself).
 				  (self
 					   integerSchemaPropertyNamed: 'timeoutSeconds'
-					   description:
-					   'Server-side timeout for the batch, in seconds. Use 0 to return immediately with all tests listed in unrunTests. Cannot be combined with timeoutMilliseconds.'
+					   description: 'Timeout in seconds; 0 returns immediately.'
 					   default: self defaultTimeoutSeconds).
 				  (self
 					   integerSchemaPropertyNamed: 'timeoutMilliseconds'
-					   description:
-					   'Server-side timeout for the batch, in milliseconds. Use for sub-second test runner contracts. Cannot be combined with timeoutSeconds.') };
+					   description: 'Timeout in milliseconds.') };
 		  required: #( 'tests' );
 		  yourself
 ]
@@ -548,17 +547,16 @@ MCPToolRunTests >> testRequestObjectSchema [
 
 	^ MCPStructureProperties new
 		  type: 'object';
-		  description: 'A single test execution request in the batch.';
+		  description: 'Test request.';
 		  properties: {
 				  (self
 					   schemaPropertyNamed: 'className'
 					   type: 'string'
-					   description: 'The test class to run.').
+					   description: 'Test class.').
 				  (self
 					   schemaPropertyNamed: 'testMethodName'
 					   type: 'string'
-					   description:
-						   'The single test method to run. Omit this to run the full class suite.') };
+					   description: 'Test method.') };
 		  required: #( 'className' );
 		  additionalProperties: false;
 		  yourself

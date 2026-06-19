@@ -37,22 +37,32 @@ MCPClassDescriptionInfo class >> fromClass: aClass [
 { #category : 'converting' }
 MCPClassDescriptionInfo >> asDictionary [
 
-	^ {
-		  (#className -> className).
-		  (#superclassName -> superclassName).
-		  (#packageName -> packageName).
-		  (#tag -> tag).
-		  (#instanceSlotNames -> instanceSlotNames).
-		  (#classSlotNames -> classSlotNames).
-		  (#traitNames -> traitNames).
-		  (#classTraitNames -> classTraitNames).
-		  (#traitComposition -> traitComposition).
-		  (#classTraitComposition -> classTraitComposition).
-		  (#sharedPoolNames -> sharedPoolNames).
-		  (#sharedVariableNames -> sharedVariableNames).
-		  (#layoutClassName -> layoutClassName).
-		  (#instanceMethodCount -> instanceMethodCount).
-		  (#classMethodCount -> classMethodCount) } asDictionary
+	| data |
+	data := Dictionary new.
+	data
+		at: #className put: className;
+		at: #superclassName put: superclassName;
+		at: #packageName put: packageName;
+		at: #tag put: tag;
+		at: #layoutClassName put: layoutClassName;
+		at: #instanceMethodCount put: instanceMethodCount;
+		at: #classMethodCount put: classMethodCount.
+	instanceSlotNames ifNotEmpty: [ :names |
+		data at: #instanceSlotNames put: names ].
+	classSlotNames ifNotEmpty: [ :names |
+		data at: #classSlotNames put: names ].
+	traitNames ifNotEmpty: [ :names | data at: #traitNames put: names ].
+	classTraitNames ifNotEmpty: [ :names |
+		data at: #classTraitNames put: names ].
+	traitComposition = '{}' ifFalse: [
+		data at: #traitComposition put: traitComposition ].
+	classTraitComposition = '{}' ifFalse: [
+		data at: #classTraitComposition put: classTraitComposition ].
+	sharedPoolNames ifNotEmpty: [ :names |
+		data at: #sharedPoolNames put: names ].
+	sharedVariableNames ifNotEmpty: [ :names |
+		data at: #sharedVariableNames put: names ].
+	^ data
 ]
 
 { #category : 'initialization' }

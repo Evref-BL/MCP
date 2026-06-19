@@ -28,14 +28,15 @@ MCPLoadBaselineResult class >> request: aRequest newPackageNames: packageNames r
 { #category : 'converting' }
 MCPLoadBaselineResult >> asDictionary [
 
-	^ {
-		  (#baseline -> self baseline).
-		  (#groups -> self groups).
-		  (#onWarning -> self onWarning).
-		  (#onConflict -> self onConflict).
-		  (#policy -> self loadPolicy asDictionary).
-		  (#newPackageNames -> self newPackageNames).
-		  (#repositories -> self repositoryDictionaries) } asDictionary
+	| data policy repositories |
+	data := { (#baseline -> self baseline) } asDictionary.
+	policy := self loadPolicy asDictionary.
+	policy ifNotEmpty: [ data at: #policy put: policy ].
+	self newPackageNames ifNotEmpty: [ :packageNames |
+		data at: #newPackageNames put: packageNames ].
+	repositories := self repositoryDictionaries.
+	repositories ifNotEmpty: [ data at: #repositories put: repositories ].
+	^ data
 ]
 
 { #category : 'accessing' }

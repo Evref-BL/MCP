@@ -154,11 +154,11 @@ operation changes the running image state.
 
 ## Dashboard
 
-In a graphical image, inspect the `mcp` object and open the dashboard tab. The
-dashboard shows server status, port/debug controls, registered tools, optional
+In a graphical image, inspect the `mcp` object and open the dashboard tab.
+The dashboard shows server status, port/debug controls, registered tools,
 observability, metrics, traces, and recent logs.
 
-Enable observability only when you need call timing, traces, and logs for the
-current image session.
-Configure `mcp monitoringExportDirectory: aDirectory` to export instance
-metadata and trace-worthy calls as JSON files for offline payload analysis.
+Observability is enabled by default. Configure
+`mcp monitoringExportDirectory: aDirectory` to override the default
+`~/pharo-mcp-observability` export root for instance metadata,
+`logs.jsonl`, `metrics.json`, and `traces.jsonl`.

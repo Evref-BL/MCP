@@ -5,16 +5,11 @@ Class {
 	#name : 'MCPChangeHistoryLogInfo',
 	#superclass : 'Object',
 	#instVars : [
-		'path',
 		'fileName',
-		'storeName',
 		'exists',
 		'fileSize',
 		'modificationTime',
-		'entriesCount',
-		'headReference',
-		'isCurrent',
-		'loadError'
+		'isCurrent'
 	],
 	#category : 'MCP-DTOs',
 	#package : 'MCP',
@@ -22,40 +17,33 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPChangeHistoryLogInfo class >> fromFileReference: aFileReference isCurrent: aBoolean includeEntryCounts: includeCounts [
+MCPChangeHistoryLogInfo class >> fromFileReference: aFileReference isCurrent: aBoolean [
 
 	^ self new
-		  initializeFromFileReference: aFileReference
-		  isCurrent: aBoolean
-		  includeEntryCounts: includeCounts
+		  initializeFromFileReference: aFileReference isCurrent: aBoolean;
+		  yourself
 ]
 
 { #category : 'converting' }
 MCPChangeHistoryLogInfo >> asDictionary [
 
-	^ {
-		  (#path -> path).
-		  (#fileName -> fileName).
-		  (#storeName -> storeName).
-		  (#exists -> exists).
-		  (#fileSize -> fileSize).
-		  (#modificationTime -> modificationTime).
-		  (#entriesCount -> entriesCount).
-		  (#headReference -> headReference).
-		  (#isCurrent -> isCurrent).
-		  (#loadError -> loadError) } asDictionary
+	| data |
+	data := Dictionary new.
+	fileName ifNotNil: [ data at: #fileName put: fileName ].
+	exists == false ifTrue: [ data at: #exists put: false ].
+	fileSize ifNotNil: [ data at: #fileSize put: fileSize ].
+	modificationTime ifNotNil: [
+		data at: #modificationTime put: modificationTime ].
+	isCurrent == true ifTrue: [ data at: #isCurrent put: true ].
+	^ data
 ]
 
 { #category : 'initialization' }
-MCPChangeHistoryLogInfo >> initializeFromFileReference: aFileReference isCurrent: aBoolean includeEntryCounts: includeCounts [
+MCPChangeHistoryLogInfo >> initializeFromFileReference: aFileReference isCurrent: aBoolean [
 
-	path := [ aFileReference fullName ]
-		        on: Error
-		        do: [ :error | aFileReference asString ].
 	fileName := [ aFileReference basename ]
 		            on: Error
-		            do: [ :error | path ].
-	storeName := fileName.
+		            do: [ :error | aFileReference asString ].
 	exists := [ aFileReference exists ]
 		          on: Error
 		          do: [ :error | false ].
@@ -65,27 +53,5 @@ MCPChangeHistoryLogInfo >> initializeFromFileReference: aFileReference isCurrent
 	modificationTime := [ aFileReference modificationTime asString ]
 		                    on: Error
 		                    do: [ :error | nil ].
-	isCurrent := aBoolean.
-	includeCounts ifTrue: [
-		self loadEntryMetadataFromFileReference: aFileReference ]
-]
-
-{ #category : 'private' }
-MCPChangeHistoryLogInfo >> loadEntryMetadataFromFileReference: aFileReference [
-
-	[
-		| log |
-		log := EpLog freshFromFile: aFileReference.
-		entriesCount := log entries size.
-		headReference := self stringFromReference: log headReference ]
-		on: Error
-		do: [ :error |
-		loadError := error messageText ifNil: [ error asString ] ]
-]
-
-{ #category : 'private' }
-MCPChangeHistoryLogInfo >> stringFromReference: aReference [
-
-	aReference isNull ifTrue: [ ^ nil ].
-	^ aReference shortName asString
+	isCurrent := aBoolean
 ]

@@ -160,20 +160,20 @@ MCPJSONSchemaValidator >> validateAdditionalPropertiesIn: aDictionary againstSch
 	additionalProperties == true ifTrue: [ ^ self ].
 	propertyNames := self propertyNamesIn: schema.
 	aDictionary keysAndValuesDo: [ :key :value |
-		(propertyNames includes: key asString) ifFalse: [
-			additionalProperties == false
-				ifTrue: [
-					self
-						addViolationAt: (path copyWith: key asString)
-						keyword: #additionalProperties
-						message: 'Object contains an unexpected property.'
-						expected: propertyNames asArray
-						actual: key asString ]
-				ifFalse: [
-					self
-						validateValue: value
-						againstSchema: additionalProperties
-						atPath: (path copyWith: key asString) ] ] ]
+			(propertyNames includes: key asString) ifFalse: [
+					additionalProperties == false
+						ifTrue: [
+								self
+									addViolationAt: (path copyWith: key asString)
+									keyword: #additionalProperties
+									message: 'Object contains an unexpected property.'
+									expected: nil
+									actual: key asString ]
+						ifFalse: [
+								self
+									validateValue: value
+									againstSchema: additionalProperties
+									atPath: (path copyWith: key asString) ] ] ]
 ]
 
 { #category : 'private - combinators' }
@@ -314,6 +314,29 @@ MCPJSONSchemaValidator >> validateNotIn: schema for: aValue atPath: path [
 			actual: 'matched prohibited schema' ]
 ]
 
+{ #category : 'private - number validation' }
+MCPJSONSchemaValidator >> validateNumber: aNumber againstSchema: schema atPath: path [
+
+	(self keywordNamed: #minimum in: schema ifAbsent: [ nil ]) ifNotNil: [
+			:minimum |
+			aNumber < minimum ifTrue: [
+					self
+						addViolationAt: path
+						keyword: #minimum
+						message: 'Number below schema minimum.'
+						expected: minimum
+						actual: aNumber ] ].
+	(self keywordNamed: #maximum in: schema ifAbsent: [ nil ]) ifNotNil: [
+			:maximum |
+			aNumber > maximum ifTrue: [
+					self
+						addViolationAt: path
+						keyword: #maximum
+						message: 'Number above schema maximum.'
+						expected: maximum
+						actual: aNumber ] ]
+]
+
 { #category : 'private - object validation' }
 MCPJSONSchemaValidator >> validateObject: aDictionary againstSchema: schema atPath: path [
 
@@ -399,22 +422,24 @@ MCPJSONSchemaValidator >> validateValue: aValue againstSchema: aSchemaObject atP
 	self validateEnumIn: schema for: aValue atPath: path.
 	type := self keywordNamed: #type in: schema ifAbsent: [ nil ].
 	type ifNotNil: [
-		(self value: aValue matchesType: type) ifFalse: [
-			self
-				addViolationAt: path
-				keyword: #type
-				message: 'Value has the wrong JSON type.'
-				expected: type
-				actual: (self typeNameFor: aValue).
-			^ self ] ].
+			(self value: aValue matchesType: type) ifFalse: [
+					self
+						addViolationAt: path
+						keyword: #type
+						message: 'Value has the wrong JSON type.'
+						expected: type
+						actual: (self typeNameFor: aValue).
+					^ self ] ].
 	(aValue isDictionary or: [ self hasObjectKeywordsIn: schema ])
 		ifTrue: [
-			aValue isDictionary ifTrue: [
-				self validateObject: aValue againstSchema: schema atPath: path ] ].
+				aValue isDictionary ifTrue: [
+					self validateObject: aValue againstSchema: schema atPath: path ] ].
 	(self isJSONArray: aValue) ifTrue: [
 		self validateArray: aValue againstSchema: schema atPath: path ].
 	aValue isString ifTrue: [
-		self validateString: aValue againstSchema: schema atPath: path ]
+		self validateString: aValue againstSchema: schema atPath: path ].
+	aValue isNumber ifTrue: [
+		self validateNumber: aValue againstSchema: schema atPath: path ]
 ]
 
 { #category : 'private - testing' }

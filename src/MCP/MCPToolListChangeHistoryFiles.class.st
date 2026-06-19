@@ -26,25 +26,41 @@ MCPToolListChangeHistoryFiles >> commandForRequest: changeHistoryRequest [
 { #category : 'defaults' }
 MCPToolListChangeHistoryFiles >> defaultDescription [
 
-	^ 'List Pharo image change history .ombu files. Use history_entry_list to inspect entries, and history_entry_apply or history_entry_revert only when previewing or performing recovery changes.'
+	^ 'List Pharo image change history .ombu files. Use history_entry_list to inspect entries. Use apply/revert only for recovery previews or changes.'
+]
+
+{ #category : 'defaults' }
+MCPToolListChangeHistoryFiles >> defaultFileLimit [
+
+	^ 25
 ]
 
 { #category : 'defaults' }
 MCPToolListChangeHistoryFiles >> defaultInputSchema [
 
+	| limitProperty offsetProperty |
+	limitProperty := self
+		                 integerSchemaPropertyNamed: 'limit'
+		                 description: 'Maximum files.'
+		                 default: self defaultFileLimit.
+	limitProperty
+		minimum: 0;
+		maximum: self maximumFileLimit.
+	offsetProperty := self
+		                  integerSchemaPropertyNamed: 'offset'
+		                  description: 'Pagination offset.'
+		                  default: 0.
+	offsetProperty minimum: 0.
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties: {
 				  (self
-					   booleanSchemaPropertyNamed: 'includeEntryCounts'
-					   description:
-						   'Whether to open each history file and count entries. Disable for a faster filesystem-only listing.'
-					   default: true).
-				  (self
 					   schemaPropertyNamed: 'directoryPath'
 					   type: 'string'
 					   description:
-						   'Optional directory to scan for .ombu change history files. Omit to scan the current image change history directory.') };
+						   'Optional .ombu directory. Default: current image history directory.').
+				  limitProperty.
+				  offsetProperty };
 		  required: #(  );
 		  additionalProperties: false;
 		  yourself
@@ -57,32 +73,23 @@ MCPToolListChangeHistoryFiles >> defaultOutputSchema [
 	filesProperty := self
 		                 schemaPropertyNamed: 'files'
 		                 type: 'array'
-		                 description:
-		                 'Change history files returned by this tool.'.
+		                 description: 'Change history files.'.
 	filesProperty items: self changeHistoryLogSchemaProperty.
 	^ self
-		  standardOutputSchemaForDataProperties: {
-				  (self
-					   schemaPropertyNamed: 'action'
-					   type: 'string'
-					   description:
-					   'The change history action that produced this result.').
-				  (self
-					   schemaPropertyNamed: 'currentLogPath'
-					   type: 'string'
-					   description: 'The current image change history file path.').
-				  (self
-					   schemaPropertyNamed: 'directoryPath'
-					   type: 'string'
-					   description: 'The directory scanned.').
-				  filesProperty }
-		  required: #( 'action' )
+		  standardOutputSchemaForDataProperties: { filesProperty }
+		  required: #( 'files' )
 ]
 
 { #category : 'defaults' }
 MCPToolListChangeHistoryFiles >> defaultTitle [
 
 	^ 'List Change History Files'
+]
+
+{ #category : 'defaults' }
+MCPToolListChangeHistoryFiles >> maximumFileLimit [
+
+	^ 100
 ]
 
 { #category : 'private - request' }

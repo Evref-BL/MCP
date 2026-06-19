@@ -43,8 +43,9 @@ MCPToolLoadRepositoryTest >> testCommandAppliesResumeWarningAndIncomingConflictP
 			           (#owner -> 'ExampleOwner').
 			           (#project -> 'ExampleProject').
 			           (#baseline -> 'ExampleBaseline').
-			           (#onWarning -> 'resume').
-			           (#onConflict -> 'useIncoming') }.
+			           (#policy -> {
+				            (#warning -> 'resume').
+				            (#conflict -> 'useIncoming') } asDictionary) }.
 	self executeRecordingCommandForRequest: request.
 	metacello := self recordedMetacello.
 	self assert: (metacello received: #onWarning:).
@@ -81,8 +82,8 @@ MCPToolLoadRepositoryTest >> testCommandConfiguresMetacelloAndLoadsDefaultGroup 
 		assert: result repositoryUrl
 		equals: 'github://ExampleOwner/ExampleProject:main/src'.
 	self
-		assert: (repository at: #repositoryUrl)
-		equals: result repositoryUrl.
+		assert: repository
+		equals: { (#repositoryUrl -> result repositoryUrl) } asDictionary.
 	self assert: (load at: #baseline) equals: 'ExampleBaseline'.
 	self assert: result newPackageNames isEmpty.
 	self assert: result repositoryInfos isEmpty
@@ -112,8 +113,9 @@ MCPToolLoadRepositoryTest >> testCommandPassPoliciesSkipMetacelloPolicyConfigura
 			           (#owner -> 'ExampleOwner').
 			           (#project -> 'ExampleProject').
 			           (#baseline -> 'ExampleBaseline').
-			           (#onWarning -> 'pass').
-			           (#onConflict -> 'pass') }.
+			           (#policy -> {
+				            (#warning -> 'pass').
+				            (#conflict -> 'pass') } asDictionary) }.
 	self executeRecordingCommandForRequest: request.
 	metacello := self recordedMetacello.
 	self assert: (metacello received: #load).

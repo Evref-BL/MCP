@@ -138,22 +138,7 @@ MCPLoadRepositoryResult >> project [
 { #category : 'converting' }
 MCPLoadRepositoryResult >> repositoryDictionary [
 
-	| dictionary |
-	dictionary := { (#repositoryUrl -> self repositoryUrl) } asDictionary.
-	self hostUrl ifNotNil: [ :value | dictionary at: #hostUrl put: value ].
-	self owner ifNotNil: [ :value | dictionary at: #owner put: value ].
-	self project ifNotNil: [ :value | dictionary at: #project put: value ].
-	self commitish ifNotNil: [ :value |
-		dictionary at: #commitish put: value ].
-	self sourceDirectory ifNotNil: [ :value |
-		dictionary at: #sourceDirectory put: value ].
-	self checkoutPath ifNotNil: [ :value |
-		dictionary at: #checkoutPath put: value ].
-	self repositoryName ifNotNil: [ :value |
-		dictionary at: #repositoryName put: value ].
-	self location ifNotNil: [ :value |
-		dictionary at: #location put: value ].
-	^ dictionary
+	^ { (#repositoryUrl -> self repositoryUrl) } asDictionary
 ]
 
 { #category : 'accessing' }

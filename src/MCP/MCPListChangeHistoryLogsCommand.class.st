@@ -52,7 +52,7 @@ MCPListChangeHistoryLogsCommand >> directoryForRequestWithCurrentFile: currentFi
 { #category : 'execution' }
 MCPListChangeHistoryLogsCommand >> execute [
 
-	| currentFile directory files logs includeFile |
+	| currentFile directory files includeFile logInfos page resultPage |
 	currentFile := self currentHistoryFileReference.
 	directory := self directoryForRequestWithCurrentFile: currentFile.
 	includeFile := self
@@ -61,15 +61,21 @@ MCPListChangeHistoryLogsCommand >> execute [
 	files := self
 		         historyFileReferencesFrom: directory
 		         including: includeFile.
-	logs := files collect: [ :each |
-			        MCPChangeHistoryLogInfo
-				        fromFileReference: each
-				        isCurrent: (self sameFileReference: each as: currentFile)
-				        includeEntryCounts: request includeEntryCounts ].
+	page := MCPPaginationResult
+		        fromEntries: files
+		        limit: request limit
+		        offset: request offset.
+	logInfos := page entries collect: [ :each |
+			            MCPChangeHistoryLogInfo
+				            fromFileReference: each
+				            isCurrent:
+				            (self sameFileReference: each as: currentFile) ].
+	resultPage := MCPPaginationResult
+		              entries: logInfos
+		              nextOffset: page nextOffset.
 	^ MCPChangeHistoryListLogsResult
-		  currentLogPath: (currentFile ifNotNil: [ currentFile fullName ])
 		  directoryPath: (directory ifNotNil: [ directory fullName ])
-		  logs: logs
+		  page: resultPage
 ]
 
 { #category : 'private' }

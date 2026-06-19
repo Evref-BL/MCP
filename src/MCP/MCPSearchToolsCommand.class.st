@@ -31,18 +31,13 @@ MCPSearchToolsCommand >> execute [
 	tools := MCPToolRegistry
 		         toolsMatchingQuery: request query
 		         group: request group
-		         includeStatic: request includeStatic
 		         limit: request limit
 		         usingPolicy: tool toolExposurePolicy.
-	^ {
-		  (#tools -> (tools collect: [ :each |
-				    MCPToolRegistry
-					    metadataForTool: each
-					    usingPolicy: tool toolExposurePolicy ]) asArray).
-		  (#totalCount -> tools size).
-		  (#query -> request query).
-		  (#group -> request group).
-		  (#includeStatic -> request includeStatic) } asDictionary
+	^ { (#tools -> (tools collect: [ :each |
+			    MCPToolRegistry
+				    searchMetadataForTool: each
+				    usingPolicy: tool toolExposurePolicy ]) asArray) }
+		  asDictionary
 ]
 
 { #category : 'accessing' }

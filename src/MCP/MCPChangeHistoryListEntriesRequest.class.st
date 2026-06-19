@@ -5,7 +5,8 @@ Class {
 	#name : 'MCPChangeHistoryListEntriesRequest',
 	#superclass : 'Object',
 	#instVars : [
-		'historyFilePath',
+		'directoryPath',
+		'historyFileName',
 		'limit',
 		'offset',
 		'newestFirst',
@@ -20,7 +21,8 @@ Class {
 MCPChangeHistoryListEntriesRequest class >> fromRequest: request tool: aTool [
 
 	^ self new
-		  historyFilePath: (request stringArgumentNamed: 'historyFilePath');
+		  directoryPath: (request stringArgumentNamed: 'directoryPath');
+		  historyFileName: (request stringArgumentNamed: 'historyFileName');
 		  limit: (request
 				   nonNegativeIntegerArgumentNamed: 'limit'
 				   default: aTool defaultEntryLimit);
@@ -46,15 +48,27 @@ MCPChangeHistoryListEntriesRequest >> codeChangesOnly: aBoolean [
 ]
 
 { #category : 'accessing' }
-MCPChangeHistoryListEntriesRequest >> historyFilePath [
+MCPChangeHistoryListEntriesRequest >> directoryPath [
 
-	^ historyFilePath
+	^ directoryPath
 ]
 
 { #category : 'accessing' }
-MCPChangeHistoryListEntriesRequest >> historyFilePath: aString [
+MCPChangeHistoryListEntriesRequest >> directoryPath: aString [
 
-	historyFilePath := aString
+	directoryPath := aString
+]
+
+{ #category : 'accessing' }
+MCPChangeHistoryListEntriesRequest >> historyFileName [
+
+	^ historyFileName
+]
+
+{ #category : 'accessing' }
+MCPChangeHistoryListEntriesRequest >> historyFileName: aString [
+
+	historyFileName := aString
 ]
 
 { #category : 'accessing' }
