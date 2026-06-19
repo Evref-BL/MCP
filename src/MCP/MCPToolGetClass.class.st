@@ -139,7 +139,7 @@ MCPToolGetClass >> commandForRequest: getRequest [
 { #category : 'defaults' }
 MCPToolGetClass >> defaultDescription [
 
-	^ 'Get one class by name and return structured metadata, with optional superclass and subclass context. Use class_search to discover candidate classes first.'
+	^ 'Get metadata for one class. Optional superclass/subclass context. Use class_search to discover class names.'
 ]
 
 { #category : 'defaults' }
@@ -149,22 +149,22 @@ MCPToolGetClass >> defaultInputSchema [
 	includeCommentProperty := MCPStructureProperties new
 		                          name: 'includeComment';
 		                          type: 'boolean';
-		                          description:
-			                          'Whether to include the class comment in returned class descriptions.';
+		                          description: 'Include class comments.';
 		                          default: false;
 		                          yourself.
 	upToSuperclassNameProperty := MCPStructureProperties new
 		                              name: 'upToSuperclassName';
 		                              type: 'string';
 		                              description:
-			                              'An optional superclass name that requests the superclass chain up to but not including that ancestor. When omitted, no superclass descriptions are returned.';
+			                              'Ancestor superclass stop.';
 		                              yourself.
 	subclassDepthProperty := MCPStructureProperties new
 		                         name: 'subclassDepth';
 		                         type: 'integer';
-		                         description:
-			                         'How many subclass levels to include. 0 includes no subclasses, 1 includes direct subclasses, 2 includes grandchildren too, and so on.';
+		                         description: 'Subclass levels.';
 		                         default: 0;
+		                         minimum: 0;
+		                         maximum: self maximumSubclassDepth;
 		                         yourself.
 	^ MCPStructureInputSchema new
 		  type: 'object';
@@ -172,7 +172,7 @@ MCPToolGetClass >> defaultInputSchema [
 				  (MCPStructureProperties new
 					   name: 'className';
 					   type: 'string';
-					   description: 'The class to return.';
+					   description: 'Class name.';
 					   yourself).
 				  includeCommentProperty.
 				  upToSuperclassNameProperty.
@@ -280,6 +280,12 @@ MCPToolGetClass >> failureMessageForClassName: className error: anError [
 				  nextPutAll: anError class name;
 				  nextPutAll: '): ';
 				  nextPutAll: anError messageText ]
+]
+
+{ #category : 'defaults' }
+MCPToolGetClass >> maximumSubclassDepth [
+
+	^ 3
 ]
 
 { #category : 'private - request' }

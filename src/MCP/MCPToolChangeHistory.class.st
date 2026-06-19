@@ -102,48 +102,39 @@ MCPToolChangeHistory >> changeHistoryLogSchemaProperty [
 
 	^ MCPStructureProperties new
 		  type: 'object';
-		  description: 'Structured metadata for one change history file.';
+		  description: 'Metadata for one change history file.';
 		  properties: {
 				  (self
 					   schemaPropertyNamed: 'path'
 					   type: 'string'
-					   description: 'The absolute file path.').
-				  (self
-					   schemaPropertyNamed: 'fileName'
-					   type: 'string'
-					   description: 'The history file basename.').
-				  (self
-					   schemaPropertyNamed: 'storeName'
-					   type: 'string'
-					   description: 'The Epicea store name, currently the file name.').
+					   description: 'Absolute file path.').
 				  (self
 					   booleanSchemaPropertyNamed: 'exists'
-					   description: 'Whether the file exists.').
+					   description: 'Included only when false.').
 				  (self
 					   integerSchemaPropertyNamed: 'fileSize'
-					   description: 'The file size in bytes when known.').
+					   description: 'File size in bytes.').
 				  (self
 					   schemaPropertyNamed: 'modificationTime'
 					   type: 'string'
-					   description: 'The file modification time when known.').
+					   description: 'File modification time.').
 				  (self
 					   integerSchemaPropertyNamed: 'entriesCount'
 					   description:
-						   'The number of history entries when includeEntryCounts=true and the file can be loaded.').
+						   'History entry count when includeEntryCounts=true.').
 				  (self
 					   schemaPropertyNamed: 'headReference'
 					   type: 'string'
 					   description:
-						   'The head entry reference when includeEntryCounts=true and the file can be loaded.').
+						   'Head entry reference when includeEntryCounts=true.').
 				  (self
 					   booleanSchemaPropertyNamed: 'isCurrent'
 					   description:
-						   'Whether this file is the current image change history file.').
+						   'Included only for the current image history file.').
 				  (self
 					   schemaPropertyNamed: 'loadError'
 					   type: 'string'
-					   description:
-						   'The load error text when includeEntryCounts=true and the file cannot be loaded.') };
+					   description: 'Load error when includeEntryCounts=true.') };
 		  additionalProperties: false;
 		  yourself
 ]

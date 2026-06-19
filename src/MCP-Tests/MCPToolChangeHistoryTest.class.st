@@ -254,11 +254,11 @@ MCPToolChangeHistoryTest >> testListEntriesReturnsGranularCodeChangeData [
 MCPToolChangeHistoryTest >> testListEntriesSupportsHistoryFilePath [
 
 	| data entries files filesResult path result |
-	filesResult := self callToolWith: {
-			               (#action -> 'listFiles').
-			               (#includeEntryCounts -> false) } asDictionary.
+	filesResult := self callToolWith:
+		               { (#action -> 'listFiles') } asDictionary.
 	files := (self dataFrom: filesResult) at: #files.
-	path := (files detect: [ :each | each at: #isCurrent ]) at: #path.
+	path := (files detect: [ :each |
+		         each at: #isCurrent ifAbsent: [ false ] ]) at: #path.
 	result := self callToolWith: {
 			          (#action -> 'listEntries').
 			          (#historyFilePath -> path).
@@ -274,10 +274,11 @@ MCPToolChangeHistoryTest >> testListEntriesSupportsHistoryFilePath [
 MCPToolChangeHistoryTest >> testListFilesReportsFilePathAsNotDirectory [
 
 	| data error filePath result |
-	data := self dataFrom: (self callToolWith: {
-				         (#action -> 'listFiles').
-				         (#includeEntryCounts -> false) } asDictionary).
-	filePath := data at: #currentLogPath.
+	data := self dataFrom:
+		        (self callToolWith:
+			         { (#action -> 'listFiles') } asDictionary).
+	filePath := ((data at: #files) detect: [ :each |
+		             each at: #isCurrent ifAbsent: [ false ] ]) at: #path.
 	result := self callToolWith: {
 			          (#action -> 'listFiles').
 			          (#directoryPath -> filePath) } asDictionary.
@@ -310,45 +311,46 @@ MCPToolChangeHistoryTest >> testListFilesReportsMissingDirectoryPath [
 { #category : 'tests' }
 MCPToolChangeHistoryTest >> testListFilesReturnsCurrentHistoryFile [
 
-	| data files result |
-	result := self callToolWith: {
-			          (#action -> 'listFiles').
-			          (#includeEntryCounts -> false) } asDictionary.
+	| data files omittedKeys result |
+	result := self callToolWith:
+		          { (#action -> 'listFiles') } asDictionary.
 	data := self dataFrom: result.
 	files := data at: #files.
+	omittedKeys := #( fileName storeName exists entriesCount headReference
+	                  loadError ).
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #action) equals: 'listFiles'.
-	self assert: (data at: #currentLogPath) notNil.
+	self deny: (data includesKey: #action).
+	self deny: (data includesKey: #currentLogPath).
 	self assert: (data at: #directoryPath) notNil.
 	self assert: files notEmpty.
-	self assert: (files anySatisfy: [ :each | each at: #isCurrent ]).
-	self assert: (files allSatisfy: [ :each |
-			 (each includesKey: #path) and: [ each includesKey: #fileName ] ]).
+	self assert:
+		(files anySatisfy: [ :each |
+			 each at: #isCurrent ifAbsent: [ false ] ]).
+	self assert: (files allSatisfy: [ :each | each includesKey: #path ]).
 	self assert: (files noneSatisfy: [ :each |
-				 (each includesKey: #entriesCount) or: [
-					 (each includesKey: #headReference) or: [
-						 each includesKey: #loadError ] ] ])
+			 omittedKeys anySatisfy: [ :key | each includesKey: key ] ])
 ]
 
 { #category : 'tests' }
 MCPToolChangeHistoryTest >> testListFilesSupportsDirectoryPath [
 
 	| baseData data directoryPath files result |
-	baseData := self dataFrom: (self callToolWith: {
-				             (#action -> 'listFiles').
-				             (#includeEntryCounts -> false) } asDictionary).
+	baseData := self dataFrom:
+		            (self callToolWith:
+			             { (#action -> 'listFiles') } asDictionary).
 	directoryPath := baseData at: #directoryPath.
 	result := self callToolWith: {
 			          (#action -> 'listFiles').
-			          (#directoryPath -> directoryPath).
-			          (#includeEntryCounts -> false) } asDictionary.
+			          (#directoryPath -> directoryPath) } asDictionary.
 	data := self dataFrom: result.
 	files := data at: #files.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #action) equals: 'listFiles'.
+	self deny: (data includesKey: #action).
 	self assert: (data at: #directoryPath) equals: directoryPath.
 	self assert: files notEmpty.
-	self assert: (files anySatisfy: [ :each | each at: #isCurrent ])
+	self assert:
+		(files anySatisfy: [ :each |
+			 each at: #isCurrent ifAbsent: [ false ] ])
 ]
 
 { #category : 'tests' }

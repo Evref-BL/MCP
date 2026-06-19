@@ -36,15 +36,13 @@ MCPChangeHistoryLogInfo >> asDictionary [
 	| data |
 	data := Dictionary new.
 	path ifNotNil: [ data at: #path put: path ].
-	fileName ifNotNil: [ data at: #fileName put: fileName ].
-	storeName ifNotNil: [ data at: #storeName put: storeName ].
-	exists ifNotNil: [ data at: #exists put: exists ].
+	exists == false ifTrue: [ data at: #exists put: false ].
 	fileSize ifNotNil: [ data at: #fileSize put: fileSize ].
 	modificationTime ifNotNil: [
 		data at: #modificationTime put: modificationTime ].
 	entriesCount ifNotNil: [ data at: #entriesCount put: entriesCount ].
 	headReference ifNotNil: [ data at: #headReference put: headReference ].
-	isCurrent ifNotNil: [ data at: #isCurrent put: isCurrent ].
+	isCurrent == true ifTrue: [ data at: #isCurrent put: true ].
 	loadError ifNotNil: [ data at: #loadError put: loadError ].
 	^ data
 ]

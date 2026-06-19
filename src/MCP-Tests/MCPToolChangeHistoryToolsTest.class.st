@@ -58,7 +58,7 @@ MCPToolChangeHistoryToolsTest >> testChangeHistoryToolsDeclareExpectedInputs [
 	                          'codeChangesOnly' 'confirm' ).
 	self
 		assert: fileProperties asArray
-		equals: #( 'includeEntryCounts' 'directoryPath' ).
+		equals: #( 'includeEntryCounts' 'directoryPath' 'limit' 'offset' ).
 	self
 		assert: entryProperties asArray
 		equals:
@@ -79,22 +79,44 @@ MCPToolChangeHistoryToolsTest >> testListChangeHistoryEntriesReturnsEntries [
 ]
 
 { #category : 'tests' }
+MCPToolChangeHistoryToolsTest >> testListChangeHistoryFilesPaginatesFiles [
+
+	| data directory files nextOffset |
+	directory := FileLocator temp asFileReference
+	             / ('mcp-history-files-' , UUID new asString).
+	[
+		directory ensureCreateDirectory.
+		directory / 'a.ombu' writeStreamDo: [ :stream |
+			stream nextPutAll: 'a' ].
+		directory / 'b.ombu' writeStreamDo: [ :stream |
+			stream nextPutAll: 'b' ].
+		data := self toolNamed: 'history_file_list' dataFromArguments: {
+				        (#directoryPath -> directory fullName).
+				        (#limit -> 1) } asDictionary.
+		files := data at: #files.
+		nextOffset := data at: #nextOffset.
+		self assert: files size equals: 1.
+		self assert: nextOffset equals: 1 ] ensure: [
+		directory ensureDeleteAll ]
+]
+
+{ #category : 'tests' }
 MCPToolChangeHistoryToolsTest >> testListChangeHistoryFilesReturnsFiles [
 
-	| data files |
+	| data files omittedKeys |
 	data := self
 		        toolNamed: 'history_file_list'
-		        dataFromArguments:
-		        { (#includeEntryCounts -> false) } asDictionary.
+		        dataFromArguments: Dictionary new.
 	files := data at: #files.
-	self assert: (data at: #action) equals: 'listFiles'.
-	self assert: (data includesKey: #currentLogPath).
+	omittedKeys := #( fileName storeName exists entriesCount headReference
+	                  loadError ).
+	self deny: (data includesKey: #action).
+	self deny: (data includesKey: #currentLogPath).
 	self assert: (data includesKey: #directoryPath).
 	self assert: files notEmpty.
+	self assert: (files allSatisfy: [ :each | each includesKey: #path ]).
 	self assert: (files noneSatisfy: [ :each |
-				 (each includesKey: #entriesCount) or: [
-					 (each includesKey: #headReference) or: [
-						 each includesKey: #loadError ] ] ])
+			 omittedKeys anySatisfy: [ :key | each includesKey: key ] ])
 ]
 
 { #category : 'tests' }

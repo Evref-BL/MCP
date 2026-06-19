@@ -313,18 +313,23 @@ MCPToolGetClassTest >> testIncludesTraitNamesForTraitUsingClass [
 { #category : 'tests' }
 MCPToolGetClassTest >> testRejectsNegativeSubclassDepth [
 
-	| error result structured |
-	result := self callToolWith: {
-			          (#className -> self baseClassName).
-			          (#subclassDepth -> -1) } asDictionary.
-	structured := self structuredContentFrom: result.
-	error := self errorFrom: result.
-	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
-	self assert: (error at: #errorClass) equals: 'Error'.
 	self
-		assert: (error at: #message)
-		equals: 'subclassDepth must be a non-negative integer.'
+		should: [
+				self callToolWith: {
+						(#className -> self baseClassName).
+						(#subclassDepth -> -1) } asDictionary ]
+		raise: MCPInvalidToolInput
+]
+
+{ #category : 'tests' }
+MCPToolGetClassTest >> testRejectsSubclassDepthAboveMaximum [
+
+	self
+		should: [
+				self callToolWith: {
+						(#className -> self baseClassName).
+						(#subclassDepth -> 4) } asDictionary ]
+		raise: MCPInvalidToolInput
 ]
 
 { #category : 'tests' }

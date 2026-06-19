@@ -6,7 +6,9 @@ Class {
 	#superclass : 'Object',
 	#instVars : [
 		'includeEntryCounts',
-		'directoryPath'
+		'directoryPath',
+		'limit',
+		'offset'
 	],
 	#category : 'MCP-Requests',
 	#package : 'MCP',
@@ -18,8 +20,16 @@ MCPChangeHistoryListLogsRequest class >> fromRequest: request tool: aTool [
 
 	^ self new
 		  includeEntryCounts:
-			  (request booleanArgumentNamed: 'includeEntryCounts' default: true);
+			  (request
+				   booleanArgumentNamed: 'includeEntryCounts'
+				   default: false);
 		  directoryPath: (request stringArgumentNamed: 'directoryPath');
+		  limit: (request
+				   nonNegativeIntegerArgumentNamed: 'limit'
+				   default: aTool defaultFileLimit
+				   maximum: aTool maximumFileLimit);
+		  offset:
+			  (request nonNegativeIntegerArgumentNamed: 'offset' default: 0);
 		  yourself
 ]
 
@@ -38,13 +48,37 @@ MCPChangeHistoryListLogsRequest >> directoryPath: aPathString [
 { #category : 'accessing' }
 MCPChangeHistoryListLogsRequest >> includeEntryCounts [
 
-	^ includeEntryCounts ifNil: [ true ]
+	^ includeEntryCounts ifNil: [ false ]
 ]
 
 { #category : 'accessing' }
 MCPChangeHistoryListLogsRequest >> includeEntryCounts: aBoolean [
 
 	includeEntryCounts := aBoolean
+]
+
+{ #category : 'accessing' }
+MCPChangeHistoryListLogsRequest >> limit [
+
+	^ limit ifNil: [ 25 ]
+]
+
+{ #category : 'accessing' }
+MCPChangeHistoryListLogsRequest >> limit: anInteger [
+
+	limit := anInteger
+]
+
+{ #category : 'accessing' }
+MCPChangeHistoryListLogsRequest >> offset [
+
+	^ offset ifNil: [ 0 ]
+]
+
+{ #category : 'accessing' }
+MCPChangeHistoryListLogsRequest >> offset: anInteger [
+
+	offset := anInteger
 ]
 
 { #category : 'accessing' }
