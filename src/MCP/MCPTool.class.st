@@ -194,7 +194,7 @@ MCPTool >> errorResultFor: anError [
 { #category : 'error handling' }
 MCPTool >> errorResultText: aString details: aDictionary [
 
-	| details normalizedSummary |
+	| details normalizedSummary structuredContent |
 	normalizedSummary := aString
 		                     ifNil: [ '' ]
 		                     ifNotNil: [ aString asString ].
@@ -203,13 +203,14 @@ MCPTool >> errorResultText: aString details: aDictionary [
 		           ifNotNil: [ aDictionary copy ].
 	details at: #message ifAbsentPut: [ normalizedSummary ].
 	details at: #errorClass ifAbsentPut: [ 'ToolError' ].
+	structuredContent := Dictionary new
+		                     at: #status put: 'error';
+		                     at: #summary put: normalizedSummary;
+		                     at: #error put: details;
+		                     yourself.
 	^ MCPStructureErrorToolResult
 		  content: { (self textContent: normalizedSummary) }
-		  structuredContent: {
-				  (#status -> 'error').
-				  (#summary -> normalizedSummary).
-				  (#warnings -> #(  )).
-				  (#error -> details) } asDictionary
+		  structuredContent: structuredContent
 ]
 
 { #category : 'private - schema' }
@@ -586,7 +587,7 @@ MCPTool >> successResultText: aSummary data: aDictionary [
 { #category : 'private - results' }
 MCPTool >> successResultText: aSummary data: aDictionary warnings: warningStrings [
 
-	| normalizedSummary warnings |
+	| normalizedSummary structuredContent warnings |
 	normalizedSummary := aSummary
 		                     ifNil: [ '' ]
 		                     ifNotNil: [ aSummary asString ].
@@ -595,13 +596,15 @@ MCPTool >> successResultText: aSummary data: aDictionary warnings: warningString
 		            ifNotNil: [
 		            (warningStrings collect: [ :each | each asString ])
 			            asArray ].
+	structuredContent := Dictionary new
+		                     at: #status put: 'ok';
+		                     at: #summary put: normalizedSummary;
+		                     at: #data put: aDictionary;
+		                     yourself.
+	warnings ifNotEmpty: [ structuredContent at: #warnings put: warnings ].
 	^ MCPStructureCallToolResult
 		  content: { (self textContent: normalizedSummary) }
-		  structuredContent: {
-				  (#status -> 'ok').
-				  (#summary -> normalizedSummary).
-				  (#warnings -> warnings).
-				  (#data -> aDictionary) } asDictionary
+		  structuredContent: structuredContent
 ]
 
 { #category : 'private' }

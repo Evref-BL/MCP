@@ -76,7 +76,7 @@ MCPDebugEvaluateCommand >> evaluationWarnings [
 { #category : 'executing' }
 MCPDebugEvaluateCommand >> execute [
 
-	| answer context data frameIndex record |
+	| answer context data frameIndex record warnings |
 	record := self sessionRecordWithMatchingState.
 	frameIndex := self selectedFrameIndex.
 	context := self
@@ -91,11 +91,13 @@ MCPDebugEvaluateCommand >> execute [
 		        resultDataFor: answer
 		        record: record
 		        frameIndex: frameIndex.
+	warnings := self evaluationWarnings.
+	warnings ifNotEmpty: [ data at: #warnings put: warnings ].
 	^ MCPDebugToolResult
 		  okSummary:
 		  'Debug expression evaluated for ' , record sessionId , '.'
 		  data: data
-		  warnings: (data at: #warnings)
+		  warnings: warnings
 ]
 
 { #category : 'private - frames' }
@@ -116,10 +118,9 @@ MCPDebugEvaluateCommand >> limitedPrintStringOf: anObject [
 { #category : 'private - data' }
 MCPDebugEvaluateCommand >> resultDataFor: answer record: aRecord frameIndex: frameIndex [
 
-	| frameRef warnings |
+	| frameRef |
 	frameRef := request frameRef ifNil: [
 		            self frameRefForRecord: aRecord frameIndex: frameIndex ].
-	warnings := self evaluationWarnings.
 	^ {
 		  (#sessionId -> aRecord sessionId).
 		  (#stateId -> aRecord stateId).
@@ -130,7 +131,6 @@ MCPDebugEvaluateCommand >> resultDataFor: answer record: aRecord frameIndex: fra
 		  (#hasResultVariableRef -> false).
 		  (#resultVariableRef -> nil).
 		  (#sideEffects -> 'possible').
-		  (#warnings -> warnings).
 		  (#capabilities -> self capabilities) } asDictionary
 ]
 

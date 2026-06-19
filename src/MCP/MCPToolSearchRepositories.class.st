@@ -34,9 +34,14 @@ MCPToolSearchRepositories >> defaultInputSchema [
 			               'How repository text filters are matched.'
 			               values: self basicFilterModes).
 		              (self caseSensitiveSchemaPropertyWithDescription:
-			               'Whether repository text matching is case-sensitive.') }
+			               'Case-sensitive matching.').
+		              (self
+			               booleanSchemaPropertyNamed: 'includeDetails'
+			               description:
+			               'Include path, package, head, and upstream metadata.'
+			               default: false) }
 	              , (self paginationInputPropertiesWithLimitDescription:
-			               'Maximum number of matching repositories to return. Use 0 to return no entries.').
+			               'Maximum results.').
 	^ self queryInputSchemaWithProperties: properties
 ]
 
@@ -132,7 +137,10 @@ MCPToolSearchRepositories >> repositoryEntriesForRequest: queryRequest [
 			repositoryInfo := MCPRepositoryInfo fromRepository: eachRepository.
 			queryEntry := repositoryInfo asQueryDictionary.
 			(self repositoryEntry: queryEntry matchesRequest: queryRequest)
-				ifTrue: [ entries add: repositoryInfo asSearchDictionary ] ].
+				ifTrue: [
+						entries add: (queryRequest includeDetails
+								 ifTrue: [ repositoryInfo asDetailedSearchDictionary ]
+								 ifFalse: [ repositoryInfo asSearchDictionary ]) ] ].
 	sortedEntries := entries asArray sort: [ :left :right |
 		                 (left at: #name) <= (right at: #name) ].
 	^ sortedEntries

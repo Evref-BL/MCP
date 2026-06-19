@@ -54,8 +54,8 @@ MCPDebugCaptureCommand >> capturedResultFor: aDebugSession continuation: aContin
 		        (#resultClassName -> nil).
 		        (#resultPrintString -> nil).
 		        (#timeoutMilliseconds -> request timeoutMilliseconds).
-		        (#warnings -> warnings).
 		        (#capabilities -> self capabilities) } asDictionary.
+	warnings ifNotEmpty: [ data at: #warnings put: warnings ].
 	^ MCPDebugToolResult
 		  okSummary: 'Debug capture registered ' , record sessionId , '.'
 		  data: data
@@ -77,8 +77,8 @@ MCPDebugCaptureCommand >> completedResultFor: answer [
 		        (#resultClassName -> answer class name asString).
 		        (#resultPrintString -> (self limitedPrintStringOf: answer)).
 		        (#timeoutMilliseconds -> request timeoutMilliseconds).
-		        (#warnings -> warnings).
 		        (#capabilities -> self capabilities) } asDictionary.
+	warnings ifNotEmpty: [ data at: #warnings put: warnings ].
 	^ MCPDebugToolResult
 		  okSummary: 'Debug capture completed without an exception.'
 		  data: data

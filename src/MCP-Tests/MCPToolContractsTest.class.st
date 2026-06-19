@@ -2723,7 +2723,7 @@ MCPToolContractsTest >> testSearchRepositoriesHasAccurateNameAndSchema [
 			   'headClassName' 'headCommitId' 'packageName' 'modifiedPackageName'
 			   'remoteName' 'remoteUrl' 'upstreamRemoteName'
 			   'upstreamBranchName' 'upstreamRemoteUrl' 'filterMode'
-			   'caseSensitive' 'limit' 'offset' ) asSet
+			   'caseSensitive' 'includeDetails' 'limit' 'offset' ) asSet
 ]
 
 { #category : 'tests' }

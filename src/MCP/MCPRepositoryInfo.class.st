@@ -48,6 +48,38 @@ MCPRepositoryInfo class >> fromRepository: aRepository [
 ]
 
 { #category : 'converting' }
+MCPRepositoryInfo >> asDetailedSearchDictionary [
+
+	| data |
+	data := Dictionary new.
+	data
+		at: #name put: self name;
+		at: #location put: self location;
+		at: #isModified put: self isModified;
+		at: #isMissing put: self isMissing.
+	self subdirectory ifNotNil: [ :value |
+		value ifNotEmpty: [ data at: #subdirectory put: value ] ].
+	self branchName ifNotNil: [ :value |
+		value ifNotEmpty: [ data at: #branchName put: value ] ].
+	self headDescription ifNotNil: [ :value |
+		value ifNotEmpty: [ data at: #headDescription put: value ] ].
+	self headCommitId ifNotEmpty: [ :value |
+		data at: #headCommitId put: value ].
+	self packageNames ifNotEmpty: [ :names |
+		data at: #packageNames put: names ].
+	self modifiedPackageNames ifNotEmpty: [ :names |
+		data at: #modifiedPackageNames put: names ].
+	self upstreamRemoteName ifNotEmpty: [ :value |
+		data at: #upstreamRemoteName put: value ].
+	self upstreamBranchName ifNotEmpty: [ :value |
+		data at: #upstreamBranchName put: value ].
+	self upstreamRemoteUrl ifNotEmpty: [ :value |
+		data at: #upstreamRemoteUrl put: value ].
+	self isDetachedHead ifTrue: [ data at: #isDetachedHead put: true ].
+	^ data
+]
+
+{ #category : 'converting' }
 MCPRepositoryInfo >> asDictionary [
 
 	^ {
@@ -81,30 +113,20 @@ MCPRepositoryInfo >> asSearchDictionary [
 
 	| data |
 	data := Dictionary new.
-	data
-		at: #name put: self name;
-		at: #location put: self location;
-		at: #isModified put: self isModified;
-		at: #isMissing put: self isMissing.
-	self subdirectory ifNotNil: [ :value |
-		value ifNotEmpty: [ data at: #subdirectory put: value ] ].
+	data at: #name put: self name.
 	self branchName ifNotNil: [ :value |
 		value ifNotEmpty: [ data at: #branchName put: value ] ].
-	self headDescription ifNotNil: [ :value |
-		value ifNotEmpty: [ data at: #headDescription put: value ] ].
-	self headCommitId ifNotEmpty: [ :value |
-		data at: #headCommitId put: value ].
-	self packageNames ifNotEmpty: [ :names |
-		data at: #packageNames put: names ].
-	self modifiedPackageNames ifNotEmpty: [ :names |
-		data at: #modifiedPackageNames put: names ].
-	self upstreamRemoteName ifNotEmpty: [ :value |
-		data at: #upstreamRemoteName put: value ].
-	self upstreamBranchName ifNotEmpty: [ :value |
-		data at: #upstreamBranchName put: value ].
-	self upstreamRemoteUrl ifNotEmpty: [ :value |
-		data at: #upstreamRemoteUrl put: value ].
-	self isDetachedHead ifTrue: [ data at: #isDetachedHead put: true ].
+	self subdirectory ifNotNil: [ :value |
+		value ifNotEmpty: [ data at: #subdirectory put: value ] ].
+	self isMissing ifTrue: [
+			data at: #isMissing put: true.
+			self location ifNotNil: [ :value | data at: #location put: value ] ].
+	self isModified ifTrue: [
+			data at: #isModified put: true.
+			self modifiedPackageNames ifNotEmpty: [ :names |
+				data at: #modifiedPackageNames put: names ] ].
+	self isDetachedHead ifFalse: [ ^ data ].
+	data at: #isDetachedHead put: true.
 	^ data
 ]
 

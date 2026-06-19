@@ -81,15 +81,20 @@ MCPToolChangeHistoryToolsTest >> testListChangeHistoryEntriesReturnsEntries [
 { #category : 'tests' }
 MCPToolChangeHistoryToolsTest >> testListChangeHistoryFilesReturnsFiles [
 
-	| data |
+	| data files |
 	data := self
 		        toolNamed: 'history_file_list'
 		        dataFromArguments:
 		        { (#includeEntryCounts -> false) } asDictionary.
+	files := data at: #files.
 	self assert: (data at: #action) equals: 'listFiles'.
 	self assert: (data includesKey: #currentLogPath).
 	self assert: (data includesKey: #directoryPath).
-	self assert: (data includesKey: #files)
+	self assert: files notEmpty.
+	self assert: (files noneSatisfy: [ :each |
+				 (each includesKey: #entriesCount) or: [
+					 (each includesKey: #headReference) or: [
+						 each includesKey: #loadError ] ] ])
 ]
 
 { #category : 'tests' }

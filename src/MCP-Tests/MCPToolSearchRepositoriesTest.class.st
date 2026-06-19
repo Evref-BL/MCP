@@ -156,14 +156,13 @@ MCPToolSearchRepositoriesTest >> testListsRegisteredRepositoriesWithStructuredDa
 				entry := self
 					         entryNamed: 'MCP Alpha Repository'
 					         in: (data at: #repositories).
-				self
-					assert: (entry at: #location)
-					equals: FileLocator imageDirectory pathString.
-				self assert: (entry at: #isMissing) equals: false.
 				self assert: (entry at: #isModified) equals: true.
 				self
-					assert: (entry at: #packageNames)
+					assert: (entry at: #modifiedPackageNames)
 					equals: #( 'MCP' 'MCP-Tests' ).
+				self deny: (entry includesKey: #location).
+				self deny: (entry includesKey: #isMissing).
+				self deny: (entry includesKey: #packageNames).
 				self deny: (entry includesKey: #className).
 				self deny: (entry includesKey: #headClassName).
 				self deny: (entry includesKey: #remotes).
@@ -186,7 +185,8 @@ MCPToolSearchRepositoriesTest >> testListsRichRepositoryMetadata [
 				repository isDetachedHead: false.
 				self withRepositories: { repository } do: [
 						| data |
-						result := self callToolWith: Dictionary new.
+						result := self callToolWith:
+							          { (#includeDetails -> true) } asDictionary.
 						data := self dataFrom: result.
 						self deny: (result at: #isError ifAbsent: [ false ]).
 						entry := self

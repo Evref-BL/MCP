@@ -323,7 +323,11 @@ MCPToolChangeHistoryTest >> testListFilesReturnsCurrentHistoryFile [
 	self assert: files notEmpty.
 	self assert: (files anySatisfy: [ :each | each at: #isCurrent ]).
 	self assert: (files allSatisfy: [ :each |
-			 (each includesKey: #path) and: [ each includesKey: #fileName ] ])
+			 (each includesKey: #path) and: [ each includesKey: #fileName ] ]).
+	self assert: (files noneSatisfy: [ :each |
+				 (each includesKey: #entriesCount) or: [
+					 (each includesKey: #headReference) or: [
+						 each includesKey: #loadError ] ] ])
 ]
 
 { #category : 'tests' }

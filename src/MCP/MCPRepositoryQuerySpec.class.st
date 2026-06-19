@@ -16,7 +16,8 @@ Class {
 		'filterMode',
 		'caseSensitive',
 		'limit',
-		'offset'
+		'offset',
+		'includeDetails'
 	],
 	#category : 'MCP-Requests',
 	#package : 'MCP',
@@ -47,6 +48,8 @@ MCPRepositoryQuerySpec class >> fromRequest: request tool: aTool [
 		  filterMode: (aTool filterModeFromRequest: request);
 		  caseSensitive:
 			  (request booleanArgumentNamed: 'caseSensitive' default: true);
+		  includeDetails:
+			  (request booleanArgumentNamed: 'includeDetails' default: false);
 		  limit: (request
 				   nonNegativeIntegerArgumentNamed: 'limit'
 				   default: aTool defaultPageLimit);
@@ -114,6 +117,18 @@ MCPRepositoryQuerySpec >> filterMode: aString [
 MCPRepositoryQuerySpec >> hasFieldFilters [
 
 	^ self fieldFilters notEmpty
+]
+
+{ #category : 'accessing' }
+MCPRepositoryQuerySpec >> includeDetails [
+
+	^ includeDetails
+]
+
+{ #category : 'accessing' }
+MCPRepositoryQuerySpec >> includeDetails: aBoolean [
+
+	includeDetails := aBoolean
 ]
 
 { #category : 'accessing' }

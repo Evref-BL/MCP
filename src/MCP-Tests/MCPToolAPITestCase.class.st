@@ -127,5 +127,7 @@ MCPToolAPITestCase >> unvalidatedToolRequestForTool: aTool arguments: someArgume
 { #category : 'private - results' }
 MCPToolAPITestCase >> warningsFrom: aResult [
 
-	^ (self structuredContentFrom: aResult) at: #warnings
+	^ (self structuredContentFrom: aResult)
+		  at: #warnings
+		  ifAbsent: [ #(  ) ]
 ]

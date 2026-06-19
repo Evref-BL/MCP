@@ -107,14 +107,13 @@ MCPDebugVariablesCommand >> dataForScopeReference: aReference context: aContext 
 		  (#variables -> variables).
 		  (#totalCount -> variables size).
 		  (#truncated -> false).
-		  (#warnings -> #(  )).
 		  (#capabilities -> self capabilities) } asDictionary
 ]
 
 { #category : 'private - data' }
 MCPDebugVariablesCommand >> dataForVariableReference: aReference context: aContext stateInfo: stateInfo [
 
-	| value children truncated |
+	| children truncated value |
 	value := self valueForVariableReference: aReference context: aContext.
 	children := request variableDepth = 0
 		            ifTrue: [ #(  ) ]
@@ -137,7 +136,6 @@ MCPDebugVariablesCommand >> dataForVariableReference: aReference context: aConte
 		  (#variables -> children).
 		  (#totalCount -> children size).
 		  (#truncated -> truncated).
-		  (#warnings -> #(  )).
 		  (#capabilities -> self capabilities) } asDictionary
 ]
 

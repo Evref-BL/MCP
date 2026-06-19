@@ -84,12 +84,13 @@ MCPToolStructuredOutputTest >> testGetClassReturnsStructuredError [
 	result := self
 		          callToolNamed: 'class_get'
 		          withArguments:
-			          { (#className -> 'MCPToolGetClassDefinitelyMissing') }
-				          asDictionary.
+		          { (#className -> 'MCPToolGetClassDefinitelyMissing') }
+			          asDictionary.
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
+	self deny: (structured includesKey: #warnings).
 	self
 		assert: (self summaryFrom: result)
 		equals: ((result at: #content) first at: #text).
@@ -117,6 +118,7 @@ MCPToolStructuredOutputTest >> testGetClassReturnsStructuredSuccess [
 		                                each asString ]) asArray.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (structured at: #status) equals: 'ok'.
+	self deny: (structured includesKey: #warnings).
 	self
 		assert: (self summaryFrom: result)
 		equals: ((result at: #content) first at: #text).
@@ -130,11 +132,11 @@ MCPToolStructuredOutputTest >> testGetClassReturnsStructuredSuccess [
 		assert: (data at: #sharedVariableNames)
 		equals: expectedSharedVariableNames.
 	self assert: (data includesKey: #layoutClassName).
-	self assert: (data includesKey: #traitComposition).
-	self assert: (data includesKey: #classTraitComposition).
+	self deny: (data includesKey: #traitComposition).
+	self deny: (data includesKey: #classTraitComposition).
 	self deny: (data includesKey: #classComment).
-	self assert: (data at: #superclasses) isEmpty.
-	self assert: (data at: #subclasses) isEmpty
+	self deny: (data includesKey: #superclasses).
+	self deny: (data includesKey: #subclasses)
 ]
 
 { #category : 'tests' }

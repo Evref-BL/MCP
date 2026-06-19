@@ -33,17 +33,20 @@ MCPChangeHistoryLogInfo class >> fromFileReference: aFileReference isCurrent: aB
 { #category : 'converting' }
 MCPChangeHistoryLogInfo >> asDictionary [
 
-	^ {
-		  (#path -> path).
-		  (#fileName -> fileName).
-		  (#storeName -> storeName).
-		  (#exists -> exists).
-		  (#fileSize -> fileSize).
-		  (#modificationTime -> modificationTime).
-		  (#entriesCount -> entriesCount).
-		  (#headReference -> headReference).
-		  (#isCurrent -> isCurrent).
-		  (#loadError -> loadError) } asDictionary
+	| data |
+	data := Dictionary new.
+	path ifNotNil: [ data at: #path put: path ].
+	fileName ifNotNil: [ data at: #fileName put: fileName ].
+	storeName ifNotNil: [ data at: #storeName put: storeName ].
+	exists ifNotNil: [ data at: #exists put: exists ].
+	fileSize ifNotNil: [ data at: #fileSize put: fileSize ].
+	modificationTime ifNotNil: [
+		data at: #modificationTime put: modificationTime ].
+	entriesCount ifNotNil: [ data at: #entriesCount put: entriesCount ].
+	headReference ifNotNil: [ data at: #headReference put: headReference ].
+	isCurrent ifNotNil: [ data at: #isCurrent put: isCurrent ].
+	loadError ifNotNil: [ data at: #loadError put: loadError ].
+	^ data
 ]
 
 { #category : 'initialization' }
