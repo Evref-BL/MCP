@@ -211,7 +211,7 @@ MCPToolContractsTest >> changeHistoryToolFlowSpecs [
 	^ {
 		  {
 			  (#toolClass -> MCPToolListChangeHistoryFiles).
-			  (#arguments -> { (#includeEntryCounts -> false) } asDictionary).
+			  (#arguments -> Dictionary new).
 			  (#requestClass -> MCPChangeHistoryListLogsRequest).
 			  (#commandClass -> MCPListChangeHistoryLogsCommand) } asDictionary.
 		  {

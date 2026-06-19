@@ -119,22 +119,9 @@ MCPToolChangeHistory >> changeHistoryLogSchemaProperty [
 					   type: 'string'
 					   description: 'File modification time.').
 				  (self
-					   integerSchemaPropertyNamed: 'entriesCount'
-					   description:
-						   'History entry count when includeEntryCounts=true.').
-				  (self
-					   schemaPropertyNamed: 'headReference'
-					   type: 'string'
-					   description:
-						   'Head entry reference when includeEntryCounts=true.').
-				  (self
 					   booleanSchemaPropertyNamed: 'isCurrent'
 					   description:
-						   'Included only for the current image history file.').
-				  (self
-					   schemaPropertyNamed: 'loadError'
-					   type: 'string'
-					   description: 'Load error when includeEntryCounts=true.') };
+						   'Included only for the current image history file.') };
 		  additionalProperties: false;
 		  yourself
 ]

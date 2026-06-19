@@ -5,7 +5,6 @@ Class {
 	#name : 'MCPChangeHistoryListLogsRequest',
 	#superclass : 'Object',
 	#instVars : [
-		'includeEntryCounts',
 		'directoryPath',
 		'limit',
 		'offset'
@@ -19,10 +18,6 @@ Class {
 MCPChangeHistoryListLogsRequest class >> fromRequest: request tool: aTool [
 
 	^ self new
-		  includeEntryCounts:
-			  (request
-				   booleanArgumentNamed: 'includeEntryCounts'
-				   default: false);
 		  directoryPath: (request stringArgumentNamed: 'directoryPath');
 		  limit: (request
 				   nonNegativeIntegerArgumentNamed: 'limit'
@@ -43,18 +38,6 @@ MCPChangeHistoryListLogsRequest >> directoryPath [
 MCPChangeHistoryListLogsRequest >> directoryPath: aPathString [
 
 	directoryPath := aPathString
-]
-
-{ #category : 'accessing' }
-MCPChangeHistoryListLogsRequest >> includeEntryCounts [
-
-	^ includeEntryCounts ifNil: [ false ]
-]
-
-{ #category : 'accessing' }
-MCPChangeHistoryListLogsRequest >> includeEntryCounts: aBoolean [
-
-	includeEntryCounts := aBoolean
 ]
 
 { #category : 'accessing' }

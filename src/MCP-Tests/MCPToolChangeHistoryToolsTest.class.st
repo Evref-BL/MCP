@@ -58,7 +58,7 @@ MCPToolChangeHistoryToolsTest >> testChangeHistoryToolsDeclareExpectedInputs [
 	                          'codeChangesOnly' 'confirm' ).
 	self
 		assert: fileProperties asArray
-		equals: #( 'includeEntryCounts' 'directoryPath' 'limit' 'offset' ).
+		equals: #( 'directoryPath' 'limit' 'offset' ).
 	self
 		assert: entryProperties asArray
 		equals:
@@ -103,20 +103,18 @@ MCPToolChangeHistoryToolsTest >> testListChangeHistoryFilesPaginatesFiles [
 { #category : 'tests' }
 MCPToolChangeHistoryToolsTest >> testListChangeHistoryFilesReturnsFiles [
 
-	| data files omittedKeys |
+	| allowedFileKeys data files |
 	data := self
 		        toolNamed: 'history_file_list'
 		        dataFromArguments: Dictionary new.
 	files := data at: #files.
-	omittedKeys := #( fileName storeName exists entriesCount headReference
-	                  loadError ).
-	self deny: (data includesKey: #action).
-	self deny: (data includesKey: #currentLogPath).
+	allowedFileKeys := #( path exists fileSize modificationTime
+	                      isCurrent ) asSet.
 	self assert: (data includesKey: #directoryPath).
 	self assert: files notEmpty.
-	self assert: (files allSatisfy: [ :each | each includesKey: #path ]).
-	self assert: (files noneSatisfy: [ :each |
-			 omittedKeys anySatisfy: [ :key | each includesKey: key ] ])
+	self assert: (files allSatisfy: [ :each |
+				 (each includesKey: #path) and: [
+					 each keys allSatisfy: [ :key | allowedFileKeys includes: key ] ] ])
 ]
 
 { #category : 'tests' }

@@ -185,9 +185,9 @@ MCPToolChangeHistoryTest >> testApplyEntriesWithoutConfirmOnlyPreviews [
 MCPToolChangeHistoryTest >> testListEntriesReportsDirectoryPathAsNotFile [
 
 	| data directoryPath error result |
-	data := self dataFrom: (self callToolWith: {
-				         (#action -> 'listFiles').
-				         (#includeEntryCounts -> false) } asDictionary).
+	data := self dataFrom:
+		        (self callToolWith:
+			         { (#action -> 'listFiles') } asDictionary).
 	directoryPath := data at: #directoryPath.
 	result := self callToolWith: {
 			          (#action -> 'listEntries').
@@ -311,24 +311,22 @@ MCPToolChangeHistoryTest >> testListFilesReportsMissingDirectoryPath [
 { #category : 'tests' }
 MCPToolChangeHistoryTest >> testListFilesReturnsCurrentHistoryFile [
 
-	| data files omittedKeys result |
+	| allowedFileKeys data files result |
 	result := self callToolWith:
 		          { (#action -> 'listFiles') } asDictionary.
 	data := self dataFrom: result.
 	files := data at: #files.
-	omittedKeys := #( fileName storeName exists entriesCount headReference
-	                  loadError ).
+	allowedFileKeys := #( path exists fileSize modificationTime
+	                      isCurrent ) asSet.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self deny: (data includesKey: #action).
-	self deny: (data includesKey: #currentLogPath).
 	self assert: (data at: #directoryPath) notNil.
 	self assert: files notEmpty.
 	self assert:
 		(files anySatisfy: [ :each |
 			 each at: #isCurrent ifAbsent: [ false ] ]).
-	self assert: (files allSatisfy: [ :each | each includesKey: #path ]).
-	self assert: (files noneSatisfy: [ :each |
-			 omittedKeys anySatisfy: [ :key | each includesKey: key ] ])
+	self assert: (files allSatisfy: [ :each |
+				 (each includesKey: #path) and: [
+					 each keys allSatisfy: [ :key | allowedFileKeys includes: key ] ] ])
 ]
 
 { #category : 'tests' }

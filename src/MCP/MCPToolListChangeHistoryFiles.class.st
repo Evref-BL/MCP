@@ -55,11 +55,6 @@ MCPToolListChangeHistoryFiles >> defaultInputSchema [
 		  type: 'object';
 		  properties: {
 				  (self
-					   booleanSchemaPropertyNamed: 'includeEntryCounts'
-					   description:
-						   'Count entries by opening files. Use only when needed.'
-					   default: false).
-				  (self
 					   schemaPropertyNamed: 'directoryPath'
 					   type: 'string'
 					   description:
@@ -82,10 +77,6 @@ MCPToolListChangeHistoryFiles >> defaultOutputSchema [
 	filesProperty items: self changeHistoryLogSchemaProperty.
 	^ self
 		  standardOutputSchemaForDataProperties: {
-				  (self
-					   schemaPropertyNamed: 'currentLogPath'
-					   type: 'string'
-					   description: 'Current image change history file path.').
 				  (self
 					   schemaPropertyNamed: 'directoryPath'
 					   type: 'string'

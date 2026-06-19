@@ -69,8 +69,7 @@ MCPListChangeHistoryLogsCommand >> execute [
 			            MCPChangeHistoryLogInfo
 				            fromFileReference: each
 				            isCurrent:
-				            (self sameFileReference: each as: currentFile)
-				            includeEntryCounts: request includeEntryCounts ].
+				            (self sameFileReference: each as: currentFile) ].
 	resultPage := MCPPaginationResult
 		              entries: logInfos
 		              nextOffset: page nextOffset.
