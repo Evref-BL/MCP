@@ -116,6 +116,18 @@ MCPToolRequest >> nonNegativeIntegerArgumentNamed: anArgumentName default: anInt
 ]
 
 { #category : 'accessing' }
+MCPToolRequest >> nonNegativeIntegerArgumentNamed: anArgumentName default: defaultInteger maximum: maximumInteger [
+
+	| value |
+	value := self
+		         nonNegativeIntegerArgumentNamed: anArgumentName
+		         default: defaultInteger.
+	value <= maximumInteger ifTrue: [ ^ value ].
+	Error signal: anArgumentName asString , ' must be no greater than '
+		, maximumInteger asString , '.'
+]
+
+{ #category : 'accessing' }
 MCPToolRequest >> objectCollectionArgumentNamed: anArgumentName [
 
 	^ self arrayArgumentNamed: anArgumentName

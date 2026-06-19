@@ -194,24 +194,23 @@ MCPToolDebugSessionControlOperation >> stateSnapshotInputProperties [
 			   'Return a debug_state_get snapshot when control stops.'
 			   default: MCPDebugControlRequest defaultReturnState).
 		  (self
-			   integerSchemaPropertyNamed: 'sourceContextLines'
-			   description: 'Source lines around selected frame.'
+			   sourceContextLinesSchemaPropertyWithDescription:
+			   'Source lines around selected frame.'
 			   default: MCPDebugRequest defaultSourceContextLines).
 		  (self
-			   integerSchemaPropertyNamed: 'stackStart'
-			   description: 'Zero-based stack offset.'
+			   stackStartSchemaPropertyWithDescription:
+			   'Zero-based stack offset.'
 			   default: MCPDebugRequest defaultStackStart).
 		  (self
-			   integerSchemaPropertyNamed: 'stackLimit'
-			   description: 'Maximum stack frames.'
+			   stackLimitSchemaPropertyWithDescription: 'Maximum stack frames.'
 			   default: MCPDebugRequest defaultStackLimit).
 		  (self
-			   integerSchemaPropertyNamed: 'variableDepth'
-			   description: 'Inline variable preview depth.'
+			   variableDepthSchemaPropertyWithDescription:
+			   'Inline preview depth.'
 			   default: MCPDebugRequest defaultVariableDepth).
 		  (self
-			   integerSchemaPropertyNamed: 'variableLimit'
-			   description: 'Maximum variables per scope.'
+			   variableLimitSchemaPropertyWithDescription:
+			   'Maximum variables per scope.'
 			   default: MCPDebugRequest defaultVariableLimit).
 		  (self
 			   booleanSchemaPropertyNamed: 'includeReceiver'

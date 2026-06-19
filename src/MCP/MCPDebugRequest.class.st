@@ -59,6 +59,30 @@ MCPDebugRequest class >> defaultVariableLimit [
 	^ 10
 ]
 
+{ #category : 'limits' }
+MCPDebugRequest class >> maximumSourceContextLines [
+
+	^ 20
+]
+
+{ #category : 'limits' }
+MCPDebugRequest class >> maximumStackLimit [
+
+	^ 50
+]
+
+{ #category : 'limits' }
+MCPDebugRequest class >> maximumVariableDepth [
+
+	^ 3
+]
+
+{ #category : 'limits' }
+MCPDebugRequest class >> maximumVariableLimit [
+
+	^ 50
+]
+
 { #category : 'accessing' }
 MCPDebugRequest >> frameRef [
 

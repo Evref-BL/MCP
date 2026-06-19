@@ -30,7 +30,7 @@ MCPDebugVariablesRequest class >> fromRequest: aRequest tool: aTool [
 						signalErrorCode: #DebugStateStale
 						message:
 							'Debug state ' , requestedStateId
-							, ' does not match reference state ' , reference stateId , '.'
+							, ' does not reference state ' , reference stateId , '.'
 						details: {
 								(#requestedStateId -> requestedStateId).
 								(#referenceStateId -> reference stateId).
@@ -47,10 +47,12 @@ MCPDebugVariablesRequest class >> fromRequest: aRequest tool: aTool [
 		  stackLimit: reference frameIndex + 1;
 		  variableDepth: (aRequest
 				   nonNegativeIntegerArgumentNamed: 'variableDepth'
-				   default: self defaultVariableDepth);
+				   default: self defaultVariableDepth
+				   maximum: self maximumVariableDepth);
 		  variableLimit: (aRequest
 				   nonNegativeIntegerArgumentNamed: 'variableLimit'
-				   default: self defaultVariableLimit);
+				   default: self defaultVariableLimit
+				   maximum: self maximumVariableLimit);
 		  includeIndexed:
 			  (aRequest booleanArgumentNamed: 'includeIndexed' default: true);
 		  includeInstanceVariables: (aRequest

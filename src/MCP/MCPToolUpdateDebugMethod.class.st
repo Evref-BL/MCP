@@ -45,49 +45,44 @@ MCPToolUpdateDebugMethod >> defaultInputSchema [
 					   schemaPropertyNamed: 'sessionId'
 					   type: 'string'
 					   description:
-						   'Opaque debug session identifier returned by debug_session_list, debug_capture, debug_test_run, or debug_candidate_attach.').
+						   'Debug session id: debug_session_list, debug_capture, debug_test_run, debug_candidate_attach.').
 				  (self
 					   schemaPropertyNamed: 'stateId'
 					   type: 'string'
-					   description:
-						   'Optional state token rejecting stale debug_method_update requests.').
+					   description: 'Optional stale-reference token.').
 				  (self
 					   schemaPropertyNamed: 'frameRef'
 					   type: 'string'
 					   description:
-						   'Optional state-scoped frame reference returned by debug_state_get. Defaults to the selected top frame.').
+						   'Optional frame reference debug_state_get; default: selected top frame.').
 				  (self
 					   schemaPropertyNamed: 'source'
 					   type: 'string'
 					   description:
-						   'Optional replacement source. DNU and subclass responsibility repairs use the default when omitted.').
+						   'Optional replacement source. Default repair source handles DNU or subclass-responsibility.').
 				  (self
 					   booleanSchemaPropertyNamed: 'ignoreCritiques'
-					   description:
-						   'Proceed after successful compile even when critiques are reported.'
+					   description: 'Proceed compile despite critiques.'
 					   default: false).
 				  (self
-					   integerSchemaPropertyNamed: 'sourceContextLines'
-					   description:
-						   'Number of source lines requested in returned state.'
+					   sourceContextLinesSchemaPropertyWithDescription:
+						   'Source lines in returned state.'
 					   default: 5).
 				  (self
-					   integerSchemaPropertyNamed: 'stackStart'
-					   description:
+					   stackStartSchemaPropertyWithDescription:
 						   'Zero-based stack frame offset returned in state.'
 					   default: 0).
 				  (self
-					   integerSchemaPropertyNamed: 'stackLimit'
-					   description: 'Maximum stack frames returned in state.'
+					   stackLimitSchemaPropertyWithDescription:
+						   'Maximum stack frames returned in state.'
 					   default: 20).
 				  (self
-					   integerSchemaPropertyNamed: 'variableDepth'
-					   description:
-						   'Inline variable preview depth in returned state.'
+					   variableDepthSchemaPropertyWithDescription:
+						   'Inline preview depth in returned state.'
 					   default: 1).
 				  (self
-					   integerSchemaPropertyNamed: 'variableLimit'
-					   description: 'Maximum variable previews returned in state.'
+					   variableLimitSchemaPropertyWithDescription:
+						   'Maximum variable previews returned in state.'
 					   default: 50).
 				  (self
 					   booleanSchemaPropertyNamed: 'includeReceiver'

@@ -10,6 +10,20 @@ Class {
 }
 
 { #category : 'private' }
+MCPToolContractsTest >> assertDebugInputPropertyNamed: propertyName inTool: aTool default: defaultValue maximum: maximumValue [
+
+	| property |
+	property := self inputPropertyNamed: propertyName inTool: aTool.
+	self assert: (property extraProperties at: #minimum) equals: 0.
+	self
+		assert: (property extraProperties at: #maximum)
+		equals: maximumValue.
+	self
+		assert: (property extraProperties at: #default)
+		equals: defaultValue
+]
+
+{ #category : 'private' }
 MCPToolContractsTest >> assertNoCompositionKeywordsIn: aValue [
 
 	self assertNoCompositionKeywordsIn: aValue path: #(  )
@@ -1105,6 +1119,70 @@ MCPToolContractsTest >> testConfiguredDiscoverableToolsAreNotDirectlyCallable [
 					rpcToolCall: 'package_search'
 					withParams: { (#limit -> 1) } asDictionary ]
 		raise: JRPCNonExistentHandler
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testDebugInputSchemasAdvertiseExpansionBounds [
+
+	| snapshotTools updateTool variablesTool |
+	snapshotTools := {
+		                 MCPToolDebugState new.
+		                 MCPToolStepOverDebugSession new.
+		                 MCPToolDebugCapture new.
+		                 MCPToolDebugTest new }.
+	snapshotTools do: [ :tool |
+			self
+				assertDebugInputPropertyNamed: 'sourceContextLines'
+				inTool: tool
+				default: MCPDebugRequest defaultSourceContextLines
+				maximum: MCPDebugRequest maximumSourceContextLines.
+			self
+				assertDebugInputPropertyNamed: 'stackLimit'
+				inTool: tool
+				default: MCPDebugRequest defaultStackLimit
+				maximum: MCPDebugRequest maximumStackLimit.
+			self
+				assertDebugInputPropertyNamed: 'variableDepth'
+				inTool: tool
+				default: MCPDebugRequest defaultVariableDepth
+				maximum: MCPDebugRequest maximumVariableDepth.
+			self
+				assertDebugInputPropertyNamed: 'variableLimit'
+				inTool: tool
+				default: MCPDebugRequest defaultVariableLimit
+				maximum: MCPDebugRequest maximumVariableLimit ].
+	variablesTool := MCPToolDebugVariables new.
+	self
+		assertDebugInputPropertyNamed: 'variableDepth'
+		inTool: variablesTool
+		default: MCPDebugRequest defaultVariableDepth
+		maximum: MCPDebugRequest maximumVariableDepth.
+	self
+		assertDebugInputPropertyNamed: 'variableLimit'
+		inTool: variablesTool
+		default: MCPDebugRequest defaultVariableLimit
+		maximum: MCPDebugRequest maximumVariableLimit.
+	updateTool := MCPToolUpdateDebugMethod new.
+	self
+		assertDebugInputPropertyNamed: 'sourceContextLines'
+		inTool: updateTool
+		default: 5
+		maximum: MCPDebugRequest maximumSourceContextLines.
+	self
+		assertDebugInputPropertyNamed: 'stackLimit'
+		inTool: updateTool
+		default: 20
+		maximum: MCPDebugRequest maximumStackLimit.
+	self
+		assertDebugInputPropertyNamed: 'variableDepth'
+		inTool: updateTool
+		default: 1
+		maximum: MCPDebugRequest maximumVariableDepth.
+	self
+		assertDebugInputPropertyNamed: 'variableLimit'
+		inTool: updateTool
+		default: 50
+		maximum: MCPDebugRequest maximumVariableLimit
 ]
 
 { #category : 'tests' }

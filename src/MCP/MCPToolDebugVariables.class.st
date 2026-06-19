@@ -46,19 +46,18 @@ MCPToolDebugVariables >> defaultInputSchema [
 				  (self
 					   schemaPropertyNamed: 'variableRef'
 					   type: 'string'
-					   description: 'State-scoped variable or scope reference.').
+					   description: 'State-scoped variable/scope reference.').
 				  (self
 					   schemaPropertyNamed: 'stateId'
 					   type: 'string'
-					   description:
-						   'Optional state token for stale-reference checks.').
+					   description: 'Optional stale-reference token.').
 				  (self
-					   integerSchemaPropertyNamed: 'variableDepth'
-					   description: 'Expansion depth; use 0 for metadata only.'
+					   variableDepthSchemaPropertyWithDescription:
+						   'Expansion depth; 0 means metadata only.'
 					   default: MCPDebugRequest defaultVariableDepth).
 				  (self
-					   integerSchemaPropertyNamed: 'variableLimit'
-					   description: 'Maximum child variables.'
+					   variableLimitSchemaPropertyWithDescription:
+						   'Maximum child variables.'
 					   default: MCPDebugRequest defaultVariableLimit).
 				  (self
 					   booleanSchemaPropertyNamed: 'includeIndexed'
