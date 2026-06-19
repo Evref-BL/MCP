@@ -43,8 +43,9 @@ MCPToolLoadRepositoryTest >> testCommandAppliesResumeWarningAndIncomingConflictP
 			           (#owner -> 'ExampleOwner').
 			           (#project -> 'ExampleProject').
 			           (#baseline -> 'ExampleBaseline').
-			           (#onWarning -> 'resume').
-			           (#onConflict -> 'useIncoming') }.
+			           (#policy -> {
+				            (#warning -> 'resume').
+				            (#conflict -> 'useIncoming') } asDictionary) }.
 	self executeRecordingCommandForRequest: request.
 	metacello := self recordedMetacello.
 	self assert: (metacello received: #onWarning:).
@@ -112,8 +113,9 @@ MCPToolLoadRepositoryTest >> testCommandPassPoliciesSkipMetacelloPolicyConfigura
 			           (#owner -> 'ExampleOwner').
 			           (#project -> 'ExampleProject').
 			           (#baseline -> 'ExampleBaseline').
-			           (#onWarning -> 'pass').
-			           (#onConflict -> 'pass') }.
+			           (#policy -> {
+				            (#warning -> 'pass').
+				            (#conflict -> 'pass') } asDictionary) }.
 	self executeRecordingCommandForRequest: request.
 	metacello := self recordedMetacello.
 	self assert: (metacello received: #load).

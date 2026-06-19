@@ -181,7 +181,7 @@ MCPJSONSchemaValidatorTest >> keywordsFrom: violations [
 	^ violations collect: [ :each | each keyword ]
 ]
 
-{ #category : 'private - fixtures' }
+{ #category : 'private' }
 MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 
 	| arguments |
@@ -230,7 +230,7 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 				(#tests
 				 -> { { (#className -> 'MCPToolContractsTest') } asDictionary }).
 				(#coverage
-				 -> { (#classNames -> #( 'MCPToolContractsTest' )) } asDictionary) }
+				 -> { (#scope -> { (#classes -> #( 'MCPToolContractsTest' )) } asDictionary) } asDictionary) }
 				asDictionary;
 		at: MCPToolApplyChangeHistoryEntries
 		put: { (#latestCount -> 1) } asDictionary;

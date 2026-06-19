@@ -41,11 +41,12 @@ MCPToolLoadBaselineTest >> testCommandAppliesProjectSpecificLoadPolicies [
 	| metacello request |
 	request := self baselineRequestFromArguments: {
 			           (#baseline -> 'ExampleBaseline').
-			           (#onConflictUseIncoming -> #( 'IncomingProject' )).
-			           (#onConflictUseLoaded -> #( 'LoadedProject' )).
-			           (#onUpgradeUseLoaded -> #( 'UpgradeProject' )).
-			           (#onDowngradeUseIncoming -> #( 'DowngradeProject' )).
-			           (#onLockBreak -> #( 'LockedProject' )) }.
+			           (#policy -> {
+				            (#conflictUseIncoming -> #( 'IncomingProject' )).
+				            (#conflictUseLoaded -> #( 'LoadedProject' )).
+				            (#upgradeUseLoaded -> #( 'UpgradeProject' )).
+				            (#downgradeUseIncoming -> #( 'DowngradeProject' )).
+				            (#lockBreak -> #( 'LockedProject' )) } asDictionary) }.
 	self executeRecordingCommandForRequest: request.
 	metacello := self recordedMetacello.
 	self assert: (metacello
@@ -71,8 +72,9 @@ MCPToolLoadBaselineTest >> testCommandAppliesResumeWarningAndIncomingConflictPol
 	| metacello request |
 	request := self baselineRequestFromArguments: {
 			           (#baseline -> 'ExampleBaseline').
-			           (#onWarning -> 'resume').
-			           (#onConflict -> 'useIncoming') }.
+			           (#policy -> {
+				            (#warning -> 'resume').
+				            (#conflict -> 'useIncoming') } asDictionary) }.
 	self executeRecordingCommandForRequest: request.
 	metacello := self recordedMetacello.
 	self assert: (metacello received: #onWarning:).
@@ -87,9 +89,10 @@ MCPToolLoadBaselineTest >> testCommandAppliesUpgradeDowngradeAndLockPolicies [
 	| metacello request |
 	request := self baselineRequestFromArguments: {
 			           (#baseline -> 'ExampleBaseline').
-			           (#onUpgrade -> 'useLoaded').
-			           (#onDowngrade -> 'useIncoming').
-			           (#onLock -> 'break') }.
+			           (#policy -> {
+				            (#upgrade -> 'useLoaded').
+				            (#downgrade -> 'useIncoming').
+				            (#lock -> 'break') } asDictionary) }.
 	self executeRecordingCommandForRequest: request.
 	metacello := self recordedMetacello.
 	self assert: (metacello received: #onUpgradeUseLoaded).

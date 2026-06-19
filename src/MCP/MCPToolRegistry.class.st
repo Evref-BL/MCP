@@ -265,18 +265,15 @@ MCPToolRegistry class >> metadataForTool: aTool [
 { #category : 'tools' }
 MCPToolRegistry class >> metadataForTool: aTool usingPolicy: aToolExposurePolicy [
 
-	^ {
-		  (#name -> aTool name).
-		  (#title -> aTool title).
-		  (#description -> aTool description).
-		  (#group -> (self groupNameForToolClass: aTool class)).
-		  (#exposure
-		   -> (self exposureForTool: aTool usingPolicy: aToolExposurePolicy)).
-		  (#mutability -> (self mutabilityForTool: aTool)).
-		  (#risk -> (self riskForTool: aTool)).
-		  (#schemaInspectionRequired -> (self
-			    schemaInspectionRequiredForTool: aTool
-			    usingPolicy: aToolExposurePolicy)) } asDictionary
+	| data |
+	data := {
+		        (#name -> aTool name).
+		        (#description -> aTool description) } asDictionary.
+	(self
+		 schemaInspectionRequiredForTool: aTool
+		 usingPolicy: aToolExposurePolicy) ifTrue: [
+		data at: #schemaInspectionRequired put: true ].
+	^ data
 ]
 
 { #category : 'tools' }
@@ -500,15 +497,15 @@ MCPToolRegistry class >> schemaInspectionRequiredForTool: aTool usingPolicy: aTo
 { #category : 'tools' }
 MCPToolRegistry class >> searchMetadataForTool: aTool usingPolicy: aToolExposurePolicy [
 
-	^ {
-		  (#name -> aTool name).
-		  (#title -> aTool title).
-		  (#description -> aTool description).
-		  (#mutability -> (self mutabilityForTool: aTool)).
-		  (#risk -> (self riskForTool: aTool)).
-		  (#schemaInspectionRequired -> (self
-			    schemaInspectionRequiredForTool: aTool
-			    usingPolicy: aToolExposurePolicy)) } asDictionary
+	| data |
+	data := {
+		        (#name -> aTool name).
+		        (#description -> aTool description) } asDictionary.
+	(self
+		 schemaInspectionRequiredForTool: aTool
+		 usingPolicy: aToolExposurePolicy) ifTrue: [
+		data at: #schemaInspectionRequired put: true ].
+	^ data
 ]
 
 { #category : 'tools' }

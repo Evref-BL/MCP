@@ -384,10 +384,9 @@ MCPToolContractsTest >> coverageToolFlowSpec [
 		  (#arguments -> {
 			   (#tests
 			    -> { { (#className -> 'MCPToolContractsTest') } asDictionary }).
-			   (#coverage
-			    ->
-			    { (#classNames -> #( 'MCPToolContractsTest' )) } asDictionary) }
-			   asDictionary).
+			   (#coverage -> { (#scope
+			     -> { (#classes -> #( 'MCPToolContractsTest' )) } asDictionary) }
+				    asDictionary) } asDictionary).
 		  (#requestClass -> MCPRunTestsRequest).
 		  (#commandClass -> MCPRunTestsCommand) } asDictionary
 ]
@@ -1291,8 +1290,15 @@ MCPToolContractsTest >> testDiscoveryUsesConfiguredStaticToolNames [
 			                    withParams:
 			                    { (#toolName -> 'repository_create') }
 				                    asDictionary)) at: #tool.
-	self assert: (searchContract at: #exposure) equals: 'static'.
-	self assert: (createContract at: #exposure) equals: 'discoverable'
+	self
+		assert: searchContract keys asSet
+		equals: #( name description inputSchema ) asSet.
+	self
+		assert: createContract keys asSet
+		equals:
+		#( name description schemaInspectionRequired
+		   inputSchema ) asSet.
+	self assert: (createContract at: #schemaInspectionRequired)
 ]
 
 { #category : 'tests - evaluate' }
@@ -1425,8 +1431,12 @@ MCPToolContractsTest >> testGetToolReturnsSchemaForCatalogTool [
 		          { (#toolName -> 'repository_create') } asDictionary.
 	contract := (self dataFrom: result) at: #tool.
 	self assert: (contract at: #name) equals: 'repository_create'.
-	self assert: (contract at: #group) equals: 'repositories'.
-	self assert: (contract at: #exposure) equals: 'discoverable'.
+	self
+		assert: contract keys asSet
+		equals:
+		#( name description schemaInspectionRequired
+		   inputSchema ) asSet.
+	self assert: (contract at: #schemaInspectionRequired).
 	inputProperties := ((contract at: #inputSchema) at: #properties) keys.
 	self assert: (inputProperties includes: 'name').
 	self assert: (inputProperties includes: 'location').
@@ -2489,10 +2499,10 @@ MCPToolContractsTest >> testRunTestCoverageUsesNestedRequestDTOs [
 			               ->
 			               { { (#className -> 'MCPToolContractsTest') }
 				               asDictionary }).
-			              (#coverage
-			               ->
-			               { (#classNames -> #( 'MCPToolContractsTest' )) }
-				               asDictionary) } asDictionary.
+			              (#coverage -> { (#scope
+			                ->
+			                { (#classes -> #( 'MCPToolContractsTest' )) }
+				                asDictionary) } asDictionary) } asDictionary.
 	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
 	command := tool commandForRequest: parsedRequest.
 	validatedRequests := command validatedRequestsFrom:
@@ -2516,7 +2526,7 @@ MCPToolContractsTest >> testRunTestCoverageUsesNestedRequestDTOs [
 { #category : 'tests' }
 MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 
-	| coverageDataProperties coverageInputProperty coverageOutputSchema coverageResultsProperty coverageTool dataProperties inputPropertyNames outputSchema resultsProperty timeoutMillisecondsProperty tool |
+	| coverageDataProperties coverageInputProperty coverageOutputSchema coverageResultsProperty coverageScopeProperty coverageScopePropertyNames coverageTool dataProperties inputPropertyNames outputSchema resultsProperty timeoutMillisecondsProperty tool |
 	tool := MCPToolRunTests new.
 	self assert: tool name equals: 'test_run'.
 	self
@@ -2545,7 +2555,6 @@ MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 		equals: 'object'.
 	self deny: (dataProperties includesKey: 'coverage').
 	self deny: (dataProperties includesKey: 'tests').
-
 	coverageTool := MCPToolRunTestCoverage new.
 	self assert: coverageTool name equals: 'test_coverage_run'.
 	self
@@ -2559,9 +2568,16 @@ MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 	self assert: (inputPropertyNames includes: 'coverage').
 	self assert: (inputPropertyNames includes: 'timeoutSeconds').
 	self assert: (inputPropertyNames includes: 'timeoutMilliseconds').
-	self assert:
-		(((coverageInputProperty extraProperties at: #properties) collect: [
-			  :each | each name ]) includes: 'packageNames').
+	coverageScopeProperty := (coverageInputProperty extraProperties at:
+		                          #properties) detect: [ :each |
+		                         each name = 'scope' ].
+	coverageScopePropertyNames := (coverageScopeProperty extraProperties
+		                               at: #properties) collect: [ :each |
+		                              each name ].
+	self assert: (coverageScopePropertyNames includes: 'packages').
+	self assert: (coverageScopePropertyNames includes: 'classes').
+	self deny: (coverageScopePropertyNames includes: 'packageNames').
+	self deny: (coverageScopePropertyNames includes: 'classNames').
 	coverageOutputSchema := coverageTool outputSchema asJRPCJSON.
 	coverageDataProperties := ((coverageOutputSchema at: #properties)
 		                           at: 'data') at: #properties.
@@ -3006,9 +3022,7 @@ MCPToolContractsTest >> testSearchToolsReturnsDiscoverableMetadata [
 		                            (each at: #name) = 'repository_create' ].
 	self
 		assert: createRepositoryMetadata keys asSet
-		equals:
-			#( name title description mutability risk schemaInspectionRequired )
-				asSet.
+		equals: #( name description schemaInspectionRequired ) asSet.
 	self assert: (createRepositoryMetadata at: #schemaInspectionRequired)
 ]
 

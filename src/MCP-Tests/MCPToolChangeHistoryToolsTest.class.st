@@ -25,7 +25,8 @@ MCPToolChangeHistoryToolsTest >> testChangeHistoryToolsAreDiscoverableWithExpect
 	metadataByName := (((self dataFrom: result) at: #tools) collect: [
 		                   :each | (each at: #name) -> each ]) asDictionary.
 	toolNames := metadataByName keys.
-	#( 'history_file_list' 'history_entry_list' ) do: [ :toolName |
+	#( 'history_file_list' 'history_entry_list' 'history_entry_apply'
+	   'history_entry_revert' ) do: [ :toolName |
 			| metadata tool |
 			self assert: (toolNames includes: toolName).
 			tool := MCPToolRegistry
@@ -35,20 +36,10 @@ MCPToolChangeHistoryToolsTest >> testChangeHistoryToolsAreDiscoverableWithExpect
 				assert: (MCPToolRegistry exposureForTool: tool)
 				equals: 'discoverable'.
 			metadata := metadataByName at: toolName.
-			self assert: (metadata at: #mutability) equals: 'read'.
-			self assert: (metadata at: #risk) equals: 'low' ].
-	#( 'history_entry_apply' 'history_entry_revert' ) do: [ :toolName |
-			| metadata tool |
-			self assert: (toolNames includes: toolName).
-			tool := MCPToolRegistry
-				        toolNamed: toolName
-				        ifAbsent: [ self fail: 'Missing tool ' , toolName ].
 			self
-				assert: (MCPToolRegistry exposureForTool: tool)
-				equals: 'discoverable'.
-			metadata := metadataByName at: toolName.
-			self assert: (metadata at: #mutability) equals: 'write'.
-			self assert: (metadata at: #risk) equals: 'high' ]
+				assert: metadata keys asSet
+				equals: #( name description schemaInspectionRequired ) asSet.
+			self assert: (metadata at: #schemaInspectionRequired) ]
 ]
 
 { #category : 'tests' }

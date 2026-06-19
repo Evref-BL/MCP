@@ -58,30 +58,29 @@ MCPTestCoverageRequest class >> nonNegativeIntegerNamed: argumentName in: rawVal
 { #category : 'private - parsing' }
 MCPTestCoverageRequest class >> scopeQueryFromValue: rawValue usingToolRequest: toolRequest [
 
+	| scopeValue |
+	scopeValue := toolRequest
+		              valueNamed: 'scope'
+		              in: rawValue
+		              ifAbsent: [ Dictionary new ].
 	^ MCPCompiledMethodScopeQuery new
-		  packageNames: (toolRequest stringCollectionFrom: (toolRequest
-						    valueNamed: 'packageNames'
-						    in: rawValue
-						    ifAbsent: [ #(  ) ]));
-		  classNames: (toolRequest stringCollectionFrom:
-					   (toolRequest
-						    valueNamed: 'classNames'
-						    in: rawValue
-						    ifAbsent: [ #(  ) ]));
-		  hierarchyClassNames:
-			  (toolRequest stringCollectionFrom: (toolRequest
-						    valueNamed: 'hierarchyClassNames'
-						    in: rawValue
-						    ifAbsent: [ #(  ) ]));
-		  subclassClassNames:
-			  (toolRequest stringCollectionFrom: (toolRequest
-						    valueNamed: 'subclassClassNames'
-						    in: rawValue
-						    ifAbsent: [ #(  ) ]));
-		  parentClassNames: (toolRequest stringCollectionFrom: (toolRequest
-						    valueNamed: 'parentClassNames'
-						    in: rawValue
-						    ifAbsent: [ #(  ) ]));
+		  packageNames:
+			  (toolRequest
+				   stringCollectionArgumentNamed: 'packages'
+				   in: scopeValue);
+		  classNames:
+			  (toolRequest
+				   stringCollectionArgumentNamed: 'classes'
+				   in: scopeValue);
+		  hierarchyClassNames: (toolRequest
+				   stringCollectionArgumentNamed: 'hierarchies'
+				   in: scopeValue);
+		  subclassClassNames: (toolRequest
+				   stringCollectionArgumentNamed: 'subclassesOf'
+				   in: scopeValue);
+		  parentClassNames: (toolRequest
+				   stringCollectionArgumentNamed: 'superclassesOf'
+				   in: scopeValue);
 		  side:
 			  (toolRequest
 				   stringArgumentNamed: 'side'
@@ -106,7 +105,7 @@ MCPTestCoverageRequest class >> signalMissingCoverageScope [
 	^ MCPCommandError
 		  signalErrorCode: #CoverageScopeRequired
 		  message:
-		  'coverage requires at least one explicit method scope: packageNames, classNames, hierarchyClassNames, subclassClassNames, or parentClassNames.'
+		  'coverage requires at least one explicit method scope: scope.packages, scope.classes, scope.hierarchies, scope.subclassesOf, or scope.superclassesOf.'
 		  details: { (#tool -> 'test_coverage_run') } asDictionary
 ]
 

@@ -14,15 +14,15 @@ MCPToolMethodSearchTest >> entryForReference: aReference in: methods [
 
 	^ methods
 		  detect: [ :each |
-			  | reference |
-			  reference := String streamContents: [ :stream |
-				               stream nextPutAll: (each at: #className).
-				               (each at: #classSide) ifTrue: [
-					               stream nextPutAll: ' class' ].
-				               stream
-					               nextPutAll: '>>';
-					               nextPutAll: (each at: #selector) ].
-			  reference = aReference ]
+				  | reference |
+				  reference := String streamContents: [ :stream |
+						               stream nextPutAll: (each at: #className).
+						               (each at: #classSide ifAbsent: [ false ])
+							               ifTrue: [ stream nextPutAll: ' class' ].
+						               stream
+							               nextPutAll: '>>';
+							               nextPutAll: (each at: #selector) ].
+				  reference = aReference ]
 		  ifNone: [ self fail: 'Missing method ' , aReference ]
 ]
 

@@ -47,7 +47,7 @@ MCPToolSearchTools >> defaultInputSchema [
 					   schemaPropertyNamed: 'query'
 					   type: 'string'
 					   description:
-						   'Search text for names, titles, descriptions, groups, or keywords.').
+						   'Search text for tool names, descriptions, or groups.').
 				  (self
 					   schemaPropertyNamed: 'group'
 					   type: 'string'
@@ -106,26 +106,13 @@ MCPToolSearchTools >> toolMetadataObjectSchema [
 					   type: 'string'
 					   description: 'MCP tool name.').
 				  (self
-					   schemaPropertyNamed: 'title'
-					   type: 'string'
-					   description: 'Human-readable title.').
-				  (self
 					   schemaPropertyNamed: 'description'
 					   type: 'string'
 					   description: 'Short description.').
 				  (self
-					   schemaPropertyNamed: 'mutability'
-					   type: 'string'
-					   description: 'read, write, or execute.').
-				  (self
-					   schemaPropertyNamed: 'risk'
-					   type: 'string'
-					   description: 'Operational risk.').
-				  (self
 					   booleanSchemaPropertyNamed: 'schemaInspectionRequired'
 					   description: 'Inspect schema before calling.') };
-		  required:
-			  #( 'name' 'title' 'description' 'mutability' 'risk' 'schemaInspectionRequired' );
+		  required: #( 'name' 'description' );
 		  additionalProperties: false;
 		  yourself
 ]

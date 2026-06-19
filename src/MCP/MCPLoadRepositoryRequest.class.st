@@ -394,14 +394,14 @@ MCPLoadRepositoryRequest >> repositoryUrl [
 { #category : 'converting' }
 MCPLoadRepositoryRequest >> requestedContext [
 
-	| context |
+	| context policy |
 	context := {
 		           (#mode -> self mode).
-		           (#baseline -> self baseline).
-		           (#groups -> self groups).
-		           (#onWarning -> self onWarning).
-		           (#onConflict -> self onConflict).
-		           (#policy -> self loadPolicy asDictionary) } asDictionary.
+		           (#baseline -> self baseline) } asDictionary.
+	self groups ifNotEmpty: [ :loadGroups |
+		context at: #groups put: loadGroups ].
+	policy := self loadPolicy asDictionary.
+	policy ifNotEmpty: [ context at: #policy put: policy ].
 	hostUrl ifNotNil: [ context at: #hostUrl put: self hostUrl ].
 	owner ifNotNil: [ context at: #owner put: self owner ].
 	project ifNotNil: [ context at: #project put: self project ].

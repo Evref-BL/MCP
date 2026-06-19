@@ -86,10 +86,11 @@ MCPLoadBaselineRequest >> onWarning [
 { #category : 'converting' }
 MCPLoadBaselineRequest >> requestedContext [
 
-	^ {
-		  (#baseline -> self baseline).
-		  (#groups -> self groups).
-		  (#onWarning -> self onWarning).
-		  (#onConflict -> self onConflict).
-		  (#policy -> self loadPolicy asDictionary) } asDictionary
+	| context policy |
+	context := { (#baseline -> self baseline) } asDictionary.
+	self groups ifNotEmpty: [ :loadGroups |
+		context at: #groups put: loadGroups ].
+	policy := self loadPolicy asDictionary.
+	policy ifNotEmpty: [ context at: #policy put: policy ].
+	^ context
 ]

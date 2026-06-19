@@ -26,7 +26,7 @@ TMCPMethodTool >> methodEntryLabel: anEntry [
 	^ self
 		  methodReferenceForClassName: (anEntry at: #className)
 		  selector: (anEntry at: #selector)
-		  isClassSide: (anEntry at: #classSide)
+		  isClassSide: (anEntry at: #classSide ifAbsent: [ false ])
 ]
 
 { #category : 'private - methods' }
@@ -48,11 +48,7 @@ TMCPMethodTool >> methodQueryScopeInputProperties [
 
 	^ {
 		  self methodSideSchemaProperty.
-		  self methodScopePackageNamesProperty.
-		  self methodScopeClassNamesProperty.
-		  self methodScopeHierarchyClassNamesProperty.
-		  self methodScopeSubclassClassNamesProperty.
-		  self methodScopeParentClassNamesProperty }
+		  self searchScopeSchemaProperty }
 ]
 
 { #category : 'private - methods' }
@@ -115,15 +111,22 @@ TMCPMethodTool >> methodScopeParentClassNamesProperty [
 TMCPMethodTool >> methodScopeQueryFromRequest: request [
 
 	^ MCPCompiledMethodScopeQuery new
-		  packageNames:
-			  (request stringCollectionArgumentNamed: 'packageNames');
-		  classNames: (request stringCollectionArgumentNamed: 'classNames');
-		  hierarchyClassNames:
-			  (request stringCollectionArgumentNamed: 'hierarchyClassNames');
-		  subclassClassNames:
-			  (request stringCollectionArgumentNamed: 'subclassClassNames');
-		  parentClassNames:
-			  (request stringCollectionArgumentNamed: 'parentClassNames');
+		  packageNames: (self
+				   searchScopeStringCollectionNamed: 'packages'
+				   fromRequest: request);
+		  classNames:
+			  (self
+				   searchScopeStringCollectionNamed: 'classes'
+				   fromRequest: request);
+		  hierarchyClassNames: (self
+				   searchScopeStringCollectionNamed: 'hierarchies'
+				   fromRequest: request);
+		  subclassClassNames: (self
+				   searchScopeStringCollectionNamed: 'subclassesOf'
+				   fromRequest: request);
+		  parentClassNames: (self
+				   searchScopeStringCollectionNamed: 'superclassesOf'
+				   fromRequest: request);
 		  side: (request stringArgumentNamed: 'side' default: 'both');
 		  yourself
 ]
@@ -145,6 +148,44 @@ TMCPMethodTool >> methodSideSchemaProperty [
 		  description: 'Method side to search.'
 		  values: #( 'instance' 'class' 'both' )
 		  default: 'both'
+]
+
+{ #category : 'private - request' }
+TMCPMethodTool >> searchScopeFromRequest: request [
+
+	^ request argumentNamed: 'scope' ifAbsent: [ Dictionary new ]
+]
+
+{ #category : 'private - schema' }
+TMCPMethodTool >> searchScopeSchemaProperties [
+
+	^ {
+		  (self stringArraySchemaNamed: 'classes').
+		  (self stringArraySchemaNamed: 'packages').
+		  (self stringArraySchemaNamed: 'superclassesOf').
+		  (self stringArraySchemaNamed: 'subclassesOf').
+		  (self stringArraySchemaNamed: 'hierarchies') }
+]
+
+{ #category : 'private - schema' }
+TMCPMethodTool >> searchScopeSchemaProperty [
+
+	^ MCPStructureProperties new
+		  name: 'scope';
+		  type: 'object';
+		  description:
+			  'Optional search scope. If omitted, searches all matching entities.';
+		  properties: self searchScopeSchemaProperties;
+		  additionalProperties: false;
+		  yourself
+]
+
+{ #category : 'private - request' }
+TMCPMethodTool >> searchScopeStringCollectionNamed: aName fromRequest: request [
+
+	^ request
+		  stringCollectionArgumentNamed: aName
+		  in: (self searchScopeFromRequest: request)
 ]
 
 { #category : 'private - request' }

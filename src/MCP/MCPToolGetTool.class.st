@@ -100,29 +100,9 @@ MCPToolGetTool >> defaultOutputSchema [
 					 type: 'string'
 					 description: 'Tool name.').
 				(self
-					 schemaPropertyNamed: 'title'
-					 type: 'string'
-					 description: 'Tool title.').
-				(self
 					 schemaPropertyNamed: 'description'
 					 type: 'string'
 					 description: 'Tool description.').
-				(self
-					 schemaPropertyNamed: 'group'
-					 type: 'string'
-					 description: 'Tool group.').
-				(self
-					 schemaPropertyNamed: 'exposure'
-					 type: 'string'
-					 description: 'Tool exposure.').
-				(self
-					 schemaPropertyNamed: 'mutability'
-					 type: 'string'
-					 description: 'Tool mutability.').
-				(self
-					 schemaPropertyNamed: 'risk'
-					 type: 'string'
-					 description: 'Tool risk.').
 				(self
 					 booleanSchemaPropertyNamed: 'schemaInspectionRequired'
 					 description: 'Inspect schema before calling.').
@@ -130,9 +110,7 @@ MCPToolGetTool >> defaultOutputSchema [
 				outputSchemaProperty.
 				examplesProperty.
 				activationRequirementsProperty };
-		required:
-			#( 'name' 'title' 'description' 'group' 'exposure' 'mutability'
-			   'risk' 'schemaInspectionRequired' 'inputSchema' );
+		required: #( 'name' 'description' 'inputSchema' );
 		additionalProperties: false.
 	^ self
 		  standardOutputSchemaForDataProperties: { toolProperty }
