@@ -1,5 +1,5 @@
 "
-Runtime observability state for an MCP server. Observability is disabled by default; when enabled, it records TinyLogger-backed log lines, per-tool timing and output-size metrics, recent completed calls, and trace-worthy call records for errors, timing outliers, or output-budget overruns.
+Runtime observability state for an MCP server. When enabled, it records TinyLogger-backed log lines, per-tool timing and output-size metrics, recent completed calls, and compact trace records for errors, timing outliers, or output-budget overruns. MCP server instances enable observability and configure a default export directory; standalone state objects can still be configured explicitly.
 "
 Class {
 	#name : 'MCPMonitoringState',
@@ -17,6 +17,7 @@ Class {
 		'outputBudgetBytes',
 		'lastActivityAt',
 		'traceLogger',
+		'logFileLogger',
 		'exportDirectory',
 		'exportInstanceDirectory',
 		'resourceMetadata'
@@ -25,6 +26,12 @@ Class {
 	#package : 'MCP',
 	#tag : 'Monitoring'
 }
+
+{ #category : 'defaults' }
+MCPMonitoringState class >> defaultExportDirectory [
+
+	^ FileLocator home asFileReference / 'pharo-mcp-observability'
+]
 
 { #category : 'private' }
 MCPMonitoringState >> addRecentCall: aRecord [
@@ -121,6 +128,9 @@ MCPMonitoringState >> disable [
 { #category : 'activation' }
 MCPMonitoringState >> enable [
 
+	self enabled ifTrue: [
+			self ensureLogger.
+			^ self ].
 	enabled := true.
 	self ensureLogger.
 	lastActivityAt := DateAndTime now.
@@ -141,6 +151,15 @@ MCPMonitoringState >> enabled: aBoolean [
 		ifFalse: [ self disable ]
 ]
 
+{ #category : 'private - exporting' }
+MCPMonitoringState >> ensureLogFileLogger [
+
+	logFileLogger ifNil: [
+			logFileLogger := MCPJSONLineFileTinyLogger named:
+				                 self logFileReference pathString ].
+	^ logFileLogger
+]
+
 { #category : 'logging' }
 MCPMonitoringState >> ensureLogger [
 
@@ -155,9 +174,8 @@ MCPMonitoringState >> ensureLogger [
 MCPMonitoringState >> ensureTraceLogger [
 
 	traceLogger ifNil: [
-			traceLogger := TinyLogger new.
-			traceLogger addLogger:
-				(MCPTraceFileTinyLogger named: self traceFileReference pathString) ].
+			traceLogger := MCPJSONLineFileTinyLogger named:
+				               self traceFileReference pathString ].
 	^ traceLogger
 ]
 
@@ -179,7 +197,8 @@ MCPMonitoringState >> exportDirectory: aPath [
 
 	exportDirectory := aPath ifNotNil: [ :path | path asFileReference ].
 	exportInstanceDirectory := nil.
-	traceLogger := nil
+	traceLogger := nil.
+	logFileLogger := nil
 ]
 
 { #category : 'testing' }
@@ -213,7 +232,7 @@ MCPMonitoringState >> exportInstanceDirectoryName [
 	suffix := instanceId first: (8 min: instanceId size).
 	^ String streamContents: [ :stream |
 			  stream
-				  nextPutAll: 'mcp-pharo-';
+				  nextPutAll: 'pharo-';
 				  nextPutAll: version asString;
 				  nextPut: $-;
 				  nextPutAll: port asString;
@@ -221,13 +240,32 @@ MCPMonitoringState >> exportInstanceDirectoryName [
 				  nextPutAll: suffix ]
 ]
 
+{ #category : 'private - exporting' }
+MCPMonitoringState >> exportLogMessage: aString timestamp: timestamp [
+
+	self exportEnabled ifFalse: [ ^ self ].
+	[
+		self ensureLogFileLogger record:
+			(self logRecordJSONFor: aString timestamp: timestamp) ]
+		on: Error
+		do: [ :ignored | nil ]
+]
+
+{ #category : 'private - exporting' }
+MCPMonitoringState >> exportMetrics [
+
+	self exportEnabled ifFalse: [ ^ self ].
+	[ self writeMetricsSnapshot ]
+		on: Error
+		do: [ :ignored | nil ]
+]
+
 { #category : 'private - tracing' }
 MCPMonitoringState >> exportTraceRecord: aRecord [
 
 	(self exportEnabled and: [ aRecord isTraceWorthy ]) ifFalse: [
 		^ self ].
-	[
-	self ensureTraceLogger record: [ self traceRecordJSONFor: aRecord ] ]
+	[ self ensureTraceLogger record: (self traceRecordJSONFor: aRecord) ]
 		on: Error
 		do: [ :error |
 			self recordLog: 'Trace export failed: ' , error class name asString ]
@@ -237,14 +275,15 @@ MCPMonitoringState >> exportTraceRecord: aRecord [
 MCPMonitoringState >> initialize [
 
 	super initialize.
-	enabled := false.
+	enabled := true.
 	statsByTool := Dictionary new.
 	recentCalls := OrderedCollection new.
 	nextCallId := 0.
 	maxRecentCalls := 100.
 	outlierFactor := 3.
 	minimumOutlierMilliseconds := 250.
-	outputBudgetBytes := self defaultOutputBudgetBytes
+	outputBudgetBytes := self defaultOutputBudgetBytes.
+	self ensureLogger
 ]
 
 { #category : 'private - tracing' }
@@ -255,6 +294,19 @@ MCPMonitoringState >> isSensitiveTraceKey: aKey [
 	^ #( 'password' 'passphrase' 'token' 'secret' 'credential'
 	     'authorization' 'apikey' 'api_key' ) anySatisfy: [ :term |
 		  lowerKey includesSubstring: term ]
+]
+
+{ #category : 'private - tracing' }
+MCPMonitoringState >> isVerboseTraceKey: aKey [
+
+	^ #( 'stackTrace' 'signalerContext' ) includes: aKey asString
+]
+
+{ #category : 'accessing' }
+MCPMonitoringState >> logFileReference [
+
+	^ self exportInstanceDirectory ifNotNil: [ :directory |
+		  directory / 'logs.jsonl' ]
 ]
 
 { #category : 'private' }
@@ -277,6 +329,23 @@ MCPMonitoringState >> logMessageForRecord: aRecord [
 					  stream
 						  nextPutAll: ' - ';
 						  nextPutAll: aRecord displaySummary ] ]
+]
+
+{ #category : 'private - exporting' }
+MCPMonitoringState >> logRecordDictionaryFor: aString timestamp: timestamp [
+
+	^ {
+		  (#schemaVersion -> 1).
+		  (#'event.name' -> 'mcp.log').
+		  (#timestamp -> timestamp asString).
+		  (#message -> aString) } asDictionary
+]
+
+{ #category : 'private - exporting' }
+MCPMonitoringState >> logRecordJSONFor: aString timestamp: timestamp [
+
+	^ STONJSON toString:
+		  (self logRecordDictionaryFor: aString timestamp: timestamp)
 ]
 
 { #category : 'private' }
@@ -315,19 +384,19 @@ MCPMonitoringState >> maxRecentCalls: anInteger [
 { #category : 'accessing' }
 MCPMonitoringState >> maxTraceCollectionItems [
 
-	^ 50
+	^ 20
 ]
 
 { #category : 'accessing' }
 MCPMonitoringState >> maxTraceDepth [
 
-	^ 6
+	^ 4
 ]
 
 { #category : 'accessing' }
 MCPMonitoringState >> maxTraceStringLength [
 
-	^ 4000
+	^ 1000
 ]
 
 { #category : 'accessing' }
@@ -341,6 +410,30 @@ MCPMonitoringState >> metrics [
 
 	^ self statsByTool values asSortedCollection: [ :left :right |
 		  left toolName <= right toolName ]
+]
+
+{ #category : 'accessing' }
+MCPMonitoringState >> metricsFileReference [
+
+	^ self exportInstanceDirectory ifNotNil: [ :directory |
+		  directory / 'metrics.json' ]
+]
+
+{ #category : 'private - exporting' }
+MCPMonitoringState >> metricsSnapshotDictionary [
+
+	^ {
+		  (#schemaVersion -> 1).
+		  (#updatedAt -> DateAndTime now asString).
+		  (#totalCallCount -> self totalCallCount).
+		  (#totalErrorCount -> self totalErrorCount).
+		  (#totalOutputBudgetExceededCount
+		   -> self totalOutputBudgetExceededCount).
+		  (#tools
+		   ->
+		   (self metrics
+			    collect: [ :each | each asMetricsDictionary ]
+			    as: Array)) } asDictionary
 ]
 
 { #category : 'accessing' }
@@ -477,8 +570,11 @@ MCPMonitoringState >> recentCalls [
 { #category : 'logging' }
 MCPMonitoringState >> recordLog: aString [
 
+	| timestamp |
 	self enabled ifFalse: [ ^ self ].
-	self ensureLogger record: aString
+	timestamp := DateAndTime now.
+	self ensureLogger record: aString.
+	self exportLogMessage: aString timestamp: timestamp
 ]
 
 { #category : 'private - budgets' }
@@ -491,7 +587,7 @@ MCPMonitoringState >> recordOutputBudgetFor: aRecord result: aToolResult error: 
 { #category : 'recording' }
 MCPMonitoringState >> recordToolCallFinish: aRecord result: aToolResult error: anError [
 
-	| finishTimestamp duration statusString stats explanation |
+	| explanation finishTimestamp stats statusString duration |
 	aRecord ifNil: [ ^ self ].
 	self enabled ifFalse: [ ^ self ].
 	finishTimestamp := DateAndTime now.
@@ -520,6 +616,7 @@ MCPMonitoringState >> recordToolCallFinish: aRecord result: aToolResult error: a
 	stats recordCall: aRecord.
 	self addRecentCall: aRecord.
 	lastActivityAt := finishTimestamp.
+	self exportMetrics.
 	self recordLog: (self logMessageForRecord: aRecord).
 	^ aRecord
 ]
@@ -573,6 +670,19 @@ MCPMonitoringState >> resourceMetadata: aDictionary [
 	resourceMetadata := metadata.
 	exportInstanceDirectory := nil.
 	traceLogger := nil
+]
+
+{ #category : 'private - tracing' }
+MCPMonitoringState >> shouldIncludeTraceAssociation: anAssociation [
+
+	| value |
+	(self isVerboseTraceKey: anAssociation key) ifTrue: [ ^ false ].
+	value := anAssociation value.
+	value ifNil: [ ^ false ].
+	(value isString and: [ value isEmpty ]) ifTrue: [ ^ false ].
+	(value isCollection and: [ value isString not and: [ value isEmpty ] ])
+		ifTrue: [ ^ false ].
+	^ true
 ]
 
 { #category : 'accessing' }
@@ -685,11 +795,35 @@ MCPMonitoringState >> traceFileReference [
 MCPMonitoringState >> traceRecordDictionaryFor: aRecord [
 
 	| dictionary |
-	dictionary := aRecord asDictionary copy.
+	dictionary := Dictionary new.
 	dictionary at: #schemaVersion put: 1.
 	dictionary
 		at: #'event.name'
 		put: (self traceEventNameForRecord: aRecord).
+	dictionary at: #id put: aRecord id.
+	dictionary at: #toolName put: aRecord toolName.
+	dictionary at: #startedAt put: aRecord displayStartedAt.
+	dictionary
+		at: #durationMilliseconds
+		put: aRecord durationMilliseconds.
+	dictionary at: #status put: aRecord status.
+	aRecord errorClass ifNotEmpty: [ :errorClass |
+		dictionary at: #errorClass put: errorClass ].
+	aRecord outputByteCount > 0 ifTrue: [
+			dictionary at: #outputBytes put: aRecord outputByteCount.
+			dictionary
+				at: #approximateOutputTokens
+				put: aRecord approximateOutputTokenCount ].
+	aRecord outputBudgetExceeded ifTrue: [
+			dictionary at: #outputBudgetBytes put: aRecord outputBudgetBytes.
+			aRecord outputBudgetExplanation ifNotEmpty: [ :explanation |
+				dictionary at: #outputBudgetExplanation put: explanation ] ].
+	aRecord outlierExplanation ifNotEmpty: [ :explanation |
+		dictionary at: #outlierExplanation put: explanation ].
+	aRecord inputSnapshot ifNotNil: [ :snapshot |
+		dictionary at: #input put: snapshot ].
+	aRecord outputSnapshot ifNotNil: [ :snapshot |
+		dictionary at: #output put: snapshot ].
 	^ dictionary
 ]
 
@@ -743,17 +877,17 @@ MCPMonitoringState >> traceSnapshotForAssociation: anAssociation depth: depth [
 { #category : 'private - tracing' }
 MCPMonitoringState >> traceSnapshotForCollection: aCollection depth: depth [
 
-	| array limit snapshot |
+	| array limit overflow snapshot |
 	array := aCollection asArray.
 	limit := array size min: self maxTraceCollectionItems.
+	overflow := array size - limit.
 	snapshot := (1 to: limit) collect: [ :index |
 		            self
 			            traceSnapshotFor: (array at: index)
 			            depth: depth + 1 ].
-	array size > limit ifTrue: [
-		snapshot := snapshot copyWith:
-			            '<truncated ' , (array size - limit) asString
-			            , ' more items>' ].
+	overflow positive ifTrue: [
+			snapshot := snapshot copyWith:
+				            'truncated ' , overflow asString , ' items omitted' ].
 	^ snapshot asArray
 ]
 
@@ -763,16 +897,17 @@ MCPMonitoringState >> traceSnapshotForDictionary: aDictionary depth: depth [
 	| snapshot |
 	snapshot := Dictionary new.
 	aDictionary associationsDo: [ :association |
-		snapshot size < self maxTraceCollectionItems ifTrue: [
-			| sanitized |
-			sanitized := self
-				             traceSnapshotForAssociation: association
-				             depth: depth.
-			snapshot at: sanitized key put: sanitized value ] ].
+			(snapshot size < self maxTraceCollectionItems and: [
+				 self shouldIncludeTraceAssociation: association ]) ifTrue: [
+					| sanitized |
+					sanitized := self
+						             traceSnapshotForAssociation: association
+						             depth: depth.
+					snapshot at: sanitized key put: sanitized value ] ].
 	aDictionary size > self maxTraceCollectionItems ifTrue: [
-		snapshot
-			at: #__truncated__
-			put: aDictionary size - self maxTraceCollectionItems ].
+			snapshot
+				at: #__truncated__
+				put: aDictionary size - self maxTraceCollectionItems ].
 	^ snapshot
 ]
 
@@ -795,6 +930,14 @@ MCPMonitoringState >> traceStringSnapshotFor: aString [
 	text := aString asString.
 	text size <= self maxTraceStringLength ifTrue: [ ^ text ].
 	^ (text first: self maxTraceStringLength) , '... <truncated>'
+]
+
+{ #category : 'private - exporting' }
+MCPMonitoringState >> writeMetricsSnapshot [
+
+	self metricsFileReference writeStreamDo: [ :stream |
+		stream nextPutAll:
+			(STONJSON toString: self metricsSnapshotDictionary) ]
 ]
 
 { #category : 'private - exporting' }

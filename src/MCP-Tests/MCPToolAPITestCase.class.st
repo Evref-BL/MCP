@@ -43,7 +43,9 @@ MCPToolAPITestCase >> callDiscoveredToolNamed: aToolName withArguments: someArgu
 MCPToolAPITestCase >> callRawToolNamed: aToolName withArguments: someArguments [
 
 	^ self aroundToolCall: [
-		  MCP new rpcToolCall: aToolName withParams: someArguments ]
+			  self mcpWithoutObservabilityExport
+				  rpcToolCall: aToolName
+				  withParams: someArguments ]
 ]
 
 { #category : 'private - calling' }

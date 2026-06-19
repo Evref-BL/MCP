@@ -240,22 +240,22 @@ MCPDashboardPresenterTest >> testDisclosureLabelsIncludeStateTitleAndCount [
 ]
 
 { #category : 'tests' }
-MCPDashboardPresenterTest >> testFreshMCPWithObservabilityDisabledCollapsesEmptyMonitoringSections [
+MCPDashboardPresenterTest >> testFreshMCPWithObservabilityEnabledExpandsMonitoringSections [
 
 	| mcp presenter |
 	mcp := MCP new.
 	presenter := MCPDashboardPresenter on: mcp.
 	presenter refreshView.
 
-	self deny: mcp monitoringEnabled.
+	self assert: mcp monitoringEnabled.
 	self assert: presenter isToolsSectionExpanded.
-	self deny: presenter isMetricsSectionExpanded.
-	self deny: presenter isTracesSectionExpanded.
-	self deny: presenter isLogsSectionExpanded.
+	self assert: presenter isMetricsSectionExpanded.
+	self assert: presenter isTracesSectionExpanded.
+	self assert: presenter isLogsSectionExpanded.
 	self assert: presenter toolsWidgetLayout children size equals: 2.
-	self assert: presenter metricsWidgetLayout children size equals: 1.
-	self assert: presenter tracesWidgetLayout children size equals: 1.
-	self assert: presenter logsWidgetLayout children size equals: 1
+	self assert: presenter metricsWidgetLayout children size equals: 2.
+	self assert: presenter tracesWidgetLayout children size equals: 2.
+	self assert: presenter logsWidgetLayout children size equals: 2
 ]
 
 { #category : 'tests' }
@@ -355,10 +355,13 @@ MCPDashboardPresenterTest >> testManualExpansionWorksAfterInitialStateIsChosen [
 	presenter := MCPDashboardPresenter on: mcp.
 	presenter refreshView.
 
-	self deny: presenter isMetricsSectionExpanded.
+	self assert: presenter isMetricsSectionExpanded.
 	presenter toggleMetricsSection.
 	presenter refreshView.
-
+	self deny: presenter isMetricsSectionExpanded.
+	self assert: presenter metricsWidgetLayout children size equals: 1.
+	presenter toggleMetricsSection.
+	presenter refreshView.
 	self assert: presenter isMetricsSectionExpanded.
 	self assert: presenter metricsWidgetLayout children size equals: 2
 ]
@@ -400,11 +403,11 @@ MCPDashboardPresenterTest >> testObservabilityToggleUpdatesModelImmediately [
 	mcp := MCP new.
 	presenter := MCPDashboardPresenter on: mcp.
 
-	self deny: mcp monitoringEnabled.
-	presenter observabilityChangedTo: true.
 	self assert: mcp monitoringEnabled.
 	presenter observabilityChangedTo: false.
-	self deny: mcp monitoringEnabled
+	self deny: mcp monitoringEnabled.
+	presenter observabilityChangedTo: true.
+	self assert: mcp monitoringEnabled
 ]
 
 { #category : 'tests' }
@@ -442,9 +445,9 @@ MCPDashboardPresenterTest >> testRefreshViewUsesShortSectionLabels [
 		assert: toolsHeader label
 		equals:
 		('[-] Tools ({1})' format: { mcp sortedTools size asString }).
-	self assert: metricsHeader label equals: '[+] Metrics (0)'.
-	self assert: tracesHeader label equals: '[+] Traces (0)'.
-	self assert: logsHeader label equals: '[+] Logs (0)'
+	self assert: metricsHeader label equals: '[-] Metrics (0)'.
+	self assert: tracesHeader label equals: '[-] Traces (0)'.
+	self assert: logsHeader label equals: '[-] Logs (0)'
 ]
 
 { #category : 'tests' }

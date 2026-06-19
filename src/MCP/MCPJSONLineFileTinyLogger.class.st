@@ -1,8 +1,8 @@
 "
-TinyLogger file sink that writes one raw JSON trace record per line.
+TinyLogger file sink that writes one JSON record per line.
 "
 Class {
-	#name : 'MCPTraceFileTinyLogger',
+	#name : 'MCPJSONLineFileTinyLogger',
 	#superclass : 'TinyFileLogger',
 	#category : 'MCP-Monitoring',
 	#package : 'MCP',
@@ -10,13 +10,13 @@ Class {
 }
 
 { #category : 'accessing' }
-MCPTraceFileTinyLogger class >> kind [
+MCPJSONLineFileTinyLogger class >> kind [
 
-	^ 'mcpTraceFile'
+	^ 'mcpJSONLineFile'
 ]
 
 { #category : 'logging' }
-MCPTraceFileTinyLogger >> record: aString [
+MCPJSONLineFileTinyLogger >> record: aString [
 
 	self fileStreamDo: [ :stream |
 			stream

@@ -42,6 +42,14 @@ MCPTestCase >> ensureMethodSource: aMethodSource protocol: aProtocol on: aBehavi
 		aBehavior compile: aMethodSource classified: aProtocol ]
 ]
 
+{ #category : 'private - monitoring' }
+MCPTestCase >> mcpWithoutObservabilityExport [
+
+	^ MCP new
+		  monitoringExportDirectory: nil;
+		  yourself
+]
+
 { #category : 'private - classes' }
 MCPTestCase >> removeClassNamed: aClassName [
 

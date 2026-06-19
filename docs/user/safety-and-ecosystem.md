@@ -189,15 +189,14 @@ The Spec dashboard is available from an inspected `MCP` object. It shows:
 - server status and port
 - debug mode
 - registered tools and descriptions
-- optional observability
+- observability enabled by default
 - per-tool timing metrics
-- traces for errors and outliers
+- traces for errors, outliers, and output overruns
 - recent logs
 
-Observability is disabled by default. Enable it for a debugging session, then
-clear it when the session is done.
-Configure `mcp monitoringExportDirectory: aDirectory` to export instance
-metadata and trace-worthy calls as JSON files for offline payload analysis.
+Configure `mcp monitoringExportDirectory: aDirectory` to override the default
+`~/pharo-mcp-observability` export root for instance metadata,
+`logs.jsonl`, `metrics.json`, and `traces.jsonl`.
 
 ## Version Compatibility
 

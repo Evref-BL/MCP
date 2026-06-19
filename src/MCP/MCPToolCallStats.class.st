@@ -57,6 +57,32 @@ MCPToolCallStats >> asDictionary [
 		   -> (self lastOutlierExplanation ifNil: [ '' ])) } asDictionary
 ]
 
+{ #category : 'converting' }
+MCPToolCallStats >> asMetricsDictionary [
+
+	| dictionary |
+	dictionary := {
+		              (#toolName -> self toolName).
+		              (#callCount -> self callCount).
+		              (#averageMilliseconds
+		               -> self averageMilliseconds asFloat).
+		              (#maxMilliseconds -> self maxMilliseconds).
+		              (#averageOutputBytes
+		               -> self averageOutputBytes asFloat).
+		              (#maxOutputBytes -> self maxOutputBytes) }
+		              asDictionary.
+	self errorCount positive ifTrue: [
+		dictionary at: #errorCount put: self errorCount ].
+	self outputBudgetExceededCount positive ifTrue: [
+			dictionary
+				at: #outputBudgetExceededCount
+				put: self outputBudgetExceededCount ].
+	self lastOutlierExplanation ifNotNil: [ :explanation |
+			explanation isEmpty ifFalse: [
+				dictionary at: #lastOutlierExplanation put: explanation ] ].
+	^ dictionary
+]
+
 { #category : 'accessing' }
 MCPToolCallStats >> averageMilliseconds [
 

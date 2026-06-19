@@ -523,7 +523,8 @@ MCPToolContractsTest >> firstTextFromToolResult: aResult [
 { #category : 'private' }
 MCPToolContractsTest >> handleJSON: aJSONString [
 
-	^ MCP new server messageProcessor handleJSON: aJSONString
+	^ self mcpWithoutObservabilityExport server messageProcessor
+		  handleJSON: aJSONString
 ]
 
 { #category : 'private' }
@@ -878,7 +879,7 @@ MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 MCPToolContractsTest >> testCallToolInvokesDiscoverableToolAfterStaticConfiguration [
 
 	| data result server |
-	server := MCP new.
+	server := self mcpWithoutObservabilityExport.
 	server staticToolNames: #( 'tool_search' 'tool_get' 'tool_call' ).
 	result := server rpcToolCall: 'tool_call' withParams: {
 			          (#toolName -> 'package_search').
@@ -1111,7 +1112,7 @@ MCPToolContractsTest >> testClassToolsOutputSchemaAdvertisesMinimalMutationResul
 MCPToolContractsTest >> testConfiguredDiscoverableToolsAreNotDirectlyCallable [
 
 	| server |
-	server := MCP new.
+	server := self mcpWithoutObservabilityExport.
 	server staticToolNames:
 		#( 'tool_search' 'tool_get' 'tool_call' ).
 	self
@@ -1272,7 +1273,7 @@ MCPToolContractsTest >> testDictionaryShapedCommandResultsUseDTOClasses [
 MCPToolContractsTest >> testDiscoveryUsesConfiguredStaticToolNames [
 
 	| createContract metadataByName result searchContract server |
-	server := MCP new.
+	server := self mcpWithoutObservabilityExport.
 	server staticToolNames:
 		#( 'tool_search' 'tool_get' 'tool_call' 'repository_search' ).
 	result := server
@@ -1557,7 +1558,7 @@ MCPToolContractsTest >> testInitializeAdvertisesPharoServerIcon [
 
 	| expectedIcon icon response serverInfo |
 	expectedIcon := (MCPStructureIcon pngIconNamed: #pharo) asJRPCJSON.
-	response := (MCP new
+	response := (self mcpWithoutObservabilityExport
 		             onInitialize: nil
 		             capabilities: nil
 		             clientInfo: nil
@@ -1573,7 +1574,7 @@ MCPToolContractsTest >> testInitializeAdvertisesPharoServerIcon [
 MCPToolContractsTest >> testInitializeAdvertisesSupportedPharoVersions [
 
 	| metadata pharo response runtimeVersion serverInfo |
-	response := (MCP new
+	response := (self mcpWithoutObservabilityExport
 		             onInitialize: nil
 		             capabilities: nil
 		             clientInfo: nil
@@ -2161,7 +2162,7 @@ MCPToolContractsTest >> testQueryScopeDescriptionsExplainScopeSemantics [
 MCPToolContractsTest >> testRPCAdvertisesStaticToolSurfaceOnly [
 
 	| discoverableToolNames expectedStaticToolNames toolNames |
-	toolNames := (MCP new rpcToolsList at: #tools) collect: [ :each |
+	toolNames := (self mcpWithoutObservabilityExport rpcToolsList at: #tools) collect: [ :each |
 		             each at: #name ].
 	expectedStaticToolNames := #( 'tool_search' 'tool_get' 'tool_call'
 	                              'package_search' 'class_search'
@@ -2194,7 +2195,7 @@ MCPToolContractsTest >> testRPCAdvertisesStaticToolSurfaceOnly [
 MCPToolContractsTest >> testRPCRefreshesCachedToolMetadata [
 
 	| mcp propertyNames result staleTool toolDefinition toolDefinitions |
-	mcp := MCP new.
+	mcp := self mcpWithoutObservabilityExport.
 	staleTool := MCPToolSearchClasses new.
 	staleTool inputSchema: (MCPStructureInputSchema new
 			 type: 'object';
@@ -2425,7 +2426,7 @@ MCPToolContractsTest >> testRpcToolCallCatchesUnhandledHaltFromTool [
 	tools := Dictionary new
 		         at: tool name put: tool;
 		         yourself.
-	mcp := MCP new.
+	mcp := self mcpWithoutObservabilityExport.
 	mcp instVarNamed: 'toolsList' put: tools.
 	result := mcp rpcToolCall: tool name withParams: Dictionary new.
 	text := self firstTextFromToolResult: result.
@@ -3060,7 +3061,7 @@ MCPToolContractsTest >> testSearchToolsUseTypedRequestObjects [
 MCPToolContractsTest >> testServerCanConfigureStaticToolNames [
 
 	| server toolNames |
-	server := MCP new.
+	server := self mcpWithoutObservabilityExport.
 	server staticToolNames:
 		#( 'tool_search' 'tool_get' 'tool_call' 'class_search' ).
 	toolNames := (server rpcToolsList at: #tools) collect: [ :each |
@@ -3077,7 +3078,7 @@ MCPToolContractsTest >> testServerCanConfigureStaticToolNames [
 MCPToolContractsTest >> testServerInitializationDoesNotRenderToolIcons [
 
 	MCPStructureIcon resetCaches.
-	MCP new.
+	self mcpWithoutObservabilityExport.
 	self assert: MCPStructureIcon cachedRenderedIconCount equals: 0
 ]
 
@@ -3128,7 +3129,7 @@ MCPToolContractsTest >> testStaticToolConfigurationRejectsUnknownToolNames [
 
 	self
 		should: [
-		MCP new staticToolNames: #( 'tool_search' 'not-a-tool' ) ]
+		self mcpWithoutObservabilityExport staticToolNames: #( 'tool_search' 'not-a-tool' ) ]
 		raise: Error
 ]
 
