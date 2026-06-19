@@ -27,7 +27,7 @@ MCPToolRewriteMethods >> commandForRequest: rewriteRequest [
 { #category : 'defaults' }
 MCPToolRewriteMethods >> defaultDescription [
 
-	^ 'Preview or apply Smalltalk AST rewrite rules for scoped methods.'
+	^ 'Preview or apply Smalltalk AST pattern rewrites within scoped methods. Smalltalk AST pattern syntax, not regex.'
 ]
 
 { #category : 'defaults' }

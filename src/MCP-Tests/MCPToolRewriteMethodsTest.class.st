@@ -459,12 +459,13 @@ MCPToolRewriteMethodsTest >> testSchemaAdvertisesRewriteContract [
 		                 each name = 'scope' ].
 	scopePropertyNames := (scopeProperty extraProperties at: #properties)
 		                      collect: [ :each | each name ].
+
 	self assert: tool name equals: 'method_rewrite'.
 	self
 		assert: tool inputSchema required asSet
 		equals: #( 'rules' ) asSet.
 	self assert:
-		(tool description includesSubstring: 'RB AST pattern syntax').
+		(tool description includesSubstring: 'Smalltalk AST pattern syntax').
 	self assert: (tool description includesSubstring: 'not regex').
 	self assert: (rulesProperty extraProperties at: #minItems) equals: 1.
 	self assert: (lhsProperty extraProperties at: #minLength) equals: 1.
