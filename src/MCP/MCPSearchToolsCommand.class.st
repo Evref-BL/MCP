@@ -35,7 +35,7 @@ MCPSearchToolsCommand >> execute [
 		         usingPolicy: tool toolExposurePolicy.
 	^ { (#tools -> (tools collect: [ :each |
 			    MCPToolRegistry
-				    metadataForTool: each
+				    searchMetadataForTool: each
 				    usingPolicy: tool toolExposurePolicy ]) asArray) }
 		  asDictionary
 ]

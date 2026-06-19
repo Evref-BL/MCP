@@ -1209,13 +1209,7 @@ MCPToolContractsTest >> testDebuggerToolsAreDiscoverableOnly [
 	metadataByName := (((self dataFrom: result) at: #tools) collect: [
 		                   :each | (each at: #name) -> each ]) asDictionary.
 	debugNames do: [ :each |
-			self assert: (metadataByName includesKey: each).
-			self
-				assert: ((metadataByName at: each) at: #exposure)
-				equals: 'discoverable'.
-			self
-				assert: ((metadataByName at: each) at: #group)
-				equals: 'debugging' ]
+		self assert: (metadataByName includesKey: each) ]
 ]
 
 { #category : 'tests' }
@@ -1276,7 +1270,7 @@ MCPToolContractsTest >> testDictionaryShapedCommandResultsUseDTOClasses [
 { #category : 'tests' }
 MCPToolContractsTest >> testDiscoveryUsesConfiguredStaticToolNames [
 
-	| metadataByName result server |
+	| createContract metadataByName result searchContract server |
 	server := MCP new.
 	server staticToolNames:
 		#( 'tool_search' 'tool_get' 'tool_call' 'repository_search' ).
@@ -1285,12 +1279,20 @@ MCPToolContractsTest >> testDiscoveryUsesConfiguredStaticToolNames [
 		          withParams: { (#query -> 'repository') } asDictionary.
 	metadataByName := (((self dataFrom: result) at: #tools) collect: [
 		                   :each | (each at: #name) -> each ]) asDictionary.
-	self
-		assert: ((metadataByName at: 'repository_search') at: #exposure)
-		equals: 'static'.
-	self
-		assert: ((metadataByName at: 'repository_create') at: #exposure)
-		equals: 'discoverable'
+	self assert: (metadataByName includesKey: 'repository_search').
+	self assert: (metadataByName includesKey: 'repository_create').
+	searchContract := (self dataFrom: (server
+			                    rpcToolCall: 'tool_get'
+			                    withParams:
+			                    { (#toolName -> 'repository_search') }
+				                    asDictionary)) at: #tool.
+	createContract := (self dataFrom: (server
+			                    rpcToolCall: 'tool_get'
+			                    withParams:
+			                    { (#toolName -> 'repository_create') }
+				                    asDictionary)) at: #tool.
+	self assert: (searchContract at: #exposure) equals: 'static'.
+	self assert: (createContract at: #exposure) equals: 'discoverable'
 ]
 
 { #category : 'tests - evaluate' }
@@ -2863,32 +2865,32 @@ MCPToolContractsTest >> testSearchToolSchemasAdvertiseGroupedScopeProperties [
 { #category : 'tests' }
 MCPToolContractsTest >> testSearchToolsIncludesStaticSurface [
 
-	| metadataByName result |
+	| metadataByName result staticTool |
 	result := self
 		          callToolNamed: 'tool_search'
 		          withArguments: { (#query -> 'classes') } asDictionary.
 	metadataByName := (((self dataFrom: result) at: #tools) collect: [
 		                   :each | (each at: #name) -> each ]) asDictionary.
 	self assert: (metadataByName includesKey: 'class_search').
+	staticTool := MCPToolRegistry
+		              toolNamed: 'class_search'
+		              ifAbsent: [ self fail: 'Missing class_search tool' ].
 	self
-		assert: ((metadataByName at: 'class_search') at: #exposure)
+		assert: (MCPToolRegistry exposureForTool: staticTool)
 		equals: 'static'
 ]
 
 { #category : 'tests' }
 MCPToolContractsTest >> testSearchToolsKeywordsAreSingleSearchTerms [
 
-	| metadataByName result |
-	result := self
-		          callToolNamed: 'tool_search'
-		          withArguments: { (#limit -> 100) } asDictionary.
-	metadataByName := (((self dataFrom: result) at: #tools) collect: [
-		                   :each | (each at: #name) -> each ]) asDictionary.
+	| evaluateTool searchTool |
+	searchTool := MCPToolSearchTools new.
+	evaluateTool := MCPToolEvaluate new.
 	self
-		assert: ((metadataByName at: 'tool_search') at: #keywords) asSet
+		assert: (MCPToolRegistry keywordsForTool: searchTool) asSet
 		equals: #( 'tool' 'catalog' 'search' ) asSet.
 	self
-		assert: ((metadataByName at: 'image_evaluate') at: #keywords) asSet
+		assert: (MCPToolRegistry keywordsForTool: evaluateTool) asSet
 		equals:
 			#( 'image' 'evaluate' 'runtime' 'expression' 'smalltalk'
 			   'code' ) asSet
@@ -3004,11 +3006,10 @@ MCPToolContractsTest >> testSearchToolsReturnsDiscoverableMetadata [
 	createRepositoryMetadata := tools detect: [ :each |
 		                            (each at: #name) = 'repository_create' ].
 	self
-		assert: (createRepositoryMetadata at: #group)
-		equals: 'repositories'.
-	self
-		assert: (createRepositoryMetadata at: #exposure)
-		equals: 'discoverable'.
+		assert: createRepositoryMetadata keys asSet
+		equals:
+			#( name title description mutability risk schemaInspectionRequired )
+				asSet.
 	self assert: (createRepositoryMetadata at: #schemaInspectionRequired)
 ]
 
@@ -3102,7 +3103,6 @@ MCPToolContractsTest >> testSpecializedClassAndMethodToolsAreDiscoverableOnly [
 				            at: each
 				            ifAbsent: [
 				            self fail: 'Missing discoverable metadata for ' , each ].
-			self assert: (metadata at: #exposure) equals: 'discoverable'.
 			self assert: (metadata at: #schemaInspectionRequired) ]
 ]
 

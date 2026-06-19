@@ -499,6 +499,20 @@ MCPToolRegistry class >> schemaInspectionRequiredForTool: aTool usingPolicy: aTo
 ]
 
 { #category : 'tools' }
+MCPToolRegistry class >> searchMetadataForTool: aTool usingPolicy: aToolExposurePolicy [
+
+	^ {
+		  (#name -> aTool name).
+		  (#title -> aTool title).
+		  (#description -> aTool description).
+		  (#mutability -> (self mutabilityForTool: aTool)).
+		  (#risk -> (self riskForTool: aTool)).
+		  (#schemaInspectionRequired -> (self
+			    schemaInspectionRequiredForTool: aTool
+			    usingPolicy: aToolExposurePolicy)) } asDictionary
+]
+
+{ #category : 'tools' }
 MCPToolRegistry class >> searchableTextForTool: aTool [
 
 	^ String streamContents: [ :stream |

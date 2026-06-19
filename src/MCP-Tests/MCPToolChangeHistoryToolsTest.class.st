@@ -26,17 +26,27 @@ MCPToolChangeHistoryToolsTest >> testChangeHistoryToolsAreDiscoverableWithExpect
 		                   :each | (each at: #name) -> each ]) asDictionary.
 	toolNames := metadataByName keys.
 	#( 'history_file_list' 'history_entry_list' ) do: [ :toolName |
-			| metadata |
+			| metadata tool |
 			self assert: (toolNames includes: toolName).
+			tool := MCPToolRegistry
+				        toolNamed: toolName
+				        ifAbsent: [ self fail: 'Missing tool ' , toolName ].
+			self
+				assert: (MCPToolRegistry exposureForTool: tool)
+				equals: 'discoverable'.
 			metadata := metadataByName at: toolName.
-			self assert: (metadata at: #exposure) equals: 'discoverable'.
 			self assert: (metadata at: #mutability) equals: 'read'.
 			self assert: (metadata at: #risk) equals: 'low' ].
 	#( 'history_entry_apply' 'history_entry_revert' ) do: [ :toolName |
-			| metadata |
+			| metadata tool |
 			self assert: (toolNames includes: toolName).
+			tool := MCPToolRegistry
+				        toolNamed: toolName
+				        ifAbsent: [ self fail: 'Missing tool ' , toolName ].
+			self
+				assert: (MCPToolRegistry exposureForTool: tool)
+				equals: 'discoverable'.
 			metadata := metadataByName at: toolName.
-			self assert: (metadata at: #exposure) equals: 'discoverable'.
 			self assert: (metadata at: #mutability) equals: 'write'.
 			self assert: (metadata at: #risk) equals: 'high' ]
 ]

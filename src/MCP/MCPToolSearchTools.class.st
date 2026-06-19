@@ -104,43 +104,28 @@ MCPToolSearchTools >> toolMetadataObjectSchema [
 				  (self
 					   schemaPropertyNamed: 'name'
 					   type: 'string'
-					   description: 'The MCP tool name.').
+					   description: 'MCP tool name.').
 				  (self
 					   schemaPropertyNamed: 'title'
 					   type: 'string'
-					   description: 'Human-readable tool title.').
+					   description: 'Human-readable title.').
 				  (self
 					   schemaPropertyNamed: 'description'
 					   type: 'string'
-					   description: 'Short tool description.').
-				  (self
-					   schemaPropertyNamed: 'group'
-					   type: 'string'
-					   description: 'Descriptive tool group identifier.').
-				  (self
-					   schemaPropertyNamed: 'exposure'
-					   type: 'string'
-					   description: 'Whether the tool is static or discoverable.').
+					   description: 'Short description.').
 				  (self
 					   schemaPropertyNamed: 'mutability'
 					   type: 'string'
-					   description:
-						   'Whether the tool reads, writes, or executes code.').
+					   description: 'read, write, or execute.').
 				  (self
 					   schemaPropertyNamed: 'risk'
 					   type: 'string'
-					   description: 'Low, medium, or high operational risk.').
-				  (self
-					   stringArraySchemaNamed: 'keywords'
-					   description: 'Search keywords for the tool.'
-					   itemDescription: 'One search keyword.').
+					   description: 'Operational risk.').
 				  (self
 					   booleanSchemaPropertyNamed: 'schemaInspectionRequired'
-					   description:
-						   'Whether callers should inspect the schema before calling the tool.') };
+					   description: 'Inspect schema before calling.') };
 		  required:
-			  #( 'name' 'title' 'description' 'group' 'exposure' 'mutability'
-			     'risk' 'keywords' 'schemaInspectionRequired' );
+			  #( 'name' 'title' 'description' 'mutability' 'risk' 'schemaInspectionRequired' );
 		  additionalProperties: false;
 		  yourself
 ]
