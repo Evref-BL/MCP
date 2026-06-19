@@ -5,7 +5,7 @@ Class {
 	#name : 'MCPChangeHistorySelectionResult',
 	#superclass : 'Object',
 	#instVars : [
-		'historyFilePath',
+		'historyFileName',
 		'selectionCriteria',
 		'selectedEntries',
 		'previewEntries',
@@ -13,7 +13,6 @@ Class {
 		'selectedCodeChangeCount',
 		'skippedNonCodeChangeCount',
 		'previewCount',
-		'headReference',
 		'action',
 		'performed',
 		'performedCount'
@@ -24,18 +23,17 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPChangeHistorySelectionResult class >> action: actionName historyFilePath: aPath selectionCriteria: criteriaDictionary selectedEntries: selectedEntryInfos previewEntries: previewEntryInfos skippedNonCodeChangeCount: skippedCount performed: performedFlag performedCount: performedEntryCount headReference: aReferenceString [
+MCPChangeHistorySelectionResult class >> action: actionName historyFileName: fileName selectionCriteria: criteriaDictionary selectedEntries: selectedEntryInfos previewEntries: previewEntryInfos skippedNonCodeChangeCount: skippedCount performed: performedFlag performedCount: performedEntryCount [
 
 	^ self new
 		  initializeAction: actionName
-		  historyFilePath: aPath
+		  historyFileName: fileName
 		  selectionCriteria: criteriaDictionary
 		  selectedEntries: selectedEntryInfos
 		  previewEntries: previewEntryInfos
 		  skippedNonCodeChangeCount: skippedCount
 		  performed: performedFlag
 		  performedCount: performedEntryCount
-		  headReference: aReferenceString
 ]
 
 { #category : 'accessing' }
@@ -53,21 +51,25 @@ MCPChangeHistorySelectionResult >> action: anObject [
 { #category : 'converting' }
 MCPChangeHistorySelectionResult >> asDictionary [
 
-	^ {
-		  (#action -> action).
-		  (#historyFilePath -> historyFilePath).
-		  (#selectionCriteria -> selectionCriteria).
-		  (#selectedEntries
-		   -> (self entryDictionariesFrom: self selectedEntries)).
-		  (#previewEntries
-		   -> (self entryDictionariesFrom: self previewEntries)).
-		  (#selectedCount -> selectedCount).
-		  (#selectedCodeChangeCount -> selectedCodeChangeCount).
-		  (#skippedNonCodeChangeCount -> skippedNonCodeChangeCount).
-		  (#previewCount -> previewCount).
-		  (#performed -> performed).
-		  (#performedCount -> performedCount).
-		  (#headReference -> headReference) } asDictionary
+	| data |
+	data := Dictionary new.
+	data at: #action put: action.
+	historyFileName ifNotNil: [
+		data at: #historyFileName put: historyFileName ].
+	data at: #selectionCriteria put: selectionCriteria.
+	data
+		at: #selectedEntries
+		put: (self entryDictionariesFrom: self selectedEntries).
+	data
+		at: #previewEntries
+		put: (self entryDictionariesFrom: self previewEntries).
+	data at: #selectedCount put: selectedCount.
+	data at: #selectedCodeChangeCount put: selectedCodeChangeCount.
+	data at: #skippedNonCodeChangeCount put: skippedNonCodeChangeCount.
+	data at: #previewCount put: previewCount.
+	data at: #performed put: performed.
+	data at: #performedCount put: performedCount.
+	^ data
 ]
 
 { #category : 'converting' }
@@ -76,11 +78,17 @@ MCPChangeHistorySelectionResult >> entryDictionariesFrom: entryInfos [
 	^ (entryInfos collect: [ :each | each asDictionary ]) asArray
 ]
 
+{ #category : 'accessing' }
+MCPChangeHistorySelectionResult >> historyFileName: aString [
+
+	historyFileName := aString
+]
+
 { #category : 'initialization' }
-MCPChangeHistorySelectionResult >> initializeAction: actionName historyFilePath: aPath selectionCriteria: criteriaDictionary selectedEntries: selectedEntryInfos previewEntries: previewEntryInfos skippedNonCodeChangeCount: skippedCount performed: performedFlag performedCount: performedEntryCount headReference: aReferenceString [
+MCPChangeHistorySelectionResult >> initializeAction: actionName historyFileName: fileName selectionCriteria: criteriaDictionary selectedEntries: selectedEntryInfos previewEntries: previewEntryInfos skippedNonCodeChangeCount: skippedCount performed: performedFlag performedCount: performedEntryCount [
 
 	action := actionName.
-	historyFilePath := aPath.
+	historyFileName := fileName.
 	selectionCriteria := criteriaDictionary ifNil: [ Dictionary new ].
 	selectedEntries := selectedEntryInfos ifNil: [ #(  ) ].
 	previewEntries := previewEntryInfos ifNil: [ #(  ) ].
@@ -90,8 +98,7 @@ MCPChangeHistorySelectionResult >> initializeAction: actionName historyFilePath:
 	skippedNonCodeChangeCount := skippedCount ifNil: [ 0 ].
 	previewCount := previewEntries size.
 	performed := performedFlag.
-	performedCount := performedEntryCount ifNil: [ 0 ].
-	headReference := aReferenceString
+	performedCount := performedEntryCount ifNil: [ 0 ]
 ]
 
 { #category : 'accessing' }

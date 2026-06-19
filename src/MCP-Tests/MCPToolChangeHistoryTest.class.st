@@ -184,20 +184,21 @@ MCPToolChangeHistoryTest >> testApplyEntriesWithoutConfirmOnlyPreviews [
 { #category : 'tests' }
 MCPToolChangeHistoryTest >> testListEntriesReportsDirectoryPathAsNotFile [
 
-	| data directoryPath error result |
+	| data directory error result |
 	data := self dataFrom:
 		        (self callToolWith:
 			         { (#action -> 'listFiles') } asDictionary).
-	directoryPath := data at: #directoryPath.
+	directory := (data at: #directoryPath) asFileReference.
 	result := self callToolWith: {
 			          (#action -> 'listEntries').
-			          (#historyFilePath -> directoryPath) } asDictionary.
+			          (#directoryPath -> directory parent fullName).
+			          (#historyFileName -> directory basename) } asDictionary.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self
 		assert: (error at: #errorCode)
 		equals: 'ChangeHistoryPathNotFile'.
-	self assert: (error at: #historyFilePath) equals: directoryPath
+	self assert: (error at: #historyFileName) equals: directory basename
 ]
 
 { #category : 'tests' }
@@ -209,18 +210,19 @@ MCPToolChangeHistoryTest >> testListEntriesReportsUnreadableHistoryFile [
 	        ('mcp-unreadable-change-history-' , UUID new asString
 	         , '.ombu').
 	[
-	file writeStreamDo: [ :stream |
-		stream nextPutAll: 'not an ombu history file' ].
-	result := self callToolWith: {
-			          (#action -> 'listEntries').
-			          (#historyFilePath -> file fullName) } asDictionary.
-	error := self errorFrom: result.
-	self assert: (result at: #isError).
-	self
-		assert: (error at: #errorCode)
-		equals: 'ChangeHistoryFileUnreadable'.
-	self assert: (error at: #historyFilePath) equals: file fullName.
-	self assert: (error includesKey: #causeClass) ] ensure: [
+		file writeStreamDo: [ :stream |
+			stream nextPutAll: 'not an ombu history file' ].
+		result := self callToolWith: {
+				          (#action -> 'listEntries').
+				          (#directoryPath -> file parent fullName).
+				          (#historyFileName -> file basename) } asDictionary.
+		error := self errorFrom: result.
+		self assert: (result at: #isError).
+		self
+			assert: (error at: #errorCode)
+			equals: 'ChangeHistoryFileUnreadable'.
+		self assert: (error at: #historyFileName) equals: file basename.
+		self assert: (error includesKey: #causeClass) ] ensure: [
 		file ensureDelete ]
 ]
 
@@ -242,7 +244,6 @@ MCPToolChangeHistoryTest >> testListEntriesReturnsGranularCodeChangeData [
 			firstEntry := entries first.
 			self assert: (firstEntry at: #isCodeChange).
 			self assert: (firstEntry includesKey: #index).
-			self assert: (firstEntry includesKey: #reference).
 			self assert: (firstEntry includesKey: #eventClassName).
 			self assert: (firstEntry at: #packageName) equals: 'MCP-Tests'.
 			self assert: (firstEntry at: #behaviorName) equals: class name.
@@ -251,34 +252,38 @@ MCPToolChangeHistoryTest >> testListEntriesReturnsGranularCodeChangeData [
 ]
 
 { #category : 'tests' }
-MCPToolChangeHistoryTest >> testListEntriesSupportsHistoryFilePath [
+MCPToolChangeHistoryTest >> testListEntriesSupportsHistoryFileName [
 
-	| data entries files filesResult path result |
+	| data entries file files filesResult result |
 	filesResult := self callToolWith:
 		               { (#action -> 'listFiles') } asDictionary.
-	files := (self dataFrom: filesResult) at: #files.
-	path := (files detect: [ :each |
-		         each at: #isCurrent ifAbsent: [ false ] ]) at: #path.
+	data := self dataFrom: filesResult.
+	files := data at: #files.
+	file := files detect: [ :each |
+		        each at: #isCurrent ifAbsent: [ false ] ].
 	result := self callToolWith: {
 			          (#action -> 'listEntries').
-			          (#historyFilePath -> path).
+			          (#directoryPath -> (data at: #directoryPath)).
+			          (#historyFileName -> (file at: #fileName)).
 			          (#limit -> 1) } asDictionary.
 	data := self dataFrom: result.
 	entries := data at: #entries.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #historyFilePath) equals: path.
+	self assert: (data at: #historyFileName) equals: (file at: #fileName).
 	self assert: entries size <= 1
 ]
 
 { #category : 'tests' }
 MCPToolChangeHistoryTest >> testListFilesReportsFilePathAsNotDirectory [
 
-	| data error filePath result |
+	| data error file filePath result |
 	data := self dataFrom:
 		        (self callToolWith:
 			         { (#action -> 'listFiles') } asDictionary).
-	filePath := ((data at: #files) detect: [ :each |
-		             each at: #isCurrent ifAbsent: [ false ] ]) at: #path.
+	file := (data at: #files) detect: [ :each |
+		        each at: #isCurrent ifAbsent: [ false ] ].
+	filePath := ((data at: #directoryPath) asFileReference
+	             / (file at: #fileName)) fullName.
 	result := self callToolWith: {
 			          (#action -> 'listFiles').
 			          (#directoryPath -> filePath) } asDictionary.
@@ -316,7 +321,7 @@ MCPToolChangeHistoryTest >> testListFilesReturnsCurrentHistoryFile [
 		          { (#action -> 'listFiles') } asDictionary.
 	data := self dataFrom: result.
 	files := data at: #files.
-	allowedFileKeys := #( path exists fileSize modificationTime
+	allowedFileKeys := #( fileName exists fileSize modificationTime
 	                      isCurrent ) asSet.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #directoryPath) notNil.
@@ -325,7 +330,7 @@ MCPToolChangeHistoryTest >> testListFilesReturnsCurrentHistoryFile [
 		(files anySatisfy: [ :each |
 			 each at: #isCurrent ifAbsent: [ false ] ]).
 	self assert: (files allSatisfy: [ :each |
-				 (each includesKey: #path) and: [
+				 (each includesKey: #fileName) and: [
 					 each keys allSatisfy: [ :key | allowedFileKeys includes: key ] ] ])
 ]
 
@@ -360,8 +365,8 @@ MCPToolChangeHistoryTest >> testNonCodeEntryDictionaryOmitsAbsentFields [
 	self assert: (entry at: #eventClassName) equals: 'EpSessionStart'.
 	self assert: (entry at: #summary) equals: 'an EpSessionStart'.
 	self deny: (entry at: #isCodeChange).
-	#( index reference globalName localName time triggerReference
-	   packageName behaviorName classSide selector protocol ) do: [ :key |
+	#( index time triggerReference packageName behaviorName classSide
+	   selector protocol ) do: [ :key |
 		self deny: (entry includesKey: key) ]
 ]
 

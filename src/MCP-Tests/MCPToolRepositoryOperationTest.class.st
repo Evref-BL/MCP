@@ -979,9 +979,10 @@ MCPToolRepositoryOperationTest >> testLinkedWorktreeAttachReportsGitMetadataAndE
 										                (#packageNames -> { packageName }) }
 										                asDictionary.
 								self deny: (attachResult at: #isError ifAbsent: [ false ]).
-								searchResult := self searchRepositoriesWith:
-									                { (#repositoryNames -> { repositoryName }) }
-										                asDictionary.
+								searchResult := self searchRepositoriesWith: {
+										                (#repositoryName -> repositoryName).
+										                (#filterMode -> 'exact').
+										                (#includeDetails -> true) } asDictionary.
 								self deny: (searchResult at: #isError ifAbsent: [ false ]).
 								searchData := self dataFrom: searchResult.
 								entry := (searchData at: #repositories) anyOne.

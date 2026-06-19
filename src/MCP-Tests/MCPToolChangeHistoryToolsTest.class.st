@@ -63,16 +63,18 @@ MCPToolChangeHistoryToolsTest >> testChangeHistoryToolsDeclareExpectedInputs [
 		                   MCPToolApplyChangeHistoryEntries new.
 	revertProperties := self inputPropertyNamesFor:
 		                    MCPToolRevertChangeHistoryEntries new.
-	selectionProperties := #( 'historyFilePath' 'indexes' 'entryReferences'
-	                          'startIndex' 'endIndex' 'latestCount'
-	                          'codeChangesOnly' 'confirm' ).
+	selectionProperties := #( 'directoryPath' 'historyFileName'
+	                          'indexes' 'startIndex' 'endIndex'
+	                          'latestCount' 'codeChangesOnly'
+	                          'confirm' ).
 	self
 		assert: fileProperties asArray
 		equals: #( 'directoryPath' 'limit' 'offset' ).
 	self
 		assert: entryProperties asArray
 		equals:
-		#( 'historyFilePath' 'limit' 'offset' 'newestFirst' 'codeChangesOnly' ).
+			#( 'directoryPath' 'historyFileName' 'limit' 'offset' 'newestFirst'
+			   'codeChangesOnly' ).
 	self assert: applyProperties asArray equals: selectionProperties.
 	self assert: revertProperties asArray equals: selectionProperties
 ]
@@ -118,12 +120,12 @@ MCPToolChangeHistoryToolsTest >> testListChangeHistoryFilesReturnsFiles [
 		        toolNamed: 'history_file_list'
 		        dataFromArguments: Dictionary new.
 	files := data at: #files.
-	allowedFileKeys := #( path exists fileSize modificationTime
+	allowedFileKeys := #( fileName exists fileSize modificationTime
 	                      isCurrent ) asSet.
 	self assert: (data includesKey: #directoryPath).
 	self assert: files notEmpty.
 	self assert: (files allSatisfy: [ :each |
-				 (each includesKey: #path) and: [
+				 (each includesKey: #fileName) and: [
 					 each keys allSatisfy: [ :key | allowedFileKeys includes: key ] ] ])
 ]
 
@@ -133,16 +135,16 @@ MCPToolChangeHistoryToolsTest >> testSelectionResultDataUsesActionNotOperation [
 	| data result |
 	result := MCPChangeHistorySelectionResult
 		          action: 'apply'
-		          historyFilePath: 'memory.ombu'
+		          historyFileName: 'memory.ombu'
 		          selectionCriteria: Dictionary new
 		          selectedEntries: #(  )
 		          previewEntries: #(  )
 		          skippedNonCodeChangeCount: 0
 		          performed: false
-		          performedCount: 0
-		          headReference: nil.
+		          performedCount: 0.
 	data := result asDictionary.
 	self assert: (data at: #action) equals: 'apply'.
+	self assert: (data at: #historyFileName) equals: 'memory.ombu'.
 	self deny: (data includesKey: #operation)
 ]
 

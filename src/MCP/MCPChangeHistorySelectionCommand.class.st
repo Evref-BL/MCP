@@ -46,21 +46,13 @@ MCPChangeHistorySelectionCommand >> addRangeSelectionTo: pairs fromLog: aLog [
 	^ pairs
 ]
 
-{ #category : 'private - selection' }
-MCPChangeHistorySelectionCommand >> addReferenceSelectionsTo: pairs fromLog: aLog [
-
-	request entryReferences do: [ :reference |
-		pairs add: (self entryPairForReference: reference inLog: aLog) ].
-	^ pairs
-]
-
 { #category : 'execution' }
 MCPChangeHistorySelectionCommand >> applyOrRevertEntries [
 
-	| logAndPath log path rawPairs selectedPairs previewLog performedCount |
-	logAndPath := self logAndPathForRequest.
-	log := logAndPath first.
-	path := logAndPath second.
+	| fileName log logAndFileName previewLog performedCount rawPairs selectedPairs |
+	logAndFileName := self logAndFileNameForRequest.
+	log := logAndFileName first.
+	fileName := logAndFileName second.
 	rawPairs := self rawSelectedEntryPairsFrom: log.
 	selectedPairs := self selectedEntryPairsFromRawPairs: rawPairs.
 	previewLog := self
@@ -71,7 +63,7 @@ MCPChangeHistorySelectionCommand >> applyOrRevertEntries [
 		                  ifFalse: [ 0 ].
 	^ self
 		  resultForLog: log
-		  path: path
+		  fileName: fileName
 		  rawPairs: rawPairs
 		  selectedPairs: selectedPairs
 		  previewLog: previewLog
@@ -111,24 +103,6 @@ MCPChangeHistorySelectionCommand >> entryInfosFromPairs: pairs log: aLog [
 			  log: aLog ]
 ]
 
-{ #category : 'private - references' }
-MCPChangeHistorySelectionCommand >> entryPairForReference: aReferenceString inLog: aLog [
-
-	| normalized |
-	normalized := aReferenceString asString.
-	aLog entries doWithIndex: [ :entry :index |
-		((self referenceCandidatesForEntry: entry inLog: aLog) includes:
-			 normalized) ifTrue: [
-			^ {
-				  index.
-				  entry } ] ].
-	MCPCommandError
-		signalErrorCode: #ChangeHistoryEntryNotFound
-		message:
-		'Change history entry reference ' , normalized , ' does not exist.'
-		details: { (#entryReference -> normalized) } asDictionary
-]
-
 { #category : 'private - entries' }
 MCPChangeHistorySelectionCommand >> entryPairsFromLog: aLog [
 
@@ -152,17 +126,12 @@ MCPChangeHistorySelectionCommand >> execute [
 		details: { (#operation -> request operation) } asDictionary
 ]
 
-{ #category : 'private - result' }
-MCPChangeHistorySelectionCommand >> headReferenceStringForLog: aLog [
-
-	^ self referenceStringFor: aLog headReference
-]
-
 { #category : 'private - log' }
-MCPChangeHistorySelectionCommand >> logAndPathForRequest [
+MCPChangeHistorySelectionCommand >> logAndFileNameForRequest [
 
-	request historyFilePath ifNil: [ ^ self currentLogAndPath ].
-	^ self logAndPathFromFilePath: request historyFilePath
+	^ self
+		  logAndFileNameFromDirectoryPath: request directoryPath
+		  fileName: request historyFileName
 ]
 
 { #category : 'private - apply' }
@@ -203,32 +172,17 @@ MCPChangeHistorySelectionCommand >> rawSelectedEntryPairsFrom: aLog [
 	| pairs |
 	pairs := OrderedCollection new.
 	self addIndexSelectionsTo: pairs fromLog: aLog.
-	self addReferenceSelectionsTo: pairs fromLog: aLog.
 	self addRangeSelectionTo: pairs fromLog: aLog.
 	self addLatestSelectionTo: pairs fromLog: aLog.
 	^ self uniqueSortedPairsFrom: pairs
 ]
 
-{ #category : 'private - references' }
-MCPChangeHistorySelectionCommand >> referenceCandidatesForEntry: anEntry inLog: aLog [
-
-	| reference |
-	reference := aLog referenceTo: anEntry.
-	^ Array streamContents: [ :stream |
-			  (self referenceStringFor: reference) ifNotNil: [ :value |
-				  stream nextPut: value ].
-			  reference globalName ifNotNil: [ :value |
-				  stream nextPut: value asString ].
-			  reference localName ifNotNil: [ :value |
-				  stream nextPut: value asString ] ]
-]
-
 { #category : 'private - result' }
-MCPChangeHistorySelectionCommand >> resultForLog: aLog path: path rawPairs: rawPairs selectedPairs: selectedPairs previewLog: previewLog performed: performedFlag performedCount: anInteger [
+MCPChangeHistorySelectionCommand >> resultForLog: aLog fileName: fileName rawPairs: rawPairs selectedPairs: selectedPairs previewLog: previewLog performed: performedFlag performedCount: anInteger [
 
 	^ MCPChangeHistorySelectionResult
 		  action: request action
-		  historyFilePath: path
+		  historyFileName: fileName
 		  selectionCriteria: request selectionCriteria
 		  selectedEntries:
 		  (self entryInfosFromPairs: selectedPairs log: aLog)
@@ -236,7 +190,6 @@ MCPChangeHistorySelectionCommand >> resultForLog: aLog path: path rawPairs: rawP
 		  skippedNonCodeChangeCount: rawPairs size - selectedPairs size
 		  performed: performedFlag
 		  performedCount: anInteger
-		  headReference: (self headReferenceStringForLog: aLog)
 ]
 
 { #category : 'private - selection' }

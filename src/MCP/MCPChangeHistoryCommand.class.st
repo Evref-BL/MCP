@@ -38,9 +38,9 @@ MCPChangeHistoryCommand >> currentHistoryFileReference [
 ]
 
 { #category : 'private - log' }
-MCPChangeHistoryCommand >> currentLogAndPath [
+MCPChangeHistoryCommand >> currentLogAndFileName [
 
-	| log currentFile path |
+	| currentFile log |
 	EpMonitor hasCurrent ifFalse: [
 			MCPCommandError
 				signalErrorCode: #ChangeHistoryUnavailable
@@ -50,10 +50,18 @@ MCPChangeHistoryCommand >> currentLogAndPath [
 	log := EpMonitor current log.
 	log refresh.
 	currentFile := self currentHistoryFileReference.
-	path := currentFile ifNotNil: [ currentFile fullName ].
 	^ {
 		  log.
-		  path }
+		  (currentFile ifNotNil: [ currentFile basename ]) }
+]
+
+{ #category : 'private - log' }
+MCPChangeHistoryCommand >> historyDirectoryForCurrentFile: aFileReference [
+
+	aFileReference ifNotNil: [ ^ aFileReference parent ].
+	^ [ EpMonitor logsDirectory ]
+		  on: Error
+		  do: [ :error | FileLocator localDirectory asFileReference ]
 ]
 
 { #category : 'initialization' }
@@ -70,48 +78,76 @@ MCPChangeHistoryCommand >> isCodeChangeEntry: anEntry [
 ]
 
 { #category : 'private - log' }
-MCPChangeHistoryCommand >> logAndPathFromFilePath: aPathString [
+MCPChangeHistoryCommand >> logAndFileNameFromDirectoryPath: directoryPath fileName: fileName [
 
-	| file log |
-	file := aPathString asFileReference.
-	file exists ifFalse: [
+	| currentFile directory file |
+	fileName ifNil: [ ^ self currentLogAndFileName ].
+	currentFile := self currentHistoryFileReference.
+	directory := directoryPath
+		             ifNil: [
+		             self historyDirectoryForCurrentFile: currentFile ]
+		             ifNotNil: [ directoryPath asFileReference ].
+	directory exists ifFalse: [
+			MCPCommandError
+				signalErrorCode: #ChangeHistoryDirectoryNotFound
+				message:
+				'Change history directory ' , directory fullName
+				, ' does not exist.'
+				details: { (#directoryPath -> directory fullName) } asDictionary ].
+	directory isDirectory ifFalse: [
+			MCPCommandError
+				signalErrorCode: #ChangeHistoryPathNotDirectory
+				message:
+				'Change history path ' , directory fullName
+				, ' is not a directory.'
+				details: { (#directoryPath -> directory fullName) } asDictionary ].
+	file := directory / fileName.
+	^ self logAndFileNameFromFileReference: file
+]
+
+{ #category : 'private - log' }
+MCPChangeHistoryCommand >> logAndFileNameFromFileReference: aFileReference [
+
+	| log |
+	aFileReference exists ifFalse: [
 			MCPCommandError
 				signalErrorCode: #ChangeHistoryFileNotFound
-				message: 'Change history file ' , aPathString , ' does not exist.'
-				details: { (#historyFilePath -> aPathString) } asDictionary ].
-	file isFile ifFalse: [
+				message:
+				'Change history file ' , aFileReference fullName
+				, ' does not exist.'
+				details: {
+						(#directoryPath -> aFileReference parent fullName).
+						(#historyFileName -> aFileReference basename) } asDictionary ].
+	aFileReference isFile ifFalse: [
 			MCPCommandError
 				signalErrorCode: #ChangeHistoryPathNotFile
-				message: 'Change history path ' , aPathString , ' is not a file.'
-				details: { (#historyFilePath -> aPathString) } asDictionary ].
+				message:
+				'Change history path ' , aFileReference fullName
+				, ' is not a file.'
+				details: {
+						(#directoryPath -> aFileReference parent fullName).
+						(#historyFileName -> aFileReference basename) } asDictionary ].
 	log := [
 		       | loadedLog |
-		       loadedLog := EpLog freshFromFile: file.
+		       loadedLog := EpLog freshFromFile: aFileReference.
 		       loadedLog entries size.
 		       loadedLog ]
 		       on: Error
 		       do: [ :error |
 				       MCPCommandError
 					       signalErrorCode: #ChangeHistoryFileUnreadable
-					       message:
-					       'Change history file ' , file fullName
-					       , ' could not be loaded.'
+					       message: 'Change history file ' , aFileReference fullName
+						       , ' could not be loaded.'
 					       details: {
-							       (#historyFilePath -> file fullName).
+							       (#directoryPath -> aFileReference parent fullName).
+							       (#historyFileName -> aFileReference basename).
 							       (#causeClass -> error class name).
 							       (#causeMessage
 							        -> (error messageText ifNil: [ error asString ])) }
 							       asDictionary ].
 	^ {
 		  log.
-		  file fullName }
-]
-
-{ #category : 'private - references' }
-MCPChangeHistoryCommand >> referenceStringFor: aReference [
-
-	aReference isNull ifTrue: [ ^ nil ].
-	^ aReference shortName asString
+		  aFileReference basename }
 ]
 
 { #category : 'accessing' }

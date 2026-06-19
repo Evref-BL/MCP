@@ -274,7 +274,6 @@ MCPToolRegistry class >> metadataForTool: aTool usingPolicy: aToolExposurePolicy
 		   -> (self exposureForTool: aTool usingPolicy: aToolExposurePolicy)).
 		  (#mutability -> (self mutabilityForTool: aTool)).
 		  (#risk -> (self riskForTool: aTool)).
-		  (#keywords -> (self keywordsForTool: aTool)).
 		  (#schemaInspectionRequired -> (self
 			    schemaInspectionRequiredForTool: aTool
 			    usingPolicy: aToolExposurePolicy)) } asDictionary

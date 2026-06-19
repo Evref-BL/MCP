@@ -6,9 +6,6 @@ Class {
 	#superclass : 'Object',
 	#instVars : [
 		'index',
-		'reference',
-		'globalName',
-		'localName',
 		'eventClassName',
 		'summary',
 		'isCodeChange',
@@ -88,9 +85,6 @@ MCPChangeHistoryEntryInfo >> asDictionary [
 	| data |
 	data := Dictionary new.
 	index ifNotNil: [ data at: #index put: index ].
-	reference ifNotNil: [ data at: #reference put: reference ].
-	globalName ifNotNil: [ data at: #globalName put: globalName ].
-	localName ifNotNil: [ data at: #localName put: localName ].
 	eventClassName ifNotNil: [
 		data at: #eventClassName put: eventClassName ].
 	summary ifNotNil: [ data at: #summary put: summary ].
@@ -126,7 +120,6 @@ MCPChangeHistoryEntryInfo >> initializeEventFieldsFrom: anEvent [
 MCPChangeHistoryEntryInfo >> initializeFromEntry: anEntry index: anInteger log: aLog [
 
 	index := anInteger.
-	self initializeReferenceFieldsFrom: (aLog referenceTo: anEntry).
 	self initializeEventFieldsFrom: anEntry content.
 	self initializeTimeFromEntry: anEntry log: aLog.
 	self initializeTriggerReferenceFromEntry: anEntry log: aLog
@@ -136,14 +129,6 @@ MCPChangeHistoryEntryInfo >> initializeFromEntry: anEntry index: anInteger log: 
 MCPChangeHistoryEntryInfo >> initializeFromEvent: anEvent [
 
 	self initializeEventFieldsFrom: anEvent
-]
-
-{ #category : 'private - initialization' }
-MCPChangeHistoryEntryInfo >> initializeReferenceFieldsFrom: aReference [
-
-	reference := self stringFromReference: aReference.
-	globalName := self stringFrom: aReference globalName.
-	localName := self stringFrom: aReference localName
 ]
 
 { #category : 'private - initialization' }

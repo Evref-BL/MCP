@@ -5,10 +5,9 @@ Class {
 	#name : 'MCPChangeHistoryListEntriesResult',
 	#superclass : 'Object',
 	#instVars : [
-		'historyFilePath',
+		'historyFileName',
 		'entries',
-		'nextOffset',
-		'headReference'
+		'nextOffset'
 	],
 	#category : 'MCP-Results',
 	#package : 'MCP',
@@ -16,13 +15,12 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPChangeHistoryListEntriesResult class >> historyFilePath: aPath page: aPage headReference: aReferenceString [
+MCPChangeHistoryListEntriesResult class >> historyFileName: aString page: aPage [
 
 	^ self new
-		  historyFilePath: aPath;
+		  historyFileName: aString;
 		  entries: aPage entries;
 		  nextOffset: aPage nextOffset;
-		  headReference: aReferenceString;
 		  yourself
 ]
 
@@ -31,15 +29,14 @@ MCPChangeHistoryListEntriesResult >> asDictionary [
 
 	| data |
 	data := Dictionary new.
+	historyFileName ifNotNil: [
+		data at: #historyFileName put: historyFileName ].
 	data
 		at: #entries
 		put:
 		((self entries collect: [ :each | each asDictionary ]) as: Array).
-	historyFilePath ifNotNil: [
-		data at: #historyFilePath put: historyFilePath ].
 	self nextOffset ifNotNil: [ :offset |
 		data at: #nextOffset put: offset ].
-	headReference ifNotNil: [ data at: #headReference put: headReference ].
 	^ data
 ]
 
@@ -56,15 +53,9 @@ MCPChangeHistoryListEntriesResult >> entries: aCollection [
 ]
 
 { #category : 'accessing' }
-MCPChangeHistoryListEntriesResult >> headReference: aString [
+MCPChangeHistoryListEntriesResult >> historyFileName: aString [
 
-	headReference := aString
-]
-
-{ #category : 'accessing' }
-MCPChangeHistoryListEntriesResult >> historyFilePath: aPath [
-
-	historyFilePath := aPath
+	historyFileName := aString
 ]
 
 { #category : 'accessing' }

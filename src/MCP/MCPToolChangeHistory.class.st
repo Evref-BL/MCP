@@ -34,65 +34,50 @@ MCPToolChangeHistory >> changeHistoryEntrySchemaProperty [
 
 	^ MCPStructureProperties new
 		  type: 'object';
-		  description: 'Structured metadata for one change history entry.';
+		  description: 'Change history entry.';
 		  properties: {
 				  (self
 					   integerSchemaPropertyNamed: 'index'
-					   description:
-						   'The one-based entry index in the source history log.').
-				  (self
-					   schemaPropertyNamed: 'reference'
-					   type: 'string'
-					   description:
-						   'A short entry reference accepted by entryReferences.').
-				  (self
-					   schemaPropertyNamed: 'globalName'
-					   type: 'string'
-					   description: 'The global entry reference name when available.').
-				  (self
-					   schemaPropertyNamed: 'localName'
-					   type: 'string'
-					   description: 'The local entry reference name when available.').
+					   description: 'One-based entry index.').
 				  (self
 					   schemaPropertyNamed: 'eventClassName'
 					   type: 'string'
-					   description: 'The Epicea event class name.').
+					   description: 'Event class name.').
 				  (self
 					   schemaPropertyNamed: 'summary'
 					   type: 'string'
-					   description: 'A printable event summary.').
+					   description: 'Entry summary.').
 				  (self
 					   booleanSchemaPropertyNamed: 'isCodeChange'
-					   description: 'Whether the entry represents a code change.').
+					   description: 'Whether entry changes code.').
 				  (self
 					   schemaPropertyNamed: 'time'
 					   type: 'string'
-					   description: 'The entry timestamp when available.').
+					   description: 'Entry time.').
 				  (self
 					   schemaPropertyNamed: 'triggerReference'
 					   type: 'string'
-					   description: 'The triggerer entry reference when available.').
+					   description: 'Trigger reference when known.').
 				  (self
 					   schemaPropertyNamed: 'packageName'
 					   type: 'string'
-					   description: 'The affected package name when available.').
+					   description: 'Package name.').
 				  (self
 					   schemaPropertyNamed: 'behaviorName'
 					   type: 'string'
-					   description:
-						   'The affected behavior or class name when available.').
+					   description: 'Class or trait name.').
 				  (self
 					   booleanSchemaPropertyNamed: 'classSide'
-					   description:
-						   'Whether the affected behavior is class-side when known.').
+					   description: 'Whether method is class-side.').
 				  (self
 					   schemaPropertyNamed: 'selector'
 					   type: 'string'
-					   description: 'The affected selector when available.').
+					   description: 'Method selector.').
 				  (self
 					   schemaPropertyNamed: 'protocol'
 					   type: 'string'
-					   description: 'The affected method protocol when available.') };
+					   description: 'Method protocol.') };
+		  required: #( 'index' 'eventClassName' 'summary' 'isCodeChange' );
 		  additionalProperties: false;
 		  yourself
 ]
@@ -102,26 +87,26 @@ MCPToolChangeHistory >> changeHistoryLogSchemaProperty [
 
 	^ MCPStructureProperties new
 		  type: 'object';
-		  description: 'Metadata for one change history file.';
+		  description: 'Change history file.';
 		  properties: {
 				  (self
-					   schemaPropertyNamed: 'path'
+					   schemaPropertyNamed: 'fileName'
 					   type: 'string'
-					   description: 'Absolute file path.').
+					   description: 'File name.').
 				  (self
 					   booleanSchemaPropertyNamed: 'exists'
-					   description: 'Included only when false.').
+					   description: 'False when listed file is missing.').
 				  (self
 					   integerSchemaPropertyNamed: 'fileSize'
 					   description: 'File size in bytes.').
 				  (self
 					   schemaPropertyNamed: 'modificationTime'
 					   type: 'string'
-					   description: 'File modification time.').
+					   description: 'Modification time.').
 				  (self
 					   booleanSchemaPropertyNamed: 'isCurrent'
-					   description:
-						   'Included only for the current image history file.') };
+					   description: 'True for current image history file.') };
+		  required: #( 'fileName' );
 		  additionalProperties: false;
 		  yourself
 ]

@@ -5,7 +5,7 @@ Class {
 	#name : 'MCPChangeHistoryLogInfo',
 	#superclass : 'Object',
 	#instVars : [
-		'path',
+		'fileName',
 		'exists',
 		'fileSize',
 		'modificationTime',
@@ -29,7 +29,7 @@ MCPChangeHistoryLogInfo >> asDictionary [
 
 	| data |
 	data := Dictionary new.
-	path ifNotNil: [ data at: #path put: path ].
+	fileName ifNotNil: [ data at: #fileName put: fileName ].
 	exists == false ifTrue: [ data at: #exists put: false ].
 	fileSize ifNotNil: [ data at: #fileSize put: fileSize ].
 	modificationTime ifNotNil: [
@@ -41,9 +41,9 @@ MCPChangeHistoryLogInfo >> asDictionary [
 { #category : 'initialization' }
 MCPChangeHistoryLogInfo >> initializeFromFileReference: aFileReference isCurrent: aBoolean [
 
-	path := [ aFileReference fullName ]
-		        on: Error
-		        do: [ :error | aFileReference asString ].
+	fileName := [ aFileReference basename ]
+		            on: Error
+		            do: [ :error | aFileReference asString ].
 	exists := [ aFileReference exists ]
 		          on: Error
 		          do: [ :error | false ].

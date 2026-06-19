@@ -27,18 +27,23 @@ MCPToolSearchRepositories >> defaultDescription [
 MCPToolSearchRepositories >> defaultInputSchema [
 
 	| properties |
-	properties := self repositoryFilterInputProperties
-	              , self repositoryFieldFilterInputProperties , {
+	properties := self repositoryFieldFilterInputProperties , {
+		              (self
+			               booleanSchemaPropertyNamed: 'isModified'
+			               description: 'Filter by modified state.').
+		              (self
+			               booleanSchemaPropertyNamed: 'isMissing'
+			               description: 'Filter by missing state.').
 		              (self
 			               filterModeSchemaPropertyWithDescription:
-			               'How repository text filters are matched.'
+			               'Filter match mode.'
 			               values: self basicFilterModes).
 		              (self caseSensitiveSchemaPropertyWithDescription:
 			               'Case-sensitive matching.').
 		              (self
 			               booleanSchemaPropertyNamed: 'includeDetails'
 			               description:
-			               'Include path, package, head, and upstream metadata.'
+			               'Include path, package, head, upstream metadata.'
 			               default: false) }
 	              , (self paginationInputPropertiesWithLimitDescription:
 			               'Maximum results.').
@@ -147,31 +152,12 @@ MCPToolSearchRepositories >> repositoryEntriesForRequest: queryRequest [
 ]
 
 { #category : 'private - filtering' }
-MCPToolSearchRepositories >> repositoryEntry: anEntry matchesDirectFiltersFromRequest: queryRequest [
-
-	(queryRequest repositoryNames notEmpty and: [
-		 (queryRequest repositoryNames includes: (anEntry at: #name)) not ])
-		ifTrue: [ ^ false ].
-	(queryRequest directoryPaths notEmpty and: [
-		 (queryRequest directoryPaths includes: (anEntry at: #location)) not ])
-		ifTrue: [ ^ false ].
-	(queryRequest packageNames notEmpty and: [
-		 (queryRequest packageNames anySatisfy: [ :each |
-			  (anEntry at: #packageNames) includes: each ]) not ]) ifTrue: [
-		^ false ].
-	queryRequest isModified ifNotNil: [ :expected |
-		(anEntry at: #isModified) = expected ifFalse: [ ^ false ] ].
-	queryRequest isMissing ifNotNil: [ :expected |
-		(anEntry at: #isMissing) = expected ifFalse: [ ^ false ] ].
-	^ true
-]
-
-{ #category : 'private - filtering' }
 MCPToolSearchRepositories >> repositoryEntry: anEntry matchesRequest: queryRequest [
 
-	(self
-		 repositoryEntry: anEntry
-		 matchesDirectFiltersFromRequest: queryRequest) ifFalse: [ ^ false ].
+	queryRequest isModified ifNotNil: [ :value |
+		(anEntry at: #isModified) = value ifFalse: [ ^ false ] ].
+	queryRequest isMissing ifNotNil: [ :value |
+		(anEntry at: #isMissing) = value ifFalse: [ ^ false ] ].
 	^ self
 		  matchesFieldFiltersOnRepositoryEntry: anEntry
 		  queryRequest: queryRequest
@@ -264,35 +250,6 @@ MCPToolSearchRepositories >> repositoryFilterFieldNames [
 	     'branchName' 'headDescription' 'headClassName' 'headCommitId'
 	     'packageName' 'modifiedPackageName' 'remoteName' 'remoteUrl'
 	     'upstreamRemoteName' 'upstreamBranchName' 'upstreamRemoteUrl' )
-]
-
-{ #category : 'private - schema' }
-MCPToolSearchRepositories >> repositoryFilterInputProperties [
-
-	^ {
-		  (self
-			   stringArraySchemaNamed: 'repositoryNames'
-			   description:
-			   'Exact repository names to include. Direct repository filters are combined.'
-			   itemDescription: 'A repository name.').
-		  (self
-			   stringArraySchemaNamed: 'directoryPaths'
-			   description:
-			   'Exact repository location paths to include. Direct repository filters are combined.'
-			   itemDescription: 'A repository location path.').
-		  (self
-			   stringArraySchemaNamed: 'packageNames'
-			   description:
-			   'Include repositories containing any of these package names. Direct repository filters are combined.'
-			   itemDescription: 'A package name.').
-		  (self
-			   booleanSchemaPropertyNamed: 'isModified'
-			   description:
-			   'When present, include only repositories whose modified state equals this value.').
-		  (self
-			   booleanSchemaPropertyNamed: 'isMissing'
-			   description:
-			   'When present, include only repositories whose missing state equals this value.') }
 ]
 
 { #category : 'private - schema' }
@@ -391,9 +348,6 @@ MCPToolSearchRepositories >> repositoryScopeSummaryForAssociations: scopeAssocia
 MCPToolSearchRepositories >> repositoryScopeSummaryForRequest: queryRequest [
 
 	^ self repositoryScopeSummaryForAssociations: {
-			  ('repositories' -> queryRequest repositoryNames notEmpty).
-			  ('directories' -> queryRequest directoryPaths notEmpty).
-			  ('packages' -> queryRequest packageNames notEmpty).
 			  ('modified-state' -> queryRequest isModified notNil).
 			  ('missing-state' -> queryRequest isMissing notNil).
 			  ('field-filters' -> queryRequest hasFieldFilters) }
@@ -412,18 +366,6 @@ MCPToolSearchRepositories >> repositoryTextFilterPropertyNamed: propertyName des
 MCPToolSearchRepositories >> requestedContextFromRequest: request [
 
 	^ { (#scope -> (self repositoryScopeSummaryForAssociations: {
-			    ('repositories'
-			     ->
-			     (request stringCollectionArgumentNamed: 'repositoryNames')
-				     notEmpty).
-			    ('directories'
-			     ->
-			     (request stringCollectionArgumentNamed: 'directoryPaths')
-				     notEmpty).
-			    ('packages'
-			     ->
-			     (request stringCollectionArgumentNamed: 'packageNames')
-				     notEmpty).
 			    ('modified-state' -> (request hasArgumentNamed: 'isModified')).
 			    ('missing-state' -> (request hasArgumentNamed: 'isMissing')).
 			    ('field-filters'

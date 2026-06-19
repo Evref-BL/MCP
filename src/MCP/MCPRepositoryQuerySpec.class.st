@@ -7,9 +7,6 @@ Class {
 	#name : 'MCPRepositoryQuerySpec',
 	#superclass : 'Object',
 	#instVars : [
-		'repositoryNames',
-		'directoryPaths',
-		'packageNames',
 		'isModified',
 		'isMissing',
 		'fieldFilters',
@@ -28,12 +25,6 @@ Class {
 MCPRepositoryQuerySpec class >> fromRequest: request tool: aTool [
 
 	^ self new
-		  repositoryNames:
-			  (request uniqueStringCollectionArgumentNamed: 'repositoryNames');
-		  directoryPaths:
-			  (request uniqueStringCollectionArgumentNamed: 'directoryPaths');
-		  packageNames:
-			  (request uniqueStringCollectionArgumentNamed: 'packageNames');
 		  isModified:
 			  (self
 				   optionalBooleanArgumentNamed: 'isModified'
@@ -75,18 +66,6 @@ MCPRepositoryQuerySpec >> caseSensitive [
 MCPRepositoryQuerySpec >> caseSensitive: aBoolean [
 
 	caseSensitive := aBoolean
-]
-
-{ #category : 'accessing' }
-MCPRepositoryQuerySpec >> directoryPaths [
-
-	^ directoryPaths
-]
-
-{ #category : 'accessing' }
-MCPRepositoryQuerySpec >> directoryPaths: aCollection [
-
-	directoryPaths := aCollection
 ]
 
 { #category : 'accessing' }
@@ -177,30 +156,6 @@ MCPRepositoryQuerySpec >> offset [
 MCPRepositoryQuerySpec >> offset: anInteger [
 
 	offset := anInteger
-]
-
-{ #category : 'accessing' }
-MCPRepositoryQuerySpec >> packageNames [
-
-	^ packageNames
-]
-
-{ #category : 'accessing' }
-MCPRepositoryQuerySpec >> packageNames: aCollection [
-
-	packageNames := aCollection
-]
-
-{ #category : 'accessing' }
-MCPRepositoryQuerySpec >> repositoryNames [
-
-	^ repositoryNames
-]
-
-{ #category : 'accessing' }
-MCPRepositoryQuerySpec >> repositoryNames: aCollection [
-
-	repositoryNames := aCollection
 ]
 
 { #category : 'accessing' }

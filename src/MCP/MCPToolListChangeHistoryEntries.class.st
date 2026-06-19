@@ -42,28 +42,29 @@ MCPToolListChangeHistoryEntries >> defaultInputSchema [
 		  type: 'object';
 		  properties: {
 				  (self
-					   schemaPropertyNamed: 'historyFilePath'
+					   schemaPropertyNamed: 'directoryPath'
+					   type: 'string'
+					   description: 'Optional .ombu directory.').
+				  (self
+					   schemaPropertyNamed: 'historyFileName'
 					   type: 'string'
 					   description:
-						   'Optional path to a .ombu change history file. Omit to inspect the current image change history.').
+						   'Optional .ombu file name from history_file_list.').
 				  (self
 					   integerSchemaPropertyNamed: 'limit'
-					   description:
-						   'Maximum number of entries to return. Use 0 to return no entries.'
+					   description: 'Maximum entries.'
 					   default: self defaultEntryLimit).
 				  (self
 					   integerSchemaPropertyNamed: 'offset'
-					   description:
-						   'Zero-based pagination offset applied after filtering and ordering.'
+					   description: 'Pagination offset.'
 					   default: 0).
 				  (self
 					   booleanSchemaPropertyNamed: 'newestFirst'
-					   description:
-						   'Return newest entries first instead of oldest first.'
+					   description: 'Return newest entries first.'
 					   default: false).
 				  (self
 					   booleanSchemaPropertyNamed: 'codeChangesOnly'
-					   description: 'Include only entries that are code changes.'
+					   description: 'Include only code changes.'
 					   default: false) };
 		  required: #(  );
 		  additionalProperties: false;
@@ -76,23 +77,17 @@ MCPToolListChangeHistoryEntries >> defaultOutputSchema [
 	| entriesProperty |
 	entriesProperty := self
 		                   changeHistoryEntryArraySchemaNamed: 'entries'
-		                   description:
-		                   'Change history entries returned by the tool.'.
+		                   description: 'Change history entries.'.
 	^ self
 		  standardOutputSchemaForDataProperties: {
 				  (self
-					   schemaPropertyNamed: 'historyFilePath'
+					   schemaPropertyNamed: 'historyFileName'
 					   type: 'string'
-					   description: 'The history file inspected.').
+					   description: 'Inspected history file name.').
 				  entriesProperty.
 				  (self
 					   integerSchemaPropertyNamed: 'nextOffset'
-					   description:
-					   'Zero-based offset for the next page. Omitted when this is the final page.').
-				  (self
-					   schemaPropertyNamed: 'headReference'
-					   type: 'string'
-					   description: 'The history log head reference when known.') }
+					   description: 'Next page offset.') }
 		  required: #( 'entries' )
 ]
 
