@@ -85,21 +85,25 @@ MCPChangeHistoryEntryInfo >> addPackageTagChangeInfoFrom: aPackageTagChange [
 { #category : 'converting' }
 MCPChangeHistoryEntryInfo >> asDictionary [
 
-	^ {
-		  (#index -> index).
-		  (#reference -> reference).
-		  (#globalName -> globalName).
-		  (#localName -> localName).
-		  (#eventClassName -> eventClassName).
-		  (#summary -> summary).
-		  (#isCodeChange -> isCodeChange).
-		  (#time -> time).
-		  (#triggerReference -> triggerReference).
-		  (#packageName -> packageName).
-		  (#behaviorName -> behaviorName).
-		  (#classSide -> classSide).
-		  (#selector -> selector).
-		  (#protocol -> protocol) } asDictionary
+	| data |
+	data := Dictionary new.
+	index ifNotNil: [ data at: #index put: index ].
+	reference ifNotNil: [ data at: #reference put: reference ].
+	globalName ifNotNil: [ data at: #globalName put: globalName ].
+	localName ifNotNil: [ data at: #localName put: localName ].
+	eventClassName ifNotNil: [
+		data at: #eventClassName put: eventClassName ].
+	summary ifNotNil: [ data at: #summary put: summary ].
+	isCodeChange ifNotNil: [ data at: #isCodeChange put: isCodeChange ].
+	time ifNotNil: [ data at: #time put: time ].
+	triggerReference ifNotNil: [
+		data at: #triggerReference put: triggerReference ].
+	packageName ifNotNil: [ data at: #packageName put: packageName ].
+	behaviorName ifNotNil: [ data at: #behaviorName put: behaviorName ].
+	classSide ifNotNil: [ data at: #classSide put: classSide ].
+	selector ifNotNil: [ data at: #selector put: selector ].
+	protocol ifNotNil: [ data at: #protocol put: protocol ].
+	^ data
 ]
 
 { #category : 'private' }

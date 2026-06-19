@@ -243,7 +243,11 @@ MCPToolChangeHistoryTest >> testListEntriesReturnsGranularCodeChangeData [
 			self assert: (firstEntry at: #isCodeChange).
 			self assert: (firstEntry includesKey: #index).
 			self assert: (firstEntry includesKey: #reference).
-			self assert: (firstEntry includesKey: #eventClassName) ]
+			self assert: (firstEntry includesKey: #eventClassName).
+			self assert: (firstEntry at: #packageName) equals: 'MCP-Tests'.
+			self assert: (firstEntry at: #behaviorName) equals: class name.
+			self assert: (firstEntry at: #classSide) equals: false.
+			self assert: (firstEntry at: #selector) equals: 'rescuedValue' ]
 ]
 
 { #category : 'tests' }
@@ -341,6 +345,20 @@ MCPToolChangeHistoryTest >> testListFilesSupportsDirectoryPath [
 	self assert: (data at: #directoryPath) equals: directoryPath.
 	self assert: files notEmpty.
 	self assert: (files anySatisfy: [ :each | each at: #isCurrent ])
+]
+
+{ #category : 'tests' }
+MCPToolChangeHistoryTest >> testNonCodeEntryDictionaryOmitsAbsentFields [
+
+	| entry |
+	entry := (MCPChangeHistoryEntryInfo fromEvent: EpSessionStart new)
+		         asDictionary.
+	self assert: (entry at: #eventClassName) equals: 'EpSessionStart'.
+	self assert: (entry at: #summary) equals: 'an EpSessionStart'.
+	self deny: (entry at: #isCodeChange).
+	#( index reference globalName localName time triggerReference
+	   packageName behaviorName classSide selector protocol ) do: [ :key |
+		self deny: (entry includesKey: key) ]
 ]
 
 { #category : 'tests' }
