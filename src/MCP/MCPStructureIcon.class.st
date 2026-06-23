@@ -167,6 +167,7 @@ MCPStructureIcon class >> pngSizeStringForForm: aForm [
 { #category : 'cache' }
 MCPStructureIcon class >> resetCaches [
 
+	<script>
 	iconCache := nil.
 	toolIconCache := nil
 ]
