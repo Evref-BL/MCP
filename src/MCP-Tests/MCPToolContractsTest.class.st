@@ -3152,6 +3152,20 @@ MCPToolContractsTest >> testStringArrayItemDescriptionsStayUseful [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testToolExposurePolicyUsesDefaultsUntilExplicitStaticListProvided [
+
+	| policy |
+	self assert:
+		(MCPToolExposurePolicy default isStaticTool: 'tool_search').
+	self deny:
+		(MCPToolExposurePolicy default isStaticTool: 'repository_search').
+	policy := MCPToolExposurePolicy staticToolNames:
+		          #( 'repository_search' ).
+	self deny: (policy isStaticTool: 'tool_search').
+	self assert: (policy isStaticTool: 'repository_search')
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testToolFlowSelectorNamesSeparateTransportAndParsedInput [
 
 	| staleSelectors |
@@ -3193,6 +3207,28 @@ MCPToolContractsTest >> testToolNamesDoNotUsePharoPrefix [
 
 	self assert: (MCPTool concreteSubclasses noneSatisfy: [ :each |
 			 each new name includesSubstring: 'pharo-' ])
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testToolRegistryAcceptsPluginToolRegistration [
+
+	| registration tool |
+	MCPToolRegistry unregisterToolNamed: MCPHaltingTestTool toolName.
+	[
+		registration := MCPToolRegistry
+			                registerToolClass: MCPHaltingTestTool
+			                groupName: 'plugins'
+			                defaultExposure: 'discoverable'.
+		tool := MCPToolRegistry
+			        toolNamed: MCPHaltingTestTool toolName
+			        ifAbsent: [ self fail ].
+		self assert: tool == registration tool.
+		self deny: (MCPToolExposurePolicy default isStaticTool: tool name).
+		self assert: ((MCPToolRegistry publicToolGroups
+				  detect: [ :each | each key = 'plugins' ]
+				  ifNone: [ self fail ]) value includes: MCPHaltingTestTool) ]
+		ensure: [
+		MCPToolRegistry unregisterToolNamed: MCPHaltingTestTool toolName ]
 ]
 
 { #category : 'tests' }
@@ -3308,6 +3344,27 @@ MCPToolContractsTest >> testToolRegistryNamesUseClassSideMetadata [
 		equals: 'debug_session_step_over'.
 	self assert: MCPToolDebugCapture toolName equals: 'debug_capture'.
 	self assert: MCPToolUpdateDebugMethod toolName equals: 'debug_method_update'
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testToolRegistryReusesRegisteredToolInstances [
+
+	| first searchResults second |
+	first := MCPToolRegistry
+		         toolNamed: 'tool_search'
+		         ifAbsent: [ self fail ].
+	second := MCPToolRegistry
+		          toolNamed: 'tool_search'
+		          ifAbsent: [ self fail ].
+	searchResults := MCPToolRegistry
+		                 toolsMatchingQuery: 'tool'
+		                 group: nil
+		                 limit: 10
+		                 usingPolicy: MCPToolExposurePolicy default.
+	self assert: first == second.
+	self assert:
+		(searchResults detect: [ :each | each name = 'tool_search' ])
+		== first
 ]
 
 { #category : 'tests' }

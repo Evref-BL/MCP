@@ -77,10 +77,21 @@ MCPToolSearchTools >> defaultTitle [
 MCPToolSearchTools >> executeWithRequest: request [
 
 	^ self
+		  executeWithRequest: request
+		  usingPolicy: MCPToolExposurePolicy default
+]
+
+{ #category : 'executing' }
+MCPToolSearchTools >> executeWithRequest: request usingPolicy: aToolExposurePolicy [
+
+	^ self
 		  executeParsedRequestFrom: request
 		  do: [ :searchRequest |
 				  | data |
-				  data := (self commandForRequest: searchRequest) execute.
+				  data := (MCPSearchToolsCommand
+					           tool: self
+					           request: searchRequest
+					           toolExposurePolicy: aToolExposurePolicy) execute.
 				  self
 					  successResultText:
 					  (data at: #tools) size asString , ' tools found.'

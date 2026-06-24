@@ -23,8 +23,7 @@ Class {
 		'description',
 		'icons',
 		'inputSchema',
-		'outputSchema',
-		'toolExposurePolicy'
+		'outputSchema'
 	],
 	#category : 'MCP-Tools',
 	#package : 'MCP',
@@ -279,6 +278,12 @@ MCPTool >> executeParsedRequestFrom: request do: executionBlock onError: errorBl
 MCPTool >> executeWithRequest: aRequest [
 
 	self subclassResponsibility
+]
+
+{ #category : 'executing' }
+MCPTool >> executeWithRequest: aRequest usingPolicy: aToolExposurePolicy [
+
+	^ self executeWithRequest: aRequest
 ]
 
 { #category : 'error handling' }
@@ -630,19 +635,6 @@ MCPTool >> title [
 MCPTool >> title: anObject [
 
 	title := anObject
-]
-
-{ #category : 'accessing' }
-MCPTool >> toolExposurePolicy [
-
-	^ toolExposurePolicy ifNil: [ MCPToolExposurePolicy default ]
-]
-
-{ #category : 'accessing' }
-MCPTool >> toolExposurePolicy: aToolExposurePolicy [
-
-	toolExposurePolicy := aToolExposurePolicy ifNil: [
-		                      MCPToolExposurePolicy default ]
 ]
 
 { #category : 'validating' }
