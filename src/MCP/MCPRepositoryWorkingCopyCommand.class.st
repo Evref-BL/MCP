@@ -54,12 +54,6 @@ MCPRepositoryWorkingCopyCommand >> packageNameFromDiffPackageNode: aNode [
 	^ aNode mcpDiffPackageName
 ]
 
-{ #category : 'private' }
-MCPRepositoryWorkingCopyCommand >> sortedStringsFrom: aCollection [
-
-	^ (aCollection collect: [ :each | each asString ]) asSet asArray sort
-]
-
 { #category : 'private - execution' }
 MCPRepositoryWorkingCopyCommand >> withNonInteractiveAuthorDuring: aBlock [
 

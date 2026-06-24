@@ -205,12 +205,6 @@ MCPRepositoryVerifyIdentityCommand >> signalMissingExpectedIdentityFields [
 				 yourself)
 ]
 
-{ #category : 'private' }
-MCPRepositoryVerifyIdentityCommand >> sortedStringsFrom: aCollection [
-
-	^ (aCollection collect: [ :each | each asString ] as: Array) sort
-]
-
 { #category : 'private - validation' }
 MCPRepositoryVerifyIdentityCommand >> validateRepository: aRepository [
 

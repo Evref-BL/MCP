@@ -84,8 +84,7 @@ MCPUpdateRepositoryCommand >> initializeTool: aTool request: aRequest [
 { #category : 'private' }
 MCPUpdateRepositoryCommand >> normalizedPackageNames: packageNames [
 
-	^ (packageNames collect: [ :each | each asString ]) asSet asArray
-		  sort
+	^ self sortedStringsFrom: packageNames
 ]
 
 { #category : 'private - packages' }

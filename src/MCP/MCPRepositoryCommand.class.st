@@ -52,6 +52,12 @@ MCPRepositoryCommand >> request [
 	^ request
 ]
 
+{ #category : 'private' }
+MCPRepositoryCommand >> sortedStringsFrom: aCollection [
+
+	^ (aCollection collect: [ :each | each asString ]) asSet asArray sort
+]
+
 { #category : 'accessing' }
 MCPRepositoryCommand >> tool [
 
