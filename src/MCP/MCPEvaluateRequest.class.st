@@ -27,5 +27,6 @@ MCPEvaluateRequest >> code [
 { #category : 'initialization' }
 MCPEvaluateRequest >> initializeCode: aString [
 
-	code := aString
+	code := aString.
+	^ self
 ]

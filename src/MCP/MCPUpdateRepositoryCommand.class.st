@@ -89,7 +89,8 @@ MCPUpdateRepositoryCommand >> initializeTool: aTool request: aRequest [
 	tool := aTool.
 	request := aRequest.
 	addedPackageNames := OrderedCollection new.
-	removedPackageNames := OrderedCollection new
+	removedPackageNames := OrderedCollection new.
+	^ self
 ]
 
 { #category : 'private' }

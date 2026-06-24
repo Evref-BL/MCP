@@ -74,7 +74,8 @@ MCPDebugSessionRecord >> continuation [
 { #category : 'accessing' }
 MCPDebugSessionRecord >> continuation: aContinuation [
 
-	continuation := aContinuation
+	continuation := aContinuation.
+	^ self
 ]
 
 { #category : 'accessing' }
@@ -86,7 +87,8 @@ MCPDebugSessionRecord >> createdAt [
 { #category : 'accessing' }
 MCPDebugSessionRecord >> createdAt: aDateAndTime [
 
-	createdAt := aDateAndTime
+	createdAt := aDateAndTime.
+	^ self
 ]
 
 { #category : 'accessing' }
@@ -98,7 +100,8 @@ MCPDebugSessionRecord >> debugSession [
 { #category : 'accessing' }
 MCPDebugSessionRecord >> debugSession: anObject [
 
-	debugSession := anObject
+	debugSession := anObject.
+	^ self
 ]
 
 { #category : 'accessing' }
@@ -122,7 +125,8 @@ MCPDebugSessionRecord >> name [
 { #category : 'accessing' }
 MCPDebugSessionRecord >> name: aString [
 
-	name := aString
+	name := aString.
+	^ self
 ]
 
 { #category : 'accessing' }
@@ -134,7 +138,8 @@ MCPDebugSessionRecord >> reason [
 { #category : 'accessing' }
 MCPDebugSessionRecord >> reason: aString [
 
-	reason := aString
+	reason := aString.
+	^ self
 ]
 
 { #category : 'accessing' }
@@ -146,7 +151,8 @@ MCPDebugSessionRecord >> sessionId [
 { #category : 'accessing' }
 MCPDebugSessionRecord >> sessionId: aString [
 
-	sessionId := aString
+	sessionId := aString.
+	^ self
 ]
 
 { #category : 'accessing' }
@@ -158,7 +164,8 @@ MCPDebugSessionRecord >> stateId [
 { #category : 'accessing' }
 MCPDebugSessionRecord >> stateId: aString [
 
-	stateId := aString
+	stateId := aString.
+	^ self
 ]
 
 { #category : 'accessing' }
@@ -170,5 +177,6 @@ MCPDebugSessionRecord >> status [
 { #category : 'accessing' }
 MCPDebugSessionRecord >> status: aString [
 
-	status := aString
+	status := aString.
+	^ self
 ]

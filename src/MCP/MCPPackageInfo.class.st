@@ -72,7 +72,8 @@ MCPPackageInfo >> initializeFromPackage: aPackage projectNames: someProjectNames
 		             as: Array) sort.
 	definedClassCount := aPackage definedClasses size.
 	extensionMethodCount := aPackage extensionMethods size.
-	isUndefined := aPackage isUndefined
+	isUndefined := aPackage isUndefined.
+	^ self
 ]
 
 { #category : 'accessing' }

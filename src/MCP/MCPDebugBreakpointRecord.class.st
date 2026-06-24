@@ -71,13 +71,15 @@ MCPDebugBreakpointRecord >> debugPoint [
 { #category : 'controlling' }
 MCPDebugBreakpointRecord >> disable [
 
-	debugPoint disable
+	debugPoint disable.
+	^ self
 ]
 
 { #category : 'controlling' }
 MCPDebugBreakpointRecord >> enable [
 
-	debugPoint enable
+	debugPoint enable.
+	^ self
 ]
 
 { #category : 'accessing' }
@@ -98,7 +100,8 @@ MCPDebugBreakpointRecord >> initializeBreakpointId: breakpointString debugPoint:
 	sourceStart := startInteger.
 	sourceStop := stopInteger.
 	nodeClassName := nodeClassString.
-	createdAt := aDateAndTime
+	createdAt := aDateAndTime.
+	^ self
 ]
 
 { #category : 'removing' }
@@ -107,7 +110,8 @@ MCPDebugBreakpointRecord >> remove [
 	debugPoint ifNil: [ ^ self ].
 	[ debugPoint remove ]
 		on: Error
-		do: [ :ignored | nil ]
+		do: [ :ignored | nil ].
+	^ self
 ]
 
 { #category : 'accessing' }

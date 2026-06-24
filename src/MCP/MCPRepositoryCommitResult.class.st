@@ -3,10 +3,8 @@ Result DTO returned by repository_commit. It reports repository state after the 
 "
 Class {
 	#name : 'MCPRepositoryCommitResult',
-	#superclass : 'Object',
+	#superclass : 'MCPRepositorySnapshotResult',
 	#instVars : [
-		'repositoryInfo',
-		'packageInfos',
 		'changedPackageNames',
 		'modifiedPackageNames',
 		'commitId',
@@ -107,12 +105,9 @@ MCPRepositoryCommitResult >> headDescription: aString [
 { #category : 'initialization' }
 MCPRepositoryCommitResult >> initializeRepository: aRepository changedPackageNames: packageNames commit: aCommit [
 
-	| packages repositoryPackageNames |
-	packages := aRepository workingCopy packages sort: [ :left :right |
-		            left name <= right name ].
-	packageInfos := packages collect: [ :each |
-		                MCPRepositoryPackageInfo fromPackage: each ].
-	repositoryPackageNames := packages collect: [ :each | each name ].
+	| repositoryPackageNames |
+	packageInfos := self packageInfosFromRepository: aRepository.
+	repositoryPackageNames := packageInfos collect: [ :each | each name ].
 	changedPackageNames := packageNames ifNil: [ #(  ) ].
 	modifiedPackageNames := #(  ).
 	commitId := self commitIdFrom: aCommit.
@@ -136,28 +131,4 @@ MCPRepositoryCommitResult >> modifiedPackageNames [
 MCPRepositoryCommitResult >> modifiedPackageNames: aCollection [
 
 	modifiedPackageNames := aCollection ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPRepositoryCommitResult >> packageInfos [
-
-	^ packageInfos ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPRepositoryCommitResult >> packageInfos: aCollection [
-
-	packageInfos := aCollection ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPRepositoryCommitResult >> repositoryInfo [
-
-	^ repositoryInfo
-]
-
-{ #category : 'accessing' }
-MCPRepositoryCommitResult >> repositoryInfo: aRepositoryInfo [
-
-	repositoryInfo := aRepositoryInfo
 ]

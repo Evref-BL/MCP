@@ -161,7 +161,8 @@ MCPGitRepositoryMetadata >> initializeWithLocationString: aString [
 
 	location := aString ifNil: [ '' ].
 	gitDirectory := self gitDirectoryForLocation: location.
-	configEntries := self configEntriesFromGitDirectory: gitDirectory
+	configEntries := self configEntriesFromGitDirectory: gitDirectory.
+	^ self
 ]
 
 { #category : 'private - parsing' }

@@ -37,5 +37,6 @@ MCPGetMethodResult >> externalVariableCount [
 MCPGetMethodResult >> initializeData: aDictionary externalVariableCount: anIntegerOrNil [
 
 	data := aDictionary.
-	externalVariableCount := anIntegerOrNil
+	externalVariableCount := anIntegerOrNil.
+	^ self
 ]

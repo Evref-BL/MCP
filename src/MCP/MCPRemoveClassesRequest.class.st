@@ -37,5 +37,6 @@ MCPRemoveClassesRequest >> force [
 MCPRemoveClassesRequest >> initializeClassNames: aCollection force: aBoolean [
 
 	classNames := aCollection.
-	force := aBoolean
+	force := aBoolean.
+	^ self
 ]

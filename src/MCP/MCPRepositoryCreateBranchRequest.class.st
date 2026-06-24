@@ -36,7 +36,8 @@ MCPRepositoryCreateBranchRequest >> initializeFromRequest: request [
 
 	repositoryReference := MCPRepositoryReferenceSpec fromRequest:
 		                       request.
-	branchName := request stringArgumentNamed: 'branchName'
+	branchName := request stringArgumentNamed: 'branchName'.
+	^ self
 ]
 
 { #category : 'accessing' }

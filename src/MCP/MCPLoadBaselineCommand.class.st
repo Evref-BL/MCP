@@ -85,7 +85,8 @@ MCPLoadBaselineCommand >> initializeTool: aTool request: aRequest configureMetac
 
 	tool := aTool.
 	request := aRequest.
-	configureMetacelloBlock := aBlock
+	configureMetacelloBlock := aBlock.
+	^ self
 ]
 
 { #category : 'private - loading' }

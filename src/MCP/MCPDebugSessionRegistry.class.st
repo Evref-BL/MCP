@@ -21,13 +21,15 @@ Class {
 { #category : 'accessing' }
 MCPDebugSessionRegistry class >> default [
 
-	^ Default ifNil: [ Default := self new ]
+	Default ifNil: [ Default := self new ].
+	^ Default
 ]
 
-{ #category : 'class initialization' }
+{ #category : 'accessing' }
 MCPDebugSessionRegistry class >> resetDefault [
 
-	Default := nil
+	Default := nil.
+	^ self
 ]
 
 { #category : 'accessing' }

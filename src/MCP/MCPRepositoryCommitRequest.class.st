@@ -30,7 +30,8 @@ MCPRepositoryCommitRequest >> initializeFromRequest: request [
 
 	repositoryReference := MCPRepositoryReferenceSpec fromRequest:
 		                       request.
-	message := request stringArgumentNamed: 'message'
+	message := request stringArgumentNamed: 'message'.
+	^ self
 ]
 
 { #category : 'accessing' }

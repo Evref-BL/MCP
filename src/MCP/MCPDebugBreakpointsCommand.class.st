@@ -102,7 +102,8 @@ MCPDebugBreakpointsCommand >> initializeTool: aTool request: aRequest registry: 
 
 	tool := aTool.
 	request := aRequest.
-	registry := aRegistry
+	registry := aRegistry.
+	^ self
 ]
 
 { #category : 'private - actions' }

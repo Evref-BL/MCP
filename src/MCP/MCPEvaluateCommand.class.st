@@ -53,7 +53,8 @@ MCPEvaluateCommand >> initializeTool: aTool request: aRequest resultPreviewChara
 
 	tool := aTool.
 	request := aRequest.
-	resultPreviewCharacterLimit := anInteger
+	resultPreviewCharacterLimit := anInteger.
+	^ self
 ]
 
 { #category : 'accessing' }

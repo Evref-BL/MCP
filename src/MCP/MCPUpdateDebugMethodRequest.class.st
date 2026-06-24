@@ -62,7 +62,8 @@ MCPUpdateDebugMethodRequest >> ignoreCritiques [
 { #category : 'accessing' }
 MCPUpdateDebugMethodRequest >> ignoreCritiques: aBoolean [
 
-	ignoreCritiques := aBoolean
+	ignoreCritiques := aBoolean.
+	^ self
 ]
 
 { #category : 'accessing' }

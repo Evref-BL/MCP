@@ -50,7 +50,8 @@ MCPSwitchRepositoryBranchCommand >> execute [
 MCPSwitchRepositoryBranchCommand >> initializeTool: aTool request: aRequest [
 
 	tool := aTool.
-	request := aRequest
+	request := aRequest.
+	^ self
 ]
 
 { #category : 'accessing' }

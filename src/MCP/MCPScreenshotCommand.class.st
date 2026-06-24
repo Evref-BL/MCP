@@ -74,7 +74,8 @@ MCPScreenshotCommand >> initializeTool: aTool request: aRequest formProvider: aB
 
 	tool := aTool.
 	request := aRequest.
-	formProvider := aBlock ifNil: [ [ self captureWorldForm ] ]
+	formProvider := aBlock ifNil: [ [ self captureWorldForm ] ].
+	^ self
 ]
 
 { #category : 'accessing' }

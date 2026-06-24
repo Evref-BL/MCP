@@ -57,7 +57,8 @@ MCPRunTestsResult >> initializeResults: resultCollection timedOut: aBoolean unru
 
 	results := resultCollection asArray.
 	timedOut := aBoolean.
-	unrunTests := testCollection asArray
+	unrunTests := testCollection asArray.
+	^ self
 ]
 
 { #category : 'converting' }

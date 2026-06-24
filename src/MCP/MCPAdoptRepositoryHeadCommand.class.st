@@ -74,7 +74,8 @@ MCPAdoptRepositoryHeadCommand >> execute [
 MCPAdoptRepositoryHeadCommand >> initializeTool: aTool request: aRequest [
 
 	tool := aTool.
-	request := aRequest
+	request := aRequest.
+	^ self
 ]
 
 { #category : 'private' }
@@ -131,5 +132,6 @@ MCPAdoptRepositoryHeadCommand >> validateHeadCommit: headCommit for: aRepository
 
 	headCommit ifNil: [ ^ self signalMissingHeadCommitFor: aRepository ].
 	(MCPIcebergCommitInfo isNoCommit: headCommit) ifTrue: [
-		^ self signalMissingHeadCommitFor: aRepository ]
+		^ self signalMissingHeadCommitFor: aRepository ].
+	^ self
 ]

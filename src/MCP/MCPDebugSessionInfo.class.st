@@ -46,5 +46,6 @@ MCPDebugSessionInfo >> record [
 { #category : 'accessing' }
 MCPDebugSessionInfo >> record: aRecord [
 
-	record := aRecord
+	record := aRecord.
+	^ self
 ]

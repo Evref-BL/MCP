@@ -78,7 +78,8 @@ MCPCompiledMethodInfo >> initializeFromMethod: aCompiledMethod [
 	classPackageName := aCompiledMethod methodClass instanceSide package
 		                    name asString.
 	isExtension := packageName ~= classPackageName.
-	source := aCompiledMethod sourceCode ifNil: [ '' ]
+	source := aCompiledMethod sourceCode ifNil: [ '' ].
+	^ self
 ]
 
 { #category : 'accessing' }

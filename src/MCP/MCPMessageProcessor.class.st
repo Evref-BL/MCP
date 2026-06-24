@@ -14,7 +14,7 @@ Class {
 { #category : 'handlers management' }
 MCPMessageProcessor >> addHandler: aJRPCHandler [
 
-	(self handlers includes: aJRPCHandler) ifTrue: [ "handler has been overridden"
+	(self handlers includes: aJRPCHandler) ifTrue: [ "handler has been override"
 		^ self ].
 
 	handlers add: aJRPCHandler

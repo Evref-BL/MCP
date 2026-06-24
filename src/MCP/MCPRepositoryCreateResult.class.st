@@ -3,11 +3,7 @@ Result DTO returned by repository_create or repository_attach. It reports the re
 "
 Class {
 	#name : 'MCPRepositoryCreateResult',
-	#superclass : 'Object',
-	#instVars : [
-		'repositoryInfo',
-		'packageInfos'
-	],
+	#superclass : 'MCPRepositorySnapshotResult',
 	#category : 'MCP-Results',
 	#package : 'MCP',
 	#tag : 'Results'
@@ -23,39 +19,4 @@ MCPRepositoryCreateResult class >> fromRepository: aRepository [
 MCPRepositoryCreateResult >> asDictionary [
 
 	^ Dictionary new
-]
-
-{ #category : 'initialization' }
-MCPRepositoryCreateResult >> initializeFromRepository: aRepository [
-
-	| packages |
-	repositoryInfo := MCPRepositoryInfo fromRepository: aRepository.
-	packages := aRepository workingCopy packages sort: [ :left :right |
-		            left name <= right name ].
-	packageInfos := packages collect: [ :each |
-		                MCPRepositoryPackageInfo fromPackage: each ]
-]
-
-{ #category : 'accessing' }
-MCPRepositoryCreateResult >> packageInfos [
-
-	^ packageInfos ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPRepositoryCreateResult >> packageInfos: aCollection [
-
-	packageInfos := aCollection ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPRepositoryCreateResult >> repositoryInfo [
-
-	^ repositoryInfo
-]
-
-{ #category : 'accessing' }
-MCPRepositoryCreateResult >> repositoryInfo: aRepositoryInfo [
-
-	repositoryInfo := aRepositoryInfo
 ]

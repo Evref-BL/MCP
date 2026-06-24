@@ -35,7 +35,8 @@ MCPRepositoryCreateRequest >> initializeFromRequest: request [
 	name := request stringArgumentNamed: 'name'.
 	location := request stringArgumentNamed: 'location'.
 	subdirectory := request stringArgumentNamed: 'subdirectory'.
-	packageNames := request stringCollectionArgumentNamed: 'packageNames'
+	packageNames := request stringCollectionArgumentNamed: 'packageNames'.
+	^ self
 ]
 
 { #category : 'accessing' }

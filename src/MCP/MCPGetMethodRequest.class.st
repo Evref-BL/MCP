@@ -58,7 +58,8 @@ MCPGetMethodRequest >> initializeClassName: aClassName selectorString: aSelector
 	className := aClassName.
 	selectorString := aSelectorString.
 	classSide := aSide.
-	includeVariableDetails := aBoolean
+	includeVariableDetails := aBoolean.
+	^ self
 ]
 
 { #category : 'accessing' }

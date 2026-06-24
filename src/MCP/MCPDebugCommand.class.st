@@ -36,7 +36,8 @@ MCPDebugCommand >> initializeTool: aTool request: aRequest registry: aRegistry [
 
 	tool := aTool.
 	request := aRequest.
-	registry := aRegistry
+	registry := aRegistry.
+	^ self
 ]
 
 { #category : 'private' }

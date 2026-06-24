@@ -109,7 +109,8 @@ MCPTestCoverageResult >> initializeCoverageResult: aCoverageResult includeCovere
 	coverageResult := aCoverageResult.
 	includeCoveredMethods := aBoolean = true.
 	methodLimit := anInteger.
-	partiallyCoveredMethods := partialMethods ifNil: [ #(  ) ]
+	partiallyCoveredMethods := partialMethods ifNil: [ #(  ) ].
+	^ self
 ]
 
 { #category : 'private - methods' }

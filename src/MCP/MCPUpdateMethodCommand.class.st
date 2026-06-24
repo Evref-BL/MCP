@@ -341,7 +341,8 @@ MCPUpdateMethodCommand >> executeRenameWithPlan: plan [
 MCPUpdateMethodCommand >> initializeTool: aTool request: aRequest [
 
 	tool := aTool.
-	request := aRequest
+	request := aRequest.
+	^ self
 ]
 
 { #category : 'private - methods' }

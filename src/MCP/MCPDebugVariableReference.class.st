@@ -83,7 +83,8 @@ MCPDebugVariableReference >> initializeRawReference: rawString sessionId: sessio
 	frameIndex := frameInteger.
 	scopeName := scopeString.
 	variableName := variableString.
-	pathSegments := segmentArray
+	pathSegments := segmentArray.
+	^ self
 ]
 
 { #category : 'testing' }

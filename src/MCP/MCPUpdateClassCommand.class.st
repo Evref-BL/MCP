@@ -523,7 +523,8 @@ MCPUpdateClassCommand >> executeSetCommentWithPlan: plan [
 MCPUpdateClassCommand >> initializeTool: aTool request: aClassRequest [
 
 	tool := aTool.
-	classRequest := aClassRequest
+	classRequest := aClassRequest.
+	^ self
 ]
 
 { #category : 'private - move' }

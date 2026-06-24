@@ -53,7 +53,8 @@ MCPEvaluateResult >> initializeStatus: aStatus data: aDictionary summary: aStrin
 	status := aStatus.
 	data := aDictionary.
 	summary := aString.
-	errorDetails := detailsDictionary
+	errorDetails := detailsDictionary.
+	^ self
 ]
 
 { #category : 'testing' }

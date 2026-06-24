@@ -55,7 +55,8 @@ MCPScreenshotResult >> initializeTarget: targetString width: widthInteger height
 	target := targetString.
 	width := widthInteger.
 	height := heightInteger.
-	imageContent := anImageContent
+	imageContent := anImageContent.
+	^ self
 ]
 
 { #category : 'accessing' }

@@ -90,7 +90,8 @@ MCPRunTestsRequest >> initializeTestRequests: aCollection timeoutMilliseconds: a
 	testRequests := aCollection.
 	timeoutMilliseconds := anInteger.
 	operation := operationString ifNil: [ 'run' ].
-	coverageRequest := aCoverageRequest
+	coverageRequest := aCoverageRequest.
+	^ self
 ]
 
 { #category : 'testing' }

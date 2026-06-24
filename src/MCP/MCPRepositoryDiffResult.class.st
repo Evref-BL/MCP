@@ -3,10 +3,8 @@ Result DTO returned by repository_change_list. It reports the repository working
 "
 Class {
 	#name : 'MCPRepositoryDiffResult',
-	#superclass : 'Object',
+	#superclass : 'MCPRepositorySnapshotResult',
 	#instVars : [
-		'repositoryInfo',
-		'packageInfos',
 		'changedPackageNames',
 		'modifiedPaths',
 		'changeCount',
@@ -76,12 +74,7 @@ MCPRepositoryDiffResult >> derivedChangeCount [
 { #category : 'initialization' }
 MCPRepositoryDiffResult >> initializeRepository: aRepository changedPackageNames: packageNames modifiedPaths: paths isEmpty: aBoolean [
 
-	| packages |
-	repositoryInfo := MCPRepositoryInfo fromRepository: aRepository.
-	packages := aRepository workingCopy packages sort: [ :left :right |
-		            left name <= right name ].
-	packageInfos := packages collect: [ :each |
-		                MCPRepositoryPackageInfo fromPackage: each ].
+	self initializeSnapshotFromRepository: aRepository.
 	changedPackageNames := packageNames ifNil: [ #(  ) ].
 	modifiedPaths := paths ifNil: [ #(  ) ].
 	isEmpty := aBoolean.
@@ -110,28 +103,4 @@ MCPRepositoryDiffResult >> modifiedPaths [
 MCPRepositoryDiffResult >> modifiedPaths: aCollection [
 
 	modifiedPaths := aCollection ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPRepositoryDiffResult >> packageInfos [
-
-	^ packageInfos ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPRepositoryDiffResult >> packageInfos: aCollection [
-
-	packageInfos := aCollection ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPRepositoryDiffResult >> repositoryInfo [
-
-	^ repositoryInfo
-]
-
-{ #category : 'accessing' }
-MCPRepositoryDiffResult >> repositoryInfo: aRepositoryInfo [
-
-	repositoryInfo := aRepositoryInfo
 ]

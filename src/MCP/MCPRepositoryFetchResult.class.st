@@ -3,11 +3,8 @@ Result DTO returned by repository_fetch. It reports repository metadata before a
 "
 Class {
 	#name : 'MCPRepositoryFetchResult',
-	#superclass : 'Object',
+	#superclass : 'MCPRepositoryTransitionResult',
 	#instVars : [
-		'repositoryInfoBefore',
-		'repositoryInfoAfter',
-		'packageInfos',
 		'remoteNames',
 		'branchName',
 		'headDescription'
@@ -49,50 +46,14 @@ MCPRepositoryFetchResult >> headDescription [
 { #category : 'initialization' }
 MCPRepositoryFetchResult >> initializeRepositoryBefore: beforeInfo after: aRepository [
 
-	repositoryInfoBefore := beforeInfo.
-	repositoryInfoAfter := MCPRepositoryInfo fromRepository: aRepository.
-	packageInfos := self packageInfosFromRepository: aRepository.
+	super initializeRepositoryBefore: beforeInfo after: aRepository.
 	remoteNames := repositoryInfoAfter remoteNames.
 	branchName := repositoryInfoAfter branchName.
 	headDescription := repositoryInfoAfter headDescription
 ]
 
 { #category : 'accessing' }
-MCPRepositoryFetchResult >> packageInfos [
-
-	^ packageInfos ifNil: [ #(  ) ]
-]
-
-{ #category : 'private' }
-MCPRepositoryFetchResult >> packageInfosFromRepository: aRepository [
-
-	| packages |
-	packages := aRepository workingCopy packages sort: [ :left :right |
-		            left name <= right name ].
-	^ packages collect: [ :each |
-		  MCPRepositoryPackageInfo fromPackage: each ]
-]
-
-{ #category : 'accessing' }
 MCPRepositoryFetchResult >> remoteNames [
 
 	^ remoteNames ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPRepositoryFetchResult >> repositoryInfo [
-
-	^ self repositoryInfoAfter
-]
-
-{ #category : 'accessing' }
-MCPRepositoryFetchResult >> repositoryInfoAfter [
-
-	^ repositoryInfoAfter
-]
-
-{ #category : 'accessing' }
-MCPRepositoryFetchResult >> repositoryInfoBefore [
-
-	^ repositoryInfoBefore
 ]

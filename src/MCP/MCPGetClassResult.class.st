@@ -43,7 +43,8 @@ MCPGetClassResult >> initializeClassName: aClassName data: aDictionary superclas
 	className := aClassName.
 	data := aDictionary.
 	superclasses := superclassCollection.
-	subclasses := subclassCollection
+	subclasses := subclassCollection.
+	^ self
 ]
 
 { #category : 'accessing' }

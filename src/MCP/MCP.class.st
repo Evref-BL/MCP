@@ -404,7 +404,8 @@ MCP >> staticToolNames [
 MCP >> staticToolNames: aCollection [
 
 	self toolExposurePolicy:
-		(MCPToolExposurePolicy staticToolNames: aCollection)
+		(MCPToolExposurePolicy staticToolNames: aCollection).
+	^ self
 ]
 
 { #category : 'accessing' }

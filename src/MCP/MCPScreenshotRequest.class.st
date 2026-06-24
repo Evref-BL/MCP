@@ -29,7 +29,8 @@ MCPScreenshotRequest class >> fromRequest: aRequest tool: aTool [
 MCPScreenshotRequest >> initializeTarget: targetString targetIdentifier: identifierString [
 
 	target := targetString ifNil: [ 'world' ].
-	targetIdentifier := identifierString
+	targetIdentifier := identifierString.
+	^ self
 ]
 
 { #category : 'testing' }

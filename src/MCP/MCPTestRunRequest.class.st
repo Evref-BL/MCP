@@ -72,7 +72,8 @@ MCPTestRunRequest >> hasTestMethod [
 MCPTestRunRequest >> initializeClassName: aClassName testMethodName: aTestMethodName [
 
 	className := aClassName.
-	testMethodName := aTestMethodName
+	testMethodName := aTestMethodName.
+	^ self
 ]
 
 { #category : 'printing' }

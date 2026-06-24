@@ -3,10 +3,8 @@ Result DTO returned by repository_push. It reports repository metadata, remote n
 "
 Class {
 	#name : 'MCPRepositoryPushResult',
-	#superclass : 'Object',
+	#superclass : 'MCPRepositorySnapshotResult',
 	#instVars : [
-		'repositoryInfo',
-		'packageInfos',
 		'remoteNames',
 		'branchName',
 		'headDescription'
@@ -48,37 +46,14 @@ MCPRepositoryPushResult >> headDescription [
 { #category : 'initialization' }
 MCPRepositoryPushResult >> initializeRepository: aRepository [
 
-	repositoryInfo := MCPRepositoryInfo fromRepository: aRepository.
-	packageInfos := self packageInfosFromRepository: aRepository.
+	self initializeSnapshotFromRepository: aRepository.
 	remoteNames := repositoryInfo remoteNames.
 	branchName := repositoryInfo branchName.
 	headDescription := repositoryInfo headDescription
 ]
 
 { #category : 'accessing' }
-MCPRepositoryPushResult >> packageInfos [
-
-	^ packageInfos ifNil: [ #(  ) ]
-]
-
-{ #category : 'private' }
-MCPRepositoryPushResult >> packageInfosFromRepository: aRepository [
-
-	| packages |
-	packages := aRepository workingCopy packages sort: [ :left :right |
-		            left name <= right name ].
-	^ packages collect: [ :each |
-		  MCPRepositoryPackageInfo fromPackage: each ]
-]
-
-{ #category : 'accessing' }
 MCPRepositoryPushResult >> remoteNames [
 
 	^ remoteNames ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPRepositoryPushResult >> repositoryInfo [
-
-	^ repositoryInfo
 ]

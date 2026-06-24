@@ -28,7 +28,8 @@ MCPRepositoryFetchRequest >> commandForTool: aTool [
 MCPRepositoryFetchRequest >> initializeFromRequest: request [
 
 	repositoryReference := MCPRepositoryReferenceSpec fromRequest:
-		                       request
+		                       request.
+	^ self
 ]
 
 { #category : 'accessing' }

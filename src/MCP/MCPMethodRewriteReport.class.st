@@ -91,7 +91,8 @@ MCPMethodRewriteReport >> initializeFromRequest: aRequest changeInfos: changeInf
 	changeInfos := changeInfoCollection asArray.
 	appliedCount := appliedCountInteger.
 	scope := aRequest scopeQuery asDictionary.
-	changeSetHash := changeSetHashInteger
+	changeSetHash := changeSetHashInteger.
+	^ self
 ]
 
 { #category : 'accessing' }

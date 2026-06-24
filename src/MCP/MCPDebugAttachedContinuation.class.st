@@ -85,7 +85,8 @@ MCPDebugAttachedContinuation >> debugSession [
 { #category : 'accessing' }
 MCPDebugAttachedContinuation >> debugSession: aDebugSession [
 
-	outcome at: #debugSession put: aDebugSession
+	outcome at: #debugSession put: aDebugSession.
+	^ self
 ]
 
 { #category : 'accessing' }

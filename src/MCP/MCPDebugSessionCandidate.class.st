@@ -66,7 +66,8 @@ MCPDebugSessionCandidate >> debugger [
 { #category : 'accessing' }
 MCPDebugSessionCandidate >> debugger: aDebugger [
 
-	debugger := aDebugger
+	debugger := aDebugger.
+	^ self
 ]
 
 { #category : 'private' }

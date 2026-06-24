@@ -64,7 +64,8 @@ MCPMethodReferenceSpec >> initializeClassName: aClassName selector: aSelector cl
 
 	className := aClassName.
 	selector := aSelector.
-	classSide := aBoolean ifNil: [ false ]
+	classSide := aBoolean ifNil: [ false ].
+	^ self
 ]
 
 { #category : 'printing' }

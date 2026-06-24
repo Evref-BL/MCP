@@ -76,16 +76,17 @@ MCPMethodRewriteChangeInfo >> initializeFromChange: aChange includeSources: aBoo
 		                  ifAbsent: [ nil ].
 	compiledMethod
 		ifNil: [
-				packageName := ''.
-				protocol := ''.
-				oldSource := '' ]
+			packageName := ''.
+			protocol := ''.
+			oldSource := '' ]
 		ifNotNil: [
-				methodInfo := MCPCompiledMethodInfo fromMethod: compiledMethod.
-				packageName := methodInfo packageName.
-				protocol := methodInfo protocol.
-				oldSource := compiledMethod sourceCode ifNil: [ '' ] ].
+			methodInfo := MCPCompiledMethodInfo fromMethod: compiledMethod.
+			packageName := methodInfo packageName.
+			protocol := methodInfo protocol.
+			oldSource := compiledMethod sourceCode ifNil: [ '' ] ].
 	newSource := aChange source ifNil: [ '' ].
-	includeSources := aBoolean
+	includeSources := aBoolean.
+	^ self
 ]
 
 { #category : 'accessing' }

@@ -41,7 +41,8 @@ MCPRemoveMethodsRequest >> initializeClassName: aClassName classSide: aBoolean s
 
 	className := aClassName.
 	classSide := aBoolean.
-	selectors := aCollection
+	selectors := aCollection.
+	^ self
 ]
 
 { #category : 'accessing' }

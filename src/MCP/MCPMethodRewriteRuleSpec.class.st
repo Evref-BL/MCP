@@ -74,7 +74,8 @@ MCPMethodRewriteRuleSpec >> initializeFromDictionary: aDictionary request: reque
 		               booleanArgumentNamed: 'isForMethod'
 		               in: aDictionary
 		               default: false.
-	self validateAtIndex: index
+	self validateAtIndex: index.
+	^ self
 ]
 
 { #category : 'accessing' }

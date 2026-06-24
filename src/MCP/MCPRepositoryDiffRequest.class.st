@@ -28,7 +28,8 @@ MCPRepositoryDiffRequest >> commandForTool: aTool [
 MCPRepositoryDiffRequest >> initializeFromRequest: request [
 
 	repositoryReference := MCPRepositoryReferenceSpec fromRequest:
-		                       request
+		                       request.
+	^ self
 ]
 
 { #category : 'accessing' }

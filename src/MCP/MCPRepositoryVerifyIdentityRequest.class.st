@@ -82,24 +82,21 @@ MCPRepositoryVerifyIdentityRequest >> initializeFromRequest: request [
 	branchName := request stringArgumentNamed: 'branchName'.
 	hasSubdirectory := request hasArgumentNamed: 'subdirectory'.
 	hasPackageNames := request hasArgumentNamed: 'packageNames'.
-	hasModifiedPackageNames := request hasArgumentNamed:
-		                           'modifiedPackageNames'.
+	hasModifiedPackageNames := request hasArgumentNamed: 'modifiedPackageNames'.
 	hasIsModified := request hasArgumentNamed: 'isModified'.
 	hasSubdirectory ifTrue: [
-			subdirectory := self
-				                stringArgumentNamed: 'subdirectory'
-				                preservingEmptyFrom: request ].
+		subdirectory := self
+			                stringArgumentNamed: 'subdirectory'
+			                preservingEmptyFrom: request ].
 	hasPackageNames ifTrue: [
-			packageNames := request uniqueStringCollectionArgumentNamed:
-				                'packageNames' ].
+		packageNames := request uniqueStringCollectionArgumentNamed:
+			                'packageNames' ].
 	hasModifiedPackageNames ifTrue: [
-			modifiedPackageNames := request
-				                        uniqueStringCollectionArgumentNamed:
-				                        'modifiedPackageNames' ].
+		modifiedPackageNames := request uniqueStringCollectionArgumentNamed:
+			                        'modifiedPackageNames' ].
 	hasIsModified ifTrue: [
-			isModified := request
-				              booleanArgumentNamed: 'isModified'
-				              default: false ]
+		isModified := request booleanArgumentNamed: 'isModified' default: false ].
+	^ self
 ]
 
 { #category : 'accessing' }

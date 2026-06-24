@@ -175,7 +175,8 @@ MCPDebugStateInfo >> record [
 { #category : 'accessing' }
 MCPDebugStateInfo >> record: aRecord [
 
-	record := aRecord
+	record := aRecord.
+	^ self
 ]
 
 { #category : 'accessing' }

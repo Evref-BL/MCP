@@ -65,7 +65,8 @@ MCPDebugToolResult >> initializeStatus: aStatus summary: aSummary data: aDiction
 	summary := aSummary.
 	data := aDictionary.
 	warnings := warningCollection.
-	errorDetails := detailsDictionary
+	errorDetails := detailsDictionary.
+	^ self
 ]
 
 { #category : 'testing' }

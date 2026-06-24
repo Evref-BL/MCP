@@ -199,7 +199,8 @@ MCPDebugRepairAnalyzer >> record [
 { #category : 'accessing' }
 MCPDebugRepairAnalyzer >> record: aRecord [
 
-	record := aRecord
+	record := aRecord.
+	^ self
 ]
 
 { #category : 'private - actions' }
@@ -245,7 +246,8 @@ MCPDebugRepairAnalyzer >> request [
 { #category : 'accessing' }
 MCPDebugRepairAnalyzer >> request: aRequest [
 
-	request := aRequest
+	request := aRequest.
+	^ self
 ]
 
 { #category : 'private - contexts' }
