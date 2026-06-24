@@ -73,7 +73,9 @@ MCP >> executeTool: tool named: toolName withParams: arguments [
 		                 input: arguments.
 	^ [
 		  request := tool requestFromToolCallArguments: arguments.
-		  result := tool executeWithRequest: request.
+		  result := tool
+			            executeWithRequest: request
+			            usingPolicy: self toolExposurePolicy.
 		  toolResult := result asMCPStructureCallToolResult.
 		  self saveImageAfterSuccessfulTool: tool result: toolResult.
 		  self monitoring
@@ -273,9 +275,11 @@ MCP >> restart [
 MCP >> rpcCallToolCallWithParams: arguments [
 
 	| callRequest callTool request targetTool |
-	callTool := MCPToolCallTool new
-		            toolExposurePolicy: self toolExposurePolicy;
-		            yourself.
+	callTool := MCPToolRegistry
+		            toolNamed: MCPToolCallTool toolName
+		            ifAbsent: [
+		            Error signal: 'tool_call is not registered.' ]
+		            usingPolicy: self toolExposurePolicy.
 	^ [
 		  request := callTool requestFromToolCallArguments: arguments.
 		  callRequest := callTool parsedRequestFromToolRequest: request.
@@ -334,7 +338,7 @@ MCP >> rpcToolCall: name withParams: arguments [
 	toolsList
 		at: name
 		ifPresent: [ :tool |
-				name = MCPToolCallTool new name ifTrue: [
+				name = MCPToolCallTool toolName ifTrue: [
 					^ self rpcCallToolCallWithParams: arguments ].
 				^ self executeTool: tool named: name withParams: arguments ]
 		ifAbsent: [ JRPCNonExistentHandler signal: name ]

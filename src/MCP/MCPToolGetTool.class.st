@@ -127,10 +127,21 @@ MCPToolGetTool >> defaultTitle [
 MCPToolGetTool >> executeWithRequest: request [
 
 	^ self
+		  executeWithRequest: request
+		  usingPolicy: MCPToolExposurePolicy default
+]
+
+{ #category : 'executing' }
+MCPToolGetTool >> executeWithRequest: request usingPolicy: aToolExposurePolicy [
+
+	^ self
 		  executeParsedRequestFrom: request
 		  do: [ :getRequest |
 				  | contract data |
-				  data := (self commandForRequest: getRequest) execute.
+				  data := (MCPGetToolCommand
+					           tool: self
+					           request: getRequest
+					           toolExposurePolicy: aToolExposurePolicy) execute.
 				  contract := data at: #tool.
 				  self
 					  successResultText: 'Tool ' , (contract at: #name) , ' found.'

@@ -8,7 +8,8 @@ Class {
 	#superclass : 'Object',
 	#instVars : [
 		'tool',
-		'request'
+		'request',
+		'toolExposurePolicy'
 	],
 	#category : 'MCP-Commands',
 	#package : 'MCP',
@@ -18,9 +19,19 @@ Class {
 { #category : 'instance creation' }
 MCPSearchToolsCommand class >> tool: aTool request: aRequest [
 
+	^ self
+		  tool: aTool
+		  request: aRequest
+		  toolExposurePolicy: MCPToolExposurePolicy default
+]
+
+{ #category : 'instance creation' }
+MCPSearchToolsCommand class >> tool: aTool request: aRequest toolExposurePolicy: aToolExposurePolicy [
+
 	^ self new
 		  tool: aTool;
 		  request: aRequest;
+		  toolExposurePolicy: aToolExposurePolicy;
 		  yourself
 ]
 
@@ -32,11 +43,11 @@ MCPSearchToolsCommand >> execute [
 		         toolsMatchingQuery: request query
 		         group: request group
 		         limit: request limit
-		         usingPolicy: tool toolExposurePolicy.
+		         usingPolicy: self toolExposurePolicy.
 	^ { (#tools -> (tools collect: [ :each |
 			    MCPToolRegistry
 				    searchMetadataForTool: each
-				    usingPolicy: tool toolExposurePolicy ]) asArray) }
+				    usingPolicy: self toolExposurePolicy ]) asArray) }
 		  asDictionary
 ]
 
@@ -62,4 +73,17 @@ MCPSearchToolsCommand >> tool [
 MCPSearchToolsCommand >> tool: anObject [
 
 	tool := anObject
+]
+
+{ #category : 'accessing' }
+MCPSearchToolsCommand >> toolExposurePolicy [
+
+	^ toolExposurePolicy ifNil: [ MCPToolExposurePolicy default ]
+]
+
+{ #category : 'accessing' }
+MCPSearchToolsCommand >> toolExposurePolicy: aToolExposurePolicy [
+
+	toolExposurePolicy := aToolExposurePolicy ifNil: [
+		                      MCPToolExposurePolicy default ]
 ]

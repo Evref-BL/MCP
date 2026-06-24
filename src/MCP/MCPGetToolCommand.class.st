@@ -8,7 +8,8 @@ Class {
 	#superclass : 'Object',
 	#instVars : [
 		'tool',
-		'request'
+		'request',
+		'toolExposurePolicy'
 	],
 	#category : 'MCP-Commands',
 	#package : 'MCP',
@@ -18,9 +19,19 @@ Class {
 { #category : 'instance creation' }
 MCPGetToolCommand class >> tool: aTool request: aRequest [
 
+	^ self
+		  tool: aTool
+		  request: aRequest
+		  toolExposurePolicy: MCPToolExposurePolicy default
+]
+
+{ #category : 'instance creation' }
+MCPGetToolCommand class >> tool: aTool request: aRequest toolExposurePolicy: aToolExposurePolicy [
+
 	^ self new
 		  tool: aTool;
 		  request: aRequest;
+		  toolExposurePolicy: aToolExposurePolicy;
 		  yourself
 ]
 
@@ -32,10 +43,10 @@ MCPGetToolCommand >> execute [
 		               toolNamed: request toolName
 		               ifAbsent: [
 		               Error signal: 'Unknown MCP tool: ' , request toolName ]
-		               usingPolicy: tool toolExposurePolicy.
+		               usingPolicy: self toolExposurePolicy.
 	^ { (#tool -> (MCPToolRegistry
 		    contractForTool: catalogTool
-		    usingPolicy: tool toolExposurePolicy
+		    usingPolicy: self toolExposurePolicy
 		    includeOutputSchema: request includeOutputSchema)) }
 		  asDictionary
 ]
@@ -62,4 +73,17 @@ MCPGetToolCommand >> tool [
 MCPGetToolCommand >> tool: anObject [
 
 	tool := anObject
+]
+
+{ #category : 'accessing' }
+MCPGetToolCommand >> toolExposurePolicy [
+
+	^ toolExposurePolicy ifNil: [ MCPToolExposurePolicy default ]
+]
+
+{ #category : 'accessing' }
+MCPGetToolCommand >> toolExposurePolicy: aToolExposurePolicy [
+
+	toolExposurePolicy := aToolExposurePolicy ifNil: [
+		                      MCPToolExposurePolicy default ]
 ]
