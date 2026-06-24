@@ -13,10 +13,8 @@ Class {
 MCPExportRepositoryCommand >> execute [
 
 	| changedPackageNames diff modifiedPaths repository result restoredOrderOnlyPaths tonelSnapshot |
-	^ self tool
-		  executeMutationAction: 'export'
-		  force: false
-		  requestedContext: self request requestedContext
+	^ self
+		  executeRepositoryAction: 'export'
 		  work: [
 				  repository := self request repository.
 				  diff := repository workingCopyDiff.

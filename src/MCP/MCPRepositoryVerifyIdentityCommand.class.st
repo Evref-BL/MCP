@@ -5,21 +5,11 @@ It performs a read-only identity assertion over a registered Iceberg repository 
 "
 Class {
 	#name : 'MCPRepositoryVerifyIdentityCommand',
-	#superclass : 'Object',
-	#instVars : [
-		'tool',
-		'request'
-	],
+	#superclass : 'MCPRepositoryCommand',
 	#category : 'MCP-Commands',
 	#package : 'MCP',
 	#tag : 'Commands'
 }
-
-{ #category : 'instance creation' }
-MCPRepositoryVerifyIdentityCommand class >> tool: aTool request: aRequest [
-
-	^ self new initializeTool: aTool request: aRequest
-]
 
 { #category : 'private - validation' }
 MCPRepositoryVerifyIdentityCommand >> addMismatchIfExpected: expectedValue actual: actualValue field: fieldName checkedFields: checkedFields mismatches: mismatches [
@@ -145,35 +135,24 @@ MCPRepositoryVerifyIdentityCommand >> checkedFieldsAndMismatchesFor: repositoryI
 MCPRepositoryVerifyIdentityCommand >> execute [
 
 	| repository result validation |
-	^ self tool
-		  executeMutationAction: 'verifyIdentity'
-		  force: false
-		  requestedContext: self request requestedContext
-		  work: [
-			  repository := self repositoryForVerifyIdentity.
-			  validation := self validateRepository: repository.
-			  result := MCPRepositoryVerifyIdentityResult
-				            repository: repository
-				            checkedFields:
-				            (validation at: #checkedFields) ]
-		  successResult: [ :warningMessages |
-			  self tool
-				  successResultText:
-				  'Repository identity verification passed for '
-				  , result repositoryInfo name , '.'
-				  data: (self tool dataForRepositoryVerifyIdentityResult: result)
-				  warnings: warningMessages ]
-		  failureSummary: [ :error |
-			  'Failed to verify repository identity: '
-			  , (error messageText ifNil: [ error asString ]) ]
-]
-
-{ #category : 'initialization' }
-MCPRepositoryVerifyIdentityCommand >> initializeTool: aTool request: aRequest [
-
-	tool := aTool.
-	request := aRequest.
 	^ self
+		  executeRepositoryAction: 'verifyIdentity'
+		  work: [
+				  repository := self repositoryForVerifyIdentity.
+				  validation := self validateRepository: repository.
+				  result := MCPRepositoryVerifyIdentityResult
+					            repository: repository
+					            checkedFields: (validation at: #checkedFields) ]
+		  successResult: [ :warningMessages |
+				  self tool
+					  successResultText:
+						  'Repository identity verification passed for '
+						  , result repositoryInfo name , '.'
+					  data: (self tool dataForRepositoryVerifyIdentityResult: result)
+					  warnings: warningMessages ]
+		  failureSummary: [ :error |
+				  'Failed verify repository identity: '
+				  , (error messageText ifNil: [ error asString ]) ]
 ]
 
 { #category : 'private - resolving' }
@@ -188,12 +167,6 @@ MCPRepositoryVerifyIdentityCommand >> repositoryForVerifyIdentity [
 						   name: self request repositoryReference name
 						   location: nil) repository ]
 				  ifFalse: [ error signal ] ]
-]
-
-{ #category : 'accessing' }
-MCPRepositoryVerifyIdentityCommand >> request [
-
-	^ request
 ]
 
 { #category : 'private - resolving' }
@@ -236,12 +209,6 @@ MCPRepositoryVerifyIdentityCommand >> signalMissingExpectedIdentityFields [
 MCPRepositoryVerifyIdentityCommand >> sortedStringsFrom: aCollection [
 
 	^ (aCollection collect: [ :each | each asString ] as: Array) sort
-]
-
-{ #category : 'accessing' }
-MCPRepositoryVerifyIdentityCommand >> tool [
-
-	^ tool
 ]
 
 { #category : 'private - validation' }

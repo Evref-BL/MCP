@@ -3,30 +3,18 @@ Command wrapper for repository_branch_checkout. It asks Iceberg to check out the
 "
 Class {
 	#name : 'MCPCheckoutRepositoryBranchCommand',
-	#superclass : 'Object',
-	#instVars : [
-		'tool',
-		'request'
-	],
+	#superclass : 'MCPRepositoryCommand',
 	#category : 'MCP-Commands',
 	#package : 'MCP',
 	#tag : 'Commands'
 }
 
-{ #category : 'instance creation' }
-MCPCheckoutRepositoryBranchCommand class >> tool: aTool request: aRequest [
-
-	^ self new initializeTool: aTool request: aRequest
-]
-
 { #category : 'executing' }
 MCPCheckoutRepositoryBranchCommand >> execute [
 
 	| beforeInfo branch repository result |
-	^ self tool
-		  executeMutationAction: 'checkoutBranch'
-		  force: false
-		  requestedContext: self request requestedContext
+	^ self
+		  executeRepositoryAction: 'checkoutBranch'
 		  work: [
 				  repository := self request repository.
 				  beforeInfo := MCPRepositoryInfo fromRepository: repository.
@@ -39,29 +27,10 @@ MCPCheckoutRepositoryBranchCommand >> execute [
 				  self tool
 					  successResultText:
 						  'Checked out repository ' , result repositoryInfo name
-						  , ' to branch ' , self request branchName , '.'
+						  , ' branch ' , self request branchName , '.'
 					  data: (self tool dataForRepositoryCheckoutBranchResult: result)
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
 				  'Failed to check out repository branch: '
 				  , (error messageText ifNil: [ error asString ]) ]
-]
-
-{ #category : 'initialization' }
-MCPCheckoutRepositoryBranchCommand >> initializeTool: aTool request: aRequest [
-
-	tool := aTool.
-	request := aRequest
-]
-
-{ #category : 'accessing' }
-MCPCheckoutRepositoryBranchCommand >> request [
-
-	^ request
-]
-
-{ #category : 'accessing' }
-MCPCheckoutRepositoryBranchCommand >> tool [
-
-	^ tool
 ]

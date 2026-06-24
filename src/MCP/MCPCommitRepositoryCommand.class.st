@@ -13,10 +13,8 @@ Class {
 MCPCommitRepositoryCommand >> execute [
 
 	| changedPackageNames diff repository result |
-	^ self tool
-		  executeMutationAction: 'commit'
-		  force: false
-		  requestedContext: self request requestedContext
+	^ self
+		  executeRepositoryAction: 'commit'
 		  work: [
 				  repository := self request repository.
 				  (self repositoryHasChangesToCommit: repository) ifFalse: [

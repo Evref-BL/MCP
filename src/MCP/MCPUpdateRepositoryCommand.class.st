@@ -3,10 +3,8 @@ Command wrapper for repository_update. It applies repository package membership 
 "
 Class {
 	#name : 'MCPUpdateRepositoryCommand',
-	#superclass : 'Object',
+	#superclass : 'MCPRepositoryCommand',
 	#instVars : [
-		'tool',
-		'request',
 		'addedPackageNames',
 		'removedPackageNames'
 	],
@@ -14,12 +12,6 @@ Class {
 	#package : 'MCP',
 	#tag : 'Commands'
 }
-
-{ #category : 'instance creation' }
-MCPUpdateRepositoryCommand class >> tool: aTool request: aRequest [
-
-	^ self new initializeTool: aTool request: aRequest
-]
 
 { #category : 'private - packages' }
 MCPUpdateRepositoryCommand >> addPackageNamed: packageName to: aRepository [
@@ -53,44 +45,40 @@ MCPUpdateRepositoryCommand >> currentPackageNamesIn: aRepository [
 MCPUpdateRepositoryCommand >> execute [
 
 	| repository result |
-	^ self tool
-		  executeMutationAction: 'update'
-		  force: false
-		  requestedContext: self request requestedContext
+	^ self
+		  executeRepositoryAction: 'update'
 		  work: [
-			  self request hasUpdates ifFalse: [ self signalNoUpdateRequested ].
-			  repository := self request repository.
-			  (self request hasSuppliedPropertyNamed: 'subdirectory') ifTrue: [
-				  self setSubdirectoryOn: repository ].
-			  (self request hasSuppliedPropertyNamed: 'packageNames') ifTrue: [
-				  self replacePackagesIn: repository ].
-			  self addPackagesTo: repository.
-			  self removePackagesFrom: repository.
-			  result := MCPRepositoryUpdateResult
-				            repository: repository
-				            updateActions:
-				            self request requestedRepositoryUpdateActions
-				            addedPackageNames: self sortedAddedPackageNames
-				            removedPackageNames: self sortedRemovedPackageNames ]
+				  self request hasUpdates ifFalse: [ self signalNoUpdateRequested ].
+				  repository := self request repository.
+				  (self request hasSuppliedPropertyNamed: 'subdirectory') ifTrue: [
+					  self setSubdirectoryOn: repository ].
+				  (self request hasSuppliedPropertyNamed: 'packageNames') ifTrue: [
+					  self replacePackagesIn: repository ].
+				  self addPackagesTo: repository.
+				  self removePackagesFrom: repository.
+				  result := MCPRepositoryUpdateResult
+					            repository: repository
+					            updateActions:
+					            self request requestedRepositoryUpdateActions
+					            addedPackageNames: self sortedAddedPackageNames
+					            removedPackageNames: self sortedRemovedPackageNames ]
 		  successResult: [ :warningMessages |
-			  self tool
-				  successResultText:
-				  'Updated repository ' , result repositoryInfo name , '.'
-				  data: (self tool dataForRepositoryUpdateResult: result)
-				  warnings: warningMessages ]
+				  self tool
+					  successResultText:
+					  'Updated repository ' , result repositoryInfo name , '.'
+					  data: (self tool dataForRepositoryUpdateResult: result)
+					  warnings: warningMessages ]
 		  failureSummary: [ :error |
-			  'Failed to update repository: '
-			  , (error messageText ifNil: [ error asString ]) ]
+				  'Failed to update repository: '
+				  , (error messageText ifNil: [ error asString ]) ]
 ]
 
 { #category : 'initialization' }
 MCPUpdateRepositoryCommand >> initializeTool: aTool request: aRequest [
 
-	tool := aTool.
-	request := aRequest.
+	super initializeTool: aTool request: aRequest.
 	addedPackageNames := OrderedCollection new.
-	removedPackageNames := OrderedCollection new.
-	^ self
+	removedPackageNames := OrderedCollection new
 ]
 
 { #category : 'private' }
@@ -139,12 +127,6 @@ MCPUpdateRepositoryCommand >> replacePackagesIn: aRepository [
 		thenDo: [ :each | self addPackageNamed: each to: aRepository ]
 ]
 
-{ #category : 'accessing' }
-MCPUpdateRepositoryCommand >> request [
-
-	^ request
-]
-
 { #category : 'private - metadata' }
 MCPUpdateRepositoryCommand >> setSubdirectoryOn: aRepository [
 
@@ -171,10 +153,4 @@ MCPUpdateRepositoryCommand >> sortedAddedPackageNames [
 MCPUpdateRepositoryCommand >> sortedRemovedPackageNames [
 
 	^ self normalizedPackageNames: self removedPackageNames
-]
-
-{ #category : 'accessing' }
-MCPUpdateRepositoryCommand >> tool [
-
-	^ tool
 ]

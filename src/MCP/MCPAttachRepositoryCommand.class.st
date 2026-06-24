@@ -31,10 +31,8 @@ MCPAttachRepositoryCommand >> createRepository [
 MCPAttachRepositoryCommand >> execute [
 
 	| repository result |
-	^ self tool
-		  executeMutationAction: 'attach'
-		  force: false
-		  requestedContext: self request requestedContext
+	^ self
+		  executeRepositoryAction: 'attach'
 		  work: [
 				  repository := self createRepository.
 				  self addRequestedPackagesTo: repository.

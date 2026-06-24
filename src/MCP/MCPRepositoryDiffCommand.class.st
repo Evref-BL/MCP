@@ -13,28 +13,26 @@ Class {
 MCPRepositoryDiffCommand >> execute [
 
 	| changedPackageNames diff modifiedPaths repository result |
-	^ self tool
-		  executeMutationAction: 'diff'
-		  force: false
-		  requestedContext: self request requestedContext
+	^ self
+		  executeRepositoryAction: 'diff'
 		  work: [
-			  repository := self request repository.
-			  diff := repository workingCopyDiff.
-			  changedPackageNames := self changedPackageNamesFromDiff: diff.
-			  modifiedPaths := self modifiedPathsFromDiff: diff.
-			  result := MCPRepositoryDiffResult
-				            repository: repository
-				            changedPackageNames: changedPackageNames
-				            modifiedPaths: modifiedPaths
-				            isEmpty: diff isEmpty ]
+				  repository := self request repository.
+				  diff := repository workingCopyDiff.
+				  changedPackageNames := self changedPackageNamesFromDiff: diff.
+				  modifiedPaths := self modifiedPathsFromDiff: diff.
+				  result := MCPRepositoryDiffResult
+					            repository: repository
+					            changedPackageNames: changedPackageNames
+					            modifiedPaths: modifiedPaths
+					            isEmpty: diff isEmpty ]
 		  successResult: [ :warningMessages |
-			  self tool
-				  successResultText:
-				  'Computed repository diff for ' , result repositoryInfo name
-				  , '.'
-				  data: (self tool dataForRepositoryDiffResult: result)
-				  warnings: warningMessages ]
+				  self tool
+					  successResultText:
+					  'Computed repository diff for ' , result repositoryInfo name
+					  , '.'
+					  data: (self tool dataForRepositoryDiffResult: result)
+					  warnings: warningMessages ]
 		  failureSummary: [ :error |
-			  'Failed to compute repository diff: '
-			  , (error messageText ifNil: [ error asString ]) ]
+				  'Failed repository diff: '
+				  , (error messageText ifNil: [ error asString ]) ]
 ]
