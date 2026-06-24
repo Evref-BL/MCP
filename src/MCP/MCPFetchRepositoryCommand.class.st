@@ -26,7 +26,7 @@ MCPFetchRepositoryCommand >> execute [
 				  self tool
 					  successResultText:
 					  'Fetched repository ' , result repositoryInfo name , '.'
-					  data: (self tool dataForRepositoryFetchResult: result)
+					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
 				  'Failed to fetch repository: '

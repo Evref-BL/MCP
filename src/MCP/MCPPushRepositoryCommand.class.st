@@ -23,7 +23,7 @@ MCPPushRepositoryCommand >> execute [
 				  self tool
 					  successResultText:
 					  'Pushed repository ' , result repositoryInfo name , '.'
-					  data: (self tool dataForRepositoryPushResult: result)
+					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
 				  'Failed to push repository: '

@@ -41,7 +41,7 @@ MCPAttachRepositoryCommand >> execute [
 				  self tool
 					  successResultText:
 					  'Attached repository ' , self request name , '.'
-					  data: (self tool dataForRepositoryAttachResult: result)
+					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
 				  'Failed to attach repository ' , self request name , ': '

@@ -59,93 +59,9 @@ MCPToolRepositoryOperation >> commandForRequest: repositoryRequest [
 ]
 
 { #category : 'private - results' }
-MCPToolRepositoryOperation >> dataForRepositoryAdoptHeadResult: aResult [
-
-	^ self dataForRepositoryResult: aResult
-]
-
-{ #category : 'private - results' }
-MCPToolRepositoryOperation >> dataForRepositoryAttachResult: aResult [
-
-	^ self dataForRepositoryResult: aResult
-]
-
-{ #category : 'private - results' }
-MCPToolRepositoryOperation >> dataForRepositoryCheckoutBranchResult: aResult [
-
-	^ self dataForRepositoryResult: aResult
-]
-
-{ #category : 'private - results' }
-MCPToolRepositoryOperation >> dataForRepositoryCommitResult: aResult [
-
-	^ self dataForRepositoryResult: aResult
-]
-
-{ #category : 'private - results' }
-MCPToolRepositoryOperation >> dataForRepositoryCreateBranchResult: aResult [
-
-	^ self dataForRepositoryResult: aResult
-]
-
-{ #category : 'private - results' }
-MCPToolRepositoryOperation >> dataForRepositoryCreateResult: aResult [
-
-	^ self dataForRepositoryResult: aResult
-]
-
-{ #category : 'private - results' }
-MCPToolRepositoryOperation >> dataForRepositoryDiffResult: aResult [
-
-	^ self dataForRepositoryResult: aResult
-]
-
-{ #category : 'private - results' }
-MCPToolRepositoryOperation >> dataForRepositoryExportResult: aResult [
-
-	^ self dataForRepositoryResult: aResult
-]
-
-{ #category : 'private - results' }
-MCPToolRepositoryOperation >> dataForRepositoryFetchResult: aResult [
-
-	^ self dataForRepositoryResult: aResult
-]
-
-{ #category : 'private - results' }
-MCPToolRepositoryOperation >> dataForRepositoryPullResult: aResult [
-
-	^ self dataForRepositoryResult: aResult
-]
-
-{ #category : 'private - results' }
-MCPToolRepositoryOperation >> dataForRepositoryPushResult: aResult [
-
-	^ self dataForRepositoryResult: aResult
-]
-
-{ #category : 'private - results' }
 MCPToolRepositoryOperation >> dataForRepositoryResult: aResult [
 
 	^ aResult asDictionary
-]
-
-{ #category : 'private - results' }
-MCPToolRepositoryOperation >> dataForRepositorySwitchBranchResult: aResult [
-
-	^ self dataForRepositoryResult: aResult
-]
-
-{ #category : 'private - results' }
-MCPToolRepositoryOperation >> dataForRepositoryUpdateResult: aResult [
-
-	^ self dataForRepositoryResult: aResult
-]
-
-{ #category : 'private - results' }
-MCPToolRepositoryOperation >> dataForRepositoryVerifyIdentityResult: aResult [
-
-	^ self dataForRepositoryResult: aResult
 ]
 
 { #category : 'metadata' }

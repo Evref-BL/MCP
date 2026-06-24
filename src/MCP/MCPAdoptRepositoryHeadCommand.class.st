@@ -51,7 +51,7 @@ MCPAdoptRepositoryHeadCommand >> execute [
 					  successResultText:
 					  'Adopted repository HEAD for ' , result repositoryInfo name
 					  , '.'
-					  data: (self tool dataForRepositoryAdoptHeadResult: result)
+					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
 				  'Failed adopt repository HEAD: '

@@ -28,7 +28,7 @@ MCPCheckoutRepositoryBranchCommand >> execute [
 					  successResultText:
 						  'Checked out repository ' , result repositoryInfo name
 						  , ' branch ' , self request branchName , '.'
-					  data: (self tool dataForRepositoryCheckoutBranchResult: result)
+					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
 				  'Failed to check out repository branch: '

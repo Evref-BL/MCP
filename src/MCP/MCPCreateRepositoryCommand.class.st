@@ -43,7 +43,7 @@ MCPCreateRepositoryCommand >> execute [
 				  self tool
 					  successResultText:
 					  'Created repository ' , self request name , '.'
-					  data: (self tool dataForRepositoryCreateResult: result)
+					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
 				  'Failed create repository ' , self request name , ': '

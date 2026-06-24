@@ -30,7 +30,7 @@ MCPRepositoryDiffCommand >> execute [
 					  successResultText:
 					  'Computed repository diff for ' , result repositoryInfo name
 					  , '.'
-					  data: (self tool dataForRepositoryDiffResult: result)
+					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
 				  'Failed repository diff: '

@@ -39,7 +39,7 @@ MCPExportRepositoryCommand >> execute [
 				  self tool
 					  successResultText:
 					  'Exported repository ' , result repositoryInfo name , '.'
-					  data: (self tool dataForRepositoryExportResult: result)
+					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
 				  'Failed to export repository: '

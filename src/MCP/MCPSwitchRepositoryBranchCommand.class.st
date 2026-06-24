@@ -27,7 +27,7 @@ MCPSwitchRepositoryBranchCommand >> execute [
 					  successResultText:
 						  'Switched repository ' , result repositoryInfo name
 						  , ' branch ' , self request branchName , '.'
-					  data: (self tool dataForRepositorySwitchBranchResult: result)
+					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
 				  'Failed to switch repository branch: '

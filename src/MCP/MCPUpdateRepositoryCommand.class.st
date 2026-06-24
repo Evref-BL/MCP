@@ -66,7 +66,7 @@ MCPUpdateRepositoryCommand >> execute [
 				  self tool
 					  successResultText:
 					  'Updated repository ' , result repositoryInfo name , '.'
-					  data: (self tool dataForRepositoryUpdateResult: result)
+					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
 				  'Failed to update repository: '

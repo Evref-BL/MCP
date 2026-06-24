@@ -148,7 +148,7 @@ MCPRepositoryVerifyIdentityCommand >> execute [
 					  successResultText:
 						  'Repository identity verification passed for '
 						  , result repositoryInfo name , '.'
-					  data: (self tool dataForRepositoryVerifyIdentityResult: result)
+					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
 				  'Failed verify repository identity: '

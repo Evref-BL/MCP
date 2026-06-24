@@ -37,7 +37,7 @@ MCPCommitRepositoryCommand >> execute [
 				  self tool
 					  successResultText:
 					  'Committed repository ' , result repositoryInfo name , '.'
-					  data: (self tool dataForRepositoryCommitResult: result)
+					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
 				  'Failed to commit repository: '

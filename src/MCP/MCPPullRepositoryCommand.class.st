@@ -26,7 +26,7 @@ MCPPullRepositoryCommand >> execute [
 				  self tool
 					  successResultText:
 					  'Pulled repository ' , result repositoryInfo name , '.'
-					  data: (self tool dataForRepositoryPullResult: result)
+					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
 				  'Failed to pull repository: '
