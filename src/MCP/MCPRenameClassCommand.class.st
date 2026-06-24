@@ -5,7 +5,7 @@ It preserves the old class name for reporting and returns the renamed class meta
 "
 Class {
 	#name : 'MCPRenameClassCommand',
-	#superclass : 'Object',
+	#superclass : 'MCPClassCommand',
 	#instVars : [
 		'className',
 		'newClassName',

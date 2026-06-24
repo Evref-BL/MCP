@@ -3,21 +3,11 @@ Command that returns method source and optional variable-reference DTOs for meth
 "
 Class {
 	#name : 'MCPGetMethodCommand',
-	#superclass : 'Object',
-	#instVars : [
-		'tool',
-		'request'
-	],
+	#superclass : 'MCPToolRequestCommand',
 	#category : 'MCP-Commands',
 	#package : 'MCP',
 	#tag : 'Commands'
 }
-
-{ #category : 'instance creation' }
-MCPGetMethodCommand class >> tool: aTool request: aRequest [
-
-	^ self new initializeTool: aTool request: aRequest
-]
 
 { #category : 'executing' }
 MCPGetMethodCommand >> execute [
@@ -43,24 +33,4 @@ MCPGetMethodCommand >> execute [
 			                      methodBehavior: methodBehavior.
 		data at: #variableReferences put: variableReferences ].
 	^ MCPGetMethodResult data: data externalVariableCount: nil
-]
-
-{ #category : 'initialization' }
-MCPGetMethodCommand >> initializeTool: aTool request: aRequest [
-
-	tool := aTool.
-	request := aRequest.
-	^ self
-]
-
-{ #category : 'accessing' }
-MCPGetMethodCommand >> request [
-
-	^ request
-]
-
-{ #category : 'accessing' }
-MCPGetMethodCommand >> tool [
-
-	^ tool
 ]

@@ -3,7 +3,7 @@ Replaces the instance-side trait composition of an existing class and returns a 
 "
 Class {
 	#name : 'MCPReplaceClassTraitsCommand',
-	#superclass : 'Object',
+	#superclass : 'MCPClassCommand',
 	#instVars : [
 		'className',
 		'traitNames'

@@ -3,7 +3,7 @@ Replaces the class variables of an existing class using the Shift class installe
 "
 Class {
 	#name : 'MCPReplaceClassSharedVariablesCommand',
-	#superclass : 'Object',
+	#superclass : 'MCPClassCommand',
 	#instVars : [
 		'className',
 		'sharedVariableNames'

@@ -5,7 +5,7 @@ It records the removed class metadata and whether subclasses were reparented.
 "
 Class {
 	#name : 'MCPRemoveClassResult',
-	#superclass : 'Object',
+	#superclass : 'MCPClassResult',
 	#instVars : [
 		'classInfo',
 		'wasEmpty',
@@ -32,7 +32,7 @@ MCPRemoveClassResult class >> classInfo: aClassInfo wasEmpty: aBoolean reparente
 MCPRemoveClassResult >> asDictionary [
 
 	| data |
-	data := self classInfo asDictionary copy.
+	data := self newClassInfoDictionary.
 	data at: #wasEmpty put: self wasEmpty.
 	data
 		at: #reparentedToSuperclassName

@@ -3,11 +3,7 @@ Abstract base for repository command objects. It owns the shared tool/request st
 "
 Class {
 	#name : 'MCPRepositoryCommand',
-	#superclass : 'Object',
-	#instVars : [
-		'tool',
-		'request'
-	],
+	#superclass : 'MCPToolRequestCommand',
 	#category : 'MCP-Commands',
 	#package : 'MCP',
 	#tag : 'Commands'
@@ -17,14 +13,6 @@ Class {
 MCPRepositoryCommand class >> isAbstract [
 
 	^ self = MCPRepositoryCommand
-]
-
-{ #category : 'instance creation' }
-MCPRepositoryCommand class >> tool: aTool request: aRequest [
-
-	^ self new
-		  initializeTool: aTool request: aRequest;
-		  yourself
 ]
 
 { #category : 'private - execution' }
@@ -39,27 +27,8 @@ MCPRepositoryCommand >> executeRepositoryAction: actionName work: workBlock succ
 		  failureSummary: failureBlock
 ]
 
-{ #category : 'initialization' }
-MCPRepositoryCommand >> initializeTool: aTool request: aRequest [
-
-	tool := aTool.
-	request := aRequest
-]
-
-{ #category : 'accessing' }
-MCPRepositoryCommand >> request [
-
-	^ request
-]
-
 { #category : 'private' }
 MCPRepositoryCommand >> sortedStringsFrom: aCollection [
 
 	^ (aCollection collect: [ :each | each asString ]) asSet asArray sort
-]
-
-{ #category : 'accessing' }
-MCPRepositoryCommand >> tool [
-
-	^ tool
 ]

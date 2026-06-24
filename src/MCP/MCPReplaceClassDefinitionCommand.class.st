@@ -3,7 +3,7 @@ Replaces the slot shape of an existing class using the Shift class installer. Om
 "
 Class {
 	#name : 'MCPReplaceClassDefinitionCommand',
-	#superclass : 'Object',
+	#superclass : 'MCPClassCommand',
 	#instVars : [
 		'className',
 		'slotNames',

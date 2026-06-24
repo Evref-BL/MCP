@@ -3,7 +3,7 @@ Adds a slot to a class or metaclass through the refactoring engine.
 "
 Class {
 	#name : 'MCPAddSlotCommand',
-	#superclass : 'Object',
+	#superclass : 'MCPClassSlotCommand',
 	#instVars : [
 		'className',
 		'slotName',
@@ -48,12 +48,6 @@ MCPAddSlotCommand >> classSide: aBoolean [
 	classSide := aBoolean
 ]
 
-{ #category : 'private' }
-MCPAddSlotCommand >> currentClass [
-
-	^ MCPImageLookup classNamed: self className
-]
-
 { #category : 'executing' }
 MCPAddSlotCommand >> execute [
 
@@ -66,14 +60,6 @@ MCPAddSlotCommand >> execute [
 		  classInfo: (MCPClassInfo fromClass: updatedClass)
 		  slotName: self slotName
 		  classSide: self classSide
-]
-
-{ #category : 'private' }
-MCPAddSlotCommand >> refactoringBehaviorForClass: aClass [
-
-	^ self classSide
-		  ifTrue: [ aClass classSide ]
-		  ifFalse: [ aClass ]
 ]
 
 { #category : 'private' }

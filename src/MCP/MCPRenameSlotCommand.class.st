@@ -3,7 +3,7 @@ Renames a slot on a class. Instance-side renames use the refactoring engine. Cla
 "
 Class {
 	#name : 'MCPRenameSlotCommand',
-	#superclass : 'Object',
+	#superclass : 'MCPClassSlotCommand',
 	#instVars : [
 		'className',
 		'slotName',
@@ -89,12 +89,6 @@ MCPRenameSlotCommand >> classSideSlotValuesForBehavior: aBehavior [
 			values add:
 				eachObject -> (eachObject instVarNamed: self slotName asString) ] ].
 	^ values asArray
-]
-
-{ #category : 'private' }
-MCPRenameSlotCommand >> currentClass [
-
-	^ MCPImageLookup classNamed: self className
 ]
 
 { #category : 'executing' }

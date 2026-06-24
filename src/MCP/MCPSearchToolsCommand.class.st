@@ -5,10 +5,8 @@ This command supports the discoverable-tool workflow: agents can search by text 
 "
 Class {
 	#name : 'MCPSearchToolsCommand',
-	#superclass : 'Object',
+	#superclass : 'MCPToolRequestCommand',
 	#instVars : [
-		'tool',
-		'request',
 		'toolExposurePolicy'
 	],
 	#category : 'MCP-Commands',
@@ -29,8 +27,7 @@ MCPSearchToolsCommand class >> tool: aTool request: aRequest [
 MCPSearchToolsCommand class >> tool: aTool request: aRequest toolExposurePolicy: aToolExposurePolicy [
 
 	^ self new
-		  tool: aTool;
-		  request: aRequest;
+		  initializeTool: aTool request: aRequest;
 		  toolExposurePolicy: aToolExposurePolicy;
 		  yourself
 ]
@@ -49,30 +46,6 @@ MCPSearchToolsCommand >> execute [
 				    searchMetadataForTool: each
 				    usingPolicy: self toolExposurePolicy ]) asArray) }
 		  asDictionary
-]
-
-{ #category : 'accessing' }
-MCPSearchToolsCommand >> request [
-
-	^ request
-]
-
-{ #category : 'accessing' }
-MCPSearchToolsCommand >> request: anObject [
-
-	request := anObject
-]
-
-{ #category : 'accessing' }
-MCPSearchToolsCommand >> tool [
-
-	^ tool
-]
-
-{ #category : 'accessing' }
-MCPSearchToolsCommand >> tool: anObject [
-
-	tool := anObject
 ]
 
 { #category : 'accessing' }

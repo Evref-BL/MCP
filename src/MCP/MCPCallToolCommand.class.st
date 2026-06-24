@@ -5,51 +5,14 @@ This command is the dynamic dispatch path behind tool_call: it validates the req
 "
 Class {
 	#name : 'MCPCallToolCommand',
-	#superclass : 'Object',
-	#instVars : [
-		'tool',
-		'request'
-	],
+	#superclass : 'MCPToolRequestCommand',
 	#category : 'MCP-Commands',
 	#package : 'MCP',
 	#tag : 'Commands'
 }
 
-{ #category : 'instance creation' }
-MCPCallToolCommand class >> tool: aTool request: aRequest [
-
-	^ self new
-		  tool: aTool;
-		  request: aRequest;
-		  yourself
-]
-
 { #category : 'executing' }
 MCPCallToolCommand >> execute [
 
 	Error signal: 'tool_call requires MCP server call context.'
-]
-
-{ #category : 'accessing' }
-MCPCallToolCommand >> request [
-
-	^ request
-]
-
-{ #category : 'accessing' }
-MCPCallToolCommand >> request: anObject [
-
-	request := anObject
-]
-
-{ #category : 'accessing' }
-MCPCallToolCommand >> tool [
-
-	^ tool
-]
-
-{ #category : 'accessing' }
-MCPCallToolCommand >> tool: anObject [
-
-	tool := anObject
 ]

@@ -3,11 +3,9 @@ Command that evaluates Smalltalk code for the evaluate tool and returns a result
 "
 Class {
 	#name : 'MCPEvaluateCommand',
-	#superclass : 'Object',
+	#superclass : 'MCPToolRequestCommand',
 	#instVars : [
-		'request',
-		'resultPreviewCharacterLimit',
-		'tool'
+		'resultPreviewCharacterLimit'
 	],
 	#category : 'MCP-Commands',
 	#package : 'MCP',
@@ -58,12 +56,6 @@ MCPEvaluateCommand >> initializeTool: aTool request: aRequest resultPreviewChara
 ]
 
 { #category : 'accessing' }
-MCPEvaluateCommand >> request [
-
-	^ request
-]
-
-{ #category : 'accessing' }
 MCPEvaluateCommand >> resultPreviewCharacterLimit [
 
 	^ resultPreviewCharacterLimit
@@ -87,10 +79,4 @@ MCPEvaluateCommand >> syntaxFailureFor: aNotice [
 	^ MCPEvaluateResult
 		  errorSummary: (tool syntaxFailureMessageFor: aNotice)
 		  details: details
-]
-
-{ #category : 'accessing' }
-MCPEvaluateCommand >> tool [
-
-	^ tool
 ]

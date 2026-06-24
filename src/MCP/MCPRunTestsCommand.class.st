@@ -5,21 +5,11 @@ It resolves MCPTestRunRequest objects to MCPValidatedTestRunRequest objects, exe
 "
 Class {
 	#name : 'MCPRunTestsCommand',
-	#superclass : 'Object',
-	#instVars : [
-		'tool',
-		'request'
-	],
+	#superclass : 'MCPToolRequestCommand',
 	#category : 'MCP-Commands',
 	#package : 'MCP',
 	#tag : 'Commands'
 }
-
-{ #category : 'instance creation' }
-MCPRunTestsCommand class >> tool: aTool request: aRequest [
-
-	^ self new initializeTool: aTool request: aRequest
-]
 
 { #category : 'private' }
 MCPRunTestsCommand >> addTestCasesFrom: aTestOrSuite to: testCases [
@@ -104,14 +94,6 @@ MCPRunTestsCommand >> hasTimedOutAt: deadline [
 	^ (self millisecondsRemainingUntil: deadline) <= 0
 ]
 
-{ #category : 'initialization' }
-MCPRunTestsCommand >> initializeTool: aTool request: aRequest [
-
-	tool := aTool.
-	request := aRequest.
-	^ self
-]
-
 { #category : 'private - timeout' }
 MCPRunTestsCommand >> millisecondsRemainingUntil: deadline [
 
@@ -131,12 +113,6 @@ MCPRunTestsCommand >> refreshRegisteredRepositoryDirtyPackages [
 	IceRepository registry do: [ :repository |
 			repository isMissing ifFalse: [
 				repository workingCopy refreshDirtyPackages ] ]
-]
-
-{ #category : 'accessing' }
-MCPRunTestsCommand >> request [
-
-	^ request
 ]
 
 { #category : 'private' }
@@ -336,12 +312,6 @@ MCPRunTestsCommand >> testRunInfoForTestResult: aResult validatedRequest: valida
 		  selectedTestCount: selectedTestCount
 		  result: aResult
 		  issues: issues
-]
-
-{ #category : 'accessing' }
-MCPRunTestsCommand >> tool [
-
-	^ tool
 ]
 
 { #category : 'private' }

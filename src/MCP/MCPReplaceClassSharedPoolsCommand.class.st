@@ -3,7 +3,7 @@ Replaces the shared pools of an existing class using the Shift class installer a
 "
 Class {
 	#name : 'MCPReplaceClassSharedPoolsCommand',
-	#superclass : 'Object',
+	#superclass : 'MCPClassCommand',
 	#instVars : [
 		'className',
 		'sharedPoolNames'

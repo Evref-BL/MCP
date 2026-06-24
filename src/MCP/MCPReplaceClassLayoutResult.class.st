@@ -5,7 +5,7 @@ It carries the class state after replacement and the old/new layout class names 
 "
 Class {
 	#name : 'MCPReplaceClassLayoutResult',
-	#superclass : 'Object',
+	#superclass : 'MCPClassResult',
 	#instVars : [
 		'classInfo',
 		'oldLayoutClassName',
@@ -30,7 +30,7 @@ MCPReplaceClassLayoutResult class >> classInfo: aClassInfo oldLayoutClassName: o
 MCPReplaceClassLayoutResult >> asDictionary [
 
 	| data |
-	data := self classInfo asDictionary copy.
+	data := self newClassInfoDictionary.
 	data at: #oldLayoutClassName put: self oldLayoutClassName.
 	data at: #newLayoutClassName put: self newLayoutClassName.
 	^ data

@@ -3,10 +3,8 @@ Command that performs a Metacello baseline load and reports packages and reposit
 "
 Class {
 	#name : 'MCPLoadBaselineCommand',
-	#superclass : 'Object',
+	#superclass : 'MCPToolRequestCommand',
 	#instVars : [
-		'tool',
-		'request',
 		'configureMetacelloBlock'
 	],
 	#category : 'MCP-Commands',
@@ -83,10 +81,8 @@ MCPLoadBaselineCommand >> execute [
 { #category : 'initialization' }
 MCPLoadBaselineCommand >> initializeTool: aTool request: aRequest configureMetacello: aBlock [
 
-	tool := aTool.
-	request := aRequest.
-	configureMetacelloBlock := aBlock.
-	^ self
+	super initializeTool: aTool request: aRequest.
+	configureMetacelloBlock := aBlock
 ]
 
 { #category : 'private - loading' }
@@ -125,16 +121,4 @@ MCPLoadBaselineCommand >> newRepositoryInfosAfter: beforeRepositories [
 		   reject: [ :each | beforeSet includes: each ]
 		   thenCollect: [ :each | MCPRepositoryInfo fromRepository: each ])
 		  asArray
-]
-
-{ #category : 'accessing' }
-MCPLoadBaselineCommand >> request [
-
-	^ request
-]
-
-{ #category : 'accessing' }
-MCPLoadBaselineCommand >> tool [
-
-	^ tool
 ]

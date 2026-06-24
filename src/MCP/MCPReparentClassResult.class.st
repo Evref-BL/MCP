@@ -5,7 +5,7 @@ It carries the updated class info and the old superclass name.
 "
 Class {
 	#name : 'MCPReparentClassResult',
-	#superclass : 'Object',
+	#superclass : 'MCPClassResult',
 	#instVars : [
 		'classInfo',
 		'oldSuperclassName'
@@ -28,7 +28,7 @@ MCPReparentClassResult class >> classInfo: aClassInfo oldSuperclassName: anOldSu
 MCPReparentClassResult >> asDictionary [
 
 	| data |
-	data := self classInfo asDictionary copy.
+	data := self newClassInfoDictionary.
 	data at: #oldSuperclassName put: self oldSuperclassName.
 	^ data
 ]

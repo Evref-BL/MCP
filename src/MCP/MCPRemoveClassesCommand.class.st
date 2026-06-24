@@ -5,7 +5,7 @@ It gathers removal warnings, removes now-empty packages when applicable, and ret
 "
 Class {
 	#name : 'MCPRemoveClassesCommand',
-	#superclass : 'Object',
+	#superclass : 'MCPCommand',
 	#instVars : [
 		'classNames',
 		'force'

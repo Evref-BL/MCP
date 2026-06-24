@@ -5,10 +5,8 @@ This command is the second step of the discoverable-tool flow: after discovery g
 "
 Class {
 	#name : 'MCPGetToolCommand',
-	#superclass : 'Object',
+	#superclass : 'MCPToolRequestCommand',
 	#instVars : [
-		'tool',
-		'request',
 		'toolExposurePolicy'
 	],
 	#category : 'MCP-Commands',
@@ -29,8 +27,7 @@ MCPGetToolCommand class >> tool: aTool request: aRequest [
 MCPGetToolCommand class >> tool: aTool request: aRequest toolExposurePolicy: aToolExposurePolicy [
 
 	^ self new
-		  tool: aTool;
-		  request: aRequest;
+		  initializeTool: aTool request: aRequest;
 		  toolExposurePolicy: aToolExposurePolicy;
 		  yourself
 ]
@@ -49,30 +46,6 @@ MCPGetToolCommand >> execute [
 		    usingPolicy: self toolExposurePolicy
 		    includeOutputSchema: request includeOutputSchema)) }
 		  asDictionary
-]
-
-{ #category : 'accessing' }
-MCPGetToolCommand >> request [
-
-	^ request
-]
-
-{ #category : 'accessing' }
-MCPGetToolCommand >> request: anObject [
-
-	request := anObject
-]
-
-{ #category : 'accessing' }
-MCPGetToolCommand >> tool [
-
-	^ tool
-]
-
-{ #category : 'accessing' }
-MCPGetToolCommand >> tool: anObject [
-
-	tool := anObject
 ]
 
 { #category : 'accessing' }

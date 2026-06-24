@@ -5,7 +5,7 @@ It carries the class state after replacement and the old/new instance-side and c
 "
 Class {
 	#name : 'MCPReplaceClassDefinitionResult',
-	#superclass : 'Object',
+	#superclass : 'MCPClassResult',
 	#instVars : [
 		'classInfo',
 		'oldInstanceSlotNames',
@@ -30,7 +30,7 @@ MCPReplaceClassDefinitionResult class >> classInfo: aClassInfo [
 MCPReplaceClassDefinitionResult >> asDictionary [
 
 	| data |
-	data := self classInfo asDictionary copy.
+	data := self newClassInfoDictionary.
 	data at: #oldInstanceSlotNames put: self oldInstanceSlotNames.
 	data at: #newInstanceSlotNames put: self newInstanceSlotNames.
 	data at: #oldClassSlotNames put: self oldClassSlotNames.

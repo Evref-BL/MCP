@@ -5,10 +5,8 @@ It holds the tool, parsed request, and shared session registry, and provides com
 "
 Class {
 	#name : 'MCPDebugCommand',
-	#superclass : 'Object',
+	#superclass : 'MCPToolRequestCommand',
 	#instVars : [
-		'tool',
-		'request',
 		'registry'
 	],
 	#category : 'MCP-Commands',
@@ -34,10 +32,8 @@ MCPDebugCommand >> execute [
 { #category : 'initialization' }
 MCPDebugCommand >> initializeTool: aTool request: aRequest registry: aRegistry [
 
-	tool := aTool.
-	request := aRequest.
-	registry := aRegistry.
-	^ self
+	super initializeTool: aTool request: aRequest.
+	registry := aRegistry
 ]
 
 { #category : 'private' }
@@ -68,12 +64,6 @@ MCPDebugCommand >> registry [
 MCPDebugCommand >> registry: aRegistry [
 
 	registry := aRegistry
-]
-
-{ #category : 'accessing' }
-MCPDebugCommand >> request [
-
-	^ request
 ]
 
 { #category : 'private' }
@@ -187,12 +177,6 @@ MCPDebugCommand >> signalUnsupportedOperation: operationName [
 		  message:
 		  'Unsupported debug operation: ' , operationName asString , '.'
 		  details: { (#operation -> operationName) } asDictionary
-]
-
-{ #category : 'accessing' }
-MCPDebugCommand >> tool [
-
-	^ tool
 ]
 
 { #category : 'private' }

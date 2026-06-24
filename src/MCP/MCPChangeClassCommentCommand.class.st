@@ -5,7 +5,7 @@ It records the previous comment and returns an MCPChangeClassCommentResult so cl
 "
 Class {
 	#name : 'MCPChangeClassCommentCommand',
-	#superclass : 'Object',
+	#superclass : 'MCPClassCommand',
 	#instVars : [
 		'className',
 		'classComment'

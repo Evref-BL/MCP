@@ -3,7 +3,7 @@ Captures the updated class state after renaming a slot.
 "
 Class {
 	#name : 'MCPRenameSlotResult',
-	#superclass : 'Object',
+	#superclass : 'MCPClassResult',
 	#instVars : [
 		'classInfo',
 		'oldSlotName',
@@ -30,7 +30,7 @@ MCPRenameSlotResult class >> classInfo: aClassInfo oldSlotName: anOldSlotName ne
 MCPRenameSlotResult >> asDictionary [
 
 	| data |
-	data := self classInfo asDictionary copy.
+	data := self newClassInfoDictionary.
 	data at: #oldSlotName put: self oldSlotName.
 	data at: #newSlotName put: self newSlotName.
 	data at: #classSide put: self classSide.

@@ -3,7 +3,7 @@ Captures the updated class state after a slot update.
 "
 Class {
 	#name : 'MCPSlotResult',
-	#superclass : 'Object',
+	#superclass : 'MCPClassResult',
 	#instVars : [
 		'classInfo',
 		'slotName',
@@ -28,7 +28,7 @@ MCPSlotResult class >> classInfo: aClassInfo slotName: aSlotName classSide: aBoo
 MCPSlotResult >> asDictionary [
 
 	| data |
-	data := self classInfo asDictionary copy.
+	data := self newClassInfoDictionary.
 	data at: #slotName put: self slotName.
 	data at: #classSide put: self classSide.
 	^ data

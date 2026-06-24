@@ -5,7 +5,7 @@ It records the previous superclass and returns MCPReparentClassResult with updat
 "
 Class {
 	#name : 'MCPReparentClassCommand',
-	#superclass : 'Object',
+	#superclass : 'MCPClassCommand',
 	#instVars : [
 		'className',
 		'superclassName'
@@ -46,12 +46,6 @@ MCPReparentClassCommand >> className [
 MCPReparentClassCommand >> className: aString [
 
 	className := aString
-]
-
-{ #category : 'private' }
-MCPReparentClassCommand >> currentClass [
-
-	^ MCPImageLookup classNamed: self className
 ]
 
 { #category : 'executing' }

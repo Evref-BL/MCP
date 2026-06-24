@@ -5,21 +5,11 @@ It owns tool-level execution concerns such as warning handling, class comments, 
 "
 Class {
 	#name : 'MCPCreateClassToolCommand',
-	#superclass : 'Object',
-	#instVars : [
-		'tool',
-		'request'
-	],
+	#superclass : 'MCPToolRequestCommand',
 	#category : 'MCP-Commands',
 	#package : 'MCP',
 	#tag : 'Commands'
 }
-
-{ #category : 'instance creation' }
-MCPCreateClassToolCommand class >> tool: aTool request: aRequest [
-
-	^ self new initializeTool: aTool request: aRequest
-]
 
 { #category : 'executing' }
 MCPCreateClassToolCommand >> execute [
@@ -59,24 +49,4 @@ MCPCreateClassToolCommand >> execute [
 				  packageName: self request packageName
 				  error: error ]
 
-]
-
-{ #category : 'initialization' }
-MCPCreateClassToolCommand >> initializeTool: aTool request: aRequest [
-
-	tool := aTool.
-	request := aRequest.
-	^ self
-]
-
-{ #category : 'accessing' }
-MCPCreateClassToolCommand >> request [
-
-	^ request
-]
-
-{ #category : 'accessing' }
-MCPCreateClassToolCommand >> tool [
-
-	^ tool
 ]

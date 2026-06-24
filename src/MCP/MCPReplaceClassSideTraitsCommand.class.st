@@ -3,7 +3,7 @@ Replaces the class-side traits of an existing class and returns a DTO describing
 "
 Class {
 	#name : 'MCPReplaceClassSideTraitsCommand',
-	#superclass : 'Object',
+	#superclass : 'MCPClassCommand',
 	#instVars : [
 		'className',
 		'classTraitNames'

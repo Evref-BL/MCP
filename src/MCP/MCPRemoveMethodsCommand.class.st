@@ -3,21 +3,11 @@ Command that removes methods and returns removed method DTO dictionaries.
 "
 Class {
 	#name : 'MCPRemoveMethodsCommand',
-	#superclass : 'Object',
-	#instVars : [
-		'tool',
-		'request'
-	],
+	#superclass : 'MCPToolRequestCommand',
 	#category : 'MCP-Commands',
 	#package : 'MCP',
 	#tag : 'Commands'
 }
-
-{ #category : 'instance creation' }
-MCPRemoveMethodsCommand class >> tool: aTool request: aRequest [
-
-	^ self new initializeTool: aTool request: aRequest
-]
 
 { #category : 'executing' }
 MCPRemoveMethodsCommand >> execute [
@@ -41,24 +31,4 @@ MCPRemoveMethodsCommand >> execute [
 		fromRequest: self request
 		removedMethods: #(  )
 		warningMessages: { warningMessage }
-]
-
-{ #category : 'initialization' }
-MCPRemoveMethodsCommand >> initializeTool: aTool request: aRequest [
-
-	tool := aTool.
-	request := aRequest.
-	^ self
-]
-
-{ #category : 'accessing' }
-MCPRemoveMethodsCommand >> request [
-
-	^ request
-]
-
-{ #category : 'accessing' }
-MCPRemoveMethodsCommand >> tool [
-
-	^ tool
 ]

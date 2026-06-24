@@ -3,7 +3,7 @@ Removes a slot from a class or metaclass through the refactoring engine.
 "
 Class {
 	#name : 'MCPRemoveSlotCommand',
-	#superclass : 'Object',
+	#superclass : 'MCPClassSlotCommand',
 	#instVars : [
 		'className',
 		'slotName',
@@ -49,12 +49,6 @@ MCPRemoveSlotCommand >> classSide: aBoolean [
 ]
 
 { #category : 'private' }
-MCPRemoveSlotCommand >> currentClass [
-
-	^ MCPImageLookup classNamed: self className
-]
-
-{ #category : 'private' }
 MCPRemoveSlotCommand >> directlyDefinesSlotNamed: aSlotName inBehavior: aBehavior [
 
 	^ aBehavior slots anySatisfy: [ :each |
@@ -84,14 +78,6 @@ MCPRemoveSlotCommand >> normalizedBehaviorNameFor: aBehavior [
 	^ (aBehavior isMeta
 		   ifTrue: [ aBehavior instanceSide name ]
 		   ifFalse: [ aBehavior name ]) asString
-]
-
-{ #category : 'private' }
-MCPRemoveSlotCommand >> refactoringBehaviorForClass: aClass [
-
-	^ self classSide
-		  ifTrue: [ aClass classSide ]
-		  ifFalse: [ aClass ]
 ]
 
 { #category : 'private' }

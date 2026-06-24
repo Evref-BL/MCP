@@ -5,10 +5,8 @@ It creates method-entry or source-interval DebugPoint breakpoints, lists registr
 "
 Class {
 	#name : 'MCPDebugBreakpointsCommand',
-	#superclass : 'Object',
+	#superclass : 'MCPToolRequestCommand',
 	#instVars : [
-		'tool',
-		'request',
 		'registry'
 	],
 	#category : 'MCP-Commands',
@@ -100,10 +98,8 @@ MCPDebugBreakpointsCommand >> execute [
 { #category : 'initialization' }
 MCPDebugBreakpointsCommand >> initializeTool: aTool request: aRequest registry: aRegistry [
 
-	tool := aTool.
-	request := aRequest.
-	registry := aRegistry.
-	^ self
+	super initializeTool: aTool request: aRequest.
+	registry := aRegistry
 ]
 
 { #category : 'private - actions' }
@@ -150,12 +146,6 @@ MCPDebugBreakpointsCommand >> removeBreakpoint [
 	^ MCPDebugToolResult
 		  okSummary: 'Debug breakpoint ' , record breakpointId , ' removed.'
 		  data: data
-]
-
-{ #category : 'accessing' }
-MCPDebugBreakpointsCommand >> request [
-
-	^ request
 ]
 
 { #category : 'private - validation' }
@@ -364,10 +354,4 @@ MCPDebugBreakpointsCommand >> targetNodeInMethod: aCompiledMethod [
 	request targetKind = 'sourceInterval' ifTrue: [
 		^ self sourceIntervalNodeInMethod: aCompiledMethod ].
 	^ self signalUnsupportedTargetKind
-]
-
-{ #category : 'accessing' }
-MCPDebugBreakpointsCommand >> tool [
-
-	^ tool
 ]

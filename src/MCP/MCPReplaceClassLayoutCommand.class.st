@@ -3,7 +3,7 @@ Replaces the layout of an existing class using the Shift class installer and ret
 "
 Class {
 	#name : 'MCPReplaceClassLayoutCommand',
-	#superclass : 'Object',
+	#superclass : 'MCPClassCommand',
 	#instVars : [
 		'className',
 		'layout'

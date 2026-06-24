@@ -5,7 +5,7 @@ It owns the class-builder interaction for superclass, package, tag, slots, trait
 "
 Class {
 	#name : 'MCPCreateClassCommand',
-	#superclass : 'Object',
+	#superclass : 'MCPClassCommand',
 	#instVars : [
 		'className',
 		'superclassName',

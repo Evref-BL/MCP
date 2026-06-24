@@ -3,21 +3,11 @@ Command for applying one method update patch. It selects an internal method upda
 "
 Class {
 	#name : 'MCPUpdateMethodCommand',
-	#superclass : 'Object',
-	#instVars : [
-		'tool',
-		'request'
-	],
+	#superclass : 'MCPToolRequestCommand',
 	#category : 'MCP-Commands',
 	#package : 'MCP',
 	#tag : 'Commands'
 }
-
-{ #category : 'instance creation' }
-MCPUpdateMethodCommand class >> tool: aTool request: aRequest [
-
-	^ self new initializeTool: aTool request: aRequest
-]
 
 { #category : 'private - results' }
 MCPUpdateMethodCommand >> appliedUpdateResultFor: aChangeResult plan: plan [
@@ -337,26 +327,12 @@ MCPUpdateMethodCommand >> executeRenameWithPlan: plan [
 				  error: error ]
 ]
 
-{ #category : 'initialization' }
-MCPUpdateMethodCommand >> initializeTool: aTool request: aRequest [
-
-	tool := aTool.
-	request := aRequest.
-	^ self
-]
-
 { #category : 'private - methods' }
 MCPUpdateMethodCommand >> protocolNameForMethod: aCompiledMethod [
 
 	^ aCompiledMethod protocol
 		  ifNil: [ '' ]
 		  ifNotNil: [ :aProtocol | aProtocol name asString ]
-]
-
-{ #category : 'accessing' }
-MCPUpdateMethodCommand >> request [
-
-	^ request
 ]
 
 { #category : 'private - planning' }
@@ -411,12 +387,6 @@ MCPUpdateMethodCommand >> signalNoUpdateRequested [
 		  message:
 		  'Method update requires one method update field such as newSelector or protocol.'
 		  details: self request requestedContext
-]
-
-{ #category : 'accessing' }
-MCPUpdateMethodCommand >> tool [
-
-	^ tool
 ]
 
 { #category : 'accessing' }

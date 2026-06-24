@@ -5,7 +5,7 @@ It performs pull-up or push-down refactorings for instance-side or class-side sl
 "
 Class {
 	#name : 'MCPMoveSlotCommand',
-	#superclass : 'Object',
+	#superclass : 'MCPClassSlotCommand',
 	#instVars : [
 		'className',
 		'slotName',
@@ -73,12 +73,6 @@ MCPMoveSlotCommand >> classSide: aBoolean [
 	classSide := aBoolean
 ]
 
-{ #category : 'private' }
-MCPMoveSlotCommand >> currentClass [
-
-	^ MCPImageLookup classNamed: self className
-]
-
 { #category : 'accessing' }
 MCPMoveSlotCommand >> direction [
 
@@ -121,14 +115,6 @@ MCPMoveSlotCommand >> normalizedAffectedClassNameFor: aBehavior [
 	^ (aBehavior isMeta
 		   ifTrue: [ aBehavior instanceSide name ]
 		   ifFalse: [ aBehavior name ]) asString
-]
-
-{ #category : 'private' }
-MCPMoveSlotCommand >> refactoringBehaviorForClass: aClass [
-
-	^ self classSide
-		  ifTrue: [ aClass classSide ]
-		  ifFalse: [ aClass ]
 ]
 
 { #category : 'private' }

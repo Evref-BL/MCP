@@ -5,7 +5,7 @@ When only a tag is supplied, it recategorizes the class inside its current packa
 "
 Class {
 	#name : 'MCPMoveClassCommand',
-	#superclass : 'Object',
+	#superclass : 'MCPClassCommand',
 	#instVars : [
 		'className',
 		'packageName',

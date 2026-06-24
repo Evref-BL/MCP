@@ -5,7 +5,7 @@ It builds an MCPClassUpdatePlanInfo for the selected internal update action, dis
 "
 Class {
 	#name : 'MCPUpdateClassCommand',
-	#superclass : 'Object',
+	#superclass : 'MCPCommand',
 	#instVars : [
 		'tool',
 		'classRequest'
