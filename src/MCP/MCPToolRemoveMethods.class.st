@@ -11,40 +11,14 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolRemoveMethods class >> toolName [
 
 	^ 'method_remove'
 ]
 
-{ #category : 'private - errors' }
-MCPToolRemoveMethods >> classNameForErrorFromParsedRequest: removeRequest rawRequest: rawRequest [
-
-	removeRequest ifNotNil: [ ^ removeRequest className ].
-	^ (rawRequest stringArgumentNamed: 'className') ifNil: [ '' ]
-]
-
-{ #category : 'private - errors' }
-MCPToolRemoveMethods >> classSideForErrorFromParsedRequest: removeRequest rawRequest: rawRequest [
-
-	removeRequest ifNotNil: [ ^ removeRequest classSide ].
-	^ rawRequest booleanArgumentNamed: 'classSide' default: false
-]
-
-{ #category : 'private - execution' }
-MCPToolRemoveMethods >> commandForRequest: removeRequest [
-
-	^ MCPRemoveMethodsCommand tool: self request: removeRequest
-]
-
-{ #category : 'defaults' }
-MCPToolRemoveMethods >> defaultDescription [
-
-	^ 'Remove methods from one class as a batch without sender safety checks. Use method_compile, method_selector_update, or method_protocol_update for method updates.'
-]
-
-{ #category : 'defaults' }
-MCPToolRemoveMethods >> defaultInputSchema [
+{ #category : 'metadata' }
+MCPToolRemoveMethods >> buildInputSchema [
 
 	^ MCPStructureInputSchema new
 		  type: 'object';
@@ -74,16 +48,36 @@ MCPToolRemoveMethods >> defaultInputSchema [
 		  yourself
 ]
 
-{ #category : 'defaults' }
-MCPToolRemoveMethods >> defaultOutputSchema [
+{ #category : 'metadata' }
+MCPToolRemoveMethods >> buildOutputSchema [
 
 	^ self standardOutputSchemaForDataProperties: #(  ) required: #(  )
 ]
 
-{ #category : 'defaults' }
-MCPToolRemoveMethods >> defaultTitle [
+{ #category : 'private - errors' }
+MCPToolRemoveMethods >> classNameForErrorFromParsedRequest: removeRequest rawRequest: rawRequest [
 
-	^ 'Remove Methods'
+	removeRequest ifNotNil: [ ^ removeRequest className ].
+	^ (rawRequest stringArgumentNamed: 'className') ifNil: [ '' ]
+]
+
+{ #category : 'private - errors' }
+MCPToolRemoveMethods >> classSideForErrorFromParsedRequest: removeRequest rawRequest: rawRequest [
+
+	removeRequest ifNotNil: [ ^ removeRequest classSide ].
+	^ rawRequest booleanArgumentNamed: 'classSide' default: false
+]
+
+{ #category : 'private - execution' }
+MCPToolRemoveMethods >> commandForRequest: removeRequest [
+
+	^ MCPRemoveMethodsCommand tool: self request: removeRequest
+]
+
+{ #category : 'metadata' }
+MCPToolRemoveMethods >> description [
+
+	^ 'Remove methods from one class as a batch without sender safety checks. Use method_compile, method_selector_update, or method_protocol_update for method updates.'
 ]
 
 { #category : 'private' }
@@ -206,4 +200,10 @@ MCPToolRemoveMethods >> successSummaryForClassName: className classSide: classSi
 		              ifFalse: [ className ].
 	^ 'Force-removed ' , selectors size asString , ' methods from '
 	  , targetName , ': ' , (', ' join: selectors) , '.'
+]
+
+{ #category : 'metadata' }
+MCPToolRemoveMethods >> title [
+
+	^ 'Remove Methods'
 ]

@@ -9,7 +9,7 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolAttachRepository class >> toolName [
 
 	^ 'repository_attach'

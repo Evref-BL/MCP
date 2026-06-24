@@ -11,20 +11,14 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolSearchMethodMetadata class >> toolName [
 
 	^ 'method_metadata_search'
 ]
 
-{ #category : 'defaults' }
-MCPToolSearchMethodMetadata >> defaultDescription [
-
-	^ 'Search method metadata by selector, protocol, class, package, or scope. Use specialized method search tools for source, senders, implementors, and references.'
-]
-
-{ #category : 'defaults' }
-MCPToolSearchMethodMetadata >> defaultInputSchema [
+{ #category : 'metadata' }
+MCPToolSearchMethodMetadata >> buildInputSchema [
 
 	| properties |
 	properties := self methodQueryScopeInputProperties
@@ -42,10 +36,10 @@ MCPToolSearchMethodMetadata >> defaultInputSchema [
 	^ self queryInputSchemaWithProperties: properties
 ]
 
-{ #category : 'defaults' }
-MCPToolSearchMethodMetadata >> defaultTitle [
+{ #category : 'metadata' }
+MCPToolSearchMethodMetadata >> description [
 
-	^ 'Search Method Metadata'
+	^ 'Search method metadata by selector, protocol, class, package, or scope. Use specialized method search tools for source, senders, implementors, and references.'
 ]
 
 { #category : 'private - filtering' }
@@ -82,4 +76,10 @@ MCPToolSearchMethodMetadata >> metadataFilterInputProperties [
 MCPToolSearchMethodMetadata >> searchRequestFromToolRequest: request [
 
 	^ MCPMethodSearchRequest fromMetadataRequest: request tool: self
+]
+
+{ #category : 'metadata' }
+MCPToolSearchMethodMetadata >> title [
+
+	^ 'Search Method Metadata'
 ]

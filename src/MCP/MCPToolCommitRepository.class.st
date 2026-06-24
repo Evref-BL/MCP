@@ -9,7 +9,7 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolCommitRepository class >> toolName [
 
 	^ 'repository_commit'

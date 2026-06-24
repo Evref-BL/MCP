@@ -9,29 +9,14 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolEvaluate class >> toolName [
 
 	^ 'image_evaluate'
 ]
 
-{ #category : 'private - execution' }
-MCPToolEvaluate >> commandForRequest: evaluateRequest [
-
-	^ MCPEvaluateCommand
-		  tool: self
-		  request: evaluateRequest
-		  resultPreviewCharacterLimit: self resultPreviewCharacterLimit
-]
-
-{ #category : 'defaults' }
-MCPToolEvaluate >> defaultDescription [
-
-	^ 'Evaluate arbitrary Smalltalk code and return a bounded preview of the result. Use this escape hatch only when a dedicated tool does not fit; it may mutate image state.'
-]
-
-{ #category : 'defaults' }
-MCPToolEvaluate >> defaultInputSchema [
+{ #category : 'metadata' }
+MCPToolEvaluate >> buildInputSchema [
 
 	^ MCPStructureInputSchema new
 		  type: 'object';
@@ -45,8 +30,8 @@ MCPToolEvaluate >> defaultInputSchema [
 		  yourself
 ]
 
-{ #category : 'defaults' }
-MCPToolEvaluate >> defaultOutputSchema [
+{ #category : 'metadata' }
+MCPToolEvaluate >> buildOutputSchema [
 
 	^ self
 		  standardOutputSchemaForDataProperties: {
@@ -64,10 +49,19 @@ MCPToolEvaluate >> defaultOutputSchema [
 		  required: #( 'resultClassName' 'resultPrintString' )
 ]
 
-{ #category : 'defaults' }
-MCPToolEvaluate >> defaultTitle [
+{ #category : 'private - execution' }
+MCPToolEvaluate >> commandForRequest: evaluateRequest [
 
-	^ 'Evaluate Image Code'
+	^ MCPEvaluateCommand
+		  tool: self
+		  request: evaluateRequest
+		  resultPreviewCharacterLimit: self resultPreviewCharacterLimit
+]
+
+{ #category : 'metadata' }
+MCPToolEvaluate >> description [
+
+	^ 'Evaluate arbitrary Smalltalk code and return a bounded preview of the result. Use this escape hatch only when a dedicated tool does not fit; it may mutate image state.'
 ]
 
 { #category : 'executing' }
@@ -148,4 +142,10 @@ MCPToolEvaluate >> syntaxFailureMessageFor: aNotice [
 					  stream
 						  nextPutAll: ' Position: ';
 						  print: position ] ]
+]
+
+{ #category : 'metadata' }
+MCPToolEvaluate >> title [
+
+	^ 'Evaluate Image Code'
 ]

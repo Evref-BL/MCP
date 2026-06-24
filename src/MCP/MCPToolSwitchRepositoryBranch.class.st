@@ -9,7 +9,7 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolSwitchRepositoryBranch class >> toolName [
 
 	^ 'repository_branch_switch'

@@ -23,30 +23,8 @@ MCPToolDebugSessionOperation >> actionName [
 	^ self sessionToolSpec at: #action
 ]
 
-{ #category : 'private - schema' }
-MCPToolDebugSessionOperation >> candidateRefSchemaProperty [
-
-	^ self
-		  schemaPropertyNamed: 'candidateRef'
-		  type: 'string'
-		  description:
-		  'Opaque debugger candidate reference returned by debug_candidate_search.'
-]
-
-{ #category : 'private - execution' }
-MCPToolDebugSessionOperation >> commandForRequest: debugRequest [
-
-	^ MCPDebugSessionsCommand tool: self request: debugRequest
-]
-
-{ #category : 'defaults' }
-MCPToolDebugSessionOperation >> defaultDescription [
-
-	^ self sessionToolSpec at: #description
-]
-
-{ #category : 'defaults' }
-MCPToolDebugSessionOperation >> defaultInputSchema [
+{ #category : 'metadata' }
+MCPToolDebugSessionOperation >> buildInputSchema [
 
 	^ MCPStructureInputSchema new
 		  type: 'object';
@@ -56,8 +34,8 @@ MCPToolDebugSessionOperation >> defaultInputSchema [
 		  yourself
 ]
 
-{ #category : 'defaults' }
-MCPToolDebugSessionOperation >> defaultOutputSchema [
+{ #category : 'metadata' }
+MCPToolDebugSessionOperation >> buildOutputSchema [
 
 	^ self
 		  standardOutputSchemaForDataProperties: {
@@ -110,10 +88,26 @@ MCPToolDebugSessionOperation >> defaultOutputSchema [
 		  required: #(  )
 ]
 
-{ #category : 'defaults' }
-MCPToolDebugSessionOperation >> defaultTitle [
+{ #category : 'private - schema' }
+MCPToolDebugSessionOperation >> candidateRefSchemaProperty [
 
-	^ self sessionToolSpec at: #title
+	^ self
+		  schemaPropertyNamed: 'candidateRef'
+		  type: 'string'
+		  description:
+		  'Opaque debugger candidate reference returned by debug_candidate_search.'
+]
+
+{ #category : 'private - execution' }
+MCPToolDebugSessionOperation >> commandForRequest: debugRequest [
+
+	^ MCPDebugSessionsCommand tool: self request: debugRequest
+]
+
+{ #category : 'metadata' }
+MCPToolDebugSessionOperation >> description [
+
+	^ self sessionToolSpec at: #description
 ]
 
 { #category : 'private - schema' }
@@ -153,4 +147,10 @@ MCPToolDebugSessionOperation >> sessionIdSchemaProperty [
 MCPToolDebugSessionOperation >> sessionToolSpec [
 
 	self subclassResponsibility
+]
+
+{ #category : 'metadata' }
+MCPToolDebugSessionOperation >> title [
+
+	^ self sessionToolSpec at: #title
 ]

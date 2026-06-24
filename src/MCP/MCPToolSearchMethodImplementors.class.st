@@ -9,22 +9,16 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolSearchMethodImplementors class >> toolName [
 
 	^ 'method_implementor_search'
 ]
 
-{ #category : 'defaults' }
-MCPToolSearchMethodImplementors >> defaultDescription [
+{ #category : 'metadata' }
+MCPToolSearchMethodImplementors >> description [
 
 	^ 'Search methods that implement a selector. Use method_metadata_search for general method metadata, or method_source_search for source text.'
-]
-
-{ #category : 'defaults' }
-MCPToolSearchMethodImplementors >> defaultTitle [
-
-	^ 'Search Method Implementors'
 ]
 
 { #category : 'private - schema' }
@@ -46,4 +40,10 @@ MCPToolSearchMethodImplementors >> queryEntriesForQueryRequest: queryRequest [
 		  implementorEntriesForSelector:
 		  (self requiredLookupPatternFromQueryRequest: queryRequest)
 		  queryRequest: queryRequest
+]
+
+{ #category : 'metadata' }
+MCPToolSearchMethodImplementors >> title [
+
+	^ 'Search Method Implementors'
 ]

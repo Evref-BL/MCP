@@ -20,7 +20,7 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 		  (MCPToolGetClass -> { (#className -> 'MCPTool') } asDictionary).
 		  (MCPToolGetMethod -> {
 			   (#className -> 'MCPTool').
-			   (#selector -> 'defaultName') } asDictionary).
+			   (#selector -> 'name') } asDictionary).
 		  (MCPToolRemoveClasses
 		   ->
 			   { (#classNames -> #( 'MCPJSONSchemaValidatorTestTemporary' )) }
@@ -210,11 +210,11 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 				(#protocol -> 'tests') } asDictionary;
 		at: MCPToolUpdateMethodSelector put: {
 				(#className -> 'MCPTool').
-				(#selector -> 'defaultName').
-				(#newSelector -> 'defaultTitle') } asDictionary;
+				(#selector -> 'name').
+				(#newSelector -> 'toolTitleForTesting') } asDictionary;
 		at: MCPToolUpdateMethodProtocol put: {
 				(#className -> 'MCPTool').
-				(#selector -> 'defaultName').
+				(#selector -> 'name').
 				(#protocol -> 'accessing') } asDictionary;
 		at: MCPToolCreateRepository put: {
 				(#name -> 'MCP Test Repository').

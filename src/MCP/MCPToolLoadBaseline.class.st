@@ -9,26 +9,14 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolLoadBaseline class >> toolName [
 
 	^ 'baseline_load'
 ]
 
-{ #category : 'private - execution' }
-MCPToolLoadBaseline >> commandForRequest: loadBaselineRequest [
-
-	^ MCPLoadBaselineCommand tool: self request: loadBaselineRequest
-]
-
-{ #category : 'defaults' }
-MCPToolLoadBaseline >> defaultDescription [
-
-	^ 'Load an existing Metacello baseline in the image.'
-]
-
-{ #category : 'defaults' }
-MCPToolLoadBaseline >> defaultInputSchema [
+{ #category : 'metadata' }
+MCPToolLoadBaseline >> buildInputSchema [
 
 	^ MCPStructureInputSchema new
 		  type: 'object';
@@ -43,8 +31,8 @@ MCPToolLoadBaseline >> defaultInputSchema [
 		  yourself
 ]
 
-{ #category : 'defaults' }
-MCPToolLoadBaseline >> defaultOutputSchema [
+{ #category : 'metadata' }
+MCPToolLoadBaseline >> buildOutputSchema [
 
 	^ self
 		  standardOutputSchemaForDataProperties:
@@ -54,14 +42,26 @@ MCPToolLoadBaseline >> defaultOutputSchema [
 			     'repositories' )
 ]
 
-{ #category : 'defaults' }
-MCPToolLoadBaseline >> defaultTitle [
+{ #category : 'private - execution' }
+MCPToolLoadBaseline >> commandForRequest: loadBaselineRequest [
 
-	^ 'Load Baseline'
+	^ MCPLoadBaselineCommand tool: self request: loadBaselineRequest
+]
+
+{ #category : 'metadata' }
+MCPToolLoadBaseline >> description [
+
+	^ 'Load an existing Metacello baseline in the image.'
 ]
 
 { #category : 'private - request' }
 MCPToolLoadBaseline >> parsedRequestFromToolRequest: request [
 
 	^ MCPLoadBaselineRequest fromRequest: request tool: self
+]
+
+{ #category : 'metadata' }
+MCPToolLoadBaseline >> title [
+
+	^ 'Load Baseline'
 ]

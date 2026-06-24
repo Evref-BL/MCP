@@ -9,20 +9,14 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolSearchEquivalentMethods class >> toolName [
 
 	^ 'method_equivalent_search'
 ]
 
-{ #category : 'defaults' }
-MCPToolSearchEquivalentMethods >> defaultDescription [
-
-	^ 'Search methods whose AST is equivalent to a referenced method.'
-]
-
-{ #category : 'defaults' }
-MCPToolSearchEquivalentMethods >> defaultInputSchema [
+{ #category : 'metadata' }
+MCPToolSearchEquivalentMethods >> buildInputSchema [
 
 	| properties |
 	properties := self methodQueryScopeInputProperties , {
@@ -51,10 +45,10 @@ MCPToolSearchEquivalentMethods >> defaultInputSchema [
 		  yourself
 ]
 
-{ #category : 'defaults' }
-MCPToolSearchEquivalentMethods >> defaultTitle [
+{ #category : 'metadata' }
+MCPToolSearchEquivalentMethods >> description [
 
-	^ 'Search Equivalent Methods'
+	^ 'Search methods whose AST is equivalent to a referenced method.'
 ]
 
 { #category : 'private - methods' }
@@ -100,4 +94,10 @@ MCPToolSearchEquivalentMethods >> queryEntriesForQueryRequest: queryRequest [
 MCPToolSearchEquivalentMethods >> searchRequestFromToolRequest: request [
 
 	^ MCPSearchEquivalentMethodsRequest fromRequest: request tool: self
+]
+
+{ #category : 'metadata' }
+MCPToolSearchEquivalentMethods >> title [
+
+	^ 'Search Equivalent Methods'
 ]

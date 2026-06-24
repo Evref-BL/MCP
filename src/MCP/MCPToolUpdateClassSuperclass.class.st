@@ -9,7 +9,7 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolUpdateClassSuperclass class >> toolName [
 
 	^ 'class_superclass_update'

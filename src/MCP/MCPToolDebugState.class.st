@@ -11,32 +11,14 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolDebugState class >> toolName [
 
 	^ 'debug_state_get'
 ]
 
-{ #category : 'private - execution' }
-MCPToolDebugState >> commandForRequest: debugRequest [
-
-	^ MCPDebugStateCommand tool: self request: debugRequest
-]
-
-{ #category : 'defaults' }
-MCPToolDebugState >> defaultDescription [
-
-	^ 'Return a compact snapshot of one tracked Pharo debug session: selected frame, source, stack, shallow scopes, and repair actions.'
-]
-
-{ #category : 'defaults' }
-MCPToolDebugState >> defaultIcons [
-
-	^ { (self pngCompositeBaseIconNamed: #bug badgeIconNamed: #inspect) }
-]
-
-{ #category : 'defaults' }
-MCPToolDebugState >> defaultInputSchema [
+{ #category : 'metadata' }
+MCPToolDebugState >> buildInputSchema [
 
 	^ MCPStructureInputSchema new
 		  type: 'object';
@@ -82,14 +64,8 @@ MCPToolDebugState >> defaultInputSchema [
 		  yourself
 ]
 
-{ #category : 'defaults' }
-MCPToolDebugState >> defaultName [
-
-	^ 'debug_state_get'
-]
-
-{ #category : 'defaults' }
-MCPToolDebugState >> defaultOutputSchema [
+{ #category : 'metadata' }
+MCPToolDebugState >> buildOutputSchema [
 
 	^ self
 		  standardOutputSchemaForDataProperties: {
@@ -163,14 +139,26 @@ MCPToolDebugState >> defaultOutputSchema [
 			     'capabilities' 'warnings' )
 ]
 
-{ #category : 'defaults' }
-MCPToolDebugState >> defaultTitle [
+{ #category : 'private - execution' }
+MCPToolDebugState >> commandForRequest: debugRequest [
 
-	^ 'Get Debug State'
+	^ MCPDebugStateCommand tool: self request: debugRequest
+]
+
+{ #category : 'metadata' }
+MCPToolDebugState >> description [
+
+	^ 'Return a compact snapshot of one tracked Pharo debug session: selected frame, source, stack, shallow scopes, and repair actions.'
 ]
 
 { #category : 'private - request' }
 MCPToolDebugState >> parsedRequestFromToolRequest: request [
 
 	^ MCPDebugStateRequest fromRequest: request tool: self
+]
+
+{ #category : 'metadata' }
+MCPToolDebugState >> title [
+
+	^ 'Get Debug State'
 ]

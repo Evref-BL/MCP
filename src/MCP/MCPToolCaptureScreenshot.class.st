@@ -11,26 +11,14 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolCaptureScreenshot class >> toolName [
 
 	^ 'screenshot_capture'
 ]
 
-{ #category : 'private - execution' }
-MCPToolCaptureScreenshot >> commandForRequest: screenshotRequest [
-
-	^ MCPScreenshotCommand tool: self request: screenshotRequest
-]
-
-{ #category : 'defaults' }
-MCPToolCaptureScreenshot >> defaultDescription [
-
-	^ 'Capture the active Morphic world and return it as MCP image content.'
-]
-
-{ #category : 'defaults' }
-MCPToolCaptureScreenshot >> defaultInputSchema [
+{ #category : 'metadata' }
+MCPToolCaptureScreenshot >> buildInputSchema [
 
 	^ MCPStructureInputSchema new
 		  type: 'object';
@@ -44,8 +32,8 @@ MCPToolCaptureScreenshot >> defaultInputSchema [
 		  yourself
 ]
 
-{ #category : 'defaults' }
-MCPToolCaptureScreenshot >> defaultOutputSchema [
+{ #category : 'metadata' }
+MCPToolCaptureScreenshot >> buildOutputSchema [
 
 	^ self
 		  standardOutputSchemaForDataProperties: {
@@ -68,10 +56,16 @@ MCPToolCaptureScreenshot >> defaultOutputSchema [
 		  required: #( 'target' 'width' 'height' 'mimeType' )
 ]
 
-{ #category : 'defaults' }
-MCPToolCaptureScreenshot >> defaultTitle [
+{ #category : 'private - execution' }
+MCPToolCaptureScreenshot >> commandForRequest: screenshotRequest [
 
-	^ 'Capture Screenshot'
+	^ MCPScreenshotCommand tool: self request: screenshotRequest
+]
+
+{ #category : 'metadata' }
+MCPToolCaptureScreenshot >> description [
+
+	^ 'Capture the active Morphic world and return it as MCP image content.'
 ]
 
 { #category : 'executing' }
@@ -118,4 +112,10 @@ MCPToolCaptureScreenshot >> successSummaryForResult: aScreenshotResult [
 			  nextPutAll: 'x';
 			  print: aScreenshotResult height;
 			  nextPutAll: ').' ]
+]
+
+{ #category : 'metadata' }
+MCPToolCaptureScreenshot >> title [
+
+	^ 'Capture Screenshot'
 ]

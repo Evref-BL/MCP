@@ -15,8 +15,8 @@ MCPToolMethodLookupOperation class >> isAbstract [
 	^ self = MCPToolMethodLookupOperation
 ]
 
-{ #category : 'defaults' }
-MCPToolMethodLookupOperation >> defaultInputSchema [
+{ #category : 'metadata' }
+MCPToolMethodLookupOperation >> buildInputSchema [
 
 	| properties |
 	properties := self methodQueryScopeInputProperties , {

@@ -9,7 +9,7 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolAttachDebugCandidate class >> toolName [
 
 	^ 'debug_candidate_attach'

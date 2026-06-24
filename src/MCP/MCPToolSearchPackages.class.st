@@ -9,20 +9,14 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolSearchPackages class >> toolName [
 
 	^ 'package_search'
 ]
 
-{ #category : 'defaults' }
-MCPToolSearchPackages >> defaultDescription [
-
-	^ 'Search packages by name, project, or tag.'
-]
-
-{ #category : 'defaults' }
-MCPToolSearchPackages >> defaultInputSchema [
+{ #category : 'metadata' }
+MCPToolSearchPackages >> buildInputSchema [
 
 	| properties |
 	properties := self packageQueryScopeInputProperties
@@ -38,8 +32,8 @@ MCPToolSearchPackages >> defaultInputSchema [
 	^ self queryInputSchemaWithProperties: properties
 ]
 
-{ #category : 'defaults' }
-MCPToolSearchPackages >> defaultOutputSchema [
+{ #category : 'metadata' }
+MCPToolSearchPackages >> buildOutputSchema [
 
 	^ self
 		  minimalPagedQueryOutputSchemaForEntriesPropertyNamed: 'packages'
@@ -49,10 +43,10 @@ MCPToolSearchPackages >> defaultOutputSchema [
 		  itemNounPhrase: 'package entries'
 ]
 
-{ #category : 'defaults' }
-MCPToolSearchPackages >> defaultTitle [
+{ #category : 'metadata' }
+MCPToolSearchPackages >> description [
 
-	^ 'Search Packages'
+	^ 'Search packages by name, project, or tag.'
 ]
 
 { #category : 'private - results' }
@@ -217,4 +211,10 @@ MCPToolSearchPackages >> successSummaryForScope: scopeSummary page: page [
 		  scopeQuerySuccessSummaryFor: 'packages'
 		  scope: scopeSummary
 		  page: page
+]
+
+{ #category : 'metadata' }
+MCPToolSearchPackages >> title [
+
+	^ 'Search Packages'
 ]

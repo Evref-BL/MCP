@@ -11,7 +11,7 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolGetMethod class >> toolName [
 
 	^ 'method_get'
@@ -25,34 +25,8 @@ MCPToolGetMethod >> bindingClassNameFor: aBinding [
 		  ifNotNil: [ :binding | binding class name asString ]
 ]
 
-{ #category : 'private - errors' }
-MCPToolGetMethod >> classNameForErrorFromParsedRequest: getRequest rawRequest: rawRequest [
-
-	getRequest ifNotNil: [ ^ getRequest className ].
-	^ (rawRequest stringArgumentNamed: 'className') ifNil: [ '' ]
-]
-
-{ #category : 'private - errors' }
-MCPToolGetMethod >> classSideForErrorFromParsedRequest: getRequest rawRequest: rawRequest [
-
-	getRequest ifNotNil: [ ^ getRequest classSide ].
-	^ rawRequest booleanArgumentNamed: 'classSide' default: false
-]
-
-{ #category : 'private - execution' }
-MCPToolGetMethod >> commandForRequest: getRequest [
-
-	^ MCPGetMethodCommand tool: self request: getRequest
-]
-
-{ #category : 'defaults' }
-MCPToolGetMethod >> defaultDescription [
-
-	^ 'Get one known method and return its source plus structured variable-reference context. Use method_metadata_search or reference lookup tools to discover methods first.'
-]
-
-{ #category : 'defaults' }
-MCPToolGetMethod >> defaultInputSchema [
+{ #category : 'metadata' }
+MCPToolGetMethod >> buildInputSchema [
 
 	| classSideProperty includeVariableDetailsProperty |
 	classSideProperty := MCPStructureProperties new
@@ -88,8 +62,8 @@ MCPToolGetMethod >> defaultInputSchema [
 		  yourself
 ]
 
-{ #category : 'defaults' }
-MCPToolGetMethod >> defaultOutputSchema [
+{ #category : 'metadata' }
+MCPToolGetMethod >> buildOutputSchema [
 
 	^ self
 		  standardOutputSchemaForDataProperties: {
@@ -111,10 +85,24 @@ MCPToolGetMethod >> defaultOutputSchema [
 		  required: #( 'protocol' 'source' )
 ]
 
-{ #category : 'defaults' }
-MCPToolGetMethod >> defaultTitle [
+{ #category : 'private - errors' }
+MCPToolGetMethod >> classNameForErrorFromParsedRequest: getRequest rawRequest: rawRequest [
 
-	^ 'Get Method'
+	getRequest ifNotNil: [ ^ getRequest className ].
+	^ (rawRequest stringArgumentNamed: 'className') ifNil: [ '' ]
+]
+
+{ #category : 'private - errors' }
+MCPToolGetMethod >> classSideForErrorFromParsedRequest: getRequest rawRequest: rawRequest [
+
+	getRequest ifNotNil: [ ^ getRequest classSide ].
+	^ rawRequest booleanArgumentNamed: 'classSide' default: false
+]
+
+{ #category : 'private - execution' }
+MCPToolGetMethod >> commandForRequest: getRequest [
+
+	^ MCPGetMethodCommand tool: self request: getRequest
 ]
 
 { #category : 'private - analysis' }
@@ -123,6 +111,12 @@ MCPToolGetMethod >> definingClassNameFromBinding: aBinding [
 	^ aBinding ifNotNil: [ :binding |
 		  binding definingClass ifNotNil: [ :definingClass |
 			  definingClass name ] ]
+]
+
+{ #category : 'metadata' }
+MCPToolGetMethod >> description [
+
+	^ 'Get one known method and return its source plus structured variable-reference context. Use method_metadata_search or reference lookup tools to discover methods first.'
 ]
 
 { #category : 'private' }
@@ -288,6 +282,12 @@ MCPToolGetMethod >> successSummaryForClassName: className selector: selector cla
 								   ifTrue: [ '' ]
 								   ifFalse: [ 's' ]) ].
 			  stream nextPutAll: '.' ]
+]
+
+{ #category : 'metadata' }
+MCPToolGetMethod >> title [
+
+	^ 'Get Method'
 ]
 
 { #category : 'private - analysis' }

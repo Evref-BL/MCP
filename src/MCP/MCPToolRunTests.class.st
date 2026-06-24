@@ -11,10 +11,60 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolRunTests class >> toolName [
 
 	^ 'test_run'
+]
+
+{ #category : 'metadata' }
+MCPToolRunTests >> buildInputSchema [
+
+	^ MCPStructureInputSchema new
+		  type: 'object';
+		  properties: {
+				  ((MCPStructureProperties new
+					    name: 'tests';
+					    type: 'array';
+					    description: 'Test requests.')
+					   items: self testRequestObjectSchema;
+					   yourself).
+				  (self
+					   integerSchemaPropertyNamed: 'timeoutSeconds'
+					   description: 'Timeout in seconds; 0 returns immediately.'
+					   default: self defaultTimeoutSeconds).
+				  (self
+					   integerSchemaPropertyNamed: 'timeoutMilliseconds'
+					   description: 'Timeout in milliseconds.') };
+		  required: #( 'tests' );
+		  yourself
+]
+
+{ #category : 'metadata' }
+MCPToolRunTests >> buildOutputSchema [
+
+	| resultsProperty unrunTestsProperty |
+	resultsProperty := self
+		                   schemaPropertyNamed: 'results'
+		                   type: 'array'
+		                   description:
+		                   'Structured results for each test execution request in the batch that completed before timeout.'.
+	resultsProperty items: self testResultObjectSchema.
+	unrunTestsProperty := self
+		                      schemaPropertyNamed: 'unrunTests'
+		                      type: 'array'
+		                      description:
+		                      'Test execution requests that did not run because the batch timed out. Pass this array to test_run to continue from the timeout point.'.
+	unrunTestsProperty items: self testRequestObjectSchema.
+	^ self
+		  standardOutputSchemaForDataProperties: {
+				  resultsProperty.
+				  (self
+					   booleanSchemaPropertyNamed: 'timedOut'
+					   description:
+					   'Whether the batch stopped early because timeoutSeconds elapsed.').
+				  unrunTestsProperty }
+		  required: #( 'results' )
 ]
 
 { #category : 'private - execution' }
@@ -188,71 +238,15 @@ MCPToolRunTests >> defaultCoverageMethodLimit [
 ]
 
 { #category : 'defaults' }
-MCPToolRunTests >> defaultDescription [
-
-	^ 'Run test classes or individual test methods as a batch and return aggregated results.'
-]
-
-{ #category : 'defaults' }
-MCPToolRunTests >> defaultInputSchema [
-
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: {
-				  ((MCPStructureProperties new
-					    name: 'tests';
-					    type: 'array';
-					    description: 'Test requests.')
-					   items: self testRequestObjectSchema;
-					   yourself).
-				  (self
-					   integerSchemaPropertyNamed: 'timeoutSeconds'
-					   description: 'Timeout in seconds; 0 returns immediately.'
-					   default: self defaultTimeoutSeconds).
-				  (self
-					   integerSchemaPropertyNamed: 'timeoutMilliseconds'
-					   description: 'Timeout in milliseconds.') };
-		  required: #( 'tests' );
-		  yourself
-]
-
-{ #category : 'defaults' }
-MCPToolRunTests >> defaultOutputSchema [
-
-	| resultsProperty unrunTestsProperty |
-	resultsProperty := self
-		                   schemaPropertyNamed: 'results'
-		                   type: 'array'
-		                   description:
-		                   'Structured results for each test execution request in the batch that completed before timeout.'.
-	resultsProperty items: self testResultObjectSchema.
-	unrunTestsProperty := self
-		                      schemaPropertyNamed: 'unrunTests'
-		                      type: 'array'
-		                      description:
-		                      'Test execution requests that did not run because the batch timed out. Pass this array to test_run to continue from the timeout point.'.
-	unrunTestsProperty items: self testRequestObjectSchema.
-	^ self
-		  standardOutputSchemaForDataProperties: {
-				  resultsProperty.
-				  (self
-					   booleanSchemaPropertyNamed: 'timedOut'
-					   description:
-					   'Whether the batch stopped early because timeoutSeconds elapsed.').
-				  unrunTestsProperty }
-		  required: #( 'results' )
-]
-
-{ #category : 'defaults' }
 MCPToolRunTests >> defaultTimeoutSeconds [
 
 	^ 90
 ]
 
-{ #category : 'defaults' }
-MCPToolRunTests >> defaultTitle [
+{ #category : 'metadata' }
+MCPToolRunTests >> description [
 
-	^ 'Run Tests'
+	^ 'Run test classes or individual test methods as a batch and return aggregated results.'
 ]
 
 { #category : 'private' }
@@ -583,4 +577,10 @@ MCPToolRunTests >> testResultObjectSchema [
 			  (self standardTestRequiredFieldsIncludingMethodName: false);
 		  additionalProperties: false;
 		  yourself
+]
+
+{ #category : 'metadata' }
+MCPToolRunTests >> title [
+
+	^ 'Run Tests'
 ]

@@ -11,26 +11,14 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolGetTool class >> toolName [
 
 	^ 'tool_get'
 ]
 
-{ #category : 'private - execution' }
-MCPToolGetTool >> commandForRequest: getRequest [
-
-	^ MCPGetToolCommand tool: self request: getRequest
-]
-
-{ #category : 'defaults' }
-MCPToolGetTool >> defaultDescription [
-
-	^ 'Return one tool contract with metadata and input schema. Set includeOutputSchema only when response validation needs it.'
-]
-
-{ #category : 'defaults' }
-MCPToolGetTool >> defaultInputSchema [
+{ #category : 'metadata' }
+MCPToolGetTool >> buildInputSchema [
 
 	| includeOutputSchemaProperty toolNameProperty |
 	toolNameProperty := self
@@ -54,8 +42,8 @@ MCPToolGetTool >> defaultInputSchema [
 		  yourself
 ]
 
-{ #category : 'defaults' }
-MCPToolGetTool >> defaultOutputSchema [
+{ #category : 'metadata' }
+MCPToolGetTool >> buildOutputSchema [
 
 	| activationRequirementsProperty examplesProperty inputSchemaProperty outputSchemaProperty schemaProperty toolProperty |
 	schemaProperty := MCPStructureProperties new
@@ -117,10 +105,16 @@ MCPToolGetTool >> defaultOutputSchema [
 		  required: #( 'tool' )
 ]
 
-{ #category : 'defaults' }
-MCPToolGetTool >> defaultTitle [
+{ #category : 'private - execution' }
+MCPToolGetTool >> commandForRequest: getRequest [
 
-	^ 'Get Tool'
+	^ MCPGetToolCommand tool: self request: getRequest
+]
+
+{ #category : 'metadata' }
+MCPToolGetTool >> description [
+
+	^ 'Return one tool contract with metadata and input schema. Set includeOutputSchema only when response validation needs it.'
 ]
 
 { #category : 'executing' }
@@ -153,4 +147,10 @@ MCPToolGetTool >> executeWithRequest: request usingPolicy: aToolExposurePolicy [
 MCPToolGetTool >> parsedRequestFromToolRequest: request [
 
 	^ MCPGetToolRequest fromToolRequest: request
+]
+
+{ #category : 'metadata' }
+MCPToolGetTool >> title [
+
+	^ 'Get Tool'
 ]

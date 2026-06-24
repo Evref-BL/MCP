@@ -9,7 +9,7 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolResumeDebugSession class >> toolName [
 
 	^ 'debug_session_resume'

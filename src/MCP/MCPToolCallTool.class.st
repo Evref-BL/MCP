@@ -11,26 +11,14 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolCallTool class >> toolName [
 
 	^ 'tool_call'
 ]
 
-{ #category : 'private - execution' }
-MCPToolCallTool >> commandForRequest: callRequest [
-
-	^ MCPCallToolCommand tool: self request: callRequest
-]
-
-{ #category : 'defaults' }
-MCPToolCallTool >> defaultDescription [
-
-	^ 'Invoke one MCP-Pharo tool selected by name from the discoverable catalog. The target tool receives the nested arguments object and is validated through its own schema.'
-]
-
-{ #category : 'defaults' }
-MCPToolCallTool >> defaultInputSchema [
+{ #category : 'metadata' }
+MCPToolCallTool >> buildInputSchema [
 
 	| argumentsProperty toolNameProperty |
 	toolNameProperty := self
@@ -54,8 +42,8 @@ MCPToolCallTool >> defaultInputSchema [
 		  yourself
 ]
 
-{ #category : 'defaults' }
-MCPToolCallTool >> defaultOutputSchema [
+{ #category : 'metadata' }
+MCPToolCallTool >> buildOutputSchema [
 
 	| resultProperty |
 	resultProperty := self
@@ -74,10 +62,16 @@ MCPToolCallTool >> defaultOutputSchema [
 		  required: #( 'targetToolName' 'result' )
 ]
 
-{ #category : 'defaults' }
-MCPToolCallTool >> defaultTitle [
+{ #category : 'private - execution' }
+MCPToolCallTool >> commandForRequest: callRequest [
 
-	^ 'Call Tool'
+	^ MCPCallToolCommand tool: self request: callRequest
+]
+
+{ #category : 'metadata' }
+MCPToolCallTool >> description [
+
+	^ 'Invoke one MCP-Pharo tool selected by name from the discoverable catalog. The target tool receives the nested arguments object and is validated through its own schema.'
 ]
 
 { #category : 'executing' }
@@ -96,4 +90,10 @@ MCPToolCallTool >> executeWithRequest: request [
 MCPToolCallTool >> parsedRequestFromToolRequest: request [
 
 	^ MCPCallToolRequest fromToolRequest: request
+]
+
+{ #category : 'metadata' }
+MCPToolCallTool >> title [
+
+	^ 'Call Tool'
 ]

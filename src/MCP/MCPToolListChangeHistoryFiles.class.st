@@ -9,34 +9,14 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolListChangeHistoryFiles class >> toolName [
 
 	^ 'history_file_list'
 ]
 
-{ #category : 'private - execution' }
-MCPToolListChangeHistoryFiles >> commandForRequest: changeHistoryRequest [
-
-	^ MCPListChangeHistoryLogsCommand
-		  tool: self
-		  request: changeHistoryRequest
-]
-
-{ #category : 'defaults' }
-MCPToolListChangeHistoryFiles >> defaultDescription [
-
-	^ 'List Pharo image change history .ombu files. Use history_entry_list to inspect entries. Use apply/revert only for recovery previews or changes.'
-]
-
-{ #category : 'defaults' }
-MCPToolListChangeHistoryFiles >> defaultFileLimit [
-
-	^ 25
-]
-
-{ #category : 'defaults' }
-MCPToolListChangeHistoryFiles >> defaultInputSchema [
+{ #category : 'metadata' }
+MCPToolListChangeHistoryFiles >> buildInputSchema [
 
 	| limitProperty offsetProperty |
 	limitProperty := self
@@ -66,8 +46,8 @@ MCPToolListChangeHistoryFiles >> defaultInputSchema [
 		  yourself
 ]
 
-{ #category : 'defaults' }
-MCPToolListChangeHistoryFiles >> defaultOutputSchema [
+{ #category : 'metadata' }
+MCPToolListChangeHistoryFiles >> buildOutputSchema [
 
 	| filesProperty |
 	filesProperty := self
@@ -80,10 +60,24 @@ MCPToolListChangeHistoryFiles >> defaultOutputSchema [
 		  required: #( 'files' )
 ]
 
-{ #category : 'defaults' }
-MCPToolListChangeHistoryFiles >> defaultTitle [
+{ #category : 'private - execution' }
+MCPToolListChangeHistoryFiles >> commandForRequest: changeHistoryRequest [
 
-	^ 'List Change History Files'
+	^ MCPListChangeHistoryLogsCommand
+		  tool: self
+		  request: changeHistoryRequest
+]
+
+{ #category : 'defaults' }
+MCPToolListChangeHistoryFiles >> defaultFileLimit [
+
+	^ 25
+]
+
+{ #category : 'metadata' }
+MCPToolListChangeHistoryFiles >> description [
+
+	^ 'List Pharo image change history .ombu files. Use history_entry_list to inspect entries. Use apply/revert only for recovery previews or changes.'
 ]
 
 { #category : 'defaults' }
@@ -96,4 +90,10 @@ MCPToolListChangeHistoryFiles >> maximumFileLimit [
 MCPToolListChangeHistoryFiles >> parsedRequestFromToolRequest: request [
 
 	^ MCPChangeHistoryListLogsRequest fromRequest: request tool: self
+]
+
+{ #category : 'metadata' }
+MCPToolListChangeHistoryFiles >> title [
+
+	^ 'List Change History Files'
 ]

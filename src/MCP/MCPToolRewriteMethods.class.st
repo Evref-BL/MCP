@@ -12,26 +12,14 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolRewriteMethods class >> toolName [
 
 	^ 'method_rewrite'
 ]
 
-{ #category : 'private - execution' }
-MCPToolRewriteMethods >> commandForRequest: rewriteRequest [
-
-	^ MCPRewriteMethodsCommand tool: self request: rewriteRequest
-]
-
-{ #category : 'defaults' }
-MCPToolRewriteMethods >> defaultDescription [
-
-	^ 'Preview or apply Smalltalk AST pattern rewrites within scoped methods. Smalltalk AST pattern syntax, not regex.'
-]
-
-{ #category : 'defaults' }
-MCPToolRewriteMethods >> defaultInputSchema [
+{ #category : 'metadata' }
+MCPToolRewriteMethods >> buildInputSchema [
 
 	^ MCPStructureInputSchema new
 		  type: 'object';
@@ -41,8 +29,8 @@ MCPToolRewriteMethods >> defaultInputSchema [
 		  yourself
 ]
 
-{ #category : 'defaults' }
-MCPToolRewriteMethods >> defaultOutputSchema [
+{ #category : 'metadata' }
+MCPToolRewriteMethods >> buildOutputSchema [
 
 	^ self
 		  standardOutputSchemaForDataProperties: self rewriteDataProperties
@@ -50,10 +38,16 @@ MCPToolRewriteMethods >> defaultOutputSchema [
 			     'scope' 'changes' )
 ]
 
-{ #category : 'defaults' }
-MCPToolRewriteMethods >> defaultTitle [
+{ #category : 'private - execution' }
+MCPToolRewriteMethods >> commandForRequest: rewriteRequest [
 
-	^ 'Rewrite Methods'
+	^ MCPRewriteMethodsCommand tool: self request: rewriteRequest
+]
+
+{ #category : 'metadata' }
+MCPToolRewriteMethods >> description [
+
+	^ 'Preview or apply Smalltalk AST pattern rewrites within scoped methods. Smalltalk AST pattern syntax, not regex.'
 ]
 
 { #category : 'error handling' }
@@ -250,6 +244,12 @@ MCPToolRewriteMethods >> shouldSaveImageAfterSuccessfulExecutionForResult: aResu
 		        ifAbsent: [ ^ false ].
 	^ (data at: #apply ifAbsent: [ false ]) == true and: [
 		  (data at: #appliedCount ifAbsent: [ 0 ]) > 0 ]
+]
+
+{ #category : 'metadata' }
+MCPToolRewriteMethods >> title [
+
+	^ 'Rewrite Methods'
 ]
 
 { #category : 'validating' }

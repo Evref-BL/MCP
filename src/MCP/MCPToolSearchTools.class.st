@@ -11,26 +11,14 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolSearchTools class >> toolName [
 
 	^ 'tool_search'
 ]
 
-{ #category : 'private - execution' }
-MCPToolSearchTools >> commandForRequest: searchRequest [
-
-	^ MCPSearchToolsCommand tool: self request: searchRequest
-]
-
-{ #category : 'defaults' }
-MCPToolSearchTools >> defaultDescription [
-
-	^ 'Search all MCP-Pharo tools. Use to discover tool names before tool_get or tool_call.'
-]
-
-{ #category : 'defaults' }
-MCPToolSearchTools >> defaultInputSchema [
+{ #category : 'metadata' }
+MCPToolSearchTools >> buildInputSchema [
 
 	| limitProperty |
 	limitProperty := self
@@ -58,8 +46,8 @@ MCPToolSearchTools >> defaultInputSchema [
 		  yourself
 ]
 
-{ #category : 'defaults' }
-MCPToolSearchTools >> defaultOutputSchema [
+{ #category : 'metadata' }
+MCPToolSearchTools >> buildOutputSchema [
 
 	^ self
 		  standardOutputSchemaForDataProperties:
@@ -67,10 +55,16 @@ MCPToolSearchTools >> defaultOutputSchema [
 		  required: #( 'tools' )
 ]
 
-{ #category : 'defaults' }
-MCPToolSearchTools >> defaultTitle [
+{ #category : 'private - execution' }
+MCPToolSearchTools >> commandForRequest: searchRequest [
 
-	^ 'Search Tool Catalog'
+	^ MCPSearchToolsCommand tool: self request: searchRequest
+]
+
+{ #category : 'metadata' }
+MCPToolSearchTools >> description [
+
+	^ 'Search all MCP-Pharo tools. Use to discover tool names before tool_get or tool_call.'
 ]
 
 { #category : 'executing' }
@@ -103,6 +97,12 @@ MCPToolSearchTools >> executeWithRequest: request usingPolicy: aToolExposurePoli
 MCPToolSearchTools >> parsedRequestFromToolRequest: request [
 
 	^ MCPSearchToolsRequest fromToolRequest: request
+]
+
+{ #category : 'metadata' }
+MCPToolSearchTools >> title [
+
+	^ 'Search Tool Catalog'
 ]
 
 { #category : 'private - schema' }

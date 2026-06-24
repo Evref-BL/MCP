@@ -9,20 +9,14 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolRunTestCoverage class >> toolName [
 
 	^ 'test_coverage_run'
 ]
 
-{ #category : 'defaults' }
-MCPToolRunTestCoverage >> defaultDescription [
-
-	^ 'Run test classes or individual test methods under coverage and return aggregated test and method coverage results.'
-]
-
-{ #category : 'defaults' }
-MCPToolRunTestCoverage >> defaultInputSchema [
+{ #category : 'metadata' }
+MCPToolRunTestCoverage >> buildInputSchema [
 
 	^ MCPStructureInputSchema new
 		  type: 'object';
@@ -45,8 +39,8 @@ MCPToolRunTestCoverage >> defaultInputSchema [
 		  yourself
 ]
 
-{ #category : 'defaults' }
-MCPToolRunTestCoverage >> defaultOutputSchema [
+{ #category : 'metadata' }
+MCPToolRunTestCoverage >> buildOutputSchema [
 
 	| coverageProperty resultsProperty unrunTestsProperty |
 	resultsProperty := self
@@ -74,10 +68,10 @@ MCPToolRunTestCoverage >> defaultOutputSchema [
 		  required: #( 'results' 'coverage' )
 ]
 
-{ #category : 'defaults' }
-MCPToolRunTestCoverage >> defaultTitle [
+{ #category : 'metadata' }
+MCPToolRunTestCoverage >> description [
 
-	^ 'Run Test Coverage'
+	^ 'Run test classes or individual test methods under coverage and return aggregated test and method coverage results.'
 ]
 
 { #category : 'private - request' }
@@ -87,4 +81,10 @@ MCPToolRunTestCoverage >> parsedRequestFromToolRequest: request [
 		  fromRequest: request
 		  tool: self
 		  operation: 'coverage'
+]
+
+{ #category : 'metadata' }
+MCPToolRunTestCoverage >> title [
+
+	^ 'Run Test Coverage'
 ]

@@ -11,32 +11,14 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolUpdateDebugMethod class >> toolName [
 
 	^ 'debug_method_update'
 ]
 
-{ #category : 'private - execution' }
-MCPToolUpdateDebugMethod >> commandForRequest: debugRequest [
-
-	^ MCPUpdateDebugMethodCommand tool: self request: debugRequest
-]
-
-{ #category : 'defaults' }
-MCPToolUpdateDebugMethod >> defaultDescription [
-
-	^ 'Update the method associated with a paused Pharo DebugSession frame. Supports normal debugger-time method updates and repair flows for resumable exceptions, gates on critiques unless ignoreCritiques=true, then proceeds the computation when possible.'
-]
-
-{ #category : 'defaults' }
-MCPToolUpdateDebugMethod >> defaultIcons [
-
-	^ { (self pngCompositeBaseIconNamed: #bug badgeIconNamed: #edit) }
-]
-
-{ #category : 'defaults' }
-MCPToolUpdateDebugMethod >> defaultInputSchema [
+{ #category : 'metadata' }
+MCPToolUpdateDebugMethod >> buildInputSchema [
 
 	^ MCPStructureInputSchema new
 		  type: 'object';
@@ -93,14 +75,8 @@ MCPToolUpdateDebugMethod >> defaultInputSchema [
 		  yourself
 ]
 
-{ #category : 'defaults' }
-MCPToolUpdateDebugMethod >> defaultName [
-
-	^ 'debug_method_update'
-]
-
-{ #category : 'defaults' }
-MCPToolUpdateDebugMethod >> defaultOutputSchema [
+{ #category : 'metadata' }
+MCPToolUpdateDebugMethod >> buildOutputSchema [
 
 	^ self
 		  standardOutputSchemaForDataProperties: {
@@ -184,10 +160,16 @@ MCPToolUpdateDebugMethod >> defaultOutputSchema [
 			     'timedOut' 'state' 'repairActions' 'warnings' 'capabilities' )
 ]
 
-{ #category : 'defaults' }
-MCPToolUpdateDebugMethod >> defaultTitle [
+{ #category : 'private - execution' }
+MCPToolUpdateDebugMethod >> commandForRequest: debugRequest [
 
-	^ 'Update Debug Method'
+	^ MCPUpdateDebugMethodCommand tool: self request: debugRequest
+]
+
+{ #category : 'metadata' }
+MCPToolUpdateDebugMethod >> description [
+
+	^ 'Update the method associated with a paused Pharo DebugSession frame. Supports normal debugger-time method updates and repair flows for resumable exceptions, gates on critiques unless ignoreCritiques=true, then proceeds the computation when possible.'
 ]
 
 { #category : 'private - request' }
@@ -200,6 +182,12 @@ MCPToolUpdateDebugMethod >> parsedRequestFromToolRequest: request [
 MCPToolUpdateDebugMethod >> shouldSaveImageAfterSuccessfulExecution [
 
 	^ true
+]
+
+{ #category : 'metadata' }
+MCPToolUpdateDebugMethod >> title [
+
+	^ 'Update Debug Method'
 ]
 
 { #category : 'private - data' }

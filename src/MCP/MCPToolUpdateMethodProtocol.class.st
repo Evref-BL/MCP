@@ -9,7 +9,7 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolUpdateMethodProtocol class >> toolName [
 
 	^ 'method_protocol_update'

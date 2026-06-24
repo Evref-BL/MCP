@@ -527,7 +527,7 @@ MCPToolMethodMutationTest >> testCollectionStyleCritiquesProvideAutomaticChanges
 MCPToolMethodMutationTest >> testCompileCanReplaceMethodOnToolClass [
 
 	| data method result |
-	method := MCPHaltingTestTool >> #defaultTitle.
+	method := MCPHaltingTestTool >> #title.
 	result := self callToolNamed: 'method_compile' withArguments: {
 			          (#className -> 'MCPHaltingTestTool').
 			          (#source -> method sourceCode).

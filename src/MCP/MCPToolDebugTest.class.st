@@ -11,26 +11,14 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolDebugTest class >> toolName [
 
 	^ 'debug_test_run'
 ]
 
-{ #category : 'private - execution' }
-MCPToolDebugTest >> commandForRequest: debugRequest [
-
-	^ MCPDebugTestCommand tool: self request: debugRequest
-]
-
-{ #category : 'defaults' }
-MCPToolDebugTest >> defaultDescription [
-
-	^ 'Run one SUnit test method under debugger control and stop at the requested phase.'
-]
-
-{ #category : 'defaults' }
-MCPToolDebugTest >> defaultInputSchema [
+{ #category : 'metadata' }
+MCPToolDebugTest >> buildInputSchema [
 
 	^ MCPStructureInputSchema new
 		  type: 'object';
@@ -90,14 +78,8 @@ MCPToolDebugTest >> defaultInputSchema [
 		  yourself
 ]
 
-{ #category : 'defaults' }
-MCPToolDebugTest >> defaultName [
-
-	^ 'debug_test_run'
-]
-
-{ #category : 'defaults' }
-MCPToolDebugTest >> defaultOutputSchema [
+{ #category : 'metadata' }
+MCPToolDebugTest >> buildOutputSchema [
 
 	^ self
 		  standardOutputSchemaForDataProperties: {
@@ -160,10 +142,16 @@ MCPToolDebugTest >> defaultOutputSchema [
 			     'stopAt' 'timeoutMilliseconds' 'warnings' 'capabilities' )
 ]
 
-{ #category : 'defaults' }
-MCPToolDebugTest >> defaultTitle [
+{ #category : 'private - execution' }
+MCPToolDebugTest >> commandForRequest: debugRequest [
 
-	^ 'Debug Test'
+	^ MCPDebugTestCommand tool: self request: debugRequest
+]
+
+{ #category : 'metadata' }
+MCPToolDebugTest >> description [
+
+	^ 'Run one SUnit test method under debugger control and stop at the requested phase.'
 ]
 
 { #category : 'private - request' }
@@ -176,4 +164,10 @@ MCPToolDebugTest >> parsedRequestFromToolRequest: request [
 MCPToolDebugTest >> shouldSaveImageAfterSuccessfulExecution [
 
 	^ true
+]
+
+{ #category : 'metadata' }
+MCPToolDebugTest >> title [
+
+	^ 'Debug Test'
 ]

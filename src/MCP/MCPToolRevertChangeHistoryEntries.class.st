@@ -9,7 +9,7 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolRevertChangeHistoryEntries class >> toolName [
 
 	^ 'history_entry_revert'

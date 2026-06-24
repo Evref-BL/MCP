@@ -9,7 +9,7 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolStepOverDebugSession class >> toolName [
 
 	^ 'debug_session_step_over'

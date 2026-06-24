@@ -27,6 +27,23 @@ MCPToolClassMutation >> atLeastOneInputProperties [
 		  ifAbsent: [ #(  ) ]
 ]
 
+{ #category : 'metadata' }
+MCPToolClassMutation >> buildInputSchema [
+
+	^ MCPStructureInputSchema new
+		  type: 'object';
+		  properties: self inputProperties;
+		  required: self requiredInputProperties;
+		  additionalProperties: false;
+		  yourself
+]
+
+{ #category : 'metadata' }
+MCPToolClassMutation >> buildOutputSchema [
+
+	^ self standardOutputSchemaForDataProperties: #(  ) required: #(  )
+]
+
 { #category : 'private - schema' }
 MCPToolClassMutation >> classCommentSchemaProperty [
 
@@ -91,33 +108,10 @@ MCPToolClassMutation >> dataForResult: aResult action: actionName [
 	^ Dictionary new
 ]
 
-{ #category : 'defaults' }
-MCPToolClassMutation >> defaultDescription [
+{ #category : 'metadata' }
+MCPToolClassMutation >> description [
 
 	^ self classToolSpec at: #description
-]
-
-{ #category : 'defaults' }
-MCPToolClassMutation >> defaultInputSchema [
-
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: self inputProperties;
-		  required: self requiredInputProperties;
-		  additionalProperties: false;
-		  yourself
-]
-
-{ #category : 'defaults' }
-MCPToolClassMutation >> defaultOutputSchema [
-
-	^ self standardOutputSchemaForDataProperties: #(  ) required: #(  )
-]
-
-{ #category : 'defaults' }
-MCPToolClassMutation >> defaultTitle [
-
-	^ self classToolSpec at: #title
 ]
 
 { #category : 'private' }
@@ -462,6 +456,12 @@ MCPToolClassMutation >> tagSchemaProperty [
 		  schemaPropertyNamed: 'tag'
 		  type: 'string'
 		  description: 'Package tag; recategorizes current package.'
+]
+
+{ #category : 'metadata' }
+MCPToolClassMutation >> title [
+
+	^ self classToolSpec at: #title
 ]
 
 { #category : 'private - schema' }

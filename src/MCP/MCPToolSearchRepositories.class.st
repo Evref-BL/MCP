@@ -11,20 +11,14 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolSearchRepositories class >> toolName [
 
 	^ 'repository_search'
 ]
 
-{ #category : 'defaults' }
-MCPToolSearchRepositories >> defaultDescription [
-
-	^ 'Search registered Iceberg repositories.'
-]
-
-{ #category : 'defaults' }
-MCPToolSearchRepositories >> defaultInputSchema [
+{ #category : 'metadata' }
+MCPToolSearchRepositories >> buildInputSchema [
 
 	| properties |
 	properties := self repositoryFieldFilterInputProperties , {
@@ -49,8 +43,8 @@ MCPToolSearchRepositories >> defaultInputSchema [
 	^ self queryInputSchemaWithProperties: properties
 ]
 
-{ #category : 'defaults' }
-MCPToolSearchRepositories >> defaultOutputSchema [
+{ #category : 'metadata' }
+MCPToolSearchRepositories >> buildOutputSchema [
 
 	^ self
 		  minimalPagedQueryOutputSchemaForEntriesPropertyNamed:
@@ -61,10 +55,10 @@ MCPToolSearchRepositories >> defaultOutputSchema [
 		  itemNounPhrase: 'repository entries'
 ]
 
-{ #category : 'defaults' }
-MCPToolSearchRepositories >> defaultTitle [
+{ #category : 'metadata' }
+MCPToolSearchRepositories >> description [
 
-	^ 'Search Repositories'
+	^ 'Search registered Iceberg repositories.'
 ]
 
 { #category : 'private - results' }
@@ -336,4 +330,10 @@ MCPToolSearchRepositories >> successSummaryForScope: scopeSummary page: page [
 		  scopeQuerySuccessSummaryFor: 'repositories'
 		  scope: scopeSummary
 		  page: page
+]
+
+{ #category : 'metadata' }
+MCPToolSearchRepositories >> title [
+
+	^ 'Search Repositories'
 ]

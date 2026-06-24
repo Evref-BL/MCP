@@ -9,7 +9,7 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolStepIntoDebugSession class >> toolName [
 
 	^ 'debug_session_step_into'

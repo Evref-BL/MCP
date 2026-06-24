@@ -555,7 +555,7 @@ MCPToolContractsTest >> methodLookupToolFlowSpecs [
 			  (#toolClass -> MCPToolSearchEquivalentMethods).
 			  (#arguments -> {
 				   (#className -> 'MCPTool').
-				   (#selector -> 'defaultName') } asDictionary).
+				   (#selector -> 'name') } asDictionary).
 			  (#requestClass -> MCPSearchEquivalentMethodsRequest).
 			  (#commandClass -> MCPSearchToolCommand) } asDictionary.
 		  {
@@ -2194,18 +2194,9 @@ MCPToolContractsTest >> testRPCAdvertisesStaticToolSurfaceOnly [
 { #category : 'tests' }
 MCPToolContractsTest >> testRPCRefreshesCachedToolMetadata [
 
-	| mcp propertyNames result staleTool toolDefinition toolDefinitions |
+	| mcp propertyNames result toolDefinition toolDefinitions |
 	mcp := self mcpWithoutObservabilityExport.
-	staleTool := MCPToolSearchClasses new.
-	staleTool inputSchema: (MCPStructureInputSchema new
-			 type: 'object';
-			 properties: #(  );
-			 required: #(  );
-			 additionalProperties: false;
-			 yourself).
-	mcp toolsList: (Dictionary new
-			 at: staleTool name put: staleTool;
-			 yourself).
+	mcp toolsList: Dictionary new.
 	toolDefinitions := mcp rpcToolsList at: #tools.
 	toolDefinition := toolDefinitions detect: [ :each |
 		                  (each at: #name) = 'class_search' ].

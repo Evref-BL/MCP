@@ -9,7 +9,7 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolUpdateClassSharedVariables class >> toolName [
 
 	^ 'class_shared_variables_update'

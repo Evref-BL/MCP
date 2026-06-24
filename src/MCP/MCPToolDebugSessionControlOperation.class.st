@@ -23,47 +23,8 @@ MCPToolDebugSessionControlOperation >> actionName [
 	^ self controlToolSpec at: #action
 ]
 
-{ #category : 'private - execution' }
-MCPToolDebugSessionControlOperation >> commandForRequest: debugRequest [
-
-	^ MCPDebugControlCommand tool: self request: debugRequest
-]
-
-{ #category : 'private' }
-MCPToolDebugSessionControlOperation >> controlFailureMessageFor: anError operation: operationName [
-
-	| message |
-	message := anError messageText
-		           ifNil: [ anError asString ]
-		           ifNotNil: [ :text | text asString ].
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Debug control ';
-				  nextPutAll: operationName asString;
-				  nextPutAll: ' failed (';
-				  nextPutAll: anError class name;
-				  nextPutAll: '): ';
-				  nextPutAll: message.
-			  anError signalerContext ifNotNil: [ :context |
-					  stream
-						  nextPutAll: ' Signaler context: ';
-						  nextPutAll: context printString ] ]
-]
-
-{ #category : 'private - specs' }
-MCPToolDebugSessionControlOperation >> controlToolSpec [
-
-	self subclassResponsibility
-]
-
-{ #category : 'defaults' }
-MCPToolDebugSessionControlOperation >> defaultDescription [
-
-	^ self controlToolSpec at: #description
-]
-
-{ #category : 'defaults' }
-MCPToolDebugSessionControlOperation >> defaultInputSchema [
+{ #category : 'metadata' }
+MCPToolDebugSessionControlOperation >> buildInputSchema [
 
 	^ MCPStructureInputSchema new
 		  type: 'object';
@@ -73,8 +34,8 @@ MCPToolDebugSessionControlOperation >> defaultInputSchema [
 		  yourself
 ]
 
-{ #category : 'defaults' }
-MCPToolDebugSessionControlOperation >> defaultOutputSchema [
+{ #category : 'metadata' }
+MCPToolDebugSessionControlOperation >> buildOutputSchema [
 
 	^ self
 		  standardOutputSchemaForDataProperties: {
@@ -126,10 +87,43 @@ MCPToolDebugSessionControlOperation >> defaultOutputSchema [
 			     'reason' 'warnings' 'capabilities' )
 ]
 
-{ #category : 'defaults' }
-MCPToolDebugSessionControlOperation >> defaultTitle [
+{ #category : 'private - execution' }
+MCPToolDebugSessionControlOperation >> commandForRequest: debugRequest [
 
-	^ self controlToolSpec at: #title
+	^ MCPDebugControlCommand tool: self request: debugRequest
+]
+
+{ #category : 'private' }
+MCPToolDebugSessionControlOperation >> controlFailureMessageFor: anError operation: operationName [
+
+	| message |
+	message := anError messageText
+		           ifNil: [ anError asString ]
+		           ifNotNil: [ :text | text asString ].
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: 'Debug control ';
+				  nextPutAll: operationName asString;
+				  nextPutAll: ' failed (';
+				  nextPutAll: anError class name;
+				  nextPutAll: '): ';
+				  nextPutAll: message.
+			  anError signalerContext ifNotNil: [ :context |
+					  stream
+						  nextPutAll: ' Signaler context: ';
+						  nextPutAll: context printString ] ]
+]
+
+{ #category : 'private - specs' }
+MCPToolDebugSessionControlOperation >> controlToolSpec [
+
+	self subclassResponsibility
+]
+
+{ #category : 'metadata' }
+MCPToolDebugSessionControlOperation >> description [
+
+	^ self controlToolSpec at: #description
 ]
 
 { #category : 'private - schema' }
@@ -216,6 +210,12 @@ MCPToolDebugSessionControlOperation >> stateSnapshotInputProperties [
 			   booleanSchemaPropertyNamed: 'includeReceiver'
 			   description: 'Include receiver scope.'
 			   default: MCPDebugRequest defaultIncludeReceiver) }
+]
+
+{ #category : 'metadata' }
+MCPToolDebugSessionControlOperation >> title [
+
+	^ self controlToolSpec at: #title
 ]
 
 { #category : 'private - specs' }

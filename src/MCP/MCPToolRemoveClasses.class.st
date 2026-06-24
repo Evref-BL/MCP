@@ -11,10 +11,52 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolRemoveClasses class >> toolName [
 
 	^ 'class_remove'
+]
+
+{ #category : 'metadata' }
+MCPToolRemoveClasses >> buildInputSchema [
+
+	^ MCPStructureInputSchema new
+		  type: 'object';
+		  properties: {
+				  ((MCPStructureProperties new
+					    name: 'classNames';
+					    type: 'array';
+					    description: 'The class names to remove as a single batch.')
+					   items: (MCPStructureProperties new
+							    type: 'string';
+							    description: 'A class name to remove.';
+							    yourself);
+					   yourself).
+				  (MCPStructureProperties new
+					   name: 'force';
+					   type: 'boolean';
+					   description:
+						   'When true, proceed even if safe-removal warnings are raised. Those warnings are returned in the tool result warnings.';
+					   default: false;
+					   yourself) };
+		  required: #( 'classNames' );
+		  yourself
+]
+
+{ #category : 'metadata' }
+MCPToolRemoveClasses >> buildOutputSchema [
+
+	^ self
+		  standardOutputSchemaForDataProperties: {
+				  (self
+					   stringArraySchemaNamed: 'removedPackageNames'
+					   description: 'Packages removed during cleanup.'
+					   itemDescription: nil).
+				  (self
+					   stringArraySchemaNamed: 'reparentedSubclassNames'
+					   description: 'Subclasses reparented during removal.'
+					   itemDescription: nil) }
+		  required: #(  )
 ]
 
 { #category : 'private - errors' }
@@ -43,58 +85,10 @@ MCPToolRemoveClasses >> commandForRequest: removeRequest [
 		  force: removeRequest force
 ]
 
-{ #category : 'defaults' }
-MCPToolRemoveClasses >> defaultDescription [
+{ #category : 'metadata' }
+MCPToolRemoveClasses >> description [
 
 	^ 'Remove classes as one batch. Safe-removal warnings stop the removal unless force is true. With force=true, the tool still returns those warnings.'
-]
-
-{ #category : 'defaults' }
-MCPToolRemoveClasses >> defaultInputSchema [
-
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: {
-				  ((MCPStructureProperties new
-					    name: 'classNames';
-					    type: 'array';
-					    description: 'The class names to remove as a single batch.')
-					   items: (MCPStructureProperties new
-							    type: 'string';
-							    description: 'A class name to remove.';
-							    yourself);
-					   yourself).
-				  (MCPStructureProperties new
-					   name: 'force';
-					   type: 'boolean';
-					   description:
-						   'When true, proceed even if safe-removal warnings are raised. Those warnings are returned in the tool result warnings.';
-					   default: false;
-					   yourself) };
-		  required: #( 'classNames' );
-		  yourself
-]
-
-{ #category : 'defaults' }
-MCPToolRemoveClasses >> defaultOutputSchema [
-
-	^ self
-		  standardOutputSchemaForDataProperties: {
-				  (self
-					   stringArraySchemaNamed: 'removedPackageNames'
-					   description: 'Packages removed during cleanup.'
-					   itemDescription: nil).
-				  (self
-					   stringArraySchemaNamed: 'reparentedSubclassNames'
-					   description: 'Subclasses reparented during removal.'
-					   itemDescription: nil) }
-		  required: #(  )
-]
-
-{ #category : 'defaults' }
-MCPToolRemoveClasses >> defaultTitle [
-
-	^ 'Remove Classes'
 ]
 
 { #category : 'private' }
@@ -213,4 +207,10 @@ MCPToolRemoveClasses >> successSummaryForClassNames: classNames removedClasses: 
 				  nextPutAll: 'Removed packages: ';
 				  nextPutAll: (', ' join: removedPackageNames);
 				  nextPut: $. ] ]
+]
+
+{ #category : 'metadata' }
+MCPToolRemoveClasses >> title [
+
+	^ 'Remove Classes'
 ]

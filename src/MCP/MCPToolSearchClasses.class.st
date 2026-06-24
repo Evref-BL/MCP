@@ -11,10 +11,38 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolSearchClasses class >> toolName [
 
 	^ 'class_search'
+]
+
+{ #category : 'metadata' }
+MCPToolSearchClasses >> buildInputSchema [
+
+	| properties |
+	properties := self classQueryScopeInputProperties
+	              , self classFilterInputProperties , {
+		              (self
+			               filterModeSchemaPropertyWithDescription:
+			               'How class metadata filters are matched.'
+			               values: self basicFilterModes).
+		              (self caseSensitiveSchemaPropertyWithDescription:
+			               'Whether class metadata matching is case-sensitive.') }
+	              , (self paginationInputPropertiesWithLimitDescription:
+			               'Maximum number of matching classes to return. Use 0 to return no entries.').
+	^ self queryInputSchemaWithProperties: properties
+]
+
+{ #category : 'metadata' }
+MCPToolSearchClasses >> buildOutputSchema [
+
+	^ self
+		  minimalPagedQueryOutputSchemaForEntriesPropertyNamed: 'classes'
+		  entriesDescription:
+		  'The class entries returned for the requested page.'
+		  entrySchema: self classEntrySchema
+		  itemNounPhrase: 'class entries'
 ]
 
 { #category : 'private - filtering' }
@@ -94,44 +122,10 @@ MCPToolSearchClasses >> classInfoDataProperties [
 			   description: 'Package tag.') }
 ]
 
-{ #category : 'defaults' }
-MCPToolSearchClasses >> defaultDescription [
+{ #category : 'metadata' }
+MCPToolSearchClasses >> description [
 
 	^ 'Search classes by name, package, tag, hierarchy, or slot. Use class_get when you already know the class name.'
-]
-
-{ #category : 'defaults' }
-MCPToolSearchClasses >> defaultInputSchema [
-
-	| properties |
-	properties := self classQueryScopeInputProperties
-	              , self classFilterInputProperties , {
-		              (self
-			               filterModeSchemaPropertyWithDescription:
-			               'How class metadata filters are matched.'
-			               values: self basicFilterModes).
-		              (self caseSensitiveSchemaPropertyWithDescription:
-			               'Whether class metadata matching is case-sensitive.') }
-	              , (self paginationInputPropertiesWithLimitDescription:
-			               'Maximum number of matching classes to return. Use 0 to return no entries.').
-	^ self queryInputSchemaWithProperties: properties
-]
-
-{ #category : 'defaults' }
-MCPToolSearchClasses >> defaultOutputSchema [
-
-	^ self
-		  minimalPagedQueryOutputSchemaForEntriesPropertyNamed: 'classes'
-		  entriesDescription:
-		  'The class entries returned for the requested page.'
-		  entrySchema: self classEntrySchema
-		  itemNounPhrase: 'class entries'
-]
-
-{ #category : 'defaults' }
-MCPToolSearchClasses >> defaultTitle [
-
-	^ 'Search Classes'
 ]
 
 { #category : 'private - results' }
@@ -223,4 +217,10 @@ MCPToolSearchClasses >> successSummaryForScope: scopeSummary page: page [
 		  scopeQuerySuccessSummaryFor: 'classes'
 		  scope: scopeSummary
 		  page: page
+]
+
+{ #category : 'metadata' }
+MCPToolSearchClasses >> title [
+
+	^ 'Search Classes'
 ]
