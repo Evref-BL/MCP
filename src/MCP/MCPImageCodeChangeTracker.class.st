@@ -11,9 +11,9 @@ Class {
 		'hasChanges',
 		'affectedPackageNames'
 	],
-	#category : 'MCP-Commands',
+	#category : 'MCP-Utilities',
 	#package : 'MCP',
-	#tag : 'Commands'
+	#tag : 'Utilities'
 }
 
 { #category : 'accessing' }

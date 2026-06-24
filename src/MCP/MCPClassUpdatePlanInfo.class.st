@@ -10,9 +10,9 @@ Class {
 		'requestedContext',
 		'updateAction'
 	],
-	#category : 'MCP-Results',
+	#category : 'MCP-DTOs',
 	#package : 'MCP',
-	#tag : 'Results'
+	#tag : 'DTOs'
 }
 
 { #category : 'instance creation' }
