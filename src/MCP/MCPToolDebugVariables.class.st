@@ -17,20 +17,8 @@ MCPToolDebugVariables class >> toolName [
 	^ 'debug_variable_get'
 ]
 
-{ #category : 'private - execution' }
-MCPToolDebugVariables >> commandForRequest: debugRequest [
-
-	^ MCPDebugVariablesCommand tool: self request: debugRequest
-]
-
 { #category : 'metadata' }
-MCPToolDebugVariables >> description [
-
-	^ 'Expand one state-scoped variable or scope reference returned by debug_state_get.'
-]
-
-{ #category : 'metadata' }
-MCPToolDebugVariables >> inputSchema [
+MCPToolDebugVariables >> buildInputSchema [
 
 	^ MCPStructureInputSchema new
 		  type: 'object';
@@ -65,7 +53,7 @@ MCPToolDebugVariables >> inputSchema [
 ]
 
 { #category : 'metadata' }
-MCPToolDebugVariables >> outputSchema [
+MCPToolDebugVariables >> buildOutputSchema [
 
 	^ self
 		  standardOutputSchemaForDataProperties: {
@@ -125,6 +113,18 @@ MCPToolDebugVariables >> outputSchema [
 		  required:
 			  #( 'sessionId' 'stateId' 'variableRef' 'kind' 'variables'
 			     'totalCount' 'truncated' 'warnings' 'capabilities' )
+]
+
+{ #category : 'private - execution' }
+MCPToolDebugVariables >> commandForRequest: debugRequest [
+
+	^ MCPDebugVariablesCommand tool: self request: debugRequest
+]
+
+{ #category : 'metadata' }
+MCPToolDebugVariables >> description [
+
+	^ 'Expand one state-scoped variable or scope reference returned by debug_state_get.'
 ]
 
 { #category : 'private - request' }

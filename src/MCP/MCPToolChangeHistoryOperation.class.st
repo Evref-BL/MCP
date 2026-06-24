@@ -21,20 +21,8 @@ MCPToolChangeHistoryOperation >> actionName [
 	^ self changeHistoryToolSpec at: #action
 ]
 
-{ #category : 'private - specs' }
-MCPToolChangeHistoryOperation >> changeHistoryToolSpec [
-
-	self subclassResponsibility
-]
-
 { #category : 'metadata' }
-MCPToolChangeHistoryOperation >> description [
-
-	^ self changeHistoryToolSpec at: #description
-]
-
-{ #category : 'metadata' }
-MCPToolChangeHistoryOperation >> inputSchema [
+MCPToolChangeHistoryOperation >> buildInputSchema [
 
 	^ MCPStructureInputSchema new
 		  type: 'object';
@@ -45,7 +33,7 @@ MCPToolChangeHistoryOperation >> inputSchema [
 ]
 
 { #category : 'metadata' }
-MCPToolChangeHistoryOperation >> outputSchema [
+MCPToolChangeHistoryOperation >> buildOutputSchema [
 
 	| previewEntriesProperty selectedEntriesProperty |
 	selectedEntriesProperty := self
@@ -96,6 +84,18 @@ MCPToolChangeHistoryOperation >> outputSchema [
 			     'previewEntries' 'selectedCount' 'selectedCodeChangeCount'
 			     'skippedNonCodeChangeCount' 'previewCount' 'performed'
 			     'performedCount' )
+]
+
+{ #category : 'private - specs' }
+MCPToolChangeHistoryOperation >> changeHistoryToolSpec [
+
+	self subclassResponsibility
+]
+
+{ #category : 'metadata' }
+MCPToolChangeHistoryOperation >> description [
+
+	^ self changeHistoryToolSpec at: #description
 ]
 
 { #category : 'private - request' }

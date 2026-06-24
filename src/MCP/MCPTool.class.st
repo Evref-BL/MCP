@@ -17,6 +17,10 @@ Subclasses should keep protocol and schema mechanics in the tool, put image work
 Class {
 	#name : 'MCPTool',
 	#superclass : 'Object',
+	#instVars : [
+		'inputSchema',
+		'outputSchema'
+	],
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -44,7 +48,7 @@ MCPTool class >> toolGroups [
 MCPTool class >> toolIconFormOf: aToolClass [
 
 	^ Form fromBase64String:
-		  (aToolClass new icons first src copyAfter: $,)
+		  (aToolClass toolIcons first src copyAfter: $,)
 ]
 
 { #category : 'icons' }
@@ -96,6 +100,18 @@ MCPTool >> booleanSchemaPropertyNamed: propertyName description: propertyDescrip
 		   description: propertyDescription)
 		  default: defaultValue;
 		  yourself
+]
+
+{ #category : 'metadata' }
+MCPTool >> buildInputSchema [
+
+	self subclassResponsibility
+]
+
+{ #category : 'metadata' }
+MCPTool >> buildOutputSchema [
+
+	self subclassResponsibility
 ]
 
 { #category : 'private - execution' }
@@ -265,7 +281,7 @@ MCPTool >> icons [
 { #category : 'metadata' }
 MCPTool >> inputSchema [
 
-	self subclassResponsibility
+	^ inputSchema ifNil: [ inputSchema := self buildInputSchema ]
 ]
 
 { #category : 'private - schema' }
@@ -296,7 +312,7 @@ MCPTool >> name [
 { #category : 'metadata' }
 MCPTool >> outputSchema [
 
-	self subclassResponsibility
+	^ outputSchema ifNil: [ outputSchema := self buildOutputSchema ]
 ]
 
 { #category : 'private - request' }

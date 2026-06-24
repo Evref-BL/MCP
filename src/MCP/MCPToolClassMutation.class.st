@@ -27,6 +27,23 @@ MCPToolClassMutation >> atLeastOneInputProperties [
 		  ifAbsent: [ #(  ) ]
 ]
 
+{ #category : 'metadata' }
+MCPToolClassMutation >> buildInputSchema [
+
+	^ MCPStructureInputSchema new
+		  type: 'object';
+		  properties: self inputProperties;
+		  required: self requiredInputProperties;
+		  additionalProperties: false;
+		  yourself
+]
+
+{ #category : 'metadata' }
+MCPToolClassMutation >> buildOutputSchema [
+
+	^ self standardOutputSchemaForDataProperties: #(  ) required: #(  )
+]
+
 { #category : 'private - schema' }
 MCPToolClassMutation >> classCommentSchemaProperty [
 
@@ -296,17 +313,6 @@ MCPToolClassMutation >> inputProperties [
 	^ self classToolSpec at: #inputProperties
 ]
 
-{ #category : 'metadata' }
-MCPToolClassMutation >> inputSchema [
-
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: self inputProperties;
-		  required: self requiredInputProperties;
-		  additionalProperties: false;
-		  yourself
-]
-
 { #category : 'private - schema' }
 MCPToolClassMutation >> layoutSchemaProperty [
 
@@ -344,12 +350,6 @@ MCPToolClassMutation >> newSlotNameSchemaProperty [
 		  schemaPropertyNamed: 'newSlotName'
 		  type: 'string'
 		  description: 'The replacement slot name.'
-]
-
-{ #category : 'metadata' }
-MCPToolClassMutation >> outputSchema [
-
-	^ self standardOutputSchemaForDataProperties: #(  ) required: #(  )
 ]
 
 { #category : 'private - request' }

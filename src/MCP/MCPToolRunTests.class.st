@@ -17,6 +17,56 @@ MCPToolRunTests class >> toolName [
 	^ 'test_run'
 ]
 
+{ #category : 'metadata' }
+MCPToolRunTests >> buildInputSchema [
+
+	^ MCPStructureInputSchema new
+		  type: 'object';
+		  properties: {
+				  ((MCPStructureProperties new
+					    name: 'tests';
+					    type: 'array';
+					    description: 'Test requests.')
+					   items: self testRequestObjectSchema;
+					   yourself).
+				  (self
+					   integerSchemaPropertyNamed: 'timeoutSeconds'
+					   description: 'Timeout in seconds; 0 returns immediately.'
+					   default: self defaultTimeoutSeconds).
+				  (self
+					   integerSchemaPropertyNamed: 'timeoutMilliseconds'
+					   description: 'Timeout in milliseconds.') };
+		  required: #( 'tests' );
+		  yourself
+]
+
+{ #category : 'metadata' }
+MCPToolRunTests >> buildOutputSchema [
+
+	| resultsProperty unrunTestsProperty |
+	resultsProperty := self
+		                   schemaPropertyNamed: 'results'
+		                   type: 'array'
+		                   description:
+		                   'Structured results for each test execution request in the batch that completed before timeout.'.
+	resultsProperty items: self testResultObjectSchema.
+	unrunTestsProperty := self
+		                      schemaPropertyNamed: 'unrunTests'
+		                      type: 'array'
+		                      description:
+		                      'Test execution requests that did not run because the batch timed out. Pass this array to test_run to continue from the timeout point.'.
+	unrunTestsProperty items: self testRequestObjectSchema.
+	^ self
+		  standardOutputSchemaForDataProperties: {
+				  resultsProperty.
+				  (self
+					   booleanSchemaPropertyNamed: 'timedOut'
+					   description:
+					   'Whether the batch stopped early because timeoutSeconds elapsed.').
+				  unrunTestsProperty }
+		  required: #( 'results' )
+]
+
 { #category : 'private - execution' }
 MCPToolRunTests >> commandForRequest: runTestsRequest [
 
@@ -246,56 +296,6 @@ MCPToolRunTests >> failureMessageForTestNames: testNames error: anError [
 				  nextPutAll: anError class name;
 				  nextPutAll: '): ';
 				  nextPutAll: anError messageText ]
-]
-
-{ #category : 'metadata' }
-MCPToolRunTests >> inputSchema [
-
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: {
-				  ((MCPStructureProperties new
-					    name: 'tests';
-					    type: 'array';
-					    description: 'Test requests.')
-					   items: self testRequestObjectSchema;
-					   yourself).
-				  (self
-					   integerSchemaPropertyNamed: 'timeoutSeconds'
-					   description: 'Timeout in seconds; 0 returns immediately.'
-					   default: self defaultTimeoutSeconds).
-				  (self
-					   integerSchemaPropertyNamed: 'timeoutMilliseconds'
-					   description: 'Timeout in milliseconds.') };
-		  required: #( 'tests' );
-		  yourself
-]
-
-{ #category : 'metadata' }
-MCPToolRunTests >> outputSchema [
-
-	| resultsProperty unrunTestsProperty |
-	resultsProperty := self
-		                   schemaPropertyNamed: 'results'
-		                   type: 'array'
-		                   description:
-		                   'Structured results for each test execution request in the batch that completed before timeout.'.
-	resultsProperty items: self testResultObjectSchema.
-	unrunTestsProperty := self
-		                      schemaPropertyNamed: 'unrunTests'
-		                      type: 'array'
-		                      description:
-		                      'Test execution requests that did not run because the batch timed out. Pass this array to test_run to continue from the timeout point.'.
-	unrunTestsProperty items: self testRequestObjectSchema.
-	^ self
-		  standardOutputSchemaForDataProperties: {
-				  resultsProperty.
-				  (self
-					   booleanSchemaPropertyNamed: 'timedOut'
-					   description:
-					   'Whether the batch stopped early because timeoutSeconds elapsed.').
-				  unrunTestsProperty }
-		  required: #( 'results' )
 ]
 
 { #category : 'private - request' }

@@ -18,6 +18,17 @@ MCPToolMethodSearch class >> isAbstract [
 	^ self = MCPToolMethodSearch
 ]
 
+{ #category : 'metadata' }
+MCPToolMethodSearch >> buildOutputSchema [
+
+	^ self
+		  minimalPagedQueryOutputSchemaForEntriesPropertyNamed: 'methods'
+		  entriesDescription:
+		  'The method entries returned for the requested page.'
+		  entrySchema: self methodEntrySchema
+		  itemNounPhrase: 'methods'
+]
+
 { #category : 'private - searching' }
 MCPToolMethodSearch >> classBindingForClassName: aClassName [
 
@@ -310,17 +321,6 @@ MCPToolMethodSearch >> methodScopeQueryFromRequest: request [
 MCPToolMethodSearch >> needsSourceForFiltering [
 
 	^ false
-]
-
-{ #category : 'metadata' }
-MCPToolMethodSearch >> outputSchema [
-
-	^ self
-		  minimalPagedQueryOutputSchemaForEntriesPropertyNamed: 'methods'
-		  entriesDescription:
-		  'The method entries returned for the requested page.'
-		  entrySchema: self methodEntrySchema
-		  itemNounPhrase: 'methods'
 ]
 
 { #category : 'private - template' }

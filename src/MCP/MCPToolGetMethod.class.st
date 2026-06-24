@@ -25,6 +25,66 @@ MCPToolGetMethod >> bindingClassNameFor: aBinding [
 		  ifNotNil: [ :binding | binding class name asString ]
 ]
 
+{ #category : 'metadata' }
+MCPToolGetMethod >> buildInputSchema [
+
+	| classSideProperty includeVariableDetailsProperty |
+	classSideProperty := MCPStructureProperties new
+		                     name: 'classSide';
+		                     type: 'boolean';
+		                     description:
+			                     'Whether the target method is on the class side.';
+		                     default: false;
+		                     yourself.
+	includeVariableDetailsProperty := MCPStructureProperties new
+		                                  name: 'includeVariableDetails';
+		                                  type: 'boolean';
+		                                  description:
+			                                  'Whether to include variable reference summaries and counts.';
+		                                  default: false;
+		                                  yourself.
+	^ MCPStructureInputSchema new
+		  type: 'object';
+		  properties: {
+				  (MCPStructureProperties new
+					   name: 'className';
+					   type: 'string';
+					   description: 'The class that defines the method.';
+					   yourself).
+				  (MCPStructureProperties new
+					   name: 'selector';
+					   type: 'string';
+					   description: 'The selector of the method to return.';
+					   yourself).
+				  classSideProperty.
+				  includeVariableDetailsProperty };
+		  required: #( 'className' 'selector' );
+		  yourself
+]
+
+{ #category : 'metadata' }
+MCPToolGetMethod >> buildOutputSchema [
+
+	^ self
+		  standardOutputSchemaForDataProperties: {
+				  (self
+					   schemaPropertyNamed: 'protocol'
+					   type: 'string'
+					   description: 'The protocol/category containing the method.').
+				  (self
+					   schemaPropertyNamed: 'source'
+					   type: 'string'
+					   description: 'The formatted source code of the method.').
+				  ((self
+					    schemaPropertyNamed: 'variableReferences'
+					    type: 'array'
+					    description:
+						    'Structured summaries of referenced variables in first-use order when variable details are included.')
+					   items: self variableReferenceSchema;
+					   yourself) }
+		  required: #( 'protocol' 'source' )
+]
+
 { #category : 'private - errors' }
 MCPToolGetMethod >> classNameForErrorFromParsedRequest: getRequest rawRequest: rawRequest [
 
@@ -137,43 +197,6 @@ MCPToolGetMethod >> incrementReferenceCountInSummary: aSummary [
 	aSummary at: #referenceCount put: (aSummary at: #referenceCount) + 1
 ]
 
-{ #category : 'metadata' }
-MCPToolGetMethod >> inputSchema [
-
-	| classSideProperty includeVariableDetailsProperty |
-	classSideProperty := MCPStructureProperties new
-		                     name: 'classSide';
-		                     type: 'boolean';
-		                     description:
-			                     'Whether the target method is on the class side.';
-		                     default: false;
-		                     yourself.
-	includeVariableDetailsProperty := MCPStructureProperties new
-		                                  name: 'includeVariableDetails';
-		                                  type: 'boolean';
-		                                  description:
-			                                  'Whether to include variable reference summaries and counts.';
-		                                  default: false;
-		                                  yourself.
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: {
-				  (MCPStructureProperties new
-					   name: 'className';
-					   type: 'string';
-					   description: 'The class that defines the method.';
-					   yourself).
-				  (MCPStructureProperties new
-					   name: 'selector';
-					   type: 'string';
-					   description: 'The selector of the method to return.';
-					   yourself).
-				  classSideProperty.
-				  includeVariableDetailsProperty };
-		  required: #( 'className' 'selector' );
-		  yourself
-]
-
 { #category : 'private - analysis' }
 MCPToolGetMethod >> matchingSummaryForNodeName: aName kind: aKind ownerName: anOwnerName in: summaries [
 
@@ -201,29 +224,6 @@ MCPToolGetMethod >> newVariableSummaryForNode: aVariableNode kind: aKind methodB
 	summary at: #referenceCount put: 0.
 	ownerName ifNotNil: [ summary at: #ownerName put: ownerName ].
 	^ summary
-]
-
-{ #category : 'metadata' }
-MCPToolGetMethod >> outputSchema [
-
-	^ self
-		  standardOutputSchemaForDataProperties: {
-				  (self
-					   schemaPropertyNamed: 'protocol'
-					   type: 'string'
-					   description: 'The protocol/category containing the method.').
-				  (self
-					   schemaPropertyNamed: 'source'
-					   type: 'string'
-					   description: 'The formatted source code of the method.').
-				  ((self
-					    schemaPropertyNamed: 'variableReferences'
-					    type: 'array'
-					    description:
-						    'Structured summaries of referenced variables in first-use order when variable details are included.')
-					   items: self variableReferenceSchema;
-					   yourself) }
-		  required: #( 'protocol' 'source' )
 ]
 
 { #category : 'private - analysis' }

@@ -15,15 +15,8 @@ MCPToolMethodLookupOperation class >> isAbstract [
 	^ self = MCPToolMethodLookupOperation
 ]
 
-{ #category : 'private - request' }
-MCPToolMethodLookupOperation >> filterPatternFromRequest: request [
-
-	^ (request stringArgumentNamed: self lookupArgumentName) ifNotNil: [
-		  :value | value trimBoth ]
-]
-
 { #category : 'metadata' }
-MCPToolMethodLookupOperation >> inputSchema [
+MCPToolMethodLookupOperation >> buildInputSchema [
 
 	| properties |
 	properties := self methodQueryScopeInputProperties , {
@@ -37,6 +30,13 @@ MCPToolMethodLookupOperation >> inputSchema [
 		  properties: properties;
 		  required: { self lookupArgumentName };
 		  yourself
+]
+
+{ #category : 'private - request' }
+MCPToolMethodLookupOperation >> filterPatternFromRequest: request [
+
+	^ (request stringArgumentNamed: self lookupArgumentName) ifNotNil: [
+		  :value | value trimBoth ]
 ]
 
 { #category : 'private - schema' }

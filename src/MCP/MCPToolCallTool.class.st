@@ -17,32 +17,8 @@ MCPToolCallTool class >> toolName [
 	^ 'tool_call'
 ]
 
-{ #category : 'private - execution' }
-MCPToolCallTool >> commandForRequest: callRequest [
-
-	^ MCPCallToolCommand tool: self request: callRequest
-]
-
 { #category : 'metadata' }
-MCPToolCallTool >> description [
-
-	^ 'Invoke one MCP-Pharo tool selected by name from the discoverable catalog. The target tool receives the nested arguments object and is validated through its own schema.'
-]
-
-{ #category : 'executing' }
-MCPToolCallTool >> executeWithRequest: request [
-
-	^ self
-		  executeParsedRequestFrom: request
-		  do: [ :callRequest |
-				  self
-					  errorResultText: 'tool_call requires MCP server call context.'
-					  details: { (#toolName -> callRequest toolName) } asDictionary ]
-		  onError: [ :error :parsedRequest | self errorResultFor: error ]
-]
-
-{ #category : 'metadata' }
-MCPToolCallTool >> inputSchema [
+MCPToolCallTool >> buildInputSchema [
 
 	| argumentsProperty toolNameProperty |
 	toolNameProperty := self
@@ -67,7 +43,7 @@ MCPToolCallTool >> inputSchema [
 ]
 
 { #category : 'metadata' }
-MCPToolCallTool >> outputSchema [
+MCPToolCallTool >> buildOutputSchema [
 
 	| resultProperty |
 	resultProperty := self
@@ -84,6 +60,30 @@ MCPToolCallTool >> outputSchema [
 					   description: 'The selected target tool name.').
 				  resultProperty }
 		  required: #( 'targetToolName' 'result' )
+]
+
+{ #category : 'private - execution' }
+MCPToolCallTool >> commandForRequest: callRequest [
+
+	^ MCPCallToolCommand tool: self request: callRequest
+]
+
+{ #category : 'metadata' }
+MCPToolCallTool >> description [
+
+	^ 'Invoke one MCP-Pharo tool selected by name from the discoverable catalog. The target tool receives the nested arguments object and is validated through its own schema.'
+]
+
+{ #category : 'executing' }
+MCPToolCallTool >> executeWithRequest: request [
+
+	^ self
+		  executeParsedRequestFrom: request
+		  do: [ :callRequest |
+				  self
+					  errorResultText: 'tool_call requires MCP server call context.'
+					  details: { (#toolName -> callRequest toolName) } asDictionary ]
+		  onError: [ :error :parsedRequest | self errorResultFor: error ]
 ]
 
 { #category : 'private - request' }

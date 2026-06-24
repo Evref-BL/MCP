@@ -16,25 +16,7 @@ MCPToolSearchEquivalentMethods class >> toolName [
 ]
 
 { #category : 'metadata' }
-MCPToolSearchEquivalentMethods >> description [
-
-	^ 'Search methods whose AST is equivalent to a referenced method.'
-]
-
-{ #category : 'private - methods' }
-MCPToolSearchEquivalentMethods >> equivalentEntriesForQueryRequest: queryRequest [
-
-	| referenceMethod |
-	referenceMethod := queryRequest referenceMethod.
-	^ self
-		  methodEntriesFromMethods:
-			  (queryRequest scopeQuery methods select: [ :eachMethod |
-				   eachMethod equivalentTo: referenceMethod ]) asArray
-		  queryRequest: queryRequest
-]
-
-{ #category : 'metadata' }
-MCPToolSearchEquivalentMethods >> inputSchema [
+MCPToolSearchEquivalentMethods >> buildInputSchema [
 
 	| properties |
 	properties := self methodQueryScopeInputProperties , {
@@ -61,6 +43,24 @@ MCPToolSearchEquivalentMethods >> inputSchema [
 		  properties: properties;
 		  required: #( 'className' 'selector' );
 		  yourself
+]
+
+{ #category : 'metadata' }
+MCPToolSearchEquivalentMethods >> description [
+
+	^ 'Search methods whose AST is equivalent to a referenced method.'
+]
+
+{ #category : 'private - methods' }
+MCPToolSearchEquivalentMethods >> equivalentEntriesForQueryRequest: queryRequest [
+
+	| referenceMethod |
+	referenceMethod := queryRequest referenceMethod.
+	^ self
+		  methodEntriesFromMethods:
+			  (queryRequest scopeQuery methods select: [ :eachMethod |
+				   eachMethod equivalentTo: referenceMethod ]) asArray
+		  queryRequest: queryRequest
 ]
 
 { #category : 'private - request' }

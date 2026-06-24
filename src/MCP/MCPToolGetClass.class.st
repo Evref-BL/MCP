@@ -17,6 +17,70 @@ MCPToolGetClass class >> toolName [
 	^ 'class_get'
 ]
 
+{ #category : 'metadata' }
+MCPToolGetClass >> buildInputSchema [
+
+	| includeCommentProperty subclassDepthProperty upToSuperclassNameProperty |
+	includeCommentProperty := MCPStructureProperties new
+		                          name: 'includeComment';
+		                          type: 'boolean';
+		                          description: 'Include class comments.';
+		                          default: false;
+		                          yourself.
+	upToSuperclassNameProperty := MCPStructureProperties new
+		                              name: 'upToSuperclassName';
+		                              type: 'string';
+		                              description:
+			                              'Ancestor superclass stop.';
+		                              yourself.
+	subclassDepthProperty := MCPStructureProperties new
+		                         name: 'subclassDepth';
+		                         type: 'integer';
+		                         description: 'Subclass levels.';
+		                         default: 0;
+		                         minimum: 0;
+		                         maximum: self maximumSubclassDepth;
+		                         yourself.
+	^ MCPStructureInputSchema new
+		  type: 'object';
+		  properties: {
+				  (MCPStructureProperties new
+					   name: 'className';
+					   type: 'string';
+					   description: 'Class name.';
+					   yourself).
+				  includeCommentProperty.
+				  upToSuperclassNameProperty.
+				  subclassDepthProperty };
+		  required: #( 'className' );
+		  yourself
+]
+
+{ #category : 'metadata' }
+MCPToolGetClass >> buildOutputSchema [
+
+	^ self
+		  standardOutputSchemaForDataProperties:
+			  self classDescriptionDataProperties , {
+				  ((self
+					    schemaPropertyNamed: 'superclasses'
+					    type: 'array'
+					    description:
+						    'The included superclasses, starting from the direct superclass and moving upward.')
+					   items: self classDescriptionObjectSchema;
+					   yourself).
+				  ((self
+					    schemaPropertyNamed: 'subclasses'
+					    type: 'array'
+					    description:
+						    'The included subclasses or descendants of the requested class, bounded by subclassDepth.')
+					   items: self classDescriptionObjectSchema;
+					   yourself) }
+		  required:
+		  self classDescriptionRequiredFields
+		  , #( 'superclasses' 'subclasses' )
+]
+
 { #category : 'private - schema' }
 MCPToolGetClass >> classDescriptionDataProperties [
 
@@ -212,74 +276,10 @@ MCPToolGetClass >> failureMessageForClassName: className error: anError [
 				  nextPutAll: anError messageText ]
 ]
 
-{ #category : 'metadata' }
-MCPToolGetClass >> inputSchema [
-
-	| includeCommentProperty subclassDepthProperty upToSuperclassNameProperty |
-	includeCommentProperty := MCPStructureProperties new
-		                          name: 'includeComment';
-		                          type: 'boolean';
-		                          description: 'Include class comments.';
-		                          default: false;
-		                          yourself.
-	upToSuperclassNameProperty := MCPStructureProperties new
-		                              name: 'upToSuperclassName';
-		                              type: 'string';
-		                              description:
-			                              'Ancestor superclass stop.';
-		                              yourself.
-	subclassDepthProperty := MCPStructureProperties new
-		                         name: 'subclassDepth';
-		                         type: 'integer';
-		                         description: 'Subclass levels.';
-		                         default: 0;
-		                         minimum: 0;
-		                         maximum: self maximumSubclassDepth;
-		                         yourself.
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: {
-				  (MCPStructureProperties new
-					   name: 'className';
-					   type: 'string';
-					   description: 'Class name.';
-					   yourself).
-				  includeCommentProperty.
-				  upToSuperclassNameProperty.
-				  subclassDepthProperty };
-		  required: #( 'className' );
-		  yourself
-]
-
 { #category : 'defaults' }
 MCPToolGetClass >> maximumSubclassDepth [
 
 	^ 3
-]
-
-{ #category : 'metadata' }
-MCPToolGetClass >> outputSchema [
-
-	^ self
-		  standardOutputSchemaForDataProperties:
-			  self classDescriptionDataProperties , {
-				  ((self
-					    schemaPropertyNamed: 'superclasses'
-					    type: 'array'
-					    description:
-						    'The included superclasses, starting from the direct superclass and moving upward.')
-					   items: self classDescriptionObjectSchema;
-					   yourself).
-				  ((self
-					    schemaPropertyNamed: 'subclasses'
-					    type: 'array'
-					    description:
-						    'The included subclasses or descendants of the requested class, bounded by subclassDepth.')
-					   items: self classDescriptionObjectSchema;
-					   yourself) }
-		  required:
-		  self classDescriptionRequiredFields
-		  , #( 'superclasses' 'subclasses' )
 ]
 
 { #category : 'private - request' }

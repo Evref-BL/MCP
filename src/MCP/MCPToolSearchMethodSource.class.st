@@ -15,26 +15,8 @@ MCPToolSearchMethodSource class >> toolName [
 	^ 'method_source_search'
 ]
 
-{ #category : 'private - request' }
-MCPToolSearchMethodSource >> defaultFilterMode [
-
-	^ 'substring'
-]
-
 { #category : 'metadata' }
-MCPToolSearchMethodSource >> description [
-
-	^ 'Search methods by source text. Use method_metadata_search for selector, protocol, class, or package metadata.'
-]
-
-{ #category : 'private - filtering' }
-MCPToolSearchMethodSource >> filterTextsForMethodEntry: anEntry sourceText: sourceText [
-
-	^ { sourceText }
-]
-
-{ #category : 'metadata' }
-MCPToolSearchMethodSource >> inputSchema [
+MCPToolSearchMethodSource >> buildInputSchema [
 
 	| properties |
 	properties := self methodQueryScopeInputProperties , {
@@ -55,6 +37,24 @@ MCPToolSearchMethodSource >> inputSchema [
 		  properties: properties;
 		  required: #( 'filter' );
 		  yourself
+]
+
+{ #category : 'private - request' }
+MCPToolSearchMethodSource >> defaultFilterMode [
+
+	^ 'substring'
+]
+
+{ #category : 'metadata' }
+MCPToolSearchMethodSource >> description [
+
+	^ 'Search methods by source text. Use method_metadata_search for selector, protocol, class, or package metadata.'
+]
+
+{ #category : 'private - filtering' }
+MCPToolSearchMethodSource >> filterTextsForMethodEntry: anEntry sourceText: sourceText [
+
+	^ { sourceText }
 ]
 
 { #category : 'private - filtering' }

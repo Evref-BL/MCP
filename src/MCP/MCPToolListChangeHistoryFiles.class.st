@@ -15,28 +15,8 @@ MCPToolListChangeHistoryFiles class >> toolName [
 	^ 'history_file_list'
 ]
 
-{ #category : 'private - execution' }
-MCPToolListChangeHistoryFiles >> commandForRequest: changeHistoryRequest [
-
-	^ MCPListChangeHistoryLogsCommand
-		  tool: self
-		  request: changeHistoryRequest
-]
-
-{ #category : 'defaults' }
-MCPToolListChangeHistoryFiles >> defaultFileLimit [
-
-	^ 25
-]
-
 { #category : 'metadata' }
-MCPToolListChangeHistoryFiles >> description [
-
-	^ 'List Pharo image change history .ombu files. Use history_entry_list to inspect entries. Use apply/revert only for recovery previews or changes.'
-]
-
-{ #category : 'metadata' }
-MCPToolListChangeHistoryFiles >> inputSchema [
+MCPToolListChangeHistoryFiles >> buildInputSchema [
 
 	| limitProperty offsetProperty |
 	limitProperty := self
@@ -66,14 +46,8 @@ MCPToolListChangeHistoryFiles >> inputSchema [
 		  yourself
 ]
 
-{ #category : 'defaults' }
-MCPToolListChangeHistoryFiles >> maximumFileLimit [
-
-	^ 100
-]
-
 { #category : 'metadata' }
-MCPToolListChangeHistoryFiles >> outputSchema [
+MCPToolListChangeHistoryFiles >> buildOutputSchema [
 
 	| filesProperty |
 	filesProperty := self
@@ -84,6 +58,32 @@ MCPToolListChangeHistoryFiles >> outputSchema [
 	^ self
 		  standardOutputSchemaForDataProperties: { filesProperty }
 		  required: #( 'files' )
+]
+
+{ #category : 'private - execution' }
+MCPToolListChangeHistoryFiles >> commandForRequest: changeHistoryRequest [
+
+	^ MCPListChangeHistoryLogsCommand
+		  tool: self
+		  request: changeHistoryRequest
+]
+
+{ #category : 'defaults' }
+MCPToolListChangeHistoryFiles >> defaultFileLimit [
+
+	^ 25
+]
+
+{ #category : 'metadata' }
+MCPToolListChangeHistoryFiles >> description [
+
+	^ 'List Pharo image change history .ombu files. Use history_entry_list to inspect entries. Use apply/revert only for recovery previews or changes.'
+]
+
+{ #category : 'defaults' }
+MCPToolListChangeHistoryFiles >> maximumFileLimit [
+
+	^ 100
 ]
 
 { #category : 'private - request' }

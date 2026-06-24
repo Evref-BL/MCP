@@ -17,20 +17,8 @@ MCPToolDebugState class >> toolName [
 	^ 'debug_state_get'
 ]
 
-{ #category : 'private - execution' }
-MCPToolDebugState >> commandForRequest: debugRequest [
-
-	^ MCPDebugStateCommand tool: self request: debugRequest
-]
-
 { #category : 'metadata' }
-MCPToolDebugState >> description [
-
-	^ 'Return a compact snapshot of one tracked Pharo debug session: selected frame, source, stack, shallow scopes, and repair actions.'
-]
-
-{ #category : 'metadata' }
-MCPToolDebugState >> inputSchema [
+MCPToolDebugState >> buildInputSchema [
 
 	^ MCPStructureInputSchema new
 		  type: 'object';
@@ -77,7 +65,7 @@ MCPToolDebugState >> inputSchema [
 ]
 
 { #category : 'metadata' }
-MCPToolDebugState >> outputSchema [
+MCPToolDebugState >> buildOutputSchema [
 
 	^ self
 		  standardOutputSchemaForDataProperties: {
@@ -149,6 +137,18 @@ MCPToolDebugState >> outputSchema [
 		  required:
 			  #( 'sessionId' 'stateId' 'status' 'callStack' 'repairActions'
 			     'capabilities' 'warnings' )
+]
+
+{ #category : 'private - execution' }
+MCPToolDebugState >> commandForRequest: debugRequest [
+
+	^ MCPDebugStateCommand tool: self request: debugRequest
+]
+
+{ #category : 'metadata' }
+MCPToolDebugState >> description [
+
+	^ 'Return a compact snapshot of one tracked Pharo debug session: selected frame, source, stack, shallow scopes, and repair actions.'
 ]
 
 { #category : 'private - request' }

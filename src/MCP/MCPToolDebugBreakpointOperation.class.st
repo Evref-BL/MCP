@@ -71,28 +71,8 @@ MCPToolDebugBreakpointOperation >> breakpointToolSpec [
 	self subclassResponsibility
 ]
 
-{ #category : 'private - execution' }
-MCPToolDebugBreakpointOperation >> commandForRequest: debugRequest [
-
-	^ MCPDebugBreakpointsCommand tool: self request: debugRequest
-]
-
 { #category : 'metadata' }
-MCPToolDebugBreakpointOperation >> description [
-
-	^ self breakpointToolSpec at: #description
-]
-
-{ #category : 'private - schema' }
-MCPToolDebugBreakpointOperation >> inputProperties [
-
-	^ self breakpointToolSpec
-		  at: #inputProperties
-		  ifAbsent: [ #(  ) ]
-]
-
-{ #category : 'metadata' }
-MCPToolDebugBreakpointOperation >> inputSchema [
+MCPToolDebugBreakpointOperation >> buildInputSchema [
 
 	^ MCPStructureInputSchema new
 		  type: 'object';
@@ -103,7 +83,7 @@ MCPToolDebugBreakpointOperation >> inputSchema [
 ]
 
 { #category : 'metadata' }
-MCPToolDebugBreakpointOperation >> outputSchema [
+MCPToolDebugBreakpointOperation >> buildOutputSchema [
 
 	^ self
 		  standardOutputSchemaForDataProperties: {
@@ -171,6 +151,26 @@ MCPToolDebugBreakpointOperation >> outputSchema [
 					   description:
 					   'Breakpoint capability gates used for this response.') }
 		  required: #( 'totalCount' 'capabilities' )
+]
+
+{ #category : 'private - execution' }
+MCPToolDebugBreakpointOperation >> commandForRequest: debugRequest [
+
+	^ MCPDebugBreakpointsCommand tool: self request: debugRequest
+]
+
+{ #category : 'metadata' }
+MCPToolDebugBreakpointOperation >> description [
+
+	^ self breakpointToolSpec at: #description
+]
+
+{ #category : 'private - schema' }
+MCPToolDebugBreakpointOperation >> inputProperties [
+
+	^ self breakpointToolSpec
+		  at: #inputProperties
+		  ifAbsent: [ #(  ) ]
 ]
 
 { #category : 'private - request' }

@@ -18,21 +18,7 @@ MCPToolSearchMethodMetadata class >> toolName [
 ]
 
 { #category : 'metadata' }
-MCPToolSearchMethodMetadata >> description [
-
-	^ 'Search method metadata by selector, protocol, class, package, or scope. Use specialized method search tools for source, senders, implementors, and references.'
-]
-
-{ #category : 'private - filtering' }
-MCPToolSearchMethodMetadata >> fieldTextsForMethodEntry: anEntry sourceText: sourceText fieldName: fieldName [
-
-	fieldName = 'selector' ifTrue: [ ^ { (anEntry at: #selector) } ].
-	fieldName = 'protocol' ifTrue: [ ^ { (anEntry at: #protocol) } ].
-	^ #(  )
-]
-
-{ #category : 'metadata' }
-MCPToolSearchMethodMetadata >> inputSchema [
+MCPToolSearchMethodMetadata >> buildInputSchema [
 
 	| properties |
 	properties := self methodQueryScopeInputProperties
@@ -48,6 +34,20 @@ MCPToolSearchMethodMetadata >> inputSchema [
 	              , (self paginationInputPropertiesWithLimitDescription:
 			               'Maximum number of matching methods to return. Use 0 to return no entries.').
 	^ self queryInputSchemaWithProperties: properties
+]
+
+{ #category : 'metadata' }
+MCPToolSearchMethodMetadata >> description [
+
+	^ 'Search method metadata by selector, protocol, class, package, or scope. Use specialized method search tools for source, senders, implementors, and references.'
+]
+
+{ #category : 'private - filtering' }
+MCPToolSearchMethodMetadata >> fieldTextsForMethodEntry: anEntry sourceText: sourceText fieldName: fieldName [
+
+	fieldName = 'selector' ifTrue: [ ^ { (anEntry at: #selector) } ].
+	fieldName = 'protocol' ifTrue: [ ^ { (anEntry at: #protocol) } ].
+	^ #(  )
 ]
 
 { #category : 'private - request' }

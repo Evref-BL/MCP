@@ -17,20 +17,8 @@ MCPToolDebugCapture class >> toolName [
 	^ 'debug_capture'
 ]
 
-{ #category : 'private - execution' }
-MCPToolDebugCapture >> commandForRequest: debugRequest [
-
-	^ MCPDebugCaptureCommand tool: self request: debugRequest
-]
-
 { #category : 'metadata' }
-MCPToolDebugCapture >> description [
-
-	^ 'Evaluate Smalltalk in a bounded worker process and capture runtime exceptions as tracked debug sessions.'
-]
-
-{ #category : 'metadata' }
-MCPToolDebugCapture >> inputSchema [
+MCPToolDebugCapture >> buildInputSchema [
 
 	^ MCPStructureInputSchema new
 		  type: 'object';
@@ -82,7 +70,7 @@ MCPToolDebugCapture >> inputSchema [
 ]
 
 { #category : 'metadata' }
-MCPToolDebugCapture >> outputSchema [
+MCPToolDebugCapture >> buildOutputSchema [
 
 	^ self
 		  standardOutputSchemaForDataProperties: {
@@ -137,6 +125,18 @@ MCPToolDebugCapture >> outputSchema [
 		  required:
 		  #( 'captured' 'timedOut' 'timeoutMilliseconds'
 		     'warnings' 'capabilities' )
+]
+
+{ #category : 'private - execution' }
+MCPToolDebugCapture >> commandForRequest: debugRequest [
+
+	^ MCPDebugCaptureCommand tool: self request: debugRequest
+]
+
+{ #category : 'metadata' }
+MCPToolDebugCapture >> description [
+
+	^ 'Evaluate Smalltalk in a bounded worker process and capture runtime exceptions as tracked debug sessions.'
 ]
 
 { #category : 'private - request' }

@@ -15,6 +15,40 @@ MCPToolEvaluate class >> toolName [
 	^ 'image_evaluate'
 ]
 
+{ #category : 'metadata' }
+MCPToolEvaluate >> buildInputSchema [
+
+	^ MCPStructureInputSchema new
+		  type: 'object';
+		  properties: { (MCPStructureProperties new
+				   name: 'code';
+				   type: 'string';
+				   description:
+					   'The Smalltalk code to execute in the running Pharo image.';
+				   yourself) };
+		  required: #( 'code' );
+		  yourself
+]
+
+{ #category : 'metadata' }
+MCPToolEvaluate >> buildOutputSchema [
+
+	^ self
+		  standardOutputSchemaForDataProperties: {
+				  (self
+					   schemaPropertyNamed: 'resultClassName'
+					   type: 'string'
+					   description: 'The name of the evaluated result''s class.').
+				  (self
+					   schemaPropertyNamed: 'resultPrintString'
+					   type: 'string'
+					   description:
+						   'A printString preview of the evaluated result, limited to '
+						   , self resultPreviewCharacterLimit printString
+						   , ' characters.') }
+		  required: #( 'resultClassName' 'resultPrintString' )
+]
+
 { #category : 'private - execution' }
 MCPToolEvaluate >> commandForRequest: evaluateRequest [
 
@@ -54,40 +88,6 @@ MCPToolEvaluate >> executeWithRequest: request [
 						   ifNil: [ error asString ]
 						   ifNotNil: [ :text | text ])
 				  details: (self errorDetailsFor: error) ]
-]
-
-{ #category : 'metadata' }
-MCPToolEvaluate >> inputSchema [
-
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: { (MCPStructureProperties new
-				   name: 'code';
-				   type: 'string';
-				   description:
-					   'The Smalltalk code to execute in the running Pharo image.';
-				   yourself) };
-		  required: #( 'code' );
-		  yourself
-]
-
-{ #category : 'metadata' }
-MCPToolEvaluate >> outputSchema [
-
-	^ self
-		  standardOutputSchemaForDataProperties: {
-				  (self
-					   schemaPropertyNamed: 'resultClassName'
-					   type: 'string'
-					   description: 'The name of the evaluated result''s class.').
-				  (self
-					   schemaPropertyNamed: 'resultPrintString'
-					   type: 'string'
-					   description:
-						   'A printString preview of the evaluated result, limited to '
-						   , self resultPreviewCharacterLimit printString
-						   , ' characters.') }
-		  required: #( 'resultClassName' 'resultPrintString' )
 ]
 
 { #category : 'private - request' }

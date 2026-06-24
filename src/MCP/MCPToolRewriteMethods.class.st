@@ -18,6 +18,26 @@ MCPToolRewriteMethods class >> toolName [
 	^ 'method_rewrite'
 ]
 
+{ #category : 'metadata' }
+MCPToolRewriteMethods >> buildInputSchema [
+
+	^ MCPStructureInputSchema new
+		  type: 'object';
+		  properties: self rewriteInputProperties;
+		  required: #( 'rules' );
+		  additionalProperties: false;
+		  yourself
+]
+
+{ #category : 'metadata' }
+MCPToolRewriteMethods >> buildOutputSchema [
+
+	^ self
+		  standardOutputSchemaForDataProperties: self rewriteDataProperties
+		  required: #( 'apply' 'changeCount' 'appliedCount' 'changeSetHash'
+			     'scope' 'changes' )
+]
+
 { #category : 'private - execution' }
 MCPToolRewriteMethods >> commandForRequest: rewriteRequest [
 
@@ -53,26 +73,6 @@ MCPToolRewriteMethods >> executeWithRequest: request [
 				  errorResultForRewriteError: error
 				  request: rewriteRequest
 				  rawRequest: request ]
-]
-
-{ #category : 'metadata' }
-MCPToolRewriteMethods >> inputSchema [
-
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: self rewriteInputProperties;
-		  required: #( 'rules' );
-		  additionalProperties: false;
-		  yourself
-]
-
-{ #category : 'metadata' }
-MCPToolRewriteMethods >> outputSchema [
-
-	^ self
-		  standardOutputSchemaForDataProperties: self rewriteDataProperties
-		  required: #( 'apply' 'changeCount' 'appliedCount' 'changeSetHash'
-			     'scope' 'changes' )
 ]
 
 { #category : 'private - execution' }

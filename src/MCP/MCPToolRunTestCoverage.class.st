@@ -16,13 +16,7 @@ MCPToolRunTestCoverage class >> toolName [
 ]
 
 { #category : 'metadata' }
-MCPToolRunTestCoverage >> description [
-
-	^ 'Run test classes or individual test methods under coverage and return aggregated test and method coverage results.'
-]
-
-{ #category : 'metadata' }
-MCPToolRunTestCoverage >> inputSchema [
+MCPToolRunTestCoverage >> buildInputSchema [
 
 	^ MCPStructureInputSchema new
 		  type: 'object';
@@ -46,7 +40,7 @@ MCPToolRunTestCoverage >> inputSchema [
 ]
 
 { #category : 'metadata' }
-MCPToolRunTestCoverage >> outputSchema [
+MCPToolRunTestCoverage >> buildOutputSchema [
 
 	| coverageProperty resultsProperty unrunTestsProperty |
 	resultsProperty := self
@@ -72,6 +66,12 @@ MCPToolRunTestCoverage >> outputSchema [
 					   'Whether the batch stopped early because timeoutSeconds elapsed.').
 				  unrunTestsProperty }
 		  required: #( 'results' 'coverage' )
+]
+
+{ #category : 'metadata' }
+MCPToolRunTestCoverage >> description [
+
+	^ 'Run test classes or individual test methods under coverage and return aggregated test and method coverage results.'
 ]
 
 { #category : 'private - request' }

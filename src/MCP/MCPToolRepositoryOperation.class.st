@@ -26,6 +26,26 @@ MCPToolRepositoryOperation >> branchNameSchemaProperty [
 		  description: 'Branch name.'
 ]
 
+{ #category : 'metadata' }
+MCPToolRepositoryOperation >> buildInputSchema [
+
+	^ MCPStructureInputSchema new
+		  type: 'object';
+		  properties: self inputProperties;
+		  required: self requiredInputProperties;
+		  additionalProperties: false;
+		  yourself
+]
+
+{ #category : 'metadata' }
+MCPToolRepositoryOperation >> buildOutputSchema [
+
+	^ self
+		  standardOutputSchemaForDataProperties:
+		  self repositoryOperationDataProperties
+		  required: #(  )
+]
+
 { #category : 'private - execution' }
 MCPToolRepositoryOperation >> commandClass [
 
@@ -158,17 +178,6 @@ MCPToolRepositoryOperation >> inputProperties [
 		   ifAbsent: [ #(  ) ])
 ]
 
-{ #category : 'metadata' }
-MCPToolRepositoryOperation >> inputSchema [
-
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: self inputProperties;
-		  required: self requiredInputProperties;
-		  additionalProperties: false;
-		  yourself
-]
-
 { #category : 'private - schema' }
 MCPToolRepositoryOperation >> isModifiedSchemaProperty [
 
@@ -207,15 +216,6 @@ MCPToolRepositoryOperation >> mutationActionForErrorFromParsedRequest: mutationR
 MCPToolRepositoryOperation >> operationAction [
 
 	^ self repositoryToolSpec at: #action
-]
-
-{ #category : 'metadata' }
-MCPToolRepositoryOperation >> outputSchema [
-
-	^ self
-		  standardOutputSchemaForDataProperties:
-		  self repositoryOperationDataProperties
-		  required: #(  )
 ]
 
 { #category : 'private - schema' }

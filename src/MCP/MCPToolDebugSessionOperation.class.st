@@ -23,36 +23,8 @@ MCPToolDebugSessionOperation >> actionName [
 	^ self sessionToolSpec at: #action
 ]
 
-{ #category : 'private - schema' }
-MCPToolDebugSessionOperation >> candidateRefSchemaProperty [
-
-	^ self
-		  schemaPropertyNamed: 'candidateRef'
-		  type: 'string'
-		  description:
-		  'Opaque debugger candidate reference returned by debug_candidate_search.'
-]
-
-{ #category : 'private - execution' }
-MCPToolDebugSessionOperation >> commandForRequest: debugRequest [
-
-	^ MCPDebugSessionsCommand tool: self request: debugRequest
-]
-
 { #category : 'metadata' }
-MCPToolDebugSessionOperation >> description [
-
-	^ self sessionToolSpec at: #description
-]
-
-{ #category : 'private - schema' }
-MCPToolDebugSessionOperation >> inputProperties [
-
-	^ self sessionToolSpec at: #inputProperties ifAbsent: [ #(  ) ]
-]
-
-{ #category : 'metadata' }
-MCPToolDebugSessionOperation >> inputSchema [
+MCPToolDebugSessionOperation >> buildInputSchema [
 
 	^ MCPStructureInputSchema new
 		  type: 'object';
@@ -63,7 +35,7 @@ MCPToolDebugSessionOperation >> inputSchema [
 ]
 
 { #category : 'metadata' }
-MCPToolDebugSessionOperation >> outputSchema [
+MCPToolDebugSessionOperation >> buildOutputSchema [
 
 	^ self
 		  standardOutputSchemaForDataProperties: {
@@ -114,6 +86,34 @@ MCPToolDebugSessionOperation >> outputSchema [
 					   description:
 					   'Whether removing the session also terminated an owned captured worker process.') }
 		  required: #(  )
+]
+
+{ #category : 'private - schema' }
+MCPToolDebugSessionOperation >> candidateRefSchemaProperty [
+
+	^ self
+		  schemaPropertyNamed: 'candidateRef'
+		  type: 'string'
+		  description:
+		  'Opaque debugger candidate reference returned by debug_candidate_search.'
+]
+
+{ #category : 'private - execution' }
+MCPToolDebugSessionOperation >> commandForRequest: debugRequest [
+
+	^ MCPDebugSessionsCommand tool: self request: debugRequest
+]
+
+{ #category : 'metadata' }
+MCPToolDebugSessionOperation >> description [
+
+	^ self sessionToolSpec at: #description
+]
+
+{ #category : 'private - schema' }
+MCPToolDebugSessionOperation >> inputProperties [
+
+	^ self sessionToolSpec at: #inputProperties ifAbsent: [ #(  ) ]
 ]
 
 { #category : 'private - request' }

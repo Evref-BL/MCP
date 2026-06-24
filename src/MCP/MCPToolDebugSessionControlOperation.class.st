@@ -23,6 +23,70 @@ MCPToolDebugSessionControlOperation >> actionName [
 	^ self controlToolSpec at: #action
 ]
 
+{ #category : 'metadata' }
+MCPToolDebugSessionControlOperation >> buildInputSchema [
+
+	^ MCPStructureInputSchema new
+		  type: 'object';
+		  properties: self inputProperties;
+		  required: #( 'sessionId' );
+		  additionalProperties: false;
+		  yourself
+]
+
+{ #category : 'metadata' }
+MCPToolDebugSessionControlOperation >> buildOutputSchema [
+
+	^ self
+		  standardOutputSchemaForDataProperties: {
+				  (self
+					   schemaPropertyNamed: 'sessionId'
+					   type: 'string'
+					   description: 'Debug session identifier.').
+				  (self
+					   schemaPropertyNamed: 'action'
+					   type: 'string'
+					   description: 'Control action that was applied.').
+				  (self
+					   schemaPropertyNamed: 'previousStateId'
+					   type: 'string'
+					   description: 'Debug state token before control was applied.').
+				  (self
+					   schemaPropertyNamed: 'stateId'
+					   type: 'string'
+					   description: 'Debug state token after control was applied.').
+				  (self
+					   schemaPropertyNamed: 'status'
+					   type: 'string'
+					   description: 'Debug session status after control.').
+				  (self
+					   schemaPropertyNamed: 'reason'
+					   type: 'string'
+					   description: 'Reason associated with the current status.').
+				  (self
+					   schemaPropertyNamed: 'frameRef'
+					   type: 'string'
+					   description:
+					   'State-scoped frame reference returned after a frame-targeted control request.').
+				  (self
+					   schemaPropertyNamed: 'state'
+					   type: 'object'
+					   description:
+					   'debug_state_get snapshot returned when control pauses and returnState=true.').
+				  (self
+					   stringArraySchemaNamed: 'warnings'
+					   description: 'Control-specific warnings.'
+					   itemDescription: 'A warning message.').
+				  (self
+					   schemaPropertyNamed: 'capabilities'
+					   type: 'object'
+					   description:
+					   'Control capability gates used for this response.') }
+		  required:
+			  #( 'sessionId' 'action' 'previousStateId' 'stateId' 'status'
+			     'reason' 'warnings' 'capabilities' )
+]
+
 { #category : 'private - execution' }
 MCPToolDebugSessionControlOperation >> commandForRequest: debugRequest [
 
@@ -83,70 +147,6 @@ MCPToolDebugSessionControlOperation >> inputProperties [
 	self usesStateSnapshotOptions ifTrue: [
 		properties addAll: self stateSnapshotInputProperties ].
 	^ properties asArray
-]
-
-{ #category : 'metadata' }
-MCPToolDebugSessionControlOperation >> inputSchema [
-
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: self inputProperties;
-		  required: #( 'sessionId' );
-		  additionalProperties: false;
-		  yourself
-]
-
-{ #category : 'metadata' }
-MCPToolDebugSessionControlOperation >> outputSchema [
-
-	^ self
-		  standardOutputSchemaForDataProperties: {
-				  (self
-					   schemaPropertyNamed: 'sessionId'
-					   type: 'string'
-					   description: 'Debug session identifier.').
-				  (self
-					   schemaPropertyNamed: 'action'
-					   type: 'string'
-					   description: 'Control action that was applied.').
-				  (self
-					   schemaPropertyNamed: 'previousStateId'
-					   type: 'string'
-					   description: 'Debug state token before control was applied.').
-				  (self
-					   schemaPropertyNamed: 'stateId'
-					   type: 'string'
-					   description: 'Debug state token after control was applied.').
-				  (self
-					   schemaPropertyNamed: 'status'
-					   type: 'string'
-					   description: 'Debug session status after control.').
-				  (self
-					   schemaPropertyNamed: 'reason'
-					   type: 'string'
-					   description: 'Reason associated with the current status.').
-				  (self
-					   schemaPropertyNamed: 'frameRef'
-					   type: 'string'
-					   description:
-					   'State-scoped frame reference returned after a frame-targeted control request.').
-				  (self
-					   schemaPropertyNamed: 'state'
-					   type: 'object'
-					   description:
-					   'debug_state_get snapshot returned when control pauses and returnState=true.').
-				  (self
-					   stringArraySchemaNamed: 'warnings'
-					   description: 'Control-specific warnings.'
-					   itemDescription: 'A warning message.').
-				  (self
-					   schemaPropertyNamed: 'capabilities'
-					   type: 'object'
-					   description:
-					   'Control capability gates used for this response.') }
-		  required:
-			  #( 'sessionId' 'action' 'previousStateId' 'stateId' 'status'
-			     'reason' 'warnings' 'capabilities' )
 ]
 
 { #category : 'private - request' }

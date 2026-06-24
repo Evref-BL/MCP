@@ -17,20 +17,8 @@ MCPToolUpdateDebugMethod class >> toolName [
 	^ 'debug_method_update'
 ]
 
-{ #category : 'private - execution' }
-MCPToolUpdateDebugMethod >> commandForRequest: debugRequest [
-
-	^ MCPUpdateDebugMethodCommand tool: self request: debugRequest
-]
-
 { #category : 'metadata' }
-MCPToolUpdateDebugMethod >> description [
-
-	^ 'Update the method associated with a paused Pharo DebugSession frame. Supports normal debugger-time method updates and repair flows for resumable exceptions, gates on critiques unless ignoreCritiques=true, then proceeds the computation when possible.'
-]
-
-{ #category : 'metadata' }
-MCPToolUpdateDebugMethod >> inputSchema [
+MCPToolUpdateDebugMethod >> buildInputSchema [
 
 	^ MCPStructureInputSchema new
 		  type: 'object';
@@ -88,7 +76,7 @@ MCPToolUpdateDebugMethod >> inputSchema [
 ]
 
 { #category : 'metadata' }
-MCPToolUpdateDebugMethod >> outputSchema [
+MCPToolUpdateDebugMethod >> buildOutputSchema [
 
 	^ self
 		  standardOutputSchemaForDataProperties: {
@@ -170,6 +158,18 @@ MCPToolUpdateDebugMethod >> outputSchema [
 			     'method' 'critiques' 'proceeded' 'blockedByCritiques'
 			     'proceedOutcome' 'resultClassName' 'resultPrintString'
 			     'timedOut' 'state' 'repairActions' 'warnings' 'capabilities' )
+]
+
+{ #category : 'private - execution' }
+MCPToolUpdateDebugMethod >> commandForRequest: debugRequest [
+
+	^ MCPUpdateDebugMethodCommand tool: self request: debugRequest
+]
+
+{ #category : 'metadata' }
+MCPToolUpdateDebugMethod >> description [
+
+	^ 'Update the method associated with a paused Pharo DebugSession frame. Supports normal debugger-time method updates and repair flows for resumable exceptions, gates on critiques unless ignoreCritiques=true, then proceeds the computation when possible.'
 ]
 
 { #category : 'private - request' }

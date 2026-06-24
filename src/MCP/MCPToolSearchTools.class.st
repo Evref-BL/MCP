@@ -17,6 +17,44 @@ MCPToolSearchTools class >> toolName [
 	^ 'tool_search'
 ]
 
+{ #category : 'metadata' }
+MCPToolSearchTools >> buildInputSchema [
+
+	| limitProperty |
+	limitProperty := self
+		                 integerSchemaPropertyNamed: 'limit'
+		                 description: 'Maximum tools to return.'
+		                 default: 25.
+	limitProperty
+		minimum: 0;
+		maximum: 100.
+	^ MCPStructureInputSchema new
+		  type: 'object';
+		  properties: {
+				  (self
+					   schemaPropertyNamed: 'query'
+					   type: 'string'
+					   description:
+						   'Search text for tool names, descriptions, or groups.').
+				  (self
+					   schemaPropertyNamed: 'group'
+					   type: 'string'
+					   description: 'Optional tool group filter.').
+				  limitProperty };
+		  required: #(  );
+		  additionalProperties: false;
+		  yourself
+]
+
+{ #category : 'metadata' }
+MCPToolSearchTools >> buildOutputSchema [
+
+	^ self
+		  standardOutputSchemaForDataProperties:
+		  { self toolsArraySchemaProperty }
+		  required: #( 'tools' )
+]
+
 { #category : 'private - execution' }
 MCPToolSearchTools >> commandForRequest: searchRequest [
 
@@ -53,44 +91,6 @@ MCPToolSearchTools >> executeWithRequest: request usingPolicy: aToolExposurePoli
 					  (data at: #tools) size asString , ' tools found.'
 					  data: data ]
 		  onError: [ :error :parsedRequest | self errorResultFor: error ]
-]
-
-{ #category : 'metadata' }
-MCPToolSearchTools >> inputSchema [
-
-	| limitProperty |
-	limitProperty := self
-		                 integerSchemaPropertyNamed: 'limit'
-		                 description: 'Maximum tools to return.'
-		                 default: 25.
-	limitProperty
-		minimum: 0;
-		maximum: 100.
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: {
-				  (self
-					   schemaPropertyNamed: 'query'
-					   type: 'string'
-					   description:
-						   'Search text for tool names, descriptions, or groups.').
-				  (self
-					   schemaPropertyNamed: 'group'
-					   type: 'string'
-					   description: 'Optional tool group filter.').
-				  limitProperty };
-		  required: #(  );
-		  additionalProperties: false;
-		  yourself
-]
-
-{ #category : 'metadata' }
-MCPToolSearchTools >> outputSchema [
-
-	^ self
-		  standardOutputSchemaForDataProperties:
-		  { self toolsArraySchemaProperty }
-		  required: #( 'tools' )
 ]
 
 { #category : 'private - request' }

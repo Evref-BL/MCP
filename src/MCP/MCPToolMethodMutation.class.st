@@ -54,6 +54,27 @@ MCPToolMethodMutation >> allowedNonErrorCritiqueRuleClasses [
 		  ReUnaryAccessingMethodWithoutReturnRule }
 ]
 
+{ #category : 'metadata' }
+MCPToolMethodMutation >> buildInputSchema [
+
+	^ MCPStructureInputSchema new
+		  type: 'object';
+		  properties: self inputProperties;
+		  required: self requiredInputProperties;
+		  additionalProperties: false;
+		  yourself
+]
+
+{ #category : 'metadata' }
+MCPToolMethodMutation >> buildOutputSchema [
+
+	^ self
+		standardOutputSchemaForDataProperties: {
+			(self schemaPropertyNamed: 'changeKind' type: 'string' description: 'Whether method_compile created or replaced a method.').
+			self methodCritiquesSchemaProperty }
+		required: #(  )
+]
+
 { #category : 'private' }
 MCPToolMethodMutation >> classReferenceNameFor: className classSide: classSide [
 
@@ -185,17 +206,6 @@ MCPToolMethodMutation >> inputProperties [
 	^ self methodToolSpec at: #inputProperties
 ]
 
-{ #category : 'metadata' }
-MCPToolMethodMutation >> inputSchema [
-
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: self inputProperties;
-		  required: self requiredInputProperties;
-		  additionalProperties: false;
-		  yourself
-]
-
 { #category : 'private - schema' }
 MCPToolMethodMutation >> methodCritiqueSchema [
 
@@ -260,16 +270,6 @@ MCPToolMethodMutation >> mutationAction [
 MCPToolMethodMutation >> mutationActionForErrorFromParsedRequest: mutationRequest rawRequest: rawRequest [
 
 	^ self mutationAction
-]
-
-{ #category : 'metadata' }
-MCPToolMethodMutation >> outputSchema [
-
-	^ self
-		standardOutputSchemaForDataProperties: {
-			(self schemaPropertyNamed: 'changeKind' type: 'string' description: 'Whether method_compile created or replaced a method.').
-			self methodCritiquesSchemaProperty }
-		required: #(  )
 ]
 
 { #category : 'private - execution' }

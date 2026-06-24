@@ -17,20 +17,8 @@ MCPToolDebugEvaluate class >> toolName [
 	^ 'debug_expression_evaluate'
 ]
 
-{ #category : 'private - execution' }
-MCPToolDebugEvaluate >> commandForRequest: debugRequest [
-
-	^ MCPDebugEvaluateCommand tool: self request: debugRequest
-]
-
 { #category : 'metadata' }
-MCPToolDebugEvaluate >> description [
-
-	^ 'Evaluate a Smalltalk expression in a selected DebugSession frame. The expression resolves frame receiver and temporaries and may mutate image state.'
-]
-
-{ #category : 'metadata' }
-MCPToolDebugEvaluate >> inputSchema [
+MCPToolDebugEvaluate >> buildInputSchema [
 
 	^ MCPStructureInputSchema new
 		  type: 'object';
@@ -66,7 +54,7 @@ MCPToolDebugEvaluate >> inputSchema [
 ]
 
 { #category : 'metadata' }
-MCPToolDebugEvaluate >> outputSchema [
+MCPToolDebugEvaluate >> buildOutputSchema [
 
 	^ self
 		  standardOutputSchemaForDataProperties: {
@@ -120,6 +108,18 @@ MCPToolDebugEvaluate >> outputSchema [
 			  #( 'sessionId' 'stateId' 'frameRef' 'expression' 'resultClassName'
 			     'resultPrintString' 'hasResultVariableRef'
 			     'sideEffects' 'warnings' 'capabilities' )
+]
+
+{ #category : 'private - execution' }
+MCPToolDebugEvaluate >> commandForRequest: debugRequest [
+
+	^ MCPDebugEvaluateCommand tool: self request: debugRequest
+]
+
+{ #category : 'metadata' }
+MCPToolDebugEvaluate >> description [
+
+	^ 'Evaluate a Smalltalk expression in a selected DebugSession frame. The expression resolves frame receiver and temporaries and may mutate image state.'
 ]
 
 { #category : 'private - request' }

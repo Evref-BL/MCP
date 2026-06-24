@@ -15,6 +15,44 @@ MCPToolLoadRepository class >> toolName [
 	^ 'repository_load'
 ]
 
+{ #category : 'metadata' }
+MCPToolLoadRepository >> buildInputSchema [
+
+	^ MCPStructureInputSchema new
+		  type: 'object';
+		  properties: {
+				  self repositoryUrlSchemaProperty.
+				  self checkoutPathSchemaProperty.
+				  self repositoryNameSchemaProperty.
+				  self locationSchemaProperty.
+				  self hostUrlSchemaProperty.
+				  (self
+					   nonEmptyStringSchemaPropertyNamed: 'owner'
+					   description: 'Repository owner or namespace.').
+				  (self
+					   nonEmptyStringSchemaPropertyNamed: 'project'
+					   description: 'Repository project.').
+				  self commitishSchemaProperty.
+				  self sourceDirectorySchemaProperty.
+				  (self
+					   nonEmptyStringSchemaPropertyNamed: 'baseline'
+					   description: 'Baseline name without BaselineOf prefix.').
+				  self groupsSchemaProperty }
+			  , self loadPolicyInputSchemaProperties;
+		  required: #( 'baseline' );
+		  additionalProperties: false;
+		  yourself
+]
+
+{ #category : 'metadata' }
+MCPToolLoadRepository >> buildOutputSchema [
+
+	^ self
+		  standardOutputSchemaForDataProperties:
+		  self loadRepositoryDataProperties
+		  required: #( 'mode' 'repository' 'load' )
+]
+
 { #category : 'private - schema' }
 MCPToolLoadRepository >> checkoutPathSchemaProperty [
 
@@ -107,35 +145,6 @@ MCPToolLoadRepository >> hostUrlSchemaProperty [
 		  yourself
 ]
 
-{ #category : 'metadata' }
-MCPToolLoadRepository >> inputSchema [
-
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: {
-				  self repositoryUrlSchemaProperty.
-				  self checkoutPathSchemaProperty.
-				  self repositoryNameSchemaProperty.
-				  self locationSchemaProperty.
-				  self hostUrlSchemaProperty.
-				  (self
-					   nonEmptyStringSchemaPropertyNamed: 'owner'
-					   description: 'Repository owner or namespace.').
-				  (self
-					   nonEmptyStringSchemaPropertyNamed: 'project'
-					   description: 'Repository project.').
-				  self commitishSchemaProperty.
-				  self sourceDirectorySchemaProperty.
-				  (self
-					   nonEmptyStringSchemaPropertyNamed: 'baseline'
-					   description: 'Baseline name without BaselineOf prefix.').
-				  self groupsSchemaProperty }
-			  , self loadPolicyInputSchemaProperties;
-		  required: #( 'baseline' );
-		  additionalProperties: false;
-		  yourself
-]
-
 { #category : 'private - schema' }
 MCPToolLoadRepository >> loadRepositoryDataProperties [
 
@@ -164,15 +173,6 @@ MCPToolLoadRepository >> modeOutputSchemaProperty [
 		  description: 'The repository source mode used by this tool.'
 		  values: #( 'remote' 'url' 'local' 'iceberg' )
 		  default: 'remote'
-]
-
-{ #category : 'metadata' }
-MCPToolLoadRepository >> outputSchema [
-
-	^ self
-		  standardOutputSchemaForDataProperties:
-		  self loadRepositoryDataProperties
-		  required: #( 'mode' 'repository' 'load' )
 ]
 
 { #category : 'private - request' }

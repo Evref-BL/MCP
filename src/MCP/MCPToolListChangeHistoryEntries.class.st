@@ -15,28 +15,8 @@ MCPToolListChangeHistoryEntries class >> toolName [
 	^ 'history_entry_list'
 ]
 
-{ #category : 'private - execution' }
-MCPToolListChangeHistoryEntries >> commandForRequest: changeHistoryRequest [
-
-	^ MCPListChangeHistoryEntriesCommand
-		  tool: self
-		  request: changeHistoryRequest
-]
-
-{ #category : 'defaults' }
-MCPToolListChangeHistoryEntries >> defaultEntryLimit [
-
-	^ 25
-]
-
 { #category : 'metadata' }
-MCPToolListChangeHistoryEntries >> description [
-
-	^ 'List granular entries from the current Pharo image change history or a selected .ombu file. Use history_file_list to locate files, and history_entry_apply or history_entry_revert only when previewing or performing recovery changes.'
-]
-
-{ #category : 'metadata' }
-MCPToolListChangeHistoryEntries >> inputSchema [
+MCPToolListChangeHistoryEntries >> buildInputSchema [
 
 	^ MCPStructureInputSchema new
 		  type: 'object';
@@ -72,7 +52,7 @@ MCPToolListChangeHistoryEntries >> inputSchema [
 ]
 
 { #category : 'metadata' }
-MCPToolListChangeHistoryEntries >> outputSchema [
+MCPToolListChangeHistoryEntries >> buildOutputSchema [
 
 	| entriesProperty |
 	entriesProperty := self
@@ -89,6 +69,26 @@ MCPToolListChangeHistoryEntries >> outputSchema [
 					   integerSchemaPropertyNamed: 'nextOffset'
 					   description: 'Next page offset.') }
 		  required: #( 'entries' )
+]
+
+{ #category : 'private - execution' }
+MCPToolListChangeHistoryEntries >> commandForRequest: changeHistoryRequest [
+
+	^ MCPListChangeHistoryEntriesCommand
+		  tool: self
+		  request: changeHistoryRequest
+]
+
+{ #category : 'defaults' }
+MCPToolListChangeHistoryEntries >> defaultEntryLimit [
+
+	^ 25
+]
+
+{ #category : 'metadata' }
+MCPToolListChangeHistoryEntries >> description [
+
+	^ 'List granular entries from the current Pharo image change history or a selected .ombu file. Use history_file_list to locate files, and history_entry_apply or history_entry_revert only when previewing or performing recovery changes.'
 ]
 
 { #category : 'private - request' }

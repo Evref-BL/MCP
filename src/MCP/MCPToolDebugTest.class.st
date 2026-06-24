@@ -17,20 +17,8 @@ MCPToolDebugTest class >> toolName [
 	^ 'debug_test_run'
 ]
 
-{ #category : 'private - execution' }
-MCPToolDebugTest >> commandForRequest: debugRequest [
-
-	^ MCPDebugTestCommand tool: self request: debugRequest
-]
-
 { #category : 'metadata' }
-MCPToolDebugTest >> description [
-
-	^ 'Run one SUnit test method under debugger control and stop at the requested phase.'
-]
-
-{ #category : 'metadata' }
-MCPToolDebugTest >> inputSchema [
+MCPToolDebugTest >> buildInputSchema [
 
 	^ MCPStructureInputSchema new
 		  type: 'object';
@@ -91,7 +79,7 @@ MCPToolDebugTest >> inputSchema [
 ]
 
 { #category : 'metadata' }
-MCPToolDebugTest >> outputSchema [
+MCPToolDebugTest >> buildOutputSchema [
 
 	^ self
 		  standardOutputSchemaForDataProperties: {
@@ -152,6 +140,18 @@ MCPToolDebugTest >> outputSchema [
 		  required:
 			  #( 'captured' 'timedOut' 'passed' 'className' 'testMethodName'
 			     'stopAt' 'timeoutMilliseconds' 'warnings' 'capabilities' )
+]
+
+{ #category : 'private - execution' }
+MCPToolDebugTest >> commandForRequest: debugRequest [
+
+	^ MCPDebugTestCommand tool: self request: debugRequest
+]
+
+{ #category : 'metadata' }
+MCPToolDebugTest >> description [
+
+	^ 'Run one SUnit test method under debugger control and stop at the requested phase.'
 ]
 
 { #category : 'private - request' }
