@@ -9,16 +9,10 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolSearchMethodSource class >> toolName [
 
 	^ 'method_source_search'
-]
-
-{ #category : 'defaults' }
-MCPToolSearchMethodSource >> defaultDescription [
-
-	^ 'Search methods by source text. Use method_metadata_search for selector, protocol, class, or package metadata.'
 ]
 
 { #category : 'private - request' }
@@ -27,8 +21,20 @@ MCPToolSearchMethodSource >> defaultFilterMode [
 	^ 'substring'
 ]
 
-{ #category : 'defaults' }
-MCPToolSearchMethodSource >> defaultInputSchema [
+{ #category : 'metadata' }
+MCPToolSearchMethodSource >> description [
+
+	^ 'Search methods by source text. Use method_metadata_search for selector, protocol, class, or package metadata.'
+]
+
+{ #category : 'private - filtering' }
+MCPToolSearchMethodSource >> filterTextsForMethodEntry: anEntry sourceText: sourceText [
+
+	^ { sourceText }
+]
+
+{ #category : 'metadata' }
+MCPToolSearchMethodSource >> inputSchema [
 
 	| properties |
 	properties := self methodQueryScopeInputProperties , {
@@ -51,18 +57,6 @@ MCPToolSearchMethodSource >> defaultInputSchema [
 		  yourself
 ]
 
-{ #category : 'defaults' }
-MCPToolSearchMethodSource >> defaultTitle [
-
-	^ 'Search Method Source'
-]
-
-{ #category : 'private - filtering' }
-MCPToolSearchMethodSource >> filterTextsForMethodEntry: anEntry sourceText: sourceText [
-
-	^ { sourceText }
-]
-
 { #category : 'private - filtering' }
 MCPToolSearchMethodSource >> needsSourceForFiltering [
 
@@ -80,4 +74,10 @@ MCPToolSearchMethodSource >> queryEntriesForQueryRequest: queryRequest [
 MCPToolSearchMethodSource >> searchRequestFromToolRequest: request [
 
 	^ MCPMethodSearchRequest fromRequest: request tool: self
+]
+
+{ #category : 'metadata' }
+MCPToolSearchMethodSource >> title [
+
+	^ 'Search Method Source'
 ]

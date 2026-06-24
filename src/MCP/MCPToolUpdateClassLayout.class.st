@@ -9,7 +9,7 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolUpdateClassLayout class >> toolName [
 
 	^ 'class_layout_update'

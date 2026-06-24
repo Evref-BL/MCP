@@ -9,22 +9,16 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolSearchVariableReferences class >> toolName [
 
 	^ 'method_variable_reference_search'
 ]
 
-{ #category : 'defaults' }
-MCPToolSearchVariableReferences >> defaultDescription [
+{ #category : 'metadata' }
+MCPToolSearchVariableReferences >> description [
 
 	^ 'Search methods that reference a variable. Use method_metadata_search for general method metadata, or method_source_search for source text.'
-]
-
-{ #category : 'defaults' }
-MCPToolSearchVariableReferences >> defaultTitle [
-
-	^ 'Search Variable References'
 ]
 
 { #category : 'private - schema' }
@@ -46,4 +40,10 @@ MCPToolSearchVariableReferences >> queryEntriesForQueryRequest: queryRequest [
 		  variableReferenceEntriesForVariableNamed:
 		  (self requiredLookupPatternFromQueryRequest: queryRequest)
 		  queryRequest: queryRequest
+]
+
+{ #category : 'metadata' }
+MCPToolSearchVariableReferences >> title [
+
+	^ 'Search Variable References'
 ]

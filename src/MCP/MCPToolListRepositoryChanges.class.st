@@ -9,7 +9,7 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolListRepositoryChanges class >> toolName [
 
 	^ 'repository_change_list'

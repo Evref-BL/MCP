@@ -9,7 +9,7 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolRemoveDebugBreakpoint class >> toolName [
 
 	^ 'debug_breakpoint_remove'

@@ -27,14 +27,14 @@ MCPToolChangeHistoryOperation >> changeHistoryToolSpec [
 	self subclassResponsibility
 ]
 
-{ #category : 'defaults' }
-MCPToolChangeHistoryOperation >> defaultDescription [
+{ #category : 'metadata' }
+MCPToolChangeHistoryOperation >> description [
 
 	^ self changeHistoryToolSpec at: #description
 ]
 
-{ #category : 'defaults' }
-MCPToolChangeHistoryOperation >> defaultInputSchema [
+{ #category : 'metadata' }
+MCPToolChangeHistoryOperation >> inputSchema [
 
 	^ MCPStructureInputSchema new
 		  type: 'object';
@@ -44,8 +44,8 @@ MCPToolChangeHistoryOperation >> defaultInputSchema [
 		  yourself
 ]
 
-{ #category : 'defaults' }
-MCPToolChangeHistoryOperation >> defaultOutputSchema [
+{ #category : 'metadata' }
+MCPToolChangeHistoryOperation >> outputSchema [
 
 	| previewEntriesProperty selectedEntriesProperty |
 	selectedEntriesProperty := self
@@ -98,12 +98,6 @@ MCPToolChangeHistoryOperation >> defaultOutputSchema [
 			     'performedCount' )
 ]
 
-{ #category : 'defaults' }
-MCPToolChangeHistoryOperation >> defaultTitle [
-
-	^ self changeHistoryToolSpec at: #title
-]
-
 { #category : 'private - request' }
 MCPToolChangeHistoryOperation >> parsedRequestFromToolRequest: request [
 
@@ -147,4 +141,10 @@ MCPToolChangeHistoryOperation >> selectionInputProperties [
 			   booleanSchemaPropertyNamed: 'confirm'
 			   description: 'False previews; true performs.'
 			   default: false) }
+]
+
+{ #category : 'metadata' }
+MCPToolChangeHistoryOperation >> title [
+
+	^ self changeHistoryToolSpec at: #title
 ]

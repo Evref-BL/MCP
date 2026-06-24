@@ -12,7 +12,7 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolRewriteMethods class >> toolName [
 
 	^ 'method_rewrite'
@@ -24,36 +24,10 @@ MCPToolRewriteMethods >> commandForRequest: rewriteRequest [
 	^ MCPRewriteMethodsCommand tool: self request: rewriteRequest
 ]
 
-{ #category : 'defaults' }
-MCPToolRewriteMethods >> defaultDescription [
+{ #category : 'metadata' }
+MCPToolRewriteMethods >> description [
 
 	^ 'Preview or apply Smalltalk AST pattern rewrites within scoped methods. Smalltalk AST pattern syntax, not regex.'
-]
-
-{ #category : 'defaults' }
-MCPToolRewriteMethods >> defaultInputSchema [
-
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: self rewriteInputProperties;
-		  required: #( 'rules' );
-		  additionalProperties: false;
-		  yourself
-]
-
-{ #category : 'defaults' }
-MCPToolRewriteMethods >> defaultOutputSchema [
-
-	^ self
-		  standardOutputSchemaForDataProperties: self rewriteDataProperties
-		  required: #( 'apply' 'changeCount' 'appliedCount' 'changeSetHash'
-			     'scope' 'changes' )
-]
-
-{ #category : 'defaults' }
-MCPToolRewriteMethods >> defaultTitle [
-
-	^ 'Rewrite Methods'
 ]
 
 { #category : 'error handling' }
@@ -79,6 +53,26 @@ MCPToolRewriteMethods >> executeWithRequest: request [
 				  errorResultForRewriteError: error
 				  request: rewriteRequest
 				  rawRequest: request ]
+]
+
+{ #category : 'metadata' }
+MCPToolRewriteMethods >> inputSchema [
+
+	^ MCPStructureInputSchema new
+		  type: 'object';
+		  properties: self rewriteInputProperties;
+		  required: #( 'rules' );
+		  additionalProperties: false;
+		  yourself
+]
+
+{ #category : 'metadata' }
+MCPToolRewriteMethods >> outputSchema [
+
+	^ self
+		  standardOutputSchemaForDataProperties: self rewriteDataProperties
+		  required: #( 'apply' 'changeCount' 'appliedCount' 'changeSetHash'
+			     'scope' 'changes' )
 ]
 
 { #category : 'private - execution' }
@@ -250,6 +244,12 @@ MCPToolRewriteMethods >> shouldSaveImageAfterSuccessfulExecutionForResult: aResu
 		        ifAbsent: [ ^ false ].
 	^ (data at: #apply ifAbsent: [ false ]) == true and: [
 		  (data at: #appliedCount ifAbsent: [ 0 ]) > 0 ]
+]
+
+{ #category : 'metadata' }
+MCPToolRewriteMethods >> title [
+
+	^ 'Rewrite Methods'
 ]
 
 { #category : 'validating' }

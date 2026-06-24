@@ -9,7 +9,7 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolVerifyRepositoryIdentity class >> toolName [
 
 	^ 'repository_identity_verify'

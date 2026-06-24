@@ -56,14 +56,37 @@ MCPToolDebugSessionControlOperation >> controlToolSpec [
 	self subclassResponsibility
 ]
 
-{ #category : 'defaults' }
-MCPToolDebugSessionControlOperation >> defaultDescription [
+{ #category : 'metadata' }
+MCPToolDebugSessionControlOperation >> description [
 
 	^ self controlToolSpec at: #description
 ]
 
-{ #category : 'defaults' }
-MCPToolDebugSessionControlOperation >> defaultInputSchema [
+{ #category : 'private - schema' }
+MCPToolDebugSessionControlOperation >> frameRefSchemaProperty [
+
+	^ self
+		  schemaPropertyNamed: 'frameRef'
+		  type: 'string'
+		  description:
+		  'Optional state-scoped frame reference. Defaults to the selected top frame.'
+]
+
+{ #category : 'private - schema' }
+MCPToolDebugSessionControlOperation >> inputProperties [
+
+	| properties |
+	properties := OrderedCollection with: self sessionIdSchemaProperty.
+	properties add: self stateIdSchemaProperty.
+	self usesFrameReference ifTrue: [
+		properties add: self frameRefSchemaProperty ].
+	self usesStateSnapshotOptions ifTrue: [
+		properties addAll: self stateSnapshotInputProperties ].
+	^ properties asArray
+]
+
+{ #category : 'metadata' }
+MCPToolDebugSessionControlOperation >> inputSchema [
 
 	^ MCPStructureInputSchema new
 		  type: 'object';
@@ -73,8 +96,8 @@ MCPToolDebugSessionControlOperation >> defaultInputSchema [
 		  yourself
 ]
 
-{ #category : 'defaults' }
-MCPToolDebugSessionControlOperation >> defaultOutputSchema [
+{ #category : 'metadata' }
+MCPToolDebugSessionControlOperation >> outputSchema [
 
 	^ self
 		  standardOutputSchemaForDataProperties: {
@@ -124,35 +147,6 @@ MCPToolDebugSessionControlOperation >> defaultOutputSchema [
 		  required:
 			  #( 'sessionId' 'action' 'previousStateId' 'stateId' 'status'
 			     'reason' 'warnings' 'capabilities' )
-]
-
-{ #category : 'defaults' }
-MCPToolDebugSessionControlOperation >> defaultTitle [
-
-	^ self controlToolSpec at: #title
-]
-
-{ #category : 'private - schema' }
-MCPToolDebugSessionControlOperation >> frameRefSchemaProperty [
-
-	^ self
-		  schemaPropertyNamed: 'frameRef'
-		  type: 'string'
-		  description:
-		  'Optional state-scoped frame reference. Defaults to the selected top frame.'
-]
-
-{ #category : 'private - schema' }
-MCPToolDebugSessionControlOperation >> inputProperties [
-
-	| properties |
-	properties := OrderedCollection with: self sessionIdSchemaProperty.
-	properties add: self stateIdSchemaProperty.
-	self usesFrameReference ifTrue: [
-		properties add: self frameRefSchemaProperty ].
-	self usesStateSnapshotOptions ifTrue: [
-		properties addAll: self stateSnapshotInputProperties ].
-	^ properties asArray
 ]
 
 { #category : 'private - request' }
@@ -216,6 +210,12 @@ MCPToolDebugSessionControlOperation >> stateSnapshotInputProperties [
 			   booleanSchemaPropertyNamed: 'includeReceiver'
 			   description: 'Include receiver scope.'
 			   default: MCPDebugRequest defaultIncludeReceiver) }
+]
+
+{ #category : 'metadata' }
+MCPToolDebugSessionControlOperation >> title [
+
+	^ self controlToolSpec at: #title
 ]
 
 { #category : 'private - specs' }

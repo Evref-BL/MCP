@@ -11,60 +11,16 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolSearchRepositories class >> toolName [
 
 	^ 'repository_search'
 ]
 
-{ #category : 'defaults' }
-MCPToolSearchRepositories >> defaultDescription [
+{ #category : 'metadata' }
+MCPToolSearchRepositories >> description [
 
 	^ 'Search registered Iceberg repositories.'
-]
-
-{ #category : 'defaults' }
-MCPToolSearchRepositories >> defaultInputSchema [
-
-	| properties |
-	properties := self repositoryFieldFilterInputProperties , {
-		              (self
-			               booleanSchemaPropertyNamed: 'isModified'
-			               description: 'Filter by modified state.').
-		              (self
-			               booleanSchemaPropertyNamed: 'isMissing'
-			               description: 'Filter by missing state.').
-		              (self
-			               filterModeSchemaPropertyWithDescription:
-			               'Filter match mode.'
-			               values: self basicFilterModes).
-		              (self caseSensitiveSchemaPropertyWithDescription:
-			               'Case-sensitive matching.').
-		              (self
-			               booleanSchemaPropertyNamed: 'includeDetails'
-			               description: 'Include detailed metadata.'
-			               default: false) }
-	              , (self paginationInputPropertiesWithLimitDescription:
-			               'Maximum results.').
-	^ self queryInputSchemaWithProperties: properties
-]
-
-{ #category : 'defaults' }
-MCPToolSearchRepositories >> defaultOutputSchema [
-
-	^ self
-		  minimalPagedQueryOutputSchemaForEntriesPropertyNamed:
-		  'repositories'
-		  entriesDescription:
-		  'The repository entries returned for the requested page.'
-		  entrySchema: self repositoryEntrySchema
-		  itemNounPhrase: 'repository entries'
-]
-
-{ #category : 'defaults' }
-MCPToolSearchRepositories >> defaultTitle [
-
-	^ 'Search Repositories'
 ]
 
 { #category : 'private - results' }
@@ -108,6 +64,32 @@ MCPToolSearchRepositories >> fieldTextsForRepositoryEntry: anEntry fieldName: fi
 	^ #(  )
 ]
 
+{ #category : 'metadata' }
+MCPToolSearchRepositories >> inputSchema [
+
+	| properties |
+	properties := self repositoryFieldFilterInputProperties , {
+		              (self
+			               booleanSchemaPropertyNamed: 'isModified'
+			               description: 'Filter by modified state.').
+		              (self
+			               booleanSchemaPropertyNamed: 'isMissing'
+			               description: 'Filter by missing state.').
+		              (self
+			               filterModeSchemaPropertyWithDescription:
+			               'Filter match mode.'
+			               values: self basicFilterModes).
+		              (self caseSensitiveSchemaPropertyWithDescription:
+			               'Case-sensitive matching.').
+		              (self
+			               booleanSchemaPropertyNamed: 'includeDetails'
+			               description: 'Include detailed metadata.'
+			               default: false) }
+	              , (self paginationInputPropertiesWithLimitDescription:
+			               'Maximum results.').
+	^ self queryInputSchemaWithProperties: properties
+]
+
 { #category : 'private - filtering' }
 MCPToolSearchRepositories >> matchesFieldFiltersOnRepositoryEntry: anEntry queryRequest: queryRequest [
 
@@ -117,6 +99,18 @@ MCPToolSearchRepositories >> matchesFieldFiltersOnRepositoryEntry: anEntry query
 			  self fieldTextsForRepositoryEntry: anEntry fieldName: fieldName ]
 		  mode: queryRequest filterMode
 		  caseSensitive: queryRequest caseSensitive
+]
+
+{ #category : 'metadata' }
+MCPToolSearchRepositories >> outputSchema [
+
+	^ self
+		  minimalPagedQueryOutputSchemaForEntriesPropertyNamed:
+		  'repositories'
+		  entriesDescription:
+		  'The repository entries returned for the requested page.'
+		  entrySchema: self repositoryEntrySchema
+		  itemNounPhrase: 'repository entries'
 ]
 
 { #category : 'private - template' }
@@ -336,4 +330,10 @@ MCPToolSearchRepositories >> successSummaryForScope: scopeSummary page: page [
 		  scopeQuerySuccessSummaryFor: 'repositories'
 		  scope: scopeSummary
 		  page: page
+]
+
+{ #category : 'metadata' }
+MCPToolSearchRepositories >> title [
+
+	^ 'Search Repositories'
 ]

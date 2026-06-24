@@ -9,7 +9,7 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolUpdateClassSharedPools class >> toolName [
 
 	^ 'class_shared_pools_update'

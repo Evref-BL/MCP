@@ -15,20 +15,26 @@ MCPHaltingTestTool class >> isAbstract [
 	^ true
 ]
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPHaltingTestTool class >> toolName [
 
 	^ 'halting-test-tool'
 ]
 
-{ #category : 'defaults' }
-MCPHaltingTestTool >> defaultDescription [
+{ #category : 'metadata' }
+MCPHaltingTestTool >> description [
 
 	^ 'Raises Halt for MCP tool-call error handling tests.'
 ]
 
-{ #category : 'defaults' }
-MCPHaltingTestTool >> defaultInputSchema [
+{ #category : 'executing' }
+MCPHaltingTestTool >> executeWithRequest: aRequest [
+
+	(Smalltalk globals at: #Halt) signal: 'mcp tool halt test'
+]
+
+{ #category : 'metadata' }
+MCPHaltingTestTool >> inputSchema [
 
 	^ MCPStructureInputSchema new
 		type: 'object';
@@ -38,20 +44,14 @@ MCPHaltingTestTool >> defaultInputSchema [
 		yourself
 ]
 
-{ #category : 'defaults' }
-MCPHaltingTestTool >> defaultOutputSchema [
+{ #category : 'metadata' }
+MCPHaltingTestTool >> outputSchema [
 
 	^ self standardOutputSchemaForDataProperties: #(  ) required: #(  )
 ]
 
-{ #category : 'defaults' }
-MCPHaltingTestTool >> defaultTitle [
+{ #category : 'metadata' }
+MCPHaltingTestTool >> title [
 
 	^ 'Halting Test Tool'
-]
-
-{ #category : 'executing' }
-MCPHaltingTestTool >> executeWithRequest: aRequest [
-
-	(Smalltalk globals at: #Halt) signal: 'mcp tool halt test'
 ]

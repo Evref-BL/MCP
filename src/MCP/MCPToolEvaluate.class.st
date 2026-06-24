@@ -9,7 +9,7 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolEvaluate class >> toolName [
 
 	^ 'image_evaluate'
@@ -24,50 +24,10 @@ MCPToolEvaluate >> commandForRequest: evaluateRequest [
 		  resultPreviewCharacterLimit: self resultPreviewCharacterLimit
 ]
 
-{ #category : 'defaults' }
-MCPToolEvaluate >> defaultDescription [
+{ #category : 'metadata' }
+MCPToolEvaluate >> description [
 
 	^ 'Evaluate arbitrary Smalltalk code and return a bounded preview of the result. Use this escape hatch only when a dedicated tool does not fit; it may mutate image state.'
-]
-
-{ #category : 'defaults' }
-MCPToolEvaluate >> defaultInputSchema [
-
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: { (MCPStructureProperties new
-				   name: 'code';
-				   type: 'string';
-				   description:
-					   'The Smalltalk code to execute in the running Pharo image.';
-				   yourself) };
-		  required: #( 'code' );
-		  yourself
-]
-
-{ #category : 'defaults' }
-MCPToolEvaluate >> defaultOutputSchema [
-
-	^ self
-		  standardOutputSchemaForDataProperties: {
-				  (self
-					   schemaPropertyNamed: 'resultClassName'
-					   type: 'string'
-					   description: 'The name of the evaluated result''s class.').
-				  (self
-					   schemaPropertyNamed: 'resultPrintString'
-					   type: 'string'
-					   description:
-						   'A printString preview of the evaluated result, limited to '
-						   , self resultPreviewCharacterLimit printString
-						   , ' characters.') }
-		  required: #( 'resultClassName' 'resultPrintString' )
-]
-
-{ #category : 'defaults' }
-MCPToolEvaluate >> defaultTitle [
-
-	^ 'Evaluate Image Code'
 ]
 
 { #category : 'executing' }
@@ -94,6 +54,40 @@ MCPToolEvaluate >> executeWithRequest: request [
 						   ifNil: [ error asString ]
 						   ifNotNil: [ :text | text ])
 				  details: (self errorDetailsFor: error) ]
+]
+
+{ #category : 'metadata' }
+MCPToolEvaluate >> inputSchema [
+
+	^ MCPStructureInputSchema new
+		  type: 'object';
+		  properties: { (MCPStructureProperties new
+				   name: 'code';
+				   type: 'string';
+				   description:
+					   'The Smalltalk code to execute in the running Pharo image.';
+				   yourself) };
+		  required: #( 'code' );
+		  yourself
+]
+
+{ #category : 'metadata' }
+MCPToolEvaluate >> outputSchema [
+
+	^ self
+		  standardOutputSchemaForDataProperties: {
+				  (self
+					   schemaPropertyNamed: 'resultClassName'
+					   type: 'string'
+					   description: 'The name of the evaluated result''s class.').
+				  (self
+					   schemaPropertyNamed: 'resultPrintString'
+					   type: 'string'
+					   description:
+						   'A printString preview of the evaluated result, limited to '
+						   , self resultPreviewCharacterLimit printString
+						   , ' characters.') }
+		  required: #( 'resultClassName' 'resultPrintString' )
 ]
 
 { #category : 'private - request' }
@@ -148,4 +142,10 @@ MCPToolEvaluate >> syntaxFailureMessageFor: aNotice [
 					  stream
 						  nextPutAll: ' Position: ';
 						  print: position ] ]
+]
+
+{ #category : 'metadata' }
+MCPToolEvaluate >> title [
+
+	^ 'Evaluate Image Code'
 ]

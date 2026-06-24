@@ -11,7 +11,7 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolDebugVariables class >> toolName [
 
 	^ 'debug_variable_get'
@@ -23,22 +23,14 @@ MCPToolDebugVariables >> commandForRequest: debugRequest [
 	^ MCPDebugVariablesCommand tool: self request: debugRequest
 ]
 
-{ #category : 'defaults' }
-MCPToolDebugVariables >> defaultDescription [
+{ #category : 'metadata' }
+MCPToolDebugVariables >> description [
 
 	^ 'Expand one state-scoped variable or scope reference returned by debug_state_get.'
 ]
 
-{ #category : 'defaults' }
-MCPToolDebugVariables >> defaultIcons [
-
-	^ { (self
-		   pngCompositeBaseIconNamed: #bug
-		   badgeIconNamed: #instVarsSelected) }
-]
-
-{ #category : 'defaults' }
-MCPToolDebugVariables >> defaultInputSchema [
+{ #category : 'metadata' }
+MCPToolDebugVariables >> inputSchema [
 
 	^ MCPStructureInputSchema new
 		  type: 'object';
@@ -72,14 +64,8 @@ MCPToolDebugVariables >> defaultInputSchema [
 		  yourself
 ]
 
-{ #category : 'defaults' }
-MCPToolDebugVariables >> defaultName [
-
-	^ 'debug_variable_get'
-]
-
-{ #category : 'defaults' }
-MCPToolDebugVariables >> defaultOutputSchema [
+{ #category : 'metadata' }
+MCPToolDebugVariables >> outputSchema [
 
 	^ self
 		  standardOutputSchemaForDataProperties: {
@@ -141,14 +127,14 @@ MCPToolDebugVariables >> defaultOutputSchema [
 			     'totalCount' 'truncated' 'warnings' 'capabilities' )
 ]
 
-{ #category : 'defaults' }
-MCPToolDebugVariables >> defaultTitle [
-
-	^ 'Get Debug Variables'
-]
-
 { #category : 'private - request' }
 MCPToolDebugVariables >> parsedRequestFromToolRequest: request [
 
 	^ MCPDebugVariablesRequest fromRequest: request tool: self
+]
+
+{ #category : 'metadata' }
+MCPToolDebugVariables >> title [
+
+	^ 'Get Debug Variables'
 ]

@@ -9,7 +9,7 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolPullUpClassSlot class >> toolName [
 
 	^ 'class_slot_pull_up'

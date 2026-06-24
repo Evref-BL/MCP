@@ -11,7 +11,7 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolCaptureScreenshot class >> toolName [
 
 	^ 'screenshot_capture'
@@ -23,55 +23,10 @@ MCPToolCaptureScreenshot >> commandForRequest: screenshotRequest [
 	^ MCPScreenshotCommand tool: self request: screenshotRequest
 ]
 
-{ #category : 'defaults' }
-MCPToolCaptureScreenshot >> defaultDescription [
+{ #category : 'metadata' }
+MCPToolCaptureScreenshot >> description [
 
 	^ 'Capture the active Morphic world and return it as MCP image content.'
-]
-
-{ #category : 'defaults' }
-MCPToolCaptureScreenshot >> defaultInputSchema [
-
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: { (self
-				   stringEnumSchemaPropertyNamed: 'target'
-				   description:
-					   'The screenshot target. The only accepted value is world.'
-				   values: #( 'world' )
-				   default: 'world') };
-		  required: #(  );
-		  yourself
-]
-
-{ #category : 'defaults' }
-MCPToolCaptureScreenshot >> defaultOutputSchema [
-
-	^ self
-		  standardOutputSchemaForDataProperties: {
-				  (self
-					   schemaPropertyNamed: 'target'
-					   type: 'string'
-					   description: 'The screenshot target that was captured.').
-				  (self
-					   schemaPropertyNamed: 'width'
-					   type: 'integer'
-					   description: 'The screenshot width in pixels.').
-				  (self
-					   schemaPropertyNamed: 'height'
-					   type: 'integer'
-					   description: 'The screenshot height in pixels.').
-				  (self
-					   schemaPropertyNamed: 'mimeType'
-					   type: 'string'
-					   description: 'The MIME type of the image content block.') }
-		  required: #( 'target' 'width' 'height' 'mimeType' )
-]
-
-{ #category : 'defaults' }
-MCPToolCaptureScreenshot >> defaultTitle [
-
-	^ 'Capture Screenshot'
 ]
 
 { #category : 'executing' }
@@ -100,6 +55,45 @@ MCPToolCaptureScreenshot >> executeWithRequest: request [
 					  details: (self errorDetailsFor: error) ]
 ]
 
+{ #category : 'metadata' }
+MCPToolCaptureScreenshot >> inputSchema [
+
+	^ MCPStructureInputSchema new
+		  type: 'object';
+		  properties: { (self
+				   stringEnumSchemaPropertyNamed: 'target'
+				   description:
+					   'The screenshot target. The only accepted value is world.'
+				   values: #( 'world' )
+				   default: 'world') };
+		  required: #(  );
+		  yourself
+]
+
+{ #category : 'metadata' }
+MCPToolCaptureScreenshot >> outputSchema [
+
+	^ self
+		  standardOutputSchemaForDataProperties: {
+				  (self
+					   schemaPropertyNamed: 'target'
+					   type: 'string'
+					   description: 'The screenshot target that was captured.').
+				  (self
+					   schemaPropertyNamed: 'width'
+					   type: 'integer'
+					   description: 'The screenshot width in pixels.').
+				  (self
+					   schemaPropertyNamed: 'height'
+					   type: 'integer'
+					   description: 'The screenshot height in pixels.').
+				  (self
+					   schemaPropertyNamed: 'mimeType'
+					   type: 'string'
+					   description: 'The MIME type of the image content block.') }
+		  required: #( 'target' 'width' 'height' 'mimeType' )
+]
+
 { #category : 'private - request' }
 MCPToolCaptureScreenshot >> parsedRequestFromToolRequest: request [
 
@@ -118,4 +112,10 @@ MCPToolCaptureScreenshot >> successSummaryForResult: aScreenshotResult [
 			  nextPutAll: 'x';
 			  print: aScreenshotResult height;
 			  nextPutAll: ').' ]
+]
+
+{ #category : 'metadata' }
+MCPToolCaptureScreenshot >> title [
+
+	^ 'Capture Screenshot'
 ]

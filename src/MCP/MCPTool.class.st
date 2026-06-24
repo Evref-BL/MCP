@@ -17,14 +17,6 @@ Subclasses should keep protocol and schema mechanics in the tool, put image work
 Class {
 	#name : 'MCPTool',
 	#superclass : 'Object',
-	#instVars : [
-		'name',
-		'title',
-		'description',
-		'icons',
-		'inputSchema',
-		'outputSchema'
-	],
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
@@ -67,7 +59,7 @@ MCPTool class >> toolIcons [
 	^ MCPStructureIcon iconsForToolClass: self
 ]
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPTool class >> toolName [
 
 	self subclassResponsibility
@@ -112,52 +104,10 @@ MCPTool >> commandForRequest: aToolRequest [
 	self subclassResponsibility
 ]
 
-{ #category : 'defaults' }
-MCPTool >> defaultDescription [
-
-	self subclassResponsibility
-]
-
-{ #category : 'defaults' }
-MCPTool >> defaultIcons [
-
-	^ self class toolIcons
-]
-
-{ #category : 'defaults' }
-MCPTool >> defaultInputSchema [
-
-	self subclassResponsibility
-]
-
-{ #category : 'defaults' }
-MCPTool >> defaultName [
-
-	^ self class toolName
-]
-
-{ #category : 'defaults' }
-MCPTool >> defaultOutputSchema [
-
-	self subclassResponsibility
-]
-
-{ #category : 'defaults' }
-MCPTool >> defaultTitle [
-
-	self subclassResponsibility
-]
-
-{ #category : 'accessing' }
+{ #category : 'metadata' }
 MCPTool >> description [
 
-	^ description
-]
-
-{ #category : 'accessing' }
-MCPTool >> description: anObject [
-
-	description := anObject
+	self subclassResponsibility
 ]
 
 { #category : 'private - results' }
@@ -306,39 +256,16 @@ MCPTool >> failureMessageFor: anError [
 				  nextPutAll: message ] ]
 ]
 
-{ #category : 'accessing' }
+{ #category : 'metadata' }
 MCPTool >> icons [
 
-	^ icons ifNil: [ icons := self class toolIcons ]
+	^ self class toolIcons
 ]
 
-{ #category : 'accessing' }
-MCPTool >> icons: anObject [
-
-	icons := anObject
-]
-
-{ #category : 'initialization' }
-MCPTool >> initialize [
-
-	super initialize.
-	name := self class toolName.
-	title := self defaultTitle.
-	description := self defaultDescription.
-	inputSchema := self defaultInputSchema.
-	outputSchema := self defaultOutputSchema
-]
-
-{ #category : 'accessing' }
+{ #category : 'metadata' }
 MCPTool >> inputSchema [
 
-	^ inputSchema
-]
-
-{ #category : 'accessing' }
-MCPTool >> inputSchema: anObject [
-
-	inputSchema := anObject
+	self subclassResponsibility
 ]
 
 { #category : 'private - schema' }
@@ -360,28 +287,16 @@ MCPTool >> integerSchemaPropertyNamed: propertyName description: propertyDescrip
 		  yourself
 ]
 
-{ #category : 'accessing' }
+{ #category : 'metadata' }
 MCPTool >> name [
 
-	^ name
+	^ self class toolName
 ]
 
-{ #category : 'accessing' }
-MCPTool >> name: anObject [
-
-	name := anObject
-]
-
-{ #category : 'accessing' }
+{ #category : 'metadata' }
 MCPTool >> outputSchema [
 
-	^ outputSchema
-]
-
-{ #category : 'accessing' }
-MCPTool >> outputSchema: anObject [
-
-	outputSchema := anObject
+	self subclassResponsibility
 ]
 
 { #category : 'private - request' }
@@ -625,16 +540,10 @@ MCPTool >> textContent: aString [
 	^ MCPStructureTextContent text: aString
 ]
 
-{ #category : 'accessing' }
+{ #category : 'metadata' }
 MCPTool >> title [
 
-	^ title
-]
-
-{ #category : 'accessing' }
-MCPTool >> title: anObject [
-
-	title := anObject
+	self subclassResponsibility
 ]
 
 { #category : 'validating' }

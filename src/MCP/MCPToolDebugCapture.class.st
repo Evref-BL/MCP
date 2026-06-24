@@ -11,7 +11,7 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolDebugCapture class >> toolName [
 
 	^ 'debug_capture'
@@ -23,20 +23,14 @@ MCPToolDebugCapture >> commandForRequest: debugRequest [
 	^ MCPDebugCaptureCommand tool: self request: debugRequest
 ]
 
-{ #category : 'defaults' }
-MCPToolDebugCapture >> defaultDescription [
+{ #category : 'metadata' }
+MCPToolDebugCapture >> description [
 
 	^ 'Evaluate Smalltalk in a bounded worker process and capture runtime exceptions as tracked debug sessions.'
 ]
 
-{ #category : 'defaults' }
-MCPToolDebugCapture >> defaultIcons [
-
-	^ { (self pngCompositeBaseIconNamed: #bug badgeIconNamed: #rightSide) }
-]
-
-{ #category : 'defaults' }
-MCPToolDebugCapture >> defaultInputSchema [
+{ #category : 'metadata' }
+MCPToolDebugCapture >> inputSchema [
 
 	^ MCPStructureInputSchema new
 		  type: 'object';
@@ -87,14 +81,8 @@ MCPToolDebugCapture >> defaultInputSchema [
 		  yourself
 ]
 
-{ #category : 'defaults' }
-MCPToolDebugCapture >> defaultName [
-
-	^ 'debug_capture'
-]
-
-{ #category : 'defaults' }
-MCPToolDebugCapture >> defaultOutputSchema [
+{ #category : 'metadata' }
+MCPToolDebugCapture >> outputSchema [
 
 	^ self
 		  standardOutputSchemaForDataProperties: {
@@ -151,12 +139,6 @@ MCPToolDebugCapture >> defaultOutputSchema [
 		     'warnings' 'capabilities' )
 ]
 
-{ #category : 'defaults' }
-MCPToolDebugCapture >> defaultTitle [
-
-	^ 'Debug Capture'
-]
-
 { #category : 'private - request' }
 MCPToolDebugCapture >> parsedRequestFromToolRequest: request [
 
@@ -182,4 +164,10 @@ MCPToolDebugCapture >> syntaxFailureMessageFor: aNotice [
 				  nextPutAll: aNotice class name;
 				  nextPutAll: '): ';
 				  nextPutAll: message ]
+]
+
+{ #category : 'metadata' }
+MCPToolDebugCapture >> title [
+
+	^ 'Debug Capture'
 ]

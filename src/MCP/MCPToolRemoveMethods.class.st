@@ -11,7 +11,7 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolRemoveMethods class >> toolName [
 
 	^ 'method_remove'
@@ -37,53 +37,10 @@ MCPToolRemoveMethods >> commandForRequest: removeRequest [
 	^ MCPRemoveMethodsCommand tool: self request: removeRequest
 ]
 
-{ #category : 'defaults' }
-MCPToolRemoveMethods >> defaultDescription [
+{ #category : 'metadata' }
+MCPToolRemoveMethods >> description [
 
 	^ 'Remove methods from one class as a batch without sender safety checks. Use method_compile, method_selector_update, or method_protocol_update for method updates.'
-]
-
-{ #category : 'defaults' }
-MCPToolRemoveMethods >> defaultInputSchema [
-
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: {
-				  (MCPStructureProperties new
-					   name: 'className';
-					   type: 'string';
-					   description: 'The class from which methods will be removed.';
-					   yourself).
-				  (MCPStructureProperties new
-					   name: 'classSide';
-					   type: 'boolean';
-					   description: 'Whether to remove methods from the class side.';
-					   default: false;
-					   yourself).
-				  ((MCPStructureProperties new
-					    name: 'selectors';
-					    type: 'array';
-					    description:
-						    'The selectors to remove as a single force-removal batch.')
-					   items: (MCPStructureProperties new
-							    type: 'string';
-							    description: 'A selector to remove.';
-							    yourself);
-					   yourself) };
-		  required: #( 'className' 'selectors' );
-		  yourself
-]
-
-{ #category : 'defaults' }
-MCPToolRemoveMethods >> defaultOutputSchema [
-
-	^ self standardOutputSchemaForDataProperties: #(  ) required: #(  )
-]
-
-{ #category : 'defaults' }
-MCPToolRemoveMethods >> defaultTitle [
-
-	^ 'Remove Methods'
 ]
 
 { #category : 'private' }
@@ -168,6 +125,43 @@ MCPToolRemoveMethods >> forceRemoveSelectors: selectorSymbols from: aBehavior [
 	refactoring performChanges
 ]
 
+{ #category : 'metadata' }
+MCPToolRemoveMethods >> inputSchema [
+
+	^ MCPStructureInputSchema new
+		  type: 'object';
+		  properties: {
+				  (MCPStructureProperties new
+					   name: 'className';
+					   type: 'string';
+					   description: 'The class from which methods will be removed.';
+					   yourself).
+				  (MCPStructureProperties new
+					   name: 'classSide';
+					   type: 'boolean';
+					   description: 'Whether to remove methods from the class side.';
+					   default: false;
+					   yourself).
+				  ((MCPStructureProperties new
+					    name: 'selectors';
+					    type: 'array';
+					    description:
+						    'The selectors to remove as a single force-removal batch.')
+					   items: (MCPStructureProperties new
+							    type: 'string';
+							    description: 'A selector to remove.';
+							    yourself);
+					   yourself) };
+		  required: #( 'className' 'selectors' );
+		  yourself
+]
+
+{ #category : 'metadata' }
+MCPToolRemoveMethods >> outputSchema [
+
+	^ self standardOutputSchemaForDataProperties: #(  ) required: #(  )
+]
+
 { #category : 'private - request' }
 MCPToolRemoveMethods >> parsedRequestFromToolRequest: request [
 
@@ -206,4 +200,10 @@ MCPToolRemoveMethods >> successSummaryForClassName: className classSide: classSi
 		              ifFalse: [ className ].
 	^ 'Force-removed ' , selectors size asString , ' methods from '
 	  , targetName , ': ' , (', ' join: selectors) , '.'
+]
+
+{ #category : 'metadata' }
+MCPToolRemoveMethods >> title [
+
+	^ 'Remove Methods'
 ]

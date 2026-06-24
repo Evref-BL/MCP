@@ -77,14 +77,22 @@ MCPToolDebugBreakpointOperation >> commandForRequest: debugRequest [
 	^ MCPDebugBreakpointsCommand tool: self request: debugRequest
 ]
 
-{ #category : 'defaults' }
-MCPToolDebugBreakpointOperation >> defaultDescription [
+{ #category : 'metadata' }
+MCPToolDebugBreakpointOperation >> description [
 
 	^ self breakpointToolSpec at: #description
 ]
 
-{ #category : 'defaults' }
-MCPToolDebugBreakpointOperation >> defaultInputSchema [
+{ #category : 'private - schema' }
+MCPToolDebugBreakpointOperation >> inputProperties [
+
+	^ self breakpointToolSpec
+		  at: #inputProperties
+		  ifAbsent: [ #(  ) ]
+]
+
+{ #category : 'metadata' }
+MCPToolDebugBreakpointOperation >> inputSchema [
 
 	^ MCPStructureInputSchema new
 		  type: 'object';
@@ -94,8 +102,8 @@ MCPToolDebugBreakpointOperation >> defaultInputSchema [
 		  yourself
 ]
 
-{ #category : 'defaults' }
-MCPToolDebugBreakpointOperation >> defaultOutputSchema [
+{ #category : 'metadata' }
+MCPToolDebugBreakpointOperation >> outputSchema [
 
 	^ self
 		  standardOutputSchemaForDataProperties: {
@@ -165,20 +173,6 @@ MCPToolDebugBreakpointOperation >> defaultOutputSchema [
 		  required: #( 'totalCount' 'capabilities' )
 ]
 
-{ #category : 'defaults' }
-MCPToolDebugBreakpointOperation >> defaultTitle [
-
-	^ self breakpointToolSpec at: #title
-]
-
-{ #category : 'private - schema' }
-MCPToolDebugBreakpointOperation >> inputProperties [
-
-	^ self breakpointToolSpec
-		  at: #inputProperties
-		  ifAbsent: [ #(  ) ]
-]
-
 { #category : 'private - request' }
 MCPToolDebugBreakpointOperation >> parsedRequestFromToolRequest: request [
 
@@ -194,4 +188,10 @@ MCPToolDebugBreakpointOperation >> requiredInputProperties [
 	^ self breakpointToolSpec
 		  at: #requiredProperties
 		  ifAbsent: [ #(  ) ]
+]
+
+{ #category : 'metadata' }
+MCPToolDebugBreakpointOperation >> title [
+
+	^ self breakpointToolSpec at: #title
 ]

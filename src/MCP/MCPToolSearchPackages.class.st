@@ -9,50 +9,16 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolSearchPackages class >> toolName [
 
 	^ 'package_search'
 ]
 
-{ #category : 'defaults' }
-MCPToolSearchPackages >> defaultDescription [
+{ #category : 'metadata' }
+MCPToolSearchPackages >> description [
 
 	^ 'Search packages by name, project, or tag.'
-]
-
-{ #category : 'defaults' }
-MCPToolSearchPackages >> defaultInputSchema [
-
-	| properties |
-	properties := self packageQueryScopeInputProperties
-	              , self packageFilterInputProperties , {
-		              (self
-			               filterModeSchemaPropertyWithDescription:
-			               'How package metadata filters are matched.'
-			               values: self basicFilterModes).
-		              (self caseSensitiveSchemaPropertyWithDescription:
-			               'Whether package metadata matching is case-sensitive.') }
-	              , (self paginationInputPropertiesWithLimitDescription:
-			               'Maximum number of matching packages to return. Use 0 to return no entries.').
-	^ self queryInputSchemaWithProperties: properties
-]
-
-{ #category : 'defaults' }
-MCPToolSearchPackages >> defaultOutputSchema [
-
-	^ self
-		  minimalPagedQueryOutputSchemaForEntriesPropertyNamed: 'packages'
-		  entriesDescription:
-		  'The package entries returned for the requested page.'
-		  entrySchema: self packageEntrySchema
-		  itemNounPhrase: 'package entries'
-]
-
-{ #category : 'defaults' }
-MCPToolSearchPackages >> defaultTitle [
-
-	^ 'Search Packages'
 ]
 
 { #category : 'private - results' }
@@ -73,6 +39,23 @@ MCPToolSearchPackages >> fieldTextsForPackageEntry: anEntry fieldName: fieldName
 	^ #(  )
 ]
 
+{ #category : 'metadata' }
+MCPToolSearchPackages >> inputSchema [
+
+	| properties |
+	properties := self packageQueryScopeInputProperties
+	              , self packageFilterInputProperties , {
+		              (self
+			               filterModeSchemaPropertyWithDescription:
+			               'How package metadata filters are matched.'
+			               values: self basicFilterModes).
+		              (self caseSensitiveSchemaPropertyWithDescription:
+			               'Whether package metadata matching is case-sensitive.') }
+	              , (self paginationInputPropertiesWithLimitDescription:
+			               'Maximum number of matching packages to return. Use 0 to return no entries.').
+	^ self queryInputSchemaWithProperties: properties
+]
+
 { #category : 'private - filtering' }
 MCPToolSearchPackages >> matchesFieldFiltersOnPackageEntry: anEntry queryRequest: queryRequest [
 
@@ -82,6 +65,17 @@ MCPToolSearchPackages >> matchesFieldFiltersOnPackageEntry: anEntry queryRequest
 			  self fieldTextsForPackageEntry: anEntry fieldName: fieldName ]
 		  mode: queryRequest filterMode
 		  caseSensitive: queryRequest caseSensitive
+]
+
+{ #category : 'metadata' }
+MCPToolSearchPackages >> outputSchema [
+
+	^ self
+		  minimalPagedQueryOutputSchemaForEntriesPropertyNamed: 'packages'
+		  entriesDescription:
+		  'The package entries returned for the requested page.'
+		  entrySchema: self packageEntrySchema
+		  itemNounPhrase: 'package entries'
 ]
 
 { #category : 'private - filtering' }
@@ -217,4 +211,10 @@ MCPToolSearchPackages >> successSummaryForScope: scopeSummary page: page [
 		  scopeQuerySuccessSummaryFor: 'packages'
 		  scope: scopeSummary
 		  page: page
+]
+
+{ #category : 'metadata' }
+MCPToolSearchPackages >> title [
+
+	^ 'Search Packages'
 ]

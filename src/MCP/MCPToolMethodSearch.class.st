@@ -53,17 +53,6 @@ MCPToolMethodSearch >> defaultFilterMode [
 	^ 'exact'
 ]
 
-{ #category : 'defaults' }
-MCPToolMethodSearch >> defaultOutputSchema [
-
-	^ self
-		  minimalPagedQueryOutputSchemaForEntriesPropertyNamed: 'methods'
-		  entriesDescription:
-		  'The method entries returned for the requested page.'
-		  entrySchema: self methodEntrySchema
-		  itemNounPhrase: 'methods'
-]
-
 { #category : 'private - results' }
 MCPToolMethodSearch >> failureMessageForScope: scopeSummary error: anError [
 
@@ -321,6 +310,17 @@ MCPToolMethodSearch >> methodScopeQueryFromRequest: request [
 MCPToolMethodSearch >> needsSourceForFiltering [
 
 	^ false
+]
+
+{ #category : 'metadata' }
+MCPToolMethodSearch >> outputSchema [
+
+	^ self
+		  minimalPagedQueryOutputSchemaForEntriesPropertyNamed: 'methods'
+		  entriesDescription:
+		  'The method entries returned for the requested page.'
+		  entrySchema: self methodEntrySchema
+		  itemNounPhrase: 'methods'
 ]
 
 { #category : 'private - template' }

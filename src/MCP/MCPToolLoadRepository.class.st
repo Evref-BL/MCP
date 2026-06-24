@@ -9,7 +9,7 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolLoadRepository class >> toolName [
 
 	^ 'repository_load'
@@ -51,53 +51,9 @@ MCPToolLoadRepository >> defaultCommitish [
 ]
 
 { #category : 'defaults' }
-MCPToolLoadRepository >> defaultDescription [
-
-	^ 'Load a Metacello baseline from a repository source into the image.'
-]
-
-{ #category : 'defaults' }
 MCPToolLoadRepository >> defaultHostUrl [
 
 	^ 'github'
-]
-
-{ #category : 'defaults' }
-MCPToolLoadRepository >> defaultInputSchema [
-
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: {
-				  self repositoryUrlSchemaProperty.
-				  self checkoutPathSchemaProperty.
-				  self repositoryNameSchemaProperty.
-				  self locationSchemaProperty.
-				  self hostUrlSchemaProperty.
-				  (self
-					   nonEmptyStringSchemaPropertyNamed: 'owner'
-					   description: 'Repository owner or namespace.').
-				  (self
-					   nonEmptyStringSchemaPropertyNamed: 'project'
-					   description: 'Repository project.').
-				  self commitishSchemaProperty.
-				  self sourceDirectorySchemaProperty.
-				  (self
-					   nonEmptyStringSchemaPropertyNamed: 'baseline'
-					   description: 'Baseline name without BaselineOf prefix.').
-				  self groupsSchemaProperty }
-			  , self loadPolicyInputSchemaProperties;
-		  required: #( 'baseline' );
-		  additionalProperties: false;
-		  yourself
-]
-
-{ #category : 'defaults' }
-MCPToolLoadRepository >> defaultOutputSchema [
-
-	^ self
-		  standardOutputSchemaForDataProperties:
-		  self loadRepositoryDataProperties
-		  required: #( 'mode' 'repository' 'load' )
 ]
 
 { #category : 'defaults' }
@@ -106,10 +62,10 @@ MCPToolLoadRepository >> defaultSourceDirectory [
 	^ '.'
 ]
 
-{ #category : 'defaults' }
-MCPToolLoadRepository >> defaultTitle [
+{ #category : 'metadata' }
+MCPToolLoadRepository >> description [
 
-	^ 'Load Repository'
+	^ 'Load a Metacello baseline from a repository source into the image.'
 ]
 
 { #category : 'private - errors' }
@@ -151,6 +107,35 @@ MCPToolLoadRepository >> hostUrlSchemaProperty [
 		  yourself
 ]
 
+{ #category : 'metadata' }
+MCPToolLoadRepository >> inputSchema [
+
+	^ MCPStructureInputSchema new
+		  type: 'object';
+		  properties: {
+				  self repositoryUrlSchemaProperty.
+				  self checkoutPathSchemaProperty.
+				  self repositoryNameSchemaProperty.
+				  self locationSchemaProperty.
+				  self hostUrlSchemaProperty.
+				  (self
+					   nonEmptyStringSchemaPropertyNamed: 'owner'
+					   description: 'Repository owner or namespace.').
+				  (self
+					   nonEmptyStringSchemaPropertyNamed: 'project'
+					   description: 'Repository project.').
+				  self commitishSchemaProperty.
+				  self sourceDirectorySchemaProperty.
+				  (self
+					   nonEmptyStringSchemaPropertyNamed: 'baseline'
+					   description: 'Baseline name without BaselineOf prefix.').
+				  self groupsSchemaProperty }
+			  , self loadPolicyInputSchemaProperties;
+		  required: #( 'baseline' );
+		  additionalProperties: false;
+		  yourself
+]
+
 { #category : 'private - schema' }
 MCPToolLoadRepository >> loadRepositoryDataProperties [
 
@@ -179,6 +164,15 @@ MCPToolLoadRepository >> modeOutputSchemaProperty [
 		  description: 'The repository source mode used by this tool.'
 		  values: #( 'remote' 'url' 'local' 'iceberg' )
 		  default: 'remote'
+]
+
+{ #category : 'metadata' }
+MCPToolLoadRepository >> outputSchema [
+
+	^ self
+		  standardOutputSchemaForDataProperties:
+		  self loadRepositoryDataProperties
+		  required: #( 'mode' 'repository' 'load' )
 ]
 
 { #category : 'private - request' }
@@ -264,4 +258,10 @@ MCPToolLoadRepository >> successSummaryForResult: aResult [
 						  space;
 						  nextPutAll: aResult newPackageNames size asString;
 						  nextPutAll: ' new packages were detected.' ] ]
+]
+
+{ #category : 'metadata' }
+MCPToolLoadRepository >> title [
+
+	^ 'Load Repository'
 ]

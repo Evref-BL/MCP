@@ -11,7 +11,7 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolSearchTools class >> toolName [
 
 	^ 'tool_search'
@@ -23,54 +23,10 @@ MCPToolSearchTools >> commandForRequest: searchRequest [
 	^ MCPSearchToolsCommand tool: self request: searchRequest
 ]
 
-{ #category : 'defaults' }
-MCPToolSearchTools >> defaultDescription [
+{ #category : 'metadata' }
+MCPToolSearchTools >> description [
 
 	^ 'Search all MCP-Pharo tools. Use to discover tool names before tool_get or tool_call.'
-]
-
-{ #category : 'defaults' }
-MCPToolSearchTools >> defaultInputSchema [
-
-	| limitProperty |
-	limitProperty := self
-		                 integerSchemaPropertyNamed: 'limit'
-		                 description: 'Maximum tools to return.'
-		                 default: 25.
-	limitProperty
-		minimum: 0;
-		maximum: 100.
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: {
-				  (self
-					   schemaPropertyNamed: 'query'
-					   type: 'string'
-					   description:
-						   'Search text for tool names, descriptions, or groups.').
-				  (self
-					   schemaPropertyNamed: 'group'
-					   type: 'string'
-					   description: 'Optional tool group filter.').
-				  limitProperty };
-		  required: #(  );
-		  additionalProperties: false;
-		  yourself
-]
-
-{ #category : 'defaults' }
-MCPToolSearchTools >> defaultOutputSchema [
-
-	^ self
-		  standardOutputSchemaForDataProperties:
-		  { self toolsArraySchemaProperty }
-		  required: #( 'tools' )
-]
-
-{ #category : 'defaults' }
-MCPToolSearchTools >> defaultTitle [
-
-	^ 'Search Tool Catalog'
 ]
 
 { #category : 'executing' }
@@ -99,10 +55,54 @@ MCPToolSearchTools >> executeWithRequest: request usingPolicy: aToolExposurePoli
 		  onError: [ :error :parsedRequest | self errorResultFor: error ]
 ]
 
+{ #category : 'metadata' }
+MCPToolSearchTools >> inputSchema [
+
+	| limitProperty |
+	limitProperty := self
+		                 integerSchemaPropertyNamed: 'limit'
+		                 description: 'Maximum tools to return.'
+		                 default: 25.
+	limitProperty
+		minimum: 0;
+		maximum: 100.
+	^ MCPStructureInputSchema new
+		  type: 'object';
+		  properties: {
+				  (self
+					   schemaPropertyNamed: 'query'
+					   type: 'string'
+					   description:
+						   'Search text for tool names, descriptions, or groups.').
+				  (self
+					   schemaPropertyNamed: 'group'
+					   type: 'string'
+					   description: 'Optional tool group filter.').
+				  limitProperty };
+		  required: #(  );
+		  additionalProperties: false;
+		  yourself
+]
+
+{ #category : 'metadata' }
+MCPToolSearchTools >> outputSchema [
+
+	^ self
+		  standardOutputSchemaForDataProperties:
+		  { self toolsArraySchemaProperty }
+		  required: #( 'tools' )
+]
+
 { #category : 'private - request' }
 MCPToolSearchTools >> parsedRequestFromToolRequest: request [
 
 	^ MCPSearchToolsRequest fromToolRequest: request
+]
+
+{ #category : 'metadata' }
+MCPToolSearchTools >> title [
+
+	^ 'Search Tool Catalog'
 ]
 
 { #category : 'private - schema' }

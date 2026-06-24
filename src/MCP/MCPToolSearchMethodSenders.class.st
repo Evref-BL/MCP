@@ -9,22 +9,16 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolSearchMethodSenders class >> toolName [
 
 	^ 'method_sender_search'
 ]
 
-{ #category : 'defaults' }
-MCPToolSearchMethodSenders >> defaultDescription [
+{ #category : 'metadata' }
+MCPToolSearchMethodSenders >> description [
 
 	^ 'Search methods that send a selector. Use method_metadata_search for general method metadata, or method_source_search for source text.'
-]
-
-{ #category : 'defaults' }
-MCPToolSearchMethodSenders >> defaultTitle [
-
-	^ 'Search Method Senders'
 ]
 
 { #category : 'private - schema' }
@@ -46,4 +40,10 @@ MCPToolSearchMethodSenders >> queryEntriesForQueryRequest: queryRequest [
 		  selectorReferenceEntriesForSelector:
 		  (self requiredLookupPatternFromQueryRequest: queryRequest)
 		  queryRequest: queryRequest
+]
+
+{ #category : 'metadata' }
+MCPToolSearchMethodSenders >> title [
+
+	^ 'Search Method Senders'
 ]

@@ -9,7 +9,7 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolListChangeHistoryEntries class >> toolName [
 
 	^ 'history_entry_list'
@@ -24,19 +24,19 @@ MCPToolListChangeHistoryEntries >> commandForRequest: changeHistoryRequest [
 ]
 
 { #category : 'defaults' }
-MCPToolListChangeHistoryEntries >> defaultDescription [
-
-	^ 'List granular entries from the current Pharo image change history or a selected .ombu file. Use history_file_list to locate files, and history_entry_apply or history_entry_revert only when previewing or performing recovery changes.'
-]
-
-{ #category : 'defaults' }
 MCPToolListChangeHistoryEntries >> defaultEntryLimit [
 
 	^ 25
 ]
 
-{ #category : 'defaults' }
-MCPToolListChangeHistoryEntries >> defaultInputSchema [
+{ #category : 'metadata' }
+MCPToolListChangeHistoryEntries >> description [
+
+	^ 'List granular entries from the current Pharo image change history or a selected .ombu file. Use history_file_list to locate files, and history_entry_apply or history_entry_revert only when previewing or performing recovery changes.'
+]
+
+{ #category : 'metadata' }
+MCPToolListChangeHistoryEntries >> inputSchema [
 
 	^ MCPStructureInputSchema new
 		  type: 'object';
@@ -71,8 +71,8 @@ MCPToolListChangeHistoryEntries >> defaultInputSchema [
 		  yourself
 ]
 
-{ #category : 'defaults' }
-MCPToolListChangeHistoryEntries >> defaultOutputSchema [
+{ #category : 'metadata' }
+MCPToolListChangeHistoryEntries >> outputSchema [
 
 	| entriesProperty |
 	entriesProperty := self
@@ -91,14 +91,14 @@ MCPToolListChangeHistoryEntries >> defaultOutputSchema [
 		  required: #( 'entries' )
 ]
 
-{ #category : 'defaults' }
-MCPToolListChangeHistoryEntries >> defaultTitle [
-
-	^ 'List Change History Entries'
-]
-
 { #category : 'private - request' }
 MCPToolListChangeHistoryEntries >> parsedRequestFromToolRequest: request [
 
 	^ MCPChangeHistoryListEntriesRequest fromRequest: request tool: self
+]
+
+{ #category : 'metadata' }
+MCPToolListChangeHistoryEntries >> title [
+
+	^ 'List Change History Entries'
 ]

@@ -9,20 +9,32 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolSearchEquivalentMethods class >> toolName [
 
 	^ 'method_equivalent_search'
 ]
 
-{ #category : 'defaults' }
-MCPToolSearchEquivalentMethods >> defaultDescription [
+{ #category : 'metadata' }
+MCPToolSearchEquivalentMethods >> description [
 
 	^ 'Search methods whose AST is equivalent to a referenced method.'
 ]
 
-{ #category : 'defaults' }
-MCPToolSearchEquivalentMethods >> defaultInputSchema [
+{ #category : 'private - methods' }
+MCPToolSearchEquivalentMethods >> equivalentEntriesForQueryRequest: queryRequest [
+
+	| referenceMethod |
+	referenceMethod := queryRequest referenceMethod.
+	^ self
+		  methodEntriesFromMethods:
+			  (queryRequest scopeQuery methods select: [ :eachMethod |
+				   eachMethod equivalentTo: referenceMethod ]) asArray
+		  queryRequest: queryRequest
+]
+
+{ #category : 'metadata' }
+MCPToolSearchEquivalentMethods >> inputSchema [
 
 	| properties |
 	properties := self methodQueryScopeInputProperties , {
@@ -49,24 +61,6 @@ MCPToolSearchEquivalentMethods >> defaultInputSchema [
 		  properties: properties;
 		  required: #( 'className' 'selector' );
 		  yourself
-]
-
-{ #category : 'defaults' }
-MCPToolSearchEquivalentMethods >> defaultTitle [
-
-	^ 'Search Equivalent Methods'
-]
-
-{ #category : 'private - methods' }
-MCPToolSearchEquivalentMethods >> equivalentEntriesForQueryRequest: queryRequest [
-
-	| referenceMethod |
-	referenceMethod := queryRequest referenceMethod.
-	^ self
-		  methodEntriesFromMethods:
-			  (queryRequest scopeQuery methods select: [ :eachMethod |
-				   eachMethod equivalentTo: referenceMethod ]) asArray
-		  queryRequest: queryRequest
 ]
 
 { #category : 'private - request' }
@@ -100,4 +94,10 @@ MCPToolSearchEquivalentMethods >> queryEntriesForQueryRequest: queryRequest [
 MCPToolSearchEquivalentMethods >> searchRequestFromToolRequest: request [
 
 	^ MCPSearchEquivalentMethodsRequest fromRequest: request tool: self
+]
+
+{ #category : 'metadata' }
+MCPToolSearchEquivalentMethods >> title [
+
+	^ 'Search Equivalent Methods'
 ]

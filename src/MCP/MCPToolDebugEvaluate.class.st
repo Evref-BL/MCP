@@ -11,7 +11,7 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolDebugEvaluate class >> toolName [
 
 	^ 'debug_expression_evaluate'
@@ -23,20 +23,14 @@ MCPToolDebugEvaluate >> commandForRequest: debugRequest [
 	^ MCPDebugEvaluateCommand tool: self request: debugRequest
 ]
 
-{ #category : 'defaults' }
-MCPToolDebugEvaluate >> defaultDescription [
+{ #category : 'metadata' }
+MCPToolDebugEvaluate >> description [
 
 	^ 'Evaluate a Smalltalk expression in a selected DebugSession frame. The expression resolves frame receiver and temporaries and may mutate image state.'
 ]
 
-{ #category : 'defaults' }
-MCPToolDebugEvaluate >> defaultIcons [
-
-	^ { (self pngCompositeBaseIconNamed: #bug badgeIconNamed: #go) }
-]
-
-{ #category : 'defaults' }
-MCPToolDebugEvaluate >> defaultInputSchema [
+{ #category : 'metadata' }
+MCPToolDebugEvaluate >> inputSchema [
 
 	^ MCPStructureInputSchema new
 		  type: 'object';
@@ -71,14 +65,8 @@ MCPToolDebugEvaluate >> defaultInputSchema [
 		  yourself
 ]
 
-{ #category : 'defaults' }
-MCPToolDebugEvaluate >> defaultName [
-
-	^ 'debug_expression_evaluate'
-]
-
-{ #category : 'defaults' }
-MCPToolDebugEvaluate >> defaultOutputSchema [
+{ #category : 'metadata' }
+MCPToolDebugEvaluate >> outputSchema [
 
 	^ self
 		  standardOutputSchemaForDataProperties: {
@@ -134,12 +122,6 @@ MCPToolDebugEvaluate >> defaultOutputSchema [
 			     'sideEffects' 'warnings' 'capabilities' )
 ]
 
-{ #category : 'defaults' }
-MCPToolDebugEvaluate >> defaultTitle [
-
-	^ 'Debug Evaluate'
-]
-
 { #category : 'private - request' }
 MCPToolDebugEvaluate >> parsedRequestFromToolRequest: request [
 
@@ -190,4 +172,10 @@ MCPToolDebugEvaluate >> syntaxFailureMessageFor: aNotice [
 				  nextPutAll: aNotice class name;
 				  nextPutAll: '): ';
 				  nextPutAll: message ]
+]
+
+{ #category : 'metadata' }
+MCPToolDebugEvaluate >> title [
+
+	^ 'Debug Evaluate'
 ]

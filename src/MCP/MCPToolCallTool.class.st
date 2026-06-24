@@ -11,7 +11,7 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolCallTool class >> toolName [
 
 	^ 'tool_call'
@@ -23,14 +23,26 @@ MCPToolCallTool >> commandForRequest: callRequest [
 	^ MCPCallToolCommand tool: self request: callRequest
 ]
 
-{ #category : 'defaults' }
-MCPToolCallTool >> defaultDescription [
+{ #category : 'metadata' }
+MCPToolCallTool >> description [
 
 	^ 'Invoke one MCP-Pharo tool selected by name from the discoverable catalog. The target tool receives the nested arguments object and is validated through its own schema.'
 ]
 
-{ #category : 'defaults' }
-MCPToolCallTool >> defaultInputSchema [
+{ #category : 'executing' }
+MCPToolCallTool >> executeWithRequest: request [
+
+	^ self
+		  executeParsedRequestFrom: request
+		  do: [ :callRequest |
+				  self
+					  errorResultText: 'tool_call requires MCP server call context.'
+					  details: { (#toolName -> callRequest toolName) } asDictionary ]
+		  onError: [ :error :parsedRequest | self errorResultFor: error ]
+]
+
+{ #category : 'metadata' }
+MCPToolCallTool >> inputSchema [
 
 	| argumentsProperty toolNameProperty |
 	toolNameProperty := self
@@ -54,8 +66,8 @@ MCPToolCallTool >> defaultInputSchema [
 		  yourself
 ]
 
-{ #category : 'defaults' }
-MCPToolCallTool >> defaultOutputSchema [
+{ #category : 'metadata' }
+MCPToolCallTool >> outputSchema [
 
 	| resultProperty |
 	resultProperty := self
@@ -74,26 +86,14 @@ MCPToolCallTool >> defaultOutputSchema [
 		  required: #( 'targetToolName' 'result' )
 ]
 
-{ #category : 'defaults' }
-MCPToolCallTool >> defaultTitle [
-
-	^ 'Call Tool'
-]
-
-{ #category : 'executing' }
-MCPToolCallTool >> executeWithRequest: request [
-
-	^ self
-		  executeParsedRequestFrom: request
-		  do: [ :callRequest |
-				  self
-					  errorResultText: 'tool_call requires MCP server call context.'
-					  details: { (#toolName -> callRequest toolName) } asDictionary ]
-		  onError: [ :error :parsedRequest | self errorResultFor: error ]
-]
-
 { #category : 'private - request' }
 MCPToolCallTool >> parsedRequestFromToolRequest: request [
 
 	^ MCPCallToolRequest fromToolRequest: request
+]
+
+{ #category : 'metadata' }
+MCPToolCallTool >> title [
+
+	^ 'Call Tool'
 ]

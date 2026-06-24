@@ -11,7 +11,7 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolGetMethod class >> toolName [
 
 	^ 'method_get'
@@ -45,84 +45,18 @@ MCPToolGetMethod >> commandForRequest: getRequest [
 	^ MCPGetMethodCommand tool: self request: getRequest
 ]
 
-{ #category : 'defaults' }
-MCPToolGetMethod >> defaultDescription [
-
-	^ 'Get one known method and return its source plus structured variable-reference context. Use method_metadata_search or reference lookup tools to discover methods first.'
-]
-
-{ #category : 'defaults' }
-MCPToolGetMethod >> defaultInputSchema [
-
-	| classSideProperty includeVariableDetailsProperty |
-	classSideProperty := MCPStructureProperties new
-		                     name: 'classSide';
-		                     type: 'boolean';
-		                     description:
-			                     'Whether the target method is on the class side.';
-		                     default: false;
-		                     yourself.
-	includeVariableDetailsProperty := MCPStructureProperties new
-		                                  name: 'includeVariableDetails';
-		                                  type: 'boolean';
-		                                  description:
-			                                  'Whether to include variable reference summaries and counts.';
-		                                  default: false;
-		                                  yourself.
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: {
-				  (MCPStructureProperties new
-					   name: 'className';
-					   type: 'string';
-					   description: 'The class that defines the method.';
-					   yourself).
-				  (MCPStructureProperties new
-					   name: 'selector';
-					   type: 'string';
-					   description: 'The selector of the method to return.';
-					   yourself).
-				  classSideProperty.
-				  includeVariableDetailsProperty };
-		  required: #( 'className' 'selector' );
-		  yourself
-]
-
-{ #category : 'defaults' }
-MCPToolGetMethod >> defaultOutputSchema [
-
-	^ self
-		  standardOutputSchemaForDataProperties: {
-				  (self
-					   schemaPropertyNamed: 'protocol'
-					   type: 'string'
-					   description: 'The protocol/category containing the method.').
-				  (self
-					   schemaPropertyNamed: 'source'
-					   type: 'string'
-					   description: 'The formatted source code of the method.').
-				  ((self
-					    schemaPropertyNamed: 'variableReferences'
-					    type: 'array'
-					    description:
-						    'Structured summaries of referenced variables in first-use order when variable details are included.')
-					   items: self variableReferenceSchema;
-					   yourself) }
-		  required: #( 'protocol' 'source' )
-]
-
-{ #category : 'defaults' }
-MCPToolGetMethod >> defaultTitle [
-
-	^ 'Get Method'
-]
-
 { #category : 'private - analysis' }
 MCPToolGetMethod >> definingClassNameFromBinding: aBinding [
 
 	^ aBinding ifNotNil: [ :binding |
 		  binding definingClass ifNotNil: [ :definingClass |
 			  definingClass name ] ]
+]
+
+{ #category : 'metadata' }
+MCPToolGetMethod >> description [
+
+	^ 'Get one known method and return its source plus structured variable-reference context. Use method_metadata_search or reference lookup tools to discover methods first.'
 ]
 
 { #category : 'private' }
@@ -203,6 +137,43 @@ MCPToolGetMethod >> incrementReferenceCountInSummary: aSummary [
 	aSummary at: #referenceCount put: (aSummary at: #referenceCount) + 1
 ]
 
+{ #category : 'metadata' }
+MCPToolGetMethod >> inputSchema [
+
+	| classSideProperty includeVariableDetailsProperty |
+	classSideProperty := MCPStructureProperties new
+		                     name: 'classSide';
+		                     type: 'boolean';
+		                     description:
+			                     'Whether the target method is on the class side.';
+		                     default: false;
+		                     yourself.
+	includeVariableDetailsProperty := MCPStructureProperties new
+		                                  name: 'includeVariableDetails';
+		                                  type: 'boolean';
+		                                  description:
+			                                  'Whether to include variable reference summaries and counts.';
+		                                  default: false;
+		                                  yourself.
+	^ MCPStructureInputSchema new
+		  type: 'object';
+		  properties: {
+				  (MCPStructureProperties new
+					   name: 'className';
+					   type: 'string';
+					   description: 'The class that defines the method.';
+					   yourself).
+				  (MCPStructureProperties new
+					   name: 'selector';
+					   type: 'string';
+					   description: 'The selector of the method to return.';
+					   yourself).
+				  classSideProperty.
+				  includeVariableDetailsProperty };
+		  required: #( 'className' 'selector' );
+		  yourself
+]
+
 { #category : 'private - analysis' }
 MCPToolGetMethod >> matchingSummaryForNodeName: aName kind: aKind ownerName: anOwnerName in: summaries [
 
@@ -230,6 +201,29 @@ MCPToolGetMethod >> newVariableSummaryForNode: aVariableNode kind: aKind methodB
 	summary at: #referenceCount put: 0.
 	ownerName ifNotNil: [ summary at: #ownerName put: ownerName ].
 	^ summary
+]
+
+{ #category : 'metadata' }
+MCPToolGetMethod >> outputSchema [
+
+	^ self
+		  standardOutputSchemaForDataProperties: {
+				  (self
+					   schemaPropertyNamed: 'protocol'
+					   type: 'string'
+					   description: 'The protocol/category containing the method.').
+				  (self
+					   schemaPropertyNamed: 'source'
+					   type: 'string'
+					   description: 'The formatted source code of the method.').
+				  ((self
+					    schemaPropertyNamed: 'variableReferences'
+					    type: 'array'
+					    description:
+						    'Structured summaries of referenced variables in first-use order when variable details are included.')
+					   items: self variableReferenceSchema;
+					   yourself) }
+		  required: #( 'protocol' 'source' )
 ]
 
 { #category : 'private - analysis' }
@@ -288,6 +282,12 @@ MCPToolGetMethod >> successSummaryForClassName: className selector: selector cla
 								   ifTrue: [ '' ]
 								   ifFalse: [ 's' ]) ].
 			  stream nextPutAll: '.' ]
+]
+
+{ #category : 'metadata' }
+MCPToolGetMethod >> title [
+
+	^ 'Get Method'
 ]
 
 { #category : 'private - analysis' }

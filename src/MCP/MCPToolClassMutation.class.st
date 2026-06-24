@@ -91,33 +91,10 @@ MCPToolClassMutation >> dataForResult: aResult action: actionName [
 	^ Dictionary new
 ]
 
-{ #category : 'defaults' }
-MCPToolClassMutation >> defaultDescription [
+{ #category : 'metadata' }
+MCPToolClassMutation >> description [
 
 	^ self classToolSpec at: #description
-]
-
-{ #category : 'defaults' }
-MCPToolClassMutation >> defaultInputSchema [
-
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: self inputProperties;
-		  required: self requiredInputProperties;
-		  additionalProperties: false;
-		  yourself
-]
-
-{ #category : 'defaults' }
-MCPToolClassMutation >> defaultOutputSchema [
-
-	^ self standardOutputSchemaForDataProperties: #(  ) required: #(  )
-]
-
-{ #category : 'defaults' }
-MCPToolClassMutation >> defaultTitle [
-
-	^ self classToolSpec at: #title
 ]
 
 { #category : 'private' }
@@ -319,6 +296,17 @@ MCPToolClassMutation >> inputProperties [
 	^ self classToolSpec at: #inputProperties
 ]
 
+{ #category : 'metadata' }
+MCPToolClassMutation >> inputSchema [
+
+	^ MCPStructureInputSchema new
+		  type: 'object';
+		  properties: self inputProperties;
+		  required: self requiredInputProperties;
+		  additionalProperties: false;
+		  yourself
+]
+
 { #category : 'private - schema' }
 MCPToolClassMutation >> layoutSchemaProperty [
 
@@ -356,6 +344,12 @@ MCPToolClassMutation >> newSlotNameSchemaProperty [
 		  schemaPropertyNamed: 'newSlotName'
 		  type: 'string'
 		  description: 'The replacement slot name.'
+]
+
+{ #category : 'metadata' }
+MCPToolClassMutation >> outputSchema [
+
+	^ self standardOutputSchemaForDataProperties: #(  ) required: #(  )
 ]
 
 { #category : 'private - request' }
@@ -462,6 +456,12 @@ MCPToolClassMutation >> tagSchemaProperty [
 		  schemaPropertyNamed: 'tag'
 		  type: 'string'
 		  description: 'Package tag; recategorizes current package.'
+]
+
+{ #category : 'metadata' }
+MCPToolClassMutation >> title [
+
+	^ self classToolSpec at: #title
 ]
 
 { #category : 'private - schema' }

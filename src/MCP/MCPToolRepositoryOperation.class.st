@@ -128,36 +128,10 @@ MCPToolRepositoryOperation >> dataForRepositoryVerifyIdentityResult: aResult [
 	^ self dataForRepositoryResult: aResult
 ]
 
-{ #category : 'defaults' }
-MCPToolRepositoryOperation >> defaultDescription [
+{ #category : 'metadata' }
+MCPToolRepositoryOperation >> description [
 
 	^ self repositoryToolSpec at: #description
-]
-
-{ #category : 'defaults' }
-MCPToolRepositoryOperation >> defaultInputSchema [
-
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: self inputProperties;
-		  required: self requiredInputProperties;
-		  additionalProperties: false;
-		  yourself
-]
-
-{ #category : 'defaults' }
-MCPToolRepositoryOperation >> defaultOutputSchema [
-
-	^ self
-		  standardOutputSchemaForDataProperties:
-		  self repositoryOperationDataProperties
-		  required: #(  )
-]
-
-{ #category : 'defaults' }
-MCPToolRepositoryOperation >> defaultTitle [
-
-	^ self repositoryToolSpec at: #title
 ]
 
 { #category : 'private - errors' }
@@ -182,6 +156,17 @@ MCPToolRepositoryOperation >> inputProperties [
 	  (self repositoryToolSpec
 		   at: #inputProperties
 		   ifAbsent: [ #(  ) ])
+]
+
+{ #category : 'metadata' }
+MCPToolRepositoryOperation >> inputSchema [
+
+	^ MCPStructureInputSchema new
+		  type: 'object';
+		  properties: self inputProperties;
+		  required: self requiredInputProperties;
+		  additionalProperties: false;
+		  yourself
 ]
 
 { #category : 'private - schema' }
@@ -222,6 +207,15 @@ MCPToolRepositoryOperation >> mutationActionForErrorFromParsedRequest: mutationR
 MCPToolRepositoryOperation >> operationAction [
 
 	^ self repositoryToolSpec at: #action
+]
+
+{ #category : 'metadata' }
+MCPToolRepositoryOperation >> outputSchema [
+
+	^ self
+		  standardOutputSchemaForDataProperties:
+		  self repositoryOperationDataProperties
+		  required: #(  )
 ]
 
 { #category : 'private - schema' }
@@ -436,6 +430,12 @@ MCPToolRepositoryOperation >> subdirectorySchemaProperty [
 		  type: 'string'
 		  description:
 		  'Expected source subdirectory for repository identity verification. Empty string is accepted.'
+]
+
+{ #category : 'metadata' }
+MCPToolRepositoryOperation >> title [
+
+	^ self repositoryToolSpec at: #title
 ]
 
 { #category : 'validating' }

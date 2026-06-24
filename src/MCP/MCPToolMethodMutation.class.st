@@ -92,37 +92,10 @@ MCPToolMethodMutation >> critiqueDataForMethod: aCompiledMethod [
 		  self critiqueDataFor: each ]
 ]
 
-{ #category : 'defaults' }
-MCPToolMethodMutation >> defaultDescription [
+{ #category : 'metadata' }
+MCPToolMethodMutation >> description [
 
 	^ self methodToolSpec at: #description
-]
-
-{ #category : 'defaults' }
-MCPToolMethodMutation >> defaultInputSchema [
-
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: self inputProperties;
-		  required: self requiredInputProperties;
-		  additionalProperties: false;
-		  yourself
-]
-
-{ #category : 'defaults' }
-MCPToolMethodMutation >> defaultOutputSchema [
-
-	^ self
-		standardOutputSchemaForDataProperties: {
-			(self schemaPropertyNamed: 'changeKind' type: 'string' description: 'Whether method_compile created or replaced a method.').
-			self methodCritiquesSchemaProperty }
-		required: #(  )
-]
-
-{ #category : 'defaults' }
-MCPToolMethodMutation >> defaultTitle [
-
-	^ self methodToolSpec at: #title
 ]
 
 { #category : 'private' }
@@ -212,6 +185,17 @@ MCPToolMethodMutation >> inputProperties [
 	^ self methodToolSpec at: #inputProperties
 ]
 
+{ #category : 'metadata' }
+MCPToolMethodMutation >> inputSchema [
+
+	^ MCPStructureInputSchema new
+		  type: 'object';
+		  properties: self inputProperties;
+		  required: self requiredInputProperties;
+		  additionalProperties: false;
+		  yourself
+]
+
 { #category : 'private - schema' }
 MCPToolMethodMutation >> methodCritiqueSchema [
 
@@ -276,6 +260,16 @@ MCPToolMethodMutation >> mutationAction [
 MCPToolMethodMutation >> mutationActionForErrorFromParsedRequest: mutationRequest rawRequest: rawRequest [
 
 	^ self mutationAction
+]
+
+{ #category : 'metadata' }
+MCPToolMethodMutation >> outputSchema [
+
+	^ self
+		standardOutputSchemaForDataProperties: {
+			(self schemaPropertyNamed: 'changeKind' type: 'string' description: 'Whether method_compile created or replaced a method.').
+			self methodCritiquesSchemaProperty }
+		required: #(  )
 ]
 
 { #category : 'private - execution' }
@@ -347,6 +341,12 @@ MCPToolMethodMutation >> sourceIntervalForCritique: aCritique [
 	sourceAnchor ifNil: [ ^ nil ].
 	sourceAnchor providesInterval ifFalse: [ ^ nil ].
 	^ sourceAnchor interval
+]
+
+{ #category : 'metadata' }
+MCPToolMethodMutation >> title [
+
+	^ self methodToolSpec at: #title
 ]
 
 { #category : 'validating' }

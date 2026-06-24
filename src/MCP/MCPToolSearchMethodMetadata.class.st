@@ -11,20 +11,28 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolSearchMethodMetadata class >> toolName [
 
 	^ 'method_metadata_search'
 ]
 
-{ #category : 'defaults' }
-MCPToolSearchMethodMetadata >> defaultDescription [
+{ #category : 'metadata' }
+MCPToolSearchMethodMetadata >> description [
 
 	^ 'Search method metadata by selector, protocol, class, package, or scope. Use specialized method search tools for source, senders, implementors, and references.'
 ]
 
-{ #category : 'defaults' }
-MCPToolSearchMethodMetadata >> defaultInputSchema [
+{ #category : 'private - filtering' }
+MCPToolSearchMethodMetadata >> fieldTextsForMethodEntry: anEntry sourceText: sourceText fieldName: fieldName [
+
+	fieldName = 'selector' ifTrue: [ ^ { (anEntry at: #selector) } ].
+	fieldName = 'protocol' ifTrue: [ ^ { (anEntry at: #protocol) } ].
+	^ #(  )
+]
+
+{ #category : 'metadata' }
+MCPToolSearchMethodMetadata >> inputSchema [
 
 	| properties |
 	properties := self methodQueryScopeInputProperties
@@ -40,20 +48,6 @@ MCPToolSearchMethodMetadata >> defaultInputSchema [
 	              , (self paginationInputPropertiesWithLimitDescription:
 			               'Maximum number of matching methods to return. Use 0 to return no entries.').
 	^ self queryInputSchemaWithProperties: properties
-]
-
-{ #category : 'defaults' }
-MCPToolSearchMethodMetadata >> defaultTitle [
-
-	^ 'Search Method Metadata'
-]
-
-{ #category : 'private - filtering' }
-MCPToolSearchMethodMetadata >> fieldTextsForMethodEntry: anEntry sourceText: sourceText fieldName: fieldName [
-
-	fieldName = 'selector' ifTrue: [ ^ { (anEntry at: #selector) } ].
-	fieldName = 'protocol' ifTrue: [ ^ { (anEntry at: #protocol) } ].
-	^ #(  )
 ]
 
 { #category : 'private - request' }
@@ -82,4 +76,10 @@ MCPToolSearchMethodMetadata >> metadataFilterInputProperties [
 MCPToolSearchMethodMetadata >> searchRequestFromToolRequest: request [
 
 	^ MCPMethodSearchRequest fromMetadataRequest: request tool: self
+]
+
+{ #category : 'metadata' }
+MCPToolSearchMethodMetadata >> title [
+
+	^ 'Search Method Metadata'
 ]

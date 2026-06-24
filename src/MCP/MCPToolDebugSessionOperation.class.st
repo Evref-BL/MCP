@@ -39,14 +39,20 @@ MCPToolDebugSessionOperation >> commandForRequest: debugRequest [
 	^ MCPDebugSessionsCommand tool: self request: debugRequest
 ]
 
-{ #category : 'defaults' }
-MCPToolDebugSessionOperation >> defaultDescription [
+{ #category : 'metadata' }
+MCPToolDebugSessionOperation >> description [
 
 	^ self sessionToolSpec at: #description
 ]
 
-{ #category : 'defaults' }
-MCPToolDebugSessionOperation >> defaultInputSchema [
+{ #category : 'private - schema' }
+MCPToolDebugSessionOperation >> inputProperties [
+
+	^ self sessionToolSpec at: #inputProperties ifAbsent: [ #(  ) ]
+]
+
+{ #category : 'metadata' }
+MCPToolDebugSessionOperation >> inputSchema [
 
 	^ MCPStructureInputSchema new
 		  type: 'object';
@@ -56,8 +62,8 @@ MCPToolDebugSessionOperation >> defaultInputSchema [
 		  yourself
 ]
 
-{ #category : 'defaults' }
-MCPToolDebugSessionOperation >> defaultOutputSchema [
+{ #category : 'metadata' }
+MCPToolDebugSessionOperation >> outputSchema [
 
 	^ self
 		  standardOutputSchemaForDataProperties: {
@@ -110,18 +116,6 @@ MCPToolDebugSessionOperation >> defaultOutputSchema [
 		  required: #(  )
 ]
 
-{ #category : 'defaults' }
-MCPToolDebugSessionOperation >> defaultTitle [
-
-	^ self sessionToolSpec at: #title
-]
-
-{ #category : 'private - schema' }
-MCPToolDebugSessionOperation >> inputProperties [
-
-	^ self sessionToolSpec at: #inputProperties ifAbsent: [ #(  ) ]
-]
-
 { #category : 'private - request' }
 MCPToolDebugSessionOperation >> parsedRequestFromToolRequest: request [
 
@@ -153,4 +147,10 @@ MCPToolDebugSessionOperation >> sessionIdSchemaProperty [
 MCPToolDebugSessionOperation >> sessionToolSpec [
 
 	self subclassResponsibility
+]
+
+{ #category : 'metadata' }
+MCPToolDebugSessionOperation >> title [
+
+	^ self sessionToolSpec at: #title
 ]

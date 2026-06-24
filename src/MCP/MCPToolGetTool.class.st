@@ -11,7 +11,7 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolGetTool class >> toolName [
 
 	^ 'tool_get'
@@ -23,14 +23,40 @@ MCPToolGetTool >> commandForRequest: getRequest [
 	^ MCPGetToolCommand tool: self request: getRequest
 ]
 
-{ #category : 'defaults' }
-MCPToolGetTool >> defaultDescription [
+{ #category : 'metadata' }
+MCPToolGetTool >> description [
 
 	^ 'Return one tool contract with metadata and input schema. Set includeOutputSchema only when response validation needs it.'
 ]
 
-{ #category : 'defaults' }
-MCPToolGetTool >> defaultInputSchema [
+{ #category : 'executing' }
+MCPToolGetTool >> executeWithRequest: request [
+
+	^ self
+		  executeWithRequest: request
+		  usingPolicy: MCPToolExposurePolicy default
+]
+
+{ #category : 'executing' }
+MCPToolGetTool >> executeWithRequest: request usingPolicy: aToolExposurePolicy [
+
+	^ self
+		  executeParsedRequestFrom: request
+		  do: [ :getRequest |
+				  | contract data |
+				  data := (MCPGetToolCommand
+					           tool: self
+					           request: getRequest
+					           toolExposurePolicy: aToolExposurePolicy) execute.
+				  contract := data at: #tool.
+				  self
+					  successResultText: 'Tool ' , (contract at: #name) , ' found.'
+					  data: data ]
+		  onError: [ :error :parsedRequest | self errorResultFor: error ]
+]
+
+{ #category : 'metadata' }
+MCPToolGetTool >> inputSchema [
 
 	| includeOutputSchemaProperty toolNameProperty |
 	toolNameProperty := self
@@ -54,8 +80,8 @@ MCPToolGetTool >> defaultInputSchema [
 		  yourself
 ]
 
-{ #category : 'defaults' }
-MCPToolGetTool >> defaultOutputSchema [
+{ #category : 'metadata' }
+MCPToolGetTool >> outputSchema [
 
 	| activationRequirementsProperty examplesProperty inputSchemaProperty outputSchemaProperty schemaProperty toolProperty |
 	schemaProperty := MCPStructureProperties new
@@ -117,40 +143,14 @@ MCPToolGetTool >> defaultOutputSchema [
 		  required: #( 'tool' )
 ]
 
-{ #category : 'defaults' }
-MCPToolGetTool >> defaultTitle [
-
-	^ 'Get Tool'
-]
-
-{ #category : 'executing' }
-MCPToolGetTool >> executeWithRequest: request [
-
-	^ self
-		  executeWithRequest: request
-		  usingPolicy: MCPToolExposurePolicy default
-]
-
-{ #category : 'executing' }
-MCPToolGetTool >> executeWithRequest: request usingPolicy: aToolExposurePolicy [
-
-	^ self
-		  executeParsedRequestFrom: request
-		  do: [ :getRequest |
-				  | contract data |
-				  data := (MCPGetToolCommand
-					           tool: self
-					           request: getRequest
-					           toolExposurePolicy: aToolExposurePolicy) execute.
-				  contract := data at: #tool.
-				  self
-					  successResultText: 'Tool ' , (contract at: #name) , ' found.'
-					  data: data ]
-		  onError: [ :error :parsedRequest | self errorResultFor: error ]
-]
-
 { #category : 'private - request' }
 MCPToolGetTool >> parsedRequestFromToolRequest: request [
 
 	^ MCPGetToolRequest fromToolRequest: request
+]
+
+{ #category : 'metadata' }
+MCPToolGetTool >> title [
+
+	^ 'Get Tool'
 ]

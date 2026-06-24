@@ -9,7 +9,7 @@ Class {
 	#tag : 'Tools'
 }
 
-{ #category : 'defaults' }
+{ #category : 'metadata' }
 MCPToolRemoveDebugSession class >> toolName [
 
 	^ 'debug_session_remove'
