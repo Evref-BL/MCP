@@ -24,6 +24,7 @@ MCPToolIconSpec class >> actionIconForToolNameParts: parts [
 MCPToolIconSpec class >> actionIconMap [
 
 	^ Dictionary newFrom: {
+			  ('compile' -> #editThiner).
 			  ('search' -> #search).
 			  ('get' -> #inspect).
 			  ('call' -> #go).
