@@ -67,9 +67,8 @@ MCPRepositoryFetchResult >> packageInfos [
 MCPRepositoryFetchResult >> packageInfosFromRepository: aRepository [
 
 	| packages |
-	packages := aRepository workingCopy packages asArray
-		            sort: [ :left :right |
-		            left name asString <= right name asString ].
+	packages := aRepository workingCopy packages sort: [ :left :right |
+		            left name <= right name ].
 	^ packages collect: [ :each |
 		  MCPRepositoryPackageInfo fromPackage: each ]
 ]

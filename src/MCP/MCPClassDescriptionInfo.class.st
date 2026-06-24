@@ -73,22 +73,23 @@ MCPClassDescriptionInfo >> initializeFromClass: aClass [
 		                  ifNil: [ '' ]
 		                  ifNotNil: [ :aSuperclass |
 		                  aSuperclass name asString ].
-	packageName := aClass packageName asString.
+	packageName := aClass package
+		               ifNil: [ '' ]
+		               ifNotNil: [ :aPackage | aPackage name asString ].
 	tag := aClass packageTagName asString.
-	instanceSlotNames := (aClass slots collect: [ :each |
-		                      each name asString ]) asArray.
-	classSlotNames := (aClass classSide slots collect: [ :each |
-		                   each name asString ]) asArray.
-	traitNames := (aClass traits collect: [ :each | each name asString ])
-		              asArray.
-	classTraitNames := (aClass classSide traits collect: [ :each |
-		                    each name asString ]) asArray.
+	instanceSlotNames := aClass slots collect: [ :each |
+		                     each name asString ].
+	classSlotNames := aClass classSide slots collect: [ :each |
+		                  each name asString ].
+	traitNames := aClass traits collect: [ :each | each name asString ].
+	classTraitNames := aClass classSide traits collect: [ :each |
+		                   each name asString ].
 	traitComposition := aClass traitCompositionString.
 	classTraitComposition := aClass classSide traitCompositionString.
-	sharedPoolNames := (aClass sharedPools collect: [ :each |
-		                    each name asString ]) asArray.
-	sharedVariableNames := (aClass classVarNames collect: [ :each |
-		                        each asString ]) asArray.
+	sharedVariableNames := aClass classVarNames collect: [ :each |
+		                       each asString ].
+	sharedPoolNames := aClass sharedPools collect: [ :each |
+		                   each name asString ].
 	layoutClassName := aClass classLayout class name asString.
 	instanceMethodCount := aClass selectors size.
 	classMethodCount := aClass classSide selectors size

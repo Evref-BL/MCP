@@ -90,28 +90,20 @@ MCPClassInfo >> initializeFromClass: aClass [
 		               ifNil: [ '' ]
 		               ifNotNil: [ :aPackage | aPackage name asString ].
 	tag := aClass packageTagName asString.
-	instanceSlotNames := aClass slots
-		                     collect: [ :each | each name asString ]
-		                     as: Array.
-	classSlotNames := aClass classSide slots
-		                  collect: [ :each | each name asString ]
-		                  as: Array.
-	traitNames := aClass traits
-		              collect: [ :each | each name asString ]
-		              as: Array.
-	classTraitNames := aClass classSide traits
-		                   collect: [ :each | each name asString ]
-		                   as: Array.
-	sharedVariableNames := aClass classVarNames
-		                       collect: [ :each | each asString ]
-		                       as: Array.
-	sharedPoolNames := aClass sharedPools
-		                   collect: [ :each | each name asString ]
-		                   as: Array.
+	instanceSlotNames := aClass slots collect: [ :each |
+		                     each name asString ].
+	classSlotNames := aClass classSide slots collect: [ :each |
+		                  each name asString ].
+	traitNames := aClass traits collect: [ :each | each name asString ].
+	classTraitNames := aClass classSide traits collect: [ :each |
+		                   each name asString ].
+	sharedVariableNames := aClass classVarNames collect: [ :each |
+		                       each asString ].
+	sharedPoolNames := aClass sharedPools collect: [ :each |
+		                   each name asString ].
 	layoutClassName := aClass classLayout class name asString.
-	subclassNames := (aClass subclasses
-		                  collect: [ :each | each name asString ]
-		                  as: Array) sort
+	subclassNames := (aClass subclasses collect: [ :each |
+		                  each name asString ]) sort
 ]
 
 { #category : 'accessing' }

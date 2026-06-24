@@ -108,13 +108,11 @@ MCPRepositoryCommitResult >> headDescription: aString [
 MCPRepositoryCommitResult >> initializeRepository: aRepository changedPackageNames: packageNames commit: aCommit [
 
 	| packages repositoryPackageNames |
-	packages := aRepository workingCopy packages asArray sort: [
-		            :left
-		            :right | left name asString <= right name asString ].
+	packages := aRepository workingCopy packages sort: [ :left :right |
+		            left name <= right name ].
 	packageInfos := packages collect: [ :each |
 		                MCPRepositoryPackageInfo fromPackage: each ].
-	repositoryPackageNames := (packages collect: [ :each |
-		                           each name asString ]) asArray.
+	repositoryPackageNames := packages collect: [ :each | each name ].
 	changedPackageNames := packageNames ifNil: [ #(  ) ].
 	modifiedPackageNames := #(  ).
 	commitId := self commitIdFrom: aCommit.

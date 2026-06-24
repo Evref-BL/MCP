@@ -30,9 +30,8 @@ MCPRepositoryCreateResult >> initializeFromRepository: aRepository [
 
 	| packages |
 	repositoryInfo := MCPRepositoryInfo fromRepository: aRepository.
-	packages := aRepository workingCopy packages asArray sort: [
-		            :left
-		            :right | left name asString <= right name asString ].
+	packages := aRepository workingCopy packages sort: [ :left :right |
+		            left name <= right name ].
 	packageInfos := packages collect: [ :each |
 		                MCPRepositoryPackageInfo fromPackage: each ]
 ]
