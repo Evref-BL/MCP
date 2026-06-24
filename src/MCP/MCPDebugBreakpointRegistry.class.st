@@ -21,16 +21,14 @@ Class {
 { #category : 'accessing' }
 MCPDebugBreakpointRegistry class >> default [
 
-	Default ifNil: [ Default := self new ].
-	^ Default
+	^ Default ifNil: [ Default := self new ]
 ]
 
-{ #category : 'accessing' }
+{ #category : 'class initialization' }
 MCPDebugBreakpointRegistry class >> resetDefault [
 
 	Default ifNotNil: [ Default removeAll ].
-	Default := nil.
-	^ self
+	Default := nil
 ]
 
 { #category : 'accessing' }
@@ -85,8 +83,7 @@ MCPDebugBreakpointRegistry >> registerDebugPoint: aDebugPoint className: aClassN
 MCPDebugBreakpointRegistry >> removeAll [
 
 	breakpoints valuesDo: [ :each | each remove ].
-	breakpoints removeAll.
-	^ self
+	breakpoints removeAll
 ]
 
 { #category : 'removing' }

@@ -78,16 +78,15 @@ MCPRepositoryDiffResult >> initializeRepository: aRepository changedPackageNames
 
 	| packages |
 	repositoryInfo := MCPRepositoryInfo fromRepository: aRepository.
-	packages := aRepository workingCopy packages asArray
-		            sort: [ :left :right |
-		            left name asString <= right name asString ].
+	packages := aRepository workingCopy packages asArray sort: [
+		            :left
+		            :right | left name asString <= right name asString ].
 	packageInfos := packages collect: [ :each |
 		                MCPRepositoryPackageInfo fromPackage: each ].
 	changedPackageNames := packageNames ifNil: [ #(  ) ].
 	modifiedPaths := paths ifNil: [ #(  ) ].
 	isEmpty := aBoolean.
-	changeCount := self derivedChangeCount.
-	^ self
+	changeCount := self derivedChangeCount
 ]
 
 { #category : 'accessing' }

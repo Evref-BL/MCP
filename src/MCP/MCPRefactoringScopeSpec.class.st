@@ -49,8 +49,7 @@ MCPRefactoringScopeSpec >> initializePackageNames: packageNamesCollection classN
 
 	packageNames := packageNamesCollection ifNil: [ #(  ) ].
 	classNames := classNamesCollection ifNil: [ #(  ) ].
-	hierarchyClassNames := hierarchyClassNamesCollection ifNil: [ #(  ) ].
-	^ self
+	hierarchyClassNames := hierarchyClassNamesCollection ifNil: [ #(  ) ]
 ]
 
 { #category : 'testing' }

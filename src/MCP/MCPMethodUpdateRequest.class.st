@@ -200,8 +200,7 @@ MCPMethodUpdateRequest >> initializeFromRequest: request [
 		               selector: selector asSymbol
 		               newSelector:
 		               (newSelector ifNotNil: [ newSelector asSymbol ]).
-	force := request booleanArgumentNamed: 'force' default: false.
-	^ self
+	force := request booleanArgumentNamed: 'force' default: false
 ]
 
 { #category : 'private - request' }
@@ -384,32 +383,31 @@ MCPMethodUpdateRequest >> updatePropertyNames [
 MCPMethodUpdateRequest >> validateAddArgumentsUpdate [
 
 	self argumentNames isEmpty ifTrue: [
-		MCPCommandError
-			signalErrorCode: #ArgumentNamesRequiredForAddedArguments
-			message:
-			'argumentNames is required when newSelector adds method arguments.'
-			details: self requestedContext ].
+			MCPCommandError
+				signalErrorCode: #ArgumentNamesRequiredForAddedArguments
+				message:
+				'argumentNames is required when newSelector adds method arguments.'
+				details: self requestedContext ].
 	self argumentNames size = self newSelector asSymbol numArgs ifFalse: [
-		MCPCommandError
-			signalErrorCode: #InvalidMethodArgumentNames
-			message:
-			'argumentNames must contain one name for each target selector argument.'
-			details: self requestedContext ].
-	(self argumentNames allSatisfy: [ :each | each isNotEmpty ])
-		ifFalse: [
 			MCPCommandError
 				signalErrorCode: #InvalidMethodArgumentNames
-				message: 'argumentNames must not contain empty names.'
+				message:
+				'argumentNames must contain one name for each target selector argument.'
 				details: self requestedContext ].
+	(self argumentNames allSatisfy: [ :each | each isNotEmpty ])
+		ifFalse: [
+				MCPCommandError
+					signalErrorCode: #InvalidMethodArgumentNames
+					message: 'argumentNames must not contain empty names.'
+					details: self requestedContext ].
 	(self argumentValueExpressions isNotEmpty and: [
 		 self argumentValueExpressions size ~= self addedArgumentCount ])
 		ifTrue: [
-			MCPCommandError
-				signalErrorCode: #InvalidMethodArgumentValueExpressions
-				message:
-				'argumentValueExpressions must contain one expression for each newly added argument.'
-				details: self requestedContext ].
-	^ self
+				MCPCommandError
+					signalErrorCode: #InvalidMethodArgumentValueExpressions
+					message:
+					'argumentValueExpressions must contain one expression for each newly added argument.'
+					details: self requestedContext ]
 ]
 
 { #category : 'validating' }
@@ -417,77 +415,75 @@ MCPMethodUpdateRequest >> validateForUpdate [
 
 	| action |
 	self hasPermutation ifTrue: [
-		self hasRenameUpdate ifFalse: [
-			MCPCommandError
-				signalErrorCode: #PermutationRequiresMethodSelectorUpdate
-				message:
-				'permutation is only valid when update changes a method selector with newSelector.'
-				details: self requestedContext ] ].
+			self hasRenameUpdate ifFalse: [
+					MCPCommandError
+						signalErrorCode: #PermutationRequiresMethodSelectorUpdate
+						message:
+						'permutation is only valid when update changes a method selector with newSelector.'
+						details: self requestedContext ] ].
 	(self hasArgumentNames or: [ self hasArgumentValueExpressions ])
 		ifTrue: [
-			self hasRenameUpdate ifFalse: [
-				MCPCommandError
-					signalErrorCode: #ArgumentMetadataRequiresMethodSelectorUpdate
-					message:
-					'argumentNames and argumentValueExpressions are only valid with newSelector.'
-					details: self requestedContext ] ].
+				self hasRenameUpdate ifFalse: [
+						MCPCommandError
+							signalErrorCode: #ArgumentMetadataRequiresMethodSelectorUpdate
+							message:
+							'argumentNames and argumentValueExpressions are only valid with newSelector.'
+							details: self requestedContext ] ].
 	action := self newSelectorUpdateAction.
-	action = 'addArguments' ifTrue: [ self validateAddArgumentsUpdate ].
-	^ self
+	action = 'addArguments' ifTrue: [ self validateAddArgumentsUpdate ]
 ]
 
 { #category : 'private - request' }
-MCPMethodUpdateRequest >> validatePermutation: requestedPermutation fromSelector: oldSelector toSelector: newSelector [
+MCPMethodUpdateRequest >> validatePermutation: requestedPermutation fromSelector: oldSelector toSelector: targetSelector [
 
 	| newArgumentCount oldArgumentCount positiveIndexes |
 	oldArgumentCount := oldSelector numArgs.
-	newArgumentCount := newSelector numArgs.
+	newArgumentCount := targetSelector numArgs.
 	requestedPermutation size = newArgumentCount ifFalse: [
-		MCPCommandError
-			signalErrorCode: #InvalidMethodArgumentPermutation
-			message:
-			'permutation must contain one entry for each target selector argument.'
-			details: self requestedContext ].
-	(requestedPermutation allSatisfy: [ :each | each isInteger ])
-		ifFalse: [
 			MCPCommandError
 				signalErrorCode: #InvalidMethodArgumentPermutation
-				message: 'permutation entries must be integers.'
+				message:
+				'permutation must contain one entry for each target selector argument.'
 				details: self requestedContext ].
+	(requestedPermutation allSatisfy: [ :each | each isInteger ])
+		ifFalse: [
+				MCPCommandError
+					signalErrorCode: #InvalidMethodArgumentPermutation
+					message: 'permutation entries must be integers.'
+					details: self requestedContext ].
 	positiveIndexes := requestedPermutation select: [ :each | each > 0 ].
 	(positiveIndexes allSatisfy: [ :each |
 		 each between: 1 and: oldArgumentCount ]) ifFalse: [
-		MCPCommandError
-			signalErrorCode: #InvalidMethodArgumentPermutation
-			message:
-			'positive permutation entries must reference existing arguments by 1-based index.'
-			details: self requestedContext ].
+			MCPCommandError
+				signalErrorCode: #InvalidMethodArgumentPermutation
+				message:
+				'positive permutation entries must reference existing arguments by 1-based index.'
+				details: self requestedContext ].
 	positiveIndexes asSet size = positiveIndexes size ifFalse: [
-		MCPCommandError
-			signalErrorCode: #InvalidMethodArgumentPermutation
-			message:
-			'permutation must not reference the same old argument twice.'
-			details: self requestedContext ].
+			MCPCommandError
+				signalErrorCode: #InvalidMethodArgumentPermutation
+				message:
+				'permutation must not reference the same old argument twice.'
+				details: self requestedContext ].
 	newArgumentCount >= oldArgumentCount
 		ifTrue: [
-			positiveIndexes size = oldArgumentCount ifFalse: [
-				MCPCommandError
-					signalErrorCode: #InvalidMethodArgumentPermutation
-					message:
-					'adding arguments requires every old argument to appear exactly once in permutation.'
-					details: self requestedContext ] ]
+				positiveIndexes size = oldArgumentCount ifFalse: [
+						MCPCommandError
+							signalErrorCode: #InvalidMethodArgumentPermutation
+							message:
+							'adding arguments requires every old argument to appear exactly once in permutation.'
+							details: self requestedContext ] ]
 		ifFalse: [
-			positiveIndexes size = newArgumentCount ifFalse: [
-				MCPCommandError
-					signalErrorCode: #InvalidMethodArgumentPermutation
-					message:
-					'removing arguments requires permutation to contain only kept old argument indexes.'
-					details: self requestedContext ].
-			(requestedPermutation allSatisfy: [ :each | each > 0 ]) ifFalse: [
-				MCPCommandError
-					signalErrorCode: #InvalidMethodArgumentPermutation
-					message:
-					'removing arguments does not accept negative permutation entries.'
-					details: self requestedContext ] ].
-	^ self
+				positiveIndexes size = newArgumentCount ifFalse: [
+						MCPCommandError
+							signalErrorCode: #InvalidMethodArgumentPermutation
+							message:
+							'removing arguments requires permutation to contain only kept old argument indexes.'
+							details: self requestedContext ].
+				(requestedPermutation allSatisfy: [ :each | each > 0 ]) ifFalse: [
+						MCPCommandError
+							signalErrorCode: #InvalidMethodArgumentPermutation
+							message:
+							'removing arguments does not accept negative permutation entries.'
+							details: self requestedContext ] ]
 ]

@@ -58,8 +58,7 @@ MCPLoadBaselineResult >> initializeRequest: aRequest newPackageNames: packageNam
 	groups := aRequest groups.
 	loadPolicy := aRequest loadPolicy.
 	newPackageNames := packageNames asArray.
-	repositoryInfos := repositories asArray.
-	^ self
+	repositoryInfos := repositories asArray
 ]
 
 { #category : 'accessing' }

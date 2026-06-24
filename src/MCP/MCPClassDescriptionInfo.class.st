@@ -91,6 +91,5 @@ MCPClassDescriptionInfo >> initializeFromClass: aClass [
 		                        each asString ]) asArray.
 	layoutClassName := aClass classLayout class name asString.
 	instanceMethodCount := aClass selectors size.
-	classMethodCount := aClass classSide selectors size.
-	^ self
+	classMethodCount := aClass classSide selectors size
 ]

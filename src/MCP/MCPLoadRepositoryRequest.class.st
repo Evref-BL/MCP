@@ -150,8 +150,7 @@ MCPLoadRepositoryRequest >> initializeDefaultsFromTool: aTool [
 	self isLocalLoad ifTrue: [
 			sourceDirectory ifNil: [
 				sourceDirectory := aTool defaultSourceDirectory ] ].
-	self isIcebergLoad ifTrue: [ self initializeIcebergDefaults ].
-	^ self
+	self isIcebergLoad ifTrue: [ self initializeIcebergDefaults ]
 ]
 
 { #category : 'initialization' }
@@ -173,8 +172,7 @@ MCPLoadRepositoryRequest >> initializeFromRequest: request tool: aTool [
 		                       request.
 	self ensureSingleRepositorySource.
 	mode := self requestedMode.
-	self initializeDefaultsFromTool: aTool.
-	^ self
+	self initializeDefaultsFromTool: aTool
 ]
 
 { #category : 'private - mode' }
@@ -182,8 +180,7 @@ MCPLoadRepositoryRequest >> initializeIcebergDefaults [
 
 	sourceDirectory ifNil: [
 			sourceDirectory := self sourceDirectoryFromRepository:
-				                   self icebergRepository ].
-	^ self
+				                   self icebergRepository ]
 ]
 
 { #category : 'private - mode' }

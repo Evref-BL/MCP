@@ -62,8 +62,7 @@ MCPDebugCaptureContinuation >> outcome [
 { #category : 'accessing' }
 MCPDebugCaptureContinuation >> outcome: aDictionary [
 
-	outcome := aDictionary.
-	^ self
+	outcome := aDictionary
 ]
 
 { #category : 'private' }
@@ -94,8 +93,7 @@ MCPDebugCaptureContinuation >> resultPreviewCharacterLimit [
 { #category : 'accessing' }
 MCPDebugCaptureContinuation >> resultPreviewCharacterLimit: anInteger [
 
-	resultPreviewCharacterLimit := anInteger.
-	^ self
+	resultPreviewCharacterLimit := anInteger
 ]
 
 { #category : 'accessing' }
@@ -107,8 +105,7 @@ MCPDebugCaptureContinuation >> semaphore [
 { #category : 'accessing' }
 MCPDebugCaptureContinuation >> semaphore: aSemaphore [
 
-	semaphore := aSemaphore.
-	^ self
+	semaphore := aSemaphore
 ]
 
 { #category : 'controlling' }
@@ -137,8 +134,7 @@ MCPDebugCaptureContinuation >> timeoutMilliseconds [
 { #category : 'accessing' }
 MCPDebugCaptureContinuation >> timeoutMilliseconds: anInteger [
 
-	timeoutMilliseconds := anInteger.
-	^ self
+	timeoutMilliseconds := anInteger
 ]
 
 { #category : 'controlling' }
@@ -156,6 +152,5 @@ MCPDebugCaptureContinuation >> workerProcess [
 { #category : 'accessing' }
 MCPDebugCaptureContinuation >> workerProcess: aProcess [
 
-	workerProcess := aProcess.
-	^ self
+	workerProcess := aProcess
 ]

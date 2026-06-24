@@ -119,9 +119,8 @@ MCPTestCoverageRequest >> includeCoveredMethods [
 MCPTestCoverageRequest >> initializeScopeQuery: aScopeQuery includeCoveredMethods: aBoolean methodLimit: anInteger [
 
 	scopeQuery := aScopeQuery.
-	includeCoveredMethods := aBoolean = true.
-	methodLimit := anInteger.
-	^ self
+	includeCoveredMethods := aBoolean == true.
+	methodLimit := anInteger
 ]
 
 { #category : 'accessing' }

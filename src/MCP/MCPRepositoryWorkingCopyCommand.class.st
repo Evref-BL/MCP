@@ -53,8 +53,7 @@ MCPRepositoryWorkingCopyCommand >> changedPackageNamesFromDiff: aDiff [
 MCPRepositoryWorkingCopyCommand >> initializeTool: aTool request: aRequest [
 
 	tool := aTool.
-	request := aRequest.
-	^ self
+	request := aRequest
 ]
 
 { #category : 'private - diff' }

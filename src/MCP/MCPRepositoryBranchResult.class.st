@@ -62,8 +62,7 @@ MCPRepositoryBranchResult >> initializeRepositoryBefore: beforeInfo after: aRepo
 	previousBranchName := beforeInfo branchName.
 	branchName := afterInfo branchName.
 	previousHeadDescription := beforeInfo headDescription.
-	headDescription := afterInfo headDescription.
-	^ self
+	headDescription := afterInfo headDescription
 ]
 
 { #category : 'accessing' }

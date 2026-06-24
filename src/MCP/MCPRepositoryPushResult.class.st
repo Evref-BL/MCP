@@ -52,8 +52,7 @@ MCPRepositoryPushResult >> initializeRepository: aRepository [
 	packageInfos := self packageInfosFromRepository: aRepository.
 	remoteNames := repositoryInfo remoteNames.
 	branchName := repositoryInfo branchName.
-	headDescription := repositoryInfo headDescription.
-	^ self
+	headDescription := repositoryInfo headDescription
 ]
 
 { #category : 'accessing' }

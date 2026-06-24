@@ -61,8 +61,7 @@ MCPLoadBaselineRequest >> initializeBaseline: baselineName groups: groupNames lo
 
 	baseline := baselineName.
 	groups := groupNames ifNil: [ #(  ) ].
-	loadPolicy := aLoadPolicy.
-	^ self
+	loadPolicy := aLoadPolicy
 ]
 
 { #category : 'accessing' }

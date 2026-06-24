@@ -98,8 +98,7 @@ MCPRepositoryAdoptHeadResult >> initializeRepositoryBefore: beforeInfo after: aR
 	adoptedCommitId := self commitIdFrom: headCommit.
 	didAdopt := aBoolean.
 	branchName := repositoryInfoAfter branchName.
-	headDescription := repositoryInfoAfter headDescription.
-	^ self
+	headDescription := repositoryInfoAfter headDescription
 ]
 
 { #category : 'accessing' }

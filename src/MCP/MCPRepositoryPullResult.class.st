@@ -56,8 +56,7 @@ MCPRepositoryPullResult >> initializeRepositoryBefore: beforeInfo after: aReposi
 	packageInfos := self packageInfosFromRepository: aRepository.
 	branchName := repositoryInfoAfter branchName.
 	headDescription := repositoryInfoAfter headDescription.
-	modifiedPackageNames := repositoryInfoAfter modifiedPackageNames.
-	^ self
+	modifiedPackageNames := repositoryInfoAfter modifiedPackageNames
 ]
 
 { #category : 'accessing' }

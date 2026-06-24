@@ -72,8 +72,7 @@ MCPRepositoryUpdateRequest >> initializeFromRequest: request [
 	addPackageNames := request stringCollectionArgumentNamed:
 		                   'addPackageNames'.
 	removePackageNames := request stringCollectionArgumentNamed:
-		                      'removePackageNames'.
-	^ self
+		                      'removePackageNames'
 ]
 
 { #category : 'accessing' }

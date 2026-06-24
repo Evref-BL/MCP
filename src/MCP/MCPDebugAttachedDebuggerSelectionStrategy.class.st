@@ -86,8 +86,7 @@ MCPDebugAttachedDebuggerSelectionStrategy class >> reset [
 	PreviousStrategy := nil.
 	OupsDebuggerSelectionStrategy debuggerSelectionStrategy = self
 		ifTrue: [
-		OupsDebuggerSelectionStrategy debuggerSelectionStrategy: fallback ].
-	^ self
+		OupsDebuggerSelectionStrategy debuggerSelectionStrategy: fallback ]
 ]
 
 { #category : 'debuggers' }

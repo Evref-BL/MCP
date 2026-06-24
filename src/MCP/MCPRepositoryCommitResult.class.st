@@ -108,9 +108,9 @@ MCPRepositoryCommitResult >> headDescription: aString [
 MCPRepositoryCommitResult >> initializeRepository: aRepository changedPackageNames: packageNames commit: aCommit [
 
 	| packages repositoryPackageNames |
-	packages := aRepository workingCopy packages asArray
-		            sort: [ :left :right |
-		            left name asString <= right name asString ].
+	packages := aRepository workingCopy packages asArray sort: [
+		            :left
+		            :right | left name asString <= right name asString ].
 	packageInfos := packages collect: [ :each |
 		                MCPRepositoryPackageInfo fromPackage: each ].
 	repositoryPackageNames := (packages collect: [ :each |
@@ -125,8 +125,7 @@ MCPRepositoryCommitResult >> initializeRepository: aRepository changedPackageNam
 		                  packageNames: repositoryPackageNames
 		                  modifiedPackageNames: modifiedPackageNames
 		                  headCommitId: commitId
-		                  headDescription: headDescription.
-	^ self
+		                  headDescription: headDescription
 ]
 
 { #category : 'accessing' }

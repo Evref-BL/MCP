@@ -55,12 +55,10 @@ MCPMethodCompileRequest >> initializeFromRequest: request tool: aTool [
 	classSide := request booleanArgumentNamed: 'classSide' default: false.
 	methodSource := (request argumentNamed: 'source' ifAbsent: [
 			                 MCPInvalidToolInput
-				                 signalMissingRequiredArgumentNamed:
-				                 'source'
+				                 signalMissingRequiredArgumentNamed: 'source'
 				                 forTool: aTool ]) withInternalLineEndings.
 	protocol := request stringArgumentNamed: 'protocol'.
-	force := request booleanArgumentNamed: 'force' default: false.
-	^ self
+	force := request booleanArgumentNamed: 'force' default: false
 ]
 
 { #category : 'accessing' }

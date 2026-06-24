@@ -54,8 +54,7 @@ MCPRepositoryFetchResult >> initializeRepositoryBefore: beforeInfo after: aRepos
 	packageInfos := self packageInfosFromRepository: aRepository.
 	remoteNames := repositoryInfoAfter remoteNames.
 	branchName := repositoryInfoAfter branchName.
-	headDescription := repositoryInfoAfter headDescription.
-	^ self
+	headDescription := repositoryInfoAfter headDescription
 ]
 
 { #category : 'accessing' }

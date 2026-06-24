@@ -80,8 +80,7 @@ MCPTestRunInfo >> initializeValidatedRequest: validatedRequest selectedTestCount
 	skippedCount := aResult skippedCount.
 	failureCount := aResult failureCount.
 	errorCount := aResult errorCount.
-	issues := issueCollection ifNil: [ #(  ) ].
-	^ self
+	issues := issueCollection ifNil: [ #(  ) ]
 ]
 
 { #category : 'accessing' }

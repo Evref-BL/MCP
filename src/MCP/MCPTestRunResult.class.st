@@ -48,8 +48,7 @@ MCPTestRunResult >> initializeResultInfo: resultInfoOrNil timedOut: aBoolean unr
 
 	resultInfo := resultInfoOrNil.
 	timedOut := aBoolean.
-	unrunTestRequests := testRequests ifNil: [ #(  ) ].
-	^ self
+	unrunTestRequests := testRequests ifNil: [ #(  ) ]
 ]
 
 { #category : 'accessing' }

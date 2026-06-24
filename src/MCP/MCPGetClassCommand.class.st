@@ -48,8 +48,7 @@ MCPGetClassCommand >> execute [
 MCPGetClassCommand >> initializeTool: aTool request: aRequest [
 
 	tool := aTool.
-	request := aRequest.
-	^ self
+	request := aRequest
 ]
 
 { #category : 'accessing' }

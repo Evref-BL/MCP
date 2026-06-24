@@ -111,8 +111,7 @@ MCPClassInfo >> initializeFromClass: aClass [
 	layoutClassName := aClass classLayout class name asString.
 	subclassNames := (aClass subclasses
 		                  collect: [ :each | each name asString ]
-		                  as: Array) sort.
-	^ self
+		                  as: Array) sort
 ]
 
 { #category : 'accessing' }

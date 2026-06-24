@@ -55,8 +55,7 @@ MCPRepositoryReferenceSpec >> hasName [
 MCPRepositoryReferenceSpec >> initializeName: aName location: aLocation [
 
 	name := aName.
-	location := aLocation.
-	^ self
+	location := aLocation
 ]
 
 { #category : 'testing' }

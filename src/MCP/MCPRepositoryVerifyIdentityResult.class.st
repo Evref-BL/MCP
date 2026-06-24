@@ -41,8 +41,7 @@ MCPRepositoryVerifyIdentityResult >> initializeRepository: aRepository checkedFi
 	repositoryInfo := MCPRepositoryInfo fromRepository: aRepository.
 	packageInfos := self packageInfosFromRepository: aRepository.
 	checkedFields := fieldNames ifNil: [ #(  ) ].
-	matched := true.
-	^ self
+	matched := true
 ]
 
 { #category : 'accessing' }

@@ -57,15 +57,14 @@ MCPRepositoryUpdateResult >> initializeRepository: aRepository updateActions: ac
 
 	| packages |
 	repositoryInfo := MCPRepositoryInfo fromRepository: aRepository.
-	packages := aRepository workingCopy packages asArray
-		            sort: [ :left :right |
-		            left name asString <= right name asString ].
+	packages := aRepository workingCopy packages asArray sort: [
+		            :left
+		            :right | left name asString <= right name asString ].
 	packageInfos := packages collect: [ :each |
 		                MCPRepositoryPackageInfo fromPackage: each ].
 	updateActions := actionNames ifNil: [ #(  ) ].
 	addedPackageNames := addedNames ifNil: [ #(  ) ].
-	removedPackageNames := removedNames ifNil: [ #(  ) ].
-	^ self
+	removedPackageNames := removedNames ifNil: [ #(  ) ]
 ]
 
 { #category : 'accessing' }

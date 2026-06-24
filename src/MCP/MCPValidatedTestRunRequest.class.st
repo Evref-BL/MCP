@@ -49,8 +49,7 @@ MCPValidatedTestRunRequest >> hasTestMethod [
 MCPValidatedTestRunRequest >> initializeRequest: aTestRunRequest testClass: aTestClass [
 
 	testRunRequest := aTestRunRequest.
-	testClass := aTestClass.
-	^ self
+	testClass := aTestClass
 ]
 
 { #category : 'accessing' }

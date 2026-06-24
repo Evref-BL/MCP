@@ -107,8 +107,7 @@ MCPClassCreateRequest >> initializeFromRequest: request [
 		                       'sharedVariables'.
 	sharedPoolNames := request stringCollectionArgumentNamed:
 		                   'sharedPools'.
-	layout := request stringArgumentNamed: 'layout'.
-	^ self
+	layout := request stringArgumentNamed: 'layout'
 ]
 
 { #category : 'accessing' }

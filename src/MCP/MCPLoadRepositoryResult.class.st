@@ -83,8 +83,7 @@ MCPLoadRepositoryResult >> initializeRequest: aRequest repositoryUrl: aRepositor
 	checkoutPath := aRequest checkoutPath.
 	repositoryName := aRequest repositoryName.
 	location := aRequest location.
-	loadResult := aLoadResult.
-	^ self
+	loadResult := aLoadResult
 ]
 
 { #category : 'accessing' }

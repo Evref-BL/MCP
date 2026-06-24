@@ -50,8 +50,7 @@ MCPRemoveMethodsResult >> initializeFromRequest: aRequest removedMethods: method
 	classSide := aRequest classSide.
 	selectors := aRequest selectors asArray.
 	removedMethods := methodCollection asArray.
-	warningMessages := warningCollection asArray.
-	^ self
+	warningMessages := warningCollection asArray
 ]
 
 { #category : 'accessing' }
