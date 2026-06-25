@@ -6,9 +6,9 @@ It scores nearby names and limits repeated suggestions from the same package or 
 Class {
 	#name : 'MCPScopeNameSuggester',
 	#superclass : 'Object',
-	#category : 'MCP-Queries',
+	#category : 'MCP-Utilities',
 	#package : 'MCP',
-	#tag : 'Queries'
+	#tag : 'Utilities'
 }
 
 { #category : 'suggesting' }
