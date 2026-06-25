@@ -293,30 +293,6 @@ MCPToolMethodSearch >> methodQueryScopeInputProperties [
 		  self searchScopeSchemaProperty }
 ]
 
-{ #category : 'private - methods' }
-MCPToolMethodSearch >> methodScopeQueryFromRequest: request [
-
-	^ MCPCompiledMethodScopeQuery new
-		  packageNames: (self
-				   searchScopeStringCollectionNamed: 'packages'
-				   fromRequest: request);
-		  classNames:
-			  (self
-				   searchScopeStringCollectionNamed: 'classes'
-				   fromRequest: request);
-		  hierarchyClassNames: (self
-				   searchScopeStringCollectionNamed: 'hierarchies'
-				   fromRequest: request);
-		  subclassClassNames: (self
-				   searchScopeStringCollectionNamed: 'subclassesOf'
-				   fromRequest: request);
-		  parentClassNames: (self
-				   searchScopeStringCollectionNamed: 'superclassesOf'
-				   fromRequest: request);
-		  side: (request stringArgumentNamed: 'side' default: 'both');
-		  yourself
-]
-
 { #category : 'private - filtering' }
 MCPToolMethodSearch >> needsSourceForFiltering [
 
@@ -366,16 +342,6 @@ MCPToolMethodSearch >> sortedMethodEntries: entries [
 
 	^ entries asArray sort: [ :left :right |
 		  (self methodEntryLabel: left) <= (self methodEntryLabel: right) ]
-]
-
-{ #category : 'private - template' }
-MCPToolMethodSearch >> successSummaryForQueryRequest: queryRequest page: page [
-
-	^ self
-		  successSummaryForScope:
-		  (self classAndMethodScopeSummaryForScopeQuery:
-			   queryRequest scopeQuery)
-		  page: page
 ]
 
 { #category : 'private - results' }

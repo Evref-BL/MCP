@@ -28,17 +28,6 @@ MCPToolClassMutation >> atLeastOneInputProperties [
 ]
 
 { #category : 'metadata' }
-MCPToolClassMutation >> buildInputSchema [
-
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: self inputProperties;
-		  required: self requiredInputProperties;
-		  additionalProperties: false;
-		  yourself
-]
-
-{ #category : 'metadata' }
 MCPToolClassMutation >> buildOutputSchema [
 
 	^ self standardOutputSchemaForDataProperties: #(  ) required: #(  )
@@ -493,10 +482,6 @@ MCPToolClassMutation >> validateAtLeastOneInputPropertyIn: request [
 { #category : 'validating' }
 MCPToolClassMutation >> validateRequest: request [
 
-	self requiredInputProperties do: [ :each |
-			(request argumentNamed: each ifAbsent: [ nil ]) ifNil: [
-					MCPInvalidToolInput
-						signalMissingRequiredArgumentNamed: each
-						forTool: self ] ].
+	super validateRequest: request.
 	self validateAtLeastOneInputPropertyIn: request
 ]

@@ -55,17 +55,6 @@ MCPToolMethodMutation >> allowedNonErrorCritiqueRuleClasses [
 ]
 
 { #category : 'metadata' }
-MCPToolMethodMutation >> buildInputSchema [
-
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: self inputProperties;
-		  required: self requiredInputProperties;
-		  additionalProperties: false;
-		  yourself
-]
-
-{ #category : 'metadata' }
 MCPToolMethodMutation >> buildOutputSchema [
 
 	^ self
@@ -344,14 +333,4 @@ MCPToolMethodMutation >> sourceIntervalForCritique: aCritique [
 MCPToolMethodMutation >> title [
 
 	^ self methodToolSpec at: #title
-]
-
-{ #category : 'validating' }
-MCPToolMethodMutation >> validateRequest: request [
-
-	self requiredInputProperties do: [ :each |
-			(request argumentNamed: each ifAbsent: [ nil ]) ifNil: [
-					MCPInvalidToolInput
-						signalMissingRequiredArgumentNamed: each
-						forTool: self ] ]
 ]

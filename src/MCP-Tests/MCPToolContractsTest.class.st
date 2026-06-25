@@ -1810,33 +1810,24 @@ MCPToolContractsTest >> testMethodToolTraitOwnsSharedMethodHelpers [
 
 	| methodToolClasses sharedSelectors |
 	methodToolClasses := {
-		                     MCPToolGetMethod.
-		                     MCPToolMethodMutation.
-		                     MCPToolRewriteMethods.
-		                     MCPToolRemoveMethods }.
+		MCPToolGetMethod.
+		MCPToolMethodMutation.
+		MCPToolMethodSearch.
+		MCPToolRewriteMethods.
+		MCPToolRemoveMethods }.
 	sharedSelectors := #( selectorStringFromRequest:
-	                      behaviorNamed:classSide:
-	                      methodReferenceForBehavior:selector:
-	                      methodReferenceForClassName:selector:isClassSide:
-	                      methodScopeQueryFromRequest: ).
-	self assert:
-		(MCPToolMethodSearch withAllSuperclasses anySatisfy: [ :each |
-			 each traits includes: TMCPMethodTool ]).
-	self
-		assert:
-		(MCPToolMethodSearch >> #methodScopeQueryFromRequest:) origin
-		equals: MCPToolMethodSearch.
+		behaviorNamed:classSide:
+		methodReferenceForBehavior:selector:
+		methodReferenceForClassName:selector:isClassSide:
+		methodScopeQueryFromRequest: ).
 	methodToolClasses do: [ :toolClass |
-			self assert: (toolClass withAllSuperclasses anySatisfy: [ :each |
-					 each traits includes: TMCPMethodTool ]).
-			sharedSelectors do: [ :selector |
-					| implementingClass |
-					implementingClass := toolClass whichClassIncludesSelector:
-						                     selector.
-					self assert: implementingClass notNil.
-					self
-						assert: (implementingClass >> selector) origin
-						equals: TMCPMethodTool ] ]
+		self assert: (toolClass withAllSuperclasses anySatisfy: [ :each |
+			each traits includes: TMCPMethodTool ]).
+		sharedSelectors do: [ :selector |
+			| implementingClass |
+			implementingClass := toolClass whichClassIncludesSelector: selector.
+			self assert: implementingClass notNil.
+			self assert: (implementingClass >> selector) origin equals: TMCPMethodTool ] ]
 ]
 
 { #category : 'tests' }

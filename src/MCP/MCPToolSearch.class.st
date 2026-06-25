@@ -550,6 +550,15 @@ MCPToolSearch >> searchScopeStringCollectionNamed: aName fromRequest: request [
 { #category : 'private - template' }
 MCPToolSearch >> successSummaryForQueryRequest: queryRequest page: page [
 
+	^ self
+		successSummaryForScope:
+		(self classAndMethodScopeSummaryForScopeQuery: queryRequest scopeQuery)
+		page: page
+]
+
+{ #category : 'private - results' }
+MCPToolSearch >> successSummaryForScope: scopeDescription page: page [
+
 	self subclassResponsibility
 ]
 

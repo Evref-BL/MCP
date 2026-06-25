@@ -27,17 +27,6 @@ MCPToolRepositoryOperation >> branchNameSchemaProperty [
 ]
 
 { #category : 'metadata' }
-MCPToolRepositoryOperation >> buildInputSchema [
-
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: self inputProperties;
-		  required: self requiredInputProperties;
-		  additionalProperties: false;
-		  yourself
-]
-
-{ #category : 'metadata' }
 MCPToolRepositoryOperation >> buildOutputSchema [
 
 	^ self
@@ -352,14 +341,4 @@ MCPToolRepositoryOperation >> subdirectorySchemaProperty [
 MCPToolRepositoryOperation >> title [
 
 	^ self repositoryToolSpec at: #title
-]
-
-{ #category : 'validating' }
-MCPToolRepositoryOperation >> validateRequest: request [
-
-	self requiredInputProperties do: [ :each |
-			(request argumentNamed: each ifAbsent: [ nil ]) ifNil: [
-					MCPInvalidToolInput
-						signalMissingRequiredArgumentNamed: each
-						forTool: self ] ]
 ]

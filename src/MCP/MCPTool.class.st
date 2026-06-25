@@ -332,10 +332,7 @@ MCPTool >> pngCompositeBaseIconNamed: aBaseIconSymbol badgeIconNamed: aBadgeIcon
 { #category : 'private - icons' }
 MCPTool >> pngDataUriForForm: aForm [
 
-	| bytes |
-	bytes := ByteArray streamContents: [ :stream |
-		         PNGReadWriter putForm: aForm onStream: stream ].
-	^ 'data:image/png;base64,' , bytes base64Encoded
+	^ MCPStructureIcon pngDataUriForForm: aForm
 ]
 
 { #category : 'private - icons' }

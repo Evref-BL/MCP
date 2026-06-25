@@ -3,10 +3,8 @@ Parsed input for repository_identity_verify. It resolves a registered Iceberg re
 "
 Class {
 	#name : 'MCPRepositoryVerifyIdentityRequest',
-	#superclass : 'Object',
+	#superclass : 'MCPRepositoryBranchRequest',
 	#instVars : [
-		'repositoryReference',
-		'branchName',
 		'subdirectory',
 		'packageNames',
 		'modifiedPackageNames',
@@ -25,12 +23,6 @@ Class {
 MCPRepositoryVerifyIdentityRequest class >> fromRequest: request tool: aTool [
 
 	^ self new initializeFromRequest: request
-]
-
-{ #category : 'accessing' }
-MCPRepositoryVerifyIdentityRequest >> branchName [
-
-	^ branchName ifNil: [ '' ]
 ]
 
 { #category : 'converting' }
@@ -77,26 +69,22 @@ MCPRepositoryVerifyIdentityRequest >> hasExpectedSubdirectory [
 { #category : 'initialization' }
 MCPRepositoryVerifyIdentityRequest >> initializeFromRequest: request [
 
-	repositoryReference := MCPRepositoryReferenceSpec fromRequest:
-		                       request.
-	branchName := request stringArgumentNamed: 'branchName'.
+	super initializeFromRequest: request.
 	hasSubdirectory := request hasArgumentNamed: 'subdirectory'.
 	hasPackageNames := request hasArgumentNamed: 'packageNames'.
 	hasModifiedPackageNames := request hasArgumentNamed: 'modifiedPackageNames'.
 	hasIsModified := request hasArgumentNamed: 'isModified'.
 	hasSubdirectory ifTrue: [
 		subdirectory := self
-			                stringArgumentNamed: 'subdirectory'
-			                preservingEmptyFrom: request ].
+			stringArgumentNamed: 'subdirectory'
+			preservingEmptyFrom: request ].
 	hasPackageNames ifTrue: [
-		packageNames := request uniqueStringCollectionArgumentNamed:
-			                'packageNames' ].
+		packageNames := request uniqueStringCollectionArgumentNamed: 'packageNames' ].
 	hasModifiedPackageNames ifTrue: [
 		modifiedPackageNames := request uniqueStringCollectionArgumentNamed:
-			                        'modifiedPackageNames' ].
+			'modifiedPackageNames' ].
 	hasIsModified ifTrue: [
-		isModified := request booleanArgumentNamed: 'isModified' default: false ].
-	^ self
+		isModified := request booleanArgumentNamed: 'isModified' default: false ]
 ]
 
 { #category : 'accessing' }
@@ -127,12 +115,6 @@ MCPRepositoryVerifyIdentityRequest >> packageNames [
 MCPRepositoryVerifyIdentityRequest >> repository [
 
 	^ self repositoryReference repository
-]
-
-{ #category : 'accessing' }
-MCPRepositoryVerifyIdentityRequest >> repositoryReference [
-
-	^ repositoryReference
 ]
 
 { #category : 'converting' }

@@ -3,10 +3,7 @@ Parsed input for repository_change_list. It resolves the registered Iceberg repo
 "
 Class {
 	#name : 'MCPRepositoryDiffRequest',
-	#superclass : 'Object',
-	#instVars : [
-		'repositoryReference'
-	],
+	#superclass : 'MCPRepositoryRequest',
 	#category : 'MCP-Requests',
 	#package : 'MCP',
 	#tag : 'Requests'
@@ -24,14 +21,6 @@ MCPRepositoryDiffRequest >> commandForTool: aTool [
 	^ MCPRepositoryDiffCommand tool: aTool request: self
 ]
 
-{ #category : 'initialization' }
-MCPRepositoryDiffRequest >> initializeFromRequest: request [
-
-	repositoryReference := MCPRepositoryReferenceSpec fromRequest:
-		                       request.
-	^ self
-]
-
 { #category : 'accessing' }
 MCPRepositoryDiffRequest >> operation [
 
@@ -42,16 +31,4 @@ MCPRepositoryDiffRequest >> operation [
 MCPRepositoryDiffRequest >> repository [
 
 	^ self repositoryReference repository
-]
-
-{ #category : 'accessing' }
-MCPRepositoryDiffRequest >> repositoryReference [
-
-	^ repositoryReference
-]
-
-{ #category : 'converting' }
-MCPRepositoryDiffRequest >> requestedContext [
-
-	^ self repositoryReference requestedContext
 ]

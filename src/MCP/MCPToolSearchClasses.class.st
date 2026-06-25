@@ -200,16 +200,6 @@ MCPToolSearchClasses >> searchRequestFromToolRequest: request [
 	^ MCPSearchClassesRequest fromRequest: request tool: self
 ]
 
-{ #category : 'private - template' }
-MCPToolSearchClasses >> successSummaryForQueryRequest: queryRequest page: page [
-
-	^ self
-		  successSummaryForScope:
-		  (self classAndMethodScopeSummaryForScopeQuery:
-			   queryRequest scopeQuery)
-		  page: page
-]
-
 { #category : 'private - results' }
 MCPToolSearchClasses >> successSummaryForScope: scopeSummary page: page [
 

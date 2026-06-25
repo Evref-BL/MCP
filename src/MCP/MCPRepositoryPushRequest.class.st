@@ -3,10 +3,7 @@ Parsed input for repository_push. It resolves the registered Iceberg repository 
 "
 Class {
 	#name : 'MCPRepositoryPushRequest',
-	#superclass : 'Object',
-	#instVars : [
-		'repositoryReference'
-	],
+	#superclass : 'MCPRepositoryRequest',
 	#category : 'MCP-Requests',
 	#package : 'MCP',
 	#tag : 'Requests'
@@ -24,14 +21,6 @@ MCPRepositoryPushRequest >> commandForTool: aTool [
 	^ MCPPushRepositoryCommand tool: aTool request: self
 ]
 
-{ #category : 'initialization' }
-MCPRepositoryPushRequest >> initializeFromRequest: request [
-
-	repositoryReference := MCPRepositoryReferenceSpec fromRequest:
-		                       request.
-	^ self
-]
-
 { #category : 'accessing' }
 MCPRepositoryPushRequest >> operation [
 
@@ -42,16 +31,4 @@ MCPRepositoryPushRequest >> operation [
 MCPRepositoryPushRequest >> repository [
 
 	^ self repositoryReference repository
-]
-
-{ #category : 'accessing' }
-MCPRepositoryPushRequest >> repositoryReference [
-
-	^ repositoryReference
-]
-
-{ #category : 'converting' }
-MCPRepositoryPushRequest >> requestedContext [
-
-	^ self repositoryReference requestedContext
 ]

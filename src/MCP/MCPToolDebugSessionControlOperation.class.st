@@ -159,16 +159,6 @@ MCPToolDebugSessionControlOperation >> parsedRequestFromToolRequest: request [
 ]
 
 { #category : 'private - schema' }
-MCPToolDebugSessionControlOperation >> sessionIdSchemaProperty [
-
-	^ self
-		  schemaPropertyNamed: 'sessionId'
-		  type: 'string'
-		  description:
-		  'Opaque debug session identifier returned by debug_session_list, debug_capture, debug_test_run, or debug_candidate_attach.'
-]
-
-{ #category : 'private - schema' }
 MCPToolDebugSessionControlOperation >> stateIdSchemaProperty [
 
 	^ self

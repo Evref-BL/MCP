@@ -3,10 +3,7 @@ Parsed input for repository_export. It resolves the registered Iceberg repositor
 "
 Class {
 	#name : 'MCPRepositoryExportRequest',
-	#superclass : 'Object',
-	#instVars : [
-		'repositoryReference'
-	],
+	#superclass : 'MCPRepositoryRequest',
 	#category : 'MCP-Requests',
 	#package : 'MCP',
 	#tag : 'Requests'
@@ -24,14 +21,6 @@ MCPRepositoryExportRequest >> commandForTool: aTool [
 	^ MCPExportRepositoryCommand tool: aTool request: self
 ]
 
-{ #category : 'initialization' }
-MCPRepositoryExportRequest >> initializeFromRequest: request [
-
-	repositoryReference := MCPRepositoryReferenceSpec fromRequest:
-		                       request.
-	^ self
-]
-
 { #category : 'accessing' }
 MCPRepositoryExportRequest >> operation [
 
@@ -42,16 +31,4 @@ MCPRepositoryExportRequest >> operation [
 MCPRepositoryExportRequest >> repository [
 
 	^ self repositoryReference repository
-]
-
-{ #category : 'accessing' }
-MCPRepositoryExportRequest >> repositoryReference [
-
-	^ repositoryReference
-]
-
-{ #category : 'converting' }
-MCPRepositoryExportRequest >> requestedContext [
-
-	^ self repositoryReference requestedContext
 ]

@@ -3,9 +3,8 @@ Parsed input for repository_commit. It resolves the registered Iceberg repositor
 "
 Class {
 	#name : 'MCPRepositoryCommitRequest',
-	#superclass : 'Object',
+	#superclass : 'MCPRepositoryRequest',
 	#instVars : [
-		'repositoryReference',
 		'message'
 	],
 	#category : 'MCP-Requests',
@@ -28,10 +27,8 @@ MCPRepositoryCommitRequest >> commandForTool: aTool [
 { #category : 'initialization' }
 MCPRepositoryCommitRequest >> initializeFromRequest: request [
 
-	repositoryReference := MCPRepositoryReferenceSpec fromRequest:
-		                       request.
-	message := request stringArgumentNamed: 'message'.
-	^ self
+	super initializeFromRequest: request.
+	message := request stringArgumentNamed: 'message'
 ]
 
 { #category : 'accessing' }
@@ -50,12 +47,6 @@ MCPRepositoryCommitRequest >> operation [
 MCPRepositoryCommitRequest >> repository [
 
 	^ self repositoryReference repository
-]
-
-{ #category : 'accessing' }
-MCPRepositoryCommitRequest >> repositoryReference [
-
-	^ repositoryReference
 ]
 
 { #category : 'converting' }

@@ -5,10 +5,7 @@ This command is the second step of the discoverable-tool flow: after discovery g
 "
 Class {
 	#name : 'MCPGetToolCommand',
-	#superclass : 'MCPToolRequestCommand',
-	#instVars : [
-		'toolExposurePolicy'
-	],
+	#superclass : 'MCPToolCatalogCommand',
 	#category : 'MCP-Commands',
 	#package : 'MCP',
 	#tag : 'Commands'
@@ -21,15 +18,6 @@ MCPGetToolCommand class >> tool: aTool request: aRequest [
 		  tool: aTool
 		  request: aRequest
 		  toolExposurePolicy: MCPToolExposurePolicy default
-]
-
-{ #category : 'instance creation' }
-MCPGetToolCommand class >> tool: aTool request: aRequest toolExposurePolicy: aToolExposurePolicy [
-
-	^ self new
-		  initializeTool: aTool request: aRequest;
-		  toolExposurePolicy: aToolExposurePolicy;
-		  yourself
 ]
 
 { #category : 'executing' }
@@ -46,17 +34,4 @@ MCPGetToolCommand >> execute [
 		    usingPolicy: self toolExposurePolicy
 		    includeOutputSchema: request includeOutputSchema)) }
 		  asDictionary
-]
-
-{ #category : 'accessing' }
-MCPGetToolCommand >> toolExposurePolicy [
-
-	^ toolExposurePolicy ifNil: [ MCPToolExposurePolicy default ]
-]
-
-{ #category : 'accessing' }
-MCPGetToolCommand >> toolExposurePolicy: aToolExposurePolicy [
-
-	toolExposurePolicy := aToolExposurePolicy ifNil: [
-		                      MCPToolExposurePolicy default ]
 ]

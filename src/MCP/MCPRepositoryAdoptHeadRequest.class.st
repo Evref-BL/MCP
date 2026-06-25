@@ -3,11 +3,7 @@ Parsed input for repository_head_adopt. It resolves the registered Iceberg repos
 "
 Class {
 	#name : 'MCPRepositoryAdoptHeadRequest',
-	#superclass : 'Object',
-	#instVars : [
-		'repositoryReference',
-		'branchName'
-	],
+	#superclass : 'MCPRepositoryBranchRequest',
 	#category : 'MCP-Requests',
 	#package : 'MCP',
 	#tag : 'Requests'
@@ -19,25 +15,10 @@ MCPRepositoryAdoptHeadRequest class >> fromRequest: request tool: aTool [
 	^ self new initializeFromRequest: request
 ]
 
-{ #category : 'accessing' }
-MCPRepositoryAdoptHeadRequest >> branchName [
-
-	^ branchName ifNil: [ '' ]
-]
-
 { #category : 'converting' }
 MCPRepositoryAdoptHeadRequest >> commandForTool: aTool [
 
 	^ MCPAdoptRepositoryHeadCommand tool: aTool request: self
-]
-
-{ #category : 'initialization' }
-MCPRepositoryAdoptHeadRequest >> initializeFromRequest: request [
-
-	repositoryReference := MCPRepositoryReferenceSpec fromRequest:
-		                       request.
-	branchName := request stringArgumentNamed: 'branchName'.
-	^ self
 ]
 
 { #category : 'accessing' }
@@ -50,12 +31,6 @@ MCPRepositoryAdoptHeadRequest >> operation [
 MCPRepositoryAdoptHeadRequest >> repository [
 
 	^ self repositoryReference repository
-]
-
-{ #category : 'accessing' }
-MCPRepositoryAdoptHeadRequest >> repositoryReference [
-
-	^ repositoryReference
 ]
 
 { #category : 'converting' }

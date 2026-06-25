@@ -72,17 +72,6 @@ MCPToolDebugBreakpointOperation >> breakpointToolSpec [
 ]
 
 { #category : 'metadata' }
-MCPToolDebugBreakpointOperation >> buildInputSchema [
-
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: self inputProperties;
-		  required: self requiredInputProperties;
-		  additionalProperties: false;
-		  yourself
-]
-
-{ #category : 'metadata' }
 MCPToolDebugBreakpointOperation >> buildOutputSchema [
 
 	^ self

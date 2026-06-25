@@ -75,6 +75,17 @@ MCPToolMutation >> addSupplementalSelectorFromMethodNode: methodNode to: details
 		details at: #selector ifAbsentPut: [ selector asString ] ]
 ]
 
+{ #category : 'metadata' }
+MCPToolMutation >> buildInputSchema [
+
+	^ MCPStructureInputSchema new
+		type: 'object';
+		properties: self inputProperties;
+		required: self requiredInputProperties;
+		additionalProperties: false;
+		yourself
+]
+
 { #category : 'private - refactoring' }
 MCPToolMutation >> classesRefactoringEnvironmentForClassNames: classNames baseEnvironment: baseEnvironment [
 
@@ -290,6 +301,12 @@ MCPToolMutation >> impactMessagesForRefactoringWarning: aWarning [
 				primaryMessage := aWarning class name asString ].
 			impactMessages add: primaryMessage ].
 	^ impactMessages asArray
+]
+
+{ #category : 'private - schema' }
+MCPToolMutation >> inputProperties [
+
+	self subclassResponsibility
 ]
 
 { #category : 'private - errors' }
@@ -526,6 +543,12 @@ MCPToolMutation >> requestedContextForErrorFromParsedRequest: mutationRequest ra
 	^ mutationRequest requestedContext
 ]
 
+{ #category : 'private - schema' }
+MCPToolMutation >> requiredInputProperties [
+
+	self subclassResponsibility
+]
+
 { #category : 'private - request' }
 MCPToolMutation >> resolvedRefactoringScopeClassesFrom: classNames [
 
@@ -625,6 +648,16 @@ MCPToolMutation >> unionRefactoringEnvironment: currentEnvironment with: addedEn
 MCPToolMutation >> validateRefactoringScopePackageNamesExist: packageNames [
 
 	packageNames do: [ :eachName | MCPImageLookup packageNamed: eachName ]
+]
+
+{ #category : 'validating' }
+MCPToolMutation >> validateRequest: request [
+
+	self requiredInputProperties do: [ :each |
+		(request argumentNamed: each ifAbsent: [ nil ]) ifNil: [
+			MCPInvalidToolInput
+				signalMissingRequiredArgumentNamed: each
+				forTool: self ] ]
 ]
 
 { #category : 'private - errors' }
