@@ -70,7 +70,8 @@ MCPCreateClassCommand >> buildClass [
 		builder sharedVariables: self sharedVariables ].
 	self sharedPools ifNotEmpty: [
 		builder sharedPools: self resolvedSharedPools ].
-	self layout ifNotNil: [ builder layout: self resolvedLayoutClass ].
+	self layout ifNotNil: [ :layoutName |
+		builder layout: (self resolvedLayoutClassNamed: layoutName) ].
 	createdClass := builder install.
 	^ createdClass
 ]

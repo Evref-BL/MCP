@@ -39,26 +39,26 @@ MCPClassCommand >> currentClass [
 ]
 
 { #category : 'private - resolving' }
-MCPClassCommand >> resolvedLayoutClass [
+MCPClassCommand >> resolvedLayoutClassNamed: layoutName [
 
 	| behavior |
-	self layout ifNil: [ ^ nil ].
+	layoutName ifNil: [ ^ nil ].
 	behavior := Smalltalk globals
-		at: self layout asSymbol
+		at: layoutName asSymbol
 		ifAbsent: [
 			MCPCommandError
 				signalErrorCode: #LayoutClassNotFound
-				message: 'Layout class ' , self layout , ' does not exist.'
+				message: 'Layout class ' , layoutName , ' does not exist.'
 				details: {
 					(#className -> self className).
-					(#layout -> self layout) } asDictionary ].
+					(#layout -> layoutName) } asDictionary ].
 	(AbstractLayout withAllSubclasses includes: behavior) ifFalse: [
 		MCPCommandError
 			signalErrorCode: #InvalidLayoutClass
-			message: self layout , ' not layout class.'
+			message: layoutName , ' not layout class.'
 			details: {
 				(#className -> self className).
-				(#layout -> self layout) } asDictionary ].
+				(#layout -> layoutName) } asDictionary ].
 	^ behavior
 ]
 

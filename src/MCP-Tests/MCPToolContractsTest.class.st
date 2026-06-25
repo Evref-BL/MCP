@@ -10,6 +10,21 @@ Class {
 }
 
 { #category : 'private' }
+MCPToolContractsTest >> addSelfSentNotImplementedCritiquesFrom: aMethod using: aRule to: issues [
+
+	aRule check: aMethod forCritiquesDo: [ :critique |
+		issues add: (String streamContents: [ :stream |
+			stream
+				nextPutAll: aMethod methodClass name asString;
+				nextPutAll: '>>';
+				nextPutAll: aMethod selector asString.
+			critique tinyHint ifNotNil: [ :hint |
+				stream
+					space;
+					nextPutAll: hint asString ] ]) ]
+]
+
+{ #category : 'private' }
 MCPToolContractsTest >> addUnimplementedResponsibilitiesFor: aClass behavior: aBehavior side: sideName to: issues [
 
 	aBehavior allSelectors do: [ :selector |
@@ -730,6 +745,27 @@ MCPToolContractsTest >> repositoryToolFlowSpecs [
 			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
 			  (#requestClass -> MCPRepositoryAdoptHeadRequest).
 			  (#commandClass -> MCPAdoptRepositoryHeadCommand) } asDictionary }
+]
+
+{ #category : 'private' }
+MCPToolContractsTest >> selfSentNotImplementedCritiquesForMCPMethods [
+
+	| issues package rule |
+	rule := ReSelfSentNotImplementedRule new.
+	package := PackageOrganizer default packageNamed: #MCP.
+	issues := OrderedCollection new.
+	package definedClasses do: [ :class |
+		class localMethods do: [ :method |
+			self
+				addSelfSentNotImplementedCritiquesFrom: method
+				using: rule
+				to: issues ].
+		class class localMethods do: [ :method |
+			self
+				addSelfSentNotImplementedCritiquesFrom: method
+				using: rule
+				to: issues ] ].
+	^ issues asArray sort
 ]
 
 { #category : 'private' }
@@ -1660,6 +1696,17 @@ MCPToolContractsTest >> testInputSchemaJSONOmitsDefaultSchemaNoise [
 	self deny: (schema includesKey: #anyOf).
 	self deny: (schema includesKey: #allOf).
 	self assert: (schema at: #additionalProperties) equals: false
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testMCPMethodsHaveImplementedSelfAndSuperSends [
+
+	| issues |
+	issues := self selfSentNotImplementedCritiquesForMCPMethods.
+	self
+		assert: issues isEmpty
+		description: (String streamContents: [ :stream |
+			issues do: [ :each | stream nextPutAll: each ] separatedBy: [ stream cr ] ])
 ]
 
 { #category : 'tests' }
