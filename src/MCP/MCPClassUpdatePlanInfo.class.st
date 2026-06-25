@@ -5,7 +5,7 @@ It records the selected update action and the request context used for validatio
 "
 Class {
 	#name : 'MCPClassUpdatePlanInfo',
-	#superclass : 'Object',
+	#superclass : 'MCPDataTransferObject',
 	#instVars : [
 		'requestedContext',
 		'updateAction'

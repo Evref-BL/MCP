@@ -5,7 +5,7 @@ It records package name, project names, tag names, class and extension method co
 "
 Class {
 	#name : 'MCPPackageInfo',
-	#superclass : 'Object',
+	#superclass : 'MCPDataTransferObject',
 	#instVars : [
 		'packageName',
 		'projectNames',

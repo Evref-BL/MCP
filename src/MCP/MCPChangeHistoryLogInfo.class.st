@@ -3,7 +3,7 @@ Structured metadata for one change history file.
 "
 Class {
 	#name : 'MCPChangeHistoryLogInfo',
-	#superclass : 'Object',
+	#superclass : 'MCPDataTransferObject',
 	#instVars : [
 		'fileName',
 		'exists',

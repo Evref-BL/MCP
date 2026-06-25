@@ -3,7 +3,7 @@ Structured metadata for one entry in image change history.
 "
 Class {
 	#name : 'MCPChangeHistoryEntryInfo',
-	#superclass : 'Object',
+	#superclass : 'MCPDataTransferObject',
 	#instVars : [
 		'index',
 		'eventClassName',

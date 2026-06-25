@@ -3,7 +3,7 @@ DTO for the method update action selected from an update request before the acti
 "
 Class {
 	#name : 'MCPMethodUpdatePlanInfo',
-	#superclass : 'Object',
+	#superclass : 'MCPDataTransferObject',
 	#instVars : [
 		'requestedContext',
 		'updateAction'

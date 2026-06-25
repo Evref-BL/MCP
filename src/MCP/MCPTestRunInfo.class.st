@@ -5,7 +5,7 @@ It records the selected test class or method, the number of executed tests, and 
 "
 Class {
 	#name : 'MCPTestRunInfo',
-	#superclass : 'Object',
+	#superclass : 'MCPDataTransferObject',
 	#instVars : [
 		'className',
 		'testMethodName',

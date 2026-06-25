@@ -5,7 +5,7 @@ It includes package, tag, layout, slots, traits, pools, shared variables, method
 "
 Class {
 	#name : 'MCPClassDescriptionInfo',
-	#superclass : 'Object',
+	#superclass : 'MCPDataTransferObject',
 	#instVars : [
 		'className',
 		'superclassName',

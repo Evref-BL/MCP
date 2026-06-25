@@ -2052,6 +2052,7 @@ MCPToolContractsTest >> testOutputDtoClassesUseResultInfoOrReportSuffixes [
 	| dtoClasses invalidNames suffixes |
 	dtoClasses := (self mcpClassesInPackageTagNamed: 'DTOs')
 	              , (self mcpClassesInPackageTagNamed: 'Results').
+	dtoClasses := dtoClasses reject: [ :each | each isAbstract ].
 	suffixes := #( 'Result' 'Info' 'Report' ).
 	invalidNames := dtoClasses reject: [ :each |
 		                suffixes anySatisfy: [ :suffix |

@@ -5,7 +5,7 @@ It records selector, declaring class, class-side flag, protocol, package, extens
 "
 Class {
 	#name : 'MCPCompiledMethodInfo',
-	#superclass : 'Object',
+	#superclass : 'MCPDataTransferObject',
 	#instVars : [
 		'className',
 		'selector',
@@ -24,6 +24,12 @@ Class {
 MCPCompiledMethodInfo class >> fromMethod: aCompiledMethod [
 
 	^ self new initializeFromMethod: aCompiledMethod
+]
+
+{ #category : 'converting' }
+MCPCompiledMethodInfo >> asDictionary [
+
+	^ self asDictionaryIncludingSource: false
 ]
 
 { #category : 'converting' }

@@ -5,7 +5,7 @@ It records the affected method identity and, when requested, the before and afte
 "
 Class {
 	#name : 'MCPMethodRewriteChangeInfo',
-	#superclass : 'Object',
+	#superclass : 'MCPDataTransferObject',
 	#instVars : [
 		'className',
 		'classSide',
