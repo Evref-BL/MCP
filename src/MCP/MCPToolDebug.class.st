@@ -79,7 +79,7 @@ MCPToolDebug >> executeWithRequest: request [
 { #category : 'private - schema' }
 MCPToolDebug >> inputProperties [
 
-	self subclassResponsibility
+	^ #( )
 ]
 
 { #category : 'private - schema' }
@@ -97,7 +97,7 @@ MCPToolDebug >> nonNegativeIntegerSchemaPropertyNamed: propertyName description:
 { #category : 'private - schema' }
 MCPToolDebug >> requiredInputProperties [
 
-	self subclassResponsibility
+	^ #( )
 ]
 
 { #category : 'private - execution' }

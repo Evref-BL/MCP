@@ -9,6 +9,12 @@ Class {
 	#tag : 'Debugging'
 }
 
+{ #category : 'testing' }
+MCPDebugController class >> isAbstract [
+
+	^ self == MCPDebugController
+]
+
 { #category : 'accessing' }
 MCPDebugController >> debugSession [
 

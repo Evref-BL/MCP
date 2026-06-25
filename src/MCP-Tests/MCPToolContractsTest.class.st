@@ -10,6 +10,25 @@ Class {
 }
 
 { #category : 'private' }
+MCPToolContractsTest >> addUnimplementedResponsibilitiesFor: aClass behavior: aBehavior side: sideName to: issues [
+
+	aBehavior allSelectors do: [ :selector |
+		| method |
+		selector = #subclassResponsibility ifFalse: [
+			method := aBehavior lookupSelector: selector.
+			(method notNil and: [ self methodSendsSubclassResponsibility: method ]) ifTrue: [
+				issues add: (String streamContents: [ :stream |
+					stream
+						nextPutAll: aClass name asString;
+						space;
+						nextPutAll: sideName;
+						nextPutAll: ' #';
+						nextPutAll: selector asString;
+						nextPutAll: ' inherited from ';
+						nextPutAll: method methodClass name asString ]) ] ] ]
+]
+
+{ #category : 'private' }
 MCPToolContractsTest >> assertDebugInputPropertyNamed: propertyName inTool: aTool default: defaultValue maximum: maximumValue [
 
 	| property |
@@ -608,6 +627,16 @@ MCPToolContractsTest >> methodMutationToolFlowSpecs [
 ]
 
 { #category : 'private' }
+MCPToolContractsTest >> methodSendsSubclassResponsibility: aCompiledMethod [
+
+	(aCompiledMethod sendsSelector: #subclassResponsibility) ifFalse: [ ^ false ].
+	aCompiledMethod ast nodesDo: [ :node |
+		(node isMessage and: [ node selector = #subclassResponsibility ]) ifTrue: [
+			^ true ] ].
+	^ false
+]
+
+{ #category : 'private' }
 MCPToolContractsTest >> repositoryToolFlowSpecs [
 
 	^ {
@@ -1103,6 +1132,17 @@ MCPToolContractsTest >> testClassToolsOutputSchemaAdvertisesMinimalMutationResul
 	outputSchema := MCPToolUpdateClassName new outputSchema asJRPCJSON.
 	dataProperties := ((outputSchema at: #properties) at: 'data') at: #properties.
 	self assert: dataProperties isEmpty
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testConcreteMCPClassesHaveNoUnimplementedResponsibilities [
+
+	| issues |
+	issues := self unimplementedResponsibilitiesForConcreteMCPClasses.
+	self
+		assert: issues isEmpty
+		description: (String streamContents: [ :stream |
+			issues do: [ :each | stream nextPutAll: each ] separatedBy: [ stream cr ] ])
 ]
 
 { #category : 'tests' }
@@ -3356,4 +3396,26 @@ MCPToolContractsTest >> toolFlowSpecs [
 	specs add: self debugTestToolFlowSpec.
 	^ specs asArray
 
+]
+
+{ #category : 'private' }
+MCPToolContractsTest >> unimplementedResponsibilitiesForConcreteMCPClasses [
+
+	| classes issues |
+	classes := (PackageOrganizer default packageNamed: #MCP) definedClasses
+		reject: [ :each | each isTrait ].
+	issues := OrderedCollection new.
+	classes do: [ :class |
+		class isAbstract ifFalse: [
+			self
+				addUnimplementedResponsibilitiesFor: class
+				behavior: class
+				side: 'instance'
+				to: issues.
+			self
+				addUnimplementedResponsibilitiesFor: class
+				behavior: class class
+				side: 'class'
+				to: issues ] ].
+	^ issues asArray sort
 ]

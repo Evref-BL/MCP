@@ -14,6 +14,12 @@ Class {
 	#tag : 'Commands'
 }
 
+{ #category : 'testing' }
+MCPDebugCommand class >> isAbstract [
+
+	^ self == MCPDebugCommand
+]
+
 { #category : 'instance creation' }
 MCPDebugCommand class >> tool: aTool request: aRequest [
 

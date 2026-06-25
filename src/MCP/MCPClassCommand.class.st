@@ -38,12 +38,6 @@ MCPClassCommand >> currentClass [
 	^ MCPImageLookup classNamed: self className
 ]
 
-{ #category : 'accessing' }
-MCPClassCommand >> layout [
-
-	self subclassResponsibility
-]
-
 { #category : 'private - resolving' }
 MCPClassCommand >> resolvedLayoutClass [
 
