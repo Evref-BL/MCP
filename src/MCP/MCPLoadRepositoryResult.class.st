@@ -3,7 +3,7 @@ Result DTO for repository_load. It wraps the reusable baseline load result and r
 "
 Class {
 	#name : 'MCPLoadRepositoryResult',
-	#superclass : 'Object',
+	#superclass : 'MCPResult',
 	#instVars : [
 		'mode',
 		'repositoryUrl',

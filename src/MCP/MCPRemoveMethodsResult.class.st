@@ -3,7 +3,7 @@ Result DTO produced by the method_remove command.
 "
 Class {
 	#name : 'MCPRemoveMethodsResult',
-	#superclass : 'Object',
+	#superclass : 'MCPResult',
 	#instVars : [
 		'className',
 		'classSide',

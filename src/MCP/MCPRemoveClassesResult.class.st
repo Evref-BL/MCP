@@ -5,7 +5,7 @@ It groups per-class removal results, package names removed as cleanup, and warni
 "
 Class {
 	#name : 'MCPRemoveClassesResult',
-	#superclass : 'Object',
+	#superclass : 'MCPResult',
 	#instVars : [
 		'removedClasses',
 		'removedPackageNames',

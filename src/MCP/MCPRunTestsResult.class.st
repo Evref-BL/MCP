@@ -5,7 +5,7 @@ It carries structured per-selection results plus timeout state and unrun MCPTest
 "
 Class {
 	#name : 'MCPRunTestsResult',
-	#superclass : 'Object',
+	#superclass : 'MCPResult',
 	#instVars : [
 		'results',
 		'timedOut',

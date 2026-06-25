@@ -3,7 +3,7 @@ Result DTO produced by the method_get command.
 "
 Class {
 	#name : 'MCPGetMethodResult',
-	#superclass : 'Object',
+	#superclass : 'MCPResult',
 	#instVars : [
 		'data',
 		'externalVariableCount'
@@ -19,6 +19,16 @@ MCPGetMethodResult class >> data: aDictionary externalVariableCount: anIntegerOr
 	^ self new
 		  initializeData: aDictionary
 		  externalVariableCount: anIntegerOrNil
+]
+
+{ #category : 'converting' }
+MCPGetMethodResult >> asDictionary [
+
+	| result |
+	result := self data copy.
+	self externalVariableCount ifNotNil: [ :count |
+		result at: #externalVariableCount put: count ].
+	^ result
 ]
 
 { #category : 'accessing' }

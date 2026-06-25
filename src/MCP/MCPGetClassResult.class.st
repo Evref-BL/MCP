@@ -3,7 +3,7 @@ Result DTO produced by the class_get command.
 "
 Class {
 	#name : 'MCPGetClassResult',
-	#superclass : 'Object',
+	#superclass : 'MCPResult',
 	#instVars : [
 		'className',
 		'data',
@@ -23,6 +23,18 @@ MCPGetClassResult class >> className: aClassName data: aDictionary superclasses:
 		  data: aDictionary
 		  superclasses: superclassCollection
 		  subclasses: subclassCollection
+]
+
+{ #category : 'converting' }
+MCPGetClassResult >> asDictionary [
+
+	| result |
+	result := self data copy.
+	self superclasses ifNotEmpty: [ :value |
+		result at: #superclasses put: value ].
+	self subclasses ifNotEmpty: [ :value |
+		result at: #subclasses put: value ].
+	^ result
 ]
 
 { #category : 'accessing' }

@@ -3,7 +3,7 @@ Result DTO for the reusable Metacello baseline load core. It reports baseline gr
 "
 Class {
 	#name : 'MCPLoadBaselineResult',
-	#superclass : 'Object',
+	#superclass : 'MCPResult',
 	#instVars : [
 		'baseline',
 		'groups',

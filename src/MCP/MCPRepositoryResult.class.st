@@ -3,7 +3,7 @@ Abstract base for repository result DTOs. It owns shared repository snapshot hel
 "
 Class {
 	#name : 'MCPRepositoryResult',
-	#superclass : 'Object',
+	#superclass : 'MCPResult',
 	#category : 'MCP-Results',
 	#package : 'MCP',
 	#tag : 'Results'

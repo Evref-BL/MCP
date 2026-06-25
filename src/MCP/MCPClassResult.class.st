@@ -5,7 +5,7 @@ Subclasses provide #classInfo and add operation-specific fields when needed.
 "
 Class {
 	#name : 'MCPClassResult',
-	#superclass : 'Object',
+	#superclass : 'MCPResult',
 	#category : 'MCP-Results',
 	#package : 'MCP',
 	#tag : 'Results'

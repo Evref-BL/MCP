@@ -5,7 +5,7 @@ Subclasses decide how much of the applied change to expose in #asDictionary.
 "
 Class {
 	#name : 'MCPAppliedChangeResult',
-	#superclass : 'Object',
+	#superclass : 'MCPResult',
 	#instVars : [
 		'updatePlan',
 		'changeResult'

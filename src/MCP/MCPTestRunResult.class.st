@@ -5,7 +5,7 @@ It carries the structured result entry when any tests ran, timeout state, and re
 "
 Class {
 	#name : 'MCPTestRunResult',
-	#superclass : 'Object',
+	#superclass : 'MCPResult',
 	#instVars : [
 		'timedOut',
 		'unrunTestRequests',

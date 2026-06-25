@@ -3,7 +3,7 @@ Structured coverage result DTO returned by test_coverage_run.
 "
 Class {
 	#name : 'MCPTestCoverageResult',
-	#superclass : 'Object',
+	#superclass : 'MCPResult',
 	#instVars : [
 		'coverageResult',
 		'includeCoveredMethods',

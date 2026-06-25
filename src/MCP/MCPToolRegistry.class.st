@@ -470,7 +470,7 @@ MCPToolRegistry class >> publicToolNames [
 { #category : 'tools' }
 MCPToolRegistry class >> publicTools [
 
-	^ (self registrations collect: [ :each | each tool ]) asArray
+	^ self registrations collect: [ :each | each tool ]
 ]
 
 { #category : 'tools' }
