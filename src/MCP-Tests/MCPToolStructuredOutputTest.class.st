@@ -549,36 +549,39 @@ MCPToolStructuredOutputTest >> testRunTestsTimeoutReturnsPartialResultsAndUnrunS
 	| data request resumedData resumedResult result runTestsRequest tool |
 	tool := MCPToolRunTests new.
 	runTestsRequest := MCPRunTestsRequest new
-		                   initializeTestRequests: {
-			                   (MCPTestRunRequest className:
-			                    'MCPToolRunTestsTimeoutTarget').
-			                   (MCPTestRunRequest className:
-			                    'MCPToolCoverageTargetTest') }
-		                   timeoutMilliseconds: 100
-		                   operation: 'run'
-		                   coverageRequest: nil.
+		initializeTestRequests: {
+			(MCPTestRunRequest className: 'MCPToolRunTestsTimeoutTarget').
+			(MCPTestRunRequest className: 'MCPToolCoverageTargetTest').
+			(MCPTestRunRequest packageName: 'MCP-Spec-Tests') }
+		timeoutMilliseconds: 100
+		operation: 'run'
+		coverageRequest: nil.
 	result := (tool commandForRequest: runTestsRequest) execute.
 	data := result asDictionary.
 	self assert: (data at: #timedOut).
 	self assert: (data at: #runCount) equals: 1.
 	self assert: (data at: #passedCount) equals: 1.
-	self assert: (data at: #unrunMethods) equals:
-		#( 'MCPToolRunTestsTimeoutTarget>>#testSlowPass' ).
-	self assert: (data at: #unrunClasses) equals:
-		#( 'MCPToolCoverageTargetTest' ).
+	self
+		assert: (data at: #unrunMethods)
+		equals: #( 'MCPToolRunTestsTimeoutTarget>>#testSlowPass' ).
+	self
+		assert: (data at: #unrunClasses)
+		equals: #( 'MCPToolCoverageTargetTest' ).
+	self assert: (data at: #unrunPackages) equals: #( 'MCP-Spec-Tests' ).
 	request := Dictionary new
-		           at: #methods put: (data at: #unrunMethods);
-		           at: #classes put: (data at: #unrunClasses);
-		           at: #timeoutSeconds put: 1;
-		           yourself.
+		at: #methods put: (data at: #unrunMethods);
+		at: #classes put: (data at: #unrunClasses);
+		at: #packages put: (data at: #unrunPackages);
+		at: #timeoutSeconds put: 30;
+		yourself.
 	resumedResult := self callToolNamed: 'test_run' withArguments: request.
 	resumedData := self dataFrom: resumedResult.
 	self
 		assert: ((self structuredContentFrom: resumedResult) at: #status)
 		equals: 'ok'.
 	self deny: (resumedData includesKey: #timedOut).
-	self assert: (resumedData at: #runCount) equals: 3.
-	self assert: (resumedData at: #passedCount) equals: 3
+	self assert: (resumedData at: #passedCount) equals: (resumedData at: #runCount).
+	self assert: (resumedData at: #runCount) > 3
 ]
 
 { #category : 'tests' }

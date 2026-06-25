@@ -308,7 +308,8 @@ MCPToolRunTests >> successSummaryForData: data [
 	failureCount := (data at: #failures ifAbsent: [ #( ) ]) size.
 	errorCount := (data at: #errors ifAbsent: [ #( ) ]) size.
 	timedOut := data at: #timedOut ifAbsent: [ false ].
-	unrunCount := (data at: #unrunClasses ifAbsent: [ #( ) ]) size
+	unrunCount := (data at: #unrunPackages ifAbsent: [ #( ) ]) size
+		+ (data at: #unrunClasses ifAbsent: [ #( ) ]) size
 		+ (data at: #unrunMethods ifAbsent: [ #( ) ]) size.
 	coverage := data at: #coverage ifAbsent: [ nil ].
 	^ String streamContents: [ :stream |
@@ -420,6 +421,10 @@ MCPToolRunTests >> testRunDataProperties [
 		(self
 			booleanSchemaPropertyNamed: 'timedOut'
 			description: 'Timeout stopped run.').
+		(self
+			stringArraySchemaNamed: 'unrunPackages'
+			description: 'Unrun test packages.'
+			itemDescription: nil).
 		(self
 			stringArraySchemaNamed: 'unrunClasses'
 			description: 'Unrun test classes.'

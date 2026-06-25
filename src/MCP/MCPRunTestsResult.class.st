@@ -29,7 +29,7 @@ MCPRunTestsResult class >> results: resultCollection timedOut: aBoolean unrunTes
 { #category : 'converting' }
 MCPRunTestsResult >> asDictionary [
 
-	| data errors failures skipped unrunClasses unrunMethods |
+	| data errors failures skipped unrunClasses unrunMethods unrunPackages |
 	data := Dictionary new.
 	data at: #runCount put: self runCount.
 	data at: #passedCount put: self passedCount.
@@ -43,6 +43,9 @@ MCPRunTestsResult >> asDictionary [
 		data at: #coverage put: coverageResult asDictionary ].
 	self timedOut ifTrue: [
 		data at: #timedOut put: true.
+		unrunPackages := self unrunPackageNames.
+		unrunPackages ifNotEmpty: [
+			data at: #unrunPackages put: unrunPackages ].
 		unrunClasses := self unrunClassNames.
 		unrunClasses ifNotEmpty: [
 			data at: #unrunClasses put: unrunClasses ].
@@ -181,7 +184,7 @@ MCPRunTestsResult >> unrunClassNames [
 
 	^ self uniqueStringsFrom: (Array streamContents: [ :stream |
 		self unrunTests do: [ :request |
-			request hasTestMethod ifFalse: [
+			(request isPackageRequest not and: [ request hasTestMethod not ]) ifTrue: [
 				stream nextPut: request className ] ] ])
 ]
 
@@ -192,6 +195,15 @@ MCPRunTestsResult >> unrunMethodReferences [
 		self unrunTests do: [ :request |
 			request hasTestMethod ifTrue: [
 				stream nextPut: request displayName ] ] ])
+]
+
+{ #category : 'converting' }
+MCPRunTestsResult >> unrunPackageNames [
+
+	^ self uniqueStringsFrom: (Array streamContents: [ :stream |
+		self unrunTests do: [ :request |
+			request isPackageRequest ifTrue: [
+				stream nextPut: request packageName ] ] ])
 ]
 
 { #category : 'converting' }

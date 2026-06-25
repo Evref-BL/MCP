@@ -2509,9 +2509,9 @@ MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 	| coverageDataProperties coverageInputProperties coverageInputProperty coverageTool dataProperties inputPropertyNames outputSchema tool |
 	tool := MCPToolRunTests new.
 	self assert: tool name equals: 'test_run'.
-	self assert: (tool inputSchema required ifNil: [ #(  ) ]) isEmpty.
+	self assert: (tool inputSchema required ifNil: [ #( ) ]) isEmpty.
 	inputPropertyNames := tool inputSchema properties collect: [ :each |
-		                      each name ].
+		each name ].
 	self
 		assert: inputPropertyNames asSet
 		equals: #( 'packages' 'classes' 'methods' 'timeoutSeconds' ) asSet.
@@ -2525,6 +2525,7 @@ MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 	self assert: (dataProperties includesKey: 'skipped').
 	self assert: (dataProperties includesKey: 'failures').
 	self assert: (dataProperties includesKey: 'errors').
+	self assert: (dataProperties includesKey: 'unrunPackages').
 	self assert: (dataProperties includesKey: 'unrunClasses').
 	self assert: (dataProperties includesKey: 'unrunMethods').
 	self deny: (dataProperties includesKey: 'results').
@@ -2534,7 +2535,7 @@ MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 	self assert: coverageTool name equals: 'test_coverage_run'.
 	self assert: coverageTool inputSchema required asSet equals: #( 'coverage' ) asSet.
 	inputPropertyNames := coverageTool inputSchema properties collect: [ :each |
-		                      each name ].
+		each name ].
 	self
 		assert: inputPropertyNames asSet
 		equals:
@@ -2542,34 +2543,44 @@ MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 	self deny: (inputPropertyNames includes: 'tests').
 	self deny: (inputPropertyNames includes: 'timeoutMilliseconds').
 	coverageInputProperty := coverageTool inputSchema properties detect: [ :each |
-		                         each name = 'coverage' ].
-	coverageInputProperties := coverageInputProperty extraProperties at: #properties.
-	self assert: (coverageInputProperties anySatisfy: [ :each |
-			 each name = 'methodLimit' ]).
+		each name = 'coverage' ].
+	coverageInputProperties := coverageInputProperty asJRPCJSON at: #properties.
+	self
+		assert: coverageInputProperties keys asSet
+		equals: #( 'scope' 'side' 'includeCoveredMethods' 'methodLimit' ) asSet.
 	outputSchema := coverageTool outputSchema asJRPCJSON.
-	coverageDataProperties := ((outputSchema at: #properties) at: 'data')
-		                          at: #properties.
-	self assert: (coverageDataProperties includesKey: 'runCount').
-	self assert: (coverageDataProperties includesKey: 'passedCount').
-	self assert: (coverageDataProperties includesKey: 'coverage').
-	self deny: (coverageDataProperties includesKey: 'results')
+	dataProperties := ((outputSchema at: #properties) at: 'data') at: #properties.
+	self assert: (dataProperties includesKey: 'coverage').
+	self assert: (dataProperties includesKey: 'runCount').
+	self assert: (dataProperties includesKey: 'passedCount').
+	self assert: (dataProperties includesKey: 'unrunPackages').
+	coverageDataProperties := (dataProperties at: 'coverage') at: #properties.
+	self assert: (coverageDataProperties includesKey: 'methodCount').
+	self assert: (coverageDataProperties includesKey: 'uncoveredMethods').
+	self assert: (coverageDataProperties includesKey: 'partiallyCoveredMethods')
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testRunTestsExpandsPackagesToConcreteTestClasses [
+MCPToolContractsTest >> testRunTestsKeepsPackagesAsPackageSelections [
 
-	| classNames parsedRequest rawRequest tool |
+	| command parsedRequest rawRequest testCases testRequests tool validatedRequests |
 	tool := MCPToolRunTests new.
 	rawRequest := tool requestFromToolCallArguments:
-		              { (#packages -> #( 'MCP-Tests' )) } asDictionary.
+		{ (#packages -> #( 'MCP-Tests' )) } asDictionary.
 	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
-	classNames := parsedRequest testRequests collect: [ :each |
-		              each className ].
-	self assert: classNames isSorted.
-	self assert: (classNames includes: 'MCPToolContractsTest').
-	self deny: (classNames includes: 'MCPToolStructuredOutputTestTarget').
-	self assert: (parsedRequest testRequests allSatisfy: [ :each |
-			 each testMethodName isNil ])
+	testRequests := parsedRequest testRequests.
+	self assert: testRequests size equals: 1.
+	self assert: testRequests first isPackageRequest.
+	self assert: testRequests first packageName equals: 'MCP-Tests'.
+	self assert: testRequests first displayName equals: 'MCP-Tests'.
+	self assert: testRequests first className equals: nil.
+	self assert: testRequests first testMethodName equals: nil.
+	command := tool commandForRequest: parsedRequest.
+	validatedRequests := command validatedRequestsFrom: testRequests.
+	self assert: validatedRequests first isPackageRequest.
+	testCases := command testCasesForValidatedRequest: validatedRequests first.
+	self assert: testCases notEmpty.
+	self assert: (testCases noneSatisfy: [ :each | each class isAbstract ])
 ]
 
 { #category : 'tests' }

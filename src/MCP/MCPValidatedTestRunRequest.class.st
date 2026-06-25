@@ -1,7 +1,7 @@
 "
 Validated test_run selection.
 
-It pairs the parsed test run request with the resolved test class that the command will execute.
+Class and method selections store their resolved test class. Package selections keep a nil test class and are expanded by MCPRunTestsCommand when execution reaches them.
 "
 Class {
 	#name : 'MCPValidatedTestRunRequest',
@@ -51,6 +51,18 @@ MCPValidatedTestRunRequest >> initializeRequest: aTestRunRequest testClass: aTes
 	testRunRequest := aTestRunRequest.
 	testClass := aTestClass.
 	^ self
+]
+
+{ #category : 'testing' }
+MCPValidatedTestRunRequest >> isPackageRequest [
+
+	^ self testRunRequest isPackageRequest
+]
+
+{ #category : 'accessing' }
+MCPValidatedTestRunRequest >> packageName [
+
+	^ self testRunRequest packageName
 ]
 
 { #category : 'accessing' }

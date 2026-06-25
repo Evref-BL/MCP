@@ -1,12 +1,13 @@
 "
 Parsed test_run selection.
 
-A request represents either a whole test class or one test method. Package selections are expanded into class requests before execution.
+A request represents one package, one whole test class, or one test method. Package selections remain package requests until execution so timeout reporting can distinguish unentered packages from interrupted classes.
 "
 Class {
 	#name : 'MCPTestRunRequest',
 	#superclass : 'Object',
 	#instVars : [
+		'packageName',
 		'className',
 		'testMethodName'
 	],
@@ -25,8 +26,9 @@ MCPTestRunRequest class >> className: aClassName [
 MCPTestRunRequest class >> className: aClassName testMethodName: aTestMethodName [
 
 	^ self new
-		  initializeClassName: aClassName
-		  testMethodName: aTestMethodName
+		initializePackageName: nil
+		className: aClassName
+		testMethodName: aTestMethodName
 ]
 
 { #category : 'instance creation' }
@@ -48,25 +50,23 @@ MCPTestRunRequest class >> fromMethodReference: aString [
 ]
 
 { #category : 'instance creation' }
-MCPTestRunRequest class >> fromValue: rawValue usingToolRequest: toolRequest [
+MCPTestRunRequest class >> packageName: aPackageName [
 
-	| className testMethodName |
-	className := toolRequest
-		             stringArgumentNamed: 'className'
-		             in: rawValue.
-	className ifNil: [
-		Error signal: 'tests must contain only non-empty class names.' ].
-	testMethodName := toolRequest
-		                  stringArgumentNamed: 'testMethodName'
-		                  in: rawValue.
-	^ self className: className testMethodName: testMethodName
+	^ self new
+		initializePackageName: aPackageName
+		className: nil
+		testMethodName: nil
 ]
 
 { #category : 'converting' }
 MCPTestRunRequest >> asDictionary [
 
 	| data |
-	data := { (#className -> self className) } asDictionary.
+	data := Dictionary new.
+	self isPackageRequest ifTrue: [
+		data at: #packageName put: self packageName.
+		^ data ].
+	data at: #className put: self className.
 	self testMethodName ifNotNil: [
 		data at: #testMethodName put: self testMethodName ].
 	^ data
@@ -81,6 +81,7 @@ MCPTestRunRequest >> className [
 { #category : 'accessing' }
 MCPTestRunRequest >> displayName [
 
+	self isPackageRequest ifTrue: [ ^ self packageName ].
 	^ self testMethodName
 		ifNil: [ self className ]
 		ifNotNil: [ :methodName | self className , '>>#' , methodName ]
@@ -95,9 +96,30 @@ MCPTestRunRequest >> hasTestMethod [
 { #category : 'initialization' }
 MCPTestRunRequest >> initializeClassName: aClassName testMethodName: aTestMethodName [
 
+	self
+		initializePackageName: nil
+		className: aClassName
+		testMethodName: aTestMethodName
+]
+
+{ #category : 'initialization' }
+MCPTestRunRequest >> initializePackageName: aPackageName className: aClassName testMethodName: aTestMethodName [
+
+	packageName := aPackageName.
 	className := aClassName.
-	testMethodName := aTestMethodName.
-	^ self
+	testMethodName := aTestMethodName
+]
+
+{ #category : 'testing' }
+MCPTestRunRequest >> isPackageRequest [
+
+	^ self packageName notNil
+]
+
+{ #category : 'accessing' }
+MCPTestRunRequest >> packageName [
+
+	^ packageName
 ]
 
 { #category : 'printing' }

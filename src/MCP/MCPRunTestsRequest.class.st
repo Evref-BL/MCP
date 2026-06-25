@@ -1,5 +1,7 @@
 "
-Parsed request for the shared test runner command. It contains parsed test requests, the timeout converted to milliseconds, and the internal operation selected by the concrete tool. Coverage requests are supplied by MCPToolRunTestCoverage.
+Parsed request shared by test_run and test_coverage_run.
+
+It stores compact test selections, timeout converted to milliseconds, and the internal operation selected by the concrete tool. Coverage requests are supplied by MCPToolRunTestCoverage.
 "
 Class {
 	#name : 'MCPRunTestsRequest',
@@ -33,8 +35,7 @@ MCPRunTestsRequest class >> addMethodReferences: methodReferences to: requests [
 MCPRunTestsRequest class >> addPackageNames: packageNames to: requests [
 
 	packageNames do: [ :packageName |
-		(self testClassesInPackageNamed: packageName) do: [ :testClass |
-			requests add: (MCPTestRunRequest className: testClass name asString) ] ]
+		requests add: (MCPTestRunRequest packageName: packageName) ]
 ]
 
 { #category : 'instance creation' }
@@ -55,16 +56,6 @@ MCPRunTestsRequest class >> fromRequest: aRequest tool: aTool operation: operati
 			defaultSeconds: aTool defaultTimeoutSeconds)
 		operation: operation
 		coverageRequest: coverageRequest
-]
-
-{ #category : 'private - parsing' }
-MCPRunTestsRequest class >> testClassesInPackageNamed: packageName [
-
-	| package |
-	package := MCPImageLookup packageNamed: packageName scopeName: 'packages'.
-	^ (package definedClasses select: [ :each |
-		each isTestCase and: [ each isAbstract not ] ]) asArray
-		sort: [ :left :right | left name <= right name ]
 ]
 
 { #category : 'private - parsing' }
