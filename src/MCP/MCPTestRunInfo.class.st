@@ -1,7 +1,7 @@
 "
-DTO for one completed test_run selection.
+Internal DTO for one executed test_run selection.
 
-It records the selected test class or method, the number of executed tests, and structured issue dictionaries captured during the run.
+It records counts and normalized issue dictionaries so MCPRunTestsResult can build compact aggregate output.
 "
 Class {
 	#name : 'MCPTestRunInfo',

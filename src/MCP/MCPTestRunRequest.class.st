@@ -1,7 +1,7 @@
 "
-Parsed request DTO for one test_run selection.
+Parsed test_run selection.
 
-It represents either a full test class run or one specific test method inside the batch.
+A request represents either a whole test class or one test method. Package selections are expanded into class requests before execution.
 "
 Class {
 	#name : 'MCPTestRunRequest',
@@ -16,11 +16,35 @@ Class {
 }
 
 { #category : 'instance creation' }
+MCPTestRunRequest class >> className: aClassName [
+
+	^ self className: aClassName testMethodName: nil
+]
+
+{ #category : 'instance creation' }
 MCPTestRunRequest class >> className: aClassName testMethodName: aTestMethodName [
 
 	^ self new
 		  initializeClassName: aClassName
 		  testMethodName: aTestMethodName
+]
+
+{ #category : 'instance creation' }
+MCPTestRunRequest class >> fromMethodReference: aString [
+
+	| className delimiterIndex selector |
+	delimiterIndex := aString findString: '>>' startingAt: 1.
+	delimiterIndex isZero ifTrue: [
+		Error signal: 'methods must use Class>>#selector references.' ].
+	className := (aString copyFrom: 1 to: delimiterIndex - 1) trimBoth.
+	selector := (aString
+		copyFrom: delimiterIndex + 2
+		to: aString size) trimBoth.
+	(selector notEmpty and: [ selector first = $# ]) ifTrue: [
+		selector := selector allButFirst ].
+	(className isEmpty or: [ selector isEmpty ]) ifTrue: [
+		Error signal: 'methods must use Class>>#selector references.' ].
+	^ self className: className testMethodName: selector
 ]
 
 { #category : 'instance creation' }
@@ -54,12 +78,12 @@ MCPTestRunRequest >> className [
 	^ className
 ]
 
-{ #category : 'printing' }
+{ #category : 'accessing' }
 MCPTestRunRequest >> displayName [
 
 	^ self testMethodName
-		  ifNil: [ self className ]
-		  ifNotNil: [ :methodName | self className , '>>' , methodName ]
+		ifNil: [ self className ]
+		ifNotNil: [ :methodName | self className , '>>#' , methodName ]
 ]
 
 { #category : 'testing' }

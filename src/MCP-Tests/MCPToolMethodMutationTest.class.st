@@ -952,6 +952,32 @@ MCPToolMethodMutationTest >> testCompileReturnsStructuredCommandErrorForUndeclar
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileStoresMethodSourceWithoutFormatterCorruption [
+
+	| result selector source storedSource |
+	selector := #sourceIntegrityProbe.
+	source := 'sourceIntegrityProbe
+	| values |
+	values := #(1 2) collect: [ :each | each asString ].
+	^ '','' join: values'.
+	[
+		result := self callToolWith: (self
+				           compileArgumentsForClassName:
+				           'MCPToolMethodMutationTestTarget'
+				           classSide: false
+				           methodSource: source
+				           protocol: 'tests').
+		storedSource := (MCPToolMethodMutationTestTarget >> selector) sourceCode.
+		self deny: (result at: #isError ifAbsent: [ false ]).
+		self assert: (storedSource includesSubstring: 'each asString').
+		self
+			assert: (MCPToolMethodMutationTestTarget new perform: selector)
+			equals: '1,2' ]
+		ensure: [
+			self removeSelector: selector from: MCPToolMethodMutationTestTarget ]
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testCompilesClassSideMethod [
 
 	| data result |
@@ -1089,25 +1115,6 @@ MCPToolMethodMutationTest >> testNormalizesLineFeedStringLiteralBeforeCompilatio
 				self
 					removeSelector: #multilineStringAnswer
 					from: MCPToolMethodMutationTestTarget ]
-]
-
-{ #category : 'tests' }
-MCPToolMethodMutationTest >> testReformatsMethod [
-
-	| data reformattedSource result source |
-	source := 'uglyAnswer   ^   1+2'.
-	result := self callToolWith: (self
-			           compileArgumentsForClassName:
-			           'MCPToolMethodMutationTestTarget'
-			           classSide: false
-			           methodSource: source
-			           protocol: 'tests').
-	data := self dataFrom: result.
-	reformattedSource := (MCPToolMethodMutationTestTarget >> #uglyAnswer)
-		                     sourceCode.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (reformattedSource includesSubstring: '1 + 2').
-	self assert: MCPToolMethodMutationTestTarget new uglyAnswer equals: 3
 ]
 
 { #category : 'tests' }
@@ -1273,40 +1280,34 @@ MCPToolMethodMutationTest >> testRenameCanLimitRefactoringToNamedPackages [
 ]
 
 { #category : 'tests' }
-MCPToolMethodMutationTest >> testRenameReturnsFormattedSourceForRenamedMethod [
+MCPToolMethodMutationTest >> testRenameKeepsRenamedMethodCallable [
 
-	| data newSelector oldSelector renamedSource result |
+	| newSelector oldSelector result target |
 	oldSelector := ('uglyRename:' , 'with:') asSymbol.
 	newSelector := ('with:' , 'uglyRename:') asSymbol.
 	[
 		self
 			ensureMethodSource:
-			'uglyRename: first  with:second ^first,''-'',second'
+			'uglyRename: first with: second ^ first , ''-'' , second'
 			protocol: 'tests'
 			on: MCPToolMethodMutationTestTarget.
 		result := self callToolWith: {
-				          (#action -> 'update').
-				          (#className -> 'MCPToolMethodMutationTestTarget').
-				          (#classSide -> false).
-				          (#selector -> oldSelector asString).
-				          (#newSelector -> newSelector asString).
-				          (#permutation -> #( 2 1 )) } asDictionary.
-		data := self dataFrom: result.
-		renamedSource := (MCPToolMethodMutationTestTarget >> newSelector)
-			                 sourceCode.
+				 (#action -> 'update').
+				 (#className -> 'MCPToolMethodMutationTestTarget').
+				 (#classSide -> false).
+				 (#selector -> oldSelector asString).
+				 (#newSelector -> newSelector asString).
+				 (#permutation -> #( 2 1 )) } asDictionary.
+		target := MCPToolMethodMutationTestTarget new.
 		self deny: (result at: #isError ifAbsent: [ false ]).
-		self assert:
-			(renamedSource includesSubstring: 'with: second uglyRename: first').
-		self assert:
-			(renamedSource includesSubstring: '^ first , ''-'' , second') ]
+		self deny: (MCPToolMethodMutationTestTarget includesSelector: oldSelector).
+		self assert: (MCPToolMethodMutationTestTarget includesSelector: newSelector).
+		self
+			assert: (target perform: newSelector with: 'right' with: 'left')
+			equals: 'left-right' ]
 		ensure: [
-				self
-					removeSelector: oldSelector
-					from: MCPToolMethodMutationTestTarget.
-				self
-					removeSelector: newSelector
-					from: MCPToolMethodMutationTestTarget ]
-
+			self removeSelector: oldSelector from: MCPToolMethodMutationTestTarget.
+			self removeSelector: newSelector from: MCPToolMethodMutationTestTarget ]
 ]
 
 { #category : 'tests' }

@@ -18,60 +18,34 @@ MCPToolRunTestCoverage class >> toolName [
 { #category : 'metadata' }
 MCPToolRunTestCoverage >> buildInputSchema [
 
+	| timeoutProperty |
+	timeoutProperty := self
+		integerSchemaPropertyNamed: 'timeoutSeconds'
+		description: 'Timeout seconds; 0 returns immediately.'
+		default: self defaultTimeoutSeconds.
+	timeoutProperty minimum: 0.
 	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: {
-				  ((MCPStructureProperties new
-					    name: 'tests';
-					    type: 'array';
-					    description: 'Test requests.')
-					   items: self testRequestObjectSchema;
-					   yourself).
-				  self coverageOptionsObjectSchema.
-				  (self
-					   integerSchemaPropertyNamed: 'timeoutSeconds'
-					   description: 'Timeout in seconds; 0 returns immediately.'
-					   default: self defaultTimeoutSeconds).
-				  (self
-					   integerSchemaPropertyNamed: 'timeoutMilliseconds'
-					   description: 'Timeout in milliseconds.') };
-		  required: #( 'tests' 'coverage' );
-		  yourself
+		type: 'object';
+		properties: self testSelectionInputProperties , {
+			self coverageOptionsObjectSchema.
+			timeoutProperty };
+		required: #( 'coverage' );
+		yourself
 ]
 
 { #category : 'metadata' }
 MCPToolRunTestCoverage >> buildOutputSchema [
 
-	| coverageProperty resultsProperty unrunTestsProperty |
-	resultsProperty := self
-		                   schemaPropertyNamed: 'results'
-		                   type: 'array'
-		                   description:
-		                   'Structured results for each test execution request in the batch that completed before timeout.'.
-	resultsProperty items: self testResultObjectSchema.
-	unrunTestsProperty := self
-		                      schemaPropertyNamed: 'unrunTests'
-		                      type: 'array'
-		                      description:
-		                      'Test execution requests that did not run because the batch timed out. Pass this array to test_coverage_run to continue from the timeout point.'.
-	unrunTestsProperty items: self testRequestObjectSchema.
-	coverageProperty := self coverageResultObjectSchema.
 	^ self
-		  standardOutputSchemaForDataProperties: {
-				  resultsProperty.
-				  coverageProperty.
-				  (self
-					   booleanSchemaPropertyNamed: 'timedOut'
-					   description:
-					   'Whether the batch stopped early because timeoutSeconds elapsed.').
-				  unrunTestsProperty }
-		  required: #( 'results' 'coverage' )
+		standardOutputSchemaForDataProperties:
+			self testRunDataProperties , { self coverageResultObjectSchema }
+		required: #( 'runCount' 'passedCount' 'coverage' )
 ]
 
 { #category : 'metadata' }
 MCPToolRunTestCoverage >> description [
 
-	^ 'Run test classes or individual test methods under coverage and return aggregated test and method coverage results.'
+	^ 'Run tests under coverage return compact aggregate test coverage results.'
 ]
 
 { #category : 'private - request' }

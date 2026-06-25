@@ -285,9 +285,6 @@ MCPToolMethodMutation >> parsedRequestFromToolRequest: request [
 { #category : 'private' }
 MCPToolMethodMutation >> reformattedMethodForBehavior: aBehavior selector: aSelector [
 
-	| compiledMethod |
-	compiledMethod := aBehavior >> aSelector.
-	compiledMethod reformat.
 	^ aBehavior >> aSelector
 ]
 

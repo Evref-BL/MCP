@@ -1,5 +1,7 @@
 "
-Run SUnit test classes or individual methods and return structured per-selection results. Coverage is exposed by MCPToolRunTestCoverage while both tools share the same command pipeline.
+Run test packages, classes, or methods and return compact aggregate results.
+
+MCPToolRunTestCoverage reuses the same selection and execution pipeline with coverage collection enabled.
 "
 Class {
 	#name : 'MCPToolRunTests',
@@ -20,51 +22,24 @@ MCPToolRunTests class >> toolName [
 { #category : 'metadata' }
 MCPToolRunTests >> buildInputSchema [
 
+	| timeoutProperty |
+	timeoutProperty := self
+		integerSchemaPropertyNamed: 'timeoutSeconds'
+		description: 'Timeout seconds; 0 returns immediately.'
+		default: self defaultTimeoutSeconds.
+	timeoutProperty minimum: 0.
 	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: {
-				  ((MCPStructureProperties new
-					    name: 'tests';
-					    type: 'array';
-					    description: 'Test requests.')
-					   items: self testRequestObjectSchema;
-					   yourself).
-				  (self
-					   integerSchemaPropertyNamed: 'timeoutSeconds'
-					   description: 'Timeout in seconds; 0 returns immediately.'
-					   default: self defaultTimeoutSeconds).
-				  (self
-					   integerSchemaPropertyNamed: 'timeoutMilliseconds'
-					   description: 'Timeout in milliseconds.') };
-		  required: #( 'tests' );
-		  yourself
+		type: 'object';
+		properties: self testSelectionInputProperties , { timeoutProperty };
+		yourself
 ]
 
 { #category : 'metadata' }
 MCPToolRunTests >> buildOutputSchema [
 
-	| resultsProperty unrunTestsProperty |
-	resultsProperty := self
-		                   schemaPropertyNamed: 'results'
-		                   type: 'array'
-		                   description:
-		                   'Structured results for each test execution request in the batch that completed before timeout.'.
-	resultsProperty items: self testResultObjectSchema.
-	unrunTestsProperty := self
-		                      schemaPropertyNamed: 'unrunTests'
-		                      type: 'array'
-		                      description:
-		                      'Test execution requests that did not run because the batch timed out. Pass this array to test_run to continue from the timeout point.'.
-	unrunTestsProperty items: self testRequestObjectSchema.
 	^ self
-		  standardOutputSchemaForDataProperties: {
-				  resultsProperty.
-				  (self
-					   booleanSchemaPropertyNamed: 'timedOut'
-					   description:
-					   'Whether the batch stopped early because timeoutSeconds elapsed.').
-				  unrunTestsProperty }
-		  required: #( 'results' )
+		standardOutputSchemaForDataProperties: self testRunDataProperties
+		required: #( 'runCount' 'passedCount' )
 ]
 
 { #category : 'private - execution' }
@@ -246,25 +221,23 @@ MCPToolRunTests >> defaultTimeoutSeconds [
 { #category : 'metadata' }
 MCPToolRunTests >> description [
 
-	^ 'Run test classes or individual test methods as a batch and return aggregated results.'
+	^ 'Run test packages, classes, methods return compact aggregate results.'
 ]
 
 { #category : 'private' }
 MCPToolRunTests >> errorResultForError: anError testNames: testNames [
 
 	^ anError
-		  mcpCommandErrorDo: [ :commandError |
-				  self
-					  errorResultText: commandError messageText
-					  details: commandError structuredDetails ]
-		  otherwise: [ :toolError |
-				  self
-					  errorResultText:
-					  (self failureMessageForTestNames: testNames error: toolError)
-					  details: {
-							  (#errorClass -> toolError class name).
-							  (#message -> toolError messageText).
-							  (#tests -> testNames) } asDictionary ]
+		mcpCommandErrorDo: [ :commandError |
+			self
+				errorResultText: commandError messageText
+				details: commandError structuredDetails ]
+		otherwise: [ :toolError |
+			self
+				errorResultText: (self failureMessageForTestNames: testNames error: toolError)
+				details: {
+					(#errorClass -> toolError class name).
+					(#message -> toolError messageText) } asDictionary ]
 ]
 
 { #category : 'executing' }
@@ -289,13 +262,16 @@ MCPToolRunTests >> executeWithRequest: request [
 MCPToolRunTests >> failureMessageForTestNames: testNames error: anError [
 
 	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Unable to run tests: ';
-				  nextPutAll: (', ' join: testNames);
-				  nextPutAll: ' (';
-				  nextPutAll: anError class name;
-				  nextPutAll: '): ';
-				  nextPutAll: anError messageText ]
+		stream nextPutAll: 'Unable to run tests'.
+		testNames ifNotEmpty: [
+			stream
+				nextPutAll: ': ';
+				nextPutAll: (', ' join: testNames) ].
+		stream
+			nextPutAll: ' (';
+			nextPutAll: anError class name;
+			nextPutAll: '): ';
+			nextPutAll: anError messageText ]
 ]
 
 { #category : 'private - request' }
@@ -304,220 +280,107 @@ MCPToolRunTests >> parsedRequestFromToolRequest: request [
 	^ MCPRunTestsRequest fromRequest: request tool: self operation: 'run'
 ]
 
-{ #category : 'private - tests' }
-MCPToolRunTests >> standardTestDataPropertiesIncludingMethodName: includeMethodName [
+{ #category : 'private - errors' }
+MCPToolRunTests >> rawStringCollectionNamed: argumentName fromRequest: rawRequest [
 
-	| issuesProperty properties |
-	properties := OrderedCollection withAll: {
-			              (self
-				               schemaPropertyNamed: 'className'
-				               type: 'string'
-				               description: 'The test class that was executed.').
-			              (self
-				               integerSchemaPropertyNamed: 'selectedTestCount'
-				               description:
-				               'The number of unique concrete test cases selected for this request after batch deduplication.').
-			              (self
-				               integerSchemaPropertyNamed: 'runCount'
-				               description:
-				               'The number of non-skipped test cases that ran.').
-			              (self
-				               integerSchemaPropertyNamed: 'passedCount'
-				               description:
-				               'The number of test cases that passed.').
-			              (self
-				               integerSchemaPropertyNamed: 'skippedCount'
-				               description:
-				               'The number of test cases that were skipped.').
-			              (self
-				               integerSchemaPropertyNamed: 'failureCount'
-				               description:
-				               'The number of test cases that failed assertions.').
-			              (self
-				               integerSchemaPropertyNamed: 'errorCount'
-				               description:
-				               'The number of test cases that raised errors.') }.
-	includeMethodName ifTrue: [
-			properties add: (self
-					 schemaPropertyNamed: 'testMethodName'
-					 type: 'string'
-					 description: 'The single test method that was executed.') ].
-	issuesProperty := self
-		                  schemaPropertyNamed: 'issues'
-		                  type: 'array'
-		                  description:
-		                  'Detailed issues captured while running tests.'.
-	issuesProperty items: self testIssueObjectSchema.
-	properties add: issuesProperty.
-	^ properties asArray
+	| value |
+	value := rawRequest argumentNamed: argumentName ifAbsent: [ ^ #( ) ].
+	value isArray ifFalse: [ ^ #( ) ].
+	^ (value collect: [ :each | each asString ]) asArray
 ]
 
-{ #category : 'private - tests' }
-MCPToolRunTests >> standardTestRequiredFieldsIncludingMethodName: includeMethodName [
+{ #category : 'private - errors' }
+MCPToolRunTests >> rawTestNamesFromRequest: rawRequest [
 
-	| required |
-	required := OrderedCollection withAll:
-		            #( 'className' 'selectedTestCount' 'runCount' 'passedCount'
-		               'skippedCount' 'failureCount' 'errorCount' ).
-	includeMethodName ifTrue: [ required add: 'testMethodName' ].
-	^ required asArray
+	^ Array streamContents: [ :stream |
+		#( 'packages' 'classes' 'methods' ) do: [ :argumentName |
+			(self rawStringCollectionNamed: argumentName fromRequest: rawRequest) do: [ :each |
+				stream nextPut: each ] ] ]
 ]
 
 { #category : 'private' }
 MCPToolRunTests >> successSummaryForData: data [
 
-	| coverage errorCount failureCount failureLikeCount results runCount selectedTestCount selectionCount selectionWord skippedCount timedOut unrunCount |
-	results := data at: #results.
-	selectionCount := results size.
-	selectionWord := selectionCount = 1
-		                 ifTrue: [ 'test selection' ]
-		                 ifFalse: [ 'test selections' ].
-	selectedTestCount := results
-		                     inject: 0
-		                     into: [ :sum :each |
-		                     sum + (each at: #selectedTestCount) ].
-	runCount := results
-		            inject: 0
-		            into: [ :sum :each | sum + (each at: #runCount) ].
-	skippedCount := results
-		                inject: 0
-		                into: [ :sum :each | sum + (each at: #skippedCount) ].
-	failureCount := results
-		                inject: 0
-		                into: [ :sum :each | sum + (each at: #failureCount) ].
-	errorCount := results
-		              inject: 0
-		              into: [ :sum :each | sum + (each at: #errorCount) ].
-	failureLikeCount := failureCount + errorCount.
+	| coverage errorCount failureCount passedCount runCount skippedCount timedOut unrunCount |
+	runCount := data at: #runCount.
+	passedCount := data at: #passedCount.
+	skippedCount := (data at: #skipped ifAbsent: [ #( ) ]) size.
+	failureCount := (data at: #failures ifAbsent: [ #( ) ]) size.
+	errorCount := (data at: #errors ifAbsent: [ #( ) ]) size.
 	timedOut := data at: #timedOut ifAbsent: [ false ].
-	unrunCount := (data at: #unrunTests ifAbsent: [ #(  ) ]) size.
+	unrunCount := (data at: #unrunClasses ifAbsent: [ #( ) ]) size
+		+ (data at: #unrunMethods ifAbsent: [ #( ) ]) size.
 	coverage := data at: #coverage ifAbsent: [ nil ].
 	^ String streamContents: [ :stream |
-			  timedOut ifTrue: [ stream nextPutAll: 'Timed out. ' ].
-			  stream
-				  nextPutAll: 'Executed ';
-				  nextPutAll: selectionCount asString;
-				  nextPutAll: ' ';
-				  nextPutAll: selectionWord;
-				  nextPutAll: ' covering ';
-				  nextPutAll: selectedTestCount asString;
-				  nextPutAll: ' unique tests (';
-				  nextPutAll: runCount asString;
-				  nextPutAll: ' ran'.
-			  skippedCount > 0 ifTrue: [
-					  stream
-						  nextPutAll: ', ';
-						  nextPutAll: skippedCount asString;
-						  nextPutAll: ' skipped' ].
-			  stream nextPutAll: ').'.
-			  failureLikeCount > 0 ifTrue: [
-					  stream
-						  space;
-						  nextPutAll: failureCount asString;
-						  nextPutAll: ' failures and ';
-						  nextPutAll: errorCount asString;
-						  nextPutAll: ' errors were reported.' ].
-			  timedOut ifTrue: [
-					  stream
-						  space;
-						  nextPutAll: unrunCount asString;
-						  nextPutAll: ' test requests remain in unrunTests.' ].
-			  coverage ifNotNil: [
-					  stream
-						  space;
-						  nextPutAll: 'Coverage: ';
-						  nextPutAll: (self coveragePercentageTextFor: coverage);
-						  nextPutAll: ' over ';
-						  nextPutAll: (coverage at: #methodCount) asString;
-						  nextPutAll: ' methods; ';
-						  nextPutAll: (coverage at: #uncoveredMethodCount) asString;
-						  nextPutAll: ' uncovered, ';
-						  nextPutAll:
-							  (coverage at: #partiallyCoveredMethodCount) asString;
-						  nextPutAll: ' partially covered.' ] ]
+		timedOut ifTrue: [ stream nextPutAll: 'Timed out. ' ].
+		stream
+			nextPutAll: 'Ran ';
+			nextPutAll: runCount asString;
+			nextPutAll: ' tests (';
+			nextPutAll: passedCount asString;
+			nextPutAll: ' passed'.
+		skippedCount > 0 ifTrue: [
+			stream
+				nextPutAll: ', ';
+				nextPutAll: skippedCount asString;
+				nextPutAll: ' skipped' ].
+		stream nextPutAll: ').'.
+		failureCount + errorCount > 0 ifTrue: [
+			stream
+				space;
+				nextPutAll: failureCount asString;
+				nextPutAll: ' failures, ';
+				nextPutAll: errorCount asString;
+				nextPutAll: ' errors.' ].
+		unrunCount > 0 ifTrue: [
+			stream
+				space;
+				nextPutAll: unrunCount asString;
+				nextPutAll: ' selections left unrun.' ].
+		coverage ifNotNil: [ :coverageData |
+			stream
+				space;
+				nextPutAll: 'Coverage: ';
+				nextPutAll: (self coveragePercentageTextFor: coverageData);
+				nextPutAll: '%.' ] ]
+]
+
+{ #category : 'private - tests' }
+MCPToolRunTests >> testIssueArraySchemaNamed: propertyName description: propertyDescription [
+
+	^ (self
+		schemaPropertyNamed: propertyName
+		type: 'array'
+		description: propertyDescription)
+		items: self testIssueObjectSchema;
+		yourself
 ]
 
 { #category : 'private - tests' }
 MCPToolRunTests >> testIssueObjectSchema [
 
-	| issueProperty |
-	issueProperty := MCPStructureProperties new
-		                 type: 'object';
-		                 description:
-			                 'A single test issue recorded while running tests.';
-		                 properties: {
-				                 (self
-					                  schemaPropertyNamed: 'kind'
-					                  type: 'string'
-					                  description:
-						                  'The issue category, such as failure, error, or skipped.').
-				                 (self
-					                  schemaPropertyNamed: 'className'
-					                  type: 'string'
-					                  description:
-						                  'The test class that produced the issue.').
-				                 (self
-					                  schemaPropertyNamed: 'testMethodName'
-					                  type: 'string'
-					                  description:
-						                  'The test method that produced the issue.').
-				                 (self
-					                  schemaPropertyNamed: 'testCaseName'
-					                  type: 'string'
-					                  description:
-						                  'The concrete test case name, including parameter values when available.').
-				                 (self
-					                  stringArraySchemaNamed: 'parameters'
-					                  description:
-						                  'Parameter bindings for the concrete test case when the issue came from a parameterized test.'
-					                  itemDescription:
-						                  'A printed parameter binding, such as #encoding->''UTF-16''.').
-				                 (self
-					                  schemaPropertyNamed: 'errorClass'
-					                  type: 'string'
-					                  description:
-						                  'The exception class captured for the issue.').
-				                 (self
-					                  schemaPropertyNamed: 'message'
-					                  type: 'string'
-					                  description:
-						                  'The exception message for the issue.').
-				                 (self
-					                  schemaPropertyNamed: 'description'
-					                  type: 'string'
-					                  description:
-						                  'A longer textual description of the issue when available.').
-				                 (self
-					                  schemaPropertyNamed: 'signalerContext'
-					                  type: 'string'
-					                  description:
-						                  'The signaler context captured for the issue when available.') };
-		                 required:
-			                 #( 'kind' 'className' 'testMethodName'
-			                    'errorClass' 'message' );
-		                 additionalProperties: false;
-		                 yourself.
-	^ issueProperty
-]
-
-{ #category : 'private - errors' }
-MCPToolRunTests >> testNameFromRawTestValue: rawValue request: rawRequest [
-
-	| className testMethodName |
-	rawValue isDictionary ifFalse: [ ^ rawValue asString ].
-	className := rawRequest
-		             valueNamed: 'className'
-		             in: rawValue
-		             ifAbsent: [ ^ rawValue asString ].
-	className ifNil: [ ^ rawValue asString ].
-	testMethodName := rawRequest
-		                  valueNamed: 'testMethodName'
-		                  in: rawValue
-		                  ifAbsent: [ nil ].
-	^ testMethodName
-		  ifNil: [ className asString ]
-		  ifNotNil: [ :methodName |
-		  className asString , '>>' , methodName asString ]
+	^ MCPStructureProperties new
+		type: 'object';
+		properties: {
+			(self
+				schemaPropertyNamed: 'test'
+				type: 'string'
+				description: 'Test reference.').
+			(self
+				schemaPropertyNamed: 'message'
+				type: 'string'
+				description: 'Failure or error message.').
+			(self
+				schemaPropertyNamed: 'errorClass'
+				type: 'string'
+				description: 'Error class.').
+			(self
+				stringArraySchemaNamed: 'parameters'
+				description: 'Parameterized test values.'
+				itemDescription: nil) };
+		required: #( 'test' );
+		additionalProperties: false;
+		yourself
 ]
 
 { #category : 'private - errors' }
@@ -525,9 +388,7 @@ MCPToolRunTests >> testNamesForErrorFromParsedRequest: runTestsRequest rawReques
 
 	runTestsRequest ifNotNil: [
 		^ self testNamesFromRequests: runTestsRequest testRequests ].
-	^ ((rawRequest objectCollectionArgumentNamed: 'tests') collect: [
-		   :each | self testNameFromRawTestValue: each request: rawRequest ])
-		  asArray
+	^ self rawTestNamesFromRequest: rawRequest
 ]
 
 { #category : 'private - errors' }
@@ -536,47 +397,55 @@ MCPToolRunTests >> testNamesFromRequests: testRequests [
 	^ (testRequests collect: [ :each | each displayName ]) asArray
 ]
 
-{ #category : 'private' }
-MCPToolRunTests >> testRequestObjectSchema [
+{ #category : 'private - tests' }
+MCPToolRunTests >> testRunDataProperties [
 
-	^ MCPStructureProperties new
-		  type: 'object';
-		  description: 'Test request.';
-		  properties: {
-				  (self
-					   schemaPropertyNamed: 'className'
-					   type: 'string'
-					   description: 'Test class.').
-				  (self
-					   schemaPropertyNamed: 'testMethodName'
-					   type: 'string'
-					   description: 'Test method.') };
-		  required: #( 'className' );
-		  additionalProperties: false;
-		  yourself
+	^ {
+		(self
+			integerSchemaPropertyNamed: 'runCount'
+			description: 'Tests run.').
+		(self
+			integerSchemaPropertyNamed: 'passedCount'
+			description: 'Tests passed.').
+		(self
+			stringArraySchemaNamed: 'skipped'
+			description: 'Skipped tests.'
+			itemDescription: nil).
+		(self
+			testIssueArraySchemaNamed: 'failures'
+			description: 'Failed tests.').
+		(self
+			testIssueArraySchemaNamed: 'errors'
+			description: 'Errored tests.').
+		(self
+			booleanSchemaPropertyNamed: 'timedOut'
+			description: 'Timeout stopped run.').
+		(self
+			stringArraySchemaNamed: 'unrunClasses'
+			description: 'Unrun test classes.'
+			itemDescription: nil).
+		(self
+			stringArraySchemaNamed: 'unrunMethods'
+			description: 'Unrun test methods.'
+			itemDescription: nil) }
 ]
 
-{ #category : 'private' }
-MCPToolRunTests >> testResultObjectSchema [
+{ #category : 'private - tests' }
+MCPToolRunTests >> testSelectionInputProperties [
 
-	| properties |
-	properties := OrderedCollection withAll:
-		              (self standardTestDataPropertiesIncludingMethodName:
-			               false).
-	properties add: (self
-			 schemaPropertyNamed: 'testMethodName'
-			 type: 'string'
-			 description:
-			 'The single test method that was executed when the batch entry targeted one method.').
-	^ MCPStructureProperties new
-		  type: 'object';
-		  description:
-			  'Structured results for one test execution request in the batch.';
-		  properties: properties asArray;
-		  required:
-			  (self standardTestRequiredFieldsIncludingMethodName: false);
-		  additionalProperties: false;
-		  yourself
+	^ {
+		(self
+			stringArraySchemaNamed: 'packages'
+			description: 'Test packages run.'
+			itemDescription: nil).
+		(self
+			stringArraySchemaNamed: 'classes'
+			description: 'Test classes run.'
+			itemDescription: nil).
+		(self
+			stringArraySchemaNamed: 'methods'
+			description: 'Test methods as Class>>#selector.'
+			itemDescription: nil) }
 ]
 
 { #category : 'metadata' }

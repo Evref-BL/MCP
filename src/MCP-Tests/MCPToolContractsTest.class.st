@@ -129,9 +129,8 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 			  (#commandClass -> MCPRemoveMethodsCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolRunTests).
-			  (#arguments -> { (#tests
-			    -> { { (#className -> 'MCPToolContractsTest') } asDictionary }) }
-				   asDictionary).
+			  (#arguments
+			   -> { (#classes -> { 'MCPToolContractsTest' }) } asDictionary).
 			  (#requestClass -> MCPRunTestsRequest).
 			  (#commandClass -> MCPRunTestsCommand) } asDictionary.
 		  {
@@ -192,7 +191,6 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 				   (#arguments -> Dictionary new) } asDictionary).
 			  (#requestClass -> MCPCallToolRequest).
 			  (#commandClass -> MCPCallToolCommand) } asDictionary }
-
 ]
 
 { #category : 'private' }
@@ -382,8 +380,7 @@ MCPToolContractsTest >> coverageToolFlowSpec [
 	^ {
 		  (#toolClass -> MCPToolRunTestCoverage).
 		  (#arguments -> {
-			   (#tests
-			    -> { { (#className -> 'MCPToolContractsTest') } asDictionary }).
+			   (#classes -> { 'MCPToolContractsTest' }).
 			   (#coverage -> { (#scope
 			     -> { (#classes -> #( 'MCPToolContractsTest' )) } asDictionary) }
 				    asDictionary) } asDictionary).
@@ -2447,7 +2444,8 @@ MCPToolContractsTest >> testRpcToolCallSignalsInvalidParametersForInvalidNestedA
 				self
 					callToolNamed: 'test_run'
 					withArguments:
-					{ (#tests -> #( 'MCPToolContractsTest' )) } asDictionary ]
+					{ (#methods -> { { (#selector -> 'testPasses') } asDictionary }) }
+						asDictionary ]
 		raise: JRPCInvalidParameters
 ]
 
@@ -2485,178 +2483,145 @@ MCPToolContractsTest >> testRpcToolCallSignalsInvalidParametersWhenRequiredArgum
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testRunTestCoverageUsesNestedRequestDTOs [
+MCPToolContractsTest >> testRunTestCoverageParsesCompactSelections [
 
 	| command parsedRequest rawRequest tool validatedRequests |
 	tool := MCPToolRunTestCoverage new.
 	rawRequest := tool requestFromToolCallArguments: {
-			              (#tests
-			               ->
-			               { { (#className -> 'MCPToolContractsTest') }
-				               asDictionary }).
-			              (#coverage -> { (#scope
-			                ->
-			                { (#classes -> #( 'MCPToolContractsTest' )) }
-				                asDictionary) } asDictionary) } asDictionary.
+			              (#classes -> #( 'MCPToolContractsTest' )).
+			              (#coverage -> { (#scope -> { (#classes -> #( 'MCPToolContractsTest' )) } asDictionary) } asDictionary) }
+		              asDictionary.
 	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
 	command := tool commandForRequest: parsedRequest.
 	validatedRequests := command validatedRequestsFrom:
 		                     parsedRequest testRequests.
 	self assert: parsedRequest class equals: MCPRunTestsRequest.
 	self assert: parsedRequest isCoverageOperation.
-	self
-		assert: parsedRequest coverageRequest class
-		equals: MCPTestCoverageRequest.
-	self
-		assert: parsedRequest testRequests first class
-		equals: MCPTestRunRequest.
-	self
-		assert: validatedRequests first class
-		equals: MCPValidatedTestRunRequest.
-	self
-		assert: validatedRequests first testClass
-		equals: MCPToolContractsTest
+	self assert: parsedRequest coverageRequest class equals: MCPTestCoverageRequest.
+	self assert: parsedRequest testRequests first class equals: MCPTestRunRequest.
+	self assert: validatedRequests first class equals: MCPValidatedTestRunRequest.
+	self assert: validatedRequests first testClass equals: MCPToolContractsTest
 ]
 
 { #category : 'tests' }
 MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 
-	| coverageInputProperties coverageInputProperty coverageScopeProperty coverageScopePropertyNames coverageTool inputPropertyNames methodLimitProperty outputSchema dataProperties resultsProperty timeoutMillisecondsProperty tool |
+	| coverageDataProperties coverageInputProperties coverageInputProperty coverageTool dataProperties inputPropertyNames outputSchema tool |
 	tool := MCPToolRunTests new.
 	self assert: tool name equals: 'test_run'.
-	self
-		assert: tool inputSchema required asSet
-		equals: #( 'tests' ) asSet.
-	self deny: (tool inputSchema extraProperties includesKey: #oneOf).
+	self assert: (tool inputSchema required ifNil: [ #(  ) ]) isEmpty.
 	inputPropertyNames := tool inputSchema properties collect: [ :each |
 		                      each name ].
-	timeoutMillisecondsProperty := tool inputSchema properties detect: [
-		                               :each |
-		                               each name = 'timeoutMilliseconds' ].
-	self deny: (inputPropertyNames includes: 'operation').
+	self
+		assert: inputPropertyNames asSet
+		equals: #( 'packages' 'classes' 'methods' 'timeoutSeconds' ) asSet.
+	self deny: (inputPropertyNames includes: 'tests').
+	self deny: (inputPropertyNames includes: 'timeoutMilliseconds').
 	self deny: (inputPropertyNames includes: 'coverage').
-	self assert: (inputPropertyNames includes: 'timeoutSeconds').
-	self assert: (inputPropertyNames includes: 'timeoutMilliseconds').
-	self
-		assert: timeoutMillisecondsProperty description
-		equals: 'Timeout in milliseconds.'.
 	outputSchema := tool outputSchema asJRPCJSON.
-	dataProperties := ((outputSchema at: #properties) at: 'data') at:
-		                  #properties.
-	resultsProperty := dataProperties at: 'results'.
-	self assert: (resultsProperty at: #type) equals: 'array'.
-	self
-		assert: ((resultsProperty at: #items) at: #type)
-		equals: 'object'.
+	dataProperties := ((outputSchema at: #properties) at: 'data') at: #properties.
+	self assert: (dataProperties includesKey: 'runCount').
+	self assert: (dataProperties includesKey: 'passedCount').
+	self assert: (dataProperties includesKey: 'skipped').
+	self assert: (dataProperties includesKey: 'failures').
+	self assert: (dataProperties includesKey: 'errors').
+	self assert: (dataProperties includesKey: 'unrunClasses').
+	self assert: (dataProperties includesKey: 'unrunMethods').
+	self deny: (dataProperties includesKey: 'results').
 	self deny: (dataProperties includesKey: 'coverage').
-	self deny: (dataProperties includesKey: 'tests').
+
 	coverageTool := MCPToolRunTestCoverage new.
 	self assert: coverageTool name equals: 'test_coverage_run'.
+	self assert: coverageTool inputSchema required asSet equals: #( 'coverage' ) asSet.
+	inputPropertyNames := coverageTool inputSchema properties collect: [ :each |
+		                      each name ].
 	self
-		assert: coverageTool inputSchema required asSet
-		equals: #( 'tests' 'coverage' ) asSet.
-	inputPropertyNames := coverageTool inputSchema properties collect: [
-		                      :each | each name ].
-	coverageInputProperty := coverageTool inputSchema properties detect: [
-		                         :each | each name = 'coverage' ].
-	coverageInputProperties := coverageInputProperty extraProperties at:
-		                           #properties.
-	methodLimitProperty := coverageInputProperties detect: [ :each |
-		                       each name = 'methodLimit' ].
-	self deny: (inputPropertyNames includes: 'operation').
-	self assert: (inputPropertyNames includes: 'coverage').
-	self assert: (inputPropertyNames includes: 'timeoutSeconds').
-	self assert: (inputPropertyNames includes: 'timeoutMilliseconds').
-	self
-		assert: (methodLimitProperty extraProperties at: #minimum)
-		equals: 0.
-	self
-		assert: (methodLimitProperty extraProperties at: #default)
-		equals: 50.
-	coverageScopeProperty := coverageInputProperties detect: [ :each |
-		                         each name = 'scope' ].
-	coverageScopePropertyNames := (coverageScopeProperty extraProperties
-		                               at: #properties) collect: [ :each |
-		                              each name ].
-	self assert: (coverageScopePropertyNames includes: 'packages').
-	self assert: (coverageScopePropertyNames includes: 'classes').
-	self deny: (coverageScopePropertyNames includes: 'packageNames').
-	self deny: (coverageScopePropertyNames includes: 'classNames')
+		assert: inputPropertyNames asSet
+		equals:
+		#( 'packages' 'classes' 'methods' 'coverage' 'timeoutSeconds' ) asSet.
+	self deny: (inputPropertyNames includes: 'tests').
+	self deny: (inputPropertyNames includes: 'timeoutMilliseconds').
+	coverageInputProperty := coverageTool inputSchema properties detect: [ :each |
+		                         each name = 'coverage' ].
+	coverageInputProperties := coverageInputProperty extraProperties at: #properties.
+	self assert: (coverageInputProperties anySatisfy: [ :each |
+			 each name = 'methodLimit' ]).
+	outputSchema := coverageTool outputSchema asJRPCJSON.
+	coverageDataProperties := ((outputSchema at: #properties) at: 'data')
+		                          at: #properties.
+	self assert: (coverageDataProperties includesKey: 'runCount').
+	self assert: (coverageDataProperties includesKey: 'passedCount').
+	self assert: (coverageDataProperties includesKey: 'coverage').
+	self deny: (coverageDataProperties includesKey: 'results')
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testRunTestsParsesTimeoutMilliseconds [
+MCPToolContractsTest >> testRunTestsExpandsPackagesToConcreteTestClasses [
 
-	| parsedRequest rawRequest tool |
+	| classNames parsedRequest rawRequest tool |
 	tool := MCPToolRunTests new.
-	rawRequest := tool requestFromToolCallArguments: {
-			              (#tests -> { {
-				               (#className -> 'MCPToolContractsTest').
-				               (#testMethodName
-				                ->
-				                'testRunTestToolsHaveAccurateNamesAndRequiredArguments') }
-				               asDictionary }).
-			              (#timeoutMilliseconds -> 25) } asDictionary.
+	rawRequest := tool requestFromToolCallArguments:
+		              { (#packages -> #( 'MCP-Tests' )) } asDictionary.
 	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
-	self assert: parsedRequest timeoutMilliseconds equals: 25
+	classNames := parsedRequest testRequests collect: [ :each |
+		              each className ].
+	self assert: classNames isSorted.
+	self assert: (classNames includes: 'MCPToolContractsTest').
+	self deny: (classNames includes: 'MCPToolStructuredOutputTestTarget').
+	self assert: (parsedRequest testRequests allSatisfy: [ :each |
+			 each testMethodName isNil ])
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testRunTestsRejectsConflictingTimeoutUnits [
+MCPToolContractsTest >> testRunTestsParsesCompactSelections [
 
-	| rawRequest tool |
+	| command parsedRequest rawRequest testRequests tool validatedRequests |
 	tool := MCPToolRunTests new.
 	rawRequest := tool requestFromToolCallArguments: {
-			              (#tests -> { {
-				               (#className -> 'MCPToolContractsTest').
-				               (#testMethodName
-				                ->
-				                'testRunTestToolsHaveAccurateNamesAndRequiredArguments') }
-				               asDictionary }).
-			              (#timeoutSeconds -> 1).
-			              (#timeoutMilliseconds -> 25) } asDictionary.
-	self
-		should: [ tool parsedRequestFromToolRequest: rawRequest ]
-		raise: Error
-		whoseDescriptionIncludes:
-		'timeoutSeconds and timeoutMilliseconds cannot both be provided'
-		description: 'Timeout requests should use one unit.'
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testRunTestsUsesNestedRequestDTOs [
-
-	| command parsedRequest rawRequest tool validatedRequests |
-	tool := MCPToolRunTests new.
-	rawRequest := tool requestFromToolCallArguments: { (#tests -> { {
-			               (#className -> 'MCPToolContractsTest').
-			               (#testMethodName
-			                ->
-			                'testRunTestToolsHaveAccurateNamesAndRequiredArguments') }
-			               asDictionary }) } asDictionary.
+			              (#classes -> #( 'MCPToolContractsTest' )).
+			              (#methods ->
+			               #( 'MCPToolStructuredOutputTestTarget>>#testPasses' )) }
+		              asDictionary.
 	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
 	command := tool commandForRequest: parsedRequest.
 	validatedRequests := command validatedRequestsFrom:
 		                     parsedRequest testRequests.
+	testRequests := parsedRequest testRequests.
 	self assert: parsedRequest class equals: MCPRunTestsRequest.
+	self assert: testRequests size equals: 2.
+	self assert: testRequests first className equals: 'MCPToolContractsTest'.
+	self assert: testRequests first testMethodName equals: nil.
+	self assert: testRequests second className equals: 'MCPToolStructuredOutputTestTarget'.
+	self assert: testRequests second testMethodName equals: 'testPasses'.
+	self assert: testRequests second displayName equals: 'MCPToolStructuredOutputTestTarget>>#testPasses'.
+	self assert: validatedRequests first class equals: MCPValidatedTestRunRequest.
+	self assert: validatedRequests first testRunRequest equals: testRequests first.
+	self assert: validatedRequests first testClass equals: MCPToolContractsTest
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testRunTestsParsesTimeoutSeconds [
+
+	| parsedRequest rawRequest tool |
+	tool := MCPToolRunTests new.
+	rawRequest := tool requestFromToolCallArguments: {
+			              (#classes -> #( 'MCPToolContractsTest' )).
+			              (#timeoutSeconds -> 2) } asDictionary.
+	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
+	self assert: parsedRequest timeoutMilliseconds equals: 2000
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testRunTestsRejectsEmptySelection [
+
+	| rawRequest tool |
+	tool := MCPToolRunTests new.
+	rawRequest := tool requestFromToolCallArguments: Dictionary new.
 	self
-		assert: parsedRequest testRequests first class
-		equals: MCPTestRunRequest.
-	self
-		assert: parsedRequest testRequests first className
-		equals: 'MCPToolContractsTest'.
-	self
-		assert: parsedRequest testRequests first testMethodName
-		equals: 'testRunTestToolsHaveAccurateNamesAndRequiredArguments'.
-	self
-		assert: validatedRequests first class
-		equals: MCPValidatedTestRunRequest.
-	self
-		assert: validatedRequests first testRunRequest
-		equals: parsedRequest testRequests first.
-	self
-		assert: validatedRequests first testClass
-		equals: MCPToolContractsTest
+		should: [ tool parsedRequestFromToolRequest: rawRequest ]
+		raise: Error
+		whoseDescriptionIncludes: 'Provide at least one package, class, or method'
+		description: 'test_run requires at least one compact selection.'
 ]
 
 { #category : 'tests' }

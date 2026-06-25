@@ -317,15 +317,38 @@ MCPRunTestsCommand >> testRunInfoForTestResult: aResult validatedRequest: valida
 { #category : 'private' }
 MCPRunTestsCommand >> uniqueTestCasesForValidatedRequest: validatedRequest seenTestCaseNames: seenTestCaseNames [
 
+	^ self
+		uniqueTestCasesFrom: (self testCasesForValidatedRequest: validatedRequest)
+		seenTestCaseNames: seenTestCaseNames
+]
+
+{ #category : 'private' }
+MCPRunTestsCommand >> uniqueTestCasesFrom: testCases seenTestCaseNames: seenTestCaseNames [
+
 	| uniqueTestCases |
 	uniqueTestCases := OrderedCollection new.
-	(self testCasesForValidatedRequest: validatedRequest) do: [ :testCase |
-			| testCaseName |
-			testCaseName := self testCaseDeduplicationKeyFor: testCase.
-			(seenTestCaseNames includes: testCaseName) ifFalse: [
-					seenTestCaseNames add: testCaseName.
-					uniqueTestCases add: testCase ] ].
+	testCases do: [ :testCase |
+		| testCaseName |
+		testCaseName := self testCaseDeduplicationKeyFor: testCase.
+		(seenTestCaseNames includes: testCaseName) ifFalse: [
+			seenTestCaseNames add: testCaseName.
+			uniqueTestCases add: testCase ] ].
 	^ uniqueTestCases asArray
+]
+
+{ #category : 'private' }
+MCPRunTestsCommand >> unrunRequestsForValidatedRequest: validatedRequest seenTestCaseNames: seenTestCaseNames [
+
+	| testCases uniqueTestCases |
+	testCases := self testCasesForValidatedRequest: validatedRequest.
+	uniqueTestCases := self
+		uniqueTestCasesFrom: testCases
+		seenTestCaseNames: seenTestCaseNames.
+	uniqueTestCases ifEmpty: [ ^ #( ) ].
+	(validatedRequest hasTestMethod not and: [
+		uniqueTestCases size = testCases size ]) ifTrue: [
+		^ { validatedRequest testRunRequest } ].
+	^ self testRequestsForTestCases: uniqueTestCases startingAt: 1
 ]
 
 { #category : 'private' }
@@ -334,12 +357,9 @@ MCPRunTestsCommand >> unrunTestsFrom: validatedRequests startingAt: startIndex s
 	| unrun |
 	unrun := OrderedCollection new.
 	startIndex to: validatedRequests size do: [ :index |
-			unrun addAll: (self
-					 testRequestsForTestCases: (self
-							  uniqueTestCasesForValidatedRequest:
-							  (validatedRequests at: index)
-							  seenTestCaseNames: seenTestCaseNames)
-					 startingAt: 1) ].
+		unrun addAll: (self
+			unrunRequestsForValidatedRequest: (validatedRequests at: index)
+			seenTestCaseNames: seenTestCaseNames) ].
 	^ unrun asArray
 ]
 
@@ -347,13 +367,15 @@ MCPRunTestsCommand >> unrunTestsFrom: validatedRequests startingAt: startIndex s
 MCPRunTestsCommand >> validatedRequestsFrom: testRequests [
 
 	^ testRequests collect: [ :each |
-		  | testClass |
-		  testClass := MCPImageLookup classNamed: each className.
-		  each testMethodName ifNotNil: [ :testMethodName |
-			  testClass compiledMethodAt: testMethodName asSymbol ifAbsent: [
-				  MCPCommandError
-					  signalMissingMethodInClassName: each className
-					  classSide: false
-					  selector: testMethodName ] ].
-		  MCPValidatedTestRunRequest request: each testClass: testClass ]
+		| testClass |
+		testClass := MCPImageLookup classNamed: each className.
+		each testMethodName ifNotNil: [ :testMethodName |
+			testClass
+				compiledMethodAt: testMethodName asSymbol
+				ifAbsent: [
+					MCPCommandError
+						signalMissingMethodInClassName: each className
+						classSide: false
+						selector: testMethodName ] ].
+		MCPValidatedTestRunRequest request: each testClass: testClass ]
 ]
