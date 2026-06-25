@@ -5,16 +5,9 @@ It handles packageNames, classNames, hierarchyClassNames, subclassClassNames, pa
 "
 Class {
 	#name : 'MCPCompiledMethodScopeQuery',
-	#superclass : 'Object',
+	#superclass : 'MCPScopeQuery',
 	#instVars : [
-		'packageNames',
-		'classNames',
-		'side',
-		'hierarchyClassNames',
-		'subclassClassNames',
-		'parentClassNames',
-		'warnings',
-		'requiresCompleteScope'
+		'side'
 	],
 	#category : 'MCP-Queries',
 	#package : 'MCP',
@@ -140,20 +133,6 @@ MCPCompiledMethodScopeQuery >> classNamed: aClassName inScope: scopeName [
 		  self recordMissingClassNamed: aClassName inScope: scopeName ]
 ]
 
-{ #category : 'accessing' }
-MCPCompiledMethodScopeQuery >> classNames [
-
-	^ classNames ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPCompiledMethodScopeQuery >> classNames: someNames [
-
-	classNames := someNames
-		              ifNil: [ #(  ) ]
-		              ifNotNil: [ someNames asArray ]
-]
-
 { #category : 'private - source' }
 MCPCompiledMethodScopeQuery >> hierarchyBehaviorsForClassNames [
 
@@ -168,20 +147,6 @@ MCPCompiledMethodScopeQuery >> hierarchyBehaviorsForClassNames [
 	hierarchyClasses do: [ :eachClass |
 		self addBehaviorsForBaseClass: eachClass to: behaviors ].
 	^ behaviors asArray
-]
-
-{ #category : 'accessing' }
-MCPCompiledMethodScopeQuery >> hierarchyClassNames [
-
-	^ hierarchyClassNames ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPCompiledMethodScopeQuery >> hierarchyClassNames: someNames [
-
-	hierarchyClassNames := someNames
-		                       ifNil: [ #(  ) ]
-		                       ifNotNil: [ someNames asArray ]
 ]
 
 { #category : 'private - scope' }
@@ -351,20 +316,6 @@ MCPCompiledMethodScopeQuery >> packageNamed: aPackageName inScope: scopeName [
 	^ PackageOrganizer default packageNamed: aPackageName
 ]
 
-{ #category : 'accessing' }
-MCPCompiledMethodScopeQuery >> packageNames [
-
-	^ packageNames ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPCompiledMethodScopeQuery >> packageNames: someNames [
-
-	packageNames := someNames
-		                ifNil: [ #(  ) ]
-		                ifNotNil: [ someNames asArray ]
-]
-
 { #category : 'private - scope' }
 MCPCompiledMethodScopeQuery >> parentBehaviorsForClassNames [
 
@@ -379,81 +330,6 @@ MCPCompiledMethodScopeQuery >> parentBehaviorsForClassNames [
 	relatedClasses do: [ :eachClass |
 		self addBehaviorsForBaseClass: eachClass to: behaviors ].
 	^ behaviors asArray
-]
-
-{ #category : 'accessing' }
-MCPCompiledMethodScopeQuery >> parentClassNames [
-
-	^ parentClassNames ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPCompiledMethodScopeQuery >> parentClassNames: someNames [
-
-	parentClassNames := someNames
-		                    ifNil: [ #(  ) ]
-		                    ifNotNil: [ someNames asArray ]
-]
-
-{ #category : 'private - resolution' }
-MCPCompiledMethodScopeQuery >> recordMissingClassNamed: className inScope: scopeName [
-
-	| suggestions |
-	suggestions := MCPScopeNameSuggester classSuggestionsFor: className.
-	self requiresCompleteScope ifTrue: [
-		^ MCPCommandError
-			  signalMissingClassNamed: className
-			  scopeName: scopeName ].
-	warnings ifNil: [ self resetWarnings ].
-	warnings add: (MCPScopeNameSuggester
-			 missingNameWarningForKind: 'Class'
-			 name: className
-			 scope: scopeName
-			 suggestions: suggestions).
-	^ nil
-]
-
-{ #category : 'private - resolution' }
-MCPCompiledMethodScopeQuery >> recordMissingPackageNamed: packageName inScope: scopeName [
-
-	| suggestions |
-	suggestions := MCPScopeNameSuggester packageSuggestionsFor:
-		               packageName.
-	self requiresCompleteScope ifTrue: [
-		^ MCPCommandError
-			  signalMissingPackageNamed: packageName
-			  scopeName: scopeName ].
-	warnings ifNil: [ self resetWarnings ].
-	warnings add: (MCPScopeNameSuggester
-			 missingNameWarningForKind: 'Package'
-			 name: packageName
-			 scope: scopeName
-			 suggestions: suggestions).
-	^ nil
-]
-
-{ #category : 'configuring' }
-MCPCompiledMethodScopeQuery >> requireCompleteScope [
-
-	self requiresCompleteScope: true
-]
-
-{ #category : 'accessing' }
-MCPCompiledMethodScopeQuery >> requiresCompleteScope [
-
-	^ requiresCompleteScope ifNil: [ false ]
-]
-
-{ #category : 'accessing' }
-MCPCompiledMethodScopeQuery >> requiresCompleteScope: aBoolean [
-
-	requiresCompleteScope := aBoolean = true
-]
-
-{ #category : 'private - resolution' }
-MCPCompiledMethodScopeQuery >> resetWarnings [
-
-	warnings := OrderedCollection new
 ]
 
 { #category : 'accessing' }
@@ -484,20 +360,6 @@ MCPCompiledMethodScopeQuery >> subclassBehaviorsForClassNames [
 	^ behaviors asArray
 ]
 
-{ #category : 'accessing' }
-MCPCompiledMethodScopeQuery >> subclassClassNames [
-
-	^ subclassClassNames ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPCompiledMethodScopeQuery >> subclassClassNames: someNames [
-
-	subclassClassNames := someNames
-		                      ifNil: [ #(  ) ]
-		                      ifNotNil: [ someNames asArray ]
-]
-
 { #category : 'private - scope' }
 MCPCompiledMethodScopeQuery >> unionBehaviors [
 
@@ -516,25 +378,9 @@ MCPCompiledMethodScopeQuery >> unionMethods [
 	^ methods asArray
 ]
 
-{ #category : 'private - source' }
-MCPCompiledMethodScopeQuery >> usesImplicitImageScope [
-
-	^ self packageNames isEmpty and: [
-		  self classNames isEmpty and: [
-			  self hierarchyClassNames isEmpty and: [
-				  self subclassClassNames isEmpty and: [
-					  self parentClassNames isEmpty ] ] ] ]
-]
-
 { #category : 'validating' }
 MCPCompiledMethodScopeQuery >> validate [
 
 	(#( 'instance' 'class' 'both' ) includes: side) ifFalse: [
 		Error signal: 'side must be one of instance, class, or both.' ]
-]
-
-{ #category : 'accessing' }
-MCPCompiledMethodScopeQuery >> warnings [
-
-	^ warnings ifNil: [ #(  ) ] ifNotNil: [ warnings asArray ]
 ]

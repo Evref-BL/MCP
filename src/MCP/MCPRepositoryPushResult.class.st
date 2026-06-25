@@ -23,12 +23,7 @@ MCPRepositoryPushResult class >> repository: aRepository [
 { #category : 'converting' }
 MCPRepositoryPushResult >> asDictionary [
 
-	| data |
-	data := Dictionary new.
-	self branchName ifNotEmpty: [ :name | data at: #branchName put: name ].
-	self headDescription ifNotEmpty: [ :description |
-		data at: #headDescription put: description ].
-	^ data
+	^ self branchHeadDictionary
 ]
 
 { #category : 'accessing' }

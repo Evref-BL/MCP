@@ -5,10 +5,7 @@ Class {
 	#name : 'MCPRenameSlotCommand',
 	#superclass : 'MCPClassSlotCommand',
 	#instVars : [
-		'className',
-		'slotName',
-		'newSlotName',
-		'classSide'
+		'newSlotName'
 	],
 	#category : 'MCP-Commands',
 	#package : 'MCP',
@@ -24,30 +21,6 @@ MCPRenameSlotCommand class >> className: aClassName slotName: aSlotName newSlotN
 		  newSlotName: aNewSlotName;
 		  classSide: aBoolean;
 		  yourself
-]
-
-{ #category : 'accessing' }
-MCPRenameSlotCommand >> className [
-
-	^ className
-]
-
-{ #category : 'accessing' }
-MCPRenameSlotCommand >> className: aClassName [
-
-	className := aClassName
-]
-
-{ #category : 'accessing' }
-MCPRenameSlotCommand >> classSide [
-
-	^ classSide
-]
-
-{ #category : 'accessing' }
-MCPRenameSlotCommand >> classSide: aBoolean [
-
-	classSide := aBoolean
 ]
 
 { #category : 'private' }
@@ -341,18 +314,6 @@ MCPRenameSlotCommand >> setterSourceForNewSlot [
 
 	^ self newSlotName , ': anObject' , String cr , String cr
 	  , self newSlotName , ' := anObject'
-]
-
-{ #category : 'accessing' }
-MCPRenameSlotCommand >> slotName [
-
-	^ slotName
-]
-
-{ #category : 'accessing' }
-MCPRenameSlotCommand >> slotName: aSlotName [
-
-	slotName := aSlotName
 ]
 
 { #category : 'private' }

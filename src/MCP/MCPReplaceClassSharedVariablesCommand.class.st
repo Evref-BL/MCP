@@ -5,7 +5,6 @@ Class {
 	#name : 'MCPReplaceClassSharedVariablesCommand',
 	#superclass : 'MCPClassCommand',
 	#instVars : [
-		'className',
 		'sharedVariableNames'
 	],
 	#category : 'MCP-Commands',
@@ -20,18 +19,6 @@ MCPReplaceClassSharedVariablesCommand class >> className: aClassName sharedVaria
 		  className: aClassName;
 		  sharedVariableNames: someNames;
 		  yourself
-]
-
-{ #category : 'accessing' }
-MCPReplaceClassSharedVariablesCommand >> className [
-
-	^ className
-]
-
-{ #category : 'accessing' }
-MCPReplaceClassSharedVariablesCommand >> className: aString [
-
-	className := aString
 ]
 
 { #category : 'executing' }

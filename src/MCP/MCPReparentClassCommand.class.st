@@ -7,7 +7,6 @@ Class {
 	#name : 'MCPReparentClassCommand',
 	#superclass : 'MCPClassCommand',
 	#instVars : [
-		'className',
 		'superclassName'
 	],
 	#category : 'MCP-Commands',
@@ -34,18 +33,6 @@ MCPReparentClassCommand >> builderForReparenting: aClass toSuperclass: aSupercla
 	builder name: aClass name.
 	builder superclass: aSuperclass.
 	^ builder
-]
-
-{ #category : 'accessing' }
-MCPReparentClassCommand >> className [
-
-	^ className
-]
-
-{ #category : 'accessing' }
-MCPReparentClassCommand >> className: aString [
-
-	className := aString
 ]
 
 { #category : 'executing' }

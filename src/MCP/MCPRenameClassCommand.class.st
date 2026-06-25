@@ -7,7 +7,6 @@ Class {
 	#name : 'MCPRenameClassCommand',
 	#superclass : 'MCPClassCommand',
 	#instVars : [
-		'className',
 		'newClassName',
 		'model'
 	],
@@ -33,18 +32,6 @@ MCPRenameClassCommand class >> className: aClassName newClassName: aNewClassName
 		  newClassName: aNewClassName;
 		  model: aModel;
 		  yourself
-]
-
-{ #category : 'accessing' }
-MCPRenameClassCommand >> className [
-
-	^ className
-]
-
-{ #category : 'accessing' }
-MCPRenameClassCommand >> className: aString [
-
-	className := aString
 ]
 
 { #category : 'executing' }

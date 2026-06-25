@@ -5,7 +5,6 @@ Class {
 	#name : 'MCPReplaceClassDefinitionCommand',
 	#superclass : 'MCPClassCommand',
 	#instVars : [
-		'className',
 		'slotNames',
 		'classSlotNames',
 		'replaceSlots',
@@ -15,18 +14,6 @@ Class {
 	#package : 'MCP',
 	#tag : 'Commands'
 }
-
-{ #category : 'accessing' }
-MCPReplaceClassDefinitionCommand >> className [
-
-	^ className
-]
-
-{ #category : 'accessing' }
-MCPReplaceClassDefinitionCommand >> className: aClassName [
-
-	className := aClassName
-]
 
 { #category : 'accessing' }
 MCPReplaceClassDefinitionCommand >> classSlotNames [

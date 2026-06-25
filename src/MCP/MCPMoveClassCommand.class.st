@@ -7,7 +7,6 @@ Class {
 	#name : 'MCPMoveClassCommand',
 	#superclass : 'MCPClassCommand',
 	#instVars : [
-		'className',
 		'packageName',
 		'tag'
 	],
@@ -24,18 +23,6 @@ MCPMoveClassCommand class >> className: aClassName packageName: aPackageName tag
 		  packageName: aPackageName;
 		  tag: aTag;
 		  yourself
-]
-
-{ #category : 'accessing' }
-MCPMoveClassCommand >> className [
-
-	^ className
-]
-
-{ #category : 'accessing' }
-MCPMoveClassCommand >> className: aString [
-
-	className := aString
 ]
 
 { #category : 'private' }

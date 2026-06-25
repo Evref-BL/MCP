@@ -6,6 +6,10 @@ Subclasses provide #slotName, #classSide, and the operation-specific refactoring
 Class {
 	#name : 'MCPClassSlotCommand',
 	#superclass : 'MCPClassCommand',
+	#instVars : [
+		'slotName',
+		'classSide'
+	],
 	#category : 'MCP-Commands',
 	#package : 'MCP',
 	#tag : 'Commands'
@@ -20,7 +24,13 @@ MCPClassSlotCommand class >> isAbstract [
 { #category : 'accessing' }
 MCPClassSlotCommand >> classSide [
 
-	self subclassResponsibility
+	^ classSide ifNil: [ false ]
+]
+
+{ #category : 'accessing' }
+MCPClassSlotCommand >> classSide: aBoolean [
+
+	classSide := aBoolean
 ]
 
 { #category : 'private' }
@@ -40,5 +50,11 @@ MCPClassSlotCommand >> refactoringForBehavior: aBehavior [
 { #category : 'accessing' }
 MCPClassSlotCommand >> slotName [
 
-	self subclassResponsibility
+	^ slotName
+]
+
+{ #category : 'accessing' }
+MCPClassSlotCommand >> slotName: aSlotName [
+
+	slotName := aSlotName
 ]

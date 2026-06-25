@@ -100,13 +100,6 @@ MCPDebugEvaluateCommand >> execute [
 		  warnings: warnings
 ]
 
-{ #category : 'private - frames' }
-MCPDebugEvaluateCommand >> frameRefForRecord: aRecord frameIndex: frameIndex [
-
-	^ aRecord sessionId , '/' , aRecord stateId , '/frame-'
-	  , frameIndex asString
-]
-
 { #category : 'private - printing' }
 MCPDebugEvaluateCommand >> limitedPrintStringOf: anObject [
 
@@ -147,35 +140,6 @@ MCPDebugEvaluateCommand >> runtimeFailureFor: anError record: aRecord frameIndex
 	^ MCPDebugToolResult
 		  errorSummary: (tool runtimeFailureMessageFor: anError)
 		  details: details
-]
-
-{ #category : 'private - frames' }
-MCPDebugEvaluateCommand >> selectedContextForRecord: aRecord frameIndex: frameIndex [
-
-	| contexts stateInfo |
-	stateInfo := MCPDebugStateInfo fromRecord: aRecord request: request.
-	contexts := stateInfo rawContexts.
-	^ contexts
-		  at: frameIndex + 1
-		  ifAbsent: [
-		  self signalMissingFrameIndex: frameIndex record: aRecord ]
-]
-
-{ #category : 'private - errors' }
-MCPDebugEvaluateCommand >> signalMissingFrameIndex: frameIndex record: aRecord [
-
-	^ MCPCommandError
-		  signalErrorCode: #DebugFrameNotFound
-		  message:
-			  'Debug frame ' , frameIndex asString
-			  , ' was not found for session ' , aRecord sessionId , '.'
-		  details: {
-				  (#sessionId -> aRecord sessionId).
-				  (#stateId -> aRecord stateId).
-				  (#frameIndex -> frameIndex).
-				  (#frameRef
-				   -> (self frameRefForRecord: aRecord frameIndex: frameIndex)) }
-				  asDictionary
 ]
 
 { #category : 'private - errors' }

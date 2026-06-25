@@ -4,11 +4,6 @@ Removes a slot from a class or metaclass through the refactoring engine.
 Class {
 	#name : 'MCPRemoveSlotCommand',
 	#superclass : 'MCPClassSlotCommand',
-	#instVars : [
-		'className',
-		'slotName',
-		'classSide'
-	],
 	#category : 'MCP-Commands',
 	#package : 'MCP',
 	#tag : 'Commands'
@@ -22,30 +17,6 @@ MCPRemoveSlotCommand class >> className: aClassName slotName: aSlotName classSid
 		  slotName: aSlotName;
 		  classSide: aBoolean;
 		  yourself
-]
-
-{ #category : 'accessing' }
-MCPRemoveSlotCommand >> className [
-
-	^ className
-]
-
-{ #category : 'accessing' }
-MCPRemoveSlotCommand >> className: aClassName [
-
-	className := aClassName
-]
-
-{ #category : 'accessing' }
-MCPRemoveSlotCommand >> classSide [
-
-	^ classSide
-]
-
-{ #category : 'accessing' }
-MCPRemoveSlotCommand >> classSide: aBoolean [
-
-	classSide := aBoolean
 ]
 
 { #category : 'private' }
@@ -110,16 +81,4 @@ MCPRemoveSlotCommand >> signalReferenceWarningIfNeededForBehavior: aBehavior [
 	hasReferences ifTrue: [
 		RBBreakingChangeChecksFailedWarning signal:
 			' Variable ' , self slotName , ' is still referenced' ]
-]
-
-{ #category : 'accessing' }
-MCPRemoveSlotCommand >> slotName [
-
-	^ slotName
-]
-
-{ #category : 'accessing' }
-MCPRemoveSlotCommand >> slotName: aSlotName [
-
-	slotName := aSlotName
 ]

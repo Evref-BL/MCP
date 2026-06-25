@@ -5,7 +5,6 @@ Class {
 	#name : 'MCPReplaceClassSideTraitsCommand',
 	#superclass : 'MCPClassCommand',
 	#instVars : [
-		'className',
 		'classTraitNames'
 	],
 	#category : 'MCP-Commands',
@@ -20,18 +19,6 @@ MCPReplaceClassSideTraitsCommand class >> className: aClassName classTraitNames:
 		  className: aClassName;
 		  classTraitNames: someNames;
 		  yourself
-]
-
-{ #category : 'accessing' }
-MCPReplaceClassSideTraitsCommand >> className [
-
-	^ className
-]
-
-{ #category : 'accessing' }
-MCPReplaceClassSideTraitsCommand >> className: aString [
-
-	className := aString
 ]
 
 { #category : 'accessing' }

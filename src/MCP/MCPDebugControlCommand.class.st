@@ -96,14 +96,6 @@ MCPDebugControlCommand >> execute [
 		  warnings: (data at: #warnings)
 ]
 
-{ #category : 'private - frames' }
-MCPDebugControlCommand >> frameRefForRecord: aRecord frameIndex: frameIndex [
-
-	frameIndex ifNil: [ ^ nil ].
-	^ aRecord sessionId , '/' , aRecord stateId , '/frame-'
-	  , frameIndex asString
-]
-
 { #category : 'private - actions' }
 MCPDebugControlCommand >> operationRequiresContext: operationName [
 
@@ -200,18 +192,6 @@ MCPDebugControlCommand >> resultDataForRecord: aRecord previousStateId: previous
 	^ data
 ]
 
-{ #category : 'private - frames' }
-MCPDebugControlCommand >> selectedContextForRecord: aRecord frameIndex: frameIndex [
-
-	| contexts stateInfo |
-	stateInfo := MCPDebugStateInfo fromRecord: aRecord request: request.
-	contexts := stateInfo rawContexts.
-	^ contexts
-		  at: frameIndex + 1
-		  ifAbsent: [
-		  self signalMissingFrameIndex: frameIndex record: aRecord ]
-]
-
 { #category : 'private - data' }
 MCPDebugControlCommand >> shouldReturnStateForRecord: aRecord operation: operationName [
 
@@ -229,23 +209,6 @@ MCPDebugControlCommand >> signalMissingDebugSessionForRecord: aRecord [
 		  'Debug session ' , aRecord sessionId
 		  , ' has no DebugSession object.'
 		  details: { (#sessionId -> aRecord sessionId) } asDictionary
-]
-
-{ #category : 'private - errors' }
-MCPDebugControlCommand >> signalMissingFrameIndex: frameIndex record: aRecord [
-
-	^ MCPCommandError
-		  signalErrorCode: #DebugFrameNotFound
-		  message:
-			  'Debug frame ' , frameIndex asString
-			  , ' was not found for session ' , aRecord sessionId , '.'
-		  details: {
-				  (#sessionId -> aRecord sessionId).
-				  (#stateId -> aRecord stateId).
-				  (#frameIndex -> frameIndex).
-				  (#frameRef
-				   -> (self frameRefForRecord: aRecord frameIndex: frameIndex)) }
-				  asDictionary
 ]
 
 { #category : 'private - data' }

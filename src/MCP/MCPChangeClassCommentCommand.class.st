@@ -7,7 +7,6 @@ Class {
 	#name : 'MCPChangeClassCommentCommand',
 	#superclass : 'MCPClassCommand',
 	#instVars : [
-		'className',
 		'classComment'
 	],
 	#category : 'MCP-Commands',
@@ -34,18 +33,6 @@ MCPChangeClassCommentCommand >> classComment [
 MCPChangeClassCommentCommand >> classComment: aString [
 
 	classComment := aString ifNil: [ '' ] ifNotNil: [ aString asString ]
-]
-
-{ #category : 'accessing' }
-MCPChangeClassCommentCommand >> className [
-
-	^ className
-]
-
-{ #category : 'accessing' }
-MCPChangeClassCommentCommand >> className: aString [
-
-	className := aString
 ]
 
 { #category : 'executing' }

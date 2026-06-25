@@ -5,16 +5,7 @@ It handles packageNames, classNames, hierarchyClassNames, subclassClassNames, an
 "
 Class {
 	#name : 'MCPClassScopeQuery',
-	#superclass : 'Object',
-	#instVars : [
-		'packageNames',
-		'classNames',
-		'hierarchyClassNames',
-		'subclassClassNames',
-		'parentClassNames',
-		'warnings',
-		'requiresCompleteScope'
-	],
+	#superclass : 'MCPScopeQuery',
 	#category : 'MCP-Queries',
 	#package : 'MCP',
 	#tag : 'Queries'
@@ -28,20 +19,6 @@ MCPClassScopeQuery >> allClasses [
 	Smalltalk globals allClasses do: [ :eachClass |
 		classes add: eachClass instanceSide ].
 	^ self sortedClassesByName: classes
-]
-
-{ #category : 'accessing' }
-MCPClassScopeQuery >> classNames [
-
-	^ classNames
-]
-
-{ #category : 'accessing' }
-MCPClassScopeQuery >> classNames: someClassNames [
-
-	classNames := someClassNames
-		              ifNil: [ #(  ) ]
-		              ifNotNil: [ someClassNames asArray ]
 ]
 
 { #category : 'private - scope' }
@@ -84,20 +61,6 @@ MCPClassScopeQuery >> classesForPackageNames [
 	^ self sortedClassesByName: classes
 ]
 
-{ #category : 'accessing' }
-MCPClassScopeQuery >> hierarchyClassNames [
-
-	^ hierarchyClassNames ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPClassScopeQuery >> hierarchyClassNames: someClassNames [
-
-	hierarchyClassNames := someClassNames
-		                       ifNil: [ #(  ) ]
-		                       ifNotNil: [ someClassNames asArray ]
-]
-
 { #category : 'private - scope' }
 MCPClassScopeQuery >> hierarchyClassesNamed: someClassNames [
 
@@ -124,34 +87,6 @@ MCPClassScopeQuery >> initialize [
 	requiresCompleteScope := false
 ]
 
-{ #category : 'accessing' }
-MCPClassScopeQuery >> packageNames [
-
-	^ packageNames
-]
-
-{ #category : 'accessing' }
-MCPClassScopeQuery >> packageNames: somePackageNames [
-
-	packageNames := somePackageNames
-		                ifNil: [ #(  ) ]
-		                ifNotNil: [ somePackageNames asArray ]
-]
-
-{ #category : 'accessing' }
-MCPClassScopeQuery >> parentClassNames [
-
-	^ parentClassNames ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPClassScopeQuery >> parentClassNames: someClassNames [
-
-	parentClassNames := someClassNames
-		                    ifNil: [ #(  ) ]
-		                    ifNotNil: [ someClassNames asArray ]
-]
-
 { #category : 'private - scope' }
 MCPClassScopeQuery >> parentClassesNamed: someClassNames [
 
@@ -163,67 +98,6 @@ MCPClassScopeQuery >> parentClassesNamed: someClassNames [
 		eachClass allSuperclasses do: [ :relatedClass |
 			classes add: relatedClass instanceSide ] ].
 	^ self sortedClassesByName: classes
-]
-
-{ #category : 'private - resolution' }
-MCPClassScopeQuery >> recordMissingClassNamed: className inScope: scopeName [
-
-	| suggestions |
-	suggestions := MCPScopeNameSuggester classSuggestionsFor: className.
-	self requiresCompleteScope ifTrue: [
-		^ MCPCommandError
-			  signalMissingClassNamed: className
-			  scopeName: scopeName ].
-	warnings ifNil: [ self resetWarnings ].
-	warnings add: (MCPScopeNameSuggester
-			 missingNameWarningForKind: 'Class'
-			 name: className
-			 scope: scopeName
-			 suggestions: suggestions).
-	^ nil
-]
-
-{ #category : 'private - resolution' }
-MCPClassScopeQuery >> recordMissingPackageNamed: packageName inScope: scopeName [
-
-	| suggestions |
-	suggestions := MCPScopeNameSuggester packageSuggestionsFor:
-		               packageName.
-	self requiresCompleteScope ifTrue: [
-		^ MCPCommandError
-			  signalMissingPackageNamed: packageName
-			  scopeName: scopeName ].
-	warnings ifNil: [ self resetWarnings ].
-	warnings add: (MCPScopeNameSuggester
-			 missingNameWarningForKind: 'Package'
-			 name: packageName
-			 scope: scopeName
-			 suggestions: suggestions).
-	^ nil
-]
-
-{ #category : 'configuring' }
-MCPClassScopeQuery >> requireCompleteScope [
-
-	self requiresCompleteScope: true
-]
-
-{ #category : 'accessing' }
-MCPClassScopeQuery >> requiresCompleteScope [
-
-	^ requiresCompleteScope ifNil: [ false ]
-]
-
-{ #category : 'accessing' }
-MCPClassScopeQuery >> requiresCompleteScope: aBoolean [
-
-	requiresCompleteScope := aBoolean = true
-]
-
-{ #category : 'private - resolution' }
-MCPClassScopeQuery >> resetWarnings [
-
-	warnings := OrderedCollection new
 ]
 
 { #category : 'private - resolution' }
@@ -279,20 +153,6 @@ MCPClassScopeQuery >> sortedClassesByName: someClasses [
 	^ someClasses asArray sort: [ :left :right | left name <= right name ]
 ]
 
-{ #category : 'accessing' }
-MCPClassScopeQuery >> subclassClassNames [
-
-	^ subclassClassNames ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPClassScopeQuery >> subclassClassNames: someClassNames [
-
-	subclassClassNames := someClassNames
-		                      ifNil: [ #(  ) ]
-		                      ifNotNil: [ someClassNames asArray ]
-]
-
 { #category : 'private - scope' }
 MCPClassScopeQuery >> subclassClassesNamed: someClassNames [
 
@@ -313,20 +173,4 @@ MCPClassScopeQuery >> unionClasses [
 	classes := IdentitySet new.
 	self classScopeSets do: [ :eachSet | classes addAll: eachSet ].
 	^ self sortedClassesByName: classes
-]
-
-{ #category : 'private - source' }
-MCPClassScopeQuery >> usesImplicitImageScope [
-
-	^ self packageNames isEmpty and: [
-		  self classNames isEmpty and: [
-			  self hierarchyClassNames isEmpty and: [
-				  self subclassClassNames isEmpty and: [
-					  self parentClassNames isEmpty ] ] ] ]
-]
-
-{ #category : 'accessing' }
-MCPClassScopeQuery >> warnings [
-
-	^ warnings ifNil: [ #(  ) ] ifNotNil: [ warnings asArray ]
 ]

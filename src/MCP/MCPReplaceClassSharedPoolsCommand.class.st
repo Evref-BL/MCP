@@ -5,7 +5,6 @@ Class {
 	#name : 'MCPReplaceClassSharedPoolsCommand',
 	#superclass : 'MCPClassCommand',
 	#instVars : [
-		'className',
 		'sharedPoolNames'
 	],
 	#category : 'MCP-Commands',
@@ -20,18 +19,6 @@ MCPReplaceClassSharedPoolsCommand class >> className: aClassName sharedPoolNames
 		  className: aClassName;
 		  sharedPoolNames: someNames;
 		  yourself
-]
-
-{ #category : 'accessing' }
-MCPReplaceClassSharedPoolsCommand >> className [
-
-	^ className
-]
-
-{ #category : 'accessing' }
-MCPReplaceClassSharedPoolsCommand >> className: aString [
-
-	className := aString
 ]
 
 { #category : 'executing' }
@@ -53,31 +40,6 @@ MCPReplaceClassSharedPoolsCommand >> replaceSharedPoolsOn: aClass [
 	^ ShiftClassInstaller
 		  update: aClass
 		  to: [ :builder | builder sharedPools: self resolvedSharedPools ]
-]
-
-{ #category : 'private' }
-MCPReplaceClassSharedPoolsCommand >> resolvedSharedPoolNamed: aSharedPoolName [
-
-	| behavior sharedPoolName |
-	sharedPoolName := aSharedPoolName.
-	behavior := Smalltalk globals
-		            at: sharedPoolName asSymbol
-		            ifAbsent: [
-				            MCPCommandError
-					            signalErrorCode: #SharedPoolNotFound
-					            message:
-					            'Shared pool ' , sharedPoolName , ' does not exist.'
-					            details: {
-							            (#className -> self className).
-							            (#sharedPoolName -> sharedPoolName) } asDictionary ].
-	(SharedPool withAllSubclasses includes: behavior) ifFalse: [
-			MCPCommandError
-				signalErrorCode: #InvalidSharedPool
-				message: sharedPoolName , ' is not a shared pool.'
-				details: {
-						(#className -> self className).
-						(#sharedPoolName -> sharedPoolName) } asDictionary ].
-	^ behavior
 ]
 
 { #category : 'private' }

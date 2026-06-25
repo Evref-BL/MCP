@@ -7,10 +7,7 @@ Class {
 	#name : 'MCPMoveSlotCommand',
 	#superclass : 'MCPClassSlotCommand',
 	#instVars : [
-		'className',
-		'slotName',
-		'direction',
-		'classSide'
+		'direction'
 	],
 	#category : 'MCP-Commands',
 	#package : 'MCP',
@@ -47,30 +44,6 @@ MCPMoveSlotCommand >> affectedClassNamesFor: aBehavior [
 	^ (behaviors
 		   collect: [ :each | self normalizedAffectedClassNameFor: each ]
 		   as: Array) sort: [ :left :right | left <= right ]
-]
-
-{ #category : 'accessing' }
-MCPMoveSlotCommand >> className [
-
-	^ className
-]
-
-{ #category : 'accessing' }
-MCPMoveSlotCommand >> className: aClassName [
-
-	className := aClassName
-]
-
-{ #category : 'accessing' }
-MCPMoveSlotCommand >> classSide [
-
-	^ classSide
-]
-
-{ #category : 'accessing' }
-MCPMoveSlotCommand >> classSide: aBoolean [
-
-	classSide := aBoolean
 ]
 
 { #category : 'accessing' }
@@ -129,16 +102,4 @@ MCPMoveSlotCommand >> refactoringForBehavior: aBehavior [
 				   Error signal: 'direction must be pullUpSlot or pushDownSlot.' ] ])
 		  variable: self slotName
 		  class: aBehavior
-]
-
-{ #category : 'accessing' }
-MCPMoveSlotCommand >> slotName [
-
-	^ slotName
-]
-
-{ #category : 'accessing' }
-MCPMoveSlotCommand >> slotName: aSlotName [
-
-	slotName := aSlotName
 ]

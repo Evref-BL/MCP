@@ -79,15 +79,6 @@ MCPListChangeHistoryLogsCommand >> execute [
 ]
 
 { #category : 'private' }
-MCPListChangeHistoryLogsCommand >> historyDirectoryForCurrentFile: aFileReference [
-
-	aFileReference ifNotNil: [ ^ aFileReference parent ].
-	^ [ EpMonitor logsDirectory ]
-		  on: Error
-		  do: [ :error | FileLocator localDirectory asFileReference ]
-]
-
-{ #category : 'private' }
 MCPListChangeHistoryLogsCommand >> historyFileReferencesFrom: aDirectory including: currentFile [
 
 	| files |
