@@ -36,11 +36,7 @@ MCPRunTestsCommand >> coverableMethodsForCoverageRequest: aCoverageRequest [
 { #category : 'private - coverage' }
 MCPRunTestsCommand >> coverageCollectorClass [
 
-	^ Smalltalk globals at: #CoverageCollector ifAbsent: [
-			  MCPCommandError
-				  signalErrorCode: #CoverageUnavailable
-				  message: 'CoverageCollector is not available in this image.'
-				  details: Dictionary new ]
+	^ CoverageCollector
 ]
 
 { #category : 'private - coverage' }

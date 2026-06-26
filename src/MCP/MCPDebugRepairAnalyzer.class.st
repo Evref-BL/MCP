@@ -150,13 +150,8 @@ MCPDebugRepairAnalyzer >> methodBehaviorForContext: aContext [
 { #category : 'private - contexts' }
 MCPDebugRepairAnalyzer >> methodImplementor [
 
-	| implementorClass session |
-	session := self debugSession.
-	session ifNil: [ ^ nil ].
-	implementorClass := Smalltalk globals
-		                    at: #StDebuggerMethodImplementor
-		                    ifAbsent: [ ^ nil ].
-	^ implementorClass forSession: session
+	^ self debugSession ifNotNil: [ :session |
+		  PharoCompatibility debuggerMethodImplementorForSession: session ]
 ]
 
 { #category : 'private - actions' }
