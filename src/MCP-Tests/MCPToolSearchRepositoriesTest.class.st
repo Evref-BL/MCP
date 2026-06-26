@@ -219,9 +219,9 @@ MCPToolSearchRepositoriesTest >> withRepositories: repositories do: aBlock [
 	registry := IceRepository registry.
 	previousRepositories := registry copy.
 	[
-	registry removeAll.
-	registry addAll: repositories.
-	aBlock value ] ensure: [
 		registry removeAll.
-		registry addAll: previousRepositories ]
+		registry addAll: repositories.
+		aBlock value ] ensure: [
+			registry removeAll.
+			registry addAll: previousRepositories ]
 ]

@@ -146,9 +146,9 @@ MCPToolMethodSearch >> matchingSelectorReferencesForSelector: aSelectorSymbol in
 	specialSelectorIndex := Smalltalk specialSelectorIndexOrNil:
 		                        aSelectorSymbol.
 	^ (compiledMethods select: [ :eachMethod |
-		   eachMethod
-			   hasSelector: aSelectorSymbol
-			   specialSelectorIndex: specialSelectorIndex ]) asArray
+			   eachMethod
+				   hasSelector: aSelectorSymbol
+				   specialSelectorIndex: specialSelectorIndex ]) asArray
 ]
 
 { #category : 'private - searching' }
@@ -159,8 +159,8 @@ MCPToolMethodSearch >> matchingVariableReferencesNamed: aVariableName scopeQuery
 		             variableBindingsNamed: aVariableName
 		             inBehaviors: query behaviors.
 	variables ifEmpty: [
-		Error signal: 'No variable named ' , aVariableName
-			, ' is accessible in the requested scope.' ].
+			Error signal: 'No variable named ' , aVariableName
+				, ' is accessible in the requested scope.' ].
 	^ (compiledMethods select: [ :eachMethod |
 		   self method: eachMethod referencesAnyVariable: variables ])
 		  asArray
@@ -365,11 +365,11 @@ MCPToolMethodSearch >> variableBindingsNamed: aVariableName inBehaviors: behavio
 	| variables |
 	variables := IdentitySet new.
 	behaviors do: [ :eachBehavior |
-		eachBehavior allSlots do: [ :eachSlot |
-			eachSlot name asString = aVariableName ifTrue: [
-				variables add: eachSlot ] ].
-		(eachBehavior bindingOf: aVariableName) ifNotNil: [ :binding |
-			variables add: binding ] ].
+			eachBehavior allSlots do: [ :eachSlot |
+					eachSlot name asString = aVariableName ifTrue: [
+						variables add: eachSlot ] ].
+			(eachBehavior bindingOf: aVariableName) ifNotNil: [ :binding |
+				variables add: binding ] ].
 	^ variables asArray
 ]
 

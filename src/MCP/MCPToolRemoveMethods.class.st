@@ -109,27 +109,27 @@ MCPToolRemoveMethods >> executeWithRequest: request [
 	^ self
 		  executeParsedRequestFrom: request
 		  do: [ :removeRequest |
-			  | result |
-			  result := (self commandForRequest: removeRequest) execute.
-			  self
-				  successResultText: (self
-						   successSummaryForClassName: result className
-						   classSide: result classSide
-						   selectors: result selectors)
-				  data: result asDictionary
-				  warnings: result warningMessages ]
+				  | result |
+				  result := (self commandForRequest: removeRequest) execute.
+				  self
+					  successResultText: (self
+							   successSummaryForClassName: result className
+							   classSide: result classSide
+							   selectors: result selectors)
+					  data: result asDictionary
+					  warnings: result warningMessages ]
 		  onError: [ :error :removeRequest |
-			  self
-				  errorResultForError: error
-				  className: (self
-						   classNameForErrorFromParsedRequest: removeRequest
-						   rawRequest: request)
-				  classSide: (self
-						   classSideForErrorFromParsedRequest: removeRequest
-						   rawRequest: request)
-				  selectors: (self
-						   selectorsForErrorFromParsedRequest: removeRequest
-						   rawRequest: request) ]
+				  self
+					  errorResultForError: error
+					  className: (self
+							   classNameForErrorFromParsedRequest: removeRequest
+							   rawRequest: request)
+					  classSide: (self
+							   classSideForErrorFromParsedRequest: removeRequest
+							   rawRequest: request)
+					  selectors: (self
+							   selectorsForErrorFromParsedRequest: removeRequest
+							   rawRequest: request) ]
 ]
 
 { #category : 'private' }
@@ -140,15 +140,15 @@ MCPToolRemoveMethods >> failureMessageForClassNamed: className classSide: classS
 		              ifTrue: [ className , ' class' ]
 		              ifFalse: [ className ].
 	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: 'Unable to remove methods from ';
-			  nextPutAll: targetName;
-			  nextPutAll: ': ';
-			  nextPutAll: (', ' join: selectors);
-			  nextPutAll: ' (';
-			  nextPutAll: anError class name;
-			  nextPutAll: '): ';
-			  nextPutAll: anError messageText ]
+			  stream
+				  nextPutAll: 'Unable to remove methods from ';
+				  nextPutAll: targetName;
+				  nextPutAll: ': ';
+				  nextPutAll: (', ' join: selectors);
+				  nextPutAll: ' (';
+				  nextPutAll: anError class name;
+				  nextPutAll: '): ';
+				  nextPutAll: anError messageText ]
 ]
 
 { #category : 'private' }

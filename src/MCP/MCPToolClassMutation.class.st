@@ -22,9 +22,7 @@ MCPToolClassMutation class >> isAbstract [
 { #category : 'private - schema' }
 MCPToolClassMutation >> atLeastOneInputProperties [
 
-	^ self classToolSpec
-		  at: #atLeastOneProperties
-		  ifAbsent: [ #(  ) ]
+	^ self classToolSpec at: #atLeastOneProperties ifAbsent: [ #(  ) ]
 ]
 
 { #category : 'metadata' }
@@ -115,45 +113,45 @@ MCPToolClassMutation >> failureMessageForAddSlotNamed: slotName onClassNamed: cl
 MCPToolClassMutation >> failureMessageForCreateClassNamed: className superclassName: superclassName packageName: packageName error: anError [
 
 	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: 'Unable to create class ';
-			  nextPutAll: className;
-			  nextPutAll: ' < ';
-			  nextPutAll: superclassName;
-			  nextPutAll: ' in package ';
-			  nextPutAll: packageName;
-			  nextPutAll: ': ';
-			  nextPutAll:
-				  (self normalizedCauseMessageForMutationError: anError) ]
+			  stream
+				  nextPutAll: 'Unable to create class ';
+				  nextPutAll: className;
+				  nextPutAll: ' < ';
+				  nextPutAll: superclassName;
+				  nextPutAll: ' in package ';
+				  nextPutAll: packageName;
+				  nextPutAll: ': ';
+				  nextPutAll:
+					  (self normalizedCauseMessageForMutationError: anError) ]
 ]
 
 { #category : 'private' }
 MCPToolClassMutation >> failureMessageForMoveClassNamed: className packageName: packageName tag: tag error: anError [
 
 	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: 'Unable to move class ';
-			  nextPutAll: className;
-			  nextPutAll: ' to package ';
-			  nextPutAll: packageName.
-		  tag ifNotNil: [
 			  stream
-				  nextPutAll: ' tag ';
-				  nextPutAll: tag ].
-		  stream
-			  nextPutAll: ': ';
-			  nextPutAll:
-				  (self normalizedCauseMessageForMutationError: anError) ]
+				  nextPutAll: 'Unable to move class ';
+				  nextPutAll: className;
+				  nextPutAll: ' to package ';
+				  nextPutAll: packageName.
+			  tag ifNotNil: [
+					  stream
+						  nextPutAll: ' tag ';
+						  nextPutAll: tag ].
+			  stream
+				  nextPutAll: ': ';
+				  nextPutAll:
+					  (self normalizedCauseMessageForMutationError: anError) ]
 ]
 
 { #category : 'private' }
 MCPToolClassMutation >> failureMessageForMoveSlotNamed: slotName onClassNamed: className classSide: classSide operation: operation error: anError [
 
 	operation = 'pullUpSlot' ifTrue: [
-		^ 'Failed to pull up '
-		  , (self slotDescriptionForClassSide: classSide) , ' ' , slotName
-		  , ' to class ' , className , ': '
-		  , (self normalizedCauseMessageForMutationError: anError) ].
+			^ 'Failed to pull up '
+			  , (self slotDescriptionForClassSide: classSide) , ' ' , slotName
+			  , ' to class ' , className , ': '
+			  , (self normalizedCauseMessageForMutationError: anError) ].
 	^ 'Failed to push down '
 	  , (self slotDescriptionForClassSide: classSide) , ' ' , slotName
 	  , ' from class ' , className , ': '
@@ -172,14 +170,14 @@ MCPToolClassMutation >> failureMessageForRemoveSlotNamed: slotName onClassNamed:
 MCPToolClassMutation >> failureMessageForRenameClassNamed: className to: newClassName error: anError [
 
 	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: 'Unable to rename class ';
-			  nextPutAll: className;
-			  nextPutAll: ' to ';
-			  nextPutAll: newClassName;
-			  nextPutAll: ': ';
-			  nextPutAll:
-				  (self normalizedCauseMessageForMutationError: anError) ]
+			  stream
+				  nextPutAll: 'Unable to rename class ';
+				  nextPutAll: className;
+				  nextPutAll: ' to ';
+				  nextPutAll: newClassName;
+				  nextPutAll: ': ';
+				  nextPutAll:
+					  (self normalizedCauseMessageForMutationError: anError) ]
 ]
 
 { #category : 'private' }
@@ -194,106 +192,104 @@ MCPToolClassMutation >> failureMessageForRenameSlotNamed: slotName to: newSlotNa
 MCPToolClassMutation >> failureMessageForReparentClassNamed: className superclassName: superclassName error: anError [
 
 	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: 'Unable to reparent class ';
-			  nextPutAll: className;
-			  nextPutAll: ' to superclass ';
-			  nextPutAll: superclassName;
-			  nextPutAll: ': ';
-			  nextPutAll:
-				  (self normalizedCauseMessageForMutationError: anError) ]
+			  stream
+				  nextPutAll: 'Unable to reparent class ';
+				  nextPutAll: className;
+				  nextPutAll: ' to superclass ';
+				  nextPutAll: superclassName;
+				  nextPutAll: ': ';
+				  nextPutAll:
+					  (self normalizedCauseMessageForMutationError: anError) ]
 ]
 
 { #category : 'private' }
 MCPToolClassMutation >> failureMessageForReplaceClassTraitsOnClassNamed: className error: anError [
 
 	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: 'Unable to replace class-side traits for class ';
-			  nextPutAll: className;
-			  nextPutAll: ': ';
-			  nextPutAll:
-				  (self normalizedCauseMessageForMutationError: anError) ]
+			  stream
+				  nextPutAll: 'Unable to replace class-side traits for class ';
+				  nextPutAll: className;
+				  nextPutAll: ': ';
+				  nextPutAll:
+					  (self normalizedCauseMessageForMutationError: anError) ]
 ]
 
 { #category : 'private' }
 MCPToolClassMutation >> failureMessageForReplaceDefinitionOnClassNamed: className error: anError [
 
 	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: 'Unable to replace slot definition for class ';
-			  nextPutAll: className;
-			  nextPutAll: ': ';
-			  nextPutAll:
-				  (self normalizedCauseMessageForMutationError: anError) ]
+			  stream
+				  nextPutAll: 'Unable to replace slot definition for class ';
+				  nextPutAll: className;
+				  nextPutAll: ': ';
+				  nextPutAll:
+					  (self normalizedCauseMessageForMutationError: anError) ]
 ]
 
 { #category : 'private' }
 MCPToolClassMutation >> failureMessageForReplaceLayoutOnClassNamed: className error: anError [
 
 	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: 'Unable to replace layout for class ';
-			  nextPutAll: className;
-			  nextPutAll: ': ';
-			  nextPutAll:
-				  (self normalizedCauseMessageForMutationError: anError) ]
+			  stream
+				  nextPutAll: 'Unable to replace layout for class ';
+				  nextPutAll: className;
+				  nextPutAll: ': ';
+				  nextPutAll:
+					  (self normalizedCauseMessageForMutationError: anError) ]
 ]
 
 { #category : 'private' }
 MCPToolClassMutation >> failureMessageForReplaceSharedPoolsOnClassNamed: className error: anError [
 
 	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: 'Unable to replace shared pools for class ';
-			  nextPutAll: className;
-			  nextPutAll: ': ';
-			  nextPutAll:
-				  (self normalizedCauseMessageForMutationError: anError) ]
+			  stream
+				  nextPutAll: 'Unable to replace shared pools for class ';
+				  nextPutAll: className;
+				  nextPutAll: ': ';
+				  nextPutAll:
+					  (self normalizedCauseMessageForMutationError: anError) ]
 ]
 
 { #category : 'private' }
 MCPToolClassMutation >> failureMessageForReplaceSharedVariablesOnClassNamed: className error: anError [
 
 	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: 'Unable to replace shared variables for class ';
-			  nextPutAll: className;
-			  nextPutAll: ': ';
-			  nextPutAll:
-				  (self normalizedCauseMessageForMutationError: anError) ]
+			  stream
+				  nextPutAll: 'Unable to replace shared variables for class ';
+				  nextPutAll: className;
+				  nextPutAll: ': ';
+				  nextPutAll:
+					  (self normalizedCauseMessageForMutationError: anError) ]
 ]
 
 { #category : 'private' }
 MCPToolClassMutation >> failureMessageForReplaceTraitsOnClassNamed: className error: anError [
 
 	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: 'Unable to replace traits for class ';
-			  nextPutAll: className;
-			  nextPutAll: ': ';
-			  nextPutAll:
-				  (self normalizedCauseMessageForMutationError: anError) ]
+			  stream
+				  nextPutAll: 'Unable to replace traits for class ';
+				  nextPutAll: className;
+				  nextPutAll: ': ';
+				  nextPutAll:
+					  (self normalizedCauseMessageForMutationError: anError) ]
 ]
 
 { #category : 'private' }
 MCPToolClassMutation >> failureMessageForSetCommentOnClassNamed: className error: anError [
 
 	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: 'Unable to set comment for class ';
-			  nextPutAll: className;
-			  nextPutAll: ': ';
-			  nextPutAll:
-				  (self normalizedCauseMessageForMutationError: anError) ]
+			  stream
+				  nextPutAll: 'Unable to set comment for class ';
+				  nextPutAll: className;
+				  nextPutAll: ': ';
+				  nextPutAll:
+					  (self normalizedCauseMessageForMutationError: anError) ]
 ]
 
 { #category : 'private - specs' }
 MCPToolClassMutation >> fixedArguments [
 
-	^ self classToolSpec
-		  at: #fixedArguments
-		  ifAbsent: [ Dictionary new ]
+	^ self classToolSpec at: #fixedArguments ifAbsent: [ Dictionary new ]
 ]
 
 { #category : 'private - schema' }
@@ -367,9 +363,9 @@ MCPToolClassMutation >> parsedRequestFromToolRequest: request [
 	self fixedArguments keysAndValuesDo: [ :key :value |
 		arguments at: key put: value ].
 	mutationToolRequest := MCPToolRequest new
-		                  tool: self;
-		                  arguments: arguments;
-		                  yourself.
+		                       tool: self;
+		                       arguments: arguments;
+		                       yourself.
 	requestClass := self mutationAction = 'create'
 		                ifTrue: [ MCPClassCreateRequest ]
 		                ifFalse: [ MCPClassUpdateRequest ].

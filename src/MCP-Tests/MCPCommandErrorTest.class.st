@@ -13,8 +13,8 @@ Class {
 MCPCommandErrorTest >> capture: aBlock [
 
 	^ [
-	  aBlock value.
-	  self fail: 'Expected MCPCommandError' ]
+		  aBlock value.
+		  self fail: 'Expected MCPCommandError' ]
 		  on: MCPCommandError
 		  do: [ :error | error ]
 ]
@@ -24,8 +24,8 @@ MCPCommandErrorTest >> testClassAlreadyExistsErrorCarriesClassName [
 
 	| details error |
 	error := self capture: [
-		         MCPCommandError signalClassAlreadyExistsNamed:
-			         'MCPCommandErrorTestExisting' ].
+			         MCPCommandError signalClassAlreadyExistsNamed:
+				         'MCPCommandErrorTestExisting' ].
 	details := error structuredDetails.
 	self assert: error errorCode equals: #ClassAlreadyExists.
 	self
@@ -64,11 +64,11 @@ MCPCommandErrorTest >> testMissingMethodErrorCarriesClassSideAndSelector [
 
 	| details error |
 	error := self capture: [
-		         MCPCommandError
-			         signalMissingMethodInClassName:
-			         'MCPCommandErrorTestTarget'
-			         classSide: true
-			         selector: 'value' ].
+			         MCPCommandError
+				         signalMissingMethodInClassName:
+				         'MCPCommandErrorTestTarget'
+				         classSide: true
+				         selector: 'value' ].
 	details := error structuredDetails.
 	self assert: error errorCode equals: #MethodNotFound.
 	self assert: (details at: #errorClass) equals: 'MCPCommandError'.
@@ -108,9 +108,9 @@ MCPCommandErrorTest >> testMissingSuperclassErrorCarriesSuperclassName [
 
 	| details error |
 	error := self capture: [
-		         MCPCommandError
-			         signalMissingSuperclassNamed: 'MCPMissingSuperclass'
-			         forClassNamed: 'MCPNewClass' ].
+			         MCPCommandError
+				         signalMissingSuperclassNamed: 'MCPMissingSuperclass'
+				         forClassNamed: 'MCPNewClass' ].
 	details := error structuredDetails.
 	self assert: error errorCode equals: #SuperclassNotFound.
 	self assert: (details at: #className) equals: 'MCPNewClass'.
@@ -124,10 +124,10 @@ MCPCommandErrorTest >> testMissingTagErrorCarriesTagAndClassName [
 
 	| details error |
 	error := self capture: [
-		         MCPCommandError
-			         signalMissingTag: 'MissingTag'
-			         packageName: 'MCP-Tests'
-			         forClassNamed: 'MCPCommandErrorTestTarget' ].
+			         MCPCommandError
+				         signalMissingTag: 'MissingTag'
+				         packageName: 'MCP-Tests'
+				         forClassNamed: 'MCPCommandErrorTestTarget' ].
 	details := error structuredDetails.
 	self assert: error errorCode equals: #TagNotFound.
 	self

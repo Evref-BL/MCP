@@ -22,9 +22,9 @@ MCPToolCatalogCommand class >> isAbstract [
 MCPToolCatalogCommand class >> tool: aTool request: aRequest toolExposurePolicy: aToolExposurePolicy [
 
 	^ self new
-		initializeTool: aTool request: aRequest;
-		toolExposurePolicy: aToolExposurePolicy;
-		yourself
+		  initializeTool: aTool request: aRequest;
+		  toolExposurePolicy: aToolExposurePolicy;
+		  yourself
 ]
 
 { #category : 'accessing' }
@@ -37,5 +37,5 @@ MCPToolCatalogCommand >> toolExposurePolicy [
 MCPToolCatalogCommand >> toolExposurePolicy: aToolExposurePolicy [
 
 	toolExposurePolicy := aToolExposurePolicy ifNil: [
-		MCPToolExposurePolicy default ]
+		                      MCPToolExposurePolicy default ]
 ]

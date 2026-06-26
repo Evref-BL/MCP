@@ -20,26 +20,27 @@ MCPToolRunTestCoverage >> buildInputSchema [
 
 	| timeoutProperty |
 	timeoutProperty := self
-		integerSchemaPropertyNamed: 'timeoutSeconds'
-		description: 'Timeout seconds; 0 returns immediately.'
-		default: self defaultTimeoutSeconds.
+		                   integerSchemaPropertyNamed: 'timeoutSeconds'
+		                   description:
+		                   'Timeout seconds; 0 returns immediately.'
+		                   default: self defaultTimeoutSeconds.
 	timeoutProperty minimum: 0.
 	^ MCPStructureInputSchema new
-		type: 'object';
-		properties: self testSelectionInputProperties , {
-			self coverageOptionsObjectSchema.
-			timeoutProperty };
-		required: #( 'coverage' );
-		yourself
+		  type: 'object';
+		  properties: self testSelectionInputProperties , {
+					  self coverageOptionsObjectSchema.
+					  timeoutProperty };
+		  required: #( 'coverage' );
+		  yourself
 ]
 
 { #category : 'metadata' }
 MCPToolRunTestCoverage >> buildOutputSchema [
 
 	^ self
-		standardOutputSchemaForDataProperties:
-			self testRunDataProperties , { self coverageResultObjectSchema }
-		required: #( 'runCount' 'passedCount' 'coverage' )
+		  standardOutputSchemaForDataProperties:
+		  self testRunDataProperties , { self coverageResultObjectSchema }
+		  required: #( 'runCount' 'passedCount' 'coverage' )
 ]
 
 { #category : 'metadata' }

@@ -29,15 +29,15 @@ MCPEvaluateCommand >> execute [
 	compiler compilationContext isScripting: true.
 	notice := nil.
 	compiler failBlock: [ :aNotice |
-		notice := aNotice.
-		nil ].
+			notice := aNotice.
+			nil ].
 	answer := [ compiler evaluate: request code ]
 		          on: Exception
 		          do: [ :error |
-			          (PharoCompatibility syntaxNoticeFromException: error)
-				          ifNotNil: [
-				          :syntaxNotice | ^ self syntaxFailureFor: syntaxNotice ].
-			          ^ self runtimeFailureFor: error ].
+				          (PharoCompatibility syntaxNoticeFromException: error)
+					          ifNotNil: [ :syntaxNotice |
+					          ^ self syntaxFailureFor: syntaxNotice ].
+				          ^ self runtimeFailureFor: error ].
 	notice ifNotNil: [ ^ self syntaxFailureFor: notice ].
 	^ MCPEvaluateResult okData: {
 			  (#resultClassName -> answer class name asString).

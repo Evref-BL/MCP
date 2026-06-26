@@ -23,7 +23,7 @@ Class {
 { #category : 'accessing' }
 MCPScopeQuery >> classNames [
 
-	^ classNames ifNil: [ #( ) ]
+	^ classNames ifNil: [ #(  ) ]
 ]
 
 { #category : 'accessing' }
@@ -35,7 +35,7 @@ MCPScopeQuery >> classNames: aCollection [
 { #category : 'accessing' }
 MCPScopeQuery >> hierarchyClassNames [
 
-	^ hierarchyClassNames ifNil: [ #( ) ]
+	^ hierarchyClassNames ifNil: [ #(  ) ]
 ]
 
 { #category : 'accessing' }
@@ -47,7 +47,7 @@ MCPScopeQuery >> hierarchyClassNames: aCollection [
 { #category : 'accessing' }
 MCPScopeQuery >> packageNames [
 
-	^ packageNames ifNil: [ #( ) ]
+	^ packageNames ifNil: [ #(  ) ]
 ]
 
 { #category : 'accessing' }
@@ -59,7 +59,7 @@ MCPScopeQuery >> packageNames: aCollection [
 { #category : 'accessing' }
 MCPScopeQuery >> parentClassNames [
 
-	^ parentClassNames ifNil: [ #( ) ]
+	^ parentClassNames ifNil: [ #(  ) ]
 ]
 
 { #category : 'accessing' }
@@ -74,15 +74,15 @@ MCPScopeQuery >> recordMissingClassNamed: className inScope: scopeName [
 	| suggestions |
 	suggestions := MCPScopeNameSuggester classSuggestionsFor: className.
 	self requiresCompleteScope ifTrue: [
-		^ MCPCommandError
-			signalMissingClassNamed: className
-			scopeName: scopeName ].
+			^ MCPCommandError
+				  signalMissingClassNamed: className
+				  scopeName: scopeName ].
 	warnings ifNil: [ self resetWarnings ].
 	warnings add: (MCPScopeNameSuggester
-		missingNameWarningForKind: 'Class'
-		name: className
-		scope: scopeName
-		suggestions: suggestions).
+			 missingNameWarningForKind: 'Class'
+			 name: className
+			 scope: scopeName
+			 suggestions: suggestions).
 	^ nil
 ]
 
@@ -90,17 +90,18 @@ MCPScopeQuery >> recordMissingClassNamed: className inScope: scopeName [
 MCPScopeQuery >> recordMissingPackageNamed: packageName inScope: scopeName [
 
 	| suggestions |
-	suggestions := MCPScopeNameSuggester packageSuggestionsFor: packageName.
+	suggestions := MCPScopeNameSuggester packageSuggestionsFor:
+		               packageName.
 	self requiresCompleteScope ifTrue: [
-		^ MCPCommandError
-			signalMissingPackageNamed: packageName
-			scopeName: scopeName ].
+			^ MCPCommandError
+				  signalMissingPackageNamed: packageName
+				  scopeName: scopeName ].
 	warnings ifNil: [ self resetWarnings ].
 	warnings add: (MCPScopeNameSuggester
-		missingNameWarningForKind: 'Package'
-		name: packageName
-		scope: scopeName
-		suggestions: suggestions).
+			 missingNameWarningForKind: 'Package'
+			 name: packageName
+			 scope: scopeName
+			 suggestions: suggestions).
 	^ nil
 ]
 
@@ -131,7 +132,7 @@ MCPScopeQuery >> resetWarnings [
 { #category : 'accessing' }
 MCPScopeQuery >> subclassClassNames [
 
-	^ subclassClassNames ifNil: [ #( ) ]
+	^ subclassClassNames ifNil: [ #(  ) ]
 ]
 
 { #category : 'accessing' }
@@ -144,14 +145,14 @@ MCPScopeQuery >> subclassClassNames: aCollection [
 MCPScopeQuery >> usesImplicitImageScope [
 
 	^ self packageNames isEmpty and: [
-		self classNames isEmpty and: [
-			self hierarchyClassNames isEmpty and: [
-				self subclassClassNames isEmpty and: [
-					self parentClassNames isEmpty ] ] ] ]
+			  self classNames isEmpty and: [
+					  self hierarchyClassNames isEmpty and: [
+						  self subclassClassNames isEmpty and: [
+							  self parentClassNames isEmpty ] ] ] ]
 ]
 
 { #category : 'accessing' }
 MCPScopeQuery >> warnings [
 
-	^ warnings ifNil: [ #( ) ]
+	^ warnings ifNil: [ #(  ) ]
 ]

@@ -46,23 +46,23 @@ MCPCommandError class >> detailsWith: associations suggestionsForPackageNamed: p
 MCPCommandError class >> messageForMissingKind: kind name: missingName scopeName: scopeName suggestions: suggestions [
 
 	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: kind;
-			  space;
-			  nextPutAll: missingName asString;
-			  nextPutAll: ' does not exist'.
-		  scopeName ifNotNil: [
 			  stream
-				  nextPutAll: ' in ';
-				  nextPutAll: scopeName asString;
-				  nextPutAll: ' scope' ].
-		  stream nextPut: $..
-		  suggestions ifNotEmpty: [
-			  stream nextPutAll: ' Did you mean: '.
-			  suggestions
-				  do: [ :each | stream nextPutAll: each ]
-				  separatedBy: [ stream nextPutAll: ', ' ].
-			  stream nextPut: $. ] ]
+				  nextPutAll: kind;
+				  space;
+				  nextPutAll: missingName asString;
+				  nextPutAll: ' does not exist'.
+			  scopeName ifNotNil: [
+					  stream
+						  nextPutAll: ' in ';
+						  nextPutAll: scopeName asString;
+						  nextPutAll: ' scope' ].
+			  stream nextPut: $..
+			  suggestions ifNotEmpty: [
+					  stream nextPutAll: ' Did you mean: '.
+					  suggestions
+						  do: [ :each | stream nextPutAll: each ]
+						  separatedBy: [ stream nextPutAll: ', ' ].
+					  stream nextPut: $. ] ]
 ]
 
 { #category : 'signaling' }

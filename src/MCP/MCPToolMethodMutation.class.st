@@ -58,10 +58,14 @@ MCPToolMethodMutation >> allowedNonErrorCritiqueRuleClasses [
 MCPToolMethodMutation >> buildOutputSchema [
 
 	^ self
-		standardOutputSchemaForDataProperties: {
-			(self schemaPropertyNamed: 'changeKind' type: 'string' description: 'Whether method_compile created or replaced a method.').
-			self methodCritiquesSchemaProperty }
-		required: #(  )
+		  standardOutputSchemaForDataProperties: {
+				  (self
+					   schemaPropertyNamed: 'changeKind'
+					   type: 'string'
+					   description:
+					   'Whether method_compile created or replaced a method.').
+				  self methodCritiquesSchemaProperty }
+		  required: #(  )
 ]
 
 { #category : 'private' }
@@ -83,9 +87,9 @@ MCPToolMethodMutation >> critiqueDataFor: aCritique [
 		        asDictionary.
 	interval := self sourceIntervalForCritique: aCritique.
 	interval ifNotNil: [
-		data
-			at: #start put: interval first;
-			at: #stop put: interval last ].
+			data
+				at: #start put: interval first;
+				at: #stop put: interval last ].
 	^ data
 ]
 
@@ -119,18 +123,18 @@ MCPToolMethodMutation >> failureMessageForArgumentUpdateAction: updateAction cla
 		        ifTrue: [ 'add arguments to' ]
 		        ifFalse: [ 'remove arguments from' ].
 	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: 'Unable to ';
-			  nextPutAll: verb;
-			  nextPutAll: ' method ';
-			  nextPutAll: targetName;
-			  nextPutAll: '>>';
-			  nextPutAll: oldSelector;
-			  nextPutAll: ' as ';
-			  nextPutAll: newSelector;
-			  nextPutAll: ': ';
-			  nextPutAll:
-				  (self normalizedCauseMessageForMutationError: anError) ]
+			  stream
+				  nextPutAll: 'Unable to ';
+				  nextPutAll: verb;
+				  nextPutAll: ' method ';
+				  nextPutAll: targetName;
+				  nextPutAll: '>>';
+				  nextPutAll: oldSelector;
+				  nextPutAll: ' as ';
+				  nextPutAll: newSelector;
+				  nextPutAll: ': ';
+				  nextPutAll:
+					  (self normalizedCauseMessageForMutationError: anError) ]
 ]
 
 { #category : 'private' }
@@ -141,16 +145,16 @@ MCPToolMethodMutation >> failureMessageForChangeProtocolClassNamed: className cl
 		              classReferenceNameFor: className
 		              classSide: classSide.
 	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: 'Unable to change protocol for ';
-			  nextPutAll: targetName;
-			  nextPutAll: '>>';
-			  nextPutAll: selector;
-			  nextPutAll: ' to ';
-			  nextPutAll: protocol;
-			  nextPutAll: ': ';
-			  nextPutAll:
-				  (self normalizedCauseMessageForMutationError: anError) ]
+			  stream
+				  nextPutAll: 'Unable to change protocol for ';
+				  nextPutAll: targetName;
+				  nextPutAll: '>>';
+				  nextPutAll: selector;
+				  nextPutAll: ' to ';
+				  nextPutAll: protocol;
+				  nextPutAll: ': ';
+				  nextPutAll:
+					  (self normalizedCauseMessageForMutationError: anError) ]
 ]
 
 { #category : 'private' }
@@ -161,12 +165,12 @@ MCPToolMethodMutation >> failureMessageForCompileClassNamed: className classSide
 		              classReferenceNameFor: className
 		              classSide: classSide.
 	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: 'Unable to compile method on ';
-			  nextPutAll: targetName;
-			  nextPutAll: ': ';
-			  nextPutAll:
-				  (self normalizedCauseMessageForMutationError: anError) ]
+			  stream
+				  nextPutAll: 'Unable to compile method on ';
+				  nextPutAll: targetName;
+				  nextPutAll: ': ';
+				  nextPutAll:
+					  (self normalizedCauseMessageForMutationError: anError) ]
 ]
 
 { #category : 'private' }
@@ -177,16 +181,16 @@ MCPToolMethodMutation >> failureMessageForRenameClassNamed: className classSide:
 		              classReferenceNameFor: className
 		              classSide: classSide.
 	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: 'Unable to rename method ';
-			  nextPutAll: targetName;
-			  nextPutAll: '>>';
-			  nextPutAll: oldSelector;
-			  nextPutAll: ' to ';
-			  nextPutAll: newSelector;
-			  nextPutAll: ': ';
-			  nextPutAll:
-				  (self normalizedCauseMessageForMutationError: anError) ]
+			  stream
+				  nextPutAll: 'Unable to rename method ';
+				  nextPutAll: targetName;
+				  nextPutAll: '>>';
+				  nextPutAll: oldSelector;
+				  nextPutAll: ' to ';
+				  nextPutAll: newSelector;
+				  nextPutAll: ': ';
+				  nextPutAll:
+					  (self normalizedCauseMessageForMutationError: anError) ]
 ]
 
 { #category : 'private - schema' }
@@ -266,8 +270,8 @@ MCPToolMethodMutation >> parsedRequestFromToolRequest: request [
 
 	| requestClass |
 	requestClass := self mutationAction = 'compile'
-		ifTrue: [ MCPMethodCompileRequest ]
-		ifFalse: [ MCPMethodUpdateRequest ].
+		                ifTrue: [ MCPMethodCompileRequest ]
+		                ifFalse: [ MCPMethodUpdateRequest ].
 	^ requestClass fromRequest: request tool: self
 ]
 

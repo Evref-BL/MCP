@@ -161,20 +161,20 @@ MCPRepositoryVerifyIdentityCommand >> repositoryForVerifyIdentity [
 	^ [ self request repository ]
 		  on: MCPCommandError
 		  do: [ :error |
-			  (self shouldRetryByNameOnlyAfter: error)
-				  ifTrue: [
-					  (MCPRepositoryReferenceSpec
-						   name: self request repositoryReference name
-						   location: nil) repository ]
-				  ifFalse: [ error signal ] ]
+				  (self shouldRetryByNameOnlyAfter: error)
+					  ifTrue: [
+							  (MCPRepositoryReferenceSpec
+								   name: self request repositoryReference name
+								   location: nil) repository ]
+					  ifFalse: [ error signal ] ]
 ]
 
 { #category : 'private - resolving' }
 MCPRepositoryVerifyIdentityCommand >> shouldRetryByNameOnlyAfter: anError [
 
 	^ anError errorCode = #RepositoryNotFound and: [
-		  self request repositoryReference hasName and: [
-			  self request repositoryReference hasLocation ] ]
+			  self request repositoryReference hasName and: [
+				  self request repositoryReference hasLocation ] ]
 ]
 
 { #category : 'private - validation' }
@@ -183,8 +183,8 @@ MCPRepositoryVerifyIdentityCommand >> signalIdentityMismatchFor: repositoryInfo 
 	MCPCommandError
 		signalErrorCode: #RepositoryIdentityMismatch
 		message:
-			'Repository identity verification failed for ' , repositoryInfo name
-			, '.'
+			'Repository identity verification failed for '
+			, repositoryInfo name , '.'
 		details: (self request requestedContext copy
 				 at: #repository put: repositoryInfo asDictionary;
 				 at: #mismatches put: mismatches;

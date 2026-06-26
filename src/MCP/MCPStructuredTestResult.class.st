@@ -74,15 +74,15 @@ MCPStructuredTestResult >> recordIssueFrom: anException forTestCase: aTestCase [
 MCPStructuredTestResult >> runCase: aTestCase [
 
 	[
-	aTestCase announce: TestCaseStarted withResult: self.
-	aTestCase runCaseManaged.
-	aTestCase announce: TestCaseEnded withResult: self.
-	self addPass: aTestCase ]
+		aTestCase announce: TestCaseStarted withResult: self.
+		aTestCase runCaseManaged.
+		aTestCase announce: TestCaseEnded withResult: self.
+		self addPass: aTestCase ]
 		on: self class failure , self class skip , self class warning
 			, self class error
 		do: [ :ex |
-			ex sunitAnnounce: aTestCase toResult: self.
-			self recordIssueFrom: ex forTestCase: aTestCase ]
+				ex sunitAnnounce: aTestCase toResult: self.
+				self recordIssueFrom: ex forTestCase: aTestCase ]
 ]
 
 { #category : 'private' }

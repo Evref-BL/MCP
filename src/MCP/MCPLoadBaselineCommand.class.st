@@ -89,9 +89,9 @@ MCPLoadBaselineCommand >> initializeTool: aTool request: aRequest configureMetac
 MCPLoadBaselineCommand >> loadMetacello: metacello [
 
 	[
-	self request groups isEmpty
-		ifTrue: [ metacello load ]
-		ifFalse: [ metacello load: self request groups ] ]
+		self request groups isEmpty
+			ifTrue: [ metacello load ]
+			ifFalse: [ metacello load: self request groups ] ]
 		on: MetacelloNotification
 		do: [ :notification | notification resume ]
 ]

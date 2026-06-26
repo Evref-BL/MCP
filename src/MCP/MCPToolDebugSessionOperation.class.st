@@ -117,9 +117,7 @@ MCPToolDebugSessionOperation >> parsedRequestFromToolRequest: request [
 { #category : 'private - schema' }
 MCPToolDebugSessionOperation >> requiredInputProperties [
 
-	^ self sessionToolSpec
-		  at: #requiredProperties
-		  ifAbsent: [ #(  ) ]
+	^ self sessionToolSpec at: #requiredProperties ifAbsent: [ #(  ) ]
 ]
 
 { #category : 'private - specs' }

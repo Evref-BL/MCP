@@ -202,9 +202,9 @@ MCPToolGetMethod >> matchingSummaryForNodeName: aName kind: aKind ownerName: anO
 
 	^ summaries
 		  detect: [ :each |
-			  (each at: #name) = aName and: [
-				  (each at: #kind) = aKind and: [
-					  (each at: #ownerName ifAbsent: [ nil ]) = anOwnerName ] ] ]
+				  (each at: #name) = aName and: [
+						  (each at: #kind) = aKind and: [
+							  (each at: #ownerName ifAbsent: [ nil ]) = anOwnerName ] ] ]
 		  ifNone: [ nil ]
 ]
 

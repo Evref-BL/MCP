@@ -66,18 +66,18 @@ MCPToolRemoveClassesTest >> ensureClassNamed: aClassName superclassName: aSuperc
 	(self class environment includesKey: symbol) ifTrue: [ ^ self ].
 	superclass := self class environment at: aSuperclassName asSymbol.
 	self withoutEpiceaDuring: [
-		(superclass << symbol)
-			package: aPackageName;
-			install ]
+			(superclass << symbol)
+				package: aPackageName;
+				install ]
 ]
 
 { #category : 'private' }
 MCPToolRemoveClassesTest >> ensureMethodSource: aMethodSource onClassNamed: aClassName [
 
 	self withoutEpiceaDuring: [
-		(self classNamed: aClassName)
-			compile: aMethodSource
-			classified: 'tests' ]
+			(self classNamed: aClassName)
+				compile: aMethodSource
+				classified: 'tests' ]
 ]
 
 { #category : 'private' }
@@ -219,34 +219,48 @@ MCPToolRemoveClassesTest >> tearDown [
 MCPToolRemoveClassesTest >> testForceRemovesNonEmptyClassAndReparentsSubclassesWithWarnings [
 
 	| data result structured warnings |
-	result := self callToolWith: (self argumentsForClassNames: { self nonEmptyParentClassName } force: true).
+	result := self callToolWith: (self
+			           argumentsForClassNames: { self nonEmptyParentClassName }
+			           force: true).
 	structured := self structuredContentFrom: result.
 	data := self dataFrom: result.
 	warnings := structured at: #warnings.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self deny: (self class environment includesKey: self nonEmptyParentClassName asSymbol).
+	self deny: (self class environment includesKey:
+			 self nonEmptyParentClassName asSymbol).
 	self
-		assert: (self classNamed: self nonEmptyChildClassName) superclass name asString
+		assert:
+			(self classNamed: self nonEmptyChildClassName) superclass name
+				asString
 		equals: 'Object'.
 	self
 		assert: (data at: #reparentedSubclassNames ifAbsent: [ #(  ) ])
 		equals: { self nonEmptyChildClassName } asArray.
 	self assert: warnings size equals: 1.
-	self assert: (warnings first includesSubstring: self nonEmptyParentClassName)
+	self assert:
+		(warnings first includesSubstring: self nonEmptyParentClassName)
 ]
 
 { #category : 'tests' }
 MCPToolRemoveClassesTest >> testForceRemovesReferencedClassAndReturnsWarnings [
 
 	| result structured warnings |
-	result := self callToolWith: (self argumentsForClassNames: { self referencedClassName } force: true).
+	result := self callToolWith:
+		          (self
+			           argumentsForClassNames: { self referencedClassName }
+			           force: true).
 	structured := self structuredContentFrom: result.
 	warnings := structured at: #warnings.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self deny: (self class environment includesKey: self referencedClassName asSymbol).
-	self assert: ((self classNamed: self senderClassName) includesSelector: #useReferencedClass).
+	self deny:
+		(self class environment includesKey:
+			 self referencedClassName asSymbol).
+	self assert:
+		((self classNamed: self senderClassName) includesSelector:
+			 #useReferencedClass).
 	self assert: warnings size equals: 1.
-	self assert: (warnings first includesSubstring: self referencedClassName)
+	self assert:
+		(warnings first includesSubstring: self referencedClassName)
 ]
 
 { #category : 'tests' }
@@ -312,12 +326,16 @@ MCPToolRemoveClassesTest >> testReturnsStructuredErrorWhenNonEmptyClassHasSubcla
 MCPToolRemoveClassesTest >> testSafelyRemovesEmptyClassAndReparentsDirectSubclasses [
 
 	| data result |
-	result := self callToolWith: (self argumentsForClassNames: { self emptyParentClassName }).
+	result := self callToolWith:
+		          (self argumentsForClassNames:
+			           { self emptyParentClassName }).
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self deny: (self class environment includesKey: self emptyParentClassName asSymbol).
+	self deny: (self class environment includesKey:
+			 self emptyParentClassName asSymbol).
 	self
-		assert: (self classNamed: self emptyChildClassName) superclass name asString
+		assert:
+		(self classNamed: self emptyChildClassName) superclass name asString
 		equals: 'Object'.
 	self
 		assert: (data at: #reparentedSubclassNames ifAbsent: [ #(  ) ])
@@ -328,12 +346,16 @@ MCPToolRemoveClassesTest >> testSafelyRemovesEmptyClassAndReparentsDirectSubclas
 MCPToolRemoveClassesTest >> testSafelyRemovesSimpleClass [
 
 	| data result |
-	result := self callToolWith: (self argumentsForClassNames: self batchClassNames).
+	result := self callToolWith:
+		          (self argumentsForClassNames: self batchClassNames).
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self deny: (self class environment includesKey: self simpleClassName asSymbol).
-	self deny: (self class environment includesKey: self packageCleanupClassName asSymbol).
-	self deny: (PackageOrganizer default hasPackage: self packageCleanupPackageName).
+	self deny:
+		(self class environment includesKey: self simpleClassName asSymbol).
+	self deny: (self class environment includesKey:
+			 self packageCleanupClassName asSymbol).
+	self deny:
+		(PackageOrganizer default hasPackage: self packageCleanupPackageName).
 	self
 		assert: (data at: #removedPackageNames ifAbsent: [ #(  ) ])
 		equals: { self packageCleanupPackageName } asArray

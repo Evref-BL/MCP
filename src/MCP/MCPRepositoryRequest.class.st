@@ -21,7 +21,8 @@ MCPRepositoryRequest class >> isAbstract [
 { #category : 'initialization' }
 MCPRepositoryRequest >> initializeFromRequest: request [
 
-	repositoryReference := MCPRepositoryReferenceSpec fromRequest: request
+	repositoryReference := MCPRepositoryReferenceSpec fromRequest:
+		                       request
 ]
 
 { #category : 'accessing' }

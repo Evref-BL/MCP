@@ -96,10 +96,10 @@ MCPMoveSlotCommand >> refactoringForBehavior: aBehavior [
 	^ (self direction = 'pullUpSlot'
 		   ifTrue: [ RePullUpInstanceVariableRefactoring ]
 		   ifFalse: [
-			   self direction = 'pushDownSlot'
-				   ifTrue: [ RBPushDownInstanceVariableRefactoring ]
-				   ifFalse: [
-				   Error signal: 'direction must be pullUpSlot or pushDownSlot.' ] ])
+				   self direction = 'pushDownSlot'
+					   ifTrue: [ RBPushDownInstanceVariableRefactoring ]
+					   ifFalse: [
+					   Error signal: 'direction must be pullUpSlot or pushDownSlot.' ] ])
 		  variable: self slotName
 		  class: aBehavior
 ]

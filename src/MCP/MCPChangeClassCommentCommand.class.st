@@ -42,10 +42,10 @@ MCPChangeClassCommentCommand >> execute [
 	targetClass := self targetClass.
 	oldClassComment := targetClass comment.
 	oldClassComment = self classComment ifTrue: [
-		^ MCPChangeClassCommentResult
-			  classInfo: (MCPClassInfo fromClass: targetClass)
-			  oldClassComment: oldClassComment
-			  newClassComment: oldClassComment ].
+			^ MCPChangeClassCommentResult
+				  classInfo: (MCPClassInfo fromClass: targetClass)
+				  oldClassComment: oldClassComment
+				  newClassComment: oldClassComment ].
 	targetClass comment: self classComment.
 	updatedClass := Smalltalk globals at: self className asSymbol.
 	^ MCPChangeClassCommentResult

@@ -64,11 +64,13 @@ MCPRepositoryUpdateRequest >> initializeFromRequest: request [
 
 	super initializeFromRequest: request.
 	suppliedProperties := self updatePropertyNames select: [ :each |
-		request hasArgumentNamed: each ].
+		                      request hasArgumentNamed: each ].
 	subdirectory := request stringArgumentNamed: 'subdirectory'.
 	packageNames := request stringCollectionArgumentNamed: 'packageNames'.
-	addPackageNames := request stringCollectionArgumentNamed: 'addPackageNames'.
-	removePackageNames := request stringCollectionArgumentNamed: 'removePackageNames'
+	addPackageNames := request stringCollectionArgumentNamed:
+		                   'addPackageNames'.
+	removePackageNames := request stringCollectionArgumentNamed:
+		                      'removePackageNames'
 ]
 
 { #category : 'accessing' }
@@ -101,9 +103,9 @@ MCPRepositoryUpdateRequest >> requestedContext [
 	| context |
 	context := self repositoryReference requestedContext copy.
 	self suppliedProperties do: [ :propertyName |
-		context
-			at: propertyName asSymbol
-			put: (self contextValueForPropertyNamed: propertyName) ].
+			context
+				at: propertyName asSymbol
+				put: (self contextValueForPropertyNamed: propertyName) ].
 	context at: #updateActions put: self requestedRepositoryUpdateActions.
 	^ context
 ]

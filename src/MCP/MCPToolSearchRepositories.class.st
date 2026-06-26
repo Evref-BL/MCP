@@ -273,8 +273,8 @@ MCPToolSearchRepositories >> repositoryScopeSummaryForAssociations: scopeAssocia
 	| labels |
 	labels := OrderedCollection new.
 	scopeAssociations do: [ :eachAssociation |
-		eachAssociation value ifTrue: [
-			self addScopeLabel: eachAssociation key to: labels ] ].
+			eachAssociation value ifTrue: [
+				self addScopeLabel: eachAssociation key to: labels ] ].
 	^ self scopeSummaryFromLabels: labels
 ]
 

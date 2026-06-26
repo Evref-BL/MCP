@@ -65,8 +65,8 @@ MCPToolRepositoryOperation >> errorResultForCommandError: anError action: action
 	| details |
 	details := anError structuredDetails copy.
 	requestedContext ifNotNil: [
-		requestedContext keysAndValuesDo: [ :key :value |
-			value ifNotNil: [ details at: key ifAbsentPut: [ value ] ] ] ].
+			requestedContext keysAndValuesDo: [ :key :value |
+				value ifNotNil: [ details at: key ifAbsentPut: [ value ] ] ] ].
 	details at: #action put: action.
 	^ self errorResultText: anError messageText details: details
 ]
@@ -78,9 +78,7 @@ MCPToolRepositoryOperation >> inputProperties [
 		   at: #referenceInputProperties
 		   ifAbsent: [ self repositoryReferenceInputProperties ])
 	  ,
-	  (self repositoryToolSpec
-		   at: #inputProperties
-		   ifAbsent: [ #(  ) ])
+	  (self repositoryToolSpec at: #inputProperties ifAbsent: [ #(  ) ])
 ]
 
 { #category : 'private - schema' }

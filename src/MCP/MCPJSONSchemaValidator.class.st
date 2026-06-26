@@ -53,8 +53,8 @@ MCPJSONSchemaValidator >> hasObjectKeywordsIn: schema [
 MCPJSONSchemaValidator >> includesPropertyNamed: propertyName in: aDictionary [
 
 	^ (aDictionary includesKey: propertyName) or: [
-		  (aDictionary includesKey: propertyName asString) or: [
-			  aDictionary includesKey: propertyName asSymbol ] ]
+			  (aDictionary includesKey: propertyName asString) or: [
+				  aDictionary includesKey: propertyName asSymbol ] ]
 ]
 
 { #category : 'initialization' }
@@ -192,12 +192,12 @@ MCPJSONSchemaValidator >> validateAnyOfIn: schema for: aValue atPath: path [
 	matches := schemas count: [ :eachSchema |
 		           self schema: eachSchema matchesValue: aValue ].
 	matches = 0 ifTrue: [
-		self
-			addViolationAt: path
-			keyword: #anyOf
-			message: 'Value must match at least one schema branch.'
-			expected: 'at least one matching branch'
-			actual: matches ]
+			self
+				addViolationAt: path
+				keyword: #anyOf
+				message: 'Value must match at least one schema branch.'
+				expected: 'at least one matching branch'
+				actual: matches ]
 ]
 
 { #category : 'private - array validation' }
@@ -236,12 +236,12 @@ MCPJSONSchemaValidator >> validateConstIn: schema for: aValue atPath: path [
 		                 in: schema
 		                 ifAbsent: [ ^ self ].
 	aValue = expectedValue ifFalse: [
-		self
-			addViolationAt: path
-			keyword: #const
-			message: 'Value must equal the schema constant.'
-			expected: expectedValue
-			actual: aValue ]
+			self
+				addViolationAt: path
+				keyword: #const
+				message: 'Value must equal the schema constant.'
+				expected: expectedValue
+				actual: aValue ]
 ]
 
 { #category : 'private - object validation' }
@@ -253,15 +253,15 @@ MCPJSONSchemaValidator >> validateDefinedPropertiesIn: aDictionary againstSchema
 		              in: schema
 		              ifAbsent: [ ^ self ].
 	properties keysAndValuesDo: [ :propertyName :propertySchema |
-		self
-			propertyValueNamed: propertyName
-			in: aDictionary
-			ifPresent: [ :value |
-				self
-					validateValue: value
-					againstSchema: propertySchema
-					atPath: (path copyWith: propertyName asString) ]
-			ifAbsent: [  ] ]
+			self
+				propertyValueNamed: propertyName
+				in: aDictionary
+				ifPresent: [ :value |
+						self
+							validateValue: value
+							againstSchema: propertySchema
+							atPath: (path copyWith: propertyName asString) ]
+				ifAbsent: [ ] ]
 ]
 
 { #category : 'private - validating' }
@@ -273,12 +273,12 @@ MCPJSONSchemaValidator >> validateEnumIn: schema for: aValue atPath: path [
 		                  in: schema
 		                  ifAbsent: [ ^ self ].
 	(expectedValues includes: aValue) ifFalse: [
-		self
-			addViolationAt: path
-			keyword: #enum
-			message: 'Value must be one of the schema enum values.'
-			expected: expectedValues
-			actual: aValue ]
+			self
+				addViolationAt: path
+				keyword: #enum
+				message: 'Value must be one of the schema enum values.'
+				expected: expectedValues
+				actual: aValue ]
 ]
 
 { #category : 'private - combinators' }
@@ -306,12 +306,12 @@ MCPJSONSchemaValidator >> validateNotIn: schema for: aValue atPath: path [
 		                    in: schema
 		                    ifAbsent: [ ^ self ].
 	(self schema: prohibitedSchema matchesValue: aValue) ifTrue: [
-		self
-			addViolationAt: path
-			keyword: #not
-			message: 'Value must not match the prohibited schema.'
-			expected: 'a value that does not match the prohibited schema'
-			actual: 'matched prohibited schema' ]
+			self
+				addViolationAt: path
+				keyword: #not
+				message: 'Value must not match the prohibited schema.'
+				expected: 'a value that does not match the prohibited schema'
+				actual: 'matched prohibited schema' ]
 ]
 
 { #category : 'private - number validation' }
@@ -363,12 +363,12 @@ MCPJSONSchemaValidator >> validateOneOfIn: schema for: aValue atPath: path [
 	matches := schemas count: [ :eachSchema |
 		           self schema: eachSchema matchesValue: aValue ].
 	matches = 1 ifFalse: [
-		self
-			addViolationAt: path
-			keyword: #oneOf
-			message: 'Value must match exactly one schema branch.'
-			expected: 'exactly one matching branch'
-			actual: matches ]
+			self
+				addViolationAt: path
+				keyword: #oneOf
+				message: 'Value must match exactly one schema branch.'
+				expected: 'exactly one matching branch'
+				actual: matches ]
 ]
 
 { #category : 'private - object validation' }
@@ -380,13 +380,14 @@ MCPJSONSchemaValidator >> validateRequiredPropertiesIn: aDictionary againstSchem
 		                      in: schema
 		                      ifAbsent: [ #(  ) ].
 	requiredProperties do: [ :propertyName |
-		(self includesPropertyNamed: propertyName in: aDictionary) ifFalse: [
-			self
-				addViolationAt: path
-				keyword: #required
-				message: 'Object is missing a required property.'
-				expected: propertyName
-				actual: nil ] ]
+			(self includesPropertyNamed: propertyName in: aDictionary)
+				ifFalse: [
+						self
+							addViolationAt: path
+							keyword: #required
+							message: 'Object is missing a required property.'
+							expected: propertyName
+							actual: nil ] ]
 ]
 
 { #category : 'private - string validation' }

@@ -33,9 +33,9 @@ MCPScopeNameSuggester class >> classSuggestionCandidates [
 	| candidates |
 	candidates := OrderedCollection new.
 	Smalltalk globals allClasses do: [ :eachClass |
-		candidates add: {
-				(#name -> eachClass name asString).
-				(#bucket -> eachClass package name asString) } asDictionary ].
+			candidates add: {
+					(#name -> eachClass name asString).
+					(#bucket -> eachClass package name asString) } asDictionary ].
 	^ candidates asArray
 ]
 
@@ -62,18 +62,20 @@ MCPScopeNameSuggester class >> editDistanceBetween: leftString and: rightString 
 	rightString isEmpty ifTrue: [ ^ leftString size ].
 	previous := (0 to: rightString size) asArray.
 	1 to: leftString size do: [ :leftIndex |
-		current := Array new: rightString size + 1.
-		current at: 1 put: leftIndex.
-		1 to: rightString size do: [ :rightIndex |
-			| cost delete insert replace |
-			cost := (leftString at: leftIndex) = (rightString at: rightIndex)
-				        ifTrue: [ 0 ]
-				        ifFalse: [ 1 ].
-			delete := (previous at: rightIndex + 1) + 1.
-			insert := (current at: rightIndex) + 1.
-			replace := (previous at: rightIndex) + cost.
-			current at: rightIndex + 1 put: ((delete min: insert) min: replace) ].
-		previous := current ].
+			current := Array new: rightString size + 1.
+			current at: 1 put: leftIndex.
+			1 to: rightString size do: [ :rightIndex |
+					| cost delete insert replace |
+					cost := (leftString at: leftIndex) = (rightString at: rightIndex)
+						        ifTrue: [ 0 ]
+						        ifFalse: [ 1 ].
+					delete := (previous at: rightIndex + 1) + 1.
+					insert := (current at: rightIndex) + 1.
+					replace := (previous at: rightIndex) + cost.
+					current
+						at: rightIndex + 1
+						put: ((delete min: insert) min: replace) ].
+			previous := current ].
 	^ previous last
 ]
 
@@ -91,19 +93,19 @@ MCPScopeNameSuggester class >> missingClassWarningFor: className scope: scopeNam
 MCPScopeNameSuggester class >> missingNameWarningForKind: kind name: missingName scope: scopeName suggestions: suggestions [
 
 	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: kind;
-			  space;
-			  nextPutAll: missingName asString;
-			  nextPutAll: ' does not exist in ';
-			  nextPutAll: scopeName asString;
-			  nextPutAll: ' scope.'.
-		  suggestions ifNotEmpty: [
-			  stream nextPutAll: ' Did you mean: '.
-			  suggestions
-				  do: [ :each | stream nextPutAll: each ]
-				  separatedBy: [ stream nextPutAll: ', ' ].
-			  stream nextPut: $. ] ]
+			  stream
+				  nextPutAll: kind;
+				  space;
+				  nextPutAll: missingName asString;
+				  nextPutAll: ' does not exist in ';
+				  nextPutAll: scopeName asString;
+				  nextPutAll: ' scope.'.
+			  suggestions ifNotEmpty: [
+					  stream nextPutAll: ' Did you mean: '.
+					  suggestions
+						  do: [ :each | stream nextPutAll: each ]
+						  separatedBy: [ stream nextPutAll: ', ' ].
+					  stream nextPut: $. ] ]
 ]
 
 { #category : 'warnings' }
@@ -120,9 +122,9 @@ MCPScopeNameSuggester class >> missingPackageWarningFor: packageName scope: scop
 MCPScopeNameSuggester class >> packageSuggestionCandidates [
 
 	^ PackageOrganizer default packages collect: [ :eachPackage |
-		  {
-			  (#name -> eachPackage name asString).
-			  (#bucket -> eachPackage name asString) } asDictionary ]
+			  {
+				  (#name -> eachPackage name asString).
+				  (#bucket -> eachPackage name asString) } asDictionary ]
 ]
 
 { #category : 'suggesting' }
@@ -162,36 +164,36 @@ MCPScopeNameSuggester class >> suggestionsFor: requestedName candidates: candida
 			            matchesRequested: requestedName ].
 	filtered isEmpty ifTrue: [ ^ #(  ) ].
 	scored := filtered collect: [ :eachCandidate |
-		          eachCandidate copy
-			          at: #score put: (self
-					           scoreForRequested: requestedName
-					           candidate: (eachCandidate at: #name));
-			          yourself ].
+			          eachCandidate copy
+				          at: #score put: (self
+						           scoreForRequested: requestedName
+						           candidate: (eachCandidate at: #name));
+				          yourself ].
 	sorted := scored asSortedCollection: [ :left :right |
-		          (left at: #score) = (right at: #score)
-			          ifTrue: [ (left at: #name) <= (right at: #name) ]
-			          ifFalse: [ (left at: #score) < (right at: #score) ] ].
+			          (left at: #score) = (right at: #score)
+				          ifTrue: [ (left at: #name) <= (right at: #name) ]
+				          ifFalse: [ (left at: #score) < (right at: #score) ] ].
 	chosen := OrderedCollection new.
 	chosenNames := Set new.
 	bucketCounts := Dictionary new.
 	sorted do: [ :eachCandidate |
-		chosen size < maxCount ifTrue: [
-			| bucket count candidateName |
-			candidateName := eachCandidate at: #name.
-			bucket := eachCandidate at: #bucket ifAbsent: [ '' ].
-			count := bucketCounts at: bucket ifAbsent: [ 0 ].
-			(count < 2 and: [ (chosenNames includes: candidateName) not ])
-				ifTrue: [
-					chosen add: candidateName.
-					chosenNames add: candidateName.
-					bucketCounts at: bucket put: count + 1 ] ] ].
-	chosen size < maxCount ifTrue: [
-		sorted do: [ :eachCandidate |
 			chosen size < maxCount ifTrue: [
-				| candidateName |
-				candidateName := eachCandidate at: #name.
-				(chosenNames includes: candidateName) ifFalse: [
-					chosen add: candidateName.
-					chosenNames add: candidateName ] ] ] ].
+					| bucket count candidateName |
+					candidateName := eachCandidate at: #name.
+					bucket := eachCandidate at: #bucket ifAbsent: [ '' ].
+					count := bucketCounts at: bucket ifAbsent: [ 0 ].
+					(count < 2 and: [ (chosenNames includes: candidateName) not ])
+						ifTrue: [
+								chosen add: candidateName.
+								chosenNames add: candidateName.
+								bucketCounts at: bucket put: count + 1 ] ] ].
+	chosen size < maxCount ifTrue: [
+			sorted do: [ :eachCandidate |
+					chosen size < maxCount ifTrue: [
+							| candidateName |
+							candidateName := eachCandidate at: #name.
+							(chosenNames includes: candidateName) ifFalse: [
+									chosen add: candidateName.
+									chosenNames add: candidateName ] ] ] ].
 	^ chosen asArray
 ]

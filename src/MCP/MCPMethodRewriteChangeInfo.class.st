@@ -38,8 +38,8 @@ MCPMethodRewriteChangeInfo >> asDictionary [
 		        (#packageName -> self packageName).
 		        (#protocol -> self protocol) } asDictionary.
 	self includeSources ifTrue: [
-		data at: #oldSource put: self oldSource.
-		data at: #newSource put: self newSource ].
+			data at: #oldSource put: self oldSource.
+			data at: #newSource put: self newSource ].
 	^ data
 ]
 
@@ -76,14 +76,14 @@ MCPMethodRewriteChangeInfo >> initializeFromChange: aChange includeSources: aBoo
 		                  ifAbsent: [ nil ].
 	compiledMethod
 		ifNil: [
-			packageName := ''.
-			protocol := ''.
-			oldSource := '' ]
+				packageName := ''.
+				protocol := ''.
+				oldSource := '' ]
 		ifNotNil: [
-			methodInfo := MCPCompiledMethodInfo fromMethod: compiledMethod.
-			packageName := methodInfo packageName.
-			protocol := methodInfo protocol.
-			oldSource := compiledMethod sourceCode ifNil: [ '' ] ].
+				methodInfo := MCPCompiledMethodInfo fromMethod: compiledMethod.
+				packageName := methodInfo packageName.
+				protocol := methodInfo protocol.
+				oldSource := compiledMethod sourceCode ifNil: [ '' ] ].
 	newSource := aChange source ifNil: [ '' ].
 	includeSources := aBoolean.
 	^ self

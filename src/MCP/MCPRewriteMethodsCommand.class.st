@@ -25,9 +25,9 @@ MCPRewriteMethodsCommand >> changeInfosForChanges: changes [
 
 	^ changes
 		  collect: [ :each |
-			  MCPMethodRewriteChangeInfo
-				  fromChange: each
-				  includeSources: self request includeSources ]
+				  MCPMethodRewriteChangeInfo
+					  fromChange: each
+					  includeSources: self request includeSources ]
 		  as: Array
 ]
 
@@ -164,8 +164,8 @@ MCPRewriteMethodsCommand >> stableHashForSource: aString [
 	| hash |
 	hash := 5381.
 	aString do: [ :character |
-		character isSeparator ifFalse: [
-			hash := (hash bitXor: character asciiValue) hashMultiply ] ].
+			character isSeparator ifFalse: [
+				hash := (hash bitXor: character asciiValue) hashMultiply ] ].
 	^ hash abs
 ]
 
@@ -193,8 +193,8 @@ MCPRewriteMethodsCommand >> stableHashForValue: anObject [
 MCPRewriteMethodsCommand >> successSummaryForReport: report [
 
 	report apply ifTrue: [
-		^ 'Applied ' , report appliedCount asString
-		  , ' method rewrite change(s).' ].
+			^ 'Applied ' , report appliedCount asString
+			  , ' method rewrite change(s).' ].
 	^ 'Previewed ' , report changeCount asString
 	  , ' method rewrite change(s).'
 ]

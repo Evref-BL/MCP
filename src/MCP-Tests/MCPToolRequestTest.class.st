@@ -26,9 +26,9 @@ MCPToolRequestTest >> testInvalidRequestRaisesInvalidParameters [
 
 	self
 		should: [
-			MCPToolRequest
-				tool: MCPToolSearchClasses new
-				arguments: { (#caseSensitive -> 'true') } asDictionary ]
+				MCPToolRequest
+					tool: MCPToolSearchClasses new
+					arguments: { (#caseSensitive -> 'true') } asDictionary ]
 		raise: JRPCInvalidParameters
 ]
 
@@ -37,9 +37,9 @@ MCPToolRequestTest >> testInvalidRequestRaisesToolInputErrorWithViolations [
 
 	| error violation |
 	[
-	MCPToolRequest
-		tool: MCPToolSearchClasses new
-		arguments: { (#caseSensitive -> 'true') } asDictionary ]
+		MCPToolRequest
+			tool: MCPToolSearchClasses new
+			arguments: { (#caseSensitive -> 'true') } asDictionary ]
 		on: MCPInvalidToolInput
 		do: [ :signalledError | error := signalledError ].
 	self assert: error isNotNil.
@@ -57,9 +57,9 @@ MCPToolRequestTest >> testInvalidToolInputErrorResponseIncludesViolations [
 
 	| data error errorJson firstViolation response violations |
 	[
-	MCPToolRequest
-		tool: MCPToolSearchClasses new
-		arguments: { (#caseSensitive -> 'true') } asDictionary ]
+		MCPToolRequest
+			tool: MCPToolSearchClasses new
+			arguments: { (#caseSensitive -> 'true') } asDictionary ]
 		on: MCPInvalidToolInput
 		do: [ :signalledError | error := signalledError ].
 	response := (error asJRPCResponseWithId: 7) asJRPCJSON.

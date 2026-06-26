@@ -347,10 +347,10 @@ MCPLoadRepositoryRequest >> repositoryScheme [
 	scheme = 'gitlabs' ifTrue: [ ^ 'gitlab' ].
 	scheme = 'bitbucket.org' ifTrue: [ ^ 'bitbucket' ].
 	(#( 'github' 'gitlab' 'bitbucket' ) includes: scheme) ifFalse: [
-		MCPCommandError
-			signalErrorCode: #UnsupportedLoadRepositoryHost
-			message: 'hostUrl must identify github, gitlab, or bitbucket.'
-			details: { (#hostUrl -> self hostUrl) } asDictionary ].
+			MCPCommandError
+				signalErrorCode: #UnsupportedLoadRepositoryHost
+				message: 'hostUrl must identify github, gitlab, or bitbucket.'
+				details: { (#hostUrl -> self hostUrl) } asDictionary ].
 	^ scheme
 ]
 

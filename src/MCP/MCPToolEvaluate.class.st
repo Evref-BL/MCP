@@ -70,24 +70,24 @@ MCPToolEvaluate >> executeWithRequest: request [
 	^ self
 		  executeParsedRequestFrom: request
 		  do: [ :evaluateRequest |
-			  | commandResult |
-			  commandResult := (self commandForRequest: evaluateRequest)
-				                   execute.
-			  commandResult isError
-				  ifTrue: [
-					  self
-						  errorResultText: commandResult summary
-						  details: commandResult errorDetails ]
-				  ifFalse: [
-					  self
-						  successResultText: 'Code evaluated successfully.'
-						  data: commandResult data ] ]
+				  | commandResult |
+				  commandResult := (self commandForRequest: evaluateRequest)
+					                   execute.
+				  commandResult isError
+					  ifTrue: [
+							  self
+								  errorResultText: commandResult summary
+								  details: commandResult errorDetails ]
+					  ifFalse: [
+							  self
+								  successResultText: 'Code evaluated successfully.'
+								  data: commandResult data ] ]
 		  onError: [ :error :ignored |
-			  self
-				  errorResultText: (error messageText
-						   ifNil: [ error asString ]
-						   ifNotNil: [ :text | text ])
-				  details: (self errorDetailsFor: error) ]
+				  self
+					  errorResultText: (error messageText
+							   ifNil: [ error asString ]
+							   ifNotNil: [ :text | text ])
+					  details: (self errorDetailsFor: error) ]
 ]
 
 { #category : 'private - request' }
@@ -110,15 +110,15 @@ MCPToolEvaluate >> runtimeFailureMessageFor: anError [
 		           ifNil: [ anError asString ]
 		           ifNotNil: [ :text | text asString ].
 	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: 'Evaluation failed during execution (';
-			  nextPutAll: anError class name;
-			  nextPutAll: '): ';
-			  nextPutAll: message.
-		  anError signalerContext ifNotNil: [ :context |
 			  stream
-				  nextPutAll: ' Signaler context: ';
-				  nextPutAll: context printString ] ]
+				  nextPutAll: 'Evaluation failed during execution (';
+				  nextPutAll: anError class name;
+				  nextPutAll: '): ';
+				  nextPutAll: message.
+			  anError signalerContext ifNotNil: [ :context |
+					  stream
+						  nextPutAll: ' Signaler context: ';
+						  nextPutAll: context printString ] ]
 ]
 
 { #category : 'testing' }

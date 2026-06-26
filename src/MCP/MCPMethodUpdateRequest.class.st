@@ -29,13 +29,13 @@ MCPMethodUpdateRequest class >> fromRequest: request tool: aTool [
 	parsedRequest := self new initializeFromRequest: request.
 	parsedRequest hasRenameUpdate
 		ifTrue: [
-			parsedRequest refactoringScopeSpec:
-				(aTool refactoringScopeSpecFromRequest: request) ]
+				parsedRequest refactoringScopeSpec:
+					(aTool refactoringScopeSpecFromRequest: request) ]
 		ifFalse: [
-			parsedRequest refactoringScopeSpec: (MCPRefactoringScopeSpec
-					 packageNames: #(  )
-					 classNames: #(  )
-					 hierarchyClassNames: #(  )) ].
+				parsedRequest refactoringScopeSpec: (MCPRefactoringScopeSpec
+						 packageNames: #(  )
+						 classNames: #(  )
+						 hierarchyClassNames: #(  )) ].
 	^ parsedRequest
 ]
 
@@ -61,15 +61,15 @@ MCPMethodUpdateRequest >> argumentRenameMapForBehavior: aBehavior [
 	oldArgumentNames := parseTree argumentNames.
 	renameMap := OrderedCollection new.
 	1 to: self permutation size do: [ :targetIndex |
-		| oldIndex newArgumentName oldArgumentName renameArgument |
-		oldIndex := self permutation at: targetIndex.
-		oldIndex > 0 ifTrue: [
-			oldArgumentName := oldArgumentNames at: oldIndex.
-			newArgumentName := self argumentNames at: targetIndex.
-			oldArgumentName = newArgumentName ifFalse: [
-				renameArgument := RBArgumentName name: oldArgumentName.
-				renameArgument newName: newArgumentName.
-				renameMap add: renameArgument ] ] ].
+			| oldIndex newArgumentName oldArgumentName renameArgument |
+			oldIndex := self permutation at: targetIndex.
+			oldIndex > 0 ifTrue: [
+					oldArgumentName := oldArgumentNames at: oldIndex.
+					newArgumentName := self argumentNames at: targetIndex.
+					oldArgumentName = newArgumentName ifFalse: [
+							renameArgument := RBArgumentName name: oldArgumentName.
+							renameArgument newName: newArgumentName.
+							renameMap add: renameArgument ] ] ].
 	^ renameMap asArray
 ]
 
@@ -126,8 +126,8 @@ MCPMethodUpdateRequest >> defaultPermutationFromSelector: oldSelector toSelector
 		^ self identityPermutationForSelector: oldSelector ].
 	newArgumentCount = 0 ifTrue: [ ^ #(  ) ].
 	oldArgumentCount = 0 ifTrue: [
-		^ ((1 to: newArgumentCount) collect: [ :index | index negated ])
-			  asArray ].
+			^ ((1 to: newArgumentCount) collect: [ :index | index negated ])
+				  asArray ].
 	^ self
 		  keywordPermutationFromSelector: oldSelector
 		  toSelector: newSelector
@@ -212,18 +212,18 @@ MCPMethodUpdateRequest >> keywordPermutationFromSelector: oldSelector toSelector
 	usedOldIndexes := Set new.
 	nextNewArgument := 0.
 	^ (newSelector keywords collect: [ :keyword |
-		   | oldIndex |
-		   oldIndex := self
-			               unusedIndexOf: keyword
-			               in: oldKeywords
-			               excluding: usedOldIndexes.
-		   oldIndex = 0
-			   ifTrue: [
-				   nextNewArgument := nextNewArgument + 1.
-				   nextNewArgument negated ]
-			   ifFalse: [
-				   usedOldIndexes add: oldIndex.
-				   oldIndex ] ]) asArray
+			   | oldIndex |
+			   oldIndex := self
+				               unusedIndexOf: keyword
+				               in: oldKeywords
+				               excluding: usedOldIndexes.
+			   oldIndex = 0
+				   ifTrue: [
+						   nextNewArgument := nextNewArgument + 1.
+						   nextNewArgument negated ]
+				   ifFalse: [
+						   usedOldIndexes add: oldIndex.
+						   oldIndex ] ]) asArray
 ]
 
 { #category : 'converting' }
@@ -274,10 +274,10 @@ MCPMethodUpdateRequest >> permutationFromRequest: request selector: oldSelector 
 	requestedPermutation := request
 		                        arrayArgumentNamed: 'permutation'
 		                        ifAbsent: [
-			                        ^ self
-				                          defaultPermutationFromSelector:
-				                          oldSelector
-				                          toSelector: selectorToUse ].
+				                        ^ self
+					                          defaultPermutationFromSelector:
+					                          oldSelector
+					                          toSelector: selectorToUse ].
 	self
 		validatePermutation: requestedPermutation
 		fromSelector: oldSelector
@@ -335,9 +335,9 @@ MCPMethodUpdateRequest >> requestedContext [
 	context at: #classSide put: self classSide.
 	context at: #selector put: self selector.
 	self suppliedProperties do: [ :propertyName |
-		context
-			at: propertyName asSymbol
-			put: (self contextValueForPropertyNamed: propertyName) ].
+			context
+				at: propertyName asSymbol
+				put: (self contextValueForPropertyNamed: propertyName) ].
 	^ context
 ]
 
@@ -368,8 +368,8 @@ MCPMethodUpdateRequest >> suppliedProperties [
 MCPMethodUpdateRequest >> unusedIndexOf: keyword in: oldKeywords excluding: usedOldIndexes [
 
 	1 to: oldKeywords size do: [ :index |
-		((oldKeywords at: index) = keyword and: [
-			 (usedOldIndexes includes: index) not ]) ifTrue: [ ^ index ] ].
+			((oldKeywords at: index) = keyword and: [
+				 (usedOldIndexes includes: index) not ]) ifTrue: [ ^ index ] ].
 	^ 0
 ]
 
@@ -384,31 +384,31 @@ MCPMethodUpdateRequest >> updatePropertyNames [
 MCPMethodUpdateRequest >> validateAddArgumentsUpdate [
 
 	self argumentNames isEmpty ifTrue: [
-		MCPCommandError
-			signalErrorCode: #ArgumentNamesRequiredForAddedArguments
-			message:
-			'argumentNames is required when newSelector adds method arguments.'
-			details: self requestedContext ].
+			MCPCommandError
+				signalErrorCode: #ArgumentNamesRequiredForAddedArguments
+				message:
+				'argumentNames is required when newSelector adds method arguments.'
+				details: self requestedContext ].
 	self argumentNames size = self newSelector asSymbol numArgs ifFalse: [
-		MCPCommandError
-			signalErrorCode: #InvalidMethodArgumentNames
-			message:
-			'argumentNames must contain one name for each target selector argument.'
-			details: self requestedContext ].
-	(self argumentNames allSatisfy: [ :each | each isNotEmpty ])
-		ifFalse: [
 			MCPCommandError
 				signalErrorCode: #InvalidMethodArgumentNames
-				message: 'argumentNames must not contain empty names.'
+				message:
+				'argumentNames must contain one name for each target selector argument.'
 				details: self requestedContext ].
+	(self argumentNames allSatisfy: [ :each | each isNotEmpty ])
+		ifFalse: [
+				MCPCommandError
+					signalErrorCode: #InvalidMethodArgumentNames
+					message: 'argumentNames must not contain empty names.'
+					details: self requestedContext ].
 	(self argumentValueExpressions isNotEmpty and: [
 		 self argumentValueExpressions size ~= self addedArgumentCount ])
 		ifTrue: [
-			MCPCommandError
-				signalErrorCode: #InvalidMethodArgumentValueExpressions
-				message:
-				'argumentValueExpressions must contain one expression for each newly added argument.'
-				details: self requestedContext ].
+				MCPCommandError
+					signalErrorCode: #InvalidMethodArgumentValueExpressions
+					message:
+					'argumentValueExpressions must contain one expression for each newly added argument.'
+					details: self requestedContext ].
 	^ self
 ]
 
@@ -417,20 +417,20 @@ MCPMethodUpdateRequest >> validateForUpdate [
 
 	| action |
 	self hasPermutation ifTrue: [
-		self hasRenameUpdate ifFalse: [
-			MCPCommandError
-				signalErrorCode: #PermutationRequiresMethodSelectorUpdate
-				message:
-				'permutation is only valid when update changes a method selector with newSelector.'
-				details: self requestedContext ] ].
+			self hasRenameUpdate ifFalse: [
+					MCPCommandError
+						signalErrorCode: #PermutationRequiresMethodSelectorUpdate
+						message:
+						'permutation is only valid when update changes a method selector with newSelector.'
+						details: self requestedContext ] ].
 	(self hasArgumentNames or: [ self hasArgumentValueExpressions ])
 		ifTrue: [
-			self hasRenameUpdate ifFalse: [
-				MCPCommandError
-					signalErrorCode: #ArgumentMetadataRequiresMethodSelectorUpdate
-					message:
-					'argumentNames and argumentValueExpressions are only valid with newSelector.'
-					details: self requestedContext ] ].
+				self hasRenameUpdate ifFalse: [
+						MCPCommandError
+							signalErrorCode: #ArgumentMetadataRequiresMethodSelectorUpdate
+							message:
+							'argumentNames and argumentValueExpressions are only valid with newSelector.'
+							details: self requestedContext ] ].
 	action := self newSelectorUpdateAction.
 	action = 'addArguments' ifTrue: [ self validateAddArgumentsUpdate ].
 	^ self
@@ -443,51 +443,51 @@ MCPMethodUpdateRequest >> validatePermutation: requestedPermutation fromSelector
 	oldArgumentCount := oldSelector numArgs.
 	newArgumentCount := newSelector numArgs.
 	requestedPermutation size = newArgumentCount ifFalse: [
-		MCPCommandError
-			signalErrorCode: #InvalidMethodArgumentPermutation
-			message:
-			'permutation must contain one entry for each target selector argument.'
-			details: self requestedContext ].
-	(requestedPermutation allSatisfy: [ :each | each isInteger ])
-		ifFalse: [
 			MCPCommandError
 				signalErrorCode: #InvalidMethodArgumentPermutation
-				message: 'permutation entries must be integers.'
+				message:
+				'permutation must contain one entry for each target selector argument.'
 				details: self requestedContext ].
+	(requestedPermutation allSatisfy: [ :each | each isInteger ])
+		ifFalse: [
+				MCPCommandError
+					signalErrorCode: #InvalidMethodArgumentPermutation
+					message: 'permutation entries must be integers.'
+					details: self requestedContext ].
 	positiveIndexes := requestedPermutation select: [ :each | each > 0 ].
 	(positiveIndexes allSatisfy: [ :each |
 		 each between: 1 and: oldArgumentCount ]) ifFalse: [
-		MCPCommandError
-			signalErrorCode: #InvalidMethodArgumentPermutation
-			message:
-			'positive permutation entries must reference existing arguments by 1-based index.'
-			details: self requestedContext ].
+			MCPCommandError
+				signalErrorCode: #InvalidMethodArgumentPermutation
+				message:
+				'positive permutation entries must reference existing arguments by 1-based index.'
+				details: self requestedContext ].
 	positiveIndexes asSet size = positiveIndexes size ifFalse: [
-		MCPCommandError
-			signalErrorCode: #InvalidMethodArgumentPermutation
-			message:
-			'permutation must not reference the same old argument twice.'
-			details: self requestedContext ].
+			MCPCommandError
+				signalErrorCode: #InvalidMethodArgumentPermutation
+				message:
+				'permutation must not reference the same old argument twice.'
+				details: self requestedContext ].
 	newArgumentCount >= oldArgumentCount
 		ifTrue: [
-			positiveIndexes size = oldArgumentCount ifFalse: [
-				MCPCommandError
-					signalErrorCode: #InvalidMethodArgumentPermutation
-					message:
-					'adding arguments requires every old argument to appear exactly once in permutation.'
-					details: self requestedContext ] ]
+				positiveIndexes size = oldArgumentCount ifFalse: [
+						MCPCommandError
+							signalErrorCode: #InvalidMethodArgumentPermutation
+							message:
+							'adding arguments requires every old argument to appear exactly once in permutation.'
+							details: self requestedContext ] ]
 		ifFalse: [
-			positiveIndexes size = newArgumentCount ifFalse: [
-				MCPCommandError
-					signalErrorCode: #InvalidMethodArgumentPermutation
-					message:
-					'removing arguments requires permutation to contain only kept old argument indexes.'
-					details: self requestedContext ].
-			(requestedPermutation allSatisfy: [ :each | each > 0 ]) ifFalse: [
-				MCPCommandError
-					signalErrorCode: #InvalidMethodArgumentPermutation
-					message:
-					'removing arguments does not accept negative permutation entries.'
-					details: self requestedContext ] ].
+				positiveIndexes size = newArgumentCount ifFalse: [
+						MCPCommandError
+							signalErrorCode: #InvalidMethodArgumentPermutation
+							message:
+							'removing arguments requires permutation to contain only kept old argument indexes.'
+							details: self requestedContext ].
+				(requestedPermutation allSatisfy: [ :each | each > 0 ]) ifFalse: [
+						MCPCommandError
+							signalErrorCode: #InvalidMethodArgumentPermutation
+							message:
+							'removing arguments does not accept negative permutation entries.'
+							details: self requestedContext ] ].
 	^ self
 ]

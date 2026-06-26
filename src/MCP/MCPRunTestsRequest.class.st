@@ -28,7 +28,8 @@ MCPRunTestsRequest class >> addClassNames: classNames to: requests [
 MCPRunTestsRequest class >> addMethodReferences: methodReferences to: requests [
 
 	methodReferences do: [ :methodReference |
-		requests add: (MCPTestRunRequest fromMethodReference: methodReference) ]
+		requests add:
+			(MCPTestRunRequest fromMethodReference: methodReference) ]
 ]
 
 { #category : 'private - parsing' }
@@ -45,17 +46,22 @@ MCPRunTestsRequest class >> fromRequest: aRequest tool: aTool operation: operati
 	(#( 'run' 'coverage' ) includes: operation) ifFalse: [
 		Error signal: 'operation must be run or coverage.' ].
 	coverageRequest := operation = 'coverage' ifTrue: [
-		MCPTestCoverageRequest
-			fromValue: (aRequest argumentNamed: 'coverage' ifAbsent: [ nil ])
-			usingToolRequest: aRequest
-			defaultMethodLimit: aTool defaultCoverageMethodLimit ].
+			                   MCPTestCoverageRequest
+				                   fromValue:
+				                   (aRequest
+					                    argumentNamed: 'coverage'
+					                    ifAbsent: [ nil ])
+				                   usingToolRequest: aRequest
+				                   defaultMethodLimit:
+				                   aTool defaultCoverageMethodLimit ].
 	^ self new
-		initializeTestRequests: (self testRequestsFromToolRequest: aRequest)
-		timeoutMilliseconds: (self
-			timeoutMillisecondsFromToolRequest: aRequest
-			defaultSeconds: aTool defaultTimeoutSeconds)
-		operation: operation
-		coverageRequest: coverageRequest
+		  initializeTestRequests:
+		  (self testRequestsFromToolRequest: aRequest)
+		  timeoutMilliseconds: (self
+				   timeoutMillisecondsFromToolRequest: aRequest
+				   defaultSeconds: aTool defaultTimeoutSeconds)
+		  operation: operation
+		  coverageRequest: coverageRequest
 ]
 
 { #category : 'private - parsing' }
@@ -63,16 +69,16 @@ MCPRunTestsRequest class >> testRequestsFromToolRequest: request [
 
 	| classNames methodReferences packageNames requests |
 	packageNames := request
-		uniqueStringCollectionArgumentNamed: 'packages'
-		default: #( ).
+		                uniqueStringCollectionArgumentNamed: 'packages'
+		                default: #(  ).
 	classNames := request
-		uniqueStringCollectionArgumentNamed: 'classes'
-		default: #( ).
+		              uniqueStringCollectionArgumentNamed: 'classes'
+		              default: #(  ).
 	methodReferences := request
-		uniqueStringCollectionArgumentNamed: 'methods'
-		default: #( ).
+		                    uniqueStringCollectionArgumentNamed: 'methods'
+		                    default: #(  ).
 	(packageNames isEmpty and: [
-		classNames isEmpty and: [ methodReferences isEmpty ] ]) ifTrue: [
+		 classNames isEmpty and: [ methodReferences isEmpty ] ]) ifTrue: [
 		Error signal: 'Provide at least one package, class, or method.' ].
 	requests := OrderedCollection new.
 	self addPackageNames: packageNames to: requests.

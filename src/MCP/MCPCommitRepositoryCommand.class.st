@@ -72,10 +72,10 @@ MCPCommitRepositoryCommand >> gitSignatureMissingFor: anError [
 	message := anError messageText ifNil: [ '' ].
 	message := message asLowercase.
 	^ message = 'config value ''user.name'' was not found' or: [
-		  message = 'config value ''user.email'' was not found' or: [
-			  message
-			  =
-			  'failed to parse signature - signature cannot have an empty name or email' ] ]
+			  message = 'config value ''user.email'' was not found' or: [
+					  message
+					  =
+					  'failed to parse signature - signature cannot have an empty name or email' ] ]
 ]
 
 { #category : 'private - git identity' }
@@ -89,8 +89,8 @@ MCPCommitRepositoryCommand >> removeGitConfigKey: key from: config [
 
 { #category : 'private - git identity' }
 MCPCommitRepositoryCommand >> removeTemporaryGitConfigKey: key from: config [
-
 	"Pharo 13 libgit2 can crash while deleting freshly-created repository config entries."
+
 	PharoCompatibility isPharo13OrLater ifTrue: [ ^ self ].
 	self removeGitConfigKey: key from: config
 ]
@@ -106,13 +106,13 @@ MCPCommitRepositoryCommand >> repositoryHasChangesToCommit: aRepository [
 MCPCommitRepositoryCommand >> repositoryHasDefaultGitSignature: aRepository [
 
 	^ [
-	  aRepository repositoryHandle defaultSignature.
-	  true ]
+		  aRepository repositoryHandle defaultSignature.
+		  true ]
 		  on: LGit_GIT_ENOTFOUND , LGit_GIT_ERROR
 		  do: [ :error |
-			  (self gitSignatureMissingFor: error)
-				  ifTrue: [ false ]
-				  ifFalse: [ error pass ] ]
+				  (self gitSignatureMissingFor: error)
+					  ifTrue: [ false ]
+					  ifFalse: [ error pass ] ]
 ]
 
 { #category : 'private - diff' }
@@ -142,8 +142,8 @@ MCPCommitRepositoryCommand >> withNonInteractiveGitIdentityFor: aRepository duri
 	shouldSetName ifTrue: [ config username: self fallbackGitUserName ].
 	shouldSetEmail ifTrue: [ config email: self fallbackGitUserEmail ].
 	^ [ aBlock value ] ensure: [
-		  shouldSetName ifTrue: [
-			  self removeTemporaryGitConfigKey: 'user.name' from: config ].
-		  shouldSetEmail ifTrue: [
-			  self removeTemporaryGitConfigKey: 'user.email' from: config ] ]
+			  shouldSetName ifTrue: [
+				  self removeTemporaryGitConfigKey: 'user.name' from: config ].
+			  shouldSetEmail ifTrue: [
+				  self removeTemporaryGitConfigKey: 'user.email' from: config ] ]
 ]

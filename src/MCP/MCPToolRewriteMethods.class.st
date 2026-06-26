@@ -69,10 +69,10 @@ MCPToolRewriteMethods >> executeWithRequest: request [
 		  do: [ :rewriteRequest |
 		  (self commandForRequest: rewriteRequest) execute ]
 		  onError: [ :error :rewriteRequest |
-			  self
-				  errorResultForRewriteError: error
-				  request: rewriteRequest
-				  rawRequest: request ]
+				  self
+					  errorResultForRewriteError: error
+					  request: rewriteRequest
+					  rawRequest: request ]
 ]
 
 { #category : 'private - execution' }
@@ -257,7 +257,7 @@ MCPToolRewriteMethods >> validateRequest: request [
 
 	((request booleanArgumentNamed: 'apply' default: false) and: [
 		 (request hasArgumentNamed: 'expectedChangeSetHash') not ]) ifTrue: [
-		MCPInvalidToolInput
-			signalMissingRequiredArgumentNamed: 'expectedChangeSetHash'
-			forTool: self ]
+			MCPInvalidToolInput
+				signalMissingRequiredArgumentNamed: 'expectedChangeSetHash'
+				forTool: self ]
 ]

@@ -211,9 +211,7 @@ MCPToolDebugSessionControlOperation >> title [
 { #category : 'private - specs' }
 MCPToolDebugSessionControlOperation >> usesFrameReference [
 
-	^ self controlToolSpec
-		  at: #usesFrameReference
-		  ifAbsent: [ false ]
+	^ self controlToolSpec at: #usesFrameReference ifAbsent: [ false ]
 ]
 
 { #category : 'private - specs' }

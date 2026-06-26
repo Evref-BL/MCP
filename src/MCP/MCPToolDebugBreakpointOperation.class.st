@@ -157,9 +157,7 @@ MCPToolDebugBreakpointOperation >> description [
 { #category : 'private - schema' }
 MCPToolDebugBreakpointOperation >> inputProperties [
 
-	^ self breakpointToolSpec
-		  at: #inputProperties
-		  ifAbsent: [ #(  ) ]
+	^ self breakpointToolSpec at: #inputProperties ifAbsent: [ #(  ) ]
 ]
 
 { #category : 'private - request' }
@@ -174,9 +172,7 @@ MCPToolDebugBreakpointOperation >> parsedRequestFromToolRequest: request [
 { #category : 'private - schema' }
 MCPToolDebugBreakpointOperation >> requiredInputProperties [
 
-	^ self breakpointToolSpec
-		  at: #requiredProperties
-		  ifAbsent: [ #(  ) ]
+	^ self breakpointToolSpec at: #requiredProperties ifAbsent: [ #(  ) ]
 ]
 
 { #category : 'metadata' }

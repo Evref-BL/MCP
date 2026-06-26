@@ -76,23 +76,23 @@ MCPReplaceClassSideTraitsCommand >> resolvedClassTraitNamed: aClassTraitName [
 	behavior := Smalltalk globals
 		            at: classTraitName asSymbol
 		            ifAbsent: [
-			            MCPCommandError
-				            signalErrorCode: #ClassTraitNotFound
-				            message:
-				            'Class trait ' , originalName , ' does not exist.'
-				            details: {
-						            (#className -> self className).
-						            (#classTraitName -> originalName).
-						            (#classTraits -> self classTraitNames) }
-						            asDictionary ].
+				            MCPCommandError
+					            signalErrorCode: #ClassTraitNotFound
+					            message:
+					            'Class trait ' , originalName , ' does not exist.'
+					            details: {
+							            (#className -> self className).
+							            (#classTraitName -> originalName).
+							            (#classTraits -> self classTraitNames) }
+							            asDictionary ].
 	behavior isTrait ifFalse: [
-		MCPCommandError
-			signalErrorCode: #InvalidClassTrait
-			message: originalName , ' is not a class trait.'
-			details: {
-					(#className -> self className).
-					(#classTraitName -> originalName).
-					(#classTraits -> self classTraitNames) } asDictionary ].
+			MCPCommandError
+				signalErrorCode: #InvalidClassTrait
+				message: originalName , ' is not a class trait.'
+				details: {
+						(#className -> self className).
+						(#classTraitName -> originalName).
+						(#classTraits -> self classTraitNames) } asDictionary ].
 	^ behavior classTrait
 ]
 

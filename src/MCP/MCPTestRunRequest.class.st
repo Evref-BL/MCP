@@ -26,9 +26,9 @@ MCPTestRunRequest class >> className: aClassName [
 MCPTestRunRequest class >> className: aClassName testMethodName: aTestMethodName [
 
 	^ self new
-		initializePackageName: nil
-		className: aClassName
-		testMethodName: aTestMethodName
+		  initializePackageName: nil
+		  className: aClassName
+		  testMethodName: aTestMethodName
 ]
 
 { #category : 'instance creation' }
@@ -39,9 +39,8 @@ MCPTestRunRequest class >> fromMethodReference: aString [
 	delimiterIndex isZero ifTrue: [
 		Error signal: 'methods must use Class>>#selector references.' ].
 	className := (aString copyFrom: 1 to: delimiterIndex - 1) trimBoth.
-	selector := (aString
-		copyFrom: delimiterIndex + 2
-		to: aString size) trimBoth.
+	selector := (aString copyFrom: delimiterIndex + 2 to: aString size)
+		            trimBoth.
 	(selector notEmpty and: [ selector first = $# ]) ifTrue: [
 		selector := selector allButFirst ].
 	(className isEmpty or: [ selector isEmpty ]) ifTrue: [
@@ -53,9 +52,9 @@ MCPTestRunRequest class >> fromMethodReference: aString [
 MCPTestRunRequest class >> packageName: aPackageName [
 
 	^ self new
-		initializePackageName: aPackageName
-		className: nil
-		testMethodName: nil
+		  initializePackageName: aPackageName
+		  className: nil
+		  testMethodName: nil
 ]
 
 { #category : 'converting' }
@@ -64,8 +63,8 @@ MCPTestRunRequest >> asDictionary [
 	| data |
 	data := Dictionary new.
 	self isPackageRequest ifTrue: [
-		data at: #packageName put: self packageName.
-		^ data ].
+			data at: #packageName put: self packageName.
+			^ data ].
 	data at: #className put: self className.
 	self testMethodName ifNotNil: [
 		data at: #testMethodName put: self testMethodName ].
@@ -83,8 +82,8 @@ MCPTestRunRequest >> displayName [
 
 	self isPackageRequest ifTrue: [ ^ self packageName ].
 	^ self testMethodName
-		ifNil: [ self className ]
-		ifNotNil: [ :methodName | self className , '>>#' , methodName ]
+		  ifNil: [ self className ]
+		  ifNotNil: [ :methodName | self className , '>>#' , methodName ]
 ]
 
 { #category : 'testing' }

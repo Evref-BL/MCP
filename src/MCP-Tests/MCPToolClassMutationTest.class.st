@@ -19,8 +19,8 @@ MCPToolClassMutationTest >> aroundToolCall: aBlock [
 MCPToolClassMutationTest >> assertIncludesReferencedSlotWarning: warningMessages [
 
 	self assert: (warningMessages anySatisfy: [ :each |
-			 (each includesSubstring: 'referencedSlot') and: [
-				 each includesSubstring: 'referenced' ] ])
+				 (each includesSubstring: 'referencedSlot') and: [
+					 each includesSubstring: 'referenced' ] ])
 ]
 
 { #category : 'private - calling' }
@@ -28,7 +28,7 @@ MCPToolClassMutationTest >> callToolWith: someArguments [
 
 	| arguments request result slotAction tool toolClass |
 	arguments := someArguments copy.
-	arguments removeKey: #action ifAbsent: [  ].
+	arguments removeKey: #action ifAbsent: [ ].
 	slotAction := arguments removeKey: #slotAction ifAbsent: [ nil ].
 	toolClass := self
 		             classToolClassForArguments: arguments
@@ -42,22 +42,36 @@ MCPToolClassMutationTest >> callToolWith: someArguments [
 { #category : 'private - calling' }
 MCPToolClassMutationTest >> classToolClassForArguments: arguments slotAction: slotAction [
 
-	((arguments includesKey: #superclassName) and: [ arguments includesKey: #packageName ]) ifTrue: [ ^ MCPToolCreateClass ].
+	((arguments includesKey: #superclassName) and: [
+		 arguments includesKey: #packageName ]) ifTrue: [
+		^ MCPToolCreateClass ].
 	slotAction = 'add' ifTrue: [ ^ MCPToolAddClassSlot ].
 	slotAction = 'remove' ifTrue: [ ^ MCPToolRemoveClassSlot ].
 	slotAction = 'rename' ifTrue: [ ^ MCPToolUpdateClassSlotName ].
 	slotAction = 'pullUp' ifTrue: [ ^ MCPToolPullUpClassSlot ].
 	slotAction = 'pushDown' ifTrue: [ ^ MCPToolPushDownClassSlot ].
-	(arguments includesKey: #newClassName) ifTrue: [ ^ MCPToolUpdateClassName ].
-	(arguments includesKey: #classComment) ifTrue: [ ^ MCPToolUpdateClassComment ].
-	(arguments includesKey: #traits) ifTrue: [ ^ MCPToolUpdateClassTraits ].
-	(arguments includesKey: #classTraits) ifTrue: [ ^ MCPToolUpdateClassSideTraits ].
-	(arguments includesKey: #sharedVariables) ifTrue: [ ^ MCPToolUpdateClassSharedVariables ].
-	(arguments includesKey: #sharedPools) ifTrue: [ ^ MCPToolUpdateClassSharedPools ].
-	(arguments includesKey: #layout) ifTrue: [ ^ MCPToolUpdateClassLayout ].
-	((arguments includesKey: #slots) or: [ arguments includesKey: #classSlots ]) ifTrue: [ ^ MCPToolUpdateClassSlots ].
-	(arguments includesKey: #superclassName) ifTrue: [ ^ MCPToolUpdateClassSuperclass ].
-	((arguments includesKey: #packageName) or: [ arguments includesKey: #tag ]) ifTrue: [ ^ MCPToolUpdateClassPackage ].
+	(arguments includesKey: #newClassName) ifTrue: [
+		^ MCPToolUpdateClassName ].
+	(arguments includesKey: #classComment) ifTrue: [
+		^ MCPToolUpdateClassComment ].
+	(arguments includesKey: #traits) ifTrue: [
+		^ MCPToolUpdateClassTraits ].
+	(arguments includesKey: #classTraits) ifTrue: [
+		^ MCPToolUpdateClassSideTraits ].
+	(arguments includesKey: #sharedVariables) ifTrue: [
+		^ MCPToolUpdateClassSharedVariables ].
+	(arguments includesKey: #sharedPools) ifTrue: [
+		^ MCPToolUpdateClassSharedPools ].
+	(arguments includesKey: #layout) ifTrue: [
+		^ MCPToolUpdateClassLayout ].
+	((arguments includesKey: #slots) or: [
+		 arguments includesKey: #classSlots ]) ifTrue: [
+		^ MCPToolUpdateClassSlots ].
+	(arguments includesKey: #superclassName) ifTrue: [
+		^ MCPToolUpdateClassSuperclass ].
+	((arguments includesKey: #packageName) or: [
+		 arguments includesKey: #tag ]) ifTrue: [
+		^ MCPToolUpdateClassPackage ].
 	^ MCPToolUpdateClassComment
 ]
 
@@ -89,12 +103,14 @@ MCPToolClassMutationTest >> createRequestArgumentsWith: associations [
 { #category : 'private' }
 MCPToolClassMutationTest >> createdClassNames [
 
-	^ #( 'MCPToolClassMutationTestGenerated' 'MCPToolClassMutationTestTagged'
+	^ #( 'MCPToolClassMutationTestGenerated'
+	     'MCPToolClassMutationTestTagged'
 	     'MCPToolClassMutationTestClassSlots'
 	     'MCPToolClassMutationTestConfigured'
 	     'MCPToolClassMutationTestTemporaryPackage'
 	     'MCPToolClassMutationTestCommentTarget'
-	     'MCPToolClassMutationTestCommented' 'MCPToolClassMutationTestReparentTarget'
+	     'MCPToolClassMutationTestCommented'
+	     'MCPToolClassMutationTestReparentTarget'
 	     'MCPToolClassMutationTestReparentSuperclass'
 	     'MCPToolClassMutationTestTraitTarget'
 	     'MCPToolClassMutationTestTraitRemovalTarget'
@@ -152,10 +168,10 @@ MCPToolClassMutationTest >> destinationTagName [
 MCPToolClassMutationTest >> ensureDestinationPackage [
 
 	self withoutEpiceaDuring: [
-		| package |
-		package := PackageOrganizer default ensurePackage:
-			           self destinationPackageName.
-		package ensureTag: self destinationTagName ]
+			| package |
+			package := PackageOrganizer default ensurePackage:
+				           self destinationPackageName.
+			package ensureTag: self destinationTagName ]
 ]
 
 { #category : 'private' }
@@ -165,14 +181,14 @@ MCPToolClassMutationTest >> ensureOriginalRenameFixtureState [
 	originalSymbol := self originalClassName asSymbol.
 	renamedSymbol := self renamedClassName asSymbol.
 	self withoutEpiceaDuring: [
-		((Smalltalk globals includesKey: originalSymbol) and: [
-			 Smalltalk globals includesKey: renamedSymbol ]) ifTrue: [
-			(Smalltalk globals at: renamedSymbol) removeFromSystem ].
-		((Smalltalk globals includesKey: renamedSymbol) and: [
-			 (Smalltalk globals includesKey: originalSymbol) not ]) ifTrue: [
-			(ReRenameClassRefactoring
-				 rename: self renamedClassName
-				 to: self originalClassName) execute ] ]
+			((Smalltalk globals includesKey: originalSymbol) and: [
+				 Smalltalk globals includesKey: renamedSymbol ]) ifTrue: [
+				(Smalltalk globals at: renamedSymbol) removeFromSystem ].
+			((Smalltalk globals includesKey: renamedSymbol) and: [
+				 (Smalltalk globals includesKey: originalSymbol) not ]) ifTrue: [
+					(ReRenameClassRefactoring
+						 rename: self renamedClassName
+						 to: self originalClassName) execute ] ]
 ]
 
 { #category : 'private' }
@@ -215,21 +231,21 @@ MCPToolClassMutationTest >> referenceClassName [
 MCPToolClassMutationTest >> removeDestinationPackage [
 
 	self withoutEpiceaDuring: [
-		(PackageOrganizer default hasPackage: self destinationPackageName)
-			ifTrue: [
-				PackageOrganizer default removePackage:
-					(PackageOrganizer default packageNamed:
-						 self destinationPackageName) ] ]
+			(PackageOrganizer default hasPackage: self destinationPackageName)
+				ifTrue: [
+						PackageOrganizer default removePackage:
+							(PackageOrganizer default packageNamed:
+								 self destinationPackageName) ] ]
 ]
 
 { #category : 'private' }
 MCPToolClassMutationTest >> removeGeneratedPackage [
 
 	self withoutEpiceaDuring: [
-		(self packageOrganizer hasPackage: self generatedPackageName)
-			ifTrue: [
-				self packageOrganizer removePackage:
-					(self packageOrganizer packageNamed: self generatedPackageName) ] ]
+			(self packageOrganizer hasPackage: self generatedPackageName)
+				ifTrue: [
+						self packageOrganizer removePackage:
+							(self packageOrganizer packageNamed: self generatedPackageName) ] ]
 ]
 
 { #category : 'private' }
@@ -258,9 +274,9 @@ MCPToolClassMutationTest >> restoreMoveTargetClassLocation [
 		 self currentTagOfMoveTargetClass = 'Uncategorized' ]) ifTrue: [
 		^ self ].
 	self withoutEpiceaDuring: [
-		(RBMoveClassTransformation
-			 move: self moveTargetClassName
-			 toPackage: self originalMovePackageName) execute ]
+			(RBMoveClassTransformation
+				 move: self moveTargetClassName
+				 toPackage: self originalMovePackageName) execute ]
 ]
 
 { #category : 'running' }
@@ -396,8 +412,7 @@ MCPToolClassMutationTest >> testCreateAcceptsDefinitionOptions [
 				 as: Array)
 		equals: #( 'ChronologyConstants' ).
 	self assert: createdClass classLayout class name equals: #WeakLayout.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-
+	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
 { #category : 'tests - create' }
@@ -419,8 +434,7 @@ MCPToolClassMutationTest >> testCreateAcceptsSlotsAndTag [
 	self
 		assert: createdClass category asString
 		equals: self generatedPackageName , '-Generated'.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-
+	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
 { #category : 'tests - create' }
@@ -439,8 +453,7 @@ MCPToolClassMutationTest >> testCreateCreatesClass [
 		assert: createdClass packageName asString
 		equals: self generatedPackageName.
 	self assert: createdClass slots isEmpty.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-
+	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
 { #category : 'tests - create' }
@@ -544,8 +557,7 @@ MCPToolClassMutationTest >> testCreateSetsClassComment [
 	createdClass := self classNamed: 'MCPToolClassMutationTestCommented'.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: createdClass comment equals: 'Created with a comment.'.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-
+	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
 { #category : 'tests - update' }
@@ -569,8 +581,7 @@ MCPToolClassMutationTest >> testUpdateAddsClassSideSlot [
 	self
 		assert: (target classSide slots collect: #name as: Array)
 		equals: #( #addedClassSlot ).
-	self deny: (result at: #isError ifAbsent: [ false ]).
-
+	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
 { #category : 'tests - update' }
@@ -593,8 +604,7 @@ MCPToolClassMutationTest >> testUpdateAddsInstanceSlot [
 	self
 		assert: (target slots collect: #name as: Array)
 		equals: #( #addedSlot ).
-	self deny: (result at: #isError ifAbsent: [ false ]).
-
+	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
 { #category : 'tests - update' }
@@ -615,8 +625,7 @@ MCPToolClassMutationTest >> testUpdateCanClearClassComment [
 	target := self classNamed: self commentTargetClassName.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: target comment equals: ''.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-
+	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
 { #category : 'tests - update' }
@@ -670,8 +679,7 @@ MCPToolClassMutationTest >> testUpdateForcePullUpSlotContinuesPastRefactoringWar
 	self assert: (childOne slots collect: #name as: Array) equals: #(  ).
 	self assert: (childTwo slots collect: #name as: Array) equals: #(  ).
 	self assert: instance slotProbe equals: 17.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-
+	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
 { #category : 'tests - update' }
@@ -702,8 +710,7 @@ MCPToolClassMutationTest >> testUpdateForceRemoveSlotContinuesPastRefactoringWar
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assertIncludesReferencedSlotWarning: warnings.
 	self assert: (target slots collect: #name as: Array) equals: #(  ).
-	self deny: (result at: #isError ifAbsent: [ false ]).
-
+	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
 { #category : 'tests - update' }
@@ -720,8 +727,7 @@ MCPToolClassMutationTest >> testUpdateMoveEnsuresMissingDestinationPackage [
 	self
 		assert: self moveTargetClass packageName asString
 		equals: self destinationPackageName.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-
+	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
 { #category : 'tests - update' }
@@ -744,8 +750,7 @@ MCPToolClassMutationTest >> testUpdateMoveEnsuresMissingDestinationTag [
 	self
 		assert: self currentTagOfMoveTargetClass
 		equals: self destinationTagName.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-
+	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
 { #category : 'tests - update' }
@@ -759,8 +764,7 @@ MCPToolClassMutationTest >> testUpdateMovesClassToAnotherPackage [
 	self
 		assert: self moveTargetClass packageName asString
 		equals: self destinationPackageName.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-
+	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
 { #category : 'tests - update' }
@@ -777,8 +781,7 @@ MCPToolClassMutationTest >> testUpdateMovesClassToExistingTag [
 	self
 		assert: self currentTagOfMoveTargetClass
 		equals: self destinationTagName.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-
+	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
 { #category : 'tests - update' }
@@ -865,7 +868,8 @@ MCPToolClassMutationTest >> testUpdatePullUpSlotStopsOnRefactoringWarningByDefau
 			           classSide: false).
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
-	target := self classNamed: 'MCPToolClassMutationTestWarningPullUpTarget'.
+	target := self classNamed:
+		          'MCPToolClassMutationTestWarningPullUpTarget'.
 	childOne := self classNamed:
 		            'MCPToolClassMutationTestWarningPullUpChildOne'.
 	childTwo := self classNamed:
@@ -888,8 +892,8 @@ MCPToolClassMutationTest >> testUpdatePullUpSlotStopsOnRefactoringWarningByDefau
 	self assert:
 		((error at: #howToProceed) includesSubstring: 'force=true').
 	self assert: ((error at: #impactMessages) anySatisfy: [ :each |
-			 each includesSubstring:
-				 'Not all subclasses have an instance variable named' ]).
+				 each includesSubstring:
+					 'Not all subclasses have an instance variable named' ]).
 	self assert: (target slots collect: #name as: Array) equals: #(  ).
 	self
 		assert: (childOne slots collect: #name as: Array)
@@ -938,8 +942,7 @@ MCPToolClassMutationTest >> testUpdatePullsUpInstanceSlotAcrossSubclasses [
 	self assert: (childOne slots collect: #name as: Array) equals: #(  ).
 	self assert: (childTwo slots collect: #name as: Array) equals: #(  ).
 	self assert: instance slotProbe equals: 41.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-
+	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
 { #category : 'tests - update' }
@@ -989,8 +992,7 @@ MCPToolClassMutationTest >> testUpdatePushesDownClassSlotToDirectSubclasses [
 		assert: (childTwo classSide slots collect: #name as: Array)
 		equals: #( #sharedClassSlot ).
 	self assert: childOne slotProbe equals: 23.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-
+	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
 { #category : 'tests - update' }
@@ -1010,8 +1012,7 @@ MCPToolClassMutationTest >> testUpdateRecategorizesWithinCurrentPackageWhenPacka
 	self
 		assert: self currentTagOfMoveTargetClass
 		equals: self destinationTagName.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-
+	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
 { #category : 'tests - update' }
@@ -1026,10 +1027,12 @@ MCPToolClassMutationTest >> testUpdateRemoveSlotStopsOnRefactoringWarningByDefau
 	self
 		ensureMethodSource: 'slotProbe ^ referencedSlot'
 		protocol: 'testing'
-		on: (self classNamed: 'MCPToolClassMutationTestWarningRemoveSlotTarget').
+		on:
+		(self classNamed: 'MCPToolClassMutationTestWarningRemoveSlotTarget').
 	result := self callToolWith: (self
 			           updateRequestArgumentsForSlotAction: 'remove'
-			           className: 'MCPToolClassMutationTestWarningRemoveSlotTarget'
+			           className:
+			           'MCPToolClassMutationTestWarningRemoveSlotTarget'
 			           slotName: 'referencedSlot'
 			           classSide: false).
 	structured := self structuredContentFrom: result.
@@ -1055,8 +1058,7 @@ MCPToolClassMutationTest >> testUpdateRemoveSlotStopsOnRefactoringWarningByDefau
 	self assert: (error at: #forceSupported) equals: true.
 	self assert:
 		((error at: #howToProceed) includesSubstring: 'force=true').
-	self assertIncludesReferencedSlotWarning:
-		(error at: #impactMessages).
+	self assertIncludesReferencedSlotWarning: (error at: #impactMessages).
 	self
 		assert: (target slots collect: #name as: Array)
 		equals: #( #referencedSlot )
@@ -1084,8 +1086,7 @@ MCPToolClassMutationTest >> testUpdateRemovesClassSideSlot [
 	self
 		assert: (target classSide slots collect: #name as: Array)
 		equals: #(  ).
-	self deny: (result at: #isError ifAbsent: [ false ]).
-
+	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
 { #category : 'tests - update' }
@@ -1108,8 +1109,7 @@ MCPToolClassMutationTest >> testUpdateRemovesClassSideTraitsWithEmptyArray [
 		               'MCPToolClassMutationTestClassTraitRemovalTarget'.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: targetClass classSide traits isEmpty.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-
+	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
 { #category : 'tests - update' }
@@ -1130,8 +1130,7 @@ MCPToolClassMutationTest >> testUpdateRemovesInstanceSlot [
 	target := self classNamed: 'MCPToolClassMutationTestRemoveSlotTarget'.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (target slots collect: #name as: Array) equals: #(  ).
-	self deny: (result at: #isError ifAbsent: [ false ]).
-
+	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
 { #category : 'tests - update' }
@@ -1154,8 +1153,7 @@ MCPToolClassMutationTest >> testUpdateRemovesSharedPoolsWithEmptyArray [
 		               'MCPToolClassMutationTestSharedPoolRemovalTarget'.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: targetClass sharedPools isEmpty.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-
+	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
 { #category : 'tests - update' }
@@ -1178,8 +1176,7 @@ MCPToolClassMutationTest >> testUpdateRemovesSharedVariablesWithEmptyArray [
 		               'MCPToolClassMutationTestSharedVariableRemovalTarget'.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: targetClass classVarNames isEmpty.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-
+	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
 { #category : 'tests - update' }
@@ -1202,8 +1199,7 @@ MCPToolClassMutationTest >> testUpdateRemovesTraitsWithEmptyArray [
 		               'MCPToolClassMutationTestTraitRemovalTarget'.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: targetClass traits isEmpty.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-
+	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
 { #category : 'tests - update' }
@@ -1283,8 +1279,7 @@ MCPToolClassMutationTest >> testUpdateRenamesClassAndReturnsStructuredData [
 		(Smalltalk globals includesKey: self renamedClassName asSymbol).
 	self deny:
 		(Smalltalk globals includesKey: self originalClassName asSymbol).
-	self deny: (result at: #isError ifAbsent: [ false ]).
-
+	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
 { #category : 'tests - update' }
@@ -1333,8 +1328,7 @@ MCPToolClassMutationTest >> testUpdateRenamesClassSideSlotAndPreservesValue [
 	self assert: target renamedClassSlot equals: 73.
 	target renamedClassSlot: 91.
 	self assert: target slotProbe equals: 91.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-
+	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
 { #category : 'tests - update' }
@@ -1378,8 +1372,7 @@ MCPToolClassMutationTest >> testUpdateRenamesInstanceSlotAndUpdatesReferences [
 	self assert: (target includesSelector: #renamedSlot:).
 	self assert: instance renamedSlot equals: 37.
 	self assert: instance slotProbe equals: 37.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-
+	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
 { #category : 'tests - update' }
@@ -1412,8 +1405,7 @@ MCPToolClassMutationTest >> testUpdateReparentsClassAndPreservesExistingState [
 		equals: self reparentSuperclassName.
 	self assert: target new probeMethod equals: 41.
 	self assert: target comment equals: 'reparent comment'.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-
+	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
 { #category : 'tests - update' }
@@ -1443,8 +1435,7 @@ MCPToolClassMutationTest >> testUpdateReplacesClassSideTraits [
 	self
 		assert: targetClass classSide traitCompositionString
 		equals: 'TComparable classTrait'.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-
+	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
 { #category : 'tests - update' }
@@ -1465,8 +1456,7 @@ MCPToolClassMutationTest >> testUpdateReplacesLayout [
 		               'MCPToolClassMutationTestLayoutTarget'.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: targetClass classLayout class name equals: #WeakLayout.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-
+	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
 { #category : 'tests - update' }
@@ -1493,8 +1483,7 @@ MCPToolClassMutationTest >> testUpdateReplacesSharedPools [
 				 collect: [ :each | each name asString ]
 				 as: Array)
 		equals: #( 'TextConstants' ).
-	self deny: (result at: #isError ifAbsent: [ false ]).
-
+	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
 { #category : 'tests - update' }
@@ -1517,8 +1506,7 @@ MCPToolClassMutationTest >> testUpdateReplacesSharedVariables [
 		               'MCPToolClassMutationTestSharedVariableTarget'.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: targetClass classVarNames equals: #( #BetaShared ).
-	self deny: (result at: #isError ifAbsent: [ false ]).
-
+	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
 { #category : 'tests - update' }
@@ -1550,8 +1538,7 @@ MCPToolClassMutationTest >> testUpdateReplacesSlotDefinitionAndPreservesMatching
 		equals: #( #keptClassSlot #newClassSlot ).
 	self assert: (instance instVarNamed: 'keptSlot') equals: 13.
 	self assert: (target instVarNamed: 'keptClassSlot') equals: 17.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-
+	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
 { #category : 'tests - update' }
@@ -1582,8 +1569,7 @@ MCPToolClassMutationTest >> testUpdateReplacesTraits [
 	self
 		assert: targetClass classSide traitCompositionString
 		equals: 'TComparable classTrait'.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-
+	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
 { #category : 'tests - update' }
@@ -1945,8 +1931,7 @@ MCPToolClassMutationTest >> testUpdateSetsClassComment [
 	target := self classNamed: self commentTargetClassName.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: target comment equals: 'updated comment'.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-
+	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
 { #category : 'private - calling' }

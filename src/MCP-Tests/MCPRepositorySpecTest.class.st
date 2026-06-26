@@ -299,16 +299,16 @@ MCPRepositorySpecTest >> testRepositoryReferenceResolvesByNameAndLocation [
 		              location: FileLocator imageDirectory
 		              packageNames: #( 'MCP' ).
 	self withRepositories: { repository } do: [
-		reference := MCPRepositoryReferenceSpec
-			             name: 'MCP Reference Repository'
-			             location: FileLocator imageDirectory pathString.
-		self assert: reference repository identicalTo: repository.
-		self
-			assert: (reference requestedContext at: #repositoryName)
-			equals: 'MCP Reference Repository'.
-		self
-			assert: (reference requestedContext at: #location)
-			equals: FileLocator imageDirectory pathString ]
+			reference := MCPRepositoryReferenceSpec
+				             name: 'MCP Reference Repository'
+				             location: FileLocator imageDirectory pathString.
+			self assert: reference repository identicalTo: repository.
+			self
+				assert: (reference requestedContext at: #repositoryName)
+				equals: 'MCP Reference Repository'.
+			self
+				assert: (reference requestedContext at: #location)
+				equals: FileLocator imageDirectory pathString ]
 ]
 
 { #category : 'tests' }
@@ -375,15 +375,16 @@ MCPRepositorySpecTest >> testRepositoryVerifyIdentityRequestParsesTypedInput [
 
 	| context verifyIdentityRequest |
 	verifyIdentityRequest := MCPRepositoryVerifyIdentityRequest
-		                    fromRequest: (self requestWithArguments: {
-					                     (#repositoryName -> 'MCP Repo').
-					                     (#location -> '/tmp/MCP').
-					                     (#branchName -> 'main').
-					                     (#subdirectory -> 'src').
-					                     (#packageNames -> #( 'MCP' 'MCP-Tests' )).
-					                     (#modifiedPackageNames -> #( 'MCP' )).
-					                     (#isModified -> true) } asDictionary)
-		                    tool: nil.
+		                         fromRequest: (self requestWithArguments: {
+					                          (#repositoryName -> 'MCP Repo').
+					                          (#location -> '/tmp/MCP').
+					                          (#branchName -> 'main').
+					                          (#subdirectory -> 'src').
+					                          (#packageNames
+					                           -> #( 'MCP' 'MCP-Tests' )).
+					                          (#modifiedPackageNames -> #( 'MCP' )).
+					                          (#isModified -> true) } asDictionary)
+		                         tool: nil.
 	context := verifyIdentityRequest requestedContext.
 	self assert: verifyIdentityRequest operation equals: 'verifyIdentity'.
 	self
@@ -431,9 +432,9 @@ MCPRepositorySpecTest >> withRepositories: repositories do: aBlock [
 	registry := IceRepository registry.
 	previousRepositories := registry copy.
 	[
-	registry removeAll.
-	registry addAll: repositories.
-	aBlock value ] ensure: [
 		registry removeAll.
-		registry addAll: previousRepositories ]
+		registry addAll: repositories.
+		aBlock value ] ensure: [
+			registry removeAll.
+			registry addAll: previousRepositories ]
 ]

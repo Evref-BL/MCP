@@ -150,12 +150,12 @@ MCPMonitoringStateTest >> testOutlierExplanationUsesPriorAverage [
 	stats := MCPToolCallStats forToolNamed: 'slow-tool'.
 	start := DateAndTime now.
 	1 to: 3 do: [ :index |
-		record := MCPToolCallRecord
-			          id: index
-			          toolName: 'slow-tool'
-			          startedAt: start.
-		record finishAt: start durationMilliseconds: 10 status: 'ok'.
-		stats recordCall: record ].
+			record := MCPToolCallRecord
+				          id: index
+				          toolName: 'slow-tool'
+				          startedAt: start.
+			record finishAt: start durationMilliseconds: 10 status: 'ok'.
+			stats recordCall: record ].
 
 	explanation := state
 		               outlierExplanationForDurationMilliseconds: 25

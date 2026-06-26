@@ -141,8 +141,8 @@ MCPRecordingMetacello >> received: selector [
 MCPRecordingMetacello >> received: selector withArguments: arguments [
 
 	^ messages anySatisfy: [ :each |
-		  (each at: #selector) = selector and: [
-			  (each at: #arguments) = arguments asArray ] ]
+			  (each at: #selector) = selector and: [
+				  (each at: #arguments) = arguments asArray ] ]
 ]
 
 { #category : 'recording' }

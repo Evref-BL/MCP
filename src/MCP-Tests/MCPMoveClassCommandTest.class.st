@@ -31,10 +31,10 @@ MCPMoveClassCommandTest >> destinationTagName [
 MCPMoveClassCommandTest >> ensureDestinationPackage [
 
 	self withoutEpiceaDuring: [
-		| package |
-		package := PackageOrganizer default ensurePackage:
-			           self destinationPackageName.
-		package ensureTag: self destinationTagName ]
+			| package |
+			package := PackageOrganizer default ensurePackage:
+				           self destinationPackageName.
+			package ensureTag: self destinationTagName ]
 ]
 
 { #category : 'private' }
@@ -47,11 +47,11 @@ MCPMoveClassCommandTest >> originalPackageName [
 MCPMoveClassCommandTest >> removeDestinationPackage [
 
 	self withoutEpiceaDuring: [
-		(PackageOrganizer default hasPackage: self destinationPackageName)
-			ifTrue: [
-				PackageOrganizer default removePackage:
-					(PackageOrganizer default packageNamed:
-						 self destinationPackageName) ] ]
+			(PackageOrganizer default hasPackage: self destinationPackageName)
+				ifTrue: [
+						PackageOrganizer default removePackage:
+							(PackageOrganizer default packageNamed:
+								 self destinationPackageName) ] ]
 ]
 
 { #category : 'private' }
@@ -61,9 +61,9 @@ MCPMoveClassCommandTest >> restoreTargetClassLocation [
 		 and: [ self currentTagOfTargetClass = 'Uncategorized' ]) ifTrue: [
 		^ self ].
 	self withoutEpiceaDuring: [
-		(RBMoveClassTransformation
-			 move: self targetClassName
-			 toPackage: self originalPackageName) execute ]
+			(RBMoveClassTransformation
+				 move: self targetClassName
+				 toPackage: self originalPackageName) execute ]
 ]
 
 { #category : 'running' }

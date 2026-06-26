@@ -64,10 +64,10 @@ MCPRemoveSlotCommand >> removeClassSideSlotFromBehavior: aBehavior [
 
 	(self directlyDefinesSlotNamed: self slotName inBehavior: aBehavior)
 		ifFalse: [
-			RBApplicabilityChecksFailedError signal:
-				'The variable ' , self slotName
-				, ' is not directly defined in the class '
-				, (self normalizedBehaviorNameFor: aBehavior) ].
+				RBApplicabilityChecksFailedError signal:
+					'The variable ' , self slotName
+					, ' is not directly defined in the class '
+					, (self normalizedBehaviorNameFor: aBehavior) ].
 	self signalReferenceWarningIfNeededForBehavior: aBehavior.
 	aBehavior removeInstVarNamed: self slotName
 ]
@@ -79,6 +79,6 @@ MCPRemoveSlotCommand >> signalReferenceWarningIfNeededForBehavior: aBehavior [
 	hasReferences := aBehavior withAllSubclasses anySatisfy: [ :each |
 		                 (each whichMethodsAccess: self slotName) isNotEmpty ].
 	hasReferences ifTrue: [
-		RBBreakingChangeChecksFailedWarning signal:
-			' Variable ' , self slotName , ' is still referenced' ]
+			RBBreakingChangeChecksFailedWarning signal:
+				' Variable ' , self slotName , ' is still referenced' ]
 ]

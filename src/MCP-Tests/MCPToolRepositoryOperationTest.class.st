@@ -74,11 +74,11 @@ MCPToolRepositoryOperationTest >> commitAllIn: aRepositoryLocation message: aMes
 MCPToolRepositoryOperationTest >> createClassNamed: aClassName inPackageNamed: aPackageName [
 
 	^ self withoutEpiceaDuring: [
-		  | builder |
-		  builder := Object << aClassName asSymbol.
-		  builder package: aPackageName.
-		  builder tag: 'Generated'.
-		  builder install ]
+			  | builder |
+			  builder := Object << aClassName asSymbol.
+			  builder package: aPackageName.
+			  builder tag: 'Generated'.
+			  builder install ]
 ]
 
 { #category : 'private' }
@@ -148,7 +148,7 @@ MCPToolRepositoryOperationTest >> removeRegisteredRepositoriesNamed: aRepository
 	registry := IceRepository registry.
 	repositories := registry select: [ :each |
 		                each name asString = aRepositoryName ].
-	repositories do: [ :each | registry remove: each ifAbsent: [  ] ]
+	repositories do: [ :each | registry remove: each ifAbsent: [ ] ]
 ]
 
 { #category : 'private - calling' }
@@ -235,7 +235,6 @@ MCPToolRepositoryOperationTest >> testAdoptHeadOperationRequiresRepositoryAndPar
 	self assert: parsedRequest operation equals: 'adoptHead'.
 	self assert: parsedRequest branchName equals: 'main'.
 	self assert: command class equals: MCPAdoptRepositoryHeadCommand
-
 ]
 
 { #category : 'tests' }
@@ -278,7 +277,6 @@ MCPToolRepositoryOperationTest >> testAttachParsesAndDispatchesToAttachCommand [
 	self assert: parsedRequest class equals: MCPRepositoryAttachRequest.
 	self assert: parsedRequest operation equals: 'attach'.
 	self assert: command class equals: MCPAttachRepositoryCommand
-
 ]
 
 { #category : 'tests' }
@@ -534,7 +532,6 @@ MCPToolRepositoryOperationTest >> testCommitParsesAndDispatchesToCommitCommand [
 	self assert: parsedRequest message equals: 'Commit from test'.
 	self assert: parsedRequest operation equals: 'commit'.
 	self assert: command class equals: MCPCommitRepositoryCommand
-
 ]
 
 { #category : 'tests' }
@@ -549,27 +546,27 @@ MCPToolRepositoryOperationTest >> testCommitReportsIcebergRefusalErrors [
 		withExportPackageNamed: packageName
 		className: 'MCPToolRepositoryOperationRefusedCommitClass'
 		do: [
-			self
-				withCleanRepositoryNamed: repositoryName
-				location: location
-				do: [
-					self callToolWith: {
-							(#action -> 'create').
-							(#name -> repositoryName).
-							(#location -> location pathString).
-							(#packageNames -> { packageName }) } asDictionary.
-					self callToolWith: {
-							(#action -> 'commit').
-							(#repositoryName -> repositoryName).
-							(#message -> 'Initial commit from MCP test') } asDictionary.
-					result := self callToolWith: {
-							          (#action -> 'commit').
-							          (#repositoryName -> repositoryName).
-							          (#message -> 'Second commit from MCP test') }
-							          asDictionary.
-					self assert: (result at: #isError ifAbsent: [ false ]).
-					self assert: ((self summaryFrom: result) includesSubstring:
-							 'Failed to commit repository') ] ]
+				self
+					withCleanRepositoryNamed: repositoryName
+					location: location
+					do: [
+							self callToolWith: {
+									(#action -> 'create').
+									(#name -> repositoryName).
+									(#location -> location pathString).
+									(#packageNames -> { packageName }) } asDictionary.
+							self callToolWith: {
+									(#action -> 'commit').
+									(#repositoryName -> repositoryName).
+									(#message -> 'Initial commit from MCP test') } asDictionary.
+							result := self callToolWith: {
+									          (#action -> 'commit').
+									          (#repositoryName -> repositoryName).
+									          (#message -> 'Second commit from MCP test') }
+									          asDictionary.
+							self assert: (result at: #isError ifAbsent: [ false ]).
+							self assert: ((self summaryFrom: result) includesSubstring:
+									 'Failed to commit repository') ] ]
 ]
 
 { #category : 'tests' }
@@ -610,8 +607,8 @@ MCPToolRepositoryOperationTest >> testCommitUsesFallbackGitIdentityWhenGitSignat
 
 	| data location packageName repository repositoryName result |
 	PharoCompatibility isPharo13OrLater ifTrue: [
-		self skip:
-			'Pharo 13 commits use the Author API; forcing empty libgit2 config can crash the VM in CI.' ].
+			self skip:
+				'Pharo 13 commits use the Author API; forcing empty libgit2 config can crash the VM in CI.' ].
 	repositoryName := 'MCP Repository Command Commit Fallback Identity Test'.
 	packageName := 'MCPToolRepositoryOperationCommitFallbackIdentityPackage'.
 	location := self temporaryRepositoryLocationNamed:
@@ -620,32 +617,32 @@ MCPToolRepositoryOperationTest >> testCommitUsesFallbackGitIdentityWhenGitSignat
 		withExportPackageNamed: packageName
 		className: 'MCPToolRepositoryOperationCommitFallbackIdentityClass'
 		do: [
-			self
-				withCleanRepositoryNamed: repositoryName
-				location: location
-				do: [
-					self callToolWith: {
-							(#action -> 'create').
-							(#name -> repositoryName).
-							(#location -> location pathString).
-							(#packageNames -> { packageName }) } asDictionary.
-					repository := IceRepository repositories detect: [ :each |
-						              each name asString = repositoryName ].
-					repository repositoryHandle config
-						username: '';
-						email: ''.
-					result := self callToolWith: {
-							          (#action -> 'commit').
-							          (#repositoryName -> repositoryName).
-							          (#message
-							           -> 'Commit with fallback identity from MCP test') }
-							          asDictionary.
-					self deny: (result at: #isError ifAbsent: [ false ]).
-					data := self dataFrom: result.
-					self
-						assert: (data at: #commitDescription)
-						equals: 'Commit with fallback identity from MCP test'.
-					self assert: repository headCommit author equals: 'MCP' ] ]
+				self
+					withCleanRepositoryNamed: repositoryName
+					location: location
+					do: [
+							self callToolWith: {
+									(#action -> 'create').
+									(#name -> repositoryName).
+									(#location -> location pathString).
+									(#packageNames -> { packageName }) } asDictionary.
+							repository := IceRepository repositories detect: [ :each |
+								              each name asString = repositoryName ].
+							repository repositoryHandle config
+								username: '';
+								email: ''.
+							result := self callToolWith: {
+									          (#action -> 'commit').
+									          (#repositoryName -> repositoryName).
+									          (#message
+									           -> 'Commit with fallback identity from MCP test') }
+									          asDictionary.
+							self deny: (result at: #isError ifAbsent: [ false ]).
+							data := self dataFrom: result.
+							self
+								assert: (data at: #commitDescription)
+								equals: 'Commit with fallback identity from MCP test'.
+							self assert: repository headCommit author equals: 'MCP' ] ]
 ]
 
 { #category : 'tests' }
@@ -781,7 +778,6 @@ MCPToolRepositoryOperationTest >> testDiffParsesAndDispatchesToDiffCommand [
 	self assert: parsedRequest class equals: MCPRepositoryDiffRequest.
 	self assert: parsedRequest operation equals: 'diff'.
 	self assert: command class equals: MCPRepositoryDiffCommand
-
 ]
 
 { #category : 'tests' }
@@ -1024,34 +1020,34 @@ MCPToolRepositoryOperationTest >> testPullReportsIcebergMergeAndLoadErrors [
 	repository failPull:
 		IceMergeAborted -> 'Iceberg merge failed for test repository'.
 	self withRegisteredRepository: repository do: [
-		mergeErrorResult := self callToolWith: {
-				                    (#action -> 'pull').
-				                    (#repositoryName -> repository name) }
-				                    asDictionary.
-		self assert: (mergeErrorResult at: #isError ifAbsent: [ false ]).
-		self assert:
-			((self summaryFrom: mergeErrorResult) includesSubstring:
-				 'Failed to pull repository').
-		self assert:
-			((self summaryFrom: mergeErrorResult) includesSubstring:
-				 'Iceberg merge failed') ].
+			mergeErrorResult := self callToolWith: {
+					                    (#action -> 'pull').
+					                    (#repositoryName -> repository name) }
+					                    asDictionary.
+			self assert: (mergeErrorResult at: #isError ifAbsent: [ false ]).
+			self assert:
+				((self summaryFrom: mergeErrorResult) includesSubstring:
+					 'Failed to pull repository').
+			self assert:
+				((self summaryFrom: mergeErrorResult) includesSubstring:
+					 'Iceberg merge failed') ].
 	repository := self newTestRepositoryNamed:
 		              'MCP Pull Load Error Test Repository'.
 	repository failPull:
 		IceCheckoutConflictError
 		-> 'Iceberg load failed for test repository'.
 	self withRegisteredRepository: repository do: [
-		loadErrorResult := self callToolWith: {
-				                   (#action -> 'pull').
-				                   (#repositoryName -> repository name) }
-				                   asDictionary.
-		self assert: (loadErrorResult at: #isError ifAbsent: [ false ]).
-		self assert:
-			((self summaryFrom: loadErrorResult) includesSubstring:
-				 'Failed to pull repository').
-		self assert:
-			((self summaryFrom: loadErrorResult) includesSubstring:
-				 'Iceberg load failed') ]
+			loadErrorResult := self callToolWith: {
+					                   (#action -> 'pull').
+					                   (#repositoryName -> repository name) }
+					                   asDictionary.
+			self assert: (loadErrorResult at: #isError ifAbsent: [ false ]).
+			self assert:
+				((self summaryFrom: loadErrorResult) includesSubstring:
+					 'Failed to pull repository').
+			self assert:
+				((self summaryFrom: loadErrorResult) includesSubstring:
+					 'Iceberg load failed') ]
 ]
 
 { #category : 'tests' }
@@ -1103,33 +1099,33 @@ MCPToolRepositoryOperationTest >> testPushReportsRemoteAndAuthenticationErrors [
 	repository failPush: IceRemoteNotFoundError
 		-> 'Iceberg remote not found for test repository'.
 	self withRegisteredRepository: repository do: [
-		remoteErrorResult := self callToolWith: {
-				                     (#action -> 'push').
-				                     (#repositoryName -> repository name) }
-				                     asDictionary.
-		self assert: (remoteErrorResult at: #isError ifAbsent: [ false ]).
-		self assert:
-			((self summaryFrom: remoteErrorResult) includesSubstring:
-				 'Failed to push repository').
-		self assert:
-			((self summaryFrom: remoteErrorResult) includesSubstring:
-				 'Iceberg remote not found') ].
+			remoteErrorResult := self callToolWith: {
+					                     (#action -> 'push').
+					                     (#repositoryName -> repository name) }
+					                     asDictionary.
+			self assert: (remoteErrorResult at: #isError ifAbsent: [ false ]).
+			self assert:
+				((self summaryFrom: remoteErrorResult) includesSubstring:
+					 'Failed to push repository').
+			self assert:
+				((self summaryFrom: remoteErrorResult) includesSubstring:
+					 'Iceberg remote not found') ].
 	repository := self newTestRepositoryNamed:
 		              'MCP Push Authentication Error Test Repository'.
 	repository failPush: IceAuthenticationError
 		-> 'Iceberg authentication failed for test repository'.
 	self withRegisteredRepository: repository do: [
-		authErrorResult := self callToolWith: {
-				                   (#action -> 'push').
-				                   (#repositoryName -> repository name) }
-				                   asDictionary.
-		self assert: (authErrorResult at: #isError ifAbsent: [ false ]).
-		self assert:
-			((self summaryFrom: authErrorResult) includesSubstring:
-				 'Failed to push repository').
-		self assert:
-			((self summaryFrom: authErrorResult) includesSubstring:
-				 'Iceberg authentication failed') ]
+			authErrorResult := self callToolWith: {
+					                   (#action -> 'push').
+					                   (#repositoryName -> repository name) }
+					                   asDictionary.
+			self assert: (authErrorResult at: #isError ifAbsent: [ false ]).
+			self assert:
+				((self summaryFrom: authErrorResult) includesSubstring:
+					 'Failed to push repository').
+			self assert:
+				((self summaryFrom: authErrorResult) includesSubstring:
+					 'Iceberg authentication failed') ]
 ]
 
 { #category : 'tests' }
@@ -1240,15 +1236,14 @@ MCPToolRepositoryOperationTest >> testRepositoryErrorDetailsUseActionNotOperatio
 		              'MCP Repository Error Action Test Repository'.
 	repository failPush: true.
 	self withRegisteredRepository: repository do: [
-		result := self callToolWith: {
-				          (#action -> 'push').
-				          (#repositoryName -> repository name) } asDictionary.
-		self assert: (result at: #isError ifAbsent: [ false ]).
-		errorDetails := self errorFrom: result.
-		self assert: (errorDetails at: #action) equals: 'push'.
-		self deny: (errorDetails includesKey: #operation).
-		self deny: (errorDetails includesKey: #updateAction) ]
-
+			result := self callToolWith: {
+					          (#action -> 'push').
+					          (#repositoryName -> repository name) } asDictionary.
+			self assert: (result at: #isError ifAbsent: [ false ]).
+			errorDetails := self errorFrom: result.
+			self assert: (errorDetails at: #action) equals: 'push'.
+			self deny: (errorDetails includesKey: #operation).
+			self deny: (errorDetails includesKey: #updateAction) ]
 ]
 
 { #category : 'tests' }
@@ -1415,34 +1410,36 @@ MCPToolRepositoryOperationTest >> testUpdateCanReplacePackageMembership [
 
 	| data repository result |
 	repository := self
-		              newRepositoryNamed: 'MCP Repository Command Replace Test'
+		              newRepositoryNamed:
+		              'MCP Repository Command Replace Test'
 		              location: FileLocator imageDirectory
 		              packageNames:
 		              #( 'MCPToolRepositoryOperationOldA'
 		                 'MCPToolRepositoryOperationOldB' ).
 	self withRegisteredRepository: repository do: [
-		result := self callToolWith: {
-				          (#action -> 'update').
-				          (#repositoryName -> repository name).
-				          (#packageNames
-				           ->
-				           #( 'MCPToolRepositoryOperationNewC'
-				              'MCPToolRepositoryOperationOldB' )) } asDictionary.
-		data := self dataFrom: result.
-		self deny: (result at: #isError ifAbsent: [ false ]).
-		self
-			assert: (self packageNamesIn: repository)
-			equals:
-			#( 'MCPToolRepositoryOperationNewC' 'MCPToolRepositoryOperationOldB' ).
-		self
-			assert: (data at: #updateActions)
-			equals: #( 'replacePackages' ).
-		self
-			assert: (data at: #addedPackageNames)
-			equals: #( 'MCPToolRepositoryOperationNewC' ).
-		self
-			assert: (data at: #removedPackageNames)
-			equals: #( 'MCPToolRepositoryOperationOldA' ) ]
+			result := self callToolWith: {
+					          (#action -> 'update').
+					          (#repositoryName -> repository name).
+					          (#packageNames
+					           ->
+					           #( 'MCPToolRepositoryOperationNewC'
+					              'MCPToolRepositoryOperationOldB' )) } asDictionary.
+			data := self dataFrom: result.
+			self deny: (result at: #isError ifAbsent: [ false ]).
+			self
+				assert: (self packageNamesIn: repository)
+				equals:
+				#( 'MCPToolRepositoryOperationNewC'
+				   'MCPToolRepositoryOperationOldB' ).
+			self
+				assert: (data at: #updateActions)
+				equals: #( 'replacePackages' ).
+			self
+				assert: (data at: #addedPackageNames)
+				equals: #( 'MCPToolRepositoryOperationNewC' ).
+			self
+				assert: (data at: #removedPackageNames)
+				equals: #( 'MCPToolRepositoryOperationOldA' ) ]
 ]
 
 { #category : 'tests' }
@@ -1510,12 +1507,13 @@ MCPToolRepositoryOperationTest >> testVerifyIdentityOperationRequiresRepositoryA
 	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
 	command := tool commandForRequest: parsedRequest.
 
-	self assert: parsedRequest class equals: MCPRepositoryVerifyIdentityRequest.
+	self
+		assert: parsedRequest class
+		equals: MCPRepositoryVerifyIdentityRequest.
 	self assert: parsedRequest operation equals: 'verifyIdentity'.
 	self assert: parsedRequest branchName equals: 'main'.
 	self assert: parsedRequest isModified equals: false.
 	self assert: command class equals: MCPRepositoryVerifyIdentityCommand
-
 ]
 
 { #category : 'tests' }
@@ -1584,24 +1582,24 @@ MCPToolRepositoryOperationTest >> testVerifyIdentityReportsWrongLocationAsIdenti
 	repository := self newTestRepositoryNamed:
 		              'MCP VerifyIdentity Location Mismatch Test Repository'.
 	self withRegisteredRepository: repository do: [
-		result := self callToolWith: {
-				          (#action -> 'verifyIdentity').
-				          (#repositoryName -> repository name).
-				          (#location -> 'memory://different-location') }
-				          asDictionary.
-		self assert: (result at: #isError ifAbsent: [ false ]).
-		errorDetails := self errorFrom: result.
-		self
-			assert: (errorDetails at: #errorCode)
-			equals: 'RepositoryIdentityMismatch'.
-		locationMismatch := (errorDetails at: #mismatches) detect: [
-			                    :each | (each at: #field) = 'location' ].
-		self
-			assert: (locationMismatch at: #expected)
-			equals: 'memory://different-location'.
-		self
-			assert: (locationMismatch at: #actual)
-			equals: repository location ]
+			result := self callToolWith: {
+					          (#action -> 'verifyIdentity').
+					          (#repositoryName -> repository name).
+					          (#location -> 'memory://different-location') }
+					          asDictionary.
+			self assert: (result at: #isError ifAbsent: [ false ]).
+			errorDetails := self errorFrom: result.
+			self
+				assert: (errorDetails at: #errorCode)
+				equals: 'RepositoryIdentityMismatch'.
+			locationMismatch := (errorDetails at: #mismatches) detect: [ :each |
+				                    (each at: #field) = 'location' ].
+			self
+				assert: (locationMismatch at: #expected)
+				equals: 'memory://different-location'.
+			self
+				assert: (locationMismatch at: #actual)
+				equals: repository location ]
 ]
 
 { #category : 'tests' }
@@ -1611,17 +1609,16 @@ MCPToolRepositoryOperationTest >> testVerifyIdentityRequiresExpectedIdentityFiel
 	repository := self newTestRepositoryNamed:
 		              'MCP VerifyIdentity Missing Expected Field Test Repository'.
 	self withRegisteredRepository: repository do: [
-		result := self callToolWith: {
-				          (#action -> 'verifyIdentity').
-				          (#repositoryName -> repository name) } asDictionary.
-		self assert: (result at: #isError ifAbsent: [ false ]).
-		errorDetails := self errorFrom: result.
-		self
-			assert: (errorDetails at: #errorCode)
-			equals: 'RepositoryIdentityExpectationRequired'.
-		self assert:
-			((self summaryFrom: result) includesSubstring:
-				 'requires at least one expected identity field') ]
+			result := self callToolWith: {
+					          (#action -> 'verifyIdentity').
+					          (#repositoryName -> repository name) } asDictionary.
+			self assert: (result at: #isError ifAbsent: [ false ]).
+			errorDetails := self errorFrom: result.
+			self
+				assert: (errorDetails at: #errorCode)
+				equals: 'RepositoryIdentityExpectationRequired'.
+			self assert: ((self summaryFrom: result) includesSubstring:
+					 'requires at least one expected identity field') ]
 ]
 
 { #category : 'private - fixtures' }
@@ -1668,23 +1665,23 @@ MCPToolRepositoryOperationTest >> toolName [
 MCPToolRepositoryOperationTest >> withCleanRepositoryNamed: aRepositoryName location: aFileReference do: aBlock [
 
 	[
-	self removeRegisteredRepositoriesNamed: aRepositoryName.
-	self deleteDirectoryIfExists: aFileReference.
-	aBlock value ] ensure: [
 		self removeRegisteredRepositoriesNamed: aRepositoryName.
-		self deleteDirectoryIfExists: aFileReference ]
+		self deleteDirectoryIfExists: aFileReference.
+		aBlock value ] ensure: [
+			self removeRegisteredRepositoriesNamed: aRepositoryName.
+			self deleteDirectoryIfExists: aFileReference ]
 ]
 
 { #category : 'private - classes' }
 MCPToolRepositoryOperationTest >> withExportPackageNamed: aPackageName className: aClassName do: aBlock [
 
 	[
-	self removeClassNamed: aClassName.
-	self removePackageNamed: aPackageName.
-	self createClassNamed: aClassName inPackageNamed: aPackageName.
-	aBlock value ] ensure: [
 		self removeClassNamed: aClassName.
-		self removePackageNamed: aPackageName ]
+		self removePackageNamed: aPackageName.
+		self createClassNamed: aClassName inPackageNamed: aPackageName.
+		aBlock value ] ensure: [
+			self removeClassNamed: aClassName.
+			self removePackageNamed: aPackageName ]
 ]
 
 { #category : 'private' }

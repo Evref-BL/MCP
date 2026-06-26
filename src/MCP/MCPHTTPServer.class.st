@@ -46,9 +46,9 @@ MCPHTTPServer >> answerPost: request with: response [
 	| payload |
 	payload := self handleJSON: request contents.
 	(payload isString and: [ payload isEmpty ]) ifTrue: [
-		response statusLine: ZnStatusLine accepted.
-		response headers at: #'Content-Length' put: '0'.
-		^ response ].
+			response statusLine: ZnStatusLine accepted.
+			response headers at: #'Content-Length' put: '0'.
+			^ response ].
 	response entity: (ZnEntity json: payload).
 	^ response
 ]

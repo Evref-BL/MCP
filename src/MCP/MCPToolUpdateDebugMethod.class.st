@@ -91,7 +91,8 @@ MCPToolUpdateDebugMethod >> buildOutputSchema [
 				  (self
 					   schemaPropertyNamed: 'stateId'
 					   type: 'string'
-					   description: 'Debug state token after the update/proceed cycle.').
+					   description:
+					   'Debug state token after the update/proceed cycle.').
 				  (self
 					   schemaPropertyNamed: 'frameRef'
 					   type: 'string'
@@ -143,7 +144,8 @@ MCPToolUpdateDebugMethod >> buildOutputSchema [
 				  (self
 					   schemaPropertyNamed: 'repairActions'
 					   type: 'array'
-					   description: 'Repair actions still available after the update.').
+					   description:
+					   'Repair actions still available after the update.').
 				  (self
 					   stringArraySchemaNamed: 'warnings'
 					   description: 'Update-specific warnings.'

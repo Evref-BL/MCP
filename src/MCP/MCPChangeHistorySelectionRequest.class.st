@@ -154,12 +154,12 @@ MCPChangeHistorySelectionRequest >> optionalPositiveIntegerArgumentNamed: argume
 	(aRequest hasArgumentNamed: argumentName) ifFalse: [ ^ nil ].
 	value := aRequest argumentNamed: argumentName ifAbsent: [ ^ nil ].
 	(value isInteger and: [ value > 0 ]) ifFalse: [
-		self
-			signalInvalidSelection:
-			argumentName , ' must be a positive integer.'
-			details: {
-					(#argumentName -> argumentName).
-					(#actualValue -> value) } asDictionary ].
+			self
+				signalInvalidSelection:
+				argumentName , ' must be a positive integer.'
+				details: {
+						(#argumentName -> argumentName).
+						(#actualValue -> value) } asDictionary ].
 	^ value
 ]
 
@@ -169,14 +169,14 @@ MCPChangeHistorySelectionRequest >> positiveIntegerCollectionArgumentNamed: argu
 	| values |
 	values := aRequest arrayArgumentNamed: argumentName.
 	^ (values collect: [ :each |
-		   (each isInteger and: [ each > 0 ]) ifFalse: [
-			   self
-				   signalInvalidSelection:
-				   argumentName , ' must contain only positive integers.'
-				   details: {
-						   (#argumentName -> argumentName).
-						   (#actualValue -> each) } asDictionary ].
-		   each ]) asArray
+			   (each isInteger and: [ each > 0 ]) ifFalse: [
+					   self
+						   signalInvalidSelection:
+						   argumentName , ' must contain only positive integers.'
+						   details: {
+								   (#argumentName -> argumentName).
+								   (#actualValue -> each) } asDictionary ].
+			   each ]) asArray
 ]
 
 { #category : 'converting' }

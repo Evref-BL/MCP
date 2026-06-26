@@ -55,10 +55,8 @@ MCPReplaceClassLayoutCommand >> layoutClassNameFromClass: aClass [
 { #category : 'private' }
 MCPReplaceClassLayoutCommand >> replaceLayoutOn: aClass [
 
-	^ ShiftClassInstaller
-		update: aClass
-		to: [ :builder |
-			builder layout: (self resolvedLayoutClassNamed: self layout) ]
+	^ ShiftClassInstaller update: aClass to: [ :builder |
+		  builder layout: (self resolvedLayoutClassNamed: self layout) ]
 ]
 
 { #category : 'private' }

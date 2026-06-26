@@ -15,22 +15,22 @@ MCPClassMutationRequestTest >> testCreateRequestParsesDefinitionArguments [
 	| context request |
 	request := MCPClassCreateRequest
 		           fromRequest: (MCPToolRequest new
-			            tool: MCPToolCreateClass new;
-			            arguments: {
-				            (#className -> 'MCPGeneratedClass').
-				            (#superclassName -> 'Object').
-				            (#packageName -> 'MCP-Generated').
-				            (#tag -> 'Models').
-				            (#classComment -> 'Generated comment.').
-				            (#force -> true).
-				            (#slots -> #( 'firstName' 'lastName' )).
-				            (#classSlots -> #( 'defaultName' )).
-				            (#traits -> #( 'TComparable' )).
-				            (#classTraits -> #( 'TComparable classTrait' )).
-				            (#sharedVariables -> #( 'Current' )).
-				            (#sharedPools -> #( 'ChronologyConstants' )).
-				            (#layout -> 'WeakLayout') } asDictionary;
-			            yourself)
+				            tool: MCPToolCreateClass new;
+				            arguments: {
+						            (#className -> 'MCPGeneratedClass').
+						            (#superclassName -> 'Object').
+						            (#packageName -> 'MCP-Generated').
+						            (#tag -> 'Models').
+						            (#classComment -> 'Generated comment.').
+						            (#force -> true).
+						            (#slots -> #( 'firstName' 'lastName' )).
+						            (#classSlots -> #( 'defaultName' )).
+						            (#traits -> #( 'TComparable' )).
+						            (#classTraits -> #( 'TComparable classTrait' )).
+						            (#sharedVariables -> #( 'Current' )).
+						            (#sharedPools -> #( 'ChronologyConstants' )).
+						            (#layout -> 'WeakLayout') } asDictionary;
+				            yourself)
 		           tool: MCPToolCreateClass new.
 	self assert: request className equals: 'MCPGeneratedClass'.
 	self assert: request superclassName equals: 'Object'.
@@ -63,8 +63,8 @@ MCPClassMutationRequestTest >> testUpdateCommandResolvesOmittedMovePackageName [
 	request := MCPToolRequest new
 		           tool: tool;
 		           arguments: {
-			           (#className -> self class name asString).
-			           (#tag -> 'Requests') } asDictionary;
+				           (#className -> self class name asString).
+				           (#tag -> 'Requests') } asDictionary;
 		           yourself.
 	mutationRequest := tool parsedRequestFromToolRequest: request.
 	command := tool commandForRequest: mutationRequest.
@@ -107,7 +107,6 @@ MCPClassMutationRequestTest >> testUpdateRequestParsesSlotArguments [
 	self assert: (context at: #slotName) equals: 'oldName'.
 	self assert: (context at: #newSlotName) equals: 'newName'.
 	self assert: (context at: #classSide)
-
 ]
 
 { #category : 'tests' }
@@ -139,7 +138,6 @@ MCPClassMutationRequestTest >> testUpdateRequestTracksSuppliedProperties [
 	self assert: (context at: #classComment) equals: ''.
 	self assert: (context at: #slots) equals: #(  ).
 	self deny: (context includesKey: #classSlots)
-
 ]
 
 { #category : 'tests' }
@@ -157,7 +155,6 @@ MCPClassMutationRequestTest >> testUpdateRequestWithNoPatchArgumentsHasNoUpdates
 	context := request requestedContext.
 	self assert: context size equals: 1.
 	self assert: (context at: #className) equals: 'ExistingClass'
-
 ]
 
 { #category : 'private' }

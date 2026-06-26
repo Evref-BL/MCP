@@ -80,8 +80,8 @@ MCPRenameClassCommand >> refactoring [
 				  rename: self className
 				  to: self newClassName ]
 		  ifNotNil: [
-			  ReRenameClassRefactoring
-				  model: self model
-				  rename: self className
-				  to: self newClassName ]
+				  ReRenameClassRefactoring
+					  model: self model
+					  rename: self className
+					  to: self newClassName ]
 ]

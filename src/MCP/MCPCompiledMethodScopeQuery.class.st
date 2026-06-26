@@ -29,8 +29,8 @@ MCPCompiledMethodScopeQuery >> allBehaviors [
 	| behaviors |
 	behaviors := IdentitySet new.
 	Smalltalk globals allBehaviorsDo: [ :eachBehavior |
-		(self matchesSideForBehavior: eachBehavior) ifTrue: [
-			behaviors add: eachBehavior ] ].
+			(self matchesSideForBehavior: eachBehavior) ifTrue: [
+				behaviors add: eachBehavior ] ].
 	^ behaviors asArray
 ]
 
@@ -46,11 +46,11 @@ MCPCompiledMethodScopeQuery >> allMethodsDo: aBlock [
 	| seenMethods |
 	seenMethods := IdentitySet new.
 	Smalltalk globals allBehaviorsDo: [ :eachBehavior |
-		(self matchesSideForBehavior: eachBehavior) ifTrue: [
-			eachBehavior methods do: [ :eachMethod |
-				(seenMethods includes: eachMethod) ifFalse: [
-					seenMethods add: eachMethod.
-					aBlock value: eachMethod ] ] ] ]
+			(self matchesSideForBehavior: eachBehavior) ifTrue: [
+					eachBehavior methods do: [ :eachMethod |
+							(seenMethods includes: eachMethod) ifFalse: [
+									seenMethods add: eachMethod.
+									aBlock value: eachMethod ] ] ] ]
 ]
 
 { #category : 'converting' }
@@ -97,8 +97,9 @@ MCPCompiledMethodScopeQuery >> behaviorsForClassNames [
 	| behaviors |
 	behaviors := IdentitySet new.
 	self classNames do: [ :eachName |
-		(self classNamed: eachName inScope: 'classNames') ifNotNil: [ :class |
-			self addBehaviorsForBaseClass: class instanceSide to: behaviors ] ].
+			(self classNamed: eachName inScope: 'classNames') ifNotNil: [
+				:class |
+				self addBehaviorsForBaseClass: class instanceSide to: behaviors ] ].
 	^ behaviors asArray
 ]
 
@@ -108,13 +109,13 @@ MCPCompiledMethodScopeQuery >> behaviorsForPackageNames [
 	| behaviors |
 	behaviors := IdentitySet new.
 	self packageNames do: [ :eachName |
-		(self packageNamed: eachName inScope: 'packageNames') ifNotNil: [
-			:package |
-			package definedClasses do: [ :aClass |
-				self addBehaviorsForBaseClass: aClass to: behaviors ].
-			package extensionMethods do: [ :eachMethod |
-				(self matchesSideForMethod: eachMethod) ifTrue: [
-					behaviors add: eachMethod methodClass ] ] ] ].
+			(self packageNamed: eachName inScope: 'packageNames') ifNotNil: [
+					:package |
+					package definedClasses do: [ :aClass |
+						self addBehaviorsForBaseClass: aClass to: behaviors ].
+					package extensionMethods do: [ :eachMethod |
+							(self matchesSideForMethod: eachMethod) ifTrue: [
+								behaviors add: eachMethod methodClass ] ] ] ].
 	^ behaviors asArray
 ]
 
@@ -139,10 +140,10 @@ MCPCompiledMethodScopeQuery >> hierarchyBehaviorsForClassNames [
 	| behaviors hierarchyClasses |
 	hierarchyClasses := IdentitySet new.
 	self hierarchyClassNames do: [ :eachName |
-		(self classNamed: eachName inScope: 'hierarchyClassNames')
-			ifNotNil: [ :class |
-				class instanceSide withAllSuperAndSubclasses do: [ :relatedClass |
-					hierarchyClasses add: relatedClass instanceSide ] ] ].
+			(self classNamed: eachName inScope: 'hierarchyClassNames')
+				ifNotNil: [ :class |
+						class instanceSide withAllSuperAndSubclasses do: [ :relatedClass |
+							hierarchyClasses add: relatedClass instanceSide ] ] ].
 	behaviors := IdentitySet new.
 	hierarchyClasses do: [ :eachClass |
 		self addBehaviorsForBaseClass: eachClass to: behaviors ].
@@ -200,14 +201,14 @@ MCPCompiledMethodScopeQuery >> methodScopeSets [
 	self classNames ifNotEmpty: [
 		sets add: (self methodsForBehaviors: self behaviorsForClassNames) ].
 	self hierarchyClassNames ifNotEmpty: [
-		sets add:
-			(self methodsForBehaviors: self hierarchyBehaviorsForClassNames) ].
+			sets add:
+				(self methodsForBehaviors: self hierarchyBehaviorsForClassNames) ].
 	self subclassClassNames ifNotEmpty: [
-		sets add:
-			(self methodsForBehaviors: self subclassBehaviorsForClassNames) ].
+			sets add:
+				(self methodsForBehaviors: self subclassBehaviorsForClassNames) ].
 	self parentClassNames ifNotEmpty: [
-		sets add:
-			(self methodsForBehaviors: self parentBehaviorsForClassNames) ].
+			sets add:
+				(self methodsForBehaviors: self parentBehaviorsForClassNames) ].
 	^ sets asArray
 ]
 
@@ -228,9 +229,9 @@ MCPCompiledMethodScopeQuery >> methodsDo: aBlock [
 	self usesImplicitImageScope ifTrue: [ ^ self allMethodsDo: aBlock ].
 	seenMethods := IdentitySet new.
 	self methods do: [ :eachMethod |
-		(seenMethods includes: eachMethod) ifFalse: [
-			seenMethods add: eachMethod.
-			aBlock value: eachMethod ] ]
+			(seenMethods includes: eachMethod) ifFalse: [
+					seenMethods add: eachMethod.
+					aBlock value: eachMethod ] ]
 ]
 
 { #category : 'private - scope' }
@@ -249,10 +250,10 @@ MCPCompiledMethodScopeQuery >> methodsForBehaviors: behaviors do: aBlock [
 	| seenMethods |
 	seenMethods := IdentitySet new.
 	behaviors do: [ :eachBehavior |
-		eachBehavior methods do: [ :eachMethod |
-			(seenMethods includes: eachMethod) ifFalse: [
-				seenMethods add: eachMethod.
-				aBlock value: eachMethod ] ] ]
+			eachBehavior methods do: [ :eachMethod |
+					(seenMethods includes: eachMethod) ifFalse: [
+							seenMethods add: eachMethod.
+							aBlock value: eachMethod ] ] ]
 ]
 
 { #category : 'private - scope' }
@@ -322,10 +323,10 @@ MCPCompiledMethodScopeQuery >> parentBehaviorsForClassNames [
 	| behaviors relatedClasses |
 	relatedClasses := IdentitySet new.
 	self parentClassNames do: [ :eachName |
-		(self classNamed: eachName inScope: 'parentClassNames') ifNotNil: [
-			:class |
-			class instanceSide allSuperclasses do: [ :relatedClass |
-				relatedClasses add: relatedClass instanceSide ] ] ].
+			(self classNamed: eachName inScope: 'parentClassNames') ifNotNil: [
+					:class |
+					class instanceSide allSuperclasses do: [ :relatedClass |
+						relatedClasses add: relatedClass instanceSide ] ] ].
 	behaviors := IdentitySet new.
 	relatedClasses do: [ :eachClass |
 		self addBehaviorsForBaseClass: eachClass to: behaviors ].
@@ -350,10 +351,10 @@ MCPCompiledMethodScopeQuery >> subclassBehaviorsForClassNames [
 	| behaviors relatedClasses |
 	relatedClasses := IdentitySet new.
 	self subclassClassNames do: [ :eachName |
-		(self classNamed: eachName inScope: 'subclassClassNames') ifNotNil: [
-			:class |
-			class instanceSide allSubclasses do: [ :relatedClass |
-				relatedClasses add: relatedClass instanceSide ] ] ].
+			(self classNamed: eachName inScope: 'subclassClassNames')
+				ifNotNil: [ :class |
+						class instanceSide allSubclasses do: [ :relatedClass |
+							relatedClasses add: relatedClass instanceSide ] ] ].
 	behaviors := IdentitySet new.
 	relatedClasses do: [ :eachClass |
 		self addBehaviorsForBaseClass: eachClass to: behaviors ].

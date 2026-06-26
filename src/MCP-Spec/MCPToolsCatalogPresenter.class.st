@@ -29,12 +29,12 @@ MCPToolsCatalogPresenter >> addToolCatalogGroup: group to: contentLayout [
 		displayBold: [ :ignored | true ].
 	contentLayout add: heading expand: false.
 	group value do: [ :toolClass |
-		contentLayout
-			add: (self toolCatalogCardFor: toolClass)
-			withConstraints: [ :constraints |
-				constraints
-					expand: false;
-					fill: true ] ]
+			contentLayout
+				add: (self toolCatalogCardFor: toolClass)
+				withConstraints: [ :constraints |
+						constraints
+							expand: false;
+							fill: true ] ]
 ]
 
 { #category : 'layout' }
@@ -87,9 +87,9 @@ MCPToolsCatalogPresenter >> toolCatalogCardFor: toolClass [
 		width: self toolCatalogLeftColumnWidth;
 		add: (self toolCatalogDescriptionPresenterFor: tool)
 		withConstraints: [ :constraints |
-			constraints
-				expand: true;
-				fill: true ].
+				constraints
+					expand: true;
+					fill: true ].
 	card layout: cardLayout.
 	^ card
 ]
@@ -114,9 +114,9 @@ MCPToolsCatalogPresenter >> toolCatalogDescriptionPresenterFor: tool [
 		withoutScrollBars.
 	descriptionLayout := SpBoxLayout newTopToBottom yourself.
 	descriptionLayout add: description withConstraints: [ :constraints |
-		constraints
-			expand: true;
-			fill: true ].
+			constraints
+				expand: true;
+				fill: true ].
 	descriptionCell layout: descriptionLayout.
 	^ descriptionCell
 ]

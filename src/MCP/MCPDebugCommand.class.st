@@ -34,7 +34,7 @@ MCPDebugCommand >> frameRefForRecord: aRecord frameIndex: frameIndex [
 
 	frameIndex ifNil: [ ^ nil ].
 	^ aRecord sessionId , '/' , aRecord stateId , '/frame-'
-		, frameIndex asString
+	  , frameIndex asString
 ]
 
 { #category : 'initialization' }
@@ -87,8 +87,9 @@ MCPDebugCommand >> selectedContextForRecord: aRecord frameIndex: frameIndex [
 	stateInfo := MCPDebugStateInfo fromRecord: aRecord request: request.
 	contexts := stateInfo rawContexts.
 	^ contexts
-		at: frameIndex + 1
-		ifAbsent: [ self signalMissingFrameIndex: frameIndex record: aRecord ]
+		  at: frameIndex + 1
+		  ifAbsent: [
+		  self signalMissingFrameIndex: frameIndex record: aRecord ]
 ]
 
 { #category : 'private - frames' }
@@ -163,16 +164,17 @@ MCPDebugCommand >> signalInvalidFrameReference: aFrameRef details: detailAssocia
 MCPDebugCommand >> signalMissingFrameIndex: frameIndex record: aRecord [
 
 	^ MCPCommandError
-		signalErrorCode: #DebugFrameNotFound
-		message:
-			'Debug frame ' , frameIndex asString
-			, ' was not found for session ' , aRecord sessionId , '.'
-		details: {
-				(#sessionId -> aRecord sessionId).
-				(#stateId -> aRecord stateId).
-				(#frameIndex -> frameIndex).
-				(#frameRef -> (self frameRefForRecord: aRecord frameIndex: frameIndex)) }
-				asDictionary
+		  signalErrorCode: #DebugFrameNotFound
+		  message:
+			  'Debug frame ' , frameIndex asString
+			  , ' was not found for session ' , aRecord sessionId , '.'
+		  details: {
+				  (#sessionId -> aRecord sessionId).
+				  (#stateId -> aRecord stateId).
+				  (#frameIndex -> frameIndex).
+				  (#frameRef
+				   -> (self frameRefForRecord: aRecord frameIndex: frameIndex)) }
+				  asDictionary
 ]
 
 { #category : 'private - errors' }

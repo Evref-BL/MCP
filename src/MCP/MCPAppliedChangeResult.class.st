@@ -25,9 +25,9 @@ MCPAppliedChangeResult class >> isAbstract [
 MCPAppliedChangeResult class >> updatePlan: anUpdatePlan changeResult: aChangeResult [
 
 	^ self new
-		updatePlan: anUpdatePlan;
-		changeResult: aChangeResult;
-		yourself
+		  updatePlan: anUpdatePlan;
+		  changeResult: aChangeResult;
+		  yourself
 ]
 
 { #category : 'accessing' }

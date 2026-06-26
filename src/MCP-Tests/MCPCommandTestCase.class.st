@@ -25,8 +25,8 @@ MCPCommandTestCase >> aroundCommandExecution: aBlock [
 MCPCommandTestCase >> captureCommandError: aBlock [
 
 	^ [
-	  self aroundCommandExecution: [ aBlock value ].
-	  self fail: 'Expected MCPCommandError' ]
+		  self aroundCommandExecution: [ aBlock value ].
+		  self fail: 'Expected MCPCommandError' ]
 		  on: MCPCommandError
 		  do: [ :error | error ]
 ]

@@ -43,9 +43,10 @@ MCPRemoveClassesResult >> asDictionary [
 	self removedPackageNames ifNotEmpty: [
 		data at: #removedPackageNames put: self removedPackageNames asArray ].
 	reparentedSubclassNames := Array streamContents: [ :stream |
-		self removedClasses do: [ :each |
-			each reparentedSubclassNames do: [ :subclassName |
-				stream nextPut: subclassName ] ] ].
+			                           self removedClasses do: [ :each |
+					                           each reparentedSubclassNames do: [
+						                           :subclassName |
+						                           stream nextPut: subclassName ] ] ].
 	reparentedSubclassNames ifNotEmpty: [
 		data at: #reparentedSubclassNames put: reparentedSubclassNames ].
 	^ data

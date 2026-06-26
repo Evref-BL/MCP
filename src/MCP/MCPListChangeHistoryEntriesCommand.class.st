@@ -42,11 +42,11 @@ MCPListChangeHistoryEntriesCommand >> matchingEntryPairsFrom: aLog [
 	| pairs |
 	pairs := OrderedCollection new.
 	aLog entries doWithIndex: [ :entry :index |
-		(request codeChangesOnly not or: [ self isCodeChangeEntry: entry ])
-			ifTrue: [
-				pairs add: {
-						index.
-						entry } ] ].
+			(request codeChangesOnly not or: [ self isCodeChangeEntry: entry ])
+				ifTrue: [
+						pairs add: {
+								index.
+								entry } ] ].
 	request newestFirst ifTrue: [ ^ pairs reversed asOrderedCollection ].
 	^ pairs
 ]

@@ -53,8 +53,8 @@ MCPToolSearch >> classAndMethodScopeSummaryFromAssociations: scopeAssociations [
 	| labels |
 	labels := OrderedCollection new.
 	scopeAssociations do: [ :eachAssociation |
-		eachAssociation value notEmpty ifTrue: [
-			self addScopeLabel: eachAssociation key to: labels ] ].
+			eachAssociation value notEmpty ifTrue: [
+				self addScopeLabel: eachAssociation key to: labels ] ].
 	^ self scopeSummaryFromLabels: labels
 ]
 
@@ -160,23 +160,23 @@ MCPToolSearch >> executeWithRequest: request [
 	^ self
 		  executeParsedRequestFrom: request
 		  do: [ :queryRequest |
-			  | command page |
-			  command := self commandForRequest: queryRequest.
-			  page := self
-				          queryPageForEntries: command execute
-				          limit: (self limitFromQueryRequest: queryRequest)
-				          offset: (self offsetFromQueryRequest: queryRequest).
-			  self
-				  successResultText:
-				  (self successSummaryForQueryRequest: queryRequest page: page)
-				  data:
-				  (self queryResultDataForQueryRequest: queryRequest page: page)
-				  warnings: (self warningsForQueryRequest: queryRequest) ]
+				  | command page |
+				  command := self commandForRequest: queryRequest.
+				  page := self
+					          queryPageForEntries: command execute
+					          limit: (self limitFromQueryRequest: queryRequest)
+					          offset: (self offsetFromQueryRequest: queryRequest).
+				  self
+					  successResultText:
+					  (self successSummaryForQueryRequest: queryRequest page: page)
+					  data:
+					  (self queryResultDataForQueryRequest: queryRequest page: page)
+					  warnings: (self warningsForQueryRequest: queryRequest) ]
 		  onError: [ :error :ignored |
-			  self
-				  errorResultForQueryError: error
-				  requestedContext:
-				  (self requestedContextForErrorFromRequest: request) ]
+				  self
+					  errorResultForQueryError: error
+					  requestedContext:
+					  (self requestedContextForErrorFromRequest: request) ]
 ]
 
 { #category : 'private - template' }
@@ -286,27 +286,27 @@ MCPToolSearch >> matcherForPattern: aPattern mode: aMode caseSensitive: aBoolean
 	| normalizedPattern regex |
 	aPattern ifNil: [ ^ [ :candidate | true ] ].
 	aMode = 'regex' ifTrue: [
-		regex := aBoolean
-			         ifTrue: [ aPattern asRegex ]
-			         ifFalse: [ aPattern asRegexIgnoringCase ].
-		^ [ :candidate |
-		  regex search:
-			  (candidate ifNil: [ '' ] ifNotNil: [ candidate asString ]) ] ].
+			regex := aBoolean
+				         ifTrue: [ aPattern asRegex ]
+				         ifFalse: [ aPattern asRegexIgnoringCase ].
+			^ [ :candidate |
+				  regex search:
+					  (candidate ifNil: [ '' ] ifNotNil: [ candidate asString ]) ] ].
 	normalizedPattern := self
 		                     normalizeFilterString: aPattern
 		                     caseSensitive: aBoolean.
 	aMode = 'substring' ifTrue: [
-		^ [ :candidate |
-		  (self normalizeFilterString: candidate caseSensitive: aBoolean)
-			  includesSubstring: normalizedPattern ] ].
+			^ [ :candidate |
+				  (self normalizeFilterString: candidate caseSensitive: aBoolean)
+					  includesSubstring: normalizedPattern ] ].
 	aMode = 'prefix' ifTrue: [
-		^ [ :candidate |
-		  (self normalizeFilterString: candidate caseSensitive: aBoolean)
-			  beginsWith: normalizedPattern ] ].
+			^ [ :candidate |
+				  (self normalizeFilterString: candidate caseSensitive: aBoolean)
+					  beginsWith: normalizedPattern ] ].
 	aMode = 'exact' ifTrue: [
-		^ [ :candidate |
-		  (self normalizeFilterString: candidate caseSensitive: aBoolean)
-		  = normalizedPattern ] ].
+			^ [ :candidate |
+				  (self normalizeFilterString: candidate caseSensitive: aBoolean)
+				  = normalizedPattern ] ].
 	Error signal: 'Unsupported filter mode: ' , aMode
 ]
 
@@ -431,7 +431,10 @@ MCPToolSearch >> queryInputSchemaWithProperties: inputProperties [
 { #category : 'private - pagination' }
 MCPToolSearch >> queryPageForEntries: entries limit: limit offset: offset [
 
-	^ MCPPaginationResult fromEntries: entries limit: limit offset: offset
+	^ MCPPaginationResult
+		  fromEntries: entries
+		  limit: limit
+		  offset: offset
 ]
 
 { #category : 'private - template' }
@@ -464,15 +467,15 @@ MCPToolSearch >> requestedContextFromRequest: request [
 MCPToolSearch >> scopeQueryFailureMessageFor: resultKind scope: scopeSummary error: anError [
 
 	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: 'Unable to query ';
-			  nextPutAll: resultKind;
-			  nextPutAll: ' [scope=';
-			  nextPutAll: scopeSummary;
-			  nextPutAll: '] (';
-			  nextPutAll: anError class name;
-			  nextPutAll: '): ';
-			  nextPutAll: anError messageText ]
+			  stream
+				  nextPutAll: 'Unable to query ';
+				  nextPutAll: resultKind;
+				  nextPutAll: ' [scope=';
+				  nextPutAll: scopeSummary;
+				  nextPutAll: '] (';
+				  nextPutAll: anError class name;
+				  nextPutAll: '): ';
+				  nextPutAll: anError messageText ]
 ]
 
 { #category : 'private - results' }
@@ -498,9 +501,9 @@ MCPToolSearch >> scopeSummaryFromLabels: labels [
 
 	labels ifEmpty: [ ^ 'image' ].
 	^ String streamContents: [ :stream |
-		  labels doWithIndex: [ :each :index |
-			  index > 1 ifTrue: [ stream nextPut: $+ ].
-			  stream nextPutAll: each ] ]
+			  labels doWithIndex: [ :each :index |
+					  index > 1 ifTrue: [ stream nextPut: $+ ].
+					  stream nextPutAll: each ] ]
 ]
 
 { #category : 'private - template' }
@@ -551,9 +554,10 @@ MCPToolSearch >> searchScopeStringCollectionNamed: aName fromRequest: request [
 MCPToolSearch >> successSummaryForQueryRequest: queryRequest page: page [
 
 	^ self
-		successSummaryForScope:
-		(self classAndMethodScopeSummaryForScopeQuery: queryRequest scopeQuery)
-		page: page
+		  successSummaryForScope:
+		  (self classAndMethodScopeSummaryForScopeQuery:
+			   queryRequest scopeQuery)
+		  page: page
 ]
 
 { #category : 'private - results' }

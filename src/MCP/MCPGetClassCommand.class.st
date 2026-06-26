@@ -42,8 +42,8 @@ MCPGetClassCommand >> subclassesForClass: aClass [
 	subclasses := OrderedCollection new.
 	aClass
 		allSubclassesWithLevelDo: [ :eachClass :level |
-			(level between: 1 and: request subclassDepth) ifTrue: [
-				subclasses add: eachClass ] ]
+				(level between: 1 and: request subclassDepth) ifTrue: [
+					subclasses add: eachClass ] ]
 		startingLevel: 0.
 	^ subclasses asArray
 ]
@@ -57,9 +57,9 @@ MCPGetClassCommand >> superclassesForClass: aClass [
 	targetSuperclass := Smalltalk globals
 		                    at: targetSuperclassName asSymbol
 		                    ifAbsent: [
-			                    MCPCommandError
-				                    signalMissingSuperclassNamed:
-				                    targetSuperclassName
-				                    forClassNamed: aClass name asString ].
+				                    MCPCommandError
+					                    signalMissingSuperclassNamed:
+					                    targetSuperclassName
+					                    forClassNamed: aClass name asString ].
 	^ aClass allSuperclasses asArray copyUpTo: targetSuperclass
 ]

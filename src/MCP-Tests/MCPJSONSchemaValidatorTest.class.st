@@ -423,7 +423,6 @@ MCPJSONSchemaValidatorTest >> testValidatesAllOfAndIfThen [
 	keywords := self keywordsFrom:
 		            (self violationsFor: arguments schema: schema).
 	self assert: keywords equals: #( 'required' )
-
 ]
 
 { #category : 'tests' }
@@ -451,7 +450,6 @@ MCPJSONSchemaValidatorTest >> testValidatesArrayItemsEnumAndConst [
 	self
 		assert: (self keywordsFrom: violations) asBag
 		equals: #( 'enum' 'const' 'type' ) asBag
-
 ]
 
 { #category : 'tests' }

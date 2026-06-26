@@ -13,12 +13,12 @@ Class {
 MCPCompiledMethodScopeQueryTest >> methodIdentitiesFor: compiledMethods [
 
 	^ (compiledMethods collect: [ :each |
-		   String streamContents: [ :stream |
-			   stream nextPutAll: each methodClass instanceSide name asString.
-			   each methodClass isMeta ifTrue: [ stream nextPutAll: ' class' ].
-			   stream
-				   nextPutAll: '>>';
-				   nextPutAll: each selector asString ] ]) asSet
+			   String streamContents: [ :stream |
+					   stream nextPutAll: each methodClass instanceSide name asString.
+					   each methodClass isMeta ifTrue: [ stream nextPutAll: ' class' ].
+					   stream
+						   nextPutAll: '>>';
+						   nextPutAll: each selector asString ] ]) asSet
 ]
 
 { #category : 'tests' }
@@ -94,8 +94,8 @@ MCPCompiledMethodScopeQueryTest >> testInvalidSideSignalsErrorWhenQuerying [
 		         side: 'invalid';
 		         yourself.
 	error := [
-	         query methods.
-	         self fail: 'Expected Error' ]
+		         query methods.
+		         self fail: 'Expected Error' ]
 		         on: Error
 		         do: [ :caught | caught ].
 	self

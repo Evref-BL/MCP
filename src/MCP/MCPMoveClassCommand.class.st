@@ -72,14 +72,14 @@ MCPMoveClassCommand >> performMove [
 
 	self tag
 		ifNil: [
-			(RBMoveClassTransformation
-				 move: self className
-				 toPackage: self packageName) execute ]
+				(RBMoveClassTransformation
+					 move: self className
+					 toPackage: self packageName) execute ]
 		ifNotNil: [
-			(RBMoveClassTransformation
-				 move: self className
-				 toPackage: self packageName
-				 inTag: self tag) execute ]
+				(RBMoveClassTransformation
+					 move: self className
+					 toPackage: self packageName
+					 inTag: self tag) execute ]
 ]
 
 { #category : 'accessing' }

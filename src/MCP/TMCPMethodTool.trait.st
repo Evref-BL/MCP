@@ -36,10 +36,10 @@ TMCPMethodTool >> methodForClassNamed: className selector: selectorString classS
 	behavior := self behaviorNamed: className classSide: classSide.
 	selectorSymbol := selectorString asSymbol.
 	(behavior includesSelector: selectorSymbol) ifFalse: [
-		MCPCommandError
-			signalMissingMethodInClassName: className
-			classSide: classSide
-			selector: selectorString ].
+			MCPCommandError
+				signalMissingMethodInClassName: className
+				classSide: classSide
+				selector: selectorString ].
 	^ behavior compiledMethodAt: selectorSymbol
 ]
 
@@ -55,20 +55,20 @@ TMCPMethodTool >> methodQueryScopeInputProperties [
 TMCPMethodTool >> methodReferenceForBehavior: aBehavior selector: aSelector [
 
 	^ String streamContents: [ :stream |
-		  stream nextPutAll: (self targetNameForBehavior: aBehavior).
-		  stream nextPutAll: '>>'.
-		  stream nextPutAll: aSelector asString ]
+			  stream nextPutAll: (self targetNameForBehavior: aBehavior).
+			  stream nextPutAll: '>>'.
+			  stream nextPutAll: aSelector asString ]
 ]
 
 { #category : 'private - methods' }
 TMCPMethodTool >> methodReferenceForClassName: aClassName selector: aSelector isClassSide: isClassSide [
 
 	^ String streamContents: [ :stream |
-		  stream nextPutAll: aClassName.
-		  isClassSide ifTrue: [ stream nextPutAll: ' class' ].
-		  stream
-			  nextPutAll: '>>';
-			  nextPutAll: aSelector ]
+			  stream nextPutAll: aClassName.
+			  isClassSide ifTrue: [ stream nextPutAll: ' class' ].
+			  stream
+				  nextPutAll: '>>';
+				  nextPutAll: aSelector ]
 ]
 
 { #category : 'private - schema' }

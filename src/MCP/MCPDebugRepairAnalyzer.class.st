@@ -224,7 +224,8 @@ MCPDebugRepairAnalyzer >> repairActionForContext: aContext behavior: aBehavior s
 		  (#selector -> aSelector asString).
 		  (#targetClassName -> (self classNameForBehavior: aBehavior)).
 		  (#classSide -> (self classSideForBehavior: aBehavior)).
-		  (#arguments -> (self debugMethodUpdateArgumentsForFrameRef: frameRef)) }
+		  (#arguments
+		   -> (self debugMethodUpdateArgumentsForFrameRef: frameRef)) }
 		  asDictionary
 ]
 

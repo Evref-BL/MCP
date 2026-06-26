@@ -20,8 +20,7 @@ MCPRepositoryResult >> branchHeadDictionary [
 
 	| data |
 	data := Dictionary new.
-	self branchName ifNotEmpty: [ :name |
-		data at: #branchName put: name ].
+	self branchName ifNotEmpty: [ :name | data at: #branchName put: name ].
 	self headDescription ifNotEmpty: [ :description |
 		data at: #headDescription put: description ].
 	^ data

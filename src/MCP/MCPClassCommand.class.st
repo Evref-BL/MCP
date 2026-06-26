@@ -43,22 +43,21 @@ MCPClassCommand >> resolvedLayoutClassNamed: layoutName [
 
 	| behavior |
 	layoutName ifNil: [ ^ nil ].
-	behavior := Smalltalk globals
-		at: layoutName asSymbol
-		ifAbsent: [
-			MCPCommandError
-				signalErrorCode: #LayoutClassNotFound
-				message: 'Layout class ' , layoutName , ' does not exist.'
-				details: {
-					(#className -> self className).
-					(#layout -> layoutName) } asDictionary ].
+	behavior := Smalltalk globals at: layoutName asSymbol ifAbsent: [
+			            MCPCommandError
+				            signalErrorCode: #LayoutClassNotFound
+				            message:
+				            'Layout class ' , layoutName , ' does not exist.'
+				            details: {
+						            (#className -> self className).
+						            (#layout -> layoutName) } asDictionary ].
 	(AbstractLayout withAllSubclasses includes: behavior) ifFalse: [
-		MCPCommandError
-			signalErrorCode: #InvalidLayoutClass
-			message: layoutName , ' not layout class.'
-			details: {
-				(#className -> self className).
-				(#layout -> layoutName) } asDictionary ].
+			MCPCommandError
+				signalErrorCode: #InvalidLayoutClass
+				message: layoutName , ' not layout class.'
+				details: {
+						(#className -> self className).
+						(#layout -> layoutName) } asDictionary ].
 	^ behavior
 ]
 
@@ -68,20 +67,21 @@ MCPClassCommand >> resolvedSharedPoolNamed: aSharedPoolName [
 	| behavior sharedPoolName |
 	sharedPoolName := aSharedPoolName.
 	behavior := Smalltalk globals
-		at: sharedPoolName asSymbol
-		ifAbsent: [
-			MCPCommandError
-				signalErrorCode: #SharedPoolNotFound
-				message: 'Shared pool ' , sharedPoolName , ' does not exist.'
-				details: {
-					(#className -> self className).
-					(#sharedPoolName -> sharedPoolName) } asDictionary ].
+		            at: sharedPoolName asSymbol
+		            ifAbsent: [
+				            MCPCommandError
+					            signalErrorCode: #SharedPoolNotFound
+					            message:
+					            'Shared pool ' , sharedPoolName , ' does not exist.'
+					            details: {
+							            (#className -> self className).
+							            (#sharedPoolName -> sharedPoolName) } asDictionary ].
 	(SharedPool withAllSubclasses includes: behavior) ifFalse: [
-		MCPCommandError
-			signalErrorCode: #InvalidSharedPool
-			message: sharedPoolName , ' not shared pool.'
-			details: {
-				(#className -> self className).
-				(#sharedPoolName -> sharedPoolName) } asDictionary ].
+			MCPCommandError
+				signalErrorCode: #InvalidSharedPool
+				message: sharedPoolName , ' not shared pool.'
+				details: {
+						(#className -> self className).
+						(#sharedPoolName -> sharedPoolName) } asDictionary ].
 	^ behavior
 ]

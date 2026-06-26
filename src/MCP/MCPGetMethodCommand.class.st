@@ -25,12 +25,12 @@ MCPGetMethodCommand >> execute [
 		        (#source -> (compiledMethod sourceCode ifNil: [ '' ])) }
 		        asDictionary.
 	request includeVariableDetails ifTrue: [
-		methodBehavior := tool
-			                  behaviorNamed: request className
-			                  classSide: request classSide.
-		variableReferences := tool
-			                      variableSummariesForMethod: compiledMethod
-			                      methodBehavior: methodBehavior.
-		data at: #variableReferences put: variableReferences ].
+			methodBehavior := tool
+				                  behaviorNamed: request className
+				                  classSide: request classSide.
+			variableReferences := tool
+				                      variableSummariesForMethod: compiledMethod
+				                      methodBehavior: methodBehavior.
+			data at: #variableReferences put: variableReferences ].
 	^ MCPGetMethodResult data: data externalVariableCount: nil
 ]
