@@ -14,7 +14,7 @@ Class {
 { #category : 'accessing' }
 MCPMethodStyleRule class >> group [
 
-	^ self designFlawGroup
+	^ #'Design Flaws'
 ]
 
 { #category : 'testing' }

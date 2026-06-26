@@ -26,7 +26,7 @@ MCPRespondsToUsageRule class >> forbiddenSelector [
 { #category : 'accessing' }
 MCPRespondsToUsageRule class >> group [
 
-	^ self designFlawGroup
+	^ #'Design Flaws'
 ]
 
 { #category : 'accessing' }

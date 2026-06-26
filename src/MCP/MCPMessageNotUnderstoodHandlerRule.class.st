@@ -26,7 +26,7 @@ MCPMessageNotUnderstoodHandlerRule class >> forbiddenExceptionName [
 { #category : 'accessing' }
 MCPMessageNotUnderstoodHandlerRule class >> group [
 
-	^ self designFlawGroup
+	^ #'Design Flaws'
 ]
 
 { #category : 'accessing' }
