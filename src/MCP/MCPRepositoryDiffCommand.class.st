@@ -12,19 +12,21 @@ Class {
 { #category : 'executing' }
 MCPRepositoryDiffCommand >> execute [
 
-	| changedPackageNames diff modifiedPaths repository result |
+	| changedPackageNames isEmpty modifiedPaths repository result |
 	^ self
 		  executeRepositoryAction: 'diff'
 		  work: [
 				  repository := self request repository.
-				  diff := repository workingCopyDiff.
-				  changedPackageNames := self changedPackageNamesFromDiff: diff.
-				  modifiedPaths := self modifiedPathsFromDiff: diff.
+				  modifiedPaths := self modifiedPathsFromGitStatusIn: repository.
+				  changedPackageNames := self
+					                         changedPackageNamesForRepository: repository
+					                         modifiedPaths: modifiedPaths.
+				  isEmpty := changedPackageNames isEmpty and: [ modifiedPaths isEmpty ].
 				  result := MCPRepositoryDiffResult
 					            repository: repository
 					            changedPackageNames: changedPackageNames
 					            modifiedPaths: modifiedPaths
-					            isEmpty: diff isEmpty ]
+					            isEmpty: isEmpty ]
 		  successResult: [ :warningMessages |
 				  self tool
 					  successResultText:

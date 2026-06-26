@@ -736,6 +736,27 @@ MCPToolRepositoryOperationTest >> testCreateCreatesAndRegistersRepository [
 ]
 
 { #category : 'tests' }
+MCPToolRepositoryOperationTest >> testDiffCanReportImageModifiedPackagesWithoutWorkingCopyDiff [
+
+	| data repository result |
+	repository := self newTestRepositoryNamed:
+		              'MCP Diff Package Only Test Repository'.
+	repository modifiedPackageNames: #( 'MCP-Test-Dirty' ).
+	self withRegisteredRepository: repository do: [
+			result := self callToolWith: {
+				          (#action -> 'diff').
+				          (#repositoryName -> repository name) } asDictionary.
+			data := self dataFrom: result.
+			self deny: (result at: #isError ifAbsent: false).
+			self assert: (data at: #isEmpty) equals: false.
+			self assert: (data at: #changeCount) equals: 1.
+			self
+				assert: (data at: #changedPackageNames)
+				equals: #( 'MCP-Test-Dirty' ).
+			self deny: (data includesKey: #modifiedPaths) ]
+]
+
+{ #category : 'tests' }
 MCPToolRepositoryOperationTest >> testDiffDoesNotRequestImageSaveAfterSuccessfulExecution [
 
 	| location packageName repositoryName result server |
@@ -792,38 +813,30 @@ MCPToolRepositoryOperationTest >> testDiffReportsWorkingCopyDiffWithoutWriting [
 		withExportPackageNamed: packageName
 		className: 'MCPToolRepositoryOperationDiffClass'
 		do: [
-				self
-					withCleanRepositoryNamed: repositoryName
-					location: location
-					do: [
-							self callToolWith: {
-									(#action -> 'create').
-									(#name -> repositoryName).
-									(#location -> location pathString).
-									(#packageNames -> { packageName }) } asDictionary.
-							repository := IceRepository repositories detect: [ :each |
-								              each name asString = repositoryName ].
-							self assert: repository index isEmpty.
-							result := self callToolWith: {
-									          (#action -> 'diff').
-									          (#repositoryName -> repositoryName) } asDictionary.
-							data := self dataFrom: result.
-							childNames := self directChildNamesOf: location.
-							self deny: (result at: #isError ifAbsent: [ false ]).
-							self
-								assert: data keys asSet
-								equals:
-								#( changeCount changedPackageNames isEmpty modifiedPaths )
-									asSet.
-							self assert: (data at: #isEmpty) equals: false.
-							self assert: (data at: #changeCount) > 0.
-							self
-								assert: (data at: #changedPackageNames)
-								equals: { packageName }.
-							self assert: (data at: #modifiedPaths) notEmpty.
-							self deny:
-								(childNames anySatisfy: [ :each |
-									 each includesSubstring: packageName ]) ] ]
+			self withCleanRepositoryNamed: repositoryName location: location do: [
+					self callToolWith: {
+							(#action -> 'create').
+							(#name -> repositoryName).
+							(#location -> location pathString).
+							(#packageNames -> { packageName }) } asDictionary.
+					repository := IceRepository repositories detect: [ :each |
+						              each name asString = repositoryName ].
+					self assert: repository index isEmpty.
+					result := self callToolWith: {
+						          (#action -> 'diff').
+						          (#repositoryName -> repositoryName) } asDictionary.
+					data := self dataFrom: result.
+					childNames := self directChildNamesOf: location.
+					self deny: (result at: #isError ifAbsent: false).
+					self
+						assert: data keys asSet
+						equals: #( changeCount changedPackageNames isEmpty ) asSet.
+					self assert: (data at: #isEmpty) equals: false.
+					self assert: (data at: #changeCount) > 0.
+					self assert: (data at: #changedPackageNames) equals: { packageName }.
+					self deny: (data includesKey: #modifiedPaths).
+					self deny: (childNames anySatisfy: [ :each |
+							 each includesSubstring: packageName ]) ] ]
 ]
 
 { #category : 'tests' }
@@ -1163,6 +1176,57 @@ MCPToolRepositoryOperationTest >> testPushReturnsResultReportsErrorsAndRequestsI
 			self assert: (errorResult at: #isError ifAbsent: [ false ]).
 			self assert: ((self summaryFrom: errorResult) includesSubstring:
 					 'Failed to push repository') ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testPushUsesGitCommandForRealWorktree [
+
+	| bareLocation commitAfter location remoteHead repository repositoryName result |
+	repositoryName := 'MCP Push Git Command Test Repository'.
+	location := self temporaryRepositoryLocationNamed:
+		            'MCPToolRepositoryOperationTestGitPush'.
+	bareLocation := self temporaryRepositoryLocationNamed:
+		                'MCPToolRepositoryOperationTestGitPushRemote.git'.
+	[
+		self deleteDirectoryIfExists: location.
+		self deleteDirectoryIfExists: bareLocation.
+		location ensureCreateDirectory.
+		self shellCommand:
+			'git init --initial-branch=main ' , (self shellQuote: location pathString).
+		(location / 'README.md') writeStreamDo: [ :stream |
+			stream nextPutAll: 'initial' ].
+		self commitAllIn: location message: 'Initial local commit'.
+		self shellCommand:
+			'git init --bare --initial-branch=main '
+			, (self shellQuote: bareLocation pathString).
+		self shellCommand:
+			'git -C ' , (self shellQuote: location pathString)
+			, ' remote add origin ' , (self shellQuote: bareLocation pathString).
+		self shellCommand:
+			'git -C ' , (self shellQuote: location pathString)
+			, ' push -u origin main'.
+		(location / 'README.md') writeStreamDo: [ :stream |
+			stream nextPutAll: 'updated' ].
+		self commitAllIn: location message: 'Second local commit'.
+		commitAfter := (LibC resultOfCommand:
+			                'git -C ' , (self shellQuote: location pathString)
+			                , ' rev-parse HEAD') trimBoth.
+	repository := MCPTestIceRepository
+		              named: repositoryName
+		              location: location pathString.
+	self withRegisteredRepository: repository do: [
+			result := self callToolWith: {
+				          (#action -> 'push').
+				          (#repositoryName -> repositoryName) } asDictionary.
+			self deny: (result at: #isError ifAbsent: false).
+			self assert: repository actionLog asArray equals: #( ).
+			remoteHead := (LibC resultOfCommand:
+				               'git --git-dir '
+				               , (self shellQuote: bareLocation pathString)
+				               , ' rev-parse main') trimBoth.
+			self assert: remoteHead equals: commitAfter ] ] ensure: [
+		self deleteDirectoryIfExists: location.
+		self deleteDirectoryIfExists: bareLocation ]
 ]
 
 { #category : 'tests' }
