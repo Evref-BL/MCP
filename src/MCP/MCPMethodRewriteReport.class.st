@@ -5,7 +5,7 @@ It summarizes preview or apply mode, calculated and applied change counts, norma
 "
 Class {
 	#name : 'MCPMethodRewriteReport',
-	#superclass : 'Object',
+	#superclass : 'MCPResult',
 	#instVars : [
 		'apply',
 		'changeInfos',

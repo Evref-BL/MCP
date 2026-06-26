@@ -5,7 +5,7 @@ It gathers removal warnings, removes now-empty packages when applicable, and ret
 "
 Class {
 	#name : 'MCPRemoveClassesCommand',
-	#superclass : 'Object',
+	#superclass : 'MCPCommand',
 	#instVars : [
 		'classNames',
 		'force'
@@ -56,9 +56,9 @@ MCPRemoveClassesCommand >> execute [
 	self performRemovalWithPreparedRefactoring: refactoring.
 	removedPackageNames := OrderedCollection new.
 	removedClasses do: [ :eachResult |
-		self
-			removePackageIfNowEmptyNamed: eachResult classInfo packageName
-			recordingInto: removedPackageNames ].
+			self
+				removePackageIfNowEmptyNamed: eachResult classInfo packageName
+				recordingInto: removedPackageNames ].
 	^ MCPRemoveClassesResult
 		  removedClasses: removedClasses
 		  removedPackageNames: removedPackageNames
@@ -108,10 +108,10 @@ MCPRemoveClassesCommand >> removePackageIfNowEmptyNamed: aPackageName recordingI
 	PackageOrganizer default
 		packageNamed: aPackageName
 		ifPresent: [ :package |
-			package definedClasses isEmpty ifTrue: [
-				PackageOrganizer default removePackage: package.
-				(removedPackageNamesCollection includes: aPackageName) ifFalse: [
-					removedPackageNamesCollection add: aPackageName ] ] ]
+				package definedClasses isEmpty ifTrue: [
+						PackageOrganizer default removePackage: package.
+						(removedPackageNamesCollection includes: aPackageName) ifFalse: [
+							removedPackageNamesCollection add: aPackageName ] ] ]
 ]
 
 { #category : 'private' }
@@ -156,11 +156,11 @@ MCPRemoveClassesCommand >> validatePreparedRefactoring: aRefactoring [
 	warningMessages := OrderedCollection new.
 	self force
 		ifTrue: [
-			[ aRefactoring checkPreconditions ]
-				on: RBRefactoringWarning
-				do: [ :warning |
-					warningMessages add: warning messageText.
-					warning resume: true ] ]
+				[ aRefactoring checkPreconditions ]
+					on: RBRefactoringWarning
+					do: [ :warning |
+							warningMessages add: warning messageText.
+							warning resume: true ] ]
 		ifFalse: [ aRefactoring checkPreconditions ].
 	^ warningMessages asArray
 ]

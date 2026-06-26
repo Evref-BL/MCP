@@ -3,7 +3,7 @@ Structured coverage result DTO returned by test_coverage_run.
 "
 Class {
 	#name : 'MCPTestCoverageResult',
-	#superclass : 'Object',
+	#superclass : 'MCPResult',
 	#instVars : [
 		'coverageResult',
 		'includeCoveredMethods',
@@ -61,12 +61,12 @@ MCPTestCoverageResult >> asDictionary [
 		at: #partiallyCoveredMethodsTruncated
 		put: (self isListTruncated: partialMethods).
 	self includeCoveredMethods ifTrue: [
-		data
-			at: #coveredMethods
-			put: (self methodDictionariesFor: coveredMethods).
-		data
-			at: #coveredMethodsTruncated
-			put: (self isListTruncated: coveredMethods) ].
+			data
+				at: #coveredMethods
+				put: (self methodDictionariesFor: coveredMethods).
+			data
+				at: #coveredMethodsTruncated
+				put: (self isListTruncated: coveredMethods) ].
 	^ data
 ]
 
@@ -149,12 +149,12 @@ MCPTestCoverageResult >> methodLimit [
 MCPTestCoverageResult >> methodSortKeyFor: aCompiledMethod [
 
 	^ String streamContents: [ :stream |
-		  stream nextPutAll: aCompiledMethod methodClass instanceSide name.
-		  aCompiledMethod methodClass isMeta ifTrue: [
-			  stream nextPutAll: ' class' ].
-		  stream
-			  nextPutAll: '>>';
-			  nextPutAll: aCompiledMethod selector asString ]
+			  stream nextPutAll: aCompiledMethod methodClass instanceSide name.
+			  aCompiledMethod methodClass isMeta ifTrue: [
+				  stream nextPutAll: ' class' ].
+			  stream
+				  nextPutAll: '>>';
+				  nextPutAll: aCompiledMethod selector asString ]
 ]
 
 { #category : 'private - coverage' }

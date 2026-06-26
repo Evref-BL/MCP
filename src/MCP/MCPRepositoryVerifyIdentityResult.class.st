@@ -3,10 +3,8 @@ Result DTO returned by repository_identity_verify. It reports the repository sna
 "
 Class {
 	#name : 'MCPRepositoryVerifyIdentityResult',
-	#superclass : 'Object',
+	#superclass : 'MCPRepositorySnapshotResult',
 	#instVars : [
-		'repositoryInfo',
-		'packageInfos',
 		'checkedFields',
 		'matched'
 	],
@@ -38,38 +36,13 @@ MCPRepositoryVerifyIdentityResult >> checkedFields [
 { #category : 'initialization' }
 MCPRepositoryVerifyIdentityResult >> initializeRepository: aRepository checkedFields: fieldNames [
 
-	repositoryInfo := MCPRepositoryInfo fromRepository: aRepository.
-	packageInfos := self packageInfosFromRepository: aRepository.
+	self initializeSnapshotFromRepository: aRepository.
 	checkedFields := fieldNames ifNil: [ #(  ) ].
-	matched := true.
-	^ self
+	matched := true
 ]
 
 { #category : 'accessing' }
 MCPRepositoryVerifyIdentityResult >> matched [
 
 	^ matched ifNil: [ false ]
-]
-
-{ #category : 'accessing' }
-MCPRepositoryVerifyIdentityResult >> packageInfos [
-
-	^ packageInfos ifNil: [ #(  ) ]
-]
-
-{ #category : 'private' }
-MCPRepositoryVerifyIdentityResult >> packageInfosFromRepository: aRepository [
-
-	| packages |
-	packages := aRepository workingCopy packages asArray
-		            sort: [ :left :right |
-		            left name asString <= right name asString ].
-	^ packages collect: [ :each |
-		  MCPRepositoryPackageInfo fromPackage: each ]
-]
-
-{ #category : 'accessing' }
-MCPRepositoryVerifyIdentityResult >> repositoryInfo [
-
-	^ repositoryInfo
 ]

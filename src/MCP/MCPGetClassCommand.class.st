@@ -3,21 +3,11 @@ Command that returns class metadata DTO dictionaries for class_get.
 "
 Class {
 	#name : 'MCPGetClassCommand',
-	#superclass : 'Object',
-	#instVars : [
-		'request',
-		'tool'
-	],
+	#superclass : 'MCPToolRequestCommand',
 	#category : 'MCP-Commands',
 	#package : 'MCP',
 	#tag : 'Commands'
 }
-
-{ #category : 'instance creation' }
-MCPGetClassCommand class >> tool: aTool request: aRequest [
-
-	^ self new initializeTool: aTool request: aRequest
-]
 
 { #category : 'executing' }
 MCPGetClassCommand >> execute [
@@ -44,20 +34,6 @@ MCPGetClassCommand >> execute [
 		  subclasses: subclasses
 ]
 
-{ #category : 'initialization' }
-MCPGetClassCommand >> initializeTool: aTool request: aRequest [
-
-	tool := aTool.
-	request := aRequest.
-	^ self
-]
-
-{ #category : 'accessing' }
-MCPGetClassCommand >> request [
-
-	^ request
-]
-
 { #category : 'private' }
 MCPGetClassCommand >> subclassesForClass: aClass [
 
@@ -66,8 +42,8 @@ MCPGetClassCommand >> subclassesForClass: aClass [
 	subclasses := OrderedCollection new.
 	aClass
 		allSubclassesWithLevelDo: [ :eachClass :level |
-			(level between: 1 and: request subclassDepth) ifTrue: [
-				subclasses add: eachClass ] ]
+				(level between: 1 and: request subclassDepth) ifTrue: [
+					subclasses add: eachClass ] ]
 		startingLevel: 0.
 	^ subclasses asArray
 ]
@@ -81,15 +57,9 @@ MCPGetClassCommand >> superclassesForClass: aClass [
 	targetSuperclass := Smalltalk globals
 		                    at: targetSuperclassName asSymbol
 		                    ifAbsent: [
-			                    MCPCommandError
-				                    signalMissingSuperclassNamed:
-				                    targetSuperclassName
-				                    forClassNamed: aClass name asString ].
+				                    MCPCommandError
+					                    signalMissingSuperclassNamed:
+					                    targetSuperclassName
+					                    forClassNamed: aClass name asString ].
 	^ aClass allSuperclasses asArray copyUpTo: targetSuperclass
-]
-
-{ #category : 'accessing' }
-MCPGetClassCommand >> tool [
-
-	^ tool
 ]

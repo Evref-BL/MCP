@@ -5,7 +5,7 @@ It reports whether compiling the source created a new method or replaced an exis
 "
 Class {
 	#name : 'MCPMethodCompileResult',
-	#superclass : 'Object',
+	#superclass : 'MCPResult',
 	#instVars : [
 		'methodInfo',
 		'critiques',

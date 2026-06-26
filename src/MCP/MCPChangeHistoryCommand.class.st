@@ -5,11 +5,7 @@ It centralizes command construction, current Epicea log access, history-file loa
 "
 Class {
 	#name : 'MCPChangeHistoryCommand',
-	#superclass : 'Object',
-	#instVars : [
-		'tool',
-		'request'
-	],
+	#superclass : 'MCPToolRequestCommand',
 	#category : 'MCP-Commands',
 	#package : 'MCP',
 	#tag : 'Commands'
@@ -19,14 +15,6 @@ Class {
 MCPChangeHistoryCommand class >> isAbstract [
 
 	^ self = MCPChangeHistoryCommand
-]
-
-{ #category : 'instance creation' }
-MCPChangeHistoryCommand class >> tool: aTool request: aRequest [
-
-	^ self new
-		  initializeTool: aTool request: aRequest;
-		  yourself
 ]
 
 { #category : 'private - log' }
@@ -62,13 +50,6 @@ MCPChangeHistoryCommand >> historyDirectoryForCurrentFile: aFileReference [
 	^ [ EpMonitor logsDirectory ]
 		  on: Error
 		  do: [ :error | FileLocator localDirectory asFileReference ]
-]
-
-{ #category : 'initialization' }
-MCPChangeHistoryCommand >> initializeTool: aTool request: aRequest [
-
-	tool := aTool.
-	request := aRequest
 ]
 
 { #category : 'private - entries' }
@@ -150,22 +131,10 @@ MCPChangeHistoryCommand >> logAndFileNameFromFileReference: aFileReference [
 		  aFileReference basename }
 ]
 
-{ #category : 'accessing' }
-MCPChangeHistoryCommand >> request [
-
-	^ request
-]
-
 { #category : 'private - files' }
 MCPChangeHistoryCommand >> sameFileReference: firstFile as: secondFile [
 
 	firstFile ifNil: [ ^ false ].
 	secondFile ifNil: [ ^ false ].
 	^ firstFile fullName = secondFile fullName
-]
-
-{ #category : 'accessing' }
-MCPChangeHistoryCommand >> tool [
-
-	^ tool
 ]

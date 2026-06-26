@@ -223,11 +223,14 @@ MCPToolRemoveMethodsTest >> testDefaultsToRemovingInstanceSideMethodsWhenClassSi
 
 	| result |
 	result := self callToolWith: {
-		(#className -> 'MCPToolRemoveMethodsTestTarget').
-		(#selectors -> self instanceBatchSelectors) } asDictionary.
+			          (#className -> 'MCPToolRemoveMethodsTestTarget').
+			          (#selectors -> self instanceBatchSelectors) }
+			          asDictionary.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self deny: (MCPToolRemoveMethodsTestTarget includesSelector: self firstInstanceBatchSelector).
-	self deny: (MCPToolRemoveMethodsTestTarget includesSelector: self secondInstanceBatchSelector)
+	self deny: (MCPToolRemoveMethodsTestTarget includesSelector:
+			 self firstInstanceBatchSelector).
+	self deny: (MCPToolRemoveMethodsTestTarget includesSelector:
+			 self secondInstanceBatchSelector)
 ]
 
 { #category : 'tests' }
@@ -235,18 +238,27 @@ MCPToolRemoveMethodsTest >> testForceRemovesMethodsEvenWhenExternalSendersExistA
 
 	| result structured text warnings |
 	result := self callToolWith: {
-		(#className -> 'MCPToolRemoveMethodsTestTarget').
-		(#classSide -> false).
-		(#selectors -> { self protectedSelector }) } asDictionary.
+			          (#className -> 'MCPToolRemoveMethodsTestTarget').
+			          (#classSide -> false).
+			          (#selectors -> { self protectedSelector }) } asDictionary.
 	structured := self structuredContentFrom: result.
 	text := self firstTextFrom: result.
 	warnings := structured at: #warnings.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self deny: (text includesSubstring: 'Warning:').
-	self assert: warnings equals: { 'This bypasses sender checks and may leave broken senders.' } asArray.
-	self deny: (MCPToolRemoveMethodsTestTarget includesSelector: self protectedSelectorSymbol).
-	self assert: (MCPToolRemoveMethodsTestSender includesSelector: #sendProtectedRemovalTarget).
-	self should: [ MCPToolRemoveMethodsTestSender new sendProtectedRemovalTarget ] raise: MessageNotUnderstood
+	self
+		assert: warnings
+		equals:
+			{ 'This bypasses sender checks and may leave broken senders.' }
+				asArray.
+	self deny: (MCPToolRemoveMethodsTestTarget includesSelector:
+			 self protectedSelectorSymbol).
+	self assert: (MCPToolRemoveMethodsTestSender includesSelector:
+			 #sendProtectedRemovalTarget).
+	self
+		should: [
+		MCPToolRemoveMethodsTestSender new sendProtectedRemovalTarget ]
+		raise: MessageNotUnderstood
 ]
 
 { #category : 'tests' }
@@ -277,8 +289,12 @@ MCPToolRemoveMethodsTest >> testRemovesBatchOfClassSideMethods [
 	| result |
 	result := self callToolWith: self classBatchArguments.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self deny: (MCPToolRemoveMethodsTestTarget classSide includesSelector: self firstClassBatchSelector).
-	self deny: (MCPToolRemoveMethodsTestTarget classSide includesSelector: self secondClassBatchSelector)
+	self deny:
+		(MCPToolRemoveMethodsTestTarget classSide includesSelector:
+			 self firstClassBatchSelector).
+	self deny:
+		(MCPToolRemoveMethodsTestTarget classSide includesSelector:
+			 self secondClassBatchSelector)
 ]
 
 { #category : 'tests' }
@@ -287,8 +303,10 @@ MCPToolRemoveMethodsTest >> testRemovesBatchOfInstanceMethods [
 	| result |
 	result := self callToolWith: self instanceBatchArguments.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self deny: (MCPToolRemoveMethodsTestTarget includesSelector: self firstInstanceBatchSelector).
-	self deny: (MCPToolRemoveMethodsTestTarget includesSelector: self secondInstanceBatchSelector)
+	self deny: (MCPToolRemoveMethodsTestTarget includesSelector:
+			 self firstInstanceBatchSelector).
+	self deny: (MCPToolRemoveMethodsTestTarget includesSelector:
+			 self secondInstanceBatchSelector)
 ]
 
 { #category : 'tests' }
@@ -296,9 +314,11 @@ MCPToolRemoveMethodsTest >> testReturnsStructuredErrorWhenAnyMethodIsMissing [
 
 	| error result structured |
 	result := self callToolWith: {
-		(#className -> 'MCPToolRemoveMethodsTestTarget').
-		(#classSide -> false).
-		(#selectors -> { self firstInstanceBatchSelectorString. self missingSelectorString }) } asDictionary.
+			          (#className -> 'MCPToolRemoveMethodsTestTarget').
+			          (#classSide -> false).
+			          (#selectors -> {
+				           self firstInstanceBatchSelectorString.
+				           self missingSelectorString }) } asDictionary.
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
@@ -306,7 +326,8 @@ MCPToolRemoveMethodsTest >> testReturnsStructuredErrorWhenAnyMethodIsMissing [
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'MethodNotFound'.
 	self assert: (error at: #selector) equals: self missingSelectorString.
-	self assert: (MCPToolRemoveMethodsTestTarget includesSelector: self firstInstanceBatchSelector)
+	self assert: (MCPToolRemoveMethodsTestTarget includesSelector:
+			 self firstInstanceBatchSelector)
 ]
 
 { #category : 'tests' }

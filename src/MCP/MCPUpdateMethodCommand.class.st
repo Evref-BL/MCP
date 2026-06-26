@@ -3,21 +3,11 @@ Command for applying one method update patch. It selects an internal method upda
 "
 Class {
 	#name : 'MCPUpdateMethodCommand',
-	#superclass : 'Object',
-	#instVars : [
-		'tool',
-		'request'
-	],
+	#superclass : 'MCPToolRequestCommand',
 	#category : 'MCP-Commands',
 	#package : 'MCP',
 	#tag : 'Commands'
 }
-
-{ #category : 'instance creation' }
-MCPUpdateMethodCommand class >> tool: aTool request: aRequest [
-
-	^ self new initializeTool: aTool request: aRequest
-]
 
 { #category : 'private - results' }
 MCPUpdateMethodCommand >> appliedUpdateResultFor: aChangeResult plan: plan [
@@ -34,10 +24,10 @@ MCPUpdateMethodCommand >> execute [
 	[ plan := self updatePlan ]
 		on: MCPCommandError
 		do: [ :error |
-			^ self tool
-				  errorResultForCommandError: error
-				  action: 'update'
-				  requestedContext: self request requestedContext ].
+				^ self tool
+					  errorResultForCommandError: error
+					  action: 'update'
+					  requestedContext: self request requestedContext ].
 	^ self executePlan: plan
 ]
 
@@ -52,60 +42,60 @@ MCPUpdateMethodCommand >> executeAddArgumentsWithPlan: plan [
 		  force: self request force
 		  requestedContext: plan requestedContext
 		  work: [
-			  behavior := self tool
-				              behaviorNamed: self request className
-				              classSide: self request classSide.
-			  behavior compiledMethodAt: oldSelectorSymbol ifAbsent: [
-				  MCPCommandError
-					  signalMissingMethodInClassName: self request className
-					  classSide: self request classSide
-					  selector: self request selector ].
-			  refactoringModel := self tool
-				                      refactoringModelForScopeSpec:
-				                      self request refactoringScopeSpec
-				                      anchoredAtBehavior: behavior.
-			  oldMethodReference := self tool
-				                        methodReferenceForBehavior: behavior
-				                        selector: oldSelectorSymbol.
-			  refactoring := self tool
-				                 addParameterRefactoringForSelector:
-				                 oldSelectorSymbol
-				                 inBehavior: behavior
-				                 to: newSelectorSymbol
-				                 permutation: self request permutation
-				                 newArgs: self request newArgumentSpecs
-				                 model: refactoringModel.
-			  renameMap := self request argumentRenameMapForBehavior: behavior.
-			  renameMap ifNotEmpty: [ refactoring renameMap: renameMap ].
-			  refactoring execute.
-			  newCompiledMethod := self tool
-				                       reformattedMethodForBehavior: behavior
-				                       selector: newSelectorSymbol.
-			  changeResult := (MCPMethodUpdateChangeResult
-				                   updateAction: 'addArguments'
-				                   method: newCompiledMethod)
-				                  oldSelector: self request selector;
-				                  newSelector: self request newSelector;
-				                  yourself ]
+				  behavior := self tool
+					              behaviorNamed: self request className
+					              classSide: self request classSide.
+				  behavior compiledMethodAt: oldSelectorSymbol ifAbsent: [
+						  MCPCommandError
+							  signalMissingMethodInClassName: self request className
+							  classSide: self request classSide
+							  selector: self request selector ].
+				  refactoringModel := self tool
+					                      refactoringModelForScopeSpec:
+					                      self request refactoringScopeSpec
+					                      anchoredAtBehavior: behavior.
+				  oldMethodReference := self tool
+					                        methodReferenceForBehavior: behavior
+					                        selector: oldSelectorSymbol.
+				  refactoring := self tool
+					                 addParameterRefactoringForSelector:
+					                 oldSelectorSymbol
+					                 inBehavior: behavior
+					                 to: newSelectorSymbol
+					                 permutation: self request permutation
+					                 newArgs: self request newArgumentSpecs
+					                 model: refactoringModel.
+				  renameMap := self request argumentRenameMapForBehavior: behavior.
+				  renameMap ifNotEmpty: [ refactoring renameMap: renameMap ].
+				  refactoring execute.
+				  newCompiledMethod := self tool
+					                       reformattedMethodForBehavior: behavior
+					                       selector: newSelectorSymbol.
+				  changeResult := (MCPMethodUpdateChangeResult
+					                   updateAction: 'addArguments'
+					                   method: newCompiledMethod)
+					                  oldSelector: self request selector;
+					                  newSelector: self request newSelector;
+					                  yourself ]
 		  successResult: [ :warningMessages |
-			  self tool
-				  successResultText:
-					  'Added arguments to ' , oldMethodReference , ' as '
-					  , (self tool
-							   methodReferenceForBehavior: behavior
-							   selector: newSelectorSymbol) , '.'
-				  data:
-				  (self appliedUpdateResultFor: changeResult plan: plan)
-					  asDictionary
-				  warnings: warningMessages ]
+				  self tool
+					  successResultText:
+						  'Added arguments to ' , oldMethodReference , ' as '
+						  , (self tool
+								   methodReferenceForBehavior: behavior
+								   selector: newSelectorSymbol) , '.'
+					  data:
+					  (self appliedUpdateResultFor: changeResult plan: plan)
+						  asDictionary
+					  warnings: warningMessages ]
 		  failureSummary: [ :error |
-			  self tool
-				  failureMessageForArgumentUpdateAction: 'addArguments'
-				  classNamed: self request className
-				  classSide: self request classSide
-				  selector: self request selector
-				  newSelector: self request newSelector
-				  error: error ]
+				  self tool
+					  failureMessageForArgumentUpdateAction: 'addArguments'
+					  classNamed: self request className
+					  classSide: self request classSide
+					  selector: self request selector
+					  newSelector: self request newSelector
+					  error: error ]
 ]
 
 { #category : 'private - planning' }
@@ -132,48 +122,48 @@ MCPUpdateMethodCommand >> executeChangeProtocolWithPlan: plan [
 		  force: self request force
 		  requestedContext: plan requestedContext
 		  work: [
-			  behavior := self tool
-				              behaviorNamed: self request className
-				              classSide: self request classSide.
-			  oldCompiledMethod := behavior
-				                       compiledMethodAt: selectorSymbol
-				                       ifAbsent: [
-					                       MCPCommandError
-						                       signalMissingMethodInClassName:
-						                       self request className
-						                       classSide: self request classSide
-						                       selector: self request selector ].
-			  oldProtocol := self protocolNameForMethod: oldCompiledMethod.
-			  (RBMethodProtocolTransformation
-				   protocol: self request protocol
-				   inMethod: selectorSymbol
-				   inClass: (self tool
-						    classReferenceNameFor: self request className
-						    classSide: self request classSide)) execute.
-			  newCompiledMethod := behavior compiledMethodAt: selectorSymbol.
-			  changeResult := (MCPMethodUpdateChangeResult
-				                   updateAction: 'changeProtocol'
-				                   method: newCompiledMethod)
-				                  oldProtocol: oldProtocol;
-				                  newProtocol: self request protocol;
-				                  yourself ]
+				  behavior := self tool
+					              behaviorNamed: self request className
+					              classSide: self request classSide.
+				  oldCompiledMethod := behavior
+					                       compiledMethodAt: selectorSymbol
+					                       ifAbsent: [
+							                       MCPCommandError
+								                       signalMissingMethodInClassName:
+								                       self request className
+								                       classSide: self request classSide
+								                       selector: self request selector ].
+				  oldProtocol := self protocolNameForMethod: oldCompiledMethod.
+				  (RBMethodProtocolTransformation
+					   protocol: self request protocol
+					   inMethod: selectorSymbol
+					   inClass: (self tool
+							    classReferenceNameFor: self request className
+							    classSide: self request classSide)) execute.
+				  newCompiledMethod := behavior compiledMethodAt: selectorSymbol.
+				  changeResult := (MCPMethodUpdateChangeResult
+					                   updateAction: 'changeProtocol'
+					                   method: newCompiledMethod)
+					                  oldProtocol: oldProtocol;
+					                  newProtocol: self request protocol;
+					                  yourself ]
 		  successResult: [ :warningMessages |
-			  self tool
-				  successResultText: 'Changed protocol for ' , (self tool
-						   methodReferenceForBehavior: behavior
-						   selector: selectorSymbol) , '.'
-				  data:
-				  (self appliedUpdateResultFor: changeResult plan: plan)
-					  asDictionary
-				  warnings: warningMessages ]
+				  self tool
+					  successResultText: 'Changed protocol for ' , (self tool
+							   methodReferenceForBehavior: behavior
+							   selector: selectorSymbol) , '.'
+					  data:
+					  (self appliedUpdateResultFor: changeResult plan: plan)
+						  asDictionary
+					  warnings: warningMessages ]
 		  failureSummary: [ :error |
-			  self tool
-				  failureMessageForChangeProtocolClassNamed:
-				  self request className
-				  classSide: self request classSide
-				  selector: self request selector
-				  protocol: self request protocol
-				  error: error ]
+				  self tool
+					  failureMessageForChangeProtocolClassNamed:
+					  self request className
+					  classSide: self request classSide
+					  selector: self request selector
+					  protocol: self request protocol
+					  error: error ]
 ]
 
 { #category : 'executing' }
@@ -204,74 +194,74 @@ MCPUpdateMethodCommand >> executeRemoveArgumentsWithPlan: plan [
 		  force: self request force
 		  requestedContext: plan requestedContext
 		  work: [
-			  behavior := self tool
-				              behaviorNamed: self request className
-				              classSide: self request classSide.
-			  behavior compiledMethodAt: oldSelectorSymbol ifAbsent: [
-				  MCPCommandError
-					  signalMissingMethodInClassName: self request className
-					  classSide: self request classSide
-					  selector: self request selector ].
-			  oldArgumentNames := (behavior parseTreeForSelector:
-				                       oldSelectorSymbol) argumentNames.
-			  removedArgumentNames := self request
-				                          removedArgumentNamesInRemovalOrderFrom:
-				                          oldArgumentNames.
-			  refactoringModel := self tool
-				                      refactoringModelForScopeSpec:
-				                      self request refactoringScopeSpec
-				                      anchoredAtBehavior: behavior.
-			  oldMethodReference := self tool
-				                        methodReferenceForBehavior: behavior
-				                        selector: oldSelectorSymbol.
-			  currentSelector := oldSelectorSymbol.
-			  removedArgumentNames doWithIndex: [ :argumentName :index |
-				  | nextSelector |
-				  nextSelector := index = removedArgumentNames size
-					                  ifTrue: [ newSelectorSymbol ]
-					                  ifFalse: [
-						                  self
-							                  selectorAfterRemovingArgumentNamed:
-							                  argumentName
-							                  fromBehavior: behavior
-							                  selector: currentSelector ].
-				  refactoring := self tool
-					                 removeParameterRefactoringForArgumentNamed:
-					                 argumentName
-					                 inBehavior: behavior
-					                 selector: currentSelector
-					                 model: refactoringModel.
-				  refactoring newSelector: nextSelector.
-				  refactoring execute.
-				  currentSelector := nextSelector ].
-			  newCompiledMethod := self tool
-				                       reformattedMethodForBehavior: behavior
-				                       selector: newSelectorSymbol.
-			  changeResult := (MCPMethodUpdateChangeResult
-				                   updateAction: 'removeArguments'
-				                   method: newCompiledMethod)
-				                  oldSelector: self request selector;
-				                  newSelector: self request newSelector;
-				                  yourself ]
+				  behavior := self tool
+					              behaviorNamed: self request className
+					              classSide: self request classSide.
+				  behavior compiledMethodAt: oldSelectorSymbol ifAbsent: [
+						  MCPCommandError
+							  signalMissingMethodInClassName: self request className
+							  classSide: self request classSide
+							  selector: self request selector ].
+				  oldArgumentNames := (behavior parseTreeForSelector:
+					                       oldSelectorSymbol) argumentNames.
+				  removedArgumentNames := self request
+					                          removedArgumentNamesInRemovalOrderFrom:
+					                          oldArgumentNames.
+				  refactoringModel := self tool
+					                      refactoringModelForScopeSpec:
+					                      self request refactoringScopeSpec
+					                      anchoredAtBehavior: behavior.
+				  oldMethodReference := self tool
+					                        methodReferenceForBehavior: behavior
+					                        selector: oldSelectorSymbol.
+				  currentSelector := oldSelectorSymbol.
+				  removedArgumentNames doWithIndex: [ :argumentName :index |
+						  | nextSelector |
+						  nextSelector := index = removedArgumentNames size
+							                  ifTrue: [ newSelectorSymbol ]
+							                  ifFalse: [
+									                  self
+										                  selectorAfterRemovingArgumentNamed:
+										                  argumentName
+										                  fromBehavior: behavior
+										                  selector: currentSelector ].
+						  refactoring := self tool
+							                 removeParameterRefactoringForArgumentNamed:
+							                 argumentName
+							                 inBehavior: behavior
+							                 selector: currentSelector
+							                 model: refactoringModel.
+						  refactoring newSelector: nextSelector.
+						  refactoring execute.
+						  currentSelector := nextSelector ].
+				  newCompiledMethod := self tool
+					                       reformattedMethodForBehavior: behavior
+					                       selector: newSelectorSymbol.
+				  changeResult := (MCPMethodUpdateChangeResult
+					                   updateAction: 'removeArguments'
+					                   method: newCompiledMethod)
+					                  oldSelector: self request selector;
+					                  newSelector: self request newSelector;
+					                  yourself ]
 		  successResult: [ :warningMessages |
-			  self tool
-				  successResultText:
-					  'Removed arguments from ' , oldMethodReference , ' as '
-					  , (self tool
-							   methodReferenceForBehavior: behavior
-							   selector: newSelectorSymbol) , '.'
-				  data:
-				  (self appliedUpdateResultFor: changeResult plan: plan)
-					  asDictionary
-				  warnings: warningMessages ]
+				  self tool
+					  successResultText:
+						  'Removed arguments from ' , oldMethodReference , ' as '
+						  , (self tool
+								   methodReferenceForBehavior: behavior
+								   selector: newSelectorSymbol) , '.'
+					  data:
+					  (self appliedUpdateResultFor: changeResult plan: plan)
+						  asDictionary
+					  warnings: warningMessages ]
 		  failureSummary: [ :error |
-			  self tool
-				  failureMessageForArgumentUpdateAction: 'removeArguments'
-				  classNamed: self request className
-				  classSide: self request classSide
-				  selector: self request selector
-				  newSelector: self request newSelector
-				  error: error ]
+				  self tool
+					  failureMessageForArgumentUpdateAction: 'removeArguments'
+					  classNamed: self request className
+					  classSide: self request classSide
+					  selector: self request selector
+					  newSelector: self request newSelector
+					  error: error ]
 ]
 
 { #category : 'executing - method' }
@@ -285,64 +275,56 @@ MCPUpdateMethodCommand >> executeRenameWithPlan: plan [
 		  force: self request force
 		  requestedContext: plan requestedContext
 		  work: [
-			  behavior := self tool
-				              behaviorNamed: self request className
-				              classSide: self request classSide.
-			  behavior compiledMethodAt: oldSelectorSymbol ifAbsent: [
-				  MCPCommandError
-					  signalMissingMethodInClassName: self request className
-					  classSide: self request classSide
-					  selector: self request selector ].
-			  refactoringModel := self tool
-				                      refactoringModelForScopeSpec:
-				                      self request refactoringScopeSpec
-				                      anchoredAtBehavior: behavior.
-			  oldMethodReference := self tool
-				                        methodReferenceForBehavior: behavior
-				                        selector: oldSelectorSymbol.
-			  refactoring := self tool
-				                 renameRefactoringForSelector: oldSelectorSymbol
-				                 inBehavior: behavior
-				                 to: newSelectorSymbol
-				                 permutation: self request permutation
-				                 model: refactoringModel.
-			  renameMap := self request argumentRenameMapForBehavior: behavior.
-			  renameMap ifNotEmpty: [ refactoring renameMap: renameMap ].
-			  refactoring execute.
-			  newCompiledMethod := self tool
-				                       reformattedMethodForBehavior: behavior
-				                       selector: newSelectorSymbol.
-			  changeResult := (MCPMethodUpdateChangeResult
-				                   updateAction: 'rename'
-				                   method: newCompiledMethod)
-				                  oldSelector: self request selector;
-				                  newSelector: self request newSelector;
-				                  yourself ]
+				  behavior := self tool
+					              behaviorNamed: self request className
+					              classSide: self request classSide.
+				  behavior compiledMethodAt: oldSelectorSymbol ifAbsent: [
+						  MCPCommandError
+							  signalMissingMethodInClassName: self request className
+							  classSide: self request classSide
+							  selector: self request selector ].
+				  refactoringModel := self tool
+					                      refactoringModelForScopeSpec:
+					                      self request refactoringScopeSpec
+					                      anchoredAtBehavior: behavior.
+				  oldMethodReference := self tool
+					                        methodReferenceForBehavior: behavior
+					                        selector: oldSelectorSymbol.
+				  refactoring := self tool
+					                 renameRefactoringForSelector: oldSelectorSymbol
+					                 inBehavior: behavior
+					                 to: newSelectorSymbol
+					                 permutation: self request permutation
+					                 model: refactoringModel.
+				  renameMap := self request argumentRenameMapForBehavior: behavior.
+				  renameMap ifNotEmpty: [ refactoring renameMap: renameMap ].
+				  refactoring execute.
+				  newCompiledMethod := self tool
+					                       reformattedMethodForBehavior: behavior
+					                       selector: newSelectorSymbol.
+				  changeResult := (MCPMethodUpdateChangeResult
+					                   updateAction: 'rename'
+					                   method: newCompiledMethod)
+					                  oldSelector: self request selector;
+					                  newSelector: self request newSelector;
+					                  yourself ]
 		  successResult: [ :warningMessages |
-			  self tool
-				  successResultText:
-					  'Renamed ' , oldMethodReference , ' to ' , (self tool
-						   methodReferenceForBehavior: behavior
-						   selector: newSelectorSymbol) , '.'
-				  data:
-				  (self appliedUpdateResultFor: changeResult plan: plan)
-					  asDictionary
-				  warnings: warningMessages ]
+				  self tool
+					  successResultText:
+						  'Renamed ' , oldMethodReference , ' to ' , (self tool
+							   methodReferenceForBehavior: behavior
+							   selector: newSelectorSymbol) , '.'
+					  data:
+					  (self appliedUpdateResultFor: changeResult plan: plan)
+						  asDictionary
+					  warnings: warningMessages ]
 		  failureSummary: [ :error |
-			  self tool
-				  failureMessageForRenameClassNamed: self request className
-				  classSide: self request classSide
-				  selector: self request selector
-				  newSelector: self request newSelector
-				  error: error ]
-]
-
-{ #category : 'initialization' }
-MCPUpdateMethodCommand >> initializeTool: aTool request: aRequest [
-
-	tool := aTool.
-	request := aRequest.
-	^ self
+				  self tool
+					  failureMessageForRenameClassNamed: self request className
+					  classSide: self request classSide
+					  selector: self request selector
+					  newSelector: self request newSelector
+					  error: error ]
 ]
 
 { #category : 'private - methods' }
@@ -353,12 +335,6 @@ MCPUpdateMethodCommand >> protocolNameForMethod: aCompiledMethod [
 		  ifNotNil: [ :aProtocol | aProtocol name asString ]
 ]
 
-{ #category : 'accessing' }
-MCPUpdateMethodCommand >> request [
-
-	^ request
-]
-
 { #category : 'private - planning' }
 MCPUpdateMethodCommand >> requestedContextForAction: action [
 
@@ -366,10 +342,10 @@ MCPUpdateMethodCommand >> requestedContextForAction: action [
 	context := self request requestedContext copy.
 	(#( 'rename' 'addArguments' 'removeArguments' ) includes: action)
 		ifTrue: [
-			self tool
-				addRefactoringScopeContextFromSpec:
-				self request refactoringScopeSpec
-				toRequestedContext: context ].
+				self tool
+					addRefactoringScopeContextFromSpec:
+					self request refactoringScopeSpec
+					toRequestedContext: context ].
 	^ context
 ]
 
@@ -411,12 +387,6 @@ MCPUpdateMethodCommand >> signalNoUpdateRequested [
 		  message:
 		  'Method update requires one method update field such as newSelector or protocol.'
 		  details: self request requestedContext
-]
-
-{ #category : 'accessing' }
-MCPUpdateMethodCommand >> tool [
-
-	^ tool
 ]
 
 { #category : 'accessing' }

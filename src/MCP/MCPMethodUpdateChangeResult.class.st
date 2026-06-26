@@ -3,7 +3,7 @@ DTO for the narrow method update performed by a method update request, such as a
 "
 Class {
 	#name : 'MCPMethodUpdateChangeResult',
-	#superclass : 'Object',
+	#superclass : 'MCPResult',
 	#instVars : [
 		'methodInfo',
 		'oldSelector',

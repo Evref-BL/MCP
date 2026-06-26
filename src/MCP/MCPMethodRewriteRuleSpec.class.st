@@ -129,15 +129,15 @@ MCPMethodRewriteRuleSpec >> signalInvalidPatternError: anError [
 MCPMethodRewriteRuleSpec >> validateAtIndex: index [
 
 	lhs ifNil: [
-		MCPCommandError
-			signalErrorCode: #RewriteRuleMissingLhs
-			message: 'Rewrite rule ' , index asString , ' is missing lhs.'
-			details: self diagnosticDetails ].
+			MCPCommandError
+				signalErrorCode: #RewriteRuleMissingLhs
+				message: 'Rewrite rule ' , index asString , ' is missing lhs.'
+				details: self diagnosticDetails ].
 	rhs ifNil: [
-		MCPCommandError
-			signalErrorCode: #RewriteRuleMissingRhs
-			message: 'Rewrite rule ' , index asString , ' is missing rhs.'
-			details: self diagnosticDetails ]
+			MCPCommandError
+				signalErrorCode: #RewriteRuleMissingRhs
+				message: 'Rewrite rule ' , index asString , ' is missing rhs.'
+				details: self diagnosticDetails ]
 ]
 
 { #category : 'validating' }

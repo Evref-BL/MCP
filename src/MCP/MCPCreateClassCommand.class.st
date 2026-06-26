@@ -5,9 +5,8 @@ It owns the class-builder interaction for superclass, package, tag, slots, trait
 "
 Class {
 	#name : 'MCPCreateClassCommand',
-	#superclass : 'Object',
+	#superclass : 'MCPClassCommand',
 	#instVars : [
-		'className',
 		'superclassName',
 		'packageName',
 		'tag',
@@ -71,21 +70,10 @@ MCPCreateClassCommand >> buildClass [
 		builder sharedVariables: self sharedVariables ].
 	self sharedPools ifNotEmpty: [
 		builder sharedPools: self resolvedSharedPools ].
-	self layout ifNotNil: [ builder layout: self resolvedLayoutClass ].
+	self layout ifNotNil: [ :layoutName |
+		builder layout: (self resolvedLayoutClassNamed: layoutName) ].
 	createdClass := builder install.
 	^ createdClass
-]
-
-{ #category : 'accessing' }
-MCPCreateClassCommand >> className [
-
-	^ className
-]
-
-{ #category : 'accessing' }
-MCPCreateClassCommand >> className: aString [
-
-	className := aString
 ]
 
 { #category : 'accessing' }
@@ -172,20 +160,20 @@ MCPCreateClassCommand >> resolvedClassTraitNamed: aClassTraitName [
 	behavior := Smalltalk globals
 		            at: classTraitName asSymbol
 		            ifAbsent: [
-			            MCPCommandError
-				            signalErrorCode: #ClassTraitNotFound
-				            message:
-				            'Class trait ' , originalName , ' does not exist.'
-				            details: {
-						            (#className -> self className).
-						            (#classTraitName -> originalName) } asDictionary ].
+				            MCPCommandError
+					            signalErrorCode: #ClassTraitNotFound
+					            message:
+					            'Class trait ' , originalName , ' does not exist.'
+					            details: {
+							            (#className -> self className).
+							            (#classTraitName -> originalName) } asDictionary ].
 	behavior isTrait ifFalse: [
-		MCPCommandError
-			signalErrorCode: #InvalidClassTrait
-			message: originalName , ' is not a class trait.'
-			details: {
-					(#className -> self className).
-					(#classTraitName -> originalName) } asDictionary ].
+			MCPCommandError
+				signalErrorCode: #InvalidClassTrait
+				message: originalName , ' is not a class trait.'
+				details: {
+						(#className -> self className).
+						(#classTraitName -> originalName) } asDictionary ].
 	^ behavior classTrait
 ]
 
@@ -195,54 +183,6 @@ MCPCreateClassCommand >> resolvedClassTraits [
 	^ self classTraits
 		  collect: [ :each | self resolvedClassTraitNamed: each ]
 		  as: Array
-]
-
-{ #category : 'private' }
-MCPCreateClassCommand >> resolvedLayoutClass [
-
-	| behavior |
-	self layout ifNil: [ ^ nil ].
-	behavior := Smalltalk globals at: self layout asSymbol ifAbsent: [
-			            MCPCommandError
-				            signalErrorCode: #LayoutClassNotFound
-				            message:
-				            'Layout class ' , self layout , ' does not exist.'
-				            details: {
-						            (#className -> self className).
-						            (#layout -> self layout) } asDictionary ].
-	(AbstractLayout withAllSubclasses includes: behavior) ifFalse: [
-			MCPCommandError
-				signalErrorCode: #InvalidLayoutClass
-				message: self layout , ' is not a layout class.'
-				details: {
-						(#className -> self className).
-						(#layout -> self layout) } asDictionary ].
-	^ behavior
-]
-
-{ #category : 'private' }
-MCPCreateClassCommand >> resolvedSharedPoolNamed: aSharedPoolName [
-
-	| behavior sharedPoolName |
-	sharedPoolName := aSharedPoolName.
-	behavior := Smalltalk globals
-		            at: sharedPoolName asSymbol
-		            ifAbsent: [
-				            MCPCommandError
-					            signalErrorCode: #SharedPoolNotFound
-					            message:
-					            'Shared pool ' , sharedPoolName , ' does not exist.'
-					            details: {
-							            (#className -> self className).
-							            (#sharedPoolName -> sharedPoolName) } asDictionary ].
-	(SharedPool withAllSubclasses includes: behavior) ifFalse: [
-			MCPCommandError
-				signalErrorCode: #InvalidSharedPool
-				message: sharedPoolName , ' is not a shared pool.'
-				details: {
-						(#className -> self className).
-						(#sharedPoolName -> sharedPoolName) } asDictionary ].
-	^ behavior
 ]
 
 { #category : 'private' }
@@ -259,23 +199,23 @@ MCPCreateClassCommand >> resolvedTraitNamed: aTraitName [
 	| behavior traitName |
 	traitName := aTraitName.
 	(traitName endsWith: ' classTrait') ifTrue: [
-		traitName := traitName
-			             copyFrom: 1
-			             to: traitName size - ' classTrait' size ].
+			traitName := traitName
+				             copyFrom: 1
+				             to: traitName size - ' classTrait' size ].
 	behavior := Smalltalk globals at: traitName asSymbol ifAbsent: [
-		            MCPCommandError
-			            signalErrorCode: #TraitNotFound
-			            message: 'Trait ' , traitName , ' does not exist.'
-			            details: {
-					            (#className -> self className).
-					            (#traitName -> traitName) } asDictionary ].
+			            MCPCommandError
+				            signalErrorCode: #TraitNotFound
+				            message: 'Trait ' , traitName , ' does not exist.'
+				            details: {
+						            (#className -> self className).
+						            (#traitName -> traitName) } asDictionary ].
 	behavior isTrait ifFalse: [
-		MCPCommandError
-			signalErrorCode: #InvalidTrait
-			message: traitName , ' is not a trait.'
-			details: {
-					(#className -> self className).
-					(#traitName -> traitName) } asDictionary ].
+			MCPCommandError
+				signalErrorCode: #InvalidTrait
+				message: traitName , ' is not a trait.'
+				details: {
+						(#className -> self className).
+						(#traitName -> traitName) } asDictionary ].
 	^ behavior
 ]
 
@@ -331,9 +271,9 @@ MCPCreateClassCommand >> slots: someSlots [
 MCPCreateClassCommand >> superclass [
 
 	^ Smalltalk globals at: self superclassName asSymbol ifAbsent: [
-		  MCPCommandError
-			  signalMissingSuperclassNamed: self superclassName
-			  forClassNamed: self className ]
+			  MCPCommandError
+				  signalMissingSuperclassNamed: self superclassName
+				  forClassNamed: self className ]
 ]
 
 { #category : 'accessing' }

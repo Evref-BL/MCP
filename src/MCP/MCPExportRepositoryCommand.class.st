@@ -13,10 +13,8 @@ Class {
 MCPExportRepositoryCommand >> execute [
 
 	| changedPackageNames diff modifiedPaths repository result restoredOrderOnlyPaths tonelSnapshot |
-	^ self tool
-		  executeMutationAction: 'export'
-		  force: false
-		  requestedContext: self request requestedContext
+	^ self
+		  executeRepositoryAction: 'export'
 		  work: [
 				  repository := self request repository.
 				  diff := repository workingCopyDiff.
@@ -41,7 +39,7 @@ MCPExportRepositoryCommand >> execute [
 				  self tool
 					  successResultText:
 					  'Exported repository ' , result repositoryInfo name , '.'
-					  data: (self tool dataForRepositoryExportResult: result)
+					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
 				  'Failed to export repository: '

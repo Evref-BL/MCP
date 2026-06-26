@@ -5,7 +5,7 @@ It carries the updated class info plus the previous package and tag.
 "
 Class {
 	#name : 'MCPMoveClassResult',
-	#superclass : 'Object',
+	#superclass : 'MCPClassResult',
 	#instVars : [
 		'classInfo',
 		'oldPackageName',
@@ -30,7 +30,7 @@ MCPMoveClassResult class >> classInfo: aClassInfo oldPackageName: anOldPackageNa
 MCPMoveClassResult >> asDictionary [
 
 	| data |
-	data := self classInfo asDictionary copy.
+	data := self newClassInfoDictionary.
 	data at: #oldPackageName put: self oldPackageName.
 	data at: #oldTag put: self oldTag.
 	^ data

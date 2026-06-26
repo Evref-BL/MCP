@@ -30,13 +30,13 @@ MCPRemoveClassesCommandTest >> createClassNamed: aClassName superclassName: aSup
 MCPRemoveClassesCommandTest >> createClassNamed: aClassName superclassName: aSuperclassName packageName: aPackageName [
 
 	^ self withoutEpiceaDuring: [
-		  | builder superclass |
-		  superclass := self classNamed: aSuperclassName.
-		  builder := superclass << aClassName asSymbol.
-		  builder package: aPackageName.
-		  builder tag: 'Internal'.
-		  builder slots: #(  ).
-		  builder install ]
+			  | builder superclass |
+			  superclass := self classNamed: aSuperclassName.
+			  builder := superclass << aClassName asSymbol.
+			  builder package: aPackageName.
+			  builder tag: 'Internal'.
+			  builder slots: #(  ).
+			  builder install ]
 ]
 
 { #category : 'private' }
@@ -79,9 +79,9 @@ MCPRemoveClassesCommandTest >> ensureFixtureClasses [
 MCPRemoveClassesCommandTest >> ensureMethodSource: aMethodSource onClassNamed: aClassName [
 
 	self withoutEpiceaDuring: [
-		(self classNamed: aClassName)
-			compile: aMethodSource
-			classified: 'tests' ]
+			(self classNamed: aClassName)
+				compile: aMethodSource
+				classified: 'tests' ]
 ]
 
 { #category : 'private' }
@@ -188,9 +188,9 @@ MCPRemoveClassesCommandTest >> testMissingClassSignalsCommandError [
 
 	| error |
 	error := self captureCommandError: [
-		         (MCPRemoveClassesCommand classNames: {
-				          self simpleClassName.
-				          self missingClassName }) execute ].
+			         (MCPRemoveClassesCommand classNames: {
+					          self simpleClassName.
+					          self missingClassName }) execute ].
 	self assert: error errorCode equals: #ClassNotFound.
 	self
 		assert: (error structuredDetails at: #className)

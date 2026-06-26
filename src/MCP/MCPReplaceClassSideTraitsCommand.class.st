@@ -3,9 +3,8 @@ Replaces the class-side traits of an existing class and returns a DTO describing
 "
 Class {
 	#name : 'MCPReplaceClassSideTraitsCommand',
-	#superclass : 'Object',
+	#superclass : 'MCPClassCommand',
 	#instVars : [
-		'className',
 		'classTraitNames'
 	],
 	#category : 'MCP-Commands',
@@ -20,18 +19,6 @@ MCPReplaceClassSideTraitsCommand class >> className: aClassName classTraitNames:
 		  className: aClassName;
 		  classTraitNames: someNames;
 		  yourself
-]
-
-{ #category : 'accessing' }
-MCPReplaceClassSideTraitsCommand >> className [
-
-	^ className
-]
-
-{ #category : 'accessing' }
-MCPReplaceClassSideTraitsCommand >> className: aString [
-
-	className := aString
 ]
 
 { #category : 'accessing' }
@@ -89,23 +76,23 @@ MCPReplaceClassSideTraitsCommand >> resolvedClassTraitNamed: aClassTraitName [
 	behavior := Smalltalk globals
 		            at: classTraitName asSymbol
 		            ifAbsent: [
-			            MCPCommandError
-				            signalErrorCode: #ClassTraitNotFound
-				            message:
-				            'Class trait ' , originalName , ' does not exist.'
-				            details: {
-						            (#className -> self className).
-						            (#classTraitName -> originalName).
-						            (#classTraits -> self classTraitNames) }
-						            asDictionary ].
+				            MCPCommandError
+					            signalErrorCode: #ClassTraitNotFound
+					            message:
+					            'Class trait ' , originalName , ' does not exist.'
+					            details: {
+							            (#className -> self className).
+							            (#classTraitName -> originalName).
+							            (#classTraits -> self classTraitNames) }
+							            asDictionary ].
 	behavior isTrait ifFalse: [
-		MCPCommandError
-			signalErrorCode: #InvalidClassTrait
-			message: originalName , ' is not a class trait.'
-			details: {
-					(#className -> self className).
-					(#classTraitName -> originalName).
-					(#classTraits -> self classTraitNames) } asDictionary ].
+			MCPCommandError
+				signalErrorCode: #InvalidClassTrait
+				message: originalName , ' is not a class trait.'
+				details: {
+						(#className -> self className).
+						(#classTraitName -> originalName).
+						(#classTraits -> self classTraitNames) } asDictionary ].
 	^ behavior classTrait
 ]
 

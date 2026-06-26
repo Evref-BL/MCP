@@ -134,6 +134,12 @@ MCPToolIconSpec class >> iconNameForObject: objectString [
 	^ self objectIconMap at: objectString asString ifAbsent: [ #info ]
 ]
 
+{ #category : 'testing' }
+MCPToolIconSpec class >> isAbstract [
+
+	^ self == MCPToolIconSpec
+]
+
 { #category : 'instance creation' }
 MCPToolIconSpec class >> named: anIconSymbol [
 

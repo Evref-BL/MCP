@@ -3,11 +3,8 @@ Result DTO returned by repository branch tools. It reports repository metadata b
 "
 Class {
 	#name : 'MCPRepositoryBranchResult',
-	#superclass : 'Object',
+	#superclass : 'MCPRepositoryTransitionResult',
 	#instVars : [
-		'repositoryInfoBefore',
-		'repositoryInfoAfter',
-		'packageInfos',
 		'previousBranchName',
 		'branchName',
 		'previousHeadDescription',
@@ -54,33 +51,11 @@ MCPRepositoryBranchResult >> headDescription [
 { #category : 'initialization' }
 MCPRepositoryBranchResult >> initializeRepositoryBefore: beforeInfo after: aRepository [
 
-	| afterInfo |
-	repositoryInfoBefore := beforeInfo.
-	afterInfo := MCPRepositoryInfo fromRepository: aRepository.
-	repositoryInfoAfter := afterInfo.
-	packageInfos := self packageInfosFromRepository: aRepository.
+	super initializeRepositoryBefore: beforeInfo after: aRepository.
 	previousBranchName := beforeInfo branchName.
-	branchName := afterInfo branchName.
+	branchName := repositoryInfoAfter branchName.
 	previousHeadDescription := beforeInfo headDescription.
-	headDescription := afterInfo headDescription.
-	^ self
-]
-
-{ #category : 'accessing' }
-MCPRepositoryBranchResult >> packageInfos [
-
-	^ packageInfos ifNil: [ #(  ) ]
-]
-
-{ #category : 'private' }
-MCPRepositoryBranchResult >> packageInfosFromRepository: aRepository [
-
-	| packages |
-	packages := aRepository workingCopy packages asArray
-		            sort: [ :left :right |
-		            left name asString <= right name asString ].
-	^ packages collect: [ :each |
-		  MCPRepositoryPackageInfo fromPackage: each ]
+	headDescription := repositoryInfoAfter headDescription
 ]
 
 { #category : 'accessing' }
@@ -93,22 +68,4 @@ MCPRepositoryBranchResult >> previousBranchName [
 MCPRepositoryBranchResult >> previousHeadDescription [
 
 	^ previousHeadDescription ifNil: [ '' ]
-]
-
-{ #category : 'accessing' }
-MCPRepositoryBranchResult >> repositoryInfo [
-
-	^ self repositoryInfoAfter
-]
-
-{ #category : 'accessing' }
-MCPRepositoryBranchResult >> repositoryInfoAfter [
-
-	^ repositoryInfoAfter
-]
-
-{ #category : 'accessing' }
-MCPRepositoryBranchResult >> repositoryInfoBefore [
-
-	^ repositoryInfoBefore
 ]

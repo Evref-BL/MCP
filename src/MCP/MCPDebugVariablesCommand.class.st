@@ -277,15 +277,15 @@ MCPDebugVariablesCommand >> rootValueForVariableReference: aReference context: a
 	aReference variableName ifNil: [
 		^ self signalMissingVariableForReference: aReference ].
 	aReference scopeName = 'receiver' ifTrue: [
-		aReference variableName = 'self' ifTrue: [ ^ aContext receiver ].
-		^ self signalMissingVariableForReference: aReference ].
+			aReference variableName = 'self' ifTrue: [ ^ aContext receiver ].
+			^ self signalMissingVariableForReference: aReference ].
 	aReference scopeName = 'temporaries' ifTrue: [
-		names := aContext tempNames collect: [ :each | each asString ].
-		index := names
-			         indexOf: aReference variableName
-			         ifAbsent: [
-			         ^ self signalMissingVariableForReference: aReference ].
-		^ aContext tempAt: index ].
+			names := aContext tempNames collect: [ :each | each asString ].
+			index := names
+				         indexOf: aReference variableName
+				         ifAbsent: [
+				         ^ self signalMissingVariableForReference: aReference ].
+			^ aContext tempAt: index ].
 	^ self
 		  signalMissingScopeNamed: aReference scopeName
 		  forReference: aReference

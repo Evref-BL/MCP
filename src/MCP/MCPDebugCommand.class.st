@@ -5,16 +5,20 @@ It holds the tool, parsed request, and shared session registry, and provides com
 "
 Class {
 	#name : 'MCPDebugCommand',
-	#superclass : 'Object',
+	#superclass : 'MCPToolRequestCommand',
 	#instVars : [
-		'tool',
-		'request',
 		'registry'
 	],
 	#category : 'MCP-Commands',
 	#package : 'MCP',
 	#tag : 'Commands'
 }
+
+{ #category : 'testing' }
+MCPDebugCommand class >> isAbstract [
+
+	^ self == MCPDebugCommand
+]
 
 { #category : 'instance creation' }
 MCPDebugCommand class >> tool: aTool request: aRequest [
@@ -25,19 +29,19 @@ MCPDebugCommand class >> tool: aTool request: aRequest [
 		  registry: MCPDebugSessionRegistry default
 ]
 
-{ #category : 'executing' }
-MCPDebugCommand >> execute [
+{ #category : 'private - frames' }
+MCPDebugCommand >> frameRefForRecord: aRecord frameIndex: frameIndex [
 
-	self subclassResponsibility
+	frameIndex ifNil: [ ^ nil ].
+	^ aRecord sessionId , '/' , aRecord stateId , '/frame-'
+	  , frameIndex asString
 ]
 
 { #category : 'initialization' }
 MCPDebugCommand >> initializeTool: aTool request: aRequest registry: aRegistry [
 
-	tool := aTool.
-	request := aRequest.
-	registry := aRegistry.
-	^ self
+	super initializeTool: aTool request: aRequest.
+	registry := aRegistry
 ]
 
 { #category : 'private' }
@@ -70,16 +74,22 @@ MCPDebugCommand >> registry: aRegistry [
 	registry := aRegistry
 ]
 
-{ #category : 'accessing' }
-MCPDebugCommand >> request [
-
-	^ request
-]
-
 { #category : 'private' }
 MCPDebugCommand >> requestedStateId [
 
 	^ request requestedStateId
+]
+
+{ #category : 'private - frames' }
+MCPDebugCommand >> selectedContextForRecord: aRecord frameIndex: frameIndex [
+
+	| contexts stateInfo |
+	stateInfo := MCPDebugStateInfo fromRecord: aRecord request: request.
+	contexts := stateInfo rawContexts.
+	^ contexts
+		  at: frameIndex + 1
+		  ifAbsent: [
+		  self signalMissingFrameIndex: frameIndex record: aRecord ]
 ]
 
 { #category : 'private - frames' }
@@ -151,6 +161,23 @@ MCPDebugCommand >> signalInvalidFrameReference: aFrameRef details: detailAssocia
 ]
 
 { #category : 'private - errors' }
+MCPDebugCommand >> signalMissingFrameIndex: frameIndex record: aRecord [
+
+	^ MCPCommandError
+		  signalErrorCode: #DebugFrameNotFound
+		  message:
+			  'Debug frame ' , frameIndex asString
+			  , ' was not found for session ' , aRecord sessionId , '.'
+		  details: {
+				  (#sessionId -> aRecord sessionId).
+				  (#stateId -> aRecord stateId).
+				  (#frameIndex -> frameIndex).
+				  (#frameRef
+				   -> (self frameRefForRecord: aRecord frameIndex: frameIndex)) }
+				  asDictionary
+]
+
+{ #category : 'private - errors' }
 MCPDebugCommand >> signalMissingSession [
 
 	^ MCPCommandError
@@ -187,12 +214,6 @@ MCPDebugCommand >> signalUnsupportedOperation: operationName [
 		  message:
 		  'Unsupported debug operation: ' , operationName asString , '.'
 		  details: { (#operation -> operationName) } asDictionary
-]
-
-{ #category : 'accessing' }
-MCPDebugCommand >> tool [
-
-	^ tool
 ]
 
 { #category : 'private' }

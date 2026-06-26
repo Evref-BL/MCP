@@ -11,6 +11,12 @@ Class {
 	#tag : 'Server'
 }
 
+{ #category : 'accessing' }
+MCPMessageSendHandler class >> defaultMethodName [
+
+	^ self shouldNotImplement
+]
+
 { #category : 'private' }
 MCPMessageSendHandler >> argumentsFromParameters: parameters [
 

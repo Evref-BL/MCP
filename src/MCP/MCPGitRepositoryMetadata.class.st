@@ -11,9 +11,9 @@ Class {
 		'gitDirectory',
 		'configEntries'
 	],
-	#category : 'MCP-Support',
+	#category : 'MCP-Utilities',
 	#package : 'MCP',
-	#tag : 'Support'
+	#tag : 'Utilities'
 }
 
 { #category : 'instance creation' }

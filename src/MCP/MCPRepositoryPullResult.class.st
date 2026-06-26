@@ -3,11 +3,8 @@ Result DTO returned by repository_pull. It reports repository metadata before an
 "
 Class {
 	#name : 'MCPRepositoryPullResult',
-	#superclass : 'Object',
+	#superclass : 'MCPRepositoryTransitionResult',
 	#instVars : [
-		'repositoryInfoBefore',
-		'repositoryInfoAfter',
-		'packageInfos',
 		'branchName',
 		'headDescription',
 		'modifiedPackageNames'
@@ -51,52 +48,14 @@ MCPRepositoryPullResult >> headDescription [
 { #category : 'initialization' }
 MCPRepositoryPullResult >> initializeRepositoryBefore: beforeInfo after: aRepository [
 
-	repositoryInfoBefore := beforeInfo.
-	repositoryInfoAfter := MCPRepositoryInfo fromRepository: aRepository.
-	packageInfos := self packageInfosFromRepository: aRepository.
+	super initializeRepositoryBefore: beforeInfo after: aRepository.
 	branchName := repositoryInfoAfter branchName.
 	headDescription := repositoryInfoAfter headDescription.
-	modifiedPackageNames := repositoryInfoAfter modifiedPackageNames.
-	^ self
+	modifiedPackageNames := repositoryInfoAfter modifiedPackageNames
 ]
 
 { #category : 'accessing' }
 MCPRepositoryPullResult >> modifiedPackageNames [
 
 	^ modifiedPackageNames ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPRepositoryPullResult >> packageInfos [
-
-	^ packageInfos ifNil: [ #(  ) ]
-]
-
-{ #category : 'private' }
-MCPRepositoryPullResult >> packageInfosFromRepository: aRepository [
-
-	| packages |
-	packages := aRepository workingCopy packages asArray
-		            sort: [ :left :right |
-		            left name asString <= right name asString ].
-	^ packages collect: [ :each |
-		  MCPRepositoryPackageInfo fromPackage: each ]
-]
-
-{ #category : 'accessing' }
-MCPRepositoryPullResult >> repositoryInfo [
-
-	^ self repositoryInfoAfter
-]
-
-{ #category : 'accessing' }
-MCPRepositoryPullResult >> repositoryInfoAfter [
-
-	^ repositoryInfoAfter
-]
-
-{ #category : 'accessing' }
-MCPRepositoryPullResult >> repositoryInfoBefore [
-
-	^ repositoryInfoBefore
 ]

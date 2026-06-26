@@ -5,11 +5,7 @@ It centralizes shared tool/request plumbing and diff summarization helpers used 
 "
 Class {
 	#name : 'MCPRepositoryWorkingCopyCommand',
-	#superclass : 'Object',
-	#instVars : [
-		'tool',
-		'request'
-	],
+	#superclass : 'MCPRepositoryCommand',
 	#category : 'MCP-Commands',
 	#package : 'MCP',
 	#tag : 'Commands'
@@ -19,14 +15,6 @@ Class {
 MCPRepositoryWorkingCopyCommand class >> isAbstract [
 
 	^ self = MCPRepositoryWorkingCopyCommand
-]
-
-{ #category : 'instance creation' }
-MCPRepositoryWorkingCopyCommand class >> tool: aTool request: aRequest [
-
-	^ self new
-		  initializeTool: aTool request: aRequest;
-		  yourself
 ]
 
 { #category : 'private - diff' }
@@ -49,14 +37,6 @@ MCPRepositoryWorkingCopyCommand >> changedPackageNamesFromDiff: aDiff [
 	^ self sortedStringsFrom: names
 ]
 
-{ #category : 'initialization' }
-MCPRepositoryWorkingCopyCommand >> initializeTool: aTool request: aRequest [
-
-	tool := aTool.
-	request := aRequest.
-	^ self
-]
-
 { #category : 'private - diff' }
 MCPRepositoryWorkingCopyCommand >> modifiedPathsFromDiff: aDiff [
 
@@ -72,24 +52,6 @@ MCPRepositoryWorkingCopyCommand >> modifiedPathsFromDiff: aDiff [
 MCPRepositoryWorkingCopyCommand >> packageNameFromDiffPackageNode: aNode [
 
 	^ aNode mcpDiffPackageName
-]
-
-{ #category : 'accessing' }
-MCPRepositoryWorkingCopyCommand >> request [
-
-	^ request
-]
-
-{ #category : 'private' }
-MCPRepositoryWorkingCopyCommand >> sortedStringsFrom: aCollection [
-
-	^ (aCollection collect: [ :each | each asString ]) asSet asArray sort
-]
-
-{ #category : 'accessing' }
-MCPRepositoryWorkingCopyCommand >> tool [
-
-	^ tool
 ]
 
 { #category : 'private - execution' }

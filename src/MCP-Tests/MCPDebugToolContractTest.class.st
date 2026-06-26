@@ -90,8 +90,8 @@ MCPDebugToolContractTest >> registerSyntheticSession [
 { #category : 'private' }
 MCPDebugToolContractTest >> removeDebugMethodUpdateTestMethods [
 
-	#( #mcpDebugMethodUpdateGeneratedValue #mcpDebugMethodUpdateTemporaryStub ) do: [
-			:selector |
+	#( #mcpDebugMethodUpdateGeneratedValue
+	   #mcpDebugMethodUpdateTemporaryStub ) do: [ :selector |
 			(MCPUpdateDebugMethodTestTarget includesSelector: selector)
 				ifTrue: [ MCPUpdateDebugMethodTestTarget removeSelector: selector ] ].
 	Smalltalk globals
@@ -821,10 +821,12 @@ MCPDebugToolContractTest >> testDebugEvaluateEvaluatesExpressionInSelectedFrame 
 	record := self registerSyntheticSession.
 	stateData := self stateDataForRecord: record.
 	frameRef := (stateData at: #selectedFrame) at: #frameRef.
-	result := self callToolNamed: 'debug_expression_evaluate' withArguments: {
-			          (#sessionId -> record sessionId).
-			          (#frameRef -> frameRef).
-			          (#expression -> 'self class name') } asDictionary.
+	result := self
+		          callToolNamed: 'debug_expression_evaluate'
+		          withArguments: {
+				          (#sessionId -> record sessionId).
+				          (#frameRef -> frameRef).
+				          (#expression -> 'self class name') } asDictionary.
 	data := self dataFrom: result.
 	self
 		assert: ((self structuredContentFrom: result) at: #status)
@@ -852,10 +854,12 @@ MCPDebugToolContractTest >> testDebugEvaluateReadsTemporaryInSelectedFrame [
 		          reason: 'halt'.
 	stateData := self stateDataForRecord: record.
 	frameRef := (stateData at: #selectedFrame) at: #frameRef.
-	result := self callToolNamed: 'debug_expression_evaluate' withArguments: {
-			          (#sessionId -> record sessionId).
-			          (#frameRef -> frameRef).
-			          (#expression -> 'marker + 1') } asDictionary.
+	result := self
+		          callToolNamed: 'debug_expression_evaluate'
+		          withArguments: {
+				          (#sessionId -> record sessionId).
+				          (#frameRef -> frameRef).
+				          (#expression -> 'marker + 1') } asDictionary.
 	data := self dataFrom: result.
 	self
 		assert: ((self structuredContentFrom: result) at: #status)
@@ -870,13 +874,15 @@ MCPDebugToolContractTest >> testDebugEvaluateRejectsForeignFrameRef [
 	| error foreignRecord record result |
 	record := self registerSyntheticSession.
 	foreignRecord := self registerSyntheticSession.
-	result := self callToolNamed: 'debug_expression_evaluate' withArguments: {
-			          (#sessionId -> record sessionId).
-			          (#frameRef
-			           ->
-			           (foreignRecord sessionId , '/' , foreignRecord stateId
-			            , '/frame-0')).
-			          (#expression -> '1') } asDictionary.
+	result := self
+		          callToolNamed: 'debug_expression_evaluate'
+		          withArguments: {
+				          (#sessionId -> record sessionId).
+				          (#frameRef
+				           ->
+				           (foreignRecord sessionId , '/' , foreignRecord stateId
+				            , '/frame-0')).
+				          (#expression -> '1') } asDictionary.
 	error := self errorFrom: result.
 	self
 		assert: ((self structuredContentFrom: result) at: #status)
@@ -895,10 +901,12 @@ MCPDebugToolContractTest >> testDebugEvaluateRejectsStaleFrameRef [
 
 	| record result error |
 	record := self registerSyntheticSession.
-	result := self callToolNamed: 'debug_expression_evaluate' withArguments: {
-			          (#sessionId -> record sessionId).
-			          (#frameRef -> (record sessionId , '/old-state/frame-0')).
-			          (#expression -> '1') } asDictionary.
+	result := self
+		          callToolNamed: 'debug_expression_evaluate'
+		          withArguments: {
+				          (#sessionId -> record sessionId).
+				          (#frameRef -> (record sessionId , '/old-state/frame-0')).
+				          (#expression -> '1') } asDictionary.
 	error := self errorFrom: result.
 	self
 		assert: ((self structuredContentFrom: result) at: #status)
@@ -939,10 +947,12 @@ MCPDebugToolContractTest >> testDebugEvaluateReportsSyntaxFailure [
 	record := self registerSyntheticSession.
 	stateData := self stateDataForRecord: record.
 	frameRef := (stateData at: #selectedFrame) at: #frameRef.
-	result := self callToolNamed: 'debug_expression_evaluate' withArguments: {
-			          (#sessionId -> record sessionId).
-			          (#frameRef -> frameRef).
-			          (#expression -> '1 +') } asDictionary.
+	result := self
+		          callToolNamed: 'debug_expression_evaluate'
+		          withArguments: {
+				          (#sessionId -> record sessionId).
+				          (#frameRef -> frameRef).
+				          (#expression -> '1 +') } asDictionary.
 	error := self errorFrom: result.
 	self
 		assert: ((self structuredContentFrom: result) at: #status)
@@ -1503,7 +1513,8 @@ MCPDebugToolContractTest >> testDebugStateOffersMissingMethodRepairAction [
 	| action arguments data result state |
 	result := self callToolNamed: 'debug_capture' withArguments: {
 			          (#expression
-			           -> 'MCPUpdateDebugMethodTestTarget new triggerMissingMethod').
+			           ->
+			           'MCPUpdateDebugMethodTestTarget new triggerMissingMethod').
 			          (#name -> 'Captured missing method').
 			          (#timeoutMilliseconds -> 1000) } asDictionary.
 	data := self dataFrom: result.

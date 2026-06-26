@@ -78,8 +78,8 @@ MCPRepositoryReferenceSpec >> matchesRepository: aRepository [
 		(self repositoryNameFor: aRepository) = self name ifFalse: [
 			^ false ] ].
 	self hasLocation ifTrue: [
-		(self repositoryLocationFor: aRepository) = self location ifFalse: [
-			^ false ] ].
+			(self repositoryLocationFor: aRepository) = self location ifFalse: [
+				^ false ] ].
 	^ true
 ]
 

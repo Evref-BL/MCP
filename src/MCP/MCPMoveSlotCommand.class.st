@@ -5,12 +5,9 @@ It performs pull-up or push-down refactorings for instance-side or class-side sl
 "
 Class {
 	#name : 'MCPMoveSlotCommand',
-	#superclass : 'Object',
+	#superclass : 'MCPClassSlotCommand',
 	#instVars : [
-		'className',
-		'slotName',
-		'direction',
-		'classSide'
+		'direction'
 	],
 	#category : 'MCP-Commands',
 	#package : 'MCP',
@@ -47,36 +44,6 @@ MCPMoveSlotCommand >> affectedClassNamesFor: aBehavior [
 	^ (behaviors
 		   collect: [ :each | self normalizedAffectedClassNameFor: each ]
 		   as: Array) sort: [ :left :right | left <= right ]
-]
-
-{ #category : 'accessing' }
-MCPMoveSlotCommand >> className [
-
-	^ className
-]
-
-{ #category : 'accessing' }
-MCPMoveSlotCommand >> className: aClassName [
-
-	className := aClassName
-]
-
-{ #category : 'accessing' }
-MCPMoveSlotCommand >> classSide [
-
-	^ classSide
-]
-
-{ #category : 'accessing' }
-MCPMoveSlotCommand >> classSide: aBoolean [
-
-	classSide := aBoolean
-]
-
-{ #category : 'private' }
-MCPMoveSlotCommand >> currentClass [
-
-	^ MCPImageLookup classNamed: self className
 ]
 
 { #category : 'accessing' }
@@ -124,35 +91,15 @@ MCPMoveSlotCommand >> normalizedAffectedClassNameFor: aBehavior [
 ]
 
 { #category : 'private' }
-MCPMoveSlotCommand >> refactoringBehaviorForClass: aClass [
-
-	^ self classSide
-		  ifTrue: [ aClass classSide ]
-		  ifFalse: [ aClass ]
-]
-
-{ #category : 'private' }
 MCPMoveSlotCommand >> refactoringForBehavior: aBehavior [
 
 	^ (self direction = 'pullUpSlot'
 		   ifTrue: [ RePullUpInstanceVariableRefactoring ]
 		   ifFalse: [
-			   self direction = 'pushDownSlot'
-				   ifTrue: [ RBPushDownInstanceVariableRefactoring ]
-				   ifFalse: [
-				   Error signal: 'direction must be pullUpSlot or pushDownSlot.' ] ])
+				   self direction = 'pushDownSlot'
+					   ifTrue: [ RBPushDownInstanceVariableRefactoring ]
+					   ifFalse: [
+					   Error signal: 'direction must be pullUpSlot or pushDownSlot.' ] ])
 		  variable: self slotName
 		  class: aBehavior
-]
-
-{ #category : 'accessing' }
-MCPMoveSlotCommand >> slotName [
-
-	^ slotName
-]
-
-{ #category : 'accessing' }
-MCPMoveSlotCommand >> slotName: aSlotName [
-
-	slotName := aSlotName
 ]

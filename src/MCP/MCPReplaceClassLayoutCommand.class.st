@@ -3,9 +3,8 @@ Replaces the layout of an existing class using the Shift class installer and ret
 "
 Class {
 	#name : 'MCPReplaceClassLayoutCommand',
-	#superclass : 'Object',
+	#superclass : 'MCPClassCommand',
 	#instVars : [
-		'className',
 		'layout'
 	],
 	#category : 'MCP-Commands',
@@ -20,18 +19,6 @@ MCPReplaceClassLayoutCommand class >> className: aClassName layout: aLayoutName 
 		  className: aClassName;
 		  layout: aLayoutName;
 		  yourself
-]
-
-{ #category : 'accessing' }
-MCPReplaceClassLayoutCommand >> className [
-
-	^ className
-]
-
-{ #category : 'accessing' }
-MCPReplaceClassLayoutCommand >> className: aString [
-
-	className := aString
 ]
 
 { #category : 'executing' }
@@ -68,32 +55,8 @@ MCPReplaceClassLayoutCommand >> layoutClassNameFromClass: aClass [
 { #category : 'private' }
 MCPReplaceClassLayoutCommand >> replaceLayoutOn: aClass [
 
-	^ ShiftClassInstaller
-		  update: aClass
-		  to: [ :builder | builder layout: self resolvedLayoutClass ]
-]
-
-{ #category : 'private' }
-MCPReplaceClassLayoutCommand >> resolvedLayoutClass [
-
-	| behavior |
-	self layout ifNil: [ ^ nil ].
-	behavior := Smalltalk globals at: self layout asSymbol ifAbsent: [
-			            MCPCommandError
-				            signalErrorCode: #LayoutClassNotFound
-				            message:
-				            'Layout class ' , self layout , ' does not exist.'
-				            details: {
-						            (#className -> self className).
-						            (#layout -> self layout) } asDictionary ].
-	(AbstractLayout withAllSubclasses includes: behavior) ifFalse: [
-			MCPCommandError
-				signalErrorCode: #InvalidLayoutClass
-				message: self layout , ' is not a layout class.'
-				details: {
-						(#className -> self className).
-						(#layout -> self layout) } asDictionary ].
-	^ behavior
+	^ ShiftClassInstaller update: aClass to: [ :builder |
+		  builder layout: (self resolvedLayoutClassNamed: self layout) ]
 ]
 
 { #category : 'private' }

@@ -13,9 +13,9 @@ Class {
 MCPChangeHistorySelectionCommand >> addIndexSelectionsTo: pairs fromLog: aLog [
 
 	request indexes do: [ :index |
-		pairs add: {
-				index.
-				(self entryAtIndex: index inLog: aLog) } ].
+			pairs add: {
+					index.
+					(self entryAtIndex: index inLog: aLog) } ].
 	^ pairs
 ]
 
@@ -26,8 +26,8 @@ MCPChangeHistorySelectionCommand >> addLatestSelectionTo: pairs fromLog: aLog [
 	request latestCount ifNil: [ ^ pairs ].
 	allPairs := self entryPairsFromLog: aLog.
 	request codeChangesOnly ifTrue: [
-		allPairs := allPairs select: [ :pair |
-			            self isCodeChangeEntry: pair second ] ].
+			allPairs := allPairs select: [ :pair |
+				            self isCodeChangeEntry: pair second ] ].
 	allPairs ifEmpty: [ ^ pairs ].
 	start := allPairs size - request latestCount + 1 max: 1.
 	selected := allPairs copyFrom: start to: allPairs size.
@@ -40,9 +40,9 @@ MCPChangeHistorySelectionCommand >> addRangeSelectionTo: pairs fromLog: aLog [
 
 	request hasRangeSelection ifFalse: [ ^ pairs ].
 	request startIndex to: request endIndex do: [ :index |
-		pairs add: {
-				index.
-				(self entryAtIndex: index inLog: aLog) } ].
+			pairs add: {
+					index.
+					(self entryAtIndex: index inLog: aLog) } ].
 	^ pairs
 ]
 
@@ -75,14 +75,14 @@ MCPChangeHistorySelectionCommand >> applyOrRevertEntries [
 MCPChangeHistorySelectionCommand >> entryAtIndex: anIndex inLog: aLog [
 
 	(anIndex between: 1 and: aLog entries size) ifFalse: [
-		MCPCommandError
-			signalErrorCode: #ChangeHistoryEntryNotFound
-			message:
-			'Change history entry index ' , anIndex asString
-			, ' does not exist.'
-			details: {
-					(#index -> anIndex).
-					(#entryCount -> aLog entries size) } asDictionary ].
+			MCPCommandError
+				signalErrorCode: #ChangeHistoryEntryNotFound
+				message:
+				'Change history entry index ' , anIndex asString
+				, ' does not exist.'
+				details: {
+						(#index -> anIndex).
+						(#entryCount -> aLog entries size) } asDictionary ].
 	^ aLog entries at: anIndex
 ]
 
@@ -97,10 +97,10 @@ MCPChangeHistorySelectionCommand >> entryInfosFromLog: aLog [
 MCPChangeHistorySelectionCommand >> entryInfosFromPairs: pairs log: aLog [
 
 	^ pairs collect: [ :pair |
-		  MCPChangeHistoryEntryInfo
-			  fromEntry: pair second
-			  index: pair first
-			  log: aLog ]
+			  MCPChangeHistoryEntryInfo
+				  fromEntry: pair second
+				  index: pair first
+				  log: aLog ]
 ]
 
 { #category : 'private - entries' }
@@ -109,9 +109,9 @@ MCPChangeHistorySelectionCommand >> entryPairsFromLog: aLog [
 	| pairs |
 	pairs := OrderedCollection new.
 	aLog entries doWithIndex: [ :entry :index |
-		pairs add: {
-				index.
-				entry } ].
+			pairs add: {
+					index.
+					entry } ].
 	^ pairs
 ]
 

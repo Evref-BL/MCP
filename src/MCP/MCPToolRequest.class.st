@@ -195,8 +195,8 @@ MCPToolRequest >> stringCollectionFrom: aValue [
 	aValue ifNil: [ ^ #(  ) ].
 	values := OrderedCollection new.
 	aValue do: [ :each |
-		(self stringValue: each) ifNotNil: [ :normalized |
-			values add: normalized ] ].
+			(self stringValue: each) ifNotNil: [ :normalized |
+				values add: normalized ] ].
 	^ values asArray
 ]
 

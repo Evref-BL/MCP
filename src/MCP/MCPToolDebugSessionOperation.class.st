@@ -24,17 +24,6 @@ MCPToolDebugSessionOperation >> actionName [
 ]
 
 { #category : 'metadata' }
-MCPToolDebugSessionOperation >> buildInputSchema [
-
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: self inputProperties;
-		  required: self requiredInputProperties;
-		  additionalProperties: false;
-		  yourself
-]
-
-{ #category : 'metadata' }
 MCPToolDebugSessionOperation >> buildOutputSchema [
 
 	^ self
@@ -128,19 +117,7 @@ MCPToolDebugSessionOperation >> parsedRequestFromToolRequest: request [
 { #category : 'private - schema' }
 MCPToolDebugSessionOperation >> requiredInputProperties [
 
-	^ self sessionToolSpec
-		  at: #requiredProperties
-		  ifAbsent: [ #(  ) ]
-]
-
-{ #category : 'private - schema' }
-MCPToolDebugSessionOperation >> sessionIdSchemaProperty [
-
-	^ self
-		  schemaPropertyNamed: 'sessionId'
-		  type: 'string'
-		  description:
-		  'Opaque debug session identifier returned by debug_session_list, debug_capture, debug_test_run, or debug_candidate_attach.'
+	^ self sessionToolSpec at: #requiredProperties ifAbsent: [ #(  ) ]
 ]
 
 { #category : 'private - specs' }

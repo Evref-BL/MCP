@@ -146,9 +146,9 @@ MCPToolMethodSearch >> matchingSelectorReferencesForSelector: aSelectorSymbol in
 	specialSelectorIndex := Smalltalk specialSelectorIndexOrNil:
 		                        aSelectorSymbol.
 	^ (compiledMethods select: [ :eachMethod |
-		   eachMethod
-			   hasSelector: aSelectorSymbol
-			   specialSelectorIndex: specialSelectorIndex ]) asArray
+			   eachMethod
+				   hasSelector: aSelectorSymbol
+				   specialSelectorIndex: specialSelectorIndex ]) asArray
 ]
 
 { #category : 'private - searching' }
@@ -159,8 +159,8 @@ MCPToolMethodSearch >> matchingVariableReferencesNamed: aVariableName scopeQuery
 		             variableBindingsNamed: aVariableName
 		             inBehaviors: query behaviors.
 	variables ifEmpty: [
-		Error signal: 'No variable named ' , aVariableName
-			, ' is accessible in the requested scope.' ].
+			Error signal: 'No variable named ' , aVariableName
+				, ' is accessible in the requested scope.' ].
 	^ (compiledMethods select: [ :eachMethod |
 		   self method: eachMethod referencesAnyVariable: variables ])
 		  asArray
@@ -293,30 +293,6 @@ MCPToolMethodSearch >> methodQueryScopeInputProperties [
 		  self searchScopeSchemaProperty }
 ]
 
-{ #category : 'private - methods' }
-MCPToolMethodSearch >> methodScopeQueryFromRequest: request [
-
-	^ MCPCompiledMethodScopeQuery new
-		  packageNames: (self
-				   searchScopeStringCollectionNamed: 'packages'
-				   fromRequest: request);
-		  classNames:
-			  (self
-				   searchScopeStringCollectionNamed: 'classes'
-				   fromRequest: request);
-		  hierarchyClassNames: (self
-				   searchScopeStringCollectionNamed: 'hierarchies'
-				   fromRequest: request);
-		  subclassClassNames: (self
-				   searchScopeStringCollectionNamed: 'subclassesOf'
-				   fromRequest: request);
-		  parentClassNames: (self
-				   searchScopeStringCollectionNamed: 'superclassesOf'
-				   fromRequest: request);
-		  side: (request stringArgumentNamed: 'side' default: 'both');
-		  yourself
-]
-
 { #category : 'private - filtering' }
 MCPToolMethodSearch >> needsSourceForFiltering [
 
@@ -368,16 +344,6 @@ MCPToolMethodSearch >> sortedMethodEntries: entries [
 		  (self methodEntryLabel: left) <= (self methodEntryLabel: right) ]
 ]
 
-{ #category : 'private - template' }
-MCPToolMethodSearch >> successSummaryForQueryRequest: queryRequest page: page [
-
-	^ self
-		  successSummaryForScope:
-		  (self classAndMethodScopeSummaryForScopeQuery:
-			   queryRequest scopeQuery)
-		  page: page
-]
-
 { #category : 'private - results' }
 MCPToolMethodSearch >> successSummaryForScope: scopeSummary page: page [
 
@@ -399,11 +365,11 @@ MCPToolMethodSearch >> variableBindingsNamed: aVariableName inBehaviors: behavio
 	| variables |
 	variables := IdentitySet new.
 	behaviors do: [ :eachBehavior |
-		eachBehavior allSlots do: [ :eachSlot |
-			eachSlot name asString = aVariableName ifTrue: [
-				variables add: eachSlot ] ].
-		(eachBehavior bindingOf: aVariableName) ifNotNil: [ :binding |
-			variables add: binding ] ].
+			eachBehavior allSlots do: [ :eachSlot |
+					eachSlot name asString = aVariableName ifTrue: [
+						variables add: eachSlot ] ].
+			(eachBehavior bindingOf: aVariableName) ifNotNil: [ :binding |
+				variables add: binding ] ].
 	^ variables asArray
 ]
 

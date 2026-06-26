@@ -24,31 +24,31 @@ MCPMessageProcessor >> addHandler: aJRPCHandler [
 MCPMessageProcessor >> addHandlersFromPragmasIn: anObject [
 
 	(Pragma allNamed: #jrpc: in: anObject class) do: [ :pragma |
-		self addHandler: (MCPMessageSendHandler new
-				 receiver: anObject;
-				 methodName: pragma arguments first;
-				 messageSelector: pragma methodSelector;
-				 yourself) ]
+			self addHandler: (MCPMessageSendHandler new
+					 receiver: anObject;
+					 methodName: pragma arguments first;
+					 messageSelector: pragma methodSelector;
+					 yourself) ]
 ]
 
 { #category : 'handling - jrpc' }
 MCPMessageProcessor >> handleJRPCRequestObject: aJRPCRequestObject [
 
 	^ [
-	  | handler result |
-	  handler := self handlerFor: aJRPCRequestObject.
-	  handler checkParametersForRequest: aJRPCRequestObject.
-	  result := handler executeWithArguments: aJRPCRequestObject params.
-	  JRPCSuccessResponseObject id: aJRPCRequestObject id result: result ]
+		  | handler result |
+		  handler := self handlerFor: aJRPCRequestObject.
+		  handler checkParametersForRequest: aJRPCRequestObject.
+		  result := handler executeWithArguments: aJRPCRequestObject params.
+		  JRPCSuccessResponseObject id: aJRPCRequestObject id result: result ]
 		  on: Exception
 		  do: [ :exception |
-			  self debugMode
-				  ifTrue: [ exception pass ]
-				  ifFalse: [
-					  exception return:
-						  (self
-							   responseForException: exception
-							   request: aJRPCRequestObject) ] ]
+				  self debugMode
+					  ifTrue: [ exception pass ]
+					  ifFalse: [
+							  exception return:
+								  (self
+									   responseForException: exception
+									   request: aJRPCRequestObject) ] ]
 ]
 
 { #category : 'handling - json' }
@@ -56,14 +56,14 @@ MCPMessageProcessor >> handleJSON: aJSONString [
 
 	| jrpcResponse |
 	jrpcResponse := [
-	                (self parseSupposedJRPCMessageObjectFromString:
-		                 aJSONString) beHandledBy: self ]
+		                (self parseSupposedJRPCMessageObjectFromString:
+			                 aJSONString) beHandledBy: self ]
 		                on: Exception
 		                do: [ :exception |
-			                self debugMode
-				                ifTrue: [ exception pass ]
-				                ifFalse: [
-				                exception return: exception asJRPCResponse ] ].
+				                self debugMode
+					                ifTrue: [ exception pass ]
+					                ifFalse: [
+					                exception return: exception asJRPCResponse ] ].
 	^ jrpcResponse beConvertedBy: self
 ]
 

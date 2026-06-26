@@ -3,21 +3,11 @@ Command wrapper for repository_head_adopt. It asks the Iceberg working copy to a
 "
 Class {
 	#name : 'MCPAdoptRepositoryHeadCommand',
-	#superclass : 'Object',
-	#instVars : [
-		'tool',
-		'request'
-	],
+	#superclass : 'MCPRepositoryCommand',
 	#category : 'MCP-Commands',
 	#package : 'MCP',
 	#tag : 'Commands'
 }
-
-{ #category : 'instance creation' }
-MCPAdoptRepositoryHeadCommand class >> tool: aTool request: aRequest [
-
-	^ self new initializeTool: aTool request: aRequest
-]
 
 { #category : 'private' }
 MCPAdoptRepositoryHeadCommand >> commit: leftCommit equals: rightCommit [
@@ -37,10 +27,8 @@ MCPAdoptRepositoryHeadCommand >> commitIdFrom: aCommit [
 MCPAdoptRepositoryHeadCommand >> execute [
 
 	| beforeInfo didAdopt headCommit previousReferenceCommit repository result |
-	^ self tool
-		  executeMutationAction: 'adoptHead'
-		  force: false
-		  requestedContext: self request requestedContext
+	^ self
+		  executeRepositoryAction: 'adoptHead'
 		  work: [
 				  repository := self request repository.
 				  self validateExpectedBranchFor: repository.
@@ -63,31 +51,17 @@ MCPAdoptRepositoryHeadCommand >> execute [
 					  successResultText:
 					  'Adopted repository HEAD for ' , result repositoryInfo name
 					  , '.'
-					  data: (self tool dataForRepositoryAdoptHeadResult: result)
+					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
-				  'Failed to adopt repository HEAD: '
+				  'Failed adopt repository HEAD: '
 				  , (error messageText ifNil: [ error asString ]) ]
-]
-
-{ #category : 'initialization' }
-MCPAdoptRepositoryHeadCommand >> initializeTool: aTool request: aRequest [
-
-	tool := aTool.
-	request := aRequest.
-	^ self
 ]
 
 { #category : 'private' }
 MCPAdoptRepositoryHeadCommand >> referenceCommitFor: aRepository [
 
 	^ aRepository workingCopy referenceCommit
-]
-
-{ #category : 'accessing' }
-MCPAdoptRepositoryHeadCommand >> request [
-
-	^ request
 ]
 
 { #category : 'private - validation' }
@@ -100,12 +74,6 @@ MCPAdoptRepositoryHeadCommand >> signalMissingHeadCommitFor: aRepository [
 		details: (self request requestedContext copy
 				 at: #repositoryName put: aRepository name asString;
 				 yourself)
-]
-
-{ #category : 'accessing' }
-MCPAdoptRepositoryHeadCommand >> tool [
-
-	^ tool
 ]
 
 { #category : 'private - validation' }

@@ -25,14 +25,14 @@ MCPTestCase >> classNamed: aClassName [
 MCPTestCase >> createClassNamed: aClassName superclassName: aSuperclassName slots: someSlots classSlots: someClassSlots [
 
 	^ self withoutEpiceaDuring: [
-		  | builder superclass |
-		  superclass := self classNamed: aSuperclassName.
-		  builder := superclass << aClassName asSymbol.
-		  builder package: 'MCP-Tests'.
-		  builder tag: 'Internal'.
-		  builder slots: someSlots.
-		  builder classSlots: someClassSlots.
-		  builder install ]
+			  | builder superclass |
+			  superclass := self classNamed: aSuperclassName.
+			  builder := superclass << aClassName asSymbol.
+			  builder package: 'MCP-Tests'.
+			  builder tag: 'Internal'.
+			  builder slots: someSlots.
+			  builder classSlots: someClassSlots.
+			  builder install ]
 ]
 
 { #category : 'private - methods' }
@@ -56,24 +56,24 @@ MCPTestCase >> removeClassNamed: aClassName [
 	| classSymbol |
 	classSymbol := aClassName asSymbol.
 	self withoutEpiceaDuring: [
-		(Smalltalk globals includesKey: classSymbol) ifTrue: [
-			(Smalltalk globals at: classSymbol) removeFromSystem ] ]
+			(Smalltalk globals includesKey: classSymbol) ifTrue: [
+				(Smalltalk globals at: classSymbol) removeFromSystem ] ]
 ]
 
 { #category : 'private - packages' }
 MCPTestCase >> removePackageNamed: aPackageName [
 
 	self withoutEpiceaDuring: [
-		(PackageOrganizer default hasPackage: aPackageName) ifTrue: [
-			PackageOrganizer default removePackage: aPackageName ] ]
+			(PackageOrganizer default hasPackage: aPackageName) ifTrue: [
+				PackageOrganizer default removePackage: aPackageName ] ]
 ]
 
 { #category : 'private - methods' }
 MCPTestCase >> removeSelector: aSelector from: aBehavior [
 
 	self withoutEpiceaDuring: [
-		(aBehavior includesSelector: aSelector) ifTrue: [
-			aBehavior removeSelector: aSelector ] ]
+			(aBehavior includesSelector: aSelector) ifTrue: [
+				aBehavior removeSelector: aSelector ] ]
 ]
 
 { #category : 'private - execution' }

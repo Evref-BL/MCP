@@ -3,11 +3,8 @@ Result DTO returned by repository_head_adopt. It reports repository metadata bef
 "
 Class {
 	#name : 'MCPRepositoryAdoptHeadResult',
-	#superclass : 'Object',
+	#superclass : 'MCPRepositoryTransitionResult',
 	#instVars : [
-		'repositoryInfoBefore',
-		'repositoryInfoAfter',
-		'packageInfos',
 		'modifiedPackageNamesBefore',
 		'modifiedPackageNamesAfter',
 		'previousReferenceCommitId',
@@ -88,9 +85,7 @@ MCPRepositoryAdoptHeadResult >> headDescription [
 { #category : 'initialization' }
 MCPRepositoryAdoptHeadResult >> initializeRepositoryBefore: beforeInfo after: aRepository previousReferenceCommit: previousCommit adoptedCommit: headCommit didAdopt: aBoolean [
 
-	repositoryInfoBefore := beforeInfo.
-	repositoryInfoAfter := MCPRepositoryInfo fromRepository: aRepository.
-	packageInfos := self packageInfosFromRepository: aRepository.
+	super initializeRepositoryBefore: beforeInfo after: aRepository.
 	modifiedPackageNamesBefore := beforeInfo modifiedPackageNames.
 	modifiedPackageNamesAfter := repositoryInfoAfter modifiedPackageNames.
 	previousReferenceCommitId := self commitIdFrom: previousCommit.
@@ -98,8 +93,7 @@ MCPRepositoryAdoptHeadResult >> initializeRepositoryBefore: beforeInfo after: aR
 	adoptedCommitId := self commitIdFrom: headCommit.
 	didAdopt := aBoolean.
 	branchName := repositoryInfoAfter branchName.
-	headDescription := repositoryInfoAfter headDescription.
-	^ self
+	headDescription := repositoryInfoAfter headDescription
 ]
 
 { #category : 'accessing' }
@@ -112,23 +106,6 @@ MCPRepositoryAdoptHeadResult >> modifiedPackageNamesAfter [
 MCPRepositoryAdoptHeadResult >> modifiedPackageNamesBefore [
 
 	^ modifiedPackageNamesBefore ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPRepositoryAdoptHeadResult >> packageInfos [
-
-	^ packageInfos ifNil: [ #(  ) ]
-]
-
-{ #category : 'private' }
-MCPRepositoryAdoptHeadResult >> packageInfosFromRepository: aRepository [
-
-	| packages |
-	packages := aRepository workingCopy packages asArray
-		            sort: [ :left :right |
-		            left name asString <= right name asString ].
-	^ packages collect: [ :each |
-		  MCPRepositoryPackageInfo fromPackage: each ]
 ]
 
 { #category : 'accessing' }
@@ -147,22 +124,4 @@ MCPRepositoryAdoptHeadResult >> referenceCommitId [
 MCPRepositoryAdoptHeadResult >> referenceCommitIdForRepository: aRepository [
 
 	^ self commitIdFrom: aRepository workingCopy referenceCommit
-]
-
-{ #category : 'accessing' }
-MCPRepositoryAdoptHeadResult >> repositoryInfo [
-
-	^ self repositoryInfoAfter
-]
-
-{ #category : 'accessing' }
-MCPRepositoryAdoptHeadResult >> repositoryInfoAfter [
-
-	^ repositoryInfoAfter
-]
-
-{ #category : 'accessing' }
-MCPRepositoryAdoptHeadResult >> repositoryInfoBefore [
-
-	^ repositoryInfoBefore
 ]

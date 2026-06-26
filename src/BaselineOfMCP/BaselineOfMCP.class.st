@@ -19,17 +19,17 @@ BaselineOfMCP >> defineDependencies: spec [
 
 	spec
 		baseline: 'PharoCompatibility' with: [
-			spec
-				repository: 'github://Evref-BL/PharoCompatibility:main/src';
-				loads: #( 'Pharo13Surface' ) ];
+				spec
+					repository: 'github://Evref-BL/PharoCompatibility:main/src';
+					loads: #( 'Pharo13Surface' ) ];
 		baseline: 'JRPC' with: [
-		spec
-			repository: 'github://juliendelplanque/JRPC:v3.2.1/src';
-			loads: #( 'Deployment' ) ].
+			spec
+				repository: 'github://juliendelplanque/JRPC:v3.2.1/src';
+				loads: #( 'Deployment' ) ].
 	spec baseline: 'TinyLogger' with: [
-		spec
-			repository: 'github://jecisc/TinyLogger:v1.x.x/src';
-			loads: #( 'Core' ) ]
+			spec
+				repository: 'github://jecisc/TinyLogger:v1.x.x/src';
+				loads: #( 'Core' ) ]
 ]
 
 { #category : 'baselines' }

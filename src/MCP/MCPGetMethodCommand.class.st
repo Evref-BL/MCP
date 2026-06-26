@@ -3,21 +3,11 @@ Command that returns method source and optional variable-reference DTOs for meth
 "
 Class {
 	#name : 'MCPGetMethodCommand',
-	#superclass : 'Object',
-	#instVars : [
-		'tool',
-		'request'
-	],
+	#superclass : 'MCPToolRequestCommand',
 	#category : 'MCP-Commands',
 	#package : 'MCP',
 	#tag : 'Commands'
 }
-
-{ #category : 'instance creation' }
-MCPGetMethodCommand class >> tool: aTool request: aRequest [
-
-	^ self new initializeTool: aTool request: aRequest
-]
 
 { #category : 'executing' }
 MCPGetMethodCommand >> execute [
@@ -35,32 +25,12 @@ MCPGetMethodCommand >> execute [
 		        (#source -> (compiledMethod sourceCode ifNil: [ '' ])) }
 		        asDictionary.
 	request includeVariableDetails ifTrue: [
-		methodBehavior := tool
-			                  behaviorNamed: request className
-			                  classSide: request classSide.
-		variableReferences := tool
-			                      variableSummariesForMethod: compiledMethod
-			                      methodBehavior: methodBehavior.
-		data at: #variableReferences put: variableReferences ].
+			methodBehavior := tool
+				                  behaviorNamed: request className
+				                  classSide: request classSide.
+			variableReferences := tool
+				                      variableSummariesForMethod: compiledMethod
+				                      methodBehavior: methodBehavior.
+			data at: #variableReferences put: variableReferences ].
 	^ MCPGetMethodResult data: data externalVariableCount: nil
-]
-
-{ #category : 'initialization' }
-MCPGetMethodCommand >> initializeTool: aTool request: aRequest [
-
-	tool := aTool.
-	request := aRequest.
-	^ self
-]
-
-{ #category : 'accessing' }
-MCPGetMethodCommand >> request [
-
-	^ request
-]
-
-{ #category : 'accessing' }
-MCPGetMethodCommand >> tool [
-
-	^ tool
 ]

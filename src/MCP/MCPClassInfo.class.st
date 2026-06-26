@@ -5,7 +5,7 @@ It describes class identity, package placement, slots, traits, shared variables,
 "
 Class {
 	#name : 'MCPClassInfo',
-	#superclass : 'Object',
+	#superclass : 'MCPDataTransferObject',
 	#instVars : [
 		'className',
 		'superclassName',

@@ -5,7 +5,7 @@ It normalizes debugger success, warning, and error payloads before they are rend
 "
 Class {
 	#name : 'MCPDebugToolResult',
-	#superclass : 'Object',
+	#superclass : 'MCPResult',
 	#instVars : [
 		'status',
 		'summary',
@@ -44,6 +44,20 @@ MCPDebugToolResult class >> okSummary: aSummary data: aDictionary warnings: warn
 		  data: aDictionary
 		  warnings: warningCollection
 		  errorDetails: nil
+]
+
+{ #category : 'converting' }
+MCPDebugToolResult >> asDictionary [
+
+	| result |
+	result := Dictionary new.
+	result at: #status put: self status.
+	self summary ifNotNil: [ :text | result at: #summary put: text ].
+	self data ifNotEmpty: [ :value | result at: #data put: value ].
+	self warnings ifNotEmpty: [ :value | result at: #warnings put: value ].
+	self errorDetails ifNotEmpty: [ :value |
+		result at: #error put: value ].
+	^ result
 ]
 
 { #category : 'accessing' }

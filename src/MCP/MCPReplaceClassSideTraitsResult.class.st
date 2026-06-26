@@ -5,7 +5,7 @@ It carries the class state after replacement and the old/new class-side trait na
 "
 Class {
 	#name : 'MCPReplaceClassSideTraitsResult',
-	#superclass : 'Object',
+	#superclass : 'MCPClassResult',
 	#instVars : [
 		'classInfo',
 		'oldClassTraitNames',
@@ -30,7 +30,7 @@ MCPReplaceClassSideTraitsResult class >> classInfo: aClassInfo oldClassTraitName
 MCPReplaceClassSideTraitsResult >> asDictionary [
 
 	| data |
-	data := self classInfo asDictionary copy.
+	data := self newClassInfoDictionary.
 	data at: #oldClassTraitNames put: self oldClassTraitNames.
 	data at: #newClassTraitNames put: self newClassTraitNames.
 	^ data

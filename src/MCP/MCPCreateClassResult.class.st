@@ -5,7 +5,7 @@ It wraps the MCPClassInfo for the newly created class.
 "
 Class {
 	#name : 'MCPCreateClassResult',
-	#superclass : 'Object',
+	#superclass : 'MCPClassResult',
 	#instVars : [
 		'classInfo'
 	],
@@ -20,12 +20,6 @@ MCPCreateClassResult class >> classInfo: aClassInfo [
 	^ self new
 		  classInfo: aClassInfo;
 		  yourself
-]
-
-{ #category : 'converting' }
-MCPCreateClassResult >> asDictionary [
-
-	^ self classInfo asDictionary copy
 ]
 
 { #category : 'accessing' }

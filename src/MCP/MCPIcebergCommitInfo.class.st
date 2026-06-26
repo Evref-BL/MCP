@@ -6,9 +6,9 @@ Iceberg has exposed commit metadata through slightly different protocols across 
 Class {
 	#name : 'MCPIcebergCommitInfo',
 	#superclass : 'Object',
-	#category : 'MCP-DTOs',
+	#category : 'MCP-Utilities',
 	#package : 'MCP',
-	#tag : 'DTOs'
+	#tag : 'Utilities'
 }
 
 { #category : 'accessing' }

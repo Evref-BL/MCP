@@ -25,8 +25,8 @@ MCPChangeClassCommentCommandTest >> ensureTargetClass [
 		slots: #(  )
 		classSlots: #(  ).
 	self withoutEpiceaDuring: [
-		(self classNamed: self commentTargetClassName) comment:
-			'original comment' ]
+			(self classNamed: self commentTargetClassName) comment:
+				'original comment' ]
 ]
 
 { #category : 'private' }
@@ -67,9 +67,9 @@ MCPChangeClassCommentCommandTest >> testMissingClassSignalsCommandError [
 
 	| error |
 	error := self captureCommandError: [
-		         (MCPChangeClassCommentCommand
-			          className: 'MCPChangeClassCommentCommandTestMissing'
-			          classComment: 'ignored') execute ].
+			         (MCPChangeClassCommentCommand
+				          className: 'MCPChangeClassCommentCommandTestMissing'
+				          classComment: 'ignored') execute ].
 	self assert: error errorCode equals: #ClassNotFound.
 	self
 		assert: (error structuredDetails at: #className)

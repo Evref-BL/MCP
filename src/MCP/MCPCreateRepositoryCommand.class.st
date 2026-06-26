@@ -3,21 +3,11 @@ Command wrapper for repository_create. It creates an Iceberg repository through 
 "
 Class {
 	#name : 'MCPCreateRepositoryCommand',
-	#superclass : 'Object',
-	#instVars : [
-		'tool',
-		'request'
-	],
+	#superclass : 'MCPRepositoryCommand',
 	#category : 'MCP-Commands',
 	#package : 'MCP',
 	#tag : 'Commands'
 }
-
-{ #category : 'instance creation' }
-MCPCreateRepositoryCommand class >> tool: aTool request: aRequest [
-
-	^ self new initializeTool: aTool request: aRequest
-]
 
 { #category : 'private' }
 MCPCreateRepositoryCommand >> addRequestedPackagesTo: aRepository [
@@ -43,41 +33,19 @@ MCPCreateRepositoryCommand >> createRepository [
 MCPCreateRepositoryCommand >> execute [
 
 	| repository result |
-	^ self tool
-		  executeMutationAction: 'create'
-		  force: false
-		  requestedContext: self request requestedContext
-		  work: [
-			  repository := self createRepository.
-			  self addRequestedPackagesTo: repository.
-			  result := MCPRepositoryCreateResult fromRepository: repository ]
-		  successResult: [ :warningMessages |
-			  self tool
-				  successResultText:
-				  'Created repository ' , self request name , '.'
-				  data: (self tool dataForRepositoryCreateResult: result)
-				  warnings: warningMessages ]
-		  failureSummary: [ :error |
-			  'Failed to create repository ' , self request name , ': '
-			  , (error messageText ifNil: [ error asString ]) ]
-]
-
-{ #category : 'initialization' }
-MCPCreateRepositoryCommand >> initializeTool: aTool request: aRequest [
-
-	tool := aTool.
-	request := aRequest.
 	^ self
-]
-
-{ #category : 'accessing' }
-MCPCreateRepositoryCommand >> request [
-
-	^ request
-]
-
-{ #category : 'accessing' }
-MCPCreateRepositoryCommand >> tool [
-
-	^ tool
+		  executeRepositoryAction: 'create'
+		  work: [
+				  repository := self createRepository.
+				  self addRequestedPackagesTo: repository.
+				  result := MCPRepositoryCreateResult fromRepository: repository ]
+		  successResult: [ :warningMessages |
+				  self tool
+					  successResultText:
+					  'Created repository ' , self request name , '.'
+					  data: (self tool dataForRepositoryResult: result)
+					  warnings: warningMessages ]
+		  failureSummary: [ :error |
+				  'Failed create repository ' , self request name , ': '
+				  , (error messageText ifNil: [ error asString ]) ]
 ]

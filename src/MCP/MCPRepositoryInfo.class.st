@@ -5,7 +5,7 @@ It is read-only and intended for repository_search responses and repository oper
 "
 Class {
 	#name : 'MCPRepositoryInfo',
-	#superclass : 'Object',
+	#superclass : 'MCPDataTransferObject',
 	#instVars : [
 		'name',
 		'className',

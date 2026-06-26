@@ -266,10 +266,10 @@ MCPTestIceRepository >> remoteNames: aCollection [
 MCPTestIceRepository >> remotes [
 
 	^ self remoteNames collect: [ :each |
-		  MCPTestRepositoryRemote
-			  named: each
-			  repository: self
-			  shouldFail: self failFetch ]
+			  MCPTestRepositoryRemote
+				  named: each
+				  repository: self
+				  shouldFail: self failFetch ]
 ]
 
 { #category : 'private' }

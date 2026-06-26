@@ -5,9 +5,8 @@ When only a tag is supplied, it recategorizes the class inside its current packa
 "
 Class {
 	#name : 'MCPMoveClassCommand',
-	#superclass : 'Object',
+	#superclass : 'MCPClassCommand',
 	#instVars : [
-		'className',
 		'packageName',
 		'tag'
 	],
@@ -24,18 +23,6 @@ MCPMoveClassCommand class >> className: aClassName packageName: aPackageName tag
 		  packageName: aPackageName;
 		  tag: aTag;
 		  yourself
-]
-
-{ #category : 'accessing' }
-MCPMoveClassCommand >> className [
-
-	^ className
-]
-
-{ #category : 'accessing' }
-MCPMoveClassCommand >> className: aString [
-
-	className := aString
 ]
 
 { #category : 'private' }
@@ -85,14 +72,14 @@ MCPMoveClassCommand >> performMove [
 
 	self tag
 		ifNil: [
-			(RBMoveClassTransformation
-				 move: self className
-				 toPackage: self packageName) execute ]
+				(RBMoveClassTransformation
+					 move: self className
+					 toPackage: self packageName) execute ]
 		ifNotNil: [
-			(RBMoveClassTransformation
-				 move: self className
-				 toPackage: self packageName
-				 inTag: self tag) execute ]
+				(RBMoveClassTransformation
+					 move: self className
+					 toPackage: self packageName
+					 inTag: self tag) execute ]
 ]
 
 { #category : 'accessing' }

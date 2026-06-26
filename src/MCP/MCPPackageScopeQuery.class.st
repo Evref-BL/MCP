@@ -49,13 +49,13 @@ MCPPackageScopeQuery >> packageProjectNamesMap [
 	| packageProjects |
 	packageProjects := Dictionary new.
 	self projectRegistrations do: [ :eachProject |
-		| projectName |
-		projectName := eachProject projectName asString.
-		(self packagesForProjectRegistration: eachProject) do: [
-			:eachPackage |
-			(packageProjects
-				 at: eachPackage name asString
-				 ifAbsentPut: [ OrderedCollection new ]) add: projectName ] ].
+			| projectName |
+			projectName := eachProject projectName asString.
+			(self packagesForProjectRegistration: eachProject) do: [
+					:eachPackage |
+					(packageProjects
+						 at: eachPackage name asString
+						 ifAbsentPut: [ OrderedCollection new ]) add: projectName ] ].
 	packageProjects valuesDo: [ :eachProjectNames |
 		eachProjectNames sort ].
 	^ packageProjects
@@ -125,9 +125,9 @@ MCPPackageScopeQuery >> projectNames: someProjectNames [
 MCPPackageScopeQuery >> projectRegistrations [
 
 	^ MetacelloProjectRegistration registry registrations select: [ :each |
-		  [ each loadedInImage ]
-			  on: Error
-			  do: [ :error | false ] ]
+			  [ each loadedInImage ]
+				  on: Error
+				  do: [ :error | false ] ]
 ]
 
 { #category : 'private - querying' }
@@ -153,9 +153,9 @@ MCPPackageScopeQuery >> resolvedProjectsNamed: someProjectNames [
 	projectsByName := self projectsByName.
 	projects := OrderedCollection new.
 	someProjectNames do: [ :eachName |
-		projects add: (projectsByName
-				 at: eachName
-				 ifAbsent: [ MCPCommandError signalMissingProjectNamed: eachName ]) ].
+			projects add: (projectsByName
+					 at: eachName
+					 ifAbsent: [ MCPCommandError signalMissingProjectNamed: eachName ]) ].
 	^ projects asArray
 ]
 

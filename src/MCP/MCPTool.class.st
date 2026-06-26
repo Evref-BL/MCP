@@ -234,8 +234,8 @@ MCPTool >> executeParsedRequestFrom: request do: executionBlock onError: errorBl
 
 	| parsedRequest |
 	^ [
-	  parsedRequest := self parsedRequestFromToolRequest: request.
-	  executionBlock value: parsedRequest ]
+		  parsedRequest := self parsedRequestFromToolRequest: request.
+		  executionBlock value: parsedRequest ]
 		  on: Exception
 		  do: [ :error | errorBlock value: error value: parsedRequest ]
 ]
@@ -260,16 +260,16 @@ MCPTool >> failureMessageFor: anError [
 		           ifNil: [ '' ]
 		           ifNotNil: [ :text | text asString ].
 	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: 'Tool ';
-			  nextPutAll: self name;
-			  nextPutAll: ' failed (';
-			  nextPutAll: anError class name;
-			  nextPutAll: ')'.
-		  message isEmpty ifFalse: [
 			  stream
-				  nextPutAll: ': ';
-				  nextPutAll: message ] ]
+				  nextPutAll: 'Tool ';
+				  nextPutAll: self name;
+				  nextPutAll: ' failed (';
+				  nextPutAll: anError class name;
+				  nextPutAll: ')'.
+			  message isEmpty ifFalse: [
+					  stream
+						  nextPutAll: ': ';
+						  nextPutAll: message ] ]
 ]
 
 { #category : 'metadata' }
@@ -332,10 +332,7 @@ MCPTool >> pngCompositeBaseIconNamed: aBaseIconSymbol badgeIconNamed: aBadgeIcon
 { #category : 'private - icons' }
 MCPTool >> pngDataUriForForm: aForm [
 
-	| bytes |
-	bytes := ByteArray streamContents: [ :stream |
-		         PNGReadWriter putForm: aForm onStream: stream ].
-	^ 'data:image/png;base64,' , bytes base64Encoded
+	^ MCPStructureIcon pngDataUriForForm: aForm
 ]
 
 { #category : 'private - icons' }

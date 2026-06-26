@@ -31,10 +31,8 @@ MCPAttachRepositoryCommand >> createRepository [
 MCPAttachRepositoryCommand >> execute [
 
 	| repository result |
-	^ self tool
-		  executeMutationAction: 'attach'
-		  force: false
-		  requestedContext: self request requestedContext
+	^ self
+		  executeRepositoryAction: 'attach'
 		  work: [
 				  repository := self createRepository.
 				  self addRequestedPackagesTo: repository.
@@ -43,7 +41,7 @@ MCPAttachRepositoryCommand >> execute [
 				  self tool
 					  successResultText:
 					  'Attached repository ' , self request name , '.'
-					  data: (self tool dataForRepositoryAttachResult: result)
+					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
 				  'Failed to attach repository ' , self request name , ': '

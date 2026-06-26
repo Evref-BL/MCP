@@ -3,10 +3,8 @@ Result DTO returned by repository_push. It reports repository metadata, remote n
 "
 Class {
 	#name : 'MCPRepositoryPushResult',
-	#superclass : 'Object',
+	#superclass : 'MCPRepositorySnapshotResult',
 	#instVars : [
-		'repositoryInfo',
-		'packageInfos',
 		'remoteNames',
 		'branchName',
 		'headDescription'
@@ -25,12 +23,7 @@ MCPRepositoryPushResult class >> repository: aRepository [
 { #category : 'converting' }
 MCPRepositoryPushResult >> asDictionary [
 
-	| data |
-	data := Dictionary new.
-	self branchName ifNotEmpty: [ :name | data at: #branchName put: name ].
-	self headDescription ifNotEmpty: [ :description |
-		data at: #headDescription put: description ].
-	^ data
+	^ self branchHeadDictionary
 ]
 
 { #category : 'accessing' }
@@ -48,39 +41,14 @@ MCPRepositoryPushResult >> headDescription [
 { #category : 'initialization' }
 MCPRepositoryPushResult >> initializeRepository: aRepository [
 
-	repositoryInfo := MCPRepositoryInfo fromRepository: aRepository.
-	packageInfos := self packageInfosFromRepository: aRepository.
+	self initializeSnapshotFromRepository: aRepository.
 	remoteNames := repositoryInfo remoteNames.
 	branchName := repositoryInfo branchName.
-	headDescription := repositoryInfo headDescription.
-	^ self
-]
-
-{ #category : 'accessing' }
-MCPRepositoryPushResult >> packageInfos [
-
-	^ packageInfos ifNil: [ #(  ) ]
-]
-
-{ #category : 'private' }
-MCPRepositoryPushResult >> packageInfosFromRepository: aRepository [
-
-	| packages |
-	packages := aRepository workingCopy packages asArray
-		            sort: [ :left :right |
-		            left name asString <= right name asString ].
-	^ packages collect: [ :each |
-		  MCPRepositoryPackageInfo fromPackage: each ]
+	headDescription := repositoryInfo headDescription
 ]
 
 { #category : 'accessing' }
 MCPRepositoryPushResult >> remoteNames [
 
 	^ remoteNames ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPRepositoryPushResult >> repositoryInfo [
-
-	^ repositoryInfo
 ]

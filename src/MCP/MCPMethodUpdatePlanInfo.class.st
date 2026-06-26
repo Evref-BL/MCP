@@ -3,14 +3,14 @@ DTO for the method update action selected from an update request before the acti
 "
 Class {
 	#name : 'MCPMethodUpdatePlanInfo',
-	#superclass : 'Object',
+	#superclass : 'MCPDataTransferObject',
 	#instVars : [
 		'requestedContext',
 		'updateAction'
 	],
-	#category : 'MCP-Results',
+	#category : 'MCP-DTOs',
 	#package : 'MCP',
-	#tag : 'Results'
+	#tag : 'DTOs'
 }
 
 { #category : 'instance creation' }

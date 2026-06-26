@@ -5,9 +5,8 @@ It identifies a registered repository and describes package membership or subdir
 "
 Class {
 	#name : 'MCPRepositoryUpdateRequest',
-	#superclass : 'Object',
+	#superclass : 'MCPRepositoryRequest',
 	#instVars : [
-		'repositoryReference',
 		'subdirectory',
 		'packageNames',
 		'addPackageNames',
@@ -63,17 +62,15 @@ MCPRepositoryUpdateRequest >> hasUpdates [
 { #category : 'initialization' }
 MCPRepositoryUpdateRequest >> initializeFromRequest: request [
 
+	super initializeFromRequest: request.
 	suppliedProperties := self updatePropertyNames select: [ :each |
 		                      request hasArgumentNamed: each ].
-	repositoryReference := MCPRepositoryReferenceSpec fromRequest:
-		                       request.
 	subdirectory := request stringArgumentNamed: 'subdirectory'.
 	packageNames := request stringCollectionArgumentNamed: 'packageNames'.
 	addPackageNames := request stringCollectionArgumentNamed:
 		                   'addPackageNames'.
 	removePackageNames := request stringCollectionArgumentNamed:
-		                      'removePackageNames'.
-	^ self
+		                      'removePackageNames'
 ]
 
 { #category : 'accessing' }
@@ -100,21 +97,15 @@ MCPRepositoryUpdateRequest >> repository [
 	^ self repositoryReference repository
 ]
 
-{ #category : 'accessing' }
-MCPRepositoryUpdateRequest >> repositoryReference [
-
-	^ repositoryReference
-]
-
 { #category : 'converting' }
 MCPRepositoryUpdateRequest >> requestedContext [
 
 	| context |
 	context := self repositoryReference requestedContext copy.
 	self suppliedProperties do: [ :propertyName |
-		context
-			at: propertyName asSymbol
-			put: (self contextValueForPropertyNamed: propertyName) ].
+			context
+				at: propertyName asSymbol
+				put: (self contextValueForPropertyNamed: propertyName) ].
 	context at: #updateActions put: self requestedRepositoryUpdateActions.
 	^ context
 ]

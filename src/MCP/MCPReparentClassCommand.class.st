@@ -5,9 +5,8 @@ It records the previous superclass and returns MCPReparentClassResult with updat
 "
 Class {
 	#name : 'MCPReparentClassCommand',
-	#superclass : 'Object',
+	#superclass : 'MCPClassCommand',
 	#instVars : [
-		'className',
 		'superclassName'
 	],
 	#category : 'MCP-Commands',
@@ -36,24 +35,6 @@ MCPReparentClassCommand >> builderForReparenting: aClass toSuperclass: aSupercla
 	^ builder
 ]
 
-{ #category : 'accessing' }
-MCPReparentClassCommand >> className [
-
-	^ className
-]
-
-{ #category : 'accessing' }
-MCPReparentClassCommand >> className: aString [
-
-	className := aString
-]
-
-{ #category : 'private' }
-MCPReparentClassCommand >> currentClass [
-
-	^ MCPImageLookup classNamed: self className
-]
-
 { #category : 'executing' }
 MCPReparentClassCommand >> execute [
 
@@ -64,9 +45,9 @@ MCPReparentClassCommand >> execute [
 		                         ifNotNil: [ :aSuperclass |
 		                         aSuperclass name asString ].
 	currentSuperclassName = self superclassName ifTrue: [
-		^ MCPReparentClassResult
-			  classInfo: (MCPClassInfo fromClass: currentClass)
-			  oldSuperclassName: currentSuperclassName ].
+			^ MCPReparentClassResult
+				  classInfo: (MCPClassInfo fromClass: currentClass)
+				  oldSuperclassName: currentSuperclassName ].
 	superclass := self newSuperclass.
 	(self builderForReparenting: currentClass toSuperclass: superclass)
 		install.
@@ -80,9 +61,9 @@ MCPReparentClassCommand >> execute [
 MCPReparentClassCommand >> newSuperclass [
 
 	^ Smalltalk globals at: self superclassName asSymbol ifAbsent: [
-		  MCPCommandError
-			  signalMissingSuperclassNamed: self superclassName
-			  forClassNamed: self className ]
+			  MCPCommandError
+				  signalMissingSuperclassNamed: self superclassName
+				  forClassNamed: self className ]
 ]
 
 { #category : 'accessing' }

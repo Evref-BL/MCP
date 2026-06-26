@@ -3,10 +3,8 @@ Result DTO returned by repository_update. It reports the repository after applyi
 "
 Class {
 	#name : 'MCPRepositoryUpdateResult',
-	#superclass : 'Object',
+	#superclass : 'MCPRepositorySnapshotResult',
 	#instVars : [
-		'repositoryInfo',
-		'packageInfos',
 		'updateActions',
 		'addedPackageNames',
 		'removedPackageNames'
@@ -55,29 +53,10 @@ MCPRepositoryUpdateResult >> asDictionary [
 { #category : 'initialization' }
 MCPRepositoryUpdateResult >> initializeRepository: aRepository updateActions: actionNames addedPackageNames: addedNames removedPackageNames: removedNames [
 
-	| packages |
-	repositoryInfo := MCPRepositoryInfo fromRepository: aRepository.
-	packages := aRepository workingCopy packages asArray
-		            sort: [ :left :right |
-		            left name asString <= right name asString ].
-	packageInfos := packages collect: [ :each |
-		                MCPRepositoryPackageInfo fromPackage: each ].
+	self initializeSnapshotFromRepository: aRepository.
 	updateActions := actionNames ifNil: [ #(  ) ].
 	addedPackageNames := addedNames ifNil: [ #(  ) ].
-	removedPackageNames := removedNames ifNil: [ #(  ) ].
-	^ self
-]
-
-{ #category : 'accessing' }
-MCPRepositoryUpdateResult >> packageInfos [
-
-	^ packageInfos ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPRepositoryUpdateResult >> packageInfos: aCollection [
-
-	packageInfos := aCollection ifNil: [ #(  ) ]
+	removedPackageNames := removedNames ifNil: [ #(  ) ]
 ]
 
 { #category : 'accessing' }
@@ -90,18 +69,6 @@ MCPRepositoryUpdateResult >> removedPackageNames [
 MCPRepositoryUpdateResult >> removedPackageNames: aCollection [
 
 	removedPackageNames := aCollection ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPRepositoryUpdateResult >> repositoryInfo [
-
-	^ repositoryInfo
-]
-
-{ #category : 'accessing' }
-MCPRepositoryUpdateResult >> repositoryInfo: aRepositoryInfo [
-
-	repositoryInfo := aRepositoryInfo
 ]
 
 { #category : 'accessing' }

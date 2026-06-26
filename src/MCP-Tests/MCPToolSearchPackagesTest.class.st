@@ -13,11 +13,11 @@ Class {
 MCPToolSearchPackagesTest >> createFixtureClassNamed: aClassName packageName: aPackageName tag: aTag [
 
 	^ self withoutEpiceaDuring: [
-		  | builder |
-		  builder := Object << aClassName asSymbol.
-		  builder package: aPackageName.
-		  builder tag: aTag.
-		  builder install ]
+			  | builder |
+			  builder := Object << aClassName asSymbol.
+			  builder package: aPackageName.
+			  builder tag: aTag.
+			  builder install ]
 ]
 
 { #category : 'private' }
@@ -234,31 +234,31 @@ MCPToolSearchPackagesTest >> withTemporaryTaggedPackagesDo: aBlock [
 	self removePackageNamed: alphaPackageName.
 	self removePackageNamed: betaPackageName.
 	[
-	self
-		createFixtureClassNamed: alphaClassName
-		packageName: alphaPackageName
-		tag: 'FixtureAlphaTag'.
-	self
-		createFixtureClassNamed: betaClassName
-		packageName: betaPackageName
-		tag: 'FixtureBetaTag'.
-	alphaPackage := PackageOrganizer default packageNamed:
-		                alphaPackageName asSymbol.
-	betaPackage := PackageOrganizer default packageNamed:
-		               betaPackageName asSymbol.
-	packageProjectNames := Dictionary new
-		                       at: alphaPackageName
-		                       put: #( 'FixtureProject' );
-		                       at: betaPackageName
-		                       put: #( 'FixtureProject' );
-		                       yourself.
-	aBlock
-		value: {
-				alphaPackage.
-				betaPackage } asArray
-		value: packageProjectNames ] ensure: [
-		self removeClassNamed: alphaClassName.
-		self removeClassNamed: betaClassName.
-		self removePackageNamed: alphaPackageName.
-		self removePackageNamed: betaPackageName ]
+		self
+			createFixtureClassNamed: alphaClassName
+			packageName: alphaPackageName
+			tag: 'FixtureAlphaTag'.
+		self
+			createFixtureClassNamed: betaClassName
+			packageName: betaPackageName
+			tag: 'FixtureBetaTag'.
+		alphaPackage := PackageOrganizer default packageNamed:
+			                alphaPackageName asSymbol.
+		betaPackage := PackageOrganizer default packageNamed:
+			               betaPackageName asSymbol.
+		packageProjectNames := Dictionary new
+			                       at: alphaPackageName
+			                       put: #( 'FixtureProject' );
+			                       at: betaPackageName
+			                       put: #( 'FixtureProject' );
+			                       yourself.
+		aBlock
+			value: {
+					alphaPackage.
+					betaPackage } asArray
+			value: packageProjectNames ] ensure: [
+			self removeClassNamed: alphaClassName.
+			self removeClassNamed: betaClassName.
+			self removePackageNamed: alphaPackageName.
+			self removePackageNamed: betaPackageName ]
 ]

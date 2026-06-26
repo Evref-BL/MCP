@@ -3,11 +3,8 @@ Result DTO returned by repository_fetch. It reports repository metadata before a
 "
 Class {
 	#name : 'MCPRepositoryFetchResult',
-	#superclass : 'Object',
+	#superclass : 'MCPRepositoryTransitionResult',
 	#instVars : [
-		'repositoryInfoBefore',
-		'repositoryInfoAfter',
-		'packageInfos',
 		'remoteNames',
 		'branchName',
 		'headDescription'
@@ -26,12 +23,7 @@ MCPRepositoryFetchResult class >> repositoryBefore: beforeInfo after: aRepositor
 { #category : 'converting' }
 MCPRepositoryFetchResult >> asDictionary [
 
-	| data |
-	data := Dictionary new.
-	self branchName ifNotEmpty: [ :name | data at: #branchName put: name ].
-	self headDescription ifNotEmpty: [ :description |
-		data at: #headDescription put: description ].
-	^ data
+	^ self branchHeadDictionary
 ]
 
 { #category : 'accessing' }
@@ -49,52 +41,14 @@ MCPRepositoryFetchResult >> headDescription [
 { #category : 'initialization' }
 MCPRepositoryFetchResult >> initializeRepositoryBefore: beforeInfo after: aRepository [
 
-	repositoryInfoBefore := beforeInfo.
-	repositoryInfoAfter := MCPRepositoryInfo fromRepository: aRepository.
-	packageInfos := self packageInfosFromRepository: aRepository.
+	super initializeRepositoryBefore: beforeInfo after: aRepository.
 	remoteNames := repositoryInfoAfter remoteNames.
 	branchName := repositoryInfoAfter branchName.
-	headDescription := repositoryInfoAfter headDescription.
-	^ self
-]
-
-{ #category : 'accessing' }
-MCPRepositoryFetchResult >> packageInfos [
-
-	^ packageInfos ifNil: [ #(  ) ]
-]
-
-{ #category : 'private' }
-MCPRepositoryFetchResult >> packageInfosFromRepository: aRepository [
-
-	| packages |
-	packages := aRepository workingCopy packages asArray
-		            sort: [ :left :right |
-		            left name asString <= right name asString ].
-	^ packages collect: [ :each |
-		  MCPRepositoryPackageInfo fromPackage: each ]
+	headDescription := repositoryInfoAfter headDescription
 ]
 
 { #category : 'accessing' }
 MCPRepositoryFetchResult >> remoteNames [
 
 	^ remoteNames ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPRepositoryFetchResult >> repositoryInfo [
-
-	^ self repositoryInfoAfter
-]
-
-{ #category : 'accessing' }
-MCPRepositoryFetchResult >> repositoryInfoAfter [
-
-	^ repositoryInfoAfter
-]
-
-{ #category : 'accessing' }
-MCPRepositoryFetchResult >> repositoryInfoBefore [
-
-	^ repositoryInfoBefore
 ]

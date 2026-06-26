@@ -3,7 +3,7 @@ Result DTO for listing entries from a change history source.
 "
 Class {
 	#name : 'MCPChangeHistoryListEntriesResult',
-	#superclass : 'Object',
+	#superclass : 'MCPResult',
 	#instVars : [
 		'historyFileName',
 		'entries',

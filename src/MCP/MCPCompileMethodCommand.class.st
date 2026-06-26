@@ -5,21 +5,11 @@ It reports whether compilation created a new method or replaced an existing meth
 "
 Class {
 	#name : 'MCPCompileMethodCommand',
-	#superclass : 'Object',
-	#instVars : [
-		'tool',
-		'request'
-	],
+	#superclass : 'MCPToolRequestCommand',
 	#category : 'MCP-Commands',
 	#package : 'MCP',
 	#tag : 'Commands'
 }
-
-{ #category : 'instance creation' }
-MCPCompileMethodCommand class >> tool: aTool request: aRequest [
-
-	^ self new initializeTool: aTool request: aRequest
-]
 
 { #category : 'private' }
 MCPCompileMethodCommand >> changeSummaryVerbFor: changeKindString [
@@ -75,28 +65,8 @@ MCPCompileMethodCommand >> execute [
 					  error: error ]
 ]
 
-{ #category : 'initialization' }
-MCPCompileMethodCommand >> initializeTool: aTool request: aRequest [
-
-	tool := aTool.
-	request := aRequest.
-	^ self
-]
-
-{ #category : 'accessing' }
-MCPCompileMethodCommand >> request [
-
-	^ request
-]
-
 { #category : 'private' }
 MCPCompileMethodCommand >> selectorForMethodSource: methodSourceString [
 
 	^ (RBParser parseMethod: methodSourceString) selector
-]
-
-{ #category : 'accessing' }
-MCPCompileMethodCommand >> tool [
-
-	^ tool
 ]

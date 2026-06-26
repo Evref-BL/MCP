@@ -33,9 +33,9 @@ MCPToolMutation >> addRefactoringScopeContextFromSpec: scopeSpec toRequestedCont
 	scopeSpec classNames ifNotEmpty: [
 		requestedContext at: #classNames put: scopeSpec classNames ].
 	scopeSpec hierarchyClassNames ifNotEmpty: [
-		requestedContext
-			at: #hierarchyClassNames
-			put: scopeSpec hierarchyClassNames ]
+			requestedContext
+				at: #hierarchyClassNames
+				put: scopeSpec hierarchyClassNames ]
 ]
 
 { #category : 'private - errors' }
@@ -73,6 +73,17 @@ MCPToolMutation >> addSupplementalSelectorFromMethodNode: methodNode to: details
 	selector := methodNode selector.
 	selector ifNotNil: [
 		details at: #selector ifAbsentPut: [ selector asString ] ]
+]
+
+{ #category : 'metadata' }
+MCPToolMutation >> buildInputSchema [
+
+	^ MCPStructureInputSchema new
+		  type: 'object';
+		  properties: self inputProperties;
+		  required: self requiredInputProperties;
+		  additionalProperties: false;
+		  yourself
 ]
 
 { #category : 'private - refactoring' }
@@ -116,13 +127,13 @@ MCPToolMutation >> errorResultForCommandError: anError action: action requestedC
 	| details |
 	details := anError structuredDetails copy.
 	requestedContext ifNotNil: [
-		requestedContext keysAndValuesDo: [ :key :value |
-			value ifNotNil: [ details at: key ifAbsentPut: [ value ] ] ] ].
+			requestedContext keysAndValuesDo: [ :key :value |
+				value ifNotNil: [ details at: key ifAbsentPut: [ value ] ] ] ].
 	(#( 'compile' 'create' 'update' ) includes: action)
 		ifTrue: [ details at: #action put: action ]
 		ifFalse: [
-			details at: #action put: 'update'.
-			details at: #updateAction put: action ].
+				details at: #action put: 'update'.
+				details at: #updateAction put: action ].
 	^ self errorResultText: anError messageText details: details
 ]
 
@@ -189,11 +200,12 @@ MCPToolMutation >> executeWithRequest: request [
 	^ self
 		  executeParsedRequestFrom: request
 		  do: [ :mutationRequest |
-		  (self commandForRequest: mutationRequest) execute ]
+			  (self commandForRequest: mutationRequest) execute ]
 		  onError: [ :error :mutationRequest |
 				  | action requestedContext |
 				  action := self
-					            mutationActionForErrorFromParsedRequest: mutationRequest
+					            mutationActionForErrorFromParsedRequest:
+					            mutationRequest
 					            rawRequest: request.
 				  requestedContext := self
 					                      requestedContextForErrorFromParsedRequest:
@@ -250,9 +262,10 @@ MCPToolMutation >> hierarchyRefactoringEnvironmentForClassNames: classNames base
 		                   classNames.
 	environment := nil.
 	resolvedClasses do: [ :eachClass |
-		environment := self
-			               unionRefactoringEnvironment: environment
-			               with: (baseEnvironment forClassHierarchy: eachClass) ].
+			environment := self
+				               unionRefactoringEnvironment: environment
+				               with:
+				               (baseEnvironment forClassHierarchy: eachClass) ].
 	^ environment
 ]
 
@@ -267,9 +280,9 @@ MCPToolMutation >> impactMessageForRefactoringCondition: aCondition [
 
 	| message |
 	message := String streamContents: [ :stream |
-		aCondition violationMessageOn: stream ].
+		           aCondition violationMessageOn: stream ].
 	^ self normalizedRefactoringConditionMessage:
-		(self normalizedSingleLineText: message)
+		  (self normalizedSingleLineText: message)
 ]
 
 { #category : 'private - warnings' }
@@ -290,6 +303,12 @@ MCPToolMutation >> impactMessagesForRefactoringWarning: aWarning [
 				primaryMessage := aWarning class name asString ].
 			impactMessages add: primaryMessage ].
 	^ impactMessages asArray
+]
+
+{ #category : 'private - schema' }
+MCPToolMutation >> inputProperties [
+
+	self subclassResponsibility
 ]
 
 { #category : 'private - errors' }
@@ -346,8 +365,7 @@ MCPToolMutation >> normalizedCommandErrorForActionFailure: anError action: actio
 		           causedBy: anError.
 	self addSupplementalDetailsForMutationError: anError to: details.
 	^ MCPCommandError new
-		  errorCode:
-			  (self failureErrorCodeFor: anError action: action);
+		  errorCode: (self failureErrorCodeFor: anError action: action);
 		  details: details;
 		  messageText: normalizedSummary;
 		  yourself
@@ -370,8 +388,7 @@ MCPToolMutation >> normalizedCommandErrorForRefactoringWarning: aWarning action:
 	details at: #howToProceed put: self howToProceedForRefactoringWarning.
 	details at: #forceSupported put: true.
 	^ MCPCommandError new
-		  errorCode:
-			  (self failureErrorCodeFor: aWarning action: action);
+		  errorCode: (self failureErrorCodeFor: aWarning action: action);
 		  details: details;
 		  messageText: summary;
 		  yourself
@@ -418,25 +435,25 @@ MCPToolMutation >> refactoringEnvironmentForScopeSpec: scopeSpec [
 	scopeSpec isDefaultImageScope ifTrue: [ ^ baseEnvironment ].
 	environment := nil.
 	scopeSpec packageNames ifNotEmpty: [
-		environment := self
-			               unionRefactoringEnvironment: environment
-			               with:
-			               (baseEnvironment forPackageNames:
-				                scopeSpec packageNames) ].
+			environment := self
+				               unionRefactoringEnvironment: environment
+				               with:
+				               (baseEnvironment forPackageNames:
+					                scopeSpec packageNames) ].
 	scopeSpec classNames ifNotEmpty: [
-		environment := self
-			               unionRefactoringEnvironment: environment
-			               with: (self
-					                classesRefactoringEnvironmentForClassNames:
-					                scopeSpec classNames
-					                baseEnvironment: baseEnvironment) ].
+			environment := self
+				               unionRefactoringEnvironment: environment
+				               with: (self
+						                classesRefactoringEnvironmentForClassNames:
+						                scopeSpec classNames
+						                baseEnvironment: baseEnvironment) ].
 	scopeSpec hierarchyClassNames ifNotEmpty: [
-		environment := self
-			               unionRefactoringEnvironment: environment
-			               with: (self
-					                hierarchyRefactoringEnvironmentForClassNames:
-					                scopeSpec hierarchyClassNames
-					                baseEnvironment: baseEnvironment) ].
+			environment := self
+				               unionRefactoringEnvironment: environment
+				               with: (self
+						                hierarchyRefactoringEnvironmentForClassNames:
+						                scopeSpec hierarchyClassNames
+						                baseEnvironment: baseEnvironment) ].
 	^ environment ifNil: [ baseEnvironment ]
 ]
 
@@ -446,16 +463,17 @@ MCPToolMutation >> refactoringModelForScopeSpec: scopeSpec anchoredAtBehavior: a
 	| details environment |
 	environment := self refactoringEnvironmentForScopeSpec: scopeSpec.
 	(environment includesClass: aBehavior) ifFalse: [
-		details := scopeSpec asDictionary copy.
-		details at: #className put: aBehavior instanceSide name asString.
-		details at: #classSide put: aBehavior isMeta.
-		MCPCommandError
-			signalErrorCode: #RefactoringScopeExcludesTargetClass
-			message: 'Refactoring scope does not include ' , (aBehavior isMeta
-					 ifTrue: [ 'the class side of ' ]
-					 ifFalse: [ 'class ' ]) , aBehavior instanceSide name asString
-				, '.'
-			details: details ].
+			details := scopeSpec asDictionary copy.
+			details at: #className put: aBehavior instanceSide name asString.
+			details at: #classSide put: aBehavior isMeta.
+			MCPCommandError
+				signalErrorCode: #RefactoringScopeExcludesTargetClass
+				message:
+					'Refactoring scope does not include ' , (aBehavior isMeta
+						 ifTrue: [ 'the class side of ' ]
+						 ifFalse: [ 'class ' ]) , aBehavior instanceSide name asString
+					, '.'
+				details: details ].
 	^ RBNamespace onEnvironment: environment
 ]
 
@@ -524,6 +542,12 @@ MCPToolMutation >> requestedContextForErrorFromParsedRequest: mutationRequest ra
 
 	mutationRequest ifNil: [ ^ rawRequest asDictionary copy ].
 	^ mutationRequest requestedContext
+]
+
+{ #category : 'private - schema' }
+MCPToolMutation >> requiredInputProperties [
+
+	self subclassResponsibility
 ]
 
 { #category : 'private - request' }
@@ -625,6 +649,16 @@ MCPToolMutation >> unionRefactoringEnvironment: currentEnvironment with: addedEn
 MCPToolMutation >> validateRefactoringScopePackageNamesExist: packageNames [
 
 	packageNames do: [ :eachName | MCPImageLookup packageNamed: eachName ]
+]
+
+{ #category : 'validating' }
+MCPToolMutation >> validateRequest: request [
+
+	self requiredInputProperties do: [ :each |
+			(request argumentNamed: each ifAbsent: [ nil ]) ifNil: [
+					MCPInvalidToolInput
+						signalMissingRequiredArgumentNamed: each
+						forTool: self ] ]
 ]
 
 { #category : 'private - errors' }

@@ -3,7 +3,7 @@ Result DTO for listing change history files and the directory that was scanned.
 "
 Class {
 	#name : 'MCPChangeHistoryListLogsResult',
-	#superclass : 'Object',
+	#superclass : 'MCPResult',
 	#instVars : [
 		'logs',
 		'directoryPath',

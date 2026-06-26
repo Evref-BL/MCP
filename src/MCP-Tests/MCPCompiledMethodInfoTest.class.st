@@ -26,12 +26,12 @@ MCPCompiledMethodInfoTest >> createTargetClass [
 
 	self hasTargetClass ifTrue: [ ^ self ].
 	self withoutEpiceaDuring: [
-		| builder |
-		builder := Object << self targetClassName asSymbol.
-		builder package: 'MCP-Tests'.
-		builder tag: 'Internal'.
-		builder slots: #(  ).
-		builder install ]
+			| builder |
+			builder := Object << self targetClassName asSymbol.
+			builder package: 'MCP-Tests'.
+			builder tag: 'Internal'.
+			builder slots: #(  ).
+			builder install ]
 ]
 
 { #category : 'private' }

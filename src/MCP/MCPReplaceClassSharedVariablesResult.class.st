@@ -5,7 +5,7 @@ It carries the class state after replacement and the old/new shared variable nam
 "
 Class {
 	#name : 'MCPReplaceClassSharedVariablesResult',
-	#superclass : 'Object',
+	#superclass : 'MCPClassResult',
 	#instVars : [
 		'classInfo',
 		'oldSharedVariableNames',
@@ -30,7 +30,7 @@ MCPReplaceClassSharedVariablesResult class >> classInfo: aClassInfo oldSharedVar
 MCPReplaceClassSharedVariablesResult >> asDictionary [
 
 	| data |
-	data := self classInfo asDictionary copy.
+	data := self newClassInfoDictionary.
 	data at: #oldSharedVariableNames put: self oldSharedVariableNames.
 	data at: #newSharedVariableNames put: self newSharedVariableNames.
 	^ data

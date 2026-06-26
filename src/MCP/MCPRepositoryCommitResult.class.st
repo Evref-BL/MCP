@@ -3,10 +3,8 @@ Result DTO returned by repository_commit. It reports repository state after the 
 "
 Class {
 	#name : 'MCPRepositoryCommitResult',
-	#superclass : 'Object',
+	#superclass : 'MCPRepositorySnapshotResult',
 	#instVars : [
-		'repositoryInfo',
-		'packageInfos',
 		'changedPackageNames',
 		'modifiedPackageNames',
 		'commitId',
@@ -107,14 +105,9 @@ MCPRepositoryCommitResult >> headDescription: aString [
 { #category : 'initialization' }
 MCPRepositoryCommitResult >> initializeRepository: aRepository changedPackageNames: packageNames commit: aCommit [
 
-	| packages repositoryPackageNames |
-	packages := aRepository workingCopy packages asArray
-		            sort: [ :left :right |
-		            left name asString <= right name asString ].
-	packageInfos := packages collect: [ :each |
-		                MCPRepositoryPackageInfo fromPackage: each ].
-	repositoryPackageNames := (packages collect: [ :each |
-		                           each name asString ]) asArray.
+	| repositoryPackageNames |
+	packageInfos := self packageInfosFromRepository: aRepository.
+	repositoryPackageNames := packageInfos collect: [ :each | each name ].
 	changedPackageNames := packageNames ifNil: [ #(  ) ].
 	modifiedPackageNames := #(  ).
 	commitId := self commitIdFrom: aCommit.
@@ -125,8 +118,7 @@ MCPRepositoryCommitResult >> initializeRepository: aRepository changedPackageNam
 		                  packageNames: repositoryPackageNames
 		                  modifiedPackageNames: modifiedPackageNames
 		                  headCommitId: commitId
-		                  headDescription: headDescription.
-	^ self
+		                  headDescription: headDescription
 ]
 
 { #category : 'accessing' }
@@ -139,28 +131,4 @@ MCPRepositoryCommitResult >> modifiedPackageNames [
 MCPRepositoryCommitResult >> modifiedPackageNames: aCollection [
 
 	modifiedPackageNames := aCollection ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPRepositoryCommitResult >> packageInfos [
-
-	^ packageInfos ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPRepositoryCommitResult >> packageInfos: aCollection [
-
-	packageInfos := aCollection ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPRepositoryCommitResult >> repositoryInfo [
-
-	^ repositoryInfo
-]
-
-{ #category : 'accessing' }
-MCPRepositoryCommitResult >> repositoryInfo: aRepositoryInfo [
-
-	repositoryInfo := aRepositoryInfo
 ]

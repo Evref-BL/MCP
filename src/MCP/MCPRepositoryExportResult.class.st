@@ -3,10 +3,8 @@ Result DTO returned by repository_export. It reports the repository synchronized
 "
 Class {
 	#name : 'MCPRepositoryExportResult',
-	#superclass : 'Object',
+	#superclass : 'MCPRepositorySnapshotResult',
 	#instVars : [
-		'repositoryInfo',
-		'packageInfos',
 		'changedPackageNames',
 		'modifiedPaths',
 		'didChange',
@@ -68,18 +66,11 @@ MCPRepositoryExportResult >> didChange: aBoolean [
 { #category : 'initialization' }
 MCPRepositoryExportResult >> initializeRepository: aRepository changedPackageNames: packageNames modifiedPaths: paths [
 
-	| packages |
-	repositoryInfo := MCPRepositoryInfo fromRepository: aRepository.
-	packages := aRepository workingCopy packages asArray
-		            sort: [ :left :right |
-		            left name asString <= right name asString ].
-	packageInfos := packages collect: [ :each |
-		                MCPRepositoryPackageInfo fromPackage: each ].
+	self initializeSnapshotFromRepository: aRepository.
 	changedPackageNames := packageNames ifNil: [ #(  ) ].
 	modifiedPaths := paths ifNil: [ #(  ) ].
 	didChange := changedPackageNames notEmpty or: [
-		             modifiedPaths notEmpty ].
-	^ self
+		             modifiedPaths notEmpty ]
 ]
 
 { #category : 'accessing' }
@@ -92,30 +83,6 @@ MCPRepositoryExportResult >> modifiedPaths [
 MCPRepositoryExportResult >> modifiedPaths: aCollection [
 
 	modifiedPaths := aCollection ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPRepositoryExportResult >> packageInfos [
-
-	^ packageInfos ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPRepositoryExportResult >> packageInfos: aCollection [
-
-	packageInfos := aCollection ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
-MCPRepositoryExportResult >> repositoryInfo [
-
-	^ repositoryInfo
-]
-
-{ #category : 'accessing' }
-MCPRepositoryExportResult >> repositoryInfo: aRepositoryInfo [
-
-	repositoryInfo := aRepositoryInfo
 ]
 
 { #category : 'accessing' }

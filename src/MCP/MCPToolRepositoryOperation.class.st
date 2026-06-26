@@ -27,17 +27,6 @@ MCPToolRepositoryOperation >> branchNameSchemaProperty [
 ]
 
 { #category : 'metadata' }
-MCPToolRepositoryOperation >> buildInputSchema [
-
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: self inputProperties;
-		  required: self requiredInputProperties;
-		  additionalProperties: false;
-		  yourself
-]
-
-{ #category : 'metadata' }
 MCPToolRepositoryOperation >> buildOutputSchema [
 
 	^ self
@@ -59,93 +48,9 @@ MCPToolRepositoryOperation >> commandForRequest: repositoryRequest [
 ]
 
 { #category : 'private - results' }
-MCPToolRepositoryOperation >> dataForRepositoryAdoptHeadResult: aResult [
-
-	^ self dataForRepositoryResult: aResult
-]
-
-{ #category : 'private - results' }
-MCPToolRepositoryOperation >> dataForRepositoryAttachResult: aResult [
-
-	^ self dataForRepositoryResult: aResult
-]
-
-{ #category : 'private - results' }
-MCPToolRepositoryOperation >> dataForRepositoryCheckoutBranchResult: aResult [
-
-	^ self dataForRepositoryResult: aResult
-]
-
-{ #category : 'private - results' }
-MCPToolRepositoryOperation >> dataForRepositoryCommitResult: aResult [
-
-	^ self dataForRepositoryResult: aResult
-]
-
-{ #category : 'private - results' }
-MCPToolRepositoryOperation >> dataForRepositoryCreateBranchResult: aResult [
-
-	^ self dataForRepositoryResult: aResult
-]
-
-{ #category : 'private - results' }
-MCPToolRepositoryOperation >> dataForRepositoryCreateResult: aResult [
-
-	^ self dataForRepositoryResult: aResult
-]
-
-{ #category : 'private - results' }
-MCPToolRepositoryOperation >> dataForRepositoryDiffResult: aResult [
-
-	^ self dataForRepositoryResult: aResult
-]
-
-{ #category : 'private - results' }
-MCPToolRepositoryOperation >> dataForRepositoryExportResult: aResult [
-
-	^ self dataForRepositoryResult: aResult
-]
-
-{ #category : 'private - results' }
-MCPToolRepositoryOperation >> dataForRepositoryFetchResult: aResult [
-
-	^ self dataForRepositoryResult: aResult
-]
-
-{ #category : 'private - results' }
-MCPToolRepositoryOperation >> dataForRepositoryPullResult: aResult [
-
-	^ self dataForRepositoryResult: aResult
-]
-
-{ #category : 'private - results' }
-MCPToolRepositoryOperation >> dataForRepositoryPushResult: aResult [
-
-	^ self dataForRepositoryResult: aResult
-]
-
-{ #category : 'private - results' }
 MCPToolRepositoryOperation >> dataForRepositoryResult: aResult [
 
 	^ aResult asDictionary
-]
-
-{ #category : 'private - results' }
-MCPToolRepositoryOperation >> dataForRepositorySwitchBranchResult: aResult [
-
-	^ self dataForRepositoryResult: aResult
-]
-
-{ #category : 'private - results' }
-MCPToolRepositoryOperation >> dataForRepositoryUpdateResult: aResult [
-
-	^ self dataForRepositoryResult: aResult
-]
-
-{ #category : 'private - results' }
-MCPToolRepositoryOperation >> dataForRepositoryVerifyIdentityResult: aResult [
-
-	^ self dataForRepositoryResult: aResult
 ]
 
 { #category : 'metadata' }
@@ -160,8 +65,8 @@ MCPToolRepositoryOperation >> errorResultForCommandError: anError action: action
 	| details |
 	details := anError structuredDetails copy.
 	requestedContext ifNotNil: [
-		requestedContext keysAndValuesDo: [ :key :value |
-			value ifNotNil: [ details at: key ifAbsentPut: [ value ] ] ] ].
+			requestedContext keysAndValuesDo: [ :key :value |
+				value ifNotNil: [ details at: key ifAbsentPut: [ value ] ] ] ].
 	details at: #action put: action.
 	^ self errorResultText: anError messageText details: details
 ]
@@ -173,9 +78,7 @@ MCPToolRepositoryOperation >> inputProperties [
 		   at: #referenceInputProperties
 		   ifAbsent: [ self repositoryReferenceInputProperties ])
 	  ,
-	  (self repositoryToolSpec
-		   at: #inputProperties
-		   ifAbsent: [ #(  ) ])
+	  (self repositoryToolSpec at: #inputProperties ifAbsent: [ #(  ) ])
 ]
 
 { #category : 'private - schema' }
@@ -436,14 +339,4 @@ MCPToolRepositoryOperation >> subdirectorySchemaProperty [
 MCPToolRepositoryOperation >> title [
 
 	^ self repositoryToolSpec at: #title
-]
-
-{ #category : 'validating' }
-MCPToolRepositoryOperation >> validateRequest: request [
-
-	self requiredInputProperties do: [ :each |
-			(request argumentNamed: each ifAbsent: [ nil ]) ifNil: [
-					MCPInvalidToolInput
-						signalMissingRequiredArgumentNamed: each
-						forTool: self ] ]
 ]

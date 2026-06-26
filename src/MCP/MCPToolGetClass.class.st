@@ -210,9 +210,9 @@ MCPToolGetClass >> description [
 MCPToolGetClass >> descriptionDictionariesForClasses: someClasses includeComment: includeComment [
 
 	^ (someClasses collect: [ :each |
-		   self
-			   descriptionDictionaryForClass: each
-			   includeComment: includeComment ]) asArray
+			   self
+				   descriptionDictionaryForClass: each
+				   includeComment: includeComment ]) asArray
 ]
 
 { #category : 'private - hierarchy' }

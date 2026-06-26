@@ -3,9 +3,8 @@ Replaces the slot shape of an existing class using the Shift class installer. Om
 "
 Class {
 	#name : 'MCPReplaceClassDefinitionCommand',
-	#superclass : 'Object',
+	#superclass : 'MCPClassCommand',
 	#instVars : [
-		'className',
 		'slotNames',
 		'classSlotNames',
 		'replaceSlots',
@@ -15,18 +14,6 @@ Class {
 	#package : 'MCP',
 	#tag : 'Commands'
 }
-
-{ #category : 'accessing' }
-MCPReplaceClassDefinitionCommand >> className [
-
-	^ className
-]
-
-{ #category : 'accessing' }
-MCPReplaceClassDefinitionCommand >> className: aClassName [
-
-	className := aClassName
-]
 
 { #category : 'accessing' }
 MCPReplaceClassDefinitionCommand >> classSlotNames [
@@ -97,9 +84,9 @@ MCPReplaceClassDefinitionCommand >> replaceClassSlots: aBoolean [
 MCPReplaceClassDefinitionCommand >> replaceDefinitionOn: aClass [
 
 	^ ShiftClassInstaller update: aClass to: [ :builder |
-		  self replaceSlots ifTrue: [ builder slots: self slots ].
-		  self replaceClassSlots ifTrue: [
-			  builder classSlots: self classSlots ] ]
+			  self replaceSlots ifTrue: [ builder slots: self slots ].
+			  self replaceClassSlots ifTrue: [
+				  builder classSlots: self classSlots ] ]
 ]
 
 { #category : 'accessing' }

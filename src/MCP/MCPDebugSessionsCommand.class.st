@@ -74,12 +74,9 @@ MCPDebugSessionsCommand >> candidateIsAttached: aCandidate [
 { #category : 'private - candidates' }
 MCPDebugSessionsCommand >> debuggerCandidates [
 
-	| candidates debuggerClass reversed |
-	debuggerClass := Smalltalk globals
-		                 at: #StDebugger
-		                 ifAbsent: [ ^ #(  ) ].
+	| candidates reversed |
 	candidates := OrderedCollection new.
-	debuggerClass allInstancesDo: [ :debugger |
+	StDebugger allInstancesDo: [ :debugger |
 			| candidate |
 			candidate := MCPDebugSessionCandidate fromDebugger: debugger.
 			candidate isAttachable ifTrue: [ candidates add: candidate ] ].

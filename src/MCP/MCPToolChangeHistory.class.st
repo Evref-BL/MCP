@@ -117,27 +117,28 @@ MCPToolChangeHistory >> changeHistoryLogSchemaProperty [
 MCPToolChangeHistory >> commandForRequest: changeHistoryRequest [
 
 	changeHistoryRequest operation = 'listFiles' ifTrue: [
-		^ MCPListChangeHistoryLogsCommand
-			  tool: self
-			  request: changeHistoryRequest ].
+			^ MCPListChangeHistoryLogsCommand
+				  tool: self
+				  request: changeHistoryRequest ].
 	changeHistoryRequest operation = 'listEntries' ifTrue: [
-		^ MCPListChangeHistoryEntriesCommand
-			  tool: self
-			  request: changeHistoryRequest ].
+			^ MCPListChangeHistoryEntriesCommand
+				  tool: self
+				  request: changeHistoryRequest ].
 	(#( 'applyEntries' 'revertEntries' ) includes:
 		 changeHistoryRequest operation) ifTrue: [
-		^ MCPChangeHistorySelectionCommand
-			  tool: self
-			  request: changeHistoryRequest ].
+			^ MCPChangeHistorySelectionCommand
+				  tool: self
+				  request: changeHistoryRequest ].
 	MCPCommandError
 		signalErrorCode: #UnsupportedChangeHistoryAction
-		message: 'Unsupported change history action: ' , changeHistoryRequest operation
+		message:
+		'Unsupported change history action: '
+		, changeHistoryRequest operation
 		details: {
 				(#action -> changeHistoryRequest operation).
 				(#supportedActions
 				 -> #( 'listFiles' 'listEntries' 'applyEntries' 'revertEntries' )) }
 				asDictionary
-
 ]
 
 { #category : 'executing' }

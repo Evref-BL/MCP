@@ -5,7 +5,7 @@ It carries the updated class info and both the old and new comments so the tool 
 "
 Class {
 	#name : 'MCPChangeClassCommentResult',
-	#superclass : 'Object',
+	#superclass : 'MCPClassResult',
 	#instVars : [
 		'classInfo',
 		'oldClassComment',
@@ -30,7 +30,7 @@ MCPChangeClassCommentResult class >> classInfo: aClassInfo oldClassComment: anOl
 MCPChangeClassCommentResult >> asDictionary [
 
 	| data |
-	data := self classInfo asDictionary copy.
+	data := self newClassInfoDictionary.
 	data at: #oldClassComment put: self oldClassComment.
 	data at: #newClassComment put: self newClassComment.
 	^ data

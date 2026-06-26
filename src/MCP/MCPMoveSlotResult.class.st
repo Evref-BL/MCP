@@ -5,7 +5,7 @@ It includes updated class info, the moved slot identity, side, and affected clas
 "
 Class {
 	#name : 'MCPMoveSlotResult',
-	#superclass : 'Object',
+	#superclass : 'MCPClassResult',
 	#instVars : [
 		'classInfo',
 		'slotName',
@@ -44,7 +44,7 @@ MCPMoveSlotResult >> affectedClassNames: someClassNames [
 MCPMoveSlotResult >> asDictionary [
 
 	| data |
-	data := self classInfo asDictionary copy.
+	data := self newClassInfoDictionary.
 	data at: #slotName put: self slotName.
 	data at: #classSide put: self classSide.
 	data at: #affectedClassNames put: self affectedClassNames.

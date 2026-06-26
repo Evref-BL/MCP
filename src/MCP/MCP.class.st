@@ -29,26 +29,26 @@ MCP >> configurePort: aPortNumber debugMode: aBoolean [
 	wasRunning := self isRunning.
 
 	wasRunning ifFalse: [
-		self port: aPortNumber.
-		self debugMode: aBoolean.
-		^ self ].
+			self port: aPortNumber.
+			self debugMode: aBoolean.
+			^ self ].
 
 	currentPort = aPortNumber ifTrue: [
-		self debugMode: aBoolean.
-		^ self ].
+			self debugMode: aBoolean.
+			^ self ].
 
 	self stop.
 
 	[
-	self port: aPortNumber.
-	self debugMode: aBoolean.
-	self start ]
+		self port: aPortNumber.
+		self debugMode: aBoolean.
+		self start ]
 		on: Error
 		do: [ :error |
-			self port: currentPort.
-			self debugMode: aBoolean.
-			self start.
-			error pass ]
+				self port: currentPort.
+				self debugMode: aBoolean.
+				self start.
+				error pass ]
 ]
 
 { #category : 'accessing' }

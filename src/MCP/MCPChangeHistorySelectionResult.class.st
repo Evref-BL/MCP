@@ -3,7 +3,7 @@ Structured result for previewing or applying selected image change history entri
 "
 Class {
 	#name : 'MCPChangeHistorySelectionResult',
-	#superclass : 'Object',
+	#superclass : 'MCPResult',
 	#instVars : [
 		'historyFileName',
 		'selectionCriteria',

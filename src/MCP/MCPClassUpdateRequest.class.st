@@ -281,9 +281,9 @@ MCPClassUpdateRequest >> requestedContext [
 	context := Dictionary new.
 	context at: #className put: self className.
 	self suppliedProperties do: [ :propertyName |
-		context
-			at: propertyName asSymbol
-			put: (self contextValueForPropertyNamed: propertyName) ].
+			context
+				at: propertyName asSymbol
+				put: (self contextValueForPropertyNamed: propertyName) ].
 	^ context
 ]
 
@@ -341,11 +341,11 @@ MCPClassUpdateRequest >> slotOperation [
 		              ('pullUp' -> 'pullUpSlot').
 		              ('pushDown' -> 'pushDownSlot') } asDictionary.
 	^ operations at: self slotAction ifAbsent: [
-		  MCPCommandError
-			  signalErrorCode: #InvalidSlotAction
-			  message:
-			  'slotAction must be one of add, remove, rename, pullUp, pushDown.'
-			  details: self slotRequestedContext ]
+			  MCPCommandError
+				  signalErrorCode: #InvalidSlotAction
+				  message:
+				  'slotAction must be one of add, remove, rename, pullUp, pushDown.'
+				  details: self slotRequestedContext ]
 ]
 
 { #category : 'converting' }
@@ -418,28 +418,28 @@ MCPClassUpdateRequest >> validateSlotUpdate [
 	| operation |
 	operation := self slotOperation.
 	operation ifNil: [
-		(self hasSlotName or: [ self hasNewSlotName ]) ifTrue: [
-			MCPCommandError
-				signalErrorCode: #SlotActionRequired
-				message:
-				'slotAction is required when slotName or newSlotName is provided for update.'
-				details: self slotRequestedContext ].
-		^ self ].
+			(self hasSlotName or: [ self hasNewSlotName ]) ifTrue: [
+					MCPCommandError
+						signalErrorCode: #SlotActionRequired
+						message:
+						'slotAction is required when slotName or newSlotName is provided for update.'
+						details: self slotRequestedContext ].
+			^ self ].
 	self hasSlotName ifFalse: [
-		MCPCommandError
-			signalErrorCode: #SlotNameRequired
-			message: 'slotName is required for slot updates.'
-			details: self slotRequestedContext ].
+			MCPCommandError
+				signalErrorCode: #SlotNameRequired
+				message: 'slotName is required for slot updates.'
+				details: self slotRequestedContext ].
 	(operation = 'renameSlot' and: [ self hasNewSlotName not ]) ifTrue: [
-		MCPCommandError
-			signalErrorCode: #NewSlotNameRequired
-			message: 'newSlotName is required when slotAction=rename.'
-			details: self slotRequestedContext ].
+			MCPCommandError
+				signalErrorCode: #NewSlotNameRequired
+				message: 'newSlotName is required when slotAction=rename.'
+				details: self slotRequestedContext ].
 	(operation ~= 'renameSlot' and: [ self hasNewSlotName ]) ifTrue: [
-		MCPCommandError
-			signalErrorCode: #UnexpectedNewSlotName
-			message: 'newSlotName is only accepted when slotAction=rename.'
-			details: self slotRequestedContext ].
+			MCPCommandError
+				signalErrorCode: #UnexpectedNewSlotName
+				message: 'newSlotName is only accepted when slotAction=rename.'
+				details: self slotRequestedContext ].
 	^ self
 ]
 

@@ -73,24 +73,25 @@ MCPMonitoringState >> approximateOutputTokensForBytes: byteCount [
 MCPMonitoringState >> captureTraceSnapshotsFor: aRecord result: aToolResult error: anError [
 
 	[
-	[
-	aRecord isTraceWorthy
-		ifTrue: [
-			aRecord inputSnapshot: (self traceSnapshotFor: aRecord inputObject).
-			aRecord outputSnapshot:
-				(self traceSnapshotForResult: aToolResult error: anError) ]
-		ifFalse: [
-			aRecord inputSnapshot: nil.
-			aRecord outputSnapshot: nil ] ]
-		on: Error
-		do: [ :snapshotError |
-			aRecord inputSnapshot: nil.
-			aRecord outputSnapshot: (self traceSnapshotFor: {
-						 (#errorClass -> snapshotError class name asString).
-						 (#message
-						  ->
-						  (snapshotError messageText ifNil: [ snapshotError asString ])).
-						 (#during -> 'trace snapshot creation') } asDictionary) ] ]
+		[
+			aRecord isTraceWorthy
+				ifTrue: [
+						aRecord inputSnapshot:
+							(self traceSnapshotFor: aRecord inputObject).
+						aRecord outputSnapshot:
+							(self traceSnapshotForResult: aToolResult error: anError) ]
+				ifFalse: [
+						aRecord inputSnapshot: nil.
+						aRecord outputSnapshot: nil ] ]
+			on: Error
+			do: [ :snapshotError |
+					aRecord inputSnapshot: nil.
+					aRecord outputSnapshot: (self traceSnapshotFor: {
+								 (#errorClass -> snapshotError class name asString).
+								 (#message
+								  ->
+								  (snapshotError messageText ifNil: [ snapshotError asString ])).
+								 (#during -> 'trace snapshot creation') } asDictionary) ] ]
 		ensure: [ aRecord inputObject: nil ]
 ]
 
@@ -165,8 +166,8 @@ MCPMonitoringState >> ensureLogger [
 
 	logger ifNil: [ logger := TinyLogger new ].
 	memoryLogger ifNil: [
-		memoryLogger := MCPMemoryTinyLogger new.
-		logger addLogger: memoryLogger ].
+			memoryLogger := MCPMemoryTinyLogger new.
+			logger addLogger: memoryLogger ].
 	^ logger
 ]
 
@@ -475,13 +476,13 @@ MCPMonitoringState >> outlierExplanationForDurationMilliseconds: duration stats:
 	ratio := duration / average.
 	ratio < self outlierFactor ifTrue: [ ^ '' ].
 	^ String streamContents: [ :stream |
-		  stream
-			  print: duration;
-			  nextPutAll: ' ms is ';
-			  nextPutAll: (ratio asFloat printShowingDecimalPlaces: 1);
-			  nextPutAll: 'x the prior average of ';
-			  nextPutAll: (average asFloat printShowingDecimalPlaces: 1);
-			  nextPutAll: ' ms' ]
+			  stream
+				  print: duration;
+				  nextPutAll: ' ms is ';
+				  nextPutAll: (ratio asFloat printShowingDecimalPlaces: 1);
+				  nextPutAll: 'x the prior average of ';
+				  nextPutAll: (average asFloat printShowingDecimalPlaces: 1);
+				  nextPutAll: ' ms' ]
 ]
 
 { #category : 'accessing' }

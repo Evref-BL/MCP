@@ -38,18 +38,18 @@ MCPToolGetClassTest >> ensureClassComment: aComment onClassNamed: aClassName [
 MCPToolGetClassTest >> ensureClassMethodSource: aMethodSource onClassNamed: aClassName [
 
 	self withoutEpiceaDuring: [
-		(self classNamed: aClassName) classSide
-			compile: aMethodSource
-			classified: 'testing' ]
+			(self classNamed: aClassName) classSide
+				compile: aMethodSource
+				classified: 'testing' ]
 ]
 
 { #category : 'private' }
 MCPToolGetClassTest >> ensureMethodSource: aMethodSource onClassNamed: aClassName [
 
 	self withoutEpiceaDuring: [
-		(self classNamed: aClassName)
-			compile: aMethodSource
-			classified: 'testing' ]
+			(self classNamed: aClassName)
+				compile: aMethodSource
+				classified: 'testing' ]
 ]
 
 { #category : 'private' }
@@ -97,9 +97,9 @@ MCPToolGetClassTest >> restoreFixtureClasses [
 		slots: #( betaSlot alphaSlot )
 		classSlots: #( classBeta classAlpha ).
 	self withoutEpiceaDuring: [
-		(self classNamed: self baseClassName)
-			addClassVarNamed: 'BetaShared';
-			addClassVarNamed: 'AlphaShared' ].
+			(self classNamed: self baseClassName)
+				addClassVarNamed: 'BetaShared';
+				addClassVarNamed: 'AlphaShared' ].
 	self
 		createClassNamed: self childZClassName
 		superclassName: self baseClassName

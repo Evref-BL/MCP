@@ -87,9 +87,9 @@ MCPDashboardPresenter >> addSectionLayout: aSectionLayout expanded: expanded to:
 MCPDashboardPresenter >> applyConfiguration [
 
 	[
-	| newPort |
-	newPort := self readPortFromInput.
-	self model configurePort: newPort debugMode: debugCheckBox state ]
+		| newPort |
+		newPort := self readPortFromInput.
+		self model configurePort: newPort debugMode: debugCheckBox state ]
 		on: Error
 		do: [ :error | UIManager default alert: error messageText ].
 
@@ -121,9 +121,9 @@ MCPDashboardPresenter >> autoRefreshIntervalSeconds [
 MCPDashboardPresenter >> autoRefreshLoop [
 
 	[
-	[ self shouldAutoRefresh ] whileTrue: [
-		(Delay forSeconds: self autoRefreshIntervalSeconds) wait.
-		self shouldAutoRefresh ifTrue: [ self defer: [ self refreshView ] ] ] ]
+		[ self shouldAutoRefresh ] whileTrue: [
+				(Delay forSeconds: self autoRefreshIntervalSeconds) wait.
+				self shouldAutoRefresh ifTrue: [ self defer: [ self refreshView ] ] ] ]
 		ensure: [ autoRefreshProcess := nil ]
 ]
 
@@ -195,11 +195,11 @@ MCPDashboardPresenter >> dashboardWidgetsLayout [
 
 	(self isToolsSectionExpanded and: [
 		 self hasExpandedMonitoringSection ]) ifTrue: [
-		^ SpPanedLayout newTopToBottom
-			  positionOfSlider: 42 percent;
-			  first: self toolsWidgetLayout;
-			  second: self monitoringWidgetsLayout;
-			  yourself ].
+			^ SpPanedLayout newTopToBottom
+				  positionOfSlider: 42 percent;
+				  first: self toolsWidgetLayout;
+				  second: self monitoringWidgetsLayout;
+				  yourself ].
 	^ self dashboardWidgetsBoxLayout
 ]
 
@@ -226,14 +226,14 @@ MCPDashboardPresenter >> defaultLayout [
 MCPDashboardPresenter >> disclosureLabelFor: title count: count expanded: expanded [
 
 	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: (expanded
-					   ifTrue: [ '[-] ' ]
-					   ifFalse: [ '[+] ' ]);
-			  nextPutAll: title;
-			  nextPutAll: ' (';
-			  print: count;
-			  nextPut: $) ]
+			  stream
+				  nextPutAll: (expanded
+						   ifTrue: [ '[-] ' ]
+						   ifFalse: [ '[+] ' ]);
+				  nextPutAll: title;
+				  nextPutAll: ' (';
+				  print: count;
+				  nextPut: $) ]
 ]
 
 { #category : 'collapsing' }
@@ -535,7 +535,8 @@ MCPDashboardPresenter >> monitoringSectionsLayout [
 						   second: self logsWidgetLayout;
 						   yourself);
 				  yourself ].
-	self expandedMonitoringSectionCount = 2 ifTrue: [ ^ self twoExpandedMonitoringSectionsLayout ].
+	self expandedMonitoringSectionCount = 2 ifTrue: [
+		^ self twoExpandedMonitoringSectionsLayout ].
 	^ self monitoringWidgetsBoxLayout
 ]
 
@@ -670,9 +671,9 @@ MCPDashboardPresenter >> restartServer [
 MCPDashboardPresenter >> serverStatusIconNameForRunning: isRunning listening: isListening [
 
 	isRunning ifFalse: [
-		^ isListening
-			  ifTrue: [ #testRed ]
-			  ifFalse: [ #testNotRun ] ].
+			^ isListening
+				  ifTrue: [ #testRed ]
+				  ifFalse: [ #testNotRun ] ].
 	^ isListening
 		  ifTrue: [ #testGreen ]
 		  ifFalse: [ #testRed ]
@@ -690,9 +691,9 @@ MCPDashboardPresenter >> serverStatusLabelForRunning: isRunning listening: isLis
 MCPDashboardPresenter >> serverStatusValueForRunning: isRunning listening: isListening [
 
 	isRunning ifFalse: [
-		^ isListening
-			  ifTrue: [ 'stopped, socket still listening' ]
-			  ifFalse: [ 'stopped' ] ].
+			^ isListening
+				  ifTrue: [ 'stopped, socket still listening' ]
+				  ifFalse: [ 'stopped' ] ].
 	^ isListening
 		  ifTrue: [ 'running' ]
 		  ifFalse: [ 'running, socket not listening' ]
@@ -731,9 +732,9 @@ MCPDashboardPresenter >> statusRowLayout [
 		  vAlignCenter;
 		  add: statusLabel expand: false;
 		  add: statusIcon withConstraints: [ :constraints |
-			  constraints
-				  width: 18;
-				  height: 18 ];
+				  constraints
+					  width: 18;
+					  height: 18 ];
 		  add: statusValueLabel expand: false;
 		  yourself
 ]
@@ -814,12 +815,12 @@ MCPDashboardPresenter >> tracesContextMenu [
 
 	^ self newMenu
 		  addGroup: [ :group |
-			  group addItem: [ :item |
-					  item
-						  name: 'Inspect';
-						  description: 'Inspect the selected trace record';
-						  enabled: [ tracesTable selectedItem isNotNil ];
-						  action: [ self inspectSelectedTraceRecord ] ] ];
+				  group addItem: [ :item |
+							  item
+								  name: 'Inspect';
+								  description: 'Inspect the selected trace record';
+								  enabled: [ tracesTable selectedItem isNotNil ];
+								  action: [ self inspectSelectedTraceRecord ] ] ];
 		  yourself
 ]
 

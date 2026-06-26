@@ -21,9 +21,9 @@ MCPImageLookup class >> classNamed: aClassName [
 MCPImageLookup class >> classNamed: aClassName scopeName: scopeName [
 
 	^ Smalltalk globals at: aClassName asSymbol ifAbsent: [
-		  MCPCommandError
-			  signalMissingClassNamed: aClassName
-			  scopeName: scopeName ]
+			  MCPCommandError
+				  signalMissingClassNamed: aClassName
+				  scopeName: scopeName ]
 ]
 
 { #category : 'resolving' }
@@ -38,7 +38,7 @@ MCPImageLookup class >> packageNamed: aPackageName scopeName: scopeName [
 	^ PackageOrganizer default
 		  packageNamed: aPackageName asSymbol
 		  ifAbsent: [
-			  MCPCommandError
-				  signalMissingPackageNamed: aPackageName
-				  scopeName: scopeName ]
+				  MCPCommandError
+					  signalMissingPackageNamed: aPackageName
+					  scopeName: scopeName ]
 ]

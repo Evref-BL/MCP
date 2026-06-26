@@ -52,10 +52,10 @@ MCPMethodReferenceSpec >> compiledMethod [
 	behavior := self behavior.
 	selectorSymbol := self selector asSymbol.
 	(behavior includesSelector: selectorSymbol) ifFalse: [
-		MCPCommandError
-			signalMissingMethodInClassName: self className
-			classSide: self classSide
-			selector: self selector ].
+			MCPCommandError
+				signalMissingMethodInClassName: self className
+				classSide: self classSide
+				selector: self selector ].
 	^ behavior compiledMethodAt: selectorSymbol
 ]
 

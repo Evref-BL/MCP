@@ -3,11 +3,9 @@ Command that evaluates Smalltalk code for the evaluate tool and returns a result
 "
 Class {
 	#name : 'MCPEvaluateCommand',
-	#superclass : 'Object',
+	#superclass : 'MCPToolRequestCommand',
 	#instVars : [
-		'request',
-		'resultPreviewCharacterLimit',
-		'tool'
+		'resultPreviewCharacterLimit'
 	],
 	#category : 'MCP-Commands',
 	#package : 'MCP',
@@ -31,15 +29,15 @@ MCPEvaluateCommand >> execute [
 	compiler compilationContext isScripting: true.
 	notice := nil.
 	compiler failBlock: [ :aNotice |
-		notice := aNotice.
-		nil ].
+			notice := aNotice.
+			nil ].
 	answer := [ compiler evaluate: request code ]
 		          on: Exception
 		          do: [ :error |
-			          (PharoCompatibility syntaxNoticeFromException: error)
-				          ifNotNil: [
-				          :syntaxNotice | ^ self syntaxFailureFor: syntaxNotice ].
-			          ^ self runtimeFailureFor: error ].
+				          (PharoCompatibility syntaxNoticeFromException: error)
+					          ifNotNil: [ :syntaxNotice |
+					          ^ self syntaxFailureFor: syntaxNotice ].
+				          ^ self runtimeFailureFor: error ].
 	notice ifNotNil: [ ^ self syntaxFailureFor: notice ].
 	^ MCPEvaluateResult okData: {
 			  (#resultClassName -> answer class name asString).
@@ -55,12 +53,6 @@ MCPEvaluateCommand >> initializeTool: aTool request: aRequest resultPreviewChara
 	request := aRequest.
 	resultPreviewCharacterLimit := anInteger.
 	^ self
-]
-
-{ #category : 'accessing' }
-MCPEvaluateCommand >> request [
-
-	^ request
 ]
 
 { #category : 'accessing' }
@@ -87,10 +79,4 @@ MCPEvaluateCommand >> syntaxFailureFor: aNotice [
 	^ MCPEvaluateResult
 		  errorSummary: (tool syntaxFailureMessageFor: aNotice)
 		  details: details
-]
-
-{ #category : 'accessing' }
-MCPEvaluateCommand >> tool [
-
-	^ tool
 ]

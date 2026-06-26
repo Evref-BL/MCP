@@ -5,9 +5,8 @@ It records the previous comment and returns an MCPChangeClassCommentResult so cl
 "
 Class {
 	#name : 'MCPChangeClassCommentCommand',
-	#superclass : 'Object',
+	#superclass : 'MCPClassCommand',
 	#instVars : [
-		'className',
 		'classComment'
 	],
 	#category : 'MCP-Commands',
@@ -36,18 +35,6 @@ MCPChangeClassCommentCommand >> classComment: aString [
 	classComment := aString ifNil: [ '' ] ifNotNil: [ aString asString ]
 ]
 
-{ #category : 'accessing' }
-MCPChangeClassCommentCommand >> className [
-
-	^ className
-]
-
-{ #category : 'accessing' }
-MCPChangeClassCommentCommand >> className: aString [
-
-	className := aString
-]
-
 { #category : 'executing' }
 MCPChangeClassCommentCommand >> execute [
 
@@ -55,10 +42,10 @@ MCPChangeClassCommentCommand >> execute [
 	targetClass := self targetClass.
 	oldClassComment := targetClass comment.
 	oldClassComment = self classComment ifTrue: [
-		^ MCPChangeClassCommentResult
-			  classInfo: (MCPClassInfo fromClass: targetClass)
-			  oldClassComment: oldClassComment
-			  newClassComment: oldClassComment ].
+			^ MCPChangeClassCommentResult
+				  classInfo: (MCPClassInfo fromClass: targetClass)
+				  oldClassComment: oldClassComment
+				  newClassComment: oldClassComment ].
 	targetClass comment: self classComment.
 	updatedClass := Smalltalk globals at: self className asSymbol.
 	^ MCPChangeClassCommentResult

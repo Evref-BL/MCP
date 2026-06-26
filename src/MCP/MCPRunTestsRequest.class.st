@@ -1,5 +1,7 @@
 "
-Parsed request for the shared test runner command. It contains parsed test requests, the timeout converted to milliseconds, and the internal operation selected by the concrete tool. Coverage requests are supplied by MCPToolRunTestCoverage.
+Parsed request shared by test_run and test_coverage_run.
+
+It stores compact test selections, timeout converted to milliseconds, and the internal operation selected by the concrete tool. Coverage requests are supplied by MCPToolRunTestCoverage.
 "
 Class {
 	#name : 'MCPRunTestsRequest',
@@ -15,12 +17,34 @@ Class {
 	#tag : 'Requests'
 }
 
+{ #category : 'private - parsing' }
+MCPRunTestsRequest class >> addClassNames: classNames to: requests [
+
+	classNames do: [ :className |
+		requests add: (MCPTestRunRequest className: className) ]
+]
+
+{ #category : 'private - parsing' }
+MCPRunTestsRequest class >> addMethodReferences: methodReferences to: requests [
+
+	methodReferences do: [ :methodReference |
+		requests add:
+			(MCPTestRunRequest fromMethodReference: methodReference) ]
+]
+
+{ #category : 'private - parsing' }
+MCPRunTestsRequest class >> addPackageNames: packageNames to: requests [
+
+	packageNames do: [ :packageName |
+		requests add: (MCPTestRunRequest packageName: packageName) ]
+]
+
 { #category : 'instance creation' }
 MCPRunTestsRequest class >> fromRequest: aRequest tool: aTool operation: operation [
 
 	| coverageRequest |
 	(#( 'run' 'coverage' ) includes: operation) ifFalse: [
-		Error signal: 'operation must be one of run or coverage.' ].
+		Error signal: 'operation must be run or coverage.' ].
 	coverageRequest := operation = 'coverage' ifTrue: [
 			                   MCPTestCoverageRequest
 				                   fromValue:
@@ -43,26 +67,31 @@ MCPRunTestsRequest class >> fromRequest: aRequest tool: aTool operation: operati
 { #category : 'private - parsing' }
 MCPRunTestsRequest class >> testRequestsFromToolRequest: request [
 
-	| requests |
-	requests := request objectCollectionArgumentNamed: 'tests'.
+	| classNames methodReferences packageNames requests |
+	packageNames := request
+		                uniqueStringCollectionArgumentNamed: 'packages'
+		                default: #(  ).
+	classNames := request
+		              uniqueStringCollectionArgumentNamed: 'classes'
+		              default: #(  ).
+	methodReferences := request
+		                    uniqueStringCollectionArgumentNamed: 'methods'
+		                    default: #(  ).
+	(packageNames isEmpty and: [
+		 classNames isEmpty and: [ methodReferences isEmpty ] ]) ifTrue: [
+		Error signal: 'Provide at least one package, class, or method.' ].
+	requests := OrderedCollection new.
+	self addPackageNames: packageNames to: requests.
+	self addClassNames: classNames to: requests.
+	self addMethodReferences: methodReferences to: requests.
 	requests ifEmpty: [
-		Error signal: 'tests must contain at least one test request.' ].
-	^ (requests collect: [ :each |
-		   MCPTestRunRequest fromValue: each usingToolRequest: request ])
-		  asArray
+		Error signal: 'No test classes or methods matched request.' ].
+	^ requests asArray
 ]
 
 { #category : 'private - parsing' }
 MCPRunTestsRequest class >> timeoutMillisecondsFromToolRequest: request defaultSeconds: defaultSeconds [
 
-	((request hasArgumentNamed: 'timeoutSeconds') and: [
-		 request hasArgumentNamed: 'timeoutMilliseconds' ]) ifTrue: [
-			Error signal:
-				'timeoutSeconds and timeoutMilliseconds cannot both be provided.' ].
-	(request hasArgumentNamed: 'timeoutMilliseconds') ifTrue: [
-			^ request
-				  nonNegativeIntegerArgumentNamed: 'timeoutMilliseconds'
-				  default: defaultSeconds * 1000 ].
 	^ (request
 		   nonNegativeIntegerArgumentNamed: 'timeoutSeconds'
 		   default: defaultSeconds) * 1000

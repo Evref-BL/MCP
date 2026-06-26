@@ -3,7 +3,7 @@ Result DTO produced by the evaluate command. It transports either evaluated data
 "
 Class {
 	#name : 'MCPEvaluateResult',
-	#superclass : 'Object',
+	#superclass : 'MCPResult',
 	#instVars : [
 		'status',
 		'data',
@@ -33,6 +33,18 @@ MCPEvaluateResult class >> okData: aDictionary [
 		  data: aDictionary
 		  summary: nil
 		  errorDetails: nil
+]
+
+{ #category : 'converting' }
+MCPEvaluateResult >> asDictionary [
+
+	| result |
+	result := Dictionary new.
+	result at: #status put: self status.
+	self data ifNotNil: [ :value | result at: #data put: value ].
+	self summary ifNotNil: [ :text | result at: #summary put: text ].
+	self errorDetails ifNotNil: [ :value | result at: #error put: value ].
+	^ result
 ]
 
 { #category : 'accessing' }

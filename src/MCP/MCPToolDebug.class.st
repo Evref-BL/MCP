@@ -29,6 +29,17 @@ MCPToolDebug >> boundedIntegerSchemaPropertyNamed: propertyName description: pro
 	^ property
 ]
 
+{ #category : 'metadata' }
+MCPToolDebug >> buildInputSchema [
+
+	^ MCPStructureInputSchema new
+		  type: 'object';
+		  properties: self inputProperties;
+		  required: self requiredInputProperties;
+		  additionalProperties: false;
+		  yourself
+]
+
 { #category : 'private - execution' }
 MCPToolDebug >> commandForRequest: debugRequest [
 
@@ -66,6 +77,12 @@ MCPToolDebug >> executeWithRequest: request [
 ]
 
 { #category : 'private - schema' }
+MCPToolDebug >> inputProperties [
+
+	^ #(  )
+]
+
+{ #category : 'private - schema' }
 MCPToolDebug >> nonNegativeIntegerSchemaPropertyNamed: propertyName description: propertyDescription default: defaultValue [
 
 	| property |
@@ -75,6 +92,12 @@ MCPToolDebug >> nonNegativeIntegerSchemaPropertyNamed: propertyName description:
 		            default: defaultValue.
 	property minimum: 0.
 	^ property
+]
+
+{ #category : 'private - schema' }
+MCPToolDebug >> requiredInputProperties [
+
+	^ #(  )
 ]
 
 { #category : 'private - execution' }
@@ -88,6 +111,16 @@ MCPToolDebug >> resultForCommandResult: commandResult [
 		  successResultText: commandResult summary
 		  data: commandResult data
 		  warnings: commandResult warnings
+]
+
+{ #category : 'private - schema' }
+MCPToolDebug >> sessionIdSchemaProperty [
+
+	^ self
+		  schemaPropertyNamed: 'sessionId'
+		  type: 'string'
+		  description:
+		  'Opaque debug session identifier returned by debug_session_list, debug_capture, debug_test_run, or debug_candidate_attach.'
 ]
 
 { #category : 'private - schema' }

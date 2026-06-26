@@ -16,14 +16,14 @@ MCPRenameClassCommandTest >> ensureOriginalFixtureState [
 	originalSymbol := self originalClassName asSymbol.
 	renamedSymbol := self renamedClassName asSymbol.
 	self withoutEpiceaDuring: [
-		((Smalltalk globals includesKey: originalSymbol) and: [
-			 Smalltalk globals includesKey: renamedSymbol ]) ifTrue: [
-			(Smalltalk globals at: renamedSymbol) removeFromSystem ].
-		((Smalltalk globals includesKey: renamedSymbol) and: [
-			 (Smalltalk globals includesKey: originalSymbol) not ]) ifTrue: [
-			(ReRenameClassRefactoring
-				 rename: self renamedClassName
-				 to: self originalClassName) execute ] ]
+			((Smalltalk globals includesKey: originalSymbol) and: [
+				 Smalltalk globals includesKey: renamedSymbol ]) ifTrue: [
+				(Smalltalk globals at: renamedSymbol) removeFromSystem ].
+			((Smalltalk globals includesKey: renamedSymbol) and: [
+				 (Smalltalk globals includesKey: originalSymbol) not ]) ifTrue: [
+					(ReRenameClassRefactoring
+						 rename: self renamedClassName
+						 to: self originalClassName) execute ] ]
 ]
 
 { #category : 'private' }
@@ -57,9 +57,9 @@ MCPRenameClassCommandTest >> testMissingClassSignalsCommandError [
 
 	| error |
 	error := self captureCommandError: [
-		         (MCPRenameClassCommand
-			          className: 'MCPRenameClassCommandTestMissing'
-			          newClassName: self renamedClassName) execute ].
+			         (MCPRenameClassCommand
+				          className: 'MCPRenameClassCommandTestMissing'
+				          newClassName: self renamedClassName) execute ].
 	self assert: error errorCode equals: #ClassNotFound.
 	self
 		assert: (error structuredDetails at: #className)

@@ -54,7 +54,8 @@ MCPToolRegistry class >> additionalKeywordsForTool: aTool [
 	toolName = 'repository_branch_switch' ifTrue: [
 		^ #( 'repo' 'iceberg' 'git' 'branch' 'switch' ) ].
 	toolName = 'repository_branch_checkout' ifTrue: [
-		^ #( 'repo' 'iceberg' 'git' 'branch' 'checkout' 'reload' 'stale' 'verification' ) ].
+			^ #( 'repo' 'iceberg' 'git' 'branch' 'checkout' 'reload' 'stale'
+			     'verification' ) ].
 	toolName = 'repository_head_adopt' ifTrue: [
 		^ #( 'repo' 'iceberg' 'git' 'head' 'adopt' ) ].
 	toolName = 'baseline_load' ifTrue: [
@@ -470,7 +471,7 @@ MCPToolRegistry class >> publicToolNames [
 { #category : 'tools' }
 MCPToolRegistry class >> publicTools [
 
-	^ (self registrations collect: [ :each | each tool ]) asArray
+	^ self registrations collect: [ :each | each tool ]
 ]
 
 { #category : 'tools' }

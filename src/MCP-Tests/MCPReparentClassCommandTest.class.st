@@ -28,8 +28,8 @@ MCPReparentClassCommandTest >> ensureFixtureClasses [
 		protocol: 'testing'
 		on: (self classNamed: self reparentTargetClassName).
 	self withoutEpiceaDuring: [
-		(self classNamed: self reparentTargetClassName) comment:
-			'reparent comment' ]
+			(self classNamed: self reparentTargetClassName) comment:
+				'reparent comment' ]
 ]
 
 { #category : 'private' }
@@ -78,9 +78,9 @@ MCPReparentClassCommandTest >> testMissingClassSignalsCommandError [
 
 	| error |
 	error := self captureCommandError: [
-		         (MCPReparentClassCommand
-			          className: 'MCPReparentClassCommandTestMissing'
-			          superclassName: self reparentSuperclassName) execute ].
+			         (MCPReparentClassCommand
+				          className: 'MCPReparentClassCommandTestMissing'
+				          superclassName: self reparentSuperclassName) execute ].
 	self assert: error errorCode equals: #ClassNotFound.
 	self
 		assert: (error structuredDetails at: #className)
@@ -92,9 +92,9 @@ MCPReparentClassCommandTest >> testMissingSuperclassSignalsCommandError [
 
 	| error |
 	error := self captureCommandError: [
-		         (MCPReparentClassCommand
-			          className: self reparentTargetClassName
-			          superclassName: 'DefinitelyMissingSuperclass') execute ].
+			         (MCPReparentClassCommand
+				          className: self reparentTargetClassName
+				          superclassName: 'DefinitelyMissingSuperclass') execute ].
 	self assert: error errorCode equals: #SuperclassNotFound.
 	self
 		assert: (error structuredDetails at: #superclassName)

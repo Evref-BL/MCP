@@ -3,11 +3,7 @@ Parsed input for repository_branch_switch. It resolves the registered Iceberg re
 "
 Class {
 	#name : 'MCPRepositorySwitchBranchRequest',
-	#superclass : 'Object',
-	#instVars : [
-		'repositoryReference',
-		'branchName'
-	],
+	#superclass : 'MCPRepositoryBranchRequest',
 	#category : 'MCP-Requests',
 	#package : 'MCP',
 	#tag : 'Requests'
@@ -19,25 +15,10 @@ MCPRepositorySwitchBranchRequest class >> fromRequest: request tool: aTool [
 	^ self new initializeFromRequest: request
 ]
 
-{ #category : 'accessing' }
-MCPRepositorySwitchBranchRequest >> branchName [
-
-	^ branchName ifNil: [ '' ]
-]
-
 { #category : 'converting' }
 MCPRepositorySwitchBranchRequest >> commandForTool: aTool [
 
 	^ MCPSwitchRepositoryBranchCommand tool: aTool request: self
-]
-
-{ #category : 'initialization' }
-MCPRepositorySwitchBranchRequest >> initializeFromRequest: request [
-
-	repositoryReference := MCPRepositoryReferenceSpec fromRequest:
-		                       request.
-	branchName := request stringArgumentNamed: 'branchName'.
-	^ self
 ]
 
 { #category : 'accessing' }
@@ -50,19 +31,4 @@ MCPRepositorySwitchBranchRequest >> operation [
 MCPRepositorySwitchBranchRequest >> repository [
 
 	^ self repositoryReference repository
-]
-
-{ #category : 'accessing' }
-MCPRepositorySwitchBranchRequest >> repositoryReference [
-
-	^ repositoryReference
-]
-
-{ #category : 'converting' }
-MCPRepositorySwitchBranchRequest >> requestedContext [
-
-	| context |
-	context := self repositoryReference requestedContext copy.
-	context at: #branchName put: self branchName.
-	^ context
 ]

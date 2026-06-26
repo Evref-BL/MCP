@@ -5,10 +5,8 @@ It supports the world target and uses an injectable form provider so tests can e
 "
 Class {
 	#name : 'MCPScreenshotCommand',
-	#superclass : 'Object',
+	#superclass : 'MCPToolRequestCommand',
 	#instVars : [
-		'tool',
-		'request',
 		'formProvider'
 	],
 	#category : 'MCP-Commands',
@@ -72,20 +70,6 @@ MCPScreenshotCommand >> formProvider [
 { #category : 'initialization' }
 MCPScreenshotCommand >> initializeTool: aTool request: aRequest formProvider: aBlock [
 
-	tool := aTool.
-	request := aRequest.
-	formProvider := aBlock ifNil: [ [ self captureWorldForm ] ].
-	^ self
-]
-
-{ #category : 'accessing' }
-MCPScreenshotCommand >> request [
-
-	^ request
-]
-
-{ #category : 'accessing' }
-MCPScreenshotCommand >> tool [
-
-	^ tool
+	super initializeTool: aTool request: aRequest.
+	formProvider := aBlock ifNil: [ [ self captureWorldForm ] ]
 ]

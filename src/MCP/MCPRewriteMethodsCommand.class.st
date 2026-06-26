@@ -5,21 +5,11 @@ It resolves the method scope, delegates pattern matching to the NewTools rewrite
 "
 Class {
 	#name : 'MCPRewriteMethodsCommand',
-	#superclass : 'Object',
-	#instVars : [
-		'tool',
-		'request'
-	],
+	#superclass : 'MCPToolRequestCommand',
 	#category : 'MCP-Commands',
 	#package : 'MCP',
 	#tag : 'Commands'
 }
-
-{ #category : 'instance creation' }
-MCPRewriteMethodsCommand class >> tool: aTool request: aRequest [
-
-	^ self new initializeTool: aTool request: aRequest
-]
 
 { #category : 'private - rewriting' }
 MCPRewriteMethodsCommand >> applyChanges: changes [
@@ -35,9 +25,9 @@ MCPRewriteMethodsCommand >> changeInfosForChanges: changes [
 
 	^ changes
 		  collect: [ :each |
-			  MCPMethodRewriteChangeInfo
-				  fromChange: each
-				  includeSources: self request includeSources ]
+				  MCPMethodRewriteChangeInfo
+					  fromChange: each
+					  includeSources: self request includeSources ]
 		  as: Array
 ]
 
@@ -111,24 +101,10 @@ MCPRewriteMethodsCommand >> hashForChange: aChange [
 		  into: [ :hash :valueHash | (hash bitXor: valueHash) hashMultiply ]
 ]
 
-{ #category : 'initialization' }
-MCPRewriteMethodsCommand >> initializeTool: aTool request: aRequest [
-
-	tool := aTool.
-	request := aRequest.
-	^ self
-]
-
 { #category : 'private - rewriting' }
 MCPRewriteMethodsCommand >> refactoringChangeManager [
 
 	^ PharoCompatibility refactoringChangeManagerClass instance
-]
-
-{ #category : 'accessing' }
-MCPRewriteMethodsCommand >> request [
-
-	^ request
 ]
 
 { #category : 'private - rewriting' }
@@ -188,8 +164,8 @@ MCPRewriteMethodsCommand >> stableHashForSource: aString [
 	| hash |
 	hash := 5381.
 	aString do: [ :character |
-		character isSeparator ifFalse: [
-			hash := (hash bitXor: character asciiValue) hashMultiply ] ].
+			character isSeparator ifFalse: [
+				hash := (hash bitXor: character asciiValue) hashMultiply ] ].
 	^ hash abs
 ]
 
@@ -217,16 +193,10 @@ MCPRewriteMethodsCommand >> stableHashForValue: anObject [
 MCPRewriteMethodsCommand >> successSummaryForReport: report [
 
 	report apply ifTrue: [
-		^ 'Applied ' , report appliedCount asString
-		  , ' method rewrite change(s).' ].
+			^ 'Applied ' , report appliedCount asString
+			  , ' method rewrite change(s).' ].
 	^ 'Previewed ' , report changeCount asString
 	  , ' method rewrite change(s).'
-]
-
-{ #category : 'accessing' }
-MCPRewriteMethodsCommand >> tool [
-
-	^ tool
 ]
 
 { #category : 'private - validating' }

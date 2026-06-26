@@ -5,9 +5,8 @@ It preserves the old class name for reporting and returns the renamed class meta
 "
 Class {
 	#name : 'MCPRenameClassCommand',
-	#superclass : 'Object',
+	#superclass : 'MCPClassCommand',
 	#instVars : [
-		'className',
 		'newClassName',
 		'model'
 	],
@@ -33,18 +32,6 @@ MCPRenameClassCommand class >> className: aClassName newClassName: aNewClassName
 		  newClassName: aNewClassName;
 		  model: aModel;
 		  yourself
-]
-
-{ #category : 'accessing' }
-MCPRenameClassCommand >> className [
-
-	^ className
-]
-
-{ #category : 'accessing' }
-MCPRenameClassCommand >> className: aString [
-
-	className := aString
 ]
 
 { #category : 'executing' }
@@ -93,8 +80,8 @@ MCPRenameClassCommand >> refactoring [
 				  rename: self className
 				  to: self newClassName ]
 		  ifNotNil: [
-			  ReRenameClassRefactoring
-				  model: self model
-				  rename: self className
-				  to: self newClassName ]
+				  ReRenameClassRefactoring
+					  model: self model
+					  rename: self className
+					  to: self newClassName ]
 ]

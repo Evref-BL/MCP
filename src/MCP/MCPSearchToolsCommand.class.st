@@ -5,12 +5,7 @@ This command supports the discoverable-tool workflow: agents can search by text 
 "
 Class {
 	#name : 'MCPSearchToolsCommand',
-	#superclass : 'Object',
-	#instVars : [
-		'tool',
-		'request',
-		'toolExposurePolicy'
-	],
+	#superclass : 'MCPToolCatalogCommand',
 	#category : 'MCP-Commands',
 	#package : 'MCP',
 	#tag : 'Commands'
@@ -23,16 +18,6 @@ MCPSearchToolsCommand class >> tool: aTool request: aRequest [
 		  tool: aTool
 		  request: aRequest
 		  toolExposurePolicy: MCPToolExposurePolicy default
-]
-
-{ #category : 'instance creation' }
-MCPSearchToolsCommand class >> tool: aTool request: aRequest toolExposurePolicy: aToolExposurePolicy [
-
-	^ self new
-		  tool: aTool;
-		  request: aRequest;
-		  toolExposurePolicy: aToolExposurePolicy;
-		  yourself
 ]
 
 { #category : 'executing' }
@@ -49,41 +34,4 @@ MCPSearchToolsCommand >> execute [
 				    searchMetadataForTool: each
 				    usingPolicy: self toolExposurePolicy ]) asArray) }
 		  asDictionary
-]
-
-{ #category : 'accessing' }
-MCPSearchToolsCommand >> request [
-
-	^ request
-]
-
-{ #category : 'accessing' }
-MCPSearchToolsCommand >> request: anObject [
-
-	request := anObject
-]
-
-{ #category : 'accessing' }
-MCPSearchToolsCommand >> tool [
-
-	^ tool
-]
-
-{ #category : 'accessing' }
-MCPSearchToolsCommand >> tool: anObject [
-
-	tool := anObject
-]
-
-{ #category : 'accessing' }
-MCPSearchToolsCommand >> toolExposurePolicy [
-
-	^ toolExposurePolicy ifNil: [ MCPToolExposurePolicy default ]
-]
-
-{ #category : 'accessing' }
-MCPSearchToolsCommand >> toolExposurePolicy: aToolExposurePolicy [
-
-	toolExposurePolicy := aToolExposurePolicy ifNil: [
-		                      MCPToolExposurePolicy default ]
 ]

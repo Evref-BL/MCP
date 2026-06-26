@@ -90,6 +90,12 @@ MCPDebugAttachedDebuggerSelectionStrategy class >> reset [
 	^ self
 ]
 
+{ #category : 'iterating' }
+MCPDebugAttachedDebuggerSelectionStrategy >> nextDebugger [
+
+	^ self shouldNotImplement
+]
+
 { #category : 'debuggers' }
 MCPDebugAttachedDebuggerSelectionStrategy >> openDebuggerForSession: aDebugSession [
 

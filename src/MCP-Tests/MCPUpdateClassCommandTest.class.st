@@ -12,22 +12,36 @@ Class {
 { #category : 'private' }
 MCPUpdateClassCommandTest >> classToolClassForArguments: arguments slotAction: slotAction [
 
-	((arguments includesKey: #superclassName) and: [ arguments includesKey: #packageName ]) ifTrue: [ ^ MCPToolCreateClass ].
+	((arguments includesKey: #superclassName) and: [
+		 arguments includesKey: #packageName ]) ifTrue: [
+		^ MCPToolCreateClass ].
 	slotAction = 'add' ifTrue: [ ^ MCPToolAddClassSlot ].
 	slotAction = 'remove' ifTrue: [ ^ MCPToolRemoveClassSlot ].
 	slotAction = 'rename' ifTrue: [ ^ MCPToolUpdateClassSlotName ].
 	slotAction = 'pullUp' ifTrue: [ ^ MCPToolPullUpClassSlot ].
 	slotAction = 'pushDown' ifTrue: [ ^ MCPToolPushDownClassSlot ].
-	(arguments includesKey: #newClassName) ifTrue: [ ^ MCPToolUpdateClassName ].
-	(arguments includesKey: #classComment) ifTrue: [ ^ MCPToolUpdateClassComment ].
-	(arguments includesKey: #traits) ifTrue: [ ^ MCPToolUpdateClassTraits ].
-	(arguments includesKey: #classTraits) ifTrue: [ ^ MCPToolUpdateClassSideTraits ].
-	(arguments includesKey: #sharedVariables) ifTrue: [ ^ MCPToolUpdateClassSharedVariables ].
-	(arguments includesKey: #sharedPools) ifTrue: [ ^ MCPToolUpdateClassSharedPools ].
-	(arguments includesKey: #layout) ifTrue: [ ^ MCPToolUpdateClassLayout ].
-	((arguments includesKey: #slots) or: [ arguments includesKey: #classSlots ]) ifTrue: [ ^ MCPToolUpdateClassSlots ].
-	(arguments includesKey: #superclassName) ifTrue: [ ^ MCPToolUpdateClassSuperclass ].
-	((arguments includesKey: #packageName) or: [ arguments includesKey: #tag ]) ifTrue: [ ^ MCPToolUpdateClassPackage ].
+	(arguments includesKey: #newClassName) ifTrue: [
+		^ MCPToolUpdateClassName ].
+	(arguments includesKey: #classComment) ifTrue: [
+		^ MCPToolUpdateClassComment ].
+	(arguments includesKey: #traits) ifTrue: [
+		^ MCPToolUpdateClassTraits ].
+	(arguments includesKey: #classTraits) ifTrue: [
+		^ MCPToolUpdateClassSideTraits ].
+	(arguments includesKey: #sharedVariables) ifTrue: [
+		^ MCPToolUpdateClassSharedVariables ].
+	(arguments includesKey: #sharedPools) ifTrue: [
+		^ MCPToolUpdateClassSharedPools ].
+	(arguments includesKey: #layout) ifTrue: [
+		^ MCPToolUpdateClassLayout ].
+	((arguments includesKey: #slots) or: [
+		 arguments includesKey: #classSlots ]) ifTrue: [
+		^ MCPToolUpdateClassSlots ].
+	(arguments includesKey: #superclassName) ifTrue: [
+		^ MCPToolUpdateClassSuperclass ].
+	((arguments includesKey: #packageName) or: [
+		 arguments includesKey: #tag ]) ifTrue: [
+		^ MCPToolUpdateClassPackage ].
 	^ MCPToolUpdateClassComment
 ]
 
@@ -36,7 +50,7 @@ MCPUpdateClassCommandTest >> commandForArguments: arguments [
 
 	| mutationRequest rawArguments slotAction tool toolClass toolRequest |
 	rawArguments := arguments copy.
-	rawArguments removeKey: #action ifAbsent: [  ].
+	rawArguments removeKey: #action ifAbsent: [ ].
 	slotAction := rawArguments removeKey: #slotAction ifAbsent: [ nil ].
 	toolClass := self
 		             classToolClassForArguments: rawArguments
@@ -52,15 +66,15 @@ MCPUpdateClassCommandTest >> testAppliedChangeResultWrapsPlanAndResult [
 
 	| appliedChange changeResult data plan |
 	plan := MCPClassUpdatePlanInfo
-		updateAction: 'setComment'
-		requestedContext: { (#className -> 'Object') } asDictionary.
+		        updateAction: 'setComment'
+		        requestedContext: { (#className -> 'Object') } asDictionary.
 	changeResult := MCPChangeClassCommentResult
-		classInfo: (MCPClassInfo fromClass: Object)
-		oldClassComment: 'old'
-		newClassComment: 'new'.
+		                classInfo: (MCPClassInfo fromClass: Object)
+		                oldClassComment: 'old'
+		                newClassComment: 'new'.
 	appliedChange := MCPClassAppliedChangeResult
-		updatePlan: plan
-		changeResult: changeResult.
+		                 updatePlan: plan
+		                 changeResult: changeResult.
 	data := appliedChange asDictionary.
 	self assert: data isEmpty
 ]
@@ -264,9 +278,9 @@ MCPUpdateClassCommandTest >> testToolBuildsUpdateClassCommand [
 
 	| command mutationRequest tool toolRequest |
 	tool := MCPToolUpdateClassComment new.
-	toolRequest := tool requestFromToolCallArguments:
-		               { (#className -> 'Object'). (#classComment -> 'updated') }
-		               asDictionary.
+	toolRequest := tool requestFromToolCallArguments: {
+			               (#className -> 'Object').
+			               (#classComment -> 'updated') } asDictionary.
 	mutationRequest := tool parsedRequestFromToolRequest: toolRequest.
 	command := tool commandForRequest: mutationRequest.
 	self assert: mutationRequest class equals: MCPClassUpdateRequest.

@@ -29,10 +29,10 @@ MCPCreateClassCommandTest >> generatedPackageName [
 MCPCreateClassCommandTest >> removeGeneratedPackage [
 
 	self withoutEpiceaDuring: [
-		(self packageOrganizer hasPackage: self generatedPackageName)
-			ifTrue: [
-				self packageOrganizer removePackage:
-					(self packageOrganizer packageNamed: self generatedPackageName) ] ]
+			(self packageOrganizer hasPackage: self generatedPackageName)
+				ifTrue: [
+						self packageOrganizer removePackage:
+							(self packageOrganizer packageNamed: self generatedPackageName) ] ]
 ]
 
 { #category : 'running' }
@@ -160,13 +160,13 @@ MCPCreateClassCommandTest >> testExistingClassSignalsCommandError [
 			 slots: nil
 			 classSlots: nil).
 	error := self captureCommandError: [
-		         (MCPCreateClassCommand
-			          className: 'MCPCreateClassCommandTestGenerated'
-			          superclassName: 'Object'
-			          packageName: self generatedPackageName
-			          tag: nil
-			          slots: nil
-			          classSlots: nil) execute ].
+			         (MCPCreateClassCommand
+				          className: 'MCPCreateClassCommandTestGenerated'
+				          superclassName: 'Object'
+				          packageName: self generatedPackageName
+				          tag: nil
+				          slots: nil
+				          classSlots: nil) execute ].
 	self assert: error errorCode equals: #ClassAlreadyExists.
 	self
 		assert: (error structuredDetails at: #className)
@@ -178,13 +178,13 @@ MCPCreateClassCommandTest >> testMissingSuperclassSignalsCommandError [
 
 	| error |
 	error := self captureCommandError: [
-		         (MCPCreateClassCommand
-			          className: 'MCPCreateClassCommandTestGenerated'
-			          superclassName: 'DefinitelyMissingSuperclass'
-			          packageName: self generatedPackageName
-			          tag: nil
-			          slots: nil
-			          classSlots: nil) execute ].
+			         (MCPCreateClassCommand
+				          className: 'MCPCreateClassCommandTestGenerated'
+				          superclassName: 'DefinitelyMissingSuperclass'
+				          packageName: self generatedPackageName
+				          tag: nil
+				          slots: nil
+				          classSlots: nil) execute ].
 	self assert: error errorCode equals: #SuperclassNotFound.
 	self
 		assert: (error structuredDetails at: #superclassName)

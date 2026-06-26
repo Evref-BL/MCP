@@ -3,10 +3,7 @@ Parsed input for repository_fetch. It resolves the registered Iceberg repository
 "
 Class {
 	#name : 'MCPRepositoryFetchRequest',
-	#superclass : 'Object',
-	#instVars : [
-		'repositoryReference'
-	],
+	#superclass : 'MCPRepositoryRequest',
 	#category : 'MCP-Requests',
 	#package : 'MCP',
 	#tag : 'Requests'
@@ -24,14 +21,6 @@ MCPRepositoryFetchRequest >> commandForTool: aTool [
 	^ MCPFetchRepositoryCommand tool: aTool request: self
 ]
 
-{ #category : 'initialization' }
-MCPRepositoryFetchRequest >> initializeFromRequest: request [
-
-	repositoryReference := MCPRepositoryReferenceSpec fromRequest:
-		                       request.
-	^ self
-]
-
 { #category : 'accessing' }
 MCPRepositoryFetchRequest >> operation [
 
@@ -42,16 +31,4 @@ MCPRepositoryFetchRequest >> operation [
 MCPRepositoryFetchRequest >> repository [
 
 	^ self repositoryReference repository
-]
-
-{ #category : 'accessing' }
-MCPRepositoryFetchRequest >> repositoryReference [
-
-	^ repositoryReference
-]
-
-{ #category : 'converting' }
-MCPRepositoryFetchRequest >> requestedContext [
-
-	^ self repositoryReference requestedContext
 ]

@@ -5,7 +5,7 @@ It keeps the MCP image content block separate from the structured metadata so to
 "
 Class {
 	#name : 'MCPScreenshotResult',
-	#superclass : 'Object',
+	#superclass : 'MCPResult',
 	#instVars : [
 		'target',
 		'width',

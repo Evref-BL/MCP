@@ -115,33 +115,33 @@ MCPToolRemoveClasses >> executeWithRequest: request [
 	^ self
 		  executeParsedRequestFrom: request
 		  do: [ :removeRequest |
-			  | result |
-			  result := (self commandForRequest: removeRequest) execute.
-			  self
-				  successResultText: (self
-						   successSummaryForClassNames: removeRequest classNames
-						   removedClasses: result removedClasses
-						   removedPackageNames: result removedPackageNames
-						   forced: result warningMessages notEmpty)
-				  data: result asDictionary
-				  warnings: result warningMessages ]
+				  | result |
+				  result := (self commandForRequest: removeRequest) execute.
+				  self
+					  successResultText: (self
+							   successSummaryForClassNames: removeRequest classNames
+							   removedClasses: result removedClasses
+							   removedPackageNames: result removedPackageNames
+							   forced: result warningMessages notEmpty)
+					  data: result asDictionary
+					  warnings: result warningMessages ]
 		  onError: [ :error :removeRequest |
-			  self errorResultForError: error classNames: (self
-					   classNamesForErrorFromParsedRequest: removeRequest
-					   rawRequest: request) ]
+				  self errorResultForError: error classNames: (self
+						   classNamesForErrorFromParsedRequest: removeRequest
+						   rawRequest: request) ]
 ]
 
 { #category : 'private' }
 MCPToolRemoveClasses >> failureMessageForClassNames: classNames error: anError [
 
 	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: 'Unable to remove classes: ';
-			  nextPutAll: (', ' join: classNames);
-			  nextPutAll: ' (';
-			  nextPutAll: anError class name;
-			  nextPutAll: '): ';
-			  nextPutAll: anError messageText ]
+			  stream
+				  nextPutAll: 'Unable to remove classes: ';
+				  nextPutAll: (', ' join: classNames);
+				  nextPutAll: ' (';
+				  nextPutAll: anError class name;
+				  nextPutAll: '): ';
+				  nextPutAll: anError messageText ]
 ]
 
 { #category : 'private - request' }
@@ -162,51 +162,51 @@ MCPToolRemoveClasses >> successSummaryForClassNames: classNames removedClasses: 
 	| reparentedSubclassNames |
 	reparentedSubclassNames := OrderedCollection new.
 	removedClasses do: [ :each |
-		each reparentedSubclassNames do: [ :subclassName |
-			(reparentedSubclassNames includes: subclassName) ifFalse: [
-				reparentedSubclassNames add: subclassName ] ] ].
+			each reparentedSubclassNames do: [ :subclassName |
+					(reparentedSubclassNames includes: subclassName) ifFalse: [
+						reparentedSubclassNames add: subclassName ] ] ].
 	^ String streamContents: [ :stream |
-		  classNames size = 1
-			  ifTrue: [
-				  wasForced
-					  ifTrue: [
-						  stream
-							  nextPutAll: 'Force-removed class ';
-							  nextPutAll: classNames first;
-							  nextPut: $. ]
-					  ifFalse: [
-						  stream
-							  nextPutAll: 'Removed class ';
-							  nextPutAll: classNames first;
-							  nextPut: $. ] ]
-			  ifFalse: [
-				  wasForced
-					  ifTrue: [
-						  stream
-							  nextPutAll: 'Force-removed ';
-							  nextPutAll: classNames size asString;
-							  nextPutAll: ' classes: ';
-							  nextPutAll: (', ' join: classNames);
-							  nextPut: $. ]
-					  ifFalse: [
-						  stream
-							  nextPutAll: 'Removed ';
-							  nextPutAll: classNames size asString;
-							  nextPutAll: ' classes: ';
-							  nextPutAll: (', ' join: classNames);
-							  nextPut: $. ] ].
-		  reparentedSubclassNames ifNotEmpty: [
-			  stream
-				  space;
-				  nextPutAll: 'Reparented subclasses: ';
-				  nextPutAll: (', ' join: reparentedSubclassNames);
-				  nextPut: $. ].
-		  removedPackageNames ifNotEmpty: [
-			  stream
-				  space;
-				  nextPutAll: 'Removed packages: ';
-				  nextPutAll: (', ' join: removedPackageNames);
-				  nextPut: $. ] ]
+			  classNames size = 1
+				  ifTrue: [
+						  wasForced
+							  ifTrue: [
+									  stream
+										  nextPutAll: 'Force-removed class ';
+										  nextPutAll: classNames first;
+										  nextPut: $. ]
+							  ifFalse: [
+									  stream
+										  nextPutAll: 'Removed class ';
+										  nextPutAll: classNames first;
+										  nextPut: $. ] ]
+				  ifFalse: [
+						  wasForced
+							  ifTrue: [
+									  stream
+										  nextPutAll: 'Force-removed ';
+										  nextPutAll: classNames size asString;
+										  nextPutAll: ' classes: ';
+										  nextPutAll: (', ' join: classNames);
+										  nextPut: $. ]
+							  ifFalse: [
+									  stream
+										  nextPutAll: 'Removed ';
+										  nextPutAll: classNames size asString;
+										  nextPutAll: ' classes: ';
+										  nextPutAll: (', ' join: classNames);
+										  nextPut: $. ] ].
+			  reparentedSubclassNames ifNotEmpty: [
+					  stream
+						  space;
+						  nextPutAll: 'Reparented subclasses: ';
+						  nextPutAll: (', ' join: reparentedSubclassNames);
+						  nextPut: $. ].
+			  removedPackageNames ifNotEmpty: [
+					  stream
+						  space;
+						  nextPutAll: 'Removed packages: ';
+						  nextPutAll: (', ' join: removedPackageNames);
+						  nextPut: $. ] ]
 ]
 
 { #category : 'metadata' }

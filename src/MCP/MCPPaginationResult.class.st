@@ -3,7 +3,7 @@ Compact pagination result shared by list and search tools. It keeps MCP payloads
 "
 Class {
 	#name : 'MCPPaginationResult',
-	#superclass : 'Object',
+	#superclass : 'MCPResult',
 	#instVars : [
 		'entries',
 		'nextOffset'
@@ -37,6 +37,12 @@ MCPPaginationResult class >> fromEntries: entryCollection limit: limit offset: o
 		  nextOffset:
 			  (offset + pageEntries size < entryCollection size ifTrue: [
 				   offset + pageEntries size ])
+]
+
+{ #category : 'converting' }
+MCPPaginationResult >> asDictionary [
+
+	^ self asDictionaryWithEntriesKey: #entries
 ]
 
 { #category : 'converting' }

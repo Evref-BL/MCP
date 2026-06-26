@@ -5,7 +5,7 @@ It carries the class state after replacement and the old/new shared pool name li
 "
 Class {
 	#name : 'MCPReplaceClassSharedPoolsResult',
-	#superclass : 'Object',
+	#superclass : 'MCPClassResult',
 	#instVars : [
 		'classInfo',
 		'oldSharedPoolNames',
@@ -30,7 +30,7 @@ MCPReplaceClassSharedPoolsResult class >> classInfo: aClassInfo oldSharedPoolNam
 MCPReplaceClassSharedPoolsResult >> asDictionary [
 
 	| data |
-	data := self classInfo asDictionary copy.
+	data := self newClassInfoDictionary.
 	data at: #oldSharedPoolNames put: self oldSharedPoolNames.
 	data at: #newSharedPoolNames put: self newSharedPoolNames.
 	^ data

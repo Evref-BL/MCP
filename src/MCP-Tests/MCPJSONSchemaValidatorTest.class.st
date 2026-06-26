@@ -14,9 +14,8 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 
 	^ {
 		  (MCPToolEvaluate -> { (#code -> '1 + 1') } asDictionary).
-		  (MCPToolRunTests -> { (#tests
-		    -> { { (#className -> 'MCPToolContractsTest') } asDictionary }) }
-			   asDictionary).
+		  (MCPToolRunTests
+		   -> { (#classes -> { 'MCPToolContractsTest' }) } asDictionary).
 		  (MCPToolGetClass -> { (#className -> 'MCPTool') } asDictionary).
 		  (MCPToolGetMethod -> {
 			   (#className -> 'MCPTool').
@@ -227,11 +226,10 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 		at: MCPToolLoadBaseline
 		put: { (#baseline -> 'ExampleBaseline') } asDictionary;
 		at: MCPToolRunTestCoverage put: {
-				(#tests
-				 -> { { (#className -> 'MCPToolContractsTest') } asDictionary }).
-				(#coverage
-				 -> { (#scope -> { (#classes -> #( 'MCPToolContractsTest' )) } asDictionary) } asDictionary) }
-				asDictionary;
+				(#classes -> { 'MCPToolContractsTest' }).
+				(#coverage -> { (#scope
+					  -> { (#classes -> #( 'MCPToolContractsTest' )) } asDictionary) }
+						 asDictionary) } asDictionary;
 		at: MCPToolApplyChangeHistoryEntries
 		put: { (#latestCount -> 1) } asDictionary;
 		at: MCPToolRevertChangeHistoryEntries
@@ -358,9 +356,7 @@ MCPJSONSchemaValidatorTest >> testCurrentToolRequestValidationRejectsOperationSp
 	self
 		should: [
 				MCPToolRunTestCoverage new requestFromToolCallArguments:
-					{ (#tests
-					 -> { { (#className -> 'MCPToolContractsTest') } asDictionary }) }
-						asDictionary ]
+					{ (#classes -> { 'MCPToolContractsTest' }) } asDictionary ]
 		raise: MCPInvalidToolInput.
 	self
 		should: [
@@ -427,7 +423,6 @@ MCPJSONSchemaValidatorTest >> testValidatesAllOfAndIfThen [
 	keywords := self keywordsFrom:
 		            (self violationsFor: arguments schema: schema).
 	self assert: keywords equals: #( 'required' )
-
 ]
 
 { #category : 'tests' }
@@ -455,7 +450,6 @@ MCPJSONSchemaValidatorTest >> testValidatesArrayItemsEnumAndConst [
 	self
 		assert: (self keywordsFrom: violations) asBag
 		equals: #( 'enum' 'const' 'type' ) asBag
-
 ]
 
 { #category : 'tests' }

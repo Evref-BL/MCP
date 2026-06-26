@@ -104,14 +104,14 @@ MCPToolCaptureScreenshot >> parsedRequestFromToolRequest: request [
 MCPToolCaptureScreenshot >> successSummaryForResult: aScreenshotResult [
 
 	^ String streamContents: [ :stream |
-		  stream
-			  nextPutAll: 'Captured ';
-			  nextPutAll: aScreenshotResult target;
-			  nextPutAll: ' screenshot (';
-			  print: aScreenshotResult width;
-			  nextPutAll: 'x';
-			  print: aScreenshotResult height;
-			  nextPutAll: ').' ]
+			  stream
+				  nextPutAll: 'Captured ';
+				  nextPutAll: aScreenshotResult target;
+				  nextPutAll: ' screenshot (';
+				  print: aScreenshotResult width;
+				  nextPutAll: 'x';
+				  print: aScreenshotResult height;
+				  nextPutAll: ').' ]
 ]
 
 { #category : 'metadata' }
