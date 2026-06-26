@@ -14,18 +14,25 @@ MCPPushRepositoryCommand >> execute [
 
 	| repository result |
 	^ self
-		  executeRepositoryAction: 'push'
-		  work: [
-				  repository := self request repository.
-				  repository push.
-				  result := MCPRepositoryPushResult repository: repository ]
-		  successResult: [ :warningMessages |
-				  self tool
-					  successResultText:
-					  'Pushed repository ' , result repositoryInfo name , '.'
-					  data: (self tool dataForRepositoryResult: result)
-					  warnings: warningMessages ]
-		  failureSummary: [ :error |
-				  'Failed to push repository: '
-				  , (error messageText ifNil: [ error asString ]) ]
+		 executeRepositoryAction: 'push'
+		 work: [
+				 repository := self request repository.
+				 (self repositorySupportsExternalGitOperations: repository)
+					 ifTrue: [
+						 self
+							 runGitArguments: #( 'push' )
+							 in: repository
+							 ifFailed: [ :gitResult |
+								 self signalGitCommandFailed: gitResult action: 'push' ] ]
+					 ifFalse: [ repository branch push ].
+				 result := MCPRepositoryPushResult repository: repository ]
+		 successResult: [ :warningMessages |
+				 self tool
+					 successResultText:
+					 'Pushed repository ' , result repositoryInfo name , '.'
+					 data: (self tool dataForRepositoryResult: result)
+					 warnings: warningMessages ]
+		 failureSummary: [ :error |
+				 'Failed to push repository: '
+				 , (error messageText ifNil: [ error asString ]) ]
 ]

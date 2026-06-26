@@ -18,7 +18,14 @@ MCPFetchRepositoryCommand >> execute [
 		  work: [
 				  repository := self request repository.
 				  beforeInfo := MCPRepositoryInfo fromRepository: repository.
-				  repository fetch.
+				  (self repositorySupportsExternalGitOperations: repository)
+					  ifTrue: [
+						  self
+							  runGitArguments: #( 'fetch' '--all' '--prune' )
+							  in: repository
+							  ifFailed: [ :gitResult |
+								  self signalGitCommandFailed: gitResult action: 'fetch' ] ]
+					  ifFalse: [ repository fetch ].
 				  result := MCPRepositoryFetchResult
 					            repositoryBefore: beforeInfo
 					            after: repository ]
