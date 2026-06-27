@@ -46,24 +46,20 @@ MCPToolMutation >> addSupplementalDetailsForMutationError: anError to: details [
 	methodNode := self methodNodeFromError: cause.
 	methodNode ifNotNil: [
 		self addSupplementalSelectorFromMethodNode: methodNode to: details ].
-	(PharoCompatibility compilationAstFromException: cause) ifNotNil: [
-		:ast | self addSupplementalSelectorFromMethodNode: ast to: details ].
+	(PharoCompatibility compilationAstFromException: anError) ifNotNil: [ :ast |
+		self addSupplementalSelectorFromMethodNode: ast to: details ].
 	anError == cause ifFalse: [
-			methodNode := self methodNodeFromError: anError.
-			methodNode ifNotNil: [
-				self addSupplementalSelectorFromMethodNode: methodNode to: details ].
-			(PharoCompatibility compilationAstFromException: anError)
-				ifNotNil: [ :ast |
-				self addSupplementalSelectorFromMethodNode: ast to: details ] ].
+		methodNode := self methodNodeFromError: anError.
+		methodNode ifNotNil: [
+			self addSupplementalSelectorFromMethodNode: methodNode to: details ] ].
 	position := self positionFromError: cause.
 	position ifNotNil: [ details at: #position put: position ].
 	undeclaredVariableNode := self undeclaredVariableNodeFrom: cause.
 	undeclaredVariableNode ifNotNil: [
-			variableName := self undeclaredVariableNameFor: cause.
-			variableName ifNotNil: [
-				details at: #variableName put: variableName ].
-			(self startPositionFromNode: undeclaredVariableNode) ifNotNil: [
-				:start | details at: #position put: start ] ]
+		variableName := self undeclaredVariableNameFor: cause.
+		variableName ifNotNil: [ details at: #variableName put: variableName ].
+		(self startPositionFromNode: undeclaredVariableNode) ifNotNil: [ :start |
+			details at: #position put: start ] ]
 ]
 
 { #category : 'private - errors' }
@@ -326,12 +322,6 @@ MCPToolMutation >> mutationActionForErrorFromParsedRequest: mutationRequest rawR
 { #category : 'private - errors' }
 MCPToolMutation >> mutationFailureCauseFor: anError [
 
-	(PharoCompatibility
-		 noticeFromException: anError
-		 ifKindOfAnyNamed:
-			 #( OCUndeclaredVariableNotice OCUndeclaredVariableWarning
-			    OCSyntaxErrorNotice RBSyntaxErrorNotice SyntaxErrorNotification ))
-		ifNotNil: [ :notice | ^ notice ].
 	^ anError mcpMutationFailureNotice
 ]
 
@@ -621,19 +611,16 @@ MCPToolMutation >> undeclaredVariableNameFor: anError [
 { #category : 'private - errors' }
 MCPToolMutation >> undeclaredVariableNodeFrom: anError [
 
+	anError mcpNoticeNode ifNotNil: [ :node | ^ node ].
 	^ PharoCompatibility undeclaredVariableNodeFromException: anError
 ]
 
 { #category : 'private - errors' }
 MCPToolMutation >> undeclaredVariableNoticeFrom: anError [
 
-	(PharoCompatibility
-		 noticeFromException: anError
-		 ifKindOfAnyNamed:
-		 #( OCUndeclaredVariableNotice OCUndeclaredVariableWarning ))
-		ifNotNil: [ :notice | ^ notice ].
-	(#( 'OCUndeclaredVariableNotice' 'OCUndeclaredVariableWarning' )
-		 includes: anError class name asString) ifTrue: [ ^ anError ].
+	| notice |
+	notice := anError mcpMutationFailureNotice.
+	(self undeclaredVariableNodeFrom: notice) ifNotNil: [ ^ notice ].
 	^ nil
 ]
 

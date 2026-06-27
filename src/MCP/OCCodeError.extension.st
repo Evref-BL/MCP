@@ -21,5 +21,5 @@ OCCodeError >> mcpMutationFailureNotice [
 { #category : '*MCP' }
 OCCodeError >> mcpNoticeNode [
 
-	^ self node
+	^ PharoCompatibility undeclaredVariableNodeFromException: self
 ]
