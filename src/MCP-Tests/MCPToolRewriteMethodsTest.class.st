@@ -176,24 +176,6 @@ MCPToolRewriteMethodsTest >> testApplyRequiresExplicitScopeUnlessForced [
 ]
 
 { #category : 'tests' }
-MCPToolRewriteMethodsTest >> testApplyResultRequestsImageSaveButPreviewDoesNot [
-
-	| applyResult previewResult tool |
-	tool := MCPToolRewriteMethods new.
-	previewResult := tool successResultText: 'preview' data: {
-			                 (#apply -> false).
-			                 (#appliedCount -> 0) } asDictionary.
-	applyResult := tool successResultText: 'apply' data: {
-			               (#apply -> true).
-			               (#appliedCount -> 1) } asDictionary.
-	self deny:
-		(tool shouldSaveImageAfterSuccessfulExecutionForResult:
-			 previewResult).
-	self assert:
-		(tool shouldSaveImageAfterSuccessfulExecutionForResult: applyResult)
-]
-
-{ #category : 'tests' }
 MCPToolRewriteMethodsTest >> testClassSideScopeRewritesOnlyClassSideMethod [
 
 	| change data result rule |

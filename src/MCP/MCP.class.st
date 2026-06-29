@@ -155,7 +155,6 @@ MCP >> executeTool: tool named: toolName withParams: arguments [
 			            executeWithRequest: request
 			            usingPolicy: self toolExposurePolicy.
 		  toolResult := result asMCPStructureCallToolResult.
-		  self saveImageAfterSuccessfulTool: tool result: toolResult.
 		  self monitoring
 			  recordToolCallFinish: monitorRecord
 			  result: toolResult
@@ -163,19 +162,19 @@ MCP >> executeTool: tool named: toolName withParams: arguments [
 		  toolResult asJRPCJSON ]
 		  on: Exception
 		  do: [ :error |
-				  | errorResult |
-				  error mcpIsJRPCError ifTrue: [
-						  self monitoring
-							  recordToolCallFinish: monitorRecord
-							  result: nil
-							  error: error.
-						  error pass ].
-				  errorResult := tool errorResultFor: error.
+			  | errorResult |
+			  error mcpIsJRPCError ifTrue: [
 				  self monitoring
 					  recordToolCallFinish: monitorRecord
-					  result: errorResult
+					  result: nil
 					  error: error.
-				  errorResult asJRPCJSON ]
+				  error pass ].
+			  errorResult := tool errorResultFor: error.
+			  self monitoring
+				  recordToolCallFinish: monitorRecord
+				  result: errorResult
+				  error: error.
+			  errorResult asJRPCJSON ]
 ]
 
 { #category : 'accessing' }
@@ -428,20 +427,6 @@ MCP >> rpcToolsList [
 	<jrpc: #'tools/list'>
 	self refreshToolsList.
 	^ { (#tools -> toolsList values asArray) } asDictionary asJRPCJSON
-]
-
-{ #category : 'private - saving' }
-MCP >> saveImageAfterSuccessfulTool: aTool result: aResult [
-
-	aResult isError ifTrue: [ ^ self ].
-	(aTool shouldSaveImageAfterSuccessfulExecutionForResult: aResult)
-		ifTrue: [ self saveImageSession ]
-]
-
-{ #category : 'private - saving' }
-MCP >> saveImageSession [
-
-	^ Smalltalk saveSession
 ]
 
 { #category : 'accessing' }

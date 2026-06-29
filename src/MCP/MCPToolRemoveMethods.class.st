@@ -185,12 +185,6 @@ MCPToolRemoveMethods >> selectorsFromRequest: request [
 	^ selectors
 ]
 
-{ #category : 'testing' }
-MCPToolRemoveMethods >> shouldSaveImageAfterSuccessfulExecution [
-
-	^ true
-]
-
 { #category : 'private' }
 MCPToolRemoveMethods >> successSummaryForClassName: className classSide: classSide selectors: selectors [
 

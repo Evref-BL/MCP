@@ -1938,33 +1938,6 @@ MCPToolContractsTest >> testMethodToolTraitOwnsSharedMethodHelpers [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testMutatingToolsRequestImageSaveAfterSuccessfulExecution [
-
-	self deny: MCPToolSearchMethodMetadata new
-			shouldSaveImageAfterSuccessfulExecution.
-	self deny:
-		MCPToolGetClass new shouldSaveImageAfterSuccessfulExecution.
-	self assert:
-		MCPToolCreateRepository new shouldSaveImageAfterSuccessfulExecution.
-	self classMutationToolClasses do: [ :toolClass |
-		self assert: toolClass new shouldSaveImageAfterSuccessfulExecution ].
-	self assert:
-		MCPToolCompileMethod new shouldSaveImageAfterSuccessfulExecution.
-	self assert: MCPToolUpdateMethodSelector new
-			shouldSaveImageAfterSuccessfulExecution.
-	self assert: MCPToolUpdateMethodProtocol new
-			shouldSaveImageAfterSuccessfulExecution.
-	self deny:
-		MCPToolRewriteMethods new shouldSaveImageAfterSuccessfulExecution.
-	self assert:
-		MCPToolRemoveClasses new shouldSaveImageAfterSuccessfulExecution.
-	self assert:
-		MCPToolRemoveMethods new shouldSaveImageAfterSuccessfulExecution.
-	self assert:
-		MCPToolEvaluate new shouldSaveImageAfterSuccessfulExecution
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testMutationDescriptionsExplainForceWarningBehavior [
 
 	| classForceDescription methodForceDescription |

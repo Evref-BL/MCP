@@ -180,17 +180,6 @@ MCPToolChangeHistory >> integerArraySchemaNamed: aName description: aDescription
 		  yourself
 ]
 
-{ #category : 'testing' }
-MCPToolChangeHistory >> shouldSaveImageAfterSuccessfulExecutionForResult: aResult [
-
-	| data |
-	data := self
-		        successfulStructuredDataFromResult: aResult
-		        ifAbsent: [ ^ false ].
-	^ (data at: #performed ifAbsent: [ false ]) == true and: [
-		  (data at: #performedCount ifAbsent: [ 0 ]) > 0 ]
-]
-
 { #category : 'private - results' }
 MCPToolChangeHistory >> successSummaryForData: data operation: operation [
 

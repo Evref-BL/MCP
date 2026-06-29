@@ -319,12 +319,6 @@ MCPToolRepositoryOperation >> requiredInputProperties [
 		  ifAbsent: [ #( 'repositoryName' ) ]
 ]
 
-{ #category : 'testing' }
-MCPToolRepositoryOperation >> shouldSaveImageAfterSuccessfulExecutionForResult: aResult [
-
-	^ (#( 'diff' 'verifyIdentity' ) includes: self operationAction) not
-]
-
 { #category : 'private - schema' }
 MCPToolRepositoryOperation >> subdirectorySchemaProperty [
 

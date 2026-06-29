@@ -235,17 +235,6 @@ MCPToolRewriteMethods >> rewriteScopeSchemaProperty [
 	^ property
 ]
 
-{ #category : 'testing' }
-MCPToolRewriteMethods >> shouldSaveImageAfterSuccessfulExecutionForResult: aResult [
-
-	| data |
-	data := self
-		        successfulStructuredDataFromResult: aResult
-		        ifAbsent: [ ^ false ].
-	^ (data at: #apply ifAbsent: [ false ]) == true and: [
-		  (data at: #appliedCount ifAbsent: [ 0 ]) > 0 ]
-]
-
 { #category : 'metadata' }
 MCPToolRewriteMethods >> title [
 

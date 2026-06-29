@@ -153,12 +153,6 @@ MCPToolDebugEvaluate >> runtimeFailureMessageFor: anError [
 						  nextPutAll: context printString ] ]
 ]
 
-{ #category : 'testing' }
-MCPToolDebugEvaluate >> shouldSaveImageAfterSuccessfulExecution [
-
-	^ true
-]
-
 { #category : 'private' }
 MCPToolDebugEvaluate >> syntaxFailureMessageFor: aNotice [
 

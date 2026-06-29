@@ -180,12 +180,6 @@ MCPToolUpdateDebugMethod >> parsedRequestFromToolRequest: request [
 	^ MCPUpdateDebugMethodRequest fromRequest: request tool: self
 ]
 
-{ #category : 'testing' }
-MCPToolUpdateDebugMethod >> shouldSaveImageAfterSuccessfulExecution [
-
-	^ true
-]
-
 { #category : 'metadata' }
 MCPToolUpdateDebugMethod >> title [
 

@@ -550,12 +550,6 @@ MCPToolMutation >> resolvedRefactoringScopeClassesFrom: classNames [
 		  MCPImageLookup classNamed: eachName ]
 ]
 
-{ #category : 'testing' }
-MCPToolMutation >> shouldSaveImageAfterSuccessfulExecution [
-
-	^ true
-]
-
 { #category : 'private - errors' }
 MCPToolMutation >> startPositionFromNode: aNode [
 

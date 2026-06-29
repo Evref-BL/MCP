@@ -150,12 +150,6 @@ MCPToolRemoveClasses >> parsedRequestFromToolRequest: request [
 	^ MCPRemoveClassesRequest fromRequest: request tool: self
 ]
 
-{ #category : 'testing' }
-MCPToolRemoveClasses >> shouldSaveImageAfterSuccessfulExecution [
-
-	^ true
-]
-
 { #category : 'private' }
 MCPToolRemoveClasses >> successSummaryForClassNames: classNames removedClasses: removedClasses removedPackageNames: removedPackageNames forced: wasForced [
 

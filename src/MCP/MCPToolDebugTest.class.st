@@ -160,12 +160,6 @@ MCPToolDebugTest >> parsedRequestFromToolRequest: request [
 	^ MCPDebugTestRequest fromRequest: request tool: self
 ]
 
-{ #category : 'testing' }
-MCPToolDebugTest >> shouldSaveImageAfterSuccessfulExecution [
-
-	^ true
-]
-
 { #category : 'metadata' }
 MCPToolDebugTest >> title [
 

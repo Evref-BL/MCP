@@ -145,12 +145,6 @@ MCPToolDebugCapture >> parsedRequestFromToolRequest: request [
 	^ MCPDebugCaptureRequest fromRequest: request tool: self
 ]
 
-{ #category : 'testing' }
-MCPToolDebugCapture >> shouldSaveImageAfterSuccessfulExecution [
-
-	^ true
-]
-
 { #category : 'private' }
 MCPToolDebugCapture >> syntaxFailureMessageFor: aNotice [
 

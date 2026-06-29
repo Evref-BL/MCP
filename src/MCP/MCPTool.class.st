@@ -378,18 +378,6 @@ MCPTool >> shouldAdvertiseStringArrayItemDescription: anItemDescription [
 	^ true
 ]
 
-{ #category : 'testing' }
-MCPTool >> shouldSaveImageAfterSuccessfulExecution [
-
-	^ false
-]
-
-{ #category : 'testing' }
-MCPTool >> shouldSaveImageAfterSuccessfulExecutionForResult: aResult [
-
-	^ self shouldSaveImageAfterSuccessfulExecution
-]
-
 { #category : 'private - schema' }
 MCPTool >> standardOutputSchemaForDataProperties: dataProperties required: requiredFields [
 
