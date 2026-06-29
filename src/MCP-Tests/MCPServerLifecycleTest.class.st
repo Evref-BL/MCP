@@ -10,6 +10,14 @@ Class {
 }
 
 { #category : 'tests' }
+MCPServerLifecycleTest >> testSocketSafeServerTreatsSocketErrorsAsConnectionTermination [
+
+	| exceptionSet |
+	exceptionSet := MCPSocketSafeZnServer new readRequestTerminationExceptionSet.
+	self assert: (exceptionSet handles: SocketError new)
+]
+
+{ #category : 'tests' }
 MCPServerLifecycleTest >> testStartEnablesAutoStartOnAssignedPort [
 
 	| server |
@@ -24,9 +32,9 @@ MCPServerLifecycleTest >> testStartEnablesAutoStartOnAssignedPort [
 ]
 
 { #category : 'tests' }
-MCPServerLifecycleTest >> testStartUpRestartsAutoStartServer [
+MCPServerLifecycleTest >> testStartUpRebuildsAutoStartServer [
 
-	| port server |
+	| port restartedServer server |
 	server := self mcpWithoutObservabilityExport.
 	[
 		server port: 0.
@@ -35,9 +43,13 @@ MCPServerLifecycleTest >> testStartUpRestartsAutoStartServer [
 		server stopForImageShutdown.
 		self deny: server isListening.
 		MCP startUp: true.
-		self assert: server port equals: port.
-		self assert: server isListening.
-		self assert: MCP autoStartEnabled ] ensure: [ server stop ]
+		restartedServer := MCP default.
+		self deny: restartedServer == server.
+		self assert: restartedServer port equals: port.
+		self assert: restartedServer isListening.
+		self assert: MCP autoStartEnabled ] ensure: [
+		MCP autoStartEnabled ifTrue: [ MCP default stop ].
+		server isListening ifTrue: [ server stop ] ]
 ]
 
 { #category : 'tests' }

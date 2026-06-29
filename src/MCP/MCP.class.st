@@ -67,9 +67,11 @@ MCP class >> shutDown: isImageQuitting [
 { #category : 'auto start' }
 MCP class >> startAutoStartServer [
 
-	AutoStartPort ifNil: [ ^ self ].
-	Default ifNil: [ Default := self new ].
-	Default port: AutoStartPort.
+	| port |
+	port := AutoStartPort.
+	port ifNil: [ ^ self ].
+	Default := self new.
+	Default port: port.
 	Default start
 ]
 

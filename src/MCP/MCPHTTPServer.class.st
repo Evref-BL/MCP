@@ -81,7 +81,7 @@ MCPHTTPServer >> initialize [
 
 	super initialize.
 	messageProcessor := MCPMessageProcessor new.
-	server := ZnServer defaultServerClass new.
+	server := MCPSocketSafeZnServer new.
 
 	server
 		port: self defaultPort;
