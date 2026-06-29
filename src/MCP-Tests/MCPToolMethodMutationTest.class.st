@@ -915,6 +915,37 @@ MCPToolMethodMutationTest >> testCompileReturnsSortedCollectionConversionCritiqu
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileReturnsStructuredCommandErrorForSyntaxError [
+
+	| error result structured |
+	self
+		removeSelector: #brokenMethod
+		from: MCPToolMethodMutationTestTarget.
+	result := self callToolWith: (self
+			           compileArgumentsForClassName:
+			           'MCPToolMethodMutationTestTarget'
+			           classSide: false
+			           methodSource: 'brokenMethod ^ 1 +'
+			           protocol: 'tests').
+	structured := self structuredContentFrom: result.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (structured at: #status) equals: 'error'.
+	self assert: (error at: #action) equals: 'compile'.
+	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
+	self assert: (error at: #errorCode) equals: 'CompileSyntaxError'.
+	self
+		assert: (error at: #className)
+		equals: 'MCPToolMethodMutationTestTarget'.
+	self assert: (error at: #classSide) equals: false.
+	self assert: (error at: #protocol) equals: 'tests'.
+	self assert: (error includesKey: #position).
+	self deny: (error includesKey: #variableName).
+	self deny:
+		(MCPToolMethodMutationTestTarget includesSelector: #brokenMethod)
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testCompileReturnsStructuredCommandErrorForUndeclaredVariable [
 
 	| error result structured |
