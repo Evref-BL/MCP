@@ -112,9 +112,21 @@ Exception >> mcpIsJRPCError [
 ]
 
 { #category : '*MCP' }
+Exception >> mcpMutationFailureCauseForSyntaxNotice: aSyntaxNotice [
+
+	^ aSyntaxNotice
+]
+
+{ #category : '*MCP' }
 Exception >> mcpMutationFailureErrorCodeSuffix [
 
 	^ 'ExecutionError'
+]
+
+{ #category : '*MCP' }
+Exception >> mcpNoticeNode [
+
+	^ PharoCompatibility undeclaredVariableNodeFromException: self
 ]
 
 { #category : '*MCP' }

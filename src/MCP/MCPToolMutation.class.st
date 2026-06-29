@@ -322,7 +322,10 @@ MCPToolMutation >> mutationActionForErrorFromParsedRequest: mutationRequest rawR
 { #category : 'private - errors' }
 MCPToolMutation >> mutationFailureCauseFor: anError [
 
-	^ anError mcpMutationFailureNotice
+	^ (PharoCompatibility syntaxNoticeFromException: anError)
+		  ifNil: [ anError mcpMutationFailureNotice ]
+		  ifNotNil: [ :syntaxNotice |
+			  anError mcpMutationFailureCauseForSyntaxNotice: syntaxNotice ]
 ]
 
 { #category : 'private - errors' }
@@ -604,15 +607,14 @@ MCPToolMutation >> undeclaredVariableNameFor: anError [
 		^ variableName ].
 	notice := self undeclaredVariableNoticeFrom: anError.
 	notice ifNil: [ ^ nil ].
-	node := notice mcpNoticeNode.
+	node := self undeclaredVariableNodeFrom: notice.
 	^ self variableNameFromNode: node
 ]
 
 { #category : 'private - errors' }
 MCPToolMutation >> undeclaredVariableNodeFrom: anError [
 
-	anError mcpNoticeNode ifNotNil: [ :node | ^ node ].
-	^ PharoCompatibility undeclaredVariableNodeFromException: anError
+	^ anError mcpNoticeNode
 ]
 
 { #category : 'private - errors' }
