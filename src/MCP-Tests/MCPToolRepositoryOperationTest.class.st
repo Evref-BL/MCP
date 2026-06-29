@@ -199,9 +199,8 @@ MCPToolRepositoryOperationTest >> testAdoptHeadAdoptsRepositoryHeadAndReportsBef
 					          (#branchName -> 'main') } asDictionary.
 			data := self dataFrom: result.
 			self deny: (result at: #isError ifAbsent: [ false ]).
-			self
-				assert: repository actionLog asArray
-				equals: #( 'adoptCommit:head-2' ).
+			self assert: repository modifiedPackages isEmpty.
+			self assert: repository workingCopy referenceCommit id equals: 'head-2'.
 			self
 				assert: data keys asSet
 				equals:
@@ -217,6 +216,32 @@ MCPToolRepositoryOperationTest >> testAdoptHeadAdoptsRepositoryHeadAndReportsBef
 			self assert: (data at: #didAdopt).
 			self assert: (data at: #branchName) equals: 'main'.
 			self assert: (data at: #headDescription) equals: 'main' ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testAdoptHeadClearsModifiedPackagesWhenReferenceAlreadyMatchesHead [
+
+	| data repository result |
+	repository := self newTestRepositoryNamed:
+		              'MCP Adopt Clean Test Repository'.
+	repository headCommitId: 'head-1'.
+	repository headDescription: 'main'.
+	repository modifiedPackageNames: #( 'MCP' ).
+	repository workingCopy referenceCommit:
+		(MCPTestRepositoryCommit id: 'head-1').
+	self withRegisteredRepository: repository do: [
+			result := self callToolWith: {
+					          (#action -> 'adoptHead').
+					          (#repositoryName -> repository name).
+					          (#branchName -> 'main') } asDictionary.
+			data := self dataFrom: result.
+			self deny: (result at: #isError ifAbsent: [ false ]).
+			self assert: repository modifiedPackages isEmpty.
+			self deny: (data at: #didAdopt).
+			self
+				assert: (data at: #modifiedPackageNamesBefore)
+				equals: #( 'MCP' ).
+			self assert: (data at: #referenceCommitId) equals: 'head-1' ]
 ]
 
 { #category : 'tests' }

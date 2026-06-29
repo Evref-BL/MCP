@@ -41,9 +41,15 @@ MCPTestRepositoryWorkingCopy >> isModified [
 ]
 
 { #category : 'accessing' }
-MCPTestRepositoryWorkingCopy >> modifiedPackages [
+MCPTestRepositoryWorkingCopy >> loadedPackages [
 
 	^ modifiedPackages ifNil: [ #(  ) ]
+]
+
+{ #category : 'accessing' }
+MCPTestRepositoryWorkingCopy >> modifiedPackages [
+
+	^ (modifiedPackages ifNil: [ #(  ) ]) select: #isDirty
 ]
 
 { #category : 'accessing' }

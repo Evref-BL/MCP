@@ -10,6 +10,16 @@ Class {
 }
 
 { #category : 'private' }
+MCPAdoptRepositoryHeadCommand >> adoptHeadCommit: headCommit for: aRepository [
+
+	| workingCopy |
+	workingCopy := aRepository workingCopy.
+	(self commit: workingCopy referenceCommit equals: headCommit) ifFalse: [
+		workingCopy referenceCommit: headCommit ].
+	self markLoadedPackagesCleanIn: workingCopy
+]
+
+{ #category : 'private' }
 MCPAdoptRepositoryHeadCommand >> commit: leftCommit equals: rightCommit [
 
 	leftCommit ifNil: [ ^ rightCommit isNil ].
@@ -39,7 +49,7 @@ MCPAdoptRepositoryHeadCommand >> execute [
 				  didAdopt := (self
 					               commit: previousReferenceCommit
 					               equals: headCommit) not.
-				  repository workingCopy adoptCommit: headCommit.
+				  self adoptHeadCommit: headCommit for: repository.
 				  result := MCPRepositoryAdoptHeadResult
 					            repositoryBefore: beforeInfo
 					            after: repository
@@ -56,6 +66,13 @@ MCPAdoptRepositoryHeadCommand >> execute [
 		  failureSummary: [ :error |
 				  'Failed adopt repository HEAD: '
 				  , (error messageText ifNil: [ error asString ]) ]
+]
+
+{ #category : 'private' }
+MCPAdoptRepositoryHeadCommand >> markLoadedPackagesCleanIn: aWorkingCopy [
+
+	aWorkingCopy loadedPackages do: [ :package |
+		package beDirty: false ]
 ]
 
 { #category : 'private' }
