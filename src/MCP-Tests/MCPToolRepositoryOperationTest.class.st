@@ -942,6 +942,28 @@ MCPToolRepositoryOperationTest >> testFetchReturnsResultShapeAndReportsErrors [
 ]
 
 { #category : 'tests' }
+MCPToolRepositoryOperationTest >> testGitCommandFailureSignalsStructuredCommandError [
+
+	| command error |
+	command := MCPPushRepositoryCommand
+		           tool: MCPToolPushRepository new
+		           request: nil.
+	error := [
+		         command
+			         signalGitCommandFailed: {
+				         (#status -> 128).
+				         (#output -> 'fatal: no upstream') } asDictionary
+			         action: 'push'.
+		         nil ]
+		         on: MCPCommandError
+		         do: [ :caught | caught ].
+	self assert: error errorCode equals: 'pushGitCommandFailed'.
+	self assert: error messageText equals: 'fatal: no upstream'.
+	self assert: (error details at: #exitStatus) equals: 128.
+	self assert: (error details at: #output) equals: 'fatal: no upstream'
+]
+
+{ #category : 'tests' }
 MCPToolRepositoryOperationTest >> testLinkedWorktreeAttachReportsGitMetadataAndExportsOnLinkedBranch [
 
 	| repositoryName packageName initialClassName exportedClassName location linkedLocation branchName createResult exportResult commitResult repository headCommitId attachResult searchResult searchData entry exportedClassFile |

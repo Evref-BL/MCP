@@ -138,8 +138,8 @@ MCPRepositoryCommand >> signalGitCommandFailed: gitResult action: actionName [
 		output := 'git ' , actionName , ' failed with status '
 		          , status asString ].
 	MCPCommandError
-		signal: output
-		code: actionName , 'GitCommandFailed'
+		signalErrorCode: actionName , 'GitCommandFailed'
+		message: output
 		details: {
 				(#exitStatus -> status).
 				(#output -> output) } asDictionary
