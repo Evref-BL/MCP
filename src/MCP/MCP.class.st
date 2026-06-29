@@ -10,10 +10,76 @@ Class {
 		'monitoring',
 		'toolExposurePolicy'
 	],
+	#classVars : [
+		'AutoStartEnabled',
+		'AutoStartPort',
+		'Default'
+	],
 	#category : 'MCP-Server',
 	#package : 'MCP',
 	#tag : 'Server'
 }
+
+{ #category : 'auto start' }
+MCP class >> autoStartEnabled [
+
+	^ AutoStartEnabled ifNil: [ false ]
+]
+
+{ #category : 'auto start' }
+MCP class >> autoStartPort [
+
+	^ AutoStartPort
+]
+
+{ #category : 'auto start' }
+MCP class >> default [
+
+	^ Default ifNil: [ Default := self new ]
+]
+
+{ #category : 'auto start' }
+MCP class >> disableAutoStartFor: anMCP [
+
+	Default == anMCP ifTrue: [
+		AutoStartEnabled := false.
+		AutoStartPort := nil.
+		Default := nil ]
+]
+
+{ #category : 'auto start' }
+MCP class >> enableAutoStartFor: anMCP [
+
+	Default := anMCP.
+	AutoStartPort := anMCP port.
+	AutoStartEnabled := true.
+	SessionManager default registerNetworkClassNamed: self name.
+	^ anMCP
+]
+
+{ #category : 'auto start' }
+MCP class >> shutDown: isImageQuitting [
+
+	(isImageQuitting and: [ Default notNil ]) ifTrue: [
+		Default stopForImageShutdown ]
+]
+
+{ #category : 'auto start' }
+MCP class >> startAutoStartServer [
+
+	AutoStartPort ifNil: [ ^ self ].
+	Default ifNil: [ Default := self new ].
+	Default port: AutoStartPort.
+	Default start
+]
+
+{ #category : 'auto start' }
+MCP class >> startUp: isImageStarting [
+
+	isImageStarting ifFalse: [ ^ self ].
+	self autoStartEnabled ifFalse: [ ^ self ].
+	self startAutoStartServer
+]
 
 { #category : 'monitoring' }
 MCP >> clearMonitoring [
@@ -62,6 +128,16 @@ MCP >> debugMode: aBoolean [
 
 	self server debugMode: aBoolean.
 	self server messageProcessor debugMode: aBoolean
+]
+
+{ #category : 'private - start' }
+MCP >> ensureServerIsListening [
+
+	(self waitUntilListeningForMilliseconds: 1000) ifTrue: [ ^ self ].
+	server stop.
+	server start.
+	(self waitUntilListeningForMilliseconds: 1000) ifTrue: [ ^ self ].
+	Error signal: 'MCP server is not listening on port ' , self port asString
 ]
 
 { #category : 'private - tools' }
@@ -390,8 +466,10 @@ MCP >> sortedTools [
 MCP >> start [
 
 	self refreshToolsList.
+	server addHandlersFromPragmasIn: self.
 	server start.
-	server addHandlersFromPragmasIn: self
+	self ensureServerIsListening.
+	self class enableAutoStartFor: self
 ]
 
 { #category : 'configuration' }
@@ -408,8 +486,15 @@ MCP >> staticToolNames: aCollection [
 	^ self
 ]
 
-{ #category : 'accessing' }
+{ #category : 'start' }
 MCP >> stop [
+
+	server stop.
+	self class disableAutoStartFor: self
+]
+
+{ #category : 'private - auto start' }
+MCP >> stopForImageShutdown [
 
 	server stop
 ]
@@ -452,4 +537,16 @@ MCP >> toolsList [
 MCP >> toolsList: aToolsList [
 
 	^ toolsList := aToolsList
+]
+
+{ #category : 'private - start' }
+MCP >> waitUntilListeningForMilliseconds: milliseconds [
+
+	| delay attempts |
+	delay := Delay forMilliseconds: 50.
+	attempts := milliseconds // 50 max: 1.
+	attempts timesRepeat: [
+		self isListening ifTrue: [ ^ true ].
+		delay wait ].
+	^ self isListening
 ]
