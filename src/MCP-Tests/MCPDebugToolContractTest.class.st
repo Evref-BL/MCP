@@ -663,6 +663,27 @@ MCPDebugToolContractTest >> testDebugCaptureReportsSyntaxFailureWithoutSession [
 ]
 
 { #category : 'tests' }
+MCPDebugToolContractTest >> testDebugCaptureResumeProceedsCapturedHalt [
+
+	| captureData captureResult resumeData resumeResult sessionId |
+	captureResult := self callToolNamed: 'debug_capture' withArguments: {
+			                 (#expression -> 'Halt signal. 42').
+			                 (#name -> 'Captured halt resume').
+			                 (#timeoutMilliseconds -> 1000) } asDictionary.
+	captureData := self dataFrom: captureResult.
+	sessionId := captureData at: #sessionId.
+	resumeResult := self
+		                callToolNamed: 'debug_session_resume'
+		                withArguments: { (#sessionId -> sessionId) } asDictionary.
+	resumeData := self dataFrom: resumeResult.
+	self
+		assert: ((self structuredContentFrom: resumeResult) at: #status)
+		equals: 'ok'.
+	self assert: (resumeData at: #status) equals: 'completed'.
+	self assert: (resumeData at: #reason) equals: 'resume'
+]
+
+{ #category : 'tests' }
 MCPDebugToolContractTest >> testDebugCaptureReturnsCompletedResultWithoutSession [
 
 	| data result |

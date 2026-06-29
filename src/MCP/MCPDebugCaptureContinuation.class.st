@@ -53,6 +53,12 @@ MCPDebugCaptureContinuation >> currentStatus [
 	^ outcome at: #status ifAbsent: [ #missing ]
 ]
 
+{ #category : 'private' }
+MCPDebugCaptureContinuation >> debugControllerForSession: aDebugSession [
+
+	^ MCPDebugSessionController debugSession: aDebugSession
+]
+
 { #category : 'accessing' }
 MCPDebugCaptureContinuation >> outcome [
 
@@ -76,13 +82,23 @@ MCPDebugCaptureContinuation >> prepareExceptionForProceed [
 { #category : 'controlling' }
 MCPDebugCaptureContinuation >> proceed [
 
-	workerProcess ifNil: [ ^ #missingWorker ].
-	workerProcess isTerminated ifTrue: [ ^ #terminated ].
+	^ self proceedUsing: [ self workerProcess resume ]
+]
+
+{ #category : 'controlling' }
+MCPDebugCaptureContinuation >> proceedUsing: aBlock [
+
+	| process timedOut |
+	process := self workerProcess.
+	process ifNil: [ ^ #missingWorker ].
+	process isTerminated ifTrue: [ ^ #terminated ].
 	self prepareExceptionForProceed.
-	workerProcess resume.
-	^ (semaphore waitTimeoutMilliseconds: timeoutMilliseconds)
-		  ifTrue: [ #timedOut ]
-		  ifFalse: [ self currentStatus ]
+	aBlock value.
+	timedOut := self waitForSignal.
+	timedOut ifFalse: [ ^ self currentStatus ].
+	process isTerminated ifTrue: [ ^ #terminated ].
+	process isSuspended ifTrue: [ ^ #paused ].
+	^ #running
 ]
 
 { #category : 'accessing' }
