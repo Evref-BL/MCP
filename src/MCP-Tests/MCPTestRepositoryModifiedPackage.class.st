@@ -21,6 +21,18 @@ MCPTestRepositoryModifiedPackage class >> named: aName [
 ]
 
 { #category : 'accessing' }
+MCPTestRepositoryModifiedPackage >> beDirty: aBoolean [
+
+	aBoolean ifFalse: [ name := nil ]
+]
+
+{ #category : 'testing' }
+MCPTestRepositoryModifiedPackage >> isDirty [
+
+	^ name notNil
+]
+
+{ #category : 'accessing' }
 MCPTestRepositoryModifiedPackage >> name [
 
 	^ name

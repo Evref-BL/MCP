@@ -240,7 +240,7 @@ MCPTestIceRepository >> modifiedPackageNames: aCollection [
 { #category : 'accessing' }
 MCPTestIceRepository >> modifiedPackages [
 
-	^ modifiedPackages ifNil: [ #(  ) ]
+	^ self workingCopy modifiedPackages
 ]
 
 { #category : 'actions' }
