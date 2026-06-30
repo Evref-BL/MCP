@@ -47,53 +47,47 @@ MCPToolGetTool >> buildOutputSchema [
 
 	| activationRequirementsProperty examplesProperty inputSchemaProperty outputSchemaProperty schemaProperty toolProperty |
 	schemaProperty := MCPStructureProperties new
-		                  type: 'object';
-		                  description: 'JSON Schema object.';
-		                  additionalProperties: true;
-		                  yourself.
+		type: 'object';
+		description: 'JSON Schema object.';
+		additionalProperties: true;
+		yourself.
 	inputSchemaProperty := schemaProperty copy
-		                       name: 'inputSchema';
-		                       yourself.
+		name: 'inputSchema';
+		yourself.
 	outputSchemaProperty := schemaProperty copy
-		                        name: 'outputSchema';
-		                        yourself.
+		name: 'outputSchema';
+		yourself.
 	examplesProperty := (self
-		                     schemaPropertyNamed: 'examples'
-		                     type: 'array'
-		                     description: 'Example calls.')
-		                    items: (MCPStructureProperties new
-				                     type: 'object';
-				                     additionalProperties: true;
-				                     yourself);
-		                    yourself.
+		schemaPropertyNamed: 'examples'
+		type: 'array'
+		description: 'Example calls.')
+		items: (MCPStructureProperties new
+			type: 'object';
+			additionalProperties: true;
+			yourself);
+		yourself.
 	activationRequirementsProperty := (self
-		                                   schemaPropertyNamed:
-			                                   'activationRequirements'
-		                                   type: 'array'
-		                                   description:
-			                                   'Requirements before calling tool.')
-		                                  items:
-			                                  (MCPStructureProperties new
-				                                   type: 'string';
-				                                   yourself);
-		                                  yourself.
+		schemaPropertyNamed: 'activationRequirements'
+		type: 'array'
+		description: 'Requirements before calling tool.')
+		items: (MCPStructureProperties new
+			type: 'string';
+			yourself);
+		yourself.
 	toolProperty := self
-		                schemaPropertyNamed: 'tool'
-		                type: 'object'
-		                description: 'Tool contract.'.
+		schemaPropertyNamed: 'tool'
+		type: 'object'
+		description: 'Tool contract.'.
 	toolProperty
 		properties: {
 				(self
-					 schemaPropertyNamed: 'name'
-					 type: 'string'
-					 description: 'Tool name.').
+					schemaPropertyNamed: 'name'
+					type: 'string'
+					description: 'Tool name.').
 				(self
-					 schemaPropertyNamed: 'description'
-					 type: 'string'
-					 description: 'Tool description.').
-				(self
-					 booleanSchemaPropertyNamed: 'schemaInspectionRequired'
-					 description: 'Inspect schema before calling.').
+					schemaPropertyNamed: 'description'
+					type: 'string'
+					description: 'Tool description.').
 				inputSchemaProperty.
 				outputSchemaProperty.
 				examplesProperty.
@@ -101,8 +95,8 @@ MCPToolGetTool >> buildOutputSchema [
 		required: #( 'name' 'description' 'inputSchema' );
 		additionalProperties: false.
 	^ self
-		  standardOutputSchemaForDataProperties: { toolProperty }
-		  required: #( 'tool' )
+		standardOutputSchemaForDataProperties: { toolProperty }
+		required: #( 'tool' )
 ]
 
 { #category : 'private - execution' }

@@ -150,15 +150,14 @@ MCPToolRepositoryToolsTest >> testRepositoryToolsAreDiscoverableWithExpectedRisk
 			| metadata tool |
 			metadata := metadataByName at: toolName.
 			tool := MCPToolRegistry
-				        toolNamed: toolName
-				        ifAbsent: [ self fail: 'Missing tool ' , toolName ].
+				toolNamed: toolName
+				ifAbsent: [ self fail: 'Missing tool ' , toolName ].
 			self
 				assert: (MCPToolRegistry exposureForTool: tool)
 				equals: 'discoverable'.
 			self
 				assert: metadata keys asSet
-				equals: #( name description schemaInspectionRequired ) asSet.
-			self assert: (metadata at: #schemaInspectionRequired) ].
+				equals: #( name description ) asSet ].
 	self assert: (metadataByName includesKey: 'repository_load')
 ]
 

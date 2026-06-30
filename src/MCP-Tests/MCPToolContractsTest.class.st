@@ -1352,31 +1352,24 @@ MCPToolContractsTest >> testDiscoveryUsesConfiguredStaticToolNames [
 	server staticToolNames:
 		#( 'tool_search' 'tool_get' 'tool_call' 'repository_search' ).
 	result := server
-		          rpcToolCall: 'tool_search'
-		          withParams: { (#query -> 'repository') } asDictionary.
-	metadataByName := (((self dataFrom: result) at: #tools) collect: [
-		                   :each | (each at: #name) -> each ]) asDictionary.
+		rpcToolCall: 'tool_search'
+		withParams: { (#query -> 'repository') } asDictionary.
+	metadataByName := (((self dataFrom: result) at: #tools) collect: [ :each |
+		(each at: #name) -> each ]) asDictionary.
 	self assert: (metadataByName includesKey: 'repository_search').
 	self assert: (metadataByName includesKey: 'repository_create').
 	searchContract := (self dataFrom: (server
-			                    rpcToolCall: 'tool_get'
-			                    withParams:
-			                    { (#toolName -> 'repository_search') }
-				                    asDictionary)) at: #tool.
+		rpcToolCall: 'tool_get'
+		withParams: { (#toolName -> 'repository_search') } asDictionary)) at: #tool.
 	createContract := (self dataFrom: (server
-			                    rpcToolCall: 'tool_get'
-			                    withParams:
-			                    { (#toolName -> 'repository_create') }
-				                    asDictionary)) at: #tool.
+		rpcToolCall: 'tool_get'
+		withParams: { (#toolName -> 'repository_create') } asDictionary)) at: #tool.
 	self
 		assert: searchContract keys asSet
 		equals: #( name description inputSchema ) asSet.
 	self
 		assert: createContract keys asSet
-		equals:
-		#( name description schemaInspectionRequired
-		   inputSchema ) asSet.
-	self assert: (createContract at: #schemaInspectionRequired)
+		equals: #( name description inputSchema ) asSet
 ]
 
 { #category : 'tests - evaluate' }
@@ -1504,17 +1497,13 @@ MCPToolContractsTest >> testGetToolReturnsSchemaForCatalogTool [
 
 	| contract inputProperties result |
 	result := self
-		          callToolNamed: 'tool_get'
-		          withArguments:
-		          { (#toolName -> 'repository_create') } asDictionary.
+		callToolNamed: 'tool_get'
+		withArguments: { (#toolName -> 'repository_create') } asDictionary.
 	contract := (self dataFrom: result) at: #tool.
 	self assert: (contract at: #name) equals: 'repository_create'.
 	self
 		assert: contract keys asSet
-		equals:
-		#( name description schemaInspectionRequired
-		   inputSchema ) asSet.
-	self assert: (contract at: #schemaInspectionRequired).
+		equals: #( name description inputSchema ) asSet.
 	inputProperties := ((contract at: #inputSchema) at: #properties) keys.
 	self assert: (inputProperties includes: 'name').
 	self assert: (inputProperties includes: 'location').
@@ -3021,20 +3010,29 @@ MCPToolContractsTest >> testSearchToolsMatchesMultipleQueryTerms [
 
 	| names result |
 	result := self
-		          callToolNamed: 'tool_search'
-		          withArguments:
-		          { (#query -> 'method source') } asDictionary.
+		callToolNamed: 'tool_search'
+		withArguments: { (#query -> 'method source') } asDictionary.
 	names := ((self dataFrom: result) at: #tools) collect: [ :each |
-		         each at: #name ].
+		each at: #name ].
 	self assert: (names includes: 'method_source_search').
 
 	result := self
-		          callToolNamed: 'tool_search'
-		          withArguments:
-		          { (#query -> 'method equivalent') } asDictionary.
+		callToolNamed: 'tool_search'
+		withArguments: { (#query -> 'method equivalent') } asDictionary.
 	names := ((self dataFrom: result) at: #tools) collect: [ :each |
-		         each at: #name ].
-	self assert: (names includes: 'method_equivalent_search')
+		each at: #name ].
+	self assert: (names includes: 'method_equivalent_search').
+
+	result := self
+		callToolNamed: 'tool_search'
+		withArguments: {
+				(#query -> 'repository branch create switch checkout commit push').
+				(#limit -> 100) } asDictionary.
+	names := ((self dataFrom: result) at: #tools) collect: [ :each |
+		each at: #name ].
+	#( 'repository_branch_create' 'repository_branch_switch'
+	   'repository_branch_checkout' 'repository_commit' 'repository_push' ) do: [
+		:toolName | self assert: (names includes: toolName) ]
 ]
 
 { #category : 'tests' }
@@ -3082,8 +3080,8 @@ MCPToolContractsTest >> testSearchToolsReturnsDiscoverableMetadata [
 
 	| createRepositoryMetadata data names result tools |
 	result := self
-		          callToolNamed: 'tool_search'
-		          withArguments: { (#query -> 'repository') } asDictionary.
+		callToolNamed: 'tool_search'
+		withArguments: { (#query -> 'repository') } asDictionary.
 	data := self dataFrom: result.
 	tools := data at: #tools.
 	names := tools collect: [ :each | each at: #name ].
@@ -3094,11 +3092,10 @@ MCPToolContractsTest >> testSearchToolsReturnsDiscoverableMetadata [
 	self assert: (names includes: 'repository_load').
 	self deny: (names includes: 'class_search').
 	createRepositoryMetadata := tools detect: [ :each |
-		                            (each at: #name) = 'repository_create' ].
+		(each at: #name) = 'repository_create' ].
 	self
 		assert: createRepositoryMetadata keys asSet
-		equals: #( name description schemaInspectionRequired ) asSet.
-	self assert: (createRepositoryMetadata at: #schemaInspectionRequired)
+		equals: #( name description ) asSet
 ]
 
 { #category : 'tests' }
@@ -3171,8 +3168,8 @@ MCPToolContractsTest >> testSpecializedClassAndMethodToolsAreDiscoverableOnly [
 	                            'method_variable_reference_search'
 	                            'test_coverage_run' ).
 	result := self
-		          callToolNamed: 'tool_search'
-		          withArguments: { (#limit -> 100) } asDictionary.
+		callToolNamed: 'tool_search'
+		withArguments: { (#limit -> 100) } asDictionary.
 	metadataByName := Dictionary new.
 	((self dataFrom: result) at: #tools) do: [ :each |
 		metadataByName at: (each at: #name) put: each ].
@@ -3181,16 +3178,17 @@ MCPToolContractsTest >> testSpecializedClassAndMethodToolsAreDiscoverableOnly [
 			self assert: (MCPToolRegistry publicToolNames includes: each).
 			self deny: (MCPToolRegistry staticToolNames includes: each).
 			tool := MCPToolRegistry
-				        toolNamed: each
-				        ifAbsent: [ self fail: 'Missing tool ' , each ].
+				toolNamed: each
+				ifAbsent: [ self fail: 'Missing tool ' , each ].
 			self
 				assert: (MCPToolRegistry exposureForTool: tool)
 				equals: 'discoverable'.
 			metadata := metadataByName
-				            at: each
-				            ifAbsent: [
-				            self fail: 'Missing discoverable metadata for ' , each ].
-			self assert: (metadata at: #schemaInspectionRequired) ]
+				at: each
+				ifAbsent: [ self fail: 'Missing discoverable metadata for ' , each ].
+			self
+				assert: metadata keys asSet
+				equals: #( name description ) asSet ]
 ]
 
 { #category : 'tests' }
