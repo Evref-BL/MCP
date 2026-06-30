@@ -206,6 +206,37 @@ MCPToolSearchRepositoriesTest >> testListsRichRepositoryMetadata [
 						self deny: (entry includesKey: #remotes) ] ]
 ]
 
+{ #category : 'tests' }
+MCPToolSearchRepositoriesTest >> testListsStaleRepositoryAsMissingAndContinues [
+
+	| data entry missingLocation present result stale |
+	missingLocation := FileLocator imageDirectory / 'MCPStaleRepositoryLocation'.
+	stale := MCPTestStaleRepository
+		named: 'MCP Stale Repository'
+		location: missingLocation.
+	present := self
+		newRepositoryNamed: 'MCP Present Repository'
+		location: FileLocator imageDirectory
+		packageNames: #( ).
+	self
+		withRepositories: {
+			stale.
+			present }
+		do: [
+			result := self callToolWith: Dictionary new.
+			data := self dataFrom: result.
+			self deny: (result at: #isError ifAbsent: [ false ]).
+			self assert: (data at: #repositories) size equals: 2.
+			entry := self
+				entryNamed: 'MCP Stale Repository'
+				in: (data at: #repositories).
+			self assert: (entry at: #isMissing) equals: true.
+			self
+				assert: (entry at: #location)
+				equals: missingLocation pathString.
+			self deny: (entry includesKey: #branchName) ]
+]
+
 { #category : 'private - calling' }
 MCPToolSearchRepositoriesTest >> toolName [
 
