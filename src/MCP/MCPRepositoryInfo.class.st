@@ -44,7 +44,9 @@ MCPRepositoryInfo class >> commitResultRepository: aRepository packageNames: pac
 { #category : 'instance creation' }
 MCPRepositoryInfo class >> fromRepository: aRepository [
 
-	^ self new initializeFromRepository: aRepository
+	^ [ self new initializeFromRepository: aRepository ]
+		on: FileException
+		do: [ :ignored | self new initializeStaleRepository: aRepository ]
 ]
 
 { #category : 'converting' }
@@ -218,6 +220,34 @@ MCPRepositoryInfo >> initializeFromRepository: aRepository [
 	upstreamRemoteUrl := upstreamInfo at: #remoteUrl
 ]
 
+{ #category : 'initialization' }
+MCPRepositoryInfo >> initializeStaleRepository: aRepository [
+
+	name := self stringFromFileBoundary: [ aRepository name ] default: ''.
+	className := aRepository class name asString.
+	location := self
+		stringFromFileBoundary: [
+			aRepository location ifNotNil: [ :repositoryLocation |
+				repositoryLocation pathString ] ]
+		default: ''.
+	subdirectory := self
+		stringFromFileBoundary: [ aRepository subdirectory ]
+		default: ''.
+	branchName := ''.
+	headDescription := ''.
+	headClassName := ''.
+	headCommitId := ''.
+	isDetachedHead := false.
+	isMissing := true.
+	isModified := false.
+	packageNames := #( ).
+	modifiedPackageNames := #( ).
+	remotes := #( ).
+	upstreamRemoteName := ''.
+	upstreamBranchName := ''.
+	upstreamRemoteUrl := ''
+]
+
 { #category : 'accessing' }
 MCPRepositoryInfo >> isDetachedHead [
 
@@ -380,6 +410,14 @@ MCPRepositoryInfo >> sortedStringsFrom: aBlock [
 MCPRepositoryInfo >> stringFrom: aBlock default: defaultString [
 
 	^ self stringValue: aBlock value default: defaultString
+]
+
+{ #category : 'private' }
+MCPRepositoryInfo >> stringFromFileBoundary: aBlock default: defaultString [
+
+	^ [ self stringValue: aBlock value default: defaultString ]
+		on: FileException
+		do: [ :ignored | defaultString ]
 ]
 
 { #category : 'private' }
