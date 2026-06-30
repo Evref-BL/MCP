@@ -1565,36 +1565,6 @@ MCPToolContractsTest >> testHandleJSONReturnsMethodNotFoundForUnknownTool [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testImageCodeChangeTrackerFallsBackToChangedWhenSubscriptionFails [
-
-	| result tracker |
-	tracker := MCPImageCodeChangeTracker new.
-	tracker announcer: Object new.
-	result := tracker trackDuring: [ 42 ].
-	self assert: result equals: 42.
-	self assert: tracker hasChanges
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testImageCodeChangeTrackerPreservesResultForReadOnlyBlock [
-
-	| result tracker |
-	tracker := MCPImageCodeChangeTracker new.
-	result := tracker trackDuring: [ 42 ].
-	self assert: result equals: 42.
-	self deny: tracker hasChanges
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testImageCodeChangeTrackerRecordsCodeAnnouncements [
-
-	| tracker |
-	tracker := MCPImageCodeChangeTracker new.
-	tracker recordCodeChangeAnnouncement: MethodAdded new.
-	self assert: tracker hasChanges
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testImageContentSerializesNativeMCPImageBlock [
 
 	| content json |

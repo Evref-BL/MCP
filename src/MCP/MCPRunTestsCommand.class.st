@@ -57,23 +57,17 @@ MCPRunTestsCommand >> deadlineForTimeoutMilliseconds: timeoutMilliseconds [
 { #category : 'executing' }
 MCPRunTestsCommand >> execute [
 
-	| deadline tracker validatedRequests |
+	| deadline validatedRequests |
 	validatedRequests := self validatedRequestsFrom: request testRequests.
 	deadline := self deadlineForTimeoutMilliseconds:
 		            request timeoutMilliseconds.
-	tracker := MCPImageCodeChangeTracker new.
-	^ [
-		  tracker trackDuring: [
-				  request isCoverageOperation
-					  ifTrue: [
-							  self
-								  runCoverageForValidatedRequests: validatedRequests
-								  deadline: deadline ]
-					  ifFalse: [
-					  self runValidatedRequests: validatedRequests deadline: deadline ] ] ]
-		  ensure: [
-				  tracker hasChanges ifTrue: [
-					  self refreshRegisteredRepositoryDirtyPackages ] ]
+	^ request isCoverageOperation
+		  ifTrue: [
+			  self
+				  runCoverageForValidatedRequests: validatedRequests
+				  deadline: deadline ]
+		  ifFalse: [
+			  self runValidatedRequests: validatedRequests deadline: deadline ]
 ]
 
 { #category : 'private - coverage' }
@@ -101,14 +95,6 @@ MCPRunTestsCommand >> partiallyCoveredMethodsFromCoverageResult: coverageResult 
 
 	^ (coverageResult methods select: [ :method |
 		   (self hasAllSequenceNodesCoveredIn: method) not ]) asArray
-]
-
-{ #category : 'private' }
-MCPRunTestsCommand >> refreshRegisteredRepositoryDirtyPackages [
-
-	IceRepository registry do: [ :repository |
-			repository isMissing ifFalse: [
-				repository workingCopy refreshDirtyPackages ] ]
 ]
 
 { #category : 'private' }
