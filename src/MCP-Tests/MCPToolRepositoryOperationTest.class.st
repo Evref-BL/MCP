@@ -1151,6 +1151,120 @@ MCPToolRepositoryOperationTest >> testPullReturnsResultReportsErrorsAndRequestsI
 ]
 
 { #category : 'tests' }
+MCPToolRepositoryOperationTest >> testPushPublishesCurrentBranchUsingRequestedRemoteName [
+
+	| bareLocation branchName commitAfter location remoteHead repository repositoryName result upstream |
+	repositoryName := 'MCP Push Requested Remote Test Repository'.
+	branchName := 'feature/requested-remote'.
+	location := self temporaryRepositoryLocationNamed:
+		            'MCPToolRepositoryOperationTestGitPushRequestedRemote'.
+	bareLocation := self temporaryRepositoryLocationNamed:
+		                'MCPToolRepositoryOperationTestGitPushRequestedRemote.git'.
+	[
+		self deleteDirectoryIfExists: location.
+		self deleteDirectoryIfExists: bareLocation.
+		location ensureCreateDirectory.
+		self shellCommand:
+			'git init --initial-branch=main ' , (self shellQuote: location pathString).
+		(location / 'README.md') writeStreamDo: [ :stream |
+			stream nextPutAll: 'initial' ].
+		self commitAllIn: location message: 'Initial local commit'.
+		self shellCommand:
+			'git init --bare --initial-branch=main '
+			, (self shellQuote: bareLocation pathString).
+		self shellCommand:
+			'git -C ' , (self shellQuote: location pathString)
+			, ' remote add backup ' , (self shellQuote: bareLocation pathString).
+		self shellCommand:
+			'git -C ' , (self shellQuote: location pathString)
+			, ' checkout -b ' , (self shellQuote: branchName).
+		(location / 'feature.txt') writeStreamDo: [ :stream |
+			stream nextPutAll: 'feature' ].
+		self commitAllIn: location message: 'Feature local commit'.
+		commitAfter := (LibC resultOfCommand:
+			                'git -C ' , (self shellQuote: location pathString)
+			                , ' rev-parse HEAD') trimBoth.
+		repository := MCPTestIceRepository
+			              named: repositoryName
+			              location: location pathString.
+		self withRegisteredRepository: repository do: [
+			result := self callToolWith: {
+				          (#action -> 'push').
+				          (#repositoryName -> repositoryName).
+				          (#remoteName -> 'backup') } asDictionary.
+			self deny: (result at: #isError ifAbsent: [ false ]).
+			remoteHead := (LibC resultOfCommand:
+				               'git --git-dir '
+				               , (self shellQuote: bareLocation pathString)
+				               , ' rev-parse ' , (self shellQuote: branchName)) trimBoth.
+			self assert: remoteHead equals: commitAfter.
+			upstream := (LibC resultOfCommand:
+				             'git -C ' , (self shellQuote: location pathString)
+				             , ' rev-parse --abbrev-ref --symbolic-full-name '
+				             , (self shellQuote: '@{u}')) trimBoth.
+			self assert: upstream equals: 'backup/' , branchName ] ] ensure: [
+		self deleteDirectoryIfExists: location.
+		self deleteDirectoryIfExists: bareLocation ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testPushPublishesCurrentBranchWhenUpstreamIsMissing [
+
+	| bareLocation branchName commitAfter location remoteHead repository repositoryName result upstream |
+	repositoryName := 'MCP Push Missing Upstream Test Repository'.
+	branchName := 'feature/publish-upstream'.
+	location := self temporaryRepositoryLocationNamed:
+		            'MCPToolRepositoryOperationTestGitPushMissingUpstream'.
+	bareLocation := self temporaryRepositoryLocationNamed:
+		                'MCPToolRepositoryOperationTestGitPushMissingUpstreamRemote.git'.
+	[
+		self deleteDirectoryIfExists: location.
+		self deleteDirectoryIfExists: bareLocation.
+		location ensureCreateDirectory.
+		self shellCommand:
+			'git init --initial-branch=main ' , (self shellQuote: location pathString).
+		(location / 'README.md') writeStreamDo: [ :stream |
+			stream nextPutAll: 'initial' ].
+		self commitAllIn: location message: 'Initial local commit'.
+		self shellCommand:
+			'git init --bare --initial-branch=main '
+			, (self shellQuote: bareLocation pathString).
+		self shellCommand:
+			'git -C ' , (self shellQuote: location pathString)
+			, ' remote add origin ' , (self shellQuote: bareLocation pathString).
+		self shellCommand:
+			'git -C ' , (self shellQuote: location pathString)
+			, ' checkout -b ' , (self shellQuote: branchName).
+		(location / 'feature.txt') writeStreamDo: [ :stream |
+			stream nextPutAll: 'feature' ].
+		self commitAllIn: location message: 'Feature local commit'.
+		commitAfter := (LibC resultOfCommand:
+			                'git -C ' , (self shellQuote: location pathString)
+			                , ' rev-parse HEAD') trimBoth.
+		repository := MCPTestIceRepository
+			              named: repositoryName
+			              location: location pathString.
+		self withRegisteredRepository: repository do: [
+			result := self callToolWith: {
+				          (#action -> 'push').
+				          (#repositoryName -> repositoryName) } asDictionary.
+			self deny: (result at: #isError ifAbsent: [ false ]).
+			self assert: repository actionLog asArray equals: #( ).
+			remoteHead := (LibC resultOfCommand:
+				               'git --git-dir '
+				               , (self shellQuote: bareLocation pathString)
+				               , ' rev-parse ' , (self shellQuote: branchName)) trimBoth.
+			self assert: remoteHead equals: commitAfter.
+			upstream := (LibC resultOfCommand:
+				             'git -C ' , (self shellQuote: location pathString)
+				             , ' rev-parse --abbrev-ref --symbolic-full-name '
+				             , (self shellQuote: '@{u}')) trimBoth.
+			self assert: upstream equals: 'origin/' , branchName ] ] ensure: [
+		self deleteDirectoryIfExists: location.
+		self deleteDirectoryIfExists: bareLocation ]
+]
+
+{ #category : 'tests' }
 MCPToolRepositoryOperationTest >> testPushReportsRemoteAndAuthenticationErrors [
 
 	| authErrorResult remoteErrorResult repository |
@@ -1186,6 +1300,60 @@ MCPToolRepositoryOperationTest >> testPushReportsRemoteAndAuthenticationErrors [
 			self assert:
 				((self summaryFrom: authErrorResult) includesSubstring:
 					 'Iceberg authentication failed') ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testPushRequiresRemoteNameWhenMultipleNonOriginRemotesExist [
+
+	| backupLocation branchName forkLocation location repository repositoryName result |
+	repositoryName := 'MCP Push Ambiguous Remote Test Repository'.
+	branchName := 'feature/ambiguous-remote'.
+	location := self temporaryRepositoryLocationNamed:
+		            'MCPToolRepositoryOperationTestGitPushAmbiguousRemote'.
+	backupLocation := self temporaryRepositoryLocationNamed:
+		                  'MCPToolRepositoryOperationTestGitPushBackupRemote.git'.
+	forkLocation := self temporaryRepositoryLocationNamed:
+		                'MCPToolRepositoryOperationTestGitPushForkRemote.git'.
+	[
+		self deleteDirectoryIfExists: location.
+		self deleteDirectoryIfExists: backupLocation.
+		self deleteDirectoryIfExists: forkLocation.
+		location ensureCreateDirectory.
+		self shellCommand:
+			'git init --initial-branch=main ' , (self shellQuote: location pathString).
+		(location / 'README.md') writeStreamDo: [ :stream |
+			stream nextPutAll: 'initial' ].
+		self commitAllIn: location message: 'Initial local commit'.
+		self shellCommand:
+			'git init --bare --initial-branch=main '
+			, (self shellQuote: backupLocation pathString).
+		self shellCommand:
+			'git init --bare --initial-branch=main '
+			, (self shellQuote: forkLocation pathString).
+		self shellCommand:
+			'git -C ' , (self shellQuote: location pathString)
+			, ' remote add backup ' , (self shellQuote: backupLocation pathString).
+		self shellCommand:
+			'git -C ' , (self shellQuote: location pathString)
+			, ' remote add fork ' , (self shellQuote: forkLocation pathString).
+		self shellCommand:
+			'git -C ' , (self shellQuote: location pathString)
+			, ' checkout -b ' , (self shellQuote: branchName).
+		(location / 'feature.txt') writeStreamDo: [ :stream |
+			stream nextPutAll: 'feature' ].
+		self commitAllIn: location message: 'Feature local commit'.
+		repository := MCPTestIceRepository
+			              named: repositoryName
+			              location: location pathString.
+		self withRegisteredRepository: repository do: [
+			result := self callToolWith: {
+				          (#action -> 'push').
+				          (#repositoryName -> repositoryName) } asDictionary.
+			self assert: (result at: #isError ifAbsent: [ false ]).
+			self assert: ((self errorFrom: result) at: #errorCode) equals: 'RepositoryRemoteRequired' ] ] ensure: [
+		self deleteDirectoryIfExists: location.
+		self deleteDirectoryIfExists: backupLocation.
+		self deleteDirectoryIfExists: forkLocation ]
 ]
 
 { #category : 'tests' }
