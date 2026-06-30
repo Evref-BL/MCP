@@ -401,15 +401,9 @@ MCPToolRegistry class >> metadataForTool: aTool [
 { #category : 'tools' }
 MCPToolRegistry class >> metadataForTool: aTool usingPolicy: aToolExposurePolicy [
 
-	| data |
-	data := {
-		        (#name -> aTool name).
-		        (#description -> aTool description) } asDictionary.
-	(self
-		 schemaInspectionRequiredForTool: aTool
-		 usingPolicy: aToolExposurePolicy) ifTrue: [
-		data at: #schemaInspectionRequired put: true ].
-	^ data
+	^ {
+		  (#name -> aTool name).
+		  (#description -> aTool description) } asDictionary
 ]
 
 { #category : 'tools' }
@@ -590,32 +584,11 @@ MCPToolRegistry class >> riskForTool: aTool [
 ]
 
 { #category : 'tools' }
-MCPToolRegistry class >> schemaInspectionRequiredForTool: aTool [
-
-	^ self
-		  schemaInspectionRequiredForTool: aTool
-		  usingPolicy: MCPToolExposurePolicy default
-]
-
-{ #category : 'tools' }
-MCPToolRegistry class >> schemaInspectionRequiredForTool: aTool usingPolicy: aToolExposurePolicy [
-
-	^ (self isStaticTool: aTool name usingPolicy: aToolExposurePolicy)
-		  not
-]
-
-{ #category : 'tools' }
 MCPToolRegistry class >> searchMetadataForTool: aTool usingPolicy: aToolExposurePolicy [
 
-	| data |
-	data := {
-		        (#name -> aTool name).
-		        (#description -> aTool description) } asDictionary.
-	(self
-		 schemaInspectionRequiredForTool: aTool
-		 usingPolicy: aToolExposurePolicy) ifTrue: [
-		data at: #schemaInspectionRequired put: true ].
-	^ data
+	^ {
+		  (#name -> aTool name).
+		  (#description -> aTool description) } asDictionary
 ]
 
 { #category : 'tools' }
@@ -734,9 +707,9 @@ MCPToolRegistry class >> tool: aTool matchesQuery: queryString group: groupStrin
 	queryTerms := self queryTermsFrom: queryString.
 	queryTerms ifEmpty: [ ^ true ].
 	searchableText := (self searchableTextForTool: aTool) asLowercase.
-	^ queryTerms allSatisfy: [ :each |
-			  (self queryTermAlternativesFor: each) anySatisfy: [ :alternative |
-				  searchableText includesSubstring: alternative ] ]
+	^ queryTerms anySatisfy: [ :each |
+		  (self queryTermAlternativesFor: each) anySatisfy: [ :alternative |
+			  searchableText includesSubstring: alternative ] ]
 ]
 
 { #category : 'tools' }

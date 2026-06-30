@@ -20,26 +20,25 @@ MCPToolChangeHistoryToolsTest >> testChangeHistoryToolsAreDiscoverableWithExpect
 
 	| metadataByName result toolNames |
 	result := self
-		          callToolNamed: 'tool_search'
-		          withArguments: { (#group -> 'history') } asDictionary.
-	metadataByName := (((self dataFrom: result) at: #tools) collect: [
-		                   :each | (each at: #name) -> each ]) asDictionary.
+		callToolNamed: 'tool_search'
+		withArguments: { (#group -> 'history') } asDictionary.
+	metadataByName := (((self dataFrom: result) at: #tools) collect: [ :each |
+		(each at: #name) -> each ]) asDictionary.
 	toolNames := metadataByName keys.
 	#( 'history_file_list' 'history_entry_list' 'history_entry_apply'
 	   'history_entry_revert' ) do: [ :toolName |
 			| metadata tool |
 			self assert: (toolNames includes: toolName).
 			tool := MCPToolRegistry
-				        toolNamed: toolName
-				        ifAbsent: [ self fail: 'Missing tool ' , toolName ].
+				toolNamed: toolName
+				ifAbsent: [ self fail: 'Missing tool ' , toolName ].
 			self
 				assert: (MCPToolRegistry exposureForTool: tool)
 				equals: 'discoverable'.
 			metadata := metadataByName at: toolName.
 			self
 				assert: metadata keys asSet
-				equals: #( name description schemaInspectionRequired ) asSet.
-			self assert: (metadata at: #schemaInspectionRequired) ]
+				equals: #( name description ) asSet ]
 ]
 
 { #category : 'tests' }

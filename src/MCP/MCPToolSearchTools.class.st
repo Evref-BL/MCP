@@ -109,23 +109,20 @@ MCPToolSearchTools >> title [
 MCPToolSearchTools >> toolMetadataObjectSchema [
 
 	^ MCPStructureProperties new
-		  type: 'object';
-		  description: 'Compact metadata for one MCP-Pharo tool.';
-		  properties: {
-				  (self
-					   schemaPropertyNamed: 'name'
-					   type: 'string'
-					   description: 'MCP tool name.').
-				  (self
-					   schemaPropertyNamed: 'description'
-					   type: 'string'
-					   description: 'Short description.').
-				  (self
-					   booleanSchemaPropertyNamed: 'schemaInspectionRequired'
-					   description: 'Inspect schema before calling.') };
-		  required: #( 'name' 'description' );
-		  additionalProperties: false;
-		  yourself
+		type: 'object';
+		description: 'Compact metadata for one MCP-Pharo tool.';
+		properties: {
+				(self
+					schemaPropertyNamed: 'name'
+					type: 'string'
+					description: 'MCP tool name.').
+				(self
+					schemaPropertyNamed: 'description'
+					type: 'string'
+					description: 'Short description.') };
+		required: #( 'name' 'description' );
+		additionalProperties: false;
+		yourself
 ]
 
 { #category : 'private - schema' }
