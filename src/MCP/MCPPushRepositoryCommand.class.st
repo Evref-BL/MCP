@@ -71,11 +71,16 @@ MCPPushRepositoryCommand >> pushArgumentsFor: aRepository [
 { #category : 'private - git' }
 MCPPushRepositoryCommand >> pushRemoteNameFor: aRepository [
 
-	| remoteNames |
+	| remoteNames requestedRemoteName |
 	remoteNames := self remoteNamesFor: aRepository.
+	requestedRemoteName := self request remoteName.
+	requestedRemoteName isEmpty ifFalse: [
+		(remoteNames includes: requestedRemoteName) ifFalse: [
+			self signalRemoteName: requestedRemoteName missingFrom: remoteNames ].
+		^ requestedRemoteName ].
 	(remoteNames includes: 'origin') ifTrue: [ ^ 'origin' ].
-	remoteNames isEmpty ifTrue: [ ^ nil ].
-	^ remoteNames first
+	remoteNames size = 1 ifTrue: [ ^ remoteNames first ].
+	self signalRemoteSelectionRequiredFor: remoteNames
 ]
 
 { #category : 'private - git' }
@@ -99,4 +104,28 @@ MCPPushRepositoryCommand >> repositoryHasUpstream: aRepository [
 		runGitArguments: #( 'rev-parse' '--abbrev-ref' '--symbolic-full-name' '@{u}' )
 		in: aRepository.
 	^ (result at: #status) = 0
+]
+
+{ #category : 'private - errors' }
+MCPPushRepositoryCommand >> signalRemoteName: remoteName missingFrom: remoteNames [
+
+	MCPCommandError
+		signalErrorCode: #RepositoryRemoteNotFound
+		message: 'Repository remote ' , remoteName , ' does not exist.'
+		details: {
+			(#remoteName -> remoteName).
+			(#remoteNames -> remoteNames) } asDictionary
+]
+
+{ #category : 'private - errors' }
+MCPPushRepositoryCommand >> signalRemoteSelectionRequiredFor: remoteNames [
+
+	| message |
+	message := remoteNames isEmpty
+		ifTrue: [ 'Repository has no configured remote.' ]
+		ifFalse: [ 'Repository has multiple remotes and no origin; provide remoteName.' ].
+	MCPCommandError
+		signalErrorCode: #RepositoryRemoteRequired
+		message: message
+		details: { (#remoteNames -> remoteNames) } asDictionary
 ]
