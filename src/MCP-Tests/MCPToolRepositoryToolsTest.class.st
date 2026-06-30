@@ -246,7 +246,7 @@ MCPToolRepositoryToolsTest >> testRepositoryToolsUseDedicatedInputs [
 		                (MCPToolPullRepository
 		                 -> #( 'repositoryName' 'location' )).
 		                (MCPToolPushRepository
-		                 -> #( 'repositoryName' 'location' )).
+		                 -> #( 'repositoryName' 'location' 'remoteName' )).
 		                (MCPToolCreateRepositoryBranch
 		                 -> #( 'repositoryName' 'location' 'branchName' )).
 		                (MCPToolSwitchRepositoryBranch
