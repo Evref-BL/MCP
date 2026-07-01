@@ -69,6 +69,16 @@ MCPInvalidToolInput >> initialize [
 	violations := #(  )
 ]
 
+{ #category : 'dispatching' }
+MCPInvalidToolInput >> mcpAddToolErrorDetailsTo: aDictionary [
+
+	aDictionary at: #toolName put: self toolName.
+	self violations ifNotEmpty: [
+		aDictionary
+			at: #violations
+			put: (self violations collect: [ :each | each asDictionary ]) ]
+]
+
 { #category : 'accessing' }
 MCPInvalidToolInput >> toolName [
 

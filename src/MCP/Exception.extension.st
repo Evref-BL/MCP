@@ -63,6 +63,13 @@ Exception >> isIncorrectJSON [
 ]
 
 { #category : '*MCP' }
+Exception >> mcpAddToolErrorDetailsTo: aDictionary [
+	"Default: ordinary exceptions do not add tool-specific fields."
+
+	^ aDictionary
+]
+
+{ #category : '*MCP' }
 Exception >> mcpCommandErrorDo: commandBlock otherwise: fallbackBlock [
 
 	^ fallbackBlock cull: self
