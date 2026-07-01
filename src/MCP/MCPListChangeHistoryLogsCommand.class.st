@@ -13,7 +13,6 @@ Class {
 MCPListChangeHistoryLogsCommand >> currentHistoryFileToInclude: currentFile inDirectory: aDirectory [
 
 	currentFile ifNil: [ ^ nil ].
-	currentFile exists ifFalse: [ ^ nil ].
 	request directoryPath ifNil: [ ^ currentFile ].
 	(self sameFileReference: aDirectory as: currentFile parent) ifFalse: [
 		^ nil ].

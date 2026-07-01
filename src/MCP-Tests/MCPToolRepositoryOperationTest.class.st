@@ -215,9 +215,11 @@ MCPToolRepositoryOperationTest >> testAdoptHeadAdoptsRepositoryHeadAndReportsBef
 					          (#repositoryName -> repository name).
 					          (#branchName -> 'main') } asDictionary.
 			data := self dataFrom: result.
-			self deny: (result at: #isError ifAbsent: [ false ]).
+			self deny: (self resultIndicatesError: result).
 			self assert: repository modifiedPackages isEmpty.
-			self assert: repository workingCopy referenceCommit id equals: 'head-2'.
+			self
+				assert: repository workingCopy referenceCommit id
+				equals: 'head-2'.
 			self
 				assert: data keys asSet
 				equals:
@@ -252,7 +254,7 @@ MCPToolRepositoryOperationTest >> testAdoptHeadClearsModifiedPackagesWhenReferen
 					          (#repositoryName -> repository name).
 					          (#branchName -> 'main') } asDictionary.
 			data := self dataFrom: result.
-			self deny: (result at: #isError ifAbsent: [ false ]).
+			self deny: (self resultIndicatesError: result).
 			self assert: repository modifiedPackages isEmpty.
 			self deny: (data at: #didAdopt).
 			self
@@ -292,7 +294,7 @@ MCPToolRepositoryOperationTest >> testAdoptHeadValidatesExpectedBranch [
 					          (#action -> 'adoptHead').
 					          (#repositoryName -> repository name).
 					          (#branchName -> 'feature') } asDictionary.
-			self assert: (result at: #isError ifAbsent: [ false ]).
+			self assert: (self resultIndicatesError: result).
 			self assert:
 				((self summaryFrom: result) includesSubstring: 'branch mismatch').
 			errorDetails := self errorFrom: result.
@@ -360,7 +362,7 @@ MCPToolRepositoryOperationTest >> testAttachRegistersExistingGitCheckout [
 									          (#packageNames -> { packageName }) } asDictionary.
 							repository := IceRepository repositories detect: [ :each |
 								              each name asString = repositoryName ].
-							self deny: (result at: #isError ifAbsent: [ false ]).
+							self deny: (self resultIndicatesError: result).
 							self
 								assert: repository location pathString
 								equals: location pathString.
@@ -415,7 +417,7 @@ MCPToolRepositoryOperationTest >> testAttachRegistersLinkedGitWorktreeCheckout [
 										          (#location -> linkedLocation pathString).
 										          (#subdirectory -> 'src').
 										          (#packageNames -> { packageName }) } asDictionary.
-								self deny: (result at: #isError ifAbsent: [ false ]).
+								self deny: (self resultIndicatesError: result).
 								repository := IceRepository repositories detect: [ :each |
 									              each name asString = repositoryName ].
 								self
@@ -450,7 +452,7 @@ MCPToolRepositoryOperationTest >> testAttachReportsDuplicateRepository [
 					          (#action -> 'attach').
 					          (#name -> repositoryName).
 					          (#location -> location pathString) } asDictionary.
-			self assert: (result at: #isError ifAbsent: [ false ]).
+			self assert: (self resultIndicatesError: result).
 			self assert:
 				((self summaryFrom: result) includesSubstring:
 					 'already registered') ]
@@ -510,7 +512,7 @@ MCPToolRepositoryOperationTest >> testCheckoutBranchLoadsTargetBranchSnapshot [
 							                  with: {
 									                  (#repositoryName -> repositoryName).
 									                  (#branchName -> baseBranch) } asDictionary.
-						self deny: (checkoutResult at: #isError ifAbsent: [ false ]).
+						self deny: (self resultIndicatesError: checkoutResult).
 						self deny:
 							((Smalltalk at: className asSymbol) includesSelector:
 								 extraSelector) ] ]
@@ -543,7 +545,7 @@ MCPToolRepositoryOperationTest >> testCommitCreatesCommitAndReturnsResult [
 									          (#message -> 'Initial commit MCP test') }
 									          asDictionary.
 							data := self dataFrom: result.
-							self deny: (result at: #isError ifAbsent: [ false ]).
+							self deny: (self resultIndicatesError: result).
 							self
 								assert: data keys asSet
 								equals:
@@ -642,7 +644,7 @@ MCPToolRepositoryOperationTest >> testCommitRequestsImageSaveAfterSuccessfulExec
 										          (#repositoryName -> repositoryName).
 										          (#message -> 'Commit and save from MCP test') }
 										          asDictionary.
-							self deny: (result at: #isError ifAbsent: [ false ]).
+							self deny: (self resultIndicatesError: result).
 							self assert: server didSaveImageSession ] ]
 ]
 
@@ -700,7 +702,7 @@ MCPToolRepositoryOperationTest >> testCreateBranchReturnsResultReportsErrorsAndR
 					          (#repositoryName -> repository name).
 					          (#branchName -> 'feature') } asDictionary.
 			data := self dataFrom: result.
-			self deny: (result at: #isError ifAbsent: [ false ]).
+			self deny: (self resultIndicatesError: result).
 			self
 				assert: repository actionLog asArray
 				equals: #( 'createBranch:feature' ).
@@ -718,13 +720,13 @@ MCPToolRepositoryOperationTest >> testCreateBranchReturnsResultReportsErrorsAndR
 				              withParams: {
 						              (#repositoryName -> repository name).
 						              (#branchName -> 'feature-save') } asDictionary.
-			self deny: (saveResult at: #isError ifAbsent: [ false ]).
+			self deny: (self resultIndicatesError: saveResult).
 			self assert: server didSaveImageSession.
 			duplicateResult := self callToolWith: {
 					                   (#action -> 'createBranch').
 					                   (#repositoryName -> repository name).
 					                   (#branchName -> 'feature') } asDictionary.
-			self assert: (duplicateResult at: #isError ifAbsent: [ false ]).
+			self assert: (self resultIndicatesError: duplicateResult).
 			self assert:
 				((self summaryFrom: duplicateResult) includesSubstring:
 					 'Failed to create repository branch').
@@ -740,7 +742,7 @@ MCPToolRepositoryOperationTest >> testCreateBranchReturnsResultReportsErrorsAndR
 					                 (#action -> 'createBranch').
 					                 (#repositoryName -> repository name).
 					                 (#branchName -> 'bad branch') } asDictionary.
-			self assert: (failureResult at: #isError ifAbsent: [ false ]).
+			self assert: (self resultIndicatesError: failureResult).
 			self assert: ((self summaryFrom: failureResult) includesSubstring:
 					 'Failed to create repository branch').
 			self assert: ((self summaryFrom: failureResult) includesSubstring:
@@ -767,7 +769,7 @@ MCPToolRepositoryOperationTest >> testCreateCreatesAndRegistersRepository [
 						          asDictionary.
 				repository := IceRepository repositories detect: [ :each |
 					              each name asString = repositoryName ].
-				self deny: (result at: #isError ifAbsent: [ false ]).
+				self deny: (self resultIndicatesError: result).
 				self
 					assert: repository location pathString
 					equals: location pathString.
@@ -824,7 +826,7 @@ MCPToolRepositoryOperationTest >> testDiffDoesNotRequestImageSaveAfterSuccessful
 								          rpcToolCall: 'repository_change_list'
 								          withParams:
 								          { (#repositoryName -> repositoryName) } asDictionary.
-							self deny: (result at: #isError ifAbsent: [ false ]).
+							self deny: (self resultIndicatesError: result).
 							self deny: server didSaveImageSession ] ]
 ]
 
@@ -893,29 +895,32 @@ MCPToolRepositoryOperationTest >> testExportUpdatesDiskAndIndexWithoutCommitting
 		withExportPackageNamed: packageName
 		className: 'MCPToolRepositoryOperationExportClass'
 		do: [
-			self
-				withCleanRepositoryNamed: repositoryName
-				location: location
-				do: [
-					self callToolWith: {
-							(#action -> 'create').
-							(#name -> repositoryName).
-							(#location -> location pathString).
-							(#packageNames -> { packageName }) } asDictionary.
-					result := self callToolWith: {
-							          (#action -> 'export').
-							          (#repositoryName -> repositoryName) } asDictionary.
-					data := self dataFrom: result.
-					childNames := self directChildNamesOf: location.
-					self deny: (result at: #isError ifAbsent: [ false ]).
-					self
-						assert: data keys asSet
-						equals: #( changedPackageNames didChange modifiedPaths ) asSet.
-					self assert: (data at: #didChange) equals: true.
-					self assert: (data at: #changedPackageNames) equals: { packageName }.
-					self assert: (data at: #modifiedPaths) notEmpty.
-					self assert: (childNames anySatisfy: [ :each |
-							 each includesSubstring: packageName ]) ] ]
+				self
+					withCleanRepositoryNamed: repositoryName
+					location: location
+					do: [
+							self callToolWith: {
+									(#action -> 'create').
+									(#name -> repositoryName).
+									(#location -> location pathString).
+									(#packageNames -> { packageName }) } asDictionary.
+							result := self callToolWith: {
+									          (#action -> 'export').
+									          (#repositoryName -> repositoryName) } asDictionary.
+							data := self dataFrom: result.
+							childNames := self directChildNamesOf: location.
+							self deny: (self resultIndicatesError: result).
+							self
+								assert: data keys asSet
+								equals: #( changedPackageNames didChange modifiedPaths ) asSet.
+							self assert: (data at: #didChange) equals: true.
+							self
+								assert: (data at: #changedPackageNames)
+								equals: { packageName }.
+							self assert: (data at: #modifiedPaths) notEmpty.
+							self assert:
+								(childNames anySatisfy: [ :each |
+									 each includesSubstring: packageName ]) ] ]
 ]
 
 { #category : 'tests' }
@@ -929,7 +934,7 @@ MCPToolRepositoryOperationTest >> testFetchReturnsResultShapeAndReportsErrors [
 					          (#action -> 'fetch').
 					          (#repositoryName -> repository name) } asDictionary.
 			data := self dataFrom: result.
-			self deny: (result at: #isError ifAbsent: [ false ]).
+			self deny: (self resultIndicatesError: result).
 			self
 				assert: repository actionLog asArray
 				equals: #( 'fetch:origin' ).
@@ -946,7 +951,7 @@ MCPToolRepositoryOperationTest >> testFetchReturnsResultShapeAndReportsErrors [
 					               (#action -> 'fetch').
 					               (#repositoryName -> repository name) }
 					               asDictionary.
-			self assert: (errorResult at: #isError ifAbsent: [ false ]).
+			self assert: (self resultIndicatesError: errorResult).
 			self assert: ((self summaryFrom: errorResult) includesSubstring:
 					 'Failed to fetch repository') ]
 ]
@@ -1004,19 +1009,19 @@ MCPToolRepositoryOperationTest >> testLinkedWorktreeAttachReportsGitMetadataAndE
 									                (#subdirectory -> 'src').
 									                (#packageNames -> { packageName }) }
 									                asDictionary.
-							self deny: (createResult at: #isError ifAbsent: [ false ]).
+							self deny: (self resultIndicatesError: createResult).
 							exportResult := self callToolWith: {
 									                (#action -> 'export').
 									                (#repositoryName -> repositoryName) }
 									                asDictionary.
-							self deny: (exportResult at: #isError ifAbsent: [ false ]).
+							self deny: (self resultIndicatesError: exportResult).
 							commitResult := self callToolWith: {
 									                (#action -> 'commit').
 									                (#repositoryName -> repositoryName).
 									                (#message
 									                 -> 'Prepare linked checkout contract test') }
 									                asDictionary.
-							self deny: (commitResult at: #isError ifAbsent: [ false ]).
+							self deny: (self resultIndicatesError: commitResult).
 							repository := IceRepository registry detect: [ :each |
 								              each name = repositoryName ].
 							headCommitId := MCPIcebergCommitInfo idStringFrom:
@@ -1044,12 +1049,12 @@ MCPToolRepositoryOperationTest >> testLinkedWorktreeAttachReportsGitMetadataAndE
 										                (#subdirectory -> 'src').
 										                (#packageNames -> { packageName }) }
 										                asDictionary.
-								self deny: (attachResult at: #isError ifAbsent: [ false ]).
+								self deny: (self resultIndicatesError: attachResult).
 								searchResult := self searchRepositoriesWith: {
 										                (#repositoryName -> repositoryName).
 										                (#filterMode -> 'exact').
 										                (#includeDetails -> true) } asDictionary.
-								self deny: (searchResult at: #isError ifAbsent: [ false ]).
+								self deny: (self resultIndicatesError: searchResult).
 								searchData := self dataFrom: searchResult.
 								entry := (searchData at: #repositories) anyOne.
 								self
@@ -1071,7 +1076,7 @@ MCPToolRepositoryOperationTest >> testLinkedWorktreeAttachReportsGitMetadataAndE
 										                (#action -> 'export').
 										                (#repositoryName -> repositoryName) }
 										                asDictionary.
-								self deny: (exportResult at: #isError ifAbsent: [ false ]).
+								self deny: (self resultIndicatesError: exportResult).
 								self assert: exportedClassFile exists ] ensure: [
 									self removeClassNamed: exportedClassName.
 									self shellCommand:
@@ -1094,7 +1099,7 @@ MCPToolRepositoryOperationTest >> testPullReportsIcebergMergeAndLoadErrors [
 					                    (#action -> 'pull').
 					                    (#repositoryName -> repository name) }
 					                    asDictionary.
-			self assert: (mergeErrorResult at: #isError ifAbsent: [ false ]).
+			self assert: (self resultIndicatesError: mergeErrorResult).
 			self assert:
 				((self summaryFrom: mergeErrorResult) includesSubstring:
 					 'Failed to pull repository').
@@ -1111,7 +1116,7 @@ MCPToolRepositoryOperationTest >> testPullReportsIcebergMergeAndLoadErrors [
 					                   (#action -> 'pull').
 					                   (#repositoryName -> repository name) }
 					                   asDictionary.
-			self assert: (loadErrorResult at: #isError ifAbsent: [ false ]).
+			self assert: (self resultIndicatesError: loadErrorResult).
 			self assert:
 				((self summaryFrom: loadErrorResult) includesSubstring:
 					 'Failed to pull repository').
@@ -1131,7 +1136,7 @@ MCPToolRepositoryOperationTest >> testPullReturnsResultReportsErrorsAndRequestsI
 					          (#action -> 'pull').
 					          (#repositoryName -> repository name) } asDictionary.
 			data := self dataFrom: result.
-			self deny: (result at: #isError ifAbsent: [ false ]).
+			self deny: (self resultIndicatesError: result).
 			self assert: repository actionLog asArray equals: #( 'pull' ).
 			self
 				assert: data keys asSet
@@ -1145,7 +1150,7 @@ MCPToolRepositoryOperationTest >> testPullReturnsResultReportsErrorsAndRequestsI
 				              withParams:
 				              { (#repositoryName -> repository name) }
 					              asDictionary.
-			self deny: (saveResult at: #isError ifAbsent: [ false ]).
+			self deny: (self resultIndicatesError: saveResult).
 			self assert: server didSaveImageSession ].
 	repository := self newTestRepositoryNamed:
 		              'MCP Pull Error Test Repository'.
@@ -1155,7 +1160,7 @@ MCPToolRepositoryOperationTest >> testPullReturnsResultReportsErrorsAndRequestsI
 					               (#action -> 'pull').
 					               (#repositoryName -> repository name) }
 					               asDictionary.
-			self assert: (errorResult at: #isError ifAbsent: [ false ]).
+			self assert: (self resultIndicatesError: errorResult).
 			self assert: ((self summaryFrom: errorResult) includesSubstring:
 					 'Failed to pull repository') ]
 ]
@@ -1174,21 +1179,21 @@ MCPToolRepositoryOperationTest >> testPushPublishesCurrentBranchUsingRequestedRe
 		self deleteDirectoryIfExists: location.
 		self deleteDirectoryIfExists: bareLocation.
 		location ensureCreateDirectory.
-		self shellCommand:
-			'git init --initial-branch=main ' , (self shellQuote: location pathString).
-		(location / 'README.md') writeStreamDo: [ :stream |
+		self shellCommand: 'git init --initial-branch=main '
+			, (self shellQuote: location pathString).
+		location / 'README.md' writeStreamDo: [ :stream |
 			stream nextPutAll: 'initial' ].
 		self commitAllIn: location message: 'Initial local commit'.
-		self shellCommand:
-			'git init --bare --initial-branch=main '
+		self shellCommand: 'git init --bare --initial-branch=main '
 			, (self shellQuote: bareLocation pathString).
 		self shellCommand:
 			'git -C ' , (self shellQuote: location pathString)
-			, ' remote add backup ' , (self shellQuote: bareLocation pathString).
+			, ' remote add backup '
+			, (self shellQuote: bareLocation pathString).
 		self shellCommand:
 			'git -C ' , (self shellQuote: location pathString)
 			, ' checkout -b ' , (self shellQuote: branchName).
-		(location / 'feature.txt') writeStreamDo: [ :stream |
+		location / 'feature.txt' writeStreamDo: [ :stream |
 			stream nextPutAll: 'feature' ].
 		self commitAllIn: location message: 'Feature local commit'.
 		commitAfter := (LibC resultOfCommand:
@@ -1198,23 +1203,24 @@ MCPToolRepositoryOperationTest >> testPushPublishesCurrentBranchUsingRequestedRe
 			              named: repositoryName
 			              location: location pathString.
 		self withRegisteredRepository: repository do: [
-			result := self callToolWith: {
-				          (#action -> 'push').
-				          (#repositoryName -> repositoryName).
-				          (#remoteName -> 'backup') } asDictionary.
-			self deny: (result at: #isError ifAbsent: [ false ]).
-			remoteHead := (LibC resultOfCommand:
-				               'git --git-dir '
-				               , (self shellQuote: bareLocation pathString)
-				               , ' rev-parse ' , (self shellQuote: branchName)) trimBoth.
-			self assert: remoteHead equals: commitAfter.
-			upstream := (LibC resultOfCommand:
-				             'git -C ' , (self shellQuote: location pathString)
-				             , ' rev-parse --abbrev-ref --symbolic-full-name '
-				             , (self shellQuote: '@{u}')) trimBoth.
-			self assert: upstream equals: 'backup/' , branchName ] ] ensure: [
-		self deleteDirectoryIfExists: location.
-		self deleteDirectoryIfExists: bareLocation ]
+				result := self callToolWith: {
+						          (#action -> 'push').
+						          (#repositoryName -> repositoryName).
+						          (#remoteName -> 'backup') } asDictionary.
+				self deny: (self resultIndicatesError: result).
+				remoteHead := (LibC resultOfCommand:
+					               'git --git-dir '
+					               , (self shellQuote: bareLocation pathString)
+					               , ' rev-parse ' , (self shellQuote: branchName))
+					              trimBoth.
+				self assert: remoteHead equals: commitAfter.
+				upstream := (LibC resultOfCommand:
+					             'git -C ' , (self shellQuote: location pathString)
+					             , ' rev-parse --abbrev-ref --symbolic-full-name '
+					             , (self shellQuote: '@{u}')) trimBoth.
+				self assert: upstream equals: 'backup/' , branchName ] ] ensure: [
+			self deleteDirectoryIfExists: location.
+			self deleteDirectoryIfExists: bareLocation ]
 ]
 
 { #category : 'tests' }
@@ -1231,21 +1237,21 @@ MCPToolRepositoryOperationTest >> testPushPublishesCurrentBranchWhenUpstreamIsMi
 		self deleteDirectoryIfExists: location.
 		self deleteDirectoryIfExists: bareLocation.
 		location ensureCreateDirectory.
-		self shellCommand:
-			'git init --initial-branch=main ' , (self shellQuote: location pathString).
-		(location / 'README.md') writeStreamDo: [ :stream |
+		self shellCommand: 'git init --initial-branch=main '
+			, (self shellQuote: location pathString).
+		location / 'README.md' writeStreamDo: [ :stream |
 			stream nextPutAll: 'initial' ].
 		self commitAllIn: location message: 'Initial local commit'.
-		self shellCommand:
-			'git init --bare --initial-branch=main '
+		self shellCommand: 'git init --bare --initial-branch=main '
 			, (self shellQuote: bareLocation pathString).
 		self shellCommand:
 			'git -C ' , (self shellQuote: location pathString)
-			, ' remote add origin ' , (self shellQuote: bareLocation pathString).
+			, ' remote add origin '
+			, (self shellQuote: bareLocation pathString).
 		self shellCommand:
 			'git -C ' , (self shellQuote: location pathString)
 			, ' checkout -b ' , (self shellQuote: branchName).
-		(location / 'feature.txt') writeStreamDo: [ :stream |
+		location / 'feature.txt' writeStreamDo: [ :stream |
 			stream nextPutAll: 'feature' ].
 		self commitAllIn: location message: 'Feature local commit'.
 		commitAfter := (LibC resultOfCommand:
@@ -1255,23 +1261,24 @@ MCPToolRepositoryOperationTest >> testPushPublishesCurrentBranchWhenUpstreamIsMi
 			              named: repositoryName
 			              location: location pathString.
 		self withRegisteredRepository: repository do: [
-			result := self callToolWith: {
-				          (#action -> 'push').
-				          (#repositoryName -> repositoryName) } asDictionary.
-			self deny: (result at: #isError ifAbsent: [ false ]).
-			self assert: repository actionLog asArray equals: #( ).
-			remoteHead := (LibC resultOfCommand:
-				               'git --git-dir '
-				               , (self shellQuote: bareLocation pathString)
-				               , ' rev-parse ' , (self shellQuote: branchName)) trimBoth.
-			self assert: remoteHead equals: commitAfter.
-			upstream := (LibC resultOfCommand:
-				             'git -C ' , (self shellQuote: location pathString)
-				             , ' rev-parse --abbrev-ref --symbolic-full-name '
-				             , (self shellQuote: '@{u}')) trimBoth.
-			self assert: upstream equals: 'origin/' , branchName ] ] ensure: [
-		self deleteDirectoryIfExists: location.
-		self deleteDirectoryIfExists: bareLocation ]
+				result := self callToolWith: {
+						          (#action -> 'push').
+						          (#repositoryName -> repositoryName) } asDictionary.
+				self deny: (self resultIndicatesError: result).
+				self assert: repository actionLog asArray equals: #(  ).
+				remoteHead := (LibC resultOfCommand:
+					               'git --git-dir '
+					               , (self shellQuote: bareLocation pathString)
+					               , ' rev-parse ' , (self shellQuote: branchName))
+					              trimBoth.
+				self assert: remoteHead equals: commitAfter.
+				upstream := (LibC resultOfCommand:
+					             'git -C ' , (self shellQuote: location pathString)
+					             , ' rev-parse --abbrev-ref --symbolic-full-name '
+					             , (self shellQuote: '@{u}')) trimBoth.
+				self assert: upstream equals: 'origin/' , branchName ] ] ensure: [
+			self deleteDirectoryIfExists: location.
+			self deleteDirectoryIfExists: bareLocation ]
 ]
 
 { #category : 'tests' }
@@ -1287,7 +1294,7 @@ MCPToolRepositoryOperationTest >> testPushReportsRemoteAndAuthenticationErrors [
 					                     (#action -> 'push').
 					                     (#repositoryName -> repository name) }
 					                     asDictionary.
-			self assert: (remoteErrorResult at: #isError ifAbsent: [ false ]).
+			self assert: (self resultIndicatesError: remoteErrorResult).
 			self assert:
 				((self summaryFrom: remoteErrorResult) includesSubstring:
 					 'Failed to push repository').
@@ -1303,7 +1310,7 @@ MCPToolRepositoryOperationTest >> testPushReportsRemoteAndAuthenticationErrors [
 					                   (#action -> 'push').
 					                   (#repositoryName -> repository name) }
 					                   asDictionary.
-			self assert: (authErrorResult at: #isError ifAbsent: [ false ]).
+			self assert: (self resultIndicatesError: authErrorResult).
 			self assert:
 				((self summaryFrom: authErrorResult) includesSubstring:
 					 'Failed to push repository').
@@ -1329,41 +1336,42 @@ MCPToolRepositoryOperationTest >> testPushRequiresRemoteNameWhenMultipleNonOrigi
 		self deleteDirectoryIfExists: backupLocation.
 		self deleteDirectoryIfExists: forkLocation.
 		location ensureCreateDirectory.
-		self shellCommand:
-			'git init --initial-branch=main ' , (self shellQuote: location pathString).
-		(location / 'README.md') writeStreamDo: [ :stream |
+		self shellCommand: 'git init --initial-branch=main '
+			, (self shellQuote: location pathString).
+		location / 'README.md' writeStreamDo: [ :stream |
 			stream nextPutAll: 'initial' ].
 		self commitAllIn: location message: 'Initial local commit'.
-		self shellCommand:
-			'git init --bare --initial-branch=main '
+		self shellCommand: 'git init --bare --initial-branch=main '
 			, (self shellQuote: backupLocation pathString).
-		self shellCommand:
-			'git init --bare --initial-branch=main '
+		self shellCommand: 'git init --bare --initial-branch=main '
 			, (self shellQuote: forkLocation pathString).
 		self shellCommand:
 			'git -C ' , (self shellQuote: location pathString)
-			, ' remote add backup ' , (self shellQuote: backupLocation pathString).
+			, ' remote add backup '
+			, (self shellQuote: backupLocation pathString).
 		self shellCommand:
 			'git -C ' , (self shellQuote: location pathString)
 			, ' remote add fork ' , (self shellQuote: forkLocation pathString).
 		self shellCommand:
 			'git -C ' , (self shellQuote: location pathString)
 			, ' checkout -b ' , (self shellQuote: branchName).
-		(location / 'feature.txt') writeStreamDo: [ :stream |
+		location / 'feature.txt' writeStreamDo: [ :stream |
 			stream nextPutAll: 'feature' ].
 		self commitAllIn: location message: 'Feature local commit'.
 		repository := MCPTestIceRepository
 			              named: repositoryName
 			              location: location pathString.
 		self withRegisteredRepository: repository do: [
-			result := self callToolWith: {
-				          (#action -> 'push').
-				          (#repositoryName -> repositoryName) } asDictionary.
-			self assert: (result at: #isError ifAbsent: [ false ]).
-			self assert: ((self errorFrom: result) at: #errorCode) equals: 'RepositoryRemoteRequired' ] ] ensure: [
-		self deleteDirectoryIfExists: location.
-		self deleteDirectoryIfExists: backupLocation.
-		self deleteDirectoryIfExists: forkLocation ]
+				result := self callToolWith: {
+						          (#action -> 'push').
+						          (#repositoryName -> repositoryName) } asDictionary.
+				self assert: (self resultIndicatesError: result).
+				self
+					assert: ((self errorFrom: result) at: #errorCode)
+					equals: 'RepositoryRemoteRequired' ] ] ensure: [
+			self deleteDirectoryIfExists: location.
+			self deleteDirectoryIfExists: backupLocation.
+			self deleteDirectoryIfExists: forkLocation ]
 ]
 
 { #category : 'tests' }
@@ -1377,7 +1385,7 @@ MCPToolRepositoryOperationTest >> testPushReturnsResultReportsErrorsAndRequestsI
 					          (#action -> 'push').
 					          (#repositoryName -> repository name) } asDictionary.
 			data := self dataFrom: result.
-			self deny: (result at: #isError ifAbsent: [ false ]).
+			self deny: (self resultIndicatesError: result).
 			self assert: repository actionLog asArray equals: #( 'push' ).
 			self
 				assert: data keys asSet
@@ -1388,7 +1396,7 @@ MCPToolRepositoryOperationTest >> testPushReturnsResultReportsErrorsAndRequestsI
 				              withParams:
 				              { (#repositoryName -> repository name) }
 					              asDictionary.
-			self deny: (saveResult at: #isError ifAbsent: [ false ]).
+			self deny: (self resultIndicatesError: saveResult).
 			self assert: server didSaveImageSession ].
 	repository := self newTestRepositoryNamed:
 		              'MCP Push Error Test Repository'.
@@ -1398,7 +1406,7 @@ MCPToolRepositoryOperationTest >> testPushReturnsResultReportsErrorsAndRequestsI
 					               (#action -> 'push').
 					               (#repositoryName -> repository name) }
 					               asDictionary.
-			self assert: (errorResult at: #isError ifAbsent: [ false ]).
+			self assert: (self resultIndicatesError: errorResult).
 			self assert: ((self summaryFrom: errorResult) includesSubstring:
 					 'Failed to push repository') ]
 ]
@@ -1528,7 +1536,7 @@ MCPToolRepositoryOperationTest >> testRepositoryErrorDetailsUseActionNotOperatio
 			result := self callToolWith: {
 					          (#action -> 'push').
 					          (#repositoryName -> repository name) } asDictionary.
-			self assert: (result at: #isError ifAbsent: [ false ]).
+			self assert: (self resultIndicatesError: result).
 			errorDetails := self errorFrom: result.
 			self assert: (errorDetails at: #action) equals: 'push'.
 			self deny: (errorDetails includesKey: #operation).
@@ -1585,7 +1593,7 @@ MCPToolRepositoryOperationTest >> testSwitchBranchReturnsResultReportsErrorsAndR
 					          (#repositoryName -> repository name).
 					          (#branchName -> 'feature') } asDictionary.
 			data := self dataFrom: result.
-			self deny: (result at: #isError ifAbsent: [ false ]).
+			self deny: (self resultIndicatesError: result).
 			self
 				assert: data keys asSet
 				equals:
@@ -1602,13 +1610,13 @@ MCPToolRepositoryOperationTest >> testSwitchBranchReturnsResultReportsErrorsAndR
 				              withParams: {
 						              (#repositoryName -> repository name).
 						              (#branchName -> 'main') } asDictionary.
-			self deny: (saveResult at: #isError ifAbsent: [ false ]).
+			self deny: (self resultIndicatesError: saveResult).
 			self assert: server didSaveImageSession.
 			missingResult := self callToolWith: {
 					                 (#action -> 'switchBranch').
 					                 (#repositoryName -> repository name).
 					                 (#branchName -> 'missing') } asDictionary.
-			self assert: (missingResult at: #isError ifAbsent: [ false ]).
+			self assert: (self resultIndicatesError: missingResult).
 			self assert: ((self summaryFrom: missingResult) includesSubstring:
 					 'Failed to switch repository branch').
 			self assert: ((self summaryFrom: missingResult) includesSubstring:
@@ -1623,7 +1631,7 @@ MCPToolRepositoryOperationTest >> testSwitchBranchReturnsResultReportsErrorsAndR
 					                  (#action -> 'switchBranch').
 					                  (#repositoryName -> repository name).
 					                  (#branchName -> 'feature') } asDictionary.
-			self assert: (conflictResult at: #isError ifAbsent: [ false ]).
+			self assert: (self resultIndicatesError: conflictResult).
 			self assert:
 				((self summaryFrom: conflictResult) includesSubstring:
 					 'Failed to switch repository branch').
@@ -1640,7 +1648,7 @@ MCPToolRepositoryOperationTest >> testSwitchBranchReturnsResultReportsErrorsAndR
 					              (#action -> 'switchBranch').
 					              (#repositoryName -> repository name).
 					              (#branchName -> 'feature') } asDictionary.
-			self assert: (loadResult at: #isError ifAbsent: [ false ]).
+			self assert: (self resultIndicatesError: loadResult).
 			self assert: ((self summaryFrom: loadResult) includesSubstring:
 					 'Failed to switch repository branch').
 			self assert: ((self summaryFrom: loadResult) includesSubstring:
@@ -1683,7 +1691,7 @@ MCPToolRepositoryOperationTest >> testUpdateAddsPackageToWorkingCopy [
 					          (#repositoryName -> repository name).
 					          (#addPackageNames -> { packageName }) } asDictionary.
 			data := self dataFrom: result.
-			self deny: (result at: #isError ifAbsent: [ false ]).
+			self deny: (self resultIndicatesError: result).
 			self
 				assert: (self packageNamesIn: repository)
 				equals: { packageName }.
@@ -1714,7 +1722,7 @@ MCPToolRepositoryOperationTest >> testUpdateCanReplacePackageMembership [
 					           #( 'MCPToolRepositoryOperationNewC'
 					              'MCPToolRepositoryOperationOldB' )) } asDictionary.
 			data := self dataFrom: result.
-			self deny: (result at: #isError ifAbsent: [ false ]).
+			self deny: (self resultIndicatesError: result).
 			self
 				assert: (self packageNamesIn: repository)
 				equals:
@@ -1751,7 +1759,7 @@ MCPToolRepositoryOperationTest >> testUpdateRemovesPackageWithoutUnloading [
 						          (#removePackageNames -> { packageName }) }
 						          asDictionary.
 				data := self dataFrom: result.
-				self deny: (result at: #isError ifAbsent: [ false ]).
+				self deny: (self resultIndicatesError: result).
 				self assert: (self packageNamesIn: repository) equals: #(  ).
 				self assert: (PackageOrganizer default hasPackage: packageName).
 				self
@@ -1779,7 +1787,7 @@ MCPToolRepositoryOperationTest >> testVerifyIdentityDoesNotRequestImageSaveAfter
 				          withParams: {
 						          (#repositoryName -> repository name).
 						          (#branchName -> 'main') } asDictionary.
-			self deny: (result at: #isError ifAbsent: [ false ]).
+			self deny: (self resultIndicatesError: result).
 			self deny: server didSaveImageSession ]
 ]
 
@@ -1824,7 +1832,7 @@ MCPToolRepositoryOperationTest >> testVerifyIdentityPassesWhenExpectedIdentityMa
 					          (#modifiedPackageNames -> #( 'MCP' )).
 					          (#isModified -> true) } asDictionary.
 			data := self dataFrom: result.
-			self deny: (result at: #isError ifAbsent: [ false ]).
+			self deny: (self resultIndicatesError: result).
 			self assert: data keys asSet equals: #( matched ) asSet.
 			self assert: (data at: #matched).
 			self assert: repository actionLog asArray equals: #(  ) ]
@@ -1844,7 +1852,7 @@ MCPToolRepositoryOperationTest >> testVerifyIdentityReportsStructuredMismatch [
 					          (#branchName -> 'feature').
 					          (#packageNames -> #( 'MCP' 'MCP-Tests' )).
 					          (#isModified -> true) } asDictionary.
-			self assert: (result at: #isError ifAbsent: [ false ]).
+			self assert: (self resultIndicatesError: result).
 			self assert: ((self summaryFrom: result) includesSubstring:
 					 'Repository identity verification failed').
 			errorDetails := self errorFrom: result.
@@ -1876,7 +1884,7 @@ MCPToolRepositoryOperationTest >> testVerifyIdentityReportsWrongLocationAsIdenti
 					          (#repositoryName -> repository name).
 					          (#location -> 'memory://different-location') }
 					          asDictionary.
-			self assert: (result at: #isError ifAbsent: [ false ]).
+			self assert: (self resultIndicatesError: result).
 			errorDetails := self errorFrom: result.
 			self
 				assert: (errorDetails at: #errorCode)
@@ -1901,7 +1909,7 @@ MCPToolRepositoryOperationTest >> testVerifyIdentityRequiresExpectedIdentityFiel
 			result := self callToolWith: {
 					          (#action -> 'verifyIdentity').
 					          (#repositoryName -> repository name) } asDictionary.
-			self assert: (result at: #isError ifAbsent: [ false ]).
+			self assert: (self resultIndicatesError: result).
 			errorDetails := self errorFrom: result.
 			self
 				assert: (errorDetails at: #errorCode)
