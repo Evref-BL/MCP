@@ -378,14 +378,13 @@ MCP >> saveImageAfterSuccessfulTool: aTool result: aResult [
 
 { #category : 'private - saving' }
 MCP >> saveImageSession [
-	"MCP autosave must not run SessionManager shutdown/startup hooks: Zinc stops managed servers during that cycle, which breaks active Streamable HTTP transports."
+	"MCP autosave must not run SessionManager shutdown/startup hooks: Zinc stops managed servers during cycle, breaking active Streamable HTTP transports."
 
 	| snapshotOperation |
-	ChangesLog default logSnapshot: true andQuit: false.
 	snapshotOperation := SnapshotOperation
-		                     save: true
-		                     andQuit: false
-		                     withSessionManager: SessionManager default.
+		save: true
+		andQuit: false
+		withSessionManager: SessionManager default.
 	snapshotOperation doSnapshot.
 	^ snapshotOperation isImageStarting
 ]
