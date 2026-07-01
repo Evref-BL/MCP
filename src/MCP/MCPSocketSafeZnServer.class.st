@@ -1,15 +1,11 @@
 "
-Zinc server used by the MCP HTTP transport.
+Zinc server used by MCP HTTP transport.
 
-It treats socket errors while reading a request as connection termination. This matters after image restart because serialized connection processes can resume with invalid native sockets; they should close quietly instead of opening a debugger.
+It treats socket errors while reading a request as connection termination. This matters after image restart because serialized connection processes can resume invalid native sockets; they should close quietly instead of opening a debugger.
 "
 Class {
 	#name : 'MCPSocketSafeZnServer',
 	#superclass : 'ZnManagingMultiThreadedServer',
-	#instVars : [
-		'postResponseActionsByProcess',
-		'postResponseActionsLock'
-	],
 	#category : 'MCP-Server',
 	#package : 'MCP',
 	#tag : 'Server'
@@ -18,18 +14,20 @@ Class {
 { #category : 'post response' }
 MCPSocketSafeZnServer >> deferAfterCurrentResponse: aBlock [
 
-	self postResponseActionsLock critical: [
-		(self postResponseActionsByProcess
-			at: Processor activeProcess
-			ifAbsentPut: [ OrderedCollection new ]) add: aBlock ]
+	MCPPostResponseActions value
+		ifNil: [ aBlock value ]
+		ifNotNil: [ :actions | actions add: aBlock ]
 ]
 
 { #category : 'request handling' }
 MCPSocketSafeZnServer >> executeOneRequestResponseOn: stream [
 
-	| shouldStop |
-	shouldStop := super executeOneRequestResponseOn: stream.
-	self runPostResponseActionsForCurrentProcess.
+	| actions shouldStop |
+	actions := OrderedCollection new.
+	shouldStop := MCPPostResponseActions
+		value: actions
+		during: [ super executeOneRequestResponseOn: stream ].
+	self runPostResponseActions: actions.
 	^ shouldStop
 ]
 
@@ -37,14 +35,6 @@ MCPSocketSafeZnServer >> executeOneRequestResponseOn: stream [
 MCPSocketSafeZnServer >> handleSocketErrorDuringListen: aSocketError [
 
 	self releaseServerSocketAfterSocketError
-]
-
-{ #category : 'initialization' }
-MCPSocketSafeZnServer >> initialize [
-
-	super initialize.
-	postResponseActionsByProcess := Dictionary new.
-	postResponseActionsLock := Mutex new
 ]
 
 { #category : 'testing' }
@@ -65,20 +55,6 @@ MCPSocketSafeZnServer >> listenLoop [
 		do: [ :error |
 			self handleSocketErrorDuringListen: error.
 			true ]
-]
-
-{ #category : 'private - post response' }
-MCPSocketSafeZnServer >> postResponseActionsByProcess [
-
-	^ postResponseActionsByProcess ifNil: [
-		postResponseActionsByProcess := Dictionary new ]
-]
-
-{ #category : 'private - post response' }
-MCPSocketSafeZnServer >> postResponseActionsLock [
-
-	^ postResponseActionsLock ifNil: [
-		postResponseActionsLock := Mutex new ]
 ]
 
 { #category : 'private' }
@@ -104,14 +80,12 @@ MCPSocketSafeZnServer >> restartableListenLoop [
 ]
 
 { #category : 'private - post response' }
-MCPSocketSafeZnServer >> runPostResponseActionsForCurrentProcess [
+MCPSocketSafeZnServer >> runPostResponseActions: actions [
 
-	| actions |
-	actions := self postResponseActionsLock critical: [
-		self postResponseActionsByProcess
-			removeKey: Processor activeProcess
-			ifAbsent: [ #() ] ].
-	actions do: [ :action |
+	| actionsToRun |
+	actionsToRun := actions copy.
+	actions removeAll.
+	actionsToRun do: [ :action |
 		[ action value ]
 			on: Error
 			do: [ :error | self logServerHandlerError: error ] ]
