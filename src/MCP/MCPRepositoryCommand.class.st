@@ -145,6 +145,14 @@ MCPRepositoryCommand >> markLoadedPackagesDirtyIn: aWorkingCopy [
 		package beDirty: true ]
 ]
 
+{ #category : 'private - git' }
+MCPRepositoryCommand >> normalizedSystemStatusFrom: anInteger [
+
+	(anInteger isInteger and: [ anInteger > 255 ]) ifTrue: [
+		^ anInteger bitShift: -8 ].
+	^ anInteger
+]
+
 { #category : 'private - iceberg state' }
 MCPRepositoryCommand >> referenceCommitFor: aRepository [
 
@@ -203,7 +211,8 @@ MCPRepositoryCommand >> runGitArguments: arguments in: aRepository [
 		           gitCommandStringFor: arguments
 		           in: aRepository
 		           outputFile: outputFile.
-	status := LibC uniqueInstance system: command.
+	status := self normalizedSystemStatusFrom:
+		          (LibC uniqueInstance system: command).
 	output := outputFile exists
 		          ifTrue: [ outputFile contents ]
 		          ifFalse: [ '' ].
