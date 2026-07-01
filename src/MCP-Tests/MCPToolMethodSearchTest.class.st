@@ -33,6 +33,18 @@ MCPToolMethodSearchTest >> targetClassName [
 ]
 
 { #category : 'tests' }
+MCPToolMethodSearchTest >> testBasicRegexMatcherRemainsAvailableAsFallback [
+
+	| matcher tool |
+	tool := MCPToolSearchMethodMetadata new.
+	matcher := tool
+		           basicRegexMatcherForPattern: 'MCP.*Test'
+		           caseSensitive: true.
+	self assert: (matcher value: 'MCPToolMethodSearchTest').
+	self deny: (matcher value: 'mcpToolMethodSearchTest')
+]
+
+{ #category : 'tests' }
 MCPToolMethodSearchTest >> testCanFilterAcrossExplicitProtocolTarget [
 
 	| data result selectors |
@@ -693,6 +705,20 @@ MCPToolMethodSearchTest >> testParentClassNamesReturnParentMethods [
 ]
 
 { #category : 'tests' }
+MCPToolMethodSearchTest >> testRegexMatcherUsesPCRE2WhenLibraryAvailable [
+
+	| matcher tool |
+	tool := MCPToolSearchMethodMetadata new.
+	tool pcre2RegexLibraryAvailable ifFalse: [
+		self skip: 'PCRE2 native library unavailable' ].
+	matcher := tool
+		           regexMatcherForPattern: '(?<=a)b'
+		           caseSensitive: true.
+	self assert: (matcher value: 'ab').
+	self deny: (matcher value: 'cb')
+]
+
+{ #category : 'tests' }
 MCPToolMethodSearchTest >> testReturnsStructuredErrorForInvalidRegex [
 
 	| error result structured |
@@ -708,7 +734,7 @@ MCPToolMethodSearchTest >> testReturnsStructuredErrorForInvalidRegex [
 	self assert: (error at: #scope) equals: 'classes'.
 	self assert: (error at: #errorClass) equals: 'RegexSyntaxError'.
 	self assert:
-		((error at: #message) includesSubstring: 'no terminating')
+		((error at: #message) includesSubstring: 'terminating')
 ]
 
 { #category : 'tests' }

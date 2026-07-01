@@ -25,11 +25,15 @@ BaselineOfMCP >> defineDependencies: spec [
 		baseline: 'JRPC' with: [
 			spec
 				repository: 'github://juliendelplanque/JRPC:v3.2.1/src';
-				loads: #( 'Deployment' ) ].
-	spec baseline: 'TinyLogger' with: [
+				loads: #( 'Deployment' ) ];
+		baseline: 'TinyLogger' with: [
 			spec
 				repository: 'github://jecisc/TinyLogger:v1.x.x/src';
-				loads: #( 'Core' ) ]
+				loads: #( 'Core' ) ];
+		baseline: 'PCRE2' with: [
+			spec
+				repository: 'github://Gabriel-Darbord/pharo-pcre2:main/src';
+				loads: #( 'core' ) ]
 ]
 
 { #category : 'baselines' }
@@ -50,7 +54,7 @@ BaselineOfMCP >> definePackages: spec [
 	spec
 		package: 'MCP'
 		with: [
-		spec requires: #( 'PharoCompatibility' 'JRPC' 'TinyLogger' ) ].
+		spec requires: #( 'PharoCompatibility' 'JRPC' 'TinyLogger' 'PCRE2' ) ].
 	spec package: 'MCP-Spec' with: [ spec requires: #( 'MCP' ) ].
 	spec
 		package: 'MCP-Tests-Resources'
