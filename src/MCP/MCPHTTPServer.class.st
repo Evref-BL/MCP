@@ -107,3 +107,10 @@ MCPHTTPServer >> localUrl [
 
 	^ server localUrl
 ]
+
+{ #category : 'starting' }
+MCPHTTPServer >> start [
+
+	server register.
+	server start
+]
