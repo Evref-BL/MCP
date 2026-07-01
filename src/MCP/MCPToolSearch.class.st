@@ -27,6 +27,16 @@ MCPToolSearch >> basicFilterModes [
 	^ #( 'substring' 'prefix' 'exact' 'regex' )
 ]
 
+{ #category : 'private - filtering' }
+MCPToolSearch >> basicRegexMatcherForPattern: aPattern caseSensitive: aBoolean [
+
+	| regex |
+	regex := aBoolean
+		         ifTrue: [ aPattern asRegex ]
+		         ifFalse: [ aPattern asRegexIgnoringCase ].
+	^ [ :candidate | regex search: (self regexSubjectFrom: candidate) ]
+]
+
 { #category : 'private - schema' }
 MCPToolSearch >> caseSensitiveSchemaPropertyWithDescription: caseSensitiveDescription [
 
@@ -129,6 +139,13 @@ MCPToolSearch >> defaultPageLimit [
 ]
 
 { #category : 'private - results' }
+MCPToolSearch >> errorClassNameForQueryError: anError [
+
+	(self isRegexSyntaxError: anError) ifTrue: [ ^ #RegexSyntaxError ].
+	^ anError class name
+]
+
+{ #category : 'private - results' }
 MCPToolSearch >> errorResultForQueryError: anError requestedContext: requestedContext [
 
 	| normalizedContext |
@@ -143,7 +160,8 @@ MCPToolSearch >> errorResultForQueryError: anError requestedContext: requestedCo
 		  otherwise: [ :queryError |
 				  | details |
 				  details := {
-					             (#errorClass -> queryError class name).
+					             (#errorClass ->
+					              (self errorClassNameForQueryError: queryError)).
 					             (#message -> queryError messageText) } asDictionary.
 				  normalizedContext associationsDo: [ :each |
 					  each value ifNotNil: [ details at: each key put: each value ] ].
@@ -274,6 +292,13 @@ MCPToolSearch >> includeSourceSchemaPropertyWithDescription: includeSourceDescri
 		  default: false
 ]
 
+{ #category : 'private - results' }
+MCPToolSearch >> isRegexSyntaxError: anError [
+
+	^ anError class = RegexSyntaxError or: [
+		  anError class = PCRE2CompileError ]
+]
+
 { #category : 'private - template' }
 MCPToolSearch >> limitFromQueryRequest: queryRequest [
 
@@ -283,30 +308,25 @@ MCPToolSearch >> limitFromQueryRequest: queryRequest [
 { #category : 'private - filtering' }
 MCPToolSearch >> matcherForPattern: aPattern mode: aMode caseSensitive: aBoolean [
 
-	| normalizedPattern regex |
+	| normalizedPattern |
 	aPattern ifNil: [ ^ [ :candidate | true ] ].
 	aMode = 'regex' ifTrue: [
-			regex := aBoolean
-				         ifTrue: [ aPattern asRegex ]
-				         ifFalse: [ aPattern asRegexIgnoringCase ].
-			^ [ :candidate |
-				  regex search:
-					  (candidate ifNil: [ '' ] ifNotNil: [ candidate asString ]) ] ].
+		^ self regexMatcherForPattern: aPattern caseSensitive: aBoolean ].
 	normalizedPattern := self
-		                     normalizeFilterString: aPattern
-		                     caseSensitive: aBoolean.
+		 normalizeFilterString: aPattern
+		 caseSensitive: aBoolean.
 	aMode = 'substring' ifTrue: [
 			^ [ :candidate |
-				  (self normalizeFilterString: candidate caseSensitive: aBoolean)
-					  includesSubstring: normalizedPattern ] ].
+				 (self normalizeFilterString: candidate caseSensitive: aBoolean)
+					 includesSubstring: normalizedPattern ] ].
 	aMode = 'prefix' ifTrue: [
 			^ [ :candidate |
-				  (self normalizeFilterString: candidate caseSensitive: aBoolean)
-					  beginsWith: normalizedPattern ] ].
+				 (self normalizeFilterString: candidate caseSensitive: aBoolean)
+					 beginsWith: normalizedPattern ] ].
 	aMode = 'exact' ifTrue: [
 			^ [ :candidate |
-				  (self normalizeFilterString: candidate caseSensitive: aBoolean)
-				  = normalizedPattern ] ].
+				 (self normalizeFilterString: candidate caseSensitive: aBoolean)
+				 = normalizedPattern ] ].
 	Error signal: 'Unsupported filter mode: ' , aMode
 ]
 
@@ -412,6 +432,27 @@ MCPToolSearch >> parsedRequestFromToolRequest: request [
 	^ self searchRequestFromToolRequest: request
 ]
 
+{ #category : 'private - filtering' }
+MCPToolSearch >> pcre2RegexLibraryAvailable [
+	"PCRE2 is an optional native runtime dependency: the Smalltalk package can be loaded while the host library is missing."
+
+	^ [
+		  LibPCRE2UTF8 config: PCRE2 configVersion.
+		  true ]
+		  on: Error
+		  do: [ false ]
+]
+
+{ #category : 'private - filtering' }
+MCPToolSearch >> pcre2RegexMatcherForPattern: aPattern caseSensitive: aBoolean [
+
+	| regex |
+	regex := aBoolean
+		         ifTrue: [ aPattern asPerlCompatibleRegex ]
+		         ifFalse: [ aPattern asPerlCompatibleRegexIgnoringCase ].
+	^ [ :candidate | regex search: (self regexSubjectFrom: candidate) ]
+]
+
 { #category : 'private - template' }
 MCPToolSearch >> queryEntriesForQueryRequest: queryRequest [
 
@@ -449,6 +490,22 @@ MCPToolSearch >> queryResultDataFrom: baseData page: page entriesKey: entriesKey
 	^ page asDictionaryWithEntriesKey: entriesKey
 ]
 
+{ #category : 'private - filtering' }
+MCPToolSearch >> regexMatcherForPattern: aPattern caseSensitive: aBoolean [
+
+	^ self pcre2RegexLibraryAvailable
+		  ifTrue: [
+		  self pcre2RegexMatcherForPattern: aPattern caseSensitive: aBoolean ]
+		  ifFalse: [
+		  self basicRegexMatcherForPattern: aPattern caseSensitive: aBoolean ]
+]
+
+{ #category : 'private - filtering' }
+MCPToolSearch >> regexSubjectFrom: aCandidate [
+
+	^ aCandidate ifNil: [ '' ] ifNotNil: [ :value | value asString ]
+]
+
 { #category : 'private - results' }
 MCPToolSearch >> requestedContextForErrorFromRequest: request [
 
@@ -473,7 +530,7 @@ MCPToolSearch >> scopeQueryFailureMessageFor: resultKind scope: scopeSummary err
 				  nextPutAll: ' [scope=';
 				  nextPutAll: scopeSummary;
 				  nextPutAll: '] (';
-				  nextPutAll: anError class name;
+				  nextPutAll: (self errorClassNameForQueryError: anError) asString;
 				  nextPutAll: '): ';
 				  nextPutAll: anError messageText ]
 ]
