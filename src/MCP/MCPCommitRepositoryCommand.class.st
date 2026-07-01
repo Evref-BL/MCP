@@ -74,7 +74,7 @@ MCPCommitRepositoryCommand >> fallbackGitUserName [
 { #category : 'private - git identity' }
 MCPCommitRepositoryCommand >> gitCommitArgumentsFor: aRepository message: aMessage [
 
-	(self repositoryHasDefaultGitSignature: aRepository) ifTrue: [
+	(self repositoryHasConfiguredGitIdentity: aRepository) ifTrue: [
 		^ {
 			  'commit'.
 			  '-m'.
@@ -90,16 +90,19 @@ MCPCommitRepositoryCommand >> gitCommitArgumentsFor: aRepository message: aMessa
 ]
 
 { #category : 'private - git identity' }
-MCPCommitRepositoryCommand >> gitSignatureMissingFor: anError [
+MCPCommitRepositoryCommand >> gitConfigValueAt: key in: aRepository [
 
-	| message |
-	message := anError messageText ifNil: [ '' ].
-	message := message asLowercase.
-	^ message = 'config value ''user.name'' was not found' or: [
-			  message = 'config value ''user.email'' was not found' or: [
-					  message
-					  =
-					  'failed to parse signature - signature cannot have an empty name or email' ] ]
+	| gitResult |
+	gitResult := self
+		             runGitArguments: {
+			             'config'.
+			             '--get'.
+			             key }
+		             in: aRepository.
+	(gitResult at: #status) = 0 ifTrue: [
+		^ (gitResult at: #output) trimBoth ].
+	(gitResult at: #status) = 1 ifTrue: [ ^ '' ].
+	self signalGitCommandFailed: gitResult action: 'config'
 ]
 
 { #category : 'private - diff' }
@@ -111,16 +114,10 @@ MCPCommitRepositoryCommand >> repositoryHasChangesToCommit: aRepository [
 ]
 
 { #category : 'private - git identity' }
-MCPCommitRepositoryCommand >> repositoryHasDefaultGitSignature: aRepository [
+MCPCommitRepositoryCommand >> repositoryHasConfiguredGitIdentity: aRepository [
 
-	^ [
-		  aRepository repositoryHandle defaultSignature.
-		  true ]
-		  on: LGit_GIT_ENOTFOUND , LGit_GIT_ERROR
-		  do: [ :error |
-				  (self gitSignatureMissingFor: error)
-					  ifTrue: [ false ]
-					  ifFalse: [ error pass ] ]
+	^ ((self gitConfigValueAt: 'user.name' in: aRepository) isNotEmpty and: [
+		   (self gitConfigValueAt: 'user.email' in: aRepository) isNotEmpty ])
 ]
 
 { #category : 'private - diff' }
