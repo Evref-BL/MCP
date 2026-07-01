@@ -59,8 +59,17 @@ MCPRepositoryWorkingCopyCommand >> exportLoadedPackagesFrom: aRepository [
 { #category : 'private - export' }
 MCPRepositoryWorkingCopyCommand >> exportPackage: anIcePackage to: sourceDirectory [
 
+	| versionInfo |
+	versionInfo := MCVersionInfo
+		               name: anIcePackage packageName
+		               id: UUID new
+		               message: ''
+		               date: Date today
+		               time: Time now
+		               ancestors: #(  )
+		               stepChildren: #(  ).
 	TonelWriter
-		fileOut: (MCVersion package: anIcePackage mcPackage)
+		fileOut: (MCVersion package: anIcePackage mcPackage info: versionInfo)
 		on: sourceDirectory
 ]
 
