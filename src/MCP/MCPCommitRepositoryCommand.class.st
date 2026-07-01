@@ -12,27 +12,43 @@ Class {
 { #category : 'executing' }
 MCPCommitRepositoryCommand >> execute [
 
-	| changedPackageNames diff repository result |
+	| changedPackageNames commit commitArguments modifiedPaths repository result tonelSnapshot |
 	^ self
 		  executeRepositoryAction: 'commit'
 		  work: [
 				  repository := self request repository.
 				  (self repositoryHasChangesToCommit: repository) ifFalse: [
 					  IceNothingToCommit signal ].
-				  diff := repository workingCopyDiff.
-				  changedPackageNames := self changedPackageNamesFromDiff: diff.
-				  result := self
-					            withNonInteractiveGitIdentityFor: repository
-					            during: [
-							            | commit |
-							            commit := self withNonInteractiveAuthorDuring: [
-									                      repository workingCopy
-										                      commitChanges: diff
-										                      withMessage: self request message ].
-							            MCPRepositoryCommitResult
-								            repository: repository
-								            changedPackageNames: changedPackageNames
-								            commit: commit ] ]
+				  tonelSnapshot := self snapshotTonelFilesFor: repository.
+				  self exportLoadedPackagesFrom: repository.
+				  self
+					  restoreOrderOnlyTonelChurnFor: repository
+					  fromSnapshot: tonelSnapshot.
+				  modifiedPaths := self modifiedPathsFromGitStatusIn: repository.
+				  modifiedPaths isEmpty ifTrue: [ IceNothingToCommit signal ].
+				  changedPackageNames := self
+					                         changedPackageNamesForRepository: repository
+					                         modifiedPaths: modifiedPaths.
+				  self
+					  runGitArguments: #( 'add' '--all' )
+					  in: repository
+					  ifFailed: [ :gitResult |
+					  self signalGitCommandFailed: gitResult action: 'add' ].
+				  commitArguments := {
+					                     'commit'.
+					                     '-m'.
+					                     self request message }.
+				  self
+					  runGitArguments: commitArguments
+					  in: repository
+					  ifFailed: [ :gitResult |
+					  self signalGitCommandFailed: gitResult action: 'commit' ].
+				  commit := repository headCommit.
+				  self adoptHeadCommit: commit for: repository.
+				  result := MCPRepositoryCommitResult
+					            repository: repository
+					            changedPackageNames: changedPackageNames
+					            commit: commit ]
 		  successResult: [ :warningMessages |
 				  self tool
 					  successResultText:
@@ -99,7 +115,8 @@ MCPCommitRepositoryCommand >> removeTemporaryGitConfigKey: key from: config [
 MCPCommitRepositoryCommand >> repositoryHasChangesToCommit: aRepository [
 
 	(self repositoryHasNoCommit: aRepository) ifTrue: [ ^ true ].
-	^ self repositoryHasModifiedPackages: aRepository
+	^ (self repositoryHasModifiedPackages: aRepository) or: [
+		  (self modifiedPathsFromGitStatusIn: aRepository) isNotEmpty ]
 ]
 
 { #category : 'private - git identity' }

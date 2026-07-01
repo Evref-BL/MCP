@@ -69,7 +69,7 @@ MCPRepositoryCommitResult >> commitDescription: aString [
 { #category : 'private' }
 MCPRepositoryCommitResult >> commitDescriptionFrom: aCommit [
 
-	^ MCPIcebergCommitInfo commentStringFrom: aCommit
+	^ (MCPIcebergCommitInfo commentStringFrom: aCommit) trimBoth
 ]
 
 { #category : 'accessing' }

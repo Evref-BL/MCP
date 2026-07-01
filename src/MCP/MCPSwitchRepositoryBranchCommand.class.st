@@ -12,24 +12,36 @@ Class {
 { #category : 'executing' }
 MCPSwitchRepositoryBranchCommand >> execute [
 
-	| beforeInfo repository result |
+	| beforeInfo headCommit repository result |
 	^ self
-		  executeRepositoryAction: 'switchBranch'
-		  work: [
-				  repository := self request repository.
-				  beforeInfo := MCPRepositoryInfo fromRepository: repository.
-				  repository switchToBranchNamed: self request branchName.
-				  result := MCPRepositoryBranchResult
-					            repositoryBefore: beforeInfo
-					            after: repository ]
-		  successResult: [ :warningMessages |
-				  self tool
-					  successResultText:
-						  'Switched repository ' , result repositoryInfo name
-						  , ' branch ' , self request branchName , '.'
-					  data: (self tool dataForRepositoryResult: result)
-					  warnings: warningMessages ]
-		  failureSummary: [ :error |
-				  'Failed to switch repository branch: '
-				  , (error messageText ifNil: [ error asString ]) ]
+		 executeRepositoryAction: 'switchBranch'
+		 work: [
+				 repository := self request repository.
+				 beforeInfo := MCPRepositoryInfo fromRepository: repository.
+				 (self repositorySupportsExternalGitOperations: repository)
+					 ifTrue: [
+						 self
+							 runGitArguments: { 'switch'. self request branchName }
+							 in: repository
+							 ifFailed: [ :gitResult |
+							 self signalGitCommandFailed: gitResult action: 'switch' ].
+						 headCommit := repository headCommit.
+						 self
+							 adoptHeadCommit: headCommit
+							 for: repository
+							 markLoadedPackagesClean: false ]
+					 ifFalse: [ repository switchToBranchNamed: self request branchName ].
+				 result := MCPRepositoryBranchResult
+					 repositoryBefore: beforeInfo
+					 after: repository ]
+		 successResult: [ :warningMessages |
+				 self tool
+					 successResultText:
+						 'Switched repository ' , result repositoryInfo name
+						 , ' branch ' , self request branchName , '.'
+					 data: (self tool dataForRepositoryResult: result)
+					 warnings: warningMessages ]
+		 failureSummary: [ :error |
+				 'Failed to switch repository branch: '
+				 , (error messageText ifNil: [ error asString ]) ]
 ]

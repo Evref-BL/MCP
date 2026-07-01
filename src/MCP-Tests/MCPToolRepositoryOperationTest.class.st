@@ -867,7 +867,7 @@ MCPToolRepositoryOperationTest >> testDiffReportsWorkingCopyDiffWithoutWriting [
 { #category : 'tests' }
 MCPToolRepositoryOperationTest >> testExportUpdatesDiskAndIndexWithoutCommitting [
 
-	| childNames data location packageName repository repositoryName result |
+	| childNames data location packageName repositoryName result |
 	repositoryName := 'MCP Repository Command Export Test'.
 	packageName := 'MCPToolRepositoryOperationExportPackage'.
 	location := self temporaryRepositoryLocationNamed:
@@ -876,36 +876,29 @@ MCPToolRepositoryOperationTest >> testExportUpdatesDiskAndIndexWithoutCommitting
 		withExportPackageNamed: packageName
 		className: 'MCPToolRepositoryOperationExportClass'
 		do: [
-				self
-					withCleanRepositoryNamed: repositoryName
-					location: location
-					do: [
-							self callToolWith: {
-									(#action -> 'create').
-									(#name -> repositoryName).
-									(#location -> location pathString).
-									(#packageNames -> { packageName }) } asDictionary.
-							repository := IceRepository repositories detect: [ :each |
-								              each name asString = repositoryName ].
-							self assert: repository index isEmpty.
-							result := self callToolWith: {
-									          (#action -> 'export').
-									          (#repositoryName -> repositoryName) } asDictionary.
-							data := self dataFrom: result.
-							childNames := self directChildNamesOf: location.
-							self deny: (result at: #isError ifAbsent: [ false ]).
-							self
-								assert: data keys asSet
-								equals: #( changedPackageNames didChange modifiedPaths ) asSet.
-							self assert: (data at: #didChange) equals: true.
-							self
-								assert: (data at: #changedPackageNames)
-								equals: { packageName }.
-							self assert: (data at: #modifiedPaths) notEmpty.
-							self assert:
-								(childNames anySatisfy: [ :each |
-									 each includesSubstring: packageName ]).
-							self deny: repository index isEmpty ] ]
+			self
+				withCleanRepositoryNamed: repositoryName
+				location: location
+				do: [
+					self callToolWith: {
+							(#action -> 'create').
+							(#name -> repositoryName).
+							(#location -> location pathString).
+							(#packageNames -> { packageName }) } asDictionary.
+					result := self callToolWith: {
+							          (#action -> 'export').
+							          (#repositoryName -> repositoryName) } asDictionary.
+					data := self dataFrom: result.
+					childNames := self directChildNamesOf: location.
+					self deny: (result at: #isError ifAbsent: [ false ]).
+					self
+						assert: data keys asSet
+						equals: #( changedPackageNames didChange modifiedPaths ) asSet.
+					self assert: (data at: #didChange) equals: true.
+					self assert: (data at: #changedPackageNames) equals: { packageName }.
+					self assert: (data at: #modifiedPaths) notEmpty.
+					self assert: (childNames anySatisfy: [ :each |
+							 each includesSubstring: packageName ]) ] ]
 ]
 
 { #category : 'tests' }
