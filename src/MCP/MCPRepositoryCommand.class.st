@@ -47,6 +47,15 @@ MCPRepositoryCommand >> commitIdFrom: aCommit [
 	^ MCPIcebergCommitInfo idStringFrom: aCommit
 ]
 
+{ #category : 'private - loading' }
+MCPRepositoryCommand >> definitionsAbsentFrom: expectedSnapshot inPackage: aPackage [
+
+	| expectedDefinitions |
+	expectedDefinitions := expectedSnapshot definitions asSet.
+	^ aPackage snapshot definitions reject: [ :definition |
+		  expectedDefinitions includes: definition ]
+]
+
 { #category : 'private - execution' }
 MCPRepositoryCommand >> executeRepositoryAction: actionName work: workBlock successResult: successBlock failureSummary: failureBlock [
 
@@ -128,6 +137,7 @@ MCPRepositoryCommand >> loadVersionsReplacingImageChanges: versions [
 	versions do: [ :version |
 		loader updatePackage: version package withSnapshot: version snapshot ].
 	loader load.
+	self unloadDefinitionsAbsentFromLoadedVersions: versions.
 	versions do: [ :version | version workingCopy loaded: version ]
 ]
 
@@ -273,4 +283,20 @@ MCPRepositoryCommand >> signalGitCommandFailed: gitResult action: actionName [
 MCPRepositoryCommand >> sortedStringsFrom: aCollection [
 
 	^ (aCollection collect: [ :each | each asString ]) asSet asArray sort
+]
+
+{ #category : 'private - loading' }
+MCPRepositoryCommand >> unloadDefinitionsAbsentFromLoadedVersions: versions [
+
+	| loader staleDefinitions |
+	staleDefinitions := OrderedCollection new.
+	versions do: [ :version |
+		staleDefinitions addAll: (self
+				 definitionsAbsentFrom: version snapshot
+				 inPackage: version package) ].
+	staleDefinitions ifEmpty: [ ^ self ].
+	loader := MCPackageLoader new.
+	staleDefinitions do: [ :definition |
+		loader removeDefinition: definition ].
+	loader load
 ]

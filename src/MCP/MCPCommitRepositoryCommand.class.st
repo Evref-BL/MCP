@@ -12,7 +12,7 @@ Class {
 { #category : 'executing' }
 MCPCommitRepositoryCommand >> execute [
 
-	| changedPackageNames commit commitArguments modifiedPaths repository result tonelSnapshot |
+	| changedPackageNames commit commitArguments commitDescription commitId modifiedPaths repository result tonelSnapshot |
 	^ self
 		  executeRepositoryAction: 'commit'
 		  work: [
@@ -42,12 +42,15 @@ MCPCommitRepositoryCommand >> execute [
 					  in: repository
 					  ifFailed: [ :gitResult |
 					  self signalGitCommandFailed: gitResult action: 'commit' ].
-				  commit := repository headCommit.
+				  commitId := self headCommitIdIn: repository.
+				  commitDescription := self headCommitDescriptionIn: repository.
+				  commit := repository lookupCommit: commitId.
 				  self adoptHeadCommit: commit for: repository.
 				  result := MCPRepositoryCommitResult
 					            repository: repository
 					            changedPackageNames: changedPackageNames
-					            commit: commit ]
+					            commitId: commitId
+					            commitDescription: commitDescription ]
 		  successResult: [ :warningMessages |
 				  self tool
 					  successResultText:
@@ -105,6 +108,24 @@ MCPCommitRepositoryCommand >> gitConfigValueAt: key in: aRepository [
 	self signalGitCommandFailed: gitResult action: 'config'
 ]
 
+{ #category : 'private - git' }
+MCPCommitRepositoryCommand >> headCommitDescriptionIn: aRepository [
+
+	^ self
+		  trimmedGitOutputFor: #( 'log' '-1' '--format=%B' )
+		  in: aRepository
+		  action: 'log'
+]
+
+{ #category : 'private - git' }
+MCPCommitRepositoryCommand >> headCommitIdIn: aRepository [
+
+	^ self
+		  trimmedGitOutputFor: #( 'rev-parse' 'HEAD' )
+		  in: aRepository
+		  action: 'rev-parse'
+]
+
 { #category : 'private - diff' }
 MCPCommitRepositoryCommand >> repositoryHasChangesToCommit: aRepository [
 
@@ -130,4 +151,16 @@ MCPCommitRepositoryCommand >> repositoryHasModifiedPackages: aRepository [
 MCPCommitRepositoryCommand >> repositoryHasNoCommit: aRepository [
 
 	^ MCPIcebergCommitInfo isNoCommit: aRepository headCommit
+]
+
+{ #category : 'private - git' }
+MCPCommitRepositoryCommand >> trimmedGitOutputFor: arguments in: aRepository action: actionName [
+
+	| gitResult |
+	gitResult := self
+		             runGitArguments: arguments
+		             in: aRepository
+		             ifFailed: [ :failedResult |
+		             self signalGitCommandFailed: failedResult action: actionName ].
+	^ (gitResult at: #output) trimBoth
 ]

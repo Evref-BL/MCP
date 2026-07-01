@@ -25,6 +25,16 @@ MCPRepositoryCommitResult class >> repository: aRepository changedPackageNames: 
 		  commit: aCommit
 ]
 
+{ #category : 'instance creation' }
+MCPRepositoryCommitResult class >> repository: aRepository changedPackageNames: packageNames commitId: commitId commitDescription: commitDescription [
+
+	^ self new
+		  initializeRepository: aRepository
+		  changedPackageNames: packageNames
+		  commitId: commitId
+		  commitDescription: commitDescription
+]
+
 { #category : 'converting' }
 MCPRepositoryCommitResult >> asDictionary [
 
@@ -112,6 +122,25 @@ MCPRepositoryCommitResult >> initializeRepository: aRepository changedPackageNam
 	modifiedPackageNames := #(  ).
 	commitId := self commitIdFrom: aCommit.
 	commitDescription := self commitDescriptionFrom: aCommit.
+	headDescription := commitId.
+	repositoryInfo := MCPRepositoryInfo
+		                  commitResultRepository: aRepository
+		                  packageNames: repositoryPackageNames
+		                  modifiedPackageNames: modifiedPackageNames
+		                  headCommitId: commitId
+		                  headDescription: headDescription
+]
+
+{ #category : 'initialization' }
+MCPRepositoryCommitResult >> initializeRepository: aRepository changedPackageNames: packageNames commitId: aCommitId commitDescription: aCommitDescription [
+
+	| repositoryPackageNames |
+	packageInfos := self packageInfosFromRepository: aRepository.
+	repositoryPackageNames := packageInfos collect: [ :each | each name ].
+	changedPackageNames := packageNames ifNil: [ #(  ) ].
+	modifiedPackageNames := #(  ).
+	commitId := aCommitId ifNil: [ '' ].
+	commitDescription := aCommitDescription ifNil: [ '' ].
 	headDescription := commitId.
 	repositoryInfo := MCPRepositoryInfo
 		                  commitResultRepository: aRepository
