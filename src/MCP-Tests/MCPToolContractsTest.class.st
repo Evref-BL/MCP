@@ -975,6 +975,21 @@ MCPToolContractsTest >> testCallToolInvokesTargetToolThroughServerPath [
 			 'MCP')
 ]
 
+{ #category : 'tests - validation' }
+MCPToolContractsTest >> testCallToolPreservesNestedValidationViolations [
+
+	| error result violations |
+	result := self callToolNamed: 'tool_call' withArguments: {
+			 (#toolName -> 'method_sender_search').
+			 (#arguments -> { (#selector -> '') } asDictionary) } asDictionary.
+	error := self errorFrom: result.
+	violations := error at: #violations.
+	self assert: (error at: #toolName) equals: 'method_sender_search'.
+	self assert: violations size equals: 1.
+	self assert: (violations first at: #keyword) equals: #required.
+	self assert: (violations first at: #expected) equals: 'selector'.
+]
+
 { #category : 'tests' }
 MCPToolContractsTest >> testCaptureScreenshotHasAccurateNameAndSchemas [
 

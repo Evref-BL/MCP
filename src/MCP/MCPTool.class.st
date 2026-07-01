@@ -129,17 +129,17 @@ MCPTool >> description [
 { #category : 'private - results' }
 MCPTool >> errorDetailsFor: anError [
 
-	| context descriptionText details message stackTrace |
+	| context descriptionText details errorClassName message stackTrace |
 	details := Dictionary new.
+	errorClassName := anError class name asString.
 	message := anError messageText
 		           ifNil: [ '' ]
 		           ifNotNil: [ :text | text asString ].
-	details at: #errorClass put: anError class name.
+	details at: #errorClass put: errorClassName.
 	details at: #message put: message.
 	descriptionText := anError description.
-	(descriptionText ~= anError class name and: [
-		 descriptionText ~= message ]) ifTrue: [
-		details at: #description put: descriptionText ].
+	(descriptionText ~= errorClassName and: [ descriptionText ~= message ])
+		ifTrue: [ details at: #description put: descriptionText ].
 	context := anError mcpSignalerContext.
 	context ifNotNil: [
 			details at: #signalerContext put: context printString.
@@ -151,9 +151,12 @@ MCPTool >> errorDetailsFor: anError [
 { #category : 'error handling' }
 MCPTool >> errorResultFor: anError [
 
+	| details |
+	details := self errorDetailsFor: anError.
+	anError mcpAddToolErrorDetailsTo: details.
 	^ self
 		  errorResultText: (self failureMessageFor: anError)
-		  details: (self errorDetailsFor: anError)
+		  details: details
 ]
 
 { #category : 'error handling' }

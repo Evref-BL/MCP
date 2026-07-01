@@ -163,6 +163,7 @@ MCPToolSearch >> errorResultForQueryError: anError requestedContext: requestedCo
 					             (#errorClass ->
 					              (self errorClassNameForQueryError: queryError)).
 					             (#message -> queryError messageText) } asDictionary.
+				  queryError mcpAddToolErrorDetailsTo: details.
 				  normalizedContext associationsDo: [ :each |
 					  each value ifNotNil: [ details at: each key put: each value ] ].
 				  self
