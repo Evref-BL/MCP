@@ -12,6 +12,13 @@ Class {
 	#tag : 'Internal'
 }
 
+{ #category : 'private - saving' }
+MCPSaveImageRecordingServer >> deferSaveImageAfterCurrentResponse [
+	"Tests call MCP directly without an HTTP response boundary, so record the save request immediately."
+
+	self saveImageSession
+]
+
 { #category : 'testing' }
 MCPSaveImageRecordingServer >> didSaveImageSession [
 

@@ -64,6 +64,12 @@ MCP >> debugMode: aBoolean [
 	self server messageProcessor debugMode: aBoolean
 ]
 
+{ #category : 'private - saving' }
+MCP >> deferSaveImageAfterCurrentResponse [
+
+	server deferAfterCurrentResponse: [ self saveImageSession ]
+]
+
 { #category : 'private - start' }
 MCP >> ensureServerIsListening [
 
@@ -367,7 +373,7 @@ MCP >> saveImageAfterSuccessfulTool: aTool result: aResult [
 
 	aResult isError ifTrue: [ ^ self ].
 	(aTool shouldSaveImageAfterSuccessfulExecutionForResult: aResult)
-		ifTrue: [ self saveImageSession ]
+		ifTrue: [ self deferSaveImageAfterCurrentResponse ]
 ]
 
 { #category : 'private - saving' }

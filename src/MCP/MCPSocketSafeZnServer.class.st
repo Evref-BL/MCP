@@ -6,15 +6,45 @@ It treats socket errors while reading a request as connection termination. This 
 Class {
 	#name : 'MCPSocketSafeZnServer',
 	#superclass : 'ZnManagingMultiThreadedServer',
+	#instVars : [
+		'postResponseActionsByProcess',
+		'postResponseActionsLock'
+	],
 	#category : 'MCP-Server',
 	#package : 'MCP',
 	#tag : 'Server'
 }
 
+{ #category : 'post response' }
+MCPSocketSafeZnServer >> deferAfterCurrentResponse: aBlock [
+
+	self postResponseActionsLock critical: [
+		(self postResponseActionsByProcess
+			at: Processor activeProcess
+			ifAbsentPut: [ OrderedCollection new ]) add: aBlock ]
+]
+
+{ #category : 'request handling' }
+MCPSocketSafeZnServer >> executeOneRequestResponseOn: stream [
+
+	| shouldStop |
+	shouldStop := super executeOneRequestResponseOn: stream.
+	self runPostResponseActionsForCurrentProcess.
+	^ shouldStop
+]
+
 { #category : 'private' }
 MCPSocketSafeZnServer >> handleSocketErrorDuringListen: aSocketError [
 
 	self releaseServerSocketAfterSocketError
+]
+
+{ #category : 'initialization' }
+MCPSocketSafeZnServer >> initialize [
+
+	super initialize.
+	postResponseActionsByProcess := Dictionary new.
+	postResponseActionsLock := Mutex new
 ]
 
 { #category : 'testing' }
@@ -37,6 +67,20 @@ MCPSocketSafeZnServer >> listenLoop [
 			true ]
 ]
 
+{ #category : 'private - post response' }
+MCPSocketSafeZnServer >> postResponseActionsByProcess [
+
+	^ postResponseActionsByProcess ifNil: [
+		postResponseActionsByProcess := Dictionary new ]
+]
+
+{ #category : 'private - post response' }
+MCPSocketSafeZnServer >> postResponseActionsLock [
+
+	^ postResponseActionsLock ifNil: [
+		postResponseActionsLock := Mutex new ]
+]
+
 { #category : 'private' }
 MCPSocketSafeZnServer >> readRequestTerminationExceptionSet [
 
@@ -57,6 +101,20 @@ MCPSocketSafeZnServer >> restartableListenLoop [
 
 	[ self listenLoop ] whileTrue: [
 		self socketRestartDelay wait ]
+]
+
+{ #category : 'private - post response' }
+MCPSocketSafeZnServer >> runPostResponseActionsForCurrentProcess [
+
+	| actions |
+	actions := self postResponseActionsLock critical: [
+		self postResponseActionsByProcess
+			removeKey: Processor activeProcess
+			ifAbsent: [ #() ] ].
+	actions do: [ :action |
+		[ action value ]
+			on: Error
+			do: [ :error | self logServerHandlerError: error ] ]
 ]
 
 { #category : 'private' }
