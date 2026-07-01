@@ -215,7 +215,9 @@ MCPToolRepositoryOperationTest >> testAdoptHeadAdoptsRepositoryHeadAndReportsBef
 					          (#repositoryName -> repository name).
 					          (#branchName -> 'main') } asDictionary.
 			data := self dataFrom: result.
-			self deny: (self resultIndicatesError: result).
+			self
+				deny: (self resultIndicatesError: result)
+				description: (self summaryFrom: result).
 			self assert: repository modifiedPackages isEmpty.
 			self
 				assert: repository workingCopy referenceCommit id
@@ -254,7 +256,9 @@ MCPToolRepositoryOperationTest >> testAdoptHeadClearsModifiedPackagesWhenReferen
 					          (#repositoryName -> repository name).
 					          (#branchName -> 'main') } asDictionary.
 			data := self dataFrom: result.
-			self deny: (self resultIndicatesError: result).
+			self
+				deny: (self resultIndicatesError: result)
+				description: (self summaryFrom: result).
 			self assert: repository modifiedPackages isEmpty.
 			self deny: (data at: #didAdopt).
 			self
@@ -362,7 +366,9 @@ MCPToolRepositoryOperationTest >> testAttachRegistersExistingGitCheckout [
 									          (#packageNames -> { packageName }) } asDictionary.
 							repository := IceRepository repositories detect: [ :each |
 								              each name asString = repositoryName ].
-							self deny: (self resultIndicatesError: result).
+							self
+								deny: (self resultIndicatesError: result)
+								description: (self summaryFrom: result).
 							self
 								assert: repository location pathString
 								equals: location pathString.
@@ -417,7 +423,9 @@ MCPToolRepositoryOperationTest >> testAttachRegistersLinkedGitWorktreeCheckout [
 										          (#location -> linkedLocation pathString).
 										          (#subdirectory -> 'src').
 										          (#packageNames -> { packageName }) } asDictionary.
-								self deny: (self resultIndicatesError: result).
+								self
+									deny: (self resultIndicatesError: result)
+									description: (self summaryFrom: result).
 								repository := IceRepository repositories detect: [ :each |
 									              each name asString = repositoryName ].
 								self
@@ -512,7 +520,9 @@ MCPToolRepositoryOperationTest >> testCheckoutBranchLoadsTargetBranchSnapshot [
 							                  with: {
 									                  (#repositoryName -> repositoryName).
 									                  (#branchName -> baseBranch) } asDictionary.
-						self deny: (self resultIndicatesError: checkoutResult).
+						self
+							deny: (self resultIndicatesError: checkoutResult)
+							description: (self summaryFrom: checkoutResult).
 						self deny:
 							((Smalltalk at: className asSymbol) includesSelector:
 								 extraSelector) ] ]
@@ -545,7 +555,9 @@ MCPToolRepositoryOperationTest >> testCommitCreatesCommitAndReturnsResult [
 									          (#message -> 'Initial commit MCP test') }
 									          asDictionary.
 							data := self dataFrom: result.
-							self deny: (self resultIndicatesError: result).
+							self
+								deny: (self resultIndicatesError: result)
+								description: (self summaryFrom: result).
 							self
 								assert: data keys asSet
 								equals:
@@ -644,7 +656,9 @@ MCPToolRepositoryOperationTest >> testCommitRequestsImageSaveAfterSuccessfulExec
 										          (#repositoryName -> repositoryName).
 										          (#message -> 'Commit and save from MCP test') }
 										          asDictionary.
-							self deny: (self resultIndicatesError: result).
+							self
+								deny: (self resultIndicatesError: result)
+								description: (self summaryFrom: result).
 							self assert: server didSaveImageSession ] ]
 ]
 
@@ -702,7 +716,9 @@ MCPToolRepositoryOperationTest >> testCreateBranchReturnsResultReportsErrorsAndR
 					          (#repositoryName -> repository name).
 					          (#branchName -> 'feature') } asDictionary.
 			data := self dataFrom: result.
-			self deny: (self resultIndicatesError: result).
+			self
+				deny: (self resultIndicatesError: result)
+				description: (self summaryFrom: result).
 			self
 				assert: repository actionLog asArray
 				equals: #( 'createBranch:feature' ).
@@ -720,7 +736,9 @@ MCPToolRepositoryOperationTest >> testCreateBranchReturnsResultReportsErrorsAndR
 				              withParams: {
 						              (#repositoryName -> repository name).
 						              (#branchName -> 'feature-save') } asDictionary.
-			self deny: (self resultIndicatesError: saveResult).
+			self
+				deny: (self resultIndicatesError: saveResult)
+				description: (self summaryFrom: saveResult).
 			self assert: server didSaveImageSession.
 			duplicateResult := self callToolWith: {
 					                   (#action -> 'createBranch').
@@ -769,7 +787,9 @@ MCPToolRepositoryOperationTest >> testCreateCreatesAndRegistersRepository [
 						          asDictionary.
 				repository := IceRepository repositories detect: [ :each |
 					              each name asString = repositoryName ].
-				self deny: (self resultIndicatesError: result).
+				self
+					deny: (self resultIndicatesError: result)
+					description: (self summaryFrom: result).
 				self
 					assert: repository location pathString
 					equals: location pathString.
@@ -826,7 +846,9 @@ MCPToolRepositoryOperationTest >> testDiffDoesNotRequestImageSaveAfterSuccessful
 								          rpcToolCall: 'repository_change_list'
 								          withParams:
 								          { (#repositoryName -> repositoryName) } asDictionary.
-							self deny: (self resultIndicatesError: result).
+							self
+								deny: (self resultIndicatesError: result)
+								description: (self summaryFrom: result).
 							self deny: server didSaveImageSession ] ]
 ]
 
@@ -909,7 +931,9 @@ MCPToolRepositoryOperationTest >> testExportUpdatesDiskAndIndexWithoutCommitting
 									          (#repositoryName -> repositoryName) } asDictionary.
 							data := self dataFrom: result.
 							childNames := self directChildNamesOf: location.
-							self deny: (self resultIndicatesError: result).
+							self
+								deny: (self resultIndicatesError: result)
+								description: (self summaryFrom: result).
 							self
 								assert: data keys asSet
 								equals: #( changedPackageNames didChange modifiedPaths ) asSet.
@@ -934,7 +958,9 @@ MCPToolRepositoryOperationTest >> testFetchReturnsResultShapeAndReportsErrors [
 					          (#action -> 'fetch').
 					          (#repositoryName -> repository name) } asDictionary.
 			data := self dataFrom: result.
-			self deny: (self resultIndicatesError: result).
+			self
+				deny: (self resultIndicatesError: result)
+				description: (self summaryFrom: result).
 			self
 				assert: repository actionLog asArray
 				equals: #( 'fetch:origin' ).
@@ -1009,19 +1035,25 @@ MCPToolRepositoryOperationTest >> testLinkedWorktreeAttachReportsGitMetadataAndE
 									                (#subdirectory -> 'src').
 									                (#packageNames -> { packageName }) }
 									                asDictionary.
-							self deny: (self resultIndicatesError: createResult).
+							self
+								deny: (self resultIndicatesError: createResult)
+								description: (self summaryFrom: createResult).
 							exportResult := self callToolWith: {
 									                (#action -> 'export').
 									                (#repositoryName -> repositoryName) }
 									                asDictionary.
-							self deny: (self resultIndicatesError: exportResult).
+							self
+								deny: (self resultIndicatesError: exportResult)
+								description: (self summaryFrom: exportResult).
 							commitResult := self callToolWith: {
 									                (#action -> 'commit').
 									                (#repositoryName -> repositoryName).
 									                (#message
 									                 -> 'Prepare linked checkout contract test') }
 									                asDictionary.
-							self deny: (self resultIndicatesError: commitResult).
+							self
+								deny: (self resultIndicatesError: commitResult)
+								description: (self summaryFrom: commitResult).
 							repository := IceRepository registry detect: [ :each |
 								              each name = repositoryName ].
 							headCommitId := MCPIcebergCommitInfo idStringFrom:
@@ -1049,12 +1081,16 @@ MCPToolRepositoryOperationTest >> testLinkedWorktreeAttachReportsGitMetadataAndE
 										                (#subdirectory -> 'src').
 										                (#packageNames -> { packageName }) }
 										                asDictionary.
-								self deny: (self resultIndicatesError: attachResult).
+								self
+									deny: (self resultIndicatesError: attachResult)
+									description: (self summaryFrom: attachResult).
 								searchResult := self searchRepositoriesWith: {
 										                (#repositoryName -> repositoryName).
 										                (#filterMode -> 'exact').
 										                (#includeDetails -> true) } asDictionary.
-								self deny: (self resultIndicatesError: searchResult).
+								self
+									deny: (self resultIndicatesError: searchResult)
+									description: (self summaryFrom: searchResult).
 								searchData := self dataFrom: searchResult.
 								entry := (searchData at: #repositories) anyOne.
 								self
@@ -1076,7 +1112,9 @@ MCPToolRepositoryOperationTest >> testLinkedWorktreeAttachReportsGitMetadataAndE
 										                (#action -> 'export').
 										                (#repositoryName -> repositoryName) }
 										                asDictionary.
-								self deny: (self resultIndicatesError: exportResult).
+								self
+									deny: (self resultIndicatesError: exportResult)
+									description: (self summaryFrom: exportResult).
 								self assert: exportedClassFile exists ] ensure: [
 									self removeClassNamed: exportedClassName.
 									self shellCommand:
@@ -1136,7 +1174,9 @@ MCPToolRepositoryOperationTest >> testPullReturnsResultReportsErrorsAndRequestsI
 					          (#action -> 'pull').
 					          (#repositoryName -> repository name) } asDictionary.
 			data := self dataFrom: result.
-			self deny: (self resultIndicatesError: result).
+			self
+				deny: (self resultIndicatesError: result)
+				description: (self summaryFrom: result).
 			self assert: repository actionLog asArray equals: #( 'pull' ).
 			self
 				assert: data keys asSet
@@ -1150,7 +1190,9 @@ MCPToolRepositoryOperationTest >> testPullReturnsResultReportsErrorsAndRequestsI
 				              withParams:
 				              { (#repositoryName -> repository name) }
 					              asDictionary.
-			self deny: (self resultIndicatesError: saveResult).
+			self
+				deny: (self resultIndicatesError: saveResult)
+				description: (self summaryFrom: saveResult).
 			self assert: server didSaveImageSession ].
 	repository := self newTestRepositoryNamed:
 		              'MCP Pull Error Test Repository'.
@@ -1207,7 +1249,9 @@ MCPToolRepositoryOperationTest >> testPushPublishesCurrentBranchUsingRequestedRe
 						          (#action -> 'push').
 						          (#repositoryName -> repositoryName).
 						          (#remoteName -> 'backup') } asDictionary.
-				self deny: (self resultIndicatesError: result).
+				self
+					deny: (self resultIndicatesError: result)
+					description: (self summaryFrom: result).
 				remoteHead := (LibC resultOfCommand:
 					               'git --git-dir '
 					               , (self shellQuote: bareLocation pathString)
@@ -1264,7 +1308,9 @@ MCPToolRepositoryOperationTest >> testPushPublishesCurrentBranchWhenUpstreamIsMi
 				result := self callToolWith: {
 						          (#action -> 'push').
 						          (#repositoryName -> repositoryName) } asDictionary.
-				self deny: (self resultIndicatesError: result).
+				self
+					deny: (self resultIndicatesError: result)
+					description: (self summaryFrom: result).
 				self assert: repository actionLog asArray equals: #(  ).
 				remoteHead := (LibC resultOfCommand:
 					               'git --git-dir '
@@ -1385,7 +1431,9 @@ MCPToolRepositoryOperationTest >> testPushReturnsResultReportsErrorsAndRequestsI
 					          (#action -> 'push').
 					          (#repositoryName -> repository name) } asDictionary.
 			data := self dataFrom: result.
-			self deny: (self resultIndicatesError: result).
+			self
+				deny: (self resultIndicatesError: result)
+				description: (self summaryFrom: result).
 			self assert: repository actionLog asArray equals: #( 'push' ).
 			self
 				assert: data keys asSet
@@ -1396,7 +1444,9 @@ MCPToolRepositoryOperationTest >> testPushReturnsResultReportsErrorsAndRequestsI
 				              withParams:
 				              { (#repositoryName -> repository name) }
 					              asDictionary.
-			self deny: (self resultIndicatesError: saveResult).
+			self
+				deny: (self resultIndicatesError: saveResult)
+				description: (self summaryFrom: saveResult).
 			self assert: server didSaveImageSession ].
 	repository := self newTestRepositoryNamed:
 		              'MCP Push Error Test Repository'.
@@ -1593,7 +1643,9 @@ MCPToolRepositoryOperationTest >> testSwitchBranchReturnsResultReportsErrorsAndR
 					          (#repositoryName -> repository name).
 					          (#branchName -> 'feature') } asDictionary.
 			data := self dataFrom: result.
-			self deny: (self resultIndicatesError: result).
+			self
+				deny: (self resultIndicatesError: result)
+				description: (self summaryFrom: result).
 			self
 				assert: data keys asSet
 				equals:
@@ -1610,7 +1662,9 @@ MCPToolRepositoryOperationTest >> testSwitchBranchReturnsResultReportsErrorsAndR
 				              withParams: {
 						              (#repositoryName -> repository name).
 						              (#branchName -> 'main') } asDictionary.
-			self deny: (self resultIndicatesError: saveResult).
+			self
+				deny: (self resultIndicatesError: saveResult)
+				description: (self summaryFrom: saveResult).
 			self assert: server didSaveImageSession.
 			missingResult := self callToolWith: {
 					                 (#action -> 'switchBranch').
@@ -1691,7 +1745,9 @@ MCPToolRepositoryOperationTest >> testUpdateAddsPackageToWorkingCopy [
 					          (#repositoryName -> repository name).
 					          (#addPackageNames -> { packageName }) } asDictionary.
 			data := self dataFrom: result.
-			self deny: (self resultIndicatesError: result).
+			self
+				deny: (self resultIndicatesError: result)
+				description: (self summaryFrom: result).
 			self
 				assert: (self packageNamesIn: repository)
 				equals: { packageName }.
@@ -1722,7 +1778,9 @@ MCPToolRepositoryOperationTest >> testUpdateCanReplacePackageMembership [
 					           #( 'MCPToolRepositoryOperationNewC'
 					              'MCPToolRepositoryOperationOldB' )) } asDictionary.
 			data := self dataFrom: result.
-			self deny: (self resultIndicatesError: result).
+			self
+				deny: (self resultIndicatesError: result)
+				description: (self summaryFrom: result).
 			self
 				assert: (self packageNamesIn: repository)
 				equals:
@@ -1759,7 +1817,9 @@ MCPToolRepositoryOperationTest >> testUpdateRemovesPackageWithoutUnloading [
 						          (#removePackageNames -> { packageName }) }
 						          asDictionary.
 				data := self dataFrom: result.
-				self deny: (self resultIndicatesError: result).
+				self
+					deny: (self resultIndicatesError: result)
+					description: (self summaryFrom: result).
 				self assert: (self packageNamesIn: repository) equals: #(  ).
 				self assert: (PackageOrganizer default hasPackage: packageName).
 				self
@@ -1787,7 +1847,9 @@ MCPToolRepositoryOperationTest >> testVerifyIdentityDoesNotRequestImageSaveAfter
 				          withParams: {
 						          (#repositoryName -> repository name).
 						          (#branchName -> 'main') } asDictionary.
-			self deny: (self resultIndicatesError: result).
+			self
+				deny: (self resultIndicatesError: result)
+				description: (self summaryFrom: result).
 			self deny: server didSaveImageSession ]
 ]
 
@@ -1832,7 +1894,9 @@ MCPToolRepositoryOperationTest >> testVerifyIdentityPassesWhenExpectedIdentityMa
 					          (#modifiedPackageNames -> #( 'MCP' )).
 					          (#isModified -> true) } asDictionary.
 			data := self dataFrom: result.
-			self deny: (self resultIndicatesError: result).
+			self
+				deny: (self resultIndicatesError: result)
+				description: (self summaryFrom: result).
 			self assert: data keys asSet equals: #( matched ) asSet.
 			self assert: (data at: #matched).
 			self assert: repository actionLog asArray equals: #(  ) ]
