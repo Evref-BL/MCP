@@ -63,6 +63,21 @@ MCPServerLifecycleTest >> testSocketSafeServerRestartsAfterBindFailure [
 ]
 
 { #category : 'tests' }
+MCPServerLifecycleTest >> testSocketSafeServerRunsDeferredActionsAfterCurrentResponse [
+
+	| ran server |
+	ran := false.
+	server := MCPSocketSafeZnServer new.
+	server deferAfterCurrentResponse: [ ran := true ].
+	self deny: ran.
+	server runPostResponseActionsForCurrentProcess.
+	self assert: ran.
+	ran := false.
+	server runPostResponseActionsForCurrentProcess.
+	self deny: ran
+]
+
+{ #category : 'tests' }
 MCPServerLifecycleTest >> testSocketSafeServerTreatsSocketErrorsAsConnectionTermination [
 
 	| exceptionSet |

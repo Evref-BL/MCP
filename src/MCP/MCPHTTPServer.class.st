@@ -76,6 +76,12 @@ MCPHTTPServer >> configureResponse: response for: request [
 		'accept, content-type, last-event-id, mcp-protocol-version, mcp-session-id'
 ]
 
+{ #category : 'post response' }
+MCPHTTPServer >> deferAfterCurrentResponse: aBlock [
+
+	server deferAfterCurrentResponse: aBlock
+]
+
 { #category : 'initialization' }
 MCPHTTPServer >> initialize [
 
