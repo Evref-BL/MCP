@@ -38,11 +38,12 @@ MCPCommitRepositoryCommand >> execute [
 					                     'commit'.
 					                     '-m'.
 					                     self request message }.
-				  self
-					  runGitArguments: commitArguments
-					  in: repository
-					  ifFailed: [ :gitResult |
-					  self signalGitCommandFailed: gitResult action: 'commit' ].
+				  self withNonInteractiveGitIdentityFor: repository during: [
+					  self
+						  runGitArguments: commitArguments
+						  in: repository
+						  ifFailed: [ :gitResult |
+						  self signalGitCommandFailed: gitResult action: 'commit' ] ].
 				  commit := repository headCommit.
 				  self adoptHeadCommit: commit for: repository.
 				  result := MCPRepositoryCommitResult
