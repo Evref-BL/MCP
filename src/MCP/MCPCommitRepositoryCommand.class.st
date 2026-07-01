@@ -34,16 +34,14 @@ MCPCommitRepositoryCommand >> execute [
 					  in: repository
 					  ifFailed: [ :gitResult |
 					  self signalGitCommandFailed: gitResult action: 'add' ].
-				  commitArguments := {
-					                     'commit'.
-					                     '-m'.
-					                     self request message }.
-				  self withNonInteractiveGitIdentityFor: repository during: [
-					  self
-						  runGitArguments: commitArguments
-						  in: repository
-						  ifFailed: [ :gitResult |
-						  self signalGitCommandFailed: gitResult action: 'commit' ] ].
+				  commitArguments := self
+					                     gitCommitArgumentsFor: repository
+					                     message: self request message.
+				  self
+					  runGitArguments: commitArguments
+					  in: repository
+					  ifFailed: [ :gitResult |
+					  self signalGitCommandFailed: gitResult action: 'commit' ].
 				  commit := repository headCommit.
 				  self adoptHeadCommit: commit for: repository.
 				  result := MCPRepositoryCommitResult
@@ -74,12 +72,21 @@ MCPCommitRepositoryCommand >> fallbackGitUserName [
 ]
 
 { #category : 'private - git identity' }
-MCPCommitRepositoryCommand >> gitConfigValueMissingOrEmpty: key in: config [
+MCPCommitRepositoryCommand >> gitCommitArgumentsFor: aRepository message: aMessage [
 
-	^ config
-		  getString: key
-		  ifPresent: [ :value | value isEmptyOrNil ]
-		  ifAbsent: [ true ]
+	(self repositoryHasDefaultGitSignature: aRepository) ifTrue: [
+		^ {
+			  'commit'.
+			  '-m'.
+			  aMessage } ].
+	^ {
+		  '-c'.
+		  'user.name=' , self fallbackGitUserName.
+		  '-c'.
+		  'user.email=' , self fallbackGitUserEmail.
+		  'commit'.
+		  '-m'.
+		  aMessage }
 ]
 
 { #category : 'private - git identity' }
@@ -93,23 +100,6 @@ MCPCommitRepositoryCommand >> gitSignatureMissingFor: anError [
 					  message
 					  =
 					  'failed to parse signature - signature cannot have an empty name or email' ] ]
-]
-
-{ #category : 'private - git identity' }
-MCPCommitRepositoryCommand >> removeGitConfigKey: key from: config [
-
-	config
-		getString: key
-		ifPresent: [ :ignored | config unset: key ]
-		ifAbsent: [ ]
-]
-
-{ #category : 'private - git identity' }
-MCPCommitRepositoryCommand >> removeTemporaryGitConfigKey: key from: config [
-	"Pharo 13 libgit2 can crash while deleting freshly-created repository config entries."
-
-	PharoCompatibility isPharo13OrLater ifTrue: [ ^ self ].
-	self removeGitConfigKey: key from: config
 ]
 
 { #category : 'private - diff' }
@@ -143,25 +133,4 @@ MCPCommitRepositoryCommand >> repositoryHasModifiedPackages: aRepository [
 MCPCommitRepositoryCommand >> repositoryHasNoCommit: aRepository [
 
 	^ MCPIcebergCommitInfo isNoCommit: aRepository headCommit
-]
-
-{ #category : 'private - git identity' }
-MCPCommitRepositoryCommand >> withNonInteractiveGitIdentityFor: aRepository during: aBlock [
-
-	| config shouldSetEmail shouldSetName |
-	config := aRepository repositoryHandle config.
-	shouldSetName := self
-		                 gitConfigValueMissingOrEmpty: 'user.name'
-		                 in: config.
-	shouldSetEmail := self
-		                  gitConfigValueMissingOrEmpty: 'user.email'
-		                  in: config.
-	(shouldSetName or: [ shouldSetEmail ]) ifFalse: [ ^ aBlock value ].
-	shouldSetName ifTrue: [ config username: self fallbackGitUserName ].
-	shouldSetEmail ifTrue: [ config email: self fallbackGitUserEmail ].
-	^ [ aBlock value ] ensure: [
-			  shouldSetName ifTrue: [
-				  self removeTemporaryGitConfigKey: 'user.name' from: config ].
-			  shouldSetEmail ifTrue: [
-				  self removeTemporaryGitConfigKey: 'user.email' from: config ] ]
 ]
