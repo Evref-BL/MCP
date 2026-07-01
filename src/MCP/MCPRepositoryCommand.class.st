@@ -64,6 +64,7 @@ MCPRepositoryCommand >> exportProjectFileFor: aRepository [
 
 	| project projectFile |
 	project := aRepository workingCopy project.
+	project ifNil: [ ^ self ].
 	project isUnborn ifTrue: [ ^ self ].
 	projectFile := aRepository location asFileReference / '.project'.
 	projectFile binaryWriteStreamDo: [ :stream |
