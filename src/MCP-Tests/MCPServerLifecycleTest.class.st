@@ -65,16 +65,29 @@ MCPServerLifecycleTest >> testSocketSafeServerRestartsAfterBindFailure [
 { #category : 'tests' }
 MCPServerLifecycleTest >> testSocketSafeServerRunsDeferredActionsAfterCurrentResponse [
 
+	| actions ran server |
+	ran := false.
+	server := MCPSocketSafeZnServer new.
+	actions := OrderedCollection new.
+	MCPPostResponseActions value: actions during: [
+		server deferAfterCurrentResponse: [ ran := true ].
+		self deny: ran ].
+	server runPostResponseActions: actions.
+	self assert: ran.
+	ran := false.
+	server runPostResponseActions: actions.
+	self deny: ran
+]
+
+{ #category : 'tests' }
+MCPServerLifecycleTest >> testSocketSafeServerRunsPostResponseActionsImmediatelyWithoutActiveQueue [
+
 	| ran server |
 	ran := false.
 	server := MCPSocketSafeZnServer new.
-	server deferAfterCurrentResponse: [ ran := true ].
-	self deny: ran.
-	server runPostResponseActionsForCurrentProcess.
-	self assert: ran.
-	ran := false.
-	server runPostResponseActionsForCurrentProcess.
-	self deny: ran
+	MCPPostResponseActions value: nil during: [
+		server deferAfterCurrentResponse: [ ran := true ] ].
+	self assert: ran
 ]
 
 { #category : 'tests' }
