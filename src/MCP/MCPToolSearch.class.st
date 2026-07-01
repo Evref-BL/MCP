@@ -296,9 +296,7 @@ MCPToolSearch >> includeSourceSchemaPropertyWithDescription: includeSourceDescri
 MCPToolSearch >> isRegexSyntaxError: anError [
 
 	^ anError class = RegexSyntaxError or: [
-		  (Smalltalk globals at: #PCRE2CompileError ifAbsent: [ nil ])
-			  ifNil: [ false ]
-			  ifNotNil: [ :errorClass | anError class = errorClass ] ]
+		  anError class = PCRE2CompileError ]
 ]
 
 { #category : 'private - template' }
