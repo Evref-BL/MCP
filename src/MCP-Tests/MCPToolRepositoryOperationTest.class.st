@@ -170,6 +170,23 @@ MCPToolRepositoryOperationTest >> shellCommand: aCommandString [
 ]
 
 { #category : 'private' }
+MCPToolRepositoryOperationTest >> shellOutput: aCommandString [
+
+	| command output outputFile status |
+	outputFile := FileLocator temp asFileReference
+	              / ('mcp-test-shell-command-' , UUID new asString , '.log').
+	command := aCommandString , ' > ' , (self shellQuote: outputFile pathString)
+	           , ' 2>&1'.
+	status := LibC uniqueInstance system: command.
+	output := outputFile exists
+		          ifTrue: [ outputFile contents ]
+		          ifFalse: [ '' ].
+	outputFile exists ifTrue: [ outputFile delete ].
+	self assert: status = 0 description: output.
+	^ output
+]
+
+{ #category : 'private' }
 MCPToolRepositoryOperationTest >> shellQuote: aString [
 
 	^ '''' , (aString copyReplaceAll: '''' with: '''"''"''') , ''''
@@ -571,27 +588,29 @@ MCPToolRepositoryOperationTest >> testCommitReportsIcebergRefusalErrors [
 		withExportPackageNamed: packageName
 		className: 'MCPToolRepositoryOperationRefusedCommitClass'
 		do: [
-				self
-					withCleanRepositoryNamed: repositoryName
-					location: location
-					do: [
-							self callToolWith: {
-									(#action -> 'create').
-									(#name -> repositoryName).
-									(#location -> location pathString).
-									(#packageNames -> { packageName }) } asDictionary.
-							self callToolWith: {
-									(#action -> 'commit').
-									(#repositoryName -> repositoryName).
-									(#message -> 'Initial commit from MCP test') } asDictionary.
-							result := self callToolWith: {
-									          (#action -> 'commit').
-									          (#repositoryName -> repositoryName).
-									          (#message -> 'Second commit from MCP test') }
-									          asDictionary.
-							self assert: (result at: #isError ifAbsent: [ false ]).
-							self assert: ((self summaryFrom: result) includesSubstring:
-									 'Failed to commit repository') ] ]
+			self
+				withCleanRepositoryNamed: repositoryName
+				location: location
+				do: [
+					self callToolWith: {
+							(#action -> 'create').
+							(#name -> repositoryName).
+							(#location -> location pathString).
+							(#packageNames -> { packageName }) } asDictionary.
+					self callToolWith: {
+							(#action -> 'commit').
+							(#repositoryName -> repositoryName).
+							(#message -> 'Initial commit from MCP test') }
+						asDictionary.
+					result := self callToolWith: {
+							(#action -> 'commit').
+							(#repositoryName -> repositoryName).
+							(#message -> 'Second commit from MCP test') }
+						asDictionary.
+					self assert: (self resultIndicatesError: result).
+					self assert:
+						((self summaryFrom: result) includesSubstring:
+							 'Failed to commit repository') ] ]
 ]
 
 { #category : 'tests' }
@@ -630,44 +649,42 @@ MCPToolRepositoryOperationTest >> testCommitRequestsImageSaveAfterSuccessfulExec
 { #category : 'tests' }
 MCPToolRepositoryOperationTest >> testCommitUsesFallbackGitIdentityWhenGitSignatureIsUnavailable [
 
-	| data location packageName repository repositoryName result |
-	PharoCompatibility isPharo13OrLater ifTrue: [
-			self skip:
-				'Pharo 13 commits use the Author API; forcing empty libgit2 config can crash the VM in CI.' ].
+	| data location message packageName repositoryName result |
 	repositoryName := 'MCP Repository Command Commit Fallback Identity Test'.
 	packageName := 'MCPToolRepositoryOperationCommitFallbackIdentityPackage'.
 	location := self temporaryRepositoryLocationNamed:
 		            'MCPToolRepositoryOperationTestCommitFallbackIdentity'.
+	message := 'Commit with fallback identity from MCP test'.
 	self
 		withExportPackageNamed: packageName
 		className: 'MCPToolRepositoryOperationCommitFallbackIdentityClass'
 		do: [
-				self
-					withCleanRepositoryNamed: repositoryName
-					location: location
-					do: [
-							self callToolWith: {
-									(#action -> 'create').
-									(#name -> repositoryName).
-									(#location -> location pathString).
-									(#packageNames -> { packageName }) } asDictionary.
-							repository := IceRepository repositories detect: [ :each |
-								              each name asString = repositoryName ].
-							repository repositoryHandle config
-								username: '';
-								email: ''.
-							result := self callToolWith: {
-									          (#action -> 'commit').
-									          (#repositoryName -> repositoryName).
-									          (#message
-									           -> 'Commit with fallback identity from MCP test') }
-									          asDictionary.
-							self deny: (result at: #isError ifAbsent: [ false ]).
-							data := self dataFrom: result.
-							self
-								assert: (data at: #commitDescription)
-								equals: 'Commit with fallback identity from MCP test'.
-							self assert: repository headCommit author equals: 'MCP' ] ]
+			self
+				withCleanRepositoryNamed: repositoryName
+				location: location
+				do: [
+					self callToolWith: {
+							(#action -> 'create').
+							(#name -> repositoryName).
+							(#location -> location pathString).
+							(#packageNames -> { packageName }) } asDictionary.
+					self shellCommand:
+						'git -C ' , (self shellQuote: location pathString)
+						, ' config user.name ' , (self shellQuote: '').
+					self shellCommand:
+						'git -C ' , (self shellQuote: location pathString)
+						, ' config user.email ' , (self shellQuote: '').
+					result := self callToolWith: {
+							(#action -> 'commit').
+							(#repositoryName -> repositoryName).
+							(#message -> message) } asDictionary.
+					data := self dataFrom: result.
+					self assert: (data at: #commitDescription) equals: message.
+					self
+						assert: (self shellOutput:
+								 'git -C ' , (self shellQuote: location pathString)
+								 , ' log -1 --format=%an') trimBoth
+						equals: 'MCP' ] ]
 ]
 
 { #category : 'tests' }

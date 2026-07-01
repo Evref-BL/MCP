@@ -64,8 +64,7 @@ MCPToolAPITestCase >> dataFrom: aResult [
 	| structuredContent |
 	structuredContent := self structuredContentFrom: aResult.
 	self
-		deny: ((structuredContent at: #isError ifAbsent: [ false ]) or: [
-				 (structuredContent at: #status ifAbsent: [ 'ok' ]) = 'error' ])
+		deny: (self resultIndicatesError: aResult)
 		description: (self summaryFrom: aResult).
 	^ structuredContent at: #data
 ]
@@ -103,6 +102,15 @@ MCPToolAPITestCase >> parsedRequestForTool: aTool arguments: someArguments [
 		  (self
 			   unvalidatedToolRequestForTool: aTool
 			   arguments: someArguments)
+]
+
+{ #category : 'private - results' }
+MCPToolAPITestCase >> resultIndicatesError: aResult [
+
+	| structuredContent |
+	structuredContent := self structuredContentFrom: aResult.
+	^ (structuredContent at: #isError ifAbsent: [ false ]) or: [
+		  (structuredContent at: #status ifAbsent: [ 'ok' ]) = 'error' ]
 ]
 
 { #category : 'support' }
