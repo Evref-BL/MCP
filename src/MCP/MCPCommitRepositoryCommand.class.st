@@ -12,27 +12,45 @@ Class {
 { #category : 'executing' }
 MCPCommitRepositoryCommand >> execute [
 
-	| changedPackageNames diff repository result |
+	| changedPackageNames commit commitArguments commitDescription commitId modifiedPaths repository result tonelSnapshot |
 	^ self
 		  executeRepositoryAction: 'commit'
 		  work: [
 				  repository := self request repository.
 				  (self repositoryHasChangesToCommit: repository) ifFalse: [
 					  IceNothingToCommit signal ].
-				  diff := repository workingCopyDiff.
-				  changedPackageNames := self changedPackageNamesFromDiff: diff.
-				  result := self
-					            withNonInteractiveGitIdentityFor: repository
-					            during: [
-							            | commit |
-							            commit := self withNonInteractiveAuthorDuring: [
-									                      repository workingCopy
-										                      commitChanges: diff
-										                      withMessage: self request message ].
-							            MCPRepositoryCommitResult
-								            repository: repository
-								            changedPackageNames: changedPackageNames
-								            commit: commit ] ]
+				  tonelSnapshot := self snapshotTonelFilesFor: repository.
+				  self exportLoadedPackagesFrom: repository.
+				  self
+					  restoreOrderOnlyTonelChurnFor: repository
+					  fromSnapshot: tonelSnapshot.
+				  modifiedPaths := self modifiedPathsFromGitStatusIn: repository.
+				  modifiedPaths isEmpty ifTrue: [ IceNothingToCommit signal ].
+				  changedPackageNames := self
+					                         changedPackageNamesForRepository: repository
+					                         modifiedPaths: modifiedPaths.
+				  self
+					  runGitArguments: #( 'add' '--all' )
+					  in: repository
+					  ifFailed: [ :gitResult |
+					  self signalGitCommandFailed: gitResult action: 'add' ].
+				  commitArguments := self
+					                     gitCommitArgumentsFor: repository
+					                     message: self request message.
+				  self
+					  runGitArguments: commitArguments
+					  in: repository
+					  ifFailed: [ :gitResult |
+					  self signalGitCommandFailed: gitResult action: 'commit' ].
+				  commitId := self headCommitIdIn: repository.
+				  commitDescription := self headCommitDescriptionIn: repository.
+				  commit := repository lookupCommit: commitId.
+				  self adoptHeadCommit: commit for: repository.
+				  result := MCPRepositoryCommitResult
+					            repository: repository
+					            changedPackageNames: changedPackageNames
+					            commitId: commitId
+					            commitDescription: commitDescription ]
 		  successResult: [ :warningMessages |
 				  self tool
 					  successResultText:
@@ -57,62 +75,70 @@ MCPCommitRepositoryCommand >> fallbackGitUserName [
 ]
 
 { #category : 'private - git identity' }
-MCPCommitRepositoryCommand >> gitConfigValueMissingOrEmpty: key in: config [
+MCPCommitRepositoryCommand >> gitCommitArgumentsFor: aRepository message: aMessage [
 
-	^ config
-		  getString: key
-		  ifPresent: [ :value | value isEmptyOrNil ]
-		  ifAbsent: [ true ]
+	(self repositoryHasConfiguredGitIdentity: aRepository) ifTrue: [
+		^ {
+			  'commit'.
+			  '-m'.
+			  aMessage } ].
+	^ {
+		  '-c'.
+		  'user.name=' , self fallbackGitUserName.
+		  '-c'.
+		  'user.email=' , self fallbackGitUserEmail.
+		  'commit'.
+		  '-m'.
+		  aMessage }
 ]
 
 { #category : 'private - git identity' }
-MCPCommitRepositoryCommand >> gitSignatureMissingFor: anError [
+MCPCommitRepositoryCommand >> gitConfigValueAt: key in: aRepository [
 
-	| message |
-	message := anError messageText ifNil: [ '' ].
-	message := message asLowercase.
-	^ message = 'config value ''user.name'' was not found' or: [
-			  message = 'config value ''user.email'' was not found' or: [
-					  message
-					  =
-					  'failed to parse signature - signature cannot have an empty name or email' ] ]
+	| gitResult |
+	gitResult := self
+		             runGitArguments: {
+			             'config'.
+			             '--get'.
+			             key }
+		             in: aRepository.
+	(gitResult at: #status) = 0 ifTrue: [
+		^ (gitResult at: #output) trimBoth ].
+	(gitResult at: #status) = 1 ifTrue: [ ^ '' ].
+	self signalGitCommandFailed: gitResult action: 'config'
 ]
 
-{ #category : 'private - git identity' }
-MCPCommitRepositoryCommand >> removeGitConfigKey: key from: config [
+{ #category : 'private - git' }
+MCPCommitRepositoryCommand >> headCommitDescriptionIn: aRepository [
 
-	config
-		getString: key
-		ifPresent: [ :ignored | config unset: key ]
-		ifAbsent: [ ]
+	^ self
+		  trimmedGitOutputFor: #( 'log' '-1' '--format=%B' )
+		  in: aRepository
+		  action: 'log'
 ]
 
-{ #category : 'private - git identity' }
-MCPCommitRepositoryCommand >> removeTemporaryGitConfigKey: key from: config [
-	"Pharo 13 libgit2 can crash while deleting freshly-created repository config entries."
+{ #category : 'private - git' }
+MCPCommitRepositoryCommand >> headCommitIdIn: aRepository [
 
-	PharoCompatibility isPharo13OrLater ifTrue: [ ^ self ].
-	self removeGitConfigKey: key from: config
+	^ self
+		  trimmedGitOutputFor: #( 'rev-parse' 'HEAD' )
+		  in: aRepository
+		  action: 'rev-parse'
 ]
 
 { #category : 'private - diff' }
 MCPCommitRepositoryCommand >> repositoryHasChangesToCommit: aRepository [
 
 	(self repositoryHasNoCommit: aRepository) ifTrue: [ ^ true ].
-	^ self repositoryHasModifiedPackages: aRepository
+	^ (self repositoryHasModifiedPackages: aRepository) or: [
+		  (self modifiedPathsFromGitStatusIn: aRepository) isNotEmpty ]
 ]
 
 { #category : 'private - git identity' }
-MCPCommitRepositoryCommand >> repositoryHasDefaultGitSignature: aRepository [
+MCPCommitRepositoryCommand >> repositoryHasConfiguredGitIdentity: aRepository [
 
-	^ [
-		  aRepository repositoryHandle defaultSignature.
-		  true ]
-		  on: LGit_GIT_ENOTFOUND , LGit_GIT_ERROR
-		  do: [ :error |
-				  (self gitSignatureMissingFor: error)
-					  ifTrue: [ false ]
-					  ifFalse: [ error pass ] ]
+	^ ((self gitConfigValueAt: 'user.name' in: aRepository) isNotEmpty and: [
+		   (self gitConfigValueAt: 'user.email' in: aRepository) isNotEmpty ])
 ]
 
 { #category : 'private - diff' }
@@ -127,23 +153,14 @@ MCPCommitRepositoryCommand >> repositoryHasNoCommit: aRepository [
 	^ MCPIcebergCommitInfo isNoCommit: aRepository headCommit
 ]
 
-{ #category : 'private - git identity' }
-MCPCommitRepositoryCommand >> withNonInteractiveGitIdentityFor: aRepository during: aBlock [
+{ #category : 'private - git' }
+MCPCommitRepositoryCommand >> trimmedGitOutputFor: arguments in: aRepository action: actionName [
 
-	| config shouldSetEmail shouldSetName |
-	config := aRepository repositoryHandle config.
-	shouldSetName := self
-		                 gitConfigValueMissingOrEmpty: 'user.name'
-		                 in: config.
-	shouldSetEmail := self
-		                  gitConfigValueMissingOrEmpty: 'user.email'
-		                  in: config.
-	(shouldSetName or: [ shouldSetEmail ]) ifFalse: [ ^ aBlock value ].
-	shouldSetName ifTrue: [ config username: self fallbackGitUserName ].
-	shouldSetEmail ifTrue: [ config email: self fallbackGitUserEmail ].
-	^ [ aBlock value ] ensure: [
-			  shouldSetName ifTrue: [
-				  self removeTemporaryGitConfigKey: 'user.name' from: config ].
-			  shouldSetEmail ifTrue: [
-				  self removeTemporaryGitConfigKey: 'user.email' from: config ] ]
+	| gitResult |
+	gitResult := self
+		             runGitArguments: arguments
+		             in: aRepository
+		             ifFailed: [ :failedResult |
+		             self signalGitCommandFailed: failedResult action: actionName ].
+	^ (gitResult at: #output) trimBoth
 ]

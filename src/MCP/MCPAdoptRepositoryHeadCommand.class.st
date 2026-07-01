@@ -9,30 +9,6 @@ Class {
 	#tag : 'Commands'
 }
 
-{ #category : 'private' }
-MCPAdoptRepositoryHeadCommand >> adoptHeadCommit: headCommit for: aRepository [
-
-	| workingCopy |
-	workingCopy := aRepository workingCopy.
-	(self commit: workingCopy referenceCommit equals: headCommit) ifFalse: [
-		workingCopy referenceCommit: headCommit ].
-	self markLoadedPackagesCleanIn: workingCopy
-]
-
-{ #category : 'private' }
-MCPAdoptRepositoryHeadCommand >> commit: leftCommit equals: rightCommit [
-
-	leftCommit ifNil: [ ^ rightCommit isNil ].
-	rightCommit ifNil: [ ^ false ].
-	^ (self commitIdFrom: leftCommit) = (self commitIdFrom: rightCommit)
-]
-
-{ #category : 'private' }
-MCPAdoptRepositoryHeadCommand >> commitIdFrom: aCommit [
-
-	^ MCPIcebergCommitInfo idStringFrom: aCommit
-]
-
 { #category : 'executing' }
 MCPAdoptRepositoryHeadCommand >> execute [
 
@@ -66,19 +42,6 @@ MCPAdoptRepositoryHeadCommand >> execute [
 		  failureSummary: [ :error |
 				  'Failed adopt repository HEAD: '
 				  , (error messageText ifNil: [ error asString ]) ]
-]
-
-{ #category : 'private' }
-MCPAdoptRepositoryHeadCommand >> markLoadedPackagesCleanIn: aWorkingCopy [
-
-	aWorkingCopy loadedPackages do: [ :package |
-		package beDirty: false ]
-]
-
-{ #category : 'private' }
-MCPAdoptRepositoryHeadCommand >> referenceCommitFor: aRepository [
-
-	^ aRepository workingCopy referenceCommit
 ]
 
 { #category : 'private - validation' }

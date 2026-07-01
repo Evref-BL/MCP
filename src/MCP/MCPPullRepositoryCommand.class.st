@@ -24,11 +24,8 @@ MCPPullRepositoryCommand >> execute [
 							 runGitArguments: #( 'pull' '--ff-only' )
 							 in: repository
 							 ifFailed: [ :gitResult |
-								 self signalGitCommandFailed: gitResult action: 'pull' ].
-						 [ (repository branchNamed: repository branchName) checkout ]
-							 on: Warning
-							 do: [ :warning | warning resume ].
-						 repository workingCopy refreshDirtyPackages ]
+							 self signalGitCommandFailed: gitResult action: 'pull' ].
+						 self loadLoadedPackagesFromDiskIn: repository ]
 					 ifFalse: [ repository branch pull ].
 				 result := MCPRepositoryPullResult
 					 repositoryBefore: beforeInfo

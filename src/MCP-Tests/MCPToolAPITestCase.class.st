@@ -61,7 +61,12 @@ MCPToolAPITestCase >> callToolNamed: aToolName withArguments: someArguments [
 { #category : 'private - results' }
 MCPToolAPITestCase >> dataFrom: aResult [
 
-	^ (self structuredContentFrom: aResult) at: #data
+	| structuredContent |
+	structuredContent := self structuredContentFrom: aResult.
+	self
+		deny: (self resultIndicatesError: aResult)
+		description: (self summaryFrom: aResult).
+	^ structuredContent at: #data
 ]
 
 { #category : 'private - results' }
@@ -97,6 +102,15 @@ MCPToolAPITestCase >> parsedRequestForTool: aTool arguments: someArguments [
 		  (self
 			   unvalidatedToolRequestForTool: aTool
 			   arguments: someArguments)
+]
+
+{ #category : 'private - results' }
+MCPToolAPITestCase >> resultIndicatesError: aResult [
+
+	| structuredContent |
+	structuredContent := self structuredContentFrom: aResult.
+	^ (structuredContent at: #isError ifAbsent: [ false ]) or: [
+		  (structuredContent at: #status ifAbsent: [ 'ok' ]) = 'error' ]
 ]
 
 { #category : 'support' }
