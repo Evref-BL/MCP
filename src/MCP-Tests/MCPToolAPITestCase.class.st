@@ -61,6 +61,11 @@ MCPToolAPITestCase >> callToolNamed: aToolName withArguments: someArguments [
 { #category : 'private - results' }
 MCPToolAPITestCase >> dataFrom: aResult [
 
+	self
+		deny: ((self structuredContentFrom: aResult)
+				 at: #isError
+				 ifAbsent: [ false ])
+		description: (self summaryFrom: aResult).
 	^ (self structuredContentFrom: aResult) at: #data
 ]
 
