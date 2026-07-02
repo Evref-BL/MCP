@@ -1,5 +1,5 @@
 "
-Request object for tool catalog searches. It captures optional search text, group filter, and result limit used by tool_search.
+Request object for tool catalog searches. Captures optional search text, group filter, and continuation cursor used by tool_search.
 "
 Class {
 	#name : 'MCPSearchToolsRequest',
@@ -7,24 +7,44 @@ Class {
 	#instVars : [
 		'query',
 		'group',
-		'limit'
+		'cursor'
 	],
 	#category : 'MCP-Requests',
 	#package : 'MCP',
 	#tag : 'Requests'
 }
 
+{ #category : 'private' }
+MCPSearchToolsRequest class >> cursorFromToolRequest: aToolRequest [
+
+	| cursorString |
+	cursorString := aToolRequest stringArgumentNamed: 'cursor'.
+	cursorString ifNil: [ ^ 0 ].
+	(cursorString allSatisfy: [ :each | each isDigit ]) ifTrue: [
+		^ cursorString asInteger ].
+	Error signal: 'cursor must be a non-negative integer string.'
+]
+
 { #category : 'instance creation' }
 MCPSearchToolsRequest class >> fromToolRequest: aToolRequest [
 
 	^ self new
-		  query: (aToolRequest stringArgumentNamed: 'query');
-		  group: (aToolRequest stringArgumentNamed: 'group');
-		  limit:
-			  ((aToolRequest
-				    nonNegativeIntegerArgumentNamed: 'limit'
-				    default: 25) min: 100);
-		  yourself
+		query: (aToolRequest stringArgumentNamed: 'query');
+		group: (aToolRequest stringArgumentNamed: 'group');
+		cursor: (self cursorFromToolRequest: aToolRequest);
+		yourself
+]
+
+{ #category : 'accessing' }
+MCPSearchToolsRequest >> cursor [
+
+	^ cursor
+]
+
+{ #category : 'accessing' }
+MCPSearchToolsRequest >> cursor: anInteger [
+
+	cursor := anInteger
 ]
 
 { #category : 'accessing' }
@@ -37,18 +57,6 @@ MCPSearchToolsRequest >> group [
 MCPSearchToolsRequest >> group: anObject [
 
 	group := anObject
-]
-
-{ #category : 'accessing' }
-MCPSearchToolsRequest >> limit [
-
-	^ limit
-]
-
-{ #category : 'accessing' }
-MCPSearchToolsRequest >> limit: anInteger [
-
-	limit := anInteger
 ]
 
 { #category : 'accessing' }

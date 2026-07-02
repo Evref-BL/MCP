@@ -23,15 +23,42 @@ MCPSearchToolsCommand class >> tool: aTool request: aRequest [
 { #category : 'executing' }
 MCPSearchToolsCommand >> execute [
 
-	| tools |
-	tools := MCPToolRegistry
-		         toolsMatchingQuery: request query
-		         group: request group
-		         limit: request limit
-		         usingPolicy: self toolExposurePolicy.
-	^ { (#tools -> (tools collect: [ :each |
-			    MCPToolRegistry
-				    searchMetadataForTool: each
-				    usingPolicy: self toolExposurePolicy ]) asArray) }
-		  asDictionary
+	| data matchingTools pageSize visibleTools |
+	pageSize := self pageSize.
+	matchingTools := MCPToolRegistry
+		toolsMatchingQuery: request query
+		group: request group
+		usingPolicy: self toolExposurePolicy.
+	visibleTools := self visibleToolsFrom: matchingTools.
+	data := Dictionary new.
+	data
+		at: #tools
+		put: ((visibleTools collect: [ :each |
+				  MCPToolRegistry
+					  searchMetadataForTool: each
+					  usingPolicy: self toolExposurePolicy ]) asArray).
+	(self hasMoreToolsAfter: matchingTools) ifTrue: [
+		data at: #nextCursor put: (request cursor + pageSize) asString ].
+	^ data
+]
+
+{ #category : 'private' }
+MCPSearchToolsCommand >> hasMoreToolsAfter: matchingTools [
+
+	^ matchingTools size > (request cursor + self pageSize)
+]
+
+{ #category : 'accessing' }
+MCPSearchToolsCommand >> pageSize [
+
+	^ 25
+]
+
+{ #category : 'private' }
+MCPSearchToolsCommand >> visibleToolsFrom: matchingTools [
+
+	request cursor >= matchingTools size ifTrue: [ ^ #(  ) ].
+	^ matchingTools
+		copyFrom: request cursor + 1
+		to: (matchingTools size min: (request cursor + self pageSize))
 ]
