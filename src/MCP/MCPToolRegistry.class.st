@@ -735,29 +735,14 @@ MCPToolRegistry class >> toolNamed: aToolName ifAbsent: absentBlock usingPolicy:
 ]
 
 { #category : 'tools' }
-MCPToolRegistry class >> toolsMatchingQuery: queryString group: groupString limit: anInteger [
+MCPToolRegistry class >> toolsMatchingQuery: queryString group: groupString usingPolicy: aToolExposurePolicy [
 
-	^ self
-		  toolsMatchingQuery: queryString
-		  group: groupString
-		  limit: anInteger
-		  usingPolicy: MCPToolExposurePolicy default
-]
-
-{ #category : 'tools' }
-MCPToolRegistry class >> toolsMatchingQuery: queryString group: groupString limit: anInteger usingPolicy: aToolExposurePolicy [
-
-	| limit matches |
-	matches := self publicTools select: [ :tool |
-			           self
-				           tool: tool
-				           matchesQuery: queryString
-				           group: groupString
-				           usingPolicy: aToolExposurePolicy ].
-	limit := anInteger ifNil: [ 25 ].
-	(limit > 0 and: [ matches size > limit ]) ifTrue: [
-		^ (matches first: limit) asArray ].
-	^ matches asArray
+	^ (self publicTools select: [ :tool |
+		   self
+			   tool: tool
+			   matchesQuery: queryString
+			   group: groupString
+			   usingPolicy: aToolExposurePolicy ]) asArray
 ]
 
 { #category : 'registrations' }

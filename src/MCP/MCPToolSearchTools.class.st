@@ -20,39 +20,37 @@ MCPToolSearchTools class >> toolName [
 { #category : 'metadata' }
 MCPToolSearchTools >> buildInputSchema [
 
-	| limitProperty |
-	limitProperty := self
-		                 integerSchemaPropertyNamed: 'limit'
-		                 description: 'Maximum tools to return.'
-		                 default: 25.
-	limitProperty
-		minimum: 0;
-		maximum: 100.
 	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: {
-				  (self
-					   schemaPropertyNamed: 'query'
-					   type: 'string'
-					   description:
-						   'Search text for tool names, descriptions, or groups.').
-				  (self
-					   schemaPropertyNamed: 'group'
-					   type: 'string'
-					   description: 'Optional tool group filter.').
-				  limitProperty };
-		  required: #(  );
-		  additionalProperties: false;
-		  yourself
+		type: 'object';
+		properties: {
+				(self
+					schemaPropertyNamed: 'query'
+					type: 'string'
+					description: 'Search text tool names, descriptions, groups.').
+				(self
+					schemaPropertyNamed: 'group'
+					type: 'string'
+					description: 'Optional tool group filter.').
+				(self
+					schemaPropertyNamed: 'cursor'
+					type: 'string'
+					description: 'Continuation cursor.') };
+		required: #( );
+		additionalProperties: false;
+		yourself
 ]
 
 { #category : 'metadata' }
 MCPToolSearchTools >> buildOutputSchema [
 
 	^ self
-		  standardOutputSchemaForDataProperties:
-		  { self toolsArraySchemaProperty }
-		  required: #( 'tools' )
+		standardOutputSchemaForDataProperties: {
+				self toolsArraySchemaProperty.
+				(self
+					schemaPropertyNamed: 'nextCursor'
+					type: 'string'
+					description: 'Cursor for the next page.') }
+		required: #( 'tools' )
 ]
 
 { #category : 'private - execution' }

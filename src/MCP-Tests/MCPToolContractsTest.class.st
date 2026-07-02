@@ -45,6 +45,23 @@ MCPToolContractsTest >> addUnimplementedResponsibilitiesFor: aClass behavior: aB
 ]
 
 { #category : 'private' }
+MCPToolContractsTest >> allToolSearchMetadataForArguments: arguments [
+
+	| cursor data metadata pageArguments |
+	metadata := OrderedCollection new.
+	cursor := nil.
+	[
+		pageArguments := arguments copy.
+		cursor ifNotNil: [ pageArguments at: #cursor put: cursor ].
+		data := self dataFrom:
+			        (self callToolNamed: 'tool_search' withArguments: pageArguments).
+		metadata addAll: (data at: #tools).
+		cursor := data at: #nextCursor ifAbsent: [ nil ].
+		cursor isNotNil ] whileTrue.
+	^ metadata asArray
+]
+
+{ #category : 'private' }
 MCPToolContractsTest >> assertDebugInputPropertyNamed: propertyName inTool: aTool default: defaultValue maximum: maximumValue [
 
 	| property |
@@ -3105,9 +3122,9 @@ MCPToolContractsTest >> testSearchToolsMatchesMultipleQueryTerms [
 
 	result := self
 		callToolNamed: 'tool_search'
-		withArguments: {
-				(#query -> 'repository branch create switch checkout commit push').
-				(#limit -> 100) } asDictionary.
+		withArguments:
+		{ (#query -> 'repository branch create switch checkout commit push') }
+			asDictionary.
 	names := ((self dataFrom: result) at: #tools) collect: [ :each |
 		each at: #name ].
 	#( 'repository_branch_create' 'repository_branch_switch'
@@ -3120,19 +3137,19 @@ MCPToolContractsTest >> testSearchToolsMatchesPluralQueryTerms [
 
 	| expectations |
 	expectations := {
-		                ('classes' -> 'class_search').
-		                ('repositories' -> 'repository_search').
-		                ('traits' -> 'class_traits_update').
-		                ('variables' -> 'class_shared_variables_update').
-		                ('refactorings' -> 'class_slot_pull_up') }.
+		('classes' -> 'class_search').
+		('repositories' -> 'repository_search').
+		('traits' -> 'class_traits_update').
+		('variables' -> 'class_shared_variables_update').
+		('refactorings' -> 'class_slot_pull_up') }.
 	expectations do: [ :expectation |
-			| names result |
-			result := self callToolNamed: 'tool_search' withArguments: {
-					          (#query -> expectation key).
-					          (#limit -> 100) } asDictionary.
-			names := ((self dataFrom: result) at: #tools) collect: [ :each |
-				         each at: #name ].
-			self assert: (names includes: expectation value) ]
+		| names result |
+		result := self
+			callToolNamed: 'tool_search'
+			withArguments: { (#query -> expectation key) } asDictionary.
+		names := ((self dataFrom: result) at: #tools) collect: [ :each |
+			each at: #name ].
+		self assert: (names includes: expectation value) ]
 ]
 
 { #category : 'tests' }
@@ -3140,19 +3157,36 @@ MCPToolContractsTest >> testSearchToolsMatchesSpecializedClassKeywords [
 
 	| expectations |
 	expectations := {
-		                ('trait composition' -> 'class_traits_update').
-		                ('metaclass trait' -> 'class_side_traits_update').
-		                ('classvar' -> 'class_shared_variables_update').
-		                ('pooldictionary' -> 'class_shared_pools_update').
-		                ('weak layout' -> 'class_layout_update') }.
+		('trait composition' -> 'class_traits_update').
+		('metaclass trait' -> 'class_side_traits_update').
+		('classvar' -> 'class_shared_variables_update').
+		('pooldictionary' -> 'class_shared_pools_update').
+		('weak layout' -> 'class_layout_update') }.
 	expectations do: [ :expectation |
-			| names result |
-			result := self callToolNamed: 'tool_search' withArguments: {
-					          (#query -> expectation key).
-					          (#limit -> 100) } asDictionary.
-			names := ((self dataFrom: result) at: #tools) collect: [ :each |
-				         each at: #name ].
-			self assert: (names includes: expectation value) ]
+		| names |
+		names := (self
+			allToolSearchMetadataForArguments:
+			{ (#query -> expectation key) } asDictionary) collect: [ :each |
+				each at: #name ].
+		self assert: (names includes: expectation value) ]
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testSearchToolsReturnsContinuationCursor [
+
+	| cursor firstData firstNames secondData secondNames |
+	firstData := self dataFrom:
+		             (self callToolNamed: 'tool_search' withArguments: Dictionary new).
+	cursor := firstData at: #nextCursor.
+	firstNames := (firstData at: #tools) collect: [ :each | each at: #name ].
+	secondData := self dataFrom:
+		              (self
+			               callToolNamed: 'tool_search'
+			               withArguments: { (#cursor -> cursor) } asDictionary).
+	secondNames := (secondData at: #tools) collect: [ :each | each at: #name ].
+	self deny: secondNames isEmpty.
+	self deny: (secondNames includes: firstNames first).
+	self deny: firstNames equals: secondNames.
 ]
 
 { #category : 'tests' }
@@ -3205,6 +3239,21 @@ MCPToolContractsTest >> testSearchToolsUseTypedRequestObjects [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testSearchToolsUsesCursorPaginationContract [
+
+	| propertyNames searchTool |
+	searchTool := MCPToolSearchTools new.
+	propertyNames := searchTool inputSchema properties collect: [ :each |
+		each name ].
+	self
+		assert: propertyNames asSet
+		equals: #( 'query' 'group' 'cursor' ) asSet.
+	self
+		assert: (self inputPropertyNamed: 'cursor' inTool: searchTool) type
+		equals: 'string'.
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testServerCanConfigureStaticToolNames [
 
 	| server toolNames |
@@ -3231,7 +3280,7 @@ MCPToolContractsTest >> testServerInitializationDoesNotRenderToolIcons [
 { #category : 'tests' }
 MCPToolContractsTest >> testSpecializedClassAndMethodToolsAreDiscoverableOnly [
 
-	| discoverableOnlyNames metadataByName result |
+	| discoverableOnlyNames metadataByName |
 	discoverableOnlyNames := #( 'class_name_update' 'class_superclass_update'
 	                            'class_package_update'
 	                            'class_comment_update'
@@ -3247,28 +3296,25 @@ MCPToolContractsTest >> testSpecializedClassAndMethodToolsAreDiscoverableOnly [
 	                            'method_class_reference_search'
 	                            'method_variable_reference_search'
 	                            'test_coverage_run' ).
-	result := self
-		callToolNamed: 'tool_search'
-		withArguments: { (#limit -> 100) } asDictionary.
 	metadataByName := Dictionary new.
-	((self dataFrom: result) at: #tools) do: [ :each |
+	(self allToolSearchMetadataForArguments: Dictionary new) do: [ :each |
 		metadataByName at: (each at: #name) put: each ].
 	discoverableOnlyNames do: [ :each |
-			| metadata tool |
-			self assert: (MCPToolRegistry publicToolNames includes: each).
-			self deny: (MCPToolRegistry staticToolNames includes: each).
-			tool := MCPToolRegistry
-				toolNamed: each
-				ifAbsent: [ self fail: 'Missing tool ' , each ].
-			self
-				assert: (MCPToolRegistry exposureForTool: tool)
-				equals: 'discoverable'.
-			metadata := metadataByName
-				at: each
-				ifAbsent: [ self fail: 'Missing discoverable metadata for ' , each ].
-			self
-				assert: metadata keys asSet
-				equals: #( name description ) asSet ]
+		| metadata tool |
+		self assert: (MCPToolRegistry publicToolNames includes: each).
+		self deny: (MCPToolRegistry staticToolNames includes: each).
+		tool := MCPToolRegistry
+			toolNamed: each
+			ifAbsent: [ self fail: 'Missing tool ' , each ].
+		self
+			assert: (MCPToolRegistry exposureForTool: tool)
+			equals: 'discoverable'.
+		metadata := metadataByName
+			at: each
+			ifAbsent: [ self fail: 'Missing discoverable metadata for ' , each ].
+		self
+			assert: metadata keys asSet
+			equals: #( name description ) asSet ]
 ]
 
 { #category : 'tests' }
@@ -3501,32 +3547,19 @@ MCPToolContractsTest >> testToolRegistryReusesRegisteredToolInstances [
 
 	| first searchResults second |
 	first := MCPToolRegistry
-		         toolNamed: 'tool_search'
-		         ifAbsent: [ self fail ].
+		toolNamed: 'tool_search'
+		ifAbsent: [ self fail ].
 	second := MCPToolRegistry
-		          toolNamed: 'tool_search'
-		          ifAbsent: [ self fail ].
+		toolNamed: 'tool_search'
+		ifAbsent: [ self fail ].
 	searchResults := MCPToolRegistry
-		                 toolsMatchingQuery: 'tool'
-		                 group: nil
-		                 limit: 10
-		                 usingPolicy: MCPToolExposurePolicy default.
+		toolsMatchingQuery: 'tool'
+		group: nil
+		usingPolicy: MCPToolExposurePolicy default.
 	self assert: first == second.
-	self assert:
-		(searchResults detect: [ :each | each name = 'tool_search' ])
+	self
+		assert: (searchResults detect: [ :each | each name = 'tool_search' ])
 		== first
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testToolSearchLimitSchemaAdvertisesBounds [
-
-	| limitProperty |
-	limitProperty := self
-		                 inputPropertyNamed: 'limit'
-		                 inTool: MCPToolSearchTools new.
-	self assert: (limitProperty extraProperties at: #minimum) equals: 0.
-	self assert: (limitProperty extraProperties at: #maximum) equals: 100.
-	self assert: (limitProperty extraProperties at: #default) equals: 25
 ]
 
 { #category : 'support' }
