@@ -279,6 +279,19 @@ MCPRepositoryCommand >> signalGitCommandFailed: gitResult action: actionName [
 				(#output -> output) } asDictionary
 ]
 
+{ #category : 'private - validation' }
+MCPRepositoryCommand >> signalSubdirectoryRequiresHeadFor: aRepository [
+
+	MCPCommandError
+		signalErrorCode: #RepositorySubdirectoryRequiresHead
+		message:
+		'Repository subdirectory is not supported before the repository has an initial commit. Attach without subdirectory, commit or adopt the initial head, then update the repository subdirectory.'
+		details: {
+				(#repositoryName -> aRepository name asString).
+				(#subdirectory -> self request subdirectory) }
+				asDictionary
+]
+
 { #category : 'private' }
 MCPRepositoryCommand >> sortedStringsFrom: aCollection [
 
@@ -299,4 +312,12 @@ MCPRepositoryCommand >> unloadDefinitionsAbsentFromLoadedVersions: versions [
 	staleDefinitions do: [ :definition |
 		loader removeDefinition: definition ].
 	loader load
+]
+
+{ #category : 'private - validation' }
+MCPRepositoryCommand >> validateSubdirectorySupportedFor: aRepository [
+
+	self request subdirectory ifNil: [ ^ self ].
+	aRepository project isUnborn ifTrue: [
+		self signalSubdirectoryRequiresHeadFor: aRepository ]
 ]

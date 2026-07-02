@@ -21,6 +21,7 @@ MCPAttachRepositoryCommand >> createRepository [
 	repository pluginManager repositoryWillBeCreated: repository.
 	repository workingCopy initializePackagesFromRepository.
 	self request subdirectory ifNotNil: [ :value |
+		self validateSubdirectorySupportedFor: repository.
 		repository subdirectory: value ].
 	repository pluginManager repositoryWasCreated: repository.
 	repository register.

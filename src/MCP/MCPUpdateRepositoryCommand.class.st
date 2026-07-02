@@ -129,6 +129,7 @@ MCPUpdateRepositoryCommand >> replacePackagesIn: aRepository [
 { #category : 'private - metadata' }
 MCPUpdateRepositoryCommand >> setSubdirectoryOn: aRepository [
 
+	self validateSubdirectorySupportedFor: aRepository.
 	aRepository subdirectory: (self request subdirectory ifNil: [ '' ])
 ]
 
