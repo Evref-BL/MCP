@@ -213,6 +213,7 @@ MCPToolRegistry class >> defaultPublicToolGroups [
 			   MCPToolSearchRepositories.
 			   MCPToolVerifyRepositoryIdentity.
 			   MCPToolListRepositoryChanges.
+			   MCPToolDiscardRepositoryChanges.
 			   MCPToolCreateRepository.
 			   MCPToolAttachRepository.
 			   MCPToolUpdateRepository.
@@ -295,7 +296,7 @@ MCPToolRegistry class >> defaultPublicToolGroups [
 			   MCPToolDebugCapture.
 			   MCPToolDebugTest.
 			   MCPToolUpdateDebugMethod }).
-		  ('image-runtime' -> { MCPToolEvaluate }) }
+		  ('runtime' -> { MCPToolEvaluate }) }
 ]
 
 { #category : 'registrations' }

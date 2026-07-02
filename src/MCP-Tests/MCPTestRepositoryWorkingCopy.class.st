@@ -34,6 +34,14 @@ MCPTestRepositoryWorkingCopy >> adoptCommit: aCommit [
 			owningRepository modifiedPackageNames: #(  ) ]
 ]
 
+{ #category : 'actions' }
+MCPTestRepositoryWorkingCopy >> discardChanges [
+
+	(modifiedPackages ifNil: [ #(  ) ]) do: [ :each |
+		each beDirty: false ].
+	self repository recordAction: 'discard'
+]
+
 { #category : 'testing' }
 MCPTestRepositoryWorkingCopy >> isModified [
 
