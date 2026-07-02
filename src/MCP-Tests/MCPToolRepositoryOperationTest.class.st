@@ -40,10 +40,8 @@ MCPToolRepositoryOperationTest >> callToolWith: someArguments [
 		             at: 'discard' put: MCPToolDiscardRepositoryChanges;
 		             at: 'remoteAdd' put: MCPToolAddRepositoryRemote;
 		             at: 'remoteRemove' put: MCPToolRemoveRepositoryRemote;
-		             at: 'remoteUrlUpdate'
-		             put: MCPToolUpdateRepositoryRemoteUrl;
-		             at: 'remoteNameUpdate'
-		             put: MCPToolUpdateRepositoryRemoteName;
+		             at: 'remoteUpdate'
+		             put: MCPToolUpdateRepositoryRemote;
 		             at: 'export' put: MCPToolExportRepository;
 		             at: 'commit' put: MCPToolCommitRepository;
 		             at: 'adoptHead' put: MCPToolAdoptRepositoryHead;
@@ -1662,56 +1660,40 @@ MCPToolRepositoryOperationTest >> testRemoteToolsManageGitRemotes [
 		              named: repositoryName
 		              location: location pathString.
 	[
-		self withRegisteredRepository: repository do: [
-				result := self callToolWith: {
-						          (#action -> 'remoteAdd').
-						          (#repositoryName -> repositoryName).
-						          (#remoteName -> 'origin').
-						          (#remoteUrl -> 'git@example.com:one.git') }
-						          asDictionary.
-				self
-					deny: (self resultIndicatesError: result)
-					description: (self summaryFrom: result).
-				remote := self
-					          remoteNamed: 'origin'
-					          in: ((self dataFrom: result) at: #remotes).
-				self assert: (remote at: #url) equals: 'git@example.com:one.git'.
+	self withRegisteredRepository: repository do: [
+		result := self callToolWith: {
+				          (#action -> 'remoteAdd').
+				          (#repositoryName -> repositoryName).
+				          (#remoteName -> 'origin').
+				          (#remoteUrl -> 'git@example.com:one.git') }
+			          asDictionary.
+		self deny: (self resultIndicatesError: result)
+			description: (self summaryFrom: result).
+		remote := self
+			          remoteNamed: 'origin'
+			          in: ((self dataFrom: result) at: #remotes).
+		self assert: (remote at: #url) equals: 'git@example.com:one.git'.
 
-				result := self callToolWith: {
-						          (#action -> 'remoteUrlUpdate').
-						          (#repositoryName -> repositoryName).
-						          (#remoteName -> 'origin').
-						          (#remoteUrl -> 'git@example.com:two.git') }
-						          asDictionary.
-				self
-					deny: (self resultIndicatesError: result)
-					description: (self summaryFrom: result).
-				remote := self
-					          remoteNamed: 'origin'
-					          in: ((self dataFrom: result) at: #remotes).
-				self assert: (remote at: #url) equals: 'git@example.com:two.git'.
+		result := self callToolWith: {
+				          (#action -> 'remoteUpdate').
+				          (#repositoryName -> repositoryName).
+				          (#remoteName -> 'origin').
+				          (#remoteUrl -> 'git@example.com:two.git') }
+			          asDictionary.
+		self deny: (self resultIndicatesError: result)
+			description: (self summaryFrom: result).
+		remote := self
+			          remoteNamed: 'origin'
+			          in: ((self dataFrom: result) at: #remotes).
+		self assert: (remote at: #url) equals: 'git@example.com:two.git'.
 
-				result := self callToolWith: {
-						          (#action -> 'remoteNameUpdate').
-						          (#repositoryName -> repositoryName).
-						          (#remoteName -> 'origin').
-						          (#newRemoteName -> 'upstream') } asDictionary.
-				self
-					deny: (self resultIndicatesError: result)
-					description: (self summaryFrom: result).
-				remote := self
-					          remoteNamed: 'upstream'
-					          in: ((self dataFrom: result) at: #remotes).
-				self assert: (remote at: #url) equals: 'git@example.com:two.git'.
-
-				result := self callToolWith: {
-						          (#action -> 'remoteRemove').
-						          (#repositoryName -> repositoryName).
-						          (#remoteName -> 'upstream') } asDictionary.
-				self
-					deny: (self resultIndicatesError: result)
-					description: (self summaryFrom: result).
-				self assert: ((self dataFrom: result) at: #remotes) equals: #(  ) ] ]
+		result := self callToolWith: {
+				          (#action -> 'remoteRemove').
+				          (#repositoryName -> repositoryName).
+				          (#remoteName -> 'origin') } asDictionary.
+		self deny: (self resultIndicatesError: result)
+			description: (self summaryFrom: result).
+		self assert: ((self dataFrom: result) at: #remotes) equals: #(  ) ] ]
 		ensure: [ self deleteDirectoryIfExists: location ]
 ]
 

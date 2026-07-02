@@ -734,24 +734,16 @@ MCPToolContractsTest >> repositoryToolFlowSpecs [
 			  asDictionary.
 
 		  {
-			  (#toolClass -> MCPToolUpdateRepositoryRemoteUrl).
+			  (#toolClass -> MCPToolUpdateRepositoryRemote).
 			  (#arguments -> {
 				   (#repositoryName -> 'MCP').
 				   (#remoteName -> 'origin').
 				   (#remoteUrl -> 'git@example.com:mcp.git') } asDictionary).
 			  (#requestClass -> MCPRepositoryRemoteRequest).
-			  (#commandClass -> MCPUpdateRepositoryRemoteUrlCommand) }
+			  (#commandClass -> MCPUpdateRepositoryRemoteCommand) }
 			  asDictionary.
 
-		  {
-			  (#toolClass -> MCPToolUpdateRepositoryRemoteName).
-			  (#arguments -> {
-				   (#repositoryName -> 'MCP').
-				   (#remoteName -> 'origin').
-				   (#newRemoteName -> 'upstream') } asDictionary).
-			  (#requestClass -> MCPRepositoryRemoteRequest).
-			  (#commandClass -> MCPUpdateRepositoryRemoteNameCommand) }
-			  asDictionary.
+
 
 		  {
 			  (#toolClass -> MCPToolPullRepository).
@@ -910,8 +902,8 @@ MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 			MCPToolUpdateRepository.
 			MCPToolAddRepositoryRemote.
 			MCPToolRemoveRepositoryRemote.
-			MCPToolUpdateRepositoryRemoteUrl.
-			MCPToolUpdateRepositoryRemoteName.
+			MCPToolUpdateRepositoryRemote.
+
 			MCPToolExportRepository.
 			MCPToolCommitRepository.
 			MCPToolFetchRepository.
@@ -2480,13 +2472,7 @@ MCPToolContractsTest >> testRequestedToolIconsAreSelected [
 			leftBadgeIconNamed: #remote
 			rightBadgeIconNamed: #delete) asJRPCJSON.
 	self
-		assert: MCPToolUpdateRepositoryRemoteUrl new icons first asJRPCJSON
-		equals: (MCPStructureIcon
-			compositeBaseIconNamed: #git
-			leftBadgeIconNamed: #remote
-			rightBadgeIconNamed: #edit) asJRPCJSON.
-	self
-		assert: MCPToolUpdateRepositoryRemoteName new icons first asJRPCJSON
+		assert: MCPToolUpdateRepositoryRemote new icons first asJRPCJSON
 		equals: (MCPStructureIcon
 			compositeBaseIconNamed: #git
 			leftBadgeIconNamed: #remote

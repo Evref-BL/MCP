@@ -2,7 +2,7 @@
 MCP tool that updates the URL for one repository remote.
 "
 Class {
-	#name : 'MCPToolUpdateRepositoryRemoteUrl',
+	#name : 'MCPToolUpdateRepositoryRemote',
 	#superclass : 'MCPToolRepositoryRemoteOperation',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
@@ -10,21 +10,20 @@ Class {
 }
 
 { #category : 'metadata' }
-MCPToolUpdateRepositoryRemoteUrl class >> toolName [
+MCPToolUpdateRepositoryRemote class >> toolName [
 
-	^ 'repository_remote_url_update'
+	^ 'repository_remote_update'
 ]
 
 { #category : 'private - specs' }
-MCPToolUpdateRepositoryRemoteUrl >> repositoryToolSpec [
+MCPToolUpdateRepositoryRemote >> repositoryToolSpec [
 
 	^ {
-		  (#title -> 'Update Repository Remote URL').
-		  (#description
-		   -> 'Update the URL configured for one repository remote.').
-		  (#action -> 'remoteUrlUpdate').
+		  (#title -> 'Update Repository Remote').
+		  (#description -> 'Update the URL configured for one repository remote.').
+		  (#action -> 'remoteUpdate').
 		  (#requestClass -> MCPRepositoryRemoteRequest).
-		  (#commandClass -> MCPUpdateRepositoryRemoteUrlCommand).
+		  (#commandClass -> MCPUpdateRepositoryRemoteCommand).
 		  (#inputProperties -> {
 			   self remoteNameSchemaProperty.
 			   self remoteUrlSchemaProperty }).
