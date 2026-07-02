@@ -653,7 +653,7 @@ MCPToolContractsTest >> methodSendsSubclassResponsibility: aCompiledMethod [
 	^ false
 ]
 
-{ #category : 'private' }
+{ #category : 'support' }
 MCPToolContractsTest >> repositoryToolFlowSpecs [
 
 	^ {
@@ -670,6 +670,11 @@ MCPToolContractsTest >> repositoryToolFlowSpecs [
 			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
 			  (#requestClass -> MCPRepositoryDiffRequest).
 			  (#commandClass -> MCPRepositoryDiffCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolDiscardRepositoryChanges).
+			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
+			  (#requestClass -> MCPRepositoryDiscardRequest).
+			  (#commandClass -> MCPDiscardRepositoryChangesCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolCreateRepository).
 			  (#arguments -> {
@@ -859,6 +864,7 @@ MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 			MCPToolSearchRepositories.
 			MCPToolVerifyRepositoryIdentity.
 			MCPToolListRepositoryChanges.
+			MCPToolDiscardRepositoryChanges.
 			MCPToolCreateRepository.
 			MCPToolAttachRepository.
 			MCPToolUpdateRepository.

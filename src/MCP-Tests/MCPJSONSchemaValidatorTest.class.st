@@ -33,6 +33,8 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 			   (#branchName -> 'main') } asDictionary).
 		  (MCPToolListRepositoryChanges
 		   -> { (#repositoryName -> 'MCP') } asDictionary).
+		  (MCPToolDiscardRepositoryChanges
+		   -> { (#repositoryName -> 'MCP') } asDictionary).
 		  (MCPToolRepositoryOperation -> {
 			   (#action -> 'update').
 			   (#repositoryName -> 'MCP').

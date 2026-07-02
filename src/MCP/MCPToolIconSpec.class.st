@@ -30,6 +30,7 @@ MCPToolIconSpec class >> actionIconMap [
 			  ('call' -> #go).
 			  ('verify' -> #accept).
 			  ('list' -> #browse).
+			  ('discard' -> #trash).
 			  ('create' -> #add).
 			  ('attach' -> #publish).
 			  ('update' -> #edit).

@@ -28,8 +28,7 @@ MCPToolRepositoryOperationTest >> callToolWith: someArguments [
 	arguments := someArguments copy.
 	action := arguments
 		          removeKey: #action
-		          ifAbsent: [
-		          arguments removeKey: #action ifAbsent: [ nil ] ].
+		          ifAbsent: [ arguments removeKey: #action ifAbsent: [ nil ] ].
 	toolClass := Dictionary new
 		             at: 'create' put: MCPToolCreateRepository;
 		             at: 'attach' put: MCPToolAttachRepository;
@@ -37,6 +36,7 @@ MCPToolRepositoryOperationTest >> callToolWith: someArguments [
 		             at: 'verifyIdentity'
 		             put: MCPToolVerifyRepositoryIdentity;
 		             at: 'diff' put: MCPToolListRepositoryChanges;
+		             at: 'discard' put: MCPToolDiscardRepositoryChanges;
 		             at: 'export' put: MCPToolExportRepository;
 		             at: 'commit' put: MCPToolCommitRepository;
 		             at: 'adoptHead' put: MCPToolAdoptRepositoryHead;
@@ -903,6 +903,63 @@ MCPToolRepositoryOperationTest >> testDiffReportsWorkingCopyDiffWithoutWriting [
 					self deny: (data includesKey: #modifiedPaths).
 					self deny: (childNames anySatisfy: [ :each |
 							 each includesSubstring: packageName ]) ] ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testDiscardCleanRepositoryDoesNothing [
+
+	| data repository result |
+	repository := self newTestRepositoryNamed:
+		              'MCP Discard Clean Test Repository'.
+	self withRegisteredRepository: repository do: [
+			result := self callToolWith: {
+				          (#action -> 'discard').
+				          (#repositoryName -> repository name) } asDictionary.
+			data := self dataFrom: result.
+			self deny: (result at: #isError ifAbsent: [ false ]).
+			self assert: (data at: #isEmpty) equals: true.
+			self assert: (data at: #changeCount) equals: 0.
+			self deny: (data includesKey: #discardedPackageNames).
+			self deny: (data includesKey: #discardedPaths).
+			self assert: repository actionLog asArray equals: #(  ) ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testDiscardClearsImageModifiedPackages [
+
+	| data repository result |
+	repository := self newTestRepositoryNamed:
+		              'MCP Discard Package Only Test Repository'.
+	repository modifiedPackageNames: #( 'MCP-Test-Dirty' ).
+	self withRegisteredRepository: repository do: [
+			result := self callToolWith: {
+				          (#action -> 'discard').
+				          (#repositoryName -> repository name) } asDictionary.
+			data := self dataFrom: result.
+			self deny: (result at: #isError ifAbsent: [ false ]).
+			self assert: (data at: #isEmpty) equals: false.
+			self assert: (data at: #changeCount) equals: 1.
+			self
+				assert: (data at: #discardedPackageNames)
+				equals: #( 'MCP-Test-Dirty' ).
+			self deny: (data includesKey: #discardedPaths).
+			self assert: repository modifiedPackages isEmpty.
+			self assert: repository actionLog asArray equals: #( 'discard' ) ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testDiscardParsesAndDispatchesToDiscardCommand [
+
+	| command parsedRequest rawRequest tool |
+	tool := MCPToolDiscardRepositoryChanges new.
+	rawRequest := tool requestFromToolCallArguments:
+		              { (#repositoryName -> 'MCP') } asDictionary.
+	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
+	command := tool commandForRequest: parsedRequest.
+
+	self assert: parsedRequest class equals: MCPRepositoryDiscardRequest.
+	self assert: parsedRequest operation equals: 'discard'.
+	self assert: command class equals: MCPDiscardRepositoryChangesCommand
 ]
 
 { #category : 'tests' }
