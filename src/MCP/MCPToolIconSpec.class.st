@@ -36,7 +36,7 @@ MCPToolIconSpec class >> actionIconMap [
 			  ('update' -> #edit).
 			  ('export' -> #saveToUrl).
 			  ('commit' -> #save).
-			  ('fetch' -> #remote).
+			  ('fetch' -> #smallUpdate).
 			  ('pull' -> #down).
 			  ('push' -> #up).
 			  ('switch' -> #refreshCircling).
@@ -161,6 +161,7 @@ MCPToolIconSpec class >> objectIconMap [
 
 	^ Dictionary newFrom: {
 			  ('identity' -> #info).
+			  ('remote' -> #remote).
 			  ('change' -> #changeUpdate).
 			  ('branch' -> #branch).
 			  ('head' -> #up).

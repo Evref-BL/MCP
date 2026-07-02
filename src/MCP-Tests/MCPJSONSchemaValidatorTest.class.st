@@ -39,6 +39,17 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 			   (#action -> 'update').
 			   (#repositoryName -> 'MCP').
 			   (#addPackageNames -> #( 'MCP' )) } asDictionary).
+		  (MCPToolAddRepositoryRemote -> {
+			   (#repositoryName -> 'MCP').
+			   (#remoteName -> 'origin').
+			   (#remoteUrl -> 'git@example.com:mcp.git') } asDictionary).
+		  (MCPToolRemoveRepositoryRemote -> {
+			   (#repositoryName -> 'MCP').
+			   (#remoteName -> 'origin') } asDictionary).
+		  (MCPToolUpdateRepositoryRemote -> {
+			   (#repositoryName -> 'MCP').
+			   (#remoteName -> 'origin').
+			   (#remoteUrl -> 'git@example.com:mcp.git') } asDictionary).
 		  (MCPToolExportRepository
 		   -> { (#repositoryName -> 'MCP') } asDictionary).
 		  (MCPToolCommitRepository -> {

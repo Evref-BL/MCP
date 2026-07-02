@@ -89,6 +89,40 @@ MCPToolRepositoryToolsTest >> repositoryToolSpecifications [
 			  (#action -> 'fetch').
 			  (#requestClass -> MCPRepositoryFetchRequest).
 			  (#commandClass -> MCPFetchRepositoryCommand) } asDictionary.
+
+		  {
+			  (#toolClass -> MCPToolAddRepositoryRemote).
+			  (#arguments -> {
+				   (#repositoryName -> 'MCP').
+				   (#remoteName -> 'origin').
+				   (#remoteUrl -> 'git@example.com:mcp.git') } asDictionary).
+			  (#action -> 'remoteAdd').
+			  (#requestClass -> MCPRepositoryRemoteRequest).
+			  (#commandClass -> MCPAddRepositoryRemoteCommand) } asDictionary.
+
+		  {
+			  (#toolClass -> MCPToolRemoveRepositoryRemote).
+			  (#arguments -> {
+				   (#repositoryName -> 'MCP').
+				   (#remoteName -> 'origin') } asDictionary).
+			  (#action -> 'remoteRemove').
+			  (#requestClass -> MCPRepositoryRemoteRequest).
+			  (#commandClass -> MCPRemoveRepositoryRemoteCommand) }
+			  asDictionary.
+
+		  {
+			  (#toolClass -> MCPToolUpdateRepositoryRemote).
+			  (#arguments -> {
+				   (#repositoryName -> 'MCP').
+				   (#remoteName -> 'origin').
+				   (#remoteUrl -> 'git@example.com:mcp.git') } asDictionary).
+			  (#action -> 'remoteUpdate').
+			  (#requestClass -> MCPRepositoryRemoteRequest).
+			  (#commandClass -> MCPUpdateRepositoryRemoteCommand) }
+			  asDictionary.
+
+
+
 		  {
 			  (#toolClass -> MCPToolPullRepository).
 			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
@@ -143,15 +177,16 @@ MCPToolRepositoryToolsTest >> testRepositoryToolsAreDiscoverableWithExpectedRisk
 	metadataByName := self metadataByNameForRepositoryTools.
 	#( 'repository_identity_verify' 'repository_change_list'
 	   'repository_create' 'repository_attach' 'repository_update'
-	   'repository_export' 'repository_commit' 'repository_fetch'
-	   'repository_pull' 'repository_push' 'repository_branch_create'
-	   'repository_branch_switch' 'repository_branch_checkout'
-	   'repository_head_adopt' ) do: [ :toolName |
+	   'repository_remote_add' 'repository_remote_remove'
+	   'repository_remote_update' 'repository_export' 'repository_commit'
+	   'repository_fetch' 'repository_pull' 'repository_push'
+	   'repository_branch_create' 'repository_branch_switch'
+	   'repository_branch_checkout' 'repository_head_adopt' ) do: [ :toolName |
 			| metadata tool |
 			metadata := metadataByName at: toolName.
 			tool := MCPToolRegistry
-				toolNamed: toolName
-				ifAbsent: [ self fail: 'Missing tool ' , toolName ].
+				        toolNamed: toolName
+				        ifAbsent: [ self fail: 'Missing tool ' , toolName ].
 			self
 				assert: (MCPToolRegistry exposureForTool: tool)
 				equals: 'discoverable'.
@@ -173,6 +208,12 @@ MCPToolRepositoryToolsTest >> testRepositoryToolsRequiredInputs [
 		                (MCPToolCreateRepository -> #( 'name' 'location' )).
 		                (MCPToolAttachRepository -> #( 'name' 'location' )).
 		                (MCPToolUpdateRepository -> #( 'repositoryName' )).
+		                (MCPToolAddRepositoryRemote
+		                 -> #( 'repositoryName' 'remoteName' 'remoteUrl' )).
+		                (MCPToolRemoveRepositoryRemote
+		                 -> #( 'repositoryName' 'remoteName' )).
+		                (MCPToolUpdateRepositoryRemote
+		                 -> #( 'repositoryName' 'remoteName' 'remoteUrl' )).
 		                (MCPToolExportRepository -> #( 'repositoryName' )).
 		                (MCPToolCommitRepository
 		                 -> #( 'repositoryName' 'message' )).
@@ -236,6 +277,16 @@ MCPToolRepositoryToolsTest >> testRepositoryToolsUseDedicatedInputs [
 			                 #( 'repositoryName' 'location' 'subdirectory'
 			                    'packageNames' 'addPackageNames'
 			                    'removePackageNames' )).
+		                (MCPToolAddRepositoryRemote
+		                 ->
+		                 #( 'repositoryName' 'location' 'remoteName'
+		                    'remoteUrl' )).
+		                (MCPToolRemoveRepositoryRemote
+		                 -> #( 'repositoryName' 'location' 'remoteName' )).
+		                (MCPToolUpdateRepositoryRemote
+		                 ->
+		                 #( 'repositoryName' 'location' 'remoteName'
+		                    'remoteUrl' )).
 		                (MCPToolExportRepository
 		                 -> #( 'repositoryName' 'location' )).
 		                (MCPToolCommitRepository

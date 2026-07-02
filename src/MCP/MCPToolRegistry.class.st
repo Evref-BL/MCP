@@ -217,6 +217,10 @@ MCPToolRegistry class >> defaultPublicToolGroups [
 			   MCPToolCreateRepository.
 			   MCPToolAttachRepository.
 			   MCPToolUpdateRepository.
+			   MCPToolAddRepositoryRemote.
+			   MCPToolRemoveRepositoryRemote.
+			   MCPToolUpdateRepositoryRemote.
+
 			   MCPToolExportRepository.
 			   MCPToolCommitRepository.
 			   MCPToolFetchRepository.
