@@ -332,7 +332,7 @@ MCPToolRepositoryOperation >> subdirectorySchemaProperty [
 		  schemaPropertyNamed: 'subdirectory'
 		  type: 'string'
 		  description:
-		  'Expected source subdirectory for repository identity verification. Empty string is accepted.'
+		  'Repository source subdirectory. For attaching or updating an unborn repository, omit until an initial commit/head exists.'
 ]
 
 { #category : 'metadata' }

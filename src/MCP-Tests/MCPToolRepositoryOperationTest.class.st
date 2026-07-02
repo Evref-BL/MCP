@@ -458,6 +458,34 @@ MCPToolRepositoryOperationTest >> testAttachRegistersLinkedGitWorktreeCheckout [
 ]
 
 { #category : 'tests' }
+MCPToolRepositoryOperationTest >> testAttachRejectsSubdirectoryForUnbornRepository [
+
+	| error location repositoryName result |
+	repositoryName := 'MCP Attach Unborn Subdirectory Test'.
+	location := self temporaryRepositoryLocationNamed:
+		            'MCPToolRepositoryOperationTestAttachUnbornSubdirectory'.
+	self
+		withCleanRepositoryNamed: repositoryName
+		location: location
+		do: [
+			location ensureCreateDirectory.
+			self shellCommand: 'git init --initial-branch=main '
+				, (self shellQuote: location pathString).
+			result := self callToolWith: {
+					          (#action -> 'attach').
+					          (#name -> repositoryName).
+					          (#location -> location pathString).
+					          (#subdirectory -> 'src') } asDictionary.
+			self assert: (self resultIndicatesError: result).
+			error := self errorFrom: result.
+			self
+				assert: (error at: #errorCode)
+				equals: 'RepositorySubdirectoryRequiresHead'.
+			self
+				assert: ((self summaryFrom: result) includesSubstring: 'initial commit') ]
+]
+
+{ #category : 'tests' }
 MCPToolRepositoryOperationTest >> testAttachReportsDuplicateRepository [
 
 	| location repository repositoryName result |
@@ -1917,6 +1945,39 @@ MCPToolRepositoryOperationTest >> testUpdateCanReplacePackageMembership [
 			self
 				assert: (data at: #removedPackageNames)
 				equals: #( 'MCPToolRepositoryOperationOldA' ) ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testUpdateRejectsSubdirectoryForUnbornRepository [
+
+	| error location repositoryName result |
+	repositoryName := 'MCP Update Unborn Subdirectory Test'.
+	location := self temporaryRepositoryLocationNamed:
+		            'MCPToolRepositoryOperationTestUpdateUnbornSubdirectory'.
+	self
+		withCleanRepositoryNamed: repositoryName
+		location: location
+		do: [
+			location ensureCreateDirectory.
+			self shellCommand: 'git init --initial-branch=main '
+				, (self shellQuote: location pathString).
+			result := self callToolWith: {
+					          (#action -> 'attach').
+					          (#name -> repositoryName).
+					          (#location -> location pathString) } asDictionary.
+			self deny: (self resultIndicatesError: result)
+				description: (self summaryFrom: result).
+			result := self callToolWith: {
+					          (#action -> 'update').
+					          (#repositoryName -> repositoryName).
+					          (#subdirectory -> 'src') } asDictionary.
+			self assert: (self resultIndicatesError: result).
+			error := self errorFrom: result.
+			self
+				assert: (error at: #errorCode)
+				equals: 'RepositorySubdirectoryRequiresHead'.
+			self
+				assert: ((self summaryFrom: result) includesSubstring: 'initial commit') ]
 ]
 
 { #category : 'tests' }
