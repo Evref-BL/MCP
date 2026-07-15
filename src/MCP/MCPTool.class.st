@@ -284,7 +284,7 @@ MCPTool >> icons [
 { #category : 'metadata' }
 MCPTool >> inputSchema [
 
-	^ inputSchema ifNil: [ inputSchema := self buildInputSchema ]
+	^ self buildInputSchema
 ]
 
 { #category : 'private - schema' }
@@ -315,7 +315,7 @@ MCPTool >> name [
 { #category : 'metadata' }
 MCPTool >> outputSchema [
 
-	^ outputSchema ifNil: [ outputSchema := self buildOutputSchema ]
+	^ self buildOutputSchema
 ]
 
 { #category : 'private - request' }

@@ -2246,6 +2246,13 @@ MCPToolContractsTest >> testProjectMethodsDoNotSendReflectiveProtocolChecks [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testProtocolVersionNegotiation [
+
+	self assert: (MCP negotiatedProtocolVersionFor: '2025-06-18') equals: '2025-06-18'.
+	self assert: (MCP negotiatedProtocolVersionFor: '1900-01-01') equals: MCP latestProtocolVersion
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testPublicToolsDoNotExposeOperationInput [
 
 	MCPToolRegistry publicTools do: [ :tool |
@@ -3562,6 +3569,15 @@ MCPToolContractsTest >> testToolRegistryReusesRegisteredToolInstances [
 	self
 		assert: (searchResults detect: [ :each | each name = 'tool_search' ])
 		== first
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testToolSchemasAreRebuiltFromLiveCode [
+
+	| tool |
+	tool := MCPToolCompileMethod new.
+	self deny: tool inputSchema identicalTo: tool inputSchema.
+	self deny: tool outputSchema identicalTo: tool outputSchema
 ]
 
 { #category : 'support' }
