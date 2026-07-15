@@ -1933,8 +1933,10 @@ MCPToolContractsTest >> testMethodMutationToolsHaveAccurateNamesAndRequiredArgum
 		selectorPropertyNames.
 		protocolPropertyNames } do: [ :each |
 			self deny: (each includes: 'operation').
-			self assert: (each includes: 'classSide').
-			self assert: (each includes: 'force') ].
+			self assert: (each includes: 'classSide') ].
+	self deny: (createPropertyNames includes: 'force').
+	self assert: (selectorPropertyNames includes: 'force').
+	self assert: (protocolPropertyNames includes: 'force').
 	self assert: (selectorPropertyNames includes: 'packageNames').
 	self assert: (selectorPropertyNames includes: 'classNames').
 	self assert: (selectorPropertyNames includes: 'hierarchyClassNames').

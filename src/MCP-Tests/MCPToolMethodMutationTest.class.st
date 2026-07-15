@@ -1152,15 +1152,15 @@ MCPToolMethodMutationTest >> testMethodToolSchemasDeclareExpectedInputs [
 	| classSideProperty createPropertyNames protocolPropertyNames selectorPropertyNames |
 	createPropertyNames := MCPToolCompileMethod new inputSchema
 		                       properties collect: [ :each | each name ].
-	selectorPropertyNames := MCPToolUpdateMethodSelector new inputSchema
-		                         properties collect: [ :each | each name ].
-	protocolPropertyNames := MCPToolUpdateMethodProtocol new inputSchema
-		                         properties collect: [ :each | each name ].
+	selectorPropertyNames := MCPToolUpdateMethodSelector new inputSchema properties
+		                         collect: [ :each | each name ].
+	protocolPropertyNames := MCPToolUpdateMethodProtocol new inputSchema properties
+		                         collect: [ :each | each name ].
 	classSideProperty := MCPToolCompileMethod new inputSchema properties
 		                     detect: [ :each | each name = 'classSide' ].
 	self
 		assert: createPropertyNames asArray
-		equals: #( 'className' 'classSide' 'force' 'source' 'protocol' ).
+		equals: #( 'className' 'classSide' 'source' 'protocol' ).
 	self
 		assert: selectorPropertyNames asArray
 		equals: #( 'className' 'classSide' 'force' 'selector' 'newSelector'
@@ -1169,17 +1169,13 @@ MCPToolMethodMutationTest >> testMethodToolSchemasDeclareExpectedInputs [
 	self
 		assert: protocolPropertyNames asArray
 		equals: #( 'className' 'classSide' 'force' 'selector' 'protocol' ).
-	self
-		assert: MCPToolCompileMethod new inputSchema required asSet
+	self assert: MCPToolCompileMethod new inputSchema required asSet
 		equals: #( 'className' 'source' 'protocol' ) asSet.
-	self
-		assert: MCPToolUpdateMethodSelector new inputSchema required asSet
+	self assert: MCPToolUpdateMethodSelector new inputSchema required asSet
 		equals: #( 'className' 'selector' 'newSelector' ) asSet.
-	self
-		assert: MCPToolUpdateMethodProtocol new inputSchema required asSet
+	self assert: MCPToolUpdateMethodProtocol new inputSchema required asSet
 		equals: #( 'className' 'selector' 'protocol' ) asSet.
-	self
-		assert: (classSideProperty extraProperties at: #default)
+	self assert: (classSideProperty extraProperties at: #default)
 		equals: false
 ]
 

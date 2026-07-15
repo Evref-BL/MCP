@@ -38,7 +38,6 @@ MCPToolCompileMethod >> methodToolSpec [
 				    description: 'Whether to compile on the class side.';
 				    default: false;
 				    yourself).
-			   self forceSchemaProperty.
 			   (MCPStructureProperties new
 				    name: 'source';
 				    type: 'string';
