@@ -44,7 +44,7 @@ BaselineOfMCP >> defineGroups: spec [
 		group: 'UI' with: #( 'MCP-UI' );
 		group: 'Tests' with: #( 'MCP-Tests-Resources' 'MCP-Tests' 'MCP-Tests-Resources-Extensions' );
 		group: 'UI Tests' with: #( 'MCP-UI-Tests' );
-		group: 'default' with: #( 'Core' 'UI' )
+		group: 'default' with: #( 'Core' 'UI' 'Tests' 'UI Tests' )
 ]
 
 { #category : 'baselines' }

@@ -33,11 +33,11 @@ spec
 
 ## Load Groups
 
-The default load includes the headless server and optional UI.
+The default load includes the server, optional UI, and their tests.
 
 | Group | Contents |
 | --- | --- |
-| `default` | `Core` and `UI` |
+| `default` | `Core`, `UI`, `Tests`, and `UI Tests` |
 | `Core` | The `MCP` server package |
 | `UI` | `MCP-UI` and its required core package |
 | `Tests` | Core server tests and test resources |

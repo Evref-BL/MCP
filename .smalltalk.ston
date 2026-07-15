@@ -7,7 +7,6 @@ SmalltalkCISpec {
     SCIMetacelloLoadSpec {
       #baseline : 'MCP',
       #directory : 'src',
-      #load : [ 'Tests', 'UI Tests' ],
       #ignoreImage : true,
       #onConflict : #useIncoming,
       #onUpgrade : #useIncoming
