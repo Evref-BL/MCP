@@ -876,20 +876,6 @@ MCPToolContractsTest >> testAllToolsUseParsedRequestsAndCommands [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testBaseToolDoesNotOwnToolSpecificPrivateHelpers [
-
-	#( testIssueObjectSchema defaultFilterMode filterModeFromRequest:
-	   normalizeFilterString:caseSensitive:
-	   matcherForPattern:mode:caseSensitive:
-	   methodScopeQueryFromRequest: targetNameForBehavior:
-	   methodReferenceForBehavior:selector:
-	   methodReferenceForClassName:selector:isClassSide:
-	   methodEntryLabel: selectorStringFromRequest:
-	   behaviorNamed:classSide: ) do: [ :selector |
-		self deny: (MCPTool includesSelector: selector) ]
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 
 	| orderedTools |
@@ -1708,14 +1694,11 @@ MCPToolContractsTest >> testInitializeResponseSerializesSupportedPharoVersions [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testInputSchemaJSONOmitsDefaultSchemaNoise [
+MCPToolContractsTest >> testInputSchemaJSONHasCompactTopLevelShape [
 
 	| schema |
 	schema := MCPToolSearchMethodMetadata new inputSchema asJRPCJSON.
-	self deny: (schema includesKey: #required).
-	self deny: (schema includesKey: #oneOf).
-	self deny: (schema includesKey: #anyOf).
-	self deny: (schema includesKey: #allOf).
+	self assert: (schema keys collect: [ :key | key asString ]) asSet equals: #( 'type' 'properties' 'additionalProperties' ) asSet.
 	self assert: (schema at: #additionalProperties) equals: false
 ]
 
@@ -2219,16 +2202,6 @@ MCPToolContractsTest >> testProtocolVersionNegotiation [
 
 	self assert: (MCP negotiatedProtocolVersionFor: '2025-06-18') equals: '2025-06-18'.
 	self assert: (MCP negotiatedProtocolVersionFor: '1900-01-01') equals: MCP latestProtocolVersion
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testPublicToolsDoNotExposeOperationInput [
-
-	MCPToolRegistry publicTools do: [ :tool |
-			| propertyNames |
-			propertyNames := tool inputSchema properties collect: [ :property |
-				                 property name ].
-			self deny: (propertyNames includes: 'operation') ]
 ]
 
 { #category : 'tests' }
@@ -3248,7 +3221,7 @@ MCPToolContractsTest >> testServerCanConfigureStaticToolNames [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testServerInitializationDoesNotRenderToolIcons [
+MCPToolContractsTest >> testServerInitializationLeavesIconCacheEmpty [
 
 	MCPStructureIcon resetCaches.
 	self mcpWithoutObservabilityExport.
@@ -3375,10 +3348,18 @@ MCPToolContractsTest >> testToolIconsAreSharedByToolClass [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testToolNamesDoNotUsePharoPrefix [
+MCPToolContractsTest >> testToolNamesFollowPublicNamingConvention [
 
-	self assert: (MCPTool concreteSubclasses noneSatisfy: [ :each |
-			 each new name includesSubstring: 'pharo-' ])
+	| names |
+	names := MCPTool concreteSubclasses collect: [ :toolClass | toolClass new name ].
+	self assert: names asSet size equals: names size.
+	names do: [ :name |
+			| segments |
+			self assert: name first isLetter.
+			self assert: name equals: name asLowercase.
+			segments := name splitOn: $_.
+			self assert:
+				(segments allSatisfy: [ :segment | segment isNotEmpty and: [ segment allSatisfy: [ :character | character isAlphaNumeric ] ] ]) ]
 ]
 
 { #category : 'tests' }

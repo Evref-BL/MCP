@@ -494,25 +494,17 @@ MCPToolStructuredOutputTest >> testRunTestsSkippedMethodReportsCompactList [
 ]
 
 { #category : 'tests' }
-MCPToolStructuredOutputTest >> testRunTestsSuccessfulResultOmitsEmptyIssueLists [
+MCPToolStructuredOutputTest >> testRunTestsSuccessfulResultHasExpectedShape [
 
 	| data result |
 	result := self
 		          callToolNamed: 'test_run'
-		          withArguments:
-			          { (#methods
-			           -> #( 'MCPToolStructuredOutputTestTarget>>#testPasses' )) }
-				          asDictionary.
+		          withArguments: { (#methods -> #( 'MCPToolStructuredOutputTestTarget>>#testPasses' )) } asDictionary.
 	data := self dataFrom: result.
-	self
-		assert: ((self structuredContentFrom: result) at: #status)
-		equals: 'ok'.
-	self assert: (data at: #runCount) equals: 1.
-	self assert: (data at: #passedCount) equals: 1.
-	self deny: (data includesKey: #skipped).
-	self deny: (data includesKey: #failures).
-	self deny: (data includesKey: #errors).
-	self deny: (data includesKey: #results)
+	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self assert: data equals: {
+			(#runCount -> 1).
+			(#passedCount -> 1) } asDictionary
 ]
 
 { #category : 'tests' }
@@ -670,13 +662,10 @@ MCPToolStructuredOutputTest >> testSearchPackagesReturnsStructuredError [
 ]
 
 { #category : 'tests' }
-MCPToolStructuredOutputTest >> testToolsListAdvertisesInputSchemaWithoutOutputSchema [
+MCPToolStructuredOutputTest >> testToolsListAdvertisesPublicToolContracts [
 
 	| tools |
 	tools := MCP new rpcToolsList at: #tools.
-	self assert:
-		(tools allSatisfy: [ :each | each includesKey: #inputSchema ]).
-	self deny:
-		(tools anySatisfy: [ :each | each includesKey: #outputSchema ]).
-	self deny: (tools anySatisfy: [ :each | each includesKey: #icons ])
+	self assert: tools notEmpty.
+	tools do: [ :tool | self assert: tool keys asSet equals: #( name title description inputSchema ) asSet ]
 ]

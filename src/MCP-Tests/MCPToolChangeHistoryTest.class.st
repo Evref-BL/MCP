@@ -363,16 +363,13 @@ MCPToolChangeHistoryTest >> testListFilesSupportsDirectoryPath [
 ]
 
 { #category : 'tests' }
-MCPToolChangeHistoryTest >> testNonCodeEntryDictionaryOmitsAbsentFields [
+MCPToolChangeHistoryTest >> testNonCodeEntryDictionaryHasExpectedShape [
 
 	| entry |
-	entry := (MCPChangeHistoryEntryInfo fromEvent: EpSessionStart new)
-		         asDictionary.
-	self
-		assert: entry keys asSet
-		equals: #( eventClassName entryKind ) asSet.
-	self assert: (entry at: #eventClassName) equals: 'EpSessionStart'.
-	self assert: (entry at: #entryKind) equals: 'session'
+	entry := (MCPChangeHistoryEntryInfo fromEvent: EpSessionStart new) asDictionary.
+	self assert: entry equals: {
+			(#eventClassName -> 'EpSessionStart').
+			(#entryKind -> 'session') } asDictionary
 ]
 
 { #category : 'tests' }

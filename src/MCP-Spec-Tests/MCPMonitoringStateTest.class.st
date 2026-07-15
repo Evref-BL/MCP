@@ -393,7 +393,7 @@ MCPMonitoringStateTest >> testTraceSnapshotForCollectionAddsTruncationMarker [
 ]
 
 { #category : 'tests' }
-MCPMonitoringStateTest >> testTraceSnapshotOmitsVerboseErrorFields [
+MCPMonitoringStateTest >> testTraceSnapshotHasCompactErrorShape [
 
 	| errorData output record result state |
 	state := MCPMonitoringState new.
@@ -403,14 +403,10 @@ MCPMonitoringStateTest >> testTraceSnapshotOmitsVerboseErrorFields [
 		             (#message -> 'failed').
 		             (#stackTrace -> #( 'frame one' 'frame two' )).
 		             (#signalerContext -> 'a context') } asDictionary.
-	result := MCPStructureCallToolResult
-		          content: #(  )
-		          structuredContent: {
-				          (#summary -> 'failed').
-				          (#error -> errorData) } asDictionary.
+	result := MCPStructureCallToolResult content: #(  ) structuredContent: {
+			          (#summary -> 'failed').
+			          (#error -> errorData) } asDictionary.
 	state recordToolCallFinish: record result: result error: Error new.
 	output := record outputSnapshot.
-	self assert: ((output at: #error) at: #message) equals: 'failed'.
-	self deny: ((output at: #error) includesKey: #stackTrace).
-	self deny: ((output at: #error) includesKey: #signalerContext)
+	self assert: (output at: #error) equals: { (#message -> 'failed') } asDictionary
 ]

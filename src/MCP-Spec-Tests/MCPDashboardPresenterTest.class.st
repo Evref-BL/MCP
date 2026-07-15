@@ -367,18 +367,13 @@ MCPDashboardPresenterTest >> testManualExpansionWorksAfterInitialStateIsChosen [
 ]
 
 { #category : 'tests' }
-MCPDashboardPresenterTest >> testMetricsTableDoesNotShowOutlierColumn [
+MCPDashboardPresenterTest >> testMetricsTableHasExpectedColumns [
 
 	| metricsTable presenter titles |
 	presenter := MCPDashboardPresenter new.
 	metricsTable := presenter instVarNamed: #metricsTable.
 	titles := metricsTable columns collect: [ :each | each title ].
-
-	self
-		assert: titles
-		equals:
-		#( 'Tool' 'Calls' 'Errors' 'Avg ms' 'Min ms' 'Max ms' 'Last ms' ).
-	self deny: (titles includes: 'Outlier')
+	self assert: titles equals: #( 'Tool' 'Calls' 'Errors' 'Avg ms' 'Min ms' 'Max ms' 'Last ms' )
 ]
 
 { #category : 'tests' }
@@ -526,15 +521,13 @@ MCPDashboardPresenterTest >> testToolsSectionCollapsesWhenToolCatalogIsEmpty [
 ]
 
 { #category : 'tests' }
-MCPDashboardPresenterTest >> testToolsTableDoesNotShowImplementationClassColumn [
+MCPDashboardPresenterTest >> testToolsTableHasExpectedColumns [
 
 	| presenter titles toolsTable |
 	presenter := MCPDashboardPresenter new.
 	toolsTable := presenter instVarNamed: #toolsTable.
 	titles := toolsTable columns collect: [ :each | each title ].
-
-	self assert: titles equals: #( 'Tool' 'Title' 'Description' ).
-	self deny: (titles includes: 'Class')
+	self assert: titles equals: #( 'Tool' 'Title' 'Description' )
 ]
 
 { #category : 'tests' }
