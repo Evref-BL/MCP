@@ -76,30 +76,25 @@ MCPToolContractsTest >> assertDebugInputPropertyNamed: propertyName inTool: aToo
 ]
 
 { #category : 'private' }
-MCPToolContractsTest >> assertNoCompositionKeywordsIn: aValue [
+MCPToolContractsTest >> assertNoUnsupportedSchemaKeywordsIn: aValue [
 
-	self assertNoCompositionKeywordsIn: aValue path: #(  )
+	self assertNoUnsupportedSchemaKeywordsIn: aValue path: #(  )
 ]
 
 { #category : 'private' }
-MCPToolContractsTest >> assertNoCompositionKeywordsIn: aValue path: path [
+MCPToolContractsTest >> assertNoUnsupportedSchemaKeywordsIn: aValue path: path [
 
-	| compositionKeywords |
-	compositionKeywords := #( oneOf anyOf allOf ).
+	| unsupportedKeywords |
+	unsupportedKeywords := #( 'oneOf' 'anyOf' 'allOf' 'not' 'if' 'then' 'else' '$ref' '$defs' 'definitions' 'dependentSchemas'
+	                          'patternProperties' 'prefixItems' 'contains' 'unevaluatedProperties' ).
 	aValue isDictionary ifTrue: [
-			compositionKeywords do: [ :keyword |
+			unsupportedKeywords do: [ :keyword |
 					self deny: (aValue includesKey: keyword).
-					self deny: (aValue includesKey: keyword asString) ].
-			aValue keysAndValuesDo: [ :key :nestedValue |
-					self
-						assertNoCompositionKeywordsIn: nestedValue
-						path: (path copyWith: key) ].
+					self deny: (aValue includesKey: keyword asSymbol) ].
+			aValue keysAndValuesDo: [ :key :nestedValue | self assertNoUnsupportedSchemaKeywordsIn: nestedValue path: (path copyWith: key) ].
 			^ self ].
 	(aValue isCollection and: [ aValue isString not ]) ifTrue: [
-			aValue withIndexDo: [ :nestedValue :index |
-					self
-						assertNoCompositionKeywordsIn: nestedValue
-						path: (path copyWith: index) ] ]
+		aValue withIndexDo: [ :nestedValue :index | self assertNoUnsupportedSchemaKeywordsIn: nestedValue path: (path copyWith: index) ] ]
 ]
 
 { #category : 'private' }
@@ -831,14 +826,6 @@ MCPToolContractsTest >> signalHaltForMCPMessageProcessorTest [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testAllToolInputSchemasAvoidCompositionKeywords [
-
-	MCPTool concreteSubclasses do: [ :toolClass |
-			self assertNoCompositionKeywordsIn:
-				(toolClass new asJRPCJSON at: #inputSchema) ]
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testAllToolOutputSchemasAdvertiseStructuredSummaryWarningsAndStatus [
 
 	MCPTool concreteSubclasses do: [ :toolClass |
@@ -855,6 +842,16 @@ MCPToolContractsTest >> testAllToolOutputSchemasAdvertiseStructuredSummaryWarnin
 			self
 				assert: (statusProperty extraProperties at: #enum) asArray
 				equals: #( 'ok' 'error' ) ]
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testAllToolSchemasAvoidUnsupportedKeywords [
+
+	MCPTool concreteSubclasses do: [ :toolClass |
+			| tool |
+			tool := toolClass new.
+			self assertNoUnsupportedSchemaKeywordsIn: tool inputSchema asJRPCJSON.
+			self assertNoUnsupportedSchemaKeywordsIn: tool outputSchema asJRPCJSON ]
 ]
 
 { #category : 'tests' }
