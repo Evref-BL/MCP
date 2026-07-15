@@ -10,6 +10,26 @@ Class {
 }
 
 { #category : 'tests' }
+MCPServerLifecycleTest >> testAbruptClientDisconnectReleasesConnection [
+
+	| clientStream server |
+	server := MCPSocketSafeZnServer new.
+	server
+		bindingAddress: #[ 127 0 0 1 ];
+		port: 0.
+	[
+		server start.
+		self assert: (self waitUntil: [ server isListening ] forMilliseconds: 3000).
+		clientStream := SocketStream openConnectionToHost: #[ 127 0 0 1 ] port: server port.
+		self assert: (self waitUntil: [ server connections notEmpty ] forMilliseconds: 3000).
+		clientStream close.
+		clientStream := nil.
+		self assert: (self waitUntil: [ server connections isEmpty ] forMilliseconds: 3000) ] ensure: [
+			clientStream ifNotNil: [ clientStream close ].
+			server stop: false ]
+]
+
+{ #category : 'tests' }
 MCPServerLifecycleTest >> testMultipleServersCanListenOnDifferentPorts [
 
 	| first second |
@@ -91,6 +111,23 @@ MCPServerLifecycleTest >> testSocketSafeServerRunsPostResponseActionsImmediately
 ]
 
 { #category : 'tests' }
+MCPServerLifecycleTest >> testSocketSafeServerSurvivesRepeatedStartStopCycles [
+
+	| server |
+	server := MCPSocketSafeZnServer new.
+	server bindingAddress: #[ 127 0 0 1 ].
+	[
+		10 timesRepeat: [
+				server port: 0.
+				server start.
+				self assert: (self waitUntil: [ server isListening ] forMilliseconds: 3000).
+				server stop: false.
+				self deny: server isRunning.
+				self deny: server isListening.
+				self assert: server connections isEmpty ] ] ensure: [ server stop: false ]
+]
+
+{ #category : 'tests' }
 MCPServerLifecycleTest >> testSocketSafeServerTreatsSocketErrorsAsConnectionTermination [
 
 	| exceptionSet |
@@ -129,6 +166,48 @@ MCPServerLifecycleTest >> testStoppingOneServerKeepsOtherListening [
 		self assert: second isListening ] ensure: [
 		second stop.
 		first stop ]
+]
+
+{ #category : 'tests' }
+MCPServerLifecycleTest >> testStoppingServerClosesActiveConnections [
+
+	| clientStream server |
+	server := MCPSocketSafeZnServer new.
+	server
+		bindingAddress: #[ 127 0 0 1 ];
+		port: 0.
+	[
+		server start.
+		self assert: (self waitUntil: [ server isListening ] forMilliseconds: 3000).
+		clientStream := SocketStream openConnectionToHost: #[ 127 0 0 1 ] port: server port.
+		self assert: (self waitUntil: [ server connections notEmpty ] forMilliseconds: 3000).
+		server stop: false.
+		self deny: server isRunning.
+		self assert: server connections isEmpty ] ensure: [
+			clientStream ifNotNil: [ clientStream close ].
+			server stop: false ]
+]
+
+{ #category : 'tests' }
+MCPServerLifecycleTest >> testStoppingServerStopsBindRetryLoop [
+
+	| occupiedSocket port server |
+	occupiedSocket := ZnNetworkingUtils serverSocketOn: 0.
+	port := occupiedSocket port.
+	server := MCPSocketSafeZnServer new.
+	[
+		server port: port.
+		server start.
+		(Delay forMilliseconds: 100) wait.
+		self deny: server isListening.
+		server stop: false.
+		occupiedSocket destroy.
+		occupiedSocket := nil.
+		(Delay forMilliseconds: 500) wait.
+		self deny: server isRunning.
+		self deny: server isListening ] ensure: [
+			server stop: false.
+			occupiedSocket ifNotNil: [ occupiedSocket destroy ] ]
 ]
 
 { #category : 'private' }
