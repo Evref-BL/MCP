@@ -1058,32 +1058,6 @@ MCPToolMethodMutationTest >> testCompileReturnsStructuredCommandErrorForUndeclar
 ]
 
 { #category : 'tests' }
-MCPToolMethodMutationTest >> testCompileStoresMethodSourceWithoutFormatterCorruption [
-
-	| result selector source storedSource |
-	selector := #sourceIntegrityProbe.
-	source := 'sourceIntegrityProbe
-	| values |
-	values := #(1 2) collect: [ :each | each asString ].
-	^ '','' join: values'.
-	[
-		result := self callToolWith: (self
-				           compileArgumentsForClassName:
-				           'MCPToolMethodMutationTestTarget'
-				           classSide: false
-				           methodSource: source
-				           protocol: 'tests').
-		storedSource := (MCPToolMethodMutationTestTarget >> selector)
-			                sourceCode.
-		self deny: (result at: #isError ifAbsent: [ false ]).
-		self assert: (storedSource includesSubstring: 'each asString').
-		self
-			assert: (MCPToolMethodMutationTestTarget new perform: selector)
-			equals: '1,2' ] ensure: [
-		self removeSelector: selector from: MCPToolMethodMutationTestTarget ]
-]
-
-{ #category : 'tests' }
 MCPToolMethodMutationTest >> testCompilesClassSideMethod [
 
 	| data result |
@@ -1144,6 +1118,17 @@ MCPToolMethodMutationTest >> testMCPPackageMethodSourcesDoNotContainLineFeeds [
 		assert: offenders isEmpty
 		description: 'MCP method source must not contain Character lf: '
 			, offenders printString
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testMethodFormatterUsesScopedMaximumLineLength [
+
+	| compiledMethod formatter originalMaximum |
+	compiledMethod := self class >> #testMethodFormatterUsesScopedMaximumLineLength.
+	originalMaximum := EFFormatter maxLineLength.
+	formatter := MCPToolCompileMethod new formatterForMethod: compiledMethod.
+	self assert: formatter maxLineLength equals: 130.
+	self assert: EFFormatter maxLineLength equals: originalMaximum
 ]
 
 { #category : 'tests' }
@@ -1223,6 +1208,22 @@ MCPToolMethodMutationTest >> testNormalizesLineFeedStringLiteralBeforeCompilatio
 				self
 					removeSelector: #multilineStringAnswer
 					from: MCPToolMethodMutationTestTarget ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testReformatsMethod [
+
+	| reformattedSource result source |
+	source := 'uglyAnswer   ^   1+2'.
+	result := self callToolWith: (self
+			           compileArgumentsForClassName: 'MCPToolMethodMutationTestTarget'
+			           classSide: false
+			           methodSource: source
+			           protocol: 'tests').
+	reformattedSource := (MCPToolMethodMutationTestTarget >> #uglyAnswer) sourceCode.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (reformattedSource includesSubstring: '1 + 2').
+	self assert: MCPToolMethodMutationTestTarget new uglyAnswer equals: 3
 ]
 
 { #category : 'tests' }

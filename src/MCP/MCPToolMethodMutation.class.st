@@ -220,6 +220,15 @@ MCPToolMethodMutation >> failureMessageForRenameClassNamed: className classSide:
 					  (self normalizedCauseMessageForMutationError: anError) ]
 ]
 
+{ #category : 'private' }
+MCPToolMethodMutation >> formatterForMethod: aCompiledMethod [
+
+	| formatter |
+	formatter := aCompiledMethod ast class formatter.
+	formatter maxLineLength: 130.
+	^ formatter
+]
+
 { #category : 'private - schema' }
 MCPToolMethodMutation >> inputProperties [
 
@@ -305,6 +314,10 @@ MCPToolMethodMutation >> parsedRequestFromToolRequest: request [
 { #category : 'private' }
 MCPToolMethodMutation >> reformattedMethodForBehavior: aBehavior selector: aSelector [
 
+	| compiledMethod formattedSource |
+	compiledMethod := aBehavior >> aSelector.
+	formattedSource := (self formatterForMethod: compiledMethod) format: compiledMethod ast.
+	aBehavior compile: formattedSource classified: compiledMethod protocol.
 	^ aBehavior >> aSelector
 ]
 
