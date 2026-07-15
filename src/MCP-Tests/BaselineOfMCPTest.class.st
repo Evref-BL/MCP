@@ -10,7 +10,7 @@ Class {
 }
 
 { #category : 'tests' }
-BaselineOfMCPTest >> testGroupsSeparateCoreAndUI [
+BaselineOfMCPTest >> testGroupsSeparateCoreAndUITests [
 
 	| spec |
 	spec := MCPRecordingBaselineSpec new.
@@ -18,6 +18,7 @@ BaselineOfMCPTest >> testGroupsSeparateCoreAndUI [
 	self assert: spec groups equals: {
 			('Core' -> #( 'MCP' )).
 			('UI' -> #( 'MCP-UI' )).
-			('Tests' -> #( 'MCP-Tests-Resources' 'MCP-Tests' 'MCP-Tests-Resources-Extensions' 'MCP-UI-Tests' )).
+			('Tests' -> #( 'MCP-Tests-Resources' 'MCP-Tests' 'MCP-Tests-Resources-Extensions' )).
+			('UI Tests' -> #( 'MCP-UI-Tests' )).
 			('default' -> #( 'Core' 'UI' )) } asDictionary
 ]

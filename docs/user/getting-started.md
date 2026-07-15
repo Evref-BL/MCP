@@ -40,7 +40,8 @@ The default load includes the headless server and optional UI.
 | `default` | `Core` and `UI` |
 | `Core` | The `MCP` server package |
 | `UI` | `MCP-UI` and its required core package |
-| `Tests` | Core/UI tests and test resources |
+| `Tests` | Core server tests and test resources |
+| `UI Tests` | UI tests and their required test dependencies |
 
 For a headless image, load only the core server:
 
