@@ -41,6 +41,7 @@ MCPToolMethodMutation >> allowedNonErrorCritiqueRuleClasses [
 		  MCPFilterThenCollectRule.
 		  MCPMessageNotUnderstoodHandlerRule.
 		  MCPNilOnlyConditionalRule.
+		  MCPRedundantExplicitSelfReturnRule.
 		  MCPRespondsToUsageRule.
 		  MCPSelectSizeCountRule.
 		  MCPSortedCollectionConversionRule.
@@ -52,6 +53,26 @@ MCPToolMethodMutation >> allowedNonErrorCritiqueRuleClasses [
 		  ReReturnInEnsureRule.
 		  ReTempVarOverridesInstVarRule.
 		  ReUnaryAccessingMethodWithoutReturnRule }
+]
+
+{ #category : 'private' }
+MCPToolMethodMutation >> blockingCritiqueDataForMethodNode: aMethodNode [
+
+	| critiques |
+	critiques := OrderedCollection new.
+	self blockingPreCompileRuleClasses do: [ :ruleClass |
+		| rule |
+		rule := ruleClass new.
+		aMethodNode nodesDo: [ :node |
+			rule check: node forCritiquesDo: [ :critique |
+				critiques add: critique ] ] ].
+	^ critiques collect: [ :each | self critiqueDataFor: each ]
+]
+
+{ #category : 'private' }
+MCPToolMethodMutation >> blockingPreCompileRuleClasses [
+
+	^ { ReDeadBlockRule }
 ]
 
 { #category : 'metadata' }
@@ -96,9 +117,15 @@ MCPToolMethodMutation >> critiqueDataFor: aCritique [
 { #category : 'private' }
 MCPToolMethodMutation >> critiqueDataForMethod: aCompiledMethod [
 
+	^ self critiqueDataFromProperties: aCompiledMethod critiques
+]
+
+{ #category : 'private' }
+MCPToolMethodMutation >> critiqueDataFromProperties: properties [
+
 	| critiques |
-	critiques := aCompiledMethod critiques select: [ :each |
-		             self shouldIncludeCritique: each ].
+	critiques := properties select: [ :each |
+		each isCritique and: [ self shouldIncludeCritique: each ] ].
 	^ (critiques asArray sort: [ :left :right |
 			   left title = right title
 				   ifTrue: [ left rule class name < right rule class name ]
@@ -321,6 +348,21 @@ MCPToolMethodMutation >> shouldIncludeCritiqueRule: aRule [
 
 	^ aRule severity = #error or: [
 		  self allowedNonErrorCritiqueRuleClasses includes: aRule class ]
+]
+
+{ #category : 'private' }
+MCPToolMethodMutation >> signalBlockingCritiquesForMethodNode: aMethodNode [
+
+	| critiques |
+	critiques := self blockingCritiqueDataForMethodNode: aMethodNode.
+	critiques ifEmpty: [ ^ self ].
+	MCPCommandError
+		signalErrorCode: #CompileBlockedByCritiques
+		message: 'Method compilation blocked by critiques.'
+		details: {
+			(#critiques -> critiques asArray).
+			(#howToProceed -> 'Correct the source and resubmit method_compile.') }
+				asDictionary
 ]
 
 { #category : 'private' }

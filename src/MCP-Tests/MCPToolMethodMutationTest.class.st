@@ -525,6 +525,44 @@ MCPToolMethodMutationTest >> testCollectionStyleCritiquesProvideAutomaticChanges
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileAllowsExplicitlyReturnedBlock [
+
+	| result selector |
+	selector := #returnedBlockProbe.
+	self removeSelector: selector from: MCPToolMethodMutationTestTarget.
+	[
+		result := self callToolWith: (self
+			compileArgumentsForClassName: 'MCPToolMethodMutationTestTarget'
+			classSide: false
+			methodSource: 'returnedBlockProbe ^ [ 1 ]'
+			protocol: 'tests').
+		self deny: (result at: #isError ifAbsent: [ false ]).
+		self assert: MCPToolMethodMutationTestTarget new returnedBlockProbe value equals: 1 ]
+		ensure: [ self removeSelector: selector from: MCPToolMethodMutationTestTarget ]
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileBlocksDeadBlockBeforeInstallation [
+
+	| critique critiques error result selector |
+	selector := #deadBlockProbe.
+	self removeSelector: selector from: MCPToolMethodMutationTestTarget.
+	result := self callToolWith: (self
+		compileArgumentsForClassName: 'MCPToolMethodMutationTestTarget'
+		classSide: false
+		methodSource: 'deadBlockProbe [ self error: ''never run'' ]'
+		protocol: 'tests').
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #errorCode) equals: 'CompileBlockedByCritiques'.
+	critiques := error at: #critiques.
+	self assert: critiques size equals: 1.
+	critique := critiques first.
+	self assert: (critique at: #ruleClass) equals: 'ReDeadBlockRule'.
+	self deny: (MCPToolMethodMutationTestTarget includesSelector: selector)
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testCompileCanReplaceMethodOnToolClass [
 
 	| data method result |
@@ -557,6 +595,26 @@ MCPToolMethodMutationTest >> testCompileDefaultsToInstanceSideWhenClassSideIsOmi
 			 #instanceAnswer).
 	self assertSuccessDataHasMethodShape: data.
 	self deny: (result at: #isError ifAbsent: [ false ])
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileDoesNotReportBranchExplicitSelfReturn [
+
+	| critiques data result selector |
+	selector := #selfReturnInBranchProbe:.
+	self removeSelector: selector from: MCPToolMethodMutationTestTarget.
+	[
+		result := self callToolWith: (self
+			compileArgumentsForClassName: 'MCPToolMethodMutationTestTarget'
+			classSide: false
+			methodSource: 'selfReturnInBranchProbe: aBoolean aBoolean ifTrue: [ ^ self ]. 1'
+			protocol: 'tests').
+		self deny: (result at: #isError ifAbsent: [ false ]).
+		data := self dataFrom: result.
+		critiques := data at: #critiques ifAbsent: [ #(  ) ].
+		self deny: (critiques anySatisfy: [ :each |
+			(each at: #ruleClass) = 'MCPRedundantExplicitSelfReturnRule' ]) ]
+		ensure: [ self removeSelector: selector from: MCPToolMethodMutationTestTarget ]
 ]
 
 { #category : 'tests' }
@@ -864,6 +922,22 @@ MCPToolMethodMutationTest >> testCompileReturnsNilOnlyConditionalCritique [
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileReturnsRedundantExplicitSelfReturnCritique [
+
+	| selector |
+	selector := #redundantSelfReturnProbe.
+	self removeSelector: selector from: MCPToolMethodMutationTestTarget.
+	[
+		self
+			assertCompileForClassName: 'MCPToolMethodMutationTestTarget'
+			methodSource: 'redundantSelfReturnProbe ^ self'
+			protocol: 'tests'
+			returnsSingleCritiqueRuleClass: 'MCPRedundantExplicitSelfReturnRule'
+			titledLike: MCPRedundantExplicitSelfReturnRule ruleName ]
+		ensure: [ self removeSelector: selector from: MCPToolMethodMutationTestTarget ]
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testCompileReturnsRespondsToUsageCritique [
 
 	| selector |
@@ -1050,6 +1124,15 @@ MCPToolMethodMutationTest >> testCompilesInstanceSideMethod [
 		equals: #tests.
 	self assertSuccessDataHasMethodShape: data.
 	self deny: (result at: #isError ifAbsent: [ false ])
+]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTest >> testCritiqueSerializationIgnoresNonCritiqueProperties [
+
+	| data |
+	data := MCPToolMethodMutation new critiqueDataFromProperties: {
+		ReExceptionProperty new }.
+	self assert: data isEmpty
 ]
 
 { #category : 'tests' }

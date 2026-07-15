@@ -68,5 +68,8 @@ MCPCompileMethodCommand >> execute [
 { #category : 'private' }
 MCPCompileMethodCommand >> selectorForMethodSource: methodSourceString [
 
-	^ (RBParser parseMethod: methodSourceString) selector
+	| methodNode |
+	methodNode := RBParser parseMethod: methodSourceString.
+	self tool signalBlockingCritiquesForMethodNode: methodNode.
+	^ methodNode selector
 ]
