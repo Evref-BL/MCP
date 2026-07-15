@@ -15,12 +15,12 @@ SmalltalkCISpec {
   #testing : {
     #packages : [
       'MCP-Tests',
-      'MCP-Spec-Tests'
+      'MCP-UI-Tests'
     ],
     #coverage : {
       #packages : [
         'MCP',
-        'MCP-Spec'
+        'MCP-UI'
       ],
       #format : #lcov
     }

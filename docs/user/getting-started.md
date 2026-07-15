@@ -1,20 +1,20 @@
 # Getting Started
 
-This guide loads MCP into a Pharo image, starts the HTTP endpoint, and
-connects an MCP client.
+This is the canonical guide for loading MCP, starting its HTTP endpoint, and
+connecting a client.
 
 ## Requirements
 
-- Pharo 12, Pharo 13, or Pharo 14
-- Network access from the MCP client to the image host
-- An MCP client that supports remote HTTP MCP servers
+- Pharo 12, 13, or 14
+- An MCP client that supports Streamable HTTP directly or through a local bridge
+- Network access from the client to the image host
 
-For local use, run the image and the client on the same machine and bind to
+For local use, keep the image and client on the same machine and use
 `127.0.0.1`.
 
 ## Load MCP
 
-Open a supported Pharo image and evaluate:
+Evaluate in a supported image:
 
 ```smalltalk
 Metacello new
@@ -23,7 +23,7 @@ Metacello new
    load.
 ```
 
-To load only the core packages from a baseline dependency:
+As a project dependency:
 
 ```smalltalk
 spec
@@ -31,9 +31,30 @@ spec
    with: [ spec repository: 'github://Evref-BL/MCP:main/src' ].
 ```
 
-## Start The Server
+## Load Groups
 
-Evaluate:
+The default load includes the server, optional UI, and their tests.
+
+| Group | Contents |
+| --- | --- |
+| `default` | `Core`, `UI`, `Tests`, and `UI Tests` |
+| `Core` | The `MCP` server package |
+| `UI` | `MCP-UI` and its required core package |
+| `Tests` | Core server tests and test resources |
+| `UI Tests` | UI tests and their required test dependencies |
+
+For a headless image, load only the core server:
+
+```smalltalk
+Metacello new
+   baseline: 'MCP';
+   repository: 'github://Evref-BL/MCP:main/src';
+   load: 'Core'.
+```
+
+Dependencies can select the same group with `loads: #( 'Core' )`.
+
+## Start And Stop
 
 ```smalltalk
 mcp := MCP new.
@@ -41,68 +62,44 @@ mcp port: 4000.
 mcp start.
 ```
 
-Check the endpoint:
+Inspect or control the server with:
 
 ```smalltalk
 mcp localUrlString.
 mcp isRunning.
 mcp isListening.
-```
-
-Stop or restart it:
-
-```smalltalk
-mcp stop.
 mcp restart.
+mcp stop.
 ```
 
-The server lives in the image. If the image quits, the MCP server stops too.
+The server lives in the image and stops when the image exits.
 
 ## Connect A Client
 
-Use the image endpoint:
+The endpoint above is:
 
 ```text
 http://127.0.0.1:4000
 ```
 
-A generic remote MCP configuration looks like this:
+Client configuration formats differ. Configure a Streamable HTTP MCP server
+using the client documentation rather than copying another client's JSON.
+Loopback addresses work only when the client connects from the local machine;
+cloud-brokered connectors cannot reach `127.0.0.1`.
 
-```json
-{
-  "mcp": {
-    "pharo": {
-      "type": "remote",
-      "url": "http://127.0.0.1:4000",
-      "enabled": true
-    }
-  }
-}
-```
-
-For Codex, copy the supplied support files into the agent workspace:
+For Codex, copy the supplied configuration, agent guide, and skills into the
+agent workspace:
 
 ```sh
 cp -R templates/. /path/to/your/project/
 ```
 
-The template includes `AGENTS.md`, `.codex/config.toml`, and reusable skills.
+The copied `.codex/config.toml` expects port `4000`; update its URL when the
+image uses another port.
 
-The supplied Codex config expects port `4000`:
+## First Calls
 
-```toml
-[mcp_servers.pharo]
-enabled = true
-required = true
-url = "http://127.0.0.1:4000"
-```
-
-If you started the server on another port, update the URL.
-
-## First Read-Only Calls
-
-Ask the client to list tools first. In clients that expose the discoverable
-catalog, start with tool discovery and schema inspection:
+Start with catalog discovery:
 
 ```text
 tools/list
@@ -110,55 +107,26 @@ tool_search
 tool_get
 ```
 
-Then inspect the image with read-only package, class, method, and repository
-tools:
+Then inspect the image with focused read-only tools such as:
 
 ```text
 package_search
 class_search
+class_get
 method_metadata_search
 method_source_search
 method_implementor_search
 method_sender_search
-class_get
 method_get
 ```
 
-Useful first questions:
+Before mutation, inspect the target and use a copied or disposable image.
+Prefer dedicated tools such as `class_create`, `method_compile`, refactoring
+tools, and `test_run` over `image_evaluate`.
 
-- list packages loaded in the image
-- search implementors of a selector with `method_implementor_search`
-- search senders with `method_sender_search`
-- get one class before editing it
-- discover repository tools before exporting or committing
-- discover change-history tools before recovering changes
+Continue with:
 
-## First Mutating Calls
-
-Prefer dedicated tools over `image_evaluate`:
-
-```text
-class_create
-method_create
-method_selector_update
-method_protocol_update
-test_run
-```
-
-Use `tool_search` for less common class-structure changes, method reference
-lookups, coverage, repository operations, and change-history recovery.
-
-Use a copied or disposable image before asking an agent to make broad edits.
-MCP saves the image after successful mutating tools, so a successful
-operation changes the running image state.
-
-## Dashboard
-
-In a graphical image, inspect the `mcp` object and open the dashboard tab.
-The dashboard shows server status, port/debug controls, registered tools,
-observability, metrics, traces, and recent logs.
-
-Observability is enabled by default. Configure
-`mcp monitoringExportDirectory: aDirectory` to override the default
-`~/pharo-mcp-observability` export root for instance metadata,
-`logs.jsonl`, `metrics.json`, and `traces.jsonl`.
+- [Using MCP from an agent](using-pharo-mcp.md)
+- [Tool reference](tool-reference.md)
+- [Safety and ecosystem integration](safety-and-ecosystem.md)
+- [Troubleshooting](troubleshooting.md)

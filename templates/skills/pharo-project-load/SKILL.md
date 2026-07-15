@@ -1,63 +1,28 @@
 ---
 name: pharo-project-load
-description: Load Pharo projects into an image from local or remote Tonel/Metacello/Iceberg repositories, choose the correct baseline, branch, source directory, and load group, and diagnose project load failures such as missing BaselineOf packages, wrong src paths, Metacello conflicts, or Pharo-version load differences. Use when asked to load, smoke test, or debug loading a Pharo project in a fresh or existing image.
+description: Load or smoke-test a Pharo project from Tonel, Metacello, or Iceberg and diagnose baseline, branch, source-directory, group, dependency, or version-specific load failures. Use for fresh-image loads and CI-equivalent project loading.
 ---
 
 # Pharo Project Load
 
-## Overview
+## Context
 
-Use this skill when the task is to load a Pharo project into an image, especially
-from a Tonel repository with a `src` directory or when reproducing how CI/users
-load the project.
-
-Prefer the Pharo MCP tools when a live image is available. Use Smalltalk snippets
-only when no dedicated tool fits.
+Before loading, read the project README, baseline, `.smalltalk.ston`, and any
+repository-specific agent guidance. Prefer dedicated Pharo MCP load tools when
+a live image is available.
 
 ## Workflow
 
-1. Identify the load target:
-   - Pharo version.
-   - Repository URL or local path.
-   - Branch, tag, or commit.
-   - Source directory, usually `src`.
-   - Baseline name, without the `BaselineOf` prefix.
-   - Load group, if one is truly needed.
+1. Identify the Pharo version, repository URL/path, branch or commit, source
+   directory, baseline name, and required load group.
+2. Confirm that `BaselineOf<Name>` and the Tonel packages exist under the
+   selected source directory. Check that repository URLs and `.project` agree.
+3. Load the default baseline first. Specify a group only when project or CI
+   configuration requires it.
+4. Verify loaded packages/classes and run focused or project tests.
+5. Inspect Iceberg state when later edits or export are in scope.
 
-2. Inspect the repository layout before loading:
-   - Confirm where `BaselineOf<name>` lives.
-   - Confirm that Tonel package directories are under the selected source
-     directory.
-   - Check `.smalltalk.ston` or project docs for the CI load path.
-   - If the repo recently moved to `src`, make sure URLs and `.project`
-     metadata agree.
-
-3. Load the project:
-   - With Pharo MCP, discover the load tool from the current client with terms
-     such as `load`, `baseline`, `Metacello`, `repository`, and `package`.
-   - For local Tonel paths, evaluate a small Metacello snippet if needed.
-   - Prefer the default load first. Specify groups only when the task or project
-     docs require them.
-
-4. Verify the image:
-   - List loaded packages/classes with MCP tools.
-   - Run focused tests or the project test package when present.
-   - Check Iceberg repository state if the task cares about later edits.
-
-5. Diagnose failures by phase:
-   - Baseline/package not found: branch or source directory is wrong, or the
-     baseline package is not committed where Metacello is looking.
-   - Undeclared globals/selectors during load: target Pharo version lacks an API
-     expected by the project or one of its dependencies.
-   - Metacello conflict/upgrade failure: dependency registration differs from
-     the image state; use the simplest conflict policy that exists in the target
-     Pharo version.
-   - Native crash during load: rerun once, then use the `pharo-ci-repro` skill
-     if smalltalkCI/Docker conditions matter.
-
-## Examples
-
-Remote Tonel repository:
+Minimal remote load:
 
 ```smalltalk
 Metacello new
@@ -66,38 +31,17 @@ Metacello new
   load
 ```
 
-Local Tonel repository:
+For local Tonel, use an absolute `tonel:///.../src` URL.
 
-```smalltalk
-Metacello new
-  baseline: 'MyProject';
-  repository: 'tonel:///absolute/path/to/MyProject/src';
-  load
-```
+## Diagnose By Phase
 
-Explicit group, only when needed:
+- Baseline/package not found: verify branch and source directory.
+- Missing global/class/selector: compare the project API surface with the
+  target Pharo version; use `pharo-version-compat` when appropriate.
+- Metacello conflict: reproduce the project's documented or CI conflict policy.
+- Native or CI-only failure: reproduce once, then use `pharo-ci-repro`.
 
-```smalltalk
-Metacello new
-  baseline: 'MyProject';
-  repository: 'github://Owner/MyProject:main/src';
-  load: 'Tests'
-```
+## Report
 
-## Common Checks
-
-- `NotFound: BaselineOfMyProject` usually means Metacello is looking in the
-  wrong source directory or branch.
-- If the project uses `src`, the repository URL usually needs to end in `/src`.
-- The branch in the URL should match the branch containing the desired layout.
-- Do not assume Metacello helper selectors exist in every supported Pharo
-  version; prefer plain `load` unless a compatibility wrapper is already
-  provided.
-- When using a local path, use an absolute path to avoid command-line working
-  directory surprises.
-
-## Reporting
-
-Report the Pharo version, repository path/URL, branch, source directory,
-baseline, group, load result, verification result, and the first meaningful
-error if loading failed.
+Report the Pharo version, repository and revision, source directory, baseline,
+group, load result, verification result, and first meaningful failure.

@@ -59,7 +59,7 @@ normal `warnings` array.
 
 ## Critiques
 
-`method_create` compiles method source in the image and returns selected Renraku
+`method_compile` compiles method source in the image and returns selected Renraku
 critiques in the structured result. It includes error-severity critiques and a
 small set of non-error rules that are useful after automated edits, such as
 excessive arguments, missing super sends, return in ensure, temporary variable

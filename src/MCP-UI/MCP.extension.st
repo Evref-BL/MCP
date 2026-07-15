@@ -1,20 +1,20 @@
 Extension { #name : 'MCP' }
 
-{ #category : '*MCP-Spec' }
+{ #category : '*MCP-UI' }
 MCP >> inspectionDashboard: aBuilder [
 
 	<inspectorPresentationOrder: 0 title: 'Dashboard'>
 	^ MCPDashboardPresenter on: self
 ]
 
-{ #category : '*MCP-Spec' }
+{ #category : '*MCP-UI' }
 MCP >> inspectionToolCatalog [
 
 	<inspectorPresentationOrder: 1 title: 'Tool Catalog'>
 	^ MCPToolsCatalogPresenter new
 ]
 
-{ #category : '*MCP-Spec' }
+{ #category : '*MCP-UI' }
 MCP class >> openToolCatalog [
 
 	<script>
