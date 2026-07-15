@@ -29,8 +29,9 @@ MCPHTTPServer >> answerGet: request with: response [
 	"Codex uses Streamable HTTP. Until this server supports SSE on GET,
 	answer explicitly with 405 instead of timing out with an empty reply."
 
-	response statusLine: ZnStatusLine methodNotAllowed.
-	^ response
+	^ self
+		  answerWithoutBody: response
+		  statusLine: ZnStatusLine methodNotAllowed
 ]
 
 { #category : 'initialization' }
@@ -46,9 +47,9 @@ MCPHTTPServer >> answerPost: request with: response [
 	| payload |
 	payload := self handleJSON: request contents.
 	(payload isString and: [ payload isEmpty ]) ifTrue: [
-			response statusLine: ZnStatusLine accepted.
-			response headers at: #'Content-Length' put: '0'.
-			^ response ].
+			^ self
+				  answerWithoutBody: response
+				  statusLine: ZnStatusLine accepted ].
 	response entity: (ZnEntity json: payload).
 	^ response
 ]
@@ -56,7 +57,16 @@ MCPHTTPServer >> answerPost: request with: response [
 { #category : 'initialization' }
 MCPHTTPServer >> answerUnsupportedMethodWith: response [
 
-	response statusLine: ZnStatusLine methodNotAllowed.
+	^ self
+		  answerWithoutBody: response
+		  statusLine: ZnStatusLine methodNotAllowed
+]
+
+{ #category : 'initialization' }
+MCPHTTPServer >> answerWithoutBody: response statusLine: statusLine [
+
+	response statusLine: statusLine.
+	response headers at: #'Content-Length' put: '0'.
 	^ response
 ]
 
