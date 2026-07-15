@@ -177,8 +177,7 @@ MCPToolMethodMutationTest >> instanceSelector [
 { #category : 'private' }
 MCPToolMethodMutationTest >> mcpPackageNames [
 
-	^ #( 'BaselineOfMCP' 'MCP' 'MCP-Spec' 'MCP-Spec-Tests'
-	     'MCP-Tests' 'MCP-Tests-Resources' 'MCP-Tests-Resources-Extensions' )
+	^ #( 'BaselineOfMCP' 'MCP' 'MCP-UI' 'MCP-UI-Tests' 'MCP-Tests' 'MCP-Tests-Resources' 'MCP-Tests-Resources-Extensions' )
 ]
 
 { #category : 'private' }

@@ -4,8 +4,8 @@ Tests for the in-memory MCP monitoring state and its integration at the MCP tool
 Class {
 	#name : 'MCPMonitoringStateTest',
 	#superclass : 'MCPTestCase',
-	#category : 'MCP-Spec-Tests-Monitoring',
-	#package : 'MCP-Spec-Tests',
+	#category : 'MCP-UI-Tests-Monitoring',
+	#package : 'MCP-UI-Tests',
 	#tag : 'Monitoring'
 }
 

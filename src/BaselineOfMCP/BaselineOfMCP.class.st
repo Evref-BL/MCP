@@ -40,32 +40,20 @@ BaselineOfMCP >> defineDependencies: spec [
 BaselineOfMCP >> defineGroups: spec [
 
 	spec
-		group: 'Core' with: #( 'MCP' 'MCP-Spec' );
-		group: 'Tests'
-		with:
-			#( 'MCP-Tests-Resources' 'MCP-Tests' 'MCP-Tests-Resources-Extensions'
-			   'MCP-Spec-Tests' )
+		group: 'Core' with: #( 'MCP' );
+		group: 'UI' with: #( 'MCP-UI' );
+		group: 'Tests' with: #( 'MCP-Tests-Resources' 'MCP-Tests' 'MCP-Tests-Resources-Extensions' 'MCP-UI-Tests' );
+		group: 'default' with: #( 'Core' 'UI' )
 ]
 
 { #category : 'baselines' }
 BaselineOfMCP >> definePackages: spec [
 	"common"
 
-	spec
-		package: 'MCP'
-		with: [
-		spec requires: #( 'PharoCompatibility' 'JRPC' 'TinyLogger' 'PCRE2' ) ].
-	spec package: 'MCP-Spec' with: [ spec requires: #( 'MCP' ) ].
-	spec
-		package: 'MCP-Tests-Resources'
-		with: [ spec requires: #( 'MCP' ) ].
-	spec
-		package: 'MCP-Tests'
-		with: [ spec requires: #( 'MCP' 'MCP-Tests-Resources' ) ].
-	spec
-		package: 'MCP-Tests-Resources-Extensions'
-		with: [ spec requires: #( 'MCP-Tests-Resources' ) ].
-	spec
-		package: 'MCP-Spec-Tests'
-		with: [ spec requires: #( 'MCP-Spec' 'MCP-Tests' ) ]
+	spec package: 'MCP' with: [ spec requires: #( 'PharoCompatibility' 'JRPC' 'TinyLogger' 'PCRE2' ) ].
+	spec package: 'MCP-UI' with: [ spec requires: #( 'MCP' ) ].
+	spec package: 'MCP-Tests-Resources' with: [ spec requires: #( 'MCP' ) ].
+	spec package: 'MCP-Tests' with: [ spec requires: #( 'MCP' 'MCP-Tests-Resources' ) ].
+	spec package: 'MCP-Tests-Resources-Extensions' with: [ spec requires: #( 'MCP-Tests-Resources' ) ].
+	spec package: 'MCP-UI-Tests' with: [ spec requires: #( 'MCP-UI' 'MCP-Tests' ) ]
 ]

@@ -31,6 +31,28 @@ spec
    with: [ spec repository: 'github://Evref-BL/MCP:main/src' ].
 ```
 
+## Load Groups
+
+The default load includes the headless server and optional UI.
+
+| Group | Contents |
+| --- | --- |
+| `default` | `Core` and `UI` |
+| `Core` | The `MCP` server package |
+| `UI` | `MCP-UI` and its required core package |
+| `Tests` | Core/UI tests and test resources |
+
+For a headless image, load only the core server:
+
+```smalltalk
+Metacello new
+   baseline: 'MCP';
+   repository: 'github://Evref-BL/MCP:main/src';
+   load: 'Core'.
+```
+
+Dependencies can select the same group with `loads: #( 'Core' )`.
+
 ## Start And Stop
 
 ```smalltalk

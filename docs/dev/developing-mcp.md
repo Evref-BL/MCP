@@ -56,7 +56,7 @@ Rules:
   keywords, mutability, risk, or schema-inspection expectations.
 - For debugger tools, keep state references opaque and scoped to the debug
   state that returned them.
-- Keep UI/Spec changes separate from core MCP tool behavior unless the task
+- Keep UI changes separate from core MCP tool behavior unless the task
   needs both.
 
 ## Verification
@@ -74,7 +74,7 @@ Live checks require an approved safe image boundary:
 - loading `BaselineOfMCP` into a clean image;
 - starting `MCP` over HTTP;
 - verifying MCP tool listing and specific tool calls;
-- running `MCP-Tests` or `MCP-Spec-Tests` in the image;
+- running `MCP-Tests` or `MCP-UI-Tests` in the image;
 - exercising edit/export/repository operation tools;
 - exercising debugger tools against a captured or attached debug session when
   debugger behavior changes.

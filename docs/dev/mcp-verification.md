@@ -49,7 +49,7 @@ These checks require an explicitly approved disposable or safe live image:
 - loading `BaselineOfMCP` into a clean image;
 - starting `MCP` over HTTP;
 - verifying tool listing;
-- running `MCP-Tests` or `MCP-Spec-Tests` inside the image;
+- running `MCP-Tests` or `MCP-UI-Tests` inside the image;
 - package, class, method, or test queries against the running image;
 - debugger capture, attach, state, control, breakpoint, and repair smoke calls
   when debugger behavior changes;

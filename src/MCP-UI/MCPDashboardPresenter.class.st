@@ -35,8 +35,8 @@ Class {
 		'statusValueLabel',
 		'sectionExpansionInitialized'
 	],
-	#category : 'MCP-Spec',
-	#package : 'MCP-Spec'
+	#category : 'MCP-UI',
+	#package : 'MCP-UI'
 }
 
 { #category : 'instance creation' }

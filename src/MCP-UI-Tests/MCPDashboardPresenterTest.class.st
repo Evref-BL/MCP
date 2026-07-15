@@ -4,8 +4,8 @@ Tests the MCP Spec dashboard presenter layout, actions, and refresh behavior.
 Class {
 	#name : 'MCPDashboardPresenterTest',
 	#superclass : 'MCPTestCase',
-	#category : 'MCP-Spec-Tests-Monitoring',
-	#package : 'MCP-Spec-Tests',
+	#category : 'MCP-UI-Tests-Monitoring',
+	#package : 'MCP-UI-Tests',
 	#tag : 'Monitoring'
 }
 

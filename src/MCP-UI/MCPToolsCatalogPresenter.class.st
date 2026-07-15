@@ -9,8 +9,8 @@ Class {
 	#instVars : [
 		'contentPresenter'
 	],
-	#category : 'MCP-Spec',
-	#package : 'MCP-Spec'
+	#category : 'MCP-UI',
+	#package : 'MCP-UI'
 }
 
 { #category : 'instance creation' }
