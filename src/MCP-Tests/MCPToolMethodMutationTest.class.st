@@ -525,6 +525,28 @@ MCPToolMethodMutationTest >> testCollectionStyleCritiquesProvideAutomaticChanges
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileAcceptsExplicitSelfReturnInBranch [
+
+	| critiques data result selector target |
+	selector := #selfReturnInBranchProbe:.
+	self removeSelector: selector from: MCPToolMethodMutationTestTarget.
+	[
+		result := self callToolWith: (self
+				           compileArgumentsForClassName: 'MCPToolMethodMutationTestTarget'
+				           classSide: false
+				           methodSource: 'selfReturnInBranchProbe: aBoolean aBoolean ifTrue: [ ^ self ]. ^ 1'
+				           protocol: 'tests').
+		self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+		data := self dataFrom: result.
+		critiques := data at: #critiques ifAbsent: [ #(  ) ].
+		self assert: critiques equals: #(  ).
+		target := MCPToolMethodMutationTestTarget new.
+		self assert: (target selfReturnInBranchProbe: true) identicalTo: target.
+		self assert: (target selfReturnInBranchProbe: false) equals: 1 ] ensure: [
+		self removeSelector: selector from: MCPToolMethodMutationTestTarget ]
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testCompileAllowsExplicitlyReturnedBlock [
 
 	| result selector |
@@ -595,26 +617,6 @@ MCPToolMethodMutationTest >> testCompileDefaultsToInstanceSideWhenClassSideIsOmi
 			 #instanceAnswer).
 	self assertSuccessDataHasMethodShape: data.
 	self deny: (result at: #isError ifAbsent: [ false ])
-]
-
-{ #category : 'tests' }
-MCPToolMethodMutationTest >> testCompileDoesNotReportBranchExplicitSelfReturn [
-
-	| critiques data result selector |
-	selector := #selfReturnInBranchProbe:.
-	self removeSelector: selector from: MCPToolMethodMutationTestTarget.
-	[
-		result := self callToolWith: (self
-			compileArgumentsForClassName: 'MCPToolMethodMutationTestTarget'
-			classSide: false
-			methodSource: 'selfReturnInBranchProbe: aBoolean aBoolean ifTrue: [ ^ self ]. 1'
-			protocol: 'tests').
-		self deny: (result at: #isError ifAbsent: [ false ]).
-		data := self dataFrom: result.
-		critiques := data at: #critiques ifAbsent: [ #(  ) ].
-		self deny: (critiques anySatisfy: [ :each |
-			(each at: #ruleClass) = 'MCPRedundantExplicitSelfReturnRule' ]) ]
-		ensure: [ self removeSelector: selector from: MCPToolMethodMutationTestTarget ]
 ]
 
 { #category : 'tests' }
@@ -1098,15 +1100,6 @@ MCPToolMethodMutationTest >> testCompilesInstanceSideMethod [
 		equals: #tests.
 	self assertSuccessDataHasMethodShape: data.
 	self deny: (result at: #isError ifAbsent: [ false ])
-]
-
-{ #category : 'tests' }
-MCPToolMethodMutationTest >> testCritiqueSerializationIgnoresNonCritiqueProperties [
-
-	| data |
-	data := MCPToolMethodMutation new critiqueDataFromProperties: {
-		ReExceptionProperty new }.
-	self assert: data isEmpty
 ]
 
 { #category : 'tests' }

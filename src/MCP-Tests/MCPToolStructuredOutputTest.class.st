@@ -169,19 +169,6 @@ MCPToolStructuredOutputTest >> testGetMethodReturnsStructuredSuccess [
 ]
 
 { #category : 'tests' }
-MCPToolStructuredOutputTest >> testGetToolOmitsOutputSchema [
-
-	| inputPropertyNames result tool |
-	result := self callToolNamed: 'tool_get' withArguments: { (#toolName -> 'class_search') } asDictionary.
-	tool := (self dataFrom: result) at: #tool.
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
-	self assert: (tool includesKey: #inputSchema).
-	self deny: (tool includesKey: #outputSchema).
-	inputPropertyNames := MCPToolGetTool new inputSchema properties collect: [ :each | each name ].
-	self assert: inputPropertyNames equals: #( 'toolName' )
-]
-
-{ #category : 'tests' }
 MCPToolStructuredOutputTest >> testMethodMetadataSearchReturnsStructuredArrayData [
 
 	| data methods result selectors |

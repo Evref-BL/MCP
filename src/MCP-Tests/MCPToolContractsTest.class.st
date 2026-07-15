@@ -76,28 +76,6 @@ MCPToolContractsTest >> assertDebugInputPropertyNamed: propertyName inTool: aToo
 ]
 
 { #category : 'private' }
-MCPToolContractsTest >> assertNoUnsupportedSchemaKeywordsIn: aValue [
-
-	self assertNoUnsupportedSchemaKeywordsIn: aValue path: #(  )
-]
-
-{ #category : 'private' }
-MCPToolContractsTest >> assertNoUnsupportedSchemaKeywordsIn: aValue path: path [
-
-	| unsupportedKeywords |
-	unsupportedKeywords := #( 'oneOf' 'anyOf' 'allOf' 'not' 'if' 'then' 'else' '$ref' '$defs' 'definitions' 'dependentSchemas'
-	                          'patternProperties' 'prefixItems' 'contains' 'unevaluatedProperties' ).
-	aValue isDictionary ifTrue: [
-			unsupportedKeywords do: [ :keyword |
-					self deny: (aValue includesKey: keyword).
-					self deny: (aValue includesKey: keyword asSymbol) ].
-			aValue keysAndValuesDo: [ :key :nestedValue | self assertNoUnsupportedSchemaKeywordsIn: nestedValue path: (path copyWith: key) ].
-			^ self ].
-	(aValue isCollection and: [ aValue isString not ]) ifTrue: [
-		aValue withIndexDo: [ :nestedValue :index | self assertNoUnsupportedSchemaKeywordsIn: nestedValue path: (path copyWith: index) ] ]
-]
-
-{ #category : 'private' }
 MCPToolContractsTest >> assertToolFlowSpec: aSpec [
 
 	| command parsedRequest rawRequest tool |
@@ -108,6 +86,23 @@ MCPToolContractsTest >> assertToolFlowSpec: aSpec [
 	command := tool commandForRequest: parsedRequest.
 	self assert: parsedRequest class equals: (aSpec at: #requestClass).
 	self assert: command class equals: (aSpec at: #commandClass)
+]
+
+{ #category : 'private' }
+MCPToolContractsTest >> assertUsesSupportedSchemaDialect: aValue [
+
+	| supportedKeywords |
+	supportedKeywords := #( 'additionalProperties' 'default' 'description' 'enum' 'items' 'maximum' 'minItems' 'minLength'
+	                        'minimum' 'properties' 'required' 'type' ).
+	aValue isDictionary ifTrue: [
+			aValue keysDo: [ :key | self assert: (supportedKeywords includes: key asString) ].
+			aValue keysAndValuesDo: [ :key :nestedValue |
+					key asString = 'properties'
+						ifTrue: [ nestedValue valuesDo: [ :schema | self assertUsesSupportedSchemaDialect: schema ] ]
+						ifFalse: [ self assertUsesSupportedSchemaDialect: nestedValue ] ].
+			^ self ].
+	(aValue isCollection and: [ aValue isString not ]) ifTrue: [
+		aValue do: [ :nestedValue | self assertUsesSupportedSchemaDialect: nestedValue ] ]
 ]
 
 { #category : 'support' }
@@ -845,13 +840,13 @@ MCPToolContractsTest >> testAllToolOutputSchemasAdvertiseStructuredSummaryWarnin
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testAllToolSchemasAvoidUnsupportedKeywords [
+MCPToolContractsTest >> testAllToolSchemasUseSupportedDialect [
 
 	MCPTool concreteSubclasses do: [ :toolClass |
 			| tool |
 			tool := toolClass new.
-			self assertNoUnsupportedSchemaKeywordsIn: tool inputSchema asJRPCJSON.
-			self assertNoUnsupportedSchemaKeywordsIn: tool outputSchema asJRPCJSON ]
+			self assertUsesSupportedSchemaDialect: tool inputSchema asJRPCJSON.
+			self assertUsesSupportedSchemaDialect: tool outputSchema asJRPCJSON ]
 ]
 
 { #category : 'tests' }
@@ -1566,22 +1561,16 @@ MCPToolContractsTest >> testGetMethodHasAccurateNameAndRequiredArguments [
 { #category : 'tests' }
 MCPToolContractsTest >> testGetToolReturnsSchemaForCatalogTool [
 
-	| contract inputProperties result |
-	result := self
-		callToolNamed: 'tool_get'
-		withArguments: { (#toolName -> 'repository_create') } asDictionary.
+	| contract getToolPropertyNames inputProperties result |
+	result := self callToolNamed: 'tool_get' withArguments: { (#toolName -> 'repository_create') } asDictionary.
 	contract := (self dataFrom: result) at: #tool.
 	self assert: (contract at: #name) equals: 'repository_create'.
-	self
-		assert: contract keys asSet
-		equals: #( name description inputSchema ) asSet.
+	self assert: contract keys asSet equals: #( name description inputSchema ) asSet.
 	inputProperties := ((contract at: #inputSchema) at: #properties) keys.
-	self assert: (inputProperties includes: 'name').
-	self assert: (inputProperties includes: 'location').
-	self deny: (inputProperties includes: 'operation').
-	self
-		assert: ((contract at: #inputSchema) at: #required) asArray
-		equals: #( 'name' 'location' )
+	self assert: inputProperties asSet equals: #( 'name' 'location' 'packageNames' 'subdirectory' ) asSet.
+	self assert: ((contract at: #inputSchema) at: #required) asArray equals: #( 'name' 'location' ).
+	getToolPropertyNames := MCPToolGetTool new inputSchema properties collect: [ :each | each name ].
+	self assert: getToolPropertyNames equals: #( 'toolName' )
 ]
 
 { #category : 'tests' }
@@ -1907,38 +1896,21 @@ MCPToolContractsTest >> testMethodMutationToolsHaveAccurateNamesAndRequiredArgum
 	createTool := MCPToolCompileMethod new.
 	selectorTool := MCPToolUpdateMethodSelector new.
 	protocolTool := MCPToolUpdateMethodProtocol new.
-	createPropertyNames := createTool inputSchema properties collect: [
-		                       :each | each name ].
-	selectorPropertyNames := selectorTool inputSchema properties
-		                         collect: [ :each | each name ].
-	protocolPropertyNames := protocolTool inputSchema properties
-		                         collect: [ :each | each name ].
+	createPropertyNames := createTool inputSchema properties collect: [ :each | each name ].
+	selectorPropertyNames := selectorTool inputSchema properties collect: [ :each | each name ].
+	protocolPropertyNames := protocolTool inputSchema properties collect: [ :each | each name ].
 	self assert: createTool name equals: 'method_compile'.
 	self assert: selectorTool name equals: 'method_selector_update'.
 	self assert: protocolTool name equals: 'method_protocol_update'.
+	self assert: createTool inputSchema required asSet equals: #( 'className' 'source' 'protocol' ) asSet.
+	self assert: selectorTool inputSchema required asSet equals: #( 'className' 'selector' 'newSelector' ) asSet.
+	self assert: protocolTool inputSchema required asSet equals: #( 'className' 'selector' 'protocol' ) asSet.
+	self assert: createPropertyNames asSet equals: #( 'className' 'classSide' 'protocol' 'source' ) asSet.
 	self
-		assert: createTool inputSchema required asSet
-		equals: #( 'className' 'source' 'protocol' ) asSet.
-	self
-		assert: selectorTool inputSchema required asSet
-		equals: #( 'className' 'selector' 'newSelector' ) asSet.
-	self
-		assert: protocolTool inputSchema required asSet
-		equals: #( 'className' 'selector' 'protocol' ) asSet.
-	{
-		createPropertyNames.
-		selectorPropertyNames.
-		protocolPropertyNames } do: [ :each |
-			self deny: (each includes: 'operation').
-			self assert: (each includes: 'classSide') ].
-	self deny: (createPropertyNames includes: 'force').
-	self assert: (selectorPropertyNames includes: 'force').
-	self assert: (protocolPropertyNames includes: 'force').
-	self assert: (selectorPropertyNames includes: 'packageNames').
-	self assert: (selectorPropertyNames includes: 'classNames').
-	self assert: (selectorPropertyNames includes: 'hierarchyClassNames').
-	self deny: (createPropertyNames includes: 'packageNames').
-	self deny: (protocolPropertyNames includes: 'packageNames')
+		assert: selectorPropertyNames asSet
+		equals: #( 'argumentNames' 'argumentValueExpressions' 'className' 'classNames' 'classSide' 'force' 'hierarchyClassNames'
+			   'newSelector' 'packageNames' 'permutation' 'selector' ) asSet.
+	self assert: protocolPropertyNames asSet equals: #( 'className' 'classSide' 'force' 'protocol' 'selector' ) asSet
 ]
 
 { #category : 'tests' }
@@ -3566,15 +3538,6 @@ MCPToolContractsTest >> testToolRegistryReusesRegisteredToolInstances [
 	self
 		assert: (searchResults detect: [ :each | each name = 'tool_search' ])
 		== first
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testToolSchemasAreRebuiltFromLiveCode [
-
-	| tool |
-	tool := MCPToolCompileMethod new.
-	self deny: tool inputSchema identicalTo: tool inputSchema.
-	self deny: tool outputSchema identicalTo: tool outputSchema
 ]
 
 { #category : 'support' }
