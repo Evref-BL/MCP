@@ -75,8 +75,7 @@ MCPToolCaptureScreenshot >> executeWithRequest: request [
 		  executeParsedRequestFrom: request
 		  do: [ :screenshotRequest |
 				  | commandResult structuredContent summary |
-				  commandResult := (self commandForRequest: screenshotRequest)
-					                   execute.
+				  commandResult := (self commandForRequest: screenshotRequest) execute.
 				  summary := self successSummaryForResult: commandResult.
 				  structuredContent := Dictionary new
 					                       at: #status put: 'ok';
@@ -88,10 +87,7 @@ MCPToolCaptureScreenshot >> executeWithRequest: request [
 							  (self textContent: summary).
 							  commandResult imageContent }
 					  structuredContent: structuredContent ]
-		  onError: [ :error :ignored |
-				  self
-					  errorResultText: (self failureMessageFor: error)
-					  details: (self errorDetailsFor: error) ]
+		  onError: [ :error :ignored | self errorResultText: (self failureMessageFor: error) details: (self errorDetailsFor: error) ]
 ]
 
 { #category : 'private - request' }

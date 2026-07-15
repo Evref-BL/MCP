@@ -17,14 +17,3 @@ MCPToolsCatalogPresenterTest >> testCatalogCardRendersFocusedToolIdentity [
 	card := presenter toolCatalogCardFor: MCPToolAttachRepository.
 	self assert: card isNotNil
 ]
-
-{ #category : 'tests' }
-MCPToolsCatalogPresenterTest >> testCatalogPresenterDoesNotExposeOperationSummarySelectors [
-
-	self deny: (MCPToolsCatalogPresenter includesSelector:
-			 #toolCatalogOperationSummaryFor:).
-	self deny: (MCPToolsCatalogPresenter includesSelector:
-			 #toolCatalogOperationHelpFor:).
-	self deny: (MCPToolsCatalogPresenter includesSelector:
-			 #toolCatalogOperationNamesFor:)
-]

@@ -15,6 +15,26 @@ Class {
 	#tag : 'Server'
 }
 
+{ #category : 'protocol' }
+MCP class >> latestProtocolVersion [
+
+	^ self supportedProtocolVersions last
+]
+
+{ #category : 'protocol' }
+MCP class >> negotiatedProtocolVersionFor: requestedVersion [
+
+	^ (self supportedProtocolVersions includes: requestedVersion)
+		  ifTrue: [ requestedVersion ]
+		  ifFalse: [ self latestProtocolVersion ]
+]
+
+{ #category : 'protocol' }
+MCP class >> supportedProtocolVersions [
+
+	^ #( '2025-03-26' '2025-06-18' '2025-11-25' )
+]
+
 { #category : 'monitoring' }
 MCP >> clearMonitoring [
 
@@ -235,10 +255,8 @@ MCP >> onInitialize: protocolVersion capabilities: capabilities clientInfo: clie
 
 	<jrpc: #initialize>
 	^ MCPStructureInitialize new
-		  protocolVersion: '2025-11-25';
-		  capabilities:
-			  (MCPStructureCapabilities new tools:
-					   MCPStructureToolsCapabilities new);
+		  protocolVersion: (self class negotiatedProtocolVersionFor: protocolVersion);
+		  capabilities: (MCPStructureCapabilities new tools: MCPStructureToolsCapabilities new);
 		  metadata: self serverInfrastructureMetadata;
 		  serverInfo: (MCPStructureServerInfo new
 				   name: 'MCP Pharo';

@@ -163,12 +163,8 @@ MCPTool >> errorResultFor: anError [
 MCPTool >> errorResultText: aString details: aDictionary [
 
 	| details normalizedSummary structuredContent |
-	normalizedSummary := aString
-		                     ifNil: [ '' ]
-		                     ifNotNil: [ aString asString ].
-	details := aDictionary
-		           ifNil: [ Dictionary new ]
-		           ifNotNil: [ aDictionary copy ].
+	normalizedSummary := aString ifNil: [ '' ] ifNotNil: [ aString asString ].
+	details := aDictionary ifNil: [ Dictionary new ] ifNotNil: [ aDictionary copy ].
 	details at: #message ifAbsentPut: [ normalizedSummary ].
 	details at: #errorClass ifAbsentPut: [ 'ToolError' ].
 	structuredContent := Dictionary new
@@ -176,9 +172,7 @@ MCPTool >> errorResultText: aString details: aDictionary [
 		                     at: #summary put: normalizedSummary;
 		                     at: #error put: details;
 		                     yourself.
-	^ MCPStructureErrorToolResult
-		  content: { (self textContent: normalizedSummary) }
-		  structuredContent: structuredContent
+	^ MCPStructureErrorToolResult content: { (self textContent: normalizedSummary) } structuredContent: structuredContent
 ]
 
 { #category : 'private - schema' }
@@ -284,7 +278,7 @@ MCPTool >> icons [
 { #category : 'metadata' }
 MCPTool >> inputSchema [
 
-	^ inputSchema ifNil: [ inputSchema := self buildInputSchema ]
+	^ self buildInputSchema
 ]
 
 { #category : 'private - schema' }
@@ -315,7 +309,7 @@ MCPTool >> name [
 { #category : 'metadata' }
 MCPTool >> outputSchema [
 
-	^ outputSchema ifNil: [ outputSchema := self buildOutputSchema ]
+	^ self buildOutputSchema
 ]
 
 { #category : 'private - request' }
@@ -521,23 +515,15 @@ MCPTool >> successResultText: aSummary data: aDictionary [
 MCPTool >> successResultText: aSummary data: aDictionary warnings: warningStrings [
 
 	| normalizedSummary structuredContent warnings |
-	normalizedSummary := aSummary
-		                     ifNil: [ '' ]
-		                     ifNotNil: [ aSummary asString ].
-	warnings := warningStrings
-		            ifNil: [ #(  ) ]
-		            ifNotNil: [
-		            (warningStrings collect: [ :each | each asString ])
-			            asArray ].
+	normalizedSummary := aSummary ifNil: [ '' ] ifNotNil: [ aSummary asString ].
+	warnings := warningStrings ifNil: [ #(  ) ] ifNotNil: [ (warningStrings collect: [ :each | each asString ]) asArray ].
 	structuredContent := Dictionary new
 		                     at: #status put: 'ok';
 		                     at: #summary put: normalizedSummary;
 		                     at: #data put: aDictionary;
 		                     yourself.
 	warnings ifNotEmpty: [ structuredContent at: #warnings put: warnings ].
-	^ MCPStructureCallToolResult
-		  content: { (self textContent: normalizedSummary) }
-		  structuredContent: structuredContent
+	^ MCPStructureCallToolResult content: { (self textContent: normalizedSummary) } structuredContent: structuredContent
 ]
 
 { #category : 'private' }

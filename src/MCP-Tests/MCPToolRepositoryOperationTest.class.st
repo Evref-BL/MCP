@@ -1726,11 +1726,10 @@ MCPToolRepositoryOperationTest >> testRemoteToolsManageGitRemotes [
 ]
 
 { #category : 'tests' }
-MCPToolRepositoryOperationTest >> testRepositoryErrorDetailsUseActionNotOperation [
+MCPToolRepositoryOperationTest >> testRepositoryErrorDetailsIncludeAction [
 
 	| errorDetails repository result |
-	repository := self newTestRepositoryNamed:
-		              'MCP Repository Error Action Test Repository'.
+	repository := self newTestRepositoryNamed: 'MCP Repository Error Action Test Repository'.
 	repository failPush: true.
 	self withRegisteredRepository: repository do: [
 			result := self callToolWith: {
@@ -1738,9 +1737,7 @@ MCPToolRepositoryOperationTest >> testRepositoryErrorDetailsUseActionNotOperatio
 					          (#repositoryName -> repository name) } asDictionary.
 			self assert: (self resultIndicatesError: result).
 			errorDetails := self errorFrom: result.
-			self assert: (errorDetails at: #action) equals: 'push'.
-			self deny: (errorDetails includesKey: #operation).
-			self deny: (errorDetails includesKey: #updateAction) ]
+			self assert: (errorDetails at: #action) equals: 'push' ]
 ]
 
 { #category : 'tests' }

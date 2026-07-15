@@ -139,7 +139,7 @@ MCPToolChangeHistoryToolsTest >> testListChangeHistoryFilesReturnsFiles [
 ]
 
 { #category : 'tests' }
-MCPToolChangeHistoryToolsTest >> testSelectionResultDataUsesActionNotOperation [
+MCPToolChangeHistoryToolsTest >> testSelectionResultDataHasExpectedShape [
 
 	| data result |
 	result := MCPChangeHistorySelectionResult
@@ -152,9 +152,18 @@ MCPToolChangeHistoryToolsTest >> testSelectionResultDataUsesActionNotOperation [
 		          performed: false
 		          performedCount: 0.
 	data := result asDictionary.
-	self assert: (data at: #action) equals: 'apply'.
-	self assert: (data at: #historyFileName) equals: 'memory.ombu'.
-	self deny: (data includesKey: #operation)
+	self assert: data equals: {
+			(#action -> 'apply').
+			(#historyFileName -> 'memory.ombu').
+			(#selectionCriteria -> Dictionary new).
+			(#selectedEntries -> #(  )).
+			(#previewEntries -> #(  )).
+			(#selectedCount -> 0).
+			(#selectedCodeChangeCount -> 0).
+			(#previewCount -> 0).
+			(#skippedNonCodeChangeCount -> 0).
+			(#performed -> false).
+			(#performedCount -> 0) } asDictionary
 ]
 
 { #category : 'tests' }

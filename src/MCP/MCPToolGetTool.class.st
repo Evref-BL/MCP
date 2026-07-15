@@ -20,23 +20,12 @@ MCPToolGetTool class >> toolName [
 { #category : 'metadata' }
 MCPToolGetTool >> buildInputSchema [
 
-	| includeOutputSchemaProperty toolNameProperty |
-	toolNameProperty := self
-		                    schemaPropertyNamed: 'toolName'
-		                    type: 'string'
-		                    description: 'Tool name.'.
+	| toolNameProperty |
+	toolNameProperty := self schemaPropertyNamed: 'toolName' type: 'string' description: 'Tool name.'.
 	toolNameProperty minLength: 1.
-	includeOutputSchemaProperty := self
-		                               booleanSchemaPropertyNamed:
-		                               'includeOutputSchema'
-		                               description:
-		                               'Include response schema; use only for response validation.'
-		                               default: false.
 	^ MCPStructureInputSchema new
 		  type: 'object';
-		  properties: {
-				  toolNameProperty.
-				  includeOutputSchemaProperty };
+		  properties: { toolNameProperty };
 		  required: #( 'toolName' );
 		  additionalProperties: false;
 		  yourself
@@ -108,7 +97,7 @@ MCPToolGetTool >> commandForRequest: getRequest [
 { #category : 'metadata' }
 MCPToolGetTool >> description [
 
-	^ 'Return one tool contract with metadata and input schema. Set includeOutputSchema only when response validation needs it.'
+	^ 'Return one tool contract with metadata and input schema.'
 ]
 
 { #category : 'executing' }

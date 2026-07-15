@@ -81,56 +81,36 @@ MCPToolStructuredOutputTest >> testGetClassParseErrorReturnsStructuredToolError 
 MCPToolStructuredOutputTest >> testGetClassReturnsStructuredError [
 
 	| error result structured |
-	result := self
-		          callToolNamed: 'class_get'
-		          withArguments:
-		          { (#className -> 'MCPToolGetClassDefinitelyMissing') }
-			          asDictionary.
+	result := self callToolNamed: 'class_get' withArguments: { (#className -> 'MCPToolGetClassDefinitelyMissing') } asDictionary.
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
 	self deny: (structured includesKey: #warnings).
-	self
-		assert: (self summaryFrom: result)
-		equals: ((result at: #content) first at: #text).
+	self assert: ((result at: #content) first at: #text) equals: (structured at: #summary).
 	self assert: (self warningsFrom: result) equals: #(  ).
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
-	self
-		assert: (error at: #className)
-		equals: 'MCPToolGetClassDefinitelyMissing'
+	self assert: (error at: #className) equals: 'MCPToolGetClassDefinitelyMissing'
 ]
 
 { #category : 'tests' }
 MCPToolStructuredOutputTest >> testGetClassReturnsStructuredSuccess [
 
 	| data expectedSharedVariableNames result structured |
-	result := self
-		          callToolNamed: 'class_get'
-		          withArguments:
-		          { (#className -> 'MCPToolGetMethodTestTarget') }
-			          asDictionary.
+	result := self callToolNamed: 'class_get' withArguments: { (#className -> 'MCPToolGetMethodTestTarget') } asDictionary.
 	structured := self structuredContentFrom: result.
 	data := self dataFrom: result.
-	expectedSharedVariableNames := (MCPToolGetMethodTestTarget
-		                                classVarNames collect: [ :each |
-		                                each asString ]) asArray.
+	expectedSharedVariableNames := (MCPToolGetMethodTestTarget classVarNames collect: [ :each | each asString ]) asArray.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (structured at: #status) equals: 'ok'.
 	self deny: (structured includesKey: #warnings).
-	self
-		assert: (self summaryFrom: result)
-		equals: ((result at: #content) first at: #text).
+	self assert: ((result at: #content) first at: #text) equals: (structured at: #summary).
 	self assert: (self warningsFrom: result) equals: #(  ).
-	self
-		assert: (data at: #className)
-		equals: 'MCPToolGetMethodTestTarget'.
+	self assert: (data at: #className) equals: 'MCPToolGetMethodTestTarget'.
 	self assert: (data at: #instanceMethodCount) equals: 1.
 	self assert: (data at: #classMethodCount) equals: 1.
-	self
-		assert: (data at: #sharedVariableNames)
-		equals: expectedSharedVariableNames.
+	self assert: (data at: #sharedVariableNames) equals: expectedSharedVariableNames.
 	self assert: (data includesKey: #layoutClassName).
 	self deny: (data includesKey: #traitComposition).
 	self deny: (data includesKey: #classTraitComposition).
@@ -186,37 +166,6 @@ MCPToolStructuredOutputTest >> testGetMethodReturnsStructuredSuccess [
 	self deny: (data includesKey: #externalVariableReferences).
 	self assert:
 		((data at: #source) includesSubstring: String cr asString)
-]
-
-{ #category : 'tests' }
-MCPToolStructuredOutputTest >> testGetToolIncludesOutputSchemaWhenRequested [
-
-	| result tool |
-	result := self callToolNamed: 'tool_get' withArguments: {
-			          (#toolName -> 'class_search').
-			          (#includeOutputSchema -> true) } asDictionary.
-	tool := (self dataFrom: result) at: #tool.
-	self
-		assert: ((self structuredContentFrom: result) at: #status)
-		equals: 'ok'.
-	self assert: (tool includesKey: #inputSchema).
-	self assert: (tool includesKey: #outputSchema)
-]
-
-{ #category : 'tests' }
-MCPToolStructuredOutputTest >> testGetToolOmitsOutputSchemaByDefault [
-
-	| result tool |
-	result := self
-		          callToolNamed: 'tool_get'
-		          withArguments:
-		          { (#toolName -> 'class_search') } asDictionary.
-	tool := (self dataFrom: result) at: #tool.
-	self
-		assert: ((self structuredContentFrom: result) at: #status)
-		equals: 'ok'.
-	self assert: (tool includesKey: #inputSchema).
-	self deny: (tool includesKey: #outputSchema)
 ]
 
 { #category : 'tests' }
@@ -545,25 +494,17 @@ MCPToolStructuredOutputTest >> testRunTestsSkippedMethodReportsCompactList [
 ]
 
 { #category : 'tests' }
-MCPToolStructuredOutputTest >> testRunTestsSuccessfulResultOmitsEmptyIssueLists [
+MCPToolStructuredOutputTest >> testRunTestsSuccessfulResultHasExpectedShape [
 
 	| data result |
 	result := self
 		          callToolNamed: 'test_run'
-		          withArguments:
-			          { (#methods
-			           -> #( 'MCPToolStructuredOutputTestTarget>>#testPasses' )) }
-				          asDictionary.
+		          withArguments: { (#methods -> #( 'MCPToolStructuredOutputTestTarget>>#testPasses' )) } asDictionary.
 	data := self dataFrom: result.
-	self
-		assert: ((self structuredContentFrom: result) at: #status)
-		equals: 'ok'.
-	self assert: (data at: #runCount) equals: 1.
-	self assert: (data at: #passedCount) equals: 1.
-	self deny: (data includesKey: #skipped).
-	self deny: (data includesKey: #failures).
-	self deny: (data includesKey: #errors).
-	self deny: (data includesKey: #results)
+	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self assert: data equals: {
+			(#runCount -> 1).
+			(#passedCount -> 1) } asDictionary
 ]
 
 { #category : 'tests' }
@@ -721,13 +662,10 @@ MCPToolStructuredOutputTest >> testSearchPackagesReturnsStructuredError [
 ]
 
 { #category : 'tests' }
-MCPToolStructuredOutputTest >> testToolsListAdvertisesInputSchemaWithoutOutputSchema [
+MCPToolStructuredOutputTest >> testToolsListAdvertisesPublicToolContracts [
 
 	| tools |
 	tools := MCP new rpcToolsList at: #tools.
-	self assert:
-		(tools allSatisfy: [ :each | each includesKey: #inputSchema ]).
-	self deny:
-		(tools anySatisfy: [ :each | each includesKey: #outputSchema ]).
-	self deny: (tools anySatisfy: [ :each | each includesKey: #icons ])
+	self assert: tools notEmpty.
+	tools do: [ :tool | self assert: tool keys asSet equals: #( name title description inputSchema ) asSet ]
 ]
