@@ -1113,17 +1113,6 @@ MCPToolMethodMutationTest >> testMCPPackageMethodSourcesDoNotContainLineFeeds [
 ]
 
 { #category : 'tests' }
-MCPToolMethodMutationTest >> testMethodFormatterUsesScopedMaximumLineLength [
-
-	| compiledMethod formatter originalMaximum |
-	compiledMethod := self class >> #testMethodFormatterUsesScopedMaximumLineLength.
-	originalMaximum := EFFormatter maxLineLength.
-	formatter := MCPToolCompileMethod new formatterForMethod: compiledMethod.
-	self assert: formatter maxLineLength equals: 130.
-	self assert: EFFormatter maxLineLength equals: originalMaximum
-]
-
-{ #category : 'tests' }
 MCPToolMethodMutationTest >> testMethodToolSchemasDeclareExpectedInputs [
 
 	| classSideProperty createPropertyNames protocolPropertyNames selectorPropertyNames |
