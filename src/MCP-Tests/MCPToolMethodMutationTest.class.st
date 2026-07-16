@@ -524,6 +524,24 @@ MCPToolMethodMutationTest >> testCollectionStyleCritiquesProvideAutomaticChanges
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileAcceptsExplicitSelfReturnAsOnlyStatement [
+
+	| critiques data result selector |
+	selector := #noopSelfReturnProbe.
+	self removeSelector: selector from: MCPToolMethodMutationTestTarget.
+	[
+		result := self callToolWith: (self
+				           compileArgumentsForClassName: 'MCPToolMethodMutationTestTarget'
+				           classSide: false
+				           methodSource: 'noopSelfReturnProbe ^ self'
+				           protocol: 'tests').
+		self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+		data := self dataFrom: result.
+		critiques := data at: #critiques ifAbsent: [ #(  ) ].
+		self assert: critiques equals: #(  ) ] ensure: [ self removeSelector: selector from: MCPToolMethodMutationTestTarget ]
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testCompileAcceptsExplicitSelfReturnInBranch [
 
 	| critiques data result selector target |
@@ -931,11 +949,11 @@ MCPToolMethodMutationTest >> testCompileReturnsRedundantExplicitSelfReturnCritiq
 	[
 		self
 			assertCompileForClassName: 'MCPToolMethodMutationTestTarget'
-			methodSource: 'redundantSelfReturnProbe ^ self'
+			methodSource: 'redundantSelfReturnProbe self printString. ^ self'
 			protocol: 'tests'
 			returnsSingleCritiqueRuleClass: 'MCPRedundantExplicitSelfReturnRule'
-			titledLike: MCPRedundantExplicitSelfReturnRule ruleName ]
-		ensure: [ self removeSelector: selector from: MCPToolMethodMutationTestTarget ]
+			titledLike: MCPRedundantExplicitSelfReturnRule ruleName ] ensure: [
+		self removeSelector: selector from: MCPToolMethodMutationTestTarget ]
 ]
 
 { #category : 'tests' }
