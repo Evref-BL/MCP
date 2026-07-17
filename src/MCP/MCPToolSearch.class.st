@@ -296,9 +296,7 @@ MCPToolSearch >> includeSourceSchemaPropertyWithDescription: includeSourceDescri
 { #category : 'private - results' }
 MCPToolSearch >> isRegexSyntaxError: anError [
 
-	| pcre2CompileErrorClass |
-	pcre2CompileErrorClass := Smalltalk at: #PCRE2CompileError ifAbsent: [ nil ].
-	^ anError class = RegexSyntaxError or: [ anError class = pcre2CompileErrorClass ]
+	^ anError class = RegexSyntaxError or: [ anError class = PCRE2CompileError ]
 ]
 
 { #category : 'private - template' }
@@ -436,13 +434,10 @@ MCPToolSearch >> parsedRequestFromToolRequest: request [
 
 { #category : 'private - filtering' }
 MCPToolSearch >> pcre2RegexLibraryAvailable [
-	"PCRE2 is optional. Use it only when its Smalltalk package and native runtime library are already available."
+	"PCRE2 is an optional native runtime dependency: the Smalltalk package can be loaded while the host library is missing."
 
-	| libraryClass pcre2Class |
-	libraryClass := Smalltalk at: #LibPCRE2UTF8 ifAbsent: [ ^ false ].
-	pcre2Class := Smalltalk at: #PCRE2 ifAbsent: [ ^ false ].
 	^ [
-		  libraryClass config: pcre2Class configVersion.
+		  LibPCRE2UTF8 config: PCRE2 configVersion.
 		  true ]
 		  on: Error
 		  do: [ false ]
