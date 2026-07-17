@@ -1,5 +1,5 @@
 "
-Test tool that models an image where the optional PCRE2 package or native library is unavailable.
+Test tool that models an unavailable native PCRE2 library.
 "
 Class {
 	#name : 'MCPToolSearchWithoutPCRE2TestStub',

@@ -296,7 +296,8 @@ MCPToolSearch >> includeSourceSchemaPropertyWithDescription: includeSourceDescri
 { #category : 'private - results' }
 MCPToolSearch >> isRegexSyntaxError: anError [
 
-	^ anError class = RegexSyntaxError or: [ anError class = PCRE2CompileError ]
+	^ anError class = RegexSyntaxError or: [
+		  anError class = PCRE2CompileError ]
 ]
 
 { #category : 'private - template' }
