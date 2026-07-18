@@ -33,18 +33,6 @@ MCPToolMethodSearchTest >> targetClassName [
 ]
 
 { #category : 'tests' }
-MCPToolMethodSearchTest >> testBasicRegexMatcherRemainsAvailableAsFallback [
-
-	| matcher tool |
-	tool := MCPToolSearchMethodMetadata new.
-	matcher := tool
-		           basicRegexMatcherForPattern: 'MCP.*Test'
-		           caseSensitive: true.
-	self assert: (matcher value: 'MCPToolMethodSearchTest').
-	self deny: (matcher value: 'mcpToolMethodSearchTest')
-]
-
-{ #category : 'tests' }
 MCPToolMethodSearchTest >> testCanFilterAcrossExplicitProtocolTarget [
 
 	| data result selectors |
@@ -702,6 +690,16 @@ MCPToolMethodSearchTest >> testParentClassNamesReturnParentMethods [
 	self
 		entryForReference: 'MCPToolHierarchyTestBase>>hierarchyProbe'
 		in: (data at: #methods)
+]
+
+{ #category : 'tests' }
+MCPToolMethodSearchTest >> testRegexMatcherUsesBasicRegexWhenPCRE2Unavailable [
+
+	| matcher tool |
+	tool := MCPToolSearchWithoutPCRE2TestStub new.
+	matcher := tool regexMatcherForPattern: 'MCP.*Test' caseSensitive: true.
+	self assert: (matcher value: 'MCPToolMethodSearchTest').
+	self deny: (matcher value: 'mcpToolMethodSearchTest')
 ]
 
 { #category : 'tests' }
