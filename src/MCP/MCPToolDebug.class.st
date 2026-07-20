@@ -17,6 +17,12 @@ MCPToolDebug class >> isAbstract [
 	^ self = MCPToolDebug
 ]
 
+{ #category : 'metadata' }
+MCPToolDebug >> additionalKeywords [
+
+	^ #( 'debug' 'session' 'state' 'frame' 'breakpoint' 'exception' 'repair' 'control' )
+]
+
 { #category : 'private - schema' }
 MCPToolDebug >> boundedIntegerSchemaPropertyNamed: propertyName description: propertyDescription default: defaultValue maximum: maximumValue [
 
@@ -74,6 +80,12 @@ MCPToolDebug >> executeWithRequest: request [
 				  self resultForCommandResult:
 					  (self commandForRequest: debugRequest) execute ]
 		  onError: [ :error :ignored | self errorResultForDebugError: error ]
+]
+
+{ #category : 'metadata' }
+MCPToolDebug >> groupName [
+
+	^ 'debugging'
 ]
 
 { #category : 'private - schema' }

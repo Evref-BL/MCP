@@ -51,11 +51,10 @@ MCPToolAPITestCase >> callRawToolNamed: aToolName withArguments: someArguments [
 { #category : 'private - calling' }
 MCPToolAPITestCase >> callToolNamed: aToolName withArguments: someArguments [
 
-	(MCPToolRegistry isStaticTool: aToolName) ifTrue: [
-		^ self callRawToolNamed: aToolName withArguments: someArguments ].
-	^ self
-		  callDiscoveredToolNamed: aToolName
-		  withArguments: someArguments
+	| mcp |
+	mcp := self mcpWithoutObservabilityExport.
+	(mcp toolExposurePolicy isStaticTool: aToolName) ifTrue: [ ^ self callRawToolNamed: aToolName withArguments: someArguments ].
+	^ self callDiscoveredToolNamed: aToolName withArguments: someArguments
 ]
 
 { #category : 'private - results' }
@@ -129,6 +128,12 @@ MCPToolAPITestCase >> structuredContentFrom: aResult [
 MCPToolAPITestCase >> summaryFrom: aResult [
 
 	^ (self structuredContentFrom: aResult) at: #summary
+]
+
+{ #category : 'support' }
+MCPToolAPITestCase >> toolRegistry [
+
+	^ self mcpWithoutObservabilityExport toolRegistry
 ]
 
 { #category : 'private - parsing' }

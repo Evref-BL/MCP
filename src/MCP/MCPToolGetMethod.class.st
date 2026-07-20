@@ -105,6 +105,12 @@ MCPToolGetMethod >> commandForRequest: getRequest [
 	^ MCPGetMethodCommand tool: self request: getRequest
 ]
 
+{ #category : 'metadata' }
+MCPToolGetMethod >> defaultExposure [
+
+	^ 'static'
+]
+
 { #category : 'private - analysis' }
 MCPToolGetMethod >> definingClassNameFromBinding: aBinding [
 
@@ -191,6 +197,12 @@ MCPToolGetMethod >> failureMessageForClassNamed: className selector: selectorStr
 				  nextPutAll: anError messageText ]
 ]
 
+{ #category : 'metadata' }
+MCPToolGetMethod >> groupName [
+
+	^ 'methods'
+]
+
 { #category : 'private - analysis' }
 MCPToolGetMethod >> incrementReferenceCountInSummary: aSummary [
 
@@ -206,6 +218,12 @@ MCPToolGetMethod >> matchingSummaryForNodeName: aName kind: aKind ownerName: anO
 						  (each at: #kind) = aKind and: [
 							  (each at: #ownerName ifAbsent: [ nil ]) = anOwnerName ] ] ]
 		  ifNone: [ nil ]
+]
+
+{ #category : 'metadata' }
+MCPToolGetMethod >> mutability [
+
+	^ 'read'
 ]
 
 { #category : 'private - analysis' }
@@ -252,6 +270,12 @@ MCPToolGetMethod >> ownerNameForNode: aVariableNode kind: aKind methodBehavior: 
 MCPToolGetMethod >> parsedRequestFromToolRequest: request [
 
 	^ MCPGetMethodRequest fromRequest: request tool: self
+]
+
+{ #category : 'metadata' }
+MCPToolGetMethod >> risk [
+
+	^ 'low'
 ]
 
 { #category : 'private - errors' }

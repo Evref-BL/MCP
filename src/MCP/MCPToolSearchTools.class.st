@@ -60,6 +60,12 @@ MCPToolSearchTools >> commandForRequest: searchRequest [
 ]
 
 { #category : 'metadata' }
+MCPToolSearchTools >> defaultExposure [
+
+	^ 'static'
+]
+
+{ #category : 'metadata' }
 MCPToolSearchTools >> description [
 
 	^ 'Search all MCP-Pharo tools. Use to discover tool names before tool_get or tool_call.'
@@ -89,6 +95,12 @@ MCPToolSearchTools >> executeWithRequest: request usingPolicy: aToolExposurePoli
 					  (data at: #tools) size asString , ' tools found.'
 					  data: data ]
 		  onError: [ :error :parsedRequest | self errorResultFor: error ]
+]
+
+{ #category : 'metadata' }
+MCPToolSearchTools >> groupName [
+
+	^ 'tool-catalog'
 ]
 
 { #category : 'private - request' }

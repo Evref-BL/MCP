@@ -15,6 +15,18 @@ MCPToolSearchDebugCandidates class >> toolName [
 	^ 'debug_candidate_search'
 ]
 
+{ #category : 'metadata' }
+MCPToolSearchDebugCandidates >> mutability [
+
+	^ 'read'
+]
+
+{ #category : 'metadata' }
+MCPToolSearchDebugCandidates >> risk [
+
+	^ 'low'
+]
+
 { #category : 'private - specs' }
 MCPToolSearchDebugCandidates >> sessionToolSpec [
 

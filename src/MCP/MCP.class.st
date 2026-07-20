@@ -293,8 +293,7 @@ MCP >> port: aPortNumber [
 { #category : 'private - tools' }
 MCP >> refreshToolsList [
 
-	toolsList := MCPToolRegistry staticToolsDictionaryUsingPolicy:
-		             self toolExposurePolicy.
+	toolsList := self toolRegistry staticToolsDictionaryUsingPolicy: self toolExposurePolicy.
 	^ toolsList
 ]
 
@@ -309,26 +308,15 @@ MCP >> restart [
 MCP >> rpcCallToolCallWithParams: arguments [
 
 	| callRequest callTool request targetTool |
-	callTool := MCPToolRegistry
-		            toolNamed: MCPToolCallTool toolName
-		            ifAbsent: [
-		            Error signal: 'tool_call is not registered.' ]
-		            usingPolicy: self toolExposurePolicy.
+	callTool := self toolRegistry toolNamed: MCPToolCallTool toolName ifAbsent: [ Error signal: 'tool_call is not registered.' ].
 	^ [
 		  request := callTool requestFromToolCallArguments: arguments.
 		  callRequest := callTool parsedRequestFromToolRequest: request.
-		  callRequest toolName = callTool name ifTrue: [
-			  Error signal: 'tool_call cannot call itself.' ].
-		  targetTool := MCPToolRegistry
+		  callRequest toolName = callTool name ifTrue: [ Error signal: 'tool_call cannot call itself.' ].
+		  targetTool := self toolRegistry
 			                toolNamed: callRequest toolName
-			                ifAbsent: [
-			                Error signal:
-				                'Unknown MCP tool: ' , callRequest toolName ]
-			                usingPolicy: self toolExposurePolicy.
-		  self
-			  executeTool: targetTool
-			  named: targetTool name
-			  withParams: callRequest arguments ]
+			                ifAbsent: [ Error signal: 'Unknown MCP tool: ' , callRequest toolName ].
+		  self executeTool: targetTool named: targetTool name withParams: callRequest arguments ]
 		  on: Exception
 		  do: [ :error |
 				  | errorResult |
@@ -482,6 +470,12 @@ MCP >> toolExposurePolicy: aToolExposurePolicy [
 		                      MCPToolExposurePolicy default ].
 	self refreshToolsList.
 	^ toolExposurePolicy
+]
+
+{ #category : 'accessing' }
+MCP >> toolRegistry [
+
+	^ self toolExposurePolicy toolRegistry
 ]
 
 { #category : 'accessing' }

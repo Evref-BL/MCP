@@ -15,6 +15,18 @@ MCPToolListRepositoryChanges class >> toolName [
 	^ 'repository_change_list'
 ]
 
+{ #category : 'metadata' }
+MCPToolListRepositoryChanges >> additionalKeywords [
+
+	^ super additionalKeywords , #( 'diff' 'status' 'change' )
+]
+
+{ #category : 'metadata' }
+MCPToolListRepositoryChanges >> mutability [
+
+	^ 'read'
+]
+
 { #category : 'private - specs' }
 MCPToolListRepositoryChanges >> repositoryToolSpec [
 
@@ -26,4 +38,10 @@ MCPToolListRepositoryChanges >> repositoryToolSpec [
 		  (#action -> 'diff').
 		  (#requestClass -> MCPRepositoryDiffRequest).
 		  (#commandClass -> MCPRepositoryDiffCommand) } asDictionary
+]
+
+{ #category : 'metadata' }
+MCPToolListRepositoryChanges >> risk [
+
+	^ 'low'
 ]

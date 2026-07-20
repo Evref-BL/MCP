@@ -28,8 +28,7 @@ MCPSaveImageRecordingServer >> didSaveImageSession [
 { #category : 'private - calling' }
 MCPSaveImageRecordingServer >> rpcToolCall: aToolName withParams: someArguments [
 
-	(MCPToolRegistry isStaticTool: aToolName) ifTrue: [
-		^ super rpcToolCall: aToolName withParams: someArguments ].
+	(self toolExposurePolicy isStaticTool: aToolName) ifTrue: [ ^ super rpcToolCall: aToolName withParams: someArguments ].
 	^ super rpcToolCall: 'tool_call' withParams: {
 			  (#toolName -> aToolName).
 			  (#arguments -> someArguments) } asDictionary

@@ -86,10 +86,22 @@ MCPToolListChangeHistoryFiles >> maximumFileLimit [
 	^ 100
 ]
 
+{ #category : 'metadata' }
+MCPToolListChangeHistoryFiles >> mutability [
+
+	^ 'read'
+]
+
 { #category : 'private - request' }
 MCPToolListChangeHistoryFiles >> parsedRequestFromToolRequest: request [
 
 	^ MCPChangeHistoryListLogsRequest fromRequest: request tool: self
+]
+
+{ #category : 'metadata' }
+MCPToolListChangeHistoryFiles >> risk [
+
+	^ 'low'
 ]
 
 { #category : 'metadata' }

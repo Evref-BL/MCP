@@ -175,24 +175,15 @@ MCPToolRepositoryToolsTest >> testRepositoryToolsAreDiscoverableWithExpectedRisk
 
 	| metadataByName |
 	metadataByName := self metadataByNameForRepositoryTools.
-	#( 'repository_identity_verify' 'repository_change_list'
-	   'repository_create' 'repository_attach' 'repository_update'
-	   'repository_remote_add' 'repository_remote_remove'
-	   'repository_remote_update' 'repository_export' 'repository_commit'
-	   'repository_fetch' 'repository_pull' 'repository_push'
-	   'repository_branch_create' 'repository_branch_switch'
+	#( 'repository_identity_verify' 'repository_change_list' 'repository_create' 'repository_attach' 'repository_update'
+	   'repository_remote_add' 'repository_remote_remove' 'repository_remote_update' 'repository_export' 'repository_commit'
+	   'repository_fetch' 'repository_pull' 'repository_push' 'repository_branch_create' 'repository_branch_switch'
 	   'repository_branch_checkout' 'repository_head_adopt' ) do: [ :toolName |
 			| metadata tool |
 			metadata := metadataByName at: toolName.
-			tool := MCPToolRegistry
-				        toolNamed: toolName
-				        ifAbsent: [ self fail: 'Missing tool ' , toolName ].
-			self
-				assert: (MCPToolRegistry exposureForTool: tool)
-				equals: 'discoverable'.
-			self
-				assert: metadata keys asSet
-				equals: #( name description ) asSet ].
+			tool := self toolRegistry toolNamed: toolName ifAbsent: [ self fail: 'Missing tool ' , toolName ].
+			self assert: tool defaultExposure equals: 'discoverable'.
+			self assert: metadata keys asSet equals: #( name description ) asSet ].
 	self assert: (metadataByName includesKey: 'repository_load')
 ]
 

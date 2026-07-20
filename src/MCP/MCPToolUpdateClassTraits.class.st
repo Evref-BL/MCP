@@ -15,6 +15,12 @@ MCPToolUpdateClassTraits class >> toolName [
 	^ 'class_traits_update'
 ]
 
+{ #category : 'metadata' }
+MCPToolUpdateClassTraits >> additionalKeywords [
+
+	^ super additionalKeywords , #( 'trait' 'composition' 'definition' )
+]
+
 { #category : 'private - specs' }
 MCPToolUpdateClassTraits >> classToolSpec [
 

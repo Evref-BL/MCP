@@ -16,6 +16,12 @@ MCPToolEvaluate class >> toolName [
 ]
 
 { #category : 'metadata' }
+MCPToolEvaluate >> additionalKeywords [
+
+	^ #( 'expression' 'smalltalk' )
+]
+
+{ #category : 'metadata' }
 MCPToolEvaluate >> buildInputSchema [
 
 	^ MCPStructureInputSchema new
@@ -59,6 +65,12 @@ MCPToolEvaluate >> commandForRequest: evaluateRequest [
 ]
 
 { #category : 'metadata' }
+MCPToolEvaluate >> defaultExposure [
+
+	^ 'static'
+]
+
+{ #category : 'metadata' }
 MCPToolEvaluate >> description [
 
 	^ 'Evaluate arbitrary Smalltalk code and return a bounded preview of the result. Use this escape hatch only when a dedicated tool does not fit; it may mutate image state.'
@@ -90,6 +102,18 @@ MCPToolEvaluate >> executeWithRequest: request [
 					  details: (self errorDetailsFor: error) ]
 ]
 
+{ #category : 'metadata' }
+MCPToolEvaluate >> groupName [
+
+	^ 'runtime'
+]
+
+{ #category : 'metadata' }
+MCPToolEvaluate >> mutability [
+
+	^ 'execute'
+]
+
 { #category : 'private - request' }
 MCPToolEvaluate >> parsedRequestFromToolRequest: request [
 
@@ -100,6 +124,12 @@ MCPToolEvaluate >> parsedRequestFromToolRequest: request [
 MCPToolEvaluate >> resultPreviewCharacterLimit [
 
 	^ 10000
+]
+
+{ #category : 'metadata' }
+MCPToolEvaluate >> risk [
+
+	^ 'medium'
 ]
 
 { #category : 'private' }

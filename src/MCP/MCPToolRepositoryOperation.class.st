@@ -17,6 +17,12 @@ MCPToolRepositoryOperation class >> isAbstract [
 	^ self = MCPToolRepositoryOperation
 ]
 
+{ #category : 'metadata' }
+MCPToolRepositoryOperation >> additionalKeywords [
+
+	^ #( 'repository' 'repo' 'iceberg' 'git' )
+]
+
 { #category : 'private - schema' }
 MCPToolRepositoryOperation >> branchNameSchemaProperty [
 
@@ -69,6 +75,12 @@ MCPToolRepositoryOperation >> errorResultForCommandError: anError action: action
 				value ifNotNil: [ details at: key ifAbsentPut: [ value ] ] ] ].
 	details at: #action put: action.
 	^ self errorResultText: anError messageText details: details
+]
+
+{ #category : 'metadata' }
+MCPToolRepositoryOperation >> groupName [
+
+	^ 'repositories'
 ]
 
 { #category : 'private - schema' }

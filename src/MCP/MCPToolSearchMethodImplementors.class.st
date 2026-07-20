@@ -16,6 +16,12 @@ MCPToolSearchMethodImplementors class >> toolName [
 ]
 
 { #category : 'metadata' }
+MCPToolSearchMethodImplementors >> defaultExposure [
+
+	^ 'static'
+]
+
+{ #category : 'metadata' }
 MCPToolSearchMethodImplementors >> description [
 
 	^ 'Search methods that implement a selector. Use method_metadata_search for general method metadata, or method_source_search for source text.'

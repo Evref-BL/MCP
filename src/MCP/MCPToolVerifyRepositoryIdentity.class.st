@@ -15,6 +15,18 @@ MCPToolVerifyRepositoryIdentity class >> toolName [
 	^ 'repository_identity_verify'
 ]
 
+{ #category : 'metadata' }
+MCPToolVerifyRepositoryIdentity >> additionalKeywords [
+
+	^ super additionalKeywords , #( 'identity' 'guard' )
+]
+
+{ #category : 'metadata' }
+MCPToolVerifyRepositoryIdentity >> mutability [
+
+	^ 'read'
+]
+
 { #category : 'private - specs' }
 MCPToolVerifyRepositoryIdentity >> repositoryToolSpec [
 
@@ -32,4 +44,10 @@ MCPToolVerifyRepositoryIdentity >> repositoryToolSpec [
 			   self packageNamesSchemaProperty.
 			   self modifiedPackageNamesSchemaProperty.
 			   self isModifiedSchemaProperty }) } asDictionary
+]
+
+{ #category : 'metadata' }
+MCPToolVerifyRepositoryIdentity >> risk [
+
+	^ 'low'
 ]

@@ -40,3 +40,9 @@ MCPToolCreateClass >> classToolSpec [
 		   -> #( 'className' 'superclassName' 'packageName' )) }
 		  asDictionary
 ]
+
+{ #category : 'metadata' }
+MCPToolCreateClass >> defaultExposure [
+
+	^ 'static'
+]

@@ -61,6 +61,12 @@ MCPToolLoadBaseline >> parsedRequestFromToolRequest: request [
 ]
 
 { #category : 'metadata' }
+MCPToolLoadBaseline >> risk [
+
+	^ 'medium'
+]
+
+{ #category : 'metadata' }
 MCPToolLoadBaseline >> title [
 
 	^ 'Load Baseline'

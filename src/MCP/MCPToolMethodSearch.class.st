@@ -19,6 +19,12 @@ MCPToolMethodSearch class >> isAbstract [
 ]
 
 { #category : 'metadata' }
+MCPToolMethodSearch >> additionalKeywords [
+
+	^ #( 'method' )
+]
+
+{ #category : 'metadata' }
 MCPToolMethodSearch >> buildOutputSchema [
 
 	^ self
@@ -83,6 +89,12 @@ MCPToolMethodSearch >> fieldTextsForMethodEntry: anEntry sourceText: sourceText 
 MCPToolMethodSearch >> filterTextsForMethodEntry: anEntry sourceText: sourceText [
 
 	^ #(  )
+]
+
+{ #category : 'metadata' }
+MCPToolMethodSearch >> groupName [
+
+	^ 'methods'
 ]
 
 { #category : 'private - methods' }

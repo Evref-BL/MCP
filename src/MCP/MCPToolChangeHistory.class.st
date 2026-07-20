@@ -17,6 +17,12 @@ MCPToolChangeHistory class >> isAbstract [
 	^ self = MCPToolChangeHistory
 ]
 
+{ #category : 'metadata' }
+MCPToolChangeHistory >> additionalKeywords [
+
+	^ #( 'history' 'change' 'epicea' 'ombu' 'recover' )
+]
+
 { #category : 'private - schema' }
 MCPToolChangeHistory >> changeHistoryEntryArraySchemaNamed: propertyName description: propertyDescription [
 
@@ -162,6 +168,12 @@ MCPToolChangeHistory >> executeWithRequest: request [
 								  errorResultText: commandError messageText
 								  details: commandError structuredDetails ]
 					  otherwise: [ :toolError | self errorResultFor: toolError ] ]
+]
+
+{ #category : 'metadata' }
+MCPToolChangeHistory >> groupName [
+
+	^ 'history'
 ]
 
 { #category : 'private - schema' }

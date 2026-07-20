@@ -69,6 +69,12 @@ MCPToolCallTool >> commandForRequest: callRequest [
 ]
 
 { #category : 'metadata' }
+MCPToolCallTool >> defaultExposure [
+
+	^ 'static'
+]
+
+{ #category : 'metadata' }
 MCPToolCallTool >> description [
 
 	^ 'Invoke one MCP-Pharo tool selected by name from the discoverable catalog. The target tool receives the nested arguments object and is validated through its own schema.'
@@ -86,10 +92,28 @@ MCPToolCallTool >> executeWithRequest: request [
 		  onError: [ :error :parsedRequest | self errorResultFor: error ]
 ]
 
+{ #category : 'metadata' }
+MCPToolCallTool >> groupName [
+
+	^ 'tool-catalog'
+]
+
+{ #category : 'metadata' }
+MCPToolCallTool >> mutability [
+
+	^ 'execute'
+]
+
 { #category : 'private - request' }
 MCPToolCallTool >> parsedRequestFromToolRequest: request [
 
 	^ MCPCallToolRequest fromToolRequest: request
+]
+
+{ #category : 'metadata' }
+MCPToolCallTool >> risk [
+
+	^ 'medium'
 ]
 
 { #category : 'metadata' }

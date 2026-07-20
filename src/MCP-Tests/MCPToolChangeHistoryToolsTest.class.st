@@ -19,26 +19,16 @@ MCPToolChangeHistoryToolsTest >> inputPropertyNamesFor: aTool [
 MCPToolChangeHistoryToolsTest >> testChangeHistoryToolsAreDiscoverableWithExpectedRisk [
 
 	| metadataByName result toolNames |
-	result := self
-		callToolNamed: 'tool_search'
-		withArguments: { (#group -> 'history') } asDictionary.
-	metadataByName := (((self dataFrom: result) at: #tools) collect: [ :each |
-		(each at: #name) -> each ]) asDictionary.
+	result := self callToolNamed: 'tool_search' withArguments: { (#group -> 'history') } asDictionary.
+	metadataByName := (((self dataFrom: result) at: #tools) collect: [ :each | (each at: #name) -> each ]) asDictionary.
 	toolNames := metadataByName keys.
-	#( 'history_file_list' 'history_entry_list' 'history_entry_apply'
-	   'history_entry_revert' ) do: [ :toolName |
+	#( 'history_file_list' 'history_entry_list' 'history_entry_apply' 'history_entry_revert' ) do: [ :toolName |
 			| metadata tool |
 			self assert: (toolNames includes: toolName).
-			tool := MCPToolRegistry
-				toolNamed: toolName
-				ifAbsent: [ self fail: 'Missing tool ' , toolName ].
-			self
-				assert: (MCPToolRegistry exposureForTool: tool)
-				equals: 'discoverable'.
+			tool := self toolRegistry toolNamed: toolName ifAbsent: [ self fail: 'Missing tool ' , toolName ].
+			self assert: tool defaultExposure equals: 'discoverable'.
 			metadata := metadataByName at: toolName.
-			self
-				assert: metadata keys asSet
-				equals: #( name description ) asSet ]
+			self assert: metadata keys asSet equals: #( name description ) asSet ]
 ]
 
 { #category : 'tests' }

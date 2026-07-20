@@ -349,6 +349,12 @@ MCPToolSearch >> minimalPagedQueryOutputSchemaForEntriesPropertyNamed: entriesPr
 		  required: { entriesPropertyName }
 ]
 
+{ #category : 'metadata' }
+MCPToolSearch >> mutability [
+
+	^ 'read'
+]
+
 { #category : 'private - filtering' }
 MCPToolSearch >> normalizeFilterString: aValue caseSensitive: aBoolean [
 
@@ -514,6 +520,12 @@ MCPToolSearch >> requestedContextForErrorFromRequest: request [
 MCPToolSearch >> requestedContextFromRequest: request [
 
 	^ self subclassResponsibility
+]
+
+{ #category : 'metadata' }
+MCPToolSearch >> risk [
+
+	^ 'low'
 ]
 
 { #category : 'private - results' }

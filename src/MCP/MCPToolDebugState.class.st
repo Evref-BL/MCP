@@ -151,10 +151,22 @@ MCPToolDebugState >> description [
 	^ 'Return a compact snapshot of one tracked Pharo debug session: selected frame, source, stack, shallow scopes, and repair actions.'
 ]
 
+{ #category : 'metadata' }
+MCPToolDebugState >> mutability [
+
+	^ 'read'
+]
+
 { #category : 'private - request' }
 MCPToolDebugState >> parsedRequestFromToolRequest: request [
 
 	^ MCPDebugStateRequest fromRequest: request tool: self
+]
+
+{ #category : 'metadata' }
+MCPToolDebugState >> risk [
+
+	^ 'low'
 ]
 
 { #category : 'metadata' }

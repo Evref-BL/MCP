@@ -20,6 +20,12 @@ MCPToolRunTests class >> toolName [
 ]
 
 { #category : 'metadata' }
+MCPToolRunTests >> additionalKeywords [
+
+	^ #( 'test' 'sunit' 'timeout' )
+]
+
+{ #category : 'metadata' }
 MCPToolRunTests >> buildInputSchema [
 
 	| timeoutProperty |
@@ -214,6 +220,12 @@ MCPToolRunTests >> defaultCoverageMethodLimit [
 	^ 50
 ]
 
+{ #category : 'metadata' }
+MCPToolRunTests >> defaultExposure [
+
+	^ 'static'
+]
+
 { #category : 'defaults' }
 MCPToolRunTests >> defaultTimeoutSeconds [
 
@@ -277,6 +289,18 @@ MCPToolRunTests >> failureMessageForTestNames: testNames error: anError [
 				  nextPutAll: anError messageText ]
 ]
 
+{ #category : 'metadata' }
+MCPToolRunTests >> groupName [
+
+	^ 'tests'
+]
+
+{ #category : 'metadata' }
+MCPToolRunTests >> mutability [
+
+	^ 'execute'
+]
+
 { #category : 'private - request' }
 MCPToolRunTests >> parsedRequestFromToolRequest: request [
 
@@ -300,6 +324,12 @@ MCPToolRunTests >> rawTestNamesFromRequest: rawRequest [
 					  (self
 						   rawStringCollectionNamed: argumentName
 						   fromRequest: rawRequest) do: [ :each | stream nextPut: each ] ] ]
+]
+
+{ #category : 'metadata' }
+MCPToolRunTests >> risk [
+
+	^ 'medium'
 ]
 
 { #category : 'private' }

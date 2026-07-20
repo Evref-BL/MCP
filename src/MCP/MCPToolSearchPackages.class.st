@@ -44,6 +44,12 @@ MCPToolSearchPackages >> buildOutputSchema [
 ]
 
 { #category : 'metadata' }
+MCPToolSearchPackages >> defaultExposure [
+
+	^ 'static'
+]
+
+{ #category : 'metadata' }
 MCPToolSearchPackages >> description [
 
 	^ 'Search packages by name, project, or tag.'
@@ -65,6 +71,12 @@ MCPToolSearchPackages >> fieldTextsForPackageEntry: anEntry fieldName: fieldName
 	fieldName = 'projectName' ifTrue: [ ^ anEntry at: #projectNames ].
 	fieldName = 'tag' ifTrue: [ ^ anEntry at: #tagNames ].
 	^ #(  )
+]
+
+{ #category : 'metadata' }
+MCPToolSearchPackages >> groupName [
+
+	^ 'packages'
 ]
 
 { #category : 'private - filtering' }

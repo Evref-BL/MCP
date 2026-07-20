@@ -75,6 +75,12 @@ MCPToolRewriteMethods >> executeWithRequest: request [
 					  rawRequest: request ]
 ]
 
+{ #category : 'metadata' }
+MCPToolRewriteMethods >> groupName [
+
+	^ 'methods'
+]
+
 { #category : 'private - execution' }
 MCPToolRewriteMethods >> parsedRequestFromToolRequest: request [
 

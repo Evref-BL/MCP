@@ -162,6 +162,12 @@ MCPToolRemoveMethods >> forceRemoveSelectors: selectorSymbols from: aBehavior [
 	refactoring performChanges
 ]
 
+{ #category : 'metadata' }
+MCPToolRemoveMethods >> groupName [
+
+	^ 'methods'
+]
+
 { #category : 'private - request' }
 MCPToolRemoveMethods >> parsedRequestFromToolRequest: request [
 

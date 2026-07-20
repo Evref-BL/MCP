@@ -24,10 +24,8 @@ MCPGetToolCommand class >> tool: aTool request: aRequest [
 MCPGetToolCommand >> execute [
 
 	| catalogTool |
-	catalogTool := MCPToolRegistry
+	catalogTool := self toolExposurePolicy toolRegistry
 		               toolNamed: request toolName
-		               ifAbsent: [ Error signal: 'Unknown MCP tool: ' , request toolName ]
-		               usingPolicy: self toolExposurePolicy.
-	^ { (#tool -> (MCPToolRegistry contractForTool: catalogTool usingPolicy: self toolExposurePolicy includeOutputSchema: false)) }
-		  asDictionary
+		               ifAbsent: [ Error signal: 'Unknown MCP tool: ' , request toolName ].
+	^ { (#tool -> (catalogTool contractUsingPolicy: self toolExposurePolicy includeOutputSchema: false)) } asDictionary
 ]

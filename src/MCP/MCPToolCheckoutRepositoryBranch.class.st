@@ -15,6 +15,12 @@ MCPToolCheckoutRepositoryBranch class >> toolName [
 	^ 'repository_branch_checkout'
 ]
 
+{ #category : 'metadata' }
+MCPToolCheckoutRepositoryBranch >> additionalKeywords [
+
+	^ super additionalKeywords , #( 'checkout' 'reload' 'stale' 'verification' )
+]
+
 { #category : 'private - specs' }
 MCPToolCheckoutRepositoryBranch >> repositoryToolSpec [
 

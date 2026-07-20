@@ -144,6 +144,12 @@ MCPToolRemoveClasses >> failureMessageForClassNames: classNames error: anError [
 				  nextPutAll: anError messageText ]
 ]
 
+{ #category : 'metadata' }
+MCPToolRemoveClasses >> groupName [
+
+	^ 'classes'
+]
+
 { #category : 'private - request' }
 MCPToolRemoveClasses >> parsedRequestFromToolRequest: request [
 

@@ -15,6 +15,18 @@ MCPToolListDebugSessions class >> toolName [
 	^ 'debug_session_list'
 ]
 
+{ #category : 'metadata' }
+MCPToolListDebugSessions >> mutability [
+
+	^ 'read'
+]
+
+{ #category : 'metadata' }
+MCPToolListDebugSessions >> risk [
+
+	^ 'low'
+]
+
 { #category : 'private - specs' }
 MCPToolListDebugSessions >> sessionToolSpec [
 

@@ -24,3 +24,15 @@ MCPToolListDebugBreakpoints >> breakpointToolSpec [
 		   -> 'List tracked transient Pharo DebugPoint breakpoints.').
 		  (#action -> 'list') } asDictionary
 ]
+
+{ #category : 'metadata' }
+MCPToolListDebugBreakpoints >> mutability [
+
+	^ 'read'
+]
+
+{ #category : 'metadata' }
+MCPToolListDebugBreakpoints >> risk [
+
+	^ 'low'
+]

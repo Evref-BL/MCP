@@ -37,6 +37,12 @@ MCPToolSearchMethodMetadata >> buildInputSchema [
 ]
 
 { #category : 'metadata' }
+MCPToolSearchMethodMetadata >> defaultExposure [
+
+	^ 'static'
+]
+
+{ #category : 'metadata' }
 MCPToolSearchMethodMetadata >> description [
 
 	^ 'Search method metadata by selector, protocol, class, package, or scope. Use specialized method search tools for source, senders, implementors, and references.'

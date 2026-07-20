@@ -225,6 +225,12 @@ MCPToolLoadRepository >> repositoryUrlSchemaProperty [
 		  yourself
 ]
 
+{ #category : 'metadata' }
+MCPToolLoadRepository >> risk [
+
+	^ 'medium'
+]
+
 { #category : 'testing' }
 MCPToolLoadRepository >> shouldSaveImageAfterSuccessfulExecution [
 

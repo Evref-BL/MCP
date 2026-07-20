@@ -19,6 +19,12 @@ MCPToolClassMutation class >> isAbstract [
 	^ self = MCPToolClassMutation
 ]
 
+{ #category : 'metadata' }
+MCPToolClassMutation >> additionalKeywords [
+
+	^ #( 'class' 'refactor' 'refactoring' )
+]
+
 { #category : 'private - schema' }
 MCPToolClassMutation >> atLeastOneInputProperties [
 
@@ -290,6 +296,12 @@ MCPToolClassMutation >> failureMessageForSetCommentOnClassNamed: className error
 MCPToolClassMutation >> fixedArguments [
 
 	^ self classToolSpec at: #fixedArguments ifAbsent: [ Dictionary new ]
+]
+
+{ #category : 'metadata' }
+MCPToolClassMutation >> groupName [
+
+	^ 'classes'
 ]
 
 { #category : 'private - schema' }

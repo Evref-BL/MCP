@@ -122,6 +122,12 @@ MCPToolDebugEvaluate >> description [
 	^ 'Evaluate a Smalltalk expression in a selected DebugSession frame. The expression resolves frame receiver and temporaries and may mutate image state.'
 ]
 
+{ #category : 'metadata' }
+MCPToolDebugEvaluate >> mutability [
+
+	^ 'execute'
+]
+
 { #category : 'private - request' }
 MCPToolDebugEvaluate >> parsedRequestFromToolRequest: request [
 
@@ -132,6 +138,12 @@ MCPToolDebugEvaluate >> parsedRequestFromToolRequest: request [
 MCPToolDebugEvaluate >> resultPreviewCharacterLimit [
 
 	^ 10000
+]
+
+{ #category : 'metadata' }
+MCPToolDebugEvaluate >> risk [
+
+	^ 'medium'
 ]
 
 { #category : 'private' }

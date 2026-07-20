@@ -15,6 +15,12 @@ MCPToolLoadMetacello class >> isAbstract [
 	^ self = MCPToolLoadMetacello
 ]
 
+{ #category : 'metadata' }
+MCPToolLoadMetacello >> additionalKeywords [
+
+	^ #( 'baseline' 'metacello' 'load' 'package' )
+]
+
 { #category : 'private - execution' }
 MCPToolLoadMetacello >> commandForRequest: loadRequest [
 
@@ -117,6 +123,12 @@ MCPToolLoadMetacello >> failureSummaryForError: anError loadRequest: loadRequest
 			  stream
 				  nextPutAll: ': ';
 				  nextPutAll: message ]
+]
+
+{ #category : 'metadata' }
+MCPToolLoadMetacello >> groupName [
+
+	^ 'repositories'
 ]
 
 { #category : 'private - schema' }

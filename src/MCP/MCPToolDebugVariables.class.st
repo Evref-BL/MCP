@@ -127,10 +127,22 @@ MCPToolDebugVariables >> description [
 	^ 'Expand one state-scoped variable or scope reference returned by debug_state_get.'
 ]
 
+{ #category : 'metadata' }
+MCPToolDebugVariables >> mutability [
+
+	^ 'read'
+]
+
 { #category : 'private - request' }
 MCPToolDebugVariables >> parsedRequestFromToolRequest: request [
 
 	^ MCPDebugVariablesRequest fromRequest: request tool: self
+]
+
+{ #category : 'metadata' }
+MCPToolDebugVariables >> risk [
+
+	^ 'low'
 ]
 
 { #category : 'metadata' }

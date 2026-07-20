@@ -95,6 +95,12 @@ MCPToolGetTool >> commandForRequest: getRequest [
 ]
 
 { #category : 'metadata' }
+MCPToolGetTool >> defaultExposure [
+
+	^ 'static'
+]
+
+{ #category : 'metadata' }
 MCPToolGetTool >> description [
 
 	^ 'Return one tool contract with metadata and input schema.'
@@ -126,10 +132,28 @@ MCPToolGetTool >> executeWithRequest: request usingPolicy: aToolExposurePolicy [
 		  onError: [ :error :parsedRequest | self errorResultFor: error ]
 ]
 
+{ #category : 'metadata' }
+MCPToolGetTool >> groupName [
+
+	^ 'tool-catalog'
+]
+
+{ #category : 'metadata' }
+MCPToolGetTool >> mutability [
+
+	^ 'read'
+]
+
 { #category : 'private - request' }
 MCPToolGetTool >> parsedRequestFromToolRequest: request [
 
 	^ MCPGetToolRequest fromToolRequest: request
+]
+
+{ #category : 'metadata' }
+MCPToolGetTool >> risk [
+
+	^ 'low'
 ]
 
 { #category : 'metadata' }

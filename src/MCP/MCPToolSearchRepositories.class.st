@@ -18,6 +18,12 @@ MCPToolSearchRepositories class >> toolName [
 ]
 
 { #category : 'metadata' }
+MCPToolSearchRepositories >> additionalKeywords [
+
+	^ #( 'repository' 'repo' 'iceberg' 'git' 'branch' 'commit' 'remote' 'head' )
+]
+
+{ #category : 'metadata' }
 MCPToolSearchRepositories >> buildInputSchema [
 
 	| properties |
@@ -100,6 +106,12 @@ MCPToolSearchRepositories >> fieldTextsForRepositoryEntry: anEntry fieldName: fi
 	fieldName = 'upstreamRemoteUrl' ifTrue: [
 		^ { (anEntry at: #upstreamRemoteUrl) } ].
 	^ #(  )
+]
+
+{ #category : 'metadata' }
+MCPToolSearchRepositories >> groupName [
+
+	^ 'repositories'
 ]
 
 { #category : 'private - filtering' }

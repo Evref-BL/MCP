@@ -39,6 +39,12 @@ MCPToolMethodLookupOperation >> filterPatternFromRequest: request [
 		  :value | value trimBoth ]
 ]
 
+{ #category : 'metadata' }
+MCPToolMethodLookupOperation >> groupName [
+
+	^ 'methods'
+]
+
 { #category : 'private - schema' }
 MCPToolMethodLookupOperation >> lookupArgumentDescription [
 

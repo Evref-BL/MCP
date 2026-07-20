@@ -31,6 +31,12 @@ MCPToolMethodMutation >> addParameterRefactoringForSelector: oldSelectorSymbol i
 		  newArgs: newArguments
 ]
 
+{ #category : 'metadata' }
+MCPToolMethodMutation >> additionalKeywords [
+
+	^ #( 'method' 'refactor' 'refactoring' )
+]
+
 { #category : 'private' }
 MCPToolMethodMutation >> allowedNonErrorCritiqueRuleClasses [
 
@@ -218,6 +224,12 @@ MCPToolMethodMutation >> failureMessageForRenameClassNamed: className classSide:
 				  nextPutAll: ': ';
 				  nextPutAll:
 					  (self normalizedCauseMessageForMutationError: anError) ]
+]
+
+{ #category : 'metadata' }
+MCPToolMethodMutation >> groupName [
+
+	^ 'methods'
 ]
 
 { #category : 'private - schema' }

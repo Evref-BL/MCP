@@ -18,6 +18,12 @@ MCPToolCaptureScreenshot class >> toolName [
 ]
 
 { #category : 'metadata' }
+MCPToolCaptureScreenshot >> additionalKeywords [
+
+	^ #( 'screenshot' 'capture' 'window' 'display' 'world' 'ui' )
+]
+
+{ #category : 'metadata' }
 MCPToolCaptureScreenshot >> buildInputSchema [
 
 	^ MCPStructureInputSchema new
@@ -90,10 +96,28 @@ MCPToolCaptureScreenshot >> executeWithRequest: request [
 		  onError: [ :error :ignored | self errorResultText: (self failureMessageFor: error) details: (self errorDetailsFor: error) ]
 ]
 
+{ #category : 'metadata' }
+MCPToolCaptureScreenshot >> groupName [
+
+	^ 'ui'
+]
+
+{ #category : 'metadata' }
+MCPToolCaptureScreenshot >> mutability [
+
+	^ 'read'
+]
+
 { #category : 'private - request' }
 MCPToolCaptureScreenshot >> parsedRequestFromToolRequest: request [
 
 	^ MCPScreenshotRequest fromRequest: request tool: self
+]
+
+{ #category : 'metadata' }
+MCPToolCaptureScreenshot >> risk [
+
+	^ 'low'
 ]
 
 { #category : 'private - results' }

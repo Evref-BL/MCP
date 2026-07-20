@@ -123,6 +123,12 @@ MCPToolSearchClasses >> classInfoDataProperties [
 ]
 
 { #category : 'metadata' }
+MCPToolSearchClasses >> defaultExposure [
+
+	^ 'static'
+]
+
+{ #category : 'metadata' }
 MCPToolSearchClasses >> description [
 
 	^ 'Search classes by name, package, tag, hierarchy, or slot. Use class_get when you already know the class name.'
@@ -146,6 +152,12 @@ MCPToolSearchClasses >> fieldTextsForClassEntry: anEntry fieldName: fieldName [
 		^ anEntry at: #instanceSlotNames ].
 	fieldName = 'classSlot' ifTrue: [ ^ anEntry at: #classSlotNames ].
 	^ #(  )
+]
+
+{ #category : 'metadata' }
+MCPToolSearchClasses >> groupName [
+
+	^ 'classes'
 ]
 
 { #category : 'private - filtering' }

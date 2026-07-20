@@ -38,10 +38,16 @@ MCPTool class >> isAbstract [
 	^ self = MCPTool
 ]
 
+{ #category : 'metadata' }
+MCPTool class >> isBuiltIn [
+
+	^ self package = MCPTool package
+]
+
 { #category : 'scripts' }
 MCPTool class >> toolGroups [
 
-	^ MCPToolRegistry publicToolGroups
+	^ MCPToolRegistry new publicToolGroups
 ]
 
 { #category : 'scripts' }
@@ -67,6 +73,18 @@ MCPTool class >> toolIcons [
 MCPTool class >> toolName [
 
 	self subclassResponsibility
+]
+
+{ #category : 'metadata' }
+MCPTool >> activationRequirements [
+
+	^ #(  )
+]
+
+{ #category : 'metadata' }
+MCPTool >> additionalKeywords [
+
+	^ #(  )
 ]
 
 { #category : 'accessing' }
@@ -118,6 +136,27 @@ MCPTool >> buildOutputSchema [
 MCPTool >> commandForRequest: aToolRequest [
 
 	self subclassResponsibility
+]
+
+{ #category : 'metadata' }
+MCPTool >> contractUsingPolicy: aToolExposurePolicy includeOutputSchema: includeOutputSchema [
+
+	| activationRequirements data examples |
+	data := self metadata copy.
+	data at: #exposure put: (aToolExposurePolicy exposureForTool: self).
+	data at: #inputSchema put: self inputSchema asJRPCJSON.
+	includeOutputSchema ifTrue: [ data at: #outputSchema put: self outputSchema asJRPCJSON ].
+	examples := self examples.
+	examples ifNotEmpty: [ data at: #examples put: examples ].
+	activationRequirements := self activationRequirements.
+	activationRequirements ifNotEmpty: [ data at: #activationRequirements put: activationRequirements ].
+	^ data
+]
+
+{ #category : 'metadata' }
+MCPTool >> defaultExposure [
+
+	^ 'discoverable'
 ]
 
 { #category : 'metadata' }
@@ -224,6 +263,12 @@ MCPTool >> errorStackTraceLimit [
 	^ 20
 ]
 
+{ #category : 'metadata' }
+MCPTool >> examples [
+
+	^ #(  )
+]
+
 { #category : 'private - execution' }
 MCPTool >> executeParsedRequestFrom: request do: executionBlock onError: errorBlock [
 	"Parse the transport request inside the same exception boundary as execution.
@@ -270,6 +315,12 @@ MCPTool >> failureMessageFor: anError [
 ]
 
 { #category : 'metadata' }
+MCPTool >> groupName [
+
+	^ 'other'
+]
+
+{ #category : 'metadata' }
 MCPTool >> icons [
 
 	^ self class toolIcons
@@ -298,6 +349,38 @@ MCPTool >> integerSchemaPropertyNamed: propertyName description: propertyDescrip
 		   description: propertyDescription)
 		  default: defaultValue;
 		  yourself
+]
+
+{ #category : 'metadata' }
+MCPTool >> keywords [
+
+	| keywords normalizedKeywords |
+	keywords := OrderedCollection new.
+	keywords addAll: (self name findTokens: '-_').
+	keywords addAll: (self title findTokens: ' -').
+	keywords addAll: (self groupName findTokens: '-_').
+	keywords addAll: self additionalKeywords.
+	normalizedKeywords := OrderedCollection new.
+	keywords do: [ :each | normalizedKeywords addAll: (each asString findTokens: '-_ ') ].
+	^ (normalizedKeywords collect: [ :each | each asLowercase ]) asSet asArray
+]
+
+{ #category : 'metadata' }
+MCPTool >> metadata [
+
+	^ {
+		  (#name -> self name).
+		  (#description -> self description).
+		  (#group -> self groupName).
+		  (#mutability -> self mutability).
+		  (#risk -> self risk).
+		  (#keywords -> self keywords) } asDictionary
+]
+
+{ #category : 'metadata' }
+MCPTool >> mutability [
+
+	^ 'write'
 ]
 
 { #category : 'metadata' }
@@ -350,6 +433,12 @@ MCPTool >> requestFromToolCallArguments: toolCallArguments [
 	^ MCPToolRequest tool: self arguments: toolCallArguments
 ]
 
+{ #category : 'metadata' }
+MCPTool >> risk [
+
+	^ 'high'
+]
+
 { #category : 'private - schema' }
 MCPTool >> schemaPropertyNamed: aName type: aType description: aDescription [
 
@@ -358,6 +447,32 @@ MCPTool >> schemaPropertyNamed: aName type: aType description: aDescription [
 		  type: aType;
 		  description: aDescription;
 		  yourself
+]
+
+{ #category : 'metadata' }
+MCPTool >> searchMetadata [
+
+	^ {
+		  (#name -> self name).
+		  (#description -> self description) } asDictionary
+]
+
+{ #category : 'metadata' }
+MCPTool >> searchableText [
+
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: self name;
+				  space;
+				  nextPutAll: self title;
+				  space;
+				  nextPutAll: self description;
+				  space;
+				  nextPutAll: self groupName.
+			  self keywords do: [ :keyword |
+					  stream
+						  space;
+						  nextPutAll: keyword ] ]
 ]
 
 { #category : 'private - schema' }

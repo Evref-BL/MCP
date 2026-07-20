@@ -201,6 +201,12 @@ MCPToolGetClass >> commandForRequest: getRequest [
 ]
 
 { #category : 'metadata' }
+MCPToolGetClass >> defaultExposure [
+
+	^ 'static'
+]
+
+{ #category : 'metadata' }
 MCPToolGetClass >> description [
 
 	^ 'Get metadata for one class. Optional superclass/subclass context. Use class_search to discover class names.'
@@ -276,16 +282,34 @@ MCPToolGetClass >> failureMessageForClassName: className error: anError [
 				  nextPutAll: anError messageText ]
 ]
 
+{ #category : 'metadata' }
+MCPToolGetClass >> groupName [
+
+	^ 'classes'
+]
+
 { #category : 'defaults' }
 MCPToolGetClass >> maximumSubclassDepth [
 
 	^ 3
 ]
 
+{ #category : 'metadata' }
+MCPToolGetClass >> mutability [
+
+	^ 'read'
+]
+
 { #category : 'private - request' }
 MCPToolGetClass >> parsedRequestFromToolRequest: request [
 
 	^ MCPGetClassRequest fromRequest: request tool: self
+]
+
+{ #category : 'metadata' }
+MCPToolGetClass >> risk [
+
+	^ 'low'
 ]
 
 { #category : 'private' }
