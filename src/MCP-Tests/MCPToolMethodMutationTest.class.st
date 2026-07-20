@@ -16,11 +16,11 @@ MCPToolMethodMutationTest >> aroundToolCall: aBlock [
 ]
 
 { #category : 'private' }
-MCPToolMethodMutationTest >> assertCompileForClassName: aClassName methodSource: aMethodSource protocol: aProtocol returnsSingleCritiqueRuleClass: aRuleClassName titledLike: aSubstring [
+MCPToolMethodMutationTest >> assertCompileForClass: aClass methodSource: aMethodSource protocol: aProtocol returnsSingleCritiqueRuleClass: aRuleClassName titledLike: aSubstring [
 
 	| critique critiques data result |
 	result := self callToolWith: (self
-			           compileArgumentsForClassName: aClassName
+			           compileArgumentsForClass: aClass
 			           classSide: false
 			           methodSource: aMethodSource
 			           protocol: aProtocol).
@@ -71,7 +71,7 @@ MCPToolMethodMutationTest >> classChangeArguments [
 
 	^ {
 		  (#action -> 'update').
-		  (#className -> 'MCPToolMethodMutationTestTarget').
+		  (#className -> MCPToolMethodMutationTestTarget name).
 		  (#classSide -> true).
 		  (#selector -> self classProtocolSelector asString).
 		  (#protocol -> 'instance creation') } asDictionary
@@ -88,7 +88,7 @@ MCPToolMethodMutationTest >> classRenameArguments [
 
 	^ {
 		  (#action -> 'update').
-		  (#className -> 'MCPToolMethodMutationTestTarget').
+		  (#className -> MCPToolMethodMutationTestTarget name).
 		  (#classSide -> true).
 		  (#selector -> self classSelector asString).
 		  (#newSelector -> self renamedClassSelector asString) }
@@ -102,11 +102,11 @@ MCPToolMethodMutationTest >> classSelector [
 ]
 
 { #category : 'private' }
-MCPToolMethodMutationTest >> compileArgumentsForClassName: aClassName classSide: aBoolean methodSource: aMethodSource protocol: aProtocol [
+MCPToolMethodMutationTest >> compileArgumentsForClass: aClass classSide: aBoolean methodSource: aMethodSource protocol: aProtocol [
 
 	^ {
 		  (#action -> 'create').
-		  (#className -> aClassName).
+		  (#className -> aClass name).
 		  (#classSide -> aBoolean).
 		  (#source -> aMethodSource).
 		  (#protocol -> aProtocol) } asDictionary
@@ -127,7 +127,7 @@ MCPToolMethodMutationTest >> extensionChangeArguments [
 
 	^ {
 		  (#action -> 'update').
-		  (#className -> 'MCPToolMethodMutationTestTarget').
+		  (#className -> MCPToolMethodMutationTestTarget name).
 		  (#classSide -> false).
 		  (#selector -> self extensionProtocolSelector asString).
 		  (#protocol -> 'tests') } asDictionary
@@ -144,7 +144,7 @@ MCPToolMethodMutationTest >> instanceChangeArguments [
 
 	^ {
 		  (#action -> 'update').
-		  (#className -> 'MCPToolMethodMutationTestTarget').
+		  (#className -> MCPToolMethodMutationTestTarget name).
 		  (#classSide -> false).
 		  (#selector -> self instanceProtocolSelector asString).
 		  (#protocol -> 'accessing') } asDictionary
@@ -161,7 +161,7 @@ MCPToolMethodMutationTest >> instanceRenameArguments [
 
 	^ {
 		  (#action -> 'update').
-		  (#className -> 'MCPToolMethodMutationTestTarget').
+		  (#className -> MCPToolMethodMutationTestTarget name).
 		  (#classSide -> false).
 		  (#selector -> self instanceSelector asString).
 		  (#newSelector -> self renamedInstanceSelector asString).
@@ -340,7 +340,7 @@ MCPToolMethodMutationTest >> testAddArgumentsUpdatesClassSideSenders [
 	| data result senderSource |
 	result := self callToolWith: {
 			          (#action -> 'update').
-			          (#className -> 'MCPToolMethodMutationTestTarget').
+			          (#className -> MCPToolMethodMutationTestTarget name).
 			          (#classSide -> true).
 			          (#selector -> 'buildValue:').
 			          (#newSelector -> 'buildValue:prefix:').
@@ -365,7 +365,7 @@ MCPToolMethodMutationTest >> testAddArgumentsUpdatesSendersAndReportsAction [
 	| data result senderSource targetSource |
 	result := self callToolWith: {
 			          (#action -> 'update').
-			          (#className -> 'MCPToolMethodMutationTestTarget').
+			          (#className -> MCPToolMethodMutationTestTarget name).
 			          (#classSide -> false).
 			          (#selector -> 'combine:with:').
 			          (#newSelector -> 'combine:with:separator:').
@@ -407,7 +407,7 @@ MCPToolMethodMutationTest >> testChangeProtocolReturnsStructuredErrorWhenMethodI
 	self assert: (error at: #errorCode) equals: 'MethodNotFound'.
 	self
 		assert: (error at: #className)
-		equals: 'MCPToolMethodMutationTestTarget'.
+		equals: MCPToolMethodMutationTestTarget name.
 	self assert: (error at: #classSide) equals: false.
 	self
 		assert: (error at: #selector)
@@ -531,7 +531,7 @@ MCPToolMethodMutationTest >> testCompileAcceptsExplicitSelfReturnAsOnlyStatement
 	self removeSelector: selector from: MCPToolMethodMutationTestTarget.
 	[
 		result := self callToolWith: (self
-				           compileArgumentsForClassName: 'MCPToolMethodMutationTestTarget'
+				           compileArgumentsForClass: MCPToolMethodMutationTestTarget
 				           classSide: false
 				           methodSource: 'noopSelfReturnProbe ^ self'
 				           protocol: 'tests').
@@ -549,7 +549,7 @@ MCPToolMethodMutationTest >> testCompileAcceptsExplicitSelfReturnInBranch [
 	self removeSelector: selector from: MCPToolMethodMutationTestTarget.
 	[
 		result := self callToolWith: (self
-				           compileArgumentsForClassName: 'MCPToolMethodMutationTestTarget'
+				           compileArgumentsForClass: MCPToolMethodMutationTestTarget
 				           classSide: false
 				           methodSource: 'selfReturnInBranchProbe: aBoolean aBoolean ifTrue: [ ^ self ]. ^ 1'
 				           protocol: 'tests').
@@ -571,7 +571,7 @@ MCPToolMethodMutationTest >> testCompileAllowsExplicitlyReturnedBlock [
 	self removeSelector: selector from: MCPToolMethodMutationTestTarget.
 	[
 		result := self callToolWith: (self
-			compileArgumentsForClassName: 'MCPToolMethodMutationTestTarget'
+			compileArgumentsForClass: MCPToolMethodMutationTestTarget
 			classSide: false
 			methodSource: 'returnedBlockProbe ^ [ 1 ]'
 			protocol: 'tests').
@@ -587,7 +587,7 @@ MCPToolMethodMutationTest >> testCompileBlocksDeadBlockBeforeInstallation [
 	selector := #deadBlockProbe.
 	self removeSelector: selector from: MCPToolMethodMutationTestTarget.
 	result := self callToolWith: (self
-		compileArgumentsForClassName: 'MCPToolMethodMutationTestTarget'
+		compileArgumentsForClass: MCPToolMethodMutationTestTarget
 		classSide: false
 		methodSource: 'deadBlockProbe [ self error: ''never run'' ]'
 		protocol: 'tests').
@@ -607,7 +607,7 @@ MCPToolMethodMutationTest >> testCompileCanReplaceMethodOnToolClass [
 	| data method result |
 	method := MCPHaltingTestTool >> #title.
 	result := self callToolNamed: 'method_compile' withArguments: {
-			          (#className -> 'MCPHaltingTestTool').
+			          (#className -> MCPHaltingTestTool name).
 			          (#source -> method sourceCode).
 			          (#protocol -> method protocol name asString) }
 			          asDictionary.
@@ -622,7 +622,7 @@ MCPToolMethodMutationTest >> testCompileDefaultsToInstanceSideWhenClassSideIsOmi
 	| data result |
 	result := self callToolWith: {
 			          (#action -> 'create').
-			          (#className -> 'MCPToolMethodMutationTestTarget').
+			          (#className -> MCPToolMethodMutationTestTarget name).
 			          (#source -> 'instanceAnswer ^ 42').
 			          (#protocol -> 'tests') } asDictionary.
 	data := self dataFrom: result.
@@ -644,7 +644,7 @@ MCPToolMethodMutationTest >> testCompileMethodReportsCreatedChangeKind [
 	self removeSelector: selector from: MCPToolMethodMutationTestTarget.
 	[
 		result := self callToolNamed: 'method_compile' withArguments: {
-				          (#className -> 'MCPToolMethodMutationTestTarget').
+				          (#className -> MCPToolMethodMutationTestTarget name).
 				          (#source -> 'directCreateProbe ^ 11').
 				          (#protocol -> 'tests') } asDictionary.
 		data := self dataFrom: result.
@@ -673,7 +673,7 @@ MCPToolMethodMutationTest >> testCompileMethodReportsReplacedChangeKind [
 		on: MCPToolMethodMutationTestTarget.
 	[
 		result := self callToolNamed: 'method_compile' withArguments: {
-				          (#className -> 'MCPToolMethodMutationTestTarget').
+				          (#className -> MCPToolMethodMutationTestTarget name).
 				          (#source -> 'directReplaceProbe ^ 2').
 				          (#protocol -> 'tests') } asDictionary.
 		data := self dataFrom: result.
@@ -699,7 +699,7 @@ MCPToolMethodMutationTest >> testCompileReturnsAllowlistedEquivalentSuperclassMe
 	self removeSelector: selector from: MCPToolHierarchyTestChild.
 	[
 		self
-			assertCompileForClassName: 'MCPToolHierarchyTestChild'
+			assertCompileForClass: MCPToolHierarchyTestChild
 			methodSource: 'hierarchyTarget ^ ''base-target'''
 			protocol: 'tests'
 			returnsSingleCritiqueRuleClass: 'ReEquivalentSuperclassMethodsRule'
@@ -715,7 +715,7 @@ MCPToolMethodMutationTest >> testCompileReturnsAllowlistedExcessiveArgumentsCrit
 	self removeSelector: selector from: MCPToolMethodMutationTestTarget.
 	[
 		self
-			assertCompileForClassName: 'MCPToolMethodMutationTestTarget'
+			assertCompileForClass: MCPToolMethodMutationTestTarget
 			methodSource:
 			'argumentHeavyMethod: first with: second with: third with: fourth with: fifth ^ first + second + third + fourth + fifth'
 			protocol: 'tests'
@@ -735,7 +735,7 @@ MCPToolMethodMutationTest >> testCompileReturnsAllowlistedMissingSuperSendsCriti
 			protocol: 'initialization'
 			on: MCPToolHierarchyTestBase.
 		self
-			assertCompileForClassName: 'MCPToolHierarchyTestChild'
+			assertCompileForClass: MCPToolHierarchyTestChild
 			methodSource: 'initialize 2 + 3'
 			protocol: 'initialization'
 			returnsSingleCritiqueRuleClass: 'ReMissingSuperSendsRule'
@@ -752,7 +752,7 @@ MCPToolMethodMutationTest >> testCompileReturnsAllowlistedNotOptimizedIfCritique
 	self removeSelector: selector from: MCPToolGetMethodTestTarget.
 	[
 		self
-			assertCompileForClassName: 'MCPToolGetMethodTestTarget'
+			assertCompileForClass: MCPToolGetMethodTestTarget
 			methodSource: 'notOptimizedIf [ true ] ifTrue: [ ^ 1 ]. ^ 2'
 			protocol: 'tests'
 			returnsSingleCritiqueRuleClass: 'ReNotOptimizedIfRule'
@@ -768,7 +768,7 @@ MCPToolMethodMutationTest >> testCompileReturnsAllowlistedNotOptimizedIfNilCriti
 	self removeSelector: selector from: MCPToolGetMethodTestTarget.
 	[
 		self
-			assertCompileForClassName: 'MCPToolGetMethodTestTarget'
+			assertCompileForClass: MCPToolGetMethodTestTarget
 			methodSource: 'notOptimizedIfNil [ nil ] ifNil: [ ^ 1 ]. ^ 2'
 			protocol: 'tests'
 			returnsSingleCritiqueRuleClass: 'ReNotOptimizedIfNilRule'
@@ -784,7 +784,7 @@ MCPToolMethodMutationTest >> testCompileReturnsAllowlistedReturnInEnsureCritique
 	self removeSelector: selector from: MCPToolMethodMutationTestTarget.
 	[
 		self
-			assertCompileForClassName: 'MCPToolMethodMutationTestTarget'
+			assertCompileForClass: MCPToolMethodMutationTestTarget
 			methodSource: 'returnInEnsure [ 1 ] ensure: [ ^ 2 ]'
 			protocol: 'tests'
 			returnsSingleCritiqueRuleClass: 'ReReturnInEnsureRule'
@@ -800,7 +800,7 @@ MCPToolMethodMutationTest >> testCompileReturnsAllowlistedUnaryAccessingWithoutR
 	self removeSelector: selector from: MCPToolGetMethodTestTarget.
 	[
 		self
-			assertCompileForClassName: 'MCPToolGetMethodTestTarget'
+			assertCompileForClass: MCPToolGetMethodTestTarget
 			methodSource: 'counterValue instanceCounter + 1'
 			protocol: 'accessing'
 			returnsSingleCritiqueRuleClass:
@@ -817,7 +817,7 @@ MCPToolMethodMutationTest >> testCompileReturnsAllowlistedWarningCritiques [
 	self removeSelector: selector from: MCPToolGetMethodTestTarget.
 	[
 		self
-			assertCompileForClassName: 'MCPToolGetMethodTestTarget'
+			assertCompileForClass: MCPToolGetMethodTestTarget
 			methodSource:
 			'shadowedCounter: value | instanceCounter | instanceCounter := value. ^ instanceCounter + 1'
 			protocol: 'tests'
@@ -834,7 +834,7 @@ MCPToolMethodMutationTest >> testCompileReturnsAssignmentInBlockCritique [
 	self removeSelector: selector from: MCPToolMethodMutationTestTarget.
 	[
 		self
-			assertCompileForClassName: 'MCPToolMethodMutationTestTarget'
+			assertCompileForClass: MCPToolMethodMutationTestTarget
 			methodSource: 'assignmentInBlockProbe | value | [ value := 1 ] ensure: [ ] . ^ value'
 			protocol: 'tests'
 			returnsSingleCritiqueRuleClass: 'ReAssignmentInBlockRule'
@@ -850,7 +850,7 @@ MCPToolMethodMutationTest >> testCompileReturnsCollectionThenDoCritique [
 	self removeSelector: selector from: MCPToolGetMethodTestTarget.
 	[
 		self
-			assertCompileForClassName: 'MCPToolGetMethodTestTarget'
+			assertCompileForClass: MCPToolGetMethodTestTarget
 			methodSource:
 			'collectionThenDoProbe: collection | sum | sum := 0. (collection select: [ :each | each odd ]) do: [ :each | sum := sum + each ]. ^ sum'
 			protocol: 'tests'
@@ -864,8 +864,8 @@ MCPToolMethodMutationTest >> testCompileReturnsErrorSeverityCritiquesOnly [
 
 	| critique critiques data result |
 	result := self callToolWith: (self
-			           compileArgumentsForClassName:
-			           'MCPToolMethodMutationTestTarget'
+			           compileArgumentsForClass:
+			           MCPToolMethodMutationTestTarget
 			           classSide: false
 			           methodSource: 'instanceProtocolTarget ^ True = true'
 			           protocol: 'tests').
@@ -895,7 +895,7 @@ MCPToolMethodMutationTest >> testCompileReturnsFilterThenCollectCritique [
 	self removeSelector: selector from: MCPToolGetMethodTestTarget.
 	[
 		self
-			assertCompileForClassName: 'MCPToolGetMethodTestTarget'
+			assertCompileForClass: MCPToolGetMethodTestTarget
 			methodSource:
 			'filterThenCollectProbe: collection ^ (collection select: [ :each | each odd ]) collect: [ :each | each asString ]'
 			protocol: 'tests'
@@ -912,7 +912,7 @@ MCPToolMethodMutationTest >> testCompileReturnsFilteredEmptinessCritique [
 	self removeSelector: selector from: MCPToolGetMethodTestTarget.
 	[
 		self
-			assertCompileForClassName: 'MCPToolGetMethodTestTarget'
+			assertCompileForClass: MCPToolGetMethodTestTarget
 			methodSource:
 			'filteredEmptinessProbe: collection ^ (collection select: [ :each | each odd ]) isEmpty'
 			protocol: 'tests'
@@ -929,7 +929,7 @@ MCPToolMethodMutationTest >> testCompileReturnsMessageNotUnderstoodHandlerCritiq
 	self removeSelector: selector from: MCPToolGetMethodTestTarget.
 	[
 		self
-			assertCompileForClassName: 'MCPToolGetMethodTestTarget'
+			assertCompileForClass: MCPToolGetMethodTestTarget
 			methodSource:
 			'messageNotUnderstoodProbe: anObject ^ [ anObject class ] on: MessageNotUnderstood do: [ :ignored | nil ]'
 			protocol: 'tests'
@@ -947,7 +947,7 @@ MCPToolMethodMutationTest >> testCompileReturnsNilOnlyConditionalCritique [
 	self removeSelector: selector from: MCPToolGetMethodTestTarget.
 	[
 		self
-			assertCompileForClassName: 'MCPToolGetMethodTestTarget'
+			assertCompileForClass: MCPToolGetMethodTestTarget
 			methodSource:
 			'nilOnlyConditionalProbe: value ^ value ifNil: [ nil ] ifNotNil: [ :present | present asString ]'
 			protocol: 'tests'
@@ -964,7 +964,7 @@ MCPToolMethodMutationTest >> testCompileReturnsRedundantExplicitSelfReturnCritiq
 	self removeSelector: selector from: MCPToolMethodMutationTestTarget.
 	[
 		self
-			assertCompileForClassName: 'MCPToolMethodMutationTestTarget'
+			assertCompileForClass: MCPToolMethodMutationTestTarget
 			methodSource: 'redundantSelfReturnProbe self printString. ^ self'
 			protocol: 'tests'
 			returnsSingleCritiqueRuleClass: 'MCPRedundantExplicitSelfReturnRule'
@@ -980,7 +980,7 @@ MCPToolMethodMutationTest >> testCompileReturnsRespondsToUsageCritique [
 	self removeSelector: selector from: MCPToolGetMethodTestTarget.
 	[
 		self
-			assertCompileForClassName: 'MCPToolGetMethodTestTarget'
+			assertCompileForClass: MCPToolGetMethodTestTarget
 			methodSource:
 			'respondsToProbe: anObject ^ anObject respondsTo: #size'
 			protocol: 'tests'
@@ -997,7 +997,7 @@ MCPToolMethodMutationTest >> testCompileReturnsSelectSizeCountCritique [
 	self removeSelector: selector from: MCPToolGetMethodTestTarget.
 	[
 		self
-			assertCompileForClassName: 'MCPToolGetMethodTestTarget'
+			assertCompileForClass: MCPToolGetMethodTestTarget
 			methodSource:
 			'selectSizeProbe: collection ^ (collection select: [ :each | each odd ]) size'
 			protocol: 'tests'
@@ -1014,7 +1014,7 @@ MCPToolMethodMutationTest >> testCompileReturnsSortedCollectionConversionCritiqu
 	self removeSelector: selector from: MCPToolGetMethodTestTarget.
 	[
 		self
-			assertCompileForClassName: 'MCPToolGetMethodTestTarget'
+			assertCompileForClass: MCPToolGetMethodTestTarget
 			methodSource:
 			'sortedCollectionConversionProbe: collection ^ collection asSortedCollection asArray'
 			protocol: 'tests'
@@ -1031,8 +1031,8 @@ MCPToolMethodMutationTest >> testCompileReturnsStructuredCommandErrorForSyntaxEr
 		removeSelector: #brokenMethod
 		from: MCPToolMethodMutationTestTarget.
 	result := self callToolWith: (self
-			           compileArgumentsForClassName:
-			           'MCPToolMethodMutationTestTarget'
+			           compileArgumentsForClass:
+			           MCPToolMethodMutationTestTarget
 			           classSide: false
 			           methodSource: 'brokenMethod ^ 1 +'
 			           protocol: 'tests').
@@ -1045,7 +1045,7 @@ MCPToolMethodMutationTest >> testCompileReturnsStructuredCommandErrorForSyntaxEr
 	self assert: (error at: #errorCode) equals: 'CompileSyntaxError'.
 	self
 		assert: (error at: #className)
-		equals: 'MCPToolMethodMutationTestTarget'.
+		equals: MCPToolMethodMutationTestTarget name.
 	self assert: (error at: #classSide) equals: false.
 	self assert: (error at: #protocol) equals: 'tests'.
 	self assert: (error includesKey: #position).
@@ -1062,8 +1062,8 @@ MCPToolMethodMutationTest >> testCompileReturnsStructuredCommandErrorForUndeclar
 		removeSelector: #brokenMethod
 		from: MCPToolMethodMutationTestTarget.
 	result := self callToolWith: (self
-			           compileArgumentsForClassName:
-			           'MCPToolMethodMutationTestTarget'
+			           compileArgumentsForClass:
+			           MCPToolMethodMutationTestTarget
 			           classSide: false
 			           methodSource: 'brokenMethod ^ missingVar'
 			           protocol: 'tests').
@@ -1081,7 +1081,7 @@ MCPToolMethodMutationTest >> testCompileReturnsStructuredCommandErrorForUndeclar
 			 (error at: #causeClass)).
 	self
 		assert: (error at: #className)
-		equals: 'MCPToolMethodMutationTestTarget'.
+		equals: MCPToolMethodMutationTestTarget name.
 	self assert: (error at: #classSide) equals: false.
 	self assert: (error at: #protocol) equals: 'tests'.
 	self assert: (error at: #selector) equals: 'brokenMethod'.
@@ -1097,8 +1097,8 @@ MCPToolMethodMutationTest >> testCompilesClassSideMethod [
 
 	| data result |
 	result := self callToolWith: (self
-			           compileArgumentsForClassName:
-			           'MCPToolMethodMutationTestTarget'
+			           compileArgumentsForClass:
+			           MCPToolMethodMutationTestTarget
 			           classSide: true
 			           methodSource: 'classAnswer ^ 7'
 			           protocol: 'tests').
@@ -1118,8 +1118,8 @@ MCPToolMethodMutationTest >> testCompilesInstanceSideMethod [
 
 	| data result |
 	result := self callToolWith: (self
-			           compileArgumentsForClassName:
-			           'MCPToolMethodMutationTestTarget'
+			           compileArgumentsForClass:
+			           MCPToolMethodMutationTestTarget
 			           classSide: false
 			           methodSource: 'instanceAnswer ^ 42'
 			           protocol: 'tests').
@@ -1186,7 +1186,7 @@ MCPToolMethodMutationTest >> testNormalizesLineEndingsBeforeCompilation [
 	source := 'multilineAnswer' , String lf , '| value |' , String lf
 	          , 'value := 41.' , String lf , '^ value + 1'.
 	self callToolWith: (self
-			 compileArgumentsForClassName: 'MCPToolMethodMutationTestTarget'
+			 compileArgumentsForClass: MCPToolMethodMutationTestTarget
 			 classSide: false
 			 methodSource: source
 			 protocol: 'tests').
@@ -1207,7 +1207,7 @@ MCPToolMethodMutationTest >> testNormalizesLineFeedStringLiteralBeforeCompilatio
 	          , String lf , 'line two'''.
 	[
 		self callToolWith: (self
-				 compileArgumentsForClassName: 'MCPToolMethodMutationTestTarget'
+				 compileArgumentsForClass: MCPToolMethodMutationTestTarget
 				 classSide: false
 				 methodSource: source
 				 protocol: 'tests').
@@ -1231,7 +1231,7 @@ MCPToolMethodMutationTest >> testReformatsMethod [
 	| reformattedSource result source |
 	source := 'uglyAnswer   ^   1+2'.
 	result := self callToolWith: (self
-			           compileArgumentsForClassName: 'MCPToolMethodMutationTestTarget'
+			           compileArgumentsForClass: MCPToolMethodMutationTestTarget
 			           classSide: false
 			           methodSource: source
 			           protocol: 'tests').
@@ -1255,7 +1255,7 @@ MCPToolMethodMutationTest >> testRemoveArgumentsFailsWhenRemovedArgumentIsRefere
 			on: MCPToolMethodMutationTestTarget.
 		result := self callToolWith: {
 				          (#action -> 'update').
-				          (#className -> 'MCPToolMethodMutationTestTarget').
+				          (#className -> MCPToolMethodMutationTestTarget name).
 				          (#classSide -> false).
 				          (#selector -> oldSelector asString).
 				          (#newSelector -> newSelector asString) } asDictionary.
@@ -1267,7 +1267,7 @@ MCPToolMethodMutationTest >> testRemoveArgumentsFailsWhenRemovedArgumentIsRefere
 		self assert: (error at: #updateAction) equals: 'removeArguments'.
 		self
 			assert: (error at: #className)
-			equals: 'MCPToolMethodMutationTestTarget'.
+			equals: MCPToolMethodMutationTestTarget name.
 		self assert: (error at: #selector) equals: oldSelector asString.
 		self assert: (error at: #newSelector) equals: newSelector asString.
 		self assert:
@@ -1301,7 +1301,7 @@ MCPToolMethodMutationTest >> testRemoveArgumentsUpdatesSendersAndReportsAction [
 			on: MCPToolMethodMutationTestSender.
 		result := self callToolWith: {
 				          (#action -> 'update').
-				          (#className -> 'MCPToolMethodMutationTestTarget').
+				          (#className -> MCPToolMethodMutationTestTarget name).
 				          (#classSide -> false).
 				          (#selector -> oldSelector asString).
 				          (#newSelector -> newSelector asString) } asDictionary.
@@ -1420,7 +1420,7 @@ MCPToolMethodMutationTest >> testRenameKeepsRenamedMethodCallable [
 			on: MCPToolMethodMutationTestTarget.
 		result := self callToolWith: {
 				          (#action -> 'update').
-				          (#className -> 'MCPToolMethodMutationTestTarget').
+				          (#className -> MCPToolMethodMutationTestTarget name).
 				          (#classSide -> false).
 				          (#selector -> oldSelector asString).
 				          (#newSelector -> newSelector asString).
@@ -1460,7 +1460,7 @@ MCPToolMethodMutationTest >> testRenameReturnsStructuredErrorWhenMethodIsMissing
 	self assert: (error at: #errorCode) equals: 'MethodNotFound'.
 	self
 		assert: (error at: #className)
-		equals: 'MCPToolMethodMutationTestTarget'.
+		equals: MCPToolMethodMutationTestTarget name.
 	self assert: (error at: #classSide) equals: false.
 	self
 		assert: (error at: #selector)
