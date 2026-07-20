@@ -17,6 +17,12 @@ MCPToolGetMethod class >> toolName [
 	^ 'method_get'
 ]
 
+{ #category : 'metadata' }
+MCPToolGetMethod >> annotations [
+
+	^ MCPStructureToolAnnotations readOnly
+]
+
 { #category : 'private - analysis' }
 MCPToolGetMethod >> bindingClassNameFor: aBinding [
 
@@ -218,12 +224,6 @@ MCPToolGetMethod >> matchingSummaryForNodeName: aName kind: aKind ownerName: anO
 						  (each at: #kind) = aKind and: [
 							  (each at: #ownerName ifAbsent: [ nil ]) = anOwnerName ] ] ]
 		  ifNone: [ nil ]
-]
-
-{ #category : 'metadata' }
-MCPToolGetMethod >> mutability [
-
-	^ 'read'
 ]
 
 { #category : 'private - analysis' }

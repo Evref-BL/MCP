@@ -16,6 +16,12 @@ MCPToolListChangeHistoryFiles class >> toolName [
 ]
 
 { #category : 'metadata' }
+MCPToolListChangeHistoryFiles >> annotations [
+
+	^ MCPStructureToolAnnotations readOnly
+]
+
+{ #category : 'metadata' }
 MCPToolListChangeHistoryFiles >> buildInputSchema [
 
 	| limitProperty offsetProperty |
@@ -84,12 +90,6 @@ MCPToolListChangeHistoryFiles >> description [
 MCPToolListChangeHistoryFiles >> maximumFileLimit [
 
 	^ 100
-]
-
-{ #category : 'metadata' }
-MCPToolListChangeHistoryFiles >> mutability [
-
-	^ 'read'
 ]
 
 { #category : 'private - request' }

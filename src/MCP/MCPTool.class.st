@@ -1,7 +1,7 @@
 "
 Abstract base for MCP tools exposed by the server.
 
-A tool owns its public MCP metadata: name, title, description, icons, input schema, and output schema. The server uses that metadata when advertising tools and when validating an incoming tool call.
+A tool owns its public MCP metadata: name, title, description, icons, annotations, input schema, and output schema. The server uses that metadata when advertising tools and when validating an incoming tool call.
 
 The normal execution flow is:
 1. The MCP server receives a JSON-RPC tool call and dispatches it to the matching MCPTool instance.
@@ -82,29 +82,28 @@ MCPTool class >> toolName [
 ]
 
 { #category : 'metadata' }
-MCPTool >> activationRequirements [
-
-	^ #(  )
-]
-
-{ #category : 'metadata' }
 MCPTool >> additionalKeywords [
 
 	^ #(  )
 ]
 
+{ #category : 'metadata' }
+MCPTool >> annotations [
+
+	^ MCPStructureToolAnnotations mayModify
+]
+
 { #category : 'accessing' }
 MCPTool >> asJRPCJSON [
 
-	| dic |
-	dic := Dictionary new.
-	self description ifNotNil: [
-		dic at: #description put: self description asJRPCJSON ].
-	self inputSchema ifNotNil: [
-		dic at: #inputSchema put: self inputSchema asJRPCJSON ].
-	self name ifNotNil: [ dic at: #name put: self name asJRPCJSON ].
-	self title ifNotNil: [ dic at: #title put: self title asJRPCJSON ].
-	^ dic
+	| dictionary |
+	dictionary := Dictionary new.
+	self annotations ifNotNil: [ :toolAnnotations | dictionary at: #annotations put: toolAnnotations asJRPCJSON ].
+	self description ifNotNil: [ dictionary at: #description put: self description asJRPCJSON ].
+	self inputSchema ifNotNil: [ dictionary at: #inputSchema put: self inputSchema asJRPCJSON ].
+	self name ifNotNil: [ dictionary at: #name put: self name asJRPCJSON ].
+	self title ifNotNil: [ dictionary at: #title put: self title asJRPCJSON ].
+	^ dictionary
 ]
 
 { #category : 'private - schema' }
@@ -147,14 +146,10 @@ MCPTool >> commandForRequest: aToolRequest [
 { #category : 'metadata' }
 MCPTool >> contractIncludingOutputSchema: includeOutputSchema [
 
-	| activationRequirements data examples |
+	| data |
 	data := self metadata copy.
 	data at: #inputSchema put: self inputSchema asJRPCJSON.
 	includeOutputSchema ifTrue: [ data at: #outputSchema put: self outputSchema asJRPCJSON ].
-	examples := self examples.
-	examples ifNotEmpty: [ data at: #examples put: examples ].
-	activationRequirements := self activationRequirements.
-	activationRequirements ifNotEmpty: [ data at: #activationRequirements put: activationRequirements ].
 	^ data
 ]
 
@@ -268,12 +263,6 @@ MCPTool >> errorStackTraceLimit [
 	^ 20
 ]
 
-{ #category : 'metadata' }
-MCPTool >> examples [
-
-	^ #(  )
-]
-
 { #category : 'private - execution' }
 MCPTool >> executeParsedRequestFrom: request do: executionBlock onError: errorBlock [
 	"Parse the transport request inside the same exception boundary as execution.
@@ -371,14 +360,8 @@ MCPTool >> metadata [
 		  (#name -> self name).
 		  (#description -> self description).
 		  (#group -> self groupName).
-		  (#mutability -> self mutability).
+		  (#annotations -> self annotations asJRPCJSON).
 		  (#keywords -> self keywords) } asDictionary
-]
-
-{ #category : 'metadata' }
-MCPTool >> mutability [
-
-	^ 'write'
 ]
 
 { #category : 'metadata' }

@@ -15,6 +15,12 @@ MCPToolListDebugBreakpoints class >> toolName [
 	^ 'debug_breakpoint_list'
 ]
 
+{ #category : 'metadata' }
+MCPToolListDebugBreakpoints >> annotations [
+
+	^ MCPStructureToolAnnotations readOnly
+]
+
 { #category : 'private - specs' }
 MCPToolListDebugBreakpoints >> breakpointToolSpec [
 
@@ -23,10 +29,4 @@ MCPToolListDebugBreakpoints >> breakpointToolSpec [
 		  (#description
 		   -> 'List tracked transient Pharo DebugPoint breakpoints.').
 		  (#action -> 'list') } asDictionary
-]
-
-{ #category : 'metadata' }
-MCPToolListDebugBreakpoints >> mutability [
-
-	^ 'read'
 ]

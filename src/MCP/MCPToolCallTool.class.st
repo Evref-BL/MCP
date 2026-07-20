@@ -98,12 +98,6 @@ MCPToolCallTool >> groupName [
 	^ 'tool-catalog'
 ]
 
-{ #category : 'metadata' }
-MCPToolCallTool >> mutability [
-
-	^ 'execute'
-]
-
 { #category : 'private - request' }
 MCPToolCallTool >> parsedRequestFromToolRequest: request [
 

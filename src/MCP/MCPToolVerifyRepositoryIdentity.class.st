@@ -22,9 +22,9 @@ MCPToolVerifyRepositoryIdentity >> additionalKeywords [
 ]
 
 { #category : 'metadata' }
-MCPToolVerifyRepositoryIdentity >> mutability [
+MCPToolVerifyRepositoryIdentity >> annotations [
 
-	^ 'read'
+	^ MCPStructureToolAnnotations readOnly
 ]
 
 { #category : 'private - specs' }

@@ -16,9 +16,9 @@ MCPToolGetDebugSession class >> toolName [
 ]
 
 { #category : 'metadata' }
-MCPToolGetDebugSession >> mutability [
+MCPToolGetDebugSession >> annotations [
 
-	^ 'read'
+	^ MCPStructureToolAnnotations readOnly
 ]
 
 { #category : 'private - specs' }

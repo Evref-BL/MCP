@@ -154,12 +154,6 @@ MCPToolDebugTest >> description [
 	^ 'Run one SUnit test method under debugger control and stop at the requested phase.'
 ]
 
-{ #category : 'metadata' }
-MCPToolDebugTest >> mutability [
-
-	^ 'execute'
-]
-
 { #category : 'private - request' }
 MCPToolDebugTest >> parsedRequestFromToolRequest: request [
 

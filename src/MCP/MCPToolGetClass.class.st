@@ -18,6 +18,12 @@ MCPToolGetClass class >> toolName [
 ]
 
 { #category : 'metadata' }
+MCPToolGetClass >> annotations [
+
+	^ MCPStructureToolAnnotations readOnly
+]
+
+{ #category : 'metadata' }
 MCPToolGetClass >> buildInputSchema [
 
 	| includeCommentProperty subclassDepthProperty upToSuperclassNameProperty |
@@ -292,12 +298,6 @@ MCPToolGetClass >> groupName [
 MCPToolGetClass >> maximumSubclassDepth [
 
 	^ 3
-]
-
-{ #category : 'metadata' }
-MCPToolGetClass >> mutability [
-
-	^ 'read'
 ]
 
 { #category : 'private - request' }

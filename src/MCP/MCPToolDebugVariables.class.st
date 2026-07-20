@@ -18,6 +18,12 @@ MCPToolDebugVariables class >> toolName [
 ]
 
 { #category : 'metadata' }
+MCPToolDebugVariables >> annotations [
+
+	^ MCPStructureToolAnnotations readOnly
+]
+
+{ #category : 'metadata' }
 MCPToolDebugVariables >> buildInputSchema [
 
 	^ MCPStructureInputSchema new
@@ -125,12 +131,6 @@ MCPToolDebugVariables >> commandForRequest: debugRequest [
 MCPToolDebugVariables >> description [
 
 	^ 'Expand one state-scoped variable or scope reference returned by debug_state_get.'
-]
-
-{ #category : 'metadata' }
-MCPToolDebugVariables >> mutability [
-
-	^ 'read'
 ]
 
 { #category : 'private - request' }

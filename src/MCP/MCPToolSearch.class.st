@@ -21,6 +21,12 @@ MCPToolSearch >> addScopeLabel: aString to: labels [
 	(labels includes: aString) ifFalse: [ labels add: aString ]
 ]
 
+{ #category : 'metadata' }
+MCPToolSearch >> annotations [
+
+	^ MCPStructureToolAnnotations readOnly
+]
+
 { #category : 'private - schema' }
 MCPToolSearch >> basicFilterModes [
 
@@ -347,12 +353,6 @@ MCPToolSearch >> minimalPagedQueryOutputSchemaForEntriesPropertyNamed: entriesPr
 					   description:
 					   'Zero-based offset for the next page. Omitted when this is the final page.') }
 		  required: { entriesPropertyName }
-]
-
-{ #category : 'metadata' }
-MCPToolSearch >> mutability [
-
-	^ 'read'
 ]
 
 { #category : 'private - filtering' }

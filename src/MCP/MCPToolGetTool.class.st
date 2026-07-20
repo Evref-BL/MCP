@@ -29,6 +29,35 @@ MCPToolGetTool class >> toolName [
 ]
 
 { #category : 'metadata' }
+MCPToolGetTool >> annotations [
+
+	^ MCPStructureToolAnnotations readOnly
+]
+
+{ #category : 'private - schema' }
+MCPToolGetTool >> annotationsSchemaProperty [
+
+	| property |
+	property := self schemaPropertyNamed: 'annotations' type: 'object' description: 'Standard MCP tool behavior hints.'.
+	property
+		properties: {
+				(self schemaPropertyNamed: 'title' type: 'string' description: 'Optional annotation title.').
+				(self schemaPropertyNamed: 'readOnlyHint' type: 'boolean' description: 'Whether the tool leaves its environment unchanged.').
+				(self
+					 schemaPropertyNamed: 'destructiveHint'
+					 type: 'boolean'
+					 description: 'Whether a modifying tool may perform destructive updates.').
+				(self schemaPropertyNamed: 'idempotentHint' type: 'boolean' description: 'Whether repeated calls have no additional effect.').
+				(self
+					 schemaPropertyNamed: 'openWorldHint'
+					 type: 'boolean'
+					 description: 'Whether the tool may interact with external entities.') };
+		required: #( 'readOnlyHint' );
+		additionalProperties: false.
+	^ property
+]
+
+{ #category : 'metadata' }
 MCPToolGetTool >> buildInputSchema [
 
 	| toolNameProperty |
@@ -45,58 +74,26 @@ MCPToolGetTool >> buildInputSchema [
 { #category : 'metadata' }
 MCPToolGetTool >> buildOutputSchema [
 
-	| activationRequirementsProperty examplesProperty inputSchemaProperty outputSchemaProperty schemaProperty toolProperty |
-	schemaProperty := MCPStructureProperties new
-		type: 'object';
-		description: 'JSON Schema object.';
-		additionalProperties: true;
-		yourself.
-	inputSchemaProperty := schemaProperty copy
-		name: 'inputSchema';
-		yourself.
-	outputSchemaProperty := schemaProperty copy
-		name: 'outputSchema';
-		yourself.
-	examplesProperty := (self
-		schemaPropertyNamed: 'examples'
-		type: 'array'
-		description: 'Example calls.')
-		items: (MCPStructureProperties new
-			type: 'object';
-			additionalProperties: true;
-			yourself);
-		yourself.
-	activationRequirementsProperty := (self
-		schemaPropertyNamed: 'activationRequirements'
-		type: 'array'
-		description: 'Requirements before calling tool.')
-		items: (MCPStructureProperties new
-			type: 'string';
-			yourself);
-		yourself.
-	toolProperty := self
-		schemaPropertyNamed: 'tool'
-		type: 'object'
-		description: 'Tool contract.'.
+	| inputSchemaProperty toolProperty |
+	inputSchemaProperty := MCPStructureProperties new
+		                       name: 'inputSchema';
+		                       type: 'object';
+		                       description: 'JSON Schema object.';
+		                       additionalProperties: true;
+		                       yourself.
+	toolProperty := self schemaPropertyNamed: 'tool' type: 'object' description: 'Tool contract.'.
 	toolProperty
 		properties: {
-				(self
-					schemaPropertyNamed: 'name'
-					type: 'string'
-					description: 'Tool name.').
-				(self
-					schemaPropertyNamed: 'description'
-					type: 'string'
-					description: 'Tool description.').
-				inputSchemaProperty.
-				outputSchemaProperty.
-				examplesProperty.
-				activationRequirementsProperty };
-		required: #( 'name' 'description' 'inputSchema' );
+				(self schemaPropertyNamed: 'name' type: 'string' description: 'Tool name.').
+				(self schemaPropertyNamed: 'description' type: 'string' description: 'Tool description.').
+				(self schemaPropertyNamed: 'group' type: 'string' description: 'Tool catalog group.').
+				(self schemaPropertyNamed: 'exposure' type: 'string' description: 'Effective tool exposure.').
+				self annotationsSchemaProperty.
+				self keywordsSchemaProperty.
+				inputSchemaProperty };
+		required: #( 'name' 'description' 'group' 'exposure' 'annotations' 'keywords' 'inputSchema' );
 		additionalProperties: false.
-	^ self
-		standardOutputSchemaForDataProperties: { toolProperty }
-		required: #( 'tool' )
+	^ self standardOutputSchemaForDataProperties: { toolProperty } required: #( 'tool' )
 ]
 
 { #category : 'private - execution' }
@@ -136,10 +133,14 @@ MCPToolGetTool >> groupName [
 	^ 'tool-catalog'
 ]
 
-{ #category : 'metadata' }
-MCPToolGetTool >> mutability [
+{ #category : 'private - schema' }
+MCPToolGetTool >> keywordsSchemaProperty [
 
-	^ 'read'
+	^ (self schemaPropertyNamed: 'keywords' type: 'array' description: 'Search terms associated with the tool.')
+		  items: (MCPStructureProperties new
+				   type: 'string';
+				   yourself);
+		  yourself
 ]
 
 { #category : 'private - request' }

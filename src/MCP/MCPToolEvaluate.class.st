@@ -108,12 +108,6 @@ MCPToolEvaluate >> groupName [
 	^ 'runtime'
 ]
 
-{ #category : 'metadata' }
-MCPToolEvaluate >> mutability [
-
-	^ 'execute'
-]
-
 { #category : 'private - request' }
 MCPToolEvaluate >> parsedRequestFromToolRequest: request [
 

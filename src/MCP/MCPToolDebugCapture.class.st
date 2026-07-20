@@ -139,12 +139,6 @@ MCPToolDebugCapture >> description [
 	^ 'Evaluate Smalltalk in a bounded worker process and capture runtime exceptions as tracked debug sessions.'
 ]
 
-{ #category : 'metadata' }
-MCPToolDebugCapture >> mutability [
-
-	^ 'execute'
-]
-
 { #category : 'private - request' }
 MCPToolDebugCapture >> parsedRequestFromToolRequest: request [
 

@@ -899,13 +899,12 @@ MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 { #category : 'tests' }
 MCPToolContractsTest >> testBuiltInToolsProvideCatalogMetadata [
 
-	| validExposures validMutabilities |
+	| validExposures |
 	validExposures := #( 'static' 'discoverable' ).
-	validMutabilities := #( 'read' 'execute' 'write' ).
 	self toolRegistry publicTools do: [ :tool |
 			self deny: tool groupName equals: 'other'.
 			self assert: (validExposures includes: tool defaultExposure).
-			self assert: (validMutabilities includes: tool mutability).
+			self assert: (true = tool annotations readOnlyHint or: [ false = tool annotations readOnlyHint ]).
 			self assert: tool keywords notEmpty ]
 ]
 
@@ -1344,10 +1343,12 @@ MCPToolContractsTest >> testDiscoveryUsesConfiguredStaticToolNames [
 		                   (server rpcToolCall: 'tool_get' withParams: { (#toolName -> 'repository_search') } asDictionary)) at: #tool.
 	createContract := (self dataFrom:
 		                   (server rpcToolCall: 'tool_get' withParams: { (#toolName -> 'repository_create') } asDictionary)) at: #tool.
-	self assert: searchContract keys asSet equals: #( name description group exposure mutability keywords inputSchema ) asSet.
-	self assert: createContract keys asSet equals: #( name description group exposure mutability keywords inputSchema ) asSet.
+	self assert: searchContract keys asSet equals: #( name description group exposure annotations keywords inputSchema ) asSet.
+	self assert: createContract keys asSet equals: #( name description group exposure annotations keywords inputSchema ) asSet.
 	self assert: (searchContract at: #exposure) equals: 'static'.
-	self assert: (createContract at: #exposure) equals: 'discoverable'
+	self assert: ((searchContract at: #annotations) at: #readOnlyHint).
+	self assert: (createContract at: #exposure) equals: 'discoverable'.
+	self deny: ((createContract at: #annotations) at: #readOnlyHint)
 ]
 
 { #category : 'tests - evaluate' }
@@ -1488,10 +1489,10 @@ MCPToolContractsTest >> testGetToolReturnsSchemaForCatalogTool [
 	result := self callToolNamed: 'tool_get' withArguments: { (#toolName -> 'repository_create') } asDictionary.
 	contract := (self dataFrom: result) at: #tool.
 	self assert: (contract at: #name) equals: 'repository_create'.
-	self assert: contract keys asSet equals: #( name description group exposure mutability keywords inputSchema ) asSet.
+	self assert: contract keys asSet equals: #( name description group exposure annotations keywords inputSchema ) asSet.
 	self assert: (contract at: #group) equals: 'repositories'.
 	self assert: (contract at: #exposure) equals: 'discoverable'.
-	self assert: (contract at: #mutability) equals: 'write'.
+	self deny: ((contract at: #annotations) at: #readOnlyHint).
 	self assert: ((contract at: #keywords) includes: 'repo').
 	inputProperties := ((contract at: #inputSchema) at: #properties) keys.
 	self assert: inputProperties asSet equals: #( 'name' 'location' 'packageNames' 'subdirectory' ) asSet.
@@ -3210,6 +3211,25 @@ MCPToolContractsTest >> testStringArrayItemDescriptionsStayUseful [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testToolAnnotationsSerializeStandardHints [
+
+	| annotations |
+	annotations := MCPStructureToolAnnotations new
+		               title: 'Safe Update';
+		               readOnlyHint: false;
+		               destructiveHint: false;
+		               idempotentHint: true;
+		               openWorldHint: false;
+		               yourself.
+	self assert: annotations asJRPCJSON equals: {
+			(#title -> 'Safe Update').
+			(#readOnlyHint -> false).
+			(#destructiveHint -> false).
+			(#idempotentHint -> true).
+			(#openWorldHint -> false) } asDictionary
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testToolFlowSelectorNamesSeparateTransportAndParsedInput [
 
 	| staleSelectors |
@@ -3367,7 +3387,7 @@ MCPToolContractsTest >> testToolsOwnRegistryMetadata [
 	tool := MCPToolEvaluate new.
 	self assert: tool groupName equals: 'runtime'.
 	self assert: tool defaultExposure equals: 'static'.
-	self assert: tool mutability equals: 'execute'.
+	self deny: tool annotations readOnlyHint.
 	self assert: (tool keywords includes: 'smalltalk')
 ]
 

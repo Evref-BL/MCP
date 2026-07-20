@@ -22,9 +22,9 @@ MCPToolListRepositoryChanges >> additionalKeywords [
 ]
 
 { #category : 'metadata' }
-MCPToolListRepositoryChanges >> mutability [
+MCPToolListRepositoryChanges >> annotations [
 
-	^ 'read'
+	^ MCPStructureToolAnnotations readOnly
 ]
 
 { #category : 'private - specs' }

@@ -295,12 +295,6 @@ MCPToolRunTests >> groupName [
 	^ 'tests'
 ]
 
-{ #category : 'metadata' }
-MCPToolRunTests >> mutability [
-
-	^ 'execute'
-]
-
 { #category : 'private - request' }
 MCPToolRunTests >> parsedRequestFromToolRequest: request [
 

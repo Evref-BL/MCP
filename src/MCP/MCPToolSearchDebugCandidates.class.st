@@ -16,9 +16,9 @@ MCPToolSearchDebugCandidates class >> toolName [
 ]
 
 { #category : 'metadata' }
-MCPToolSearchDebugCandidates >> mutability [
+MCPToolSearchDebugCandidates >> annotations [
 
-	^ 'read'
+	^ MCPStructureToolAnnotations readOnly
 ]
 
 { #category : 'private - specs' }

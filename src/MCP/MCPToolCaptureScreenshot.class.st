@@ -24,6 +24,12 @@ MCPToolCaptureScreenshot >> additionalKeywords [
 ]
 
 { #category : 'metadata' }
+MCPToolCaptureScreenshot >> annotations [
+
+	^ MCPStructureToolAnnotations readOnly
+]
+
+{ #category : 'metadata' }
 MCPToolCaptureScreenshot >> buildInputSchema [
 
 	^ MCPStructureInputSchema new
@@ -100,12 +106,6 @@ MCPToolCaptureScreenshot >> executeWithRequest: request [
 MCPToolCaptureScreenshot >> groupName [
 
 	^ 'ui'
-]
-
-{ #category : 'metadata' }
-MCPToolCaptureScreenshot >> mutability [
-
-	^ 'read'
 ]
 
 { #category : 'private - request' }

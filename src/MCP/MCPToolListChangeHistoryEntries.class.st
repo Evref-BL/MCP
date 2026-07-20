@@ -16,6 +16,12 @@ MCPToolListChangeHistoryEntries class >> toolName [
 ]
 
 { #category : 'metadata' }
+MCPToolListChangeHistoryEntries >> annotations [
+
+	^ MCPStructureToolAnnotations readOnly
+]
+
+{ #category : 'metadata' }
 MCPToolListChangeHistoryEntries >> buildInputSchema [
 
 	^ MCPStructureInputSchema new
@@ -89,12 +95,6 @@ MCPToolListChangeHistoryEntries >> defaultEntryLimit [
 MCPToolListChangeHistoryEntries >> description [
 
 	^ 'List granular entries from the current Pharo image change history or a selected .ombu file. Use history_file_list to locate files, and history_entry_apply or history_entry_revert only when previewing or performing recovery changes.'
-]
-
-{ #category : 'metadata' }
-MCPToolListChangeHistoryEntries >> mutability [
-
-	^ 'read'
 ]
 
 { #category : 'private - request' }

@@ -18,6 +18,12 @@ MCPToolDebugState class >> toolName [
 ]
 
 { #category : 'metadata' }
+MCPToolDebugState >> annotations [
+
+	^ MCPStructureToolAnnotations readOnly
+]
+
+{ #category : 'metadata' }
 MCPToolDebugState >> buildInputSchema [
 
 	^ MCPStructureInputSchema new
@@ -149,12 +155,6 @@ MCPToolDebugState >> commandForRequest: debugRequest [
 MCPToolDebugState >> description [
 
 	^ 'Return a compact snapshot of one tracked Pharo debug session: selected frame, source, stack, shallow scopes, and repair actions.'
-]
-
-{ #category : 'metadata' }
-MCPToolDebugState >> mutability [
-
-	^ 'read'
 ]
 
 { #category : 'private - request' }

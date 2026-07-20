@@ -29,6 +29,12 @@ MCPToolSearchTools class >> toolName [
 ]
 
 { #category : 'metadata' }
+MCPToolSearchTools >> annotations [
+
+	^ MCPStructureToolAnnotations readOnly
+]
+
+{ #category : 'metadata' }
 MCPToolSearchTools >> buildInputSchema [
 
 	^ MCPStructureInputSchema new
