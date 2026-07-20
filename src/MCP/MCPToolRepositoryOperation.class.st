@@ -11,6 +11,12 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'metadata' }
+MCPToolRepositoryOperation class >> groupName [
+
+	^ self repositoriesGroupName
+]
+
 { #category : 'testing' }
 MCPToolRepositoryOperation class >> isAbstract [
 
@@ -75,12 +81,6 @@ MCPToolRepositoryOperation >> errorResultForCommandError: anError action: action
 				value ifNotNil: [ details at: key ifAbsentPut: [ value ] ] ] ].
 	details at: #action put: action.
 	^ self errorResultText: anError messageText details: details
-]
-
-{ #category : 'metadata' }
-MCPToolRepositoryOperation >> groupName [
-
-	^ 'repositories'
 ]
 
 { #category : 'private - schema' }

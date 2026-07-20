@@ -10,6 +10,12 @@ Class {
 }
 
 { #category : 'metadata' }
+MCPToolEvaluate class >> groupName [
+
+	^ self runtimeGroupName
+]
+
+{ #category : 'metadata' }
 MCPToolEvaluate class >> toolName [
 
 	^ 'image_evaluate'
@@ -100,12 +106,6 @@ MCPToolEvaluate >> executeWithRequest: request [
 							   ifNil: [ error asString ]
 							   ifNotNil: [ :text | text ])
 					  details: (self errorDetailsFor: error) ]
-]
-
-{ #category : 'metadata' }
-MCPToolEvaluate >> groupName [
-
-	^ 'runtime'
 ]
 
 { #category : 'private - request' }

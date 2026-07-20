@@ -12,6 +12,12 @@ Class {
 }
 
 { #category : 'metadata' }
+MCPToolSearchRepositories class >> groupName [
+
+	^ self repositoriesGroupName
+]
+
+{ #category : 'metadata' }
 MCPToolSearchRepositories class >> toolName [
 
 	^ 'repository_search'
@@ -106,12 +112,6 @@ MCPToolSearchRepositories >> fieldTextsForRepositoryEntry: anEntry fieldName: fi
 	fieldName = 'upstreamRemoteUrl' ifTrue: [
 		^ { (anEntry at: #upstreamRemoteUrl) } ].
 	^ #(  )
-]
-
-{ #category : 'metadata' }
-MCPToolSearchRepositories >> groupName [
-
-	^ 'repositories'
 ]
 
 { #category : 'private - filtering' }

@@ -14,6 +14,12 @@ Class {
 }
 
 { #category : 'metadata' }
+MCPToolRunTests class >> groupName [
+
+	^ self testsGroupName
+]
+
+{ #category : 'metadata' }
 MCPToolRunTests class >> toolName [
 
 	^ 'test_run'
@@ -287,12 +293,6 @@ MCPToolRunTests >> failureMessageForTestNames: testNames error: anError [
 				  nextPutAll: anError class name;
 				  nextPutAll: '): ';
 				  nextPutAll: anError messageText ]
-]
-
-{ #category : 'metadata' }
-MCPToolRunTests >> groupName [
-
-	^ 'tests'
 ]
 
 { #category : 'private - request' }

@@ -13,6 +13,12 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'metadata' }
+MCPToolMethodMutation class >> groupName [
+
+	^ self methodsGroupName
+]
+
 { #category : 'testing' }
 MCPToolMethodMutation class >> isAbstract [
 
@@ -224,12 +230,6 @@ MCPToolMethodMutation >> failureMessageForRenameClassNamed: className classSide:
 				  nextPutAll: ': ';
 				  nextPutAll:
 					  (self normalizedCauseMessageForMutationError: anError) ]
-]
-
-{ #category : 'metadata' }
-MCPToolMethodMutation >> groupName [
-
-	^ 'methods'
 ]
 
 { #category : 'private - schema' }

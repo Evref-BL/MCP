@@ -12,6 +12,12 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'metadata' }
+MCPToolMethodSearch class >> groupName [
+
+	^ self methodsGroupName
+]
+
 { #category : 'testing' }
 MCPToolMethodSearch class >> isAbstract [
 
@@ -89,12 +95,6 @@ MCPToolMethodSearch >> fieldTextsForMethodEntry: anEntry sourceText: sourceText 
 MCPToolMethodSearch >> filterTextsForMethodEntry: anEntry sourceText: sourceText [
 
 	^ #(  )
-]
-
-{ #category : 'metadata' }
-MCPToolMethodSearch >> groupName [
-
-	^ 'methods'
 ]
 
 { #category : 'private - methods' }

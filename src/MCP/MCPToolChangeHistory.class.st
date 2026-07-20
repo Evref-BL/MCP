@@ -11,6 +11,12 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'metadata' }
+MCPToolChangeHistory class >> groupName [
+
+	^ self historyGroupName
+]
+
 { #category : 'testing' }
 MCPToolChangeHistory class >> isAbstract [
 
@@ -168,12 +174,6 @@ MCPToolChangeHistory >> executeWithRequest: request [
 								  errorResultText: commandError messageText
 								  details: commandError structuredDetails ]
 					  otherwise: [ :toolError | self errorResultFor: toolError ] ]
-]
-
-{ #category : 'metadata' }
-MCPToolChangeHistory >> groupName [
-
-	^ 'history'
 ]
 
 { #category : 'private - schema' }

@@ -12,6 +12,12 @@ Class {
 }
 
 { #category : 'metadata' }
+MCPToolCallTool class >> groupName [
+
+	^ self toolCatalogGroupName
+]
+
+{ #category : 'metadata' }
 MCPToolCallTool class >> toolName [
 
 	^ 'tool_call'
@@ -90,12 +96,6 @@ MCPToolCallTool >> executeWithRequest: request [
 					  errorResultText: 'tool_call requires MCP server call context.'
 					  details: { (#toolName -> callRequest toolName) } asDictionary ]
 		  onError: [ :error :parsedRequest | self errorResultFor: error ]
-]
-
-{ #category : 'metadata' }
-MCPToolCallTool >> groupName [
-
-	^ 'tool-catalog'
 ]
 
 { #category : 'private - request' }

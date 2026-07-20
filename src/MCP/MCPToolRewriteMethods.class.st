@@ -13,6 +13,12 @@ Class {
 }
 
 { #category : 'metadata' }
+MCPToolRewriteMethods class >> groupName [
+
+	^ self methodsGroupName
+]
+
+{ #category : 'metadata' }
 MCPToolRewriteMethods class >> toolName [
 
 	^ 'method_rewrite'
@@ -73,12 +79,6 @@ MCPToolRewriteMethods >> executeWithRequest: request [
 					  errorResultForRewriteError: error
 					  request: rewriteRequest
 					  rawRequest: request ]
-]
-
-{ #category : 'metadata' }
-MCPToolRewriteMethods >> groupName [
-
-	^ 'methods'
 ]
 
 { #category : 'private - execution' }

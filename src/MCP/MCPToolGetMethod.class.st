@@ -12,6 +12,12 @@ Class {
 }
 
 { #category : 'metadata' }
+MCPToolGetMethod class >> groupName [
+
+	^ self methodsGroupName
+]
+
+{ #category : 'metadata' }
 MCPToolGetMethod class >> toolName [
 
 	^ 'method_get'
@@ -201,12 +207,6 @@ MCPToolGetMethod >> failureMessageForClassNamed: className selector: selectorStr
 				  nextPutAll: anError class name;
 				  nextPutAll: '): ';
 				  nextPutAll: anError messageText ]
-]
-
-{ #category : 'metadata' }
-MCPToolGetMethod >> groupName [
-
-	^ 'methods'
 ]
 
 { #category : 'private - analysis' }

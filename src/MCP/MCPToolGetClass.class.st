@@ -12,6 +12,12 @@ Class {
 }
 
 { #category : 'metadata' }
+MCPToolGetClass class >> groupName [
+
+	^ self classesGroupName
+]
+
+{ #category : 'metadata' }
 MCPToolGetClass class >> toolName [
 
 	^ 'class_get'
@@ -286,12 +292,6 @@ MCPToolGetClass >> failureMessageForClassName: className error: anError [
 				  nextPutAll: anError class name;
 				  nextPutAll: '): ';
 				  nextPutAll: anError messageText ]
-]
-
-{ #category : 'metadata' }
-MCPToolGetClass >> groupName [
-
-	^ 'classes'
 ]
 
 { #category : 'defaults' }

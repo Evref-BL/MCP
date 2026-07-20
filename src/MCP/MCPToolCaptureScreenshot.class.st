@@ -12,6 +12,12 @@ Class {
 }
 
 { #category : 'metadata' }
+MCPToolCaptureScreenshot class >> groupName [
+
+	^ self uiGroupName
+]
+
+{ #category : 'metadata' }
 MCPToolCaptureScreenshot class >> toolName [
 
 	^ 'screenshot_capture'
@@ -100,12 +106,6 @@ MCPToolCaptureScreenshot >> executeWithRequest: request [
 							  commandResult imageContent }
 					  structuredContent: structuredContent ]
 		  onError: [ :error :ignored | self errorResultText: (self failureMessageFor: error) details: (self errorDetailsFor: error) ]
-]
-
-{ #category : 'metadata' }
-MCPToolCaptureScreenshot >> groupName [
-
-	^ 'ui'
 ]
 
 { #category : 'private - request' }

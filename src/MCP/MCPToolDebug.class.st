@@ -11,6 +11,12 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'metadata' }
+MCPToolDebug class >> groupName [
+
+	^ self debuggingGroupName
+]
+
 { #category : 'testing' }
 MCPToolDebug class >> isAbstract [
 
@@ -80,12 +86,6 @@ MCPToolDebug >> executeWithRequest: request [
 				  self resultForCommandResult:
 					  (self commandForRequest: debugRequest) execute ]
 		  onError: [ :error :ignored | self errorResultForDebugError: error ]
-]
-
-{ #category : 'metadata' }
-MCPToolDebug >> groupName [
-
-	^ 'debugging'
 ]
 
 { #category : 'private - schema' }

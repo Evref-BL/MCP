@@ -10,6 +10,12 @@ Class {
 }
 
 { #category : 'metadata' }
+MCPToolSearchPackages class >> groupName [
+
+	^ self packagesGroupName
+]
+
+{ #category : 'metadata' }
 MCPToolSearchPackages class >> toolName [
 
 	^ 'package_search'
@@ -71,12 +77,6 @@ MCPToolSearchPackages >> fieldTextsForPackageEntry: anEntry fieldName: fieldName
 	fieldName = 'projectName' ifTrue: [ ^ anEntry at: #projectNames ].
 	fieldName = 'tag' ifTrue: [ ^ anEntry at: #tagNames ].
 	^ #(  )
-]
-
-{ #category : 'metadata' }
-MCPToolSearchPackages >> groupName [
-
-	^ 'packages'
 ]
 
 { #category : 'private - filtering' }

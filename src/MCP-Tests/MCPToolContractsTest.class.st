@@ -902,7 +902,8 @@ MCPToolContractsTest >> testBuiltInToolsProvideCatalogMetadata [
 	| validExposures |
 	validExposures := #( 'static' 'discoverable' ).
 	self toolRegistry publicTools do: [ :tool |
-			self deny: tool groupName equals: 'other'.
+			self assert: (MCPTool builtInGroupNames includes: tool groupName).
+			self assert: tool groupName equals: tool class groupName.
 			self assert: (validExposures includes: tool defaultExposure).
 			self assert: (true = tool annotations readOnlyHint or: [ false = tool annotations readOnlyHint ]).
 			self assert: tool keywords notEmpty ]

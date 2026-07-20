@@ -12,6 +12,12 @@ Class {
 }
 
 { #category : 'metadata' }
+MCPToolRemoveMethods class >> groupName [
+
+	^ self methodsGroupName
+]
+
+{ #category : 'metadata' }
 MCPToolRemoveMethods class >> toolName [
 
 	^ 'method_remove'
@@ -160,12 +166,6 @@ MCPToolRemoveMethods >> forceRemoveSelectors: selectorSymbols from: aBehavior [
 		               from: aBehavior.
 	refactoring removeMethodChanges.
 	refactoring performChanges
-]
-
-{ #category : 'metadata' }
-MCPToolRemoveMethods >> groupName [
-
-	^ 'methods'
 ]
 
 { #category : 'private - request' }

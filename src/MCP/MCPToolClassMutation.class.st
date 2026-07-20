@@ -13,6 +13,12 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'metadata' }
+MCPToolClassMutation class >> groupName [
+
+	^ self classesGroupName
+]
+
 { #category : 'testing' }
 MCPToolClassMutation class >> isAbstract [
 
@@ -296,12 +302,6 @@ MCPToolClassMutation >> failureMessageForSetCommentOnClassNamed: className error
 MCPToolClassMutation >> fixedArguments [
 
 	^ self classToolSpec at: #fixedArguments ifAbsent: [ Dictionary new ]
-]
-
-{ #category : 'metadata' }
-MCPToolClassMutation >> groupName [
-
-	^ 'classes'
 ]
 
 { #category : 'private - schema' }

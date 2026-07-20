@@ -9,6 +9,12 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'metadata' }
+MCPToolLoadMetacello class >> groupName [
+
+	^ self repositoriesGroupName
+]
+
 { #category : 'testing' }
 MCPToolLoadMetacello class >> isAbstract [
 
@@ -123,12 +129,6 @@ MCPToolLoadMetacello >> failureSummaryForError: anError loadRequest: loadRequest
 			  stream
 				  nextPutAll: ': ';
 				  nextPutAll: message ]
-]
-
-{ #category : 'metadata' }
-MCPToolLoadMetacello >> groupName [
-
-	^ 'repositories'
 ]
 
 { #category : 'private - schema' }

@@ -14,6 +14,12 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'metadata' }
+MCPToolGetTool class >> groupName [
+
+	^ self toolCatalogGroupName
+]
+
 { #category : 'instance creation' }
 MCPToolGetTool class >> newForRegistry: aToolRegistry [
 
@@ -125,12 +131,6 @@ MCPToolGetTool >> executeWithRequest: request [
 				  contract := data at: #tool.
 				  self successResultText: 'Tool ' , (contract at: #name) , ' found.' data: data ]
 		  onError: [ :error :parsedRequest | self errorResultFor: error ]
-]
-
-{ #category : 'metadata' }
-MCPToolGetTool >> groupName [
-
-	^ 'tool-catalog'
 ]
 
 { #category : 'private - schema' }

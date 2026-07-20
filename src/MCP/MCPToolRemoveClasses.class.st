@@ -12,6 +12,12 @@ Class {
 }
 
 { #category : 'metadata' }
+MCPToolRemoveClasses class >> groupName [
+
+	^ self classesGroupName
+]
+
+{ #category : 'metadata' }
 MCPToolRemoveClasses class >> toolName [
 
 	^ 'class_remove'
@@ -142,12 +148,6 @@ MCPToolRemoveClasses >> failureMessageForClassNames: classNames error: anError [
 				  nextPutAll: anError class name;
 				  nextPutAll: '): ';
 				  nextPutAll: anError messageText ]
-]
-
-{ #category : 'metadata' }
-MCPToolRemoveClasses >> groupName [
-
-	^ 'classes'
 ]
 
 { #category : 'private - request' }

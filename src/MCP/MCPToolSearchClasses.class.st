@@ -12,6 +12,12 @@ Class {
 }
 
 { #category : 'metadata' }
+MCPToolSearchClasses class >> groupName [
+
+	^ self classesGroupName
+]
+
+{ #category : 'metadata' }
 MCPToolSearchClasses class >> toolName [
 
 	^ 'class_search'
@@ -152,12 +158,6 @@ MCPToolSearchClasses >> fieldTextsForClassEntry: anEntry fieldName: fieldName [
 		^ anEntry at: #instanceSlotNames ].
 	fieldName = 'classSlot' ifTrue: [ ^ anEntry at: #classSlotNames ].
 	^ #(  )
-]
-
-{ #category : 'metadata' }
-MCPToolSearchClasses >> groupName [
-
-	^ 'classes'
 ]
 
 { #category : 'private - filtering' }

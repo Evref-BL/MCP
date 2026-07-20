@@ -26,10 +26,50 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'metadata - groups' }
+MCPTool class >> builtInGroupNames [
+
+	^ {
+		  self classesGroupName.
+		  self debuggingGroupName.
+		  self historyGroupName.
+		  self methodsGroupName.
+		  self packagesGroupName.
+		  self repositoriesGroupName.
+		  self runtimeGroupName.
+		  self testsGroupName.
+		  self toolCatalogGroupName.
+		  self uiGroupName }
+]
+
+{ #category : 'metadata - groups' }
+MCPTool class >> classesGroupName [
+
+	^ 'classes'
+]
+
 { #category : 'querying' }
 MCPTool class >> concreteSubclasses [
 
 	^ self allSubclasses reject: [ :each | each isAbstract ]
+]
+
+{ #category : 'metadata - groups' }
+MCPTool class >> debuggingGroupName [
+
+	^ 'debugging'
+]
+
+{ #category : 'metadata' }
+MCPTool class >> groupName [
+
+	^ self otherGroupName
+]
+
+{ #category : 'metadata - groups' }
+MCPTool class >> historyGroupName [
+
+	^ 'history'
 ]
 
 { #category : 'testing' }
@@ -44,10 +84,52 @@ MCPTool class >> isBuiltIn [
 	^ self package = MCPTool package
 ]
 
+{ #category : 'metadata - groups' }
+MCPTool class >> methodsGroupName [
+
+	^ 'methods'
+]
+
 { #category : 'instance creation' }
 MCPTool class >> newForRegistry: aToolRegistry [
 
 	^ self new
+]
+
+{ #category : 'metadata - groups' }
+MCPTool class >> otherGroupName [
+
+	^ 'other'
+]
+
+{ #category : 'metadata - groups' }
+MCPTool class >> packagesGroupName [
+
+	^ 'packages'
+]
+
+{ #category : 'metadata - groups' }
+MCPTool class >> repositoriesGroupName [
+
+	^ 'repositories'
+]
+
+{ #category : 'metadata - groups' }
+MCPTool class >> runtimeGroupName [
+
+	^ 'runtime'
+]
+
+{ #category : 'metadata - groups' }
+MCPTool class >> testsGroupName [
+
+	^ 'tests'
+]
+
+{ #category : 'metadata - groups' }
+MCPTool class >> toolCatalogGroupName [
+
+	^ 'tool-catalog'
 ]
 
 { #category : 'scripts' }
@@ -79,6 +161,12 @@ MCPTool class >> toolIcons [
 MCPTool class >> toolName [
 
 	self subclassResponsibility
+]
+
+{ #category : 'metadata - groups' }
+MCPTool class >> uiGroupName [
+
+	^ 'ui'
 ]
 
 { #category : 'metadata' }
@@ -305,7 +393,7 @@ MCPTool >> failureMessageFor: anError [
 { #category : 'metadata' }
 MCPTool >> groupName [
 
-	^ 'other'
+	^ self class groupName
 ]
 
 { #category : 'metadata' }

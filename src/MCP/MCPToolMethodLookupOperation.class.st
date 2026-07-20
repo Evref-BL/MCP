@@ -9,6 +9,12 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'metadata' }
+MCPToolMethodLookupOperation class >> groupName [
+
+	^ self methodsGroupName
+]
+
 { #category : 'testing' }
 MCPToolMethodLookupOperation class >> isAbstract [
 
@@ -37,12 +43,6 @@ MCPToolMethodLookupOperation >> filterPatternFromRequest: request [
 
 	^ (request stringArgumentNamed: self lookupArgumentName) ifNotNil: [
 		  :value | value trimBoth ]
-]
-
-{ #category : 'metadata' }
-MCPToolMethodLookupOperation >> groupName [
-
-	^ 'methods'
 ]
 
 { #category : 'private - schema' }
