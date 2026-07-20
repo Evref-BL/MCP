@@ -821,6 +821,15 @@ MCPToolContractsTest >> signalHaltForMCPMessageProcessorTest [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testAllStaticExposurePolicyMakesEveryRegistrationStatic [
+
+	| registry |
+	registry := MCPToolRegistry new.
+	registry exposurePolicy: MCPToolExposurePolicy allStatic.
+	self assert: registry staticToolNames asSet equals: registry publicToolNames asSet
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testAllToolOutputSchemasAdvertiseStructuredSummaryWarningsAndStatus [
 
 	MCPTool concreteSubclasses do: [ :toolClass |
@@ -978,6 +987,17 @@ MCPToolContractsTest >> testCaptureScreenshotHasAccurateNameAndSchemas [
 	self assert: (outputPropertyNames includes: 'width').
 	self assert: (outputPropertyNames includes: 'height').
 	self assert: (outputPropertyNames includes: 'mimeType')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testCatalogToolsUseOwningRegistry [
+
+	| registry |
+	registry := MCPToolRegistry new.
+	#( 'tool_search' 'tool_get' ) do: [ :toolName |
+			| tool |
+			tool := registry toolNamed: toolName ifAbsent: [ self fail ].
+			self assert: tool toolRegistry == registry ]
 ]
 
 { #category : 'tests' }
@@ -1412,13 +1432,12 @@ MCPToolContractsTest >> testEvaluateReturnsRuntimeFailureInformation [
 { #category : 'tests' }
 MCPToolContractsTest >> testExposurePolicyOverridesToolDefault [
 
-	| policy registry tool |
+	| registry tool |
 	registry := MCPToolRegistry new.
 	tool := registry toolNamed: 'method_protocol_update' ifAbsent: [ self fail ].
-	policy := MCPToolExposurePolicy forRegistry: registry.
-	policy staticToolNames: (registry staticToolNames copyWith: tool name).
+	registry exposurePolicy: (MCPToolExposurePolicy staticToolNames: (registry staticToolNames copyWith: tool name)).
 	self assert: tool defaultExposure equals: 'discoverable'.
-	self assert: (policy isStaticTool: tool name)
+	self assert: (registry isStaticToolNamed: tool name)
 ]
 
 { #category : 'tests' }
@@ -3127,6 +3146,14 @@ MCPToolContractsTest >> testServerInitializationLeavesIconCacheEmpty [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testServerRegistryOwnsExposurePolicy [
+
+	| server |
+	server := self mcpWithoutObservabilityExport.
+	self assert: server toolExposurePolicy == server toolRegistry exposurePolicy
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testSingularSearchTermsUseGenericInflectionRules [
 
 	| registry |
@@ -3183,20 +3210,6 @@ MCPToolContractsTest >> testStringArrayItemDescriptionsStayUseful [
 	self
 		assert: ((usefulProperty asJRPCJSON at: #items) at: #description)
 		equals: 'Smalltalk expression.'
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testToolExposurePolicyUsesDefaultsUntilExplicitStaticListProvided [
-
-	| policy |
-	self assert:
-		(MCPToolExposurePolicy default isStaticTool: 'tool_search').
-	self deny:
-		(MCPToolExposurePolicy default isStaticTool: 'repository_search').
-	policy := MCPToolExposurePolicy staticToolNames:
-		          #( 'repository_search' ).
-	self deny: (policy isStaticTool: 'tool_search').
-	self assert: (policy isStaticTool: 'repository_search')
 ]
 
 { #category : 'tests' }
@@ -3259,7 +3272,7 @@ MCPToolContractsTest >> testToolRegistryAcceptsPluginToolRegistration [
 	registration := registry registerToolClass: MCPHaltingTestTool.
 	tool := registry toolNamed: MCPHaltingTestTool toolName ifAbsent: [ self fail ].
 	self assert: tool == registration tool.
-	self deny: ((MCPToolExposurePolicy forRegistry: registry) isStaticTool: tool name).
+	self deny: (registry isStaticToolNamed: tool name).
 	self assert:
 		((registry publicToolGroups detect: [ :each | each key = 'plugins' ] ifNone: [ self fail ]) value includes: MCPHaltingTestTool)
 ]
@@ -3336,6 +3349,18 @@ MCPToolContractsTest >> testToolRegistryReusesRegisteredToolInstances [
 	searchResults := registry toolsMatchingQuery: 'tool' group: nil.
 	self assert: first == second.
 	self assert: (searchResults detect: [ :each | each name = 'tool_search' ]) == first
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testToolRegistryUsesDefaultExposureUntilStaticListProvided [
+
+	| registry |
+	registry := MCPToolRegistry new.
+	self assert: (registry isStaticToolNamed: 'tool_search').
+	self deny: (registry isStaticToolNamed: 'repository_search').
+	registry staticToolNames: #( 'repository_search' ).
+	self deny: (registry isStaticToolNamed: 'tool_search').
+	self assert: (registry isStaticToolNamed: 'repository_search')
 ]
 
 { #category : 'tests' }

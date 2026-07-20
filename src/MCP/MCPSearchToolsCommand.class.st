@@ -14,10 +14,7 @@ Class {
 { #category : 'instance creation' }
 MCPSearchToolsCommand class >> tool: aTool request: aRequest [
 
-	^ self
-		  tool: aTool
-		  request: aRequest
-		  toolExposurePolicy: MCPToolExposurePolicy default
+	^ self tool: aTool request: aRequest toolRegistry: MCPToolRegistry new
 ]
 
 { #category : 'executing' }
@@ -25,7 +22,7 @@ MCPSearchToolsCommand >> execute [
 
 	| data matchingTools pageSize visibleTools |
 	pageSize := self pageSize.
-	matchingTools := self toolExposurePolicy toolRegistry toolsMatchingQuery: request query group: request group.
+	matchingTools := self toolRegistry toolsMatchingQuery: request query group: request group.
 	visibleTools := self visibleToolsFrom: matchingTools.
 	data := Dictionary new.
 	data at: #tools put: (visibleTools collect: [ :each | each searchMetadata ]) asArray.

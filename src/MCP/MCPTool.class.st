@@ -44,6 +44,12 @@ MCPTool class >> isBuiltIn [
 	^ self package = MCPTool package
 ]
 
+{ #category : 'instance creation' }
+MCPTool class >> newForRegistry: aToolRegistry [
+
+	^ self new
+]
+
 { #category : 'scripts' }
 MCPTool class >> toolGroups [
 
@@ -139,11 +145,10 @@ MCPTool >> commandForRequest: aToolRequest [
 ]
 
 { #category : 'metadata' }
-MCPTool >> contractUsingPolicy: aToolExposurePolicy includeOutputSchema: includeOutputSchema [
+MCPTool >> contractIncludingOutputSchema: includeOutputSchema [
 
 	| activationRequirements data examples |
 	data := self metadata copy.
-	data at: #exposure put: (aToolExposurePolicy exposureForTool: self).
 	data at: #inputSchema put: self inputSchema asJRPCJSON.
 	includeOutputSchema ifTrue: [ data at: #outputSchema put: self outputSchema asJRPCJSON ].
 	examples := self examples.
@@ -286,12 +291,6 @@ MCPTool >> executeParsedRequestFrom: request do: executionBlock onError: errorBl
 MCPTool >> executeWithRequest: aRequest [
 
 	self subclassResponsibility
-]
-
-{ #category : 'executing' }
-MCPTool >> executeWithRequest: aRequest usingPolicy: aToolExposurePolicy [
-
-	^ self executeWithRequest: aRequest
 ]
 
 { #category : 'error handling' }

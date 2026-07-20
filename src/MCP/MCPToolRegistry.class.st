@@ -1,30 +1,70 @@
 "
 Instance-scoped catalog of MCP tools.
 
-A registry discovers built-in concrete MCPTool subclasses, owns one reusable instance of each registered tool, and provides lookup, grouping, static-surface selection, and catalog search. Intrinsic metadata belongs to the tools. Visibility overrides belong to MCPToolExposurePolicy.
+A registry discovers built-in concrete MCPTool subclasses, owns one reusable instance of each registered tool, owns the exposure policy applied to those registrations, and provides lookup, grouping, static-surface selection, contract composition, and catalog search. Intrinsic metadata belongs to tools; visibility overrides belong to MCPToolExposurePolicy.
 "
 Class {
 	#name : 'MCPToolRegistry',
 	#superclass : 'Object',
 	#instVars : [
-		'registrations'
+		'registrations',
+		'exposurePolicy'
 	],
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
 }
 
+{ #category : 'tools' }
+MCPToolRegistry >> contractForTool: aTool includeOutputSchema: includeOutputSchema [
+
+	| contract |
+	contract := aTool contractIncludingOutputSchema: includeOutputSchema.
+	contract at: #exposure put: (self exposureForTool: aTool).
+	^ contract
+]
+
+{ #category : 'tools' }
+MCPToolRegistry >> contractForToolNamed: aToolName includeOutputSchema: includeOutputSchema [
+
+	| tool |
+	tool := self toolNamed: aToolName ifAbsent: [ Error signal: 'Unknown MCP tool: ' , aToolName asString ].
+	^ self contractForTool: tool includeOutputSchema: includeOutputSchema
+]
+
 { #category : 'registrations' }
 MCPToolRegistry >> defaultRegistrations [
 
 	| tools |
-	tools := (MCPTool concreteSubclasses select: [ :toolClass | toolClass isBuiltIn ] thenCollect: [ :toolClass | toolClass new ])
-		         asArray.
+	tools := (MCPTool concreteSubclasses
+		          select: [ :toolClass | toolClass isBuiltIn ]
+		          thenCollect: [ :toolClass | toolClass newForRegistry: self ]) asArray.
 	tools sort: [ :left :right |
 			left groupName = right groupName
 				ifTrue: [ left name <= right name ]
 				ifFalse: [ left groupName <= right groupName ] ].
 	^ tools collect: [ :tool | MCPToolRegistration tool: tool ]
+]
+
+{ #category : 'tools' }
+MCPToolRegistry >> exposureForTool: aTool [
+
+	| registration |
+	registration := self registrationForTool: aTool ifAbsent: [ Error signal: 'MCP tool is not registered: ' , aTool name ].
+	^ self exposurePolicy exposureForToolRegistration: registration
+]
+
+{ #category : 'accessing' }
+MCPToolRegistry >> exposurePolicy [
+
+	^ exposurePolicy
+]
+
+{ #category : 'accessing' }
+MCPToolRegistry >> exposurePolicy: aToolExposurePolicy [
+
+	self validateExposurePolicy: aToolExposurePolicy.
+	exposurePolicy := aToolExposurePolicy
 ]
 
 { #category : 'testing' }
@@ -37,7 +77,16 @@ MCPToolRegistry >> includesToolNamed: aToolName [
 MCPToolRegistry >> initialize [
 
 	super initialize.
+	exposurePolicy := MCPToolExposurePolicy default.
 	self resetRegistrations
+]
+
+{ #category : 'testing' }
+MCPToolRegistry >> isStaticToolNamed: aToolName [
+
+	| registration |
+	registration := self registrationNamed: aToolName ifAbsent: [ ^ false ].
+	^ self exposurePolicy isStaticToolRegistration: registration
 ]
 
 { #category : 'tools' }
@@ -105,7 +154,7 @@ MCPToolRegistry >> registerTool: aTool [
 { #category : 'registrations' }
 MCPToolRegistry >> registerToolClass: aToolClass [
 
-	^ self registerTool: aToolClass new
+	^ self registerTool: (aToolClass newForRegistry: self)
 ]
 
 { #category : 'registrations' }
@@ -154,35 +203,29 @@ MCPToolRegistry >> singularSearchTermFor: aTerm [
 { #category : 'tools' }
 MCPToolRegistry >> staticToolNames [
 
-	^ (self registrations select: [ :each | each isStaticByDefault ] thenCollect: [ :each | each name ]) asArray
+	^ (self staticTools collect: [ :each | each name ]) asArray
+]
+
+{ #category : 'configuration' }
+MCPToolRegistry >> staticToolNames: aCollection [
+
+	self exposurePolicy: (MCPToolExposurePolicy staticToolNames: aCollection)
 ]
 
 { #category : 'tools' }
 MCPToolRegistry >> staticTools [
 
-	^ self staticToolsUsingPolicy: (MCPToolExposurePolicy forRegistry: self)
+	^ (self registrations select: [ :each | self exposurePolicy isStaticToolRegistration: each ] thenCollect: [ :each | each tool ])
+		  asArray
 ]
 
 { #category : 'tools' }
 MCPToolRegistry >> staticToolsDictionary [
 
-	^ self staticToolsDictionaryUsingPolicy: (MCPToolExposurePolicy forRegistry: self)
-]
-
-{ #category : 'tools' }
-MCPToolRegistry >> staticToolsDictionaryUsingPolicy: aToolExposurePolicy [
-
 	| dictionary |
 	dictionary := Dictionary new.
-	(self staticToolsUsingPolicy: aToolExposurePolicy) do: [ :tool | dictionary at: tool name put: tool ].
+	self staticTools do: [ :tool | dictionary at: tool name put: tool ].
 	^ dictionary
-]
-
-{ #category : 'tools' }
-MCPToolRegistry >> staticToolsUsingPolicy: aToolExposurePolicy [
-
-	^ (self registrations select: [ :each | aToolExposurePolicy isStaticToolRegistration: each ] thenCollect: [ :each | each tool ])
-		  asArray
 ]
 
 { #category : 'tools' }
@@ -216,4 +259,14 @@ MCPToolRegistry >> unregisterToolNamed: aToolName [
 	| toolName |
 	toolName := aToolName asString.
 	registrations := self registrations reject: [ :each | each name = toolName ]
+]
+
+{ #category : 'private - exposure' }
+MCPToolRegistry >> validateExposurePolicy: aToolExposurePolicy [
+
+	| staticNames unknown |
+	staticNames := aToolExposurePolicy explicitStaticToolNames.
+	staticNames ifNil: [ ^ self ].
+	unknown := staticNames reject: [ :each | self includesToolNamed: each ].
+	unknown ifNotEmpty: [ Error signal: 'Unknown MCP tool(s) in exposure policy: ' , unknown printString ]
 ]

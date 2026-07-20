@@ -1,15 +1,26 @@
 "
-Static bridge tool for reading a catalog tool's full contract.
+Static bridge tool for reading a tool contract from its owning registry.
 
 Agents use it after tool_search and before tool_call when a discoverable tool requires exact schema details.
 "
 Class {
 	#name : 'MCPToolGetTool',
 	#superclass : 'MCPTool',
+	#instVars : [
+		'toolRegistry'
+	],
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
 }
+
+{ #category : 'instance creation' }
+MCPToolGetTool class >> newForRegistry: aToolRegistry [
+
+	^ self new
+		  toolRegistry: aToolRegistry;
+		  yourself
+]
 
 { #category : 'metadata' }
 MCPToolGetTool class >> toolName [
@@ -91,7 +102,7 @@ MCPToolGetTool >> buildOutputSchema [
 { #category : 'private - execution' }
 MCPToolGetTool >> commandForRequest: getRequest [
 
-	^ MCPGetToolCommand tool: self request: getRequest
+	^ MCPGetToolCommand tool: self request: getRequest toolRegistry: self toolRegistry
 ]
 
 { #category : 'metadata' }
@@ -110,25 +121,12 @@ MCPToolGetTool >> description [
 MCPToolGetTool >> executeWithRequest: request [
 
 	^ self
-		  executeWithRequest: request
-		  usingPolicy: MCPToolExposurePolicy default
-]
-
-{ #category : 'executing' }
-MCPToolGetTool >> executeWithRequest: request usingPolicy: aToolExposurePolicy [
-
-	^ self
 		  executeParsedRequestFrom: request
 		  do: [ :getRequest |
 				  | contract data |
-				  data := (MCPGetToolCommand
-					           tool: self
-					           request: getRequest
-					           toolExposurePolicy: aToolExposurePolicy) execute.
+				  data := (self commandForRequest: getRequest) execute.
 				  contract := data at: #tool.
-				  self
-					  successResultText: 'Tool ' , (contract at: #name) , ' found.'
-					  data: data ]
+				  self successResultText: 'Tool ' , (contract at: #name) , ' found.' data: data ]
 		  onError: [ :error :parsedRequest | self errorResultFor: error ]
 ]
 
@@ -160,4 +158,16 @@ MCPToolGetTool >> risk [
 MCPToolGetTool >> title [
 
 	^ 'Get Tool'
+]
+
+{ #category : 'accessing' }
+MCPToolGetTool >> toolRegistry [
+
+	^ toolRegistry ifNil: [ toolRegistry := MCPToolRegistry new ]
+]
+
+{ #category : 'accessing' }
+MCPToolGetTool >> toolRegistry: aToolRegistry [
+
+	toolRegistry := aToolRegistry
 ]
