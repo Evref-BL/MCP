@@ -164,12 +164,6 @@ MCPToolDebugState >> parsedRequestFromToolRequest: request [
 ]
 
 { #category : 'metadata' }
-MCPToolDebugState >> risk [
-
-	^ 'low'
-]
-
-{ #category : 'metadata' }
 MCPToolDebugState >> title [
 
 	^ 'Get Debug State'

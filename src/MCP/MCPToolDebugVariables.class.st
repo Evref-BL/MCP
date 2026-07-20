@@ -140,12 +140,6 @@ MCPToolDebugVariables >> parsedRequestFromToolRequest: request [
 ]
 
 { #category : 'metadata' }
-MCPToolDebugVariables >> risk [
-
-	^ 'low'
-]
-
-{ #category : 'metadata' }
 MCPToolDebugVariables >> title [
 
 	^ 'Get Debug Variables'

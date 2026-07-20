@@ -272,12 +272,6 @@ MCPToolGetMethod >> parsedRequestFromToolRequest: request [
 	^ MCPGetMethodRequest fromRequest: request tool: self
 ]
 
-{ #category : 'metadata' }
-MCPToolGetMethod >> risk [
-
-	^ 'low'
-]
-
 { #category : 'private - errors' }
 MCPToolGetMethod >> selectorForErrorFromParsedRequest: getRequest rawRequest: rawRequest [
 

@@ -21,12 +21,6 @@ MCPToolGetDebugSession >> mutability [
 	^ 'read'
 ]
 
-{ #category : 'metadata' }
-MCPToolGetDebugSession >> risk [
-
-	^ 'low'
-]
-
 { #category : 'private - specs' }
 MCPToolGetDebugSession >> sessionToolSpec [
 

@@ -111,12 +111,6 @@ MCPToolCallTool >> parsedRequestFromToolRequest: request [
 ]
 
 { #category : 'metadata' }
-MCPToolCallTool >> risk [
-
-	^ 'medium'
-]
-
-{ #category : 'metadata' }
 MCPToolCallTool >> title [
 
 	^ 'Call Tool'

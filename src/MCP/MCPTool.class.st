@@ -372,7 +372,6 @@ MCPTool >> metadata [
 		  (#description -> self description).
 		  (#group -> self groupName).
 		  (#mutability -> self mutability).
-		  (#risk -> self risk).
 		  (#keywords -> self keywords) } asDictionary
 ]
 
@@ -430,12 +429,6 @@ MCPTool >> pngSizeStringForForm: aForm [
 MCPTool >> requestFromToolCallArguments: toolCallArguments [
 
 	^ MCPToolRequest tool: self arguments: toolCallArguments
-]
-
-{ #category : 'metadata' }
-MCPTool >> risk [
-
-	^ 'high'
 ]
 
 { #category : 'private - schema' }

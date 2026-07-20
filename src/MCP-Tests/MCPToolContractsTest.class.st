@@ -899,15 +899,13 @@ MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 { #category : 'tests' }
 MCPToolContractsTest >> testBuiltInToolsProvideCatalogMetadata [
 
-	| validExposures validMutabilities validRisks |
+	| validExposures validMutabilities |
 	validExposures := #( 'static' 'discoverable' ).
 	validMutabilities := #( 'read' 'execute' 'write' ).
-	validRisks := #( 'low' 'medium' 'high' ).
 	self toolRegistry publicTools do: [ :tool |
 			self deny: tool groupName equals: 'other'.
 			self assert: (validExposures includes: tool defaultExposure).
 			self assert: (validMutabilities includes: tool mutability).
-			self assert: (validRisks includes: tool risk).
 			self assert: tool keywords notEmpty ]
 ]
 
@@ -1346,8 +1344,8 @@ MCPToolContractsTest >> testDiscoveryUsesConfiguredStaticToolNames [
 		                   (server rpcToolCall: 'tool_get' withParams: { (#toolName -> 'repository_search') } asDictionary)) at: #tool.
 	createContract := (self dataFrom:
 		                   (server rpcToolCall: 'tool_get' withParams: { (#toolName -> 'repository_create') } asDictionary)) at: #tool.
-	self assert: searchContract keys asSet equals: #( name description group exposure mutability risk keywords inputSchema ) asSet.
-	self assert: createContract keys asSet equals: #( name description group exposure mutability risk keywords inputSchema ) asSet.
+	self assert: searchContract keys asSet equals: #( name description group exposure mutability keywords inputSchema ) asSet.
+	self assert: createContract keys asSet equals: #( name description group exposure mutability keywords inputSchema ) asSet.
 	self assert: (searchContract at: #exposure) equals: 'static'.
 	self assert: (createContract at: #exposure) equals: 'discoverable'
 ]
@@ -1490,11 +1488,10 @@ MCPToolContractsTest >> testGetToolReturnsSchemaForCatalogTool [
 	result := self callToolNamed: 'tool_get' withArguments: { (#toolName -> 'repository_create') } asDictionary.
 	contract := (self dataFrom: result) at: #tool.
 	self assert: (contract at: #name) equals: 'repository_create'.
-	self assert: contract keys asSet equals: #( name description group exposure mutability risk keywords inputSchema ) asSet.
+	self assert: contract keys asSet equals: #( name description group exposure mutability keywords inputSchema ) asSet.
 	self assert: (contract at: #group) equals: 'repositories'.
 	self assert: (contract at: #exposure) equals: 'discoverable'.
 	self assert: (contract at: #mutability) equals: 'write'.
-	self assert: (contract at: #risk) equals: 'high'.
 	self assert: ((contract at: #keywords) includes: 'repo').
 	inputProperties := ((contract at: #inputSchema) at: #properties) keys.
 	self assert: inputProperties asSet equals: #( 'name' 'location' 'packageNames' 'subdirectory' ) asSet.
@@ -3371,7 +3368,6 @@ MCPToolContractsTest >> testToolsOwnRegistryMetadata [
 	self assert: tool groupName equals: 'runtime'.
 	self assert: tool defaultExposure equals: 'static'.
 	self assert: tool mutability equals: 'execute'.
-	self assert: tool risk equals: 'medium'.
 	self assert: (tool keywords includes: 'smalltalk')
 ]
 

@@ -104,12 +104,6 @@ MCPToolListChangeHistoryEntries >> parsedRequestFromToolRequest: request [
 ]
 
 { #category : 'metadata' }
-MCPToolListChangeHistoryEntries >> risk [
-
-	^ 'low'
-]
-
-{ #category : 'metadata' }
 MCPToolListChangeHistoryEntries >> title [
 
 	^ 'List Change History Entries'

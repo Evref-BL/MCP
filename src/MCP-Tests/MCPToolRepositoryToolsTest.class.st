@@ -171,7 +171,7 @@ MCPToolRepositoryToolsTest >> repositoryToolSpecifications [
 ]
 
 { #category : 'tests' }
-MCPToolRepositoryToolsTest >> testRepositoryToolsAreDiscoverableWithExpectedRisk [
+MCPToolRepositoryToolsTest >> testRepositoryToolsAreDiscoverableWithExpectedMetadata [
 
 	| metadataByName |
 	metadataByName := self metadataByNameForRepositoryTools.

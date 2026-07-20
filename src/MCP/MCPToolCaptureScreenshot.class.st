@@ -114,12 +114,6 @@ MCPToolCaptureScreenshot >> parsedRequestFromToolRequest: request [
 	^ MCPScreenshotRequest fromRequest: request tool: self
 ]
 
-{ #category : 'metadata' }
-MCPToolCaptureScreenshot >> risk [
-
-	^ 'low'
-]
-
 { #category : 'private - results' }
 MCPToolCaptureScreenshot >> successSummaryForResult: aScreenshotResult [
 

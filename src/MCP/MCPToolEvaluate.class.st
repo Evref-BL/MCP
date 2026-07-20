@@ -126,12 +126,6 @@ MCPToolEvaluate >> resultPreviewCharacterLimit [
 	^ 10000
 ]
 
-{ #category : 'metadata' }
-MCPToolEvaluate >> risk [
-
-	^ 'medium'
-]
-
 { #category : 'private' }
 MCPToolEvaluate >> runtimeFailureMessageFor: anError [
 

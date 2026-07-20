@@ -522,12 +522,6 @@ MCPToolSearch >> requestedContextFromRequest: request [
 	^ self subclassResponsibility
 ]
 
-{ #category : 'metadata' }
-MCPToolSearch >> risk [
-
-	^ 'low'
-]
-
 { #category : 'private - results' }
 MCPToolSearch >> scopeQueryFailureMessageFor: resultKind scope: scopeSummary error: anError [
 

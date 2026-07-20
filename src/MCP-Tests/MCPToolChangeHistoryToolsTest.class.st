@@ -16,7 +16,7 @@ MCPToolChangeHistoryToolsTest >> inputPropertyNamesFor: aTool [
 ]
 
 { #category : 'tests' }
-MCPToolChangeHistoryToolsTest >> testChangeHistoryToolsAreDiscoverableWithExpectedRisk [
+MCPToolChangeHistoryToolsTest >> testChangeHistoryToolsAreDiscoverableWithExpectedMetadata [
 
 	| metadataByName result toolNames |
 	result := self callToolNamed: 'tool_search' withArguments: { (#group -> 'history') } asDictionary.

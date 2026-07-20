@@ -326,12 +326,6 @@ MCPToolRunTests >> rawTestNamesFromRequest: rawRequest [
 						   fromRequest: rawRequest) do: [ :each | stream nextPut: each ] ] ]
 ]
 
-{ #category : 'metadata' }
-MCPToolRunTests >> risk [
-
-	^ 'medium'
-]
-
 { #category : 'private' }
 MCPToolRunTests >> successSummaryForData: data [
 

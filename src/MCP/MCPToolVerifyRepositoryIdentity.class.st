@@ -45,9 +45,3 @@ MCPToolVerifyRepositoryIdentity >> repositoryToolSpec [
 			   self modifiedPackageNamesSchemaProperty.
 			   self isModifiedSchemaProperty }) } asDictionary
 ]
-
-{ #category : 'metadata' }
-MCPToolVerifyRepositoryIdentity >> risk [
-
-	^ 'low'
-]

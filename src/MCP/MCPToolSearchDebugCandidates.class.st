@@ -21,12 +21,6 @@ MCPToolSearchDebugCandidates >> mutability [
 	^ 'read'
 ]
 
-{ #category : 'metadata' }
-MCPToolSearchDebugCandidates >> risk [
-
-	^ 'low'
-]
-
 { #category : 'private - specs' }
 MCPToolSearchDebugCandidates >> sessionToolSpec [
 

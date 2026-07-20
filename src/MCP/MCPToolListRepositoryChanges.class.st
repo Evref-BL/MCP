@@ -39,9 +39,3 @@ MCPToolListRepositoryChanges >> repositoryToolSpec [
 		  (#requestClass -> MCPRepositoryDiffRequest).
 		  (#commandClass -> MCPRepositoryDiffCommand) } asDictionary
 ]
-
-{ #category : 'metadata' }
-MCPToolListRepositoryChanges >> risk [
-
-	^ 'low'
-]

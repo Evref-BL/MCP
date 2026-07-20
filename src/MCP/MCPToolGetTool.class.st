@@ -149,12 +149,6 @@ MCPToolGetTool >> parsedRequestFromToolRequest: request [
 ]
 
 { #category : 'metadata' }
-MCPToolGetTool >> risk [
-
-	^ 'low'
-]
-
-{ #category : 'metadata' }
 MCPToolGetTool >> title [
 
 	^ 'Get Tool'

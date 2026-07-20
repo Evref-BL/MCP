@@ -30,9 +30,3 @@ MCPToolListDebugBreakpoints >> mutability [
 
 	^ 'read'
 ]
-
-{ #category : 'metadata' }
-MCPToolListDebugBreakpoints >> risk [
-
-	^ 'low'
-]

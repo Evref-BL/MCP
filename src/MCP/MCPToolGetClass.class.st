@@ -306,12 +306,6 @@ MCPToolGetClass >> parsedRequestFromToolRequest: request [
 	^ MCPGetClassRequest fromRequest: request tool: self
 ]
 
-{ #category : 'metadata' }
-MCPToolGetClass >> risk [
-
-	^ 'low'
-]
-
 { #category : 'private' }
 MCPToolGetClass >> successSummaryForClassName: className superclasses: superclasses subclasses: subclasses [
 
