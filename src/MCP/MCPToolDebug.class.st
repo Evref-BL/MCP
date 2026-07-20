@@ -11,10 +11,22 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'metadata' }
+MCPToolDebug class >> groupName [
+
+	^ self debuggingGroupName
+]
+
 { #category : 'testing' }
 MCPToolDebug class >> isAbstract [
 
 	^ self = MCPToolDebug
+]
+
+{ #category : 'metadata' }
+MCPToolDebug >> additionalKeywords [
+
+	^ #( 'debug' 'session' 'state' 'frame' 'breakpoint' 'exception' 'repair' 'control' )
 ]
 
 { #category : 'private - schema' }

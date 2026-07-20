@@ -12,6 +12,12 @@ Class {
 }
 
 { #category : 'metadata' }
+MCPToolCallTool class >> groupName [
+
+	^ self toolCatalogGroupName
+]
+
+{ #category : 'metadata' }
 MCPToolCallTool class >> toolName [
 
 	^ 'tool_call'
@@ -66,6 +72,12 @@ MCPToolCallTool >> buildOutputSchema [
 MCPToolCallTool >> commandForRequest: callRequest [
 
 	^ MCPCallToolCommand tool: self request: callRequest
+]
+
+{ #category : 'metadata' }
+MCPToolCallTool >> defaultExposure [
+
+	^ 'static'
 ]
 
 { #category : 'metadata' }

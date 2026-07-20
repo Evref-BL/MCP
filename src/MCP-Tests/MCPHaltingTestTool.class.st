@@ -51,6 +51,12 @@ MCPHaltingTestTool >> executeWithRequest: aRequest [
 ]
 
 { #category : 'metadata' }
+MCPHaltingTestTool >> groupName [
+
+	^ 'plugins'
+]
+
+{ #category : 'metadata' }
 MCPHaltingTestTool >> title [
 
 	^ 'Halting Test Tool'

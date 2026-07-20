@@ -13,6 +13,12 @@ Class {
 }
 
 { #category : 'metadata' }
+MCPToolRewriteMethods class >> groupName [
+
+	^ self methodsGroupName
+]
+
+{ #category : 'metadata' }
 MCPToolRewriteMethods class >> toolName [
 
 	^ 'method_rewrite'

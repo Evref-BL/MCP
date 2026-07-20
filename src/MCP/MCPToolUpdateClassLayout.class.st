@@ -15,6 +15,12 @@ MCPToolUpdateClassLayout class >> toolName [
 	^ 'class_layout_update'
 ]
 
+{ #category : 'metadata' }
+MCPToolUpdateClassLayout >> additionalKeywords [
+
+	^ super additionalKeywords , #( 'layout' 'shape' 'format' 'fixed' 'variable' 'weak' 'immediate' 'word' 'byte' )
+]
+
 { #category : 'private - specs' }
 MCPToolUpdateClassLayout >> classToolSpec [
 

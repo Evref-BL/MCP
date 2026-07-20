@@ -9,10 +9,22 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'metadata' }
+MCPToolLoadMetacello class >> groupName [
+
+	^ self repositoriesGroupName
+]
+
 { #category : 'testing' }
 MCPToolLoadMetacello class >> isAbstract [
 
 	^ self = MCPToolLoadMetacello
+]
+
+{ #category : 'metadata' }
+MCPToolLoadMetacello >> additionalKeywords [
+
+	^ #( 'baseline' 'metacello' 'load' 'package' )
 ]
 
 { #category : 'private - execution' }

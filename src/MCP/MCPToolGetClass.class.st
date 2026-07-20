@@ -12,9 +12,21 @@ Class {
 }
 
 { #category : 'metadata' }
+MCPToolGetClass class >> groupName [
+
+	^ self classesGroupName
+]
+
+{ #category : 'metadata' }
 MCPToolGetClass class >> toolName [
 
 	^ 'class_get'
+]
+
+{ #category : 'metadata' }
+MCPToolGetClass >> annotations [
+
+	^ MCPStructureToolAnnotations readOnly
 ]
 
 { #category : 'metadata' }
@@ -198,6 +210,12 @@ MCPToolGetClass >> classNameFromRequest: request [
 MCPToolGetClass >> commandForRequest: getRequest [
 
 	^ MCPGetClassCommand tool: self request: getRequest
+]
+
+{ #category : 'metadata' }
+MCPToolGetClass >> defaultExposure [
+
+	^ 'static'
 ]
 
 { #category : 'metadata' }

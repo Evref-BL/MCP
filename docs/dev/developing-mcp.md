@@ -53,7 +53,7 @@ Rules:
   strings, or broad exception swallowing.
 - Keep schema and contract tests close to tool behavior changes.
 - Keep discoverable-tool metadata current when adding or changing tool groups,
-  keywords, mutability, risk, or schema-inspection expectations.
+  keywords, standard tool annotations, or schema-inspection expectations.
 - For debugger tools, keep state references opaque and scoped to the debug
   state that returned them.
 - Keep UI changes separate from core MCP tool behavior unless the task

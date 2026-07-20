@@ -15,6 +15,18 @@ MCPToolVerifyRepositoryIdentity class >> toolName [
 	^ 'repository_identity_verify'
 ]
 
+{ #category : 'metadata' }
+MCPToolVerifyRepositoryIdentity >> additionalKeywords [
+
+	^ super additionalKeywords , #( 'identity' 'guard' )
+]
+
+{ #category : 'metadata' }
+MCPToolVerifyRepositoryIdentity >> annotations [
+
+	^ MCPStructureToolAnnotations readOnly
+]
+
 { #category : 'private - specs' }
 MCPToolVerifyRepositoryIdentity >> repositoryToolSpec [
 

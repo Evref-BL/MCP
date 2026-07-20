@@ -15,6 +15,12 @@ MCPToolSearchDebugCandidates class >> toolName [
 	^ 'debug_candidate_search'
 ]
 
+{ #category : 'metadata' }
+MCPToolSearchDebugCandidates >> annotations [
+
+	^ MCPStructureToolAnnotations readOnly
+]
+
 { #category : 'private - specs' }
 MCPToolSearchDebugCandidates >> sessionToolSpec [
 

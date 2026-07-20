@@ -12,6 +12,12 @@ Class {
 }
 
 { #category : 'metadata' }
+MCPToolSearchClasses class >> groupName [
+
+	^ self classesGroupName
+]
+
+{ #category : 'metadata' }
 MCPToolSearchClasses class >> toolName [
 
 	^ 'class_search'
@@ -120,6 +126,12 @@ MCPToolSearchClasses >> classInfoDataProperties [
 			   schemaPropertyNamed: 'tag'
 			   type: 'string'
 			   description: 'Package tag.') }
+]
+
+{ #category : 'metadata' }
+MCPToolSearchClasses >> defaultExposure [
+
+	^ 'static'
 ]
 
 { #category : 'metadata' }

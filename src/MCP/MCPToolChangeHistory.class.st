@@ -11,10 +11,22 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'metadata' }
+MCPToolChangeHistory class >> groupName [
+
+	^ self historyGroupName
+]
+
 { #category : 'testing' }
 MCPToolChangeHistory class >> isAbstract [
 
 	^ self = MCPToolChangeHistory
+]
+
+{ #category : 'metadata' }
+MCPToolChangeHistory >> additionalKeywords [
+
+	^ #( 'history' 'change' 'epicea' 'ombu' 'recover' )
 ]
 
 { #category : 'private - schema' }

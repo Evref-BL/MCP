@@ -15,6 +15,12 @@ MCPToolGetDebugSession class >> toolName [
 	^ 'debug_session_get'
 ]
 
+{ #category : 'metadata' }
+MCPToolGetDebugSession >> annotations [
+
+	^ MCPStructureToolAnnotations readOnly
+]
+
 { #category : 'private - specs' }
 MCPToolGetDebugSession >> sessionToolSpec [
 

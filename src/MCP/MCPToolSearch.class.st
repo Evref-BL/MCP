@@ -21,6 +21,12 @@ MCPToolSearch >> addScopeLabel: aString to: labels [
 	(labels includes: aString) ifFalse: [ labels add: aString ]
 ]
 
+{ #category : 'metadata' }
+MCPToolSearch >> annotations [
+
+	^ MCPStructureToolAnnotations readOnly
+]
+
 { #category : 'private - schema' }
 MCPToolSearch >> basicFilterModes [
 

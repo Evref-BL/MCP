@@ -14,9 +14,21 @@ Class {
 }
 
 { #category : 'metadata' }
+MCPToolRunTests class >> groupName [
+
+	^ self testsGroupName
+]
+
+{ #category : 'metadata' }
 MCPToolRunTests class >> toolName [
 
 	^ 'test_run'
+]
+
+{ #category : 'metadata' }
+MCPToolRunTests >> additionalKeywords [
+
+	^ #( 'test' 'sunit' 'timeout' )
 ]
 
 { #category : 'metadata' }
@@ -212,6 +224,12 @@ MCPToolRunTests >> coverageResultObjectSchema [
 MCPToolRunTests >> defaultCoverageMethodLimit [
 
 	^ 50
+]
+
+{ #category : 'metadata' }
+MCPToolRunTests >> defaultExposure [
+
+	^ 'static'
 ]
 
 { #category : 'defaults' }

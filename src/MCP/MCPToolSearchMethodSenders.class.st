@@ -16,6 +16,12 @@ MCPToolSearchMethodSenders class >> toolName [
 ]
 
 { #category : 'metadata' }
+MCPToolSearchMethodSenders >> defaultExposure [
+
+	^ 'static'
+]
+
+{ #category : 'metadata' }
 MCPToolSearchMethodSenders >> description [
 
 	^ 'Search methods that send a selector. Use method_metadata_search for general method metadata, or method_source_search for source text.'

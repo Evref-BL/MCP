@@ -57,39 +57,22 @@ MCPToolMethodLookupTest >> testLookupSchemasRequireDedicatedArguments [
 MCPToolMethodLookupTest >> testLookupToolsArePublicStaticReadTools [
 
 	| discoverableNames staticNames |
-	staticNames := #( 'method_source_search' 'method_implementor_search'
-	                  'method_sender_search' ).
-	discoverableNames := #( 'method_equivalent_search'
-	                        'method_class_reference_search'
-	                        'method_variable_reference_search' ).
+	staticNames := #( 'method_source_search' 'method_implementor_search' 'method_sender_search' ).
+	discoverableNames := #( 'method_equivalent_search' 'method_class_reference_search' 'method_variable_reference_search' ).
 	staticNames do: [ :each |
 			| tool |
-			self assert: (MCPToolRegistry publicToolNames includes: each).
-			self assert: (MCPToolRegistry staticToolNames includes: each).
-			tool := MCPToolRegistry
-				        toolNamed: each
-				        ifAbsent: [ self fail: 'Missing tool ' , each ].
-			self
-				assert: (MCPToolRegistry exposureForTool: tool)
-				equals: 'static'.
-			self
-				assert: (MCPToolRegistry mutabilityForTool: tool)
-				equals: 'read'.
-			self assert: (MCPToolRegistry riskForTool: tool) equals: 'low' ].
+			self assert: (self toolRegistry publicToolNames includes: each).
+			self assert: (self toolRegistry staticToolNames includes: each).
+			tool := self toolRegistry toolNamed: each ifAbsent: [ self fail: 'Missing tool ' , each ].
+			self assert: tool defaultExposure equals: 'static'.
+			self assert: tool annotations readOnlyHint ].
 	discoverableNames do: [ :each |
 			| tool |
-			self assert: (MCPToolRegistry publicToolNames includes: each).
-			self deny: (MCPToolRegistry staticToolNames includes: each).
-			tool := MCPToolRegistry
-				        toolNamed: each
-				        ifAbsent: [ self fail: 'Missing tool ' , each ].
-			self
-				assert: (MCPToolRegistry exposureForTool: tool)
-				equals: 'discoverable'.
-			self
-				assert: (MCPToolRegistry mutabilityForTool: tool)
-				equals: 'read'.
-			self assert: (MCPToolRegistry riskForTool: tool) equals: 'low' ]
+			self assert: (self toolRegistry publicToolNames includes: each).
+			self deny: (self toolRegistry staticToolNames includes: each).
+			tool := self toolRegistry toolNamed: each ifAbsent: [ self fail: 'Missing tool ' , each ].
+			self assert: tool defaultExposure equals: 'discoverable'.
+			self assert: tool annotations readOnlyHint ]
 ]
 
 { #category : 'tests' }

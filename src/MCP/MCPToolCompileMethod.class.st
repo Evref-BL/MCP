@@ -17,6 +17,12 @@ MCPToolCompileMethod class >> toolName [
 	^ 'method_compile'
 ]
 
+{ #category : 'metadata' }
+MCPToolCompileMethod >> defaultExposure [
+
+	^ 'static'
+]
+
 { #category : 'private - specs' }
 MCPToolCompileMethod >> methodToolSpec [
 

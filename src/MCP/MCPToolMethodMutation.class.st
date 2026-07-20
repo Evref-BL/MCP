@@ -13,6 +13,12 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'metadata' }
+MCPToolMethodMutation class >> groupName [
+
+	^ self methodsGroupName
+]
+
 { #category : 'testing' }
 MCPToolMethodMutation class >> isAbstract [
 
@@ -29,6 +35,12 @@ MCPToolMethodMutation >> addParameterRefactoringForSelector: oldSelectorSymbol i
 		  newSelector: newSelectorSymbol
 		  permutation: permutation
 		  newArgs: newArguments
+]
+
+{ #category : 'metadata' }
+MCPToolMethodMutation >> additionalKeywords [
+
+	^ #( 'method' 'refactor' 'refactoring' )
 ]
 
 { #category : 'private' }

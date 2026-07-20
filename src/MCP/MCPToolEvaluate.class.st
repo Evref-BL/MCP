@@ -10,9 +10,21 @@ Class {
 }
 
 { #category : 'metadata' }
+MCPToolEvaluate class >> groupName [
+
+	^ self runtimeGroupName
+]
+
+{ #category : 'metadata' }
 MCPToolEvaluate class >> toolName [
 
 	^ 'image_evaluate'
+]
+
+{ #category : 'metadata' }
+MCPToolEvaluate >> additionalKeywords [
+
+	^ #( 'expression' 'smalltalk' )
 ]
 
 { #category : 'metadata' }
@@ -56,6 +68,12 @@ MCPToolEvaluate >> commandForRequest: evaluateRequest [
 		  tool: self
 		  request: evaluateRequest
 		  resultPreviewCharacterLimit: self resultPreviewCharacterLimit
+]
+
+{ #category : 'metadata' }
+MCPToolEvaluate >> defaultExposure [
+
+	^ 'static'
 ]
 
 { #category : 'metadata' }

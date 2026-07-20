@@ -15,6 +15,18 @@ MCPToolListRepositoryChanges class >> toolName [
 	^ 'repository_change_list'
 ]
 
+{ #category : 'metadata' }
+MCPToolListRepositoryChanges >> additionalKeywords [
+
+	^ super additionalKeywords , #( 'diff' 'status' 'change' )
+]
+
+{ #category : 'metadata' }
+MCPToolListRepositoryChanges >> annotations [
+
+	^ MCPStructureToolAnnotations readOnly
+]
+
 { #category : 'private - specs' }
 MCPToolListRepositoryChanges >> repositoryToolSpec [
 

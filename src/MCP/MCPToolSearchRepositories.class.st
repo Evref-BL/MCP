@@ -12,9 +12,21 @@ Class {
 }
 
 { #category : 'metadata' }
+MCPToolSearchRepositories class >> groupName [
+
+	^ self repositoriesGroupName
+]
+
+{ #category : 'metadata' }
 MCPToolSearchRepositories class >> toolName [
 
 	^ 'repository_search'
+]
+
+{ #category : 'metadata' }
+MCPToolSearchRepositories >> additionalKeywords [
+
+	^ #( 'repository' 'repo' 'iceberg' 'git' 'branch' 'commit' 'remote' 'head' )
 ]
 
 { #category : 'metadata' }

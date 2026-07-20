@@ -16,6 +16,12 @@ MCPToolListChangeHistoryFiles class >> toolName [
 ]
 
 { #category : 'metadata' }
+MCPToolListChangeHistoryFiles >> annotations [
+
+	^ MCPStructureToolAnnotations readOnly
+]
+
+{ #category : 'metadata' }
 MCPToolListChangeHistoryFiles >> buildInputSchema [
 
 	| limitProperty offsetProperty |

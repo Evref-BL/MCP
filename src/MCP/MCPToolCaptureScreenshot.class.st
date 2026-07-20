@@ -12,9 +12,27 @@ Class {
 }
 
 { #category : 'metadata' }
+MCPToolCaptureScreenshot class >> groupName [
+
+	^ self uiGroupName
+]
+
+{ #category : 'metadata' }
 MCPToolCaptureScreenshot class >> toolName [
 
 	^ 'screenshot_capture'
+]
+
+{ #category : 'metadata' }
+MCPToolCaptureScreenshot >> additionalKeywords [
+
+	^ #( 'screenshot' 'capture' 'window' 'display' 'world' 'ui' )
+]
+
+{ #category : 'metadata' }
+MCPToolCaptureScreenshot >> annotations [
+
+	^ MCPStructureToolAnnotations readOnly
 ]
 
 { #category : 'metadata' }

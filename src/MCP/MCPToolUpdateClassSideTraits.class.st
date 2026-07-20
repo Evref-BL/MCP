@@ -15,6 +15,12 @@ MCPToolUpdateClassSideTraits class >> toolName [
 	^ 'class_side_traits_update'
 ]
 
+{ #category : 'metadata' }
+MCPToolUpdateClassSideTraits >> additionalKeywords [
+
+	^ super additionalKeywords , #( 'trait' 'side' 'metaclass' 'composition' 'definition' )
+]
+
 { #category : 'private - specs' }
 MCPToolUpdateClassSideTraits >> classToolSpec [
 

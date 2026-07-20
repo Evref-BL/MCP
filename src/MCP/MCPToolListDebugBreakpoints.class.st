@@ -15,6 +15,12 @@ MCPToolListDebugBreakpoints class >> toolName [
 	^ 'debug_breakpoint_list'
 ]
 
+{ #category : 'metadata' }
+MCPToolListDebugBreakpoints >> annotations [
+
+	^ MCPStructureToolAnnotations readOnly
+]
+
 { #category : 'private - specs' }
 MCPToolListDebugBreakpoints >> breakpointToolSpec [
 

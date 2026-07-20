@@ -821,6 +821,15 @@ MCPToolContractsTest >> signalHaltForMCPMessageProcessorTest [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testAllStaticExposurePolicyMakesEveryRegistrationStatic [
+
+	| registry |
+	registry := MCPToolRegistry new.
+	registry exposurePolicy: MCPToolExposurePolicy allStatic.
+	self assert: registry staticToolNames asSet equals: registry publicToolNames asSet
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testAllToolOutputSchemasAdvertiseStructuredSummaryWarningsAndStatus [
 
 	MCPTool concreteSubclasses do: [ :toolClass |
@@ -878,102 +887,26 @@ MCPToolContractsTest >> testAllToolsUseParsedRequestsAndCommands [
 { #category : 'tests' }
 MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 
-	| orderedTools |
-	orderedTools := OrderedCollection new.
-	MCPTool toolGroups do: [ :group | orderedTools addAll: group value ].
-	self
-		assert: orderedTools asSet
-		equals: MCPTool concreteSubclasses asSet.
-	self assert: orderedTools asArray equals: {
-			MCPToolSearchTools.
-			MCPToolGetTool.
-			MCPToolCallTool.
-			MCPToolSearchRepositories.
-			MCPToolVerifyRepositoryIdentity.
-			MCPToolListRepositoryChanges.
-			MCPToolDiscardRepositoryChanges.
-			MCPToolCreateRepository.
-			MCPToolAttachRepository.
-			MCPToolUpdateRepository.
-			MCPToolAddRepositoryRemote.
-			MCPToolRemoveRepositoryRemote.
-			MCPToolUpdateRepositoryRemote.
+	| builtInToolClasses groupedToolClasses |
+	builtInToolClasses := MCPTool concreteSubclasses select: [ :toolClass | toolClass isBuiltIn ].
+	groupedToolClasses := OrderedCollection new.
+	MCPTool toolGroups do: [ :group |
+			group value do: [ :toolClass | self assert: toolClass new groupName equals: group key ].
+			groupedToolClasses addAll: group value ].
+	self assert: groupedToolClasses asSet equals: builtInToolClasses asSet
+]
 
-			MCPToolExportRepository.
-			MCPToolCommitRepository.
-			MCPToolFetchRepository.
-			MCPToolPullRepository.
-			MCPToolPushRepository.
-			MCPToolCreateRepositoryBranch.
-			MCPToolSwitchRepositoryBranch.
-			MCPToolCheckoutRepositoryBranch.
-			MCPToolAdoptRepositoryHead.
-			MCPToolLoadBaseline.
-			MCPToolLoadRepository.
-			MCPToolSearchPackages.
-			MCPToolSearchClasses.
-			MCPToolGetClass.
-			MCPToolCreateClass.
-			MCPToolUpdateClassName.
-			MCPToolUpdateClassSuperclass.
-			MCPToolUpdateClassPackage.
-			MCPToolUpdateClassComment.
-			MCPToolUpdateClassSlots.
-			MCPToolUpdateClassTraits.
-			MCPToolUpdateClassSideTraits.
-			MCPToolUpdateClassSharedVariables.
-			MCPToolUpdateClassSharedPools.
-			MCPToolUpdateClassLayout.
-			MCPToolAddClassSlot.
-			MCPToolRemoveClassSlot.
-			MCPToolUpdateClassSlotName.
-			MCPToolPullUpClassSlot.
-			MCPToolPushDownClassSlot.
-			MCPToolRemoveClasses.
-			MCPToolSearchMethodMetadata.
-			MCPToolSearchMethodSource.
-			MCPToolSearchEquivalentMethods.
-			MCPToolSearchMethodImplementors.
-			MCPToolSearchMethodSenders.
-			MCPToolSearchClassReferences.
-			MCPToolSearchVariableReferences.
-			MCPToolGetMethod.
-			MCPToolCompileMethod.
-			MCPToolUpdateMethodSelector.
-			MCPToolUpdateMethodProtocol.
-			MCPToolRewriteMethods.
-			MCPToolRemoveMethods.
-			MCPToolListChangeHistoryFiles.
-			MCPToolListChangeHistoryEntries.
-			MCPToolApplyChangeHistoryEntries.
-			MCPToolRevertChangeHistoryEntries.
-			MCPToolRunTests.
-			MCPToolRunTestCoverage.
-			MCPToolCaptureScreenshot.
-			MCPToolListDebugSessions.
-			MCPToolGetDebugSession.
-			MCPToolRemoveDebugSession.
-			MCPToolSearchDebugCandidates.
-			MCPToolAttachDebugCandidate.
-			MCPToolDebugState.
-			MCPToolDebugVariables.
-			MCPToolDebugEvaluate.
-			MCPToolStepIntoDebugSession.
-			MCPToolStepOverDebugSession.
-			MCPToolStepThroughDebugSession.
-			MCPToolRestartDebugSession.
-			MCPToolResumeDebugSession.
-			MCPToolTerminateDebugSession.
-			MCPToolListDebugBreakpoints.
-			MCPToolSetDebugBreakpoint.
-			MCPToolRemoveDebugBreakpoint.
-			MCPToolEnableDebugBreakpoint.
-			MCPToolDisableDebugBreakpoint.
-			MCPToolClearDebugBreakpoints.
-			MCPToolDebugCapture.
-			MCPToolDebugTest.
-			MCPToolUpdateDebugMethod.
-			MCPToolEvaluate }
+{ #category : 'tests' }
+MCPToolContractsTest >> testBuiltInToolsProvideCatalogMetadata [
+
+	| validExposures |
+	validExposures := #( 'static' 'discoverable' ).
+	self toolRegistry publicTools do: [ :tool |
+			self assert: (MCPTool builtInGroupNames includes: tool groupName).
+			self assert: tool groupName equals: tool class groupName.
+			self assert: (validExposures includes: tool defaultExposure).
+			self assert: (true = tool annotations readOnlyHint or: [ false = tool annotations readOnlyHint ]).
+			self assert: tool keywords notEmpty ]
 ]
 
 { #category : 'tests' }
@@ -1052,6 +985,17 @@ MCPToolContractsTest >> testCaptureScreenshotHasAccurateNameAndSchemas [
 	self assert: (outputPropertyNames includes: 'width').
 	self assert: (outputPropertyNames includes: 'height').
 	self assert: (outputPropertyNames includes: 'mimeType')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testCatalogToolsUseOwningRegistry [
+
+	| registry |
+	registry := MCPToolRegistry new.
+	#( 'tool_search' 'tool_get' ) do: [ :toolName |
+			| tool |
+			tool := registry toolNamed: toolName ifAbsent: [ self fail ].
+			self assert: tool toolRegistry == registry ]
 ]
 
 { #category : 'tests' }
@@ -1320,27 +1264,17 @@ MCPToolContractsTest >> testDebugInputSchemasAdvertiseExpansionBounds [
 MCPToolContractsTest >> testDebuggerToolsAreDiscoverableOnly [
 
 	| debugNames metadataByName result staticToolNames |
-	debugNames := #( 'debug_session_list' 'debug_session_get'
-	                 'debug_session_remove' 'debug_candidate_search'
-	                 'debug_candidate_attach' 'debug_state_get'
-	                 'debug_variable_get' 'debug_expression_evaluate'
-	                 'debug_session_step_into' 'debug_session_step_over'
-	                 'debug_session_step_through'
-	                 'debug_session_restart' 'debug_session_resume'
-	                 'debug_session_terminate' 'debug_breakpoint_list'
-	                 'debug_breakpoint_set' 'debug_breakpoint_remove'
-	                 'debug_breakpoint_enable' 'debug_breakpoint_disable'
-	                 'debug_breakpoint_clear' 'debug_capture'
-	                 'debug_test_run' 'debug_method_update' ).
-	staticToolNames := MCPToolRegistry staticToolNames.
+	debugNames := #( 'debug_session_list' 'debug_session_get' 'debug_session_remove' 'debug_candidate_search'
+	                 'debug_candidate_attach' 'debug_state_get' 'debug_variable_get' 'debug_expression_evaluate'
+	                 'debug_session_step_into' 'debug_session_step_over' 'debug_session_step_through' 'debug_session_restart'
+	                 'debug_session_resume' 'debug_session_terminate' 'debug_breakpoint_list' 'debug_breakpoint_set'
+	                 'debug_breakpoint_remove' 'debug_breakpoint_enable' 'debug_breakpoint_disable' 'debug_breakpoint_clear'
+	                 'debug_capture' 'debug_test_run' 'debug_method_update' ).
+	staticToolNames := self toolRegistry staticToolNames.
 	debugNames do: [ :each | self deny: (staticToolNames includes: each) ].
-	result := self
-		          callToolNamed: 'tool_search'
-		          withArguments: { (#group -> 'debugging') } asDictionary.
-	metadataByName := (((self dataFrom: result) at: #tools) collect: [
-		                   :each | (each at: #name) -> each ]) asDictionary.
-	debugNames do: [ :each |
-		self assert: (metadataByName includesKey: each) ]
+	result := self callToolNamed: 'tool_search' withArguments: { (#group -> 'debugging') } asDictionary.
+	metadataByName := (((self dataFrom: result) at: #tools) collect: [ :each | (each at: #name) -> each ]) asDictionary.
+	debugNames do: [ :each | self assert: (metadataByName includesKey: each) ]
 ]
 
 { #category : 'tests' }
@@ -1401,27 +1335,21 @@ MCPToolContractsTest >> testDiscoveryUsesConfiguredStaticToolNames [
 
 	| createContract metadataByName result searchContract server |
 	server := self mcpWithoutObservabilityExport.
-	server staticToolNames:
-		#( 'tool_search' 'tool_get' 'tool_call' 'repository_search' ).
-	result := server
-		rpcToolCall: 'tool_search'
-		withParams: { (#query -> 'repository') } asDictionary.
-	metadataByName := (((self dataFrom: result) at: #tools) collect: [ :each |
-		(each at: #name) -> each ]) asDictionary.
+	server staticToolNames: #( 'tool_search' 'tool_get' 'tool_call' 'repository_search' ).
+	result := server rpcToolCall: 'tool_search' withParams: { (#query -> 'repository') } asDictionary.
+	metadataByName := (((self dataFrom: result) at: #tools) collect: [ :each | (each at: #name) -> each ]) asDictionary.
 	self assert: (metadataByName includesKey: 'repository_search').
 	self assert: (metadataByName includesKey: 'repository_create').
-	searchContract := (self dataFrom: (server
-		rpcToolCall: 'tool_get'
-		withParams: { (#toolName -> 'repository_search') } asDictionary)) at: #tool.
-	createContract := (self dataFrom: (server
-		rpcToolCall: 'tool_get'
-		withParams: { (#toolName -> 'repository_create') } asDictionary)) at: #tool.
-	self
-		assert: searchContract keys asSet
-		equals: #( name description inputSchema ) asSet.
-	self
-		assert: createContract keys asSet
-		equals: #( name description inputSchema ) asSet
+	searchContract := (self dataFrom:
+		                   (server rpcToolCall: 'tool_get' withParams: { (#toolName -> 'repository_search') } asDictionary)) at: #tool.
+	createContract := (self dataFrom:
+		                   (server rpcToolCall: 'tool_get' withParams: { (#toolName -> 'repository_create') } asDictionary)) at: #tool.
+	self assert: searchContract keys asSet equals: #( name description group exposure annotations keywords inputSchema ) asSet.
+	self assert: createContract keys asSet equals: #( name description group exposure annotations keywords inputSchema ) asSet.
+	self assert: (searchContract at: #exposure) equals: 'static'.
+	self assert: ((searchContract at: #annotations) at: #readOnlyHint).
+	self assert: (createContract at: #exposure) equals: 'discoverable'.
+	self deny: ((createContract at: #annotations) at: #readOnlyHint)
 ]
 
 { #category : 'tests - evaluate' }
@@ -1502,6 +1430,17 @@ MCPToolContractsTest >> testEvaluateReturnsRuntimeFailureInformation [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testExposurePolicyOverridesToolDefault [
+
+	| registry tool |
+	registry := MCPToolRegistry new.
+	tool := registry toolNamed: 'method_protocol_update' ifAbsent: [ self fail ].
+	registry exposurePolicy: (MCPToolExposurePolicy staticToolNames: (registry staticToolNames copyWith: tool name)).
+	self assert: tool defaultExposure equals: 'discoverable'.
+	self assert: (registry isStaticToolNamed: tool name)
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testGetClassHasAccurateNameAndRequiredArguments [
 
 	| inputPropertyNames outputDataProperty outputPropertyNames tool |
@@ -1551,7 +1490,11 @@ MCPToolContractsTest >> testGetToolReturnsSchemaForCatalogTool [
 	result := self callToolNamed: 'tool_get' withArguments: { (#toolName -> 'repository_create') } asDictionary.
 	contract := (self dataFrom: result) at: #tool.
 	self assert: (contract at: #name) equals: 'repository_create'.
-	self assert: contract keys asSet equals: #( name description inputSchema ) asSet.
+	self assert: contract keys asSet equals: #( name description group exposure annotations keywords inputSchema ) asSet.
+	self assert: (contract at: #group) equals: 'repositories'.
+	self assert: (contract at: #exposure) equals: 'discoverable'.
+	self deny: ((contract at: #annotations) at: #readOnlyHint).
+	self assert: ((contract at: #keywords) includes: 'repo').
 	inputProperties := ((contract at: #inputSchema) at: #properties) keys.
 	self assert: inputProperties asSet equals: #( 'name' 'location' 'packageNames' 'subdirectory' ) asSet.
 	self assert: ((contract at: #inputSchema) at: #required) asArray equals: #( 'name' 'location' ).
@@ -2240,33 +2183,19 @@ MCPToolContractsTest >> testQueryScopeDescriptionsExplainScopeSemantics [
 { #category : 'tests' }
 MCPToolContractsTest >> testRPCAdvertisesStaticToolSurfaceOnly [
 
-	| discoverableToolNames expectedStaticToolNames toolNames |
-	toolNames := (self mcpWithoutObservabilityExport rpcToolsList at:
-		              #tools) collect: [ :each | each at: #name ].
-	expectedStaticToolNames := #( 'tool_search' 'tool_get' 'tool_call'
-	                              'package_search' 'class_search'
-	                              'class_get' 'class_create'
-	                              'method_metadata_search'
-	                              'method_source_search'
-	                              'method_implementor_search'
-	                              'method_sender_search'
-	                              'method_get' 'method_compile'
-	                              'method_selector_update'
+	| discoverableToolNames expectedStaticToolNames registry toolNames |
+	registry := self toolRegistry.
+	toolNames := (self mcpWithoutObservabilityExport rpcToolsList at: #tools) collect: [ :each | each at: #name ].
+	expectedStaticToolNames := #( 'tool_search' 'tool_get' 'tool_call' 'package_search' 'class_search' 'class_get' 'class_create'
+	                              'method_metadata_search' 'method_source_search' 'method_implementor_search'
+	                              'method_sender_search' 'method_get' 'method_compile' 'method_selector_update'
 	                              'image_evaluate' 'test_run' ).
-	discoverableToolNames := MCPToolRegistry publicToolNames difference:
-		                         MCPToolRegistry staticToolNames.
-	self
-		assert: toolNames asSet
-		equals: MCPToolRegistry staticToolNames asSet.
-	self
-		assert: MCPToolRegistry staticToolNames asSet
-		equals: expectedStaticToolNames asSet.
-	expectedStaticToolNames do: [ :each |
-		self assert: (toolNames includes: each) ].
-	discoverableToolNames do: [ :each |
-		self deny: (toolNames includes: each) ].
-	self assert:
-		(MCPToolRegistry publicToolNames includes: 'method_protocol_update').
+	discoverableToolNames := registry publicToolNames difference: registry staticToolNames.
+	self assert: toolNames asSet equals: registry staticToolNames asSet.
+	self assert: registry staticToolNames asSet equals: expectedStaticToolNames asSet.
+	expectedStaticToolNames do: [ :each | self assert: (toolNames includes: each) ].
+	discoverableToolNames do: [ :each | self deny: (toolNames includes: each) ].
+	self assert: (registry publicToolNames includes: 'method_protocol_update').
 	self deny: (toolNames includes: 'method_protocol_update')
 ]
 
@@ -2993,18 +2922,11 @@ MCPToolContractsTest >> testSearchToolSchemasAdvertiseGroupedScopeProperties [
 MCPToolContractsTest >> testSearchToolsIncludesStaticSurface [
 
 	| metadataByName result staticTool |
-	result := self
-		          callToolNamed: 'tool_search'
-		          withArguments: { (#query -> 'classes') } asDictionary.
-	metadataByName := (((self dataFrom: result) at: #tools) collect: [
-		                   :each | (each at: #name) -> each ]) asDictionary.
+	result := self callToolNamed: 'tool_search' withArguments: { (#query -> 'classes') } asDictionary.
+	metadataByName := (((self dataFrom: result) at: #tools) collect: [ :each | (each at: #name) -> each ]) asDictionary.
 	self assert: (metadataByName includesKey: 'class_search').
-	staticTool := MCPToolRegistry
-		              toolNamed: 'class_search'
-		              ifAbsent: [ self fail: 'Missing class_search tool' ].
-	self
-		assert: (MCPToolRegistry exposureForTool: staticTool)
-		equals: 'static'
+	staticTool := self toolRegistry toolNamed: 'class_search' ifAbsent: [ self fail: 'Missing class_search tool' ].
+	self assert: staticTool defaultExposure equals: 'static'
 ]
 
 { #category : 'tests' }
@@ -3013,14 +2935,8 @@ MCPToolContractsTest >> testSearchToolsKeywordsAreSingleSearchTerms [
 	| evaluateTool searchTool |
 	searchTool := MCPToolSearchTools new.
 	evaluateTool := MCPToolEvaluate new.
-	self
-		assert: (MCPToolRegistry keywordsForTool: searchTool) asSet
-		equals: #( 'tool' 'catalog' 'search' ) asSet.
-	self
-		assert: (MCPToolRegistry keywordsForTool: evaluateTool) asSet
-		equals:
-			#( 'image' 'evaluate' 'runtime' 'expression' 'smalltalk'
-			   'code' ) asSet
+	self assert: searchTool keywords asSet equals: #( 'tool' 'catalog' 'search' ) asSet.
+	self assert: evaluateTool keywords asSet equals: #( 'image' 'evaluate' 'runtime' 'expression' 'smalltalk' 'code' ) asSet
 ]
 
 { #category : 'tests' }
@@ -3229,43 +3145,42 @@ MCPToolContractsTest >> testServerInitializationLeavesIconCacheEmpty [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testServerRegistryOwnsExposurePolicy [
+
+	| server |
+	server := self mcpWithoutObservabilityExport.
+	self assert: server toolExposurePolicy == server toolRegistry exposurePolicy
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testSingularSearchTermsUseGenericInflectionRules [
+
+	| registry |
+	registry := MCPToolRegistry new.
+	self assert: (registry singularSearchTermFor: 'classes') equals: 'class'.
+	self assert: (registry singularSearchTermFor: 'repositories') equals: 'repository'.
+	self assert: (registry singularSearchTermFor: 'histories') equals: 'history'
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testSpecializedClassAndMethodToolsAreDiscoverableOnly [
 
 	| discoverableOnlyNames metadataByName |
-	discoverableOnlyNames := #( 'class_name_update' 'class_superclass_update'
-	                            'class_package_update'
-	                            'class_comment_update'
-	                            'class_slots_update' 'class_traits_update'
-	                            'class_side_traits_update'
-	                            'class_shared_variables_update'
-	                            'class_shared_pools_update'
-	                            'class_layout_update'
-	                            'class_slot_add' 'class_slot_remove'
-	                            'class_slot_name_update'
-	                            'class_slot_pull_up' 'class_slot_push_down'
-	                            'method_equivalent_search'
-	                            'method_class_reference_search'
-	                            'method_variable_reference_search'
-	                            'test_coverage_run' ).
+	discoverableOnlyNames := #( 'class_name_update' 'class_superclass_update' 'class_package_update' 'class_comment_update'
+	                            'class_slots_update' 'class_traits_update' 'class_side_traits_update' 'class_shared_variables_update'
+	                            'class_shared_pools_update' 'class_layout_update' 'class_slot_add' 'class_slot_remove'
+	                            'class_slot_name_update' 'class_slot_pull_up' 'class_slot_push_down' 'method_equivalent_search'
+	                            'method_class_reference_search' 'method_variable_reference_search' 'test_coverage_run' ).
 	metadataByName := Dictionary new.
-	(self allToolSearchMetadataForArguments: Dictionary new) do: [ :each |
-		metadataByName at: (each at: #name) put: each ].
+	(self allToolSearchMetadataForArguments: Dictionary new) do: [ :each | metadataByName at: (each at: #name) put: each ].
 	discoverableOnlyNames do: [ :each |
-		| metadata tool |
-		self assert: (MCPToolRegistry publicToolNames includes: each).
-		self deny: (MCPToolRegistry staticToolNames includes: each).
-		tool := MCPToolRegistry
-			toolNamed: each
-			ifAbsent: [ self fail: 'Missing tool ' , each ].
-		self
-			assert: (MCPToolRegistry exposureForTool: tool)
-			equals: 'discoverable'.
-		metadata := metadataByName
-			at: each
-			ifAbsent: [ self fail: 'Missing discoverable metadata for ' , each ].
-		self
-			assert: metadata keys asSet
-			equals: #( name description ) asSet ]
+			| metadata tool |
+			self assert: (self toolRegistry publicToolNames includes: each).
+			self deny: (self toolRegistry staticToolNames includes: each).
+			tool := self toolRegistry toolNamed: each ifAbsent: [ self fail: 'Missing tool ' , each ].
+			self assert: tool defaultExposure equals: 'discoverable'.
+			metadata := metadataByName at: each ifAbsent: [ self fail: 'Missing discoverable metadata for ' , each ].
+			self assert: metadata keys asSet equals: #( name description ) asSet ]
 ]
 
 { #category : 'tests' }
@@ -3297,17 +3212,22 @@ MCPToolContractsTest >> testStringArrayItemDescriptionsStayUseful [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testToolExposurePolicyUsesDefaultsUntilExplicitStaticListProvided [
+MCPToolContractsTest >> testToolAnnotationsSerializeStandardHints [
 
-	| policy |
-	self assert:
-		(MCPToolExposurePolicy default isStaticTool: 'tool_search').
-	self deny:
-		(MCPToolExposurePolicy default isStaticTool: 'repository_search').
-	policy := MCPToolExposurePolicy staticToolNames:
-		          #( 'repository_search' ).
-	self deny: (policy isStaticTool: 'tool_search').
-	self assert: (policy isStaticTool: 'repository_search')
+	| annotations |
+	annotations := MCPStructureToolAnnotations new
+		               title: 'Safe Update';
+		               readOnlyHint: false;
+		               destructiveHint: false;
+		               idempotentHint: true;
+		               openWorldHint: false;
+		               yourself.
+	self assert: annotations asJRPCJSON equals: {
+			(#title -> 'Safe Update').
+			(#readOnlyHint -> false).
+			(#destructiveHint -> false).
+			(#idempotentHint -> true).
+			(#openWorldHint -> false) } asDictionary
 ]
 
 { #category : 'tests' }
@@ -3365,160 +3285,111 @@ MCPToolContractsTest >> testToolNamesFollowPublicNamingConvention [
 { #category : 'tests' }
 MCPToolContractsTest >> testToolRegistryAcceptsPluginToolRegistration [
 
-	| registration tool |
-	MCPToolRegistry unregisterToolNamed: MCPHaltingTestTool toolName.
-	[
-		registration := MCPToolRegistry
-			                registerToolClass: MCPHaltingTestTool
-			                groupName: 'plugins'
-			                defaultExposure: 'discoverable'.
-		tool := MCPToolRegistry
-			        toolNamed: MCPHaltingTestTool toolName
-			        ifAbsent: [ self fail ].
-		self assert: tool == registration tool.
-		self deny: (MCPToolExposurePolicy default isStaticTool: tool name).
-		self assert: ((MCPToolRegistry publicToolGroups
-				  detect: [ :each | each key = 'plugins' ]
-				  ifNone: [ self fail ]) value includes: MCPHaltingTestTool) ]
-		ensure: [
-		MCPToolRegistry unregisterToolNamed: MCPHaltingTestTool toolName ]
+	| registration registry tool |
+	registry := MCPToolRegistry new.
+	registration := registry registerToolClass: MCPHaltingTestTool.
+	tool := registry toolNamed: MCPHaltingTestTool toolName ifAbsent: [ self fail ].
+	self assert: tool == registration tool.
+	self deny: (registry isStaticToolNamed: tool name).
+	self assert:
+		((registry publicToolGroups detect: [ :each | each key = 'plugins' ] ifNone: [ self fail ]) value includes: MCPHaltingTestTool)
 ]
 
 { #category : 'tests' }
 MCPToolContractsTest >> testToolRegistryNamesUseClassSideMetadata [
 
-	| names |
-	names := MCPToolRegistry publicToolClasses collect: [ :each |
-		         each toolName ].
-	self assert: MCPToolRegistry publicToolNames equals: names.
+	| names registry |
+	registry := self toolRegistry.
+	names := registry publicToolClasses collect: [ :each | each toolName ].
+	self assert: registry publicToolNames equals: names.
 	self assert: MCPToolSearchClasses toolName equals: 'class_search'.
 	self assert: MCPToolCreateClass toolName equals: 'class_create'.
-	self
-		assert: MCPToolUpdateClassName toolName
-		equals: 'class_name_update'.
-	self
-		assert: MCPToolUpdateClassSuperclass toolName
-		equals: 'class_superclass_update'.
-	self
-		assert: MCPToolUpdateClassPackage toolName
-		equals: 'class_package_update'.
-	self
-		assert: MCPToolUpdateClassComment toolName
-		equals: 'class_comment_update'.
-	self
-		assert: MCPToolUpdateClassSlots toolName
-		equals: 'class_slots_update'.
-	self
-		assert: MCPToolUpdateClassTraits toolName
-		equals: 'class_traits_update'.
-	self
-		assert: MCPToolUpdateClassSideTraits toolName
-		equals: 'class_side_traits_update'.
-	self
-		assert: MCPToolUpdateClassSharedVariables toolName
-		equals: 'class_shared_variables_update'.
-	self
-		assert: MCPToolUpdateClassSharedPools toolName
-		equals: 'class_shared_pools_update'.
-	self
-		assert: MCPToolUpdateClassLayout toolName
-		equals: 'class_layout_update'.
+	self assert: MCPToolUpdateClassName toolName equals: 'class_name_update'.
+	self assert: MCPToolUpdateClassSuperclass toolName equals: 'class_superclass_update'.
+	self assert: MCPToolUpdateClassPackage toolName equals: 'class_package_update'.
+	self assert: MCPToolUpdateClassComment toolName equals: 'class_comment_update'.
+	self assert: MCPToolUpdateClassSlots toolName equals: 'class_slots_update'.
+	self assert: MCPToolUpdateClassTraits toolName equals: 'class_traits_update'.
+	self assert: MCPToolUpdateClassSideTraits toolName equals: 'class_side_traits_update'.
+	self assert: MCPToolUpdateClassSharedVariables toolName equals: 'class_shared_variables_update'.
+	self assert: MCPToolUpdateClassSharedPools toolName equals: 'class_shared_pools_update'.
+	self assert: MCPToolUpdateClassLayout toolName equals: 'class_layout_update'.
 	self assert: MCPToolAddClassSlot toolName equals: 'class_slot_add'.
-	self
-		assert: MCPToolRemoveClassSlot toolName
-		equals: 'class_slot_remove'.
-	self
-		assert: MCPToolUpdateClassSlotName toolName
-		equals: 'class_slot_name_update'.
-	self
-		assert: MCPToolPullUpClassSlot toolName
-		equals: 'class_slot_pull_up'.
-	self
-		assert: MCPToolPushDownClassSlot toolName
-		equals: 'class_slot_push_down'.
+	self assert: MCPToolRemoveClassSlot toolName equals: 'class_slot_remove'.
+	self assert: MCPToolUpdateClassSlotName toolName equals: 'class_slot_name_update'.
+	self assert: MCPToolPullUpClassSlot toolName equals: 'class_slot_pull_up'.
+	self assert: MCPToolPushDownClassSlot toolName equals: 'class_slot_push_down'.
 	self assert: MCPToolRunTests toolName equals: 'test_run'.
 	self assert: MCPToolCompileMethod toolName equals: 'method_compile'.
-	self
-		assert: MCPToolUpdateMethodSelector toolName
-		equals: 'method_selector_update'.
-	self
-		assert: MCPToolUpdateMethodProtocol toolName
-		equals: 'method_protocol_update'.
-	self
-		assert: MCPToolVerifyRepositoryIdentity toolName
-		equals: 'repository_identity_verify'.
-	self
-		assert: MCPToolListRepositoryChanges toolName
-		equals: 'repository_change_list'.
-	self
-		assert: MCPToolCreateRepository toolName
-		equals: 'repository_create'.
-	self
-		assert: MCPToolAttachRepository toolName
-		equals: 'repository_attach'.
-	self
-		assert: MCPToolUpdateRepository toolName
-		equals: 'repository_update'.
-	self
-		assert: MCPToolExportRepository toolName
-		equals: 'repository_export'.
-	self
-		assert: MCPToolCommitRepository toolName
-		equals: 'repository_commit'.
-	self
-		assert: MCPToolFetchRepository toolName
-		equals: 'repository_fetch'.
+	self assert: MCPToolUpdateMethodSelector toolName equals: 'method_selector_update'.
+	self assert: MCPToolUpdateMethodProtocol toolName equals: 'method_protocol_update'.
+	self assert: MCPToolVerifyRepositoryIdentity toolName equals: 'repository_identity_verify'.
+	self assert: MCPToolListRepositoryChanges toolName equals: 'repository_change_list'.
+	self assert: MCPToolCreateRepository toolName equals: 'repository_create'.
+	self assert: MCPToolAttachRepository toolName equals: 'repository_attach'.
+	self assert: MCPToolUpdateRepository toolName equals: 'repository_update'.
+	self assert: MCPToolExportRepository toolName equals: 'repository_export'.
+	self assert: MCPToolCommitRepository toolName equals: 'repository_commit'.
+	self assert: MCPToolFetchRepository toolName equals: 'repository_fetch'.
 	self assert: MCPToolPullRepository toolName equals: 'repository_pull'.
 	self assert: MCPToolPushRepository toolName equals: 'repository_push'.
-	self
-		assert: MCPToolCreateRepositoryBranch toolName
-		equals: 'repository_branch_create'.
-	self
-		assert: MCPToolSwitchRepositoryBranch toolName
-		equals: 'repository_branch_switch'.
-	self
-		assert: MCPToolAdoptRepositoryHead toolName
-		equals: 'repository_head_adopt'.
-	self
-		assert: MCPToolListChangeHistoryFiles toolName
-		equals: 'history_file_list'.
-	self
-		assert: MCPToolListChangeHistoryEntries toolName
-		equals: 'history_entry_list'.
-	self
-		assert: MCPToolApplyChangeHistoryEntries toolName
-		equals: 'history_entry_apply'.
-	self
-		assert: MCPToolRevertChangeHistoryEntries toolName
-		equals: 'history_entry_revert'.
+	self assert: MCPToolCreateRepositoryBranch toolName equals: 'repository_branch_create'.
+	self assert: MCPToolSwitchRepositoryBranch toolName equals: 'repository_branch_switch'.
+	self assert: MCPToolAdoptRepositoryHead toolName equals: 'repository_head_adopt'.
+	self assert: MCPToolListChangeHistoryFiles toolName equals: 'history_file_list'.
+	self assert: MCPToolListChangeHistoryEntries toolName equals: 'history_entry_list'.
+	self assert: MCPToolApplyChangeHistoryEntries toolName equals: 'history_entry_apply'.
+	self assert: MCPToolRevertChangeHistoryEntries toolName equals: 'history_entry_revert'.
 	self assert: MCPToolDebugState toolName equals: 'debug_state_get'.
-	self
-		assert: MCPToolStepOverDebugSession toolName
-		equals: 'debug_session_step_over'.
+	self assert: MCPToolStepOverDebugSession toolName equals: 'debug_session_step_over'.
 	self assert: MCPToolDebugCapture toolName equals: 'debug_capture'.
-	self
-		assert: MCPToolUpdateDebugMethod toolName
-		equals: 'debug_method_update'
+	self assert: MCPToolUpdateDebugMethod toolName equals: 'debug_method_update'
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testToolRegistryRegistrationIsInstanceScoped [
+
+	| firstRegistry secondRegistry |
+	firstRegistry := MCPToolRegistry new.
+	secondRegistry := MCPToolRegistry new.
+	firstRegistry registerToolClass: MCPHaltingTestTool.
+	self assert: (firstRegistry includesToolNamed: MCPHaltingTestTool toolName).
+	self deny: (secondRegistry includesToolNamed: MCPHaltingTestTool toolName)
 ]
 
 { #category : 'tests' }
 MCPToolContractsTest >> testToolRegistryReusesRegisteredToolInstances [
 
-	| first searchResults second |
-	first := MCPToolRegistry
-		toolNamed: 'tool_search'
-		ifAbsent: [ self fail ].
-	second := MCPToolRegistry
-		toolNamed: 'tool_search'
-		ifAbsent: [ self fail ].
-	searchResults := MCPToolRegistry
-		toolsMatchingQuery: 'tool'
-		group: nil
-		usingPolicy: MCPToolExposurePolicy default.
+	| first registry searchResults second |
+	registry := MCPToolRegistry new.
+	first := registry toolNamed: 'tool_search' ifAbsent: [ self fail ].
+	second := registry toolNamed: 'tool_search' ifAbsent: [ self fail ].
+	searchResults := registry toolsMatchingQuery: 'tool' group: nil.
 	self assert: first == second.
-	self
-		assert: (searchResults detect: [ :each | each name = 'tool_search' ])
-		== first
+	self assert: (searchResults detect: [ :each | each name = 'tool_search' ]) == first
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testToolRegistryUsesDefaultExposureUntilStaticListProvided [
+
+	| registry |
+	registry := MCPToolRegistry new.
+	self assert: (registry isStaticToolNamed: 'tool_search').
+	self deny: (registry isStaticToolNamed: 'repository_search').
+	registry staticToolNames: #( 'repository_search' ).
+	self deny: (registry isStaticToolNamed: 'tool_search').
+	self assert: (registry isStaticToolNamed: 'repository_search')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testToolsOwnRegistryMetadata [
+
+	| tool |
+	tool := MCPToolEvaluate new.
+	self assert: tool groupName equals: 'runtime'.
+	self assert: tool defaultExposure equals: 'static'.
+	self deny: tool annotations readOnlyHint.
+	self assert: (tool keywords includes: 'smalltalk')
 ]
 
 { #category : 'support' }

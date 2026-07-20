@@ -12,9 +12,21 @@ Class {
 }
 
 { #category : 'metadata' }
+MCPToolGetMethod class >> groupName [
+
+	^ self methodsGroupName
+]
+
+{ #category : 'metadata' }
 MCPToolGetMethod class >> toolName [
 
 	^ 'method_get'
+]
+
+{ #category : 'metadata' }
+MCPToolGetMethod >> annotations [
+
+	^ MCPStructureToolAnnotations readOnly
 ]
 
 { #category : 'private - analysis' }
@@ -103,6 +115,12 @@ MCPToolGetMethod >> classSideForErrorFromParsedRequest: getRequest rawRequest: r
 MCPToolGetMethod >> commandForRequest: getRequest [
 
 	^ MCPGetMethodCommand tool: self request: getRequest
+]
+
+{ #category : 'metadata' }
+MCPToolGetMethod >> defaultExposure [
+
+	^ 'static'
 ]
 
 { #category : 'private - analysis' }

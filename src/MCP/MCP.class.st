@@ -1,5 +1,5 @@
 "
-Top-level MCP server application object. MCP owns the registered tool instances, the HTTP server, and observability state. It exposes the core JSON-RPC MCP handlers, including initialization, tool listing, tool calls, ping, and empty resource listings. Tool calls are delegated to the matching MCPTool after request validation.
+Top-level MCP server application object. MCP owns one MCPToolRegistry, the HTTP server, and observability state. The registry owns registered tool instances and their exposure policy. MCP exposes the core JSON-RPC handlers, including initialization, tool listing, tool calls, ping, and empty resource listings. Tool calls are delegated to the matching MCPTool after request validation.
 "
 Class {
 	#name : 'MCP',
@@ -8,7 +8,7 @@ Class {
 		'server',
 		'toolsList',
 		'monitoring',
-		'toolExposurePolicy'
+		'toolRegistry'
 	],
 	#category : 'MCP-Server',
 	#package : 'MCP',
@@ -104,35 +104,22 @@ MCP >> ensureServerIsListening [
 MCP >> executeTool: tool named: toolName withParams: arguments [
 
 	| monitorRecord request result toolResult |
-	monitorRecord := self monitoring
-		                 recordToolCallStart: toolName
-		                 input: arguments.
+	monitorRecord := self monitoring recordToolCallStart: toolName input: arguments.
 	^ [
 		  request := tool requestFromToolCallArguments: arguments.
-		  result := tool
-			            executeWithRequest: request
-			            usingPolicy: self toolExposurePolicy.
+		  result := tool executeWithRequest: request.
 		  toolResult := result asMCPStructureCallToolResult.
 		  self saveImageAfterSuccessfulTool: tool result: toolResult.
-		  self monitoring
-			  recordToolCallFinish: monitorRecord
-			  result: toolResult
-			  error: nil.
+		  self monitoring recordToolCallFinish: monitorRecord result: toolResult error: nil.
 		  toolResult asJRPCJSON ]
 		  on: Exception
 		  do: [ :error |
 				  | errorResult |
 				  error mcpIsJRPCError ifTrue: [
-						  self monitoring
-							  recordToolCallFinish: monitorRecord
-							  result: nil
-							  error: error.
+						  self monitoring recordToolCallFinish: monitorRecord result: nil error: error.
 						  error pass ].
 				  errorResult := tool errorResultFor: error.
-				  self monitoring
-					  recordToolCallFinish: monitorRecord
-					  result: errorResult
-					  error: error.
+				  self monitoring recordToolCallFinish: monitorRecord result: errorResult error: error.
 				  errorResult asJRPCJSON ]
 ]
 
@@ -293,8 +280,7 @@ MCP >> port: aPortNumber [
 { #category : 'private - tools' }
 MCP >> refreshToolsList [
 
-	toolsList := MCPToolRegistry staticToolsDictionaryUsingPolicy:
-		             self toolExposurePolicy.
+	toolsList := self toolRegistry staticToolsDictionary.
 	^ toolsList
 ]
 
@@ -309,26 +295,15 @@ MCP >> restart [
 MCP >> rpcCallToolCallWithParams: arguments [
 
 	| callRequest callTool request targetTool |
-	callTool := MCPToolRegistry
-		            toolNamed: MCPToolCallTool toolName
-		            ifAbsent: [
-		            Error signal: 'tool_call is not registered.' ]
-		            usingPolicy: self toolExposurePolicy.
+	callTool := self toolRegistry toolNamed: MCPToolCallTool toolName ifAbsent: [ Error signal: 'tool_call is not registered.' ].
 	^ [
 		  request := callTool requestFromToolCallArguments: arguments.
 		  callRequest := callTool parsedRequestFromToolRequest: request.
-		  callRequest toolName = callTool name ifTrue: [
-			  Error signal: 'tool_call cannot call itself.' ].
-		  targetTool := MCPToolRegistry
+		  callRequest toolName = callTool name ifTrue: [ Error signal: 'tool_call cannot call itself.' ].
+		  targetTool := self toolRegistry
 			                toolNamed: callRequest toolName
-			                ifAbsent: [
-			                Error signal:
-				                'Unknown MCP tool: ' , callRequest toolName ]
-			                usingPolicy: self toolExposurePolicy.
-		  self
-			  executeTool: targetTool
-			  named: targetTool name
-			  withParams: callRequest arguments ]
+			                ifAbsent: [ Error signal: 'Unknown MCP tool: ' , callRequest toolName ].
+		  self executeTool: targetTool named: targetTool name withParams: callRequest arguments ]
 		  on: Exception
 		  do: [ :error |
 				  | errorResult |
@@ -439,15 +414,14 @@ MCP >> start [
 { #category : 'configuration' }
 MCP >> staticToolNames [
 
-	^ self toolExposurePolicy staticToolNames
+	^ self toolRegistry staticToolNames
 ]
 
 { #category : 'configuration' }
 MCP >> staticToolNames: aCollection [
 
-	self toolExposurePolicy:
-		(MCPToolExposurePolicy staticToolNames: aCollection).
-	^ self
+	self toolRegistry staticToolNames: aCollection.
+	self refreshToolsList
 ]
 
 { #category : 'start' }
@@ -471,17 +445,27 @@ MCP >> supportedPharoMajorVersions [
 { #category : 'accessing' }
 MCP >> toolExposurePolicy [
 
-	^ toolExposurePolicy ifNil: [
-		  toolExposurePolicy := MCPToolExposurePolicy default ]
+	^ self toolRegistry exposurePolicy
 ]
 
 { #category : 'accessing' }
 MCP >> toolExposurePolicy: aToolExposurePolicy [
 
-	toolExposurePolicy := aToolExposurePolicy ifNil: [
-		                      MCPToolExposurePolicy default ].
-	self refreshToolsList.
-	^ toolExposurePolicy
+	self toolRegistry exposurePolicy: (aToolExposurePolicy ifNil: [ MCPToolExposurePolicy default ]).
+	self refreshToolsList
+]
+
+{ #category : 'accessing' }
+MCP >> toolRegistry [
+
+	^ toolRegistry ifNil: [ toolRegistry := MCPToolRegistry new ]
+]
+
+{ #category : 'accessing' }
+MCP >> toolRegistry: aToolRegistry [
+
+	toolRegistry := aToolRegistry ifNil: [ MCPToolRegistry new ].
+	self refreshToolsList
 ]
 
 { #category : 'accessing' }

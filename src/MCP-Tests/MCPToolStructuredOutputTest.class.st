@@ -654,5 +654,5 @@ MCPToolStructuredOutputTest >> testToolsListAdvertisesPublicToolContracts [
 	| tools |
 	tools := MCP new rpcToolsList at: #tools.
 	self assert: tools notEmpty.
-	tools do: [ :tool | self assert: tool keys asSet equals: #( name title description inputSchema ) asSet ]
+	tools do: [ :tool | self assert: tool keys asSet equals: #( name title description annotations inputSchema ) asSet ]
 ]

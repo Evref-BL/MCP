@@ -1,20 +1,43 @@
 "
-Static bridge tool for searching the discoverable tool catalog.
+Static bridge tool for searching its owning registry's discoverable tool catalog.
 
 It is intentionally kept on the fast path so agents can find optional or specialized tools without requiring those tools to be statically advertised.
 "
 Class {
 	#name : 'MCPToolSearchTools',
 	#superclass : 'MCPTool',
+	#instVars : [
+		'toolRegistry'
+	],
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
 }
 
 { #category : 'metadata' }
+MCPToolSearchTools class >> groupName [
+
+	^ self toolCatalogGroupName
+]
+
+{ #category : 'instance creation' }
+MCPToolSearchTools class >> newForRegistry: aToolRegistry [
+
+	^ self new
+		  toolRegistry: aToolRegistry;
+		  yourself
+]
+
+{ #category : 'metadata' }
 MCPToolSearchTools class >> toolName [
 
 	^ 'tool_search'
+]
+
+{ #category : 'metadata' }
+MCPToolSearchTools >> annotations [
+
+	^ MCPStructureToolAnnotations readOnly
 ]
 
 { #category : 'metadata' }
@@ -56,7 +79,13 @@ MCPToolSearchTools >> buildOutputSchema [
 { #category : 'private - execution' }
 MCPToolSearchTools >> commandForRequest: searchRequest [
 
-	^ MCPSearchToolsCommand tool: self request: searchRequest
+	^ MCPSearchToolsCommand tool: self request: searchRequest toolRegistry: self toolRegistry
+]
+
+{ #category : 'metadata' }
+MCPToolSearchTools >> defaultExposure [
+
+	^ 'static'
 ]
 
 { #category : 'metadata' }
@@ -69,25 +98,11 @@ MCPToolSearchTools >> description [
 MCPToolSearchTools >> executeWithRequest: request [
 
 	^ self
-		  executeWithRequest: request
-		  usingPolicy: MCPToolExposurePolicy default
-]
-
-{ #category : 'executing' }
-MCPToolSearchTools >> executeWithRequest: request usingPolicy: aToolExposurePolicy [
-
-	^ self
 		  executeParsedRequestFrom: request
 		  do: [ :searchRequest |
 				  | data |
-				  data := (MCPSearchToolsCommand
-					           tool: self
-					           request: searchRequest
-					           toolExposurePolicy: aToolExposurePolicy) execute.
-				  self
-					  successResultText:
-					  (data at: #tools) size asString , ' tools found.'
-					  data: data ]
+				  data := (self commandForRequest: searchRequest) execute.
+				  self successResultText: (data at: #tools) size asString , ' tools found.' data: data ]
 		  onError: [ :error :parsedRequest | self errorResultFor: error ]
 ]
 
@@ -121,6 +136,18 @@ MCPToolSearchTools >> toolMetadataObjectSchema [
 		required: #( 'name' 'description' );
 		additionalProperties: false;
 		yourself
+]
+
+{ #category : 'accessing' }
+MCPToolSearchTools >> toolRegistry [
+
+	^ toolRegistry ifNil: [ toolRegistry := MCPToolRegistry new ]
+]
+
+{ #category : 'accessing' }
+MCPToolSearchTools >> toolRegistry: aToolRegistry [
+
+	toolRegistry := aToolRegistry
 ]
 
 { #category : 'private - schema' }

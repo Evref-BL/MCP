@@ -15,6 +15,12 @@ MCPToolUpdateClassSharedVariables class >> toolName [
 	^ 'class_shared_variables_update'
 ]
 
+{ #category : 'metadata' }
+MCPToolUpdateClassSharedVariables >> additionalKeywords [
+
+	^ super additionalKeywords , #( 'variable' 'shared' 'classvar' 'binding' )
+]
+
 { #category : 'private - specs' }
 MCPToolUpdateClassSharedVariables >> classToolSpec [
 

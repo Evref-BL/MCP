@@ -1,7 +1,7 @@
 "
 Abstract base for MCP tools exposed by the server.
 
-A tool owns its public MCP metadata: name, title, description, icons, input schema, and output schema. The server uses that metadata when advertising tools and when validating an incoming tool call.
+A tool owns its public MCP metadata: name, title, description, icons, annotations, input schema, and output schema. The server uses that metadata when advertising tools and when validating an incoming tool call.
 
 The normal execution flow is:
 1. The MCP server receives a JSON-RPC tool call and dispatches it to the matching MCPTool instance.
@@ -26,10 +26,50 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'metadata - groups' }
+MCPTool class >> builtInGroupNames [
+
+	^ {
+		  self classesGroupName.
+		  self debuggingGroupName.
+		  self historyGroupName.
+		  self methodsGroupName.
+		  self packagesGroupName.
+		  self repositoriesGroupName.
+		  self runtimeGroupName.
+		  self testsGroupName.
+		  self toolCatalogGroupName.
+		  self uiGroupName }
+]
+
+{ #category : 'metadata - groups' }
+MCPTool class >> classesGroupName [
+
+	^ 'classes'
+]
+
 { #category : 'querying' }
 MCPTool class >> concreteSubclasses [
 
 	^ self allSubclasses reject: [ :each | each isAbstract ]
+]
+
+{ #category : 'metadata - groups' }
+MCPTool class >> debuggingGroupName [
+
+	^ 'debugging'
+]
+
+{ #category : 'metadata' }
+MCPTool class >> groupName [
+
+	^ self otherGroupName
+]
+
+{ #category : 'metadata - groups' }
+MCPTool class >> historyGroupName [
+
+	^ 'history'
 ]
 
 { #category : 'testing' }
@@ -38,10 +78,64 @@ MCPTool class >> isAbstract [
 	^ self = MCPTool
 ]
 
+{ #category : 'metadata' }
+MCPTool class >> isBuiltIn [
+
+	^ self package = MCPTool package
+]
+
+{ #category : 'metadata - groups' }
+MCPTool class >> methodsGroupName [
+
+	^ 'methods'
+]
+
+{ #category : 'instance creation' }
+MCPTool class >> newForRegistry: aToolRegistry [
+
+	^ self new
+]
+
+{ #category : 'metadata - groups' }
+MCPTool class >> otherGroupName [
+
+	^ 'other'
+]
+
+{ #category : 'metadata - groups' }
+MCPTool class >> packagesGroupName [
+
+	^ 'packages'
+]
+
+{ #category : 'metadata - groups' }
+MCPTool class >> repositoriesGroupName [
+
+	^ 'repositories'
+]
+
+{ #category : 'metadata - groups' }
+MCPTool class >> runtimeGroupName [
+
+	^ 'runtime'
+]
+
+{ #category : 'metadata - groups' }
+MCPTool class >> testsGroupName [
+
+	^ 'tests'
+]
+
+{ #category : 'metadata - groups' }
+MCPTool class >> toolCatalogGroupName [
+
+	^ 'tool-catalog'
+]
+
 { #category : 'scripts' }
 MCPTool class >> toolGroups [
 
-	^ MCPToolRegistry publicToolGroups
+	^ MCPToolRegistry new publicToolGroups
 ]
 
 { #category : 'scripts' }
@@ -69,18 +163,35 @@ MCPTool class >> toolName [
 	self subclassResponsibility
 ]
 
+{ #category : 'metadata - groups' }
+MCPTool class >> uiGroupName [
+
+	^ 'ui'
+]
+
+{ #category : 'metadata' }
+MCPTool >> additionalKeywords [
+
+	^ #(  )
+]
+
+{ #category : 'metadata' }
+MCPTool >> annotations [
+
+	^ MCPStructureToolAnnotations mayModify
+]
+
 { #category : 'accessing' }
 MCPTool >> asJRPCJSON [
 
-	| dic |
-	dic := Dictionary new.
-	self description ifNotNil: [
-		dic at: #description put: self description asJRPCJSON ].
-	self inputSchema ifNotNil: [
-		dic at: #inputSchema put: self inputSchema asJRPCJSON ].
-	self name ifNotNil: [ dic at: #name put: self name asJRPCJSON ].
-	self title ifNotNil: [ dic at: #title put: self title asJRPCJSON ].
-	^ dic
+	| dictionary |
+	dictionary := Dictionary new.
+	self annotations ifNotNil: [ :toolAnnotations | dictionary at: #annotations put: toolAnnotations asJRPCJSON ].
+	self description ifNotNil: [ dictionary at: #description put: self description asJRPCJSON ].
+	self inputSchema ifNotNil: [ dictionary at: #inputSchema put: self inputSchema asJRPCJSON ].
+	self name ifNotNil: [ dictionary at: #name put: self name asJRPCJSON ].
+	self title ifNotNil: [ dictionary at: #title put: self title asJRPCJSON ].
+	^ dictionary
 ]
 
 { #category : 'private - schema' }
@@ -118,6 +229,22 @@ MCPTool >> buildOutputSchema [
 MCPTool >> commandForRequest: aToolRequest [
 
 	self subclassResponsibility
+]
+
+{ #category : 'metadata' }
+MCPTool >> contractIncludingOutputSchema: includeOutputSchema [
+
+	| data |
+	data := self metadata copy.
+	data at: #inputSchema put: self inputSchema asJRPCJSON.
+	includeOutputSchema ifTrue: [ data at: #outputSchema put: self outputSchema asJRPCJSON ].
+	^ data
+]
+
+{ #category : 'metadata' }
+MCPTool >> defaultExposure [
+
+	^ 'discoverable'
 ]
 
 { #category : 'metadata' }
@@ -243,12 +370,6 @@ MCPTool >> executeWithRequest: aRequest [
 	self subclassResponsibility
 ]
 
-{ #category : 'executing' }
-MCPTool >> executeWithRequest: aRequest usingPolicy: aToolExposurePolicy [
-
-	^ self executeWithRequest: aRequest
-]
-
 { #category : 'error handling' }
 MCPTool >> failureMessageFor: anError [
 
@@ -267,6 +388,12 @@ MCPTool >> failureMessageFor: anError [
 					  stream
 						  nextPutAll: ': ';
 						  nextPutAll: message ] ]
+]
+
+{ #category : 'metadata' }
+MCPTool >> groupName [
+
+	^ self class groupName
 ]
 
 { #category : 'metadata' }
@@ -298,6 +425,31 @@ MCPTool >> integerSchemaPropertyNamed: propertyName description: propertyDescrip
 		   description: propertyDescription)
 		  default: defaultValue;
 		  yourself
+]
+
+{ #category : 'metadata' }
+MCPTool >> keywords [
+
+	| keywords normalizedKeywords |
+	keywords := OrderedCollection new.
+	keywords addAll: (self name findTokens: '-_').
+	keywords addAll: (self title findTokens: ' -').
+	keywords addAll: (self groupName findTokens: '-_').
+	keywords addAll: self additionalKeywords.
+	normalizedKeywords := OrderedCollection new.
+	keywords do: [ :each | normalizedKeywords addAll: (each asString findTokens: '-_ ') ].
+	^ (normalizedKeywords collect: [ :each | each asLowercase ]) asSet asArray
+]
+
+{ #category : 'metadata' }
+MCPTool >> metadata [
+
+	^ {
+		  (#name -> self name).
+		  (#description -> self description).
+		  (#group -> self groupName).
+		  (#annotations -> self annotations asJRPCJSON).
+		  (#keywords -> self keywords) } asDictionary
 ]
 
 { #category : 'metadata' }
@@ -358,6 +510,32 @@ MCPTool >> schemaPropertyNamed: aName type: aType description: aDescription [
 		  type: aType;
 		  description: aDescription;
 		  yourself
+]
+
+{ #category : 'metadata' }
+MCPTool >> searchMetadata [
+
+	^ {
+		  (#name -> self name).
+		  (#description -> self description) } asDictionary
+]
+
+{ #category : 'metadata' }
+MCPTool >> searchableText [
+
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: self name;
+				  space;
+				  nextPutAll: self title;
+				  space;
+				  nextPutAll: self description;
+				  space;
+				  nextPutAll: self groupName.
+			  self keywords do: [ :keyword |
+					  stream
+						  space;
+						  nextPutAll: keyword ] ]
 ]
 
 { #category : 'private - schema' }

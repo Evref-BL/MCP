@@ -39,6 +39,12 @@ MCPToolSearchMethodSource >> buildInputSchema [
 		  yourself
 ]
 
+{ #category : 'metadata' }
+MCPToolSearchMethodSource >> defaultExposure [
+
+	^ 'static'
+]
+
 { #category : 'private - request' }
 MCPToolSearchMethodSource >> defaultFilterMode [
 

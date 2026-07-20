@@ -18,6 +18,12 @@ MCPToolDebugVariables class >> toolName [
 ]
 
 { #category : 'metadata' }
+MCPToolDebugVariables >> annotations [
+
+	^ MCPStructureToolAnnotations readOnly
+]
+
+{ #category : 'metadata' }
 MCPToolDebugVariables >> buildInputSchema [
 
 	^ MCPStructureInputSchema new

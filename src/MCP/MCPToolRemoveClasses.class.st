@@ -12,6 +12,12 @@ Class {
 }
 
 { #category : 'metadata' }
+MCPToolRemoveClasses class >> groupName [
+
+	^ self classesGroupName
+]
+
+{ #category : 'metadata' }
 MCPToolRemoveClasses class >> toolName [
 
 	^ 'class_remove'

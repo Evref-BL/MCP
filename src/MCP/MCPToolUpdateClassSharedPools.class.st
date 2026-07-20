@@ -15,6 +15,12 @@ MCPToolUpdateClassSharedPools class >> toolName [
 	^ 'class_shared_pools_update'
 ]
 
+{ #category : 'metadata' }
+MCPToolUpdateClassSharedPools >> additionalKeywords [
+
+	^ super additionalKeywords , #( 'pool' 'shared' 'pooldictionary' 'dictionary' )
+]
+
 { #category : 'private - specs' }
 MCPToolUpdateClassSharedPools >> classToolSpec [
 

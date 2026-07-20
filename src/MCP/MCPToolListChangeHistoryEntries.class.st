@@ -16,6 +16,12 @@ MCPToolListChangeHistoryEntries class >> toolName [
 ]
 
 { #category : 'metadata' }
+MCPToolListChangeHistoryEntries >> annotations [
+
+	^ MCPStructureToolAnnotations readOnly
+]
+
+{ #category : 'metadata' }
 MCPToolListChangeHistoryEntries >> buildInputSchema [
 
 	^ MCPStructureInputSchema new

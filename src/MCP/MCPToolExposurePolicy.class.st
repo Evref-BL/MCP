@@ -1,13 +1,12 @@
 "
-I decide which registered MCP tools are advertised directly through tools/list for one MCP server instance.
-
-The default policy follows each tool registration's default exposure. Supplying staticToolNames: switches to an explicit static surface; all other registered tools remain discoverable through tool_call.
+Pure visibility policy for MCP tool registrations. It applies tool defaults unless configured with an explicit static tool-name set or to expose every registration statically. Registry lookup and configuration validation remain the responsibility of MCPToolRegistry.
 "
 Class {
 	#name : 'MCPToolExposurePolicy',
 	#superclass : 'Object',
 	#instVars : [
-		'staticToolNames'
+		'staticToolNames',
+		'exposeAllTools'
 	],
 	#category : 'MCP-Tools',
 	#package : 'MCP',
@@ -17,7 +16,9 @@ Class {
 { #category : 'instance creation' }
 MCPToolExposurePolicy class >> allStatic [
 
-	^ self staticToolNames: MCPToolRegistry publicToolNames
+	^ self new
+		  exposeAllTools;
+		  yourself
 ]
 
 { #category : 'instance creation' }
@@ -34,15 +35,26 @@ MCPToolExposurePolicy class >> staticToolNames: aCollection [
 		  yourself
 ]
 
-{ #category : 'tools' }
-MCPToolExposurePolicy >> exposureForTool: aTool [
+{ #category : 'accessing' }
+MCPToolExposurePolicy >> explicitStaticToolNames [
 
-	^ self exposureForToolRegistration: (MCPToolRegistry
-			   registrationForTool: aTool
-			   ifAbsent: [ ^ 'discoverable' ])
+	^ staticToolNames
 ]
 
-{ #category : 'tools' }
+{ #category : 'configuration' }
+MCPToolExposurePolicy >> exposeAllTools [
+
+	exposeAllTools := true.
+	staticToolNames := nil
+]
+
+{ #category : 'testing' }
+MCPToolExposurePolicy >> exposesAllTools [
+
+	^ exposeAllTools
+]
+
+{ #category : 'accessing' }
 MCPToolExposurePolicy >> exposureForToolRegistration: aToolRegistration [
 
 	^ (self isStaticToolRegistration: aToolRegistration)
@@ -56,39 +68,24 @@ MCPToolExposurePolicy >> hasExplicitStaticToolNames [
 	^ staticToolNames notNil
 ]
 
-{ #category : 'testing' }
-MCPToolExposurePolicy >> isStaticTool: aToolName [
+{ #category : 'initialization' }
+MCPToolExposurePolicy >> initialize [
 
-	^ self isStaticToolRegistration:
-		  (MCPToolRegistry
-			   registrationNamed: aToolName
-			   ifAbsent: [ ^ false ])
+	super initialize.
+	exposeAllTools := false
 ]
 
 { #category : 'testing' }
 MCPToolExposurePolicy >> isStaticToolRegistration: aToolRegistration [
 
-	self hasExplicitStaticToolNames ifTrue: [
-		^ staticToolNames includes: aToolRegistration name ].
+	self exposesAllTools ifTrue: [ ^ true ].
+	self hasExplicitStaticToolNames ifTrue: [ ^ staticToolNames includes: aToolRegistration name ].
 	^ aToolRegistration isStaticByDefault
-]
-
-{ #category : 'accessing' }
-MCPToolExposurePolicy >> staticToolNames [
-
-	^ staticToolNames ifNil: [ MCPToolRegistry defaultStaticToolNames ]
 ]
 
 { #category : 'accessing' }
 MCPToolExposurePolicy >> staticToolNames: aCollection [
 
-	| normalized unknown |
-	normalized := (aCollection collect: [ :each | each asString ])
-		              asArray.
-	unknown := normalized reject: [ :each |
-		           MCPToolRegistry includesToolNamed: each ].
-	unknown ifNotEmpty: [
-			Error signal:
-				'Unknown MCP tool(s) in exposure policy: ' , unknown printString ].
-	staticToolNames := normalized
+	staticToolNames := (aCollection collect: [ :each | each asString ]) asArray.
+	exposeAllTools := false
 ]

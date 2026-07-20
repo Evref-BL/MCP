@@ -13,10 +13,22 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'metadata' }
+MCPToolClassMutation class >> groupName [
+
+	^ self classesGroupName
+]
+
 { #category : 'testing' }
 MCPToolClassMutation class >> isAbstract [
 
 	^ self = MCPToolClassMutation
+]
+
+{ #category : 'metadata' }
+MCPToolClassMutation >> additionalKeywords [
+
+	^ #( 'class' 'refactor' 'refactoring' )
 ]
 
 { #category : 'private - schema' }

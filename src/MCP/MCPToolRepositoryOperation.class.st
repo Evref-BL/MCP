@@ -11,10 +11,22 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'metadata' }
+MCPToolRepositoryOperation class >> groupName [
+
+	^ self repositoriesGroupName
+]
+
 { #category : 'testing' }
 MCPToolRepositoryOperation class >> isAbstract [
 
 	^ self = MCPToolRepositoryOperation
+]
+
+{ #category : 'metadata' }
+MCPToolRepositoryOperation >> additionalKeywords [
+
+	^ #( 'repository' 'repo' 'iceberg' 'git' )
 ]
 
 { #category : 'private - schema' }

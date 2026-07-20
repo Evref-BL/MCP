@@ -14,20 +14,11 @@ Class {
 { #category : 'instance creation' }
 MCPGetToolCommand class >> tool: aTool request: aRequest [
 
-	^ self
-		  tool: aTool
-		  request: aRequest
-		  toolExposurePolicy: MCPToolExposurePolicy default
+	^ self tool: aTool request: aRequest toolRegistry: MCPToolRegistry new
 ]
 
 { #category : 'executing' }
 MCPGetToolCommand >> execute [
 
-	| catalogTool |
-	catalogTool := MCPToolRegistry
-		               toolNamed: request toolName
-		               ifAbsent: [ Error signal: 'Unknown MCP tool: ' , request toolName ]
-		               usingPolicy: self toolExposurePolicy.
-	^ { (#tool -> (MCPToolRegistry contractForTool: catalogTool usingPolicy: self toolExposurePolicy includeOutputSchema: false)) }
-		  asDictionary
+	^ { (#tool -> (self toolRegistry contractForToolNamed: request toolName includeOutputSchema: false)) } asDictionary
 ]

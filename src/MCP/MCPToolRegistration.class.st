@@ -1,15 +1,11 @@
 "
-I describe one registered MCP tool.
-
-The registry owns registrations so a tool can be instantiated once and reused. The registration carries catalog metadata that belongs to registration time, such as the public group and default exposure. Server-specific exposure policy remains outside the tool and registration.
+Registry entry wrapping one reusable MCPTool instance. Group and default exposure are delegated to the tool so registrations do not duplicate intrinsic metadata.
 "
 Class {
 	#name : 'MCPToolRegistration',
 	#superclass : 'Object',
 	#instVars : [
-		'tool',
-		'groupName',
-		'defaultExposure'
+		'tool'
 	],
 	#category : 'MCP-Tools',
 	#package : 'MCP',
@@ -17,40 +13,27 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPToolRegistration class >> tool: aTool groupName: aGroupName defaultExposure: anExposure [
+MCPToolRegistration class >> tool: aTool [
 
-	^ self new
-		  initializeTool: aTool
-		  groupName: aGroupName
-		  defaultExposure: anExposure
-]
-
-{ #category : 'constants' }
-MCPToolRegistration class >> validExposureNames [
-
-	^ #( 'static' 'discoverable' )
+	^ self new initializeTool: aTool
 ]
 
 { #category : 'accessing' }
 MCPToolRegistration >> defaultExposure [
 
-	^ defaultExposure
+	^ self tool defaultExposure
 ]
 
 { #category : 'accessing' }
 MCPToolRegistration >> groupName [
 
-	^ groupName
+	^ self tool groupName
 ]
 
 { #category : 'initialization' }
-MCPToolRegistration >> initializeTool: aTool groupName: aGroupName defaultExposure: anExposure [
+MCPToolRegistration >> initializeTool: aTool [
 
-	tool := aTool.
-	groupName := aGroupName asString.
-	defaultExposure := anExposure asString.
-	(self class validExposureNames includes: defaultExposure) ifFalse: [
-		Error signal: 'Unknown MCP tool exposure: ' , defaultExposure ]
+	tool := aTool
 ]
 
 { #category : 'testing' }

@@ -1,11 +1,11 @@
 "
-Abstract command for tool-catalog operations that need the current exposure policy.
+Abstract command for tool-catalog operations. Catalog commands receive the registry whose tools and effective exposure metadata they query.
 "
 Class {
 	#name : 'MCPToolCatalogCommand',
 	#superclass : 'MCPToolRequestCommand',
 	#instVars : [
-		'toolExposurePolicy'
+		'toolRegistry'
 	],
 	#category : 'MCP-Commands',
 	#package : 'MCP',
@@ -19,23 +19,22 @@ MCPToolCatalogCommand class >> isAbstract [
 ]
 
 { #category : 'instance creation' }
-MCPToolCatalogCommand class >> tool: aTool request: aRequest toolExposurePolicy: aToolExposurePolicy [
+MCPToolCatalogCommand class >> tool: aTool request: aRequest toolRegistry: aToolRegistry [
 
 	^ self new
 		  initializeTool: aTool request: aRequest;
-		  toolExposurePolicy: aToolExposurePolicy;
+		  toolRegistry: aToolRegistry;
 		  yourself
 ]
 
 { #category : 'accessing' }
-MCPToolCatalogCommand >> toolExposurePolicy [
+MCPToolCatalogCommand >> toolRegistry [
 
-	^ toolExposurePolicy ifNil: [ MCPToolExposurePolicy default ]
+	^ toolRegistry
 ]
 
 { #category : 'accessing' }
-MCPToolCatalogCommand >> toolExposurePolicy: aToolExposurePolicy [
+MCPToolCatalogCommand >> toolRegistry: aToolRegistry [
 
-	toolExposurePolicy := aToolExposurePolicy ifNil: [
-		                      MCPToolExposurePolicy default ]
+	toolRegistry := aToolRegistry
 ]

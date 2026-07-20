@@ -44,6 +44,12 @@ MCPToolRunTestCoverage >> buildOutputSchema [
 ]
 
 { #category : 'metadata' }
+MCPToolRunTestCoverage >> defaultExposure [
+
+	^ 'discoverable'
+]
+
+{ #category : 'metadata' }
 MCPToolRunTestCoverage >> description [
 
 	^ 'Run tests under coverage return compact aggregate test coverage results.'

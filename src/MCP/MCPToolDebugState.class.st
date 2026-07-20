@@ -18,6 +18,12 @@ MCPToolDebugState class >> toolName [
 ]
 
 { #category : 'metadata' }
+MCPToolDebugState >> annotations [
+
+	^ MCPStructureToolAnnotations readOnly
+]
+
+{ #category : 'metadata' }
 MCPToolDebugState >> buildInputSchema [
 
 	^ MCPStructureInputSchema new

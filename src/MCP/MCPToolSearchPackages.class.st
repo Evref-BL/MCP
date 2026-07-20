@@ -10,6 +10,12 @@ Class {
 }
 
 { #category : 'metadata' }
+MCPToolSearchPackages class >> groupName [
+
+	^ self packagesGroupName
+]
+
+{ #category : 'metadata' }
 MCPToolSearchPackages class >> toolName [
 
 	^ 'package_search'
@@ -41,6 +47,12 @@ MCPToolSearchPackages >> buildOutputSchema [
 		  'The package entries returned for the requested page.'
 		  entrySchema: self packageEntrySchema
 		  itemNounPhrase: 'package entries'
+]
+
+{ #category : 'metadata' }
+MCPToolSearchPackages >> defaultExposure [
+
+	^ 'static'
 ]
 
 { #category : 'metadata' }
