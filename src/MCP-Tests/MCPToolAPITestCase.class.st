@@ -130,6 +130,12 @@ MCPToolAPITestCase >> summaryFrom: aResult [
 	^ (self structuredContentFrom: aResult) at: #summary
 ]
 
+{ #category : 'private - calling' }
+MCPToolAPITestCase >> testReferenceForMethod: aCompiledMethod [
+
+	^ aCompiledMethod methodClass name asString , '>>#' , aCompiledMethod selector asString
+]
+
 { #category : 'support' }
 MCPToolAPITestCase >> toolRegistry [
 

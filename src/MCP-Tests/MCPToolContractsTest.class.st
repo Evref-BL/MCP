@@ -2640,41 +2640,27 @@ MCPToolContractsTest >> testRunTestsKeepsPackagesAsPackageSelections [
 { #category : 'tests' }
 MCPToolContractsTest >> testRunTestsParsesCompactSelections [
 
-	| command parsedRequest rawRequest testRequests tool validatedRequests |
+	| command fixtureClassName parsedRequest rawRequest testMethodReference testRequests tool validatedRequests |
 	tool := MCPToolRunTests new.
+	fixtureClassName := MCPToolStructuredOutputTestTarget name asString.
+	testMethodReference := self testReferenceForMethod: MCPToolStructuredOutputTestTarget >> #testPasses.
 	rawRequest := tool requestFromToolCallArguments: {
-			              (#classes -> #( 'MCPToolContractsTest' )).
-			              (#methods
-			               ->
-			               #( 'MCPToolStructuredOutputTestTarget>>#testPasses' )) }
-			              asDictionary.
+			              (#classes -> { MCPToolContractsTest name asString }).
+			              (#methods -> { testMethodReference }) } asDictionary.
 	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
 	command := tool commandForRequest: parsedRequest.
-	validatedRequests := command validatedRequestsFrom:
-		                     parsedRequest testRequests.
+	validatedRequests := command validatedRequestsFrom: parsedRequest testRequests.
 	testRequests := parsedRequest testRequests.
 	self assert: parsedRequest class equals: MCPRunTestsRequest.
 	self assert: testRequests size equals: 2.
-	self
-		assert: testRequests first className
-		equals: 'MCPToolContractsTest'.
+	self assert: testRequests first className equals: MCPToolContractsTest name asString.
 	self assert: testRequests first testMethodName equals: nil.
-	self
-		assert: testRequests second className
-		equals: 'MCPToolStructuredOutputTestTarget'.
-	self assert: testRequests second testMethodName equals: 'testPasses'.
-	self
-		assert: testRequests second displayName
-		equals: 'MCPToolStructuredOutputTestTarget>>#testPasses'.
-	self
-		assert: validatedRequests first class
-		equals: MCPValidatedTestRunRequest.
-	self
-		assert: validatedRequests first testRunRequest
-		equals: testRequests first.
-	self
-		assert: validatedRequests first testClass
-		equals: MCPToolContractsTest
+	self assert: testRequests second className equals: fixtureClassName.
+	self assert: testRequests second testMethodName equals: #testPasses asString.
+	self assert: testRequests second displayName equals: testMethodReference.
+	self assert: validatedRequests first class equals: MCPValidatedTestRunRequest.
+	self assert: validatedRequests first testRunRequest equals: testRequests first.
+	self assert: validatedRequests first testClass equals: MCPToolContractsTest
 ]
 
 { #category : 'tests' }
