@@ -827,6 +827,22 @@ MCPToolMethodMutationTest >> testCompileReturnsAllowlistedWarningCritiques [
 ]
 
 { #category : 'tests' }
+MCPToolMethodMutationTest >> testCompileReturnsAssignmentInBlockCritique [
+
+	| selector |
+	selector := #assignmentInBlockProbe.
+	self removeSelector: selector from: MCPToolMethodMutationTestTarget.
+	[
+		self
+			assertCompileForClassName: 'MCPToolMethodMutationTestTarget'
+			methodSource: 'assignmentInBlockProbe | value | [ value := 1 ] ensure: [ ] . ^ value'
+			protocol: 'tests'
+			returnsSingleCritiqueRuleClass: 'ReAssignmentInBlockRule'
+			titledLike: 'Unnecessary assignment or return in block' ] ensure: [
+		self removeSelector: selector from: MCPToolMethodMutationTestTarget ]
+]
+
+{ #category : 'tests' }
 MCPToolMethodMutationTest >> testCompileReturnsCollectionThenDoCritique [
 
 	| selector |
