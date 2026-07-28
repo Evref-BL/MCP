@@ -7,8 +7,8 @@ Class {
 	#instVars : [
 		'id'
 	],
-	#category : 'MCP-Tests-Internal',
-	#package : 'MCP-Tests',
+	#category : 'MCP-Tests-Resources-Internal',
+	#package : 'MCP-Tests-Resources',
 	#tag : 'Internal'
 }
 

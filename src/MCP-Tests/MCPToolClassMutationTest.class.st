@@ -224,7 +224,7 @@ MCPToolClassMutationTest >> originalMovePackageName [
 { #category : 'private' }
 MCPToolClassMutationTest >> referenceClassName [
 
-	^ 'MCPToolRenameClassTestReference'
+	^ MCPToolRenameClassTestReference name
 ]
 
 { #category : 'private' }
@@ -294,7 +294,7 @@ MCPToolClassMutationTest >> setUp [
 { #category : 'private' }
 MCPToolClassMutationTest >> subclassName [
 
-	^ 'MCPToolRenameClassTestSubclass'
+	^ MCPToolRenameClassTestSubclass name
 ]
 
 { #category : 'running' }

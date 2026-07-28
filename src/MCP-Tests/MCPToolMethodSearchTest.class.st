@@ -29,7 +29,7 @@ MCPToolMethodSearchTest >> entryForReference: aReference in: methods [
 { #category : 'private' }
 MCPToolMethodSearchTest >> targetClassName [
 
-	^ 'MCPToolMethodSearchTestTarget'
+	^ MCPToolMethodSearchTestTarget name
 ]
 
 { #category : 'tests' }
@@ -574,8 +574,7 @@ MCPToolMethodSearchTest >> testHierarchyClassNamesSelectHierarchyScope [
 MCPToolMethodSearchTest >> testImageScopeReturnsInstanceAndClassImplementors [
 
 	| data result |
-	result := self callToolWith:
-		          { (#selector -> 'sharedTarget') } asDictionary.
+	result := self callToolWith: { (#selector -> 'sharedTarget') } asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self
@@ -583,12 +582,10 @@ MCPToolMethodSearchTest >> testImageScopeReturnsInstanceAndClassImplementors [
 		equals: 'ok'.
 	self assert: (data at: #methods) size equals: 2.
 	self
-		entryForReference:
-		'MCPToolMethodSearchReferenceFixture>>sharedTarget'
+		entryForReference: MCPToolMethodSearchReferenceFixture name , '>>sharedTarget'
 		in: (data at: #methods).
 	self
-		entryForReference:
-		'MCPToolMethodSearchReferenceFixture class>>sharedTarget'
+		entryForReference: MCPToolMethodSearchReferenceFixture name , ' class>>sharedTarget'
 		in: (data at: #methods)
 ]
 
@@ -1046,26 +1043,15 @@ MCPToolMethodSearchTest >> testVariableReferenceReturnsClassSideVariableReferenc
 MCPToolMethodSearchTest >> testVariableReferenceReturnsInstanceVariableReferences [
 
 	| data result |
-	result := self
-		          callToolNamed: 'method_variable_reference_search'
-		          withArguments: {
-				          (#variableName -> 'trackedSlot').
-				          (#side -> 'instance').
-				          (self searchScope:
-					           { (#classes
-					            -> #( 'MCPToolMethodSearchVariableReferenceTarget' )) }) }
-				          asDictionary.
+	result := self callToolNamed: 'method_variable_reference_search' withArguments: {
+			          (#variableName -> 'trackedSlot').
+			          (#side -> 'instance').
+			          (self searchScope: { (#classes -> { MCPToolMethodSearchVariableReferenceTarget name }) }) } asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #methods) size equals: 2.
-	self
-		entryForReference:
-		'MCPToolMethodSearchVariableReferenceTarget>>readTrackedSlot'
-		in: (data at: #methods).
-	self
-		entryForReference:
-		'MCPToolMethodSearchVariableReferenceTarget>>writeTrackedSlot'
-		in: (data at: #methods)
+	self entryForReference: MCPToolMethodSearchVariableReferenceTarget name , '>>readTrackedSlot' in: (data at: #methods).
+	self entryForReference: MCPToolMethodSearchVariableReferenceTarget name , '>>writeTrackedSlot' in: (data at: #methods)
 ]
 
 { #category : 'tests' }

@@ -4,8 +4,8 @@ Load-repository command test double that routes Metacello creation through MCPRe
 Class {
 	#name : 'MCPRecordingLoadRepositoryCommand',
 	#superclass : 'MCPLoadRepositoryCommand',
-	#category : 'MCP-Tests-Support',
-	#package : 'MCP-Tests',
+	#category : 'MCP-Tests-Resources-Support',
+	#package : 'MCP-Tests-Resources',
 	#tag : 'Support'
 }
 

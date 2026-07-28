@@ -89,7 +89,7 @@ MCPCompiledMethodInfoTest >> targetClass [
 { #category : 'private' }
 MCPCompiledMethodInfoTest >> targetClassName [
 
-	^ 'MCPCompiledMethodInfoTestTarget'
+	^ MCPCompiledMethodInfoTestTarget name
 ]
 
 { #category : 'running' }

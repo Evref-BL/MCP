@@ -4,8 +4,8 @@ SUnit target used by debugger test-running tool tests.
 Class {
 	#name : 'MCPDebugTestToolTarget',
 	#superclass : 'TestCase',
-	#category : 'MCP-Tests-Tools',
-	#package : 'MCP-Tests',
+	#category : 'MCP-Tests-Resources-Tools',
+	#package : 'MCP-Tests-Resources',
 	#tag : 'Tools'
 }
 
