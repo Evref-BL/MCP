@@ -7,8 +7,8 @@ Class {
 	#classInstVars : [
 		'LastMetacello'
 	],
-	#category : 'MCP-Tests-Support',
-	#package : 'MCP-Tests',
+	#category : 'MCP-Tests-Resources-Support',
+	#package : 'MCP-Tests-Resources',
 	#tag : 'Support'
 }
 

@@ -7,6 +7,6 @@ Class {
 	#classInstVars : [
 		'alpha'
 	],
-	#category : 'MCP-Tests',
-	#package : 'MCP-Tests'
+	#category : 'MCP-Tests-Resources',
+	#package : 'MCP-Tests-Resources'
 }
