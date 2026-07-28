@@ -29,7 +29,7 @@ MCPToolMethodLookupTest >> entryForReference: aReference in: methods [
 { #category : 'private' }
 MCPToolMethodLookupTest >> targetClassName [
 
-	^ 'MCPToolMethodSearchTestTarget'
+	^ MCPToolMethodSearchTestTarget name
 ]
 
 { #category : 'tests' }
