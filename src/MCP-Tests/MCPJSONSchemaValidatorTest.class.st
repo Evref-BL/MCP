@@ -296,21 +296,11 @@ MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasAcceptRepresentativeArg
 
 	| argumentsByTool |
 	argumentsByTool := self representativeArgumentsByToolClass.
-	MCPTool concreteSubclasses do: [ :toolClass |
+	self builtInToolClasses do: [ :toolClass |
 			| arguments violations |
-			arguments := argumentsByTool
-				             at: toolClass
-				             ifAbsent: [
-				             self fail:
-					             'Missing representative arguments for '
-					             , toolClass name ].
-			violations := self
-				              violationsFor: arguments
-				              schema: toolClass new inputSchema.
-			violations ifNotEmpty: [
-					self fail:
-						toolClass name , ' schema rejected representative arguments: '
-						, violations printString ] ]
+			arguments := argumentsByTool at: toolClass ifAbsent: [ self fail: 'Missing representative arguments for ' , toolClass name ].
+			violations := self violationsFor: arguments schema: toolClass new inputSchema.
+			violations ifNotEmpty: [ self fail: toolClass name , ' schema rejected representative arguments: ' , violations printString ] ]
 ]
 
 { #category : 'tests' }
