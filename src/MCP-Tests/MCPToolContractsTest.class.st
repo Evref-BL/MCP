@@ -832,26 +832,22 @@ MCPToolContractsTest >> testAllStaticExposurePolicyMakesEveryRegistrationStatic 
 { #category : 'tests' }
 MCPToolContractsTest >> testAllToolOutputSchemasAdvertiseStructuredSummaryWarningsAndStatus [
 
-	MCPTool concreteSubclasses do: [ :toolClass |
+	self builtInToolClasses do: [ :toolClass |
 			| outputSchema propertyNames requiredNames statusProperty |
 			outputSchema := toolClass new outputSchema.
-			propertyNames := outputSchema properties collect: [ :each |
-				                 each name ].
+			propertyNames := outputSchema properties collect: [ :each | each name ].
 			requiredNames := outputSchema required asSet.
-			statusProperty := outputSchema properties detect: [ :each |
-				                  each name = 'status' ].
+			statusProperty := outputSchema properties detect: [ :each | each name = 'status' ].
 			self assert: (propertyNames includes: 'summary').
 			self assert: (propertyNames includes: 'warnings').
 			self assert: requiredNames equals: #( 'status' 'summary' ) asSet.
-			self
-				assert: (statusProperty extraProperties at: #enum) asArray
-				equals: #( 'ok' 'error' ) ]
+			self assert: (statusProperty extraProperties at: #enum) asArray equals: #( 'ok' 'error' ) ]
 ]
 
 { #category : 'tests' }
 MCPToolContractsTest >> testAllToolSchemasUseSupportedDialect [
 
-	MCPTool concreteSubclasses do: [ :toolClass |
+	self builtInToolClasses do: [ :toolClass |
 			| tool |
 			tool := toolClass new.
 			self assertUsesSupportedSchemaDialect: tool inputSchema asJRPCJSON.
@@ -861,7 +857,7 @@ MCPToolContractsTest >> testAllToolSchemasUseSupportedDialect [
 { #category : 'tests' }
 MCPToolContractsTest >> testAllToolsHavePngIconsWithDataUris [
 
-	MCPTool concreteSubclasses do: [ :toolClass |
+	self builtInToolClasses do: [ :toolClass |
 			| icon icons |
 			icons := toolClass new icons.
 			self deny: icons isEmpty.
@@ -876,24 +872,29 @@ MCPToolContractsTest >> testAllToolsHavePngIconsWithDataUris [
 MCPToolContractsTest >> testAllToolsUseParsedRequestsAndCommands [
 
 	| toolClasses |
-	toolClasses := self toolFlowSpecs collect: [ :each |
-		               each at: #toolClass ].
-	self
-		assert: toolClasses asSet
-		equals: MCPTool concreteSubclasses asSet.
+	toolClasses := self toolFlowSpecs collect: [ :each | each at: #toolClass ].
+	self assert: toolClasses asSet equals: self builtInToolClasses asSet.
 	self toolFlowSpecs do: [ :each | self assertToolFlowSpec: each ]
 ]
 
 { #category : 'tests' }
 MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 
-	| builtInToolClasses groupedToolClasses |
-	builtInToolClasses := MCPTool concreteSubclasses select: [ :toolClass | toolClass isBuiltIn ].
+	| groupedToolClasses |
 	groupedToolClasses := OrderedCollection new.
 	MCPTool toolGroups do: [ :group |
 			group value do: [ :toolClass | self assert: toolClass new groupName equals: group key ].
 			groupedToolClasses addAll: group value ].
-	self assert: groupedToolClasses asSet equals: builtInToolClasses asSet
+	self assert: groupedToolClasses asSet equals: self builtInToolClasses asSet
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testBuiltInToolClassesExcludeExternalToolSubclasses [
+
+	self assert: (MCPTool concreteSubclasses includes: MCPExternalTestTool).
+	self deny: MCPExternalTestTool isBuiltIn.
+	self deny: (self builtInToolClasses includes: MCPExternalTestTool).
+	self deny: (MCPTool builtInGroupNames includes: MCPExternalTestTool groupName)
 ]
 
 { #category : 'tests' }
@@ -901,11 +902,11 @@ MCPToolContractsTest >> testBuiltInToolsProvideCatalogMetadata [
 
 	| validExposures |
 	validExposures := #( 'static' 'discoverable' ).
-	self toolRegistry publicTools do: [ :tool |
+	self toolRegistry publicTools select: [ :tool | tool class isBuiltIn ] thenDo: [ :tool |
 			self assert: (MCPTool builtInGroupNames includes: tool groupName).
 			self assert: tool groupName equals: tool class groupName.
 			self assert: (validExposures includes: tool defaultExposure).
-			self assert: (true = tool annotations readOnlyHint or: [ false = tool annotations readOnlyHint ]).
+			self assert: (#( true false ) includes: tool annotations readOnlyHint).
 			self assert: tool keywords notEmpty ]
 ]
 
@@ -1560,20 +1561,15 @@ MCPToolContractsTest >> testIncludeSourceFlagsWarnAboutCost [
 
 	| descriptions |
 	descriptions := OrderedCollection new.
-	MCPTool concreteSubclasses do: [ :toolClass |
+	self builtInToolClasses do: [ :toolClass |
 			| tool |
 			tool := toolClass new.
 			tool inputSchema properties do: [ :property |
 					property name = 'includeSource' ifTrue: [
 							descriptions add: property description.
-							self
-								assert: (property extraProperties at: #default)
-								equals: false ] ] ].
+							self assert: (property extraProperties at: #default) equals: false ] ] ].
 	self assert: descriptions notEmpty.
-	descriptions do: [ :each |
-			self
-				assert: each
-				equals: 'Include source code. Use only for small result sets.' ]
+	descriptions do: [ :each | self assert: each equals: 'Include source code. Use only for small result sets.' ]
 ]
 
 { #category : 'tests' }
@@ -3257,7 +3253,7 @@ MCPToolContractsTest >> testToolIconsAreSharedByToolClass [
 MCPToolContractsTest >> testToolNamesFollowPublicNamingConvention [
 
 	| names |
-	names := MCPTool concreteSubclasses collect: [ :toolClass | toolClass new name ].
+	names := self builtInToolClasses collect: [ :toolClass | toolClass new name ].
 	self assert: names asSet size equals: names size.
 	names do: [ :name |
 			| segments |
@@ -3273,12 +3269,13 @@ MCPToolContractsTest >> testToolRegistryAcceptsPluginToolRegistration [
 
 	| registration registry tool |
 	registry := MCPToolRegistry new.
-	registration := registry registerToolClass: MCPHaltingTestTool.
-	tool := registry toolNamed: MCPHaltingTestTool toolName ifAbsent: [ self fail ].
+	registration := registry registerToolClass: MCPExternalTestTool.
+	tool := registry toolNamed: MCPExternalTestTool toolName ifAbsent: [ self fail ].
 	self assert: tool == registration tool.
 	self deny: (registry isStaticToolNamed: tool name).
 	self assert:
-		((registry publicToolGroups detect: [ :each | each key = 'plugins' ] ifNone: [ self fail ]) value includes: MCPHaltingTestTool)
+		((registry publicToolGroups detect: [ :each | each key = MCPExternalTestTool groupName ] ifNone: [ self fail ]) value includes:
+			 MCPExternalTestTool)
 ]
 
 { #category : 'tests' }

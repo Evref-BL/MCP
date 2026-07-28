@@ -15,6 +15,12 @@ MCPTestCase class >> isAbstract [
 	^ self = MCPTestCase or: [ super isAbstract ]
 ]
 
+{ #category : 'support' }
+MCPTestCase >> builtInToolClasses [
+
+	^ MCPTool concreteSubclasses select: [ :toolClass | toolClass isBuiltIn ]
+]
+
 { #category : 'private - classes' }
 MCPTestCase >> classNamed: aClassName [
 
