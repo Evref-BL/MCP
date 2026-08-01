@@ -25,6 +25,33 @@ The execution path is:
 6. The tool returns structured content with `status`, `summary`, `warnings`,
    and either `data` or `error`.
 
+```mermaid
+sequenceDiagram
+    participant Client
+    participant HTTP as HTTP Endpoint
+    participant Req as MCPToolRequest
+    participant Tool as Concrete Tool
+    participant Cmd as Command/Query
+    participant Pharo as Pharo Image
+
+    Client->>HTTP: JSON-RPC tools/call
+    HTTP->>Req: validate raw arguments
+    Req->>Req: check against tool input schema
+    alt invalid arguments
+        Req-->>HTTP: validation error
+        HTTP-->>Client: error response
+    else valid arguments
+        Req->>Tool: validated arguments
+        Tool->>Tool: parse into typed request/spec
+        Tool->>Cmd: dispatch command or query
+        Cmd->>Pharo: query or mutate image via Pharo APIs
+        Pharo-->>Cmd: result / side effect
+        Cmd-->>Tool: outcome
+        Tool-->>HTTP: structured content (status, summary, warnings, data/error)
+        HTTP-->>Client: JSON-RPC response
+    end
+```
+
 This keeps transport parsing, schema validation, image operations, and result
 formatting in separate places.
 
