@@ -21,6 +21,12 @@ MCPToolMethodSearchReferenceFixture class >> classSendShared [
 ]
 
 { #category : 'testing' }
+MCPToolMethodSearchReferenceFixture class >> mcpImageScopeUniqueTarget [
+
+	^ 'class-image-scope-target'
+]
+
+{ #category : 'testing' }
 MCPToolMethodSearchReferenceFixture class >> referenceExtensionTarget [
 
 	^ MCPToolMethodSearchReferenceTarget
@@ -48,6 +54,12 @@ MCPToolMethodSearchReferenceFixture >> MCPToolMethodSearchReferenceTarget [
 MCPToolMethodSearchReferenceFixture >> instanceSendShared [
 
 	^ self sharedTarget
+]
+
+{ #category : 'testing' }
+MCPToolMethodSearchReferenceFixture >> mcpImageScopeUniqueTarget [
+
+	^ 'instance-image-scope-target'
 ]
 
 { #category : 'testing' }

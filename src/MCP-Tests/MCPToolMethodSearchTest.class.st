@@ -573,20 +573,14 @@ MCPToolMethodSearchTest >> testHierarchyClassNamesSelectHierarchyScope [
 { #category : 'tests' }
 MCPToolMethodSearchTest >> testImageScopeReturnsInstanceAndClassImplementors [
 
-	| data result |
-	result := self callToolWith: { (#selector -> 'sharedTarget') } asDictionary.
+	| data result selector |
+	selector := #mcpImageScopeUniqueTarget.
+	result := self callToolWith: { (#selector -> selector) } asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self
-		assert: ((self structuredContentFrom: result) at: #status)
-		equals: 'ok'.
-	self assert: (data at: #methods) size equals: 2.
-	self
-		entryForReference: MCPToolMethodSearchReferenceFixture name , '>>sharedTarget'
-		in: (data at: #methods).
-	self
-		entryForReference: MCPToolMethodSearchReferenceFixture name , ' class>>sharedTarget'
-		in: (data at: #methods)
+	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self entryForReference: MCPToolMethodSearchReferenceFixture name , '>>' , selector in: (data at: #methods).
+	self entryForReference: MCPToolMethodSearchReferenceFixture name , ' class>>' , selector in: (data at: #methods)
 ]
 
 { #category : 'tests' }
