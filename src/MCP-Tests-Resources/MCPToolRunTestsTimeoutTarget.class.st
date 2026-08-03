@@ -10,12 +10,14 @@ Class {
 
 { #category : 'tests' }
 MCPToolRunTestsTimeoutTarget >> testFastPass [
+	"This is a fixture test method, intentionally exercised by MCP test-running tool tests."
 
 	self assert: true
 ]
 
 { #category : 'tests' }
 MCPToolRunTestsTimeoutTarget >> testSlowPass [
+	"This is a fixture test method; the delay is intentional and exercised by MCP test-running timeout tests."
 
 	(Delay forMilliseconds: 300) wait.
 	self assert: true

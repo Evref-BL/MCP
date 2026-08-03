@@ -35,6 +35,7 @@ MCPToolRunTestsParameterizedTarget >> encoding: aString [
 
 { #category : 'tests' }
 MCPToolRunTestsParameterizedTarget >> testFailsOnlyForUTF16 [
+	"This is a fixture test method; the UTF-16 failure is intentional and exercised by MCP parameterized test-running tests."
 
 	self deny: encoding = 'UTF-16' description: 'UTF-16 probe failure'
 ]
