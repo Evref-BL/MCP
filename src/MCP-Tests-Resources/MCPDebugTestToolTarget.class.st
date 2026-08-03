@@ -11,12 +11,14 @@ Class {
 
 { #category : 'fixtures' }
 MCPDebugTestToolTarget >> debugTestFailingCase [
+	"This is a fixture test method; the failure is intentional and exercised by MCP debugger test-running tool tests."
 
 	self assert: 6 * 7 equals: 43
 ]
 
 { #category : 'fixtures' }
 MCPDebugTestToolTarget >> debugTestPassingCase [
+	"This is a fixture test method, intentionally exercised by MCP debugger test-running tool tests."
 
 	self assert: 6 * 7 equals: 42
 ]
