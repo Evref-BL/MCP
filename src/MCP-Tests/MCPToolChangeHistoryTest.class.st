@@ -7,7 +7,8 @@ Class {
 	#instVars : [
 		'originalMonitor',
 		'tempMonitor',
-		'memoryDirectory'
+		'memoryDirectory',
+		'originalMonitorWasEnabled'
 	],
 	#category : 'MCP-Tests-Tools',
 	#package : 'MCP-Tests',
@@ -94,14 +95,10 @@ MCPToolChangeHistoryTest >> setUp [
 
 	super setUp.
 	originalMonitor := EpMonitor current.
+	originalMonitorWasEnabled := originalMonitor isEnabled.
 	originalMonitor disable.
-	memoryDirectory := (FileSystem memory
-	                    / ('mcp-history-test-' , UUID new asString36))
-		                   ensureCreateDirectory.
-	tempMonitor := EpMonitor newWithLog: (EpLog newWithStore:
-			                (OmBlockFileStore
-				                 named: 'log'
-				                 inDirectory: memoryDirectory)).
+	memoryDirectory := (FileSystem memory / ('mcp-history-test-' , UUID new asString36)) ensureCreateDirectory.
+	tempMonitor := EpMonitor newWithLog: (EpLog newWithStore: (OmBlockFileStore named: 'log' inDirectory: memoryDirectory)).
 	EpMonitor current: tempMonitor.
 	tempMonitor enable
 ]
@@ -112,7 +109,9 @@ MCPToolChangeHistoryTest >> tearDown [
 	tempMonitor ifNotNil: [ tempMonitor disable ].
 	originalMonitor ifNotNil: [
 			EpMonitor current: originalMonitor.
-			originalMonitor enable ].
+			originalMonitorWasEnabled
+				ifTrue: [ originalMonitor enable ]
+				ifFalse: [ originalMonitor disable ] ].
 	memoryDirectory ifNotNil: [ memoryDirectory ensureDeleteAll ].
 	super tearDown
 ]
