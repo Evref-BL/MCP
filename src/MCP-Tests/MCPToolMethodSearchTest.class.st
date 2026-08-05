@@ -12,7 +12,7 @@ Class {
 { #category : 'accessing' }
 MCPToolMethodSearchTest class >> defaultTimeLimit [
 
-	^30 seconds
+	^ 30 seconds
 ]
 
 { #category : 'private' }
