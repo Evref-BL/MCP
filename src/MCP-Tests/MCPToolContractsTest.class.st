@@ -3365,6 +3365,47 @@ MCPToolContractsTest >> testToolRegistryUsesDefaultExposureUntilStaticListProvid
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testToolResponsesCanReturnContentAndStructuredContent [
+
+	| result server text |
+	server := MCP new.
+	server useContentAndStructuredContentToolResponses.
+	result := server rpcToolCall: 'tool_search' withParams: { (#query -> 'classes') } asDictionary.
+	text := self firstTextFromToolResult: result.
+	self assert: (result includesKey: #content).
+	self assert: (result includesKey: #structuredContent).
+	self assert: ((result at: #structuredContent) at: #status) equals: 'ok'.
+	self assert: (text includesSubstring: '"data"')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testToolResponsesCanReturnStructuredContentOnly [
+
+	| result server |
+	server := MCP new.
+	server useStructuredContentOnlyToolResponses.
+	result := server rpcToolCall: 'tool_search' withParams: { (#query -> 'classes') } asDictionary.
+	self deny: (result includesKey: #content).
+	self assert: (result includesKey: #structuredContent).
+	self assert: ((result at: #structuredContent) at: #status) equals: 'ok'.
+	self assert: (((result at: #structuredContent) at: #data) includesKey: #tools)
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testToolResponsesDefaultToContentOnly [
+
+	| result text |
+	result := MCP new rpcToolCall: 'tool_search' withParams: { (#query -> 'classes') } asDictionary.
+	text := self firstTextFromToolResult: result.
+	self assert: (result includesKey: #content).
+	self deny: (result includesKey: #structuredContent).
+	self assert: (text includesSubstring: '"status"').
+	self assert: (text includesSubstring: '"summary"').
+	self assert: (text includesSubstring: '"data"').
+	self assert: (text includesSubstring: '"tools"')
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testToolsOwnRegistryMetadata [
 
 	| tool |

@@ -35,13 +35,20 @@ MCPStructureCallToolResult class >> content: aContent structuredContent: aStruct
 { #category : 'accessing' }
 MCPStructureCallToolResult >> asJRPCJSON [
 
-	| dic |
-	dic := Dictionary new.
-	dic at: #content put: self content asJRPCJSON.
-	self structuredContent ifNotNil: [
-		dic at: #structuredContent put: self structuredContent asJRPCJSON ].
-	self isError ifTrue: [ dic at: #isError put: true ].
-	^ dic
+	^ self asJRPCJSONForResponseFields: #both
+]
+
+{ #category : 'accessing' }
+MCPStructureCallToolResult >> asJRPCJSONForResponseFields: responseFields [
+
+	| dictionary normalizedFields |
+	normalizedFields := responseFields asSymbol.
+	dictionary := Dictionary new.
+	(self includesContentForResponseFields: normalizedFields) ifTrue: [ dictionary at: #content put: self content asJRPCJSON ].
+	(self includesStructuredContentForResponseFields: normalizedFields) ifTrue: [
+		self structuredContent ifNotNil: [ :structured | dictionary at: #structuredContent put: structured asJRPCJSON ] ].
+	self isError ifTrue: [ dictionary at: #isError put: true ].
+	^ dictionary
 ]
 
 { #category : 'converting' }
@@ -60,6 +67,18 @@ MCPStructureCallToolResult >> content [
 MCPStructureCallToolResult >> content: anObject [
 
 	content := anObject
+]
+
+{ #category : 'testing' }
+MCPStructureCallToolResult >> includesContentForResponseFields: responseFields [
+
+	^ responseFields = #content or: [ responseFields = #both ]
+]
+
+{ #category : 'testing' }
+MCPStructureCallToolResult >> includesStructuredContentForResponseFields: responseFields [
+
+	^ responseFields = #structuredContent or: [ responseFields = #both ]
 ]
 
 { #category : 'accessing' }

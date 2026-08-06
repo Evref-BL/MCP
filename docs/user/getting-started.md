@@ -62,6 +62,15 @@ mcp port: 4000.
 mcp start.
 ```
 
+Tool calls return canonical LLM-facing `content` by default. If a client or
+integration needs programmatic payloads, configure the response fields before
+starting:
+
+```smalltalk
+mcp useStructuredContentOnlyToolResponses.
+mcp useContentAndStructuredContentToolResponses.
+```
+
 Inspect or control the server with:
 
 ```smalltalk

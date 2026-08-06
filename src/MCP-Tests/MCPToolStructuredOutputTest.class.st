@@ -80,14 +80,17 @@ MCPToolStructuredOutputTest >> testGetClassParseErrorReturnsStructuredToolError 
 { #category : 'tests' }
 MCPToolStructuredOutputTest >> testGetClassReturnsStructuredError [
 
-	| error result structured |
+	| contentText error result structured |
 	result := self callToolNamed: 'class_get' withArguments: { (#className -> 'MCPToolGetClassDefinitelyMissing') } asDictionary.
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
+	contentText := (result at: #content) first at: #text.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
 	self deny: (structured includesKey: #warnings).
-	self assert: ((result at: #content) first at: #text) equals: (structured at: #summary).
+	self assert: (contentText includesSubstring: (structured at: #summary)).
+	self assert: (contentText includesSubstring: '"error"').
+	self assert: (contentText includesSubstring: '"errorCode"').
 	self assert: (self warningsFrom: result) equals: #(  ).
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
@@ -97,15 +100,18 @@ MCPToolStructuredOutputTest >> testGetClassReturnsStructuredError [
 { #category : 'tests' }
 MCPToolStructuredOutputTest >> testGetClassReturnsStructuredSuccess [
 
-	| data expectedSharedVariableNames result structured |
+	| contentText data expectedSharedVariableNames result structured |
 	result := self callToolNamed: 'class_get' withArguments: { (#className -> 'MCPToolGetMethodTestTarget') } asDictionary.
 	structured := self structuredContentFrom: result.
 	data := self dataFrom: result.
+	contentText := (result at: #content) first at: #text.
 	expectedSharedVariableNames := (MCPToolGetMethodTestTarget classVarNames collect: [ :each | each asString ]) asArray.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (structured at: #status) equals: 'ok'.
 	self deny: (structured includesKey: #warnings).
-	self assert: ((result at: #content) first at: #text) equals: (structured at: #summary).
+	self assert: (contentText includesSubstring: (structured at: #summary)).
+	self assert: (contentText includesSubstring: '"data"').
+	self assert: (contentText includesSubstring: '"className"').
 	self assert: (self warningsFrom: result) equals: #(  ).
 	self assert: (data at: #className) equals: 'MCPToolGetMethodTestTarget'.
 	self assert: (data at: #instanceMethodCount) equals: 1.

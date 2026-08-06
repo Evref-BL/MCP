@@ -8,7 +8,8 @@ Class {
 		'server',
 		'toolsList',
 		'monitoring',
-		'toolRegistry'
+		'toolRegistry',
+		'toolResponseFields'
 	],
 	#category : 'MCP-Server',
 	#package : 'MCP',
@@ -111,7 +112,7 @@ MCP >> executeTool: tool named: toolName withParams: arguments [
 		  toolResult := result asMCPStructureCallToolResult.
 		  self saveImageAfterSuccessfulTool: tool result: toolResult.
 		  self monitoring recordToolCallFinish: monitorRecord result: toolResult error: nil.
-		  toolResult asJRPCJSON ]
+		  toolResult asJRPCJSONForResponseFields: self toolResponseFields ]
 		  on: Exception
 		  do: [ :error |
 				  | errorResult |
@@ -120,7 +121,7 @@ MCP >> executeTool: tool named: toolName withParams: arguments [
 						  error pass ].
 				  errorResult := tool errorResultFor: error.
 				  self monitoring recordToolCallFinish: monitorRecord result: errorResult error: error.
-				  errorResult asJRPCJSON ]
+				  errorResult asJRPCJSONForResponseFields: self toolResponseFields ]
 ]
 
 { #category : 'accessing' }
@@ -309,7 +310,7 @@ MCP >> rpcCallToolCallWithParams: arguments [
 				  | errorResult |
 				  error mcpIsJRPCError ifTrue: [ error pass ].
 				  errorResult := callTool errorResultFor: error.
-				  errorResult asJRPCJSON ]
+				  errorResult asJRPCJSONForResponseFields: self toolResponseFields ]
 ]
 
 { #category : 'rpc' }
@@ -468,6 +469,22 @@ MCP >> toolRegistry: aToolRegistry [
 	self refreshToolsList
 ]
 
+{ #category : 'configuration' }
+MCP >> toolResponseFields [
+
+	^ toolResponseFields ifNil: [ toolResponseFields := #content ]
+]
+
+{ #category : 'configuration' }
+MCP >> toolResponseFields: aSymbolOrString [
+
+	| normalized |
+	normalized := aSymbolOrString asSymbol.
+	(self validToolResponseFields includes: normalized) ifFalse: [
+		Error signal: 'Unsupported MCP tool response fields: ' , aSymbolOrString asString ].
+	toolResponseFields := normalized
+]
+
 { #category : 'accessing' }
 MCP >> toolsList [
 
@@ -478,6 +495,30 @@ MCP >> toolsList [
 MCP >> toolsList: aToolsList [
 
 	^ toolsList := aToolsList
+]
+
+{ #category : 'configuration' }
+MCP >> useContentAndStructuredContentToolResponses [
+
+	self toolResponseFields: #both
+]
+
+{ #category : 'configuration' }
+MCP >> useContentOnlyToolResponses [
+
+	self toolResponseFields: #content
+]
+
+{ #category : 'configuration' }
+MCP >> useStructuredContentOnlyToolResponses [
+
+	self toolResponseFields: #structuredContent
+]
+
+{ #category : 'configuration' }
+MCP >> validToolResponseFields [
+
+	^ #( content structuredContent both )
 ]
 
 { #category : 'private - start' }

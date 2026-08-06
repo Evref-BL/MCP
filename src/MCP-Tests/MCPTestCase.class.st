@@ -53,6 +53,7 @@ MCPTestCase >> mcpWithoutObservabilityExport [
 
 	^ MCP new
 		  monitoringExportDirectory: nil;
+		  useContentAndStructuredContentToolResponses;
 		  yourself
 ]
 
