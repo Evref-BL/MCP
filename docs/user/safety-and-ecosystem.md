@@ -22,8 +22,10 @@ The execution path is:
 3. The concrete tool parses the request into a typed request or spec object.
 4. The tool dispatches a command or query object.
 5. The command uses Pharo APIs to query or mutate the image.
-6. The tool returns structured content with `status`, `summary`, `warnings`,
-   and either `data` or `error`.
+6. The tool returns a payload with `status`, `summary`, `warnings`, and either
+   `data` or `error`. By default this payload is serialized into the MCP
+   `content` field; the server can also emit `structuredContent` for clients
+   that need programmatic results.
 
 ```mermaid
 sequenceDiagram

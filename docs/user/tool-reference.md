@@ -5,8 +5,9 @@ advertised directly; less common tools can be found through the catalog tools.
 Tool names use `snake_case` names that generally put the domain before the
 action.
 
-Every tool returns MCP call content plus structured content. Structured content
-uses this common shape:
+By default, every tool returns MCP call `content` as the canonical response for
+LLMs. The text block contains the complete tool payload encoded as JSON using
+this common shape:
 
 ```text
 status: ok | error
@@ -17,6 +18,15 @@ error: structured error payload
 ```
 
 `data` is present on success. `error` is present on failure.
+
+For clients or integrations that need programmatic payloads, configure the
+server response fields before `start`:
+
+```smalltalk
+mcp useContentOnlyToolResponses. "default"
+mcp useStructuredContentOnlyToolResponses.
+mcp useContentAndStructuredContentToolResponses.
+```
 
 ## Compact Paging
 

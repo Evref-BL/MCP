@@ -25,6 +25,13 @@ MCPSaveImageRecordingServer >> didSaveImageSession [
 	^ didSaveImageSession ifNil: [ false ]
 ]
 
+{ #category : 'initialization' }
+MCPSaveImageRecordingServer >> initialize [
+
+	super initialize.
+	self useContentAndStructuredContentToolResponses
+]
+
 { #category : 'private - calling' }
 MCPSaveImageRecordingServer >> rpcToolCall: aToolName withParams: someArguments [
 

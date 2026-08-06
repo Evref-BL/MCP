@@ -225,6 +225,12 @@ MCPTool >> buildOutputSchema [
 	self subclassResponsibility
 ]
 
+{ #category : 'private - results' }
+MCPTool >> canonicalContentTextForStructuredContent: structuredContent [
+
+	^ STON toJsonStringPretty: structuredContent asJRPCJSON
+]
+
 { #category : 'private - execution' }
 MCPTool >> commandForRequest: aToolRequest [
 
@@ -299,7 +305,9 @@ MCPTool >> errorResultText: aString details: aDictionary [
 		                     at: #summary put: normalizedSummary;
 		                     at: #error put: details;
 		                     yourself.
-	^ MCPStructureErrorToolResult content: { (self textContent: normalizedSummary) } structuredContent: structuredContent
+	^ MCPStructureErrorToolResult
+		  content: { (self textContent: (self canonicalContentTextForStructuredContent: structuredContent)) }
+		  structuredContent: structuredContent
 ]
 
 { #category : 'private - schema' }
@@ -701,7 +709,9 @@ MCPTool >> successResultText: aSummary data: aDictionary warnings: warningString
 		                     at: #data put: aDictionary;
 		                     yourself.
 	warnings ifNotEmpty: [ structuredContent at: #warnings put: warnings ].
-	^ MCPStructureCallToolResult content: { (self textContent: normalizedSummary) } structuredContent: structuredContent
+	^ MCPStructureCallToolResult
+		  content: { (self textContent: (self canonicalContentTextForStructuredContent: structuredContent)) }
+		  structuredContent: structuredContent
 ]
 
 { #category : 'private' }
