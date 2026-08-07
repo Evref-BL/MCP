@@ -8,7 +8,7 @@ MCP >> inspectionDashboard: aBuilder [
 ]
 
 { #category : '*MCP-UI' }
-MCP >> inspectionToolCatalog [
+MCP >> inspectionToolCatalog: aBuilder [
 
 	<inspectorPresentationOrder: 1 title: 'Tool Catalog'>
 	^ MCPToolsCatalogPresenter new
