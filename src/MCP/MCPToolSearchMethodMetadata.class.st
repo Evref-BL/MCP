@@ -79,6 +79,14 @@ MCPToolSearchMethodMetadata >> metadataFilterInputProperties [
 ]
 
 { #category : 'private - template' }
+MCPToolSearchMethodMetadata >> queryEntriesForQueryRequest: queryRequest [
+
+	(self usesExactSelectorLookupForQueryRequest: queryRequest) ifTrue: [
+		^ self implementorEntriesForSelector: (queryRequest fieldFilters at: 'selector') queryRequest: queryRequest ].
+	^ super queryEntriesForQueryRequest: queryRequest
+]
+
+{ #category : 'private - template' }
 MCPToolSearchMethodMetadata >> searchRequestFromToolRequest: request [
 
 	^ MCPMethodSearchRequest fromMetadataRequest: request tool: self
@@ -88,4 +96,13 @@ MCPToolSearchMethodMetadata >> searchRequestFromToolRequest: request [
 MCPToolSearchMethodMetadata >> title [
 
 	^ 'Search Method Metadata'
+]
+
+{ #category : 'testing' }
+MCPToolSearchMethodMetadata >> usesExactSelectorLookupForQueryRequest: queryRequest [
+
+	^ queryRequest filterPattern isNil and: [
+			  queryRequest filterMode = 'exact' and: [
+				  queryRequest caseSensitive and: [
+					  queryRequest fieldFilters size = 1 and: [ queryRequest fieldFilters includesKey: 'selector' ] ] ] ]
 ]

@@ -42,7 +42,7 @@ BaselineOfMCP >> defineGroups: spec [
 	spec
 		group: 'Core' with: #( 'MCP' );
 		group: 'UI' with: #( 'MCP-UI' );
-		group: 'Tests' with: #( 'MCP-Tests-Resources' 'MCP-Tests' 'MCP-Tests-Resources-Extensions' );
+		group: 'Tests' with: #( 'MCP-Tests-Resources' 'MCP-Tests-RunResources' 'MCP-Tests' 'MCP-Tests-Resources-Extensions' );
 		group: 'UI Tests' with: #( 'MCP-UI-Tests' );
 		group: 'default' with: #( 'Core' 'UI' 'Tests' 'UI Tests' )
 ]
@@ -54,7 +54,8 @@ BaselineOfMCP >> definePackages: spec [
 	spec package: 'MCP' with: [ spec requires: #( 'PharoCompatibility' 'JRPC' 'TinyLogger' 'PCRE2' ) ].
 	spec package: 'MCP-UI' with: [ spec requires: #( 'MCP' ) ].
 	spec package: 'MCP-Tests-Resources' with: [ spec requires: #( 'MCP' ) ].
-	spec package: 'MCP-Tests' with: [ spec requires: #( 'MCP' 'MCP-Tests-Resources' ) ].
+	spec package: 'MCP-Tests-RunResources' with: [ spec requires: #( 'MCP-Tests-Resources' ) ].
+	spec package: 'MCP-Tests' with: [ spec requires: #( 'MCP' 'MCP-Tests-Resources' 'MCP-Tests-RunResources' ) ].
 	spec package: 'MCP-Tests-Resources-Extensions' with: [ spec requires: #( 'MCP-Tests-Resources' ) ].
 	spec package: 'MCP-UI-Tests' with: [ spec requires: #( 'MCP-UI' 'MCP-Tests' ) ]
 ]

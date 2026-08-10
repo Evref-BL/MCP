@@ -573,14 +573,25 @@ MCPToolMethodSearchTest >> testHierarchyClassNamesSelectHierarchyScope [
 { #category : 'tests' }
 MCPToolMethodSearchTest >> testImageScopeReturnsInstanceAndClassImplementors [
 
-	| data result selector |
+	| entries queryRequest scopeQuery selector tool |
 	selector := #mcpImageScopeUniqueTarget.
-	result := self callToolWith: { (#selector -> selector) } asDictionary.
-	data := self dataFrom: result.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
-	self entryForReference: MCPToolMethodSearchReferenceFixture name , '>>' , selector in: (data at: #methods).
-	self entryForReference: MCPToolMethodSearchReferenceFixture name , ' class>>' , selector in: (data at: #methods)
+	scopeQuery := MCPMethodSearchImageScopeQueryTestDouble new
+		              behaviors: {
+				              MCPToolMethodSearchReferenceFixture.
+				              MCPToolMethodSearchReferenceFixture class };
+		              yourself.
+	queryRequest := MCPMethodSearchRequest new
+		                scopeQuery: scopeQuery;
+		                fieldFilters: { ('selector' -> selector asString) } asDictionary;
+		                filterMode: 'exact';
+		                caseSensitive: true;
+		                includeSource: false;
+		                yourself.
+	tool := MCPToolSearchMethodMetadata new.
+	entries := tool queryEntriesForQueryRequest: queryRequest.
+	self assert: entries size equals: 2.
+	self entryForReference: MCPToolMethodSearchReferenceFixture name , '>>' , selector in: entries.
+	self entryForReference: MCPToolMethodSearchReferenceFixture name , ' class>>' , selector in: entries
 ]
 
 { #category : 'tests' }

@@ -16,7 +16,7 @@ MCPDebugToolContractTest >> assertDebugTestStopAt: stopAt selects: selector [
 	result := self callToolNamed: 'debug_test_run' withArguments: {
 			          (#className -> 'MCPDebugTestToolTarget').
 			          (#testMethodName -> 'debugTestPassingCase').
-			          (#timeoutMilliseconds -> 1000).
+			          (#timeoutMilliseconds -> self debugSuccessTimeoutMilliseconds).
 			          (#stopAt -> stopAt) } asDictionary.
 	data := self dataFrom: result.
 	session := data at: #session.
@@ -50,6 +50,12 @@ MCPDebugToolContractTest >> assertDebugTestStopAt: stopAt selects: selector [
 MCPDebugToolContractTest >> candidateRefForDebugger: aDebugger [
 
 	^ 'debugger-candidate-' , aDebugger identityHash asString
+]
+
+{ #category : 'private' }
+MCPDebugToolContractTest >> debugSuccessTimeoutMilliseconds [
+
+	^ MCPDebugCaptureRequest defaultTimeoutMilliseconds
 ]
 
 { #category : 'private' }
@@ -622,7 +628,7 @@ MCPDebugToolContractTest >> testDebugCaptureCapturesRuntimeExceptionAsDebugSessi
 	result := self callToolNamed: 'debug_capture' withArguments: {
 			          (#expression -> 'self error: ''debug_capture boom''').
 			          (#name -> 'Captured runtime error').
-			          (#timeoutMilliseconds -> 1000) } asDictionary.
+			          (#timeoutMilliseconds -> self debugSuccessTimeoutMilliseconds) } asDictionary.
 	data := self dataFrom: result.
 	session := data at: #session.
 	state := data at: #state.
@@ -652,7 +658,7 @@ MCPDebugToolContractTest >> testDebugCaptureReportsSyntaxFailureWithoutSession [
 	| error result |
 	result := self callToolNamed: 'debug_capture' withArguments: {
 			          (#expression -> '1 +').
-			          (#timeoutMilliseconds -> 1000) } asDictionary.
+			          (#timeoutMilliseconds -> self debugSuccessTimeoutMilliseconds) } asDictionary.
 	error := self errorFrom: result.
 	self
 		assert: ((self structuredContentFrom: result) at: #status)
@@ -669,7 +675,7 @@ MCPDebugToolContractTest >> testDebugCaptureResumeProceedsCapturedHalt [
 	captureResult := self callToolNamed: 'debug_capture' withArguments: {
 			                 (#expression -> 'Halt signal. 42').
 			                 (#name -> 'Captured halt resume').
-			                 (#timeoutMilliseconds -> 1000) } asDictionary.
+			                 (#timeoutMilliseconds -> self debugSuccessTimeoutMilliseconds) } asDictionary.
 	captureData := self dataFrom: captureResult.
 	sessionId := captureData at: #sessionId.
 	resumeResult := self
@@ -689,7 +695,7 @@ MCPDebugToolContractTest >> testDebugCaptureReturnsCompletedResultWithoutSession
 	| data result |
 	result := self callToolNamed: 'debug_capture' withArguments: {
 			          (#expression -> '21 + 21').
-			          (#timeoutMilliseconds -> 1000) } asDictionary.
+			          (#timeoutMilliseconds -> self debugSuccessTimeoutMilliseconds) } asDictionary.
 	data := self dataFrom: result.
 	self
 		assert: ((self structuredContentFrom: result) at: #status)
@@ -1001,7 +1007,7 @@ MCPDebugToolContractTest >> testDebugMethodUpdateCanIgnoreCritiquesAndProceed [
 			                withArguments: {
 					                (#expression -> expression).
 					                (#name -> 'Captured critique-ignored update').
-					                (#timeoutMilliseconds -> 1000) } asDictionary).
+					                (#timeoutMilliseconds -> self debugSuccessTimeoutMilliseconds) } asDictionary).
 	state := captureData at: #state.
 	action := (state at: #repairActions) first.
 	methodSource := String streamContents: [ :stream |
@@ -1056,7 +1062,7 @@ MCPDebugToolContractTest >> testDebugMethodUpdateCanProceedAfterPriorCritiqueBlo
 			                withArguments: {
 					                (#expression -> expression).
 					                (#name -> 'Captured two-step critique update').
-					                (#timeoutMilliseconds -> 1000) } asDictionary).
+					                (#timeoutMilliseconds -> self debugSuccessTimeoutMilliseconds) } asDictionary).
 	state := captureData at: #state.
 	action := (state at: #repairActions) first.
 	methodSource := String streamContents: [ :stream |
@@ -1112,7 +1118,7 @@ MCPDebugToolContractTest >> testDebugMethodUpdateCreatesMissingMethodFromRepairA
 					                 ->
 					                 'MCPUpdateDebugMethodTestTarget new triggerMissingMethod').
 					                (#name -> 'Captured missing method update').
-					                (#timeoutMilliseconds -> 1000) } asDictionary).
+					                (#timeoutMilliseconds -> self debugSuccessTimeoutMilliseconds) } asDictionary).
 	state := captureData at: #state.
 	action := (state at: #repairActions) first.
 	methodSource := String streamContents: [ :stream |
@@ -1175,7 +1181,7 @@ MCPDebugToolContractTest >> testDebugMethodUpdateProceedsAfterCleanMissingMethod
 			                withArguments: {
 					                (#expression -> expression).
 					                (#name -> 'Captured missing method proceed').
-					                (#timeoutMilliseconds -> 1000) } asDictionary).
+					                (#timeoutMilliseconds -> self debugSuccessTimeoutMilliseconds) } asDictionary).
 	state := captureData at: #state.
 	action := (state at: #repairActions) first.
 	methodSource := String streamContents: [ :stream |
@@ -1220,7 +1226,7 @@ MCPDebugToolContractTest >> testDebugMethodUpdateRecompilesNotYetImplementedFram
 					                 ->
 					                 'MCPUpdateDebugMethodTestTarget new mcpDebugMethodUpdateTemporaryStub').
 					                (#name -> 'Captured not yet implemented update').
-					                (#timeoutMilliseconds -> 1000) } asDictionary).
+					                (#timeoutMilliseconds -> self debugSuccessTimeoutMilliseconds) } asDictionary).
 	state := captureData at: #state.
 	action := (state at: #repairActions) first.
 	self assert: (action at: #kind) equals: 'notYetImplemented'.
@@ -1296,7 +1302,7 @@ MCPDebugToolContractTest >> testDebugMethodUpdateStopsBeforeProceedingWhenCritiq
 			                withArguments: {
 					                (#expression -> expression).
 					                (#name -> 'Captured critique-blocked update').
-					                (#timeoutMilliseconds -> 1000) } asDictionary).
+					                (#timeoutMilliseconds -> self debugSuccessTimeoutMilliseconds) } asDictionary).
 	state := captureData at: #state.
 	action := (state at: #repairActions) first.
 	methodSource := String streamContents: [ :stream |
@@ -1481,7 +1487,7 @@ MCPDebugToolContractTest >> testDebugSessionsRemoveTerminatesCapturedSessionWork
 	data := self dataFrom:
 		        (self callToolNamed: 'debug_capture' withArguments: {
 				         (#expression -> 'self error: ''remove cleanup boom''').
-				         (#timeoutMilliseconds -> 1000) } asDictionary).
+				         (#timeoutMilliseconds -> self debugSuccessTimeoutMilliseconds) } asDictionary).
 	sessionId := data at: #sessionId.
 	record := MCPDebugSessionRegistry default
 		          sessionRecordAt: sessionId
@@ -1537,7 +1543,7 @@ MCPDebugToolContractTest >> testDebugStateOffersMissingMethodRepairAction [
 			           ->
 			           'MCPUpdateDebugMethodTestTarget new triggerMissingMethod').
 			          (#name -> 'Captured missing method').
-			          (#timeoutMilliseconds -> 1000) } asDictionary.
+			          (#timeoutMilliseconds -> self debugSuccessTimeoutMilliseconds) } asDictionary.
 	data := self dataFrom: result.
 	state := data at: #state.
 	action := (state at: #repairActions) first.

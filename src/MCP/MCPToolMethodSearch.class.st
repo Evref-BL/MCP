@@ -110,12 +110,21 @@ MCPToolMethodSearch >> implementorEntriesForSelector: selectorString queryReques
 
 	| compiledMethods selectorSymbol |
 	selectorSymbol := selectorString asSymbol.
-	compiledMethods := queryRequest scopeQuery methods select: [
-		                   :eachMethod |
-		                   eachMethod selector = selectorSymbol ].
-	^ self
-		  methodEntriesFromMethods: compiledMethods asArray
-		  queryRequest: queryRequest
+	compiledMethods := self implementorMethodsForSelector: selectorSymbol queryRequest: queryRequest.
+	^ self methodEntriesFromMethods: compiledMethods queryRequest: queryRequest
+]
+
+{ #category : 'private - methods' }
+MCPToolMethodSearch >> implementorMethodsForSelector: selectorSymbol queryRequest: queryRequest [
+
+	| methods scopeQuery |
+	scopeQuery := queryRequest scopeQuery.
+	scopeQuery packageNames ifNotEmpty: [
+		^ (scopeQuery methods select: [ :eachMethod | eachMethod selector = selectorSymbol ]) asArray ].
+	methods := OrderedCollection new.
+	scopeQuery behaviors do: [ :eachBehavior |
+		(eachBehavior includesSelector: selectorSymbol) ifTrue: [ methods add: eachBehavior >> selectorSymbol ] ].
+	^ methods asArray
 ]
 
 { #category : 'private - filtering' }
