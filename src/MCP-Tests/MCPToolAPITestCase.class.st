@@ -94,6 +94,55 @@ MCPToolAPITestCase >> expectedUndeclaredVariableNoticeClassNames [
 	     'OCCompilationError' )
 ]
 
+{ #category : 'private - fixtures' }
+MCPToolAPITestCase >> packageSearchFixtureEntriesLoadedInImage: aBoolean [
+
+	^ MCPToolSearchPackages new queryEntriesForQueryRequest: (self packageSearchFixtureRequestLoadedInImage: aBoolean)
+]
+
+{ #category : 'private - fixtures' }
+MCPToolAPITestCase >> packageSearchFixturePackageNames [
+
+	^ #( 'MCP-Tests-Resources' 'MCP-Tests-RunResources' )
+]
+
+{ #category : 'private - fixtures' }
+MCPToolAPITestCase >> packageSearchFixtureProjectName [
+
+	^ 'MCPPackageSearchFixture'
+]
+
+{ #category : 'private - fixtures' }
+MCPToolAPITestCase >> packageSearchFixtureRegistrationLoadedInImage: aBoolean [
+
+	^ MCPPackageSearchProjectRegistrationFixture
+		  projectName: self packageSearchFixtureProjectName
+		  packageNames: self packageSearchFixturePackageNames
+		  loadedInImage: aBoolean
+]
+
+{ #category : 'private - fixtures' }
+MCPToolAPITestCase >> packageSearchFixtureRequestLoadedInImage: aBoolean [
+
+	^ MCPSearchPackagesRequest new
+		  scopeQuery: (self packageSearchFixtureScopeQueryLoadedInImage: aBoolean);
+		  filterMode: 'substring';
+		  fieldFilters: Dictionary new;
+		  caseSensitive: true;
+		  limit: 100;
+		  offset: 0;
+		  yourself
+]
+
+{ #category : 'private - fixtures' }
+MCPToolAPITestCase >> packageSearchFixtureScopeQueryLoadedInImage: aBoolean [
+
+	^ MCPPackageScopeQueryTestDouble new
+		  projectNames: { self packageSearchFixtureProjectName };
+		  projectRegistrations: { (self packageSearchFixtureRegistrationLoadedInImage: aBoolean) };
+		  yourself
+]
+
 { #category : 'private - parsing' }
 MCPToolAPITestCase >> parsedRequestForTool: aTool arguments: someArguments [
 

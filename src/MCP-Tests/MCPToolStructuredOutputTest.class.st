@@ -484,13 +484,14 @@ MCPToolStructuredOutputTest >> testRunTestsSuccessfulResultHasExpectedShape [
 { #category : 'tests' }
 MCPToolStructuredOutputTest >> testRunTestsTimeoutReturnsPartialResultsAndUnrunSelectionsCanResume [
 
-	| data request resumedData resumedResult result runTestsRequest tool |
+	| data expectedRunCount request resumedData resumedResult result runTestsRequest tool |
 	tool := MCPToolRunTests new.
+	expectedRunCount := 1 + MCPToolCoverageTargetTest testSelectors size + MCPToolRunTestsPackageTarget testSelectors size.
 	runTestsRequest := MCPRunTestsRequest new
 		                   initializeTestRequests: {
-				                   (MCPTestRunRequest className: 'MCPToolRunTestsTimeoutTarget').
-				                   (MCPTestRunRequest className: 'MCPToolCoverageTargetTest').
-				                   (MCPTestRunRequest packageName: 'MCP-UI-Tests') }
+				                   (MCPTestRunRequest className: MCPToolRunTestsTimeoutTarget name).
+				                   (MCPTestRunRequest className: MCPToolCoverageTargetTest name).
+				                   (MCPTestRunRequest packageName: 'MCP-Tests-RunResources') }
 		                   timeoutMilliseconds: 100
 		                   operation: 'run'
 		                   coverageRequest: nil.
@@ -499,9 +500,9 @@ MCPToolStructuredOutputTest >> testRunTestsTimeoutReturnsPartialResultsAndUnrunS
 	self assert: (data at: #timedOut).
 	self assert: (data at: #runCount) equals: 1.
 	self assert: (data at: #passedCount) equals: 1.
-	self assert: (data at: #unrunMethods) equals: #( 'MCPToolRunTestsTimeoutTarget>>#testSlowPass' ).
-	self assert: (data at: #unrunClasses) equals: #( 'MCPToolCoverageTargetTest' ).
-	self assert: (data at: #unrunPackages) equals: #( 'MCP-UI-Tests' ).
+	self assert: (data at: #unrunMethods) equals: { (MCPToolRunTestsTimeoutTarget name , '>>#testSlowPass') }.
+	self assert: (data at: #unrunClasses) equals: { MCPToolCoverageTargetTest name }.
+	self assert: (data at: #unrunPackages) equals: #( 'MCP-Tests-RunResources' ).
 	request := Dictionary new
 		           at: #methods put: (data at: #unrunMethods);
 		           at: #classes put: (data at: #unrunClasses);
@@ -513,7 +514,7 @@ MCPToolStructuredOutputTest >> testRunTestsTimeoutReturnsPartialResultsAndUnrunS
 	self assert: ((self structuredContentFrom: resumedResult) at: #status) equals: 'ok'.
 	self deny: (resumedData includesKey: #timedOut).
 	self assert: (resumedData at: #passedCount) equals: (resumedData at: #runCount).
-	self assert: (resumedData at: #runCount) > 3
+	self assert: (resumedData at: #runCount) equals: expectedRunCount
 ]
 
 { #category : 'tests' }
@@ -568,16 +569,14 @@ MCPToolStructuredOutputTest >> testSearchPackagesDefaultsToImageScopeWhenScopePr
 
 	| data packageNames packages result |
 	result := self callToolNamed: 'package_search' withArguments: {
-			          (#projectName -> 'MCP').
+			          (#packageName -> 'MCP-Tests-Resources').
 			          (#filterMode -> 'exact') } asDictionary.
 	data := self dataFrom: result.
 	packages := data at: #packages.
 	packageNames := packages collect: [ :each | each at: #packageName ].
-	self
-		assert: ((self structuredContentFrom: result) at: #status)
-		equals: 'ok'.
-	self assert: packages notEmpty.
-	self assert: (packageNames includes: 'MCP')
+	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self assert: packages size equals: 1.
+	self assert: packageNames equals: #( 'MCP-Tests-Resources' )
 ]
 
 { #category : 'tests' }
@@ -586,19 +585,14 @@ MCPToolStructuredOutputTest >> testSearchPackagesReturnsStructuredArrayData [
 	| data packageNames packages result |
 	result := self
 		          callToolNamed: 'package_search'
-		          withArguments:
-		          { (#projectNames -> #( 'MCP' )) } asDictionary.
+		          withArguments: { (#packageNames -> self packageSearchFixturePackageNames) } asDictionary.
 	data := self dataFrom: result.
 	packages := data at: #packages.
 	packageNames := packages collect: [ :each | each at: #packageName ].
-	self
-		assert: ((self structuredContentFrom: result) at: #status)
-		equals: 'ok'.
-	self assert: packages notEmpty.
-	self assert: (packages allSatisfy: [ :each |
-				 (each includesKey: #packageName) and: [
-					 each includesKey: #projectNames ] ]).
-	self assert: (packageNames includes: 'MCP')
+	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self assert: packages size equals: self packageSearchFixturePackageNames size.
+	self assert: (packages allSatisfy: [ :each | (each includesKey: #packageName) and: [ each includesKey: #projectNames ] ]).
+	self assert: packageNames equals: self packageSearchFixturePackageNames
 ]
 
 { #category : 'tests' }

@@ -28,25 +28,6 @@ MCPToolSearchPackagesTest >> entryNamed: aPackageName in: packageEntries [
 		  ifNone: [ self fail: 'Missing package entry ' , aPackageName ]
 ]
 
-{ #category : 'private' }
-MCPToolSearchPackagesTest >> mcpProject [
-
-	^ MetacelloProjectRegistration registry
-		  registrationForClassNamed: 'BaselineOfMCP'
-		  ifAbsent: [ self fail: 'Missing MCP project fixture in image.' ]
-]
-
-{ #category : 'private' }
-MCPToolSearchPackagesTest >> mcpProjectPackageNames [
-
-	^ (Array streamContents: [ :stream |
-			   self mcpProject projectVersion packages do: [ :eachSpec |
-					   PackageOrganizer default
-						   packageNamed: eachSpec name asSymbol
-						   ifPresent: [ :package |
-						   stream nextPut: package name asString ] ] ]) sort
-]
-
 { #category : 'tests' }
 MCPToolSearchPackagesTest >> testCanFilterPackageEntriesByTagNamesUsingControlledPackages [
 
@@ -136,15 +117,15 @@ MCPToolSearchPackagesTest >> testImageScopeReturnsStructuredPackages [
 
 	| data entry packages result |
 	result := self callToolWith: {
-			          (#projectName -> 'MCP').
+			          (#packageName -> 'MCP-Tests-Resources').
 			          (#filterMode -> 'exact') } asDictionary.
 	data := self dataFrom: result.
 	packages := data at: #packages.
-	entry := self entryNamed: 'MCP' in: packages.
+	entry := self entryNamed: 'MCP-Tests-Resources' in: packages.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: packages notEmpty.
-	self assert: (entry at: #projectNames) equals: #( 'MCP' ).
-	self assert: ((entry at: #tagNames) includes: 'Tools').
+	self assert: packages size equals: 1.
+	self assert: (entry includesKey: #projectNames).
+	self assert: (entry includesKey: #tagNames).
 	self deny: (entry includesKey: #definedClassCount).
 	self deny: (entry includesKey: #extensionMethodCount).
 	self deny: (entry includesKey: #isUndefined)
@@ -186,33 +167,32 @@ MCPToolSearchPackagesTest >> testProjectNamesReturnStructuredErrorWhenProjectIsM
 { #category : 'tests' }
 MCPToolSearchPackagesTest >> testProjectNamesSearchPackagesForNamedProject [
 
-	| data packageNames result |
-	result := self callToolWith:
-		          { (#projectNames -> #( 'MCP' )) } asDictionary.
-	data := self dataFrom: result.
-	packageNames := (data at: #packages) collect: [ :each |
-		                each at: #packageName ].
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self
-		assert: (data at: #packages) size
-		equals: self mcpProjectPackageNames size.
-	self assert: packageNames equals: self mcpProjectPackageNames
+	| entries packageNames |
+	entries := self packageSearchFixtureEntriesLoadedInImage: true.
+	packageNames := entries collect: [ :each | each at: #packageName ].
+	self assert: entries size equals: self packageSearchFixturePackageNames size.
+	self assert: packageNames equals: self packageSearchFixturePackageNames.
+	self assert: (entries allSatisfy: [ :each | (each at: #projectNames) = { self packageSearchFixtureProjectName } ])
 ]
 
 { #category : 'tests' }
 MCPToolSearchPackagesTest >> testProjectNamesSelectProjectScope [
 
-	| data packageNames result |
-	result := self callToolWith:
-		          { (#projectNames -> #( 'MCP' )) } asDictionary.
-	data := self dataFrom: result.
-	packageNames := (data at: #packages) collect: [ :each |
-		                each at: #packageName ].
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self
-		assert: (data at: #packages) size
-		equals: self mcpProjectPackageNames size.
-	self assert: packageNames equals: self mcpProjectPackageNames
+	| entries packageNames |
+	entries := self packageSearchFixtureEntriesLoadedInImage: false.
+	packageNames := entries collect: [ :each | each at: #packageName ].
+	self assert: entries size equals: self packageSearchFixturePackageNames size.
+	self assert: packageNames equals: self packageSearchFixturePackageNames.
+	self assert: (entries allSatisfy: [ :each | (each at: #projectNames) = { self packageSearchFixtureProjectName } ])
+]
+
+{ #category : 'tests' }
+MCPToolSearchPackagesTest >> testProjectRegistrationWithPresentPackagesIsUsableWhenNotLoaded [
+
+	| query registration |
+	query := MCPPackageScopeQuery new.
+	registration := self packageSearchFixtureRegistrationLoadedInImage: false.
+	self assert: (query shouldUseProjectRegistration: registration)
 ]
 
 { #category : 'private - calling' }

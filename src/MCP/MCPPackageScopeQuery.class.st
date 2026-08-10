@@ -121,13 +121,32 @@ MCPPackageScopeQuery >> projectNames: someProjectNames [
 		                ifNotNil: [ someProjectNames asArray ]
 ]
 
+{ #category : 'private - testing' }
+MCPPackageScopeQuery >> projectRegistrationLoadedInImage: aProjectRegistration [
+
+	^ [ aProjectRegistration loadedInImage ]
+		  on: Error
+		  do: [ false ]
+]
+
+{ #category : 'private - testing' }
+MCPPackageScopeQuery >> projectRegistrationPackagesArePresent: aProjectRegistration [
+
+	| hasPackages |
+	hasPackages := false.
+	[
+		aProjectRegistration projectVersion packages do: [ :eachSpec |
+				hasPackages := true.
+				(PackageOrganizer default hasPackage: eachSpec name asSymbol) ifFalse: [ ^ false ] ] ]
+		on: Error
+		do: [ ^ false ].
+	^ hasPackages
+]
+
 { #category : 'private - querying' }
 MCPPackageScopeQuery >> projectRegistrations [
 
-	^ MetacelloProjectRegistration registry registrations select: [ :each |
-			  [ each loadedInImage ]
-				  on: Error
-				  do: [ :error | false ] ]
+	^ MetacelloProjectRegistration registry registrations select: [ :each | self shouldUseProjectRegistration: each ]
 ]
 
 { #category : 'private - querying' }
@@ -157,6 +176,13 @@ MCPPackageScopeQuery >> resolvedProjectsNamed: someProjectNames [
 					 at: eachName
 					 ifAbsent: [ MCPCommandError signalMissingProjectNamed: eachName ]) ].
 	^ projects asArray
+]
+
+{ #category : 'private - testing' }
+MCPPackageScopeQuery >> shouldUseProjectRegistration: aProjectRegistration [
+
+	^ (self projectRegistrationLoadedInImage: aProjectRegistration) or: [
+		  self projectRegistrationPackagesArePresent: aProjectRegistration ]
 ]
 
 { #category : 'private - scope' }
