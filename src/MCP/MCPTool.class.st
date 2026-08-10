@@ -120,6 +120,12 @@ MCPTool class >> runtimeGroupName [
 	^ 'runtime'
 ]
 
+{ #category : 'metadata' }
+MCPTool class >> shouldAutoRegister [
+
+	^ self isBuiltIn
+]
+
 { #category : 'metadata - groups' }
 MCPTool class >> testsGroupName [
 

@@ -285,6 +285,27 @@ MCP >> refreshToolsList [
 	^ toolsList
 ]
 
+{ #category : 'configuration' }
+MCP >> registerTool: aTool [
+
+	| registration |
+	registration := self toolRegistry registerTool: aTool.
+	self refreshToolsList.
+	^ registration
+]
+
+{ #category : 'configuration' }
+MCP >> registerToolClass: aToolClass [
+
+	^ self registerTool: (aToolClass newForRegistry: self toolRegistry)
+]
+
+{ #category : 'configuration' }
+MCP >> registerToolClasses: toolClasses [
+
+	^ toolClasses collect: [ :eachToolClass | self registerToolClass: eachToolClass ]
+]
+
 { #category : 'start' }
 MCP >> restart [
 
@@ -495,6 +516,13 @@ MCP >> toolsList [
 MCP >> toolsList: aToolsList [
 
 	^ toolsList := aToolsList
+]
+
+{ #category : 'configuration' }
+MCP >> unregisterToolNamed: aToolName [
+
+	self toolRegistry unregisterToolNamed: aToolName.
+	self refreshToolsList
 ]
 
 { #category : 'configuration' }
