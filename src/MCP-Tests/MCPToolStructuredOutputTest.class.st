@@ -569,16 +569,14 @@ MCPToolStructuredOutputTest >> testSearchPackagesDefaultsToImageScopeWhenScopePr
 
 	| data packageNames packages result |
 	result := self callToolNamed: 'package_search' withArguments: {
-			          (#projectName -> 'MCP').
+			          (#packageName -> 'MCP-Tests-Resources').
 			          (#filterMode -> 'exact') } asDictionary.
 	data := self dataFrom: result.
 	packages := data at: #packages.
 	packageNames := packages collect: [ :each | each at: #packageName ].
-	self
-		assert: ((self structuredContentFrom: result) at: #status)
-		equals: 'ok'.
-	self assert: packages notEmpty.
-	self assert: (packageNames includes: 'MCP')
+	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self assert: packages size equals: 1.
+	self assert: packageNames equals: #( 'MCP-Tests-Resources' )
 ]
 
 { #category : 'tests' }
@@ -587,19 +585,14 @@ MCPToolStructuredOutputTest >> testSearchPackagesReturnsStructuredArrayData [
 	| data packageNames packages result |
 	result := self
 		          callToolNamed: 'package_search'
-		          withArguments:
-		          { (#projectNames -> #( 'MCP' )) } asDictionary.
+		          withArguments: { (#packageNames -> self packageSearchFixturePackageNames) } asDictionary.
 	data := self dataFrom: result.
 	packages := data at: #packages.
 	packageNames := packages collect: [ :each | each at: #packageName ].
-	self
-		assert: ((self structuredContentFrom: result) at: #status)
-		equals: 'ok'.
-	self assert: packages notEmpty.
-	self assert: (packages allSatisfy: [ :each |
-				 (each includesKey: #packageName) and: [
-					 each includesKey: #projectNames ] ]).
-	self assert: (packageNames includes: 'MCP')
+	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self assert: packages size equals: self packageSearchFixturePackageNames size.
+	self assert: (packages allSatisfy: [ :each | (each includesKey: #packageName) and: [ each includesKey: #projectNames ] ]).
+	self assert: packageNames equals: self packageSearchFixturePackageNames
 ]
 
 { #category : 'tests' }

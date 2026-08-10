@@ -2793,18 +2793,12 @@ MCPToolContractsTest >> testSearchPackagesHasAccurateNameAndSchema [
 { #category : 'tests' }
 MCPToolContractsTest >> testSearchPackagesListsPackagesForExistingProject [
 
-	| data packageNames packages result |
-	result := self
-		          callToolNamed: 'package_search'
-		          withArguments:
-		          { (#projectNames -> #( 'MCP' )) } asDictionary.
-	data := (result at: #structuredContent) at: #data.
-	packages := data at: #packages.
-	packageNames := packages collect: [ :each | each at: #packageName ].
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: packages notEmpty.
-	self assert: (packageNames includes: 'MCP').
-	self assert: (packageNames includes: 'MCP-Tests')
+	| entries packageNames |
+	entries := self packageSearchFixtureEntriesLoadedInImage: false.
+	packageNames := entries collect: [ :each | each at: #packageName ].
+	self assert: entries notEmpty.
+	self assert: packageNames equals: self packageSearchFixturePackageNames.
+	self assert: (entries allSatisfy: [ :each | (each at: #projectNames) = { self packageSearchFixtureProjectName } ])
 ]
 
 { #category : 'tests' }
