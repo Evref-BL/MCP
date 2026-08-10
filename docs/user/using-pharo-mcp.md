@@ -62,9 +62,8 @@ provide the class-side tool name and the instance-side metadata, schema, and
 execution protocol expected by `MCPTool`:
 
 ```smalltalk
-MCPTool subclass: #MyProjectMCPTool
-	instanceVariableNames: ''
-	classVariableNames: ''
+MCPTool << #MyProjectMCPTool
+	slots: {};
 	package: 'MyProject-MCP'
 ```
 
