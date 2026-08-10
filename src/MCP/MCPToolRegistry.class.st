@@ -37,7 +37,7 @@ MCPToolRegistry >> defaultRegistrations [
 
 	| tools |
 	tools := (MCPTool concreteSubclasses
-		          select: [ :toolClass | toolClass isBuiltIn ]
+		          select: [ :toolClass | toolClass shouldAutoRegister ]
 		          thenCollect: [ :toolClass | toolClass newForRegistry: self ]) asArray.
 	tools sort: [ :left :right |
 			left groupName = right groupName
