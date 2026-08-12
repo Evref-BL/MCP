@@ -236,25 +236,45 @@ MCPToolMethodMutationTest >> restoreFixtureMethods [
 	self removeSelector: #callInstanceTarget from: MCPToolMethodMutationTestSender.
 	self removeSelector: #callClassTarget from: MCPToolMethodMutationTestSender.
 	self
-		ensureMethodSource: 'combine: first with: second ^ first , ''-'' , second'
+		ensureMethodSource: 'combine: first with: second
+
+	^ first , ''-'' , second'
 		protocol: 'tests'
 		on: MCPToolMethodMutationTestTarget.
 	self
-		ensureMethodSource: 'buildValue: aString ^ ''Class-'' , aString'
+		ensureMethodSource: 'buildValue: aString
+
+	^ ''Class-'' , aString'
 		protocol: 'tests'
 		on: MCPToolMethodMutationTestTarget classSide.
-	self ensureMethodSource: 'instanceProtocolTarget ^ 41' protocol: 'tests' on: MCPToolMethodMutationTestTarget.
-	self ensureMethodSource: 'classProtocolTarget ^ 7' protocol: 'tests' on: MCPToolMethodMutationTestTarget classSide.
 	self
-		ensureMethodSource: 'extensionProtocolTarget ^ 99'
+		ensureMethodSource: 'instanceProtocolTarget
+
+	^ 41'
+		protocol: 'tests'
+		on: MCPToolMethodMutationTestTarget.
+	self
+		ensureMethodSource: 'classProtocolTarget
+
+	^ 7'
+		protocol: 'tests'
+		on: MCPToolMethodMutationTestTarget classSide.
+	self
+		ensureMethodSource: 'extensionProtocolTarget
+
+	^ 99'
 		protocol: '*MCP-Tests-Resources-Extensions'
 		on: MCPToolMethodMutationTestTarget.
 	self
-		ensureMethodSource: 'callInstanceTarget ^ MCPToolMethodMutationTestTarget new combine: ''first'' with: ''second'''
+		ensureMethodSource: 'callInstanceTarget
+
+	^ MCPToolMethodMutationTestTarget new combine: ''first'' with: ''second'''
 		protocol: 'tests'
 		on: MCPToolMethodMutationTestSender.
 	self
-		ensureMethodSource: 'callClassTarget ^ MCPToolMethodMutationTestTarget buildValue: ''value'''
+		ensureMethodSource: 'callClassTarget
+
+	^ MCPToolMethodMutationTestTarget buildValue: ''value'''
 		protocol: 'tests'
 		on: MCPToolMethodMutationTestSender
 ]

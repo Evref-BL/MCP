@@ -59,9 +59,24 @@ MCPCompiledMethodInfoTest >> restoreFixtureMethods [
 	self removeSelector: self instanceSelector from: self targetClass.
 	self removeSelector: self classSelector from: self classTarget.
 	self removeSelector: self extensionSelector from: self targetClass.
-	self ensureMethodSource: 'infoTarget ^ 1' protocol: 'tests' on: self targetClass.
-	self ensureMethodSource: 'classInfoTarget ^ 2' protocol: 'tests' on: self classTarget.
-	self ensureMethodSource: 'extensionInfoTarget ^ 3' protocol: '*MCP-Tests-Resources-Extensions' on: self targetClass
+	self
+		ensureMethodSource: 'infoTarget
+
+	^ 1'
+		protocol: 'tests'
+		on: self targetClass.
+	self
+		ensureMethodSource: 'classInfoTarget
+
+	^ 2'
+		protocol: 'tests'
+		on: self classTarget.
+	self
+		ensureMethodSource: 'extensionInfoTarget
+
+	^ 3'
+		protocol: '*MCP-Tests-Resources-Extensions'
+		on: self targetClass
 ]
 
 { #category : 'running' }
