@@ -32,7 +32,7 @@ BaselineOfMCP >> defineDependencies: spec [
 				loads: #( 'Core' ) ];
 		baseline: 'PCRE2' with: [
 			spec
-				repository: 'github://Gabriel-Darbord/pharo-pcre2:main/src';
+				repository: 'github://Gabriel-Darbord/pharo-pcre2:v1.0.0/src';
 				loads: #( 'Core' ) ]
 ]
 
