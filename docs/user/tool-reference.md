@@ -132,6 +132,7 @@ instead of continuing.
 | `method_selector_update` | Rename selectors, add/remove arguments, or reorder arguments through the Refactoring Engine. |
 | `method_protocol_update` | Move one method to another regular or extension protocol. |
 | `method_rewrite` | Preview or apply AST rewrite rules across a method scope. Applying requires `expectedChangeSetHash` from a preview. |
+| `critique_run` | Run selected or all Renraku critiques over a scope and return hits grouped by rule class. |
 | `method_remove` | Remove methods from one class as a batch without sender safety checks. |
 
 Prefer the specialized lookup tools for navigation tasks. Use

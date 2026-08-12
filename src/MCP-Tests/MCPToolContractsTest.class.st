@@ -431,6 +431,16 @@ MCPToolContractsTest >> coverageToolFlowSpec [
 ]
 
 { #category : 'private' }
+MCPToolContractsTest >> critiqueRunToolFlowSpec [
+
+	^ {
+		  (#toolClass -> MCPToolRunCritiques).
+		  (#arguments -> { (#ruleClasses -> { ReAssignmentInBlockRule name }) } asDictionary).
+		  (#requestClass -> MCPCritiqueRunRequest).
+		  (#commandClass -> MCPSearchToolCommand) } asDictionary
+]
+
+{ #category : 'private' }
 MCPToolContractsTest >> debugBreakpointToolFlowSpecs [
 
 	^ {
@@ -3489,6 +3499,7 @@ MCPToolContractsTest >> toolFlowSpecs [
 	specs add: self coverageToolFlowSpec.
 	specs addAll: self classMutationToolFlowSpecs.
 	specs addAll: self methodLookupToolFlowSpecs.
+	specs add: self critiqueRunToolFlowSpec.
 	specs addAll: self methodMutationToolFlowSpecs.
 	specs addAll: self changeHistoryToolFlowSpecs.
 	specs addAll: self repositoryToolFlowSpecs.
