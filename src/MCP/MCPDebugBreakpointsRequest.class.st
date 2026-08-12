@@ -28,42 +28,27 @@ MCPDebugBreakpointsRequest class >> fromRequest: aRequest tool: aTool operation:
 	(self supportedOperations includes: operationName) ifFalse: [
 			MCPCommandError
 				signalErrorCode: #DebugBreakpointOperationUnsupported
-				message:
-					'Unsupported debug breakpoint operation: '
-					, operationName asString , '.'
+				message: 'Unsupported debug breakpoint operation: ' , operationName asString , '.'
 				details: {
 						(#operation -> operationName).
-						(#supportedOperations -> self supportedOperations) }
-						asDictionary ].
-	targetKindName := aRequest
-		                  stringArgumentNamed: 'targetKind'
-		                  default: 'method'.
+						(#supportedOperations -> self supportedOperations) } asDictionary ].
+	targetKindName := aRequest stringArgumentNamed: 'targetKind' default: 'method'.
 	(self supportedTargetKinds includes: targetKindName) ifFalse: [
 			MCPCommandError
 				signalErrorCode: #DebugBreakpointTargetUnsupported
-				message:
-					'Unsupported debug breakpoint targetKind: '
-					, targetKindName asString , '.'
+				message: 'Unsupported debug breakpoint targetKind: ' , targetKindName asString , '.'
 				details: {
 						(#targetKind -> targetKindName).
-						(#supportedTargetKinds -> self supportedTargetKinds) }
-						asDictionary ].
+						(#supportedTargetKinds -> self supportedTargetKinds) } asDictionary ].
 	^ self new
 		  operation: operationName;
 		  breakpointId: (aRequest stringArgumentNamed: 'breakpointId');
 		  className: (aRequest stringArgumentNamed: 'className');
 		  selector: (aRequest stringArgumentNamed: 'selector');
-		  classSide:
-			  (aRequest booleanArgumentNamed: 'classSide' default: false);
+		  classSide: (aRequest booleanArgumentNamed: 'classSide' default: false);
 		  targetKind: targetKindName;
-		  sourceStart:
-			  (aRequest
-				   nonNegativeIntegerArgumentNamed: 'sourceStart'
-				   default: nil);
-		  sourceStop:
-			  (aRequest
-				   nonNegativeIntegerArgumentNamed: 'sourceStop'
-				   default: nil);
+		  sourceStart: (aRequest nonNegativeIntegerArgumentNamed: 'sourceStart' default: nil);
+		  sourceStop: (aRequest nonNegativeIntegerArgumentNamed: 'sourceStop' default: nil);
 		  yourself
 ]
 

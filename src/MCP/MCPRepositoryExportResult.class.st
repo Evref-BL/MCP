@@ -18,10 +18,7 @@ Class {
 { #category : 'instance creation' }
 MCPRepositoryExportResult class >> repository: aRepository changedPackageNames: packageNames modifiedPaths: paths [
 
-	^ self new
-		  initializeRepository: aRepository
-		  changedPackageNames: packageNames
-		  modifiedPaths: paths
+	^ self new initializeRepository: aRepository changedPackageNames: packageNames modifiedPaths: paths
 ]
 
 { #category : 'converting' }
@@ -30,12 +27,9 @@ MCPRepositoryExportResult >> asDictionary [
 	| data |
 	data := Dictionary new.
 	data at: #didChange put: self didChange.
-	self changedPackageNames ifNotEmpty: [ :names |
-		data at: #changedPackageNames put: names ].
-	self modifiedPaths ifNotEmpty: [ :paths |
-		data at: #modifiedPaths put: paths ].
-	self restoredOrderOnlyPaths ifNotEmpty: [ :paths |
-		data at: #restoredOrderOnlyPaths put: paths ].
+	self changedPackageNames ifNotEmpty: [ :names | data at: #changedPackageNames put: names ].
+	self modifiedPaths ifNotEmpty: [ :paths | data at: #modifiedPaths put: paths ].
+	self restoredOrderOnlyPaths ifNotEmpty: [ :paths | data at: #restoredOrderOnlyPaths put: paths ].
 	^ data
 ]
 
@@ -69,8 +63,7 @@ MCPRepositoryExportResult >> initializeRepository: aRepository changedPackageNam
 	self initializeSnapshotFromRepository: aRepository.
 	changedPackageNames := packageNames ifNil: [ #(  ) ].
 	modifiedPaths := paths ifNil: [ #(  ) ].
-	didChange := changedPackageNames notEmpty or: [
-		             modifiedPaths notEmpty ]
+	didChange := changedPackageNames notEmpty or: [ modifiedPaths notEmpty ]
 ]
 
 { #category : 'accessing' }

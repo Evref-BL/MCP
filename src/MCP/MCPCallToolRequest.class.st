@@ -20,10 +20,7 @@ MCPCallToolRequest class >> fromToolRequest: aToolRequest [
 
 	^ self new
 		  toolName: (aToolRequest stringArgumentNamed: 'toolName');
-		  arguments:
-			  (aToolRequest
-				   argumentNamed: 'arguments'
-				   ifAbsent: [ Dictionary new ]);
+		  arguments: (aToolRequest argumentNamed: 'arguments' ifAbsent: [ Dictionary new ]);
 		  yourself
 ]
 

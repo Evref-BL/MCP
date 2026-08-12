@@ -39,52 +39,23 @@ MCPToolDebugSessionControlOperation >> buildOutputSchema [
 
 	^ self
 		  standardOutputSchemaForDataProperties: {
-				  (self
-					   schemaPropertyNamed: 'sessionId'
-					   type: 'string'
-					   description: 'Debug session identifier.').
-				  (self
-					   schemaPropertyNamed: 'action'
-					   type: 'string'
-					   description: 'Control action that was applied.').
-				  (self
-					   schemaPropertyNamed: 'previousStateId'
-					   type: 'string'
-					   description: 'Debug state token before control was applied.').
-				  (self
-					   schemaPropertyNamed: 'stateId'
-					   type: 'string'
-					   description: 'Debug state token after control was applied.').
-				  (self
-					   schemaPropertyNamed: 'status'
-					   type: 'string'
-					   description: 'Debug session status after control.').
-				  (self
-					   schemaPropertyNamed: 'reason'
-					   type: 'string'
-					   description: 'Reason associated with the current status.').
+				  (self schemaPropertyNamed: 'sessionId' type: 'string' description: 'Debug session identifier.').
+				  (self schemaPropertyNamed: 'action' type: 'string' description: 'Control action that was applied.').
+				  (self schemaPropertyNamed: 'previousStateId' type: 'string' description: 'Debug state token before control was applied.').
+				  (self schemaPropertyNamed: 'stateId' type: 'string' description: 'Debug state token after control was applied.').
+				  (self schemaPropertyNamed: 'status' type: 'string' description: 'Debug session status after control.').
+				  (self schemaPropertyNamed: 'reason' type: 'string' description: 'Reason associated with the current status.').
 				  (self
 					   schemaPropertyNamed: 'frameRef'
 					   type: 'string'
-					   description:
-					   'State-scoped frame reference returned after a frame-targeted control request.').
+					   description: 'State-scoped frame reference returned after a frame-targeted control request.').
 				  (self
 					   schemaPropertyNamed: 'state'
 					   type: 'object'
-					   description:
-					   'debug_state_get snapshot returned when control pauses and returnState=true.').
-				  (self
-					   stringArraySchemaNamed: 'warnings'
-					   description: 'Control-specific warnings.'
-					   itemDescription: 'A warning message.').
-				  (self
-					   schemaPropertyNamed: 'capabilities'
-					   type: 'object'
-					   description:
-					   'Control capability gates used for this response.') }
-		  required:
-			  #( 'sessionId' 'action' 'previousStateId' 'stateId' 'status'
-			     'reason' 'warnings' 'capabilities' )
+					   description: 'debug_state_get snapshot returned when control pauses and returnState=true.').
+				  (self stringArraySchemaNamed: 'warnings' description: 'Control-specific warnings.' itemDescription: 'A warning message.').
+				  (self schemaPropertyNamed: 'capabilities' type: 'object' description: 'Control capability gates used for this response.') }
+		  required: #( 'sessionId' 'action' 'previousStateId' 'stateId' 'status' 'reason' 'warnings' 'capabilities' )
 ]
 
 { #category : 'private - execution' }
@@ -97,9 +68,7 @@ MCPToolDebugSessionControlOperation >> commandForRequest: debugRequest [
 MCPToolDebugSessionControlOperation >> controlFailureMessageFor: anError operation: operationName [
 
 	| message |
-	message := anError messageText
-		           ifNil: [ anError asString ]
-		           ifNotNil: [ :text | text asString ].
+	message := anError messageText ifNil: [ anError asString ] ifNotNil: [ :text | text asString ].
 	^ String streamContents: [ :stream |
 			  stream
 				  nextPutAll: 'Debug control ';
@@ -132,8 +101,7 @@ MCPToolDebugSessionControlOperation >> frameRefSchemaProperty [
 	^ self
 		  schemaPropertyNamed: 'frameRef'
 		  type: 'string'
-		  description:
-		  'Optional state-scoped frame reference. Defaults to the selected top frame.'
+		  description: 'Optional state-scoped frame reference. Defaults to the selected top frame.'
 ]
 
 { #category : 'private - schema' }
@@ -142,30 +110,21 @@ MCPToolDebugSessionControlOperation >> inputProperties [
 	| properties |
 	properties := OrderedCollection with: self sessionIdSchemaProperty.
 	properties add: self stateIdSchemaProperty.
-	self usesFrameReference ifTrue: [
-		properties add: self frameRefSchemaProperty ].
-	self usesStateSnapshotOptions ifTrue: [
-		properties addAll: self stateSnapshotInputProperties ].
+	self usesFrameReference ifTrue: [ properties add: self frameRefSchemaProperty ].
+	self usesStateSnapshotOptions ifTrue: [ properties addAll: self stateSnapshotInputProperties ].
 	^ properties asArray
 ]
 
 { #category : 'private - request' }
 MCPToolDebugSessionControlOperation >> parsedRequestFromToolRequest: request [
 
-	^ MCPDebugControlRequest
-		  fromRequest: request
-		  tool: self
-		  operation: self actionName
+	^ MCPDebugControlRequest fromRequest: request tool: self operation: self actionName
 ]
 
 { #category : 'private - schema' }
 MCPToolDebugSessionControlOperation >> stateIdSchemaProperty [
 
-	^ self
-		  schemaPropertyNamed: 'stateId'
-		  type: 'string'
-		  description:
-		  'Optional state token to reject stale debug control requests.'
+	^ self schemaPropertyNamed: 'stateId' type: 'string' description: 'Optional state token to reject stale debug control requests.'
 ]
 
 { #category : 'private - schema' }
@@ -174,28 +133,15 @@ MCPToolDebugSessionControlOperation >> stateSnapshotInputProperties [
 	^ {
 		  (self
 			   booleanSchemaPropertyNamed: 'returnState'
-			   description:
-			   'Return a debug_state_get snapshot when control stops.'
+			   description: 'Return a debug_state_get snapshot when control stops.'
 			   default: MCPDebugControlRequest defaultReturnState).
 		  (self
-			   sourceContextLinesSchemaPropertyWithDescription:
-			   'Source lines around selected frame.'
+			   sourceContextLinesSchemaPropertyWithDescription: 'Source lines around selected frame.'
 			   default: MCPDebugRequest defaultSourceContextLines).
-		  (self
-			   stackStartSchemaPropertyWithDescription:
-			   'Zero-based stack offset.'
-			   default: MCPDebugRequest defaultStackStart).
-		  (self
-			   stackLimitSchemaPropertyWithDescription: 'Maximum stack frames.'
-			   default: MCPDebugRequest defaultStackLimit).
-		  (self
-			   variableDepthSchemaPropertyWithDescription:
-			   'Inline preview depth.'
-			   default: MCPDebugRequest defaultVariableDepth).
-		  (self
-			   variableLimitSchemaPropertyWithDescription:
-			   'Maximum variables per scope.'
-			   default: MCPDebugRequest defaultVariableLimit).
+		  (self stackStartSchemaPropertyWithDescription: 'Zero-based stack offset.' default: MCPDebugRequest defaultStackStart).
+		  (self stackLimitSchemaPropertyWithDescription: 'Maximum stack frames.' default: MCPDebugRequest defaultStackLimit).
+		  (self variableDepthSchemaPropertyWithDescription: 'Inline preview depth.' default: MCPDebugRequest defaultVariableDepth).
+		  (self variableLimitSchemaPropertyWithDescription: 'Maximum variables per scope.' default: MCPDebugRequest defaultVariableLimit).
 		  (self
 			   booleanSchemaPropertyNamed: 'includeReceiver'
 			   description: 'Include receiver scope.'
@@ -217,7 +163,5 @@ MCPToolDebugSessionControlOperation >> usesFrameReference [
 { #category : 'private - specs' }
 MCPToolDebugSessionControlOperation >> usesStateSnapshotOptions [
 
-	^ self controlToolSpec
-		  at: #usesStateSnapshotOptions
-		  ifAbsent: [ true ]
+	^ self controlToolSpec at: #usesStateSnapshotOptions ifAbsent: [ true ]
 ]

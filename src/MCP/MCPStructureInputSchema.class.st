@@ -47,20 +47,13 @@ MCPStructureInputSchema >> asJRPCJSON [
 
 	| dictionary |
 	dictionary := Dictionary new.
-	self type ifNotNil: [ :schemaType |
-		dictionary at: #type put: schemaType asJRPCJSON ].
-	self properties ifNotNil: [
-		dictionary at: #properties put: self propertiesAsJRPCJSON ].
+	self type ifNotNil: [ :schemaType | dictionary at: #type put: schemaType asJRPCJSON ].
+	self properties ifNotNil: [ dictionary at: #properties put: self propertiesAsJRPCJSON ].
 	self required ifNotNil: [ :requiredProperties |
-			requiredProperties ifNotEmpty: [
-				dictionary at: #required put: requiredProperties asJRPCJSON ] ].
+		requiredProperties ifNotEmpty: [ dictionary at: #required put: requiredProperties asJRPCJSON ] ].
 	self additionalProperties ifNotNil: [ :additionalPropertiesValue |
-			additionalPropertiesValue ~~ true ifTrue: [
-					dictionary
-						at: #additionalProperties
-						put: additionalPropertiesValue asJRPCJSON ] ].
-	self extraProperties keysAndValuesDo: [ :key :value |
-		dictionary at: key put: (self jsonValueForKey: key value: value) ].
+		additionalPropertiesValue ~~ true ifTrue: [ dictionary at: #additionalProperties put: additionalPropertiesValue asJRPCJSON ] ].
+	self extraProperties keysAndValuesDo: [ :key :value | dictionary at: key put: (self jsonValueForKey: key value: value) ].
 	^ dictionary
 ]
 
@@ -73,9 +66,7 @@ MCPStructureInputSchema >> extraProperties [
 { #category : 'accessing' }
 MCPStructureInputSchema >> extraProperties: anObject [
 
-	extraProperties := anObject
-		                   ifNil: [ Dictionary new ]
-		                   ifNotNil: [ anObject ]
+	extraProperties := anObject ifNil: [ Dictionary new ] ifNotNil: [ anObject ]
 ]
 
 { #category : 'initialization' }
@@ -115,8 +106,7 @@ MCPStructureInputSchema >> propertiesAsJRPCJSON [
 
 	| propertiesDictionary |
 	propertiesDictionary := Dictionary new.
-	self properties do: [ :prop |
-		propertiesDictionary at: prop name put: prop metaDescription ].
+	self properties do: [ :prop | propertiesDictionary at: prop name put: prop metaDescription ].
 	^ propertiesDictionary
 ]
 

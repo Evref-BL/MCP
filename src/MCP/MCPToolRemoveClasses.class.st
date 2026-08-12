@@ -54,10 +54,7 @@ MCPToolRemoveClasses >> buildOutputSchema [
 
 	^ self
 		  standardOutputSchemaForDataProperties: {
-				  (self
-					   stringArraySchemaNamed: 'removedPackageNames'
-					   description: 'Packages removed during cleanup.'
-					   itemDescription: nil).
+				  (self stringArraySchemaNamed: 'removedPackageNames' description: 'Packages removed during cleanup.' itemDescription: nil).
 				  (self
 					   stringArraySchemaNamed: 'reparentedSubclassNames'
 					   description: 'Subclasses reparented during removal.'
@@ -76,19 +73,15 @@ MCPToolRemoveClasses >> classNamesForErrorFromParsedRequest: removeRequest rawRe
 MCPToolRemoveClasses >> classNamesFromRequest: request [
 
 	| classNames |
-	classNames := request uniqueStringCollectionArgumentNamed:
-		              'classNames'.
-	classNames ifEmpty: [
-		Error signal: 'classNames must contain at least one class name.' ].
+	classNames := request uniqueStringCollectionArgumentNamed: 'classNames'.
+	classNames ifEmpty: [ Error signal: 'classNames must contain at least one class name.' ].
 	^ classNames
 ]
 
 { #category : 'private - execution' }
 MCPToolRemoveClasses >> commandForRequest: removeRequest [
 
-	^ MCPRemoveClassesCommand
-		  classNames: removeRequest classNames
-		  force: removeRequest force
+	^ MCPRemoveClassesCommand classNames: removeRequest classNames force: removeRequest force
 ]
 
 { #category : 'metadata' }
@@ -101,18 +94,12 @@ MCPToolRemoveClasses >> description [
 MCPToolRemoveClasses >> errorResultForError: anError classNames: classNames [
 
 	^ anError
-		  mcpCommandErrorDo: [ :commandError |
-				  self
-					  errorResultText: commandError messageText
-					  details: commandError structuredDetails ]
+		  mcpCommandErrorDo: [ :commandError | self errorResultText: commandError messageText details: commandError structuredDetails ]
 		  otherwise: [ :toolError |
-				  self
-					  errorResultText:
-					  (self failureMessageForClassNames: classNames error: toolError)
-					  details: {
-							  (#errorClass -> toolError class name).
-							  (#message -> toolError messageText).
-							  (#classNames -> classNames asArray) } asDictionary ]
+				  self errorResultText: (self failureMessageForClassNames: classNames error: toolError) details: {
+						  (#errorClass -> toolError class name).
+						  (#message -> toolError messageText).
+						  (#classNames -> classNames asArray) } asDictionary ]
 ]
 
 { #category : 'executing' }
@@ -132,9 +119,7 @@ MCPToolRemoveClasses >> executeWithRequest: request [
 					  data: result asDictionary
 					  warnings: result warningMessages ]
 		  onError: [ :error :removeRequest |
-				  self errorResultForError: error classNames: (self
-						   classNamesForErrorFromParsedRequest: removeRequest
-						   rawRequest: request) ]
+			  self errorResultForError: error classNames: (self classNamesForErrorFromParsedRequest: removeRequest rawRequest: request) ]
 ]
 
 { #category : 'private' }
@@ -169,8 +154,7 @@ MCPToolRemoveClasses >> successSummaryForClassNames: classNames removedClasses: 
 	reparentedSubclassNames := OrderedCollection new.
 	removedClasses do: [ :each |
 			each reparentedSubclassNames do: [ :subclassName |
-					(reparentedSubclassNames includes: subclassName) ifFalse: [
-						reparentedSubclassNames add: subclassName ] ] ].
+				(reparentedSubclassNames includes: subclassName) ifFalse: [ reparentedSubclassNames add: subclassName ] ] ].
 	^ String streamContents: [ :stream |
 			  classNames size = 1
 				  ifTrue: [

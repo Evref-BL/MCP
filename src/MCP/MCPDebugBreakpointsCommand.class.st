@@ -17,10 +17,7 @@ Class {
 { #category : 'instance creation' }
 MCPDebugBreakpointsCommand class >> tool: aTool request: aRequest [
 
-	^ self new
-		  initializeTool: aTool
-		  request: aRequest
-		  registry: MCPDebugBreakpointRegistry default
+	^ self new initializeTool: aTool request: aRequest registry: MCPDebugBreakpointRegistry default
 ]
 
 { #category : 'private - data' }
@@ -32,8 +29,7 @@ MCPDebugBreakpointsCommand >> capabilities [
 		  (#fileLineBreakpoints -> false).
 		  (#transient -> true).
 		  (#operations -> MCPDebugBreakpointsRequest supportedOperations).
-		  (#targetKinds -> MCPDebugBreakpointsRequest supportedTargetKinds) }
-		  asDictionary
+		  (#targetKinds -> MCPDebugBreakpointsRequest supportedTargetKinds) } asDictionary
 ]
 
 { #category : 'private - actions' }
@@ -67,8 +63,7 @@ MCPDebugBreakpointsCommand >> disableBreakpoint [
 	record := self requiredBreakpointRecord.
 	record disable.
 	^ MCPDebugToolResult
-		  okSummary:
-		  'Debug breakpoint ' , record breakpointId , ' disabled.'
+		  okSummary: 'Debug breakpoint ' , record breakpointId , ' disabled.'
 		  data: (self dataForBreakpointRecord: record)
 ]
 
@@ -105,19 +100,14 @@ MCPDebugBreakpointsCommand >> initializeTool: aTool request: aRequest registry: 
 { #category : 'private - actions' }
 MCPDebugBreakpointsCommand >> listBreakpoints [
 
-	^ MCPDebugToolResult
-		  okSummary: 'Debug breakpoints listed.'
-		  data: self listData
+	^ MCPDebugToolResult okSummary: 'Debug breakpoints listed.' data: self listData
 ]
 
 { #category : 'private - data' }
 MCPDebugBreakpointsCommand >> listData [
 
 	^ {
-		  (#breakpoints
-		   ->
-			   (registry breakpointRecords collect: [ :each |
-				    each asDictionary ]) asArray).
+		  (#breakpoints -> (registry breakpointRecords collect: [ :each | each asDictionary ]) asArray).
 		  (#totalCount -> registry size).
 		  (#capabilities -> self capabilities) } asDictionary
 ]
@@ -138,37 +128,28 @@ MCPDebugBreakpointsCommand >> registry: aRegistry [
 MCPDebugBreakpointsCommand >> removeBreakpoint [
 
 	| data record |
-	record := registry
-		          removeBreakpointId: self requiredBreakpointId
-		          ifAbsent: [ ^ self signalBreakpointNotFound ].
+	record := registry removeBreakpointId: self requiredBreakpointId ifAbsent: [ ^ self signalBreakpointNotFound ].
 	data := self dataForBreakpointRecord: record.
 	data at: #removed put: true.
-	^ MCPDebugToolResult
-		  okSummary: 'Debug breakpoint ' , record breakpointId , ' removed.'
-		  data: data
+	^ MCPDebugToolResult okSummary: 'Debug breakpoint ' , record breakpointId , ' removed.' data: data
 ]
 
 { #category : 'private - validation' }
 MCPDebugBreakpointsCommand >> requireSetArguments [
 
-	request className ifNil: [
-		self signalRequiredArgumentNamed: 'className' ].
-	request selector ifNil: [
-		self signalRequiredArgumentNamed: 'selector' ]
+	request className ifNil: [ self signalRequiredArgumentNamed: 'className' ].
+	request selector ifNil: [ self signalRequiredArgumentNamed: 'selector' ]
 ]
 
 { #category : 'private - validation' }
 MCPDebugBreakpointsCommand >> requireSourceIntervalArguments [
 
-	request sourceStart ifNil: [
-		self signalRequiredArgumentNamed: 'sourceStart' ].
-	request sourceStop ifNil: [
-		self signalRequiredArgumentNamed: 'sourceStop' ].
+	request sourceStart ifNil: [ self signalRequiredArgumentNamed: 'sourceStart' ].
+	request sourceStop ifNil: [ self signalRequiredArgumentNamed: 'sourceStop' ].
 	request sourceStop < request sourceStart ifTrue: [
 			MCPCommandError
 				signalErrorCode: #DebugBreakpointSourceIntervalInvalid
-				message:
-				'sourceStop must be greater than or equal to sourceStart.'
+				message: 'sourceStop must be greater than or equal to sourceStart.'
 				details: {
 						(#sourceStart -> request sourceStart).
 						(#sourceStop -> request sourceStop) } asDictionary ]
@@ -184,9 +165,7 @@ MCPDebugBreakpointsCommand >> requiredBreakpointId [
 { #category : 'private - validation' }
 MCPDebugBreakpointsCommand >> requiredBreakpointRecord [
 
-	^ registry
-		  breakpointRecordAt: self requiredBreakpointId
-		  ifAbsent: [ self signalBreakpointNotFound ]
+	^ registry breakpointRecordAt: self requiredBreakpointId ifAbsent: [ self signalBreakpointNotFound ]
 ]
 
 { #category : 'private - actions' }
@@ -206,9 +185,7 @@ MCPDebugBreakpointsCommand >> setBreakpoint [
 		          sourceStart: interval first
 		          sourceStop: interval last
 		          nodeClassName: node class name asString.
-	^ MCPDebugToolResult
-		  okSummary: 'Debug breakpoint ' , record breakpointId , ' set.'
-		  data: (self dataForBreakpointRecord: record)
+	^ MCPDebugToolResult okSummary: 'Debug breakpoint ' , record breakpointId , ' set.' data: (self dataForBreakpointRecord: record)
 ]
 
 { #category : 'private - errors' }
@@ -216,8 +193,7 @@ MCPDebugBreakpointsCommand >> signalBreakpointNotFound [
 
 	^ MCPCommandError
 		  signalErrorCode: #DebugBreakpointNotFound
-		  message: 'Debug breakpoint ' , request breakpointId asString
-			  , ' was not found.'
+		  message: 'Debug breakpoint ' , request breakpointId asString , ' was not found.'
 		  details: { (#breakpointId -> request breakpointId) } asDictionary
 ]
 
@@ -246,19 +222,15 @@ MCPDebugBreakpointsCommand >> signalSourceIntervalNotFoundForMethod: aCompiledMe
 
 	^ MCPCommandError
 		  signalErrorCode: #DebugBreakpointSourceIntervalNotFound
-		  message:
-			  'No AST node contains source interval '
-			  , request sourceStart asString , '-'
-			  , request sourceStop asString , ' in ' , request className
-			  , '>>#' , request selector , '.'
+		  message: 'No AST node contains source interval ' , request sourceStart asString , '-' , request sourceStop asString , ' in '
+			  , request className , '>>#' , request selector , '.'
 		  details: {
 				  (#className -> request className).
 				  (#classSide -> request classSide).
 				  (#selector -> request selector).
 				  (#sourceStart -> request sourceStart).
 				  (#sourceStop -> request sourceStop).
-				  (#methodSelector -> aCompiledMethod selector asString) }
-				  asDictionary
+				  (#methodSelector -> aCompiledMethod selector asString) } asDictionary
 ]
 
 { #category : 'private - errors' }
@@ -266,14 +238,10 @@ MCPDebugBreakpointsCommand >> signalUnsupportedOperation: operationName [
 
 	^ MCPCommandError
 		  signalErrorCode: #DebugBreakpointOperationUnsupported
-		  message:
-			  'Unsupported debug breakpoint operation: '
-			  , operationName asString , '.'
+		  message: 'Unsupported debug breakpoint operation: ' , operationName asString , '.'
 		  details: {
 				  (#operation -> operationName).
-				  (#supportedOperations
-				   -> MCPDebugBreakpointsRequest supportedOperations) }
-				  asDictionary
+				  (#supportedOperations -> MCPDebugBreakpointsRequest supportedOperations) } asDictionary
 ]
 
 { #category : 'private - errors' }
@@ -281,13 +249,10 @@ MCPDebugBreakpointsCommand >> signalUnsupportedTargetKind [
 
 	^ MCPCommandError
 		  signalErrorCode: #DebugBreakpointTargetUnsupported
-		  message: 'Unsupported debug breakpoint targetKind: '
-			  , request targetKind asString , '.'
+		  message: 'Unsupported debug breakpoint targetKind: ' , request targetKind asString , '.'
 		  details: {
 				  (#targetKind -> request targetKind).
-				  (#supportedTargetKinds
-				   -> MCPDebugBreakpointsRequest supportedTargetKinds) }
-				  asDictionary
+				  (#supportedTargetKinds -> MCPDebugBreakpointsRequest supportedTargetKinds) } asDictionary
 ]
 
 { #category : 'private - resolving' }
@@ -312,13 +277,10 @@ MCPDebugBreakpointsCommand >> sourceIntervalNodeInMethod: aCompiledMethod [
 	nodes do: [ :node |
 			| interval |
 			interval := self sourceIntervalForNode: node.
-			((interval first <= start and: [ interval last >= stop ]) and: [
-				 interval first > 0 ]) ifTrue: [ candidates add: node ] ].
-	candidates ifEmpty: [
-		^ self signalSourceIntervalNotFoundForMethod: aCompiledMethod ].
+			((interval first <= start and: [ interval last >= stop ]) and: [ interval first > 0 ]) ifTrue: [ candidates add: node ] ].
+	candidates ifEmpty: [ ^ self signalSourceIntervalNotFoundForMethod: aCompiledMethod ].
 	^ (candidates asSortedCollection: [ :left :right |
-			   (self sourceIntervalForNode: left) size
-			   < (self sourceIntervalForNode: right) size ]) first
+		   (self sourceIntervalForNode: left) size < (self sourceIntervalForNode: right) size ]) first
 ]
 
 { #category : 'private - resolving' }
@@ -327,8 +289,7 @@ MCPDebugBreakpointsCommand >> targetBehavior [
 	| class |
 	class := Smalltalk globals
 		         at: request className asSymbol
-		         ifAbsent: [
-		         MCPCommandError signalMissingClassNamed: request className ].
+		         ifAbsent: [ MCPCommandError signalMissingClassNamed: request className ].
 	^ request classSide
 		  ifTrue: [ class class ]
 		  ifFalse: [ class ]
@@ -340,18 +301,16 @@ MCPDebugBreakpointsCommand >> targetMethod [
 	| behavior |
 	self requireSetArguments.
 	behavior := self targetBehavior.
-	^ behavior compiledMethodAt: request selector asSymbol ifAbsent: [
-			  MCPCommandError
-				  signalMissingMethodInClassName: request className
-				  classSide: request classSide
-				  selector: request selector ]
+	^ behavior
+		  compiledMethodAt: request selector asSymbol
+		  ifAbsent: [
+		  MCPCommandError signalMissingMethodInClassName: request className classSide: request classSide selector: request selector ]
 ]
 
 { #category : 'private - resolving' }
 MCPDebugBreakpointsCommand >> targetNodeInMethod: aCompiledMethod [
 
 	request targetKind = 'method' ifTrue: [ ^ aCompiledMethod ast ].
-	request targetKind = 'sourceInterval' ifTrue: [
-		^ self sourceIntervalNodeInMethod: aCompiledMethod ].
+	request targetKind = 'sourceInterval' ifTrue: [ ^ self sourceIntervalNodeInMethod: aCompiledMethod ].
 	^ self signalUnsupportedTargetKind
 ]

@@ -37,9 +37,7 @@ MCPRepositoryVerifyIdentityRequest >> hasExpectedIdentityFields [
 	^ self repositoryReference hasLocation or: [
 			  self branchName isNotEmpty or: [
 					  self hasExpectedSubdirectory or: [
-							  self hasExpectedPackageNames or: [
-								  self hasExpectedModifiedPackageNames or: [
-									  self hasExpectedIsModified ] ] ] ] ]
+						  self hasExpectedPackageNames or: [ self hasExpectedModifiedPackageNames or: [ self hasExpectedIsModified ] ] ] ] ]
 ]
 
 { #category : 'testing' }
@@ -72,24 +70,12 @@ MCPRepositoryVerifyIdentityRequest >> initializeFromRequest: request [
 	super initializeFromRequest: request.
 	hasSubdirectory := request hasArgumentNamed: 'subdirectory'.
 	hasPackageNames := request hasArgumentNamed: 'packageNames'.
-	hasModifiedPackageNames := request hasArgumentNamed:
-		                           'modifiedPackageNames'.
+	hasModifiedPackageNames := request hasArgumentNamed: 'modifiedPackageNames'.
 	hasIsModified := request hasArgumentNamed: 'isModified'.
-	hasSubdirectory ifTrue: [
-			subdirectory := self
-				                stringArgumentNamed: 'subdirectory'
-				                preservingEmptyFrom: request ].
-	hasPackageNames ifTrue: [
-			packageNames := request uniqueStringCollectionArgumentNamed:
-				                'packageNames' ].
-	hasModifiedPackageNames ifTrue: [
-			modifiedPackageNames := request
-				                        uniqueStringCollectionArgumentNamed:
-				                        'modifiedPackageNames' ].
-	hasIsModified ifTrue: [
-			isModified := request
-				              booleanArgumentNamed: 'isModified'
-				              default: false ]
+	hasSubdirectory ifTrue: [ subdirectory := self stringArgumentNamed: 'subdirectory' preservingEmptyFrom: request ].
+	hasPackageNames ifTrue: [ packageNames := request uniqueStringCollectionArgumentNamed: 'packageNames' ].
+	hasModifiedPackageNames ifTrue: [ modifiedPackageNames := request uniqueStringCollectionArgumentNamed: 'modifiedPackageNames' ].
+	hasIsModified ifTrue: [ isModified := request booleanArgumentNamed: 'isModified' default: false ]
 ]
 
 { #category : 'accessing' }
@@ -127,16 +113,11 @@ MCPRepositoryVerifyIdentityRequest >> requestedContext [
 
 	| context |
 	context := self repositoryReference requestedContext copy.
-	self branchName ifNotEmpty: [ :expectedBranchName |
-		context at: #branchName put: expectedBranchName ].
-	self hasExpectedSubdirectory ifTrue: [
-		context at: #subdirectory put: self subdirectory ].
-	self hasExpectedPackageNames ifTrue: [
-		context at: #packageNames put: self packageNames ].
-	self hasExpectedModifiedPackageNames ifTrue: [
-		context at: #modifiedPackageNames put: self modifiedPackageNames ].
-	self hasExpectedIsModified ifTrue: [
-		context at: #isModified put: self isModified ].
+	self branchName ifNotEmpty: [ :expectedBranchName | context at: #branchName put: expectedBranchName ].
+	self hasExpectedSubdirectory ifTrue: [ context at: #subdirectory put: self subdirectory ].
+	self hasExpectedPackageNames ifTrue: [ context at: #packageNames put: self packageNames ].
+	self hasExpectedModifiedPackageNames ifTrue: [ context at: #modifiedPackageNames put: self modifiedPackageNames ].
+	self hasExpectedIsModified ifTrue: [ context at: #isModified put: self isModified ].
 	^ context
 ]
 

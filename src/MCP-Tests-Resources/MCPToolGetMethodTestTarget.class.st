@@ -22,10 +22,7 @@ MCPToolGetMethodTestTarget class >> readClassSide [
 
 	| local |
 	local := classCounter ifNil: [ SharedLimit ].
-	^ Array
-		  with: local
-		  with: thisContext method selector
-		  with: Smalltalk imagePath
+	^ Array with: local with: thisContext method selector with: Smalltalk imagePath
 ]
 
 { #category : 'reading' }

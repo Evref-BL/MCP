@@ -26,8 +26,7 @@ MCPToolUpdateMethodSelector >> methodToolSpec [
 
 	^ {
 		  (#title -> 'Update Method Selector').
-		  (#description
-		   -> 'Rename or reshape a method selector and update senders.').
+		  (#description -> 'Rename or reshape a method selector and update senders.').
 		  (#action -> 'update').
 		  (#inputProperties -> {
 			   (MCPStructureProperties new
@@ -55,8 +54,7 @@ MCPToolUpdateMethodSelector >> methodToolSpec [
 			   ((MCPStructureProperties new
 				     name: 'permutation';
 				     type: 'array';
-				     description:
-					     'Target argument map; old indexes positive, new args negative.')
+				     description: 'Target argument map; old indexes positive, new args negative.')
 				    items: (MCPStructureProperties new
 						     type: 'integer';
 						     description: 'Argument index.';
@@ -82,6 +80,5 @@ MCPToolUpdateMethodSelector >> methodToolSpec [
 			   self refactoringScopePackageNamesSchemaProperty.
 			   self refactoringScopeClassNamesSchemaProperty.
 			   self refactoringScopeHierarchyClassNamesSchemaProperty }).
-		  (#requiredProperties -> #( 'className' 'selector' 'newSelector' )) }
-		  asDictionary
+		  (#requiredProperties -> #( 'className' 'selector' 'newSelector' )) } asDictionary
 ]

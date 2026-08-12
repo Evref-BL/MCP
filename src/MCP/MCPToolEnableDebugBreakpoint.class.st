@@ -20,8 +20,7 @@ MCPToolEnableDebugBreakpoint >> breakpointToolSpec [
 
 	^ {
 		  (#title -> 'Enable Debug Breakpoint').
-		  (#description
-		   -> 'Enable one tracked transient Pharo DebugPoint breakpoint.').
+		  (#description -> 'Enable one tracked transient Pharo DebugPoint breakpoint.').
 		  (#action -> 'enable').
 		  (#inputProperties -> { self breakpointIdSchemaProperty }).
 		  (#requiredProperties -> #( 'breakpointId' )) } asDictionary

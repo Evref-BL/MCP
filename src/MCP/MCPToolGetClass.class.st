@@ -42,8 +42,7 @@ MCPToolGetClass >> buildInputSchema [
 	upToSuperclassNameProperty := MCPStructureProperties new
 		                              name: 'upToSuperclassName';
 		                              type: 'string';
-		                              description:
-			                              'Ancestor superclass stop.';
+		                              description: 'Ancestor superclass stop.';
 		                              yourself.
 	subclassDepthProperty := MCPStructureProperties new
 		                         name: 'subclassDepth';
@@ -72,48 +71,33 @@ MCPToolGetClass >> buildInputSchema [
 MCPToolGetClass >> buildOutputSchema [
 
 	^ self
-		  standardOutputSchemaForDataProperties:
-			  self classDescriptionDataProperties , {
+		  standardOutputSchemaForDataProperties: self classDescriptionDataProperties , {
 				  ((self
 					    schemaPropertyNamed: 'superclasses'
 					    type: 'array'
-					    description:
-						    'The included superclasses, starting from the direct superclass and moving upward.')
+					    description: 'The included superclasses, starting from the direct superclass and moving upward.')
 					   items: self classDescriptionObjectSchema;
 					   yourself).
 				  ((self
 					    schemaPropertyNamed: 'subclasses'
 					    type: 'array'
-					    description:
-						    'The included subclasses or descendants of the requested class, bounded by subclassDepth.')
+					    description: 'The included subclasses or descendants of the requested class, bounded by subclassDepth.')
 					   items: self classDescriptionObjectSchema;
 					   yourself) }
-		  required:
-		  self classDescriptionRequiredFields
-		  , #( 'superclasses' 'subclasses' )
+		  required: self classDescriptionRequiredFields , #( 'superclasses' 'subclasses' )
 ]
 
 { #category : 'private - schema' }
 MCPToolGetClass >> classDescriptionDataProperties [
 
 	^ {
-		  (self
-			   schemaPropertyNamed: 'className'
-			   type: 'string'
-			   description: 'The requested class.').
+		  (self schemaPropertyNamed: 'className' type: 'string' description: 'The requested class.').
 		  (self
 			   schemaPropertyNamed: 'superclassName'
 			   type: 'string'
-			   description:
-			   'The direct superclass of the requested class, or an empty string for the root.').
-		  (self
-			   schemaPropertyNamed: 'packageName'
-			   type: 'string'
-			   description: 'The package that defines the class.').
-		  (self
-			   schemaPropertyNamed: 'tag'
-			   type: 'string'
-			   description: 'The package tag assigned to the class.').
+			   description: 'The direct superclass of the requested class, or an empty string for the root.').
+		  (self schemaPropertyNamed: 'packageName' type: 'string' description: 'The package that defines the class.').
+		  (self schemaPropertyNamed: 'tag' type: 'string' description: 'The package tag assigned to the class.').
 		  (self
 			   stringArraySchemaNamed: 'instanceSlotNames'
 			   description: 'The instance-side slots defined on the class.'
@@ -122,10 +106,7 @@ MCPToolGetClass >> classDescriptionDataProperties [
 			   stringArraySchemaNamed: 'classSlotNames'
 			   description: 'The class-side slots defined on the class.'
 			   itemDescription: 'A class-side slot name.').
-		  (self
-			   stringArraySchemaNamed: 'traitNames'
-			   description: 'The traits used by the class.'
-			   itemDescription: 'A trait name.').
+		  (self stringArraySchemaNamed: 'traitNames' description: 'The traits used by the class.' itemDescription: 'A trait name.').
 		  (self
 			   stringArraySchemaNamed: 'classTraitNames'
 			   description: 'The traits used by the class side.'
@@ -138,8 +119,7 @@ MCPToolGetClass >> classDescriptionDataProperties [
 		  (self
 			   schemaPropertyNamed: 'classTraitComposition'
 			   type: 'string'
-			   description:
-			   'The full class-side trait composition expression, preserving aliases, exclusions, and compound compositions.').
+			   description: 'The full class-side trait composition expression, preserving aliases, exclusions, and compound compositions.').
 		  (self
 			   stringArraySchemaNamed: 'sharedPoolNames'
 			   description: 'The shared pools referenced by the class.'
@@ -148,22 +128,12 @@ MCPToolGetClass >> classDescriptionDataProperties [
 			   stringArraySchemaNamed: 'sharedVariableNames'
 			   description: 'The class variables defined on the class.'
 			   itemDescription: 'A class variable name.').
-		  (self
-			   schemaPropertyNamed: 'layoutClassName'
-			   type: 'string'
-			   description: 'The layout class used by the class.').
+		  (self schemaPropertyNamed: 'layoutClassName' type: 'string' description: 'The layout class used by the class.').
 		  (self
 			   integerSchemaPropertyNamed: 'instanceMethodCount'
-			   description:
-			   'The number of instance-side methods defined on the class.').
-		  (self
-			   integerSchemaPropertyNamed: 'classMethodCount'
-			   description:
-			   'The number of class-side methods defined on the class.').
-		  (self
-			   schemaPropertyNamed: 'classComment'
-			   type: 'string'
-			   description: 'The class comment when includeComment=true.') }
+			   description: 'The number of instance-side methods defined on the class.').
+		  (self integerSchemaPropertyNamed: 'classMethodCount' description: 'The number of class-side methods defined on the class.').
+		  (self schemaPropertyNamed: 'classComment' type: 'string' description: 'The class comment when includeComment=true.') }
 ]
 
 { #category : 'private - schema' }
@@ -182,11 +152,9 @@ MCPToolGetClass >> classDescriptionObjectSchema [
 { #category : 'private - schema' }
 MCPToolGetClass >> classDescriptionRequiredFields [
 
-	^ #( 'className' 'superclassName' 'packageName' 'tag' 'instanceSlotNames'
-	     'classSlotNames' 'traitNames' 'classTraitNames'
-	     'traitComposition' 'classTraitComposition'
-	     'sharedPoolNames' 'sharedVariableNames' 'layoutClassName'
-	     'instanceMethodCount' 'classMethodCount' )
+	^ #( 'className' 'superclassName' 'packageName' 'tag' 'instanceSlotNames' 'classSlotNames' 'traitNames' 'classTraitNames'
+	     'traitComposition' 'classTraitComposition' 'sharedPoolNames' 'sharedVariableNames' 'layoutClassName' 'instanceMethodCount'
+	     'classMethodCount' )
 ]
 
 { #category : 'private - errors' }
@@ -201,8 +169,7 @@ MCPToolGetClass >> classNameFromRequest: request [
 
 	| className |
 	className := request stringArgumentNamed: 'className'.
-	className ifNil: [
-		Error signal: 'className must be a non-empty string.' ].
+	className ifNil: [ Error signal: 'className must be a non-empty string.' ].
 	^ className
 ]
 
@@ -227,10 +194,7 @@ MCPToolGetClass >> description [
 { #category : 'private - hierarchy' }
 MCPToolGetClass >> descriptionDictionariesForClasses: someClasses includeComment: includeComment [
 
-	^ (someClasses collect: [ :each |
-			   self
-				   descriptionDictionaryForClass: each
-				   includeComment: includeComment ]) asArray
+	^ (someClasses collect: [ :each | self descriptionDictionaryForClass: each includeComment: includeComment ]) asArray
 ]
 
 { #category : 'private - hierarchy' }
@@ -238,8 +202,7 @@ MCPToolGetClass >> descriptionDictionaryForClass: aClass includeComment: include
 
 	| data |
 	data := (MCPClassDescriptionInfo fromClass: aClass) asDictionary copy.
-	includeComment ifTrue: [
-		data at: #classComment put: (aClass comment ifNil: [ '' ]) ].
+	includeComment ifTrue: [ data at: #classComment put: (aClass comment ifNil: [ '' ]) ].
 	^ data
 ]
 
@@ -247,18 +210,12 @@ MCPToolGetClass >> descriptionDictionaryForClass: aClass includeComment: include
 MCPToolGetClass >> errorResultForError: anError className: className [
 
 	^ anError
-		  mcpCommandErrorDo: [ :commandError |
-				  self
-					  errorResultText: commandError messageText
-					  details: commandError structuredDetails ]
+		  mcpCommandErrorDo: [ :commandError | self errorResultText: commandError messageText details: commandError structuredDetails ]
 		  otherwise: [ :toolError |
-				  self
-					  errorResultText:
-					  (self failureMessageForClassName: className error: toolError)
-					  details: {
-							  (#errorClass -> toolError class name).
-							  (#message -> toolError messageText).
-							  (#className -> className) } asDictionary ]
+				  self errorResultText: (self failureMessageForClassName: className error: toolError) details: {
+						  (#errorClass -> toolError class name).
+						  (#message -> toolError messageText).
+						  (#className -> className) } asDictionary ]
 ]
 
 { #category : 'executing' }
@@ -276,9 +233,7 @@ MCPToolGetClass >> executeWithRequest: request [
 							   subclasses: commandResult subclasses)
 					  data: commandResult data ]
 		  onError: [ :error :getRequest |
-				  self errorResultForError: error className: (self
-						   classNameForErrorFromParsedRequest: getRequest
-						   rawRequest: request) ]
+			  self errorResultForError: error className: (self classNameForErrorFromParsedRequest: getRequest rawRequest: request) ]
 ]
 
 { #category : 'private' }

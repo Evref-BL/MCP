@@ -31,19 +31,12 @@ MCPMoveSlotCommand >> affectedClassNamesFor: aBehavior [
 	| behaviors |
 	behaviors := self direction = 'pullUpSlot'
 		             ifTrue: [
-				             aBehavior allSubclasses select: [ :each |
-					             self
-						             directlyDefinesSlotNamed: self slotName
-						             inBehavior: each ] ]
+		             aBehavior allSubclasses select: [ :each | self directlyDefinesSlotNamed: self slotName inBehavior: each ] ]
 		             ifFalse: [
 				             self direction = 'pushDownSlot'
 					             ifTrue: [ aBehavior subclasses ]
-					             ifFalse: [
-					             Error signal:
-						             'direction must be pullUpSlot or pushDownSlot.' ] ].
-	^ (behaviors
-		   collect: [ :each | self normalizedAffectedClassNameFor: each ]
-		   as: Array) sort: [ :left :right | left <= right ]
+					             ifFalse: [ Error signal: 'direction must be pullUpSlot or pushDownSlot.' ] ].
+	^ (behaviors collect: [ :each | self normalizedAffectedClassNameFor: each ] as: Array) sort: [ :left :right | left <= right ]
 ]
 
 { #category : 'accessing' }
@@ -61,8 +54,7 @@ MCPMoveSlotCommand >> direction: aDirection [
 { #category : 'private' }
 MCPMoveSlotCommand >> directlyDefinesSlotNamed: aSlotName inBehavior: aBehavior [
 
-	^ aBehavior slots anySatisfy: [ :each |
-		  each name asString = aSlotName ]
+	^ aBehavior slots anySatisfy: [ :each | each name asString = aSlotName ]
 ]
 
 { #category : 'executing' }
@@ -98,8 +90,5 @@ MCPMoveSlotCommand >> refactoringForBehavior: aBehavior [
 		   ifFalse: [
 				   self direction = 'pushDownSlot'
 					   ifTrue: [ RBPushDownInstanceVariableRefactoring ]
-					   ifFalse: [
-					   Error signal: 'direction must be pullUpSlot or pushDownSlot.' ] ])
-		  variable: self slotName
-		  class: aBehavior
+					   ifFalse: [ Error signal: 'direction must be pullUpSlot or pushDownSlot.' ] ]) variable: self slotName class: aBehavior
 ]

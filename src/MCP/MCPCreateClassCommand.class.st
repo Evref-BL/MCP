@@ -64,14 +64,10 @@ MCPCreateClassCommand >> buildClass [
 	builder slots: self slots.
 	self classSlots ifNotEmpty: [ builder classSlots: self classSlots ].
 	self traits ifNotEmpty: [ builder traits: self resolvedTraits ].
-	self classTraits ifNotEmpty: [
-		builder classTraits: self resolvedClassTraits ].
-	self sharedVariables ifNotEmpty: [
-		builder sharedVariables: self sharedVariables ].
-	self sharedPools ifNotEmpty: [
-		builder sharedPools: self resolvedSharedPools ].
-	self layout ifNotNil: [ :layoutName |
-		builder layout: (self resolvedLayoutClassNamed: layoutName) ].
+	self classTraits ifNotEmpty: [ builder classTraits: self resolvedClassTraits ].
+	self sharedVariables ifNotEmpty: [ builder sharedVariables: self sharedVariables ].
+	self sharedPools ifNotEmpty: [ builder sharedPools: self resolvedSharedPools ].
+	self layout ifNotNil: [ :layoutName | builder layout: (self resolvedLayoutClassNamed: layoutName) ].
 	createdClass := builder install.
 	^ createdClass
 ]
@@ -85,9 +81,7 @@ MCPCreateClassCommand >> classSlots [
 { #category : 'accessing' }
 MCPCreateClassCommand >> classSlots: someSlots [
 
-	classSlots := someSlots
-		              ifNil: [ #(  ) ]
-		              ifNotNil: [ someSlots asArray ]
+	classSlots := someSlots ifNil: [ #(  ) ] ifNotNil: [ someSlots asArray ]
 ]
 
 { #category : 'accessing' }
@@ -99,9 +93,7 @@ MCPCreateClassCommand >> classTraits [
 { #category : 'accessing' }
 MCPCreateClassCommand >> classTraits: someTraits [
 
-	classTraits := someTraits
-		               ifNil: [ #(  ) ]
-		               ifNotNil: [ someTraits asArray ]
+	classTraits := someTraits ifNil: [ #(  ) ] ifNotNil: [ someTraits asArray ]
 ]
 
 { #category : 'private' }
@@ -114,12 +106,10 @@ MCPCreateClassCommand >> ensurePackageNamed: aPackageName [
 MCPCreateClassCommand >> execute [
 
 	| createdClass |
-	(Smalltalk globals includesKey: self className asSymbol) ifTrue: [
-		MCPCommandError signalClassAlreadyExistsNamed: self className ].
+	(Smalltalk globals includesKey: self className asSymbol) ifTrue: [ MCPCommandError signalClassAlreadyExistsNamed: self className ].
 	self ensurePackageNamed: self packageName.
 	createdClass := self buildClass.
-	^ MCPCreateClassResult classInfo:
-		  (MCPClassInfo fromClass: createdClass)
+	^ MCPCreateClassResult classInfo: (MCPClassInfo fromClass: createdClass)
 ]
 
 { #category : 'accessing' }
@@ -152,45 +142,32 @@ MCPCreateClassCommand >> resolvedClassTraitNamed: aClassTraitName [
 	| behavior classTraitName originalName |
 	originalName := aClassTraitName.
 	classTraitName := (originalName endsWith: ' classTrait')
-		                  ifTrue: [
-		                  originalName
-			                  copyFrom: 1
-			                  to: originalName size - ' classTrait' size ]
+		                  ifTrue: [ originalName copyFrom: 1 to: originalName size - ' classTrait' size ]
 		                  ifFalse: [ originalName ].
-	behavior := Smalltalk globals
-		            at: classTraitName asSymbol
-		            ifAbsent: [
-				            MCPCommandError
-					            signalErrorCode: #ClassTraitNotFound
-					            message:
-					            'Class trait ' , originalName , ' does not exist.'
-					            details: {
-							            (#className -> self className).
-							            (#classTraitName -> originalName) } asDictionary ].
+	behavior := Smalltalk globals at: classTraitName asSymbol ifAbsent: [
+			            MCPCommandError
+				            signalErrorCode: #ClassTraitNotFound
+				            message: 'Class trait ' , originalName , ' does not exist.'
+				            details: {
+						            (#className -> self className).
+						            (#classTraitName -> originalName) } asDictionary ].
 	behavior isTrait ifFalse: [
-			MCPCommandError
-				signalErrorCode: #InvalidClassTrait
-				message: originalName , ' is not a class trait.'
-				details: {
-						(#className -> self className).
-						(#classTraitName -> originalName) } asDictionary ].
+			MCPCommandError signalErrorCode: #InvalidClassTrait message: originalName , ' is not a class trait.' details: {
+					(#className -> self className).
+					(#classTraitName -> originalName) } asDictionary ].
 	^ behavior classTrait
 ]
 
 { #category : 'private' }
 MCPCreateClassCommand >> resolvedClassTraits [
 
-	^ self classTraits
-		  collect: [ :each | self resolvedClassTraitNamed: each ]
-		  as: Array
+	^ self classTraits collect: [ :each | self resolvedClassTraitNamed: each ] as: Array
 ]
 
 { #category : 'private' }
 MCPCreateClassCommand >> resolvedSharedPools [
 
-	^ self sharedPools
-		  collect: [ :each | self resolvedSharedPoolNamed: each ]
-		  as: Array
+	^ self sharedPools collect: [ :each | self resolvedSharedPoolNamed: each ] as: Array
 ]
 
 { #category : 'private' }
@@ -198,33 +175,22 @@ MCPCreateClassCommand >> resolvedTraitNamed: aTraitName [
 
 	| behavior traitName |
 	traitName := aTraitName.
-	(traitName endsWith: ' classTrait') ifTrue: [
-			traitName := traitName
-				             copyFrom: 1
-				             to: traitName size - ' classTrait' size ].
+	(traitName endsWith: ' classTrait') ifTrue: [ traitName := traitName copyFrom: 1 to: traitName size - ' classTrait' size ].
 	behavior := Smalltalk globals at: traitName asSymbol ifAbsent: [
-			            MCPCommandError
-				            signalErrorCode: #TraitNotFound
-				            message: 'Trait ' , traitName , ' does not exist.'
-				            details: {
-						            (#className -> self className).
-						            (#traitName -> traitName) } asDictionary ].
+			            MCPCommandError signalErrorCode: #TraitNotFound message: 'Trait ' , traitName , ' does not exist.' details: {
+					            (#className -> self className).
+					            (#traitName -> traitName) } asDictionary ].
 	behavior isTrait ifFalse: [
-			MCPCommandError
-				signalErrorCode: #InvalidTrait
-				message: traitName , ' is not a trait.'
-				details: {
-						(#className -> self className).
-						(#traitName -> traitName) } asDictionary ].
+			MCPCommandError signalErrorCode: #InvalidTrait message: traitName , ' is not a trait.' details: {
+					(#className -> self className).
+					(#traitName -> traitName) } asDictionary ].
 	^ behavior
 ]
 
 { #category : 'private' }
 MCPCreateClassCommand >> resolvedTraits [
 
-	^ self traits
-		  collect: [ :each | self resolvedTraitNamed: each ]
-		  as: Array
+	^ self traits collect: [ :each | self resolvedTraitNamed: each ] as: Array
 ]
 
 { #category : 'accessing' }
@@ -236,9 +202,7 @@ MCPCreateClassCommand >> sharedPools [
 { #category : 'accessing' }
 MCPCreateClassCommand >> sharedPools: somePools [
 
-	sharedPools := somePools
-		               ifNil: [ #(  ) ]
-		               ifNotNil: [ somePools asArray ]
+	sharedPools := somePools ifNil: [ #(  ) ] ifNotNil: [ somePools asArray ]
 ]
 
 { #category : 'accessing' }
@@ -250,9 +214,7 @@ MCPCreateClassCommand >> sharedVariables [
 { #category : 'accessing' }
 MCPCreateClassCommand >> sharedVariables: someVariables [
 
-	sharedVariables := someVariables
-		                   ifNil: [ #(  ) ]
-		                   ifNotNil: [ someVariables asArray ]
+	sharedVariables := someVariables ifNil: [ #(  ) ] ifNotNil: [ someVariables asArray ]
 ]
 
 { #category : 'accessing' }
@@ -270,10 +232,9 @@ MCPCreateClassCommand >> slots: someSlots [
 { #category : 'private' }
 MCPCreateClassCommand >> superclass [
 
-	^ Smalltalk globals at: self superclassName asSymbol ifAbsent: [
-			  MCPCommandError
-				  signalMissingSuperclassNamed: self superclassName
-				  forClassNamed: self className ]
+	^ Smalltalk globals
+		  at: self superclassName asSymbol
+		  ifAbsent: [ MCPCommandError signalMissingSuperclassNamed: self superclassName forClassNamed: self className ]
 ]
 
 { #category : 'accessing' }
@@ -309,7 +270,5 @@ MCPCreateClassCommand >> traits [
 { #category : 'accessing' }
 MCPCreateClassCommand >> traits: someTraits [
 
-	traits := someTraits
-		          ifNil: [ #(  ) ]
-		          ifNotNil: [ someTraits asArray ]
+	traits := someTraits ifNil: [ #(  ) ] ifNotNil: [ someTraits asArray ]
 ]

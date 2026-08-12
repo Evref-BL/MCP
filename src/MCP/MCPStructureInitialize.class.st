@@ -25,8 +25,7 @@ MCPStructureInitialize >> asJRPCJSON [
 		       (#capabilities -> self capabilities asJRPCJSON).
 		       (#protocolVersion -> self protocolVersion asJRPCJSON).
 		       (#serverInfo -> self serverInfo asJRPCJSON) } asDictionary.
-	self metadata ifNotNil: [
-		dic at: #_meta put: self metadata asJRPCJSON ].
+	self metadata ifNotNil: [ dic at: #_meta put: self metadata asJRPCJSON ].
 	^ dic
 ]
 

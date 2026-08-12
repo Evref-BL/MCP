@@ -23,8 +23,7 @@ MCPMemoryTinyLogger class >> kind [
 MCPMemoryTinyLogger >> addEntry: aString [
 
 	self entries add: aString.
-	[ self entries size > self maxEntries ] whileTrue: [
-		self entries removeFirst ]
+	[ self entries size > self maxEntries ] whileTrue: [ self entries removeFirst ]
 ]
 
 { #category : 'logging' }
@@ -74,6 +73,5 @@ MCPMemoryTinyLogger >> recentEntries [
 { #category : 'logging' }
 MCPMemoryTinyLogger >> record: aString [
 
-	self addEntry:
-		(String streamContents: [ :stream | self record: aString on: stream ])
+	self addEntry: (String streamContents: [ :stream | self record: aString on: stream ])
 ]

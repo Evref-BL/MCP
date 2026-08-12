@@ -26,12 +26,10 @@ MCPToolUpdateClassSharedPools >> classToolSpec [
 
 	^ {
 		  (#title -> 'Update Class Shared Pools').
-		  (#description
-		   -> 'Replace the shared pools referenced by one class.').
+		  (#description -> 'Replace the shared pools referenced by one class.').
 		  (#inputProperties -> {
 			   self classNameSchemaProperty.
 			   self sharedPoolsSchemaProperty.
 			   self forceSchemaProperty }).
-		  (#requiredProperties -> #( 'className' 'sharedPools' )) }
-		  asDictionary
+		  (#requiredProperties -> #( 'className' 'sharedPools' )) } asDictionary
 ]

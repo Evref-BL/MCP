@@ -48,8 +48,7 @@ MCPJSONSchemaViolation >> asDictionary [
 		              (#path -> self path).
 		              (#keyword -> self keyword).
 		              (#message -> self message) } asDictionary.
-	self expected ifNotNil: [
-		dictionary at: #expected put: self expected ].
+	self expected ifNotNil: [ dictionary at: #expected put: self expected ].
 	self actual ifNotNil: [ dictionary at: #actual put: self actual ].
 	^ dictionary
 ]
@@ -106,9 +105,7 @@ MCPJSONSchemaViolation >> path [
 { #category : 'accessing' }
 MCPJSONSchemaViolation >> path: aCollection [
 
-	path := aCollection
-		        ifNil: [ #(  ) ]
-		        ifNotNil: [ aCollection asArray ]
+	path := aCollection ifNil: [ #(  ) ] ifNotNil: [ aCollection asArray ]
 ]
 
 { #category : 'printing' }

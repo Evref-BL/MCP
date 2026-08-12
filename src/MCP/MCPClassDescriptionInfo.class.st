@@ -47,21 +47,14 @@ MCPClassDescriptionInfo >> asDictionary [
 		at: #layoutClassName put: layoutClassName;
 		at: #instanceMethodCount put: instanceMethodCount;
 		at: #classMethodCount put: classMethodCount.
-	instanceSlotNames ifNotEmpty: [ :names |
-		data at: #instanceSlotNames put: names ].
-	classSlotNames ifNotEmpty: [ :names |
-		data at: #classSlotNames put: names ].
+	instanceSlotNames ifNotEmpty: [ :names | data at: #instanceSlotNames put: names ].
+	classSlotNames ifNotEmpty: [ :names | data at: #classSlotNames put: names ].
 	traitNames ifNotEmpty: [ :names | data at: #traitNames put: names ].
-	classTraitNames ifNotEmpty: [ :names |
-		data at: #classTraitNames put: names ].
-	traitComposition = '{}' ifFalse: [
-		data at: #traitComposition put: traitComposition ].
-	classTraitComposition = '{}' ifFalse: [
-		data at: #classTraitComposition put: classTraitComposition ].
-	sharedPoolNames ifNotEmpty: [ :names |
-		data at: #sharedPoolNames put: names ].
-	sharedVariableNames ifNotEmpty: [ :names |
-		data at: #sharedVariableNames put: names ].
+	classTraitNames ifNotEmpty: [ :names | data at: #classTraitNames put: names ].
+	traitComposition = '{}' ifFalse: [ data at: #traitComposition put: traitComposition ].
+	classTraitComposition = '{}' ifFalse: [ data at: #classTraitComposition put: classTraitComposition ].
+	sharedPoolNames ifNotEmpty: [ :names | data at: #sharedPoolNames put: names ].
+	sharedVariableNames ifNotEmpty: [ :names | data at: #sharedVariableNames put: names ].
 	^ data
 ]
 
@@ -69,26 +62,17 @@ MCPClassDescriptionInfo >> asDictionary [
 MCPClassDescriptionInfo >> initializeFromClass: aClass [
 
 	className := aClass name asString.
-	superclassName := aClass superclass
-		                  ifNil: [ '' ]
-		                  ifNotNil: [ :aSuperclass |
-		                  aSuperclass name asString ].
+	superclassName := aClass superclass ifNil: [ '' ] ifNotNil: [ :aSuperclass | aSuperclass name asString ].
 	packageName := aClass packageName asString.
 	tag := aClass packageTagName asString.
-	instanceSlotNames := (aClass slots collect: [ :each |
-		                      each name asString ]) asArray.
-	classSlotNames := (aClass classSide slots collect: [ :each |
-		                   each name asString ]) asArray.
-	traitNames := (aClass traits collect: [ :each | each name asString ])
-		              asArray.
-	classTraitNames := (aClass classSide traits collect: [ :each |
-		                    each name asString ]) asArray.
+	instanceSlotNames := (aClass slots collect: [ :each | each name asString ]) asArray.
+	classSlotNames := (aClass classSide slots collect: [ :each | each name asString ]) asArray.
+	traitNames := (aClass traits collect: [ :each | each name asString ]) asArray.
+	classTraitNames := (aClass classSide traits collect: [ :each | each name asString ]) asArray.
 	traitComposition := aClass traitCompositionString.
 	classTraitComposition := aClass classSide traitCompositionString.
-	sharedPoolNames := (aClass sharedPools collect: [ :each |
-		                    each name asString ]) asArray.
-	sharedVariableNames := (aClass classVarNames collect: [ :each |
-		                        each asString ]) asArray.
+	sharedPoolNames := (aClass sharedPools collect: [ :each | each name asString ]) asArray.
+	sharedVariableNames := (aClass classVarNames collect: [ :each | each asString ]) asArray.
 	layoutClassName := aClass classLayout class name asString.
 	instanceMethodCount := aClass selectors size.
 	classMethodCount := aClass classSide selectors size.

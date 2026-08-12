@@ -24,9 +24,8 @@ MCPDebugEvaluateRequest class >> fromRequest: aRequest tool: aTool [
 		  stateId: (aRequest stringArgumentNamed: 'stateId');
 		  frameRef: (aRequest stringArgumentNamed: 'frameRef');
 		  expression: (aRequest stringArgumentNamed: 'expression');
-		  resultPreviewCharacterLimit: (aRequest
-				   nonNegativeIntegerArgumentNamed: 'resultPreviewCharacterLimit'
-				   default: aTool resultPreviewCharacterLimit);
+		  resultPreviewCharacterLimit:
+			  (aRequest nonNegativeIntegerArgumentNamed: 'resultPreviewCharacterLimit' default: aTool resultPreviewCharacterLimit);
 		  yourself
 ]
 

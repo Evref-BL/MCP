@@ -20,13 +20,10 @@ MCPToolSwitchRepositoryBranch >> repositoryToolSpec [
 
 	^ {
 		  (#title -> 'Switch Repository Branch').
-		  (#description
-		   ->
-		   'Switch a registered Iceberg repository to an existing branch.').
+		  (#description -> 'Switch a registered Iceberg repository to an existing branch.').
 		  (#action -> 'switchBranch').
 		  (#requestClass -> MCPRepositorySwitchBranchRequest).
 		  (#commandClass -> MCPSwitchRepositoryBranchCommand).
 		  (#inputProperties -> { self branchNameSchemaProperty }).
-		  (#requiredProperties -> #( 'repositoryName' 'branchName' )) }
-		  asDictionary
+		  (#requiredProperties -> #( 'repositoryName' 'branchName' )) } asDictionary
 ]

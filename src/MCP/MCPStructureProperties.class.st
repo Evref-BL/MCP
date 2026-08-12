@@ -102,11 +102,9 @@ MCPStructureProperties >> metaDescription [
 
 	| schema |
 	schema := Dictionary new.
-	self description ifNotNil: [
-		schema at: #description put: self description ].
+	self description ifNotNil: [ schema at: #description put: self description ].
 	self type ifNotNil: [ schema at: #type put: self type ].
-	self extraProperties keysAndValuesDo: [ :key :value |
-		schema at: key put: (self jsonValueForKey: key value: value) ].
+	self extraProperties keysAndValuesDo: [ :key :value | schema at: key put: (self jsonValueForKey: key value: value) ].
 	^ schema
 ]
 
@@ -151,8 +149,7 @@ MCPStructureProperties >> propertiesAsJRPCJSON: aCollection [
 
 	| propertiesDictionary |
 	propertiesDictionary := Dictionary new.
-	aCollection do: [ :prop |
-		propertiesDictionary at: prop name put: prop metaDescription ].
+	aCollection do: [ :prop | propertiesDictionary at: prop name put: prop metaDescription ].
 	^ propertiesDictionary
 ]
 

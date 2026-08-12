@@ -20,8 +20,7 @@ MCPToolUpdateClassSlotName >> classToolSpec [
 
 	^ {
 		  (#title -> 'Update Class Slot Name').
-		  (#description
-		   -> 'Rename one instance-side or class-side slot in a class.').
+		  (#description -> 'Rename one instance-side or class-side slot in a class.').
 		  (#fixedArguments -> { (#slotAction -> 'rename') } asDictionary).
 		  (#inputProperties -> {
 			   self classNameSchemaProperty.
@@ -29,6 +28,5 @@ MCPToolUpdateClassSlotName >> classToolSpec [
 			   self newSlotNameSchemaProperty.
 			   self classSideSlotSchemaProperty.
 			   self forceSchemaProperty }).
-		  (#requiredProperties -> #( 'className' 'slotName' 'newSlotName' )) }
-		  asDictionary
+		  (#requiredProperties -> #( 'className' 'slotName' 'newSlotName' )) } asDictionary
 ]

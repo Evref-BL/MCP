@@ -14,8 +14,7 @@ MCPToolLoadBaselineTest >> baselineRequestFromArguments: associations [
 
 	| tool |
 	tool := MCPToolLoadBaseline new.
-	^ tool parsedRequestFromToolRequest:
-		  (tool requestFromToolCallArguments: associations asDictionary)
+	^ tool parsedRequestFromToolRequest: (tool requestFromToolCallArguments: associations asDictionary)
 ]
 
 { #category : 'private' }
@@ -23,9 +22,7 @@ MCPToolLoadBaselineTest >> executeRecordingCommandForRequest: request [
 
 	| command |
 	MCPRecordingLoadBaselineCommand reset.
-	command := MCPRecordingLoadBaselineCommand
-		           tool: MCPToolLoadBaseline new
-		           request: request.
+	command := MCPRecordingLoadBaselineCommand tool: MCPToolLoadBaseline new request: request.
 	^ command execute
 ]
 
@@ -49,20 +46,12 @@ MCPToolLoadBaselineTest >> testCommandAppliesProjectSpecificLoadPolicies [
 				            (#lockBreak -> #( 'LockedProject' )) } asDictionary) }.
 	self executeRecordingCommandForRequest: request.
 	metacello := self recordedMetacello.
-	self assert: (metacello
-			 received: #onConflictUseIncoming:useLoaded:
-			 withArguments: {
-					 #( 'IncomingProject' ).
-					 #( 'LoadedProject' ) }).
-	self assert: (metacello
-			 received: #onUpgradeUseLoaded:
-			 withArguments: { #( 'UpgradeProject' ) }).
-	self assert: (metacello
-			 received: #onDowngradeUseIncoming:
-			 withArguments: { #( 'DowngradeProject' ) }).
-	self assert: (metacello
-			 received: #onLockBreak:
-			 withArguments: { #( 'LockedProject' ) }).
+	self assert: (metacello received: #onConflictUseIncoming:useLoaded: withArguments: {
+				 #( 'IncomingProject' ).
+				 #( 'LoadedProject' ) }).
+	self assert: (metacello received: #onUpgradeUseLoaded: withArguments: { #( 'UpgradeProject' ) }).
+	self assert: (metacello received: #onDowngradeUseIncoming: withArguments: { #( 'DowngradeProject' ) }).
+	self assert: (metacello received: #onLockBreak: withArguments: { #( 'LockedProject' ) }).
 	self deny: (metacello received: #onConflictUseLoaded)
 ]
 
@@ -104,14 +93,12 @@ MCPToolLoadBaselineTest >> testCommandAppliesUpgradeDowngradeAndLockPolicies [
 MCPToolLoadBaselineTest >> testCommandLoadsExistingBaselineWithoutRepository [
 
 	| data metacello request result |
-	request := self baselineRequestFromArguments:
-		           { (#baseline -> 'ExampleBaseline') }.
+	request := self baselineRequestFromArguments: { (#baseline -> 'ExampleBaseline') }.
 	result := self executeRecordingCommandForRequest: request.
 	metacello := self recordedMetacello.
 	data := result asDictionary.
 	self assert: (metacello messageCountFor: #baseline:) equals: 1.
-	self assert:
-		(metacello received: #baseline: withArguments: { 'ExampleBaseline' }).
+	self assert: (metacello received: #baseline: withArguments: { 'ExampleBaseline' }).
 	self deny: (metacello received: #repository:).
 	self assert: (metacello received: #onWarningLog).
 	self assert: (metacello received: #onConflictUseLoaded).
@@ -130,8 +117,7 @@ MCPToolLoadBaselineTest >> testCommandLoadsRequestedGroups [
 			           (#groups -> #( 'Core' 'Tests' )) }.
 	self executeRecordingCommandForRequest: request.
 	metacello := self recordedMetacello.
-	self assert:
-		(metacello received: #load: withArguments: { #( 'Core' 'Tests' ) }).
+	self assert: (metacello received: #load: withArguments: { #( 'Core' 'Tests' ) }).
 	self deny: (metacello received: #load)
 ]
 
@@ -139,8 +125,7 @@ MCPToolLoadBaselineTest >> testCommandLoadsRequestedGroups [
 MCPToolLoadBaselineTest >> testUsesBaselineDefaults [
 
 	| request |
-	request := self baselineRequestFromArguments:
-		           { (#baseline -> 'ExampleBaseline') }.
+	request := self baselineRequestFromArguments: { (#baseline -> 'ExampleBaseline') }.
 	self assert: request groups equals: #(  ).
 	self assert: request onWarning equals: 'log'.
 	self assert: request onConflict equals: 'useLoaded'

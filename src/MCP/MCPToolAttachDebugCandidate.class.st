@@ -20,9 +20,7 @@ MCPToolAttachDebugCandidate >> sessionToolSpec [
 
 	^ {
 		  (#title -> 'Attach Debug Candidate').
-		  (#description
-		   ->
-		   'Attach an open Pharo debugger candidate to the MCP debugger registry and return its session state.').
+		  (#description -> 'Attach an open Pharo debugger candidate to the MCP debugger registry and return its session state.').
 		  (#action -> 'attach').
 		  (#inputProperties -> { self candidateRefSchemaProperty }).
 		  (#requiredProperties -> #( 'candidateRef' )) } asDictionary

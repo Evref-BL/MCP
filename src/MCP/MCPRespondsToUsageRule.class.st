@@ -61,8 +61,7 @@ MCPRespondsToUsageRule >> check: aMethod forCritiquesDo: aCriticBlock [
 					aCriticBlock cull: (self
 							 createTrivialCritiqueOn: aMethod
 							 intervalOf: sendNode
-							 hint:
-							 'Use collaborator contracts, testing protocol, or PharoCompatibility first.') ] ]
+							 hint: 'Use collaborator contracts, testing protocol, or PharoCompatibility first.') ] ]
 ]
 
 { #category : 'accessing' }

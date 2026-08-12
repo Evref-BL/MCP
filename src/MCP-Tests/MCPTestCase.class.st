@@ -44,8 +44,7 @@ MCPTestCase >> createClassNamed: aClassName superclassName: aSuperclassName slot
 { #category : 'private - methods' }
 MCPTestCase >> ensureMethodSource: aMethodSource protocol: aProtocol on: aBehavior [
 
-	self withoutEpiceaDuring: [
-		aBehavior compile: aMethodSource classified: aProtocol ]
+	self withoutEpiceaDuring: [ aBehavior compile: aMethodSource classified: aProtocol ]
 ]
 
 { #category : 'private - monitoring' }
@@ -63,24 +62,20 @@ MCPTestCase >> removeClassNamed: aClassName [
 	| classSymbol |
 	classSymbol := aClassName asSymbol.
 	self withoutEpiceaDuring: [
-			(Smalltalk globals includesKey: classSymbol) ifTrue: [
-				(Smalltalk globals at: classSymbol) removeFromSystem ] ]
+		(Smalltalk globals includesKey: classSymbol) ifTrue: [ (Smalltalk globals at: classSymbol) removeFromSystem ] ]
 ]
 
 { #category : 'private - packages' }
 MCPTestCase >> removePackageNamed: aPackageName [
 
 	self withoutEpiceaDuring: [
-			(PackageOrganizer default hasPackage: aPackageName) ifTrue: [
-				PackageOrganizer default removePackage: aPackageName ] ]
+		(PackageOrganizer default hasPackage: aPackageName) ifTrue: [ PackageOrganizer default removePackage: aPackageName ] ]
 ]
 
 { #category : 'private - methods' }
 MCPTestCase >> removeSelector: aSelector from: aBehavior [
 
-	self withoutEpiceaDuring: [
-			(aBehavior includesSelector: aSelector) ifTrue: [
-				aBehavior removeSelector: aSelector ] ]
+	self withoutEpiceaDuring: [ (aBehavior includesSelector: aSelector) ifTrue: [ aBehavior removeSelector: aSelector ] ]
 ]
 
 { #category : 'private - execution' }

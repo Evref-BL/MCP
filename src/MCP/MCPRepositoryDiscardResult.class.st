@@ -18,9 +18,7 @@ Class {
 { #category : 'instance creation' }
 MCPRepositoryDiscardResult class >> discardedPackageNames: packageNames discardedPaths: paths [
 
-	^ self new
-		  initializeDiscardedPackageNames: packageNames
-		  discardedPaths: paths
+	^ self new initializeDiscardedPackageNames: packageNames discardedPaths: paths
 ]
 
 { #category : 'converting' }
@@ -31,10 +29,8 @@ MCPRepositoryDiscardResult >> asDictionary [
 	data
 		at: #changeCount put: self changeCount;
 		at: #isEmpty put: self isEmpty.
-	self discardedPackageNames ifNotEmpty: [ :names |
-		data at: #discardedPackageNames put: names ].
-	self discardedPaths ifNotEmpty: [ :paths |
-		data at: #discardedPaths put: paths ].
+	self discardedPackageNames ifNotEmpty: [ :names | data at: #discardedPackageNames put: names ].
+	self discardedPaths ifNotEmpty: [ :paths | data at: #discardedPaths put: paths ].
 	^ data
 ]
 

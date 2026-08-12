@@ -68,13 +68,11 @@ MCPTestGitRepositoryFixture class >> standardConfig [
 MCPTestGitRepositoryFixture class >> withConfig: configContents do: aBlock [
 
 	| repositoryDirectory |
-	repositoryDirectory := FileLocator temp asFileReference
-	                       / ('mcp-git-fixture-' , UUID new asString).
+	repositoryDirectory := FileLocator temp asFileReference / ('mcp-git-fixture-' , UUID new asString).
 	[
 		repositoryDirectory ensureCreateDirectory.
 		self writeConfig: configContents in: repositoryDirectory.
-		aBlock value: repositoryDirectory ] ensure: [
-		repositoryDirectory exists ifTrue: [ repositoryDirectory deleteAll ] ]
+		aBlock value: repositoryDirectory ] ensure: [ repositoryDirectory exists ifTrue: [ repositoryDirectory deleteAll ] ]
 ]
 
 { #category : 'fixtures' }
@@ -83,6 +81,5 @@ MCPTestGitRepositoryFixture class >> writeConfig: configContents in: repositoryD
 	| gitDirectory |
 	gitDirectory := repositoryDirectory / '.git'.
 	gitDirectory ensureCreateDirectory.
-	gitDirectory / 'config' writeStreamDo: [ :stream |
-		stream nextPutAll: configContents ]
+	gitDirectory / 'config' writeStreamDo: [ :stream | stream nextPutAll: configContents ]
 ]

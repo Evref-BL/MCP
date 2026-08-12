@@ -30,26 +30,19 @@ MCPToolGetClassTest >> childZClassName [
 { #category : 'private' }
 MCPToolGetClassTest >> ensureClassComment: aComment onClassNamed: aClassName [
 
-	self withoutEpiceaDuring: [
-		(self classNamed: aClassName) comment: aComment stamp: '' ]
+	self withoutEpiceaDuring: [ (self classNamed: aClassName) comment: aComment stamp: '' ]
 ]
 
 { #category : 'private' }
 MCPToolGetClassTest >> ensureClassMethodSource: aMethodSource onClassNamed: aClassName [
 
-	self withoutEpiceaDuring: [
-			(self classNamed: aClassName) classSide
-				compile: aMethodSource
-				classified: 'testing' ]
+	self withoutEpiceaDuring: [ (self classNamed: aClassName) classSide compile: aMethodSource classified: 'testing' ]
 ]
 
 { #category : 'private' }
 MCPToolGetClassTest >> ensureMethodSource: aMethodSource onClassNamed: aClassName [
 
-	self withoutEpiceaDuring: [
-			(self classNamed: aClassName)
-				compile: aMethodSource
-				classified: 'testing' ]
+	self withoutEpiceaDuring: [ (self classNamed: aClassName) compile: aMethodSource classified: 'testing' ]
 ]
 
 { #category : 'private' }
@@ -83,8 +76,7 @@ MCPToolGetClassTest >> missingClassName [
 { #category : 'private' }
 MCPToolGetClassTest >> removeFixtureClasses [
 
-	self fixtureClassNames reverseDo: [ :each |
-		self removeClassNamed: each ]
+	self fixtureClassNames reverseDo: [ :each | self removeClassNamed: each ]
 ]
 
 { #category : 'private' }
@@ -115,24 +107,12 @@ MCPToolGetClassTest >> restoreFixtureClasses [
 		superclassName: self childZClassName
 		slots: #(  )
 		classSlots: #(  ).
-	self
-		ensureMethodSource: 'instanceMarker ^ 1'
-		onClassNamed: self baseClassName.
-	self
-		ensureClassMethodSource: 'classMarker ^ 2'
-		onClassNamed: self baseClassName.
-	self
-		ensureClassComment: 'Base fixture class comment.'
-		onClassNamed: self baseClassName.
-	self
-		ensureClassComment: 'Child A fixture class comment.'
-		onClassNamed: self childAClassName.
-	self
-		ensureClassComment: 'Child Z fixture class comment.'
-		onClassNamed: self childZClassName.
-	self
-		ensureClassComment: 'Grandchild fixture class comment.'
-		onClassNamed: self grandchildClassName
+	self ensureMethodSource: 'instanceMarker ^ 1' onClassNamed: self baseClassName.
+	self ensureClassMethodSource: 'classMarker ^ 2' onClassNamed: self baseClassName.
+	self ensureClassComment: 'Base fixture class comment.' onClassNamed: self baseClassName.
+	self ensureClassComment: 'Child A fixture class comment.' onClassNamed: self childAClassName.
+	self ensureClassComment: 'Child Z fixture class comment.' onClassNamed: self childZClassName.
+	self ensureClassComment: 'Grandchild fixture class comment.' onClassNamed: self grandchildClassName
 ]
 
 { #category : 'running' }
@@ -153,37 +133,25 @@ MCPToolGetClassTest >> tearDown [
 MCPToolGetClassTest >> testGetsClassMetadata [
 
 	| data expectedLayoutClassName result |
-	result := self callToolWith:
-		          { (#className -> self baseClassName) } asDictionary.
+	result := self callToolWith: { (#className -> self baseClassName) } asDictionary.
 	data := self dataFrom: result.
-	expectedLayoutClassName := (self classNamed: self baseClassName)
-		                           classLayout class name asString.
+	expectedLayoutClassName := (self classNamed: self baseClassName) classLayout class name asString.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self
-		assert: ((self structuredContentFrom: result) at: #status)
-		equals: 'ok'.
+	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
 	self assert: (data at: #className) equals: self baseClassName.
 	self assert: (data at: #superclassName) equals: 'Object'.
 	self assert: (data at: #packageName) equals: 'MCP-Tests'.
 	self assert: (data at: #tag) equals: 'Internal'.
 	self deny: (data includesKey: #classComment).
-	self
-		assert: (data at: #instanceSlotNames)
-		equals: #( 'betaSlot' 'alphaSlot' ).
-	self
-		assert: (data at: #classSlotNames)
-		equals: #( 'classBeta' 'classAlpha' ).
+	self assert: (data at: #instanceSlotNames) equals: #( 'betaSlot' 'alphaSlot' ).
+	self assert: (data at: #classSlotNames) equals: #( 'classBeta' 'classAlpha' ).
 	self deny: (data includesKey: #traitNames).
 	self deny: (data includesKey: #classTraitNames).
 	self deny: (data includesKey: #traitComposition).
 	self deny: (data includesKey: #classTraitComposition).
 	self deny: (data includesKey: #sharedPoolNames).
-	self
-		assert: (data at: #sharedVariableNames)
-		equals: #( 'AlphaShared' 'BetaShared' ).
-	self
-		assert: (data at: #layoutClassName)
-		equals: expectedLayoutClassName.
+	self assert: (data at: #sharedVariableNames) equals: #( 'AlphaShared' 'BetaShared' ).
+	self assert: (data at: #layoutClassName) equals: expectedLayoutClassName.
 	self assert: (data at: #instanceMethodCount) equals: 1.
 	self assert: (data at: #classMethodCount) equals: 1.
 	self deny: (data includesKey: #superclasses).
@@ -202,20 +170,12 @@ MCPToolGetClassTest >> testIncludesClassCommentsWhenRequested [
 	data := self dataFrom: result.
 	subclasses := data at: #subclasses.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self
-		assert: ((self structuredContentFrom: result) at: #status)
-		equals: 'ok'.
-	self
-		assert: (data at: #classComment)
-		equals: 'Child Z fixture class comment.'.
+	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self assert: (data at: #classComment) equals: 'Child Z fixture class comment.'.
 	self deny: (data includesKey: #superclasses).
 	self assert: subclasses size equals: 1.
-	self
-		assert: (subclasses first at: #className)
-		equals: self grandchildClassName.
-	self
-		assert: (subclasses first at: #classComment)
-		equals: 'Grandchild fixture class comment.'
+	self assert: (subclasses first at: #className) equals: self grandchildClassName.
+	self assert: (subclasses first at: #classComment) equals: 'Grandchild fixture class comment.'
 ]
 
 { #category : 'tests' }
@@ -228,14 +188,10 @@ MCPToolGetClassTest >> testIncludesDirectSubclasses [
 	data := self dataFrom: result.
 	subclasses := data at: #subclasses.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self
-		assert: ((self structuredContentFrom: result) at: #status)
-		equals: 'ok'.
-	self
-		assert: (subclasses collect: [ :each | each at: #className ])
-		equals: {
-				self childAClassName.
-				self childZClassName } asArray
+	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self assert: (subclasses collect: [ :each | each at: #className ]) equals: {
+			self childAClassName.
+			self childZClassName } asArray
 ]
 
 { #category : 'tests' }
@@ -248,26 +204,20 @@ MCPToolGetClassTest >> testIncludesNamedSuperclassChain [
 	data := self dataFrom: result.
 	superclasses := data at: #superclasses.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self
-		assert: ((self structuredContentFrom: result) at: #status)
-		equals: 'ok'.
-	self
-		assert: (superclasses collect: [ :each | each at: #className ])
-		equals: {
-				self childZClassName.
-				self baseClassName } asArray
+	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self assert: (superclasses collect: [ :each | each at: #className ]) equals: {
+			self childZClassName.
+			self baseClassName } asArray
 ]
 
 { #category : 'tests' }
 MCPToolGetClassTest >> testIncludesSharedPoolNamesForSharedPoolUsingClass [
 
 	| data result |
-	result := self callToolWith:
-		          { (#className -> 'AbstractTimeZone') } asDictionary.
+	result := self callToolWith: { (#className -> 'AbstractTimeZone') } asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert:
-		((data at: #sharedPoolNames) includes: 'ChronologyConstants')
+	self assert: ((data at: #sharedPoolNames) includes: 'ChronologyConstants')
 ]
 
 { #category : 'tests' }
@@ -280,34 +230,24 @@ MCPToolGetClassTest >> testIncludesSubclassesUpToRequestedDepth [
 	data := self dataFrom: result.
 	subclasses := data at: #subclasses.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self
-		assert: ((self structuredContentFrom: result) at: #status)
-		equals: 'ok'.
-	self
-		assert: (subclasses collect: [ :each | each at: #className ])
-		equals: {
-				self childAClassName.
-				self childZClassName.
-				self grandchildClassName } asArray
+	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self assert: (subclasses collect: [ :each | each at: #className ]) equals: {
+			self childAClassName.
+			self childZClassName.
+			self grandchildClassName } asArray
 ]
 
 { #category : 'tests' }
 MCPToolGetClassTest >> testIncludesTraitNamesForTraitUsingClass [
 
 	| data result |
-	result := self callToolWith:
-		          { (#className -> 'AlignmentMorph') } asDictionary.
+	result := self callToolWith: { (#className -> 'AlignmentMorph') } asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: ((data at: #traitNames) anySatisfy: [ :each |
-			 each includesSubstring: 'TAbleToRotate' ]).
-	self assert: ((data at: #classTraitNames) anySatisfy: [ :each |
-			 each includesSubstring: 'TAbleToRotate' ]).
-	self assert:
-		((data at: #traitComposition) includesSubstring: 'TAbleToRotate').
-	self assert:
-		((data at: #classTraitComposition) includesSubstring:
-			 'TAbleToRotate')
+	self assert: ((data at: #traitNames) anySatisfy: [ :each | each includesSubstring: 'TAbleToRotate' ]).
+	self assert: ((data at: #classTraitNames) anySatisfy: [ :each | each includesSubstring: 'TAbleToRotate' ]).
+	self assert: ((data at: #traitComposition) includesSubstring: 'TAbleToRotate').
+	self assert: ((data at: #classTraitComposition) includesSubstring: 'TAbleToRotate')
 ]
 
 { #category : 'tests' }
@@ -336,8 +276,7 @@ MCPToolGetClassTest >> testRejectsSubclassDepthAboveMaximum [
 MCPToolGetClassTest >> testReturnsStructuredErrorWhenClassIsMissing [
 
 	| error result structured |
-	result := self callToolWith:
-		          { (#className -> self missingClassName) } asDictionary.
+	result := self callToolWith: { (#className -> self missingClassName) } asDictionary.
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
@@ -350,9 +289,7 @@ MCPToolGetClassTest >> testReturnsStructuredErrorWhenClassIsMissing [
 { #category : 'tests' }
 MCPToolGetClassTest >> testToolRequiresClassNameInSchema [
 
-	self
-		assert: MCPToolGetClass new inputSchema required asSet
-		equals: #( 'className' ) asSet
+	self assert: MCPToolGetClass new inputSchema required asSet equals: #( 'className' ) asSet
 ]
 
 { #category : 'private - calling' }

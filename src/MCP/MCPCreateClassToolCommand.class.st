@@ -33,13 +33,10 @@ MCPCreateClassToolCommand >> execute [
 					             sharedPools: self request sharedPools
 					             layout: self request layout) execute.
 				  self request classComment ifNotNil: [
-						  (MCPChangeClassCommentCommand
-							   className: self request className
-							   classComment: self request classComment) execute ] ]
+					  (MCPChangeClassCommentCommand className: self request className classComment: self request classComment) execute ] ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText:
-					  'Created class ' , self request className , '.'
+					  successResultText: 'Created class ' , self request className , '.'
 					  data: (self tool dataForResult: result action: 'create')
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |

@@ -3,9 +3,7 @@ Extension { #name : 'CodeError' }
 { #category : '*MCP' }
 CodeError >> mcpErrorPosition [
 
-	^ self notice
-		  ifNil: [ self position ]
-		  ifNotNil: [ :syntaxNotice | syntaxNotice position ]
+	^ self notice ifNil: [ self position ] ifNotNil: [ :syntaxNotice | syntaxNotice position ]
 ]
 
 { #category : '*MCP' }

@@ -25,10 +25,7 @@ Class {
 { #category : 'instance creation' }
 MCPLoadRepositoryResult class >> request: aRequest repositoryUrl: aRepositoryUrl loadResult: aLoadResult [
 
-	^ self new
-		  initializeRequest: aRequest
-		  repositoryUrl: aRepositoryUrl
-		  loadResult: aLoadResult
+	^ self new initializeRequest: aRequest repositoryUrl: aRepositoryUrl loadResult: aLoadResult
 ]
 
 { #category : 'converting' }

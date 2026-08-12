@@ -20,8 +20,7 @@ MCPToolDisableDebugBreakpoint >> breakpointToolSpec [
 
 	^ {
 		  (#title -> 'Disable Debug Breakpoint').
-		  (#description
-		   -> 'Disable one tracked transient Pharo DebugPoint breakpoint.').
+		  (#description -> 'Disable one tracked transient Pharo DebugPoint breakpoint.').
 		  (#action -> 'disable').
 		  (#inputProperties -> { self breakpointIdSchemaProperty }).
 		  (#requiredProperties -> #( 'breakpointId' )) } asDictionary

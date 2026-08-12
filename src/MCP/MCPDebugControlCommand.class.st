@@ -37,15 +37,9 @@ MCPDebugControlCommand >> controlFailureFor: anError record: aRecord frameIndex:
 		at: #sessionId put: aRecord sessionId;
 		at: #stateId put: aRecord stateId;
 		at: #action put: request operation;
-		at: #frameRef
-		put: (self frameRefForRecord: aRecord frameIndex: frameIndex);
+		at: #frameRef put: (self frameRefForRecord: aRecord frameIndex: frameIndex);
 		at: #controlErrorClass put: anError class name.
-	^ MCPDebugToolResult
-		  errorSummary:
-		  (tool
-			   controlFailureMessageFor: anError
-			   operation: request operation)
-		  details: details
+	^ MCPDebugToolResult errorSummary: (tool controlFailureMessageFor: anError operation: request operation) details: details
 ]
 
 { #category : 'private - data' }
@@ -62,36 +56,27 @@ MCPDebugControlCommand >> execute [
 	operationName := request operation.
 	previousStateId := record stateId.
 	record continuation ifNotNil: [
-			(operationName = 'resume' or: [
-				 self operationRequiresContext: operationName ]) ifTrue: [
-					^ self
-						  performContinuationOperationForRecord: record
-						  previousStateId: previousStateId ] ].
+			(operationName = 'resume' or: [ self operationRequiresContext: operationName ]) ifTrue: [
+				^ self performContinuationOperationForRecord: record previousStateId: previousStateId ] ].
 	frameIndex := nil.
 	context := nil.
 	(self operationRequiresContext: operationName) ifTrue: [
 			frameIndex := self selectedFrameIndex.
-			context := self
-				           selectedContextForRecord: record
-				           frameIndex: frameIndex ].
+			context := self selectedContextForRecord: record frameIndex: frameIndex ].
 	controlResult := self
 		                 performOperationOn: record debugSession
 		                 context: context
 		                 record: record
 		                 frameIndex: frameIndex.
 	controlResult ifNotNil: [ ^ controlResult ].
-	record
-		advanceStateForStatus: (self statusAfterOperation: operationName)
-		reason: operationName.
+	record advanceStateForStatus: (self statusAfterOperation: operationName) reason: operationName.
 	data := self
 		        resultDataForRecord: record
 		        previousStateId: previousStateId
 		        frameIndex: frameIndex
 		        operation: operationName.
 	^ MCPDebugToolResult
-		  okSummary:
-			  'Debug control ' , operationName , ' applied to '
-			  , record sessionId , '.'
+		  okSummary: 'Debug control ' , operationName , ' applied to ' , record sessionId , '.'
 		  data: data
 		  warnings: (data at: #warnings)
 ]
@@ -117,36 +102,23 @@ MCPDebugControlCommand >> performContinuationOperationForRecord: aRecord previou
 	context := nil.
 	(self operationRequiresContext: operationName) ifTrue: [
 			frameIndex := self selectedFrameIndex.
-			context := self
-				           selectedContextForRecord: aRecord
-				           frameIndex: frameIndex ].
-	aRecord debugSession ifNil: [
-		^ self signalMissingDebugSessionForRecord: aRecord ].
+			context := self selectedContextForRecord: aRecord frameIndex: frameIndex ].
+	aRecord debugSession ifNil: [ ^ self signalMissingDebugSessionForRecord: aRecord ].
 	status := [
 		          aRecord continuation proceedUsing: [
-				          (aRecord continuation debugControllerForSession:
-					           aRecord debugSession)
-					          performOperationNamed: operationName
-					          context: context ] ]
+			          (aRecord continuation debugControllerForSession: aRecord debugSession)
+				          performOperationNamed: operationName
+				          context: context ] ]
 		          on: Exception
-		          do: [ :error |
-			          ^ self
-				            controlFailureFor: error
-				            record: aRecord
-				            frameIndex: frameIndex ].
-	self
-		updateRecord: aRecord
-		afterContinuationStatus: status
-		operation: operationName.
+		          do: [ :error | ^ self controlFailureFor: error record: aRecord frameIndex: frameIndex ].
+	self updateRecord: aRecord afterContinuationStatus: status operation: operationName.
 	data := self
 		        resultDataForRecord: aRecord
 		        previousStateId: previousStateId
 		        frameIndex: frameIndex
 		        operation: operationName.
 	^ MCPDebugToolResult
-		  okSummary:
-			  'Debug control ' , operationName , ' applied to '
-			  , aRecord sessionId , '.'
+		  okSummary: 'Debug control ' , operationName , ' applied to ' , aRecord sessionId , '.'
 		  data: data
 		  warnings: (data at: #warnings)
 ]
@@ -154,28 +126,19 @@ MCPDebugControlCommand >> performContinuationOperationForRecord: aRecord previou
 { #category : 'private - actions' }
 MCPDebugControlCommand >> performOperationOn: aDebugSession context: aContext record: aRecord frameIndex: frameIndex [
 
-	aDebugSession ifNil: [
-		^ self signalMissingDebugSessionForRecord: aRecord ].
+	aDebugSession ifNil: [ ^ self signalMissingDebugSessionForRecord: aRecord ].
 	^ [
-		  (MCPDebugSessionController debugSession: aDebugSession)
-			  performOperationNamed: request operation
-			  context: aContext.
+		  (MCPDebugSessionController debugSession: aDebugSession) performOperationNamed: request operation context: aContext.
 		  nil ]
 		  on: Exception
-		  do: [ :error |
-			  self
-				  controlFailureFor: error
-				  record: aRecord
-				  frameIndex: frameIndex ]
+		  do: [ :error | self controlFailureFor: error record: aRecord frameIndex: frameIndex ]
 ]
 
 { #category : 'private - data' }
 MCPDebugControlCommand >> resultDataForRecord: aRecord previousStateId: previousStateId frameIndex: frameIndex operation: operationName [
 
 	| data state warnings |
-	state := self
-		         stateSnapshotForRecord: aRecord
-		         operation: operationName.
+	state := self stateSnapshotForRecord: aRecord operation: operationName.
 	warnings := self controlWarnings.
 	data := {
 		        (#sessionId -> aRecord sessionId).
@@ -184,8 +147,7 @@ MCPDebugControlCommand >> resultDataForRecord: aRecord previousStateId: previous
 		        (#stateId -> aRecord stateId).
 		        (#status -> aRecord status).
 		        (#reason -> aRecord reason).
-		        (#frameRef
-		         -> (self frameRefForRecord: aRecord frameIndex: frameIndex)).
+		        (#frameRef -> (self frameRefForRecord: aRecord frameIndex: frameIndex)).
 		        (#state -> state).
 		        (#capabilities -> self capabilities) } asDictionary.
 	warnings ifNotEmpty: [ data at: #warnings put: warnings ].
@@ -205,19 +167,15 @@ MCPDebugControlCommand >> signalMissingDebugSessionForRecord: aRecord [
 
 	^ MCPCommandError
 		  signalErrorCode: #DebugSessionDetached
-		  message:
-		  'Debug session ' , aRecord sessionId
-		  , ' has no DebugSession object.'
+		  message: 'Debug session ' , aRecord sessionId , ' has no DebugSession object.'
 		  details: { (#sessionId -> aRecord sessionId) } asDictionary
 ]
 
 { #category : 'private - data' }
 MCPDebugControlCommand >> stateSnapshotForRecord: aRecord operation: operationName [
 
-	(self shouldReturnStateForRecord: aRecord operation: operationName)
-		ifFalse: [ ^ nil ].
-	^ (MCPDebugStateInfo fromRecord: aRecord request: request)
-		  asDictionary
+	(self shouldReturnStateForRecord: aRecord operation: operationName) ifFalse: [ ^ nil ].
+	^ (MCPDebugStateInfo fromRecord: aRecord request: request) asDictionary
 ]
 
 { #category : 'private - actions' }

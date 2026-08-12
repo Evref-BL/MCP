@@ -42,10 +42,7 @@ MCPToolSearchMethodImplementors >> lookupArgumentName [
 { #category : 'private - template' }
 MCPToolSearchMethodImplementors >> queryEntriesForQueryRequest: queryRequest [
 
-	^ self
-		  implementorEntriesForSelector:
-		  (self requiredLookupPatternFromQueryRequest: queryRequest)
-		  queryRequest: queryRequest
+	^ self implementorEntriesForSelector: (self requiredLookupPatternFromQueryRequest: queryRequest) queryRequest: queryRequest
 ]
 
 { #category : 'metadata' }

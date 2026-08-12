@@ -21,16 +21,13 @@ Class {
 MCPDebugVariablesRequest class >> fromRequest: aRequest tool: aTool [
 
 	| reference suppliedStateId |
-	reference := MCPDebugVariableReference fromString:
-		             (aRequest stringArgumentNamed: 'variableRef').
+	reference := MCPDebugVariableReference fromString: (aRequest stringArgumentNamed: 'variableRef').
 	suppliedStateId := aRequest stringArgumentNamed: 'stateId'.
 	suppliedStateId ifNotNil: [ :requestedStateId |
 			requestedStateId ~= reference stateId ifTrue: [
 					MCPCommandError
 						signalErrorCode: #DebugStateStale
-						message:
-							'Debug state ' , requestedStateId
-							, ' does not reference state ' , reference stateId , '.'
+						message: 'Debug state ' , requestedStateId , ' does not reference state ' , reference stateId , '.'
 						details: {
 								(#requestedStateId -> requestedStateId).
 								(#referenceStateId -> reference stateId).
@@ -40,24 +37,21 @@ MCPDebugVariablesRequest class >> fromRequest: aRequest tool: aTool [
 		  variableReference: reference;
 		  sessionId: reference sessionId;
 		  stateId: reference stateId;
-		  frameRef:
-			  reference sessionId , '/' , reference stateId , '/frame-'
-			  , reference frameIndex asString;
+		  frameRef: reference sessionId , '/' , reference stateId , '/frame-' , reference frameIndex asString;
 		  stackStart: 0;
 		  stackLimit: reference frameIndex + 1;
-		  variableDepth: (aRequest
+		  variableDepth:
+			  (aRequest
 				   nonNegativeIntegerArgumentNamed: 'variableDepth'
 				   default: self defaultVariableDepth
 				   maximum: self maximumVariableDepth);
-		  variableLimit: (aRequest
+		  variableLimit:
+			  (aRequest
 				   nonNegativeIntegerArgumentNamed: 'variableLimit'
 				   default: self defaultVariableLimit
 				   maximum: self maximumVariableLimit);
-		  includeIndexed:
-			  (aRequest booleanArgumentNamed: 'includeIndexed' default: true);
-		  includeInstanceVariables: (aRequest
-				   booleanArgumentNamed: 'includeInstanceVariables'
-				   default: true);
+		  includeIndexed: (aRequest booleanArgumentNamed: 'includeIndexed' default: true);
+		  includeInstanceVariables: (aRequest booleanArgumentNamed: 'includeInstanceVariables' default: true);
 		  yourself
 ]
 
@@ -88,9 +82,7 @@ MCPDebugVariablesRequest >> includeInstanceVariables: aBoolean [
 { #category : 'accessing' }
 MCPDebugVariablesRequest >> requestedStateId [
 
-	^ super requestedStateId ifNil: [
-			  self variableRef ifNotNil: [ :reference |
-				  self stateIdFromReference: reference ] ]
+	^ super requestedStateId ifNil: [ self variableRef ifNotNil: [ :reference | self stateIdFromReference: reference ] ]
 ]
 
 { #category : 'accessing' }

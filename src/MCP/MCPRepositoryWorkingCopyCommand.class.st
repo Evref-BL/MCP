@@ -20,18 +20,15 @@ MCPRepositoryWorkingCopyCommand class >> isAbstract [
 { #category : 'private - diff' }
 MCPRepositoryWorkingCopyCommand >> addModifiedPathsFromNode: aNode to: paths [
 
-	(aNode hasChanges and: [ aNode path segments notEmpty ]) ifTrue: [
-		paths add: aNode path pathString ].
-	aNode children do: [ :each |
-		self addModifiedPathsFromNode: each to: paths ]
+	(aNode hasChanges and: [ aNode path segments notEmpty ]) ifTrue: [ paths add: aNode path pathString ].
+	aNode children do: [ :each | self addModifiedPathsFromNode: each to: paths ]
 ]
 
 { #category : 'private - diff' }
 MCPRepositoryWorkingCopyCommand >> changedPackageNamesForRepository: aRepository modifiedPaths: paths [
 
 	^ self sortedStringsFrom:
-		  (self imageModifiedPackageNamesFor: aRepository)
-		  , (self packageNamesFromModifiedPaths: paths in: aRepository)
+		  (self imageModifiedPackageNamesFor: aRepository) , (self packageNamesFromModifiedPaths: paths in: aRepository)
 ]
 
 { #category : 'private - diff' }
@@ -40,8 +37,7 @@ MCPRepositoryWorkingCopyCommand >> changedPackageNamesFromDiff: aDiff [
 	| names |
 	names := OrderedCollection new.
 	aDiff packages do: [ :each |
-			(self packageNameFromDiffPackageNode: each) ifNotNil: [ :name |
-				name isEmpty ifFalse: [ names add: name ] ] ].
+		(self packageNameFromDiffPackageNode: each) ifNotNil: [ :name | name isEmpty ifFalse: [ names add: name ] ] ].
 	^ self sortedStringsFrom: names
 ]
 
@@ -52,8 +48,7 @@ MCPRepositoryWorkingCopyCommand >> exportLoadedPackagesFrom: aRepository [
 	self exportProjectFileFor: aRepository.
 	sourceDirectory := self repositorySourceDirectoryFor: aRepository.
 	sourceDirectory ensureCreateDirectory.
-	aRepository workingCopy loadedPackages do: [ :package |
-		self exportPackage: package to: sourceDirectory ]
+	aRepository workingCopy loadedPackages do: [ :package | self exportPackage: package to: sourceDirectory ]
 ]
 
 { #category : 'private - export' }
@@ -68,9 +63,7 @@ MCPRepositoryWorkingCopyCommand >> exportPackage: anIcePackage to: sourceDirecto
 		               time: Time now
 		               ancestors: #(  )
 		               stepChildren: #(  ).
-	TonelWriter
-		fileOut: (MCVersion package: anIcePackage mcPackage info: versionInfo)
-		on: sourceDirectory
+	TonelWriter fileOut: (MCVersion package: anIcePackage mcPackage info: versionInfo) on: sourceDirectory
 ]
 
 { #category : 'private - diff' }
@@ -80,17 +73,14 @@ MCPRepositoryWorkingCopyCommand >> gitStatusLinesFor: aRepository [
 	output := (self
 		           runGitArguments: #( 'status' '--porcelain=v1' )
 		           in: aRepository
-		           ifFailed: [ :gitResult |
-			           self signalGitCommandFailed: gitResult action: 'status' ])
-		          at: #output.
+		           ifFailed: [ :gitResult | self signalGitCommandFailed: gitResult action: 'status' ]) at: #output.
 	^ output lines
 ]
 
 { #category : 'private - diff' }
 MCPRepositoryWorkingCopyCommand >> imageModifiedPackageNamesFor: aRepository [
 
-	^ self sortedStringsFrom:
-		  (aRepository modifiedPackages collect: [ :each | each name ])
+	^ self sortedStringsFrom: (aRepository modifiedPackages collect: [ :each | each name ])
 ]
 
 { #category : 'private - tonel order' }
@@ -98,8 +88,7 @@ MCPRepositoryWorkingCopyCommand >> isTonelMethodOrderFile: aFileReference [
 
 	| basename |
 	basename := aFileReference basename.
-	^ (basename endsWith: '.class.st') or: [
-		  basename endsWith: '.extension.st' ]
+	^ (basename endsWith: '.class.st') or: [ basename endsWith: '.extension.st' ]
 ]
 
 { #category : 'private - tonel order' }
@@ -127,7 +116,7 @@ MCPRepositoryWorkingCopyCommand >> modifiedPathsFromDiff: aDiff [
 { #category : 'private - diff' }
 MCPRepositoryWorkingCopyCommand >> modifiedPathsFromGitStatusIn: aRepository [
 
-	(self repositoryHasGitWorkTree: aRepository) ifFalse: [ ^ #( ) ].
+	(self repositoryHasGitWorkTree: aRepository) ifFalse: [ ^ #(  ) ].
 	^ self sortedStringsFrom:
 		  ((self gitStatusLinesFor: aRepository)
 			   collect: [ :line | self pathFromGitStatusLine: line ]
@@ -151,11 +140,10 @@ MCPRepositoryWorkingCopyCommand >> packageNameFromPath: pathString in: aReposito
 	packageName := subdirectory isEmpty
 		               ifTrue: [ segments first ]
 		               ifFalse: [
-			               subdirectorySegments := subdirectory substrings: '/'.
-			               segments size <= subdirectorySegments size ifTrue: [ ^ '' ].
-			               (segments first: subdirectorySegments size)
-			               = subdirectorySegments ifFalse: [ ^ '' ].
-			               segments at: subdirectorySegments size + 1 ].
+				               subdirectorySegments := subdirectory substrings: '/'.
+				               segments size <= subdirectorySegments size ifTrue: [ ^ '' ].
+				               (segments first: subdirectorySegments size) = subdirectorySegments ifFalse: [ ^ '' ].
+				               segments at: subdirectorySegments size + 1 ].
 	(packageName beginsWith: '.') ifTrue: [ ^ '' ].
 	^ packageName
 ]
@@ -164,8 +152,7 @@ MCPRepositoryWorkingCopyCommand >> packageNameFromPath: pathString in: aReposito
 MCPRepositoryWorkingCopyCommand >> packageNamesFromModifiedPaths: paths in: aRepository [
 
 	^ self sortedStringsFrom:
-		  (paths collect: [ :path | self packageNameFromPath: path in: aRepository ]
-		         thenSelect: [ :name | name notEmpty ])
+		  (paths collect: [ :path | self packageNameFromPath: path in: aRepository ] thenSelect: [ :name | name notEmpty ])
 ]
 
 { #category : 'private - diff' }
@@ -199,17 +186,13 @@ MCPRepositoryWorkingCopyCommand >> restoreOrderOnlyTonelChurnFor: aRepository fr
 	restored := OrderedCollection new.
 	sourceDirectory := self repositorySourceDirectoryFor: aRepository.
 	aSnapshot keysAndValuesDo: [ :relativePath :beforeContents |
-		| afterContents file |
-		file := sourceDirectory / relativePath.
-		file exists ifTrue: [
-			afterContents := file contents.
-			(beforeContents ~= afterContents and: [
-				 self
-					 tonelMethodOrderEquivalent: beforeContents
-					 to: afterContents ]) ifTrue: [
-				file writeStreamDo: [ :stream |
-					stream nextPutAll: beforeContents ].
-				restored add: relativePath ] ] ].
+			| afterContents file |
+			file := sourceDirectory / relativePath.
+			file exists ifTrue: [
+					afterContents := file contents.
+					(beforeContents ~= afterContents and: [ self tonelMethodOrderEquivalent: beforeContents to: afterContents ]) ifTrue: [
+							file writeStreamDo: [ :stream | stream nextPutAll: beforeContents ].
+							restored add: relativePath ] ] ].
 	^ self sortedStringsFrom: restored
 ]
 
@@ -219,12 +202,10 @@ MCPRepositoryWorkingCopyCommand >> snapshotTonelFilesFor: aRepository [
 	| snapshot sourceDirectory |
 	snapshot := Dictionary new.
 	sourceDirectory := self repositorySourceDirectoryFor: aRepository.
-	(sourceDirectory exists and: [ sourceDirectory isDirectory ])
-		ifFalse: [ ^ snapshot ].
-	self tonelFilesIn: sourceDirectory do: [ :file |
-		snapshot
-			at: (self relativePathFor: file under: sourceDirectory)
-			put: file contents ].
+	(sourceDirectory exists and: [ sourceDirectory isDirectory ]) ifFalse: [ ^ snapshot ].
+	self
+		tonelFilesIn: sourceDirectory
+		do: [ :file | snapshot at: (self relativePathFor: file under: sourceDirectory) put: file contents ].
 	^ snapshot
 ]
 
@@ -232,18 +213,15 @@ MCPRepositoryWorkingCopyCommand >> snapshotTonelFilesFor: aRepository [
 MCPRepositoryWorkingCopyCommand >> tonelFilesIn: aDirectory do: aBlock [
 
 	aDirectory children do: [ :child |
-		child isDirectory
-			ifTrue: [ self tonelFilesIn: child do: aBlock ]
-			ifFalse: [
-				(self isTonelMethodOrderFile: child) ifTrue: [
-					aBlock value: child ] ] ]
+			child isDirectory
+				ifTrue: [ self tonelFilesIn: child do: aBlock ]
+				ifFalse: [ (self isTonelMethodOrderFile: child) ifTrue: [ aBlock value: child ] ] ]
 ]
 
 { #category : 'private - tonel order' }
 MCPRepositoryWorkingCopyCommand >> tonelMethodOrderEquivalent: beforeContents to: afterContents [
 
-	^ (self tonelMethodOrderSignatureFor: beforeContents)
-	  = (self tonelMethodOrderSignatureFor: afterContents)
+	^ (self tonelMethodOrderSignatureFor: beforeContents) = (self tonelMethodOrderSignatureFor: afterContents)
 ]
 
 { #category : 'private - tonel order' }
@@ -260,8 +238,7 @@ MCPRepositoryWorkingCopyCommand >> tonelMethodOrderSignatureFor: contents [
 			line := lines at: index.
 			(self isTonelMethodStartAt: index in: lines)
 				ifTrue: [
-						currentChunk ifNotNil: [
-							chunks add: currentChunk contents trimBoth ].
+						currentChunk ifNotNil: [ chunks add: currentChunk contents trimBoth ].
 						currentChunk := WriteStream on: String new.
 						currentChunk
 							nextPutAll: line;
@@ -285,7 +262,5 @@ MCPRepositoryWorkingCopyCommand >> tonelMethodOrderSignatureFor: contents [
 { #category : 'private - execution' }
 MCPRepositoryWorkingCopyCommand >> withNonInteractiveAuthorDuring: aBlock [
 
-	^ PharoCompatibility
-		  withNonInteractiveAuthorNamed: 'MCP'
-		  during: aBlock
+	^ PharoCompatibility withNonInteractiveAuthorNamed: 'MCP' during: aBlock
 ]

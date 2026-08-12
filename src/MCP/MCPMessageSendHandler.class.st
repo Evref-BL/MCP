@@ -22,8 +22,7 @@ MCPMessageSendHandler >> argumentsFromParameters: parameters [
 
 	parameters ifNil: [ ^ #(  ) ].
 	parameters isDictionary ifFalse: [ ^ parameters ].
-	^ (self parametersNames collect: [ :name |
-		   parameters at: name ifAbsent: [ nil ] ]) asArray
+	^ (self parametersNames collect: [ :name | parameters at: name ifAbsent: [ nil ] ]) asArray
 ]
 
 { #category : 'parameters-checking' }
@@ -40,15 +39,11 @@ MCPMessageSendHandler >> checkParametersForRequest: aJRPCRequestObject [
 { #category : 'evaluation' }
 MCPMessageSendHandler >> executeWithArguments: parameters [
 
-	^ self
-		  send: self messageSelector
-		  to: self receiver
-		  with: (self argumentsFromParameters: parameters)
+	^ self send: self messageSelector to: self receiver with: (self argumentsFromParameters: parameters)
 ]
 
 { #category : 'accessing' }
 MCPMessageSendHandler >> parametersNames [
 
-	^ (self receiver class lookupSelector: self messageSelector)
-		  argumentNames
+	^ (self receiver class lookupSelector: self messageSelector) argumentNames
 ]

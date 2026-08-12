@@ -20,22 +20,16 @@ MCPFetchRepositoryCommand >> execute [
 				  beforeInfo := MCPRepositoryInfo fromRepository: repository.
 				  (self repositorySupportsExternalGitOperations: repository)
 					  ifTrue: [
-						  self
-							  runGitArguments: #( 'fetch' '--all' '--prune' )
-							  in: repository
-							  ifFailed: [ :gitResult |
-								  self signalGitCommandFailed: gitResult action: 'fetch' ] ]
+							  self
+								  runGitArguments: #( 'fetch' '--all' '--prune' )
+								  in: repository
+								  ifFailed: [ :gitResult | self signalGitCommandFailed: gitResult action: 'fetch' ] ]
 					  ifFalse: [ repository fetch ].
-				  result := MCPRepositoryFetchResult
-					            repositoryBefore: beforeInfo
-					            after: repository ]
+				  result := MCPRepositoryFetchResult repositoryBefore: beforeInfo after: repository ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText:
-					  'Fetched repository ' , result repositoryInfo name , '.'
+					  successResultText: 'Fetched repository ' , result repositoryInfo name , '.'
 					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
-		  failureSummary: [ :error |
-				  'Failed to fetch repository: '
-				  , (error messageText ifNil: [ error asString ]) ]
+		  failureSummary: [ :error | 'Failed to fetch repository: ' , (error messageText ifNil: [ error asString ]) ]
 ]

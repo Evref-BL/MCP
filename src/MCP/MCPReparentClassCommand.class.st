@@ -40,30 +40,21 @@ MCPReparentClassCommand >> execute [
 
 	| currentClass currentSuperclassName updatedClass superclass |
 	currentClass := self currentClass.
-	currentSuperclassName := currentClass superclass
-		                         ifNil: [ '' ]
-		                         ifNotNil: [ :aSuperclass |
-		                         aSuperclass name asString ].
+	currentSuperclassName := currentClass superclass ifNil: [ '' ] ifNotNil: [ :aSuperclass | aSuperclass name asString ].
 	currentSuperclassName = self superclassName ifTrue: [
-			^ MCPReparentClassResult
-				  classInfo: (MCPClassInfo fromClass: currentClass)
-				  oldSuperclassName: currentSuperclassName ].
+		^ MCPReparentClassResult classInfo: (MCPClassInfo fromClass: currentClass) oldSuperclassName: currentSuperclassName ].
 	superclass := self newSuperclass.
-	(self builderForReparenting: currentClass toSuperclass: superclass)
-		install.
+	(self builderForReparenting: currentClass toSuperclass: superclass) install.
 	updatedClass := Smalltalk globals at: self className asSymbol.
-	^ MCPReparentClassResult
-		  classInfo: (MCPClassInfo fromClass: updatedClass)
-		  oldSuperclassName: currentSuperclassName
+	^ MCPReparentClassResult classInfo: (MCPClassInfo fromClass: updatedClass) oldSuperclassName: currentSuperclassName
 ]
 
 { #category : 'private' }
 MCPReparentClassCommand >> newSuperclass [
 
-	^ Smalltalk globals at: self superclassName asSymbol ifAbsent: [
-			  MCPCommandError
-				  signalMissingSuperclassNamed: self superclassName
-				  forClassNamed: self className ]
+	^ Smalltalk globals
+		  at: self superclassName asSymbol
+		  ifAbsent: [ MCPCommandError signalMissingSuperclassNamed: self superclassName forClassNamed: self className ]
 ]
 
 { #category : 'accessing' }

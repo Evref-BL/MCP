@@ -23,8 +23,7 @@ MCPTestRepositoryHead class >> repository: aRepository [
 { #category : 'testing' }
 MCPTestRepositoryHead >> hasUpstream [
 
-	^ repository upstreamRemoteName notEmpty or: [
-		  repository upstreamBranchName notEmpty ]
+	^ repository upstreamRemoteName notEmpty or: [ repository upstreamBranchName notEmpty ]
 ]
 
 { #category : 'testing' }
@@ -42,7 +41,5 @@ MCPTestRepositoryHead >> repository: aRepository [
 { #category : 'accessing' }
 MCPTestRepositoryHead >> upstream [
 
-	^ MCPTestRepositoryUpstream
-		  remoteName: repository upstreamRemoteName
-		  branchName: repository upstreamBranchName
+	^ MCPTestRepositoryUpstream remoteName: repository upstreamRemoteName branchName: repository upstreamBranchName
 ]

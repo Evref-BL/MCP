@@ -82,36 +82,17 @@ MCPClassInfo >> classTraitNames [
 MCPClassInfo >> initializeFromClass: aClass [
 
 	className := aClass name asString.
-	superclassName := aClass superclass
-		                  ifNil: [ '' ]
-		                  ifNotNil: [ :aSuperclass |
-		                  aSuperclass name asString ].
-	packageName := aClass package
-		               ifNil: [ '' ]
-		               ifNotNil: [ :aPackage | aPackage name asString ].
+	superclassName := aClass superclass ifNil: [ '' ] ifNotNil: [ :aSuperclass | aSuperclass name asString ].
+	packageName := aClass package ifNil: [ '' ] ifNotNil: [ :aPackage | aPackage name asString ].
 	tag := aClass packageTagName asString.
-	instanceSlotNames := aClass slots
-		                     collect: [ :each | each name asString ]
-		                     as: Array.
-	classSlotNames := aClass classSide slots
-		                  collect: [ :each | each name asString ]
-		                  as: Array.
-	traitNames := aClass traits
-		              collect: [ :each | each name asString ]
-		              as: Array.
-	classTraitNames := aClass classSide traits
-		                   collect: [ :each | each name asString ]
-		                   as: Array.
-	sharedVariableNames := aClass classVarNames
-		                       collect: [ :each | each asString ]
-		                       as: Array.
-	sharedPoolNames := aClass sharedPools
-		                   collect: [ :each | each name asString ]
-		                   as: Array.
+	instanceSlotNames := aClass slots collect: [ :each | each name asString ] as: Array.
+	classSlotNames := aClass classSide slots collect: [ :each | each name asString ] as: Array.
+	traitNames := aClass traits collect: [ :each | each name asString ] as: Array.
+	classTraitNames := aClass classSide traits collect: [ :each | each name asString ] as: Array.
+	sharedVariableNames := aClass classVarNames collect: [ :each | each asString ] as: Array.
+	sharedPoolNames := aClass sharedPools collect: [ :each | each name asString ] as: Array.
 	layoutClassName := aClass classLayout class name asString.
-	subclassNames := (aClass subclasses
-		                  collect: [ :each | each name asString ]
-		                  as: Array) sort.
+	subclassNames := (aClass subclasses collect: [ :each | each name asString ] as: Array) sort.
 	^ self
 ]
 

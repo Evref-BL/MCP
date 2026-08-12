@@ -20,14 +20,14 @@ MCPToolPushRepository >> repositoryToolSpec [
 
 	^ {
 		  (#title -> 'Push Repository').
-		  (#description
-		   -> 'Push local commits for a registered Iceberg repository.').
+		  (#description -> 'Push local commits for a registered Iceberg repository.').
 		  (#action -> 'push').
 		  (#requestClass -> MCPRepositoryPushRequest).
 		  (#commandClass -> MCPPushRepositoryCommand).
-		  (#inputProperties -> {
-			   self
-				   schemaPropertyNamed: 'remoteName'
-				   type: 'string'
-				   description: 'Remote to use when publishing a branch without upstream.' }) } asDictionary
+		  (#inputProperties
+		   ->
+		   { (self
+			    schemaPropertyNamed: 'remoteName'
+			    type: 'string'
+			    description: 'Remote to use when publishing a branch without upstream.') }) } asDictionary
 ]

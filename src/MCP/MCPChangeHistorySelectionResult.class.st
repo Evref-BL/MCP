@@ -54,15 +54,10 @@ MCPChangeHistorySelectionResult >> asDictionary [
 	| data |
 	data := Dictionary new.
 	data at: #action put: action.
-	historyFileName ifNotNil: [
-		data at: #historyFileName put: historyFileName ].
+	historyFileName ifNotNil: [ data at: #historyFileName put: historyFileName ].
 	data at: #selectionCriteria put: selectionCriteria.
-	data
-		at: #selectedEntries
-		put: (self entryDictionariesFrom: self selectedEntries).
-	data
-		at: #previewEntries
-		put: (self entryDictionariesFrom: self previewEntries).
+	data at: #selectedEntries put: (self entryDictionariesFrom: self selectedEntries).
+	data at: #previewEntries put: (self entryDictionariesFrom: self previewEntries).
 	data at: #selectedCount put: selectedCount.
 	data at: #selectedCodeChangeCount put: selectedCodeChangeCount.
 	data at: #skippedNonCodeChangeCount put: skippedNonCodeChangeCount.
@@ -93,8 +88,7 @@ MCPChangeHistorySelectionResult >> initializeAction: actionName historyFileName:
 	selectedEntries := selectedEntryInfos ifNil: [ #(  ) ].
 	previewEntries := previewEntryInfos ifNil: [ #(  ) ].
 	selectedCount := selectedEntries size.
-	selectedCodeChangeCount := selectedEntries count: [ :each |
-		                           each isCodeChange ].
+	selectedCodeChangeCount := selectedEntries count: [ :each | each isCodeChange ].
 	skippedNonCodeChangeCount := skippedCount ifNil: [ 0 ].
 	previewCount := previewEntries size.
 	performed := performedFlag.

@@ -28,14 +28,9 @@ MCPToolMutation >> actionErrorCodePrefixFor: action [
 { #category : 'private - refactoring' }
 MCPToolMutation >> addRefactoringScopeContextFromSpec: scopeSpec toRequestedContext: requestedContext [
 
-	scopeSpec packageNames ifNotEmpty: [
-		requestedContext at: #packageNames put: scopeSpec packageNames ].
-	scopeSpec classNames ifNotEmpty: [
-		requestedContext at: #classNames put: scopeSpec classNames ].
-	scopeSpec hierarchyClassNames ifNotEmpty: [
-			requestedContext
-				at: #hierarchyClassNames
-				put: scopeSpec hierarchyClassNames ]
+	scopeSpec packageNames ifNotEmpty: [ requestedContext at: #packageNames put: scopeSpec packageNames ].
+	scopeSpec classNames ifNotEmpty: [ requestedContext at: #classNames put: scopeSpec classNames ].
+	scopeSpec hierarchyClassNames ifNotEmpty: [ requestedContext at: #hierarchyClassNames put: scopeSpec hierarchyClassNames ]
 ]
 
 { #category : 'private - errors' }
@@ -44,22 +39,19 @@ MCPToolMutation >> addSupplementalDetailsForMutationError: anError to: details [
 	| cause methodNode position undeclaredVariableNode variableName |
 	cause := self mutationFailureCauseFor: anError.
 	methodNode := self methodNodeFromError: cause.
-	methodNode ifNotNil: [
-		self addSupplementalSelectorFromMethodNode: methodNode to: details ].
+	methodNode ifNotNil: [ self addSupplementalSelectorFromMethodNode: methodNode to: details ].
 	(PharoCompatibility compilationAstFromException: anError) ifNotNil: [ :ast |
 		self addSupplementalSelectorFromMethodNode: ast to: details ].
 	anError == cause ifFalse: [
-		methodNode := self methodNodeFromError: anError.
-		methodNode ifNotNil: [
-			self addSupplementalSelectorFromMethodNode: methodNode to: details ] ].
+			methodNode := self methodNodeFromError: anError.
+			methodNode ifNotNil: [ self addSupplementalSelectorFromMethodNode: methodNode to: details ] ].
 	position := self positionFromError: cause.
 	position ifNotNil: [ details at: #position put: position ].
 	undeclaredVariableNode := self undeclaredVariableNodeFrom: cause.
 	undeclaredVariableNode ifNotNil: [
-		variableName := self undeclaredVariableNameFor: cause.
-		variableName ifNotNil: [ details at: #variableName put: variableName ].
-		(self startPositionFromNode: undeclaredVariableNode) ifNotNil: [ :start |
-			details at: #position put: start ] ]
+			variableName := self undeclaredVariableNameFor: cause.
+			variableName ifNotNil: [ details at: #variableName put: variableName ].
+			(self startPositionFromNode: undeclaredVariableNode) ifNotNil: [ :start | details at: #position put: start ] ]
 ]
 
 { #category : 'private - errors' }
@@ -67,8 +59,7 @@ MCPToolMutation >> addSupplementalSelectorFromMethodNode: methodNode to: details
 
 	| selector |
 	selector := methodNode selector.
-	selector ifNotNil: [
-		details at: #selector ifAbsentPut: [ selector asString ] ]
+	selector ifNotNil: [ details at: #selector ifAbsentPut: [ selector asString ] ]
 ]
 
 { #category : 'metadata' }
@@ -85,8 +76,7 @@ MCPToolMutation >> buildInputSchema [
 { #category : 'private - refactoring' }
 MCPToolMutation >> classesRefactoringEnvironmentForClassNames: classNames baseEnvironment: baseEnvironment [
 
-	^ baseEnvironment forClasses:
-		  (self resolvedRefactoringScopeClassesFrom: classNames)
+	^ baseEnvironment forClasses: (self resolvedRefactoringScopeClassesFrom: classNames)
 ]
 
 { #category : 'private - execution' }
@@ -100,9 +90,7 @@ MCPToolMutation >> errorDetailsForRequestedContext: requestedContext causedBy: a
 
 	| cause details |
 	cause := self mutationFailureCauseFor: anError.
-	details := requestedContext
-		           ifNil: [ Dictionary new ]
-		           ifNotNil: [ requestedContext copy ].
+	details := requestedContext ifNil: [ Dictionary new ] ifNotNil: [ requestedContext copy ].
 	details at: #causeClass put: cause class name asString.
 	^ details
 ]
@@ -123,8 +111,7 @@ MCPToolMutation >> errorResultForCommandError: anError action: action requestedC
 	| details |
 	details := anError structuredDetails copy.
 	requestedContext ifNotNil: [
-			requestedContext keysAndValuesDo: [ :key :value |
-				value ifNotNil: [ details at: key ifAbsentPut: [ value ] ] ] ].
+		requestedContext keysAndValuesDo: [ :key :value | value ifNotNil: [ details at: key ifAbsentPut: [ value ] ] ] ].
 	(#( 'compile' 'create' 'update' ) includes: action)
 		ifTrue: [ details at: #action put: action ]
 		ifFalse: [
@@ -137,10 +124,8 @@ MCPToolMutation >> errorResultForCommandError: anError action: action requestedC
 MCPToolMutation >> errorResultForRefactoringWarning: aWarning action: action requestedContext: requestedContext [
 
 	^ self
-		  errorResultForCommandError: (self
-				   normalizedCommandErrorForRefactoringWarning: aWarning
-				   action: action
-				   requestedContext: requestedContext)
+		  errorResultForCommandError:
+		  (self normalizedCommandErrorForRefactoringWarning: aWarning action: action requestedContext: requestedContext)
 		  action: action
 		  requestedContext: requestedContext
 ]
@@ -154,17 +139,14 @@ MCPToolMutation >> executeActionBlock: actionBlock force: forceRequested action:
 		on: RBRefactoringWarning
 		do: [ :warning |
 				| impactMessages |
-				impactMessages := self impactMessagesForRefactoringWarning:
-					                  warning.
+				impactMessages := self impactMessagesForRefactoringWarning: warning.
 				forceRequested
 					ifTrue: [
 							warningMessages addAll: impactMessages.
 							warning resume: true ]
 					ifFalse: [
-							^ { (#stoppedResult -> (self
-								    errorResultForRefactoringWarning: warning
-								    action: action
-								    requestedContext: requestedContext)) } asDictionary ] ].
+							^ { (#stoppedResult -> (self errorResultForRefactoringWarning: warning action: action requestedContext: requestedContext)) }
+								  asDictionary ] ].
 	^ { (#warnings -> warningMessages asArray) } asDictionary
 ]
 
@@ -178,8 +160,7 @@ MCPToolMutation >> executeMutationAction: action force: forceRequested requested
 			                      force: forceRequested
 			                      action: action
 			                      requestedContext: requestedContext.
-		  (executionOutcome includesKey: #stoppedResult) ifTrue: [
-			  ^ executionOutcome at: #stoppedResult ].
+		  (executionOutcome includesKey: #stoppedResult) ifTrue: [ ^ executionOutcome at: #stoppedResult ].
 		  successBlock value: (executionOutcome at: #warnings) ]
 		  on: Exception
 		  do: [ :error |
@@ -195,32 +176,20 @@ MCPToolMutation >> executeWithRequest: request [
 
 	^ self
 		  executeParsedRequestFrom: request
-		  do: [ :mutationRequest |
-			  (self commandForRequest: mutationRequest) execute ]
+		  do: [ :mutationRequest | (self commandForRequest: mutationRequest) execute ]
 		  onError: [ :error :mutationRequest |
 				  | action requestedContext |
-				  action := self
-					            mutationActionForErrorFromParsedRequest:
-					            mutationRequest
-					            rawRequest: request.
-				  requestedContext := self
-					                      requestedContextForErrorFromParsedRequest:
-					                      mutationRequest
-					                      rawRequest: request.
+				  action := self mutationActionForErrorFromParsedRequest: mutationRequest rawRequest: request.
+				  requestedContext := self requestedContextForErrorFromParsedRequest: mutationRequest rawRequest: request.
 				  error
 					  mcpCommandErrorDo: [ :commandError |
-							  self
-								  errorResultForCommandError: commandError
-								  action: action
-								  requestedContext: requestedContext ]
+					  self errorResultForCommandError: commandError action: action requestedContext: requestedContext ]
 					  otherwise: [ :actionError |
 							  self
 								  errorResultForActionFailure: actionError
 								  action: action
 								  requestedContext: requestedContext
-								  summary: (actionError messageText
-										   ifNil: [ actionError asString ]
-										   ifNotNil: [ :text | text ]) ] ]
+								  summary: (actionError messageText ifNil: [ actionError asString ] ifNotNil: [ :text | text ]) ] ]
 ]
 
 { #category : 'private - errors' }
@@ -229,8 +198,7 @@ MCPToolMutation >> failureErrorCodeFor: anError action: action [
 	| cause prefix |
 	cause := self mutationFailureCauseFor: anError.
 	prefix := self actionErrorCodePrefixFor: action.
-	(self undeclaredVariableNodeFrom: cause) ifNotNil: [
-		^ prefix , 'UndeclaredVariable' ].
+	(self undeclaredVariableNodeFrom: cause) ifNotNil: [ ^ prefix , 'UndeclaredVariable' ].
 	^ prefix , cause mcpMutationFailureErrorCodeSuffix
 ]
 
@@ -245,8 +213,7 @@ MCPToolMutation >> forceSchemaProperty [
 
 	^ self
 		  booleanSchemaPropertyNamed: 'force'
-		  description:
-		  'Continue through refactoring warnings instead of stopping.'
+		  description: 'Continue through refactoring warnings instead of stopping.'
 		  default: false
 ]
 
@@ -254,14 +221,10 @@ MCPToolMutation >> forceSchemaProperty [
 MCPToolMutation >> hierarchyRefactoringEnvironmentForClassNames: classNames baseEnvironment: baseEnvironment [
 
 	| environment resolvedClasses |
-	resolvedClasses := self resolvedRefactoringScopeClassesFrom:
-		                   classNames.
+	resolvedClasses := self resolvedRefactoringScopeClassesFrom: classNames.
 	environment := nil.
 	resolvedClasses do: [ :eachClass |
-			environment := self
-				               unionRefactoringEnvironment: environment
-				               with:
-				               (baseEnvironment forClassHierarchy: eachClass) ].
+		environment := self unionRefactoringEnvironment: environment with: (baseEnvironment forClassHierarchy: eachClass) ].
 	^ environment
 ]
 
@@ -275,10 +238,8 @@ MCPToolMutation >> howToProceedForRefactoringWarning [
 MCPToolMutation >> impactMessageForRefactoringCondition: aCondition [
 
 	| message |
-	message := String streamContents: [ :stream |
-		           aCondition violationMessageOn: stream ].
-	^ self normalizedRefactoringConditionMessage:
-		  (self normalizedSingleLineText: message)
+	message := String streamContents: [ :stream | aCondition violationMessageOn: stream ].
+	^ self normalizedRefactoringConditionMessage: (self normalizedSingleLineText: message)
 ]
 
 { #category : 'private - warnings' }
@@ -293,10 +254,8 @@ MCPToolMutation >> impactMessagesForRefactoringWarning: aWarning [
 					message := self impactMessageForRefactoringCondition: each.
 					message isEmpty ifFalse: [ impactMessages add: message ] ] ].
 	impactMessages ifEmpty: [
-			primaryMessage := self normalizedSingleLineText:
-				                  aWarning messageText.
-			primaryMessage isEmpty ifTrue: [
-				primaryMessage := aWarning class name asString ].
+			primaryMessage := self normalizedSingleLineText: aWarning messageText.
+			primaryMessage isEmpty ifTrue: [ primaryMessage := aWarning class name asString ].
 			impactMessages add: primaryMessage ].
 	^ impactMessages asArray
 ]
@@ -324,8 +283,7 @@ MCPToolMutation >> mutationFailureCauseFor: anError [
 
 	^ (PharoCompatibility syntaxNoticeFromException: anError)
 		  ifNil: [ anError mcpMutationFailureNotice ]
-		  ifNotNil: [ :syntaxNotice |
-			  anError mcpMutationFailureCauseForSyntaxNotice: syntaxNotice ]
+		  ifNotNil: [ :syntaxNotice | anError mcpMutationFailureCauseForSyntaxNotice: syntaxNotice ]
 ]
 
 { #category : 'private - errors' }
@@ -333,8 +291,7 @@ MCPToolMutation >> normalizedCauseMessageForMutationError: anError [
 
 	| cause descriptionText message |
 	cause := self mutationFailureCauseFor: anError.
-	(self undeclaredVariableNodeFrom: cause) ifNotNil: [
-		^ self undeclaredVariableCauseMessageFor: cause ].
+	(self undeclaredVariableNodeFrom: cause) ifNotNil: [ ^ self undeclaredVariableCauseMessageFor: cause ].
 	message := cause messageText.
 	message ifNil: [ message := '' ].
 	message := message asString.
@@ -350,12 +307,8 @@ MCPToolMutation >> normalizedCauseMessageForMutationError: anError [
 MCPToolMutation >> normalizedCommandErrorForActionFailure: anError action: action requestedContext: requestedContext summary: summary [
 
 	| details normalizedSummary |
-	normalizedSummary := summary
-		                     ifNil: [ String new ]
-		                     ifNotNil: [ summary asString ].
-	details := self
-		           errorDetailsForRequestedContext: requestedContext
-		           causedBy: anError.
+	normalizedSummary := summary ifNil: [ String new ] ifNotNil: [ summary asString ].
+	details := self errorDetailsForRequestedContext: requestedContext causedBy: anError.
 	self addSupplementalDetailsForMutationError: anError to: details.
 	^ MCPCommandError new
 		  errorCode: (self failureErrorCodeFor: anError action: action);
@@ -374,9 +327,7 @@ MCPToolMutation >> normalizedCommandErrorForRefactoringWarning: aWarning action:
 		           action: action
 		           requestedContext: requestedContext
 		           impactMessages: impactMessages.
-	details := self
-		           errorDetailsForRequestedContext: requestedContext
-		           causedBy: aWarning.
+	details := self errorDetailsForRequestedContext: requestedContext causedBy: aWarning.
 	details at: #impactMessages put: impactMessages.
 	details at: #howToProceed put: self howToProceedForRefactoringWarning.
 	details at: #forceSupported put: true.
@@ -390,8 +341,7 @@ MCPToolMutation >> normalizedCommandErrorForRefactoringWarning: aWarning action:
 { #category : 'private - warnings' }
 MCPToolMutation >> normalizedRefactoringConditionMessage: aString [
 
-	(aString beginsWith: 'NOT ') ifTrue: [
-		^ (aString allButFirst: 4) trimBoth ].
+	(aString beginsWith: 'NOT ') ifTrue: [ ^ (aString allButFirst: 4) trimBoth ].
 	^ aString
 ]
 
@@ -403,8 +353,7 @@ MCPToolMutation >> normalizedSingleLineText: aString [
 	text := text copyReplaceAll: '<n>' with: ' '.
 	text := text copyReplaceAll: String cr with: ' '.
 	text := text copyReplaceAll: String lf with: ' '.
-	[ text includesSubstring: '  ' ] whileTrue: [
-		text := text copyReplaceAll: '  ' with: ' ' ].
+	[ text includesSubstring: '  ' ] whileTrue: [ text := text copyReplaceAll: '  ' with: ' ' ].
 	^ text trimBoth
 ]
 
@@ -428,25 +377,18 @@ MCPToolMutation >> refactoringEnvironmentForScopeSpec: scopeSpec [
 	scopeSpec isDefaultImageScope ifTrue: [ ^ baseEnvironment ].
 	environment := nil.
 	scopeSpec packageNames ifNotEmpty: [
-			environment := self
-				               unionRefactoringEnvironment: environment
-				               with:
-				               (baseEnvironment forPackageNames:
-					                scopeSpec packageNames) ].
+		environment := self unionRefactoringEnvironment: environment with: (baseEnvironment forPackageNames: scopeSpec packageNames) ].
 	scopeSpec classNames ifNotEmpty: [
 			environment := self
 				               unionRefactoringEnvironment: environment
-				               with: (self
-						                classesRefactoringEnvironmentForClassNames:
-						                scopeSpec classNames
-						                baseEnvironment: baseEnvironment) ].
+				               with: (self classesRefactoringEnvironmentForClassNames: scopeSpec classNames baseEnvironment: baseEnvironment) ].
 	scopeSpec hierarchyClassNames ifNotEmpty: [
 			environment := self
 				               unionRefactoringEnvironment: environment
-				               with: (self
-						                hierarchyRefactoringEnvironmentForClassNames:
-						                scopeSpec hierarchyClassNames
-						                baseEnvironment: baseEnvironment) ].
+				               with:
+				               (self
+					                hierarchyRefactoringEnvironmentForClassNames: scopeSpec hierarchyClassNames
+					                baseEnvironment: baseEnvironment) ].
 	^ environment ifNil: [ baseEnvironment ]
 ]
 
@@ -461,11 +403,9 @@ MCPToolMutation >> refactoringModelForScopeSpec: scopeSpec anchoredAtBehavior: a
 			details at: #classSide put: aBehavior isMeta.
 			MCPCommandError
 				signalErrorCode: #RefactoringScopeExcludesTargetClass
-				message:
-					'Refactoring scope does not include ' , (aBehavior isMeta
+				message: 'Refactoring scope does not include ' , (aBehavior isMeta
 						 ifTrue: [ 'the class side of ' ]
-						 ifFalse: [ 'class ' ]) , aBehavior instanceSide name asString
-					, '.'
+						 ifFalse: [ 'class ' ]) , aBehavior instanceSide name asString , '.'
 				details: details ].
 	^ RBNamespace onEnvironment: environment
 ]
@@ -473,10 +413,7 @@ MCPToolMutation >> refactoringModelForScopeSpec: scopeSpec anchoredAtBehavior: a
 { #category : 'private - schema' }
 MCPToolMutation >> refactoringScopeClassNamesSchemaProperty [
 
-	^ self
-		  stringArraySchemaNamed: 'classNames'
-		  description: 'Scope classes; include target.'
-		  itemDescription: 'Class name.'
+	^ self stringArraySchemaNamed: 'classNames' description: 'Scope classes; include target.' itemDescription: 'Class name.'
 ]
 
 { #category : 'private - schema' }
@@ -491,10 +428,7 @@ MCPToolMutation >> refactoringScopeHierarchyClassNamesSchemaProperty [
 { #category : 'private - schema' }
 MCPToolMutation >> refactoringScopePackageNamesSchemaProperty [
 
-	^ self
-		  stringArraySchemaNamed: 'packageNames'
-		  description: 'Scope packages; include target.'
-		  itemDescription: 'Package name.'
+	^ self stringArraySchemaNamed: 'packageNames' description: 'Scope packages; include target.' itemDescription: 'Package name.'
 ]
 
 { #category : 'private - request' }
@@ -503,13 +437,9 @@ MCPToolMutation >> refactoringScopeSpecFromRequest: request [
 	| classNames hierarchyClassNames packageNames |
 	packageNames := request stringCollectionArgumentNamed: 'packageNames'.
 	classNames := request stringCollectionArgumentNamed: 'classNames'.
-	hierarchyClassNames := request stringCollectionArgumentNamed:
-		                       'hierarchyClassNames'.
+	hierarchyClassNames := request stringCollectionArgumentNamed: 'hierarchyClassNames'.
 	self validateRefactoringScopePackageNamesExist: packageNames.
-	^ MCPRefactoringScopeSpec
-		  packageNames: packageNames
-		  classNames: classNames
-		  hierarchyClassNames: hierarchyClassNames
+	^ MCPRefactoringScopeSpec packageNames: packageNames classNames: classNames hierarchyClassNames: hierarchyClassNames
 ]
 
 { #category : 'private - warnings' }
@@ -519,8 +449,7 @@ MCPToolMutation >> refactoringWarningSummaryFor: aWarning action: action request
 			  stream
 				  nextPutAll: 'Refactoring warning for ';
 				  nextPutAll: action;
-				  nextPutAll:
-					  (self targetDescriptionForRequestedContext: requestedContext).
+				  nextPutAll: (self targetDescriptionForRequestedContext: requestedContext).
 			  impactMessages isEmpty ifFalse: [
 					  stream
 						  nextPutAll: ': ';
@@ -546,8 +475,7 @@ MCPToolMutation >> requiredInputProperties [
 { #category : 'private - request' }
 MCPToolMutation >> resolvedRefactoringScopeClassesFrom: classNames [
 
-	^ classNames collect: [ :eachName |
-		  MCPImageLookup classNamed: eachName ]
+	^ classNames collect: [ :eachName | MCPImageLookup classNamed: eachName ]
 ]
 
 { #category : 'testing' }
@@ -570,17 +498,14 @@ MCPToolMutation >> targetDescriptionForRequestedContext: requestedContext [
 	className := requestedContext at: #className ifAbsent: [ nil ].
 	selector := requestedContext at: #selector ifAbsent: [ nil ].
 	slotName := requestedContext at: #slotName ifAbsent: [ nil ].
-	(className isNil and: [ selector isNil and: [ slotName isNil ] ])
-		ifTrue: [ ^ '' ].
+	(className isNil and: [ selector isNil and: [ slotName isNil ] ]) ifTrue: [ ^ '' ].
 	^ String streamContents: [ :stream |
 			  className ifNotNil: [
 					  stream
 						  nextPutAll: ' on ';
 						  nextPutAll: className ].
 			  selector ifNotNil: [
-					  className
-						  ifNil: [ stream nextPutAll: ' for selector ' ]
-						  ifNotNil: [ stream nextPutAll: '>>' ].
+					  className ifNil: [ stream nextPutAll: ' for selector ' ] ifNotNil: [ stream nextPutAll: '>>' ].
 					  stream nextPutAll: selector ].
 			  slotName ifNotNil: [
 					  stream
@@ -593,9 +518,7 @@ MCPToolMutation >> undeclaredVariableCauseMessageFor: anError [
 
 	| variableName |
 	variableName := self undeclaredVariableNameFor: anError.
-	^ variableName
-		  ifNil: [ 'Undeclared variable' ]
-		  ifNotNil: [ 'Undeclared variable: ' , variableName ]
+	^ variableName ifNil: [ 'Undeclared variable' ] ifNotNil: [ 'Undeclared variable: ' , variableName ]
 ]
 
 { #category : 'private - errors' }
@@ -603,8 +526,7 @@ MCPToolMutation >> undeclaredVariableNameFor: anError [
 
 	| node notice |
 	node := self undeclaredVariableNodeFrom: anError.
-	(self variableNameFromNode: node) ifNotNil: [ :variableName |
-		^ variableName ].
+	(self variableNameFromNode: node) ifNotNil: [ :variableName | ^ variableName ].
 	notice := self undeclaredVariableNoticeFrom: anError.
 	notice ifNil: [ ^ nil ].
 	node := self undeclaredVariableNodeFrom: notice.
@@ -629,9 +551,7 @@ MCPToolMutation >> undeclaredVariableNoticeFrom: anError [
 { #category : 'private - refactoring' }
 MCPToolMutation >> unionRefactoringEnvironment: currentEnvironment with: addedEnvironment [
 
-	^ currentEnvironment
-		  ifNil: [ addedEnvironment ]
-		  ifNotNil: [ currentEnvironment | addedEnvironment ]
+	^ currentEnvironment ifNil: [ addedEnvironment ] ifNotNil: [ currentEnvironment | addedEnvironment ]
 ]
 
 { #category : 'private - request' }
@@ -645,9 +565,7 @@ MCPToolMutation >> validateRequest: request [
 
 	self requiredInputProperties do: [ :each |
 			(request argumentNamed: each ifAbsent: [ nil ]) ifNil: [
-					MCPInvalidToolInput
-						signalMissingRequiredArgumentNamed: each
-						forTool: self ] ]
+				MCPInvalidToolInput signalMissingRequiredArgumentNamed: each forTool: self ] ]
 ]
 
 { #category : 'private - errors' }

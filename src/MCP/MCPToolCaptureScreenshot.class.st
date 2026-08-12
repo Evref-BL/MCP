@@ -42,8 +42,7 @@ MCPToolCaptureScreenshot >> buildInputSchema [
 		  type: 'object';
 		  properties: { (self
 				   stringEnumSchemaPropertyNamed: 'target'
-				   description:
-					   'The screenshot target. The only accepted value is world.'
+				   description: 'The screenshot target. The only accepted value is world.'
 				   values: #( 'world' )
 				   default: 'world') };
 		  required: #(  );
@@ -55,22 +54,10 @@ MCPToolCaptureScreenshot >> buildOutputSchema [
 
 	^ self
 		  standardOutputSchemaForDataProperties: {
-				  (self
-					   schemaPropertyNamed: 'target'
-					   type: 'string'
-					   description: 'The screenshot target that was captured.').
-				  (self
-					   schemaPropertyNamed: 'width'
-					   type: 'integer'
-					   description: 'The screenshot width in pixels.').
-				  (self
-					   schemaPropertyNamed: 'height'
-					   type: 'integer'
-					   description: 'The screenshot height in pixels.').
-				  (self
-					   schemaPropertyNamed: 'mimeType'
-					   type: 'string'
-					   description: 'The MIME type of the image content block.') }
+				  (self schemaPropertyNamed: 'target' type: 'string' description: 'The screenshot target that was captured.').
+				  (self schemaPropertyNamed: 'width' type: 'integer' description: 'The screenshot width in pixels.').
+				  (self schemaPropertyNamed: 'height' type: 'integer' description: 'The screenshot height in pixels.').
+				  (self schemaPropertyNamed: 'mimeType' type: 'string' description: 'The MIME type of the image content block.') }
 		  required: #( 'target' 'width' 'height' 'mimeType' )
 ]
 

@@ -14,16 +14,12 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 
 	^ {
 		  (MCPToolEvaluate -> { (#code -> '1 + 1') } asDictionary).
-		  (MCPToolRunTests
-		   -> { (#classes -> { 'MCPToolContractsTest' }) } asDictionary).
+		  (MCPToolRunTests -> { (#classes -> { 'MCPToolContractsTest' }) } asDictionary).
 		  (MCPToolGetClass -> { (#className -> 'MCPTool') } asDictionary).
 		  (MCPToolGetMethod -> {
 			   (#className -> 'MCPTool').
 			   (#selector -> 'name') } asDictionary).
-		  (MCPToolRemoveClasses
-		   ->
-			   { (#classNames -> #( 'MCPJSONSchemaValidatorTestTemporary' )) }
-				   asDictionary).
+		  (MCPToolRemoveClasses -> { (#classNames -> #( 'MCPJSONSchemaValidatorTestTemporary' )) } asDictionary).
 		  (MCPToolRemoveMethods -> {
 			   (#className -> 'MCPTool').
 			   (#selectors -> #( 'temporarySelector' )) } asDictionary).
@@ -31,10 +27,8 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 		  (MCPToolVerifyRepositoryIdentity -> {
 			   (#repositoryName -> 'MCP').
 			   (#branchName -> 'main') } asDictionary).
-		  (MCPToolListRepositoryChanges
-		   -> { (#repositoryName -> 'MCP') } asDictionary).
-		  (MCPToolDiscardRepositoryChanges
-		   -> { (#repositoryName -> 'MCP') } asDictionary).
+		  (MCPToolListRepositoryChanges -> { (#repositoryName -> 'MCP') } asDictionary).
+		  (MCPToolDiscardRepositoryChanges -> { (#repositoryName -> 'MCP') } asDictionary).
 		  (MCPToolRepositoryOperation -> {
 			   (#action -> 'update').
 			   (#repositoryName -> 'MCP').
@@ -50,17 +44,13 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 			   (#repositoryName -> 'MCP').
 			   (#remoteName -> 'origin').
 			   (#remoteUrl -> 'git@example.com:mcp.git') } asDictionary).
-		  (MCPToolExportRepository
-		   -> { (#repositoryName -> 'MCP') } asDictionary).
+		  (MCPToolExportRepository -> { (#repositoryName -> 'MCP') } asDictionary).
 		  (MCPToolCommitRepository -> {
 			   (#repositoryName -> 'MCP').
 			   (#message -> 'Example commit') } asDictionary).
-		  (MCPToolFetchRepository
-		   -> { (#repositoryName -> 'MCP') } asDictionary).
-		  (MCPToolPullRepository
-		   -> { (#repositoryName -> 'MCP') } asDictionary).
-		  (MCPToolPushRepository
-		   -> { (#repositoryName -> 'MCP') } asDictionary).
+		  (MCPToolFetchRepository -> { (#repositoryName -> 'MCP') } asDictionary).
+		  (MCPToolPullRepository -> { (#repositoryName -> 'MCP') } asDictionary).
+		  (MCPToolPushRepository -> { (#repositoryName -> 'MCP') } asDictionary).
 		  (MCPToolCreateRepositoryBranch -> {
 			   (#repositoryName -> 'MCP').
 			   (#branchName -> 'example-branch') } asDictionary).
@@ -70,8 +60,7 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 		  (MCPToolCheckoutRepositoryBranch -> {
 			   (#repositoryName -> 'MCP').
 			   (#branchName -> 'main') } asDictionary).
-		  (MCPToolAdoptRepositoryHead
-		   -> { (#repositoryName -> 'MCP') } asDictionary).
+		  (MCPToolAdoptRepositoryHead -> { (#repositoryName -> 'MCP') } asDictionary).
 		  (MCPToolLoadRepository -> {
 			   (#owner -> 'ExampleOwner').
 			   (#project -> 'ExampleProject').
@@ -91,38 +80,26 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 		  (MCPToolRewriteMethods -> { (#rules -> { {
 			    (#lhs -> 'self').
 			    (#rhs -> 'self') } asDictionary }) } asDictionary).
-		  (MCPToolSearchMethodImplementors
-		   -> { (#selector -> 'toolName') } asDictionary).
-		  (MCPToolSearchMethodSenders
-		   -> { (#selector -> 'toolName') } asDictionary).
-		  (MCPToolSearchClassReferences
-		   -> { (#className -> 'MCPTool') } asDictionary).
-		  (MCPToolSearchVariableReferences
-		   -> { (#variableName -> 'toolName') } asDictionary).
+		  (MCPToolSearchMethodImplementors -> { (#selector -> 'toolName') } asDictionary).
+		  (MCPToolSearchMethodSenders -> { (#selector -> 'toolName') } asDictionary).
+		  (MCPToolSearchClassReferences -> { (#className -> 'MCPTool') } asDictionary).
+		  (MCPToolSearchVariableReferences -> { (#variableName -> 'toolName') } asDictionary).
 		  (MCPToolListChangeHistoryFiles -> Dictionary new).
 		  (MCPToolListChangeHistoryEntries -> Dictionary new).
 		  (MCPToolChangeHistory -> { (#action -> 'listFiles') } asDictionary).
 		  (MCPToolCaptureScreenshot -> { (#target -> 'world') } asDictionary).
-		  (MCPToolDebugSessionOperation
-		   -> { (#action -> 'list') } asDictionary).
-		  (MCPToolDebugState
-		   -> { (#sessionId -> 'debug-session-1') } asDictionary).
-		  (MCPToolDebugVariables
-		   ->
-			   { (#variableRef
-			    -> 'debug-session-1/state-0/frame-0/scope-receiver') }
-				   asDictionary).
+		  (MCPToolDebugSessionOperation -> { (#action -> 'list') } asDictionary).
+		  (MCPToolDebugState -> { (#sessionId -> 'debug-session-1') } asDictionary).
+		  (MCPToolDebugVariables -> { (#variableRef -> 'debug-session-1/state-0/frame-0/scope-receiver') } asDictionary).
 		  (MCPToolDebugEvaluate -> {
 			   (#sessionId -> 'debug-session-1').
 			   (#expression -> '1') } asDictionary).
 		  (MCPToolDebugSessionControlOperation -> {
 			   (#sessionId -> 'debug-session-1').
 			   (#action -> 'stepOver') } asDictionary).
-		  (MCPToolDebugBreakpointOperation
-		   -> { (#action -> 'list') } asDictionary).
+		  (MCPToolDebugBreakpointOperation -> { (#action -> 'list') } asDictionary).
 		  (MCPToolDebugCapture -> { (#expression -> '1') } asDictionary).
-		  (MCPToolUpdateDebugMethod
-		   -> { (#sessionId -> 'debug-session-1') } asDictionary).
+		  (MCPToolUpdateDebugMethod -> { (#sessionId -> 'debug-session-1') } asDictionary).
 		  (MCPToolSearchMethodMetadata -> Dictionary new).
 		  (MCPToolSearchTools -> Dictionary new).
 		  (MCPToolGetTool -> { (#toolName -> 'class_search') } asDictionary).
@@ -289,58 +266,35 @@ MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasAdvertiseGroupedSearchS
 
 	| classProperties classScopeProperties methodProperties methodScopeProperties |
 	classProperties := MCPToolSearchClasses new inputSchema properties.
-	methodProperties := MCPToolSearchMethodMetadata new inputSchema
-		                    properties.
-	classScopeProperties := ((classProperties detect: [ :each |
-		                          each name = 'scope' ]) extraProperties
-		                         at: #properties) collect: [ :each |
-		                        each name ].
-	methodScopeProperties := ((methodProperties detect: [ :each |
-		                           each name = 'scope' ]) extraProperties
-		                          at: #properties) collect: [ :each |
-		                         each name ].
+	methodProperties := MCPToolSearchMethodMetadata new inputSchema properties.
+	classScopeProperties := ((classProperties detect: [ :each | each name = 'scope' ]) extraProperties at: #properties) collect: [
+		                        :each | each name ].
+	methodScopeProperties := ((methodProperties detect: [ :each | each name = 'scope' ]) extraProperties at: #properties) collect: [
+		                         :each | each name ].
 	self
 		assert: (classProperties collect: [ :each | each name ]) asSet
-		equals:
-			#( 'scope' 'className' 'tag' 'instanceSlot' 'classSlot' 'filterMode'
-			   'caseSensitive' 'limit' 'offset' ) asSet.
+		equals: #( 'scope' 'className' 'tag' 'instanceSlot' 'classSlot' 'filterMode' 'caseSensitive' 'limit' 'offset' ) asSet.
 	self
 		assert: (methodProperties collect: [ :each | each name ]) asSet
-		equals:
-			#( 'scope' 'selector' 'protocol' 'filterMode' 'side' 'includeSource'
-			   'limit' 'offset' 'caseSensitive' ) asSet.
-	self
-		assert: classScopeProperties asSet
-		equals:
-			#( 'classes' 'packages' 'superclassesOf' 'subclassesOf'
-			   'hierarchies' ) asSet.
-	self
-		assert: methodScopeProperties asSet
-		equals: classScopeProperties asSet
+		equals: #( 'scope' 'selector' 'protocol' 'filterMode' 'side' 'includeSource' 'limit' 'offset' 'caseSensitive' ) asSet.
+	self assert: classScopeProperties asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' 'hierarchies' ) asSet.
+	self assert: methodScopeProperties asSet equals: classScopeProperties asSet
 ]
 
 { #category : 'tests' }
 MCPJSONSchemaValidatorTest >> testCurrentToolRequestValidationRejectsOperationSpecificMissingArguments [
 
 	self
-		should: [
-				MCPToolCreateClass new requestFromToolCallArguments:
-					{ (#className -> 'MCPTool') } asDictionary ]
+		should: [ MCPToolCreateClass new requestFromToolCallArguments: { (#className -> 'MCPTool') } asDictionary ]
 		raise: MCPInvalidToolInput.
 	self
-		should: [
-				MCPToolUpdateClassPackage new requestFromToolCallArguments:
-					{ (#className -> 'MCPTool') } asDictionary ]
+		should: [ MCPToolUpdateClassPackage new requestFromToolCallArguments: { (#className -> 'MCPTool') } asDictionary ]
 		raise: MCPInvalidToolInput.
 	self
-		should: [
-				MCPToolCommitRepository new requestFromToolCallArguments:
-					{ (#repositoryName -> 'MCP') } asDictionary ]
+		should: [ MCPToolCommitRepository new requestFromToolCallArguments: { (#repositoryName -> 'MCP') } asDictionary ]
 		raise: MCPInvalidToolInput.
 	self
-		should: [
-				MCPToolRunTestCoverage new requestFromToolCallArguments:
-					{ (#classes -> { 'MCPToolContractsTest' }) } asDictionary ]
+		should: [ MCPToolRunTestCoverage new requestFromToolCallArguments: { (#classes -> { 'MCPToolContractsTest' }) } asDictionary ]
 		raise: MCPInvalidToolInput.
 	self
 		should: [
@@ -361,8 +315,7 @@ MCPJSONSchemaValidatorTest >> testReportsRequiredTypeAndAdditionalPropertiesViol
 		          (#required -> #( 'name' )).
 		          (#properties -> {
 			           ('name' -> (self schemaPropertyType: 'string')).
-			           ('count' -> (self schemaPropertyType: 'integer')) }
-			           asDictionary).
+			           ('count' -> (self schemaPropertyType: 'integer')) } asDictionary).
 		          (#additionalProperties -> false) } asDictionary.
 	arguments := {
 		             (#count -> 'two').
@@ -372,10 +325,7 @@ MCPJSONSchemaValidatorTest >> testReportsRequiredTypeAndAdditionalPropertiesViol
 	self assert: (keywords includes: 'required').
 	self assert: (keywords includes: 'type').
 	self assert: (keywords includes: 'additionalProperties').
-	additionalPropertyViolation := (violations detect: [ :each |
-		                                each keyword
-		                                = 'additionalProperties' ])
-		                               asDictionary.
+	additionalPropertyViolation := (violations detect: [ :each | each keyword = 'additionalProperties' ]) asDictionary.
 	self assert: additionalPropertyViolation equals: {
 			(#path -> #( 'extra' )).
 			(#keyword -> 'additionalProperties').
@@ -394,18 +344,11 @@ MCPJSONSchemaValidatorTest >> testValidatesAllOfAndIfThen [
 			           {
 				           (#if -> {
 					            (#type -> 'object').
-					            (#properties
-					             ->
-						             { ('operation'
-						              -> { (#const -> 'rename') } asDictionary) }
-							             asDictionary).
+					            (#properties -> { ('operation' -> { (#const -> 'rename') } asDictionary) } asDictionary).
 					            (#required -> #( 'operation' )) } asDictionary).
-				           (#then
-				            -> { (#required -> #( 'newName' )) } asDictionary) }
-				           asDictionary }) } asDictionary.
+				           (#then -> { (#required -> #( 'newName' )) } asDictionary) } asDictionary }) } asDictionary.
 	arguments := { (#operation -> 'rename') } asDictionary.
-	keywords := self keywordsFrom:
-		            (self violationsFor: arguments schema: schema).
+	keywords := self keywordsFrom: (self violationsFor: arguments schema: schema).
 	self assert: keywords equals: #( 'required' )
 ]
 
@@ -424,16 +367,13 @@ MCPJSONSchemaValidatorTest >> testValidatesArrayItemsEnumAndConst [
 				            (#const -> 'rename') } asDictionary).
 			           ('names' -> {
 				            (#type -> 'array').
-				            (#items -> (self schemaPropertyType: 'string')) }
-				            asDictionary) } asDictionary) } asDictionary.
+				            (#items -> (self schemaPropertyType: 'string')) } asDictionary) } asDictionary) } asDictionary.
 	arguments := {
 		             (#mode -> 'variable').
 		             (#operation -> 'move').
 		             (#names -> #( 'first' 2 )) } asDictionary.
 	violations := self violationsFor: arguments schema: schema.
-	self
-		assert: (self keywordsFrom: violations) asBag
-		equals: #( 'enum' 'const' 'type' ) asBag
+	self assert: (self keywordsFrom: violations) asBag equals: #( 'enum' 'const' 'type' ) asBag
 ]
 
 { #category : 'tests' }
@@ -453,19 +393,14 @@ MCPJSONSchemaValidatorTest >> testValidatesMinItemsAndMinLength [
 						               (#minLength -> 1) } asDictionary).
 					              ('rhs' -> {
 						               (#type -> 'string').
-						               (#minLength -> 1) } asDictionary) } asDictionary) }
-				             asDictionary) } asDictionary) } asDictionary) }
+						               (#minLength -> 1) } asDictionary) } asDictionary) } asDictionary) } asDictionary) } asDictionary) }
 		          asDictionary.
 	arguments := { (#rules -> { {
 		              (#lhs -> '').
 		              (#rhs -> '') } asDictionary }) } asDictionary.
 	violations := self violationsFor: arguments schema: schema.
-	self
-		assert: (self keywordsFrom: violations) asBag
-		equals: #( 'minLength' 'minLength' ) asBag.
-	violations := self
-		              violationsFor: { (#rules -> #(  )) } asDictionary
-		              schema: schema.
+	self assert: (self keywordsFrom: violations) asBag equals: #( 'minLength' 'minLength' ) asBag.
+	violations := self violationsFor: { (#rules -> #(  )) } asDictionary schema: schema.
 	self assert: (self keywordsFrom: violations) equals: #( 'minItems' )
 ]
 
@@ -478,18 +413,11 @@ MCPJSONSchemaValidatorTest >> testValidatesMinimumAndMaximum [
 		          (#properties -> { ('count' -> {
 			            (#type -> 'integer').
 			            (#minimum -> 0).
-			            (#maximum -> 100) } asDictionary) } asDictionary) }
-		          asDictionary.
-	self assert:
-		(self violationsFor: { (#count -> 25) } asDictionary schema: schema)
-			isEmpty.
-	violations := self
-		              violationsFor: { (#count -> -1) } asDictionary
-		              schema: schema.
+			            (#maximum -> 100) } asDictionary) } asDictionary) } asDictionary.
+	self assert: (self violationsFor: { (#count -> 25) } asDictionary schema: schema) isEmpty.
+	violations := self violationsFor: { (#count -> -1) } asDictionary schema: schema.
 	self assert: (self keywordsFrom: violations) equals: #( 'minimum' ).
-	violations := self
-		              violationsFor: { (#count -> 101) } asDictionary
-		              schema: schema.
+	violations := self violationsFor: { (#count -> 101) } asDictionary schema: schema.
 	self assert: (self keywordsFrom: violations) equals: #( 'maximum' )
 ]
 
@@ -497,29 +425,19 @@ MCPJSONSchemaValidatorTest >> testValidatesMinimumAndMaximum [
 MCPJSONSchemaValidatorTest >> testValidatesNot [
 
 	| allowedArguments conflictingArguments directSchema schema violations |
-	directSchema := { (#not -> { (#type -> 'string') } asDictionary) }
-		                asDictionary.
+	directSchema := { (#not -> { (#type -> 'string') } asDictionary) } asDictionary.
 	self assert: (self violationsFor: 3 schema: directSchema) isEmpty.
-	self
-		assert:
-		(self keywordsFrom:
-			 (self violationsFor: 'name' schema: directSchema))
-		equals: #( 'not' ).
+	self assert: (self keywordsFrom: (self violationsFor: 'name' schema: directSchema)) equals: #( 'not' ).
 	schema := {
 		          (#type -> 'object').
-		          (#not
-		           ->
-		           { (#required -> #( 'selector' 'references' )) }
-			           asDictionary) } asDictionary.
+		          (#not -> { (#required -> #( 'selector' 'references' )) } asDictionary) } asDictionary.
 	allowedArguments := { (#selector -> 'yourself') } asDictionary.
-	self assert:
-		(self violationsFor: allowedArguments schema: schema) isEmpty.
+	self assert: (self violationsFor: allowedArguments schema: schema) isEmpty.
 	conflictingArguments := {
 		                        (#selector -> 'yourself').
 		                        (#references -> {
 			                         (#mode -> 'method').
-			                         (#target -> 'yourself') } asDictionary) }
-		                        asDictionary.
+			                         (#target -> 'yourself') } asDictionary) } asDictionary.
 	violations := self violationsFor: conflictingArguments schema: schema.
 	self assert: (self keywordsFrom: violations) equals: #( 'not' ).
 	self assert: violations first path equals: #(  )
@@ -531,22 +449,14 @@ MCPJSONSchemaValidatorTest >> testValidatesOneOfExactlyOneBranch [
 	| invalidSchema validSchema |
 	validSchema := { (#oneOf -> {
 		                { (#type -> 'string') } asDictionary.
-		                { (#type -> 'integer') } asDictionary }) }
-		               asDictionary.
+		                { (#type -> 'integer') } asDictionary }) } asDictionary.
 	self assert: (self violationsFor: 'name' schema: validSchema) isEmpty.
 	self assert: (self violationsFor: 3 schema: validSchema) isEmpty.
-	self
-		assert:
-		(self keywordsFrom: (self violationsFor: true schema: validSchema))
-		equals: #( 'oneOf' ).
+	self assert: (self keywordsFrom: (self violationsFor: true schema: validSchema)) equals: #( 'oneOf' ).
 	invalidSchema := { (#oneOf -> {
 		                  { (#type -> 'integer') } asDictionary.
-		                  { (#type -> 'number') } asDictionary }) }
-		                 asDictionary.
-	self
-		assert:
-		(self keywordsFrom: (self violationsFor: 3 schema: invalidSchema))
-		equals: #( 'oneOf' )
+		                  { (#type -> 'number') } asDictionary }) } asDictionary.
+	self assert: (self keywordsFrom: (self violationsFor: 3 schema: invalidSchema)) equals: #( 'oneOf' )
 ]
 
 { #category : 'private' }

@@ -18,13 +18,10 @@ MCPDebugSessionsRequest class >> fromRequest: aRequest tool: aTool operation: op
 	(self supportedOperations includes: operationName) ifFalse: [
 			MCPCommandError
 				signalErrorCode: #DebugSessionsOperationUnsupported
-				message:
-					'Unsupported debug sessions operation: ' , operationName asString
-					, '.'
+				message: 'Unsupported debug sessions operation: ' , operationName asString , '.'
 				details: {
 						(#operation -> operationName).
-						(#supportedOperations -> self supportedOperations) }
-						asDictionary ].
+						(#supportedOperations -> self supportedOperations) } asDictionary ].
 	^ self new
 		  operation: operationName;
 		  sessionId: (aRequest stringArgumentNamed: 'sessionId');

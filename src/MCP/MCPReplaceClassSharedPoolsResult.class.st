@@ -57,9 +57,7 @@ MCPReplaceClassSharedPoolsResult >> newSharedPoolNames [
 { #category : 'accessing' }
 MCPReplaceClassSharedPoolsResult >> newSharedPoolNames: someNames [
 
-	newSharedPoolNames := someNames
-		                      ifNil: [ #(  ) ]
-		                      ifNotNil: [ someNames asArray ]
+	newSharedPoolNames := someNames ifNil: [ #(  ) ] ifNotNil: [ someNames asArray ]
 ]
 
 { #category : 'accessing' }
@@ -71,7 +69,5 @@ MCPReplaceClassSharedPoolsResult >> oldSharedPoolNames [
 { #category : 'accessing' }
 MCPReplaceClassSharedPoolsResult >> oldSharedPoolNames: someNames [
 
-	oldSharedPoolNames := someNames
-		                      ifNil: [ #(  ) ]
-		                      ifNotNil: [ someNames asArray ]
+	oldSharedPoolNames := someNames ifNil: [ #(  ) ] ifNotNil: [ someNames asArray ]
 ]

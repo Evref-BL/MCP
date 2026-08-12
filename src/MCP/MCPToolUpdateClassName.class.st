@@ -20,8 +20,7 @@ MCPToolUpdateClassName >> classToolSpec [
 
 	^ {
 		  (#title -> 'Update Class Name').
-		  (#description
-		   -> 'Rename one class through the Pharo refactoring engine.').
+		  (#description -> 'Rename one class through the Pharo refactoring engine.').
 		  (#inputProperties -> {
 			   self classNameSchemaProperty.
 			   self newClassNameSchemaProperty.
@@ -29,6 +28,5 @@ MCPToolUpdateClassName >> classToolSpec [
 			   self refactoringScopePackageNamesSchemaProperty.
 			   self refactoringScopeClassNamesSchemaProperty.
 			   self refactoringScopeHierarchyClassNamesSchemaProperty }).
-		  (#requiredProperties -> #( 'className' 'newClassName' )) }
-		  asDictionary
+		  (#requiredProperties -> #( 'className' 'newClassName' )) } asDictionary
 ]

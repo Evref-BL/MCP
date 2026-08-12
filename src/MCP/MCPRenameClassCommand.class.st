@@ -75,13 +75,6 @@ MCPRenameClassCommand >> newClassName: aString [
 MCPRenameClassCommand >> refactoring [
 
 	^ self model
-		  ifNil: [
-			  ReRenameClassRefactoring
-				  rename: self className
-				  to: self newClassName ]
-		  ifNotNil: [
-				  ReRenameClassRefactoring
-					  model: self model
-					  rename: self className
-					  to: self newClassName ]
+		  ifNil: [ ReRenameClassRefactoring rename: self className to: self newClassName ]
+		  ifNotNil: [ ReRenameClassRefactoring model: self model rename: self className to: self newClassName ]
 ]

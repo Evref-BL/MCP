@@ -74,11 +74,9 @@ MCPToolMethodMutation >> blockingCritiqueDataForMethodNode: aMethodNode [
 	| critiques |
 	critiques := OrderedCollection new.
 	self blockingPreCompileRuleClasses do: [ :ruleClass |
-		| rule |
-		rule := ruleClass new.
-		aMethodNode nodesDo: [ :node |
-			rule check: node forCritiquesDo: [ :critique |
-				critiques add: critique ] ] ].
+			| rule |
+			rule := ruleClass new.
+			aMethodNode nodesDo: [ :node | rule check: node forCritiquesDo: [ :critique | critiques add: critique ] ] ].
 	^ critiques collect: [ :each | self critiqueDataFor: each ]
 ]
 
@@ -93,11 +91,7 @@ MCPToolMethodMutation >> buildOutputSchema [
 
 	^ self
 		  standardOutputSchemaForDataProperties: {
-				  (self
-					   schemaPropertyNamed: 'changeKind'
-					   type: 'string'
-					   description:
-					   'Whether method_compile created or replaced a method.').
+				  (self schemaPropertyNamed: 'changeKind' type: 'string' description: 'Whether method_compile created or replaced a method.').
 				  self methodCritiquesSchemaProperty }
 		  required: #(  )
 ]
@@ -117,8 +111,7 @@ MCPToolMethodMutation >> critiqueDataFor: aCritique [
 	data := {
 		        (#ruleClass -> aCritique rule class name asString).
 		        (#title -> aCritique title asString).
-		        (#description -> aCritique description asString) }
-		        asDictionary.
+		        (#description -> aCritique description asString) } asDictionary.
 	interval := self sourceIntervalForCritique: aCritique.
 	interval ifNotNil: [
 			data
@@ -137,13 +130,11 @@ MCPToolMethodMutation >> critiqueDataForMethod: aCompiledMethod [
 MCPToolMethodMutation >> critiqueDataFromProperties: properties [
 
 	| critiques |
-	critiques := properties select: [ :each |
-		each isCritique and: [ self shouldIncludeCritique: each ] ].
+	critiques := properties select: [ :each | each isCritique and: [ self shouldIncludeCritique: each ] ].
 	^ (critiques asArray sort: [ :left :right |
 			   left title = right title
 				   ifTrue: [ left rule class name < right rule class name ]
-				   ifFalse: [ left title < right title ] ]) collect: [ :each |
-		  self critiqueDataFor: each ]
+				   ifFalse: [ left title < right title ] ]) collect: [ :each | self critiqueDataFor: each ]
 ]
 
 { #category : 'metadata' }
@@ -156,9 +147,7 @@ MCPToolMethodMutation >> description [
 MCPToolMethodMutation >> failureMessageForArgumentUpdateAction: updateAction classNamed: className classSide: classSide selector: oldSelector newSelector: newSelector error: anError [
 
 	| targetName verb |
-	targetName := self
-		              classReferenceNameFor: className
-		              classSide: classSide.
+	targetName := self classReferenceNameFor: className classSide: classSide.
 	verb := updateAction = 'addArguments'
 		        ifTrue: [ 'add arguments to' ]
 		        ifFalse: [ 'remove arguments from' ].
@@ -173,17 +162,14 @@ MCPToolMethodMutation >> failureMessageForArgumentUpdateAction: updateAction cla
 				  nextPutAll: ' as ';
 				  nextPutAll: newSelector;
 				  nextPutAll: ': ';
-				  nextPutAll:
-					  (self normalizedCauseMessageForMutationError: anError) ]
+				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
 ]
 
 { #category : 'private' }
 MCPToolMethodMutation >> failureMessageForChangeProtocolClassNamed: className classSide: classSide selector: selector protocol: protocol error: anError [
 
 	| targetName |
-	targetName := self
-		              classReferenceNameFor: className
-		              classSide: classSide.
+	targetName := self classReferenceNameFor: className classSide: classSide.
 	^ String streamContents: [ :stream |
 			  stream
 				  nextPutAll: 'Unable to change protocol for ';
@@ -193,33 +179,27 @@ MCPToolMethodMutation >> failureMessageForChangeProtocolClassNamed: className cl
 				  nextPutAll: ' to ';
 				  nextPutAll: protocol;
 				  nextPutAll: ': ';
-				  nextPutAll:
-					  (self normalizedCauseMessageForMutationError: anError) ]
+				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
 ]
 
 { #category : 'private' }
 MCPToolMethodMutation >> failureMessageForCompileClassNamed: className classSide: classSide error: anError [
 
 	| targetName |
-	targetName := self
-		              classReferenceNameFor: className
-		              classSide: classSide.
+	targetName := self classReferenceNameFor: className classSide: classSide.
 	^ String streamContents: [ :stream |
 			  stream
 				  nextPutAll: 'Unable to compile method on ';
 				  nextPutAll: targetName;
 				  nextPutAll: ': ';
-				  nextPutAll:
-					  (self normalizedCauseMessageForMutationError: anError) ]
+				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
 ]
 
 { #category : 'private' }
 MCPToolMethodMutation >> failureMessageForRenameClassNamed: className classSide: classSide selector: oldSelector newSelector: newSelector error: anError [
 
 	| targetName |
-	targetName := self
-		              classReferenceNameFor: className
-		              classSide: classSide.
+	targetName := self classReferenceNameFor: className classSide: classSide.
 	^ String streamContents: [ :stream |
 			  stream
 				  nextPutAll: 'Unable to rename method ';
@@ -229,8 +209,7 @@ MCPToolMethodMutation >> failureMessageForRenameClassNamed: className classSide:
 				  nextPutAll: ' to ';
 				  nextPutAll: newSelector;
 				  nextPutAll: ': ';
-				  nextPutAll:
-					  (self normalizedCauseMessageForMutationError: anError) ]
+				  nextPutAll: (self normalizedCauseMessageForMutationError: anError) ]
 ]
 
 { #category : 'private - schema' }
@@ -244,32 +223,20 @@ MCPToolMethodMutation >> methodCritiqueSchema [
 
 	^ MCPStructureProperties new
 		  type: 'object';
-		  description:
-			  'One included Renraku critique reported for the method.';
+		  description: 'One included Renraku critique reported for the method.';
 		  properties: {
-				  (self
-					   schemaPropertyNamed: 'ruleClass'
-					   type: 'string'
-					   description:
-						   'The Renraku rule class that reported the critique.').
-				  (self
-					   schemaPropertyNamed: 'title'
-					   type: 'string'
-					   description:
-						   'The short critique title, including any rule-specific hint.').
+				  (self schemaPropertyNamed: 'ruleClass' type: 'string' description: 'The Renraku rule class that reported the critique.').
+				  (self schemaPropertyNamed: 'title' type: 'string' description: 'The short critique title, including any rule-specific hint.').
 				  (self
 					   schemaPropertyNamed: 'description'
 					   type: 'string'
-					   description:
-						   'The critique rationale explaining why the rule flagged the method.').
+					   description: 'The critique rationale explaining why the rule flagged the method.').
 				  (self
 					   integerSchemaPropertyNamed: 'start'
-					   description:
-						   'The first character position of the critique interval in the method source when available.').
+					   description: 'The first character position of the critique interval in the method source when available.').
 				  (self
 					   integerSchemaPropertyNamed: 'stop'
-					   description:
-						   'The last character position of the critique interval in the method source when available.') };
+					   description: 'The last character position of the critique interval in the method source when available.') };
 		  required: #( 'ruleClass' 'title' 'description' );
 		  additionalProperties: false;
 		  yourself
@@ -281,8 +248,7 @@ MCPToolMethodMutation >> methodCritiquesSchemaProperty [
 	^ (self
 		   schemaPropertyNamed: 'critiques'
 		   type: 'array'
-		   description:
-			   'Renraku critiques included in compile output: all error-severity critiques plus selected non-error rules.')
+		   description: 'Renraku critiques included in compile output: all error-severity critiques plus selected non-error rules.')
 		  items: self methodCritiqueSchema;
 		  yourself
 ]
@@ -348,9 +314,7 @@ MCPToolMethodMutation >> renameRefactoringForSelector: oldSelectorSymbol inBehav
 { #category : 'private - schema' }
 MCPToolMethodMutation >> requiredInputProperties [
 
-	^ self methodToolSpec
-		  at: #requiredProperties
-		  ifAbsent: [ #( 'className' ) ]
+	^ self methodToolSpec at: #requiredProperties ifAbsent: [ #( 'className' ) ]
 ]
 
 { #category : 'private' }
@@ -362,8 +326,7 @@ MCPToolMethodMutation >> shouldIncludeCritique: aCritique [
 { #category : 'private' }
 MCPToolMethodMutation >> shouldIncludeCritiqueRule: aRule [
 
-	^ aRule severity = #error or: [
-		  self allowedNonErrorCritiqueRuleClasses includes: aRule class ]
+	^ aRule severity = #error or: [ self allowedNonErrorCritiqueRuleClasses includes: aRule class ]
 ]
 
 { #category : 'private' }
@@ -372,13 +335,9 @@ MCPToolMethodMutation >> signalBlockingCritiquesForMethodNode: aMethodNode [
 	| critiques |
 	critiques := self blockingCritiqueDataForMethodNode: aMethodNode.
 	critiques ifEmpty: [ ^ self ].
-	MCPCommandError
-		signalErrorCode: #CompileBlockedByCritiques
-		message: 'Method compilation blocked by critiques.'
-		details: {
+	MCPCommandError signalErrorCode: #CompileBlockedByCritiques message: 'Method compilation blocked by critiques.' details: {
 			(#critiques -> critiques asArray).
-			(#howToProceed -> 'Correct the source and resubmit method_compile.') }
-				asDictionary
+			(#howToProceed -> 'Correct the source and resubmit method_compile.') } asDictionary
 ]
 
 { #category : 'private' }

@@ -26,7 +26,6 @@ MCPToolListDebugBreakpoints >> breakpointToolSpec [
 
 	^ {
 		  (#title -> 'List Debug Breakpoints').
-		  (#description
-		   -> 'List tracked transient Pharo DebugPoint breakpoints.').
+		  (#description -> 'List tracked transient Pharo DebugPoint breakpoints.').
 		  (#action -> 'list') } asDictionary
 ]

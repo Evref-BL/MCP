@@ -21,8 +21,8 @@ MCPAttachRepositoryCommand >> createRepository [
 	repository pluginManager repositoryWillBeCreated: repository.
 	repository workingCopy initializePackagesFromRepository.
 	self request subdirectory ifNotNil: [ :value |
-		self validateSubdirectorySupportedFor: repository.
-		repository subdirectory: value ].
+			self validateSubdirectorySupportedFor: repository.
+			repository subdirectory: value ].
 	repository pluginManager repositoryWasCreated: repository.
 	repository register.
 	^ repository
@@ -40,13 +40,11 @@ MCPAttachRepositoryCommand >> execute [
 				  result := MCPRepositoryCreateResult fromRepository: repository ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText:
-					  'Attached repository ' , self request name , '.'
+					  successResultText: 'Attached repository ' , self request name , '.'
 					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
-				  'Failed to attach repository ' , self request name , ': '
-				  , (error messageText ifNil: [ error asString ]) ]
+		  'Failed to attach repository ' , self request name , ': ' , (error messageText ifNil: [ error asString ]) ]
 ]
 
 { #category : 'private' }
@@ -62,8 +60,7 @@ MCPAttachRepositoryCommand >> gitDirectoryReferenceFor: gitDirPath relativeTo: a
 { #category : 'private' }
 MCPAttachRepositoryCommand >> isGitCheckoutRoot: aLocation [
 
-	^ (IceRepositoryCreator isGitRoot: aLocation) or: [
-		  self isLinkedGitWorktreeRoot: aLocation ]
+	^ (IceRepositoryCreator isGitRoot: aLocation) or: [ self isLinkedGitWorktreeRoot: aLocation ]
 ]
 
 { #category : 'private' }
@@ -79,9 +76,7 @@ MCPAttachRepositoryCommand >> isLinkedGitWorktreeRoot: aLocation [
 	(contents beginsWith: 'gitdir:') ifFalse: [ ^ false ].
 	gitDirectoryPath := (contents allButFirst: 'gitdir:' size) trimBoth.
 	gitDirectoryPath isEmpty ifTrue: [ ^ false ].
-	^ (self
-		   gitDirectoryReferenceFor: gitDirectoryPath
-		   relativeTo: aLocation) exists
+	^ (self gitDirectoryReferenceFor: gitDirectoryPath relativeTo: aLocation) exists
 ]
 
 { #category : 'private' }
@@ -97,8 +92,7 @@ MCPAttachRepositoryCommand >> locationReference [
 	(self isGitCheckoutRoot: location) ifFalse: [
 			MCPCommandError
 				signalErrorCode: #RepositoryLocationNotGitRoot
-				message:
-				'repository_attach requires location to be an existing Git repository root.'
+				message: 'repository_attach requires location to be an existing Git repository root.'
 				details: self request requestedContext ].
 	^ location
 ]
@@ -109,17 +103,13 @@ MCPAttachRepositoryCommand >> matchingRegisteredRepositories [
 	| locationPath |
 	locationPath := self request location asFileReference pathString.
 	^ IceRepository repositories select: [ :each |
-			  each name asString = self request name or: [
-				  (self repositoryLocationPathFor: each) = locationPath ] ]
+		  each name asString = self request name or: [ (self repositoryLocationPathFor: each) = locationPath ] ]
 ]
 
 { #category : 'private' }
 MCPAttachRepositoryCommand >> repositoryLocationPathFor: aRepository [
 
-	^ aRepository location
-		  ifNil: [ '' ]
-		  ifNotNil: [ :repositoryLocation |
-			  repositoryLocation mcpRepositoryLocationString ]
+	^ aRepository location ifNil: [ '' ] ifNotNil: [ :repositoryLocation | repositoryLocation mcpRepositoryLocationString ]
 ]
 
 { #category : 'private - signaling' }
@@ -128,13 +118,10 @@ MCPAttachRepositoryCommand >> signalDuplicateRepositoryIfNeeded [
 	| matchingRepositoryNames matches |
 	matches := self matchingRegisteredRepositories.
 	matches isEmpty ifTrue: [ ^ self ].
-	matchingRepositoryNames := (matches
-		                            collect: [ :each | each name asString ]
-		                            as: Array) sort.
+	matchingRepositoryNames := (matches collect: [ :each | each name asString ] as: Array) sort.
 	MCPCommandError
 		signalErrorCode: #RepositoryAlreadyRegistered
-		message:
-		'Repository name or location is already registered in Iceberg.'
+		message: 'Repository name or location is already registered in Iceberg.'
 		details: (self request requestedContext copy
 				 at: #matchingRepositoryNames put: matchingRepositoryNames;
 				 yourself)

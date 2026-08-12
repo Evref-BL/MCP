@@ -21,8 +21,7 @@ MCPToolRemoveDebugSession >> sessionToolSpec [
 	^ {
 		  (#title -> 'Remove Debug Session').
 		  (#description
-		   ->
-		   'Remove a tracked debug session from the MCP debugger registry and terminate an owned captured worker when applicable.').
+		   -> 'Remove a tracked debug session from the MCP debugger registry and terminate an owned captured worker when applicable.').
 		  (#action -> 'remove').
 		  (#inputProperties -> { self sessionIdSchemaProperty }).
 		  (#requiredProperties -> #( 'sessionId' )) } asDictionary

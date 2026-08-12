@@ -13,9 +13,7 @@ Class {
 MCPToolRequestTest >> testHasArgumentNamedHandlesSymbolAndStringKeys [
 
 	| request |
-	request := MCPToolRequest
-		           tool: MCPToolEvaluate new
-		           arguments: { ('code' -> '1 + 1') } asDictionary.
+	request := MCPToolRequest tool: MCPToolEvaluate new arguments: { ('code' -> '1 + 1') } asDictionary.
 	self assert: (request hasArgumentNamed: 'code').
 	self assert: (request hasArgumentNamed: #code).
 	self deny: (request hasArgumentNamed: 'missing')
@@ -25,10 +23,7 @@ MCPToolRequestTest >> testHasArgumentNamedHandlesSymbolAndStringKeys [
 MCPToolRequestTest >> testInvalidRequestRaisesInvalidParameters [
 
 	self
-		should: [
-				MCPToolRequest
-					tool: MCPToolSearchClasses new
-					arguments: { (#caseSensitive -> 'true') } asDictionary ]
+		should: [ MCPToolRequest tool: MCPToolSearchClasses new arguments: { (#caseSensitive -> 'true') } asDictionary ]
 		raise: JRPCInvalidParameters
 ]
 
@@ -36,10 +31,7 @@ MCPToolRequestTest >> testInvalidRequestRaisesInvalidParameters [
 MCPToolRequestTest >> testInvalidRequestRaisesToolInputErrorWithViolations [
 
 	| error violation |
-	[
-		MCPToolRequest
-			tool: MCPToolSearchClasses new
-			arguments: { (#caseSensitive -> 'true') } asDictionary ]
+	[ MCPToolRequest tool: MCPToolSearchClasses new arguments: { (#caseSensitive -> 'true') } asDictionary ]
 		on: MCPInvalidToolInput
 		do: [ :signalledError | error := signalledError ].
 	self assert: error isNotNil.
@@ -56,10 +48,7 @@ MCPToolRequestTest >> testInvalidRequestRaisesToolInputErrorWithViolations [
 MCPToolRequestTest >> testInvalidToolInputErrorResponseIncludesViolations [
 
 	| data error errorJson firstViolation response violations |
-	[
-		MCPToolRequest
-			tool: MCPToolSearchClasses new
-			arguments: { (#caseSensitive -> 'true') } asDictionary ]
+	[ MCPToolRequest tool: MCPToolSearchClasses new arguments: { (#caseSensitive -> 'true') } asDictionary ]
 		on: MCPInvalidToolInput
 		do: [ :signalledError | error := signalledError ].
 	response := (error asJRPCResponseWithId: 7) asJRPCJSON.
@@ -71,9 +60,7 @@ MCPToolRequestTest >> testInvalidToolInputErrorResponseIncludesViolations [
 	self assert: (data at: 'toolName') equals: 'class_search'.
 	self assert: (firstViolation at: #path) equals: #( 'caseSensitive' ).
 	self assert: (firstViolation at: #keyword) equals: 'type'.
-	self
-		assert: (firstViolation at: #message)
-		equals: 'Value has the wrong JSON type.'
+	self assert: (firstViolation at: #message) equals: 'Value has the wrong JSON type.'
 ]
 
 { #category : 'tests' }
@@ -85,55 +72,30 @@ MCPToolRequestTest >> testNonNegativeIntegerArgumentRejectsValuesAboveMaximum [
 		           arguments: { (#stackLimit -> 51) } asDictionary;
 		           yourself.
 	self
-		should: [
-				request
-					nonNegativeIntegerArgumentNamed: 'stackLimit'
-					default: 5
-					maximum: 50 ]
+		should: [ request nonNegativeIntegerArgumentNamed: 'stackLimit' default: 5 maximum: 50 ]
 		raise: Error
-		withExceptionDo: [ :error |
-				self
-					assert: error messageText
-					equals: 'stackLimit must be no greater than 50.' ]
+		withExceptionDo: [ :error | self assert: error messageText equals: 'stackLimit must be no greater than 50.' ]
 ]
 
 { #category : 'tests' }
 MCPToolRequestTest >> testRequestAccessorsProvideDefaultsUniqueCollectionsSymbolsAndNestedStrings [
 
 	| nested request |
-	request := MCPToolRequest
-		           tool: MCPToolCreateRepository new
-		           arguments: {
-				           (#name -> 'Example').
-				           (#location -> FileLocator imageDirectory fullName).
-				           (#packageNames -> #( ' MCP ' '' 'MCP' 'Other' )) }
-				           asDictionary.
-	self
-		assert: (request stringCollectionArgumentNamed: 'packageNames')
-		equals: #( 'MCP' 'MCP' 'Other' ).
-	self
-		assert:
-		(request uniqueStringCollectionArgumentNamed: 'packageNames')
-		equals: #( 'MCP' 'Other' ).
-	self
-		assert: (request stringArgumentNamed: 'missing' default: 'image')
-		equals: 'image'.
-	self
-		assert: (request symbolCollectionArgumentNamed: 'packageNames')
-		equals: #( #MCP #MCP #Other ).
+	request := MCPToolRequest tool: MCPToolCreateRepository new arguments: {
+			           (#name -> 'Example').
+			           (#location -> FileLocator imageDirectory fullName).
+			           (#packageNames -> #( ' MCP ' '' 'MCP' 'Other' )) } asDictionary.
+	self assert: (request stringCollectionArgumentNamed: 'packageNames') equals: #( 'MCP' 'MCP' 'Other' ).
+	self assert: (request uniqueStringCollectionArgumentNamed: 'packageNames') equals: #( 'MCP' 'Other' ).
+	self assert: (request stringArgumentNamed: 'missing' default: 'image') equals: 'image'.
+	self assert: (request symbolCollectionArgumentNamed: 'packageNames') equals: #( #MCP #MCP #Other ).
 	nested := {
 		          (#className -> ' MCPToolRequestTest ').
-		          (#testMethodName
-		           ->
-		           ' testRequestAccessorsProvideDefaultsUniqueCollectionsSymbolsAndNestedStrings ') }
-		          asDictionary.
-	self
-		assert: (request stringArgumentNamed: 'className' in: nested)
-		equals: 'MCPToolRequestTest'.
+		          (#testMethodName -> ' testRequestAccessorsProvideDefaultsUniqueCollectionsSymbolsAndNestedStrings ') } asDictionary.
+	self assert: (request stringArgumentNamed: 'className' in: nested) equals: 'MCPToolRequestTest'.
 	self
 		assert: (request stringArgumentNamed: 'testMethodName' in: nested)
-		equals:
-		'testRequestAccessorsProvideDefaultsUniqueCollectionsSymbolsAndNestedStrings'
+		equals: 'testRequestAccessorsProvideDefaultsUniqueCollectionsSymbolsAndNestedStrings'
 ]
 
 { #category : 'tests' }
@@ -141,24 +103,13 @@ MCPToolRequestTest >> testValidRequestProvidesTypedAccessors [
 
 	| request scope |
 	scope := { (#packages -> #( 'MCP' )) } asDictionary.
-	request := MCPToolRequest
-		           tool: MCPToolSearchClasses new
-		           arguments: {
-				           (#scope -> scope).
-				           (#caseSensitive -> true).
-				           (#limit -> 3) } asDictionary.
-	self assert:
-		(request booleanArgumentNamed: 'caseSensitive' default: false).
-	self
-		assert:
-		(request nonNegativeIntegerArgumentNamed: 'limit' default: 100)
-		equals: 3.
-	self
-		assert:
-		(request stringCollectionArgumentNamed: 'packages' in: scope)
-		equals: #( 'MCP' ).
+	request := MCPToolRequest tool: MCPToolSearchClasses new arguments: {
+			           (#scope -> scope).
+			           (#caseSensitive -> true).
+			           (#limit -> 3) } asDictionary.
+	self assert: (request booleanArgumentNamed: 'caseSensitive' default: false).
+	self assert: (request nonNegativeIntegerArgumentNamed: 'limit' default: 100) equals: 3.
+	self assert: (request stringCollectionArgumentNamed: 'packages' in: scope) equals: #( 'MCP' ).
 	self assert: (request stringArgumentNamed: 'missing') isNil.
-	self
-		assert: (request booleanArgumentNamed: 'missing' default: false)
-		equals: false
+	self assert: (request booleanArgumentNamed: 'missing' default: false) equals: false
 ]

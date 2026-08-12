@@ -37,8 +37,7 @@ MCPTestRepositoryWorkingCopy >> adoptCommit: aCommit [
 { #category : 'actions' }
 MCPTestRepositoryWorkingCopy >> discardChanges [
 
-	(modifiedPackages ifNil: [ #(  ) ]) do: [ :each |
-		each beDirty: false ].
+	(modifiedPackages ifNil: [ #(  ) ]) do: [ :each | each beDirty: false ].
 	self repository recordAction: 'discard'
 ]
 

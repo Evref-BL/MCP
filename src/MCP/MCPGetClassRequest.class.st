@@ -20,14 +20,9 @@ MCPGetClassRequest class >> fromRequest: aRequest tool: aTool [
 
 	^ self new
 		  initializeClassName: (aTool classNameFromRequest: aRequest)
-		  includeComment:
-		  (aRequest booleanArgumentNamed: 'includeComment' default: false)
-		  upToSuperclassName:
-		  (aRequest stringArgumentNamed: 'upToSuperclassName')
-		  subclassDepth: (aRequest
-				   nonNegativeIntegerArgumentNamed: 'subclassDepth'
-				   default: 0
-				   maximum: aTool maximumSubclassDepth)
+		  includeComment: (aRequest booleanArgumentNamed: 'includeComment' default: false)
+		  upToSuperclassName: (aRequest stringArgumentNamed: 'upToSuperclassName')
+		  subclassDepth: (aRequest nonNegativeIntegerArgumentNamed: 'subclassDepth' default: 0 maximum: aTool maximumSubclassDepth)
 ]
 
 { #category : 'accessing' }

@@ -19,10 +19,7 @@ Class {
 { #category : 'instance creation' }
 MCPMethodCompileResult class >> method: aCompiledMethod critiques: critiqueDictionaries [
 
-	^ self
-		  method: aCompiledMethod
-		  critiques: critiqueDictionaries
-		  changeKind: 'created'
+	^ self method: aCompiledMethod critiques: critiqueDictionaries changeKind: 'created'
 ]
 
 { #category : 'instance creation' }

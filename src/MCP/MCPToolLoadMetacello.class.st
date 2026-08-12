@@ -68,14 +68,10 @@ MCPToolLoadMetacello >> errorDetailsForError: anError loadRequest: loadRequest r
 
 	| context details |
 	details := anError
-		           mcpCommandErrorDo: [ :commandError |
-		           commandError structuredDetails copy ]
+		           mcpCommandErrorDo: [ :commandError | commandError structuredDetails copy ]
 		           otherwise: [ self errorDetailsFor: anError ].
-	context := self
-		           requestedContextForErrorFromLoadRequest: loadRequest
-		           rawRequest: rawRequest.
-	context keysAndValuesDo: [ :key :value |
-		value ifNotNil: [ details at: key ifAbsentPut: [ value ] ] ].
+	context := self requestedContextForErrorFromLoadRequest: loadRequest rawRequest: rawRequest.
+	context keysAndValuesDo: [ :key :value | value ifNotNil: [ details at: key ifAbsentPut: [ value ] ] ].
 	^ details
 ]
 
@@ -83,14 +79,8 @@ MCPToolLoadMetacello >> errorDetailsForError: anError loadRequest: loadRequest r
 MCPToolLoadMetacello >> errorResultForError: anError loadRequest: loadRequest rawRequest: rawRequest [
 
 	^ self
-		  errorResultText: (self
-				   failureSummaryForError: anError
-				   loadRequest: loadRequest
-				   rawRequest: rawRequest)
-		  details: (self
-				   errorDetailsForError: anError
-				   loadRequest: loadRequest
-				   rawRequest: rawRequest)
+		  errorResultText: (self failureSummaryForError: anError loadRequest: loadRequest rawRequest: rawRequest)
+		  details: (self errorDetailsForError: anError loadRequest: loadRequest rawRequest: rawRequest)
 ]
 
 { #category : 'executing' }
@@ -101,23 +91,15 @@ MCPToolLoadMetacello >> executeWithRequest: request [
 		  do: [ :loadRequest |
 				  | result |
 				  result := (self commandForRequest: loadRequest) execute.
-				  self
-					  successResultText: (self successSummaryForResult: result)
-					  data: result asDictionary ]
-		  onError: [ :error :loadRequest |
-				  self
-					  errorResultForError: error
-					  loadRequest: loadRequest
-					  rawRequest: request ]
+				  self successResultText: (self successSummaryForResult: result) data: result asDictionary ]
+		  onError: [ :error :loadRequest | self errorResultForError: error loadRequest: loadRequest rawRequest: request ]
 ]
 
 { #category : 'private - errors' }
 MCPToolLoadMetacello >> failureSummaryForError: anError loadRequest: loadRequest rawRequest: rawRequest [
 
 	| baseline message |
-	message := anError messageText
-		           ifNil: [ anError asString ]
-		           ifNotNil: [ :text | text asString ].
+	message := anError messageText ifNil: [ anError asString ] ifNotNil: [ :text | text asString ].
 	loadRequest ifNil: [ ^ 'Failed to load baseline: ' , message ].
 	baseline := loadRequest baseline ifNil: [ '' ].
 	^ String streamContents: [ :stream |
@@ -134,20 +116,14 @@ MCPToolLoadMetacello >> failureSummaryForError: anError loadRequest: loadRequest
 { #category : 'private - schema' }
 MCPToolLoadMetacello >> groupsSchemaProperty [
 
-	^ self
-		  stringArraySchemaNamed: 'groups'
-		  description: 'Metacello load groups.'
-		  itemDescription: nil
+	^ self stringArraySchemaNamed: 'groups' description: 'Metacello load groups.' itemDescription: nil
 ]
 
 { #category : 'private - schema' }
 MCPToolLoadMetacello >> loadBaselineDataProperties [
 
 	^ {
-		  (self
-			   schemaPropertyNamed: 'baseline'
-			   type: 'string'
-			   description: 'The Metacello baseline name loaded.').
+		  (self schemaPropertyNamed: 'baseline' type: 'string' description: 'The Metacello baseline name loaded.').
 		  self loadPolicyOutputSchemaProperty.
 		  (self
 			   stringArraySchemaNamed: 'newPackageNames'
@@ -159,10 +135,7 @@ MCPToolLoadMetacello >> loadBaselineDataProperties [
 { #category : 'private - schema' }
 MCPToolLoadMetacello >> loadBaselineOutputSchemaProperty [
 
-	^ (self
-		   schemaPropertyNamed: 'load'
-		   type: 'object'
-		   description: 'Baseline load details for Metacello load.')
+	^ (self schemaPropertyNamed: 'load' type: 'object' description: 'Baseline load details for Metacello load.')
 		  properties: self loadBaselineDataProperties;
 		  required: #( 'baseline' );
 		  additionalProperties: false;
@@ -173,30 +146,15 @@ MCPToolLoadMetacello >> loadBaselineOutputSchemaProperty [
 MCPToolLoadMetacello >> loadPolicyDataProperties [
 
 	^ {
-		  (self
-			   schemaPropertyNamed: 'warning'
-			   type: 'string'
-			   description: 'Warning policy used.').
-		  (self
-			   schemaPropertyNamed: 'conflict'
-			   type: 'string'
-			   description: 'Conflict policy used.').
+		  (self schemaPropertyNamed: 'warning' type: 'string' description: 'Warning policy used.').
+		  (self schemaPropertyNamed: 'conflict' type: 'string' description: 'Conflict policy used.').
 		  (self stringArraySchemaNamed: 'conflictUseIncoming').
 		  (self stringArraySchemaNamed: 'conflictUseLoaded').
-		  (self
-			   schemaPropertyNamed: 'upgrade'
-			   type: 'string'
-			   description: 'Upgrade policy used.').
+		  (self schemaPropertyNamed: 'upgrade' type: 'string' description: 'Upgrade policy used.').
 		  (self stringArraySchemaNamed: 'upgradeUseLoaded').
-		  (self
-			   schemaPropertyNamed: 'downgrade'
-			   type: 'string'
-			   description: 'Downgrade policy used.').
+		  (self schemaPropertyNamed: 'downgrade' type: 'string' description: 'Downgrade policy used.').
 		  (self stringArraySchemaNamed: 'downgradeUseIncoming').
-		  (self
-			   schemaPropertyNamed: 'lock'
-			   type: 'string'
-			   description: 'Lock policy used.').
+		  (self schemaPropertyNamed: 'lock' type: 'string' description: 'Lock policy used.').
 		  (self stringArraySchemaNamed: 'lockBreak') }
 ]
 
@@ -209,10 +167,7 @@ MCPToolLoadMetacello >> loadPolicyInputSchemaProperties [
 { #category : 'private - schema' }
 MCPToolLoadMetacello >> loadPolicyInputSchemaProperty [
 
-	^ (self
-		   schemaPropertyNamed: 'policy'
-		   type: 'object'
-		   description: 'Metacello load policy.')
+	^ (self schemaPropertyNamed: 'policy' type: 'object' description: 'Metacello load policy.')
 		  properties: {
 				  self onWarningSchemaProperty.
 				  self onConflictSchemaProperty.
@@ -231,11 +186,7 @@ MCPToolLoadMetacello >> loadPolicyInputSchemaProperty [
 { #category : 'private - schema' }
 MCPToolLoadMetacello >> loadPolicyOutputSchemaProperty [
 
-	^ (self
-		   schemaPropertyNamed: 'policy'
-		   type: 'object'
-		   description:
-			   'Metacello load policy values that differ from defaults.')
+	^ (self schemaPropertyNamed: 'policy' type: 'object' description: 'Metacello load policy values that differ from defaults.')
 		  properties: self loadPolicyDataProperties;
 		  additionalProperties: false;
 		  yourself
@@ -244,10 +195,7 @@ MCPToolLoadMetacello >> loadPolicyOutputSchemaProperty [
 { #category : 'private - schema' }
 MCPToolLoadMetacello >> nonEmptyStringSchemaPropertyNamed: propertyName description: propertyDescription [
 
-	^ (self
-		   schemaPropertyNamed: propertyName
-		   type: 'string'
-		   description: propertyDescription)
+	^ (self schemaPropertyNamed: propertyName type: 'string' description: propertyDescription)
 		  minLength: 1;
 		  yourself
 ]
@@ -302,10 +250,7 @@ MCPToolLoadMetacello >> onDowngradeUseIncomingSchemaProperty [
 { #category : 'private - schema' }
 MCPToolLoadMetacello >> onLockBreakSchemaProperty [
 
-	^ self
-		  stringArraySchemaNamed: 'lockBreak'
-		  description: 'Projects with locks to break.'
-		  itemDescription: nil
+	^ self stringArraySchemaNamed: 'lockBreak' description: 'Projects with locks to break.' itemDescription: nil
 ]
 
 { #category : 'private - schema' }
@@ -360,8 +305,7 @@ MCPToolLoadMetacello >> repositoriesOutputSchemaProperty [
 	property := self
 		            schemaPropertyNamed: 'repositories'
 		            type: 'array'
-		            description:
-		            'Iceberg repositories newly registered during the load, when detectable.'.
+		            description: 'Iceberg repositories newly registered during the load, when detectable.'.
 	property items: self repositoryInfoOutputSchemaProperty.
 	^ property
 ]
@@ -371,8 +315,7 @@ MCPToolLoadMetacello >> repositoryInfoOutputSchemaProperty [
 
 	^ MCPStructureProperties new
 		  type: 'object';
-		  description:
-			  'Structured metadata for one Iceberg repository newly registered during the load.';
+		  description: 'Structured metadata for one Iceberg repository newly registered during the load.';
 		  additionalProperties: true;
 		  yourself
 ]

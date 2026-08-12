@@ -71,9 +71,7 @@ MCPMethodRewriteChangeInfo >> initializeFromChange: aChange includeSources: aBoo
 	className := classSide
 		             ifTrue: [ behavior instanceSide name asString ]
 		             ifFalse: [ behavior name asString ].
-	compiledMethod := behavior
-		                  compiledMethodAt: aChange selector
-		                  ifAbsent: [ nil ].
+	compiledMethod := behavior compiledMethodAt: aChange selector ifAbsent: [ nil ].
 	compiledMethod
 		ifNil: [
 				packageName := ''.

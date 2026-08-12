@@ -20,8 +20,7 @@ MCPToolPullRepository >> repositoryToolSpec [
 
 	^ {
 		  (#title -> 'Pull Repository').
-		  (#description
-		   -> 'Pull remote changes for a registered Iceberg repository.').
+		  (#description -> 'Pull remote changes for a registered Iceberg repository.').
 		  (#action -> 'pull').
 		  (#requestClass -> MCPRepositoryPullRequest).
 		  (#commandClass -> MCPPullRepositoryCommand) } asDictionary

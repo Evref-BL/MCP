@@ -59,9 +59,7 @@ MCPReplaceClassDefinitionResult >> newClassSlotNames [
 { #category : 'accessing' }
 MCPReplaceClassDefinitionResult >> newClassSlotNames: someNames [
 
-	newClassSlotNames := someNames
-		                     ifNil: [ #(  ) ]
-		                     ifNotNil: [ someNames asArray ]
+	newClassSlotNames := someNames ifNil: [ #(  ) ] ifNotNil: [ someNames asArray ]
 ]
 
 { #category : 'accessing' }
@@ -73,9 +71,7 @@ MCPReplaceClassDefinitionResult >> newInstanceSlotNames [
 { #category : 'accessing' }
 MCPReplaceClassDefinitionResult >> newInstanceSlotNames: someNames [
 
-	newInstanceSlotNames := someNames
-		                        ifNil: [ #(  ) ]
-		                        ifNotNil: [ someNames asArray ]
+	newInstanceSlotNames := someNames ifNil: [ #(  ) ] ifNotNil: [ someNames asArray ]
 ]
 
 { #category : 'accessing' }
@@ -87,9 +83,7 @@ MCPReplaceClassDefinitionResult >> oldClassSlotNames [
 { #category : 'accessing' }
 MCPReplaceClassDefinitionResult >> oldClassSlotNames: someNames [
 
-	oldClassSlotNames := someNames
-		                     ifNil: [ #(  ) ]
-		                     ifNotNil: [ someNames asArray ]
+	oldClassSlotNames := someNames ifNil: [ #(  ) ] ifNotNil: [ someNames asArray ]
 ]
 
 { #category : 'accessing' }
@@ -101,7 +95,5 @@ MCPReplaceClassDefinitionResult >> oldInstanceSlotNames [
 { #category : 'accessing' }
 MCPReplaceClassDefinitionResult >> oldInstanceSlotNames: someNames [
 
-	oldInstanceSlotNames := someNames
-		                        ifNil: [ #(  ) ]
-		                        ifNotNil: [ someNames asArray ]
+	oldInstanceSlotNames := someNames ifNil: [ #(  ) ] ifNotNil: [ someNames asArray ]
 ]

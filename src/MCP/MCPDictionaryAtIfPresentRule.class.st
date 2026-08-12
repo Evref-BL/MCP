@@ -26,7 +26,6 @@ MCPDictionaryAtIfPresentRule >> initialize [
 
 	super initialize.
 	self
-		replace:
-		'(`@dictionary at: `@key ifAbsent: [ nil ]) ifNotNil: `@presentBlock'
+		replace: '(`@dictionary at: `@key ifAbsent: [ nil ]) ifNotNil: `@presentBlock'
 		with: '`@dictionary at: `@key ifPresent: `@presentBlock'
 ]

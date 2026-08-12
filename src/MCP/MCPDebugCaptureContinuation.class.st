@@ -75,8 +75,7 @@ MCPDebugCaptureContinuation >> outcome: aDictionary [
 { #category : 'private' }
 MCPDebugCaptureContinuation >> prepareExceptionForProceed [
 
-	self capturedException ifNotNil: [ :exception |
-		exception mcpPrepareForProceed ]
+	self capturedException ifNotNil: [ :exception | exception mcpPrepareForProceed ]
 ]
 
 { #category : 'controlling' }

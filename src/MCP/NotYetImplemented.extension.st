@@ -10,8 +10,6 @@ NotYetImplemented >> mcpDebugMethodUpdateKind [
 NotYetImplemented >> mcpDebugRepairActionsFor: aRepairAnalyzer [
 
 	| action |
-	action := aRepairAnalyzer
-		          stubActionFor: self
-		          kind: 'notYetImplemented'.
+	action := aRepairAnalyzer stubActionFor: self kind: 'notYetImplemented'.
 	^ action ifNil: [ #(  ) ] ifNotNil: [ { action } ]
 ]

@@ -23,23 +23,19 @@ MCPDebugStateRequest class >> fromRequest: aRequest tool: aTool [
 				   nonNegativeIntegerArgumentNamed: 'sourceContextLines'
 				   default: self defaultSourceContextLines
 				   maximum: self maximumSourceContextLines);
-		  stackStart: (aRequest
-				   nonNegativeIntegerArgumentNamed: 'stackStart'
-				   default: self defaultStackStart);
-		  stackLimit: (aRequest
-				   nonNegativeIntegerArgumentNamed: 'stackLimit'
-				   default: self defaultStackLimit
-				   maximum: self maximumStackLimit);
-		  variableDepth: (aRequest
+		  stackStart: (aRequest nonNegativeIntegerArgumentNamed: 'stackStart' default: self defaultStackStart);
+		  stackLimit:
+			  (aRequest nonNegativeIntegerArgumentNamed: 'stackLimit' default: self defaultStackLimit maximum: self maximumStackLimit);
+		  variableDepth:
+			  (aRequest
 				   nonNegativeIntegerArgumentNamed: 'variableDepth'
 				   default: self defaultVariableDepth
 				   maximum: self maximumVariableDepth);
-		  variableLimit: (aRequest
+		  variableLimit:
+			  (aRequest
 				   nonNegativeIntegerArgumentNamed: 'variableLimit'
 				   default: self defaultVariableLimit
 				   maximum: self maximumVariableLimit);
-		  includeReceiver: (aRequest
-				   booleanArgumentNamed: 'includeReceiver'
-				   default: self defaultIncludeReceiver);
+		  includeReceiver: (aRequest booleanArgumentNamed: 'includeReceiver' default: self defaultIncludeReceiver);
 		  yourself
 ]

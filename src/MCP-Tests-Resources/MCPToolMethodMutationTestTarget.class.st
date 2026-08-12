@@ -9,17 +9,25 @@ Class {
 }
 
 { #category : 'tests' }
-MCPToolMethodMutationTestTarget class >> buildValue: aString [ ^ 'Class-' , aString
+MCPToolMethodMutationTestTarget class >> buildValue: aString [
+
+	^ 'Class-' , aString
 ]
 
 { #category : 'tests' }
-MCPToolMethodMutationTestTarget class >> classProtocolTarget [ ^ 7
+MCPToolMethodMutationTestTarget class >> classProtocolTarget [
+
+	^ 7
 ]
 
 { #category : 'tests' }
-MCPToolMethodMutationTestTarget >> combine: first with: second [ ^ first , '-' , second
+MCPToolMethodMutationTestTarget >> combine: first with: second [
+
+	^ first , '-' , second
 ]
 
 { #category : 'tests' }
-MCPToolMethodMutationTestTarget >> instanceProtocolTarget [ ^ 41
+MCPToolMethodMutationTestTarget >> instanceProtocolTarget [
+
+	^ 41
 ]

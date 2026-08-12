@@ -29,12 +29,10 @@ MCPToolsCatalogPresenter >> addToolCatalogGroup: group to: contentLayout [
 		displayBold: [ :ignored | true ].
 	contentLayout add: heading expand: false.
 	group value do: [ :toolClass |
-			contentLayout
-				add: (self toolCatalogCardFor: toolClass)
-				withConstraints: [ :constraints |
-						constraints
-							expand: false;
-							fill: true ] ]
+			contentLayout add: (self toolCatalogCardFor: toolClass) withConstraints: [ :constraints |
+					constraints
+						expand: false;
+						fill: true ] ]
 ]
 
 { #category : 'layout' }
@@ -45,8 +43,7 @@ MCPToolsCatalogPresenter >> catalogLayout [
 		                 spacing: 10;
 		                 borderWidth: 12;
 		                 yourself.
-	MCPTool toolGroups do: [ :group |
-		self addToolCatalogGroup: group to: contentLayout ].
+	MCPTool toolGroups do: [ :group | self addToolCatalogGroup: group to: contentLayout ].
 	^ contentLayout
 ]
 
@@ -83,10 +80,8 @@ MCPToolsCatalogPresenter >> toolCatalogCardFor: toolClass [
 		              borderWidth: 8;
 		              yourself.
 	cardLayout
-		add: (self toolCatalogLeftCellFor: tool)
-		width: self toolCatalogLeftColumnWidth;
-		add: (self toolCatalogDescriptionPresenterFor: tool)
-		withConstraints: [ :constraints |
+		add: (self toolCatalogLeftCellFor: tool) width: self toolCatalogLeftColumnWidth;
+		add: (self toolCatalogDescriptionPresenterFor: tool) withConstraints: [ :constraints |
 				constraints
 					expand: true;
 					fill: true ].

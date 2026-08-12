@@ -14,9 +14,7 @@ Class {
 { #category : 'post response' }
 MCPSocketSafeZnServer >> deferAfterCurrentResponse: aBlock [
 
-	MCPPostResponseActions value
-		ifNil: [ aBlock value ]
-		ifNotNil: [ :actions | actions add: aBlock ]
+	MCPPostResponseActions value ifNil: [ aBlock value ] ifNotNil: [ :actions | actions add: aBlock ]
 ]
 
 { #category : 'request handling' }
@@ -24,9 +22,7 @@ MCPSocketSafeZnServer >> executeOneRequestResponseOn: stream [
 
 	| actions shouldStop |
 	actions := OrderedCollection new.
-	shouldStop := MCPPostResponseActions
-		value: actions
-		during: [ super executeOneRequestResponseOn: stream ].
+	shouldStop := MCPPostResponseActions value: actions during: [ super executeOneRequestResponseOn: stream ].
 	self runPostResponseActions: actions.
 	^ shouldStop
 ]
@@ -41,27 +37,26 @@ MCPSocketSafeZnServer >> handleSocketErrorDuringListen: aSocketError [
 MCPSocketSafeZnServer >> isListening [
 
 	^ [ super isListening ]
-		on: SocketError
-		do: [ false ]
+		  on: SocketError
+		  do: [ false ]
 ]
 
 { #category : 'request handling' }
 MCPSocketSafeZnServer >> listenLoop [
 
 	^ [
-	  super listenLoop.
-	  false ]
-		on: SocketError
-		do: [ :error |
-			self handleSocketErrorDuringListen: error.
-			true ]
+		  super listenLoop.
+		  false ]
+		  on: SocketError
+		  do: [ :error |
+				  self handleSocketErrorDuringListen: error.
+				  true ]
 ]
 
 { #category : 'private' }
 MCPSocketSafeZnServer >> readRequestTerminationExceptionSet [
 
-	^ super readRequestTerminationExceptionSet
-	  , (self exceptionSet: #( #SocketError ))
+	^ super readRequestTerminationExceptionSet , (self exceptionSet: #( #SocketError ))
 ]
 
 { #category : 'private' }
@@ -75,8 +70,7 @@ MCPSocketSafeZnServer >> releaseServerSocketAfterSocketError [
 { #category : 'request handling' }
 MCPSocketSafeZnServer >> restartableListenLoop [
 
-	[ self listenLoop ] whileTrue: [
-		self socketRestartDelay wait ]
+	[ self listenLoop ] whileTrue: [ self socketRestartDelay wait ]
 ]
 
 { #category : 'private - post response' }
@@ -86,9 +80,9 @@ MCPSocketSafeZnServer >> runPostResponseActions: actions [
 	actionsToRun := actions copy.
 	actions removeAll.
 	actionsToRun do: [ :action |
-		[ action value ]
-			on: Error
-			do: [ :error | self logServerHandlerError: error ] ]
+			[ action value ]
+				on: Error
+				do: [ :error | self logServerHandlerError: error ] ]
 ]
 
 { #category : 'private' }
@@ -103,9 +97,7 @@ MCPSocketSafeZnServer >> start [
 
 	self stop: false.
 	self class default = self ifTrue: [ self register ].
-	process := [ self restartableListenLoop ]
-		           forkAt: Processor highIOPriority
-		           named: self serverProcessName.
+	process := [ self restartableListenLoop ] forkAt: Processor highIOPriority named: self serverProcessName.
 	self logStarted
 ]
 
@@ -113,12 +105,12 @@ MCPSocketSafeZnServer >> start [
 MCPSocketSafeZnServer >> stop: unregister [
 
 	(process isNil and: [ serverSocket isNil ]) ifTrue: [
-		unregister ifTrue: [ self unregister ].
-		self closeConnections.
-		^ self ].
+			unregister ifTrue: [ self unregister ].
+			self closeConnections.
+			^ self ].
 	process ifNotNil: [
-		process terminate.
-		process := nil ].
+			process terminate.
+			process := nil ].
 	unregister ifTrue: [ self unregister ].
 	self closeDelegate.
 	self releaseServerSocketAfterSocketError.

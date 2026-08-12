@@ -63,12 +63,8 @@ MCPTestIceRepository >> branchName: aString [
 { #category : 'API - branches' }
 MCPTestIceRepository >> createBranch: aBranchName [
 
-	self
-		signalFailureIfNeeded: self failCreateBranch
-		defaultMessage: 'Create branch failed for test repository'.
-	(self knownBranchNames includes: aBranchName) ifTrue: [
-		IceBranchAlreadyExists signal:
-			'Branch already exists: ' , aBranchName ].
+	self signalFailureIfNeeded: self failCreateBranch defaultMessage: 'Create branch failed for test repository'.
+	(self knownBranchNames includes: aBranchName) ifTrue: [ IceBranchAlreadyExists signal: 'Branch already exists: ' , aBranchName ].
 	knownBranchNames add: aBranchName.
 	branchName := aBranchName.
 	headDescription := 'branch ' , aBranchName.
@@ -181,9 +177,7 @@ MCPTestIceRepository >> initialize [
 	remoteNames := #(  ).
 	actionLog := OrderedCollection new.
 	modifiedPackages := #(  ).
-	self workingCopy: (MCPTestRepositoryWorkingCopy
-			 packageNames: #(  )
-			 modifiedPackages: #(  )).
+	self workingCopy: (MCPTestRepositoryWorkingCopy packageNames: #(  ) modifiedPackages: #(  )).
 	^ self
 ]
 
@@ -232,8 +226,7 @@ MCPTestIceRepository >> location: aLocation [
 { #category : 'accessing' }
 MCPTestIceRepository >> modifiedPackageNames: aCollection [
 
-	modifiedPackages := (aCollection ifNil: [ #(  ) ]) collect: [ :each |
-		                    MCPTestRepositoryModifiedPackage named: each ].
+	modifiedPackages := (aCollection ifNil: [ #(  ) ]) collect: [ :each | MCPTestRepositoryModifiedPackage named: each ].
 	self workingCopy modifiedPackages: modifiedPackages
 ]
 
@@ -265,11 +258,7 @@ MCPTestIceRepository >> remoteNames: aCollection [
 { #category : 'accessing' }
 MCPTestIceRepository >> remotes [
 
-	^ self remoteNames collect: [ :each |
-			  MCPTestRepositoryRemote
-				  named: each
-				  repository: self
-				  shouldFail: self failFetch ]
+	^ self remoteNames collect: [ :each | MCPTestRepositoryRemote named: each repository: self shouldFail: self failFetch ]
 ]
 
 { #category : 'private' }
@@ -292,11 +281,8 @@ MCPTestIceRepository >> subdirectory [
 { #category : 'API - branches' }
 MCPTestIceRepository >> switchToBranchNamed: aBranchName [
 
-	self
-		signalFailureIfNeeded: self failSwitchBranch
-		defaultMessage: 'Switch branch failed for test repository'.
-	(self knownBranchNames includes: aBranchName) ifFalse: [
-		IceBranchNotFound signal: 'Branch not found: ' , aBranchName ].
+	self signalFailureIfNeeded: self failSwitchBranch defaultMessage: 'Switch branch failed for test repository'.
+	(self knownBranchNames includes: aBranchName) ifFalse: [ IceBranchNotFound signal: 'Branch not found: ' , aBranchName ].
 	branchName := aBranchName.
 	headDescription := 'branch ' , aBranchName.
 	self recordAction: 'switchBranch:' , aBranchName

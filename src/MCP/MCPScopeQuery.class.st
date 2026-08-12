@@ -73,10 +73,7 @@ MCPScopeQuery >> recordMissingClassNamed: className inScope: scopeName [
 
 	| suggestions |
 	suggestions := MCPScopeNameSuggester classSuggestionsFor: className.
-	self requiresCompleteScope ifTrue: [
-			^ MCPCommandError
-				  signalMissingClassNamed: className
-				  scopeName: scopeName ].
+	self requiresCompleteScope ifTrue: [ ^ MCPCommandError signalMissingClassNamed: className scopeName: scopeName ].
 	warnings ifNil: [ self resetWarnings ].
 	warnings add: (MCPScopeNameSuggester
 			 missingNameWarningForKind: 'Class'
@@ -90,12 +87,8 @@ MCPScopeQuery >> recordMissingClassNamed: className inScope: scopeName [
 MCPScopeQuery >> recordMissingPackageNamed: packageName inScope: scopeName [
 
 	| suggestions |
-	suggestions := MCPScopeNameSuggester packageSuggestionsFor:
-		               packageName.
-	self requiresCompleteScope ifTrue: [
-			^ MCPCommandError
-				  signalMissingPackageNamed: packageName
-				  scopeName: scopeName ].
+	suggestions := MCPScopeNameSuggester packageSuggestionsFor: packageName.
+	self requiresCompleteScope ifTrue: [ ^ MCPCommandError signalMissingPackageNamed: packageName scopeName: scopeName ].
 	warnings ifNil: [ self resetWarnings ].
 	warnings add: (MCPScopeNameSuggester
 			 missingNameWarningForKind: 'Package'
@@ -146,9 +139,7 @@ MCPScopeQuery >> usesImplicitImageScope [
 
 	^ self packageNames isEmpty and: [
 			  self classNames isEmpty and: [
-					  self hierarchyClassNames isEmpty and: [
-						  self subclassClassNames isEmpty and: [
-							  self parentClassNames isEmpty ] ] ] ]
+				  self hierarchyClassNames isEmpty and: [ self subclassClassNames isEmpty and: [ self parentClassNames isEmpty ] ] ] ]
 ]
 
 { #category : 'accessing' }

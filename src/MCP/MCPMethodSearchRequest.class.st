@@ -24,9 +24,7 @@ MCPMethodSearchRequest class >> fromMetadataRequest: request tool: aTool [
 
 	| searchRequest |
 	searchRequest := self fromRequest: request tool: aTool.
-	searchRequest fieldFilters: (aTool
-			 fieldFiltersFromRequest: request
-			 fieldNames: aTool metadataFilterFieldNames).
+	searchRequest fieldFilters: (aTool fieldFiltersFromRequest: request fieldNames: aTool metadataFilterFieldNames).
 	^ searchRequest
 ]
 
@@ -39,15 +37,10 @@ MCPMethodSearchRequest class >> fromRequest: request tool: aTool [
 		  scopeQuery: scopeQuery;
 		  filterPattern: (aTool filterPatternFromRequest: request);
 		  filterMode: (aTool filterModeFromRequest: request);
-		  caseSensitive:
-			  (request booleanArgumentNamed: 'caseSensitive' default: true);
-		  includeSource:
-			  (request booleanArgumentNamed: 'includeSource' default: false);
-		  limit: (request
-				   nonNegativeIntegerArgumentNamed: 'limit'
-				   default: aTool defaultPageLimit);
-		  offset:
-			  (request nonNegativeIntegerArgumentNamed: 'offset' default: 0);
+		  caseSensitive: (request booleanArgumentNamed: 'caseSensitive' default: true);
+		  includeSource: (request booleanArgumentNamed: 'includeSource' default: false);
+		  limit: (request nonNegativeIntegerArgumentNamed: 'limit' default: aTool defaultPageLimit);
+		  offset: (request nonNegativeIntegerArgumentNamed: 'offset' default: 0);
 		  yourself
 ]
 
@@ -150,14 +143,8 @@ MCPMethodSearchRequest >> offset: anInteger [
 { #category : 'validating' }
 MCPMethodSearchRequest >> requiredFilterPatternForTool: aTool [
 
-	filterPattern ifNil: [
-			^ MCPInvalidToolInput
-				  signalMissingRequiredArgumentNamed: 'filter'
-				  forTool: aTool ].
-	filterPattern isEmpty ifTrue: [
-			^ MCPInvalidToolInput
-				  signalMissingRequiredArgumentNamed: 'filter'
-				  forTool: aTool ].
+	filterPattern ifNil: [ ^ MCPInvalidToolInput signalMissingRequiredArgumentNamed: 'filter' forTool: aTool ].
+	filterPattern isEmpty ifTrue: [ ^ MCPInvalidToolInput signalMissingRequiredArgumentNamed: 'filter' forTool: aTool ].
 	^ filterPattern
 ]
 

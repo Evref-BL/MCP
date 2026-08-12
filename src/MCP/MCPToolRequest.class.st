@@ -27,10 +27,7 @@ MCPToolRequest class >> tool: aTool arguments: aDictionary [
 { #category : 'accessing' }
 MCPToolRequest >> argumentNamed: anArgumentName ifAbsent: absentBlock [
 
-	^ self
-		  valueNamed: anArgumentName
-		  in: self arguments
-		  ifAbsent: absentBlock
+	^ self valueNamed: anArgumentName in: self arguments ifAbsent: absentBlock
 ]
 
 { #category : 'accessing' }
@@ -55,9 +52,7 @@ MCPToolRequest >> arrayArgumentNamed: anArgumentName [
 MCPToolRequest >> arrayArgumentNamed: anArgumentName ifAbsent: absentBlock [
 
 	| value |
-	value := self
-		         argumentNamed: anArgumentName
-		         ifAbsent: [ ^ absentBlock value ].
+	value := self argumentNamed: anArgumentName ifAbsent: [ ^ absentBlock value ].
 	value ifNil: [ ^ absentBlock value ].
 	^ value asArray
 ]
@@ -81,10 +76,7 @@ MCPToolRequest >> booleanArgumentNamed: anArgumentName default: aBoolean [
 MCPToolRequest >> booleanArgumentNamed: anArgumentName in: aDictionary default: aBoolean [
 
 	| value |
-	value := self
-		         valueNamed: anArgumentName
-		         in: aDictionary
-		         ifAbsent: [ ^ aBoolean ].
+	value := self valueNamed: anArgumentName in: aDictionary ifAbsent: [ ^ aBoolean ].
 	value ifNil: [ ^ aBoolean ].
 	^ value
 ]
@@ -92,8 +84,7 @@ MCPToolRequest >> booleanArgumentNamed: anArgumentName in: aDictionary default: 
 { #category : 'accessing' }
 MCPToolRequest >> hasArgumentNamed: anArgumentName [
 
-	^ (self arguments includesKey: anArgumentName asSymbol) or: [
-		  self arguments includesKey: anArgumentName asString ]
+	^ (self arguments includesKey: anArgumentName asSymbol) or: [ self arguments includesKey: anArgumentName asString ]
 ]
 
 { #category : 'initialization' }
@@ -111,20 +102,16 @@ MCPToolRequest >> nonNegativeIntegerArgumentNamed: anArgumentName default: anInt
 	value := self argumentNamed: anArgumentName ifAbsent: [ ^ anInteger ].
 	value ifNil: [ ^ anInteger ].
 	(value isInteger and: [ value >= 0 ]) ifTrue: [ ^ value ].
-	Error signal:
-		anArgumentName asString , ' must be a non-negative integer.'
+	Error signal: anArgumentName asString , ' must be a non-negative integer.'
 ]
 
 { #category : 'accessing' }
 MCPToolRequest >> nonNegativeIntegerArgumentNamed: anArgumentName default: defaultInteger maximum: maximumInteger [
 
 	| value |
-	value := self
-		         nonNegativeIntegerArgumentNamed: anArgumentName
-		         default: defaultInteger.
+	value := self nonNegativeIntegerArgumentNamed: anArgumentName default: defaultInteger.
 	value <= maximumInteger ifTrue: [ ^ value ].
-	Error signal: anArgumentName asString , ' must be no greater than '
-		, maximumInteger asString , '.'
+	Error signal: anArgumentName asString , ' must be no greater than ' , maximumInteger asString , '.'
 ]
 
 { #category : 'accessing' }
@@ -136,8 +123,7 @@ MCPToolRequest >> objectCollectionArgumentNamed: anArgumentName [
 { #category : 'accessing' }
 MCPToolRequest >> stringArgumentNamed: anArgumentName [
 
-	^ self stringValue:
-		  (self argumentNamed: anArgumentName ifAbsent: [ ^ nil ])
+	^ self stringValue: (self argumentNamed: anArgumentName ifAbsent: [ ^ nil ])
 ]
 
 { #category : 'accessing' }
@@ -149,43 +135,32 @@ MCPToolRequest >> stringArgumentNamed: anArgumentName default: defaultValue [
 { #category : 'accessing' }
 MCPToolRequest >> stringArgumentNamed: anArgumentName in: aDictionary [
 
-	^ self stringValue:
-		  (self
-			   valueNamed: anArgumentName
-			   in: aDictionary
-			   ifAbsent: [ ^ nil ])
+	^ self stringValue: (self valueNamed: anArgumentName in: aDictionary ifAbsent: [ ^ nil ])
 ]
 
 { #category : 'accessing' }
 MCPToolRequest >> stringArgumentNamed: anArgumentName in: aDictionary default: defaultValue [
 
-	^ (self stringArgumentNamed: anArgumentName in: aDictionary) ifNil: [
-		  defaultValue ]
+	^ (self stringArgumentNamed: anArgumentName in: aDictionary) ifNil: [ defaultValue ]
 ]
 
 { #category : 'accessing' }
 MCPToolRequest >> stringCollectionArgumentNamed: anArgumentName [
 
-	^ self stringCollectionFrom:
-		  (self argumentNamed: anArgumentName ifAbsent: [ ^ #(  ) ])
+	^ self stringCollectionFrom: (self argumentNamed: anArgumentName ifAbsent: [ ^ #(  ) ])
 ]
 
 { #category : 'accessing' }
 MCPToolRequest >> stringCollectionArgumentNamed: anArgumentName default: defaultCollection [
 
-	(self hasArgumentNamed: anArgumentName) ifFalse: [
-		^ defaultCollection ].
+	(self hasArgumentNamed: anArgumentName) ifFalse: [ ^ defaultCollection ].
 	^ self stringCollectionArgumentNamed: anArgumentName
 ]
 
 { #category : 'accessing' }
 MCPToolRequest >> stringCollectionArgumentNamed: anArgumentName in: aDictionary [
 
-	^ self stringCollectionFrom:
-		  (self
-			   valueNamed: anArgumentName
-			   in: aDictionary
-			   ifAbsent: [ ^ #(  ) ])
+	^ self stringCollectionFrom: (self valueNamed: anArgumentName in: aDictionary ifAbsent: [ ^ #(  ) ])
 ]
 
 { #category : 'private - accessing' }
@@ -194,9 +169,7 @@ MCPToolRequest >> stringCollectionFrom: aValue [
 	| values |
 	aValue ifNil: [ ^ #(  ) ].
 	values := OrderedCollection new.
-	aValue do: [ :each |
-			(self stringValue: each) ifNotNil: [ :normalized |
-				values add: normalized ] ].
+	aValue do: [ :each | (self stringValue: each) ifNotNil: [ :normalized | values add: normalized ] ].
 	^ values asArray
 ]
 
@@ -214,9 +187,7 @@ MCPToolRequest >> stringValue: aValue [
 { #category : 'accessing' }
 MCPToolRequest >> symbolCollectionArgumentNamed: anArgumentName [
 
-	^ (self stringCollectionArgumentNamed: anArgumentName)
-		  collect: #asSymbol
-		  as: Array
+	^ (self stringCollectionArgumentNamed: anArgumentName) collect: #asSymbol as: Array
 ]
 
 { #category : 'accessing' }
@@ -234,16 +205,13 @@ MCPToolRequest >> tool: aTool [
 { #category : 'accessing' }
 MCPToolRequest >> uniqueStringCollectionArgumentNamed: anArgumentName [
 
-	^ self uniqueStringCollectionFrom:
-		  (self stringCollectionArgumentNamed: anArgumentName)
+	^ self uniqueStringCollectionFrom: (self stringCollectionArgumentNamed: anArgumentName)
 ]
 
 { #category : 'accessing' }
 MCPToolRequest >> uniqueStringCollectionArgumentNamed: anArgumentName default: defaultCollection [
 
-	^ self uniqueStringCollectionFrom: (self
-			   stringCollectionArgumentNamed: anArgumentName
-			   default: defaultCollection)
+	^ self uniqueStringCollectionFrom: (self stringCollectionArgumentNamed: anArgumentName default: defaultCollection)
 ]
 
 { #category : 'private - accessing' }
@@ -251,8 +219,7 @@ MCPToolRequest >> uniqueStringCollectionFrom: strings [
 
 	| unique |
 	unique := OrderedCollection new.
-	strings do: [ :each |
-		(unique includes: each) ifFalse: [ unique add: each ] ].
+	strings do: [ :each | (unique includes: each) ifFalse: [ unique add: each ] ].
 	^ unique asArray
 ]
 
@@ -260,11 +227,8 @@ MCPToolRequest >> uniqueStringCollectionFrom: strings [
 MCPToolRequest >> validate [
 
 	self tool inputSchema ifNil: [ ^ self ].
-	violations := MCPJSONSchemaValidator
-		              violationsFor: self arguments
-		              schema: self tool inputSchema.
-	violations ifNotEmpty: [
-		MCPInvalidToolInput signalForTool: self tool violations: violations ].
+	violations := MCPJSONSchemaValidator violationsFor: self arguments schema: self tool inputSchema.
+	violations ifNotEmpty: [ MCPInvalidToolInput signalForTool: self tool violations: violations ].
 	self tool validateRequest: self.
 	^ self
 ]
@@ -273,10 +237,7 @@ MCPToolRequest >> validate [
 MCPToolRequest >> valueNamed: anArgumentName in: aDictionary ifAbsent: absentBlock [
 
 	aDictionary ifNil: [ ^ absentBlock value ].
-	^ aDictionary
-		  at: anArgumentName asSymbol
-		  ifAbsent: [
-		  aDictionary at: anArgumentName asString ifAbsent: absentBlock ]
+	^ aDictionary at: anArgumentName asSymbol ifAbsent: [ aDictionary at: anArgumentName asString ifAbsent: absentBlock ]
 ]
 
 { #category : 'accessing' }

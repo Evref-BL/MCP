@@ -48,25 +48,13 @@ MCPTestCoverageResult >> asDictionary [
 	data at: #nodeCount put: self nodeCount.
 	data at: #coveredNodeCount put: self coveredNodeCount.
 	data at: #percentage put: self percentage.
-	data
-		at: #uncoveredMethods
-		put: (self methodDictionariesFor: uncoveredMethods).
-	data
-		at: #partiallyCoveredMethods
-		put: (self methodDictionariesFor: partialMethods).
-	data
-		at: #uncoveredMethodsTruncated
-		put: (self isListTruncated: uncoveredMethods).
-	data
-		at: #partiallyCoveredMethodsTruncated
-		put: (self isListTruncated: partialMethods).
+	data at: #uncoveredMethods put: (self methodDictionariesFor: uncoveredMethods).
+	data at: #partiallyCoveredMethods put: (self methodDictionariesFor: partialMethods).
+	data at: #uncoveredMethodsTruncated put: (self isListTruncated: uncoveredMethods).
+	data at: #partiallyCoveredMethodsTruncated put: (self isListTruncated: partialMethods).
 	self includeCoveredMethods ifTrue: [
-			data
-				at: #coveredMethods
-				put: (self methodDictionariesFor: coveredMethods).
-			data
-				at: #coveredMethodsTruncated
-				put: (self isListTruncated: coveredMethods) ].
+			data at: #coveredMethods put: (self methodDictionariesFor: coveredMethods).
+			data at: #coveredMethodsTruncated put: (self isListTruncated: coveredMethods) ].
 	^ data
 ]
 
@@ -93,8 +81,7 @@ MCPTestCoverageResult >> fullyCoveredMethods [
 
 	| partialMethods |
 	partialMethods := self partiallyCoveredMethods.
-	^ self coveredMethods reject: [ :method |
-		  partialMethods includes: method ]
+	^ self coveredMethods reject: [ :method | partialMethods includes: method ]
 ]
 
 { #category : 'accessing' }
@@ -126,17 +113,14 @@ MCPTestCoverageResult >> methodDictionariesFor: methods [
 	sorted := self sortedMethods: methods.
 	limited := self methodLimit = 0
 		           ifTrue: [ #(  ) ]
-		           ifFalse: [
-		           sorted first: (self methodLimit min: sorted size) ].
-	^ (limited collect: [ :each | self methodDictionaryFor: each ])
-		  asArray
+		           ifFalse: [ sorted first: (self methodLimit min: sorted size) ].
+	^ (limited collect: [ :each | self methodDictionaryFor: each ]) asArray
 ]
 
 { #category : 'private - methods' }
 MCPTestCoverageResult >> methodDictionaryFor: aCompiledMethod [
 
-	^ (MCPCompiledMethodInfo fromMethod: aCompiledMethod)
-		  asDictionaryIncludingSource: false
+	^ (MCPCompiledMethodInfo fromMethod: aCompiledMethod) asDictionaryIncludingSource: false
 ]
 
 { #category : 'accessing' }
@@ -150,8 +134,7 @@ MCPTestCoverageResult >> methodSortKeyFor: aCompiledMethod [
 
 	^ String streamContents: [ :stream |
 			  stream nextPutAll: aCompiledMethod methodClass instanceSide name.
-			  aCompiledMethod methodClass isMeta ifTrue: [
-				  stream nextPutAll: ' class' ].
+			  aCompiledMethod methodClass isMeta ifTrue: [ stream nextPutAll: ' class' ].
 			  stream
 				  nextPutAll: '>>';
 				  nextPutAll: aCompiledMethod selector asString ]
@@ -181,8 +164,7 @@ MCPTestCoverageResult >> percentage [
 { #category : 'private - methods' }
 MCPTestCoverageResult >> sortedMethods: methods [
 
-	^ methods asSortedCollection: [ :left :right |
-		  (self methodSortKeyFor: left) <= (self methodSortKeyFor: right) ]
+	^ methods asSortedCollection: [ :left :right | (self methodSortKeyFor: left) <= (self methodSortKeyFor: right) ]
 ]
 
 { #category : 'private - coverage' }

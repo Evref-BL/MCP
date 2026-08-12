@@ -14,8 +14,7 @@ MCPListChangeHistoryLogsCommand >> currentHistoryFileToInclude: currentFile inDi
 
 	currentFile ifNil: [ ^ nil ].
 	request directoryPath ifNil: [ ^ currentFile ].
-	(self sameFileReference: aDirectory as: currentFile parent) ifFalse: [
-		^ nil ].
+	(self sameFileReference: aDirectory as: currentFile parent) ifFalse: [ ^ nil ].
 	^ currentFile
 ]
 
@@ -24,27 +23,23 @@ MCPListChangeHistoryLogsCommand >> directoryForRequestWithCurrentFile: currentFi
 
 	| directory directoryPath |
 	directoryPath := request directoryPath.
-	directoryPath ifNil: [
-		^ self historyDirectoryForCurrentFile: currentFile ].
+	directoryPath ifNil: [ ^ self historyDirectoryForCurrentFile: currentFile ].
 	directory := directoryPath asFileReference.
 	currentFile ifNotNil: [
 			(self sameFileReference: directory as: currentFile) ifTrue: [
 					MCPCommandError
 						signalErrorCode: #ChangeHistoryPathNotDirectory
-						message:
-						'Change history path ' , directoryPath , ' is not a directory.'
+						message: 'Change history path ' , directoryPath , ' is not a directory.'
 						details: { (#directoryPath -> directoryPath) } asDictionary ] ].
 	directory exists ifFalse: [
 			MCPCommandError
 				signalErrorCode: #ChangeHistoryDirectoryNotFound
-				message:
-				'Change history directory ' , directoryPath , ' does not exist.'
+				message: 'Change history directory ' , directoryPath , ' does not exist.'
 				details: { (#directoryPath -> directoryPath) } asDictionary ].
 	directory isDirectory ifFalse: [
 			MCPCommandError
 				signalErrorCode: #ChangeHistoryPathNotDirectory
-				message:
-				'Change history path ' , directoryPath , ' is not a directory.'
+				message: 'Change history path ' , directoryPath , ' is not a directory.'
 				details: { (#directoryPath -> directoryPath) } asDictionary ].
 	^ directory
 ]
@@ -55,27 +50,13 @@ MCPListChangeHistoryLogsCommand >> execute [
 	| currentFile directory files includeFile logInfos page resultPage |
 	currentFile := self currentHistoryFileReference.
 	directory := self directoryForRequestWithCurrentFile: currentFile.
-	includeFile := self
-		               currentHistoryFileToInclude: currentFile
-		               inDirectory: directory.
-	files := self
-		         historyFileReferencesFrom: directory
-		         including: includeFile.
-	page := MCPPaginationResult
-		        fromEntries: files
-		        limit: request limit
-		        offset: request offset.
+	includeFile := self currentHistoryFileToInclude: currentFile inDirectory: directory.
+	files := self historyFileReferencesFrom: directory including: includeFile.
+	page := MCPPaginationResult fromEntries: files limit: request limit offset: request offset.
 	logInfos := page entries collect: [ :each |
-			            MCPChangeHistoryLogInfo
-				            fromFileReference: each
-				            isCurrent:
-				            (self sameFileReference: each as: currentFile) ].
-	resultPage := MCPPaginationResult
-		              entries: logInfos
-		              nextOffset: page nextOffset.
-	^ MCPChangeHistoryListLogsResult
-		  directoryPath: (directory ifNotNil: [ directory fullName ])
-		  page: resultPage
+		            MCPChangeHistoryLogInfo fromFileReference: each isCurrent: (self sameFileReference: each as: currentFile) ].
+	resultPage := MCPPaginationResult entries: logInfos nextOffset: page nextOffset.
+	^ MCPChangeHistoryListLogsResult directoryPath: (directory ifNotNil: [ directory fullName ]) page: resultPage
 ]
 
 { #category : 'private' }
@@ -84,16 +65,11 @@ MCPListChangeHistoryLogsCommand >> historyFileReferencesFrom: aDirectory includi
 	| files |
 	files := aDirectory ifNil: [ #(  ) ] ifNotNil: [ :directory |
 			         directory exists
-				         ifTrue: [
-				         directory files select: [ :each |
-					         each extension = 'ombu' ] ]
+				         ifTrue: [ directory files select: [ :each | each extension = 'ombu' ] ]
 				         ifFalse: [ #(  ) ] ].
 	currentFile ifNotNil: [
-			(files anySatisfy: [ :each |
-				 self sameFileReference: each as: currentFile ]) ifFalse: [
-				files := files copyWith: currentFile ] ].
-	^ files asArray sort: [ :left :right |
-		  self shouldSortFile: left before: right ]
+		(files anySatisfy: [ :each | self sameFileReference: each as: currentFile ]) ifFalse: [ files := files copyWith: currentFile ] ].
+	^ files asArray sort: [ :left :right | self shouldSortFile: left before: right ]
 ]
 
 { #category : 'private' }
@@ -110,8 +86,7 @@ MCPListChangeHistoryLogsCommand >> shouldSortFile: leftFile before: rightFile [
 	| leftTime rightTime |
 	leftTime := self modificationTimeOf: leftFile.
 	rightTime := self modificationTimeOf: rightFile.
-	(leftTime isNil and: [ rightTime isNil ]) ifTrue: [
-		^ leftFile basename <= rightFile basename ].
+	(leftTime isNil and: [ rightTime isNil ]) ifTrue: [ ^ leftFile basename <= rightFile basename ].
 	leftTime ifNil: [ ^ false ].
 	rightTime ifNil: [ ^ true ].
 	^ leftTime >= rightTime

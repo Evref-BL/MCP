@@ -15,10 +15,7 @@ Class {
 { #category : 'instance creation' }
 MCPEvaluateCommand class >> tool: aTool request: aRequest resultPreviewCharacterLimit: anInteger [
 
-	^ self new
-		  initializeTool: aTool
-		  request: aRequest
-		  resultPreviewCharacterLimit: anInteger
+	^ self new initializeTool: aTool request: aRequest resultPreviewCharacterLimit: anInteger
 ]
 
 { #category : 'executing' }
@@ -34,16 +31,13 @@ MCPEvaluateCommand >> execute [
 	answer := [ compiler evaluate: request code ]
 		          on: Exception
 		          do: [ :error |
-				          (PharoCompatibility syntaxNoticeFromException: error)
-					          ifNotNil: [ :syntaxNotice |
+				          (PharoCompatibility syntaxNoticeFromException: error) ifNotNil: [ :syntaxNotice |
 					          ^ self syntaxFailureFor: syntaxNotice ].
 				          ^ self runtimeFailureFor: error ].
 	notice ifNotNil: [ ^ self syntaxFailureFor: notice ].
 	^ MCPEvaluateResult okData: {
 			  (#resultClassName -> answer class name asString).
-			  (#resultPrintString
-			   -> (answer printStringLimitedTo: resultPreviewCharacterLimit)) }
-			  asDictionary
+			  (#resultPrintString -> (answer printStringLimitedTo: resultPreviewCharacterLimit)) } asDictionary
 ]
 
 { #category : 'initialization' }
@@ -64,9 +58,7 @@ MCPEvaluateCommand >> resultPreviewCharacterLimit [
 { #category : 'private' }
 MCPEvaluateCommand >> runtimeFailureFor: anError [
 
-	^ MCPEvaluateResult
-		  errorSummary: (tool runtimeFailureMessageFor: anError)
-		  details: (tool errorDetailsFor: anError)
+	^ MCPEvaluateResult errorSummary: (tool runtimeFailureMessageFor: anError) details: (tool errorDetailsFor: anError)
 ]
 
 { #category : 'private' }
@@ -76,7 +68,5 @@ MCPEvaluateCommand >> syntaxFailureFor: aNotice [
 	details := tool errorDetailsFor: aNotice.
 	details at: #description put: 'Compilation failed before evaluation.'.
 	details at: #position put: aNotice position.
-	^ MCPEvaluateResult
-		  errorSummary: (tool syntaxFailureMessageFor: aNotice)
-		  details: details
+	^ MCPEvaluateResult errorSummary: (tool syntaxFailureMessageFor: aNotice) details: details
 ]

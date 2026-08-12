@@ -24,17 +24,13 @@ MCPReplaceClassDefinitionCommand >> classSlotNames [
 { #category : 'accessing' }
 MCPReplaceClassDefinitionCommand >> classSlotNames: someNames [
 
-	classSlotNames := someNames
-		                  ifNil: [ #(  ) ]
-		                  ifNotNil: [ someNames asArray ]
+	classSlotNames := someNames ifNil: [ #(  ) ] ifNotNil: [ someNames asArray ]
 ]
 
 { #category : 'private' }
 MCPReplaceClassDefinitionCommand >> classSlotNamesFromClass: aClass [
 
-	^ aClass classSide slots
-		  collect: [ :each | each name asString ]
-		  as: Array
+	^ aClass classSide slots collect: [ :each | each name asString ] as: Array
 ]
 
 { #category : 'accessing' }
@@ -51,12 +47,10 @@ MCPReplaceClassDefinitionCommand >> execute [
 	oldInstanceSlotNames := self instanceSlotNamesFromClass: targetClass.
 	oldClassSlotNames := self classSlotNamesFromClass: targetClass.
 	updatedClass := self replaceDefinitionOn: targetClass.
-	result := MCPReplaceClassDefinitionResult classInfo:
-		          (MCPClassInfo fromClass: updatedClass).
+	result := MCPReplaceClassDefinitionResult classInfo: (MCPClassInfo fromClass: updatedClass).
 	result
 		oldInstanceSlotNames: oldInstanceSlotNames;
-		newInstanceSlotNames:
-			(self instanceSlotNamesFromClass: updatedClass);
+		newInstanceSlotNames: (self instanceSlotNamesFromClass: updatedClass);
 		oldClassSlotNames: oldClassSlotNames;
 		newClassSlotNames: (self classSlotNamesFromClass: updatedClass).
 	^ result
@@ -85,8 +79,7 @@ MCPReplaceClassDefinitionCommand >> replaceDefinitionOn: aClass [
 
 	^ ShiftClassInstaller update: aClass to: [ :builder |
 			  self replaceSlots ifTrue: [ builder slots: self slots ].
-			  self replaceClassSlots ifTrue: [
-				  builder classSlots: self classSlots ] ]
+			  self replaceClassSlots ifTrue: [ builder classSlots: self classSlots ] ]
 ]
 
 { #category : 'accessing' }
@@ -110,9 +103,7 @@ MCPReplaceClassDefinitionCommand >> slotNames [
 { #category : 'accessing' }
 MCPReplaceClassDefinitionCommand >> slotNames: someNames [
 
-	slotNames := someNames
-		             ifNil: [ #(  ) ]
-		             ifNotNil: [ someNames asArray ]
+	slotNames := someNames ifNil: [ #(  ) ] ifNotNil: [ someNames asArray ]
 ]
 
 { #category : 'accessing' }

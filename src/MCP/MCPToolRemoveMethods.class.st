@@ -43,8 +43,7 @@ MCPToolRemoveMethods >> buildInputSchema [
 				  ((MCPStructureProperties new
 					    name: 'selectors';
 					    type: 'array';
-					    description:
-						    'The selectors to remove as a single force-removal batch.')
+					    description: 'The selectors to remove as a single force-removal batch.')
 					   items: (MCPStructureProperties new
 							    type: 'string';
 							    description: 'A selector to remove.';
@@ -90,10 +89,7 @@ MCPToolRemoveMethods >> description [
 MCPToolRemoveMethods >> errorResultForError: anError className: className classSide: classSide selectors: selectors [
 
 	^ anError
-		  mcpCommandErrorDo: [ :commandError |
-				  self
-					  errorResultText: commandError messageText
-					  details: commandError structuredDetails ]
+		  mcpCommandErrorDo: [ :commandError | self errorResultText: commandError messageText details: commandError structuredDetails ]
 		  otherwise: [ :toolError |
 				  self
 					  errorResultText: (self
@@ -118,24 +114,16 @@ MCPToolRemoveMethods >> executeWithRequest: request [
 				  | result |
 				  result := (self commandForRequest: removeRequest) execute.
 				  self
-					  successResultText: (self
-							   successSummaryForClassName: result className
-							   classSide: result classSide
-							   selectors: result selectors)
+					  successResultText:
+					  (self successSummaryForClassName: result className classSide: result classSide selectors: result selectors)
 					  data: result asDictionary
 					  warnings: result warningMessages ]
 		  onError: [ :error :removeRequest |
 				  self
 					  errorResultForError: error
-					  className: (self
-							   classNameForErrorFromParsedRequest: removeRequest
-							   rawRequest: request)
-					  classSide: (self
-							   classSideForErrorFromParsedRequest: removeRequest
-							   rawRequest: request)
-					  selectors: (self
-							   selectorsForErrorFromParsedRequest: removeRequest
-							   rawRequest: request) ]
+					  className: (self classNameForErrorFromParsedRequest: removeRequest rawRequest: request)
+					  classSide: (self classSideForErrorFromParsedRequest: removeRequest rawRequest: request)
+					  selectors: (self selectorsForErrorFromParsedRequest: removeRequest rawRequest: request) ]
 ]
 
 { #category : 'private' }
@@ -161,9 +149,7 @@ MCPToolRemoveMethods >> failureMessageForClassNamed: className classSide: classS
 MCPToolRemoveMethods >> forceRemoveSelectors: selectorSymbols from: aBehavior [
 
 	| refactoring |
-	refactoring := ReRemoveMethodsRefactoring
-		               selectors: selectorSymbols
-		               from: aBehavior.
+	refactoring := ReRemoveMethodsRefactoring selectors: selectorSymbols from: aBehavior.
 	refactoring removeMethodChanges.
 	refactoring performChanges
 ]
@@ -186,8 +172,7 @@ MCPToolRemoveMethods >> selectorsFromRequest: request [
 
 	| selectors |
 	selectors := request uniqueStringCollectionArgumentNamed: 'selectors'.
-	selectors ifEmpty: [
-		Error signal: 'selectors must contain at least one selector.' ].
+	selectors ifEmpty: [ Error signal: 'selectors must contain at least one selector.' ].
 	^ selectors
 ]
 
@@ -204,8 +189,7 @@ MCPToolRemoveMethods >> successSummaryForClassName: className classSide: classSi
 	targetName := classSide
 		              ifTrue: [ className , ' class' ]
 		              ifFalse: [ className ].
-	^ 'Force-removed ' , selectors size asString , ' methods from '
-	  , targetName , ': ' , (', ' join: selectors) , '.'
+	^ 'Force-removed ' , selectors size asString , ' methods from ' , targetName , ': ' , (', ' join: selectors) , '.'
 ]
 
 { #category : 'metadata' }

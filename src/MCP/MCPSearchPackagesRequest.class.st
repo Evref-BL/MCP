@@ -22,26 +22,16 @@ MCPSearchPackagesRequest class >> fromRequest: request tool: aTool [
 
 	| scopeQuery |
 	scopeQuery := MCPPackageScopeQuery new
-		              projectNames:
-			              (request stringCollectionArgumentNamed:
-					               'projectNames');
-		              packageNames:
-			              (request stringCollectionArgumentNamed:
-					               'packageNames');
+		              projectNames: (request stringCollectionArgumentNamed: 'projectNames');
+		              packageNames: (request stringCollectionArgumentNamed: 'packageNames');
 		              yourself.
 	^ self new
 		  scopeQuery: scopeQuery;
 		  filterMode: (aTool filterModeFromRequest: request);
-		  fieldFilters: (aTool
-				   fieldFiltersFromRequest: request
-				   fieldNames: aTool packageFilterFieldNames);
-		  caseSensitive:
-			  (request booleanArgumentNamed: 'caseSensitive' default: true);
-		  limit: (request
-				   nonNegativeIntegerArgumentNamed: 'limit'
-				   default: aTool defaultPageLimit);
-		  offset:
-			  (request nonNegativeIntegerArgumentNamed: 'offset' default: 0);
+		  fieldFilters: (aTool fieldFiltersFromRequest: request fieldNames: aTool packageFilterFieldNames);
+		  caseSensitive: (request booleanArgumentNamed: 'caseSensitive' default: true);
+		  limit: (request nonNegativeIntegerArgumentNamed: 'limit' default: aTool defaultPageLimit);
+		  offset: (request nonNegativeIntegerArgumentNamed: 'offset' default: 0);
 		  yourself
 ]
 

@@ -14,30 +14,25 @@ MCPCheckoutRepositoryBranchCommand >> execute [
 
 	| beforeInfo repository result |
 	^ self
-		 executeRepositoryAction: 'checkoutBranch'
-		 work: [
-				 repository := self request repository.
-				 beforeInfo := MCPRepositoryInfo fromRepository: repository.
-				 (self repositorySupportsExternalGitOperations: repository)
-					 ifTrue: [
-						 self
-							 runGitArguments: { 'switch'. self request branchName }
-							 in: repository
-							 ifFailed: [ :gitResult |
-							 self signalGitCommandFailed: gitResult action: 'checkoutBranch' ].
-						 self loadLoadedPackagesFromDiskIn: repository ]
-					 ifFalse: [ (repository branchNamed: self request branchName) checkout ].
-				 result := MCPRepositoryBranchResult
-					 repositoryBefore: beforeInfo
-					 after: repository ]
-		 successResult: [ :warningMessages |
-				 self tool
-					 successResultText:
-						 'Checked out repository ' , result repositoryInfo name
-						 , ' branch ' , self request branchName , '.'
-					 data: (self tool dataForRepositoryResult: result)
-					 warnings: warningMessages ]
-		 failureSummary: [ :error |
-				 'Failed check out repository branch: '
-				 , (error messageText ifNil: [ error asString ]) ]
+		  executeRepositoryAction: 'checkoutBranch'
+		  work: [
+				  repository := self request repository.
+				  beforeInfo := MCPRepositoryInfo fromRepository: repository.
+				  (self repositorySupportsExternalGitOperations: repository)
+					  ifTrue: [
+							  self
+								  runGitArguments: {
+										  'switch'.
+										  self request branchName }
+								  in: repository
+								  ifFailed: [ :gitResult | self signalGitCommandFailed: gitResult action: 'checkoutBranch' ].
+							  self loadLoadedPackagesFromDiskIn: repository ]
+					  ifFalse: [ (repository branchNamed: self request branchName) checkout ].
+				  result := MCPRepositoryBranchResult repositoryBefore: beforeInfo after: repository ]
+		  successResult: [ :warningMessages |
+				  self tool
+					  successResultText: 'Checked out repository ' , result repositoryInfo name , ' branch ' , self request branchName , '.'
+					  data: (self tool dataForRepositoryResult: result)
+					  warnings: warningMessages ]
+		  failureSummary: [ :error | 'Failed check out repository branch: ' , (error messageText ifNil: [ error asString ]) ]
 ]

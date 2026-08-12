@@ -95,18 +95,14 @@ MCPClassCreateRequest >> initializeFromRequest: request [
 	superclassName := request stringArgumentNamed: 'superclassName'.
 	packageName := request stringArgumentNamed: 'packageName'.
 	tag := request stringArgumentNamed: 'tag'.
-	classComment := (request hasArgumentNamed: 'classComment') ifTrue: [
-		                self classCommentFromRequest: request ].
+	classComment := (request hasArgumentNamed: 'classComment') ifTrue: [ self classCommentFromRequest: request ].
 	force := request booleanArgumentNamed: 'force' default: false.
 	slotNames := request stringCollectionArgumentNamed: 'slots'.
 	classSlotNames := request stringCollectionArgumentNamed: 'classSlots'.
 	traitNames := request stringCollectionArgumentNamed: 'traits'.
-	classTraitNames := request stringCollectionArgumentNamed:
-		                   'classTraits'.
-	sharedVariableNames := request stringCollectionArgumentNamed:
-		                       'sharedVariables'.
-	sharedPoolNames := request stringCollectionArgumentNamed:
-		                   'sharedPools'.
+	classTraitNames := request stringCollectionArgumentNamed: 'classTraits'.
+	sharedVariableNames := request stringCollectionArgumentNamed: 'sharedVariables'.
+	sharedPoolNames := request stringCollectionArgumentNamed: 'sharedPools'.
 	layout := request stringArgumentNamed: 'layout'.
 	^ self
 ]

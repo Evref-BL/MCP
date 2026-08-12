@@ -60,15 +60,21 @@ MCPCompiledMethodInfoTest >> restoreFixtureMethods [
 	self removeSelector: self classSelector from: self classTarget.
 	self removeSelector: self extensionSelector from: self targetClass.
 	self
-		ensureMethodSource: 'infoTarget ^ 1'
+		ensureMethodSource: 'infoTarget
+
+	^ 1'
 		protocol: 'tests'
 		on: self targetClass.
 	self
-		ensureMethodSource: 'classInfoTarget ^ 2'
+		ensureMethodSource: 'classInfoTarget
+
+	^ 2'
 		protocol: 'tests'
 		on: self classTarget.
 	self
-		ensureMethodSource: 'extensionInfoTarget ^ 3'
+		ensureMethodSource: 'extensionInfoTarget
+
+	^ 3'
 		protocol: '*MCP-Tests-Resources-Extensions'
 		on: self targetClass
 ]
@@ -103,14 +109,11 @@ MCPCompiledMethodInfoTest >> tearDown [
 MCPCompiledMethodInfoTest >> testBuildsInfoForExtensionMethod [
 
 	| info |
-	info := MCPCompiledMethodInfo fromMethod:
-		        self targetClass >> self extensionSelector.
+	info := MCPCompiledMethodInfo fromMethod: self targetClass >> self extensionSelector.
 	self assert: info className equals: self targetClassName.
 	self assert: info selector equals: 'extensionInfoTarget'.
 	self deny: info classSide.
-	self
-		assert: info packageName
-		equals: 'MCP-Tests-Resources-Extensions'.
+	self assert: info packageName equals: 'MCP-Tests-Resources-Extensions'.
 	self assert: info isExtension.
 	self assert: info protocol equals: '*MCP-Tests-Resources-Extensions'.
 	self assert: (info source includesSubstring: 'extensionInfoTarget')
@@ -120,10 +123,8 @@ MCPCompiledMethodInfoTest >> testBuildsInfoForExtensionMethod [
 MCPCompiledMethodInfoTest >> testBuildsInfoForInstanceAndClassMethods [
 
 	| classInfo instanceInfo |
-	instanceInfo := MCPCompiledMethodInfo fromMethod:
-		                self targetClass >> self instanceSelector.
-	classInfo := MCPCompiledMethodInfo fromMethod:
-		             self classTarget >> self classSelector.
+	instanceInfo := MCPCompiledMethodInfo fromMethod: self targetClass >> self instanceSelector.
+	classInfo := MCPCompiledMethodInfo fromMethod: self classTarget >> self classSelector.
 	self assert: instanceInfo className equals: self targetClassName.
 	self deny: instanceInfo classSide.
 	self assert: instanceInfo selector equals: 'infoTarget'.

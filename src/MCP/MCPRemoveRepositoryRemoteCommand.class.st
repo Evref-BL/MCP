@@ -29,10 +29,7 @@ MCPRemoveRepositoryRemoteCommand >> execute [
 				  self
 					  successResultForRepository: repository
 					  result: result
-					  summary:
-					  'Removed repository remote for ' , repository name , '.'
+					  summary: 'Removed repository remote for ' , repository name , '.'
 					  warnings: warningMessages ]
-		  failureSummary: [ :error |
-				  'Failed repository remote remove: '
-				  , (error messageText ifNil: [ error asString ]) ]
+		  failureSummary: [ :error | 'Failed repository remote remove: ' , (error messageText ifNil: [ error asString ]) ]
 ]

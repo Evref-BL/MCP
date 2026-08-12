@@ -78,17 +78,15 @@ MCPCompositeToolIconSpec >> leftBadgeIconSymbol [
 { #category : 'accessing' }
 MCPCompositeToolIconSpec >> leftBadgeIconSymbol: anIconSymbol [
 
-	leftBadgeIconSymbol := anIconSymbol ifNotNil: [
-		                       anIconSymbol asSymbol ]
+	leftBadgeIconSymbol := anIconSymbol ifNotNil: [ anIconSymbol asSymbol ]
 ]
 
 { #category : 'rendering' }
 MCPCompositeToolIconSpec >> renderUsing: anIconFactory [
 
 	self leftBadgeIconSymbol ifNil: [
-			^ anIconFactory iconForForm: (anIconFactory
-					   compositeFormBaseIconNamed: self baseIconSymbol
-					   badgeIconNamed: self badgeIconSymbol) ].
+		^ anIconFactory iconForForm:
+			  (anIconFactory compositeFormBaseIconNamed: self baseIconSymbol badgeIconNamed: self badgeIconSymbol) ].
 	^ anIconFactory iconForForm: (anIconFactory
 			   compositeFormBaseIconNamed: self baseIconSymbol
 			   leftBadgeIconNamed: self leftBadgeIconSymbol

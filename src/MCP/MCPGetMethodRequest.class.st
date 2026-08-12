@@ -21,11 +21,8 @@ MCPGetMethodRequest class >> fromRequest: aRequest tool: aTool [
 	^ self new
 		  initializeClassName: (aRequest stringArgumentNamed: 'className')
 		  selectorString: (aTool selectorStringFromRequest: aRequest)
-		  classSide:
-		  (aRequest booleanArgumentNamed: 'classSide' default: false)
-		  includeVariableDetails: (aRequest
-				   booleanArgumentNamed: 'includeVariableDetails'
-				   default: false)
+		  classSide: (aRequest booleanArgumentNamed: 'classSide' default: false)
+		  includeVariableDetails: (aRequest booleanArgumentNamed: 'includeVariableDetails' default: false)
 ]
 
 { #category : 'accessing' }

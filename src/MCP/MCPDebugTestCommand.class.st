@@ -63,8 +63,7 @@ MCPDebugTestCommand >> capturedResultFor: aDebugSession continuation: aContinuat
 		          status: 'paused'
 		          reason: (self capturedReasonFor: aDebugSession).
 	record continuation: aContinuation.
-	state := (MCPDebugStateInfo fromRecord: record request: request)
-		         asDictionary.
+	state := (MCPDebugStateInfo fromRecord: record request: request) asDictionary.
 	warnings := self captureWarnings.
 	data := self testData.
 	data
@@ -73,16 +72,12 @@ MCPDebugTestCommand >> capturedResultFor: aDebugSession continuation: aContinuat
 		at: #passed put: false;
 		at: #sessionId put: record sessionId;
 		at: #stateId put: record stateId;
-		at: #session
-		put: (MCPDebugSessionInfo fromRecord: record) asDictionary;
+		at: #session put: (MCPDebugSessionInfo fromRecord: record) asDictionary;
 		at: #state put: state;
 		at: #timeoutMilliseconds put: request timeoutMilliseconds;
 		at: #capabilities put: self capabilities.
 	warnings ifNotEmpty: [ data at: #warnings put: warnings ].
-	^ MCPDebugToolResult
-		  okSummary: 'Debug test registered ' , record sessionId , '.'
-		  data: data
-		  warnings: warnings
+	^ MCPDebugToolResult okSummary: 'Debug test registered ' , record sessionId , '.' data: data warnings: warnings
 ]
 
 { #category : 'private - results' }
@@ -102,10 +97,7 @@ MCPDebugTestCommand >> completedResultFor: ignored [
 		at: #timeoutMilliseconds put: request timeoutMilliseconds;
 		at: #capabilities put: self capabilities.
 	warnings ifNotEmpty: [ data at: #warnings put: warnings ].
-	^ MCPDebugToolResult
-		  okSummary: 'Debug test completed without stopping or failing.'
-		  data: data
-		  warnings: warnings
+	^ MCPDebugToolResult okSummary: 'Debug test completed without stopping or failing.' data: data warnings: warnings
 ]
 
 { #category : 'private - worker' }
@@ -125,19 +117,14 @@ MCPDebugTestCommand >> execute [
 { #category : 'private - debugging' }
 MCPDebugTestCommand >> installStopBreakpoint [
 
-	^ DebugPointManager
-		  installNew: BreakDebugPoint
-		  on: self breakpointMethod ast
+	^ DebugPointManager installNew: BreakDebugPoint on: self breakpointMethod ast
 ]
 
 { #category : 'private - worker' }
 MCPDebugTestCommand >> recordCapturedException: anException inOutcome: outcome [
 
 	| debugSession |
-	debugSession := DebugSession
-		                named: request name
-		                on: Processor activeProcess
-		                startedAt: (self debugStartContextFor: anException).
+	debugSession := DebugSession named: request name on: Processor activeProcess startedAt: (self debugStartContextFor: anException).
 	debugSession exception: anException.
 	outcome
 		removeKey: #answer ifAbsent: [ nil ];
@@ -172,12 +159,10 @@ MCPDebugTestCommand >> signalUnsupportedStopPoint [
 
 	^ MCPCommandError
 		  signalErrorCode: #DebugTestStopPointUnsupported
-		  message:
-		  'Unsupported debug test stopAt: ' , request stopAt asString , '.'
+		  message: 'Unsupported debug test stopAt: ' , request stopAt asString , '.'
 		  details: {
 				  (#stopAt -> request stopAt).
-				  (#supportedStopPoints -> MCPDebugTestRequest supportedStopPoints) }
-				  asDictionary
+				  (#supportedStopPoints -> MCPDebugTestRequest supportedStopPoints) } asDictionary
 ]
 
 { #category : 'private - resolving' }
@@ -187,10 +172,7 @@ MCPDebugTestCommand >> testCase [
 	class := self testClass.
 	selector := self testSelector.
 	(class canUnderstand: selector) ifFalse: [
-			MCPCommandError
-				signalMissingMethodInClassName: request className
-				classSide: false
-				selector: selector ].
+		MCPCommandError signalMissingMethodInClassName: request className classSide: false selector: selector ].
 	^ class selector: selector
 ]
 
@@ -200,10 +182,8 @@ MCPDebugTestCommand >> testClass [
 	| class |
 	class := Smalltalk globals
 		         at: request className asSymbol
-		         ifAbsent: [
-		         MCPCommandError signalMissingClassNamed: request className ].
-	(TestCase withAllSubclasses includes: class) ifFalse: [
-		self signalClassIsNotTestCase: class ].
+		         ifAbsent: [ MCPCommandError signalMissingClassNamed: request className ].
+	(TestCase withAllSubclasses includes: class) ifFalse: [ self signalClassIsNotTestCase: class ].
 	^ class
 ]
 
@@ -232,11 +212,7 @@ MCPDebugTestCommand >> timeoutResultForContinuation: aContinuation [
 		at: #errorCode put: 'DebugTestTimedOut';
 		at: #timeoutMilliseconds put: request timeoutMilliseconds;
 		at: #workerTerminated put: true.
-	^ MCPDebugToolResult
-		  errorSummary:
-			  'Debug test timed out after '
-			  , request timeoutMilliseconds asString , ' ms.'
-		  details: details
+	^ MCPDebugToolResult errorSummary: 'Debug test timed out after ' , request timeoutMilliseconds asString , ' ms.' details: details
 ]
 
 { #category : 'private - worker' }
@@ -254,16 +230,13 @@ MCPDebugTestCommand >> workerProcessForContinuation: aContinuation [
 			            on: Exception
 			            do: [ :error |
 					            handled := true.
-					            self
-						            recordCapturedException: error
-						            inOutcome: outcome.
+					            self recordCapturedException: error inOutcome: outcome.
 					            aContinuation signal.
 					            Processor activeProcess suspend.
 					            false ].
 		  handled
 			  ifFalse: [ self recordCompletedAnswer: answer inOutcome: outcome ]
 			  ifTrue: [
-					  (outcome at: #status ifAbsent: [ nil ]) = #captured ifTrue: [
-						  self recordCompletedAnswer: answer inOutcome: outcome ] ].
+			  (outcome at: #status ifAbsent: [ nil ]) = #captured ifTrue: [ self recordCompletedAnswer: answer inOutcome: outcome ] ].
 		  aContinuation signal ] newProcess
 ]

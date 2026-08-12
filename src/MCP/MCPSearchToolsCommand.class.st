@@ -46,7 +46,5 @@ MCPSearchToolsCommand >> pageSize [
 MCPSearchToolsCommand >> visibleToolsFrom: matchingTools [
 
 	request cursor >= matchingTools size ifTrue: [ ^ #(  ) ].
-	^ matchingTools
-		copyFrom: request cursor + 1
-		to: (matchingTools size min: (request cursor + self pageSize))
+	^ matchingTools copyFrom: request cursor + 1 to: (matchingTools size min: request cursor + self pageSize)
 ]

@@ -26,8 +26,6 @@ MCPToolSearchDebugCandidates >> sessionToolSpec [
 
 	^ {
 		  (#title -> 'Search Debug Candidates').
-		  (#description
-		   ->
-		   'Search unattached open Pharo debugger windows that can be attached to MCP debugging.').
+		  (#description -> 'Search unattached open Pharo debugger windows that can be attached to MCP debugging.').
 		  (#action -> 'search') } asDictionary
 ]

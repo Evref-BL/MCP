@@ -19,10 +19,7 @@ Class {
 { #category : 'instance creation' }
 MCPRemoveMethodsResult class >> fromRequest: aRequest removedMethods: methodCollection warningMessages: warningCollection [
 
-	^ self new
-		  initializeFromRequest: aRequest
-		  removedMethods: methodCollection
-		  warningMessages: warningCollection
+	^ self new initializeFromRequest: aRequest removedMethods: methodCollection warningMessages: warningCollection
 ]
 
 { #category : 'converting' }

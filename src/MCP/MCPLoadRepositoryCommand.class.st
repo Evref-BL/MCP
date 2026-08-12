@@ -21,8 +21,7 @@ MCPLoadRepositoryCommand >> baselineCommandForRepositoryUrl: repositoryUrl [
 	^ self baselineCommandClass
 		  tool: self tool
 		  request: self request baselineRequest
-		  configureMetacello: [ :metacello |
-		  metacello repository: repositoryUrl ]
+		  configureMetacello: [ :metacello | metacello repository: repositoryUrl ]
 ]
 
 { #category : 'executing' }
@@ -30,10 +29,6 @@ MCPLoadRepositoryCommand >> execute [
 
 	| loadResult repositoryUrl |
 	repositoryUrl := self request repositoryUrl.
-	loadResult := (self baselineCommandForRepositoryUrl: repositoryUrl)
-		              execute.
-	^ MCPLoadRepositoryResult
-		  request: self request
-		  repositoryUrl: repositoryUrl
-		  loadResult: loadResult
+	loadResult := (self baselineCommandForRepositoryUrl: repositoryUrl) execute.
+	^ MCPLoadRepositoryResult request: self request repositoryUrl: repositoryUrl loadResult: loadResult
 ]

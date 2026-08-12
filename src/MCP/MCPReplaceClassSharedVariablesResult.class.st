@@ -57,9 +57,7 @@ MCPReplaceClassSharedVariablesResult >> newSharedVariableNames [
 { #category : 'accessing' }
 MCPReplaceClassSharedVariablesResult >> newSharedVariableNames: someNames [
 
-	newSharedVariableNames := someNames
-		                          ifNil: [ #(  ) ]
-		                          ifNotNil: [ someNames asArray ]
+	newSharedVariableNames := someNames ifNil: [ #(  ) ] ifNotNil: [ someNames asArray ]
 ]
 
 { #category : 'accessing' }
@@ -71,7 +69,5 @@ MCPReplaceClassSharedVariablesResult >> oldSharedVariableNames [
 { #category : 'accessing' }
 MCPReplaceClassSharedVariablesResult >> oldSharedVariableNames: someNames [
 
-	oldSharedVariableNames := someNames
-		                          ifNil: [ #(  ) ]
-		                          ifNotNil: [ someNames asArray ]
+	oldSharedVariableNames := someNames ifNil: [ #(  ) ] ifNotNil: [ someNames asArray ]
 ]

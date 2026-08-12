@@ -18,9 +18,7 @@ Class {
 { #category : 'instance creation' }
 MCPRepositoryReferenceSpec class >> fromRequest: request [
 
-	^ self
-		  name: (request stringArgumentNamed: 'repositoryName')
-		  location: (request stringArgumentNamed: 'location')
+	^ self name: (request stringArgumentNamed: 'repositoryName') location: (request stringArgumentNamed: 'location')
 ]
 
 { #category : 'instance creation' }
@@ -74,12 +72,8 @@ MCPRepositoryReferenceSpec >> location [
 { #category : 'private - resolving' }
 MCPRepositoryReferenceSpec >> matchesRepository: aRepository [
 
-	self hasName ifTrue: [
-		(self repositoryNameFor: aRepository) = self name ifFalse: [
-			^ false ] ].
-	self hasLocation ifTrue: [
-			(self repositoryLocationFor: aRepository) = self location ifFalse: [
-				^ false ] ].
+	self hasName ifTrue: [ (self repositoryNameFor: aRepository) = self name ifFalse: [ ^ false ] ].
+	self hasLocation ifTrue: [ (self repositoryLocationFor: aRepository) = self location ifFalse: [ ^ false ] ].
 	^ true
 ]
 
@@ -94,8 +88,7 @@ MCPRepositoryReferenceSpec >> repository [
 
 	| matches |
 	self isEmpty ifTrue: [ self signalMissingRepositoryReference ].
-	matches := IceRepository repositories select: [ :each |
-		           self matchesRepository: each ].
+	matches := IceRepository repositories select: [ :each | self matchesRepository: each ].
 	matches isEmpty ifTrue: [ self signalRepositoryNotFound ].
 	matches size > 1 ifTrue: [ self signalAmbiguousRepository: matches ].
 	^ matches anyOne
@@ -105,9 +98,7 @@ MCPRepositoryReferenceSpec >> repository [
 MCPRepositoryReferenceSpec >> repositoryLocationFor: aRepository [
 
 	^ self
-		  stringFrom: [
-				  aRepository location ifNotNil: [ :repositoryLocation |
-					  repositoryLocation mcpRepositoryLocationString ] ]
+		  stringFrom: [ aRepository location ifNotNil: [ :repositoryLocation | repositoryLocation mcpRepositoryLocationString ] ]
 		  default: ''
 ]
 
@@ -128,14 +119,11 @@ MCPRepositoryReferenceSpec >> signalAmbiguousRepository: repositories [
 
 	| details matchingRepositoryNames |
 	details := self requestedContext copy.
-	matchingRepositoryNames := (repositories
-		                            collect: [ :each | each name asString ]
-		                            as: Array) sort.
+	matchingRepositoryNames := (repositories collect: [ :each | each name asString ] as: Array) sort.
 	details at: #matchingRepositoryNames put: matchingRepositoryNames.
 	MCPCommandError
 		signalErrorCode: #RepositoryReferenceAmbiguous
-		message:
-		'More than one registered Iceberg repository matches the requested repository reference.'
+		message: 'More than one registered Iceberg repository matches the requested repository reference.'
 		details: details
 ]
 
@@ -144,8 +132,7 @@ MCPRepositoryReferenceSpec >> signalMissingRepositoryReference [
 
 	MCPCommandError
 		signalErrorCode: #RepositoryReferenceRequired
-		message:
-		'Repository tools require repositoryName, location, or both.'
+		message: 'Repository tools require repositoryName, location, or both.'
 		details: self requestedContext
 ]
 
@@ -154,8 +141,7 @@ MCPRepositoryReferenceSpec >> signalRepositoryNotFound [
 
 	MCPCommandError
 		signalErrorCode: #RepositoryNotFound
-		message:
-		'No registered Iceberg repository matches the requested repository reference.'
+		message: 'No registered Iceberg repository matches the requested repository reference.'
 		details: self requestedContext
 ]
 

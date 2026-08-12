@@ -28,8 +28,7 @@ MCPTestRepositoryRemote class >> named: aName repository: aRepository shouldFail
 { #category : 'actions' }
 MCPTestRepositoryRemote >> fetch [
 
-	self shouldFail ifTrue: [
-		Error signal: 'Fetch failed for remote ' , self name ].
+	self shouldFail ifTrue: [ Error signal: 'Fetch failed for remote ' , self name ].
 	repository recordAction: 'fetch:' , self name
 ]
 

@@ -18,9 +18,7 @@ MCPRepositoryDiffCommand >> execute [
 		  work: [
 				  repository := self request repository.
 				  modifiedPaths := self modifiedPathsFromGitStatusIn: repository.
-				  changedPackageNames := self
-					                         changedPackageNamesForRepository: repository
-					                         modifiedPaths: modifiedPaths.
+				  changedPackageNames := self changedPackageNamesForRepository: repository modifiedPaths: modifiedPaths.
 				  isEmpty := changedPackageNames isEmpty and: [ modifiedPaths isEmpty ].
 				  result := MCPRepositoryDiffResult
 					            repository: repository
@@ -29,12 +27,8 @@ MCPRepositoryDiffCommand >> execute [
 					            isEmpty: isEmpty ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText:
-					  'Computed repository diff for ' , result repositoryInfo name
-					  , '.'
+					  successResultText: 'Computed repository diff for ' , result repositoryInfo name , '.'
 					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
-		  failureSummary: [ :error |
-				  'Failed repository diff: '
-				  , (error messageText ifNil: [ error asString ]) ]
+		  failureSummary: [ :error | 'Failed repository diff: ' , (error messageText ifNil: [ error asString ]) ]
 ]

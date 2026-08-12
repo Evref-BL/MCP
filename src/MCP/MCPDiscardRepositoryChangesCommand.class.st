@@ -14,16 +14,11 @@ MCPDiscardRepositoryChangesCommand >> assertRepositoryCleanAfterDiscard: aReposi
 
 	| remainingPackageNames remainingPaths |
 	remainingPaths := self modifiedPathsFromGitStatusIn: aRepository.
-	remainingPackageNames := self
-		                         changedPackageNamesForRepository: aRepository
-		                         modifiedPaths: remainingPaths.
+	remainingPackageNames := self changedPackageNamesForRepository: aRepository modifiedPaths: remainingPaths.
 	(remainingPackageNames isEmpty and: [ remainingPaths isEmpty ]) ifFalse: [
-		MCPCommandError
-			signalErrorCode: 'RepositoryDiscardIncomplete'
-			message: 'Repository changes remain after discard.'
-			details: {
-						(#remainingPackageNames -> remainingPackageNames).
-						(#remainingPaths -> remainingPaths) } asDictionary ]
+			MCPCommandError signalErrorCode: 'RepositoryDiscardIncomplete' message: 'Repository changes remain after discard.' details: {
+					(#remainingPackageNames -> remainingPackageNames).
+					(#remainingPaths -> remainingPaths) } asDictionary ]
 ]
 
 { #category : 'executing' }
@@ -35,22 +30,14 @@ MCPDiscardRepositoryChangesCommand >> execute [
 		  work: [
 				  repository := self request repository.
 				  discardedPaths := self modifiedPathsFromGitStatusIn: repository.
-				  discardedPackageNames := self
-					                           changedPackageNamesForRepository: repository
-					                           modifiedPaths: discardedPaths.
-				  (discardedPackageNames isNotEmpty or: [ discardedPaths isNotEmpty ])
-					  ifTrue: [ repository discardChanges ].
-				  result := MCPRepositoryDiscardResult
-					            discardedPackageNames: discardedPackageNames
-					            discardedPaths: discardedPaths.
+				  discardedPackageNames := self changedPackageNamesForRepository: repository modifiedPaths: discardedPaths.
+				  (discardedPackageNames isNotEmpty or: [ discardedPaths isNotEmpty ]) ifTrue: [ repository discardChanges ].
+				  result := MCPRepositoryDiscardResult discardedPackageNames: discardedPackageNames discardedPaths: discardedPaths.
 				  self assertRepositoryCleanAfterDiscard: repository ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText:
-					  'Discarded repository changes for ' , repository name , '.'
+					  successResultText: 'Discarded repository changes for ' , repository name , '.'
 					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
-		  failureSummary: [ :error |
-				  'Failed repository discard: '
-				  , (error messageText ifNil: [ error asString ]) ]
+		  failureSummary: [ :error | 'Failed repository discard: ' , (error messageText ifNil: [ error asString ]) ]
 ]

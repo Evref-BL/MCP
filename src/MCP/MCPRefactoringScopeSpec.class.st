@@ -56,8 +56,7 @@ MCPRefactoringScopeSpec >> initializePackageNames: packageNamesCollection classN
 { #category : 'testing' }
 MCPRefactoringScopeSpec >> isDefaultImageScope [
 
-	^ self packageNames isEmpty and: [
-		  self classNames isEmpty and: [ self hierarchyClassNames isEmpty ] ]
+	^ self packageNames isEmpty and: [ self classNames isEmpty and: [ self hierarchyClassNames isEmpty ] ]
 ]
 
 { #category : 'accessing' }
@@ -70,14 +69,9 @@ MCPRefactoringScopeSpec >> packageNames [
 MCPRefactoringScopeSpec >> scope [
 
 	self isDefaultImageScope ifTrue: [ ^ 'image' ].
-	(self packageNames isNotEmpty and: [
-		 self classNames isEmpty and: [ self hierarchyClassNames isEmpty ] ])
-		ifTrue: [ ^ 'packages' ].
-	(self classNames isNotEmpty and: [
-		 self packageNames isEmpty and: [ self hierarchyClassNames isEmpty ] ])
-		ifTrue: [ ^ 'classes' ].
-	(self hierarchyClassNames isNotEmpty and: [
-		 self packageNames isEmpty and: [ self classNames isEmpty ] ])
-		ifTrue: [ ^ 'hierarchy' ].
+	(self packageNames isNotEmpty and: [ self classNames isEmpty and: [ self hierarchyClassNames isEmpty ] ]) ifTrue: [ ^ 'packages' ].
+	(self classNames isNotEmpty and: [ self packageNames isEmpty and: [ self hierarchyClassNames isEmpty ] ]) ifTrue: [ ^ 'classes' ].
+	(self hierarchyClassNames isNotEmpty and: [ self packageNames isEmpty and: [ self classNames isEmpty ] ]) ifTrue: [
+		^ 'hierarchy' ].
 	^ 'custom'
 ]

@@ -42,19 +42,13 @@ MCPRepositoryAdoptHeadResult >> asDictionary [
 	| data |
 	data := Dictionary new.
 	data at: #didAdopt put: self didAdopt.
-	self previousReferenceCommitId ifNotEmpty: [ :id |
-		data at: #previousReferenceCommitId put: id ].
-	self referenceCommitId ifNotEmpty: [ :id |
-		data at: #referenceCommitId put: id ].
-	self adoptedCommitId ifNotEmpty: [ :id |
-		data at: #adoptedCommitId put: id ].
-	self modifiedPackageNamesBefore ifNotEmpty: [ :names |
-		data at: #modifiedPackageNamesBefore put: names ].
-	self modifiedPackageNamesAfter ifNotEmpty: [ :names |
-		data at: #modifiedPackageNamesAfter put: names ].
+	self previousReferenceCommitId ifNotEmpty: [ :id | data at: #previousReferenceCommitId put: id ].
+	self referenceCommitId ifNotEmpty: [ :id | data at: #referenceCommitId put: id ].
+	self adoptedCommitId ifNotEmpty: [ :id | data at: #adoptedCommitId put: id ].
+	self modifiedPackageNamesBefore ifNotEmpty: [ :names | data at: #modifiedPackageNamesBefore put: names ].
+	self modifiedPackageNamesAfter ifNotEmpty: [ :names | data at: #modifiedPackageNamesAfter put: names ].
 	self branchName ifNotEmpty: [ :name | data at: #branchName put: name ].
-	self headDescription ifNotEmpty: [ :description |
-		data at: #headDescription put: description ].
+	self headDescription ifNotEmpty: [ :description | data at: #headDescription put: description ].
 	^ data
 ]
 

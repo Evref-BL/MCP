@@ -45,8 +45,8 @@ MCPRepositoryInfo class >> commitResultRepository: aRepository packageNames: pac
 MCPRepositoryInfo class >> fromRepository: aRepository [
 
 	^ [ self new initializeFromRepository: aRepository ]
-		on: FileException
-		do: [ :ignored | self new initializeStaleRepository: aRepository ]
+		  on: FileException
+		  do: [ :ignored | self new initializeStaleRepository: aRepository ]
 ]
 
 { #category : 'converting' }
@@ -59,24 +59,15 @@ MCPRepositoryInfo >> asDetailedSearchDictionary [
 		at: #location put: self location;
 		at: #isModified put: self isModified;
 		at: #isMissing put: self isMissing.
-	self subdirectory ifNotNil: [ :value |
-		value ifNotEmpty: [ data at: #subdirectory put: value ] ].
-	self branchName ifNotNil: [ :value |
-		value ifNotEmpty: [ data at: #branchName put: value ] ].
-	self headDescription ifNotNil: [ :value |
-		value ifNotEmpty: [ data at: #headDescription put: value ] ].
-	self headCommitId ifNotEmpty: [ :value |
-		data at: #headCommitId put: value ].
-	self packageNames ifNotEmpty: [ :names |
-		data at: #packageNames put: names ].
-	self modifiedPackageNames ifNotEmpty: [ :names |
-		data at: #modifiedPackageNames put: names ].
-	self upstreamRemoteName ifNotEmpty: [ :value |
-		data at: #upstreamRemoteName put: value ].
-	self upstreamBranchName ifNotEmpty: [ :value |
-		data at: #upstreamBranchName put: value ].
-	self upstreamRemoteUrl ifNotEmpty: [ :value |
-		data at: #upstreamRemoteUrl put: value ].
+	self subdirectory ifNotNil: [ :value | value ifNotEmpty: [ data at: #subdirectory put: value ] ].
+	self branchName ifNotNil: [ :value | value ifNotEmpty: [ data at: #branchName put: value ] ].
+	self headDescription ifNotNil: [ :value | value ifNotEmpty: [ data at: #headDescription put: value ] ].
+	self headCommitId ifNotEmpty: [ :value | data at: #headCommitId put: value ].
+	self packageNames ifNotEmpty: [ :names | data at: #packageNames put: names ].
+	self modifiedPackageNames ifNotEmpty: [ :names | data at: #modifiedPackageNames put: names ].
+	self upstreamRemoteName ifNotEmpty: [ :value | data at: #upstreamRemoteName put: value ].
+	self upstreamBranchName ifNotEmpty: [ :value | data at: #upstreamBranchName put: value ].
+	self upstreamRemoteUrl ifNotEmpty: [ :value | data at: #upstreamRemoteUrl put: value ].
 	self isDetachedHead ifTrue: [ data at: #isDetachedHead put: true ].
 	^ data
 ]
@@ -116,17 +107,14 @@ MCPRepositoryInfo >> asSearchDictionary [
 	| data |
 	data := Dictionary new.
 	data at: #name put: self name.
-	self branchName ifNotNil: [ :value |
-		value ifNotEmpty: [ data at: #branchName put: value ] ].
-	self subdirectory ifNotNil: [ :value |
-		value ifNotEmpty: [ data at: #subdirectory put: value ] ].
+	self branchName ifNotNil: [ :value | value ifNotEmpty: [ data at: #branchName put: value ] ].
+	self subdirectory ifNotNil: [ :value | value ifNotEmpty: [ data at: #subdirectory put: value ] ].
 	self isMissing ifTrue: [
 			data at: #isMissing put: true.
 			self location ifNotNil: [ :value | data at: #location put: value ] ].
 	self isModified ifTrue: [
 			data at: #isModified put: true.
-			self modifiedPackageNames ifNotEmpty: [ :names |
-				data at: #modifiedPackageNames put: names ] ].
+			self modifiedPackageNames ifNotEmpty: [ :names | data at: #modifiedPackageNames put: names ] ].
 	self isDetachedHead ifFalse: [ ^ data ].
 	data at: #isDetachedHead put: true.
 	^ data
@@ -183,8 +171,7 @@ MCPRepositoryInfo >> initializeCommitResultRepository: aRepository packageNames:
 	isMissing := false.
 	isModified := repositoryModifiedPackageNames notEmpty.
 	packageNames := repositoryPackageNames ifNil: [ #(  ) ].
-	modifiedPackageNames := repositoryModifiedPackageNames ifNil: [
-		                        #(  ) ].
+	modifiedPackageNames := repositoryModifiedPackageNames ifNil: [ #(  ) ].
 	remotes := #(  ).
 	upstreamRemoteName := ''.
 	upstreamBranchName := ''.
@@ -204,15 +191,10 @@ MCPRepositoryInfo >> initializeFromRepository: aRepository [
 	headClassName := self repositoryHeadClassNameFor: aRepository.
 	headCommitId := self repositoryHeadCommitIdFor: aRepository.
 	isDetachedHead := self repositoryIsDetachedHeadFor: aRepository.
-	isMissing := self
-		             booleanFrom: [ aRepository isMissing ]
-		             default: false.
-	isModified := self
-		              booleanFrom: [ aRepository isModified ]
-		              default: false.
+	isMissing := self booleanFrom: [ aRepository isMissing ] default: false.
+	isModified := self booleanFrom: [ aRepository isModified ] default: false.
 	packageNames := self repositoryPackageNamesFor: aRepository.
-	modifiedPackageNames := self repositoryModifiedPackageNamesFor:
-		                        aRepository.
+	modifiedPackageNames := self repositoryModifiedPackageNamesFor: aRepository.
 	remotes := self repositoryRemotesFor: aRepository.
 	upstreamInfo := self repositoryUpstreamInfoFor: aRepository.
 	upstreamRemoteName := upstreamInfo at: #remoteName.
@@ -226,13 +208,9 @@ MCPRepositoryInfo >> initializeStaleRepository: aRepository [
 	name := self stringFromFileBoundary: [ aRepository name ] default: ''.
 	className := aRepository class name asString.
 	location := self
-		stringFromFileBoundary: [
-			aRepository location ifNotNil: [ :repositoryLocation |
-				repositoryLocation pathString ] ]
-		default: ''.
-	subdirectory := self
-		stringFromFileBoundary: [ aRepository subdirectory ]
-		default: ''.
+		            stringFromFileBoundary: [ aRepository location ifNotNil: [ :repositoryLocation | repositoryLocation pathString ] ]
+		            default: ''.
+	subdirectory := self stringFromFileBoundary: [ aRepository subdirectory ] default: ''.
 	branchName := ''.
 	headDescription := ''.
 	headClassName := ''.
@@ -240,9 +218,9 @@ MCPRepositoryInfo >> initializeStaleRepository: aRepository [
 	isDetachedHead := false.
 	isMissing := true.
 	isModified := false.
-	packageNames := #( ).
-	modifiedPackageNames := #( ).
-	remotes := #( ).
+	packageNames := #(  ).
+	modifiedPackageNames := #(  ).
+	remotes := #(  ).
 	upstreamRemoteName := ''.
 	upstreamBranchName := ''.
 	upstreamRemoteUrl := ''
@@ -293,8 +271,7 @@ MCPRepositoryInfo >> packageNames [
 { #category : 'accessing' }
 MCPRepositoryInfo >> remoteNames [
 
-	^ ((self remotes collect: [ :each | each at: #name ifAbsent: [ '' ] ])
-		   reject: [ :each | each isEmpty ]) asArray
+	^ ((self remotes collect: [ :each | each at: #name ifAbsent: [ '' ] ]) reject: [ :each | each isEmpty ]) asArray
 ]
 
 { #category : 'accessing' }
@@ -355,17 +332,14 @@ MCPRepositoryInfo >> repositoryIsDetachedHeadFor: aRepository [
 MCPRepositoryInfo >> repositoryLocationFor: aRepository [
 
 	^ self
-		  stringFrom: [
-				  aRepository location ifNotNil: [ :repositoryLocation |
-					  repositoryLocation mcpRepositoryLocationString ] ]
+		  stringFrom: [ aRepository location ifNotNil: [ :repositoryLocation | repositoryLocation mcpRepositoryLocationString ] ]
 		  default: ''
 ]
 
 { #category : 'private' }
 MCPRepositoryInfo >> repositoryModifiedPackageNamesFor: aRepository [
 
-	^ self sortedStringsFrom: [
-		  aRepository modifiedPackages collect: [ :each | each name ] ]
+	^ self sortedStringsFrom: [ aRepository modifiedPackages collect: [ :each | each name ] ]
 ]
 
 { #category : 'private' }
@@ -377,8 +351,7 @@ MCPRepositoryInfo >> repositoryPackageNamesFor: aRepository [
 { #category : 'private' }
 MCPRepositoryInfo >> repositoryRemotesFor: aRepository [
 
-	^ (MCPGitRepositoryMetadata forRepository: aRepository)
-		  remoteDictionaries
+	^ (MCPGitRepositoryMetadata forRepository: aRepository) remoteDictionaries
 ]
 
 { #category : 'private' }
@@ -390,8 +363,7 @@ MCPRepositoryInfo >> repositorySubdirectoryFor: aRepository [
 { #category : 'private' }
 MCPRepositoryInfo >> repositoryUpstreamInfoFor: aRepository [
 
-	^ (MCPGitRepositoryMetadata forRepository: aRepository)
-		  upstreamInfoForBranchNamed: self branchName
+	^ (MCPGitRepositoryMetadata forRepository: aRepository) upstreamInfoForBranchNamed: self branchName
 ]
 
 { #category : 'private' }
@@ -416,8 +388,8 @@ MCPRepositoryInfo >> stringFrom: aBlock default: defaultString [
 MCPRepositoryInfo >> stringFromFileBoundary: aBlock default: defaultString [
 
 	^ [ self stringValue: aBlock value default: defaultString ]
-		on: FileException
-		do: [ :ignored | defaultString ]
+		  on: FileException
+		  do: [ :ignored | defaultString ]
 ]
 
 { #category : 'private' }

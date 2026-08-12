@@ -26,9 +26,7 @@ MCPToolGetDebugSession >> sessionToolSpec [
 
 	^ {
 		  (#title -> 'Get Debug Session').
-		  (#description
-		   ->
-		   'Return the registry summary for one tracked Pharo DebugSession.').
+		  (#description -> 'Return the registry summary for one tracked Pharo DebugSession.').
 		  (#action -> 'get').
 		  (#inputProperties -> { self sessionIdSchemaProperty }).
 		  (#requiredProperties -> #( 'sessionId' )) } asDictionary

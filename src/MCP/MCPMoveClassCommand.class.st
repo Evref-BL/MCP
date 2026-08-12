@@ -49,10 +49,7 @@ MCPMoveClassCommand >> execute [
 	oldTag := movedClass packageTagName asString.
 	self performMove.
 	movedClass := Smalltalk globals at: self className asSymbol.
-	^ MCPMoveClassResult
-		  classInfo: (MCPClassInfo fromClass: movedClass)
-		  oldPackageName: oldPackageName
-		  oldTag: oldTag
+	^ MCPMoveClassResult classInfo: (MCPClassInfo fromClass: movedClass) oldPackageName: oldPackageName oldTag: oldTag
 ]
 
 { #category : 'accessing' }
@@ -71,15 +68,8 @@ MCPMoveClassCommand >> packageName: aString [
 MCPMoveClassCommand >> performMove [
 
 	self tag
-		ifNil: [
-				(RBMoveClassTransformation
-					 move: self className
-					 toPackage: self packageName) execute ]
-		ifNotNil: [
-				(RBMoveClassTransformation
-					 move: self className
-					 toPackage: self packageName
-					 inTag: self tag) execute ]
+		ifNil: [ (RBMoveClassTransformation move: self className toPackage: self packageName) execute ]
+		ifNotNil: [ (RBMoveClassTransformation move: self className toPackage: self packageName inTag: self tag) execute ]
 ]
 
 { #category : 'accessing' }

@@ -26,8 +26,7 @@ MCPDebugEvaluateCommand >> debugLocationDetailsForRecord: aRecord frameIndex: fr
 	^ {
 		  (#sessionId -> aRecord sessionId).
 		  (#stateId -> aRecord stateId).
-		  (#frameRef -> (request frameRef ifNil: [
-			    self frameRefForRecord: aRecord frameIndex: frameIndex ])).
+		  (#frameRef -> (request frameRef ifNil: [ self frameRefForRecord: aRecord frameIndex: frameIndex ])).
 		  (#expression -> request expression) } asDictionary
 ]
 
@@ -46,24 +45,11 @@ MCPDebugEvaluateCommand >> evaluateExpressionInContext: aContext record: aRecord
 		          on: Exception
 		          do: [ :error |
 				          (PharoCompatibility syntaxNoticeFromException: error)
-					          ifNotNil: [ :syntaxNotice |
-							          result := self
-								                    syntaxFailureFor: syntaxNotice
-								                    record: aRecord
-								                    frameIndex: frameIndex ]
-					          ifNil: [
-							          result := self
-								                    runtimeFailureFor: error
-								                    record: aRecord
-								                    frameIndex: frameIndex ].
+					          ifNotNil: [ :syntaxNotice | result := self syntaxFailureFor: syntaxNotice record: aRecord frameIndex: frameIndex ]
+					          ifNil: [ result := self runtimeFailureFor: error record: aRecord frameIndex: frameIndex ].
 				          nil ].
 	result ifNotNil: [ ^ failureBlock value: result ].
-	notice ifNotNil: [
-			^ failureBlock value:
-				  (self
-					   syntaxFailureFor: notice
-					   record: aRecord
-					   frameIndex: frameIndex) ].
+	notice ifNotNil: [ ^ failureBlock value: (self syntaxFailureFor: notice record: aRecord frameIndex: frameIndex) ].
 	^ answer
 ]
 
@@ -79,41 +65,29 @@ MCPDebugEvaluateCommand >> execute [
 	| answer context data frameIndex record warnings |
 	record := self sessionRecordWithMatchingState.
 	frameIndex := self selectedFrameIndex.
-	context := self
-		           selectedContextForRecord: record
-		           frameIndex: frameIndex.
+	context := self selectedContextForRecord: record frameIndex: frameIndex.
 	answer := self
 		          evaluateExpressionInContext: context
 		          record: record
 		          frameIndex: frameIndex
 		          ifFailed: [ :commandResult | ^ commandResult ].
-	data := self
-		        resultDataFor: answer
-		        record: record
-		        frameIndex: frameIndex.
+	data := self resultDataFor: answer record: record frameIndex: frameIndex.
 	warnings := self evaluationWarnings.
 	warnings ifNotEmpty: [ data at: #warnings put: warnings ].
-	^ MCPDebugToolResult
-		  okSummary:
-		  'Debug expression evaluated for ' , record sessionId , '.'
-		  data: data
-		  warnings: warnings
+	^ MCPDebugToolResult okSummary: 'Debug expression evaluated for ' , record sessionId , '.' data: data warnings: warnings
 ]
 
 { #category : 'private - printing' }
 MCPDebugEvaluateCommand >> limitedPrintStringOf: anObject [
 
-	^ self
-		  limitedPrintStringOf: anObject
-		  limit: request resultPreviewCharacterLimit
+	^ self limitedPrintStringOf: anObject limit: request resultPreviewCharacterLimit
 ]
 
 { #category : 'private - data' }
 MCPDebugEvaluateCommand >> resultDataFor: answer record: aRecord frameIndex: frameIndex [
 
 	| frameRef |
-	frameRef := request frameRef ifNil: [
-		            self frameRefForRecord: aRecord frameIndex: frameIndex ].
+	frameRef := request frameRef ifNil: [ self frameRefForRecord: aRecord frameIndex: frameIndex ].
 	^ {
 		  (#sessionId -> aRecord sessionId).
 		  (#stateId -> aRecord stateId).
@@ -132,14 +106,11 @@ MCPDebugEvaluateCommand >> runtimeFailureFor: anError record: aRecord frameIndex
 
 	| details |
 	details := tool errorDetailsFor: anError.
-	details addAll:
-		(self debugLocationDetailsForRecord: aRecord frameIndex: frameIndex).
+	details addAll: (self debugLocationDetailsForRecord: aRecord frameIndex: frameIndex).
 	details
 		at: #errorCode put: 'DebugEvaluationFailed';
 		at: #evaluationErrorClass put: anError class name.
-	^ MCPDebugToolResult
-		  errorSummary: (tool runtimeFailureMessageFor: anError)
-		  details: details
+	^ MCPDebugToolResult errorSummary: (tool runtimeFailureMessageFor: anError) details: details
 ]
 
 { #category : 'private - errors' }
@@ -147,12 +118,9 @@ MCPDebugEvaluateCommand >> syntaxFailureFor: aNotice record: aRecord frameIndex:
 
 	| details |
 	details := tool errorDetailsFor: aNotice.
-	details addAll:
-		(self debugLocationDetailsForRecord: aRecord frameIndex: frameIndex).
+	details addAll: (self debugLocationDetailsForRecord: aRecord frameIndex: frameIndex).
 	details
 		at: #errorCode put: 'DebugEvaluationSyntaxError';
 		at: #description put: 'Compilation failed before evaluation.'.
-	^ MCPDebugToolResult
-		  errorSummary: (tool syntaxFailureMessageFor: aNotice)
-		  details: details
+	^ MCPDebugToolResult errorSummary: (tool syntaxFailureMessageFor: aNotice) details: details
 ]

@@ -40,8 +40,7 @@ MCPToolRewriteMethods >> buildOutputSchema [
 
 	^ self
 		  standardOutputSchemaForDataProperties: self rewriteDataProperties
-		  required: #( 'apply' 'changeCount' 'appliedCount' 'changeSetHash'
-			     'scope' 'changes' )
+		  required: #( 'apply' 'changeCount' 'appliedCount' 'changeSetHash' 'scope' 'changes' )
 ]
 
 { #category : 'private - execution' }
@@ -60,10 +59,7 @@ MCPToolRewriteMethods >> description [
 MCPToolRewriteMethods >> errorResultForRewriteError: anError request: rewriteRequest rawRequest: rawRequest [
 
 	^ anError
-		  mcpCommandErrorDo: [ :commandError |
-				  self
-					  errorResultText: commandError messageText
-					  details: commandError structuredDetails ]
+		  mcpCommandErrorDo: [ :commandError | self errorResultText: commandError messageText details: commandError structuredDetails ]
 		  otherwise: [ :toolError | self errorResultFor: toolError ]
 ]
 
@@ -72,13 +68,8 @@ MCPToolRewriteMethods >> executeWithRequest: request [
 
 	^ self
 		  executeParsedRequestFrom: request
-		  do: [ :rewriteRequest |
-		  (self commandForRequest: rewriteRequest) execute ]
-		  onError: [ :error :rewriteRequest |
-				  self
-					  errorResultForRewriteError: error
-					  request: rewriteRequest
-					  rawRequest: request ]
+		  do: [ :rewriteRequest | (self commandForRequest: rewriteRequest) execute ]
+		  onError: [ :error :rewriteRequest | self errorResultForRewriteError: error request: rewriteRequest rawRequest: request ]
 ]
 
 { #category : 'private - execution' }
@@ -94,35 +85,14 @@ MCPToolRewriteMethods >> rewriteChangeSchema [
 		  type: 'object';
 		  description: 'One method source rewrite change.';
 		  properties: {
-				  (self
-					   schemaPropertyNamed: 'className'
-					   type: 'string'
-					   description: 'The base class that defines the method.').
-				  (self
-					   booleanSchemaPropertyNamed: 'classSide'
-					   description: 'Whether the method is on the class side.').
-				  (self
-					   schemaPropertyNamed: 'selector'
-					   type: 'string'
-					   description: 'The method selector.').
-				  (self
-					   schemaPropertyNamed: 'packageName'
-					   type: 'string'
-					   description: 'The package that owns the method.').
-				  (self
-					   schemaPropertyNamed: 'protocol'
-					   type: 'string'
-					   description: 'The method protocol/category.').
-				  (self
-					   schemaPropertyNamed: 'oldSource'
-					   type: 'string'
-					   description: 'The method source before applying the rewrite.').
-				  (self
-					   schemaPropertyNamed: 'newSource'
-					   type: 'string'
-					   description: 'The method source produced by the rewrite.') };
-		  required:
-			  #( 'className' 'classSide' 'selector' 'packageName' 'protocol' );
+				  (self schemaPropertyNamed: 'className' type: 'string' description: 'The base class that defines the method.').
+				  (self booleanSchemaPropertyNamed: 'classSide' description: 'Whether the method is on the class side.').
+				  (self schemaPropertyNamed: 'selector' type: 'string' description: 'The method selector.').
+				  (self schemaPropertyNamed: 'packageName' type: 'string' description: 'The package that owns the method.').
+				  (self schemaPropertyNamed: 'protocol' type: 'string' description: 'The method protocol/category.').
+				  (self schemaPropertyNamed: 'oldSource' type: 'string' description: 'The method source before applying the rewrite.').
+				  (self schemaPropertyNamed: 'newSource' type: 'string' description: 'The method source produced by the rewrite.') };
+		  required: #( 'className' 'classSide' 'selector' 'packageName' 'protocol' );
 		  additionalProperties: false;
 		  yourself
 ]
@@ -133,8 +103,7 @@ MCPToolRewriteMethods >> rewriteChangesSchemaProperty [
 	^ (self
 		   schemaPropertyNamed: 'changes'
 		   type: 'array'
-		   description:
-			   'The method rewrite changes calculated for the requested scope.')
+		   description: 'The method rewrite changes calculated for the requested scope.')
 		  items: self rewriteChangeSchema;
 		  yourself
 ]
@@ -143,20 +112,10 @@ MCPToolRewriteMethods >> rewriteChangesSchemaProperty [
 MCPToolRewriteMethods >> rewriteDataProperties [
 
 	^ {
-		  (self
-			   booleanSchemaPropertyNamed: 'apply'
-			   description:
-			   'Whether the request applied changes or only previewed them.').
-		  (self
-			   integerSchemaPropertyNamed: 'changeCount'
-			   description: 'The number of rewrite changes calculated.').
-		  (self
-			   integerSchemaPropertyNamed: 'appliedCount'
-			   description:
-			   'The number of rewrite changes applied to the image.').
-		  (self
-			   integerSchemaPropertyNamed: 'changeSetHash'
-			   description: 'Hash of the calculated rewrite change set.').
+		  (self booleanSchemaPropertyNamed: 'apply' description: 'Whether the request applied changes or only previewed them.').
+		  (self integerSchemaPropertyNamed: 'changeCount' description: 'The number of rewrite changes calculated.').
+		  (self integerSchemaPropertyNamed: 'appliedCount' description: 'The number of rewrite changes applied to the image.').
+		  (self integerSchemaPropertyNamed: 'changeSetHash' description: 'Hash of the calculated rewrite change set.').
 		  self rewriteScopeSchemaProperty.
 		  self rewriteChangesSchemaProperty }
 ]
@@ -166,21 +125,12 @@ MCPToolRewriteMethods >> rewriteInputProperties [
 
 	^ {
 		  self rewriteRulesSchemaProperty.
-		  (self
-			   booleanSchemaPropertyNamed: 'apply'
-			   description: 'Apply changes instead of preview.'
-			   default: false).
-		  (self
-			   integerSchemaPropertyNamed: 'expectedChangeSetHash'
-			   description: 'Required when apply=true.').
-		  (self
-			   booleanSchemaPropertyNamed: 'force'
-			   description: 'Allow whole-image apply scope.'
-			   default: false).
+		  (self booleanSchemaPropertyNamed: 'apply' description: 'Apply changes instead of preview.' default: false).
+		  (self integerSchemaPropertyNamed: 'expectedChangeSetHash' description: 'Required when apply=true.').
+		  (self booleanSchemaPropertyNamed: 'force' description: 'Allow whole-image apply scope.' default: false).
 		  (self
 			   booleanSchemaPropertyNamed: 'includeSource'
-			   description:
-			   'Include source code. Use only for small result sets.'
+			   description: 'Include source code. Use only for small result sets.'
 			   default: false) } , self methodQueryScopeInputProperties
 ]
 
@@ -191,26 +141,14 @@ MCPToolRewriteMethods >> rewriteRuleSchema [
 		  type: 'object';
 		  description: 'Rewrite rule.';
 		  properties: {
-				  (self
-					   schemaPropertyNamed: 'name'
-					   type: 'string'
-					   description: 'Diagnostic name.').
-				  ((self
-					    schemaPropertyNamed: 'lhs'
-					    type: 'string'
-					    description: 'Pattern to match.')
+				  (self schemaPropertyNamed: 'name' type: 'string' description: 'Diagnostic name.').
+				  ((self schemaPropertyNamed: 'lhs' type: 'string' description: 'Pattern to match.')
 					   minLength: 1;
 					   yourself).
-				  ((self
-					    schemaPropertyNamed: 'rhs'
-					    type: 'string'
-					    description: 'Replacement pattern.')
+				  ((self schemaPropertyNamed: 'rhs' type: 'string' description: 'Replacement pattern.')
 					   minLength: 1;
 					   yourself).
-				  (self
-					   booleanSchemaPropertyNamed: 'isForMethod'
-					   description: 'Match whole methods.'
-					   default: false) };
+				  (self booleanSchemaPropertyNamed: 'isForMethod' description: 'Match whole methods.' default: false) };
 		  required: #( 'lhs' 'rhs' );
 		  additionalProperties: false;
 		  yourself
@@ -219,10 +157,7 @@ MCPToolRewriteMethods >> rewriteRuleSchema [
 { #category : 'private - schema' }
 MCPToolRewriteMethods >> rewriteRulesSchemaProperty [
 
-	^ (self
-		   schemaPropertyNamed: 'rules'
-		   type: 'array'
-		   description: 'Rewrite rules.')
+	^ (self schemaPropertyNamed: 'rules' type: 'array' description: 'Rewrite rules.')
 		  minItems: 1;
 		  items: self rewriteRuleSchema;
 		  yourself
@@ -235,8 +170,7 @@ MCPToolRewriteMethods >> rewriteScopeSchemaProperty [
 	property := self
 		            schemaPropertyNamed: 'scope'
 		            type: 'object'
-		            description:
-		            'The normalized method scope used to calculate rewrite changes.'.
+		            description: 'The normalized method scope used to calculate rewrite changes.'.
 	property additionalProperties: true.
 	^ property
 ]
@@ -245,11 +179,8 @@ MCPToolRewriteMethods >> rewriteScopeSchemaProperty [
 MCPToolRewriteMethods >> shouldSaveImageAfterSuccessfulExecutionForResult: aResult [
 
 	| data |
-	data := self
-		        successfulStructuredDataFromResult: aResult
-		        ifAbsent: [ ^ false ].
-	^ (data at: #apply ifAbsent: [ false ]) == true and: [
-		  (data at: #appliedCount ifAbsent: [ 0 ]) > 0 ]
+	data := self successfulStructuredDataFromResult: aResult ifAbsent: [ ^ false ].
+	^ (data at: #apply ifAbsent: [ false ]) == true and: [ (data at: #appliedCount ifAbsent: [ 0 ]) > 0 ]
 ]
 
 { #category : 'metadata' }
@@ -261,9 +192,6 @@ MCPToolRewriteMethods >> title [
 { #category : 'validating' }
 MCPToolRewriteMethods >> validateRequest: request [
 
-	((request booleanArgumentNamed: 'apply' default: false) and: [
-		 (request hasArgumentNamed: 'expectedChangeSetHash') not ]) ifTrue: [
-			MCPInvalidToolInput
-				signalMissingRequiredArgumentNamed: 'expectedChangeSetHash'
-				forTool: self ]
+	((request booleanArgumentNamed: 'apply' default: false) and: [ (request hasArgumentNamed: 'expectedChangeSetHash') not ])
+		ifTrue: [ MCPInvalidToolInput signalMissingRequiredArgumentNamed: 'expectedChangeSetHash' forTool: self ]
 ]

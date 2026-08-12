@@ -15,26 +15,19 @@ Class {
 { #category : 'instance creation' }
 MCPLoadBaselineCommand class >> tool: aTool request: aRequest [
 
-	^ self
-		  tool: aTool
-		  request: aRequest
-		  configureMetacello: [ :metacello | metacello ]
+	^ self tool: aTool request: aRequest configureMetacello: [ :metacello | metacello ]
 ]
 
 { #category : 'instance creation' }
 MCPLoadBaselineCommand class >> tool: aTool request: aRequest configureMetacello: aBlock [
 
-	^ self new
-		  initializeTool: aTool
-		  request: aRequest
-		  configureMetacello: aBlock
+	^ self new initializeTool: aTool request: aRequest configureMetacello: aBlock
 ]
 
 { #category : 'private - loading' }
 MCPLoadBaselineCommand >> configureMetacello: metacello [
 
-	configureMetacelloBlock ifNotNil: [
-		configureMetacelloBlock value: metacello ].
+	configureMetacelloBlock ifNotNil: [ configureMetacelloBlock value: metacello ].
 	^ metacello
 ]
 
@@ -51,9 +44,7 @@ MCPLoadBaselineCommand >> configuredMetacello [
 { #category : 'private - image state' }
 MCPLoadBaselineCommand >> currentPackageNames [
 
-	^ (PackageOrganizer default packageNames
-		   collect: [ :each | each asString ]
-		   as: Array) sort
+	^ (PackageOrganizer default packageNames collect: [ :each | each asString ] as: Array) sort
 ]
 
 { #category : 'private - image state' }
@@ -74,8 +65,7 @@ MCPLoadBaselineCommand >> execute [
 	^ MCPLoadBaselineResult
 		  request: self request
 		  newPackageNames: (self newPackageNamesAfter: beforePackageNames)
-		  repositoryInfos:
-		  (self newRepositoryInfosAfter: beforeRepositories)
+		  repositoryInfos: (self newRepositoryInfosAfter: beforeRepositories)
 ]
 
 { #category : 'initialization' }
@@ -107,8 +97,7 @@ MCPLoadBaselineCommand >> newPackageNamesAfter: beforePackageNames [
 
 	| beforeSet |
 	beforeSet := beforePackageNames asSet.
-	^ (self currentPackageNames reject: [ :each |
-		   beforeSet includes: each ]) asArray sort
+	^ (self currentPackageNames reject: [ :each | beforeSet includes: each ]) asArray sort
 ]
 
 { #category : 'private - image state' }
@@ -119,6 +108,5 @@ MCPLoadBaselineCommand >> newRepositoryInfosAfter: beforeRepositories [
 	beforeSet addAll: beforeRepositories.
 	^ (self currentRepositories
 		   reject: [ :each | beforeSet includes: each ]
-		   thenCollect: [ :each | MCPRepositoryInfo fromRepository: each ])
-		  asArray
+		   thenCollect: [ :each | MCPRepositoryInfo fromRepository: each ]) asArray
 ]

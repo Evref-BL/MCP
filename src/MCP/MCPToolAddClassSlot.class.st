@@ -20,14 +20,12 @@ MCPToolAddClassSlot >> classToolSpec [
 
 	^ {
 		  (#title -> 'Add Class Slot').
-		  (#description
-		   -> 'Add one instance-side or class-side slot to a class.').
+		  (#description -> 'Add one instance-side or class-side slot to a class.').
 		  (#fixedArguments -> { (#slotAction -> 'add') } asDictionary).
 		  (#inputProperties -> {
 			   self classNameSchemaProperty.
 			   self slotNameSchemaProperty.
 			   self classSideSlotSchemaProperty.
 			   self forceSchemaProperty }).
-		  (#requiredProperties -> #( 'className' 'slotName' )) }
-		  asDictionary
+		  (#requiredProperties -> #( 'className' 'slotName' )) } asDictionary
 ]

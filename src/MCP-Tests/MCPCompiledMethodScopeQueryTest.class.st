@@ -30,11 +30,8 @@ MCPCompiledMethodScopeQueryTest >> testClassesScopeCollectsMethodsFromExactClass
 		         side: 'instance';
 		         yourself.
 	methodIdentities := self methodIdentitiesFor: query methods.
-	self assert: (methodIdentities includes:
-			 'MCPToolHierarchyTestChild>>hierarchyProbe').
-	self deny:
-		(methodIdentities includes:
-			 'MCPToolHierarchyTestBase>>hierarchyProbe')
+	self assert: (methodIdentities includes: 'MCPToolHierarchyTestChild>>hierarchyProbe').
+	self deny: (methodIdentities includes: 'MCPToolHierarchyTestBase>>hierarchyProbe')
 ]
 
 { #category : 'tests' }
@@ -42,18 +39,14 @@ MCPCompiledMethodScopeQueryTest >> testClassesScopeReturnsPartialMethodsAndWarni
 
 	| methodIdentities query |
 	query := MCPCompiledMethodScopeQuery new
-		         classNames:
-			         #( 'MCPToolHierarchyTestChild' 'MCPDefinitelyMissingCompiledMethodScopeQueryClass' );
+		         classNames: #( 'MCPToolHierarchyTestChild' 'MCPDefinitelyMissingCompiledMethodScopeQueryClass' );
 		         side: 'instance';
 		         yourself.
 	methodIdentities := self methodIdentitiesFor: query methods.
-	self assert: (methodIdentities includes:
-			 'MCPToolHierarchyTestChild>>hierarchyProbe').
+	self assert: (methodIdentities includes: 'MCPToolHierarchyTestChild>>hierarchyProbe').
 	self assert: query warnings size equals: 1.
-	self assert: (query warnings first includesSubstring:
-			 'MCPDefinitelyMissingCompiledMethodScopeQueryClass').
-	self assert:
-		(query warnings first includesSubstring: 'Did you mean:')
+	self assert: (query warnings first includesSubstring: 'MCPDefinitelyMissingCompiledMethodScopeQueryClass').
+	self assert: (query warnings first includesSubstring: 'Did you mean:')
 ]
 
 { #category : 'tests' }
@@ -65,11 +58,8 @@ MCPCompiledMethodScopeQueryTest >> testHierarchyScopeCollectsMethodsAcrossTheHie
 		         side: 'instance';
 		         yourself.
 	methodIdentities := self methodIdentitiesFor: query methods.
-	self assert:
-		(methodIdentities includes:
-			 'MCPToolHierarchyTestBase>>hierarchyProbe').
-	self assert: (methodIdentities includes:
-			 'MCPToolHierarchyTestChild>>hierarchyProbe')
+	self assert: (methodIdentities includes: 'MCPToolHierarchyTestBase>>hierarchyProbe').
+	self assert: (methodIdentities includes: 'MCPToolHierarchyTestChild>>hierarchyProbe')
 ]
 
 { #category : 'tests' }
@@ -80,10 +70,8 @@ MCPCompiledMethodScopeQueryTest >> testImageScopeRespectsSideFiltering [
 		         side: 'class';
 		         yourself.
 	methodIdentities := self methodIdentitiesFor: query methods.
-	self assert: (methodIdentities includes:
-			 'MCPToolMethodSearchReferenceFixture class>>sharedTarget').
-	self deny: (methodIdentities includes:
-			 'MCPToolMethodSearchReferenceFixture>>sharedTarget')
+	self assert: (methodIdentities includes: 'MCPToolMethodSearchReferenceFixture class>>sharedTarget').
+	self deny: (methodIdentities includes: 'MCPToolMethodSearchReferenceFixture>>sharedTarget')
 ]
 
 { #category : 'tests' }
@@ -98,9 +86,7 @@ MCPCompiledMethodScopeQueryTest >> testInvalidSideSignalsErrorWhenQuerying [
 		         self fail: 'Expected Error' ]
 		         on: Error
 		         do: [ :caught | caught ].
-	self
-		assert: error messageText
-		equals: 'side must be one of instance, class, or both.'
+	self assert: error messageText equals: 'side must be one of instance, class, or both.'
 ]
 
 { #category : 'tests' }
@@ -112,8 +98,7 @@ MCPCompiledMethodScopeQueryTest >> testPackageScopeIncludesExtensionMethods [
 		         side: 'instance';
 		         yourself.
 	methodIdentities := self methodIdentitiesFor: query methods.
-	self assert: (methodIdentities includes:
-			 'MCPToolMethodSearchReferenceTarget>>extensionProbe')
+	self assert: (methodIdentities includes: 'MCPToolMethodSearchReferenceTarget>>extensionProbe')
 ]
 
 { #category : 'tests' }
@@ -126,8 +111,7 @@ MCPCompiledMethodScopeQueryTest >> testPackageScopeReturnsEmptyMethodsAndWarning
 		         yourself.
 	self assert: query methods isEmpty.
 	self assert: query warnings size equals: 1.
-	self assert:
-		(query warnings first includesSubstring: 'MCP-Definitely-Missing')
+	self assert: (query warnings first includesSubstring: 'MCP-Definitely-Missing')
 ]
 
 { #category : 'tests' }
@@ -139,11 +123,8 @@ MCPCompiledMethodScopeQueryTest >> testParentScopeCollectsMethodsFromParentsOnly
 		         side: 'instance';
 		         yourself.
 	methodIdentities := self methodIdentitiesFor: query methods.
-	self assert:
-		(methodIdentities includes:
-			 'MCPToolHierarchyTestBase>>hierarchyProbe').
-	self deny: (methodIdentities includes:
-			 'MCPToolHierarchyTestChild>>hierarchyProbe')
+	self assert: (methodIdentities includes: 'MCPToolHierarchyTestBase>>hierarchyProbe').
+	self deny: (methodIdentities includes: 'MCPToolHierarchyTestChild>>hierarchyProbe')
 ]
 
 { #category : 'tests' }
@@ -155,9 +136,6 @@ MCPCompiledMethodScopeQueryTest >> testSubclassScopeCollectsMethodsFromSubclasse
 		         side: 'instance';
 		         yourself.
 	methodIdentities := self methodIdentitiesFor: query methods.
-	self assert: (methodIdentities includes:
-			 'MCPToolHierarchyTestChild>>hierarchyProbe').
-	self deny:
-		(methodIdentities includes:
-			 'MCPToolHierarchyTestBase>>hierarchyProbe')
+	self assert: (methodIdentities includes: 'MCPToolHierarchyTestChild>>hierarchyProbe').
+	self deny: (methodIdentities includes: 'MCPToolHierarchyTestBase>>hierarchyProbe')
 ]

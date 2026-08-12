@@ -30,17 +30,13 @@ MCPReplaceClassSideTraitsCommand >> classTraitNames [
 { #category : 'accessing' }
 MCPReplaceClassSideTraitsCommand >> classTraitNames: someNames [
 
-	classTraitNames := someNames
-		                   ifNil: [ #(  ) ]
-		                   ifNotNil: [ someNames asArray ]
+	classTraitNames := someNames ifNil: [ #(  ) ] ifNotNil: [ someNames asArray ]
 ]
 
 { #category : 'private' }
 MCPReplaceClassSideTraitsCommand >> classTraitNamesFromClass: aClass [
 
-	^ aClass classSide traits
-		  collect: [ :each | each name asString ]
-		  as: Array
+	^ aClass classSide traits collect: [ :each | each name asString ] as: Array
 ]
 
 { #category : 'accessing' }
@@ -68,40 +64,28 @@ MCPReplaceClassSideTraitsCommand >> resolvedClassTraitNamed: aClassTraitName [
 	| behavior classTraitName originalName |
 	originalName := aClassTraitName.
 	classTraitName := (originalName endsWith: ' classTrait')
-		                  ifTrue: [
-		                  originalName
-			                  copyFrom: 1
-			                  to: originalName size - ' classTrait' size ]
+		                  ifTrue: [ originalName copyFrom: 1 to: originalName size - ' classTrait' size ]
 		                  ifFalse: [ originalName ].
-	behavior := Smalltalk globals
-		            at: classTraitName asSymbol
-		            ifAbsent: [
-				            MCPCommandError
-					            signalErrorCode: #ClassTraitNotFound
-					            message:
-					            'Class trait ' , originalName , ' does not exist.'
-					            details: {
-							            (#className -> self className).
-							            (#classTraitName -> originalName).
-							            (#classTraits -> self classTraitNames) }
-							            asDictionary ].
+	behavior := Smalltalk globals at: classTraitName asSymbol ifAbsent: [
+			            MCPCommandError
+				            signalErrorCode: #ClassTraitNotFound
+				            message: 'Class trait ' , originalName , ' does not exist.'
+				            details: {
+						            (#className -> self className).
+						            (#classTraitName -> originalName).
+						            (#classTraits -> self classTraitNames) } asDictionary ].
 	behavior isTrait ifFalse: [
-			MCPCommandError
-				signalErrorCode: #InvalidClassTrait
-				message: originalName , ' is not a class trait.'
-				details: {
-						(#className -> self className).
-						(#classTraitName -> originalName).
-						(#classTraits -> self classTraitNames) } asDictionary ].
+			MCPCommandError signalErrorCode: #InvalidClassTrait message: originalName , ' is not a class trait.' details: {
+					(#className -> self className).
+					(#classTraitName -> originalName).
+					(#classTraits -> self classTraitNames) } asDictionary ].
 	^ behavior classTrait
 ]
 
 { #category : 'private' }
 MCPReplaceClassSideTraitsCommand >> resolvedClassTraits [
 
-	^ self classTraits
-		  collect: [ :each | self resolvedClassTraitNamed: each ]
-		  as: Array
+	^ self classTraits collect: [ :each | self resolvedClassTraitNamed: each ] as: Array
 ]
 
 { #category : 'private' }

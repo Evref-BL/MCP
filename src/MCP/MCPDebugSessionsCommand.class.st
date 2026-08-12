@@ -30,22 +30,16 @@ MCPDebugSessionsCommand >> attachCandidate [
 	record continuation ifNil: [
 			record continuation: (MCPDebugAttachedContinuation
 					 debugger: candidate debugger
-					 timeoutMilliseconds:
-					 self attachedContinuationTimeoutMilliseconds
+					 timeoutMilliseconds: self attachedContinuationTimeoutMilliseconds
 					 resultPreviewCharacterLimit: 1000) ].
-	state := (MCPDebugStateInfo fromRecord: record request: request)
-		         asDictionary.
-	^ MCPDebugToolResult
-		  okSummary:
-		  'Attached debug session candidate ' , candidate candidateRef , '.'
-		  data: {
-				  (#candidateRef -> candidate candidateRef).
-				  (#attached -> true).
-				  (#alreadyAttached -> alreadyAttached).
-				  (#session
-				   -> (MCPDebugSessionInfo fromRecord: record) asDictionary).
-				  (#sessionId -> record sessionId).
-				  (#state -> state) } asDictionary
+	state := (MCPDebugStateInfo fromRecord: record request: request) asDictionary.
+	^ MCPDebugToolResult okSummary: 'Attached debug session candidate ' , candidate candidateRef , '.' data: {
+			  (#candidateRef -> candidate candidateRef).
+			  (#attached -> true).
+			  (#alreadyAttached -> alreadyAttached).
+			  (#session -> (MCPDebugSessionInfo fromRecord: record) asDictionary).
+			  (#sessionId -> record sessionId).
+			  (#state -> state) } asDictionary
 ]
 
 { #category : 'private' }
@@ -59,16 +53,14 @@ MCPDebugSessionsCommand >> candidateForReference: aCandidateRef [
 
 	aCandidateRef ifNil: [ ^ self signalMissingCandidateRef ].
 	^ self debuggerCandidates
-		  detect: [ :candidate |
-		  candidate matchesCandidateRef: aCandidateRef ]
+		  detect: [ :candidate | candidate matchesCandidateRef: aCandidateRef ]
 		  ifNone: [ self signalCandidateNotFound: aCandidateRef ]
 ]
 
 { #category : 'private - candidates' }
 MCPDebugSessionsCommand >> candidateIsAttached: aCandidate [
 
-	^ (registry hasDebugger: aCandidate debugger) or: [
-		  registry hasDebugSession: aCandidate debugSession ]
+	^ (registry hasDebugger: aCandidate debugger) or: [ registry hasDebugSession: aCandidate debugSession ]
 ]
 
 { #category : 'private - candidates' }
@@ -103,23 +95,17 @@ MCPDebugSessionsCommand >> getSession [
 	record := self sessionRecord.
 	^ MCPDebugToolResult
 		  okSummary: 'Debug session ' , record sessionId , ' found.'
-		  data:
-			  { (#session
-			   -> (MCPDebugSessionInfo fromRecord: record) asDictionary) }
-				  asDictionary
+		  data: { (#session -> (MCPDebugSessionInfo fromRecord: record) asDictionary) } asDictionary
 ]
 
 { #category : 'private' }
 MCPDebugSessionsCommand >> listSessions [
 
 	| sessions |
-	sessions := registry sessionRecords collect: [ :each |
-		            (MCPDebugSessionInfo fromRecord: each) asDictionary ].
-	^ MCPDebugToolResult
-		  okSummary: sessions size asString , ' debug sessions found.'
-		  data: {
-				  (#sessions -> sessions).
-				  (#totalCount -> sessions size) } asDictionary
+	sessions := registry sessionRecords collect: [ :each | (MCPDebugSessionInfo fromRecord: each) asDictionary ].
+	^ MCPDebugToolResult okSummary: sessions size asString , ' debug sessions found.' data: {
+			  (#sessions -> sessions).
+			  (#totalCount -> sessions size) } asDictionary
 ]
 
 { #category : 'private - candidates' }
@@ -128,11 +114,7 @@ MCPDebugSessionsCommand >> recordForCandidate: aCandidate ifFound: foundBlock if
 	^ registry
 		  recordForDebugger: aCandidate debugger
 		  ifFound: foundBlock
-		  ifAbsent: [
-				  registry
-					  recordForDebugSession: aCandidate debugSession
-					  ifFound: foundBlock
-					  ifAbsent: absentBlock ]
+		  ifAbsent: [ registry recordForDebugSession: aCandidate debugSession ifFound: foundBlock ifAbsent: absentBlock ]
 ]
 
 { #category : 'private' }
@@ -142,12 +124,10 @@ MCPDebugSessionsCommand >> removeSession [
 	record := self sessionRecord.
 	terminated := self terminateCapturedSessionForRecord: record.
 	registry removeSessionId: record sessionId.
-	^ MCPDebugToolResult
-		  okSummary: 'Removed debug session ' , record sessionId , '.'
-		  data: {
-				  (#sessionId -> record sessionId).
-				  (#removed -> true).
-				  (#terminated -> terminated) } asDictionary
+	^ MCPDebugToolResult okSummary: 'Removed debug session ' , record sessionId , '.' data: {
+			  (#sessionId -> record sessionId).
+			  (#removed -> true).
+			  (#terminated -> terminated) } asDictionary
 ]
 
 { #category : 'private' }
@@ -155,13 +135,9 @@ MCPDebugSessionsCommand >> searchCandidates [
 
 	| candidates |
 	candidates := self unattachedCandidates.
-	^ MCPDebugToolResult
-		  okSummary:
-		  candidates size asString , ' debug session candidates found.'
-		  data: {
-				  (#candidates
-				   -> (candidates collect: [ :each | each asDictionary ])).
-				  (#totalCount -> candidates size) } asDictionary
+	^ MCPDebugToolResult okSummary: candidates size asString , ' debug session candidates found.' data: {
+			  (#candidates -> (candidates collect: [ :each | each asDictionary ])).
+			  (#totalCount -> candidates size) } asDictionary
 ]
 
 { #category : 'private - errors' }
@@ -169,8 +145,7 @@ MCPDebugSessionsCommand >> signalCandidateNotFound: aCandidateRef [
 
 	MCPCommandError
 		signalErrorCode: #DebugSessionCandidateNotFound
-		message: 'Debug session candidate ' , aCandidateRef asString
-			, ' was not found.'
+		message: 'Debug session candidate ' , aCandidateRef asString , ' was not found.'
 		details: { (#candidateRef -> aCandidateRef) } asDictionary
 ]
 
@@ -187,8 +162,7 @@ MCPDebugSessionsCommand >> signalMissingCandidateRef [
 MCPDebugSessionsCommand >> terminateCapturedSessionForRecord: aRecord [
 
 	| session |
-	aRecord continuation ifNotNil: [ :continuation |
-		^ continuation terminateWorker ].
+	aRecord continuation ifNotNil: [ :continuation | ^ continuation terminateWorker ].
 	aRecord reason = 'capturedException' ifFalse: [ ^ false ].
 	session := aRecord debugSession.
 	session ifNil: [ ^ false ].
@@ -201,6 +175,5 @@ MCPDebugSessionsCommand >> terminateCapturedSessionForRecord: aRecord [
 { #category : 'private - candidates' }
 MCPDebugSessionsCommand >> unattachedCandidates [
 
-	^ self debuggerCandidates reject: [ :candidate |
-		  self candidateIsAttached: candidate ]
+	^ self debuggerCandidates reject: [ :candidate | self candidateIsAttached: candidate ]
 ]

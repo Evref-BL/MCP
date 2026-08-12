@@ -16,17 +16,11 @@ MCPGetClassCommand >> execute [
 	targetClass := tool resolvedClassNamed: request className.
 	superclasses := self superclassesForClass: targetClass.
 	subclasses := self subclassesForClass: targetClass.
-	data := tool
-		        descriptionDictionaryForClass: targetClass
-		        includeComment: request includeComment.
+	data := tool descriptionDictionaryForClass: targetClass includeComment: request includeComment.
 	superclasses ifNotEmpty: [
-			data at: #superclasses put: (tool
-					 descriptionDictionariesForClasses: superclasses
-					 includeComment: request includeComment) ].
+		data at: #superclasses put: (tool descriptionDictionariesForClasses: superclasses includeComment: request includeComment) ].
 	subclasses ifNotEmpty: [
-			data at: #subclasses put: (tool
-					 descriptionDictionariesForClasses: subclasses
-					 includeComment: request includeComment) ].
+		data at: #subclasses put: (tool descriptionDictionariesForClasses: subclasses includeComment: request includeComment) ].
 	^ MCPGetClassResult
 		  className: request className
 		  data: data
@@ -42,8 +36,7 @@ MCPGetClassCommand >> subclassesForClass: aClass [
 	subclasses := OrderedCollection new.
 	aClass
 		allSubclassesWithLevelDo: [ :eachClass :level |
-				(level between: 1 and: request subclassDepth) ifTrue: [
-					subclasses add: eachClass ] ]
+		(level between: 1 and: request subclassDepth) ifTrue: [ subclasses add: eachClass ] ]
 		startingLevel: 0.
 	^ subclasses asArray
 ]
@@ -57,9 +50,6 @@ MCPGetClassCommand >> superclassesForClass: aClass [
 	targetSuperclass := Smalltalk globals
 		                    at: targetSuperclassName asSymbol
 		                    ifAbsent: [
-				                    MCPCommandError
-					                    signalMissingSuperclassNamed:
-					                    targetSuperclassName
-					                    forClassNamed: aClass name asString ].
+		                    MCPCommandError signalMissingSuperclassNamed: targetSuperclassName forClassNamed: aClass name asString ].
 	^ aClass allSuperclasses asArray copyUpTo: targetSuperclass
 ]

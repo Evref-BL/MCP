@@ -33,10 +33,7 @@ MCPToolDebug >> additionalKeywords [
 MCPToolDebug >> boundedIntegerSchemaPropertyNamed: propertyName description: propertyDescription default: defaultValue maximum: maximumValue [
 
 	| property |
-	property := self
-		            nonNegativeIntegerSchemaPropertyNamed: propertyName
-		            description: propertyDescription
-		            default: defaultValue.
+	property := self nonNegativeIntegerSchemaPropertyNamed: propertyName description: propertyDescription default: defaultValue.
 	property maximum: maximumValue.
 	^ property
 ]
@@ -61,19 +58,14 @@ MCPToolDebug >> commandForRequest: debugRequest [
 { #category : 'private - errors' }
 MCPToolDebug >> debugErrorDetailsFor: anError [
 
-	^ anError
-		  mcpCommandErrorDo: [ :commandError |
-		  commandError structuredDetails ]
-		  otherwise: [ self errorDetailsFor: anError ]
+	^ anError mcpCommandErrorDo: [ :commandError | commandError structuredDetails ] otherwise: [ self errorDetailsFor: anError ]
 ]
 
 { #category : 'private - errors' }
 MCPToolDebug >> errorResultForDebugError: anError [
 
 	^ self
-		  errorResultText: (anError messageText
-				   ifNil: [ anError asString ]
-				   ifNotNil: [ :text | text asString ])
+		  errorResultText: (anError messageText ifNil: [ anError asString ] ifNotNil: [ :text | text asString ])
 		  details: (self debugErrorDetailsFor: anError)
 ]
 
@@ -82,9 +74,7 @@ MCPToolDebug >> executeWithRequest: request [
 
 	^ self
 		  executeParsedRequestFrom: request
-		  do: [ :debugRequest |
-				  self resultForCommandResult:
-					  (self commandForRequest: debugRequest) execute ]
+		  do: [ :debugRequest | self resultForCommandResult: (self commandForRequest: debugRequest) execute ]
 		  onError: [ :error :ignored | self errorResultForDebugError: error ]
 ]
 
@@ -98,10 +88,7 @@ MCPToolDebug >> inputProperties [
 MCPToolDebug >> nonNegativeIntegerSchemaPropertyNamed: propertyName description: propertyDescription default: defaultValue [
 
 	| property |
-	property := self
-		            integerSchemaPropertyNamed: propertyName
-		            description: propertyDescription
-		            default: defaultValue.
+	property := self integerSchemaPropertyNamed: propertyName description: propertyDescription default: defaultValue.
 	property minimum: 0.
 	^ property
 ]
@@ -115,14 +102,8 @@ MCPToolDebug >> requiredInputProperties [
 { #category : 'private - execution' }
 MCPToolDebug >> resultForCommandResult: commandResult [
 
-	commandResult isError ifTrue: [
-			^ self
-				  errorResultText: commandResult summary
-				  details: commandResult errorDetails ].
-	^ self
-		  successResultText: commandResult summary
-		  data: commandResult data
-		  warnings: commandResult warnings
+	commandResult isError ifTrue: [ ^ self errorResultText: commandResult summary details: commandResult errorDetails ].
+	^ self successResultText: commandResult summary data: commandResult data warnings: commandResult warnings
 ]
 
 { #category : 'private - schema' }
@@ -158,10 +139,7 @@ MCPToolDebug >> stackLimitSchemaPropertyWithDescription: aDescription default: d
 { #category : 'private - schema' }
 MCPToolDebug >> stackStartSchemaPropertyWithDescription: aDescription default: defaultValue [
 
-	^ self
-		  nonNegativeIntegerSchemaPropertyNamed: 'stackStart'
-		  description: aDescription
-		  default: defaultValue
+	^ self nonNegativeIntegerSchemaPropertyNamed: 'stackStart' description: aDescription default: defaultValue
 ]
 
 { #category : 'private - schema' }

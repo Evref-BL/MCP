@@ -36,54 +36,25 @@ MCPToolChangeHistoryOperation >> buildInputSchema [
 MCPToolChangeHistoryOperation >> buildOutputSchema [
 
 	| previewEntriesProperty selectedEntriesProperty |
-	selectedEntriesProperty := self
-		                           changeHistoryEntryArraySchemaNamed:
-		                           'selectedEntries'
-		                           description: 'Selected source entries.'.
+	selectedEntriesProperty := self changeHistoryEntryArraySchemaNamed: 'selectedEntries' description: 'Selected source entries.'.
 	previewEntriesProperty := self
-		                          changeHistoryEntryArraySchemaNamed:
-		                          'previewEntries'
-		                          description:
-		                          'Previewed current-image changes.'.
+		                          changeHistoryEntryArraySchemaNamed: 'previewEntries'
+		                          description: 'Previewed current-image changes.'.
 	^ self
 		  standardOutputSchemaForDataProperties: {
-				  (self
-					   schemaPropertyNamed: 'action'
-					   type: 'string'
-					   description: 'apply or revert.').
-				  (self
-					   schemaPropertyNamed: 'historyFileName'
-					   type: 'string'
-					   description: 'Selected history file name.').
-				  (self
-					   schemaPropertyNamed: 'selectionCriteria'
-					   type: 'object'
-					   description: 'Normalized selection criteria.').
+				  (self schemaPropertyNamed: 'action' type: 'string' description: 'apply or revert.').
+				  (self schemaPropertyNamed: 'historyFileName' type: 'string' description: 'Selected history file name.').
+				  (self schemaPropertyNamed: 'selectionCriteria' type: 'object' description: 'Normalized selection criteria.').
 				  selectedEntriesProperty.
 				  previewEntriesProperty.
-				  (self
-					   integerSchemaPropertyNamed: 'selectedCount'
-					   description: 'Selected source entries.').
-				  (self
-					   integerSchemaPropertyNamed: 'selectedCodeChangeCount'
-					   description: 'Selected code changes.').
-				  (self
-					   integerSchemaPropertyNamed: 'skippedNonCodeChangeCount'
-					   description: 'Skipped non-code entries.').
-				  (self
-					   integerSchemaPropertyNamed: 'previewCount'
-					   description: 'Previewed changes.').
-				  (self
-					   booleanSchemaPropertyNamed: 'performed'
-					   description: 'Whether changes were performed.').
-				  (self
-					   integerSchemaPropertyNamed: 'performedCount'
-					   description: 'Performed changes.') }
-		  required:
-			  #( 'action' 'selectionCriteria' 'selectedEntries'
-			     'previewEntries' 'selectedCount' 'selectedCodeChangeCount'
-			     'skippedNonCodeChangeCount' 'previewCount' 'performed'
-			     'performedCount' )
+				  (self integerSchemaPropertyNamed: 'selectedCount' description: 'Selected source entries.').
+				  (self integerSchemaPropertyNamed: 'selectedCodeChangeCount' description: 'Selected code changes.').
+				  (self integerSchemaPropertyNamed: 'skippedNonCodeChangeCount' description: 'Skipped non-code entries.').
+				  (self integerSchemaPropertyNamed: 'previewCount' description: 'Previewed changes.').
+				  (self booleanSchemaPropertyNamed: 'performed' description: 'Whether changes were performed.').
+				  (self integerSchemaPropertyNamed: 'performedCount' description: 'Performed changes.') }
+		  required: #( 'action' 'selectionCriteria' 'selectedEntries' 'previewEntries' 'selectedCount' 'selectedCodeChangeCount'
+			     'skippedNonCodeChangeCount' 'previewCount' 'performed' 'performedCount' )
 ]
 
 { #category : 'private - specs' }
@@ -101,46 +72,24 @@ MCPToolChangeHistoryOperation >> description [
 { #category : 'private - request' }
 MCPToolChangeHistoryOperation >> parsedRequestFromToolRequest: request [
 
-	^ MCPChangeHistorySelectionRequest
-		  fromRequest: request
-		  tool: self
-		  operation: self actionName
+	^ MCPChangeHistorySelectionRequest fromRequest: request tool: self operation: self actionName
 ]
 
 { #category : 'private - schema' }
 MCPToolChangeHistoryOperation >> selectionInputProperties [
 
 	^ {
-		  (self
-			   schemaPropertyNamed: 'directoryPath'
-			   type: 'string'
-			   description: 'Optional .ombu directory.').
-		  (self
-			   schemaPropertyNamed: 'historyFileName'
-			   type: 'string'
-			   description: 'Optional .ombu file name from history_file_list.').
+		  (self schemaPropertyNamed: 'directoryPath' type: 'string' description: 'Optional .ombu directory.').
+		  (self schemaPropertyNamed: 'historyFileName' type: 'string' description: 'Optional .ombu file name from history_file_list.').
 		  (self
 			   integerArraySchemaNamed: 'indexes'
-			   description:
-			   'One-based entry indexes returned by history_entry_list.'
+			   description: 'One-based entry indexes returned by history_entry_list.'
 			   itemDescription: 'Entry index.').
-		  (self
-			   integerSchemaPropertyNamed: 'startIndex'
-			   description: 'First one-based entry index in range.').
-		  (self
-			   integerSchemaPropertyNamed: 'endIndex'
-			   description: 'Last one-based entry index in range.').
-		  (self
-			   integerSchemaPropertyNamed: 'latestCount'
-			   description: 'Select latest N entries.').
-		  (self
-			   booleanSchemaPropertyNamed: 'codeChangesOnly'
-			   description: 'Select only code changes.'
-			   default: true).
-		  (self
-			   booleanSchemaPropertyNamed: 'confirm'
-			   description: 'False previews; true performs.'
-			   default: false) }
+		  (self integerSchemaPropertyNamed: 'startIndex' description: 'First one-based entry index in range.').
+		  (self integerSchemaPropertyNamed: 'endIndex' description: 'Last one-based entry index in range.').
+		  (self integerSchemaPropertyNamed: 'latestCount' description: 'Select latest N entries.').
+		  (self booleanSchemaPropertyNamed: 'codeChangesOnly' description: 'Select only code changes.' default: true).
+		  (self booleanSchemaPropertyNamed: 'confirm' description: 'False previews; true performs.' default: false) }
 ]
 
 { #category : 'metadata' }

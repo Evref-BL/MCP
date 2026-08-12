@@ -20,8 +20,7 @@ MCPSearchToolsRequest class >> cursorFromToolRequest: aToolRequest [
 	| cursorString |
 	cursorString := aToolRequest stringArgumentNamed: 'cursor'.
 	cursorString ifNil: [ ^ 0 ].
-	(cursorString allSatisfy: [ :each | each isDigit ]) ifTrue: [
-		^ cursorString asInteger ].
+	(cursorString allSatisfy: [ :each | each isDigit ]) ifTrue: [ ^ cursorString asInteger ].
 	Error signal: 'cursor must be a non-negative integer string.'
 ]
 
@@ -29,10 +28,10 @@ MCPSearchToolsRequest class >> cursorFromToolRequest: aToolRequest [
 MCPSearchToolsRequest class >> fromToolRequest: aToolRequest [
 
 	^ self new
-		query: (aToolRequest stringArgumentNamed: 'query');
-		group: (aToolRequest stringArgumentNamed: 'group');
-		cursor: (self cursorFromToolRequest: aToolRequest);
-		yourself
+		  query: (aToolRequest stringArgumentNamed: 'query');
+		  group: (aToolRequest stringArgumentNamed: 'group');
+		  cursor: (self cursorFromToolRequest: aToolRequest);
+		  yourself
 ]
 
 { #category : 'accessing' }

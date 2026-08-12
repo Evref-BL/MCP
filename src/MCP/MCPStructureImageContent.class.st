@@ -29,8 +29,7 @@ MCPStructureImageContent class >> pngFromForm: aForm [
 	"Encode a Pharo Form as an MCP image content block."
 
 	| bytes |
-	bytes := ByteArray streamContents: [ :stream |
-		         PNGReadWriter putForm: aForm onStream: stream ].
+	bytes := ByteArray streamContents: [ :stream | PNGReadWriter putForm: aForm onStream: stream ].
 	^ self data: bytes base64Encoded mimeType: 'image/png'
 ]
 
@@ -39,10 +38,8 @@ MCPStructureImageContent >> asJRPCJSON [
 
 	| dic |
 	dic := super asJRPCJSON.
-	self data ifNotNil: [ :base64Data |
-		dic at: #data put: base64Data asJRPCJSON ].
-	self mimeType ifNotNil: [ :typeString |
-		dic at: #mimeType put: typeString asJRPCJSON ].
+	self data ifNotNil: [ :base64Data | dic at: #data put: base64Data asJRPCJSON ].
+	self mimeType ifNotNil: [ :typeString | dic at: #mimeType put: typeString asJRPCJSON ].
 	^ dic
 ]
 
