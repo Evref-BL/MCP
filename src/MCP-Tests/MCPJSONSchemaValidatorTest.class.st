@@ -203,19 +203,19 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 	arguments removeKey: MCPToolMethodMutation ifAbsent: [ ].
 	arguments removeKey: MCPToolChangeHistory ifAbsent: [ ].
 	arguments removeKey: MCPToolDebugSessionOperation ifAbsent: [ ].
-	arguments
-		removeKey: MCPToolDebugSessionControlOperation
-		ifAbsent: [ ].
+	arguments removeKey: MCPToolDebugSessionControlOperation ifAbsent: [ ].
 	arguments removeKey: MCPToolDebugBreakpointOperation ifAbsent: [ ].
-	self classMutationRepresentativeArgumentsByToolClass
-		keysAndValuesDo: [ :toolClass :representativeArguments |
-			arguments at: toolClass put: representativeArguments ].
+	self classMutationRepresentativeArgumentsByToolClass keysAndValuesDo: [ :toolClass :representativeArguments |
+		arguments at: toolClass put: representativeArguments ].
 	arguments
-		at: MCPToolSearchMethodSource
-		put: { (#filter -> 'method') } asDictionary;
+		at: MCPToolSearchMethodSource put: { (#filter -> 'method') } asDictionary;
 		at: MCPToolSearchEquivalentMethods put: {
 				(#className -> 'Object').
 				(#selector -> 'class') } asDictionary;
+		at: MCPToolRunCritiques put: {
+				(#scope -> { (#classes -> { 'MCPToolRunCritiquesTest' }) } asDictionary).
+				(#ruleClasses -> { ReAssignmentInBlockRule name }).
+				(#limit -> 3) } asDictionary;
 		at: MCPToolCompileMethod put: {
 				(#className -> 'MCPTool').
 				(#source -> 'temporarySelector ^ self').
@@ -234,54 +234,35 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 		at: MCPToolAttachRepository put: {
 				(#name -> 'MCP Test Repository').
 				(#location -> '/tmp/mcp-test-repository') } asDictionary;
-		at: MCPToolUpdateRepository
-		put: { (#repositoryName -> 'MCP') } asDictionary;
-		at: MCPToolLoadBaseline
-		put: { (#baseline -> 'ExampleBaseline') } asDictionary;
+		at: MCPToolUpdateRepository put: { (#repositoryName -> 'MCP') } asDictionary;
+		at: MCPToolLoadBaseline put: { (#baseline -> 'ExampleBaseline') } asDictionary;
 		at: MCPToolRunTestCoverage put: {
 				(#classes -> { 'MCPToolContractsTest' }).
-				(#coverage -> { (#scope
-					  -> { (#classes -> #( 'MCPToolContractsTest' )) } asDictionary) }
-						 asDictionary) } asDictionary;
-		at: MCPToolApplyChangeHistoryEntries
-		put: { (#latestCount -> 1) } asDictionary;
-		at: MCPToolRevertChangeHistoryEntries
-		put: { (#latestCount -> 1) } asDictionary;
+				(#coverage -> { (#scope -> { (#classes -> #( 'MCPToolContractsTest' )) } asDictionary) } asDictionary) } asDictionary;
+		at: MCPToolApplyChangeHistoryEntries put: { (#latestCount -> 1) } asDictionary;
+		at: MCPToolRevertChangeHistoryEntries put: { (#latestCount -> 1) } asDictionary;
 		at: MCPToolListDebugSessions put: Dictionary new;
-		at: MCPToolGetDebugSession
-		put: { (#sessionId -> 'debug-session-1') } asDictionary;
-		at: MCPToolRemoveDebugSession
-		put: { (#sessionId -> 'debug-session-1') } asDictionary;
+		at: MCPToolGetDebugSession put: { (#sessionId -> 'debug-session-1') } asDictionary;
+		at: MCPToolRemoveDebugSession put: { (#sessionId -> 'debug-session-1') } asDictionary;
 		at: MCPToolSearchDebugCandidates put: Dictionary new;
-		at: MCPToolAttachDebugCandidate
-		put: { (#candidateRef -> 'debugger-candidate-1') } asDictionary;
-		at: MCPToolStepIntoDebugSession
-		put: { (#sessionId -> 'debug-session-1') } asDictionary;
-		at: MCPToolStepOverDebugSession
-		put: { (#sessionId -> 'debug-session-1') } asDictionary;
-		at: MCPToolStepThroughDebugSession
-		put: { (#sessionId -> 'debug-session-1') } asDictionary;
-		at: MCPToolRestartDebugSession
-		put: { (#sessionId -> 'debug-session-1') } asDictionary;
-		at: MCPToolResumeDebugSession
-		put: { (#sessionId -> 'debug-session-1') } asDictionary;
-		at: MCPToolTerminateDebugSession
-		put: { (#sessionId -> 'debug-session-1') } asDictionary;
+		at: MCPToolAttachDebugCandidate put: { (#candidateRef -> 'debugger-candidate-1') } asDictionary;
+		at: MCPToolStepIntoDebugSession put: { (#sessionId -> 'debug-session-1') } asDictionary;
+		at: MCPToolStepOverDebugSession put: { (#sessionId -> 'debug-session-1') } asDictionary;
+		at: MCPToolStepThroughDebugSession put: { (#sessionId -> 'debug-session-1') } asDictionary;
+		at: MCPToolRestartDebugSession put: { (#sessionId -> 'debug-session-1') } asDictionary;
+		at: MCPToolResumeDebugSession put: { (#sessionId -> 'debug-session-1') } asDictionary;
+		at: MCPToolTerminateDebugSession put: { (#sessionId -> 'debug-session-1') } asDictionary;
 		at: MCPToolListDebugBreakpoints put: Dictionary new;
 		at: MCPToolSetDebugBreakpoint put: {
 				(#className -> 'MCPJSONSchemaValidatorTest').
 				(#selector -> 'testCurrentToolSchemasValidate') } asDictionary;
-		at: MCPToolRemoveDebugBreakpoint
-		put: { (#breakpointId -> 'debug-breakpoint-1') } asDictionary;
-		at: MCPToolEnableDebugBreakpoint
-		put: { (#breakpointId -> 'debug-breakpoint-1') } asDictionary;
-		at: MCPToolDisableDebugBreakpoint
-		put: { (#breakpointId -> 'debug-breakpoint-1') } asDictionary;
+		at: MCPToolRemoveDebugBreakpoint put: { (#breakpointId -> 'debug-breakpoint-1') } asDictionary;
+		at: MCPToolEnableDebugBreakpoint put: { (#breakpointId -> 'debug-breakpoint-1') } asDictionary;
+		at: MCPToolDisableDebugBreakpoint put: { (#breakpointId -> 'debug-breakpoint-1') } asDictionary;
 		at: MCPToolClearDebugBreakpoints put: Dictionary new;
 		at: MCPToolDebugTest put: {
 				(#className -> 'MCPToolContractsTest').
-				(#testMethodName -> 'testDebuggerToolsAreDiscoverableOnly') }
-				asDictionary.
+				(#testMethodName -> 'testDebuggerToolsAreDiscoverableOnly') } asDictionary.
 	^ arguments
 ]
 
