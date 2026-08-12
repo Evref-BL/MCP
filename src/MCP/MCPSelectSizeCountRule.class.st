@@ -27,7 +27,5 @@ MCPSelectSizeCountRule class >> ruleName [
 MCPSelectSizeCountRule >> initialize [
 
 	super initialize.
-	self
-		replace: '(`@collection select: `@block) size'
-		with: '`@collection count: `@block'
+	self replace: '(`@collection select: `@block) size' with: '`@collection count: `@block'
 ]

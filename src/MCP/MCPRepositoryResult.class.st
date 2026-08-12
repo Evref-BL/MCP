@@ -21,8 +21,7 @@ MCPRepositoryResult >> branchHeadDictionary [
 	| data |
 	data := Dictionary new.
 	self branchName ifNotEmpty: [ :name | data at: #branchName put: name ].
-	self headDescription ifNotEmpty: [ :description |
-		data at: #headDescription put: description ].
+	self headDescription ifNotEmpty: [ :description | data at: #headDescription put: description ].
 	^ data
 ]
 
@@ -41,8 +40,7 @@ MCPRepositoryResult >> headDescription [
 { #category : 'private' }
 MCPRepositoryResult >> packageInfosFromRepository: aRepository [
 
-	^ (aRepository workingCopy packages asArray sort: [ :left :right |
-		   left name asString <= right name asString ]) collect: [ :each |
+	^ (aRepository workingCopy packages asArray sort: [ :left :right | left name asString <= right name asString ]) collect: [ :each |
 		  MCPRepositoryPackageInfo fromPackage: each ]
 ]
 

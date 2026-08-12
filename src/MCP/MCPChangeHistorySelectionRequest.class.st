@@ -76,8 +76,7 @@ MCPChangeHistorySelectionRequest >> hasRangeSelection [
 { #category : 'testing' }
 MCPChangeHistorySelectionRequest >> hasSelectionCriteria [
 
-	^ self indexes notEmpty or: [
-		  self hasRangeSelection or: [ self latestCount notNil ] ]
+	^ self indexes notEmpty or: [ self hasRangeSelection or: [ self latestCount notNil ] ]
 ]
 
 { #category : 'accessing' }
@@ -104,21 +103,11 @@ MCPChangeHistorySelectionRequest >> initializeFromRequest: aRequest operation: o
 	operation := operationName.
 	directoryPath := aRequest stringArgumentNamed: 'directoryPath'.
 	historyFileName := aRequest stringArgumentNamed: 'historyFileName'.
-	indexes := self
-		           positiveIntegerCollectionArgumentNamed: 'indexes'
-		           fromRequest: aRequest.
-	startIndex := self
-		              optionalPositiveIntegerArgumentNamed: 'startIndex'
-		              fromRequest: aRequest.
-	endIndex := self
-		            optionalPositiveIntegerArgumentNamed: 'endIndex'
-		            fromRequest: aRequest.
-	latestCount := self
-		               optionalPositiveIntegerArgumentNamed: 'latestCount'
-		               fromRequest: aRequest.
-	codeChangesOnly := aRequest
-		                   booleanArgumentNamed: 'codeChangesOnly'
-		                   default: true.
+	indexes := self positiveIntegerCollectionArgumentNamed: 'indexes' fromRequest: aRequest.
+	startIndex := self optionalPositiveIntegerArgumentNamed: 'startIndex' fromRequest: aRequest.
+	endIndex := self optionalPositiveIntegerArgumentNamed: 'endIndex' fromRequest: aRequest.
+	latestCount := self optionalPositiveIntegerArgumentNamed: 'latestCount' fromRequest: aRequest.
+	codeChangesOnly := aRequest booleanArgumentNamed: 'codeChangesOnly' default: true.
 	confirm := aRequest booleanArgumentNamed: 'confirm' default: false.
 	self validateSelectionCriteria
 ]
@@ -154,12 +143,9 @@ MCPChangeHistorySelectionRequest >> optionalPositiveIntegerArgumentNamed: argume
 	(aRequest hasArgumentNamed: argumentName) ifFalse: [ ^ nil ].
 	value := aRequest argumentNamed: argumentName ifAbsent: [ ^ nil ].
 	(value isInteger and: [ value > 0 ]) ifFalse: [
-			self
-				signalInvalidSelection:
-				argumentName , ' must be a positive integer.'
-				details: {
-						(#argumentName -> argumentName).
-						(#actualValue -> value) } asDictionary ].
+			self signalInvalidSelection: argumentName , ' must be a positive integer.' details: {
+					(#argumentName -> argumentName).
+					(#actualValue -> value) } asDictionary ].
 	^ value
 ]
 
@@ -170,12 +156,9 @@ MCPChangeHistorySelectionRequest >> positiveIntegerCollectionArgumentNamed: argu
 	values := aRequest arrayArgumentNamed: argumentName.
 	^ (values collect: [ :each |
 			   (each isInteger and: [ each > 0 ]) ifFalse: [
-					   self
-						   signalInvalidSelection:
-						   argumentName , ' must contain only positive integers.'
-						   details: {
-								   (#argumentName -> argumentName).
-								   (#actualValue -> each) } asDictionary ].
+					   self signalInvalidSelection: argumentName , ' must contain only positive integers.' details: {
+							   (#argumentName -> argumentName).
+							   (#actualValue -> each) } asDictionary ].
 			   each ]) asArray
 ]
 
@@ -184,13 +167,11 @@ MCPChangeHistorySelectionRequest >> selectionCriteria [
 
 	| criteria |
 	criteria := Dictionary new.
-	self indexes ifNotEmpty: [ :values |
-		criteria at: #indexes put: values ].
+	self indexes ifNotEmpty: [ :values | criteria at: #indexes put: values ].
 	self hasRangeSelection ifTrue: [
 			criteria at: #startIndex put: self startIndex.
 			criteria at: #endIndex put: self endIndex ].
-	self latestCount ifNotNil: [ :value |
-		criteria at: #latestCount put: value ].
+	self latestCount ifNotNil: [ :value | criteria at: #latestCount put: value ].
 	criteria at: #codeChangesOnly put: self codeChangesOnly.
 	^ criteria
 ]
@@ -198,21 +179,15 @@ MCPChangeHistorySelectionRequest >> selectionCriteria [
 { #category : 'private - validation' }
 MCPChangeHistorySelectionRequest >> signalIncompleteRangeSelection [
 
-	self
-		signalInvalidSelection:
-		'startIndex and endIndex must be provided together for range selection.'
-		details: {
-				(#startIndex -> startIndex).
-				(#endIndex -> endIndex) } asDictionary
+	self signalInvalidSelection: 'startIndex and endIndex must be provided together for range selection.' details: {
+			(#startIndex -> startIndex).
+			(#endIndex -> endIndex) } asDictionary
 ]
 
 { #category : 'private' }
 MCPChangeHistorySelectionRequest >> signalInvalidSelection: aMessage details: aDictionary [
 
-	MCPCommandError
-		signalErrorCode: #ChangeHistoryInvalidSelection
-		message: aMessage
-		details: aDictionary
+	MCPCommandError signalErrorCode: #ChangeHistoryInvalidSelection message: aMessage details: aDictionary
 ]
 
 { #category : 'accessing' }
@@ -228,15 +203,11 @@ MCPChangeHistorySelectionRequest >> validateSelectionCriteria [
 			startIndex ifNil: [ self signalIncompleteRangeSelection ].
 			endIndex ifNil: [ self signalIncompleteRangeSelection ].
 			startIndex > endIndex ifTrue: [
-					self
-						signalInvalidSelection:
-						'startIndex must be less than or equal to endIndex.'
-						details: {
-								(#startIndex -> startIndex).
-								(#endIndex -> endIndex) } asDictionary ] ].
+					self signalInvalidSelection: 'startIndex must be less than or equal to endIndex.' details: {
+							(#startIndex -> startIndex).
+							(#endIndex -> endIndex) } asDictionary ] ].
 	self hasSelectionCriteria ifFalse: [
 			self
-				signalInvalidSelection:
-				'Provide at least one selection criterion: indexes, startIndex/endIndex, or latestCount.'
+				signalInvalidSelection: 'Provide at least one selection criterion: indexes, startIndex/endIndex, or latestCount.'
 				details: Dictionary new ]
 ]

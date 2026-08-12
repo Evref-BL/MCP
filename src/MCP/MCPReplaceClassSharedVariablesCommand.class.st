@@ -26,8 +26,7 @@ MCPReplaceClassSharedVariablesCommand >> execute [
 
 	| oldSharedVariableNames targetClass updatedClass |
 	targetClass := self targetClass.
-	oldSharedVariableNames := self sharedVariableNamesFromClass:
-		                          targetClass.
+	oldSharedVariableNames := self sharedVariableNamesFromClass: targetClass.
 	updatedClass := self replaceSharedVariablesOn: targetClass.
 	^ MCPReplaceClassSharedVariablesResult
 		  classInfo: (MCPClassInfo fromClass: updatedClass)
@@ -38,10 +37,7 @@ MCPReplaceClassSharedVariablesCommand >> execute [
 { #category : 'private' }
 MCPReplaceClassSharedVariablesCommand >> replaceSharedVariablesOn: aClass [
 
-	^ ShiftClassInstaller
-		  update: aClass
-		  to: [ :builder |
-		  builder sharedVariables: self sharedVariableNames ]
+	^ ShiftClassInstaller update: aClass to: [ :builder | builder sharedVariables: self sharedVariableNames ]
 ]
 
 { #category : 'accessing' }
@@ -53,9 +49,7 @@ MCPReplaceClassSharedVariablesCommand >> sharedVariableNames [
 { #category : 'accessing' }
 MCPReplaceClassSharedVariablesCommand >> sharedVariableNames: someNames [
 
-	sharedVariableNames := someNames
-		                       ifNil: [ #(  ) ]
-		                       ifNotNil: [ someNames asArray ]
+	sharedVariableNames := someNames ifNil: [ #(  ) ] ifNotNil: [ someNames asArray ]
 ]
 
 { #category : 'private' }

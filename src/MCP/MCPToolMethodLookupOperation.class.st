@@ -27,10 +27,10 @@ MCPToolMethodLookupOperation >> buildInputSchema [
 	| properties |
 	properties := self methodQueryScopeInputProperties , {
 		              self lookupArgumentSchemaProperty.
-		              (self includeSourceSchemaPropertyWithDescription:
-			               'Whether to include method source code in each result entry.') }
-	              , (self paginationInputPropertiesWithLimitDescription:
-			               'Maximum number of methods to return. Use 0 to return no entries.').
+		              (self includeSourceSchemaPropertyWithDescription: 'Whether to include method source code in each result entry.') }
+	              ,
+	              (self paginationInputPropertiesWithLimitDescription:
+		               'Maximum number of methods to return. Use 0 to return no entries.').
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties: properties;
@@ -41,8 +41,7 @@ MCPToolMethodLookupOperation >> buildInputSchema [
 { #category : 'private - request' }
 MCPToolMethodLookupOperation >> filterPatternFromRequest: request [
 
-	^ (request stringArgumentNamed: self lookupArgumentName) ifNotNil: [
-		  :value | value trimBoth ]
+	^ (request stringArgumentNamed: self lookupArgumentName) ifNotNil: [ :value | value trimBoth ]
 ]
 
 { #category : 'private - schema' }
@@ -72,14 +71,8 @@ MCPToolMethodLookupOperation >> requiredLookupPatternFromQueryRequest: queryRequ
 
 	| pattern |
 	pattern := queryRequest filterPattern.
-	pattern ifNil: [
-			^ MCPInvalidToolInput
-				  signalMissingRequiredArgumentNamed: self lookupArgumentName
-				  forTool: self ].
-	pattern isEmpty ifTrue: [
-			^ MCPInvalidToolInput
-				  signalMissingRequiredArgumentNamed: self lookupArgumentName
-				  forTool: self ].
+	pattern ifNil: [ ^ MCPInvalidToolInput signalMissingRequiredArgumentNamed: self lookupArgumentName forTool: self ].
+	pattern isEmpty ifTrue: [ ^ MCPInvalidToolInput signalMissingRequiredArgumentNamed: self lookupArgumentName forTool: self ].
 	^ pattern
 ]
 

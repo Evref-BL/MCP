@@ -23,10 +23,7 @@ MCPScreenshotCommand class >> tool: aTool request: aRequest [
 { #category : 'instance creation' }
 MCPScreenshotCommand class >> tool: aTool request: aRequest formProvider: aBlock [
 
-	^ self new
-		  initializeTool: aTool
-		  request: aRequest
-		  formProvider: aBlock
+	^ self new initializeTool: aTool request: aRequest formProvider: aBlock
 ]
 
 { #category : 'private' }
@@ -35,8 +32,7 @@ MCPScreenshotCommand >> captureWorldForm [
 
 	| world |
 	world := self currentWorld.
-	world ifNil: [
-		Error signal: 'No Morphic world is available to capture.' ].
+	world ifNil: [ Error signal: 'No Morphic world is available to capture.' ].
 	^ world imageForm
 ]
 

@@ -74,8 +74,7 @@ MCPDebugAttachedDebuggerController >> failureBlock: aBlock [
 { #category : 'controlling' }
 MCPDebugAttachedDebuggerController >> performOperationNamed: operationName context: aContext [
 
-	^ self deferAction: [
-		  self dispatchOperationNamed: operationName context: aContext ]
+	^ self deferAction: [ self dispatchOperationNamed: operationName context: aContext ]
 ]
 
 { #category : 'controlling' }

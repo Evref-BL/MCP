@@ -40,26 +40,21 @@ MCPDebugCaptureCommand >> capturedResultFor: aDebugSession continuation: aContin
 		          status: 'paused'
 		          reason: 'capturedException'.
 	record continuation: aContinuation.
-	state := (MCPDebugStateInfo fromRecord: record request: request)
-		         asDictionary.
+	state := (MCPDebugStateInfo fromRecord: record request: request) asDictionary.
 	warnings := self captureWarnings.
 	data := {
 		        (#captured -> true).
 		        (#timedOut -> false).
 		        (#sessionId -> record sessionId).
 		        (#stateId -> record stateId).
-		        (#session
-		         -> (MCPDebugSessionInfo fromRecord: record) asDictionary).
+		        (#session -> (MCPDebugSessionInfo fromRecord: record) asDictionary).
 		        (#state -> state).
 		        (#resultClassName -> nil).
 		        (#resultPrintString -> nil).
 		        (#timeoutMilliseconds -> request timeoutMilliseconds).
 		        (#capabilities -> self capabilities) } asDictionary.
 	warnings ifNotEmpty: [ data at: #warnings put: warnings ].
-	^ MCPDebugToolResult
-		  okSummary: 'Debug capture registered ' , record sessionId , '.'
-		  data: data
-		  warnings: warnings
+	^ MCPDebugToolResult okSummary: 'Debug capture registered ' , record sessionId , '.' data: data warnings: warnings
 ]
 
 { #category : 'private - results' }
@@ -79,10 +74,7 @@ MCPDebugCaptureCommand >> completedResultFor: answer [
 		        (#timeoutMilliseconds -> request timeoutMilliseconds).
 		        (#capabilities -> self capabilities) } asDictionary.
 	warnings ifNotEmpty: [ data at: #warnings put: warnings ].
-	^ MCPDebugToolResult
-		  okSummary: 'Debug capture completed without an exception.'
-		  data: data
-		  warnings: warnings
+	^ MCPDebugToolResult okSummary: 'Debug capture completed without an exception.' data: data warnings: warnings
 ]
 
 { #category : 'executing' }
@@ -93,8 +85,7 @@ MCPDebugCaptureCommand >> execute [
 		                outcome: Dictionary new
 		                semaphore: Semaphore new
 		                timeoutMilliseconds: request timeoutMilliseconds
-		                resultPreviewCharacterLimit:
-		                request resultPreviewCharacterLimit.
+		                resultPreviewCharacterLimit: request resultPreviewCharacterLimit.
 	worker := self workerProcessForContinuation: continuation.
 	continuation workerProcess: worker.
 	worker resume.
@@ -106,19 +97,14 @@ MCPDebugCaptureCommand >> execute [
 { #category : 'private - printing' }
 MCPDebugCaptureCommand >> limitedPrintStringOf: anObject [
 
-	^ self
-		  limitedPrintStringOf: anObject
-		  limit: request resultPreviewCharacterLimit
+	^ self limitedPrintStringOf: anObject limit: request resultPreviewCharacterLimit
 ]
 
 { #category : 'private - worker' }
 MCPDebugCaptureCommand >> recordCapturedException: anException inOutcome: outcome [
 
 	| debugSession |
-	debugSession := DebugSession
-		                named: request name
-		                on: Processor activeProcess
-		                startedAt: anException signalerContext.
+	debugSession := DebugSession named: request name on: Processor activeProcess startedAt: anException signalerContext.
 	debugSession exception: anException.
 	outcome
 		removeKey: #answer ifAbsent: [ nil ];
@@ -150,19 +136,12 @@ MCPDebugCaptureCommand >> resultForContinuation: aContinuation [
 
 	| status |
 	status := aContinuation currentStatus.
-	status = #completed ifTrue: [
-		^ self completedResultFor: aContinuation completedAnswer ].
-	status = #captured ifTrue: [
-			^ self
-				  capturedResultFor: aContinuation capturedDebugSession
-				  continuation: aContinuation ].
-	status = #syntaxError ifTrue: [
-		^ self syntaxFailureFor: (aContinuation outcome at: #notice) ].
-	^ MCPDebugToolResult
-		  errorSummary: 'Debug capture failed without a worker outcome.'
-		  details: {
-				  (#errorCode -> 'DebugCaptureNoOutcome').
-				  (#expression -> request expression) } asDictionary
+	status = #completed ifTrue: [ ^ self completedResultFor: aContinuation completedAnswer ].
+	status = #captured ifTrue: [ ^ self capturedResultFor: aContinuation capturedDebugSession continuation: aContinuation ].
+	status = #syntaxError ifTrue: [ ^ self syntaxFailureFor: (aContinuation outcome at: #notice) ].
+	^ MCPDebugToolResult errorSummary: 'Debug capture failed without a worker outcome.' details: {
+			  (#errorCode -> 'DebugCaptureNoOutcome').
+			  (#expression -> request expression) } asDictionary
 ]
 
 { #category : 'private - results' }
@@ -172,12 +151,9 @@ MCPDebugCaptureCommand >> syntaxFailureFor: aNotice [
 	details := tool errorDetailsFor: aNotice.
 	details
 		at: #errorCode put: 'DebugCaptureSyntaxError';
-		at: #description
-		put: 'Compilation failed before capture execution.';
+		at: #description put: 'Compilation failed before capture execution.';
 		at: #expression put: request expression.
-	^ MCPDebugToolResult
-		  errorSummary: (tool syntaxFailureMessageFor: aNotice)
-		  details: details
+	^ MCPDebugToolResult errorSummary: (tool syntaxFailureMessageFor: aNotice) details: details
 ]
 
 { #category : 'private - results' }
@@ -191,8 +167,7 @@ MCPDebugCaptureCommand >> timeoutResultForContinuation: aContinuation [
 		           (#timeoutMilliseconds -> request timeoutMilliseconds).
 		           (#workerTerminated -> true) } asDictionary.
 	^ MCPDebugToolResult
-		  errorSummary: 'Debug capture timed out after '
-			  , request timeoutMilliseconds asString , ' ms.'
+		  errorSummary: 'Debug capture timed out after ' , request timeoutMilliseconds asString , ' ms.'
 		  details: details
 ]
 
@@ -214,26 +189,18 @@ MCPDebugCaptureCommand >> workerProcessForContinuation: aContinuation [
 			            do: [ :error |
 					            handled := true.
 					            (PharoCompatibility syntaxNoticeFromException: error)
-						            ifNotNil: [ :syntaxNotice |
-							            self
-								            recordSyntaxFailure: syntaxNotice
-								            inOutcome: outcome ]
+						            ifNotNil: [ :syntaxNotice | self recordSyntaxFailure: syntaxNotice inOutcome: outcome ]
 						            ifNil: [
-								            self
-									            recordCapturedException: error
-									            inOutcome: outcome.
+								            self recordCapturedException: error inOutcome: outcome.
 								            aContinuation signal.
 								            Processor activeProcess suspend ].
 					            nil ].
 		  handled
 			  ifFalse: [
 					  notice
-						  ifNotNil: [
-						  self recordSyntaxFailure: notice inOutcome: outcome ]
-						  ifNil: [
-						  self recordCompletedAnswer: answer inOutcome: outcome ] ]
+						  ifNotNil: [ self recordSyntaxFailure: notice inOutcome: outcome ]
+						  ifNil: [ self recordCompletedAnswer: answer inOutcome: outcome ] ]
 			  ifTrue: [
-					  (outcome at: #status ifAbsent: [ nil ]) = #captured ifTrue: [
-						  self recordCompletedAnswer: answer inOutcome: outcome ] ].
+			  (outcome at: #status ifAbsent: [ nil ]) = #captured ifTrue: [ self recordCompletedAnswer: answer inOutcome: outcome ] ].
 		  aContinuation signal ] newProcess
 ]

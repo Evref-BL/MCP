@@ -28,8 +28,6 @@ MCPSortedCollectionConversionRule >> initialize [
 
 	super initialize.
 	self
-		replace: '`@collection asSortedCollection asArray'
-		with: '`@collection sorted';
-		replace: '(`@collection asSortedCollection: `@block) asArray'
-		with: '`@collection sorted: `@block'
+		replace: '`@collection asSortedCollection asArray' with: '`@collection sorted';
+		replace: '(`@collection asSortedCollection: `@block) asArray' with: '`@collection sorted: `@block'
 ]

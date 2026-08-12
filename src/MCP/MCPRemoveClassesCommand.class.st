@@ -39,9 +39,7 @@ MCPRemoveClassesCommand >> classNames [
 { #category : 'accessing' }
 MCPRemoveClassesCommand >> classNames: someClassNames [
 
-	classNames := someClassNames
-		              ifNil: [ #(  ) ]
-		              ifNotNil: [ someClassNames asArray ]
+	classNames := someClassNames ifNil: [ #(  ) ] ifNotNil: [ someClassNames asArray ]
 ]
 
 { #category : 'executing' }
@@ -51,18 +49,12 @@ MCPRemoveClassesCommand >> execute [
 	resolvedClasses := self resolvedClasses.
 	refactoring := self preparedRefactoringForClassNames: self classNames.
 	warningMessages := self validatePreparedRefactoring: refactoring.
-	removedClasses := resolvedClasses collect: [ :each |
-		                  self resultForRemovedClass: each ].
+	removedClasses := resolvedClasses collect: [ :each | self resultForRemovedClass: each ].
 	self performRemovalWithPreparedRefactoring: refactoring.
 	removedPackageNames := OrderedCollection new.
 	removedClasses do: [ :eachResult |
-			self
-				removePackageIfNowEmptyNamed: eachResult classInfo packageName
-				recordingInto: removedPackageNames ].
-	^ MCPRemoveClassesResult
-		  removedClasses: removedClasses
-		  removedPackageNames: removedPackageNames
-		  warningMessages: warningMessages
+		self removePackageIfNowEmptyNamed: eachResult classInfo packageName recordingInto: removedPackageNames ].
+	^ MCPRemoveClassesResult removedClasses: removedClasses removedPackageNames: removedPackageNames warningMessages: warningMessages
 ]
 
 { #category : 'accessing' }
@@ -80,8 +72,7 @@ MCPRemoveClassesCommand >> force: aBoolean [
 { #category : 'private' }
 MCPRemoveClassesCommand >> isEmptyClass: aClass [
 
-	^ aClass classVarNames isEmpty and: [
-		  aClass instVarNames isEmpty and: [ aClass selectors isEmpty ] ]
+	^ aClass classVarNames isEmpty and: [ aClass instVarNames isEmpty and: [ aClass selectors isEmpty ] ]
 ]
 
 { #category : 'private' }
@@ -95,8 +86,7 @@ MCPRemoveClassesCommand >> performRemovalWithPreparedRefactoring: aRefactoring [
 MCPRemoveClassesCommand >> preparedRefactoringForClassNames: someClassNames [
 
 	| refactoring |
-	refactoring := ReRemoveClassRefactoring classNames:
-		               (someClassNames collect: #asSymbol).
+	refactoring := ReRemoveClassRefactoring classNames: (someClassNames collect: #asSymbol).
 	refactoring prepareForExecution.
 	^ refactoring
 ]
@@ -105,13 +95,10 @@ MCPRemoveClassesCommand >> preparedRefactoringForClassNames: someClassNames [
 MCPRemoveClassesCommand >> removePackageIfNowEmptyNamed: aPackageName recordingInto: removedPackageNamesCollection [
 
 	aPackageName = '_UnpackagedPackage' ifTrue: [ ^ self ].
-	PackageOrganizer default
-		packageNamed: aPackageName
-		ifPresent: [ :package |
-				package definedClasses isEmpty ifTrue: [
-						PackageOrganizer default removePackage: package.
-						(removedPackageNamesCollection includes: aPackageName) ifFalse: [
-							removedPackageNamesCollection add: aPackageName ] ] ]
+	PackageOrganizer default packageNamed: aPackageName ifPresent: [ :package |
+			package definedClasses isEmpty ifTrue: [
+					PackageOrganizer default removePackage: package.
+					(removedPackageNamesCollection includes: aPackageName) ifFalse: [ removedPackageNamesCollection add: aPackageName ] ] ]
 ]
 
 { #category : 'private' }
@@ -126,10 +113,7 @@ MCPRemoveClassesCommand >> resultForRemovedClass: aClass [
 	| classInfo reparentedSubclassNames wasEmpty |
 	classInfo := MCPClassInfo fromClass: aClass.
 	wasEmpty := self isEmptyClass: aClass.
-	reparentedSubclassNames := (self
-		                            shouldReparentSubclassesWhenRemoving:
-		                            aClass
-		                            wasEmpty: wasEmpty)
+	reparentedSubclassNames := (self shouldReparentSubclassesWhenRemoving: aClass wasEmpty: wasEmpty)
 		                           ifTrue: [ classInfo subclassNames ]
 		                           ifFalse: [ #(  ) ].
 	^ MCPRemoveClassResult

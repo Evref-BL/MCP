@@ -16,8 +16,7 @@ Class {
 { #category : 'private - packages' }
 MCPUpdateRepositoryCommand >> addPackageNamed: packageName to: aRepository [
 
-	((self currentPackageNamesIn: aRepository) includes: packageName)
-		ifTrue: [ ^ self ].
+	((self currentPackageNamesIn: aRepository) includes: packageName) ifTrue: [ ^ self ].
 	aRepository workingCopy addPackageNamed: packageName.
 	addedPackageNames add: packageName
 ]
@@ -25,8 +24,7 @@ MCPUpdateRepositoryCommand >> addPackageNamed: packageName to: aRepository [
 { #category : 'private - packages' }
 MCPUpdateRepositoryCommand >> addPackagesTo: aRepository [
 
-	self request addPackageNames do: [ :each |
-		self addPackageNamed: each to: aRepository ]
+	self request addPackageNames do: [ :each | self addPackageNamed: each to: aRepository ]
 ]
 
 { #category : 'accessing' }
@@ -50,27 +48,21 @@ MCPUpdateRepositoryCommand >> execute [
 		  work: [
 				  self request hasUpdates ifFalse: [ self signalNoUpdateRequested ].
 				  repository := self request repository.
-				  (self request hasSuppliedPropertyNamed: 'subdirectory') ifTrue: [
-					  self setSubdirectoryOn: repository ].
-				  (self request hasSuppliedPropertyNamed: 'packageNames') ifTrue: [
-					  self replacePackagesIn: repository ].
+				  (self request hasSuppliedPropertyNamed: 'subdirectory') ifTrue: [ self setSubdirectoryOn: repository ].
+				  (self request hasSuppliedPropertyNamed: 'packageNames') ifTrue: [ self replacePackagesIn: repository ].
 				  self addPackagesTo: repository.
 				  self removePackagesFrom: repository.
 				  result := MCPRepositoryUpdateResult
 					            repository: repository
-					            updateActions:
-					            self request requestedRepositoryUpdateActions
+					            updateActions: self request requestedRepositoryUpdateActions
 					            addedPackageNames: self sortedAddedPackageNames
 					            removedPackageNames: self sortedRemovedPackageNames ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText:
-					  'Updated repository ' , result repositoryInfo name , '.'
+					  successResultText: 'Updated repository ' , result repositoryInfo name , '.'
 					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
-		  failureSummary: [ :error |
-				  'Failed to update repository: '
-				  , (error messageText ifNil: [ error asString ]) ]
+		  failureSummary: [ :error | 'Failed to update repository: ' , (error messageText ifNil: [ error asString ]) ]
 ]
 
 { #category : 'initialization' }
@@ -91,9 +83,7 @@ MCPUpdateRepositoryCommand >> normalizedPackageNames: packageNames [
 MCPUpdateRepositoryCommand >> removePackageNamed: packageName from: aRepository [
 
 	| package |
-	package := aRepository workingCopy
-		           packageNamed: packageName
-		           ifAbsent: [ ^ self ].
+	package := aRepository workingCopy packageNamed: packageName ifAbsent: [ ^ self ].
 	package remove.
 	removedPackageNames add: packageName
 ]
@@ -101,8 +91,7 @@ MCPUpdateRepositoryCommand >> removePackageNamed: packageName from: aRepository 
 { #category : 'private - packages' }
 MCPUpdateRepositoryCommand >> removePackagesFrom: aRepository [
 
-	self request removePackageNames do: [ :each |
-		self removePackageNamed: each from: aRepository ]
+	self request removePackageNames do: [ :each | self removePackageNamed: each from: aRepository ]
 ]
 
 { #category : 'accessing' }
@@ -115,15 +104,12 @@ MCPUpdateRepositoryCommand >> removedPackageNames [
 MCPUpdateRepositoryCommand >> replacePackagesIn: aRepository [
 
 	| currentPackages desiredPackages |
-	desiredPackages := self normalizedPackageNames:
-		                   self request packageNames.
+	desiredPackages := self normalizedPackageNames: self request packageNames.
 	currentPackages := self currentPackageNamesIn: aRepository.
 	currentPackages
 		reject: [ :each | desiredPackages includes: each ]
 		thenDo: [ :each | self removePackageNamed: each from: aRepository ].
-	desiredPackages
-		reject: [ :each | currentPackages includes: each ]
-		thenDo: [ :each | self addPackageNamed: each to: aRepository ]
+	desiredPackages reject: [ :each | currentPackages includes: each ] thenDo: [ :each | self addPackageNamed: each to: aRepository ]
 ]
 
 { #category : 'private - metadata' }
@@ -138,8 +124,7 @@ MCPUpdateRepositoryCommand >> signalNoUpdateRequested [
 
 	MCPCommandError
 		signalErrorCode: #NoRepositoryUpdateRequested
-		message:
-		'repository_update requires subdirectory, packageNames, addPackageNames, or removePackageNames.'
+		message: 'repository_update requires subdirectory, packageNames, addPackageNames, or removePackageNames.'
 		details: self request requestedContext
 ]
 

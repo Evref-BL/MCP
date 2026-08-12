@@ -25,9 +25,7 @@ MCPChangeHistorySelectionCommand >> addLatestSelectionTo: pairs fromLog: aLog [
 	| allPairs selected start |
 	request latestCount ifNil: [ ^ pairs ].
 	allPairs := self entryPairsFromLog: aLog.
-	request codeChangesOnly ifTrue: [
-			allPairs := allPairs select: [ :pair |
-				            self isCodeChangeEntry: pair second ] ].
+	request codeChangesOnly ifTrue: [ allPairs := allPairs select: [ :pair | self isCodeChangeEntry: pair second ] ].
 	allPairs ifEmpty: [ ^ pairs ].
 	start := allPairs size - request latestCount + 1 max: 1.
 	selected := allPairs copyFrom: start to: allPairs size.
@@ -55,9 +53,7 @@ MCPChangeHistorySelectionCommand >> applyOrRevertEntries [
 	fileName := logAndFileName second.
 	rawPairs := self rawSelectedEntryPairsFrom: log.
 	selectedPairs := self selectedEntryPairsFromRawPairs: rawPairs.
-	previewLog := self
-		              previewLogForSelectedEntryPairs: selectedPairs
-		              fromLog: log.
+	previewLog := self previewLogForSelectedEntryPairs: selectedPairs fromLog: log.
 	performedCount := request confirm
 		                  ifTrue: [ self performPreviewLog: previewLog ]
 		                  ifFalse: [ 0 ].
@@ -77,9 +73,7 @@ MCPChangeHistorySelectionCommand >> entryAtIndex: anIndex inLog: aLog [
 	(anIndex between: 1 and: aLog entries size) ifFalse: [
 			MCPCommandError
 				signalErrorCode: #ChangeHistoryEntryNotFound
-				message:
-				'Change history entry index ' , anIndex asString
-				, ' does not exist.'
+				message: 'Change history entry index ' , anIndex asString , ' does not exist.'
 				details: {
 						(#index -> anIndex).
 						(#entryCount -> aLog entries size) } asDictionary ].
@@ -89,18 +83,13 @@ MCPChangeHistorySelectionCommand >> entryAtIndex: anIndex inLog: aLog [
 { #category : 'private - result' }
 MCPChangeHistorySelectionCommand >> entryInfosFromLog: aLog [
 
-	^ aLog entries collectWithIndex: [ :entry :index |
-		  MCPChangeHistoryEntryInfo fromEntry: entry index: index log: aLog ]
+	^ aLog entries collectWithIndex: [ :entry :index | MCPChangeHistoryEntryInfo fromEntry: entry index: index log: aLog ]
 ]
 
 { #category : 'private - result' }
 MCPChangeHistorySelectionCommand >> entryInfosFromPairs: pairs log: aLog [
 
-	^ pairs collect: [ :pair |
-			  MCPChangeHistoryEntryInfo
-				  fromEntry: pair second
-				  index: pair first
-				  log: aLog ]
+	^ pairs collect: [ :pair | MCPChangeHistoryEntryInfo fromEntry: pair second index: pair first log: aLog ]
 ]
 
 { #category : 'private - entries' }
@@ -118,8 +107,7 @@ MCPChangeHistorySelectionCommand >> entryPairsFromLog: aLog [
 { #category : 'execution' }
 MCPChangeHistorySelectionCommand >> execute [
 
-	(#( 'applyEntries' 'revertEntries' ) includes: request operation)
-		ifTrue: [ ^ self applyOrRevertEntries ].
+	(#( 'applyEntries' 'revertEntries' ) includes: request operation) ifTrue: [ ^ self applyOrRevertEntries ].
 	MCPCommandError
 		signalErrorCode: #UnsupportedChangeHistoryOperation
 		message: 'Unsupported change history selection operation.'
@@ -129,9 +117,7 @@ MCPChangeHistorySelectionCommand >> execute [
 { #category : 'private - log' }
 MCPChangeHistorySelectionCommand >> logAndFileNameForRequest [
 
-	^ self
-		  logAndFileNameFromDirectoryPath: request directoryPath
-		  fileName: request historyFileName
+	^ self logAndFileNameFromDirectoryPath: request directoryPath fileName: request historyFileName
 ]
 
 { #category : 'private - apply' }
@@ -141,8 +127,7 @@ MCPChangeHistorySelectionCommand >> performPreviewLog: aPreviewLog [
 	entries := aPreviewLog entries.
 	entries ifEmpty: [ ^ 0 ].
 	factory := EpLogBrowserOperationFactory new
-		           logBrowserModel:
-			           (EpLogBrowserPresenter newWithLog: aPreviewLog);
+		           logBrowserModel: (EpLogBrowserPresenter newWithLog: aPreviewLog);
 		           entries: entries;
 		           errorHandlerBlock: [ :error | error signal ];
 		           yourself.
@@ -184,8 +169,7 @@ MCPChangeHistorySelectionCommand >> resultForLog: aLog fileName: fileName rawPai
 		  action: request action
 		  historyFileName: fileName
 		  selectionCriteria: request selectionCriteria
-		  selectedEntries:
-		  (self entryInfosFromPairs: selectedPairs log: aLog)
+		  selectedEntries: (self entryInfosFromPairs: selectedPairs log: aLog)
 		  previewEntries: (self entryInfosFromLog: previewLog)
 		  skippedNonCodeChangeCount: rawPairs size - selectedPairs size
 		  performed: performedFlag
@@ -205,6 +189,5 @@ MCPChangeHistorySelectionCommand >> uniqueSortedPairsFrom: pairs [
 	| byIndex |
 	byIndex := Dictionary new.
 	pairs do: [ :pair | byIndex at: pair first ifAbsentPut: [ pair ] ].
-	^ byIndex values asArray sort: [ :left :right |
-		  left first < right first ]
+	^ byIndex values asArray sort: [ :left :right | left first < right first ]
 ]

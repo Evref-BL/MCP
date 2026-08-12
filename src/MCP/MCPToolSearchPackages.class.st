@@ -25,16 +25,14 @@ MCPToolSearchPackages class >> toolName [
 MCPToolSearchPackages >> buildInputSchema [
 
 	| properties |
-	properties := self packageQueryScopeInputProperties
-	              , self packageFilterInputProperties , {
+	properties := self packageQueryScopeInputProperties , self packageFilterInputProperties , {
 		              (self
-			               filterModeSchemaPropertyWithDescription:
-			               'How package metadata filters are matched.'
+			               filterModeSchemaPropertyWithDescription: 'How package metadata filters are matched.'
 			               values: self basicFilterModes).
-		              (self caseSensitiveSchemaPropertyWithDescription:
-			               'Whether package metadata matching is case-sensitive.') }
-	              , (self paginationInputPropertiesWithLimitDescription:
-			               'Maximum number of matching packages to return. Use 0 to return no entries.').
+		              (self caseSensitiveSchemaPropertyWithDescription: 'Whether package metadata matching is case-sensitive.') }
+	              ,
+	              (self paginationInputPropertiesWithLimitDescription:
+		               'Maximum number of matching packages to return. Use 0 to return no entries.').
 	^ self queryInputSchemaWithProperties: properties
 ]
 
@@ -43,8 +41,7 @@ MCPToolSearchPackages >> buildOutputSchema [
 
 	^ self
 		  minimalPagedQueryOutputSchemaForEntriesPropertyNamed: 'packages'
-		  entriesDescription:
-		  'The package entries returned for the requested page.'
+		  entriesDescription: 'The package entries returned for the requested page.'
 		  entrySchema: self packageEntrySchema
 		  itemNounPhrase: 'package entries'
 ]
@@ -64,10 +61,7 @@ MCPToolSearchPackages >> description [
 { #category : 'private - results' }
 MCPToolSearchPackages >> failureMessageForScope: scopeSummary error: anError [
 
-	^ self
-		  scopeQueryFailureMessageFor: 'packages'
-		  scope: scopeSummary
-		  error: anError
+	^ self scopeQueryFailureMessageFor: 'packages' scope: scopeSummary error: anError
 ]
 
 { #category : 'private - filtering' }
@@ -84,8 +78,7 @@ MCPToolSearchPackages >> matchesFieldFiltersOnPackageEntry: anEntry queryRequest
 
 	^ self
 		  fieldFilters: queryRequest fieldFilters
-		  matchUsing: [ :fieldName |
-			  self fieldTextsForPackageEntry: anEntry fieldName: fieldName ]
+		  matchUsing: [ :fieldName | self fieldTextsForPackageEntry: anEntry fieldName: fieldName ]
 		  mode: queryRequest filterMode
 		  caseSensitive: queryRequest caseSensitive
 ]
@@ -106,15 +99,9 @@ MCPToolSearchPackages >> packageEntriesFromPackages: packages projectNames: pack
 	entries := OrderedCollection new.
 	packages do: [ :eachPackage |
 			| entry projectNames |
-			projectNames := packageProjectNames
-				                at: eachPackage name asString
-				                ifAbsent: [ #(  ) ].
-			entry := (MCPPackageInfo
-				          fromPackage: eachPackage
-				          projectNames: projectNames) asQueryDictionary.
-			(self
-				 matchesFieldFiltersOnPackageEntry: entry
-				 queryRequest: queryRequest) ifTrue: [ entries add: entry ] ].
+			projectNames := packageProjectNames at: eachPackage name asString ifAbsent: [ #(  ) ].
+			entry := (MCPPackageInfo fromPackage: eachPackage projectNames: projectNames) asQueryDictionary.
+			(self matchesFieldFiltersOnPackageEntry: entry queryRequest: queryRequest) ifTrue: [ entries add: entry ] ].
 	^ entries asArray
 ]
 
@@ -144,28 +131,19 @@ MCPToolSearchPackages >> packageFilterInputProperties [
 		  (self
 			   schemaPropertyNamed: 'packageName'
 			   type: 'string'
-			   description:
-			   'Optional package-name text matched against package names.').
+			   description: 'Optional package-name text matched against package names.').
 		  (self
 			   schemaPropertyNamed: 'projectName'
 			   type: 'string'
-			   description:
-			   'Optional project-name text matched against owning projects.').
-		  (self
-			   schemaPropertyNamed: 'tag'
-			   type: 'string'
-			   description:
-			   'Optional tag-name text matched against package tags.') }
+			   description: 'Optional project-name text matched against owning projects.').
+		  (self schemaPropertyNamed: 'tag' type: 'string' description: 'Optional tag-name text matched against package tags.') }
 ]
 
 { #category : 'private - schema' }
 MCPToolSearchPackages >> packageInfoDataProperties [
 
 	^ {
-		  (self
-			   schemaPropertyNamed: 'packageName'
-			   type: 'string'
-			   description: 'The package name.').
+		  (self schemaPropertyNamed: 'packageName' type: 'string' description: 'The package name.').
 		  (self
 			   stringArraySchemaNamed: 'projectNames'
 			   description: 'The project names that include the package.'
@@ -192,11 +170,8 @@ MCPToolSearchPackages >> queryResultDataForQueryRequest: queryRequest page: page
 MCPToolSearchPackages >> requestedContextFromRequest: request [
 
 	^ { (#scope -> (self
-		    packageScopeSummaryForProjectNames:
-		    (request stringCollectionArgumentNamed: 'projectNames')
-		    packageNames:
-		    (request stringCollectionArgumentNamed: 'packageNames'))) }
-		  asDictionary
+		    packageScopeSummaryForProjectNames: (request stringCollectionArgumentNamed: 'projectNames')
+		    packageNames: (request stringCollectionArgumentNamed: 'packageNames'))) } asDictionary
 ]
 
 { #category : 'private - template' }
@@ -209,20 +184,17 @@ MCPToolSearchPackages >> searchRequestFromToolRequest: request [
 MCPToolSearchPackages >> successSummaryForQueryRequest: queryRequest page: page [
 
 	^ self
-		  successSummaryForScope: (self
-				   packageScopeSummaryForProjectNames:
-				   queryRequest scopeQuery projectNames
-				   packageNames: queryRequest scopeQuery packageNames)
+		  successSummaryForScope:
+		  (self
+			   packageScopeSummaryForProjectNames: queryRequest scopeQuery projectNames
+			   packageNames: queryRequest scopeQuery packageNames)
 		  page: page
 ]
 
 { #category : 'private - results' }
 MCPToolSearchPackages >> successSummaryForScope: scopeSummary page: page [
 
-	^ self
-		  scopeQuerySuccessSummaryFor: 'packages'
-		  scope: scopeSummary
-		  page: page
+	^ self scopeQuerySuccessSummaryFor: 'packages' scope: scopeSummary page: page
 ]
 
 { #category : 'metadata' }

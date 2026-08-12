@@ -24,17 +24,13 @@ MCPDebugController >> debugSession [
 { #category : 'controlling' }
 MCPDebugController >> dispatchOperationNamed: operationName context: aContext [
 
-	operationName = 'stepInto' ifTrue: [
-		^ self stepIntoContext: aContext ].
-	operationName = 'stepOver' ifTrue: [
-		^ self stepOverContext: aContext ].
-	operationName = 'stepThrough' ifTrue: [
-		^ self stepThroughContext: aContext ].
+	operationName = 'stepInto' ifTrue: [ ^ self stepIntoContext: aContext ].
+	operationName = 'stepOver' ifTrue: [ ^ self stepOverContext: aContext ].
+	operationName = 'stepThrough' ifTrue: [ ^ self stepThroughContext: aContext ].
 	operationName = 'restart' ifTrue: [ ^ self restartContext: aContext ].
 	operationName = 'resume' ifTrue: [ ^ self resume ].
 	operationName = 'terminate' ifTrue: [ ^ self terminate ].
-	self error:
-		'Unsupported debug control operation: ' , operationName asString
+	self error: 'Unsupported debug control operation: ' , operationName asString
 ]
 
 { #category : 'controlling' }
@@ -82,6 +78,5 @@ MCPDebugController >> terminate [
 { #category : 'accessing' }
 MCPDebugController >> workerProcess [
 
-	^ self debugSession ifNotNil: [ :session |
-		  session interruptedProcess ]
+	^ self debugSession ifNotNil: [ :session | session interruptedProcess ]
 ]

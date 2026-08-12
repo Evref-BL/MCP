@@ -132,9 +132,7 @@ MCPDebugAttachedContinuation >> outcome: aDictionary [
 { #category : 'private' }
 MCPDebugAttachedContinuation >> prepareExceptionForProceed [
 
-	self debugSession ifNotNil: [ :session |
-			session exception ifNotNil: [ :exception |
-				exception mcpPrepareForProceed ] ]
+	self debugSession ifNotNil: [ :session | session exception ifNotNil: [ :exception | exception mcpPrepareForProceed ] ]
 ]
 
 { #category : 'controlling' }
@@ -240,6 +238,5 @@ MCPDebugAttachedContinuation >> waitForSignal [
 { #category : 'accessing' }
 MCPDebugAttachedContinuation >> workerProcess [
 
-	^ self debugSession ifNotNil: [ :session |
-		  session interruptedProcess ]
+	^ self debugSession ifNotNil: [ :session | session interruptedProcess ]
 ]

@@ -37,8 +37,7 @@ MCPToolSearchVariableReferences >> lookupArgumentName [
 MCPToolSearchVariableReferences >> queryEntriesForQueryRequest: queryRequest [
 
 	^ self
-		  variableReferenceEntriesForVariableNamed:
-		  (self requiredLookupPatternFromQueryRequest: queryRequest)
+		  variableReferenceEntriesForVariableNamed: (self requiredLookupPatternFromQueryRequest: queryRequest)
 		  queryRequest: queryRequest
 ]
 

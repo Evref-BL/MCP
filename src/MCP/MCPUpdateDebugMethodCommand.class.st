@@ -49,21 +49,11 @@ MCPUpdateDebugMethodCommand >> classSideForBehavior: aBehavior [
 { #category : 'private - compiling' }
 MCPUpdateDebugMethodCommand >> compileForRecord: aRecord context: aContext updateKind: updateKind [
 
-	(#( 'missingMethod' 'subclassResponsibility' ) includes: updateKind)
-		ifTrue: [
-				^ self
-					  compileImplementationForRecord: aRecord
-					  context: aContext
-					  updateKind: updateKind ].
-	(#( 'recompile' 'shouldBeImplemented' 'notYetImplemented' )
-		 includes: updateKind) ifTrue: [
-			^ self
-				  recompileContext: aContext
-				  record: aRecord
-				  updateKind: updateKind ].
-	^ self
-		  signalUnsupportedUpdateForRecord: aRecord
-		  updateKind: updateKind
+	(#( 'missingMethod' 'subclassResponsibility' ) includes: updateKind) ifTrue: [
+		^ self compileImplementationForRecord: aRecord context: aContext updateKind: updateKind ].
+	(#( 'recompile' 'shouldBeImplemented' 'notYetImplemented' ) includes: updateKind) ifTrue: [
+		^ self recompileContext: aContext record: aRecord updateKind: updateKind ].
+	^ self signalUnsupportedUpdateForRecord: aRecord updateKind: updateKind
 ]
 
 { #category : 'private - compiling' }
@@ -71,23 +61,14 @@ MCPUpdateDebugMethodCommand >> compileImplementationForRecord: aRecord context: 
 
 	| analyzer behavior details message source |
 	analyzer := self analyzerForRecord: aRecord.
-	message := analyzer
-		           messageForException: analyzer exception
-		           context: aContext.
-	message ifNil: [
-			^ self
-				  signalUnsupportedUpdateForRecord: aRecord
-				  updateKind: updateKind ].
+	message := analyzer messageForException: analyzer exception context: aContext.
+	message ifNil: [ ^ self signalUnsupportedUpdateForRecord: aRecord updateKind: updateKind ].
 	behavior := analyzer behaviorForContext: aContext.
-	source := self methodSourceOrNil ifNil: [
-		          analyzer
-			          defaultSourceForMessage: message
-			          behavior: behavior ].
+	source := self methodSourceOrNil ifNil: [ analyzer defaultSourceForMessage: message behavior: behavior ].
 	source ifNil: [
 			^ self
 				  signalRequiredMethodSourceForRecord: aRecord
-				  frameIndex:
-				  (self frameIndexForContext: aContext record: aRecord fallback: 0)
+				  frameIndex: (self frameIndexForContext: aContext record: aRecord fallback: 0)
 				  updateKind: updateKind ].
 	details := {
 		           (#source -> source).
@@ -106,10 +87,7 @@ MCPUpdateDebugMethodCommand >> compileSourceUsing: details [
 	| actualSelector behavior context expectedSelector message method record selectorDetails source |
 	record := details at: #record.
 	behavior := details at: #behavior.
-	behavior ifNil: [
-			^ self
-				  signalUnsupportedUpdateForRecord: record
-				  updateKind: (details at: #updateKind) ].
+	behavior ifNil: [ ^ self signalUnsupportedUpdateForRecord: record updateKind: (details at: #updateKind) ].
 	expectedSelector := details at: #expectedSelector.
 	source := (details at: #source) withInternalLineEndings.
 	actualSelector := behavior compile: source.
@@ -120,22 +98,15 @@ MCPUpdateDebugMethodCommand >> compileSourceUsing: details [
 				                   (#updateKind -> (details at: #updateKind)).
 				                   (#expectedSelector -> expectedSelector asString).
 				                   (#actualSelector -> actualSelector asString).
-				                   (#targetClassName
-				                    -> (self classNameForBehavior: behavior)).
-				                   (#classSide
-				                    -> (self classSideForBehavior: behavior)) }
-				                   asDictionary.
+				                   (#targetClassName -> (self classNameForBehavior: behavior)).
+				                   (#classSide -> (self classSideForBehavior: behavior)) } asDictionary.
 			^ self signalSelectorMismatchWithDetails: selectorDetails ].
-	method := self
-		          formattedMethodForBehavior: behavior
-		          selector: actualSelector.
+	method := self formattedMethodForBehavior: behavior selector: actualSelector.
 	MethodClassifier classify: method.
 	context := details at: #context.
 	message := details at: #message.
 	context privRefreshWith: method.
-	context method numArgs > 0 ifTrue: [
-			message arguments withIndexDo: [ :argument :index |
-				context tempAt: index put: argument ] ].
+	context method numArgs > 0 ifTrue: [ message arguments withIndexDo: [ :argument :index | context tempAt: index put: argument ] ].
 	record debugSession
 		updateContextTo: context;
 		contextChanged.
@@ -162,44 +133,27 @@ MCPUpdateDebugMethodCommand >> execute [
 	record := self sessionRecordWithMatchingState.
 	previousStateId := record stateId.
 	frameIndex := self selectedFrameIndex.
-	selectedContext := self
-		                   selectedContextForRecord: record
-		                   frameIndex: frameIndex.
+	selectedContext := self selectedContextForRecord: record frameIndex: frameIndex.
 	updateKind := self updateKindForRecord: record.
-	context := self
-		           updateContextForRecord: record
-		           selectedContext: selectedContext
-		           updateKind: updateKind.
-	frameIndex := self
-		              frameIndexForContext: context
-		              record: record
-		              fallback: frameIndex.
-	compiledMethod := self
-		                  compileForRecord: record
-		                  context: context
-		                  updateKind: updateKind.
+	context := self updateContextForRecord: record selectedContext: selectedContext updateKind: updateKind.
+	frameIndex := self frameIndexForContext: context record: record fallback: frameIndex.
+	compiledMethod := self compileForRecord: record context: context updateKind: updateKind.
 	record advanceStateForStatus: 'paused' reason: 'debugMethodUpdate'.
 	frameRef := self frameRefForRecord: record frameIndex: frameIndex.
 	critiques := self critiqueDataForMethod: compiledMethod.
 	proceedData := (self shouldBlockProceedForCritiques: critiques)
 		               ifTrue: [ self proceedDataBlockedByCritiques ]
-		               ifFalse: [
-		               self proceedAfterMethodUpdateForRecord: record ].
-	(proceedData at: #blockedByCritiques) ifTrue: [
-		record reason: 'debugMethodUpdateCritiques' ].
+		               ifFalse: [ self proceedAfterMethodUpdateForRecord: record ].
+	(proceedData at: #blockedByCritiques) ifTrue: [ record reason: 'debugMethodUpdateCritiques' ].
 	resultDetails := {
 		                 (#method -> compiledMethod).
 		                 (#record -> record).
 		                 (#previousStateId -> previousStateId).
 		                 (#frameRef -> frameRef).
 		                 (#updateKind -> updateKind) } asDictionary.
-	data := self
-		        resultDataUsing: resultDetails
-		        critiques: critiques
-		        proceedData: proceedData.
+	data := self resultDataUsing: resultDetails critiques: critiques proceedData: proceedData.
 	^ MCPDebugToolResult
-		  okSummary: 'Debug method update ' , updateKind , ' applied to '
-			  , record sessionId , '.'
+		  okSummary: 'Debug method update ' , updateKind , ' applied to ' , record sessionId , '.'
 		  data: data
 		  warnings: (data at: #warnings)
 ]
@@ -217,17 +171,14 @@ MCPUpdateDebugMethodCommand >> formattedMethodForBehavior: aBehavior selector: a
 MCPUpdateDebugMethodCommand >> frameIndexForContext: aContext record: aRecord fallback: fallbackIndex [
 
 	| rawContexts |
-	rawContexts := (MCPDebugStateInfo
-		                fromRecord: aRecord
-		                request: request) rawContexts.
+	rawContexts := (MCPDebugStateInfo fromRecord: aRecord request: request) rawContexts.
 	^ (rawContexts indexOf: aContext ifAbsent: [ fallbackIndex + 1 ]) - 1
 ]
 
 { #category : 'private - data' }
 MCPUpdateDebugMethodCommand >> methodDataFor: aCompiledMethod [
 
-	^ (MCPCompiledMethodInfo fromMethod: aCompiledMethod)
-		  asDictionaryIncludingSource: true
+	^ (MCPCompiledMethodInfo fromMethod: aCompiledMethod) asDictionaryIncludingSource: true
 ]
 
 { #category : 'private - source' }
@@ -252,8 +203,7 @@ MCPUpdateDebugMethodCommand >> prepareInterruptedProcessForContext: aContext rec
 { #category : 'private - proceeding' }
 MCPUpdateDebugMethodCommand >> proceedAfterMethodUpdateForRecord: aRecord [
 
-	aRecord continuation ifNotNil: [ :continuation |
-		^ self proceedContinuation: continuation forRecord: aRecord ].
+	aRecord continuation ifNotNil: [ :continuation | ^ self proceedContinuation: continuation forRecord: aRecord ].
 	^ self proceedDebugSessionForRecord: aRecord
 ]
 
@@ -267,38 +217,29 @@ MCPUpdateDebugMethodCommand >> proceedContinuation: aContinuation forRecord: aRe
 			aRecord
 				debugSession: nil;
 				continuation: nil;
-				advanceStateForStatus: 'completed'
-				reason: 'debugMethodUpdateProceed'.
-			^ self
-				  proceedDataForCompletedAnswer: answer
-				  limit: aContinuation resultPreviewCharacterLimit ].
+				advanceStateForStatus: 'completed' reason: 'debugMethodUpdateProceed'.
+			^ self proceedDataForCompletedAnswer: answer limit: aContinuation resultPreviewCharacterLimit ].
 	status = #captured ifTrue: [
 			aRecord
 				debugSession: aContinuation capturedDebugSession;
 				advanceStateForStatus: 'paused' reason: 'capturedException'.
 			^ self proceedDataForOutcome: 'paused' timedOut: false ].
 	status = #paused ifTrue: [
-			aRecord
-				advanceStateForStatus: 'paused'
-				reason: 'debugMethodUpdateProceed'.
+			aRecord advanceStateForStatus: 'paused' reason: 'debugMethodUpdateProceed'.
 			^ self proceedDataForOutcome: 'paused' timedOut: false ].
 	status = #running ifTrue: [
-			aRecord
-				advanceStateForStatus: 'running'
-				reason: 'debugMethodUpdateProceed'.
+			aRecord advanceStateForStatus: 'running' reason: 'debugMethodUpdateProceed'.
 			^ self proceedDataForOutcome: 'running' timedOut: false ].
 	status = #timedOut ifTrue: [
 			aContinuation terminateWorker.
 			aRecord
 				continuation: nil;
-				advanceStateForStatus: 'timedOut'
-				reason: 'debugMethodUpdateProceedTimeout'.
+				advanceStateForStatus: 'timedOut' reason: 'debugMethodUpdateProceedTimeout'.
 			^ self proceedDataForOutcome: 'timedOut' timedOut: true ].
 	status = #terminated ifTrue: [
 			aRecord
 				continuation: nil;
-				advanceStateForStatus: 'terminated'
-				reason: 'debugMethodUpdateProceed'.
+				advanceStateForStatus: 'terminated' reason: 'debugMethodUpdateProceed'.
 			^ self proceedDataForOutcome: 'terminated' timedOut: false ].
 	^ self proceedDataForOutcome: status asString timedOut: false
 ]
@@ -318,9 +259,7 @@ MCPUpdateDebugMethodCommand >> proceedDataBlockedByCritiques [
 { #category : 'private - proceeding' }
 MCPUpdateDebugMethodCommand >> proceedDataForCompletedAnswer: answer [
 
-	^ self
-		  proceedDataForCompletedAnswer: answer
-		  limit: request resultPreviewCharacterLimit
+	^ self proceedDataForCompletedAnswer: answer limit: request resultPreviewCharacterLimit
 ]
 
 { #category : 'private - proceeding' }
@@ -331,8 +270,7 @@ MCPUpdateDebugMethodCommand >> proceedDataForCompletedAnswer: answer limit: char
 		  (#blockedByCritiques -> false).
 		  (#proceedOutcome -> 'completed').
 		  (#resultClassName -> answer class name asString).
-		  (#resultPrintString
-		   -> (self limitedPrintStringOf: answer limit: characterLimit)).
+		  (#resultPrintString -> (self limitedPrintStringOf: answer limit: characterLimit)).
 		  (#timedOut -> false) } asDictionary
 ]
 
@@ -351,18 +289,13 @@ MCPUpdateDebugMethodCommand >> proceedDataForOutcome: outcomeString timedOut: ti
 { #category : 'private - proceeding' }
 MCPUpdateDebugMethodCommand >> proceedDebugSessionForRecord: aRecord [
 
-	aRecord debugSession ifNil: [
-		^ self proceedDataForOutcome: 'unavailable' timedOut: false ].
+	aRecord debugSession ifNil: [ ^ self proceedDataForOutcome: 'unavailable' timedOut: false ].
 	[
 		aRecord debugSession resume.
-		aRecord
-			advanceStateForStatus: 'running'
-			reason: 'debugMethodUpdateProceed' ]
+		aRecord advanceStateForStatus: 'running' reason: 'debugMethodUpdateProceed' ]
 		on: Exception
 		do: [ :error |
-				aRecord
-					advanceStateForStatus: 'paused'
-					reason: 'debugMethodUpdateProceedError'.
+				aRecord advanceStateForStatus: 'paused' reason: 'debugMethodUpdateProceedError'.
 				^ self proceedDataForOutcome: 'failed' timedOut: false ].
 	^ self proceedDataForOutcome: 'running' timedOut: false
 ]
@@ -371,35 +304,15 @@ MCPUpdateDebugMethodCommand >> proceedDebugSessionForRecord: aRecord [
 MCPUpdateDebugMethodCommand >> recompileContext: aContext record: aRecord updateKind: updateKind [
 
 	| frameIndex method source succeeded |
-	frameIndex := self
-		              frameIndexForContext: aContext
-		              record: aRecord
-		              fallback: 0.
+	frameIndex := self frameIndexForContext: aContext record: aRecord fallback: 0.
 	source := self methodSourceOrNil.
-	source ifNil: [
-			^ self
-				  signalRequiredMethodSourceForRecord: aRecord
-				  frameIndex: frameIndex
-				  updateKind: updateKind ].
+	source ifNil: [ ^ self signalRequiredMethodSourceForRecord: aRecord frameIndex: frameIndex updateKind: updateKind ].
 	succeeded := PharoCompatibility resumeDeprecationsDuring: [
-			             aRecord debugSession
-				             recompileMethodTo: source
-				             inContext: aContext
-				             notifying: nil ].
-	succeeded ifFalse: [
-			^ self
-				  signalRecompileFailedForRecord: aRecord
-				  frameIndex: frameIndex
-				  updateKind: updateKind ].
+		             aRecord debugSession recompileMethodTo: source inContext: aContext notifying: nil ].
+	succeeded ifFalse: [ ^ self signalRecompileFailedForRecord: aRecord frameIndex: frameIndex updateKind: updateKind ].
 	method := self compiledMethodForContext: aContext.
-	method ifNil: [
-			^ self
-				  signalRecompileFailedForRecord: aRecord
-				  frameIndex: frameIndex
-				  updateKind: updateKind ].
-	method := self
-		          formattedMethodForBehavior: method methodClass
-		          selector: method selector.
+	method ifNil: [ ^ self signalRecompileFailedForRecord: aRecord frameIndex: frameIndex updateKind: updateKind ].
+	method := self formattedMethodForBehavior: method methodClass selector: method selector.
 	aContext privRefreshWith: method.
 	aRecord debugSession
 		updateContextTo: aContext;
@@ -414,10 +327,7 @@ MCPUpdateDebugMethodCommand >> resultDataUsing: details critiques: critiques pro
 	| data methodData record repairActions state warnings |
 	record := details at: #record.
 	state := self stateDataForRecord: record.
-	repairActions := state
-		                 ifNil: [ #(  ) ]
-		                 ifNotNil: [
-		                 state at: #repairActions ifAbsent: [ #(  ) ] ].
+	repairActions := state ifNil: [ #(  ) ] ifNotNil: [ state at: #repairActions ifAbsent: [ #(  ) ] ].
 	warnings := tool updateWarnings.
 	methodData := self methodDataFor: (details at: #method).
 	data := {
@@ -429,8 +339,7 @@ MCPUpdateDebugMethodCommand >> resultDataUsing: details critiques: critiques pro
 		        (#method -> methodData).
 		        (#critiques -> critiques).
 		        (#proceeded -> (proceedData at: #proceeded)).
-		        (#blockedByCritiques
-		         -> (proceedData at: #blockedByCritiques)).
+		        (#blockedByCritiques -> (proceedData at: #blockedByCritiques)).
 		        (#proceedOutcome -> (proceedData at: #proceedOutcome)).
 		        (#resultClassName -> (proceedData at: #resultClassName)).
 		        (#resultPrintString -> (proceedData at: #resultPrintString)).
@@ -454,13 +363,11 @@ MCPUpdateDebugMethodCommand >> signalRecompileFailedForRecord: aRecord frameInde
 
 	^ MCPCommandError
 		  signalErrorCode: #DebugMethodUpdateRecompileFailed
-		  message:
-		  'debug_method_update could not recompile the selected debug frame.'
+		  message: 'debug_method_update could not recompile the selected debug frame.'
 		  details: {
 				  (#sessionId -> aRecord sessionId).
 				  (#stateId -> aRecord stateId).
-				  (#frameRef
-				   -> (self frameRefForRecord: aRecord frameIndex: frameIndex)).
+				  (#frameRef -> (self frameRefForRecord: aRecord frameIndex: frameIndex)).
 				  (#updateKind -> updateKind) } asDictionary
 ]
 
@@ -469,13 +376,11 @@ MCPUpdateDebugMethodCommand >> signalRequiredMethodSourceForRecord: aRecord fram
 
 	^ MCPCommandError
 		  signalErrorCode: #DebugMethodUpdateMethodSourceRequired
-		  message:
-		  'debug_method_update requires source for ' , updateKind , '.'
+		  message: 'debug_method_update requires source for ' , updateKind , '.'
 		  details: {
 				  (#sessionId -> aRecord sessionId).
 				  (#stateId -> aRecord stateId).
-				  (#frameRef
-				   -> (self frameRefForRecord: aRecord frameIndex: frameIndex)).
+				  (#frameRef -> (self frameRefForRecord: aRecord frameIndex: frameIndex)).
 				  (#updateKind -> updateKind) } asDictionary
 ]
 
@@ -484,9 +389,7 @@ MCPUpdateDebugMethodCommand >> signalSelectorMismatchWithDetails: details [
 
 	^ MCPCommandError
 		  signalErrorCode: #DebugMethodUpdateSelectorMismatch
-		  message:
-			  'debug_method_update compiled ' , (details at: #actualSelector)
-			  , ' but the debug state expects '
+		  message: 'debug_method_update compiled ' , (details at: #actualSelector) , ' but the debug state expects '
 			  , (details at: #expectedSelector) , '.'
 		  details: details
 ]
@@ -496,8 +399,7 @@ MCPUpdateDebugMethodCommand >> signalUnsupportedUpdateForRecord: aRecord updateK
 
 	^ MCPCommandError
 		  signalErrorCode: #DebugMethodUpdateUnsupported
-		  message:
-		  'debug_method_update cannot repair the current debug state.'
+		  message: 'debug_method_update cannot repair the current debug state.'
 		  details: {
 				  (#sessionId -> aRecord sessionId).
 				  (#stateId -> aRecord stateId).
@@ -509,8 +411,7 @@ MCPUpdateDebugMethodCommand >> stateDataForRecord: aRecord [
 
 	aRecord status = 'paused' ifFalse: [ ^ nil ].
 	aRecord debugSession ifNil: [ ^ nil ].
-	^ (MCPDebugStateInfo fromRecord: aRecord request: request)
-		  asDictionary
+	^ (MCPDebugStateInfo fromRecord: aRecord request: request) asDictionary
 ]
 
 { #category : 'private - actions' }
@@ -519,14 +420,12 @@ MCPUpdateDebugMethodCommand >> updateContextForRecord: aRecord selectedContext: 
 	| analyzer context exception |
 	analyzer := self analyzerForRecord: aRecord.
 	exception := analyzer exception.
-	(#( 'missingMethod' 'subclassResponsibility' ) includes: updateKind)
-		ifTrue: [
-				context := analyzer targetContextForException: exception.
-				context ifNotNil: [ ^ context ] ].
-	(#( 'shouldBeImplemented' 'notYetImplemented' ) includes: updateKind)
-		ifTrue: [
-				context := analyzer selectorContextForException: exception.
-				context ifNotNil: [ ^ context ] ].
+	(#( 'missingMethod' 'subclassResponsibility' ) includes: updateKind) ifTrue: [
+			context := analyzer targetContextForException: exception.
+			context ifNotNil: [ ^ context ] ].
+	(#( 'shouldBeImplemented' 'notYetImplemented' ) includes: updateKind) ifTrue: [
+			context := analyzer selectorContextForException: exception.
+			context ifNotNil: [ ^ context ] ].
 	^ selectedContext
 ]
 

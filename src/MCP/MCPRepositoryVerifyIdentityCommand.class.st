@@ -63,8 +63,7 @@ MCPRepositoryVerifyIdentityCommand >> checkModifiedPackageNamesFor: repositoryIn
 
 	self request hasExpectedModifiedPackageNames ifFalse: [ ^ self ].
 	self
-		addMismatchIfExpected:
-		(self sortedStringsFrom: self request modifiedPackageNames)
+		addMismatchIfExpected: (self sortedStringsFrom: self request modifiedPackageNames)
 		actual: repositoryInfo modifiedPackageNames
 		field: 'modifiedPackageNames'
 		checkedFields: checkedFields
@@ -76,8 +75,7 @@ MCPRepositoryVerifyIdentityCommand >> checkPackageNamesFor: repositoryInfo check
 
 	self request hasExpectedPackageNames ifFalse: [ ^ self ].
 	self
-		addMismatchIfExpected:
-		(self sortedStringsFrom: self request packageNames)
+		addMismatchIfExpected: (self sortedStringsFrom: self request packageNames)
 		actual: repositoryInfo packageNames
 		field: 'packageNames'
 		checkedFields: checkedFields
@@ -102,30 +100,12 @@ MCPRepositoryVerifyIdentityCommand >> checkedFieldsAndMismatchesFor: repositoryI
 	| checkedFields mismatches |
 	checkedFields := OrderedCollection new.
 	mismatches := OrderedCollection new.
-	self
-		checkLocationFor: repositoryInfo
-		checkedFields: checkedFields
-		mismatches: mismatches.
-	self
-		checkBranchNameFor: repositoryInfo
-		checkedFields: checkedFields
-		mismatches: mismatches.
-	self
-		checkSubdirectoryFor: repositoryInfo
-		checkedFields: checkedFields
-		mismatches: mismatches.
-	self
-		checkPackageNamesFor: repositoryInfo
-		checkedFields: checkedFields
-		mismatches: mismatches.
-	self
-		checkModifiedPackageNamesFor: repositoryInfo
-		checkedFields: checkedFields
-		mismatches: mismatches.
-	self
-		checkIsModifiedFor: repositoryInfo
-		checkedFields: checkedFields
-		mismatches: mismatches.
+	self checkLocationFor: repositoryInfo checkedFields: checkedFields mismatches: mismatches.
+	self checkBranchNameFor: repositoryInfo checkedFields: checkedFields mismatches: mismatches.
+	self checkSubdirectoryFor: repositoryInfo checkedFields: checkedFields mismatches: mismatches.
+	self checkPackageNamesFor: repositoryInfo checkedFields: checkedFields mismatches: mismatches.
+	self checkModifiedPackageNamesFor: repositoryInfo checkedFields: checkedFields mismatches: mismatches.
+	self checkIsModifiedFor: repositoryInfo checkedFields: checkedFields mismatches: mismatches.
 	^ {
 		  (#checkedFields -> checkedFields asArray).
 		  (#mismatches -> mismatches asArray) } asDictionary
@@ -140,19 +120,13 @@ MCPRepositoryVerifyIdentityCommand >> execute [
 		  work: [
 				  repository := self repositoryForVerifyIdentity.
 				  validation := self validateRepository: repository.
-				  result := MCPRepositoryVerifyIdentityResult
-					            repository: repository
-					            checkedFields: (validation at: #checkedFields) ]
+				  result := MCPRepositoryVerifyIdentityResult repository: repository checkedFields: (validation at: #checkedFields) ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText:
-						  'Repository identity verification passed for '
-						  , result repositoryInfo name , '.'
+					  successResultText: 'Repository identity verification passed for ' , result repositoryInfo name , '.'
 					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
-		  failureSummary: [ :error |
-				  'Failed verify repository identity: '
-				  , (error messageText ifNil: [ error asString ]) ]
+		  failureSummary: [ :error | 'Failed verify repository identity: ' , (error messageText ifNil: [ error asString ]) ]
 ]
 
 { #category : 'private - resolving' }
@@ -162,10 +136,7 @@ MCPRepositoryVerifyIdentityCommand >> repositoryForVerifyIdentity [
 		  on: MCPCommandError
 		  do: [ :error |
 				  (self shouldRetryByNameOnlyAfter: error)
-					  ifTrue: [
-							  (MCPRepositoryReferenceSpec
-								   name: self request repositoryReference name
-								   location: nil) repository ]
+					  ifTrue: [ (MCPRepositoryReferenceSpec name: self request repositoryReference name location: nil) repository ]
 					  ifFalse: [ error signal ] ]
 ]
 
@@ -173,8 +144,7 @@ MCPRepositoryVerifyIdentityCommand >> repositoryForVerifyIdentity [
 MCPRepositoryVerifyIdentityCommand >> shouldRetryByNameOnlyAfter: anError [
 
 	^ anError errorCode = #RepositoryNotFound and: [
-			  self request repositoryReference hasName and: [
-				  self request repositoryReference hasLocation ] ]
+		  self request repositoryReference hasName and: [ self request repositoryReference hasLocation ] ]
 ]
 
 { #category : 'private - validation' }
@@ -182,9 +152,7 @@ MCPRepositoryVerifyIdentityCommand >> signalIdentityMismatchFor: repositoryInfo 
 
 	MCPCommandError
 		signalErrorCode: #RepositoryIdentityMismatch
-		message:
-			'Repository identity verification failed for '
-			, repositoryInfo name , '.'
+		message: 'Repository identity verification failed for ' , repositoryInfo name , '.'
 		details: (self request requestedContext copy
 				 at: #repository put: repositoryInfo asDictionary;
 				 at: #mismatches put: mismatches;
@@ -196,12 +164,10 @@ MCPRepositoryVerifyIdentityCommand >> signalMissingExpectedIdentityFields [
 
 	MCPCommandError
 		signalErrorCode: #RepositoryIdentityExpectationRequired
-		message:
-		'repository_identity_verify requires at least one expected identity field besides repositoryName.'
+		message: 'repository_identity_verify requires at least one expected identity field besides repositoryName.'
 		details: (self request requestedContext copy
-				 at: #expectedFields
-				 put: #( 'location' 'branchName' 'subdirectory' 'packageNames'
-					    'modifiedPackageNames' 'isModified' );
+				 at: #expectedFields put: #( 'location' 'branchName' 'subdirectory' 'packageNames' 'modifiedPackageNames'
+					    'isModified' );
 				 yourself)
 ]
 
@@ -209,13 +175,9 @@ MCPRepositoryVerifyIdentityCommand >> signalMissingExpectedIdentityFields [
 MCPRepositoryVerifyIdentityCommand >> validateRepository: aRepository [
 
 	| repositoryInfo validation |
-	self request hasExpectedIdentityFields ifFalse: [
-		self signalMissingExpectedIdentityFields ].
+	self request hasExpectedIdentityFields ifFalse: [ self signalMissingExpectedIdentityFields ].
 	repositoryInfo := MCPRepositoryInfo fromRepository: aRepository.
 	validation := self checkedFieldsAndMismatchesFor: repositoryInfo.
-	(validation at: #mismatches) ifNotEmpty: [ :mismatches |
-		self
-			signalIdentityMismatchFor: repositoryInfo
-			mismatches: mismatches ].
+	(validation at: #mismatches) ifNotEmpty: [ :mismatches | self signalIdentityMismatchFor: repositoryInfo mismatches: mismatches ].
 	^ validation
 ]

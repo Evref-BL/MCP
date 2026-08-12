@@ -39,35 +39,24 @@ MCPReplaceClassTraitsCommand >> resolvedTraitNamed: aTraitName [
 
 	| behavior traitName |
 	traitName := aTraitName.
-	(traitName endsWith: ' classTrait') ifTrue: [
-			traitName := traitName
-				             copyFrom: 1
-				             to: traitName size - ' classTrait' size ].
+	(traitName endsWith: ' classTrait') ifTrue: [ traitName := traitName copyFrom: 1 to: traitName size - ' classTrait' size ].
 	behavior := Smalltalk globals at: traitName asSymbol ifAbsent: [
-			            MCPCommandError
-				            signalErrorCode: #TraitNotFound
-				            message: 'Trait ' , traitName , ' does not exist.'
-				            details: {
-						            (#className -> self className).
-						            (#traitName -> traitName).
-						            (#traits -> self traitNames) } asDictionary ].
+			            MCPCommandError signalErrorCode: #TraitNotFound message: 'Trait ' , traitName , ' does not exist.' details: {
+					            (#className -> self className).
+					            (#traitName -> traitName).
+					            (#traits -> self traitNames) } asDictionary ].
 	behavior isTrait ifFalse: [
-			MCPCommandError
-				signalErrorCode: #InvalidTrait
-				message: traitName , ' is not a trait.'
-				details: {
-						(#className -> self className).
-						(#traitName -> traitName).
-						(#traits -> self traitNames) } asDictionary ].
+			MCPCommandError signalErrorCode: #InvalidTrait message: traitName , ' is not a trait.' details: {
+					(#className -> self className).
+					(#traitName -> traitName).
+					(#traits -> self traitNames) } asDictionary ].
 	^ behavior
 ]
 
 { #category : 'private' }
 MCPReplaceClassTraitsCommand >> resolvedTraits [
 
-	^ self traitNames
-		  collect: [ :each | self resolvedTraitNamed: each ]
-		  as: Array
+	^ self traitNames collect: [ :each | self resolvedTraitNamed: each ] as: Array
 ]
 
 { #category : 'private' }
@@ -85,9 +74,7 @@ MCPReplaceClassTraitsCommand >> traitNames [
 { #category : 'accessing' }
 MCPReplaceClassTraitsCommand >> traitNames: someNames [
 
-	traitNames := someNames
-		              ifNil: [ #(  ) ]
-		              ifNotNil: [ someNames asArray ]
+	traitNames := someNames ifNil: [ #(  ) ] ifNotNil: [ someNames asArray ]
 ]
 
 { #category : 'private' }

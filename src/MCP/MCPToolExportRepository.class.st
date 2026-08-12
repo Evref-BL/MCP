@@ -21,8 +21,7 @@ MCPToolExportRepository >> repositoryToolSpec [
 	^ {
 		  (#title -> 'Export Repository').
 		  (#description
-		   ->
-		   'Materialize image-side repository changes to Tonel files through Iceberg without staging or committing Git changes.').
+		   -> 'Materialize image-side repository changes to Tonel files through Iceberg without staging or committing Git changes.').
 		  (#action -> 'export').
 		  (#requestClass -> MCPRepositoryExportRequest).
 		  (#commandClass -> MCPExportRepositoryCommand) } asDictionary

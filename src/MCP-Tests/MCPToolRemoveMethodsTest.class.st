@@ -29,8 +29,7 @@ MCPToolRemoveMethodsTest >> classBatchSelectors [
 { #category : 'private' }
 MCPToolRemoveMethodsTest >> firstClassBatchMethodSource [
 
-	^ self firstClassBatchSelectorString , ' ^ self '
-	  , self secondClassBatchSelectorString , ' + 1'
+	^ self firstClassBatchSelectorString , ' ^ self ' , self secondClassBatchSelectorString , ' + 1'
 ]
 
 { #category : 'private' }
@@ -48,8 +47,7 @@ MCPToolRemoveMethodsTest >> firstClassBatchSelectorString [
 { #category : 'private' }
 MCPToolRemoveMethodsTest >> firstInstanceBatchMethodSource [
 
-	^ self firstInstanceBatchSelectorString , ' ^ self '
-	  , self secondInstanceBatchSelectorString , ' + 1'
+	^ self firstInstanceBatchSelectorString , ' ^ self ' , self secondInstanceBatchSelectorString , ' + 1'
 ]
 
 { #category : 'private' }
@@ -120,45 +118,17 @@ MCPToolRemoveMethodsTest >> protectedSelectorSymbol [
 { #category : 'private' }
 MCPToolRemoveMethodsTest >> restoreFixtureMethods [
 
-	self
-		removeSelector: self firstInstanceBatchSelector
-		from: MCPToolRemoveMethodsTestTarget.
-	self
-		removeSelector: self secondInstanceBatchSelector
-		from: MCPToolRemoveMethodsTestTarget.
-	self
-		removeSelector: self protectedSelectorSymbol
-		from: MCPToolRemoveMethodsTestTarget.
-	self
-		removeSelector: self firstClassBatchSelector
-		from: MCPToolRemoveMethodsTestTarget classSide.
-	self
-		removeSelector: self secondClassBatchSelector
-		from: MCPToolRemoveMethodsTestTarget classSide.
-	self
-		ensureMethodSource: self firstInstanceBatchMethodSource
-		protocol: 'tests'
-		on: MCPToolRemoveMethodsTestTarget.
-	self
-		ensureMethodSource: self secondInstanceBatchMethodSource
-		protocol: 'tests'
-		on: MCPToolRemoveMethodsTestTarget.
-	self
-		ensureMethodSource: self protectedMethodSource
-		protocol: 'tests'
-		on: MCPToolRemoveMethodsTestTarget.
-	self
-		ensureMethodSource: self firstClassBatchMethodSource
-		protocol: 'tests'
-		on: MCPToolRemoveMethodsTestTarget classSide.
-	self
-		ensureMethodSource: self secondClassBatchMethodSource
-		protocol: 'tests'
-		on: MCPToolRemoveMethodsTestTarget classSide.
-	self
-		ensureMethodSource: self senderMethodSource
-		protocol: 'tests'
-		on: MCPToolRemoveMethodsTestSender
+	self removeSelector: self firstInstanceBatchSelector from: MCPToolRemoveMethodsTestTarget.
+	self removeSelector: self secondInstanceBatchSelector from: MCPToolRemoveMethodsTestTarget.
+	self removeSelector: self protectedSelectorSymbol from: MCPToolRemoveMethodsTestTarget.
+	self removeSelector: self firstClassBatchSelector from: MCPToolRemoveMethodsTestTarget classSide.
+	self removeSelector: self secondClassBatchSelector from: MCPToolRemoveMethodsTestTarget classSide.
+	self ensureMethodSource: self firstInstanceBatchMethodSource protocol: 'tests' on: MCPToolRemoveMethodsTestTarget.
+	self ensureMethodSource: self secondInstanceBatchMethodSource protocol: 'tests' on: MCPToolRemoveMethodsTestTarget.
+	self ensureMethodSource: self protectedMethodSource protocol: 'tests' on: MCPToolRemoveMethodsTestTarget.
+	self ensureMethodSource: self firstClassBatchMethodSource protocol: 'tests' on: MCPToolRemoveMethodsTestTarget classSide.
+	self ensureMethodSource: self secondClassBatchMethodSource protocol: 'tests' on: MCPToolRemoveMethodsTestTarget classSide.
+	self ensureMethodSource: self senderMethodSource protocol: 'tests' on: MCPToolRemoveMethodsTestSender
 ]
 
 { #category : 'private' }
@@ -200,8 +170,7 @@ MCPToolRemoveMethodsTest >> secondInstanceBatchSelectorString [
 { #category : 'private' }
 MCPToolRemoveMethodsTest >> senderMethodSource [
 
-	^ 'sendProtectedRemovalTarget ^ MCPToolRemoveMethodsTestTarget new '
-	  , self protectedSelectorString
+	^ 'sendProtectedRemovalTarget ^ MCPToolRemoveMethodsTestTarget new ' , self protectedSelectorString
 ]
 
 { #category : 'running' }
@@ -224,13 +193,10 @@ MCPToolRemoveMethodsTest >> testDefaultsToRemovingInstanceSideMethodsWhenClassSi
 	| result |
 	result := self callToolWith: {
 			          (#className -> 'MCPToolRemoveMethodsTestTarget').
-			          (#selectors -> self instanceBatchSelectors) }
-			          asDictionary.
+			          (#selectors -> self instanceBatchSelectors) } asDictionary.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self deny: (MCPToolRemoveMethodsTestTarget includesSelector:
-			 self firstInstanceBatchSelector).
-	self deny: (MCPToolRemoveMethodsTestTarget includesSelector:
-			 self secondInstanceBatchSelector)
+	self deny: (MCPToolRemoveMethodsTestTarget includesSelector: self firstInstanceBatchSelector).
+	self deny: (MCPToolRemoveMethodsTestTarget includesSelector: self secondInstanceBatchSelector)
 ]
 
 { #category : 'tests' }
@@ -246,41 +212,25 @@ MCPToolRemoveMethodsTest >> testForceRemovesMethodsEvenWhenExternalSendersExistA
 	warnings := structured at: #warnings.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self deny: (text includesSubstring: 'Warning:').
-	self
-		assert: warnings
-		equals:
-			{ 'This bypasses sender checks and may leave broken senders.' }
-				asArray.
-	self deny: (MCPToolRemoveMethodsTestTarget includesSelector:
-			 self protectedSelectorSymbol).
-	self assert: (MCPToolRemoveMethodsTestSender includesSelector:
-			 #sendProtectedRemovalTarget).
-	self
-		should: [
-		MCPToolRemoveMethodsTestSender new sendProtectedRemovalTarget ]
-		raise: MessageNotUnderstood
+	self assert: warnings equals: { 'This bypasses sender checks and may leave broken senders.' } asArray.
+	self deny: (MCPToolRemoveMethodsTestTarget includesSelector: self protectedSelectorSymbol).
+	self assert: (MCPToolRemoveMethodsTestSender includesSelector: #sendProtectedRemovalTarget).
+	self should: [ MCPToolRemoveMethodsTestSender new sendProtectedRemovalTarget ] raise: MessageNotUnderstood
 ]
 
 { #category : 'tests' }
 MCPToolRemoveMethodsTest >> testForceRemovesSuperOnlyOverride [
 
 	| result |
-	self
-		ensureMethodSource: 'printString ^ super printString'
-		protocol: 'tests'
-		on: MCPToolRemoveMethodsTestTarget.
+	self ensureMethodSource: 'printString ^ super printString' protocol: 'tests' on: MCPToolRemoveMethodsTestTarget.
 	[
 		result := self callToolWith: {
 				          (#className -> 'MCPToolRemoveMethodsTestTarget').
 				          (#classSide -> false).
 				          (#selectors -> #( 'printString' )) } asDictionary.
 		self deny: (result at: #isError ifAbsent: [ false ]).
-		self deny:
-			(MCPToolRemoveMethodsTestTarget includesSelector: #printString) ]
-		ensure: [
-			self
-				removeSelector: #printString
-				from: MCPToolRemoveMethodsTestTarget ]
+		self deny: (MCPToolRemoveMethodsTestTarget includesSelector: #printString) ] ensure: [
+		self removeSelector: #printString from: MCPToolRemoveMethodsTestTarget ]
 ]
 
 { #category : 'tests' }
@@ -289,12 +239,8 @@ MCPToolRemoveMethodsTest >> testRemovesBatchOfClassSideMethods [
 	| result |
 	result := self callToolWith: self classBatchArguments.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self deny:
-		(MCPToolRemoveMethodsTestTarget classSide includesSelector:
-			 self firstClassBatchSelector).
-	self deny:
-		(MCPToolRemoveMethodsTestTarget classSide includesSelector:
-			 self secondClassBatchSelector)
+	self deny: (MCPToolRemoveMethodsTestTarget classSide includesSelector: self firstClassBatchSelector).
+	self deny: (MCPToolRemoveMethodsTestTarget classSide includesSelector: self secondClassBatchSelector)
 ]
 
 { #category : 'tests' }
@@ -303,10 +249,8 @@ MCPToolRemoveMethodsTest >> testRemovesBatchOfInstanceMethods [
 	| result |
 	result := self callToolWith: self instanceBatchArguments.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self deny: (MCPToolRemoveMethodsTestTarget includesSelector:
-			 self firstInstanceBatchSelector).
-	self deny: (MCPToolRemoveMethodsTestTarget includesSelector:
-			 self secondInstanceBatchSelector)
+	self deny: (MCPToolRemoveMethodsTestTarget includesSelector: self firstInstanceBatchSelector).
+	self deny: (MCPToolRemoveMethodsTestTarget includesSelector: self secondInstanceBatchSelector)
 ]
 
 { #category : 'tests' }
@@ -326,22 +270,16 @@ MCPToolRemoveMethodsTest >> testReturnsStructuredErrorWhenAnyMethodIsMissing [
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'MethodNotFound'.
 	self assert: (error at: #selector) equals: self missingSelectorString.
-	self assert: (MCPToolRemoveMethodsTestTarget includesSelector:
-			 self firstInstanceBatchSelector)
+	self assert: (MCPToolRemoveMethodsTestTarget includesSelector: self firstInstanceBatchSelector)
 ]
 
 { #category : 'tests' }
 MCPToolRemoveMethodsTest >> testToolRequiresSelectorsInSchema [
 
 	| classSideProperty |
-	classSideProperty := MCPToolRemoveMethods new inputSchema properties
-		                     detect: [ :each | each name = 'classSide' ].
-	self
-		assert: MCPToolRemoveMethods new inputSchema required asSet
-		equals: #( 'className' 'selectors' ) asSet.
-	self
-		assert: (classSideProperty extraProperties at: #default)
-		equals: false
+	classSideProperty := MCPToolRemoveMethods new inputSchema properties detect: [ :each | each name = 'classSide' ].
+	self assert: MCPToolRemoveMethods new inputSchema required asSet equals: #( 'className' 'selectors' ) asSet.
+	self assert: (classSideProperty extraProperties at: #default) equals: false
 ]
 
 { #category : 'private - calling' }

@@ -35,26 +35,16 @@ MCPToolChangeHistoryToolsTest >> testChangeHistoryToolsAreDiscoverableWithExpect
 MCPToolChangeHistoryToolsTest >> testChangeHistoryToolsDeclareExpectedInputs [
 
 	| applyProperties entryProperties fileProperties revertProperties selectionProperties |
-	fileProperties := self inputPropertyNamesFor:
-		                  MCPToolListChangeHistoryFiles new.
-	entryProperties := self inputPropertyNamesFor:
-		                   MCPToolListChangeHistoryEntries new.
-	applyProperties := self inputPropertyNamesFor:
-		                   MCPToolApplyChangeHistoryEntries new.
-	revertProperties := self inputPropertyNamesFor:
-		                    MCPToolRevertChangeHistoryEntries new.
-	selectionProperties := #( 'directoryPath' 'historyFileName'
-	                          'indexes' 'startIndex' 'endIndex'
-	                          'latestCount' 'codeChangesOnly'
+	fileProperties := self inputPropertyNamesFor: MCPToolListChangeHistoryFiles new.
+	entryProperties := self inputPropertyNamesFor: MCPToolListChangeHistoryEntries new.
+	applyProperties := self inputPropertyNamesFor: MCPToolApplyChangeHistoryEntries new.
+	revertProperties := self inputPropertyNamesFor: MCPToolRevertChangeHistoryEntries new.
+	selectionProperties := #( 'directoryPath' 'historyFileName' 'indexes' 'startIndex' 'endIndex' 'latestCount' 'codeChangesOnly'
 	                          'confirm' ).
-	self
-		assert: fileProperties asArray
-		equals: #( 'directoryPath' 'limit' 'offset' ).
+	self assert: fileProperties asArray equals: #( 'directoryPath' 'limit' 'offset' ).
 	self
 		assert: entryProperties asArray
-		equals:
-			#( 'directoryPath' 'historyFileName' 'limit' 'offset' 'newestFirst'
-			   'codeChangesOnly' ).
+		equals: #( 'directoryPath' 'historyFileName' 'limit' 'offset' 'newestFirst' 'codeChangesOnly' ).
 	self assert: applyProperties asArray equals: selectionProperties.
 	self assert: revertProperties asArray equals: selectionProperties
 ]
@@ -64,19 +54,12 @@ MCPToolChangeHistoryToolsTest >> testEntryListSchemaAdvertisesNonCodeEntryKind [
 
 	| entriesProperty entryKindProperty entrySchema tool |
 	tool := MCPToolListChangeHistoryEntries new.
-	entriesProperty := ((tool outputSchema properties detect: [ :each |
-		                     each name = 'data' ]) extraProperties at:
-		                    #properties) detect: [ :each |
-		                   each name = 'entries' ].
+	entriesProperty := ((tool outputSchema properties detect: [ :each | each name = 'data' ]) extraProperties at: #properties)
+		                   detect: [ :each | each name = 'entries' ].
 	entrySchema := entriesProperty extraProperties at: #items.
-	entryKindProperty := (entrySchema extraProperties at: #properties)
-		                     detect: [ :each | each name = 'entryKind' ].
-	self
-		assert: (entryKindProperty extraProperties at: #enum) asArray
-		equals: #( 'code' 'session' 'other' ).
-	self
-		assert: (entryKindProperty extraProperties at: #default)
-		equals: 'code'
+	entryKindProperty := (entrySchema extraProperties at: #properties) detect: [ :each | each name = 'entryKind' ].
+	self assert: (entryKindProperty extraProperties at: #enum) asArray equals: #( 'code' 'session' 'other' ).
+	self assert: (entryKindProperty extraProperties at: #default) equals: 'code'
 ]
 
 { #category : 'tests' }
@@ -94,38 +77,30 @@ MCPToolChangeHistoryToolsTest >> testListChangeHistoryEntriesReturnsEntries [
 MCPToolChangeHistoryToolsTest >> testListChangeHistoryFilesPaginatesFiles [
 
 	| data directory files nextOffset |
-	directory := FileLocator temp asFileReference
-	             / ('mcp-history-files-' , UUID new asString).
+	directory := FileLocator temp asFileReference / ('mcp-history-files-' , UUID new asString).
 	[
 		directory ensureCreateDirectory.
-		directory / 'a.ombu' writeStreamDo: [ :stream |
-			stream nextPutAll: 'a' ].
-		directory / 'b.ombu' writeStreamDo: [ :stream |
-			stream nextPutAll: 'b' ].
+		directory / 'a.ombu' writeStreamDo: [ :stream | stream nextPutAll: 'a' ].
+		directory / 'b.ombu' writeStreamDo: [ :stream | stream nextPutAll: 'b' ].
 		data := self toolNamed: 'history_file_list' dataFromArguments: {
 				        (#directoryPath -> directory fullName).
 				        (#limit -> 1) } asDictionary.
 		files := data at: #files.
 		nextOffset := data at: #nextOffset.
 		self assert: files size equals: 1.
-		self assert: nextOffset equals: 1 ] ensure: [
-		directory ensureDeleteAll ]
+		self assert: nextOffset equals: 1 ] ensure: [ directory ensureDeleteAll ]
 ]
 
 { #category : 'tests' }
 MCPToolChangeHistoryToolsTest >> testListChangeHistoryFilesReturnsFiles [
 
 	| allowedFileKeys data files |
-	data := self
-		        toolNamed: 'history_file_list'
-		        dataFromArguments: Dictionary new.
+	data := self toolNamed: 'history_file_list' dataFromArguments: Dictionary new.
 	files := data at: #files.
-	allowedFileKeys := #( fileName exists fileSize modificationTime
-	                      isCurrent ) asSet.
+	allowedFileKeys := #( fileName exists fileSize modificationTime isCurrent ) asSet.
 	self assert: files notEmpty.
 	self assert: (files allSatisfy: [ :each |
-				 (each includesKey: #fileName) and: [
-					 each keys allSatisfy: [ :key | allowedFileKeys includes: key ] ] ])
+			 (each includesKey: #fileName) and: [ each keys allSatisfy: [ :key | allowedFileKeys includes: key ] ] ])
 ]
 
 { #category : 'tests' }
@@ -161,17 +136,13 @@ MCPToolChangeHistoryToolsTest >> testSelectionToolsRouteToChangeHistorySelection
 
 	{
 		(MCPToolApplyChangeHistoryEntries -> 'applyEntries').
-		(MCPToolRevertChangeHistoryEntries -> 'revertEntries') } do: [
-			:association |
+		(MCPToolRevertChangeHistoryEntries -> 'revertEntries') } do: [ :association |
 			| command parsedRequest rawRequest tool |
 			tool := association key new.
-			rawRequest := tool requestFromToolCallArguments:
-				              { (#latestCount -> 1) } asDictionary.
+			rawRequest := tool requestFromToolCallArguments: { (#latestCount -> 1) } asDictionary.
 			parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
 			command := tool commandForRequest: parsedRequest.
-			self
-				assert: parsedRequest class
-				equals: MCPChangeHistorySelectionRequest.
+			self assert: parsedRequest class equals: MCPChangeHistorySelectionRequest.
 			self assert: parsedRequest operation equals: association value.
 			self assert: command class equals: MCPChangeHistorySelectionCommand ]
 ]
@@ -179,6 +150,5 @@ MCPToolChangeHistoryToolsTest >> testSelectionToolsRouteToChangeHistorySelection
 { #category : 'private' }
 MCPToolChangeHistoryToolsTest >> toolNamed: aToolName dataFromArguments: arguments [
 
-	^ self dataFrom:
-		  (self callToolNamed: aToolName withArguments: arguments)
+	^ self dataFrom: (self callToolNamed: aToolName withArguments: arguments)
 ]

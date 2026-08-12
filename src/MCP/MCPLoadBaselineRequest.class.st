@@ -17,19 +17,13 @@ Class {
 { #category : 'instance creation' }
 MCPLoadBaselineRequest class >> baseline: baselineName groups: groupNames loadPolicy: aLoadPolicy [
 
-	^ self new
-		  initializeBaseline: baselineName
-		  groups: groupNames
-		  loadPolicy: aLoadPolicy
+	^ self new initializeBaseline: baselineName groups: groupNames loadPolicy: aLoadPolicy
 ]
 
 { #category : 'instance creation' }
 MCPLoadBaselineRequest class >> fromLoadRepositoryRequest: aRequest [
 
-	^ self
-		  baseline: aRequest baseline
-		  groups: aRequest groups
-		  loadPolicy: aRequest loadPolicy
+	^ self baseline: aRequest baseline groups: aRequest groups loadPolicy: aRequest loadPolicy
 ]
 
 { #category : 'instance creation' }
@@ -37,10 +31,7 @@ MCPLoadBaselineRequest class >> fromRequest: request tool: aTool [
 
 	^ self
 		  baseline: (request stringArgumentNamed: 'baseline')
-		  groups:
-		  (request
-			   uniqueStringCollectionArgumentNamed: 'groups'
-			   default: #(  ))
+		  groups: (request uniqueStringCollectionArgumentNamed: 'groups' default: #(  ))
 		  loadPolicy: (MCPLoadPolicySpec fromRequest: request tool: aTool)
 ]
 
@@ -88,8 +79,7 @@ MCPLoadBaselineRequest >> requestedContext [
 
 	| context policy |
 	context := { (#baseline -> self baseline) } asDictionary.
-	self groups ifNotEmpty: [ :loadGroups |
-		context at: #groups put: loadGroups ].
+	self groups ifNotEmpty: [ :loadGroups | context at: #groups put: loadGroups ].
 	policy := self loadPolicy asDictionary.
 	policy ifNotEmpty: [ context at: #policy put: policy ].
 	^ context

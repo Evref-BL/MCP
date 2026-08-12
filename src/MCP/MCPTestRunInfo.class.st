@@ -38,16 +38,14 @@ MCPTestRunInfo >> asDictionary [
 	| data |
 	data := Dictionary new.
 	data at: #className put: self className.
-	self testMethodName ifNotNil: [ :methodName |
-		data at: #testMethodName put: methodName ].
+	self testMethodName ifNotNil: [ :methodName | data at: #testMethodName put: methodName ].
 	data at: #selectedTestCount put: self selectedTestCount.
 	data at: #runCount put: self runCount.
 	data at: #passedCount put: self passedCount.
 	data at: #skippedCount put: self skippedCount.
 	data at: #failureCount put: self failureCount.
 	data at: #errorCount put: self errorCount.
-	self issues ifNotEmpty: [ :issueDetails |
-		data at: #issues put: issueDetails ].
+	self issues ifNotEmpty: [ :issueDetails | data at: #issues put: issueDetails ].
 	^ data
 ]
 

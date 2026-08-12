@@ -28,8 +28,6 @@ MCPNilOnlyConditionalRule >> initialize [
 
 	super initialize.
 	self
-		replace: '`@receiver ifNil: [ nil ] ifNotNil: `@block'
-		with: '`@receiver ifNotNil: `@block';
-		replace: '`@receiver ifNotNil: `@block ifNil: [ nil ]'
-		with: '`@receiver ifNotNil: `@block'
+		replace: '`@receiver ifNil: [ nil ] ifNotNil: `@block' with: '`@receiver ifNotNil: `@block';
+		replace: '`@receiver ifNotNil: `@block ifNil: [ nil ]' with: '`@receiver ifNotNil: `@block'
 ]

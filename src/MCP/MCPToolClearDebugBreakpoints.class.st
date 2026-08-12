@@ -20,7 +20,6 @@ MCPToolClearDebugBreakpoints >> breakpointToolSpec [
 
 	^ {
 		  (#title -> 'Clear Debug Breakpoints').
-		  (#description
-		   -> 'Remove all tracked transient Pharo DebugPoint breakpoints.').
+		  (#description -> 'Remove all tracked transient Pharo DebugPoint breakpoints.').
 		  (#action -> 'clear') } asDictionary
 ]

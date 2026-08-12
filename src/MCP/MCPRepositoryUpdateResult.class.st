@@ -41,12 +41,9 @@ MCPRepositoryUpdateResult >> asDictionary [
 
 	| data |
 	data := Dictionary new.
-	self updateActions ifNotEmpty: [ :actions |
-		data at: #updateActions put: actions ].
-	self addedPackageNames ifNotEmpty: [ :names |
-		data at: #addedPackageNames put: names ].
-	self removedPackageNames ifNotEmpty: [ :names |
-		data at: #removedPackageNames put: names ].
+	self updateActions ifNotEmpty: [ :actions | data at: #updateActions put: actions ].
+	self addedPackageNames ifNotEmpty: [ :names | data at: #addedPackageNames put: names ].
+	self removedPackageNames ifNotEmpty: [ :names | data at: #removedPackageNames put: names ].
 	^ data
 ]
 

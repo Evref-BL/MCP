@@ -36,13 +36,17 @@ MCPServerLifecycleTest >> testMultipleServersCanListenOnDifferentPorts [
 	first := self mcpWithoutObservabilityExport.
 	second := self mcpWithoutObservabilityExport.
 	[
-		first port: 0; start.
-		second port: 0; start.
+		first
+			port: 0;
+			start.
+		second
+			port: 0;
+			start.
 		self assert: first isListening.
 		self assert: second isListening.
 		self deny: first port equals: second port ] ensure: [
-		second stop.
-		first stop ]
+			second stop.
+			first stop ]
 ]
 
 { #category : 'tests' }
@@ -57,8 +61,8 @@ MCPServerLifecycleTest >> testSocketSafeServerHandlesBindFailure [
 				 on: SocketError
 				 do: [ false ]).
 		self deny: server isListening ] ensure: [
-		server stop: false.
-		occupiedSocket destroy ]
+			server stop: false.
+			occupiedSocket destroy ]
 ]
 
 { #category : 'tests' }
@@ -75,11 +79,9 @@ MCPServerLifecycleTest >> testSocketSafeServerRestartsAfterBindFailure [
 		self deny: server isListening.
 		occupiedSocket destroy.
 		occupiedSocket := nil.
-		self assert: (self
-				 waitUntil: [ server isListening ]
-				 forMilliseconds: 3000) ] ensure: [
-		server stop: false.
-		occupiedSocket ifNotNil: [ occupiedSocket destroy ] ]
+		self assert: (self waitUntil: [ server isListening ] forMilliseconds: 3000) ] ensure: [
+			server stop: false.
+			occupiedSocket ifNotNil: [ occupiedSocket destroy ] ]
 ]
 
 { #category : 'tests' }
@@ -90,8 +92,8 @@ MCPServerLifecycleTest >> testSocketSafeServerRunsDeferredActionsAfterCurrentRes
 	server := MCPSocketSafeZnServer new.
 	actions := OrderedCollection new.
 	MCPPostResponseActions value: actions during: [
-		server deferAfterCurrentResponse: [ ran := true ].
-		self deny: ran ].
+			server deferAfterCurrentResponse: [ ran := true ].
+			self deny: ran ].
 	server runPostResponseActions: actions.
 	self assert: ran.
 	ran := false.
@@ -105,8 +107,7 @@ MCPServerLifecycleTest >> testSocketSafeServerRunsPostResponseActionsImmediately
 	| ran server |
 	ran := false.
 	server := MCPSocketSafeZnServer new.
-	MCPPostResponseActions value: nil during: [
-		server deferAfterCurrentResponse: [ ran := true ] ].
+	MCPPostResponseActions value: nil during: [ server deferAfterCurrentResponse: [ ran := true ] ].
 	self assert: ran
 ]
 
@@ -144,12 +145,10 @@ MCPServerLifecycleTest >> testStartRegistersServerForImageStartup [
 		server port: 0.
 		server start.
 		port := server port.
-		self assert: (ZnServer managedServers anySatisfy: [ :each |
-			each class = MCPSocketSafeZnServer and: [ each port = port ] ]).
+		self assert: (ZnServer managedServers anySatisfy: [ :each | each class = MCPSocketSafeZnServer and: [ each port = port ] ]).
 		server stop.
-		self deny: (ZnServer managedServers anySatisfy: [ :each |
-			each class = MCPSocketSafeZnServer and: [ each port = port ] ]) ] ensure: [
-		server stop ]
+		self deny: (ZnServer managedServers anySatisfy: [ :each | each class = MCPSocketSafeZnServer and: [ each port = port ] ]) ]
+		ensure: [ server stop ]
 ]
 
 { #category : 'tests' }
@@ -159,13 +158,17 @@ MCPServerLifecycleTest >> testStoppingOneServerKeepsOtherListening [
 	first := self mcpWithoutObservabilityExport.
 	second := self mcpWithoutObservabilityExport.
 	[
-		first port: 0; start.
-		second port: 0; start.
+		first
+			port: 0;
+			start.
+		second
+			port: 0;
+			start.
 		first stop.
 		self deny: first isListening.
 		self assert: second isListening ] ensure: [
-		second stop.
-		first stop ]
+			second stop.
+			first stop ]
 ]
 
 { #category : 'tests' }
@@ -217,7 +220,7 @@ MCPServerLifecycleTest >> waitUntil: conditionBlock forMilliseconds: millisecond
 	delay := Delay forMilliseconds: 50.
 	attempts := milliseconds // 50 max: 1.
 	attempts timesRepeat: [
-		conditionBlock value ifTrue: [ ^ true ].
-		delay wait ].
+			conditionBlock value ifTrue: [ ^ true ].
+			delay wait ].
 	^ conditionBlock value
 ]

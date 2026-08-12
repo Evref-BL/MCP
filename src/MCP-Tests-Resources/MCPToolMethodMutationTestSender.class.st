@@ -9,9 +9,13 @@ Class {
 }
 
 { #category : 'tests' }
-MCPToolMethodMutationTestSender >> callClassTarget [ ^ MCPToolMethodMutationTestTarget buildValue: 'value'
+MCPToolMethodMutationTestSender >> callClassTarget [
+
+	^ MCPToolMethodMutationTestTarget buildValue: 'value'
 ]
 
 { #category : 'tests' }
-MCPToolMethodMutationTestSender >> callInstanceTarget [ ^ MCPToolMethodMutationTestTarget new combine: 'first' with: 'second'
+MCPToolMethodMutationTestSender >> callInstanceTarget [
+
+	^ MCPToolMethodMutationTestTarget new combine: 'first' with: 'second'
 ]

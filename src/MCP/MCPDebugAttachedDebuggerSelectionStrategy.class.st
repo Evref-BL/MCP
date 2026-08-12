@@ -30,21 +30,16 @@ MCPDebugAttachedDebuggerSelectionStrategy class >> activate: aContinuation durin
 				  ifTrue: [
 						  | restore |
 						  restore := PreviousStrategy ifNil: [ previous ].
-						  restore = self ifTrue: [
-								  restore := OupsDebuggerSelectionStrategy
-									             defaultDebuggerSelectionStrategy ].
-						  OupsDebuggerSelectionStrategy debuggerSelectionStrategy:
-							  restore.
+						  restore = self ifTrue: [ restore := OupsDebuggerSelectionStrategy defaultDebuggerSelectionStrategy ].
+						  OupsDebuggerSelectionStrategy debuggerSelectionStrategy: restore.
 						  PreviousStrategy := nil ]
-				  ifFalse: [
-				  OupsDebuggerSelectionStrategy debuggerSelectionStrategy: self ] ]
+				  ifFalse: [ OupsDebuggerSelectionStrategy debuggerSelectionStrategy: self ] ]
 ]
 
 { #category : 'accessing' }
 MCPDebugAttachedDebuggerSelectionStrategy class >> activeContinuations [
 
-	ActiveContinuations ifNil: [
-		ActiveContinuations := IdentityDictionary new ].
+	ActiveContinuations ifNil: [ ActiveContinuations := IdentityDictionary new ].
 	^ ActiveContinuations
 ]
 
@@ -62,8 +57,7 @@ MCPDebugAttachedDebuggerSelectionStrategy class >> continuationForProcess: aProc
 { #category : 'accessing' }
 MCPDebugAttachedDebuggerSelectionStrategy class >> previousStrategy [
 
-	^ PreviousStrategy ifNil: [
-		  OupsDebuggerSelectionStrategy defaultDebuggerSelectionStrategy ]
+	^ PreviousStrategy ifNil: [ OupsDebuggerSelectionStrategy defaultDebuggerSelectionStrategy ]
 ]
 
 { #category : 'accessing' }
@@ -76,16 +70,11 @@ MCPDebugAttachedDebuggerSelectionStrategy class >> previousStrategy: aStrategyCl
 MCPDebugAttachedDebuggerSelectionStrategy class >> reset [
 
 	| fallback |
-	fallback := PreviousStrategy ifNil: [
-		            OupsDebuggerSelectionStrategy
-			            defaultDebuggerSelectionStrategy ].
-	fallback = self ifTrue: [
-			fallback := OupsDebuggerSelectionStrategy
-				            defaultDebuggerSelectionStrategy ].
+	fallback := PreviousStrategy ifNil: [ OupsDebuggerSelectionStrategy defaultDebuggerSelectionStrategy ].
+	fallback = self ifTrue: [ fallback := OupsDebuggerSelectionStrategy defaultDebuggerSelectionStrategy ].
 	ActiveContinuations := IdentityDictionary new.
 	PreviousStrategy := nil.
-	OupsDebuggerSelectionStrategy debuggerSelectionStrategy = self
-		ifTrue: [
+	OupsDebuggerSelectionStrategy debuggerSelectionStrategy = self ifTrue: [
 		OupsDebuggerSelectionStrategy debuggerSelectionStrategy: fallback ].
 	^ self
 ]
@@ -101,8 +90,7 @@ MCPDebugAttachedDebuggerSelectionStrategy >> openDebuggerForSession: aDebugSessi
 
 	^ self class
 		  continuationForProcess: aDebugSession interruptedProcess
-		  ifPresent: [ :continuation |
-		  continuation captureDebugSession: aDebugSession ]
+		  ifPresent: [ :continuation | continuation captureDebugSession: aDebugSession ]
 		  ifAbsent: [ self openFallbackDebuggerForSession: aDebugSession ]
 ]
 
@@ -111,9 +99,6 @@ MCPDebugAttachedDebuggerSelectionStrategy >> openFallbackDebuggerForSession: aDe
 
 	| fallbackClass |
 	fallbackClass := self class previousStrategy.
-	fallbackClass = self class ifTrue: [
-			fallbackClass := OupsDebuggerSelectionStrategy
-				                 defaultDebuggerSelectionStrategy ].
-	^ (fallbackClass with: self debuggers) openDebuggerForSession:
-		  aDebugSession
+	fallbackClass = self class ifTrue: [ fallbackClass := OupsDebuggerSelectionStrategy defaultDebuggerSelectionStrategy ].
+	^ (fallbackClass with: self debuggers) openDebuggerForSession: aDebugSession
 ]

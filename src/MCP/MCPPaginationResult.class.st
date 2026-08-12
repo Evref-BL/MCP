@@ -26,17 +26,11 @@ MCPPaginationResult class >> entries: entryCollection nextOffset: anIntegerOrNil
 MCPPaginationResult class >> fromEntries: entryCollection limit: limit offset: offset [
 
 	| endIndex pageEntries startIndex |
-	(limit = 0 or: [ offset >= entryCollection size ]) ifTrue: [
-		^ self entries: #(  ) nextOffset: nil ].
+	(limit = 0 or: [ offset >= entryCollection size ]) ifTrue: [ ^ self entries: #(  ) nextOffset: nil ].
 	startIndex := offset + 1.
 	endIndex := entryCollection size min: offset + limit.
-	pageEntries := (entryCollection copyFrom: startIndex to: endIndex)
-		               asArray.
-	^ self
-		  entries: pageEntries
-		  nextOffset:
-			  (offset + pageEntries size < entryCollection size ifTrue: [
-				   offset + pageEntries size ])
+	pageEntries := (entryCollection copyFrom: startIndex to: endIndex) asArray.
+	^ self entries: pageEntries nextOffset: (offset + pageEntries size < entryCollection size ifTrue: [ offset + pageEntries size ])
 ]
 
 { #category : 'converting' }
@@ -51,8 +45,7 @@ MCPPaginationResult >> asDictionaryWithEntriesKey: entriesKey [
 	| data |
 	data := Dictionary new.
 	data at: entriesKey put: self entries.
-	self nextOffset ifNotNil: [ :offset |
-		data at: #nextOffset put: offset ].
+	self nextOffset ifNotNil: [ :offset | data at: #nextOffset put: offset ].
 	^ data
 ]
 

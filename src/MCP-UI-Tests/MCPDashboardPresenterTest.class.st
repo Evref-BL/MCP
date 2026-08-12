@@ -44,22 +44,13 @@ MCPDashboardPresenterTest >> testCheckboxRowsIncludeLeftPadding [
 
 	| configurationLayout observabilityLayout |
 	configurationLayout := MCPDashboardPresenter new configurationLayout.
-	observabilityLayout := MCPDashboardPresenter new
-		                       monitoringControlsLayout.
+	observabilityLayout := MCPDashboardPresenter new monitoringControlsLayout.
 
 	self assert: configurationLayout children size equals: 5.
-	self
-		assert: configurationLayout children third class
-		equals: SpNullPresenter.
-	self
-		assert: configurationLayout children fourth label
-		equals: 'Debug mode'.
-	self
-		assert: observabilityLayout children first class
-		equals: SpNullPresenter.
-	self
-		assert: observabilityLayout children fourth class
-		equals: SpNullPresenter
+	self assert: configurationLayout children third class equals: SpNullPresenter.
+	self assert: configurationLayout children fourth label equals: 'Debug mode'.
+	self assert: observabilityLayout children first class equals: SpNullPresenter.
+	self assert: observabilityLayout children fourth class equals: SpNullPresenter
 ]
 
 { #category : 'tests' }
@@ -89,9 +80,7 @@ MCPDashboardPresenterTest >> testCollapsedMetricsSectionKeepsHeaderVisible [
 
 	self deny: presenter isMetricsSectionExpanded.
 	self assert: collapsedLayout children size equals: 1.
-	self
-		assert: collapsedLayout children first class
-		equals: SpButtonPresenter
+	self assert: collapsedLayout children first class equals: SpButtonPresenter
 ]
 
 { #category : 'tests' }
@@ -215,12 +204,9 @@ MCPDashboardPresenterTest >> testDebugModeCheckboxExplainsBehavior [
 	debugCheckBox := presenter instVarNamed: #debugCheckBox.
 
 	self assert: debugCheckBox label equals: 'Debug mode'.
-	self assert: (debugCheckBox help includesSubstring:
-			 'server and JSON-RPC errors pass through').
-	self assert:
-		(debugCheckBox help includesSubstring: 'debugger can open').
-	self assert:
-		(debugCheckBox help includesSubstring: 'normal error responses')
+	self assert: (debugCheckBox help includesSubstring: 'server and JSON-RPC errors pass through').
+	self assert: (debugCheckBox help includesSubstring: 'debugger can open').
+	self assert: (debugCheckBox help includesSubstring: 'normal error responses')
 ]
 
 { #category : 'tests' }
@@ -229,14 +215,8 @@ MCPDashboardPresenterTest >> testDisclosureLabelsIncludeStateTitleAndCount [
 	| presenter |
 	presenter := MCPDashboardPresenter new.
 
-	self
-		assert:
-		(presenter disclosureLabelFor: 'Logs' count: 3 expanded: true)
-		equals: '[-] Logs (3)'.
-	self
-		assert:
-		(presenter disclosureLabelFor: 'Logs' count: 3 expanded: false)
-		equals: '[+] Logs (3)'
+	self assert: (presenter disclosureLabelFor: 'Logs' count: 3 expanded: true) equals: '[-] Logs (3)'.
+	self assert: (presenter disclosureLabelFor: 'Logs' count: 3 expanded: false) equals: '[+] Logs (3)'
 ]
 
 { #category : 'tests' }
@@ -272,18 +252,10 @@ MCPDashboardPresenterTest >> testHeaderLayoutUsesStatusAndEndpointRows [
 	self assert: statusRow class equals: SpBoxLayout.
 	self assert: statusRow isHorizontal.
 	self assert: statusRow children size equals: 3.
-	self
-		assert: statusRow children first
-		identicalTo: (presenter instVarNamed: #statusLabel).
-	self
-		assert: statusRow children second
-		identicalTo: (presenter instVarNamed: #statusIcon).
-	self
-		assert: statusRow children third
-		identicalTo: (presenter instVarNamed: #statusValueLabel).
-	self
-		assert: headerLayout children second
-		identicalTo: (presenter instVarNamed: #urlLabel)
+	self assert: statusRow children first identicalTo: (presenter instVarNamed: #statusLabel).
+	self assert: statusRow children second identicalTo: (presenter instVarNamed: #statusIcon).
+	self assert: statusRow children third identicalTo: (presenter instVarNamed: #statusValueLabel).
+	self assert: headerLayout children second identicalTo: (presenter instVarNamed: #urlLabel)
 ]
 
 { #category : 'tests' }
@@ -310,10 +282,7 @@ MCPDashboardPresenterTest >> testInitialSectionsOpenForStoredMonitoringData [
 	mcp := MCP new.
 	mcp monitoringEnabled: true.
 	record := mcp monitoring recordToolCallStart: 'failing-tool'.
-	mcp monitoring
-		recordToolCallFinish: record
-		result: (MCPStructureErrorToolResult content: #(  ))
-		error: Error new.
+	mcp monitoring recordToolCallFinish: record result: (MCPStructureErrorToolResult content: #(  )) error: Error new.
 	mcp monitoringEnabled: false.
 	presenter := MCPDashboardPresenter on: mcp.
 	presenter refreshView.
@@ -341,10 +310,7 @@ MCPDashboardPresenterTest >> testLogsForDisplayAreTailFirst [
 
 	| presenter |
 	presenter := MCPDashboardPresenter new.
-	self
-		assert:
-		(presenter logsForDisplayFrom: #( 'oldest' 'middle' 'newest' ))
-		equals: #( 'newest' 'middle' 'oldest' )
+	self assert: (presenter logsForDisplayFrom: #( 'oldest' 'middle' 'newest' )) equals: #( 'newest' 'middle' 'oldest' )
 ]
 
 { #category : 'tests' }
@@ -383,9 +349,7 @@ MCPDashboardPresenterTest >> testObservabilityControlsStartWithEnableRefreshAuto
 	layout := MCPDashboardPresenter new monitoringControlsLayout.
 
 	self assert: layout children size equals: 6.
-	self
-		assert: layout children second label
-		equals: 'Enable observability'.
+	self assert: layout children second label equals: 'Enable observability'.
 	self assert: layout children third label equals: 'Refresh'.
 	self assert: layout children fifth label equals: 'Auto-refresh'.
 	self assert: layout children sixth label equals: 'Clear'
@@ -416,9 +380,7 @@ MCPDashboardPresenterTest >> testRefreshViewUpdatesStatusIcon [
 	statusLabel := presenter instVarNamed: #statusLabel.
 	statusValueLabel := presenter instVarNamed: #statusValueLabel.
 
-	self
-		assert: statusIcon image
-		equals: (presenter iconNamed: #testNotRun).
+	self assert: statusIcon image equals: (presenter iconNamed: #testNotRun).
 	self assert: statusIcon help equals: 'Status: stopped'.
 	self assert: statusLabel label equals: 'Status:'.
 	self assert: statusValueLabel label equals: 'stopped'
@@ -436,10 +398,7 @@ MCPDashboardPresenterTest >> testRefreshViewUsesShortSectionLabels [
 	tracesHeader := presenter instVarNamed: #tracesHeaderButton.
 	logsHeader := presenter instVarNamed: #logsHeaderButton.
 
-	self
-		assert: toolsHeader label
-		equals:
-		('[-] Tools ({1})' format: { mcp sortedTools size asString }).
+	self assert: toolsHeader label equals: ('[-] Tools ({1})' format: { mcp sortedTools size asString }).
 	self assert: metricsHeader label equals: '[-] Metrics (0)'.
 	self assert: tracesHeader label equals: '[-] Traces (0)'.
 	self assert: logsHeader label equals: '[-] Logs (0)'
@@ -465,22 +424,10 @@ MCPDashboardPresenterTest >> testServerStatusIconUsesTestIcons [
 	| presenter |
 	presenter := MCPDashboardPresenter new.
 
-	self
-		assert:
-		(presenter serverStatusIconNameForRunning: false listening: false)
-		equals: #testNotRun.
-	self
-		assert:
-		(presenter serverStatusIconNameForRunning: true listening: true)
-		equals: #testGreen.
-	self
-		assert:
-		(presenter serverStatusIconNameForRunning: true listening: false)
-		equals: #testRed.
-	self
-		assert:
-		(presenter serverStatusIconNameForRunning: false listening: true)
-		equals: #testRed
+	self assert: (presenter serverStatusIconNameForRunning: false listening: false) equals: #testNotRun.
+	self assert: (presenter serverStatusIconNameForRunning: true listening: true) equals: #testGreen.
+	self assert: (presenter serverStatusIconNameForRunning: true listening: false) equals: #testRed.
+	self assert: (presenter serverStatusIconNameForRunning: false listening: true) equals: #testRed
 ]
 
 { #category : 'tests' }
@@ -489,22 +436,10 @@ MCPDashboardPresenterTest >> testServerStatusLabelShowsListenerOnlyWhenAnomalous
 	| presenter |
 	presenter := MCPDashboardPresenter new.
 
-	self
-		assert:
-		(presenter serverStatusLabelForRunning: false listening: false)
-		equals: 'Status: stopped'.
-	self
-		assert:
-		(presenter serverStatusLabelForRunning: true listening: true)
-		equals: 'Status: running'.
-	self
-		assert:
-		(presenter serverStatusLabelForRunning: true listening: false)
-		equals: 'Status: running, socket not listening'.
-	self
-		assert:
-		(presenter serverStatusLabelForRunning: false listening: true)
-		equals: 'Status: stopped, socket still listening'
+	self assert: (presenter serverStatusLabelForRunning: false listening: false) equals: 'Status: stopped'.
+	self assert: (presenter serverStatusLabelForRunning: true listening: true) equals: 'Status: running'.
+	self assert: (presenter serverStatusLabelForRunning: true listening: false) equals: 'Status: running, socket not listening'.
+	self assert: (presenter serverStatusLabelForRunning: false listening: true) equals: 'Status: stopped, socket still listening'
 ]
 
 { #category : 'tests' }

@@ -19,17 +19,11 @@ MCPCreateRepositoryBranchCommand >> execute [
 				  repository := self request repository.
 				  beforeInfo := MCPRepositoryInfo fromRepository: repository.
 				  repository createBranch: self request branchName.
-				  result := MCPRepositoryBranchResult
-					            repositoryBefore: beforeInfo
-					            after: repository ]
+				  result := MCPRepositoryBranchResult repositoryBefore: beforeInfo after: repository ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText:
-						  'Created branch ' , self request branchName
-						  , ' in repository ' , result repositoryInfo name , '.'
+					  successResultText: 'Created branch ' , self request branchName , ' in repository ' , result repositoryInfo name , '.'
 					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
-		  failureSummary: [ :error |
-				  'Failed to create repository branch: '
-				  , (error messageText ifNil: [ error asString ]) ]
+		  failureSummary: [ :error | 'Failed to create repository branch: ' , (error messageText ifNil: [ error asString ]) ]
 ]

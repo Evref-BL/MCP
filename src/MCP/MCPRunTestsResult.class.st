@@ -20,10 +20,7 @@ Class {
 { #category : 'instance creation' }
 MCPRunTestsResult class >> results: resultCollection timedOut: aBoolean unrunTests: testCollection [
 
-	^ self new
-		  initializeResults: resultCollection
-		  timedOut: aBoolean
-		  unrunTests: testCollection
+	^ self new initializeResults: resultCollection timedOut: aBoolean unrunTests: testCollection
 ]
 
 { #category : 'converting' }
@@ -39,19 +36,15 @@ MCPRunTestsResult >> asDictionary [
 	failures ifNotEmpty: [ data at: #failures put: failures ].
 	errors := self errorDictionaries.
 	errors ifNotEmpty: [ data at: #errors put: errors ].
-	self coverage ifNotNil: [ :coverageResult |
-		data at: #coverage put: coverageResult asDictionary ].
+	self coverage ifNotNil: [ :coverageResult | data at: #coverage put: coverageResult asDictionary ].
 	self timedOut ifTrue: [
 			data at: #timedOut put: true.
 			unrunPackages := self unrunPackageNames.
-			unrunPackages ifNotEmpty: [
-				data at: #unrunPackages put: unrunPackages ].
+			unrunPackages ifNotEmpty: [ data at: #unrunPackages put: unrunPackages ].
 			unrunClasses := self unrunClassNames.
-			unrunClasses ifNotEmpty: [
-				data at: #unrunClasses put: unrunClasses ].
+			unrunClasses ifNotEmpty: [ data at: #unrunClasses put: unrunClasses ].
 			unrunMethods := self unrunMethodReferences.
-			unrunMethods ifNotEmpty: [
-				data at: #unrunMethods put: unrunMethods ] ].
+			unrunMethods ifNotEmpty: [ data at: #unrunMethods put: unrunMethods ] ].
 	^ data
 ]
 
@@ -61,14 +54,10 @@ MCPRunTestsResult >> compactIssueFor: issue [
 	| data |
 	data := Dictionary new.
 	data at: #test put: (self testReferenceForIssue: issue).
-	issue at: #message ifPresent: [ :message |
-		message isEmpty ifFalse: [ data at: #message put: message ] ].
+	issue at: #message ifPresent: [ :message | message isEmpty ifFalse: [ data at: #message put: message ] ].
 	(issue at: #kind ifAbsent: [ nil ]) = 'error' ifTrue: [
-			issue
-				at: #errorClass
-				ifPresent: [ :className | data at: #errorClass put: className ] ].
-	issue at: #parameters ifPresent: [ :parameters |
-		parameters ifNotEmpty: [ data at: #parameters put: parameters ] ].
+		issue at: #errorClass ifPresent: [ :className | data at: #errorClass put: className ] ].
+	issue at: #parameters ifPresent: [ :parameters | parameters ifNotEmpty: [ data at: #parameters put: parameters ] ].
 	^ data
 ]
 
@@ -87,17 +76,14 @@ MCPRunTestsResult >> coverage: aCoverageResult [
 { #category : 'converting' }
 MCPRunTestsResult >> errorDictionaries [
 
-	^ Array streamContents: [ :stream |
-			  (self issuesOfKind: 'error') do: [ :issue |
-				  stream nextPut: (self compactIssueFor: issue) ] ]
+	^ Array streamContents: [ :stream | (self issuesOfKind: 'error') do: [ :issue | stream nextPut: (self compactIssueFor: issue) ] ]
 ]
 
 { #category : 'converting' }
 MCPRunTestsResult >> failureDictionaries [
 
 	^ Array streamContents: [ :stream |
-			  (self issuesOfKind: 'failure') do: [ :issue |
-				  stream nextPut: (self compactIssueFor: issue) ] ]
+		  (self issuesOfKind: 'failure') do: [ :issue | stream nextPut: (self compactIssueFor: issue) ] ]
 ]
 
 { #category : 'initialization' }
@@ -114,17 +100,13 @@ MCPRunTestsResult >> issuesOfKind: issueKind [
 
 	^ Array streamContents: [ :stream |
 			  self results do: [ :resultInfo |
-					  resultInfo issues do: [ :issue |
-							  (issue at: #kind ifAbsent: [ nil ]) = issueKind ifTrue: [
-								  stream nextPut: issue ] ] ] ]
+				  resultInfo issues do: [ :issue | (issue at: #kind ifAbsent: [ nil ]) = issueKind ifTrue: [ stream nextPut: issue ] ] ] ]
 ]
 
 { #category : 'converting' }
 MCPRunTestsResult >> passedCount [
 
-	^ self results
-		  inject: 0
-		  into: [ :sum :each | sum + each passedCount ]
+	^ self results inject: 0 into: [ :sum :each | sum + each passedCount ]
 ]
 
 { #category : 'converting' }
@@ -148,16 +130,13 @@ MCPRunTestsResult >> runCount [
 { #category : 'converting' }
 MCPRunTestsResult >> skippedTestReferences [
 
-	^ self uniqueStringsFrom:
-		  ((self issuesOfKind: 'skipped') collect: [ :issue |
-			   self testReferenceForIssue: issue ])
+	^ self uniqueStringsFrom: ((self issuesOfKind: 'skipped') collect: [ :issue | self testReferenceForIssue: issue ])
 ]
 
 { #category : 'converting' }
 MCPRunTestsResult >> testReferenceForIssue: issue [
 
-	^ (issue at: #className) asString , '>>#'
-	  , (issue at: #testMethodName) asString
+	^ (issue at: #className) asString , '>>#' , (issue at: #testMethodName) asString
 ]
 
 { #category : 'accessing' }
@@ -183,27 +162,21 @@ MCPRunTestsResult >> unrunClassNames [
 
 	^ self uniqueStringsFrom: (Array streamContents: [ :stream |
 				   self unrunTests do: [ :request |
-						   (request isPackageRequest not and: [
-							    request hasTestMethod not ]) ifTrue: [
-							   stream nextPut: request className ] ] ])
+					   (request isPackageRequest not and: [ request hasTestMethod not ]) ifTrue: [ stream nextPut: request className ] ] ])
 ]
 
 { #category : 'converting' }
 MCPRunTestsResult >> unrunMethodReferences [
 
 	^ self uniqueStringsFrom: (Array streamContents: [ :stream |
-				   self unrunTests do: [ :request |
-					   request hasTestMethod ifTrue: [
-						   stream nextPut: request displayName ] ] ])
+			   self unrunTests do: [ :request | request hasTestMethod ifTrue: [ stream nextPut: request displayName ] ] ])
 ]
 
 { #category : 'converting' }
 MCPRunTestsResult >> unrunPackageNames [
 
 	^ self uniqueStringsFrom: (Array streamContents: [ :stream |
-				   self unrunTests do: [ :request |
-						   request isPackageRequest ifTrue: [
-							   stream nextPut: request packageName ] ] ])
+			   self unrunTests do: [ :request | request isPackageRequest ifTrue: [ stream nextPut: request packageName ] ] ])
 ]
 
 { #category : 'converting' }

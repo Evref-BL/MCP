@@ -72,17 +72,12 @@ MCPCompiledMethodInfo >> initializeFromMethod: aCompiledMethod [
 	className := aCompiledMethod methodClass instanceSide name asString.
 	classSide := aCompiledMethod methodClass isMeta.
 	selector := aCompiledMethod selector asString.
-	protocol := aCompiledMethod protocol
-		            ifNil: [ '' ]
-		            ifNotNil: [ :aProtocol | aProtocol name asString ].
+	protocol := aCompiledMethod protocol ifNil: [ '' ] ifNotNil: [ :aProtocol | aProtocol name asString ].
 	methodPackageName := aCompiledMethod package
-		                     ifNil: [
-		                     aCompiledMethod methodClass instanceSide
-			                     package name asString ]
+		                     ifNil: [ aCompiledMethod methodClass instanceSide package name asString ]
 		                     ifNotNil: [ :aPackage | aPackage name asString ].
 	packageName := methodPackageName.
-	classPackageName := aCompiledMethod methodClass instanceSide package
-		                    name asString.
+	classPackageName := aCompiledMethod methodClass instanceSide package name asString.
 	isExtension := packageName ~= classPackageName.
 	source := aCompiledMethod sourceCode ifNil: [ '' ].
 	^ self

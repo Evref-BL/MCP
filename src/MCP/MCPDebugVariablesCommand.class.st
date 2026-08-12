@@ -35,8 +35,7 @@ MCPDebugVariablesCommand >> addInstanceVariableEntriesOf: anObject parentReferen
 	| names |
 	anObject ifNil: [ ^ self ].
 	(self isAtomicObject: anObject) ifTrue: [ ^ self ].
-	names := anObject class allInstVarNames collect: [ :each |
-		         each asString ].
+	names := anObject class allInstVarNames collect: [ :each | each asString ].
 	names withIndexDo: [ :name :index |
 			entries size >= request variableLimit ifTrue: [ ^ self ].
 			entries add: (self
@@ -55,8 +54,7 @@ MCPDebugVariablesCommand >> capabilities [
 		  (#scopeExpansion -> true).
 		  (#objectExpansion -> true).
 		  (#indexedExpansion -> request includeIndexed).
-		  (#instanceVariableExpansion -> request includeInstanceVariables) }
-		  asDictionary
+		  (#instanceVariableExpansion -> request includeInstanceVariables) } asDictionary
 ]
 
 { #category : 'private - children' }
@@ -65,15 +63,8 @@ MCPDebugVariablesCommand >> childEntriesFor: anObject parentReference: parentRef
 	| entries |
 	entries := OrderedCollection new.
 	request includeInstanceVariables ifTrue: [
-			self
-				addInstanceVariableEntriesOf: anObject
-				parentReference: parentReference
-				to: entries ].
-	request includeIndexed ifTrue: [
-			self
-				addIndexedEntriesOf: anObject
-				parentReference: parentReference
-				to: entries ].
+		self addInstanceVariableEntriesOf: anObject parentReference: parentReference to: entries ].
+	request includeIndexed ifTrue: [ self addIndexedEntriesOf: anObject parentReference: parentReference to: entries ].
 	^ entries asArray
 ]
 
@@ -82,19 +73,14 @@ MCPDebugVariablesCommand >> contextForReference: aReference stateInfo: stateInfo
 
 	| contexts |
 	contexts := stateInfo rawContexts.
-	^ contexts
-		  at: aReference frameIndex + 1
-		  ifAbsent: [ self signalMissingFrameForReference: aReference ]
+	^ contexts at: aReference frameIndex + 1 ifAbsent: [ self signalMissingFrameForReference: aReference ]
 ]
 
 { #category : 'private - data' }
 MCPDebugVariablesCommand >> dataForScopeReference: aReference context: aContext stateInfo: stateInfo [
 
 	| variables |
-	variables := self
-		             variablesForScopeReference: aReference
-		             context: aContext
-		             stateInfo: stateInfo.
+	variables := self variablesForScopeReference: aReference context: aContext stateInfo: stateInfo.
 	^ {
 		  (#sessionId -> aReference sessionId).
 		  (#stateId -> aReference stateId).
@@ -117,10 +103,7 @@ MCPDebugVariablesCommand >> dataForVariableReference: aReference context: aConte
 	value := self valueForVariableReference: aReference context: aContext.
 	children := request variableDepth = 0
 		            ifTrue: [ #(  ) ]
-		            ifFalse: [
-			            self
-				            childEntriesFor: value
-				            parentReference: aReference rawReference ].
+		            ifFalse: [ self childEntriesFor: value parentReference: aReference rawReference ].
 	truncated := (self potentialChildCountOf: value) > children size.
 	^ {
 		  (#sessionId -> aReference sessionId).
@@ -128,9 +111,7 @@ MCPDebugVariablesCommand >> dataForVariableReference: aReference context: aConte
 		  (#variableRef -> aReference rawReference).
 		  (#kind -> 'variable').
 		  (#name -> aReference variableName).
-		  (#className -> (value
-			    ifNil: [ 'UndefinedObject' ]
-			    ifNotNil: [ value class name asString ])).
+		  (#className -> (value ifNil: [ 'UndefinedObject' ] ifNotNil: [ value class name asString ])).
 		  (#printString -> (self limitedPrintStringOf: value)).
 		  (#hasChildren -> (self objectHasChildren: value)).
 		  (#variables -> children).
@@ -148,19 +129,10 @@ MCPDebugVariablesCommand >> execute [
 	stateInfo := self stateInfoForRecord: record.
 	context := self contextForReference: reference stateInfo: stateInfo.
 	data := reference isScopeReference
-		        ifTrue: [
-				        self
-					        dataForScopeReference: reference
-					        context: context
-					        stateInfo: stateInfo ]
-		        ifFalse: [
-				        self
-					        dataForVariableReference: reference
-					        context: context
-					        stateInfo: stateInfo ].
+		        ifTrue: [ self dataForScopeReference: reference context: context stateInfo: stateInfo ]
+		        ifFalse: [ self dataForVariableReference: reference context: context stateInfo: stateInfo ].
 	^ MCPDebugToolResult
-		  okSummary:
-		  'Debug variables expanded for ' , reference rawReference , '.'
+		  okSummary: 'Debug variables expanded for ' , reference rawReference , '.'
 		  data: data
 		  warnings: (data at: #warnings ifAbsent: [ #(  ) ])
 ]
@@ -201,10 +173,8 @@ MCPDebugVariablesCommand >> potentialChildCountOf: anObject [
 	anObject ifNil: [ ^ 0 ].
 	(self isAtomicObject: anObject) ifTrue: [ ^ 0 ].
 	count := 0.
-	request includeInstanceVariables ifTrue: [
-		count := count + anObject class allInstVarNames size ].
-	request includeIndexed ifTrue: [
-		count := count + (self indexedSlotCountOf: anObject) ].
+	request includeInstanceVariables ifTrue: [ count := count + anObject class allInstVarNames size ].
+	request includeIndexed ifTrue: [ count := count + (self indexedSlotCountOf: anObject) ].
 	^ count
 ]
 
@@ -212,15 +182,10 @@ MCPDebugVariablesCommand >> potentialChildCountOf: anObject [
 MCPDebugVariablesCommand >> resolveIndexedSlot: indexString from: anObject reference: aReference [
 
 	| index |
-	(indexString isEmpty or: [
-		 indexString anySatisfy: [ :character | character isDigit not ] ])
-		ifTrue: [
-				^ self
-					  signalInvalidChildSegment: 'index-' , indexString
-					  forReference: aReference ].
+	(indexString isEmpty or: [ indexString anySatisfy: [ :character | character isDigit not ] ]) ifTrue: [
+		^ self signalInvalidChildSegment: 'index-' , indexString forReference: aReference ].
 	index := indexString asInteger.
-	(index between: 1 and: (self indexedSlotCountOf: anObject)) ifFalse: [
-		^ self signalMissingVariableForReference: aReference ].
+	(index between: 1 and: (self indexedSlotCountOf: anObject)) ifFalse: [ ^ self signalMissingVariableForReference: aReference ].
 	^ anObject basicAt: index
 ]
 
@@ -228,14 +193,9 @@ MCPDebugVariablesCommand >> resolveIndexedSlot: indexString from: anObject refer
 MCPDebugVariablesCommand >> resolveInstanceVariableNamed: variableName from: anObject reference: aReference [
 
 	| index names |
-	anObject ifNil: [
-		^ self signalMissingVariableForReference: aReference ].
-	names := anObject class allInstVarNames collect: [ :each |
-		         each asString ].
-	index := names
-		         indexOf: variableName
-		         ifAbsent: [
-		         ^ self signalMissingVariableForReference: aReference ].
+	anObject ifNil: [ ^ self signalMissingVariableForReference: aReference ].
+	names := anObject class allInstVarNames collect: [ :each | each asString ].
+	index := names indexOf: variableName ifAbsent: [ ^ self signalMissingVariableForReference: aReference ].
 	^ anObject instVarAt: index
 ]
 
@@ -244,11 +204,7 @@ MCPDebugVariablesCommand >> resolvePathSegments: segmentArray from: anObject ref
 
 	| current |
 	current := anObject.
-	segmentArray do: [ :segment |
-			current := self
-				           resolveSegment: segment
-				           from: current
-				           reference: aReference ].
+	segmentArray do: [ :segment | current := self resolveSegment: segment from: current reference: aReference ].
 	^ current
 ]
 
@@ -256,39 +212,25 @@ MCPDebugVariablesCommand >> resolvePathSegments: segmentArray from: anObject ref
 MCPDebugVariablesCommand >> resolveSegment: segmentString from: anObject reference: aReference [
 
 	(segmentString beginsWith: 'ivar-') ifTrue: [
-			^ self
-				  resolveInstanceVariableNamed: (segmentString allButFirst: 5)
-				  from: anObject
-				  reference: aReference ].
+		^ self resolveInstanceVariableNamed: (segmentString allButFirst: 5) from: anObject reference: aReference ].
 	(segmentString beginsWith: 'index-') ifTrue: [
-			^ self
-				  resolveIndexedSlot: (segmentString allButFirst: 6)
-				  from: anObject
-				  reference: aReference ].
-	^ self
-		  signalInvalidChildSegment: segmentString
-		  forReference: aReference
+		^ self resolveIndexedSlot: (segmentString allButFirst: 6) from: anObject reference: aReference ].
+	^ self signalInvalidChildSegment: segmentString forReference: aReference
 ]
 
 { #category : 'private - variables' }
 MCPDebugVariablesCommand >> rootValueForVariableReference: aReference context: aContext [
 
 	| names index |
-	aReference variableName ifNil: [
-		^ self signalMissingVariableForReference: aReference ].
+	aReference variableName ifNil: [ ^ self signalMissingVariableForReference: aReference ].
 	aReference scopeName = 'receiver' ifTrue: [
 			aReference variableName = 'self' ifTrue: [ ^ aContext receiver ].
 			^ self signalMissingVariableForReference: aReference ].
 	aReference scopeName = 'temporaries' ifTrue: [
 			names := aContext tempNames collect: [ :each | each asString ].
-			index := names
-				         indexOf: aReference variableName
-				         ifAbsent: [
-				         ^ self signalMissingVariableForReference: aReference ].
+			index := names indexOf: aReference variableName ifAbsent: [ ^ self signalMissingVariableForReference: aReference ].
 			^ aContext tempAt: index ].
-	^ self
-		  signalMissingScopeNamed: aReference scopeName
-		  forReference: aReference
+	^ self signalMissingScopeNamed: aReference scopeName forReference: aReference
 ]
 
 { #category : 'private - errors' }
@@ -296,9 +238,7 @@ MCPDebugVariablesCommand >> signalInvalidChildSegment: segmentString forReferenc
 
 	^ MCPCommandError
 		  signalErrorCode: #DebugVariableReferenceInvalid
-		  message:
-			  'Invalid debug variable child segment: ' , segmentString asString
-			  , '.'
+		  message: 'Invalid debug variable child segment: ' , segmentString asString , '.'
 		  details: {
 				  (#segment -> segmentString).
 				  (#variableRef -> aReference rawReference) } asDictionary
@@ -309,8 +249,7 @@ MCPDebugVariablesCommand >> signalMissingFrameForReference: aReference [
 
 	^ MCPCommandError
 		  signalErrorCode: #DebugFrameNotFound
-		  message: 'Debug frame ' , aReference frameIndex asString
-			  , ' was not found for session ' , aReference sessionId , '.'
+		  message: 'Debug frame ' , aReference frameIndex asString , ' was not found for session ' , aReference sessionId , '.'
 		  details: {
 				  (#sessionId -> aReference sessionId).
 				  (#stateId -> aReference stateId).
@@ -334,8 +273,7 @@ MCPDebugVariablesCommand >> signalMissingVariableForReference: aReference [
 
 	^ MCPCommandError
 		  signalErrorCode: #DebugVariableNotFound
-		  message: 'Debug variable ' , aReference variableName asString
-			  , ' was not found.'
+		  message: 'Debug variable ' , aReference variableName asString , ' was not found.'
 		  details: {
 				  (#variableName -> aReference variableName).
 				  (#scopeName -> aReference scopeName).
@@ -352,13 +290,8 @@ MCPDebugVariablesCommand >> stateInfoForRecord: aRecord [
 MCPDebugVariablesCommand >> valueForVariableReference: aReference context: aContext [
 
 	| value |
-	value := self
-		         rootValueForVariableReference: aReference
-		         context: aContext.
-	^ self
-		  resolvePathSegments: aReference pathSegments
-		  from: value
-		  reference: aReference
+	value := self rootValueForVariableReference: aReference context: aContext.
+	^ self resolvePathSegments: aReference pathSegments from: value reference: aReference
 ]
 
 { #category : 'private - children' }
@@ -367,28 +300,18 @@ MCPDebugVariablesCommand >> variableEntryNamed: variableName kind: kindString va
 	^ {
 		  (#name -> variableName asString).
 		  (#kind -> kindString).
-		  (#className -> (value
-			    ifNil: [ 'UndefinedObject' ]
-			    ifNotNil: [ value class name asString ])).
+		  (#className -> (value ifNil: [ 'UndefinedObject' ] ifNotNil: [ value class name asString ])).
 		  (#printString -> (self limitedPrintStringOf: value)).
 		  (#variableRef -> referenceString).
 		  (#hasChildren -> (self objectHasChildren: value)).
-		  (#childrenCount -> (self potentialChildCountOf: value)) }
-		  asDictionary
+		  (#childrenCount -> (self potentialChildCountOf: value)) } asDictionary
 ]
 
 { #category : 'private - scopes' }
 MCPDebugVariablesCommand >> variablesForScopeReference: aReference context: aContext stateInfo: stateInfo [
 
-	aReference scopeName = 'receiver' ifTrue: [
-			^ stateInfo
-				  receiverVariablesForContext: aContext
-				  frameIndex: aReference frameIndex ].
+	aReference scopeName = 'receiver' ifTrue: [ ^ stateInfo receiverVariablesForContext: aContext frameIndex: aReference frameIndex ].
 	aReference scopeName = 'temporaries' ifTrue: [
-			^ stateInfo
-				  temporaryVariablesForContext: aContext
-				  frameIndex: aReference frameIndex ].
-	^ self
-		  signalMissingScopeNamed: aReference scopeName
-		  forReference: aReference
+		^ stateInfo temporaryVariablesForContext: aContext frameIndex: aReference frameIndex ].
+	^ self signalMissingScopeNamed: aReference scopeName forReference: aReference
 ]

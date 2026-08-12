@@ -20,13 +20,10 @@ MCPToolCommitRepository >> repositoryToolSpec [
 
 	^ {
 		  (#title -> 'Commit Repository').
-		  (#description
-		   ->
-		   'Create an Iceberg commit for a registered repository using the provided commit message.').
+		  (#description -> 'Create an Iceberg commit for a registered repository using the provided commit message.').
 		  (#action -> 'commit').
 		  (#requestClass -> MCPRepositoryCommitRequest).
 		  (#commandClass -> MCPCommitRepositoryCommand).
 		  (#inputProperties -> { self messageSchemaProperty }).
-		  (#requiredProperties -> #( 'repositoryName' 'message' )) }
-		  asDictionary
+		  (#requiredProperties -> #( 'repositoryName' 'message' )) } asDictionary
 ]

@@ -46,10 +46,7 @@ MCPToolSearch >> basicRegexMatcherForPattern: aPattern caseSensitive: aBoolean [
 { #category : 'private - schema' }
 MCPToolSearch >> caseSensitiveSchemaPropertyWithDescription: caseSensitiveDescription [
 
-	^ self
-		  booleanSchemaPropertyNamed: 'caseSensitive'
-		  description: 'Case-sensitive matching.'
-		  default: true
+	^ self booleanSchemaPropertyNamed: 'caseSensitive' description: 'Case-sensitive matching.' default: true
 ]
 
 { #category : 'private - results' }
@@ -69,8 +66,7 @@ MCPToolSearch >> classAndMethodScopeSummaryFromAssociations: scopeAssociations [
 	| labels |
 	labels := OrderedCollection new.
 	scopeAssociations do: [ :eachAssociation |
-			eachAssociation value notEmpty ifTrue: [
-				self addScopeLabel: eachAssociation key to: labels ] ].
+		eachAssociation value notEmpty ifTrue: [ self addScopeLabel: eachAssociation key to: labels ] ].
 	^ self scopeSummaryFromLabels: labels
 ]
 
@@ -78,23 +74,11 @@ MCPToolSearch >> classAndMethodScopeSummaryFromAssociations: scopeAssociations [
 MCPToolSearch >> classAndMethodScopeSummaryFromRequest: request [
 
 	^ self classAndMethodScopeSummaryFromAssociations: {
-			  ('packages' -> (self
-				    searchScopeStringCollectionNamed: 'packages'
-				    fromRequest: request)).
-			  ('classes'
-			   ->
-			   (self
-				    searchScopeStringCollectionNamed: 'classes'
-				    fromRequest: request)).
-			  ('hierarchies' -> (self
-				    searchScopeStringCollectionNamed: 'hierarchies'
-				    fromRequest: request)).
-			  ('subclasses' -> (self
-				    searchScopeStringCollectionNamed: 'subclassesOf'
-				    fromRequest: request)).
-			  ('superclasses' -> (self
-				    searchScopeStringCollectionNamed: 'superclassesOf'
-				    fromRequest: request)) }
+			  ('packages' -> (self searchScopeStringCollectionNamed: 'packages' fromRequest: request)).
+			  ('classes' -> (self searchScopeStringCollectionNamed: 'classes' fromRequest: request)).
+			  ('hierarchies' -> (self searchScopeStringCollectionNamed: 'hierarchies' fromRequest: request)).
+			  ('subclasses' -> (self searchScopeStringCollectionNamed: 'subclassesOf' fromRequest: request)).
+			  ('superclasses' -> (self searchScopeStringCollectionNamed: 'superclassesOf' fromRequest: request)) }
 ]
 
 { #category : 'private - schema' }
@@ -107,22 +91,11 @@ MCPToolSearch >> classQueryScopeInputProperties [
 MCPToolSearch >> classScopeQueryFromRequest: request [
 
 	^ MCPClassScopeQuery new
-		  packageNames: (self
-				   searchScopeStringCollectionNamed: 'packages'
-				   fromRequest: request);
-		  classNames:
-			  (self
-				   searchScopeStringCollectionNamed: 'classes'
-				   fromRequest: request);
-		  hierarchyClassNames: (self
-				   searchScopeStringCollectionNamed: 'hierarchies'
-				   fromRequest: request);
-		  subclassClassNames: (self
-				   searchScopeStringCollectionNamed: 'subclassesOf'
-				   fromRequest: request);
-		  parentClassNames: (self
-				   searchScopeStringCollectionNamed: 'superclassesOf'
-				   fromRequest: request);
+		  packageNames: (self searchScopeStringCollectionNamed: 'packages' fromRequest: request);
+		  classNames: (self searchScopeStringCollectionNamed: 'classes' fromRequest: request);
+		  hierarchyClassNames: (self searchScopeStringCollectionNamed: 'hierarchies' fromRequest: request);
+		  subclassClassNames: (self searchScopeStringCollectionNamed: 'subclassesOf' fromRequest: request);
+		  parentClassNames: (self searchScopeStringCollectionNamed: 'superclassesOf' fromRequest: request);
 		  yourself
 ]
 
@@ -160,23 +133,16 @@ MCPToolSearch >> errorResultForQueryError: anError requestedContext: requestedCo
 		  mcpCommandErrorDo: [ :commandError |
 				  | details |
 				  details := commandError structuredDetails copy.
-				  normalizedContext associationsDo: [ :each |
-					  each value ifNotNil: [ details at: each key put: each value ] ].
+				  normalizedContext associationsDo: [ :each | each value ifNotNil: [ details at: each key put: each value ] ].
 				  self errorResultText: commandError messageText details: details ]
 		  otherwise: [ :queryError |
 				  | details |
 				  details := {
-					             (#errorClass ->
-					              (self errorClassNameForQueryError: queryError)).
+					             (#errorClass -> (self errorClassNameForQueryError: queryError)).
 					             (#message -> queryError messageText) } asDictionary.
 				  queryError mcpAddToolErrorDetailsTo: details.
-				  normalizedContext associationsDo: [ :each |
-					  each value ifNotNil: [ details at: each key put: each value ] ].
-				  self
-					  errorResultText: (self
-							   failureMessageForRequestedContext: normalizedContext
-							   error: queryError)
-					  details: details ]
+				  normalizedContext associationsDo: [ :each | each value ifNotNil: [ details at: each key put: each value ] ].
+				  self errorResultText: (self failureMessageForRequestedContext: normalizedContext error: queryError) details: details ]
 ]
 
 { #category : 'executing' }
@@ -192,24 +158,17 @@ MCPToolSearch >> executeWithRequest: request [
 					          limit: (self limitFromQueryRequest: queryRequest)
 					          offset: (self offsetFromQueryRequest: queryRequest).
 				  self
-					  successResultText:
-					  (self successSummaryForQueryRequest: queryRequest page: page)
-					  data:
-					  (self queryResultDataForQueryRequest: queryRequest page: page)
+					  successResultText: (self successSummaryForQueryRequest: queryRequest page: page)
+					  data: (self queryResultDataForQueryRequest: queryRequest page: page)
 					  warnings: (self warningsForQueryRequest: queryRequest) ]
 		  onError: [ :error :ignored |
-				  self
-					  errorResultForQueryError: error
-					  requestedContext:
-					  (self requestedContextForErrorFromRequest: request) ]
+		  self errorResultForQueryError: error requestedContext: (self requestedContextForErrorFromRequest: request) ]
 ]
 
 { #category : 'private - template' }
 MCPToolSearch >> failureMessageForRequestedContext: requestedContext error: anError [
 
-	^ self
-		  failureMessageForScope: (requestedContext at: #scope)
-		  error: anError
+	^ self failureMessageForScope: (requestedContext at: #scope) error: anError
 ]
 
 { #category : 'private - template' }
@@ -223,12 +182,8 @@ MCPToolSearch >> fieldFilters: fieldFilters matchUsing: fieldTextsBlock mode: fi
 
 	fieldFilters keysAndValuesDo: [ :fieldName :pattern |
 			| matcher |
-			matcher := self
-				           matcherForPattern: pattern
-				           mode: filterMode
-				           caseSensitive: caseSensitive.
-			((fieldTextsBlock value: fieldName) anySatisfy: [ :each |
-				 matcher value: each ]) ifFalse: [ ^ false ] ].
+			matcher := self matcherForPattern: pattern mode: filterMode caseSensitive: caseSensitive.
+			((fieldTextsBlock value: fieldName) anySatisfy: [ :each | matcher value: each ]) ifFalse: [ ^ false ] ].
 	^ true
 ]
 
@@ -241,15 +196,9 @@ MCPToolSearch >> fieldFiltersFromRequest: request fieldNames: fieldNames [
 			(request hasArgumentNamed: fieldName) ifTrue: [
 					| value |
 					value := request stringArgumentNamed: fieldName.
-					value ifNil: [
-							MCPInvalidToolInput
-								signalMissingRequiredArgumentNamed: fieldName
-								forTool: self ].
+					value ifNil: [ MCPInvalidToolInput signalMissingRequiredArgumentNamed: fieldName forTool: self ].
 					value := value trimBoth.
-					value isEmpty ifTrue: [
-							MCPInvalidToolInput
-								signalMissingRequiredArgumentNamed: fieldName
-								forTool: self ].
+					value isEmpty ifTrue: [ MCPInvalidToolInput signalMissingRequiredArgumentNamed: fieldName forTool: self ].
 					filters at: fieldName put: value ] ].
 	^ filters
 ]
@@ -257,9 +206,7 @@ MCPToolSearch >> fieldFiltersFromRequest: request fieldNames: fieldNames [
 { #category : 'private - request' }
 MCPToolSearch >> filterModeFromRequest: request [
 
-	^ request
-		  stringArgumentNamed: 'filterMode'
-		  default: self defaultFilterMode
+	^ request stringArgumentNamed: 'filterMode' default: self defaultFilterMode
 ]
 
 { #category : 'private - schema' }
@@ -276,17 +223,13 @@ MCPToolSearch >> filterModeSchemaPropertyWithDescription: modeDescription values
 MCPToolSearch >> filterPatternFromRequest: request [
 
 	(request hasArgumentNamed: 'filter') ifFalse: [ ^ nil ].
-	^ (request argumentNamed: 'filter' ifAbsent: [ nil ]) ifNotNil: [
-		  :value | value asString trimBoth ]
+	^ (request argumentNamed: 'filter' ifAbsent: [ nil ]) ifNotNil: [ :value | value asString trimBoth ]
 ]
 
 { #category : 'private - schema' }
 MCPToolSearch >> filterSchemaPropertyWithDescription: filterDescription [
 
-	^ self
-		  schemaPropertyNamed: 'filter'
-		  type: 'string'
-		  description: filterDescription
+	^ self schemaPropertyNamed: 'filter' type: 'string' description: filterDescription
 ]
 
 { #category : 'private - schema' }
@@ -294,8 +237,7 @@ MCPToolSearch >> includeSourceSchemaPropertyWithDescription: includeSourceDescri
 
 	^ self
 		  booleanSchemaPropertyNamed: 'includeSource'
-		  description:
-		  'Include source code. Use only for small result sets.'
+		  description: 'Include source code. Use only for small result sets.'
 		  default: false
 ]
 
@@ -316,23 +258,13 @@ MCPToolSearch >> matcherForPattern: aPattern mode: aMode caseSensitive: aBoolean
 
 	| normalizedPattern |
 	aPattern ifNil: [ ^ [ :candidate | true ] ].
-	aMode = 'regex' ifTrue: [
-		^ self regexMatcherForPattern: aPattern caseSensitive: aBoolean ].
-	normalizedPattern := self
-		 normalizeFilterString: aPattern
-		 caseSensitive: aBoolean.
+	aMode = 'regex' ifTrue: [ ^ self regexMatcherForPattern: aPattern caseSensitive: aBoolean ].
+	normalizedPattern := self normalizeFilterString: aPattern caseSensitive: aBoolean.
 	aMode = 'substring' ifTrue: [
-			^ [ :candidate |
-				 (self normalizeFilterString: candidate caseSensitive: aBoolean)
-					 includesSubstring: normalizedPattern ] ].
+		^ [ :candidate | (self normalizeFilterString: candidate caseSensitive: aBoolean) includesSubstring: normalizedPattern ] ].
 	aMode = 'prefix' ifTrue: [
-			^ [ :candidate |
-				 (self normalizeFilterString: candidate caseSensitive: aBoolean)
-					 beginsWith: normalizedPattern ] ].
-	aMode = 'exact' ifTrue: [
-			^ [ :candidate |
-				 (self normalizeFilterString: candidate caseSensitive: aBoolean)
-				 = normalizedPattern ] ].
+		^ [ :candidate | (self normalizeFilterString: candidate caseSensitive: aBoolean) beginsWith: normalizedPattern ] ].
+	aMode = 'exact' ifTrue: [ ^ [ :candidate | (self normalizeFilterString: candidate caseSensitive: aBoolean) = normalizedPattern ] ].
 	Error signal: 'Unsupported filter mode: ' , aMode
 ]
 
@@ -340,18 +272,14 @@ MCPToolSearch >> matcherForPattern: aPattern mode: aMode caseSensitive: aBoolean
 MCPToolSearch >> minimalPagedQueryOutputSchemaForEntriesPropertyNamed: entriesPropertyName entriesDescription: entriesDescription entrySchema: entrySchema itemNounPhrase: itemNounPhrase [
 
 	| entriesProperty |
-	entriesProperty := self
-		                   schemaPropertyNamed: entriesPropertyName
-		                   type: 'array'
-		                   description: entriesDescription.
+	entriesProperty := self schemaPropertyNamed: entriesPropertyName type: 'array' description: entriesDescription.
 	entriesProperty items: entrySchema.
 	^ self
 		  standardOutputSchemaForDataProperties: {
 				  entriesProperty.
 				  (self
 					   integerSchemaPropertyNamed: 'nextOffset'
-					   description:
-					   'Zero-based offset for the next page. Omitted when this is the final page.') }
+					   description: 'Zero-based offset for the next page. Omitted when this is the final page.') }
 		  required: { entriesPropertyName }
 ]
 
@@ -359,9 +287,7 @@ MCPToolSearch >> minimalPagedQueryOutputSchemaForEntriesPropertyNamed: entriesPr
 MCPToolSearch >> normalizeFilterString: aValue caseSensitive: aBoolean [
 
 	| normalized |
-	normalized := aValue
-		              ifNil: [ '' ]
-		              ifNotNil: [ :value | value asString ].
+	normalized := aValue ifNil: [ '' ] ifNotNil: [ :value | value asString ].
 	^ aBoolean
 		  ifTrue: [ normalized ]
 		  ifFalse: [ normalized asLowercase ]
@@ -384,10 +310,7 @@ MCPToolSearch >> packageQueryScopeInputProperties [
 { #category : 'private - schema' }
 MCPToolSearch >> packageScopePackageNamesProperty [
 
-	^ self
-		  stringArraySchemaNamed: 'packageNames'
-		  description: 'Exact packages.'
-		  itemDescription: 'Package name.'
+	^ self stringArraySchemaNamed: 'packageNames' description: 'Exact packages.' itemDescription: 'Package name.'
 ]
 
 { #category : 'private - schema' }
@@ -404,10 +327,8 @@ MCPToolSearch >> packageScopeSummaryForProjectNames: projectNames packageNames: 
 
 	| labels |
 	labels := OrderedCollection new.
-	projectNames notEmpty ifTrue: [
-		self addScopeLabel: 'projects' to: labels ].
-	packageNames notEmpty ifTrue: [
-		self addScopeLabel: 'packages' to: labels ].
+	projectNames notEmpty ifTrue: [ self addScopeLabel: 'projects' to: labels ].
+	packageNames notEmpty ifTrue: [ self addScopeLabel: 'packages' to: labels ].
 	^ self scopeSummaryFromLabels: labels
 ]
 
@@ -415,17 +336,11 @@ MCPToolSearch >> packageScopeSummaryForProjectNames: projectNames packageNames: 
 MCPToolSearch >> paginationInputPropertiesWithLimitDescription: limitDescription [
 
 	| limitProperty offsetProperty |
-	limitProperty := self
-		                 integerSchemaPropertyNamed: 'limit'
-		                 description: 'Maximum results.'
-		                 default: self defaultPageLimit.
+	limitProperty := self integerSchemaPropertyNamed: 'limit' description: 'Maximum results.' default: self defaultPageLimit.
 	limitProperty
 		minimum: 0;
 		maximum: 100.
-	offsetProperty := self
-		                  integerSchemaPropertyNamed: 'offset'
-		                  description: 'Pagination offset.'
-		                  default: 0.
+	offsetProperty := self integerSchemaPropertyNamed: 'offset' description: 'Pagination offset.' default: 0.
 	offsetProperty minimum: 0.
 	^ {
 		  limitProperty.
@@ -474,10 +389,7 @@ MCPToolSearch >> queryInputSchemaWithProperties: inputProperties [
 { #category : 'private - pagination' }
 MCPToolSearch >> queryPageForEntries: entries limit: limit offset: offset [
 
-	^ MCPPaginationResult
-		  fromEntries: entries
-		  limit: limit
-		  offset: offset
+	^ MCPPaginationResult fromEntries: entries limit: limit offset: offset
 ]
 
 { #category : 'private - template' }
@@ -496,10 +408,8 @@ MCPToolSearch >> queryResultDataFrom: baseData page: page entriesKey: entriesKey
 MCPToolSearch >> regexMatcherForPattern: aPattern caseSensitive: aBoolean [
 
 	^ self pcre2RegexLibraryAvailable
-		  ifTrue: [
-		  self pcre2RegexMatcherForPattern: aPattern caseSensitive: aBoolean ]
-		  ifFalse: [
-		  self basicRegexMatcherForPattern: aPattern caseSensitive: aBoolean ]
+		  ifTrue: [ self pcre2RegexMatcherForPattern: aPattern caseSensitive: aBoolean ]
+		  ifFalse: [ self basicRegexMatcherForPattern: aPattern caseSensitive: aBoolean ]
 ]
 
 { #category : 'private - filtering' }
@@ -594,8 +504,7 @@ MCPToolSearch >> searchScopeSchemaProperty [
 	^ MCPStructureProperties new
 		  name: 'scope';
 		  type: 'object';
-		  description:
-			  'Optional search scope. If omitted, searches all matching entities.';
+		  description: 'Optional search scope. If omitted, searches all matching entities.';
 		  properties: self searchScopeSchemaProperties;
 		  additionalProperties: false;
 		  yourself
@@ -604,19 +513,13 @@ MCPToolSearch >> searchScopeSchemaProperty [
 { #category : 'private - request' }
 MCPToolSearch >> searchScopeStringCollectionNamed: aName fromRequest: request [
 
-	^ request
-		  stringCollectionArgumentNamed: aName
-		  in: (self searchScopeFromRequest: request)
+	^ request stringCollectionArgumentNamed: aName in: (self searchScopeFromRequest: request)
 ]
 
 { #category : 'private - template' }
 MCPToolSearch >> successSummaryForQueryRequest: queryRequest page: page [
 
-	^ self
-		  successSummaryForScope:
-		  (self classAndMethodScopeSummaryForScopeQuery:
-			   queryRequest scopeQuery)
-		  page: page
+	^ self successSummaryForScope: (self classAndMethodScopeSummaryForScopeQuery: queryRequest scopeQuery) page: page
 ]
 
 { #category : 'private - results' }

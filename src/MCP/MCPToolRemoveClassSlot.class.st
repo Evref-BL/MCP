@@ -20,14 +20,12 @@ MCPToolRemoveClassSlot >> classToolSpec [
 
 	^ {
 		  (#title -> 'Remove Class Slot').
-		  (#description
-		   -> 'Remove one instance-side or class-side slot from a class.').
+		  (#description -> 'Remove one instance-side or class-side slot from a class.').
 		  (#fixedArguments -> { (#slotAction -> 'remove') } asDictionary).
 		  (#inputProperties -> {
 			   self classNameSchemaProperty.
 			   self slotNameSchemaProperty.
 			   self classSideSlotSchemaProperty.
 			   self forceSchemaProperty }).
-		  (#requiredProperties -> #( 'className' 'slotName' )) }
-		  asDictionary
+		  (#requiredProperties -> #( 'className' 'slotName' )) } asDictionary
 ]

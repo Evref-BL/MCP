@@ -25,17 +25,11 @@ MCPToolListChangeHistoryFiles >> annotations [
 MCPToolListChangeHistoryFiles >> buildInputSchema [
 
 	| limitProperty offsetProperty |
-	limitProperty := self
-		                 integerSchemaPropertyNamed: 'limit'
-		                 description: 'Maximum files.'
-		                 default: self defaultFileLimit.
+	limitProperty := self integerSchemaPropertyNamed: 'limit' description: 'Maximum files.' default: self defaultFileLimit.
 	limitProperty
 		minimum: 0;
 		maximum: self maximumFileLimit.
-	offsetProperty := self
-		                  integerSchemaPropertyNamed: 'offset'
-		                  description: 'Pagination offset.'
-		                  default: 0.
+	offsetProperty := self integerSchemaPropertyNamed: 'offset' description: 'Pagination offset.' default: 0.
 	offsetProperty minimum: 0.
 	^ MCPStructureInputSchema new
 		  type: 'object';
@@ -43,8 +37,7 @@ MCPToolListChangeHistoryFiles >> buildInputSchema [
 				  (self
 					   schemaPropertyNamed: 'directoryPath'
 					   type: 'string'
-					   description:
-						   'Optional .ombu directory. Default: current image history directory.').
+					   description: 'Optional .ombu directory. Default: current image history directory.').
 				  limitProperty.
 				  offsetProperty };
 		  required: #(  );
@@ -56,22 +49,15 @@ MCPToolListChangeHistoryFiles >> buildInputSchema [
 MCPToolListChangeHistoryFiles >> buildOutputSchema [
 
 	| filesProperty |
-	filesProperty := self
-		                 schemaPropertyNamed: 'files'
-		                 type: 'array'
-		                 description: 'Change history files.'.
+	filesProperty := self schemaPropertyNamed: 'files' type: 'array' description: 'Change history files.'.
 	filesProperty items: self changeHistoryLogSchemaProperty.
-	^ self
-		  standardOutputSchemaForDataProperties: { filesProperty }
-		  required: #( 'files' )
+	^ self standardOutputSchemaForDataProperties: { filesProperty } required: #( 'files' )
 ]
 
 { #category : 'private - execution' }
 MCPToolListChangeHistoryFiles >> commandForRequest: changeHistoryRequest [
 
-	^ MCPListChangeHistoryLogsCommand
-		  tool: self
-		  request: changeHistoryRequest
+	^ MCPListChangeHistoryLogsCommand tool: self request: changeHistoryRequest
 ]
 
 { #category : 'defaults' }

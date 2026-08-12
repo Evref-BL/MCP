@@ -21,7 +21,6 @@ MCPToolResumeDebugSession >> controlToolSpec [
 	^ {
 		  (#title -> 'Resume Debug Session').
 		  (#description
-		   ->
-		   'Resume a tracked Pharo DebugSession and optionally return a debug_state_get snapshot if execution pauses again.').
+		   -> 'Resume a tracked Pharo DebugSession and optionally return a debug_state_get snapshot if execution pauses again.').
 		  (#action -> 'resume') } asDictionary
 ]

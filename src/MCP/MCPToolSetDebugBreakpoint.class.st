@@ -20,11 +20,8 @@ MCPToolSetDebugBreakpoint >> breakpointToolSpec [
 
 	^ {
 		  (#title -> 'Set Debug Breakpoint').
-		  (#description
-		   ->
-		   'Install a transient Pharo DebugPoint breakpoint on a method or source interval.').
+		  (#description -> 'Install a transient Pharo DebugPoint breakpoint on a method or source interval.').
 		  (#action -> 'set').
 		  (#inputProperties -> self breakpointTargetInputProperties).
-		  (#requiredProperties -> #( 'className' 'selector' )) }
-		  asDictionary
+		  (#requiredProperties -> #( 'className' 'selector' )) } asDictionary
 ]

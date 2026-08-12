@@ -27,16 +27,14 @@ MCPToolSearchClasses class >> toolName [
 MCPToolSearchClasses >> buildInputSchema [
 
 	| properties |
-	properties := self classQueryScopeInputProperties
-	              , self classFilterInputProperties , {
+	properties := self classQueryScopeInputProperties , self classFilterInputProperties , {
 		              (self
-			               filterModeSchemaPropertyWithDescription:
-			               'How class metadata filters are matched.'
+			               filterModeSchemaPropertyWithDescription: 'How class metadata filters are matched.'
 			               values: self basicFilterModes).
-		              (self caseSensitiveSchemaPropertyWithDescription:
-			               'Whether class metadata matching is case-sensitive.') }
-	              , (self paginationInputPropertiesWithLimitDescription:
-			               'Maximum number of matching classes to return. Use 0 to return no entries.').
+		              (self caseSensitiveSchemaPropertyWithDescription: 'Whether class metadata matching is case-sensitive.') }
+	              ,
+	              (self paginationInputPropertiesWithLimitDescription:
+		               'Maximum number of matching classes to return. Use 0 to return no entries.').
 	^ self queryInputSchemaWithProperties: properties
 ]
 
@@ -45,8 +43,7 @@ MCPToolSearchClasses >> buildOutputSchema [
 
 	^ self
 		  minimalPagedQueryOutputSchemaForEntriesPropertyNamed: 'classes'
-		  entriesDescription:
-		  'The class entries returned for the requested page.'
+		  entriesDescription: 'The class entries returned for the requested page.'
 		  entrySchema: self classEntrySchema
 		  itemNounPhrase: 'class entries'
 ]
@@ -59,9 +56,7 @@ MCPToolSearchClasses >> classEntriesForRequest: queryRequest [
 	queryRequest scopeQuery classes do: [ :eachClass |
 			| entry |
 			entry := (MCPClassInfo fromClass: eachClass) asQueryDictionary.
-			(self
-				 matchesFieldFiltersOnClassEntry: entry
-				 queryRequest: queryRequest) ifTrue: [ entries add: entry ] ].
+			(self matchesFieldFiltersOnClassEntry: entry queryRequest: queryRequest) ifTrue: [ entries add: entry ] ].
 	^ entries asArray
 ]
 
@@ -88,44 +83,22 @@ MCPToolSearchClasses >> classFilterFieldNames [
 MCPToolSearchClasses >> classFilterInputProperties [
 
 	^ {
-		  (self
-			   schemaPropertyNamed: 'className'
-			   type: 'string'
-			   description:
-			   'Optional class-name text matched against class names.').
-		  (self
-			   schemaPropertyNamed: 'tag'
-			   type: 'string'
-			   description:
-			   'Optional package-tag text matched against class tags.').
+		  (self schemaPropertyNamed: 'className' type: 'string' description: 'Optional class-name text matched against class names.').
+		  (self schemaPropertyNamed: 'tag' type: 'string' description: 'Optional package-tag text matched against class tags.').
 		  (self
 			   schemaPropertyNamed: 'instanceSlot'
 			   type: 'string'
-			   description:
-			   'Optional slot-name text matched against instance-side slots.').
-		  (self
-			   schemaPropertyNamed: 'classSlot'
-			   type: 'string'
-			   description:
-			   'Optional slot-name text matched against class-side slots.') }
+			   description: 'Optional slot-name text matched against instance-side slots.').
+		  (self schemaPropertyNamed: 'classSlot' type: 'string' description: 'Optional slot-name text matched against class-side slots.') }
 ]
 
 { #category : 'private - schema' }
 MCPToolSearchClasses >> classInfoDataProperties [
 
 	^ {
-		  (self
-			   schemaPropertyNamed: 'className'
-			   type: 'string'
-			   description: 'Class name.').
-		  (self
-			   schemaPropertyNamed: 'packageName'
-			   type: 'string'
-			   description: 'Defining package.').
-		  (self
-			   schemaPropertyNamed: 'tag'
-			   type: 'string'
-			   description: 'Package tag.') }
+		  (self schemaPropertyNamed: 'className' type: 'string' description: 'Class name.').
+		  (self schemaPropertyNamed: 'packageName' type: 'string' description: 'Defining package.').
+		  (self schemaPropertyNamed: 'tag' type: 'string' description: 'Package tag.') }
 ]
 
 { #category : 'metadata' }
@@ -143,10 +116,7 @@ MCPToolSearchClasses >> description [
 { #category : 'private - results' }
 MCPToolSearchClasses >> failureMessageForScope: scopeSummary error: anError [
 
-	^ self
-		  scopeQueryFailureMessageFor: 'classes'
-		  scope: scopeSummary
-		  error: anError
+	^ self scopeQueryFailureMessageFor: 'classes' scope: scopeSummary error: anError
 ]
 
 { #category : 'private - filtering' }
@@ -154,8 +124,7 @@ MCPToolSearchClasses >> fieldTextsForClassEntry: anEntry fieldName: fieldName [
 
 	fieldName = 'className' ifTrue: [ ^ { (anEntry at: #className) } ].
 	fieldName = 'tag' ifTrue: [ ^ { (anEntry at: #tag) } ].
-	fieldName = 'instanceSlot' ifTrue: [
-		^ anEntry at: #instanceSlotNames ].
+	fieldName = 'instanceSlot' ifTrue: [ ^ anEntry at: #instanceSlotNames ].
 	fieldName = 'classSlot' ifTrue: [ ^ anEntry at: #classSlotNames ].
 	^ #(  )
 ]
@@ -165,8 +134,7 @@ MCPToolSearchClasses >> matchesFieldFiltersOnClassEntry: anEntry queryRequest: q
 
 	^ self
 		  fieldFilters: queryRequest fieldFilters
-		  matchUsing: [ :fieldName |
-			  self fieldTextsForClassEntry: anEntry fieldName: fieldName ]
+		  matchUsing: [ :fieldName | self fieldTextsForClassEntry: anEntry fieldName: fieldName ]
 		  mode: queryRequest filterMode
 		  caseSensitive: queryRequest caseSensitive
 ]
@@ -182,11 +150,8 @@ MCPToolSearchClasses >> queryResultDataForQueryRequest: queryRequest page: page 
 
 	| data |
 	data := Dictionary new.
-	data at: #classes put: (page entries
-			 collect: [ :each | self queryResultEntryFromClassEntry: each ]
-			 as: Array).
-	page nextOffset ifNotNil: [ :offset |
-		data at: #nextOffset put: offset ].
+	data at: #classes put: (page entries collect: [ :each | self queryResultEntryFromClassEntry: each ] as: Array).
+	page nextOffset ifNotNil: [ :offset | data at: #nextOffset put: offset ].
 	^ data
 ]
 
@@ -202,8 +167,7 @@ MCPToolSearchClasses >> queryResultEntryFromClassEntry: anEntry [
 { #category : 'private - template' }
 MCPToolSearchClasses >> requestedContextFromRequest: request [
 
-	^ { (#scope -> (self classAndMethodScopeSummaryFromRequest: request)) }
-		  asDictionary
+	^ { (#scope -> (self classAndMethodScopeSummaryFromRequest: request)) } asDictionary
 ]
 
 { #category : 'private - template' }
@@ -215,10 +179,7 @@ MCPToolSearchClasses >> searchRequestFromToolRequest: request [
 { #category : 'private - results' }
 MCPToolSearchClasses >> successSummaryForScope: scopeSummary page: page [
 
-	^ self
-		  scopeQuerySuccessSummaryFor: 'classes'
-		  scope: scopeSummary
-		  page: page
+	^ self scopeQuerySuccessSummaryFor: 'classes' scope: scopeSummary page: page
 ]
 
 { #category : 'metadata' }

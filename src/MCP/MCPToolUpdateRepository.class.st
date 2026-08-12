@@ -20,18 +20,12 @@ MCPToolUpdateRepository >> repositoryToolSpec [
 
 	^ {
 		  (#title -> 'Update Repository').
-		  (#description
-		   ->
-		   'Change image-side repository subdirectory or package membership without writing packages to files.').
+		  (#description -> 'Change image-side repository subdirectory or package membership without writing packages to files.').
 		  (#action -> 'update').
 		  (#requestClass -> MCPRepositoryUpdateRequest).
 		  (#commandClass -> MCPUpdateRepositoryCommand).
 		  (#inputProperties -> {
-			   (self
-				    schemaPropertyNamed: 'subdirectory'
-				    type: 'string'
-				    description:
-				    'Set the repository source subdirectory in the image.').
+			   (self schemaPropertyNamed: 'subdirectory' type: 'string' description: 'Set the repository source subdirectory in the image.').
 			   (self
 				    stringArraySchemaNamed: 'packageNames'
 				    description:
@@ -39,13 +33,10 @@ MCPToolUpdateRepository >> repositoryToolSpec [
 				    itemDescription: 'A package name.').
 			   (self
 				    stringArraySchemaNamed: 'addPackageNames'
-				    description:
-				    'Package names to add to the repository working copy without writing packages to files.'
+				    description: 'Package names to add to the repository working copy without writing packages to files.'
 				    itemDescription: 'A package name to add.').
 			   (self
 				    stringArraySchemaNamed: 'removePackageNames'
-				    description:
-				    'Package names to remove from repository membership without unloading packages from the image.'
-				    itemDescription: 'A package name to remove.') }) }
-		  asDictionary
+				    description: 'Package names to remove from repository membership without unloading packages from the image.'
+				    itemDescription: 'A package name to remove.') }) } asDictionary
 ]

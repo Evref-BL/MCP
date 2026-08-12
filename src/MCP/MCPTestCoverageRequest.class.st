@@ -21,71 +21,39 @@ MCPTestCoverageRequest class >> fromValue: rawValue usingToolRequest: toolReques
 
 	| includeCovered methodLimit scopeQuery |
 	rawValue ifNil: [ self signalMissingCoverageOptions ].
-	scopeQuery := self
-		              scopeQueryFromValue: rawValue
-		              usingToolRequest: toolRequest.
-	scopeQuery usesImplicitImageScope ifTrue: [
-		self signalMissingCoverageScope ].
-	includeCovered := toolRequest
-		                  booleanArgumentNamed: 'includeCoveredMethods'
-		                  in: rawValue
-		                  default: false.
+	scopeQuery := self scopeQueryFromValue: rawValue usingToolRequest: toolRequest.
+	scopeQuery usesImplicitImageScope ifTrue: [ self signalMissingCoverageScope ].
+	includeCovered := toolRequest booleanArgumentNamed: 'includeCoveredMethods' in: rawValue default: false.
 	methodLimit := self
 		               nonNegativeIntegerNamed: 'methodLimit'
 		               in: rawValue
 		               usingToolRequest: toolRequest
 		               default: defaultMethodLimit.
-	^ self new
-		  initializeScopeQuery: scopeQuery
-		  includeCoveredMethods: includeCovered
-		  methodLimit: methodLimit
+	^ self new initializeScopeQuery: scopeQuery includeCoveredMethods: includeCovered methodLimit: methodLimit
 ]
 
 { #category : 'private - parsing' }
 MCPTestCoverageRequest class >> nonNegativeIntegerNamed: argumentName in: rawValue usingToolRequest: toolRequest default: defaultValue [
 
 	| value |
-	value := toolRequest
-		         valueNamed: argumentName
-		         in: rawValue
-		         ifAbsent: [ ^ defaultValue ].
+	value := toolRequest valueNamed: argumentName in: rawValue ifAbsent: [ ^ defaultValue ].
 	value ifNil: [ ^ defaultValue ].
 	(value isInteger and: [ value >= 0 ]) ifTrue: [ ^ value ].
-	Error signal: 'coverage.' , argumentName asString
-		, ' must be a non-negative integer.'
+	Error signal: 'coverage.' , argumentName asString , ' must be a non-negative integer.'
 ]
 
 { #category : 'private - parsing' }
 MCPTestCoverageRequest class >> scopeQueryFromValue: rawValue usingToolRequest: toolRequest [
 
 	| scopeValue |
-	scopeValue := toolRequest
-		              valueNamed: 'scope'
-		              in: rawValue
-		              ifAbsent: [ Dictionary new ].
+	scopeValue := toolRequest valueNamed: 'scope' in: rawValue ifAbsent: [ Dictionary new ].
 	^ MCPCompiledMethodScopeQuery new
-		  packageNames:
-			  (toolRequest
-				   stringCollectionArgumentNamed: 'packages'
-				   in: scopeValue);
-		  classNames:
-			  (toolRequest
-				   stringCollectionArgumentNamed: 'classes'
-				   in: scopeValue);
-		  hierarchyClassNames: (toolRequest
-				   stringCollectionArgumentNamed: 'hierarchies'
-				   in: scopeValue);
-		  subclassClassNames: (toolRequest
-				   stringCollectionArgumentNamed: 'subclassesOf'
-				   in: scopeValue);
-		  parentClassNames: (toolRequest
-				   stringCollectionArgumentNamed: 'superclassesOf'
-				   in: scopeValue);
-		  side:
-			  (toolRequest
-				   stringArgumentNamed: 'side'
-				   in: rawValue
-				   default: 'both');
+		  packageNames: (toolRequest stringCollectionArgumentNamed: 'packages' in: scopeValue);
+		  classNames: (toolRequest stringCollectionArgumentNamed: 'classes' in: scopeValue);
+		  hierarchyClassNames: (toolRequest stringCollectionArgumentNamed: 'hierarchies' in: scopeValue);
+		  subclassClassNames: (toolRequest stringCollectionArgumentNamed: 'subclassesOf' in: scopeValue);
+		  parentClassNames: (toolRequest stringCollectionArgumentNamed: 'superclassesOf' in: scopeValue);
+		  side: (toolRequest stringArgumentNamed: 'side' in: rawValue default: 'both');
 		  yourself
 ]
 
@@ -94,8 +62,7 @@ MCPTestCoverageRequest class >> signalMissingCoverageOptions [
 
 	^ MCPCommandError
 		  signalErrorCode: #CoverageOptionsRequired
-		  message:
-		  'test_coverage_run requires a coverage object with an explicit method scope.'
+		  message: 'test_coverage_run requires a coverage object with an explicit method scope.'
 		  details: { (#tool -> 'test_coverage_run') } asDictionary
 ]
 

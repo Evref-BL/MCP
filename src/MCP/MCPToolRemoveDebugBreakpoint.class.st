@@ -20,8 +20,7 @@ MCPToolRemoveDebugBreakpoint >> breakpointToolSpec [
 
 	^ {
 		  (#title -> 'Remove Debug Breakpoint').
-		  (#description
-		   -> 'Remove one tracked transient Pharo DebugPoint breakpoint.').
+		  (#description -> 'Remove one tracked transient Pharo DebugPoint breakpoint.').
 		  (#action -> 'remove').
 		  (#inputProperties -> { self breakpointIdSchemaProperty }).
 		  (#requiredProperties -> #( 'breakpointId' )) } asDictionary

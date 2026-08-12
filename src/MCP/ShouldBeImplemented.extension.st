@@ -10,8 +10,6 @@ ShouldBeImplemented >> mcpDebugMethodUpdateKind [
 ShouldBeImplemented >> mcpDebugRepairActionsFor: aRepairAnalyzer [
 
 	| action |
-	action := aRepairAnalyzer
-		          stubActionFor: self
-		          kind: 'shouldBeImplemented'.
+	action := aRepairAnalyzer stubActionFor: self kind: 'shouldBeImplemented'.
 	^ action ifNil: [ #(  ) ] ifNotNil: [ { action } ]
 ]

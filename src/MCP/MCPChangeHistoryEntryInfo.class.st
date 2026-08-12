@@ -86,14 +86,11 @@ MCPChangeHistoryEntryInfo >> asDictionary [
 	| data |
 	data := Dictionary new.
 	index ifNotNil: [ data at: #index put: index ].
-	eventClassName ifNotNil: [
-		data at: #eventClassName put: eventClassName ].
-	(summary notNil and: [ summary ~= ('an ' , eventClassName) ])
-		ifTrue: [ data at: #summary put: summary ].
+	eventClassName ifNotNil: [ data at: #eventClassName put: eventClassName ].
+	(summary notNil and: [ summary ~= ('an ' , eventClassName) ]) ifTrue: [ data at: #summary put: summary ].
 	entryKind ifNotNil: [ data at: #entryKind put: entryKind ].
 	time ifNotNil: [ data at: #time put: time ].
-	triggerReference ifNotNil: [
-		data at: #triggerReference put: triggerReference ].
+	triggerReference ifNotNil: [ data at: #triggerReference put: triggerReference ].
 	packageName ifNotNil: [ data at: #packageName put: packageName ].
 	behaviorName ifNotNil: [ data at: #behaviorName put: behaviorName ].
 	classSide ifNotNil: [ data at: #classSide put: classSide ].
@@ -138,8 +135,7 @@ MCPChangeHistoryEntryInfo >> initializeFromEvent: anEvent [
 { #category : 'private - initialization' }
 MCPChangeHistoryEntryInfo >> initializeTimeFromEntry: anEntry log: aLog [
 
-	time := (aLog timeAt: anEntry ifAbsent: [ nil ]) ifNotNil: [ :value |
-		        value asString ]
+	time := (aLog timeAt: anEntry ifAbsent: [ nil ]) ifNotNil: [ :value | value asString ]
 ]
 
 { #category : 'private - initialization' }
@@ -148,8 +144,7 @@ MCPChangeHistoryEntryInfo >> initializeTriggerReferenceFromEntry: anEntry log: a
 	triggerReference := nil.
 	aLog
 		triggererReferenceOf: anEntry
-		ifPresent: [ :aReference |
-			triggerReference := self stringFromReference: aReference ]
+		ifPresent: [ :aReference | triggerReference := self stringFromReference: aReference ]
 		ifAbsent: [ ]
 ]
 

@@ -26,13 +26,10 @@ MCPRepositoryBranchResult >> asDictionary [
 
 	| data |
 	data := Dictionary new.
-	self previousBranchName ifNotEmpty: [ :name |
-		data at: #previousBranchName put: name ].
+	self previousBranchName ifNotEmpty: [ :name | data at: #previousBranchName put: name ].
 	self branchName ifNotEmpty: [ :name | data at: #branchName put: name ].
-	self previousHeadDescription ifNotEmpty: [ :description |
-		data at: #previousHeadDescription put: description ].
-	self headDescription ifNotEmpty: [ :description |
-		data at: #headDescription put: description ].
+	self previousHeadDescription ifNotEmpty: [ :description | data at: #previousHeadDescription put: description ].
+	self headDescription ifNotEmpty: [ :description | data at: #headDescription put: description ].
 	^ data
 ]
 

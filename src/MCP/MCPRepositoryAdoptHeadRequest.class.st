@@ -38,7 +38,6 @@ MCPRepositoryAdoptHeadRequest >> requestedContext [
 
 	| context |
 	context := self repositoryReference requestedContext copy.
-	self branchName ifNotEmpty: [ :expectedBranchName |
-		context at: #branchName put: expectedBranchName ].
+	self branchName ifNotEmpty: [ :expectedBranchName | context at: #branchName put: expectedBranchName ].
 	^ context
 ]

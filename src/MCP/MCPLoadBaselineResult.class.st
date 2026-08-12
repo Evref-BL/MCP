@@ -19,10 +19,7 @@ Class {
 { #category : 'instance creation' }
 MCPLoadBaselineResult class >> request: aRequest newPackageNames: packageNames repositoryInfos: repositories [
 
-	^ self new
-		  initializeRequest: aRequest
-		  newPackageNames: packageNames
-		  repositoryInfos: repositories
+	^ self new initializeRequest: aRequest newPackageNames: packageNames repositoryInfos: repositories
 ]
 
 { #category : 'converting' }
@@ -32,8 +29,7 @@ MCPLoadBaselineResult >> asDictionary [
 	data := { (#baseline -> self baseline) } asDictionary.
 	policy := self loadPolicy asDictionary.
 	policy ifNotEmpty: [ data at: #policy put: policy ].
-	self newPackageNames ifNotEmpty: [ :packageNames |
-		data at: #newPackageNames put: packageNames ].
+	self newPackageNames ifNotEmpty: [ :packageNames | data at: #newPackageNames put: packageNames ].
 	repositories := self repositoryDictionaries.
 	repositories ifNotEmpty: [ data at: #repositories put: repositories ].
 	^ data
@@ -89,8 +85,7 @@ MCPLoadBaselineResult >> onWarning [
 { #category : 'converting' }
 MCPLoadBaselineResult >> repositoryDictionaries [
 
-	^ (self repositoryInfos collect: [ :each | each asDictionary ])
-		  asArray
+	^ (self repositoryInfos collect: [ :each | each asDictionary ]) asArray
 ]
 
 { #category : 'accessing' }

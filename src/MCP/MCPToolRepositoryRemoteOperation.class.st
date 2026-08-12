@@ -18,28 +18,19 @@ MCPToolRepositoryRemoteOperation class >> isAbstract [
 { #category : 'private - schema' }
 MCPToolRepositoryRemoteOperation >> newRemoteNameSchemaProperty [
 
-	^ self
-		  schemaPropertyNamed: 'newRemoteName'
-		  type: 'string'
-		  description: 'New remote name.'
+	^ self schemaPropertyNamed: 'newRemoteName' type: 'string' description: 'New remote name.'
 ]
 
 { #category : 'private - schema' }
 MCPToolRepositoryRemoteOperation >> remoteNameSchemaProperty [
 
-	^ self
-		  schemaPropertyNamed: 'remoteName'
-		  type: 'string'
-		  description: 'Remote name.'
+	^ self schemaPropertyNamed: 'remoteName' type: 'string' description: 'Remote name.'
 ]
 
 { #category : 'private - schema' }
 MCPToolRepositoryRemoteOperation >> remoteUrlSchemaProperty [
 
-	^ self
-		  schemaPropertyNamed: 'remoteUrl'
-		  type: 'string'
-		  description: 'Remote URL.'
+	^ self schemaPropertyNamed: 'remoteUrl' type: 'string' description: 'Remote URL.'
 ]
 
 { #category : 'testing' }
@@ -55,7 +46,5 @@ MCPToolRepositoryRemoteOperation >> validateRequest: request [
 	self requiredInputProperties do: [ :each |
 			(request argumentNamed: each ifAbsent: [ nil ]) ifNotNil: [ :value |
 					(value isString and: [ value trimBoth isEmpty ]) ifTrue: [
-							MCPInvalidToolInput
-								signalMissingRequiredArgumentNamed: each
-								forTool: self ] ] ]
+						MCPInvalidToolInput signalMissingRequiredArgumentNamed: each forTool: self ] ] ]
 ]

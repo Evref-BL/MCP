@@ -26,10 +26,8 @@ MCPRepositoryPullResult >> asDictionary [
 	| data |
 	data := Dictionary new.
 	self branchName ifNotEmpty: [ :name | data at: #branchName put: name ].
-	self headDescription ifNotEmpty: [ :description |
-		data at: #headDescription put: description ].
-	self modifiedPackageNames ifNotEmpty: [ :names |
-		data at: #modifiedPackageNames put: names ].
+	self headDescription ifNotEmpty: [ :description | data at: #headDescription put: description ].
+	self modifiedPackageNames ifNotEmpty: [ :names | data at: #modifiedPackageNames put: names ].
 	^ data
 ]
 

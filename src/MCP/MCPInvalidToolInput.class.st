@@ -37,10 +37,7 @@ MCPInvalidToolInput class >> signalForTool: aTool violations: aCollection [
 { #category : 'instance creation' }
 MCPInvalidToolInput class >> signalMissingRequiredArgumentNamed: anArgumentName forTool: aTool [
 
-	^ self
-		  signalForTool: aTool
-		  violations:
-		  { (self missingRequiredArgumentViolationNamed: anArgumentName) }
+	^ self signalForTool: aTool violations: { (self missingRequiredArgumentViolationNamed: anArgumentName) }
 ]
 
 { #category : 'converting' }
@@ -48,9 +45,7 @@ MCPInvalidToolInput >> asJRPCErrorData [
 
 	^ {
 		  ('toolName' -> self toolName).
-		  ('violations'
-		   -> (self violations collect: [ :each | each asDictionary ])) }
-		  asDictionary
+		  ('violations' -> (self violations collect: [ :each | each asDictionary ])) } asDictionary
 ]
 
 { #category : 'converting' }
@@ -73,10 +68,7 @@ MCPInvalidToolInput >> initialize [
 MCPInvalidToolInput >> mcpAddToolErrorDetailsTo: aDictionary [
 
 	aDictionary at: #toolName put: self toolName.
-	self violations ifNotEmpty: [
-		aDictionary
-			at: #violations
-			put: (self violations collect: [ :each | each asDictionary ]) ]
+	self violations ifNotEmpty: [ aDictionary at: #violations put: (self violations collect: [ :each | each asDictionary ]) ]
 ]
 
 { #category : 'accessing' }
@@ -100,7 +92,5 @@ MCPInvalidToolInput >> violations [
 { #category : 'accessing' }
 MCPInvalidToolInput >> violations: aCollection [
 
-	violations := aCollection
-		              ifNil: [ #(  ) ]
-		              ifNotNil: [ aCollection asArray ]
+	violations := aCollection ifNil: [ #(  ) ] ifNotNil: [ aCollection asArray ]
 ]

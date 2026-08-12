@@ -13,16 +13,12 @@ Class {
 MCPToolStructuredOutputTest >> testEvaluateReturnsStructuredError [
 
 	| result structured error |
-	result := self
-		          callToolNamed: 'image_evaluate'
-		          withArguments: { (#code -> '1 +') } asDictionary.
+	result := self callToolNamed: 'image_evaluate' withArguments: { (#code -> '1 +') } asDictionary.
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
-	self
-		assert: (error at: #errorClass)
-		equals: self expectedSyntaxErrorNoticeClassName.
+	self assert: (error at: #errorClass) equals: self expectedSyntaxErrorNoticeClassName.
 	self assert: ((error at: #message) includesSubstring: 'expected')
 ]
 
@@ -30,10 +26,7 @@ MCPToolStructuredOutputTest >> testEvaluateReturnsStructuredError [
 MCPToolStructuredOutputTest >> testEvaluateReturnsStructuredRuntimeErrorWithStackTrace [
 
 	| error result stackTrace |
-	result := self
-		          callToolNamed: 'image_evaluate'
-		          withArguments:
-		          { (#code -> 'Error signal: ''boom''') } asDictionary.
+	result := self callToolNamed: 'image_evaluate' withArguments: { (#code -> 'Error signal: ''boom''') } asDictionary.
 	error := self errorFrom: result.
 	stackTrace := error at: #stackTrace.
 	self assert: (result at: #isError).
@@ -49,9 +42,7 @@ MCPToolStructuredOutputTest >> testEvaluateReturnsStructuredRuntimeErrorWithStac
 MCPToolStructuredOutputTest >> testEvaluateReturnsStructuredSuccess [
 
 	| result data structured |
-	result := self
-		          callToolNamed: 'image_evaluate'
-		          withArguments: { (#code -> '1 + 2') } asDictionary.
+	result := self callToolNamed: 'image_evaluate' withArguments: { (#code -> '1 + 2') } asDictionary.
 	structured := self structuredContentFrom: result.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
@@ -64,17 +55,14 @@ MCPToolStructuredOutputTest >> testEvaluateReturnsStructuredSuccess [
 MCPToolStructuredOutputTest >> testGetClassParseErrorReturnsStructuredToolError [
 
 	| error result structured |
-	result := self
-		          callToolNamed: 'class_get'
-		          withArguments: { (#className -> '') } asDictionary.
+	result := self callToolNamed: 'class_get' withArguments: { (#className -> '') } asDictionary.
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
 	self assert: (error at: #errorClass) equals: #Error.
 	self assert: (error at: #className) equals: ''.
-	self assert: ((error at: #message) includesSubstring:
-			 'className must be a non-empty string')
+	self assert: ((error at: #message) includesSubstring: 'className must be a non-empty string')
 ]
 
 { #category : 'tests' }
@@ -138,9 +126,7 @@ MCPToolStructuredOutputTest >> testGetMethodReturnsStructuredError [
 	self assert: (structured at: #status) equals: 'error'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'MethodNotFound'.
-	self
-		assert: (error at: #className)
-		equals: 'MCPToolGetMethodTestTarget'.
+	self assert: (error at: #className) equals: 'MCPToolGetMethodTestTarget'.
 	self assert: (error at: #selector) equals: 'doesNotExist'.
 	self assert: (error includesKey: #classSide).
 	self deny: (error at: #classSide).
@@ -156,9 +142,7 @@ MCPToolStructuredOutputTest >> testGetMethodReturnsStructuredSuccess [
 			          (#selector -> 'readInstanceWith:') } asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self
-		assert: ((self structuredContentFrom: result) at: #status)
-		equals: 'ok'.
+	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
 	self assert: (data at: #protocol) equals: 'reading'.
 	self deny: (data includesKey: #variableReferences).
 	self deny: (data includesKey: #className).
@@ -170,8 +154,7 @@ MCPToolStructuredOutputTest >> testGetMethodReturnsStructuredSuccess [
 	self deny: (data includesKey: #externalVariableCount).
 	self deny: (data includesKey: #variableReferenceCount).
 	self deny: (data includesKey: #externalVariableReferences).
-	self assert:
-		((data at: #source) includesSubstring: String cr asString)
+	self assert: ((data at: #source) includesSubstring: String cr asString)
 ]
 
 { #category : 'tests' }
@@ -180,20 +163,14 @@ MCPToolStructuredOutputTest >> testMethodMetadataSearchReturnsStructuredArrayDat
 	| data methods result selectors |
 	result := self
 		          callToolNamed: 'method_metadata_search'
-		          withArguments: { (self searchScope:
-				           { (#classes -> #( 'MCPToolMethodSearchTestTarget' )) }) }
-				          asDictionary.
+		          withArguments: { (self searchScope: { (#classes -> #( 'MCPToolMethodSearchTestTarget' )) }) } asDictionary.
 	data := self dataFrom: result.
 	methods := data at: #methods.
 	selectors := methods collect: [ :each | each at: #selector ].
-	self
-		assert: ((self structuredContentFrom: result) at: #status)
-		equals: 'ok'.
+	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
 	self assert: methods notEmpty.
 	self assert: (methods allSatisfy: [ :each |
-				 (each includesKey: #selector) and: [
-					 (each includesKey: #className) and: [
-						 each includesKey: #packageName ] ] ]).
+			 (each includesKey: #selector) and: [ (each includesKey: #className) and: [ each includesKey: #packageName ] ] ]).
 	self assert: (selectors includes: 'alphaNeedleSelector')
 ]
 
@@ -203,10 +180,7 @@ MCPToolStructuredOutputTest >> testMethodMetadataSearchReturnsStructuredWarnings
 	| data result structured warnings |
 	result := self
 		          callToolNamed: 'method_metadata_search'
-		          withArguments:
-			          { (self searchScope:
-				           { (#packages -> #( 'MCP-Definitely-Missing' )) }) }
-				          asDictionary.
+		          withArguments: { (self searchScope: { (#packages -> #( 'MCP-Definitely-Missing' )) }) } asDictionary.
 	structured := self structuredContentFrom: result.
 	data := self dataFrom: result.
 	warnings := self warningsFrom: result.
@@ -215,8 +189,7 @@ MCPToolStructuredOutputTest >> testMethodMetadataSearchReturnsStructuredWarnings
 	self assert: (structured includesKey: #error) not.
 	self assert: (data at: #methods) isEmpty.
 	self assert: warnings size equals: 1.
-	self assert:
-		(warnings first includesSubstring: 'MCP-Definitely-Missing').
+	self assert: (warnings first includesSubstring: 'MCP-Definitely-Missing').
 	self assert: (warnings first includesSubstring: 'packageNames scope').
 	self assert: (warnings first includesSubstring: 'Did you mean:')
 ]
@@ -227,19 +200,14 @@ MCPToolStructuredOutputTest >> testRemoveClassReturnsStructuredError [
 	| result structured error |
 	result := self
 		          callToolNamed: 'class_remove'
-		          withArguments:
-			          { (#classNames
-			           -> { 'MCPToolRemoveClassDefinitelyMissing' }) }
-				          asDictionary.
+		          withArguments: { (#classNames -> { 'MCPToolRemoveClassDefinitelyMissing' }) } asDictionary.
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
-	self
-		assert: (error at: #className)
-		equals: 'MCPToolRemoveClassDefinitelyMissing'
+	self assert: (error at: #className) equals: 'MCPToolRemoveClassDefinitelyMissing'
 ]
 
 { #category : 'tests' }
@@ -294,19 +262,13 @@ MCPToolStructuredOutputTest >> testRunTestsCoverageCanIncludeCoveredMethodsAndCa
 	result := self callToolNamed: 'test_coverage_run' withArguments: {
 			          (#classes -> #( 'MCPToolCoverageTargetTest' )).
 			          (#coverage -> {
-				           (#scope
-				            ->
-				            { (#classes -> #( 'MCPToolCoverageTarget' )) }
-					            asDictionary).
+				           (#scope -> { (#classes -> #( 'MCPToolCoverageTarget' )) } asDictionary).
 				           (#includeCoveredMethods -> true).
 				           (#methodLimit -> 1) } asDictionary) } asDictionary.
 	data := self dataFrom: result.
 	coverage := data at: #coverage.
-	coveredSelectors := (coverage at: #coveredMethods) collect: [ :each |
-		                    each at: #selector ].
-	self
-		assert: ((self structuredContentFrom: result) at: #status)
-		equals: 'ok'.
+	coveredSelectors := (coverage at: #coveredMethods) collect: [ :each | each at: #selector ].
+	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
 	self assert: (data at: #runCount) equals: 2.
 	self assert: (data at: #passedCount) equals: 2.
 	self assert: (coverage at: #coveredMethodCount) equals: 2.
@@ -324,12 +286,9 @@ MCPToolStructuredOutputTest >> testRunTestsCoverageRequiresExplicitScope [
 			          (#coverage -> Dictionary new) } asDictionary.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self
-		assert: ((self structuredContentFrom: result) at: #status)
-		equals: 'error'.
+	self assert: ((self structuredContentFrom: result) at: #status) equals: 'error'.
 	self assert: (error at: #errorCode) equals: 'CoverageScopeRequired'.
-	self assert:
-		((error at: #message) includesSubstring: 'explicit method scope')
+	self assert: ((error at: #message) includesSubstring: 'explicit method scope')
 ]
 
 { #category : 'tests' }
@@ -339,22 +298,14 @@ MCPToolStructuredOutputTest >> testRunTestsCoverageReturnsStructuredCoverage [
 	result := self callToolNamed: 'test_coverage_run' withArguments: {
 			          (#classes -> #( 'MCPToolCoverageTargetTest' )).
 			          (#coverage -> {
-				           (#scope
-				            ->
-				            { (#classes -> #( 'MCPToolCoverageTarget' )) }
-					            asDictionary).
+				           (#scope -> { (#classes -> #( 'MCPToolCoverageTarget' )) } asDictionary).
 				           (#methodLimit -> 10) } asDictionary) } asDictionary.
 	data := self dataFrom: result.
 	coverage := data at: #coverage.
-	uncoveredSelectors := (coverage at: #uncoveredMethods) collect: [
-		                      :each | each at: #selector ].
-	partialSelectors := (coverage at: #partiallyCoveredMethods) collect: [
-		                    :each | each at: #selector ].
-	self
-		assert: ((self structuredContentFrom: result) at: #status)
-		equals: 'ok'.
-	self assert:
-		((self summaryFrom: result) includesSubstring: 'Coverage:').
+	uncoveredSelectors := (coverage at: #uncoveredMethods) collect: [ :each | each at: #selector ].
+	partialSelectors := (coverage at: #partiallyCoveredMethods) collect: [ :each | each at: #selector ].
+	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self assert: ((self summaryFrom: result) includesSubstring: 'Coverage:').
 	self assert: (data at: #runCount) equals: 2.
 	self assert: (data at: #passedCount) equals: 2.
 	self deny: (data includesKey: #results).
@@ -412,24 +363,17 @@ MCPToolStructuredOutputTest >> testRunTestsDeduplicatesUnrunCasesAcrossSelection
 MCPToolStructuredOutputTest >> testRunTestsParameterizedMethodFailureIncludesCaseDetails [
 
 	| data issue result |
-	result := self callToolNamed: 'test_run' withArguments: { (#methods
-		           ->
-		           #( 'MCPToolRunTestsParameterizedTarget>>#testFailsOnlyForUTF16' )) }
-			          asDictionary.
+	result := self
+		          callToolNamed: 'test_run'
+		          withArguments: { (#methods -> #( 'MCPToolRunTestsParameterizedTarget>>#testFailsOnlyForUTF16' )) } asDictionary.
 	data := self dataFrom: result.
 	issue := (data at: #failures) first.
-	self
-		assert: ((self structuredContentFrom: result) at: #status)
-		equals: 'ok'.
+	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
 	self assert: (data at: #runCount) equals: 3.
 	self assert: (data at: #passedCount) equals: 2.
 	self assert: (data at: #failures) size equals: 1.
-	self
-		assert: (issue at: #test)
-		equals: 'MCPToolRunTestsParameterizedTarget>>#testFailsOnlyForUTF16'.
-	self
-		assert: (issue at: #parameters)
-		equals: #( '#encoding->''UTF-16''' ).
+	self assert: (issue at: #test) equals: 'MCPToolRunTestsParameterizedTarget>>#testFailsOnlyForUTF16'.
+	self assert: (issue at: #parameters) equals: #( '#encoding->''UTF-16''' ).
 	self assert: ((issue at: #message) includesSubstring: 'UTF-16').
 	self deny: (issue includesKey: #testName).
 	self deny: (issue includesKey: #testCaseName)
@@ -439,18 +383,14 @@ MCPToolStructuredOutputTest >> testRunTestsParameterizedMethodFailureIncludesCas
 MCPToolStructuredOutputTest >> testRunTestsParseErrorReturnsStructuredToolError [
 
 	| error result structured |
-	result := self
-		          callToolNamed: 'test_run'
-		          withArguments:
-		          { (#methods -> #( 'NotAMethodReference' )) } asDictionary.
+	result := self callToolNamed: 'test_run' withArguments: { (#methods -> #( 'NotAMethodReference' )) } asDictionary.
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
 	self assert: (error at: #errorClass) equals: #Error.
 	self deny: (error includesKey: #tests).
-	self assert:
-		((error at: #message) includesSubstring: 'Class>>#selector')
+	self assert: ((error at: #message) includesSubstring: 'Class>>#selector')
 ]
 
 { #category : 'tests' }
@@ -523,20 +463,13 @@ MCPToolStructuredOutputTest >> testSearchClassesReturnsStructuredArrayData [
 	| classNames classes data result |
 	result := self
 		          callToolNamed: 'class_search'
-		          withArguments:
-			          { (self searchScope:
-				           { (#classes -> #( 'MCPToolContractsTest' )) }) }
-				          asDictionary.
+		          withArguments: { (self searchScope: { (#classes -> #( 'MCPToolContractsTest' )) }) } asDictionary.
 	data := self dataFrom: result.
 	classes := data at: #classes.
 	classNames := classes collect: [ :each | each at: #className ].
-	self
-		assert: ((self structuredContentFrom: result) at: #status)
-		equals: 'ok'.
+	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
 	self assert: classes size equals: 1.
-	self assert: (classes allSatisfy: [ :each |
-			 (each includesKey: #className) and: [
-				 each includesKey: #packageName ] ]).
+	self assert: (classes allSatisfy: [ :each | (each includesKey: #className) and: [ each includesKey: #packageName ] ]).
 	self assert: (classNames includes: 'MCPToolContractsTest')
 ]
 
@@ -546,10 +479,7 @@ MCPToolStructuredOutputTest >> testSearchClassesReturnsStructuredWarnings [
 	| data result structured warnings |
 	result := self
 		          callToolNamed: 'class_search'
-		          withArguments:
-			          { (self searchScope:
-				           { (#packages -> #( 'MCP-Definitely-Missing' )) }) }
-				          asDictionary.
+		          withArguments: { (self searchScope: { (#packages -> #( 'MCP-Definitely-Missing' )) }) } asDictionary.
 	structured := self structuredContentFrom: result.
 	data := self dataFrom: result.
 	warnings := self warningsFrom: result.
@@ -558,8 +488,7 @@ MCPToolStructuredOutputTest >> testSearchClassesReturnsStructuredWarnings [
 	self assert: (structured includesKey: #error) not.
 	self assert: (data at: #classes) isEmpty.
 	self assert: warnings size equals: 1.
-	self assert:
-		(warnings first includesSubstring: 'MCP-Definitely-Missing').
+	self assert: (warnings first includesSubstring: 'MCP-Definitely-Missing').
 	self assert: (warnings first includesSubstring: 'packageNames scope').
 	self assert: (warnings first includesSubstring: 'Did you mean:')
 ]
@@ -599,21 +528,14 @@ MCPToolStructuredOutputTest >> testSearchPackagesReturnsStructuredArrayData [
 MCPToolStructuredOutputTest >> testSearchPackagesReturnsStructuredError [
 
 	| result structured error |
-	result := self
-		          callToolNamed: 'package_search'
-		          withArguments:
-		          { (#projectNames -> #( 'DefinitelyMissingProject' )) }
-			          asDictionary.
+	result := self callToolNamed: 'package_search' withArguments: { (#projectNames -> #( 'DefinitelyMissingProject' )) } asDictionary.
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
-	self
-		assert: (error at: #projectName)
-		equals: 'DefinitelyMissingProject'.
+	self assert: (error at: #projectName) equals: 'DefinitelyMissingProject'.
 	self assert: (error at: #scope) equals: 'projects'.
-	self assert: ((error at: #message) includesSubstring:
-			 'Project DefinitelyMissingProject does not exist.')
+	self assert: ((error at: #message) includesSubstring: 'Project DefinitelyMissingProject does not exist.')
 ]
 
 { #category : 'tests' }

@@ -20,15 +20,12 @@ MCPToolPullUpClassSlot >> classToolSpec [
 
 	^ {
 		  (#title -> 'Pull Up Class Slot').
-		  (#description
-		   ->
-		   'Pull one instance-side or class-side slot up to a superclass.').
+		  (#description -> 'Pull one instance-side or class-side slot up to a superclass.').
 		  (#fixedArguments -> { (#slotAction -> 'pullUp') } asDictionary).
 		  (#inputProperties -> {
 			   self classNameSchemaProperty.
 			   self slotNameSchemaProperty.
 			   self classSideSlotSchemaProperty.
 			   self forceSchemaProperty }).
-		  (#requiredProperties -> #( 'className' 'slotName' )) }
-		  asDictionary
+		  (#requiredProperties -> #( 'className' 'slotName' )) } asDictionary
 ]

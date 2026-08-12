@@ -26,8 +26,6 @@ MCPToolListDebugSessions >> sessionToolSpec [
 
 	^ {
 		  (#title -> 'List Debug Sessions').
-		  (#description
-		   ->
-		   'List Pharo DebugSession records tracked by the MCP debugger registry.').
+		  (#description -> 'List Pharo DebugSession records tracked by the MCP debugger registry.').
 		  (#action -> 'list') } asDictionary
 ]

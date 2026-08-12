@@ -82,16 +82,13 @@ MCPToolCallRecord >> displayDurationMilliseconds [
 { #category : 'displaying' }
 MCPToolCallRecord >> displayStartedAt [
 
-	^ self startedAt
-		  ifNil: [ '' ]
-		  ifNotNil: [ :timestamp | timestamp asString ]
+	^ self startedAt ifNil: [ '' ] ifNotNil: [ :timestamp | timestamp asString ]
 ]
 
 { #category : 'displaying' }
 MCPToolCallRecord >> displaySummary [
 
-	self outputBudgetExplanation isEmpty ifFalse: [
-		^ self outputBudgetExplanation ].
+	self outputBudgetExplanation isEmpty ifFalse: [ ^ self outputBudgetExplanation ].
 	self outlierExplanation isEmpty ifFalse: [ ^ self outlierExplanation ].
 	self summary isEmpty ifFalse: [ ^ self summary ].
 	^ self errorClass
@@ -186,9 +183,7 @@ MCPToolCallRecord >> isRunning [
 { #category : 'testing' }
 MCPToolCallRecord >> isTraceWorthy [
 
-	^ self status = 'error' or: [
-		  self outlierExplanation isNotEmpty or: [
-			  self outputBudgetExceeded ] ]
+	^ self status = 'error' or: [ self outlierExplanation isNotEmpty or: [ self outputBudgetExceeded ] ]
 ]
 
 { #category : 'accessing' }
@@ -267,12 +262,10 @@ MCPToolCallRecord >> outputSnapshot: anObject [
 MCPToolCallRecord >> recordOutputBudget: budgetData [
 
 	self outputByteCount: (budgetData at: #outputBytes).
-	self approximateOutputTokenCount:
-		(budgetData at: #approximateOutputTokens).
+	self approximateOutputTokenCount: (budgetData at: #approximateOutputTokens).
 	self outputBudgetBytes: (budgetData at: #outputBudgetBytes).
 	self outputBudgetExceeded: (budgetData at: #outputBudgetExceeded).
-	self outputBudgetExplanation:
-		(budgetData at: #outputBudgetExplanation)
+	self outputBudgetExplanation: (budgetData at: #outputBudgetExplanation)
 ]
 
 { #category : 'accessing' }

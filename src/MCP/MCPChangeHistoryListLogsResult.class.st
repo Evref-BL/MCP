@@ -29,9 +29,7 @@ MCPChangeHistoryListLogsResult >> asDictionary [
 
 	| data |
 	data := Dictionary new.
-	data
-		at: #files
-		put: ((self logs collect: [ :each | each asDictionary ]) as: Array).
+	data at: #files put: ((self logs collect: [ :each | each asDictionary ]) as: Array).
 	nextOffset ifNotNil: [ :offset | data at: #nextOffset put: offset ].
 	^ data
 ]

@@ -19,10 +19,7 @@ Class {
 { #category : 'instance creation' }
 MCPRepositoryCommitResult class >> repository: aRepository changedPackageNames: packageNames commit: aCommit [
 
-	^ self new
-		  initializeRepository: aRepository
-		  changedPackageNames: packageNames
-		  commit: aCommit
+	^ self new initializeRepository: aRepository changedPackageNames: packageNames commit: aCommit
 ]
 
 { #category : 'instance creation' }
@@ -41,14 +38,10 @@ MCPRepositoryCommitResult >> asDictionary [
 	| data |
 	data := Dictionary new.
 	self commitId ifNotEmpty: [ :id | data at: #commitId put: id ].
-	self commitDescription ifNotEmpty: [ :description |
-		data at: #commitDescription put: description ].
-	self headDescription ifNotEmpty: [ :description |
-		data at: #headDescription put: description ].
-	self changedPackageNames ifNotEmpty: [ :names |
-		data at: #changedPackageNames put: names ].
-	self modifiedPackageNames ifNotEmpty: [ :names |
-		data at: #modifiedPackageNames put: names ].
+	self commitDescription ifNotEmpty: [ :description | data at: #commitDescription put: description ].
+	self headDescription ifNotEmpty: [ :description | data at: #headDescription put: description ].
+	self changedPackageNames ifNotEmpty: [ :names | data at: #changedPackageNames put: names ].
+	self modifiedPackageNames ifNotEmpty: [ :names | data at: #modifiedPackageNames put: names ].
 	^ data
 ]
 

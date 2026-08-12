@@ -18,8 +18,7 @@ MCPGitRepositoryMetadataTest >> testDirectoryGitConfigProducesEmptyMetadata [
 			gitDirectory ensureCreateDirectory.
 			configPath := gitDirectory / 'config'.
 			configPath ensureCreateDirectory.
-			metadata := MCPGitRepositoryMetadata fromLocationString:
-				            repositoryDirectory pathString.
+			metadata := MCPGitRepositoryMetadata fromLocationString: repositoryDirectory pathString.
 			self assert: metadata remoteDictionaries equals: #(  ).
 			self assert: (metadata remoteUrlNamed: 'origin') equals: ''.
 			upstreamInfo := metadata upstreamInfoForBranchNamed: 'main'.
@@ -33,8 +32,7 @@ MCPGitRepositoryMetadataTest >> testMissingGitConfigProducesEmptyMetadata [
 
 	self withTemporaryRepositoryDo: [ :repositoryDirectory |
 			| metadata upstreamInfo |
-			metadata := MCPGitRepositoryMetadata fromLocationString:
-				            repositoryDirectory pathString.
+			metadata := MCPGitRepositoryMetadata fromLocationString: repositoryDirectory pathString.
 			self assert: metadata remoteDictionaries equals: #(  ).
 			self assert: (metadata remoteUrlNamed: 'origin') equals: ''.
 			upstreamInfo := metadata upstreamInfoForBranchNamed: 'main'.
@@ -49,24 +47,17 @@ MCPGitRepositoryMetadataTest >> testReadsRemoteAndUpstreamMetadataFromGitConfig 
 	self withTemporaryRepositoryDo: [ :repositoryDirectory |
 			| metadata remotes upstreamInfo |
 			self writeStandardConfigIn: repositoryDirectory.
-			metadata := MCPGitRepositoryMetadata fromLocationString:
-				            repositoryDirectory pathString.
+			metadata := MCPGitRepositoryMetadata fromLocationString: repositoryDirectory pathString.
 			remotes := metadata remoteDictionaries.
 			self assert: remotes size equals: 2.
 			self assert: (remotes first at: #name) equals: 'backup'.
-			self
-				assert: (remotes first at: #url)
-				equals: 'ssh://example.com/backup.git'.
+			self assert: (remotes first at: #url) equals: 'ssh://example.com/backup.git'.
 			self assert: (remotes second at: #name) equals: 'origin'.
-			self
-				assert: (remotes second at: #url)
-				equals: 'https://example.com/project.git'.
+			self assert: (remotes second at: #url) equals: 'https://example.com/project.git'.
 			upstreamInfo := metadata upstreamInfoForBranchNamed: 'main'.
 			self assert: (upstreamInfo at: #remoteName) equals: 'origin'.
 			self assert: (upstreamInfo at: #branchName) equals: 'main'.
-			self
-				assert: (upstreamInfo at: #remoteUrl)
-				equals: 'https://example.com/project.git' ]
+			self assert: (upstreamInfo at: #remoteUrl) equals: 'https://example.com/project.git' ]
 ]
 
 { #category : 'tests' }
@@ -74,31 +65,21 @@ MCPGitRepositoryMetadataTest >> testReadsWorktreeMetadataFromCommonGitDirectory 
 
 	self withTemporaryRepositoryDo: [ :repositoryDirectory |
 			| commonGitDirectory metadata upstreamInfo |
-			commonGitDirectory := self writeWorktreeConfigIn:
-				                      repositoryDirectory.
-			metadata := MCPGitRepositoryMetadata fromLocationString:
-				            repositoryDirectory pathString.
-			self
-				assert: metadata gitDirectory pathString
-				equals: commonGitDirectory pathString.
-			self
-				assert: (metadata remoteUrlNamed: 'origin')
-				equals: 'https://example.com/worktree.git'.
+			commonGitDirectory := self writeWorktreeConfigIn: repositoryDirectory.
+			metadata := MCPGitRepositoryMetadata fromLocationString: repositoryDirectory pathString.
+			self assert: metadata gitDirectory pathString equals: commonGitDirectory pathString.
+			self assert: (metadata remoteUrlNamed: 'origin') equals: 'https://example.com/worktree.git'.
 			upstreamInfo := metadata upstreamInfoForBranchNamed: 'feature'.
 			self assert: (upstreamInfo at: #remoteName) equals: 'origin'.
 			self assert: (upstreamInfo at: #branchName) equals: 'feature'.
-			self
-				assert: (upstreamInfo at: #remoteUrl)
-				equals: 'https://example.com/worktree.git' ]
+			self assert: (upstreamInfo at: #remoteUrl) equals: 'https://example.com/worktree.git' ]
 ]
 
 { #category : 'tests' }
 MCPGitRepositoryMetadataTest >> testRepositoryWithNilLocationProducesEmptyMetadata [
 
 	| metadata repository upstreamInfo |
-	repository := MCPTestIceRepository
-		              named: 'MCP Repository Without Location'
-		              location: nil.
+	repository := MCPTestIceRepository named: 'MCP Repository Without Location' location: nil.
 	metadata := MCPGitRepositoryMetadata forRepository: repository.
 	self assert: metadata remoteDictionaries equals: #(  ).
 	self assert: (metadata remoteUrlNamed: 'origin') equals: ''.
@@ -112,12 +93,10 @@ MCPGitRepositoryMetadataTest >> testRepositoryWithNilLocationProducesEmptyMetada
 MCPGitRepositoryMetadataTest >> withTemporaryRepositoryDo: aBlock [
 
 	| repositoryDirectory |
-	repositoryDirectory := FileLocator temp asFileReference
-	                       / ('mcp-git-metadata-' , UUID new asString).
+	repositoryDirectory := FileLocator temp asFileReference / ('mcp-git-metadata-' , UUID new asString).
 	[
 		repositoryDirectory ensureCreateDirectory.
-		aBlock value: repositoryDirectory ] ensure: [
-		repositoryDirectory exists ifTrue: [ repositoryDirectory deleteAll ] ]
+		aBlock value: repositoryDirectory ] ensure: [ repositoryDirectory exists ifTrue: [ repositoryDirectory deleteAll ] ]
 ]
 
 { #category : 'private' }

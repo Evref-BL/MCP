@@ -12,8 +12,7 @@ Class {
 { #category : 'private' }
 MCPCreateRepositoryCommand >> addRequestedPackagesTo: aRepository [
 
-	self request packageNames do: [ :each |
-		aRepository workingCopy addPackageNamed: each ]
+	self request packageNames do: [ :each | aRepository workingCopy addPackageNamed: each ]
 ]
 
 { #category : 'private' }
@@ -22,8 +21,7 @@ MCPCreateRepositoryCommand >> createRepository [
 	| creator repository |
 	creator := IceRepositoryCreator new.
 	creator location: self request location asFileReference.
-	self request subdirectory ifNotNil: [ :value |
-		creator subdirectory: value ].
+	self request subdirectory ifNotNil: [ :value | creator subdirectory: value ].
 	repository := creator createNewRepositoryNamed: self request name.
 	repository register.
 	^ repository
@@ -41,11 +39,9 @@ MCPCreateRepositoryCommand >> execute [
 				  result := MCPRepositoryCreateResult fromRepository: repository ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText:
-					  'Created repository ' , self request name , '.'
+					  successResultText: 'Created repository ' , self request name , '.'
 					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
-				  'Failed create repository ' , self request name , ': '
-				  , (error messageText ifNil: [ error asString ]) ]
+		  'Failed create repository ' , self request name , ': ' , (error messageText ifNil: [ error asString ]) ]
 ]

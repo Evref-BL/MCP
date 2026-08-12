@@ -33,41 +33,32 @@ MCPDebugCaptureRequest class >> defaultTimeoutMilliseconds [
 MCPDebugCaptureRequest class >> fromRequest: aRequest tool: aTool [
 
 	| timeout |
-	timeout := aRequest
-		           nonNegativeIntegerArgumentNamed: 'timeoutMilliseconds'
-		           default: self defaultTimeoutMilliseconds.
+	timeout := aRequest nonNegativeIntegerArgumentNamed: 'timeoutMilliseconds' default: self defaultTimeoutMilliseconds.
 	timeout := timeout min: self maximumTimeoutMilliseconds.
 	^ self new
 		  expression: (aRequest stringArgumentNamed: 'expression');
-		  name: (aRequest
-				   stringArgumentNamed: 'name'
-				   default: 'Captured debug session');
+		  name: (aRequest stringArgumentNamed: 'name' default: 'Captured debug session');
 		  timeoutMilliseconds: timeout;
-		  resultPreviewCharacterLimit: (aRequest
-				   nonNegativeIntegerArgumentNamed: 'resultPreviewCharacterLimit'
-				   default: self defaultResultPreviewCharacterLimit);
+		  resultPreviewCharacterLimit:
+			  (aRequest nonNegativeIntegerArgumentNamed: 'resultPreviewCharacterLimit' default: self defaultResultPreviewCharacterLimit);
 		  sourceContextLines: (aRequest
 				   nonNegativeIntegerArgumentNamed: 'sourceContextLines'
 				   default: self defaultSourceContextLines
 				   maximum: self maximumSourceContextLines);
-		  stackStart: (aRequest
-				   nonNegativeIntegerArgumentNamed: 'stackStart'
-				   default: self defaultStackStart);
-		  stackLimit: (aRequest
-				   nonNegativeIntegerArgumentNamed: 'stackLimit'
-				   default: self defaultStackLimit
-				   maximum: self maximumStackLimit);
-		  variableDepth: (aRequest
+		  stackStart: (aRequest nonNegativeIntegerArgumentNamed: 'stackStart' default: self defaultStackStart);
+		  stackLimit:
+			  (aRequest nonNegativeIntegerArgumentNamed: 'stackLimit' default: self defaultStackLimit maximum: self maximumStackLimit);
+		  variableDepth:
+			  (aRequest
 				   nonNegativeIntegerArgumentNamed: 'variableDepth'
 				   default: self defaultVariableDepth
 				   maximum: self maximumVariableDepth);
-		  variableLimit: (aRequest
+		  variableLimit:
+			  (aRequest
 				   nonNegativeIntegerArgumentNamed: 'variableLimit'
 				   default: self defaultVariableLimit
 				   maximum: self maximumVariableLimit);
-		  includeReceiver: (aRequest
-				   booleanArgumentNamed: 'includeReceiver'
-				   default: self defaultIncludeReceiver);
+		  includeReceiver: (aRequest booleanArgumentNamed: 'includeReceiver' default: self defaultIncludeReceiver);
 		  yourself
 ]
 
@@ -104,8 +95,7 @@ MCPDebugCaptureRequest >> name: aString [
 { #category : 'accessing' }
 MCPDebugCaptureRequest >> resultPreviewCharacterLimit [
 
-	^ resultPreviewCharacterLimit ifNil: [
-		  self class defaultResultPreviewCharacterLimit ]
+	^ resultPreviewCharacterLimit ifNil: [ self class defaultResultPreviewCharacterLimit ]
 ]
 
 { #category : 'accessing' }

@@ -25,6 +25,5 @@ MCPToolUpdateClassSuperclass >> classToolSpec [
 			   self classNameSchemaProperty.
 			   self superclassNameSchemaProperty.
 			   self forceSchemaProperty }).
-		  (#requiredProperties -> #( 'className' 'superclassName' )) }
-		  asDictionary
+		  (#requiredProperties -> #( 'className' 'superclassName' )) } asDictionary
 ]

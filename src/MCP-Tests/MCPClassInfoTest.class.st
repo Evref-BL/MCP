@@ -60,8 +60,7 @@ MCPClassInfoTest >> fixtureClassNames [
 { #category : 'private' }
 MCPClassInfoTest >> removeFixtureClasses [
 
-	self fixtureClassNames reverseDo: [ :each |
-		self removeClassNamed: each ]
+	self fixtureClassNames reverseDo: [ :each | self removeClassNamed: each ]
 ]
 
 { #category : 'running' }
@@ -87,12 +86,8 @@ MCPClassInfoTest >> testBuildsSortedClassMetadataSnapshot [
 	self assert: info superclassName equals: 'Object'.
 	self assert: info packageName equals: 'MCP-Tests'.
 	self assert: info tag equals: 'Internal'.
-	self
-		assert: info instanceSlotNames
-		equals: #( 'betaSlot' 'alphaSlot' ).
-	self
-		assert: info classSlotNames
-		equals: #( 'classBeta' 'classAlpha' ).
+	self assert: info instanceSlotNames equals: #( 'betaSlot' 'alphaSlot' ).
+	self assert: info classSlotNames equals: #( 'classBeta' 'classAlpha' ).
 	self assert: info subclassNames equals: {
 			self childAClassName.
 			self childZClassName } asArray

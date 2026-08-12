@@ -22,8 +22,7 @@ MCPRemoveSlotCommand class >> className: aClassName slotName: aSlotName classSid
 { #category : 'private' }
 MCPRemoveSlotCommand >> directlyDefinesSlotNamed: aSlotName inBehavior: aBehavior [
 
-	^ aBehavior slots anySatisfy: [ :each |
-		  each name asString = aSlotName ]
+	^ aBehavior slots anySatisfy: [ :each | each name asString = aSlotName ]
 ]
 
 { #category : 'executing' }
@@ -34,13 +33,9 @@ MCPRemoveSlotCommand >> execute [
 	refactoringBehavior := self refactoringBehaviorForClass: currentClass.
 	self classSide
 		ifTrue: [ self removeClassSideSlotFromBehavior: refactoringBehavior ]
-		ifFalse: [
-		(self refactoringForBehavior: refactoringBehavior) execute ].
+		ifFalse: [ (self refactoringForBehavior: refactoringBehavior) execute ].
 	updatedClass := Smalltalk globals at: self className asSymbol.
-	^ MCPSlotResult
-		  classInfo: (MCPClassInfo fromClass: updatedClass)
-		  slotName: self slotName
-		  classSide: self classSide
+	^ MCPSlotResult classInfo: (MCPClassInfo fromClass: updatedClass) slotName: self slotName classSide: self classSide
 ]
 
 { #category : 'private' }
@@ -54,20 +49,15 @@ MCPRemoveSlotCommand >> normalizedBehaviorNameFor: aBehavior [
 { #category : 'private' }
 MCPRemoveSlotCommand >> refactoringForBehavior: aBehavior [
 
-	^ ReRemoveInstanceVariableRefactoring
-		  remove: self slotName
-		  from: aBehavior
+	^ ReRemoveInstanceVariableRefactoring remove: self slotName from: aBehavior
 ]
 
 { #category : 'private' }
 MCPRemoveSlotCommand >> removeClassSideSlotFromBehavior: aBehavior [
 
-	(self directlyDefinesSlotNamed: self slotName inBehavior: aBehavior)
-		ifFalse: [
-				RBApplicabilityChecksFailedError signal:
-					'The variable ' , self slotName
-					, ' is not directly defined in the class '
-					, (self normalizedBehaviorNameFor: aBehavior) ].
+	(self directlyDefinesSlotNamed: self slotName inBehavior: aBehavior) ifFalse: [
+			RBApplicabilityChecksFailedError signal:
+				'The variable ' , self slotName , ' is not directly defined in the class ' , (self normalizedBehaviorNameFor: aBehavior) ].
 	self signalReferenceWarningIfNeededForBehavior: aBehavior.
 	aBehavior removeInstVarNamed: self slotName
 ]
@@ -76,9 +66,6 @@ MCPRemoveSlotCommand >> removeClassSideSlotFromBehavior: aBehavior [
 MCPRemoveSlotCommand >> signalReferenceWarningIfNeededForBehavior: aBehavior [
 
 	| hasReferences |
-	hasReferences := aBehavior withAllSubclasses anySatisfy: [ :each |
-		                 (each whichMethodsAccess: self slotName) isNotEmpty ].
-	hasReferences ifTrue: [
-			RBBreakingChangeChecksFailedWarning signal:
-				' Variable ' , self slotName , ' is still referenced' ]
+	hasReferences := aBehavior withAllSubclasses anySatisfy: [ :each | (each whichMethodsAccess: self slotName) isNotEmpty ].
+	hasReferences ifTrue: [ RBBreakingChangeChecksFailedWarning signal: ' Variable ' , self slotName , ' is still referenced' ]
 ]

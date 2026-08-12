@@ -42,8 +42,7 @@ MCPDebugBreakpointRegistry >> breakpointRecordAt: breakpointId ifAbsent: absentB
 { #category : 'accessing' }
 MCPDebugBreakpointRegistry >> breakpointRecords [
 
-	^ (breakpoints values asArray sort: [ :left :right |
-		   left breakpointId <= right breakpointId ]) asArray
+	^ (breakpoints values asArray sort: [ :left :right | left breakpointId <= right breakpointId ]) asArray
 ]
 
 { #category : 'initialization' }

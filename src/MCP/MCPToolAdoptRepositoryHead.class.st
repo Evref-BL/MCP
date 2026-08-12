@@ -20,12 +20,9 @@ MCPToolAdoptRepositoryHead >> repositoryToolSpec [
 
 	^ {
 		  (#title -> 'Adopt Repository Head').
-		  (#description
-		   ->
-		   'Align the image working-copy reference with the repository HEAD commit.').
+		  (#description -> 'Align the image working-copy reference with the repository HEAD commit.').
 		  (#action -> 'adoptHead').
 		  (#requestClass -> MCPRepositoryAdoptHeadRequest).
 		  (#commandClass -> MCPAdoptRepositoryHeadCommand).
-		  (#inputProperties -> { self branchNameSchemaProperty }) }
-		  asDictionary
+		  (#inputProperties -> { self branchNameSchemaProperty }) } asDictionary
 ]

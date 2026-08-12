@@ -35,9 +35,7 @@ MCPDebugTestRequest class >> defaultTimeoutMilliseconds [
 MCPDebugTestRequest class >> fromRequest: aRequest tool: aTool [
 
 	| stopAtName timeout |
-	timeout := aRequest
-		           nonNegativeIntegerArgumentNamed: 'timeoutMilliseconds'
-		           default: self defaultTimeoutMilliseconds.
+	timeout := aRequest nonNegativeIntegerArgumentNamed: 'timeoutMilliseconds' default: self defaultTimeoutMilliseconds.
 	timeout := timeout min: self maximumTimeoutMilliseconds.
 	stopAtName := aRequest stringArgumentNamed: 'stopAt' default: 'test'.
 	(self supportedStopPoints includes: stopAtName) ifFalse: [
@@ -46,41 +44,32 @@ MCPDebugTestRequest class >> fromRequest: aRequest tool: aTool [
 				message: 'Unsupported debug stopAt: ' , stopAtName asString , '.'
 				details: {
 						(#stopAt -> stopAtName).
-						(#supportedStopPoints -> self supportedStopPoints) }
-						asDictionary ].
+						(#supportedStopPoints -> self supportedStopPoints) } asDictionary ].
 	^ self new
 		  className: (aRequest stringArgumentNamed: 'className');
 		  testMethodName: (aRequest stringArgumentNamed: 'testMethodName');
-		  name:
-			  (aRequest
-				   stringArgumentNamed: 'name'
-				   default: 'Debug test session');
+		  name: (aRequest stringArgumentNamed: 'name' default: 'Debug test session');
 		  timeoutMilliseconds: timeout;
-		  resultPreviewCharacterLimit: (aRequest
-				   nonNegativeIntegerArgumentNamed: 'resultPreviewCharacterLimit'
-				   default: self defaultResultPreviewCharacterLimit);
+		  resultPreviewCharacterLimit:
+			  (aRequest nonNegativeIntegerArgumentNamed: 'resultPreviewCharacterLimit' default: self defaultResultPreviewCharacterLimit);
 		  sourceContextLines: (aRequest
 				   nonNegativeIntegerArgumentNamed: 'sourceContextLines'
 				   default: self defaultSourceContextLines
 				   maximum: self maximumSourceContextLines);
-		  stackStart: (aRequest
-				   nonNegativeIntegerArgumentNamed: 'stackStart'
-				   default: self defaultStackStart);
-		  stackLimit: (aRequest
-				   nonNegativeIntegerArgumentNamed: 'stackLimit'
-				   default: self defaultStackLimit
-				   maximum: self maximumStackLimit);
-		  variableDepth: (aRequest
+		  stackStart: (aRequest nonNegativeIntegerArgumentNamed: 'stackStart' default: self defaultStackStart);
+		  stackLimit:
+			  (aRequest nonNegativeIntegerArgumentNamed: 'stackLimit' default: self defaultStackLimit maximum: self maximumStackLimit);
+		  variableDepth:
+			  (aRequest
 				   nonNegativeIntegerArgumentNamed: 'variableDepth'
 				   default: self defaultVariableDepth
 				   maximum: self maximumVariableDepth);
-		  variableLimit: (aRequest
+		  variableLimit:
+			  (aRequest
 				   nonNegativeIntegerArgumentNamed: 'variableLimit'
 				   default: self defaultVariableLimit
 				   maximum: self maximumVariableLimit);
-		  includeReceiver: (aRequest
-				   booleanArgumentNamed: 'includeReceiver'
-				   default: self defaultIncludeReceiver);
+		  includeReceiver: (aRequest booleanArgumentNamed: 'includeReceiver' default: self defaultIncludeReceiver);
 		  stopAt: stopAtName;
 		  yourself
 ]

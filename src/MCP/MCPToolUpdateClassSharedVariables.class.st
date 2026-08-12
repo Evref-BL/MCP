@@ -31,6 +31,5 @@ MCPToolUpdateClassSharedVariables >> classToolSpec [
 			   self classNameSchemaProperty.
 			   self sharedVariablesSchemaProperty.
 			   self forceSchemaProperty }).
-		  (#requiredProperties -> #( 'className' 'sharedVariables' )) }
-		  asDictionary
+		  (#requiredProperties -> #( 'className' 'sharedVariables' )) } asDictionary
 ]

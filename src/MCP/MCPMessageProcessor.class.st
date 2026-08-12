@@ -14,8 +14,7 @@ Class {
 { #category : 'handlers management' }
 MCPMessageProcessor >> addHandler: aJRPCHandler [
 
-	(self handlers includes: aJRPCHandler) ifTrue: [ "handler has been override"
-		^ self ].
+	(self handlers includes: aJRPCHandler) ifTrue: [ "handler has been override" ^ self ].
 
 	handlers add: aJRPCHandler
 ]
@@ -44,26 +43,19 @@ MCPMessageProcessor >> handleJRPCRequestObject: aJRPCRequestObject [
 		  do: [ :exception |
 				  self debugMode
 					  ifTrue: [ exception pass ]
-					  ifFalse: [
-							  exception return:
-								  (self
-									   responseForException: exception
-									   request: aJRPCRequestObject) ] ]
+					  ifFalse: [ exception return: (self responseForException: exception request: aJRPCRequestObject) ] ]
 ]
 
 { #category : 'handling - json' }
 MCPMessageProcessor >> handleJSON: aJSONString [
 
 	| jrpcResponse |
-	jrpcResponse := [
-		                (self parseSupposedJRPCMessageObjectFromString:
-			                 aJSONString) beHandledBy: self ]
+	jrpcResponse := [ (self parseSupposedJRPCMessageObjectFromString: aJSONString) beHandledBy: self ]
 		                on: Exception
 		                do: [ :exception |
 				                self debugMode
 					                ifTrue: [ exception pass ]
-					                ifFalse: [
-					                exception return: exception asJRPCResponse ] ].
+					                ifFalse: [ exception return: exception asJRPCResponse ] ].
 	^ jrpcResponse beConvertedBy: self
 ]
 
@@ -71,8 +63,7 @@ MCPMessageProcessor >> handleJSON: aJSONString [
 MCPMessageProcessor >> responseForException: anException request: aJRPCRequestObject [
 
 	aJRPCRequestObject isNotification ifTrue: [
-			anException isIncorrectJSON ifTrue: [
-				^ anException asJRPCResponseWithId: aJRPCRequestObject id ].
+			anException isIncorrectJSON ifTrue: [ ^ anException asJRPCResponseWithId: aJRPCRequestObject id ].
 			^ JRPCEmptyResponseObject new ].
 	^ anException asJRPCResponseWithId: aJRPCRequestObject id
 ]

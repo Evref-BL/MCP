@@ -13,24 +13,14 @@ Class {
 MCPGetMethodCommand >> execute [
 
 	| compiledMethod data methodBehavior protocolName variableReferences |
-	compiledMethod := tool
-		                  methodForClassNamed: request className
-		                  selector: request selectorString
-		                  classSide: request classSide.
-	protocolName := compiledMethod protocol
-		                ifNil: [ '' ]
-		                ifNotNil: [ :protocol | protocol name asString ].
+	compiledMethod := tool methodForClassNamed: request className selector: request selectorString classSide: request classSide.
+	protocolName := compiledMethod protocol ifNil: [ '' ] ifNotNil: [ :protocol | protocol name asString ].
 	data := {
 		        (#protocol -> protocolName).
-		        (#source -> (compiledMethod sourceCode ifNil: [ '' ])) }
-		        asDictionary.
+		        (#source -> (compiledMethod sourceCode ifNil: [ '' ])) } asDictionary.
 	request includeVariableDetails ifTrue: [
-			methodBehavior := tool
-				                  behaviorNamed: request className
-				                  classSide: request classSide.
-			variableReferences := tool
-				                      variableSummariesForMethod: compiledMethod
-				                      methodBehavior: methodBehavior.
+			methodBehavior := tool behaviorNamed: request className classSide: request classSide.
+			variableReferences := tool variableSummariesForMethod: compiledMethod methodBehavior: methodBehavior.
 			data at: #variableReferences put: variableReferences ].
 	^ MCPGetMethodResult data: data externalVariableCount: nil
 ]

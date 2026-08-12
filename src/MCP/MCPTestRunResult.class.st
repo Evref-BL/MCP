@@ -19,10 +19,7 @@ Class {
 { #category : 'instance creation' }
 MCPTestRunResult class >> resultInfo: resultInfoOrNil timedOut: aBoolean unrunTestRequests: testRequests [
 
-	^ self new
-		  initializeResultInfo: resultInfoOrNil
-		  timedOut: aBoolean
-		  unrunTestRequests: testRequests
+	^ self new initializeResultInfo: resultInfoOrNil timedOut: aBoolean unrunTestRequests: testRequests
 ]
 
 { #category : 'converting' }
@@ -30,8 +27,7 @@ MCPTestRunResult >> asDictionary [
 
 	| data |
 	data := Dictionary new.
-	self resultInfo ifNotNil: [ :entry |
-		data at: #result put: entry asDictionary ].
+	self resultInfo ifNotNil: [ :entry | data at: #result put: entry asDictionary ].
 	data at: #timedOut put: self timedOut.
 	data at: #unrunTests put: self unrunTestDictionaries.
 	^ data
@@ -73,8 +69,7 @@ MCPTestRunResult >> timedOut [
 { #category : 'converting' }
 MCPTestRunResult >> unrunTestDictionaries [
 
-	^ (self unrunTestRequests collect: [ :each | each asDictionary ])
-		  asArray
+	^ (self unrunTestRequests collect: [ :each | each asDictionary ]) asArray
 ]
 
 { #category : 'accessing' }

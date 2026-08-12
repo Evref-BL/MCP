@@ -18,7 +18,5 @@ MCPToolCoverageTargetTest >> testCoveredMethod [
 { #category : 'tests' }
 MCPToolCoverageTargetTest >> testPartiallyCoveredMethod [
 
-	self
-		assert: (MCPToolCoverageTarget new partiallyCoveredMethod: 1)
-		equals: 1
+	self assert: (MCPToolCoverageTarget new partiallyCoveredMethod: 1) equals: 1
 ]

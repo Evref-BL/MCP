@@ -40,11 +40,8 @@ MCPDebugSessionRecord class >> sessionId: aSessionId debugSession: aDebugSession
 MCPDebugSessionRecord >> advanceStateForStatus: statusString reason: reasonString [
 
 	| nextNumber suffix |
-	suffix := stateId
-		          ifNil: [ '0' ]
-		          ifNotNil: [ stateId copyAfterLast: $- ].
-	nextNumber := (suffix notEmpty and: [
-		               suffix allSatisfy: [ :character | character isDigit ] ])
+	suffix := stateId ifNil: [ '0' ] ifNotNil: [ stateId copyAfterLast: $- ].
+	nextNumber := (suffix notEmpty and: [ suffix allSatisfy: [ :character | character isDigit ] ])
 		              ifTrue: [ suffix asInteger + 1 ]
 		              ifFalse: [ 1 ].
 	stateId := 'state-' , nextNumber asString.

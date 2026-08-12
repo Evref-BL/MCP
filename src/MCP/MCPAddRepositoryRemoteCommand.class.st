@@ -32,7 +32,5 @@ MCPAddRepositoryRemoteCommand >> execute [
 					  result: result
 					  summary: 'Added repository remote for ' , repository name , '.'
 					  warnings: warningMessages ]
-		  failureSummary: [ :error |
-				  'Failed repository remote add: '
-				  , (error messageText ifNil: [ error asString ]) ]
+		  failureSummary: [ :error | 'Failed repository remote add: ' , (error messageText ifNil: [ error asString ]) ]
 ]

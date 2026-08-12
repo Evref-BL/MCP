@@ -16,19 +16,13 @@ MCPRewriteMethodsCommand >> applyChanges: changes [
 
 	| changeManager |
 	changeManager := self refactoringChangeManager.
-	PharoCompatibility resumeDeprecationsDuring: [
-		changes do: [ :change | changeManager performChange: change ] ]
+	PharoCompatibility resumeDeprecationsDuring: [ changes do: [ :change | changeManager performChange: change ] ]
 ]
 
 { #category : 'private - results' }
 MCPRewriteMethodsCommand >> changeInfosForChanges: changes [
 
-	^ changes
-		  collect: [ :each |
-				  MCPMethodRewriteChangeInfo
-					  fromChange: each
-					  includeSources: self request includeSources ]
-		  as: Array
+	^ changes collect: [ :each | MCPMethodRewriteChangeInfo fromChange: each includeSources: self request includeSources ] as: Array
 ]
 
 { #category : 'private - hashing' }
@@ -37,9 +31,7 @@ MCPRewriteMethodsCommand >> changeSetHashForChanges: changes [
 	| hash |
 	hash := changes
 		        inject: (self stableHashForString: self class name asString)
-		        into: [ :currentHash :change |
-			        (currentHash bitXor: (self hashForChange: change))
-				        hashMultiply ].
+		        into: [ :currentHash :change | (currentHash bitXor: (self hashForChange: change)) hashMultiply ].
 	^ hash abs
 ]
 
@@ -71,9 +63,7 @@ MCPRewriteMethodsCommand >> execute [
 		          changeInfos: changeInfos
 		          appliedCount: appliedCount
 		          changeSetHash: changeSetHash.
-	^ self tool
-		  successResultText: (self successSummaryForReport: report)
-		  data: report asDictionary
+	^ self tool successResultText: (self successSummaryForReport: report) data: report asDictionary
 ]
 
 { #category : 'private - hashing' }
@@ -84,9 +74,7 @@ MCPRewriteMethodsCommand >> hashForChange: aChange [
 	className := behavior isMeta
 		             ifTrue: [ behavior instanceSide name asString ]
 		             ifFalse: [ behavior name asString ].
-	oldSource := (behavior
-		              compiledMethodAt: aChange selector
-		              ifAbsent: [ nil ])
+	oldSource := (behavior compiledMethodAt: aChange selector ifAbsent: [ nil ])
 		             ifNil: [ '' ]
 		             ifNotNil: [ :method | method sourceCode ifNil: [ '' ] ].
 	valueHashes := {
@@ -94,8 +82,7 @@ MCPRewriteMethodsCommand >> hashForChange: aChange [
 		               (self stableHashForValue: behavior isMeta).
 		               (self stableHashForString: aChange selector asString).
 		               (self stableHashForSource: oldSource).
-		               (self stableHashForSource:
-			                (aChange source ifNil: [ '' ])) }.
+		               (self stableHashForSource: (aChange source ifNil: [ '' ])) }.
 	^ valueHashes
 		  inject: (self stableHashForString: self class name asString)
 		  into: [ :hash :valueHash | (hash bitXor: valueHash) hashMultiply ]
@@ -116,8 +103,7 @@ MCPRewriteMethodsCommand >> rewriteChanges [
 	transformationRule := RBTransformationRule new
 		                      rewriteRule: self rewriteRule;
 		                      yourself.
-	methods do: [ :eachMethod |
-		transformationRule checkMethod: eachMethod ].
+	methods do: [ :eachMethod | transformationRule checkMethod: eachMethod ].
 	^ transformationRule changes asArray
 ]
 
@@ -131,16 +117,13 @@ MCPRewriteMethodsCommand >> rewriteRule [
 { #category : 'private - rewriting' }
 MCPRewriteMethodsCommand >> ruleHolders [
 
-	^ self request rules
-		  collect: [ :each | each asStRewriterRuleHolder ]
-		  as: Array
+	^ self request rules collect: [ :each | each asStRewriterRuleHolder ] as: Array
 ]
 
 { #category : 'private - rewriting' }
 MCPRewriteMethodsCommand >> sortedChanges: changes [
 
-	^ changes asArray sort: [ :left :right |
-		  self sortsChange: left before: right ]
+	^ changes asArray sort: [ :left :right | self sortsChange: left before: right ]
 ]
 
 { #category : 'private - rewriting' }
@@ -149,12 +132,10 @@ MCPRewriteMethodsCommand >> sortsChange: leftChange before: rightChange [
 	| leftClassName leftClassSide rightClassName rightClassSide |
 	leftClassName := self classNameForChange: leftChange.
 	rightClassName := self classNameForChange: rightChange.
-	leftClassName = rightClassName ifFalse: [
-		^ leftClassName < rightClassName ].
+	leftClassName = rightClassName ifFalse: [ ^ leftClassName < rightClassName ].
 	leftClassSide := leftChange changeClass isMeta.
 	rightClassSide := rightChange changeClass isMeta.
-	leftClassSide = rightClassSide ifFalse: [
-		^ leftClassSide not and: [ rightClassSide ] ].
+	leftClassSide = rightClassSide ifFalse: [ ^ leftClassSide not and: [ rightClassSide ] ].
 	^ leftChange selector asString < rightChange selector asString
 ]
 
@@ -163,9 +144,7 @@ MCPRewriteMethodsCommand >> stableHashForSource: aString [
 
 	| hash |
 	hash := 5381.
-	aString do: [ :character |
-			character isSeparator ifFalse: [
-				hash := (hash bitXor: character asciiValue) hashMultiply ] ].
+	aString do: [ :character | character isSeparator ifFalse: [ hash := (hash bitXor: character asciiValue) hashMultiply ] ].
 	^ hash abs
 ]
 
@@ -174,8 +153,7 @@ MCPRewriteMethodsCommand >> stableHashForString: aString [
 
 	| hash |
 	hash := 5381.
-	aString do: [ :character |
-		hash := (hash bitXor: character asciiValue) hashMultiply ].
+	aString do: [ :character | hash := (hash bitXor: character asciiValue) hashMultiply ].
 	^ hash abs
 ]
 
@@ -192,11 +170,8 @@ MCPRewriteMethodsCommand >> stableHashForValue: anObject [
 { #category : 'private - results' }
 MCPRewriteMethodsCommand >> successSummaryForReport: report [
 
-	report apply ifTrue: [
-			^ 'Applied ' , report appliedCount asString
-			  , ' method rewrite change(s).' ].
-	^ 'Previewed ' , report changeCount asString
-	  , ' method rewrite change(s).'
+	report apply ifTrue: [ ^ 'Applied ' , report appliedCount asString , ' method rewrite change(s).' ].
+	^ 'Previewed ' , report changeCount asString , ' method rewrite change(s).'
 ]
 
 { #category : 'private - validating' }
@@ -205,14 +180,12 @@ MCPRewriteMethodsCommand >> validateExpectedChangeSetHash: changeSetHashInteger 
 	self request expectedChangeSetHash ifNil: [
 			MCPCommandError
 				signalErrorCode: #RewriteExpectedChangeSetHashRequired
-				message:
-				'Applying method_rewrite requires expectedChangeSetHash from a preview.'
+				message: 'Applying method_rewrite requires expectedChangeSetHash from a preview.'
 				details: self request requestedContext ].
 	self request expectedChangeSetHash = changeSetHashInteger ifFalse: [
 			MCPCommandError
 				signalErrorCode: #RewriteChangeSetHashMismatch
-				message:
-				'Rewrite change set hash does not match expectedChangeSetHash.'
+				message: 'Rewrite change set hash does not match expectedChangeSetHash.'
 				details: (self request requestedContext
 						 at: #actualChangeSetHash put: changeSetHashInteger;
 						 yourself) ]
@@ -221,8 +194,7 @@ MCPRewriteMethodsCommand >> validateExpectedChangeSetHash: changeSetHashInteger 
 { #category : 'private - validating' }
 MCPRewriteMethodsCommand >> validateExplicitApplyScope [
 
-	(self request scopeQuery usesImplicitImageScope and: [
-		 self request force not ]) ifTrue: [
+	(self request scopeQuery usesImplicitImageScope and: [ self request force not ]) ifTrue: [
 			MCPCommandError
 				signalErrorCode: #RewriteApplyRequiresExplicitScope
 				message:

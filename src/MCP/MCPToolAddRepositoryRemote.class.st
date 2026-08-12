@@ -27,6 +27,5 @@ MCPToolAddRepositoryRemote >> repositoryToolSpec [
 		  (#inputProperties -> {
 			   self remoteNameSchemaProperty.
 			   self remoteUrlSchemaProperty }).
-		  (#requiredProperties
-		   -> #( 'repositoryName' 'remoteName' 'remoteUrl' )) } asDictionary
+		  (#requiredProperties -> #( 'repositoryName' 'remoteName' 'remoteUrl' )) } asDictionary
 ]

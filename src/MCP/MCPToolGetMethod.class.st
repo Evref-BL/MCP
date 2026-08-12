@@ -32,9 +32,7 @@ MCPToolGetMethod >> annotations [
 { #category : 'private - analysis' }
 MCPToolGetMethod >> bindingClassNameFor: aBinding [
 
-	^ aBinding
-		  ifNil: [ 'UnknownBinding' ]
-		  ifNotNil: [ :binding | binding class name asString ]
+	^ aBinding ifNil: [ 'UnknownBinding' ] ifNotNil: [ :binding | binding class name asString ]
 ]
 
 { #category : 'metadata' }
@@ -44,15 +42,13 @@ MCPToolGetMethod >> buildInputSchema [
 	classSideProperty := MCPStructureProperties new
 		                     name: 'classSide';
 		                     type: 'boolean';
-		                     description:
-			                     'Whether the target method is on the class side.';
+		                     description: 'Whether the target method is on the class side.';
 		                     default: false;
 		                     yourself.
 	includeVariableDetailsProperty := MCPStructureProperties new
 		                                  name: 'includeVariableDetails';
 		                                  type: 'boolean';
-		                                  description:
-			                                  'Whether to include variable reference summaries and counts.';
+		                                  description: 'Whether to include variable reference summaries and counts.';
 		                                  default: false;
 		                                  yourself.
 	^ MCPStructureInputSchema new
@@ -79,19 +75,12 @@ MCPToolGetMethod >> buildOutputSchema [
 
 	^ self
 		  standardOutputSchemaForDataProperties: {
-				  (self
-					   schemaPropertyNamed: 'protocol'
-					   type: 'string'
-					   description: 'The protocol/category containing the method.').
-				  (self
-					   schemaPropertyNamed: 'source'
-					   type: 'string'
-					   description: 'The formatted source code of the method.').
+				  (self schemaPropertyNamed: 'protocol' type: 'string' description: 'The protocol/category containing the method.').
+				  (self schemaPropertyNamed: 'source' type: 'string' description: 'The formatted source code of the method.').
 				  ((self
 					    schemaPropertyNamed: 'variableReferences'
 					    type: 'array'
-					    description:
-						    'Structured summaries of referenced variables in first-use order when variable details are included.')
+					    description: 'Structured summaries of referenced variables in first-use order when variable details are included.')
 					   items: self variableReferenceSchema;
 					   yourself) }
 		  required: #( 'protocol' 'source' )
@@ -126,9 +115,7 @@ MCPToolGetMethod >> defaultExposure [
 { #category : 'private - analysis' }
 MCPToolGetMethod >> definingClassNameFromBinding: aBinding [
 
-	^ aBinding ifNotNil: [ :binding |
-		  binding definingClass ifNotNil: [ :definingClass |
-			  definingClass name ] ]
+	^ aBinding ifNotNil: [ :binding | binding definingClass ifNotNil: [ :definingClass | definingClass name ] ]
 ]
 
 { #category : 'metadata' }
@@ -181,15 +168,9 @@ MCPToolGetMethod >> executeWithRequest: request [
 		  onError: [ :error :getRequest |
 				  self
 					  errorResultForError: error
-					  className: (self
-							   classNameForErrorFromParsedRequest: getRequest
-							   rawRequest: request)
-					  selector: (self
-							   selectorForErrorFromParsedRequest: getRequest
-							   rawRequest: request)
-					  classSide: (self
-							   classSideForErrorFromParsedRequest: getRequest
-							   rawRequest: request) ]
+					  className: (self classNameForErrorFromParsedRequest: getRequest rawRequest: request)
+					  selector: (self selectorForErrorFromParsedRequest: getRequest rawRequest: request)
+					  classSide: (self classSideForErrorFromParsedRequest: getRequest rawRequest: request) ]
 ]
 
 { #category : 'private - results' }
@@ -220,9 +201,7 @@ MCPToolGetMethod >> matchingSummaryForNodeName: aName kind: aKind ownerName: anO
 
 	^ summaries
 		  detect: [ :each |
-				  (each at: #name) = aName and: [
-						  (each at: #kind) = aKind and: [
-							  (each at: #ownerName ifAbsent: [ nil ]) = anOwnerName ] ] ]
+			  (each at: #name) = aName and: [ (each at: #kind) = aKind and: [ (each at: #ownerName ifAbsent: [ nil ]) = anOwnerName ] ] ]
 		  ifNone: [ nil ]
 ]
 
@@ -231,10 +210,7 @@ MCPToolGetMethod >> newVariableSummaryForNode: aVariableNode kind: aKind methodB
 
 	| binding ownerName summary |
 	binding := aVariableNode binding.
-	ownerName := self
-		             ownerNameForNode: aVariableNode
-		             kind: aKind
-		             methodBehavior: aBehavior.
+	ownerName := self ownerNameForNode: aVariableNode kind: aKind methodBehavior: aBehavior.
 	summary := Dictionary new.
 	summary at: #name put: aVariableNode name asString.
 	summary at: #kind put: aKind.
@@ -249,19 +225,16 @@ MCPToolGetMethod >> ownerNameForNode: aVariableNode kind: aKind methodBehavior: 
 
 	| binding definingClassName |
 	(#( 'argument' 'temporary' ) includes: aKind) ifTrue: [ ^ 'method' ].
-	(#( 'self' 'super' ) includes: aKind) ifTrue: [
-		^ aBehavior name asString ].
+	(#( 'self' 'super' ) includes: aKind) ifTrue: [ ^ aBehavior name asString ].
 	aKind = 'thisContext' ifTrue: [ ^ 'execution context' ].
 	binding := aVariableNode binding.
-	(#( 'instanceVariable' 'classInstanceVariable'
-	    'classVariable' ) includes: aKind) ifTrue: [
+	(#( 'instanceVariable' 'classInstanceVariable' 'classVariable' ) includes: aKind) ifTrue: [
 			definingClassName := self definingClassNameFromBinding: binding.
 			^ definingClassName ifNil: [ aBehavior name asString ] ].
 	aKind = 'poolVariable' ifTrue: [
 			definingClassName := self definingClassNameFromBinding: binding.
 			^ definingClassName ifNil: [ 'shared pool' ] ].
-	(#( 'class' 'global' ) includes: aKind) ifTrue: [
-		^ 'Smalltalk globals' ].
+	(#( 'class' 'global' ) includes: aKind) ifTrue: [ ^ 'Smalltalk globals' ].
 	aKind = 'undeclared' ifTrue: [ ^ 'Undeclared' ].
 	^ nil
 ]
@@ -337,37 +310,24 @@ MCPToolGetMethod >> variableReferenceSchema [
 	ownerNameProperty := self
 		                     schemaPropertyNamed: 'ownerName'
 		                     type: 'string'
-		                     description:
-		                     'The class, global environment, or pseudo-scope that provides the variable when known.'.
+		                     description: 'The class, global environment, or pseudo-scope that provides the variable when known.'.
 	^ MCPStructureProperties new
 		  name: 'variableReference';
 		  type: 'object';
 		  description: 'A summary of one referenced variable in the method.';
 		  properties: {
-				  (self
-					   schemaPropertyNamed: 'name'
-					   type: 'string'
-					   description: 'The variable name as it appears in source.').
-				  ((self
-					    schemaPropertyNamed: 'kind'
-					    type: 'string'
-					    description: 'How the variable resolves in Pharo.')
+				  (self schemaPropertyNamed: 'name' type: 'string' description: 'The variable name as it appears in source.').
+				  ((self schemaPropertyNamed: 'kind' type: 'string' description: 'How the variable resolves in Pharo.')
 					   enum:
-						   #( 'argument' 'temporary' 'instanceVariable'
-						      'classInstanceVariable' 'classVariable' 'poolVariable'
-						      'class' 'global' 'self' 'super' 'thisContext'
-						      'undeclared' 'unknown' );
+						   #( 'argument' 'temporary' 'instanceVariable' 'classInstanceVariable' 'classVariable' 'poolVariable' 'class' 'global'
+						      'self' 'super' 'thisContext' 'undeclared' 'unknown' );
 					   yourself).
 				  ownerNameProperty.
 				  (self
 					   schemaPropertyNamed: 'bindingClass'
 					   type: 'string'
-					   description:
-					   'The compiler binding class used to resolve the variable.').
-				  (self
-					   integerSchemaPropertyNamed: 'referenceCount'
-					   description:
-					   'How many times the variable is referenced in the method.') };
+					   description: 'The compiler binding class used to resolve the variable.').
+				  (self integerSchemaPropertyNamed: 'referenceCount' description: 'How many times the variable is referenced in the method.') };
 		  required: #( 'name' 'kind' 'bindingClass' 'referenceCount' );
 		  additionalProperties: false;
 		  yourself
@@ -382,20 +342,14 @@ MCPToolGetMethod >> variableSummariesForMethod: aCompiledMethod methodBehavior: 
 			node isVariable ifTrue: [
 					| kind ownerName summary |
 					kind := self variableKindForNode: node methodBehavior: aBehavior.
-					ownerName := self
-						             ownerNameForNode: node
-						             kind: kind
-						             methodBehavior: aBehavior.
+					ownerName := self ownerNameForNode: node kind: kind methodBehavior: aBehavior.
 					summary := self
 						           matchingSummaryForNodeName: node name asString
 						           kind: kind
 						           ownerName: ownerName
 						           in: summaries.
 					summary ifNil: [
-							summary := self
-								           newVariableSummaryForNode: node
-								           kind: kind
-								           methodBehavior: aBehavior.
+							summary := self newVariableSummaryForNode: node kind: kind methodBehavior: aBehavior.
 							summaries add: summary ].
 					self incrementReferenceCountInSummary: summary ] ].
 	^ summaries asArray

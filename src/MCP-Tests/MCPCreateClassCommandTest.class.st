@@ -12,11 +12,8 @@ Class {
 { #category : 'private' }
 MCPCreateClassCommandTest >> createdClassNames [
 
-	^ #( 'MCPCreateClassCommandTestGenerated'
-	     'MCPCreateClassCommandTestTagged'
-	     'MCPCreateClassCommandTestClassSlots'
-	     'MCPCreateClassCommandTestConfigured'
-	     'MCPCreateClassCommandTestTemporaryPackage' )
+	^ #( 'MCPCreateClassCommandTestGenerated' 'MCPCreateClassCommandTestTagged' 'MCPCreateClassCommandTestClassSlots'
+	     'MCPCreateClassCommandTestConfigured' 'MCPCreateClassCommandTestTemporaryPackage' )
 ]
 
 { #category : 'private' }
@@ -29,10 +26,8 @@ MCPCreateClassCommandTest >> generatedPackageName [
 MCPCreateClassCommandTest >> removeGeneratedPackage [
 
 	self withoutEpiceaDuring: [
-			(self packageOrganizer hasPackage: self generatedPackageName)
-				ifTrue: [
-						self packageOrganizer removePackage:
-							(self packageOrganizer packageNamed: self generatedPackageName) ] ]
+			(self packageOrganizer hasPackage: self generatedPackageName) ifTrue: [
+				self packageOrganizer removePackage: (self packageOrganizer packageNamed: self generatedPackageName) ] ]
 ]
 
 { #category : 'running' }
@@ -64,15 +59,9 @@ MCPCreateClassCommandTest >> testCreatesClassAndReturnsResultObject [
 			           classSlots: nil).
 	createdClass := self classNamed: 'MCPCreateClassCommandTestGenerated'.
 	self assert: createdClass superclass equals: Object.
-	self
-		assert: createdClass packageName asString
-		equals: self generatedPackageName.
-	self
-		assert: result classInfo className
-		equals: 'MCPCreateClassCommandTestGenerated'.
-	self
-		assert: result asDictionary
-		equals: result classInfo asDictionary
+	self assert: createdClass packageName asString equals: self generatedPackageName.
+	self assert: result classInfo className equals: 'MCPCreateClassCommandTestGenerated'.
+	self assert: result asDictionary equals: result classInfo asDictionary
 ]
 
 { #category : 'tests' }
@@ -87,12 +76,8 @@ MCPCreateClassCommandTest >> testCreatesClassWithTagSlotsAndClassSlots [
 			           slots: #( #firstName #lastName )
 			           classSlots: #( #defaultName )).
 	createdClass := self classNamed: 'MCPCreateClassCommandTestTagged'.
-	self
-		assert: (createdClass slots collect: #name as: Array)
-		equals: #( #firstName #lastName ).
-	self
-		assert: (createdClass classSide slots collect: #name as: Array)
-		equals: #( #defaultName ).
+	self assert: (createdClass slots collect: #name as: Array) equals: #( #firstName #lastName ).
+	self assert: (createdClass classSide slots collect: #name as: Array) equals: #( #defaultName ).
 	self assert: createdClass packageTagName asString equals: 'Generated'.
 	self assert: result classInfo tag equals: 'Generated'
 ]
@@ -113,38 +98,18 @@ MCPCreateClassCommandTest >> testCreatesClassWithTraitsClassTraitsSharedVariable
 			           sharedVariables: #( 'AlphaShared' 'BetaShared' )
 			           sharedPools: #( 'ChronologyConstants' )
 			           layout: 'WeakLayout').
-	createdClass := self classNamed:
-		                'MCPCreateClassCommandTestConfigured'.
+	createdClass := self classNamed: 'MCPCreateClassCommandTestConfigured'.
+	self assert: (createdClass traits collect: [ :each | each name asString ] as: Array) equals: #( 'TAbleToRotate' ).
 	self
-		assert:
-		(createdClass traits
-			 collect: [ :each | each name asString ]
-			 as: Array)
-		equals: #( 'TAbleToRotate' ).
-	self
-		assert: (createdClass classSide traits
-				 collect: [ :each | each name asString ]
-				 as: Array)
+		assert: (createdClass classSide traits collect: [ :each | each name asString ] as: Array)
 		equals: #( 'TAbleToRotate classTrait' ).
-	self
-		assert: createdClass classVarNames
-		equals: #( #AlphaShared #BetaShared ).
-	self
-		assert: (createdClass sharedPools
-				 collect: [ :each | each name asString ]
-				 as: Array)
-		equals: #( 'ChronologyConstants' ).
+	self assert: createdClass classVarNames equals: #( #AlphaShared #BetaShared ).
+	self assert: (createdClass sharedPools collect: [ :each | each name asString ] as: Array) equals: #( 'ChronologyConstants' ).
 	self assert: createdClass classLayout class name equals: #WeakLayout.
 	self assert: result classInfo traitNames equals: #( 'TAbleToRotate' ).
-	self
-		assert: result classInfo classTraitNames
-		equals: #( 'TAbleToRotate classTrait' ).
-	self
-		assert: result classInfo sharedVariableNames
-		equals: #( 'AlphaShared' 'BetaShared' ).
-	self
-		assert: result classInfo sharedPoolNames
-		equals: #( 'ChronologyConstants' ).
+	self assert: result classInfo classTraitNames equals: #( 'TAbleToRotate classTrait' ).
+	self assert: result classInfo sharedVariableNames equals: #( 'AlphaShared' 'BetaShared' ).
+	self assert: result classInfo sharedPoolNames equals: #( 'ChronologyConstants' ).
 	self assert: result classInfo layoutClassName equals: 'WeakLayout'
 ]
 
@@ -168,9 +133,7 @@ MCPCreateClassCommandTest >> testExistingClassSignalsCommandError [
 				          slots: nil
 				          classSlots: nil) execute ].
 	self assert: error errorCode equals: #ClassAlreadyExists.
-	self
-		assert: (error structuredDetails at: #className)
-		equals: 'MCPCreateClassCommandTestGenerated'
+	self assert: (error structuredDetails at: #className) equals: 'MCPCreateClassCommandTestGenerated'
 ]
 
 { #category : 'tests' }
@@ -186,7 +149,5 @@ MCPCreateClassCommandTest >> testMissingSuperclassSignalsCommandError [
 				          slots: nil
 				          classSlots: nil) execute ].
 	self assert: error errorCode equals: #SuperclassNotFound.
-	self
-		assert: (error structuredDetails at: #superclassName)
-		equals: 'DefinitelyMissingSuperclass'
+	self assert: (error structuredDetails at: #superclassName) equals: 'DefinitelyMissingSuperclass'
 ]

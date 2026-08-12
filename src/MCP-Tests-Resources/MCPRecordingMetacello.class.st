@@ -15,9 +15,7 @@ Class {
 { #category : 'accessing' }
 MCPRecordingMetacello >> argumentsFor: selector [
 
-	^ (messages
-		   detect: [ :each | (each at: #selector) = selector ]
-		   ifNone: [ ^ nil ]) at: #arguments
+	^ (messages detect: [ :each | (each at: #selector) = selector ] ifNone: [ ^ nil ]) at: #arguments
 ]
 
 { #category : 'metacello protocol' }
@@ -140,9 +138,7 @@ MCPRecordingMetacello >> received: selector [
 { #category : 'testing' }
 MCPRecordingMetacello >> received: selector withArguments: arguments [
 
-	^ messages anySatisfy: [ :each |
-			  (each at: #selector) = selector and: [
-				  (each at: #arguments) = arguments asArray ] ]
+	^ messages anySatisfy: [ :each | (each at: #selector) = selector and: [ (each at: #arguments) = arguments asArray ] ]
 ]
 
 { #category : 'recording' }

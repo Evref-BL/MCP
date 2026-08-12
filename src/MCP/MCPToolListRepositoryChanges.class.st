@@ -32,9 +32,7 @@ MCPToolListRepositoryChanges >> repositoryToolSpec [
 
 	^ {
 		  (#title -> 'List Repository Changes').
-		  (#description
-		   ->
-		   'Inspect the image-side Iceberg working-copy diff for a registered repository without writing files.').
+		  (#description -> 'Inspect the image-side Iceberg working-copy diff for a registered repository without writing files.').
 		  (#action -> 'diff').
 		  (#requestClass -> MCPRepositoryDiffRequest).
 		  (#commandClass -> MCPRepositoryDiffCommand) } asDictionary

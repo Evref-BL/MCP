@@ -16,9 +16,7 @@ Class {
 { #category : 'instance creation' }
 MCPGetMethodResult class >> data: aDictionary externalVariableCount: anIntegerOrNil [
 
-	^ self new
-		  initializeData: aDictionary
-		  externalVariableCount: anIntegerOrNil
+	^ self new initializeData: aDictionary externalVariableCount: anIntegerOrNil
 ]
 
 { #category : 'converting' }
@@ -26,8 +24,7 @@ MCPGetMethodResult >> asDictionary [
 
 	| result |
 	result := self data copy.
-	self externalVariableCount ifNotNil: [ :count |
-		result at: #externalVariableCount put: count ].
+	self externalVariableCount ifNotNil: [ :count | result at: #externalVariableCount put: count ].
 	^ result
 ]
 

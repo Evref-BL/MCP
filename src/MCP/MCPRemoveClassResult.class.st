@@ -34,9 +34,7 @@ MCPRemoveClassResult >> asDictionary [
 	| data |
 	data := self newClassInfoDictionary.
 	data at: #wasEmpty put: self wasEmpty.
-	data
-		at: #reparentedToSuperclassName
-		put: self reparentedToSuperclassName.
+	data at: #reparentedToSuperclassName put: self reparentedToSuperclassName.
 	data at: #reparentedSubclassNames put: self reparentedSubclassNames.
 	^ data
 ]
@@ -62,9 +60,7 @@ MCPRemoveClassResult >> reparentedSubclassNames [
 { #category : 'accessing' }
 MCPRemoveClassResult >> reparentedSubclassNames: aCollection [
 
-	reparentedSubclassNames := aCollection
-		                           ifNil: [ #(  ) ]
-		                           ifNotNil: [ aCollection asArray ]
+	reparentedSubclassNames := aCollection ifNil: [ #(  ) ] ifNotNil: [ aCollection asArray ]
 ]
 
 { #category : 'accessing' }

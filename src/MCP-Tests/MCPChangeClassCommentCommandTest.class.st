@@ -24,9 +24,7 @@ MCPChangeClassCommentCommandTest >> ensureTargetClass [
 		superclassName: 'Object'
 		slots: #(  )
 		classSlots: #(  ).
-	self withoutEpiceaDuring: [
-			(self classNamed: self commentTargetClassName) comment:
-				'original comment' ]
+	self withoutEpiceaDuring: [ (self classNamed: self commentTargetClassName) comment: 'original comment' ]
 ]
 
 { #category : 'private' }
@@ -53,9 +51,7 @@ MCPChangeClassCommentCommandTest >> tearDown [
 MCPChangeClassCommentCommandTest >> testCanClearClassComment [
 
 	| result target |
-	result := self executeCommand: (MCPChangeClassCommentCommand
-			           className: self commentTargetClassName
-			           classComment: '').
+	result := self executeCommand: (MCPChangeClassCommentCommand className: self commentTargetClassName classComment: '').
 	target := self classNamed: self commentTargetClassName.
 	self assert: target comment equals: ''.
 	self assert: result oldClassComment equals: 'original comment'.
@@ -67,27 +63,20 @@ MCPChangeClassCommentCommandTest >> testMissingClassSignalsCommandError [
 
 	| error |
 	error := self captureCommandError: [
-			         (MCPChangeClassCommentCommand
-				          className: 'MCPChangeClassCommentCommandTestMissing'
-				          classComment: 'ignored') execute ].
+		         (MCPChangeClassCommentCommand className: 'MCPChangeClassCommentCommandTestMissing' classComment: 'ignored') execute ].
 	self assert: error errorCode equals: #ClassNotFound.
-	self
-		assert: (error structuredDetails at: #className)
-		equals: 'MCPChangeClassCommentCommandTestMissing'
+	self assert: (error structuredDetails at: #className) equals: 'MCPChangeClassCommentCommandTestMissing'
 ]
 
 { #category : 'tests' }
 MCPChangeClassCommentCommandTest >> testUpdatesClassCommentAndReturnsResultObject [
 
 	| result target |
-	result := self executeCommand: (MCPChangeClassCommentCommand
-			           className: self commentTargetClassName
-			           classComment: 'updated comment').
+	result := self executeCommand:
+		          (MCPChangeClassCommentCommand className: self commentTargetClassName classComment: 'updated comment').
 	target := self classNamed: self commentTargetClassName.
 	self assert: target comment equals: 'updated comment'.
 	self assert: result oldClassComment equals: 'original comment'.
 	self assert: result newClassComment equals: 'updated comment'.
-	self
-		assert: result classInfo className
-		equals: self commentTargetClassName
+	self assert: result classInfo className equals: self commentTargetClassName
 ]

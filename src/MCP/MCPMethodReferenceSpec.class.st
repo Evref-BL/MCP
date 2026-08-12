@@ -17,10 +17,7 @@ Class {
 { #category : 'instance creation' }
 MCPMethodReferenceSpec class >> className: aClassName selector: aSelector classSide: aBoolean [
 
-	^ self new
-		  initializeClassName: aClassName
-		  selector: aSelector
-		  classSide: aBoolean
+	^ self new initializeClassName: aClassName selector: aSelector classSide: aBoolean
 ]
 
 { #category : 'resolving' }
@@ -52,10 +49,7 @@ MCPMethodReferenceSpec >> compiledMethod [
 	behavior := self behavior.
 	selectorSymbol := self selector asSymbol.
 	(behavior includesSelector: selectorSymbol) ifFalse: [
-			MCPCommandError
-				signalMissingMethodInClassName: self className
-				classSide: self classSide
-				selector: self selector ].
+		MCPCommandError signalMissingMethodInClassName: self className classSide: self classSide selector: self selector ].
 	^ behavior compiledMethodAt: selectorSymbol
 ]
 

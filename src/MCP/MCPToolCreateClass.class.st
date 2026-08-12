@@ -20,8 +20,7 @@ MCPToolCreateClass >> classToolSpec [
 
 	^ {
 		  (#title -> 'Create Class').
-		  (#description
-		   -> 'Create one class definition in the running image.').
+		  (#description -> 'Create one class definition in the running image.').
 		  (#action -> 'create').
 		  (#inputProperties -> {
 			   self classNameSchemaProperty.
@@ -36,9 +35,7 @@ MCPToolCreateClass >> classToolSpec [
 			   self sharedPoolsSchemaProperty.
 			   self layoutSchemaProperty.
 			   self classCommentSchemaProperty }).
-		  (#requiredProperties
-		   -> #( 'className' 'superclassName' 'packageName' )) }
-		  asDictionary
+		  (#requiredProperties -> #( 'className' 'superclassName' 'packageName' )) } asDictionary
 ]
 
 { #category : 'metadata' }

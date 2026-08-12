@@ -79,10 +79,8 @@ MCPDebugSessionCandidate >> exceptionInfo [
 	message := exception messageText.
 	^ {
 		  (#className -> exception class name asString).
-		  (#message
-		   -> (message ifNil: [ '' ] ifNotNil: [ message asString ])).
-		  (#printString -> (self limitedPrintStringOf: exception)) }
-		  asDictionary
+		  (#message -> (message ifNil: [ '' ] ifNotNil: [ message asString ])).
+		  (#printString -> (self limitedPrintStringOf: exception)) } asDictionary
 ]
 
 { #category : 'private - stack' }
@@ -93,8 +91,7 @@ MCPDebugSessionCandidate >> frameInfoForContext: aContext [
 		  (#displayString -> (self limitedPrintStringOf: aContext)).
 		  (#method -> (self methodInfoForContext: aContext)).
 		  (#pc -> aContext pc).
-		  (#receiverClassName -> aContext receiver class name asString) }
-		  asDictionary
+		  (#receiverClassName -> aContext receiver class name asString) } asDictionary
 ]
 
 { #category : 'testing' }

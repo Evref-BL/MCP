@@ -59,19 +59,14 @@ MCPDashboardPresenter >> addMonitoringWidgetsLayoutTo: aBoxLayout [
 
 	self hasExpandedMonitoringSection
 		ifTrue: [ aBoxLayout add: self monitoringWidgetsLayout ]
-		ifFalse: [
-		aBoxLayout add: self monitoringWidgetsLayout expand: false ]
+		ifFalse: [ aBoxLayout add: self monitoringWidgetsLayout expand: false ]
 ]
 
 { #category : 'layout' }
 MCPDashboardPresenter >> addPaddedCheckbox: aCheckBoxPresenter width: width to: aBoxLayout [
 
-	aBoxLayout
-		add: self newNullPresenter
-		withConstraints: [ :constraints | constraints width: 8 ].
-	aBoxLayout
-		add: aCheckBoxPresenter
-		withConstraints: [ :constraints | constraints width: width ].
+	aBoxLayout add: self newNullPresenter withConstraints: [ :constraints | constraints width: 8 ].
+	aBoxLayout add: aCheckBoxPresenter withConstraints: [ :constraints | constraints width: width ].
 	^ aBoxLayout
 ]
 
@@ -99,8 +94,7 @@ MCPDashboardPresenter >> applyConfiguration [
 { #category : 'collapsing' }
 MCPDashboardPresenter >> areAllMonitoringSectionsExpanded [
 
-	^ self isMetricsSectionExpanded and: [
-		  self isTracesSectionExpanded and: [ self isLogsSectionExpanded ] ]
+	^ self isMetricsSectionExpanded and: [ self isTracesSectionExpanded and: [ self isLogsSectionExpanded ] ]
 ]
 
 { #category : 'auto-refresh' }
@@ -123,8 +117,7 @@ MCPDashboardPresenter >> autoRefreshLoop [
 	[
 		[ self shouldAutoRefresh ] whileTrue: [
 				(Delay forSeconds: self autoRefreshIntervalSeconds) wait.
-				self shouldAutoRefresh ifTrue: [ self defer: [ self refreshView ] ] ] ]
-		ensure: [ autoRefreshProcess := nil ]
+				self shouldAutoRefresh ifTrue: [ self defer: [ self refreshView ] ] ] ] ensure: [ autoRefreshProcess := nil ]
 ]
 
 { #category : 'actions' }
@@ -141,12 +134,9 @@ MCPDashboardPresenter >> configurationLayout [
 	boxLayout := SpBoxLayout newLeftToRight.
 	boxLayout
 		add: portLabel expand: false;
-		add: portInput
-		withConstraints: [ :constraints | constraints width: 90 ].
+		add: portInput withConstraints: [ :constraints | constraints width: 90 ].
 	self addPaddedCheckbox: debugCheckBox width: 140 to: boxLayout.
-	boxLayout
-		add: applyButton
-		withConstraints: [ :constraints | constraints width: 110 ].
+	boxLayout add: applyButton withConstraints: [ :constraints | constraints width: 110 ].
 	^ boxLayout
 ]
 
@@ -162,10 +152,8 @@ MCPDashboardPresenter >> connectPresenters [
 
 	applyButton action: [ self applyConfiguration ].
 	refreshButton action: [ self refreshView ].
-	autoRefreshCheckBox whenChangedDo: [ :enabled |
-		self autoRefreshChangedTo: enabled ].
-	monitoringCheckBox whenChangedDo: [ :enabled |
-		self observabilityChangedTo: enabled ].
+	autoRefreshCheckBox whenChangedDo: [ :enabled | self autoRefreshChangedTo: enabled ].
+	monitoringCheckBox whenChangedDo: [ :enabled | self observabilityChangedTo: enabled ].
 	toolsHeaderButton action: [ self toggleToolsSection ].
 	metricsHeaderButton action: [ self toggleMetricsSection ].
 	tracesHeaderButton action: [ self toggleTracesSection ].
@@ -182,10 +170,7 @@ MCPDashboardPresenter >> dashboardWidgetsBoxLayout [
 
 	| widgetLayout |
 	widgetLayout := SpBoxLayout newTopToBottom.
-	self
-		addSectionLayout: self toolsWidgetLayout
-		expanded: self isToolsSectionExpanded
-		to: widgetLayout.
+	self addSectionLayout: self toolsWidgetLayout expanded: self isToolsSectionExpanded to: widgetLayout.
 	self addMonitoringWidgetsLayoutTo: widgetLayout.
 	^ widgetLayout
 ]
@@ -193,8 +178,7 @@ MCPDashboardPresenter >> dashboardWidgetsBoxLayout [
 { #category : 'layout' }
 MCPDashboardPresenter >> dashboardWidgetsLayout [
 
-	(self isToolsSectionExpanded and: [
-		 self hasExpandedMonitoringSection ]) ifTrue: [
+	(self isToolsSectionExpanded and: [ self hasExpandedMonitoringSection ]) ifTrue: [
 			^ SpPanedLayout newTopToBottom
 				  positionOfSlider: 42 percent;
 				  first: self toolsWidgetLayout;
@@ -214,10 +198,8 @@ MCPDashboardPresenter >> defaultLayout [
 
 	^ SpBoxLayout newTopToBottom
 		  add: self headerLayout expand: false;
-		  add: self configurationLayout
-		  withConstraints: [ :constraints | constraints height: 30 ];
-		  add: self lifecycleActionsLayout
-		  withConstraints: [ :constraints | constraints height: 30 ];
+		  add: self configurationLayout withConstraints: [ :constraints | constraints height: 30 ];
+		  add: self lifecycleActionsLayout withConstraints: [ :constraints | constraints height: 30 ];
 		  add: self dashboardWidgetsLayout;
 		  yourself
 ]
@@ -250,8 +232,7 @@ MCPDashboardPresenter >> expandedMonitoringSectionCount [
 { #category : 'collapsing' }
 MCPDashboardPresenter >> hasExpandedMonitoringSection [
 
-	^ self isMetricsSectionExpanded or: [
-		  self isTracesSectionExpanded or: [ self isLogsSectionExpanded ] ]
+	^ self isMetricsSectionExpanded or: [ self isTracesSectionExpanded or: [ self isLogsSectionExpanded ] ]
 ]
 
 { #category : 'layout' }
@@ -319,38 +300,21 @@ MCPDashboardPresenter >> initializePresenters [
 
 	toolsTable
 		addColumn: (SpStringTableColumn title: 'Tool' evaluated: #name);
-		addColumn: (SpStringTableColumn
-				 title: 'Title'
-				 evaluated: [ :tool | tool title ifNil: [ '' ] ]);
-		addColumn: (SpStringTableColumn
-				 title: 'Description'
-				 evaluated: [ :tool | tool description ifNil: [ '' ] ]);
+		addColumn: (SpStringTableColumn title: 'Title' evaluated: [ :tool | tool title ifNil: [ '' ] ]);
+		addColumn: (SpStringTableColumn title: 'Description' evaluated: [ :tool | tool description ifNil: [ '' ] ]);
 		beResizable.
 	metricsTable
 		addColumn: (SpStringTableColumn title: 'Tool' evaluated: #toolName);
-		addColumn: (SpStringTableColumn
-				 title: 'Calls'
-				 evaluated: [ :stats | stats callCount asString ]);
-		addColumn: (SpStringTableColumn
-				 title: 'Errors'
-				 evaluated: [ :stats | stats errorCount asString ]);
-		addColumn: (SpStringTableColumn
-				 title: 'Avg ms'
-				 evaluated: #displayAverageMilliseconds);
-		addColumn: (SpStringTableColumn
-				 title: 'Min ms'
-				 evaluated: #displayMinMilliseconds);
-		addColumn: (SpStringTableColumn
-				 title: 'Max ms'
-				 evaluated: #displayMaxMilliseconds);
-		addColumn: (SpStringTableColumn
-				 title: 'Last ms'
-				 evaluated: #displayLastMilliseconds);
+		addColumn: (SpStringTableColumn title: 'Calls' evaluated: [ :stats | stats callCount asString ]);
+		addColumn: (SpStringTableColumn title: 'Errors' evaluated: [ :stats | stats errorCount asString ]);
+		addColumn: (SpStringTableColumn title: 'Avg ms' evaluated: #displayAverageMilliseconds);
+		addColumn: (SpStringTableColumn title: 'Min ms' evaluated: #displayMinMilliseconds);
+		addColumn: (SpStringTableColumn title: 'Max ms' evaluated: #displayMaxMilliseconds);
+		addColumn: (SpStringTableColumn title: 'Last ms' evaluated: #displayLastMilliseconds);
 		beResizable.
 	self initializeTracesTableColumns.
 	logsTable
-		addColumn:
-			(SpStringTableColumn title: 'Log' evaluated: [ :line | line ]);
+		addColumn: (SpStringTableColumn title: 'Log' evaluated: [ :line | line ]);
 		beResizable
 ]
 
@@ -359,12 +323,9 @@ MCPDashboardPresenter >> initializeSectionExpansionFor: mcp [
 
 	sectionExpansionInitialized ifTrue: [ ^ self ].
 	toolsSectionExpanded := mcp sortedTools notEmpty.
-	metricsSectionExpanded := mcp monitoringEnabled or: [
-		                          mcp monitoringMetrics notEmpty ].
-	tracesSectionExpanded := mcp monitoringEnabled or: [
-		                         mcp monitoringTraces notEmpty ].
-	logsSectionExpanded := mcp monitoringEnabled or: [
-		                       mcp monitoringLogs notEmpty ].
+	metricsSectionExpanded := mcp monitoringEnabled or: [ mcp monitoringMetrics notEmpty ].
+	tracesSectionExpanded := mcp monitoringEnabled or: [ mcp monitoringTraces notEmpty ].
+	logsSectionExpanded := mcp monitoringEnabled or: [ mcp monitoringLogs notEmpty ].
 	sectionExpansionInitialized := true
 ]
 
@@ -374,16 +335,10 @@ MCPDashboardPresenter >> initializeTracesTableColumns [
 	tracesTable
 		addColumn: (SpStringTableColumn title: 'Status' evaluated: #status);
 		addColumn: (SpStringTableColumn title: 'Tool' evaluated: #toolName);
-		addColumn: (SpStringTableColumn
-				 title: 'Duration ms'
-				 evaluated: #displayDurationMilliseconds);
-		addColumn: (SpStringTableColumn
-				 title: 'Output bytes'
-				 evaluated: [ :record | record outputByteCount asString ]);
-		addColumn:
-			(SpStringTableColumn title: 'Details' evaluated: #displaySummary);
-		addColumn:
-			(SpStringTableColumn title: 'Started' evaluated: #displayStartedAt);
+		addColumn: (SpStringTableColumn title: 'Duration ms' evaluated: #displayDurationMilliseconds);
+		addColumn: (SpStringTableColumn title: 'Output bytes' evaluated: [ :record | record outputByteCount asString ]);
+		addColumn: (SpStringTableColumn title: 'Details' evaluated: #displaySummary);
+		addColumn: (SpStringTableColumn title: 'Started' evaluated: #displayStartedAt);
 		beResizable
 ]
 
@@ -416,8 +371,7 @@ MCPDashboardPresenter >> isAutoRefreshEnabled [
 { #category : 'auto-refresh' }
 MCPDashboardPresenter >> isAutoRefreshProcessRunning [
 
-	^ autoRefreshProcess notNil and: [
-		  autoRefreshProcess isTerminated not ]
+	^ autoRefreshProcess notNil and: [ autoRefreshProcess isTerminated not ]
 ]
 
 { #category : 'collapsing' }
@@ -448,12 +402,9 @@ MCPDashboardPresenter >> isTracesSectionExpanded [
 MCPDashboardPresenter >> lifecycleActionsLayout [
 
 	^ SpBoxLayout newLeftToRight
-		  add: startButton
-		  withConstraints: [ :constraints | constraints width: 110 ];
-		  add: stopButton
-		  withConstraints: [ :constraints | constraints width: 110 ];
-		  add: restartButton
-		  withConstraints: [ :constraints | constraints width: 120 ];
+		  add: startButton withConstraints: [ :constraints | constraints width: 110 ];
+		  add: stopButton withConstraints: [ :constraints | constraints width: 110 ];
+		  add: restartButton withConstraints: [ :constraints | constraints width: 120 ];
 		  yourself
 ]
 
@@ -479,8 +430,7 @@ MCPDashboardPresenter >> metricsWidgetLayout [
 	| widgetLayout |
 	widgetLayout := SpBoxLayout newTopToBottom.
 	widgetLayout add: metricsHeaderButton expand: false.
-	self isMetricsSectionExpanded ifTrue: [
-		widgetLayout add: metricsTable ].
+	self isMetricsSectionExpanded ifTrue: [ widgetLayout add: metricsTable ].
 	^ widgetLayout
 ]
 
@@ -496,20 +446,10 @@ MCPDashboardPresenter >> monitoringControlsLayout [
 
 	| controlsLayout |
 	controlsLayout := SpBoxLayout newLeftToRight.
-	self
-		addPaddedCheckbox: monitoringCheckBox
-		width: 190
-		to: controlsLayout.
-	controlsLayout
-		add: refreshButton
-		withConstraints: [ :constraints | constraints width: 110 ].
-	self
-		addPaddedCheckbox: autoRefreshCheckBox
-		width: 150
-		to: controlsLayout.
-	controlsLayout
-		add: clearMonitoringButton
-		withConstraints: [ :constraints | constraints width: 90 ].
+	self addPaddedCheckbox: monitoringCheckBox width: 190 to: controlsLayout.
+	controlsLayout add: refreshButton withConstraints: [ :constraints | constraints width: 110 ].
+	self addPaddedCheckbox: autoRefreshCheckBox width: 150 to: controlsLayout.
+	controlsLayout add: clearMonitoringButton withConstraints: [ :constraints | constraints width: 90 ].
 	^ controlsLayout
 ]
 
@@ -517,8 +457,7 @@ MCPDashboardPresenter >> monitoringControlsLayout [
 MCPDashboardPresenter >> monitoringHeaderLayout [
 
 	^ SpBoxLayout newTopToBottom
-		  add: self monitoringControlsLayout
-		  withConstraints: [ :constraints | constraints height: 30 ];
+		  add: self monitoringControlsLayout withConstraints: [ :constraints | constraints height: 30 ];
 		  yourself
 ]
 
@@ -535,8 +474,7 @@ MCPDashboardPresenter >> monitoringSectionsLayout [
 						   second: self logsWidgetLayout;
 						   yourself);
 				  yourself ].
-	self expandedMonitoringSectionCount = 2 ifTrue: [
-		^ self twoExpandedMonitoringSectionsLayout ].
+	self expandedMonitoringSectionCount = 2 ifTrue: [ ^ self twoExpandedMonitoringSectionsLayout ].
 	^ self monitoringWidgetsBoxLayout
 ]
 
@@ -545,18 +483,9 @@ MCPDashboardPresenter >> monitoringWidgetsBoxLayout [
 
 	| widgetLayout |
 	widgetLayout := SpBoxLayout newTopToBottom.
-	self
-		addSectionLayout: self metricsWidgetLayout
-		expanded: self isMetricsSectionExpanded
-		to: widgetLayout.
-	self
-		addSectionLayout: self tracesWidgetLayout
-		expanded: self isTracesSectionExpanded
-		to: widgetLayout.
-	self
-		addSectionLayout: self logsWidgetLayout
-		expanded: self isLogsSectionExpanded
-		to: widgetLayout.
+	self addSectionLayout: self metricsWidgetLayout expanded: self isMetricsSectionExpanded to: widgetLayout.
+	self addSectionLayout: self tracesWidgetLayout expanded: self isTracesSectionExpanded to: widgetLayout.
+	self addSectionLayout: self logsWidgetLayout expanded: self isLogsSectionExpanded to: widgetLayout.
 	^ widgetLayout
 ]
 
@@ -589,11 +518,9 @@ MCPDashboardPresenter >> readPortFromInput [
 
 	parsedPort := [ trimmedPort asInteger ]
 		              on: Error
-		              do: [ :error |
-		              self error: 'Port must be a valid integer.' ].
+		              do: [ :error | self error: 'Port must be a valid integer.' ].
 
-	(parsedPort between: 1 and: 65535) ifFalse: [
-		self error: 'Port must be between 1 and 65535.' ].
+	(parsedPort between: 1 and: 65535) ifFalse: [ self error: 'Port must be between 1 and 65535.' ].
 
 	^ parsedPort
 ]
@@ -618,42 +545,24 @@ MCPDashboardPresenter >> refreshView [
 	logs := mcp monitoringLogs.
 	isRunning := mcp isRunning.
 	isListening := mcp isListening.
-	statusText := self
-		              serverStatusLabelForRunning: isRunning
-		              listening: isListening.
+	statusText := self serverStatusLabelForRunning: isRunning listening: isListening.
 
 	statusIcon
-		image: (self iconNamed:
-					 (self
-						  serverStatusIconNameForRunning: isRunning
-						  listening: isListening));
+		image: (self iconNamed: (self serverStatusIconNameForRunning: isRunning listening: isListening));
 		help: statusText.
 	statusLabel label: 'Status:'.
-	statusValueLabel label:
-		(self serverStatusValueForRunning: isRunning listening: isListening).
+	statusValueLabel label: (self serverStatusValueForRunning: isRunning listening: isListening).
 	urlLabel label: 'Endpoint: ' , mcp localUrlString.
 	portInput text: mcp port asString.
 	debugCheckBox state: mcp debugMode.
-	toolsHeaderButton label: (self
-			 disclosureLabelFor: 'Tools'
-			 count: tools size
-			 expanded: self isToolsSectionExpanded).
+	toolsHeaderButton label: (self disclosureLabelFor: 'Tools' count: tools size expanded: self isToolsSectionExpanded).
 	toolsTable items: tools.
 	monitoringCheckBox state: mcp monitoringEnabled.
-	metricsHeaderButton label: (self
-			 disclosureLabelFor: 'Metrics'
-			 count: metrics size
-			 expanded: self isMetricsSectionExpanded).
+	metricsHeaderButton label: (self disclosureLabelFor: 'Metrics' count: metrics size expanded: self isMetricsSectionExpanded).
 	metricsTable items: metrics.
-	tracesHeaderButton label: (self
-			 disclosureLabelFor: 'Traces'
-			 count: traces size
-			 expanded: self isTracesSectionExpanded).
+	tracesHeaderButton label: (self disclosureLabelFor: 'Traces' count: traces size expanded: self isTracesSectionExpanded).
 	tracesTable items: traces.
-	logsHeaderButton label: (self
-			 disclosureLabelFor: 'Logs'
-			 count: logs size
-			 expanded: self isLogsSectionExpanded).
+	logsHeaderButton label: (self disclosureLabelFor: 'Logs' count: logs size expanded: self isLogsSectionExpanded).
 	logsTable items: (self logsForDisplayFrom: logs)
 ]
 
@@ -682,9 +591,7 @@ MCPDashboardPresenter >> serverStatusIconNameForRunning: isRunning listening: is
 { #category : 'private - text' }
 MCPDashboardPresenter >> serverStatusLabelForRunning: isRunning listening: isListening [
 
-	^ 'Status: '
-	  ,
-	  (self serverStatusValueForRunning: isRunning listening: isListening)
+	^ 'Status: ' , (self serverStatusValueForRunning: isRunning listening: isListening)
 ]
 
 { #category : 'private - text' }
@@ -710,8 +617,7 @@ MCPDashboardPresenter >> startAutoRefresh [
 
 	self isAutoRefreshProcessRunning ifTrue: [ ^ self ].
 	self refreshView.
-	autoRefreshProcess := [ self autoRefreshLoop ] forkAt:
-		                      Processor userBackgroundPriority
+	autoRefreshProcess := [ self autoRefreshLoop ] forkAt: Processor userBackgroundPriority
 ]
 
 { #category : 'actions' }

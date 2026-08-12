@@ -21,8 +21,7 @@ MCPToolDiscardRepositoryChanges >> repositoryToolSpec [
 	^ {
 		  (#title -> 'Discard Repository Changes').
 		  (#description
-		   ->
-		   'Discard all current changes in one registered Iceberg repository working copy. Use only when abandoning local changes.').
+		   -> 'Discard all current changes in one registered Iceberg repository working copy. Use only when abandoning local changes.').
 		  (#action -> 'discard').
 		  (#requestClass -> MCPRepositoryDiscardRequest).
 		  (#commandClass -> MCPDiscardRepositoryChangesCommand) } asDictionary

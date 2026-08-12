@@ -45,6 +45,5 @@ MCPNamedToolIconSpec >> iconSymbol: anIconSymbol [
 { #category : 'rendering' }
 MCPNamedToolIconSpec >> renderUsing: anIconFactory [
 
-	^ anIconFactory iconForForm:
-		  (anIconFactory highScaleFormNamed: self iconSymbol)
+	^ anIconFactory iconForForm: (anIconFactory highScaleFormNamed: self iconSymbol)
 ]

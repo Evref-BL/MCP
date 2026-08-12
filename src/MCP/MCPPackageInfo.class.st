@@ -22,9 +22,7 @@ Class {
 { #category : 'instance creation' }
 MCPPackageInfo class >> fromPackage: aPackage projectNames: someProjectNames [
 
-	^ self new
-		  initializeFromPackage: aPackage
-		  projectNames: someProjectNames
+	^ self new initializeFromPackage: aPackage projectNames: someProjectNames
 ]
 
 { #category : 'converting' }
@@ -64,12 +62,8 @@ MCPPackageInfo >> extensionMethodCount [
 MCPPackageInfo >> initializeFromPackage: aPackage projectNames: someProjectNames [
 
 	packageName := aPackage name asString.
-	projectNames := ((someProjectNames ifNil: [ #(  ) ])
-		                 collect: [ :each | each asString ]
-		                 as: Array) sort.
-	tagNames := (aPackage tagNames
-		             collect: [ :each | each asString ]
-		             as: Array) sort.
+	projectNames := ((someProjectNames ifNil: [ #(  ) ]) collect: [ :each | each asString ] as: Array) sort.
+	tagNames := (aPackage tagNames collect: [ :each | each asString ] as: Array) sort.
 	definedClassCount := aPackage definedClasses size.
 	extensionMethodCount := aPackage extensionMethods size.
 	isUndefined := aPackage isUndefined.

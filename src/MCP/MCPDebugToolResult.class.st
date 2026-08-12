@@ -55,8 +55,7 @@ MCPDebugToolResult >> asDictionary [
 	self summary ifNotNil: [ :text | result at: #summary put: text ].
 	self data ifNotEmpty: [ :value | result at: #data put: value ].
 	self warnings ifNotEmpty: [ :value | result at: #warnings put: value ].
-	self errorDetails ifNotEmpty: [ :value |
-		result at: #error put: value ].
+	self errorDetails ifNotEmpty: [ :value | result at: #error put: value ].
 	^ result
 ]
 

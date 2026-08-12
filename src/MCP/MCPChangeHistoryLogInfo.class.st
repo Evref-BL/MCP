@@ -32,8 +32,7 @@ MCPChangeHistoryLogInfo >> asDictionary [
 	fileName ifNotNil: [ data at: #fileName put: fileName ].
 	exists == false ifTrue: [ data at: #exists put: false ].
 	fileSize ifNotNil: [ data at: #fileSize put: fileSize ].
-	modificationTime ifNotNil: [
-		data at: #modificationTime put: modificationTime ].
+	modificationTime ifNotNil: [ data at: #modificationTime put: modificationTime ].
 	isCurrent == true ifTrue: [ data at: #isCurrent put: true ].
 	^ data
 ]

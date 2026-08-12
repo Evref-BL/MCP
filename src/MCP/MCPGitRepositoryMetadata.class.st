@@ -42,12 +42,8 @@ MCPGitRepositoryMetadata >> commonGitDirectoryFor: aGitDirectory [
 
 	| commonPath contents |
 	aGitDirectory ifNil: [ ^ nil ].
-	contents := self
-		            fileContentsOf: aGitDirectory / 'commondir'
-		            ifAbsent: [ ^ aGitDirectory ].
-	commonPath := contents lines
-		              ifEmpty: [ '' ]
-		              ifNotEmpty: [ :lines | lines first trimBoth ].
+	contents := self fileContentsOf: aGitDirectory / 'commondir' ifAbsent: [ ^ aGitDirectory ].
+	commonPath := contents lines ifEmpty: [ '' ] ifNotEmpty: [ :lines | lines first trimBoth ].
 	commonPath isEmpty ifTrue: [ ^ aGitDirectory ].
 	^ self directoryFromPath: commonPath relativeTo: aGitDirectory
 ]
@@ -62,9 +58,7 @@ MCPGitRepositoryMetadata >> configEntries [
 MCPGitRepositoryMetadata >> configEntriesFromFile: configFile [
 
 	| contents |
-	contents := self
-		            fileContentsOf: configFile
-		            ifAbsent: [ ^ Dictionary new ].
+	contents := self fileContentsOf: configFile ifAbsent: [ ^ Dictionary new ].
 	^ self parseConfig: contents
 ]
 
@@ -121,9 +115,7 @@ MCPGitRepositoryMetadata >> gitDirectoryForLocation: aLocationString [
 	dotGit := repositoryDirectory / '.git'.
 	dotGit isDirectory ifTrue: [ ^ self commonGitDirectoryFor: dotGit ].
 	dotGit exists ifFalse: [ ^ nil ].
-	^ self commonGitDirectoryFor: (self
-			   gitDirectoryFromGitFile: dotGit
-			   repositoryDirectory: repositoryDirectory)
+	^ self commonGitDirectoryFor: (self gitDirectoryFromGitFile: dotGit repositoryDirectory: repositoryDirectory)
 ]
 
 { #category : 'private - files' }
@@ -141,9 +133,7 @@ MCPGitRepositoryMetadata >> gitdirPathFrom: fileContents [
 
 	| line prefix trimmed |
 	prefix := 'gitdir:'.
-	line := fileContents lines
-		        detect: [ :each | each trimBoth beginsWith: prefix ]
-		        ifNone: [ ^ '' ].
+	line := fileContents lines detect: [ :each | each trimBoth beginsWith: prefix ] ifNone: [ ^ '' ].
 	trimmed := line trimBoth.
 	^ (trimmed copyFrom: prefix size + 1 to: trimmed size) trimBoth
 ]
@@ -152,8 +142,7 @@ MCPGitRepositoryMetadata >> gitdirPathFrom: fileContents [
 MCPGitRepositoryMetadata >> initializeForRepository: aRepository [
 
 	^ self initializeWithLocationString:
-		  (aRepository location ifNotNil: [ :repositoryLocation |
-			   repositoryLocation mcpRepositoryLocationString ])
+		  (aRepository location ifNotNil: [ :repositoryLocation | repositoryLocation mcpRepositoryLocationString ])
 ]
 
 { #category : 'initialization' }
@@ -200,13 +189,8 @@ MCPGitRepositoryMetadata >> parseConfig: fileContents [
 			trimmed := line trimBoth.
 			(trimmed isEmpty or: [ self isCommentLine: trimmed ]) ifFalse: [
 					(self sectionNameFromLine: trimmed)
-						ifNil: [
-								currentEntries ifNotNil: [
-									self storeConfigEntryFromLine: trimmed in: currentEntries ] ]
-						ifNotNil: [ :sectionName |
-								currentEntries := entries
-									                  at: sectionName
-									                  ifAbsentPut: [ Dictionary new ] ] ] ].
+						ifNil: [ currentEntries ifNotNil: [ self storeConfigEntryFromLine: trimmed in: currentEntries ] ]
+						ifNotNil: [ :sectionName | currentEntries := entries at: sectionName ifAbsentPut: [ Dictionary new ] ] ] ].
 	^ entries
 ]
 
@@ -218,16 +202,13 @@ MCPGitRepositoryMetadata >> remoteDictionaries [
 	self configEntries keysAndValuesDo: [ :sectionName :entries |
 			(self isRemoteSectionName: sectionName) ifTrue: [
 					| remoteName remoteUrl |
-					remoteName := self
-						              nameFromSectionName: sectionName
-						              prefix: 'remote.'.
+					remoteName := self nameFromSectionName: sectionName prefix: 'remote.'.
 					remoteUrl := entries at: 'url' ifAbsent: [ '' ].
 					(remoteName isEmpty and: [ remoteUrl isEmpty ]) ifFalse: [
 							remotes add: {
 									(#name -> remoteName).
 									(#url -> remoteUrl) } asDictionary ] ] ].
-	^ remotes asArray sort: [ :left :right |
-		  (left at: #name) <= (right at: #name) ]
+	^ remotes asArray sort: [ :left :right | (left at: #name) <= (right at: #name) ]
 ]
 
 { #category : 'accessing' }
@@ -235,9 +216,7 @@ MCPGitRepositoryMetadata >> remoteUrlNamed: aRemoteName [
 
 	| remoteEntries |
 	aRemoteName isEmpty ifTrue: [ ^ '' ].
-	remoteEntries := self configEntries
-		                 at: 'remote.' , aRemoteName
-		                 ifAbsent: [ ^ '' ].
+	remoteEntries := self configEntries at: 'remote.' , aRemoteName ifAbsent: [ ^ '' ].
 	^ remoteEntries at: 'url' ifAbsent: [ '' ]
 ]
 
@@ -245,18 +224,15 @@ MCPGitRepositoryMetadata >> remoteUrlNamed: aRemoteName [
 MCPGitRepositoryMetadata >> sectionNameFromLine: aString [
 
 	| header quoteEnd quoteStart sectionName |
-	((aString beginsWith: '[') and: [ aString endsWith: ']' ]) ifFalse: [
-		^ nil ].
+	((aString beginsWith: '[') and: [ aString endsWith: ']' ]) ifFalse: [ ^ nil ].
 	header := (aString copyFrom: 2 to: aString size - 1) trimBoth.
 	quoteStart := header indexOf: $".
 	quoteStart isZero ifTrue: [ ^ header ].
 	quoteEnd := header lastIndexOf: $".
 	quoteEnd <= quoteStart ifTrue: [ ^ header ].
 	sectionName := (header copyFrom: 1 to: quoteStart - 1) trimBoth.
-	sectionName isEmpty ifTrue: [
-		^ (header copyFrom: quoteStart + 1 to: quoteEnd - 1) trimBoth ].
-	^ sectionName , '.'
-	  , (header copyFrom: quoteStart + 1 to: quoteEnd - 1) trimBoth
+	sectionName isEmpty ifTrue: [ ^ (header copyFrom: quoteStart + 1 to: quoteEnd - 1) trimBoth ].
+	^ sectionName , '.' , (header copyFrom: quoteStart + 1 to: quoteEnd - 1) trimBoth
 ]
 
 { #category : 'private - parsing' }
@@ -269,17 +245,14 @@ MCPGitRepositoryMetadata >> storeConfigEntryFromLine: aString in: entryDictionar
 	key isEmpty ifTrue: [ ^ self ].
 	value := separator = aString size
 		         ifTrue: [ '' ]
-		         ifFalse: [
-		         (aString copyFrom: separator + 1 to: aString size) trimBoth ].
+		         ifFalse: [ (aString copyFrom: separator + 1 to: aString size) trimBoth ].
 	entryDictionary at: key put: (self unquotedConfigValue: value)
 ]
 
 { #category : 'private - parsing' }
 MCPGitRepositoryMetadata >> unquotedConfigValue: aString [
 
-	(aString size >= 2 and: [
-		 aString first = $" and: [ aString last = $" ] ]) ifFalse: [
-		^ aString ].
+	(aString size >= 2 and: [ aString first = $" and: [ aString last = $" ] ]) ifFalse: [ ^ aString ].
 	^ aString copyFrom: 2 to: aString size - 1
 ]
 
@@ -288,12 +261,9 @@ MCPGitRepositoryMetadata >> upstreamInfoForBranchNamed: aBranchName [
 
 	| branchEntries branchName remoteName remoteUrl |
 	aBranchName isEmpty ifTrue: [ ^ self emptyUpstreamInfo ].
-	branchEntries := self configEntries
-		                 at: 'branch.' , aBranchName
-		                 ifAbsent: [ ^ self emptyUpstreamInfo ].
+	branchEntries := self configEntries at: 'branch.' , aBranchName ifAbsent: [ ^ self emptyUpstreamInfo ].
 	remoteName := branchEntries at: 'remote' ifAbsent: [ '' ].
-	branchName := self branchNameFromMerge:
-		              (branchEntries at: 'merge' ifAbsent: [ '' ]).
+	branchName := self branchNameFromMerge: (branchEntries at: 'merge' ifAbsent: [ '' ]).
 	remoteUrl := self remoteUrlNamed: remoteName.
 	^ {
 		  (#remoteName -> remoteName).

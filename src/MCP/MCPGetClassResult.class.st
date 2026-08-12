@@ -30,10 +30,8 @@ MCPGetClassResult >> asDictionary [
 
 	| result |
 	result := self data copy.
-	self superclasses ifNotEmpty: [ :value |
-		result at: #superclasses put: value ].
-	self subclasses ifNotEmpty: [ :value |
-		result at: #subclasses put: value ].
+	self superclasses ifNotEmpty: [ :value | result at: #superclasses put: value ].
+	self subclasses ifNotEmpty: [ :value | result at: #subclasses put: value ].
 	^ result
 ]
 

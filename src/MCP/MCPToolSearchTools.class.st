@@ -44,36 +44,24 @@ MCPToolSearchTools >> annotations [
 MCPToolSearchTools >> buildInputSchema [
 
 	^ MCPStructureInputSchema new
-		type: 'object';
-		properties: {
-				(self
-					schemaPropertyNamed: 'query'
-					type: 'string'
-					description: 'Search text tool names, descriptions, groups.').
-				(self
-					schemaPropertyNamed: 'group'
-					type: 'string'
-					description: 'Optional tool group filter.').
-				(self
-					schemaPropertyNamed: 'cursor'
-					type: 'string'
-					description: 'Continuation cursor.') };
-		required: #( );
-		additionalProperties: false;
-		yourself
+		  type: 'object';
+		  properties: {
+				  (self schemaPropertyNamed: 'query' type: 'string' description: 'Search text tool names, descriptions, groups.').
+				  (self schemaPropertyNamed: 'group' type: 'string' description: 'Optional tool group filter.').
+				  (self schemaPropertyNamed: 'cursor' type: 'string' description: 'Continuation cursor.') };
+		  required: #(  );
+		  additionalProperties: false;
+		  yourself
 ]
 
 { #category : 'metadata' }
 MCPToolSearchTools >> buildOutputSchema [
 
 	^ self
-		standardOutputSchemaForDataProperties: {
-				self toolsArraySchemaProperty.
-				(self
-					schemaPropertyNamed: 'nextCursor'
-					type: 'string'
-					description: 'Cursor for the next page.') }
-		required: #( 'tools' )
+		  standardOutputSchemaForDataProperties: {
+				  self toolsArraySchemaProperty.
+				  (self schemaPropertyNamed: 'nextCursor' type: 'string' description: 'Cursor for the next page.') }
+		  required: #( 'tools' )
 ]
 
 { #category : 'private - execution' }
@@ -122,20 +110,14 @@ MCPToolSearchTools >> title [
 MCPToolSearchTools >> toolMetadataObjectSchema [
 
 	^ MCPStructureProperties new
-		type: 'object';
-		description: 'Compact metadata for one MCP-Pharo tool.';
-		properties: {
-				(self
-					schemaPropertyNamed: 'name'
-					type: 'string'
-					description: 'MCP tool name.').
-				(self
-					schemaPropertyNamed: 'description'
-					type: 'string'
-					description: 'Short description.') };
-		required: #( 'name' 'description' );
-		additionalProperties: false;
-		yourself
+		  type: 'object';
+		  description: 'Compact metadata for one MCP-Pharo tool.';
+		  properties: {
+				  (self schemaPropertyNamed: 'name' type: 'string' description: 'MCP tool name.').
+				  (self schemaPropertyNamed: 'description' type: 'string' description: 'Short description.') };
+		  required: #( 'name' 'description' );
+		  additionalProperties: false;
+		  yourself
 ]
 
 { #category : 'accessing' }
@@ -153,10 +135,7 @@ MCPToolSearchTools >> toolRegistry: aToolRegistry [
 { #category : 'private - schema' }
 MCPToolSearchTools >> toolsArraySchemaProperty [
 
-	^ (self
-		   schemaPropertyNamed: 'tools'
-		   type: 'array'
-		   description: 'Matching tool metadata entries.')
+	^ (self schemaPropertyNamed: 'tools' type: 'array' description: 'Matching tool metadata entries.')
 		  items: self toolMetadataObjectSchema;
 		  yourself
 ]

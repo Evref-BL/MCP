@@ -44,9 +44,7 @@ MCPLoadRepositoryRequest >> baselineRequest [
 { #category : 'testing' }
 MCPLoadRepositoryRequest >> canResolveRepositoryUrl [
 
-	self isRemoteLoad ifTrue: [
-			^ self hasRemoteCoordinates and: [
-				  hostUrl notNil and: [ commitish notNil ] ] ].
+	self isRemoteLoad ifTrue: [ ^ self hasRemoteCoordinates and: [ hostUrl notNil and: [ commitish notNil ] ] ].
 	self isUrlLoad ifTrue: [ ^ self hasExplicitRepositoryUrl ].
 	self isLocalLoad ifTrue: [ ^ self hasCheckoutPath ].
 	self isIcebergLoad ifTrue: [ ^ self hasIcebergRepositoryReference ].
@@ -71,8 +69,7 @@ MCPLoadRepositoryRequest >> ensureSingleRepositorySource [
 	self repositorySourceCount <= 1 ifTrue: [ ^ self ].
 	MCPCommandError
 		signalErrorCode: #AmbiguousLoadRepositorySource
-		message:
-		'repository_load accepts one source: remote owner/project, repositoryUrl, checkoutPath, or repositoryName/location.'
+		message: 'repository_load accepts one source: remote owner/project, repositoryUrl, checkoutPath, or repositoryName/location.'
 		details: self requestedContext
 ]
 
@@ -120,8 +117,7 @@ MCPLoadRepositoryRequest >> hasRemoteCoordinates [
 { #category : 'private - mode' }
 MCPLoadRepositoryRequest >> hasRemoteSourceFields [
 
-	^ hostUrl notNil or: [
-		  owner notNil or: [ project notNil or: [ commitish notNil ] ] ]
+	^ hostUrl notNil or: [ owner notNil or: [ project notNil or: [ commitish notNil ] ] ]
 ]
 
 { #category : 'accessing' }
@@ -145,11 +141,8 @@ MCPLoadRepositoryRequest >> icebergRepository [
 { #category : 'private - mode' }
 MCPLoadRepositoryRequest >> initializeDefaultsFromTool: aTool [
 
-	self isRemoteLoad ifTrue: [
-		^ self initializeRemoteDefaultsFromTool: aTool ].
-	self isLocalLoad ifTrue: [
-			sourceDirectory ifNil: [
-				sourceDirectory := aTool defaultSourceDirectory ] ].
+	self isRemoteLoad ifTrue: [ ^ self initializeRemoteDefaultsFromTool: aTool ].
+	self isLocalLoad ifTrue: [ sourceDirectory ifNil: [ sourceDirectory := aTool defaultSourceDirectory ] ].
 	self isIcebergLoad ifTrue: [ self initializeIcebergDefaults ].
 	^ self
 ]
@@ -158,9 +151,7 @@ MCPLoadRepositoryRequest >> initializeDefaultsFromTool: aTool [
 MCPLoadRepositoryRequest >> initializeFromRequest: request tool: aTool [
 
 	baseline := request stringArgumentNamed: 'baseline'.
-	groups := request
-		          uniqueStringCollectionArgumentNamed: 'groups'
-		          default: #(  ).
+	groups := request uniqueStringCollectionArgumentNamed: 'groups' default: #(  ).
 	loadPolicy := MCPLoadPolicySpec fromRequest: request tool: aTool.
 	hostUrl := request stringArgumentNamed: 'hostUrl'.
 	owner := request stringArgumentNamed: 'owner'.
@@ -169,8 +160,7 @@ MCPLoadRepositoryRequest >> initializeFromRequest: request tool: aTool [
 	sourceDirectory := request stringArgumentNamed: 'sourceDirectory'.
 	repositoryUrl := request stringArgumentNamed: 'repositoryUrl'.
 	checkoutPath := request stringArgumentNamed: 'checkoutPath'.
-	repositoryReference := MCPRepositoryReferenceSpec fromRequest:
-		                       request.
+	repositoryReference := MCPRepositoryReferenceSpec fromRequest: request.
 	self ensureSingleRepositorySource.
 	mode := self requestedMode.
 	self initializeDefaultsFromTool: aTool.
@@ -180,9 +170,7 @@ MCPLoadRepositoryRequest >> initializeFromRequest: request tool: aTool [
 { #category : 'private - mode' }
 MCPLoadRepositoryRequest >> initializeIcebergDefaults [
 
-	sourceDirectory ifNil: [
-			sourceDirectory := self sourceDirectoryFromRepository:
-				                   self icebergRepository ].
+	sourceDirectory ifNil: [ sourceDirectory := self sourceDirectoryFromRepository: self icebergRepository ].
 	^ self
 ]
 
@@ -196,8 +184,7 @@ MCPLoadRepositoryRequest >> initializeRemoteDefaultsFromTool: aTool [
 				details: self requestedContext ].
 	hostUrl ifNil: [ hostUrl := aTool defaultHostUrl ].
 	commitish ifNil: [ commitish := aTool defaultCommitish ].
-	sourceDirectory ifNil: [
-		sourceDirectory := aTool defaultSourceDirectory ]
+	sourceDirectory ifNil: [ sourceDirectory := aTool defaultSourceDirectory ]
 ]
 
 { #category : 'private - mode' }
@@ -247,8 +234,7 @@ MCPLoadRepositoryRequest >> normalizedCheckoutPath: aCheckoutPath [
 
 	| path |
 	path := aCheckoutPath trimBoth.
-	[ path size > 1 and: [ path last = $/ ] ] whileTrue: [
-		path := path allButLast ].
+	[ path size > 1 and: [ path last = $/ ] ] whileTrue: [ path := path allButLast ].
 	^ path
 ]
 
@@ -315,8 +301,7 @@ MCPLoadRepositoryRequest >> repositoryHostQualifier [
 	remainder := remainder trimBoth.
 	remainder isEmpty ifTrue: [ ^ '' ].
 	lower := remainder asLowercase.
-	(#( 'github.com' 'gitlab.com' 'bitbucket.org' ) includes: lower)
-		ifTrue: [ ^ '' ].
+	(#( 'github.com' 'gitlab.com' 'bitbucket.org' ) includes: lower) ifTrue: [ ^ '' ].
 	^ remainder
 ]
 
@@ -340,8 +325,7 @@ MCPLoadRepositoryRequest >> repositoryScheme [
 	markerIndex := raw findString: '://' startingAt: 1.
 	scheme := markerIndex = 0
 		          ifTrue: [ raw asLowercase ]
-		          ifFalse: [
-		          (raw copyFrom: 1 to: markerIndex - 1) asLowercase ].
+		          ifFalse: [ (raw copyFrom: 1 to: markerIndex - 1) asLowercase ].
 	scheme = 'github.com' ifTrue: [ ^ 'github' ].
 	scheme = 'gitlab.com' ifTrue: [ ^ 'gitlab' ].
 	scheme = 'gitlabs' ifTrue: [ ^ 'gitlab' ].
@@ -373,10 +357,8 @@ MCPLoadRepositoryRequest >> repositorySourceDirectorySegment [
 	path := self sourceDirectory ifNil: [ '.' ].
 	path := path trimBoth.
 	(path isEmpty or: [ path = '.' ]) ifTrue: [ ^ '' ].
-	[ path notEmpty and: [ path first = $/ ] ] whileTrue: [
-		path := path allButFirst ].
-	[ path notEmpty and: [ path last = $/ ] ] whileTrue: [
-		path := path allButLast ].
+	[ path notEmpty and: [ path first = $/ ] ] whileTrue: [ path := path allButFirst ].
+	[ path notEmpty and: [ path last = $/ ] ] whileTrue: [ path := path allButLast ].
 	^ path
 ]
 
@@ -384,10 +366,8 @@ MCPLoadRepositoryRequest >> repositorySourceDirectorySegment [
 MCPLoadRepositoryRequest >> repositoryUrl [
 
 	self isUrlLoad ifTrue: [ ^ repositoryUrl ].
-	self isLocalLoad ifTrue: [
-		^ self tonelRepositoryUrlFromCheckoutPath: self checkoutPath ].
-	self isIcebergLoad ifTrue: [
-		^ self tonelRepositoryUrlFromCheckoutPath: self icebergCheckoutPath ].
+	self isLocalLoad ifTrue: [ ^ self tonelRepositoryUrlFromCheckoutPath: self checkoutPath ].
+	self isIcebergLoad ifTrue: [ ^ self tonelRepositoryUrlFromCheckoutPath: self icebergCheckoutPath ].
 	^ self remoteRepositoryUrl
 ]
 
@@ -398,26 +378,19 @@ MCPLoadRepositoryRequest >> requestedContext [
 	context := {
 		           (#mode -> self mode).
 		           (#baseline -> self baseline) } asDictionary.
-	self groups ifNotEmpty: [ :loadGroups |
-		context at: #groups put: loadGroups ].
+	self groups ifNotEmpty: [ :loadGroups | context at: #groups put: loadGroups ].
 	policy := self loadPolicy asDictionary.
 	policy ifNotEmpty: [ context at: #policy put: policy ].
 	hostUrl ifNotNil: [ context at: #hostUrl put: self hostUrl ].
 	owner ifNotNil: [ context at: #owner put: self owner ].
 	project ifNotNil: [ context at: #project put: self project ].
 	commitish ifNotNil: [ context at: #commitish put: self commitish ].
-	sourceDirectory ifNotNil: [
-		context at: #sourceDirectory put: self sourceDirectory ].
-	repositoryUrl ifNotNil: [
-		context at: #repositoryUrl put: repositoryUrl ].
-	checkoutPath ifNotNil: [
-		context at: #checkoutPath put: self checkoutPath ].
-	self repositoryName ifNotNil: [ :name |
-		context at: #repositoryName put: name ].
-	self location ifNotNil: [ :repositoryLocation |
-		context at: #location put: repositoryLocation ].
-	self canResolveRepositoryUrl ifTrue: [
-		context at: #resolvedRepositoryUrl put: self repositoryUrl ].
+	sourceDirectory ifNotNil: [ context at: #sourceDirectory put: self sourceDirectory ].
+	repositoryUrl ifNotNil: [ context at: #repositoryUrl put: repositoryUrl ].
+	checkoutPath ifNotNil: [ context at: #checkoutPath put: self checkoutPath ].
+	self repositoryName ifNotNil: [ :name | context at: #repositoryName put: name ].
+	self location ifNotNil: [ :repositoryLocation | context at: #location put: repositoryLocation ].
+	self canResolveRepositoryUrl ifTrue: [ context at: #resolvedRepositoryUrl put: self repositoryUrl ].
 	^ context
 ]
 

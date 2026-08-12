@@ -83,15 +83,13 @@ MCPDebugRepairAnalyzer >> descriptionForKind: kind behavior: aBehavior selector:
 
 	| targetName |
 	targetName := self classNameForBehavior: aBehavior.
-	(self classSideForBehavior: aBehavior) ifTrue: [
-		targetName := targetName , ' class' ].
+	(self classSideForBehavior: aBehavior) ifTrue: [ targetName := targetName , ' class' ].
 	^ String streamContents: [ :stream |
 			  kind = 'missingMethod'
 				  ifTrue: [ stream nextPutAll: 'Create missing method ' ]
 				  ifFalse: [
 						  kind = 'subclassResponsibility'
-							  ifTrue: [
-							  stream nextPutAll: 'Implement subclass responsibility ' ]
+							  ifTrue: [ stream nextPutAll: 'Implement subclass responsibility ' ]
 							  ifFalse: [ stream nextPutAll: 'Update method ' ] ].
 			  stream
 				  nextPutAll: targetName asString;
@@ -110,8 +108,7 @@ MCPDebugRepairAnalyzer >> fallbackTargetContextForException: anException [
 
 	| contexts session |
 	session := self debugSession.
-	session ifNotNil: [
-		session interruptedContext ifNotNil: [ :context | ^ context ] ].
+	session ifNotNil: [ session interruptedContext ifNotNil: [ :context | ^ context ] ].
 	contexts := self rawContexts.
 	contexts isEmpty ifTrue: [ ^ nil ].
 	^ contexts first
@@ -123,8 +120,7 @@ MCPDebugRepairAnalyzer >> frameRefForContext: aContext [
 	| frameIndex rawContexts |
 	rawContexts := self rawContexts.
 	frameIndex := (rawContexts indexOf: aContext ifAbsent: [ 1 ]) - 1.
-	^ record sessionId , '/' , record stateId , '/frame-'
-	  , frameIndex asString
+	^ record sessionId , '/' , record stateId , '/frame-' , frameIndex asString
 ]
 
 { #category : 'private - methods' }
@@ -150,8 +146,7 @@ MCPDebugRepairAnalyzer >> methodBehaviorForContext: aContext [
 { #category : 'private - contexts' }
 MCPDebugRepairAnalyzer >> methodImplementor [
 
-	^ self debugSession ifNotNil: [ :session |
-		  PharoCompatibility debuggerMethodImplementorForSession: session ]
+	^ self debugSession ifNotNil: [ :session | PharoCompatibility debuggerMethodImplementorForSession: session ]
 ]
 
 { #category : 'private - actions' }
@@ -163,18 +158,13 @@ MCPDebugRepairAnalyzer >> missingMethodActionFor: anException [
 	message := self messageForException: anException context: context.
 	message ifNil: [ ^ nil ].
 	behavior := self behaviorForContext: context.
-	defaultSource := self
-		                 defaultSourceForMessage: message
-		                 behavior: behavior.
+	defaultSource := self defaultSourceForMessage: message behavior: behavior.
 	action := self
 		          repairActionForContext: context
 		          behavior: behavior
 		          selector: message selector
 		          kind: 'missingMethod'.
-	^ self
-		  addDefaultSource: defaultSource
-		  requiresMethodSource: false
-		  toAction: action
+	^ self addDefaultSource: defaultSource requiresMethodSource: false toAction: action
 ]
 
 { #category : 'private' }
@@ -206,12 +196,7 @@ MCPDebugRepairAnalyzer >> repairActionForContext: aContext behavior: aBehavior s
 	^ {
 		  (#repairActionId -> kind).
 		  (#kind -> kind).
-		  (#description
-		   ->
-		   (self
-			    descriptionForKind: kind
-			    behavior: aBehavior
-			    selector: aSelector)).
+		  (#description -> (self descriptionForKind: kind behavior: aBehavior selector: aSelector)).
 		  (#toolName -> 'debug_method_update').
 		  (#sessionId -> record sessionId).
 		  (#stateId -> record stateId).
@@ -219,18 +204,13 @@ MCPDebugRepairAnalyzer >> repairActionForContext: aContext behavior: aBehavior s
 		  (#selector -> aSelector asString).
 		  (#targetClassName -> (self classNameForBehavior: aBehavior)).
 		  (#classSide -> (self classSideForBehavior: aBehavior)).
-		  (#arguments
-		   -> (self debugMethodUpdateArgumentsForFrameRef: frameRef)) }
-		  asDictionary
+		  (#arguments -> (self debugMethodUpdateArgumentsForFrameRef: frameRef)) } asDictionary
 ]
 
 { #category : 'repairing' }
 MCPDebugRepairAnalyzer >> repairActions [
 
-	^ self exception
-		  ifNil: [ #(  ) ]
-		  ifNotNil: [ :anException |
-		  anException mcpDebugRepairActionsFor: self ]
+	^ self exception ifNil: [ #(  ) ] ifNotNil: [ :anException | anException mcpDebugRepairActionsFor: self ]
 ]
 
 { #category : 'accessing' }
@@ -252,9 +232,7 @@ MCPDebugRepairAnalyzer >> selectorContextForException: anException [
 	| selector |
 	selector := anException mcpSelectorForContextLookup.
 	selector ifNil: [ ^ nil ].
-	^ self rawContexts
-		  detect: [ :context | context selector = selector ]
-		  ifNone: [ nil ]
+	^ self rawContexts detect: [ :context | context selector = selector ] ifNone: [ nil ]
 ]
 
 { #category : 'private - methods' }
@@ -277,10 +255,7 @@ MCPDebugRepairAnalyzer >> stubActionFor: anException kind: kind [
 		          behavior: behavior
 		          selector: selector
 		          kind: kind.
-	^ self
-		  addDefaultSource: source
-		  requiresMethodSource: true
-		  toAction: action
+	^ self addDefaultSource: source requiresMethodSource: true toAction: action
 ]
 
 { #category : 'private - actions' }
@@ -292,18 +267,13 @@ MCPDebugRepairAnalyzer >> subclassResponsibilityActionFor: anException [
 	message := self messageForException: anException context: context.
 	message ifNil: [ ^ nil ].
 	behavior := self behaviorForContext: context.
-	defaultSource := self
-		                 defaultSourceForMessage: message
-		                 behavior: behavior.
+	defaultSource := self defaultSourceForMessage: message behavior: behavior.
 	action := self
 		          repairActionForContext: context
 		          behavior: behavior
 		          selector: message selector
 		          kind: 'subclassResponsibility'.
-	^ self
-		  addDefaultSource: defaultSource
-		  requiresMethodSource: false
-		  toAction: action
+	^ self addDefaultSource: defaultSource requiresMethodSource: false toAction: action
 ]
 
 { #category : 'private - contexts' }
@@ -312,8 +282,7 @@ MCPDebugRepairAnalyzer >> targetContextForException: anException [
 	| context methodImplementor |
 	methodImplementor := self methodImplementor.
 	methodImplementor ifNotNil: [
-			context := anException mcpRepairContextForMethodImplementation:
-				           methodImplementor.
+			context := anException mcpRepairContextForMethodImplementation: methodImplementor.
 			context ifNotNil: [ ^ context ] ].
 	^ self fallbackTargetContextForException: anException
 ]

@@ -26,19 +26,12 @@ MCPToolLoadRepository >> buildInputSchema [
 				  self repositoryNameSchemaProperty.
 				  self locationSchemaProperty.
 				  self hostUrlSchemaProperty.
-				  (self
-					   nonEmptyStringSchemaPropertyNamed: 'owner'
-					   description: 'Repository owner or namespace.').
-				  (self
-					   nonEmptyStringSchemaPropertyNamed: 'project'
-					   description: 'Repository project.').
+				  (self nonEmptyStringSchemaPropertyNamed: 'owner' description: 'Repository owner or namespace.').
+				  (self nonEmptyStringSchemaPropertyNamed: 'project' description: 'Repository project.').
 				  self commitishSchemaProperty.
 				  self sourceDirectorySchemaProperty.
-				  (self
-					   nonEmptyStringSchemaPropertyNamed: 'baseline'
-					   description: 'Baseline name without BaselineOf prefix.').
-				  self groupsSchemaProperty }
-			  , self loadPolicyInputSchemaProperties;
+				  (self nonEmptyStringSchemaPropertyNamed: 'baseline' description: 'Baseline name without BaselineOf prefix.').
+				  self groupsSchemaProperty } , self loadPolicyInputSchemaProperties;
 		  required: #( 'baseline' );
 		  additionalProperties: false;
 		  yourself
@@ -47,19 +40,13 @@ MCPToolLoadRepository >> buildInputSchema [
 { #category : 'metadata' }
 MCPToolLoadRepository >> buildOutputSchema [
 
-	^ self
-		  standardOutputSchemaForDataProperties:
-		  self loadRepositoryDataProperties
-		  required: #( 'mode' 'repository' 'load' )
+	^ self standardOutputSchemaForDataProperties: self loadRepositoryDataProperties required: #( 'mode' 'repository' 'load' )
 ]
 
 { #category : 'private - schema' }
 MCPToolLoadRepository >> checkoutPathSchemaProperty [
 
-	^ (self
-		   schemaPropertyNamed: 'checkoutPath'
-		   type: 'string'
-		   description: 'Local checkout path.')
+	^ (self schemaPropertyNamed: 'checkoutPath' type: 'string' description: 'Local checkout path.')
 		  minLength: 1;
 		  yourself
 ]
@@ -73,10 +60,7 @@ MCPToolLoadRepository >> commandForRequest: loadRepositoryRequest [
 { #category : 'private - schema' }
 MCPToolLoadRepository >> commitishSchemaProperty [
 
-	^ (self
-		   schemaPropertyNamed: 'commitish'
-		   type: 'string'
-		   description: 'Branch, tag, or commitish.')
+	^ (self schemaPropertyNamed: 'commitish' type: 'string' description: 'Branch, tag, or commitish.')
 		  default: self defaultCommitish;
 		  minLength: 1;
 		  yourself
@@ -110,9 +94,7 @@ MCPToolLoadRepository >> description [
 MCPToolLoadRepository >> failureSummaryForError: anError loadRequest: loadRequest rawRequest: rawRequest [
 
 	| baseline message repositoryUrl |
-	message := anError messageText
-		           ifNil: [ anError asString ]
-		           ifNotNil: [ :text | text asString ].
+	message := anError messageText ifNil: [ anError asString ] ifNotNil: [ :text | text asString ].
 	loadRequest ifNil: [ ^ 'Failed to load repository: ' , message ].
 	baseline := loadRequest baseline ifNil: [ '' ].
 	repositoryUrl := loadRequest canResolveRepositoryUrl
@@ -136,10 +118,7 @@ MCPToolLoadRepository >> failureSummaryForError: anError loadRequest: loadReques
 { #category : 'private - schema' }
 MCPToolLoadRepository >> hostUrlSchemaProperty [
 
-	^ (self
-		   schemaPropertyNamed: 'hostUrl'
-		   type: 'string'
-		   description: 'Repository host URL or kind.')
+	^ (self schemaPropertyNamed: 'hostUrl' type: 'string' description: 'Repository host URL or kind.')
 		  default: self defaultHostUrl;
 		  minLength: 1;
 		  yourself
@@ -157,10 +136,7 @@ MCPToolLoadRepository >> loadRepositoryDataProperties [
 { #category : 'private - schema' }
 MCPToolLoadRepository >> locationSchemaProperty [
 
-	^ (self
-		   schemaPropertyNamed: 'location'
-		   type: 'string'
-		   description: 'Registered repository filesystem location.')
+	^ (self schemaPropertyNamed: 'location' type: 'string' description: 'Registered repository filesystem location.')
 		  minLength: 1;
 		  yourself
 ]
@@ -184,19 +160,13 @@ MCPToolLoadRepository >> parsedRequestFromToolRequest: request [
 { #category : 'private - schema' }
 MCPToolLoadRepository >> repositoryDataProperties [
 
-	^ { (self
-		   schemaPropertyNamed: 'repositoryUrl'
-		   type: 'string'
-		   description: 'Resolved Metacello repository URL.') }
+	^ { (self schemaPropertyNamed: 'repositoryUrl' type: 'string' description: 'Resolved Metacello repository URL.') }
 ]
 
 { #category : 'private - schema' }
 MCPToolLoadRepository >> repositoryNameSchemaProperty [
 
-	^ (self
-		   schemaPropertyNamed: 'repositoryName'
-		   type: 'string'
-		   description: 'Registered Iceberg repository name.')
+	^ (self schemaPropertyNamed: 'repositoryName' type: 'string' description: 'Registered Iceberg repository name.')
 		  minLength: 1;
 		  yourself
 ]
@@ -204,10 +174,7 @@ MCPToolLoadRepository >> repositoryNameSchemaProperty [
 { #category : 'private - schema' }
 MCPToolLoadRepository >> repositoryOutputSchemaProperty [
 
-	^ (self
-		   schemaPropertyNamed: 'repository'
-		   type: 'object'
-		   description: 'Repository source used for the load.')
+	^ (self schemaPropertyNamed: 'repository' type: 'object' description: 'Repository source used for the load.')
 		  properties: self repositoryDataProperties;
 		  required: #( 'repositoryUrl' );
 		  additionalProperties: false;
@@ -217,10 +184,7 @@ MCPToolLoadRepository >> repositoryOutputSchemaProperty [
 { #category : 'private - schema' }
 MCPToolLoadRepository >> repositoryUrlSchemaProperty [
 
-	^ (self
-		   schemaPropertyNamed: 'repositoryUrl'
-		   type: 'string'
-		   description: 'Explicit Metacello repository URL.')
+	^ (self schemaPropertyNamed: 'repositoryUrl' type: 'string' description: 'Explicit Metacello repository URL.')
 		  minLength: 1;
 		  yourself
 ]
@@ -234,10 +198,7 @@ MCPToolLoadRepository >> shouldSaveImageAfterSuccessfulExecution [
 { #category : 'private - schema' }
 MCPToolLoadRepository >> sourceDirectorySchemaProperty [
 
-	^ (self
-		   schemaPropertyNamed: 'sourceDirectory'
-		   type: 'string'
-		   description: 'Repository path containing the baseline.')
+	^ (self schemaPropertyNamed: 'sourceDirectory' type: 'string' description: 'Repository path containing the baseline.')
 		  default: self defaultSourceDirectory;
 		  minLength: 1;
 		  yourself

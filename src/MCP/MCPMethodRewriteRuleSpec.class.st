@@ -21,10 +21,7 @@ Class {
 { #category : 'instance creation' }
 MCPMethodRewriteRuleSpec class >> fromDictionary: aDictionary request: request index: index [
 
-	^ self new
-		  initializeFromDictionary: aDictionary
-		  request: request
-		  index: index
+	^ self new initializeFromDictionary: aDictionary request: request index: index
 ]
 
 { #category : 'converting' }
@@ -41,10 +38,7 @@ MCPMethodRewriteRuleSpec >> asDictionary [
 { #category : 'converting' }
 MCPMethodRewriteRuleSpec >> asStRewriterRuleHolder [
 
-	^ StRewriterRuleHolder
-		  lhs: self lhs
-		  rhs: self rhs
-		  isForMethod: self isForMethod
+	^ StRewriterRuleHolder lhs: self lhs rhs: self rhs isForMethod: self isForMethod
 ]
 
 { #category : 'converting' }
@@ -62,18 +56,10 @@ MCPMethodRewriteRuleSpec >> diagnosticDetails [
 MCPMethodRewriteRuleSpec >> initializeFromDictionary: aDictionary request: request index: index [
 
 	ruleIndex := index.
-	name := request
-		        stringArgumentNamed: 'name'
-		        in: aDictionary
-		        default: 'rule-' , index asString.
-	lhs := (request stringArgumentNamed: 'lhs' in: aDictionary)
-		       withInternalLineEndings.
-	rhs := (request stringArgumentNamed: 'rhs' in: aDictionary)
-		       withInternalLineEndings.
-	isForMethod := request
-		               booleanArgumentNamed: 'isForMethod'
-		               in: aDictionary
-		               default: false.
+	name := request stringArgumentNamed: 'name' in: aDictionary default: 'rule-' , index asString.
+	lhs := (request stringArgumentNamed: 'lhs' in: aDictionary) withInternalLineEndings.
+	rhs := (request stringArgumentNamed: 'rhs' in: aDictionary) withInternalLineEndings.
+	isForMethod := request booleanArgumentNamed: 'isForMethod' in: aDictionary default: false.
 	self validateAtIndex: index.
 	^ self
 ]
@@ -115,14 +101,9 @@ MCPMethodRewriteRuleSpec >> signalInvalidPatternError: anError [
 	details := self diagnosticDetails.
 	details at: #backendErrorClass put: anError class name asString.
 	details at: #backendMessage put: anError messageText.
-	message := 'Rewrite rule ' , self ruleIndex asString
-	           , ' has an invalid pattern.'.
-	anError messageText ifNotNil: [ :errorMessage |
-		message := message , ' ' , errorMessage ].
-	MCPCommandError
-		signalErrorCode: #RewriteRuleInvalidPattern
-		message: message
-		details: details
+	message := 'Rewrite rule ' , self ruleIndex asString , ' has an invalid pattern.'.
+	anError messageText ifNotNil: [ :errorMessage | message := message , ' ' , errorMessage ].
+	MCPCommandError signalErrorCode: #RewriteRuleInvalidPattern message: message details: details
 ]
 
 { #category : 'validating' }

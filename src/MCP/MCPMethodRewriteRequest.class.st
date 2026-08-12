@@ -61,21 +61,12 @@ MCPMethodRewriteRequest >> initializeFromRequest: request tool: aTool [
 				details: Dictionary new ].
 	rules := OrderedCollection new.
 	ruleObjects doWithIndex: [ :eachRule :index |
-			rules add: (MCPMethodRewriteRuleSpec
-					 fromDictionary: eachRule
-					 request: request
-					 index: index) ].
+		rules add: (MCPMethodRewriteRuleSpec fromDictionary: eachRule request: request index: index) ].
 	apply := request booleanArgumentNamed: 'apply' default: false.
 	force := request booleanArgumentNamed: 'force' default: false.
-	includeSources := request
-		                  booleanArgumentNamed: 'includeSource'
-		                  default: false.
-	expectedChangeSetHash := (request hasArgumentNamed:
-		                          'expectedChangeSetHash') ifTrue: [
-			                         request
-				                         nonNegativeIntegerArgumentNamed:
-				                         'expectedChangeSetHash'
-				                         default: nil ].
+	includeSources := request booleanArgumentNamed: 'includeSource' default: false.
+	expectedChangeSetHash := (request hasArgumentNamed: 'expectedChangeSetHash') ifTrue: [
+		                         request nonNegativeIntegerArgumentNamed: 'expectedChangeSetHash' default: nil ].
 	scopeQuery := aTool methodScopeQueryFromRequest: request.
 	scopeQuery requireCompleteScope
 ]
@@ -86,8 +77,7 @@ MCPMethodRewriteRequest >> requestedContext [
 	| context |
 	context := Dictionary new.
 	context at: #apply put: self apply.
-	self expectedChangeSetHash ifNotNil: [ :hash |
-		context at: #expectedChangeSetHash put: hash ].
+	self expectedChangeSetHash ifNotNil: [ :hash | context at: #expectedChangeSetHash put: hash ].
 	context at: #force put: self force.
 	context at: #includeSource put: self includeSources.
 	context at: #scope put: self scopeQuery asDictionary.

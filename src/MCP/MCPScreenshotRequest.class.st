@@ -19,10 +19,8 @@ Class {
 MCPScreenshotRequest class >> fromRequest: aRequest tool: aTool [
 
 	^ self new
-		  initializeTarget:
-		  (aRequest stringArgumentNamed: 'target' default: 'world')
-		  targetIdentifier:
-		  (aRequest stringArgumentNamed: 'targetIdentifier')
+		  initializeTarget: (aRequest stringArgumentNamed: 'target' default: 'world')
+		  targetIdentifier: (aRequest stringArgumentNamed: 'targetIdentifier')
 ]
 
 { #category : 'initialization' }

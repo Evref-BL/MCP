@@ -147,8 +147,7 @@ MCPTool class >> toolGroups [
 { #category : 'scripts' }
 MCPTool class >> toolIconFormOf: aToolClass [
 
-	^ Form fromBase64String:
-		  (aToolClass toolIcons first src copyAfter: $,)
+	^ Form fromBase64String: (aToolClass toolIcons first src copyAfter: $,)
 ]
 
 { #category : 'icons' }
@@ -203,18 +202,13 @@ MCPTool >> asJRPCJSON [
 { #category : 'private - schema' }
 MCPTool >> booleanSchemaPropertyNamed: propertyName description: propertyDescription [
 
-	^ self
-		  schemaPropertyNamed: propertyName
-		  type: 'boolean'
-		  description: propertyDescription
+	^ self schemaPropertyNamed: propertyName type: 'boolean' description: propertyDescription
 ]
 
 { #category : 'private - schema' }
 MCPTool >> booleanSchemaPropertyNamed: propertyName description: propertyDescription default: defaultValue [
 
-	^ (self
-		   booleanSchemaPropertyNamed: propertyName
-		   description: propertyDescription)
+	^ (self booleanSchemaPropertyNamed: propertyName description: propertyDescription)
 		  default: defaultValue;
 		  yourself
 ]
@@ -271,14 +265,11 @@ MCPTool >> errorDetailsFor: anError [
 	| context descriptionText details errorClassName message stackTrace |
 	details := Dictionary new.
 	errorClassName := anError class name asString.
-	message := anError messageText
-		           ifNil: [ '' ]
-		           ifNotNil: [ :text | text asString ].
+	message := anError messageText ifNil: [ '' ] ifNotNil: [ :text | text asString ].
 	details at: #errorClass put: errorClassName.
 	details at: #message put: message.
 	descriptionText := anError description.
-	(descriptionText ~= errorClassName and: [ descriptionText ~= message ])
-		ifTrue: [ details at: #description put: descriptionText ].
+	(descriptionText ~= errorClassName and: [ descriptionText ~= message ]) ifTrue: [ details at: #description put: descriptionText ].
 	context := anError mcpSignalerContext.
 	context ifNotNil: [
 			details at: #signalerContext put: context printString.
@@ -293,9 +284,7 @@ MCPTool >> errorResultFor: anError [
 	| details |
 	details := self errorDetailsFor: anError.
 	anError mcpAddToolErrorDetailsTo: details.
-	^ self
-		  errorResultText: (self failureMessageFor: anError)
-		  details: details
+	^ self errorResultText: (self failureMessageFor: anError) details: details
 ]
 
 { #category : 'error handling' }
@@ -323,40 +312,30 @@ MCPTool >> errorSchemaProperties [
 		  (self
 			   schemaPropertyNamed: 'errorClass'
 			   type: 'string'
-			   description:
-			   'The Smalltalk exception class name describing the failure.').
+			   description: 'The Smalltalk exception class name describing the failure.').
 		  (self
 			   schemaPropertyNamed: 'errorCode'
 			   type: 'string'
-			   description:
-			   'A tool-specific error code when the failure was signaled intentionally by the MCP implementation.').
-		  (self
-			   schemaPropertyNamed: 'message'
-			   type: 'string'
-			   description: 'A concise error message describing the failure.').
+			   description: 'A tool-specific error code when the failure was signaled intentionally by the MCP implementation.').
+		  (self schemaPropertyNamed: 'message' type: 'string' description: 'A concise error message describing the failure.').
 		  (self
 			   schemaPropertyNamed: 'description'
 			   type: 'string'
-			   description:
-			   'A longer textual description of the failure when available.').
+			   description: 'A longer textual description of the failure when available.').
 		  (self
 			   schemaPropertyNamed: 'signalerContext'
 			   type: 'string'
-			   description:
-			   'The signaler context recorded for the exception when available.').
+			   description: 'The signaler context recorded for the exception when available.').
 		  (self
 			   stringArraySchemaNamed: 'stackTrace'
-			   description:
-			   'A debug stack trace captured from the signaler context when available.'
-			   itemDescription:
-			   'One stack frame from the captured signaler chain, ordered from the signaling frame outward.') }
+			   description: 'A debug stack trace captured from the signaler context when available.'
+			   itemDescription: 'One stack frame from the captured signaler chain, ordered from the signaling frame outward.') }
 ]
 
 { #category : 'private - results' }
 MCPTool >> errorStackTraceForContext: aContext [
 
-	^ ((aContext stackOfSize: self errorStackTraceLimit) collect: [ :each |
-		   each printString ]) asArray
+	^ ((aContext stackOfSize: self errorStackTraceLimit) collect: [ :each | each printString ]) asArray
 ]
 
 { #category : 'private - results' }
@@ -388,9 +367,7 @@ MCPTool >> executeWithRequest: aRequest [
 MCPTool >> failureMessageFor: anError [
 
 	| message |
-	message := anError messageText
-		           ifNil: [ '' ]
-		           ifNotNil: [ :text | text asString ].
+	message := anError messageText ifNil: [ '' ] ifNotNil: [ :text | text asString ].
 	^ String streamContents: [ :stream |
 			  stream
 				  nextPutAll: 'Tool ';
@@ -425,18 +402,13 @@ MCPTool >> inputSchema [
 { #category : 'private - schema' }
 MCPTool >> integerSchemaPropertyNamed: propertyName description: propertyDescription [
 
-	^ self
-		  schemaPropertyNamed: propertyName
-		  type: 'integer'
-		  description: propertyDescription
+	^ self schemaPropertyNamed: propertyName type: 'integer' description: propertyDescription
 ]
 
 { #category : 'private - schema' }
 MCPTool >> integerSchemaPropertyNamed: propertyName description: propertyDescription default: defaultValue [
 
-	^ (self
-		   integerSchemaPropertyNamed: propertyName
-		   description: propertyDescription)
+	^ (self integerSchemaPropertyNamed: propertyName description: propertyDescription)
 		  default: defaultValue;
 		  yourself
 ]
@@ -487,9 +459,7 @@ MCPTool >> parsedRequestFromToolRequest: request [
 { #category : 'private - icons' }
 MCPTool >> pngCompositeBaseIconNamed: aBaseIconSymbol badgeIconNamed: aBadgeIconSymbol [
 
-	^ MCPStructureIcon
-		  compositeBaseIconNamed: aBaseIconSymbol
-		  badgeIconNamed: aBadgeIconSymbol
+	^ MCPStructureIcon compositeBaseIconNamed: aBaseIconSymbol badgeIconNamed: aBadgeIconSymbol
 ]
 
 { #category : 'private - icons' }
@@ -556,14 +526,10 @@ MCPTool >> searchableText [
 MCPTool >> shouldAdvertiseStringArrayItemDescription: anItemDescription [
 
 	| itemDescriptionString |
-	itemDescriptionString := anItemDescription
-		                         ifNil: [ ^ false ]
-		                         ifNotNil: [ :value |
-		                         value asString trimBoth ].
+	itemDescriptionString := anItemDescription ifNil: [ ^ false ] ifNotNil: [ :value | value asString trimBoth ].
 	itemDescriptionString isEmpty ifTrue: [ ^ false ].
 	(itemDescriptionString endsWith: ' name.') ifTrue: [ ^ false ].
-	(#( 'Hierarchy root class.' ) includes: itemDescriptionString)
-		ifTrue: [ ^ false ].
+	(#( 'Hierarchy root class.' ) includes: itemDescriptionString) ifTrue: [ ^ false ].
 	^ true
 ]
 
@@ -583,30 +549,18 @@ MCPTool >> shouldSaveImageAfterSuccessfulExecutionForResult: aResult [
 MCPTool >> standardOutputSchemaForDataProperties: dataProperties required: requiredFields [
 
 	| dataProperty errorProperty statusProperty summaryProperty |
-	dataProperty := self
-		                schemaPropertyNamed: 'data'
-		                type: 'object'
-		                description: 'Structured success payload.'.
+	dataProperty := self schemaPropertyNamed: 'data' type: 'object' description: 'Structured success payload.'.
 	dataProperty
 		properties: dataProperties;
 		required: requiredFields;
 		additionalProperties: false.
-	errorProperty := self
-		                 schemaPropertyNamed: 'error'
-		                 type: 'object'
-		                 description: 'Structured error information.'.
+	errorProperty := self schemaPropertyNamed: 'error' type: 'object' description: 'Structured error information.'.
 	errorProperty
 		properties: self errorSchemaProperties;
 		required: #( 'message' );
 		additionalProperties: true.
-	statusProperty := self
-		                  stringEnumSchemaPropertyNamed: 'status'
-		                  description: 'Tool result status.'
-		                  values: #( 'ok' 'error' ).
-	summaryProperty := self
-		                   schemaPropertyNamed: 'summary'
-		                   type: 'string'
-		                   description: 'Human-readable result summary.'.
+	statusProperty := self stringEnumSchemaPropertyNamed: 'status' description: 'Tool result status.' values: #( 'ok' 'error' ).
+	summaryProperty := self schemaPropertyNamed: 'summary' type: 'string' description: 'Human-readable result summary.'.
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties: {
@@ -623,10 +577,7 @@ MCPTool >> standardOutputSchemaForDataProperties: dataProperties required: requi
 { #category : 'private - schema' }
 MCPTool >> stringArraySchemaNamed: aName [
 
-	^ self
-		  stringArraySchemaNamed: aName
-		  description: nil
-		  itemDescription: nil
+	^ self stringArraySchemaNamed: aName description: nil itemDescription: nil
 ]
 
 { #category : 'private - schema' }
@@ -636,12 +587,8 @@ MCPTool >> stringArraySchemaNamed: aName description: aDescription itemDescripti
 	itemsProperty := MCPStructureProperties new
 		                 type: 'string';
 		                 yourself.
-	(self shouldAdvertiseStringArrayItemDescription: anItemDescription)
-		ifTrue: [ itemsProperty description: anItemDescription ].
-	^ (self
-		   schemaPropertyNamed: aName
-		   type: 'array'
-		   description: aDescription)
+	(self shouldAdvertiseStringArrayItemDescription: anItemDescription) ifTrue: [ itemsProperty description: anItemDescription ].
+	^ (self schemaPropertyNamed: aName type: 'array' description: aDescription)
 		  items: itemsProperty;
 		  yourself
 ]
@@ -655,10 +602,7 @@ MCPTool >> stringEnumArraySchemaNamed: propertyName description: propertyDescrip
 		                 description: itemDescription;
 		                 enum: enumValues;
 		                 yourself.
-	^ (self
-		   schemaPropertyNamed: propertyName
-		   type: 'array'
-		   description: propertyDescription)
+	^ (self schemaPropertyNamed: propertyName type: 'array' description: propertyDescription)
 		  items: itemsProperty;
 		  yourself
 ]
@@ -678,10 +622,7 @@ MCPTool >> stringEnumArraySchemaNamed: propertyName description: propertyDescrip
 { #category : 'private - schema' }
 MCPTool >> stringEnumSchemaPropertyNamed: propertyName description: propertyDescription values: enumValues [
 
-	^ (self
-		   schemaPropertyNamed: propertyName
-		   type: 'string'
-		   description: propertyDescription)
+	^ (self schemaPropertyNamed: propertyName type: 'string' description: propertyDescription)
 		  enum: enumValues;
 		  yourself
 ]
@@ -689,10 +630,7 @@ MCPTool >> stringEnumSchemaPropertyNamed: propertyName description: propertyDesc
 { #category : 'private - schema' }
 MCPTool >> stringEnumSchemaPropertyNamed: propertyName description: propertyDescription values: enumValues default: defaultValue [
 
-	^ (self
-		   stringEnumSchemaPropertyNamed: propertyName
-		   description: propertyDescription
-		   values: enumValues)
+	^ (self stringEnumSchemaPropertyNamed: propertyName description: propertyDescription values: enumValues)
 		  default: defaultValue;
 		  yourself
 ]
@@ -751,8 +689,5 @@ MCPTool >> validateRequest: aToolRequest [
 { #category : 'private - schema' }
 MCPTool >> warningsSchemaProperty [
 
-	^ self
-		  stringArraySchemaNamed: 'warnings'
-		  description: 'Warnings produced by the tool.'
-		  itemDescription: 'Warning message.'
+	^ self stringArraySchemaNamed: 'warnings' description: 'Warnings produced by the tool.' itemDescription: 'Warning message.'
 ]

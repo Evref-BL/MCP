@@ -23,33 +23,15 @@ MCPUpdateDebugMethodRequest class >> fromRequest: aRequest tool: aTool [
 		  sessionId: (aRequest stringArgumentNamed: 'sessionId');
 		  stateId: (aRequest stringArgumentNamed: 'stateId');
 		  frameRef: (aRequest stringArgumentNamed: 'frameRef');
-		  methodSource:
-			  ((aRequest stringArgumentNamed: 'source') ifNotNil: [ :source |
-					   source withInternalLineEndings ]);
-		  ignoreCritiques:
-			  (aRequest booleanArgumentNamed: 'ignoreCritiques' default: false);
-		  sourceContextLines: (aRequest
-				   nonNegativeIntegerArgumentNamed: 'sourceContextLines'
-				   default: 5
-				   maximum: self maximumSourceContextLines);
-		  stackStart:
-			  (aRequest
-				   nonNegativeIntegerArgumentNamed: 'stackStart'
-				   default: 0);
-		  stackLimit: (aRequest
-				   nonNegativeIntegerArgumentNamed: 'stackLimit'
-				   default: 20
-				   maximum: self maximumStackLimit);
-		  variableDepth: (aRequest
-				   nonNegativeIntegerArgumentNamed: 'variableDepth'
-				   default: 1
-				   maximum: self maximumVariableDepth);
-		  variableLimit: (aRequest
-				   nonNegativeIntegerArgumentNamed: 'variableLimit'
-				   default: 50
-				   maximum: self maximumVariableLimit);
-		  includeReceiver:
-			  (aRequest booleanArgumentNamed: 'includeReceiver' default: true);
+		  methodSource: ((aRequest stringArgumentNamed: 'source') ifNotNil: [ :source | source withInternalLineEndings ]);
+		  ignoreCritiques: (aRequest booleanArgumentNamed: 'ignoreCritiques' default: false);
+		  sourceContextLines:
+			  (aRequest nonNegativeIntegerArgumentNamed: 'sourceContextLines' default: 5 maximum: self maximumSourceContextLines);
+		  stackStart: (aRequest nonNegativeIntegerArgumentNamed: 'stackStart' default: 0);
+		  stackLimit: (aRequest nonNegativeIntegerArgumentNamed: 'stackLimit' default: 20 maximum: self maximumStackLimit);
+		  variableDepth: (aRequest nonNegativeIntegerArgumentNamed: 'variableDepth' default: 1 maximum: self maximumVariableDepth);
+		  variableLimit: (aRequest nonNegativeIntegerArgumentNamed: 'variableLimit' default: 50 maximum: self maximumVariableLimit);
+		  includeReceiver: (aRequest booleanArgumentNamed: 'includeReceiver' default: true);
 		  yourself
 ]
 

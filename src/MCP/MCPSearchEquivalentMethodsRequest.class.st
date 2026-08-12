@@ -17,8 +17,7 @@ MCPSearchEquivalentMethodsRequest class >> fromRequest: request tool: aTool [
 
 	| searchRequest |
 	searchRequest := super fromRequest: request tool: aTool.
-	searchRequest referenceMethod:
-		(aTool methodReferenceSpecFromToolRequest: request) compiledMethod.
+	searchRequest referenceMethod: (aTool methodReferenceSpecFromToolRequest: request) compiledMethod.
 	^ searchRequest
 ]
 

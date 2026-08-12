@@ -28,10 +28,7 @@ MCPCollectionThenDoRule >> initialize [
 
 	super initialize.
 	self
-		replace: '(`@collection collect: `@collectBlock) do: `@doBlock'
-		with: '`@collection collect: `@collectBlock thenDo: `@doBlock';
-		replace: '(`@collection select: `@filterBlock) do: `@doBlock'
-		with: '`@collection select: `@filterBlock thenDo: `@doBlock';
-		replace: '(`@collection reject: `@filterBlock) do: `@doBlock'
-		with: '`@collection reject: `@filterBlock thenDo: `@doBlock'
+		replace: '(`@collection collect: `@collectBlock) do: `@doBlock' with: '`@collection collect: `@collectBlock thenDo: `@doBlock';
+		replace: '(`@collection select: `@filterBlock) do: `@doBlock' with: '`@collection select: `@filterBlock thenDo: `@doBlock';
+		replace: '(`@collection reject: `@filterBlock) do: `@doBlock' with: '`@collection reject: `@filterBlock thenDo: `@doBlock'
 ]

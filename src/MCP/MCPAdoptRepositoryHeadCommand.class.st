@@ -22,9 +22,7 @@ MCPAdoptRepositoryHeadCommand >> execute [
 				  headCommit := repository headCommit.
 				  self validateHeadCommit: headCommit for: repository.
 				  previousReferenceCommit := self referenceCommitFor: repository.
-				  didAdopt := (self
-					               commit: previousReferenceCommit
-					               equals: headCommit) not.
+				  didAdopt := (self commit: previousReferenceCommit equals: headCommit) not.
 				  self adoptHeadCommit: headCommit for: repository.
 				  result := MCPRepositoryAdoptHeadResult
 					            repositoryBefore: beforeInfo
@@ -34,14 +32,10 @@ MCPAdoptRepositoryHeadCommand >> execute [
 					            didAdopt: didAdopt ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText:
-					  'Adopted repository HEAD for ' , result repositoryInfo name
-					  , '.'
+					  successResultText: 'Adopted repository HEAD for ' , result repositoryInfo name , '.'
 					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
-		  failureSummary: [ :error |
-				  'Failed adopt repository HEAD: '
-				  , (error messageText ifNil: [ error asString ]) ]
+		  failureSummary: [ :error | 'Failed adopt repository HEAD: ' , (error messageText ifNil: [ error asString ]) ]
 ]
 
 { #category : 'private - validation' }
@@ -49,8 +43,7 @@ MCPAdoptRepositoryHeadCommand >> signalMissingHeadCommitFor: aRepository [
 
 	MCPCommandError
 		signalErrorCode: #RepositoryHeadCommitRequired
-		message:
-		'Cannot adopt repository HEAD because the repository has no head commit.'
+		message: 'Cannot adopt repository HEAD because the repository has no head commit.'
 		details: (self request requestedContext copy
 				 at: #repositoryName put: aRepository name asString;
 				 yourself)
@@ -66,9 +59,7 @@ MCPAdoptRepositoryHeadCommand >> validateExpectedBranchFor: aRepository [
 	actualBranchName = expectedBranchName ifTrue: [ ^ self ].
 	MCPCommandError
 		signalErrorCode: #RepositoryBranchMismatch
-		message:
-			'Repository branch mismatch. Expected ' , expectedBranchName
-			, ' but found ' , actualBranchName , '.'
+		message: 'Repository branch mismatch. Expected ' , expectedBranchName , ' but found ' , actualBranchName , '.'
 		details: (self request requestedContext copy
 				 at: #actualBranchName put: actualBranchName;
 				 at: #expectedBranchName put: expectedBranchName;
@@ -79,7 +70,6 @@ MCPAdoptRepositoryHeadCommand >> validateExpectedBranchFor: aRepository [
 MCPAdoptRepositoryHeadCommand >> validateHeadCommit: headCommit for: aRepository [
 
 	headCommit ifNil: [ ^ self signalMissingHeadCommitFor: aRepository ].
-	(MCPIcebergCommitInfo isNoCommit: headCommit) ifTrue: [
-		^ self signalMissingHeadCommitFor: aRepository ].
+	(MCPIcebergCommitInfo isNoCommit: headCommit) ifTrue: [ ^ self signalMissingHeadCommitFor: aRepository ].
 	^ self
 ]

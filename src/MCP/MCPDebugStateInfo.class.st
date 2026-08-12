@@ -31,42 +31,25 @@ MCPDebugStateInfo >> asDictionary [
 	rawContexts := self rawContexts.
 	visibleContexts := self slicedContextsFrom: rawContexts.
 	selectedIndex := self selectedFrameIndex.
-	selectedContext := rawContexts
-		                   at: selectedIndex + 1
-		                   ifAbsent: [ nil ].
+	selectedContext := rawContexts at: selectedIndex + 1 ifAbsent: [ nil ].
 	warnings := OrderedCollection new.
-	record debugSession ifNil: [
-			warnings add:
-				'No DebugSession object attached this debug session record.' ].
-	selectedContext ifNil: [
-		warnings add: 'No stack context was available for selected frame.' ].
+	record debugSession ifNil: [ warnings add: 'No DebugSession object attached this debug session record.' ].
+	selectedContext ifNil: [ warnings add: 'No stack context was available for selected frame.' ].
 	callStack := OrderedCollection new.
 	visibleContexts withIndexDo: [ :context :index |
-			callStack add:
-				(self frameInfoFor: context index: request stackStart + index - 1) ].
-	selectedFrame := selectedContext ifNotNil: [
-		                 self
-			                 frameInfoFor: selectedContext
-			                 index: selectedIndex ].
-	repairActions := (MCPDebugRepairAnalyzer
-		                  fromRecord: record
-		                  request: request) repairActions.
+		callStack add: (self frameInfoFor: context index: request stackStart + index - 1) ].
+	selectedFrame := selectedContext ifNotNil: [ self frameInfoFor: selectedContext index: selectedIndex ].
+	repairActions := (MCPDebugRepairAnalyzer fromRecord: record request: request) repairActions.
 	data := {
 		        (#sessionId -> record sessionId).
 		        (#stateId -> record stateId).
 		        (#status -> record status).
 		        (#reason -> record reason).
 		        (#exception -> self exceptionInfo).
-		        (#location -> (self
-			          locationInfoForContext: selectedContext
-			          frameIndex: selectedIndex)).
+		        (#location -> (self locationInfoForContext: selectedContext frameIndex: selectedIndex)).
 		        (#source -> (self sourceInfoForContext: selectedContext)).
 		        (#selectedFrame -> selectedFrame).
-		        (#scopes
-		         ->
-		         (self
-			          scopesForContext: selectedContext
-			          frameIndex: selectedIndex)).
+		        (#scopes -> (self scopesForContext: selectedContext frameIndex: selectedIndex)).
 		        (#callStack -> callStack asArray).
 		        (#repairActions -> repairActions).
 		        (#stackStart -> request stackStart).
@@ -86,10 +69,8 @@ MCPDebugStateInfo >> exceptionInfo [
 	message := exception messageText.
 	^ {
 		  (#className -> exception class name asString).
-		  (#message
-		   -> (message ifNil: [ '' ] ifNotNil: [ message asString ])).
-		  (#printString -> (self limitedPrintStringOf: exception)) }
-		  asDictionary
+		  (#message -> (message ifNil: [ '' ] ifNotNil: [ message asString ])).
+		  (#printString -> (self limitedPrintStringOf: exception)) } asDictionary
 ]
 
 { #category : 'private - stack' }
@@ -101,15 +82,13 @@ MCPDebugStateInfo >> frameInfoFor: aContext index: frameIndex [
 		  (#displayString -> (self limitedPrintStringOf: aContext)).
 		  (#method -> (self methodInfoForContext: aContext)).
 		  (#pc -> aContext pc).
-		  (#receiverClassName -> aContext receiver class name asString) }
-		  asDictionary
+		  (#receiverClassName -> aContext receiver class name asString) } asDictionary
 ]
 
 { #category : 'private - refs' }
 MCPDebugStateInfo >> frameRefForIndex: anInteger [
 
-	^ record sessionId , '/' , record stateId , '/frame-'
-	  , anInteger asString
+	^ record sessionId , '/' , record stateId , '/frame-' , anInteger asString
 ]
 
 { #category : 'private' }
@@ -150,8 +129,7 @@ MCPDebugStateInfo >> rawContexts [
 	| contexts debugSession |
 	debugSession := record debugSession.
 	debugSession ifNil: [ ^ #(  ) ].
-	contexts := debugSession stackOfSize:
-		            request stackStart + request stackLimit + 1.
+	contexts := debugSession stackOfSize: request stackStart + request stackLimit + 1.
 	^ contexts asArray
 ]
 
@@ -207,21 +185,13 @@ MCPDebugStateInfo >> scopesForContext: aContext frameIndex: frameIndex [
 			scopes add: {
 					(#name -> 'Receiver').
 					(#kind -> 'receiver').
-					(#variableRef
-					 -> (self scopeRefFor: 'receiver' frameIndex: frameIndex)).
-					(#variables
-					 ->
-					 (self
-						  receiverVariablesForContext: aContext
-						  frameIndex: frameIndex)) } asDictionary ].
-	temporaryVariables := self
-		                      temporaryVariablesForContext: aContext
-		                      frameIndex: frameIndex.
+					(#variableRef -> (self scopeRefFor: 'receiver' frameIndex: frameIndex)).
+					(#variables -> (self receiverVariablesForContext: aContext frameIndex: frameIndex)) } asDictionary ].
+	temporaryVariables := self temporaryVariablesForContext: aContext frameIndex: frameIndex.
 	scopes add: {
 			(#name -> 'Temporaries').
 			(#kind -> 'temporaries').
-			(#variableRef
-			 -> (self scopeRefFor: 'temporaries' frameIndex: frameIndex)).
+			(#variableRef -> (self scopeRefFor: 'temporaries' frameIndex: frameIndex)).
 			(#variables -> temporaryVariables) } asDictionary.
 	^ scopes asArray
 ]
@@ -242,9 +212,7 @@ MCPDebugStateInfo >> selectedFrameIndex [
 	frameRef := request frameRef.
 	frameRef ifNil: [ ^ 0 ].
 	suffix := frameRef copyAfterLast: $-.
-	(suffix isEmpty or: [
-		 suffix anySatisfy: [ :character | character isDigit not ] ])
-		ifTrue: [ ^ 0 ].
+	(suffix isEmpty or: [ suffix anySatisfy: [ :character | character isDigit not ] ]) ifTrue: [ ^ 0 ].
 	^ suffix asInteger
 ]
 
@@ -256,8 +224,7 @@ MCPDebugStateInfo >> slicedContextsFrom: contextArray [
 	request stackLimit = 0 ifTrue: [ ^ #(  ) ].
 	first := request stackStart + 1.
 	first > contextArray size ifTrue: [ ^ #(  ) ].
-	last := request stackStart + request stackLimit min:
-		        contextArray size.
+	last := request stackStart + request stackLimit min: contextArray size.
 	^ contextArray copyFrom: first to: last
 ]
 
@@ -297,19 +264,13 @@ MCPDebugStateInfo >> variableInfoNamed: variableName value: anObject frameIndex:
 
 	^ {
 		  (#name -> variableName asString).
-		  (#className -> (anObject
-			    ifNil: [ 'UndefinedObject' ]
-			    ifNotNil: [ anObject class name asString ])).
+		  (#className -> (anObject ifNil: [ 'UndefinedObject' ] ifNotNil: [ anObject class name asString ])).
 		  (#printString -> (self limitedPrintStringOf: anObject)).
-		  (#variableRef -> (self
-			    variableRefFor: variableName
-			    frameIndex: frameIndex
-			    scopeName: scopeName)) } asDictionary
+		  (#variableRef -> (self variableRefFor: variableName frameIndex: frameIndex scopeName: scopeName)) } asDictionary
 ]
 
 { #category : 'private - refs' }
 MCPDebugStateInfo >> variableRefFor: variableName frameIndex: frameIndex scopeName: scopeName [
 
-	^ (self scopeRefFor: scopeName frameIndex: frameIndex) , '/var-'
-	  , variableName asString
+	^ (self scopeRefFor: scopeName frameIndex: frameIndex) , '/var-' , variableName asString
 ]

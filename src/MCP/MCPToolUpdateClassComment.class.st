@@ -25,6 +25,5 @@ MCPToolUpdateClassComment >> classToolSpec [
 			   self classNameSchemaProperty.
 			   self classCommentSchemaProperty.
 			   self forceSchemaProperty }).
-		  (#requiredProperties -> #( 'className' 'classComment' )) }
-		  asDictionary
+		  (#requiredProperties -> #( 'className' 'classComment' )) } asDictionary
 ]

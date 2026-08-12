@@ -30,9 +30,7 @@ MCPStructureIcon class >> cachedRenderedIconCount [
 { #category : 'instance creation' }
 MCPStructureIcon class >> compositeBaseIconNamed: aBaseIconSymbol badgeIconNamed: aBadgeIconSymbol [
 
-	^ self iconForSpec: (MCPToolIconSpec
-			   baseIconNamed: aBaseIconSymbol
-			   badgeIconNamed: aBadgeIconSymbol)
+	^ self iconForSpec: (MCPToolIconSpec baseIconNamed: aBaseIconSymbol badgeIconNamed: aBadgeIconSymbol)
 ]
 
 { #category : 'instance creation' }
@@ -50,14 +48,11 @@ MCPStructureIcon class >> compositeFormBaseIconNamed: aBaseIconSymbol badgeIconN
 	| baseForm badgeForm badgeSize canvas composite |
 	baseForm := self highScaleFormNamed: aBaseIconSymbol.
 	badgeSize := baseForm width // 2 @ (baseForm height // 2).
-	badgeForm := (self highScaleFormNamed: aBadgeIconSymbol)
-		             scaledToSize: badgeSize.
+	badgeForm := (self highScaleFormNamed: aBadgeIconSymbol) scaledToSize: badgeSize.
 	composite := Form extent: baseForm extent depth: 32.
 	canvas := composite getCanvas.
 	canvas translucentImage: baseForm at: 0 @ 0.
-	canvas
-		translucentImage: badgeForm
-		at: composite extent - badgeForm extent.
+	canvas translucentImage: badgeForm at: composite extent - badgeForm extent.
 	^ composite
 ]
 
@@ -67,19 +62,13 @@ MCPStructureIcon class >> compositeFormBaseIconNamed: aBaseIconSymbol leftBadgeI
 	| badgeSize baseForm canvas composite leftBadgeForm rightBadgeForm |
 	baseForm := self highScaleFormNamed: aBaseIconSymbol.
 	badgeSize := baseForm width // 2 @ (baseForm height // 2).
-	leftBadgeForm := (self highScaleFormNamed: aLeftBadgeIconSymbol)
-		                 scaledToSize: badgeSize.
-	rightBadgeForm := (self highScaleFormNamed: aRightBadgeIconSymbol)
-		                  scaledToSize: badgeSize.
+	leftBadgeForm := (self highScaleFormNamed: aLeftBadgeIconSymbol) scaledToSize: badgeSize.
+	rightBadgeForm := (self highScaleFormNamed: aRightBadgeIconSymbol) scaledToSize: badgeSize.
 	composite := Form extent: baseForm extent depth: 32.
 	canvas := composite getCanvas.
 	canvas translucentImage: baseForm at: 0 @ 0.
-	canvas
-		translucentImage: leftBadgeForm
-		at: 0 @ (composite height - leftBadgeForm height).
-	canvas
-		translucentImage: rightBadgeForm
-		at: composite extent - rightBadgeForm extent.
+	canvas translucentImage: leftBadgeForm at: 0 @ (composite height - leftBadgeForm height).
+	canvas translucentImage: rightBadgeForm at: composite extent - rightBadgeForm extent.
 	^ composite
 ]
 
@@ -90,25 +79,16 @@ MCPStructureIcon class >> highScaleFormNamed: anIconSymbol [
 	anIconSymbol = #pharoHalfScale ifTrue: [
 			| pharoForm |
 			pharoForm := self highScaleFormNamed: #pharo.
-			^ pharoForm scaledToSize:
-				  pharoForm width // 2 @ (pharoForm height // 2) ].
-	anIconSymbol = #referencesUpsideDown ifTrue: [
-		^ (self highScaleFormNamed: #references) rotateBy: 180 ].
-	scaledIcons := Smalltalk ui icons iconsPerScale
-		               at: 2.0
-		               ifAbsent: [
-		               self error: 'Missing precomputed scale 2.0 icons.' ].
-	^ scaledIcons
-		  at: anIconSymbol
-		  ifAbsent: [
-		  self error: 'Missing UI icon named ' , anIconSymbol asString ]
+			^ pharoForm scaledToSize: pharoForm width // 2 @ (pharoForm height // 2) ].
+	anIconSymbol = #referencesUpsideDown ifTrue: [ ^ (self highScaleFormNamed: #references) rotateBy: 180 ].
+	scaledIcons := Smalltalk ui icons iconsPerScale at: 2.0 ifAbsent: [ self error: 'Missing precomputed scale 2.0 icons.' ].
+	^ scaledIcons at: anIconSymbol ifAbsent: [ self error: 'Missing UI icon named ' , anIconSymbol asString ]
 ]
 
 { #category : 'instance creation' }
 MCPStructureIcon class >> horizontallyFlippedPngIconNamed: anIconSymbol [
 
-	^ self iconForForm:
-		  (self highScaleFormNamed: anIconSymbol) deepCopy flipHorizontally
+	^ self iconForForm: (self highScaleFormNamed: anIconSymbol) deepCopy flipHorizontally
 ]
 
 { #category : 'cache' }
@@ -130,25 +110,20 @@ MCPStructureIcon class >> iconForForm: aForm [
 { #category : 'cache' }
 MCPStructureIcon class >> iconForSpec: anIconSpec [
 
-	^ self iconCache
-		  at: anIconSpec cacheKey
-		  ifAbsentPut: [ anIconSpec renderUsing: self ]
+	^ self iconCache at: anIconSpec cacheKey ifAbsentPut: [ anIconSpec renderUsing: self ]
 ]
 
 { #category : 'cache' }
 MCPStructureIcon class >> iconsForToolClass: aToolClass [
 
-	^ self toolIconCache
-		  at: aToolClass
-		  ifAbsentPut: [ { (self iconForSpec: aToolClass toolIconSpec) } ]
+	^ self toolIconCache at: aToolClass ifAbsentPut: [ { (self iconForSpec: aToolClass toolIconSpec) } ]
 ]
 
 { #category : 'instance creation' }
 MCPStructureIcon class >> pngDataUriForForm: aForm [
 
 	| bytes |
-	bytes := ByteArray streamContents: [ :stream |
-		         PNGReadWriter putForm: aForm onStream: stream ].
+	bytes := ByteArray streamContents: [ :stream | PNGReadWriter putForm: aForm onStream: stream ].
 	^ 'data:image/png;base64,' , bytes base64Encoded
 ]
 
@@ -184,8 +159,7 @@ MCPStructureIcon >> asJRPCJSON [
 	| dic |
 	dic := Dictionary new.
 	self src ifNotNil: [ dic at: #src put: self src asJRPCJSON ].
-	self mimeType ifNotNil: [
-		dic at: #mimeType put: self mimeType asJRPCJSON ].
+	self mimeType ifNotNil: [ dic at: #mimeType put: self mimeType asJRPCJSON ].
 	self sizes ifNotNil: [ dic at: #sizes put: self sizes asJRPCJSON ].
 	self theme ifNotNil: [ dic at: #theme put: self theme asJRPCJSON ].
 	^ dic

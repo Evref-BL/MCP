@@ -19,8 +19,7 @@ MCPStructureToolsCapabilities >> asJRPCJSON [
 
 	| dic |
 	dic := Dictionary new.
-	self listChanged ifNotNil: [
-		dic at: #listChanged put: self listChanged asJRPCJSON ].
+	self listChanged ifNotNil: [ dic at: #listChanged put: self listChanged asJRPCJSON ].
 	^ dic
 ]
 

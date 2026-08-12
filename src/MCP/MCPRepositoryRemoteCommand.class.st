@@ -18,9 +18,7 @@ MCPRepositoryRemoteCommand class >> isAbstract [
 { #category : 'private - results' }
 MCPRepositoryRemoteCommand >> remoteResultForRepository: aRepository [
 
-	^ MCPRepositoryRemoteResult remotes:
-		  (MCPGitRepositoryMetadata forRepository: aRepository)
-			  remoteDictionaries
+	^ MCPRepositoryRemoteResult remotes: (MCPGitRepositoryMetadata forRepository: aRepository) remoteDictionaries
 ]
 
 { #category : 'private - git' }
@@ -29,15 +27,11 @@ MCPRepositoryRemoteCommand >> runRemoteGitArguments: arguments action: actionNam
 	self
 		runGitArguments: arguments
 		in: aRepository
-		ifFailed: [ :gitResult |
-			self signalGitCommandFailed: gitResult action: actionName ]
+		ifFailed: [ :gitResult | self signalGitCommandFailed: gitResult action: actionName ]
 ]
 
 { #category : 'private - results' }
 MCPRepositoryRemoteCommand >> successResultForRepository: aRepository result: aResult summary: summaryString warnings: warningMessages [
 
-	^ self tool
-		  successResultText: summaryString
-		  data: (self tool dataForRepositoryResult: aResult)
-		  warnings: warningMessages
+	^ self tool successResultText: summaryString data: (self tool dataForRepositoryResult: aResult) warnings: warningMessages
 ]

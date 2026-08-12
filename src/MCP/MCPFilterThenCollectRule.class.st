@@ -28,12 +28,8 @@ MCPFilterThenCollectRule >> initialize [
 
 	super initialize.
 	self
-		replace:
-			'(`@collection select: `@filterBlock) collect: `@collectBlock'
-		with:
-			'`@collection select: `@filterBlock thenCollect: `@collectBlock';
-		replace:
-			'(`@collection reject: `@filterBlock) collect: `@collectBlock'
-		with:
-			'`@collection reject: `@filterBlock thenCollect: `@collectBlock'
+		replace: '(`@collection select: `@filterBlock) collect: `@collectBlock'
+		with: '`@collection select: `@filterBlock thenCollect: `@collectBlock';
+		replace: '(`@collection reject: `@filterBlock) collect: `@collectBlock'
+		with: '`@collection reject: `@filterBlock thenCollect: `@collectBlock'
 ]

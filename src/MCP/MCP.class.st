@@ -137,8 +137,7 @@ MCP >> initialize [
 	self refreshToolsList.
 	server := MCPHTTPServer new.
 	server addHandlersFromPragmasIn: self.
-	self monitoringExportDirectory:
-		MCPMonitoringState defaultExportDirectory
+	self monitoringExportDirectory: MCPMonitoringState defaultExportDirectory
 ]
 
 { #category : 'testing' }
@@ -219,9 +218,7 @@ MCP >> monitoringResourceMetadata [
 
 	| metadata |
 	metadata := self monitoring resourceMetadata copy.
-	metadata
-		at: #'pharo.majorVersion'
-		put: PharoCompatibility currentMajorVersion.
+	metadata at: #'pharo.majorVersion' put: PharoCompatibility currentMajorVersion.
 	metadata at: #'mcp.port' put: self port.
 	^ metadata
 ]
@@ -262,8 +259,7 @@ MCP >> pharoRuntimeMetadata [
 	^ {
 		  (#runtimeVersion -> PharoCompatibility runtimeVersionString).
 		  (#supportedMajorVersions -> self supportedPharoMajorVersions).
-		  (#supportedLauncherVersions -> self supportedPharoLauncherVersions) }
-		  asDictionary
+		  (#supportedLauncherVersions -> self supportedPharoLauncherVersions) } asDictionary
 ]
 
 { #category : 'accessing' }
@@ -369,8 +365,7 @@ MCP >> rpcToolCall: name withParams: arguments [
 	toolsList
 		at: name
 		ifPresent: [ :tool |
-				name = MCPToolCallTool toolName ifTrue: [
-					^ self rpcCallToolCallWithParams: arguments ].
+				name = MCPToolCallTool toolName ifTrue: [ ^ self rpcCallToolCallWithParams: arguments ].
 				^ self executeTool: tool named: name withParams: arguments ]
 		ifAbsent: [ JRPCNonExistentHandler signal: name ]
 ]
@@ -387,8 +382,7 @@ MCP >> rpcToolsList [
 MCP >> saveImageAfterSuccessfulTool: aTool result: aResult [
 
 	aResult isError ifTrue: [ ^ self ].
-	(aTool shouldSaveImageAfterSuccessfulExecutionForResult: aResult)
-		ifTrue: [ self deferSaveImageAfterCurrentResponse ]
+	(aTool shouldSaveImageAfterSuccessfulExecutionForResult: aResult) ifTrue: [ self deferSaveImageAfterCurrentResponse ]
 ]
 
 { #category : 'private - saving' }
@@ -396,10 +390,7 @@ MCP >> saveImageSession [
 	"MCP autosave must not run SessionManager shutdown/startup hooks: Zinc stops managed servers during cycle, breaking active Streamable HTTP transports."
 
 	| snapshotOperation |
-	snapshotOperation := SnapshotOperation
-		save: true
-		andQuit: false
-		withSessionManager: SessionManager default.
+	snapshotOperation := SnapshotOperation save: true andQuit: false withSessionManager: SessionManager default.
 	snapshotOperation doSnapshot.
 	^ snapshotOperation isImageStarting
 ]
@@ -413,15 +404,13 @@ MCP >> server [
 { #category : 'infrastructure metadata' }
 MCP >> serverInfrastructureMetadata [
 
-	^ { (#'io.github.evref-bl/pharo' -> self pharoRuntimeMetadata) }
-		  asDictionary
+	^ { (#'io.github.evref-bl/pharo' -> self pharoRuntimeMetadata) } asDictionary
 ]
 
 { #category : 'accessing' }
 MCP >> sortedTools [
 
-	^ self toolsList values asSortedCollection: [ :left :right |
-		  left name <= right name ]
+	^ self toolsList values asSortedCollection: [ :left :right | left name <= right name ]
 ]
 
 { #category : 'start' }
@@ -556,7 +545,7 @@ MCP >> waitUntilListeningForMilliseconds: milliseconds [
 	delay := Delay forMilliseconds: 50.
 	attempts := milliseconds // 50 max: 1.
 	attempts timesRepeat: [
-		self isListening ifTrue: [ ^ true ].
-		delay wait ].
+			self isListening ifTrue: [ ^ true ].
+			delay wait ].
 	^ self isListening
 ]

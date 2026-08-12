@@ -17,8 +17,7 @@ MCPToolMethodLookupTest >> entryForReference: aReference in: methods [
 				  | reference |
 				  reference := String streamContents: [ :stream |
 						               stream nextPutAll: (each at: #className).
-						               (each at: #classSide ifAbsent: [ false ])
-							               ifTrue: [ stream nextPutAll: ' class' ].
+						               (each at: #classSide ifAbsent: [ false ]) ifTrue: [ stream nextPutAll: ' class' ].
 						               stream
 							               nextPutAll: '>>';
 							               nextPutAll: (each at: #selector) ].
@@ -48,9 +47,7 @@ MCPToolMethodLookupTest >> testLookupSchemasRequireDedicatedArguments [
 			required := schema required asArray.
 			propertyNames := schema properties collect: [ :each | each name ].
 			self assert: required equals: { expectation value }.
-			self
-				assert: propertyNames asSet
-				equals: (commonProperties , { expectation value }) asSet ]
+			self assert: propertyNames asSet equals: (commonProperties , { expectation value }) asSet ]
 ]
 
 { #category : 'tests' }
@@ -79,18 +76,13 @@ MCPToolMethodLookupTest >> testLookupToolsArePublicStaticReadTools [
 MCPToolMethodLookupTest >> testMethodSourceSearchSearchesSourceText [
 
 	| data result |
-	result := self
-		          callToolNamed: 'method_source_search'
-		          withArguments: {
-				          (self searchScope:
-					           { (#classes -> { self targetClassName }) }).
-				          (#filter -> 'gamma value') } asDictionary.
+	result := self callToolNamed: 'method_source_search' withArguments: {
+			          (self searchScope: { (#classes -> { self targetClassName }) }).
+			          (#filter -> 'gamma value') } asDictionary.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	data := self dataFrom: result.
 	self assert: (data at: #methods) size equals: 1.
-	self
-		assert: ((data at: #methods) first at: #selector)
-		equals: 'gammaUtility'.
+	self assert: ((data at: #methods) first at: #selector) equals: 'gammaUtility'.
 	self deny: ((data at: #methods) first includesKey: #source)
 ]
 
@@ -100,18 +92,10 @@ MCPToolMethodLookupTest >> testSearchClassReferencesReturnsClassBindingReference
 	| data |
 	data := self
 		        toolNamed: 'method_class_reference_search'
-		        dataFromArguments:
-		        { (#className -> 'MCPToolMethodSearchReferenceTarget') }
-			        asDictionary.
+		        dataFromArguments: { (#className -> 'MCPToolMethodSearchReferenceTarget') } asDictionary.
 	self assert: (data at: #methods) size equals: 2.
-	self
-		entryForReference:
-		'MCPToolMethodSearchReferenceFixture>>referenceExtensionTarget'
-		in: (data at: #methods).
-	self
-		entryForReference:
-		'MCPToolMethodSearchReferenceFixture class>>referenceExtensionTarget'
-		in: (data at: #methods)
+	self entryForReference: 'MCPToolMethodSearchReferenceFixture>>referenceExtensionTarget' in: (data at: #methods).
+	self entryForReference: 'MCPToolMethodSearchReferenceFixture class>>referenceExtensionTarget' in: (data at: #methods)
 ]
 
 { #category : 'tests' }
@@ -133,81 +117,47 @@ MCPToolMethodLookupTest >> testSearchEquivalentMethodsReturnsEquivalentAstMatche
 		slots: #(  )
 		classSlots: #(  ).
 	[
-		self
-			ensureMethodSource: methodSource
-			protocol: 'testing'
-			on: (self classNamed: subclassName).
-		data := self
-			        toolNamed: 'method_equivalent_search'
-			        dataFromArguments: {
-					        (self searchScope: { (#classes -> { subclassName }) }).
-					        (#className -> 'MCPToolMethodSearchReferenceFixture').
-					        (#selector -> 'sharedTarget') } asDictionary.
+		self ensureMethodSource: methodSource protocol: 'testing' on: (self classNamed: subclassName).
+		data := self toolNamed: 'method_equivalent_search' dataFromArguments: {
+				        (self searchScope: { (#classes -> { subclassName }) }).
+				        (#className -> 'MCPToolMethodSearchReferenceFixture').
+				        (#selector -> 'sharedTarget') } asDictionary.
 		self assert: (data at: #methods) size equals: 1.
-		self
-			entryForReference: subclassName , '>>sharedTarget'
-			in: (data at: #methods) ] ensure: [
-		self removeClassNamed: subclassName ]
+		self entryForReference: subclassName , '>>sharedTarget' in: (data at: #methods) ] ensure: [ self removeClassNamed: subclassName ]
 ]
 
 { #category : 'tests' }
 MCPToolMethodLookupTest >> testSearchMethodImplementorsReturnsExactSelectorMatches [
 
 	| data |
-	data := self
-		        toolNamed: 'method_implementor_search'
-		        dataFromArguments: {
-				        (#selector -> 'alphaNeedleSelector').
-				        (self searchScope:
-					         { (#classes -> { self targetClassName }) }) }
-				        asDictionary.
+	data := self toolNamed: 'method_implementor_search' dataFromArguments: {
+			        (#selector -> 'alphaNeedleSelector').
+			        (self searchScope: { (#classes -> { self targetClassName }) }) } asDictionary.
 	self assert: (data at: #methods) size equals: 1.
-	self
-		entryForReference: self targetClassName , '>>alphaNeedleSelector'
-		in: (data at: #methods)
+	self entryForReference: self targetClassName , '>>alphaNeedleSelector' in: (data at: #methods)
 ]
 
 { #category : 'tests' }
 MCPToolMethodLookupTest >> testSearchMethodSendersReturnsSelectorReferences [
 
 	| data |
-	data := self
-		        toolNamed: 'method_sender_search'
-		        dataFromArguments:
-		        { (#selector -> 'sharedTarget') } asDictionary.
+	data := self toolNamed: 'method_sender_search' dataFromArguments: { (#selector -> 'sharedTarget') } asDictionary.
 	self assert: (data at: #methods) size equals: 2.
-	self
-		entryForReference:
-		'MCPToolMethodSearchReferenceFixture>>instanceSendShared'
-		in: (data at: #methods).
-	self
-		entryForReference:
-		'MCPToolMethodSearchReferenceFixture class>>classSendShared'
-		in: (data at: #methods)
+	self entryForReference: 'MCPToolMethodSearchReferenceFixture>>instanceSendShared' in: (data at: #methods).
+	self entryForReference: 'MCPToolMethodSearchReferenceFixture class>>classSendShared' in: (data at: #methods)
 ]
 
 { #category : 'tests' }
 MCPToolMethodLookupTest >> testSearchVariableReferencesReturnsVariableReferences [
 
 	| data |
-	data := self
-		        toolNamed: 'method_variable_reference_search'
-		        dataFromArguments: {
-				        (#variableName -> 'trackedSlot').
-				        (#side -> 'instance').
-				        (self searchScope:
-					         { (#classes
-					          -> #( 'MCPToolMethodSearchVariableReferenceTarget' )) }) }
-				        asDictionary.
+	data := self toolNamed: 'method_variable_reference_search' dataFromArguments: {
+			        (#variableName -> 'trackedSlot').
+			        (#side -> 'instance').
+			        (self searchScope: { (#classes -> #( 'MCPToolMethodSearchVariableReferenceTarget' )) }) } asDictionary.
 	self assert: (data at: #methods) size equals: 2.
-	self
-		entryForReference:
-		'MCPToolMethodSearchVariableReferenceTarget>>readTrackedSlot'
-		in: (data at: #methods).
-	self
-		entryForReference:
-		'MCPToolMethodSearchVariableReferenceTarget>>writeTrackedSlot'
-		in: (data at: #methods)
+	self entryForReference: 'MCPToolMethodSearchVariableReferenceTarget>>readTrackedSlot' in: (data at: #methods).
+	self entryForReference: 'MCPToolMethodSearchVariableReferenceTarget>>writeTrackedSlot' in: (data at: #methods)
 ]
 
 { #category : 'tests' }
@@ -216,29 +166,22 @@ MCPToolMethodLookupTest >> testSourceAndEquivalentSearchSchemasUseDedicatedInput
 	| equivalentPropertyNames equivalentRequired equivalentSchema sourcePropertyNames sourceRequired sourceSchema |
 	sourceSchema := MCPToolSearchMethodSource new inputSchema.
 	sourceRequired := sourceSchema required asArray.
-	sourcePropertyNames := sourceSchema properties collect: [ :each |
-		                       each name ].
+	sourcePropertyNames := sourceSchema properties collect: [ :each | each name ].
 	self assert: sourceRequired equals: #( 'filter' ).
 	self
 		assert: sourcePropertyNames asSet
-		equals:
-			#( 'caseSensitive' 'scope' 'side' 'includeSource' 'filter' 'filterMode'
-			   'limit' 'offset' ) asSet.
+		equals: #( 'caseSensitive' 'scope' 'side' 'includeSource' 'filter' 'filterMode' 'limit' 'offset' ) asSet.
 	equivalentSchema := MCPToolSearchEquivalentMethods new inputSchema.
 	equivalentRequired := equivalentSchema required asArray.
-	equivalentPropertyNames := equivalentSchema properties collect: [
-		                           :each | each name ].
+	equivalentPropertyNames := equivalentSchema properties collect: [ :each | each name ].
 	self assert: equivalentRequired equals: #( 'className' 'selector' ).
 	self
 		assert: equivalentPropertyNames asSet
-		equals:
-			#( 'scope' 'classSide' 'selector' 'side' 'className' 'includeSource'
-			   'limit' 'offset' ) asSet
+		equals: #( 'scope' 'classSide' 'selector' 'side' 'className' 'includeSource' 'limit' 'offset' ) asSet
 ]
 
 { #category : 'private' }
 MCPToolMethodLookupTest >> toolNamed: aToolName dataFromArguments: arguments [
 
-	^ self dataFrom:
-		  (self callToolNamed: aToolName withArguments: arguments)
+	^ self dataFrom: (self callToolNamed: aToolName withArguments: arguments)
 ]

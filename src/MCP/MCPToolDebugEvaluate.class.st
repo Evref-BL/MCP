@@ -28,25 +28,18 @@ MCPToolDebugEvaluate >> buildInputSchema [
 					   type: 'string'
 					   description:
 						   'Opaque debug session identifier returned by debug_session_list, debug_capture, debug_test_run, or debug_candidate_attach.').
-				  (self
-					   schemaPropertyNamed: 'stateId'
-					   type: 'string'
-					   description:
-						   'Optional state token to reject stale frame references.').
+				  (self schemaPropertyNamed: 'stateId' type: 'string' description: 'Optional state token to reject stale frame references.').
 				  (self
 					   schemaPropertyNamed: 'frameRef'
 					   type: 'string'
-					   description:
-						   'Optional state-scoped frame reference returned by debug_state_get. Defaults to the selected top frame.').
+					   description: 'Optional state-scoped frame reference returned by debug_state_get. Defaults to the selected top frame.').
 				  (self
 					   schemaPropertyNamed: 'expression'
 					   type: 'string'
-					   description:
-						   'Smalltalk expression to evaluate in the selected frame context.').
+					   description: 'Smalltalk expression to evaluate in the selected frame context.').
 				  (self
 					   integerSchemaPropertyNamed: 'resultPreviewCharacterLimit'
-					   description:
-						   'Maximum number of characters returned in resultPrintString.'
+					   description: 'Maximum number of characters returned in resultPrintString.'
 					   default: self resultPreviewCharacterLimit) };
 		  required: #( 'sessionId' 'expression' );
 		  additionalProperties: false;
@@ -58,55 +51,23 @@ MCPToolDebugEvaluate >> buildOutputSchema [
 
 	^ self
 		  standardOutputSchemaForDataProperties: {
-				  (self
-					   schemaPropertyNamed: 'sessionId'
-					   type: 'string'
-					   description: 'Debug session identifier.').
-				  (self
-					   schemaPropertyNamed: 'stateId'
-					   type: 'string'
-					   description: 'Current debug state token.').
-				  (self
-					   schemaPropertyNamed: 'frameRef'
-					   type: 'string'
-					   description: 'Frame reference used for evaluation.').
-				  (self
-					   schemaPropertyNamed: 'expression'
-					   type: 'string'
-					   description: 'Expression evaluated in the selected frame.').
-				  (self
-					   schemaPropertyNamed: 'resultClassName'
-					   type: 'string'
-					   description: 'The name of the evaluated result class.').
-				  (self
-					   schemaPropertyNamed: 'resultPrintString'
-					   type: 'string'
-					   description: 'Bounded printString of the evaluated result.').
+				  (self schemaPropertyNamed: 'sessionId' type: 'string' description: 'Debug session identifier.').
+				  (self schemaPropertyNamed: 'stateId' type: 'string' description: 'Current debug state token.').
+				  (self schemaPropertyNamed: 'frameRef' type: 'string' description: 'Frame reference used for evaluation.').
+				  (self schemaPropertyNamed: 'expression' type: 'string' description: 'Expression evaluated in the selected frame.').
+				  (self schemaPropertyNamed: 'resultClassName' type: 'string' description: 'The name of the evaluated result class.').
+				  (self schemaPropertyNamed: 'resultPrintString' type: 'string' description: 'Bounded printString of the evaluated result.').
 				  (self
 					   booleanSchemaPropertyNamed: 'hasResultVariableRef'
-					   description:
-					   'Whether resultVariableRef can be expanded with debug_variable_get.').
+					   description: 'Whether resultVariableRef can be expanded with debug_variable_get.').
 				  (self
 					   schemaPropertyNamed: 'resultVariableRef'
 					   type: 'string'
-					   description:
-					   'Optional state-scoped variable reference for the evaluation result.').
-				  (self
-					   schemaPropertyNamed: 'sideEffects'
-					   type: 'string'
-					   description: 'Side-effect expectation for this evaluation.').
-				  (self
-					   stringArraySchemaNamed: 'warnings'
-					   description: 'Evaluation-specific warnings.'
-					   itemDescription: 'A warning message.').
-				  (self
-					   schemaPropertyNamed: 'capabilities'
-					   type: 'object'
-					   description:
-					   'Evaluation capability gates used for this response.') }
-		  required:
-			  #( 'sessionId' 'stateId' 'frameRef' 'expression' 'resultClassName'
-			     'resultPrintString' 'hasResultVariableRef'
+					   description: 'Optional state-scoped variable reference for the evaluation result.').
+				  (self schemaPropertyNamed: 'sideEffects' type: 'string' description: 'Side-effect expectation for this evaluation.').
+				  (self stringArraySchemaNamed: 'warnings' description: 'Evaluation-specific warnings.' itemDescription: 'A warning message.').
+				  (self schemaPropertyNamed: 'capabilities' type: 'object' description: 'Evaluation capability gates used for this response.') }
+		  required: #( 'sessionId' 'stateId' 'frameRef' 'expression' 'resultClassName' 'resultPrintString' 'hasResultVariableRef'
 			     'sideEffects' 'warnings' 'capabilities' )
 ]
 
@@ -138,9 +99,7 @@ MCPToolDebugEvaluate >> resultPreviewCharacterLimit [
 MCPToolDebugEvaluate >> runtimeFailureMessageFor: anError [
 
 	| message |
-	message := anError messageText
-		           ifNil: [ anError asString ]
-		           ifNotNil: [ :text | text asString ].
+	message := anError messageText ifNil: [ anError asString ] ifNotNil: [ :text | text asString ].
 	^ String streamContents: [ :stream |
 			  stream
 				  nextPutAll: 'Debug evaluation failed during execution (';
@@ -163,9 +122,7 @@ MCPToolDebugEvaluate >> shouldSaveImageAfterSuccessfulExecution [
 MCPToolDebugEvaluate >> syntaxFailureMessageFor: aNotice [
 
 	| message |
-	message := aNotice messageText
-		           ifNil: [ aNotice asString ]
-		           ifNotNil: [ :text | text asString ].
+	message := aNotice messageText ifNil: [ aNotice asString ] ifNotNil: [ :text | text asString ].
 	^ String streamContents: [ :stream |
 			  stream
 				  nextPutAll: 'Debug evaluation failed during compilation (';

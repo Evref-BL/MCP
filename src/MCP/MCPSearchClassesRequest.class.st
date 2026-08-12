@@ -23,16 +23,10 @@ MCPSearchClassesRequest class >> fromRequest: request tool: aTool [
 	^ self new
 		  scopeQuery: (aTool classScopeQueryFromRequest: request);
 		  filterMode: (aTool filterModeFromRequest: request);
-		  fieldFilters: (aTool
-				   fieldFiltersFromRequest: request
-				   fieldNames: aTool classFilterFieldNames);
-		  caseSensitive:
-			  (request booleanArgumentNamed: 'caseSensitive' default: true);
-		  limit: (request
-				   nonNegativeIntegerArgumentNamed: 'limit'
-				   default: aTool defaultPageLimit);
-		  offset:
-			  (request nonNegativeIntegerArgumentNamed: 'offset' default: 0);
+		  fieldFilters: (aTool fieldFiltersFromRequest: request fieldNames: aTool classFilterFieldNames);
+		  caseSensitive: (request booleanArgumentNamed: 'caseSensitive' default: true);
+		  limit: (request nonNegativeIntegerArgumentNamed: 'limit' default: aTool defaultPageLimit);
+		  offset: (request nonNegativeIntegerArgumentNamed: 'offset' default: 0);
 		  yourself
 ]
 

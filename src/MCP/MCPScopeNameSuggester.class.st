@@ -42,10 +42,7 @@ MCPScopeNameSuggester class >> classSuggestionCandidates [
 { #category : 'suggesting' }
 MCPScopeNameSuggester class >> classSuggestionsFor: aName [
 
-	^ self
-		  suggestionsFor: aName
-		  candidates: self classSuggestionCandidates
-		  max: self defaultLimit
+	^ self suggestionsFor: aName candidates: self classSuggestionCandidates max: self defaultLimit
 ]
 
 { #category : 'defaults' }
@@ -72,9 +69,7 @@ MCPScopeNameSuggester class >> editDistanceBetween: leftString and: rightString 
 					delete := (previous at: rightIndex + 1) + 1.
 					insert := (current at: rightIndex) + 1.
 					replace := (previous at: rightIndex) + cost.
-					current
-						at: rightIndex + 1
-						put: ((delete min: insert) min: replace) ].
+					current at: rightIndex + 1 put: ((delete min: insert) min: replace) ].
 			previous := current ].
 	^ previous last
 ]
@@ -102,9 +97,7 @@ MCPScopeNameSuggester class >> missingNameWarningForKind: kind name: missingName
 				  nextPutAll: ' scope.'.
 			  suggestions ifNotEmpty: [
 					  stream nextPutAll: ' Did you mean: '.
-					  suggestions
-						  do: [ :each | stream nextPutAll: each ]
-						  separatedBy: [ stream nextPutAll: ', ' ].
+					  suggestions do: [ :each | stream nextPutAll: each ] separatedBy: [ stream nextPutAll: ', ' ].
 					  stream nextPut: $. ] ]
 ]
 
@@ -130,10 +123,7 @@ MCPScopeNameSuggester class >> packageSuggestionCandidates [
 { #category : 'suggesting' }
 MCPScopeNameSuggester class >> packageSuggestionsFor: aName [
 
-	^ self
-		  suggestionsFor: aName
-		  candidates: self packageSuggestionCandidates
-		  max: self defaultLimit
+	^ self suggestionsFor: aName candidates: self packageSuggestionCandidates max: self defaultLimit
 ]
 
 { #category : 'suggesting' }
@@ -143,14 +133,10 @@ MCPScopeNameSuggester class >> scoreForRequested: requestedName candidate: candi
 	requested := requestedName asString asLowercase.
 	candidate := candidateName asString asLowercase.
 	requested = candidate ifTrue: [ ^ 0 ].
-	(candidate beginsWith: requested) ifTrue: [
-		^ 10 + (candidate size - requested size) ].
-	(requested beginsWith: candidate) ifTrue: [
-		^ 20 + (requested size - candidate size) ].
-	(candidate includesSubstring: requested) ifTrue: [
-		^ 30 + (candidate size - requested size) ].
-	(requested includesSubstring: candidate) ifTrue: [
-		^ 40 + (requested size - candidate size) ].
+	(candidate beginsWith: requested) ifTrue: [ ^ 10 + (candidate size - requested size) ].
+	(requested beginsWith: candidate) ifTrue: [ ^ 20 + (requested size - candidate size) ].
+	(candidate includesSubstring: requested) ifTrue: [ ^ 30 + (candidate size - requested size) ].
+	(requested includesSubstring: candidate) ifTrue: [ ^ 40 + (requested size - candidate size) ].
 	^ 100 + (self editDistanceBetween: requested and: candidate)
 ]
 
@@ -158,16 +144,11 @@ MCPScopeNameSuggester class >> scoreForRequested: requestedName candidate: candi
 MCPScopeNameSuggester class >> suggestionsFor: requestedName candidates: candidates max: maxCount [
 
 	| bucketCounts chosen chosenNames filtered scored sorted |
-	filtered := candidates select: [ :eachCandidate |
-		            self
-			            candidate: eachCandidate
-			            matchesRequested: requestedName ].
+	filtered := candidates select: [ :eachCandidate | self candidate: eachCandidate matchesRequested: requestedName ].
 	filtered isEmpty ifTrue: [ ^ #(  ) ].
 	scored := filtered collect: [ :eachCandidate |
 			          eachCandidate copy
-				          at: #score put: (self
-						           scoreForRequested: requestedName
-						           candidate: (eachCandidate at: #name));
+				          at: #score put: (self scoreForRequested: requestedName candidate: (eachCandidate at: #name));
 				          yourself ].
 	sorted := scored asSortedCollection: [ :left :right |
 			          (left at: #score) = (right at: #score)
@@ -182,11 +163,10 @@ MCPScopeNameSuggester class >> suggestionsFor: requestedName candidates: candida
 					candidateName := eachCandidate at: #name.
 					bucket := eachCandidate at: #bucket ifAbsent: [ '' ].
 					count := bucketCounts at: bucket ifAbsent: [ 0 ].
-					(count < 2 and: [ (chosenNames includes: candidateName) not ])
-						ifTrue: [
-								chosen add: candidateName.
-								chosenNames add: candidateName.
-								bucketCounts at: bucket put: count + 1 ] ] ].
+					(count < 2 and: [ (chosenNames includes: candidateName) not ]) ifTrue: [
+							chosen add: candidateName.
+							chosenNames add: candidateName.
+							bucketCounts at: bucket put: count + 1 ] ] ].
 	chosen size < maxCount ifTrue: [
 			sorted do: [ :eachCandidate |
 					chosen size < maxCount ifTrue: [

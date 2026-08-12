@@ -18,41 +18,24 @@ MCPToolGetMethodTest >> testGetMethodReturnsInstanceSideVariableContext [
 			          (#selector -> 'readInstanceWith:').
 			          (#includeVariableDetails -> true) } asDictionary.
 	data := self dataFrom: result.
-	instanceVariable := self
-		                    variableNamed: 'instanceCounter'
-		                    in: (data at: #variableReferences).
-	classVariable := self
-		                 variableNamed: 'SharedLimit'
-		                 in: (data at: #variableReferences).
-	globalVariable := self
-		                  variableNamed: 'OrderedCollection'
-		                  in: (data at: #variableReferences).
-	selfVariable := self
-		                variableNamed: 'self'
-		                in: (data at: #variableReferences).
+	instanceVariable := self variableNamed: 'instanceCounter' in: (data at: #variableReferences).
+	classVariable := self variableNamed: 'SharedLimit' in: (data at: #variableReferences).
+	globalVariable := self variableNamed: 'OrderedCollection' in: (data at: #variableReferences).
+	selfVariable := self variableNamed: 'self' in: (data at: #variableReferences).
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self
-		assert: ((self structuredContentFrom: result) at: #status)
-		equals: 'ok'.
+	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
 	self assert: (data at: #protocol) equals: 'reading'.
 	self assert: (instanceVariable at: #kind) equals: 'instanceVariable'.
-	self
-		assert: (instanceVariable at: #ownerName)
-		equals: 'MCPToolGetMethodTestTarget'.
+	self assert: (instanceVariable at: #ownerName) equals: 'MCPToolGetMethodTestTarget'.
 	self assert: (classVariable at: #kind) equals: 'classVariable'.
 	self assert: (globalVariable at: #kind) equals: 'class'.
-	self
-		assert: (globalVariable at: #ownerName)
-		equals: 'Smalltalk globals'.
+	self assert: (globalVariable at: #ownerName) equals: 'Smalltalk globals'.
 	self assert: (selfVariable at: #kind) equals: 'self'.
 	self assert: (data at: #variableReferences) size equals: 7.
 	self assert: ((data at: #variableReferences) allSatisfy: [ :each |
-				 #( #sourceIntervals #external #declaredInMethod ) noneSatisfy: [
-					 :key | each includesKey: key ] ]).
-	self assert:
-		((data at: #source) includesSubstring: String cr asString).
-	self assert: ((data at: #source) includesSubstring:
-			 'instanceCounter ifNil: [ SharedLimit ]').
+			 #( #sourceIntervals #external #declaredInMethod ) noneSatisfy: [ :key | each includesKey: key ] ]).
+	self assert: ((data at: #source) includesSubstring: String cr asString).
+	self assert: ((data at: #source) includesSubstring: 'instanceCounter ifNil: [ SharedLimit ]').
 	self deny: (data includesKey: #className).
 	self deny: (data includesKey: #selector).
 	self deny: (data includesKey: #side).
@@ -77,15 +60,12 @@ MCPToolGetMethodTest >> testGetMethodReturnsStructuredErrorForMissingSelector [
 	self assert: (structured at: #status) equals: 'error'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'MethodNotFound'.
-	self
-		assert: (error at: #className)
-		equals: 'MCPToolGetMethodTestTarget'.
+	self assert: (error at: #className) equals: 'MCPToolGetMethodTestTarget'.
 	self assert: (error at: #selector) equals: 'doesNotExist'.
 	self assert: (error includesKey: #classSide).
 	self deny: (error at: #classSide).
 	self deny: (error includesKey: #side).
-	self assert: ((error at: #message) includesSubstring:
-			 'Method MCPToolGetMethodTestTarget>>doesNotExist does not exist.')
+	self assert: ((error at: #message) includesSubstring: 'Method MCPToolGetMethodTestTarget>>doesNotExist does not exist.')
 ]
 
 { #category : 'tests' }
@@ -98,39 +78,23 @@ MCPToolGetMethodTest >> testGetMethodSupportsClassSideContext [
 			          (#classSide -> true).
 			          (#includeVariableDetails -> true) } asDictionary.
 	data := self dataFrom: result.
-	classInstanceVariable := self
-		                         variableNamed: 'classCounter'
-		                         in: (data at: #variableReferences).
-	thisContextVariable := self
-		                       variableNamed: 'thisContext'
-		                       in: (data at: #variableReferences).
+	classInstanceVariable := self variableNamed: 'classCounter' in: (data at: #variableReferences).
+	thisContextVariable := self variableNamed: 'thisContext' in: (data at: #variableReferences).
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self
-		assert: (classInstanceVariable at: #kind)
-		equals: 'classInstanceVariable'.
-	self
-		assert: (classInstanceVariable at: #ownerName)
-		equals: 'MCPToolGetMethodTestTarget class'.
+	self assert: (classInstanceVariable at: #kind) equals: 'classInstanceVariable'.
+	self assert: (classInstanceVariable at: #ownerName) equals: 'MCPToolGetMethodTestTarget class'.
 	self assert: (thisContextVariable at: #kind) equals: 'thisContext'.
-	self
-		assert: (thisContextVariable at: #ownerName)
-		equals: 'execution context'.
+	self assert: (thisContextVariable at: #ownerName) equals: 'execution context'.
 	self assert: ((data at: #variableReferences) allSatisfy: [ :each |
-				 #( #sourceIntervals #external #declaredInMethod ) noneSatisfy: [
-					 :key | each includesKey: key ] ]).
-	self assert:
-		((data at: #source) includesSubstring: String cr asString).
-	self
-		assert: data keys asSet
-		equals: #( protocol source variableReferences ) asSet
+			 #( #sourceIntervals #external #declaredInMethod ) noneSatisfy: [ :key | each includesKey: key ] ]).
+	self assert: ((data at: #source) includesSubstring: String cr asString).
+	self assert: data keys asSet equals: #( protocol source variableReferences ) asSet
 ]
 
 { #category : 'tests' }
 MCPToolGetMethodTest >> testToolRequiresClassNameAndSelectorInSchema [
 
-	self
-		assert: MCPToolGetMethod new inputSchema required asSet
-		equals: #( 'className' 'selector' ) asSet
+	self assert: MCPToolGetMethod new inputSchema required asSet equals: #( 'className' 'selector' ) asSet
 ]
 
 { #category : 'private - calling' }
@@ -142,7 +106,5 @@ MCPToolGetMethodTest >> toolName [
 { #category : 'private' }
 MCPToolGetMethodTest >> variableNamed: aName in: variableReferences [
 
-	^ variableReferences
-		  detect: [ :each | (each at: #name) = aName ]
-		  ifNone: [ self fail: 'Missing variable summary for ' , aName ]
+	^ variableReferences detect: [ :each | (each at: #name) = aName ] ifNone: [ self fail: 'Missing variable summary for ' , aName ]
 ]

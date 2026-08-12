@@ -16,8 +16,7 @@ MCPClassScopeQuery >> allClasses [
 
 	| classes |
 	classes := IdentitySet new.
-	Smalltalk globals allClasses do: [ :eachClass |
-		classes add: eachClass instanceSide ].
+	Smalltalk globals allClasses do: [ :eachClass | classes add: eachClass instanceSide ].
 	^ self sortedClassesByName: classes
 ]
 
@@ -26,17 +25,11 @@ MCPClassScopeQuery >> classScopeSets [
 
 	| sets |
 	sets := OrderedCollection new.
-	self packageNames ifNotEmpty: [
-		sets add: self classesForPackageNames ].
-	self classNames ifNotEmpty: [
-			sets add:
-				(self resolvedClassesNamed: self classNames inScope: 'classNames') ].
-	self hierarchyClassNames ifNotEmpty: [
-		sets add: (self hierarchyClassesNamed: self hierarchyClassNames) ].
-	self subclassClassNames ifNotEmpty: [
-		sets add: (self subclassClassesNamed: self subclassClassNames) ].
-	self parentClassNames ifNotEmpty: [
-		sets add: (self parentClassesNamed: self parentClassNames) ].
+	self packageNames ifNotEmpty: [ sets add: self classesForPackageNames ].
+	self classNames ifNotEmpty: [ sets add: (self resolvedClassesNamed: self classNames inScope: 'classNames') ].
+	self hierarchyClassNames ifNotEmpty: [ sets add: (self hierarchyClassesNamed: self hierarchyClassNames) ].
+	self subclassClassNames ifNotEmpty: [ sets add: (self subclassClassesNamed: self subclassClassNames) ].
+	self parentClassNames ifNotEmpty: [ sets add: (self parentClassesNamed: self parentClassNames) ].
 	^ sets asArray
 ]
 
@@ -54,10 +47,8 @@ MCPClassScopeQuery >> classesForPackageNames [
 	| classes |
 	classes := IdentitySet new.
 	packageNames do: [ :eachName |
-			(self resolvedPackageNamed: eachName inScope: 'packageNames')
-				ifNotNil: [ :package |
-						package classes do: [ :eachClass |
-							classes add: eachClass instanceSide ] ] ].
+			(self resolvedPackageNamed: eachName inScope: 'packageNames') ifNotNil: [ :package |
+				package classes do: [ :eachClass | classes add: eachClass instanceSide ] ] ].
 	^ self sortedClassesByName: classes
 ]
 
@@ -66,11 +57,8 @@ MCPClassScopeQuery >> hierarchyClassesNamed: someClassNames [
 
 	| classes |
 	classes := IdentitySet new.
-	(self
-		 resolvedClassesNamed: someClassNames
-		 inScope: 'hierarchyClassNames') do: [ :eachClass |
-			eachClass withAllSuperAndSubclasses do: [ :relatedClass |
-				classes add: relatedClass instanceSide ] ].
+	(self resolvedClassesNamed: someClassNames inScope: 'hierarchyClassNames') do: [ :eachClass |
+		eachClass withAllSuperAndSubclasses do: [ :relatedClass | classes add: relatedClass instanceSide ] ].
 	^ self sortedClassesByName: classes
 ]
 
@@ -92,11 +80,8 @@ MCPClassScopeQuery >> parentClassesNamed: someClassNames [
 
 	| classes |
 	classes := IdentitySet new.
-	(self
-		 resolvedClassesNamed: someClassNames
-		 inScope: 'parentClassNames') do: [ :eachClass |
-			eachClass allSuperclasses do: [ :relatedClass |
-				classes add: relatedClass instanceSide ] ].
+	(self resolvedClassesNamed: someClassNames inScope: 'parentClassNames') do: [ :eachClass |
+		eachClass allSuperclasses do: [ :relatedClass | classes add: relatedClass instanceSide ] ].
 	^ self sortedClassesByName: classes
 ]
 
@@ -109,10 +94,7 @@ MCPClassScopeQuery >> resolvedClassNamed: className [
 { #category : 'private - resolution' }
 MCPClassScopeQuery >> resolvedClassNamed: className inScope: scopeName [
 
-	^ Smalltalk globals
-		  at: className asSymbol
-		  ifAbsent: [
-		  self recordMissingClassNamed: className inScope: scopeName ]
+	^ Smalltalk globals at: className asSymbol ifAbsent: [ self recordMissingClassNamed: className inScope: scopeName ]
 ]
 
 { #category : 'private - resolution' }
@@ -127,8 +109,7 @@ MCPClassScopeQuery >> resolvedClassesNamed: someClassNames inScope: scopeName [
 	| classes |
 	classes := IdentitySet new.
 	someClassNames do: [ :eachName |
-			(self resolvedClassNamed: eachName inScope: scopeName) ifNotNil: [
-				:resolvedClass | classes add: resolvedClass instanceSide ] ].
+		(self resolvedClassNamed: eachName inScope: scopeName) ifNotNil: [ :resolvedClass | classes add: resolvedClass instanceSide ] ].
 	^ self sortedClassesByName: classes
 ]
 
@@ -143,8 +124,7 @@ MCPClassScopeQuery >> resolvedPackageNamed: packageName inScope: scopeName [
 
 	^ PackageOrganizer default
 		  packageNamed: packageName asSymbol
-		  ifAbsent: [
-		  self recordMissingPackageNamed: packageName inScope: scopeName ]
+		  ifAbsent: [ self recordMissingPackageNamed: packageName inScope: scopeName ]
 ]
 
 { #category : 'private - scope' }
@@ -158,11 +138,8 @@ MCPClassScopeQuery >> subclassClassesNamed: someClassNames [
 
 	| classes |
 	classes := IdentitySet new.
-	(self
-		 resolvedClassesNamed: someClassNames
-		 inScope: 'subclassClassNames') do: [ :eachClass |
-			eachClass allSubclasses do: [ :relatedClass |
-				classes add: relatedClass instanceSide ] ].
+	(self resolvedClassesNamed: someClassNames inScope: 'subclassClassNames') do: [ :eachClass |
+		eachClass allSubclasses do: [ :relatedClass | classes add: relatedClass instanceSide ] ].
 	^ self sortedClassesByName: classes
 ]
 

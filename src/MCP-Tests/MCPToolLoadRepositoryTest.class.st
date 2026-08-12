@@ -14,9 +14,7 @@ MCPToolLoadRepositoryTest >> executeRecordingCommandForRequest: request [
 
 	| command |
 	MCPRecordingLoadBaselineCommand reset.
-	command := MCPRecordingLoadRepositoryCommand
-		           tool: MCPToolLoadRepository new
-		           request: request.
+	command := MCPRecordingLoadRepositoryCommand tool: MCPToolLoadRepository new request: request.
 	^ command execute
 ]
 
@@ -25,8 +23,7 @@ MCPToolLoadRepositoryTest >> loadRepositoryRequestFromArguments: associations [
 
 	| tool |
 	tool := MCPToolLoadRepository new.
-	^ tool parsedRequestFromToolRequest:
-		  (tool requestFromToolCallArguments: associations asDictionary)
+	^ tool parsedRequestFromToolRequest: (tool requestFromToolCallArguments: associations asDictionary)
 ]
 
 { #category : 'private' }
@@ -69,21 +66,14 @@ MCPToolLoadRepositoryTest >> testCommandConfiguresMetacelloAndLoadsDefaultGroup 
 	load := data at: #load.
 	repository := data at: #repository.
 	self assert: (metacello messageCountFor: #baseline:) equals: 1.
-	self assert:
-		(metacello received: #baseline: withArguments: { 'ExampleBaseline' }).
-	self assert: (metacello
-			 received: #repository:
-			 withArguments: { 'github://ExampleOwner/ExampleProject:main/src' }).
+	self assert: (metacello received: #baseline: withArguments: { 'ExampleBaseline' }).
+	self assert: (metacello received: #repository: withArguments: { 'github://ExampleOwner/ExampleProject:main/src' }).
 	self assert: (metacello received: #onWarningLog).
 	self assert: (metacello received: #onConflictUseLoaded).
 	self assert: (metacello received: #load).
 	self assert: result mode equals: 'remote'.
-	self
-		assert: result repositoryUrl
-		equals: 'github://ExampleOwner/ExampleProject:main/src'.
-	self
-		assert: repository
-		equals: { (#repositoryUrl -> result repositoryUrl) } asDictionary.
+	self assert: result repositoryUrl equals: 'github://ExampleOwner/ExampleProject:main/src'.
+	self assert: repository equals: { (#repositoryUrl -> result repositoryUrl) } asDictionary.
 	self assert: (load at: #baseline) equals: 'ExampleBaseline'.
 	self assert: result newPackageNames isEmpty.
 	self assert: result repositoryInfos isEmpty
@@ -100,8 +90,7 @@ MCPToolLoadRepositoryTest >> testCommandLoadsRequestedGroups [
 			           (#groups -> #( 'Core' 'Tests' )) }.
 	self executeRecordingCommandForRequest: request.
 	metacello := self recordedMetacello.
-	self assert:
-		(metacello received: #load: withArguments: { #( 'Core' 'Tests' ) }).
+	self assert: (metacello received: #load: withArguments: { #( 'Core' 'Tests' ) }).
 	self deny: (metacello received: #load)
 ]
 
@@ -136,16 +125,10 @@ MCPToolLoadRepositoryTest >> testRepositoryLoadAcceptsExplicitRepositoryUrl [
 	metacello := self recordedMetacello.
 	repository := result asDictionary at: #repository.
 	self assert: request mode equals: 'url'.
-	self
-		assert: request repositoryUrl
-		equals: 'tonel:///tmp/ExampleProject/src'.
-	self assert: (metacello
-			 received: #repository:
-			 withArguments: { 'tonel:///tmp/ExampleProject/src' }).
+	self assert: request repositoryUrl equals: 'tonel:///tmp/ExampleProject/src'.
+	self assert: (metacello received: #repository: withArguments: { 'tonel:///tmp/ExampleProject/src' }).
 	self assert: result mode equals: 'url'.
-	self
-		assert: (repository at: #repositoryUrl)
-		equals: 'tonel:///tmp/ExampleProject/src'
+	self assert: (repository at: #repositoryUrl) equals: 'tonel:///tmp/ExampleProject/src'
 ]
 
 { #category : 'tests' }
@@ -157,18 +140,14 @@ MCPToolLoadRepositoryTest >> testRepositoryLoadAcceptsLocalCheckoutPath [
 			           (#sourceDirectory -> '/src/').
 			           (#baseline -> 'ExampleBaseline') }.
 	self assert: request mode equals: 'local'.
-	self
-		assert: request repositoryUrl
-		equals: 'tonel:///tmp/ExampleProject/src'
+	self assert: request repositoryUrl equals: 'tonel:///tmp/ExampleProject/src'
 ]
 
 { #category : 'tests' }
 MCPToolLoadRepositoryTest >> testRepositoryLoadAcceptsRegisteredIcebergRepository [
 
 	| repository request |
-	repository := MCPTestIceRepository
-		              named: 'MCP Load Registered Repository'
-		              location: FileLocator imageDirectory pathString.
+	repository := MCPTestIceRepository named: 'MCP Load Registered Repository' location: FileLocator imageDirectory pathString.
 	self withRegisteredRepository: repository do: [
 			request := self loadRepositoryRequestFromArguments: {
 					           (#repositoryName -> repository name).
@@ -188,9 +167,7 @@ MCPToolLoadRepositoryTest >> testRepositoryLoadRejectsMixedRepositorySources [
 			               (#repositoryUrl -> 'tonel:///tmp/ExampleProject/src').
 			               (#owner -> 'ExampleOwner').
 			               (#baseline -> 'ExampleBaseline') } asDictionary.
-	self
-		should: [ tool parsedRequestFromToolRequest: toolRequest ]
-		raise: MCPCommandError
+	self should: [ tool parsedRequestFromToolRequest: toolRequest ] raise: MCPCommandError
 ]
 
 { #category : 'tests' }
@@ -198,11 +175,8 @@ MCPToolLoadRepositoryTest >> testRepositoryLoadRequiresOwnerAndProject [
 
 	| tool toolRequest |
 	tool := MCPToolLoadRepository new.
-	toolRequest := tool requestFromToolCallArguments:
-		               { (#baseline -> 'ExampleBaseline') } asDictionary.
-	self
-		should: [ tool parsedRequestFromToolRequest: toolRequest ]
-		raise: MCPCommandError
+	toolRequest := tool requestFromToolCallArguments: { (#baseline -> 'ExampleBaseline') } asDictionary.
+	self should: [ tool parsedRequestFromToolRequest: toolRequest ] raise: MCPCommandError
 ]
 
 { #category : 'tests' }
@@ -210,8 +184,7 @@ MCPToolLoadRepositoryTest >> testRepositoryLoadUsesRemoteDefaults [
 
 	| request tool |
 	tool := MCPToolLoadRepository new.
-	request := tool parsedRequestFromToolRequest:
-		           (tool requestFromToolCallArguments: {
+	request := tool parsedRequestFromToolRequest: (tool requestFromToolCallArguments: {
 				            (#owner -> 'ExampleOwner').
 				            (#project -> 'ExampleProject').
 				            (#baseline -> 'ExampleBaseline') } asDictionary).
@@ -222,9 +195,7 @@ MCPToolLoadRepositoryTest >> testRepositoryLoadUsesRemoteDefaults [
 	self assert: request groups equals: #(  ).
 	self assert: request onWarning equals: 'log'.
 	self assert: request onConflict equals: 'useLoaded'.
-	self
-		assert: request repositoryUrl
-		equals: 'github://ExampleOwner/ExampleProject:main'
+	self assert: request repositoryUrl equals: 'github://ExampleOwner/ExampleProject:main'
 ]
 
 { #category : 'tests' }
@@ -232,18 +203,14 @@ MCPToolLoadRepositoryTest >> testRepositoryUrlEscapesCommitishSlashes [
 
 	| request tool |
 	tool := MCPToolLoadRepository new.
-	request := tool parsedRequestFromToolRequest:
-		           (tool requestFromToolCallArguments: {
+	request := tool parsedRequestFromToolRequest: (tool requestFromToolCallArguments: {
 				            (#owner -> 'ExampleOwner').
 				            (#project -> 'ExampleProject').
 				            (#baseline -> 'ExampleBaseline').
 				            (#commitish -> 'feature/load/slash').
 				            (#sourceDirectory -> 'src') } asDictionary).
 	self assert: request mode equals: 'remote'.
-	self
-		assert: request repositoryUrl
-		equals:
-		'github://ExampleOwner/ExampleProject:feature\/load\/slash/src'
+	self assert: request repositoryUrl equals: 'github://ExampleOwner/ExampleProject:feature\/load\/slash/src'
 ]
 
 { #category : 'tests' }
@@ -251,8 +218,7 @@ MCPToolLoadRepositoryTest >> testRepositoryUrlIncludesSourceDirectoryAndCustomHo
 
 	| request tool |
 	tool := MCPToolLoadRepository new.
-	request := tool parsedRequestFromToolRequest:
-		           (tool requestFromToolCallArguments: {
+	request := tool parsedRequestFromToolRequest: (tool requestFromToolCallArguments: {
 				            (#hostUrl -> 'gitlab://git.example.com').
 				            (#owner -> 'ExampleOwner').
 				            (#project -> 'ExampleProject').
@@ -260,10 +226,7 @@ MCPToolLoadRepositoryTest >> testRepositoryUrlIncludesSourceDirectoryAndCustomHo
 				            (#commitish -> 'v1.0.0').
 				            (#sourceDirectory -> '/src/') } asDictionary).
 	self assert: request mode equals: 'remote'.
-	self
-		assert: request repositoryUrl
-		equals:
-		'gitlab://git.example.com:ExampleOwner/ExampleProject:v1.0.0/src'
+	self assert: request repositoryUrl equals: 'gitlab://git.example.com:ExampleOwner/ExampleProject:v1.0.0/src'
 ]
 
 { #category : 'private - calling' }
@@ -278,6 +241,5 @@ MCPToolLoadRepositoryTest >> withRegisteredRepository: aRepository do: aBlock [
 	| registry |
 	registry := IceRepository registry.
 	registry add: aRepository.
-	[ aBlock value ] ensure: [
-		registry remove: aRepository ifAbsent: [ ] ]
+	[ aBlock value ] ensure: [ registry remove: aRepository ifAbsent: [ ] ]
 ]

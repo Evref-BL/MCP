@@ -57,9 +57,7 @@ MCPReplaceClassSideTraitsResult >> newClassTraitNames [
 { #category : 'accessing' }
 MCPReplaceClassSideTraitsResult >> newClassTraitNames: someNames [
 
-	newClassTraitNames := someNames
-		                      ifNil: [ #(  ) ]
-		                      ifNotNil: [ someNames asArray ]
+	newClassTraitNames := someNames ifNil: [ #(  ) ] ifNotNil: [ someNames asArray ]
 ]
 
 { #category : 'accessing' }
@@ -71,7 +69,5 @@ MCPReplaceClassSideTraitsResult >> oldClassTraitNames [
 { #category : 'accessing' }
 MCPReplaceClassSideTraitsResult >> oldClassTraitNames: someNames [
 
-	oldClassTraitNames := someNames
-		                      ifNil: [ #(  ) ]
-		                      ifNotNil: [ someNames asArray ]
+	oldClassTraitNames := someNames ifNil: [ #(  ) ] ifNotNil: [ someNames asArray ]
 ]

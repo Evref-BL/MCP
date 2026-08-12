@@ -21,11 +21,8 @@ MCPToolLoadBaseline >> buildInputSchema [
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties: {
-				  (self
-					   nonEmptyStringSchemaPropertyNamed: 'baseline'
-					   description: 'Baseline name without BaselineOf prefix.').
-				  self groupsSchemaProperty }
-			  , self loadPolicyInputSchemaProperties;
+				  (self nonEmptyStringSchemaPropertyNamed: 'baseline' description: 'Baseline name without BaselineOf prefix.').
+				  self groupsSchemaProperty } , self loadPolicyInputSchemaProperties;
 		  required: #( 'baseline' );
 		  additionalProperties: false;
 		  yourself
@@ -35,11 +32,8 @@ MCPToolLoadBaseline >> buildInputSchema [
 MCPToolLoadBaseline >> buildOutputSchema [
 
 	^ self
-		  standardOutputSchemaForDataProperties:
-		  self loadBaselineDataProperties
-		  required:
-			  #( 'baseline' 'groups' 'onWarning' 'onConflict' 'policy' 'newPackageNames'
-			     'repositories' )
+		  standardOutputSchemaForDataProperties: self loadBaselineDataProperties
+		  required: #( 'baseline' 'groups' 'onWarning' 'onConflict' 'policy' 'newPackageNames' 'repositories' )
 ]
 
 { #category : 'private - execution' }

@@ -20,8 +20,7 @@ MCPToolFetchRepository >> repositoryToolSpec [
 
 	^ {
 		  (#title -> 'Fetch Repository').
-		  (#description
-		   -> 'Fetch remote refs for a registered Iceberg repository.').
+		  (#description -> 'Fetch remote refs for a registered Iceberg repository.').
 		  (#action -> 'fetch').
 		  (#requestClass -> MCPRepositoryFetchRequest).
 		  (#commandClass -> MCPFetchRepositoryCommand) } asDictionary

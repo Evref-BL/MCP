@@ -14,9 +14,7 @@ Class {
 { #category : 'private - mapping' }
 MCPToolIconSpec class >> actionIconForToolNameParts: parts [
 
-	(parts size = 2 and: [
-		 parts first = 'screenshot' and: [ parts last = 'capture' ] ])
-		ifTrue: [ ^ #smallScreenshot ].
+	(parts size = 2 and: [ parts first = 'screenshot' and: [ parts last = 'capture' ] ]) ifTrue: [ ^ #smallScreenshot ].
 	^ self iconNameForAction: parts last
 ]
 
@@ -69,9 +67,7 @@ MCPToolIconSpec class >> actionIconMap [
 { #category : 'instance creation' }
 MCPToolIconSpec class >> baseIconNamed: aBaseIconSymbol badgeIconNamed: aBadgeIconSymbol [
 
-	^ MCPCompositeToolIconSpec
-		  baseIconNamed: aBaseIconSymbol
-		  badgeIconNamed: aBadgeIconSymbol
+	^ MCPCompositeToolIconSpec baseIconNamed: aBaseIconSymbol badgeIconNamed: aBadgeIconSymbol
 ]
 
 { #category : 'instance creation' }
@@ -109,12 +105,8 @@ MCPToolIconSpec class >> forToolName: toolNameString [
 	baseIcon := self iconNameForDomain: parts first.
 	actionIcon := self actionIconForToolNameParts: parts.
 	objectIcon := self objectIconForToolNameParts: parts.
-	objectIcon ifNil: [
-		^ self baseIconNamed: baseIcon badgeIconNamed: actionIcon ].
-	^ self
-		  baseIconNamed: baseIcon
-		  leftBadgeIconNamed: objectIcon
-		  rightBadgeIconNamed: actionIcon
+	objectIcon ifNil: [ ^ self baseIconNamed: baseIcon badgeIconNamed: actionIcon ].
+	^ self baseIconNamed: baseIcon leftBadgeIconNamed: objectIcon rightBadgeIconNamed: actionIcon
 ]
 
 { #category : 'private - mapping' }

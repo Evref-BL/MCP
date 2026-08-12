@@ -26,42 +26,34 @@ MCPDebugControlRequest class >> fromRequest: aRequest tool: aTool operation: ope
 	(self supportedOperations includes: operationName) ifFalse: [
 			MCPCommandError
 				signalErrorCode: #DebugControlOperationUnsupported
-				message:
-				'Unsupported debug operation: ' , operationName asString , '.'
+				message: 'Unsupported debug operation: ' , operationName asString , '.'
 				details: {
 						(#operation -> operationName).
-						(#supportedOperations -> self supportedOperations) }
-						asDictionary ].
+						(#supportedOperations -> self supportedOperations) } asDictionary ].
 	^ self new
 		  operation: operationName;
 		  sessionId: (aRequest stringArgumentNamed: 'sessionId');
 		  stateId: (aRequest stringArgumentNamed: 'stateId');
 		  frameRef: (aRequest stringArgumentNamed: 'frameRef');
-		  returnState: (aRequest
-				   booleanArgumentNamed: 'returnState'
-				   default: self defaultReturnState);
+		  returnState: (aRequest booleanArgumentNamed: 'returnState' default: self defaultReturnState);
 		  sourceContextLines: (aRequest
 				   nonNegativeIntegerArgumentNamed: 'sourceContextLines'
 				   default: self defaultSourceContextLines
 				   maximum: self maximumSourceContextLines);
-		  stackStart: (aRequest
-				   nonNegativeIntegerArgumentNamed: 'stackStart'
-				   default: self defaultStackStart);
-		  stackLimit: (aRequest
-				   nonNegativeIntegerArgumentNamed: 'stackLimit'
-				   default: self defaultStackLimit
-				   maximum: self maximumStackLimit);
-		  variableDepth: (aRequest
+		  stackStart: (aRequest nonNegativeIntegerArgumentNamed: 'stackStart' default: self defaultStackStart);
+		  stackLimit:
+			  (aRequest nonNegativeIntegerArgumentNamed: 'stackLimit' default: self defaultStackLimit maximum: self maximumStackLimit);
+		  variableDepth:
+			  (aRequest
 				   nonNegativeIntegerArgumentNamed: 'variableDepth'
 				   default: self defaultVariableDepth
 				   maximum: self maximumVariableDepth);
-		  variableLimit: (aRequest
+		  variableLimit:
+			  (aRequest
 				   nonNegativeIntegerArgumentNamed: 'variableLimit'
 				   default: self defaultVariableLimit
 				   maximum: self maximumVariableLimit);
-		  includeReceiver: (aRequest
-				   booleanArgumentNamed: 'includeReceiver'
-				   default: self defaultIncludeReceiver);
+		  includeReceiver: (aRequest booleanArgumentNamed: 'includeReceiver' default: self defaultIncludeReceiver);
 		  yourself
 ]
 

@@ -29,8 +29,7 @@ MCPToolCompileMethod >> methodToolSpec [
 	^ {
 		  (#title -> 'Compile Method').
 		  (#description
-		   ->
-		   'Compile method source into a class. Creates the method when absent and replaces it when the selector already exists.').
+		   -> 'Compile method source into a class. Creates the method when absent and replaces it when the selector already exists.').
 		  (#action -> 'compile').
 		  (#inputProperties -> {
 			   (MCPStructureProperties new
@@ -52,9 +51,7 @@ MCPToolCompileMethod >> methodToolSpec [
 			   (MCPStructureProperties new
 				    name: 'protocol';
 				    type: 'string';
-				    description:
-					    'The target protocol. For extension methods, use an extension protocol such as *Package-Name.';
+				    description: 'The target protocol. For extension methods, use an extension protocol such as *Package-Name.';
 				    yourself) }).
-		  (#requiredProperties -> #( 'className' 'source' 'protocol' )) }
-		  asDictionary
+		  (#requiredProperties -> #( 'className' 'source' 'protocol' )) } asDictionary
 ]

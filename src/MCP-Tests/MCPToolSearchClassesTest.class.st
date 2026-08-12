@@ -24,9 +24,7 @@ MCPToolSearchClassesTest >> childClassName [
 { #category : 'private' }
 MCPToolSearchClassesTest >> entryNamed: aClassName in: classEntries [
 
-	^ classEntries
-		  detect: [ :each | (each at: #className) = aClassName ]
-		  ifNone: [ self fail: 'Missing class entry ' , aClassName ]
+	^ classEntries detect: [ :each | (each at: #className) = aClassName ] ifNone: [ self fail: 'Missing class entry ' , aClassName ]
 ]
 
 { #category : 'private' }
@@ -59,8 +57,7 @@ MCPToolSearchClassesTest >> missingClassName [
 { #category : 'private' }
 MCPToolSearchClassesTest >> removeFixtureClasses [
 
-	self fixtureClassNames reverseDo: [ :each |
-		self removeClassNamed: each ]
+	self fixtureClassNames reverseDo: [ :each | self removeClassNamed: each ]
 ]
 
 { #category : 'private' }
@@ -106,9 +103,7 @@ MCPToolSearchClassesTest >> testClassNamesReturnExactClassInfos [
 				            self childClassName.
 				            self baseClassName }) }) } asDictionary.
 	data := self dataFrom: result.
-	baseEntry := self
-		             entryNamed: self baseClassName
-		             in: (data at: #classes).
+	baseEntry := self entryNamed: self baseClassName in: (data at: #classes).
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #classes) size equals: 2.
 	self assert: (baseEntry at: #packageName) equals: 'MCP-Tests'.
@@ -127,8 +122,7 @@ MCPToolSearchClassesTest >> testClassNamesSelectExactClassScope [
 				            self childClassName.
 				            self baseClassName }) }) } asDictionary.
 	data := self dataFrom: result.
-	classNames := (data at: #classes) collect: [ :each |
-		              each at: #className ].
+	classNames := (data at: #classes) collect: [ :each | each at: #className ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #classes) size equals: 2.
 	self assert: classNames equals: {
@@ -146,8 +140,7 @@ MCPToolSearchClassesTest >> testDefaultFilterAppliesToClassOnly [
 			          (#filterMode -> 'exact') } asDictionary.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	data := self dataFrom: result.
-	classNames := (data at: #classes) collect: [ :each |
-		              each at: #className ].
+	classNames := (data at: #classes) collect: [ :each | each at: #className ].
 	self assert: (data at: #classes) size equals: 1.
 	self assert: classNames equals: { self baseClassName } asArray
 ]
@@ -164,8 +157,7 @@ MCPToolSearchClassesTest >> testDirectionalScopesAreUnionedWithExactClassNames [
 			          (#className -> self fixturePrefix).
 			          (#filterMode -> 'prefix') } asDictionary.
 	data := self dataFrom: result.
-	classNames := (data at: #classes) collect: [ :each |
-		              each at: #className ].
+	classNames := (data at: #classes) collect: [ :each | each at: #className ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #classes) size equals: 3.
 	self assert: classNames equals: {
@@ -192,13 +184,11 @@ MCPToolSearchClassesTest >> testHierarchyClassNamesReturnRelatedClasses [
 
 	| classNames data result |
 	result := self callToolWith: {
-			          (self searchScope:
-				           { (#hierarchies -> { self childClassName }) }).
+			          (self searchScope: { (#hierarchies -> { self childClassName }) }).
 			          (#className -> self fixturePrefix).
 			          (#filterMode -> 'prefix') } asDictionary.
 	data := self dataFrom: result.
-	classNames := (data at: #classes) collect: [ :each |
-		              each at: #className ].
+	classNames := (data at: #classes) collect: [ :each | each at: #className ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #classes) size equals: 3.
 	self assert: classNames equals: {
@@ -212,13 +202,11 @@ MCPToolSearchClassesTest >> testHierarchyClassNamesSelectHierarchyScope [
 
 	| classNames data result |
 	result := self callToolWith: {
-			          (self searchScope:
-				           { (#hierarchies -> { self childClassName }) }).
+			          (self searchScope: { (#hierarchies -> { self childClassName }) }).
 			          (#className -> self fixturePrefix).
 			          (#filterMode -> 'prefix') } asDictionary.
 	data := self dataFrom: result.
-	classNames := (data at: #classes) collect: [ :each |
-		              each at: #className ].
+	classNames := (data at: #classes) collect: [ :each | each at: #className ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #classes) size equals: 3.
 	self assert: classNames equals: {
@@ -237,8 +225,7 @@ MCPToolSearchClassesTest >> testImageScopeCanFilterAndPaginate [
 			          (#limit -> 2).
 			          (#offset -> 1) } asDictionary.
 	data := self dataFrom: result.
-	classNames := (data at: #classes) collect: [ :each |
-		              each at: #className ].
+	classNames := (data at: #classes) collect: [ :each | each at: #className ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: classNames size equals: 2.
 	self deny: (data includesKey: #nextOffset).
@@ -256,14 +243,12 @@ MCPToolSearchClassesTest >> testMissingClassScopeReturnsPartialResultsAndWarning
 				            self missingClassName }) }) } asDictionary.
 	data := self dataFrom: result.
 	warnings := self warningsFrom: result.
-	classNames := (data at: #classes) collect: [ :each |
-		              each at: #className ].
+	classNames := (data at: #classes) collect: [ :each | each at: #className ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #classes) size equals: 1.
 	self assert: classNames equals: { self baseClassName } asArray.
 	self assert: warnings size equals: 1.
-	self assert:
-		(warnings first includesSubstring: self missingClassName)
+	self assert: (warnings first includesSubstring: self missingClassName)
 ]
 
 { #category : 'tests' }
@@ -277,8 +262,7 @@ MCPToolSearchClassesTest >> testMultipleScopesAreUnioned [
 			          (#className -> 'MCPToolSearchClasses').
 			          (#filterMode -> 'prefix') } asDictionary.
 	data := self dataFrom: result.
-	classNames := (data at: #classes) collect: [ :each |
-		              each at: #className ].
+	classNames := (data at: #classes) collect: [ :each | each at: #className ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #classes) size equals: 4.
 	self assert: classNames equals: {
@@ -296,8 +280,7 @@ MCPToolSearchClassesTest >> testPackageNamesReturnPackageClasses [
 			          (self searchScope: { (#packages -> #( 'MCP-Tests' )) }).
 			          (#className -> self fixturePrefix) } asDictionary.
 	data := self dataFrom: result.
-	classNames := (data at: #classes) collect: [ :each |
-		              each at: #className ].
+	classNames := (data at: #classes) collect: [ :each | each at: #className ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #classes) size equals: 3.
 	self assert: classNames equals: {
@@ -314,8 +297,7 @@ MCPToolSearchClassesTest >> testPackageNamesSelectPackageScope [
 			          (self searchScope: { (#packages -> #( 'MCP-Tests' )) }).
 			          (#className -> self fixturePrefix) } asDictionary.
 	data := self dataFrom: result.
-	classNames := (data at: #classes) collect: [ :each |
-		              each at: #className ].
+	classNames := (data at: #classes) collect: [ :each | each at: #className ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #classes) size equals: 3.
 	self assert: classNames equals: {
@@ -329,13 +311,11 @@ MCPToolSearchClassesTest >> testParentClassNamesReturnParentsOnly [
 
 	| classNames data result |
 	result := self callToolWith: {
-			          (self searchScope:
-				           { (#superclassesOf -> { self childClassName }) }).
+			          (self searchScope: { (#superclassesOf -> { self childClassName }) }).
 			          (#className -> self fixturePrefix).
 			          (#filterMode -> 'prefix') } asDictionary.
 	data := self dataFrom: result.
-	classNames := (data at: #classes) collect: [ :each |
-		              each at: #className ].
+	classNames := (data at: #classes) collect: [ :each | each at: #className ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #classes) size equals: 1.
 	self assert: classNames equals: { self baseClassName } asArray
@@ -345,18 +325,14 @@ MCPToolSearchClassesTest >> testParentClassNamesReturnParentsOnly [
 MCPToolSearchClassesTest >> testReturnsWarningsAndEmptyResultsWhenClassIsMissing [
 
 	| data result warnings |
-	result := self callToolWith:
-		          { (self searchScope:
-			           { (#classes -> { self missingClassName }) }) }
-			          asDictionary.
+	result := self callToolWith: { (self searchScope: { (#classes -> { self missingClassName }) }) } asDictionary.
 	data := self dataFrom: result.
 	warnings := self warningsFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #classes) size equals: 0.
 	self assert: (data at: #classes) isEmpty.
 	self assert: warnings size equals: 1.
-	self assert:
-		(warnings first includesSubstring: self missingClassName).
+	self assert: (warnings first includesSubstring: self missingClassName).
 	self assert: (warnings first includesSubstring: 'Did you mean:')
 ]
 
@@ -364,18 +340,14 @@ MCPToolSearchClassesTest >> testReturnsWarningsAndEmptyResultsWhenClassIsMissing
 MCPToolSearchClassesTest >> testReturnsWarningsAndEmptyResultsWhenPackageIsMissing [
 
 	| data result warnings |
-	result := self callToolWith:
-		          { (self searchScope:
-			           { (#packages -> #( 'MCP-Definitely-Missing' )) }) }
-			          asDictionary.
+	result := self callToolWith: { (self searchScope: { (#packages -> #( 'MCP-Definitely-Missing' )) }) } asDictionary.
 	data := self dataFrom: result.
 	warnings := self warningsFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #classes) size equals: 0.
 	self assert: (data at: #classes) isEmpty.
 	self assert: warnings size equals: 1.
-	self assert:
-		(warnings first includesSubstring: 'MCP-Definitely-Missing')
+	self assert: (warnings first includesSubstring: 'MCP-Definitely-Missing')
 ]
 
 { #category : 'tests' }
@@ -383,13 +355,11 @@ MCPToolSearchClassesTest >> testSubclassClassNamesReturnSubclassesOnly [
 
 	| classNames data result |
 	result := self callToolWith: {
-			          (self searchScope:
-				           { (#subclassesOf -> { self childClassName }) }).
+			          (self searchScope: { (#subclassesOf -> { self childClassName }) }).
 			          (#className -> self fixturePrefix).
 			          (#filterMode -> 'prefix') } asDictionary.
 	data := self dataFrom: result.
-	classNames := (data at: #classes) collect: [ :each |
-		              each at: #className ].
+	classNames := (data at: #classes) collect: [ :each | each at: #className ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #classes) size equals: 1.
 	self assert: classNames equals: { self grandchildClassName } asArray
@@ -398,9 +368,7 @@ MCPToolSearchClassesTest >> testSubclassClassNamesReturnSubclassesOnly [
 { #category : 'tests' }
 MCPToolSearchClassesTest >> testToolDoesNotRequireArgumentsInSchema [
 
-	self
-		assert: MCPToolSearchClasses new inputSchema required
-		equals: #(  )
+	self assert: MCPToolSearchClasses new inputSchema required equals: #(  )
 ]
 
 { #category : 'private - calling' }

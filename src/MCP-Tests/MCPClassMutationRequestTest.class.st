@@ -43,9 +43,7 @@ MCPClassMutationRequestTest >> testCreateRequestParsesDefinitionArguments [
 	self assert: request classSlotNames equals: #( 'defaultName' ).
 	self assert: request classSlots equals: #( #defaultName ).
 	self assert: request traits equals: #( 'TComparable' ).
-	self
-		assert: request classTraits
-		equals: #( 'TComparable classTrait' ).
+	self assert: request classTraits equals: #( 'TComparable classTrait' ).
 	self assert: request sharedVariables equals: #( 'Current' ).
 	self assert: request sharedPools equals: #( 'ChronologyConstants' ).
 	self assert: request layout equals: 'WeakLayout'.
@@ -69,16 +67,10 @@ MCPClassMutationRequestTest >> testUpdateCommandResolvesOmittedMovePackageName [
 	mutationRequest := tool parsedRequestFromToolRequest: request.
 	command := tool commandForRequest: mutationRequest.
 	context := command moveRequestedContext.
-	self
-		assert: command classRequest className
-		equals: self class name asString.
-	self
-		assert: command movePackageName
-		equals: self class packageName asString.
+	self assert: command classRequest className equals: self class name asString.
+	self assert: command movePackageName equals: self class packageName asString.
 	self assert: command classRequest tag equals: 'Requests'.
-	self
-		assert: (context at: #packageName)
-		equals: self class packageName asString
+	self assert: (context at: #packageName) equals: self class packageName asString
 ]
 
 { #category : 'tests' }
@@ -146,8 +138,7 @@ MCPClassMutationRequestTest >> testUpdateRequestWithNoPatchArgumentsHasNoUpdates
 	| context request tool |
 	tool := MCPToolUpdateClassSlots new.
 	request := MCPClassUpdateRequest
-		           fromRequest: (self toolRequestWithArguments:
-				            { (#className -> 'ExistingClass') } asDictionary)
+		           fromRequest: (self toolRequestWithArguments: { (#className -> 'ExistingClass') } asDictionary)
 		           tool: tool.
 	self assert: request className equals: 'ExistingClass'.
 	self deny: request hasUpdates.

@@ -19,10 +19,7 @@ Class {
 { #category : 'instance creation' }
 MCPRemoveClassesResult class >> removedClasses: someRemovedClasses removedPackageNames: somePackageNames [
 
-	^ self
-		  removedClasses: someRemovedClasses
-		  removedPackageNames: somePackageNames
-		  warningMessages: #(  )
+	^ self removedClasses: someRemovedClasses removedPackageNames: somePackageNames warningMessages: #(  )
 ]
 
 { #category : 'instance creation' }
@@ -40,15 +37,11 @@ MCPRemoveClassesResult >> asDictionary [
 
 	| data reparentedSubclassNames |
 	data := Dictionary new.
-	self removedPackageNames ifNotEmpty: [
-		data at: #removedPackageNames put: self removedPackageNames asArray ].
+	self removedPackageNames ifNotEmpty: [ data at: #removedPackageNames put: self removedPackageNames asArray ].
 	reparentedSubclassNames := Array streamContents: [ :stream |
-			                           self removedClasses do: [ :each |
-					                           each reparentedSubclassNames do: [
-						                           :subclassName |
-						                           stream nextPut: subclassName ] ] ].
-	reparentedSubclassNames ifNotEmpty: [
-		data at: #reparentedSubclassNames put: reparentedSubclassNames ].
+		                           self removedClasses do: [ :each |
+			                           each reparentedSubclassNames do: [ :subclassName | stream nextPut: subclassName ] ] ].
+	reparentedSubclassNames ifNotEmpty: [ data at: #reparentedSubclassNames put: reparentedSubclassNames ].
 	^ data
 ]
 
@@ -61,9 +54,7 @@ MCPRemoveClassesResult >> removedClasses [
 { #category : 'accessing' }
 MCPRemoveClassesResult >> removedClasses: aCollection [
 
-	removedClasses := aCollection
-		                  ifNil: [ #(  ) ]
-		                  ifNotNil: [ aCollection asArray ]
+	removedClasses := aCollection ifNil: [ #(  ) ] ifNotNil: [ aCollection asArray ]
 ]
 
 { #category : 'accessing' }
@@ -75,9 +66,7 @@ MCPRemoveClassesResult >> removedPackageNames [
 { #category : 'accessing' }
 MCPRemoveClassesResult >> removedPackageNames: aCollection [
 
-	removedPackageNames := aCollection
-		                       ifNil: [ #(  ) ]
-		                       ifNotNil: [ aCollection asArray ]
+	removedPackageNames := aCollection ifNil: [ #(  ) ] ifNotNil: [ aCollection asArray ]
 ]
 
 { #category : 'accessing' }
@@ -89,7 +78,5 @@ MCPRemoveClassesResult >> warningMessages [
 { #category : 'accessing' }
 MCPRemoveClassesResult >> warningMessages: aCollection [
 
-	warningMessages := aCollection
-		                   ifNil: [ #(  ) ]
-		                   ifNotNil: [ aCollection asArray ]
+	warningMessages := aCollection ifNil: [ #(  ) ] ifNotNil: [ aCollection asArray ]
 ]

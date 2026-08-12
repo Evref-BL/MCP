@@ -20,13 +20,10 @@ MCPToolCreateRepositoryBranch >> repositoryToolSpec [
 
 	^ {
 		  (#title -> 'Create Repository Branch').
-		  (#description
-		   ->
-		   'Create a branch from the current Iceberg repository head and switch to it.').
+		  (#description -> 'Create a branch from the current Iceberg repository head and switch to it.').
 		  (#action -> 'createBranch').
 		  (#requestClass -> MCPRepositoryCreateBranchRequest).
 		  (#commandClass -> MCPCreateRepositoryBranchCommand).
 		  (#inputProperties -> { self branchNameSchemaProperty }).
-		  (#requiredProperties -> #( 'repositoryName' 'branchName' )) }
-		  asDictionary
+		  (#requiredProperties -> #( 'repositoryName' 'branchName' )) } asDictionary
 ]

@@ -27,31 +27,12 @@ MCPToolListChangeHistoryEntries >> buildInputSchema [
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties: {
-				  (self
-					   schemaPropertyNamed: 'directoryPath'
-					   type: 'string'
-					   description: 'Optional .ombu directory.').
-				  (self
-					   schemaPropertyNamed: 'historyFileName'
-					   type: 'string'
-					   description:
-						   'Optional .ombu file name from history_file_list.').
-				  (self
-					   integerSchemaPropertyNamed: 'limit'
-					   description: 'Maximum entries.'
-					   default: self defaultEntryLimit).
-				  (self
-					   integerSchemaPropertyNamed: 'offset'
-					   description: 'Pagination offset.'
-					   default: 0).
-				  (self
-					   booleanSchemaPropertyNamed: 'newestFirst'
-					   description: 'Return newest entries first.'
-					   default: false).
-				  (self
-					   booleanSchemaPropertyNamed: 'codeChangesOnly'
-					   description: 'Include only code changes.'
-					   default: false) };
+				  (self schemaPropertyNamed: 'directoryPath' type: 'string' description: 'Optional .ombu directory.').
+				  (self schemaPropertyNamed: 'historyFileName' type: 'string' description: 'Optional .ombu file name from history_file_list.').
+				  (self integerSchemaPropertyNamed: 'limit' description: 'Maximum entries.' default: self defaultEntryLimit).
+				  (self integerSchemaPropertyNamed: 'offset' description: 'Pagination offset.' default: 0).
+				  (self booleanSchemaPropertyNamed: 'newestFirst' description: 'Return newest entries first.' default: false).
+				  (self booleanSchemaPropertyNamed: 'codeChangesOnly' description: 'Include only code changes.' default: false) };
 		  required: #(  );
 		  additionalProperties: false;
 		  yourself
@@ -61,28 +42,19 @@ MCPToolListChangeHistoryEntries >> buildInputSchema [
 MCPToolListChangeHistoryEntries >> buildOutputSchema [
 
 	| entriesProperty |
-	entriesProperty := self
-		                   changeHistoryEntryArraySchemaNamed: 'entries'
-		                   description: 'Change history entries.'.
+	entriesProperty := self changeHistoryEntryArraySchemaNamed: 'entries' description: 'Change history entries.'.
 	^ self
 		  standardOutputSchemaForDataProperties: {
-				  (self
-					   schemaPropertyNamed: 'historyFileName'
-					   type: 'string'
-					   description: 'Inspected history file name.').
+				  (self schemaPropertyNamed: 'historyFileName' type: 'string' description: 'Inspected history file name.').
 				  entriesProperty.
-				  (self
-					   integerSchemaPropertyNamed: 'nextOffset'
-					   description: 'Next page offset.') }
+				  (self integerSchemaPropertyNamed: 'nextOffset' description: 'Next page offset.') }
 		  required: #( 'entries' )
 ]
 
 { #category : 'private - execution' }
 MCPToolListChangeHistoryEntries >> commandForRequest: changeHistoryRequest [
 
-	^ MCPListChangeHistoryEntriesCommand
-		  tool: self
-		  request: changeHistoryRequest
+	^ MCPListChangeHistoryEntriesCommand tool: self request: changeHistoryRequest
 ]
 
 { #category : 'defaults' }

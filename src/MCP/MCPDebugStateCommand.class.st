@@ -16,11 +16,7 @@ MCPDebugStateCommand >> execute [
 
 	| record state warnings |
 	record := self sessionRecordWithMatchingState.
-	state := (MCPDebugStateInfo fromRecord: record request: request)
-		         asDictionary.
+	state := (MCPDebugStateInfo fromRecord: record request: request) asDictionary.
 	warnings := state at: #warnings ifAbsent: [ #(  ) ].
-	^ MCPDebugToolResult
-		  okSummary: 'Debug state captured for ' , record sessionId , '.'
-		  data: state
-		  warnings: warnings
+	^ MCPDebugToolResult okSummary: 'Debug state captured for ' , record sessionId , '.' data: state warnings: warnings
 ]

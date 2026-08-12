@@ -61,8 +61,7 @@ MCPMessageNotUnderstoodHandlerRule >> check: aMethod forCritiquesDo: aCriticBloc
 					aCriticBlock cull: (self
 							 createTrivialCritiqueOn: aMethod
 							 intervalOf: sendNode
-							 hint:
-							 'Use explicit dispatch or an MCP compatibility message instead of catching MessageNotUnderstood.') ] ]
+							 hint: 'Use explicit dispatch or an MCP compatibility message instead of catching MessageNotUnderstood.') ] ]
 ]
 
 { #category : 'private' }
@@ -71,8 +70,7 @@ MCPMessageNotUnderstoodHandlerRule >> isMessageNotUnderstoodHandlerSend: sendNod
 	| exceptionNode |
 	sendNode selector = #on:do: ifFalse: [ ^ false ].
 	exceptionNode := sendNode arguments first.
-	^ exceptionNode isVariable and: [
-		  exceptionNode name = self class forbiddenExceptionName ]
+	^ exceptionNode isVariable and: [ exceptionNode name = self class forbiddenExceptionName ]
 ]
 
 { #category : 'accessing' }

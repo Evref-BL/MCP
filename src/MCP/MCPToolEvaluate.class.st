@@ -35,8 +35,7 @@ MCPToolEvaluate >> buildInputSchema [
 		  properties: { (MCPStructureProperties new
 				   name: 'code';
 				   type: 'string';
-				   description:
-					   'The Smalltalk code to execute in the running Pharo image.';
+				   description: 'The Smalltalk code to execute in the running Pharo image.';
 				   yourself) };
 		  required: #( 'code' );
 		  yourself
@@ -47,27 +46,20 @@ MCPToolEvaluate >> buildOutputSchema [
 
 	^ self
 		  standardOutputSchemaForDataProperties: {
-				  (self
-					   schemaPropertyNamed: 'resultClassName'
-					   type: 'string'
-					   description: 'The name of the evaluated result''s class.').
+				  (self schemaPropertyNamed: 'resultClassName' type: 'string' description: 'The name of the evaluated result''s class.').
 				  (self
 					   schemaPropertyNamed: 'resultPrintString'
 					   type: 'string'
 					   description:
-						   'A printString preview of the evaluated result, limited to '
-						   , self resultPreviewCharacterLimit printString
-						   , ' characters.') }
+					   'A printString preview of the evaluated result, limited to ' , self resultPreviewCharacterLimit printString
+					   , ' characters.') }
 		  required: #( 'resultClassName' 'resultPrintString' )
 ]
 
 { #category : 'private - execution' }
 MCPToolEvaluate >> commandForRequest: evaluateRequest [
 
-	^ MCPEvaluateCommand
-		  tool: self
-		  request: evaluateRequest
-		  resultPreviewCharacterLimit: self resultPreviewCharacterLimit
+	^ MCPEvaluateCommand tool: self request: evaluateRequest resultPreviewCharacterLimit: self resultPreviewCharacterLimit
 ]
 
 { #category : 'metadata' }
@@ -89,22 +81,13 @@ MCPToolEvaluate >> executeWithRequest: request [
 		  executeParsedRequestFrom: request
 		  do: [ :evaluateRequest |
 				  | commandResult |
-				  commandResult := (self commandForRequest: evaluateRequest)
-					                   execute.
+				  commandResult := (self commandForRequest: evaluateRequest) execute.
 				  commandResult isError
-					  ifTrue: [
-							  self
-								  errorResultText: commandResult summary
-								  details: commandResult errorDetails ]
-					  ifFalse: [
-							  self
-								  successResultText: 'Code evaluated successfully.'
-								  data: commandResult data ] ]
+					  ifTrue: [ self errorResultText: commandResult summary details: commandResult errorDetails ]
+					  ifFalse: [ self successResultText: 'Code evaluated successfully.' data: commandResult data ] ]
 		  onError: [ :error :ignored |
 				  self
-					  errorResultText: (error messageText
-							   ifNil: [ error asString ]
-							   ifNotNil: [ :text | text ])
+					  errorResultText: (error messageText ifNil: [ error asString ] ifNotNil: [ :text | text ])
 					  details: (self errorDetailsFor: error) ]
 ]
 
@@ -124,9 +107,7 @@ MCPToolEvaluate >> resultPreviewCharacterLimit [
 MCPToolEvaluate >> runtimeFailureMessageFor: anError [
 
 	| message |
-	message := anError messageText
-		           ifNil: [ anError asString ]
-		           ifNotNil: [ :text | text asString ].
+	message := anError messageText ifNil: [ anError asString ] ifNotNil: [ :text | text asString ].
 	^ String streamContents: [ :stream |
 			  stream
 				  nextPutAll: 'Evaluation failed during execution (';

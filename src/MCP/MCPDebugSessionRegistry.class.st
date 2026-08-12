@@ -36,17 +36,13 @@ MCPDebugSessionRegistry class >> resetDefault [
 MCPDebugSessionRegistry >> hasDebugSession: aDebugSession [
 
 	aDebugSession ifNil: [ ^ false ].
-	^ sessions values anySatisfy: [ :record |
-		  record debugSession == aDebugSession ]
+	^ sessions values anySatisfy: [ :record | record debugSession == aDebugSession ]
 ]
 
 { #category : 'accessing' }
 MCPDebugSessionRegistry >> hasDebugger: aDebugger [
 
-	^ self
-		  recordForDebugger: aDebugger
-		  ifFound: [ :record | true ]
-		  ifAbsent: [ false ]
+	^ self recordForDebugger: aDebugger ifFound: [ :record | true ] ifAbsent: [ false ]
 ]
 
 { #category : 'initialization' }
@@ -67,9 +63,7 @@ MCPDebugSessionRegistry >> nextSessionId [
 { #category : 'accessing' }
 MCPDebugSessionRegistry >> recordForDebugSession: aDebugSession ifFound: foundBlock ifAbsent: absentBlock [
 
-	sessions valuesDo: [ :record |
-			record debugSession == aDebugSession ifTrue: [
-				^ foundBlock value: record ] ].
+	sessions valuesDo: [ :record | record debugSession == aDebugSession ifTrue: [ ^ foundBlock value: record ] ].
 	^ absentBlock value
 ]
 
@@ -77,8 +71,7 @@ MCPDebugSessionRegistry >> recordForDebugSession: aDebugSession ifFound: foundBl
 MCPDebugSessionRegistry >> recordForDebugger: aDebugger ifFound: foundBlock ifAbsent: absentBlock [
 
 	aDebugger ifNil: [ ^ absentBlock value ].
-	sessions valuesDo: [ :record |
-		record debugger == aDebugger ifTrue: [ ^ foundBlock value: record ] ].
+	sessions valuesDo: [ :record | record debugger == aDebugger ifTrue: [ ^ foundBlock value: record ] ].
 	^ absentBlock value
 ]
 
@@ -123,8 +116,7 @@ MCPDebugSessionRegistry >> sessionRecordAt: aSessionId ifAbsent: absentBlock [
 { #category : 'accessing' }
 MCPDebugSessionRegistry >> sessionRecords [
 
-	^ sessions values asArray sort: [ :left :right |
-		  left sessionId <= right sessionId ]
+	^ sessions values asArray sort: [ :left :right | left sessionId <= right sessionId ]
 ]
 
 { #category : 'accessing' }

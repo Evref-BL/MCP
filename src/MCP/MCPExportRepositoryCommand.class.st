@@ -19,31 +19,22 @@ MCPExportRepositoryCommand >> execute [
 				  repository := self request repository.
 				  tonelSnapshot := self snapshotTonelFilesFor: repository.
 				  self withNonInteractiveAuthorDuring: [
-					  self exportLoadedPackagesFrom: repository.
-					  restoredOrderOnlyPaths := self
-						                            restoreOrderOnlyTonelChurnFor:
-						                            repository
-						                            fromSnapshot: tonelSnapshot ].
+						  self exportLoadedPackagesFrom: repository.
+						  restoredOrderOnlyPaths := self restoreOrderOnlyTonelChurnFor: repository fromSnapshot: tonelSnapshot ].
 				  modifiedPaths := self modifiedPathsFromGitStatusIn: repository.
-				  changedPackageNames := self
-					                         changedPackageNamesForRepository: repository
-					                         modifiedPaths: modifiedPaths.
+				  changedPackageNames := self changedPackageNamesForRepository: repository modifiedPaths: modifiedPaths.
 				  self markLoadedPackagesCleanIn: repository workingCopy.
 				  result := (MCPRepositoryExportResult
 					             repository: repository
 					             changedPackageNames: changedPackageNames
 					             modifiedPaths: modifiedPaths)
 					            restoredOrderOnlyPaths: restoredOrderOnlyPaths;
-					            didChange:
-					            (changedPackageNames isNotEmpty or: [ modifiedPaths isNotEmpty ]);
+					            didChange: (changedPackageNames isNotEmpty or: [ modifiedPaths isNotEmpty ]);
 					            yourself ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText:
-					  'Exported repository ' , result repositoryInfo name , '.'
+					  successResultText: 'Exported repository ' , result repositoryInfo name , '.'
 					  data: (self tool dataForRepositoryResult: result)
 					  warnings: warningMessages ]
-		  failureSummary: [ :error |
-				  'Failed to export repository: '
-				  , (error messageText ifNil: [ error asString ]) ]
+		  failureSummary: [ :error | 'Failed to export repository: ' , (error messageText ifNil: [ error asString ]) ]
 ]

@@ -20,17 +20,13 @@ MCPRunTestsCommand >> addTestCasesFrom: aTestOrSuite to: testCases [
 { #category : 'private' }
 MCPRunTestsCommand >> aggregateDataForResults: resultEntries timedOut: timedOut unrunTests: unrunTests [
 
-	^ MCPRunTestsResult
-		  results: resultEntries
-		  timedOut: timedOut
-		  unrunTests: unrunTests
+	^ MCPRunTestsResult results: resultEntries timedOut: timedOut unrunTests: unrunTests
 ]
 
 { #category : 'private - coverage' }
 MCPRunTestsCommand >> coverableMethodsForCoverageRequest: aCoverageRequest [
 
-	^ (aCoverageRequest scopeQuery methods reject: [ :method |
-		   self shouldIgnoreMethodForCoverage: method ]) asArray
+	^ (aCoverageRequest scopeQuery methods reject: [ :method | self shouldIgnoreMethodForCoverage: method ]) asArray
 ]
 
 { #category : 'private - coverage' }
@@ -59,22 +55,16 @@ MCPRunTestsCommand >> execute [
 
 	| deadline validatedRequests |
 	validatedRequests := self validatedRequestsFrom: request testRequests.
-	deadline := self deadlineForTimeoutMilliseconds:
-		            request timeoutMilliseconds.
+	deadline := self deadlineForTimeoutMilliseconds: request timeoutMilliseconds.
 	^ request isCoverageOperation
-		  ifTrue: [
-			  self
-				  runCoverageForValidatedRequests: validatedRequests
-				  deadline: deadline ]
-		  ifFalse: [
-			  self runValidatedRequests: validatedRequests deadline: deadline ]
+		  ifTrue: [ self runCoverageForValidatedRequests: validatedRequests deadline: deadline ]
+		  ifFalse: [ self runValidatedRequests: validatedRequests deadline: deadline ]
 ]
 
 { #category : 'private - coverage' }
 MCPRunTestsCommand >> hasAllSequenceNodesCoveredIn: aCompiledMethod [
 
-	aCompiledMethod ast nodesDo: [ :node |
-		node isSequence ifTrue: [ node hasBeenExecuted ifFalse: [ ^ false ] ] ].
+	aCompiledMethod ast nodesDo: [ :node | node isSequence ifTrue: [ node hasBeenExecuted ifFalse: [ ^ false ] ] ].
 	^ true
 ]
 
@@ -93,43 +83,27 @@ MCPRunTestsCommand >> millisecondsRemainingUntil: deadline [
 { #category : 'private - coverage' }
 MCPRunTestsCommand >> partiallyCoveredMethodsFromCoverageResult: coverageResult [
 
-	^ (coverageResult methods select: [ :method |
-		   (self hasAllSequenceNodesCoveredIn: method) not ]) asArray
+	^ (coverageResult methods select: [ :method | (self hasAllSequenceNodesCoveredIn: method) not ]) asArray
 ]
 
 { #category : 'private' }
 MCPRunTestsCommand >> resultForValidatedRequest: validatedRequest deadline: deadline seenTestCaseNames: seenTestCaseNames [
 
 	| includeResult result resultInfo selectedTestCount testCases timedOutIndex unrunTestRequests |
-	testCases := self
-		             uniqueTestCasesForValidatedRequest: validatedRequest
-		             seenTestCaseNames: seenTestCaseNames.
+	testCases := self uniqueTestCasesForValidatedRequest: validatedRequest seenTestCaseNames: seenTestCaseNames.
 	selectedTestCount := testCases size.
 	result := MCPStructuredTestResult new.
 	timedOutIndex := nil.
 	testCases doWithIndex: [ :testCase :index |
-			timedOutIndex ifNil: [
-					(self runTestCase: testCase into: result deadline: deadline)
-						ifTrue: [ timedOutIndex := index ] ] ].
-	includeResult := self
-		                 shouldIncludeTestResult: result
-		                 selectedTestCount: selectedTestCount
-		                 timedOutIndex: timedOutIndex.
+		timedOutIndex ifNil: [ (self runTestCase: testCase into: result deadline: deadline) ifTrue: [ timedOutIndex := index ] ] ].
+	includeResult := self shouldIncludeTestResult: result selectedTestCount: selectedTestCount timedOutIndex: timedOutIndex.
 	resultInfo := includeResult ifTrue: [
-			              self
-				              testRunInfoForTestResult: result
-				              validatedRequest: validatedRequest
-				              selectedTestCount: selectedTestCount ].
-	unrunTestRequests := timedOutIndex ifNil: [ #(  ) ] ifNotNil: [
-			                     self
-				                     unrunRequestsForValidatedRequest:
-				                     validatedRequest
-				                     testCases: testCases
-				                     startingAt: timedOutIndex ].
-	^ MCPTestRunResult
-		  resultInfo: resultInfo
-		  timedOut: timedOutIndex notNil
-		  unrunTestRequests: unrunTestRequests
+		              self testRunInfoForTestResult: result validatedRequest: validatedRequest selectedTestCount: selectedTestCount ].
+	unrunTestRequests := timedOutIndex
+		                     ifNil: [ #(  ) ]
+		                     ifNotNil: [
+		                     self unrunRequestsForValidatedRequest: validatedRequest testCases: testCases startingAt: timedOutIndex ].
+	^ MCPTestRunResult resultInfo: resultInfo timedOut: timedOutIndex notNil unrunTestRequests: unrunTestRequests
 ]
 
 { #category : 'private - coverage' }
@@ -142,14 +116,11 @@ MCPRunTestsCommand >> runCoverageForValidatedRequests: validatedRequests deadlin
 	[
 		collector installOn: [
 				collector reset.
-				runResult := self
-					             runValidatedRequests: validatedRequests
-					             deadline: deadline.
+				runResult := self runValidatedRequests: validatedRequests deadline: deadline.
 				"Collect before resetting annotations so partial node coverage remains observable."
 				collector remapMethods.
 				coverageResult := collector basicCollectResult.
-				partialMethods := self partiallyCoveredMethodsFromCoverageResult:
-					                  coverageResult ] ] ensure: [ collector reset ].
+				partialMethods := self partiallyCoveredMethodsFromCoverageResult: coverageResult ] ] ensure: [ collector reset ].
 	runResult coverage: (MCPTestCoverageResult
 			 coverageResult: coverageResult
 			 includeCoveredMethods: coverageRequest includeCoveredMethods
@@ -177,35 +148,19 @@ MCPRunTestsCommand >> runValidatedRequests: validatedRequests deadline: deadline
 	seenTestCaseNames := Set new.
 	1 to: validatedRequests size do: [ :index |
 			(self hasTimedOutAt: deadline) ifTrue: [
-					unrunTests := self
-						              unrunTestsFrom: validatedRequests
-						              startingAt: index
-						              seenTestCaseNames: seenTestCaseNames.
-					^ self
-						  aggregateDataForResults: resultEntries
-						  timedOut: true
-						  unrunTests: unrunTests ].
+					unrunTests := self unrunTestsFrom: validatedRequests startingAt: index seenTestCaseNames: seenTestCaseNames.
+					^ self aggregateDataForResults: resultEntries timedOut: true unrunTests: unrunTests ].
 			outcome := self
-				           resultForValidatedRequest:
-				           (validatedRequests at: index)
+				           resultForValidatedRequest: (validatedRequests at: index)
 				           deadline: deadline
 				           seenTestCaseNames: seenTestCaseNames.
 			outcome hasResult ifTrue: [ resultEntries add: outcome resultInfo ].
 			outcome timedOut ifTrue: [
 					unrunTests := OrderedCollection new.
 					unrunTests addAll: outcome unrunTestRequests.
-					unrunTests addAll: (self
-							 unrunTestsFrom: validatedRequests
-							 startingAt: index + 1
-							 seenTestCaseNames: seenTestCaseNames).
-					^ self
-						  aggregateDataForResults: resultEntries
-						  timedOut: true
-						  unrunTests: unrunTests ] ].
-	^ self
-		  aggregateDataForResults: resultEntries
-		  timedOut: false
-		  unrunTests: #(  )
+					unrunTests addAll: (self unrunTestsFrom: validatedRequests startingAt: index + 1 seenTestCaseNames: seenTestCaseNames).
+					^ self aggregateDataForResults: resultEntries timedOut: true unrunTests: unrunTests ] ].
+	^ self aggregateDataForResults: resultEntries timedOut: false unrunTests: #(  )
 ]
 
 { #category : 'private - coverage' }
@@ -243,18 +198,15 @@ MCPRunTestsCommand >> testCaseDeduplicationKeyFor: aTestCase [
 MCPRunTestsCommand >> testCasesForPackageRequest: validatedRequest [
 
 	^ Array streamContents: [ :stream |
-			  (self testClassesInPackageNamed: validatedRequest packageName)
-				  do: [ :testClass |
-						  (self testCasesFromSuite: testClass suite) do: [ :testCase |
-							  stream nextPut: testCase ] ] ]
+			  (self testClassesInPackageNamed: validatedRequest packageName) do: [ :testClass |
+				  (self testCasesFromSuite: testClass suite) do: [ :testCase | stream nextPut: testCase ] ] ]
 ]
 
 { #category : 'private' }
 MCPRunTestsCommand >> testCasesForValidatedRequest: validatedRequest [
 
 	| suite testCases testMethodSelector |
-	validatedRequest isPackageRequest ifTrue: [
-		^ self testCasesForPackageRequest: validatedRequest ].
+	validatedRequest isPackageRequest ifTrue: [ ^ self testCasesForPackageRequest: validatedRequest ].
 	suite := validatedRequest testClass suite.
 	testCases := self testCasesFromSuite: suite.
 	validatedRequest testMethodName ifNotNil: [ :testMethodName |
@@ -276,21 +228,15 @@ MCPRunTestsCommand >> testCasesFromSuite: aSuite [
 MCPRunTestsCommand >> testClassesInPackageNamed: packageName [
 
 	| package |
-	package := MCPImageLookup
-		           packageNamed: packageName
-		           scopeName: 'packages'.
-	^ (package definedClasses select: [ :each |
-		   each isTestCase and: [ each isAbstract not ] ]) asArray sort: [
-		  :left
-		  :right | left name <= right name ]
+	package := MCPImageLookup packageNamed: packageName scopeName: 'packages'.
+	^ (package definedClasses select: [ :each | each isTestCase and: [ each isAbstract not ] ]) asArray sort: [ :left :right |
+		  left name <= right name ]
 ]
 
 { #category : 'private' }
 MCPRunTestsCommand >> testRequestForTestCase: aTestCase [
 
-	^ MCPTestRunRequest
-		  className: aTestCase class name asString
-		  testMethodName: aTestCase selector asString
+	^ MCPTestRunRequest className: aTestCase class name asString testMethodName: aTestCase selector asString
 ]
 
 { #category : 'private' }
@@ -318,8 +264,7 @@ MCPRunTestsCommand >> testRequestsForTestCases: testCases startingAt: startIndex
 
 	| requests |
 	requests := OrderedCollection new.
-	startIndex to: testCases size do: [ :index |
-		requests add: (self testRequestForTestCase: (testCases at: index)) ].
+	startIndex to: testCases size do: [ :index | requests add: (self testRequestForTestCase: (testCases at: index)) ].
 	^ requests asArray
 ]
 
@@ -327,13 +272,11 @@ MCPRunTestsCommand >> testRequestsForTestCases: testCases startingAt: startIndex
 MCPRunTestsCommand >> testRunInfoForTestResult: aResult validatedRequest: validatedRequest selectedTestCount: selectedTestCount [
 
 	| issues |
-	issues := (aResult issueDetails asArray sort: [ :left :right |
-		           (left at: #testName) <= (right at: #testName) ])
-		          collect: [ :each |
-				          | issue |
-				          issue := each copy.
-				          issue removeKey: #testName ifAbsent: [ ].
-				          issue ].
+	issues := (aResult issueDetails asArray sort: [ :left :right | (left at: #testName) <= (right at: #testName) ]) collect: [ :each |
+			          | issue |
+			          issue := each copy.
+			          issue removeKey: #testName ifAbsent: [ ].
+			          issue ].
 	^ MCPTestRunInfo
 		  validatedRequest: validatedRequest
 		  selectedTestCount: selectedTestCount
@@ -344,10 +287,7 @@ MCPRunTestsCommand >> testRunInfoForTestResult: aResult validatedRequest: valida
 { #category : 'private' }
 MCPRunTestsCommand >> uniqueTestCasesForValidatedRequest: validatedRequest seenTestCaseNames: seenTestCaseNames [
 
-	^ self
-		  uniqueTestCasesFrom:
-		  (self testCasesForValidatedRequest: validatedRequest)
-		  seenTestCaseNames: seenTestCaseNames
+	^ self uniqueTestCasesFrom: (self testCasesForValidatedRequest: validatedRequest) seenTestCaseNames: seenTestCaseNames
 ]
 
 { #category : 'private' }
@@ -369,12 +309,9 @@ MCPRunTestsCommand >> unrunRequestsForValidatedRequest: validatedRequest seenTes
 
 	| testCases uniqueTestCases |
 	testCases := self testCasesForValidatedRequest: validatedRequest.
-	uniqueTestCases := self
-		                   uniqueTestCasesFrom: testCases
-		                   seenTestCaseNames: seenTestCaseNames.
+	uniqueTestCases := self uniqueTestCasesFrom: testCases seenTestCaseNames: seenTestCaseNames.
 	uniqueTestCases ifEmpty: [ ^ #(  ) ].
-	(validatedRequest hasTestMethod not and: [
-		 uniqueTestCases size = testCases size ]) ifTrue: [
+	(validatedRequest hasTestMethod not and: [ uniqueTestCases size = testCases size ]) ifTrue: [
 		^ { validatedRequest testRunRequest } ].
 	^ self testRequestsForTestCases: uniqueTestCases startingAt: 1
 ]
@@ -382,10 +319,7 @@ MCPRunTestsCommand >> unrunRequestsForValidatedRequest: validatedRequest seenTes
 { #category : 'private' }
 MCPRunTestsCommand >> unrunRequestsForValidatedRequest: validatedRequest testCases: testCases startingAt: startIndex [
 
-	validatedRequest isPackageRequest ifTrue: [
-			^ self
-				  testRequestsByClassForTestCases: testCases
-				  startingAt: startIndex ].
+	validatedRequest isPackageRequest ifTrue: [ ^ self testRequestsByClassForTestCases: testCases startingAt: startIndex ].
 	^ self testRequestsForTestCases: testCases startingAt: startIndex
 ]
 
@@ -395,9 +329,7 @@ MCPRunTestsCommand >> unrunTestsFrom: validatedRequests startingAt: startIndex s
 	| unrun |
 	unrun := OrderedCollection new.
 	startIndex to: validatedRequests size do: [ :index |
-			unrun addAll: (self
-					 unrunRequestsForValidatedRequest: (validatedRequests at: index)
-					 seenTestCaseNames: seenTestCaseNames) ].
+		unrun addAll: (self unrunRequestsForValidatedRequest: (validatedRequests at: index) seenTestCaseNames: seenTestCaseNames) ].
 	^ unrun asArray
 ]
 
@@ -415,10 +347,6 @@ MCPRunTestsCommand >> validatedRequestsFrom: testRequests [
 						  each testMethodName ifNotNil: [ :testMethodName |
 								  testClass
 									  compiledMethodAt: testMethodName asSymbol
-									  ifAbsent: [
-											  MCPCommandError
-												  signalMissingMethodInClassName: each className
-												  classSide: false
-												  selector: testMethodName ] ].
+									  ifAbsent: [ MCPCommandError signalMissingMethodInClassName: each className classSide: false selector: testMethodName ] ].
 						  MCPValidatedTestRunRequest request: each testClass: testClass ] ]
 ]

@@ -53,8 +53,7 @@ MCPToolCallStats >> asDictionary [
 		  (#lastApproximateOutputTokens -> self lastApproximateOutputTokens).
 		  (#outputBudgetExceededCount -> self outputBudgetExceededCount).
 		  (#outputBudgetGuidance -> self outputBudgetGuidance).
-		  (#lastOutlierExplanation
-		   -> (self lastOutlierExplanation ifNil: [ '' ])) } asDictionary
+		  (#lastOutlierExplanation -> (self lastOutlierExplanation ifNil: [ '' ])) } asDictionary
 ]
 
 { #category : 'converting' }
@@ -64,22 +63,14 @@ MCPToolCallStats >> asMetricsDictionary [
 	dictionary := {
 		              (#toolName -> self toolName).
 		              (#callCount -> self callCount).
-		              (#averageMilliseconds
-		               -> self averageMilliseconds asFloat).
+		              (#averageMilliseconds -> self averageMilliseconds asFloat).
 		              (#maxMilliseconds -> self maxMilliseconds).
-		              (#averageOutputBytes
-		               -> self averageOutputBytes asFloat).
-		              (#maxOutputBytes -> self maxOutputBytes) }
-		              asDictionary.
-	self errorCount positive ifTrue: [
-		dictionary at: #errorCount put: self errorCount ].
-	self outputBudgetExceededCount positive ifTrue: [
-			dictionary
-				at: #outputBudgetExceededCount
-				put: self outputBudgetExceededCount ].
+		              (#averageOutputBytes -> self averageOutputBytes asFloat).
+		              (#maxOutputBytes -> self maxOutputBytes) } asDictionary.
+	self errorCount positive ifTrue: [ dictionary at: #errorCount put: self errorCount ].
+	self outputBudgetExceededCount positive ifTrue: [ dictionary at: #outputBudgetExceededCount put: self outputBudgetExceededCount ].
 	self lastOutlierExplanation ifNotNil: [ :explanation |
-			explanation isEmpty ifFalse: [
-				dictionary at: #lastOutlierExplanation put: explanation ] ].
+		explanation isEmpty ifFalse: [ dictionary at: #lastOutlierExplanation put: explanation ] ].
 	^ dictionary
 ]
 
@@ -244,8 +235,7 @@ MCPToolCallStats >> outputBudgetGuidance [
 			  stream
 				  nextPutAll: ' (max ';
 				  print: self maxOutputBytes;
-				  nextPutAll:
-					  ' bytes). Prefer pagination, handles, or summary-first output.' ]
+				  nextPutAll: ' bytes). Prefer pagination, handles, or summary-first output.' ]
 ]
 
 { #category : 'recording' }
@@ -260,18 +250,13 @@ MCPToolCallStats >> recordCall: aRecord [
 		ifTrue: [ successCount := self successCount + 1 ]
 		ifFalse: [ errorCount := self errorCount + 1 ].
 	totalMilliseconds := self totalMilliseconds + duration.
-	minMilliseconds := self minMilliseconds
-		                   ifNil: [ duration ]
-		                   ifNotNil: [ :current | current min: duration ].
-	maxMilliseconds := self maxMilliseconds
-		                   ifNil: [ duration ]
-		                   ifNotNil: [ :current | current max: duration ].
+	minMilliseconds := self minMilliseconds ifNil: [ duration ] ifNotNil: [ :current | current min: duration ].
+	maxMilliseconds := self maxMilliseconds ifNil: [ duration ] ifNotNil: [ :current | current max: duration ].
 	totalOutputBytes := self totalOutputBytes + outputBytes.
 	maxOutputBytes := self maxOutputBytes max: outputBytes.
 	lastOutputBytes := outputBytes.
 	lastApproximateOutputTokens := aRecord approximateOutputTokenCount.
-	aRecord outputBudgetExceeded ifTrue: [
-		outputBudgetExceededCount := self outputBudgetExceededCount + 1 ].
+	aRecord outputBudgetExceeded ifTrue: [ outputBudgetExceededCount := self outputBudgetExceededCount + 1 ].
 	lastMilliseconds := duration.
 	lastStartedAt := aRecord startedAt.
 	lastFinishedAt := aRecord finishedAt.

@@ -27,16 +27,11 @@ MCPAddSlotCommand >> execute [
 	refactoringBehavior := self refactoringBehaviorForClass: currentClass.
 	(self refactoringForBehavior: refactoringBehavior) execute.
 	updatedClass := Smalltalk globals at: self className asSymbol.
-	^ MCPSlotResult
-		  classInfo: (MCPClassInfo fromClass: updatedClass)
-		  slotName: self slotName
-		  classSide: self classSide
+	^ MCPSlotResult classInfo: (MCPClassInfo fromClass: updatedClass) slotName: self slotName classSide: self classSide
 ]
 
 { #category : 'private' }
 MCPAddSlotCommand >> refactoringForBehavior: aBehavior [
 
-	^ RBAddInstanceVariableRefactoring
-		  variable: self slotName
-		  class: aBehavior
+	^ RBAddInstanceVariableRefactoring variable: self slotName class: aBehavior
 ]

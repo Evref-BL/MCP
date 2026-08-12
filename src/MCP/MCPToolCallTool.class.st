@@ -27,16 +27,9 @@ MCPToolCallTool class >> toolName [
 MCPToolCallTool >> buildInputSchema [
 
 	| argumentsProperty toolNameProperty |
-	toolNameProperty := self
-		                    schemaPropertyNamed: 'toolName'
-		                    type: 'string'
-		                    description: 'The MCP tool name to invoke.'.
+	toolNameProperty := self schemaPropertyNamed: 'toolName' type: 'string' description: 'The MCP tool name to invoke.'.
 	toolNameProperty minLength: 1.
-	argumentsProperty := self
-		                     schemaPropertyNamed: 'arguments'
-		                     type: 'object'
-		                     description:
-		                     'Arguments passed to the selected tool.'.
+	argumentsProperty := self schemaPropertyNamed: 'arguments' type: 'object' description: 'Arguments passed to the selected tool.'.
 	argumentsProperty additionalProperties: true.
 	^ MCPStructureInputSchema new
 		  type: 'object';
@@ -55,15 +48,11 @@ MCPToolCallTool >> buildOutputSchema [
 	resultProperty := self
 		                  schemaPropertyNamed: 'result'
 		                  type: 'object'
-		                  description:
-		                  'The target tool result when tool_call is executed outside the MCP server call path.'.
+		                  description: 'The target tool result when tool_call is executed outside the MCP server call path.'.
 	resultProperty additionalProperties: true.
 	^ self
 		  standardOutputSchemaForDataProperties: {
-				  (self
-					   schemaPropertyNamed: 'targetToolName'
-					   type: 'string'
-					   description: 'The selected target tool name.').
+				  (self schemaPropertyNamed: 'targetToolName' type: 'string' description: 'The selected target tool name.').
 				  resultProperty }
 		  required: #( 'targetToolName' 'result' )
 ]
@@ -92,9 +81,9 @@ MCPToolCallTool >> executeWithRequest: request [
 	^ self
 		  executeParsedRequestFrom: request
 		  do: [ :callRequest |
-				  self
-					  errorResultText: 'tool_call requires MCP server call context.'
-					  details: { (#toolName -> callRequest toolName) } asDictionary ]
+			  self
+				  errorResultText: 'tool_call requires MCP server call context.'
+				  details: { (#toolName -> callRequest toolName) } asDictionary ]
 		  onError: [ :error :parsedRequest | self errorResultFor: error ]
 ]
 
