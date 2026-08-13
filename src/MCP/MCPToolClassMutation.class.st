@@ -44,12 +44,6 @@ MCPToolClassMutation >> buildOutputSchema [
 ]
 
 { #category : 'private - schema' }
-MCPToolClassMutation >> classCommentSchemaProperty [
-
-	^ self schemaPropertyNamed: 'classComment' type: 'string' description: 'Class comment; empty clears.'
-]
-
-{ #category : 'private - schema' }
 MCPToolClassMutation >> classNameSchemaProperty [
 
 	^ self schemaPropertyNamed: 'className' type: 'string' description: 'Class name.'
@@ -80,6 +74,12 @@ MCPToolClassMutation >> classToolSpec [
 MCPToolClassMutation >> classTraitsSchemaProperty [
 
 	^ self stringArraySchemaNamed: 'classTraits' description: 'Class-side traits; empty array clears.' itemDescription: 'Trait name.'
+]
+
+{ #category : 'private - schema' }
+MCPToolClassMutation >> commentSchemaProperty [
+
+	^ self schemaPropertyNamed: 'comment' type: 'string' description: 'Class comment; empty clears.'
 ]
 
 { #category : 'private' }

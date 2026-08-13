@@ -52,7 +52,7 @@ MCPClassUpdateRequest >> classComment [
 MCPClassUpdateRequest >> classCommentFromRequest: request [
 
 	| value |
-	value := request argumentNamed: 'classComment' ifAbsent: [ ^ nil ].
+	value := request argumentNamed: 'comment' ifAbsent: [ ^ nil ].
 	^ value ifNil: [ '' ] ifNotNil: [ value asString ]
 ]
 
@@ -105,7 +105,7 @@ MCPClassUpdateRequest >> contextValueForPropertyNamed: propertyName [
 	propertyName = 'superclassName' ifTrue: [ ^ self superclassName ].
 	propertyName = 'packageName' ifTrue: [ ^ self packageName ].
 	propertyName = 'tag' ifTrue: [ ^ self tag ifNil: [ '' ] ].
-	propertyName = 'classComment' ifTrue: [ ^ self classComment ifNil: [ '' ] ].
+	propertyName = 'comment' ifTrue: [ ^ self classComment ifNil: [ '' ] ].
 	propertyName = 'slots' ifTrue: [ ^ self slotNames ].
 	propertyName = 'classSlots' ifTrue: [ ^ self classSlotNames ].
 	propertyName = 'traits' ifTrue: [ ^ self traitNames ].
@@ -170,7 +170,7 @@ MCPClassUpdateRequest >> initializeFromRequest: request [
 	superclassName := request stringArgumentNamed: 'superclassName'.
 	packageName := request stringArgumentNamed: 'packageName'.
 	tag := request stringArgumentNamed: 'tag'.
-	classComment := (self hasSuppliedPropertyNamed: 'classComment') ifTrue: [ self classCommentFromRequest: request ].
+	classComment := (self hasSuppliedPropertyNamed: 'comment') ifTrue: [ self classCommentFromRequest: request ].
 	force := request booleanArgumentNamed: 'force' default: false.
 	slotNames := request stringCollectionArgumentNamed: 'slots'.
 	classSlotNames := request stringCollectionArgumentNamed: 'classSlots'.
@@ -182,8 +182,7 @@ MCPClassUpdateRequest >> initializeFromRequest: request [
 	slotName := request stringArgumentNamed: 'slotName'.
 	newSlotName := request stringArgumentNamed: 'newSlotName'.
 	slotAction := request stringArgumentNamed: 'slotAction'.
-	classSide := request booleanArgumentNamed: 'classSide' default: false.
-	^ self
+	classSide := request booleanArgumentNamed: 'classSide' default: false
 ]
 
 { #category : 'accessing' }
@@ -245,7 +244,7 @@ MCPClassUpdateRequest >> requestedClassUpdateActions [
 	(self hasSuppliedPropertyNamed: 'newClassName') ifTrue: [ actions add: 'rename' ].
 	(self hasSuppliedPropertyNamed: 'superclassName') ifTrue: [ actions add: 'reparent' ].
 	((self hasSuppliedPropertyNamed: 'packageName') or: [ self hasSuppliedPropertyNamed: 'tag' ]) ifTrue: [ actions add: 'move' ].
-	(self hasSuppliedPropertyNamed: 'classComment') ifTrue: [ actions add: 'setComment' ].
+	(self hasSuppliedPropertyNamed: 'comment') ifTrue: [ actions add: 'setComment' ].
 	(self hasSuppliedPropertyNamed: 'traits') ifTrue: [ actions add: 'replaceTraits' ].
 	(self hasSuppliedPropertyNamed: 'classTraits') ifTrue: [ actions add: 'replaceClassTraits' ].
 	(self hasSuppliedPropertyNamed: 'sharedVariables') ifTrue: [ actions add: 'replaceSharedVariables' ].
@@ -383,7 +382,7 @@ MCPClassUpdateRequest >> traits [
 { #category : 'private - request' }
 MCPClassUpdateRequest >> updatePropertyNames [
 
-	^ #( 'newClassName' 'superclassName' 'packageName' 'tag' 'classComment' 'slots' 'classSlots' 'traits' 'classTraits' 'sharedVariables'
+	^ #( 'newClassName' 'superclassName' 'packageName' 'tag' 'comment' 'slots' 'classSlots' 'traits' 'classTraits' 'sharedVariables'
 	     'sharedPools' 'layout' 'slotAction' 'slotName' 'newSlotName' )
 ]
 

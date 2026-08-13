@@ -42,7 +42,7 @@ MCPClassCreateRequest >> classComment [
 MCPClassCreateRequest >> classCommentFromRequest: request [
 
 	| value |
-	value := request argumentNamed: 'classComment' ifAbsent: [ ^ nil ].
+	value := request argumentNamed: 'comment' ifAbsent: [ ^ nil ].
 	^ value ifNil: [ '' ] ifNotNil: [ value asString ]
 ]
 
@@ -95,7 +95,7 @@ MCPClassCreateRequest >> initializeFromRequest: request [
 	superclassName := request stringArgumentNamed: 'superclassName'.
 	packageName := request stringArgumentNamed: 'packageName'.
 	tag := request stringArgumentNamed: 'tag'.
-	classComment := (request hasArgumentNamed: 'classComment') ifTrue: [ self classCommentFromRequest: request ].
+	classComment := (request hasArgumentNamed: 'comment') ifTrue: [ self classCommentFromRequest: request ].
 	force := request booleanArgumentNamed: 'force' default: false.
 	slotNames := request stringCollectionArgumentNamed: 'slots'.
 	classSlotNames := request stringCollectionArgumentNamed: 'classSlots'.
@@ -103,8 +103,7 @@ MCPClassCreateRequest >> initializeFromRequest: request [
 	classTraitNames := request stringCollectionArgumentNamed: 'classTraits'.
 	sharedVariableNames := request stringCollectionArgumentNamed: 'sharedVariables'.
 	sharedPoolNames := request stringCollectionArgumentNamed: 'sharedPools'.
-	layout := request stringArgumentNamed: 'layout'.
-	^ self
+	layout := request stringArgumentNamed: 'layout'
 ]
 
 { #category : 'accessing' }
@@ -127,7 +126,7 @@ MCPClassCreateRequest >> requestedContext [
 		  (#superclassName -> self superclassName).
 		  (#packageName -> self packageName).
 		  (#tag -> (self tag ifNil: [ '' ])).
-		  (#classComment -> (self classComment ifNil: [ '' ])).
+		  (#comment -> (self classComment ifNil: [ '' ])).
 		  (#slots -> self slotNames).
 		  (#classSlots -> self classSlotNames).
 		  (#traits -> self traitNames).

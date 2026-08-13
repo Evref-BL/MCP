@@ -21,7 +21,7 @@ MCPClassMutationRequestTest >> testCreateRequestParsesDefinitionArguments [
 						            (#superclassName -> 'Object').
 						            (#packageName -> 'MCP-Generated').
 						            (#tag -> 'Models').
-						            (#classComment -> 'Generated comment.').
+						            (#comment -> 'Generated comment.').
 						            (#force -> true).
 						            (#slots -> #( 'firstName' 'lastName' )).
 						            (#classSlots -> #( 'defaultName' )).
@@ -50,7 +50,7 @@ MCPClassMutationRequestTest >> testCreateRequestParsesDefinitionArguments [
 	context := request requestedContext.
 	self assert: (context at: #className) equals: 'MCPGeneratedClass'.
 	self assert: (context at: #slots) equals: #( 'firstName' 'lastName' ).
-	self assert: (context at: #classComment) equals: 'Generated comment.'
+	self assert: (context at: #comment) equals: 'Generated comment.'
 ]
 
 { #category : 'tests' }
@@ -110,7 +110,7 @@ MCPClassMutationRequestTest >> testUpdateRequestTracksSuppliedProperties [
 		           fromRequest: (self toolRequestWithArguments: {
 					            (#className -> 'ExistingClass').
 					            (#tag -> 'Models').
-					            (#classComment -> '').
+					            (#comment -> '').
 					            (#force -> true).
 					            (#slots -> #(  )) } asDictionary)
 		           tool: tool.
@@ -120,14 +120,14 @@ MCPClassMutationRequestTest >> testUpdateRequestTracksSuppliedProperties [
 	self assert: request force.
 	self assert: request hasUpdates.
 	self assert: (request hasSuppliedPropertyNamed: 'tag').
-	self assert: (request hasSuppliedPropertyNamed: 'classComment').
+	self assert: (request hasSuppliedPropertyNamed: 'comment').
 	self assert: (request hasSuppliedPropertyNamed: 'slots').
 	self deny: (request hasSuppliedPropertyNamed: 'classSlots').
 	self assert: request slotNames isEmpty.
 	context := request requestedContext.
 	self assert: (context at: #className) equals: 'ExistingClass'.
 	self assert: (context at: #tag) equals: 'Models'.
-	self assert: (context at: #classComment) equals: ''.
+	self assert: (context at: #comment) equals: ''.
 	self assert: (context at: #slots) equals: #(  ).
 	self deny: (context includesKey: #classSlots)
 ]

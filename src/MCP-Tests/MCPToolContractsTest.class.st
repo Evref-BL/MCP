@@ -318,7 +318,7 @@ MCPToolContractsTest >> classMutationToolFlowSpecs [
 			  (#toolClass -> MCPToolUpdateClassComment).
 			  (#arguments -> {
 				   (#className -> 'Object').
-				   (#classComment -> '') } asDictionary).
+				   (#comment -> '') } asDictionary).
 			  (#requestClass -> MCPClassUpdateRequest).
 			  (#commandClass -> MCPUpdateClassCommand) } asDictionary.
 		  {
@@ -984,7 +984,7 @@ MCPToolContractsTest >> testClassMutationToolsHaveAccurateNamesAndRequiredArgume
 			self deny: (propertyNames includes: 'operation') ].
 	self assert: MCPToolCreateClass new inputSchema required asSet equals: #( 'className' 'superclassName' 'packageName' ) asSet.
 	self assert: MCPToolUpdateClassName new inputSchema required asSet equals: #( 'className' 'newClassName' ) asSet.
-	self assert: MCPToolUpdateClassComment new inputSchema required asSet equals: #( 'className' 'classComment' ) asSet.
+	self assert: MCPToolUpdateClassComment new inputSchema required asSet equals: #( 'className' 'comment' ) asSet.
 	self assert: MCPToolUpdateClassSlotName new inputSchema required asSet equals: #( 'className' 'slotName' 'newSlotName' ) asSet.
 	packagePropertyNames := MCPToolUpdateClassPackage new inputSchema properties collect: [ :each | each name ].
 	slotsPropertyNames := MCPToolUpdateClassSlots new inputSchema properties collect: [ :each | each name ].

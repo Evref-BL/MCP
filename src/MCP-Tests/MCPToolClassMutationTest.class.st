@@ -25,11 +25,13 @@ MCPToolClassMutationTest >> assertIncludesReferencedSlotWarning: warningMessages
 { #category : 'private - calling' }
 MCPToolClassMutationTest >> callToolWith: someArguments [
 
-	| arguments request result slotAction tool toolClass |
+	| action arguments request result slotAction tool toolClass |
 	arguments := someArguments copy.
-	arguments removeKey: #action ifAbsent: [ ].
+	action := arguments removeKey: #action ifAbsent: [ nil ].
 	slotAction := arguments removeKey: #slotAction ifAbsent: [ nil ].
-	toolClass := self classToolClassForArguments: arguments slotAction: slotAction.
+	toolClass := action = 'create'
+		             ifTrue: [ MCPToolCreateClass ]
+		             ifFalse: [ self classToolClassForArguments: arguments slotAction: slotAction ].
 	tool := toolClass new.
 	request := tool requestFromToolCallArguments: arguments.
 	result := tool executeWithRequest: request.
@@ -46,7 +48,7 @@ MCPToolClassMutationTest >> classToolClassForArguments: arguments slotAction: sl
 	slotAction = 'pullUp' ifTrue: [ ^ MCPToolPullUpClassSlot ].
 	slotAction = 'pushDown' ifTrue: [ ^ MCPToolPushDownClassSlot ].
 	(arguments includesKey: #newClassName) ifTrue: [ ^ MCPToolUpdateClassName ].
-	(arguments includesKey: #classComment) ifTrue: [ ^ MCPToolUpdateClassComment ].
+	(arguments includesKey: #comment) ifTrue: [ ^ MCPToolUpdateClassComment ].
 	(arguments includesKey: #traits) ifTrue: [ ^ MCPToolUpdateClassTraits ].
 	(arguments includesKey: #classTraits) ifTrue: [ ^ MCPToolUpdateClassSideTraits ].
 	(arguments includesKey: #sharedVariables) ifTrue: [ ^ MCPToolUpdateClassSharedVariables ].
@@ -266,7 +268,7 @@ MCPToolClassMutationTest >> testClassToolSchemasDeclareExpectedInputs [
 	self
 		assert: createProperties asArray
 		equals: #( 'className' 'superclassName' 'packageName' 'tag' 'slots' 'classSlots' 'traits' 'classTraits' 'sharedVariables'
-			   'sharedPools' 'layout' 'classComment' ).
+			   'sharedPools' 'layout' 'comment' ).
 	self assert: MCPToolCreateClass new inputSchema required asSet equals: #( 'className' 'superclassName' 'packageName' ) asSet.
 	self
 		assert: renameProperties asArray
@@ -434,7 +436,7 @@ MCPToolClassMutationTest >> testCreateSetsClassComment [
 		             createRequestArgumentsForClassName: 'MCPToolClassMutationTestCommented'
 		             superclassName: 'Object'
 		             packageName: self generatedPackageName.
-	arguments at: #classComment put: 'Created with a comment.'.
+	arguments at: #comment put: 'Created with a comment.'.
 	result := self callToolWith: arguments.
 	data := self dataFrom: result.
 	createdClass := self classNamed: 'MCPToolClassMutationTestCommented'.
@@ -1301,7 +1303,7 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenCommentClassIsMi
 	result := self callToolWith: {
 			          (#action -> 'update').
 			          (#className -> 'MCPToolClassMutationTestMissing').
-			          (#classComment -> 'ignored') } asDictionary.
+			          (#comment -> 'ignored') } asDictionary.
 	error := self errorFrom: result.
 	suggestions := error at: #suggestions.
 	self assert: (result at: #isError).
@@ -1593,7 +1595,7 @@ MCPToolClassMutationTest >> updateRequestArgumentsForClassComment: aClassComment
 	^ {
 		  (#action -> 'update').
 		  (#className -> self commentTargetClassName).
-		  (#classComment -> aClassComment) } asDictionary
+		  (#comment -> aClassComment) } asDictionary
 ]
 
 { #category : 'private - update' }
