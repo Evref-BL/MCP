@@ -33,7 +33,11 @@ BaselineOfMCP >> defineDependencies: spec [
 		baseline: 'PCRE2' with: [
 			spec
 				repository: 'github://Gabriel-Darbord/pharo-pcre2:v1.0.0/src';
-				loads: #( 'Core' ) ]
+				loads: #( 'Core' ) ];
+		baseline: 'OpenTelemetry' with: [
+			spec
+				repository: 'github://Gabriel-Darbord/opentelemetry-pharo:main/src';
+				loads: #( 'traces' 'metrics' 'logs' ) ]
 ]
 
 { #category : 'baselines' }
@@ -42,6 +46,7 @@ BaselineOfMCP >> defineGroups: spec [
 	spec
 		group: 'Core' with: #( 'MCP' );
 		group: 'UI' with: #( 'MCP-UI' );
+		group: 'OpenTelemetry' with: #( 'MCP-OpenTelemetry' );
 		group: 'Tests' with: #( 'MCP-Tests-Resources' 'MCP-Tests-RunResources' 'MCP-Tests' 'MCP-Tests-Resources-Extensions' );
 		group: 'UI Tests' with: #( 'MCP-UI-Tests' );
 		group: 'default' with: #( 'Core' 'UI' 'Tests' 'UI Tests' )
@@ -53,6 +58,7 @@ BaselineOfMCP >> definePackages: spec [
 
 	spec package: 'MCP' with: [ spec requires: #( 'PharoCompatibility' 'JRPC' 'TinyLogger' 'PCRE2' ) ].
 	spec package: 'MCP-UI' with: [ spec requires: #( 'MCP' ) ].
+	spec package: 'MCP-OpenTelemetry' with: [ spec requires: #( 'MCP' 'OpenTelemetry' ) ].
 	spec package: 'MCP-Tests-Resources' with: [ spec requires: #( 'MCP' ) ].
 	spec package: 'MCP-Tests-RunResources' with: [ spec requires: #( 'MCP-Tests-Resources' ) ].
 	spec package: 'MCP-Tests' with: [ spec requires: #( 'MCP' 'MCP-Tests-Resources' 'MCP-Tests-RunResources' ) ].

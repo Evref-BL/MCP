@@ -3,7 +3,7 @@ Runtime observability state for an MCP server. When enabled, it records TinyLogg
 "
 Class {
 	#name : 'MCPMonitoringState',
-	#superclass : 'Object',
+	#superclass : 'MCPObservabilityBackend',
 	#instVars : [
 		'enabled',
 		'logger',
@@ -30,14 +30,15 @@ Class {
 { #category : 'defaults' }
 MCPMonitoringState class >> defaultExportDirectory [
 
-	^ FileLocator home asFileReference / 'pharo-mcp-observability'
+	^ Smalltalk imageFile asFileReference parent / 'pharo-local' / 'mcp' / 'observability'
 ]
 
 { #category : 'private' }
 MCPMonitoringState >> addRecentCall: aRecord [
 
 	self recentCalls addFirst: aRecord.
-	[ self recentCalls size > self maxRecentCalls ] whileTrue: [ self recentCalls removeLast ]
+	[ self recentCalls size > self maxRecentCalls ] whileTrue: [
+		self recentCalls removeLast ]
 ]
 
 { #category : 'private - budgets' }
@@ -53,11 +54,13 @@ MCPMonitoringState >> approximateOutputBytesForObject: anObject [
 { #category : 'private - budgets' }
 MCPMonitoringState >> approximateOutputBytesForResult: aToolResult error: anError [
 
-	aToolResult ifNotNil: [ ^ self approximateOutputBytesForObject: aToolResult asJRPCJSON ].
+	aToolResult ifNotNil: [
+		^ self approximateOutputBytesForObject: aToolResult asJRPCJSON ].
 	anError ifNil: [ ^ 0 ].
 	^ self approximateOutputBytesForObject: {
 			  (#errorClass -> anError class name asString).
-			  (#message -> (anError messageText ifNil: [ anError asString ])) } asDictionary
+			  (#message -> (anError messageText ifNil: [ anError asString ])) }
+			  asDictionary
 ]
 
 { #category : 'private - budgets' }
@@ -73,8 +76,10 @@ MCPMonitoringState >> captureTraceSnapshotsFor: aRecord result: aToolResult erro
 		[
 			aRecord isTraceWorthy
 				ifTrue: [
-						aRecord inputSnapshot: (self traceSnapshotFor: aRecord inputObject).
-						aRecord outputSnapshot: (self traceSnapshotForResult: aToolResult error: anError) ]
+						aRecord inputSnapshot:
+							(self traceSnapshotFor: aRecord inputObject).
+						aRecord outputSnapshot:
+							(self traceSnapshotForResult: aToolResult error: anError) ]
 				ifFalse: [
 						aRecord inputSnapshot: nil.
 						aRecord outputSnapshot: nil ] ]
@@ -83,8 +88,11 @@ MCPMonitoringState >> captureTraceSnapshotsFor: aRecord result: aToolResult erro
 					aRecord inputSnapshot: nil.
 					aRecord outputSnapshot: (self traceSnapshotFor: {
 								 (#errorClass -> snapshotError class name asString).
-								 (#message -> (snapshotError messageText ifNil: [ snapshotError asString ])).
-								 (#during -> 'trace snapshot creation') } asDictionary) ] ] ensure: [ aRecord inputObject: nil ]
+								 (#message
+								  ->
+								  (snapshotError messageText ifNil: [ snapshotError asString ])).
+								 (#during -> 'trace snapshot creation') } asDictionary) ] ]
+		ensure: [ aRecord inputObject: nil ]
 ]
 
 { #category : 'clearing' }
@@ -147,7 +155,9 @@ MCPMonitoringState >> enabled: aBoolean [
 { #category : 'private - exporting' }
 MCPMonitoringState >> ensureLogFileLogger [
 
-	logFileLogger ifNil: [ logFileLogger := MCPJSONLineFileTinyLogger named: self logFileReference pathString ].
+	logFileLogger ifNil: [
+			logFileLogger := MCPJSONLineFileTinyLogger named:
+				                 self logFileReference pathString ].
 	^ logFileLogger
 ]
 
@@ -164,7 +174,9 @@ MCPMonitoringState >> ensureLogger [
 { #category : 'private - tracing' }
 MCPMonitoringState >> ensureTraceLogger [
 
-	traceLogger ifNil: [ traceLogger := MCPJSONLineFileTinyLogger named: self traceFileReference pathString ].
+	traceLogger ifNil: [
+			traceLogger := MCPJSONLineFileTinyLogger named:
+				               self traceFileReference pathString ].
 	^ traceLogger
 ]
 
@@ -173,6 +185,15 @@ MCPMonitoringState >> errorClassNameFor: anError [
 
 	anError ifNil: [ ^ '' ].
 	^ anError class name asString
+]
+
+{ #category : 'private - tracing' }
+MCPMonitoringState >> eventKindsForRecord: aRecord [
+
+	^ Array streamContents: [ :stream |
+			  aRecord status = 'error' ifTrue: [ stream nextPut: 'error' ].
+			  aRecord outputBudgetExceeded ifTrue: [ stream nextPut: 'output_budget_exceeded' ].
+			  aRecord outlierExplanation ifNotEmpty: [ :ignored | stream nextPut: 'duration_outlier' ] ]
 ]
 
 { #category : 'accessing' }
@@ -202,7 +223,8 @@ MCPMonitoringState >> exportInstanceDirectory [
 	| directory |
 	self exportEnabled ifFalse: [ ^ nil ].
 	exportInstanceDirectory ifNil: [
-			directory := self exportDirectory / self exportInstanceDirectoryName.
+			directory := self exportDirectory
+			             / self exportInstanceDirectoryName.
 			directory ensureCreateDirectory.
 			exportInstanceDirectory := directory.
 			self writeResourceMetadata ].
@@ -232,7 +254,9 @@ MCPMonitoringState >> exportInstanceDirectoryName [
 MCPMonitoringState >> exportLogMessage: aString timestamp: timestamp [
 
 	self exportEnabled ifFalse: [ ^ self ].
-	[ self ensureLogFileLogger record: (self logRecordJSONFor: aString timestamp: timestamp) ]
+	[
+		self ensureLogFileLogger record:
+			(self logRecordJSONFor: aString timestamp: timestamp) ]
 		on: Error
 		do: [ :ignored | nil ]
 ]
@@ -249,10 +273,18 @@ MCPMonitoringState >> exportMetrics [
 { #category : 'private - tracing' }
 MCPMonitoringState >> exportTraceRecord: aRecord [
 
-	(self exportEnabled and: [ aRecord isTraceWorthy ]) ifFalse: [ ^ self ].
+	(self exportEnabled and: [ aRecord isTraceWorthy ]) ifFalse: [
+		^ self ].
 	[ self ensureTraceLogger record: (self traceRecordJSONFor: aRecord) ]
 		on: Error
-		do: [ :error | self recordLog: 'Trace export failed: ' , error class name asString ]
+		do: [ :error |
+			self recordLog: 'Trace export failed: ' , error class name asString ]
+]
+
+{ #category : 'actions' }
+MCPMonitoringState >> forceFlush [
+
+	self exportMetrics
 ]
 
 { #category : 'initialization' }
@@ -270,12 +302,19 @@ MCPMonitoringState >> initialize [
 	self ensureLogger
 ]
 
+{ #category : 'testing' }
+MCPMonitoringState >> isNoop [
+
+	^ false
+]
+
 { #category : 'private - tracing' }
 MCPMonitoringState >> isSensitiveTraceKey: aKey [
 
 	| lowerKey |
 	lowerKey := aKey asString asLowercase.
-	^ #( 'password' 'passphrase' 'token' 'secret' 'credential' 'authorization' 'apikey' 'api_key' ) anySatisfy: [ :term |
+	^ #( 'password' 'passphrase' 'token' 'secret' 'credential'
+	     'authorization' 'apikey' 'api_key' ) anySatisfy: [ :term |
 		  lowerKey includesSubstring: term ]
 ]
 
@@ -288,7 +327,8 @@ MCPMonitoringState >> isVerboseTraceKey: aKey [
 { #category : 'accessing' }
 MCPMonitoringState >> logFileReference [
 
-	^ self exportInstanceDirectory ifNotNil: [ :directory | directory / 'logs.jsonl' ]
+	^ self exportInstanceDirectory ifNotNil: [ :directory |
+		  directory / 'logs.jsonl' ]
 ]
 
 { #category : 'private' }
@@ -326,7 +366,8 @@ MCPMonitoringState >> logRecordDictionaryFor: aString timestamp: timestamp [
 { #category : 'private - exporting' }
 MCPMonitoringState >> logRecordJSONFor: aString timestamp: timestamp [
 
-	^ STONJSON toString: (self logRecordDictionaryFor: aString timestamp: timestamp)
+	^ STONJSON toString:
+		  (self logRecordDictionaryFor: aString timestamp: timestamp)
 ]
 
 { #category : 'private' }
@@ -389,13 +430,15 @@ MCPMonitoringState >> memoryLogger [
 { #category : 'accessing' }
 MCPMonitoringState >> metrics [
 
-	^ self statsByTool values asSortedCollection: [ :left :right | left toolName <= right toolName ]
+	^ self statsByTool values asSortedCollection: [ :left :right |
+		  left toolName <= right toolName ]
 ]
 
 { #category : 'accessing' }
 MCPMonitoringState >> metricsFileReference [
 
-	^ self exportInstanceDirectory ifNotNil: [ :directory | directory / 'metrics.json' ]
+	^ self exportInstanceDirectory ifNotNil: [ :directory |
+		  directory / 'metrics.json' ]
 ]
 
 { #category : 'private - exporting' }
@@ -406,8 +449,13 @@ MCPMonitoringState >> metricsSnapshotDictionary [
 		  (#updatedAt -> DateAndTime now asString).
 		  (#totalCallCount -> self totalCallCount).
 		  (#totalErrorCount -> self totalErrorCount).
-		  (#totalOutputBudgetExceededCount -> self totalOutputBudgetExceededCount).
-		  (#tools -> (self metrics collect: [ :each | each asMetricsDictionary ] as: Array)) } asDictionary
+		  (#totalOutputBudgetExceededCount
+		   -> self totalOutputBudgetExceededCount).
+		  (#tools
+		   ->
+		   (self metrics
+			    collect: [ :each | each asMetricsDictionary ]
+			    as: Array)) } asDictionary
 ]
 
 { #category : 'accessing' }
@@ -486,11 +534,14 @@ MCPMonitoringState >> outputBudgetBytes: anInteger [
 MCPMonitoringState >> outputBudgetDataForResult: aToolResult error: anError [
 
 	| byteCount explanation |
-	byteCount := self approximateOutputBytesForResult: aToolResult error: anError.
+	byteCount := self
+		             approximateOutputBytesForResult: aToolResult
+		             error: anError.
 	explanation := self outputBudgetExplanationForByteCount: byteCount.
 	^ {
 		  (#outputBytes -> byteCount).
-		  (#approximateOutputTokens -> (self approximateOutputTokensForBytes: byteCount)).
+		  (#approximateOutputTokens
+		   -> (self approximateOutputTokensForBytes: byteCount)).
 		  (#outputBudgetBytes -> self outputBudgetBytes).
 		  (#outputBudgetExceeded -> explanation isNotEmpty).
 		  (#outputBudgetExplanation -> explanation) } asDictionary
@@ -506,7 +557,8 @@ MCPMonitoringState >> outputBudgetExplanationForByteCount: byteCount [
 				  print: byteCount;
 				  nextPutAll: ' bytes exceeds budget ';
 				  print: self outputBudgetBytes;
-				  nextPutAll: ' bytes; consider pagination, handles, or summary-first output' ]
+				  nextPutAll:
+					  ' bytes; consider pagination, handles, or summary-first output' ]
 ]
 
 { #category : 'displaying' }
@@ -550,7 +602,24 @@ MCPMonitoringState >> recordLog: aString [
 { #category : 'private - budgets' }
 MCPMonitoringState >> recordOutputBudgetFor: aRecord result: aToolResult error: anError [
 
-	aRecord recordOutputBudget: (self outputBudgetDataForResult: aToolResult error: anError)
+	aRecord recordOutputBudget:
+		(self outputBudgetDataForResult: aToolResult error: anError)
+]
+
+{ #category : 'recording' }
+MCPMonitoringState >> recordSessionEndFor: anMCP [
+
+	self resourceMetadata at: #sessionEndedAt put: DateAndTime now asString.
+	self exportEnabled ifTrue: [ self writeResourceMetadata ].
+	self forceFlush
+]
+
+{ #category : 'recording' }
+MCPMonitoringState >> recordSessionStartFor: anMCP [
+
+	self resourceMetadata at: #sessionStartedAt put: DateAndTime now asString.
+	self resourceMetadata removeKey: #sessionEndedAt ifAbsent: [ nil ].
+	self exportEnabled ifTrue: [ self writeResourceMetadata ]
 ]
 
 { #category : 'recording' }
@@ -569,6 +638,7 @@ MCPMonitoringState >> recordToolCallFinish: aRecord result: aToolResult error: a
 	aRecord summary: (self summaryForResult: aToolResult).
 	aRecord outlierExplanation: explanation.
 	self recordOutputBudgetFor: aRecord result: aToolResult error: anError.
+	aRecord eventKinds: (self eventKindsForRecord: aRecord).
 	self captureTraceSnapshotsFor: aRecord result: aToolResult error: anError.
 	self exportTraceRecord: aRecord.
 	stats recordCall: aRecord.
@@ -580,35 +650,40 @@ MCPMonitoringState >> recordToolCallFinish: aRecord result: aToolResult error: a
 ]
 
 { #category : 'recording' }
-MCPMonitoringState >> recordToolCallStart: aToolName [
-
-	^ self recordToolCallStart: aToolName input: nil
-]
-
-{ #category : 'recording' }
-MCPMonitoringState >> recordToolCallStart: aToolName input: inputObject [
+MCPMonitoringState >> recordToolCallStart: aToolName input: inputObject dispatchPath: dispatchPath context: contextDictionary [
 
 	| record startTimestamp |
 	self enabled ifFalse: [ ^ nil ].
 	nextCallId := self nextCallId + 1.
 	startTimestamp := DateAndTime now.
-	record := MCPToolCallRecord id: self nextCallId toolName: aToolName asString startedAt: startTimestamp.
+	record := MCPToolCallRecord
+		          id: self nextCallId
+		          toolName: aToolName asString
+		          startedAt: startTimestamp.
 	record inputObject: inputObject.
+	record inputByteCount: (inputObject
+			 ifNil: [ 0 ]
+			 ifNotNil: [
+			 self approximateOutputBytesForObject: inputObject ]).
+	record dispatchPath: dispatchPath asString.
 	lastActivityAt := startTimestamp.
-	self recordLog: 'Begin tool ' , aToolName asString , ' #' , record id asString.
+	self recordLog:
+		'Begin tool ' , aToolName asString , ' #' , record id asString.
 	^ record
 ]
 
 { #category : 'accessing' }
 MCPMonitoringState >> resourceFileReference [
 
-	^ self exportInstanceDirectory ifNotNil: [ :directory | directory / 'resource.json' ]
+	^ self exportInstanceDirectory ifNotNil: [ :directory |
+		  directory / 'resource.json' ]
 ]
 
 { #category : 'accessing' }
 MCPMonitoringState >> resourceMetadata [
 
-	^ resourceMetadata ifNil: [ resourceMetadata := self newResourceMetadata ]
+	^ resourceMetadata ifNil: [
+		  resourceMetadata := self newResourceMetadata ]
 ]
 
 { #category : 'accessing' }
@@ -616,7 +691,9 @@ MCPMonitoringState >> resourceMetadata: aDictionary [
 
 	| metadata |
 	metadata := self resourceMetadata copy.
-	aDictionary ifNotNil: [ aDictionary keysAndValuesDo: [ :key :value | metadata at: key put: value ] ].
+	aDictionary ifNotNil: [
+			aDictionary keysAndValuesDo: [ :key :value |
+				metadata at: key put: value ] ].
 	resourceMetadata := metadata.
 	exportInstanceDirectory := nil.
 	traceLogger := nil
@@ -630,8 +707,15 @@ MCPMonitoringState >> shouldIncludeTraceAssociation: anAssociation [
 	value := anAssociation value.
 	value ifNil: [ ^ false ].
 	(value isString and: [ value isEmpty ]) ifTrue: [ ^ false ].
-	(value isCollection and: [ value isString not and: [ value isEmpty ] ]) ifTrue: [ ^ false ].
+	(value isCollection and: [ value isString not and: [ value isEmpty ] ])
+		ifTrue: [ ^ false ].
 	^ true
+]
+
+{ #category : 'actions' }
+MCPMonitoringState >> shutdown [
+
+	self recordSessionEndFor: nil
 ]
 
 { #category : 'accessing' }
@@ -643,16 +727,20 @@ MCPMonitoringState >> statsByTool [
 { #category : 'accessing' }
 MCPMonitoringState >> statsForToolNamed: aToolName [
 
-	^ self statsByTool at: aToolName asString ifAbsentPut: [ MCPToolCallStats forToolNamed: aToolName asString ]
+	^ self statsByTool
+		  at: aToolName asString
+		  ifAbsentPut: [ MCPToolCallStats forToolNamed: aToolName asString ]
 ]
 
 { #category : 'private - budgets' }
 MCPMonitoringState >> statsNeedingOutputBudgetAttention [
 
-	^ (self metrics select: [ :each | each outputBudgetExceededCount > 0 ]) asArray sort: [ :left :right |
+	^ (self metrics select: [ :each | each outputBudgetExceededCount > 0 ])
+		  asArray sort: [ :left :right |
 			  left outputBudgetExceededCount = right outputBudgetExceededCount
 				  ifTrue: [ left maxOutputBytes >= right maxOutputBytes ]
-				  ifFalse: [ left outputBudgetExceededCount > right outputBudgetExceededCount ] ]
+				  ifFalse: [
+				  left outputBudgetExceededCount > right outputBudgetExceededCount ] ]
 ]
 
 { #category : 'private' }
@@ -692,7 +780,10 @@ MCPMonitoringState >> summaryForResult: aToolResult [
 	aToolResult ifNil: [ ^ '' ].
 	structuredContent := aToolResult structuredContent.
 	structuredContent ifNil: [ ^ '' ].
-	^ (structuredContent at: #summary ifAbsent: [ structuredContent at: 'summary' ifAbsent: [ '' ] ]) asString
+	^ (structuredContent
+		   at: #summary
+		   ifAbsent: [ structuredContent at: 'summary' ifAbsent: [ '' ] ])
+		  asString
 ]
 
 { #category : 'accessing' }
@@ -710,22 +801,25 @@ MCPMonitoringState >> totalErrorCount [
 { #category : 'accessing' }
 MCPMonitoringState >> totalOutputBudgetExceededCount [
 
-	^ self metrics inject: 0 into: [ :sum :each | sum + each outputBudgetExceededCount ]
+	^ self metrics
+		  inject: 0
+		  into: [ :sum :each | sum + each outputBudgetExceededCount ]
 ]
 
 { #category : 'private - tracing' }
 MCPMonitoringState >> traceEventNameForRecord: aRecord [
 
-	aRecord outputBudgetExceeded ifTrue: [ ^ 'mcp.tool_call.output_budget_exceeded' ].
 	aRecord status = 'error' ifTrue: [ ^ 'mcp.tool_call.error' ].
-	aRecord outlierExplanation isNotEmpty ifTrue: [ ^ 'mcp.tool_call.duration_outlier' ].
-	^ 'mcp.tool_call.trace'
+	aRecord outputBudgetExceeded ifTrue: [ ^ 'mcp.tool_call.output_budget_exceeded' ].
+	aRecord outlierExplanation ifNotEmpty: [ ^ 'mcp.tool_call.duration_outlier' ].
+	^ 'mcp.tool_call.completed'
 ]
 
 { #category : 'accessing' }
 MCPMonitoringState >> traceFileReference [
 
-	^ self exportInstanceDirectory ifNotNil: [ :directory | directory / 'traces.jsonl' ]
+	^ self exportInstanceDirectory ifNotNil: [ :directory |
+		  directory / 'traces.jsonl' ]
 ]
 
 { #category : 'private - tracing' }
@@ -735,12 +829,15 @@ MCPMonitoringState >> traceRecordDictionaryFor: aRecord [
 	dictionary := Dictionary new.
 	dictionary at: #schemaVersion put: 1.
 	dictionary at: #'event.name' put: (self traceEventNameForRecord: aRecord).
+	dictionary at: #'event.kinds' put: aRecord eventKinds.
 	dictionary at: #id put: aRecord id.
 	dictionary at: #toolName put: aRecord toolName.
+	dictionary at: #dispatchPath put: aRecord dispatchPath.
 	dictionary at: #startedAt put: aRecord displayStartedAt.
 	dictionary at: #durationMilliseconds put: aRecord durationMilliseconds.
 	dictionary at: #status put: aRecord status.
 	aRecord errorClass ifNotEmpty: [ :errorClass | dictionary at: #errorClass put: errorClass ].
+	aRecord inputByteCount > 0 ifTrue: [ dictionary at: #inputBytes put: aRecord inputByteCount ].
 	aRecord outputByteCount > 0 ifTrue: [
 			dictionary at: #outputBytes put: aRecord outputByteCount.
 			dictionary at: #approximateOutputTokens put: aRecord approximateOutputTokenCount ].
@@ -775,21 +872,29 @@ MCPMonitoringState >> traceSnapshotFor: anObject [
 MCPMonitoringState >> traceSnapshotFor: anObject depth: depth [
 
 	anObject ifNil: [ ^ nil ].
-	(anObject isString or: [ anObject isSymbol ]) ifTrue: [ ^ self traceStringSnapshotFor: anObject ].
-	(anObject isNumber or: [ anObject == true or: [ anObject == false ] ]) ifTrue: [ ^ anObject ].
+	(anObject isString or: [ anObject isSymbol ]) ifTrue: [
+		^ self traceStringSnapshotFor: anObject ].
+	(anObject isNumber or: [ anObject == true or: [ anObject == false ] ])
+		ifTrue: [ ^ anObject ].
 	anObject isCharacter ifTrue: [ ^ anObject asString ].
-	depth >= self maxTraceDepth ifTrue: [ ^ self traceStringSnapshotFor: anObject printString ].
-	anObject isAssociation ifTrue: [ ^ self traceSnapshotForAssociation: anObject depth: depth ].
-	anObject isDictionary ifTrue: [ ^ self traceSnapshotForDictionary: anObject depth: depth ].
-	(anObject isCollection and: [ anObject isString not ]) ifTrue: [ ^ self traceSnapshotForCollection: anObject depth: depth ].
+	depth >= self maxTraceDepth ifTrue: [
+		^ self traceStringSnapshotFor: anObject printString ].
+	anObject isAssociation ifTrue: [
+		^ self traceSnapshotForAssociation: anObject depth: depth ].
+	anObject isDictionary ifTrue: [
+		^ self traceSnapshotForDictionary: anObject depth: depth ].
+	(anObject isCollection and: [ anObject isString not ]) ifTrue: [
+		^ self traceSnapshotForCollection: anObject depth: depth ].
 	^ self traceStringSnapshotFor: anObject printString
 ]
 
 { #category : 'private - tracing' }
 MCPMonitoringState >> traceSnapshotForAssociation: anAssociation depth: depth [
 
-	(self isSensitiveTraceKey: anAssociation key) ifTrue: [ ^ anAssociation key -> '<redacted>' ].
-	^ anAssociation key -> (self traceSnapshotFor: anAssociation value depth: depth + 1)
+	(self isSensitiveTraceKey: anAssociation key) ifTrue: [
+		^ anAssociation key -> '<redacted>' ].
+	^ anAssociation key
+	  -> (self traceSnapshotFor: anAssociation value depth: depth + 1)
 ]
 
 { #category : 'private - tracing' }
@@ -799,8 +904,13 @@ MCPMonitoringState >> traceSnapshotForCollection: aCollection depth: depth [
 	array := aCollection asArray.
 	limit := array size min: self maxTraceCollectionItems.
 	overflow := array size - limit.
-	snapshot := (1 to: limit) collect: [ :index | self traceSnapshotFor: (array at: index) depth: depth + 1 ].
-	overflow positive ifTrue: [ snapshot := snapshot copyWith: 'truncated ' , overflow asString , ' items omitted' ].
+	snapshot := (1 to: limit) collect: [ :index |
+		            self
+			            traceSnapshotFor: (array at: index)
+			            depth: depth + 1 ].
+	overflow positive ifTrue: [
+			snapshot := snapshot copyWith:
+				            'truncated ' , overflow asString , ' items omitted' ].
 	^ snapshot asArray
 ]
 
@@ -810,23 +920,30 @@ MCPMonitoringState >> traceSnapshotForDictionary: aDictionary depth: depth [
 	| snapshot |
 	snapshot := Dictionary new.
 	aDictionary associationsDo: [ :association |
-			(snapshot size < self maxTraceCollectionItems and: [ self shouldIncludeTraceAssociation: association ]) ifTrue: [
+			(snapshot size < self maxTraceCollectionItems and: [
+				 self shouldIncludeTraceAssociation: association ]) ifTrue: [
 					| sanitized |
-					sanitized := self traceSnapshotForAssociation: association depth: depth.
+					sanitized := self
+						             traceSnapshotForAssociation: association
+						             depth: depth.
 					snapshot at: sanitized key put: sanitized value ] ].
 	aDictionary size > self maxTraceCollectionItems ifTrue: [
-		snapshot at: #__truncated__ put: aDictionary size - self maxTraceCollectionItems ].
+			snapshot
+				at: #__truncated__
+				put: aDictionary size - self maxTraceCollectionItems ].
 	^ snapshot
 ]
 
 { #category : 'private - tracing' }
 MCPMonitoringState >> traceSnapshotForResult: aToolResult error: anError [
 
-	aToolResult ifNotNil: [ ^ self traceSnapshotFor: aToolResult structuredContent ].
+	aToolResult ifNotNil: [
+		^ self traceSnapshotFor: aToolResult structuredContent ].
 	anError ifNil: [ ^ nil ].
 	^ self traceSnapshotFor: {
 			  (#errorClass -> anError class name asString).
-			  (#message -> (anError messageText ifNil: [ anError asString ])) } asDictionary
+			  (#message -> (anError messageText ifNil: [ anError asString ])) }
+			  asDictionary
 ]
 
 { #category : 'private - tracing' }
@@ -839,13 +956,29 @@ MCPMonitoringState >> traceStringSnapshotFor: aString [
 ]
 
 { #category : 'private - exporting' }
+MCPMonitoringState >> writeJSON: aDictionary to: aFileReference [
+
+	| temporaryFile |
+	aFileReference parent ensureCreateDirectory.
+	temporaryFile := aFileReference parent / (aFileReference basename , '.' , UUID new asString , '.tmp').
+	[
+		temporaryFile writeStreamDo: [ :stream | stream nextPutAll: (STONJSON toString: aDictionary) ].
+		aFileReference exists ifTrue: [ aFileReference delete ].
+		temporaryFile renameTo: aFileReference basename.
+		temporaryFile := nil.
+		aFileReference ] ensure: [
+		temporaryFile ifNotNil: [
+			temporaryFile exists ifTrue: [ temporaryFile delete ] ] ]
+]
+
+{ #category : 'private - exporting' }
 MCPMonitoringState >> writeMetricsSnapshot [
 
-	self metricsFileReference writeStreamDo: [ :stream | stream nextPutAll: (STONJSON toString: self metricsSnapshotDictionary) ]
+	self writeJSON: self metricsSnapshotDictionary to: self metricsFileReference
 ]
 
 { #category : 'private - exporting' }
 MCPMonitoringState >> writeResourceMetadata [
 
-	self resourceFileReference writeStreamDo: [ :stream | stream nextPutAll: (STONJSON toString: self resourceMetadata) ]
+	self writeJSON: self resourceMetadata to: self resourceFileReference
 ]

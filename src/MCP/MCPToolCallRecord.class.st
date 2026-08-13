@@ -21,7 +21,10 @@ Class {
 		'approximateOutputTokenCount',
 		'outputBudgetBytes',
 		'outputBudgetExceeded',
-		'outputBudgetExplanation'
+		'outputBudgetExplanation',
+		'dispatchPath',
+		'inputByteCount',
+		'eventKinds'
 	],
 	#category : 'MCP-Monitoring',
 	#package : 'MCP',
@@ -57,12 +60,15 @@ MCPToolCallRecord >> asDictionary [
 	^ {
 		  (#id -> self id).
 		  (#toolName -> self toolName).
+		  (#dispatchPath -> self dispatchPath).
 		  (#startedAt -> self displayStartedAt).
 		  (#durationMilliseconds -> self durationMilliseconds).
 		  (#status -> self status).
 		  (#errorClass -> self errorClass).
 		  (#summary -> self summary).
+		  (#eventKinds -> self eventKinds).
 		  (#outlierExplanation -> self outlierExplanation).
+		  (#inputBytes -> self inputByteCount).
 		  (#outputBytes -> self outputByteCount).
 		  (#approximateOutputTokens -> self approximateOutputTokenCount).
 		  (#outputBudgetBytes -> self outputBudgetBytes).
@@ -70,6 +76,18 @@ MCPToolCallRecord >> asDictionary [
 		  (#outputBudgetExplanation -> self outputBudgetExplanation).
 		  (#input -> self inputSnapshot).
 		  (#output -> self outputSnapshot) } asDictionary
+]
+
+{ #category : 'accessing' }
+MCPToolCallRecord >> dispatchPath [
+
+	^ dispatchPath ifNil: [ 'direct' ]
+]
+
+{ #category : 'accessing' }
+MCPToolCallRecord >> dispatchPath: aString [
+
+	dispatchPath := aString
 ]
 
 { #category : 'displaying' }
@@ -82,13 +100,16 @@ MCPToolCallRecord >> displayDurationMilliseconds [
 { #category : 'displaying' }
 MCPToolCallRecord >> displayStartedAt [
 
-	^ self startedAt ifNil: [ '' ] ifNotNil: [ :timestamp | timestamp asString ]
+	^ self startedAt
+		  ifNil: [ '' ]
+		  ifNotNil: [ :timestamp | timestamp asString ]
 ]
 
 { #category : 'displaying' }
 MCPToolCallRecord >> displaySummary [
 
-	self outputBudgetExplanation isEmpty ifFalse: [ ^ self outputBudgetExplanation ].
+	self outputBudgetExplanation isEmpty ifFalse: [
+		^ self outputBudgetExplanation ].
 	self outlierExplanation isEmpty ifFalse: [ ^ self outlierExplanation ].
 	self summary isEmpty ifFalse: [ ^ self summary ].
 	^ self errorClass
@@ -116,6 +137,18 @@ MCPToolCallRecord >> errorClass [
 MCPToolCallRecord >> errorClass: aString [
 
 	errorClass := aString
+]
+
+{ #category : 'accessing' }
+MCPToolCallRecord >> eventKinds [
+
+	^ eventKinds ifNil: [ #(  ) ]
+]
+
+{ #category : 'accessing' }
+MCPToolCallRecord >> eventKinds: aCollection [
+
+	eventKinds := aCollection asArray
 ]
 
 { #category : 'recording' }
@@ -148,6 +181,18 @@ MCPToolCallRecord >> id [
 MCPToolCallRecord >> id: anInteger [
 
 	id := anInteger
+]
+
+{ #category : 'accessing' }
+MCPToolCallRecord >> inputByteCount [
+
+	^ inputByteCount ifNil: [ 0 ]
+]
+
+{ #category : 'accessing' }
+MCPToolCallRecord >> inputByteCount: anInteger [
+
+	inputByteCount := anInteger
 ]
 
 { #category : 'private' }
@@ -183,7 +228,9 @@ MCPToolCallRecord >> isRunning [
 { #category : 'testing' }
 MCPToolCallRecord >> isTraceWorthy [
 
-	^ self status = 'error' or: [ self outlierExplanation isNotEmpty or: [ self outputBudgetExceeded ] ]
+	^ self status = 'error' or: [
+		  self outlierExplanation isNotEmpty or: [
+			  self outputBudgetExceeded ] ]
 ]
 
 { #category : 'accessing' }
@@ -262,10 +309,12 @@ MCPToolCallRecord >> outputSnapshot: anObject [
 MCPToolCallRecord >> recordOutputBudget: budgetData [
 
 	self outputByteCount: (budgetData at: #outputBytes).
-	self approximateOutputTokenCount: (budgetData at: #approximateOutputTokens).
+	self approximateOutputTokenCount:
+		(budgetData at: #approximateOutputTokens).
 	self outputBudgetBytes: (budgetData at: #outputBudgetBytes).
 	self outputBudgetExceeded: (budgetData at: #outputBudgetExceeded).
-	self outputBudgetExplanation: (budgetData at: #outputBudgetExplanation)
+	self outputBudgetExplanation:
+		(budgetData at: #outputBudgetExplanation)
 ]
 
 { #category : 'accessing' }

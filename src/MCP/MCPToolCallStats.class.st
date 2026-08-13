@@ -13,6 +13,7 @@ Class {
 		'minMilliseconds',
 		'maxMilliseconds',
 		'lastMilliseconds',
+		'firstStartedAt',
 		'lastStartedAt',
 		'lastFinishedAt',
 		'lastOutlierExplanation',
@@ -20,7 +21,8 @@ Class {
 		'maxOutputBytes',
 		'lastOutputBytes',
 		'lastApproximateOutputTokens',
-		'outputBudgetExceededCount'
+		'outputBudgetExceededCount',
+		'errorCountsByClass'
 	],
 	#category : 'MCP-Monitoring',
 	#package : 'MCP',
@@ -43,10 +45,13 @@ MCPToolCallStats >> asDictionary [
 		  (#callCount -> self callCount).
 		  (#successCount -> self successCount).
 		  (#errorCount -> self errorCount).
+		  (#errorCountsByClass -> self errorCountsByClass copy).
 		  (#averageMilliseconds -> self averageMilliseconds asFloat).
 		  (#minMilliseconds -> (self minMilliseconds ifNil: [ 0 ])).
 		  (#maxMilliseconds -> (self maxMilliseconds ifNil: [ 0 ])).
 		  (#lastMilliseconds -> (self lastMilliseconds ifNil: [ 0 ])).
+		  (#firstCallAt -> self firstCallAt).
+		  (#lastCallAt -> self lastCallAt).
 		  (#averageOutputBytes -> self averageOutputBytes asFloat).
 		  (#maxOutputBytes -> self maxOutputBytes).
 		  (#lastOutputBytes -> self lastOutputBytes).
@@ -63,11 +68,20 @@ MCPToolCallStats >> asMetricsDictionary [
 	dictionary := {
 		              (#toolName -> self toolName).
 		              (#callCount -> self callCount).
+		              (#successCount -> self successCount).
 		              (#averageMilliseconds -> self averageMilliseconds asFloat).
-		              (#maxMilliseconds -> self maxMilliseconds).
+		              (#minMilliseconds -> (self minMilliseconds ifNil: [ 0 ])).
+		              (#maxMilliseconds -> (self maxMilliseconds ifNil: [ 0 ])).
+		              (#lastMilliseconds -> (self lastMilliseconds ifNil: [ 0 ])).
+		              (#firstCallAt -> self firstCallAt).
+		              (#lastCallAt -> self lastCallAt).
 		              (#averageOutputBytes -> self averageOutputBytes asFloat).
-		              (#maxOutputBytes -> self maxOutputBytes) } asDictionary.
-	self errorCount positive ifTrue: [ dictionary at: #errorCount put: self errorCount ].
+		              (#maxOutputBytes -> self maxOutputBytes).
+		              (#lastOutputBytes -> self lastOutputBytes).
+		              (#lastApproximateOutputTokens -> self lastApproximateOutputTokens) } asDictionary.
+	self errorCount positive ifTrue: [
+			dictionary at: #errorCount put: self errorCount.
+			dictionary at: #errorCountsByClass put: self errorCountsByClass copy ].
 	self outputBudgetExceededCount positive ifTrue: [ dictionary at: #outputBudgetExceededCount put: self outputBudgetExceededCount ].
 	self lastOutlierExplanation ifNotNil: [ :explanation |
 		explanation isEmpty ifFalse: [ dictionary at: #lastOutlierExplanation put: explanation ] ].
@@ -155,10 +169,22 @@ MCPToolCallStats >> errorCount [
 ]
 
 { #category : 'accessing' }
+MCPToolCallStats >> errorCountsByClass [
+
+	^ errorCountsByClass ifNil: [ errorCountsByClass := Dictionary new ]
+]
+
+{ #category : 'accessing' }
 MCPToolCallStats >> errorRate [
 
 	self callCount = 0 ifTrue: [ ^ 0 ].
 	^ self errorCount / self callCount
+]
+
+{ #category : 'accessing' }
+MCPToolCallStats >> firstCallAt [
+
+	^ self timestampStringFor: firstStartedAt
 ]
 
 { #category : 'initialization' }
@@ -170,13 +196,20 @@ MCPToolCallStats >> initialize [
 	errorCount := 0.
 	totalMilliseconds := 0.
 	totalOutputBytes := 0.
-	outputBudgetExceededCount := 0
+	outputBudgetExceededCount := 0.
+	errorCountsByClass := Dictionary new
 ]
 
 { #category : 'accessing' }
 MCPToolCallStats >> lastApproximateOutputTokens [
 
 	^ lastApproximateOutputTokens ifNil: [ 0 ]
+]
+
+{ #category : 'accessing' }
+MCPToolCallStats >> lastCallAt [
+
+	^ self timestampStringFor: lastFinishedAt
 ]
 
 { #category : 'accessing' }
@@ -235,7 +268,8 @@ MCPToolCallStats >> outputBudgetGuidance [
 			  stream
 				  nextPutAll: ' (max ';
 				  print: self maxOutputBytes;
-				  nextPutAll: ' bytes). Prefer pagination, handles, or summary-first output.' ]
+				  nextPutAll:
+					  ' bytes). Prefer pagination, handles, or summary-first output.' ]
 ]
 
 { #category : 'recording' }
@@ -248,7 +282,7 @@ MCPToolCallStats >> recordCall: aRecord [
 	callCount := self callCount + 1.
 	statusString = 'ok'
 		ifTrue: [ successCount := self successCount + 1 ]
-		ifFalse: [ errorCount := self errorCount + 1 ].
+		ifFalse: [ self recordErrorFor: aRecord ].
 	totalMilliseconds := self totalMilliseconds + duration.
 	minMilliseconds := self minMilliseconds ifNil: [ duration ] ifNotNil: [ :current | current min: duration ].
 	maxMilliseconds := self maxMilliseconds ifNil: [ duration ] ifNotNil: [ :current | current max: duration ].
@@ -257,16 +291,33 @@ MCPToolCallStats >> recordCall: aRecord [
 	lastOutputBytes := outputBytes.
 	lastApproximateOutputTokens := aRecord approximateOutputTokenCount.
 	aRecord outputBudgetExceeded ifTrue: [ outputBudgetExceededCount := self outputBudgetExceededCount + 1 ].
+	firstStartedAt ifNil: [ firstStartedAt := aRecord startedAt ].
 	lastMilliseconds := duration.
 	lastStartedAt := aRecord startedAt.
 	lastFinishedAt := aRecord finishedAt.
 	lastOutlierExplanation := aRecord outlierExplanation
 ]
 
+{ #category : 'recording' }
+MCPToolCallStats >> recordErrorFor: aRecord [
+
+	errorCount := self errorCount + 1.
+	aRecord errorClass ifNotEmpty: [ :className |
+		self errorCountsByClass at: className put: (self errorCountsByClass at: className ifAbsent: [ 0 ]) + 1 ]
+]
+
 { #category : 'accessing' }
 MCPToolCallStats >> successCount [
 
 	^ successCount ifNil: [ 0 ]
+]
+
+{ #category : 'private' }
+MCPToolCallStats >> timestampStringFor: aTimestamp [
+
+	^ aTimestamp
+		  ifNil: [ '' ]
+		  ifNotNil: [ :timestamp | timestamp asString ]
 ]
 
 { #category : 'accessing' }
