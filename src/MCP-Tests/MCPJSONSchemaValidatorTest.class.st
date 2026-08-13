@@ -127,7 +127,7 @@ MCPJSONSchemaValidatorTest >> classMutationRepresentativeArgumentsByToolClass [
 			   (#tag -> 'Tools') } asDictionary).
 		  (MCPToolUpdateClassComment -> {
 			   (#className -> 'MCPTool').
-			   (#classComment -> '') } asDictionary).
+			   (#comment -> '') } asDictionary).
 		  (MCPToolUpdateClassSlots -> {
 			   (#className -> 'MCPTool').
 			   (#slots -> #(  )) } asDictionary).
