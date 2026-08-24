@@ -1,6 +1,8 @@
 "
 Top-level MCP server application object. MCP owns one MCPToolRegistry, the HTTP server, and observability state. The registry owns registered tool instances and their exposure policy. MCP exposes the core JSON-RPC handlers, including initialization, tool listing, tool calls, ping, and empty resource listings. Tool calls are delegated to the matching MCPTool after request validation.
 
+The registry is the source of truth for registered tools. The toolsList instance variable caches the current tools/list static tool surface as a dictionary keyed by tool name.
+
 Adding new tools to the server (its `registry`) can be done:
 - call `mcp registerToolClass: MyToolClass` before starting the server;
 - (for several tool classes) call `mcp registerToolClasses: { MyToolClass. MyOtherToolClass }`;
@@ -281,6 +283,7 @@ MCP >> port: aPortNumber [
 
 { #category : 'private - tools' }
 MCP >> refreshToolsList [
+	"Refresh the cached tools/list response surface from the registry's current static tools."
 
 	toolsList := self toolRegistry staticToolsDictionary.
 	^ toolsList
@@ -502,12 +505,14 @@ MCP >> toolResponseFields: aSymbolOrString [
 
 { #category : 'accessing' }
 MCP >> toolsList [
+	"Answer the cached tools/list static tool surface. The registry remains the source of truth for registered tools."
 
 	^ toolsList
 ]
 
 { #category : 'accessing' }
 MCP >> toolsList: aToolsList [
+	"Replace the cached tools/list surface. Intended for tests and controlled presenter setup; normal registration should go through the registry-facing MCP configuration API."
 
 	^ toolsList := aToolsList
 ]
