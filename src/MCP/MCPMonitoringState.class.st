@@ -1,23 +1,21 @@
 "
-Runtime observability state for an MCP server. When enabled, it records TinyLogger-backed log lines, per-tool timing and output-size metrics, recent completed calls, and compact trace records for errors, timing outliers, or output-budget overruns. MCP server instances enable observability and configure a default export directory; standalone state objects can still be configured explicitly.
+Runtime observability state for an MCP server. When enabled, it records local log lines, per-tool timing and output-size metrics, recent completed calls, and compact trace records for errors, timing outliers, or output-budget overruns. MCP server instances enable observability and configure a default export directory; standalone state objects can still be configured explicitly.
 "
 Class {
 	#name : 'MCPMonitoringState',
 	#superclass : 'MCPObservabilityBackend',
 	#instVars : [
 		'enabled',
-		'logger',
-		'memoryLogger',
+		'logEntries',
 		'statsByTool',
 		'recentCalls',
 		'nextCallId',
 		'maxRecentCalls',
+		'maxLogEntries',
 		'outlierFactor',
 		'minimumOutlierMilliseconds',
 		'outputBudgetBytes',
 		'lastActivityAt',
-		'traceLogger',
-		'logFileLogger',
 		'exportDirectory',
 		'exportInstanceDirectory',
 		'resourceMetadata'
@@ -109,7 +107,7 @@ MCPMonitoringState >> clear [
 { #category : 'logging' }
 MCPMonitoringState >> clearLogs [
 
-	memoryLogger ifNotNil: [ memoryLogger clearLog ]
+	self logEntries removeAll
 ]
 
 { #category : 'private - defaults' }
@@ -129,11 +127,8 @@ MCPMonitoringState >> disable [
 { #category : 'activation' }
 MCPMonitoringState >> enable [
 
-	self enabled ifTrue: [
-			self ensureLogger.
-			^ self ].
+	self enabled ifTrue: [ ^ self ].
 	enabled := true.
-	self ensureLogger.
 	lastActivityAt := DateAndTime now.
 	self recordLog: 'Observability enabled'
 ]
@@ -150,34 +145,6 @@ MCPMonitoringState >> enabled: aBoolean [
 	aBoolean
 		ifTrue: [ self enable ]
 		ifFalse: [ self disable ]
-]
-
-{ #category : 'private - exporting' }
-MCPMonitoringState >> ensureLogFileLogger [
-
-	logFileLogger ifNil: [
-			logFileLogger := MCPJSONLineFileTinyLogger named:
-				                 self logFileReference pathString ].
-	^ logFileLogger
-]
-
-{ #category : 'logging' }
-MCPMonitoringState >> ensureLogger [
-
-	logger ifNil: [ logger := TinyLogger new ].
-	memoryLogger ifNil: [
-			memoryLogger := MCPMemoryTinyLogger new.
-			logger addLogger: memoryLogger ].
-	^ logger
-]
-
-{ #category : 'private - tracing' }
-MCPMonitoringState >> ensureTraceLogger [
-
-	traceLogger ifNil: [
-			traceLogger := MCPJSONLineFileTinyLogger named:
-				               self traceFileReference pathString ].
-	^ traceLogger
 ]
 
 { #category : 'private' }
@@ -206,9 +173,7 @@ MCPMonitoringState >> exportDirectory [
 MCPMonitoringState >> exportDirectory: aPath [
 
 	exportDirectory := aPath ifNotNil: [ :path | path asFileReference ].
-	exportInstanceDirectory := nil.
-	traceLogger := nil.
-	logFileLogger := nil
+	exportInstanceDirectory := nil
 ]
 
 { #category : 'testing' }
@@ -255,8 +220,9 @@ MCPMonitoringState >> exportLogMessage: aString timestamp: timestamp [
 
 	self exportEnabled ifFalse: [ ^ self ].
 	[
-		self ensureLogFileLogger record:
-			(self logRecordJSONFor: aString timestamp: timestamp) ]
+		self
+			writeJSONLine: (self logRecordJSONFor: aString timestamp: timestamp)
+			to: self logFileReference ]
 		on: Error
 		do: [ :ignored | nil ]
 ]
@@ -275,7 +241,8 @@ MCPMonitoringState >> exportTraceRecord: aRecord [
 
 	(self exportEnabled and: [ aRecord isTraceWorthy ]) ifFalse: [
 		^ self ].
-	[ self ensureTraceLogger record: (self traceRecordJSONFor: aRecord) ]
+	[
+	self writeJSONLine: (self traceRecordJSONFor: aRecord) to: self traceFileReference ]
 		on: Error
 		do: [ :error |
 			self recordLog: 'Trace export failed: ' , error class name asString ]
@@ -296,10 +263,10 @@ MCPMonitoringState >> initialize [
 	recentCalls := OrderedCollection new.
 	nextCallId := 0.
 	maxRecentCalls := 100.
+	maxLogEntries := 200.
 	outlierFactor := 3.
 	minimumOutlierMilliseconds := 250.
-	outputBudgetBytes := self defaultOutputBudgetBytes.
-	self ensureLogger
+	outputBudgetBytes := self defaultOutputBudgetBytes
 ]
 
 { #category : 'testing' }
@@ -322,6 +289,20 @@ MCPMonitoringState >> isSensitiveTraceKey: aKey [
 MCPMonitoringState >> isVerboseTraceKey: aKey [
 
 	^ #( 'stackTrace' 'signalerContext' ) includes: aKey asString
+]
+
+{ #category : 'private - logging' }
+MCPMonitoringState >> logEntries [
+
+	^ logEntries ifNil: [ logEntries := OrderedCollection new ]
+]
+
+{ #category : 'private - logging' }
+MCPMonitoringState >> logEntry: aString [
+
+	self logEntries add: aString.
+	[ self logEntries size > self maxLogEntries ] whileTrue: [
+		self logEntries removeFirst ]
 ]
 
 { #category : 'accessing' }
@@ -378,17 +359,22 @@ MCPMonitoringState >> logStatusLabelForStatus: statusString [
 	^ statusString capitalized
 ]
 
-{ #category : 'accessing' }
-MCPMonitoringState >> logger [
-
-	^ logger
-]
-
 { #category : 'logging' }
 MCPMonitoringState >> logs [
 
-	memoryLogger ifNil: [ ^ #(  ) ].
-	^ memoryLogger recentEntries
+	^ self logEntries asArray
+]
+
+{ #category : 'accessing' }
+MCPMonitoringState >> maxLogEntries [
+
+	^ maxLogEntries ifNil: [ 200 ]
+]
+
+{ #category : 'accessing' }
+MCPMonitoringState >> maxLogEntries: anInteger [
+
+	maxLogEntries := anInteger
 ]
 
 { #category : 'accessing' }
@@ -419,12 +405,6 @@ MCPMonitoringState >> maxTraceDepth [
 MCPMonitoringState >> maxTraceStringLength [
 
 	^ 1000
-]
-
-{ #category : 'accessing' }
-MCPMonitoringState >> memoryLogger [
-
-	^ memoryLogger
 ]
 
 { #category : 'accessing' }
@@ -595,7 +575,7 @@ MCPMonitoringState >> recordLog: aString [
 	| timestamp |
 	self enabled ifFalse: [ ^ self ].
 	timestamp := DateAndTime now.
-	self ensureLogger record: aString.
+	self logEntry: aString.
 	self exportLogMessage: aString timestamp: timestamp
 ]
 
@@ -695,8 +675,7 @@ MCPMonitoringState >> resourceMetadata: aDictionary [
 			aDictionary keysAndValuesDo: [ :key :value |
 				metadata at: key put: value ] ].
 	resourceMetadata := metadata.
-	exportInstanceDirectory := nil.
-	traceLogger := nil
+	exportInstanceDirectory := nil
 ]
 
 { #category : 'private - tracing' }
@@ -969,6 +948,17 @@ MCPMonitoringState >> writeJSON: aDictionary to: aFileReference [
 		aFileReference ] ensure: [
 		temporaryFile ifNotNil: [
 			temporaryFile exists ifTrue: [ temporaryFile delete ] ] ]
+]
+
+{ #category : 'private - exporting' }
+MCPMonitoringState >> writeJSONLine: aString to: aFileReference [
+
+	aFileReference parent ensureCreateDirectory.
+	aFileReference writeStreamDo: [ :stream |
+		stream
+			setToEnd;
+			nextPutAll: aString;
+			lf ]
 ]
 
 { #category : 'private - exporting' }

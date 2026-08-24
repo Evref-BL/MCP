@@ -249,7 +249,7 @@ mcp useOpenTelemetryObservability
 
 ## Version Compatibility
 
-The core baseline loads PharoCompatibility, JRPC, TinyLogger, and PCRE2.
+The core baseline loads PharoCompatibility, JRPC, and PCRE2.
 OpenTelemetry is loaded only by the optional `Telemetry` group. CI covers
 Pharo 12, 13, and 14. Code that depends on version-sensitive Pharo APIs should
 go through PharoCompatibility rather than assuming the Pharo 13 API is present
