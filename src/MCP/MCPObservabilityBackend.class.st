@@ -6,9 +6,9 @@ Core MCP code talks to this protocol so normal tool execution can report observa
 Class {
 	#name : 'MCPObservabilityBackend',
 	#superclass : 'Object',
-	#category : 'MCP-Monitoring',
+	#category : 'MCP-Observability',
 	#package : 'MCP',
-	#tag : 'Monitoring'
+	#tag : 'Observability'
 }
 
 { #category : 'testing' }

@@ -1,5 +1,5 @@
 "
-Monitoring DTO for one MCP tool call. Active records have no finishedAt duration yet. Completed records store status, timing, compact output-budget metadata, optional error class, optional outlier explanation, and bounded redacted input/output snapshots only when the call is trace-worthy. The raw input object is held transiently while the call is active and cleared when recording finishes.
+Observability DTO for one MCP tool call. Active records have no finishedAt duration yet. Completed records store status, timing, compact output-budget metadata, optional error class, optional outlier explanation, and bounded redacted input/output snapshots only when the call is trace-worthy. The raw input object is held transiently while the call is active and cleared when recording finishes.
 "
 Class {
 	#name : 'MCPToolCallRecord',
@@ -26,9 +26,9 @@ Class {
 		'inputByteCount',
 		'eventKinds'
 	],
-	#category : 'MCP-Monitoring',
+	#category : 'MCP-Observability',
 	#package : 'MCP',
-	#tag : 'Monitoring'
+	#tag : 'Observability'
 }
 
 { #category : 'instance creation' }

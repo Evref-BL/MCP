@@ -47,11 +47,11 @@ MCPTestCase >> ensureMethodSource: aMethodSource protocol: aProtocol on: aBehavi
 	self withoutEpiceaDuring: [ aBehavior compile: aMethodSource classified: aProtocol ]
 ]
 
-{ #category : 'private - monitoring' }
+{ #category : 'private - observability' }
 MCPTestCase >> mcpWithoutObservabilityExport [
 
 	^ MCP new
-		  monitoringExportDirectory: nil;
+		  observabilityExportDirectory: nil;
 		  useContentAndStructuredContentToolResponses;
 		  yourself
 ]

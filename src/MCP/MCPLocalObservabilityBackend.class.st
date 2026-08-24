@@ -2,7 +2,7 @@
 Runtime observability state for an MCP server. When enabled, it records local log lines, per-tool timing and output-size metrics, recent completed calls, and compact trace records for errors, timing outliers, or output-budget overruns. MCP server instances enable observability and configure a default export directory; standalone state objects can still be configured explicitly.
 "
 Class {
-	#name : 'MCPMonitoringState',
+	#name : 'MCPLocalObservabilityBackend',
 	#superclass : 'MCPObservabilityBackend',
 	#instVars : [
 		'enabled',
@@ -20,26 +20,26 @@ Class {
 		'exportInstanceDirectory',
 		'resourceMetadata'
 	],
-	#category : 'MCP-Monitoring',
+	#category : 'MCP-Observability',
 	#package : 'MCP',
-	#tag : 'Monitoring'
+	#tag : 'Observability'
 }
 
 { #category : 'defaults' }
-MCPMonitoringState class >> defaultExportDirectory [
+MCPLocalObservabilityBackend class >> defaultExportDirectory [
 
 	^ Smalltalk imageFile asFileReference parent / 'pharo-local' / 'mcp' / 'observability'
 ]
 
 { #category : 'private' }
-MCPMonitoringState >> addRecentCall: aRecord [
+MCPLocalObservabilityBackend >> addRecentCall: aRecord [
 
 	self recentCalls addFirst: aRecord.
 	[ self recentCalls size > self maxRecentCalls ] whileTrue: [ self recentCalls removeLast ]
 ]
 
 { #category : 'private - budgets' }
-MCPMonitoringState >> approximateOutputBytesForObject: anObject [
+MCPLocalObservabilityBackend >> approximateOutputBytesForObject: anObject [
 
 	| jsonString |
 	jsonString := [ STONJSON toString: anObject ]
@@ -49,7 +49,7 @@ MCPMonitoringState >> approximateOutputBytesForObject: anObject [
 ]
 
 { #category : 'private - budgets' }
-MCPMonitoringState >> approximateOutputBytesForResult: aToolResult error: anError [
+MCPLocalObservabilityBackend >> approximateOutputBytesForResult: aToolResult error: anError [
 
 	aToolResult ifNotNil: [ ^ self approximateOutputBytesForObject: aToolResult asJRPCJSON ].
 	anError ifNil: [ ^ 0 ].
@@ -59,13 +59,13 @@ MCPMonitoringState >> approximateOutputBytesForResult: aToolResult error: anErro
 ]
 
 { #category : 'private - budgets' }
-MCPMonitoringState >> approximateOutputTokensForBytes: byteCount [
+MCPLocalObservabilityBackend >> approximateOutputTokensForBytes: byteCount [
 
 	^ byteCount + 3 // 4
 ]
 
 { #category : 'private - tracing' }
-MCPMonitoringState >> captureTraceSnapshotsFor: aRecord result: aToolResult error: anError [
+MCPLocalObservabilityBackend >> captureTraceSnapshotsFor: aRecord result: aToolResult error: anError [
 
 	[
 		[
@@ -86,7 +86,7 @@ MCPMonitoringState >> captureTraceSnapshotsFor: aRecord result: aToolResult erro
 ]
 
 { #category : 'clearing' }
-MCPMonitoringState >> clear [
+MCPLocalObservabilityBackend >> clear [
 
 	self statsByTool removeAll.
 	self recentCalls removeAll.
@@ -97,27 +97,27 @@ MCPMonitoringState >> clear [
 ]
 
 { #category : 'logging' }
-MCPMonitoringState >> clearLogs [
+MCPLocalObservabilityBackend >> clearLogs [
 
 	self logEntries removeAll
 ]
 
 { #category : 'private - defaults' }
-MCPMonitoringState >> defaultOutputBudgetBytes [
-	"32 KiB is about 8k tokens with the monitoring estimate of four bytes per token. It is only the default trace threshold; callers can override it with outputBudgetBytes:."
+MCPLocalObservabilityBackend >> defaultOutputBudgetBytes [
+	"32 KiB is about 8k tokens with the observability estimate of four bytes per token. It is only the default trace threshold; callers can override it with outputBudgetBytes:."
 
 	^ 32 * 1024
 ]
 
 { #category : 'activation' }
-MCPMonitoringState >> disable [
+MCPLocalObservabilityBackend >> disable [
 
 	self enabled ifTrue: [ self recordLog: 'Observability disabled' ].
 	enabled := false
 ]
 
 { #category : 'activation' }
-MCPMonitoringState >> enable [
+MCPLocalObservabilityBackend >> enable [
 
 	self enabled ifTrue: [ ^ self ].
 	enabled := true.
@@ -126,13 +126,13 @@ MCPMonitoringState >> enable [
 ]
 
 { #category : 'accessing' }
-MCPMonitoringState >> enabled [
+MCPLocalObservabilityBackend >> enabled [
 
 	^ enabled ifNil: [ false ]
 ]
 
 { #category : 'accessing' }
-MCPMonitoringState >> enabled: aBoolean [
+MCPLocalObservabilityBackend >> enabled: aBoolean [
 
 	aBoolean
 		ifTrue: [ self enable ]
@@ -140,14 +140,14 @@ MCPMonitoringState >> enabled: aBoolean [
 ]
 
 { #category : 'private' }
-MCPMonitoringState >> errorClassNameFor: anError [
+MCPLocalObservabilityBackend >> errorClassNameFor: anError [
 
 	anError ifNil: [ ^ '' ].
 	^ anError class name asString
 ]
 
 { #category : 'private - tracing' }
-MCPMonitoringState >> eventKindsForRecord: aRecord [
+MCPLocalObservabilityBackend >> eventKindsForRecord: aRecord [
 
 	^ Array streamContents: [ :stream |
 			  aRecord status = 'error' ifTrue: [ stream nextPut: 'error' ].
@@ -156,26 +156,26 @@ MCPMonitoringState >> eventKindsForRecord: aRecord [
 ]
 
 { #category : 'accessing' }
-MCPMonitoringState >> exportDirectory [
+MCPLocalObservabilityBackend >> exportDirectory [
 
 	^ exportDirectory
 ]
 
 { #category : 'accessing' }
-MCPMonitoringState >> exportDirectory: aPath [
+MCPLocalObservabilityBackend >> exportDirectory: aPath [
 
 	exportDirectory := aPath ifNotNil: [ :path | path asFileReference ].
 	exportInstanceDirectory := nil
 ]
 
 { #category : 'testing' }
-MCPMonitoringState >> exportEnabled [
+MCPLocalObservabilityBackend >> exportEnabled [
 
 	^ self exportDirectory notNil
 ]
 
 { #category : 'accessing' }
-MCPMonitoringState >> exportInstanceDirectory [
+MCPLocalObservabilityBackend >> exportInstanceDirectory [
 
 	| directory |
 	self exportEnabled ifFalse: [ ^ nil ].
@@ -188,7 +188,7 @@ MCPMonitoringState >> exportInstanceDirectory [
 ]
 
 { #category : 'private - exporting' }
-MCPMonitoringState >> exportInstanceDirectoryName [
+MCPLocalObservabilityBackend >> exportInstanceDirectoryName [
 
 	| instanceId metadata port suffix version |
 	metadata := self resourceMetadata.
@@ -207,7 +207,7 @@ MCPMonitoringState >> exportInstanceDirectoryName [
 ]
 
 { #category : 'private - exporting' }
-MCPMonitoringState >> exportLogMessage: aString timestamp: timestamp [
+MCPLocalObservabilityBackend >> exportLogMessage: aString timestamp: timestamp [
 
 	self exportEnabled ifFalse: [ ^ self ].
 	[ self writeJSONLine: (self logRecordJSONFor: aString timestamp: timestamp) to: self logFileReference ]
@@ -216,7 +216,7 @@ MCPMonitoringState >> exportLogMessage: aString timestamp: timestamp [
 ]
 
 { #category : 'private - exporting' }
-MCPMonitoringState >> exportMetrics [
+MCPLocalObservabilityBackend >> exportMetrics [
 
 	self exportEnabled ifFalse: [ ^ self ].
 	[ self writeMetricsSnapshot ]
@@ -225,7 +225,7 @@ MCPMonitoringState >> exportMetrics [
 ]
 
 { #category : 'private - tracing' }
-MCPMonitoringState >> exportTraceRecord: aRecord [
+MCPLocalObservabilityBackend >> exportTraceRecord: aRecord [
 
 	(self exportEnabled and: [ aRecord isTraceWorthy ]) ifFalse: [ ^ self ].
 	[ self writeJSONLine: (self traceRecordJSONFor: aRecord) to: self traceFileReference ]
@@ -234,13 +234,13 @@ MCPMonitoringState >> exportTraceRecord: aRecord [
 ]
 
 { #category : 'actions' }
-MCPMonitoringState >> forceFlush [
+MCPLocalObservabilityBackend >> forceFlush [
 
 	self exportMetrics
 ]
 
 { #category : 'initialization' }
-MCPMonitoringState >> initialize [
+MCPLocalObservabilityBackend >> initialize [
 
 	super initialize.
 	enabled := true.
@@ -255,13 +255,13 @@ MCPMonitoringState >> initialize [
 ]
 
 { #category : 'testing' }
-MCPMonitoringState >> isNoop [
+MCPLocalObservabilityBackend >> isNoop [
 
 	^ false
 ]
 
 { #category : 'private - tracing' }
-MCPMonitoringState >> isSensitiveTraceKey: aKey [
+MCPLocalObservabilityBackend >> isSensitiveTraceKey: aKey [
 
 	| lowerKey |
 	lowerKey := aKey asString asLowercase.
@@ -270,32 +270,32 @@ MCPMonitoringState >> isSensitiveTraceKey: aKey [
 ]
 
 { #category : 'private - tracing' }
-MCPMonitoringState >> isVerboseTraceKey: aKey [
+MCPLocalObservabilityBackend >> isVerboseTraceKey: aKey [
 
 	^ #( 'stackTrace' 'signalerContext' ) includes: aKey asString
 ]
 
 { #category : 'private - logging' }
-MCPMonitoringState >> logEntries [
+MCPLocalObservabilityBackend >> logEntries [
 
 	^ logEntries ifNil: [ logEntries := OrderedCollection new ]
 ]
 
 { #category : 'private - logging' }
-MCPMonitoringState >> logEntry: aString [
+MCPLocalObservabilityBackend >> logEntry: aString [
 
 	self logEntries add: aString.
 	[ self logEntries size > self maxLogEntries ] whileTrue: [ self logEntries removeFirst ]
 ]
 
 { #category : 'accessing' }
-MCPMonitoringState >> logFileReference [
+MCPLocalObservabilityBackend >> logFileReference [
 
 	^ self exportInstanceDirectory ifNotNil: [ :directory | directory / 'logs.jsonl' ]
 ]
 
 { #category : 'private' }
-MCPMonitoringState >> logMessageForRecord: aRecord [
+MCPLocalObservabilityBackend >> logMessageForRecord: aRecord [
 
 	^ String streamContents: [ :stream |
 			  stream
@@ -317,7 +317,7 @@ MCPMonitoringState >> logMessageForRecord: aRecord [
 ]
 
 { #category : 'private - exporting' }
-MCPMonitoringState >> logRecordDictionaryFor: aString timestamp: timestamp [
+MCPLocalObservabilityBackend >> logRecordDictionaryFor: aString timestamp: timestamp [
 
 	^ {
 		  (#schemaVersion -> 1).
@@ -327,13 +327,13 @@ MCPMonitoringState >> logRecordDictionaryFor: aString timestamp: timestamp [
 ]
 
 { #category : 'private - exporting' }
-MCPMonitoringState >> logRecordJSONFor: aString timestamp: timestamp [
+MCPLocalObservabilityBackend >> logRecordJSONFor: aString timestamp: timestamp [
 
 	^ STONJSON toString: (self logRecordDictionaryFor: aString timestamp: timestamp)
 ]
 
 { #category : 'private' }
-MCPMonitoringState >> logStatusLabelForStatus: statusString [
+MCPLocalObservabilityBackend >> logStatusLabelForStatus: statusString [
 
 	statusString = 'ok' ifTrue: [ ^ 'OK' ].
 	statusString = 'error' ifTrue: [ ^ 'Error' ].
@@ -341,67 +341,67 @@ MCPMonitoringState >> logStatusLabelForStatus: statusString [
 ]
 
 { #category : 'logging' }
-MCPMonitoringState >> logs [
+MCPLocalObservabilityBackend >> logs [
 
 	^ self logEntries asArray
 ]
 
 { #category : 'accessing' }
-MCPMonitoringState >> maxLogEntries [
+MCPLocalObservabilityBackend >> maxLogEntries [
 
 	^ maxLogEntries ifNil: [ 200 ]
 ]
 
 { #category : 'accessing' }
-MCPMonitoringState >> maxLogEntries: anInteger [
+MCPLocalObservabilityBackend >> maxLogEntries: anInteger [
 
 	maxLogEntries := anInteger
 ]
 
 { #category : 'accessing' }
-MCPMonitoringState >> maxRecentCalls [
+MCPLocalObservabilityBackend >> maxRecentCalls [
 
 	^ maxRecentCalls ifNil: [ 100 ]
 ]
 
 { #category : 'accessing' }
-MCPMonitoringState >> maxRecentCalls: anInteger [
+MCPLocalObservabilityBackend >> maxRecentCalls: anInteger [
 
 	maxRecentCalls := anInteger
 ]
 
 { #category : 'accessing' }
-MCPMonitoringState >> maxTraceCollectionItems [
+MCPLocalObservabilityBackend >> maxTraceCollectionItems [
 
 	^ 20
 ]
 
 { #category : 'accessing' }
-MCPMonitoringState >> maxTraceDepth [
+MCPLocalObservabilityBackend >> maxTraceDepth [
 
 	^ 4
 ]
 
 { #category : 'accessing' }
-MCPMonitoringState >> maxTraceStringLength [
+MCPLocalObservabilityBackend >> maxTraceStringLength [
 
 	^ 1000
 ]
 
 { #category : 'accessing' }
-MCPMonitoringState >> metrics [
+MCPLocalObservabilityBackend >> metrics [
 
 	^ self statsByTool values asSortedCollection: [ :left :right | left toolName <= right toolName ]
 ]
 
 { #category : 'accessing' }
-MCPMonitoringState >> metricsFileReference [
+MCPLocalObservabilityBackend >> metricsFileReference [
 
 	^ self exportInstanceDirectory ifNotNil: [ :directory | directory / 'metrics.json' ]
 ]
 
 { #category : 'private - exporting' }
-MCPMonitoringState >> metricsSnapshotDictionary [
+MCPLocalObservabilityBackend >> metricsSnapshotDictionary [
 
 	^ {
 		  (#schemaVersion -> 1).
@@ -413,19 +413,19 @@ MCPMonitoringState >> metricsSnapshotDictionary [
 ]
 
 { #category : 'accessing' }
-MCPMonitoringState >> minimumOutlierMilliseconds [
+MCPLocalObservabilityBackend >> minimumOutlierMilliseconds [
 
 	^ minimumOutlierMilliseconds ifNil: [ 250 ]
 ]
 
 { #category : 'accessing' }
-MCPMonitoringState >> minimumOutlierMilliseconds: anInteger [
+MCPLocalObservabilityBackend >> minimumOutlierMilliseconds: anInteger [
 
 	minimumOutlierMilliseconds := anInteger
 ]
 
 { #category : 'private - exporting' }
-MCPMonitoringState >> newResourceMetadata [
+MCPLocalObservabilityBackend >> newResourceMetadata [
 
 	^ {
 		  (#schemaVersion -> 1).
@@ -435,13 +435,13 @@ MCPMonitoringState >> newResourceMetadata [
 ]
 
 { #category : 'accessing' }
-MCPMonitoringState >> nextCallId [
+MCPLocalObservabilityBackend >> nextCallId [
 
 	^ nextCallId ifNil: [ 0 ]
 ]
 
 { #category : 'private' }
-MCPMonitoringState >> outlierExplanationForDurationMilliseconds: duration stats: stats [
+MCPLocalObservabilityBackend >> outlierExplanationForDurationMilliseconds: duration stats: stats [
 
 	| average ratio |
 	stats callCount < 3 ifTrue: [ ^ '' ].
@@ -461,31 +461,31 @@ MCPMonitoringState >> outlierExplanationForDurationMilliseconds: duration stats:
 ]
 
 { #category : 'accessing' }
-MCPMonitoringState >> outlierFactor [
+MCPLocalObservabilityBackend >> outlierFactor [
 
 	^ outlierFactor ifNil: [ 3 ]
 ]
 
 { #category : 'accessing' }
-MCPMonitoringState >> outlierFactor: aNumber [
+MCPLocalObservabilityBackend >> outlierFactor: aNumber [
 
 	outlierFactor := aNumber
 ]
 
 { #category : 'accessing' }
-MCPMonitoringState >> outputBudgetBytes [
+MCPLocalObservabilityBackend >> outputBudgetBytes [
 
 	^ outputBudgetBytes ifNil: [ self defaultOutputBudgetBytes ]
 ]
 
 { #category : 'accessing' }
-MCPMonitoringState >> outputBudgetBytes: anInteger [
+MCPLocalObservabilityBackend >> outputBudgetBytes: anInteger [
 
 	outputBudgetBytes := anInteger
 ]
 
 { #category : 'private - budgets' }
-MCPMonitoringState >> outputBudgetDataForResult: aToolResult error: anError [
+MCPLocalObservabilityBackend >> outputBudgetDataForResult: aToolResult error: anError [
 
 	| byteCount explanation |
 	byteCount := self approximateOutputBytesForResult: aToolResult error: anError.
@@ -499,7 +499,7 @@ MCPMonitoringState >> outputBudgetDataForResult: aToolResult error: anError [
 ]
 
 { #category : 'private - budgets' }
-MCPMonitoringState >> outputBudgetExplanationForByteCount: byteCount [
+MCPLocalObservabilityBackend >> outputBudgetExplanationForByteCount: byteCount [
 
 	byteCount <= self outputBudgetBytes ifTrue: [ ^ '' ].
 	^ String streamContents: [ :stream |
@@ -512,7 +512,7 @@ MCPMonitoringState >> outputBudgetExplanationForByteCount: byteCount [
 ]
 
 { #category : 'displaying' }
-MCPMonitoringState >> outputBudgetGuidance [
+MCPLocalObservabilityBackend >> outputBudgetGuidance [
 
 	| attentionStats displayedCount |
 	attentionStats := self statsNeedingOutputBudgetAttention.
@@ -528,19 +528,19 @@ MCPMonitoringState >> outputBudgetGuidance [
 ]
 
 { #category : 'accessing' }
-MCPMonitoringState >> recentCallRecords [
+MCPLocalObservabilityBackend >> recentCallRecords [
 
 	^ self recentCalls asArray
 ]
 
 { #category : 'accessing' }
-MCPMonitoringState >> recentCalls [
+MCPLocalObservabilityBackend >> recentCalls [
 
 	^ recentCalls ifNil: [ recentCalls := OrderedCollection new ]
 ]
 
 { #category : 'logging' }
-MCPMonitoringState >> recordLog: aString [
+MCPLocalObservabilityBackend >> recordLog: aString [
 
 	| timestamp |
 	self enabled ifFalse: [ ^ self ].
@@ -550,13 +550,13 @@ MCPMonitoringState >> recordLog: aString [
 ]
 
 { #category : 'private - budgets' }
-MCPMonitoringState >> recordOutputBudgetFor: aRecord result: aToolResult error: anError [
+MCPLocalObservabilityBackend >> recordOutputBudgetFor: aRecord result: aToolResult error: anError [
 
 	aRecord recordOutputBudget: (self outputBudgetDataForResult: aToolResult error: anError)
 ]
 
 { #category : 'recording' }
-MCPMonitoringState >> recordSessionEndFor: anMCP [
+MCPLocalObservabilityBackend >> recordSessionEndFor: anMCP [
 
 	self resourceMetadata at: #sessionEndedAt put: DateAndTime now asString.
 	self exportEnabled ifTrue: [ self writeResourceMetadata ].
@@ -564,7 +564,7 @@ MCPMonitoringState >> recordSessionEndFor: anMCP [
 ]
 
 { #category : 'recording' }
-MCPMonitoringState >> recordSessionStartFor: anMCP [
+MCPLocalObservabilityBackend >> recordSessionStartFor: anMCP [
 
 	self resourceMetadata at: #sessionStartedAt put: DateAndTime now asString.
 	self resourceMetadata removeKey: #sessionEndedAt ifAbsent: [ nil ].
@@ -572,7 +572,7 @@ MCPMonitoringState >> recordSessionStartFor: anMCP [
 ]
 
 { #category : 'recording' }
-MCPMonitoringState >> recordToolCallFinish: aRecord result: aToolResult error: anError [
+MCPLocalObservabilityBackend >> recordToolCallFinish: aRecord result: aToolResult error: anError [
 
 	| explanation finishTimestamp stats statusString duration |
 	aRecord ifNil: [ ^ self ].
@@ -599,7 +599,7 @@ MCPMonitoringState >> recordToolCallFinish: aRecord result: aToolResult error: a
 ]
 
 { #category : 'recording' }
-MCPMonitoringState >> recordToolCallStart: aToolName input: inputObject dispatchPath: dispatchPath context: contextDictionary [
+MCPLocalObservabilityBackend >> recordToolCallStart: aToolName input: inputObject dispatchPath: dispatchPath context: contextDictionary [
 
 	| record startTimestamp |
 	self enabled ifFalse: [ ^ nil ].
@@ -615,19 +615,19 @@ MCPMonitoringState >> recordToolCallStart: aToolName input: inputObject dispatch
 ]
 
 { #category : 'accessing' }
-MCPMonitoringState >> resourceFileReference [
+MCPLocalObservabilityBackend >> resourceFileReference [
 
 	^ self exportInstanceDirectory ifNotNil: [ :directory | directory / 'resource.json' ]
 ]
 
 { #category : 'accessing' }
-MCPMonitoringState >> resourceMetadata [
+MCPLocalObservabilityBackend >> resourceMetadata [
 
 	^ resourceMetadata ifNil: [ resourceMetadata := self newResourceMetadata ]
 ]
 
 { #category : 'accessing' }
-MCPMonitoringState >> resourceMetadata: aDictionary [
+MCPLocalObservabilityBackend >> resourceMetadata: aDictionary [
 
 	| metadata |
 	metadata := self resourceMetadata copy.
@@ -637,7 +637,7 @@ MCPMonitoringState >> resourceMetadata: aDictionary [
 ]
 
 { #category : 'private - tracing' }
-MCPMonitoringState >> shouldIncludeTraceAssociation: anAssociation [
+MCPLocalObservabilityBackend >> shouldIncludeTraceAssociation: anAssociation [
 
 	| value |
 	(self isVerboseTraceKey: anAssociation key) ifTrue: [ ^ false ].
@@ -649,25 +649,25 @@ MCPMonitoringState >> shouldIncludeTraceAssociation: anAssociation [
 ]
 
 { #category : 'actions' }
-MCPMonitoringState >> shutdown [
+MCPLocalObservabilityBackend >> shutdown [
 
 	self recordSessionEndFor: nil
 ]
 
 { #category : 'accessing' }
-MCPMonitoringState >> statsByTool [
+MCPLocalObservabilityBackend >> statsByTool [
 
 	^ statsByTool ifNil: [ statsByTool := Dictionary new ]
 ]
 
 { #category : 'accessing' }
-MCPMonitoringState >> statsForToolNamed: aToolName [
+MCPLocalObservabilityBackend >> statsForToolNamed: aToolName [
 
 	^ self statsByTool at: aToolName asString ifAbsentPut: [ MCPToolCallStats forToolNamed: aToolName asString ]
 ]
 
 { #category : 'private - budgets' }
-MCPMonitoringState >> statsNeedingOutputBudgetAttention [
+MCPLocalObservabilityBackend >> statsNeedingOutputBudgetAttention [
 
 	^ (self metrics select: [ :each | each outputBudgetExceededCount > 0 ]) asArray sort: [ :left :right |
 			  left outputBudgetExceededCount = right outputBudgetExceededCount
@@ -676,7 +676,7 @@ MCPMonitoringState >> statsNeedingOutputBudgetAttention [
 ]
 
 { #category : 'private' }
-MCPMonitoringState >> statusForResult: aToolResult error: anError [
+MCPLocalObservabilityBackend >> statusForResult: aToolResult error: anError [
 
 	anError ifNotNil: [ ^ 'error' ].
 	aToolResult ifNil: [ ^ 'error' ].
@@ -686,7 +686,7 @@ MCPMonitoringState >> statusForResult: aToolResult error: anError [
 ]
 
 { #category : 'displaying' }
-MCPMonitoringState >> statusText [
+MCPLocalObservabilityBackend >> statusText [
 
 	| guidance |
 	self enabled ifFalse: [ ^ 'Observability disabled' ].
@@ -706,7 +706,7 @@ MCPMonitoringState >> statusText [
 ]
 
 { #category : 'private' }
-MCPMonitoringState >> summaryForResult: aToolResult [
+MCPLocalObservabilityBackend >> summaryForResult: aToolResult [
 
 	| structuredContent |
 	aToolResult ifNil: [ ^ '' ].
@@ -716,25 +716,25 @@ MCPMonitoringState >> summaryForResult: aToolResult [
 ]
 
 { #category : 'accessing' }
-MCPMonitoringState >> totalCallCount [
+MCPLocalObservabilityBackend >> totalCallCount [
 
 	^ self metrics inject: 0 into: [ :sum :each | sum + each callCount ]
 ]
 
 { #category : 'accessing' }
-MCPMonitoringState >> totalErrorCount [
+MCPLocalObservabilityBackend >> totalErrorCount [
 
 	^ self metrics inject: 0 into: [ :sum :each | sum + each errorCount ]
 ]
 
 { #category : 'accessing' }
-MCPMonitoringState >> totalOutputBudgetExceededCount [
+MCPLocalObservabilityBackend >> totalOutputBudgetExceededCount [
 
 	^ self metrics inject: 0 into: [ :sum :each | sum + each outputBudgetExceededCount ]
 ]
 
 { #category : 'private - tracing' }
-MCPMonitoringState >> traceEventNameForRecord: aRecord [
+MCPLocalObservabilityBackend >> traceEventNameForRecord: aRecord [
 
 	aRecord status = 'error' ifTrue: [ ^ 'mcp.tool_call.error' ].
 	aRecord outputBudgetExceeded ifTrue: [ ^ 'mcp.tool_call.output_budget_exceeded' ].
@@ -743,13 +743,13 @@ MCPMonitoringState >> traceEventNameForRecord: aRecord [
 ]
 
 { #category : 'accessing' }
-MCPMonitoringState >> traceFileReference [
+MCPLocalObservabilityBackend >> traceFileReference [
 
 	^ self exportInstanceDirectory ifNotNil: [ :directory | directory / 'traces.jsonl' ]
 ]
 
 { #category : 'private - tracing' }
-MCPMonitoringState >> traceRecordDictionaryFor: aRecord [
+MCPLocalObservabilityBackend >> traceRecordDictionaryFor: aRecord [
 
 	| dictionary |
 	dictionary := Dictionary new.
@@ -777,25 +777,25 @@ MCPMonitoringState >> traceRecordDictionaryFor: aRecord [
 ]
 
 { #category : 'private - tracing' }
-MCPMonitoringState >> traceRecordJSONFor: aRecord [
+MCPLocalObservabilityBackend >> traceRecordJSONFor: aRecord [
 
 	^ STONJSON toString: (self traceRecordDictionaryFor: aRecord)
 ]
 
 { #category : 'accessing' }
-MCPMonitoringState >> traceRecords [
+MCPLocalObservabilityBackend >> traceRecords [
 
 	^ self recentCallRecords select: [ :each | each isTraceWorthy ]
 ]
 
 { #category : 'private - tracing' }
-MCPMonitoringState >> traceSnapshotFor: anObject [
+MCPLocalObservabilityBackend >> traceSnapshotFor: anObject [
 
 	^ self traceSnapshotFor: anObject depth: 0
 ]
 
 { #category : 'private - tracing' }
-MCPMonitoringState >> traceSnapshotFor: anObject depth: depth [
+MCPLocalObservabilityBackend >> traceSnapshotFor: anObject depth: depth [
 
 	anObject ifNil: [ ^ nil ].
 	(anObject isString or: [ anObject isSymbol ]) ifTrue: [ ^ self traceStringSnapshotFor: anObject ].
@@ -809,14 +809,14 @@ MCPMonitoringState >> traceSnapshotFor: anObject depth: depth [
 ]
 
 { #category : 'private - tracing' }
-MCPMonitoringState >> traceSnapshotForAssociation: anAssociation depth: depth [
+MCPLocalObservabilityBackend >> traceSnapshotForAssociation: anAssociation depth: depth [
 
 	(self isSensitiveTraceKey: anAssociation key) ifTrue: [ ^ anAssociation key -> '<redacted>' ].
 	^ anAssociation key -> (self traceSnapshotFor: anAssociation value depth: depth + 1)
 ]
 
 { #category : 'private - tracing' }
-MCPMonitoringState >> traceSnapshotForCollection: aCollection depth: depth [
+MCPLocalObservabilityBackend >> traceSnapshotForCollection: aCollection depth: depth [
 
 	| array limit overflow snapshot |
 	array := aCollection asArray.
@@ -828,7 +828,7 @@ MCPMonitoringState >> traceSnapshotForCollection: aCollection depth: depth [
 ]
 
 { #category : 'private - tracing' }
-MCPMonitoringState >> traceSnapshotForDictionary: aDictionary depth: depth [
+MCPLocalObservabilityBackend >> traceSnapshotForDictionary: aDictionary depth: depth [
 
 	| snapshot |
 	snapshot := Dictionary new.
@@ -843,7 +843,7 @@ MCPMonitoringState >> traceSnapshotForDictionary: aDictionary depth: depth [
 ]
 
 { #category : 'private - tracing' }
-MCPMonitoringState >> traceSnapshotForResult: aToolResult error: anError [
+MCPLocalObservabilityBackend >> traceSnapshotForResult: aToolResult error: anError [
 
 	aToolResult ifNotNil: [ ^ self traceSnapshotFor: aToolResult structuredContent ].
 	anError ifNil: [ ^ nil ].
@@ -853,7 +853,7 @@ MCPMonitoringState >> traceSnapshotForResult: aToolResult error: anError [
 ]
 
 { #category : 'private - tracing' }
-MCPMonitoringState >> traceStringSnapshotFor: aString [
+MCPLocalObservabilityBackend >> traceStringSnapshotFor: aString [
 
 	| text |
 	text := aString asString.
@@ -862,7 +862,7 @@ MCPMonitoringState >> traceStringSnapshotFor: aString [
 ]
 
 { #category : 'private - exporting' }
-MCPMonitoringState >> writeJSON: aDictionary to: aFileReference [
+MCPLocalObservabilityBackend >> writeJSON: aDictionary to: aFileReference [
 
 	| temporaryFile |
 	aFileReference parent ensureCreateDirectory.
@@ -876,7 +876,7 @@ MCPMonitoringState >> writeJSON: aDictionary to: aFileReference [
 ]
 
 { #category : 'private - exporting' }
-MCPMonitoringState >> writeJSONLine: aString to: aFileReference [
+MCPLocalObservabilityBackend >> writeJSONLine: aString to: aFileReference [
 
 	aFileReference parent ensureCreateDirectory.
 	aFileReference writeStreamDo: [ :stream |
@@ -887,13 +887,13 @@ MCPMonitoringState >> writeJSONLine: aString to: aFileReference [
 ]
 
 { #category : 'private - exporting' }
-MCPMonitoringState >> writeMetricsSnapshot [
+MCPLocalObservabilityBackend >> writeMetricsSnapshot [
 
 	self writeJSON: self metricsSnapshotDictionary to: self metricsFileReference
 ]
 
 { #category : 'private - exporting' }
-MCPMonitoringState >> writeResourceMetadata [
+MCPLocalObservabilityBackend >> writeResourceMetadata [
 
 	self writeJSON: self resourceMetadata to: self resourceFileReference
 ]

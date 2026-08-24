@@ -6,9 +6,9 @@ This is the default backend for MCP core. It deliberately has no external depend
 Class {
 	#name : 'MCPNoopObservabilityBackend',
 	#superclass : 'MCPObservabilityBackend',
-	#category : 'MCP-Monitoring',
+	#category : 'MCP-Observability',
 	#package : 'MCP',
-	#tag : 'Monitoring'
+	#tag : 'Observability'
 }
 
 { #category : 'clearing' }

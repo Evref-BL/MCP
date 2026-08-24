@@ -18,8 +18,8 @@ Class {
 		'stopButton',
 		'restartButton',
 		'toolsTable',
-		'monitoringCheckBox',
-		'clearMonitoringButton',
+		'observabilityCheckBox',
+		'clearObservabilityButton',
 		'metricsHeaderButton',
 		'metricsTable',
 		'tracesHeaderButton',
@@ -55,11 +55,11 @@ MCPDashboardPresenter class >> openOn: anMCP [
 ]
 
 { #category : 'layout' }
-MCPDashboardPresenter >> addMonitoringWidgetsLayoutTo: aBoxLayout [
+MCPDashboardPresenter >> addObservabilityWidgetsLayoutTo: aBoxLayout [
 
-	self hasExpandedMonitoringSection
-		ifTrue: [ aBoxLayout add: self monitoringWidgetsLayout ]
-		ifFalse: [ aBoxLayout add: self monitoringWidgetsLayout expand: false ]
+	self hasExpandedObservabilitySection
+		ifTrue: [ aBoxLayout add: self observabilityWidgetsLayout ]
+		ifFalse: [ aBoxLayout add: self observabilityWidgetsLayout expand: false ]
 ]
 
 { #category : 'layout' }
@@ -92,7 +92,7 @@ MCPDashboardPresenter >> applyConfiguration [
 ]
 
 { #category : 'collapsing' }
-MCPDashboardPresenter >> areAllMonitoringSectionsExpanded [
+MCPDashboardPresenter >> areAllObservabilitySectionsExpanded [
 
 	^ self isMetricsSectionExpanded and: [ self isTracesSectionExpanded and: [ self isLogsSectionExpanded ] ]
 ]
@@ -121,9 +121,9 @@ MCPDashboardPresenter >> autoRefreshLoop [
 ]
 
 { #category : 'actions' }
-MCPDashboardPresenter >> clearMonitoring [
+MCPDashboardPresenter >> clearObservability [
 
-	self model clearMonitoring.
+	self model clearObservability.
 	self refreshView
 ]
 
@@ -153,7 +153,7 @@ MCPDashboardPresenter >> connectPresenters [
 	applyButton action: [ self applyConfiguration ].
 	refreshButton action: [ self refreshView ].
 	autoRefreshCheckBox whenChangedDo: [ :enabled | self autoRefreshChangedTo: enabled ].
-	monitoringCheckBox whenChangedDo: [ :enabled | self observabilityChangedTo: enabled ].
+	observabilityCheckBox whenChangedDo: [ :enabled | self observabilityChangedTo: enabled ].
 	toolsHeaderButton action: [ self toggleToolsSection ].
 	metricsHeaderButton action: [ self toggleMetricsSection ].
 	tracesHeaderButton action: [ self toggleTracesSection ].
@@ -162,7 +162,7 @@ MCPDashboardPresenter >> connectPresenters [
 	startButton action: [ self startServer ].
 	stopButton action: [ self stopServer ].
 	restartButton action: [ self restartServer ].
-	clearMonitoringButton action: [ self clearMonitoring ]
+	clearObservabilityButton action: [ self clearObservability ]
 ]
 
 { #category : 'layout' }
@@ -171,18 +171,18 @@ MCPDashboardPresenter >> dashboardWidgetsBoxLayout [
 	| widgetLayout |
 	widgetLayout := SpBoxLayout newTopToBottom.
 	self addSectionLayout: self toolsWidgetLayout expanded: self isToolsSectionExpanded to: widgetLayout.
-	self addMonitoringWidgetsLayoutTo: widgetLayout.
+	self addObservabilityWidgetsLayoutTo: widgetLayout.
 	^ widgetLayout
 ]
 
 { #category : 'layout' }
 MCPDashboardPresenter >> dashboardWidgetsLayout [
 
-	(self isToolsSectionExpanded and: [ self hasExpandedMonitoringSection ]) ifTrue: [
+	(self isToolsSectionExpanded and: [ self hasExpandedObservabilitySection ]) ifTrue: [
 			^ SpPanedLayout newTopToBottom
 				  positionOfSlider: 42 percent;
 				  first: self toolsWidgetLayout;
-				  second: self monitoringWidgetsLayout;
+				  second: self observabilityWidgetsLayout;
 				  yourself ].
 	^ self dashboardWidgetsBoxLayout
 ]
@@ -219,7 +219,7 @@ MCPDashboardPresenter >> disclosureLabelFor: title count: count expanded: expand
 ]
 
 { #category : 'collapsing' }
-MCPDashboardPresenter >> expandedMonitoringSectionCount [
+MCPDashboardPresenter >> expandedObservabilitySectionCount [
 
 	| count |
 	count := 0.
@@ -230,7 +230,7 @@ MCPDashboardPresenter >> expandedMonitoringSectionCount [
 ]
 
 { #category : 'collapsing' }
-MCPDashboardPresenter >> hasExpandedMonitoringSection [
+MCPDashboardPresenter >> hasExpandedObservabilitySection [
 
 	^ self isMetricsSectionExpanded or: [ self isTracesSectionExpanded or: [ self isLogsSectionExpanded ] ]
 ]
@@ -275,8 +275,8 @@ MCPDashboardPresenter >> initializePresenters [
 	stopButton := self instantiate: SpButtonPresenter.
 	restartButton := self instantiate: SpButtonPresenter.
 	toolsTable := self newTable.
-	monitoringCheckBox := self instantiate: SpCheckBoxPresenter.
-	clearMonitoringButton := self instantiate: SpButtonPresenter.
+	observabilityCheckBox := self instantiate: SpCheckBoxPresenter.
+	clearObservabilityButton := self instantiate: SpButtonPresenter.
 	metricsHeaderButton := self instantiate: SpButtonPresenter.
 	metricsTable := self newTable.
 	tracesHeaderButton := self instantiate: SpButtonPresenter.
@@ -295,8 +295,8 @@ MCPDashboardPresenter >> initializePresenters [
 	startButton label: 'Start'.
 	stopButton label: 'Stop'.
 	restartButton label: 'Restart'.
-	monitoringCheckBox label: 'Enable observability'.
-	clearMonitoringButton label: 'Clear'.
+	observabilityCheckBox label: 'Enable observability'.
+	clearObservabilityButton label: 'Clear'.
 
 	toolsTable
 		addColumn: (SpStringTableColumn title: 'Tool' evaluated: #name);
@@ -323,9 +323,9 @@ MCPDashboardPresenter >> initializeSectionExpansionFor: mcp [
 
 	sectionExpansionInitialized ifTrue: [ ^ self ].
 	toolsSectionExpanded := mcp sortedTools notEmpty.
-	metricsSectionExpanded := mcp monitoringEnabled or: [ mcp monitoringMetrics notEmpty ].
-	tracesSectionExpanded := mcp monitoringEnabled or: [ mcp monitoringTraces notEmpty ].
-	logsSectionExpanded := mcp monitoringEnabled or: [ mcp monitoringLogs notEmpty ].
+	metricsSectionExpanded := mcp observabilityEnabled or: [ mcp observabilityMetrics notEmpty ].
+	tracesSectionExpanded := mcp observabilityEnabled or: [ mcp observabilityTraces notEmpty ].
+	logsSectionExpanded := mcp observabilityEnabled or: [ mcp observabilityLogs notEmpty ].
 	sectionExpansionInitialized := true
 ]
 
@@ -408,7 +408,7 @@ MCPDashboardPresenter >> lifecycleActionsLayout [
 		  yourself
 ]
 
-{ #category : 'private - monitoring' }
+{ #category : 'private - observability' }
 MCPDashboardPresenter >> logsForDisplayFrom: logEntries [
 
 	^ logEntries reversed
@@ -442,29 +442,29 @@ MCPDashboardPresenter >> modelChanged [
 ]
 
 { #category : 'layout' }
-MCPDashboardPresenter >> monitoringControlsLayout [
+MCPDashboardPresenter >> observabilityControlsLayout [
 
 	| controlsLayout |
 	controlsLayout := SpBoxLayout newLeftToRight.
-	self addPaddedCheckbox: monitoringCheckBox width: 190 to: controlsLayout.
+	self addPaddedCheckbox: observabilityCheckBox width: 190 to: controlsLayout.
 	controlsLayout add: refreshButton withConstraints: [ :constraints | constraints width: 110 ].
 	self addPaddedCheckbox: autoRefreshCheckBox width: 150 to: controlsLayout.
-	controlsLayout add: clearMonitoringButton withConstraints: [ :constraints | constraints width: 90 ].
+	controlsLayout add: clearObservabilityButton withConstraints: [ :constraints | constraints width: 90 ].
 	^ controlsLayout
 ]
 
 { #category : 'layout' }
-MCPDashboardPresenter >> monitoringHeaderLayout [
+MCPDashboardPresenter >> observabilityHeaderLayout [
 
 	^ SpBoxLayout newTopToBottom
-		  add: self monitoringControlsLayout withConstraints: [ :constraints | constraints height: 30 ];
+		  add: self observabilityControlsLayout withConstraints: [ :constraints | constraints height: 30 ];
 		  yourself
 ]
 
 { #category : 'layout' }
-MCPDashboardPresenter >> monitoringSectionsLayout [
+MCPDashboardPresenter >> observabilitySectionsLayout [
 
-	self areAllMonitoringSectionsExpanded ifTrue: [
+	self areAllObservabilitySectionsExpanded ifTrue: [
 			^ SpPanedLayout newTopToBottom
 				  positionOfSlider: 42 percent;
 				  first: self metricsWidgetLayout;
@@ -474,12 +474,12 @@ MCPDashboardPresenter >> monitoringSectionsLayout [
 						   second: self logsWidgetLayout;
 						   yourself);
 				  yourself ].
-	self expandedMonitoringSectionCount = 2 ifTrue: [ ^ self twoExpandedMonitoringSectionsLayout ].
-	^ self monitoringWidgetsBoxLayout
+	self expandedObservabilitySectionCount = 2 ifTrue: [ ^ self twoExpandedObservabilitySectionsLayout ].
+	^ self observabilityWidgetsBoxLayout
 ]
 
 { #category : 'layout' }
-MCPDashboardPresenter >> monitoringWidgetsBoxLayout [
+MCPDashboardPresenter >> observabilityWidgetsBoxLayout [
 
 	| widgetLayout |
 	widgetLayout := SpBoxLayout newTopToBottom.
@@ -490,11 +490,11 @@ MCPDashboardPresenter >> monitoringWidgetsBoxLayout [
 ]
 
 { #category : 'layout' }
-MCPDashboardPresenter >> monitoringWidgetsLayout [
+MCPDashboardPresenter >> observabilityWidgetsLayout [
 
 	^ SpBoxLayout newTopToBottom
-		  add: self monitoringHeaderLayout expand: false;
-		  add: self monitoringSectionsLayout;
+		  add: self observabilityHeaderLayout expand: false;
+		  add: self observabilitySectionsLayout;
 		  yourself
 ]
 
@@ -503,8 +503,8 @@ MCPDashboardPresenter >> observabilityChangedTo: enabled [
 
 	| mcp |
 	mcp := self model ifNil: [ ^ self ].
-	mcp monitoringEnabled = enabled ifTrue: [ ^ self ].
-	mcp monitoringEnabled: enabled.
+	mcp observabilityEnabled = enabled ifTrue: [ ^ self ].
+	mcp observabilityEnabled: enabled.
 	self refreshView
 ]
 
@@ -540,9 +540,9 @@ MCPDashboardPresenter >> refreshView [
 	self configureTracesTableMenu.
 	self initializeSectionExpansionFor: mcp.
 	tools := mcp sortedTools.
-	metrics := mcp monitoringMetrics.
-	traces := mcp monitoringTraces.
-	logs := mcp monitoringLogs.
+	metrics := mcp observabilityMetrics.
+	traces := mcp observabilityTraces.
+	logs := mcp observabilityLogs.
 	isRunning := mcp isRunning.
 	isListening := mcp isListening.
 	statusText := self serverStatusLabelForRunning: isRunning listening: isListening.
@@ -557,7 +557,7 @@ MCPDashboardPresenter >> refreshView [
 	debugCheckBox state: mcp debugMode.
 	toolsHeaderButton label: (self disclosureLabelFor: 'Tools' count: tools size expanded: self isToolsSectionExpanded).
 	toolsTable items: tools.
-	monitoringCheckBox state: mcp monitoringEnabled.
+	observabilityCheckBox state: mcp observabilityEnabled.
 	metricsHeaderButton label: (self disclosureLabelFor: 'Metrics' count: metrics size expanded: self isMetricsSectionExpanded).
 	metricsTable items: metrics.
 	tracesHeaderButton label: (self disclosureLabelFor: 'Traces' count: traces size expanded: self isTracesSectionExpanded).
@@ -741,7 +741,7 @@ MCPDashboardPresenter >> tracesWidgetLayout [
 ]
 
 { #category : 'layout' }
-MCPDashboardPresenter >> twoExpandedMonitoringSectionsLayout [
+MCPDashboardPresenter >> twoExpandedObservabilitySectionsLayout [
 
 	self isMetricsSectionExpanded ifFalse: [
 			^ SpBoxLayout newTopToBottom
@@ -770,5 +770,5 @@ MCPDashboardPresenter >> twoExpandedMonitoringSectionsLayout [
 						   yourself);
 				  add: self logsWidgetLayout expand: false;
 				  yourself ].
-	^ self monitoringWidgetsBoxLayout
+	^ self observabilityWidgetsBoxLayout
 ]

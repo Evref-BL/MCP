@@ -227,22 +227,22 @@ MCP starts with a no-op observability backend. Enable the built-in JSON
 observability backend explicitly:
 
 ```smalltalk
-mcp monitoringEnabled: true
+mcp observabilityEnabled: true
 ```
 
 By default, JSON observability exports under the image-local
 `pharo-local/mcp/observability` directory. Configure
-`mcp monitoringExportDirectory: aDirectory` to override that export root for
+`mcp observabilityExportDirectory: aDirectory` to override that export root for
 instance metadata, `logs.jsonl`, `metrics.json`, and `traces.jsonl`.
 
-OpenTelemetry support is optional. Load the `Telemetry` group, then enable
+OpenTelemetry support is optional. Load the `OpenTelemetry` group, then enable
 the OpenTelemetry backend for an MCP instance:
 
 ```smalltalk
 Metacello new
    baseline: 'MCP';
    repository: 'github://Evref-BL/MCP:main/src';
-   load: 'Telemetry'.
+   load: 'OpenTelemetry'.
 
 mcp useOpenTelemetryObservability
 ```
@@ -250,7 +250,7 @@ mcp useOpenTelemetryObservability
 ## Version Compatibility
 
 The core baseline loads PharoCompatibility, JRPC, and PCRE2.
-OpenTelemetry is loaded only by the optional `Telemetry` group. CI covers
+OpenTelemetry is loaded only by the optional `OpenTelemetry` group. CI covers
 Pharo 12, 13, and 14. Code that depends on version-sensitive Pharo APIs should
 go through PharoCompatibility rather than assuming the Pharo 13 API is present
 everywhere.

@@ -1,5 +1,5 @@
 "
-Aggregated monitoring metrics for one MCP tool. It tracks call counts, success/error counts, timing totals, min/max/last duration, output-size totals and maxima, output-budget overruns, and the last outlier explanation.
+Aggregated observability metrics for one MCP tool. It tracks call counts, success/error counts, timing totals, min/max/last duration, output-size totals and maxima, output-budget overruns, and the last outlier explanation.
 "
 Class {
 	#name : 'MCPToolCallStats',
@@ -24,9 +24,9 @@ Class {
 		'outputBudgetExceededCount',
 		'errorCountsByClass'
 	],
-	#category : 'MCP-Monitoring',
+	#category : 'MCP-Observability',
 	#package : 'MCP',
-	#tag : 'Monitoring'
+	#tag : 'Observability'
 }
 
 { #category : 'instance creation' }
