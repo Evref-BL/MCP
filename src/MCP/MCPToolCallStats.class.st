@@ -268,8 +268,7 @@ MCPToolCallStats >> outputBudgetGuidance [
 			  stream
 				  nextPutAll: ' (max ';
 				  print: self maxOutputBytes;
-				  nextPutAll:
-					  ' bytes). Prefer pagination, handles, or summary-first output.' ]
+				  nextPutAll: ' bytes). Prefer pagination, handles, or summary-first output.' ]
 ]
 
 { #category : 'recording' }
@@ -315,9 +314,7 @@ MCPToolCallStats >> successCount [
 { #category : 'private' }
 MCPToolCallStats >> timestampStringFor: aTimestamp [
 
-	^ aTimestamp
-		  ifNil: [ '' ]
-		  ifNotNil: [ :timestamp | timestamp asString ]
+	^ aTimestamp ifNil: [ '' ] ifNotNil: [ :timestamp | timestamp asString ]
 ]
 
 { #category : 'accessing' }
