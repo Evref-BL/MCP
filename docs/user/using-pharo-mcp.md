@@ -109,6 +109,12 @@ Auto-registered external tools are discoverable by default. Agents can find
 them with `tool_search`, inspect them with `tool_get`, and call them through
 `tool_call`.
 
+`MCPToolRegistry` is the server's source of truth for registered tools. In
+normal use, configure it through the `MCP` instance messages below. The
+`tools/list` response contains only the static tool surface cached by the MCP
+instance; discoverable tools remain available through `tool_search`, `tool_get`,
+and `tool_call`.
+
 For per-server configuration, register tools explicitly before starting the
 server:
 

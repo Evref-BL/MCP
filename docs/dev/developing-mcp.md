@@ -54,6 +54,8 @@ Rules:
 - Keep schema and contract tests close to tool behavior changes.
 - Keep discoverable-tool metadata current when adding or changing tool groups,
   keywords, standard tool annotations, or schema-inspection expectations.
+- When changing tool registration or exposure, keep the distinction between the
+  registry source of truth and MCP's cached `tools/list` surface explicit.
 - For debugger tools, keep state references opaque and scoped to the debug
   state that returned them.
 - Keep UI changes separate from core MCP tool behavior unless the task
