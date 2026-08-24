@@ -20,7 +20,7 @@ MCPObservabilityBackend class >> isAbstract [
 { #category : 'clearing' }
 MCPObservabilityBackend >> clear [
 
-	self subclassResponsibility
+
 ]
 
 { #category : 'activation' }
@@ -50,25 +50,25 @@ MCPObservabilityBackend >> enabled: aBoolean [
 { #category : 'accessing' }
 MCPObservabilityBackend >> exportDirectory [
 
-	self subclassResponsibility
+	^ nil
 ]
 
 { #category : 'accessing' }
 MCPObservabilityBackend >> exportDirectory: aPath [
 
-	self subclassResponsibility
+
 ]
 
 { #category : 'testing' }
 MCPObservabilityBackend >> exportEnabled [
 
-	self subclassResponsibility
+	^ false
 ]
 
 { #category : 'accessing' }
 MCPObservabilityBackend >> exportInstanceDirectory [
 
-	self subclassResponsibility
+	^ nil
 ]
 
 { #category : 'actions' }
@@ -86,19 +86,19 @@ MCPObservabilityBackend >> isNoop [
 { #category : 'logging' }
 MCPObservabilityBackend >> logs [
 
-	self subclassResponsibility
+	^ #(  )
 ]
 
 { #category : 'accessing' }
 MCPObservabilityBackend >> metrics [
 
-	self subclassResponsibility
+	^ #(  )
 ]
 
 { #category : 'accessing' }
 MCPObservabilityBackend >> recentCallRecords [
 
-	self subclassResponsibility
+	^ #(  )
 ]
 
 { #category : 'recording' }
@@ -144,13 +144,13 @@ MCPObservabilityBackend >> recordToolCallStart: aToolName input: inputObject dis
 { #category : 'accessing' }
 MCPObservabilityBackend >> resourceMetadata [
 
-	self subclassResponsibility
+	^ Dictionary new
 ]
 
 { #category : 'accessing' }
 MCPObservabilityBackend >> resourceMetadata: aDictionary [
 
-	self subclassResponsibility
+
 ]
 
 { #category : 'actions' }
@@ -168,23 +168,23 @@ MCPObservabilityBackend >> statusText [
 { #category : 'accessing' }
 MCPObservabilityBackend >> totalCallCount [
 
-	self subclassResponsibility
+	^ 0
 ]
 
 { #category : 'accessing' }
 MCPObservabilityBackend >> totalErrorCount [
 
-	self subclassResponsibility
+	^ 0
 ]
 
 { #category : 'accessing' }
 MCPObservabilityBackend >> totalOutputBudgetExceededCount [
 
-	self subclassResponsibility
+	^ 0
 ]
 
 { #category : 'accessing' }
 MCPObservabilityBackend >> traceRecords [
 
-	self subclassResponsibility
+	^ #(  )
 ]

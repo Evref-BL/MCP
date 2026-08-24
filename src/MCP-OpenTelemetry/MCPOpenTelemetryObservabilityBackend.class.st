@@ -5,7 +5,7 @@ This class lives in the optional MCP-OpenTelemetry package so MCP core can remai
 "
 Class {
 	#name : 'MCPOpenTelemetryObservabilityBackend',
-	#superclass : 'MCPNoopObservabilityBackend',
+	#superclass : 'MCPObservabilityBackend',
 	#instVars : [
 		'enabled',
 		'tracer',
