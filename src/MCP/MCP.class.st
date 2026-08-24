@@ -1,5 +1,10 @@
 "
 Top-level MCP server application object. MCP owns one MCPToolRegistry, the HTTP server, and observability state. The registry owns registered tool instances and their exposure policy. MCP exposes the core JSON-RPC handlers, including initialization, tool listing, tool calls, ping, and empty resource listings. Tool calls are delegated to the matching MCPTool after request validation.
+
+Adding new tools to the server (its `registry`) can be done:
+- call `mcp registerToolClass: MyToolClass` before starting the server;
+- (for several tool classes) call `mcp registerToolClasses: { MyToolClass. MyOtherToolClass }`;
+- for automatic opt-in: override `MyToolClass class >> shouldAutoRegister` to return `true`.
 "
 Class {
 	#name : 'MCP',
