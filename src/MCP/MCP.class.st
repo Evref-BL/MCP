@@ -148,10 +148,10 @@ MCP >> executeTool: tool named: toolName withParams: arguments dispatchPath: dis
 
 	| observabilityRecord request result toolResult |
 	observabilityRecord := self observability
-		                 recordToolCallStart: toolName
-		                 input: arguments
-		                 dispatchPath: dispatchPath
-		                 context: Dictionary new.
+		                       recordToolCallStart: toolName
+		                       input: arguments
+		                       dispatchPath: dispatchPath
+		                       context: Dictionary new.
 	^ [
 		  request := tool requestFromToolCallArguments: arguments.
 		  result := tool executeWithRequest: request.
@@ -220,6 +220,15 @@ MCP >> isRunning [
 MCP >> localUrlString [
 
 	^ self server localUrl asString
+]
+
+{ #category : 'observability' }
+MCP >> newLocalObservabilityBackend [
+
+	^ MCPLocalObservabilityBackend new
+		  resourceMetadata: self observabilityResourceMetadata;
+		  exportDirectory: MCPLocalObservabilityBackend defaultExportDirectory;
+		  yourself
 ]
 
 { #category : 'accessing' }
@@ -307,15 +316,6 @@ MCP >> observabilityStatusText [
 MCP >> observabilityTraces [
 
 	^ self observability traceRecords
-]
-
-{ #category : 'observability' }
-MCP >> newLocalObservabilityBackend [
-
-	^ MCPLocalObservabilityBackend new
-		  resourceMetadata: self observabilityResourceMetadata;
-		  exportDirectory: MCPLocalObservabilityBackend defaultExportDirectory;
-		  yourself
 ]
 
 { #category : 'start' }

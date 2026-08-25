@@ -9,7 +9,5 @@ Class {
 }
 
 { #category : 'tests' }
-MCPToolRemoveMethodsTestSender >> sendProtectedRemovalTarget [
-
-	^ MCPToolRemoveMethodsTestTarget new externallyReferencedBatchRemoval
+MCPToolRemoveMethodsTestSender >> sendProtectedRemovalTarget [ ^ MCPToolRemoveMethodsTestTarget new externallyReferencedBatchRemoval
 ]
