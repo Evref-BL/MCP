@@ -1,19 +1,27 @@
 "
-Tests for the in-memory MCP monitoring state and its integration at the MCP tool-call boundary.
+Tests for the in-memory MCP observability state and its integration at the MCP tool-call boundary.
 "
 Class {
-	#name : 'MCPMonitoringStateTest',
+	#name : 'MCPLocalObservabilityBackendTest',
 	#superclass : 'MCPTestCase',
-	#category : 'MCP-UI-Tests-Monitoring',
+	#category : 'MCP-UI-Tests-Observability',
 	#package : 'MCP-UI-Tests',
-	#tag : 'Monitoring'
+	#tag : 'Observability'
 }
 
 { #category : 'tests' }
-MCPMonitoringStateTest >> testEnabledByDefaultRecords [
+MCPLocalObservabilityBackendTest >> testDefaultExportDirectoryIsImageLocal [
+
+	self
+		assert: MCPLocalObservabilityBackend defaultExportDirectory
+		equals: Smalltalk imageFile asFileReference parent / 'pharo-local' / 'mcp' / 'observability'
+]
+
+{ #category : 'tests' }
+MCPLocalObservabilityBackendTest >> testEnabledByDefaultRecords [
 
 	| record state |
-	state := MCPMonitoringState new.
+	state := MCPLocalObservabilityBackend new.
 	record := state recordToolCallStart: 'method_metadata_search'.
 	self assert: state enabled.
 	self assert: record notNil.
@@ -22,20 +30,20 @@ MCPMonitoringStateTest >> testEnabledByDefaultRecords [
 ]
 
 { #category : 'tests' }
-MCPMonitoringStateTest >> testExportDisabledByDefault [
+MCPLocalObservabilityBackendTest >> testExportDisabledByDefault [
 
 	| state |
-	state := MCPMonitoringState new.
+	state := MCPLocalObservabilityBackend new.
 	self deny: state exportEnabled.
 	self assert: state exportDirectory isNil.
 	self assert: state exportInstanceDirectory isNil
 ]
 
 { #category : 'tests' }
-MCPMonitoringStateTest >> testInputSnapshotRedactsSensitiveKeys [
+MCPLocalObservabilityBackendTest >> testInputSnapshotRedactsSensitiveKeys [
 
 	| input record state |
-	state := MCPMonitoringState new.
+	state := MCPLocalObservabilityBackend new.
 	state enable.
 	input := {
 		         (#limit -> 10).
@@ -51,10 +59,10 @@ MCPMonitoringStateTest >> testInputSnapshotRedactsSensitiveKeys [
 ]
 
 { #category : 'tests' }
-MCPMonitoringStateTest >> testLargeOutputExceedingBudgetBecomesTraceAndGuidance [
+MCPLocalObservabilityBackendTest >> testLargeOutputExceedingBudgetBecomesTraceAndGuidance [
 
 	| budgetBytes exceedsBudget largeText record result state stats |
-	state := MCPMonitoringState new.
+	state := MCPLocalObservabilityBackend new.
 	state outputBudgetBytes: 80.
 	state enable.
 	largeText := String new: 200 withAll: $x.
@@ -80,52 +88,75 @@ MCPMonitoringStateTest >> testLargeOutputExceedingBudgetBecomesTraceAndGuidance 
 ]
 
 { #category : 'tests' }
-MCPMonitoringStateTest >> testMCPConfiguresMonitoringExportDirectory [
+MCPLocalObservabilityBackendTest >> testMCPConfiguresObservabilityExportDirectory [
 
 	| defaultDirectory directory mcp |
 	directory := FileLocator temp asFileReference / ('mcp-observability-' , UUID new asString).
 	[
 		mcp := MCP new.
-		defaultDirectory := MCPMonitoringState defaultExportDirectory.
-		self assert: mcp monitoringEnabled.
-		self assert: mcp monitoringExportDirectory equals: defaultDirectory.
-		mcp monitoringExportDirectory: directory.
-		self assert: mcp monitoringExportDirectory equals: directory.
-		self assert: (mcp monitoring resourceMetadata at: #'pharo.majorVersion') equals: PharoCompatibility currentMajorVersion.
-		self assert: (mcp monitoring resourceMetadata includesKey: #'mcp.port') ] ensure: [
+		defaultDirectory := MCPLocalObservabilityBackend defaultExportDirectory.
+		self deny: mcp observabilityEnabled.
+		self assert: mcp observability class equals: MCPNoopObservabilityBackend.
+		self assert: mcp observabilityExportDirectory isNil.
+		mcp observabilityEnabled: true.
+		self assert: mcp observabilityEnabled.
+		self assert: mcp observabilityExportDirectory equals: defaultDirectory.
+		mcp observabilityExportDirectory: directory.
+		self assert: mcp observabilityExportDirectory equals: directory.
+		self assert: (mcp observability resourceMetadata at: #'pharo.majorVersion') equals: PharoCompatibility currentMajorVersion.
+		self assert: (mcp observability resourceMetadata includesKey: #'mcp.port') ] ensure: [
 		directory exists ifTrue: [ directory deleteAll ] ]
 ]
 
 { #category : 'tests' }
-MCPMonitoringStateTest >> testMCPRecordsToolCallsWhenMonitoringIsEnabled [
+MCPLocalObservabilityBackendTest >> testMCPRecordsToolCallDispatchPath [
+
+	| mcp records |
+	mcp := MCP new.
+	mcp observabilityEnabled: true.
+
+	mcp rpcToolCall: 'tool_call' withParams: {
+			(#toolName -> 'package_search').
+			(#arguments -> { (#limit -> 0) } asDictionary) } asDictionary.
+	records := mcp observability recentCallRecords.
+
+	self assert: records size equals: 2.
+	self assert: records first toolName equals: 'tool_call'.
+	self assert: records first dispatchPath equals: 'direct'.
+	self assert: records second toolName equals: 'package_search'.
+	self assert: records second dispatchPath equals: 'via_tool_call'
+]
+
+{ #category : 'tests' }
+MCPLocalObservabilityBackendTest >> testMCPRecordsToolCallsWhenObservabilityIsEnabled [
 
 	| directory mcp record result stats |
 	directory := FileLocator temp asFileReference / ('mcp-observability-' , UUID new asString).
 	[
 		directory exists ifTrue: [ directory deleteAll ].
 		mcp := MCP new.
-		mcp monitoringExportDirectory: directory.
+		mcp observabilityExportDirectory: directory.
 		result := mcp rpcToolCall: 'package_search' withParams: { (#limit -> 0) } asDictionary.
-		stats := mcp monitoringMetrics first.
-		record := mcp monitoring recentCallRecords first.
+		stats := mcp observabilityMetrics first.
+		record := mcp observability recentCallRecords first.
 
 		self deny: (result at: #isError ifAbsent: [ false ]).
-		self assert: mcp monitoring totalCallCount equals: 1.
+		self assert: mcp observability totalCallCount equals: 1.
 		self assert: stats toolName equals: 'package_search'.
 		self assert: stats successCount equals: 1.
 		self assert: record inputSnapshot isNil.
 		self assert: record outputSnapshot isNil.
 		self assert: record inputObject isNil.
-		self assert: mcp monitoringLogs notEmpty.
-		self assert: mcp monitoring logFileReference exists.
-		self assert: mcp monitoring metricsFileReference exists ] ensure: [ directory exists ifTrue: [ directory deleteAll ] ]
+		self assert: mcp observabilityLogs notEmpty.
+		self assert: mcp observability logFileReference exists.
+		self assert: mcp observability metricsFileReference exists ] ensure: [ directory exists ifTrue: [ directory deleteAll ] ]
 ]
 
 { #category : 'tests' }
-MCPMonitoringStateTest >> testOutlierExplanationUsesPriorAverage [
+MCPLocalObservabilityBackendTest >> testOutlierExplanationUsesPriorAverage [
 
 	| state stats start record explanation |
-	state := MCPMonitoringState new.
+	state := MCPLocalObservabilityBackend new.
 	state minimumOutlierMilliseconds: 1.
 	state outlierFactor: 2.
 	stats := MCPToolCallStats forToolNamed: 'slow-tool'.
@@ -143,10 +174,10 @@ MCPMonitoringStateTest >> testOutlierExplanationUsesPriorAverage [
 ]
 
 { #category : 'tests' }
-MCPMonitoringStateTest >> testRecordsErrorCall [
+MCPLocalObservabilityBackendTest >> testRecordsErrorCall [
 
 	| recentCall record state stats |
-	state := MCPMonitoringState new.
+	state := MCPLocalObservabilityBackend new.
 	state enable.
 	record := state recordToolCallStart: 'method_compile'.
 	state recordToolCallFinish: record result: nil error: Error new.
@@ -156,6 +187,7 @@ MCPMonitoringStateTest >> testRecordsErrorCall [
 	self assert: state totalCallCount equals: 1.
 	self assert: state totalErrorCount equals: 1.
 	self assert: stats errorCount equals: 1.
+	self assert: (stats errorCountsByClass at: 'Error') equals: 1.
 	self assert: recentCall status equals: 'error'.
 	self assert: recentCall errorClass equals: 'Error'.
 	self assert: (recentCall outputSnapshot at: #errorClass) equals: 'Error'.
@@ -165,10 +197,10 @@ MCPMonitoringStateTest >> testRecordsErrorCall [
 ]
 
 { #category : 'tests' }
-MCPMonitoringStateTest >> testRecordsOutputBudgetMetadata [
+MCPLocalObservabilityBackendTest >> testRecordsOutputBudgetMetadata [
 
 	| record result state stats recordData statsData |
-	state := MCPMonitoringState new.
+	state := MCPLocalObservabilityBackend new.
 	state enable.
 	record := state recordToolCallStart: 'method_metadata_search'.
 	result := MCPStructureCallToolResult content: #(  ) structuredContent: { (#summary -> 'Small output') } asDictionary.
@@ -178,6 +210,7 @@ MCPMonitoringStateTest >> testRecordsOutputBudgetMetadata [
 	statsData := stats asDictionary.
 
 	self assert: record outputByteCount > 0.
+	self assert: record inputByteCount equals: 0.
 	self assert: record approximateOutputTokenCount equals: (state approximateOutputTokensForBytes: record outputByteCount).
 	self deny: record outputBudgetExceeded.
 	self assert: record outputBudgetExplanation isEmpty.
@@ -186,14 +219,16 @@ MCPMonitoringStateTest >> testRecordsOutputBudgetMetadata [
 	self assert: stats outputBudgetExceededCount equals: 0.
 	self assert: (recordData at: #outputBytes) equals: record outputByteCount.
 	self assert: (recordData at: #approximateOutputTokens) equals: record approximateOutputTokenCount.
-	self assert: (statsData at: #lastOutputBytes) equals: record outputByteCount
+	self assert: (statsData at: #lastOutputBytes) equals: record outputByteCount.
+	self assert: (statsData at: #firstCallAt) isNotEmpty.
+	self assert: (statsData at: #lastCallAt) isNotEmpty
 ]
 
 { #category : 'tests' }
-MCPMonitoringStateTest >> testRecordsSuccessfulCallMetricsAndLogs [
+MCPLocalObservabilityBackendTest >> testRecordsSuccessfulCallMetricsAndLogs [
 
 	| state record result stats |
-	state := MCPMonitoringState new.
+	state := MCPLocalObservabilityBackend new.
 	state enable.
 	record := state recordToolCallStart: 'method_metadata_search'.
 	result := MCPStructureCallToolResult content: #(  ) structuredContent: { (#summary -> 'Listed methods') } asDictionary.
@@ -213,13 +248,32 @@ MCPMonitoringStateTest >> testRecordsSuccessfulCallMetricsAndLogs [
 ]
 
 { #category : 'tests' }
-MCPMonitoringStateTest >> testTraceExportSkipsNonTraceRecords [
+MCPLocalObservabilityBackendTest >> testSessionLifecycleWritesResourceMarkers [
+
+	| directory resource state |
+	directory := FileLocator temp asFileReference / ('mcp-observability-' , UUID new asString).
+	[
+		directory exists ifTrue: [ directory deleteAll ].
+		state := MCPLocalObservabilityBackend new.
+		state exportDirectory: directory.
+		state recordSessionStartFor: nil.
+		resource := STONJSON fromString: state resourceFileReference contents.
+		self assert: (resource includesKey: 'sessionStartedAt').
+		self deny: (resource includesKey: 'sessionEndedAt').
+		state recordSessionEndFor: nil.
+		resource := STONJSON fromString: state resourceFileReference contents.
+		self assert: (resource includesKey: 'sessionStartedAt').
+		self assert: (resource includesKey: 'sessionEndedAt') ] ensure: [ directory exists ifTrue: [ directory deleteAll ] ]
+]
+
+{ #category : 'tests' }
+MCPLocalObservabilityBackendTest >> testTraceExportSkipsNonTraceRecords [
 
 	| directory record result state |
 	directory := FileLocator temp asFileReference / ('mcp-observability-' , UUID new asString).
 	[
 		directory exists ifTrue: [ directory deleteAll ].
-		state := MCPMonitoringState new.
+		state := MCPLocalObservabilityBackend new.
 		state exportDirectory: directory.
 		state outputBudgetBytes: 10000.
 		record := state recordToolCallStart: 'package_search'.
@@ -232,13 +286,13 @@ MCPMonitoringStateTest >> testTraceExportSkipsNonTraceRecords [
 ]
 
 { #category : 'tests' }
-MCPMonitoringStateTest >> testTraceExportWritesOverBudgetRecordAsJSONLine [
+MCPLocalObservabilityBackendTest >> testTraceExportWritesOverBudgetRecordAsJSONLine [
 
 	| directory input line output payload record resource result state traceFile |
 	directory := FileLocator temp asFileReference / ('mcp-observability-' , UUID new asString).
 	[
 		directory exists ifTrue: [ directory deleteAll ].
-		state := MCPMonitoringState new.
+		state := MCPLocalObservabilityBackend new.
 		state resourceMetadata: {
 				(#'pharo.majorVersion' -> 13).
 				(#'mcp.port' -> 9013) } asDictionary.
@@ -266,6 +320,9 @@ MCPMonitoringStateTest >> testTraceExportWritesOverBudgetRecordAsJSONLine [
 		payload := STONJSON fromString: line.
 		self assert: (payload at: 'event.name') equals: 'mcp.tool_call.output_budget_exceeded'.
 		self assert: (payload at: 'toolName') equals: 'method_source_search'.
+		self assert: (payload at: 'dispatchPath') equals: 'direct'.
+		self assert: ((payload at: 'event.kinds') includes: 'output_budget_exceeded').
+		self assert: (payload at: 'inputBytes') > 0.
 		self assert: (payload at: 'outputBudgetBytes') equals: 80.
 		self deny: (payload includesKey: 'outputBudgetExceeded').
 		self deny: (payload includesKey: 'summary').
@@ -276,10 +333,10 @@ MCPMonitoringStateTest >> testTraceExportWritesOverBudgetRecordAsJSONLine [
 ]
 
 { #category : 'tests' }
-MCPMonitoringStateTest >> testTraceRecordsIncludeErrorsAndOutliersOnly [
+MCPLocalObservabilityBackendTest >> testTraceRecordsIncludeErrorsAndOutliersOnly [
 
 	| error normal outlier start state traces |
-	state := MCPMonitoringState new.
+	state := MCPLocalObservabilityBackend new.
 	start := DateAndTime now.
 	normal := MCPToolCallRecord id: 1 toolName: 'method_metadata_search' startedAt: start.
 	normal finishAt: start durationMilliseconds: 5 status: 'ok'.
@@ -304,20 +361,20 @@ MCPMonitoringStateTest >> testTraceRecordsIncludeErrorsAndOutliersOnly [
 ]
 
 { #category : 'tests' }
-MCPMonitoringStateTest >> testTraceSnapshotForCollectionAddsTruncationMarker [
+MCPLocalObservabilityBackendTest >> testTraceSnapshotForCollectionAddsTruncationMarker [
 
 	| snapshot state |
-	state := MCPMonitoringState new.
+	state := MCPLocalObservabilityBackend new.
 	snapshot := state traceSnapshotFor: (1 to: state maxTraceCollectionItems + 2) asArray.
 	self assert: snapshot size equals: state maxTraceCollectionItems + 1.
 	self assert: snapshot last equals: 'truncated 2 items omitted'
 ]
 
 { #category : 'tests' }
-MCPMonitoringStateTest >> testTraceSnapshotHasCompactErrorShape [
+MCPLocalObservabilityBackendTest >> testTraceSnapshotHasCompactErrorShape [
 
 	| errorData output record result state |
-	state := MCPMonitoringState new.
+	state := MCPLocalObservabilityBackend new.
 	state outputBudgetBytes: 10000.
 	record := state recordToolCallStart: 'image_evaluate'.
 	errorData := {

@@ -44,14 +44,17 @@ MCPTestCase >> createClassNamed: aClassName superclassName: aSuperclassName slot
 { #category : 'private - methods' }
 MCPTestCase >> ensureMethodSource: aMethodSource protocol: aProtocol on: aBehavior [
 
-	self withoutEpiceaDuring: [ aBehavior compile: aMethodSource classified: aProtocol ]
+	self withoutEpiceaDuring: [
+			| selector |
+			selector := aBehavior compile: aMethodSource classified: aProtocol.
+			(aBehavior >> selector) reformat ]
 ]
 
-{ #category : 'private - monitoring' }
+{ #category : 'private - observability' }
 MCPTestCase >> mcpWithoutObservabilityExport [
 
 	^ MCP new
-		  monitoringExportDirectory: nil;
+		  observabilityExportDirectory: nil;
 		  useContentAndStructuredContentToolResponses;
 		  yourself
 ]

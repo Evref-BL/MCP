@@ -218,17 +218,39 @@ The Spec dashboard is available from an inspected `MCP` object. It shows:
 - server status and port
 - debug mode
 - registered tools and descriptions
-- observability enabled by default
+- observability status
 - per-tool timing metrics
 - traces for errors, outliers, and output overruns
 - recent logs
 
-Configure `mcp monitoringExportDirectory: aDirectory` to override the default
-`~/pharo-mcp-observability` export root for instance metadata,
-`logs.jsonl`, `metrics.json`, and `traces.jsonl`.
+MCP starts with a no-op observability backend. Enable the built-in JSON
+observability backend explicitly:
+
+```smalltalk
+mcp observabilityEnabled: true
+```
+
+By default, JSON observability exports under the image-local
+`pharo-local/mcp/observability` directory. Configure
+`mcp observabilityExportDirectory: aDirectory` to override that export root for
+instance metadata, `logs.jsonl`, `metrics.json`, and `traces.jsonl`.
+
+OpenTelemetry support is optional. Load the `OpenTelemetry` group, then enable
+the OpenTelemetry backend for an MCP instance:
+
+```smalltalk
+Metacello new
+   baseline: 'MCP';
+   repository: 'github://Evref-BL/MCP:main/src';
+   load: 'OpenTelemetry'.
+
+mcp useOpenTelemetryObservability
+```
 
 ## Version Compatibility
 
-The baseline loads PharoCompatibility, JRPC, and TinyLogger. CI covers Pharo 12,
-13, and 14. Code that depends on version-sensitive Pharo APIs should go through
-PharoCompatibility rather than assuming the Pharo 13 API is present everywhere.
+The core baseline loads PharoCompatibility, JRPC, and PCRE2.
+OpenTelemetry is loaded only by the optional `OpenTelemetry` group. CI covers
+Pharo 12, 13, and 14. Code that depends on version-sensitive Pharo APIs should
+go through PharoCompatibility rather than assuming the Pharo 13 API is present
+everywhere.

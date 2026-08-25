@@ -14,7 +14,7 @@ Class {
 	#instVars : [
 		'server',
 		'toolsList',
-		'monitoring',
+		'observability',
 		'toolRegistry',
 		'toolResponseFields'
 	],
@@ -43,10 +43,10 @@ MCP class >> supportedProtocolVersions [
 	^ #( '2025-03-26' '2025-06-18' '2025-11-25' )
 ]
 
-{ #category : 'monitoring' }
-MCP >> clearMonitoring [
+{ #category : 'observability' }
+MCP >> clearObservability [
 
-	self monitoring clear
+	self observability clear
 ]
 
 { #category : 'configuration' }
@@ -98,6 +98,31 @@ MCP >> deferSaveImageAfterCurrentResponse [
 	server deferAfterCurrentResponse: [ self saveImageSession ]
 ]
 
+{ #category : 'private - tools' }
+MCP >> dispatchToolCallWith: callTool arguments: arguments observabilityRecord: observabilityRecord [
+
+	| callRequest request targetResponse targetTool wrapperResult |
+	request := callTool requestFromToolCallArguments: arguments.
+	callRequest := callTool parsedRequestFromToolRequest: request.
+	self validateToolCallRequest: callRequest wrapperTool: callTool.
+	targetTool := self targetToolForCallRequest: callRequest.
+	targetResponse := self
+		                  executeTool: targetTool
+		                  named: targetTool name
+		                  withParams: callRequest arguments
+		                  dispatchPath: 'via_tool_call'.
+	wrapperResult := self toolCallWrapperResultFor: callTool request: callRequest.
+	self finishToolCallWrapper: observabilityRecord result: wrapperResult.
+	^ targetResponse
+]
+
+{ #category : 'observability' }
+MCP >> ensureLocalObservabilityBackend [
+
+	self observability isNoop ifTrue: [ observability := self newLocalObservabilityBackend ].
+	^ self observability
+]
+
 { #category : 'private - start' }
 MCP >> ensureServerIsListening [
 
@@ -111,24 +136,56 @@ MCP >> ensureServerIsListening [
 { #category : 'private - tools' }
 MCP >> executeTool: tool named: toolName withParams: arguments [
 
-	| monitorRecord request result toolResult |
-	monitorRecord := self monitoring recordToolCallStart: toolName input: arguments.
+	^ self
+		  executeTool: tool
+		  named: toolName
+		  withParams: arguments
+		  dispatchPath: 'direct'
+]
+
+{ #category : 'private - tools' }
+MCP >> executeTool: tool named: toolName withParams: arguments dispatchPath: dispatchPath [
+
+	| observabilityRecord request result toolResult |
+	observabilityRecord := self observability
+		                       recordToolCallStart: toolName
+		                       input: arguments
+		                       dispatchPath: dispatchPath
+		                       context: Dictionary new.
 	^ [
 		  request := tool requestFromToolCallArguments: arguments.
 		  result := tool executeWithRequest: request.
 		  toolResult := result asMCPStructureCallToolResult.
 		  self saveImageAfterSuccessfulTool: tool result: toolResult.
-		  self monitoring recordToolCallFinish: monitorRecord result: toolResult error: nil.
+		  self observability recordToolCallFinish: observabilityRecord result: toolResult error: nil.
 		  toolResult asJRPCJSONForResponseFields: self toolResponseFields ]
 		  on: Exception
 		  do: [ :error |
 				  | errorResult |
 				  error mcpIsJRPCError ifTrue: [
-						  self monitoring recordToolCallFinish: monitorRecord result: nil error: error.
+						  self observability recordToolCallFinish: observabilityRecord result: nil error: error.
 						  error pass ].
 				  errorResult := tool errorResultFor: error.
-				  self monitoring recordToolCallFinish: monitorRecord result: errorResult error: error.
+				  self observability recordToolCallFinish: observabilityRecord result: errorResult error: error.
 				  errorResult asJRPCJSONForResponseFields: self toolResponseFields ]
+]
+
+{ #category : 'private - tools' }
+MCP >> finishToolCallWrapper: observabilityRecord result: wrapperResult [
+
+	self observability recordToolCallFinish: observabilityRecord result: wrapperResult asMCPStructureCallToolResult error: nil
+]
+
+{ #category : 'private - tools' }
+MCP >> handleToolCallWrapperError: error tool: callTool observabilityRecord: observabilityRecord [
+
+	| errorResult |
+	error mcpIsJRPCError ifTrue: [
+			self observability recordToolCallFinish: observabilityRecord result: nil error: error.
+			error pass ].
+	errorResult := callTool errorResultFor: error.
+	self observability recordToolCallFinish: observabilityRecord result: errorResult error: error.
+	^ errorResult asJRPCJSONForResponseFields: self toolResponseFields
 ]
 
 { #category : 'accessing' }
@@ -144,7 +201,7 @@ MCP >> initialize [
 	self refreshToolsList.
 	server := MCPHTTPServer new.
 	server addHandlersFromPragmasIn: self.
-	self monitoringExportDirectory: MCPMonitoringState defaultExportDirectory
+	observability := MCPNoopObservabilityBackend new
 ]
 
 { #category : 'testing' }
@@ -165,81 +222,100 @@ MCP >> localUrlString [
 	^ self server localUrl asString
 ]
 
+{ #category : 'observability' }
+MCP >> newLocalObservabilityBackend [
+
+	^ MCPLocalObservabilityBackend new
+		  resourceMetadata: self observabilityResourceMetadata;
+		  exportDirectory: MCPLocalObservabilityBackend defaultExportDirectory;
+		  yourself
+]
+
 { #category : 'accessing' }
-MCP >> monitoring [
+MCP >> observability [
 
-	^ monitoring ifNil: [ monitoring := MCPMonitoringState new ]
+	^ observability ifNil: [ observability := MCPNoopObservabilityBackend new ]
 ]
 
-{ #category : 'monitoring' }
-MCP >> monitoringEnabled [
+{ #category : 'accessing' }
+MCP >> observability: anObservabilityBackend [
 
-	^ self monitoring enabled
+	observability := anObservabilityBackend
 ]
 
-{ #category : 'monitoring' }
-MCP >> monitoringEnabled: aBoolean [
+{ #category : 'observability' }
+MCP >> observabilityEnabled [
 
-	self monitoring enabled: aBoolean
+	^ self observability enabled
 ]
 
-{ #category : 'monitoring' }
-MCP >> monitoringExportDirectory [
+{ #category : 'observability' }
+MCP >> observabilityEnabled: aBoolean [
 
-	^ self monitoring exportDirectory
+	aBoolean
+		ifTrue: [ self ensureLocalObservabilityBackend enabled: true ]
+		ifFalse: [ observability := MCPNoopObservabilityBackend new ]
 ]
 
-{ #category : 'monitoring' }
-MCP >> monitoringExportDirectory: aPath [
+{ #category : 'observability' }
+MCP >> observabilityExportDirectory [
 
-	self monitoring resourceMetadata: self monitoringResourceMetadata.
-	self monitoring exportDirectory: aPath
+	^ self observability exportDirectory
 ]
 
-{ #category : 'monitoring' }
-MCP >> monitoringExportInstanceDirectory [
+{ #category : 'observability' }
+MCP >> observabilityExportDirectory: aPath [
 
-	^ self monitoring exportInstanceDirectory
+	| localObservability |
+	localObservability := self ensureLocalObservabilityBackend.
+	localObservability resourceMetadata: self observabilityResourceMetadata.
+	localObservability exportDirectory: aPath
 ]
 
-{ #category : 'monitoring' }
-MCP >> monitoringLogs [
+{ #category : 'observability' }
+MCP >> observabilityExportInstanceDirectory [
 
-	^ self monitoring logs
+	^ self observability exportInstanceDirectory
 ]
 
-{ #category : 'monitoring' }
-MCP >> monitoringMetrics [
+{ #category : 'observability' }
+MCP >> observabilityLogs [
 
-	^ self monitoring metrics
+	^ self observability logs
 ]
 
-{ #category : 'monitoring' }
-MCP >> monitoringRecentCalls [
+{ #category : 'observability' }
+MCP >> observabilityMetrics [
 
-	^ self monitoring recentCallRecords
+	^ self observability metrics
 ]
 
-{ #category : 'monitoring' }
-MCP >> monitoringResourceMetadata [
+{ #category : 'observability' }
+MCP >> observabilityRecentCalls [
+
+	^ self observability recentCallRecords
+]
+
+{ #category : 'observability' }
+MCP >> observabilityResourceMetadata [
 
 	| metadata |
-	metadata := self monitoring resourceMetadata copy.
+	metadata := self observability resourceMetadata copy.
 	metadata at: #'pharo.majorVersion' put: PharoCompatibility currentMajorVersion.
 	metadata at: #'mcp.port' put: self port.
 	^ metadata
 ]
 
-{ #category : 'monitoring' }
-MCP >> monitoringStatusText [
+{ #category : 'observability' }
+MCP >> observabilityStatusText [
 
-	^ self monitoring statusText
+	^ self observability statusText
 ]
 
-{ #category : 'monitoring' }
-MCP >> monitoringTraces [
+{ #category : 'observability' }
+MCP >> observabilityTraces [
 
-	^ self monitoring traceRecords
+	^ self observability traceRecords
 ]
 
 { #category : 'start' }
@@ -282,6 +358,16 @@ MCP >> port: aPortNumber [
 ]
 
 { #category : 'private - tools' }
+MCP >> recordToolCallWrapperStartFor: callTool arguments: arguments [
+
+	^ self observability
+		  recordToolCallStart: callTool name
+		  input: arguments
+		  dispatchPath: 'direct'
+		  context: Dictionary new
+]
+
+{ #category : 'private - tools' }
 MCP >> refreshToolsList [
 	"Refresh the cached tools/list response surface from the registry's current static tools."
 
@@ -320,22 +406,12 @@ MCP >> restart [
 { #category : 'private - tools' }
 MCP >> rpcCallToolCallWithParams: arguments [
 
-	| callRequest callTool request targetTool |
-	callTool := self toolRegistry toolNamed: MCPToolCallTool toolName ifAbsent: [ Error signal: 'tool_call is not registered.' ].
-	^ [
-		  request := callTool requestFromToolCallArguments: arguments.
-		  callRequest := callTool parsedRequestFromToolRequest: request.
-		  callRequest toolName = callTool name ifTrue: [ Error signal: 'tool_call cannot call itself.' ].
-		  targetTool := self toolRegistry
-			                toolNamed: callRequest toolName
-			                ifAbsent: [ Error signal: 'Unknown MCP tool: ' , callRequest toolName ].
-		  self executeTool: targetTool named: targetTool name withParams: callRequest arguments ]
+	| callTool observabilityRecord |
+	callTool := self toolCallTool.
+	observabilityRecord := self recordToolCallWrapperStartFor: callTool arguments: arguments.
+	^ [ self dispatchToolCallWith: callTool arguments: arguments observabilityRecord: observabilityRecord ]
 		  on: Exception
-		  do: [ :error |
-				  | errorResult |
-				  error mcpIsJRPCError ifTrue: [ error pass ].
-				  errorResult := callTool errorResultFor: error.
-				  errorResult asJRPCJSONForResponseFields: self toolResponseFields ]
+		  do: [ :error | self handleToolCallWrapperError: error tool: callTool observabilityRecord: observabilityRecord ]
 ]
 
 { #category : 'rpc' }
@@ -427,7 +503,8 @@ MCP >> start [
 	self refreshToolsList.
 	server addHandlersFromPragmasIn: self.
 	server start.
-	self ensureServerIsListening
+	self ensureServerIsListening.
+	self observability recordSessionStartFor: self
 ]
 
 { #category : 'configuration' }
@@ -446,7 +523,7 @@ MCP >> staticToolNames: aCollection [
 { #category : 'start' }
 MCP >> stop [
 
-	server stop
+	[ server stop ] ensure: [ self observability shutdown ]
 ]
 
 { #category : 'infrastructure metadata' }
@@ -459,6 +536,26 @@ MCP >> supportedPharoLauncherVersions [
 MCP >> supportedPharoMajorVersions [
 
 	^ #( 12 13 14 )
+]
+
+{ #category : 'private - tools' }
+MCP >> targetToolForCallRequest: callRequest [
+
+	^ self toolRegistry toolNamed: callRequest toolName ifAbsent: [ Error signal: 'Unknown MCP tool: ' , callRequest toolName ]
+]
+
+{ #category : 'private - tools' }
+MCP >> toolCallTool [
+
+	^ self toolRegistry toolNamed: MCPToolCallTool toolName ifAbsent: [ Error signal: 'tool_call is not registered.' ]
+]
+
+{ #category : 'private - tools' }
+MCP >> toolCallWrapperResultFor: callTool request: callRequest [
+
+	^ callTool
+		  successResultText: 'Dispatched tool ' , callRequest toolName
+		  data: { (#toolName -> callRequest toolName) } asDictionary
 ]
 
 { #category : 'accessing' }
@@ -546,6 +643,12 @@ MCP >> useStructuredContentOnlyToolResponses [
 MCP >> validToolResponseFields [
 
 	^ #( content structuredContent both )
+]
+
+{ #category : 'private - tools' }
+MCP >> validateToolCallRequest: callRequest wrapperTool: callTool [
+
+	callRequest toolName = callTool name ifTrue: [ Error signal: 'tool_call cannot call itself.' ]
 ]
 
 { #category : 'private - start' }

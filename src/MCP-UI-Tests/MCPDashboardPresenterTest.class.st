@@ -4,28 +4,28 @@ Tests the MCP Spec dashboard presenter layout, actions, and refresh behavior.
 Class {
 	#name : 'MCPDashboardPresenterTest',
 	#superclass : 'MCPTestCase',
-	#category : 'MCP-UI-Tests-Monitoring',
+	#category : 'MCP-UI-Tests-Observability',
 	#package : 'MCP-UI-Tests',
-	#tag : 'Monitoring'
+	#tag : 'Observability'
 }
 
 { #category : 'tests' }
-MCPDashboardPresenterTest >> testAllMonitoringSectionsCollapsedRemovesOuterSplitter [
+MCPDashboardPresenterTest >> testAllObservabilitySectionsCollapsedRemovesOuterSplitter [
 
-	| presenter layout monitoringLayout sectionsLayout |
+	| presenter layout observabilityLayout sectionsLayout |
 	presenter := MCPDashboardPresenter new.
 
 	presenter toggleMetricsSection.
 	presenter toggleTracesSection.
 	presenter toggleLogsSection.
 	layout := presenter dashboardWidgetsLayout.
-	monitoringLayout := layout children second.
-	sectionsLayout := monitoringLayout children second.
+	observabilityLayout := layout children second.
+	sectionsLayout := observabilityLayout children second.
 
-	self deny: presenter hasExpandedMonitoringSection.
+	self deny: presenter hasExpandedObservabilitySection.
 	self assert: layout class equals: SpBoxLayout.
 	self assert: layout children size equals: 2.
-	self assert: monitoringLayout children size equals: 2.
+	self assert: observabilityLayout children size equals: 2.
 	self assert: sectionsLayout children size equals: 3
 ]
 
@@ -44,7 +44,7 @@ MCPDashboardPresenterTest >> testCheckboxRowsIncludeLeftPadding [
 
 	| configurationLayout observabilityLayout |
 	configurationLayout := MCPDashboardPresenter new configurationLayout.
-	observabilityLayout := MCPDashboardPresenter new monitoringControlsLayout.
+	observabilityLayout := MCPDashboardPresenter new observabilityControlsLayout.
 
 	self assert: configurationLayout children size equals: 5.
 	self assert: configurationLayout children third class equals: SpNullPresenter.
@@ -60,7 +60,7 @@ MCPDashboardPresenterTest >> testCollapsedLogsSectionKeepsHeaderAndSplitsOpenSec
 	presenter := MCPDashboardPresenter new.
 
 	presenter toggleLogsSection.
-	sectionsLayout := presenter monitoringSectionsLayout.
+	sectionsLayout := presenter observabilitySectionsLayout.
 	splitLayout := sectionsLayout children first.
 
 	self assert: sectionsLayout class equals: SpBoxLayout.
@@ -84,13 +84,13 @@ MCPDashboardPresenterTest >> testCollapsedMetricsSectionKeepsHeaderVisible [
 ]
 
 { #category : 'tests' }
-MCPDashboardPresenterTest >> testCollapsedMonitoringSectionUsesFixedHeaderRow [
+MCPDashboardPresenterTest >> testCollapsedObservabilitySectionUsesFixedHeaderRow [
 
 	| presenter sectionsLayout splitLayout |
 	presenter := MCPDashboardPresenter new.
 
 	presenter toggleMetricsSection.
-	sectionsLayout := presenter monitoringSectionsLayout.
+	sectionsLayout := presenter observabilitySectionsLayout.
 	splitLayout := sectionsLayout children second.
 
 	self assert: sectionsLayout class equals: SpBoxLayout.
@@ -115,19 +115,19 @@ MCPDashboardPresenterTest >> testCollapsedSectionCanBeExpandedAgain [
 { #category : 'tests' }
 MCPDashboardPresenterTest >> testCollapsedToolsSectionUsesFixedHeaderRow [
 
-	| presenter layout monitoringLayout monitoringSectionsLayout |
+	| presenter layout observabilityLayout observabilitySectionsLayout |
 	presenter := MCPDashboardPresenter new.
 
 	presenter toggleToolsSection.
 	layout := presenter dashboardWidgetsLayout.
-	monitoringLayout := layout children second.
-	monitoringSectionsLayout := monitoringLayout children second.
+	observabilityLayout := layout children second.
+	observabilitySectionsLayout := observabilityLayout children second.
 
 	self assert: layout class equals: SpBoxLayout.
 	self assert: layout children size equals: 2.
 	self assert: layout children first children size equals: 1.
-	self assert: monitoringLayout class equals: SpBoxLayout.
-	self assert: monitoringSectionsLayout class equals: SpPanedLayout
+	self assert: observabilityLayout class equals: SpBoxLayout.
+	self assert: observabilitySectionsLayout class equals: SpPanedLayout
 ]
 
 { #category : 'tests' }
@@ -137,7 +137,7 @@ MCPDashboardPresenterTest >> testCollapsedTracesSectionKeepsHeaderAndSplitsOpenS
 	presenter := MCPDashboardPresenter new.
 
 	presenter toggleTracesSection.
-	sectionsLayout := presenter monitoringSectionsLayout.
+	sectionsLayout := presenter observabilitySectionsLayout.
 	lowerLayout := sectionsLayout children second.
 
 	self assert: sectionsLayout class equals: SpPanedLayout.
@@ -181,17 +181,17 @@ MCPDashboardPresenterTest >> testCollapsibleSectionsRemoveOnlyTheirBody [
 { #category : 'tests' }
 MCPDashboardPresenterTest >> testDashboardWidgetsUseVerticalSplitters [
 
-	| nestedSections presenter layout monitoringLayout monitoringSectionsLayout |
+	| nestedSections presenter layout observabilityLayout observabilitySectionsLayout |
 	presenter := MCPDashboardPresenter new.
 	layout := presenter dashboardWidgetsLayout.
-	monitoringLayout := layout children second.
-	monitoringSectionsLayout := monitoringLayout children second.
-	nestedSections := monitoringSectionsLayout children second.
+	observabilityLayout := layout children second.
+	observabilitySectionsLayout := observabilityLayout children second.
+	nestedSections := observabilitySectionsLayout children second.
 
 	self assert: layout class equals: SpPanedLayout.
 	self assert: layout isVertical.
-	self assert: monitoringSectionsLayout class equals: SpPanedLayout.
-	self assert: monitoringSectionsLayout isVertical.
+	self assert: observabilitySectionsLayout class equals: SpPanedLayout.
+	self assert: observabilitySectionsLayout isVertical.
 	self assert: nestedSections class equals: SpPanedLayout.
 	self assert: nestedSections isVertical
 ]
@@ -220,22 +220,22 @@ MCPDashboardPresenterTest >> testDisclosureLabelsIncludeStateTitleAndCount [
 ]
 
 { #category : 'tests' }
-MCPDashboardPresenterTest >> testFreshMCPWithObservabilityEnabledExpandsMonitoringSections [
+MCPDashboardPresenterTest >> testFreshMCPWithNoopObservabilityCollapsesObservabilitySections [
 
 	| mcp presenter |
 	mcp := MCP new.
 	presenter := MCPDashboardPresenter on: mcp.
 	presenter refreshView.
 
-	self assert: mcp monitoringEnabled.
+	self deny: mcp observabilityEnabled.
 	self assert: presenter isToolsSectionExpanded.
-	self assert: presenter isMetricsSectionExpanded.
-	self assert: presenter isTracesSectionExpanded.
-	self assert: presenter isLogsSectionExpanded.
+	self deny: presenter isMetricsSectionExpanded.
+	self deny: presenter isTracesSectionExpanded.
+	self deny: presenter isLogsSectionExpanded.
 	self assert: presenter toolsWidgetLayout children size equals: 2.
-	self assert: presenter metricsWidgetLayout children size equals: 2.
-	self assert: presenter tracesWidgetLayout children size equals: 2.
-	self assert: presenter logsWidgetLayout children size equals: 2
+	self assert: presenter metricsWidgetLayout children size equals: 1.
+	self assert: presenter tracesWidgetLayout children size equals: 1.
+	self assert: presenter logsWidgetLayout children size equals: 1
 ]
 
 { #category : 'tests' }
@@ -259,11 +259,29 @@ MCPDashboardPresenterTest >> testHeaderLayoutUsesStatusAndEndpointRows [
 ]
 
 { #category : 'tests' }
+MCPDashboardPresenterTest >> testInitialSectionsCollapseAfterObservabilityIsDisabled [
+
+	| mcp presenter record |
+	mcp := MCP new.
+	mcp observabilityEnabled: true.
+	record := mcp observability recordToolCallStart: 'failing-tool'.
+	mcp observability recordToolCallFinish: record result: (MCPStructureErrorToolResult content: #(  )) error: Error new.
+	mcp observabilityEnabled: false.
+	presenter := MCPDashboardPresenter on: mcp.
+	presenter refreshView.
+
+	self deny: mcp observabilityEnabled.
+	self deny: presenter isMetricsSectionExpanded.
+	self deny: presenter isTracesSectionExpanded.
+	self deny: presenter isLogsSectionExpanded
+]
+
+{ #category : 'tests' }
 MCPDashboardPresenterTest >> testInitialSectionsOpenForObservabilityEnabled [
 
 	| mcp presenter |
 	mcp := MCP new.
-	mcp monitoringEnabled: true.
+	mcp observabilityEnabled: true.
 	presenter := MCPDashboardPresenter on: mcp.
 	presenter refreshView.
 
@@ -273,24 +291,6 @@ MCPDashboardPresenterTest >> testInitialSectionsOpenForObservabilityEnabled [
 	self assert: presenter metricsWidgetLayout children size equals: 2.
 	self assert: presenter tracesWidgetLayout children size equals: 2.
 	self assert: presenter logsWidgetLayout children size equals: 2
-]
-
-{ #category : 'tests' }
-MCPDashboardPresenterTest >> testInitialSectionsOpenForStoredMonitoringData [
-
-	| mcp presenter record |
-	mcp := MCP new.
-	mcp monitoringEnabled: true.
-	record := mcp monitoring recordToolCallStart: 'failing-tool'.
-	mcp monitoring recordToolCallFinish: record result: (MCPStructureErrorToolResult content: #(  )) error: Error new.
-	mcp monitoringEnabled: false.
-	presenter := MCPDashboardPresenter on: mcp.
-	presenter refreshView.
-
-	self deny: mcp monitoringEnabled.
-	self assert: presenter isMetricsSectionExpanded.
-	self assert: presenter isTracesSectionExpanded.
-	self assert: presenter isLogsSectionExpanded
 ]
 
 { #category : 'tests' }
@@ -321,11 +321,7 @@ MCPDashboardPresenterTest >> testManualExpansionWorksAfterInitialStateIsChosen [
 	presenter := MCPDashboardPresenter on: mcp.
 	presenter refreshView.
 
-	self assert: presenter isMetricsSectionExpanded.
-	presenter toggleMetricsSection.
-	presenter refreshView.
 	self deny: presenter isMetricsSectionExpanded.
-	self assert: presenter metricsWidgetLayout children size equals: 1.
 	presenter toggleMetricsSection.
 	presenter refreshView.
 	self assert: presenter isMetricsSectionExpanded.
@@ -346,7 +342,7 @@ MCPDashboardPresenterTest >> testMetricsTableHasExpectedColumns [
 MCPDashboardPresenterTest >> testObservabilityControlsStartWithEnableRefreshAutoRefreshAndClear [
 
 	| layout |
-	layout := MCPDashboardPresenter new monitoringControlsLayout.
+	layout := MCPDashboardPresenter new observabilityControlsLayout.
 
 	self assert: layout children size equals: 6.
 	self assert: layout children second label equals: 'Enable observability'.
@@ -362,11 +358,11 @@ MCPDashboardPresenterTest >> testObservabilityToggleUpdatesModelImmediately [
 	mcp := MCP new.
 	presenter := MCPDashboardPresenter on: mcp.
 
-	self assert: mcp monitoringEnabled.
-	presenter observabilityChangedTo: false.
-	self deny: mcp monitoringEnabled.
+	self deny: mcp observabilityEnabled.
 	presenter observabilityChangedTo: true.
-	self assert: mcp monitoringEnabled
+	self assert: mcp observabilityEnabled.
+	presenter observabilityChangedTo: false.
+	self deny: mcp observabilityEnabled
 ]
 
 { #category : 'tests' }
@@ -399,9 +395,9 @@ MCPDashboardPresenterTest >> testRefreshViewUsesShortSectionLabels [
 	logsHeader := presenter instVarNamed: #logsHeaderButton.
 
 	self assert: toolsHeader label equals: ('[-] Tools ({1})' format: { mcp sortedTools size asString }).
-	self assert: metricsHeader label equals: '[-] Metrics (0)'.
-	self assert: tracesHeader label equals: '[-] Traces (0)'.
-	self assert: logsHeader label equals: '[-] Logs (0)'
+	self assert: metricsHeader label equals: '[+] Metrics (0)'.
+	self assert: tracesHeader label equals: '[+] Traces (0)'.
+	self assert: logsHeader label equals: '[+] Logs (0)'
 ]
 
 { #category : 'tests' }
