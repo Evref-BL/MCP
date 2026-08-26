@@ -70,7 +70,7 @@ MCPToolClassMutationTest >> commentTargetClassName [
 MCPToolClassMutationTest >> createRequestArgumentsForClassName: aClassName superclassName: aSuperclassName packageName: aPackageName [
 
 	^ self createRequestArgumentsWith: {
-			  (#className -> aClassName).
+			  (#name -> aClassName).
 			  (#superclassName -> aSuperclassName).
 			  (#packageName -> aPackageName) }
 ]
@@ -267,9 +267,10 @@ MCPToolClassMutationTest >> testClassToolSchemasDeclareExpectedInputs [
 	slotProperties := MCPToolAddClassSlot new inputSchema properties collect: [ :each | each name ].
 	self
 		assert: createProperties asArray
-		equals: #( 'className' 'superclassName' 'packageName' 'tag' 'slots' 'classSlots' 'traits' 'classTraits' 'sharedVariables'
-			   'sharedPools' 'layout' 'comment' ).
-	self assert: MCPToolCreateClass new inputSchema required asSet equals: #( 'className' 'superclassName' 'packageName' ) asSet.
+		equals:
+			#( 'name' 'superclassName' 'packageName' 'tag' 'slots' 'classSlots' 'traits' 'classTraits' 'sharedVariables' 'sharedPools'
+			   'layout' 'comment' ).
+	self assert: MCPToolCreateClass new inputSchema required asSet equals: #( 'name' 'superclassName' 'packageName' ) asSet.
 	self
 		assert: renameProperties asArray
 		equals: #( 'className' 'newClassName' 'force' 'packageNames' 'classNames' 'hierarchyClassNames' ).
@@ -285,7 +286,7 @@ MCPToolClassMutationTest >> testCreateAcceptsClassSlots [
 
 	| createdClass data result |
 	result := self callToolWith: (self createRequestArgumentsWith: {
-				           (#className -> 'MCPToolClassMutationTestClassSlots').
+				           (#name -> 'MCPToolClassMutationTestClassSlots').
 				           (#superclassName -> 'Object').
 				           (#packageName -> self generatedPackageName).
 				           (#classSlots -> #( 'defaultName' )) }).
@@ -329,7 +330,7 @@ MCPToolClassMutationTest >> testCreateAcceptsSlotsAndTag [
 
 	| createdClass data result |
 	result := self callToolWith: (self createRequestArgumentsWith: {
-				           (#className -> 'MCPToolClassMutationTestTagged').
+				           (#name -> 'MCPToolClassMutationTestTagged').
 				           (#superclassName -> 'Object').
 				           (#packageName -> self generatedPackageName).
 				           (#tag -> 'Generated').

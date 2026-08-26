@@ -113,7 +113,7 @@ MCPJSONSchemaValidatorTest >> classMutationRepresentativeArgumentsByToolClass [
 
 	^ {
 		  (MCPToolCreateClass -> {
-			   (#className -> 'MCPJSONSchemaValidatorTestTemporary').
+			   (#name -> 'MCPJSONSchemaValidatorTestTemporary').
 			   (#superclassName -> 'Object').
 			   (#packageName -> 'MCP-Tests') } asDictionary).
 		  (MCPToolUpdateClassName -> {
@@ -285,7 +285,7 @@ MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasAdvertiseGroupedSearchS
 MCPJSONSchemaValidatorTest >> testCurrentToolRequestValidationRejectsOperationSpecificMissingArguments [
 
 	self
-		should: [ MCPToolCreateClass new requestFromToolCallArguments: { (#className -> 'MCPTool') } asDictionary ]
+		should: [ MCPToolCreateClass new requestFromToolCallArguments: { (#name -> 'MCPTool') } asDictionary ]
 		raise: MCPInvalidToolInput.
 	self
 		should: [ MCPToolUpdateClassPackage new requestFromToolCallArguments: { (#className -> 'MCPTool') } asDictionary ]

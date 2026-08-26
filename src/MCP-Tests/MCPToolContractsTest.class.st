@@ -288,7 +288,7 @@ MCPToolContractsTest >> classMutationToolFlowSpecs [
 		  {
 			  (#toolClass -> MCPToolCreateClass).
 			  (#arguments -> {
-				   (#className -> 'MCPTemporaryClass').
+				   (#name -> 'MCPTemporaryClass').
 				   (#superclassName -> 'Object').
 				   (#packageName -> 'MCP-Tests') } asDictionary).
 			  (#requestClass -> MCPClassCreateRequest).
@@ -982,7 +982,7 @@ MCPToolContractsTest >> testClassMutationToolsHaveAccurateNamesAndRequiredArgume
 			propertyNames := tool inputSchema properties collect: [ :each | each name ].
 			self assert: tool name equals: association value.
 			self deny: (propertyNames includes: 'operation') ].
-	self assert: MCPToolCreateClass new inputSchema required asSet equals: #( 'className' 'superclassName' 'packageName' ) asSet.
+	self assert: MCPToolCreateClass new inputSchema required asSet equals: #( 'name' 'superclassName' 'packageName' ) asSet.
 	self assert: MCPToolUpdateClassName new inputSchema required asSet equals: #( 'className' 'newClassName' ) asSet.
 	self assert: MCPToolUpdateClassComment new inputSchema required asSet equals: #( 'className' 'comment' ) asSet.
 	self assert: MCPToolUpdateClassSlotName new inputSchema required asSet equals: #( 'className' 'slotName' 'newSlotName' ) asSet.

@@ -17,12 +17,11 @@ MCPClassMutationRequestTest >> testCreateRequestParsesDefinitionArguments [
 		           fromRequest: (MCPToolRequest new
 				            tool: MCPToolCreateClass new;
 				            arguments: {
-						            (#className -> 'MCPGeneratedClass').
+						            (#name -> 'MCPGeneratedClass').
 						            (#superclassName -> 'Object').
 						            (#packageName -> 'MCP-Generated').
 						            (#tag -> 'Models').
 						            (#comment -> 'Generated comment.').
-						            (#force -> true).
 						            (#slots -> #( 'firstName' 'lastName' )).
 						            (#classSlots -> #( 'defaultName' )).
 						            (#traits -> #( 'TComparable' )).
@@ -37,7 +36,6 @@ MCPClassMutationRequestTest >> testCreateRequestParsesDefinitionArguments [
 	self assert: request packageName equals: 'MCP-Generated'.
 	self assert: request tag equals: 'Models'.
 	self assert: request classComment equals: 'Generated comment.'.
-	self assert: request force.
 	self assert: request slotNames equals: #( 'firstName' 'lastName' ).
 	self assert: request slots equals: #( #firstName #lastName ).
 	self assert: request classSlotNames equals: #( 'defaultName' ).
