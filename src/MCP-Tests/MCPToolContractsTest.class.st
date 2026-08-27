@@ -128,7 +128,7 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 			  (#commandClass -> MCPSearchToolCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolGetClass).
-			  (#arguments -> { (#className -> 'Object') } asDictionary).
+			  (#arguments -> { (#name -> 'Object') } asDictionary).
 			  (#requestClass -> MCPGetClassRequest).
 			  (#commandClass -> MCPGetClassCommand) } asDictionary.
 		  {
@@ -296,8 +296,8 @@ MCPToolContractsTest >> classMutationToolFlowSpecs [
 		  {
 			  (#toolClass -> MCPToolUpdateClassName).
 			  (#arguments -> {
-				   (#className -> 'Object').
-				   (#newClassName -> 'MCPObject') } asDictionary).
+				   (#name -> 'Object').
+				   (#newName -> 'MCPObject') } asDictionary).
 			  (#requestClass -> MCPClassUpdateRequest).
 			  (#commandClass -> MCPUpdateClassCommand) } asDictionary.
 		  {
@@ -983,7 +983,7 @@ MCPToolContractsTest >> testClassMutationToolsHaveAccurateNamesAndRequiredArgume
 			self assert: tool name equals: association value.
 			self deny: (propertyNames includes: 'operation') ].
 	self assert: MCPToolCreateClass new inputSchema required asSet equals: #( 'name' 'superclassName' 'packageName' ) asSet.
-	self assert: MCPToolUpdateClassName new inputSchema required asSet equals: #( 'className' 'newClassName' ) asSet.
+	self assert: MCPToolUpdateClassName new inputSchema required asSet equals: #( 'name' 'newName' ) asSet.
 	self assert: MCPToolUpdateClassComment new inputSchema required asSet equals: #( 'className' 'comment' ) asSet.
 	self assert: MCPToolUpdateClassSlotName new inputSchema required asSet equals: #( 'className' 'slotName' 'newSlotName' ) asSet.
 	packagePropertyNames := MCPToolUpdateClassPackage new inputSchema properties collect: [ :each | each name ].
@@ -1314,7 +1314,7 @@ MCPToolContractsTest >> testGetClassHasAccurateNameAndRequiredArguments [
 	outputDataProperty := tool outputSchema properties detect: [ :each | each name = 'data' ].
 	outputPropertyNames := (outputDataProperty extraProperties at: #properties) collect: [ :each | each name ].
 	self assert: tool name equals: 'class_get'.
-	self assert: tool inputSchema required asSet equals: #( 'className' ) asSet.
+	self assert: tool inputSchema required asSet equals: #( 'name' ) asSet.
 	self assert: (inputPropertyNames includes: 'includeComment').
 	self assert: (outputPropertyNames includes: 'traitComposition').
 	self assert: (outputPropertyNames includes: 'classTraitComposition')
@@ -1699,14 +1699,10 @@ MCPToolContractsTest >> testMutatingToolsRequestImageSaveAfterSuccessfulExecutio
 { #category : 'tests' }
 MCPToolContractsTest >> testMutationDescriptionsExplainForceWarningBehavior [
 
-	| classForceDescription methodForceDescription |
-	classForceDescription := (self inputPropertyNamed: 'force' inTool: MCPToolUpdateClassName new) description.
+	| methodForceDescription |
 	methodForceDescription := (self inputPropertyNamed: 'force' inTool: MCPToolUpdateMethodSelector new) description.
-	{
-		classForceDescription.
-		methodForceDescription } do: [ :each |
-			self assert: (each includesSubstring: 'refactoring warnings').
-			self assert: (each includesSubstring: 'stopping') ]
+	self assert: (methodForceDescription includesSubstring: 'refactoring warnings').
+	self assert: (methodForceDescription includesSubstring: 'stopping')
 ]
 
 { #category : 'tests' }
@@ -1717,13 +1713,15 @@ MCPToolContractsTest >> testMutationToolSchemasAdvertiseRenameScopeConditions [
 	selectorInputSchema := MCPToolUpdateMethodSelector new inputSchema.
 	classRenamePropertyNames := classRenameInputSchema properties collect: [ :each | each name ].
 	selectorPropertyNames := selectorInputSchema properties collect: [ :each | each name ].
-	{
-		classRenamePropertyNames.
-		selectorPropertyNames } do: [ :propertyNames |
-			self deny: (propertyNames includes: 'scope').
-			self assert: (propertyNames includes: 'packageNames').
-			self assert: (propertyNames includes: 'classNames').
-			self assert: (propertyNames includes: 'hierarchyClassNames') ].
+	self deny: (classRenamePropertyNames includes: 'scope').
+	self deny: (classRenamePropertyNames includes: 'force').
+	self deny: (classRenamePropertyNames includes: 'packageNames').
+	self deny: (classRenamePropertyNames includes: 'classNames').
+	self deny: (classRenamePropertyNames includes: 'hierarchyClassNames').
+	self deny: (selectorPropertyNames includes: 'scope').
+	self assert: (selectorPropertyNames includes: 'packageNames').
+	self assert: (selectorPropertyNames includes: 'classNames').
+	self assert: (selectorPropertyNames includes: 'hierarchyClassNames').
 	self assert: (classRenameInputSchema asJRPCJSON at: #additionalProperties) equals: false.
 	self assert: (selectorInputSchema asJRPCJSON at: #additionalProperties) equals: false
 ]
@@ -1731,8 +1729,7 @@ MCPToolContractsTest >> testMutationToolSchemasAdvertiseRenameScopeConditions [
 { #category : 'tests' }
 MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable [
 
-	| classSlotTool classUpdateTool searchClassesTool methodMetadataTool searchPackagesTool getClassTool getMethodTool removeClassesTool removeMethodsTool rewriteMethodsTool updateMethodTool |
-	classUpdateTool := MCPToolUpdateClassName new.
+	| classSlotTool searchClassesTool methodMetadataTool searchPackagesTool getClassTool getMethodTool removeClassesTool removeMethodsTool rewriteMethodsTool updateMethodTool |
 	classSlotTool := MCPToolAddClassSlot new.
 	getClassTool := MCPToolGetClass new.
 	getMethodTool := MCPToolGetMethod new.
@@ -1743,7 +1740,6 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 	searchPackagesTool := MCPToolSearchPackages new.
 	removeClassesTool := MCPToolRemoveClasses new.
 	removeMethodsTool := MCPToolRemoveMethods new.
-	self assert: ((self inputPropertyNamed: 'force' inTool: classUpdateTool) extraProperties at: #default) equals: false.
 	self assert: ((self inputPropertyNamed: 'classSide' inTool: classSlotTool) extraProperties at: #default) equals: false.
 	self assert: ((self inputPropertyNamed: 'includeComment' inTool: getClassTool) extraProperties at: #default) equals: false.
 	self assert: ((self inputPropertyNamed: 'subclassDepth' inTool: getClassTool) extraProperties at: #default) equals: 0.

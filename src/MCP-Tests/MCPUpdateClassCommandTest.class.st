@@ -18,7 +18,7 @@ MCPUpdateClassCommandTest >> classToolClassForArguments: arguments slotAction: s
 	slotAction = 'rename' ifTrue: [ ^ MCPToolUpdateClassSlotName ].
 	slotAction = 'pullUp' ifTrue: [ ^ MCPToolPullUpClassSlot ].
 	slotAction = 'pushDown' ifTrue: [ ^ MCPToolPushDownClassSlot ].
-	(arguments includesKey: #newClassName) ifTrue: [ ^ MCPToolUpdateClassName ].
+	(arguments includesKey: #newName) ifTrue: [ ^ MCPToolUpdateClassName ].
 	(arguments includesKey: #comment) ifTrue: [ ^ MCPToolUpdateClassComment ].
 	(arguments includesKey: #traits) ifTrue: [ ^ MCPToolUpdateClassTraits ].
 	(arguments includesKey: #classTraits) ifTrue: [ ^ MCPToolUpdateClassSideTraits ].
@@ -152,7 +152,10 @@ MCPUpdateClassCommandTest >> testBuildsUpdatePlan [
 MCPUpdateClassCommandTest >> testMapsClassPatchFieldsToUpdateActions [
 
 	self
-		assert: (self commandForArguments: (self updateArgumentsWith: { (#newClassName -> 'ObjectRenamed') })) updateAction
+		assert: (self commandForArguments: {
+					 (#action -> 'update').
+					 (#name -> 'Object').
+					 (#newName -> 'ObjectRenamed') } asDictionary) updateAction
 		equals: 'rename'.
 	self
 		assert: (self commandForArguments: (self updateArgumentsWith: { (#superclassName -> 'ProtoObject') })) updateAction

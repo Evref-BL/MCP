@@ -298,12 +298,6 @@ MCPToolClassMutation >> mutationActionForErrorFromParsedRequest: mutationRequest
 ]
 
 { #category : 'private - schema' }
-MCPToolClassMutation >> newClassNameSchemaProperty [
-
-	^ self schemaPropertyNamed: 'newClassName' type: 'string' description: 'The new class name.'
-]
-
-{ #category : 'private - schema' }
 MCPToolClassMutation >> newSlotNameSchemaProperty [
 
 	^ self schemaPropertyNamed: 'newSlotName' type: 'string' description: 'The replacement slot name.'

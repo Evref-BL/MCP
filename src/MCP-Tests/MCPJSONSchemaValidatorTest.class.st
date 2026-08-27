@@ -15,7 +15,7 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 	^ {
 		  (MCPToolEvaluate -> { (#code -> '1 + 1') } asDictionary).
 		  (MCPToolRunTests -> { (#classes -> { 'MCPToolContractsTest' }) } asDictionary).
-		  (MCPToolGetClass -> { (#className -> 'MCPTool') } asDictionary).
+		  (MCPToolGetClass -> { (#name -> 'MCPTool') } asDictionary).
 		  (MCPToolGetMethod -> {
 			   (#className -> 'MCPTool').
 			   (#selector -> 'name') } asDictionary).
@@ -70,8 +70,8 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 		  (MCPToolSearchPackages -> Dictionary new).
 		  (MCPToolClassMutation -> {
 			   (#action -> 'update').
-			   (#className -> 'MCPTool').
-			   (#newClassName -> 'MCPToolRenamed') } asDictionary).
+			   (#name -> 'MCPTool').
+			   (#newName -> 'MCPToolRenamed') } asDictionary).
 		  (MCPToolMethodMutation -> {
 			   (#action -> 'create').
 			   (#className -> 'MCPTool').
@@ -117,8 +117,8 @@ MCPJSONSchemaValidatorTest >> classMutationRepresentativeArgumentsByToolClass [
 			   (#superclassName -> 'Object').
 			   (#packageName -> 'MCP-Tests') } asDictionary).
 		  (MCPToolUpdateClassName -> {
-			   (#className -> 'MCPTool').
-			   (#newClassName -> 'MCPToolRenamed') } asDictionary).
+			   (#name -> 'MCPTool').
+			   (#newName -> 'MCPToolRenamed') } asDictionary).
 		  (MCPToolUpdateClassSuperclass -> {
 			   (#className -> 'MCPTool').
 			   (#superclassName -> 'Object') } asDictionary).

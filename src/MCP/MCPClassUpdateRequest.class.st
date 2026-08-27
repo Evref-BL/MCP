@@ -101,7 +101,7 @@ MCPClassUpdateRequest >> commandForTool: aTool [
 { #category : 'converting' }
 MCPClassUpdateRequest >> contextValueForPropertyNamed: propertyName [
 
-	propertyName = 'newClassName' ifTrue: [ ^ self newClassName ].
+	propertyName = 'newName' ifTrue: [ ^ self newClassName ].
 	propertyName = 'superclassName' ifTrue: [ ^ self superclassName ].
 	propertyName = 'packageName' ifTrue: [ ^ self packageName ].
 	propertyName = 'tag' ifTrue: [ ^ self tag ifNil: [ '' ] ].
@@ -165,8 +165,10 @@ MCPClassUpdateRequest >> hasUpdates [
 MCPClassUpdateRequest >> initializeFromRequest: request [
 
 	suppliedProperties := self updatePropertyNames select: [ :each | request hasArgumentNamed: each ].
-	className := request stringArgumentNamed: 'className'.
-	newClassName := request stringArgumentNamed: 'newClassName'.
+	className := request stringArgumentNamed: ((request hasArgumentNamed: 'name')
+			              ifTrue: [ 'name' ]
+			              ifFalse: [ 'className' ]).
+	newClassName := request stringArgumentNamed: 'newName'.
 	superclassName := request stringArgumentNamed: 'superclassName'.
 	packageName := request stringArgumentNamed: 'packageName'.
 	tag := request stringArgumentNamed: 'tag'.
@@ -241,7 +243,7 @@ MCPClassUpdateRequest >> requestedClassUpdateActions [
 
 	| actions |
 	actions := OrderedCollection new.
-	(self hasSuppliedPropertyNamed: 'newClassName') ifTrue: [ actions add: 'rename' ].
+	(self hasSuppliedPropertyNamed: 'newName') ifTrue: [ actions add: 'rename' ].
 	(self hasSuppliedPropertyNamed: 'superclassName') ifTrue: [ actions add: 'reparent' ].
 	((self hasSuppliedPropertyNamed: 'packageName') or: [ self hasSuppliedPropertyNamed: 'tag' ]) ifTrue: [ actions add: 'move' ].
 	(self hasSuppliedPropertyNamed: 'comment') ifTrue: [ actions add: 'setComment' ].
@@ -382,7 +384,7 @@ MCPClassUpdateRequest >> traits [
 { #category : 'private - request' }
 MCPClassUpdateRequest >> updatePropertyNames [
 
-	^ #( 'newClassName' 'superclassName' 'packageName' 'tag' 'comment' 'slots' 'classSlots' 'traits' 'classTraits' 'sharedVariables'
+	^ #( 'newName' 'superclassName' 'packageName' 'tag' 'comment' 'slots' 'classSlots' 'traits' 'classTraits' 'sharedVariables'
 	     'sharedPools' 'layout' 'slotAction' 'slotName' 'newSlotName' )
 ]
 
@@ -412,8 +414,7 @@ MCPClassUpdateRequest >> validateSlotUpdate [
 			MCPCommandError
 				signalErrorCode: #UnexpectedNewSlotName
 				message: 'newSlotName is only accepted when slotAction=rename.'
-				details: self slotRequestedContext ].
-	^ self
+				details: self slotRequestedContext ]
 ]
 
 { #category : 'converting' }

@@ -133,7 +133,7 @@ MCPToolGetClassTest >> tearDown [
 MCPToolGetClassTest >> testGetsClassMetadata [
 
 	| data expectedLayoutClassName result |
-	result := self callToolWith: { (#className -> self baseClassName) } asDictionary.
+	result := self callToolWith: { (#name -> self baseClassName) } asDictionary.
 	data := self dataFrom: result.
 	expectedLayoutClassName := (self classNamed: self baseClassName) classLayout class name asString.
 	self deny: (result at: #isError ifAbsent: [ false ]).
@@ -163,7 +163,7 @@ MCPToolGetClassTest >> testIncludesClassCommentsWhenRequested [
 
 	| data result subclasses |
 	result := self callToolWith: {
-			          (#className -> self childZClassName).
+			          (#name -> self childZClassName).
 			          (#includeComment -> true).
 			          (#upToSuperclassName -> self baseClassName).
 			          (#subclassDepth -> 1) } asDictionary.
@@ -183,7 +183,7 @@ MCPToolGetClassTest >> testIncludesDirectSubclasses [
 
 	| data result subclasses |
 	result := self callToolWith: {
-			          (#className -> self baseClassName).
+			          (#name -> self baseClassName).
 			          (#subclassDepth -> 1) } asDictionary.
 	data := self dataFrom: result.
 	subclasses := data at: #subclasses.
@@ -199,7 +199,7 @@ MCPToolGetClassTest >> testIncludesNamedSuperclassChain [
 
 	| data result superclasses |
 	result := self callToolWith: {
-			          (#className -> self grandchildClassName).
+			          (#name -> self grandchildClassName).
 			          (#upToSuperclassName -> 'Object') } asDictionary.
 	data := self dataFrom: result.
 	superclasses := data at: #superclasses.
@@ -214,7 +214,7 @@ MCPToolGetClassTest >> testIncludesNamedSuperclassChain [
 MCPToolGetClassTest >> testIncludesSharedPoolNamesForSharedPoolUsingClass [
 
 	| data result |
-	result := self callToolWith: { (#className -> 'AbstractTimeZone') } asDictionary.
+	result := self callToolWith: { (#name -> 'AbstractTimeZone') } asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: ((data at: #sharedPoolNames) includes: 'ChronologyConstants')
@@ -225,7 +225,7 @@ MCPToolGetClassTest >> testIncludesSubclassesUpToRequestedDepth [
 
 	| data result subclasses |
 	result := self callToolWith: {
-			          (#className -> self baseClassName).
+			          (#name -> self baseClassName).
 			          (#subclassDepth -> 2) } asDictionary.
 	data := self dataFrom: result.
 	subclasses := data at: #subclasses.
@@ -241,7 +241,7 @@ MCPToolGetClassTest >> testIncludesSubclassesUpToRequestedDepth [
 MCPToolGetClassTest >> testIncludesTraitNamesForTraitUsingClass [
 
 	| data result |
-	result := self callToolWith: { (#className -> 'AlignmentMorph') } asDictionary.
+	result := self callToolWith: { (#name -> 'AlignmentMorph') } asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: ((data at: #traitNames) anySatisfy: [ :each | each includesSubstring: 'TAbleToRotate' ]).
@@ -256,7 +256,7 @@ MCPToolGetClassTest >> testRejectsNegativeSubclassDepth [
 	self
 		should: [
 				self callToolWith: {
-						(#className -> self baseClassName).
+						(#name -> self baseClassName).
 						(#subclassDepth -> -1) } asDictionary ]
 		raise: MCPInvalidToolInput
 ]
@@ -267,8 +267,8 @@ MCPToolGetClassTest >> testRejectsSubclassDepthAboveMaximum [
 	self
 		should: [
 				self callToolWith: {
-						(#className -> self baseClassName).
-						(#subclassDepth -> 4) } asDictionary ]
+						(#name -> self baseClassName).
+						(#subclassDepth -> 11) } asDictionary ]
 		raise: MCPInvalidToolInput
 ]
 
@@ -276,7 +276,7 @@ MCPToolGetClassTest >> testRejectsSubclassDepthAboveMaximum [
 MCPToolGetClassTest >> testReturnsStructuredErrorWhenClassIsMissing [
 
 	| error result structured |
-	result := self callToolWith: { (#className -> self missingClassName) } asDictionary.
+	result := self callToolWith: { (#name -> self missingClassName) } asDictionary.
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
@@ -287,9 +287,9 @@ MCPToolGetClassTest >> testReturnsStructuredErrorWhenClassIsMissing [
 ]
 
 { #category : 'tests' }
-MCPToolGetClassTest >> testToolRequiresClassNameInSchema [
+MCPToolGetClassTest >> testToolRequiresNameInSchema [
 
-	self assert: MCPToolGetClass new inputSchema required asSet equals: #( 'className' ) asSet
+	self assert: MCPToolGetClass new inputSchema required asSet equals: #( 'name' ) asSet
 ]
 
 { #category : 'private - calling' }

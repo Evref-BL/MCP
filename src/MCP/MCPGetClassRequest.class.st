@@ -43,8 +43,7 @@ MCPGetClassRequest >> initializeClassName: aClassName includeComment: aBoolean u
 	className := aClassName.
 	includeComment := aBoolean.
 	upToSuperclassName := aSuperclassName.
-	subclassDepth := anInteger.
-	^ self
+	subclassDepth := anInteger
 ]
 
 { #category : 'accessing' }

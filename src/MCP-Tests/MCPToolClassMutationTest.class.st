@@ -47,7 +47,7 @@ MCPToolClassMutationTest >> classToolClassForArguments: arguments slotAction: sl
 	slotAction = 'rename' ifTrue: [ ^ MCPToolUpdateClassSlotName ].
 	slotAction = 'pullUp' ifTrue: [ ^ MCPToolPullUpClassSlot ].
 	slotAction = 'pushDown' ifTrue: [ ^ MCPToolPushDownClassSlot ].
-	(arguments includesKey: #newClassName) ifTrue: [ ^ MCPToolUpdateClassName ].
+	(arguments includesKey: #newName) ifTrue: [ ^ MCPToolUpdateClassName ].
 	(arguments includesKey: #comment) ifTrue: [ ^ MCPToolUpdateClassComment ].
 	(arguments includesKey: #traits) ifTrue: [ ^ MCPToolUpdateClassTraits ].
 	(arguments includesKey: #classTraits) ifTrue: [ ^ MCPToolUpdateClassSideTraits ].
@@ -271,10 +271,8 @@ MCPToolClassMutationTest >> testClassToolSchemasDeclareExpectedInputs [
 			#( 'name' 'superclassName' 'packageName' 'tag' 'slots' 'classSlots' 'traits' 'classTraits' 'sharedVariables' 'sharedPools'
 			   'layout' 'comment' ).
 	self assert: MCPToolCreateClass new inputSchema required asSet equals: #( 'name' 'superclassName' 'packageName' ) asSet.
-	self
-		assert: renameProperties asArray
-		equals: #( 'className' 'newClassName' 'force' 'packageNames' 'classNames' 'hierarchyClassNames' ).
-	self assert: MCPToolUpdateClassName new inputSchema required asSet equals: #( 'className' 'newClassName' ) asSet.
+	self assert: renameProperties asArray equals: #( 'name' 'newName' ).
+	self assert: MCPToolUpdateClassName new inputSchema required asSet equals: #( 'name' 'newName' ) asSet.
 	self assert: packageProperties asArray equals: #( 'className' 'packageName' 'tag' 'force' ).
 	self assert: MCPToolUpdateClassPackage new inputSchema required asSet equals: #( 'className' ) asSet.
 	self assert: slotProperties asArray equals: #( 'className' 'slotName' 'classSide' 'force' ).
@@ -983,40 +981,6 @@ MCPToolClassMutationTest >> testUpdateRemovesTraitsWithEmptyArray [
 ]
 
 { #category : 'tests - update' }
-MCPToolClassMutationTest >> testUpdateRenameCanLimitRefactoringToClassHierarchy [
-
-	| hierarchyArguments referenceClass referenceSource result subclass |
-	hierarchyArguments := self updateRequestArgumentsForRename copy
-		                      at: #hierarchyClassNames put: { self originalClassName };
-		                      yourself.
-	result := self callToolWith: hierarchyArguments.
-	referenceClass := self classNamed: self referenceClassName.
-	subclass := self classNamed: self subclassName.
-	referenceSource := (referenceClass >> #referencedClass) sourceCode.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: subclass superclass name asString equals: self renamedClassName.
-	self assert: (referenceSource includesSubstring: self originalClassName).
-	self deny: (referenceSource includesSubstring: self renamedClassName).
-	self assert: ((referenceClass >> #newReferencedInstance) sourceCode includesSubstring: self originalClassName)
-]
-
-{ #category : 'tests - update' }
-MCPToolClassMutationTest >> testUpdateRenameCanLimitRefactoringToNamedClasses [
-
-	| classesArguments referenceClass result |
-	classesArguments := self updateRequestArgumentsForRename copy
-		                    at: #classNames put: {
-				                    self originalClassName.
-				                    self referenceClassName };
-		                    yourself.
-	result := self callToolWith: classesArguments.
-	referenceClass := self classNamed: self referenceClassName.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: ((referenceClass >> #referencedClass) sourceCode includesSubstring: self renamedClassName).
-	self assert: ((referenceClass >> #newReferencedInstance) sourceCode includesSubstring: self renamedClassName)
-]
-
-{ #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateRenameUpdatesMethodReferences [
 
 	| reference |
@@ -1393,8 +1357,8 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenRenameClassIsMis
 	| error result suggestions |
 	result := self callToolWith: {
 			          (#action -> 'update').
-			          (#className -> 'MCPToolClassMutationTestMissing').
-			          (#newClassName -> self renamedClassName) } asDictionary.
+			          (#name -> 'MCPToolClassMutationTestMissing').
+			          (#newName -> self renamedClassName) } asDictionary.
 	error := self errorFrom: result.
 	suggestions := error at: #suggestions.
 	self assert: (result at: #isError).
@@ -1648,8 +1612,8 @@ MCPToolClassMutationTest >> updateRequestArgumentsForRename [
 
 	^ {
 		  (#action -> 'update').
-		  (#className -> self originalClassName).
-		  (#newClassName -> self renamedClassName) } asDictionary
+		  (#name -> self originalClassName).
+		  (#newName -> self renamedClassName) } asDictionary
 ]
 
 { #category : 'private - update' }

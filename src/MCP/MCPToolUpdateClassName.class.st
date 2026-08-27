@@ -20,13 +20,21 @@ MCPToolUpdateClassName >> classToolSpec [
 
 	^ {
 		  (#title -> 'Update Class Name').
-		  (#description -> 'Rename one class through the Pharo refactoring engine.').
+		  (#description -> 'Rename one class through the Pharo refactoring engine across the whole image.').
 		  (#inputProperties -> {
-			   self classNameSchemaProperty.
-			   self newClassNameSchemaProperty.
-			   self forceSchemaProperty.
-			   self refactoringScopePackageNamesSchemaProperty.
-			   self refactoringScopeClassNamesSchemaProperty.
-			   self refactoringScopeHierarchyClassNamesSchemaProperty }).
-		  (#requiredProperties -> #( 'className' 'newClassName' )) } asDictionary
+			   self renameClassNameSchemaProperty.
+			   self renameNewClassNameSchemaProperty }).
+		  (#requiredProperties -> #( 'name' 'newName' )) } asDictionary
+]
+
+{ #category : 'private - schema' }
+MCPToolUpdateClassName >> renameClassNameSchemaProperty [
+
+	^ self schemaPropertyNamed: 'name' type: 'string' description: 'Class to rename.'
+]
+
+{ #category : 'private - schema' }
+MCPToolUpdateClassName >> renameNewClassNameSchemaProperty [
+
+	^ self schemaPropertyNamed: 'newName' type: 'string' description: 'New class name.'
 ]
