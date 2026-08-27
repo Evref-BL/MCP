@@ -49,7 +49,7 @@ MCPUpdateClassCommand >> executeAddSlotWithPlan: plan [
 	| result |
 	^ self tool
 		  executeMutationAction: 'addSlot'
-		  force: self classRequest force
+		  force: false
 		  requestedContext: plan requestedContext
 		  work: [
 				  result := (MCPAddSlotCommand
@@ -127,7 +127,7 @@ MCPUpdateClassCommand >> executeMoveWithPlan: plan [
 	packageName := self movePackageName.
 	^ self tool
 		  executeMutationAction: 'move'
-		  force: self classRequest force
+		  force: false
 		  requestedContext: plan requestedContext
 		  work: [
 			  result := (MCPMoveClassCommand className: self classRequest className packageName: packageName tag: self classRequest tag)
@@ -207,7 +207,7 @@ MCPUpdateClassCommand >> executeRenameSlotWithPlan: plan [
 	| result |
 	^ self tool
 		  executeMutationAction: 'renameSlot'
-		  force: self classRequest force
+		  force: false
 		  requestedContext: plan requestedContext
 		  work: [
 				  result := (MCPRenameSlotCommand
@@ -258,7 +258,7 @@ MCPUpdateClassCommand >> executeReparentWithPlan: plan [
 	| result |
 	^ self tool
 		  executeMutationAction: 'reparent'
-		  force: self classRequest force
+		  force: false
 		  requestedContext: plan requestedContext
 		  work: [
 				  result := (MCPReparentClassCommand className: self classRequest className superclassName: self classRequest superclassName)
@@ -282,7 +282,7 @@ MCPUpdateClassCommand >> executeReplaceClassTraitsWithPlan: plan [
 	| result |
 	^ self tool
 		  executeMutationAction: 'replaceClassTraits'
-		  force: self classRequest force
+		  force: false
 		  requestedContext: plan requestedContext
 		  work: [
 				  result := (MCPReplaceClassSideTraitsCommand
@@ -310,7 +310,7 @@ MCPUpdateClassCommand >> executeReplaceDefinitionWithPlan: plan [
 		replaceClassSlots: (self classRequest hasSuppliedPropertyNamed: 'classSlots').
 	^ self tool
 		  executeMutationAction: 'replaceDefinition'
-		  force: self classRequest force
+		  force: false
 		  requestedContext: plan requestedContext
 		  work: [ result := command execute ]
 		  successResult: [ :warningMessages |
@@ -327,7 +327,7 @@ MCPUpdateClassCommand >> executeReplaceLayoutWithPlan: plan [
 	| result |
 	^ self tool
 		  executeMutationAction: 'replaceLayout'
-		  force: self classRequest force
+		  force: false
 		  requestedContext: plan requestedContext
 		  work: [
 		  result := (MCPReplaceClassLayoutCommand className: self classRequest className layout: self classRequest layout) execute ]
@@ -345,7 +345,7 @@ MCPUpdateClassCommand >> executeReplaceSharedPoolsWithPlan: plan [
 	| result |
 	^ self tool
 		  executeMutationAction: 'replaceSharedPools'
-		  force: self classRequest force
+		  force: false
 		  requestedContext: plan requestedContext
 		  work: [
 				  result := (MCPReplaceClassSharedPoolsCommand
@@ -366,7 +366,7 @@ MCPUpdateClassCommand >> executeReplaceSharedVariablesWithPlan: plan [
 	| result |
 	^ self tool
 		  executeMutationAction: 'replaceSharedVariables'
-		  force: self classRequest force
+		  force: false
 		  requestedContext: plan requestedContext
 		  work: [
 				  result := (MCPReplaceClassSharedVariablesCommand
@@ -387,7 +387,7 @@ MCPUpdateClassCommand >> executeReplaceTraitsWithPlan: plan [
 	| result |
 	^ self tool
 		  executeMutationAction: 'replaceTraits'
-		  force: self classRequest force
+		  force: false
 		  requestedContext: plan requestedContext
 		  work: [
 		  result := (MCPReplaceClassTraitsCommand className: self classRequest className traitNames: self classRequest traits) execute ]

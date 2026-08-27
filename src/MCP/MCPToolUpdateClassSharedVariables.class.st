@@ -29,7 +29,6 @@ MCPToolUpdateClassSharedVariables >> classToolSpec [
 		  (#description -> 'Replace the class variables of one class.').
 		  (#inputProperties -> {
 			   self classNameSchemaProperty.
-			   self sharedVariablesSchemaProperty.
-			   self forceSchemaProperty }).
+			   self sharedVariablesSchemaProperty }).
 		  (#requiredProperties -> #( 'className' 'sharedVariables' )) } asDictionary
 ]

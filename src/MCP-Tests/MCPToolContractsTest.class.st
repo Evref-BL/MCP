@@ -994,8 +994,7 @@ MCPToolContractsTest >> testClassMutationToolsHaveAccurateNamesAndRequiredArgume
 	self assert: (slotsPropertyNames includes: 'slots').
 	self assert: (slotsPropertyNames includes: 'classSlots').
 	self deny: (slotToolPropertyNames includes: 'slotAction').
-	self assert: (slotToolPropertyNames includes: 'classSide').
-	self assert: (slotToolPropertyNames includes: 'force')
+	self assert: (slotToolPropertyNames includes: 'classSide')
 ]
 
 { #category : 'tests' }
@@ -1010,12 +1009,11 @@ MCPToolContractsTest >> testClassPackageUpdateDescriptionMentionsRecategorizatio
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testClassToolSchemaDescriptionsExplainRecategorizationForceAndReplacementSemantics [
+MCPToolContractsTest >> testClassToolSchemaDescriptionsExplainRecategorizationAndReplacementSemantics [
 
-	| classSlotsDescription classTraitsDescription forceDescription layoutDescription packageDescription sharedPoolsDescription sharedVariablesDescription slotsDescription tagDescription traitsDescription |
+	| classSlotsDescription classTraitsDescription layoutDescription packageDescription sharedPoolsDescription sharedVariablesDescription slotsDescription tagDescription traitsDescription |
 	packageDescription := (self inputPropertyNamed: 'packageName' inTool: MCPToolUpdateClassPackage new) description.
 	tagDescription := (self inputPropertyNamed: 'tag' inTool: MCPToolUpdateClassPackage new) description.
-	forceDescription := (self inputPropertyNamed: 'force' inTool: MCPToolUpdateClassPackage new) description.
 	slotsDescription := (self inputPropertyNamed: 'slots' inTool: MCPToolUpdateClassSlots new) description.
 	classSlotsDescription := (self inputPropertyNamed: 'classSlots' inTool: MCPToolUpdateClassSlots new) description.
 	traitsDescription := (self inputPropertyNamed: 'traits' inTool: MCPToolUpdateClassTraits new) description.
@@ -1028,8 +1026,6 @@ MCPToolContractsTest >> testClassToolSchemaDescriptionsExplainRecategorizationFo
 	self assert: (packageDescription includesSubstring: 'omit packageName').
 	self assert: (packageDescription includesSubstring: 'current package').
 	self assert: (tagDescription includesSubstring: 'recategorizes').
-	self assert: (forceDescription includesSubstring: 'refactoring warnings').
-	self assert: (forceDescription includesSubstring: 'stopping').
 	self assert: (slotsDescription includesSubstring: 'empty array').
 	self assert: (slotsDescription includesSubstring: 'classSlots').
 	self assert: (classSlotsDescription includesSubstring: 'empty array').
@@ -1656,7 +1652,7 @@ MCPToolContractsTest >> testMethodMutationToolsHaveAccurateNamesAndRequiredArgum
 		assert: selectorPropertyNames asSet
 		equals: #( 'argumentNames' 'argumentValueExpressions' 'className' 'classNames' 'classSide' 'force' 'hierarchyClassNames'
 			   'newSelector' 'packageNames' 'permutation' 'selector' ) asSet.
-	self assert: protocolPropertyNames asSet equals: #( 'className' 'classSide' 'force' 'protocol' 'selector' ) asSet
+	self assert: protocolPropertyNames asSet equals: #( 'className' 'classSide' 'protocol' 'selector' ) asSet
 ]
 
 { #category : 'tests' }

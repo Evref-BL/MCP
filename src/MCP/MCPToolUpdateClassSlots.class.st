@@ -24,8 +24,7 @@ MCPToolUpdateClassSlots >> classToolSpec [
 		  (#inputProperties -> {
 			   self classNameSchemaProperty.
 			   self slotsSchemaProperty.
-			   self classSlotsSchemaProperty.
-			   self forceSchemaProperty }).
+			   self classSlotsSchemaProperty }).
 		  (#requiredProperties -> #( 'className' )).
 		  (#atLeastOneProperties -> #( 'slots' 'classSlots' )) } asDictionary
 ]

@@ -273,9 +273,9 @@ MCPToolClassMutationTest >> testClassToolSchemasDeclareExpectedInputs [
 	self assert: MCPToolCreateClass new inputSchema required asSet equals: #( 'name' 'superclassName' 'packageName' ) asSet.
 	self assert: renameProperties asArray equals: #( 'name' 'newName' ).
 	self assert: MCPToolUpdateClassName new inputSchema required asSet equals: #( 'name' 'newName' ) asSet.
-	self assert: packageProperties asArray equals: #( 'className' 'packageName' 'tag' 'force' ).
+	self assert: packageProperties asArray equals: #( 'className' 'packageName' 'tag' ).
 	self assert: MCPToolUpdateClassPackage new inputSchema required asSet equals: #( 'className' ) asSet.
-	self assert: slotProperties asArray equals: #( 'className' 'slotName' 'classSide' 'force' ).
+	self assert: slotProperties asArray equals: #( 'className' 'slotName' 'classSide' ).
 	self assert: MCPToolAddClassSlot new inputSchema required asSet equals: #( 'className' 'slotName' ) asSet
 ]
 
