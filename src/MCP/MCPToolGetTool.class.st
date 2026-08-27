@@ -58,7 +58,6 @@ MCPToolGetTool >> annotationsSchemaProperty [
 					 schemaPropertyNamed: 'openWorldHint'
 					 type: 'boolean'
 					 description: 'Whether the tool may interact with external entities.') };
-		required: #( 'readOnlyHint' );
 		additionalProperties: false.
 	^ property
 ]

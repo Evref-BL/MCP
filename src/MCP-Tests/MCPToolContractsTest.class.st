@@ -873,7 +873,7 @@ MCPToolContractsTest >> testBuiltInToolsProvideCatalogMetadata [
 			self assert: (MCPTool builtInGroupNames includes: tool groupName).
 			self assert: tool groupName equals: tool class groupName.
 			self assert: (validExposures includes: tool defaultExposure).
-			self assert: (#( true false ) includes: tool annotations readOnlyHint).
+			self assert: (#( true nil ) includes: tool annotations readOnlyHint).
 			self assert: tool keywords notEmpty ]
 ]
 
@@ -1217,7 +1217,7 @@ MCPToolContractsTest >> testDiscoveryUsesConfiguredStaticToolNames [
 	self assert: (searchContract at: #exposure) equals: 'static'.
 	self assert: ((searchContract at: #annotations) at: #readOnlyHint).
 	self assert: (createContract at: #exposure) equals: 'discoverable'.
-	self deny: ((createContract at: #annotations) at: #readOnlyHint)
+	self deny: ((createContract at: #annotations) includesKey: #readOnlyHint)
 ]
 
 { #category : 'tests - evaluate' }
@@ -1348,7 +1348,7 @@ MCPToolContractsTest >> testGetToolReturnsSchemaForCatalogTool [
 	self assert: contract keys asSet equals: #( name description group exposure annotations keywords inputSchema ) asSet.
 	self assert: (contract at: #group) equals: 'repositories'.
 	self assert: (contract at: #exposure) equals: 'discoverable'.
-	self deny: ((contract at: #annotations) at: #readOnlyHint).
+	self deny: ((contract at: #annotations) includesKey: #readOnlyHint).
 	self assert: ((contract at: #keywords) includes: 'repo').
 	inputProperties := ((contract at: #inputSchema) at: #properties) keys.
 	self assert: inputProperties asSet equals: #( 'name' 'location' 'packageNames' 'subdirectory' ) asSet.
@@ -2626,7 +2626,6 @@ MCPToolContractsTest >> testToolAnnotationsSerializeStandardHints [
 		               yourself.
 	self assert: annotations asJRPCJSON equals: {
 			(#title -> 'Safe Update').
-			(#readOnlyHint -> false).
 			(#destructiveHint -> false).
 			(#idempotentHint -> true).
 			(#openWorldHint -> false) } asDictionary
@@ -2847,7 +2846,7 @@ MCPToolContractsTest >> testToolsOwnRegistryMetadata [
 	tool := MCPToolEvaluate new.
 	self assert: tool groupName equals: 'runtime'.
 	self assert: tool defaultExposure equals: 'static'.
-	self deny: tool annotations readOnlyHint.
+	self assert: tool annotations readOnlyHint equals: nil.
 	self assert: (tool keywords includes: 'smalltalk')
 ]
 
