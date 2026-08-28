@@ -133,7 +133,8 @@ MCPCreateClassCommandTest >> testExistingClassSignalsCommandError [
 				          slots: nil
 				          classSlots: nil) execute ].
 	self assert: error errorCode equals: #ClassAlreadyExists.
-	self assert: (error structuredDetails at: #className) equals: 'MCPCreateClassCommandTestGenerated'
+	self assert: (error structuredDetails at: #className) equals: 'MCPCreateClassCommandTestGenerated'.
+	self assert: ((error structuredDetails at: #guidance) includesSubstring: 'Use class_get')
 ]
 
 { #category : 'tests' }

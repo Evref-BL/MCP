@@ -385,7 +385,9 @@ MCPToolClassMutationTest >> testCreateReturnsStructuredErrorWhenClassAlreadyExis
 	self assert: (error at: #action) equals: 'create'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ClassAlreadyExists'.
-	self assert: (error at: #message) equals: 'Class MCPToolClassMutationTestGenerated already exists.'
+	self assert: (error at: #message) equals: 'Class MCPToolClassMutationTestGenerated already exists.'.
+	self assert: ((error at: #guidance) includesSubstring: 'Use class_get').
+	self assert: ((error at: #guidance) includesSubstring: 'Do not use class_create')
 ]
 
 { #category : 'tests - create' }

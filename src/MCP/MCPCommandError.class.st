@@ -65,9 +65,15 @@ MCPCommandError class >> messageForMissingKind: kind name: missingName scopeName
 { #category : 'signaling' }
 MCPCommandError class >> signalClassAlreadyExistsNamed: aClassName [
 
-	| message |
+	| details message |
 	message := 'Class ' , aClassName , ' already exists.'.
-	^ self signalErrorCode: #ClassAlreadyExists message: message details: { (#className -> aClassName) } asDictionary
+	details := {
+		           (#className -> aClassName).
+		           (#guidance
+		            ->
+		            'Use class_get to inspect the existing class, or use the class update tools to modify it. Do not use class_create for existing classes.') }
+		           asDictionary.
+	^ self signalErrorCode: #ClassAlreadyExists message: message details: details
 ]
 
 { #category : 'signaling' }
