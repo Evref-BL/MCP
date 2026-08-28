@@ -151,6 +151,7 @@ MCPToolSearchClasses >> queryResultDataForQueryRequest: queryRequest page: page 
 	| data |
 	data := Dictionary new.
 	data at: #classes put: (page entries collect: [ :each | self queryResultEntryFromClassEntry: each ] as: Array).
+	data at: #pagination put: page paginationDictionary.
 	page nextOffset ifNotNil: [ :offset | data at: #nextOffset put: offset ].
 	^ data
 ]

@@ -277,10 +277,13 @@ MCPToolSearch >> minimalPagedQueryOutputSchemaForEntriesPropertyNamed: entriesPr
 	^ self
 		  standardOutputSchemaForDataProperties: {
 				  entriesProperty.
+				  self paginationOutputSchemaProperty.
 				  (self
 					   integerSchemaPropertyNamed: 'nextOffset'
 					   description: 'Zero-based offset for the next page. Omitted when this is the final page.') }
-		  required: { entriesPropertyName }
+		  required: {
+				  entriesPropertyName.
+				  'pagination' }
 ]
 
 { #category : 'private - filtering' }
@@ -345,6 +348,28 @@ MCPToolSearch >> paginationInputPropertiesWithLimitDescription: limitDescription
 	^ {
 		  limitProperty.
 		  offsetProperty }
+]
+
+{ #category : 'private - schema' }
+MCPToolSearch >> paginationOutputSchemaProperty [
+
+	| nextOffsetProperty property returnedCountProperty totalCountProperty truncatedProperty |
+	returnedCountProperty := self integerSchemaPropertyNamed: 'returnedCount' description: 'Entries returned in this page.'.
+	totalCountProperty := self integerSchemaPropertyNamed: 'totalCount' description: 'Total matching entries before pagination.'.
+	truncatedProperty := self booleanSchemaPropertyNamed: 'truncated' description: 'Whether more entries are available.'.
+	nextOffsetProperty := self
+		                      integerSchemaPropertyNamed: 'nextOffset'
+		                      description: 'Zero-based offset for the next page. Omitted when this is the final page.'.
+	property := self schemaPropertyNamed: 'pagination' type: 'object' description: 'Pagination metadata for this result page.'.
+	property
+		properties: {
+				returnedCountProperty.
+				totalCountProperty.
+				truncatedProperty.
+				nextOffsetProperty };
+		required: #( 'returnedCount' 'totalCount' 'truncated' );
+		additionalProperties: false.
+	^ property
 ]
 
 { #category : 'private - request' }
@@ -452,16 +477,22 @@ MCPToolSearch >> scopeQuerySuccessSummaryFor: resultKind scope: scopeSummary pag
 
 	^ String streamContents: [ :stream |
 			  stream
+				  nextPutAll: 'Showing ';
 				  print: page returnedCount;
+				  nextPutAll: ' of ';
+				  print: page totalCount;
 				  space;
 				  nextPutAll: resultKind;
-				  nextPutAll: ' found [scope=';
+				  nextPutAll: ' [scope=';
 				  nextPutAll: scopeSummary;
 				  nextPutAll: ']'.
 			  page nextOffset ifNotNil: [ :offset |
 					  stream
-						  nextPutAll: ' More available at offset ';
-						  print: offset ].
+						  nextPutAll: '. More available: use offset ';
+						  print: offset;
+						  nextPutAll: ' and limit ';
+						  print: page returnedCount;
+						  nextPutAll: ', or narrow the scope/filter' ].
 			  stream nextPut: $. ]
 ]
 

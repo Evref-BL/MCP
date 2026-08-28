@@ -218,17 +218,24 @@ MCPToolSearchClassesTest >> testHierarchyClassNamesSelectHierarchyScope [
 { #category : 'tests' }
 MCPToolSearchClassesTest >> testImageScopeCanFilterAndPaginate [
 
-	| classNames data result |
+	| classNames data pagination result summary |
 	result := self callToolWith: {
 			          (#className -> self fixturePrefix).
 			          (#filterMode -> 'prefix').
 			          (#limit -> 2).
 			          (#offset -> 1) } asDictionary.
 	data := self dataFrom: result.
+	pagination := data at: #pagination.
+	summary := self summaryFrom: result.
 	classNames := (data at: #classes) collect: [ :each | each at: #className ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: classNames size equals: 2.
 	self deny: (data includesKey: #nextOffset).
+	self assert: (pagination at: #returnedCount) equals: 2.
+	self assert: (pagination at: #totalCount) equals: 3.
+	self deny: (pagination at: #truncated).
+	self deny: (pagination includesKey: #nextOffset).
+	self assert: (summary includesSubstring: 'Showing 2 of 3 classes').
 	self assert: classNames equals: {
 			self childClassName.
 			self grandchildClassName } asArray

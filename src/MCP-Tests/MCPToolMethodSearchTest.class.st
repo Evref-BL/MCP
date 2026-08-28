@@ -49,7 +49,7 @@ MCPToolMethodSearchTest >> testCanFilterAcrossExplicitProtocolTarget [
 { #category : 'tests' }
 MCPToolMethodSearchTest >> testCanFilterPaginateAndIncludeSource [
 
-	| data result |
+	| data pagination result summary |
 	result := self callToolWith: {
 			          (self searchScope: { (#classes -> { self targetClassName }) }).
 			          (#side -> 'class').
@@ -58,9 +58,14 @@ MCPToolMethodSearchTest >> testCanFilterPaginateAndIncludeSource [
 			          (#includeSource -> true).
 			          (#limit -> 1) } asDictionary.
 	data := self dataFrom: result.
+	pagination := data at: #pagination.
+	summary := self summaryFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #methods) size equals: 1.
 	self assert: (data at: #nextOffset) equals: 1.
+	self assert: (pagination at: #returnedCount) equals: 1.
+	self assert: (pagination at: #truncated).
+	self assert: (summary includesSubstring: 'use offset 1 and limit 1').
 	self assert: ((data at: #methods) allSatisfy: [ :each | each at: #classSide ]).
 	self assert: ((data at: #methods) allSatisfy: [ :each | (each at: #protocol) includesSubstring: 'meta' ]).
 	self assert: ((data at: #methods) allSatisfy: [ :each | each includesKey: #source ]).

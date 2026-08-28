@@ -66,13 +66,15 @@ MCPToolSearchPackagesTest >> testImageScopeCanFilterPackagesByTagTarget [
 { #category : 'tests' }
 MCPToolSearchPackagesTest >> testImageScopeCanPaginateFilteredPackages [
 
-	| data expected packageNames result |
+	| data expected packageNames pagination result summary |
 	result := self callToolWith: {
 			          (#packageName -> 'MCP-').
 			          (#filterMode -> 'prefix').
 			          (#limit -> 2).
 			          (#offset -> 1) } asDictionary.
 	data := self dataFrom: result.
+	pagination := data at: #pagination.
+	summary := self summaryFrom: result.
 	packageNames := (data at: #packages) collect: [ :each | each at: #packageName ].
 	expected := (PackageOrganizer default packages
 		             select: [ :each | each name asString beginsWith: 'MCP-' ]
@@ -80,6 +82,12 @@ MCPToolSearchPackagesTest >> testImageScopeCanPaginateFilteredPackages [
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: packageNames size equals: 2.
 	self assert: (data at: #nextOffset) equals: 3.
+	self assert: (pagination at: #returnedCount) equals: 2.
+	self assert: (pagination at: #totalCount) equals: expected size.
+	self assert: (pagination at: #truncated).
+	self assert: (pagination at: #nextOffset) equals: 3.
+	self assert: (summary includesSubstring: 'Showing 2 of ').
+	self assert: (summary includesSubstring: 'use offset 3 and limit 2').
 	self assert: packageNames equals: (expected copyFrom: 2 to: 3) asArray
 ]
 
