@@ -12,6 +12,11 @@ Class {
 		'durationMilliseconds',
 		'status',
 		'errorClass',
+		'errorKind',
+		'errorCode',
+		'causeClass',
+		'schemaViolationKeywords',
+		'schemaViolationCount',
 		'summary',
 		'outlierExplanation',
 		'inputSnapshot',
@@ -65,6 +70,11 @@ MCPToolCallRecord >> asDictionary [
 		  (#durationMilliseconds -> self durationMilliseconds).
 		  (#status -> self status).
 		  (#errorClass -> self errorClass).
+		  (#errorKind -> self errorKind).
+		  (#errorCode -> self errorCode).
+		  (#causeClass -> self causeClass).
+		  (#schemaViolationKeywords -> self schemaViolationKeywords).
+		  (#schemaViolationCount -> self schemaViolationCount).
 		  (#summary -> self summary).
 		  (#eventKinds -> self eventKinds).
 		  (#outlierExplanation -> self outlierExplanation).
@@ -76,6 +86,18 @@ MCPToolCallRecord >> asDictionary [
 		  (#outputBudgetExplanation -> self outputBudgetExplanation).
 		  (#input -> self inputSnapshot).
 		  (#output -> self outputSnapshot) } asDictionary
+]
+
+{ #category : 'accessing' }
+MCPToolCallRecord >> causeClass [
+
+	^ causeClass ifNil: [ '' ]
+]
+
+{ #category : 'accessing' }
+MCPToolCallRecord >> causeClass: aString [
+
+	causeClass := aString
 ]
 
 { #category : 'accessing' }
@@ -134,6 +156,30 @@ MCPToolCallRecord >> errorClass [
 MCPToolCallRecord >> errorClass: aString [
 
 	errorClass := aString
+]
+
+{ #category : 'accessing' }
+MCPToolCallRecord >> errorCode [
+
+	^ errorCode ifNil: [ '' ]
+]
+
+{ #category : 'accessing' }
+MCPToolCallRecord >> errorCode: aString [
+
+	errorCode := aString
+]
+
+{ #category : 'accessing' }
+MCPToolCallRecord >> errorKind [
+
+	^ errorKind ifNil: [ '' ]
+]
+
+{ #category : 'accessing' }
+MCPToolCallRecord >> errorKind: aString [
+
+	errorKind := aString
 ]
 
 { #category : 'accessing' }
@@ -308,6 +354,30 @@ MCPToolCallRecord >> recordOutputBudget: budgetData [
 	self outputBudgetBytes: (budgetData at: #outputBudgetBytes).
 	self outputBudgetExceeded: (budgetData at: #outputBudgetExceeded).
 	self outputBudgetExplanation: (budgetData at: #outputBudgetExplanation)
+]
+
+{ #category : 'accessing' }
+MCPToolCallRecord >> schemaViolationCount [
+
+	^ schemaViolationCount ifNil: [ 0 ]
+]
+
+{ #category : 'accessing' }
+MCPToolCallRecord >> schemaViolationCount: anInteger [
+
+	schemaViolationCount := anInteger
+]
+
+{ #category : 'accessing' }
+MCPToolCallRecord >> schemaViolationKeywords [
+
+	^ schemaViolationKeywords ifNil: [ #(  ) ]
+]
+
+{ #category : 'accessing' }
+MCPToolCallRecord >> schemaViolationKeywords: aCollection [
+
+	schemaViolationKeywords := aCollection ifNil: [ #(  ) ] ifNotNil: [ aCollection asArray ]
 ]
 
 { #category : 'accessing' }

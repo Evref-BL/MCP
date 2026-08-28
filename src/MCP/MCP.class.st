@@ -147,11 +147,13 @@ MCP >> executeTool: tool named: toolName withParams: arguments [
 MCP >> executeTool: tool named: toolName withParams: arguments dispatchPath: dispatchPath [
 
 	| observabilityRecord request result toolResult |
-	observabilityRecord := self observability
-		                       recordToolCallStart: toolName
-		                       input: arguments
-		                       dispatchPath: dispatchPath
-		                       context: Dictionary new.
+	observabilityRecord := nil.
+	tool shouldRecordObservability ifTrue: [
+			observabilityRecord := self observability
+				                       recordToolCallStart: toolName
+				                       input: arguments
+				                       dispatchPath: dispatchPath
+				                       context: Dictionary new ].
 	^ [
 		  request := tool requestFromToolCallArguments: arguments.
 		  result := tool executeWithRequest: request.

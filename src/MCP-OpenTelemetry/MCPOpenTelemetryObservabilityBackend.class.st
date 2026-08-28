@@ -119,25 +119,30 @@ MCPOpenTelemetryObservabilityBackend >> enrichSpan: span withRecord: aRecord att
 		attributeAt: 'mcp.output.tokens.approx' put: aRecord approximateOutputTokenCount;
 		attributeAt: 'mcp.output_budget.exceeded' put: aRecord outputBudgetExceeded.
 	aRecord outputBudgetExceeded ifTrue: [ span addEventNamed: 'mcp.output_budget_exceeded' attributes: attributes ].
-	anError ifNotNil: [
-			span
-				attributeAt: 'error.type' put: anError class name asString;
-				setStatus: OTSpan error description: anError description;
-				recordException: anError ].
+	aRecord errorKind ifNotEmpty: [ :kind | span attributeAt: 'mcp.error.kind' put: kind ].
+	aRecord errorCode ifNotEmpty: [ :code | span attributeAt: 'mcp.error.code' put: code ].
+	aRecord errorClass ifNotEmpty: [ :className | span attributeAt: 'error.type' put: className ].
+	aRecord causeClass ifNotEmpty: [ :className | span attributeAt: 'mcp.error.cause_class' put: className ].
+	aRecord schemaViolationCount > 0 ifTrue: [
+		span attributeAt: 'mcp.error.schema.violation_count' put: aRecord schemaViolationCount ].
+	aRecord status = 'error' ifTrue: [
+			span setStatus: OTSpan error description: aRecord displaySummary.
+			anError ifNotNil: [ span recordException: anError ] ].
 	aRecord status = 'ok' ifTrue: [ span setStatus: OTSpan ok description: '' ]
 ]
 
 { #category : 'private - metrics' }
 MCPOpenTelemetryObservabilityBackend >> errorAttributesForRecord: aRecord baseAttributes: attributes [
 
-	^ attributes copyWith: 'error.type' -> aRecord errorClass
-]
-
-{ #category : 'private' }
-MCPOpenTelemetryObservabilityBackend >> errorClassNameFor: anError [
-
-	anError ifNil: [ ^ '' ].
-	^ anError class name asString
+	| errorAttributes |
+	errorAttributes := OrderedCollection withAll: attributes.
+	aRecord errorClass ifNotEmpty: [ :className | errorAttributes add: 'error.type' -> className ].
+	aRecord errorKind ifNotEmpty: [ :kind | errorAttributes add: 'mcp.error.kind' -> kind ].
+	aRecord errorCode ifNotEmpty: [ :code | errorAttributes add: 'mcp.error.code' -> code ].
+	aRecord causeClass ifNotEmpty: [ :className | errorAttributes add: 'mcp.error.cause_class' -> className ].
+	aRecord schemaViolationCount > 0 ifTrue: [
+		errorAttributes add: 'mcp.error.schema.violation_count' -> aRecord schemaViolationCount ].
+	^ errorAttributes asArray
 ]
 
 { #category : 'private - instruments' }
@@ -155,7 +160,7 @@ MCPOpenTelemetryObservabilityBackend >> finishRecord: aRecord result: aToolResul
 	duration := (finishedAt - aRecord startedAt) asMilliSeconds.
 	statusString := self statusForResult: aToolResult error: anError.
 	aRecord finishAt: finishedAt durationMilliseconds: duration status: statusString.
-	aRecord errorClass: (self errorClassNameFor: anError).
+	self recordErrorDetailsFor: aRecord result: aToolResult error: anError.
 	self recordOutputBudgetFor: aRecord result: aToolResult error: anError.
 	aRecord inputObject: nil.
 	self updateEventKindsForRecord: aRecord

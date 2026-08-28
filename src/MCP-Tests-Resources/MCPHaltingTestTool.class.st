@@ -56,6 +56,12 @@ MCPHaltingTestTool >> groupName [
 	^ 'plugins'
 ]
 
+{ #category : 'testing' }
+MCPHaltingTestTool >> shouldRecordObservability [
+
+	^ false
+]
+
 { #category : 'metadata' }
 MCPHaltingTestTool >> title [
 

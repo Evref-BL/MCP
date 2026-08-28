@@ -534,6 +534,12 @@ MCPTool >> shouldAdvertiseStringArrayItemDescription: anItemDescription [
 ]
 
 { #category : 'testing' }
+MCPTool >> shouldRecordObservability [
+
+	^ true
+]
+
+{ #category : 'testing' }
 MCPTool >> shouldSaveImageAfterSuccessfulExecution [
 
 	^ false
