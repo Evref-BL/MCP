@@ -583,7 +583,7 @@ MCPLocalObservabilityBackend >> recordToolCallFinish: aRecord result: aToolResul
 	stats := self statsForToolNamed: aRecord toolName.
 	explanation := self outlierExplanationForDurationMilliseconds: duration stats: stats.
 	aRecord finishAt: finishTimestamp durationMilliseconds: duration status: statusString.
-	aRecord errorClass: (self errorClassNameFor: anError).
+	self recordErrorDetailsFor: aRecord result: aToolResult error: anError.
 	aRecord summary: (self summaryForResult: aToolResult).
 	aRecord outlierExplanation: explanation.
 	self recordOutputBudgetFor: aRecord result: aToolResult error: anError.
@@ -763,6 +763,11 @@ MCPLocalObservabilityBackend >> traceRecordDictionaryFor: aRecord [
 	dictionary at: #durationMilliseconds put: aRecord durationMilliseconds.
 	dictionary at: #status put: aRecord status.
 	aRecord errorClass ifNotEmpty: [ :errorClass | dictionary at: #errorClass put: errorClass ].
+	aRecord errorKind ifNotEmpty: [ :errorKind | dictionary at: #errorKind put: errorKind ].
+	aRecord errorCode ifNotEmpty: [ :errorCode | dictionary at: #errorCode put: errorCode ].
+	aRecord causeClass ifNotEmpty: [ :causeClass | dictionary at: #causeClass put: causeClass ].
+	aRecord schemaViolationKeywords ifNotEmpty: [ :keywords | dictionary at: #schemaViolationKeywords put: keywords ].
+	aRecord schemaViolationCount > 0 ifTrue: [ dictionary at: #schemaViolationCount put: aRecord schemaViolationCount ].
 	aRecord inputByteCount > 0 ifTrue: [ dictionary at: #inputBytes put: aRecord inputByteCount ].
 	aRecord outputByteCount > 0 ifTrue: [
 			dictionary at: #outputBytes put: aRecord outputByteCount.

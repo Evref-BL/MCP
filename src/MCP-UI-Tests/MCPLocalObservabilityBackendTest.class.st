@@ -153,6 +153,21 @@ MCPLocalObservabilityBackendTest >> testMCPRecordsToolCallsWhenObservabilityIsEn
 ]
 
 { #category : 'tests' }
+MCPLocalObservabilityBackendTest >> testMCPTestToolsDoNotRecordObservability [
+
+	| mcp result |
+	mcp := MCP new.
+	mcp observabilityEnabled: true.
+
+	result := mcp executeTool: MCPExternalTestTool new named: MCPExternalTestTool toolName withParams: Dictionary new.
+
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: mcp observability totalCallCount equals: 0.
+	self assert: mcp observabilityMetrics isEmpty.
+	self assert: mcp observability recentCallRecords isEmpty
+]
+
+{ #category : 'tests' }
 MCPLocalObservabilityBackendTest >> testOutlierExplanationUsesPriorAverage [
 
 	| state stats start record explanation |
@@ -222,6 +237,54 @@ MCPLocalObservabilityBackendTest >> testRecordsOutputBudgetMetadata [
 	self assert: (statsData at: #lastOutputBytes) equals: record outputByteCount.
 	self assert: (statsData at: #firstCallAt) isNotEmpty.
 	self assert: (statsData at: #lastCallAt) isNotEmpty
+]
+
+{ #category : 'tests' }
+MCPLocalObservabilityBackendTest >> testRecordsSchemaViolationErrorDetails [
+
+	| error record state stats |
+	state := MCPLocalObservabilityBackend new.
+	state enable.
+	error := MCPInvalidToolInput new
+		         toolName: 'class_search';
+		         violations: { (MCPInvalidToolInput missingRequiredArgumentViolationNamed: 'name') };
+		         messageText: 'Tool input does not match the input schema.';
+		         yourself.
+	record := state recordToolCallStart: 'class_search'.
+	state recordToolCallFinish: record result: nil error: error.
+	stats := state metrics first.
+
+	self assert: record errorKind equals: 'input_schema'.
+	self assert: record errorClass equals: 'MCPInvalidToolInput'.
+	self assert: record schemaViolationCount equals: 1.
+	self assert: (record schemaViolationKeywords includes: 'required').
+	self assert: (stats errorCountsByKind at: 'input_schema') equals: 1.
+	self assert: (stats errorCountsByClass at: 'MCPInvalidToolInput') equals: 1
+]
+
+{ #category : 'tests' }
+MCPLocalObservabilityBackendTest >> testRecordsStructuredToolErrorDetails [
+
+	| details record result state stats |
+	state := MCPLocalObservabilityBackend new.
+	state enable.
+	details := {
+		           (#errorClass -> 'MCPCommandError').
+		           (#errorCode -> 'MethodNotFound').
+		           (#causeClass -> 'KeyNotFound').
+		           (#message -> 'No method found.') } asDictionary.
+	record := state recordToolCallStart: 'method_get'.
+	result := MCPToolGetMethod new errorResultText: 'No method found.' details: details.
+	state recordToolCallFinish: record result: result error: nil.
+	stats := state metrics first.
+
+	self assert: record status equals: 'error'.
+	self assert: record errorKind equals: 'domain'.
+	self assert: record errorClass equals: 'MCPCommandError'.
+	self assert: record errorCode equals: 'MethodNotFound'.
+	self assert: record causeClass equals: 'KeyNotFound'.
+	self assert: (stats errorCountsByKind at: 'domain') equals: 1.
+	self assert: (stats errorCountsByCode at: 'MethodNotFound') equals: 1
 ]
 
 { #category : 'tests' }

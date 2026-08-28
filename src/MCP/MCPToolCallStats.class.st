@@ -22,7 +22,9 @@ Class {
 		'lastOutputBytes',
 		'lastApproximateOutputTokens',
 		'outputBudgetExceededCount',
-		'errorCountsByClass'
+		'errorCountsByClass',
+		'errorCountsByKind',
+		'errorCountsByCode'
 	],
 	#category : 'MCP-Observability',
 	#package : 'MCP',
@@ -46,6 +48,8 @@ MCPToolCallStats >> asDictionary [
 		  (#successCount -> self successCount).
 		  (#errorCount -> self errorCount).
 		  (#errorCountsByClass -> self errorCountsByClass copy).
+		  (#errorCountsByKind -> self errorCountsByKind copy).
+		  (#errorCountsByCode -> self errorCountsByCode copy).
 		  (#averageMilliseconds -> self averageMilliseconds asFloat).
 		  (#minMilliseconds -> (self minMilliseconds ifNil: [ 0 ])).
 		  (#maxMilliseconds -> (self maxMilliseconds ifNil: [ 0 ])).
@@ -81,7 +85,9 @@ MCPToolCallStats >> asMetricsDictionary [
 		              (#lastApproximateOutputTokens -> self lastApproximateOutputTokens) } asDictionary.
 	self errorCount positive ifTrue: [
 			dictionary at: #errorCount put: self errorCount.
-			dictionary at: #errorCountsByClass put: self errorCountsByClass copy ].
+			dictionary at: #errorCountsByClass put: self errorCountsByClass copy.
+			dictionary at: #errorCountsByKind put: self errorCountsByKind copy.
+			dictionary at: #errorCountsByCode put: self errorCountsByCode copy ].
 	self outputBudgetExceededCount positive ifTrue: [ dictionary at: #outputBudgetExceededCount put: self outputBudgetExceededCount ].
 	self lastOutlierExplanation ifNotNil: [ :explanation |
 		explanation isEmpty ifFalse: [ dictionary at: #lastOutlierExplanation put: explanation ] ].
@@ -175,6 +181,18 @@ MCPToolCallStats >> errorCountsByClass [
 ]
 
 { #category : 'accessing' }
+MCPToolCallStats >> errorCountsByCode [
+
+	^ errorCountsByCode ifNil: [ errorCountsByCode := Dictionary new ]
+]
+
+{ #category : 'accessing' }
+MCPToolCallStats >> errorCountsByKind [
+
+	^ errorCountsByKind ifNil: [ errorCountsByKind := Dictionary new ]
+]
+
+{ #category : 'accessing' }
 MCPToolCallStats >> errorRate [
 
 	self callCount = 0 ifTrue: [ ^ 0 ].
@@ -197,7 +215,9 @@ MCPToolCallStats >> initialize [
 	totalMilliseconds := 0.
 	totalOutputBytes := 0.
 	outputBudgetExceededCount := 0.
-	errorCountsByClass := Dictionary new
+	errorCountsByClass := Dictionary new.
+	errorCountsByKind := Dictionary new.
+	errorCountsByCode := Dictionary new
 ]
 
 { #category : 'accessing' }
@@ -298,11 +318,18 @@ MCPToolCallStats >> recordCall: aRecord [
 ]
 
 { #category : 'recording' }
+MCPToolCallStats >> recordErrorCountIn: aDictionary named: aString [
+
+	aDictionary at: aString put: (aDictionary at: aString ifAbsent: [ 0 ]) + 1
+]
+
+{ #category : 'recording' }
 MCPToolCallStats >> recordErrorFor: aRecord [
 
 	errorCount := self errorCount + 1.
-	aRecord errorClass ifNotEmpty: [ :className |
-		self errorCountsByClass at: className put: (self errorCountsByClass at: className ifAbsent: [ 0 ]) + 1 ]
+	aRecord errorClass ifNotEmpty: [ :className | self recordErrorCountIn: self errorCountsByClass named: className ].
+	aRecord errorKind ifNotEmpty: [ :kind | self recordErrorCountIn: self errorCountsByKind named: kind ].
+	aRecord errorCode ifNotEmpty: [ :code | self recordErrorCountIn: self errorCountsByCode named: code ]
 ]
 
 { #category : 'accessing' }

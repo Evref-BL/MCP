@@ -50,6 +50,12 @@ MCPExternalTestTool >> executeWithRequest: aRequest [
 	^ self successResultText: 'External test tool executed.' data: Dictionary new
 ]
 
+{ #category : 'testing' }
+MCPExternalTestTool >> shouldRecordObservability [
+
+	^ false
+]
+
 { #category : 'metadata' }
 MCPExternalTestTool >> title [
 

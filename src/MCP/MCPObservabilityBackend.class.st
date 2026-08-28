@@ -47,6 +47,44 @@ MCPObservabilityBackend >> enabled: aBoolean [
 	self subclassResponsibility
 ]
 
+{ #category : 'private - errors' }
+MCPObservabilityBackend >> errorDetailsForResult: aToolResult error: anError [
+
+	| details resultDetails |
+	details := Dictionary new.
+	anError ifNotNil: [
+			details at: #errorClass put: anError class name asString.
+			details at: #message put: (anError messageText ifNil: [ anError asString ]).
+			anError mcpAddToolErrorDetailsTo: details ].
+	resultDetails := self errorDetailsFromToolResult: aToolResult.
+	resultDetails keysAndValuesDo: [ :key :value | details at: key asSymbol put: value ].
+	^ details
+]
+
+{ #category : 'private - errors' }
+MCPObservabilityBackend >> errorDetailsFromToolResult: aToolResult [
+
+	| errorDetails structuredContent |
+	aToolResult ifNil: [ ^ Dictionary new ].
+	structuredContent := aToolResult structuredContent.
+	structuredContent ifNil: [ ^ Dictionary new ].
+	structuredContent isDictionary ifFalse: [ ^ Dictionary new ].
+	errorDetails := self valueAtKey: #error in: structuredContent ifAbsent: [ nil ].
+	errorDetails isDictionary ifFalse: [ ^ Dictionary new ].
+	^ errorDetails
+]
+
+{ #category : 'private - errors' }
+MCPObservabilityBackend >> errorKindForDetails: details error: anError violations: violations [
+
+	violations ifNotEmpty: [ ^ 'input_schema' ].
+	(self stringValueAtKey: #errorClass in: details) = 'MCPInvalidToolInput' ifTrue: [ ^ 'input_schema' ].
+	(self stringValueAtKey: #errorCode in: details) ifNotEmpty: [ ^ 'domain' ].
+	anError ifNil: [ ^ 'tool_result' ].
+	anError mcpIsJRPCError ifTrue: [ ^ 'json_rpc' ].
+	^ 'exception'
+]
+
 { #category : 'accessing' }
 MCPObservabilityBackend >> exportDirectory [
 
@@ -99,6 +137,21 @@ MCPObservabilityBackend >> metrics [
 MCPObservabilityBackend >> recentCallRecords [
 
 	^ #(  )
+]
+
+{ #category : 'private - errors' }
+MCPObservabilityBackend >> recordErrorDetailsFor: aRecord result: aToolResult error: anError [
+
+	| details violations |
+	aRecord status = 'error' ifFalse: [ ^ self ].
+	details := self errorDetailsForResult: aToolResult error: anError.
+	violations := self violationsFromDetails: details.
+	aRecord errorClass: (self stringValueAtKey: #errorClass in: details).
+	aRecord errorCode: (self stringValueAtKey: #errorCode in: details).
+	aRecord causeClass: (self stringValueAtKey: #causeClass in: details).
+	aRecord schemaViolationKeywords: (self violationKeywordsFor: violations).
+	aRecord schemaViolationCount: violations size.
+	aRecord errorKind: (self errorKindForDetails: details error: anError violations: violations)
 ]
 
 { #category : 'recording' }
@@ -165,6 +218,15 @@ MCPObservabilityBackend >> statusText [
 	self subclassResponsibility
 ]
 
+{ #category : 'private - errors' }
+MCPObservabilityBackend >> stringValueAtKey: aKey in: aDictionary [
+
+	| value |
+	value := self valueAtKey: aKey in: aDictionary ifAbsent: [ '' ].
+	value ifNil: [ ^ '' ].
+	^ value asString
+]
+
 { #category : 'accessing' }
 MCPObservabilityBackend >> totalCallCount [
 
@@ -187,4 +249,33 @@ MCPObservabilityBackend >> totalOutputBudgetExceededCount [
 MCPObservabilityBackend >> traceRecords [
 
 	^ #(  )
+]
+
+{ #category : 'private - errors' }
+MCPObservabilityBackend >> valueAtKey: aKey in: aDictionary ifAbsent: absentBlock [
+
+	(aDictionary includesKey: aKey) ifTrue: [ ^ aDictionary at: aKey ].
+	^ aDictionary at: aKey asString ifAbsent: absentBlock
+]
+
+{ #category : 'private - errors' }
+MCPObservabilityBackend >> violationKeywordFor: aViolation [
+
+	aViolation isDictionary ifTrue: [ ^ self stringValueAtKey: #keyword in: aViolation ].
+	^ ''
+]
+
+{ #category : 'private - errors' }
+MCPObservabilityBackend >> violationKeywordsFor: violations [
+
+	^ ((violations collect: [ :each | self violationKeywordFor: each ]) reject: [ :each | each isEmpty ]) asSet asArray
+]
+
+{ #category : 'private - errors' }
+MCPObservabilityBackend >> violationsFromDetails: details [
+
+	| violations |
+	violations := self valueAtKey: #violations in: details ifAbsent: [ #(  ) ].
+	violations ifNil: [ ^ #(  ) ].
+	^ violations asArray
 ]
