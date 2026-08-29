@@ -1755,7 +1755,6 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 	self assert: ((self inputPropertyNamed: 'includeSource' inTool: rewriteMethodsTool) extraProperties at: #default) equals: false.
 	self assert: ((self inputPropertyNamed: 'side' inTool: rewriteMethodsTool) extraProperties at: #default) equals: 'both'.
 	self assert: ((self inputPropertyNamed: 'filterMode' inTool: searchClassesTool) extraProperties at: #default) equals: 'substring'.
-	self assert: ((self inputPropertyNamed: 'caseSensitive' inTool: searchClassesTool) extraProperties at: #default) equals: true.
 	self assert: ((self inputPropertyNamed: 'limit' inTool: searchClassesTool) extraProperties at: #default) equals: 25.
 	self assert: ((self inputPropertyNamed: 'filterMode' inTool: methodMetadataTool) extraProperties at: #default) equals: 'exact'.
 	self assert: ((self inputPropertyNamed: 'caseSensitive' inTool: methodMetadataTool) extraProperties at: #default) equals: true.
@@ -1867,9 +1866,7 @@ MCPToolContractsTest >> testRPCRefreshesCachedToolMetadata [
 	toolDefinitions := mcp rpcToolsList at: #tools.
 	toolDefinition := toolDefinitions detect: [ :each | (each at: #name) = 'class_search' ].
 	propertyNames := ((toolDefinition at: #inputSchema) at: #properties) keys asSet.
-	self
-		assert: propertyNames
-		equals: #( 'scope' 'className' 'tag' 'instanceSlot' 'classSlot' 'filterMode' 'caseSensitive' 'limit' 'offset' ) asSet.
+	self assert: propertyNames equals: #( 'scope' 'name' 'tag' 'filterMode' 'limit' 'offset' ) asSet.
 	result := mcp rpcToolCall: 'class_search' withParams: {
 			          (self searchScope: {
 					           (#classes -> #( 'MCPToolContractsTest' )).
@@ -2067,7 +2064,7 @@ MCPToolContractsTest >> testRpcToolCallSignalsInvalidParametersForUnexpectedArgu
 MCPToolContractsTest >> testRpcToolCallSignalsInvalidParametersForWrongArgumentType [
 
 	self
-		should: [ self callToolNamed: 'class_search' withArguments: { (#caseSensitive -> 'true') } asDictionary ]
+		should: [ self callToolNamed: 'package_search' withArguments: { (#caseSensitive -> 'true') } asDictionary ]
 		raise: JRPCInvalidParameters
 ]
 
@@ -2245,9 +2242,7 @@ MCPToolContractsTest >> testSearchClassesHasAccurateNameAndSchema [
 	scopePropertyNames := (scopeProperty extraProperties at: #properties) collect: [ :each | each name ].
 	self assert: MCPToolSearchClasses new name equals: 'class_search'.
 	self assert: schema required equals: #(  ).
-	self
-		assert: propertyNames asSet
-		equals: #( 'scope' 'className' 'tag' 'instanceSlot' 'classSlot' 'filterMode' 'caseSensitive' 'limit' 'offset' ) asSet.
+	self assert: propertyNames asSet equals: #( 'scope' 'name' 'tag' 'filterMode' 'limit' 'offset' ) asSet.
 	self assert: scopeProperty description equals: 'Search scope. If omitted, searches all matching entities.'.
 	self assert: scopePropertyNames asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' ) asSet
 ]

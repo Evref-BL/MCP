@@ -273,7 +273,7 @@ MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasAdvertiseGroupedSearchS
 		                         :each | each name ].
 	self
 		assert: (classProperties collect: [ :each | each name ]) asSet
-		equals: #( 'scope' 'className' 'tag' 'instanceSlot' 'classSlot' 'filterMode' 'caseSensitive' 'limit' 'offset' ) asSet.
+		equals: #( 'scope' 'name' 'tag' 'filterMode' 'limit' 'offset' ) asSet.
 	self
 		assert: (methodProperties collect: [ :each | each name ]) asSet
 		equals: #( 'scope' 'selector' 'protocol' 'filterMode' 'side' 'includeSource' 'limit' 'offset' 'caseSensitive' ) asSet.
