@@ -1156,7 +1156,7 @@ MCPToolContractsTest >> testDebuggerToolsAreDiscoverableOnly [
 	                 'debug_capture' 'debug_test_run' 'debug_method_update' ).
 	staticToolNames := self toolRegistry staticToolNames.
 	debugNames do: [ :each | self deny: (staticToolNames includes: each) ].
-	result := self callToolNamed: 'tool_search' withArguments: { (#group -> 'debugging') } asDictionary.
+	result := self callToolNamed: 'tool_search' withArguments: { (#query -> 'debug') } asDictionary.
 	metadataByName := (((self dataFrom: result) at: #tools) collect: [ :each | (each at: #name) -> each ]) asDictionary.
 	debugNames do: [ :each | self assert: (metadataByName includesKey: each) ]
 ]
@@ -2528,7 +2528,7 @@ MCPToolContractsTest >> testSearchToolsUsesCursorPaginationContract [
 	| propertyNames searchTool |
 	searchTool := MCPToolSearchTools new.
 	propertyNames := searchTool inputSchema properties collect: [ :each | each name ].
-	self assert: propertyNames asSet equals: #( 'query' 'group' 'cursor' ) asSet.
+	self assert: propertyNames asSet equals: #( 'query' 'cursor' ) asSet.
 	self assert: (self inputPropertyNamed: 'cursor' inTool: searchTool) type equals: 'string'
 ]
 

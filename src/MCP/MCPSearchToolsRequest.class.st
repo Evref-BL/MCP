@@ -1,12 +1,11 @@
 "
-Request object for tool catalog searches. Captures optional search text, group filter, and continuation cursor used by tool_search.
+Request object for tool catalog searches. Captures optional search text and continuation cursor used by tool_search.
 "
 Class {
 	#name : 'MCPSearchToolsRequest',
 	#superclass : 'Object',
 	#instVars : [
 		'query',
-		'group',
 		'cursor'
 	],
 	#category : 'MCP-Requests',
@@ -29,7 +28,6 @@ MCPSearchToolsRequest class >> fromToolRequest: aToolRequest [
 
 	^ self new
 		  query: (aToolRequest stringArgumentNamed: 'query');
-		  group: (aToolRequest stringArgumentNamed: 'group');
 		  cursor: (self cursorFromToolRequest: aToolRequest);
 		  yourself
 ]
@@ -44,18 +42,6 @@ MCPSearchToolsRequest >> cursor [
 MCPSearchToolsRequest >> cursor: anInteger [
 
 	cursor := anInteger
-]
-
-{ #category : 'accessing' }
-MCPSearchToolsRequest >> group [
-
-	^ group
-]
-
-{ #category : 'accessing' }
-MCPSearchToolsRequest >> group: anObject [
-
-	group := anObject
 ]
 
 { #category : 'accessing' }

@@ -1,7 +1,7 @@
 "
 Searches the tool catalog and returns compact metadata for matching tools.
 
-This command supports the discoverable-tool workflow: agents can search by text or group, then read a selected tool contract before invoking it.
+This command supports the discoverable-tool workflow: agents can search by text, then read a selected tool contract before invoking it.
 "
 Class {
 	#name : 'MCPSearchToolsCommand',
@@ -22,7 +22,7 @@ MCPSearchToolsCommand >> execute [
 
 	| data matchingTools pageSize visibleTools |
 	pageSize := self pageSize.
-	matchingTools := self toolRegistry toolsMatchingQuery: request query group: request group.
+	matchingTools := self toolRegistry toolsMatchingQuery: request query group: nil.
 	visibleTools := self visibleToolsFrom: matchingTools.
 	data := Dictionary new.
 	data at: #tools put: (visibleTools collect: [ :each | each searchMetadata ]) asArray.

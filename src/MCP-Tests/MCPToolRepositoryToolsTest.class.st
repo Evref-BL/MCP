@@ -19,7 +19,7 @@ MCPToolRepositoryToolsTest >> inputPropertyNamesFor: aTool [
 MCPToolRepositoryToolsTest >> metadataByNameForRepositoryTools [
 
 	| result |
-	result := self callToolNamed: 'tool_search' withArguments: { (#group -> 'repositories') } asDictionary.
+	result := self callToolNamed: 'tool_search' withArguments: { (#query -> 'repository') } asDictionary.
 	^ (((self dataFrom: result) at: #tools) collect: [ :each | (each at: #name) -> each ]) asDictionary
 ]
 
