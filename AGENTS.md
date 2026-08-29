@@ -37,7 +37,8 @@ template package.
 - For a tool's own contract, ask the server with `tool_search` and `tool_get`.
 - `templates/pharo-references/` holds the user-facing guidance this repository
   ships, and `templates/pharo-skills/` the workflows with their own triggers:
-  project loading, version compatibility, image-to-Git handoff, CI reproduction.
+  project loading, version compatibility, image-to-Git handoff, CI reproduction,
+  code profiling.
 
 ## Project Facts
 
