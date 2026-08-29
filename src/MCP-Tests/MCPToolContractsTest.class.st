@@ -1530,10 +1530,11 @@ MCPToolContractsTest >> testMethodMetadataSearchDescriptionPointsToSpecializedRe
 	| description filterModeDescription filterModeProperty protocolDescription selectorDescription tool |
 	tool := MCPToolSearchMethodMetadata new.
 	description := tool description.
-	self assert: (description includesSubstring: 'source').
-	self assert: (description includesSubstring: 'senders').
-	self assert: (description includesSubstring: 'implementors').
-	self assert: (description includesSubstring: 'references').
+	self assert: (description includesSubstring: 'method_source_search').
+	self assert: (description includesSubstring: 'method_sender_search').
+	self assert: (description includesSubstring: 'method_implementor_search').
+	self assert: (description includesSubstring: 'method_class_reference_search').
+	self assert: (description includesSubstring: 'method_variable_reference_search').
 	selectorDescription := (self inputPropertyNamed: 'selector' inTool: tool) description.
 	protocolDescription := (self inputPropertyNamed: 'protocol' inTool: tool) description.
 	filterModeProperty := self inputPropertyNamed: 'filterMode' inTool: tool.
@@ -1547,10 +1548,11 @@ MCPToolContractsTest >> testMethodMetadataSearchDescriptionPointsToSpecializedRe
 { #category : 'tests' }
 MCPToolContractsTest >> testMethodMetadataSearchHasAccurateNameAndSchema [
 
-	| filterModeProperty propertyNames schema scopeProperty scopePropertyNames |
+	| filterModeProperty limitProperty propertyNames schema scopeProperty scopePropertyNames |
 	schema := MCPToolSearchMethodMetadata new inputSchema.
 	propertyNames := schema properties collect: [ :each | each name ].
 	filterModeProperty := schema properties detect: [ :each | each name = 'filterMode' ].
+	limitProperty := schema properties detect: [ :each | each name = 'limit' ].
 	scopeProperty := schema properties detect: [ :each | each name = 'scope' ].
 	scopePropertyNames := (scopeProperty extraProperties at: #properties) collect: [ :each | each name ].
 	self assert: MCPToolSearchMethodMetadata new name equals: 'method_metadata_search'.
@@ -1558,7 +1560,10 @@ MCPToolContractsTest >> testMethodMetadataSearchHasAccurateNameAndSchema [
 	self
 		assert: propertyNames asSet
 		equals: #( 'scope' 'selector' 'protocol' 'filterMode' 'side' 'includeSource' 'limit' 'offset' 'caseSensitive' ) asSet.
-	self assert: scopeProperty description equals: 'Optional search scope. If omitted, searches all matching entities.'.
+	self assert: scopeProperty description equals: 'Search scope. If omitted, searches all matching entities.'.
+	self
+		assert: limitProperty description
+		equals: 'Maximum matching methods to return. Use 0 to count matches without returning entries.'.
 	self assert: (scopeProperty extraProperties at: #additionalProperties) equals: false.
 	self assert: scopePropertyNames asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' 'hierarchies' ) asSet.
 	self assert: (filterModeProperty extraProperties at: #enum) asArray equals: #( 'substring' 'prefix' 'exact' 'regex' )
@@ -1826,7 +1831,7 @@ MCPToolContractsTest >> testQueryScopeDescriptionsExplainScopeSemantics [
 	classScope := self inputPropertyNamed: 'scope' inTool: MCPToolSearchClasses new.
 	methodScope := self inputPropertyNamed: 'scope' inTool: MCPToolSearchMethodMetadata new.
 	scopePropertyNames := (classScope extraProperties at: #properties) collect: [ :each | each name ].
-	self assert: classScope description equals: 'Optional search scope. If omitted, searches all matching entities.'.
+	self assert: classScope description equals: 'Search scope. If omitted, searches all matching entities.'.
 	self assert: methodScope description equals: classScope description.
 	self assert: (classScope extraProperties at: #additionalProperties) equals: false.
 	self assert: (methodScope extraProperties at: #additionalProperties) equals: false.
@@ -2243,7 +2248,7 @@ MCPToolContractsTest >> testSearchClassesHasAccurateNameAndSchema [
 	self
 		assert: propertyNames asSet
 		equals: #( 'scope' 'className' 'tag' 'instanceSlot' 'classSlot' 'filterMode' 'caseSensitive' 'limit' 'offset' ) asSet.
-	self assert: scopeProperty description equals: 'Optional search scope. If omitted, searches all matching entities.'.
+	self assert: scopeProperty description equals: 'Search scope. If omitted, searches all matching entities.'.
 	self assert: scopePropertyNames asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' 'hierarchies' ) asSet
 ]
 

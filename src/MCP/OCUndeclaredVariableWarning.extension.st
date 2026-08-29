@@ -11,9 +11,3 @@ OCUndeclaredVariableWarning >> mcpMethodNode [
 
 	^ self methodNode
 ]
-
-{ #category : '*MCP' }
-OCUndeclaredVariableWarning >> mcpNoticeNode [
-
-	^ PharoCompatibility undeclaredVariableNodeFromException: self
-]

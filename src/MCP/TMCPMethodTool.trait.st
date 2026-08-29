@@ -162,7 +162,7 @@ TMCPMethodTool >> searchScopeSchemaProperty [
 	^ MCPStructureProperties new
 		  name: 'scope';
 		  type: 'object';
-		  description: 'Optional search scope. If omitted, searches all matching entities.';
+		  description: 'Search scope. If omitted, searches all matching entities.';
 		  properties: self searchScopeSchemaProperties;
 		  additionalProperties: false;
 		  yourself

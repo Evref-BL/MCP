@@ -339,7 +339,7 @@ MCPToolSearch >> packageScopeSummaryForProjectNames: projectNames packageNames: 
 MCPToolSearch >> paginationInputPropertiesWithLimitDescription: limitDescription [
 
 	| limitProperty offsetProperty |
-	limitProperty := self integerSchemaPropertyNamed: 'limit' description: 'Maximum results.' default: self defaultPageLimit.
+	limitProperty := self integerSchemaPropertyNamed: 'limit' description: limitDescription default: self defaultPageLimit.
 	limitProperty
 		minimum: 0;
 		maximum: 100.
@@ -535,7 +535,7 @@ MCPToolSearch >> searchScopeSchemaProperty [
 	^ MCPStructureProperties new
 		  name: 'scope';
 		  type: 'object';
-		  description: 'Optional search scope. If omitted, searches all matching entities.';
+		  description: 'Search scope. If omitted, searches all matching entities.';
 		  properties: self searchScopeSchemaProperties;
 		  additionalProperties: false;
 		  yourself
