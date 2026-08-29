@@ -54,15 +54,64 @@ MCPCommandErrorTest >> testMissingMethodErrorCarriesClassSideAndSelector [
 
 	| details error |
 	error := self capture: [
-		         MCPCommandError signalMissingMethodInClassName: 'MCPCommandErrorTestTarget' classSide: true selector: 'value' ].
+			         MCPCommandError
+				         signalMissingMethodInClassName: 'MCPToolGetMethodTestTarget'
+				         classSide: true
+				         selector: 'mcpDefinitelyMissingSelectorForErrorTest' ].
 	details := error structuredDetails.
 	self assert: error errorCode equals: #MethodNotFound.
 	self assert: (details at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (details at: #errorCode) equals: 'MethodNotFound'.
-	self assert: (details at: #className) equals: 'MCPCommandErrorTestTarget'.
+	self assert: (details at: #className) equals: 'MCPToolGetMethodTestTarget'.
 	self assert: (details at: #classSide).
-	self assert: (details at: #selector) equals: 'value'.
+	self assert: (details at: #selector) equals: 'mcpDefinitelyMissingSelectorForErrorTest'.
 	self assert: details keys asSet equals: #( errorClass errorCode message className classSide selector ) asSet
+]
+
+{ #category : 'tests' }
+MCPCommandErrorTest >> testMissingMethodErrorForMissingClassHasNoSuggestions [
+
+	| details error |
+	error := self capture: [
+		         MCPCommandError signalMissingMethodInClassName: 'MCPCommandErrorTestMissingClass' classSide: false selector: 'value' ].
+	details := error structuredDetails.
+	self assert: error errorCode equals: #ClassNotFound.
+	self assert: (details at: #className) equals: 'MCPCommandErrorTestMissingClass'.
+	self assert: (details at: #selector) equals: 'value'.
+	self deny: (details includesKey: #suggestions).
+	self assert: ((details at: #message) includesSubstring: 'Class MCPCommandErrorTestMissingClass does not exist')
+]
+
+{ #category : 'tests' }
+MCPCommandErrorTest >> testMissingMethodErrorSuggestsFirstExactSuperclassMatch [
+
+	| details error suggestions |
+	error := self capture: [
+		         MCPCommandError signalMissingMethodInClassName: 'MCPToolGetMethodTestTarget' classSide: false selector: 'yourself' ].
+	details := error structuredDetails.
+	suggestions := details at: #suggestions.
+	self assert: error errorCode equals: #MethodNotFound.
+	self assert: suggestions size equals: 1.
+	self assert: (suggestions first at: #className) equals: 'Object'.
+	self deny: (suggestions first at: #classSide).
+	self assert: (suggestions first at: #selector) equals: 'yourself'.
+	self assert: ((details at: #message) includesSubstring: 'Exact matches: Object>>yourself')
+]
+
+{ #category : 'tests' }
+MCPCommandErrorTest >> testMissingMethodErrorSuggestsOnlyExactOppositeSideAndSuperclassMatches [
+
+	| details error suggestions |
+	error := self capture: [
+		         MCPCommandError signalMissingMethodInClassName: 'MCPToolGetMethodTestTarget' classSide: false selector: 'readClassSide' ].
+	details := error structuredDetails.
+	suggestions := details at: #suggestions.
+	self assert: error errorCode equals: #MethodNotFound.
+	self assert: suggestions size equals: 1.
+	self assert: (suggestions first at: #className) equals: 'MCPToolGetMethodTestTarget'.
+	self assert: (suggestions first at: #classSide).
+	self assert: (suggestions first at: #selector) equals: 'readClassSide'.
+	self assert: ((details at: #message) includesSubstring: 'Exact matches: MCPToolGetMethodTestTarget class>>readClassSide')
 ]
 
 { #category : 'tests' }

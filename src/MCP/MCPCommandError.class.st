@@ -62,6 +62,52 @@ MCPCommandError class >> messageForMissingKind: kind name: missingName scopeName
 					  stream nextPut: $. ] ]
 ]
 
+{ #category : 'private - suggestions' }
+MCPCommandError class >> methodReferenceForClassName: className selector: selectorString classSide: classSide [
+
+	^ String streamContents: [ :stream |
+			  stream nextPutAll: className.
+			  classSide ifTrue: [ stream nextPutAll: ' class' ].
+			  stream
+				  nextPutAll: '>>';
+				  nextPutAll: selectorString ]
+]
+
+{ #category : 'private - suggestions' }
+MCPCommandError class >> methodSuggestionForBehavior: aBehavior selector: aSelectorSymbol [
+
+	| protocolName |
+	protocolName := (aBehavior compiledMethodAt: aSelectorSymbol) protocol
+		                ifNil: [ '' ]
+		                ifNotNil: [ :protocol | protocol name asString ].
+	^ {
+		  (#className -> aBehavior instanceSide name asString).
+		  (#classSide -> aBehavior isClassSide).
+		  (#selector -> aSelectorSymbol asString).
+		  (#protocol -> protocolName) } asDictionary
+]
+
+{ #category : 'private - suggestions' }
+MCPCommandError class >> methodSuggestionsForClass: targetClass classSide: classSide selector: selectorSymbol [
+
+	^ Array streamContents: [ :stream |
+			  (self oppositeSideMethodSuggestionForClass: targetClass classSide: classSide selector: selectorSymbol) ifNotNil: [
+				  :suggestion | stream nextPut: suggestion ].
+			  (self superclassMethodSuggestionForClass: targetClass classSide: classSide selector: selectorSymbol) ifNotNil: [ :suggestion |
+				  stream nextPut: suggestion ] ]
+]
+
+{ #category : 'private - suggestions' }
+MCPCommandError class >> oppositeSideMethodSuggestionForClass: targetClass classSide: classSide selector: selectorSymbol [
+
+	| oppositeBehavior |
+	oppositeBehavior := classSide
+		                    ifTrue: [ targetClass ]
+		                    ifFalse: [ targetClass classSide ].
+	(oppositeBehavior includesSelector: selectorSymbol) ifFalse: [ ^ nil ].
+	^ self methodSuggestionForBehavior: oppositeBehavior selector: selectorSymbol
+]
+
 { #category : 'signaling' }
 MCPCommandError class >> signalClassAlreadyExistsNamed: aClassName [
 
@@ -121,14 +167,30 @@ MCPCommandError class >> signalMissingClassNamed: aClassName scopeName: scopeNam
 { #category : 'signaling' }
 MCPCommandError class >> signalMissingMethodInClassName: aClassName classSide: aBoolean selector: aSelectorString [
 
-	| message |
-	message := 'Method ' , (aBoolean
-		            ifTrue: [ aClassName , ' class>>' , aSelectorString ]
-		            ifFalse: [ aClassName , '>>' , aSelectorString ]) , ' does not exist.'.
-	^ self signalErrorCode: #MethodNotFound message: message details: {
-			  (#className -> aClassName).
-			  (#classSide -> aBoolean).
-			  (#selector -> aSelectorString) } asDictionary
+	| details message selectorSymbol suggestions targetClass |
+	selectorSymbol := aSelectorString asSymbol.
+	targetClass := Smalltalk globals at: aClassName asSymbol ifAbsent: [
+			               message := 'Class ' , aClassName , ' does not exist; cannot look up method '
+			                          , (self methodReferenceForClassName: aClassName selector: aSelectorString classSide: aBoolean) , '.'.
+			               ^ self signalErrorCode: #ClassNotFound message: message details: {
+					                 (#className -> aClassName).
+					                 (#classSide -> aBoolean).
+					                 (#selector -> aSelectorString) } asDictionary ].
+	suggestions := self methodSuggestionsForClass: targetClass classSide: aBoolean selector: selectorSymbol.
+	message := 'Method ' , (self methodReferenceForClassName: aClassName selector: aSelectorString classSide: aBoolean)
+	           , ' does not exist.'.
+	suggestions ifNotEmpty: [
+			message := message , ' Exact matches: ' , (', ' join: (suggestions collect: [ :each |
+					             self
+						             methodReferenceForClassName: (each at: #className)
+						             selector: (each at: #selector)
+						             classSide: (each at: #classSide) ])) , '.' ].
+	details := {
+		           (#className -> aClassName).
+		           (#classSide -> aBoolean).
+		           (#selector -> aSelectorString) } asDictionary.
+	suggestions ifNotEmpty: [ :matches | details at: #suggestions put: matches ].
+	^ self signalErrorCode: #MethodNotFound message: message details: details
 ]
 
 { #category : 'signaling' }
@@ -216,6 +278,19 @@ MCPCommandError class >> signalMissingTag: aTag packageName: aPackageName forCla
 			  (#className -> aClassName).
 			  (#packageName -> aPackageName).
 			  (#tag -> aTag) } asDictionary
+]
+
+{ #category : 'private - suggestions' }
+MCPCommandError class >> superclassMethodSuggestionForClass: targetClass classSide: classSide selector: selectorSymbol [
+
+	| behavior |
+	behavior := classSide
+		            ifTrue: [ targetClass classSide superclass ]
+		            ifFalse: [ targetClass superclass ].
+	[ behavior notNil ] whileTrue: [
+			(behavior includesSelector: selectorSymbol) ifTrue: [ ^ self methodSuggestionForBehavior: behavior selector: selectorSymbol ].
+			behavior := behavior superclass ].
+	^ nil
 ]
 
 { #category : 'accessing' }
