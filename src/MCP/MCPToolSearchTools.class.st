@@ -114,9 +114,9 @@ MCPToolSearchTools >> toolMetadataObjectSchema [
 
 	^ MCPStructureProperties new
 		  type: 'object';
-		  description: 'Compact metadata for one MCP-Pharo tool.';
+		  description: 'Compact metadata for one tool.';
 		  properties: {
-				  (self schemaPropertyNamed: 'name' type: 'string' description: 'MCP tool name.').
+				  (self schemaPropertyNamed: 'name' type: 'string' description: 'Tool name.').
 				  (self schemaPropertyNamed: 'description' type: 'string' description: 'Short description.') };
 		  required: #( 'name' 'description' );
 		  additionalProperties: false;
