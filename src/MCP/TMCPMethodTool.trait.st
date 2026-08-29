@@ -113,7 +113,6 @@ TMCPMethodTool >> methodScopeQueryFromRequest: request [
 	^ MCPCompiledMethodScopeQuery new
 		  packageNames: (self searchScopeStringCollectionNamed: 'packages' fromRequest: request);
 		  classNames: (self searchScopeStringCollectionNamed: 'classes' fromRequest: request);
-		  hierarchyClassNames: (self searchScopeStringCollectionNamed: 'hierarchies' fromRequest: request);
 		  subclassClassNames: (self searchScopeStringCollectionNamed: 'subclassesOf' fromRequest: request);
 		  parentClassNames: (self searchScopeStringCollectionNamed: 'superclassesOf' fromRequest: request);
 		  side: (request stringArgumentNamed: 'side' default: 'both');
@@ -152,8 +151,7 @@ TMCPMethodTool >> searchScopeSchemaProperties [
 		  (self stringArraySchemaNamed: 'classes').
 		  (self stringArraySchemaNamed: 'packages').
 		  (self stringArraySchemaNamed: 'superclassesOf').
-		  (self stringArraySchemaNamed: 'subclassesOf').
-		  (self stringArraySchemaNamed: 'hierarchies') }
+		  (self stringArraySchemaNamed: 'subclassesOf') }
 ]
 
 { #category : 'private - schema' }

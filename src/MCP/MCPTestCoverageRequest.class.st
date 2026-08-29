@@ -50,7 +50,6 @@ MCPTestCoverageRequest class >> scopeQueryFromValue: rawValue usingToolRequest: 
 	^ MCPCompiledMethodScopeQuery new
 		  packageNames: (toolRequest stringCollectionArgumentNamed: 'packages' in: scopeValue);
 		  classNames: (toolRequest stringCollectionArgumentNamed: 'classes' in: scopeValue);
-		  hierarchyClassNames: (toolRequest stringCollectionArgumentNamed: 'hierarchies' in: scopeValue);
 		  subclassClassNames: (toolRequest stringCollectionArgumentNamed: 'subclassesOf' in: scopeValue);
 		  parentClassNames: (toolRequest stringCollectionArgumentNamed: 'superclassesOf' in: scopeValue);
 		  side: (toolRequest stringArgumentNamed: 'side' in: rawValue default: 'both');
@@ -72,7 +71,7 @@ MCPTestCoverageRequest class >> signalMissingCoverageScope [
 	^ MCPCommandError
 		  signalErrorCode: #CoverageScopeRequired
 		  message:
-		  'coverage requires at least one explicit method scope: scope.packages, scope.classes, scope.hierarchies, scope.subclassesOf, or scope.superclassesOf.'
+		  'coverage requires at least one explicit method scope: scope.packages, scope.classes, scope.subclassesOf, or scope.superclassesOf.'
 		  details: { (#tool -> 'test_coverage_run') } asDictionary
 ]
 

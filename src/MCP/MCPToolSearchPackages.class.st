@@ -128,15 +128,9 @@ MCPToolSearchPackages >> packageFilterFieldNames [
 MCPToolSearchPackages >> packageFilterInputProperties [
 
 	^ {
-		  (self
-			   schemaPropertyNamed: 'packageName'
-			   type: 'string'
-			   description: 'Optional package-name text matched against package names.').
-		  (self
-			   schemaPropertyNamed: 'projectName'
-			   type: 'string'
-			   description: 'Optional project-name text matched against owning projects.').
-		  (self schemaPropertyNamed: 'tag' type: 'string' description: 'Optional tag-name text matched against package tags.') }
+		  (self schemaPropertyNamed: 'packageName' type: 'string' description: 'Match package names.').
+		  (self schemaPropertyNamed: 'projectName' type: 'string' description: 'Match owning projects.').
+		  (self schemaPropertyNamed: 'tag' type: 'string' description: 'Match package tags.') }
 ]
 
 { #category : 'private - schema' }

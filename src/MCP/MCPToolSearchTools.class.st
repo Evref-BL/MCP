@@ -46,8 +46,8 @@ MCPToolSearchTools >> buildInputSchema [
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties: {
-				  (self schemaPropertyNamed: 'query' type: 'string' description: 'Search text tool names, descriptions, groups.').
-				  (self schemaPropertyNamed: 'group' type: 'string' description: 'Optional tool group filter.').
+				  (self schemaPropertyNamed: 'query' type: 'string' description: 'Search tool names, descriptions, and groups.').
+				  (self schemaPropertyNamed: 'group' type: 'string' description: 'Tool group filter.').
 				  (self schemaPropertyNamed: 'cursor' type: 'string' description: 'Continuation cursor.') };
 		  required: #(  );
 		  additionalProperties: false;

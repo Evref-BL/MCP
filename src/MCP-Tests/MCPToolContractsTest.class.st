@@ -1565,7 +1565,7 @@ MCPToolContractsTest >> testMethodMetadataSearchHasAccurateNameAndSchema [
 		assert: limitProperty description
 		equals: 'Maximum matching methods to return. Use 0 to count matches without returning entries.'.
 	self assert: (scopeProperty extraProperties at: #additionalProperties) equals: false.
-	self assert: scopePropertyNames asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' 'hierarchies' ) asSet.
+	self assert: scopePropertyNames asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' ) asSet.
 	self assert: (filterModeProperty extraProperties at: #enum) asArray equals: #( 'substring' 'prefix' 'exact' 'regex' )
 ]
 
@@ -1835,7 +1835,7 @@ MCPToolContractsTest >> testQueryScopeDescriptionsExplainScopeSemantics [
 	self assert: methodScope description equals: classScope description.
 	self assert: (classScope extraProperties at: #additionalProperties) equals: false.
 	self assert: (methodScope extraProperties at: #additionalProperties) equals: false.
-	self assert: scopePropertyNames asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' 'hierarchies' ) asSet.
+	self assert: scopePropertyNames asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' ) asSet.
 	self assert: ((classScope extraProperties at: #properties) allSatisfy: [ :each | each description isNil ])
 ]
 
@@ -2249,7 +2249,7 @@ MCPToolContractsTest >> testSearchClassesHasAccurateNameAndSchema [
 		assert: propertyNames asSet
 		equals: #( 'scope' 'className' 'tag' 'instanceSlot' 'classSlot' 'filterMode' 'caseSensitive' 'limit' 'offset' ) asSet.
 	self assert: scopeProperty description equals: 'Search scope. If omitted, searches all matching entities.'.
-	self assert: scopePropertyNames asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' 'hierarchies' ) asSet
+	self assert: scopePropertyNames asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' ) asSet
 ]
 
 { #category : 'tests' }
@@ -2373,7 +2373,7 @@ MCPToolContractsTest >> testSearchToolSchemasAdvertiseGroupedScopeProperties [
 			scopePropertyNames := (scopeProperty extraProperties at: #properties) collect: [ :each | each name ].
 			self assert: (propertyNames includes: 'scope').
 			oldScopePropertyNames do: [ :each | self deny: (propertyNames includes: each) ].
-			self assert: scopePropertyNames asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' 'hierarchies' ) asSet ]
+			self assert: scopePropertyNames asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' ) asSet ]
 ]
 
 { #category : 'tests' }

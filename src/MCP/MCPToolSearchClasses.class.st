@@ -83,13 +83,10 @@ MCPToolSearchClasses >> classFilterFieldNames [
 MCPToolSearchClasses >> classFilterInputProperties [
 
 	^ {
-		  (self schemaPropertyNamed: 'className' type: 'string' description: 'Optional class-name text matched against class names.').
-		  (self schemaPropertyNamed: 'tag' type: 'string' description: 'Optional package-tag text matched against class tags.').
-		  (self
-			   schemaPropertyNamed: 'instanceSlot'
-			   type: 'string'
-			   description: 'Optional slot-name text matched against instance-side slots.').
-		  (self schemaPropertyNamed: 'classSlot' type: 'string' description: 'Optional slot-name text matched against class-side slots.') }
+		  (self schemaPropertyNamed: 'className' type: 'string' description: 'Match class names.').
+		  (self schemaPropertyNamed: 'tag' type: 'string' description: 'Match package tags.').
+		  (self schemaPropertyNamed: 'instanceSlot' type: 'string' description: 'Match instance-side slots.').
+		  (self schemaPropertyNamed: 'classSlot' type: 'string' description: 'Match class-side slots.') }
 ]
 
 { #category : 'private - schema' }
@@ -110,7 +107,7 @@ MCPToolSearchClasses >> defaultExposure [
 { #category : 'metadata' }
 MCPToolSearchClasses >> description [
 
-	^ 'Search classes by name, package, tag, hierarchy, or slot. Use class_get when you already know the class name.'
+	^ 'Search classes by name, package, tag, superclass/subclass scope, or slot. Use class_get when you already know the class name.'
 ]
 
 { #category : 'private - results' }
