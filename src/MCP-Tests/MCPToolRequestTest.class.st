@@ -64,17 +64,14 @@ MCPToolRequestTest >> testInvalidToolInputErrorResponseIncludesViolations [
 ]
 
 { #category : 'tests' }
-MCPToolRequestTest >> testNonNegativeIntegerArgumentRejectsValuesAboveMaximum [
+MCPToolRequestTest >> testNonNegativeIntegerArgumentClampsValuesAboveMaximum [
 
 	| request |
 	request := MCPToolRequest new
 		           tool: MCPToolDebugState new;
 		           arguments: { (#stackLimit -> 51) } asDictionary;
 		           yourself.
-	self
-		should: [ request nonNegativeIntegerArgumentNamed: 'stackLimit' default: 5 maximum: 50 ]
-		raise: Error
-		withExceptionDo: [ :error | self assert: error messageText equals: 'stackLimit must be no greater than 50.' ]
+	self assert: (request nonNegativeIntegerArgumentNamed: 'stackLimit' default: 5 maximum: 50) equals: 50
 ]
 
 { #category : 'tests' }
@@ -96,6 +93,14 @@ MCPToolRequestTest >> testRequestAccessorsProvideDefaultsUniqueCollectionsSymbol
 	self
 		assert: (request stringArgumentNamed: 'testMethodName' in: nested)
 		equals: 'testRequestAccessorsProvideDefaultsUniqueCollectionsSymbolsAndNestedStrings'
+]
+
+{ #category : 'tests' }
+MCPToolRequestTest >> testToolRequestClampsArgumentsAboveSchemaMaximumBeforeValidation [
+
+	| request |
+	request := MCPToolSearchPackages new requestFromToolCallArguments: { (#limit -> 1000) } asDictionary.
+	self assert: (request argumentNamed: 'limit' ifAbsent: [ self fail: 'Expected normalized limit.' ]) equals: 100
 ]
 
 { #category : 'tests' }

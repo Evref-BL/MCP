@@ -130,6 +130,23 @@ MCPToolGetClassTest >> tearDown [
 ]
 
 { #category : 'tests' }
+MCPToolGetClassTest >> testClampsSubclassDepthAboveMaximum [
+
+	| data result subclasses |
+	result := self callToolWith: {
+			          (#name -> self baseClassName).
+			          (#subclassDepth -> 1000) } asDictionary.
+	data := self dataFrom: result.
+	subclasses := data at: #subclasses.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self assert: (subclasses collect: [ :each | each at: #className ]) equals: {
+			self childAClassName.
+			self childZClassName.
+			self grandchildClassName } asArray
+]
+
+{ #category : 'tests' }
 MCPToolGetClassTest >> testGetsClassMetadata [
 
 	| data expectedLayoutClassName result |
@@ -258,17 +275,6 @@ MCPToolGetClassTest >> testRejectsNegativeSubclassDepth [
 				self callToolWith: {
 						(#name -> self baseClassName).
 						(#subclassDepth -> -1) } asDictionary ]
-		raise: MCPInvalidToolInput
-]
-
-{ #category : 'tests' }
-MCPToolGetClassTest >> testRejectsSubclassDepthAboveMaximum [
-
-	self
-		should: [
-				self callToolWith: {
-						(#name -> self baseClassName).
-						(#subclassDepth -> 11) } asDictionary ]
 		raise: MCPInvalidToolInput
 ]
 
