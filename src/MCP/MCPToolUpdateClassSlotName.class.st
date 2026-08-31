@@ -27,5 +27,5 @@ MCPToolUpdateClassSlotName >> classToolSpec [
 			   self slotNameSchemaProperty.
 			   self newSlotNameSchemaProperty.
 			   self classSideSlotSchemaProperty }).
-		  (#requiredProperties -> #( 'className' 'slotName' 'newSlotName' )) } asDictionary
+		  (#requiredProperties -> #( 'name' 'slotName' 'newSlotName' )) } asDictionary
 ]

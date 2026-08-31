@@ -59,7 +59,7 @@ MCPClassMutationRequestTest >> testUpdateCommandResolvesOmittedMovePackageName [
 	request := MCPToolRequest new
 		           tool: tool;
 		           arguments: {
-				           (#className -> self class name asString).
+				           (#name -> self class name asString).
 				           (#tag -> 'Requests') } asDictionary;
 		           yourself.
 	mutationRequest := tool parsedRequestFromToolRequest: request.
@@ -78,7 +78,7 @@ MCPClassMutationRequestTest >> testUpdateRequestParsesSlotArguments [
 	tool := MCPToolUpdateClassSlotName new.
 	request := MCPClassUpdateRequest
 		           fromRequest: (self toolRequestWithArguments: {
-					            (#className -> 'ExistingClass').
+					            (#name -> 'ExistingClass').
 					            (#slotAction -> 'rename').
 					            (#slotName -> 'oldName').
 					            (#newSlotName -> 'newName').
@@ -106,7 +106,7 @@ MCPClassMutationRequestTest >> testUpdateRequestTracksSuppliedProperties [
 	tool := MCPToolUpdateClassSlots new.
 	request := MCPClassUpdateRequest
 		           fromRequest: (self toolRequestWithArguments: {
-					            (#className -> 'ExistingClass').
+					            (#name -> 'ExistingClass').
 					            (#tag -> 'Models').
 					            (#comment -> '').
 					            (#force -> true).
@@ -123,7 +123,7 @@ MCPClassMutationRequestTest >> testUpdateRequestTracksSuppliedProperties [
 	self deny: (request hasSuppliedPropertyNamed: 'classSlots').
 	self assert: request slotNames isEmpty.
 	context := request requestedContext.
-	self assert: (context at: #className) equals: 'ExistingClass'.
+	self assert: (context at: #name) equals: 'ExistingClass'.
 	self assert: (context at: #tag) equals: 'Models'.
 	self assert: (context at: #comment) equals: ''.
 	self assert: (context at: #slots) equals: #(  ).
@@ -136,14 +136,14 @@ MCPClassMutationRequestTest >> testUpdateRequestWithNoPatchArgumentsHasNoUpdates
 	| context request tool |
 	tool := MCPToolUpdateClassSlots new.
 	request := MCPClassUpdateRequest
-		           fromRequest: (self toolRequestWithArguments: { (#className -> 'ExistingClass') } asDictionary)
+		           fromRequest: (self toolRequestWithArguments: { (#name -> 'ExistingClass') } asDictionary)
 		           tool: tool.
 	self assert: request className equals: 'ExistingClass'.
 	self deny: request hasUpdates.
 	self assert: request suppliedProperties isEmpty.
 	context := request requestedContext.
 	self assert: context size equals: 1.
-	self assert: (context at: #className) equals: 'ExistingClass'
+	self assert: (context at: #name) equals: 'ExistingClass'
 ]
 
 { #category : 'private' }

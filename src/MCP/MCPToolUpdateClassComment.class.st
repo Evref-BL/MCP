@@ -22,7 +22,7 @@ MCPToolUpdateClassComment >> classToolSpec [
 		  (#title -> 'Update Class Comment').
 		  (#description -> 'Set or clear one class comment.').
 		  (#inputProperties -> {
-			   self classNameSchemaProperty.
+			   (self schemaPropertyNamed: 'name' type: 'string' description: 'Class name.').
 			   self commentSchemaProperty }).
-		  (#requiredProperties -> #( 'className' 'comment' )) } asDictionary
+		  (#requiredProperties -> #( 'name' 'comment' )) } asDictionary
 ]

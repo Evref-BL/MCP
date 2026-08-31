@@ -68,7 +68,7 @@ MCPToolSearchPackagesTest >> testImageScopeCanPaginateFilteredPackages [
 
 	| data expected packageNames pagination result summary |
 	result := self callToolWith: {
-			          (#packageName -> 'MCP-').
+			          (#name -> 'MCP-').
 			          (#filterMode -> 'prefix').
 			          (#limit -> 2).
 			          (#offset -> 1) } asDictionary.
@@ -96,7 +96,7 @@ MCPToolSearchPackagesTest >> testImageScopeReturnsExactPackageNameMatch [
 
 	| data packageNames result |
 	result := self callToolWith: {
-			          (#packageName -> 'MCP-Tests').
+			          (#name -> 'MCP-Tests').
 			          (#filterMode -> 'exact') } asDictionary.
 	data := self dataFrom: result.
 	packageNames := (data at: #packages) collect: [ :each | each at: #packageName ].
@@ -111,7 +111,7 @@ MCPToolSearchPackagesTest >> testImageScopeReturnsStructuredPackages [
 
 	| data entry packages result |
 	result := self callToolWith: {
-			          (#packageName -> 'MCP-Tests-Resources').
+			          (#name -> 'MCP-Tests-Resources').
 			          (#filterMode -> 'exact') } asDictionary.
 	data := self dataFrom: result.
 	packages := data at: #packages.

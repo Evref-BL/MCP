@@ -19,7 +19,7 @@ Class {
 MCPCallToolRequest class >> fromToolRequest: aToolRequest [
 
 	^ self new
-		  toolName: (aToolRequest stringArgumentNamed: 'toolName');
+		  toolName: (aToolRequest stringArgumentNamed: 'name');
 		  arguments: (aToolRequest argumentNamed: 'arguments' ifAbsent: [ Dictionary new ]);
 		  yourself
 ]

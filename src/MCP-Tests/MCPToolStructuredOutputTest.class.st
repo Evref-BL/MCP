@@ -498,7 +498,7 @@ MCPToolStructuredOutputTest >> testSearchPackagesDefaultsToImageScopeWhenScopePr
 
 	| data packageNames packages result |
 	result := self callToolNamed: 'package_search' withArguments: {
-			          (#packageName -> 'MCP-Tests-Resources').
+			          (#name -> 'MCP-Tests-Resources').
 			          (#filterMode -> 'exact') } asDictionary.
 	data := self dataFrom: result.
 	packages := data at: #packages.

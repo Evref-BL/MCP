@@ -165,9 +165,7 @@ MCPClassUpdateRequest >> hasUpdates [
 MCPClassUpdateRequest >> initializeFromRequest: request [
 
 	suppliedProperties := self updatePropertyNames select: [ :each | request hasArgumentNamed: each ].
-	className := request stringArgumentNamed: ((request hasArgumentNamed: 'name')
-			              ifTrue: [ 'name' ]
-			              ifFalse: [ 'className' ]).
+	className := request stringArgumentNamed: 'name'.
 	newClassName := request stringArgumentNamed: 'newName'.
 	superclassName := request stringArgumentNamed: 'superclassName'.
 	packageName := request stringArgumentNamed: 'packageName'.
@@ -261,7 +259,7 @@ MCPClassUpdateRequest >> requestedContext [
 
 	| context |
 	context := Dictionary new.
-	context at: #className put: self className.
+	context at: #name put: self className.
 	self suppliedProperties do: [ :propertyName |
 		context at: propertyName asSymbol put: (self contextValueForPropertyNamed: propertyName) ].
 	^ context

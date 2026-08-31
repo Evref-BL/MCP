@@ -46,7 +46,7 @@ MCPToolClassMutation >> buildOutputSchema [
 { #category : 'private - schema' }
 MCPToolClassMutation >> classNameSchemaProperty [
 
-	^ self schemaPropertyNamed: 'className' type: 'string' description: 'Class name.'
+	^ self schemaPropertyNamed: 'name' type: 'string' description: 'Class name.'
 ]
 
 { #category : 'private - schema' }
