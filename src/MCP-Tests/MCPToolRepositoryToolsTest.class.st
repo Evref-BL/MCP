@@ -223,8 +223,7 @@ MCPToolRepositoryToolsTest >> testRepositoryToolsUseDedicatedInputs [
 	| expectations |
 	expectations := {
 		                (MCPToolVerifyRepositoryIdentity
-		                 ->
-		                 #( 'name' 'location' 'branchName' 'subdirectory' 'packageNames' 'modifiedPackageNames'
+		                 -> #( 'name' 'location' 'branchName' 'subdirectory' 'packageNames' 'modifiedPackageNames'
 		                    'isModified' )).
 		                (MCPToolListRepositoryChanges -> #( 'name' 'location' )).
 		                (MCPToolCreateRepository -> #( 'name' 'location' 'subdirectory' 'packageNames' )).

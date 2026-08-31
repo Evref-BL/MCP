@@ -1204,10 +1204,10 @@ MCPToolContractsTest >> testDiscoveryUsesConfiguredStaticToolNames [
 	metadataByName := (((self dataFrom: result) at: #tools) collect: [ :each | (each at: #name) -> each ]) asDictionary.
 	self assert: (metadataByName includesKey: 'repository_search').
 	self assert: (metadataByName includesKey: 'repository_create').
-	searchContract := (self dataFrom:
-		                   (server rpcToolCall: 'tool_get' withParams: { (#name -> 'repository_search') } asDictionary)) at: #tool.
-	createContract := (self dataFrom:
-		                   (server rpcToolCall: 'tool_get' withParams: { (#name -> 'repository_create') } asDictionary)) at: #tool.
+	searchContract := (self dataFrom: (server rpcToolCall: 'tool_get' withParams: { (#name -> 'repository_search') } asDictionary))
+		                  at: #tool.
+	createContract := (self dataFrom: (server rpcToolCall: 'tool_get' withParams: { (#name -> 'repository_create') } asDictionary))
+		                  at: #tool.
 	self assert: searchContract keys asSet equals: #( name description group exposure annotations keywords inputSchema ) asSet.
 	self assert: createContract keys asSet equals: #( name description group exposure annotations keywords inputSchema ) asSet.
 	self assert: (searchContract at: #exposure) equals: 'static'.
