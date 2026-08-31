@@ -46,8 +46,11 @@ MCPToolSearchTools >> buildInputSchema [
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties: {
-				  (self schemaPropertyNamed: 'query' type: 'string' description: 'Search text tool names, descriptions, groups.').
-				  (self schemaPropertyNamed: 'group' type: 'string' description: 'Optional tool group filter.').
+				  (self
+					   schemaPropertyNamed: 'query'
+					   type: 'string'
+					   description:
+						   'Space-separated search words matched against tool names, descriptions, groups, and keywords. Returns tools matching any word.').
 				  (self schemaPropertyNamed: 'cursor' type: 'string' description: 'Continuation cursor.') };
 		  required: #(  );
 		  additionalProperties: false;
@@ -79,7 +82,7 @@ MCPToolSearchTools >> defaultExposure [
 { #category : 'metadata' }
 MCPToolSearchTools >> description [
 
-	^ 'Search all MCP-Pharo tools. Use to discover tool names before tool_get or tool_call.'
+	^ 'Search available tools. Use to discover tool names before tool_get or tool_call.'
 ]
 
 { #category : 'executing' }
@@ -111,9 +114,9 @@ MCPToolSearchTools >> toolMetadataObjectSchema [
 
 	^ MCPStructureProperties new
 		  type: 'object';
-		  description: 'Compact metadata for one MCP-Pharo tool.';
+		  description: 'Compact metadata for one tool.';
 		  properties: {
-				  (self schemaPropertyNamed: 'name' type: 'string' description: 'MCP tool name.').
+				  (self schemaPropertyNamed: 'name' type: 'string' description: 'Tool name.').
 				  (self schemaPropertyNamed: 'description' type: 'string' description: 'Short description.') };
 		  required: #( 'name' 'description' );
 		  additionalProperties: false;

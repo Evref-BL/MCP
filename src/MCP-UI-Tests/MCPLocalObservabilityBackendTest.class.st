@@ -116,7 +116,7 @@ MCPLocalObservabilityBackendTest >> testMCPRecordsToolCallDispatchPath [
 	mcp observabilityEnabled: true.
 
 	mcp rpcToolCall: 'tool_call' withParams: {
-			(#toolName -> 'package_search').
+			(#name -> 'package_search').
 			(#arguments -> { (#limit -> 0) } asDictionary) } asDictionary.
 	records := mcp observability recentCallRecords.
 

@@ -166,7 +166,7 @@ MCPToolLoadRepository >> repositoryDataProperties [
 { #category : 'private - schema' }
 MCPToolLoadRepository >> repositoryNameSchemaProperty [
 
-	^ (self schemaPropertyNamed: 'repositoryName' type: 'string' description: 'Registered Iceberg repository name.')
+	^ (self schemaPropertyNamed: 'name' type: 'string' description: 'Registered Iceberg repository name.')
 		  minLength: 1;
 		  yourself
 ]

@@ -10,6 +10,22 @@ Class {
 }
 
 { #category : 'tests' }
+MCPToolGetMethodTest >> testGetMethodMissingClassHasNoMethodSuggestions [
+
+	| error result |
+	result := self callToolWith: {
+			          (#className -> 'MCPToolGetMethodTestMissingClass').
+			          (#selector -> 'value') } asDictionary.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
+	self assert: (error at: #className) equals: 'MCPToolGetMethodTestMissingClass'.
+	self assert: (error at: #selector) equals: 'value'.
+	self deny: (error includesKey: #suggestions).
+	self assert: ((error at: #message) includesSubstring: 'Class MCPToolGetMethodTestMissingClass does not exist')
+]
+
+{ #category : 'tests' }
 MCPToolGetMethodTest >> testGetMethodReturnsInstanceSideVariableContext [
 
 	| classVariable data globalVariable instanceVariable result selfVariable |
@@ -66,6 +82,23 @@ MCPToolGetMethodTest >> testGetMethodReturnsStructuredErrorForMissingSelector [
 	self deny: (error at: #classSide).
 	self deny: (error includesKey: #side).
 	self assert: ((error at: #message) includesSubstring: 'Method MCPToolGetMethodTestTarget>>doesNotExist does not exist.')
+]
+
+{ #category : 'tests' }
+MCPToolGetMethodTest >> testGetMethodSuggestsExactOppositeSideSelector [
+
+	| error result suggestions |
+	result := self callToolWith: {
+			          (#className -> 'MCPToolGetMethodTestTarget').
+			          (#selector -> 'readClassSide') } asDictionary.
+	error := self errorFrom: result.
+	suggestions := error at: #suggestions.
+	self assert: (result at: #isError).
+	self assert: (error at: #errorCode) equals: 'MethodNotFound'.
+	self assert: suggestions size equals: 1.
+	self assert: (suggestions first at: #className) equals: 'MCPToolGetMethodTestTarget'.
+	self assert: (suggestions first at: #classSide).
+	self assert: (suggestions first at: #selector) equals: 'readClassSide'
 ]
 
 { #category : 'tests' }

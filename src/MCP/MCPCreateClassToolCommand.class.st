@@ -17,7 +17,7 @@ MCPCreateClassToolCommand >> execute [
 	| result |
 	^ self tool
 		  executeMutationAction: 'create'
-		  force: self request force
+		  force: false
 		  requestedContext: self request requestedContext
 		  work: [
 				  result := (MCPCreateClassCommand

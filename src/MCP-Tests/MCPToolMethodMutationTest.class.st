@@ -1015,7 +1015,7 @@ MCPToolMethodMutationTest >> testMethodToolSchemasDeclareExpectedInputs [
 		assert: selectorPropertyNames asArray
 		equals: #( 'className' 'classSide' 'force' 'selector' 'newSelector' 'permutation' 'argumentNames' 'argumentValueExpressions'
 			   'packageNames' 'classNames' 'hierarchyClassNames' ).
-	self assert: protocolPropertyNames asArray equals: #( 'className' 'classSide' 'force' 'selector' 'protocol' ).
+	self assert: protocolPropertyNames asArray equals: #( 'className' 'classSide' 'selector' 'protocol' ).
 	self assert: MCPToolCompileMethod new inputSchema required asSet equals: #( 'className' 'source' 'protocol' ) asSet.
 	self assert: MCPToolUpdateMethodSelector new inputSchema required asSet equals: #( 'className' 'selector' 'newSelector' ) asSet.
 	self assert: MCPToolUpdateMethodProtocol new inputSchema required asSet equals: #( 'className' 'selector' 'protocol' ) asSet.

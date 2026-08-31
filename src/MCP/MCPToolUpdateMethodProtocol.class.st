@@ -34,7 +34,6 @@ MCPToolUpdateMethodProtocol >> methodToolSpec [
 				    description: 'Whether the target method is on the class side.';
 				    default: false;
 				    yourself).
-			   self forceSchemaProperty.
 			   (MCPStructureProperties new
 				    name: 'selector';
 				    type: 'string';

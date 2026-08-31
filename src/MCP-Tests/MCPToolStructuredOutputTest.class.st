@@ -55,21 +55,21 @@ MCPToolStructuredOutputTest >> testEvaluateReturnsStructuredSuccess [
 MCPToolStructuredOutputTest >> testGetClassParseErrorReturnsStructuredToolError [
 
 	| error result structured |
-	result := self callToolNamed: 'class_get' withArguments: { (#className -> '') } asDictionary.
+	result := self callToolNamed: 'class_get' withArguments: { (#name -> '') } asDictionary.
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (structured at: #status) equals: 'error'.
 	self assert: (error at: #errorClass) equals: #Error.
 	self assert: (error at: #className) equals: ''.
-	self assert: ((error at: #message) includesSubstring: 'className must be a non-empty string')
+	self assert: ((error at: #message) includesSubstring: 'name must be a non-empty string')
 ]
 
 { #category : 'tests' }
 MCPToolStructuredOutputTest >> testGetClassReturnsStructuredError [
 
 	| contentText error result structured |
-	result := self callToolNamed: 'class_get' withArguments: { (#className -> 'MCPToolGetClassDefinitelyMissing') } asDictionary.
+	result := self callToolNamed: 'class_get' withArguments: { (#name -> 'MCPToolGetClassDefinitelyMissing') } asDictionary.
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	contentText := (result at: #content) first at: #text.
@@ -89,7 +89,7 @@ MCPToolStructuredOutputTest >> testGetClassReturnsStructuredError [
 MCPToolStructuredOutputTest >> testGetClassReturnsStructuredSuccess [
 
 	| contentText data expectedSharedVariableNames result structured |
-	result := self callToolNamed: 'class_get' withArguments: { (#className -> 'MCPToolGetMethodTestTarget') } asDictionary.
+	result := self callToolNamed: 'class_get' withArguments: { (#name -> 'MCPToolGetMethodTestTarget') } asDictionary.
 	structured := self structuredContentFrom: result.
 	data := self dataFrom: result.
 	contentText := (result at: #content) first at: #text.
@@ -498,7 +498,7 @@ MCPToolStructuredOutputTest >> testSearchPackagesDefaultsToImageScopeWhenScopePr
 
 	| data packageNames packages result |
 	result := self callToolNamed: 'package_search' withArguments: {
-			          (#packageName -> 'MCP-Tests-Resources').
+			          (#name -> 'MCP-Tests-Resources').
 			          (#filterMode -> 'exact') } asDictionary.
 	data := self dataFrom: result.
 	packages := data at: #packages.

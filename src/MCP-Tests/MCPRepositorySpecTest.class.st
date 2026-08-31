@@ -34,7 +34,7 @@ MCPRepositorySpecTest >> testRepositoryAdoptHeadRequestParsesTypedInput [
 	| adoptHeadRequest |
 	adoptHeadRequest := MCPRepositoryAdoptHeadRequest
 		                    fromRequest: (self requestWithArguments: {
-					                     (#repositoryName -> 'MCP Repo').
+					                     (#name -> 'MCP Repo').
 					                     (#branchName -> 'main') } asDictionary)
 		                    tool: nil.
 	self assert: adoptHeadRequest operation equals: 'adoptHead'.
@@ -118,7 +118,7 @@ MCPRepositorySpecTest >> testRepositoryCreateUpdateExportRequestsParseTypedInput
 	self assert: createRequest packageNames equals: #( 'MCP' 'MCP-Tests' ).
 	updateRequest := MCPRepositoryUpdateRequest
 		                 fromRequest: (self requestWithArguments: {
-					                  (#repositoryName -> 'MCP Repo').
+					                  (#name -> 'MCP Repo').
 					                  (#subdirectory -> 'src').
 					                  (#addPackageNames -> #( 'New-Package' )).
 					                  (#removePackageNames -> #( 'Old-Package' )) } asDictionary)
@@ -128,44 +128,44 @@ MCPRepositorySpecTest >> testRepositoryCreateUpdateExportRequestsParseTypedInput
 	self assert: updateRequest hasUpdates.
 	self assert: updateRequest requestedRepositoryUpdateActions equals: #( 'setSubdirectory' 'addPackages' 'removePackages' ).
 	exportRequest := MCPRepositoryExportRequest
-		                 fromRequest: (self requestWithArguments: { (#repositoryName -> 'MCP Repo') } asDictionary)
+		                 fromRequest: (self requestWithArguments: { (#name -> 'MCP Repo') } asDictionary)
 		                 tool: nil.
 	self assert: exportRequest operation equals: 'export'.
 	self assert: exportRequest repositoryReference name equals: 'MCP Repo'.
 	diffRequest := MCPRepositoryDiffRequest
-		               fromRequest: (self requestWithArguments: { (#repositoryName -> 'MCP Repo') } asDictionary)
+		               fromRequest: (self requestWithArguments: { (#name -> 'MCP Repo') } asDictionary)
 		               tool: nil.
 	self assert: diffRequest operation equals: 'diff'.
 	self assert: diffRequest repositoryReference name equals: 'MCP Repo'.
 	commitRequest := MCPRepositoryCommitRequest
 		                 fromRequest: (self requestWithArguments: {
-					                  (#repositoryName -> 'MCP Repo').
+					                  (#name -> 'MCP Repo').
 					                  (#message -> 'Commit from test') } asDictionary)
 		                 tool: nil.
 	self assert: commitRequest operation equals: 'commit'.
 	self assert: commitRequest message equals: 'Commit from test'.
 	fetchRequest := MCPRepositoryFetchRequest
-		                fromRequest: (self requestWithArguments: { (#repositoryName -> 'MCP Repo') } asDictionary)
+		                fromRequest: (self requestWithArguments: { (#name -> 'MCP Repo') } asDictionary)
 		                tool: nil.
 	self assert: fetchRequest operation equals: 'fetch'.
 	pullRequest := MCPRepositoryPullRequest
-		               fromRequest: (self requestWithArguments: { (#repositoryName -> 'MCP Repo') } asDictionary)
+		               fromRequest: (self requestWithArguments: { (#name -> 'MCP Repo') } asDictionary)
 		               tool: nil.
 	self assert: pullRequest operation equals: 'pull'.
 	pushRequest := MCPRepositoryPushRequest
-		               fromRequest: (self requestWithArguments: { (#repositoryName -> 'MCP Repo') } asDictionary)
+		               fromRequest: (self requestWithArguments: { (#name -> 'MCP Repo') } asDictionary)
 		               tool: nil.
 	self assert: pushRequest operation equals: 'push'.
 	createBranchRequest := MCPRepositoryCreateBranchRequest
 		                       fromRequest: (self requestWithArguments: {
-					                        (#repositoryName -> 'MCP Repo').
+					                        (#name -> 'MCP Repo').
 					                        (#branchName -> 'feature') } asDictionary)
 		                       tool: nil.
 	self assert: createBranchRequest operation equals: 'createBranch'.
 	self assert: createBranchRequest branchName equals: 'feature'.
 	switchBranchRequest := MCPRepositorySwitchBranchRequest
 		                       fromRequest: (self requestWithArguments: {
-					                        (#repositoryName -> 'MCP Repo').
+					                        (#name -> 'MCP Repo').
 					                        (#branchName -> 'main') } asDictionary)
 		                       tool: nil.
 	self assert: switchBranchRequest operation equals: 'switchBranch'.
@@ -226,13 +226,13 @@ MCPRepositorySpecTest >> testRepositoryQuerySpecParsesOptionalBooleanFilters [
 	tool := MCPToolSearchRepositories new.
 	request := MCPToolRequest tool: tool arguments: {
 			           (#isModified -> false).
-			           (#repositoryName -> 'MCP').
+			           (#name -> 'MCP').
 			           (#limit -> 5) } asDictionary.
 	spec := tool searchRequestFromToolRequest: request.
 	self assert: spec class equals: MCPRepositoryQuerySpec.
 	self assert: spec isModified equals: false.
 	self assert: spec isMissing isNil.
-	self assert: (spec fieldFilters at: 'repositoryName') equals: 'MCP'.
+	self assert: (spec fieldFilters at: 'name') equals: 'MCP'.
 	self assert: spec limit equals: 5.
 	self assert: spec offset equals: 0
 ]
@@ -245,7 +245,7 @@ MCPRepositorySpecTest >> testRepositoryReferenceResolvesByNameAndLocation [
 	self withRepositories: { repository } do: [
 			reference := MCPRepositoryReferenceSpec name: 'MCP Reference Repository' location: FileLocator imageDirectory pathString.
 			self assert: reference repository identicalTo: repository.
-			self assert: (reference requestedContext at: #repositoryName) equals: 'MCP Reference Repository'.
+			self assert: (reference requestedContext at: #name) equals: 'MCP Reference Repository'.
 			self assert: (reference requestedContext at: #location) equals: FileLocator imageDirectory pathString ]
 ]
 
@@ -289,7 +289,7 @@ MCPRepositorySpecTest >> testRepositoryVerifyIdentityRequestParsesTypedInput [
 	| context verifyIdentityRequest |
 	verifyIdentityRequest := MCPRepositoryVerifyIdentityRequest
 		                         fromRequest: (self requestWithArguments: {
-					                          (#repositoryName -> 'MCP Repo').
+					                          (#name -> 'MCP Repo').
 					                          (#location -> '/tmp/MCP').
 					                          (#branchName -> 'main').
 					                          (#subdirectory -> 'src').

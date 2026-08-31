@@ -25,5 +25,5 @@ MCPToolCreateRepositoryBranch >> repositoryToolSpec [
 		  (#requestClass -> MCPRepositoryCreateBranchRequest).
 		  (#commandClass -> MCPCreateRepositoryBranchCommand).
 		  (#inputProperties -> { self branchNameSchemaProperty }).
-		  (#requiredProperties -> #( 'repositoryName' 'branchName' )) } asDictionary
+		  (#requiredProperties -> #( 'name' 'branchName' )) } asDictionary
 ]

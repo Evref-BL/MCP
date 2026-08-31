@@ -32,9 +32,15 @@ TMCPMethodTool >> methodEntryLabel: anEntry [
 { #category : 'private - methods' }
 TMCPMethodTool >> methodForClassNamed: className selector: selectorString classSide: classSide [
 
-	| behavior selectorSymbol |
-	behavior := self behaviorNamed: className classSide: classSide.
+	| behavior selectorSymbol targetClass |
 	selectorSymbol := selectorString asSymbol.
+	targetClass := self class environment
+		               at: className asSymbol
+		               ifAbsent: [
+		               MCPCommandError signalMissingMethodInClassName: className classSide: classSide selector: selectorString ].
+	behavior := classSide
+		            ifTrue: [ targetClass classSide ]
+		            ifFalse: [ targetClass ].
 	(behavior includesSelector: selectorSymbol) ifFalse: [
 		MCPCommandError signalMissingMethodInClassName: className classSide: classSide selector: selectorString ].
 	^ behavior compiledMethodAt: selectorSymbol
@@ -107,7 +113,6 @@ TMCPMethodTool >> methodScopeQueryFromRequest: request [
 	^ MCPCompiledMethodScopeQuery new
 		  packageNames: (self searchScopeStringCollectionNamed: 'packages' fromRequest: request);
 		  classNames: (self searchScopeStringCollectionNamed: 'classes' fromRequest: request);
-		  hierarchyClassNames: (self searchScopeStringCollectionNamed: 'hierarchies' fromRequest: request);
 		  subclassClassNames: (self searchScopeStringCollectionNamed: 'subclassesOf' fromRequest: request);
 		  parentClassNames: (self searchScopeStringCollectionNamed: 'superclassesOf' fromRequest: request);
 		  side: (request stringArgumentNamed: 'side' default: 'both');
@@ -146,8 +151,7 @@ TMCPMethodTool >> searchScopeSchemaProperties [
 		  (self stringArraySchemaNamed: 'classes').
 		  (self stringArraySchemaNamed: 'packages').
 		  (self stringArraySchemaNamed: 'superclassesOf').
-		  (self stringArraySchemaNamed: 'subclassesOf').
-		  (self stringArraySchemaNamed: 'hierarchies') }
+		  (self stringArraySchemaNamed: 'subclassesOf') }
 ]
 
 { #category : 'private - schema' }
@@ -156,7 +160,7 @@ TMCPMethodTool >> searchScopeSchemaProperty [
 	^ MCPStructureProperties new
 		  name: 'scope';
 		  type: 'object';
-		  description: 'Optional search scope. If omitted, searches all matching entities.';
+		  description: 'Search scope. If omitted, searches all matching entities.';
 		  properties: self searchScopeSchemaProperties;
 		  additionalProperties: false;
 		  yourself

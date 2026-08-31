@@ -19,7 +19,7 @@ MCPToolRepositoryToolsTest >> inputPropertyNamesFor: aTool [
 MCPToolRepositoryToolsTest >> metadataByNameForRepositoryTools [
 
 	| result |
-	result := self callToolNamed: 'tool_search' withArguments: { (#group -> 'repositories') } asDictionary.
+	result := self callToolNamed: 'tool_search' withArguments: { (#query -> 'repository') } asDictionary.
 	^ (((self dataFrom: result) at: #tools) collect: [ :each | (each at: #name) -> each ]) asDictionary
 ]
 
@@ -30,14 +30,14 @@ MCPToolRepositoryToolsTest >> repositoryToolSpecifications [
 		  {
 			  (#toolClass -> MCPToolVerifyRepositoryIdentity).
 			  (#arguments -> {
-				   (#repositoryName -> 'MCP').
+				   (#name -> 'MCP').
 				   (#branchName -> 'main') } asDictionary).
 			  (#action -> 'verifyIdentity').
 			  (#requestClass -> MCPRepositoryVerifyIdentityRequest).
 			  (#commandClass -> MCPRepositoryVerifyIdentityCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolListRepositoryChanges).
-			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
+			  (#arguments -> { (#name -> 'MCP') } asDictionary).
 			  (#action -> 'diff').
 			  (#requestClass -> MCPRepositoryDiffRequest).
 			  (#commandClass -> MCPRepositoryDiffCommand) } asDictionary.
@@ -60,28 +60,28 @@ MCPToolRepositoryToolsTest >> repositoryToolSpecifications [
 		  {
 			  (#toolClass -> MCPToolUpdateRepository).
 			  (#arguments -> {
-				   (#repositoryName -> 'MCP').
+				   (#name -> 'MCP').
 				   (#addPackageNames -> #( 'MCP' )) } asDictionary).
 			  (#action -> 'update').
 			  (#requestClass -> MCPRepositoryUpdateRequest).
 			  (#commandClass -> MCPUpdateRepositoryCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolExportRepository).
-			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
+			  (#arguments -> { (#name -> 'MCP') } asDictionary).
 			  (#action -> 'export').
 			  (#requestClass -> MCPRepositoryExportRequest).
 			  (#commandClass -> MCPExportRepositoryCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolCommitRepository).
 			  (#arguments -> {
-				   (#repositoryName -> 'MCP').
+				   (#name -> 'MCP').
 				   (#message -> 'Commit from test') } asDictionary).
 			  (#action -> 'commit').
 			  (#requestClass -> MCPRepositoryCommitRequest).
 			  (#commandClass -> MCPCommitRepositoryCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolFetchRepository).
-			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
+			  (#arguments -> { (#name -> 'MCP') } asDictionary).
 			  (#action -> 'fetch').
 			  (#requestClass -> MCPRepositoryFetchRequest).
 			  (#commandClass -> MCPFetchRepositoryCommand) } asDictionary.
@@ -89,7 +89,7 @@ MCPToolRepositoryToolsTest >> repositoryToolSpecifications [
 		  {
 			  (#toolClass -> MCPToolAddRepositoryRemote).
 			  (#arguments -> {
-				   (#repositoryName -> 'MCP').
+				   (#name -> 'MCP').
 				   (#remoteName -> 'origin').
 				   (#remoteUrl -> 'git@example.com:mcp.git') } asDictionary).
 			  (#action -> 'remoteAdd').
@@ -99,7 +99,7 @@ MCPToolRepositoryToolsTest >> repositoryToolSpecifications [
 		  {
 			  (#toolClass -> MCPToolRemoveRepositoryRemote).
 			  (#arguments -> {
-				   (#repositoryName -> 'MCP').
+				   (#name -> 'MCP').
 				   (#remoteName -> 'origin') } asDictionary).
 			  (#action -> 'remoteRemove').
 			  (#requestClass -> MCPRepositoryRemoteRequest).
@@ -108,7 +108,7 @@ MCPToolRepositoryToolsTest >> repositoryToolSpecifications [
 		  {
 			  (#toolClass -> MCPToolUpdateRepositoryRemote).
 			  (#arguments -> {
-				   (#repositoryName -> 'MCP').
+				   (#name -> 'MCP').
 				   (#remoteName -> 'origin').
 				   (#remoteUrl -> 'git@example.com:mcp.git') } asDictionary).
 			  (#action -> 'remoteUpdate').
@@ -119,20 +119,20 @@ MCPToolRepositoryToolsTest >> repositoryToolSpecifications [
 
 		  {
 			  (#toolClass -> MCPToolPullRepository).
-			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
+			  (#arguments -> { (#name -> 'MCP') } asDictionary).
 			  (#action -> 'pull').
 			  (#requestClass -> MCPRepositoryPullRequest).
 			  (#commandClass -> MCPPullRepositoryCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolPushRepository).
-			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
+			  (#arguments -> { (#name -> 'MCP') } asDictionary).
 			  (#action -> 'push').
 			  (#requestClass -> MCPRepositoryPushRequest).
 			  (#commandClass -> MCPPushRepositoryCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolCreateRepositoryBranch).
 			  (#arguments -> {
-				   (#repositoryName -> 'MCP').
+				   (#name -> 'MCP').
 				   (#branchName -> 'feature') } asDictionary).
 			  (#action -> 'createBranch').
 			  (#requestClass -> MCPRepositoryCreateBranchRequest).
@@ -140,7 +140,7 @@ MCPToolRepositoryToolsTest >> repositoryToolSpecifications [
 		  {
 			  (#toolClass -> MCPToolSwitchRepositoryBranch).
 			  (#arguments -> {
-				   (#repositoryName -> 'MCP').
+				   (#name -> 'MCP').
 				   (#branchName -> 'main') } asDictionary).
 			  (#action -> 'switchBranch').
 			  (#requestClass -> MCPRepositorySwitchBranchRequest).
@@ -148,14 +148,14 @@ MCPToolRepositoryToolsTest >> repositoryToolSpecifications [
 		  {
 			  (#toolClass -> MCPToolCheckoutRepositoryBranch).
 			  (#arguments -> {
-				   (#repositoryName -> 'MCP').
+				   (#name -> 'MCP').
 				   (#branchName -> 'main') } asDictionary).
 			  (#action -> 'checkoutBranch').
 			  (#requestClass -> MCPRepositoryCheckoutBranchRequest).
 			  (#commandClass -> MCPCheckoutRepositoryBranchCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolAdoptRepositoryHead).
-			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
+			  (#arguments -> { (#name -> 'MCP') } asDictionary).
 			  (#action -> 'adoptHead').
 			  (#requestClass -> MCPRepositoryAdoptHeadRequest).
 			  (#commandClass -> MCPAdoptRepositoryHeadCommand) } asDictionary }
@@ -183,23 +183,23 @@ MCPToolRepositoryToolsTest >> testRepositoryToolsRequiredInputs [
 
 	| expectations |
 	expectations := {
-		                (MCPToolVerifyRepositoryIdentity -> #( 'repositoryName' )).
-		                (MCPToolListRepositoryChanges -> #( 'repositoryName' )).
+		                (MCPToolVerifyRepositoryIdentity -> #( 'name' )).
+		                (MCPToolListRepositoryChanges -> #( 'name' )).
 		                (MCPToolCreateRepository -> #( 'name' 'location' )).
 		                (MCPToolAttachRepository -> #( 'name' 'location' )).
-		                (MCPToolUpdateRepository -> #( 'repositoryName' )).
-		                (MCPToolAddRepositoryRemote -> #( 'repositoryName' 'remoteName' 'remoteUrl' )).
-		                (MCPToolRemoveRepositoryRemote -> #( 'repositoryName' 'remoteName' )).
-		                (MCPToolUpdateRepositoryRemote -> #( 'repositoryName' 'remoteName' 'remoteUrl' )).
-		                (MCPToolExportRepository -> #( 'repositoryName' )).
-		                (MCPToolCommitRepository -> #( 'repositoryName' 'message' )).
-		                (MCPToolFetchRepository -> #( 'repositoryName' )).
-		                (MCPToolPullRepository -> #( 'repositoryName' )).
-		                (MCPToolPushRepository -> #( 'repositoryName' )).
-		                (MCPToolCreateRepositoryBranch -> #( 'repositoryName' 'branchName' )).
-		                (MCPToolSwitchRepositoryBranch -> #( 'repositoryName' 'branchName' )).
-		                (MCPToolCheckoutRepositoryBranch -> #( 'repositoryName' 'branchName' )).
-		                (MCPToolAdoptRepositoryHead -> #( 'repositoryName' )) }.
+		                (MCPToolUpdateRepository -> #( 'name' )).
+		                (MCPToolAddRepositoryRemote -> #( 'name' 'remoteName' 'remoteUrl' )).
+		                (MCPToolRemoveRepositoryRemote -> #( 'name' 'remoteName' )).
+		                (MCPToolUpdateRepositoryRemote -> #( 'name' 'remoteName' 'remoteUrl' )).
+		                (MCPToolExportRepository -> #( 'name' )).
+		                (MCPToolCommitRepository -> #( 'name' 'message' )).
+		                (MCPToolFetchRepository -> #( 'name' )).
+		                (MCPToolPullRepository -> #( 'name' )).
+		                (MCPToolPushRepository -> #( 'name' )).
+		                (MCPToolCreateRepositoryBranch -> #( 'name' 'branchName' )).
+		                (MCPToolSwitchRepositoryBranch -> #( 'name' 'branchName' )).
+		                (MCPToolCheckoutRepositoryBranch -> #( 'name' 'branchName' )).
+		                (MCPToolAdoptRepositoryHead -> #( 'name' )) }.
 	expectations do: [ :association | self assert: association key new inputSchema required asArray equals: association value ]
 ]
 
@@ -223,26 +223,25 @@ MCPToolRepositoryToolsTest >> testRepositoryToolsUseDedicatedInputs [
 	| expectations |
 	expectations := {
 		                (MCPToolVerifyRepositoryIdentity
-		                 ->
-		                 #( 'repositoryName' 'location' 'branchName' 'subdirectory' 'packageNames' 'modifiedPackageNames'
+		                 -> #( 'name' 'location' 'branchName' 'subdirectory' 'packageNames' 'modifiedPackageNames'
 		                    'isModified' )).
-		                (MCPToolListRepositoryChanges -> #( 'repositoryName' 'location' )).
+		                (MCPToolListRepositoryChanges -> #( 'name' 'location' )).
 		                (MCPToolCreateRepository -> #( 'name' 'location' 'subdirectory' 'packageNames' )).
 		                (MCPToolAttachRepository -> #( 'name' 'location' 'subdirectory' 'packageNames' )).
 		                (MCPToolUpdateRepository
-		                 -> #( 'repositoryName' 'location' 'subdirectory' 'packageNames' 'addPackageNames' 'removePackageNames' )).
-		                (MCPToolAddRepositoryRemote -> #( 'repositoryName' 'location' 'remoteName' 'remoteUrl' )).
-		                (MCPToolRemoveRepositoryRemote -> #( 'repositoryName' 'location' 'remoteName' )).
-		                (MCPToolUpdateRepositoryRemote -> #( 'repositoryName' 'location' 'remoteName' 'remoteUrl' )).
-		                (MCPToolExportRepository -> #( 'repositoryName' 'location' )).
-		                (MCPToolCommitRepository -> #( 'repositoryName' 'location' 'message' )).
-		                (MCPToolFetchRepository -> #( 'repositoryName' 'location' )).
-		                (MCPToolPullRepository -> #( 'repositoryName' 'location' )).
-		                (MCPToolPushRepository -> #( 'repositoryName' 'location' 'remoteName' )).
-		                (MCPToolCreateRepositoryBranch -> #( 'repositoryName' 'location' 'branchName' )).
-		                (MCPToolSwitchRepositoryBranch -> #( 'repositoryName' 'location' 'branchName' )).
-		                (MCPToolCheckoutRepositoryBranch -> #( 'repositoryName' 'location' 'branchName' )).
-		                (MCPToolAdoptRepositoryHead -> #( 'repositoryName' 'location' 'branchName' )) }.
+		                 -> #( 'name' 'location' 'subdirectory' 'packageNames' 'addPackageNames' 'removePackageNames' )).
+		                (MCPToolAddRepositoryRemote -> #( 'name' 'location' 'remoteName' 'remoteUrl' )).
+		                (MCPToolRemoveRepositoryRemote -> #( 'name' 'location' 'remoteName' )).
+		                (MCPToolUpdateRepositoryRemote -> #( 'name' 'location' 'remoteName' 'remoteUrl' )).
+		                (MCPToolExportRepository -> #( 'name' 'location' )).
+		                (MCPToolCommitRepository -> #( 'name' 'location' 'message' )).
+		                (MCPToolFetchRepository -> #( 'name' 'location' )).
+		                (MCPToolPullRepository -> #( 'name' 'location' )).
+		                (MCPToolPushRepository -> #( 'name' 'location' 'remoteName' )).
+		                (MCPToolCreateRepositoryBranch -> #( 'name' 'location' 'branchName' )).
+		                (MCPToolSwitchRepositoryBranch -> #( 'name' 'location' 'branchName' )).
+		                (MCPToolCheckoutRepositoryBranch -> #( 'name' 'location' 'branchName' )).
+		                (MCPToolAdoptRepositoryHead -> #( 'name' 'location' 'branchName' )) }.
 	expectations do: [ :association |
 			| propertyNames |
 			propertyNames := self inputPropertyNamesFor: association key new.

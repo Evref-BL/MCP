@@ -28,8 +28,7 @@ MCPToolUpdateClassTraits >> classToolSpec [
 		  (#title -> 'Update Class Traits').
 		  (#description -> 'Replace the instance-side trait composition of one class.').
 		  (#inputProperties -> {
-			   self classNameSchemaProperty.
-			   self traitsSchemaProperty.
-			   self forceSchemaProperty }).
-		  (#requiredProperties -> #( 'className' 'traits' )) } asDictionary
+			   (self schemaPropertyNamed: 'name' type: 'string' description: 'Class name.').
+			   self traitsSchemaProperty }).
+		  (#requiredProperties -> #( 'name' 'traits' )) } asDictionary
 ]

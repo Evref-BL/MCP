@@ -20,7 +20,7 @@ MCPObservabilityBackend class >> isAbstract [
 { #category : 'clearing' }
 MCPObservabilityBackend >> clear [
 
-
+	^ self
 ]
 
 { #category : 'activation' }
@@ -94,7 +94,7 @@ MCPObservabilityBackend >> exportDirectory [
 { #category : 'accessing' }
 MCPObservabilityBackend >> exportDirectory: aPath [
 
-
+	^ self
 ]
 
 { #category : 'testing' }
@@ -203,7 +203,7 @@ MCPObservabilityBackend >> resourceMetadata [
 { #category : 'accessing' }
 MCPObservabilityBackend >> resourceMetadata: aDictionary [
 
-
+	^ self
 ]
 
 { #category : 'actions' }

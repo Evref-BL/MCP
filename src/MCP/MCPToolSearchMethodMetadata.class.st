@@ -27,9 +27,8 @@ MCPToolSearchMethodMetadata >> buildInputSchema [
 			               values: self supportedFilterModes).
 		              (self caseSensitiveSchemaPropertyWithDescription: 'Whether selector and protocol matching is case-sensitive.').
 		              (self includeSourceSchemaPropertyWithDescription: 'Whether to include method source code in each result entry.') }
-	              ,
-	              (self paginationInputPropertiesWithLimitDescription:
-		               'Maximum number of matching methods to return. Use 0 to return no entries.').
+	              , (self paginationInputPropertiesWithLimitDescription:
+			               'Maximum matching methods to return. Use 0 to count matches without returning entries.').
 	^ self queryInputSchemaWithProperties: properties
 ]
 
@@ -42,7 +41,7 @@ MCPToolSearchMethodMetadata >> defaultExposure [
 { #category : 'metadata' }
 MCPToolSearchMethodMetadata >> description [
 
-	^ 'Search method metadata by selector, protocol, class, package, or scope. Use specialized method search tools for source, senders, implementors, and references.'
+	^ 'Search methods by selector, protocol, class, package, or scope. Specialized method search tools are method_source_search, method_sender_search, method_implementor_search, method_class_reference_search, and method_variable_reference_search.'
 ]
 
 { #category : 'private - filtering' }
@@ -63,11 +62,8 @@ MCPToolSearchMethodMetadata >> metadataFilterFieldNames [
 MCPToolSearchMethodMetadata >> metadataFilterInputProperties [
 
 	^ {
-		  (self schemaPropertyNamed: 'selector' type: 'string' description: 'Optional selector text matched against method selectors.').
-		  (self
-			   schemaPropertyNamed: 'protocol'
-			   type: 'string'
-			   description: 'Optional protocol/category text matched against method protocols.') }
+		  (self schemaPropertyNamed: 'selector' type: 'string' description: 'Match method selectors.').
+		  (self schemaPropertyNamed: 'protocol' type: 'string' description: 'Match method protocols.') }
 ]
 
 { #category : 'private - template' }

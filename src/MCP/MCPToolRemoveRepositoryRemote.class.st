@@ -25,5 +25,5 @@ MCPToolRemoveRepositoryRemote >> repositoryToolSpec [
 		  (#requestClass -> MCPRepositoryRemoteRequest).
 		  (#commandClass -> MCPRemoveRepositoryRemoteCommand).
 		  (#inputProperties -> { self remoteNameSchemaProperty }).
-		  (#requiredProperties -> #( 'repositoryName' 'remoteName' )) } asDictionary
+		  (#requiredProperties -> #( 'name' 'remoteName' )) } asDictionary
 ]

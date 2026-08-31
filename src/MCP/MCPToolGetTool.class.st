@@ -58,7 +58,6 @@ MCPToolGetTool >> annotationsSchemaProperty [
 					 schemaPropertyNamed: 'openWorldHint'
 					 type: 'boolean'
 					 description: 'Whether the tool may interact with external entities.') };
-		required: #( 'readOnlyHint' );
 		additionalProperties: false.
 	^ property
 ]
@@ -66,13 +65,13 @@ MCPToolGetTool >> annotationsSchemaProperty [
 { #category : 'metadata' }
 MCPToolGetTool >> buildInputSchema [
 
-	| toolNameProperty |
-	toolNameProperty := self schemaPropertyNamed: 'toolName' type: 'string' description: 'Tool name.'.
-	toolNameProperty minLength: 1.
+	| nameProperty |
+	nameProperty := self schemaPropertyNamed: 'name' type: 'string' description: 'Tool name.'.
+	nameProperty minLength: 1.
 	^ MCPStructureInputSchema new
 		  type: 'object';
-		  properties: { toolNameProperty };
-		  required: #( 'toolName' );
+		  properties: { nameProperty };
+		  required: #( 'name' );
 		  additionalProperties: false;
 		  yourself
 ]

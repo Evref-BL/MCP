@@ -46,7 +46,7 @@ MCPToolClassMutation >> buildOutputSchema [
 { #category : 'private - schema' }
 MCPToolClassMutation >> classNameSchemaProperty [
 
-	^ self schemaPropertyNamed: 'className' type: 'string' description: 'Class name.'
+	^ self schemaPropertyNamed: 'name' type: 'string' description: 'Class name.'
 ]
 
 { #category : 'private - schema' }
@@ -295,12 +295,6 @@ MCPToolClassMutation >> mutationAction [
 MCPToolClassMutation >> mutationActionForErrorFromParsedRequest: mutationRequest rawRequest: rawRequest [
 
 	^ self mutationAction
-]
-
-{ #category : 'private - schema' }
-MCPToolClassMutation >> newClassNameSchemaProperty [
-
-	^ self schemaPropertyNamed: 'newClassName' type: 'string' description: 'The new class name.'
 ]
 
 { #category : 'private - schema' }

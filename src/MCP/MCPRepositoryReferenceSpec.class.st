@@ -18,7 +18,7 @@ Class {
 { #category : 'instance creation' }
 MCPRepositoryReferenceSpec class >> fromRequest: request [
 
-	^ self name: (request stringArgumentNamed: 'repositoryName') location: (request stringArgumentNamed: 'location')
+	^ self name: (request stringArgumentNamed: 'name') location: (request stringArgumentNamed: 'location')
 ]
 
 { #category : 'instance creation' }
@@ -33,7 +33,7 @@ MCPRepositoryReferenceSpec class >> name: aName location: aLocation [
 MCPRepositoryReferenceSpec >> asDictionary [
 
 	^ {
-		  (#repositoryName -> self name).
+		  (#name -> self name).
 		  (#location -> self location) } asDictionary
 ]
 
@@ -132,7 +132,7 @@ MCPRepositoryReferenceSpec >> signalMissingRepositoryReference [
 
 	MCPCommandError
 		signalErrorCode: #RepositoryReferenceRequired
-		message: 'Repository tools require repositoryName, location, or both.'
+		message: 'Repository tools require name, location, or both.'
 		details: self requestedContext
 ]
 

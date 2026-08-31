@@ -24,10 +24,9 @@ MCPToolUpdateClassPackage >> classToolSpec [
 		   ->
 		   'Move one class to a package and/or recategorize it under a package tag. Omit packageName when only changing tag inside the current package.').
 		  (#inputProperties -> {
-			   self classNameSchemaProperty.
+			   (self schemaPropertyNamed: 'name' type: 'string' description: 'Class name.').
 			   self packageNameSchemaProperty.
-			   self tagSchemaProperty.
-			   self forceSchemaProperty }).
-		  (#requiredProperties -> #( 'className' )).
+			   self tagSchemaProperty }).
+		  (#requiredProperties -> #( 'name' )).
 		  (#atLeastOneProperties -> #( 'packageName' 'tag' )) } asDictionary
 ]

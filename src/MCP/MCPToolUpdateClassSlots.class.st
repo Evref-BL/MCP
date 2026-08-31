@@ -22,10 +22,9 @@ MCPToolUpdateClassSlots >> classToolSpec [
 		  (#title -> 'Update Class Slots').
 		  (#description -> 'Replace the instance-side and/or class-side slot definition of one class.').
 		  (#inputProperties -> {
-			   self classNameSchemaProperty.
+			   (self schemaPropertyNamed: 'name' type: 'string' description: 'Class name.').
 			   self slotsSchemaProperty.
-			   self classSlotsSchemaProperty.
-			   self forceSchemaProperty }).
-		  (#requiredProperties -> #( 'className' )).
+			   self classSlotsSchemaProperty }).
+		  (#requiredProperties -> #( 'name' )).
 		  (#atLeastOneProperties -> #( 'slots' 'classSlots' )) } asDictionary
 ]

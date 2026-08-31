@@ -67,7 +67,7 @@ MCPToolSearchPackages >> failureMessageForScope: scopeSummary error: anError [
 { #category : 'private - filtering' }
 MCPToolSearchPackages >> fieldTextsForPackageEntry: anEntry fieldName: fieldName [
 
-	fieldName = 'packageName' ifTrue: [ ^ { (anEntry at: #packageName) } ].
+	fieldName = 'name' ifTrue: [ ^ { (anEntry at: #packageName) } ].
 	fieldName = 'projectName' ifTrue: [ ^ anEntry at: #projectNames ].
 	fieldName = 'tag' ifTrue: [ ^ anEntry at: #tagNames ].
 	^ #(  )
@@ -121,22 +121,16 @@ MCPToolSearchPackages >> packageEntrySchema [
 { #category : 'private - request' }
 MCPToolSearchPackages >> packageFilterFieldNames [
 
-	^ #( 'packageName' 'projectName' 'tag' )
+	^ #( 'name' 'projectName' 'tag' )
 ]
 
 { #category : 'private - schema' }
 MCPToolSearchPackages >> packageFilterInputProperties [
 
 	^ {
-		  (self
-			   schemaPropertyNamed: 'packageName'
-			   type: 'string'
-			   description: 'Optional package-name text matched against package names.').
-		  (self
-			   schemaPropertyNamed: 'projectName'
-			   type: 'string'
-			   description: 'Optional project-name text matched against owning projects.').
-		  (self schemaPropertyNamed: 'tag' type: 'string' description: 'Optional tag-name text matched against package tags.') }
+		  (self schemaPropertyNamed: 'name' type: 'string' description: 'Match package names.').
+		  (self schemaPropertyNamed: 'projectName' type: 'string' description: 'Match owning projects.').
+		  (self schemaPropertyNamed: 'tag' type: 'string' description: 'Match package tags.') }
 ]
 
 { #category : 'private - schema' }

@@ -18,7 +18,7 @@ MCPUpdateClassCommandTest >> classToolClassForArguments: arguments slotAction: s
 	slotAction = 'rename' ifTrue: [ ^ MCPToolUpdateClassSlotName ].
 	slotAction = 'pullUp' ifTrue: [ ^ MCPToolPullUpClassSlot ].
 	slotAction = 'pushDown' ifTrue: [ ^ MCPToolPushDownClassSlot ].
-	(arguments includesKey: #newClassName) ifTrue: [ ^ MCPToolUpdateClassName ].
+	(arguments includesKey: #newName) ifTrue: [ ^ MCPToolUpdateClassName ].
 	(arguments includesKey: #comment) ifTrue: [ ^ MCPToolUpdateClassComment ].
 	(arguments includesKey: #traits) ifTrue: [ ^ MCPToolUpdateClassTraits ].
 	(arguments includesKey: #classTraits) ifTrue: [ ^ MCPToolUpdateClassSideTraits ].
@@ -51,7 +51,7 @@ MCPUpdateClassCommandTest >> commandForArguments: arguments [
 MCPUpdateClassCommandTest >> testAppliedChangeResultWrapsPlanAndResult [
 
 	| appliedChange changeResult data plan |
-	plan := MCPClassUpdatePlanInfo updateAction: 'setComment' requestedContext: { (#className -> 'Object') } asDictionary.
+	plan := MCPClassUpdatePlanInfo updateAction: 'setComment' requestedContext: { (#name -> 'Object') } asDictionary.
 	changeResult := MCPChangeClassCommentResult
 		                classInfo: (MCPClassInfo fromClass: Object)
 		                oldClassComment: 'old'
@@ -69,7 +69,7 @@ MCPUpdateClassCommandTest >> testBuildsClassTraitReplacementUpdatePlan [
 	plan := command updatePlan.
 	context := plan requestedContext.
 	self assert: plan updateAction equals: 'replaceClassTraits'.
-	self assert: (context at: #className) equals: 'Object'.
+	self assert: (context at: #name) equals: 'Object'.
 	self assert: (context at: #classTraits) equals: #( 'TAbleToRotate classTrait' )
 ]
 
@@ -83,7 +83,7 @@ MCPUpdateClassCommandTest >> testBuildsDefinitionReplacementUpdatePlan [
 	plan := command updatePlan.
 	context := plan requestedContext.
 	self assert: plan updateAction equals: 'replaceDefinition'.
-	self assert: (context at: #className) equals: 'Object'.
+	self assert: (context at: #name) equals: 'Object'.
 	self assert: (context at: #slots) equals: #( 'first' 'second' ).
 	self assert: (context at: #classSlots) equals: #( 'Current' )
 ]
@@ -96,7 +96,7 @@ MCPUpdateClassCommandTest >> testBuildsLayoutReplacementUpdatePlan [
 	plan := command updatePlan.
 	context := plan requestedContext.
 	self assert: plan updateAction equals: 'replaceLayout'.
-	self assert: (context at: #className) equals: 'Object'.
+	self assert: (context at: #name) equals: 'Object'.
 	self assert: (context at: #layout) equals: 'WeakLayout'
 ]
 
@@ -108,7 +108,7 @@ MCPUpdateClassCommandTest >> testBuildsSharedPoolReplacementUpdatePlan [
 	plan := command updatePlan.
 	context := plan requestedContext.
 	self assert: plan updateAction equals: 'replaceSharedPools'.
-	self assert: (context at: #className) equals: 'Object'.
+	self assert: (context at: #name) equals: 'Object'.
 	self assert: (context at: #sharedPools) equals: #( 'ChronologyConstants' )
 ]
 
@@ -120,7 +120,7 @@ MCPUpdateClassCommandTest >> testBuildsSharedVariableReplacementUpdatePlan [
 	plan := command updatePlan.
 	context := plan requestedContext.
 	self assert: plan updateAction equals: 'replaceSharedVariables'.
-	self assert: (context at: #className) equals: 'Object'.
+	self assert: (context at: #name) equals: 'Object'.
 	self assert: (context at: #sharedVariables) equals: #( 'Current' )
 ]
 
@@ -132,7 +132,7 @@ MCPUpdateClassCommandTest >> testBuildsTraitReplacementUpdatePlan [
 	plan := command updatePlan.
 	context := plan requestedContext.
 	self assert: plan updateAction equals: 'replaceTraits'.
-	self assert: (context at: #className) equals: 'Object'.
+	self assert: (context at: #name) equals: 'Object'.
 	self assert: (context at: #traits) equals: #( 'TAbleToRotate' )
 ]
 
@@ -152,7 +152,10 @@ MCPUpdateClassCommandTest >> testBuildsUpdatePlan [
 MCPUpdateClassCommandTest >> testMapsClassPatchFieldsToUpdateActions [
 
 	self
-		assert: (self commandForArguments: (self updateArgumentsWith: { (#newClassName -> 'ObjectRenamed') })) updateAction
+		assert: (self commandForArguments: {
+					 (#action -> 'update').
+					 (#name -> 'Object').
+					 (#newName -> 'ObjectRenamed') } asDictionary) updateAction
 		equals: 'rename'.
 	self
 		assert: (self commandForArguments: (self updateArgumentsWith: { (#superclassName -> 'ProtoObject') })) updateAction
@@ -221,7 +224,7 @@ MCPUpdateClassCommandTest >> testToolBuildsUpdateClassCommand [
 	| command mutationRequest tool toolRequest |
 	tool := MCPToolUpdateClassComment new.
 	toolRequest := tool requestFromToolCallArguments: {
-			               (#className -> 'Object').
+			               (#name -> 'Object').
 			               (#comment -> 'updated') } asDictionary.
 	mutationRequest := tool parsedRequestFromToolRequest: toolRequest.
 	command := tool commandForRequest: mutationRequest.
@@ -239,7 +242,7 @@ MCPUpdateClassCommandTest >> updateArgumentsWith: associations [
 	| arguments |
 	arguments := {
 		             (#action -> 'update').
-		             (#className -> 'Object') } asDictionary.
+		             (#name -> 'Object') } asDictionary.
 	associations do: [ :each | arguments at: each key put: each value ].
 	^ arguments
 ]

@@ -11,10 +11,8 @@ Class {
 		'isMissing',
 		'fieldFilters',
 		'filterMode',
-		'caseSensitive',
 		'limit',
-		'offset',
-		'includeDetails'
+		'offset'
 	],
 	#category : 'MCP-Requests',
 	#package : 'MCP',
@@ -29,8 +27,6 @@ MCPRepositoryQuerySpec class >> fromRequest: request tool: aTool [
 		  isMissing: (self optionalBooleanArgumentNamed: 'isMissing' fromRequest: request);
 		  fieldFilters: (aTool fieldFiltersFromRequest: request fieldNames: aTool repositoryFilterFieldNames);
 		  filterMode: (aTool filterModeFromRequest: request);
-		  caseSensitive: (request booleanArgumentNamed: 'caseSensitive' default: true);
-		  includeDetails: (request booleanArgumentNamed: 'includeDetails' default: false);
 		  limit: (request nonNegativeIntegerArgumentNamed: 'limit' default: aTool defaultPageLimit);
 		  offset: (request nonNegativeIntegerArgumentNamed: 'offset' default: 0);
 		  yourself
@@ -41,18 +37,6 @@ MCPRepositoryQuerySpec class >> optionalBooleanArgumentNamed: anArgumentName fro
 
 	(request hasArgumentNamed: anArgumentName) ifFalse: [ ^ nil ].
 	^ request booleanArgumentNamed: anArgumentName default: false
-]
-
-{ #category : 'accessing' }
-MCPRepositoryQuerySpec >> caseSensitive [
-
-	^ caseSensitive
-]
-
-{ #category : 'accessing' }
-MCPRepositoryQuerySpec >> caseSensitive: aBoolean [
-
-	caseSensitive := aBoolean
 ]
 
 { #category : 'accessing' }
@@ -83,18 +67,6 @@ MCPRepositoryQuerySpec >> filterMode: aString [
 MCPRepositoryQuerySpec >> hasFieldFilters [
 
 	^ self fieldFilters notEmpty
-]
-
-{ #category : 'accessing' }
-MCPRepositoryQuerySpec >> includeDetails [
-
-	^ includeDetails
-]
-
-{ #category : 'accessing' }
-MCPRepositoryQuerySpec >> includeDetails: aBoolean [
-
-	includeDetails := aBoolean
 ]
 
 { #category : 'accessing' }

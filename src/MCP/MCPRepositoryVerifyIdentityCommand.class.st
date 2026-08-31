@@ -164,7 +164,7 @@ MCPRepositoryVerifyIdentityCommand >> signalMissingExpectedIdentityFields [
 
 	MCPCommandError
 		signalErrorCode: #RepositoryIdentityExpectationRequired
-		message: 'repository_identity_verify requires at least one expected identity field besides repositoryName.'
+		message: 'repository_identity_verify requires at least one expected identity field besides name.'
 		details: (self request requestedContext copy
 				 at: #expectedFields put: #( 'location' 'branchName' 'subdirectory' 'packageNames' 'modifiedPackageNames'
 					    'isModified' );

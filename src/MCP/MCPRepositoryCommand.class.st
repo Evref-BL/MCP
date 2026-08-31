@@ -261,7 +261,7 @@ MCPRepositoryCommand >> signalSubdirectoryRequiresHeadFor: aRepository [
 		message:
 		'Repository subdirectory is not supported before the repository has an initial commit. Attach without subdirectory, commit or adopt the initial head, then update the repository subdirectory.'
 		details: {
-				(#repositoryName -> aRepository name asString).
+				(#name -> aRepository name asString).
 				(#subdirectory -> self request subdirectory) } asDictionary
 ]
 
