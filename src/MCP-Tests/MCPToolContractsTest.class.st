@@ -1525,6 +1525,32 @@ MCPToolContractsTest >> testMCPUnregisterToolNamedRefreshesStaticTools [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testMessageProcessorRegistersInheritedMCPHandlersForSubclass [
+
+	| processor request response server |
+	server := MCPSubclassHandlerTestServer new.
+	processor := MCPMessageProcessor new.
+	processor addHandlersFromPragmasIn: server.
+	request := JRPCRequestObject id: 1 method: 'tools/list' params: Dictionary new.
+	response := processor handleJRPCRequestObject: request.
+	self assert: response class equals: JRPCSuccessResponseObject
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testMessageProcessorUsesSubclassJRPCHandlerOverride [
+
+	| processor request response result server |
+	server := MCPSubclassHandlerTestServer new.
+	processor := MCPMessageProcessor new.
+	processor addHandlersFromPragmasIn: server.
+	request := JRPCRequestObject id: 1 method: 'ping' params: Dictionary new.
+	response := processor handleJRPCRequestObject: request.
+	result := response result.
+	self assert: response class equals: JRPCSuccessResponseObject.
+	self assert: (result at: #source) equals: 'subclass'
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testMethodMetadataSearchDescriptionPointsToSpecializedReferenceTools [
 
 	| description filterModeDescription filterModeProperty protocolDescription selectorDescription tool |
