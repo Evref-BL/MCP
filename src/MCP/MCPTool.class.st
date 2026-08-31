@@ -141,7 +141,7 @@ MCPTool class >> toolCatalogGroupName [
 { #category : 'scripts' }
 MCPTool class >> toolGroups [
 
-	^ MCPToolRegistry new publicToolGroups
+	^ MCPToolRegistry default publicToolGroups
 ]
 
 { #category : 'scripts' }

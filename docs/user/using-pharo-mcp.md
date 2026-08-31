@@ -115,8 +115,25 @@ normal use, configure it through the `MCP` instance messages below. The
 instance; discoverable tools remain available through `tool_search`, `tool_get`,
 and `tool_call`.
 
-For per-server configuration, register tools explicitly before starting the
-server:
+For a server with only your own tools, use a profile:
+
+```smalltalk
+mcp := MCP profile: (MCPProfile tools: { MyProjectMCPTool }).
+mcp start.
+```
+
+`MCPProfile tools:` registers the given tools and advertises them directly in
+`tools/list`. Use `tools:static:` when some registered tools should stay
+discoverable through the catalog tools:
+
+```smalltalk
+mcp := MCP profile: (MCPProfile
+	tools: { MyProjectMCPTool. MyOtherMCPTool }
+	static: { MyProjectMCPTool }).
+```
+
+For incremental per-server configuration, register tools explicitly before
+starting the server:
 
 ```smalltalk
 mcp := MCP new.

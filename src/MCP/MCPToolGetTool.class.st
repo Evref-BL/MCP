@@ -157,7 +157,7 @@ MCPToolGetTool >> title [
 { #category : 'accessing' }
 MCPToolGetTool >> toolRegistry [
 
-	^ toolRegistry ifNil: [ toolRegistry := MCPToolRegistry new ]
+	^ toolRegistry ifNil: [ toolRegistry := MCPToolRegistry default ]
 ]
 
 { #category : 'accessing' }
