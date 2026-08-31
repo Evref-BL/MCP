@@ -150,7 +150,7 @@ MCPToolLoadRepositoryTest >> testRepositoryLoadAcceptsRegisteredIcebergRepositor
 	repository := MCPTestIceRepository named: 'MCP Load Registered Repository' location: FileLocator imageDirectory pathString.
 	self withRegisteredRepository: repository do: [
 			request := self loadRepositoryRequestFromArguments: {
-					           (#repositoryName -> repository name).
+					           (#name -> repository name).
 					           (#baseline -> 'MCP').
 					           (#sourceDirectory -> 'src') }.
 			self assert: request mode equals: 'iceberg'.

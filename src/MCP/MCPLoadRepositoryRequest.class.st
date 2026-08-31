@@ -69,7 +69,7 @@ MCPLoadRepositoryRequest >> ensureSingleRepositorySource [
 	self repositorySourceCount <= 1 ifTrue: [ ^ self ].
 	MCPCommandError
 		signalErrorCode: #AmbiguousLoadRepositorySource
-		message: 'repository_load accepts one source: remote owner/project, repositoryUrl, checkoutPath, or repositoryName/location.'
+		message: 'repository_load accepts one source: remote owner/project, repositoryUrl, checkoutPath, or name/location.'
 		details: self requestedContext
 ]
 
@@ -388,7 +388,7 @@ MCPLoadRepositoryRequest >> requestedContext [
 	sourceDirectory ifNotNil: [ context at: #sourceDirectory put: self sourceDirectory ].
 	repositoryUrl ifNotNil: [ context at: #repositoryUrl put: repositoryUrl ].
 	checkoutPath ifNotNil: [ context at: #checkoutPath put: self checkoutPath ].
-	self repositoryName ifNotNil: [ :name | context at: #repositoryName put: name ].
+	self repositoryName ifNotNil: [ :name | context at: #name put: name ].
 	self location ifNotNil: [ :repositoryLocation | context at: #location put: repositoryLocation ].
 	self canResolveRepositoryUrl ifTrue: [ context at: #resolvedRepositoryUrl put: self repositoryUrl ].
 	^ context

@@ -33,5 +33,5 @@ MCPToolCheckoutRepositoryBranch >> repositoryToolSpec [
 		  (#requestClass -> MCPRepositoryCheckoutBranchRequest).
 		  (#commandClass -> MCPCheckoutRepositoryBranchCommand).
 		  (#inputProperties -> { self branchNameSchemaProperty }).
-		  (#requiredProperties -> #( 'repositoryName' 'branchName' )) } asDictionary
+		  (#requiredProperties -> #( 'name' 'branchName' )) } asDictionary
 ]

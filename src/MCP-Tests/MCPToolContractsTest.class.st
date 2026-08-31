@@ -648,18 +648,18 @@ MCPToolContractsTest >> repositoryToolFlowSpecs [
 		  {
 			  (#toolClass -> MCPToolVerifyRepositoryIdentity).
 			  (#arguments -> {
-				   (#repositoryName -> 'MCP').
+				   (#name -> 'MCP').
 				   (#branchName -> 'main') } asDictionary).
 			  (#requestClass -> MCPRepositoryVerifyIdentityRequest).
 			  (#commandClass -> MCPRepositoryVerifyIdentityCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolListRepositoryChanges).
-			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
+			  (#arguments -> { (#name -> 'MCP') } asDictionary).
 			  (#requestClass -> MCPRepositoryDiffRequest).
 			  (#commandClass -> MCPRepositoryDiffCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolDiscardRepositoryChanges).
-			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
+			  (#arguments -> { (#name -> 'MCP') } asDictionary).
 			  (#requestClass -> MCPRepositoryDiscardRequest).
 			  (#commandClass -> MCPDiscardRepositoryChangesCommand) } asDictionary.
 		  {
@@ -679,32 +679,32 @@ MCPToolContractsTest >> repositoryToolFlowSpecs [
 		  {
 			  (#toolClass -> MCPToolUpdateRepository).
 			  (#arguments -> {
-				   (#repositoryName -> 'MCP').
+				   (#name -> 'MCP').
 				   (#addPackageNames -> #( 'MCP' )) } asDictionary).
 			  (#requestClass -> MCPRepositoryUpdateRequest).
 			  (#commandClass -> MCPUpdateRepositoryCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolExportRepository).
-			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
+			  (#arguments -> { (#name -> 'MCP') } asDictionary).
 			  (#requestClass -> MCPRepositoryExportRequest).
 			  (#commandClass -> MCPExportRepositoryCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolCommitRepository).
 			  (#arguments -> {
-				   (#repositoryName -> 'MCP').
+				   (#name -> 'MCP').
 				   (#message -> 'Commit from test') } asDictionary).
 			  (#requestClass -> MCPRepositoryCommitRequest).
 			  (#commandClass -> MCPCommitRepositoryCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolFetchRepository).
-			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
+			  (#arguments -> { (#name -> 'MCP') } asDictionary).
 			  (#requestClass -> MCPRepositoryFetchRequest).
 			  (#commandClass -> MCPFetchRepositoryCommand) } asDictionary.
 
 		  {
 			  (#toolClass -> MCPToolAddRepositoryRemote).
 			  (#arguments -> {
-				   (#repositoryName -> 'MCP').
+				   (#name -> 'MCP').
 				   (#remoteName -> 'origin').
 				   (#remoteUrl -> 'git@example.com:mcp.git') } asDictionary).
 			  (#requestClass -> MCPRepositoryRemoteRequest).
@@ -713,7 +713,7 @@ MCPToolContractsTest >> repositoryToolFlowSpecs [
 		  {
 			  (#toolClass -> MCPToolRemoveRepositoryRemote).
 			  (#arguments -> {
-				   (#repositoryName -> 'MCP').
+				   (#name -> 'MCP').
 				   (#remoteName -> 'origin') } asDictionary).
 			  (#requestClass -> MCPRepositoryRemoteRequest).
 			  (#commandClass -> MCPRemoveRepositoryRemoteCommand) } asDictionary.
@@ -721,7 +721,7 @@ MCPToolContractsTest >> repositoryToolFlowSpecs [
 		  {
 			  (#toolClass -> MCPToolUpdateRepositoryRemote).
 			  (#arguments -> {
-				   (#repositoryName -> 'MCP').
+				   (#name -> 'MCP').
 				   (#remoteName -> 'origin').
 				   (#remoteUrl -> 'git@example.com:mcp.git') } asDictionary).
 			  (#requestClass -> MCPRepositoryRemoteRequest).
@@ -731,38 +731,38 @@ MCPToolContractsTest >> repositoryToolFlowSpecs [
 
 		  {
 			  (#toolClass -> MCPToolPullRepository).
-			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
+			  (#arguments -> { (#name -> 'MCP') } asDictionary).
 			  (#requestClass -> MCPRepositoryPullRequest).
 			  (#commandClass -> MCPPullRepositoryCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolPushRepository).
-			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
+			  (#arguments -> { (#name -> 'MCP') } asDictionary).
 			  (#requestClass -> MCPRepositoryPushRequest).
 			  (#commandClass -> MCPPushRepositoryCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolCreateRepositoryBranch).
 			  (#arguments -> {
-				   (#repositoryName -> 'MCP').
+				   (#name -> 'MCP').
 				   (#branchName -> 'feature') } asDictionary).
 			  (#requestClass -> MCPRepositoryCreateBranchRequest).
 			  (#commandClass -> MCPCreateRepositoryBranchCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolSwitchRepositoryBranch).
 			  (#arguments -> {
-				   (#repositoryName -> 'MCP').
+				   (#name -> 'MCP').
 				   (#branchName -> 'main') } asDictionary).
 			  (#requestClass -> MCPRepositorySwitchBranchRequest).
 			  (#commandClass -> MCPSwitchRepositoryBranchCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolCheckoutRepositoryBranch).
 			  (#arguments -> {
-				   (#repositoryName -> 'MCP').
+				   (#name -> 'MCP').
 				   (#branchName -> 'main') } asDictionary).
 			  (#requestClass -> MCPRepositoryCheckoutBranchRequest).
 			  (#commandClass -> MCPCheckoutRepositoryBranchCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolAdoptRepositoryHead).
-			  (#arguments -> { (#repositoryName -> 'MCP') } asDictionary).
+			  (#arguments -> { (#name -> 'MCP') } asDictionary).
 			  (#requestClass -> MCPRepositoryAdoptHeadRequest).
 			  (#commandClass -> MCPAdoptRepositoryHeadCommand) } asDictionary }
 ]
@@ -1914,9 +1914,9 @@ MCPToolContractsTest >> testRepositoryCreateAndUpdateRequiredArguments [
 	self assert: MCPToolUpdateRepository new name equals: 'repository_update'.
 	self assert: MCPToolCreateRepository new inputSchema required asArray equals: #( 'name' 'location' ).
 	self assert: MCPToolAttachRepository new inputSchema required asArray equals: #( 'name' 'location' ).
-	self assert: MCPToolUpdateRepository new inputSchema required asArray equals: #( 'repositoryName' ).
+	self assert: MCPToolUpdateRepository new inputSchema required asArray equals: #( 'name' ).
 	#( 'name' 'location' 'subdirectory' 'packageNames' ) do: [ :each | self assert: (createPropertyNames includes: each) ].
-	#( 'repositoryName' 'location' 'subdirectory' 'packageNames' 'addPackageNames' 'removePackageNames' ) do: [ :each |
+	#( 'name' 'location' 'subdirectory' 'packageNames' 'addPackageNames' 'removePackageNames' ) do: [ :each |
 		self assert: (updatePropertyNames includes: each) ].
 	self deny: (createPropertyNames includes: 'operation').
 	self deny: (updatePropertyNames includes: 'operation')
