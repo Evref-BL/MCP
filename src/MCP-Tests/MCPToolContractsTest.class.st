@@ -2326,9 +2326,8 @@ MCPToolContractsTest >> testSearchRepositoriesHasAccurateNameAndSchema [
 	self
 		assert: propertyNames asSet
 		equals:
-			#( 'isModified' 'isMissing' 'repositoryName' 'repositoryClassName' 'location' 'subdirectory' 'branchName' 'headDescription'
-			   'headClassName' 'headCommitId' 'packageName' 'modifiedPackageName' 'remoteName' 'remoteUrl' 'upstreamRemoteName'
-			   'upstreamBranchName' 'upstreamRemoteUrl' 'filterMode' 'caseSensitive' 'includeDetails' 'limit' 'offset' ) asSet
+			#( 'isModified' 'isMissing' 'name' 'location' 'subdirectory' 'packageName' 'className' 'modifiedPackageName'
+			   'filterMode' 'limit' 'offset' ) asSet
 ]
 
 { #category : 'tests' }

@@ -26,7 +26,7 @@ MCPToolSearchRepositories class >> toolName [
 { #category : 'metadata' }
 MCPToolSearchRepositories >> additionalKeywords [
 
-	^ #( 'repository' 'repo' 'iceberg' 'git' 'branch' 'commit' 'remote' 'head' )
+	^ #( 'repository' 'repositories' 'repo' 'iceberg' 'package' 'packages' 'class' 'classes' )
 ]
 
 { #category : 'metadata' }
@@ -34,12 +34,10 @@ MCPToolSearchRepositories >> buildInputSchema [
 
 	| properties |
 	properties := self repositoryFieldFilterInputProperties , {
-		              (self booleanSchemaPropertyNamed: 'isModified' description: 'Filter by modified state.').
-		              (self booleanSchemaPropertyNamed: 'isMissing' description: 'Filter by missing state.').
-		              (self filterModeSchemaPropertyWithDescription: 'Filter match mode.' values: self basicFilterModes).
-		              (self caseSensitiveSchemaPropertyWithDescription: 'Case-sensitive matching.').
-		              (self booleanSchemaPropertyNamed: 'includeDetails' description: 'Include detailed metadata.' default: false) }
-	              , (self paginationInputPropertiesWithLimitDescription: 'Maximum results.').
+		              (self booleanSchemaPropertyNamed: 'isModified' description: 'Filter by image-side modified state.').
+		              (self booleanSchemaPropertyNamed: 'isMissing' description: 'Filter by missing repository directory state.').
+		              (self filterModeSchemaPropertyWithDescription: 'Filter match mode.' values: self basicFilterModes) }
+	              , (self paginationInputPropertiesWithLimitDescription: 'Maximum number of matching repositories to return.').
 	^ self queryInputSchemaWithProperties: properties
 ]
 
@@ -53,10 +51,22 @@ MCPToolSearchRepositories >> buildOutputSchema [
 		  itemNounPhrase: 'repository entries'
 ]
 
+{ #category : 'private - filtering' }
+MCPToolSearchRepositories >> classNamesForRepositoryEntry: anEntry [
+
+	| classNames |
+	classNames := OrderedCollection new.
+	(anEntry at: #packageNames) do: [ :packageName |
+			PackageOrganizer default
+				packageNamed: packageName asSymbol
+				ifPresent: [ :package | package definedClasses do: [ :class | classNames add: class name asString ] ] ].
+	^ classNames asArray
+]
+
 { #category : 'metadata' }
 MCPToolSearchRepositories >> description [
 
-	^ 'Search registered Iceberg repositories.'
+	^ 'Search registered repositories by image-side repository, package, class, and modification state.'
 ]
 
 { #category : 'private - results' }
@@ -68,21 +78,12 @@ MCPToolSearchRepositories >> failureMessageForScope: scopeSummary error: anError
 { #category : 'private - filtering' }
 MCPToolSearchRepositories >> fieldTextsForRepositoryEntry: anEntry fieldName: fieldName [
 
-	fieldName = 'repositoryName' ifTrue: [ ^ { (anEntry at: #name) } ].
-	fieldName = 'repositoryClassName' ifTrue: [ ^ { (anEntry at: #className) } ].
+	fieldName = 'name' ifTrue: [ ^ { (anEntry at: #name) } ].
 	fieldName = 'location' ifTrue: [ ^ { (anEntry at: #location) } ].
 	fieldName = 'subdirectory' ifTrue: [ ^ { (anEntry at: #subdirectory) } ].
-	fieldName = 'branchName' ifTrue: [ ^ { (anEntry at: #branchName) } ].
-	fieldName = 'headDescription' ifTrue: [ ^ { (anEntry at: #headDescription) } ].
-	fieldName = 'headClassName' ifTrue: [ ^ { (anEntry at: #headClassName) } ].
-	fieldName = 'headCommitId' ifTrue: [ ^ { (anEntry at: #headCommitId) } ].
 	fieldName = 'packageName' ifTrue: [ ^ anEntry at: #packageNames ].
+	fieldName = 'className' ifTrue: [ ^ self classNamesForRepositoryEntry: anEntry ].
 	fieldName = 'modifiedPackageName' ifTrue: [ ^ anEntry at: #modifiedPackageNames ].
-	fieldName = 'remoteName' ifTrue: [ ^ (anEntry at: #remotes) collect: [ :remote | remote at: #name ] ].
-	fieldName = 'remoteUrl' ifTrue: [ ^ (anEntry at: #remotes) collect: [ :remote | remote at: #url ] ].
-	fieldName = 'upstreamRemoteName' ifTrue: [ ^ { (anEntry at: #upstreamRemoteName) } ].
-	fieldName = 'upstreamBranchName' ifTrue: [ ^ { (anEntry at: #upstreamBranchName) } ].
-	fieldName = 'upstreamRemoteUrl' ifTrue: [ ^ { (anEntry at: #upstreamRemoteUrl) } ].
 	^ #(  )
 ]
 
@@ -93,7 +94,7 @@ MCPToolSearchRepositories >> matchesFieldFiltersOnRepositoryEntry: anEntry query
 		  fieldFilters: queryRequest fieldFilters
 		  matchUsing: [ :fieldName | self fieldTextsForRepositoryEntry: anEntry fieldName: fieldName ]
 		  mode: queryRequest filterMode
-		  caseSensitive: queryRequest caseSensitive
+		  caseSensitive: false
 ]
 
 { #category : 'private - template' }
@@ -117,10 +118,7 @@ MCPToolSearchRepositories >> repositoryEntriesForRequest: queryRequest [
 			| repositoryInfo queryEntry |
 			repositoryInfo := MCPRepositoryInfo fromRepository: eachRepository.
 			queryEntry := repositoryInfo asQueryDictionary.
-			(self repositoryEntry: queryEntry matchesRequest: queryRequest) ifTrue: [
-					entries add: (queryRequest includeDetails
-							 ifTrue: [ repositoryInfo asDetailedSearchDictionary ]
-							 ifFalse: [ repositoryInfo asSearchDictionary ]) ] ].
+			(self repositoryEntry: queryEntry matchesRequest: queryRequest) ifTrue: [ entries add: repositoryInfo asSearchDictionary ] ].
 	sortedEntries := entries asArray sort: [ :left :right | (left at: #name) <= (right at: #name) ].
 	^ sortedEntries
 ]
@@ -149,15 +147,21 @@ MCPToolSearchRepositories >> repositoryEntrySchema [
 { #category : 'private - schema' }
 MCPToolSearchRepositories >> repositoryFieldFilterInputProperties [
 
-	^ self repositoryFilterFieldNames collect: [ :fieldName | self repositoryTextFilterPropertyNamed: fieldName description: nil ]
+	^ {
+		  (self repositoryTextFilterPropertyNamed: 'name' description: 'Match repository names case-insensitively.').
+		  (self repositoryTextFilterPropertyNamed: 'location' description: 'Match repository directory paths case-insensitively.').
+		  (self repositoryTextFilterPropertyNamed: 'subdirectory' description: 'Match source subdirectories case-insensitively.').
+		  (self repositoryTextFilterPropertyNamed: 'packageName' description: 'Match managed package names case-insensitively.').
+		  (self
+			   repositoryTextFilterPropertyNamed: 'className'
+			   description: 'Match loaded class names in managed packages case-insensitively.').
+		  (self repositoryTextFilterPropertyNamed: 'modifiedPackageName' description: 'Match modified package names case-insensitively.') }
 ]
 
 { #category : 'private - request' }
 MCPToolSearchRepositories >> repositoryFilterFieldNames [
 
-	^ #( 'repositoryName' 'repositoryClassName' 'location' 'subdirectory' 'branchName' 'headDescription' 'headClassName'
-	     'headCommitId' 'packageName' 'modifiedPackageName' 'remoteName' 'remoteUrl' 'upstreamRemoteName' 'upstreamBranchName'
-	     'upstreamRemoteUrl' )
+	^ #( 'name' 'location' 'subdirectory' 'packageName' 'className' 'modifiedPackageName' )
 ]
 
 { #category : 'private - schema' }
@@ -167,17 +171,10 @@ MCPToolSearchRepositories >> repositoryInfoDataProperties [
 		  (self schemaPropertyNamed: 'name' type: 'string' description: 'Repository name.').
 		  (self schemaPropertyNamed: 'location' type: 'string' description: 'Repository directory.').
 		  (self schemaPropertyNamed: 'subdirectory' type: 'string' description: 'Repository source subdirectory.').
-		  (self schemaPropertyNamed: 'branchName' type: 'string' description: 'Current branch.').
-		  (self schemaPropertyNamed: 'headDescription' type: 'string' description: 'Current HEAD description.').
-		  (self schemaPropertyNamed: 'headCommitId' type: 'string' description: 'Current HEAD commit id.').
 		  (self booleanSchemaPropertyNamed: 'isModified' description: 'Whether repository has image-side modifications.').
 		  (self booleanSchemaPropertyNamed: 'isMissing' description: 'Whether repository directory is missing.').
-		  (self booleanSchemaPropertyNamed: 'isDetachedHead' description: 'Whether repository is detached.').
 		  (self stringArraySchemaNamed: 'packageNames' description: 'Managed packages.' itemDescription: 'Package name.').
-		  (self stringArraySchemaNamed: 'modifiedPackageNames' description: 'Modified packages.' itemDescription: 'Package name.').
-		  (self schemaPropertyNamed: 'upstreamRemoteName' type: 'string' description: 'Upstream remote name when configured.').
-		  (self schemaPropertyNamed: 'upstreamBranchName' type: 'string' description: 'Upstream branch when configured.').
-		  (self schemaPropertyNamed: 'upstreamRemoteUrl' type: 'string' description: 'Upstream remote URL when configured.') }
+		  (self stringArraySchemaNamed: 'modifiedPackageNames' description: 'Modified packages.' itemDescription: 'Package name.') }
 ]
 
 { #category : 'private - schema' }

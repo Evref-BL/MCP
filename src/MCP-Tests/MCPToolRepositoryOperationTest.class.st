@@ -843,9 +843,9 @@ MCPToolRepositoryOperationTest >> testGitCommandFailureSignalsStructuredCommandE
 ]
 
 { #category : 'tests' }
-MCPToolRepositoryOperationTest >> testLinkedWorktreeAttachReportsGitMetadataAndExportsOnLinkedBranch [
+MCPToolRepositoryOperationTest >> testLinkedWorktreeAttachExportsOnLinkedBranch [
 
-	| repositoryName packageName initialClassName exportedClassName location linkedLocation branchName createResult exportResult commitResult repository headCommitId attachResult searchResult searchData entry exportedClassFile |
+	| repositoryName packageName initialClassName exportedClassName location linkedLocation branchName createResult exportResult commitResult attachResult searchResult searchData entry exportedClassFile |
 	repositoryName := 'MCP Repository Command Linked Worktree Contract Test'.
 	packageName := 'MCPToolRepositoryOperationLinkedWorktreePackage'.
 	initialClassName := 'MCPToolRepositoryOperationLinkedWorktreeClass'.
@@ -873,8 +873,6 @@ MCPToolRepositoryOperationTest >> testLinkedWorktreeAttachReportsGitMetadataAndE
 							                (#repositoryName -> repositoryName).
 							                (#message -> 'Prepare linked checkout contract test') } asDictionary.
 					self deny: (self resultIndicatesError: commitResult) description: (self summaryFrom: commitResult).
-					repository := IceRepository registry detect: [ :each | each name = repositoryName ].
-					headCommitId := MCPIcebergCommitInfo idStringFrom: repository headCommit.
 					self shellCommand: 'git -C ' , (self shellQuote: location pathString) , ' remote add origin https://example.com/worktree.git'.
 					self shellCommand: 'git -C ' , (self shellQuote: location pathString) , ' worktree add -b ' , branchName , ' '
 						, (self shellQuote: linkedLocation pathString).
@@ -893,18 +891,14 @@ MCPToolRepositoryOperationTest >> testLinkedWorktreeAttachReportsGitMetadataAndE
 								                (#packageNames -> { packageName }) } asDictionary.
 						self deny: (self resultIndicatesError: attachResult) description: (self summaryFrom: attachResult).
 						searchResult := self searchRepositoriesWith: {
-								                (#repositoryName -> repositoryName).
-								                (#filterMode -> 'exact').
-								                (#includeDetails -> true) } asDictionary.
+								                (#name -> repositoryName).
+								                (#filterMode -> 'exact') } asDictionary.
 						self deny: (self resultIndicatesError: searchResult) description: (self summaryFrom: searchResult).
 						searchData := self dataFrom: searchResult.
 						entry := (searchData at: #repositories) anyOne.
 						self assert: (entry at: #location) equals: linkedLocation pathString.
-						self assert: (entry at: #branchName) equals: branchName.
-						self assert: (entry at: #headCommitId) equals: headCommitId.
-						self assert: (entry at: #upstreamRemoteName) equals: 'origin'.
-						self assert: (entry at: #upstreamBranchName) equals: branchName.
-						self assert: (entry at: #upstreamRemoteUrl) equals: 'https://example.com/worktree.git'.
+						self assert: (entry at: #subdirectory) equals: 'src'.
+						self assert: (entry at: #packageNames) equals: { packageName }.
 						self createClassNamed: exportedClassName inPackageNamed: packageName.
 						exportResult := self callToolWith: {
 								                (#action -> 'export').

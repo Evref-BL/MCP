@@ -29,6 +29,27 @@ MCPToolSearchRepositoriesTest >> newRepositoryNamed: aRepositoryName location: a
 ]
 
 { #category : 'tests' }
+MCPToolSearchRepositoriesTest >> testCanFilterByClassName [
+
+	| alpha beta data repositoryNames result |
+	alpha := self newRepositoryNamed: 'MCP Alpha Repository' location: FileLocator imageDirectory packageNames: #( 'MCP-Tests' ).
+	beta := self newRepositoryNamed: 'MCP Beta Repository' location: FileLocator imageDirectory packageNames: #( 'MCP' ).
+	self
+		withRepositories: {
+				alpha.
+				beta }
+		do: [
+				result := self callToolWith: {
+						          (#className -> self class name asString).
+						          (#filterMode -> 'exact') } asDictionary.
+				data := self dataFrom: result.
+				repositoryNames := (data at: #repositories) collect: [ :each | each at: #name ].
+				self deny: (result at: #isError ifAbsent: [ false ]).
+				self assert: (data at: #repositories) size equals: 1.
+				self assert: repositoryNames equals: #( 'MCP Alpha Repository' ) ]
+]
+
+{ #category : 'tests' }
 MCPToolSearchRepositoriesTest >> testCanFilterByMissingStateAndDirectory [
 
 	| data missing missingLocation present repositoryNames result |
@@ -74,33 +95,6 @@ MCPToolSearchRepositoriesTest >> testCanFilterByPackageNameAndModifiedState [
 ]
 
 { #category : 'tests' }
-MCPToolSearchRepositoriesTest >> testCanFilterByRemoteUrlAndHeadCommit [
-
-	MCPTestGitRepositoryFixture withConfig: MCPTestGitRepositoryFixture standardConfig do: [ :alphaDirectory |
-			MCPTestGitRepositoryFixture withConfig: MCPTestGitRepositoryFixture backupConfig do: [ :betaDirectory |
-					| alpha beta data repositoryNames result |
-					alpha := MCPTestIceRepository named: 'MCP Alpha Repository' location: alphaDirectory pathString.
-					alpha headCommitId: 'abc123'.
-					beta := MCPTestIceRepository named: 'MCP Beta Repository' location: betaDirectory pathString.
-					beta headCommitId: 'def456'.
-					self
-						withRepositories: {
-								alpha.
-								beta }
-						do: [
-								result := self callToolWith: { (#headCommitId -> 'abc123') } asDictionary.
-								data := self dataFrom: result.
-								repositoryNames := (data at: #repositories) collect: [ :each | each at: #name ].
-								self deny: (result at: #isError ifAbsent: [ false ]).
-								self assert: repositoryNames equals: #( 'MCP Alpha Repository' ).
-								result := self callToolWith: { (#remoteUrl -> 'memory://backup') } asDictionary.
-								data := self dataFrom: result.
-								repositoryNames := (data at: #repositories) collect: [ :each | each at: #name ].
-								self deny: (result at: #isError ifAbsent: [ false ]).
-								self assert: repositoryNames equals: #( 'MCP Beta Repository' ) ] ] ]
-]
-
-{ #category : 'tests' }
 MCPToolSearchRepositoriesTest >> testListsRegisteredRepositoriesWithStructuredData [
 
 	| alpha beta data entry result |
@@ -119,19 +113,15 @@ MCPToolSearchRepositoriesTest >> testListsRegisteredRepositoriesWithStructuredDa
 				self deny: (result at: #isError ifAbsent: [ false ]).
 				self assert: (data at: #repositories) size equals: 2.
 				entry := self entryNamed: 'MCP Alpha Repository' in: (data at: #repositories).
-				self assert: (entry at: #isModified) equals: true.
-				self assert: (entry at: #modifiedPackageNames) equals: #( 'MCP' 'MCP-Tests' ).
-				self deny: (entry includesKey: #location).
-				self deny: (entry includesKey: #isMissing).
-				self deny: (entry includesKey: #packageNames).
-				self deny: (entry includesKey: #className).
-				self deny: (entry includesKey: #headClassName).
-				self deny: (entry includesKey: #remotes).
-				self deny: (entry includesKey: #remoteNames) ]
+				self assert: (entry at: #location) equals: FileLocator imageDirectory pathString.
+				self assert: (entry at: #isModified).
+				self deny: (entry at: #isMissing).
+				self assert: (entry at: #packageNames) equals: #( 'MCP' 'MCP-Tests' ).
+				self assert: (entry at: #modifiedPackageNames) equals: #( 'MCP' 'MCP-Tests' ) ]
 ]
 
 { #category : 'tests' }
-MCPToolSearchRepositoriesTest >> testListsRichRepositoryMetadata [
+MCPToolSearchRepositoriesTest >> testListsRepositoryPackageMetadata [
 
 	MCPTestGitRepositoryFixture withConfig: MCPTestGitRepositoryFixture richConfig do: [ :repositoryDirectory |
 			| entry repository result |
@@ -142,18 +132,13 @@ MCPToolSearchRepositoriesTest >> testListsRichRepositoryMetadata [
 			repository isDetachedHead: false.
 			self withRepositories: { repository } do: [
 					| data |
-					result := self callToolWith: { (#includeDetails -> true) } asDictionary.
+					result := self callToolWith: Dictionary new.
 					data := self dataFrom: result.
 					self deny: (result at: #isError ifAbsent: [ false ]).
 					entry := self entryNamed: 'MCP Rich Repository' in: (data at: #repositories).
-					self assert: (entry at: #headDescription) equals: 'rich head'.
-					self assert: (entry at: #headCommitId) equals: 'abc123'.
-					self assert: (entry at: #upstreamRemoteName) equals: 'origin'.
-					self assert: (entry at: #upstreamBranchName) equals: 'main'.
-					self assert: (entry at: #upstreamRemoteUrl) equals: 'memory://origin'.
-					self deny: (entry includesKey: #isDetachedHead).
-					self deny: (entry includesKey: #headClassName).
-					self deny: (entry includesKey: #remotes) ] ]
+					self assert: entry keys asSet equals: #( name location isModified isMissing packageNames ) asSet.
+					self assert: (entry at: #location) equals: repositoryDirectory pathString.
+					self assert: (entry at: #packageNames) equals: #( 'MCP' ) ] ]
 ]
 
 { #category : 'tests' }
