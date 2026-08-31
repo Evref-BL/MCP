@@ -28,8 +28,8 @@ Apply every matching route, reading user guidance before developer guidance.
 - Before verifying MCP changes: read `docs/dev/mcp-verification.md`.
 - Before image-to-Git handoff: use
   `templates/skills/pharo-image-git-handoff/SKILL.md`.
-- For project loading, compatibility, or CI reproduction, use the matching
-  skill under `templates/skills/`.
+- For project loading, compatibility, CI reproduction, or code profiling, use
+  the matching skill under `templates/skills/`.
 
 ## Project Facts
 
