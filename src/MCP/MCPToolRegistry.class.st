@@ -15,6 +15,20 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'instance creation' }
+MCPToolRegistry class >> default [
+
+	^ self new
+		  resetRegistrations;
+		  yourself
+]
+
+{ #category : 'instance creation' }
+MCPToolRegistry class >> empty [
+
+	^ self new
+]
+
 { #category : 'tools' }
 MCPToolRegistry >> contractForTool: aTool includeOutputSchema: includeOutputSchema [
 
@@ -78,7 +92,7 @@ MCPToolRegistry >> initialize [
 
 	super initialize.
 	exposurePolicy := MCPToolExposurePolicy default.
-	self resetRegistrations
+	self removeAllTools
 ]
 
 { #category : 'testing' }
@@ -158,6 +172,12 @@ MCPToolRegistry >> registerToolClass: aToolClass [
 ]
 
 { #category : 'registrations' }
+MCPToolRegistry >> registerToolClasses: toolClasses [
+
+	^ toolClasses collect: [ :eachToolClass | self registerToolClass: eachToolClass ]
+]
+
+{ #category : 'registrations' }
 MCPToolRegistry >> registrationForTool: aTool ifAbsent: absentBlock [
 
 	^ self registrationNamed: aTool name ifAbsent: absentBlock
@@ -181,6 +201,12 @@ MCPToolRegistry >> registrationNamed: aToolName ifAbsent: absentBlock [
 MCPToolRegistry >> registrations [
 
 	^ registrations
+]
+
+{ #category : 'registrations' }
+MCPToolRegistry >> removeAllTools [
+
+	registrations := #(  )
 ]
 
 { #category : 'registrations' }

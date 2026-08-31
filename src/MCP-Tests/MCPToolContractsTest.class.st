@@ -790,7 +790,7 @@ MCPToolContractsTest >> signalHaltForMCPMessageProcessorTest [
 MCPToolContractsTest >> testAllStaticExposurePolicyMakesEveryRegistrationStatic [
 
 	| registry |
-	registry := MCPToolRegistry new.
+	registry := MCPToolRegistry default.
 	registry exposurePolicy: MCPToolExposurePolicy allStatic.
 	self assert: registry staticToolNames asSet equals: registry publicToolNames asSet
 ]
@@ -948,7 +948,7 @@ MCPToolContractsTest >> testCaptureScreenshotHasAccurateNameAndSchemas [
 MCPToolContractsTest >> testCatalogToolsUseOwningRegistry [
 
 	| registry |
-	registry := MCPToolRegistry new.
+	registry := MCPToolRegistry default.
 	#( 'tool_search' 'tool_get' ) do: [ :toolName |
 			| tool |
 			tool := registry toolNamed: toolName ifAbsent: [ self fail ].
@@ -1162,6 +1162,24 @@ MCPToolContractsTest >> testDebuggerToolsAreDiscoverableOnly [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testDefaultProfileUsesDefaultToolRegistry [
+
+	| server |
+	server := MCP new.
+	self assert: (server toolRegistry includesToolNamed: MCPToolSearchTools toolName).
+	self assert: (server staticToolNames includes: MCPToolSearchClasses toolName)
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testDefaultToolRegistryRegistersBuiltInTools [
+
+	| registry |
+	registry := MCPToolRegistry default.
+	self assert: (registry includesToolNamed: MCPToolSearchTools toolName).
+	self assert: (registry staticToolNames includes: MCPToolSearchClasses toolName)
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testDictionaryShapedCommandResultsUseDTOClasses [
 
 	| commandResultClasses |
@@ -1214,6 +1232,16 @@ MCPToolContractsTest >> testDiscoveryUsesConfiguredStaticToolNames [
 	self assert: ((searchContract at: #annotations) at: #readOnlyHint).
 	self assert: (createContract at: #exposure) equals: 'discoverable'.
 	self deny: ((createContract at: #annotations) includesKey: #readOnlyHint)
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testEmptyProfileRegistersNoTools [
+
+	| server |
+	server := MCP profile: MCPProfile empty.
+	self assert: server toolRegistry publicToolNames isEmpty.
+	self assert: server staticToolNames isEmpty.
+	self assert: (server rpcToolsList at: #tools) isEmpty
 ]
 
 { #category : 'tests - evaluate' }
@@ -1284,7 +1312,7 @@ MCPToolContractsTest >> testEvaluateReturnsRuntimeFailureInformation [
 MCPToolContractsTest >> testExposurePolicyOverridesToolDefault [
 
 	| registry tool |
-	registry := MCPToolRegistry new.
+	registry := MCPToolRegistry default.
 	tool := registry toolNamed: 'method_protocol_update' ifAbsent: [ self fail ].
 	registry exposurePolicy: (MCPToolExposurePolicy staticToolNames: (registry staticToolNames copyWith: tool name)).
 	self assert: tool defaultExposure equals: 'discoverable'.
@@ -1769,6 +1797,15 @@ MCPToolContractsTest >> testMutationToolSchemasAdvertiseRenameScopeConditions [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testNewToolRegistryStartsEmpty [
+
+	| registry |
+	registry := MCPToolRegistry new.
+	self assert: registry publicToolNames isEmpty.
+	self assert: registry staticToolNames isEmpty
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable [
 
 	| classSlotTool searchClassesTool methodMetadataTool searchPackagesTool getClassTool getMethodTool removeClassesTool removeMethodsTool rewriteMethodsTool updateMethodTool |
@@ -1830,6 +1867,31 @@ MCPToolContractsTest >> testParsedInputClassesUseRequestOrSpecSuffixes [
 	self assert: ((self mcpClassesInPackageTagNamed: 'Requests') includes: MCPToolRequest).
 	self assert: parsedInputClasses notEmpty.
 	self assert: invalidNames isEmpty
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testProfileCanKeepRegisteredToolsDiscoverable [
+
+	| server |
+	server := MCP profile: (MCPProfile
+			           tools: {
+					           MCPExternalTestTool.
+					           MCPToolSearchTools }
+			           static: { MCPExternalTestTool }).
+	self assert: server toolRegistry publicToolNames asSet equals: {
+			MCPExternalTestTool toolName.
+			MCPToolSearchTools toolName } asSet.
+	self assert: server staticToolNames asSet equals: { MCPExternalTestTool toolName } asSet.
+	self deny: ((server rpcToolsList at: #tools) anySatisfy: [ :each | (each at: #name) = MCPToolSearchTools toolName ])
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testProfileRegistersOnlyDeclaredTools [
+
+	| server |
+	server := MCP profile: (MCPProfile tools: { MCPExternalTestTool }).
+	self assert: server toolRegistry publicToolNames asSet equals: { MCPExternalTestTool toolName } asSet.
+	self assert: server staticToolNames asSet equals: { MCPExternalTestTool toolName } asSet
 ]
 
 { #category : 'tests' }
@@ -2784,7 +2846,7 @@ MCPToolContractsTest >> testToolRegistryAutoRegistersOptInExternalTools [
 	^ true'
 			protocol: 'metadata'
 			on: toolClass classSide.
-		registry := MCPToolRegistry new.
+		registry := MCPToolRegistry default.
 		self assert: toolClass shouldAutoRegister.
 		self assert: (registry includesToolNamed: MCPExternalTestTool toolName).
 		self deny: (registry isStaticToolNamed: MCPExternalTestTool toolName) ] ensure: [ self removeClassNamed: className ]
@@ -2856,7 +2918,7 @@ MCPToolContractsTest >> testToolRegistryRegistrationIsInstanceScoped [
 MCPToolContractsTest >> testToolRegistryReusesRegisteredToolInstances [
 
 	| first registry searchResults second |
-	registry := MCPToolRegistry new.
+	registry := MCPToolRegistry default.
 	first := registry toolNamed: 'tool_search' ifAbsent: [ self fail ].
 	second := registry toolNamed: 'tool_search' ifAbsent: [ self fail ].
 	searchResults := registry toolsMatchingQuery: 'tool' group: nil.
@@ -2868,7 +2930,7 @@ MCPToolContractsTest >> testToolRegistryReusesRegisteredToolInstances [
 MCPToolContractsTest >> testToolRegistryUsesDefaultExposureUntilStaticListProvided [
 
 	| registry |
-	registry := MCPToolRegistry new.
+	registry := MCPToolRegistry default.
 	self assert: (registry isStaticToolNamed: 'tool_search').
 	self deny: (registry isStaticToolNamed: 'repository_search').
 	registry staticToolNames: #( 'repository_search' ).

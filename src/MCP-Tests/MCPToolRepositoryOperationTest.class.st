@@ -13,7 +13,7 @@ Class {
 MCPToolRepositoryOperationTest >> callToolNamed: aToolName with: someArguments [
 
 	| request result tool |
-	tool := MCPToolRegistry new toolNamed: aToolName ifAbsent: [ Error signal: 'Unknown MCP tool: ' , aToolName ].
+	tool := MCPToolRegistry default toolNamed: aToolName ifAbsent: [ Error signal: 'Unknown MCP tool: ' , aToolName ].
 	request := tool requestFromToolCallArguments: someArguments.
 	result := tool executeWithRequest: request.
 	^ result asJRPCJSON

@@ -126,7 +126,7 @@ MCPToolSearchTools >> toolMetadataObjectSchema [
 { #category : 'accessing' }
 MCPToolSearchTools >> toolRegistry [
 
-	^ toolRegistry ifNil: [ toolRegistry := MCPToolRegistry new ]
+	^ toolRegistry ifNil: [ toolRegistry := MCPToolRegistry default ]
 ]
 
 { #category : 'accessing' }

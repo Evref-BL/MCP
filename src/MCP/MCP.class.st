@@ -37,6 +37,14 @@ MCP class >> negotiatedProtocolVersionFor: requestedVersion [
 		  ifFalse: [ self latestProtocolVersion ]
 ]
 
+{ #category : 'instance creation' }
+MCP class >> profile: aProfile [
+
+	^ self new
+		  profile: aProfile;
+		  yourself
+]
+
 { #category : 'protocol' }
 MCP class >> supportedProtocolVersions [
 
@@ -90,6 +98,12 @@ MCP >> debugMode: aBoolean [
 
 	self server debugMode: aBoolean.
 	self server messageProcessor debugMode: aBoolean
+]
+
+{ #category : 'configuration' }
+MCP >> defaultProfile [
+
+	^ MCPProfile default
 ]
 
 { #category : 'private - saving' }
@@ -200,10 +214,10 @@ MCP >> handlersCount [
 MCP >> initialize [
 
 	super initialize.
-	self refreshToolsList.
 	server := MCPHTTPServer new.
 	server addHandlersFromPragmasIn: self.
-	observability := MCPNoopObservabilityBackend new
+	observability := MCPNoopObservabilityBackend new.
+	self profile: self defaultProfile
 ]
 
 { #category : 'testing' }
@@ -361,6 +375,12 @@ MCP >> port [
 MCP >> port: aPortNumber [
 
 	self server port: aPortNumber
+]
+
+{ #category : 'configuration' }
+MCP >> profile: aProfile [
+
+	aProfile applyTo: self
 ]
 
 { #category : 'private - tools' }
@@ -601,13 +621,13 @@ MCP >> toolExposurePolicy: aToolExposurePolicy [
 { #category : 'accessing' }
 MCP >> toolRegistry [
 
-	^ toolRegistry ifNil: [ toolRegistry := MCPToolRegistry new ]
+	^ toolRegistry ifNil: [ toolRegistry := MCPToolRegistry default ]
 ]
 
 { #category : 'accessing' }
 MCP >> toolRegistry: aToolRegistry [
 
-	toolRegistry := aToolRegistry ifNil: [ MCPToolRegistry new ].
+	toolRegistry := aToolRegistry ifNil: [ MCPToolRegistry default ].
 	self refreshToolsList
 ]
 

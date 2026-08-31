@@ -14,7 +14,7 @@ Class {
 { #category : 'instance creation' }
 MCPSearchToolsCommand class >> tool: aTool request: aRequest [
 
-	^ self tool: aTool request: aRequest toolRegistry: MCPToolRegistry new
+	^ self tool: aTool request: aRequest toolRegistry: MCPToolRegistry default
 ]
 
 { #category : 'executing' }
