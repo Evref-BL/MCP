@@ -1456,6 +1456,21 @@ MCPToolContractsTest >> testInitializeAdvertisesSupportedPharoVersions [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testInitializeAdvertisesSupportedProtocolDomains [
+
+	| capabilities response |
+	response := (self mcpWithoutObservabilityExport
+		             onInitialize: nil
+		             capabilities: nil
+		             clientInfo: nil
+		             websiteUrl: nil) asJRPCJSON.
+	capabilities := response at: #capabilities.
+	self assert: (capabilities at: #tools) equals: Dictionary new.
+	self assert: (capabilities at: #resources) equals: Dictionary new.
+	self assert: (capabilities at: #prompts) equals: Dictionary new
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testInitializeResponseSerializesSupportedPharoVersions [
 
 	| response |
@@ -1522,6 +1537,32 @@ MCPToolContractsTest >> testMCPUnregisterToolNamedRefreshesStaticTools [
 	server unregisterToolNamed: MCPHaltingTestTool toolName.
 	self deny: (server toolRegistry includesToolNamed: MCPHaltingTestTool toolName).
 	self deny: (server staticToolNames includes: MCPHaltingTestTool toolName)
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testMessageProcessorRegistersInheritedMCPHandlersForSubclass [
+
+	| processor request response server |
+	server := MCPSubclassHandlerTestServer new.
+	processor := MCPMessageProcessor new.
+	processor addHandlersFromPragmasIn: server.
+	request := JRPCRequestObject id: 1 method: 'tools/list' params: Dictionary new.
+	response := processor handleJRPCRequestObject: request.
+	self assert: response class equals: JRPCSuccessResponseObject
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testMessageProcessorUsesSubclassJRPCHandlerOverride [
+
+	| processor request response result server |
+	server := MCPSubclassHandlerTestServer new.
+	processor := MCPMessageProcessor new.
+	processor addHandlersFromPragmasIn: server.
+	request := JRPCRequestObject id: 1 method: 'ping' params: Dictionary new.
+	response := processor handleJRPCRequestObject: request.
+	result := response result.
+	self assert: response class equals: JRPCSuccessResponseObject.
+	self assert: (result at: #source) equals: 'subclass'
 ]
 
 { #category : 'tests' }
@@ -1817,6 +1858,23 @@ MCPToolContractsTest >> testProjectMethodsDoNotSendReflectiveProtocolChecks [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testPromptsGetReturnsInvalidParamsWhenPromptIsUnknown [
+
+	| response |
+	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"prompts/get","params":{"name":"missing"}}'.
+	self assert: (response includesSubstring: '"code":-32602').
+	self assert: (response includesSubstring: '"message":"Invalid method parameter(s)."')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testPromptsListReturnsEmptyPromptList [
+
+	| response |
+	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"prompts/list"}'.
+	self assert: (response includesSubstring: '"result":{"prompts":[]}')
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testProtocolVersionNegotiation [
 
 	self assert: (MCP negotiatedProtocolVersionFor: '2025-06-18') equals: '2025-06-18'.
@@ -2006,6 +2064,31 @@ MCPToolContractsTest >> testRequestedToolIconsAreSelected [
 	self
 		assert: MCPToolEvaluate new icons first asJRPCJSON
 		equals: (MCPStructureIcon compositeBaseIconNamed: #pharoHalfScale badgeIconNamed: #go) asJRPCJSON
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testResourcesListReturnsEmptyResourceList [
+
+	| response |
+	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"resources/list"}'.
+	self assert: (response includesSubstring: '"result":{"resources":[]}')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testResourcesReadReturnsInvalidParamsWhenResourceIsUnknown [
+
+	| response |
+	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"resources/read","params":{"uri":"pharo://missing"}}'.
+	self assert: (response includesSubstring: '"code":-32602').
+	self assert: (response includesSubstring: '"message":"Invalid method parameter(s)."')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testResourcesTemplatesListReturnsEmptyTemplateList [
+
+	| response |
+	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"resources/templates/list"}'.
+	self assert: (response includesSubstring: '"result":{"resourceTemplates":[]}')
 ]
 
 { #category : 'tests' }

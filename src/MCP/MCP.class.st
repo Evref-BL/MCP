@@ -326,7 +326,11 @@ MCP >> onInitialize: protocolVersion capabilities: capabilities clientInfo: clie
 	<jrpc: #initialize>
 	^ MCPStructureInitialize new
 		  protocolVersion: (self class negotiatedProtocolVersionFor: protocolVersion);
-		  capabilities: (MCPStructureCapabilities new tools: MCPStructureToolsCapabilities new);
+		  capabilities: (MCPStructureCapabilities new
+				   tools: MCPStructureToolsCapabilities new;
+				   resources: MCPStructureResourcesCapabilities new;
+				   prompts: MCPStructurePromptsCapabilities new;
+				   yourself);
 		  metadata: self serverInfrastructureMetadata;
 		  serverInfo: (MCPStructureServerInfo new
 				   name: 'MCP Pharo';
@@ -431,17 +435,38 @@ MCP >> rpcPing [
 ]
 
 { #category : 'rpc' }
+MCP >> rpcPromptGet: name arguments: arguments [
+
+	<jrpc: #'prompts/get'>
+	JRPCInvalidParameters signal
+]
+
+{ #category : 'rpc' }
+MCP >> rpcPromptsList [
+
+	<jrpc: #'prompts/list'>
+	^ { (#prompts -> #(  )) } asDictionary
+]
+
+{ #category : 'rpc' }
+MCP >> rpcResourceRead: uri [
+
+	<jrpc: #'resources/read'>
+	JRPCInvalidParameters signal
+]
+
+{ #category : 'rpc' }
 MCP >> rpcResourcesList [
 
 	<jrpc: #'resources/list'>
-	^ { (#resource -> {  }) } asDictionary
+	^ { (#resources -> #(  )) } asDictionary
 ]
 
 { #category : 'rpc' }
 MCP >> rpcResourcesTemplateList [
 
 	<jrpc: #'resources/templates/list'>
-	^ { (#resourceTemplates -> {  }) } asDictionary
+	^ { (#resourceTemplates -> #(  )) } asDictionary
 ]
 
 { #category : 'rpc' }
