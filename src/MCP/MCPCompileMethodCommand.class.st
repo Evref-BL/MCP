@@ -30,11 +30,15 @@ MCPCompileMethodCommand >> execute [
 		  work: [
 				  behavior := self tool behaviorNamed: self request className classSide: self request classSide.
 				  methodSource := self request methodSource withInternalLineEndings.
-				  selector := self selectorForMethodSource: methodSource.
+				  selector := [ self selectorForMethodSource: methodSource ]
+					              on: Exception
+					              do: [ :error | self signalCompileFailure: error methodSource: methodSource ].
 				  changeKind := (behavior includesSelector: selector)
 					                ifTrue: [ 'replaced' ]
 					                ifFalse: [ 'created' ].
-				  selector := behavior compile: methodSource classified: self request protocol.
+				  selector := [ behavior compile: methodSource classified: self request protocol ]
+					              on: Exception
+					              do: [ :error | self signalCompileFailure: error methodSource: methodSource ].
 				  compiledMethod := self tool reformattedMethodForBehavior: behavior selector: selector.
 				  methodReference := self tool methodReferenceForBehavior: behavior selector: selector.
 				  result := MCPMethodCompileResult
@@ -57,4 +61,17 @@ MCPCompileMethodCommand >> selectorForMethodSource: methodSourceString [
 	methodNode := RBParser parseMethod: methodSourceString.
 	self tool signalBlockingCritiquesForMethodNode: methodNode.
 	^ methodNode selector
+]
+
+{ #category : 'private - errors' }
+MCPCompileMethodCommand >> signalCompileFailure: anError methodSource: methodSource [
+
+	anError mcpCommandErrorDo: [ :commandError | commandError signal ] otherwise: [ :compileError |
+			(self tool
+				 commandErrorForCompileFailure: compileError
+				 methodSource: methodSource
+				 requestedContext: self request requestedContext
+				 summary:
+				 (self tool failureMessageForCompileClassNamed: self request className classSide: self request classSide error: compileError))
+				signal ]
 ]
