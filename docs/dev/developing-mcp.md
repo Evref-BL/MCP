@@ -94,7 +94,8 @@ workflow-oriented:
 - project loading;
 - supported-version compatibility;
 - image-to-Git handoff;
-- CI/smalltalkCI reproduction.
+- CI/smalltalkCI reproduction;
+- code profiling and performance optimization.
 
 A generic Pharo clean-code skill can be useful if shared across repositories,
 but for MCP development the coding rules and style heuristics should remain in
