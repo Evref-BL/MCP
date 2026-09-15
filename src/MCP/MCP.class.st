@@ -216,7 +216,7 @@ MCP >> initialize [
 	super initialize.
 	server := MCPHTTPServer new.
 	server addHandlersFromPragmasIn: self.
-	observability := MCPNoopObservabilityBackend new.
+	observability := self newLocalObservabilityBackend.
 	self profile: self defaultProfile
 ]
 
