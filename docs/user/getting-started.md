@@ -42,6 +42,8 @@ The default load includes the server, optional UI, and their tests.
 | `UI` | `MCP-UI` and its required core package |
 | `Tests` | Core server tests and test resources |
 | `UI Tests` | UI tests and their required test dependencies |
+| `OpenTelemetry` | Optional OpenTelemetry backend |
+| `all` | Every package, including the optional OpenTelemetry backend |
 
 For a headless image, load only the core server:
 

@@ -223,11 +223,11 @@ The Spec dashboard is available from an inspected `MCP` object. It shows:
 - traces for errors, outliers, and output overruns
 - recent logs
 
-MCP starts with a no-op observability backend. Enable the built-in JSON
-observability backend explicitly:
+MCP starts with the built-in JSON observability backend enabled. Disable it for
+a specific server when its local metrics, traces, and logs are not wanted:
 
 ```smalltalk
-mcp observabilityEnabled: true
+mcp observabilityEnabled: false
 ```
 
 By default, JSON observability exports under the image-local

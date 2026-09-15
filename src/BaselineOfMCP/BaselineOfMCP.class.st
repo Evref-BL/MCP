@@ -45,7 +45,8 @@ BaselineOfMCP >> defineGroups: spec [
 		group: 'OpenTelemetry' with: #( 'MCP-OpenTelemetry' );
 		group: 'Tests' with: #( 'MCP-Tests-Resources' 'MCP-Tests-RunResources' 'MCP-Tests' 'MCP-Tests-Resources-Extensions' );
 		group: 'UI Tests' with: #( 'MCP-UI-Tests' );
-		group: 'default' with: #( 'Core' 'UI' 'Tests' 'UI Tests' )
+		group: 'default' with: #( 'Core' 'UI' 'Tests' 'UI Tests' );
+		group: 'all' with: #( 'default' 'OpenTelemetry' )
 ]
 
 { #category : 'baselines' }
