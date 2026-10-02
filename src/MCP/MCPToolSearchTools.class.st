@@ -50,7 +50,7 @@ MCPToolSearchTools >> buildInputSchema [
 					   schemaPropertyNamed: 'query'
 					   type: 'string'
 					   description:
-						   'Space-separated search words matched against tool names, descriptions, groups, and keywords. Returns tools matching any word.').
+						   'Space-separated search words matched against tool names, descriptions, groups, and keywords. Returns tools matching every word.').
 				  (self schemaPropertyNamed: 'cursor' type: 'string' description: 'Continuation cursor.') };
 		  required: #(  );
 		  additionalProperties: false;

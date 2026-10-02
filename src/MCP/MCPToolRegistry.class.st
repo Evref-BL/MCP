@@ -263,7 +263,7 @@ MCPToolRegistry >> tool: aTool matchesQuery: queryString group: groupString [
 	queryTerms := self queryTermsFrom: queryString.
 	queryTerms ifEmpty: [ ^ true ].
 	searchableText := aTool searchableText asLowercase.
-	^ queryTerms anySatisfy: [ :each |
+	^ queryTerms allSatisfy: [ :each |
 		  (self queryTermAlternativesFor: each) anySatisfy: [ :alternative | searchableText includesSubstring: alternative ] ]
 ]
 

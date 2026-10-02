@@ -2569,17 +2569,19 @@ MCPToolContractsTest >> testSearchToolsMatchesMultipleQueryTerms [
 	result := self callToolNamed: 'tool_search' withArguments: { (#query -> 'method source') } asDictionary.
 	names := ((self dataFrom: result) at: #tools) collect: [ :each | each at: #name ].
 	self assert: (names includes: 'method_source_search').
+	self deny: (names includes: 'method_equivalent_search').
 
 	result := self callToolNamed: 'tool_search' withArguments: { (#query -> 'method equivalent') } asDictionary.
 	names := ((self dataFrom: result) at: #tools) collect: [ :each | each at: #name ].
 	self assert: (names includes: 'method_equivalent_search').
+	self deny: (names includes: 'method_source_search').
 
-	result := self
-		          callToolNamed: 'tool_search'
-		          withArguments: { (#query -> 'repository branch create switch checkout commit push') } asDictionary.
+	result := self callToolNamed: 'tool_search' withArguments: { (#query -> 'repository branch') } asDictionary.
 	names := ((self dataFrom: result) at: #tools) collect: [ :each | each at: #name ].
-	#( 'repository_branch_create' 'repository_branch_switch' 'repository_branch_checkout' 'repository_commit' 'repository_push' )
-		do: [ :toolName | self assert: (names includes: toolName) ]
+	#( 'repository_branch_create' 'repository_branch_switch' 'repository_branch_checkout' ) do: [ :toolName |
+		self assert: (names includes: toolName) ].
+	self deny: (names includes: 'repository_commit').
+	self deny: (names includes: 'repository_push')
 ]
 
 { #category : 'tests' }
