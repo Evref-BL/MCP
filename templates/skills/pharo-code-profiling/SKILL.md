@@ -61,8 +61,7 @@ reportShort := String streamContents: [ :s | profiler report: s cutoff: 2 ].
   tool call and other background processes. Verify the report actually shows
   your workload's methods; otherwise lengthen or CPU-bind the block.
 - Profiling forks a background process and mutates image state; run it inside a
-  safe image boundary, and remember that a successful `image_evaluate` can save
-  the image.
+  safe image boundary.
 - Sampling approximates execution. Primitives and machine-code paths are charged
   to their callers, so trust the ranking and proportions, not exact numbers.
 
