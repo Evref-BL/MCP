@@ -21,7 +21,7 @@ MCPToolLoadBaseline >> buildInputSchema [
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties: {
-				  (self nonEmptyStringSchemaPropertyNamed: 'baseline' description: 'Baseline name without BaselineOf prefix.').
+				  (self schemaPropertyNamed: 'baseline' type: 'string' description: 'Baseline name without BaselineOf prefix.').
 				  self groupsSchemaProperty } , self loadPolicyInputSchemaProperties;
 		  required: #( 'baseline' );
 		  additionalProperties: false;

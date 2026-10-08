@@ -79,6 +79,12 @@ MCPToolSearchMethodSource >> searchRequestFromToolRequest: request [
 	^ MCPMethodSearchRequest fromRequest: request tool: self
 ]
 
+{ #category : 'private - schema' }
+MCPToolSearchMethodSource >> supportedFilterModes [
+
+	^ #( 'substring' 'regex' )
+]
+
 { #category : 'metadata' }
 MCPToolSearchMethodSource >> title [
 

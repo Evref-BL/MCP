@@ -20,14 +20,20 @@ MCPMessageProcessor >> addHandler: aJRPCHandler [
 ]
 
 { #category : 'handlers management' }
-MCPMessageProcessor >> addHandlersFromPragmasIn: anObject [
+MCPMessageProcessor >> addHandlersFromPragmasFrom: aSubClass to: aSuperClass for: anObject [
 
-	(Pragma allNamed: #jrpc: in: anObject class) do: [ :pragma |
+	(Pragma allNamed: #jrpc: from: aSubClass to: aSuperClass) do: [ :pragma |
 			self addHandler: (MCPMessageSendHandler new
 					 receiver: anObject;
 					 methodName: pragma arguments first;
 					 messageSelector: pragma methodSelector;
 					 yourself) ]
+]
+
+{ #category : 'handlers management' }
+MCPMessageProcessor >> addHandlersFromPragmasIn: anObject [
+
+	self addHandlersFromPragmasFrom: anObject class to: MCP for: anObject
 ]
 
 { #category : 'handling - jrpc' }

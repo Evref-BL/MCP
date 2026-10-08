@@ -19,7 +19,7 @@ MCPToolChangeHistoryToolsTest >> inputPropertyNamesFor: aTool [
 MCPToolChangeHistoryToolsTest >> testChangeHistoryToolsAreDiscoverableWithExpectedMetadata [
 
 	| metadataByName result toolNames |
-	result := self callToolNamed: 'tool_search' withArguments: { (#group -> 'history') } asDictionary.
+	result := self callToolNamed: 'tool_search' withArguments: { (#query -> 'history') } asDictionary.
 	metadataByName := (((self dataFrom: result) at: #tools) collect: [ :each | (each at: #name) -> each ]) asDictionary.
 	toolNames := metadataByName keys.
 	#( 'history_file_list' 'history_entry_list' 'history_entry_apply' 'history_entry_revert' ) do: [ :toolName |

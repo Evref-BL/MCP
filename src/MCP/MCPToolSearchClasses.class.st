@@ -27,11 +27,11 @@ MCPToolSearchClasses class >> toolName [
 MCPToolSearchClasses >> buildInputSchema [
 
 	| properties |
-	properties := self classQueryScopeInputProperties , self classFilterInputProperties , {
-		              (self
-			               filterModeSchemaPropertyWithDescription: 'How class metadata filters are matched.'
-			               values: self basicFilterModes).
-		              (self caseSensitiveSchemaPropertyWithDescription: 'Whether class metadata matching is case-sensitive.') }
+	properties := self classQueryScopeInputProperties , self classFilterInputProperties
+	              ,
+	              { (self
+		               filterModeSchemaPropertyWithDescription: 'How class metadata filters are matched.'
+		               values: self basicFilterModes) }
 	              ,
 	              (self paginationInputPropertiesWithLimitDescription:
 		               'Maximum number of matching classes to return. Use 0 to return no entries.').
@@ -76,20 +76,15 @@ MCPToolSearchClasses >> classEntrySchema [
 { #category : 'private - request' }
 MCPToolSearchClasses >> classFilterFieldNames [
 
-	^ #( 'className' 'tag' 'instanceSlot' 'classSlot' )
+	^ #( 'name' 'tag' )
 ]
 
 { #category : 'private - schema' }
 MCPToolSearchClasses >> classFilterInputProperties [
 
 	^ {
-		  (self schemaPropertyNamed: 'className' type: 'string' description: 'Optional class-name text matched against class names.').
-		  (self schemaPropertyNamed: 'tag' type: 'string' description: 'Optional package-tag text matched against class tags.').
-		  (self
-			   schemaPropertyNamed: 'instanceSlot'
-			   type: 'string'
-			   description: 'Optional slot-name text matched against instance-side slots.').
-		  (self schemaPropertyNamed: 'classSlot' type: 'string' description: 'Optional slot-name text matched against class-side slots.') }
+		  (self schemaPropertyNamed: 'name' type: 'string' description: 'Match class names case-insensitively.').
+		  (self schemaPropertyNamed: 'tag' type: 'string' description: 'Match package tags case-insensitively.') }
 ]
 
 { #category : 'private - schema' }
@@ -110,7 +105,7 @@ MCPToolSearchClasses >> defaultExposure [
 { #category : 'metadata' }
 MCPToolSearchClasses >> description [
 
-	^ 'Search classes by name, package, tag, hierarchy, or slot. Use class_get when you already know the class name.'
+	^ 'Search classes by name, package, tag, or superclass/subclass scope. Use class_get when you already know the class name.'
 ]
 
 { #category : 'private - results' }
@@ -122,10 +117,8 @@ MCPToolSearchClasses >> failureMessageForScope: scopeSummary error: anError [
 { #category : 'private - filtering' }
 MCPToolSearchClasses >> fieldTextsForClassEntry: anEntry fieldName: fieldName [
 
-	fieldName = 'className' ifTrue: [ ^ { (anEntry at: #className) } ].
+	fieldName = 'name' ifTrue: [ ^ { (anEntry at: #className) } ].
 	fieldName = 'tag' ifTrue: [ ^ { (anEntry at: #tag) } ].
-	fieldName = 'instanceSlot' ifTrue: [ ^ anEntry at: #instanceSlotNames ].
-	fieldName = 'classSlot' ifTrue: [ ^ anEntry at: #classSlotNames ].
 	^ #(  )
 ]
 
@@ -151,6 +144,7 @@ MCPToolSearchClasses >> queryResultDataForQueryRequest: queryRequest page: page 
 	| data |
 	data := Dictionary new.
 	data at: #classes put: (page entries collect: [ :each | self queryResultEntryFromClassEntry: each ] as: Array).
+	data at: #pagination put: page paginationDictionary.
 	page nextOffset ifNotNil: [ :offset | data at: #nextOffset put: offset ].
 	^ data
 ]

@@ -25,5 +25,5 @@ MCPToolSwitchRepositoryBranch >> repositoryToolSpec [
 		  (#requestClass -> MCPRepositorySwitchBranchRequest).
 		  (#commandClass -> MCPSwitchRepositoryBranchCommand).
 		  (#inputProperties -> { self branchNameSchemaProperty }).
-		  (#requiredProperties -> #( 'repositoryName' 'branchName' )) } asDictionary
+		  (#requiredProperties -> #( 'name' 'branchName' )) } asDictionary
 ]

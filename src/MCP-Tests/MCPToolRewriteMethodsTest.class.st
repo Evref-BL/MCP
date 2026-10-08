@@ -380,7 +380,7 @@ MCPToolRewriteMethodsTest >> testSchemaAdvertisesRewriteContract [
 	self
 		assert: propertyNames asSet
 		equals: #( 'rules' 'apply' 'expectedChangeSetHash' 'force' 'includeSource' 'scope' 'side' ) asSet.
-	self assert: scopePropertyNames asSet equals: #( 'packages' 'classes' 'hierarchies' 'subclassesOf' 'superclassesOf' ) asSet.
+	self assert: scopePropertyNames asSet equals: #( 'packages' 'classes' 'subclassesOf' 'superclassesOf' ) asSet.
 	self assert: (ruleProperties includes: 'lhs').
 	self assert: (ruleProperties includes: 'rhs').
 	self assert: (ruleProperties includes: 'isForMethod')

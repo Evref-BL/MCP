@@ -45,7 +45,7 @@ MCPAdoptRepositoryHeadCommand >> signalMissingHeadCommitFor: aRepository [
 		signalErrorCode: #RepositoryHeadCommitRequired
 		message: 'Cannot adopt repository HEAD because the repository has no head commit.'
 		details: (self request requestedContext copy
-				 at: #repositoryName put: aRepository name asString;
+				 at: #name put: aRepository name asString;
 				 yourself)
 ]
 

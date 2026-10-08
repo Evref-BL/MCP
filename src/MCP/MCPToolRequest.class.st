@@ -81,6 +81,15 @@ MCPToolRequest >> booleanArgumentNamed: anArgumentName in: aDictionary default: 
 	^ value
 ]
 
+{ #category : 'private - validating' }
+MCPToolRequest >> clampArgumentNamed: anArgumentName maximum: maximumValue in: normalizedArguments [
+
+	| key value |
+	key := self keyForArgumentNamed: anArgumentName in: normalizedArguments ifAbsent: [ ^ self ].
+	value := normalizedArguments at: key.
+	(value isNumber and: [ value > maximumValue ]) ifTrue: [ normalizedArguments at: key put: maximumValue ]
+]
+
 { #category : 'accessing' }
 MCPToolRequest >> hasArgumentNamed: anArgumentName [
 
@@ -93,6 +102,16 @@ MCPToolRequest >> initialize [
 	super initialize.
 	arguments := Dictionary new.
 	violations := #(  )
+]
+
+{ #category : 'private - validating' }
+MCPToolRequest >> keyForArgumentNamed: anArgumentName in: aDictionary ifAbsent: absentBlock [
+
+	aDictionary ifNil: [ ^ absentBlock value ].
+	(aDictionary includesKey: anArgumentName) ifTrue: [ ^ anArgumentName ].
+	(aDictionary includesKey: anArgumentName asString) ifTrue: [ ^ anArgumentName asString ].
+	(aDictionary includesKey: anArgumentName asSymbol) ifTrue: [ ^ anArgumentName asSymbol ].
+	^ absentBlock value
 ]
 
 { #category : 'accessing' }
@@ -110,8 +129,19 @@ MCPToolRequest >> nonNegativeIntegerArgumentNamed: anArgumentName default: defau
 
 	| value |
 	value := self nonNegativeIntegerArgumentNamed: anArgumentName default: defaultInteger.
-	value <= maximumInteger ifTrue: [ ^ value ].
-	Error signal: anArgumentName asString , ' must be no greater than ' , maximumInteger asString , '.'
+	^ value min: maximumInteger
+]
+
+{ #category : 'private - validating' }
+MCPToolRequest >> normalizeArgumentsForInputSchema: anInputSchema [
+
+	| normalizedArguments |
+	normalizedArguments := self arguments copy.
+	anInputSchema properties do: [ :property |
+			| maximum |
+			maximum := property extraProperties at: #maximum ifAbsent: [ nil ].
+			maximum ifNotNil: [ self clampArgumentNamed: property name maximum: maximum in: normalizedArguments ] ].
+	arguments := normalizedArguments
 ]
 
 { #category : 'accessing' }
@@ -226,11 +256,12 @@ MCPToolRequest >> uniqueStringCollectionFrom: strings [
 { #category : 'validating' }
 MCPToolRequest >> validate [
 
-	self tool inputSchema ifNil: [ ^ self ].
-	violations := MCPJSONSchemaValidator violationsFor: self arguments schema: self tool inputSchema.
+	| inputSchema |
+	inputSchema := self tool inputSchema ifNil: [ ^ self ].
+	self normalizeArgumentsForInputSchema: inputSchema.
+	violations := MCPJSONSchemaValidator violationsFor: self arguments schema: inputSchema.
 	violations ifNotEmpty: [ MCPInvalidToolInput signalForTool: self tool violations: violations ].
-	self tool validateRequest: self.
-	^ self
+	self tool validateRequest: self
 ]
 
 { #category : 'private - accessing' }

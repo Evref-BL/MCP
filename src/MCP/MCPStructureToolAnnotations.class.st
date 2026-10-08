@@ -20,8 +20,6 @@ Class {
 MCPStructureToolAnnotations class >> mayModify [
 
 	^ self new
-		  readOnlyHint: false;
-		  yourself
 ]
 
 { #category : 'instance creation' }
@@ -38,7 +36,7 @@ MCPStructureToolAnnotations >> asJRPCJSON [
 	| dictionary |
 	dictionary := Dictionary new.
 	self title ifNotNil: [ :annotationTitle | dictionary at: #title put: annotationTitle ].
-	self readOnlyHint ifNotNil: [ :hint | dictionary at: #readOnlyHint put: hint ].
+	self readOnlyHint = true ifTrue: [ dictionary at: #readOnlyHint put: true ].
 	self destructiveHint ifNotNil: [ :hint | dictionary at: #destructiveHint put: hint ].
 	self idempotentHint ifNotNil: [ :hint | dictionary at: #idempotentHint put: hint ].
 	self openWorldHint ifNotNil: [ :hint | dictionary at: #openWorldHint put: hint ].

@@ -26,17 +26,17 @@ MCPToolCallTool class >> toolName [
 { #category : 'metadata' }
 MCPToolCallTool >> buildInputSchema [
 
-	| argumentsProperty toolNameProperty |
-	toolNameProperty := self schemaPropertyNamed: 'toolName' type: 'string' description: 'The MCP tool name to invoke.'.
-	toolNameProperty minLength: 1.
+	| argumentsProperty nameProperty |
+	nameProperty := self schemaPropertyNamed: 'name' type: 'string' description: 'Tool name to invoke.'.
+	nameProperty minLength: 1.
 	argumentsProperty := self schemaPropertyNamed: 'arguments' type: 'object' description: 'Arguments passed to the selected tool.'.
 	argumentsProperty additionalProperties: true.
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties: {
-				  toolNameProperty.
+				  nameProperty.
 				  argumentsProperty };
-		  required: #( 'toolName' );
+		  required: #( 'name' );
 		  additionalProperties: false;
 		  yourself
 ]
@@ -81,9 +81,7 @@ MCPToolCallTool >> executeWithRequest: request [
 	^ self
 		  executeParsedRequestFrom: request
 		  do: [ :callRequest |
-			  self
-				  errorResultText: 'tool_call requires MCP server call context.'
-				  details: { (#toolName -> callRequest toolName) } asDictionary ]
+			  self errorResultText: 'tool_call requires MCP server call context.' details: { (#name -> callRequest toolName) } asDictionary ]
 		  onError: [ :error :parsedRequest | self errorResultFor: error ]
 ]
 

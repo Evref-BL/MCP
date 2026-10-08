@@ -93,7 +93,7 @@ MCPUpdateMethodCommand >> executeChangeProtocolWithPlan: plan [
 	selectorSymbol := self request selector asSymbol.
 	^ self tool
 		  executeMutationAction: 'changeProtocol'
-		  force: self request force
+		  force: false
 		  requestedContext: plan requestedContext
 		  work: [
 				  behavior := self tool behaviorNamed: self request className classSide: self request classSide.

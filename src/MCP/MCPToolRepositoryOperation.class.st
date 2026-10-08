@@ -230,7 +230,7 @@ MCPToolRepositoryOperation >> repositoryPackagesOutputSchemaProperty [
 MCPToolRepositoryOperation >> repositoryReferenceInputProperties [
 
 	^ {
-		  (self schemaPropertyNamed: 'repositoryName' type: 'string' description: 'Registered repository name.').
+		  (self schemaPropertyNamed: 'name' type: 'string' description: 'Registered repository name.').
 		  (self schemaPropertyNamed: 'location' type: 'string' description: 'Repository location disambiguator.') }
 ]
 
@@ -249,7 +249,7 @@ MCPToolRepositoryOperation >> requestClass [
 { #category : 'private - schema' }
 MCPToolRepositoryOperation >> requiredInputProperties [
 
-	^ self repositoryToolSpec at: #requiredProperties ifAbsent: [ #( 'repositoryName' ) ]
+	^ self repositoryToolSpec at: #requiredProperties ifAbsent: [ #( 'name' ) ]
 ]
 
 { #category : 'testing' }

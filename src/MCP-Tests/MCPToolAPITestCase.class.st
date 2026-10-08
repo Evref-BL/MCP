@@ -32,7 +32,7 @@ MCPToolAPITestCase >> aroundToolCall: aBlock [
 MCPToolAPITestCase >> callDiscoveredToolNamed: aToolName withArguments: someArguments [
 
 	^ self callRawToolNamed: 'tool_call' withArguments: {
-			  (#toolName -> aToolName).
+			  (#name -> aToolName).
 			  (#arguments -> someArguments) } asDictionary
 ]
 

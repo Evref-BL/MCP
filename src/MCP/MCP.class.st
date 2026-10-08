@@ -37,6 +37,14 @@ MCP class >> negotiatedProtocolVersionFor: requestedVersion [
 		  ifFalse: [ self latestProtocolVersion ]
 ]
 
+{ #category : 'instance creation' }
+MCP class >> profile: aProfile [
+
+	^ self new
+		  profile: aProfile;
+		  yourself
+]
+
 { #category : 'protocol' }
 MCP class >> supportedProtocolVersions [
 
@@ -90,6 +98,12 @@ MCP >> debugMode: aBoolean [
 
 	self server debugMode: aBoolean.
 	self server messageProcessor debugMode: aBoolean
+]
+
+{ #category : 'configuration' }
+MCP >> defaultProfile [
+
+	^ MCPProfile default
 ]
 
 { #category : 'private - saving' }
@@ -200,10 +214,10 @@ MCP >> handlersCount [
 MCP >> initialize [
 
 	super initialize.
-	self refreshToolsList.
 	server := MCPHTTPServer new.
 	server addHandlersFromPragmasIn: self.
-	observability := MCPNoopObservabilityBackend new
+	observability := self newLocalObservabilityBackend.
+	self profile: self defaultProfile
 ]
 
 { #category : 'testing' }
@@ -326,7 +340,11 @@ MCP >> onInitialize: protocolVersion capabilities: capabilities clientInfo: clie
 	<jrpc: #initialize>
 	^ MCPStructureInitialize new
 		  protocolVersion: (self class negotiatedProtocolVersionFor: protocolVersion);
-		  capabilities: (MCPStructureCapabilities new tools: MCPStructureToolsCapabilities new);
+		  capabilities: (MCPStructureCapabilities new
+				   tools: MCPStructureToolsCapabilities new;
+				   resources: MCPStructureResourcesCapabilities new;
+				   prompts: MCPStructurePromptsCapabilities new;
+				   yourself);
 		  metadata: self serverInfrastructureMetadata;
 		  serverInfo: (MCPStructureServerInfo new
 				   name: 'MCP Pharo';
@@ -357,6 +375,12 @@ MCP >> port [
 MCP >> port: aPortNumber [
 
 	self server port: aPortNumber
+]
+
+{ #category : 'configuration' }
+MCP >> profile: aProfile [
+
+	aProfile applyTo: self
 ]
 
 { #category : 'private - tools' }
@@ -431,17 +455,38 @@ MCP >> rpcPing [
 ]
 
 { #category : 'rpc' }
+MCP >> rpcPromptGet: name arguments: arguments [
+
+	<jrpc: #'prompts/get'>
+	JRPCInvalidParameters signal
+]
+
+{ #category : 'rpc' }
+MCP >> rpcPromptsList [
+
+	<jrpc: #'prompts/list'>
+	^ { (#prompts -> #(  )) } asDictionary
+]
+
+{ #category : 'rpc' }
+MCP >> rpcResourceRead: uri [
+
+	<jrpc: #'resources/read'>
+	JRPCInvalidParameters signal
+]
+
+{ #category : 'rpc' }
 MCP >> rpcResourcesList [
 
 	<jrpc: #'resources/list'>
-	^ { (#resource -> {  }) } asDictionary
+	^ { (#resources -> #(  )) } asDictionary
 ]
 
 { #category : 'rpc' }
 MCP >> rpcResourcesTemplateList [
 
 	<jrpc: #'resources/templates/list'>
-	^ { (#resourceTemplates -> {  }) } asDictionary
+	^ { (#resourceTemplates -> #(  )) } asDictionary
 ]
 
 { #category : 'rpc' }
@@ -576,13 +621,13 @@ MCP >> toolExposurePolicy: aToolExposurePolicy [
 { #category : 'accessing' }
 MCP >> toolRegistry [
 
-	^ toolRegistry ifNil: [ toolRegistry := MCPToolRegistry new ]
+	^ toolRegistry ifNil: [ toolRegistry := MCPToolRegistry default ]
 ]
 
 { #category : 'accessing' }
 MCP >> toolRegistry: aToolRegistry [
 
-	toolRegistry := aToolRegistry ifNil: [ MCPToolRegistry new ].
+	toolRegistry := aToolRegistry ifNil: [ MCPToolRegistry default ].
 	self refreshToolsList
 ]
 

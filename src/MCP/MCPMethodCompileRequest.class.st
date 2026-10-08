@@ -79,6 +79,5 @@ MCPMethodCompileRequest >> requestedContext [
 
 	^ {
 		  (#className -> self className).
-		  (#classSide -> self classSide).
-		  (#protocol -> self protocol) } asDictionary
+		  (#classSide -> self classSide) } asDictionary
 ]

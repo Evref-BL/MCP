@@ -49,7 +49,7 @@ MCPUpdateClassCommand >> executeAddSlotWithPlan: plan [
 	| result |
 	^ self tool
 		  executeMutationAction: 'addSlot'
-		  force: self classRequest force
+		  force: false
 		  requestedContext: plan requestedContext
 		  work: [
 				  result := (MCPAddSlotCommand
@@ -127,7 +127,7 @@ MCPUpdateClassCommand >> executeMoveWithPlan: plan [
 	packageName := self movePackageName.
 	^ self tool
 		  executeMutationAction: 'move'
-		  force: self classRequest force
+		  force: false
 		  requestedContext: plan requestedContext
 		  work: [
 			  result := (MCPMoveClassCommand className: self classRequest className packageName: packageName tag: self classRequest tag)
@@ -207,7 +207,7 @@ MCPUpdateClassCommand >> executeRenameSlotWithPlan: plan [
 	| result |
 	^ self tool
 		  executeMutationAction: 'renameSlot'
-		  force: self classRequest force
+		  force: false
 		  requestedContext: plan requestedContext
 		  work: [
 				  result := (MCPRenameSlotCommand
@@ -234,20 +234,15 @@ MCPUpdateClassCommand >> executeRenameSlotWithPlan: plan [
 { #category : 'executing - class' }
 MCPUpdateClassCommand >> executeRenameWithPlan: plan [
 
-	| refactoringModel result targetClass |
+	| result |
 	^ self tool
 		  executeMutationAction: 'rename'
-		  force: self classRequest force
+		  force: false
 		  requestedContext: plan requestedContext
 		  work: [
-				  targetClass := MCPImageLookup classNamed: self classRequest className.
-				  refactoringModel := self tool
-					                      refactoringModelForScopeSpec: self classRequest refactoringScopeSpec
-					                      anchoredAtBehavior: targetClass.
-				  result := (MCPRenameClassCommand
-					             className: self classRequest className
-					             newClassName: self classRequest newClassName
-					             model: refactoringModel) execute ]
+				  MCPImageLookup classNamed: self classRequest className.
+				  result := (MCPRenameClassCommand className: self classRequest className newClassName: self classRequest newClassName)
+					            execute ]
 		  successResult: [ :warningMessages |
 				  self tool
 					  successResultText: 'Renamed class ' , self classRequest className , ' to ' , self classRequest newClassName , '.'
@@ -263,7 +258,7 @@ MCPUpdateClassCommand >> executeReparentWithPlan: plan [
 	| result |
 	^ self tool
 		  executeMutationAction: 'reparent'
-		  force: self classRequest force
+		  force: false
 		  requestedContext: plan requestedContext
 		  work: [
 				  result := (MCPReparentClassCommand className: self classRequest className superclassName: self classRequest superclassName)
@@ -287,7 +282,7 @@ MCPUpdateClassCommand >> executeReplaceClassTraitsWithPlan: plan [
 	| result |
 	^ self tool
 		  executeMutationAction: 'replaceClassTraits'
-		  force: self classRequest force
+		  force: false
 		  requestedContext: plan requestedContext
 		  work: [
 				  result := (MCPReplaceClassSideTraitsCommand
@@ -315,7 +310,7 @@ MCPUpdateClassCommand >> executeReplaceDefinitionWithPlan: plan [
 		replaceClassSlots: (self classRequest hasSuppliedPropertyNamed: 'classSlots').
 	^ self tool
 		  executeMutationAction: 'replaceDefinition'
-		  force: self classRequest force
+		  force: false
 		  requestedContext: plan requestedContext
 		  work: [ result := command execute ]
 		  successResult: [ :warningMessages |
@@ -332,7 +327,7 @@ MCPUpdateClassCommand >> executeReplaceLayoutWithPlan: plan [
 	| result |
 	^ self tool
 		  executeMutationAction: 'replaceLayout'
-		  force: self classRequest force
+		  force: false
 		  requestedContext: plan requestedContext
 		  work: [
 		  result := (MCPReplaceClassLayoutCommand className: self classRequest className layout: self classRequest layout) execute ]
@@ -350,7 +345,7 @@ MCPUpdateClassCommand >> executeReplaceSharedPoolsWithPlan: plan [
 	| result |
 	^ self tool
 		  executeMutationAction: 'replaceSharedPools'
-		  force: self classRequest force
+		  force: false
 		  requestedContext: plan requestedContext
 		  work: [
 				  result := (MCPReplaceClassSharedPoolsCommand
@@ -371,7 +366,7 @@ MCPUpdateClassCommand >> executeReplaceSharedVariablesWithPlan: plan [
 	| result |
 	^ self tool
 		  executeMutationAction: 'replaceSharedVariables'
-		  force: self classRequest force
+		  force: false
 		  requestedContext: plan requestedContext
 		  work: [
 				  result := (MCPReplaceClassSharedVariablesCommand
@@ -392,7 +387,7 @@ MCPUpdateClassCommand >> executeReplaceTraitsWithPlan: plan [
 	| result |
 	^ self tool
 		  executeMutationAction: 'replaceTraits'
-		  force: self classRequest force
+		  force: false
 		  requestedContext: plan requestedContext
 		  work: [
 		  result := (MCPReplaceClassTraitsCommand className: self classRequest className traitNames: self classRequest traits) execute ]
@@ -427,8 +422,7 @@ MCPUpdateClassCommand >> executeSetCommentWithPlan: plan [
 MCPUpdateClassCommand >> initializeTool: aTool request: aClassRequest [
 
 	tool := aTool.
-	classRequest := aClassRequest.
-	^ self
+	classRequest := aClassRequest
 ]
 
 { #category : 'private - move' }
@@ -449,12 +443,7 @@ MCPUpdateClassCommand >> moveRequestedContext [
 { #category : 'private - planning' }
 MCPUpdateClassCommand >> requestedContextForAction: action [
 
-	| context |
 	action = 'move' ifTrue: [ ^ self moveRequestedContext ].
-	action = 'rename' ifTrue: [
-			context := self classRequest requestedContext.
-			self tool addRefactoringScopeContextFromSpec: self classRequest refactoringScopeSpec toRequestedContext: context.
-			^ context ].
 	action = 'renameSlot' ifTrue: [ ^ self classRequest renameSlotRequestedContext ].
 	(#( 'addSlot' 'removeSlot' 'pullUpSlot' 'pushDownSlot' ) includes: action) ifTrue: [ ^ self classRequest slotRequestedContext ].
 	^ self classRequest requestedContext
@@ -477,7 +466,7 @@ MCPUpdateClassCommand >> signalNoUpdateRequested [
 	^ MCPCommandError
 		  signalErrorCode: #NoClassUpdateRequested
 		  message:
-		  'Class update requires one update field such as newClassName, superclassName, packageName, tag, classComment, slots, classSlots, traits, classTraits, sharedVariables, sharedPools, layout, or slotAction.'
+		  'Class update requires one update field such as newName, superclassName, packageName, tag, classComment, slots, classSlots, traits, classTraits, sharedVariables, sharedPools, layout, or slotAction.'
 		  details: self validationContext
 ]
 

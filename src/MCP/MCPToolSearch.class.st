@@ -55,7 +55,6 @@ MCPToolSearch >> classAndMethodScopeSummaryForScopeQuery: scopeQuery [
 	^ self classAndMethodScopeSummaryFromAssociations: {
 			  ('packages' -> scopeQuery packageNames).
 			  ('classes' -> scopeQuery classNames).
-			  ('hierarchies' -> scopeQuery hierarchyClassNames).
 			  ('subclasses' -> scopeQuery subclassClassNames).
 			  ('superclasses' -> scopeQuery parentClassNames) }
 ]
@@ -76,7 +75,6 @@ MCPToolSearch >> classAndMethodScopeSummaryFromRequest: request [
 	^ self classAndMethodScopeSummaryFromAssociations: {
 			  ('packages' -> (self searchScopeStringCollectionNamed: 'packages' fromRequest: request)).
 			  ('classes' -> (self searchScopeStringCollectionNamed: 'classes' fromRequest: request)).
-			  ('hierarchies' -> (self searchScopeStringCollectionNamed: 'hierarchies' fromRequest: request)).
 			  ('subclasses' -> (self searchScopeStringCollectionNamed: 'subclassesOf' fromRequest: request)).
 			  ('superclasses' -> (self searchScopeStringCollectionNamed: 'superclassesOf' fromRequest: request)) }
 ]
@@ -93,7 +91,6 @@ MCPToolSearch >> classScopeQueryFromRequest: request [
 	^ MCPClassScopeQuery new
 		  packageNames: (self searchScopeStringCollectionNamed: 'packages' fromRequest: request);
 		  classNames: (self searchScopeStringCollectionNamed: 'classes' fromRequest: request);
-		  hierarchyClassNames: (self searchScopeStringCollectionNamed: 'hierarchies' fromRequest: request);
 		  subclassClassNames: (self searchScopeStringCollectionNamed: 'subclassesOf' fromRequest: request);
 		  parentClassNames: (self searchScopeStringCollectionNamed: 'superclassesOf' fromRequest: request);
 		  yourself
@@ -277,10 +274,13 @@ MCPToolSearch >> minimalPagedQueryOutputSchemaForEntriesPropertyNamed: entriesPr
 	^ self
 		  standardOutputSchemaForDataProperties: {
 				  entriesProperty.
+				  self paginationOutputSchemaProperty.
 				  (self
 					   integerSchemaPropertyNamed: 'nextOffset'
 					   description: 'Zero-based offset for the next page. Omitted when this is the final page.') }
-		  required: { entriesPropertyName }
+		  required: {
+				  entriesPropertyName.
+				  'pagination' }
 ]
 
 { #category : 'private - filtering' }
@@ -336,7 +336,7 @@ MCPToolSearch >> packageScopeSummaryForProjectNames: projectNames packageNames: 
 MCPToolSearch >> paginationInputPropertiesWithLimitDescription: limitDescription [
 
 	| limitProperty offsetProperty |
-	limitProperty := self integerSchemaPropertyNamed: 'limit' description: 'Maximum results.' default: self defaultPageLimit.
+	limitProperty := self integerSchemaPropertyNamed: 'limit' description: limitDescription default: self defaultPageLimit.
 	limitProperty
 		minimum: 0;
 		maximum: 100.
@@ -345,6 +345,28 @@ MCPToolSearch >> paginationInputPropertiesWithLimitDescription: limitDescription
 	^ {
 		  limitProperty.
 		  offsetProperty }
+]
+
+{ #category : 'private - schema' }
+MCPToolSearch >> paginationOutputSchemaProperty [
+
+	| nextOffsetProperty property returnedCountProperty totalCountProperty truncatedProperty |
+	returnedCountProperty := self integerSchemaPropertyNamed: 'returnedCount' description: 'Entries returned in this page.'.
+	totalCountProperty := self integerSchemaPropertyNamed: 'totalCount' description: 'Total matching entries before pagination.'.
+	truncatedProperty := self booleanSchemaPropertyNamed: 'truncated' description: 'Whether more entries are available.'.
+	nextOffsetProperty := self
+		                      integerSchemaPropertyNamed: 'nextOffset'
+		                      description: 'Zero-based offset for the next page. Omitted when this is the final page.'.
+	property := self schemaPropertyNamed: 'pagination' type: 'object' description: 'Pagination metadata for this result page.'.
+	property
+		properties: {
+				returnedCountProperty.
+				totalCountProperty.
+				truncatedProperty.
+				nextOffsetProperty };
+		required: #( 'returnedCount' 'totalCount' 'truncated' );
+		additionalProperties: false.
+	^ property
 ]
 
 { #category : 'private - request' }
@@ -452,16 +474,22 @@ MCPToolSearch >> scopeQuerySuccessSummaryFor: resultKind scope: scopeSummary pag
 
 	^ String streamContents: [ :stream |
 			  stream
+				  nextPutAll: 'Showing ';
 				  print: page returnedCount;
+				  nextPutAll: ' of ';
+				  print: page totalCount;
 				  space;
 				  nextPutAll: resultKind;
-				  nextPutAll: ' found [scope=';
+				  nextPutAll: ' [scope=';
 				  nextPutAll: scopeSummary;
 				  nextPutAll: ']'.
 			  page nextOffset ifNotNil: [ :offset |
 					  stream
-						  nextPutAll: ' More available at offset ';
-						  print: offset ].
+						  nextPutAll: '. More available: use offset ';
+						  print: offset;
+						  nextPutAll: ' and limit ';
+						  print: page returnedCount;
+						  nextPutAll: ', or narrow the scope/filter' ].
 			  stream nextPut: $. ]
 ]
 
@@ -494,8 +522,7 @@ MCPToolSearch >> searchScopeSchemaProperties [
 		  (self stringArraySchemaNamed: 'classes').
 		  (self stringArraySchemaNamed: 'packages').
 		  (self stringArraySchemaNamed: 'superclassesOf').
-		  (self stringArraySchemaNamed: 'subclassesOf').
-		  (self stringArraySchemaNamed: 'hierarchies') }
+		  (self stringArraySchemaNamed: 'subclassesOf') }
 ]
 
 { #category : 'private - schema' }
@@ -504,7 +531,7 @@ MCPToolSearch >> searchScopeSchemaProperty [
 	^ MCPStructureProperties new
 		  name: 'scope';
 		  type: 'object';
-		  description: 'Optional search scope. If omitted, searches all matching entities.';
+		  description: 'Search scope. If omitted, searches all matching entities.';
 		  properties: self searchScopeSchemaProperties;
 		  additionalProperties: false;
 		  yourself

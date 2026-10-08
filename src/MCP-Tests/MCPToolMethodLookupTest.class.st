@@ -163,14 +163,16 @@ MCPToolMethodLookupTest >> testSearchVariableReferencesReturnsVariableReferences
 { #category : 'tests' }
 MCPToolMethodLookupTest >> testSourceAndEquivalentSearchSchemasUseDedicatedInputs [
 
-	| equivalentPropertyNames equivalentRequired equivalentSchema sourcePropertyNames sourceRequired sourceSchema |
+	| equivalentPropertyNames equivalentRequired equivalentSchema filterModeProperty sourcePropertyNames sourceRequired sourceSchema |
 	sourceSchema := MCPToolSearchMethodSource new inputSchema.
 	sourceRequired := sourceSchema required asArray.
 	sourcePropertyNames := sourceSchema properties collect: [ :each | each name ].
+	filterModeProperty := sourceSchema properties detect: [ :each | each name = 'filterMode' ].
 	self assert: sourceRequired equals: #( 'filter' ).
 	self
 		assert: sourcePropertyNames asSet
 		equals: #( 'caseSensitive' 'scope' 'side' 'includeSource' 'filter' 'filterMode' 'limit' 'offset' ) asSet.
+	self assert: (filterModeProperty extraProperties at: #enum) asArray equals: #( 'substring' 'regex' ).
 	equivalentSchema := MCPToolSearchEquivalentMethods new inputSchema.
 	equivalentRequired := equivalentSchema required asArray.
 	equivalentPropertyNames := equivalentSchema properties collect: [ :each | each name ].

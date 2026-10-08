@@ -22,8 +22,7 @@ MCPToolUpdateClassSuperclass >> classToolSpec [
 		  (#title -> 'Update Class Superclass').
 		  (#description -> 'Change the superclass of one class.').
 		  (#inputProperties -> {
-			   self classNameSchemaProperty.
-			   self superclassNameSchemaProperty.
-			   self forceSchemaProperty }).
-		  (#requiredProperties -> #( 'className' 'superclassName' )) } asDictionary
+			   (self schemaPropertyNamed: 'name' type: 'string' description: 'Class name.').
+			   self superclassNameSchemaProperty }).
+		  (#requiredProperties -> #( 'name' 'superclassName' )) } asDictionary
 ]

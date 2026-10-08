@@ -928,8 +928,10 @@ MCPToolMethodMutationTest >> testCompileReturnsStructuredCommandErrorForSyntaxEr
 	self assert: (error at: #errorCode) equals: 'CompileSyntaxError'.
 	self assert: (error at: #className) equals: MCPToolMethodMutationTestTarget name.
 	self assert: (error at: #classSide) equals: false.
-	self assert: (error at: #protocol) equals: 'tests'.
-	self assert: (error includesKey: #position).
+	self assert: (error at: #position) equals: 19.
+	self assert: (error at: #line) equals: 1.
+	self assert: (error at: #column) equals: 19.
+	self assert: (error at: #sourceLine) equals: 'brokenMethod ^ 1 +'.
 	self deny: (error includesKey: #variableName).
 	self deny: (MCPToolMethodMutationTestTarget includesSelector: #brokenMethod)
 ]
@@ -954,10 +956,12 @@ MCPToolMethodMutationTest >> testCompileReturnsStructuredCommandErrorForUndeclar
 	self assert: (self expectedUndeclaredVariableNoticeClassNames includes: (error at: #causeClass)).
 	self assert: (error at: #className) equals: MCPToolMethodMutationTestTarget name.
 	self assert: (error at: #classSide) equals: false.
-	self assert: (error at: #protocol) equals: 'tests'.
 	self assert: (error at: #selector) equals: 'brokenMethod'.
 	self assert: (error at: #variableName) equals: 'missingVar'.
 	self assert: (error at: #position) equals: 16.
+	self assert: (error at: #line) equals: 1.
+	self assert: (error at: #column) equals: 16.
+	self assert: (error at: #sourceLine) equals: 'brokenMethod ^ missingVar'.
 	self assert: ((error at: #message) includesSubstring: 'missingVar').
 	self deny: (MCPToolMethodMutationTestTarget includesSelector: #brokenMethod)
 ]
@@ -1015,7 +1019,7 @@ MCPToolMethodMutationTest >> testMethodToolSchemasDeclareExpectedInputs [
 		assert: selectorPropertyNames asArray
 		equals: #( 'className' 'classSide' 'force' 'selector' 'newSelector' 'permutation' 'argumentNames' 'argumentValueExpressions'
 			   'packageNames' 'classNames' 'hierarchyClassNames' ).
-	self assert: protocolPropertyNames asArray equals: #( 'className' 'classSide' 'force' 'selector' 'protocol' ).
+	self assert: protocolPropertyNames asArray equals: #( 'className' 'classSide' 'selector' 'protocol' ).
 	self assert: MCPToolCompileMethod new inputSchema required asSet equals: #( 'className' 'source' 'protocol' ) asSet.
 	self assert: MCPToolUpdateMethodSelector new inputSchema required asSet equals: #( 'className' 'selector' 'newSelector' ) asSet.
 	self assert: MCPToolUpdateMethodProtocol new inputSchema required asSet equals: #( 'className' 'selector' 'protocol' ) asSet.

@@ -42,7 +42,8 @@ MCPToolGetClass >> buildInputSchema [
 	upToSuperclassNameProperty := MCPStructureProperties new
 		                              name: 'upToSuperclassName';
 		                              type: 'string';
-		                              description: 'Ancestor superclass stop.';
+		                              description:
+			                              'Optional ancestor where the returned superclass chain stops. The named class is used as the exclusive upper bound and is not included.';
 		                              yourself.
 	subclassDepthProperty := MCPStructureProperties new
 		                         name: 'subclassDepth';
@@ -56,14 +57,14 @@ MCPToolGetClass >> buildInputSchema [
 		  type: 'object';
 		  properties: {
 				  (MCPStructureProperties new
-					   name: 'className';
+					   name: 'name';
 					   type: 'string';
 					   description: 'Class name.';
 					   yourself).
 				  includeCommentProperty.
 				  upToSuperclassNameProperty.
 				  subclassDepthProperty };
-		  required: #( 'className' );
+		  required: #( 'name' );
 		  yourself
 ]
 
@@ -161,15 +162,15 @@ MCPToolGetClass >> classDescriptionRequiredFields [
 MCPToolGetClass >> classNameForErrorFromParsedRequest: getRequest rawRequest: rawRequest [
 
 	getRequest ifNotNil: [ ^ getRequest className ].
-	^ (rawRequest stringArgumentNamed: 'className') ifNil: [ '' ]
+	^ (rawRequest stringArgumentNamed: 'name') ifNil: [ '' ]
 ]
 
 { #category : 'private - request' }
 MCPToolGetClass >> classNameFromRequest: request [
 
 	| className |
-	className := request stringArgumentNamed: 'className'.
-	className ifNil: [ Error signal: 'className must be a non-empty string.' ].
+	className := request stringArgumentNamed: 'name'.
+	className ifNil: [ Error signal: 'name must be a non-empty string.' ].
 	^ className
 ]
 
@@ -252,7 +253,7 @@ MCPToolGetClass >> failureMessageForClassName: className error: anError [
 { #category : 'defaults' }
 MCPToolGetClass >> maximumSubclassDepth [
 
-	^ 3
+	^ 10
 ]
 
 { #category : 'private - request' }

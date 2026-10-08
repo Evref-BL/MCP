@@ -12,7 +12,6 @@ Class {
 		'packageName',
 		'tag',
 		'classComment',
-		'force',
 		'slotNames',
 		'classSlotNames',
 		'traitNames',
@@ -82,21 +81,14 @@ MCPClassCreateRequest >> commandForTool: aTool [
 	^ MCPCreateClassToolCommand tool: aTool request: self
 ]
 
-{ #category : 'accessing' }
-MCPClassCreateRequest >> force [
-
-	^ force ifNil: [ false ]
-]
-
 { #category : 'initialization' }
 MCPClassCreateRequest >> initializeFromRequest: request [
 
-	className := request stringArgumentNamed: 'className'.
+	className := request stringArgumentNamed: 'name'.
 	superclassName := request stringArgumentNamed: 'superclassName'.
 	packageName := request stringArgumentNamed: 'packageName'.
 	tag := request stringArgumentNamed: 'tag'.
 	classComment := (request hasArgumentNamed: 'comment') ifTrue: [ self classCommentFromRequest: request ].
-	force := request booleanArgumentNamed: 'force' default: false.
 	slotNames := request stringCollectionArgumentNamed: 'slots'.
 	classSlotNames := request stringCollectionArgumentNamed: 'classSlots'.
 	traitNames := request stringCollectionArgumentNamed: 'traits'.

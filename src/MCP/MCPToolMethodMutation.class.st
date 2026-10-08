@@ -25,6 +25,12 @@ MCPToolMethodMutation class >> isAbstract [
 	^ self = MCPToolMethodMutation
 ]
 
+{ #category : 'private - errors' }
+MCPToolMethodMutation >> addCompileSourceContextFor: methodSource to: details [
+
+	details at: #position ifPresent: [ :position | self addSourceLineContextFor: methodSource position: position to: details ]
+]
+
 { #category : 'private - refactoring' }
 MCPToolMethodMutation >> addParameterRefactoringForSelector: oldSelectorSymbol inBehavior: aBehavior to: newSelectorSymbol permutation: permutation newArgs: newArguments model: refactoringModel [
 
@@ -35,6 +41,24 @@ MCPToolMethodMutation >> addParameterRefactoringForSelector: oldSelectorSymbol i
 		  newSelector: newSelectorSymbol
 		  permutation: permutation
 		  newArgs: newArguments
+]
+
+{ #category : 'private - errors' }
+MCPToolMethodMutation >> addSourceLineContextFor: methodSource position: position to: details [
+
+	| boundedPosition column lineEnd lineNumber lineStart sourceLine sourceText |
+	sourceText := methodSource ifNil: [ '' ] ifNotNil: [ methodSource asString ].
+	sourceText isEmpty ifTrue: [ ^ self ].
+	boundedPosition := (position max: 1) min: sourceText size + 1.
+	lineStart := sourceText lastIndexOf: Character cr startingAt: boundedPosition - 1 ifAbsent: [ 0 ].
+	lineEnd := sourceText indexOf: Character cr startingAt: boundedPosition ifAbsent: [ sourceText size + 1 ].
+	lineNumber := (sourceText copyFrom: 1 to: lineStart) occurrencesOf: Character cr.
+	column := boundedPosition - lineStart.
+	sourceLine := sourceText copyFrom: lineStart + 1 to: lineEnd - 1.
+	details
+		at: #line put: lineNumber + 1;
+		at: #column put: column;
+		at: #sourceLine put: sourceLine
 ]
 
 { #category : 'metadata' }
@@ -102,6 +126,19 @@ MCPToolMethodMutation >> classReferenceNameFor: className classSide: classSide [
 	^ classSide
 		  ifTrue: [ className , ' class' ]
 		  ifFalse: [ className ]
+]
+
+{ #category : 'private - errors' }
+MCPToolMethodMutation >> commandErrorForCompileFailure: anError methodSource: methodSource requestedContext: requestedContext summary: summary [
+
+	| commandError |
+	commandError := self
+		                normalizedCommandErrorForActionFailure: anError
+		                action: 'compile'
+		                requestedContext: requestedContext
+		                summary: summary.
+	self addCompileSourceContextFor: methodSource to: commandError details.
+	^ commandError
 ]
 
 { #category : 'private' }

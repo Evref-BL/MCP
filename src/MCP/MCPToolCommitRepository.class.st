@@ -25,5 +25,5 @@ MCPToolCommitRepository >> repositoryToolSpec [
 		  (#requestClass -> MCPRepositoryCommitRequest).
 		  (#commandClass -> MCPCommitRepositoryCommand).
 		  (#inputProperties -> { self messageSchemaProperty }).
-		  (#requiredProperties -> #( 'repositoryName' 'message' )) } asDictionary
+		  (#requiredProperties -> #( 'name' 'message' )) } asDictionary
 ]

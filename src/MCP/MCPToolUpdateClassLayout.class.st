@@ -28,8 +28,7 @@ MCPToolUpdateClassLayout >> classToolSpec [
 		  (#title -> 'Update Class Layout').
 		  (#description -> 'Replace the layout class used by one class.').
 		  (#inputProperties -> {
-			   self classNameSchemaProperty.
-			   self layoutSchemaProperty.
-			   self forceSchemaProperty }).
-		  (#requiredProperties -> #( 'className' 'layout' )) } asDictionary
+			   (self schemaPropertyNamed: 'name' type: 'string' description: 'Class name.').
+			   self layoutSchemaProperty }).
+		  (#requiredProperties -> #( 'name' 'layout' )) } asDictionary
 ]

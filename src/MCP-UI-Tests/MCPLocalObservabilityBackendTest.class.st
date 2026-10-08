@@ -95,11 +95,8 @@ MCPLocalObservabilityBackendTest >> testMCPConfiguresObservabilityExportDirector
 	[
 		mcp := MCP new.
 		defaultDirectory := MCPLocalObservabilityBackend defaultExportDirectory.
-		self deny: mcp observabilityEnabled.
-		self assert: mcp observability class equals: MCPNoopObservabilityBackend.
-		self assert: mcp observabilityExportDirectory isNil.
-		mcp observabilityEnabled: true.
 		self assert: mcp observabilityEnabled.
+		self assert: mcp observability class equals: MCPLocalObservabilityBackend.
 		self assert: mcp observabilityExportDirectory equals: defaultDirectory.
 		mcp observabilityExportDirectory: directory.
 		self assert: mcp observabilityExportDirectory equals: directory.
@@ -116,7 +113,7 @@ MCPLocalObservabilityBackendTest >> testMCPRecordsToolCallDispatchPath [
 	mcp observabilityEnabled: true.
 
 	mcp rpcToolCall: 'tool_call' withParams: {
-			(#toolName -> 'package_search').
+			(#name -> 'package_search').
 			(#arguments -> { (#limit -> 0) } asDictionary) } asDictionary.
 	records := mcp observability recentCallRecords.
 

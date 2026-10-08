@@ -18,7 +18,7 @@ Class {
 MCPGetToolRequest class >> fromToolRequest: aToolRequest [
 
 	^ self new
-		  toolName: (aToolRequest stringArgumentNamed: 'toolName');
+		  toolName: (aToolRequest stringArgumentNamed: 'name');
 		  yourself
 ]
 
