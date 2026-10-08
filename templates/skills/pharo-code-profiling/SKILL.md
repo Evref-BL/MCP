@@ -1,6 +1,6 @@
 ---
 name: pharo-code-profiling
-description: Profile running Pharo code to find where time is spent and drive performance optimization. Use when diagnosing slow methods, comparing before/after timings, or when a single `#timeToRun` measurement would be too noisy or too coarse to act on.
+description: Profile running Pharo code to find where time is spent and drive performance optimization. Use when diagnosing slow methods, comparing before/after timings, or when a single `#timeToRun` measurement would be too simple to have good informations.
 ---
 
 # Pharo Code Profiling
@@ -13,15 +13,8 @@ own vs. child time, GC, and process activity. A single `#timeToRun` sample only
 returns one noisy wall-clock number (JIT warm-up, GC, and scheduling skew it)
 and gives no reason *why* the time went there.
 
-Two profilers ship in the `Tool-Profilers` package of every supported Pharo:
-
-- `AndreasSystemProfiler` — VM-supported sampling that answers a textual report
-  (`report` returns a `String`). Preferred for agent-driven optimization.
-- `TimeProfiler` — a graphical tree browser and a front end for `MessageTally`.
-  Useful only when a human will browse the profile interactively.
-
-`MessageTally` is the sampling engine underneath `TimeProfiler`; use it directly
-only when you need its process-aware variants (`spyAllOn:`, `tallySendsTo:`).
+The best tool to use in a textual format is `AndreasSystemProfiler`. VM-supported
+sampling that answers a textual report (`report` returns a `String`).
 
 ## Workflow
 
@@ -47,13 +40,8 @@ reportShort := String streamContents: [ :s | profiler report: s cutoff: 2 ].
    in its children, and check the GC and process stats at the end. A hotspot in
    a leaf is actionable; a large own-time caller is where micro-optimization
    usually starts.
-5. For interactive human browsing only, open the graphical profiler:
 
-```smalltalk
-TimeProfiler spyOn: [ workload ].
-```
-
-6. Make the narrowest change, re-profile the same workload with the same cutoff,
+5. Make the narrowest change, re-profile the same workload with the same cutoff,
    and verify behavior with focused SUnit tests.
 
 ## Token Efficiency
