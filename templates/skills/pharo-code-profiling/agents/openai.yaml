@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pharo Code Profiling"
+  short_description: "Find Pharo performance hotspots"
+  default_prompt: "Use $pharo-code-profiling to profile this Pharo code and find where the time is spent before optimizing."
