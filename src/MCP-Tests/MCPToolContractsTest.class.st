@@ -1278,6 +1278,19 @@ MCPToolContractsTest >> testEvaluateIsMarkedAsAdvancedEscapeHatch [
 	self assert: (description includesSubstring: 'arbitrary Smalltalk code')
 ]
 
+{ #category : 'tests - evaluate' }
+MCPToolContractsTest >> testEvaluateLetsNotificationsUseTheirDefaultAction [
+
+	| data result |
+	result := self
+		          callDiscoveredToolNamed: 'image_evaluate'
+		          withArguments: { (#code -> 'MCPToolDefaultActionNotification signal') } asDictionary.
+	data := self dataFrom: result.
+	self deny: (result includesKey: #isError).
+	self assert: (data at: #resultClassName) equals: 'ByteSymbol'.
+	self assert: (data at: #resultPrintString) equals: '#mcpDefaultAction'
+]
+
 { #category : 'tests' }
 MCPToolContractsTest >> testEvaluateRequiresCodeInSchema [
 
