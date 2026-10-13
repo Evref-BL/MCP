@@ -394,6 +394,28 @@ MCPToolStructuredOutputTest >> testRunTestsParseErrorReturnsStructuredToolError 
 ]
 
 { #category : 'tests' }
+MCPToolStructuredOutputTest >> testRunTestsLetsNotificationsUseTheirDefaultAction [
+
+	| data result |
+	result := self callToolNamed: 'test_run' withArguments: { (#classes -> { MCPToolNotificationTargetTest name }) } asDictionary.
+	data := self dataFrom: result.
+	self assert: (data at: #runCount) equals: 1.
+	self assert: (data at: #passedCount) equals: 1
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testRunTestCoverageLetsNotificationsUseTheirDefaultAction [
+
+	| data result |
+	result := self callToolNamed: 'test_coverage_run' withArguments: {
+			  (#classes -> { MCPToolNotificationTargetTest name }).
+			  (#coverage -> { (#scope -> { (#classes -> { MCPToolCoverageTarget name }) } asDictionary) } asDictionary) } asDictionary.
+	data := self dataFrom: result.
+	self assert: (data at: #runCount) equals: 1.
+	self assert: (data at: #passedCount) equals: 1
+]
+
+{ #category : 'tests' }
 MCPToolStructuredOutputTest >> testRunTestsSkippedMethodReportsCompactList [
 
 	| data result skippedReference |
