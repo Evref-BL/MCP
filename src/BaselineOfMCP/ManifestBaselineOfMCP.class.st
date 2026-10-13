@@ -12,5 +12,7 @@ Class {
 { #category : 'formatting' }
 ManifestBaselineOfMCP class >> formatter [
 
-	^ EFFormatter new installNewContext: (EFContext new maxLineLength: 130)
+	^ EFFormatter new installNewContext: (EFContext new
+			   maxLineLength: 130;
+			   numberOfNewLinesAfterMethodSignatureWithMethodComment: 1)
 ]
