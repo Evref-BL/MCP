@@ -4,9 +4,8 @@ Test-only MCP tool that raises Halt so server-level tool-call error handling can
 Class {
 	#name : 'MCPHaltingTestTool',
 	#superclass : 'MCPTool',
-	#category : 'MCP-Tests-Resources-Tools',
-	#package : 'MCP-Tests-Resources',
-	#tag : 'Tools'
+	#category : 'MCP-Tests-Resources',
+	#package : 'MCP-Tests-Resources'
 }
 
 { #category : 'testing' }

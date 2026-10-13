@@ -4,9 +4,8 @@ Test fixture MCP subclass used to verify inherited JSON-RPC handler registration
 Class {
 	#name : 'MCPSubclassHandlerTestServer',
 	#superclass : 'MCP',
-	#category : 'MCP-Tests-Resources-Fixtures',
-	#package : 'MCP-Tests-Resources',
-	#tag : 'Fixtures'
+	#category : 'MCP-Tests-Resources',
+	#package : 'MCP-Tests-Resources'
 }
 
 { #category : 'jrpc' }

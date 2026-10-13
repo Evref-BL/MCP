@@ -4,9 +4,8 @@ Fixture class updated by debugger method-update tests.
 Class {
 	#name : 'MCPUpdateDebugMethodTestTarget',
 	#superclass : 'Object',
-	#category : 'MCP-Tests-Resources-Tools',
-	#package : 'MCP-Tests-Resources',
-	#tag : 'Tools'
+	#category : 'MCP-Tests-Resources',
+	#package : 'MCP-Tests-Resources'
 }
 
 { #category : 'tests' }

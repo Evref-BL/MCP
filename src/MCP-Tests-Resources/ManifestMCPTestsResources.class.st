@@ -4,9 +4,8 @@ Please describe the package using the class comment of the included manifest cla
 Class {
 	#name : 'ManifestMCPTestsResources',
 	#superclass : 'PackageManifest',
-	#category : 'MCP-Tests-Resources-Manifest',
-	#package : 'MCP-Tests-Resources',
-	#tag : 'Manifest'
+	#category : 'MCP-Tests-Resources',
+	#package : 'MCP-Tests-Resources'
 }
 
 { #category : 'formatting' }
