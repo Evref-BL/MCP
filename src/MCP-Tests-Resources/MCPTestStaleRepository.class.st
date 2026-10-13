@@ -10,9 +10,8 @@ Class {
 		'name',
 		'location'
 	],
-	#category : 'MCP-Tests-Resources-Repository doubles',
-	#package : 'MCP-Tests-Resources',
-	#tag : 'Repository doubles'
+	#category : 'MCP-Tests-Resources',
+	#package : 'MCP-Tests-Resources'
 }
 
 { #category : 'instance creation' }

@@ -8,9 +8,8 @@ Class {
 		'remoteName',
 		'branchName'
 	],
-	#category : 'MCP-Tests-Resources-Internal',
-	#package : 'MCP-Tests-Resources',
-	#tag : 'Internal'
+	#category : 'MCP-Tests-Resources',
+	#package : 'MCP-Tests-Resources'
 }
 
 { #category : 'instance creation' }

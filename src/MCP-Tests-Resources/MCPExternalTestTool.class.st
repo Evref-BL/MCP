@@ -4,9 +4,8 @@ Concrete MCPTool subclass in a non-MCP package used to verify MCP contract tests
 Class {
 	#name : 'MCPExternalTestTool',
 	#superclass : 'MCPTool',
-	#category : 'MCP-Tests-Resources-Tools',
-	#package : 'MCP-Tests-Resources',
-	#tag : 'Tools'
+	#category : 'MCP-Tests-Resources',
+	#package : 'MCP-Tests-Resources'
 }
 
 { #category : 'metadata' }

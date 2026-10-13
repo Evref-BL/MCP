@@ -8,9 +8,8 @@ Class {
 		'contexts',
 		'operations'
 	],
-	#category : 'MCP-Tests-Resources-Tools',
-	#package : 'MCP-Tests-Resources',
-	#tag : 'Tools'
+	#category : 'MCP-Tests-Resources',
+	#package : 'MCP-Tests-Resources'
 }
 
 { #category : 'instance creation' }

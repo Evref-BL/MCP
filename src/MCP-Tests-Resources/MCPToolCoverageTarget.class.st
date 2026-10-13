@@ -6,9 +6,8 @@ Its methods are intentionally simple and stable so coverage assertions can disti
 Class {
 	#name : 'MCPToolCoverageTarget',
 	#superclass : 'Object',
-	#category : 'MCP-Tests-Resources-Internal',
-	#package : 'MCP-Tests-Resources',
-	#tag : 'Internal'
+	#category : 'MCP-Tests-Resources',
+	#package : 'MCP-Tests-Resources'
 }
 
 { #category : 'examples' }

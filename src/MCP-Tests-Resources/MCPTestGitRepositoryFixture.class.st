@@ -4,9 +4,8 @@ Test fixture helper for creating temporary file-backed Git repository metadata w
 Class {
 	#name : 'MCPTestGitRepositoryFixture',
 	#superclass : 'Object',
-	#category : 'MCP-Tests-Resources-Support',
-	#package : 'MCP-Tests-Resources',
-	#tag : 'Support'
+	#category : 'MCP-Tests-Resources',
+	#package : 'MCP-Tests-Resources'
 }
 
 { #category : 'fixtures' }
