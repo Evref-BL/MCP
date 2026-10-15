@@ -1,6 +1,6 @@
 ---
 name: pharo-code-profiling
-description: Profile running Pharo code to find where time is spent and drive performance optimization. Use when diagnosing slow methods, comparing before/after timings, or when a single `#timeToRun` measurement would be too simple to have good informations.
+description: Profile running Pharo code to find where time is spent and drive performance optimization. Use when diagnosing slow methods, comparing before/after timings, or when a single `#timeToRun` measurement would be too simple to give good information.
 ---
 
 # Pharo Code Profiling
@@ -23,26 +23,51 @@ sampling that answers a textual report (`report` returns a `String`).
 2. Profile and read the report as text:
 
 ```smalltalk
-report := (AndreasSystemProfiler new spyOn: [ workload ]; report).
+profiler := AndreasSystemProfiler new.
+profiler spyOn: [ 3 timesRepeat: [ workload ] ].
+report := String streamContents: [ :stream | profiler report: stream cutoff: 2 ].
 ```
 
-   The cascade `; report` is required: `spyOn:` returns the block's value, not
-   the profiler. Do not use `AndreasSystemProfiler spyOn:`; it routes through
-   `doReport`, which opens a text editor window instead of returning text.
-3. If the report is too large, re-render it with a higher cutoff percentage
-   instead of dumping the whole tree:
-
-```smalltalk
-reportShort := String streamContents: [ :s | profiler report: s cutoff: 2 ].
-```
-
-4. Read the tree top-down: separate each method's own time from the time spent
-   in its children, and check the GC and process stats at the end. A hotspot in
-   a leaf is actionable; a large own-time caller is where micro-optimization
-   usually starts.
+   Keep the profiler in a variable so you can render it more than once. Do not
+   use `AndreasSystemProfiler spyOn:`; it routes through `doReport`, which opens
+   a text editor window instead of returning text.
+3. The default `report` is large. Render it with `report:cutoff:` and a higher
+   cutoff percentage instead of dumping the whole tree, as above.
+4. Read the tree top-down:
+   - Percentages come from the whole image. The report includes the MCP server
+     process that runs your eval (`MCPToolEvaluate`, `MCPSocketSafeZnServer`),
+     so find your workload's entry method first and read percentages from that
+     node, not from the root.
+   - Each line shows total time per node, not own time. Own time is the node's
+     total minus the sum of its children. For example, if a method is 81% total
+     and its biggest child is 60%, most of the rest is its own work or smaller
+     children.
+   - Check the GC and process stats at the end. A hotspot in a leaf is
+     actionable; a large own-time caller is where micro-optimization usually
+     starts.
 
 5. Make the narrowest change, re-profile the same workload with the same cutoff,
-   and verify behavior with focused SUnit tests.
+   and verify behavior with focused SUnit tests. When the tests cannot run in
+   the image, check the optimization differentially: build the result with the
+   old path and with the new path, and compare the outputs.
+
+## Measurement
+
+- Warm up once, then run the workload three times. Report the minimum and the
+  median of the wall-clock time next to the profile, and the sample count.
+  Timings of the same code can vary by a factor of two between runs.
+- If the profile does not separate the candidates, time each stage with
+  `Time millisecondsToRun: [ ... ]` and compare the stages.
+
+## MCP Notes For Image Evals
+
+- `image_evaluate` has no timeout parameter. A long run times out the tool
+  call while the image keeps running: split the work, or poll with a second
+  eval.
+- Reading an undefined accessor in an eval makes Pharo generate and compile a
+  getter in that class. Use `instVarNamed:` to read internal state.
+- Eval errors come back as `PharoCompatibility class >> #syntaxNoticeFromException:`.
+  The real message is in the stack trace of the result.
 
 ## Token Efficiency
 
@@ -60,8 +85,9 @@ reportShort := String streamContents: [ :s | profiler report: s cutoff: 2 ].
 - Sampling covers the whole image, including the MCP server process serving the
   tool call and other background processes. Verify the report actually shows
   your workload's methods; otherwise lengthen or CPU-bind the block.
-- Profiling forks a background process and mutates image state; run it inside a
-  safe image boundary.
+- Profiling forks a background process and mutates image state. Run it inside
+  a safe image boundary: restore every method you changed for the run, and never
+  save the image.
 - Sampling approximates execution. Primitives and machine-code paths are charged
   to their callers, so trust the ranking and proportions, not exact numbers.
 
