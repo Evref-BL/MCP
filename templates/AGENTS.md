@@ -25,6 +25,8 @@ guessing from source.
   `skills/pharo-image-git-handoff/SKILL.md`.
 - Before reproducing smalltalkCI or GitHub failures: use
   `skills/pharo-ci-repro/SKILL.md`.
+- Before profiling or optimizing Pharo code: use
+  `skills/pharo-code-profiling/SKILL.md`.
 - Before recovering a stopped standalone image: use
   `skills/pharo-mcp-recovery/SKILL.md`.
 - Before debugger sessions or repairs: read the MCP
