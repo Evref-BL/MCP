@@ -38,7 +38,8 @@ mutation, and inspect `repository_change_list` before export or commit. Read
 boundaries.
 
 For history recovery, inspect files and entries before applying or reverting.
-For debugger sessions, breakpoints, or repairs, read [Debugging tools](debugging.md).
+For debugger sessions, breakpoints, or repairs, read the installed local
+debugging guide.
 
 ## Image Mutation
 
@@ -51,9 +52,9 @@ exported source for a question about the live image.
 
 ## Reusable Workflows
 
-Copy `templates/` into the target project to install context-routed skills for
-project loading, version compatibility, image-to-Git handoff, CI reproduction,
-and standalone MCP recovery.
+Run `npx @evref-bl/pharo-mcp install --host <host>` in the target project to
+install context-routed skills for project loading, version compatibility,
+image-to-Git handoff, CI reproduction, and standalone MCP recovery.
 
 ## Custom Tools
 

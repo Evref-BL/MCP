@@ -4,8 +4,8 @@ Applies when verifying changes to this MCP repository.
 
 Read after:
 
-- `docs/user/source-vs-live-image.md`
-- `docs/dev/developing-mcp.md`
+- `templates/pharo-references/source-vs-live-image.md`
+- `docs/developing-mcp.md`
 
 ## Goal
 
@@ -21,7 +21,7 @@ These checks do not require a running Pharo image:
 - file layout inspection under `src/`
 - review of `src/BaselineOfMCP/BaselineOfMCP.class.st`
 - search for expected tool classes and test classes in exported source files
-- review of `AGENTS.md`, `templates/AGENTS.md`, `README.md`, and `docs/`
+- review of `AGENTS.md`, `templates/pharo.AGENTS.md`, `README.md`, and `docs/`
 - review of package dependencies, baseline groups, and test package names
 
 These checks can confirm that exported source, package declarations, and docs

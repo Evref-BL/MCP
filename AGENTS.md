@@ -2,7 +2,8 @@
 
 This repository implements the image-side MCP server for Pharo. These rules are
 for developing MCP itself; users of a released server should start with
-`docs/user/using-pharo-mcp.md` or copy `templates/`.
+`templates/pharo-references/using-pharo-mcp.md` or install the published
+template package.
 
 ## Read First
 
@@ -16,20 +17,23 @@ for developing MCP itself; users of a released server should start with
 
 Apply every matching route, reading user guidance before developer guidance.
 
-- Before using Pharo MCP tools: read `docs/user/using-pharo-mcp.md`.
+- Before using Pharo MCP tools: read
+  `templates/pharo-references/using-pharo-mcp.md`.
 - Before MCP source, tests, schemas, packaging, or developer docs: read
-  `docs/dev/developing-mcp.md`.
-- Before Pharo source changes: also read `docs/user/pharo-coding-rules.md` and
-  `docs/user/pharo-coding-style.md`.
+  `docs/developing-mcp.md`.
+- Before Pharo source changes: also read
+  `templates/pharo-references/pharo-coding-rules.md` and
+  `templates/pharo-references/pharo-coding-style.md`.
 - Before reasoning across image, Iceberg, Tonel, or Git: read
-  `docs/user/source-vs-live-image.md`.
-- Before debugger work: read `docs/user/debugging.md`; for repair flows also
-  read `docs/user/debugger-driven-development.md`.
-- Before verifying MCP changes: read `docs/dev/mcp-verification.md`.
+  `templates/pharo-references/source-vs-live-image.md`.
+- Before debugger work: read `templates/pharo-references/debugging.md`; for
+  repair flows also read
+  `templates/pharo-references/debugger-driven-development.md`.
+- Before verifying MCP changes: read `docs/mcp-verification.md`.
 - Before image-to-Git handoff: use
-  `templates/skills/pharo-image-git-handoff/SKILL.md`.
+  `templates/pharo-skills/pharo-image-git-handoff/SKILL.md`.
 - For project loading, compatibility, or CI reproduction, use the matching
-  skill under `templates/skills/`.
+  skill under `templates/pharo-skills/`.
 
 ## Project Facts
 
