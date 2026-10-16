@@ -27,3 +27,21 @@ jobs:
         run: npm pkg set version="${VERSION#v}"
       - run: npm test
       - run: npm publish
+
+      - uses: actions/create-github-app-token@v2
+        id: app-token
+        with:
+          app-id: ${{ secrets.DEVNEXUS_AUTOMATION_APP_ID }}
+          private-key: ${{ secrets.DEVNEXUS_AUTOMATION_PRIVATE_KEY }}
+          owner: Evref-BL
+          repositories: PLexus
+
+      - name: Notify released consumers
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          version="${RELEASE_TAG#v}"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          jq -nc --arg version "$version" '{event_type: "component-release", client_payload: {component: "mcp", version: $version}}' |
+            gh api --method POST repos/Evref-BL/PLexus/dispatches --input -
