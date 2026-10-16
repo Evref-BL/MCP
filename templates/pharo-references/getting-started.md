@@ -98,15 +98,15 @@ using the client documentation rather than copying another client's JSON.
 Loopback addresses work only when the client connects from the local machine;
 cloud-brokered connectors cannot reach `127.0.0.1`.
 
-For Codex, copy the supplied configuration, agent guide, and skills into the
-agent workspace:
+Install the supplied guide, local references, workflow skills, and direct MCP
+configuration into the current agent project:
 
 ```sh
-cp -R templates/. /path/to/your/project/
+npx @evref-bl/pharo-mcp install --host codex
 ```
 
-The copied `.codex/config.toml` expects port `4000`; update its URL when the
-image uses another port.
+Use `--host claude` or `--host opencode` for those hosts. The direct MCP
+configuration expects port `4000`; update it when the image uses another port.
 
 ## First Calls
 

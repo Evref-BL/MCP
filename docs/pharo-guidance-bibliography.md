@@ -2,9 +2,9 @@
 
 Applies when maintaining MCP-Pharo's Pharo coding guidance:
 
-- `docs/user/pharo-coding-rules.md`
-- `docs/user/pharo-coding-style.md`
-- Pharo-related guidance in `templates/AGENTS.md`
+- `templates/pharo-references/pharo-coding-rules.md`
+- `templates/pharo-references/pharo-coding-style.md`
+- Pharo-related guidance in `templates/pharo.AGENTS.md`
 
 This file records the public sources behind the guidance. It is developer
 maintenance context, not required reading for agents that only use MCP.
@@ -52,7 +52,7 @@ maintenance context, not required reading for agents that only use MCP.
 ## Cross-Language Style And Refactoring Sources
 
 These sources back the readability heuristics in
-`docs/user/pharo-coding-style.md`. They are not Pharo authorities, but they
+`templates/pharo-references/pharo-coding-style.md`. They are not Pharo authorities, but they
 confirm that the guidance is consistent with established style and refactoring
 practice.
 

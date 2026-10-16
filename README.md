@@ -38,33 +38,43 @@ mcp start.
 ```
 
 Connect a local MCP client to `http://127.0.0.1:4000`. Client configuration
-formats differ; see [Getting started](docs/user/getting-started.md) for setup,
-first calls, and the copyable Codex template.
+formats differ; see [Getting started](templates/pharo-references/getting-started.md) for setup
+and first calls.
 
 ## Documentation
 
 - [Documentation index](docs/README.md)
-- [Getting started](docs/user/getting-started.md)
-- [Using MCP from an agent](docs/user/using-pharo-mcp.md)
-- [Tool reference](docs/user/tool-reference.md)
-- [Safety and ecosystem integration](docs/user/safety-and-ecosystem.md)
-- [Troubleshooting](docs/user/troubleshooting.md)
-- [Developing MCP](docs/dev/developing-mcp.md)
+- [Getting started](templates/pharo-references/getting-started.md)
+- [Using MCP from an agent](templates/pharo-references/using-pharo-mcp.md)
+- [Tool reference](templates/pharo-references/tool-reference.md)
+- [Safety and ecosystem integration](templates/pharo-references/safety-and-ecosystem.md)
+- [Troubleshooting](templates/pharo-references/troubleshooting.md)
+- [Developing MCP](docs/developing-mcp.md)
 
-## Agent Template
+## Agent Templates
 
-Copy the supplied MCP configuration, agent guide, and workflow skills into a
-Pharo project:
+Install the guide, local references, workflow skills, and direct MCP
+configuration for an agent host into the current project:
 
 ```sh
-cp -R templates/. /path/to/your/project/
+npx @evref-bl/pharo-mcp install --host codex
 ```
 
-Update `.codex/config.toml` when the image uses a port other than `4000`.
+Use `--host claude` or `--host opencode` for those hosts. The direct MCP
+configuration expects port `4000`; update it when the image uses another port.
+
+Node integrations that provide their own MCP transport can install only the
+guide, skills, references, and soft-loading instruction block:
+
+```js
+import { installGuidance } from "@evref-bl/pharo-mcp";
+
+installGuidance({ host: "codex", cwd: process.cwd() });
+```
 
 ## Contributing
 
 Use Pharo 13 for normal development and preserve Pharo 12/14 compatibility.
 Live behavior must be verified in an image; source inspection alone is not
 enough. Start with [AGENTS.md](AGENTS.md) and
-[MCP verification](docs/dev/mcp-verification.md).
+[MCP verification](docs/mcp-verification.md).

@@ -1,0 +1,35 @@
+{
+  "name": "@evref-bl/pharo-mcp",
+  "version": "0.0.0",
+  "description": "Pharo MCP agent-host templates",
+  "license": "MIT",
+  "type": "module",
+  "exports": "./node/index.js",
+  "bin": {
+    "pharo-mcp": "./bin/pharo-mcp.js"
+  },
+  "files": [
+    "bin",
+    "node",
+    "templates",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "node --test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Evref-BL/MCP.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Evref-BL/MCP/issues"
+  },
+  "homepage": "https://github.com/Evref-BL/MCP#readme",
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

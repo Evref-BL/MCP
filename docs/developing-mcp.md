@@ -5,13 +5,13 @@ developer documentation.
 
 Read after:
 
-- `docs/user/using-pharo-mcp.md`
-- `docs/user/source-vs-live-image.md`
-- `docs/user/pharo-coding-rules.md`
-- `docs/user/pharo-coding-style.md`
+- `templates/pharo-references/using-pharo-mcp.md`
+- `templates/pharo-references/source-vs-live-image.md`
+- `templates/pharo-references/pharo-coding-rules.md`
+- `templates/pharo-references/pharo-coding-style.md`
 
-Also read `docs/user/debugging.md` when changing debugger tools, debug-session
-state, breakpoints, or debugger-driven repair behavior.
+Also read `templates/pharo-references/debugging.md` when changing debugger
+tools, debug-session state, breakpoints, or debugger-driven repair behavior.
 
 ## Goal
 
@@ -42,9 +42,9 @@ Rules:
 
 ## Implementation Rules
 
-- Follow `docs/user/pharo-coding-rules.md` for Pharo object design and
+- Follow `templates/pharo-references/pharo-coding-rules.md` for Pharo object design and
   correctness rules.
-- Follow `docs/user/pharo-coding-style.md` for readability heuristics around
+- Follow `templates/pharo-references/pharo-coding-style.md` for readability heuristics around
   expression shape, guards, temporaries, and conditions.
 - Keep tool APIs explicit and testable through request, command, and result
   objects.
@@ -81,14 +81,14 @@ Live checks require an approved safe image boundary:
 - exercising debugger tools against a captured or attached debug session when
   debugger behavior changes.
 
-Use `docs/dev/mcp-verification.md` for MCP-specific verification details.
+Use `docs/mcp-verification.md` for MCP-specific verification details.
 
 ## Skills Strategy
 
 Keep always-on guidance in `AGENTS.md` and focused modules. Use skills for
 repeatable workflows that have a clear trigger and multiple steps.
 
-Reusable workflow skills under `templates/skills/` are already
+Reusable workflow skills under `templates/pharo-skills/` are already
 workflow-oriented:
 
 - project loading;
@@ -98,13 +98,14 @@ workflow-oriented:
 
 A generic Pharo clean-code skill can be useful if shared across repositories,
 but for MCP development the coding rules and style heuristics should remain in
-`docs/user/pharo-coding-rules.md` and `docs/user/pharo-coding-style.md` and be
-loaded by context routing. Add a specialized skill only when a workflow needs
+`templates/pharo-references/pharo-coding-rules.md` and
+`templates/pharo-references/pharo-coding-style.md` and be loaded by context
+routing. Add a specialized skill only when a workflow needs
 procedural steps, scripts, or tool-specific checks beyond ordinary reading.
 
 ## Guidance Maintenance
 
 When updating Pharo coding rules, style heuristics, or reusable template
-guidance, use `docs/dev/pharo-guidance-bibliography.md` to keep public sources
+guidance, use `docs/pharo-guidance-bibliography.md` to keep public sources
 separate from operational user instructions. Do not link that bibliography from
 `templates/` or require it for agents that only use MCP in another project.

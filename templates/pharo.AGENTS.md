@@ -16,9 +16,9 @@ guessing from source.
 ## Context Loading
 
 - Before Pharo source changes: read the project's Pharo coding and testing
-  guidance. If none exists, use the MCP
-  [coding rules](https://github.com/Evref-BL/MCP/blob/main/docs/user/pharo-coding-rules.md)
-  and [coding style](https://github.com/Evref-BL/MCP/blob/main/docs/user/pharo-coding-style.md).
+  guidance. If none exists, use the local
+  [coding rules](pharo-references/pharo-coding-rules.md) and
+  [coding style](pharo-references/pharo-coding-style.md).
 - Before loading a project: use `skills/pharo-project-load/SKILL.md`.
 - Before cross-version work: use `skills/pharo-version-compat/SKILL.md`.
 - Before exporting image changes or changing Git state: use
@@ -27,8 +27,8 @@ guessing from source.
   `skills/pharo-ci-repro/SKILL.md`.
 - Before recovering a stopped standalone image: use
   `skills/pharo-mcp-recovery/SKILL.md`.
-- Before debugger sessions or repairs: read the MCP
-  [debugging guide](https://github.com/Evref-BL/MCP/blob/main/docs/user/debugging.md).
+- Before debugger sessions or repairs: read the local
+  [debugging guide](pharo-references/debugging.md).
 
 ## Workflow
 
