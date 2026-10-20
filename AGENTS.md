@@ -38,7 +38,7 @@ Apply every matching route, reading user guidance before developer guidance.
 ## Project Facts
 
 - Source: `src/`; baseline: `src/BaselineOfMCP/BaselineOfMCP.class.st`.
-- Supported versions: Pharo 12, 13, and 14; default development image: Pharo 13.
+- Supported versions: Pharo 12, 13, and 14; default development image: Pharo 14.
 - Static checks: `git diff --check` and source/package inspection.
 - Live checks: baseline load, server startup, MCP calls, and image-side tests.
 

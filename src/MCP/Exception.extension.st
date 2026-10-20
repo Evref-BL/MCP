@@ -119,7 +119,13 @@ Exception >> mcpMutationFailureErrorCodeSuffix [
 { #category : '*MCP' }
 Exception >> mcpNoticeNode [
 
-	^ PharoCompatibility undeclaredVariableNodeFromException: self
+	^ nil
+]
+
+{ #category : '*MCP' }
+Exception >> mcpSyntaxNotice [
+
+	^ nil
 ]
 
 { #category : '*MCP' }

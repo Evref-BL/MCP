@@ -188,7 +188,7 @@ MCPDebugCaptureCommand >> workerProcessForContinuation: aContinuation [
 			            on: Exception
 			            do: [ :error |
 					            handled := true.
-					            (PharoCompatibility syntaxNoticeFromException: error)
+					            error mcpSyntaxNotice
 						            ifNotNil: [ :syntaxNotice | self recordSyntaxFailure: syntaxNotice inOutcome: outcome ]
 						            ifNil: [
 								            self recordCapturedException: error inOutcome: outcome.

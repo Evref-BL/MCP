@@ -262,5 +262,5 @@ MCPRepositoryWorkingCopyCommand >> tonelMethodOrderSignatureFor: contents [
 { #category : 'private - execution' }
 MCPRepositoryWorkingCopyCommand >> withNonInteractiveAuthorDuring: aBlock [
 
-	^ PharoCompatibility withNonInteractiveAuthorNamed: 'MCP' during: aBlock
+	^ aBlock value
 ]

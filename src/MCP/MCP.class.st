@@ -317,7 +317,7 @@ MCP >> observabilityResourceMetadata [
 
 	| metadata |
 	metadata := self observability resourceMetadata copy.
-	metadata at: #'pharo.majorVersion' put: PharoCompatibility currentMajorVersion.
+	metadata at: #'pharo.majorVersion' put: SystemVersion current major.
 	metadata at: #'mcp.port' put: self port.
 	^ metadata
 ]
@@ -360,7 +360,7 @@ MCP >> onInitialize: protocolVersion capabilities: capabilities clientInfo: clie
 MCP >> pharoRuntimeMetadata [
 
 	^ {
-		  (#runtimeVersion -> PharoCompatibility runtimeVersionString).
+		  (#runtimeVersion -> SystemVersion current version).
 		  (#supportedMajorVersions -> self supportedPharoMajorVersions).
 		  (#supportedLauncherVersions -> self supportedPharoLauncherVersions) } asDictionary
 ]

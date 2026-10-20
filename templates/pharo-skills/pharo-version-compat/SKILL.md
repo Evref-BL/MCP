@@ -1,32 +1,29 @@
 ---
 name: pharo-version-compat
-description: Use PharoCompatibility to load and test a project across supported Pharo versions. Use for missing or renamed Pharo globals, classes, selectors, packages, notices, or semantics; baseline surface selection; and reusable cross-version shims.
+description: Use PharoBackwardCompatibility to load and test a project developed on a later Pharo across supported older versions. Use for missing APIs, selectors, packages, notices, or semantics and reusable upstream backports.
 ---
 
 # Pharo Version Compatibility
 
 ## Model
 
-`PharoCompatibility` handles Pharo-version differences, not library-specific
-workarounds. A project declares the Pharo API surface its source expects; the
-runtime loads the compatibility packages needed by the current image.
+`PharoBackwardCompatibility` backports later Pharo APIs to older supported
+images. Develop against the newest supported Pharo and let the dependency load
+the packages needed by the current image.
 
-Known source surfaces include `Pharo12Surface` and `Pharo13Surface`. Omit a
-surface only when the project needs the core helper API alone.
+It has no source-surface group: load its default baseline.
 
 ## Workflow
 
 1. Read the project baseline, supported-version policy, and CI matrix.
-2. Identify the source Pharo surface and target runtime versions.
-3. Load the matching surface from the project baseline:
+2. Identify the newest source Pharo version and target runtime versions.
+3. Load PBC from the project baseline:
 
 ```smalltalk
 spec
-  baseline: 'PharoCompatibility'
+  baseline: 'PharoBackwardCompatibility'
   with: [
-    spec
-      repository: 'github://Evref-BL/PharoCompatibility:main/src';
-      loads: #( 'Pharo13Surface' ) ]
+    spec repository: 'github://jecisc/PharoBackwardCompatibility:v1.x.x/src' ]
 ```
 
 4. Reproduce on every affected Pharo version and classify the failure: missing
@@ -34,19 +31,19 @@ spec
    native/tooling failure.
 5. Choose the narrowest owner:
    - transparent shim for equivalent APIs;
-   - explicit PharoCompatibility helper for reusable behavior;
+   - an upstream PharoBackwardCompatibility backport for general APIs;
    - project abstraction for irreducible semantic differences;
    - project-local fix for library-specific behavior.
-6. Verify both PharoCompatibility and the consuming project across the matrix.
+6. Verify both PharoBackwardCompatibility and the consuming project across the matrix.
 
-## Extending PharoCompatibility
+## Extending PharoBackwardCompatibility
 
-- Confirm the difference is general and assign it to a source surface and
-  runtime version.
+- Confirm the difference is general, originates in a newer Pharo API, and
+  affects an older supported runtime.
 - Put runtime code in the matching conditional package and baseline group.
 - Use late lookup for optional globals.
-- Keep shims additive when possible and test the compatibility contract, not
-  only package loading.
+- Keep backports additive when possible and test the compatibility contract,
+  not only package loading.
 
 Use `pharo-project-load` for load-path failures and `pharo-ci-repro` for
 smalltalkCI or runner-specific failures.

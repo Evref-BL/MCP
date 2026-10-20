@@ -11,3 +11,9 @@ OCUndeclaredVariableWarning >> mcpMethodNode [
 
 	^ self methodNode
 ]
+
+{ #category : '*MCP' }
+OCUndeclaredVariableWarning >> mcpNoticeNode [
+
+	^ self node
+]

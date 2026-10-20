@@ -106,9 +106,7 @@ MCPDebugRepairAnalyzer >> exception [
 { #category : 'private - contexts' }
 MCPDebugRepairAnalyzer >> fallbackTargetContextForException: anException [
 
-	| contexts session |
-	session := self debugSession.
-	session ifNotNil: [ session interruptedContext ifNotNil: [ :context | ^ context ] ].
+	| contexts |
 	contexts := self rawContexts.
 	contexts isEmpty ifTrue: [ ^ nil ].
 	^ contexts first
@@ -146,7 +144,9 @@ MCPDebugRepairAnalyzer >> methodBehaviorForContext: aContext [
 { #category : 'private - contexts' }
 MCPDebugRepairAnalyzer >> methodImplementor [
 
-	^ self debugSession ifNotNil: [ :session | PharoCompatibility debuggerMethodImplementorForSession: session ]
+	^ self debugSession ifNotNil: [ :session |
+		  (self class environment at: #StDebuggerMethodImplementor ifAbsent: [ ^ nil ])
+			  forSession: session ]
 ]
 
 { #category : 'private - actions' }

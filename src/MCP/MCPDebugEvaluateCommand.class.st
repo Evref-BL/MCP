@@ -44,7 +44,7 @@ MCPDebugEvaluateCommand >> evaluateExpressionInContext: aContext record: aRecord
 	answer := [ compiler evaluate: request expression ]
 		          on: Exception
 		          do: [ :error |
-				          (PharoCompatibility syntaxNoticeFromException: error)
+				          error mcpSyntaxNotice
 					          ifNotNil: [ :syntaxNotice | result := self syntaxFailureFor: syntaxNotice record: aRecord frameIndex: frameIndex ]
 					          ifNil: [ result := self runtimeFailureFor: error record: aRecord frameIndex: frameIndex ].
 				          nil ].

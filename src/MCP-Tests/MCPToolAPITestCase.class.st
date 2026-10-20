@@ -75,7 +75,9 @@ MCPToolAPITestCase >> expectedRefactoringWarningCauseClassNames [
 { #category : 'private - compatibility' }
 MCPToolAPITestCase >> expectedSyntaxErrorNoticeClassName [
 
-	^ PharoCompatibility syntaxErrorNoticeClassName
+	^ (self class environment
+		   at: #OCSyntaxErrorNotice
+		   ifAbsent: [ self class environment at: #RBSyntaxErrorNotice ]) name asString
 ]
 
 { #category : 'private - compatibility' }
