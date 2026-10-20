@@ -16,7 +16,9 @@ MCPRewriteMethodsCommand >> applyChanges: changes [
 
 	| changeManager |
 	changeManager := self refactoringChangeManager.
-	PharoCompatibility resumeDeprecationsDuring: [ changes do: [ :change | changeManager performChange: change ] ]
+	^ [ changes do: [ :change | changeManager performChange: change ] ]
+		  on: Deprecation
+		  do: [ :deprecation | deprecation resume ]
 ]
 
 { #category : 'private - results' }
@@ -91,7 +93,7 @@ MCPRewriteMethodsCommand >> hashForChange: aChange [
 { #category : 'private - rewriting' }
 MCPRewriteMethodsCommand >> refactoringChangeManager [
 
-	^ PharoCompatibility refactoringChangeManagerClass instance
+	^ ReChangeManager instance
 ]
 
 { #category : 'private - rewriting' }

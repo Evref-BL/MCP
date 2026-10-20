@@ -63,7 +63,7 @@ MCPTestIceRepository >> branchName: aString [
 MCPTestIceRepository >> createBranch: aBranchName [
 
 	self signalFailureIfNeeded: self failCreateBranch defaultMessage: 'Create branch failed for test repository'.
-	(self knownBranchNames includes: aBranchName) ifTrue: [ IceBranchAlreadyExists signal: 'Branch already exists: ' , aBranchName ].
+	(self knownBranchNames includes: aBranchName) ifTrue: [ IceBranchAlreadyExistsError signal: 'Branch already exists: ' , aBranchName ].
 	knownBranchNames add: aBranchName.
 	branchName := aBranchName.
 	headDescription := 'branch ' , aBranchName.

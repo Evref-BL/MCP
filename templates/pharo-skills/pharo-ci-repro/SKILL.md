@@ -31,7 +31,7 @@ produces logs.
 ```sh
 skills/pharo-ci-repro/scripts/run-smalltalkci-docker.sh \
   --repo /path/to/repo \
-  --platform Pharo64-13 \
+  --platform Pharo64-14 \
   --attempts 3
 ```
 

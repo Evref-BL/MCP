@@ -15,7 +15,7 @@ files as plain text.
 
 ## Supported Versions
 
-Pharo 12, 13, and 14 are supported. Development targets Pharo 13 while CI
+Pharo 12, 13, and 14 are supported. Development targets Pharo 14 while CI
 checks the full matrix.
 
 ## Install And Start
@@ -74,7 +74,7 @@ installGuidance({ host: "codex", cwd: process.cwd() });
 
 ## Contributing
 
-Use Pharo 13 for normal development and preserve Pharo 12/14 compatibility.
+Use Pharo 14 for normal development and preserve Pharo 12/13 compatibility.
 Live behavior must be verified in an image; source inspection alone is not
 enough. Start with [AGENTS.md](AGENTS.md) and
 [MCP verification](docs/mcp-verification.md).

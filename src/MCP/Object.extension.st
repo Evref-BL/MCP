@@ -13,6 +13,12 @@ Object >> mcpDiffPackageName [
 ]
 
 { #category : '*MCP' }
+Object >> mcpCompilationAst [
+
+	^ nil
+]
+
+{ #category : '*MCP' }
 Object >> mcpErrorPosition [
 
 	^ nil

@@ -32,7 +32,7 @@ MCPEvaluateCommand >> execute [
 		          on: Exception
 		          do: [ :error |
 			          (error isKindOf: Notification) ifTrue: [ error resume: error defaultAction ].
-			          (PharoCompatibility syntaxNoticeFromException: error) ifNotNil: [ :syntaxNotice |
+			          error mcpSyntaxNotice ifNotNil: [ :syntaxNotice |
 				          ^ self syntaxFailureFor: syntaxNotice ].
 			          ^ self runtimeFailureFor: error ].
 	notice ifNotNil: [ ^ self syntaxFailureFor: notice ].

@@ -40,7 +40,7 @@ MCPToolMutation >> addSupplementalDetailsForMutationError: anError to: details [
 	cause := self mutationFailureCauseFor: anError.
 	methodNode := self methodNodeFromError: cause.
 	methodNode ifNotNil: [ self addSupplementalSelectorFromMethodNode: methodNode to: details ].
-	(PharoCompatibility compilationAstFromException: anError) ifNotNil: [ :ast |
+	(anError mcpCompilationAst) ifNotNil: [ :ast |
 		self addSupplementalSelectorFromMethodNode: ast to: details ].
 	anError == cause ifFalse: [
 			methodNode := self methodNodeFromError: anError.
@@ -281,7 +281,7 @@ MCPToolMutation >> mutationActionForErrorFromParsedRequest: mutationRequest rawR
 { #category : 'private - errors' }
 MCPToolMutation >> mutationFailureCauseFor: anError [
 
-	^ (PharoCompatibility syntaxNoticeFromException: anError)
+	^ anError mcpSyntaxNotice
 		  ifNil: [ anError mcpMutationFailureNotice ]
 		  ifNotNil: [ :syntaxNotice | anError mcpMutationFailureCauseForSyntaxNotice: syntaxNotice ]
 ]

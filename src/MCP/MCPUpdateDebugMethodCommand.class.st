@@ -307,8 +307,9 @@ MCPUpdateDebugMethodCommand >> recompileContext: aContext record: aRecord update
 	frameIndex := self frameIndexForContext: aContext record: aRecord fallback: 0.
 	source := self methodSourceOrNil.
 	source ifNil: [ ^ self signalRequiredMethodSourceForRecord: aRecord frameIndex: frameIndex updateKind: updateKind ].
-	succeeded := PharoCompatibility resumeDeprecationsDuring: [
-		             aRecord debugSession recompileMethodTo: source inContext: aContext notifying: nil ].
+	succeeded := [ aRecord debugSession recompileMethodTo: source inContext: aContext notifying: nil ]
+		             on: Deprecation
+		             do: [ :deprecation | deprecation resume ].
 	succeeded ifFalse: [ ^ self signalRecompileFailedForRecord: aRecord frameIndex: frameIndex updateKind: updateKind ].
 	method := self compiledMethodForContext: aContext.
 	method ifNil: [ ^ self signalRecompileFailedForRecord: aRecord frameIndex: frameIndex updateKind: updateKind ].

@@ -66,10 +66,9 @@ MCPToolChangeHistoryTest >> latestRecoverableMethodEntryIndexFor: aClass [
 { #category : 'private' }
 MCPToolChangeHistoryTest >> recordMethodAdditionOn: aClass [
 
-	^ PharoCompatibility withNonInteractiveAuthorNamed: 'MCP' during: [
-			  aClass compile: 'rescuedValue ^ 42' classified: 'testing'.
-			  EpMonitor current sessionStore flush.
-			  self latestRecoverableMethodEntryIndexFor: aClass ]
+	aClass compile: 'rescuedValue ^ 42' classified: 'testing'.
+	EpMonitor current sessionStore flush.
+	^ self latestRecoverableMethodEntryIndexFor: aClass
 ]
 
 { #category : 'private' }

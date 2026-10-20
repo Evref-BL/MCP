@@ -8,7 +8,7 @@ Usage:
 
 Options:
   --repo DIR          Source repository or working tree to test.
-  --platform NAME    smalltalkCI platform, default Pharo64-13.
+  --platform NAME    smalltalkCI platform, default Pharo64-14.
   --spec FILE        smalltalkCI spec file, default .smalltalk.ston.
   --attempts N       Number of attempts, default 1.
   --out DIR          Scratch/log directory, default /tmp/pharo-ci-repro-<timestamp>.
@@ -24,7 +24,7 @@ USAGE
 }
 
 repo=""
-platform="Pharo64-13"
+platform="Pharo64-14"
 spec=".smalltalk.ston"
 attempts="1"
 out=""

@@ -26,15 +26,15 @@ jobs:
         shell: bash
         timeout-minutes: 15
       - name: Verify coverage report
-        if: ${{ success() && matrix.smalltalk == 'Pharo64-13' }}
+        if: ${{ success() && matrix.smalltalk == 'Pharo64-14' }}
         run: test -s ./coverage/lcov.info
         shell: bash
       - name: Coveralls
-        if: ${{ success() && matrix.smalltalk == 'Pharo64-13' }}
+        if: ${{ success() && matrix.smalltalk == 'Pharo64-14' }}
         uses: coverallsapp/github-action@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           file: ./coverage/lcov.info
           format: lcov
-          flag-name: Pharo64-13
+          flag-name: Pharo64-14
           fail-on-error: false

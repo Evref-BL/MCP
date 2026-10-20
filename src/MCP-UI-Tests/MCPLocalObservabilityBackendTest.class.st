@@ -100,7 +100,7 @@ MCPLocalObservabilityBackendTest >> testMCPConfiguresObservabilityExportDirector
 		self assert: mcp observabilityExportDirectory equals: defaultDirectory.
 		mcp observabilityExportDirectory: directory.
 		self assert: mcp observabilityExportDirectory equals: directory.
-		self assert: (mcp observability resourceMetadata at: #'pharo.majorVersion') equals: PharoCompatibility currentMajorVersion.
+		self assert: (mcp observability resourceMetadata at: #'pharo.majorVersion') equals: SystemVersion current major.
 		self assert: (mcp observability resourceMetadata includesKey: #'mcp.port') ] ensure: [
 		directory exists ifTrue: [ directory deleteAll ] ]
 ]
