@@ -31,7 +31,7 @@ MCPEvaluateCommand >> execute [
 	answer := [ compiler evaluate: request code ]
 		          on: Exception
 		          do: [ :error |
-			          (error isKindOf: Notification) ifTrue: [ error resume: error defaultAction ].
+			          (error isKindOf: Notification) ifTrue: [ self tool resumeNotification: error ].
 			          error mcpSyntaxNotice ifNotNil: [ :syntaxNotice |
 				          ^ self syntaxFailureFor: syntaxNotice ].
 			          ^ self runtimeFailureFor: error ].

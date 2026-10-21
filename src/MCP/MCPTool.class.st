@@ -348,12 +348,19 @@ MCPTool >> errorStackTraceLimit [
 { #category : 'private - execution' }
 MCPTool >> executeParsedRequestFrom: request do: executionBlock onError: errorBlock [
 	"Parse the transport request inside the same exception boundary as execution.
-	The error block receives the error and the parsed request, or nil if parsing failed."
+	The error block receives the error and the parsed request, or nil if parsing failed.
+	Every Warning and Notification is an Exception, so notifications are resumed here instead of failing the call."
 
 	| parsedRequest |
 	^ [
-		  parsedRequest := self parsedRequestFromToolRequest: request.
-		  executionBlock value: parsedRequest ]
+	  [
+	  parsedRequest := self parsedRequestFromToolRequest: request.
+	  executionBlock value: parsedRequest ]
+		  on: Notification
+		  do: [ :notification |
+				  (self shouldResumeNotification: notification)
+					  ifTrue: [ self resumeNotification: notification ]
+					  ifFalse: [ notification pass ] ] ]
 		  on: Exception
 		  do: [ :error | errorBlock value: error value: parsedRequest ]
 ]
@@ -487,6 +494,15 @@ MCPTool >> requestFromToolCallArguments: toolCallArguments [
 	^ MCPToolRequest tool: self arguments: toolCallArguments
 ]
 
+{ #category : 'private - execution' }
+MCPTool >> resumeNotification: aNotification [
+	"Resume with the value the image itself would have produced. The default action may signal notifications of its own, and a handler is suspended while its block runs, so those would otherwise escape this boundary and fail the call: Deprecation>>defaultAction logs, and logging signals DeprecationPerformedNotification."
+
+	^ aNotification resume: ([ aNotification defaultAction ]
+			   on: Notification
+			   do: [ :nested | self resumeNotification: nested ])
+]
+
 { #category : 'private - schema' }
 MCPTool >> schemaPropertyNamed: aName type: aType description: aDescription [
 
@@ -520,6 +536,13 @@ MCPTool >> shouldAdvertiseStringArrayItemDescription: anItemDescription [
 MCPTool >> shouldRecordObservability [
 
 	^ true
+]
+
+{ #category : 'testing' }
+MCPTool >> shouldResumeNotification: aNotification [
+	"A notification is not a failed call, so the boundary resumes it. A refactoring warning is the exception: it reports a change that breaks something, and a tool that may proceed anyway handles it itself behind force, so letting it reach the boundary unresumed is what aborts an unauthorized mutation."
+
+	^ (aNotification isKindOf: RBRefactoringWarning) not
 ]
 
 { #category : 'testing' }

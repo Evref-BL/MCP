@@ -1289,6 +1289,19 @@ MCPToolContractsTest >> testEvaluateRequiresCodeInSchema [
 ]
 
 { #category : 'tests - evaluate' }
+MCPToolContractsTest >> testEvaluateResumesNotificationsSignaledByADefaultAction [
+	"A default action may signal a notification of its own, and a handler is suspended while its block runs: Deprecation>>defaultAction logs, logging signals DeprecationPerformedNotification, and that second notification used to escape and fail the call."
+
+	| data result |
+	result := self
+		          callDiscoveredToolNamed: 'image_evaluate'
+		          withArguments: { (#code -> 'MCPToolNestedNotification signal') } asDictionary.
+	data := self dataFrom: result.
+	self deny: (result includesKey: #isError).
+	self assert: (data at: #resultPrintString) equals: '''nested-mcpDefaultAction'''
+]
+
+{ #category : 'tests - evaluate' }
 MCPToolContractsTest >> testEvaluateReturnsCompilationFailureInformation [
 
 	| result text |
@@ -2823,6 +2836,21 @@ MCPToolContractsTest >> testToolAnnotationsSerializeStandardHints [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testToolCallsResumeNotificationsWithoutAToolOfTheirOwn [
+	"Every Warning and Notification is an Exception, so the shared boundary resumes them for every tool instead of each tool needing a handler."
+
+	| result server structured |
+	server := MCP new.
+	server toolExposurePolicy: MCPToolExposurePolicy allStatic.
+	server useContentAndStructuredContentToolResponses.
+	server registerToolClass: MCPNotifyingTestTool.
+	result := server rpcToolCall: MCPNotifyingTestTool toolName withParams: Dictionary new.
+	structured := result at: #structuredContent.
+	self deny: (result includesKey: #isError).
+	self assert: ((structured at: #data) at: #resumedWith) equals: 'nested-mcpDefaultAction'
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testToolFlowSelectorNamesSeparateTransportAndParsedInput [
 
 	| staleSelectors |
@@ -3025,6 +3053,14 @@ MCPToolContractsTest >> testToolResponsesDefaultToContentOnly [
 	self assert: (result includesKey: #content).
 	self deny: (result includesKey: #structuredContent).
 	self assert: (text includesSubstring: 'class_search - ')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testToolsDoNotResumeRefactoringWarnings [
+	"A refactoring warning reports a change that breaks something: resuming it at the boundary would apply a mutation that force did not authorize."
+
+	self deny: (MCPToolRemoveClasses new shouldResumeNotification: RBRefactoringWarning new).
+	self assert: (MCPToolEvaluate new shouldResumeNotification: MCPToolNestedNotification new)
 ]
 
 { #category : 'tests' }

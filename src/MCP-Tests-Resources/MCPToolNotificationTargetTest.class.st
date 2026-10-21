@@ -11,5 +11,5 @@ Class {
 { #category : 'tests' }
 MCPToolNotificationTargetTest >> testSignalsNotification [
 
-	self assert: MCPToolDefaultActionNotification signal equals: #mcpDefaultAction
+	self assert: MCPToolNestedNotification signal equals: 'nested-mcpDefaultAction'
 ]
