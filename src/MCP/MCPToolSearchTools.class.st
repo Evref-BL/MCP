@@ -61,10 +61,37 @@ MCPToolSearchTools >> buildOutputSchema [
 	^ self standardOutputSchemaForDataProperties: { self toolsArraySchemaProperty } required: #( 'tools' )
 ]
 
+{ #category : 'private - results' }
+MCPToolSearchTools >> catalogTextForSummary: aSummary tools: toolMetadataEntries [
+	"Separate entries with a line feed: a carriage return reaches the caller as an escaped character rather than a line break."
+
+	^ String streamContents: [ :stream |
+			  stream nextPutAll: aSummary.
+			  toolMetadataEntries do: [ :each |
+					  stream
+						  nextPut: Character lf;
+						  nextPutAll: (each at: #name);
+						  nextPutAll: ' - ';
+						  nextPutAll: (each at: #description) ] ]
+]
+
 { #category : 'private - execution' }
 MCPToolSearchTools >> commandForRequest: searchRequest [
 
 	^ MCPSearchToolsCommand tool: self request: searchRequest toolRegistry: self toolRegistry
+]
+
+{ #category : 'private - results' }
+MCPToolSearchTools >> contentTextForStructuredContent: structuredContent [
+	"A catalog listing reads as prose and costs a third fewer characters than its JSON. Error results keep the default shape."
+
+	^ structuredContent
+		  at: #data
+		  ifPresent: [ :data |
+				  self
+					  catalogTextForSummary: (structuredContent at: #summary ifAbsent: [ '' ])
+					  tools: (data at: #tools) ]
+		  ifAbsent: [ super contentTextForStructuredContent: structuredContent ]
 ]
 
 { #category : 'metadata' }

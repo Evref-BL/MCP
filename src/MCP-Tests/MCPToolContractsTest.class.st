@@ -2529,6 +2529,19 @@ MCPToolContractsTest >> testSearchToolSchemasAdvertiseGroupedScopeProperties [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testSearchToolsAnswerPlainTextContent [
+	"A catalog listing is read as prose, so the text block carries one line per tool instead of the canonical JSON."
+
+	| lines result text |
+	result := self callToolNamed: 'tool_search' withArguments: { (#query -> 'class slots') } asDictionary.
+	text := self firstTextFromToolResult: result.
+	lines := text lines.
+	self assert: lines first equals: (self summaryFrom: result).
+	self assert: (lines anySatisfy: [ :each | each beginsWith: 'class_slots_update - ' ]).
+	self deny: (text includesSubstring: '"tools"')
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testSearchToolsAnswersBestMatchesWhenNoToolMatchesEveryWord [
 	"A query word boosts a tool, it never gates it out: this query used to answer nothing because no tool matches all four words."
 
@@ -2987,7 +3000,7 @@ MCPToolContractsTest >> testToolResponsesCanReturnContentAndStructuredContent [
 	self assert: (result includesKey: #content).
 	self assert: (result includesKey: #structuredContent).
 	self assert: ((result at: #structuredContent) at: #status) equals: 'ok'.
-	self assert: (text includesSubstring: '"data"')
+	self assert: text lines first equals: ((result at: #structuredContent) at: #summary)
 ]
 
 { #category : 'tests' }
@@ -3011,10 +3024,7 @@ MCPToolContractsTest >> testToolResponsesDefaultToContentOnly [
 	text := self firstTextFromToolResult: result.
 	self assert: (result includesKey: #content).
 	self deny: (result includesKey: #structuredContent).
-	self assert: (text includesSubstring: '"status"').
-	self assert: (text includesSubstring: '"summary"').
-	self assert: (text includesSubstring: '"data"').
-	self assert: (text includesSubstring: '"tools"')
+	self assert: (text includesSubstring: 'class_search - ')
 ]
 
 { #category : 'tests' }
