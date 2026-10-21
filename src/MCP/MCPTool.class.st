@@ -333,10 +333,10 @@ MCPTool >> errorSchemaProperties [
 			   itemDescription: 'One stack frame from the captured signaler chain, ordered from the signaling frame outward.') }
 ]
 
-{ #category : 'private - results' }
+{ #category : 'error handling' }
 MCPTool >> errorStackTraceForContext: aContext [
 
-	^ ((aContext stackOfSize: self errorStackTraceLimit) collect: [ :each | each printString ]) asArray
+	^ ((self framesUpToCallerIn: (aContext stackOfSize: self errorStackTraceLimit)) collect: [ :each | each printString ]) asArray
 ]
 
 { #category : 'private - results' }
@@ -389,6 +389,17 @@ MCPTool >> failureMessageFor: anError [
 						  nextPutAll: message ] ]
 ]
 
+{ #category : 'error handling' }
+MCPTool >> framesUpToCallerIn: frames [
+	"Drop the trailing frames that belong to the server rather than to the failing code: the dispatch and doIt scaffolding is identical on every failure and says nothing about why this one failed. An evaluation ends at its outermost doIt; any other call ends where the server's own classes begin. When nothing else is left the failure was in the server, so the whole stack is kept."
+
+	| lastCallerFrame |
+	lastCallerFrame := frames findLast: [ :each | each method selector == #DoIt ].
+	lastCallerFrame = 0 ifTrue: [ lastCallerFrame := frames findLast: [ :each | (self isServerFrame: each) not ] ].
+	lastCallerFrame = 0 ifTrue: [ ^ frames ].
+	^ frames first: lastCallerFrame
+]
+
 { #category : 'metadata' }
 MCPTool >> groupName [
 
@@ -419,6 +430,14 @@ MCPTool >> integerSchemaPropertyNamed: propertyName description: propertyDescrip
 	^ (self integerSchemaPropertyNamed: propertyName description: propertyDescription)
 		  default: defaultValue;
 		  yourself
+]
+
+{ #category : 'error handling' }
+MCPTool >> isServerFrame: aContext [
+
+	^ aContext method methodClass
+		  ifNil: [ false ]
+		  ifNotNil: [ :methodClass | methodClass instanceSide name beginsWith: 'MCP' ]
 ]
 
 { #category : 'metadata' }

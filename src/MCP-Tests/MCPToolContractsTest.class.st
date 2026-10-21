@@ -1348,6 +1348,19 @@ MCPToolContractsTest >> testEvaluateReturnsRuntimeFailureInformation [
 	self assert: (text includesSubstring: 'Signaler context:')
 ]
 
+{ #category : 'tests - evaluate' }
+MCPToolContractsTest >> testEvaluateStackTraceStopsAtTheEvaluatedCode [
+	"Below the outermost doIt every frame is compiler and dispatch scaffolding, identical on every failure."
+
+	| error stackTrace |
+	error := self errorFrom:
+		         (self callDiscoveredToolNamed: 'image_evaluate' withArguments: { (#code -> '#( 1 2 3 ) do: [ :each | each frobnicate ]') } asDictionary).
+	stackTrace := error at: #stackTrace.
+	self assert: stackTrace last equals: 'UndefinedObject>>DoIt'.
+	self deny: (stackTrace anySatisfy: [ :each | each includesSubstring: 'MCP' ]).
+	self deny: (stackTrace anySatisfy: [ :each | each includesSubstring: 'OpalCompiler' ])
+]
+
 { #category : 'tests' }
 MCPToolContractsTest >> testEvaluateToolPointsAtTheToolCatalog [
 	"image_evaluate is where an agent lands when it believes no dedicated tool exists, so its description has to name the way out."
