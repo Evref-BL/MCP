@@ -36,9 +36,7 @@ MCPEvaluateCommand >> execute [
 				          ^ self syntaxFailureFor: syntaxNotice ].
 			          ^ self runtimeFailureFor: error ].
 	notice ifNotNil: [ ^ self syntaxFailureFor: notice ].
-	^ MCPEvaluateResult okData: {
-			  (#resultClassName -> answer class name asString).
-			  (#resultPrintString -> (answer printStringLimitedTo: resultPreviewCharacterLimit)) } asDictionary
+	^ MCPEvaluateResult okData: (self resultDataFor: answer)
 ]
 
 { #category : 'initialization' }
@@ -48,6 +46,21 @@ MCPEvaluateCommand >> initializeTool: aTool request: aRequest resultPreviewChara
 	request := aRequest.
 	resultPreviewCharacterLimit := anInteger.
 	^ self
+]
+
+{ #category : 'private' }
+MCPEvaluateCommand >> resultDataFor: anAnswer [
+	"Report what a truncated preview left out. The full length is deliberately not computed: printStringLimitedTo: stops early, and forcing the whole print string is exactly the cost this preview exists to avoid."
+
+	| data printString |
+	printString := anAnswer printStringLimitedTo: resultPreviewCharacterLimit.
+	data := Dictionary new.
+	data at: #resultClassName put: anAnswer class name asString.
+	data at: #resultPrintString put: printString.
+	printString size < resultPreviewCharacterLimit ifTrue: [ ^ data ].
+	data at: #truncated put: true.
+	(anAnswer isCollection and: [ anAnswer isString not ]) ifTrue: [ data at: #resultSize put: anAnswer size ].
+	^ data
 ]
 
 { #category : 'accessing' }

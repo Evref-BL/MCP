@@ -1282,6 +1282,29 @@ MCPToolContractsTest >> testEvaluateLetsNotificationsUseTheirDefaultAction [
 	self assert: (data at: #resultPrintString) equals: '#mcpDefaultAction'
 ]
 
+{ #category : 'tests - evaluate' }
+MCPToolContractsTest >> testEvaluateOmitsTruncationFieldsForSmallResults [
+
+	| data |
+	data := self dataFrom:
+		        (self callDiscoveredToolNamed: 'image_evaluate' withArguments: { (#code -> '#( 1 2 3 )') } asDictionary).
+	self deny: (data includesKey: #truncated).
+	self deny: (data includesKey: #resultSize)
+]
+
+{ #category : 'tests - evaluate' }
+MCPToolContractsTest >> testEvaluateReportsTruncationAndCollectionSize [
+	"A cut preview used to end in a marker and nothing else, so the caller could not tell whether two or two hundred kilobytes were missing."
+
+	| data |
+	data := self dataFrom: (self
+			         callDiscoveredToolNamed: 'image_evaluate'
+			         withArguments: { (#code -> '(1 to: 40000) asOrderedCollection') } asDictionary).
+	self assert: (data at: #truncated).
+	self assert: (data at: #resultSize) equals: 40000.
+	self assert: (data at: #resultPrintString) size equals: MCPToolEvaluate new resultPreviewCharacterLimit
+]
+
 { #category : 'tests' }
 MCPToolContractsTest >> testEvaluateRequiresCodeInSchema [
 
