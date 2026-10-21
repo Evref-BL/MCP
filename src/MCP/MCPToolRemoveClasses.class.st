@@ -87,7 +87,7 @@ MCPToolRemoveClasses >> commandForRequest: removeRequest [
 { #category : 'metadata' }
 MCPToolRemoveClasses >> description [
 
-	^ 'Remove classes as one batch. Safe-removal warnings stop the removal unless force is true. With force=true, the tool still returns those warnings.'
+	^ 'Remove classes as one batch. Safe-removal warnings stop the removal unless force is true. With force=true, the tool still returns those warnings. history_entry_revert undoes a removal in the running image.'
 ]
 
 { #category : 'private' }
@@ -139,12 +139,6 @@ MCPToolRemoveClasses >> failureMessageForClassNames: classNames error: anError [
 MCPToolRemoveClasses >> parsedRequestFromToolRequest: request [
 
 	^ MCPRemoveClassesRequest fromRequest: request tool: self
-]
-
-{ #category : 'testing' }
-MCPToolRemoveClasses >> shouldSaveImageAfterSuccessfulExecution [
-
-	^ true
 ]
 
 { #category : 'private' }
