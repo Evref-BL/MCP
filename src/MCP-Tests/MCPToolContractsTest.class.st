@@ -2570,6 +2570,14 @@ MCPToolContractsTest >> testSearchToolsKeywordsAreSingleSearchTerms [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testSearchToolsLetDescriptionsRefineRankingWithoutAdmittingTools [
+	"'the' appears in most descriptions, so a word found only there must not turn a tool into a result, but it still ranks a tool that already matches."
+
+	self assert: (self searchedToolNamesFor: 'frobnicate the widget') isEmpty.
+	self assert: (self searchedToolNamesFor: 'rename a method everywhere') first equals: 'method_selector_update'
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testSearchToolsMatchesAgentGuidanceKeywords [
 
 	| expectations |

@@ -61,6 +61,16 @@ MCPToolRegistry >> defaultRegistrations [
 ]
 
 { #category : 'tools' }
+MCPToolRegistry >> descriptionWeightForTool: aTool queryTerm: aTerm [
+	"Descriptions are prose, so common words like 'the' appear in most of them. A term found only here refines the ranking of a tool that already matches; it never makes one a match."
+
+	^ ((self queryTermAlternativesFor: aTerm) anySatisfy: [ :each |
+		   each size >= 3 and: [ aTool description asLowercase includesSubstring: each ] ])
+		  ifTrue: [ 2 ]
+		  ifFalse: [ 0 ]
+]
+
+{ #category : 'tools' }
 MCPToolRegistry >> exposureForTool: aTool [
 
 	| registration |
@@ -79,6 +89,21 @@ MCPToolRegistry >> exposurePolicy: aToolExposurePolicy [
 
 	self validateExposurePolicy: aToolExposurePolicy.
 	exposurePolicy := aToolExposurePolicy
+]
+
+{ #category : 'tools' }
+MCPToolRegistry >> identityWeightForTool: aTool queryTerm: aTerm [
+	"Answer how strongly aTerm identifies aTool through its name, keywords, or title. Terms shorter than three characters only count as an exact name segment or keyword: matching them as substrings would make every tool a match."
+
+	| alternatives substringTerms toolName |
+	alternatives := self queryTermAlternativesFor: aTerm.
+	toolName := aTool name asLowercase.
+	(alternatives anySatisfy: [ :each | (toolName findTokens: '-_') includes: each ]) ifTrue: [ ^ 10 ].
+	(alternatives anySatisfy: [ :each | aTool keywords includes: each ]) ifTrue: [ ^ 6 ].
+	substringTerms := alternatives select: [ :each | each size >= 3 ].
+	(substringTerms anySatisfy: [ :each | toolName includesSubstring: each ]) ifTrue: [ ^ 5 ].
+	(substringTerms anySatisfy: [ :each | aTool title asLowercase includesSubstring: each ]) ifTrue: [ ^ 3 ].
+	^ 0
 ]
 
 { #category : 'testing' }
@@ -228,16 +253,20 @@ MCPToolRegistry >> resetRegistrations [
 
 { #category : 'tools' }
 MCPToolRegistry >> scoreForTool: aTool queryTerms: queryTerms [
-	"Term coverage dominates the score; the matched field only breaks ties between tools covering the same number of terms."
+	"Term coverage dominates the score and the matched field breaks ties. Only a term identifying the tool counts as coverage, so a tool reached through its description alone scores zero and is not a match."
 
 	| matchedTerms fieldWeight |
 	matchedTerms := 0.
 	fieldWeight := 0.
 	queryTerms do: [ :term |
 			| weight |
-			weight := self weightForTool: aTool queryTerm: term.
-			weight > 0 ifTrue: [ matchedTerms := matchedTerms + 1 ].
-			fieldWeight := fieldWeight + weight ].
+			weight := self identityWeightForTool: aTool queryTerm: term.
+			weight > 0
+				ifTrue: [
+						matchedTerms := matchedTerms + 1.
+						fieldWeight := fieldWeight + weight ]
+				ifFalse: [ fieldWeight := fieldWeight + (self descriptionWeightForTool: aTool queryTerm: term) ] ].
+	matchedTerms = 0 ifTrue: [ ^ 0 ].
 	^ matchedTerms * 100 + fieldWeight
 ]
 
@@ -321,20 +350,4 @@ MCPToolRegistry >> validateExposurePolicy: aToolExposurePolicy [
 	staticNames ifNil: [ ^ self ].
 	unknown := staticNames reject: [ :each | self includesToolNamed: each ].
 	unknown ifNotEmpty: [ Error signal: 'Unknown MCP tool(s) in exposure policy: ' , unknown printString ]
-]
-
-{ #category : 'tools' }
-MCPToolRegistry >> weightForTool: aTool queryTerm: aTerm [
-	"Terms shorter than three characters only count as an exact name segment or keyword: matching them as substrings would make every tool a match."
-
-	| alternatives substringTerms toolName |
-	alternatives := self queryTermAlternativesFor: aTerm.
-	toolName := aTool name asLowercase.
-	(alternatives anySatisfy: [ :each | (toolName findTokens: '-_') includes: each ]) ifTrue: [ ^ 10 ].
-	(alternatives anySatisfy: [ :each | aTool keywords includes: each ]) ifTrue: [ ^ 6 ].
-	substringTerms := alternatives select: [ :each | each size >= 3 ].
-	(substringTerms anySatisfy: [ :each | toolName includesSubstring: each ]) ifTrue: [ ^ 5 ].
-	(substringTerms anySatisfy: [ :each | aTool title asLowercase includesSubstring: each ]) ifTrue: [ ^ 3 ].
-	(substringTerms anySatisfy: [ :each | aTool description asLowercase includesSubstring: each ]) ifTrue: [ ^ 2 ].
-	^ 0
 ]
