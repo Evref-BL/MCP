@@ -1313,6 +1313,15 @@ MCPToolContractsTest >> testEvaluateReturnsRuntimeFailureInformation [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testEvaluateToolPointsAtTheToolCatalog [
+	"image_evaluate is where an agent lands when it believes no dedicated tool exists, so its description has to name the way out."
+
+	| tool |
+	tool := self toolRegistry toolNamed: 'image_evaluate' ifAbsent: [ self fail: 'Missing image_evaluate tool' ].
+	self assert: (tool description includesSubstring: 'tool_search')
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testExposurePolicyOverridesToolDefault [
 
 	| registry tool |
@@ -2530,12 +2539,27 @@ MCPToolContractsTest >> testSearchToolsAnswersBestMatchesWhenNoToolMatchesEveryW
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testSearchToolsAnswersCatalogSizeWithoutQuery [
+MCPToolContractsTest >> testSearchToolsAnswersCatalogOverviewWhenNothingMatches [
+	"Answering a bare zero is read as proof of absence, so a caller that matched nothing is told the size and vocabulary of the catalog instead."
 
-	| result |
-	result := self callToolNamed: 'tool_search' withArguments: Dictionary new.
+	| result summary |
+	result := self callToolNamed: 'tool_search' withArguments: { (#query -> 'frobnicate the widget') } asDictionary.
+	summary := self summaryFrom: result.
 	self assert: ((self dataFrom: result) at: #tools) isEmpty.
-	self assert: ((self summaryFrom: result) includesSubstring: '0 of ')
+	self assert: (summary beginsWith: 'No tool matched. ').
+	self assert: (summary includesSubstring: ' tools in ').
+	self assert: (summary includesSubstring: 'classes ')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testSearchToolsAnswersCatalogOverviewWithoutQuery [
+
+	| result summary |
+	result := self callToolNamed: 'tool_search' withArguments: Dictionary new.
+	summary := self summaryFrom: result.
+	self assert: ((self dataFrom: result) at: #tools) isEmpty.
+	self assert: (summary includesSubstring: self toolRegistry publicTools size asString , ' tools in ').
+	self assert: (summary includesSubstring: 'classes ')
 ]
 
 { #category : 'tests' }

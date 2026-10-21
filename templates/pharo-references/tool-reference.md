@@ -42,7 +42,7 @@ present. Request larger pages only when the next step truly needs more entries.
 
 | Tool | Use |
 | --- | --- |
-| `tool_search` | Search the tool catalog by keyword, best match first. |
+| `tool_search` | Search the tool catalog by keyword, best match first. Without a query it answers the catalog's size and groups. |
 | `tool_get` | Return input schema and metadata for one catalog tool. |
 | `tool_call` | Invoke a catalog tool that is not exposed directly by the current client. |
 

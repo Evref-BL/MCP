@@ -20,6 +20,31 @@ MCPSearchToolsCommand class >> tool: aTool request: aRequest [
 	^ self tool: aTool request: aRequest toolRegistry: MCPToolRegistry default
 ]
 
+{ #category : 'private' }
+MCPSearchToolsCommand >> catalogOverviewText [
+	"Answer the size and shape of the catalog: a caller that matched nothing needs the vocabulary to search with, not only a count."
+
+	| groups |
+	groups := self toolRegistry publicToolGroups asSortedCollection: [ :left :right |
+		          left value size = right value size
+			          ifTrue: [ left key <= right key ]
+			          ifFalse: [ left value size > right value size ] ].
+	^ String streamContents: [ :stream |
+			  stream
+				  print: self toolRegistry publicTools size;
+				  nextPutAll: ' tools in ';
+				  print: groups size;
+				  nextPutAll: ' groups: '.
+			  groups
+				  do: [ :each |
+						  stream
+							  nextPutAll: each key;
+							  space;
+							  print: each value size ]
+				  separatedBy: [ stream nextPutAll: ', ' ].
+			  stream nextPutAll: '. Search by keyword.' ]
+]
+
 { #category : 'executing' }
 MCPSearchToolsCommand >> execute [
 
@@ -41,7 +66,10 @@ MCPSearchToolsCommand >> resultLimit [
 MCPSearchToolsCommand >> summaryText [
 
 	| shown |
-	matchingTools ifEmpty: [ ^ '0 of ' , self toolRegistry publicTools size asString , ' tools matched.' ].
+	matchingTools ifEmpty: [
+		^ request query isEmptyOrNil
+			  ifTrue: [ self catalogOverviewText ]
+			  ifFalse: [ 'No tool matched. ' , self catalogOverviewText ] ].
 	shown := self visibleTools size.
 	shown = matchingTools size ifTrue: [ ^ shown asString , ' tools matched, best first.' ].
 	^ shown asString , ' of ' , matchingTools size asString , ' matching tools, best first. Add words to narrow the search.'
