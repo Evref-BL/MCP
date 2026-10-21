@@ -212,51 +212,19 @@ The debugger tools are discoverable under the `debugging` group. Read
 | `image_evaluate` | Evaluate arbitrary Smalltalk and return a bounded preview of the result. |
 
 Use `image_evaluate` only when no dedicated tool fits. A successful evaluation can
-mutate and save the image.
+mutate the running image.
 
 ## Mutation And Saving
 
-Most search and inspection tools are read-only and do not save the image.
-Mutating tools save the image after a successful call.
+No tool saves the image. Mutating tools change the running image only, so
+closing it discards every change since its last save, and a mistake costs the
+session rather than the image file. Saving is the caller's decision: evaluate
+`Smalltalk saveSession` when a change should survive, or leave it to whoever
+owns the image lifecycle.
 
-Tools that can save after success include:
-
-```text
-class_create
-class_name_update
-class_package_update
-class_comment_update
-class_slot_add
-class_slot_remove
-class_slot_name_update
-method_compile
-method_selector_update
-method_protocol_update
-repository_create
-repository_attach
-repository_update
-repository_export
-repository_commit
-repository_fetch
-repository_pull
-repository_push
-repository_branch_create
-repository_branch_switch
-repository_branch_checkout
-repository_head_adopt
-baseline_load
-repository_load
-class_remove
-method_remove
-method_rewrite when apply=true and changes were applied
-history_entry_apply when entries were performed
-history_entry_revert when entries were performed
-debug_expression_evaluate
-debug_capture
-debug_test_run
-debug_method_update when a method is accepted
-image_evaluate
-```
+Use `history_entry_list` to see what changed and `history_entry_revert` to undo
+a change in the running image; both preview first and perform with
+`confirm=true`.
 
 `repository_identity_verify` and `repository_change_list` are read-only.
 

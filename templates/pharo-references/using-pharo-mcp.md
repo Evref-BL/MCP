@@ -43,9 +43,12 @@ debugging guide.
 
 ## Image Mutation
 
-Successful mutating tools save the image. Use a copied or disposable image for
-broad or risky edits, preview changes when the tool supports it, and run focused
-tests after source changes.
+Mutating tools change the running image and never save it, so closing the image
+discards everything since its last save. Saving is the caller's decision:
+evaluate `Smalltalk saveSession` when a change should survive, or leave it to
+whoever owns the image lifecycle. Use a copied or disposable image for broad or
+risky edits, preview changes when the tool supports it, and run focused tests
+after source changes.
 
 Report incomplete or failing tool results clearly. Never silently fall back to
 exported source for a question about the live image.

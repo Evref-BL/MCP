@@ -11,7 +11,7 @@ guessing from source.
 - Prefer the least-mutating dedicated tool. Use `image_evaluate` only when no
   dedicated tool fits.
 - Treat image, Tonel, Iceberg, and Git state as separate.
-- Successful mutating tools save the image; use a safe image boundary.
+- Tools change the running image but never save it; use a safe image boundary.
 
 ## Context Loading
 

@@ -545,18 +545,6 @@ MCPTool >> shouldResumeNotification: aNotification [
 	^ (aNotification isKindOf: RBRefactoringWarning) not
 ]
 
-{ #category : 'testing' }
-MCPTool >> shouldSaveImageAfterSuccessfulExecution [
-
-	^ false
-]
-
-{ #category : 'testing' }
-MCPTool >> shouldSaveImageAfterSuccessfulExecutionForResult: aResult [
-
-	^ self shouldSaveImageAfterSuccessfulExecution
-]
-
 { #category : 'private - schema' }
 MCPTool >> standardOutputSchemaForDataProperties: dataProperties required: requiredFields [
 
