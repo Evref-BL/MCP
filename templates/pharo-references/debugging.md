@@ -13,8 +13,8 @@ Debugger tools are discoverable, not part of the default static surface.
 
 ## Discovery Flow
 
-1. Use `tool_search` with `group=debugging` to find available debugger
-   tools.
+1. Use `tool_search` with a query such as `debug session` to find available
+   debugger tools.
 2. Use `tool_get` for the exact schema of the tool you plan to call.
 3. If the current client exposes a catalog bridge, use `tool_call` to invoke
    the selected debugger tool by name. Otherwise use the callable form exposed

@@ -6,6 +6,9 @@ This command supports the discoverable-tool workflow: agents can search by text,
 Class {
 	#name : 'MCPSearchToolsCommand',
 	#superclass : 'MCPToolCatalogCommand',
+	#instVars : [
+		'matchingTools'
+	],
 	#category : 'MCP-Commands',
 	#package : 'MCP',
 	#tag : 'Commands'
@@ -20,31 +23,32 @@ MCPSearchToolsCommand class >> tool: aTool request: aRequest [
 { #category : 'executing' }
 MCPSearchToolsCommand >> execute [
 
-	| data matchingTools pageSize visibleTools |
-	pageSize := self pageSize.
-	matchingTools := self toolRegistry toolsMatchingQuery: request query group: nil.
-	visibleTools := self visibleToolsFrom: matchingTools.
+	| data |
+	matchingTools := self toolRegistry toolsMatchingQuery: request query.
 	data := Dictionary new.
-	data at: #tools put: (visibleTools collect: [ :each | each searchMetadata ]) asArray.
-	(self hasMoreToolsAfter: matchingTools) ifTrue: [ data at: #nextCursor put: (request cursor + pageSize) asString ].
+	data at: #tools put: (self visibleTools collect: [ :each | each searchMetadata ]) asArray.
 	^ data
 ]
 
-{ #category : 'private' }
-MCPSearchToolsCommand >> hasMoreToolsAfter: matchingTools [
+{ #category : 'accessing' }
+MCPSearchToolsCommand >> resultLimit [
+	"The ranking answers the closest matches; a caller narrows the search with more words instead of paging through worse ones."
 
-	^ matchingTools size > (request cursor + self pageSize)
+	^ 15
 ]
 
 { #category : 'accessing' }
-MCPSearchToolsCommand >> pageSize [
+MCPSearchToolsCommand >> summaryText [
 
-	^ 25
+	| shown |
+	matchingTools ifEmpty: [ ^ '0 of ' , self toolRegistry publicTools size asString , ' tools matched.' ].
+	shown := self visibleTools size.
+	shown = matchingTools size ifTrue: [ ^ shown asString , ' tools matched, best first.' ].
+	^ shown asString , ' of ' , matchingTools size asString , ' matching tools, best first. Add words to narrow the search.'
 ]
 
 { #category : 'private' }
-MCPSearchToolsCommand >> visibleToolsFrom: matchingTools [
+MCPSearchToolsCommand >> visibleTools [
 
-	request cursor >= matchingTools size ifTrue: [ ^ #(  ) ].
-	^ matchingTools copyFrom: request cursor + 1 to: (matchingTools size min: request cursor + self pageSize)
+	^ matchingTools first: (matchingTools size min: self resultLimit)
 ]

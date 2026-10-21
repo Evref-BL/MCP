@@ -42,12 +42,14 @@ present. Request larger pages only when the next step truly needs more entries.
 
 | Tool | Use |
 | --- | --- |
-| `tool_search` | Search the tool catalog by group, keyword, title, or description. |
+| `tool_search` | Search the tool catalog by keyword, best match first. |
 | `tool_get` | Return input schema and metadata for one catalog tool. |
 | `tool_call` | Invoke a catalog tool that is not exposed directly by the current client. |
 
-Use `tool_search` before calling less common or high-risk tools. Inspect the
-schema before invoking a discoverable tool.
+Use `tool_search` before calling less common or high-risk tools. It ranks the
+catalog instead of filtering it, so the closest tools come back even when no
+tool matches every word; add words to narrow the ranking. Inspect the schema
+before invoking a discoverable tool.
 
 ## Repositories
 

@@ -504,24 +504,6 @@ MCPTool >> searchMetadata [
 		  (#description -> self description) } asDictionary
 ]
 
-{ #category : 'metadata' }
-MCPTool >> searchableText [
-
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: self name;
-				  space;
-				  nextPutAll: self title;
-				  space;
-				  nextPutAll: self description;
-				  space;
-				  nextPutAll: self groupName.
-			  self keywords do: [ :keyword |
-					  stream
-						  space;
-						  nextPutAll: keyword ] ]
-]
-
 { #category : 'private - schema' }
 MCPTool >> shouldAdvertiseStringArrayItemDescription: anItemDescription [
 

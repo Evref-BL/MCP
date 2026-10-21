@@ -104,6 +104,17 @@ MCPToolRegistry >> isStaticToolNamed: aToolName [
 ]
 
 { #category : 'tools' }
+MCPToolRegistry >> isTool: aTool rankedBefore: anotherTool [
+	"Break a score tie in favor of the more general tool: fewer name segments first, then alphabetically."
+
+	| segments otherSegments |
+	segments := (aTool name findTokens: '-_') size.
+	otherSegments := (anotherTool name findTokens: '-_') size.
+	segments = otherSegments ifTrue: [ ^ aTool name <= anotherTool name ].
+	^ segments < otherSegments
+]
+
+{ #category : 'tools' }
 MCPToolRegistry >> publicToolClasses [
 
 	^ (self registrations collect: [ :each | each toolClass ]) asArray
@@ -216,6 +227,21 @@ MCPToolRegistry >> resetRegistrations [
 ]
 
 { #category : 'tools' }
+MCPToolRegistry >> scoreForTool: aTool queryTerms: queryTerms [
+	"Term coverage dominates the score; the matched field only breaks ties between tools covering the same number of terms."
+
+	| matchedTerms fieldWeight |
+	matchedTerms := 0.
+	fieldWeight := 0.
+	queryTerms do: [ :term |
+			| weight |
+			weight := self weightForTool: aTool queryTerm: term.
+			weight > 0 ifTrue: [ matchedTerms := matchedTerms + 1 ].
+			fieldWeight := fieldWeight + weight ].
+	^ matchedTerms * 100 + fieldWeight
+]
+
+{ #category : 'tools' }
 MCPToolRegistry >> singularSearchTermFor: aTerm [
 
 	| term |
@@ -255,28 +281,28 @@ MCPToolRegistry >> staticToolsDictionary [
 ]
 
 { #category : 'tools' }
-MCPToolRegistry >> tool: aTool matchesQuery: queryString group: groupString [
-
-	| group queryTerms searchableText |
-	group := groupString ifNotNil: [ :value | value asString trimBoth asLowercase ].
-	(group isNotNil and: [ group isNotEmpty and: [ group ~= aTool groupName ] ]) ifTrue: [ ^ false ].
-	queryTerms := self queryTermsFrom: queryString.
-	queryTerms ifEmpty: [ ^ true ].
-	searchableText := aTool searchableText asLowercase.
-	^ queryTerms allSatisfy: [ :each |
-		  (self queryTermAlternativesFor: each) anySatisfy: [ :alternative | searchableText includesSubstring: alternative ] ]
-]
-
-{ #category : 'tools' }
 MCPToolRegistry >> toolNamed: aToolName ifAbsent: absentBlock [
 
 	^ (self registrationNamed: aToolName ifAbsent: [ ^ absentBlock value ]) tool
 ]
 
 { #category : 'tools' }
-MCPToolRegistry >> toolsMatchingQuery: queryString group: groupString [
+MCPToolRegistry >> toolsMatchingQuery: queryString [
+	"Answer the tools matching queryString, best match first. Query words rank tools instead of gating them, so a tool matching only some of the words is still answered. An empty query matches nothing."
 
-	^ (self publicTools select: [ :tool | self tool: tool matchesQuery: queryString group: groupString ]) asArray
+	| queryTerms scoredTools |
+	queryTerms := self queryTermsFrom: queryString.
+	queryTerms ifEmpty: [ ^ #(  ) ].
+	scoredTools := OrderedCollection new.
+	self publicTools do: [ :tool |
+			| score |
+			score := self scoreForTool: tool queryTerms: queryTerms.
+			score > 0 ifTrue: [ scoredTools add: score -> tool ] ].
+	scoredTools sort: [ :left :right |
+			left key = right key
+				ifTrue: [ self isTool: left value rankedBefore: right value ]
+				ifFalse: [ left key > right key ] ].
+	^ (scoredTools collect: [ :each | each value ]) asArray
 ]
 
 { #category : 'registrations' }
@@ -295,4 +321,20 @@ MCPToolRegistry >> validateExposurePolicy: aToolExposurePolicy [
 	staticNames ifNil: [ ^ self ].
 	unknown := staticNames reject: [ :each | self includesToolNamed: each ].
 	unknown ifNotEmpty: [ Error signal: 'Unknown MCP tool(s) in exposure policy: ' , unknown printString ]
+]
+
+{ #category : 'tools' }
+MCPToolRegistry >> weightForTool: aTool queryTerm: aTerm [
+	"Terms shorter than three characters only count as an exact name segment or keyword: matching them as substrings would make every tool a match."
+
+	| alternatives substringTerms toolName |
+	alternatives := self queryTermAlternativesFor: aTerm.
+	toolName := aTool name asLowercase.
+	(alternatives anySatisfy: [ :each | (toolName findTokens: '-_') includes: each ]) ifTrue: [ ^ 10 ].
+	(alternatives anySatisfy: [ :each | aTool keywords includes: each ]) ifTrue: [ ^ 6 ].
+	substringTerms := alternatives select: [ :each | each size >= 3 ].
+	(substringTerms anySatisfy: [ :each | toolName includesSubstring: each ]) ifTrue: [ ^ 5 ].
+	(substringTerms anySatisfy: [ :each | aTool title asLowercase includesSubstring: each ]) ifTrue: [ ^ 3 ].
+	(substringTerms anySatisfy: [ :each | aTool description asLowercase includesSubstring: each ]) ifTrue: [ ^ 2 ].
+	^ 0
 ]
