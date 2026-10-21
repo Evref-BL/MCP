@@ -26,6 +26,7 @@ Load MCP in a supported image:
 Metacello new
    baseline: 'MCP';
    repository: 'github://Evref-BL/MCP:main/src';
+   onConflictUseIncoming;
    load.
 ```
 
