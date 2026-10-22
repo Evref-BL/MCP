@@ -73,8 +73,7 @@ MCPToolStructuredOutputTest >> testGetClassReturnsStructuredError [
 	self assert: (result at: #isError).
 	self deny: (structured includesKey: #warnings).
 	self assert: (contentText includesSubstring: (structured at: #summary)).
-	self assert: (contentText includesSubstring: '"error"').
-	self assert: (contentText includesSubstring: '"errorCode"').
+	self deny: (contentText includesSubstring: '"errorCode"').
 	self assert: (self warningsFrom: result) equals: #(  ).
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
@@ -93,8 +92,7 @@ MCPToolStructuredOutputTest >> testGetClassReturnsStructuredSuccess [
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self deny: (structured includesKey: #warnings).
 	self assert: (contentText includesSubstring: (structured at: #summary)).
-	self assert: (contentText includesSubstring: '"data"').
-	self assert: (contentText includesSubstring: '"className"').
+	self assert: (contentText includesSubstring: 'className: MCPToolGetMethodTestTarget').
 	self assert: (self warningsFrom: result) equals: #(  ).
 	self assert: (data at: #className) equals: 'MCPToolGetMethodTestTarget'.
 	self assert: (data at: #instanceMethodCount) equals: 1.

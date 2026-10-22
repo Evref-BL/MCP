@@ -233,9 +233,12 @@ MCPTool >> commandForRequest: aToolRequest [
 
 { #category : 'private - results' }
 MCPTool >> contentTextForStructuredContent: structuredContent [
-	"Answer the text block a caller reads. The default is the canonical JSON of the structured content; a tool overrides this when plain text reads better and costs fewer tokens."
+	"Answer the text block a caller reads: what happened, then the payload as lines. A tool overrides the rendering of its own data when its shape reads better another way."
 
-	^ STON toJsonStringPretty: structuredContent asJRPCJSON
+	^ String streamContents: [ :stream |
+			  self summaryAndWarningsOn: stream for: structuredContent.
+			  structuredContent at: #data ifPresent: [ :data | self dataTextOn: stream for: data ].
+			  structuredContent at: #error ifPresent: [ :error | self errorTextOn: stream for: error ] ]
 ]
 
 { #category : 'metadata' }
@@ -248,6 +251,30 @@ MCPTool >> contractIncludingOutputSchema: includeOutputSchema [
 	^ data
 ]
 
+{ #category : 'private - results' }
+MCPTool >> dataTextOn: stream for: data [
+	"Render a payload as lines, in a reading order: what identifies the result first, then the blocks of text it carries. Sorting alphabetically alone buries a class name under its comment."
+
+	| keys stated |
+	stated := self keysStatedInSummary.
+	keys := (data keys reject: [ :key | stated includes: key asSymbol ]) asSortedCollection: [ :left :right |
+		        left asString <= right asString ].
+	keys do: [ :key |
+			(self isBlockValue: (data at: key)) ifFalse: [
+					self
+						valueTextOn: stream
+						for: (data at: key)
+						labelled: key asString
+						indent: '' ] ].
+	keys do: [ :key |
+			(self isBlockValue: (data at: key)) ifTrue: [
+					self
+						valueTextOn: stream
+						for: (data at: key)
+						labelled: key asString
+						indent: '' ] ]
+]
+
 { #category : 'metadata' }
 MCPTool >> defaultExposure [
 
@@ -258,6 +285,34 @@ MCPTool >> defaultExposure [
 MCPTool >> description [
 
 	self subclassResponsibility
+]
+
+{ #category : 'private - results' }
+MCPTool >> entriesTextOn: stream for: entries labelled: label indent: indent [
+	"A list of records reads as one line each; a list of plain values reads as one line."
+
+	(entries anySatisfy: [ :each | each isDictionary ]) ifFalse: [
+			stream
+				nextPut: Character lf;
+				nextPutAll: indent;
+				nextPutAll: label;
+				nextPutAll: ': ';
+				nextPutAll: (', ' join: (entries collect: [ :each | each asString ])).
+			^ self ].
+	entries do: [ :entry |
+			stream
+				nextPut: Character lf;
+				nextPutAll: indent.
+			entry isDictionary
+				ifTrue: [
+						(entry keys asSortedCollection: [ :left :right | left asString <= right asString ])
+							do: [ :key |
+									stream
+										nextPutAll: key asString;
+										nextPut: $=;
+										nextPutAll: (entry at: key) asString ]
+							separatedBy: [ stream space ] ]
+				ifFalse: [ stream nextPutAll: entry asString ] ]
 ]
 
 { #category : 'private - results' }
@@ -342,6 +397,22 @@ MCPTool >> errorStackTraceForContext: aContext [
 MCPTool >> errorStackTraceLimit [
 
 	^ 20
+]
+
+{ #category : 'private - results' }
+MCPTool >> errorTextOn: stream for: error [
+	"The summary already carries the class, the message, and any suggestion the command phrased into it. What it does not carry is where the failure happened, or the selectors a receiver would have understood."
+
+	error at: #suggestedSelectors ifPresent: [ :selectors |
+			stream
+				nextPut: Character lf;
+				nextPutAll: 'Did you mean: ';
+				nextPutAll: (', ' join: selectors) ].
+	error at: #stackTrace ifPresent: [ :frames |
+			frames do: [ :each |
+					stream
+						nextPut: Character lf;
+						nextPutAll: each ] ]
 ]
 
 { #category : 'private - execution' }
@@ -431,12 +502,26 @@ MCPTool >> integerSchemaPropertyNamed: propertyName description: propertyDescrip
 		  yourself
 ]
 
+{ #category : 'private - results' }
+MCPTool >> isBlockValue: value [
+	"A block of text is read as a block: it belongs after the fields that identify the result, not sorted among them."
+
+	^ value isString and: [ value includesSubstring: String cr ]
+]
+
 { #category : 'error handling' }
 MCPTool >> isServerFrame: aContext [
 
 	^ aContext method methodClass
 		  ifNil: [ false ]
 		  ifNotNil: [ :methodClass | methodClass instanceSide name beginsWith: 'MCP' ]
+]
+
+{ #category : 'private - results' }
+MCPTool >> keysStatedInSummary [
+	"Answer the data keys whose value the summary already states in prose, so the text does not say it twice. A tool declares its own."
+
+	^ #(  )
 ]
 
 { #category : 'metadata' }
@@ -712,6 +797,43 @@ MCPTool >> title [
 MCPTool >> validateRequest: aToolRequest [
 
 	^ self
+]
+
+{ #category : 'private - results' }
+MCPTool >> valueTextOn: stream for: value labelled: label indent: indent [
+
+	(value isNil or: [ value isCollection and: [ value isString not and: [ value isEmpty ] ] ]) ifTrue: [ ^ self ].
+	value isDictionary ifTrue: [
+			stream
+				nextPut: Character lf;
+				nextPutAll: indent;
+				nextPutAll: label;
+				nextPut: $:.
+			^ (value keys asSortedCollection: [ :left :right | left asString <= right asString ]) do: [ :key |
+					  self
+						  valueTextOn: stream
+						  for: (value at: key)
+						  labelled: key asString
+						  indent: indent , '  ' ] ].
+	(value isCollection and: [ value isString not ]) ifTrue: [
+			^ self
+				  entriesTextOn: stream
+				  for: value
+				  labelled: label
+				  indent: indent ].
+	stream
+		nextPut: Character lf;
+		nextPutAll: indent;
+		nextPutAll: label;
+		nextPut: $:.
+	(value isString and: [ value includesSubstring: String cr ])
+		ifTrue: [
+				stream nextPut: Character lf.
+				stream nextPutAll: value withUnixLineEndings ]
+		ifFalse: [
+				stream
+					space;
+					nextPutAll: value asString ]
 ]
 
 { #category : 'private - schema' }

@@ -135,6 +135,13 @@ MCPToolRemoveClasses >> failureMessageForClassNames: classNames error: anError [
 				  nextPutAll: anError messageText ]
 ]
 
+{ #category : 'private - results' }
+MCPToolRemoveClasses >> keysStatedInSummary [
+	"The summary already reads 'Removed class Foo. Removed packages: Bar.'"
+
+	^ #( removedClasses removedPackageNames )
+]
+
 { #category : 'private - request' }
 MCPToolRemoveClasses >> parsedRequestFromToolRequest: request [
 

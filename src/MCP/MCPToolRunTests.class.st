@@ -162,6 +162,33 @@ MCPToolRunTests >> coverageResultObjectSchema [
 	^ property
 ]
 
+{ #category : 'private - results' }
+MCPToolRunTests >> dataTextOn: stream for: data [
+	"A failed test is read as a line naming it and why, not as a record."
+
+	| rest |
+	#( failures errors ) do: [ :key |
+			(data at: key ifAbsent: [ #(  ) ]) do: [ :entry |
+					stream
+						nextPut: Character lf;
+						nextPutAll: (key = #failures
+								 ifTrue: [ 'failed ' ]
+								 ifFalse: [ 'error ' ]);
+						nextPutAll: (entry at: #test ifAbsent: [ '?' ]).
+					entry at: #errorClass ifPresent: [ :errorClass |
+							stream
+								nextPutAll: ' (';
+								nextPutAll: errorClass;
+								nextPut: $) ].
+					entry at: #message ifPresent: [ :message |
+							stream
+								nextPutAll: ': ';
+								nextPutAll: message ] ] ].
+	rest := data copy.
+	#( failures errors ) do: [ :key | rest removeKey: key ifAbsent: [ nil ] ].
+	super dataTextOn: stream for: rest
+]
+
 { #category : 'defaults' }
 MCPToolRunTests >> defaultCoverageMethodLimit [
 
@@ -225,6 +252,13 @@ MCPToolRunTests >> failureMessageForTestNames: testNames error: anError [
 				  nextPutAll: anError class name;
 				  nextPutAll: '): ';
 				  nextPutAll: anError messageText ]
+]
+
+{ #category : 'private - results' }
+MCPToolRunTests >> keysStatedInSummary [
+	"The summary already reads 'Ran 731 tests (728 passed). 3 failures, 0 errors.'"
+
+	^ #( runCount passedCount failureCount errorCount skippedCount )
 ]
 
 { #category : 'private - request' }
