@@ -38,6 +38,27 @@ exists, `data` includes `nextOffset`; call the same tool again with that
 Use the returned array size for the current page and follow `nextOffset` when
 present. Request larger pages only when the next step truly needs more entries.
 
+## Naming Several Targets
+
+Four tools act on several targets in one call. The argument that names the
+target holds either one value or a list of them, and every other argument
+applies to all of them:
+
+| Tool | Argument | One call covers |
+| --- | --- | --- |
+| `method_get` | `selector` | Methods of one class, on one side. |
+| `method_compile` | `source` | Sources compiled into one class, under one protocol. |
+| `class_get` | `name` | Classes read with the same options. |
+| `class_create` | `name` | Classes sharing a superclass, package and slots. |
+
+Every target is attempted. The summary states how many succeeded, each target
+then reads as it would have read on its own, and `data` carries one entry per
+target under `results`, in request order. An entry that failed carries its
+`error`. The call is flagged `isError` only when every target failed.
+
+A call naming one target answers exactly what it answers when the argument
+holds a single value.
+
 ## Finding A Tool
 
 The server answers for its own catalogue. `tool_search` ranks it by keyword,

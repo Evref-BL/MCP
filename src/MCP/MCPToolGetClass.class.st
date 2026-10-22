@@ -30,9 +30,27 @@ MCPToolGetClass >> annotations [
 ]
 
 { #category : 'metadata' }
+MCPToolGetClass >> batchArgumentName [
+
+	^ 'name'
+]
+
+{ #category : 'metadata' }
+MCPToolGetClass >> batchSummaryNoun [
+
+	^ 'classes'
+]
+
+{ #category : 'metadata' }
+MCPToolGetClass >> batchSummaryVerb [
+
+	^ 'Got'
+]
+
+{ #category : 'metadata' }
 MCPToolGetClass >> buildInputSchema [
 
-	| includeCommentProperty subclassDepthProperty upToSuperclassNameProperty |
+	| includeCommentProperty subclassDepthProperty upToSuperclassNameProperty nameProperty |
 	includeCommentProperty := MCPStructureProperties new
 		                          name: 'includeComment';
 		                          type: 'boolean';
@@ -53,14 +71,19 @@ MCPToolGetClass >> buildInputSchema [
 		                         minimum: 0;
 		                         maximum: self maximumSubclassDepth;
 		                         yourself.
+	nameProperty := MCPStructureProperties new
+		                name: 'name';
+		                type: #( 'string' 'array' );
+		                description: 'Class name, or several class names.';
+		                items: (MCPStructureProperties new
+			                 type: 'string';
+			                 description: 'A class name.';
+			                 yourself);
+		                yourself.
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties: {
-				  (MCPStructureProperties new
-					   name: 'name';
-					   type: 'string';
-					   description: 'Class name.';
-					   yourself).
+				  nameProperty.
 				  includeCommentProperty.
 				  upToSuperclassNameProperty.
 				  subclassDepthProperty };
@@ -189,7 +212,7 @@ MCPToolGetClass >> defaultExposure [
 { #category : 'metadata' }
 MCPToolGetClass >> description [
 
-	^ 'Get metadata for one class. Optional superclass/subclass context. Use class_search to discover class names.'
+	^ 'Get metadata for one or more classes. Optional superclass/subclass context. Use class_search to discover class names.'
 ]
 
 { #category : 'private - hierarchy' }
@@ -222,19 +245,20 @@ MCPToolGetClass >> errorResultForError: anError className: className [
 { #category : 'executing' }
 MCPToolGetClass >> executeWithRequest: request [
 
-	^ self
-		  executeParsedRequestFrom: request
-		  do: [ :getRequest |
-				  | commandResult |
-				  commandResult := (self commandForRequest: getRequest) execute.
-				  self
-					  successResultText: (self
-							   successSummaryForClassName: commandResult className
-							   superclasses: commandResult superclasses
-							   subclasses: commandResult subclasses)
-					  data: commandResult data ]
-		  onError: [ :error :getRequest |
-			  self errorResultForError: error className: (self classNameForErrorFromParsedRequest: getRequest rawRequest: request) ]
+	^ self executeBatchedRequest: request do: [ :targetRequest |
+		  self
+			  executeParsedRequestFrom: targetRequest
+			  do: [ :getRequest |
+					  | commandResult |
+					  commandResult := (self commandForRequest: getRequest) execute.
+					  self
+						  successResultText: (self
+								   successSummaryForClassName: commandResult className
+								   superclasses: commandResult superclasses
+								   subclasses: commandResult subclasses)
+						  data: commandResult data ]
+			  onError: [ :error :getRequest |
+				  self errorResultForError: error className: (self classNameForErrorFromParsedRequest: getRequest rawRequest: targetRequest) ] ]
 ]
 
 { #category : 'private' }

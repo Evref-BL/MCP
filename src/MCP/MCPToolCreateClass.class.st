@@ -15,6 +15,24 @@ MCPToolCreateClass class >> toolName [
 	^ 'class_create'
 ]
 
+{ #category : 'metadata' }
+MCPToolCreateClass >> batchArgumentName [
+
+	^ 'name'
+]
+
+{ #category : 'metadata' }
+MCPToolCreateClass >> batchSummaryNoun [
+
+	^ 'classes'
+]
+
+{ #category : 'metadata' }
+MCPToolCreateClass >> batchSummaryVerb [
+
+	^ 'Created'
+]
+
 { #category : 'private - specs' }
 MCPToolCreateClass >> classToolSpec [
 
@@ -41,7 +59,15 @@ MCPToolCreateClass >> classToolSpec [
 { #category : 'private - schema' }
 MCPToolCreateClass >> createClassNameSchemaProperty [
 
-	^ self schemaPropertyNamed: 'name' type: 'string' description: 'Name of the class to create.'
+	^ (self
+		   schemaPropertyNamed: 'name'
+		   type: #( 'string' 'array' )
+		   description: 'Name of the class to create, or several names sharing the other arguments.')
+		  items: (MCPStructureProperties new
+			   type: 'string';
+			   description: 'Name of one class to create.';
+			   yourself);
+		  yourself
 ]
 
 { #category : 'private - schema' }

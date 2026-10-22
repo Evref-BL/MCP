@@ -37,6 +37,10 @@ mutation, and inspect `repository_change_list` before export or commit. Read
 [Safety and ecosystem integration](safety-and-ecosystem.md) for mutation
 boundaries.
 
+`method_get` and `class_get` read several targets in one call when their
+`selector` or `name` holds a list, and `method_compile` and `class_create`
+write several the same way. See [Tool reference](tool-reference.md).
+
 For history recovery, inspect files and entries before applying or reverting.
 For debugger sessions, breakpoints, or repairs, read the installed local
 debugging guide.

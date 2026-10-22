@@ -18,6 +18,9 @@ template package.
   refactoring warning is the exception and stops an unforced mutation.
 - Method source in the image separates lines with CR. `method_compile`
   normalizes it; a bare `compile:` does not.
+- `method_get`, `method_compile`, `class_get` and `class_create` take one
+  target or a list of them in the argument that names it, and attempt every
+  one.
 - Use live images or externally mutating workflows only with an approved image,
   repository, and cleanup boundary.
 

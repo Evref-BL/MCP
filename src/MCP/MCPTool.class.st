@@ -199,6 +199,136 @@ MCPTool >> asJRPCJSON [
 	^ dictionary
 ]
 
+{ #category : 'metadata' }
+MCPTool >> batchArgumentName [
+	"The argument naming what the call acts on. A tool that answers one accepts either a single value
+	or a list of them there, and runs once per value."
+
+	^ nil
+]
+
+{ #category : 'private - results' }
+MCPTool >> batchContentTextForResults: results summary: summary [
+	"Each target reads exactly as it would have read on its own, under one line saying how the call as a whole went."
+
+	^ String streamContents: [ :stream |
+		  stream nextPutAll: summary.
+		  results do: [ :each |
+			  stream
+				  nextPut: Character lf;
+				  nextPut: Character lf;
+				  nextPutAll: (self contentTextForStructuredContent: each structuredContent) ] ]
+]
+
+{ #category : 'private - results' }
+MCPTool >> batchEntryForResult: aResult [
+
+	| structured entry |
+	structured := aResult structuredContent.
+	entry := Dictionary new.
+	entry at: #summary put: (structured at: #summary ifAbsent: [ '' ]).
+	aResult isError
+		ifTrue: [ entry at: #error put: (structured at: #error ifAbsent: [ Dictionary new ]) ]
+		ifFalse: [
+				(structured at: #data ifAbsent: [ nil ]) ifNotNil: [ :data |
+						data keysAndValuesDo: [ :key :value | entry at: key put: value ] ].
+				(structured at: #warnings ifAbsent: [ nil ]) ifNotNil: [ :warnings | entry at: #warnings put: warnings ] ].
+	^ entry
+]
+
+{ #category : 'private - results' }
+MCPTool >> batchResultForResults: results [
+
+	| failedCount summary data structuredContent resultClass |
+	failedCount := results count: [ :each | each isError ].
+	summary := self batchSummaryForSucceeded: results size - failedCount total: results size.
+	data := Dictionary new
+		        at: #results put: (results collect: [ :each | self batchEntryForResult: each ]) asArray;
+		        yourself.
+	structuredContent := Dictionary new
+		                     at: #summary put: summary;
+		                     at: #data put: data;
+		                     yourself.
+	resultClass := failedCount = results size
+		               ifTrue: [ MCPStructureErrorToolResult ]
+		               ifFalse: [ MCPStructureCallToolResult ].
+	^ resultClass
+		  content: { (self textContent: (self batchContentTextForResults: results summary: summary)) }
+		  structuredContent: structuredContent
+]
+
+{ #category : 'private - results' }
+MCPTool >> batchResultForTargets: targets request: aRequest do: executionBlock [
+
+	| results |
+	results := targets collect: [ :target |
+		           [ executionBlock value: (aRequest withArgumentNamed: self batchArgumentName setTo: target) ]
+			           on: Error
+			           do: [ :error | self errorResultFor: error ] ].
+	^ self batchResultForResults: results
+]
+
+{ #category : 'private - schema' }
+MCPTool >> batchResultsSchemaPropertyFor: dataProperties [
+	"A batched tool answers the fields of one target, or one entry per target when the call named several."
+
+	| entrySchema |
+	entrySchema := MCPStructureProperties new
+		               name: 'result';
+		               type: 'object';
+		               description: 'The outcome for one target.';
+		               properties: dataProperties , {
+				               (self schemaPropertyNamed: 'summary' type: 'string' description: 'The summary for this target.').
+				               (self
+					                schemaPropertyNamed: 'error'
+					                type: 'object'
+					                description: 'Structured error information when this target failed.') };
+		               required: #( 'summary' );
+		               additionalProperties: true;
+		               yourself.
+	^ (self
+		   schemaPropertyNamed: 'results'
+		   type: 'array'
+		   description: 'One entry per target, in request order, when the call named several.')
+		  items: entrySchema;
+		  yourself
+]
+
+{ #category : 'private - results' }
+MCPTool >> batchSummaryForSucceeded: successCount total: totalCount [
+	"A batch always names at least two targets, so the noun is always plural."
+
+	^ String streamContents: [ :stream |
+		  stream
+			  nextPutAll: self batchSummaryVerb;
+			  space;
+			  print: successCount;
+			  nextPutAll: ' of ';
+			  print: totalCount;
+			  space;
+			  nextPutAll: self batchSummaryNoun;
+			  nextPut: $..
+		  successCount = totalCount ifFalse: [
+				  stream
+					  space;
+					  print: totalCount - successCount;
+					  nextPutAll: ' failed.' ] ]
+]
+
+{ #category : 'metadata' }
+MCPTool >> batchSummaryNoun [
+	"How the targets of a batch are named in its summary, in the plural."
+
+	^ 'targets'
+]
+
+{ #category : 'metadata' }
+MCPTool >> batchSummaryVerb [
+	"How a batch summary opens."
+
+	^ 'Handled'
+]
+
 { #category : 'private - schema' }
 MCPTool >> booleanSchemaPropertyNamed: propertyName description: propertyDescription [
 
@@ -431,6 +561,21 @@ MCPTool >> errorTextOn: stream for: error [
 					stream
 						nextPut: Character lf;
 						nextPutAll: each ] ]
+]
+
+{ #category : 'executing' }
+MCPTool >> executeBatchedRequest: aRequest do: executionBlock [
+	"Run executionBlock once per value named by the batch argument. A single value behaves exactly
+	as it does when the tool does not batch at all."
+
+	| targets |
+	self batchArgumentName ifNil: [ ^ executionBlock value: aRequest ].
+	targets := aRequest stringCollectionArgumentNamed: self batchArgumentName.
+	targets size < 2 ifTrue: [
+			^ executionBlock value: (targets
+					 ifEmpty: [ aRequest ]
+					 ifNotEmpty: [ aRequest withArgumentNamed: self batchArgumentName setTo: targets first ]) ].
+	^ self batchResultForTargets: targets request: aRequest do: executionBlock
 ]
 
 { #category : 'private - execution' }
@@ -686,11 +831,16 @@ MCPTool >> shouldResumeNotification: aNotification [
 MCPTool >> standardOutputSchemaForDataProperties: dataProperties required: requiredFields [
 	"The result carries no status field: isError already states on the wire whether the call failed, and the presence of data or error says the same again."
 
-	| dataProperty errorProperty summaryProperty |
+	| dataProperty errorProperty summaryProperty properties required |
+	properties := dataProperties.
+	required := requiredFields.
+	self batchArgumentName ifNotNil: [
+			properties := dataProperties , { (self batchResultsSchemaPropertyFor: dataProperties) }.
+			required := #(  ) ].
 	dataProperty := self schemaPropertyNamed: 'data' type: 'object' description: 'Structured success payload.'.
 	dataProperty
-		properties: dataProperties;
-		required: requiredFields;
+		properties: properties;
+		required: required;
 		additionalProperties: false.
 	errorProperty := self schemaPropertyNamed: 'error' type: 'object' description: 'Structured error information.'.
 	errorProperty

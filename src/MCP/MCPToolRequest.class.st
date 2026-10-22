@@ -198,6 +198,7 @@ MCPToolRequest >> stringCollectionFrom: aValue [
 
 	| values |
 	aValue ifNil: [ ^ #(  ) ].
+	aValue isString ifTrue: [ ^ (self stringValue: aValue) ifNil: [ #(  ) ] ifNotNil: [ :normalized | { normalized } ] ].
 	values := OrderedCollection new.
 	aValue do: [ :each | (self stringValue: each) ifNotNil: [ :normalized | values add: normalized ] ].
 	^ values asArray
@@ -275,4 +276,15 @@ MCPToolRequest >> valueNamed: anArgumentName in: aDictionary ifAbsent: absentBlo
 MCPToolRequest >> violations [
 
 	^ violations
+]
+
+{ #category : 'copying' }
+MCPToolRequest >> withArgumentNamed: anArgumentName setTo: aValue [
+	"Answer a request like this one, but naming a single value where this one may name several."
+
+	| newArguments key |
+	newArguments := self arguments copy.
+	key := self keyForArgumentNamed: anArgumentName in: newArguments ifAbsent: [ anArgumentName ].
+	newArguments at: key put: aValue.
+	^ self class tool: self tool arguments: newArguments
 ]

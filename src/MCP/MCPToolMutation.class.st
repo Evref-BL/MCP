@@ -174,22 +174,23 @@ MCPToolMutation >> executeMutationAction: action force: forceRequested requested
 { #category : 'executing' }
 MCPToolMutation >> executeWithRequest: request [
 
-	^ self
-		  executeParsedRequestFrom: request
-		  do: [ :mutationRequest | (self commandForRequest: mutationRequest) execute ]
-		  onError: [ :error :mutationRequest |
-				  | action requestedContext |
-				  action := self mutationActionForErrorFromParsedRequest: mutationRequest rawRequest: request.
-				  requestedContext := self requestedContextForErrorFromParsedRequest: mutationRequest rawRequest: request.
-				  error
-					  mcpCommandErrorDo: [ :commandError |
-					  self errorResultForCommandError: commandError action: action requestedContext: requestedContext ]
-					  otherwise: [ :actionError |
-							  self
-								  errorResultForActionFailure: actionError
-								  action: action
-								  requestedContext: requestedContext
-								  summary: (actionError messageText ifNil: [ actionError asString ] ifNotNil: [ :text | text ]) ] ]
+	^ self executeBatchedRequest: request do: [ :targetRequest |
+		  self
+			  executeParsedRequestFrom: targetRequest
+			  do: [ :mutationRequest | (self commandForRequest: mutationRequest) execute ]
+			  onError: [ :error :mutationRequest |
+					  | action requestedContext |
+					  action := self mutationActionForErrorFromParsedRequest: mutationRequest rawRequest: targetRequest.
+					  requestedContext := self requestedContextForErrorFromParsedRequest: mutationRequest rawRequest: targetRequest.
+					  error
+						  mcpCommandErrorDo: [ :commandError |
+						  self errorResultForCommandError: commandError action: action requestedContext: requestedContext ]
+						  otherwise: [ :actionError |
+								  self
+									  errorResultForActionFailure: actionError
+									  action: action
+									  requestedContext: requestedContext
+									  summary: (actionError messageText ifNil: [ actionError asString ] ifNotNil: [ :text | text ]) ] ] ]
 ]
 
 { #category : 'private - errors' }

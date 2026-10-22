@@ -29,6 +29,24 @@ MCPToolGetMethod >> annotations [
 	^ MCPStructureToolAnnotations readOnly
 ]
 
+{ #category : 'metadata' }
+MCPToolGetMethod >> batchArgumentName [
+
+	^ 'selector'
+]
+
+{ #category : 'metadata' }
+MCPToolGetMethod >> batchSummaryNoun [
+
+	^ 'methods'
+]
+
+{ #category : 'metadata' }
+MCPToolGetMethod >> batchSummaryVerb [
+
+	^ 'Got'
+]
+
 { #category : 'private - analysis' }
 MCPToolGetMethod >> bindingClassNameFor: aBinding [
 
@@ -38,7 +56,7 @@ MCPToolGetMethod >> bindingClassNameFor: aBinding [
 { #category : 'metadata' }
 MCPToolGetMethod >> buildInputSchema [
 
-	| classSideProperty includeVariableDetailsProperty |
+	| classSideProperty includeVariableDetailsProperty selectorProperty |
 	classSideProperty := MCPStructureProperties new
 		                     name: 'classSide';
 		                     type: 'boolean';
@@ -51,6 +69,15 @@ MCPToolGetMethod >> buildInputSchema [
 		                                  description: 'Whether to include variable reference summaries and counts.';
 		                                  default: false;
 		                                  yourself.
+	selectorProperty := MCPStructureProperties new
+		                    name: 'selector';
+		                    type: #( 'string' 'array' );
+		                    description: 'The selector of the method to return, or several selectors from the same class.';
+		                    items: (MCPStructureProperties new
+			                     type: 'string';
+			                     description: 'A selector to return.';
+			                     yourself);
+		                    yourself.
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties: {
@@ -59,11 +86,7 @@ MCPToolGetMethod >> buildInputSchema [
 					   type: 'string';
 					   description: 'The class that defines the method.';
 					   yourself).
-				  (MCPStructureProperties new
-					   name: 'selector';
-					   type: 'string';
-					   description: 'The selector of the method to return.';
-					   yourself).
+				  selectorProperty.
 				  classSideProperty.
 				  includeVariableDetailsProperty };
 		  required: #( 'className' 'selector' );
@@ -121,7 +144,7 @@ MCPToolGetMethod >> definingClassNameFromBinding: aBinding [
 { #category : 'metadata' }
 MCPToolGetMethod >> description [
 
-	^ 'Get one known method and return its source plus structured variable-reference context. Use method_metadata_search or reference lookup tools to discover methods first.'
+	^ 'Get known methods of one class and return their source plus structured variable-reference context. Use method_metadata_search or reference lookup tools to discover methods first.'
 ]
 
 { #category : 'private' }
@@ -153,24 +176,25 @@ MCPToolGetMethod >> errorResultForError: anError className: className selector: 
 { #category : 'executing' }
 MCPToolGetMethod >> executeWithRequest: request [
 
-	^ self
-		  executeParsedRequestFrom: request
-		  do: [ :getRequest |
-				  | commandResult |
-				  commandResult := (self commandForRequest: getRequest) execute.
-				  self
-					  successResultText: (self
-							   successSummaryForClassName: getRequest className
-							   selector: getRequest selectorString
-							   classSide: getRequest classSide
-							   externalVariableCount: commandResult externalVariableCount)
-					  data: commandResult data ]
-		  onError: [ :error :getRequest |
-				  self
-					  errorResultForError: error
-					  className: (self classNameForErrorFromParsedRequest: getRequest rawRequest: request)
-					  selector: (self selectorForErrorFromParsedRequest: getRequest rawRequest: request)
-					  classSide: (self classSideForErrorFromParsedRequest: getRequest rawRequest: request) ]
+	^ self executeBatchedRequest: request do: [ :targetRequest |
+		  self
+			  executeParsedRequestFrom: targetRequest
+			  do: [ :getRequest |
+					  | commandResult |
+					  commandResult := (self commandForRequest: getRequest) execute.
+					  self
+						  successResultText: (self
+								   successSummaryForClassName: getRequest className
+								   selector: getRequest selectorString
+								   classSide: getRequest classSide
+								   externalVariableCount: commandResult externalVariableCount)
+						  data: commandResult data ]
+			  onError: [ :error :getRequest |
+					  self
+						  errorResultForError: error
+						  className: (self classNameForErrorFromParsedRequest: getRequest rawRequest: targetRequest)
+						  selector: (self selectorForErrorFromParsedRequest: getRequest rawRequest: targetRequest)
+						  classSide: (self classSideForErrorFromParsedRequest: getRequest rawRequest: targetRequest) ] ]
 ]
 
 { #category : 'private - results' }
