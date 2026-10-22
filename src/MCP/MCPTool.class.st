@@ -289,7 +289,7 @@ MCPTool >> description [
 
 { #category : 'private - results' }
 MCPTool >> entriesTextOn: stream for: entries labelled: label indent: indent [
-	"A list of records reads as one line each; a list of plain values reads as one line."
+	"A list of records reads as one entry at a time; a list of plain values reads as one line."
 
 	(entries anySatisfy: [ :each | each isDictionary ]) ifFalse: [
 			stream
@@ -300,19 +300,36 @@ MCPTool >> entriesTextOn: stream for: entries labelled: label indent: indent [
 				nextPutAll: (', ' join: (entries collect: [ :each | each asString ])).
 			^ self ].
 	entries do: [ :entry |
-			stream
-				nextPut: Character lf;
-				nextPutAll: indent.
 			entry isDictionary
-				ifTrue: [
-						(entry keys asSortedCollection: [ :left :right | left asString <= right asString ])
-							do: [ :key |
-									stream
-										nextPutAll: key asString;
-										nextPut: $=;
-										nextPutAll: (entry at: key) asString ]
-							separatedBy: [ stream space ] ]
-				ifFalse: [ stream nextPutAll: entry asString ] ]
+				ifTrue: [ self entryTextOn: stream for: entry indent: indent ]
+				ifFalse: [
+						stream
+							nextPut: Character lf;
+							nextPutAll: indent;
+							nextPutAll: entry asString ] ]
+]
+
+{ #category : 'private - results' }
+MCPTool >> entryTextOn: stream for: entry indent: indent [
+	"What identifies the entry goes on its line; anything it carries that has its own shape, such as a method's source or a list of hits, follows on its own lines."
+
+	| keys pairs redundant |
+	redundant := self redundantEntryKeys.
+	keys := (entry keys reject: [ :key | redundant includes: key asSymbol ]) asSortedCollection: [ :left :right |
+		        left asString <= right asString ].
+	pairs := OrderedCollection new.
+	keys do: [ :key | (self isInlineValue: (entry at: key)) ifTrue: [ pairs add: key asString , '=' , (entry at: key) asString ] ].
+	stream
+		nextPut: Character lf;
+		nextPutAll: indent;
+		nextPutAll: (' ' join: pairs).
+	keys do: [ :key |
+			(self isInlineValue: (entry at: key)) ifFalse: [
+					self
+						valueTextOn: stream
+						for: (entry at: key)
+						labelled: key asString
+						indent: indent , '  ' ] ]
 ]
 
 { #category : 'private - results' }
@@ -504,9 +521,18 @@ MCPTool >> integerSchemaPropertyNamed: propertyName description: propertyDescrip
 
 { #category : 'private - results' }
 MCPTool >> isBlockValue: value [
-	"A block of text is read as a block: it belongs after the fields that identify the result, not sorted among them."
+	"A block is read as a block: text with its own lines, or prose too long to sit in a field. It belongs after the fields that identify the result, not among them."
 
-	^ value isString and: [ value includesSubstring: String cr ]
+	^ value isString and: [ (value includesSubstring: String cr) or: [ value size > 160 ] ]
+]
+
+{ #category : 'private - results' }
+MCPTool >> isInlineValue: value [
+	"A value sits on the entry's own line when it is a single scalar. A block of text or a nested structure gets its own lines, since printString would fold it into one."
+
+	value isDictionary ifTrue: [ ^ false ].
+	(value isCollection and: [ value isString not ]) ifTrue: [ ^ false ].
+	^ (self isBlockValue: value) not
 ]
 
 { #category : 'error handling' }
@@ -589,6 +615,13 @@ MCPTool >> pngIconNamed: anIconSymbol [
 MCPTool >> pngSizeStringForForm: aForm [
 
 	^ aForm width asString , 'x' , aForm height asString
+]
+
+{ #category : 'private - results' }
+MCPTool >> redundantEntryKeys [
+	"Answer the keys of an entry whose value its sibling fields already say. A tool declares its own."
+
+	^ #(  )
 ]
 
 { #category : 'validating' }

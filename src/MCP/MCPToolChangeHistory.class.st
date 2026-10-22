@@ -130,6 +130,20 @@ MCPToolChangeHistory >> integerArraySchemaNamed: aName description: aDescription
 ]
 
 { #category : 'private - results' }
+MCPToolChangeHistory >> keysStatedInSummary [
+	"The summary already says how many entries, and the offset the next page starts at."
+
+	^ #( nextOffset )
+]
+
+{ #category : 'private - results' }
+MCPToolChangeHistory >> redundantEntryKeys [
+	"An entry's summary prints its event class around its behavior and selector, which the entry already names."
+
+	^ #( summary )
+]
+
+{ #category : 'private - results' }
 MCPToolChangeHistory >> successSummaryForData: data operation: operation [
 
 	| action selectedCount performedCount previewCount |
