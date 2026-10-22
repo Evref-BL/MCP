@@ -333,10 +333,10 @@ MCPTool >> errorSchemaProperties [
 			   itemDescription: 'One stack frame from the captured signaler chain, ordered from the signaling frame outward.') }
 ]
 
-{ #category : 'private - results' }
+{ #category : 'error handling' }
 MCPTool >> errorStackTraceForContext: aContext [
 
-	^ ((aContext stackOfSize: self errorStackTraceLimit) collect: [ :each | each printString ]) asArray
+	^ ((self framesUpToCallerIn: (aContext stackOfSize: self errorStackTraceLimit)) collect: [ :each | each printString ]) asArray
 ]
 
 { #category : 'private - results' }
@@ -348,12 +348,19 @@ MCPTool >> errorStackTraceLimit [
 { #category : 'private - execution' }
 MCPTool >> executeParsedRequestFrom: request do: executionBlock onError: errorBlock [
 	"Parse the transport request inside the same exception boundary as execution.
-	The error block receives the error and the parsed request, or nil if parsing failed."
+	The error block receives the error and the parsed request, or nil if parsing failed.
+	Every Warning and Notification is an Exception, so notifications are resumed here instead of failing the call."
 
 	| parsedRequest |
 	^ [
-		  parsedRequest := self parsedRequestFromToolRequest: request.
-		  executionBlock value: parsedRequest ]
+	  [
+	  parsedRequest := self parsedRequestFromToolRequest: request.
+	  executionBlock value: parsedRequest ]
+		  on: Notification
+		  do: [ :notification |
+				  (self shouldResumeNotification: notification)
+					  ifTrue: [ self resumeNotification: notification ]
+					  ifFalse: [ notification pass ] ] ]
 		  on: Exception
 		  do: [ :error | errorBlock value: error value: parsedRequest ]
 ]
@@ -380,6 +387,17 @@ MCPTool >> failureMessageFor: anError [
 					  stream
 						  nextPutAll: ': ';
 						  nextPutAll: message ] ]
+]
+
+{ #category : 'error handling' }
+MCPTool >> framesUpToCallerIn: frames [
+	"Drop the trailing frames that belong to the server rather than to the failing code: the dispatch and doIt scaffolding is identical on every failure and says nothing about why this one failed. An evaluation ends at its outermost doIt; any other call ends where the server's own classes begin. When nothing else is left the failure was in the server, so the whole stack is kept."
+
+	| lastCallerFrame |
+	lastCallerFrame := frames findLast: [ :each | each method selector == #DoIt ].
+	lastCallerFrame = 0 ifTrue: [ lastCallerFrame := frames findLast: [ :each | (self isServerFrame: each) not ] ].
+	lastCallerFrame = 0 ifTrue: [ ^ frames ].
+	^ frames first: lastCallerFrame
 ]
 
 { #category : 'metadata' }
@@ -412,6 +430,14 @@ MCPTool >> integerSchemaPropertyNamed: propertyName description: propertyDescrip
 	^ (self integerSchemaPropertyNamed: propertyName description: propertyDescription)
 		  default: defaultValue;
 		  yourself
+]
+
+{ #category : 'error handling' }
+MCPTool >> isServerFrame: aContext [
+
+	^ aContext method methodClass
+		  ifNil: [ false ]
+		  ifNotNil: [ :methodClass | methodClass instanceSide name beginsWith: 'MCP' ]
 ]
 
 { #category : 'metadata' }
@@ -487,6 +513,15 @@ MCPTool >> requestFromToolCallArguments: toolCallArguments [
 	^ MCPToolRequest tool: self arguments: toolCallArguments
 ]
 
+{ #category : 'private - execution' }
+MCPTool >> resumeNotification: aNotification [
+	"Resume with the value the image itself would have produced. The default action may signal notifications of its own, and a handler is suspended while its block runs, so those would otherwise escape this boundary and fail the call: Deprecation>>defaultAction logs, and logging signals DeprecationPerformedNotification."
+
+	^ aNotification resume: ([ aNotification defaultAction ]
+			   on: Notification
+			   do: [ :nested | self resumeNotification: nested ])
+]
+
 { #category : 'private - schema' }
 MCPTool >> schemaPropertyNamed: aName type: aType description: aDescription [
 
@@ -523,15 +558,10 @@ MCPTool >> shouldRecordObservability [
 ]
 
 { #category : 'testing' }
-MCPTool >> shouldSaveImageAfterSuccessfulExecution [
+MCPTool >> shouldResumeNotification: aNotification [
+	"A notification is not a failed call, so the boundary resumes it. A refactoring warning is the exception: it reports a change that breaks something, and a tool that may proceed anyway handles it itself behind force, so letting it reach the boundary unresumed is what aborts an unauthorized mutation."
 
-	^ false
-]
-
-{ #category : 'testing' }
-MCPTool >> shouldSaveImageAfterSuccessfulExecutionForResult: aResult [
-
-	^ self shouldSaveImageAfterSuccessfulExecution
+	^ (aNotification isKindOf: RBRefactoringWarning) not
 ]
 
 { #category : 'private - schema' }

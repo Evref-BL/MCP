@@ -33,12 +33,6 @@ MCPToolRepositoryRemoteOperation >> remoteUrlSchemaProperty [
 	^ self schemaPropertyNamed: 'remoteUrl' type: 'string' description: 'Remote URL.'
 ]
 
-{ #category : 'testing' }
-MCPToolRepositoryRemoteOperation >> shouldSaveImageAfterSuccessfulExecutionForResult: aResult [
-
-	^ false
-]
-
 { #category : 'validating' }
 MCPToolRepositoryRemoteOperation >> validateRequest: request [
 

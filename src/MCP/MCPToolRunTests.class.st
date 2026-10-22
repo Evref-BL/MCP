@@ -204,9 +204,7 @@ MCPToolRunTests >> executeWithRequest: request [
 		  executeParsedRequestFrom: request
 		  do: [ :runTestsRequest |
 				  | data result |
-				  result := [ (self commandForRequest: runTestsRequest) execute ]
-					            on: Notification
-					            do: [ :notification | notification resume: notification defaultAction ].
+				  result := (self commandForRequest: runTestsRequest) execute.
 				  data := result asDictionary.
 				  self successResultText: (self successSummaryForData: data) data: data ]
 		  onError: [ :error :runTestsRequest |

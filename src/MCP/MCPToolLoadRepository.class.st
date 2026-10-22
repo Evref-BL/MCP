@@ -189,12 +189,6 @@ MCPToolLoadRepository >> repositoryUrlSchemaProperty [
 		  yourself
 ]
 
-{ #category : 'testing' }
-MCPToolLoadRepository >> shouldSaveImageAfterSuccessfulExecution [
-
-	^ true
-]
-
 { #category : 'private - schema' }
 MCPToolLoadRepository >> sourceDirectorySchemaProperty [
 

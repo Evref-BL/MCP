@@ -109,8 +109,8 @@ Coverage scopes should be narrow: package, class, hierarchy, or method names.
 
 ## The Image Changed Unexpectedly
 
-Image-changing tools save the image after successful mutation. If you are using
-an automation or agent, run it against a copied or disposable image.
+Image-changing tools change the running image without saving it. If you are
+using an automation or agent, run it against a copied or disposable image.
 
 Use `history_file_list` and `history_entry_list` to inspect
 Epicea history. Apply or revert operations stay in `history_entry_apply` and

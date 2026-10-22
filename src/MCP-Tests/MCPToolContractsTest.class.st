@@ -1282,10 +1282,61 @@ MCPToolContractsTest >> testEvaluateLetsNotificationsUseTheirDefaultAction [
 	self assert: (data at: #resultPrintString) equals: '#mcpDefaultAction'
 ]
 
+{ #category : 'tests - evaluate' }
+MCPToolContractsTest >> testEvaluateOmitsTruncationFieldsForSmallResults [
+
+	| data |
+	data := self dataFrom:
+		        (self callDiscoveredToolNamed: 'image_evaluate' withArguments: { (#code -> '#( 1 2 3 )') } asDictionary).
+	self deny: (data includesKey: #truncated).
+	self deny: (data includesKey: #resultSize)
+]
+
+{ #category : 'tests - evaluate' }
+MCPToolContractsTest >> testEvaluateReportsTheFailingSourceLine [
+	"A character offset makes a caller count through its own source to find the mistake."
+
+	| error |
+	error := self errorFrom: (self
+			         callDiscoveredToolNamed: 'image_evaluate'
+			         withArguments: { (#code -> '| s |
+s := WriteStream on: String new.
+s << cr.
+s contents') } asDictionary).
+	self assert: (error at: #line) equals: 3.
+	self assert: (error at: #sourceLine) equals: 's << cr.'
+]
+
+{ #category : 'tests - evaluate' }
+MCPToolContractsTest >> testEvaluateReportsTruncationAndCollectionSize [
+	"A cut preview used to end in a marker and nothing else, so the caller could not tell whether two or two hundred kilobytes were missing."
+
+	| data |
+	data := self dataFrom: (self
+			         callDiscoveredToolNamed: 'image_evaluate'
+			         withArguments: { (#code -> '(1 to: 40000) asOrderedCollection') } asDictionary).
+	self assert: (data at: #truncated).
+	self assert: (data at: #resultSize) equals: 40000.
+	self assert: (data at: #resultPrintString) size equals: MCPToolEvaluate new resultPreviewCharacterLimit
+]
+
 { #category : 'tests' }
 MCPToolContractsTest >> testEvaluateRequiresCodeInSchema [
 
 	self assert: (MCPToolEvaluate new inputSchema required includes: 'code')
+]
+
+{ #category : 'tests - evaluate' }
+MCPToolContractsTest >> testEvaluateResumesNotificationsSignaledByADefaultAction [
+	"A default action may signal a notification of its own, and a handler is suspended while its block runs: Deprecation>>defaultAction logs, logging signals DeprecationPerformedNotification, and that second notification used to escape and fail the call."
+
+	| data result |
+	result := self
+		          callDiscoveredToolNamed: 'image_evaluate'
+		          withArguments: { (#code -> 'MCPToolNestedNotification signal') } asDictionary.
+	data := self dataFrom: result.
+	self deny: (result includesKey: #isError).
+	self assert: (data at: #resultPrintString) equals: '''nested-mcpDefaultAction'''
 ]
 
 { #category : 'tests - evaluate' }
@@ -1297,7 +1348,7 @@ MCPToolContractsTest >> testEvaluateReturnsCompilationFailureInformation [
 	self assert: (result at: #isError).
 	self assert: (text includesSubstring: 'failed during compilation').
 	self assert: (text includesSubstring: self expectedSyntaxErrorNoticeClassName).
-	self assert: (text includesSubstring: 'Position: 4')
+	self assert: (text includesSubstring: 'Line 1')
 ]
 
 { #category : 'tests - evaluate' }
@@ -1310,6 +1361,19 @@ MCPToolContractsTest >> testEvaluateReturnsRuntimeFailureInformation [
 	self assert: (text includesSubstring: 'failed during execution').
 	self assert: (text includesSubstring: 'boom').
 	self assert: (text includesSubstring: 'Signaler context:')
+]
+
+{ #category : 'tests - evaluate' }
+MCPToolContractsTest >> testEvaluateStackTraceStopsAtTheEvaluatedCode [
+	"Below the outermost doIt every frame is compiler and dispatch scaffolding, identical on every failure."
+
+	| error stackTrace |
+	error := self errorFrom:
+		         (self callDiscoveredToolNamed: 'image_evaluate' withArguments: { (#code -> '#( 1 2 3 ) do: [ :each | each frobnicate ]') } asDictionary).
+	stackTrace := error at: #stackTrace.
+	self assert: stackTrace last equals: 'UndefinedObject>>DoIt'.
+	self deny: (stackTrace anySatisfy: [ :each | each includesSubstring: 'MCP' ]).
+	self deny: (stackTrace anySatisfy: [ :each | each includesSubstring: 'OpalCompiler' ])
 ]
 
 { #category : 'tests' }
@@ -1580,6 +1644,28 @@ MCPToolContractsTest >> testMCPUnregisterToolNamedRefreshesStaticTools [
 	self deny: (server staticToolNames includes: MCPHaltingTestTool toolName)
 ]
 
+{ #category : 'tests - evaluate' }
+MCPToolContractsTest >> testMessageNotUnderstoodSuggestsNearMissSelectors [
+	"Thirty-five failures in a day of real use were guesses at an API; the receiver knows which selectors the guess resembles."
+
+	| error |
+	error := self errorFrom: (self
+			         callDiscoveredToolNamed: 'image_evaluate'
+			         withArguments: { (#code -> 'OrderedCollection new adAll: #( 1 2 3 )') } asDictionary).
+	self assert: (error at: #suggestedSelectors) first equals: 'addAll:'
+]
+
+{ #category : 'tests - evaluate' }
+MCPToolContractsTest >> testMessageNotUnderstoodSuggestsNothingForAnUnrelatedSelector [
+	"Pharo's corrector answers its closest candidates whatever their distance; suggesting those would be worse than saying nothing."
+
+	| error |
+	error := self errorFrom: (self
+			         callDiscoveredToolNamed: 'image_evaluate'
+			         withArguments: { (#code -> 'OrderedCollection new frobnicate') } asDictionary).
+	self deny: (error includesKey: #suggestedSelectors)
+]
+
 { #category : 'tests' }
 MCPToolContractsTest >> testMessageProcessorRegistersInheritedMCPHandlersForSubclass [
 
@@ -1761,22 +1847,6 @@ MCPToolContractsTest >> testMethodToolTraitOwnsSharedMethodHelpers [
 					implementingClass := toolClass whichClassIncludesSelector: selector.
 					self assert: implementingClass notNil.
 					self assert: (implementingClass >> selector) origin equals: TMCPMethodTool ] ]
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testMutatingToolsRequestImageSaveAfterSuccessfulExecution [
-
-	self deny: MCPToolSearchMethodMetadata new shouldSaveImageAfterSuccessfulExecution.
-	self deny: MCPToolGetClass new shouldSaveImageAfterSuccessfulExecution.
-	self assert: MCPToolCreateRepository new shouldSaveImageAfterSuccessfulExecution.
-	self classMutationToolClasses do: [ :toolClass | self assert: toolClass new shouldSaveImageAfterSuccessfulExecution ].
-	self assert: MCPToolCompileMethod new shouldSaveImageAfterSuccessfulExecution.
-	self assert: MCPToolUpdateMethodSelector new shouldSaveImageAfterSuccessfulExecution.
-	self assert: MCPToolUpdateMethodProtocol new shouldSaveImageAfterSuccessfulExecution.
-	self deny: MCPToolRewriteMethods new shouldSaveImageAfterSuccessfulExecution.
-	self assert: MCPToolRemoveClasses new shouldSaveImageAfterSuccessfulExecution.
-	self assert: MCPToolRemoveMethods new shouldSaveImageAfterSuccessfulExecution.
-	self assert: MCPToolEvaluate new shouldSaveImageAfterSuccessfulExecution
 ]
 
 { #category : 'tests' }
@@ -2731,6 +2801,16 @@ MCPToolContractsTest >> testSearchToolsUsesQueryOnlyContract [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testSelectorSuggestionsPreferASharedPrefixOverACorrection [
+	"A wrong guess usually keeps the prefix of the right selector, which no spelling distance recovers."
+
+	self
+		assert: (MCPSelectorSuggestion selectorsLike: #errorStackTraceForContextNamed: understoodBy: MCPTool) first
+		equals: 'errorStackTraceForContext:'.
+	self assert: (MCPSelectorSuggestion selectorsLike: #zzzzUnrelatedSelector understoodBy: MCPTool) isEmpty
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testServerCanConfigureStaticToolNames [
 
 	| server toolNames |
@@ -2820,6 +2900,21 @@ MCPToolContractsTest >> testToolAnnotationsSerializeStandardHints [
 			(#destructiveHint -> false).
 			(#idempotentHint -> true).
 			(#openWorldHint -> false) } asDictionary
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testToolCallsResumeNotificationsWithoutAToolOfTheirOwn [
+	"Every Warning and Notification is an Exception, so the shared boundary resumes them for every tool instead of each tool needing a handler."
+
+	| result server structured |
+	server := MCP new.
+	server toolExposurePolicy: MCPToolExposurePolicy allStatic.
+	server useContentAndStructuredContentToolResponses.
+	server registerToolClass: MCPNotifyingTestTool.
+	result := server rpcToolCall: MCPNotifyingTestTool toolName withParams: Dictionary new.
+	structured := result at: #structuredContent.
+	self deny: (result includesKey: #isError).
+	self assert: ((structured at: #data) at: #resumedWith) equals: 'nested-mcpDefaultAction'
 ]
 
 { #category : 'tests' }
@@ -3025,6 +3120,14 @@ MCPToolContractsTest >> testToolResponsesDefaultToContentOnly [
 	self assert: (result includesKey: #content).
 	self deny: (result includesKey: #structuredContent).
 	self assert: (text includesSubstring: 'class_search - ')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testToolsDoNotResumeRefactoringWarnings [
+	"A refactoring warning reports a change that breaks something: resuming it at the boundary would apply a mutation that force did not authorize."
+
+	self deny: (MCPToolRemoveClasses new shouldResumeNotification: RBRefactoringWarning new).
+	self assert: (MCPToolEvaluate new shouldResumeNotification: MCPToolNestedNotification new)
 ]
 
 { #category : 'tests' }

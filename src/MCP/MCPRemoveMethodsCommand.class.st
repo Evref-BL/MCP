@@ -14,7 +14,7 @@ MCPRemoveMethodsCommand >> execute [
 
 	| behavior selectorSymbols warningMessage |
 	selectorSymbols := self request selectors collect: #asSymbol.
-	warningMessage := 'This bypasses sender checks and may leave broken senders.'.
+	warningMessage := 'This bypasses sender checks and may leave broken senders. history_entry_revert undoes it in the running image.'.
 	behavior := self tool behaviorNamed: self request className classSide: self request classSide.
 	selectorSymbols do: [ :selector |
 			behavior compiledMethodAt: selector ifAbsent: [

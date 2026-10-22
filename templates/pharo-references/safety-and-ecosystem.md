@@ -204,8 +204,8 @@ proceeding a repaired computation.
 
 ## Evaluation Escape Hatch
 
-`image_evaluate` runs arbitrary Smalltalk and saves the image after a successful
-call. It is useful for short inspection or glue code when no dedicated tool
+`image_evaluate` runs arbitrary Smalltalk in the running image without saving
+it. It is useful for short inspection or glue code when no dedicated tool
 exists.
 
 Prefer a dedicated tool when one exists, because the dedicated tools validate

@@ -106,12 +106,6 @@ MCP >> defaultProfile [
 	^ MCPProfile default
 ]
 
-{ #category : 'private - saving' }
-MCP >> deferSaveImageAfterCurrentResponse [
-
-	server deferAfterCurrentResponse: [ self saveImageSession ]
-]
-
 { #category : 'private - tools' }
 MCP >> dispatchToolCallWith: callTool arguments: arguments observabilityRecord: observabilityRecord [
 
@@ -172,7 +166,6 @@ MCP >> executeTool: tool named: toolName withParams: arguments dispatchPath: dis
 		  request := tool requestFromToolCallArguments: arguments.
 		  result := tool executeWithRequest: request.
 		  toolResult := result asMCPStructureCallToolResult.
-		  self saveImageAfterSuccessfulTool: tool result: toolResult.
 		  self observability recordToolCallFinish: observabilityRecord result: toolResult error: nil.
 		  toolResult asJRPCJSONForResponseFields: self toolResponseFields ]
 		  on: Exception
@@ -507,20 +500,6 @@ MCP >> rpcToolsList [
 	<jrpc: #'tools/list'>
 	self refreshToolsList.
 	^ { (#tools -> toolsList values asArray) } asDictionary asJRPCJSON
-]
-
-{ #category : 'private - saving' }
-MCP >> saveImageAfterSuccessfulTool: aTool result: aResult [
-
-	aResult isError ifTrue: [ ^ self ].
-	(aTool shouldSaveImageAfterSuccessfulExecutionForResult: aResult) ifTrue: [ self deferSaveImageAfterCurrentResponse ]
-]
-
-{ #category : 'private - saving' }
-MCP >> saveImageSession [
-	"Snapshot through the session manager so the saved image can be restarted. The bare snapshot primitive writes live sockets and external semaphores into the image file and runs no startup hooks on restore, leaving the restored image deadlocked on resources from the previous session. Post-response actions are request-scoped and run once the response is written, so the session cycle no longer disturbs the active transport."
-
-	^ Smalltalk saveSession
 ]
 
 { #category : 'accessing' }

@@ -52,7 +52,13 @@ MCPToolEvaluate >> buildOutputSchema [
 					   type: 'string'
 					   description:
 					   'A printString preview of the evaluated result, limited to ' , self resultPreviewCharacterLimit printString
-					   , ' characters.') }
+					   , ' characters.').
+				  (self
+					   booleanSchemaPropertyNamed: 'truncated'
+					   description: 'Present and true when the preview was cut short. Narrow the expression to see the rest.').
+				  (self
+					   integerSchemaPropertyNamed: 'resultSize'
+					   description: 'Element count of a truncated collection result, so a slice such as first: can be sized without evaluating it again.') }
 		  required: #( 'resultClassName' 'resultPrintString' )
 ]
 
@@ -120,27 +126,19 @@ MCPToolEvaluate >> runtimeFailureMessageFor: anError [
 						  nextPutAll: context printString ] ]
 ]
 
-{ #category : 'testing' }
-MCPToolEvaluate >> shouldSaveImageAfterSuccessfulExecution [
-
-	^ true
-]
-
 { #category : 'private' }
-MCPToolEvaluate >> syntaxFailureMessageFor: aNotice [
+MCPToolEvaluate >> syntaxFailureMessageFor: aNotice line: aLineNumber [
 
-	| position |
-	position := aNotice position.
 	^ String streamContents: [ :stream |
 			  stream
 				  nextPutAll: 'Evaluation failed during compilation (';
 				  nextPutAll: aNotice class name;
 				  nextPutAll: '): ';
 				  nextPutAll: aNotice messageText.
-			  position ifNotNil: [
+			  aLineNumber ifNotNil: [
 					  stream
-						  nextPutAll: ' Position: ';
-						  print: position ] ]
+						  nextPutAll: ' Line ';
+						  print: aLineNumber ] ]
 ]
 
 { #category : 'metadata' }
