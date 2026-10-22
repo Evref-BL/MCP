@@ -139,7 +139,7 @@ MCPToolGetClassTest >> testClampsSubclassDepthAboveMaximum [
 	data := self dataFrom: result.
 	subclasses := data at: #subclasses.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: result).
 	self assert: (subclasses collect: [ :each | each at: #className ]) equals: {
 			self childAClassName.
 			self childZClassName.
@@ -154,7 +154,7 @@ MCPToolGetClassTest >> testGetsClassMetadata [
 	data := self dataFrom: result.
 	expectedLayoutClassName := (self classNamed: self baseClassName) classLayout class name asString.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: result).
 	self assert: (data at: #className) equals: self baseClassName.
 	self assert: (data at: #superclassName) equals: 'Object'.
 	self assert: (data at: #packageName) equals: 'MCP-Tests'.
@@ -187,7 +187,7 @@ MCPToolGetClassTest >> testIncludesClassCommentsWhenRequested [
 	data := self dataFrom: result.
 	subclasses := data at: #subclasses.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: result).
 	self assert: (data at: #classComment) equals: 'Child Z fixture class comment.'.
 	self deny: (data includesKey: #superclasses).
 	self assert: subclasses size equals: 1.
@@ -205,7 +205,7 @@ MCPToolGetClassTest >> testIncludesDirectSubclasses [
 	data := self dataFrom: result.
 	subclasses := data at: #subclasses.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: result).
 	self assert: (subclasses collect: [ :each | each at: #className ]) equals: {
 			self childAClassName.
 			self childZClassName } asArray
@@ -221,7 +221,7 @@ MCPToolGetClassTest >> testIncludesNamedSuperclassChain [
 	data := self dataFrom: result.
 	superclasses := data at: #superclasses.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: result).
 	self assert: (superclasses collect: [ :each | each at: #className ]) equals: {
 			self childZClassName.
 			self baseClassName } asArray
@@ -247,7 +247,7 @@ MCPToolGetClassTest >> testIncludesSubclassesUpToRequestedDepth [
 	data := self dataFrom: result.
 	subclasses := data at: #subclasses.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: result).
 	self assert: (subclasses collect: [ :each | each at: #className ]) equals: {
 			self childAClassName.
 			self childZClassName.
@@ -286,7 +286,6 @@ MCPToolGetClassTest >> testReturnsStructuredErrorWhenClassIsMissing [
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
 	self assert: (error at: #className) equals: self missingClassName

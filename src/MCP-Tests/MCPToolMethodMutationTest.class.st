@@ -351,7 +351,6 @@ MCPToolMethodMutationTest >> testChangeProtocolReturnsStructuredErrorWhenMethodI
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
 	self assert: (error at: #action) equals: 'update'.
 	self assert: (error at: #updateAction) equals: 'changeProtocol'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
@@ -465,7 +464,7 @@ MCPToolMethodMutationTest >> testCompileAcceptsExplicitSelfReturnAsOnlyStatement
 				           classSide: false
 				           methodSource: 'noopSelfReturnProbe ^ self'
 				           protocol: 'tests').
-		self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+		self deny: (self resultIndicatesError: result).
 		data := self dataFrom: result.
 		critiques := data at: #critiques ifAbsent: [ #(  ) ].
 		self assert: critiques equals: #(  ) ] ensure: [ self removeSelector: selector from: MCPToolMethodMutationTestTarget ]
@@ -483,7 +482,7 @@ MCPToolMethodMutationTest >> testCompileAcceptsExplicitSelfReturnInBranch [
 				           classSide: false
 				           methodSource: 'selfReturnInBranchProbe: aBoolean aBoolean ifTrue: [ ^ self ]. ^ 1'
 				           protocol: 'tests').
-		self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+		self deny: (self resultIndicatesError: result).
 		data := self dataFrom: result.
 		critiques := data at: #critiques ifAbsent: [ #(  ) ].
 		self assert: critiques equals: #(  ).
@@ -922,7 +921,6 @@ MCPToolMethodMutationTest >> testCompileReturnsStructuredCommandErrorForSyntaxEr
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
 	self assert: (error at: #action) equals: 'compile'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'CompileSyntaxError'.
@@ -949,7 +947,6 @@ MCPToolMethodMutationTest >> testCompileReturnsStructuredCommandErrorForUndeclar
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
 	self assert: (error at: #action) equals: 'compile'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'CompileUndeclaredVariable'.
@@ -1099,7 +1096,6 @@ MCPToolMethodMutationTest >> testRemoveArgumentsFailsWhenRemovedArgumentIsRefere
 		structured := self structuredContentFrom: result.
 		error := self errorFrom: result.
 		self assert: (result at: #isError).
-		self assert: (structured at: #status) equals: 'error'.
 		self assert: (error at: #action) equals: 'update'.
 		self assert: (error at: #updateAction) equals: 'removeArguments'.
 		self assert: (error at: #className) equals: MCPToolMethodMutationTestTarget name.
@@ -1243,7 +1239,6 @@ MCPToolMethodMutationTest >> testRenameReturnsStructuredErrorWhenMethodIsMissing
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
 	self assert: (error at: #action) equals: 'update'.
 	self assert: (error at: #updateAction) equals: 'rename'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
@@ -1278,7 +1273,6 @@ MCPToolMethodMutationTest >> testRenameReturnsStructuredErrorWhenScopedPackageIs
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
 	self assert: (error at: #action) equals: 'update'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'PackageNotFound'.

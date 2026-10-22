@@ -125,7 +125,7 @@ MCPToolMethodSearchTest >> testClassNamesReturnMethodsForExactClasses [
 	data := self dataFrom: result.
 	selectors := (data at: #methods) collect: [ :each | each at: #selector ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: result).
 	self assert: (data at: #methods) size equals: 5.
 	self assert: (data at: #methods) size equals: 5.
 	self
@@ -218,7 +218,6 @@ MCPToolMethodSearchTest >> testClassReferenceReturnsStructuredErrorWhenClassIsMi
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
 	self assert: ((error at: #message) includesSubstring: 'There is no class named MCPDefinitelyMissingReferenceClass')
 ]
 
@@ -424,7 +423,6 @@ MCPToolMethodSearchTest >> testExactEmptyFilterIsApplied [
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
 	self assert: (error at: #errorClass) equals: 'MCPInvalidToolInput'
 ]
 
@@ -560,7 +558,6 @@ MCPToolMethodSearchTest >> testReturnsStructuredErrorForInvalidRegex [
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
 	self assert: (error at: #scope) equals: 'classes'.
 	self assert: (error at: #errorClass) equals: 'RegexSyntaxError'.
 	self assert: ((error at: #message) includesSubstring: 'terminating')
@@ -668,7 +665,6 @@ MCPToolMethodSearchTest >> testSelectorReferenceRejectsEmptyFilter [
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
 	self assert: (error at: #errorClass) equals: 'MCPInvalidToolInput'
 ]
 
@@ -840,7 +836,6 @@ MCPToolMethodSearchTest >> testVariableReferenceReturnsStructuredErrorWhenVariab
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
 	self assert: ((error at: #message) includesSubstring: 'No variable named missingTrackedSlot')
 ]
 

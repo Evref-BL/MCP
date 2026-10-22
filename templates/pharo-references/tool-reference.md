@@ -6,18 +6,18 @@ Tool names use `snake_case` names that generally put the domain before the
 action.
 
 By default, every tool returns MCP call `content` as the canonical response for
-LLMs. The text block contains the complete tool payload encoded as JSON using
-this common shape:
+LLMs. `tool_search` and `image_evaluate` answer plain text; the other tools
+answer their payload encoded as JSON using this common shape:
 
 ```text
-status: ok | error
 summary: human-readable summary
 warnings: array of warning strings
 data: structured success payload
 error: structured error payload
 ```
 
-`data` is present on success. `error` is present on failure.
+`data` is present on success. `error` is present on failure, where the call is
+also flagged with the protocol's own `isError`.
 
 For clients or integrations that need programmatic payloads, configure the
 server response fields before `start`:

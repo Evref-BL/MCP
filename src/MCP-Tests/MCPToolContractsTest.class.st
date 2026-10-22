@@ -788,18 +788,17 @@ MCPToolContractsTest >> testAllStaticExposurePolicyMakesEveryRegistrationStatic 
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testAllToolOutputSchemasAdvertiseStructuredSummaryWarningsAndStatus [
+MCPToolContractsTest >> testAllToolOutputSchemasAdvertiseStructuredSummaryAndWarnings [
+	"No tool advertises a status field: isError already states on the wire whether the call failed."
 
 	self builtInToolClasses do: [ :toolClass |
-			| outputSchema propertyNames requiredNames statusProperty |
+			| outputSchema propertyNames |
 			outputSchema := toolClass new outputSchema.
 			propertyNames := outputSchema properties collect: [ :each | each name ].
-			requiredNames := outputSchema required asSet.
-			statusProperty := outputSchema properties detect: [ :each | each name = 'status' ].
 			self assert: (propertyNames includes: 'summary').
 			self assert: (propertyNames includes: 'warnings').
-			self assert: requiredNames equals: #( 'status' 'summary' ) asSet.
-			self assert: (statusProperty extraProperties at: #enum) asArray equals: #( 'ok' 'error' ) ]
+			self deny: (propertyNames includes: 'status').
+			self assert: outputSchema required asSet equals: #( 'summary' ) asSet ]
 ]
 
 { #category : 'tests' }
@@ -1786,7 +1785,7 @@ MCPToolContractsTest >> testMethodMetadataSearchReturnsWarningResultForMissingCl
 	data := self dataFrom: result.
 	warnings := self warningsFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: result).
 	self assert: (data at: #methods) isEmpty.
 	self assert: warnings size equals: 1.
 	self assert: (warnings first includesSubstring: 'MCPDefinitelyMissingMethodSearchClass').
@@ -2523,7 +2522,7 @@ MCPToolContractsTest >> testSearchClassesReturnsWarningResultForMissingPackage [
 	data := self dataFrom: result.
 	warnings := self warningsFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: result).
 	self assert: (data at: #classes) isEmpty.
 	self assert: warnings size equals: 1.
 	self assert: (warnings first includesSubstring: 'MCP-Definitely-Missing').
@@ -3117,7 +3116,7 @@ MCPToolContractsTest >> testToolResponsesCanReturnContentAndStructuredContent [
 	text := self firstTextFromToolResult: result.
 	self assert: (result includesKey: #content).
 	self assert: (result includesKey: #structuredContent).
-	self assert: ((result at: #structuredContent) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: result).
 	self assert: text lines first equals: ((result at: #structuredContent) at: #summary)
 ]
 
@@ -3130,7 +3129,7 @@ MCPToolContractsTest >> testToolResponsesCanReturnStructuredContentOnly [
 	result := server rpcToolCall: 'tool_search' withParams: { (#query -> 'classes') } asDictionary.
 	self deny: (result includesKey: #content).
 	self assert: (result includesKey: #structuredContent).
-	self assert: ((result at: #structuredContent) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: result).
 	self assert: (((result at: #structuredContent) at: #data) includesKey: #tools)
 ]
 

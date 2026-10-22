@@ -83,7 +83,6 @@ MCPToolCaptureScreenshot >> executeWithRequest: request [
 				  commandResult := (self commandForRequest: screenshotRequest) execute.
 				  summary := self successSummaryForResult: commandResult.
 				  structuredContent := Dictionary new
-					                       at: #status put: 'ok';
 					                       at: #summary put: summary;
 					                       at: #data put: commandResult asDictionary;
 					                       yourself.

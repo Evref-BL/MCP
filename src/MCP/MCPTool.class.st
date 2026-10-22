@@ -297,7 +297,6 @@ MCPTool >> errorResultText: aString details: aDictionary [
 	details at: #message ifAbsentPut: [ normalizedSummary ].
 	details at: #errorClass ifAbsentPut: [ 'ToolError' ].
 	structuredContent := Dictionary new
-		                     at: #status put: 'error';
 		                     at: #summary put: normalizedSummary;
 		                     at: #error put: details;
 		                     yourself.
@@ -566,8 +565,9 @@ MCPTool >> shouldResumeNotification: aNotification [
 
 { #category : 'private - schema' }
 MCPTool >> standardOutputSchemaForDataProperties: dataProperties required: requiredFields [
+	"The result carries no status field: isError already states on the wire whether the call failed, and the presence of data or error says the same again."
 
-	| dataProperty errorProperty statusProperty summaryProperty |
+	| dataProperty errorProperty summaryProperty |
 	dataProperty := self schemaPropertyNamed: 'data' type: 'object' description: 'Structured success payload.'.
 	dataProperty
 		properties: dataProperties;
@@ -578,17 +578,15 @@ MCPTool >> standardOutputSchemaForDataProperties: dataProperties required: requi
 		properties: self errorSchemaProperties;
 		required: #( 'message' );
 		additionalProperties: true.
-	statusProperty := self stringEnumSchemaPropertyNamed: 'status' description: 'Tool result status.' values: #( 'ok' 'error' ).
 	summaryProperty := self schemaPropertyNamed: 'summary' type: 'string' description: 'Human-readable result summary.'.
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties: {
-				  statusProperty.
 				  summaryProperty.
 				  self warningsSchemaProperty.
 				  dataProperty.
 				  errorProperty };
-		  required: #( 'status' 'summary' );
+		  required: #( 'summary' );
 		  additionalProperties: false;
 		  yourself
 ]
@@ -667,7 +665,6 @@ MCPTool >> successResultText: aSummary data: aDictionary warnings: warningString
 	normalizedSummary := aSummary ifNil: [ '' ] ifNotNil: [ aSummary asString ].
 	warnings := warningStrings ifNil: [ #(  ) ] ifNotNil: [ (warningStrings collect: [ :each | each asString ]) asArray ].
 	structuredContent := Dictionary new
-		                     at: #status put: 'ok';
 		                     at: #summary put: normalizedSummary;
 		                     at: #data put: aDictionary;
 		                     yourself.

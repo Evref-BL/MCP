@@ -143,10 +143,9 @@ MCPToolAPITestCase >> parsedRequestForTool: aTool arguments: someArguments [
 
 { #category : 'private - results' }
 MCPToolAPITestCase >> resultIndicatesError: aResult [
+	"isError travels beside the structured content, not inside it."
 
-	| structuredContent |
-	structuredContent := self structuredContentFrom: aResult.
-	^ (structuredContent at: #isError ifAbsent: [ false ]) or: [ (structuredContent at: #status ifAbsent: [ 'ok' ]) = 'error' ]
+	^ aResult at: #isError ifAbsent: [ false ]
 ]
 
 { #category : 'support' }

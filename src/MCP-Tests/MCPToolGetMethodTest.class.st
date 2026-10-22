@@ -39,7 +39,7 @@ MCPToolGetMethodTest >> testGetMethodReturnsInstanceSideVariableContext [
 	globalVariable := self variableNamed: 'OrderedCollection' in: (data at: #variableReferences).
 	selfVariable := self variableNamed: 'self' in: (data at: #variableReferences).
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: result).
 	self assert: (data at: #protocol) equals: 'reading'.
 	self assert: (instanceVariable at: #kind) equals: 'instanceVariable'.
 	self assert: (instanceVariable at: #ownerName) equals: 'MCPToolGetMethodTestTarget'.
@@ -73,7 +73,6 @@ MCPToolGetMethodTest >> testGetMethodReturnsStructuredErrorForMissingSelector [
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'MethodNotFound'.
 	self assert: (error at: #className) equals: 'MCPToolGetMethodTestTarget'.

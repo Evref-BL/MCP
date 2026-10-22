@@ -229,7 +229,6 @@ MCPToolRemoveClassesTest >> testReturnsStructuredErrorWhenClassHasReferences [
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
 	self assert: (error at: #classNames) equals: { self referencedClassName } asArray.
 	self assert: (self class environment includesKey: self referencedClassName asSymbol)
 ]
@@ -244,7 +243,6 @@ MCPToolRemoveClassesTest >> testReturnsStructuredErrorWhenClassIsMissing [
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
 	self assert: (error at: #className) equals: self missingClassName.
@@ -259,7 +257,6 @@ MCPToolRemoveClassesTest >> testReturnsStructuredErrorWhenNonEmptyClassHasSubcla
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
 	self assert: (error at: #classNames) equals: { self nonEmptyParentClassName } asArray.
 	self assert: (self class environment includesKey: self nonEmptyParentClassName asSymbol).
 	self assert: (self classNamed: self nonEmptyChildClassName) superclass name asString equals: self nonEmptyParentClassName
