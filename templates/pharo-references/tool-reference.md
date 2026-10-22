@@ -71,6 +71,16 @@ target under `results`, in request order. An entry that failed carries its
 A call naming one target answers exactly what it answers when the argument
 holds a single value.
 
+## The Advertised Surface
+
+Fifteen tools are advertised directly: `tool_search`, `tool_get`, `tool_call`, `class_search`, `class_get`, `class_create`, `class_remove`, `method_metadata_search`, `method_source_search`, `method_reference_search`, `method_get`, `method_compile`, `method_remove`, `test_run` and `image_evaluate`. Every other tool is found with `tool_search` and called through `tool_call`.
+
+A server chooses its own surface before `start`:
+
+```smalltalk
+mcp staticToolNames: #( 'tool_search' 'tool_get' 'tool_call' 'method_get' ).
+```
+
 ## Finding A Tool
 
 The server answers for its own catalogue. `tool_search` ranks it by keyword,

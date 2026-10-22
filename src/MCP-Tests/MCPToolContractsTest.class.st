@@ -1998,18 +1998,18 @@ MCPToolContractsTest >> testQueryScopeDescriptionsExplainScopeSemantics [
 
 { #category : 'tests' }
 MCPToolContractsTest >> testRPCAdvertisesStaticToolSurfaceOnly [
+	"The public surface is capped at fifteen: the catalogue, the classes, the methods, and running code."
 
 	| discoverableToolNames expectedStaticToolNames registry toolNames |
 	registry := self toolRegistry.
 	toolNames := (self mcpWithoutObservabilityExport rpcToolsList at: #tools) collect: [ :each | each at: #name ].
-	expectedStaticToolNames := #( 'tool_search' 'tool_get' 'tool_call' 'package_search' 'class_search' 'class_get' 'class_create'
-	                              'method_metadata_search' 'method_source_search' 'method_reference_search'
-	                              'method_reference_search' 'method_get' 'method_compile' 'method_selector_update'
-	                              'image_evaluate' 'test_run' ).
+	expectedStaticToolNames := #( 'tool_search' 'tool_get' 'tool_call' 'class_search' 'class_get' 'class_create' 'class_remove'
+	                              'method_metadata_search' 'method_source_search' 'method_reference_search' 'method_get'
+	                              'method_compile' 'method_remove' 'image_evaluate' 'test_run' ).
 	discoverableToolNames := registry publicToolNames difference: registry staticToolNames.
+	self assert: expectedStaticToolNames size equals: 15.
 	self assert: toolNames asSet equals: registry staticToolNames asSet.
 	self assert: registry staticToolNames asSet equals: expectedStaticToolNames asSet.
-	expectedStaticToolNames do: [ :each | self assert: (toolNames includes: each) ].
 	discoverableToolNames do: [ :each | self deny: (toolNames includes: each) ].
 	self assert: (registry publicToolNames includes: 'method_protocol_update').
 	self deny: (toolNames includes: 'method_protocol_update')

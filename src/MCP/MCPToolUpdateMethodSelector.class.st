@@ -15,12 +15,6 @@ MCPToolUpdateMethodSelector class >> toolName [
 	^ 'method_selector_update'
 ]
 
-{ #category : 'metadata' }
-MCPToolUpdateMethodSelector >> defaultExposure [
-
-	^ 'static'
-]
-
 { #category : 'private - specs' }
 MCPToolUpdateMethodSelector >> methodToolSpec [
 

@@ -121,7 +121,6 @@ tool_get
 Then inspect the image with focused read-only tools such as:
 
 ```text
-package_search
 class_search
 class_get
 method_metadata_search
@@ -129,6 +128,8 @@ method_source_search
 method_reference_search
 method_get
 ```
+
+`package_search` and the specialized tools are found with `tool_search`.
 
 Before mutation, inspect the target and use a copied or disposable image.
 Prefer dedicated tools such as `class_create`, `method_compile`, refactoring

@@ -72,6 +72,12 @@ MCPToolRemoveClasses >> commandForRequest: removeRequest [
 ]
 
 { #category : 'metadata' }
+MCPToolRemoveClasses >> defaultExposure [
+
+	^ 'static'
+]
+
+{ #category : 'metadata' }
 MCPToolRemoveClasses >> description [
 
 	^ 'Remove classes as one batch. Safe-removal warnings stop the removal unless force is true. With force=true, the tool still returns those warnings. history_entry_revert undoes a removal in the running image.'
