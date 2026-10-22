@@ -44,7 +44,7 @@ debugging guide.
 ## Image Mutation
 
 Mutating tools change the running image and never save it, so closing the image
-discards everything since its last save. Saving is the caller's decision:
+discards everything since its last save. Saving is the caller's responsibility:
 evaluate `Smalltalk saveSession` when a change should survive, or leave it to
 whoever owns the image lifecycle. Use a copied or disposable image for broad or
 risky edits, preview changes when the tool supports it, and run focused tests
@@ -52,6 +52,19 @@ after source changes.
 
 Report incomplete or failing tool results clearly. Never silently fall back to
 exported source for a question about the live image.
+
+## Failures And Notifications
+
+A notification is not a failure. Pharo signals them for remarks rather than
+faults, and every `Warning` is one, so a deprecated send or an undeclared
+variable during a load is resumed and the call proceeds. A refactoring warning
+is the exception: it reports a change that breaks something, so it stops the
+call until you rerun with `force=true`.
+
+A failed call reports the error class, the message and the frames of the failing
+code; the server's own frames are left out. For `image_evaluate` a compilation
+failure also names the line and shows it, and a `MessageNotUnderstood` suggests
+selectors the receiver does understand.
 
 ## Reusable Workflows
 

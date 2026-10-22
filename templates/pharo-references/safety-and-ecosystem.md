@@ -27,6 +27,18 @@ The execution path is:
    this payload reaches the MCP `content` field; the server can also emit
    `structuredContent` for clients that need programmatic results.
 
+### Notifications
+
+A notification is not a failed call. Pharo signals them for remarks rather than
+faults, and every `Warning` is one. The tool boundary resumes them with the
+value the image itself would have produced and the call proceeds, so a
+deprecated send, or an undeclared variable during a package load, does not fail
+it. A deprecated method called from a test does not abort the suite.
+
+Refactoring warnings are the exception. `RBRefactoringWarning` reports a change
+that breaks something, so it reaches the boundary unresumed and stops the call,
+aborting a removal or a rename that `force=true` did not authorize.
+
 ```mermaid
 sequenceDiagram
     participant Client
@@ -210,6 +222,13 @@ exists.
 
 Prefer a dedicated tool when one exists, because the dedicated tools validate
 input, return structured result data, and often use safer Pharo APIs.
+
+Compiling source is one of those cases. Method source in the image separates
+lines with CR, and `method_compile` normalizes what it is given; a bare
+`compile:` from `image_evaluate` stores whatever it receives, so source written
+with LF compares unequal to every other method in the image. Use
+`method_compile` for a method, and `withInternalLineEndings` if you must compile
+source by hand.
 
 ## Observability And UI
 

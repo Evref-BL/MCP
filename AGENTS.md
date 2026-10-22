@@ -8,32 +8,33 @@ template package.
 ## Read First
 
 - Preserve unrelated local changes.
-- Do not infer live-image behavior from Tonel source alone.
-- Prefer dedicated Pharo MCP tools over `image_evaluate`.
+- Image, Tonel, Iceberg and Git are separate states. Do not infer live-image
+  behavior from Tonel source alone.
+- Prefer dedicated Pharo MCP tools over `image_evaluate`, and find them with
+  `tool_search`.
+- No tool saves the image. A change lives in the running image until someone
+  saves it, so closing the image discards it and a mistake costs the session.
+- A notification does not fail a call: the tool boundary resumes it. A
+  refactoring warning is the exception and stops an unforced mutation.
+- Method source in the image separates lines with CR. `method_compile`
+  normalizes it; a bare `compile:` does not.
 - Use live images or externally mutating workflows only with an approved image,
   repository, and cleanup boundary.
 
 ## Context Loading
 
-Apply every matching route, reading user guidance before developer guidance.
-
-- Before using Pharo MCP tools: read
-  `templates/pharo-references/using-pharo-mcp.md`.
 - Before MCP source, tests, schemas, packaging, or developer docs: read
-  `docs/developing-mcp.md`.
-- Before Pharo source changes: also read
+  `docs/developing-mcp.md`, and `docs/mcp-verification.md` before verifying.
+- Before Pharo source changes: read
   `templates/pharo-references/pharo-coding-rules.md` and
   `templates/pharo-references/pharo-coding-style.md`.
-- Before reasoning across image, Iceberg, Tonel, or Git: read
-  `templates/pharo-references/source-vs-live-image.md`.
 - Before debugger work: read `templates/pharo-references/debugging.md`; for
   repair flows also read
   `templates/pharo-references/debugger-driven-development.md`.
-- Before verifying MCP changes: read `docs/mcp-verification.md`.
-- Before image-to-Git handoff: use
-  `templates/pharo-skills/pharo-image-git-handoff/SKILL.md`.
-- For project loading, compatibility, or CI reproduction, use the matching
-  skill under `templates/pharo-skills/`.
+- For a tool's own contract, ask the server with `tool_search` and `tool_get`.
+- `templates/pharo-references/` holds the user-facing guidance this repository
+  ships, and `templates/pharo-skills/` the workflows with their own triggers:
+  project loading, version compatibility, image-to-Git handoff, CI reproduction.
 
 ## Project Facts
 
