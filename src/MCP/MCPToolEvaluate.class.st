@@ -127,20 +127,18 @@ MCPToolEvaluate >> runtimeFailureMessageFor: anError [
 ]
 
 { #category : 'private' }
-MCPToolEvaluate >> syntaxFailureMessageFor: aNotice [
+MCPToolEvaluate >> syntaxFailureMessageFor: aNotice line: aLineNumber [
 
-	| position |
-	position := aNotice position.
 	^ String streamContents: [ :stream |
 			  stream
 				  nextPutAll: 'Evaluation failed during compilation (';
 				  nextPutAll: aNotice class name;
 				  nextPutAll: '): ';
 				  nextPutAll: aNotice messageText.
-			  position ifNotNil: [
+			  aLineNumber ifNotNil: [
 					  stream
-						  nextPutAll: ' Position: ';
-						  print: position ] ]
+						  nextPutAll: ' Line ';
+						  print: aLineNumber ] ]
 ]
 
 { #category : 'metadata' }

@@ -1293,6 +1293,21 @@ MCPToolContractsTest >> testEvaluateOmitsTruncationFieldsForSmallResults [
 ]
 
 { #category : 'tests - evaluate' }
+MCPToolContractsTest >> testEvaluateReportsTheFailingSourceLine [
+	"A character offset makes a caller count through its own source to find the mistake."
+
+	| error |
+	error := self errorFrom: (self
+			         callDiscoveredToolNamed: 'image_evaluate'
+			         withArguments: { (#code -> '| s |
+s := WriteStream on: String new.
+s << cr.
+s contents') } asDictionary).
+	self assert: (error at: #line) equals: 3.
+	self assert: (error at: #sourceLine) equals: 's << cr.'
+]
+
+{ #category : 'tests - evaluate' }
 MCPToolContractsTest >> testEvaluateReportsTruncationAndCollectionSize [
 	"A cut preview used to end in a marker and nothing else, so the caller could not tell whether two or two hundred kilobytes were missing."
 
@@ -1333,7 +1348,7 @@ MCPToolContractsTest >> testEvaluateReturnsCompilationFailureInformation [
 	self assert: (result at: #isError).
 	self assert: (text includesSubstring: 'failed during compilation').
 	self assert: (text includesSubstring: self expectedSyntaxErrorNoticeClassName).
-	self assert: (text includesSubstring: 'Position: 4')
+	self assert: (text includesSubstring: 'Line 1')
 ]
 
 { #category : 'tests - evaluate' }
@@ -1627,6 +1642,28 @@ MCPToolContractsTest >> testMCPUnregisterToolNamedRefreshesStaticTools [
 	server unregisterToolNamed: MCPHaltingTestTool toolName.
 	self deny: (server toolRegistry includesToolNamed: MCPHaltingTestTool toolName).
 	self deny: (server staticToolNames includes: MCPHaltingTestTool toolName)
+]
+
+{ #category : 'tests - evaluate' }
+MCPToolContractsTest >> testMessageNotUnderstoodSuggestsNearMissSelectors [
+	"Thirty-five failures in a day of real use were guesses at an API; the receiver knows which selectors the guess resembles."
+
+	| error |
+	error := self errorFrom: (self
+			         callDiscoveredToolNamed: 'image_evaluate'
+			         withArguments: { (#code -> 'OrderedCollection new adAll: #( 1 2 3 )') } asDictionary).
+	self assert: (error at: #suggestedSelectors) first equals: 'addAll:'
+]
+
+{ #category : 'tests - evaluate' }
+MCPToolContractsTest >> testMessageNotUnderstoodSuggestsNothingForAnUnrelatedSelector [
+	"Pharo's corrector answers its closest candidates whatever their distance; suggesting those would be worse than saying nothing."
+
+	| error |
+	error := self errorFrom: (self
+			         callDiscoveredToolNamed: 'image_evaluate'
+			         withArguments: { (#code -> 'OrderedCollection new frobnicate') } asDictionary).
+	self deny: (error includesKey: #suggestedSelectors)
 ]
 
 { #category : 'tests' }
@@ -2761,6 +2798,16 @@ MCPToolContractsTest >> testSearchToolsUsesQueryOnlyContract [
 	| propertyNames |
 	propertyNames := MCPToolSearchTools new inputSchema properties collect: [ :each | each name ].
 	self assert: propertyNames asArray equals: #( 'query' )
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testSelectorSuggestionsPreferASharedPrefixOverACorrection [
+	"A wrong guess usually keeps the prefix of the right selector, which no spelling distance recovers."
+
+	self
+		assert: (MCPSelectorSuggestion selectorsLike: #errorStackTraceForContextNamed: understoodBy: MCPTool) first
+		equals: 'errorStackTraceForContext:'.
+	self assert: (MCPSelectorSuggestion selectorsLike: #zzzzUnrelatedSelector understoodBy: MCPTool) isEmpty
 ]
 
 { #category : 'tests' }

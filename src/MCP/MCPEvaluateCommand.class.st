@@ -72,15 +72,33 @@ MCPEvaluateCommand >> resultPreviewCharacterLimit [
 { #category : 'private' }
 MCPEvaluateCommand >> runtimeFailureFor: anError [
 
-	^ MCPEvaluateResult errorSummary: (tool runtimeFailureMessageFor: anError) details: (tool errorDetailsFor: anError)
+	| details |
+	details := tool errorDetailsFor: anError.
+	anError mcpAddToolErrorDetailsTo: details.
+	^ MCPEvaluateResult errorSummary: (tool runtimeFailureMessageFor: anError) details: details
+]
+
+{ #category : 'private' }
+MCPEvaluateCommand >> sourceIndexFor: aPosition [
+	"A notice can point one character past the end of the source, where the expression simply stopped, so the position is clamped rather than rejected."
+
+	| source |
+	aPosition ifNil: [ ^ nil ].
+	source := request code.
+	source ifEmpty: [ ^ nil ].
+	^ (aPosition max: 1) min: source size
 ]
 
 { #category : 'private' }
 MCPEvaluateCommand >> syntaxFailureFor: aNotice [
 
-	| details |
+	| details index line |
 	details := tool errorDetailsFor: aNotice.
 	details at: #description put: 'Compilation failed before evaluation.'.
-	details at: #position put: aNotice position.
-	^ MCPEvaluateResult errorSummary: (tool syntaxFailureMessageFor: aNotice) details: details
+	index := self sourceIndexFor: aNotice position.
+	line := index ifNotNil: [ request code lineNumberCorrespondingToIndex: index ].
+	line ifNotNil: [
+			details at: #line put: line.
+			details at: #sourceLine put: (request code lineCorrespondingToIndex: index) ].
+	^ MCPEvaluateResult errorSummary: (tool syntaxFailureMessageFor: aNotice line: line) details: details
 ]
