@@ -38,16 +38,6 @@ MCPToolSearchClasses >> buildInputSchema [
 	^ self queryInputSchemaWithProperties: properties
 ]
 
-{ #category : 'metadata' }
-MCPToolSearchClasses >> buildOutputSchema [
-
-	^ self
-		  minimalPagedQueryOutputSchemaForEntriesPropertyNamed: 'classes'
-		  entriesDescription: 'The class entries returned for the requested page.'
-		  entrySchema: self classEntrySchema
-		  itemNounPhrase: 'class entries'
-]
-
 { #category : 'private - filtering' }
 MCPToolSearchClasses >> classEntriesForRequest: queryRequest [
 
@@ -58,19 +48,6 @@ MCPToolSearchClasses >> classEntriesForRequest: queryRequest [
 			entry := (MCPClassInfo fromClass: eachClass) asQueryDictionary.
 			(self matchesFieldFiltersOnClassEntry: entry queryRequest: queryRequest) ifTrue: [ entries add: entry ] ].
 	^ entries asArray
-]
-
-{ #category : 'private - schema' }
-MCPToolSearchClasses >> classEntrySchema [
-
-	^ MCPStructureProperties new
-		  name: 'classEntry';
-		  type: 'object';
-		  description: 'One class search result.';
-		  properties: self classInfoDataProperties;
-		  required: #( 'className' 'packageName' 'tag' );
-		  additionalProperties: false;
-		  yourself
 ]
 
 { #category : 'private - request' }
@@ -85,15 +62,6 @@ MCPToolSearchClasses >> classFilterInputProperties [
 	^ {
 		  (self schemaPropertyNamed: 'name' type: 'string' description: 'Match class names case-insensitively.').
 		  (self schemaPropertyNamed: 'tag' type: 'string' description: 'Match package tags case-insensitively.') }
-]
-
-{ #category : 'private - schema' }
-MCPToolSearchClasses >> classInfoDataProperties [
-
-	^ {
-		  (self schemaPropertyNamed: 'className' type: 'string' description: 'Class name.').
-		  (self schemaPropertyNamed: 'packageName' type: 'string' description: 'Defining package.').
-		  (self schemaPropertyNamed: 'tag' type: 'string' description: 'Package tag.') }
 ]
 
 { #category : 'metadata' }

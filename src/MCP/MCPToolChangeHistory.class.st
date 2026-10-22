@@ -29,59 +29,6 @@ MCPToolChangeHistory >> additionalKeywords [
 	^ #( 'history' 'change' 'epicea' 'ombu' 'recover' )
 ]
 
-{ #category : 'private - schema' }
-MCPToolChangeHistory >> changeHistoryEntryArraySchemaNamed: propertyName description: propertyDescription [
-
-	| property |
-	property := self schemaPropertyNamed: propertyName type: 'array' description: propertyDescription.
-	property items: self changeHistoryEntrySchemaProperty.
-	^ property
-]
-
-{ #category : 'private - schema' }
-MCPToolChangeHistory >> changeHistoryEntrySchemaProperty [
-
-	^ MCPStructureProperties new
-		  type: 'object';
-		  description: 'Change history entry.';
-		  properties: {
-				  (self integerSchemaPropertyNamed: 'index' description: 'One-based entry index.').
-				  (self schemaPropertyNamed: 'eventClassName' type: 'string' description: 'Event class name.').
-				  (self schemaPropertyNamed: 'summary' type: 'string' description: 'Specific entry summary.').
-				  (self
-					   stringEnumSchemaPropertyNamed: 'entryKind'
-					   description: 'Entry kind.'
-					   values: #( 'code' 'session' 'other' )
-					   default: 'code').
-				  (self schemaPropertyNamed: 'time' type: 'string' description: 'Entry time.').
-				  (self schemaPropertyNamed: 'triggerReference' type: 'string' description: 'Trigger reference.').
-				  (self schemaPropertyNamed: 'packageName' type: 'string' description: 'Package name.').
-				  (self schemaPropertyNamed: 'behaviorName' type: 'string' description: 'Class or trait name.').
-				  (self booleanSchemaPropertyNamed: 'classSide' description: 'Whether method is class-side.').
-				  (self schemaPropertyNamed: 'selector' type: 'string' description: 'Method selector.').
-				  (self schemaPropertyNamed: 'protocol' type: 'string' description: 'Method protocol.') };
-		  required: #( 'index' 'eventClassName' );
-		  additionalProperties: false;
-		  yourself
-]
-
-{ #category : 'private - schema' }
-MCPToolChangeHistory >> changeHistoryLogSchemaProperty [
-
-	^ MCPStructureProperties new
-		  type: 'object';
-		  description: 'Change history file.';
-		  properties: {
-				  (self schemaPropertyNamed: 'fileName' type: 'string' description: 'File name.').
-				  (self booleanSchemaPropertyNamed: 'exists' description: 'False when listed file is missing.').
-				  (self integerSchemaPropertyNamed: 'fileSize' description: 'File size in bytes.').
-				  (self schemaPropertyNamed: 'modificationTime' type: 'string' description: 'Modification time.').
-				  (self booleanSchemaPropertyNamed: 'isCurrent' description: 'True for current image history file.') };
-		  required: #( 'fileName' );
-		  additionalProperties: false;
-		  yourself
-]
-
 { #category : 'private - execution' }
 MCPToolChangeHistory >> commandForRequest: changeHistoryRequest [
 

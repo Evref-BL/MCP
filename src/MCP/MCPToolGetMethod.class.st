@@ -93,22 +93,6 @@ MCPToolGetMethod >> buildInputSchema [
 		  yourself
 ]
 
-{ #category : 'metadata' }
-MCPToolGetMethod >> buildOutputSchema [
-
-	^ self
-		  standardOutputSchemaForDataProperties: {
-				  (self schemaPropertyNamed: 'protocol' type: 'string' description: 'The protocol/category containing the method.').
-				  (self schemaPropertyNamed: 'source' type: 'string' description: 'The formatted source code of the method.').
-				  ((self
-					    schemaPropertyNamed: 'variableReferences'
-					    type: 'array'
-					    description: 'Structured summaries of referenced variables in first-use order when variable details are included.')
-					   items: self variableReferenceSchema;
-					   yourself) }
-		  required: #( 'protocol' 'source' )
-]
-
 { #category : 'private - errors' }
 MCPToolGetMethod >> classNameForErrorFromParsedRequest: getRequest rawRequest: rawRequest [
 

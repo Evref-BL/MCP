@@ -37,12 +37,6 @@ MCPToolClassMutation >> atLeastOneInputProperties [
 	^ self classToolSpec at: #atLeastOneProperties ifAbsent: [ #(  ) ]
 ]
 
-{ #category : 'metadata' }
-MCPToolClassMutation >> buildOutputSchema [
-
-	^ self standardOutputSchemaForDataProperties: #(  ) required: #(  )
-]
-
 { #category : 'private - schema' }
 MCPToolClassMutation >> classNameSchemaProperty [
 

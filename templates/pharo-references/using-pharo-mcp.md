@@ -106,10 +106,6 @@ MyProjectMCPTool >> buildInputSchema
 		additionalProperties: false;
 		yourself
 
-MyProjectMCPTool >> buildOutputSchema
-
-	^ self standardOutputSchemaForDataProperties: #(  ) required: #(  )
-
 MyProjectMCPTool >> executeWithRequest: request
 
 	^ self

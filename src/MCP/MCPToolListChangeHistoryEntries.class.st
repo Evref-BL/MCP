@@ -38,19 +38,6 @@ MCPToolListChangeHistoryEntries >> buildInputSchema [
 		  yourself
 ]
 
-{ #category : 'metadata' }
-MCPToolListChangeHistoryEntries >> buildOutputSchema [
-
-	| entriesProperty |
-	entriesProperty := self changeHistoryEntryArraySchemaNamed: 'entries' description: 'Change history entries.'.
-	^ self
-		  standardOutputSchemaForDataProperties: {
-				  (self schemaPropertyNamed: 'historyFileName' type: 'string' description: 'Inspected history file name.').
-				  entriesProperty.
-				  (self integerSchemaPropertyNamed: 'nextOffset' description: 'Next page offset.') }
-		  required: #( 'entries' )
-]
-
 { #category : 'private - execution' }
 MCPToolListChangeHistoryEntries >> commandForRequest: changeHistoryRequest [
 

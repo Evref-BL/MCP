@@ -49,19 +49,6 @@ MCPToolRemoveClasses >> buildInputSchema [
 		  yourself
 ]
 
-{ #category : 'metadata' }
-MCPToolRemoveClasses >> buildOutputSchema [
-
-	^ self
-		  standardOutputSchemaForDataProperties: {
-				  (self stringArraySchemaNamed: 'removedPackageNames' description: 'Packages removed during cleanup.' itemDescription: nil).
-				  (self
-					   stringArraySchemaNamed: 'reparentedSubclassNames'
-					   description: 'Subclasses reparented during removal.'
-					   itemDescription: nil) }
-		  required: #(  )
-]
-
 { #category : 'private - errors' }
 MCPToolRemoveClasses >> classNamesForErrorFromParsedRequest: removeRequest rawRequest: rawRequest [
 

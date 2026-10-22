@@ -28,14 +28,6 @@ MCPToolLoadBaseline >> buildInputSchema [
 		  yourself
 ]
 
-{ #category : 'metadata' }
-MCPToolLoadBaseline >> buildOutputSchema [
-
-	^ self
-		  standardOutputSchemaForDataProperties: self loadBaselineDataProperties
-		  required: #( 'baseline' 'groups' 'onWarning' 'onConflict' 'policy' 'newPackageNames' 'repositories' )
-]
-
 { #category : 'private - execution' }
 MCPToolLoadBaseline >> commandForRequest: loadBaselineRequest [
 

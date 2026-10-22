@@ -46,31 +46,6 @@ MCPToolDebugEvaluate >> buildInputSchema [
 		  yourself
 ]
 
-{ #category : 'metadata' }
-MCPToolDebugEvaluate >> buildOutputSchema [
-
-	^ self
-		  standardOutputSchemaForDataProperties: {
-				  (self schemaPropertyNamed: 'sessionId' type: 'string' description: 'Debug session identifier.').
-				  (self schemaPropertyNamed: 'stateId' type: 'string' description: 'Current debug state token.').
-				  (self schemaPropertyNamed: 'frameRef' type: 'string' description: 'Frame reference used for evaluation.').
-				  (self schemaPropertyNamed: 'expression' type: 'string' description: 'Expression evaluated in the selected frame.').
-				  (self schemaPropertyNamed: 'resultClassName' type: 'string' description: 'The name of the evaluated result class.').
-				  (self schemaPropertyNamed: 'resultPrintString' type: 'string' description: 'Bounded printString of the evaluated result.').
-				  (self
-					   booleanSchemaPropertyNamed: 'hasResultVariableRef'
-					   description: 'Whether resultVariableRef can be expanded with debug_variable_get.').
-				  (self
-					   schemaPropertyNamed: 'resultVariableRef'
-					   type: 'string'
-					   description: 'Optional state-scoped variable reference for the evaluation result.').
-				  (self schemaPropertyNamed: 'sideEffects' type: 'string' description: 'Side-effect expectation for this evaluation.').
-				  (self stringArraySchemaNamed: 'warnings' description: 'Evaluation-specific warnings.' itemDescription: 'A warning message.').
-				  (self schemaPropertyNamed: 'capabilities' type: 'object' description: 'Evaluation capability gates used for this response.') }
-		  required: #( 'sessionId' 'stateId' 'frameRef' 'expression' 'resultClassName' 'resultPrintString' 'hasResultVariableRef'
-			     'sideEffects' 'warnings' 'capabilities' )
-]
-
 { #category : 'private - execution' }
 MCPToolDebugEvaluate >> commandForRequest: debugRequest [
 

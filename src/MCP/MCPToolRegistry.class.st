@@ -30,20 +30,20 @@ MCPToolRegistry class >> empty [
 ]
 
 { #category : 'tools' }
-MCPToolRegistry >> contractForTool: aTool includeOutputSchema: includeOutputSchema [
+MCPToolRegistry >> contractForTool: aTool [
 
 	| contract |
-	contract := aTool contractIncludingOutputSchema: includeOutputSchema.
+	contract := aTool contract.
 	contract at: #exposure put: (self exposureForTool: aTool).
 	^ contract
 ]
 
 { #category : 'tools' }
-MCPToolRegistry >> contractForToolNamed: aToolName includeOutputSchema: includeOutputSchema [
+MCPToolRegistry >> contractForToolNamed: aToolName [
 
 	| tool |
 	tool := self toolNamed: aToolName ifAbsent: [ Error signal: 'Unknown MCP tool: ' , aToolName asString ].
-	^ self contractForTool: tool includeOutputSchema: includeOutputSchema
+	^ self contractForTool: tool
 ]
 
 { #category : 'registrations' }

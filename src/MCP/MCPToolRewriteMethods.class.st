@@ -35,14 +35,6 @@ MCPToolRewriteMethods >> buildInputSchema [
 		  yourself
 ]
 
-{ #category : 'metadata' }
-MCPToolRewriteMethods >> buildOutputSchema [
-
-	^ self
-		  standardOutputSchemaForDataProperties: self rewriteDataProperties
-		  required: #( 'apply' 'changeCount' 'appliedCount' 'changeSetHash' 'scope' 'changes' )
-]
-
 { #category : 'private - execution' }
 MCPToolRewriteMethods >> commandForRequest: rewriteRequest [
 
@@ -86,48 +78,6 @@ MCPToolRewriteMethods >> parsedRequestFromToolRequest: request [
 ]
 
 { #category : 'private - schema' }
-MCPToolRewriteMethods >> rewriteChangeSchema [
-
-	^ MCPStructureProperties new
-		  type: 'object';
-		  description: 'One method source rewrite change.';
-		  properties: {
-				  (self schemaPropertyNamed: 'className' type: 'string' description: 'The base class that defines the method.').
-				  (self booleanSchemaPropertyNamed: 'classSide' description: 'Whether the method is on the class side.').
-				  (self schemaPropertyNamed: 'selector' type: 'string' description: 'The method selector.').
-				  (self schemaPropertyNamed: 'packageName' type: 'string' description: 'The package that owns the method.').
-				  (self schemaPropertyNamed: 'protocol' type: 'string' description: 'The method protocol/category.').
-				  (self schemaPropertyNamed: 'oldSource' type: 'string' description: 'The method source before applying the rewrite.').
-				  (self schemaPropertyNamed: 'newSource' type: 'string' description: 'The method source produced by the rewrite.') };
-		  required: #( 'className' 'classSide' 'selector' 'packageName' 'protocol' );
-		  additionalProperties: false;
-		  yourself
-]
-
-{ #category : 'private - schema' }
-MCPToolRewriteMethods >> rewriteChangesSchemaProperty [
-
-	^ (self
-		   schemaPropertyNamed: 'changes'
-		   type: 'array'
-		   description: 'The method rewrite changes calculated for the requested scope.')
-		  items: self rewriteChangeSchema;
-		  yourself
-]
-
-{ #category : 'private - schema' }
-MCPToolRewriteMethods >> rewriteDataProperties [
-
-	^ {
-		  (self booleanSchemaPropertyNamed: 'apply' description: 'Whether the request applied changes or only previewed them.').
-		  (self integerSchemaPropertyNamed: 'changeCount' description: 'The number of rewrite changes calculated.').
-		  (self integerSchemaPropertyNamed: 'appliedCount' description: 'The number of rewrite changes applied to the image.').
-		  (self integerSchemaPropertyNamed: 'changeSetHash' description: 'Hash of the calculated rewrite change set.').
-		  self rewriteScopeSchemaProperty.
-		  self rewriteChangesSchemaProperty }
-]
-
-{ #category : 'private - schema' }
 MCPToolRewriteMethods >> rewriteInputProperties [
 
 	^ {
@@ -168,18 +118,6 @@ MCPToolRewriteMethods >> rewriteRulesSchemaProperty [
 		  minItems: 1;
 		  items: self rewriteRuleSchema;
 		  yourself
-]
-
-{ #category : 'private - schema' }
-MCPToolRewriteMethods >> rewriteScopeSchemaProperty [
-
-	| property |
-	property := self
-		            schemaPropertyNamed: 'scope'
-		            type: 'object'
-		            description: 'The normalized method scope used to calculate rewrite changes.'.
-	property additionalProperties: true.
-	^ property
 ]
 
 { #category : 'metadata' }

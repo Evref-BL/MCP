@@ -120,45 +120,6 @@ MCPToolLoadMetacello >> groupsSchemaProperty [
 ]
 
 { #category : 'private - schema' }
-MCPToolLoadMetacello >> loadBaselineDataProperties [
-
-	^ {
-		  (self schemaPropertyNamed: 'baseline' type: 'string' description: 'The Metacello baseline name loaded.').
-		  self loadPolicyOutputSchemaProperty.
-		  (self
-			   stringArraySchemaNamed: 'newPackageNames'
-			   description: 'Packages that appeared in the image after load.'
-			   itemDescription: 'A package name.').
-		  self repositoriesOutputSchemaProperty }
-]
-
-{ #category : 'private - schema' }
-MCPToolLoadMetacello >> loadBaselineOutputSchemaProperty [
-
-	^ (self schemaPropertyNamed: 'load' type: 'object' description: 'Baseline load details for Metacello load.')
-		  properties: self loadBaselineDataProperties;
-		  required: #( 'baseline' );
-		  additionalProperties: false;
-		  yourself
-]
-
-{ #category : 'private - schema' }
-MCPToolLoadMetacello >> loadPolicyDataProperties [
-
-	^ {
-		  (self schemaPropertyNamed: 'warning' type: 'string' description: 'Warning policy used.').
-		  (self schemaPropertyNamed: 'conflict' type: 'string' description: 'Conflict policy used.').
-		  (self stringArraySchemaNamed: 'conflictUseIncoming').
-		  (self stringArraySchemaNamed: 'conflictUseLoaded').
-		  (self schemaPropertyNamed: 'upgrade' type: 'string' description: 'Upgrade policy used.').
-		  (self stringArraySchemaNamed: 'upgradeUseLoaded').
-		  (self schemaPropertyNamed: 'downgrade' type: 'string' description: 'Downgrade policy used.').
-		  (self stringArraySchemaNamed: 'downgradeUseIncoming').
-		  (self schemaPropertyNamed: 'lock' type: 'string' description: 'Lock policy used.').
-		  (self stringArraySchemaNamed: 'lockBreak') }
-]
-
-{ #category : 'private - schema' }
 MCPToolLoadMetacello >> loadPolicyInputSchemaProperties [
 
 	^ { self loadPolicyInputSchemaProperty }
@@ -179,15 +140,6 @@ MCPToolLoadMetacello >> loadPolicyInputSchemaProperty [
 				  self onDowngradeUseIncomingSchemaProperty.
 				  self onLockSchemaProperty.
 				  self onLockBreakSchemaProperty };
-		  additionalProperties: false;
-		  yourself
-]
-
-{ #category : 'private - schema' }
-MCPToolLoadMetacello >> loadPolicyOutputSchemaProperty [
-
-	^ (self schemaPropertyNamed: 'policy' type: 'object' description: 'Metacello load policy values that differ from defaults.')
-		  properties: self loadPolicyDataProperties;
 		  additionalProperties: false;
 		  yourself
 ]
@@ -296,28 +248,6 @@ MCPToolLoadMetacello >> onWarningSchemaProperty [
 MCPToolLoadMetacello >> parsedRequestFromToolRequest: request [
 
 	self subclassResponsibility
-]
-
-{ #category : 'private - schema' }
-MCPToolLoadMetacello >> repositoriesOutputSchemaProperty [
-
-	| property |
-	property := self
-		            schemaPropertyNamed: 'repositories'
-		            type: 'array'
-		            description: 'Iceberg repositories newly registered during the load, when detectable.'.
-	property items: self repositoryInfoOutputSchemaProperty.
-	^ property
-]
-
-{ #category : 'private - schema' }
-MCPToolLoadMetacello >> repositoryInfoOutputSchemaProperty [
-
-	^ MCPStructureProperties new
-		  type: 'object';
-		  description: 'Structured metadata for one Iceberg repository newly registered during the load.';
-		  additionalProperties: true;
-		  yourself
 ]
 
 { #category : 'private - errors' }

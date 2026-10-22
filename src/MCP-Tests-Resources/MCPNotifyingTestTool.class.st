@@ -32,15 +32,6 @@ MCPNotifyingTestTool >> buildInputSchema [
 ]
 
 { #category : 'metadata' }
-MCPNotifyingTestTool >> buildOutputSchema [
-
-	^ self
-		  standardOutputSchemaForDataProperties:
-		  { (self schemaPropertyNamed: 'resumedWith' type: 'string' description: 'The value the signaled notification resumed with.') }
-		  required: #( 'resumedWith' )
-]
-
-{ #category : 'metadata' }
 MCPNotifyingTestTool >> description [
 
 	^ 'Signals a notification for MCP tool-call notification handling tests.'

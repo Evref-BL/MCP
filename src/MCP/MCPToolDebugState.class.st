@@ -50,37 +50,6 @@ MCPToolDebugState >> buildInputSchema [
 		  yourself
 ]
 
-{ #category : 'metadata' }
-MCPToolDebugState >> buildOutputSchema [
-
-	^ self
-		  standardOutputSchemaForDataProperties: {
-				  (self schemaPropertyNamed: 'sessionId' type: 'string' description: 'Debug session identifier.').
-				  (self schemaPropertyNamed: 'stateId' type: 'string' description: 'Current debug state token.').
-				  (self schemaPropertyNamed: 'status' type: 'string' description: 'Current debug session status.').
-				  (self schemaPropertyNamed: 'reason' type: 'string' description: 'Reason the debug session is stopped or tracked.').
-				  (self
-					   schemaPropertyNamed: 'exception'
-					   type: 'object'
-					   description: 'Exception associated with the debug session when available.').
-				  (self schemaPropertyNamed: 'location' type: 'object' description: 'Selected execution location.').
-				  (self schemaPropertyNamed: 'source' type: 'object' description: 'Source context for the selected frame.').
-				  (self schemaPropertyNamed: 'selectedFrame' type: 'object' description: 'Selected stack frame.').
-				  (self schemaPropertyNamed: 'scopes' type: 'array' description: 'State-scoped variable scopes for the selected frame.').
-				  (self schemaPropertyNamed: 'callStack' type: 'array' description: 'Visible call stack frames.').
-				  (self
-					   schemaPropertyNamed: 'repairActions'
-					   type: 'array'
-					   description:
-					   'Repair actions available for debugger-driven development, such as debug_method_update arguments for a missing or stub method.').
-				  (self integerSchemaPropertyNamed: 'stackStart' description: 'Zero-based stack offset used for the response.').
-				  (self integerSchemaPropertyNamed: 'stackLimit' description: 'Stack frame limit used for the response.').
-				  (self integerSchemaPropertyNamed: 'totalFrames' description: 'Number of stack frames known to this snapshot.').
-				  (self schemaPropertyNamed: 'capabilities' type: 'object' description: 'Debugger feature gates available for this session.').
-				  (self stringArraySchemaNamed: 'warnings' description: 'Snapshot-specific warnings.' itemDescription: 'A warning message.') }
-		  required: #( 'sessionId' 'stateId' 'status' 'callStack' 'repairActions' 'capabilities' 'warnings' )
-]
-
 { #category : 'private - execution' }
 MCPToolDebugState >> commandForRequest: debugRequest [
 

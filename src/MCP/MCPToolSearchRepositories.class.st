@@ -41,16 +41,6 @@ MCPToolSearchRepositories >> buildInputSchema [
 	^ self queryInputSchemaWithProperties: properties
 ]
 
-{ #category : 'metadata' }
-MCPToolSearchRepositories >> buildOutputSchema [
-
-	^ self
-		  minimalPagedQueryOutputSchemaForEntriesPropertyNamed: 'repositories'
-		  entriesDescription: 'The repository entries returned for the requested page.'
-		  entrySchema: self repositoryEntrySchema
-		  itemNounPhrase: 'repository entries'
-]
-
 { #category : 'private - filtering' }
 MCPToolSearchRepositories >> classNamesForRepositoryEntry: anEntry [
 
@@ -132,19 +122,6 @@ MCPToolSearchRepositories >> repositoryEntry: anEntry matchesRequest: queryReque
 ]
 
 { #category : 'private - schema' }
-MCPToolSearchRepositories >> repositoryEntrySchema [
-
-	^ MCPStructureProperties new
-		  name: 'repositoryEntry';
-		  type: 'object';
-		  description: 'Compact metadata for one registered Iceberg repository.';
-		  properties: self repositoryInfoDataProperties;
-		  required: #( 'name' 'location' 'isModified' 'isMissing' );
-		  additionalProperties: false;
-		  yourself
-]
-
-{ #category : 'private - schema' }
 MCPToolSearchRepositories >> repositoryFieldFilterInputProperties [
 
 	^ {
@@ -162,34 +139,6 @@ MCPToolSearchRepositories >> repositoryFieldFilterInputProperties [
 MCPToolSearchRepositories >> repositoryFilterFieldNames [
 
 	^ #( 'name' 'location' 'subdirectory' 'packageName' 'className' 'modifiedPackageName' )
-]
-
-{ #category : 'private - schema' }
-MCPToolSearchRepositories >> repositoryInfoDataProperties [
-
-	^ {
-		  (self schemaPropertyNamed: 'name' type: 'string' description: 'Repository name.').
-		  (self schemaPropertyNamed: 'location' type: 'string' description: 'Repository directory.').
-		  (self schemaPropertyNamed: 'subdirectory' type: 'string' description: 'Repository source subdirectory.').
-		  (self booleanSchemaPropertyNamed: 'isModified' description: 'Whether repository has image-side modifications.').
-		  (self booleanSchemaPropertyNamed: 'isMissing' description: 'Whether repository directory is missing.').
-		  (self stringArraySchemaNamed: 'packageNames' description: 'Managed packages.' itemDescription: 'Package name.').
-		  (self stringArraySchemaNamed: 'modifiedPackageNames' description: 'Modified packages.' itemDescription: 'Package name.') }
-]
-
-{ #category : 'private - schema' }
-MCPToolSearchRepositories >> repositoryRemoteEntrySchema [
-
-	^ MCPStructureProperties new
-		  name: 'repositoryRemoteEntry';
-		  type: 'object';
-		  description: 'Structured metadata for one configured repository remote.';
-		  properties: {
-				  (self schemaPropertyNamed: 'name' type: 'string' description: 'The remote name.').
-				  (self schemaPropertyNamed: 'url' type: 'string' description: 'The remote URL.') };
-		  required: #( 'name' 'url' );
-		  additionalProperties: false;
-		  yourself
 ]
 
 { #category : 'private - results' }

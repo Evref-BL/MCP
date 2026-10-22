@@ -788,27 +788,9 @@ MCPToolContractsTest >> testAllStaticExposurePolicyMakesEveryRegistrationStatic 
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testAllToolOutputSchemasAdvertiseStructuredSummaryAndWarnings [
-	"No tool advertises a status field: isError already states on the wire whether the call failed."
-
-	self builtInToolClasses do: [ :toolClass |
-			| outputSchema propertyNames |
-			outputSchema := toolClass new outputSchema.
-			propertyNames := outputSchema properties collect: [ :each | each name ].
-			self assert: (propertyNames includes: 'summary').
-			self assert: (propertyNames includes: 'warnings').
-			self deny: (propertyNames includes: 'status').
-			self assert: outputSchema required asSet equals: #( 'summary' ) asSet ]
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testAllToolSchemasUseSupportedDialect [
 
-	self builtInToolClasses do: [ :toolClass |
-			| tool |
-			tool := toolClass new.
-			self assertUsesSupportedSchemaDialect: tool inputSchema asJRPCJSON.
-			self assertUsesSupportedSchemaDialect: tool outputSchema asJRPCJSON ]
+	self builtInToolClasses do: [ :toolClass | self assertUsesSupportedSchemaDialect: toolClass new inputSchema asJRPCJSON ]
 ]
 
 { #category : 'tests' }
@@ -918,21 +900,15 @@ MCPToolContractsTest >> testCallToolPreservesNestedValidationViolations [
 { #category : 'tests' }
 MCPToolContractsTest >> testCaptureScreenshotHasAccurateNameAndSchemas [
 
-	| dataProperty inputPropertyNames outputPropertyNames targetProperty tool |
+	| inputPropertyNames targetProperty tool |
 	tool := MCPToolCaptureScreenshot new.
 	inputPropertyNames := tool inputSchema properties collect: [ :each | each name ].
-	dataProperty := tool outputSchema properties detect: [ :each | each name = 'data' ].
-	outputPropertyNames := (dataProperty extraProperties at: #properties) collect: [ :each | each name ].
 	targetProperty := self inputPropertyNamed: 'target' inTool: tool.
 	self assert: tool name equals: 'screenshot_capture'.
 	self assert: tool inputSchema required equals: #(  ).
 	self assert: inputPropertyNames equals: #( 'target' ).
 	self assert: (targetProperty extraProperties at: #enum) equals: #( 'world' ).
-	self assert: (targetProperty extraProperties at: #default) equals: 'world'.
-	self assert: (outputPropertyNames includes: 'target').
-	self assert: (outputPropertyNames includes: 'width').
-	self assert: (outputPropertyNames includes: 'height').
-	self assert: (outputPropertyNames includes: 'mimeType')
+	self assert: (targetProperty extraProperties at: #default) equals: 'world'
 ]
 
 { #category : 'tests' }
@@ -1041,15 +1017,6 @@ MCPToolContractsTest >> testClassToolTraitOwnsSharedClassHelpers [
 	classToolClasses do: [ :toolClass |
 			self assert: (toolClass withAllSuperclasses anySatisfy: [ :each | each traits includes: TMCPClassTool ]).
 			sharedSelectors do: [ :selector | self assert: (toolClass lookupSelector: selector) origin equals: TMCPClassTool ] ]
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testClassToolsOutputSchemaAdvertisesMinimalMutationResult [
-
-	| dataProperties outputSchema |
-	outputSchema := MCPToolUpdateClassName new outputSchema asJRPCJSON.
-	dataProperties := ((outputSchema at: #properties) at: 'data') at: #properties.
-	self assert: dataProperties isEmpty
 ]
 
 { #category : 'tests' }
@@ -1282,16 +1249,6 @@ MCPToolContractsTest >> testEvaluateCatchesHaltAsRuntimeFailure [
 	self assert: (text includesSubstring: 'mcp halt test')
 ]
 
-{ #category : 'tests' }
-MCPToolContractsTest >> testEvaluateErrorSchemaAdvertisesStackTrace [
-
-	| errorProperties errorProperty propertyNames |
-	errorProperty := MCPToolEvaluate new outputSchema properties detect: [ :each | each name = 'error' ].
-	errorProperties := errorProperty extraProperties at: #properties.
-	propertyNames := errorProperties collect: [ :each | each name ].
-	self assert: (propertyNames includes: 'stackTrace')
-]
-
 { #category : 'tests - evaluate' }
 MCPToolContractsTest >> testEvaluateFailureTextNamesSuggestionsAndFrames [
 
@@ -1455,16 +1412,12 @@ MCPToolContractsTest >> testExternalToolFixtureIsNotBuiltIn [
 { #category : 'tests' }
 MCPToolContractsTest >> testGetClassHasAccurateNameAndRequiredArguments [
 
-	| inputPropertyNames outputDataProperty outputPropertyNames tool |
+	| inputPropertyNames tool |
 	tool := MCPToolGetClass new.
 	inputPropertyNames := tool inputSchema properties collect: [ :each | each name ].
-	outputDataProperty := tool outputSchema properties detect: [ :each | each name = 'data' ].
-	outputPropertyNames := (outputDataProperty extraProperties at: #properties) collect: [ :each | each name ].
 	self assert: tool name equals: 'class_get'.
 	self assert: tool inputSchema required asSet equals: #( 'name' ) asSet.
-	self assert: (inputPropertyNames includes: 'includeComment').
-	self assert: (outputPropertyNames includes: 'traitComposition').
-	self assert: (outputPropertyNames includes: 'classTraitComposition')
+	self assert: (inputPropertyNames includes: 'includeComment')
 ]
 
 { #category : 'tests' }
@@ -1832,25 +1785,6 @@ MCPToolContractsTest >> testMethodMetadataSearchTopLevelFilterModesAreTextOnly [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testMethodMutationSchemaAdvertisesOnlyNonInputOutcomes [
-
-	| argumentNamesProperty argumentValuesProperty dataProperties dataProperty permutationProperty propertyNames tool toolPropertyNames |
-	tool := MCPToolUpdateMethodSelector new.
-	toolPropertyNames := tool inputSchema properties collect: [ :each | each name ].
-	permutationProperty := tool inputSchema properties detect: [ :each | each name = 'permutation' ].
-	argumentNamesProperty := tool inputSchema properties detect: [ :each | each name = 'argumentNames' ].
-	argumentValuesProperty := tool inputSchema properties detect: [ :each | each name = 'argumentValueExpressions' ].
-	dataProperty := tool outputSchema properties detect: [ :each | each name = 'data' ].
-	dataProperties := dataProperty extraProperties at: #properties.
-	propertyNames := dataProperties collect: [ :each | each name ].
-	self deny: (toolPropertyNames includes: 'action').
-	self assert: (permutationProperty extraProperties at: #items) type equals: 'integer'.
-	self assert: (argumentNamesProperty extraProperties at: #items) type equals: 'string'.
-	self assert: (argumentValuesProperty extraProperties at: #items) type equals: 'string'.
-	self assert: propertyNames asSet equals: #( 'changeKind' 'critiques' ) asSet
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testMethodMutationToolsHaveAccurateNamesAndRequiredArguments [
 
 	| createPropertyNames createTool protocolPropertyNames protocolTool selectorPropertyNames selectorTool |
@@ -2172,22 +2106,6 @@ MCPToolContractsTest >> testRepositoryCreateAndUpdateRequiredArguments [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testRepositoryOperationOutputSchemaUsesCompactOutcomeFields [
-
-	| dataProperties expectedFields outputSchema required |
-	outputSchema := MCPToolUpdateRepository new outputSchema asJRPCJSON.
-	dataProperties := ((outputSchema at: #properties) at: 'data') at: #properties.
-	required := ((outputSchema at: #properties) at: 'data') at: #required.
-	expectedFields := #( 'matched' 'updateActions' 'addedPackageNames' 'removedPackageNames' 'changedPackageNames'
-	                     'modifiedPackageNames' 'modifiedPackageNamesBefore' 'modifiedPackageNamesAfter' 'modifiedPaths'
-	                     'restoredOrderOnlyPaths' 'changeCount' 'isEmpty' 'didChange' 'didAdopt' 'commitId' 'commitDescription'
-	                     'branchName' 'previousBranchName' 'headDescription' 'previousHeadDescription' 'previousReferenceCommitId'
-	                     'referenceCommitId' 'adoptedCommitId' ).
-	self assert: dataProperties keys asSet equals: expectedFields asSet.
-	self assert: required equals: #(  )
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testRequestedToolIconsAreSelected [
 
 	MCPStructureIcon resetCaches.
@@ -2371,7 +2289,7 @@ MCPToolContractsTest >> testRunTestCoverageParsesCompactSelections [
 { #category : 'tests' }
 MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 
-	| coverageDataProperties coverageInputProperties coverageInputProperty coverageTool dataProperties inputPropertyNames outputSchema tool |
+	| coverageInputProperties coverageInputProperty coverageTool inputPropertyNames tool |
 	tool := MCPToolRunTests new.
 	self assert: tool name equals: 'test_run'.
 	self assert: (tool inputSchema required ifNil: [ #(  ) ]) isEmpty.
@@ -2380,18 +2298,6 @@ MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 	self deny: (inputPropertyNames includes: 'tests').
 	self deny: (inputPropertyNames includes: 'timeoutMilliseconds').
 	self deny: (inputPropertyNames includes: 'coverage').
-	outputSchema := tool outputSchema asJRPCJSON.
-	dataProperties := ((outputSchema at: #properties) at: 'data') at: #properties.
-	self assert: (dataProperties includesKey: 'runCount').
-	self assert: (dataProperties includesKey: 'passedCount').
-	self assert: (dataProperties includesKey: 'skipped').
-	self assert: (dataProperties includesKey: 'failures').
-	self assert: (dataProperties includesKey: 'errors').
-	self assert: (dataProperties includesKey: 'unrunPackages').
-	self assert: (dataProperties includesKey: 'unrunClasses').
-	self assert: (dataProperties includesKey: 'unrunMethods').
-	self deny: (dataProperties includesKey: 'results').
-	self deny: (dataProperties includesKey: 'coverage').
 
 	coverageTool := MCPToolRunTestCoverage new.
 	self assert: coverageTool name equals: 'test_coverage_run'.
@@ -2402,17 +2308,7 @@ MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 	self deny: (inputPropertyNames includes: 'timeoutMilliseconds').
 	coverageInputProperty := coverageTool inputSchema properties detect: [ :each | each name = 'coverage' ].
 	coverageInputProperties := coverageInputProperty asJRPCJSON at: #properties.
-	self assert: coverageInputProperties keys asSet equals: #( 'scope' 'side' 'includeCoveredMethods' 'methodLimit' ) asSet.
-	outputSchema := coverageTool outputSchema asJRPCJSON.
-	dataProperties := ((outputSchema at: #properties) at: 'data') at: #properties.
-	self assert: (dataProperties includesKey: 'coverage').
-	self assert: (dataProperties includesKey: 'runCount').
-	self assert: (dataProperties includesKey: 'passedCount').
-	self assert: (dataProperties includesKey: 'unrunPackages').
-	coverageDataProperties := (dataProperties at: 'coverage') at: #properties.
-	self assert: (coverageDataProperties includesKey: 'methodCount').
-	self assert: (coverageDataProperties includesKey: 'uncoveredMethods').
-	self assert: (coverageDataProperties includesKey: 'partiallyCoveredMethods')
+	self assert: coverageInputProperties keys asSet equals: #( 'scope' 'side' 'includeCoveredMethods' 'methodLimit' ) asSet
 ]
 
 { #category : 'tests' }

@@ -37,12 +37,6 @@ MCPToolLoadRepository >> buildInputSchema [
 		  yourself
 ]
 
-{ #category : 'metadata' }
-MCPToolLoadRepository >> buildOutputSchema [
-
-	^ self standardOutputSchemaForDataProperties: self loadRepositoryDataProperties required: #( 'mode' 'repository' 'load' )
-]
-
 { #category : 'private - schema' }
 MCPToolLoadRepository >> checkoutPathSchemaProperty [
 
@@ -125,30 +119,11 @@ MCPToolLoadRepository >> hostUrlSchemaProperty [
 ]
 
 { #category : 'private - schema' }
-MCPToolLoadRepository >> loadRepositoryDataProperties [
-
-	^ {
-		  self modeOutputSchemaProperty.
-		  self repositoryOutputSchemaProperty.
-		  self loadBaselineOutputSchemaProperty }
-]
-
-{ #category : 'private - schema' }
 MCPToolLoadRepository >> locationSchemaProperty [
 
 	^ (self schemaPropertyNamed: 'location' type: 'string' description: 'Registered repository filesystem location.')
 		  minLength: 1;
 		  yourself
-]
-
-{ #category : 'private - schema' }
-MCPToolLoadRepository >> modeOutputSchemaProperty [
-
-	^ self
-		  stringEnumSchemaPropertyNamed: 'mode'
-		  description: 'The repository source mode used by this tool.'
-		  values: #( 'remote' 'url' 'local' 'iceberg' )
-		  default: 'remote'
 ]
 
 { #category : 'private - request' }
@@ -158,26 +133,10 @@ MCPToolLoadRepository >> parsedRequestFromToolRequest: request [
 ]
 
 { #category : 'private - schema' }
-MCPToolLoadRepository >> repositoryDataProperties [
-
-	^ { (self schemaPropertyNamed: 'repositoryUrl' type: 'string' description: 'Resolved Metacello repository URL.') }
-]
-
-{ #category : 'private - schema' }
 MCPToolLoadRepository >> repositoryNameSchemaProperty [
 
 	^ (self schemaPropertyNamed: 'name' type: 'string' description: 'Registered Iceberg repository name.')
 		  minLength: 1;
-		  yourself
-]
-
-{ #category : 'private - schema' }
-MCPToolLoadRepository >> repositoryOutputSchemaProperty [
-
-	^ (self schemaPropertyNamed: 'repository' type: 'object' description: 'Repository source used for the load.')
-		  properties: self repositoryDataProperties;
-		  required: #( 'repositoryUrl' );
-		  additionalProperties: false;
 		  yourself
 ]
 

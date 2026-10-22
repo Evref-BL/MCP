@@ -179,18 +179,6 @@ MCPToolRunCritiques >> buildInputSchema [
 			  self ruleClassesSchemaProperty } , (self paginationInputPropertiesWithLimitDescription: 'Maximum critique hits returned.')
 ]
 
-{ #category : 'metadata' }
-MCPToolRunCritiques >> buildOutputSchema [
-
-	^ self
-		  standardOutputSchemaForDataProperties: {
-				  self critiqueRulesSchemaProperty.
-				  (self
-					   integerSchemaPropertyNamed: 'nextOffset'
-					   description: 'Zero-based offset for the next page. Omitted when this is the final page.') }
-		  required: #( 'rules' )
-]
-
 { #category : 'private - entries' }
 MCPToolRunCritiques >> critiqueEntryFor: critique rule: rule fallbackEntity: fallbackEntity [
 
@@ -202,60 +190,6 @@ MCPToolRunCritiques >> critiqueEntryFor: critique rule: rule fallbackEntity: fal
 	rule severity ifNotNil: [ :severity | entry at: #severity put: severity asString ].
 	entry at: #hit put: (self hitDataForCritique: critique fallbackEntity: fallbackEntity).
 	^ entry
-]
-
-{ #category : 'private - schema' }
-MCPToolRunCritiques >> critiqueHitSchemaProperty [
-
-	| hitProperty |
-	hitProperty := self
-		               schemaPropertyNamed: 'hit'
-		               type: 'object'
-		               description:
-		               'Lean critique target/location data. Method, class, or package identifies the target; interval is included when available.'.
-	hitProperty
-		properties: {
-				(self
-					 schemaPropertyNamed: 'method'
-					 type: 'string'
-					 description: 'Method reference, such as MyClass>>selector or MyClass class>>selector.').
-				(self schemaPropertyNamed: 'class' type: 'string' description: 'Class reference.').
-				(self schemaPropertyNamed: 'package' type: 'string' description: 'Package name.').
-				((self schemaPropertyNamed: 'interval' type: 'array' description: 'Source interval as start and stop offsets when available.')
-					 items: (MCPStructureProperties new
-							  type: 'integer';
-							  yourself);
-					 yourself) };
-		additionalProperties: true.
-	^ hitProperty
-]
-
-{ #category : 'private - schema' }
-MCPToolRunCritiques >> critiqueRuleSchemaProperty [
-
-	| hitsProperty ruleProperty |
-	hitsProperty := self schemaPropertyNamed: 'hits' type: 'array' description: 'Critique hits for this rule in the returned page.'.
-	hitsProperty items: self critiqueHitSchemaProperty.
-	ruleProperty := self schemaPropertyNamed: 'rule' type: 'object' description: 'One critique rule group.'.
-	ruleProperty
-		properties: {
-				(self schemaPropertyNamed: 'ruleClass' type: 'string' description: 'Renraku rule class name.').
-				(self schemaPropertyNamed: 'title' type: 'string' description: 'Rule title.').
-				(self schemaPropertyNamed: 'hint' type: 'string' description: 'Rule-level guidance when available.').
-				(self schemaPropertyNamed: 'severity' type: 'string' description: 'Rule severity when available.').
-				hitsProperty };
-		required: #( 'ruleClass' 'title' 'hits' );
-		additionalProperties: false.
-	^ ruleProperty
-]
-
-{ #category : 'private - schema' }
-MCPToolRunCritiques >> critiqueRulesSchemaProperty [
-
-	| ruleProperty |
-	ruleProperty := self schemaPropertyNamed: 'rules' type: 'array' description: 'Critique rule groups returned for this page.'.
-	ruleProperty items: self critiqueRuleSchemaProperty.
-	^ ruleProperty
 ]
 
 { #category : 'metadata' }

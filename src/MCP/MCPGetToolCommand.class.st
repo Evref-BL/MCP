@@ -20,5 +20,5 @@ MCPGetToolCommand class >> tool: aTool request: aRequest [
 { #category : 'executing' }
 MCPGetToolCommand >> execute [
 
-	^ { (#tool -> (self toolRegistry contractForToolNamed: request toolName includeOutputSchema: false)) } asDictionary
+	^ { (#tool -> (self toolRegistry contractForToolNamed: request toolName)) } asDictionary
 ]

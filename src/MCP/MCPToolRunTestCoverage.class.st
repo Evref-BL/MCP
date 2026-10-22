@@ -33,14 +33,6 @@ MCPToolRunTestCoverage >> buildInputSchema [
 		  yourself
 ]
 
-{ #category : 'metadata' }
-MCPToolRunTestCoverage >> buildOutputSchema [
-
-	^ self
-		  standardOutputSchemaForDataProperties: self testRunDataProperties , { self coverageResultObjectSchema }
-		  required: #( 'runCount' 'passedCount' 'coverage' )
-]
-
 { #category : 'private - results' }
 MCPToolRunTestCoverage >> dataTextOn: stream for: data [
 	"A truncation flag is worth a line only when it is set, and the summary already states the percentage."

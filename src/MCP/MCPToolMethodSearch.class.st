@@ -30,16 +30,6 @@ MCPToolMethodSearch >> additionalKeywords [
 	^ #( 'method' )
 ]
 
-{ #category : 'metadata' }
-MCPToolMethodSearch >> buildOutputSchema [
-
-	^ self
-		  minimalPagedQueryOutputSchemaForEntriesPropertyNamed: 'methods'
-		  entriesDescription: 'The method entries returned for the requested page.'
-		  entrySchema: self methodEntrySchema
-		  itemNounPhrase: 'methods'
-]
-
 { #category : 'private - searching' }
 MCPToolMethodSearch >> classBindingForClassName: aClassName [
 
@@ -199,48 +189,6 @@ MCPToolMethodSearch >> methodEntriesFromQueryRequest: queryRequest [
 							entry at: #source put: sourceText ].
 					entries add: entry ] ].
 	^ self sortedMethodEntries: entries
-]
-
-{ #category : 'private - schema' }
-MCPToolMethodSearch >> methodEntrySchema [
-
-	^ self
-		  methodEntrySchemaNamed: 'method'
-		  description: 'A method matching the query.'
-		  subjectDescription: 'method'
-		  selectorDescription: 'The selector name.'
-		  sourceDescription: 'The formatted source code of the method when includeSource=true.'
-]
-
-{ #category : 'private - schema' }
-MCPToolMethodSearch >> methodEntrySchemaNamed: entryName description: entryDescription subjectDescription: subjectDescription selectorDescription: selectorDescription sourceDescription: sourceDescription [
-
-	^ MCPStructureProperties new
-		  name: entryName;
-		  type: 'object';
-		  description: entryDescription;
-		  properties: {
-				  (self schemaPropertyNamed: 'selector' type: 'string' description: selectorDescription).
-				  (self
-					   schemaPropertyNamed: 'className'
-					   type: 'string'
-					   description: 'The base class that defines the ' , subjectDescription , '.').
-				  (self
-					   schemaPropertyNamed: 'classSide'
-					   type: 'boolean'
-					   description: 'Whether the ' , subjectDescription , ' is defined on the class side.').
-				  (self schemaPropertyNamed: 'packageName' type: 'string' description: 'The package that owns the ' , subjectDescription , '.').
-				  (self
-					   booleanSchemaPropertyNamed: 'isExtension'
-					   description: 'Whether the ' , subjectDescription , ' is an extension on its class package.').
-				  (self
-					   schemaPropertyNamed: 'protocol'
-					   type: 'string'
-					   description: 'The protocol/category containing the ' , subjectDescription , '.').
-				  (self schemaPropertyNamed: 'source' type: 'string' description: sourceDescription) };
-		  required: #( 'selector' 'className' 'classSide' 'packageName' 'isExtension' 'protocol' );
-		  additionalProperties: false;
-		  yourself
 ]
 
 { #category : 'private - results' }

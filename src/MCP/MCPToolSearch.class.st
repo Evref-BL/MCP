@@ -272,24 +272,6 @@ MCPToolSearch >> matcherForPattern: aPattern mode: aMode caseSensitive: aBoolean
 	Error signal: 'Unsupported filter mode: ' , aMode
 ]
 
-{ #category : 'private - schema' }
-MCPToolSearch >> minimalPagedQueryOutputSchemaForEntriesPropertyNamed: entriesPropertyName entriesDescription: entriesDescription entrySchema: entrySchema itemNounPhrase: itemNounPhrase [
-
-	| entriesProperty |
-	entriesProperty := self schemaPropertyNamed: entriesPropertyName type: 'array' description: entriesDescription.
-	entriesProperty items: entrySchema.
-	^ self
-		  standardOutputSchemaForDataProperties: {
-				  entriesProperty.
-				  self paginationOutputSchemaProperty.
-				  (self
-					   integerSchemaPropertyNamed: 'nextOffset'
-					   description: 'Zero-based offset for the next page. Omitted when this is the final page.') }
-		  required: {
-				  entriesPropertyName.
-				  'pagination' }
-]
-
 { #category : 'private - filtering' }
 MCPToolSearch >> normalizeFilterString: aValue caseSensitive: aBoolean [
 
@@ -352,28 +334,6 @@ MCPToolSearch >> paginationInputPropertiesWithLimitDescription: limitDescription
 	^ {
 		  limitProperty.
 		  offsetProperty }
-]
-
-{ #category : 'private - schema' }
-MCPToolSearch >> paginationOutputSchemaProperty [
-
-	| nextOffsetProperty property returnedCountProperty totalCountProperty truncatedProperty |
-	returnedCountProperty := self integerSchemaPropertyNamed: 'returnedCount' description: 'Entries returned in this page.'.
-	totalCountProperty := self integerSchemaPropertyNamed: 'totalCount' description: 'Total matching entries before pagination.'.
-	truncatedProperty := self booleanSchemaPropertyNamed: 'truncated' description: 'Whether more entries are available.'.
-	nextOffsetProperty := self
-		                      integerSchemaPropertyNamed: 'nextOffset'
-		                      description: 'Zero-based offset for the next page. Omitted when this is the final page.'.
-	property := self schemaPropertyNamed: 'pagination' type: 'object' description: 'Pagination metadata for this result page.'.
-	property
-		properties: {
-				returnedCountProperty.
-				totalCountProperty.
-				truncatedProperty.
-				nextOffsetProperty };
-		required: #( 'returnedCount' 'totalCount' 'truncated' );
-		additionalProperties: false.
-	^ property
 ]
 
 { #category : 'private - request' }

@@ -35,12 +35,6 @@ MCPToolRepositoryOperation >> branchNameSchemaProperty [
 	^ self schemaPropertyNamed: 'branchName' type: 'string' description: 'Branch name.'
 ]
 
-{ #category : 'metadata' }
-MCPToolRepositoryOperation >> buildOutputSchema [
-
-	^ self standardOutputSchemaForDataProperties: self repositoryOperationDataProperties required: #(  )
-]
-
 { #category : 'private - execution' }
 MCPToolRepositoryOperation >> commandClass [
 
@@ -131,99 +125,6 @@ MCPToolRepositoryOperation >> packageNamesSchemaProperty [
 MCPToolRepositoryOperation >> parsedRequestFromToolRequest: request [
 
 	^ self requestClass fromRequest: request tool: self
-]
-
-{ #category : 'private - schema' }
-MCPToolRepositoryOperation >> repositoryOperationDataProperties [
-
-	^ {
-		  (self booleanSchemaPropertyNamed: 'matched' description: 'Whether identity verification passed.').
-		  (self
-			   stringArraySchemaNamed: 'updateActions'
-			   description: 'Repository update actions applied.'
-			   itemDescription: 'Update action.').
-		  (self
-			   stringArraySchemaNamed: 'addedPackageNames'
-			   description: 'Packages added repository membership.'
-			   itemDescription: 'Package name.').
-		  (self
-			   stringArraySchemaNamed: 'removedPackageNames'
-			   description: 'Packages removed repository membership.'
-			   itemDescription: 'Package name.').
-		  (self
-			   stringArraySchemaNamed: 'changedPackageNames'
-			   description: 'Packages with changed files.'
-			   itemDescription: 'Package name.').
-		  (self
-			   stringArraySchemaNamed: 'modifiedPackageNames'
-			   description: 'Packages still modified after operation.'
-			   itemDescription: 'Package name.').
-		  (self
-			   stringArraySchemaNamed: 'modifiedPackageNamesBefore'
-			   description: 'Packages modified before adopt-head.'
-			   itemDescription: 'Package name.').
-		  (self
-			   stringArraySchemaNamed: 'modifiedPackageNamesAfter'
-			   description: 'Packages modified after adopt-head.'
-			   itemDescription: 'Package name.').
-		  (self stringArraySchemaNamed: 'modifiedPaths' description: 'Changed repository paths.' itemDescription: 'Path.').
-		  (self
-			   stringArraySchemaNamed: 'restoredOrderOnlyPaths'
-			   description: 'Tonel paths restored because only method order changed.'
-			   itemDescription: 'Path.').
-		  (self integerSchemaPropertyNamed: 'changeCount' description: 'Number of changed paths.').
-		  (self booleanSchemaPropertyNamed: 'isEmpty' description: 'Whether the repository diff is empty.').
-		  (self booleanSchemaPropertyNamed: 'didChange' description: 'Whether export changed files.').
-		  (self booleanSchemaPropertyNamed: 'didAdopt' description: 'Whether adopt-head changed image reference.').
-		  (self schemaPropertyNamed: 'commitId' type: 'string' description: 'Commit id created by commit operation.').
-		  (self schemaPropertyNamed: 'commitDescription' type: 'string' description: 'Commit description created by commit operation.').
-		  (self schemaPropertyNamed: 'branchName' type: 'string' description: 'Current branch after operation.').
-		  (self schemaPropertyNamed: 'previousBranchName' type: 'string' description: 'Branch before branch operation.').
-		  (self schemaPropertyNamed: 'headDescription' type: 'string' description: 'Current HEAD description after operation.').
-		  (self schemaPropertyNamed: 'previousHeadDescription' type: 'string' description: 'HEAD description before branch operation.').
-		  (self schemaPropertyNamed: 'previousReferenceCommitId' type: 'string' description: 'Reference commit before adopt-head.').
-		  (self schemaPropertyNamed: 'referenceCommitId' type: 'string' description: 'Reference commit after adopt-head.').
-		  (self schemaPropertyNamed: 'adoptedCommitId' type: 'string' description: 'Commit adopted by adopt-head.') }
-]
-
-{ #category : 'private - schema' }
-MCPToolRepositoryOperation >> repositoryOutputSchemaProperty [
-
-	| property |
-	property := self
-		            schemaPropertyNamed: 'repository'
-		            type: 'object'
-		            description: 'Structured metadata for the repository after the update.'.
-	property additionalProperties: true.
-	^ property
-]
-
-{ #category : 'private - schema' }
-MCPToolRepositoryOperation >> repositoryPackageInfoOutputSchemaProperty [
-
-	^ MCPStructureProperties new
-		  type: 'object';
-		  description: 'Structured metadata for one package managed by the repository.';
-		  properties: {
-				  (self schemaPropertyNamed: 'name' type: 'string' description: 'The package name.').
-				  (self schemaPropertyNamed: 'directoryName' type: 'string' description: 'The package directory name used by Iceberg.').
-				  (self booleanSchemaPropertyNamed: 'isLoaded' description: 'Whether the package is loaded in the image.').
-				  (self booleanSchemaPropertyNamed: 'isModified' description: 'Whether Iceberg reports image changes for the package.') };
-		  required: #( 'name' 'directoryName' 'isLoaded' 'isModified' );
-		  additionalProperties: false;
-		  yourself
-]
-
-{ #category : 'private - schema' }
-MCPToolRepositoryOperation >> repositoryPackagesOutputSchemaProperty [
-
-	| property |
-	property := self
-		            schemaPropertyNamed: 'packages'
-		            type: 'array'
-		            description: 'Packages managed by the repository after the update.'.
-	property items: self repositoryPackageInfoOutputSchemaProperty.
-	^ property
 ]
 
 { #category : 'private - schema' }

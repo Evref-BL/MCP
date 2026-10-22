@@ -32,12 +32,6 @@ MCPHaltingTestTool >> buildInputSchema [
 ]
 
 { #category : 'metadata' }
-MCPHaltingTestTool >> buildOutputSchema [
-
-	^ self standardOutputSchemaForDataProperties: #(  ) required: #(  )
-]
-
-{ #category : 'metadata' }
 MCPHaltingTestTool >> description [
 
 	^ 'Raises Halt for MCP tool-call error handling tests.'

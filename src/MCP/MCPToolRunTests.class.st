@@ -46,12 +46,6 @@ MCPToolRunTests >> buildInputSchema [
 		  yourself
 ]
 
-{ #category : 'metadata' }
-MCPToolRunTests >> buildOutputSchema [
-
-	^ self standardOutputSchemaForDataProperties: self testRunDataProperties required: #( 'runCount' 'passedCount' )
-]
-
 { #category : 'private - execution' }
 MCPToolRunTests >> commandForRequest: runTestsRequest [
 
@@ -109,57 +103,6 @@ MCPToolRunTests >> coveragePercentageTextFor: coverageData [
 	percentage := coverageData at: #percentage ifAbsent: [ nil ].
 	percentage ifNil: [ ^ 'n/a' ].
 	^ percentage printShowingDecimalPlaces: 2
-]
-
-{ #category : 'private - coverage schema' }
-MCPToolRunTests >> coverageResultObjectSchema [
-
-	| property |
-	property := self schemaPropertyNamed: 'coverage' type: 'object' description: 'Coverage summary returned by test_coverage_run.'.
-	property
-		properties: {
-				(self integerSchemaPropertyNamed: 'methodCount' description: 'The number of instrumented methods.').
-				(self
-					 integerSchemaPropertyNamed: 'coveredMethodCount'
-					 description: 'The number of instrumented methods that executed at least once.').
-				(self
-					 integerSchemaPropertyNamed: 'fullyCoveredMethodCount'
-					 description: 'The number of executed methods whose sequence nodes all executed.').
-				(self
-					 integerSchemaPropertyNamed: 'uncoveredMethodCount'
-					 description: 'The number of instrumented methods that did not execute.').
-				(self
-					 integerSchemaPropertyNamed: 'partiallyCoveredMethodCount'
-					 description: 'The number of executed methods with at least one unexecuted sequence node.').
-				(self integerSchemaPropertyNamed: 'nodeCount' description: 'The number of instrumented sequence nodes.').
-				(self integerSchemaPropertyNamed: 'coveredNodeCount' description: 'The number of executed sequence nodes.').
-				(self
-					 schemaPropertyNamed: 'percentage'
-					 type: #( 'number' 'null' )
-					 description: 'Node coverage percentage, or null when no nodes were instrumented.').
-				(self
-					 coverageMethodArrayPropertyNamed: 'uncoveredMethods'
-					 description: 'Capped list of instrumented methods that did not execute.').
-				(self
-					 coverageMethodArrayPropertyNamed: 'partiallyCoveredMethods'
-					 description: 'Capped list of executed methods with at least one unexecuted sequence node.').
-				(self
-					 coverageMethodArrayPropertyNamed: 'coveredMethods'
-					 description: 'Optional capped list of methods that executed at least once. Present only when includeCoveredMethods is true.').
-				(self
-					 booleanSchemaPropertyNamed: 'uncoveredMethodsTruncated'
-					 description: 'Whether uncoveredMethods was capped by methodLimit.').
-				(self
-					 booleanSchemaPropertyNamed: 'partiallyCoveredMethodsTruncated'
-					 description: 'Whether partiallyCoveredMethods was capped by methodLimit.').
-				(self
-					 booleanSchemaPropertyNamed: 'coveredMethodsTruncated'
-					 description: 'Whether coveredMethods was capped by methodLimit. Present only when includeCoveredMethods is true.') };
-		required: #( 'methodCount' 'coveredMethodCount' 'fullyCoveredMethodCount' 'uncoveredMethodCount' 'partiallyCoveredMethodCount'
-			   'nodeCount' 'coveredNodeCount' 'percentage' 'uncoveredMethods' 'partiallyCoveredMethods' 'uncoveredMethodsTruncated'
-			   'partiallyCoveredMethodsTruncated' );
-		additionalProperties: false.
-	^ property
 ]
 
 { #category : 'private - results' }
@@ -331,29 +274,6 @@ MCPToolRunTests >> successSummaryForData: data [
 						  nextPutAll: '%.' ] ]
 ]
 
-{ #category : 'private - tests' }
-MCPToolRunTests >> testIssueArraySchemaNamed: propertyName description: propertyDescription [
-
-	^ (self schemaPropertyNamed: propertyName type: 'array' description: propertyDescription)
-		  items: self testIssueObjectSchema;
-		  yourself
-]
-
-{ #category : 'private - tests' }
-MCPToolRunTests >> testIssueObjectSchema [
-
-	^ MCPStructureProperties new
-		  type: 'object';
-		  properties: {
-				  (self schemaPropertyNamed: 'test' type: 'string' description: 'Test reference.').
-				  (self schemaPropertyNamed: 'message' type: 'string' description: 'Failure or error message.').
-				  (self schemaPropertyNamed: 'errorClass' type: 'string' description: 'Error class.').
-				  (self stringArraySchemaNamed: 'parameters' description: 'Parameterized test values.' itemDescription: nil) };
-		  required: #( 'test' );
-		  additionalProperties: false;
-		  yourself
-]
-
 { #category : 'private - errors' }
 MCPToolRunTests >> testNamesForErrorFromParsedRequest: runTestsRequest rawRequest: rawRequest [
 
@@ -365,21 +285,6 @@ MCPToolRunTests >> testNamesForErrorFromParsedRequest: runTestsRequest rawReques
 MCPToolRunTests >> testNamesFromRequests: testRequests [
 
 	^ (testRequests collect: [ :each | each displayName ]) asArray
-]
-
-{ #category : 'private - tests' }
-MCPToolRunTests >> testRunDataProperties [
-
-	^ {
-		  (self integerSchemaPropertyNamed: 'runCount' description: 'Tests run.').
-		  (self integerSchemaPropertyNamed: 'passedCount' description: 'Tests passed.').
-		  (self stringArraySchemaNamed: 'skipped' description: 'Skipped tests.' itemDescription: nil).
-		  (self testIssueArraySchemaNamed: 'failures' description: 'Failed tests.').
-		  (self testIssueArraySchemaNamed: 'errors' description: 'Errored tests.').
-		  (self booleanSchemaPropertyNamed: 'timedOut' description: 'Timeout stopped run.').
-		  (self stringArraySchemaNamed: 'unrunPackages' description: 'Unrun test packages.' itemDescription: nil).
-		  (self stringArraySchemaNamed: 'unrunClasses' description: 'Unrun test classes.' itemDescription: nil).
-		  (self stringArraySchemaNamed: 'unrunMethods' description: 'Unrun test methods.' itemDescription: nil) }
 ]
 
 { #category : 'private - tests' }

@@ -53,33 +53,6 @@ MCPToolDebugCapture >> buildInputSchema [
 		  yourself
 ]
 
-{ #category : 'metadata' }
-MCPToolDebugCapture >> buildOutputSchema [
-
-	^ self
-		  standardOutputSchemaForDataProperties: {
-				  (self booleanSchemaPropertyNamed: 'captured' description: 'Whether execution stopped on a captured runtime exception.').
-				  (self
-					   booleanSchemaPropertyNamed: 'timedOut'
-					   description: 'Whether capture timed out before completion or exception capture.').
-				  (self schemaPropertyNamed: 'sessionId' type: 'string' description: 'Captured debug session identifier, when captured.').
-				  (self schemaPropertyNamed: 'stateId' type: 'string' description: 'Captured debug state token, when captured.').
-				  (self schemaPropertyNamed: 'session' type: 'object' description: 'Captured debug session summary.').
-				  (self schemaPropertyNamed: 'state' type: 'object' description: 'Immediate debug_state_get snapshot for captured exceptions.').
-				  (self
-					   schemaPropertyNamed: 'resultClassName'
-					   type: 'string'
-					   description: 'Result class name when execution completed normally.').
-				  (self
-					   schemaPropertyNamed: 'resultPrintString'
-					   type: 'string'
-					   description: 'Bounded result printString when execution completed normally.').
-				  (self integerSchemaPropertyNamed: 'timeoutMilliseconds' description: 'Effective timeout used for this capture.').
-				  (self stringArraySchemaNamed: 'warnings' description: 'Capture-specific warnings.' itemDescription: 'A warning message.').
-				  (self schemaPropertyNamed: 'capabilities' type: 'object' description: 'Capture capability gates used for this response.') }
-		  required: #( 'captured' 'timedOut' 'timeoutMilliseconds' 'warnings' 'capabilities' )
-]
-
 { #category : 'private - execution' }
 MCPToolDebugCapture >> commandForRequest: debugRequest [
 

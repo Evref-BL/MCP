@@ -41,27 +41,6 @@ MCPToolEvaluate >> buildInputSchema [
 		  yourself
 ]
 
-{ #category : 'metadata' }
-MCPToolEvaluate >> buildOutputSchema [
-
-	^ self
-		  standardOutputSchemaForDataProperties: {
-				  (self schemaPropertyNamed: 'resultClassName' type: 'string' description: 'The name of the evaluated result''s class.').
-				  (self
-					   schemaPropertyNamed: 'resultPrintString'
-					   type: 'string'
-					   description:
-					   'A printString preview of the evaluated result, limited to ' , self resultPreviewCharacterLimit printString
-					   , ' characters.').
-				  (self
-					   booleanSchemaPropertyNamed: 'truncated'
-					   description: 'Present and true when the preview was cut short. Narrow the expression to see the rest.').
-				  (self
-					   integerSchemaPropertyNamed: 'resultSize'
-					   description: 'Element count of a truncated collection result, so a slice such as first: can be sized without evaluating it again.') }
-		  required: #( 'resultClassName' 'resultPrintString' )
-]
-
 { #category : 'private - execution' }
 MCPToolEvaluate >> commandForRequest: evaluateRequest [
 

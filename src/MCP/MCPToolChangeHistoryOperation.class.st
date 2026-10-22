@@ -32,31 +32,6 @@ MCPToolChangeHistoryOperation >> buildInputSchema [
 		  yourself
 ]
 
-{ #category : 'metadata' }
-MCPToolChangeHistoryOperation >> buildOutputSchema [
-
-	| previewEntriesProperty selectedEntriesProperty |
-	selectedEntriesProperty := self changeHistoryEntryArraySchemaNamed: 'selectedEntries' description: 'Selected source entries.'.
-	previewEntriesProperty := self
-		                          changeHistoryEntryArraySchemaNamed: 'previewEntries'
-		                          description: 'Previewed current-image changes.'.
-	^ self
-		  standardOutputSchemaForDataProperties: {
-				  (self schemaPropertyNamed: 'action' type: 'string' description: 'apply or revert.').
-				  (self schemaPropertyNamed: 'historyFileName' type: 'string' description: 'Selected history file name.').
-				  (self schemaPropertyNamed: 'selectionCriteria' type: 'object' description: 'Normalized selection criteria.').
-				  selectedEntriesProperty.
-				  previewEntriesProperty.
-				  (self integerSchemaPropertyNamed: 'selectedCount' description: 'Selected source entries.').
-				  (self integerSchemaPropertyNamed: 'selectedCodeChangeCount' description: 'Selected code changes.').
-				  (self integerSchemaPropertyNamed: 'skippedNonCodeChangeCount' description: 'Skipped non-code entries.').
-				  (self integerSchemaPropertyNamed: 'previewCount' description: 'Previewed changes.').
-				  (self booleanSchemaPropertyNamed: 'performed' description: 'Whether changes were performed.').
-				  (self integerSchemaPropertyNamed: 'performedCount' description: 'Performed changes.') }
-		  required: #( 'action' 'selectionCriteria' 'selectedEntries' 'previewEntries' 'selectedCount' 'selectedCodeChangeCount'
-			     'skippedNonCodeChangeCount' 'previewCount' 'performed' 'performedCount' )
-]
-
 { #category : 'private - specs' }
 MCPToolChangeHistoryOperation >> changeHistoryToolSpec [
 

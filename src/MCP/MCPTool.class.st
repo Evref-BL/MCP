@@ -18,8 +18,7 @@ Class {
 	#name : 'MCPTool',
 	#superclass : 'Object',
 	#instVars : [
-		'inputSchema',
-		'outputSchema'
+		'inputSchema'
 	],
 	#category : 'MCP-Tools',
 	#package : 'MCP',
@@ -268,32 +267,6 @@ MCPTool >> batchResultForTargets: targets request: aRequest do: executionBlock [
 	^ self batchResultForResults: results
 ]
 
-{ #category : 'private - schema' }
-MCPTool >> batchResultsSchemaPropertyFor: dataProperties [
-	"A batched tool answers the fields of one target, or one entry per target when the call named several."
-
-	| entrySchema |
-	entrySchema := MCPStructureProperties new
-		               name: 'result';
-		               type: 'object';
-		               description: 'The outcome for one target.';
-		               properties: dataProperties , {
-				               (self schemaPropertyNamed: 'summary' type: 'string' description: 'The summary for this target.').
-				               (self
-					                schemaPropertyNamed: 'error'
-					                type: 'object'
-					                description: 'Structured error information when this target failed.') };
-		               required: #( 'summary' );
-		               additionalProperties: true;
-		               yourself.
-	^ (self
-		   schemaPropertyNamed: 'results'
-		   type: 'array'
-		   description: 'One entry per target, in request order, when the call named several.')
-		  items: entrySchema;
-		  yourself
-]
-
 { #category : 'private - results' }
 MCPTool >> batchSummaryForSucceeded: successCount total: totalCount [
 	"A batch always names at least two targets, so the noun is always plural."
@@ -357,12 +330,6 @@ MCPTool >> buildInputSchema [
 	self subclassResponsibility
 ]
 
-{ #category : 'metadata' }
-MCPTool >> buildOutputSchema [
-
-	self subclassResponsibility
-]
-
 { #category : 'private - execution' }
 MCPTool >> commandForRequest: aToolRequest [
 
@@ -380,12 +347,11 @@ MCPTool >> contentTextForStructuredContent: structuredContent [
 ]
 
 { #category : 'metadata' }
-MCPTool >> contractIncludingOutputSchema: includeOutputSchema [
+MCPTool >> contract [
 
 	| data |
 	data := self metadata copy.
 	data at: #inputSchema put: self inputSchema asJRPCJSON.
-	includeOutputSchema ifTrue: [ data at: #outputSchema put: self outputSchema asJRPCJSON ].
 	^ data
 ]
 
@@ -542,33 +508,6 @@ MCPTool >> errorResultText: aString details: aDictionary [
 	^ MCPStructureErrorToolResult
 		  content: { (self textContent: (self contentTextForStructuredContent: structuredContent)) }
 		  structuredContent: structuredContent
-]
-
-{ #category : 'private - schema' }
-MCPTool >> errorSchemaProperties [
-
-	^ {
-		  (self
-			   schemaPropertyNamed: 'errorClass'
-			   type: 'string'
-			   description: 'The Smalltalk exception class name describing the failure.').
-		  (self
-			   schemaPropertyNamed: 'errorCode'
-			   type: 'string'
-			   description: 'A tool-specific error code when the failure was signaled intentionally by the MCP implementation.').
-		  (self schemaPropertyNamed: 'message' type: 'string' description: 'A concise error message describing the failure.').
-		  (self
-			   schemaPropertyNamed: 'description'
-			   type: 'string'
-			   description: 'A longer textual description of the failure when available.').
-		  (self
-			   schemaPropertyNamed: 'signalerContext'
-			   type: 'string'
-			   description: 'The signaler context recorded for the exception when available.').
-		  (self
-			   stringArraySchemaNamed: 'stackTrace'
-			   description: 'A debug stack trace captured from the signaler context when available.'
-			   itemDescription: 'One stack frame from the captured signaler chain, ordered from the signaling frame outward.') }
 ]
 
 { #category : 'error handling' }
@@ -807,12 +746,6 @@ MCPTool >> name [
 	^ self class toolName
 ]
 
-{ #category : 'metadata' }
-MCPTool >> outputSchema [
-
-	^ self buildOutputSchema
-]
-
 { #category : 'private - request' }
 MCPTool >> parsedRequestFromToolRequest: request [
 
@@ -918,39 +851,6 @@ MCPTool >> shouldResumeNotification: aNotification [
 ]
 
 { #category : 'private - schema' }
-MCPTool >> standardOutputSchemaForDataProperties: dataProperties required: requiredFields [
-	"The result carries no status field: isError already states on the wire whether the call failed, and the presence of data or error says the same again."
-
-	| dataProperty errorProperty summaryProperty properties required |
-	properties := dataProperties.
-	required := requiredFields.
-	self batchArgumentName ifNotNil: [
-			properties := dataProperties , { (self batchResultsSchemaPropertyFor: dataProperties) }.
-			required := #(  ) ].
-	dataProperty := self schemaPropertyNamed: 'data' type: 'object' description: 'Structured success payload.'.
-	dataProperty
-		properties: properties;
-		required: required;
-		additionalProperties: false.
-	errorProperty := self schemaPropertyNamed: 'error' type: 'object' description: 'Structured error information.'.
-	errorProperty
-		properties: self errorSchemaProperties;
-		required: #( 'message' );
-		additionalProperties: true.
-	summaryProperty := self schemaPropertyNamed: 'summary' type: 'string' description: 'Human-readable result summary.'.
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: {
-				  summaryProperty.
-				  self warningsSchemaProperty.
-				  dataProperty.
-				  errorProperty };
-		  required: #( 'summary' );
-		  additionalProperties: false;
-		  yourself
-]
-
-{ #category : 'private - schema' }
 MCPTool >> stringArraySchemaNamed: aName [
 
 	^ self stringArraySchemaNamed: aName description: nil itemDescription: nil
@@ -966,32 +866,6 @@ MCPTool >> stringArraySchemaNamed: aName description: aDescription itemDescripti
 	(self shouldAdvertiseStringArrayItemDescription: anItemDescription) ifTrue: [ itemsProperty description: anItemDescription ].
 	^ (self schemaPropertyNamed: aName type: 'array' description: aDescription)
 		  items: itemsProperty;
-		  yourself
-]
-
-{ #category : 'private - schema' }
-MCPTool >> stringEnumArraySchemaNamed: propertyName description: propertyDescription itemDescription: itemDescription values: enumValues [
-
-	| itemsProperty |
-	itemsProperty := MCPStructureProperties new
-		                 type: 'string';
-		                 description: itemDescription;
-		                 enum: enumValues;
-		                 yourself.
-	^ (self schemaPropertyNamed: propertyName type: 'array' description: propertyDescription)
-		  items: itemsProperty;
-		  yourself
-]
-
-{ #category : 'private - schema' }
-MCPTool >> stringEnumArraySchemaNamed: propertyName description: propertyDescription itemDescription: itemDescription values: enumValues default: defaultValues [
-
-	^ (self
-		   stringEnumArraySchemaNamed: propertyName
-		   description: propertyDescription
-		   itemDescription: itemDescription
-		   values: enumValues)
-		  default: defaultValues;
 		  yourself
 ]
 
@@ -1140,8 +1014,3 @@ MCPTool >> valueTextOn: stream for: value labelled: label indent: indent [
 					nextPutAll: value asString ]
 ]
 
-{ #category : 'private - schema' }
-MCPTool >> warningsSchemaProperty [
-
-	^ self stringArraySchemaNamed: 'warnings' description: 'Warnings produced by the tool.' itemDescription: 'Warning message.'
-]
