@@ -97,7 +97,7 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 		  (MCPToolDebugBreakpointOperation -> { (#action -> 'list') } asDictionary).
 		  (MCPToolDebugCapture -> { (#expression -> '1') } asDictionary).
 		  (MCPToolUpdateDebugMethod -> { (#sessionId -> 'debug-session-1') } asDictionary).
-		  (MCPToolSearchMethodMetadata -> Dictionary new).
+		  (MCPToolSearchMethods -> Dictionary new).
 		  (MCPToolSearchTools -> Dictionary new).
 		  (MCPToolGetTool -> { (#name -> 'class_search') } asDictionary).
 		  (MCPToolCallTool -> {
@@ -263,7 +263,7 @@ MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasAdvertiseGroupedSearchS
 
 	| classProperties classScopeProperties methodProperties methodScopeProperties |
 	classProperties := MCPToolSearchClasses new inputSchema properties.
-	methodProperties := MCPToolSearchMethodMetadata new inputSchema properties.
+	methodProperties := MCPToolSearchMethods new inputSchema properties.
 	classScopeProperties := ((classProperties detect: [ :each | each name = 'scope' ]) extraProperties at: #properties) collect: [
 		                        :each | each name ].
 	methodScopeProperties := ((methodProperties detect: [ :each | each name = 'scope' ]) extraProperties at: #properties) collect: [

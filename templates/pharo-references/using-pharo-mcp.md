@@ -28,7 +28,7 @@ See [Tool reference](tool-reference.md) for tool groups and common workflows.
 
 ## Choose Specialized Lookups
 
-Use `method_metadata_search` for metadata, `method_source_search` for source,
+Use `method_search` for metadata, `method_source_search` for source,
 `method_equivalent_search` for equivalent ASTs, and the implementor, sender,
 class-reference, or variable-reference search matching the question.
 

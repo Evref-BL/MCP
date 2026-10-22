@@ -114,7 +114,7 @@ MCPToolStructuredOutputTest >> testEntryFieldQuotingEscapesEmbeddedQuotes [
 MCPToolStructuredOutputTest >> testEntryFieldsWithSeparatorsAreQuoted [
 
 	| contentText result |
-	result := self callToolNamed: 'method_metadata_search' withArguments: {
+	result := self callToolNamed: 'method_search' withArguments: {
 		          (#protocol -> 'meta filtering').
 		          (#side -> 'class').
 		          (self searchScope: { (#classes -> #( 'MCPToolMethodSearchTestTarget' )) }) } asDictionary.
@@ -268,7 +268,7 @@ MCPToolStructuredOutputTest >> testMethodMetadataSearchReturnsStructuredArrayDat
 
 	| data methods result selectors |
 	result := self
-		          callToolNamed: 'method_metadata_search'
+		          callToolNamed: 'method_search'
 		          withArguments: { (self searchScope: { (#classes -> #( 'MCPToolMethodSearchTestTarget' )) }) } asDictionary.
 	data := self dataFrom: result.
 	methods := data at: #methods.
@@ -285,7 +285,7 @@ MCPToolStructuredOutputTest >> testMethodMetadataSearchReturnsStructuredWarnings
 
 	| data result structured warnings |
 	result := self
-		          callToolNamed: 'method_metadata_search'
+		          callToolNamed: 'method_search'
 		          withArguments: { (self searchScope: { (#packages -> #( 'MCP-Definitely-Missing' )) }) } asDictionary.
 	structured := self structuredContentFrom: result.
 	data := self dataFrom: result.
@@ -303,7 +303,7 @@ MCPToolStructuredOutputTest >> testMethodMetadataSearchReturnsStructuredWarnings
 MCPToolStructuredOutputTest >> testMethodRecordsReadAsMethodReferences [
 
 	| contentText result |
-	result := self callToolNamed: 'method_metadata_search' withArguments: {
+	result := self callToolNamed: 'method_search' withArguments: {
 		          (self searchScope: { (#classes -> #( 'MCPToolMethodSearchTestTarget' )) }) } asDictionary.
 	contentText := (result at: #content) first at: #text.
 	self deny: (self resultIndicatesError: result).

@@ -121,7 +121,7 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 			  (#requestClass -> MCPRemoveClassesRequest).
 			  (#commandClass -> MCPRemoveClassesCommand) } asDictionary.
 		  {
-			  (#toolClass -> MCPToolSearchMethodMetadata).
+			  (#toolClass -> MCPToolSearchMethods).
 			  (#arguments -> Dictionary new).
 			  (#requestClass -> MCPMethodSearchRequest).
 			  (#commandClass -> MCPSearchToolCommand) } asDictionary.
@@ -1572,7 +1572,7 @@ MCPToolContractsTest >> testInitializeResponseSerializesSupportedPharoVersions [
 MCPToolContractsTest >> testInputSchemaJSONHasCompactTopLevelShape [
 
 	| schema |
-	schema := MCPToolSearchMethodMetadata new inputSchema asJRPCJSON.
+	schema := MCPToolSearchMethods new inputSchema asJRPCJSON.
 	self assert: (schema keys collect: [ :key | key asString ]) asSet equals: #( 'type' 'properties' 'additionalProperties' ) asSet.
 	self assert: (schema at: #additionalProperties) equals: false
 ]
@@ -1675,7 +1675,7 @@ MCPToolContractsTest >> testMessageProcessorUsesSubclassJRPCHandlerOverride [
 MCPToolContractsTest >> testMethodMetadataSearchDescriptionPointsToSpecializedReferenceTools [
 
 	| description filterModeDescription filterModeProperty protocolDescription selectorDescription tool |
-	tool := MCPToolSearchMethodMetadata new.
+	tool := MCPToolSearchMethods new.
 	description := tool description.
 	self assert: (description includesSubstring: 'method_source_search').
 	self assert: (description includesSubstring: 'method_reference_search').
@@ -1696,12 +1696,12 @@ MCPToolContractsTest >> testMethodMetadataSearchDescriptionPointsToSpecializedRe
 MCPToolContractsTest >> testMethodMetadataSearchHasAccurateNameAndSchema [
 
 	| filterModeProperty propertyNames schema scopeProperty scopePropertyNames |
-	schema := MCPToolSearchMethodMetadata new inputSchema.
+	schema := MCPToolSearchMethods new inputSchema.
 	propertyNames := schema properties collect: [ :each | each name ].
 	filterModeProperty := schema properties detect: [ :each | each name = 'filterMode' ].
 	scopeProperty := schema properties detect: [ :each | each name = 'scope' ].
 	scopePropertyNames := (scopeProperty extraProperties at: #properties) collect: [ :each | each name ].
-	self assert: MCPToolSearchMethodMetadata new name equals: 'method_metadata_search'.
+	self assert: MCPToolSearchMethods new name equals: 'method_search'.
 	self assert: schema required equals: #(  ).
 	self
 		assert: propertyNames asSet
@@ -1717,7 +1717,7 @@ MCPToolContractsTest >> testMethodMetadataSearchListsMethodsForExistingClassScop
 
 	| data methods result selectors |
 	result := self
-		          callToolNamed: 'method_metadata_search'
+		          callToolNamed: 'method_search'
 		          withArguments: { (self searchScope: { (#classes -> #( 'MCPToolMethodSearchTestTarget' )) }) } asDictionary.
 	data := (result at: #structuredContent) at: #data.
 	methods := data at: #methods.
@@ -1733,7 +1733,7 @@ MCPToolContractsTest >> testMethodMetadataSearchReturnsWarningResultForMissingCl
 
 	| data result warnings |
 	result := self
-		          callToolNamed: 'method_metadata_search'
+		          callToolNamed: 'method_search'
 		          withArguments: { (self searchScope: { (#classes -> #( 'MCPDefinitelyMissingMethodSearchClass' )) }) } asDictionary.
 	data := self dataFrom: result.
 	warnings := self warningsFrom: result.
@@ -1750,7 +1750,7 @@ MCPToolContractsTest >> testMethodMetadataSearchReturnsWarningResultForMissingCl
 MCPToolContractsTest >> testMethodMetadataSearchTopLevelFilterModesAreTextOnly [
 
 	| filterModeEnum filterModeProperty schema selectorProperty |
-	schema := MCPToolSearchMethodMetadata new inputSchema asJRPCJSON.
+	schema := MCPToolSearchMethods new inputSchema asJRPCJSON.
 	filterModeProperty := (schema at: #properties) at: 'filterMode'.
 	selectorProperty := (schema at: #properties) at: 'selector'.
 	filterModeEnum := (filterModeProperty at: #enum) asArray.
@@ -1854,7 +1854,7 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 	updateMethodTool := MCPToolUpdateMethodSelector new.
 	rewriteMethodsTool := MCPToolRewriteMethods new.
 	searchClassesTool := MCPToolSearchClasses new.
-	methodMetadataTool := MCPToolSearchMethodMetadata new.
+	methodMetadataTool := MCPToolSearchMethods new.
 	searchPackagesTool := MCPToolSearchPackages new.
 	removeClassesTool := MCPToolRemoveClasses new.
 	removeMethodsTool := MCPToolRemoveMethods new.
@@ -1986,7 +1986,7 @@ MCPToolContractsTest >> testQueryScopeDescriptionsExplainScopeSemantics [
 
 	| classScope methodScope scopePropertyNames |
 	classScope := self inputPropertyNamed: 'scope' inTool: MCPToolSearchClasses new.
-	methodScope := self inputPropertyNamed: 'scope' inTool: MCPToolSearchMethodMetadata new.
+	methodScope := self inputPropertyNamed: 'scope' inTool: MCPToolSearchMethods new.
 	scopePropertyNames := (classScope extraProperties at: #properties) collect: [ :each | each name ].
 	self assert: classScope description equals: 'Search scope. If omitted, searches all matching entities.'.
 	self assert: methodScope description equals: classScope description.
@@ -2004,7 +2004,7 @@ MCPToolContractsTest >> testRPCAdvertisesStaticToolSurfaceOnly [
 	registry := self toolRegistry.
 	toolNames := (self mcpWithoutObservabilityExport rpcToolsList at: #tools) collect: [ :each | each at: #name ].
 	expectedStaticToolNames := #( 'tool_search' 'tool_get' 'tool_call' 'class_search' 'class_get' 'class_create' 'class_remove'
-	                              'method_metadata_search' 'method_source_search' 'method_reference_search' 'method_get'
+	                              'method_search' 'method_source_search' 'method_reference_search' 'method_get'
 	                              'method_compile' 'method_remove' 'image_evaluate' 'test_run' ).
 	discoverableToolNames := registry publicToolNames difference: registry staticToolNames.
 	self assert: expectedStaticToolNames size equals: 15.
@@ -2502,7 +2502,7 @@ MCPToolContractsTest >> testSearchToolSchemasAdvertiseGroupedScopeProperties [
 	oldScopePropertyNames := #( 'packageNames' 'classNames' 'hierarchyClassNames' 'subclassClassNames' 'parentClassNames' ).
 	searchTools := {
 		               MCPToolSearchClasses new.
-		               MCPToolSearchMethodMetadata new.
+		               MCPToolSearchMethods new.
 		               MCPToolSearchMethodSource new.
 		               MCPToolSearchMethodReferences new.
 		               MCPToolSearchEquivalentMethods new }.
@@ -2521,7 +2521,7 @@ MCPToolContractsTest >> testSearchToolsAnswerEntriesAsLines [
 	"A search answers rows under the name of the list they belong to, each naming its method the way Pharo does; the pagination block repeats what the summary already says in prose."
 
 	| lines text |
-	text := self firstTextFromToolResult: (self callToolNamed: 'method_metadata_search' withArguments:
+	text := self firstTextFromToolResult: (self callToolNamed: 'method_search' withArguments:
 			         { (#scope -> { (#classes -> { 'MCPSelectorSuggestion' }) } asDictionary) } asDictionary).
 	lines := text lines.
 	self assert: (lines first includesSubstring: 'methods').
@@ -2715,8 +2715,8 @@ MCPToolContractsTest >> testSearchToolsUseTypedRequestObjects [
 		                     (MCPToolRequest tool: MCPToolSearchRepositories new arguments: Dictionary new).
 	classRequest := MCPToolSearchClasses new searchRequestFromToolRequest:
 		                (MCPToolRequest tool: MCPToolSearchClasses new arguments: Dictionary new).
-	methodRequest := MCPToolSearchMethodMetadata new searchRequestFromToolRequest:
-		                 (MCPToolRequest tool: MCPToolSearchMethodMetadata new arguments: Dictionary new).
+	methodRequest := MCPToolSearchMethods new searchRequestFromToolRequest:
+		                 (MCPToolRequest tool: MCPToolSearchMethods new arguments: Dictionary new).
 	packageRequest := MCPToolSearchPackages new searchRequestFromToolRequest:
 		                  (MCPToolRequest tool: MCPToolSearchPackages new arguments: Dictionary new).
 	self assert: repositoryRequest class equals: MCPRepositoryQuerySpec.

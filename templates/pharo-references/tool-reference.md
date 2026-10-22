@@ -73,7 +73,7 @@ holds a single value.
 
 ## The Advertised Surface
 
-Fifteen tools are advertised directly: `tool_search`, `tool_get`, `tool_call`, `class_search`, `class_get`, `class_create`, `class_remove`, `method_metadata_search`, `method_source_search`, `method_reference_search`, `method_get`, `method_compile`, `method_remove`, `test_run` and `image_evaluate`. Every other tool is found with `tool_search` and called through `tool_call`.
+Fifteen tools are advertised directly: `tool_search`, `tool_get`, `tool_call`, `class_search`, `class_get`, `class_create`, `class_remove`, `method_search`, `method_source_search`, `method_reference_search`, `method_get`, `method_compile`, `method_remove`, `test_run` and `image_evaluate`. Every other tool is found with `tool_search` and called through `tool_call`.
 
 A server chooses its own surface before `start`:
 

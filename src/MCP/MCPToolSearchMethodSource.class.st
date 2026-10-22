@@ -61,7 +61,7 @@ MCPToolSearchMethodSource >> defaultFilterMode [
 { #category : 'metadata' }
 MCPToolSearchMethodSource >> description [
 
-	^ 'Search methods by source text. Use method_metadata_search for selector, protocol, class, or package metadata.'
+	^ 'Search methods by source text. Use method_search for selector, protocol, class, or package metadata.'
 ]
 
 { #category : 'private - filtering' }

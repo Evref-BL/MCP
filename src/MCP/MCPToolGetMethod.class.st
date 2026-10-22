@@ -129,7 +129,7 @@ MCPToolGetMethod >> definingClassNameFromBinding: aBinding [
 { #category : 'metadata' }
 MCPToolGetMethod >> description [
 
-	^ 'Get known methods and return their source plus structured variable-reference context. Takes methods as Class>>selector, as a search prints them, or bare selectors with className. Use method_metadata_search or reference lookup tools to discover methods first.'
+	^ 'Get known methods and return their source plus structured variable-reference context. Takes methods as Class>>selector, as a search prints them, or bare selectors with className. Use method_search or reference lookup tools to discover methods first.'
 ]
 
 { #category : 'private' }

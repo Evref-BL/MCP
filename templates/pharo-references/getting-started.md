@@ -123,7 +123,7 @@ Then inspect the image with focused read-only tools such as:
 ```text
 class_search
 class_get
-method_metadata_search
+method_search
 method_source_search
 method_reference_search
 method_get

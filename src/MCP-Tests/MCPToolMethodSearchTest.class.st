@@ -397,7 +397,7 @@ MCPToolMethodSearchTest >> testImageScopeReturnsInstanceAndClassImplementors [
 		                caseSensitive: true;
 		                includeSource: false;
 		                yourself.
-	tool := MCPToolSearchMethodMetadata new.
+	tool := MCPToolSearchMethods new.
 	entries := tool queryEntriesForQueryRequest: queryRequest.
 	self assert: entries size equals: 2.
 	self entryForReference: MCPToolMethodSearchReferenceFixture name , '>>' , selector in: entries.
@@ -494,7 +494,7 @@ MCPToolMethodSearchTest >> testRegexMatcherUsesBasicRegexWhenPCRE2Unavailable [
 MCPToolMethodSearchTest >> testRegexMatcherUsesPCRE2WhenLibraryAvailable [
 
 	| matcher tool |
-	tool := MCPToolSearchMethodMetadata new.
+	tool := MCPToolSearchMethods new.
 	tool pcre2RegexLibraryAvailable ifFalse: [ self skip: 'PCRE2 native library unavailable' ].
 	matcher := tool regexMatcherForPattern: '(?<=a)b' caseSensitive: true.
 	self assert: (matcher value: 'ab').
@@ -735,7 +735,7 @@ MCPToolMethodSearchTest >> testSuperclassAndSubclassScopesSelectRelatedScope [
 { #category : 'tests' }
 MCPToolMethodSearchTest >> testToolDoesNotRequireArgumentsInSchema [
 
-	self assert: MCPToolSearchMethodMetadata new inputSchema required equals: #(  )
+	self assert: MCPToolSearchMethods new inputSchema required equals: #(  )
 ]
 
 { #category : 'tests' }
@@ -784,5 +784,5 @@ MCPToolMethodSearchTest >> testVariableReferenceReturnsStructuredErrorWhenVariab
 { #category : 'private - calling' }
 MCPToolMethodSearchTest >> toolName [
 
-	^ 'method_metadata_search'
+	^ 'method_search'
 ]

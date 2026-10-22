@@ -4,7 +4,7 @@ Concrete method metadata search tool.
 Shared method-search behavior lives in MCPToolMethodSearch.
 "
 Class {
-	#name : 'MCPToolSearchMethodMetadata',
+	#name : 'MCPToolSearchMethods',
 	#superclass : 'MCPToolMethodSearch',
 	#category : 'MCP-Tools',
 	#package : 'MCP',
@@ -12,13 +12,13 @@ Class {
 }
 
 { #category : 'metadata' }
-MCPToolSearchMethodMetadata class >> toolName [
+MCPToolSearchMethods class >> toolName [
 
-	^ 'method_metadata_search'
+	^ 'method_search'
 ]
 
 { #category : 'metadata' }
-MCPToolSearchMethodMetadata >> buildInputSchema [
+MCPToolSearchMethods >> buildInputSchema [
 
 	| properties |
 	properties := self methodQueryScopeInputProperties , self metadataFilterInputProperties , {
@@ -31,19 +31,19 @@ MCPToolSearchMethodMetadata >> buildInputSchema [
 ]
 
 { #category : 'metadata' }
-MCPToolSearchMethodMetadata >> defaultExposure [
+MCPToolSearchMethods >> defaultExposure [
 
 	^ 'static'
 ]
 
 { #category : 'metadata' }
-MCPToolSearchMethodMetadata >> description [
+MCPToolSearchMethods >> description [
 
 	^ 'Search methods by selector, protocol, class, package, or scope. Use method_source_search for source text and method_reference_search for where a name is used.'
 ]
 
 { #category : 'private - filtering' }
-MCPToolSearchMethodMetadata >> fieldTextsForMethodEntry: anEntry sourceText: sourceText fieldName: fieldName [
+MCPToolSearchMethods >> fieldTextsForMethodEntry: anEntry sourceText: sourceText fieldName: fieldName [
 
 	fieldName = 'selector' ifTrue: [ ^ { (anEntry at: #selector) } ].
 	fieldName = 'protocol' ifTrue: [ ^ { (anEntry at: #protocol) } ].
@@ -51,13 +51,13 @@ MCPToolSearchMethodMetadata >> fieldTextsForMethodEntry: anEntry sourceText: sou
 ]
 
 { #category : 'private - request' }
-MCPToolSearchMethodMetadata >> metadataFilterFieldNames [
+MCPToolSearchMethods >> metadataFilterFieldNames [
 
 	^ #( 'selector' 'protocol' )
 ]
 
 { #category : 'private - schema' }
-MCPToolSearchMethodMetadata >> metadataFilterInputProperties [
+MCPToolSearchMethods >> metadataFilterInputProperties [
 
 	^ {
 		  (self schemaPropertyNamed: 'selector' type: 'string' description: 'Match method selectors.').
@@ -65,7 +65,7 @@ MCPToolSearchMethodMetadata >> metadataFilterInputProperties [
 ]
 
 { #category : 'private - template' }
-MCPToolSearchMethodMetadata >> queryEntriesForQueryRequest: queryRequest [
+MCPToolSearchMethods >> queryEntriesForQueryRequest: queryRequest [
 
 	(self usesExactSelectorLookupForQueryRequest: queryRequest) ifTrue: [
 		^ self implementorEntriesForSelector: (queryRequest fieldFilters at: 'selector') queryRequest: queryRequest ].
@@ -73,19 +73,19 @@ MCPToolSearchMethodMetadata >> queryEntriesForQueryRequest: queryRequest [
 ]
 
 { #category : 'private - template' }
-MCPToolSearchMethodMetadata >> searchRequestFromToolRequest: request [
+MCPToolSearchMethods >> searchRequestFromToolRequest: request [
 
 	^ MCPMethodSearchRequest fromMetadataRequest: request tool: self
 ]
 
 { #category : 'metadata' }
-MCPToolSearchMethodMetadata >> title [
+MCPToolSearchMethods >> title [
 
 	^ 'Search Method Metadata'
 ]
 
 { #category : 'testing' }
-MCPToolSearchMethodMetadata >> usesExactSelectorLookupForQueryRequest: queryRequest [
+MCPToolSearchMethods >> usesExactSelectorLookupForQueryRequest: queryRequest [
 
 	^ queryRequest filterPattern isNil and: [
 			  queryRequest filterMode = 'exact' and: [
