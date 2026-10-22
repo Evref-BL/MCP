@@ -685,6 +685,18 @@ MCPTool >> successfulStructuredDataFromResult: aResult ifAbsent: absentBlock [
 ]
 
 { #category : 'private - results' }
+MCPTool >> summaryAndWarningsOn: stream for: structuredContent [
+	"The opening of a plain-text result: what happened, then anything the call wants to qualify it with."
+
+	stream nextPutAll: (structuredContent at: #summary ifAbsent: [ '' ]).
+	(structuredContent at: #warnings ifAbsent: [ #(  ) ]) do: [ :each |
+		stream
+			nextPut: Character lf;
+			nextPutAll: 'Warning: ';
+			nextPutAll: each ]
+]
+
+{ #category : 'private - results' }
 MCPTool >> textContent: aString [
 
 	^ MCPStructureTextContent text: aString

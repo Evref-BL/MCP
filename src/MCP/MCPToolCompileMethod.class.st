@@ -17,6 +17,28 @@ MCPToolCompileMethod class >> toolName [
 	^ 'method_compile'
 ]
 
+{ #category : 'private - results' }
+MCPToolCompileMethod >> contentTextForStructuredContent: structuredContent [
+	"The summary already names the change and its kind. A critique's description is its rule's generic explanation, the same text on every hit, while the title names the problem actually found."
+
+	| data |
+	data := structuredContent at: #data ifAbsent: [ ^ super contentTextForStructuredContent: structuredContent ].
+	^ String streamContents: [ :stream |
+			  self summaryAndWarningsOn: stream for: structuredContent.
+			  (data at: #critiques ifAbsent: [ #(  ) ]) do: [ :critique |
+					  stream
+						  nextPut: Character lf;
+						  nextPutAll: (critique at: #ruleClass);
+						  nextPutAll: ' '.
+					  critique at: #start ifPresent: [ :start |
+							  stream
+								  print: start;
+								  nextPut: $-;
+								  print: (critique at: #stop ifAbsent: [ start ]);
+								  nextPutAll: ' ' ].
+					  stream nextPutAll: (critique at: #title) ] ]
+]
+
 { #category : 'metadata' }
 MCPToolCompileMethod >> defaultExposure [
 

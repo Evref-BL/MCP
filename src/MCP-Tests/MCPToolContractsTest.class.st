@@ -1053,6 +1053,20 @@ MCPToolContractsTest >> testClassToolsOutputSchemaAdvertisesMinimalMutationResul
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testCompileMethodAnswersItsSummaryAsText [
+
+	| text |
+	text := self firstTextFromToolResult: (self callToolNamed: 'method_compile' withArguments: {
+				          (#className -> MCPToolContractsTest name).
+				          (#protocol -> 'tests - fixtures').
+				          (#source -> 'mcpPlainTextContentFixture
+
+	^ 42') } asDictionary).
+	self assert: text equals: 'Created MCPToolContractsTest>>mcpPlainTextContentFixture.'.
+	MCPToolContractsTest removeSelector: #mcpPlainTextContentFixture
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testConcreteMCPClassesHaveNoUnimplementedResponsibilities [
 
 	| issues |
@@ -2618,6 +2632,19 @@ MCPToolContractsTest >> testSearchToolSchemasAdvertiseGroupedScopeProperties [
 			self assert: (propertyNames includes: 'scope').
 			oldScopePropertyNames do: [ :each | self deny: (propertyNames includes: each) ].
 			self assert: scopePropertyNames asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' ) asSet ]
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testSearchToolsAnswerEntriesAsLines [
+	"A search answers rows; the pagination block repeats what the summary already says in prose."
+
+	| lines text |
+	text := self firstTextFromToolResult: (self callToolNamed: 'method_metadata_search' withArguments:
+			         { (#scope -> { (#classes -> { 'MCPSelectorSuggestion' }) } asDictionary) } asDictionary).
+	lines := text lines.
+	self assert: (lines first includesSubstring: 'methods').
+	self assert: (lines allButFirst allSatisfy: [ :each | each includesSubstring: 'selector=' ]).
+	self deny: (text includesSubstring: 'pagination')
 ]
 
 { #category : 'tests' }

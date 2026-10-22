@@ -6,8 +6,8 @@ Tool names use `snake_case` names that generally put the domain before the
 action.
 
 By default, every tool returns MCP call `content` as the canonical response for
-LLMs. `tool_search` and `image_evaluate` answer plain text; the other tools
-answer their payload encoded as JSON using this common shape:
+LLMs. The most used tools answer plain text; the rest answer their payload
+encoded as JSON using this common shape:
 
 ```text
 summary: human-readable summary

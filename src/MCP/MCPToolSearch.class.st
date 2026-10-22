@@ -102,6 +102,18 @@ MCPToolSearch >> commandForRequest: searchRequest [
 	^ MCPSearchToolCommand tool: self request: searchRequest
 ]
 
+{ #category : 'private - results' }
+MCPToolSearch >> contentTextForStructuredContent: structuredContent [
+	"Entries read as one line each. The pagination block is left out: the summary already states the counts and the next offset in prose."
+
+	| data |
+	data := structuredContent at: #data ifAbsent: [ ^ super contentTextForStructuredContent: structuredContent ].
+	^ String streamContents: [ :stream |
+			  self summaryAndWarningsOn: stream for: structuredContent.
+			  (data keys asSortedCollection: [ :left :right | left asString <= right asString ]) do: [ :key |
+					  key = #pagination ifFalse: [ self entryTextOn: stream for: (data at: key) ] ] ]
+]
+
 { #category : 'private - request' }
 MCPToolSearch >> defaultFilterMode [
 
@@ -112,6 +124,24 @@ MCPToolSearch >> defaultFilterMode [
 MCPToolSearch >> defaultPageLimit [
 
 	^ 25
+]
+
+{ #category : 'private - results' }
+MCPToolSearch >> entryTextOn: stream for: value [
+
+	(value isCollection and: [ value isString not ]) ifFalse: [ ^ self ].
+	value do: [ :entry |
+		stream nextPut: Character lf.
+		entry isDictionary
+			ifTrue: [
+					(entry keys asSortedCollection: [ :left :right | left asString <= right asString ])
+						do: [ :key |
+								stream
+									nextPutAll: key asString;
+									nextPut: $=;
+									nextPutAll: (entry at: key) asString ]
+						separatedBy: [ stream nextPutAll: ' ' ] ]
+			ifFalse: [ stream nextPutAll: entry asString ] ]
 ]
 
 { #category : 'private - results' }
