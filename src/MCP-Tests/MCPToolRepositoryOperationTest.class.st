@@ -847,8 +847,7 @@ MCPToolRepositoryOperationTest >> testLinkedWorktreeAttachExportsOnLinkedBranch 
 								                (#packageNames -> { packageName }) } asDictionary.
 						self deny: (self resultIndicatesError: attachResult) description: (self summaryFrom: attachResult).
 						searchResult := self searchRepositoriesWith: {
-								                (#name -> repositoryName).
-								                (#filterMode -> 'exact') } asDictionary.
+								                (#name -> repositoryName) } asDictionary.
 						self deny: (self resultIndicatesError: searchResult) description: (self summaryFrom: searchResult).
 						searchData := self dataFrom: searchResult.
 						entry := (searchData at: #repositories) anyOne.

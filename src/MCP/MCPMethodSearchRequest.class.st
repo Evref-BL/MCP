@@ -37,7 +37,7 @@ MCPMethodSearchRequest class >> fromRequest: request tool: aTool [
 		  scopeQuery: scopeQuery;
 		  filterPattern: (aTool filterPatternFromRequest: request);
 		  filterMode: (aTool filterModeFromRequest: request);
-		  caseSensitive: (request booleanArgumentNamed: 'caseSensitive' default: true);
+		  caseSensitive: true;
 		  includeSource: (request booleanArgumentNamed: 'includeSource' default: false);
 		  limit: (request nonNegativeIntegerArgumentNamed: 'limit' default: aTool defaultPageLimit);
 		  offset: (request nonNegativeIntegerArgumentNamed: 'offset' default: 0);

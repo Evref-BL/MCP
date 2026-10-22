@@ -21,12 +21,8 @@ MCPToolSearchMethods class >> toolName [
 MCPToolSearchMethods >> buildInputSchema [
 
 	| properties |
-	properties := self methodQueryScopeInputProperties , self metadataFilterInputProperties , {
-		              (self
-			               filterModeSchemaPropertyWithDescription: 'How selector and protocol filters are matched.'
-			               values: self supportedFilterModes).
-		              (self caseSensitiveSchemaPropertyWithDescription: 'Whether selector and protocol matching is case-sensitive.').
-		              self offsetInputProperty }.
+	properties := self methodQueryScopeInputProperties , self metadataFilterInputProperties
+	              , { self offsetInputProperty }.
 	^ self queryInputSchemaWithProperties: properties
 ]
 

@@ -35,9 +35,8 @@ MCPToolSearchMethodSource >> buildInputSchema [
 	properties := self methodQueryScopeInputProperties , {
 		              (self filterSchemaPropertyWithDescription: 'Source text to match in method bodies.').
 		              (self
-			               filterModeSchemaPropertyWithDescription: 'How source text filtering is matched.'
+			               filterModeSchemaPropertyWithDescription: 'Whether the filter is literal text or a regular expression.'
 			               values: self supportedFilterModes).
-		              (self caseSensitiveSchemaPropertyWithDescription: 'Whether source text matching is case-sensitive.').
 		              self offsetInputProperty }.
 	^ MCPStructureInputSchema new
 		  type: 'object';

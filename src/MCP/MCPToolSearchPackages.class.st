@@ -25,11 +25,7 @@ MCPToolSearchPackages class >> toolName [
 MCPToolSearchPackages >> buildInputSchema [
 
 	| properties |
-	properties := self packageQueryScopeInputProperties , self packageFilterInputProperties , {
-		              (self
-			               filterModeSchemaPropertyWithDescription: 'How package metadata filters are matched.'
-			               values: self basicFilterModes).
-		              (self caseSensitiveSchemaPropertyWithDescription: 'Whether package metadata matching is case-sensitive.') }
+	properties := self packageQueryScopeInputProperties , self packageFilterInputProperties
 	              ,
 	              (self paginationInputPropertiesWithLimitDescription:
 		               'Maximum number of matching packages to return. Use 0 to return no entries.').

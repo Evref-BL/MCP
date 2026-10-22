@@ -845,7 +845,6 @@ MCPToolContractsTest >> testCallToolInvokesDiscoverableToolAfterStaticConfigurat
 			          (#name -> 'package_search').
 			          (#arguments -> {
 				           (#name -> 'MCP').
-				           (#filterMode -> 'substring').
 				           (#limit -> 1) } asDictionary) } asDictionary.
 	data := self dataFrom: result.
 	self assert: (data at: #packages) size equals: 1.
@@ -860,7 +859,6 @@ MCPToolContractsTest >> testCallToolInvokesTargetToolThroughServerPath [
 			          (#name -> 'package_search').
 			          (#arguments -> {
 				           (#name -> 'MCP').
-				           (#filterMode -> 'substring').
 				           (#limit -> 1) } asDictionary) } asDictionary.
 	data := self dataFrom: result.
 	self assert: (data at: #packages) size equals: 1.
@@ -1674,42 +1672,31 @@ MCPToolContractsTest >> testMessageProcessorUsesSubclassJRPCHandlerOverride [
 { #category : 'tests' }
 MCPToolContractsTest >> testMethodMetadataSearchDescriptionPointsToSpecializedReferenceTools [
 
-	| description filterModeDescription filterModeProperty protocolDescription selectorDescription tool |
+	| description protocolDescription selectorDescription tool |
 	tool := MCPToolSearchMethods new.
 	description := tool description.
 	self assert: (description includesSubstring: 'method_source_search').
 	self assert: (description includesSubstring: 'method_reference_search').
-	self assert: (description includesSubstring: 'method_reference_search').
-	self assert: (description includesSubstring: 'method_reference_search').
-	self assert: (description includesSubstring: 'method_reference_search').
 	selectorDescription := (self inputPropertyNamed: 'selector' inTool: tool) description.
 	protocolDescription := (self inputPropertyNamed: 'protocol' inTool: tool) description.
-	filterModeProperty := self inputPropertyNamed: 'filterMode' inTool: tool.
-	filterModeDescription := filterModeProperty description.
 	self assert: (selectorDescription includesSubstring: 'selector').
-	self assert: (protocolDescription includesSubstring: 'protocol').
-	self assert: (filterModeDescription includesSubstring: 'match mode').
-	self assert: (filterModeProperty extraProperties at: #enum) asArray equals: #( 'substring' 'prefix' 'exact' 'regex' )
+	self assert: (protocolDescription includesSubstring: 'protocol')
 ]
 
 { #category : 'tests' }
 MCPToolContractsTest >> testMethodMetadataSearchHasAccurateNameAndSchema [
 
-	| filterModeProperty propertyNames schema scopeProperty scopePropertyNames |
+	| propertyNames schema scopeProperty scopePropertyNames |
 	schema := MCPToolSearchMethods new inputSchema.
 	propertyNames := schema properties collect: [ :each | each name ].
-	filterModeProperty := schema properties detect: [ :each | each name = 'filterMode' ].
 	scopeProperty := schema properties detect: [ :each | each name = 'scope' ].
 	scopePropertyNames := (scopeProperty extraProperties at: #properties) collect: [ :each | each name ].
 	self assert: MCPToolSearchMethods new name equals: 'method_search'.
 	self assert: schema required equals: #(  ).
-	self
-		assert: propertyNames asSet
-		equals: #( 'scope' 'selector' 'protocol' 'filterMode' 'side' 'offset' 'caseSensitive' ) asSet.
+	self assert: propertyNames asSet equals: #( 'scope' 'selector' 'protocol' 'side' 'offset' ) asSet.
 	self assert: scopeProperty description equals: 'Search scope. If omitted, searches all matching entities.'.
 	self assert: (scopeProperty extraProperties at: #additionalProperties) equals: false.
-	self assert: scopePropertyNames asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' ) asSet.
-	self assert: (filterModeProperty extraProperties at: #enum) asArray equals: #( 'substring' 'prefix' 'exact' 'regex' )
+	self assert: scopePropertyNames asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' ) asSet
 ]
 
 { #category : 'tests' }
@@ -1744,20 +1731,6 @@ MCPToolContractsTest >> testMethodMetadataSearchReturnsWarningResultForMissingCl
 	self assert: (warnings first includesSubstring: 'MCPDefinitelyMissingMethodSearchClass').
 	self assert: (warnings first includesSubstring: 'classNames scope').
 	self assert: (warnings first includesSubstring: 'Did you mean')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testMethodMetadataSearchTopLevelFilterModesAreTextOnly [
-
-	| filterModeEnum filterModeProperty schema selectorProperty |
-	schema := MCPToolSearchMethods new inputSchema asJRPCJSON.
-	filterModeProperty := (schema at: #properties) at: 'filterMode'.
-	selectorProperty := (schema at: #properties) at: 'selector'.
-	filterModeEnum := (filterModeProperty at: #enum) asArray.
-	self assert: (schema at: #type) equals: 'object'.
-	self assert: (schema at: #additionalProperties) equals: false.
-	self assert: filterModeEnum equals: #( 'substring' 'prefix' 'exact' 'regex' ).
-	self assert: ((selectorProperty at: #description) includesSubstring: 'selector')
 ]
 
 { #category : 'tests' }
@@ -1871,14 +1844,7 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 	self assert: ((self inputPropertyNamed: 'force' inTool: rewriteMethodsTool) extraProperties at: #default) equals: false.
 	self assert: ((self inputPropertyNamed: 'includeSource' inTool: rewriteMethodsTool) extraProperties at: #default) equals: false.
 	self assert: ((self inputPropertyNamed: 'side' inTool: rewriteMethodsTool) extraProperties at: #default) equals: 'both'.
-	self assert: ((self inputPropertyNamed: 'filterMode' inTool: searchClassesTool) extraProperties at: #default) equals: 'substring'.
 	self assert: ((self inputPropertyNamed: 'limit' inTool: searchClassesTool) extraProperties at: #default) equals: 25.
-	self assert: ((self inputPropertyNamed: 'filterMode' inTool: methodMetadataTool) extraProperties at: #default) equals: 'exact'.
-	self assert: ((self inputPropertyNamed: 'caseSensitive' inTool: methodMetadataTool) extraProperties at: #default) equals: true.
-	self
-		assert: ((self inputPropertyNamed: 'filterMode' inTool: searchPackagesTool) extraProperties at: #default)
-		equals: 'substring'.
-	self assert: ((self inputPropertyNamed: 'caseSensitive' inTool: searchPackagesTool) extraProperties at: #default) equals: true.
 	self assert: ((self inputPropertyNamed: 'force' inTool: removeClassesTool) extraProperties at: #default) equals: false.
 	self assert: ((self inputPropertyNamed: 'classSide' inTool: removeMethodsTool) extraProperties at: #default) equals: false
 ]
@@ -2024,7 +1990,7 @@ MCPToolContractsTest >> testRPCRefreshesCachedToolMetadata [
 	toolDefinitions := mcp rpcToolsList at: #tools.
 	toolDefinition := toolDefinitions detect: [ :each | (each at: #name) = 'class_search' ].
 	propertyNames := ((toolDefinition at: #inputSchema) at: #properties) keys asSet.
-	self assert: propertyNames equals: #( 'scope' 'name' 'tag' 'filterMode' 'limit' 'offset' ) asSet.
+	self assert: propertyNames equals: #( 'scope' 'name' 'tag' 'limit' 'offset' ) asSet.
 	result := mcp rpcToolCall: 'class_search' withParams: {
 			          (self searchScope: {
 					           (#classes -> #( 'MCPToolContractsTest' )).
@@ -2231,7 +2197,7 @@ MCPToolContractsTest >> testRpcToolCallSignalsInvalidParametersForUnexpectedArgu
 MCPToolContractsTest >> testRpcToolCallSignalsInvalidParametersForWrongArgumentType [
 
 	self
-		should: [ self callToolNamed: 'package_search' withArguments: { (#caseSensitive -> 'true') } asDictionary ]
+		should: [ self callToolNamed: 'package_search' withArguments: { (#limit -> 'ten') } asDictionary ]
 		raise: JRPCInvalidParameters
 ]
 
@@ -2387,7 +2353,7 @@ MCPToolContractsTest >> testSearchClassesHasAccurateNameAndSchema [
 	scopePropertyNames := (scopeProperty extraProperties at: #properties) collect: [ :each | each name ].
 	self assert: MCPToolSearchClasses new name equals: 'class_search'.
 	self assert: schema required equals: #(  ).
-	self assert: propertyNames asSet equals: #( 'scope' 'name' 'tag' 'filterMode' 'limit' 'offset' ) asSet.
+	self assert: propertyNames asSet equals: #( 'scope' 'name' 'tag' 'limit' 'offset' ) asSet.
 	self assert: scopeProperty description equals: 'Search scope. If omitted, searches all matching entities.'.
 	self assert: scopePropertyNames asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' ) asSet
 ]
@@ -2435,7 +2401,7 @@ MCPToolContractsTest >> testSearchPackagesHasAccurateNameAndSchema [
 	self assert: schema required equals: #(  ).
 	self
 		assert: propertyNames asSet
-		equals: #( 'projectNames' 'packageNames' 'name' 'projectName' 'tag' 'filterMode' 'caseSensitive' 'limit' 'offset' ) asSet
+		equals: #( 'projectNames' 'packageNames' 'name' 'projectName' 'tag' 'limit' 'offset' ) asSet
 ]
 
 { #category : 'tests' }
@@ -2472,7 +2438,7 @@ MCPToolContractsTest >> testSearchRepositoriesHasAccurateNameAndSchema [
 		assert: propertyNames asSet
 		equals:
 			#( 'isModified' 'isMissing' 'name' 'location' 'subdirectory' 'packageName' 'className' 'modifiedPackageName'
-			   'filterMode' 'limit' 'offset' ) asSet
+			   'limit' 'offset' ) asSet
 ]
 
 { #category : 'tests' }

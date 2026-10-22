@@ -35,8 +35,7 @@ MCPToolSearchRepositories >> buildInputSchema [
 	| properties |
 	properties := self repositoryFieldFilterInputProperties , {
 		              (self booleanSchemaPropertyNamed: 'isModified' description: 'Filter by image-side modified state.').
-		              (self booleanSchemaPropertyNamed: 'isMissing' description: 'Filter by missing repository directory state.').
-		              (self filterModeSchemaPropertyWithDescription: 'Filter match mode.' values: self basicFilterModes) }
+		              (self booleanSchemaPropertyNamed: 'isMissing' description: 'Filter by missing repository directory state.') }
 	              , (self paginationInputPropertiesWithLimitDescription: 'Maximum number of matching repositories to return.').
 	^ self queryInputSchemaWithProperties: properties
 ]

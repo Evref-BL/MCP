@@ -29,10 +29,6 @@ MCPToolSearchClasses >> buildInputSchema [
 	| properties |
 	properties := self classQueryScopeInputProperties , self classFilterInputProperties
 	              ,
-	              { (self
-		               filterModeSchemaPropertyWithDescription: 'How class metadata filters are matched.'
-		               values: self basicFilterModes) }
-	              ,
 	              (self paginationInputPropertiesWithLimitDescription:
 		               'Maximum number of matching classes to return. Use 0 to return no entries.').
 	^ self queryInputSchemaWithProperties: properties

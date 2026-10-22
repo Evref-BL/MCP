@@ -23,7 +23,7 @@ MCPToolRequestTest >> testHasArgumentNamedHandlesSymbolAndStringKeys [
 MCPToolRequestTest >> testInvalidRequestRaisesInvalidParameters [
 
 	self
-		should: [ MCPToolRequest tool: MCPToolSearchPackages new arguments: { (#caseSensitive -> 'true') } asDictionary ]
+		should: [ MCPToolRequest tool: MCPToolSearchPackages new arguments: { (#limit -> 'ten') } asDictionary ]
 		raise: JRPCInvalidParameters
 ]
 
@@ -31,16 +31,16 @@ MCPToolRequestTest >> testInvalidRequestRaisesInvalidParameters [
 MCPToolRequestTest >> testInvalidRequestRaisesToolInputErrorWithViolations [
 
 	| error violation |
-	[ MCPToolRequest tool: MCPToolSearchPackages new arguments: { (#caseSensitive -> 'true') } asDictionary ]
+	[ MCPToolRequest tool: MCPToolSearchPackages new arguments: { (#limit -> 'ten') } asDictionary ]
 		on: MCPInvalidToolInput
 		do: [ :signalledError | error := signalledError ].
 	self assert: error isNotNil.
 	self assert: error toolName equals: 'package_search'.
 	self assert: error violations size equals: 1.
 	violation := error violations first.
-	self assert: violation path equals: #( 'caseSensitive' ).
+	self assert: violation path equals: #( 'limit' ).
 	self assert: violation keyword equals: 'type'.
-	self assert: violation expected equals: 'boolean'.
+	self assert: violation expected equals: 'integer'.
 	self assert: violation actual equals: 'string'
 ]
 
@@ -48,7 +48,7 @@ MCPToolRequestTest >> testInvalidRequestRaisesToolInputErrorWithViolations [
 MCPToolRequestTest >> testInvalidToolInputErrorResponseIncludesViolations [
 
 	| data error errorJson firstViolation response violations |
-	[ MCPToolRequest tool: MCPToolSearchPackages new arguments: { (#caseSensitive -> 'true') } asDictionary ]
+	[ MCPToolRequest tool: MCPToolSearchPackages new arguments: { (#limit -> 'ten') } asDictionary ]
 		on: MCPInvalidToolInput
 		do: [ :signalledError | error := signalledError ].
 	response := (error asJRPCResponseWithId: 7) asJRPCJSON.
@@ -58,7 +58,7 @@ MCPToolRequestTest >> testInvalidToolInputErrorResponseIncludesViolations [
 	firstViolation := violations first.
 	self assert: (errorJson at: 'code') equals: -32602.
 	self assert: (data at: 'toolName') equals: 'package_search'.
-	self assert: (firstViolation at: #path) equals: #( 'caseSensitive' ).
+	self assert: (firstViolation at: #path) equals: #( 'limit' ).
 	self assert: (firstViolation at: #keyword) equals: 'type'.
 	self assert: (firstViolation at: #message) equals: 'Value has the wrong JSON type.'
 ]

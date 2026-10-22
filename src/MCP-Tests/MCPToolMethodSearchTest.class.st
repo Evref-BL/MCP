@@ -37,8 +37,7 @@ MCPToolMethodSearchTest >> testCanFilterAcrossExplicitProtocolTarget [
 	| data result selectors |
 	result := self callToolWith: {
 			          (self searchScope: { (#classes -> { self targetClassName }) }).
-			          (#protocol -> 'helpers').
-			          (#filterMode -> 'substring') } asDictionary.
+			          (#protocol -> 'helpers') } asDictionary.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	data := self dataFrom: result.
 	selectors := (data at: #methods) collect: [ :each | each at: #selector ].
@@ -53,27 +52,12 @@ MCPToolMethodSearchTest >> testCanFilterPaginateAndIncludeSource [
 	result := self callToolWith: {
 		          (self searchScope: { (#classes -> { self targetClassName }) }).
 		          (#side -> 'class').
-		          (#protocol -> 'meta').
-		          (#filterMode -> 'substring') } asDictionary.
+		          (#protocol -> 'meta') } asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: ((data at: #methods) allSatisfy: [ :each | each at: #classSide ]).
 	self assert: ((data at: #methods) allSatisfy: [ :each | (each at: #protocol) includesSubstring: 'meta' ]).
 	self deny: ((data at: #methods) anySatisfy: [ :each | each includesKey: #source ])
-]
-
-{ #category : 'tests' }
-MCPToolMethodSearchTest >> testCaseInsensitiveExactSelectorFilterKeepsGeneralFilteringSemantics [
-
-	| data result |
-	result := self callToolWith: {
-			          (self searchScope: { (#classes -> { self targetClassName }) }).
-			          (#selector -> 'ALPHANEEDLESELECTOR').
-			          (#caseSensitive -> false) } asDictionary.
-	data := self dataFrom: result.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #methods) size equals: 1.
-	self entryForReference: self targetClassName , '>>alphaNeedleSelector' in: (data at: #methods)
 ]
 
 { #category : 'tests' }
@@ -372,8 +356,7 @@ MCPToolMethodSearchTest >> testExactEmptyFilterIsApplied [
 	| error result structured |
 	result := self callToolWith: {
 			          (self searchScope: { (#classes -> { self targetClassName }) }).
-			          (#protocol -> '').
-			          (#filterMode -> 'exact') } asDictionary.
+			          (#protocol -> '') } asDictionary.
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
@@ -504,15 +487,13 @@ MCPToolMethodSearchTest >> testRegexMatcherUsesPCRE2WhenLibraryAvailable [
 { #category : 'tests' }
 MCPToolMethodSearchTest >> testReturnsStructuredErrorForInvalidRegex [
 
-	| error result structured |
-	result := self callToolWith: {
-			          (self searchScope: { (#classes -> { self targetClassName }) }).
-			          (#selector -> '[').
-			          (#filterMode -> 'regex') } asDictionary.
-	structured := self structuredContentFrom: result.
+	| error result |
+	result := self callToolNamed: 'method_source_search' withArguments: {
+		          (self searchScope: { (#classes -> { self targetClassName }) }).
+		          (#filterMode -> 'regex').
+		          (#filter -> '[') } asDictionary.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self assert: (error at: #scope) equals: 'classes'.
 	self assert: (error at: #errorClass) equals: 'RegexSyntaxError'.
 	self assert: ((error at: #message) includesSubstring: 'terminating')
 ]

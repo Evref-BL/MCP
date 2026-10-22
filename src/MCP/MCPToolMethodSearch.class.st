@@ -59,12 +59,6 @@ MCPToolMethodSearch >> classReferenceEntriesForQueryRequest: queryRequest [
 	^ self classReferenceEntriesForClassNamed: (queryRequest requiredFilterPatternForTool: self) queryRequest: queryRequest
 ]
 
-{ #category : 'private - request' }
-MCPToolMethodSearch >> defaultFilterMode [
-
-	^ 'exact'
-]
-
 { #category : 'private - results' }
 MCPToolMethodSearch >> failureMessageForScope: scopeSummary error: anError [
 

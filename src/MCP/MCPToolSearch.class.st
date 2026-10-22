@@ -50,12 +50,6 @@ MCPToolSearch >> basicRegexMatcherForPattern: aPattern caseSensitive: aBoolean [
 	^ [ :candidate | regex search: (self regexSubjectFrom: candidate) ]
 ]
 
-{ #category : 'private - schema' }
-MCPToolSearch >> caseSensitiveSchemaPropertyWithDescription: caseSensitiveDescription [
-
-	^ self booleanSchemaPropertyNamed: 'caseSensitive' description: 'Case-sensitive matching.' default: true
-]
-
 { #category : 'private - results' }
 MCPToolSearch >> classAndMethodScopeSummaryForScopeQuery: scopeQuery [
 

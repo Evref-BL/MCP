@@ -652,9 +652,7 @@ MCPToolStructuredOutputTest >> testSearchClassesReturnsStructuredWarnings [
 MCPToolStructuredOutputTest >> testSearchPackagesDefaultsToImageScopeWhenScopePropertiesAreOmitted [
 
 	| data packageNames packages result |
-	result := self callToolNamed: 'package_search' withArguments: {
-			          (#name -> 'MCP-Tests-Resources').
-			          (#filterMode -> 'exact') } asDictionary.
+	result := self callToolNamed: 'package_search' withArguments: { (#packageNames -> #( 'MCP-Tests-Resources' )) } asDictionary.
 	data := self dataFrom: result.
 	packages := data at: #packages.
 	packageNames := packages collect: [ :each | each at: #packageName ].

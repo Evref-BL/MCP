@@ -197,7 +197,7 @@ MCPToolMethodLookupTest >> testSourceAndEquivalentSearchSchemasUseDedicatedInput
 	self assert: sourceRequired equals: #( 'filter' ).
 	self
 		assert: sourcePropertyNames asSet
-		equals: #( 'caseSensitive' 'scope' 'side' 'filter' 'filterMode' 'offset' ) asSet.
+		equals: #( 'scope' 'side' 'filter' 'filterMode' 'offset' ) asSet.
 	self assert: (filterModeProperty extraProperties at: #enum) asArray equals: #( 'substring' 'regex' ).
 	equivalentSchema := MCPToolSearchEquivalentMethods new inputSchema.
 	equivalentRequired := equivalentSchema required asArray.
