@@ -1236,6 +1236,16 @@ MCPToolContractsTest >> testEmptyProfileRegistersNoTools [
 ]
 
 { #category : 'tests - evaluate' }
+MCPToolContractsTest >> testEvaluateAnswersThePrintStringAsItsWholeText [
+	"The envelope around a one-line answer cost more than the answer."
+
+	self
+		assert: (self firstTextFromToolResult:
+				 (self callDiscoveredToolNamed: 'image_evaluate' withArguments: { (#code -> '3 + 4') } asDictionary))
+		equals: '7'
+]
+
+{ #category : 'tests - evaluate' }
 MCPToolContractsTest >> testEvaluateCatchesHaltAsRuntimeFailure [
 
 	| result text |
@@ -1257,6 +1267,19 @@ MCPToolContractsTest >> testEvaluateErrorSchemaAdvertisesStackTrace [
 	errorProperties := errorProperty extraProperties at: #properties.
 	propertyNames := errorProperties collect: [ :each | each name ].
 	self assert: (propertyNames includes: 'stackTrace')
+]
+
+{ #category : 'tests - evaluate' }
+MCPToolContractsTest >> testEvaluateFailureTextNamesSuggestionsAndFrames [
+
+	| lines text |
+	text := self firstTextFromToolResult: (self
+			         callDiscoveredToolNamed: 'image_evaluate'
+			         withArguments: { (#code -> 'OrderedCollection new adAll: #( 1 2 3 )') } asDictionary).
+	lines := text lines.
+	self assert: (lines anySatisfy: [ :each | each beginsWith: 'Did you mean: addAll:' ]).
+	self assert: lines last equals: 'UndefinedObject>>DoIt'.
+	self deny: (text includesSubstring: '"errorClass"')
 ]
 
 { #category : 'tests' }
@@ -1360,7 +1383,7 @@ MCPToolContractsTest >> testEvaluateReturnsRuntimeFailureInformation [
 	self assert: (result at: #isError).
 	self assert: (text includesSubstring: 'failed during execution').
 	self assert: (text includesSubstring: 'boom').
-	self assert: (text includesSubstring: 'Signaler context:')
+	self assert: (text lines last includesSubstring: 'UndefinedObject>>DoIt')
 ]
 
 { #category : 'tests - evaluate' }
