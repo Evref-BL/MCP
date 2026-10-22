@@ -126,8 +126,7 @@ class_search
 class_get
 method_metadata_search
 method_source_search
-method_implementor_search
-method_sender_search
+method_reference_search
 method_get
 ```
 

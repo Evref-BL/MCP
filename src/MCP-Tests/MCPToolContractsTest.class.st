@@ -566,23 +566,8 @@ MCPToolContractsTest >> methodLookupToolFlowSpecs [
 			  (#requestClass -> MCPSearchEquivalentMethodsRequest).
 			  (#commandClass -> MCPSearchToolCommand) } asDictionary.
 		  {
-			  (#toolClass -> MCPToolSearchMethodImplementors).
-			  (#arguments -> { (#selector -> 'class') } asDictionary).
-			  (#requestClass -> MCPMethodSearchRequest).
-			  (#commandClass -> MCPSearchToolCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolSearchMethodSenders).
-			  (#arguments -> { (#selector -> 'class') } asDictionary).
-			  (#requestClass -> MCPMethodSearchRequest).
-			  (#commandClass -> MCPSearchToolCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolSearchClassReferences).
-			  (#arguments -> { (#className -> 'Object') } asDictionary).
-			  (#requestClass -> MCPMethodSearchRequest).
-			  (#commandClass -> MCPSearchToolCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolSearchVariableReferences).
-			  (#arguments -> { (#variableName -> 'instVarNamed') } asDictionary).
+			  (#toolClass -> MCPToolSearchMethodReferences).
+			  (#arguments -> { (#name -> 'class') } asDictionary).
 			  (#requestClass -> MCPMethodSearchRequest).
 			  (#commandClass -> MCPSearchToolCommand) } asDictionary }
 ]
@@ -887,14 +872,14 @@ MCPToolContractsTest >> testCallToolPreservesNestedValidationViolations [
 
 	| error result violations |
 	result := self callToolNamed: 'tool_call' withArguments: {
-			          (#name -> 'method_sender_search').
-			          (#arguments -> { (#selector -> '') } asDictionary) } asDictionary.
+			          (#name -> 'method_reference_search').
+			          (#arguments -> { (#name -> '') } asDictionary) } asDictionary.
 	error := self errorFrom: result.
 	violations := error at: #violations.
-	self assert: (error at: #toolName) equals: 'method_sender_search'.
+	self assert: (error at: #toolName) equals: 'method_reference_search'.
 	self assert: violations size equals: 1.
 	self assert: (violations first at: #keyword) equals: #required.
-	self assert: (violations first at: #expected) equals: 'selector'
+	self assert: (violations first at: #expected) equals: 'name'
 ]
 
 { #category : 'tests' }
@@ -1693,10 +1678,10 @@ MCPToolContractsTest >> testMethodMetadataSearchDescriptionPointsToSpecializedRe
 	tool := MCPToolSearchMethodMetadata new.
 	description := tool description.
 	self assert: (description includesSubstring: 'method_source_search').
-	self assert: (description includesSubstring: 'method_sender_search').
-	self assert: (description includesSubstring: 'method_implementor_search').
-	self assert: (description includesSubstring: 'method_class_reference_search').
-	self assert: (description includesSubstring: 'method_variable_reference_search').
+	self assert: (description includesSubstring: 'method_reference_search').
+	self assert: (description includesSubstring: 'method_reference_search').
+	self assert: (description includesSubstring: 'method_reference_search').
+	self assert: (description includesSubstring: 'method_reference_search').
 	selectorDescription := (self inputPropertyNamed: 'selector' inTool: tool) description.
 	protocolDescription := (self inputPropertyNamed: 'protocol' inTool: tool) description.
 	filterModeProperty := self inputPropertyNamed: 'filterMode' inTool: tool.
@@ -2023,8 +2008,8 @@ MCPToolContractsTest >> testRPCAdvertisesStaticToolSurfaceOnly [
 	registry := self toolRegistry.
 	toolNames := (self mcpWithoutObservabilityExport rpcToolsList at: #tools) collect: [ :each | each at: #name ].
 	expectedStaticToolNames := #( 'tool_search' 'tool_get' 'tool_call' 'package_search' 'class_search' 'class_get' 'class_create'
-	                              'method_metadata_search' 'method_source_search' 'method_implementor_search'
-	                              'method_sender_search' 'method_get' 'method_compile' 'method_selector_update'
+	                              'method_metadata_search' 'method_source_search' 'method_reference_search'
+	                              'method_reference_search' 'method_get' 'method_compile' 'method_selector_update'
 	                              'image_evaluate' 'test_run' ).
 	discoverableToolNames := registry publicToolNames difference: registry staticToolNames.
 	self assert: toolNames asSet equals: registry staticToolNames asSet.
@@ -2114,9 +2099,9 @@ MCPToolContractsTest >> testRequestedToolIconsAreSelected [
 		assert: MCPToolSearchMethodSource new icons first asJRPCJSON
 		equals: (MCPStructureIcon compositeBaseIconNamed: #page leftBadgeIconNamed: #workspace rightBadgeIconNamed: #search) asJRPCJSON.
 	self
-		assert: MCPToolSearchMethodImplementors new icons first asJRPCJSON
+		assert: MCPToolSearchMethodReferences new icons first asJRPCJSON
 		equals:
-		(MCPStructureIcon compositeBaseIconNamed: #page leftBadgeIconNamed: #referencesUpsideDown rightBadgeIconNamed: #search)
+		(MCPStructureIcon compositeBaseIconNamed: #page leftBadgeIconNamed: #references rightBadgeIconNamed: #search)
 			asJRPCJSON.
 	self
 		assert: MCPToolUpdateMethodProtocol new icons first asJRPCJSON
@@ -2520,11 +2505,8 @@ MCPToolContractsTest >> testSearchToolSchemasAdvertiseGroupedScopeProperties [
 		               MCPToolSearchClasses new.
 		               MCPToolSearchMethodMetadata new.
 		               MCPToolSearchMethodSource new.
-		               MCPToolSearchMethodSenders new.
-		               MCPToolSearchMethodImplementors new.
-		               MCPToolSearchEquivalentMethods new.
-		               MCPToolSearchClassReferences new.
-		               MCPToolSearchVariableReferences new }.
+		               MCPToolSearchMethodReferences new.
+		               MCPToolSearchEquivalentMethods new }.
 	searchTools do: [ :tool |
 			| propertyNames scopeProperty |
 			propertyNames := tool inputSchema properties collect: [ :each | each name ].
@@ -2807,7 +2789,7 @@ MCPToolContractsTest >> testSpecializedClassAndMethodToolsAreDiscoverableOnly [
 	                            'class_slots_update' 'class_traits_update' 'class_side_traits_update' 'class_shared_variables_update'
 	                            'class_shared_pools_update' 'class_layout_update' 'class_slot_add' 'class_slot_remove'
 	                            'class_slot_name_update' 'class_slot_pull_up' 'class_slot_push_down' 'method_equivalent_search'
-	                            'method_class_reference_search' 'method_variable_reference_search' 'test_coverage_run' ).
+	                            'test_coverage_run' ).
 	discoverableOnlyNames do: [ :each |
 			| tool |
 			self assert: (self toolRegistry publicToolNames includes: each).

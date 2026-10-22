@@ -22,6 +22,7 @@ MCPToolMethodLookupOperation >> buildInputSchema [
 	properties := self methodQueryScopeInputProperties , {
 		              self lookupArgumentSchemaProperty.
 		              (self includeSourceSchemaPropertyWithDescription: 'Whether to include method source code in each result entry.') }
+	              , self extraInputProperties
 	              ,
 	              (self paginationInputPropertiesWithLimitDescription:
 		               'Maximum number of methods to return. Use 0 to return no entries.').
@@ -30,6 +31,13 @@ MCPToolMethodLookupOperation >> buildInputSchema [
 		  properties: properties;
 		  required: { self lookupArgumentName };
 		  yourself
+]
+
+{ #category : 'private - schema' }
+MCPToolMethodLookupOperation >> extraInputProperties [
+	"What a lookup takes beyond the name it looks up. A tool declares its own."
+
+	^ #(  )
 ]
 
 { #category : 'private - request' }

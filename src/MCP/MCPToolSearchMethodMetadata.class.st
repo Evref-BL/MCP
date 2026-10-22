@@ -41,7 +41,7 @@ MCPToolSearchMethodMetadata >> defaultExposure [
 { #category : 'metadata' }
 MCPToolSearchMethodMetadata >> description [
 
-	^ 'Search methods by selector, protocol, class, package, or scope. Specialized method search tools are method_source_search, method_sender_search, method_implementor_search, method_class_reference_search, and method_variable_reference_search.'
+	^ 'Search methods by selector, protocol, class, package, or scope. Use method_source_search for source text and method_reference_search for where a name is used.'
 ]
 
 { #category : 'private - filtering' }

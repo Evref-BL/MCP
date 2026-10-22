@@ -80,10 +80,7 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 		  (MCPToolRewriteMethods -> { (#rules -> { {
 			    (#lhs -> 'self').
 			    (#rhs -> 'self') } asDictionary }) } asDictionary).
-		  (MCPToolSearchMethodImplementors -> { (#selector -> 'toolName') } asDictionary).
-		  (MCPToolSearchMethodSenders -> { (#selector -> 'toolName') } asDictionary).
-		  (MCPToolSearchClassReferences -> { (#className -> 'MCPTool') } asDictionary).
-		  (MCPToolSearchVariableReferences -> { (#variableName -> 'toolName') } asDictionary).
+		  (MCPToolSearchMethodReferences -> { (#name -> 'toolName') } asDictionary).
 		  (MCPToolListChangeHistoryFiles -> Dictionary new).
 		  (MCPToolListChangeHistoryEntries -> Dictionary new).
 		  (MCPToolChangeHistory -> { (#action -> 'listFiles') } asDictionary).

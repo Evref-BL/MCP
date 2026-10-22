@@ -152,8 +152,8 @@ MCPToolMethodSearchTest >> testClassNamesSelectExactClassScope [
 MCPToolMethodSearchTest >> testClassReferenceCanIncludeFormattedSource [
 
 	| data method result |
-	result := self callToolNamed: 'method_class_reference_search' withArguments: {
-			          (#className -> 'MCPToolMethodSearchReferenceTarget').
+	result := self callToolNamed: 'method_reference_search' withArguments: {
+			          (#name -> 'MCPToolMethodSearchReferenceTarget').
 			          (#side -> 'class').
 			          (#includeSource -> true).
 			          (#limit -> 1) } asDictionary.
@@ -170,8 +170,8 @@ MCPToolMethodSearchTest >> testClassReferenceCanIncludeFormattedSource [
 MCPToolMethodSearchTest >> testClassReferenceClassScopeReturnsClassGlobalReferences [
 
 	| data result |
-	result := self callToolNamed: 'method_class_reference_search' withArguments: {
-			          (#className -> 'MCPToolMethodSearchReferenceTarget').
+	result := self callToolNamed: 'method_reference_search' withArguments: {
+			          (#name -> 'MCPToolMethodSearchReferenceTarget').
 			          (self searchScope: { (#classes -> #( 'MCPToolMethodSearchReferenceFixture' )) }) } asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
@@ -185,8 +185,8 @@ MCPToolMethodSearchTest >> testClassReferenceDoesNotIncludeSelectorSendsNamedLik
 
 	| data result selectors |
 	result := self
-		          callToolNamed: 'method_class_reference_search'
-		          withArguments: { (#className -> 'MCPToolMethodSearchReferenceTarget') } asDictionary.
+		          callToolNamed: 'method_reference_search'
+		          withArguments: { (#name -> 'MCPToolMethodSearchReferenceTarget') } asDictionary.
 	data := self dataFrom: result.
 	selectors := (data at: #methods) collect: [ :each | each at: #selector ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
@@ -199,8 +199,8 @@ MCPToolMethodSearchTest >> testClassReferenceReturnsInstanceAndClassGlobalRefere
 
 	| data result |
 	result := self
-		          callToolNamed: 'method_class_reference_search'
-		          withArguments: { (#className -> 'MCPToolMethodSearchReferenceTarget') } asDictionary.
+		          callToolNamed: 'method_reference_search'
+		          withArguments: { (#name -> 'MCPToolMethodSearchReferenceTarget') } asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #methods) size equals: 2.
@@ -213,12 +213,12 @@ MCPToolMethodSearchTest >> testClassReferenceReturnsStructuredErrorWhenClassIsMi
 
 	| error result structured |
 	result := self
-		          callToolNamed: 'method_class_reference_search'
-		          withArguments: { (#className -> 'MCPDefinitelyMissingReferenceClass') } asDictionary.
+		          callToolNamed: 'method_reference_search'
+		          withArguments: { (#name -> 'MCPDefinitelyMissingReferenceClass') } asDictionary.
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self assert: ((error at: #message) includesSubstring: 'There is no class named MCPDefinitelyMissingReferenceClass')
+	self assert: ((error at: #message) includesSubstring: 'There is no class, variable or selector named MCPDefinitelyMissingReferenceClass')
 ]
 
 { #category : 'tests' }
@@ -602,8 +602,9 @@ MCPToolMethodSearchTest >> testScopeArgumentIsRejected [
 MCPToolMethodSearchTest >> testSelectorReferenceCanIncludeFormattedSource [
 
 	| data method result |
-	result := self callToolNamed: 'method_sender_search' withArguments: {
-			          (#selector -> 'sharedTarget').
+	result := self callToolNamed: 'method_reference_search' withArguments: {
+			          (#kind -> 'senders').
+			          (#name -> 'sharedTarget').
 			          (#side -> 'class').
 			          (#includeSource -> true).
 			          (#limit -> 1) } asDictionary.
@@ -620,8 +621,9 @@ MCPToolMethodSearchTest >> testSelectorReferenceCanIncludeFormattedSource [
 MCPToolMethodSearchTest >> testSelectorReferenceClassNamesLimitToExactClasses [
 
 	| data result |
-	result := self callToolNamed: 'method_sender_search' withArguments: {
-			          (#selector -> 'hierarchyTarget').
+	result := self callToolNamed: 'method_reference_search' withArguments: {
+			          (#kind -> 'senders').
+			          (#name -> 'hierarchyTarget').
 			          (self searchScope: { (#classes -> #( 'MCPToolHierarchyTestChild' )) }) } asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
@@ -633,8 +635,9 @@ MCPToolMethodSearchTest >> testSelectorReferenceClassNamesLimitToExactClasses [
 MCPToolMethodSearchTest >> testSelectorReferencePackageNamesIncludeExtensionMethods [
 
 	| data method result |
-	result := self callToolNamed: 'method_sender_search' withArguments: {
-			          (#selector -> 'extensionTarget').
+	result := self callToolNamed: 'method_reference_search' withArguments: {
+			          (#kind -> 'senders').
+			          (#name -> 'extensionTarget').
 			          (self searchScope: { (#packages -> #( 'MCP-Tests-Resources-Extensions' )) }) } asDictionary.
 	data := self dataFrom: result.
 	method := self entryForReference: 'MCPToolMethodSearchReferenceTarget>>extensionSender' in: (data at: #methods).
@@ -648,8 +651,9 @@ MCPToolMethodSearchTest >> testSelectorReferencePackageNamesIncludeExtensionMeth
 MCPToolMethodSearchTest >> testSelectorReferenceParentClassNamesSearchParents [
 
 	| data result |
-	result := self callToolNamed: 'method_sender_search' withArguments: {
-			          (#selector -> 'hierarchyTarget').
+	result := self callToolNamed: 'method_reference_search' withArguments: {
+			          (#kind -> 'senders').
+			          (#name -> 'hierarchyTarget').
 			          (self searchScope: { (#superclassesOf -> #( 'MCPToolHierarchyTestMid' )) }) } asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
@@ -661,7 +665,8 @@ MCPToolMethodSearchTest >> testSelectorReferenceParentClassNamesSearchParents [
 MCPToolMethodSearchTest >> testSelectorReferenceRejectsEmptyFilter [
 
 	| error result structured |
-	result := self callToolNamed: 'method_sender_search' withArguments: { (#selector -> '') } asDictionary.
+	result := self callToolNamed: 'method_reference_search' withArguments: { (#kind -> 'senders').
+			          (#name -> '') } asDictionary.
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
@@ -672,7 +677,8 @@ MCPToolMethodSearchTest >> testSelectorReferenceRejectsEmptyFilter [
 MCPToolMethodSearchTest >> testSelectorReferenceReturnsInstanceAndClassSenders [
 
 	| data result |
-	result := self callToolNamed: 'method_sender_search' withArguments: { (#selector -> 'sharedTarget') } asDictionary.
+	result := self callToolNamed: 'method_reference_search' withArguments: { (#kind -> 'senders').
+			          (#name -> 'sharedTarget') } asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #methods) size equals: 2.
@@ -685,8 +691,9 @@ MCPToolMethodSearchTest >> testSelectorReferenceReturnsSelectorSendsNamedLikeCla
 
 	| data result |
 	result := self
-		          callToolNamed: 'method_sender_search'
-		          withArguments: { (#selector -> 'MCPToolMethodSearchReferenceTarget') } asDictionary.
+		          callToolNamed: 'method_reference_search'
+		          withArguments: { (#kind -> 'senders').
+			          (#name -> 'MCPToolMethodSearchReferenceTarget') } asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #methods) size equals: 2.
@@ -698,8 +705,9 @@ MCPToolMethodSearchTest >> testSelectorReferenceReturnsSelectorSendsNamedLikeCla
 MCPToolMethodSearchTest >> testSelectorReferenceSubclassClassNamesSearchSubclasses [
 
 	| data result |
-	result := self callToolNamed: 'method_sender_search' withArguments: {
-			          (#selector -> 'hierarchyTarget').
+	result := self callToolNamed: 'method_reference_search' withArguments: {
+			          (#kind -> 'senders').
+			          (#name -> 'hierarchyTarget').
 			          (self searchScope: { (#subclassesOf -> #( 'MCPToolHierarchyTestMid' )) }) } asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
@@ -711,8 +719,9 @@ MCPToolMethodSearchTest >> testSelectorReferenceSubclassClassNamesSearchSubclass
 MCPToolMethodSearchTest >> testSelectorReferenceSuperclassAndSubclassScopesSearchRelatedMethods [
 
 	| data result |
-	result := self callToolNamed: 'method_sender_search' withArguments: {
-			          (#selector -> 'hierarchyTarget').
+	result := self callToolNamed: 'method_reference_search' withArguments: {
+			          (#kind -> 'senders').
+			          (#name -> 'hierarchyTarget').
 			          (self searchScope: {
 					           (#superclassesOf -> #( 'MCPToolHierarchyTestMid' )).
 					           (#subclassesOf -> #( 'MCPToolHierarchyTestMid' )) }) } asDictionary.
@@ -781,8 +790,8 @@ MCPToolMethodSearchTest >> testToolDoesNotRequireArgumentsInSchema [
 MCPToolMethodSearchTest >> testVariableReferenceCanIncludeFormattedSource [
 
 	| data method result |
-	result := self callToolNamed: 'method_variable_reference_search' withArguments: {
-			          (#variableName -> 'trackedSlot').
+	result := self callToolNamed: 'method_reference_search' withArguments: {
+			          (#name -> 'trackedSlot').
 			          (#side -> 'instance').
 			          (self searchScope: { (#classes -> #( 'MCPToolMethodSearchVariableReferenceTarget' )) }).
 			          (#includeSource -> true).
@@ -800,8 +809,8 @@ MCPToolMethodSearchTest >> testVariableReferenceCanIncludeFormattedSource [
 MCPToolMethodSearchTest >> testVariableReferenceReturnsClassSideVariableReferences [
 
 	| data result |
-	result := self callToolNamed: 'method_variable_reference_search' withArguments: {
-			          (#variableName -> 'trackedClassSlot').
+	result := self callToolNamed: 'method_reference_search' withArguments: {
+			          (#name -> 'trackedClassSlot').
 			          (#side -> 'class').
 			          (self searchScope: { (#classes -> #( 'MCPToolMethodSearchVariableReferenceTarget' )) }) } asDictionary.
 	data := self dataFrom: result.
@@ -815,8 +824,8 @@ MCPToolMethodSearchTest >> testVariableReferenceReturnsClassSideVariableReferenc
 MCPToolMethodSearchTest >> testVariableReferenceReturnsInstanceVariableReferences [
 
 	| data result |
-	result := self callToolNamed: 'method_variable_reference_search' withArguments: {
-			          (#variableName -> 'trackedSlot').
+	result := self callToolNamed: 'method_reference_search' withArguments: {
+			          (#name -> 'trackedSlot').
 			          (#side -> 'instance').
 			          (self searchScope: { (#classes -> { MCPToolMethodSearchVariableReferenceTarget name }) }) } asDictionary.
 	data := self dataFrom: result.
@@ -830,13 +839,13 @@ MCPToolMethodSearchTest >> testVariableReferenceReturnsInstanceVariableReference
 MCPToolMethodSearchTest >> testVariableReferenceReturnsStructuredErrorWhenVariableIsMissing [
 
 	| error result structured |
-	result := self callToolNamed: 'method_variable_reference_search' withArguments: {
-			          (#variableName -> 'missingTrackedSlot').
+	result := self callToolNamed: 'method_reference_search' withArguments: {
+			          (#name -> 'missingTrackedSlot').
 			          (self searchScope: { (#classes -> #( 'MCPToolMethodSearchVariableReferenceTarget' )) }) } asDictionary.
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self assert: ((error at: #message) includesSubstring: 'No variable named missingTrackedSlot')
+	self assert: ((error at: #message) includesSubstring: 'There is no class, variable or selector named missingTrackedSlot')
 ]
 
 { #category : 'private - calling' }
