@@ -45,13 +45,11 @@ MCPToolSearchTools >> buildInputSchema [
 
 	^ MCPStructureInputSchema new
 		  type: 'object';
-		  properties: {
-				  (self
-					   schemaPropertyNamed: 'query'
-					   type: 'string'
-					   description:
-						   'Space-separated search words matched against tool names, descriptions, groups, and keywords. Returns tools matching every word.').
-				  (self schemaPropertyNamed: 'cursor' type: 'string' description: 'Continuation cursor.') };
+		  properties: { (self
+				   schemaPropertyNamed: 'query'
+				   type: 'string'
+				   description:
+					   'Space-separated search words matched against tool names, titles, descriptions, groups, and keywords. Tools are ranked by how many words they match, so the closest tools are answered even when none matches every word.') };
 		  required: #(  );
 		  additionalProperties: false;
 		  yourself
@@ -60,17 +58,40 @@ MCPToolSearchTools >> buildInputSchema [
 { #category : 'metadata' }
 MCPToolSearchTools >> buildOutputSchema [
 
-	^ self
-		  standardOutputSchemaForDataProperties: {
-				  self toolsArraySchemaProperty.
-				  (self schemaPropertyNamed: 'nextCursor' type: 'string' description: 'Cursor for the next page.') }
-		  required: #( 'tools' )
+	^ self standardOutputSchemaForDataProperties: { self toolsArraySchemaProperty } required: #( 'tools' )
+]
+
+{ #category : 'private - results' }
+MCPToolSearchTools >> catalogTextForSummary: aSummary tools: toolMetadataEntries [
+	"Separate entries with a line feed: a carriage return reaches the caller as an escaped character rather than a line break."
+
+	^ String streamContents: [ :stream |
+			  stream nextPutAll: aSummary.
+			  toolMetadataEntries do: [ :each |
+					  stream
+						  nextPut: Character lf;
+						  nextPutAll: (each at: #name);
+						  nextPutAll: ' - ';
+						  nextPutAll: (each at: #description) ] ]
 ]
 
 { #category : 'private - execution' }
 MCPToolSearchTools >> commandForRequest: searchRequest [
 
 	^ MCPSearchToolsCommand tool: self request: searchRequest toolRegistry: self toolRegistry
+]
+
+{ #category : 'private - results' }
+MCPToolSearchTools >> contentTextForStructuredContent: structuredContent [
+	"A catalog listing reads as prose and costs a third fewer characters than its JSON. Error results keep the default shape."
+
+	^ structuredContent
+		  at: #data
+		  ifPresent: [ :data |
+				  self
+					  catalogTextForSummary: (structuredContent at: #summary ifAbsent: [ '' ])
+					  tools: (data at: #tools) ]
+		  ifAbsent: [ super contentTextForStructuredContent: structuredContent ]
 ]
 
 { #category : 'metadata' }
@@ -82,7 +103,7 @@ MCPToolSearchTools >> defaultExposure [
 { #category : 'metadata' }
 MCPToolSearchTools >> description [
 
-	^ 'Search available tools. Use to discover tool names before tool_get or tool_call.'
+	^ 'Search available tools, best match first. Use to discover tool names before tool_get or tool_call.'
 ]
 
 { #category : 'executing' }
@@ -91,9 +112,10 @@ MCPToolSearchTools >> executeWithRequest: request [
 	^ self
 		  executeParsedRequestFrom: request
 		  do: [ :searchRequest |
-				  | data |
-				  data := (self commandForRequest: searchRequest) execute.
-				  self successResultText: (data at: #tools) size asString , ' tools found.' data: data ]
+				  | command data |
+				  command := self commandForRequest: searchRequest.
+				  data := command execute.
+				  self successResultText: command summaryText data: data ]
 		  onError: [ :error :parsedRequest | self errorResultFor: error ]
 ]
 
@@ -138,7 +160,7 @@ MCPToolSearchTools >> toolRegistry: aToolRegistry [
 { #category : 'private - schema' }
 MCPToolSearchTools >> toolsArraySchemaProperty [
 
-	^ (self schemaPropertyNamed: 'tools' type: 'array' description: 'Matching tool metadata entries.')
+	^ (self schemaPropertyNamed: 'tools' type: 'array' description: 'Matching tool metadata entries, best match first.')
 		  items: self toolMetadataObjectSchema;
 		  yourself
 ]

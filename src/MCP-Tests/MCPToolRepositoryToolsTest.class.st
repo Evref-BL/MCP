@@ -16,14 +16,6 @@ MCPToolRepositoryToolsTest >> inputPropertyNamesFor: aTool [
 ]
 
 { #category : 'private' }
-MCPToolRepositoryToolsTest >> metadataByNameForRepositoryTools [
-
-	| result |
-	result := self callToolNamed: 'tool_search' withArguments: { (#query -> 'repository') } asDictionary.
-	^ (((self dataFrom: result) at: #tools) collect: [ :each | (each at: #name) -> each ]) asDictionary
-]
-
-{ #category : 'private' }
 MCPToolRepositoryToolsTest >> repositoryToolSpecifications [
 
 	^ {
@@ -161,11 +153,20 @@ MCPToolRepositoryToolsTest >> repositoryToolSpecifications [
 			  (#commandClass -> MCPAdoptRepositoryHeadCommand) } asDictionary }
 ]
 
+{ #category : 'private' }
+MCPToolRepositoryToolsTest >> searchMetadataByToolName [
+
+	| metadata |
+	metadata := Dictionary new.
+	self toolRegistry publicTools do: [ :tool | metadata at: tool name put: tool searchMetadata ].
+	^ metadata
+]
+
 { #category : 'tests' }
 MCPToolRepositoryToolsTest >> testRepositoryToolsAreDiscoverableWithExpectedMetadata [
 
 	| metadataByName |
-	metadataByName := self metadataByNameForRepositoryTools.
+	metadataByName := self searchMetadataByToolName.
 	#( 'repository_identity_verify' 'repository_change_list' 'repository_create' 'repository_attach' 'repository_update'
 	   'repository_remote_add' 'repository_remote_remove' 'repository_remote_update' 'repository_export' 'repository_commit'
 	   'repository_fetch' 'repository_pull' 'repository_push' 'repository_branch_create' 'repository_branch_switch'

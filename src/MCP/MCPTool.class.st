@@ -225,16 +225,17 @@ MCPTool >> buildOutputSchema [
 	self subclassResponsibility
 ]
 
-{ #category : 'private - results' }
-MCPTool >> canonicalContentTextForStructuredContent: structuredContent [
-
-	^ STON toJsonStringPretty: structuredContent asJRPCJSON
-]
-
 { #category : 'private - execution' }
 MCPTool >> commandForRequest: aToolRequest [
 
 	self subclassResponsibility
+]
+
+{ #category : 'private - results' }
+MCPTool >> contentTextForStructuredContent: structuredContent [
+	"Answer the text block a caller reads. The default is the canonical JSON of the structured content; a tool overrides this when plain text reads better and costs fewer tokens."
+
+	^ STON toJsonStringPretty: structuredContent asJRPCJSON
 ]
 
 { #category : 'metadata' }
@@ -301,7 +302,7 @@ MCPTool >> errorResultText: aString details: aDictionary [
 		                     at: #error put: details;
 		                     yourself.
 	^ MCPStructureErrorToolResult
-		  content: { (self textContent: (self canonicalContentTextForStructuredContent: structuredContent)) }
+		  content: { (self textContent: (self contentTextForStructuredContent: structuredContent)) }
 		  structuredContent: structuredContent
 ]
 
@@ -504,24 +505,6 @@ MCPTool >> searchMetadata [
 		  (#description -> self description) } asDictionary
 ]
 
-{ #category : 'metadata' }
-MCPTool >> searchableText [
-
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: self name;
-				  space;
-				  nextPutAll: self title;
-				  space;
-				  nextPutAll: self description;
-				  space;
-				  nextPutAll: self groupName.
-			  self keywords do: [ :keyword |
-					  stream
-						  space;
-						  nextPutAll: keyword ] ]
-]
-
 { #category : 'private - schema' }
 MCPTool >> shouldAdvertiseStringArrayItemDescription: anItemDescription [
 
@@ -660,7 +643,7 @@ MCPTool >> successResultText: aSummary data: aDictionary warnings: warningString
 		                     yourself.
 	warnings ifNotEmpty: [ structuredContent at: #warnings put: warnings ].
 	^ MCPStructureCallToolResult
-		  content: { (self textContent: (self canonicalContentTextForStructuredContent: structuredContent)) }
+		  content: { (self textContent: (self contentTextForStructuredContent: structuredContent)) }
 		  structuredContent: structuredContent
 ]
 

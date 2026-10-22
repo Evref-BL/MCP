@@ -71,7 +71,7 @@ MCPToolEvaluate >> defaultExposure [
 { #category : 'metadata' }
 MCPToolEvaluate >> description [
 
-	^ 'Evaluate arbitrary Smalltalk code and return a bounded preview of the result. Use this escape hatch only when a dedicated tool does not fit; it may mutate image state.'
+	^ 'Evaluate arbitrary Smalltalk code and return a bounded preview of the result. It may mutate image state. This is the escape hatch: before hand-writing a class, method, package, test or repository change, look for the dedicated tool with tool_search.'
 ]
 
 { #category : 'executing' }

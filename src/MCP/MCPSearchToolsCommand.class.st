@@ -6,6 +6,9 @@ This command supports the discoverable-tool workflow: agents can search by text,
 Class {
 	#name : 'MCPSearchToolsCommand',
 	#superclass : 'MCPToolCatalogCommand',
+	#instVars : [
+		'matchingTools'
+	],
 	#category : 'MCP-Commands',
 	#package : 'MCP',
 	#tag : 'Commands'
@@ -17,34 +20,63 @@ MCPSearchToolsCommand class >> tool: aTool request: aRequest [
 	^ self tool: aTool request: aRequest toolRegistry: MCPToolRegistry default
 ]
 
+{ #category : 'private' }
+MCPSearchToolsCommand >> catalogOverviewText [
+	"Answer the size and shape of the catalog: a caller that matched nothing needs the vocabulary to search with, not only a count."
+
+	| groups |
+	groups := self toolRegistry publicToolGroups asSortedCollection: [ :left :right |
+		          left value size = right value size
+			          ifTrue: [ left key <= right key ]
+			          ifFalse: [ left value size > right value size ] ].
+	^ String streamContents: [ :stream |
+			  stream
+				  print: self toolRegistry publicTools size;
+				  nextPutAll: ' tools in ';
+				  print: groups size;
+				  nextPutAll: ' groups: '.
+			  groups
+				  do: [ :each |
+						  stream
+							  nextPutAll: each key;
+							  space;
+							  print: each value size ]
+				  separatedBy: [ stream nextPutAll: ', ' ].
+			  stream nextPutAll: '. Search by keyword.' ]
+]
+
 { #category : 'executing' }
 MCPSearchToolsCommand >> execute [
 
-	| data matchingTools pageSize visibleTools |
-	pageSize := self pageSize.
-	matchingTools := self toolRegistry toolsMatchingQuery: request query group: nil.
-	visibleTools := self visibleToolsFrom: matchingTools.
+	| data |
+	matchingTools := self toolRegistry toolsMatchingQuery: request query.
 	data := Dictionary new.
-	data at: #tools put: (visibleTools collect: [ :each | each searchMetadata ]) asArray.
-	(self hasMoreToolsAfter: matchingTools) ifTrue: [ data at: #nextCursor put: (request cursor + pageSize) asString ].
+	data at: #tools put: (self visibleTools collect: [ :each | each searchMetadata ]) asArray.
 	^ data
 ]
 
-{ #category : 'private' }
-MCPSearchToolsCommand >> hasMoreToolsAfter: matchingTools [
+{ #category : 'accessing' }
+MCPSearchToolsCommand >> resultLimit [
+	"The ranking answers the closest matches; a caller narrows the search with more words instead of paging through worse ones."
 
-	^ matchingTools size > (request cursor + self pageSize)
+	^ 15
 ]
 
 { #category : 'accessing' }
-MCPSearchToolsCommand >> pageSize [
+MCPSearchToolsCommand >> summaryText [
 
-	^ 25
+	| shown |
+	matchingTools ifEmpty: [
+		^ request query isEmptyOrNil
+			  ifTrue: [ self catalogOverviewText ]
+			  ifFalse: [ 'No tool matched. ' , self catalogOverviewText ] ].
+	shown := self visibleTools size.
+	shown = matchingTools size ifTrue: [ ^ shown asString , ' tools matched, best first.' ].
+	^ shown asString , ' of ' , matchingTools size asString , ' matching tools, best first. Add words to narrow the search.'
 ]
 
 { #category : 'private' }
-MCPSearchToolsCommand >> visibleToolsFrom: matchingTools [
+MCPSearchToolsCommand >> visibleTools [
 
-	request cursor >= matchingTools size ifTrue: [ ^ #(  ) ].
-	^ matchingTools copyFrom: request cursor + 1 to: (matchingTools size min: request cursor + self pageSize)
+	^ matchingTools first: (matchingTools size min: self resultLimit)
 ]
