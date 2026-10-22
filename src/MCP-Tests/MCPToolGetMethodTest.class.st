@@ -126,7 +126,7 @@ MCPToolGetMethodTest >> testGetMethodSupportsClassSideContext [
 { #category : 'tests' }
 MCPToolGetMethodTest >> testToolRequiresClassNameAndSelectorInSchema [
 
-	self assert: MCPToolGetMethod new inputSchema required asSet equals: #( 'className' 'selector' ) asSet
+	self assert: MCPToolGetMethod new inputSchema required asSet equals: #( 'selector' ) asSet
 ]
 
 { #category : 'private - calling' }

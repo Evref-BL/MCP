@@ -9,6 +9,18 @@ Class {
 	#tag : 'Tools'
 }
 
+{ #category : 'tests' }
+MCPToolBatchTest >> testMethodsAreReadAcrossClassesAndSides [
+
+	| entries result |
+	result := self callToolWith: { (#selector -> #( 'MCPToolBatchTestTarget>>readFirst' 'MCPTool class#toolName' 'MCPTool>>' )) } asDictionary.
+	entries := (self dataFrom: result) at: #results.
+	self assert: (self summaryFrom: result) equals: 'Got 2 of 3 methods. 1 failed.'.
+	self assert: ((entries first at: #summary) includesSubstring: 'MCPToolBatchTestTarget>>readFirst').
+	self assert: ((entries second at: #summary) includesSubstring: 'MCPTool class>>toolName').
+	self assert: (((entries third at: #error) at: #errorCode)) equals: 'MethodReferenceUnreadable'
+]
+
 { #category : 'accessing' }
 MCPToolBatchTest >> toolName [
 
@@ -88,10 +100,11 @@ MCPToolBatchTest >> testOneTargetInAListReadsAsASingleCall [
 
 	| data result |
 	result := self callToolWith: {
-			          (#className -> 'MCPToolBatchTestTarget').
-			          (#selector -> #( 'readFirst' )) } asDictionary.
+		          (#className -> 'MCPToolBatchTestTarget').
+		          (#selector -> #( 'readFirst' )) } asDictionary.
 	data := self dataFrom: result.
 	self deny: (data includesKey: #results).
-	self assert: (self summaryFrom: result) equals: 'Got method MCPToolBatchTestTarget>>readFirst [classSide=false].'.
+	self assert: (self summaryFrom: result) equals: 'Got method MCPToolBatchTestTarget>>readFirst.'.
 	self assert: ((data at: #source) includesSubstring: 'readFirst')
 ]
+

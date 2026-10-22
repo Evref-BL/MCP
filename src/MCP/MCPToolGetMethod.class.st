@@ -60,7 +60,7 @@ MCPToolGetMethod >> buildInputSchema [
 	classSideProperty := MCPStructureProperties new
 		                     name: 'classSide';
 		                     type: 'boolean';
-		                     description: 'Whether the target method is on the class side.';
+		                     description: 'Whether a bare selector is on the class side. A method written as Class class>>selector says so itself.';
 		                     default: false;
 		                     yourself.
 	includeVariableDetailsProperty := MCPStructureProperties new
@@ -72,10 +72,11 @@ MCPToolGetMethod >> buildInputSchema [
 	selectorProperty := MCPStructureProperties new
 		                    name: 'selector';
 		                    type: #( 'string' 'array' );
-		                    description: 'The selector of the method to return, or several selectors from the same class.';
+		                    description:
+		                    'A method as Class>>selector or Class class>>selector, or a bare selector when className is given. One of them, or several.';
 		                    items: (MCPStructureProperties new
 			                     type: 'string';
-			                     description: 'A selector to return.';
+			                     description: 'One method.';
 			                     yourself);
 		                    yourself.
 	^ MCPStructureInputSchema new
@@ -84,12 +85,12 @@ MCPToolGetMethod >> buildInputSchema [
 				  (MCPStructureProperties new
 					   name: 'className';
 					   type: 'string';
-					   description: 'The class that defines the method.';
+					   description: 'The class defining the methods, for selectors that do not name their own.';
 					   yourself).
 				  selectorProperty.
 				  classSideProperty.
 				  includeVariableDetailsProperty };
-		  required: #( 'className' 'selector' );
+		  required: #( 'selector' );
 		  yourself
 ]
 
@@ -128,7 +129,7 @@ MCPToolGetMethod >> definingClassNameFromBinding: aBinding [
 { #category : 'metadata' }
 MCPToolGetMethod >> description [
 
-	^ 'Get known methods of one class and return their source plus structured variable-reference context. Use method_metadata_search or reference lookup tools to discover methods first.'
+	^ 'Get known methods and return their source plus structured variable-reference context. Takes methods as Class>>selector, as a search prints them, or bare selectors with className. Use method_metadata_search or reference lookup tools to discover methods first.'
 ]
 
 { #category : 'private' }
@@ -185,17 +186,13 @@ MCPToolGetMethod >> executeWithRequest: request [
 MCPToolGetMethod >> failureMessageForClassNamed: className selector: selectorString classSide: classSide error: anError [
 
 	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Unable to get method ';
-				  nextPutAll: className;
-				  nextPutAll: '>>';
-				  nextPutAll: selectorString;
-				  nextPutAll: ' [classSide=';
-				  print: classSide;
-				  nextPutAll: '] (';
-				  nextPutAll: anError class name;
-				  nextPutAll: '): ';
-				  nextPutAll: anError messageText ]
+		  stream
+			  nextPutAll: 'Unable to get method ';
+			  nextPutAll: (self methodReferenceTextForClassName: className selector: selectorString classSide: classSide);
+			  nextPutAll: ' (';
+			  nextPutAll: anError class name;
+			  nextPutAll: '): ';
+			  nextPutAll: anError messageText ]
 ]
 
 { #category : 'private - analysis' }
@@ -211,6 +208,14 @@ MCPToolGetMethod >> matchingSummaryForNodeName: aName kind: aKind ownerName: anO
 		  detect: [ :each |
 			  (each at: #name) = aName and: [ (each at: #kind) = aKind and: [ (each at: #ownerName ifAbsent: [ nil ]) = anOwnerName ] ] ]
 		  ifNone: [ nil ]
+]
+
+{ #category : 'private - results' }
+MCPToolGetMethod >> methodReferenceTextForClassName: className selector: selector classSide: classSide [
+
+	^ className , (classSide
+		   ifTrue: [ ' class>>' ]
+		   ifFalse: [ '>>' ]) , selector
 ]
 
 { #category : 'private - analysis' }
@@ -264,23 +269,14 @@ MCPToolGetMethod >> selectorForErrorFromParsedRequest: getRequest rawRequest: ra
 MCPToolGetMethod >> successSummaryForClassName: className selector: selector classSide: classSide externalVariableCount: externalVariableCount [
 
 	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: 'Got method ';
-				  nextPutAll: className;
-				  nextPutAll: '>>';
-				  nextPutAll: selector;
-				  nextPutAll: ' [classSide=';
-				  print: classSide;
-				  nextPutAll: ']'.
-			  externalVariableCount ifNotNil: [
-					  stream
-						  nextPutAll: ' with ';
-						  print: externalVariableCount;
-						  nextPutAll: ' external variable reference';
-						  nextPutAll: (externalVariableCount = 1
-								   ifTrue: [ '' ]
-								   ifFalse: [ 's' ]) ].
-			  stream nextPutAll: '.' ]
+		  stream
+			  nextPutAll: 'Got method ';
+			  nextPutAll: (self methodReferenceTextForClassName: className selector: selector classSide: classSide).
+		  externalVariableCount ifNotNil: [
+				  stream
+					  nextPutAll: ' with ';
+					  nextPutAll: (self textForCount: externalVariableCount noun: 'external variable reference') ].
+		  stream nextPutAll: '.' ]
 ]
 
 { #category : 'metadata' }
@@ -309,36 +305,6 @@ MCPToolGetMethod >> variableKindForNode: aVariableNode methodBehavior: aBehavior
 	binding isPoolVariable ifTrue: [ ^ 'poolVariable' ].
 	binding value isBehavior ifTrue: [ ^ 'class' ].
 	^ 'global'
-]
-
-{ #category : 'private - schema' }
-MCPToolGetMethod >> variableReferenceSchema [
-
-	| ownerNameProperty |
-	ownerNameProperty := self
-		                     schemaPropertyNamed: 'ownerName'
-		                     type: 'string'
-		                     description: 'The class, global environment, or pseudo-scope that provides the variable when known.'.
-	^ MCPStructureProperties new
-		  name: 'variableReference';
-		  type: 'object';
-		  description: 'A summary of one referenced variable in the method.';
-		  properties: {
-				  (self schemaPropertyNamed: 'name' type: 'string' description: 'The variable name as it appears in source.').
-				  ((self schemaPropertyNamed: 'kind' type: 'string' description: 'How the variable resolves in Pharo.')
-					   enum:
-						   #( 'argument' 'temporary' 'instanceVariable' 'classInstanceVariable' 'classVariable' 'poolVariable' 'class' 'global'
-						      'self' 'super' 'thisContext' 'undeclared' 'unknown' );
-					   yourself).
-				  ownerNameProperty.
-				  (self
-					   schemaPropertyNamed: 'bindingClass'
-					   type: 'string'
-					   description: 'The compiler binding class used to resolve the variable.').
-				  (self integerSchemaPropertyNamed: 'referenceCount' description: 'How many times the variable is referenced in the method.') };
-		  required: #( 'name' 'kind' 'bindingClass' 'referenceCount' );
-		  additionalProperties: false;
-		  yourself
 ]
 
 { #category : 'private - analysis' }

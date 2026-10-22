@@ -1423,19 +1423,14 @@ MCPToolContractsTest >> testGetClassHasAccurateNameAndRequiredArguments [
 { #category : 'tests' }
 MCPToolContractsTest >> testGetMethodHasAccurateNameAndRequiredArguments [
 
-	| propertyNames variablePropertyNames |
+	| propertyNames |
 	propertyNames := MCPToolGetMethod new inputSchema properties collect: [ :each | each name ].
-	variablePropertyNames := (MCPToolGetMethod new variableReferenceSchema extraProperties at: #properties) collect: [ :each |
-		                         each name ].
 	self assert: MCPToolGetMethod new name equals: 'method_get'.
-	self assert: MCPToolGetMethod new inputSchema required asSet equals: #( 'className' 'selector' ) asSet.
+	self assert: MCPToolGetMethod new inputSchema required asSet equals: #( 'selector' ) asSet.
 	self assert: (propertyNames includes: 'className').
 	self assert: (propertyNames includes: 'selector').
 	self assert: (propertyNames includes: 'classSide').
-	self assert: (propertyNames includes: 'includeVariableDetails').
-	self deny: (variablePropertyNames includes: 'sourceIntervals').
-	self deny: (variablePropertyNames includes: 'external').
-	self deny: (variablePropertyNames includes: 'declaredInMethod')
+	self assert: (propertyNames includes: 'includeVariableDetails')
 ]
 
 { #category : 'tests' }
