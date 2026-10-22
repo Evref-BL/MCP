@@ -20,7 +20,9 @@ MCPToolCreateRepository >> repositoryToolSpec [
 
 	^ {
 		  (#title -> 'Create Repository').
-		  (#description -> 'Create a new Iceberg repository directory and optionally attach initial packages.').
+		  (#description
+		   ->
+		   'Create a new Iceberg repository directory and optionally attach initial packages. When location is omitted, use Iceberg''s default local repository directory.').
 		  (#action -> 'create').
 		  (#requestClass -> MCPRepositoryCreateRequest).
 		  (#commandClass -> MCPCreateRepositoryCommand).
@@ -30,7 +32,8 @@ MCPToolCreateRepository >> repositoryToolSpec [
 			   (self
 				    schemaPropertyNamed: 'location'
 				    type: 'string'
-				    description: 'Filesystem path where the new repository directory is created.').
+				    description:
+				    'Optional filesystem path where the new repository directory is created. Defaults to Iceberg''s local repository directory / repository name.').
 			   (self
 				    schemaPropertyNamed: 'subdirectory'
 				    type: 'string'
@@ -39,5 +42,5 @@ MCPToolCreateRepository >> repositoryToolSpec [
 				    stringArraySchemaNamed: 'packageNames'
 				    description: 'Package names to manage initially in the new repository.'
 				    itemDescription: 'A package name.') }).
-		  (#requiredProperties -> #( 'name' 'location' )) } asDictionary
+		  (#requiredProperties -> #( 'name' )) } asDictionary
 ]

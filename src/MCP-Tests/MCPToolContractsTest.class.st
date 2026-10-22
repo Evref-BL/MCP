@@ -1430,7 +1430,7 @@ MCPToolContractsTest >> testGetToolReturnsSchemaForCatalogTool [
 	self assert: ((contract at: #keywords) includes: 'repo').
 	inputProperties := ((contract at: #inputSchema) at: #properties) keys.
 	self assert: inputProperties asSet equals: #( 'name' 'location' 'packageNames' 'subdirectory' ) asSet.
-	self assert: ((contract at: #inputSchema) at: #required) asArray equals: #( 'name' 'location' ).
+	self assert: ((contract at: #inputSchema) at: #required) asArray equals: #( 'name' ).
 	getToolPropertyNames := MCPToolGetTool new inputSchema properties collect: [ :each | each name ].
 	self assert: getToolPropertyNames equals: #( 'name' )
 ]
@@ -2036,7 +2036,7 @@ MCPToolContractsTest >> testRepositoryCreateAndUpdateRequiredArguments [
 	self assert: MCPToolCreateRepository new name equals: 'repository_create'.
 	self assert: MCPToolAttachRepository new name equals: 'repository_attach'.
 	self assert: MCPToolUpdateRepository new name equals: 'repository_update'.
-	self assert: MCPToolCreateRepository new inputSchema required asArray equals: #( 'name' 'location' ).
+	self assert: MCPToolCreateRepository new inputSchema required asArray equals: #( 'name' ).
 	self assert: MCPToolAttachRepository new inputSchema required asArray equals: #( 'name' 'location' ).
 	self assert: MCPToolUpdateRepository new inputSchema required asArray equals: #( 'name' ).
 	#( 'name' 'location' 'subdirectory' 'packageNames' ) do: [ :each | self assert: (createPropertyNames includes: each) ].
