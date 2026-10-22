@@ -383,21 +383,22 @@ MCPTool >> contractIncludingOutputSchema: includeOutputSchema [
 
 { #category : 'private - results' }
 MCPTool >> dataTextOn: stream for: data [
-	"Render a payload as lines, in a reading order: what identifies the result first, then the blocks of text it carries. Sorting alphabetically alone buries a class name under its comment."
+	"Render a payload as lines, in a reading order: what identifies the result first, then the lists and
+	blocks of text it carries. Sorting alphabetically alone buries a class name under its comment."
 
 	| keys stated |
 	stated := self keysStatedInSummary.
 	keys := (data keys reject: [ :key | stated includes: key asSymbol ]) asSortedCollection: [ :left :right |
 		        left asString <= right asString ].
 	keys do: [ :key |
-			(self isBlockValue: (data at: key)) ifFalse: [
+			(self isInlineValue: (data at: key)) ifTrue: [
 					self
 						valueTextOn: stream
 						for: (data at: key)
 						labelled: key asString
 						indent: '' ] ].
 	keys do: [ :key |
-			(self isBlockValue: (data at: key)) ifTrue: [
+			(self isInlineValue: (data at: key)) ifFalse: [
 					self
 						valueTextOn: stream
 						for: (data at: key)
@@ -419,8 +420,11 @@ MCPTool >> description [
 
 { #category : 'private - results' }
 MCPTool >> entriesTextOn: stream for: entries labelled: label indent: indent [
-	"A list of records reads as one entry at a time; a list of plain values reads as one line, bracketed so that a list of two is not read as one value containing a comma."
+	"A list of records reads as one entry at a time under the name of the list it belongs to; a list of
+	plain values reads as one line, bracketed so that a list of two is not read as one value containing
+	a comma."
 
+	| entryIndent |
 	(entries anySatisfy: [ :each | each isDictionary ]) ifFalse: [
 			stream
 				nextPut: Character lf;
@@ -430,13 +434,19 @@ MCPTool >> entriesTextOn: stream for: entries labelled: label indent: indent [
 				nextPutAll: (', ' join: (entries collect: [ :each | each asString ]));
 				nextPut: $].
 			^ self ].
+	stream
+		nextPut: Character lf;
+		nextPutAll: indent;
+		nextPutAll: label;
+		nextPut: $:.
+	entryIndent := indent , '  '.
 	entries do: [ :entry |
 			entry isDictionary
-				ifTrue: [ self entryTextOn: stream for: entry indent: indent ]
+				ifTrue: [ self entryTextOn: stream for: entry indent: entryIndent ]
 				ifFalse: [
 						stream
 							nextPut: Character lf;
-							nextPutAll: indent;
+							nextPutAll: entryIndent;
 							nextPutAll: entry asString ] ]
 ]
 

@@ -218,6 +218,23 @@ MCPToolStructuredOutputTest >> testMethodMetadataSearchReturnsStructuredWarnings
 ]
 
 { #category : 'tests' }
+MCPToolStructuredOutputTest >> testRecordListsCarryTheirLabel [
+
+	| contentText lines result |
+	result := self callToolNamed: 'class_get' withArguments: {
+		          (#name -> 'MCPToolMutation').
+		          (#subclassDepth -> 1).
+		          (#upToSuperclassName -> 'Object') } asDictionary.
+	contentText := (result at: #content) first at: #text.
+	lines := contentText lines.
+	self deny: (self resultIndicatesError: result).
+	self assert: (lines includes: 'subclasses:').
+	self assert: (lines includes: 'superclasses:').
+	self assert: (lines indexOf: 'subclasses:') < (lines indexOf: 'superclasses:').
+	self assert: ((lines indexOf: 'className: MCPToolMutation') < (lines indexOf: 'subclasses:'))
+]
+
+{ #category : 'tests' }
 MCPToolStructuredOutputTest >> testRemoveClassReturnsStructuredError [
 
 	| result structured error |
