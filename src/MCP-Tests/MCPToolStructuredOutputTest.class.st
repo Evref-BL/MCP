@@ -10,6 +10,38 @@ Class {
 }
 
 { #category : 'tests' }
+MCPToolStructuredOutputTest >> testEntryFieldQuotingEscapesEmbeddedQuotes [
+
+	| contentText entry |
+	entry := Dictionary new
+		         at: #label put: 'says "hi" there';
+		         at: #name put: 'Plain';
+		         yourself.
+	contentText := MCPToolGetClass new contentTextForStructuredContent: (Dictionary new
+		               at: #summary put: 'Summary.';
+		               at: #data put: (Dictionary new
+				                at: #entries put: { entry };
+				                yourself);
+		               yourself).
+	self assert: (contentText includesSubstring: 'label="says \"hi\" there"').
+	self assert: (contentText includesSubstring: 'name=Plain')
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testEntryFieldsWithSeparatorsAreQuoted [
+
+	| contentText result |
+	result := self callToolNamed: 'method_metadata_search' withArguments: {
+		          (#protocol -> 'meta filtering').
+		          (#side -> 'class').
+		          (self searchScope: { (#classes -> #( 'MCPToolMethodSearchTestTarget' )) }) } asDictionary.
+	contentText := (result at: #content) first at: #text.
+	self deny: (self resultIndicatesError: result).
+	self assert: (contentText includesSubstring: 'protocol="meta filtering"').
+	self assert: (contentText includesSubstring: 'className=MCPToolMethodSearchTestTarget')
+]
+
+{ #category : 'tests' }
 MCPToolStructuredOutputTest >> testEvaluateReturnsStructuredError [
 
 	| result structured error |

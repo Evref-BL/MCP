@@ -449,7 +449,9 @@ MCPTool >> entryTextOn: stream for: entry indent: indent [
 	keys := (entry keys reject: [ :key | redundant includes: key asSymbol ]) asSortedCollection: [ :left :right |
 		        left asString <= right asString ].
 	pairs := OrderedCollection new.
-	keys do: [ :key | (self isInlineValue: (entry at: key)) ifTrue: [ pairs add: key asString , '=' , (entry at: key) asString ] ].
+	keys do: [ :key |
+		(self isInlineValue: (entry at: key)) ifTrue: [
+			pairs add: key asString , '=' , (self inlineValueTextFor: (entry at: key)) ] ].
 	stream
 		nextPut: Character lf;
 		nextPutAll: indent;
@@ -643,6 +645,21 @@ MCPTool >> groupName [
 MCPTool >> icons [
 
 	^ self class toolIcons
+]
+
+{ #category : 'private - results' }
+MCPTool >> inlineValueTextFor: aValue [
+	"A field that carries separators is quoted, so that where its value ends is never a guess."
+
+	| text |
+	text := aValue asString.
+	(text anySatisfy: [ :char | char isSeparator ]) ifFalse: [ ^ text ].
+	^ String streamContents: [ :stream |
+		  stream nextPut: $".
+		  text do: [ :char |
+				  (char = $" or: [ char = $\ ]) ifTrue: [ stream nextPut: $\ ].
+				  stream nextPut: char ].
+		  stream nextPut: $" ]
 ]
 
 { #category : 'metadata' }

@@ -5,9 +5,15 @@ advertised directly; less common tools can be found through the catalog tools.
 Tool names use `snake_case` names that generally put the domain before the
 action.
 
-By default, every tool returns MCP call `content` as the canonical response for
-LLMs. The most used tools answer plain text; the rest answer their payload
-encoded as JSON using this common shape:
+Every tool returns MCP call `content` as the canonical response for LLMs, in
+plain text: the summary first, then any warnings, then the payload as lines.
+The fields that identify one record share a line as `key=value` pairs, and a
+value carrying spaces is quoted, as in `protocol="private - results"`. A list
+of plain values is bracketed, as in `required: [name, slotName]`. Text with its
+own lines, such as method source, follows under its own label. `tool_get`
+answers a tool's contract as YAML.
+
+The same payload is also carried as `structuredContent`:
 
 ```text
 summary: human-readable summary
