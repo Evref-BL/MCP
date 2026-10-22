@@ -107,6 +107,18 @@ MCPToolGetTool >> commandForRequest: getRequest [
 	^ MCPGetToolCommand tool: self request: getRequest toolRegistry: self toolRegistry
 ]
 
+{ #category : 'private - results' }
+MCPToolGetTool >> contentTextForStructuredContent: structuredContent [
+	"A contract is read in order to build a call, so it is written as YAML rather than as plain lines: lines cannot say whether a value is a number or the text of one, whether a list holds one item or is a string containing a comma, or where a value with spaces ends."
+
+	| data |
+	data := structuredContent at: #data ifAbsent: [ ^ super contentTextForStructuredContent: structuredContent ].
+	^ String streamContents: [ :stream |
+			  self summaryAndWarningsOn: stream for: structuredContent.
+			  stream nextPut: Character lf.
+			  stream nextPutAll: (MCPYamlWriter yamlFor: data indent: '') ]
+]
+
 { #category : 'metadata' }
 MCPToolGetTool >> defaultExposure [
 
