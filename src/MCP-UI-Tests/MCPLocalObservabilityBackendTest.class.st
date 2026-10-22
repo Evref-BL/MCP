@@ -133,13 +133,13 @@ MCPLocalObservabilityBackendTest >> testMCPRecordsToolCallsWhenObservabilityIsEn
 		directory exists ifTrue: [ directory deleteAll ].
 		mcp := MCP new.
 		mcp observabilityExportDirectory: directory.
-		result := mcp rpcToolCall: 'package_search' withParams: { (#limit -> 0) } asDictionary.
+		result := mcp rpcToolCall: 'class_search' withParams: { (#limit -> 0) } asDictionary.
 		stats := mcp observabilityMetrics first.
 		record := mcp observability recentCallRecords first.
 
 		self deny: (result at: #isError ifAbsent: [ false ]).
 		self assert: mcp observability totalCallCount equals: 1.
-		self assert: stats toolName equals: 'package_search'.
+		self assert: stats toolName equals: 'class_search'.
 		self assert: stats successCount equals: 1.
 		self assert: record inputSnapshot isNil.
 		self assert: record outputSnapshot isNil.
