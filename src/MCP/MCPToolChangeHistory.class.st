@@ -137,7 +137,7 @@ MCPToolChangeHistory >> keysStatedInSummary [
 ]
 
 { #category : 'private - results' }
-MCPToolChangeHistory >> redundantEntryKeys [
+MCPToolChangeHistory >> redundantKeys [
 	"An entry's summary prints its event class around its behavior and selector, which the entry already names."
 
 	^ #( summary )
@@ -147,13 +147,15 @@ MCPToolChangeHistory >> redundantEntryKeys [
 MCPToolChangeHistory >> successSummaryForData: data operation: operation [
 
 	| action selectedCount performedCount previewCount |
-	operation = 'listFiles' ifTrue: [ ^ 'Listed ' , (data at: #files ifAbsent: [ #(  ) ]) size asString , ' change history files.' ].
+	operation = 'listFiles' ifTrue: [
+		^ 'Listed ' , (self textForCount: (data at: #files ifAbsent: [ #(  ) ]) size noun: 'change history file') , '.' ].
 	operation = 'listEntries' ifTrue: [
 			^ String streamContents: [ :stream |
 					  stream
 						  nextPutAll: 'Listed ';
-						  print: (data at: #entries ifAbsent: [ #(  ) ]) size;
-						  nextPutAll: ' change history entries'.
+						  nextPutAll: (self
+								   textForCount: (data at: #entries ifAbsent: [ #(  ) ]) size
+								   noun: 'change history entry').
 					  data at: #nextOffset ifPresent: [ :offset |
 							  stream
 								  nextPutAll: '. More available at offset ';
@@ -165,11 +167,12 @@ MCPToolChangeHistory >> successSummaryForData: data operation: operation [
 			(data at: #performed ifAbsent: [ false ])
 				ifTrue: [
 						performedCount := data at: #performedCount ifAbsent: [ 0 ].
-						^ 'Performed ' , action , ' for ' , performedCount asString , ' previewed changes from ' , selectedCount asString
-						  , ' selected history entries.' ]
+						^ 'Performed ' , action , ' for ' , (self textForCount: performedCount noun: 'previewed change') , ' from '
+						  , (self textForCount: selectedCount noun: 'selected history entry') , '.' ]
 				ifFalse: [
 						previewCount := data at: #previewCount ifAbsent: [ 0 ].
-						^ 'Previewed ' , action , ' for ' , previewCount asString , ' applicable changes from ' , selectedCount asString
-						  , ' selected history entries.' ] ].
+						^ 'Previewed ' , action , ' for ' , (self textForCount: previewCount noun: 'applicable change') , ' from '
+						  , (self textForCount: selectedCount noun: 'selected history entry') , '.' ] ].
 	^ 'Change history operation completed.'
 ]
+

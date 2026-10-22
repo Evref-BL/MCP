@@ -8,10 +8,16 @@ action.
 Every tool returns MCP call `content` as the canonical response for LLMs, in
 plain text: the summary first, then any warnings, then the payload as lines.
 The fields that identify one record share a line as `key=value` pairs, and a
-value carrying spaces is quoted, as in `protocol="private - results"`. A list
-of plain values is bracketed, as in `required: [name, slotName]`. Text with its
-own lines, such as method source, follows under its own label. `tool_get`
-answers a tool's contract as YAML.
+value carrying spaces is quoted, as in `protocol="private - results"`. A record
+that names a method opens with the method, written the way Pharo writes it:
+`MCPTool>>batchSummaryNoun`, or `MCPTool class>>toolName` on the class side. A
+list of plain values is bracketed, as in `required: [name, slotName]`, and a
+list of records is named before its entries. Text with its own lines, such as
+method source, follows under its own label. `tool_get` answers a tool's
+contract as YAML.
+
+A result does not repeat itself: what the summary states in prose, and what a
+record already says another way, is left out of the lines.
 
 The same payload is also carried as `structuredContent`:
 

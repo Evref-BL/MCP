@@ -329,6 +329,14 @@ MCPTool >> batchSummaryVerb [
 	^ 'Handled'
 ]
 
+{ #category : 'private - results' }
+MCPTool >> blockValueKeys [
+	"Answer the keys whose value reads better on a line of its own, however short it is. A tool declares
+	its own."
+
+	^ #(  )
+]
+
 { #category : 'private - schema' }
 MCPTool >> booleanSchemaPropertyNamed: propertyName description: propertyDescription [
 
@@ -386,9 +394,17 @@ MCPTool >> dataTextOn: stream for: data [
 	"Render a payload as lines, in a reading order: what identifies the result first, then the lists and
 	blocks of text it carries. Sorting alphabetically alone buries a class name under its comment."
 
-	| keys stated |
-	stated := self keysStatedInSummary.
-	keys := (data keys reject: [ :key | stated includes: key asSymbol ]) asSortedCollection: [ :left :right |
+	| keys skipped reference |
+	skipped := self keysStatedInSummary asOrderedCollection.
+	skipped addAll: self redundantKeys.
+	reference := self methodReferenceTextFor: data.
+	reference ifNotNil: [
+			skipped addAll: self methodReferenceKeys.
+			stream
+				nextPut: Character lf;
+				nextPutAll: 'method: ';
+				nextPutAll: reference ].
+	keys := (data keys reject: [ :key | skipped includes: key asSymbol ]) asSortedCollection: [ :left :right |
 		        left asString <= right asString ].
 	keys do: [ :key |
 			(self isInlineValue: (data at: key)) ifTrue: [
@@ -454,20 +470,23 @@ MCPTool >> entriesTextOn: stream for: entries labelled: label indent: indent [
 MCPTool >> entryTextOn: stream for: entry indent: indent [
 	"What identifies the entry goes on its line; anything it carries that has its own shape, such as a method's source or a list of hits, follows on its own lines."
 
-	| keys pairs redundant |
-	redundant := self redundantEntryKeys.
-	keys := (entry keys reject: [ :key | redundant includes: key asSymbol ]) asSortedCollection: [ :left :right |
+	| keys pairs skipped reference |
+	reference := self methodReferenceTextFor: entry.
+	skipped := self redundantKeys asOrderedCollection.
+	reference ifNotNil: [ skipped addAll: self methodReferenceKeys ].
+	keys := (entry keys reject: [ :key | skipped includes: key asSymbol ]) asSortedCollection: [ :left :right |
 		        left asString <= right asString ].
 	pairs := OrderedCollection new.
+	reference ifNotNil: [ pairs add: reference ].
 	keys do: [ :key |
-		(self isInlineValue: (entry at: key)) ifTrue: [
+		(self isInlineValue: (entry at: key) forKey: key) ifTrue: [
 			pairs add: key asString , '=' , (self inlineValueTextFor: (entry at: key)) ] ].
 	stream
 		nextPut: Character lf;
 		nextPutAll: indent;
 		nextPutAll: (' ' join: pairs).
 	keys do: [ :key |
-			(self isInlineValue: (entry at: key)) ifFalse: [
+			(self isInlineValue: (entry at: key) forKey: key) ifFalse: [
 					self
 						valueTextOn: stream
 						for: (entry at: key)
@@ -708,6 +727,12 @@ MCPTool >> isInlineValue: value [
 	^ (self isBlockValue: value) not
 ]
 
+{ #category : 'private - results' }
+MCPTool >> isInlineValue: value forKey: aKey [
+
+	^ (self blockValueKeys includes: aKey asSymbol) not and: [ self isInlineValue: value ]
+]
+
 { #category : 'error handling' }
 MCPTool >> isServerFrame: aContext [
 
@@ -748,6 +773,27 @@ MCPTool >> metadata [
 		  (#keywords -> self keywords) } asDictionary
 ]
 
+{ #category : 'private - results' }
+MCPTool >> methodReferenceKeys [
+	"The fields a method reference stands in for."
+
+	^ #( className behaviorName selector classSide )
+]
+
+{ #category : 'private - results' }
+MCPTool >> methodReferenceTextFor: aDictionary [
+	"A record that names a method reads the way Pharo names one, instead of spending three fields on it."
+
+	| behaviorName selector |
+	selector := self valueIn: aDictionary at: #selector.
+	selector ifNil: [ ^ nil ].
+	behaviorName := (self valueIn: aDictionary at: #className) ifNil: [ self valueIn: aDictionary at: #behaviorName ].
+	behaviorName ifNil: [ ^ nil ].
+	^ ((self valueIn: aDictionary at: #classSide) = true
+		   ifTrue: [ behaviorName asString , ' class' ]
+		   ifFalse: [ behaviorName asString ]) , '>>' , selector asString
+]
+
 { #category : 'metadata' }
 MCPTool >> name [
 
@@ -764,6 +810,16 @@ MCPTool >> outputSchema [
 MCPTool >> parsedRequestFromToolRequest: request [
 
 	^ request
+]
+
+{ #category : 'private - results' }
+MCPTool >> pluralNounFor: aNoun [
+	"Enough English for the nouns a summary names: entry, class, match, method."
+
+	(aNoun size > 1 and: [ (aNoun endsWith: 'y') and: [ (aNoun at: aNoun size - 1) isVowel not ] ]) ifTrue: [
+		^ (aNoun allButLast: 1) , 'ies' ].
+	(#( 's' 'x' 'z' 'ch' 'sh' ) anySatisfy: [ :ending | aNoun endsWith: ending ]) ifTrue: [ ^ aNoun , 'es' ].
+	^ aNoun , 's'
 ]
 
 { #category : 'private - icons' }
@@ -791,8 +847,8 @@ MCPTool >> pngSizeStringForForm: aForm [
 ]
 
 { #category : 'private - results' }
-MCPTool >> redundantEntryKeys [
-	"Answer the keys of an entry whose value its sibling fields already say. A tool declares its own."
+MCPTool >> redundantKeys [
+	"Answer the keys whose value the record around them already says. A tool declares its own."
 
 	^ #(  )
 ]
@@ -998,6 +1054,19 @@ MCPTool >> textContent: aString [
 	^ MCPStructureTextContent text: aString
 ]
 
+{ #category : 'private - results' }
+MCPTool >> textForCount: anInteger noun: aNoun [
+	"One of a thing is not several of it."
+
+	^ String streamContents: [ :stream |
+		  stream
+			  print: anInteger;
+			  space;
+			  nextPutAll: (anInteger = 1
+					   ifTrue: [ aNoun ]
+					   ifFalse: [ self pluralNounFor: aNoun ]) ]
+]
+
 { #category : 'metadata' }
 MCPTool >> title [
 
@@ -1011,16 +1080,33 @@ MCPTool >> validateRequest: aToolRequest [
 ]
 
 { #category : 'private - results' }
+MCPTool >> valueIn: aDictionary at: aKey [
+	"Entries reach the renderer with symbol keys from the image and string keys from the wire."
+
+	^ aDictionary at: aKey ifAbsent: [ aDictionary at: aKey asString ifAbsent: [ nil ] ]
+]
+
+{ #category : 'private - results' }
 MCPTool >> valueTextOn: stream for: value labelled: label indent: indent [
 
-	(value isNil or: [ value isCollection and: [ value isString not and: [ value isEmpty ] ] ]) ifTrue: [ ^ self ].
+	| reference |
+	(value isNil or: [ value isCollection and: [ value isEmpty ] ]) ifTrue: [ ^ self ].
 	value isDictionary ifTrue: [
+			reference := self methodReferenceTextFor: value.
+			reference ifNotNil: [
+					^ stream
+						  nextPut: Character lf;
+						  nextPutAll: indent;
+						  nextPutAll: label;
+						  nextPutAll: ': ';
+						  nextPutAll: reference ].
 			stream
 				nextPut: Character lf;
 				nextPutAll: indent;
 				nextPutAll: label;
 				nextPut: $:.
-			^ (value keys asSortedCollection: [ :left :right | left asString <= right asString ]) do: [ :key |
+			^ ((value keys reject: [ :key | self redundantKeys includes: key asSymbol ]) asSortedCollection: [ :left :right |
+			   left asString <= right asString ]) do: [ :key |
 					  self
 						  valueTextOn: stream
 						  for: (value at: key)

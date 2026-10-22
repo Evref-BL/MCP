@@ -10,6 +10,89 @@ Class {
 }
 
 { #category : 'tests' }
+MCPToolStructuredOutputTest >> testCountedNounsReadAsEnglish [
+
+	| tool |
+	tool := MCPToolGetClass new.
+	self assert: (tool textForCount: 1 noun: 'change history entry') equals: '1 change history entry'.
+	self assert: (tool textForCount: 2 noun: 'change history entry') equals: '2 change history entries'.
+	self assert: (tool textForCount: 2 noun: 'class') equals: '2 classes'.
+	self assert: (tool textForCount: 2 noun: 'match') equals: '2 matches'.
+	self assert: (tool textForCount: 2 noun: 'method') equals: '2 methods'
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testCoverageDropsFlagsThatAreNotSet [
+
+	| contentText |
+	contentText := MCPToolRunTestCoverage new contentTextForStructuredContent: (Dictionary new
+		               at: #summary put: 'Ran 4 tests (4 passed). Coverage: 78.95%.';
+		               at: #data put: (Dictionary new
+				                at: #coverage put: (Dictionary new
+						                 at: #percentage put: 78.94736842105263;
+						                 at: #methodCount put: 6;
+						                 at: #coveredMethodsTruncated put: false;
+						                 at: #uncoveredMethodsTruncated put: true;
+						                 yourself);
+				                yourself);
+		               yourself).
+	self assert: (contentText includesSubstring: 'methodCount: 6').
+	self assert: (contentText includesSubstring: 'uncoveredMethodsTruncated: true').
+	self deny: (contentText includesSubstring: 'percentage').
+	self deny: (contentText lines anySatisfy: [ :each | each trimBoth beginsWith: 'coveredMethodsTruncated' ])
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testDebugResultDropsWhatItAlreadySays [
+
+	| contentText frame |
+	frame := Dictionary new
+		         at: #displayString put: 'SmallInteger>>/';
+		         at: #receiverClassName put: 'SmallInteger';
+		         at: #pc put: 124;
+		         at: #method put: (Dictionary new
+				          at: #className put: 'SmallInteger';
+				          at: #selector put: '/';
+				          yourself);
+		         yourself.
+	contentText := MCPToolDebugState new contentTextForStructuredContent: (Dictionary new
+		               at: #summary put: 'Summary.';
+		               at: #data put: (Dictionary new
+				                at: #sessionId put: 'debug-session-1';
+				                at: #callStack put: { frame };
+				                at: #capabilities put: (Dictionary new
+						                 at: #control put: true;
+						                 yourself);
+				                yourself);
+		               yourself).
+	self assert: (contentText includesSubstring: 'displayString=SmallInteger>>/').
+	self assert: (contentText includesSubstring: 'sessionId: debug-session-1').
+	self deny: (contentText includesSubstring: 'capabilities').
+	self deny: (contentText includesSubstring: 'receiverClassName').
+	self deny: (contentText includesSubstring: 'method:')
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testDeclaredBlockKeyLeavesTheEntryLine [
+
+	| contentText rule |
+	rule := Dictionary new
+		        at: #title put: 'Class not referenced';
+		        at: #hint put: 'Remove it when nothing refers to it.';
+		        yourself.
+	contentText := MCPToolRunCritiques new contentTextForStructuredContent: (Dictionary new
+		               at: #summary put: 'Summary.';
+		               at: #data put: (Dictionary new
+				                at: #rules put: { rule };
+				                yourself);
+		               yourself).
+	self assert: (contentText includesSubstring: 'title="Class not referenced"').
+	self assert: (contentText lines anySatisfy: [ :each |
+			 each trimBoth = 'hint: Remove it when nothing refers to it.' ]).
+	self deny: (contentText includesSubstring: 'hint=')
+]
+
+{ #category : 'tests' }
 MCPToolStructuredOutputTest >> testEntryFieldQuotingEscapesEmbeddedQuotes [
 
 	| contentText entry |
@@ -37,8 +120,7 @@ MCPToolStructuredOutputTest >> testEntryFieldsWithSeparatorsAreQuoted [
 		          (self searchScope: { (#classes -> #( 'MCPToolMethodSearchTestTarget' )) }) } asDictionary.
 	contentText := (result at: #content) first at: #text.
 	self deny: (self resultIndicatesError: result).
-	self assert: (contentText includesSubstring: 'protocol="meta filtering"').
-	self assert: (contentText includesSubstring: 'className=MCPToolMethodSearchTestTarget')
+	self assert: (contentText includesSubstring: 'protocol="meta filtering"')
 ]
 
 { #category : 'tests' }
@@ -215,6 +297,20 @@ MCPToolStructuredOutputTest >> testMethodMetadataSearchReturnsStructuredWarnings
 	self assert: (warnings first includesSubstring: 'MCP-Definitely-Missing').
 	self assert: (warnings first includesSubstring: 'packageNames scope').
 	self assert: (warnings first includesSubstring: 'Did you mean:')
+]
+
+{ #category : 'tests' }
+MCPToolStructuredOutputTest >> testMethodRecordsReadAsMethodReferences [
+
+	| contentText result |
+	result := self callToolNamed: 'method_metadata_search' withArguments: {
+		          (self searchScope: { (#classes -> #( 'MCPToolMethodSearchTestTarget' )) }) } asDictionary.
+	contentText := (result at: #content) first at: #text.
+	self deny: (self resultIndicatesError: result).
+	self assert: (contentText includesSubstring: 'MCPToolMethodSearchTestTarget>>alphaNeedleSelector').
+	self assert: (contentText includesSubstring: 'MCPToolMethodSearchTestTarget class>>classNeedleSelector').
+	self deny: (contentText includesSubstring: 'className=').
+	self deny: (contentText includesSubstring: 'classSide=')
 ]
 
 { #category : 'tests' }

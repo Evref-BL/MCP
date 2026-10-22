@@ -41,6 +41,22 @@ MCPToolRunTestCoverage >> buildOutputSchema [
 		  required: #( 'runCount' 'passedCount' 'coverage' )
 ]
 
+{ #category : 'private - results' }
+MCPToolRunTestCoverage >> dataTextOn: stream for: data [
+	"A truncation flag is worth a line only when it is set, and the summary already states the percentage."
+
+	| coverage rest |
+	rest := data copy.
+	(rest at: #coverage ifAbsent: [ nil ]) ifNotNil: [ :measured |
+			coverage := measured copy.
+			coverage removeKey: #percentage ifAbsent: [ nil ].
+			coverage keys do: [ :key |
+				((key asString endsWith: 'Truncated') and: [ (coverage at: key) = false ]) ifTrue: [
+					coverage removeKey: key ] ].
+			rest at: #coverage put: coverage ].
+	super dataTextOn: stream for: rest
+]
+
 { #category : 'metadata' }
 MCPToolRunTestCoverage >> defaultExposure [
 

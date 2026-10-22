@@ -69,6 +69,13 @@ MCPToolChangeHistoryOperation >> description [
 	^ self changeHistoryToolSpec at: #description
 ]
 
+{ #category : 'private - results' }
+MCPToolChangeHistoryOperation >> keysStatedInSummary [
+	"The summary already reads 'Previewed apply for 3 applicable changes from 5 selected history entries.'"
+
+	^ #( action performed performedCount previewCount selectedCount )
+]
+
 { #category : 'private - request' }
 MCPToolChangeHistoryOperation >> parsedRequestFromToolRequest: request [
 

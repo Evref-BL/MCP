@@ -72,6 +72,13 @@ MCPToolRewriteMethods >> executeWithRequest: request [
 		  onError: [ :error :rewriteRequest | self errorResultForRewriteError: error request: rewriteRequest rawRequest: request ]
 ]
 
+{ #category : 'private - results' }
+MCPToolRewriteMethods >> keysStatedInSummary [
+	"The summary already reads 'Previewed 3 method rewrite changes.'"
+
+	^ #( apply appliedCount changeCount )
+]
+
 { #category : 'private - execution' }
 MCPToolRewriteMethods >> parsedRequestFromToolRequest: request [
 

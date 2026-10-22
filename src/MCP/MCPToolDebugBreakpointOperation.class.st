@@ -107,6 +107,14 @@ MCPToolDebugBreakpointOperation >> parsedRequestFromToolRequest: request [
 	^ MCPDebugBreakpointsRequest fromRequest: request tool: self operation: self actionName
 ]
 
+{ #category : 'private - results' }
+MCPToolDebugBreakpointOperation >> redundantKeys [
+	"The breakpoint already names the method it is set on, and its kind says whether it watches the
+	whole method or one node."
+
+	^ super redundantKeys , #( targetString )
+]
+
 { #category : 'private - schema' }
 MCPToolDebugBreakpointOperation >> requiredInputProperties [
 

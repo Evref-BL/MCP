@@ -164,6 +164,13 @@ MCPToolRunCritiques >> allRuleClasses [
 		  left name <= right name ]
 ]
 
+{ #category : 'private - results' }
+MCPToolRunCritiques >> blockValueKeys [
+	"A rule's hint is a sentence about how to act on the rule, not a field of the hit."
+
+	^ #( hint )
+]
+
 { #category : 'metadata' }
 MCPToolRunCritiques >> buildInputSchema [
 

@@ -2636,7 +2636,7 @@ MCPToolContractsTest >> testSearchToolSchemasAdvertiseGroupedScopeProperties [
 
 { #category : 'tests' }
 MCPToolContractsTest >> testSearchToolsAnswerEntriesAsLines [
-	"A search answers rows under the name of the list they belong to; the pagination block repeats what the summary already says in prose."
+	"A search answers rows under the name of the list they belong to, each naming its method the way Pharo does; the pagination block repeats what the summary already says in prose."
 
 	| lines text |
 	text := self firstTextFromToolResult: (self callToolNamed: 'method_metadata_search' withArguments:
@@ -2644,7 +2644,8 @@ MCPToolContractsTest >> testSearchToolsAnswerEntriesAsLines [
 	lines := text lines.
 	self assert: (lines first includesSubstring: 'methods').
 	self assert: (lines second) equals: 'methods:'.
-	self assert: ((lines allButFirst: 2) allSatisfy: [ :each | each includesSubstring: 'selector=' ]).
+	self assert: ((lines allButFirst: 2) allSatisfy: [ :each | each includesSubstring: 'MCPSelectorSuggestion class>>' ]).
+	self deny: (text includesSubstring: 'selector=').
 	self deny: (text includesSubstring: 'pagination')
 ]
 

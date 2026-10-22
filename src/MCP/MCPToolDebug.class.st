@@ -93,6 +93,15 @@ MCPToolDebug >> nonNegativeIntegerSchemaPropertyNamed: propertyName description:
 	^ property
 ]
 
+{ #category : 'private - results' }
+MCPToolDebug >> redundantKeys [
+	"A frame's displayString already names its method and its receiver's class, the selected frame says
+	what location says and more, a session states its capabilities once, and the warnings are already
+	read out above the payload."
+
+	^ #( capabilities location method receiverClassName warnings )
+]
+
 { #category : 'private - schema' }
 MCPToolDebug >> requiredInputProperties [
 
