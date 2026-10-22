@@ -114,6 +114,15 @@ MCPToolRequest >> keyForArgumentNamed: anArgumentName in: aDictionary ifAbsent: 
 	^ absentBlock value
 ]
 
+{ #category : 'testing' }
+MCPToolRequest >> namesAListAt: anArgumentName [
+	"Whether the caller wrote a list there, however many usable values it turned out to hold."
+
+	| value |
+	value := self argumentNamed: anArgumentName ifAbsent: [ ^ false ].
+	^ value isCollection and: [ value isString not ]
+]
+
 { #category : 'accessing' }
 MCPToolRequest >> nonNegativeIntegerArgumentNamed: anArgumentName default: anInteger [
 

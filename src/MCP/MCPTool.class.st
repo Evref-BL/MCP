@@ -515,11 +515,16 @@ MCPTool >> errorDetailsFor: anError [
 
 { #category : 'error handling' }
 MCPTool >> errorResultFor: anError [
+	"A command error already says what went wrong and carries its own details; only an unexpected
+	failure needs the class, the signaler and the stack."
 
-	| details |
-	details := self errorDetailsFor: anError.
-	anError mcpAddToolErrorDetailsTo: details.
-	^ self errorResultText: (self failureMessageFor: anError) details: details
+	^ anError
+		  mcpCommandErrorDo: [ :commandError | self errorResultText: commandError messageText details: commandError structuredDetails ]
+		  otherwise: [ :toolError |
+				  | details |
+				  details := self errorDetailsFor: toolError.
+				  toolError mcpAddToolErrorDetailsTo: details.
+				  self errorResultText: (self failureMessageFor: toolError) details: details ]
 ]
 
 { #category : 'error handling' }
@@ -602,10 +607,12 @@ MCPTool >> executeBatchedRequest: aRequest do: executionBlock [
 	| targets |
 	self batchArgumentName ifNil: [ ^ executionBlock value: aRequest ].
 	targets := aRequest stringCollectionArgumentNamed: self batchArgumentName.
-	targets size < 2 ifTrue: [
-			^ executionBlock value: (targets
-					 ifEmpty: [ aRequest ]
-					 ifNotEmpty: [ aRequest withArgumentNamed: self batchArgumentName setTo: targets first ]) ].
+	targets ifEmpty: [
+			(aRequest namesAListAt: self batchArgumentName) ifTrue: [
+				MCPInvalidToolInput signalEmptyArgumentNamed: self batchArgumentName forTool: self ].
+			^ executionBlock value: aRequest ].
+	targets size = 1 ifTrue: [
+		^ executionBlock value: (aRequest withArgumentNamed: self batchArgumentName setTo: targets first) ].
 	^ self batchResultForTargets: targets request: aRequest do: executionBlock
 ]
 

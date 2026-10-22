@@ -1239,6 +1239,16 @@ MCPToolContractsTest >> testDiscoveryUsesConfiguredStaticToolNames [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testEmptyListOfTargetsIsRejectedAsInput [
+
+	self
+		should: [ self callToolNamed: 'method_get' withArguments: {
+				 (#className -> 'MCPTool').
+				 (#selector -> #(  )) } asDictionary ]
+		raise: MCPInvalidToolInput
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testEmptyProfileRegistersNoTools [
 
 	| server |
@@ -3190,6 +3200,19 @@ MCPToolContractsTest >> testToolsOwnRegistryMetadata [
 	self assert: tool defaultExposure equals: 'static'.
 	self assert: tool annotations readOnlyHint equals: nil.
 	self assert: (tool keywords includes: 'smalltalk')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testUnknownToolNameSuggestsCloseNames [
+
+	| error result |
+	result := self callToolNamed: 'tool_call' withArguments: { (#name -> 'method_serch') } asDictionary.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: (error at: #errorCode) equals: 'ToolNotFound'.
+	self assert: (error at: #toolName) equals: 'method_serch'.
+	self assert: ((error at: #suggestedTools) includes: 'method_source_search').
+	self deny: (error includesKey: #stackTrace)
 ]
 
 { #category : 'support' }

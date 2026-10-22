@@ -576,6 +576,27 @@ MCPDebugToolContractTest >> testDebugCaptureTimesOutWithoutSession [
 ]
 
 { #category : 'tests' }
+MCPDebugToolContractTest >> testDebugCaptureWindowsSourceAroundTheSelectedFrame [
+
+	| narrow result source wide wideSource |
+	result := self callToolNamed: 'debug_capture' withArguments: {
+		          (#expression -> '3 / 0').
+		          (#sourceContextLines -> 0).
+		          (#timeoutMilliseconds -> self debugSuccessTimeoutMilliseconds) } asDictionary.
+	source := ((self dataFrom: result) at: #state) at: #source.
+	wide := self callToolNamed: 'debug_capture' withArguments: {
+		        (#expression -> '3 / 0').
+		        (#sourceContextLines -> 3).
+		        (#timeoutMilliseconds -> self debugSuccessTimeoutMilliseconds) } asDictionary.
+	wideSource := ((self dataFrom: wide) at: #state) at: #source.
+	self assert: (source at: #sourceCode) lines size equals: 1.
+	self assert: ((source at: #sourceCode) includesSubstring: 'ZeroDivide').
+	self assert: (source at: #firstLineNumber) > 1.
+	self assert: ((source at: #selectedRange) first) <= (source at: #sourceCode) size.
+	self assert: (wideSource at: #sourceCode) lines size > (source at: #sourceCode) lines size
+]
+
+{ #category : 'tests' }
 MCPDebugToolContractTest >> testDebugControlRejectsForeignFrameRef [
 
 	| error foreignRecord record result |
