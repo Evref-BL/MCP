@@ -15,6 +15,19 @@ MCPToolSearchMethodSource class >> toolName [
 	^ 'method_source_search'
 ]
 
+{ #category : 'private - methods' }
+MCPToolSearchMethodSource >> addMatchContextTo: entry sourceText: sourceText matcher: matcher queryRequest: queryRequest [
+	"A hit on source text is read by seeing the line that matched, not by fetching the whole method."
+
+	| lines index |
+	sourceText ifNil: [ ^ self ].
+	lines := sourceText lines.
+	index := lines findFirst: [ :each | matcher value: each ].
+	index isZero ifTrue: [ ^ self ].
+	entry at: #lineNumber put: index.
+	entry at: #line put: (lines at: index) trimBoth
+]
+
 { #category : 'metadata' }
 MCPToolSearchMethodSource >> buildInputSchema [
 
@@ -25,10 +38,7 @@ MCPToolSearchMethodSource >> buildInputSchema [
 			               filterModeSchemaPropertyWithDescription: 'How source text filtering is matched.'
 			               values: self supportedFilterModes).
 		              (self caseSensitiveSchemaPropertyWithDescription: 'Whether source text matching is case-sensitive.').
-		              (self includeSourceSchemaPropertyWithDescription: 'Whether to include method source code in each result entry.') }
-	              ,
-	              (self paginationInputPropertiesWithLimitDescription:
-		               'Maximum number of matching methods to return. Use 0 to return no entries.').
+		              self offsetInputProperty }.
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties: properties;

@@ -24,6 +24,13 @@ MCPToolMethodSearch class >> isAbstract [
 	^ self = MCPToolMethodSearch
 ]
 
+{ #category : 'private - methods' }
+MCPToolMethodSearch >> addMatchContextTo: entry sourceText: sourceText matcher: matcher queryRequest: queryRequest [
+	"What a hit carries beyond the method it names. A tool that matches text says where it matched."
+
+	^ self
+]
+
 { #category : 'metadata' }
 MCPToolMethodSearch >> additionalKeywords [
 
@@ -184,9 +191,11 @@ MCPToolMethodSearch >> methodEntriesFromQueryRequest: queryRequest [
 				                  self matchesFilterOnMethodEntry: entry sourceText: sourceText matcher: matcher ]) and: [
 				                 self matchesFieldFiltersOnMethodEntry: entry sourceText: sourceText queryRequest: queryRequest ].
 			matchesFilter ifTrue: [
-					queryRequest includeSource ifTrue: [
-							sourceText ifNil: [ sourceText := info source ].
-							entry at: #source put: sourceText ].
+					self
+						addMatchContextTo: entry
+						sourceText: sourceText
+						matcher: matcher
+						queryRequest: queryRequest.
 					entries add: entry ] ].
 	^ self sortedMethodEntries: entries
 ]

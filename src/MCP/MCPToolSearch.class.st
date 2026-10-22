@@ -21,6 +21,13 @@ MCPToolSearch >> addScopeLabel: aString to: labels [
 	(labels includes: aString) ifFalse: [ labels add: aString ]
 ]
 
+{ #category : 'testing' }
+MCPToolSearch >> advertisesLimit [
+	"Whether a caller can set the page size, or the tool answers a page of its own size."
+
+	^ self inputSchema properties anySatisfy: [ :each | each name = 'limit' ]
+]
+
 { #category : 'metadata' }
 MCPToolSearch >> annotations [
 
@@ -289,6 +296,15 @@ MCPToolSearch >> offsetFromQueryRequest: queryRequest [
 ]
 
 { #category : 'private - schema' }
+MCPToolSearch >> offsetInputProperty [
+	"A page is a fixed size, so where it starts is all a caller sets."
+
+	^ (self integerSchemaPropertyNamed: 'offset' description: 'Pagination offset.' default: 0)
+		  minimum: 0;
+		  yourself
+]
+
+{ #category : 'private - schema' }
 MCPToolSearch >> packageQueryScopeInputProperties [
 
 	^ {
@@ -453,10 +469,12 @@ MCPToolSearch >> scopeQuerySuccessSummaryFor: resultKind scope: scopeSummary pag
 			  page nextOffset ifNotNil: [ :offset |
 					  stream
 						  nextPutAll: '. More available: use offset ';
-						  print: offset;
-						  nextPutAll: ' and limit ';
-						  print: page returnedCount;
-						  nextPutAll: ', or narrow the scope/filter' ].
+						  print: offset.
+					  self advertisesLimit ifTrue: [
+							  stream
+								  nextPutAll: ' and limit ';
+								  print: page returnedCount ].
+					  stream nextPutAll: ', or narrow the scope/filter' ].
 			  stream nextPut: $. ]
 ]
 

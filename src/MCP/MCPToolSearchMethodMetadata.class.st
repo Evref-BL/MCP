@@ -26,9 +26,7 @@ MCPToolSearchMethodMetadata >> buildInputSchema [
 			               filterModeSchemaPropertyWithDescription: 'How selector and protocol filters are matched.'
 			               values: self supportedFilterModes).
 		              (self caseSensitiveSchemaPropertyWithDescription: 'Whether selector and protocol matching is case-sensitive.').
-		              (self includeSourceSchemaPropertyWithDescription: 'Whether to include method source code in each result entry.') }
-	              , (self paginationInputPropertiesWithLimitDescription:
-			               'Maximum matching methods to return. Use 0 to count matches without returning entries.').
+		              self offsetInputProperty }.
 	^ self queryInputSchemaWithProperties: properties
 ]
 

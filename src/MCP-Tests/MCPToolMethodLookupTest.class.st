@@ -55,7 +55,7 @@ MCPToolMethodLookupTest >> testKindNarrowsWhatIsLookedFor [
 MCPToolMethodLookupTest >> testLookupSchemasRequireDedicatedArguments [
 
 	| commonProperties expectations |
-	commonProperties := #( 'scope' 'side' 'includeSource' 'limit' 'offset' ).
+	commonProperties := #( 'scope' 'side' 'offset' ).
 	expectations := {
 		                (MCPToolSearchMethodReferences -> #( 'name' 'kind' )).
 		                (MCPToolSearchEquivalentMethods -> #( 'className' 'selector' 'classSide' )) }.
@@ -197,7 +197,7 @@ MCPToolMethodLookupTest >> testSourceAndEquivalentSearchSchemasUseDedicatedInput
 	self assert: sourceRequired equals: #( 'filter' ).
 	self
 		assert: sourcePropertyNames asSet
-		equals: #( 'caseSensitive' 'scope' 'side' 'includeSource' 'filter' 'filterMode' 'limit' 'offset' ) asSet.
+		equals: #( 'caseSensitive' 'scope' 'side' 'filter' 'filterMode' 'offset' ) asSet.
 	self assert: (filterModeProperty extraProperties at: #enum) asArray equals: #( 'substring' 'regex' ).
 	equivalentSchema := MCPToolSearchEquivalentMethods new inputSchema.
 	equivalentRequired := equivalentSchema required asArray.
@@ -205,7 +205,7 @@ MCPToolMethodLookupTest >> testSourceAndEquivalentSearchSchemasUseDedicatedInput
 	self assert: equivalentRequired equals: #( 'className' 'selector' ).
 	self
 		assert: equivalentPropertyNames asSet
-		equals: #( 'scope' 'classSide' 'selector' 'side' 'className' 'includeSource' 'limit' 'offset' ) asSet
+		equals: #( 'scope' 'classSide' 'selector' 'side' 'className' 'offset' ) asSet
 ]
 
 { #category : 'private' }

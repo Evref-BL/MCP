@@ -1695,22 +1695,18 @@ MCPToolContractsTest >> testMethodMetadataSearchDescriptionPointsToSpecializedRe
 { #category : 'tests' }
 MCPToolContractsTest >> testMethodMetadataSearchHasAccurateNameAndSchema [
 
-	| filterModeProperty limitProperty propertyNames schema scopeProperty scopePropertyNames |
+	| filterModeProperty propertyNames schema scopeProperty scopePropertyNames |
 	schema := MCPToolSearchMethodMetadata new inputSchema.
 	propertyNames := schema properties collect: [ :each | each name ].
 	filterModeProperty := schema properties detect: [ :each | each name = 'filterMode' ].
-	limitProperty := schema properties detect: [ :each | each name = 'limit' ].
 	scopeProperty := schema properties detect: [ :each | each name = 'scope' ].
 	scopePropertyNames := (scopeProperty extraProperties at: #properties) collect: [ :each | each name ].
 	self assert: MCPToolSearchMethodMetadata new name equals: 'method_metadata_search'.
 	self assert: schema required equals: #(  ).
 	self
 		assert: propertyNames asSet
-		equals: #( 'scope' 'selector' 'protocol' 'filterMode' 'side' 'includeSource' 'limit' 'offset' 'caseSensitive' ) asSet.
+		equals: #( 'scope' 'selector' 'protocol' 'filterMode' 'side' 'offset' 'caseSensitive' ) asSet.
 	self assert: scopeProperty description equals: 'Search scope. If omitted, searches all matching entities.'.
-	self
-		assert: limitProperty description
-		equals: 'Maximum matching methods to return. Use 0 to count matches without returning entries.'.
 	self assert: (scopeProperty extraProperties at: #additionalProperties) equals: false.
 	self assert: scopePropertyNames asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' ) asSet.
 	self assert: (filterModeProperty extraProperties at: #enum) asArray equals: #( 'substring' 'prefix' 'exact' 'regex' )
@@ -1879,7 +1875,6 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 	self assert: ((self inputPropertyNamed: 'limit' inTool: searchClassesTool) extraProperties at: #default) equals: 25.
 	self assert: ((self inputPropertyNamed: 'filterMode' inTool: methodMetadataTool) extraProperties at: #default) equals: 'exact'.
 	self assert: ((self inputPropertyNamed: 'caseSensitive' inTool: methodMetadataTool) extraProperties at: #default) equals: true.
-	self assert: ((self inputPropertyNamed: 'includeSource' inTool: methodMetadataTool) extraProperties at: #default) equals: false.
 	self
 		assert: ((self inputPropertyNamed: 'filterMode' inTool: searchPackagesTool) extraProperties at: #default)
 		equals: 'substring'.
@@ -2482,18 +2477,22 @@ MCPToolContractsTest >> testSearchRepositoriesHasAccurateNameAndSchema [
 
 { #category : 'tests' }
 MCPToolContractsTest >> testSearchToolPaginationSchemasAdvertiseBounds [
+	"A method search answers a page of a fixed size; the other searches still take a limit."
 
 	MCPToolSearch concreteSubclasses do: [ :toolClass |
-			| limitProperty offsetProperty tool |
+			| offsetProperty propertyNames tool |
 			tool := toolClass new.
-			limitProperty := self inputPropertyNamed: 'limit' inTool: tool.
+			propertyNames := (tool inputSchema properties collect: [ :each | each name ]) asSet.
 			offsetProperty := self inputPropertyNamed: 'offset' inTool: tool.
-			self assert: (limitProperty extraProperties at: #minimum) equals: 0.
-			self assert: (limitProperty extraProperties at: #maximum) equals: 100.
-			self assert: (limitProperty extraProperties at: #default) equals: 25.
 			self assert: (offsetProperty extraProperties at: #minimum) equals: 0.
 			self deny: (offsetProperty extraProperties includesKey: #maximum).
-			self assert: (offsetProperty extraProperties at: #default) equals: 0 ]
+			self assert: (offsetProperty extraProperties at: #default) equals: 0.
+			(propertyNames includes: 'limit') ifTrue: [
+					| limitProperty |
+					limitProperty := self inputPropertyNamed: 'limit' inTool: tool.
+					self assert: (limitProperty extraProperties at: #minimum) equals: 0.
+					self assert: (limitProperty extraProperties at: #maximum) equals: 100.
+					self assert: (limitProperty extraProperties at: #default) equals: 25 ] ]
 ]
 
 { #category : 'tests' }
