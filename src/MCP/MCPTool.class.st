@@ -289,15 +289,16 @@ MCPTool >> description [
 
 { #category : 'private - results' }
 MCPTool >> entriesTextOn: stream for: entries labelled: label indent: indent [
-	"A list of records reads as one entry at a time; a list of plain values reads as one line."
+	"A list of records reads as one entry at a time; a list of plain values reads as one line, bracketed so that a list of two is not read as one value containing a comma."
 
 	(entries anySatisfy: [ :each | each isDictionary ]) ifFalse: [
 			stream
 				nextPut: Character lf;
 				nextPutAll: indent;
 				nextPutAll: label;
-				nextPutAll: ': ';
-				nextPutAll: (', ' join: (entries collect: [ :each | each asString ])).
+				nextPutAll: ': [';
+				nextPutAll: (', ' join: (entries collect: [ :each | each asString ]));
+				nextPut: $].
 			^ self ].
 	entries do: [ :entry |
 			entry isDictionary
