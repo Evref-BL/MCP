@@ -302,9 +302,10 @@ MCPToolRegistry >> staticTools [
 
 { #category : 'tools' }
 MCPToolRegistry >> staticToolsDictionary [
+	"Keyed by tool name for lookup, ordered so tools/list keeps the order staticTools ranked them in. Clients cache that list and feed it to a model, so a surface that reshuffles between calls costs cache hits for no reason."
 
 	| dictionary |
-	dictionary := Dictionary new.
+	dictionary := OrderedDictionary new.
 	self staticTools do: [ :tool | dictionary at: tool name put: tool ].
 	^ dictionary
 ]

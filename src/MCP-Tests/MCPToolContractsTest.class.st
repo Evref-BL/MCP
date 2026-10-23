@@ -1660,6 +1660,18 @@ MCPToolContractsTest >> testRPCAdvertisesStaticToolSurfaceOnly [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testRPCAdvertisesToolsInRegistryOrder [
+	"Clients cache tools/list and feed it to a model, so the order has to be the registry's and has to hold across calls."
+
+	| first second mcp |
+	mcp := self mcpWithoutObservabilityExport.
+	first := (mcp rpcToolsList at: #tools) collect: [ :each | each at: #name ].
+	second := (mcp rpcToolsList at: #tools) collect: [ :each | each at: #name ].
+	self assert: first asArray equals: mcp staticToolNames.
+	self assert: first asArray equals: second asArray
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testRPCRefreshesCachedToolMetadata [
 
 	| mcp propertyNames result toolDefinition toolDefinitions |
