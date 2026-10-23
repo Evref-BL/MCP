@@ -1,12 +1,16 @@
 "
 Top-level MCP server application object. MCP owns one MCPToolRegistry, the HTTP server, and observability state. The registry owns registered tool instances and their exposure policy. MCP exposes the core JSON-RPC handlers, including initialization, tool listing, tool calls, ping, and empty resource listings. Tool calls are delegated to the matching MCPTool after request validation.
 
-The registry is the source of truth for registered tools. The toolsList instance variable caches the current tools/list static tool surface as a dictionary keyed by tool name.
+The registry is the source of truth for registered tools. The toolsList instance variable caches the advertised surface as a dictionary keyed by tool name.
 
-Adding new tools to the server (its `registry`) can be done:
-- call `mcp registerToolClass: MyToolClass` before starting the server;
-- (for several tool classes) call `mcp registerToolClasses: { MyToolClass. MyOtherToolClass }`;
-- for automatic opt-in: override `MyToolClass class >> shouldAutoRegister` to return `true`.
+Two words govern the tool surface. A *registered* tool is in the catalog and reachable through tool_search, tool_get and tool_call. An *advertised* tool is also in tools/list.
+
+- `mcp addTool: MyToolClass` and `mcp addTools: { A. B }` register tools, as classes or ready instances;
+- `mcp removeTool: 'image_evaluate'` takes one back out;
+- `mcp onlyTools: { A. B }` replaces the catalog with exactly those;
+- `mcp advertiseTools: { A. 'class_search' }` chooses what tools/list shows, registering anything not yet in the catalog;
+- `mcp advertiseAllTools` and `mcp advertiseToolDefaults` are the other two advertising states;
+- for automatic opt-in, override `MyToolClass class >> shouldAutoRegister` to return `true`.
 "
 Class {
 	#name : 'MCP',
@@ -38,10 +42,10 @@ MCP class >> negotiatedProtocolVersionFor: requestedVersion [
 ]
 
 { #category : 'instance creation' }
-MCP class >> profile: aProfile [
+MCP class >> onlyTools: toolsOrToolClasses [
 
 	^ self new
-		  profile: aProfile;
+		  onlyTools: toolsOrToolClasses;
 		  yourself
 ]
 
@@ -98,12 +102,6 @@ MCP >> debugMode: aBoolean [
 
 	self server debugMode: aBoolean.
 	self server messageProcessor debugMode: aBoolean
-]
-
-{ #category : 'configuration' }
-MCP >> defaultProfile [
-
-	^ MCPProfile default
 ]
 
 { #category : 'private - tools' }
@@ -209,8 +207,7 @@ MCP >> initialize [
 	super initialize.
 	server := MCPHTTPServer new.
 	server addHandlersFromPragmasIn: self.
-	observability := self newLocalObservabilityBackend.
-	self profile: self defaultProfile
+	observability := self newLocalObservabilityBackend
 ]
 
 { #category : 'testing' }
@@ -371,9 +368,20 @@ MCP >> port: aPortNumber [
 ]
 
 { #category : 'configuration' }
-MCP >> profile: aProfile [
+MCP >> onlyTools: toolsOrToolClasses [
+	"Replace the catalog with exactly these tools, advertising all of them. A server built this way discovers nothing, so it keeps the surface it was given."
 
-	aProfile applyTo: self
+	self toolRegistry: (MCPToolRegistry empty
+			 addTools: toolsOrToolClasses;
+			 advertiseAllTools;
+			 yourself)
+]
+
+{ #category : 'configuration' }
+MCP >> removeTool: aToolName [
+
+	self toolRegistry removeToolNamed: aToolName.
+	self refreshToolsList
 ]
 
 { #category : 'private - tools' }
@@ -390,29 +398,27 @@ MCP >> recordToolCallWrapperStartFor: callTool arguments: arguments [
 MCP >> refreshToolsList [
 	"Refresh the cached tools/list response surface from the registry's current static tools."
 
-	toolsList := self toolRegistry staticToolsDictionary.
+	toolsList := self toolRegistry advertisedToolsDictionary.
 	^ toolsList
 ]
 
 { #category : 'configuration' }
-MCP >> registerTool: aTool [
+MCP >> addTool: aToolOrToolClass [
+	"Register one tool, as a class or as a ready instance. It becomes reachable through tool_search, tool_get and tool_call; whether tools/list shows it is the advertising question."
 
-	| registration |
-	registration := self toolRegistry registerTool: aTool.
+	| tool |
+	tool := self toolRegistry addTool: aToolOrToolClass.
 	self refreshToolsList.
-	^ registration
+	^ tool
 ]
 
 { #category : 'configuration' }
-MCP >> registerToolClass: aToolClass [
+MCP >> addTools: toolsOrToolClasses [
 
-	^ self registerTool: (aToolClass newForRegistry: self toolRegistry)
-]
-
-{ #category : 'configuration' }
-MCP >> registerToolClasses: toolClasses [
-
-	^ toolClasses collect: [ :eachToolClass | self registerToolClass: eachToolClass ]
+	| added |
+	added := self toolRegistry addTools: toolsOrToolClasses.
+	self refreshToolsList.
+	^ added
 ]
 
 { #category : 'start' }
@@ -486,7 +492,7 @@ MCP >> rpcResourcesTemplateList [
 MCP >> rpcToolCall: name withParams: arguments [
 
 	<jrpc: #'tools/call'>
-	toolsList
+	self toolsList
 		at: name
 		ifPresent: [ :tool |
 				name = MCPToolCallTool toolName ifTrue: [ ^ self rpcCallToolCallWithParams: arguments ].
@@ -499,7 +505,7 @@ MCP >> rpcToolsList [
 
 	<jrpc: #'tools/list'>
 	self refreshToolsList.
-	^ { (#tools -> toolsList values asArray) } asDictionary asJRPCJSON
+	^ { (#tools -> self toolsList values asArray) } asDictionary asJRPCJSON
 ]
 
 { #category : 'accessing' }
@@ -519,18 +525,15 @@ MCP >> signalMissingToolNamed: aToolName [
 	"A name that does not resolve is the caller's mistake, not the server's, so it reads as one."
 
 	| suggestions details |
-	suggestions := MCPSelectorSuggestion
-		               namesLike: aToolName
-		               among: (self toolRegistry registrations collect: [ :each | each tool name ]).
+	suggestions := MCPSelectorSuggestion namesLike: aToolName among: self toolRegistry toolNames.
 	details := Dictionary new
 		           at: #toolName put: aToolName;
 		           yourself.
 	suggestions ifNotEmpty: [ details at: #suggestedTools put: suggestions ].
 	MCPCommandError
 		signalErrorCode: #ToolNotFound
-		message: 'No MCP tool named ' , aToolName , '.' , (suggestions
-				 ifEmpty: [ ' Use tool_search to find one.' ]
-				 ifNotEmpty: [ ' Did you mean: ' , (', ' join: suggestions) , '?' ])
+		message: 'No MCP tool named ' , aToolName , '.'
+			, (suggestions ifEmpty: [ ' Use tool_search to find one.' ] ifNotEmpty: [ ' Did you mean: ' , (', ' join: suggestions) , '?' ])
 		details: details
 ]
 
@@ -551,16 +554,32 @@ MCP >> start [
 ]
 
 { #category : 'configuration' }
-MCP >> staticToolNames [
+MCP >> advertiseAllTools [
 
-	^ self toolRegistry staticToolNames
+	self toolRegistry advertiseAllTools.
+	self refreshToolsList
 ]
 
 { #category : 'configuration' }
-MCP >> staticToolNames: aCollection [
+MCP >> advertiseToolDefaults [
+	"Leave tools/list to each tool's own default exposure, which is where a fresh server starts."
 
-	self toolRegistry staticToolNames: aCollection.
+	self toolRegistry advertiseToolDefaults.
 	self refreshToolsList
+]
+
+{ #category : 'configuration' }
+MCP >> advertiseTools: toolsOrToolClassesOrNames [
+	"Say which tools tools/list should show, as classes, tool instances or names. Anything not in the catalog yet is registered, so this can be called before or after adding them."
+
+	self toolRegistry advertiseTools: toolsOrToolClassesOrNames.
+	self refreshToolsList
+]
+
+{ #category : 'configuration' }
+MCP >> advertisedToolNames [
+
+	^ self toolRegistry advertisedToolNames
 ]
 
 { #category : 'start' }
@@ -601,17 +620,10 @@ MCP >> toolCallWrapperResultFor: callTool request: callRequest [
 		  data: { (#toolName -> callRequest toolName) } asDictionary
 ]
 
-{ #category : 'accessing' }
-MCP >> toolExposurePolicy [
+{ #category : 'configuration' }
+MCP >> toolNames [
 
-	^ self toolRegistry exposurePolicy
-]
-
-{ #category : 'accessing' }
-MCP >> toolExposurePolicy: aToolExposurePolicy [
-
-	self toolRegistry exposurePolicy: (aToolExposurePolicy ifNil: [ MCPToolExposurePolicy default ]).
-	self refreshToolsList
+	^ self toolRegistry toolNames
 ]
 
 { #category : 'accessing' }
@@ -645,24 +657,19 @@ MCP >> toolResponseFields: aSymbolOrString [
 
 { #category : 'accessing' }
 MCP >> toolsList [
-	"Answer the cached tools/list static tool surface. The registry remains the source of truth for registered tools."
+	"Answer the cached advertised surface. The registry remains the source of truth for registered tools."
 
-	^ toolsList
+	^ toolsList ifNil: [ self refreshToolsList ]
 ]
 
 { #category : 'accessing' }
 MCP >> toolsList: aToolsList [
-	"Replace the cached tools/list surface. Intended for tests and controlled presenter setup; normal registration should go through the registry-facing MCP configuration API."
+	"Replace the cached advertised surface. Intended for tests and controlled presenter setup; normal configuration goes through addTool: and advertiseTools:."
 
 	^ toolsList := aToolsList
 ]
 
-{ #category : 'configuration' }
-MCP >> unregisterToolNamed: aToolName [
 
-	self toolRegistry unregisterToolNamed: aToolName.
-	self refreshToolsList
-]
 
 { #category : 'configuration' }
 MCP >> useContentAndStructuredContentToolResponses [

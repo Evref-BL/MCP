@@ -47,7 +47,7 @@ MCPToolAPITestCase >> callToolNamed: aToolName withArguments: someArguments [
 
 	| mcp |
 	mcp := self mcpWithoutObservabilityExport.
-	(mcp toolRegistry isStaticToolNamed: aToolName) ifTrue: [ ^ self callRawToolNamed: aToolName withArguments: someArguments ].
+	(mcp toolRegistry isToolAdvertisedNamed: aToolName) ifTrue: [ ^ self callRawToolNamed: aToolName withArguments: someArguments ].
 	^ self callDiscoveredToolNamed: aToolName withArguments: someArguments
 ]
 

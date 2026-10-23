@@ -90,7 +90,7 @@ MCPToolRepositoryToolsTest >> searchMetadataByToolName [
 
 	| metadata |
 	metadata := Dictionary new.
-	self toolRegistry publicTools do: [ :tool | metadata at: tool name put: tool searchMetadata ].
+	self toolRegistry tools do: [ :tool | metadata at: tool name put: tool searchMetadata ].
 	^ metadata
 ]
 

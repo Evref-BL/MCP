@@ -661,7 +661,7 @@ MCPToolStructuredOutputTest >> testSearchPackagesReturnsStructuredError [
 ]
 
 { #category : 'tests' }
-MCPToolStructuredOutputTest >> testToolsListAdvertisesPublicToolContracts [
+MCPToolStructuredOutputTest >> testToolsListAdvertisesToolContracts [
 
 	| tools |
 	tools := MCP new rpcToolsList at: #tools.

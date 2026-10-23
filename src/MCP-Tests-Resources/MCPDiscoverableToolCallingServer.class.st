@@ -18,7 +18,7 @@ MCPDiscoverableToolCallingServer >> initialize [
 { #category : 'private - calling' }
 MCPDiscoverableToolCallingServer >> rpcToolCall: aToolName withParams: someArguments [
 
-	(self toolRegistry isStaticToolNamed: aToolName) ifTrue: [ ^ super rpcToolCall: aToolName withParams: someArguments ].
+	(self toolRegistry isToolAdvertisedNamed: aToolName) ifTrue: [ ^ super rpcToolCall: aToolName withParams: someArguments ].
 	^ super rpcToolCall: 'tool_call' withParams: {
 			  (#name -> aToolName).
 			  (#arguments -> someArguments) } asDictionary

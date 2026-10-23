@@ -100,7 +100,7 @@ over clients branching on concrete classes or internal fields.
 - Do not use `getName` or `setName:`.
 - Predicates should read as predicates: `isReady`, `hasErrors`,
   `canHandle:`.
-- Action selectors should use verbs: `parseRequest:`, `registerTool:`,
+- Action selectors should use verbs: `parseRequest:`, `addTool:`,
   `writeResponseOn:`.
 - Conversion selectors should start with `as`.
 

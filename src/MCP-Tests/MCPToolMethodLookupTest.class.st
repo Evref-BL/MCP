@@ -74,15 +74,15 @@ MCPToolMethodLookupTest >> testLookupToolsArePublicStaticReadTools [
 	discoverableNames := #( 'method_equivalent_search' ).
 	staticNames do: [ :each |
 			| tool |
-			self assert: (self toolRegistry publicToolNames includes: each).
-			self assert: (self toolRegistry staticToolNames includes: each).
+			self assert: (self toolRegistry toolNames includes: each).
+			self assert: (self toolRegistry advertisedToolNames includes: each).
 			tool := self toolRegistry toolNamed: each ifAbsent: [ self fail: 'Missing tool ' , each ].
 			self assert: tool defaultExposure equals: 'static'.
 			self assert: tool annotations readOnlyHint ].
 	discoverableNames do: [ :each |
 			| tool |
-			self assert: (self toolRegistry publicToolNames includes: each).
-			self deny: (self toolRegistry staticToolNames includes: each).
+			self assert: (self toolRegistry toolNames includes: each).
+			self deny: (self toolRegistry advertisedToolNames includes: each).
 			tool := self toolRegistry toolNamed: each ifAbsent: [ self fail: 'Missing tool ' , each ].
 			self assert: tool defaultExposure equals: 'discoverable'.
 			self assert: tool annotations readOnlyHint ]
