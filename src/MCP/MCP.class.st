@@ -201,6 +201,7 @@ MCP >> ensureServerIsListening [
 	server start.
 	(self waitUntilListeningForMilliseconds: 1000) ifTrue: [ ^ self ].
 	Error signal: 'MCP server is not listening on port ' , self port asString
+		, (server lastListenError ifNil: [ '' ] ifNotNil: [ :reason | ': ' , reason ])
 ]
 
 { #category : 'private - tools' }

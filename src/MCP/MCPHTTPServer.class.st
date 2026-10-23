@@ -368,6 +368,12 @@ MCPHTTPServer >> isRunning [
 ]
 
 { #category : 'accessing' }
+MCPHTTPServer >> lastListenError [
+
+	^ server lastListenError
+]
+
+{ #category : 'accessing' }
 MCPHTTPServer >> localUrl [
 
 	^ server localUrl
