@@ -1,57 +1,32 @@
 "
 Instance-scoped catalog of MCP tools.
 
-A registry owns one reusable instance of each tool, keyed by tool name and kept in the order the tools were discovered or added, and decides which of them are advertised. Intrinsic metadata belongs to the tools themselves.
-
 Two words, consistently. A *registered* tool is in the catalog and reachable through tool_search, tool_get and tool_call. An *advertised* tool is also in tools/list. advertisedToolNames carries that choice in three states: nil leaves it to each tool's own default exposure, #all advertises everything, and a set of names advertises exactly those.
 
-A registry built with #default discovers tool classes and keeps doing so: it outlives the classes it found, so it rediscovers them whenever the set of auto-registering tool classes changes. Tools added by hand survive that rediscovery as long as their class does. A registry built with #empty is curated rather than discovered, holds exactly what was added to it, and never rediscovers.
+Holding, discovery and rediscovery come from MCPRegistry. What lives here is the advertising split, which the other registries have no equivalent of, and the ranking tool_search uses.
 "
 Class {
 	#name : 'MCPToolRegistry',
-	#superclass : 'Object',
+	#superclass : 'MCPRegistry',
 	#instVars : [
-		'tools',
-		'advertisedToolNames',
-		'discoversToolClasses',
-		'discoveredToolClasses'
+		'advertisedToolNames'
 	],
 	#category : 'MCP-Tools',
 	#package : 'MCP',
 	#tag : 'Tools'
 }
 
-{ #category : 'instance creation' }
-MCPToolRegistry class >> default [
-
-	^ self new
-		  resetTools;
-		  yourself
-]
-
-{ #category : 'instance creation' }
-MCPToolRegistry class >> empty [
-
-	^ self new
-]
-
 { #category : 'tools' }
 MCPToolRegistry >> addTool: aToolOrToolClass [
 	"Add a tool to the catalog, as a class or as a ready instance, and answer it."
 
-	| tool |
-	tool := aToolOrToolClass isBehavior
-		        ifTrue: [ aToolOrToolClass newForRegistry: self ]
-		        ifFalse: [ aToolOrToolClass ].
-	(self includesToolNamed: tool name) ifTrue: [ Error signal: 'MCP tool already registered: ' , tool name ].
-	self toolsByName at: tool name put: tool.
-	^ tool
+	^ self add: aToolOrToolClass
 ]
 
 { #category : 'tools' }
 MCPToolRegistry >> addTools: toolsOrToolClasses [
 
-	^ (toolsOrToolClasses collect: [ :each | self addTool: each ]) asArray
+	^ self addAll: toolsOrToolClasses
 ]
 
 { #category : 'advertising' }
@@ -114,12 +89,6 @@ MCPToolRegistry >> advertisedToolsDictionary [
 ]
 
 { #category : 'tools' }
-MCPToolRegistry >> autoRegisteringToolClasses [
-
-	^ (MCPTool concreteSubclasses select: [ :toolClass | toolClass shouldAutoRegister ]) asSet
-]
-
-{ #category : 'tools' }
 MCPToolRegistry >> contractForTool: aTool [
 
 	| contract |
@@ -136,16 +105,14 @@ MCPToolRegistry >> contractForToolNamed: aToolName [
 	^ self contractForTool: tool
 ]
 
-{ #category : 'tools' }
-MCPToolRegistry >> defaultTools [
+{ #category : 'discovery' }
+MCPToolRegistry >> defaultEntries [
+	"Grouped, then alphabetical within a group, which is how the catalog reads to someone scanning it."
 
-	| discovered |
-	discovered := (self autoRegisteringToolClasses collect: [ :toolClass | toolClass newForRegistry: self ]) asArray.
-	discovered sort: [ :left :right |
-			left groupName = right groupName
-				ifTrue: [ left name <= right name ]
-				ifFalse: [ left groupName <= right groupName ] ].
-	^ discovered
+	^ (self autoRegisteringClasses collect: [ :each | self newEntryFrom: each ]) asSortedCollection: [ :left :right |
+		  left groupName = right groupName
+			  ifTrue: [ left name <= right name ]
+			  ifFalse: [ left groupName <= right groupName ] ]
 ]
 
 { #category : 'tools' }
@@ -184,14 +151,7 @@ MCPToolRegistry >> identityWeightForTool: aTool queryTerm: aTerm [
 { #category : 'testing' }
 MCPToolRegistry >> includesToolNamed: aToolName [
 
-	^ self toolsByName includesKey: aToolName asString
-]
-
-{ #category : 'initialization' }
-MCPToolRegistry >> initialize [
-
-	super initialize.
-	self removeAllTools
+	^ self includesKey: aToolName
 ]
 
 { #category : 'advertising' }
@@ -219,6 +179,12 @@ MCPToolRegistry >> isTool: aTool rankedBefore: anotherTool [
 	^ segments < otherSegments
 ]
 
+{ #category : 'entries' }
+MCPToolRegistry >> keyFor: aTool [
+
+	^ aTool name
+]
+
 { #category : 'tools' }
 MCPToolRegistry >> queryTermAlternativesFor: aTerm [
 
@@ -239,45 +205,16 @@ MCPToolRegistry >> queryTermsFrom: queryString [
 	^ normalized findTokens: ' -_'
 ]
 
-{ #category : 'tools' }
-MCPToolRegistry >> rediscoverToolClassesIfChanged [
-	"A discovering registry outlives the tool classes it found. Loading or removing tool classes in a running image left it answering its old catalog until someone reset it by hand, so it notices here instead.
+{ #category : 'entries' }
+MCPToolRegistry >> registeredClass [
 
-	It takes in what appeared and drops what vanished, rather than rebuilding. Rebuilding would undo every hand edit the catalog has had: a tool added by hand, and a tool deliberately removed, which would come back the next time any tool class was loaded."
-
-	| discovered appeared vanished |
-	discoversToolClasses ifFalse: [ ^ self ].
-	discovered := self autoRegisteringToolClasses.
-	discovered = discoveredToolClasses ifTrue: [ ^ self ].
-	vanished := discoveredToolClasses difference: discovered.
-	appeared := (discovered difference: discoveredToolClasses) asSortedCollection: [ :left :right | left toolName <= right toolName ].
-	discoveredToolClasses := discovered.
-	(tools keys select: [ :each | vanished includes: (tools at: each) class ]) do: [ :each | tools removeKey: each ].
-	appeared do: [ :toolClass |
-		(self includesToolNamed: toolClass toolName) ifFalse: [ tools at: toolClass toolName put: (toolClass newForRegistry: self) ] ]
-]
-
-{ #category : 'tools' }
-MCPToolRegistry >> removeAllTools [
-
-	discoversToolClasses := false.
-	discoveredToolClasses := nil.
-	tools := OrderedDictionary new
+	^ MCPTool
 ]
 
 { #category : 'tools' }
 MCPToolRegistry >> removeToolNamed: aToolName [
 
-	self toolsByName removeKey: aToolName asString ifAbsent: [ nil ]
-]
-
-{ #category : 'tools' }
-MCPToolRegistry >> resetTools [
-
-	discoversToolClasses := true.
-	discoveredToolClasses := self autoRegisteringToolClasses.
-	tools := OrderedDictionary new.
-	self defaultTools do: [ :each | tools at: each name put: each ]
+	self removeKey: aToolName
 ]
 
 { #category : 'tools' }
@@ -313,7 +250,7 @@ MCPToolRegistry >> singularSearchTermFor: aTerm [
 { #category : 'tools' }
 MCPToolRegistry >> toolClasses [
 
-	^ (self tools collect: [ :each | each class ]) asArray
+	^ self entryClasses
 ]
 
 { #category : 'tools' }
@@ -333,26 +270,19 @@ MCPToolRegistry >> toolGroups [
 { #category : 'tools' }
 MCPToolRegistry >> toolNamed: aToolName ifAbsent: absentBlock [
 
-	^ self toolsByName at: aToolName asString ifAbsent: absentBlock
+	^ self at: aToolName ifAbsent: absentBlock
 ]
 
 { #category : 'tools' }
 MCPToolRegistry >> toolNames [
 
-	^ (self tools collect: [ :each | each name ]) asArray
+	^ self keys
 ]
 
 { #category : 'tools' }
 MCPToolRegistry >> tools [
 
-	^ self toolsByName values asArray
-]
-
-{ #category : 'private' }
-MCPToolRegistry >> toolsByName [
-
-	self rediscoverToolClassesIfChanged.
-	^ tools
+	^ self entries
 ]
 
 { #category : 'tools' }

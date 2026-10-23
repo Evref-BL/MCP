@@ -20,6 +20,8 @@ Class {
 		'toolsList',
 		'observability',
 		'toolRegistry',
+		'resourceRegistry',
+		'promptRegistry',
 		'toolResponseFields'
 	],
 	#category : 'MCP-Server',
@@ -325,16 +327,25 @@ MCP >> observabilityTraces [
 ]
 
 { #category : 'start' }
+MCP >> advertisedCapabilities [
+	"Only what this server actually has. A capability for an empty catalog promises methods that would answer nothing, and neither subscribe nor listChanged is declared because the transport cannot push."
+
+	| capabilities |
+	capabilities := MCPStructureCapabilities new
+		                tools: MCPStructureToolsCapabilities new;
+		                yourself.
+	self resourceRegistry entries ifNotEmpty: [ capabilities resources: MCPStructureResourcesCapabilities new ].
+	self promptRegistry entries ifNotEmpty: [ capabilities prompts: MCPStructurePromptsCapabilities new ].
+	^ capabilities
+]
+
+{ #category : 'start' }
 MCP >> onInitialize: protocolVersion capabilities: capabilities clientInfo: clientInfo websiteUrl: websiteUrl [
 
 	<jrpc: #initialize>
 	^ MCPStructureInitialize new
 		  protocolVersion: (self class negotiatedProtocolVersionFor: protocolVersion);
-		  capabilities: (MCPStructureCapabilities new
-				   tools: MCPStructureToolsCapabilities new;
-				   resources: MCPStructureResourcesCapabilities new;
-				   prompts: MCPStructurePromptsCapabilities new;
-				   yourself);
+		  capabilities: self advertisedCapabilities;
 		  metadata: self serverInfrastructureMetadata;
 		  serverInfo: (MCPStructureServerInfo new
 				   name: 'MCP Pharo';
@@ -378,6 +389,72 @@ MCP >> onlyTools: toolsOrToolClasses [
 ]
 
 { #category : 'configuration' }
+MCP >> onlyPrompts: promptsOrPromptClasses [
+	"Replace the prompt catalog with exactly these. A server built this way discovers nothing, so it keeps what it was given."
+
+	promptRegistry := MCPPromptRegistry empty
+		                  addPrompts: promptsOrPromptClasses;
+		                  yourself
+]
+
+{ #category : 'configuration' }
+MCP >> onlyResources: resourcesOrResourceClasses [
+	"Replace the resource catalog with exactly these. A server built this way discovers nothing, so it keeps what it was given."
+
+	resourceRegistry := MCPResourceRegistry empty
+		                    addResources: resourcesOrResourceClasses;
+		                    yourself
+]
+
+{ #category : 'configuration' }
+MCP >> removeResource: aUri [
+
+	self resourceRegistry removeResourceAt: aUri
+]
+
+{ #category : 'configuration' }
+MCP >> resourceUris [
+
+	^ self resourceRegistry resourceUris
+]
+
+{ #category : 'configuration' }
+MCP >> promptNames [
+
+	^ self promptRegistry promptNames
+]
+
+{ #category : 'accessing' }
+MCP >> promptRegistry [
+
+	^ promptRegistry ifNil: [ promptRegistry := MCPPromptRegistry default ]
+]
+
+{ #category : 'accessing' }
+MCP >> promptRegistry: aPromptRegistry [
+
+	promptRegistry := aPromptRegistry ifNil: [ MCPPromptRegistry default ]
+]
+
+{ #category : 'configuration' }
+MCP >> removePrompt: aName [
+
+	self promptRegistry removePromptNamed: aName
+]
+
+{ #category : 'accessing' }
+MCP >> resourceRegistry [
+
+	^ resourceRegistry ifNil: [ resourceRegistry := MCPResourceRegistry default ]
+]
+
+{ #category : 'accessing' }
+MCP >> resourceRegistry: aResourceRegistry [
+
+	resourceRegistry := aResourceRegistry ifNil: [ MCPResourceRegistry default ]
+]
+
+{ #category : 'configuration' }
 MCP >> removeTool: aToolName [
 
 	self toolRegistry removeToolNamed: aToolName.
@@ -400,6 +477,32 @@ MCP >> refreshToolsList [
 
 	toolsList := self toolRegistry advertisedToolsDictionary.
 	^ toolsList
+]
+
+{ #category : 'configuration' }
+MCP >> addPrompt: aPromptOrPromptClass [
+	"Register one prompt, as a class or as a ready instance. Every registered prompt is listed by prompts/list."
+
+	^ self promptRegistry addPrompt: aPromptOrPromptClass
+]
+
+{ #category : 'configuration' }
+MCP >> addPrompts: promptsOrPromptClasses [
+
+	^ self promptRegistry addPrompts: promptsOrPromptClasses
+]
+
+{ #category : 'configuration' }
+MCP >> addResource: aResourceOrResourceClass [
+	"Register one resource, as a class or as a ready instance. Every registered resource is listed by resources/list."
+
+	^ self resourceRegistry addResource: aResourceOrResourceClass
+]
+
+{ #category : 'configuration' }
+MCP >> addResources: resourcesOrResourceClasses [
+
+	^ self resourceRegistry addResources: resourcesOrResourceClasses
 ]
 
 { #category : 'configuration' }
@@ -457,35 +560,48 @@ MCP >> rpcPing [
 MCP >> rpcPromptGet: name arguments: arguments [
 
 	<jrpc: #'prompts/get'>
-	JRPCInvalidParameters signal
+	| prompt suppliedArguments result |
+	prompt := self promptRegistry
+		          promptNamed: name
+		          ifAbsent: [ ^ MCPUnknownPrompt signalNamed: name known: self promptRegistry promptNames ].
+	suppliedArguments := arguments ifNil: [ Dictionary new ].
+	prompt validateArguments: suppliedArguments.
+	result := Dictionary new
+		          at: #messages
+		          put: ((prompt messagesFor: suppliedArguments) collect: [ :each | each asJRPCJSON ]);
+		          yourself.
+	prompt description ifNotNil: [ :value | result at: #description put: value asJRPCJSON ].
+	^ result
 ]
 
 { #category : 'rpc' }
 MCP >> rpcPromptsList [
 
 	<jrpc: #'prompts/list'>
-	^ { (#prompts -> #(  )) } asDictionary
+	^ { (#prompts -> (self promptRegistry prompts collect: [ :each | each asJRPCJSON ])) } asDictionary
 ]
 
 { #category : 'rpc' }
 MCP >> rpcResourceRead: uri [
 
 	<jrpc: #'resources/read'>
-	JRPCInvalidParameters signal
+	| resource |
+	resource := self resourceRegistry resourceAt: uri ifAbsent: [ ^ MCPResourceNotFound signalForUri: uri ].
+	^ { (#contents -> (resource readContents collect: [ :each | each asJRPCJSON ])) } asDictionary
 ]
 
 { #category : 'rpc' }
 MCP >> rpcResourcesList [
 
 	<jrpc: #'resources/list'>
-	^ { (#resources -> #(  )) } asDictionary
+	^ { (#resources -> (self resourceRegistry resources collect: [ :each | each asJRPCJSON ])) } asDictionary
 ]
 
 { #category : 'rpc' }
 MCP >> rpcResourcesTemplateList [
 
 	<jrpc: #'resources/templates/list'>
-	^ { (#resourceTemplates -> #(  )) } asDictionary
+	^ { (#resourceTemplates -> (self resourceRegistry resourceTemplates collect: [ :each | each asJRPCJSON ])) } asDictionary
 ]
 
 { #category : 'rpc' }

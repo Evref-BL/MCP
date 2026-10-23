@@ -1219,7 +1219,8 @@ MCPToolContractsTest >> testInitializeAdvertisesSupportedPharoVersions [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testInitializeAdvertisesSupportedProtocolDomains [
+MCPToolContractsTest >> testInitializeAdvertisesOnlyWhatTheServerHas [
+	"A capability promises the methods of a domain. Prompts are not advertised because the server holds none, and nothing is advertised that the transport could not honour."
 
 	| capabilities response |
 	response := (self mcpWithoutObservabilityExport
@@ -1230,7 +1231,7 @@ MCPToolContractsTest >> testInitializeAdvertisesSupportedProtocolDomains [
 	capabilities := response at: #capabilities.
 	self assert: (capabilities at: #tools) equals: Dictionary new.
 	self assert: (capabilities at: #resources) equals: Dictionary new.
-	self assert: (capabilities at: #prompts) equals: Dictionary new
+	self deny: (capabilities includesKey: #prompts)
 ]
 
 { #category : 'tests' }
@@ -1770,20 +1771,23 @@ MCPToolContractsTest >> testRequestedToolIconsAreSelected [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testResourcesListReturnsEmptyResourceList [
+MCPToolContractsTest >> testResourcesListAnswersTheRegisteredResources [
 
 	| response |
 	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"resources/list"}'.
-	self assert: (response includesSubstring: '"result":{"resources":[]}')
+	self assert: (response includesSubstring: '"resources":').
+	self assert: (response includesSubstring: MCPImageMetadataResource resourceUri)
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testResourcesReadReturnsInvalidParamsWhenResourceIsUnknown [
+MCPToolContractsTest >> testResourcesReadAnswersResourceNotFoundWhenTheUriIsUnknown [
+	"The spec gives resource-not-found its own code rather than folding it into invalid params, and asks for the URI in the error data."
 
 	| response |
 	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"resources/read","params":{"uri":"pharo://missing"}}'.
-	self assert: (response includesSubstring: '"code":-32602').
-	self assert: (response includesSubstring: '"message":"Invalid method parameter(s)."')
+	self assert: (response includesSubstring: '"code":-32002').
+	self assert: (response includesSubstring: '"message":"Resource not found"').
+	self assert: (response includesSubstring: '"uri":"pharo://missing"')
 ]
 
 { #category : 'tests' }
