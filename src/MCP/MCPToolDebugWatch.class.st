@@ -70,14 +70,6 @@ MCPToolDebugWatch >> parsedRequestFromToolRequest: request [
 	^ MCPDebugWatchRequest fromRequest: request tool: self
 ]
 
-{ #category : 'private - results' }
-MCPToolDebugWatch >> redundantKeys [
-	"The session tools drop the method because a frame's displayString already names it. Here a
-	series of values has nothing else to say where it came from."
-
-	^ super redundantKeys copyWithout: #method
-]
-
 { #category : 'metadata' }
 MCPToolDebugWatch >> requiredInputProperties [
 

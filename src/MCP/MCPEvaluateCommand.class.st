@@ -18,27 +18,10 @@ MCPEvaluateCommand class >> tool: aTool request: aRequest resultPreviewCharacter
 	^ self new initializeTool: aTool request: aRequest resultPreviewCharacterLimit: anInteger
 ]
 
-{ #category : 'private - frames' }
-MCPEvaluateCommand >> evaluateInFrame: aFrameRef [
-	"Evaluating against a paused frame is evaluation with a narrower scope, so it is this tool with
-	one more argument rather than a tool of its own."
-
-	| debugRequest |
-	debugRequest := MCPDebugEvaluateRequest new
-		                operation: 'image_evaluate';
-		                sessionId: (aFrameRef findTokens: '/') first;
-		                frameRef: aFrameRef;
-		                expression: request code;
-		                resultPreviewCharacterLimit: self tool resultPreviewCharacterLimit;
-		                yourself.
-	^ (MCPDebugEvaluateCommand tool: self tool request: debugRequest) execute
-]
-
 { #category : 'executing' }
 MCPEvaluateCommand >> execute [
 
 	| answer compiler notice |
-	request frame ifNotNil: [ :frameRef | ^ self evaluateInFrame: frameRef ].
 	compiler := SmalltalkImage current compiler.
 	compiler compilationContext isScripting: true.
 	notice := nil.

@@ -1011,14 +1011,13 @@ MCPToolMethodMutationTest >> testMethodToolSchemasDeclareExpectedInputs [
 	selectorPropertyNames := MCPToolUpdateMethodSelector new inputSchema properties collect: [ :each | each name ].
 	protocolPropertyNames := MCPToolUpdateMethodProtocol new inputSchema properties collect: [ :each | each name ].
 	classSideProperty := MCPToolCompileMethod new inputSchema properties detect: [ :each | each name = 'classSide' ].
-	self assert: createPropertyNames asArray equals: #( 'className' 'classSide' 'source' 'protocol' 'force' 'frame' ).
+	self assert: createPropertyNames asArray equals: #( 'className' 'classSide' 'source' 'protocol' ).
 	self
 		assert: selectorPropertyNames asArray
 		equals: #( 'className' 'classSide' 'force' 'selector' 'newSelector' 'permutation' 'argumentNames' 'argumentValueExpressions'
 			   'packageNames' 'classNames' 'hierarchyClassNames' ).
 	self assert: protocolPropertyNames asArray equals: #( 'className' 'classSide' 'selector' 'protocol' ).
-	"className and protocol come from the frame when one is named, so only the source is always required."
-	self assert: MCPToolCompileMethod new inputSchema required asSet equals: #( 'source' ) asSet.
+	self assert: MCPToolCompileMethod new inputSchema required asSet equals: #( 'className' 'source' 'protocol' ) asSet.
 	self assert: MCPToolUpdateMethodSelector new inputSchema required asSet equals: #( 'className' 'selector' 'newSelector' ) asSet.
 	self assert: MCPToolUpdateMethodProtocol new inputSchema required asSet equals: #( 'className' 'selector' 'protocol' ) asSet.
 	self assert: (classSideProperty extraProperties at: #default) equals: false

@@ -138,10 +138,10 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 			  (#requestClass -> MCPScreenshotRequest).
 			  (#commandClass -> MCPScreenshotCommand) } asDictionary.
 		  {
-			  (#toolClass -> MCPToolDebugSession).
+			  (#toolClass -> MCPToolDebugSearch).
 			  (#arguments -> Dictionary new).
-			  (#requestClass -> MCPDebugSessionsRequest).
-			  (#commandClass -> MCPDebugSessionsCommand) } asDictionary.
+			  (#requestClass -> MCPDebugSearchRequest).
+			  (#commandClass -> MCPDebugSearchCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolEvaluate).
 			  (#arguments -> { (#code -> '1') } asDictionary).
@@ -809,7 +809,7 @@ MCPToolContractsTest >> testConfiguredDiscoverableToolsAreNotDirectlyCallable [
 MCPToolContractsTest >> testDebuggerToolsAreDiscoverableOnly [
 
 	| debugNames staticToolNames |
-	debugNames := #( 'debug_session' 'debug_watch' ).
+	debugNames := #( 'debug_search' 'debug_watch' ).
 	staticToolNames := self toolRegistry staticToolNames.
 	debugNames do: [ :each |
 			self deny: (staticToolNames includes: each).
@@ -1441,10 +1441,10 @@ MCPToolContractsTest >> testMethodMutationToolsHaveAccurateNamesAndRequiredArgum
 	self assert: createTool name equals: 'method_compile'.
 	self assert: selectorTool name equals: 'method_selector_update'.
 	self assert: protocolTool name equals: 'method_protocol_update'.
-	self assert: createTool inputSchema required asSet equals: #( 'source' ) asSet.
+	self assert: createTool inputSchema required asSet equals: #( 'className' 'source' 'protocol' ) asSet.
 	self assert: selectorTool inputSchema required asSet equals: #( 'className' 'selector' 'newSelector' ) asSet.
 	self assert: protocolTool inputSchema required asSet equals: #( 'className' 'selector' 'protocol' ) asSet.
-	self assert: createPropertyNames asSet equals: #( 'className' 'classSide' 'protocol' 'source' 'force' 'frame' ) asSet.
+	self assert: createPropertyNames asSet equals: #( 'className' 'classSide' 'protocol' 'source' ) asSet.
 	self
 		assert: selectorPropertyNames asSet
 		equals: #( 'argumentNames' 'argumentValueExpressions' 'className' 'classNames' 'classSide' 'force' 'hierarchyClassNames'
@@ -2252,9 +2252,8 @@ MCPToolContractsTest >> testSearchToolsMatchesAgentGuidanceKeywords [
 		                ('recover' -> 'history_entry_apply').
 		                ('window' -> 'screenshot_capture').
 		                ('display' -> 'screenshot_capture').
-		                ('repair' -> 'method_compile').
 		                ('watch' -> 'debug_watch').
-		                ('session' -> 'debug_session').
+		                ('debugger' -> 'debug_search').
 		                ('refactor' -> 'class_slot_pull_up').
 		                ('refactoring' -> 'method_selector_update') }.
 	expectations do: [ :expectation |
@@ -2591,7 +2590,7 @@ MCPToolContractsTest >> testToolRegistryNamesUseClassSideMetadata [
 	self assert: MCPToolListChangeHistoryEntries toolName equals: 'history_entry_list'.
 	self assert: MCPToolApplyChangeHistoryEntries toolName equals: 'history_entry_apply'.
 	self assert: MCPToolRevertChangeHistoryEntries toolName equals: 'history_entry_revert'.
-	self assert: MCPToolDebugSession toolName equals: 'debug_session'.
+	self assert: MCPToolDebugSearch toolName equals: 'debug_search'.
 	self assert: MCPToolDebugWatch toolName equals: 'debug_watch'
 ]
 

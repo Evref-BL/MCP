@@ -19,31 +19,10 @@ MCPCompileMethodCommand >> changeSummaryVerbFor: changeKindString [
 	^ 'Changed'
 ]
 
-{ #category : 'private - frames' }
-MCPCompileMethodCommand >> compileIntoFrame: aFrameRef [
-	"Repairing the method a paused frame stopped in is compilation with a narrower scope: the class
-	and the selector come from the frame, and the computation carries on once the edit is accepted."
-
-	| debugRequest frameResult |
-	debugRequest := MCPUpdateDebugMethodRequest new
-		                operation: 'update';
-		                sessionId: (aFrameRef findTokens: '/') first;
-		                frameRef: aFrameRef;
-		                methodSource: self request methodSource;
-		                ignoreCritiques: self request force;
-		                includeReceiver: true;
-		                yourself.
-	frameResult := (MCPUpdateDebugMethodCommand tool: self tool request: debugRequest) execute.
-	^ frameResult isError
-		  ifTrue: [ self tool errorResultText: frameResult summary details: frameResult errorDetails ]
-		  ifFalse: [ self tool successResultText: frameResult summary data: frameResult data warnings: frameResult warnings ]
-]
-
 { #category : 'executing' }
 MCPCompileMethodCommand >> execute [
 
 	| behavior changeKind compiledMethod methodReference methodSource result selector |
-	self request frame ifNotNil: [ :frameRef | ^ self compileIntoFrame: frameRef ].
 	^ self tool
 		  executeMutationAction: 'compile'
 		  force: self request force

@@ -1,7 +1,7 @@
 "
 Abstract base for MCP debugger tools.
 
-It centralizes the parse/execute/result wrapper shared by debugger tools while subclasses provide request parsing, command creation, schemas, and public metadata.
+It centralizes the parse/execute/result wrapper the debugger tools share while subclasses provide request parsing, command creation, schemas, and public metadata.
 "
 Class {
 	#name : 'MCPToolDebug',
@@ -26,16 +26,7 @@ MCPToolDebug class >> isAbstract [
 { #category : 'metadata' }
 MCPToolDebug >> additionalKeywords [
 
-	^ #( 'debug' 'session' 'state' 'frame' 'breakpoint' 'exception' 'repair' 'control' )
-]
-
-{ #category : 'private - schema' }
-MCPToolDebug >> boundedIntegerSchemaPropertyNamed: propertyName description: propertyDescription default: defaultValue maximum: maximumValue [
-
-	| property |
-	property := self nonNegativeIntegerSchemaPropertyNamed: propertyName description: propertyDescription default: defaultValue.
-	property maximum: maximumValue.
-	^ property
+	^ #( 'debug' 'debugger' 'value' 'variable' 'frame' 'exception' )
 ]
 
 { #category : 'metadata' }
@@ -84,22 +75,11 @@ MCPToolDebug >> inputProperties [
 	^ #(  )
 ]
 
-{ #category : 'private - schema' }
-MCPToolDebug >> nonNegativeIntegerSchemaPropertyNamed: propertyName description: propertyDescription default: defaultValue [
-
-	| property |
-	property := self integerSchemaPropertyNamed: propertyName description: propertyDescription default: defaultValue.
-	property minimum: 0.
-	^ property
-]
-
 { #category : 'private - results' }
 MCPToolDebug >> redundantKeys [
-	"A frame's displayString already names its method and its receiver's class, the selected frame says
-	what location says and more, a session states its capabilities once, and the warnings are already
-	read out above the payload."
+	"The warnings are already read out above the payload."
 
-	^ #( capabilities location method receiverClassName warnings )
+	^ #( warnings )
 ]
 
 { #category : 'private - schema' }
@@ -113,60 +93,4 @@ MCPToolDebug >> resultForCommandResult: commandResult [
 
 	commandResult isError ifTrue: [ ^ self errorResultText: commandResult summary details: commandResult errorDetails ].
 	^ self successResultText: commandResult summary data: commandResult data warnings: commandResult warnings
-]
-
-{ #category : 'private - schema' }
-MCPToolDebug >> sessionIdSchemaProperty [
-
-	^ self
-		  schemaPropertyNamed: 'sessionId'
-		  type: 'string'
-		  description:
-		  'Opaque debug session identifier returned by debug_session_list or debug_candidate_attach.'
-]
-
-{ #category : 'private - schema' }
-MCPToolDebug >> sourceContextLinesSchemaPropertyWithDescription: aDescription default: defaultValue [
-
-	^ self
-		  boundedIntegerSchemaPropertyNamed: 'sourceContextLines'
-		  description: aDescription
-		  default: defaultValue
-		  maximum: MCPDebugRequest maximumSourceContextLines
-]
-
-{ #category : 'private - schema' }
-MCPToolDebug >> stackLimitSchemaPropertyWithDescription: aDescription default: defaultValue [
-
-	^ self
-		  boundedIntegerSchemaPropertyNamed: 'stackLimit'
-		  description: aDescription
-		  default: defaultValue
-		  maximum: MCPDebugRequest maximumStackLimit
-]
-
-{ #category : 'private - schema' }
-MCPToolDebug >> stackStartSchemaPropertyWithDescription: aDescription default: defaultValue [
-
-	^ self nonNegativeIntegerSchemaPropertyNamed: 'stackStart' description: aDescription default: defaultValue
-]
-
-{ #category : 'private - schema' }
-MCPToolDebug >> variableDepthSchemaPropertyWithDescription: aDescription default: defaultValue [
-
-	^ self
-		  boundedIntegerSchemaPropertyNamed: 'variableDepth'
-		  description: aDescription
-		  default: defaultValue
-		  maximum: MCPDebugRequest maximumVariableDepth
-]
-
-{ #category : 'private - schema' }
-MCPToolDebug >> variableLimitSchemaPropertyWithDescription: aDescription default: defaultValue [
-
-	^ self
-		  boundedIntegerSchemaPropertyNamed: 'variableLimit'
-		  description: aDescription
-		  default: defaultValue
-		  maximum: MCPDebugRequest maximumVariableLimit
 ]

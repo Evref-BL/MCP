@@ -58,7 +58,7 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 		  (MCPToolListChangeHistoryEntries -> Dictionary new).
 		  (MCPToolChangeHistory -> { (#action -> 'listFiles') } asDictionary).
 		  (MCPToolCaptureScreenshot -> { (#target -> 'world') } asDictionary).
-		  (MCPToolDebugSession -> Dictionary new).
+		  (MCPToolDebugSearch -> Dictionary new).
 		  (MCPToolSearchMethods -> Dictionary new).
 		  (MCPToolSearchTools -> Dictionary new).
 		  (MCPToolGetTool -> { (#name -> 'class_search') } asDictionary).

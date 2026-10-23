@@ -201,16 +201,12 @@ live image back to Tonel/Git.
 
 ## Debugging
 
-Debugger tools are discoverable through the `debugging` group. They work with
-non-halting probes that record values while code runs, and with attached
-human-opened debuggers and their tracked Pharo `DebugSession` records.
+Debugger tools are discoverable through the `debugging` group. They keep no
+state: `debug_watch` installs non-halting probes and removes them before it
+answers, and `debug_search` only reads the debuggers a person has open.
 
-Treat debugger state references as opaque and state-scoped. After editing from a
-debug state or proceeding it, read the state again before evaluating in a frame.
-
-Compile into a frame only from a paused debug state and only after reading the
-offered repair actions. It uses the same critique gate as any method edit before
-proceeding a repaired computation.
+A debugger somebody opened belongs to them. Read it, then act with the ordinary
+class and method tools; do not step, resume or terminate it.
 
 ## Evaluation Escape Hatch
 
