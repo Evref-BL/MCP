@@ -81,7 +81,7 @@ Fifteen tools are advertised directly: `tool_search`, `tool_get`, `tool_call`, `
 A server chooses its own surface before `start`:
 
 ```smalltalk
-mcp staticToolNames: #( 'tool_search' 'tool_get' 'tool_call' 'method_get' ).
+mcp advertiseTools: #( 'tool_search' 'tool_get' 'tool_call' 'method_get' ).
 ```
 
 ## Finding A Tool

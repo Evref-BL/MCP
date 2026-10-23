@@ -132,40 +132,39 @@ normal use, configure it through the `MCP` instance messages below. The
 instance; discoverable tools remain available through `tool_search`, `tool_get`,
 and `tool_call`.
 
-For a server with only your own tools, use a profile:
+Two words govern the surface. A **registered** tool is in the catalog and
+reachable through `tool_search`, `tool_get` and `tool_call`. An **advertised**
+tool is also in `tools/list`.
+
+For a server with only your own tools:
 
 ```smalltalk
-mcp := MCP profile: (MCPProfile tools: { MyProjectMCPTool }).
+mcp := MCP onlyTools: { MyProjectMCPTool }.
 mcp start.
 ```
 
-`MCPProfile tools:` registers the given tools and advertises them directly in
-`tools/list`. Use `tools:static:` when some registered tools should stay
-discoverable through the catalog tools:
+`onlyTools:` replaces the catalog with exactly those tools and advertises all of
+them. Advertise a subset when some registered tools should stay discoverable
+through the catalog tools instead:
 
 ```smalltalk
-mcp := MCP profile: (MCPProfile
-	tools: { MyProjectMCPTool. MyOtherMCPTool }
-	static: { MyProjectMCPTool }).
+mcp := MCP onlyTools: { MyProjectMCPTool. MyOtherMCPTool }.
+mcp advertiseTools: { MyProjectMCPTool }.
 ```
 
-For incremental per-server configuration, register tools explicitly before
-starting the server:
+To add to the tools a server already has, rather than replacing them:
 
 ```smalltalk
 mcp := MCP new.
-mcp registerToolClass: MyProjectMCPTool.
+mcp addTool: MyProjectMCPTool.
 mcp start.
 ```
 
-You can also register several classes, register an already-created tool, or
-remove a tool from one server instance:
-
-```smalltalk
-mcp registerToolClasses: { MyProjectMCPTool. MyOtherMCPTool }.
-mcp registerTool: MyProjectMCPTool new.
-mcp unregisterToolNamed: 'my_project_tool'.
-```
+`addTool:` takes a class or a ready instance, and `addTools:` takes several.
+`removeTool:` takes one back out by name. `advertiseTools:` accepts classes,
+instances or names, and registers anything not in the catalog yet, so it can be
+called before or after adding. `advertiseAllTools` advertises everything, and
+`advertiseToolDefaults` returns to each tool's own default exposure.
 
 Use `defaultExposure` to decide whether a registered tool is directly
 advertised in `tools/list` (`'static'`) or kept discoverable through the catalog

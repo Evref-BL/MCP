@@ -1,16 +1,18 @@
 "
 Instance-scoped catalog of MCP tools.
 
-A registry discovers built-in concrete MCPTool subclasses, owns one reusable instance of each registered tool, owns the exposure policy applied to those registrations, and provides lookup, grouping, static-surface selection, contract composition, and catalog search. Intrinsic metadata belongs to tools; visibility overrides belong to MCPToolExposurePolicy.
+A registry owns one reusable instance of each tool, keyed by tool name and kept in the order the tools were discovered or added, and decides which of them are advertised. Intrinsic metadata belongs to the tools themselves.
 
-A registry built with #default discovers tool classes and keeps doing so: it outlives the classes it found, so it rediscovers them whenever the set of auto-registering tool classes changes. Tools registered by hand survive that rediscovery as long as their class does. A registry built with #empty is curated rather than discovered, holds exactly what was registered into it, and never rediscovers; that is what profiles use to pin a surface.
+Two words, consistently. A *registered* tool is in the catalog and reachable through tool_search, tool_get and tool_call. An *advertised* tool is also in tools/list. advertisedToolNames carries that choice in three states: nil leaves it to each tool's own default exposure, #all advertises everything, and a set of names advertises exactly those.
+
+A registry built with #default discovers tool classes and keeps doing so: it outlives the classes it found, so it rediscovers them whenever the set of auto-registering tool classes changes. Tools added by hand survive that rediscovery as long as their class does. A registry built with #empty is curated rather than discovered, holds exactly what was added to it, and never rediscovers.
 "
 Class {
 	#name : 'MCPToolRegistry',
 	#superclass : 'Object',
 	#instVars : [
-		'registrations',
-		'exposurePolicy',
+		'tools',
+		'advertisedToolNames',
 		'discoversToolClasses',
 		'discoveredToolClasses'
 	],
@@ -23,7 +25,7 @@ Class {
 MCPToolRegistry class >> default [
 
 	^ self new
-		  resetRegistrations;
+		  resetTools;
 		  yourself
 ]
 
@@ -31,6 +33,86 @@ MCPToolRegistry class >> default [
 MCPToolRegistry class >> empty [
 
 	^ self new
+]
+
+{ #category : 'tools' }
+MCPToolRegistry >> addTool: aToolOrToolClass [
+	"Add a tool to the catalog, as a class or as a ready instance, and answer it."
+
+	| tool |
+	tool := aToolOrToolClass isBehavior
+		        ifTrue: [ aToolOrToolClass newForRegistry: self ]
+		        ifFalse: [ aToolOrToolClass ].
+	(self includesToolNamed: tool name) ifTrue: [ Error signal: 'MCP tool already registered: ' , tool name ].
+	self toolsByName at: tool name put: tool.
+	^ tool
+]
+
+{ #category : 'tools' }
+MCPToolRegistry >> addTools: toolsOrToolClasses [
+
+	^ (toolsOrToolClasses collect: [ :each | self addTool: each ]) asArray
+]
+
+{ #category : 'advertising' }
+MCPToolRegistry >> advertiseAllTools [
+
+	advertisedToolNames := #all
+]
+
+{ #category : 'advertising' }
+MCPToolRegistry >> advertiseToolDefaults [
+
+	advertisedToolNames := nil
+]
+
+{ #category : 'advertising' }
+MCPToolRegistry >> advertiseTools: toolsOrToolClassesOrNames [
+	"Say which tools tools/list should show, as classes, tool instances or names. Anything not in the catalog yet is added, so the order of configuration does not matter for a class. A bare name matching nothing is a typo, and the error says what is known."
+
+	| names unknown |
+	names := toolsOrToolClassesOrNames collect: [ :each | self advertisedNameFor: each ].
+	unknown := names reject: [ :each | self includesToolNamed: each ].
+	unknown ifNotEmpty: [
+			Error signal: 'Unknown MCP tool(s): ' , unknown asArray printString , '. Known tools: ' , self toolNames printString ].
+	advertisedToolNames := names asSet
+]
+
+{ #category : 'private - advertising' }
+MCPToolRegistry >> advertisedNameFor: aToolOrToolClassOrName [
+
+	aToolOrToolClassOrName isString ifTrue: [ ^ aToolOrToolClassOrName ].
+	aToolOrToolClassOrName isSymbol ifTrue: [ ^ aToolOrToolClassOrName asString ].
+	(self includesToolNamed: aToolOrToolClassOrName name) ifFalse: [ self addTool: aToolOrToolClassOrName ].
+	^ aToolOrToolClassOrName name
+]
+
+{ #category : 'advertising' }
+MCPToolRegistry >> advertisedToolNames [
+
+	^ (self advertisedTools collect: [ :each | each name ]) asArray
+]
+
+{ #category : 'advertising' }
+MCPToolRegistry >> advertisedTools [
+
+	^ (self tools select: [ :each | self isToolAdvertised: each ]) asArray
+]
+
+{ #category : 'advertising' }
+MCPToolRegistry >> advertisedToolsDictionary [
+	"Keyed by tool name for lookup, ordered so tools/list keeps the order the catalog ranked them in. Clients cache that list and feed it to a model, so a surface that reshuffles between calls costs cache hits for no reason."
+
+	| dictionary |
+	dictionary := OrderedDictionary new.
+	self advertisedTools do: [ :tool | dictionary at: tool name put: tool ].
+	^ dictionary
+]
+
+{ #category : 'tools' }
+MCPToolRegistry >> autoRegisteringToolClasses [
+
+	^ (MCPTool concreteSubclasses select: [ :toolClass | toolClass shouldAutoRegister ]) asSet
 ]
 
 { #category : 'tools' }
@@ -50,22 +132,16 @@ MCPToolRegistry >> contractForToolNamed: aToolName [
 	^ self contractForTool: tool
 ]
 
-{ #category : 'registrations' }
-MCPToolRegistry >> autoRegisteringToolClasses [
+{ #category : 'tools' }
+MCPToolRegistry >> defaultTools [
 
-	^ (MCPTool concreteSubclasses select: [ :toolClass | toolClass shouldAutoRegister ]) asSet
-]
-
-{ #category : 'registrations' }
-MCPToolRegistry >> defaultRegistrations [
-
-	| tools |
-	tools := (self autoRegisteringToolClasses collect: [ :toolClass | toolClass newForRegistry: self ]) asArray.
-	tools sort: [ :left :right |
+	| discovered |
+	discovered := (self autoRegisteringToolClasses collect: [ :toolClass | toolClass newForRegistry: self ]) asArray.
+	discovered sort: [ :left :right |
 			left groupName = right groupName
 				ifTrue: [ left name <= right name ]
 				ifFalse: [ left groupName <= right groupName ] ].
-	^ tools collect: [ :tool | MCPToolRegistration tool: tool ]
+	^ discovered
 ]
 
 { #category : 'tools' }
@@ -78,25 +154,12 @@ MCPToolRegistry >> descriptionWeightForTool: aTool queryTerm: aTerm [
 		  ifFalse: [ 0 ]
 ]
 
-{ #category : 'tools' }
+{ #category : 'advertising' }
 MCPToolRegistry >> exposureForTool: aTool [
 
-	| registration |
-	registration := self registrationForTool: aTool ifAbsent: [ Error signal: 'MCP tool is not registered: ' , aTool name ].
-	^ self exposurePolicy exposureForToolRegistration: registration
-]
-
-{ #category : 'accessing' }
-MCPToolRegistry >> exposurePolicy [
-
-	^ exposurePolicy
-]
-
-{ #category : 'accessing' }
-MCPToolRegistry >> exposurePolicy: aToolExposurePolicy [
-
-	self validateExposurePolicy: aToolExposurePolicy.
-	exposurePolicy := aToolExposurePolicy
+	^ (self isToolAdvertised: aTool)
+		  ifTrue: [ 'static' ]
+		  ifFalse: [ 'discoverable' ]
 ]
 
 { #category : 'tools' }
@@ -117,38 +180,28 @@ MCPToolRegistry >> identityWeightForTool: aTool queryTerm: aTerm [
 { #category : 'testing' }
 MCPToolRegistry >> includesToolNamed: aToolName [
 
-	^ self publicToolNames includes: aToolName asString
+	^ self toolsByName includesKey: aToolName asString
 ]
 
 { #category : 'initialization' }
 MCPToolRegistry >> initialize [
 
 	super initialize.
-	exposurePolicy := MCPToolExposurePolicy default.
 	self removeAllTools
 ]
 
-{ #category : 'registrations' }
-MCPToolRegistry >> rediscoverToolClassesIfChanged [
-	"A discovering registry outlives the tool classes it found. Loading or removing tool classes in a running image left it answering its old surface until someone reset it by hand, so it notices here instead. Tools registered by hand survive as long as their class does."
+{ #category : 'advertising' }
+MCPToolRegistry >> isToolAdvertised: aTool [
 
-	| discovered liveToolClasses surviving |
-	discoversToolClasses ifFalse: [ ^ self ].
-	discovered := self autoRegisteringToolClasses.
-	discovered = discoveredToolClasses ifTrue: [ ^ self ].
-	liveToolClasses := MCPTool concreteSubclasses asSet.
-	surviving := registrations select: [ :each |
-		              (discoveredToolClasses includes: each tool class) not and: [ liveToolClasses includes: each tool class ] ].
-	discoveredToolClasses := discovered.
-	registrations := self defaultRegistrations , surviving
+	advertisedToolNames ifNil: [ ^ aTool defaultExposure = 'static' ].
+	advertisedToolNames = #all ifTrue: [ ^ true ].
+	^ advertisedToolNames includes: aTool name
 ]
 
 { #category : 'testing' }
-MCPToolRegistry >> isStaticToolNamed: aToolName [
+MCPToolRegistry >> isToolAdvertisedNamed: aToolName [
 
-	| registration |
-	registration := self registrationNamed: aToolName ifAbsent: [ ^ false ].
-	^ self exposurePolicy isStaticToolRegistration: registration
+	^ self isToolAdvertised: (self toolNamed: aToolName ifAbsent: [ ^ false ])
 ]
 
 { #category : 'tools' }
@@ -160,38 +213,6 @@ MCPToolRegistry >> isTool: aTool rankedBefore: anotherTool [
 	otherSegments := (anotherTool name findTokens: '-_') size.
 	segments = otherSegments ifTrue: [ ^ aTool name <= anotherTool name ].
 	^ segments < otherSegments
-]
-
-{ #category : 'tools' }
-MCPToolRegistry >> publicToolClasses [
-
-	^ (self registrations collect: [ :each | each toolClass ]) asArray
-]
-
-{ #category : 'tools' }
-MCPToolRegistry >> publicToolGroups [
-
-	| groups |
-	groups := OrderedCollection new.
-	self registrations do: [ :registration |
-			| group |
-			group := groups detect: [ :each | each key = registration groupName ] ifNone: [
-					         groups add: registration groupName -> OrderedCollection new.
-					         groups last ].
-			group value add: registration toolClass ].
-	^ (groups collect: [ :each | each key -> each value asArray ]) asArray
-]
-
-{ #category : 'tools' }
-MCPToolRegistry >> publicToolNames [
-
-	^ (self registrations collect: [ :each | each name ]) asArray
-]
-
-{ #category : 'tools' }
-MCPToolRegistry >> publicTools [
-
-	^ self registrations collect: [ :each | each tool ]
 ]
 
 { #category : 'tools' }
@@ -214,69 +235,43 @@ MCPToolRegistry >> queryTermsFrom: queryString [
 	^ normalized findTokens: ' -_'
 ]
 
-{ #category : 'registrations' }
-MCPToolRegistry >> registerTool: aTool [
+{ #category : 'tools' }
+MCPToolRegistry >> rediscoverToolClassesIfChanged [
+	"A discovering registry outlives the tool classes it found. Loading or removing tool classes in a running image left it answering its old catalog until someone reset it by hand, so it notices here instead. Tools added by hand survive as long as their class does."
 
-	| registration |
-	registration := MCPToolRegistration tool: aTool.
-	(self includesToolNamed: registration name) ifTrue: [ Error signal: 'MCP tool already registered: ' , registration name ].
-	registrations := self registrations copyWith: registration.
-	^ registration
+	| discovered liveToolClasses surviving |
+	discoversToolClasses ifFalse: [ ^ self ].
+	discovered := self autoRegisteringToolClasses.
+	discovered = discoveredToolClasses ifTrue: [ ^ self ].
+	liveToolClasses := MCPTool concreteSubclasses asSet.
+	surviving := tools values select: [ :each |
+		             (discoveredToolClasses includes: each class) not and: [ liveToolClasses includes: each class ] ].
+	discoveredToolClasses := discovered.
+	tools := OrderedDictionary new.
+	self defaultTools , surviving do: [ :each | tools at: each name put: each ]
 ]
 
-{ #category : 'registrations' }
-MCPToolRegistry >> registerToolClass: aToolClass [
-
-	^ self registerTool: (aToolClass newForRegistry: self)
-]
-
-{ #category : 'registrations' }
-MCPToolRegistry >> registerToolClasses: toolClasses [
-
-	^ toolClasses collect: [ :eachToolClass | self registerToolClass: eachToolClass ]
-]
-
-{ #category : 'registrations' }
-MCPToolRegistry >> registrationForTool: aTool ifAbsent: absentBlock [
-
-	^ self registrationNamed: aTool name ifAbsent: absentBlock
-]
-
-{ #category : 'registrations' }
-MCPToolRegistry >> registrationForToolClass: aToolClass ifAbsent: absentBlock [
-
-	^ self registrations detect: [ :each | each toolClass = aToolClass ] ifNone: absentBlock
-]
-
-{ #category : 'registrations' }
-MCPToolRegistry >> registrationNamed: aToolName ifAbsent: absentBlock [
-
-	| toolName |
-	toolName := aToolName asString.
-	^ self registrations detect: [ :each | each name = toolName ] ifNone: absentBlock
-]
-
-{ #category : 'registrations' }
-MCPToolRegistry >> registrations [
-
-	self rediscoverToolClassesIfChanged.
-	^ registrations
-]
-
-{ #category : 'registrations' }
+{ #category : 'tools' }
 MCPToolRegistry >> removeAllTools [
 
 	discoversToolClasses := false.
 	discoveredToolClasses := nil.
-	registrations := #(  )
+	tools := OrderedDictionary new
 ]
 
-{ #category : 'registrations' }
-MCPToolRegistry >> resetRegistrations [
+{ #category : 'tools' }
+MCPToolRegistry >> removeToolNamed: aToolName [
+
+	self toolsByName removeKey: aToolName asString ifAbsent: [ nil ]
+]
+
+{ #category : 'tools' }
+MCPToolRegistry >> resetTools [
 
 	discoversToolClasses := true.
 	discoveredToolClasses := self autoRegisteringToolClasses.
-	registrations := self defaultRegistrations
+	tools := OrderedDictionary new.
+	self defaultTools do: [ :each | tools at: each name put: each ]
 ]
 
 { #category : 'tools' }
@@ -310,38 +305,48 @@ MCPToolRegistry >> singularSearchTermFor: aTerm [
 ]
 
 { #category : 'tools' }
-MCPToolRegistry >> staticToolNames [
+MCPToolRegistry >> toolClasses [
 
-	^ (self staticTools collect: [ :each | each name ]) asArray
-]
-
-{ #category : 'configuration' }
-MCPToolRegistry >> staticToolNames: aCollection [
-
-	self exposurePolicy: (MCPToolExposurePolicy staticToolNames: aCollection)
+	^ (self tools collect: [ :each | each class ]) asArray
 ]
 
 { #category : 'tools' }
-MCPToolRegistry >> staticTools [
+MCPToolRegistry >> toolGroups [
 
-	^ (self registrations select: [ :each | self exposurePolicy isStaticToolRegistration: each ] thenCollect: [ :each | each tool ])
-		  asArray
-]
-
-{ #category : 'tools' }
-MCPToolRegistry >> staticToolsDictionary [
-	"Keyed by tool name for lookup, ordered so tools/list keeps the order staticTools ranked them in. Clients cache that list and feed it to a model, so a surface that reshuffles between calls costs cache hits for no reason."
-
-	| dictionary |
-	dictionary := OrderedDictionary new.
-	self staticTools do: [ :tool | dictionary at: tool name put: tool ].
-	^ dictionary
+	| groups |
+	groups := OrderedCollection new.
+	self tools do: [ :tool |
+			| group |
+			group := groups detect: [ :each | each key = tool groupName ] ifNone: [
+					         groups add: tool groupName -> OrderedCollection new.
+					         groups last ].
+			group value add: tool class ].
+	^ (groups collect: [ :each | each key -> each value asArray ]) asArray
 ]
 
 { #category : 'tools' }
 MCPToolRegistry >> toolNamed: aToolName ifAbsent: absentBlock [
 
-	^ (self registrationNamed: aToolName ifAbsent: [ ^ absentBlock value ]) tool
+	^ self toolsByName at: aToolName asString ifAbsent: absentBlock
+]
+
+{ #category : 'tools' }
+MCPToolRegistry >> toolNames [
+
+	^ (self tools collect: [ :each | each name ]) asArray
+]
+
+{ #category : 'tools' }
+MCPToolRegistry >> tools [
+
+	^ self toolsByName values asArray
+]
+
+{ #category : 'private' }
+MCPToolRegistry >> toolsByName [
+
+	self rediscoverToolClassesIfChanged.
+	^ tools
 ]
 
 { #category : 'tools' }
@@ -352,7 +357,7 @@ MCPToolRegistry >> toolsMatchingQuery: queryString [
 	queryTerms := self queryTermsFrom: queryString.
 	queryTerms ifEmpty: [ ^ #(  ) ].
 	scoredTools := OrderedCollection new.
-	self publicTools do: [ :tool |
+	self tools do: [ :tool |
 			| score |
 			score := self scoreForTool: tool queryTerms: queryTerms.
 			score > 0 ifTrue: [ scoredTools add: score -> tool ] ].
@@ -361,22 +366,4 @@ MCPToolRegistry >> toolsMatchingQuery: queryString [
 				ifTrue: [ self isTool: left value rankedBefore: right value ]
 				ifFalse: [ left key > right key ] ].
 	^ (scoredTools collect: [ :each | each value ]) asArray
-]
-
-{ #category : 'registrations' }
-MCPToolRegistry >> unregisterToolNamed: aToolName [
-
-	| toolName |
-	toolName := aToolName asString.
-	registrations := self registrations reject: [ :each | each name = toolName ]
-]
-
-{ #category : 'private - exposure' }
-MCPToolRegistry >> validateExposurePolicy: aToolExposurePolicy [
-
-	| staticNames unknown |
-	staticNames := aToolExposurePolicy explicitStaticToolNames.
-	staticNames ifNil: [ ^ self ].
-	unknown := staticNames reject: [ :each | self includesToolNamed: each ].
-	unknown ifNotEmpty: [ Error signal: 'Unknown MCP tool(s) in exposure policy: ' , unknown printString ]
 ]

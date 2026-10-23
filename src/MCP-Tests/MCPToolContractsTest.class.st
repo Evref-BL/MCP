@@ -538,12 +538,12 @@ MCPToolContractsTest >> signalHaltForMCPMessageProcessorTest [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testAllStaticExposurePolicyMakesEveryRegistrationStatic [
+MCPToolContractsTest >> testAdvertisingAllToolsAdvertisesEveryRegisteredTool [
 
 	| registry |
 	registry := MCPToolRegistry default.
-	registry exposurePolicy: MCPToolExposurePolicy allStatic.
-	self assert: registry staticToolNames asSet equals: registry publicToolNames asSet
+	registry advertiseAllTools.
+	self assert: registry advertisedToolNames asSet equals: registry toolNames asSet
 ]
 
 { #category : 'tests' }
@@ -601,7 +601,7 @@ MCPToolContractsTest >> testBuiltInToolsProvideCatalogMetadata [
 
 	| validExposures |
 	validExposures := #( 'static' 'discoverable' ).
-	self toolRegistry publicTools select: [ :tool | tool class isBuiltIn ] thenDo: [ :tool |
+	self toolRegistry tools select: [ :tool | tool class isBuiltIn ] thenDo: [ :tool |
 			self assert: (MCPTool builtInGroupNames includes: tool groupName).
 			self assert: tool groupName equals: tool class groupName.
 			self assert: (validExposures includes: tool defaultExposure).
@@ -614,7 +614,7 @@ MCPToolContractsTest >> testCallToolInvokesDiscoverableToolAfterStaticConfigurat
 
 	| data result server |
 	server := self mcpWithoutObservabilityExport.
-	server staticToolNames: #( 'tool_search' 'tool_get' 'tool_call' ).
+	server advertiseTools: #( 'tool_search' 'tool_get' 'tool_call' ).
 	result := server rpcToolCall: 'tool_call' withParams: {
 			          (#name -> 'package_search').
 			          (#arguments -> {
@@ -803,19 +803,19 @@ MCPToolContractsTest >> testConfiguredDiscoverableToolsAreNotDirectlyCallable [
 
 	| server |
 	server := self mcpWithoutObservabilityExport.
-	server staticToolNames: #( 'tool_search' 'tool_get' 'tool_call' ).
+	server advertiseTools: #( 'tool_search' 'tool_get' 'tool_call' ).
 	self should: [ server rpcToolCall: 'package_search' withParams: Dictionary new ] raise: JRPCNonExistentHandler
 ]
 
 { #category : 'tests' }
 MCPToolContractsTest >> testDebuggerToolsAreDiscoverableOnly [
 
-	| debugNames staticToolNames |
+	| debugNames advertisedToolNames |
 	debugNames := #( 'debug_search' 'debug_watch' ).
-	staticToolNames := self toolRegistry staticToolNames.
+	advertisedToolNames := self toolRegistry advertisedToolNames.
 	debugNames do: [ :each |
-			self deny: (staticToolNames includes: each).
-			self assert: (self toolRegistry publicToolNames includes: each) ]
+			self deny: (advertisedToolNames includes: each).
+			self assert: (self toolRegistry toolNames includes: each) ]
 ]
 
 { #category : 'tests' }
@@ -824,7 +824,7 @@ MCPToolContractsTest >> testDefaultProfileUsesDefaultToolRegistry [
 	| server |
 	server := MCP new.
 	self assert: (server toolRegistry includesToolNamed: MCPToolSearchTools toolName).
-	self assert: (server staticToolNames includes: MCPToolSearchClasses toolName)
+	self assert: (server advertisedToolNames includes: MCPToolSearchClasses toolName)
 ]
 
 { #category : 'tests' }
@@ -833,7 +833,7 @@ MCPToolContractsTest >> testDefaultToolRegistryRegistersBuiltInTools [
 	| registry |
 	registry := MCPToolRegistry default.
 	self assert: (registry includesToolNamed: MCPToolSearchTools toolName).
-	self assert: (registry staticToolNames includes: MCPToolSearchClasses toolName)
+	self assert: (registry advertisedToolNames includes: MCPToolSearchClasses toolName)
 ]
 
 { #category : 'tests' }
@@ -868,7 +868,7 @@ MCPToolContractsTest >> testDiscoveryUsesConfiguredStaticToolNames [
 
 	| createContract metadataByName result searchContract server |
 	server := self mcpWithoutObservabilityExport.
-	server staticToolNames: #( 'tool_search' 'tool_get' 'tool_call' 'repository_search' ).
+	server advertiseTools: #( 'tool_search' 'tool_get' 'tool_call' 'repository_search' ).
 	result := server rpcToolCall: 'tool_search' withParams: { (#query -> 'repository') } asDictionary.
 	metadataByName := (((self dataFrom: result) at: #tools) collect: [ :each | (each at: #name) -> each ]) asDictionary.
 	self assert: (metadataByName includesKey: 'repository_search').
@@ -896,12 +896,12 @@ MCPToolContractsTest >> testEmptyListOfTargetsIsRejectedAsInput [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testEmptyProfileRegistersNoTools [
+MCPToolContractsTest >> testServerWithNoToolsRegistersNone [
 
 	| server |
-	server := MCP profile: MCPProfile empty.
-	self assert: server toolRegistry publicToolNames isEmpty.
-	self assert: server staticToolNames isEmpty.
+	server := MCP onlyTools: #(  ).
+	self assert: server toolRegistry toolNames isEmpty.
+	self assert: server advertisedToolNames isEmpty.
 	self assert: (server rpcToolsList at: #tools) isEmpty
 ]
 
@@ -1069,14 +1069,14 @@ MCPToolContractsTest >> testEvaluateToolPointsAtTheToolCatalog [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testExposurePolicyOverridesToolDefault [
+MCPToolContractsTest >> testAdvertisingOverridesToolDefault [
 
 	| registry tool |
 	registry := MCPToolRegistry default.
 	tool := registry toolNamed: 'method_protocol_update' ifAbsent: [ self fail ].
-	registry exposurePolicy: (MCPToolExposurePolicy staticToolNames: (registry staticToolNames copyWith: tool name)).
+	registry advertiseTools: (registry advertisedToolNames copyWith: tool name).
 	self assert: tool defaultExposure equals: 'discoverable'.
-	self assert: (registry isStaticToolNamed: tool name)
+	self assert: (registry isToolAdvertisedNamed: tool name)
 ]
 
 { #category : 'tests' }
@@ -1267,39 +1267,39 @@ MCPToolContractsTest >> testMCPMethodsHaveImplementedSelfAndSuperSends [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testMCPRegisterToolClassRefreshesStaticTools [
+MCPToolContractsTest >> testMCPAddToolRefreshesAdvertisedTools [
 
 	| server |
 	server := MCP new.
-	server toolExposurePolicy: MCPToolExposurePolicy allStatic.
-	self deny: (server staticToolNames includes: MCPHaltingTestTool toolName).
-	server registerToolClass: MCPHaltingTestTool.
+	server advertiseAllTools.
+	self deny: (server advertisedToolNames includes: MCPHaltingTestTool toolName).
+	server addTool: MCPHaltingTestTool.
 	self assert: (server toolRegistry includesToolNamed: MCPHaltingTestTool toolName).
-	self assert: (server staticToolNames includes: MCPHaltingTestTool toolName)
+	self assert: (server advertisedToolNames includes: MCPHaltingTestTool toolName)
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testMCPRegisterToolClassesReturnsRegistrations [
+MCPToolContractsTest >> testMCPAddToolsAnswersTheAddedTools [
 
-	| registrations server |
+	| added server |
 	server := MCP new.
-	registrations := server registerToolClasses: { MCPHaltingTestTool }.
-	self assert: registrations size equals: 1.
-	self assert: registrations first toolClass equals: MCPHaltingTestTool.
+	added := server addTools: { MCPHaltingTestTool }.
+	self assert: added size equals: 1.
+	self assert: added first class equals: MCPHaltingTestTool.
 	self assert: (server toolRegistry includesToolNamed: MCPHaltingTestTool toolName)
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testMCPUnregisterToolNamedRefreshesStaticTools [
+MCPToolContractsTest >> testMCPRemoveToolRefreshesAdvertisedTools [
 
 	| server |
 	server := MCP new.
-	server toolExposurePolicy: MCPToolExposurePolicy allStatic.
-	server registerToolClass: MCPHaltingTestTool.
-	self assert: (server staticToolNames includes: MCPHaltingTestTool toolName).
-	server unregisterToolNamed: MCPHaltingTestTool toolName.
+	server advertiseAllTools.
+	server addTool: MCPHaltingTestTool.
+	self assert: (server advertisedToolNames includes: MCPHaltingTestTool toolName).
+	server removeTool: MCPHaltingTestTool toolName.
 	self deny: (server toolRegistry includesToolNamed: MCPHaltingTestTool toolName).
-	self deny: (server staticToolNames includes: MCPHaltingTestTool toolName)
+	self deny: (server advertisedToolNames includes: MCPHaltingTestTool toolName)
 ]
 
 { #category : 'tests - evaluate' }
@@ -1494,8 +1494,8 @@ MCPToolContractsTest >> testNewToolRegistryStartsEmpty [
 
 	| registry |
 	registry := MCPToolRegistry new.
-	self assert: registry publicToolNames isEmpty.
-	self assert: registry staticToolNames isEmpty
+	self assert: registry toolNames isEmpty.
+	self assert: registry advertisedToolNames isEmpty
 ]
 
 { #category : 'tests' }
@@ -1552,28 +1552,27 @@ MCPToolContractsTest >> testParsedInputClassesUseRequestOrSpecSuffixes [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testProfileCanKeepRegisteredToolsDiscoverable [
+MCPToolContractsTest >> testOnlyToolsCanKeepSomeOfThemDiscoverable [
 
 	| server |
-	server := MCP profile: (MCPProfile
-			           tools: {
-					           MCPExternalTestTool.
-					           MCPToolSearchTools }
-			           static: { MCPExternalTestTool }).
-	self assert: server toolRegistry publicToolNames asSet equals: {
+	server := MCP onlyTools: {
+			          MCPExternalTestTool.
+			          MCPToolSearchTools }.
+	server advertiseTools: { MCPExternalTestTool }.
+	self assert: server toolRegistry toolNames asSet equals: {
 			MCPExternalTestTool toolName.
 			MCPToolSearchTools toolName } asSet.
-	self assert: server staticToolNames asSet equals: { MCPExternalTestTool toolName } asSet.
+	self assert: server advertisedToolNames asSet equals: { MCPExternalTestTool toolName } asSet.
 	self deny: ((server rpcToolsList at: #tools) anySatisfy: [ :each | (each at: #name) = MCPToolSearchTools toolName ])
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testProfileRegistersOnlyDeclaredTools [
+MCPToolContractsTest >> testOnlyToolsRegistersExactlyThoseTools [
 
 	| server |
-	server := MCP profile: (MCPProfile tools: { MCPExternalTestTool }).
-	self assert: server toolRegistry publicToolNames asSet equals: { MCPExternalTestTool toolName } asSet.
-	self assert: server staticToolNames asSet equals: { MCPExternalTestTool toolName } asSet
+	server := MCP onlyTools: { MCPExternalTestTool }.
+	self assert: server toolRegistry toolNames asSet equals: { MCPExternalTestTool toolName } asSet.
+	self assert: server advertisedToolNames asSet equals: { MCPExternalTestTool toolName } asSet
 ]
 
 { #category : 'tests' }
@@ -1650,12 +1649,12 @@ MCPToolContractsTest >> testRPCAdvertisesStaticToolSurfaceOnly [
 	expectedStaticToolNames := #( 'tool_search' 'tool_get' 'tool_call' 'class_search' 'class_get' 'class_create' 'class_remove'
 	                              'method_search' 'method_source_search' 'method_reference_search' 'method_get'
 	                              'method_compile' 'method_remove' 'image_evaluate' 'test_run' ).
-	discoverableToolNames := registry publicToolNames difference: registry staticToolNames.
+	discoverableToolNames := registry toolNames difference: registry advertisedToolNames.
 	self assert: expectedStaticToolNames size equals: 15.
-	self assert: toolNames asSet equals: registry staticToolNames asSet.
-	self assert: registry staticToolNames asSet equals: expectedStaticToolNames asSet.
+	self assert: toolNames asSet equals: registry advertisedToolNames asSet.
+	self assert: registry advertisedToolNames asSet equals: expectedStaticToolNames asSet.
 	discoverableToolNames do: [ :each | self deny: (toolNames includes: each) ].
-	self assert: (registry publicToolNames includes: 'method_protocol_update').
+	self assert: (registry toolNames includes: 'method_protocol_update').
 	self deny: (toolNames includes: 'method_protocol_update')
 ]
 
@@ -1667,7 +1666,7 @@ MCPToolContractsTest >> testRPCAdvertisesToolsInRegistryOrder [
 	mcp := self mcpWithoutObservabilityExport.
 	first := (mcp rpcToolsList at: #tools) collect: [ :each | each at: #name ].
 	second := (mcp rpcToolsList at: #tools) collect: [ :each | each at: #name ].
-	self assert: first asArray equals: mcp staticToolNames.
+	self assert: first asArray equals: mcp advertisedToolNames.
 	self assert: first asArray equals: second asArray
 ]
 
@@ -2189,7 +2188,7 @@ MCPToolContractsTest >> testSearchToolsAnswersCatalogOverviewWithoutQuery [
 	result := self callToolNamed: 'tool_search' withArguments: Dictionary new.
 	summary := self summaryFrom: result.
 	self assert: ((self dataFrom: result) at: #tools) isEmpty.
-	self assert: (summary includesSubstring: self toolRegistry publicTools size asString , ' tools in ').
+	self assert: (summary includesSubstring: self toolRegistry tools size asString , ' tools in ').
 	self assert: (summary includesSubstring: 'classes ')
 ]
 
@@ -2291,7 +2290,7 @@ MCPToolContractsTest >> testSearchToolsMatchesSpecializedClassKeywords [
 { #category : 'tests' }
 MCPToolContractsTest >> testSearchToolsRanksEveryToolFirstForItsOwnName [
 
-	self toolRegistry publicTools do: [ :tool |
+	self toolRegistry tools do: [ :tool |
 		self assert: (self toolRegistry toolsMatchingQuery: tool name) first name equals: tool name ]
 ]
 
@@ -2362,7 +2361,7 @@ MCPToolContractsTest >> testServerCanConfigureStaticToolNames [
 
 	| server toolNames |
 	server := self mcpWithoutObservabilityExport.
-	server staticToolNames: #( 'tool_search' 'tool_get' 'tool_call' 'class_search' ).
+	server advertiseTools: #( 'tool_search' 'tool_get' 'tool_call' 'class_search' ).
 	toolNames := (server rpcToolsList at: #tools) collect: [ :each | each at: #name ].
 	self assert: toolNames asSet equals: #( 'tool_search' 'tool_get' 'tool_call' 'class_search' ) asSet.
 	self deny: (toolNames includes: 'class_name_update')
@@ -2377,11 +2376,11 @@ MCPToolContractsTest >> testServerInitializationLeavesIconCacheEmpty [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testServerRegistryOwnsExposurePolicy [
+MCPToolContractsTest >> testServerAdvertisingReadsTheRegistry [
 
 	| server |
 	server := self mcpWithoutObservabilityExport.
-	self assert: server toolExposurePolicy == server toolRegistry exposurePolicy
+	self assert: server advertisedToolNames equals: server toolRegistry advertisedToolNames
 ]
 
 { #category : 'tests' }
@@ -2405,8 +2404,8 @@ MCPToolContractsTest >> testSpecializedClassAndMethodToolsAreDiscoverableOnly [
 	                            'test_coverage_run' ).
 	discoverableOnlyNames do: [ :each |
 			| tool |
-			self assert: (self toolRegistry publicToolNames includes: each).
-			self deny: (self toolRegistry staticToolNames includes: each).
+			self assert: (self toolRegistry toolNames includes: each).
+			self deny: (self toolRegistry advertisedToolNames includes: each).
 			tool := self toolRegistry toolNamed: each ifAbsent: [ self fail: 'Missing tool ' , each ].
 			self assert: tool defaultExposure equals: 'discoverable'.
 			self assert: tool searchMetadata keys asSet equals: #( name description ) asSet ]
@@ -2415,7 +2414,7 @@ MCPToolContractsTest >> testSpecializedClassAndMethodToolsAreDiscoverableOnly [
 { #category : 'tests' }
 MCPToolContractsTest >> testStaticToolConfigurationRejectsUnknownToolNames [
 
-	self should: [ self mcpWithoutObservabilityExport staticToolNames: #( 'tool_search' 'not-a-tool' ) ] raise: Error
+	self should: [ self mcpWithoutObservabilityExport advertiseTools: #( 'tool_search' 'not-a-tool' ) ] raise: Error
 ]
 
 { #category : 'tests' }
@@ -2455,9 +2454,9 @@ MCPToolContractsTest >> testToolCallsResumeNotificationsWithoutAToolOfTheirOwn [
 
 	| result server structured |
 	server := MCP new.
-	server toolExposurePolicy: MCPToolExposurePolicy allStatic.
+	server advertiseAllTools.
 	server useContentAndStructuredContentToolResponses.
-	server registerToolClass: MCPNotifyingTestTool.
+	server addTool: MCPNotifyingTestTool.
 	result := server rpcToolCall: MCPNotifyingTestTool toolName withParams: Dictionary new.
 	structured := result at: #structuredContent.
 	self deny: (result includesKey: #isError).
@@ -2513,11 +2512,11 @@ MCPToolContractsTest >> testToolRegistryAcceptsPluginToolRegistration [
 
 	| registration registry tool |
 	registry := MCPToolRegistry new.
-	registration := registry registerToolClass: MCPHaltingTestTool.
+	registration := registry addTool: MCPHaltingTestTool.
 	tool := registry toolNamed: MCPHaltingTestTool toolName ifAbsent: [ self fail ].
 	self assert: tool == registration tool.
-	self deny: (registry isStaticToolNamed: tool name).
-	self assert: ((registry publicToolGroups detect: [ :each | each key = tool groupName ] ifNone: [ self fail ]) value includes:
+	self deny: (registry isToolAdvertisedNamed: tool name).
+	self assert: ((registry toolGroups detect: [ :each | each key = tool groupName ] ifNone: [ self fail ]) value includes:
 			 MCPHaltingTestTool)
 ]
 
@@ -2542,7 +2541,7 @@ MCPToolContractsTest >> testToolRegistryAutoRegistersOptInExternalTools [
 		registry := MCPToolRegistry default.
 		self assert: toolClass shouldAutoRegister.
 		self assert: (registry includesToolNamed: MCPExternalTestTool toolName).
-		self deny: (registry isStaticToolNamed: MCPExternalTestTool toolName) ] ensure: [ self removeClassNamed: className ]
+		self deny: (registry isToolAdvertisedNamed: MCPExternalTestTool toolName) ] ensure: [ self removeClassNamed: className ]
 ]
 
 { #category : 'tests' }
@@ -2550,8 +2549,8 @@ MCPToolContractsTest >> testToolRegistryNamesUseClassSideMetadata [
 
 	| names registry |
 	registry := self toolRegistry.
-	names := registry publicToolClasses collect: [ :each | each toolName ].
-	self assert: registry publicToolNames equals: names.
+	names := registry toolClasses collect: [ :each | each toolName ].
+	self assert: registry toolNames equals: names.
 	self assert: MCPToolSearchClasses toolName equals: 'class_search'.
 	self assert: MCPToolCreateClass toolName equals: 'class_create'.
 	self assert: MCPToolUpdateClassName toolName equals: 'class_name_update'.
@@ -2596,7 +2595,7 @@ MCPToolContractsTest >> testToolRegistryRegistrationIsInstanceScoped [
 	| firstRegistry secondRegistry |
 	firstRegistry := MCPToolRegistry new.
 	secondRegistry := MCPToolRegistry new.
-	firstRegistry registerToolClass: MCPHaltingTestTool.
+	firstRegistry addTool: MCPHaltingTestTool.
 	self assert: (firstRegistry includesToolNamed: MCPHaltingTestTool toolName).
 	self deny: (secondRegistry includesToolNamed: MCPHaltingTestTool toolName)
 ]
@@ -2618,11 +2617,11 @@ MCPToolContractsTest >> testToolRegistryUsesDefaultExposureUntilStaticListProvid
 
 	| registry |
 	registry := MCPToolRegistry default.
-	self assert: (registry isStaticToolNamed: 'tool_search').
-	self deny: (registry isStaticToolNamed: 'repository_search').
-	registry staticToolNames: #( 'repository_search' ).
-	self deny: (registry isStaticToolNamed: 'tool_search').
-	self assert: (registry isStaticToolNamed: 'repository_search')
+	self assert: (registry isToolAdvertisedNamed: 'tool_search').
+	self deny: (registry isToolAdvertisedNamed: 'repository_search').
+	registry advertiseTools: #( 'repository_search' ).
+	self deny: (registry isToolAdvertisedNamed: 'tool_search').
+	self assert: (registry isToolAdvertisedNamed: 'repository_search')
 ]
 
 { #category : 'tests' }

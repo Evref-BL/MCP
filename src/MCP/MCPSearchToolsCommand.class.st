@@ -25,13 +25,13 @@ MCPSearchToolsCommand >> catalogOverviewText [
 	"Answer the size and shape of the catalog: a caller that matched nothing needs the vocabulary to search with, not only a count."
 
 	| groups |
-	groups := self toolRegistry publicToolGroups asSortedCollection: [ :left :right |
+	groups := self toolRegistry toolGroups asSortedCollection: [ :left :right |
 		          left value size = right value size
 			          ifTrue: [ left key <= right key ]
 			          ifFalse: [ left value size > right value size ] ].
 	^ String streamContents: [ :stream |
 			  stream
-				  print: self toolRegistry publicTools size;
+				  print: self toolRegistry tools size;
 				  nextPutAll: ' tools in ';
 				  print: groups size;
 				  nextPutAll: ' groups: '.

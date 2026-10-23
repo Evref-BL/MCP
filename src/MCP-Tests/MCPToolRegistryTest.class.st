@@ -87,9 +87,9 @@ MCPToolRegistryTest >> testCuratedRegistryIgnoresNewToolClasses [
 
 	| registry |
 	registry := MCPToolRegistry empty.
-	registry registerToolClass: MCPExternalTestTool.
+	registry addTool: MCPExternalTestTool.
 	self createProbeToolClass.
-	self assert: registry publicToolNames asArray equals: (Array with: MCPExternalTestTool toolName)
+	self assert: registry toolNames asArray equals: (Array with: MCPExternalTestTool toolName)
 ]
 
 { #category : 'tests' }
@@ -98,9 +98,9 @@ MCPToolRegistryTest >> testDiscoveringRegistryDropsRemovedToolClasses [
 	| registry |
 	self createProbeToolClass.
 	registry := MCPToolRegistry default.
-	self assert: (registry publicToolNames includes: self probeToolName).
+	self assert: (registry toolNames includes: self probeToolName).
 	self removeProbeToolClass.
-	self deny: (registry publicToolNames includes: self probeToolName).
+	self deny: (registry toolNames includes: self probeToolName).
 	self assert: (registry toolNamed: self probeToolName ifAbsent: [ nil ]) isNil
 ]
 
@@ -110,9 +110,9 @@ MCPToolRegistryTest >> testDiscoveringRegistryPicksUpNewToolClasses [
 
 	| registry |
 	registry := MCPToolRegistry default.
-	self deny: (registry publicToolNames includes: self probeToolName).
+	self deny: (registry toolNames includes: self probeToolName).
 	self createProbeToolClass.
-	self assert: (registry publicToolNames includes: self probeToolName).
+	self assert: (registry toolNames includes: self probeToolName).
 	self assert: (registry toolNamed: self probeToolName ifAbsent: [ nil ]) isNotNil
 ]
 
@@ -121,10 +121,10 @@ MCPToolRegistryTest >> testHandRegisteredToolsSurviveRediscovery [
 
 	| registry |
 	registry := MCPToolRegistry default.
-	registry registerToolClass: MCPExternalTestTool.
+	registry addTool: MCPExternalTestTool.
 	self createProbeToolClass.
-	self assert: (registry publicToolNames includes: MCPExternalTestTool toolName).
-	self assert: (registry publicToolNames includes: self probeToolName)
+	self assert: (registry toolNames includes: MCPExternalTestTool toolName).
+	self assert: (registry toolNames includes: self probeToolName)
 ]
 
 { #category : 'tests' }
@@ -133,8 +133,8 @@ MCPToolRegistryTest >> testServerAnswersNewToolClassesWithoutAManualReset [
 
 	| mcp |
 	mcp := self mcpWithoutObservabilityExport.
-	self deny: (mcp toolRegistry publicToolNames includes: self probeToolName).
+	self deny: (mcp toolRegistry toolNames includes: self probeToolName).
 	self createProbeToolClass.
-	mcp staticToolNames: { self probeToolName }.
+	mcp advertiseTools: { self probeToolName }.
 	self assert: ((mcp rpcToolsList at: #tools) collect: [ :each | each at: #name ]) asArray equals: { self probeToolName }
 ]
