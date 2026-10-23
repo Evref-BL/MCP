@@ -56,22 +56,16 @@ MCPHTTPServer >> answerGet: request with: response [
 	(self getAcceptsEventStream: request) ifFalse: [ ^ self answerMethodNotAllowedWith: response ].
 	stream := MCPEventStream new.
 	self addEventStream: stream.
-	response headers
-		at: #'Cache-Control' put: 'no-cache';
-		at: #Connection put: 'keep-alive'.
-	^ response
-		  statusLine: ZnStatusLine ok;
-		  entity: (MCPEventStreamEntity on: stream);
-		  yourself
+	^ self streamResponse: response for: stream
 ]
 
 { #category : 'event streams' }
-MCPHTTPServer >> broadcast: aJSONString [
-	"Write to every open listener, and forget the ones whose client has gone."
+MCPHTTPServer >> broadcastNotification: aMethodName parameters: someParameters [
+	"Offer the notification to every open listener and forget the ones whose client has gone. Each stream decides whether it agreed to carry this one, and tags it with its own subscription."
 
 	self eventStreams copy do: [ :each |
 			each isOpen
-				ifTrue: [ each write: aJSONString ]
+				ifTrue: [ each writeNotification: aMethodName parameters: someParameters ]
 				ifFalse: [ eventStreams remove: each ifAbsent: [ nil ] ] ]
 ]
 
@@ -113,7 +107,15 @@ MCPHTTPServer >> answerOptionsWith: response [
 { #category : 'initialization' }
 MCPHTTPServer >> answerPost: request with: response [
 
-	| payload |
+	| payload mismatch body |
+	mismatch := self headerMismatchFor: request.
+	mismatch ifNotNil: [
+			response
+				statusLine: ZnStatusLine badRequest;
+				entity: (ZnEntity json: mismatch).
+			^ response ].
+	body := self bodyOf: request.
+	(self isSubscriptionsListen: body) ifTrue: [ ^ self answerSubscriptionsListen: body with: response ].
 	payload := self handleJSON: request contents.
 	(payload isString and: [ payload isEmpty ]) ifTrue: [ ^ self answerWithoutBody: response statusLine: ZnStatusLine accepted ].
 	response
@@ -167,6 +169,147 @@ MCPHTTPServer >> configureResponse: response for: request [
 MCPHTTPServer >> deferAfterCurrentResponse: aBlock [
 
 	server deferAfterCurrentResponse: aBlock
+]
+
+{ #category : 'event streams' }
+MCPHTTPServer >> acceptedNotificationsFor: aFilter [
+	"The notification methods this server agreed to carry, from the types the client asked for. resourceSubscriptions is absent because no resource here can say it changed, and the revision has the acknowledgement omit what the server does not support."
+
+	| accepted |
+	accepted := Set new.
+	(aFilter at: 'toolsListChanged' ifAbsent: [ false ]) = true ifTrue: [ accepted add: 'notifications/tools/list_changed' ].
+	(aFilter at: 'promptsListChanged' ifAbsent: [ false ]) = true ifTrue: [
+		accepted add: 'notifications/prompts/list_changed' ].
+	(aFilter at: 'resourcesListChanged' ifAbsent: [ false ]) = true ifTrue: [
+		accepted add: 'notifications/resources/list_changed' ].
+	^ accepted
+]
+
+{ #category : 'event streams' }
+MCPHTTPServer >> acknowledgedFilterFor: aFilter [
+	"What the server agreed to, which the client compares with what it asked for."
+
+	| acknowledged |
+	acknowledged := Dictionary new.
+	#( 'toolsListChanged' 'promptsListChanged' 'resourcesListChanged' ) do: [ :each |
+		(aFilter at: each ifAbsent: [ false ]) = true ifTrue: [ acknowledged at: each put: true ] ].
+	^ acknowledged
+]
+
+{ #category : 'initialization' }
+MCPHTTPServer >> answerSubscriptionsListen: body with: response [
+	"The response to this request is the stream itself, which stays open and carries the notifications the client opted in to. The acknowledgement goes first, before anything can be broadcast onto it."
+
+	| stream filter |
+	filter := (body at: 'params' ifAbsent: [ Dictionary new ]) at: 'notifications' ifAbsent: [ Dictionary new ].
+	stream := MCPEventStream new
+		          subscriptionId: (body at: 'id' ifAbsent: [ nil ]);
+		          acceptedNotifications: (self acceptedNotificationsFor: filter);
+		          yourself.
+	stream write: (stream
+			 notificationFor: 'notifications/subscriptions/acknowledged'
+			 parameters: { ('notifications' -> (self acknowledgedFilterFor: filter)) } asDictionary).
+	self addEventStream: stream.
+	^ self streamResponse: response for: stream
+]
+
+{ #category : 'testing' }
+MCPHTTPServer >> isSubscriptionsListen: body [
+
+	body isDictionary ifFalse: [ ^ false ].
+	^ (body at: 'method' ifAbsent: [ nil ]) = 'subscriptions/listen'
+]
+
+{ #category : 'initialization' }
+MCPHTTPServer >> streamResponse: response for: aStream [
+	"X-Accel-Buffering keeps a reverse proxy from holding events in a buffer, which would break the point of a stream."
+
+	response headers
+		at: #'Cache-Control' put: 'no-cache';
+		at: #Connection put: 'keep-alive';
+		at: #'X-Accel-Buffering' put: 'no'.
+	^ response
+		  statusLine: ZnStatusLine ok;
+		  entity: (MCPEventStreamEntity on: aStream);
+		  yourself
+]
+
+{ #category : 'private - modern headers' }
+MCPHTTPServer >> bodyOf: request [
+	"Answer the parsed request body, or nil when it is not JSON at all. A body that cannot be parsed is the message processor's to refuse, not this check's."
+
+	^ [ STONJSON fromString: request contents ] on: Error do: [ :error | error return: nil ]
+]
+
+{ #category : 'private - modern headers' }
+MCPHTTPServer >> decodedHeaderValue: aValue [
+	"A value that cannot travel as plain ASCII arrives wrapped in a sentinel, and has to be decoded before it can be compared with the body."
+
+	| sentinelStart sentinelEnd |
+	sentinelStart := '=?base64?'.
+	sentinelEnd := '?='.
+	((aValue beginsWith: sentinelStart) and: [ aValue endsWith: sentinelEnd ]) ifFalse: [ ^ aValue ].
+	^ [
+	  (ZnBase64Encoder new decode: (aValue copyFrom: sentinelStart size + 1 to: aValue size - sentinelEnd size)) utf8Decoded ]
+		  on: Error
+		  do: [ :error | error return: aValue ]
+]
+
+{ #category : 'private - modern headers' }
+MCPHTTPServer >> headerMismatchFor: request [
+	"Answer the error body for a modern request whose headers do not agree with it, or nil when there is nothing to refuse. Legacy requests carry none of these headers and are not asked to."
+
+	| body |
+	body := self bodyOf: request.
+	body isDictionary ifFalse: [ ^ nil ].
+	(MCP isModernRequest: (body at: 'params' ifAbsent: [ nil ])) ifFalse: [ ^ nil ].
+	^ [
+	  self validateModernHeadersFor: request body: body.
+	  nil ]
+		  on: MCPHeaderMismatch
+		  do: [ :error | error return: (error asJRPCResponseWithId: (body at: 'id' ifAbsent: [ nil ])) asJRPCJSON ]
+]
+
+{ #category : 'private - modern headers' }
+MCPHTTPServer >> headerNamed: aName in: request [
+
+	^ request headers at: aName ifAbsent: [ MCPHeaderMismatch signalMissing: aName ]
+]
+
+{ #category : 'private - modern headers' }
+MCPHTTPServer >> nameHeaderSourceIn: body [
+	"The body field Mcp-Name mirrors: the thing the call names. Only the three methods that name something carry it."
+
+	| params |
+	params := body at: 'params' ifAbsent: [ ^ nil ].
+	params isDictionary ifFalse: [ ^ nil ].
+	^ (#( 'tools/call' 'prompts/get' ) includes: (body at: 'method' ifAbsent: [ '' ]))
+		  ifTrue: [ params at: 'name' ifAbsent: [ nil ] ]
+		  ifFalse: [
+			  (body at: 'method' ifAbsent: [ '' ]) = 'resources/read'
+				  ifTrue: [ params at: 'uri' ifAbsent: [ nil ] ]
+				  ifFalse: [ nil ] ]
+]
+
+{ #category : 'private - modern headers' }
+MCPHTTPServer >> validate: aHeaderName in: request matches: aBodyValue [
+
+	| headerValue |
+	headerValue := self decodedHeaderValue: (self headerNamed: aHeaderName in: request).
+	headerValue = aBodyValue ifFalse: [
+		MCPHeaderMismatch signalName: aHeaderName header: headerValue doesNotMatch: aBodyValue ]
+]
+
+{ #category : 'private - modern headers' }
+MCPHTTPServer >> validateModernHeadersFor: request body: body [
+	"Every modern request mirrors its method and version into headers, and the three that name something mirror that too."
+
+	self
+		validate: 'MCP-Protocol-Version'
+		in: request
+		matches: (MCP requestedProtocolVersionIn: (body at: 'params' ifAbsent: [ nil ])).
+	self validate: 'Mcp-Method' in: request matches: (body at: 'method' ifAbsent: [ nil ]).
+	(self nameHeaderSourceIn: body) ifNotNil: [ :named | self validate: 'Mcp-Name' in: request matches: named ]
 ]
 
 { #category : 'private - validation' }

@@ -30,17 +30,79 @@ Class {
 }
 
 { #category : 'protocol' }
+MCP class >> catalogCacheMilliseconds [
+	"How long a catalog answer stays good. The catalogs only move when code is loaded or removed, and list_changed invalidates a client's copy the moment they do, so a minute costs a non-listening client at most a minute of staleness and saves everyone else the refetches."
+
+	^ 60000
+]
+
+{ #category : 'protocol' }
+MCP class >> resourceContentsCacheMilliseconds [
+	"Shorter than a catalog, because nothing announces that a resource's contents changed. Until a resource can signal that, the only protection a client has is a short freshness window."
+
+	^ 5000
+]
+
+{ #category : 'protocol' }
+MCP class >> isModernRequest: someParams [
+	"A modern request declares a modern protocol version in _meta. A legacy one opens with initialize and says nothing per request; one that declares a legacy version is answered the legacy way, which is what it named."
+
+	| declared |
+	declared := self requestedProtocolVersionIn: someParams.
+	declared ifNil: [ ^ false ].
+	^ self modernProtocolVersions includes: declared
+]
+
+{ #category : 'protocol' }
+MCP class >> modernProtocolVersionKey [
+
+	^ 'io.modelcontextprotocol/protocolVersion'
+]
+
+{ #category : 'protocol' }
+MCP class >> requestedProtocolVersionIn: someParams [
+	"Answer the protocol version a request declares for itself, or nil when it declares none."
+
+	| meta |
+	someParams isDictionary ifFalse: [ ^ nil ].
+	meta := someParams at: '_meta' ifAbsent: [ ^ nil ].
+	meta isDictionary ifFalse: [ ^ nil ].
+	^ meta at: self modernProtocolVersionKey ifAbsent: [ nil ]
+]
+
+{ #category : 'protocol' }
+MCP class >> latestLegacyProtocolVersion [
+
+	^ self legacyProtocolVersions last
+]
+
+{ #category : 'protocol' }
 MCP class >> latestProtocolVersion [
 
 	^ self supportedProtocolVersions last
 ]
 
 { #category : 'protocol' }
-MCP class >> negotiatedProtocolVersionFor: requestedVersion [
+MCP class >> legacyProtocolVersions [
+	"The revisions that open with an initialize handshake and carry a session."
 
-	^ (self supportedProtocolVersions includes: requestedVersion)
+	^ #( '2025-03-26' '2025-06-18' '2025-11-25' )
+]
+
+{ #category : 'protocol' }
+MCP class >> modernProtocolVersions [
+	"The revisions that declare their version on every request and keep no session."
+
+	^ #( '2026-07-28' )
+]
+
+{ #category : 'protocol' }
+MCP class >> negotiatedProtocolVersionFor: requestedVersion [
+	"initialize is how a legacy client opens, so it negotiates among legacy versions only. Answering a modern version here would name one the client cannot speak, since the modern era has no handshake to answer with."
+
+	^ (self legacyProtocolVersions includes: requestedVersion)
 		  ifTrue: [ requestedVersion ]
-		  ifFalse: [ self latestProtocolVersion ]
+		  ifFalse: [ self latestLegacyProtocolVersion ]
 ]
 
 { #category : 'instance creation' }
@@ -54,7 +116,7 @@ MCP class >> onlyTools: toolsOrToolClasses [
 { #category : 'protocol' }
 MCP class >> supportedProtocolVersions [
 
-	^ #( '2025-03-26' '2025-06-18' '2025-11-25' )
+	^ self legacyProtocolVersions , self modernProtocolVersions
 ]
 
 { #category : 'observability' }
@@ -360,9 +422,7 @@ MCP >> listeningRegistry: aRegistry notifying: aDomainName [
 MCP >> notifyListChangedFor: aDomainName [
 	"Not guarded: a client that has gone is handled where the write happens, so anything raising here is a fault in the server rather than a condition to absorb. An earlier guard here hid exactly that for a whole round."
 
-	server broadcast: (STONJSON toString: {
-			 (#jsonrpc -> '2.0').
-			 (#method -> ('notifications/' , aDomainName , '/list_changed')) } asDictionary)
+	server broadcastNotification: 'notifications/' , aDomainName , '/list_changed' parameters: nil
 ]
 
 { #category : 'private - completion' }
@@ -392,6 +452,27 @@ MCP >> hasCompletableReferences [
 ]
 
 { #category : 'start' }
+MCP >> discoveryInstructions [
+	"Natural-language guidance a client may put in front of a model. The catalog is larger than what tools/list shows, so the one thing worth saying is how to reach the rest of it."
+
+	^ 'Pharo image tools. tools/list shows the advertised surface; tool_search finds the rest of the catalog and tool_call runs any of them. image_evaluate is the escape hatch when no tool fits.'
+]
+
+{ #category : 'start' }
+MCP >> serverIdentity [
+	"Who this server says it is. Self-reported and unverified, so it is for display and logging rather than for a client to act on."
+
+	^ MCPStructureServerInfo new
+		  name: 'MCP Pharo';
+		  title: 'The MCP server for Pharo';
+		  version: '1.0.0';
+		  description: 'a MCP server for Pharo';
+		  websiteUrl: 'https://badetitou.fr';
+		  icons: { (MCPStructureIcon pngIconNamed: #pharo) };
+		  yourself
+]
+
+{ #category : 'start' }
 MCP >> onInitialize: protocolVersion capabilities: capabilities clientInfo: clientInfo websiteUrl: websiteUrl [
 
 	<jrpc: #initialize>
@@ -399,14 +480,7 @@ MCP >> onInitialize: protocolVersion capabilities: capabilities clientInfo: clie
 		  protocolVersion: (self class negotiatedProtocolVersionFor: protocolVersion);
 		  capabilities: self advertisedCapabilities;
 		  metadata: self serverInfrastructureMetadata;
-		  serverInfo: (MCPStructureServerInfo new
-				   name: 'MCP Pharo';
-				   title: 'The MCP server for Pharo';
-				   version: '1.0.0';
-				   description: 'a MCP server for Pharo';
-				   websiteUrl: 'https://badetitou.fr';
-				   icons: { (MCPStructureIcon pngIconNamed: #pharo) };
-				   yourself)
+		  serverInfo: self serverIdentity
 ]
 
 { #category : 'infrastructure metadata' }
@@ -620,6 +694,19 @@ MCP >> rpcCompletionComplete: ref argument: argument context: context [
 		               value: (argument at: #value ifAbsent: [ '' ])
 		               context: ((context ifNil: [ Dictionary new ]) at: #arguments ifAbsent: [ Dictionary new ]).
 	^ { (#completion -> (MCPStructureCompletion values: suggestions) asJRPCJSON) } asDictionary
+]
+
+{ #category : 'rpc' }
+MCP >> rpcServerDiscover [
+	"What a client needs before it can talk: the versions this server implements, what it can do, and who it is. A client may call it first or never, so it answers whatever version was asked for."
+
+	<jrpc: #'server/discover'>
+	^ {
+		  (#supportedVersions -> self class supportedProtocolVersions).
+		  (#capabilities -> self advertisedCapabilities asJRPCJSON).
+		  (#instructions -> self discoveryInstructions).
+		  (#_meta -> { ('io.modelcontextprotocol/serverInfo' -> self serverIdentity asJRPCJSON) } asDictionary) }
+			  asDictionary
 ]
 
 { #category : 'rpc' }

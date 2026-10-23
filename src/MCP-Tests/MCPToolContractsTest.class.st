@@ -1628,7 +1628,7 @@ MCPToolContractsTest >> testPromptsListReturnsEmptyPromptList [
 MCPToolContractsTest >> testProtocolVersionNegotiation [
 
 	self assert: (MCP negotiatedProtocolVersionFor: '2025-06-18') equals: '2025-06-18'.
-	self assert: (MCP negotiatedProtocolVersionFor: '1900-01-01') equals: MCP latestProtocolVersion
+	self assert: (MCP negotiatedProtocolVersionFor: '1900-01-01') equals: MCP latestLegacyProtocolVersion
 ]
 
 { #category : 'tests' }
