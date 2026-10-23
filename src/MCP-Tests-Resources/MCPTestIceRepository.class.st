@@ -1,5 +1,5 @@
 "
-Test double for IceRepository used by repository tool tests. It keeps repository metadata in memory and simulates remote operations without network access.
+Test double for IceRepository used by repository tool tests. It keeps repository metadata in memory.
 "
 Class {
 	#name : 'MCPTestIceRepository',
@@ -10,12 +10,6 @@ Class {
 		'headDescription',
 		'remoteNames',
 		'actionLog',
-		'failFetch',
-		'failPull',
-		'failPush',
-		'failCreateBranch',
-		'failSwitchBranch',
-		'knownBranchNames',
 		'modifiedPackages',
 		'headCommitId',
 		'isDetachedHead',
@@ -57,77 +51,6 @@ MCPTestIceRepository >> branchName [
 MCPTestIceRepository >> branchName: aString [
 
 	branchName := aString
-]
-
-{ #category : 'API - branches' }
-MCPTestIceRepository >> createBranch: aBranchName [
-
-	self signalFailureIfNeeded: self failCreateBranch defaultMessage: 'Create branch failed for test repository'.
-	(self knownBranchNames includes: aBranchName) ifTrue: [ IceBranchAlreadyExistsError signal: 'Branch already exists: ' , aBranchName ].
-	knownBranchNames add: aBranchName.
-	branchName := aBranchName.
-	headDescription := 'branch ' , aBranchName.
-	self recordAction: 'createBranch:' , aBranchName
-]
-
-{ #category : 'testing' }
-MCPTestIceRepository >> failCreateBranch [
-
-	^ failCreateBranch ifNil: [ false ]
-]
-
-{ #category : 'testing' }
-MCPTestIceRepository >> failCreateBranch: aBoolean [
-
-	failCreateBranch := aBoolean
-]
-
-{ #category : 'testing' }
-MCPTestIceRepository >> failFetch [
-
-	^ failFetch ifNil: [ false ]
-]
-
-{ #category : 'testing' }
-MCPTestIceRepository >> failFetch: aBoolean [
-
-	failFetch := aBoolean
-]
-
-{ #category : 'testing' }
-MCPTestIceRepository >> failPull [
-
-	^ failPull ifNil: [ false ]
-]
-
-{ #category : 'testing' }
-MCPTestIceRepository >> failPull: aBoolean [
-
-	failPull := aBoolean
-]
-
-{ #category : 'testing' }
-MCPTestIceRepository >> failPush [
-
-	^ failPush ifNil: [ false ]
-]
-
-{ #category : 'testing' }
-MCPTestIceRepository >> failPush: aBoolean [
-
-	failPush := aBoolean
-]
-
-{ #category : 'testing' }
-MCPTestIceRepository >> failSwitchBranch [
-
-	^ failSwitchBranch ifNil: [ false ]
-]
-
-{ #category : 'testing' }
-MCPTestIceRepository >> failSwitchBranch: aBoolean [
-
-	failSwitchBranch := aBoolean
 ]
 
 { #category : 'accessing' }
@@ -205,12 +128,6 @@ MCPTestIceRepository >> isModified [
 ]
 
 { #category : 'accessing' }
-MCPTestIceRepository >> knownBranchNames [
-
-	^ knownBranchNames ifNil: [ #(  ) ]
-]
-
-{ #category : 'accessing' }
 MCPTestIceRepository >> location [
 
 	^ location
@@ -257,7 +174,7 @@ MCPTestIceRepository >> remoteNames: aCollection [
 { #category : 'accessing' }
 MCPTestIceRepository >> remotes [
 
-	^ self remoteNames collect: [ :each | MCPTestRepositoryRemote named: each repository: self shouldFail: self failFetch ]
+	^ self remoteNames collect: [ :each | MCPTestRepositoryRemote named: each repository: self ]
 ]
 
 { #category : 'private' }
@@ -277,26 +194,10 @@ MCPTestIceRepository >> subdirectory [
 	^ ''
 ]
 
-{ #category : 'API - branches' }
-MCPTestIceRepository >> switchToBranchNamed: aBranchName [
-
-	self signalFailureIfNeeded: self failSwitchBranch defaultMessage: 'Switch branch failed for test repository'.
-	(self knownBranchNames includes: aBranchName) ifFalse: [ IceBranchNotFound signal: 'Branch not found: ' , aBranchName ].
-	branchName := aBranchName.
-	headDescription := 'branch ' , aBranchName.
-	self recordAction: 'switchBranch:' , aBranchName
-]
-
 { #category : 'accessing' }
 MCPTestIceRepository >> upstreamBranchName [
 
 	^ upstreamBranchName ifNil: [ '' ]
-]
-
-{ #category : 'accessing' }
-MCPTestIceRepository >> upstreamBranchName: aString [
-
-	upstreamBranchName := aString
 ]
 
 { #category : 'accessing' }
@@ -305,8 +206,3 @@ MCPTestIceRepository >> upstreamRemoteName [
 	^ upstreamRemoteName ifNil: [ '' ]
 ]
 
-{ #category : 'accessing' }
-MCPTestIceRepository >> upstreamRemoteName: aString [
-
-	upstreamRemoteName := aString
-]

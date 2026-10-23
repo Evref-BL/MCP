@@ -19,23 +19,6 @@ MCPTestRepositoryBranch class >> repository: aRepository [
 		  yourself
 ]
 
-{ #category : 'actions' }
-MCPTestRepositoryBranch >> pull [
-
-	self signalFailureIfNeeded: repository failPull defaultMessage: 'Pull failed for test repository'.
-	repository recordAction: 'pull'.
-	repository headDescription: 'after pull'.
-	repository modifiedPackageNames: #( 'MCP-Test-Pulled' )
-]
-
-{ #category : 'actions' }
-MCPTestRepositoryBranch >> push [
-
-	self signalFailureIfNeeded: repository failPush defaultMessage: 'Push failed for test repository'.
-	repository recordAction: 'push'.
-	repository headDescription: 'after push'
-]
-
 { #category : 'accessing' }
 MCPTestRepositoryBranch >> repository: aRepository [
 

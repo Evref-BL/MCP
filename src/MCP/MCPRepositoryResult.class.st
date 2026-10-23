@@ -15,16 +15,6 @@ MCPRepositoryResult class >> isAbstract [
 	^ self = MCPRepositoryResult
 ]
 
-{ #category : 'converting' }
-MCPRepositoryResult >> branchHeadDictionary [
-
-	| data |
-	data := Dictionary new.
-	self branchName ifNotEmpty: [ :name | data at: #branchName put: name ].
-	self headDescription ifNotEmpty: [ :description | data at: #headDescription put: description ].
-	^ data
-]
-
 { #category : 'accessing' }
 MCPRepositoryResult >> branchName [
 
