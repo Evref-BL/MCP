@@ -30,6 +30,30 @@ Class {
 }
 
 { #category : 'protocol' }
+MCP class >> isModernRequest: someParams [
+	"A modern request declares its own protocol version in _meta. A legacy one opens with initialize and says nothing per request."
+
+	^ (self requestedProtocolVersionIn: someParams) isNotNil
+]
+
+{ #category : 'protocol' }
+MCP class >> modernProtocolVersionKey [
+
+	^ 'io.modelcontextprotocol/protocolVersion'
+]
+
+{ #category : 'protocol' }
+MCP class >> requestedProtocolVersionIn: someParams [
+	"Answer the protocol version a request declares for itself, or nil when it declares none."
+
+	| meta |
+	someParams isDictionary ifFalse: [ ^ nil ].
+	meta := someParams at: '_meta' ifAbsent: [ ^ nil ].
+	meta isDictionary ifFalse: [ ^ nil ].
+	^ meta at: self modernProtocolVersionKey ifAbsent: [ nil ]
+]
+
+{ #category : 'protocol' }
 MCP class >> latestProtocolVersion [
 
 	^ self supportedProtocolVersions last
@@ -392,6 +416,27 @@ MCP >> hasCompletableReferences [
 ]
 
 { #category : 'start' }
+MCP >> discoveryInstructions [
+	"Natural-language guidance a client may put in front of a model. The catalog is larger than what tools/list shows, so the one thing worth saying is how to reach the rest of it."
+
+	^ 'Pharo image tools. tools/list shows the advertised surface; tool_search finds the rest of the catalog and tool_call runs any of them. image_evaluate is the escape hatch when no tool fits.'
+]
+
+{ #category : 'start' }
+MCP >> serverIdentity [
+	"Who this server says it is. Self-reported and unverified, so it is for display and logging rather than for a client to act on."
+
+	^ MCPStructureServerInfo new
+		  name: 'MCP Pharo';
+		  title: 'The MCP server for Pharo';
+		  version: '1.0.0';
+		  description: 'a MCP server for Pharo';
+		  websiteUrl: 'https://badetitou.fr';
+		  icons: { (MCPStructureIcon pngIconNamed: #pharo) };
+		  yourself
+]
+
+{ #category : 'start' }
 MCP >> onInitialize: protocolVersion capabilities: capabilities clientInfo: clientInfo websiteUrl: websiteUrl [
 
 	<jrpc: #initialize>
@@ -399,14 +444,7 @@ MCP >> onInitialize: protocolVersion capabilities: capabilities clientInfo: clie
 		  protocolVersion: (self class negotiatedProtocolVersionFor: protocolVersion);
 		  capabilities: self advertisedCapabilities;
 		  metadata: self serverInfrastructureMetadata;
-		  serverInfo: (MCPStructureServerInfo new
-				   name: 'MCP Pharo';
-				   title: 'The MCP server for Pharo';
-				   version: '1.0.0';
-				   description: 'a MCP server for Pharo';
-				   websiteUrl: 'https://badetitou.fr';
-				   icons: { (MCPStructureIcon pngIconNamed: #pharo) };
-				   yourself)
+		  serverInfo: self serverIdentity
 ]
 
 { #category : 'infrastructure metadata' }
@@ -620,6 +658,19 @@ MCP >> rpcCompletionComplete: ref argument: argument context: context [
 		               value: (argument at: #value ifAbsent: [ '' ])
 		               context: ((context ifNil: [ Dictionary new ]) at: #arguments ifAbsent: [ Dictionary new ]).
 	^ { (#completion -> (MCPStructureCompletion values: suggestions) asJRPCJSON) } asDictionary
+]
+
+{ #category : 'rpc' }
+MCP >> rpcServerDiscover [
+	"What a client needs before it can talk: the versions this server implements, what it can do, and who it is. A client may call it first or never, so it answers whatever version was asked for."
+
+	<jrpc: #'server/discover'>
+	^ {
+		  (#supportedVersions -> self class supportedProtocolVersions).
+		  (#capabilities -> self advertisedCapabilities asJRPCJSON).
+		  (#instructions -> self discoveryInstructions).
+		  (#_meta -> { ('io.modelcontextprotocol/serverInfo' -> self serverIdentity asJRPCJSON) } asDictionary) }
+			  asDictionary
 ]
 
 { #category : 'rpc' }

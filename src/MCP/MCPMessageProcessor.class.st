@@ -41,6 +41,7 @@ MCPMessageProcessor >> handleJRPCRequestObject: aJRPCRequestObject [
 
 	^ [
 		  | handler result |
+		  self validateProtocolVersionFor: aJRPCRequestObject.
 		  handler := self handlerFor: aJRPCRequestObject.
 		  handler checkParametersForRequest: aJRPCRequestObject.
 		  result := handler executeWithArguments: aJRPCRequestObject params.
@@ -50,6 +51,17 @@ MCPMessageProcessor >> handleJRPCRequestObject: aJRPCRequestObject [
 				  self debugMode
 					  ifTrue: [ exception pass ]
 					  ifFalse: [ exception return: (self responseForException: exception request: aJRPCRequestObject) ] ]
+]
+
+{ #category : 'handling - jrpc' }
+MCPMessageProcessor >> validateProtocolVersionFor: aJRPCRequestObject [
+	"A request that declares its own protocol version is answered only if the server implements that version. server/discover is exempt: it is how a client learns which versions those are, so refusing it would leave a client nothing to retry with."
+
+	| requested |
+	aJRPCRequestObject method = 'server/discover' ifTrue: [ ^ self ].
+	requested := MCP requestedProtocolVersionIn: aJRPCRequestObject params.
+	requested ifNil: [ ^ self ].
+	(MCP supportedProtocolVersions includes: requested) ifFalse: [ MCPUnsupportedProtocolVersion signalRequested: requested ]
 ]
 
 { #category : 'handling - json' }
