@@ -120,7 +120,7 @@ MCPTestCoverageResult >> methodDictionariesFor: methods [
 { #category : 'private - methods' }
 MCPTestCoverageResult >> methodDictionaryFor: aCompiledMethod [
 
-	^ (MCPCompiledMethodInfo fromMethod: aCompiledMethod) asDictionaryIncludingSource: false
+	^ (MCPCompiledMethodInfo fromMethod: aCompiledMethod) asDictionary
 ]
 
 { #category : 'accessing' }

@@ -29,12 +29,6 @@ MCPCompiledMethodInfo class >> fromMethod: aCompiledMethod [
 { #category : 'converting' }
 MCPCompiledMethodInfo >> asDictionary [
 
-	^ self asDictionaryIncludingSource: false
-]
-
-{ #category : 'converting' }
-MCPCompiledMethodInfo >> asDictionaryIncludingSource: includeSource [
-
 	| data |
 	data := {
 		        (#selector -> self selector).
@@ -43,7 +37,6 @@ MCPCompiledMethodInfo >> asDictionaryIncludingSource: includeSource [
 		        (#protocol -> self protocol) } asDictionary.
 	self classSide ifTrue: [ data at: #classSide put: true ].
 	self isExtension ifTrue: [ data at: #isExtension put: true ].
-	includeSource ifTrue: [ data at: #source put: self source ].
 	^ data
 ]
 

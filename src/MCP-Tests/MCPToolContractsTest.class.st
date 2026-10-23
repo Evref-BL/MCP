@@ -1180,22 +1180,6 @@ MCPToolContractsTest >> testImageContentSerializesNativeMCPImageBlock [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testIncludeSourceFlagsWarnAboutCost [
-
-	| descriptions |
-	descriptions := OrderedCollection new.
-	self builtInToolClasses do: [ :toolClass |
-			| tool |
-			tool := toolClass new.
-			tool inputSchema properties do: [ :property |
-					property name = 'includeSource' ifTrue: [
-							descriptions add: property description.
-							self assert: (property extraProperties at: #default) equals: false ] ] ].
-	"No tool advertises includeSource today. The rule still holds for any that does again."
-	descriptions do: [ :each | self assert: each equals: 'Include source code. Use only for small result sets.' ]
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testInitializeAdvertisesPharoServerIcon [
 
 	| expectedIcon icon response serverInfo |

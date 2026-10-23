@@ -162,7 +162,7 @@ MCPToolMethodSearch >> methodEntriesFromMethods: compiledMethods queryRequest: q
 	compiledMethods do: [ :eachMethod |
 			| info |
 			info := MCPCompiledMethodInfo fromMethod: eachMethod.
-			entries add: (info asDictionaryIncludingSource: queryRequest includeSource) ].
+			entries add: info asDictionary ].
 	^ self sortedMethodEntries: entries
 ]
 
@@ -179,7 +179,7 @@ MCPToolMethodSearch >> methodEntriesFromQueryRequest: queryRequest [
 	queryRequest scopeQuery methodsDo: [ :eachMethod |
 			| entry info matchesFilter sourceText |
 			info := MCPCompiledMethodInfo fromMethod: eachMethod.
-			entry := info asDictionaryIncludingSource: false.
+			entry := info asDictionary.
 			sourceText := needsSourceForFiltering ifTrue: [ info source ].
 			matchesFilter := (queryRequest hasFilterPattern not or: [
 				                  self matchesFilterOnMethodEntry: entry sourceText: sourceText matcher: matcher ]) and: [
