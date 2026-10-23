@@ -23,12 +23,12 @@ MCPResourceTest >> testCapabilitiesLeaveOutResourcesWhenThereAreNone [
 
 { #category : 'tests' }
 MCPResourceTest >> testCapabilitiesSayNothingTheTransportCannotDo [
-	"The transport answers GET with 405 and has no stream, so neither subscribe nor listChanged may be declared."
+	"The stream carries list_changed, so that is declared. Subscribing is not, because no resource here can say it changed."
 
 	| resources |
 	resources := self mcpWithoutObservabilityExport advertisedCapabilities asJRPCJSON at: #resources.
 	self deny: (resources includesKey: #subscribe).
-	self deny: (resources includesKey: #listChanged)
+	self assert: (resources at: #listChanged)
 ]
 
 { #category : 'tests' }
