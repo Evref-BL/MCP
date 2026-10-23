@@ -26,7 +26,7 @@ MCPToolUpdateDebugMethod >> buildInputSchema [
 				  (self
 					   schemaPropertyNamed: 'sessionId'
 					   type: 'string'
-					   description: 'Debug session id: debug_session_list, debug_capture, debug_test_run, debug_candidate_attach.').
+					   description: 'Debug session id: debug_session_list, debug_candidate_attach.').
 				  (self schemaPropertyNamed: 'stateId' type: 'string' description: 'Optional stale-reference token.').
 				  (self
 					   schemaPropertyNamed: 'frameRef'

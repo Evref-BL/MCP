@@ -1,8 +1,8 @@
 # Debugging Tools
 
-Applies when using MCP-Pharo to capture exceptions, inspect debug sessions,
-control paused execution, manage breakpoints, or repair code from a debugger
-state.
+Applies when using MCP-Pharo to take over a debugger a person already opened:
+inspecting its state, controlling paused execution, managing breakpoints, or
+repairing code from a debugger state.
 
 ## Goal
 
@@ -26,8 +26,8 @@ Debugger tools are discoverable, not part of the default static surface.
   state-scoped.
 - Use the newest returned state after every control or edit action.
 - Keep stack and variable limits small first, then expand only what is needed.
-- Clear temporary breakpoints and forget agent-owned sessions when the task is
-  done.
+- Clear temporary breakpoints when the task is done, and leave a person's
+  debugger as you found it.
 - Report the exact debugger tool names used and the final session state.
 
 ## Do Not
@@ -36,7 +36,7 @@ Debugger tools are discoverable, not part of the default static surface.
   code.
 - Do not reuse frame or variable references after stepping, restarting,
   resuming, terminating, or editing.
-- Do not leave breakpoints or captured sessions behind without reporting them.
+- Do not leave breakpoints behind without reporting them.
 - Do not use debugger editing as a substitute for normal source tools when
   there is no paused debugger state.
 
@@ -44,8 +44,6 @@ Debugger tools are discoverable, not part of the default static surface.
 
 | Tool | Use |
 | --- | --- |
-| `debug_capture` | Evaluate a Smalltalk expression in a bounded worker process and capture runtime exceptions as tracked debug sessions. |
-| `debug_test_run` | Run one SUnit test method in a bounded worker process and capture failures or errors as tracked debug sessions. |
 | `debug_session_list` | List tracked debug sessions. |
 | `debug_session_get` | Inspect one tracked debug session summary. |
 | `debug_session_remove` | Remove a tracked debug session from the registry. |
@@ -70,21 +68,17 @@ Debugger tools are discoverable, not part of the default static surface.
 
 ## Session Workflow
 
-Use `debug_capture` when the agent should run code and capture its own
-failure. If execution completes normally, there is no debugger session. If a
-runtime exception is captured, use the returned `sessionId` and `state`.
-
-Use `debug_test_run` when the failure is already expressed as one SUnit test method.
-If the test passes, there is no debugger session. If it fails or errors, use the
-returned `sessionId` and `state`.
+A debug session comes from a debugger a person already opened. No tool starts
+one on the agent's behalf: to see why your own code failed, call the tool that
+runs it and read the failure it reports, which names the frames nearest the
+error and the values they held.
 
 Use `debug_candidate_search` when a human already opened a debugger. It returns
 unattached candidates with identifying details. Attach by passing the
 candidate's `candidateRef` to `debug_candidate_attach`.
 
-Use `debug_session_remove` when you are done. Removing an agent-owned captured
-session can terminate its worker process. Removing an attached human debugger
-only removes it from the MCP registry.
+Use `debug_session_remove` when you are done. It only removes the session from
+the MCP registry; the person's debugger stays open.
 
 ## State And References
 

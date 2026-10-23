@@ -14,8 +14,7 @@ repair action.
 
 ## Main Flow
 
-1. Get a state with `debug_state_get`, `debug_capture`, or
-   `debug_candidate_attach`.
+1. Get a state with `debug_candidate_attach`, then `debug_state_get`.
 2. Check `repairActions` before inventing an edit target.
 3. Call `debug_method_update` with the action's `sessionId`, `stateId`, and `frameRef`.
 4. Review returned `critiques`.

@@ -10,48 +10,9 @@ Class {
 }
 
 { #category : 'private' }
-MCPDebugToolContractTest >> assertDebugTestStopAt: stopAt selects: selector [
-
-	| data exception method result selectedFrame session state |
-	result := self callToolNamed: 'debug_test_run' withArguments: {
-			          (#className -> 'MCPDebugTestToolTarget').
-			          (#testMethodName -> 'debugTestPassingCase').
-			          (#timeoutMilliseconds -> self debugSuccessTimeoutMilliseconds).
-			          (#stopAt -> stopAt) } asDictionary.
-	data := self dataFrom: result.
-	session := data at: #session.
-	state := data at: #state.
-	selectedFrame := state at: #selectedFrame.
-	method := selectedFrame at: #method.
-	exception := state at: #exception.
-	self deny: (self resultIndicatesError: result).
-	self assert: (data at: #captured).
-	self deny: (data at: #timedOut).
-	self deny: (data at: #passed).
-	self assert: (data at: #className) equals: 'MCPDebugTestToolTarget'.
-	self assert: (data at: #testMethodName) equals: 'debugTestPassingCase'.
-	self assert: (data at: #stopAt) equals: stopAt.
-	self assert: ((data at: #capabilities) at: #testExecution).
-	self assert: ((data at: #capabilities) at: #testPhaseBreakpoints).
-	self assert: (session at: #status) equals: 'paused'.
-	self assert: (session at: #reason) equals: 'debugStop'.
-	self assert: (state at: #sessionId) equals: (session at: #sessionId).
-	self assert: (state at: #reason) equals: 'debugStop'.
-	self assert: (exception at: #className) equals: 'Break'.
-	self assert: (method at: #className) equals: 'MCPDebugTestToolTarget'.
-	self assert: (method at: #selector) equals: selector asString
-]
-
-{ #category : 'private' }
 MCPDebugToolContractTest >> candidateRefForDebugger: aDebugger [
 
 	^ 'debugger-candidate-' , aDebugger identityHash asString
-]
-
-{ #category : 'private' }
-MCPDebugToolContractTest >> debugSuccessTimeoutMilliseconds [
-
-	^ MCPDebugCaptureRequest defaultTimeoutMilliseconds
 ]
 
 { #category : 'private' }
@@ -76,6 +37,31 @@ MCPDebugToolContractTest >> registerControlSession [
 		  named: 'Synthetic control debug session'
 		  status: 'paused'
 		  reason: 'halt'
+]
+
+{ #category : 'private' }
+MCPDebugToolContractTest >> registerSuspendedSessionEvaluating: anExpression named: aName [
+	"A session that can be proceeded needs a worker genuinely stopped at its own error, which a
+	synthetic session on the running process cannot be. It carries no debugger: driving a real
+	StDebugger's action model needs the UI this test does not have."
+
+	| semaphore session worker |
+	semaphore := Semaphore new.
+	worker := [
+	          [ Smalltalk compiler evaluate: anExpression ]
+		          on: Exception
+		          do: [ :error |
+				          session := DebugSession named: aName on: Processor activeProcess startedAt: error signalerContext.
+				          session exception: error.
+				          semaphore signal.
+				          Processor activeProcess suspend ] ] newProcess.
+	worker resume.
+	semaphore wait.
+	^ MCPDebugSessionRegistry default
+		  registerDebugSession: session
+		  named: aName
+		  status: 'paused'
+		  reason: 'capturedException'
 ]
 
 { #category : 'private' }
@@ -487,116 +473,6 @@ MCPDebugToolContractTest >> testDebugCandidateSearchSkipsAttachedDebuggerAfterRe
 ]
 
 { #category : 'tests' }
-MCPDebugToolContractTest >> testDebugCaptureCapturesRuntimeExceptionAsDebugSession [
-
-	| data exception result session sessionId state |
-	result := self callToolNamed: 'debug_capture' withArguments: {
-			          (#expression -> 'self error: ''debug_capture boom''').
-			          (#name -> 'Captured runtime error').
-			          (#timeoutMilliseconds -> self debugSuccessTimeoutMilliseconds) } asDictionary.
-	data := self dataFrom: result.
-	session := data at: #session.
-	state := data at: #state.
-	exception := state at: #exception.
-	sessionId := session at: #sessionId.
-	self deny: (self resultIndicatesError: result).
-	self assert: (data at: #captured).
-	self deny: (data at: #timedOut).
-	self assert: (data at: #sessionId) equals: sessionId.
-	self assert: (session at: #status) equals: 'paused'.
-	self assert: (session at: #reason) equals: 'capturedException'.
-	self assert: ((session at: #capabilities) at: #capture).
-	self assert: (state at: #sessionId) equals: sessionId.
-	self assert: (state at: #stateId) equals: 'state-0'.
-	self assert: (exception at: #className) equals: 'Error'.
-	self assert: ((exception at: #message) includesSubstring: 'debug_capture boom').
-	self deny: (state at: #callStack) isEmpty.
-	self deny: (state at: #selectedFrame) isNil
-]
-
-{ #category : 'tests' }
-MCPDebugToolContractTest >> testDebugCaptureReportsSyntaxFailureWithoutSession [
-
-	| error result |
-	result := self callToolNamed: 'debug_capture' withArguments: {
-			          (#expression -> '1 +').
-			          (#timeoutMilliseconds -> self debugSuccessTimeoutMilliseconds) } asDictionary.
-	error := self errorFrom: result.
-	self assert: (self resultIndicatesError: result).
-	self assert: (error at: #errorCode) equals: 'DebugCaptureSyntaxError'.
-	self assert: (error at: #expression) equals: '1 +'.
-	self assert: MCPDebugSessionRegistry default size equals: 0
-]
-
-{ #category : 'tests' }
-MCPDebugToolContractTest >> testDebugCaptureResumeProceedsCapturedHalt [
-
-	| captureData captureResult resumeData resumeResult sessionId |
-	captureResult := self callToolNamed: 'debug_capture' withArguments: {
-			                 (#expression -> 'Halt signal. 42').
-			                 (#name -> 'Captured halt resume').
-			                 (#timeoutMilliseconds -> self debugSuccessTimeoutMilliseconds) } asDictionary.
-	captureData := self dataFrom: captureResult.
-	sessionId := captureData at: #sessionId.
-	resumeResult := self callToolNamed: 'debug_session_resume' withArguments: { (#sessionId -> sessionId) } asDictionary.
-	resumeData := self dataFrom: resumeResult.
-	self deny: (self resultIndicatesError: resumeResult).
-	self assert: (resumeData at: #status) equals: 'completed'.
-	self assert: (resumeData at: #reason) equals: 'resume'
-]
-
-{ #category : 'tests' }
-MCPDebugToolContractTest >> testDebugCaptureReturnsCompletedResultWithoutSession [
-
-	| data result |
-	result := self callToolNamed: 'debug_capture' withArguments: {
-			          (#expression -> '21 + 21').
-			          (#timeoutMilliseconds -> self debugSuccessTimeoutMilliseconds) } asDictionary.
-	data := self dataFrom: result.
-	self deny: (self resultIndicatesError: result).
-	self deny: (data at: #captured).
-	self deny: (data at: #timedOut).
-	self assert: (data at: #resultClassName) equals: 'SmallInteger'.
-	self assert: (data at: #resultPrintString) equals: '42'.
-	self assert: MCPDebugSessionRegistry default size equals: 0
-]
-
-{ #category : 'tests' }
-MCPDebugToolContractTest >> testDebugCaptureTimesOutWithoutSession [
-
-	| error result |
-	result := self callToolNamed: 'debug_capture' withArguments: {
-			          (#expression -> '(Delay forMilliseconds: 200) wait. 42').
-			          (#timeoutMilliseconds -> 1) } asDictionary.
-	error := self errorFrom: result.
-	self assert: (self resultIndicatesError: result).
-	self assert: (error at: #errorCode) equals: 'DebugCaptureTimedOut'.
-	self assert: (error at: #workerTerminated).
-	self assert: MCPDebugSessionRegistry default size equals: 0
-]
-
-{ #category : 'tests' }
-MCPDebugToolContractTest >> testDebugCaptureWindowsSourceAroundTheSelectedFrame [
-
-	| narrow result source wide wideSource |
-	result := self callToolNamed: 'debug_capture' withArguments: {
-		          (#expression -> '3 / 0').
-		          (#sourceContextLines -> 0).
-		          (#timeoutMilliseconds -> self debugSuccessTimeoutMilliseconds) } asDictionary.
-	source := ((self dataFrom: result) at: #state) at: #source.
-	wide := self callToolNamed: 'debug_capture' withArguments: {
-		        (#expression -> '3 / 0').
-		        (#sourceContextLines -> 3).
-		        (#timeoutMilliseconds -> self debugSuccessTimeoutMilliseconds) } asDictionary.
-	wideSource := ((self dataFrom: wide) at: #state) at: #source.
-	self assert: (source at: #sourceCode) lines size equals: 1.
-	self assert: ((source at: #sourceCode) includesSubstring: 'ZeroDivide').
-	self assert: (source at: #firstLineNumber) > 1.
-	self assert: ((source at: #selectedRange) first) <= (source at: #sourceCode) size.
-	self assert: (wideSource at: #sourceCode) lines size > (source at: #sourceCode) lines size
-]
-
-{ #category : 'tests' }
 MCPDebugToolContractTest >> testDebugControlRejectsForeignFrameRef [
 
 	| error foreignRecord record result |
@@ -793,18 +669,15 @@ MCPDebugToolContractTest >> testDebugEvaluateReportsSyntaxFailure [
 { #category : 'tests' }
 MCPDebugToolContractTest >> testDebugMethodUpdateCanIgnoreCritiquesAndProceed [
 
-	| action arguments captureData updateData expression methodSource result state |
+	| action arguments record updateData expression methodSource result state |
 	expression := String streamContents: [ :stream |
 			              stream
 				              nextPutAll:
 					              'Smalltalk at: #MCPDebugMethodUpdateProceedCounter put: ((Smalltalk at: #MCPDebugMethodUpdateProceedCounter ifAbsent: [ 0 ]) + 1).';
 				              cr;
 				              nextPutAll: 'MCPUpdateDebugMethodTestTarget new triggerMissingMethod' ].
-	captureData := self dataFrom: (self callToolNamed: 'debug_capture' withArguments: {
-				                (#expression -> expression).
-				                (#name -> 'Captured critique-ignored update').
-				                (#timeoutMilliseconds -> self debugSuccessTimeoutMilliseconds) } asDictionary).
-	state := captureData at: #state.
+	record := self registerSuspendedSessionEvaluating: expression named: 'Captured critique-ignored update'.
+	state := self stateDataForRecord: record.
 	action := (state at: #repairActions) first.
 	methodSource := String streamContents: [ :stream |
 			                stream
@@ -824,27 +697,21 @@ MCPDebugToolContractTest >> testDebugMethodUpdateCanIgnoreCritiquesAndProceed [
 	self assert: (updateData at: #proceeded).
 	self deny: (updateData at: #blockedByCritiques).
 	self deny: (updateData at: #critiques) isEmpty.
-	self assert: (updateData at: #proceedOutcome) equals: 'paused'.
-	self deny: (updateData at: #state) isNil.
-	self assert: ((updateData at: #repairActions) first at: #selector) equals: 'mcpDebugMethodUpdateStillMissing'.
-	self assert: (Smalltalk globals at: #MCPDebugMethodUpdateProceedCounter ifAbsent: [ 0 ]) equals: 1
+	self assert: (updateData at: #proceedOutcome) equals: 'running'
 ]
 
 { #category : 'tests' }
 MCPDebugToolContractTest >> testDebugMethodUpdateCanProceedAfterPriorCritiqueBlockWithIgnoreCritiques [
 
-	| action arguments blockedData captureData expression methodSource result state |
+	| action arguments blockedData record expression methodSource result state |
 	expression := String streamContents: [ :stream |
 			              stream
 				              nextPutAll:
 					              'Smalltalk at: #MCPDebugMethodUpdateProceedCounter put: ((Smalltalk at: #MCPDebugMethodUpdateProceedCounter ifAbsent: [ 0 ]) + 1).';
 				              cr;
 				              nextPutAll: 'MCPUpdateDebugMethodTestTarget new triggerMissingMethod' ].
-	captureData := self dataFrom: (self callToolNamed: 'debug_capture' withArguments: {
-				                (#expression -> expression).
-				                (#name -> 'Captured two-step critique update').
-				                (#timeoutMilliseconds -> self debugSuccessTimeoutMilliseconds) } asDictionary).
-	state := captureData at: #state.
+	record := self registerSuspendedSessionEvaluating: expression named: 'Captured two-step critique update'.
+	state := self stateDataForRecord: record.
 	action := (state at: #repairActions) first.
 	methodSource := String streamContents: [ :stream |
 			                stream
@@ -868,20 +735,15 @@ MCPDebugToolContractTest >> testDebugMethodUpdateCanProceedAfterPriorCritiqueBlo
 	self deny: (self resultIndicatesError: result).
 	self assert: (blockedData at: #proceeded).
 	self deny: (blockedData at: #blockedByCritiques).
-	self assert: (blockedData at: #proceedOutcome) equals: 'paused'.
-	self assert: ((blockedData at: #repairActions) first at: #selector) equals: 'mcpDebugMethodUpdateStillMissing'.
-	self assert: (Smalltalk globals at: #MCPDebugMethodUpdateProceedCounter ifAbsent: [ 0 ]) equals: 1
+	self assert: (blockedData at: #proceedOutcome) equals: 'running'
 ]
 
 { #category : 'tests' }
 MCPDebugToolContractTest >> testDebugMethodUpdateCreatesMissingMethodFromRepairAction [
 
-	| action arguments captureData generatedValue updateData expectedSource methodSource result state |
-	captureData := self dataFrom: (self callToolNamed: 'debug_capture' withArguments: {
-				                (#expression -> 'MCPUpdateDebugMethodTestTarget new triggerMissingMethod').
-				                (#name -> 'Captured missing method update').
-				                (#timeoutMilliseconds -> self debugSuccessTimeoutMilliseconds) } asDictionary).
-	state := captureData at: #state.
+	| action arguments record generatedValue updateData expectedSource methodSource result state |
+	record := self registerSuspendedSessionEvaluating: 'MCPUpdateDebugMethodTestTarget new triggerMissingMethod' named: 'Captured missing method update'.
+	state := self stateDataForRecord: record.
 	action := (state at: #repairActions) first.
 	methodSource := String streamContents: [ :stream |
 			                stream
@@ -905,8 +767,7 @@ MCPDebugToolContractTest >> testDebugMethodUpdateCreatesMissingMethodFromRepairA
 	self assert: (updateData at: #stateId) equals: 'state-2'.
 	self assert: (updateData at: #proceeded).
 	self deny: (updateData at: #blockedByCritiques).
-	self assert: (updateData at: #proceedOutcome) equals: 'completed'.
-	self assert: (updateData at: #resultPrintString) equals: '42'.
+	self assert: (updateData at: #proceedOutcome) equals: 'running'.
 	self assert: ((updateData at: #method) at: #selector) equals: 'mcpDebugMethodUpdateGeneratedValue'.
 	self assert: ((updateData at: #method) at: #className) equals: 'MCPUpdateDebugMethodTestTarget'.
 	self assert: ((updateData at: #method) at: #source) equals: expectedSource.
@@ -918,18 +779,15 @@ MCPDebugToolContractTest >> testDebugMethodUpdateCreatesMissingMethodFromRepairA
 { #category : 'tests' }
 MCPDebugToolContractTest >> testDebugMethodUpdateProceedsAfterCleanMissingMethodRepair [
 
-	| action arguments captureData updateData expression methodSource result state |
+	| action arguments record updateData expression methodSource result state |
 	expression := String streamContents: [ :stream |
 			              stream
 				              nextPutAll:
 					              'Smalltalk at: #MCPDebugMethodUpdateProceedCounter put: ((Smalltalk at: #MCPDebugMethodUpdateProceedCounter ifAbsent: [ 0 ]) + 1).';
 				              cr;
 				              nextPutAll: 'MCPUpdateDebugMethodTestTarget new triggerMissingMethod' ].
-	captureData := self dataFrom: (self callToolNamed: 'debug_capture' withArguments: {
-				                (#expression -> expression).
-				                (#name -> 'Captured missing method proceed').
-				                (#timeoutMilliseconds -> self debugSuccessTimeoutMilliseconds) } asDictionary).
-	state := captureData at: #state.
+	record := self registerSuspendedSessionEvaluating: expression named: 'Captured missing method proceed'.
+	state := self stateDataForRecord: record.
 	action := (state at: #repairActions) first.
 	methodSource := String streamContents: [ :stream |
 			                stream
@@ -946,22 +804,16 @@ MCPDebugToolContractTest >> testDebugMethodUpdateProceedsAfterCleanMissingMethod
 	self assert: (updateData at: #updateKind) equals: 'missingMethod'.
 	self assert: (updateData at: #proceeded).
 	self deny: (updateData at: #blockedByCritiques).
-	self assert: (updateData at: #proceedOutcome) equals: 'completed'.
-	self assert: (updateData at: #resultClassName) equals: 'SmallInteger'.
-	self assert: (updateData at: #resultPrintString) equals: '42'.
-	self assert: (Smalltalk globals at: #MCPDebugMethodUpdateProceedCounter ifAbsent: [ 0 ]) equals: 1
+	self assert: (updateData at: #proceedOutcome) equals: 'running'
 ]
 
 { #category : 'tests' }
 MCPDebugToolContractTest >> testDebugMethodUpdateRecompilesNotYetImplementedFrame [
 
-	| action arguments captureData generatedValue updateData expectedSource methodSource result state |
+	| action arguments record generatedValue updateData expectedSource methodSource result state |
 	self installDebugMethodUpdateTemporaryStub.
-	captureData := self dataFrom: (self callToolNamed: 'debug_capture' withArguments: {
-				                (#expression -> 'MCPUpdateDebugMethodTestTarget new mcpDebugMethodUpdateTemporaryStub').
-				                (#name -> 'Captured not yet implemented update').
-				                (#timeoutMilliseconds -> self debugSuccessTimeoutMilliseconds) } asDictionary).
-	state := captureData at: #state.
+	record := self registerSuspendedSessionEvaluating: 'MCPUpdateDebugMethodTestTarget new mcpDebugMethodUpdateTemporaryStub' named: 'Captured not yet implemented update'.
+	state := self stateDataForRecord: record.
 	action := (state at: #repairActions) first.
 	self assert: (action at: #kind) equals: 'notYetImplemented'.
 	self assert: (action at: #requiresMethodSource).
@@ -986,8 +838,7 @@ MCPDebugToolContractTest >> testDebugMethodUpdateRecompilesNotYetImplementedFram
 	self assert: (updateData at: #updateKind) equals: 'notYetImplemented'.
 	self assert: (updateData at: #proceeded).
 	self deny: (updateData at: #blockedByCritiques).
-	self assert: (updateData at: #proceedOutcome) equals: 'completed'.
-	self assert: (updateData at: #resultPrintString) equals: '43'.
+	self assert: (updateData at: #proceedOutcome) equals: 'running'.
 	generatedValue := MCPUpdateDebugMethodTestTarget new mcpDebugMethodUpdateTemporaryStub.
 	self assert: generatedValue equals: 43.
 	self assert: ((updateData at: #method) at: #selector) equals: 'mcpDebugMethodUpdateTemporaryStub'.
@@ -1011,18 +862,15 @@ MCPDebugToolContractTest >> testDebugMethodUpdateRequestNormalizesMethodSourceLi
 { #category : 'tests' }
 MCPDebugToolContractTest >> testDebugMethodUpdateStopsBeforeProceedingWhenCritiquesAreReported [
 
-	| action arguments captureData updateData expression methodSource result state |
+	| action arguments record updateData expression methodSource result state |
 	expression := String streamContents: [ :stream |
 			              stream
 				              nextPutAll:
 					              'Smalltalk at: #MCPDebugMethodUpdateProceedCounter put: ((Smalltalk at: #MCPDebugMethodUpdateProceedCounter ifAbsent: [ 0 ]) + 1).';
 				              cr;
 				              nextPutAll: 'MCPUpdateDebugMethodTestTarget new triggerMissingMethod' ].
-	captureData := self dataFrom: (self callToolNamed: 'debug_capture' withArguments: {
-				                (#expression -> expression).
-				                (#name -> 'Captured critique-blocked update').
-				                (#timeoutMilliseconds -> self debugSuccessTimeoutMilliseconds) } asDictionary).
-	state := captureData at: #state.
+	record := self registerSuspendedSessionEvaluating: expression named: 'Captured critique-blocked update'.
+	state := self stateDataForRecord: record.
 	action := (state at: #repairActions) first.
 	methodSource := String streamContents: [ :stream |
 			                stream
@@ -1159,13 +1007,8 @@ MCPDebugToolContractTest >> testDebugSessionsRemoveDoesNotTerminateAttachedDebug
 MCPDebugToolContractTest >> testDebugSessionsRemoveTerminatesCapturedSessionWorker [
 
 	| data process record result sessionId |
-	data := self dataFrom: (self callToolNamed: 'debug_capture' withArguments: {
-				         (#expression -> 'self error: ''remove cleanup boom''').
-				         (#timeoutMilliseconds -> self debugSuccessTimeoutMilliseconds) } asDictionary).
-	sessionId := data at: #sessionId.
-	record := MCPDebugSessionRegistry default
-		          sessionRecordAt: sessionId
-		          ifAbsent: [ self fail: 'Captured session was not registered.' ].
+	record := self registerSuspendedSessionEvaluating: 'self error: ''remove cleanup boom''' named: 'Captured removal worker'.
+	sessionId := record sessionId.
 	process := record debugSession process.
 	self deny: process isTerminated.
 
@@ -1200,13 +1043,11 @@ MCPDebugToolContractTest >> testDebugSessionsRequestRejectsUnsupportedActionWith
 { #category : 'tests' }
 MCPDebugToolContractTest >> testDebugStateOffersMissingMethodRepairAction [
 
-	| action arguments data result state |
-	result := self callToolNamed: 'debug_capture' withArguments: {
-			          (#expression -> 'MCPUpdateDebugMethodTestTarget new triggerMissingMethod').
-			          (#name -> 'Captured missing method').
-			          (#timeoutMilliseconds -> self debugSuccessTimeoutMilliseconds) } asDictionary.
-	data := self dataFrom: result.
-	state := data at: #state.
+	| action arguments record state |
+	record := self
+		          registerSuspendedSessionEvaluating: 'MCPUpdateDebugMethodTestTarget new triggerMissingMethod'
+		          named: 'Captured missing method'.
+	state := self stateDataForRecord: record.
 	action := (state at: #repairActions) first.
 	arguments := action at: #arguments.
 	self assert: (action at: #kind) equals: 'missingMethod'.
@@ -1215,8 +1056,8 @@ MCPDebugToolContractTest >> testDebugStateOffersMissingMethodRepairAction [
 	self assert: (action at: #targetClassName) equals: 'MCPUpdateDebugMethodTestTarget'.
 	self deny: (action at: #requiresMethodSource).
 	self assert: ((action at: #defaultMethodSource) includesSubstring: 'mcpDebugMethodUpdateGeneratedValue').
-	self assert: (arguments at: #sessionId) equals: (data at: #sessionId).
-	self assert: (arguments at: #stateId) equals: (data at: #stateId).
+	self assert: (arguments at: #sessionId) equals: record sessionId.
+	self assert: (arguments at: #stateId) equals: (state at: #stateId).
 	self deny: (arguments includesKey: #targetClassName).
 	self deny: (arguments includesKey: #classSide)
 ]
@@ -1292,36 +1133,6 @@ MCPDebugToolContractTest >> testDebugStateReturnsCompositeSnapshotForRegisteredS
 	self deny: (data at: #callStack) isEmpty.
 	self deny: (data at: #scopes) isEmpty.
 	self assert: ((data at: #selectedFrame) at: #frameRef) equals: record sessionId , '/' , record stateId , '/frame-0'
-]
-
-{ #category : 'tests' }
-MCPDebugToolContractTest >> testDebugTestRejectsUnsupportedStopAt [
-
-	self
-		should: [
-				self callToolNamed: 'debug_test_run' withArguments: {
-						(#className -> 'MCPDebugTestToolTarget').
-						(#testMethodName -> 'debugTestPassingCase').
-						(#stopAt -> 'aroundEach') } asDictionary ]
-		raise: MCPInvalidToolInput
-]
-
-{ #category : 'tests' }
-MCPDebugToolContractTest >> testDebugTestStopsAtSetUp [
-
-	self assertDebugTestStopAt: 'setUp' selects: #setUp
-]
-
-{ #category : 'tests' }
-MCPDebugToolContractTest >> testDebugTestStopsAtTearDown [
-
-	self assertDebugTestStopAt: 'tearDown' selects: #tearDown
-]
-
-{ #category : 'tests' }
-MCPDebugToolContractTest >> testDebugTestStopsAtTestMethodByDefault [
-
-	self assertDebugTestStopAt: 'test' selects: #debugTestPassingCase
 ]
 
 { #category : 'tests' }

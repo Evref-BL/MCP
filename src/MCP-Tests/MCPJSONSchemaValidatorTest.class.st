@@ -68,7 +68,6 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 			   (#sessionId -> 'debug-session-1').
 			   (#action -> 'stepOver') } asDictionary).
 		  (MCPToolDebugBreakpointOperation -> { (#action -> 'list') } asDictionary).
-		  (MCPToolDebugCapture -> { (#expression -> '1') } asDictionary).
 		  (MCPToolUpdateDebugMethod -> { (#sessionId -> 'debug-session-1') } asDictionary).
 		  (MCPToolSearchMethods -> Dictionary new).
 		  (MCPToolSearchTools -> Dictionary new).
@@ -204,10 +203,7 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 		at: MCPToolRemoveDebugBreakpoint put: { (#breakpointId -> 'debug-breakpoint-1') } asDictionary;
 		at: MCPToolEnableDebugBreakpoint put: { (#breakpointId -> 'debug-breakpoint-1') } asDictionary;
 		at: MCPToolDisableDebugBreakpoint put: { (#breakpointId -> 'debug-breakpoint-1') } asDictionary;
-		at: MCPToolClearDebugBreakpoints put: Dictionary new;
-		at: MCPToolDebugTest put: {
-				(#className -> 'MCPToolContractsTest').
-				(#testMethodName -> 'testDebuggerToolsAreDiscoverableOnly') } asDictionary.
+		at: MCPToolClearDebugBreakpoints put: Dictionary new.
 	^ arguments
 ]
 

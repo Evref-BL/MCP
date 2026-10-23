@@ -165,11 +165,6 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 			  (#requestClass -> MCPDebugEvaluateRequest).
 			  (#commandClass -> MCPDebugEvaluateCommand) } asDictionary.
 		  {
-			  (#toolClass -> MCPToolDebugCapture).
-			  (#arguments -> { (#expression -> '1') } asDictionary).
-			  (#requestClass -> MCPDebugCaptureRequest).
-			  (#commandClass -> MCPDebugCaptureCommand) } asDictionary.
-		  {
 			  (#toolClass -> MCPToolUpdateDebugMethod).
 			  (#arguments -> { (#sessionId -> 'debug-session-1') } asDictionary).
 			  (#requestClass -> MCPUpdateDebugMethodRequest).
@@ -491,18 +486,6 @@ MCPToolContractsTest >> debugSessionToolFlowSpecs [
 			  (#arguments -> { (#candidateRef -> 'debugger-candidate-1') } asDictionary).
 			  (#requestClass -> MCPDebugSessionsRequest).
 			  (#commandClass -> MCPDebugSessionsCommand) } asDictionary }
-]
-
-{ #category : 'private' }
-MCPToolContractsTest >> debugTestToolFlowSpec [
-
-	^ {
-		  (#toolClass -> MCPToolDebugTest).
-		  (#arguments -> {
-			   (#className -> 'MCPToolContractsTest').
-			   (#testMethodName -> 'testDebuggerToolsAreDiscoverableOnly') } asDictionary).
-		  (#requestClass -> MCPDebugTestRequest).
-		  (#commandClass -> MCPDebugTestCommand) } asDictionary
 ]
 
 { #category : 'private' }
@@ -960,9 +943,7 @@ MCPToolContractsTest >> testDebugInputSchemasAdvertiseExpansionBounds [
 	| snapshotTools updateTool variablesTool |
 	snapshotTools := {
 		                 MCPToolDebugState new.
-		                 MCPToolStepOverDebugSession new.
-		                 MCPToolDebugCapture new.
-		                 MCPToolDebugTest new }.
+		                 MCPToolStepOverDebugSession new }.
 	snapshotTools do: [ :tool |
 			self
 				assertDebugInputPropertyNamed: 'sourceContextLines'
@@ -1027,7 +1008,7 @@ MCPToolContractsTest >> testDebuggerToolsAreDiscoverableOnly [
 	                 'debug_session_step_into' 'debug_session_step_over' 'debug_session_step_through' 'debug_session_restart'
 	                 'debug_session_resume' 'debug_session_terminate' 'debug_breakpoint_list' 'debug_breakpoint_set'
 	                 'debug_breakpoint_remove' 'debug_breakpoint_enable' 'debug_breakpoint_disable' 'debug_breakpoint_clear'
-	                 'debug_capture' 'debug_test_run' 'debug_method_update' ).
+	                 'debug_method_update' ).
 	staticToolNames := self toolRegistry staticToolNames.
 	debugNames do: [ :each |
 			self deny: (staticToolNames includes: each).
@@ -2815,7 +2796,6 @@ MCPToolContractsTest >> testToolRegistryNamesUseClassSideMetadata [
 	self assert: MCPToolRevertChangeHistoryEntries toolName equals: 'history_entry_revert'.
 	self assert: MCPToolDebugState toolName equals: 'debug_state_get'.
 	self assert: MCPToolStepOverDebugSession toolName equals: 'debug_session_step_over'.
-	self assert: MCPToolDebugCapture toolName equals: 'debug_capture'.
 	self assert: MCPToolUpdateDebugMethod toolName equals: 'debug_method_update'
 ]
 
@@ -2939,7 +2919,6 @@ MCPToolContractsTest >> toolFlowSpecs [
 	specs addAll: self debugSessionToolFlowSpecs.
 	specs addAll: self debugControlToolFlowSpecs.
 	specs addAll: self debugBreakpointToolFlowSpecs.
-	specs add: self debugTestToolFlowSpec.
 	^ specs asArray
 ]
 

@@ -27,7 +27,7 @@ MCPToolDebugEvaluate >> buildInputSchema [
 					   schemaPropertyNamed: 'sessionId'
 					   type: 'string'
 					   description:
-						   'Opaque debug session identifier returned by debug_session_list, debug_capture, debug_test_run, or debug_candidate_attach.').
+						   'Opaque debug session identifier returned by debug_session_list or debug_candidate_attach.').
 				  (self schemaPropertyNamed: 'stateId' type: 'string' description: 'Optional state token to reject stale frame references.').
 				  (self
 					   schemaPropertyNamed: 'frameRef'
