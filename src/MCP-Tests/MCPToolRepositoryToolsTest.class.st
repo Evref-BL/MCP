@@ -186,7 +186,7 @@ MCPToolRepositoryToolsTest >> testRepositoryToolsRequiredInputs [
 	expectations := {
 		                (MCPToolVerifyRepositoryIdentity -> #( 'name' )).
 		                (MCPToolListRepositoryChanges -> #( 'name' )).
-		                (MCPToolCreateRepository -> #( 'name' 'location' )).
+		                (MCPToolCreateRepository -> #( 'name' )).
 		                (MCPToolAttachRepository -> #( 'name' 'location' )).
 		                (MCPToolUpdateRepository -> #( 'name' )).
 		                (MCPToolAddRepositoryRemote -> #( 'name' 'remoteName' 'remoteUrl' )).

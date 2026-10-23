@@ -33,10 +33,9 @@ MCPRepositoryCreateRequest >> commandForTool: aTool [
 MCPRepositoryCreateRequest >> initializeFromRequest: request [
 
 	name := request stringArgumentNamed: 'name'.
-	location := request stringArgumentNamed: 'location'.
+	location := request stringArgumentNamed: 'location' default: (IceLibgitRepository repositoriesLocation / name) fullName.
 	subdirectory := request stringArgumentNamed: 'subdirectory'.
-	packageNames := request stringCollectionArgumentNamed: 'packageNames'.
-	^ self
+	packageNames := request stringCollectionArgumentNamed: 'packageNames'
 ]
 
 { #category : 'accessing' }
