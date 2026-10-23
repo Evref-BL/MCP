@@ -25,24 +25,58 @@ MCPMethodRewriteRuleSpec class >> fromDictionary: aDictionary request: request i
 ]
 
 { #category : 'instance creation' }
-MCPMethodRewriteRuleSpec class >> specsForRuleClassNamed: aName startingAt: anIndex [
-	"A rule is a set of pattern pairs, so naming one stands for writing its patterns out. Only MCP's
-	own style rules record theirs; Renraku offers no way to read a rule's patterns back."
+MCPMethodRewriteRuleSpec class >> rewritePairFor: aMatcher rewriter: aRewriter ruleNamed: aName [
+	"A rewriter either carries the tree it rewrites to, or computes it with a block. Only the first
+	has a pattern form."
 
-	| ruleClass patterns |
+	(aRewriter class allInstVarNames includes: 'tree') ifFalse: [
+			MCPCommandError
+				signalErrorCode: #RewriteRuleComputesItsReplacement
+				message: aName asString , ' computes its replacement instead of writing one, so it has no pattern form.'
+				details: { (#ruleClass -> aName) } asDictionary ].
+	^ {
+		  (#match -> aMatcher formattedCode).
+		  (#replacement -> (aRewriter instVarNamed: 'tree') formattedCode).
+		  (#isForMethod -> ([ aMatcher isMethod ] on: Error do: [ :error | false ])) } asDictionary
+]
+
+{ #category : 'instance creation' }
+MCPMethodRewriteRuleSpec class >> rewritePairsOf: aRuleClass named: aName [
+	"Renraku keeps a rule's pattern pairs in an instance variable and offers no accessor for them.
+	The Dictionary holding them does not keep the order they were declared in either, so they are
+	sorted, which at least makes one rule always expand the same way."
+
+	| matches pairs |
+	matches := [ aRuleClass new instVarNamed: 'matches' ] on: Error do: [ :error | nil ].
+	matches ifNil: [
+			MCPCommandError
+				signalErrorCode: #RewriteRuleHasNoReadablePatterns
+				message: 'Could not read the rewrite patterns of ' , aName asString , '.'
+				details: { (#ruleClass -> aName) } asDictionary ].
+	pairs := OrderedCollection new.
+	matches keysAndValuesDo: [ :matcher :rewriter |
+		pairs add: (self rewritePairFor: matcher rewriter: rewriter ruleNamed: aName) ].
+	^ (pairs asSortedCollection: [ :left :right | (left at: #match) <= (right at: #match) ]) asArray
+]
+
+{ #category : 'instance creation' }
+MCPMethodRewriteRuleSpec class >> specsForRuleClassNamed: aName startingAt: anIndex [
+	"A rewrite rule is a set of pattern pairs, so naming one stands for writing its patterns out."
+
+	| ruleClass pairs |
 	ruleClass := MCPImageLookup classNamed: aName.
-	(ruleClass inheritsFrom: MCPMethodStyleRule) ifFalse: [
+	(ruleClass inheritsFrom: ReNodeRewriteRule) ifFalse: [
 			MCPCommandError
 				signalErrorCode: #RewriteRuleClassHasNoPatterns
-				message: aName asString , ' does not declare rewrite patterns. Name a subclass of MCPMethodStyleRule.'
+				message: aName asString , ' is not a rewrite rule. Name a subclass of ReNodeRewriteRule.'
 				details: { (#ruleClass -> aName) } asDictionary ].
-	patterns := ruleClass new rewritePatterns.
-	^ patterns withIndexCollect: [ :pattern :offset |
+	pairs := self rewritePairsOf: ruleClass named: aName.
+	^ pairs withIndexCollect: [ :pair :offset |
 		  self new
 			  initializeName: aName
-			  match: (pattern at: #match)
-			  replacement: (pattern at: #replacement)
-			  isForMethod: (pattern at: #isForMethod)
+			  match: (pair at: #match)
+			  replacement: (pair at: #replacement)
+			  isForMethod: (pair at: #isForMethod)
 			  index: anIndex + offset - 1 ]
 ]
 

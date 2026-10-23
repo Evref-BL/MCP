@@ -44,7 +44,7 @@ MCPToolRewriteMethods >> commandForRequest: rewriteRequest [
 { #category : 'metadata' }
 MCPToolRewriteMethods >> description [
 
-	^ 'Preview or apply Smalltalk AST pattern rewrites within scoped methods. Write the patterns, or name critique rule classes whose rewrites to apply. Smalltalk AST pattern syntax, not regex.'
+	^ 'Preview or apply Smalltalk AST pattern rewrites within scoped methods. Write the patterns, or name rewrite rule classes whose patterns to apply. Smalltalk AST pattern syntax, not regex.'
 ]
 
 { #category : 'error handling' }
@@ -94,7 +94,7 @@ MCPToolRewriteMethods >> rewriteRuleClassesSchemaProperty [
 		  name: 'ruleClasses';
 		  type: 'array';
 		  description:
-			  'Critique rule classes whose rewrites to apply, as critique_run names them. A rule stands for its own pattern pairs.';
+			  'Rewrite rule classes whose patterns to apply, as critique_run names them. Any subclass of ReNodeRewriteRule, including Pharo''s own.';
 		  items: (MCPStructureProperties new
 				   type: 'string';
 				   description: 'One rule class name.';
