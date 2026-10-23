@@ -134,3 +134,21 @@ MCPCompiledMethodInfoTest >> testBuildsInfoForInstanceAndClassMethods [
 	self assert: classInfo classSide.
 	self assert: classInfo selector equals: 'classInfoTarget'
 ]
+
+{ #category : 'tests' }
+MCPCompiledMethodInfoTest >> testRecordsNoTraitForAMethodTheClassDefinesItself [
+
+	| info |
+	info := MCPCompiledMethodInfo fromMethod: MCPToolMethodSearchTraitOverrider >> #mcpTraitFixtureValue.
+	self assert: info traitName isNil.
+	self deny: (info asDictionary includesKey: #trait)
+]
+
+{ #category : 'tests' }
+MCPCompiledMethodInfoTest >> testRecordsTheTraitAMethodWasInstalledFrom [
+
+	| info |
+	info := MCPCompiledMethodInfo fromMethod: MCPToolMethodSearchTraitUser >> #mcpTraitFixtureValue.
+	self assert: info traitName equals: TMCPToolMethodSearchFixture name asString.
+	self assert: (info asDictionary at: #trait) equals: TMCPToolMethodSearchFixture name asString
+]

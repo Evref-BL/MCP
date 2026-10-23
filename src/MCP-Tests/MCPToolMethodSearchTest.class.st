@@ -32,6 +32,16 @@ MCPToolMethodSearchTest >> targetClassName [
 ]
 
 { #category : 'tests' }
+MCPToolMethodSearchTest >> testAClassOverridingATraitMethodKeepsItsOwnAnswer [
+
+	| entries entry |
+	entries := self traitFixtureImplementors.
+	entry := self entryForReference: 'MCPToolMethodSearchTraitOverrider>>mcpTraitFixtureValue' in: entries.
+	self deny: (entry includesKey: #installedIn).
+	self deny: (entry includesKey: #trait)
+]
+
+{ #category : 'tests' }
 MCPToolMethodSearchTest >> testCanFilterAcrossExplicitProtocolTarget [
 
 	| data result selectors |
@@ -752,8 +762,49 @@ MCPToolMethodSearchTest >> testVariableReferenceReturnsStructuredErrorWhenVariab
 	self assert: ((error at: #message) includesSubstring: 'There is no class, variable or selector named missingTrackedSlot')
 ]
 
+{ #category : 'tests' }
+MCPToolMethodSearchTest >> testTraitMethodCopiesAreAnsweredOnceAsTheTraitDefiningThem [
+
+	| entries entry |
+	entries := self traitFixtureImplementors.
+	entry := self entryForReference: 'TMCPToolMethodSearchFixture>>mcpTraitFixtureValue' in: entries.
+	self assert: (entry at: #installedIn) asArray equals: {
+			MCPToolMethodSearchTraitOtherUser name.
+			MCPToolMethodSearchTraitUser name }.
+	self deny: (entries anySatisfy: [ :each | (each at: #class) = MCPToolMethodSearchTraitUser name ])
+]
+
+{ #category : 'tests' }
+MCPToolMethodSearchTest >> testTraitMethodCopiesAreAnsweredOncePerSide [
+
+	| entries entry |
+	entries := self traitFixtureImplementors.
+	self assert: entries size equals: 3.
+	entry := self entryForReference: 'TMCPToolMethodSearchFixture class>>mcpTraitFixtureValue' in: entries.
+	self assert: (entry at: #installedIn) asArray equals: {
+			MCPToolMethodSearchTraitOtherUser name.
+			MCPToolMethodSearchTraitOverrider name.
+			MCPToolMethodSearchTraitUser name }
+]
+
 { #category : 'private - calling' }
 MCPToolMethodSearchTest >> toolName [
 
 	^ 'method_search'
+]
+
+{ #category : 'private' }
+MCPToolMethodSearchTest >> traitFixtureImplementors [
+
+	| result |
+	result := self callToolNamed: 'method_reference_search' withArguments: {
+			          (#kind -> 'implementors').
+			          (#name -> 'mcpTraitFixtureValue').
+			          (self searchScope: { (#classes -> {
+							            TMCPToolMethodSearchFixture name.
+							            MCPToolMethodSearchTraitUser name.
+							            MCPToolMethodSearchTraitOtherUser name.
+							            MCPToolMethodSearchTraitOverrider name }) }) } asDictionary.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	^ (self dataFrom: result) at: #methods
 ]

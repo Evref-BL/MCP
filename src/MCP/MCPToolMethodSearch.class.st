@@ -59,6 +59,34 @@ MCPToolMethodSearch >> classReferenceEntriesForQueryRequest: queryRequest [
 	^ self classReferenceEntriesForClassNamed: (queryRequest requiredFilterPatternForTool: self) queryRequest: queryRequest
 ]
 
+{ #category : 'private - methods' }
+MCPToolMethodSearch >> collapsedEntriesFor: entries [
+	"One entry for the trait, keeping the classes its method reached. Entries the trait no longer answers for, as an alias installs the method under another selector, are left as they are."
+
+	| installed entry traitName |
+	traitName := entries detect: [ :each | each includesKey: #trait ] ifFound: [ :each | each at: #trait ] ifNone: [ ^ entries ].
+	(self traitNamed: traitName stillImplements: entries first) ifFalse: [ ^ entries ].
+	installed := (entries select: [ :each | each includesKey: #trait ] thenCollect: [ :each | each at: #class ]) asArray sort.
+	entry := (entries detect: [ :each | (each includesKey: #trait) not ] ifNone: [ entries first ]) copy.
+	entry removeKey: #trait ifAbsent: [ nil ].
+	entry at: #class put: traitName.
+	entry at: #installedIn put: installed.
+	^ { entry }
+]
+
+{ #category : 'private - methods' }
+MCPToolMethodSearch >> collapsedTraitEntriesIn: entries [
+	"A method defined in a trait is installed in every class that uses the trait, so a search can answer the same source dozens of times over. Those copies are answered once, as the trait that defines them."
+
+	| groups collapsed |
+	(entries anySatisfy: [ :each | each includesKey: #trait ]) ifFalse: [ ^ entries ].
+	groups := OrderedDictionary new.
+	entries do: [ :each | (groups at: (self traitGroupKeyFor: each) ifAbsentPut: [ OrderedCollection new ]) add: each ].
+	collapsed := OrderedCollection new.
+	groups valuesDo: [ :each | collapsed addAll: (self collapsedEntriesFor: each) ].
+	^ collapsed
+]
+
 { #category : 'private - results' }
 MCPToolMethodSearch >> failureMessageForScope: scopeSummary error: anError [
 
@@ -248,7 +276,8 @@ MCPToolMethodSearch >> selectorReferenceEntriesForSelector: selectorString query
 { #category : 'private - methods' }
 MCPToolMethodSearch >> sortedMethodEntries: entries [
 
-	^ entries asArray sort: [ :left :right | (self methodEntryLabel: left) <= (self methodEntryLabel: right) ]
+	^ (self collapsedTraitEntriesIn: entries) asArray sort: [ :left :right |
+		  (self methodEntryLabel: left) <= (self methodEntryLabel: right) ]
 ]
 
 { #category : 'private - results' }
@@ -261,6 +290,26 @@ MCPToolMethodSearch >> successSummaryForScope: scopeSummary page: page [
 MCPToolMethodSearch >> supportedFilterModes [
 
 	^ #( 'substring' 'prefix' 'exact' 'regex' )
+]
+
+{ #category : 'private - methods' }
+MCPToolMethodSearch >> traitGroupKeyFor: anEntry [
+	"What makes two entries the same method: where it is defined, rather than where it was installed."
+
+	^ {
+		  (anEntry at: #trait ifAbsent: [ anEntry at: #class ]).
+		  (anEntry at: #selector).
+		  (anEntry at: #side ifAbsent: [ 'instance' ]) }
+]
+
+{ #category : 'private - methods' }
+MCPToolMethodSearch >> traitNamed: aTraitName stillImplements: anEntry [
+	"Whether the trait still answers the selector its copies carry, which an alias changes."
+
+	| behavior |
+	behavior := self class environment at: aTraitName asSymbol ifAbsent: [ ^ false ].
+	(anEntry at: #side ifAbsent: [ 'instance' ]) = 'class' ifTrue: [ behavior := behavior classSide ].
+	^ behavior includesSelector: (anEntry at: #selector) asSymbol
 ]
 
 { #category : 'private - searching' }

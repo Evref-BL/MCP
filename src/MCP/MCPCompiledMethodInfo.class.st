@@ -1,7 +1,7 @@
 "
 DTO for compiled method metadata.
 
-It records selector, declaring class, class-side flag, protocol, package, extension status, and optionally formatted source text.
+It records selector, declaring class, class-side flag, protocol, package, extension status, the trait the method was installed from when there is one, and optionally formatted source text.
 "
 Class {
 	#name : 'MCPCompiledMethodInfo',
@@ -13,7 +13,8 @@ Class {
 		'packageName',
 		'isExtension',
 		'source',
-		'classSide'
+		'classSide',
+		'traitName'
 	],
 	#category : 'MCP-DTOs',
 	#package : 'MCP',
@@ -36,6 +37,7 @@ MCPCompiledMethodInfo >> asDictionary [
 		        (#package -> self packageName).
 		        (#protocol -> self protocol) } asDictionary.
 	self classSide ifTrue: [ data at: #side put: 'class' ].
+	self traitName ifNotNil: [ :aTraitName | data at: #trait put: aTraitName ].
 	self isExtension ifTrue: [ data at: #isExtension put: true ].
 	^ data
 ]
@@ -65,6 +67,7 @@ MCPCompiledMethodInfo >> initializeFromMethod: aCompiledMethod [
 	className := aCompiledMethod methodClass instanceSide name asString.
 	classSide := aCompiledMethod methodClass isMeta.
 	selector := aCompiledMethod selector asString.
+	aCompiledMethod isFromTrait ifTrue: [ traitName := aCompiledMethod origin instanceSide name asString ].
 	protocol := aCompiledMethod protocol ifNil: [ '' ] ifNotNil: [ :aProtocol | aProtocol name asString ].
 	methodPackageName := aCompiledMethod package
 		                     ifNil: [ aCompiledMethod methodClass instanceSide package name asString ]
@@ -104,4 +107,11 @@ MCPCompiledMethodInfo >> selector [
 MCPCompiledMethodInfo >> source [
 
 	^ source ifNil: [ '' ]
+]
+
+{ #category : 'accessing' }
+MCPCompiledMethodInfo >> traitName [
+	"The trait that defines this method, when the class only carries a copy installed from one."
+
+	^ traitName
 ]
