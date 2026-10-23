@@ -115,9 +115,11 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 			  (#commandClass -> MCPGetMethodCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolRewriteMethods).
-			  (#arguments -> { (#rules -> { {
-				    (#lhs -> 'self').
-				    (#rhs -> 'self') } asDictionary }) } asDictionary).
+			  (#arguments -> {
+				   (#rules -> { {
+					    (#lhs -> 'self').
+					    (#rhs -> 'self') } asDictionary }).
+				   (#scope -> { (#classes -> { 'MCPToolContractsTest' }) } asDictionary) } asDictionary).
 			  (#requestClass -> MCPMethodRewriteRequest).
 			  (#commandClass -> MCPRewriteMethodsCommand) } asDictionary.
 		  {
@@ -1189,7 +1191,7 @@ MCPToolContractsTest >> testIncludeSourceFlagsWarnAboutCost [
 					property name = 'includeSource' ifTrue: [
 							descriptions add: property description.
 							self assert: (property extraProperties at: #default) equals: false ] ] ].
-	self assert: descriptions notEmpty.
+	"No tool advertises includeSource today. The rule still holds for any that does again."
 	descriptions do: [ :each | self assert: each equals: 'Include source code. Use only for small result sets.' ]
 ]
 
@@ -1536,8 +1538,6 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 	self assert: ((self inputPropertyNamed: 'classSide' inTool: updateMethodTool) extraProperties at: #default) equals: false.
 	self assert: ((self inputPropertyNamed: 'force' inTool: updateMethodTool) extraProperties at: #default) equals: false.
 	self assert: ((self inputPropertyNamed: 'apply' inTool: rewriteMethodsTool) extraProperties at: #default) equals: false.
-	self assert: ((self inputPropertyNamed: 'force' inTool: rewriteMethodsTool) extraProperties at: #default) equals: false.
-	self assert: ((self inputPropertyNamed: 'includeSource' inTool: rewriteMethodsTool) extraProperties at: #default) equals: false.
 	self assert: ((self inputPropertyNamed: 'side' inTool: rewriteMethodsTool) extraProperties at: #default) equals: 'both'.
 	self assert: ((self inputPropertyNamed: 'force' inTool: removeClassesTool) extraProperties at: #default) equals: false.
 	self assert: ((self inputPropertyNamed: 'classSide' inTool: removeMethodsTool) extraProperties at: #default) equals: false

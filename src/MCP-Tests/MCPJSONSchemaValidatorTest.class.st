@@ -50,9 +50,11 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 			   (#className -> 'MCPTool').
 			   (#source -> 'temporarySelector ^ self').
 			   (#protocol -> 'tests') } asDictionary).
-		  (MCPToolRewriteMethods -> { (#rules -> { {
-			    (#lhs -> 'self').
-			    (#rhs -> 'self') } asDictionary }) } asDictionary).
+		  (MCPToolRewriteMethods -> {
+			   (#rules -> { {
+				    (#lhs -> 'self').
+				    (#rhs -> 'self') } asDictionary }).
+			   (#scope -> { (#classes -> { 'MCPJSONSchemaValidatorTest' }) } asDictionary) } asDictionary).
 		  (MCPToolSearchMethodReferences -> { (#name -> 'toolName') } asDictionary).
 		  (MCPToolListChangeHistoryFiles -> Dictionary new).
 		  (MCPToolListChangeHistoryEntries -> Dictionary new).

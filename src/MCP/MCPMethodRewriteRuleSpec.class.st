@@ -24,6 +24,38 @@ MCPMethodRewriteRuleSpec class >> fromDictionary: aDictionary request: request i
 	^ self new initializeFromDictionary: aDictionary request: request index: index
 ]
 
+{ #category : 'instance creation' }
+MCPMethodRewriteRuleSpec class >> specsForRuleClassNamed: aName startingAt: anIndex [
+	"A rule is a set of pattern pairs, so naming one stands for writing its patterns out. Only MCP's
+	own style rules record theirs; Renraku offers no way to read a rule's patterns back."
+
+	| ruleClass patterns |
+	ruleClass := MCPImageLookup classNamed: aName.
+	(ruleClass inheritsFrom: MCPMethodStyleRule) ifFalse: [
+			MCPCommandError
+				signalErrorCode: #RewriteRuleClassHasNoPatterns
+				message: aName asString , ' does not declare rewrite patterns. Name a subclass of MCPMethodStyleRule.'
+				details: { (#ruleClass -> aName) } asDictionary ].
+	patterns := ruleClass new rewritePatterns.
+	^ patterns withIndexCollect: [ :pattern :offset |
+		  self new
+			  initializeName: aName
+			  lhs: (pattern at: #lhs)
+			  rhs: (pattern at: #rhs)
+			  isForMethod: (pattern at: #isForMethod)
+			  index: anIndex + offset - 1 ]
+]
+
+{ #category : 'initialization' }
+MCPMethodRewriteRuleSpec >> initializeName: aName lhs: aLeftPattern rhs: aRightPattern isForMethod: aBoolean index: anIndex [
+
+	name := aName.
+	lhs := aLeftPattern.
+	rhs := aRightPattern.
+	isForMethod := aBoolean.
+	ruleIndex := anIndex
+]
+
 { #category : 'converting' }
 MCPMethodRewriteRuleSpec >> asDictionary [
 

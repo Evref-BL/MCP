@@ -116,27 +116,14 @@ Critiques include:
 The method may compile successfully and still return critiques. Treat critiques
 as follow-up review evidence, not as transport failures.
 
-## Rewrite Preview And Confirmation
+## Rewriting Methods
 
 `method_rewrite` uses Smalltalk AST rewrite rules. Patterns use RB AST pattern
-syntax, not regex.
+syntax, not regex. A scope is required, so rewriting everything is something a
+caller asks for by naming the packages rather than by leaving an argument out.
 
-The default mode is preview:
-
-```json
-{
-  "rules": [
-    {
-      "lhs": "`@receiver ifTrue: [ `@body ]",
-      "rhs": "`@receiver ifTrue: [ `@body ]"
-    }
-  ],
-  "apply": false
-}
-```
-
-Preview mode returns calculated changes and a `changeSetHash`. Applying requires
-the hash from a preview of the same request:
+The default mode is preview, which carries the old and new source of every
+change:
 
 ```json
 {
@@ -146,14 +133,28 @@ the hash from a preview of the same request:
       "rhs": "`@new"
     }
   ],
-  "packageNames": ["MyPackage"],
-  "apply": true,
-  "expectedChangeSetHash": 123456
+  "scope": { "packages": ["MyPackage"] }
 }
 ```
 
-Applying to the whole image also requires `force=true`. Prefer an explicit
-package, class, hierarchy, or method scope.
+Add `apply` to make the changes. One call is enough; preview first only when
+you want to read them before they land. `history_entry_revert` undoes a rewrite
+that turned out wrong.
+
+A critique rule stands for its own patterns, so its name can be given instead
+of writing them out:
+
+```json
+{
+  "ruleClasses": ["MCPCollectionThenDoRule"],
+  "scope": { "packages": ["MyPackage"] },
+  "apply": true
+}
+```
+
+Rules that report a critique are not applied by the tools that compile. A
+compile reports what it would change; changing it is this tool's job, and the
+caller asks.
 
 ## Tests And Coverage
 

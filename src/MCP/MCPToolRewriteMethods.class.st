@@ -1,7 +1,7 @@
 "
 Mass-updates methods by applying Smalltalk AST rewrite rules in a method scope.
 
-It is a method-scoped command tool, not a search tool: preview mode calculates ordered rewrite changes and a changeSetHash, while apply mode mutates the image only after expectedChangeSetHash confirmation.
+It is a method-scoped command tool, not a search tool: it previews the ordered rewrite changes, and applies them when asked. A scope is required, so rewriting the whole image is not something a caller can ask for by leaving an argument out.
 "
 Class {
 	#name : 'MCPToolRewriteMethods',
@@ -30,7 +30,7 @@ MCPToolRewriteMethods >> buildInputSchema [
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties: self rewriteInputProperties;
-		  required: #( 'rules' );
+		  required: #( 'scope' );
 		  additionalProperties: false;
 		  yourself
 ]
@@ -44,7 +44,7 @@ MCPToolRewriteMethods >> commandForRequest: rewriteRequest [
 { #category : 'metadata' }
 MCPToolRewriteMethods >> description [
 
-	^ 'Preview or apply Smalltalk AST pattern rewrites within scoped methods. Smalltalk AST pattern syntax, not regex.'
+	^ 'Preview or apply Smalltalk AST pattern rewrites within scoped methods. Write the patterns, or name critique rule classes whose rewrites to apply. Smalltalk AST pattern syntax, not regex.'
 ]
 
 { #category : 'error handling' }
@@ -82,13 +82,24 @@ MCPToolRewriteMethods >> rewriteInputProperties [
 
 	^ {
 		  self rewriteRulesSchemaProperty.
-		  (self booleanSchemaPropertyNamed: 'apply' description: 'Apply changes instead of preview.' default: false).
-		  (self integerSchemaPropertyNamed: 'expectedChangeSetHash' description: 'Required when apply=true.').
-		  (self booleanSchemaPropertyNamed: 'force' description: 'Allow whole-image apply scope.' default: false).
-		  (self
-			   booleanSchemaPropertyNamed: 'includeSource'
-			   description: 'Include source code. Use only for small result sets.'
-			   default: false) } , self methodQueryScopeInputProperties
+		  self rewriteRuleClassesSchemaProperty.
+		  (self booleanSchemaPropertyNamed: 'apply' description: 'Apply the changes instead of previewing them.' default: false) }
+	  , self methodQueryScopeInputProperties
+]
+
+{ #category : 'private - schema' }
+MCPToolRewriteMethods >> rewriteRuleClassesSchemaProperty [
+
+	^ MCPStructureProperties new
+		  name: 'ruleClasses';
+		  type: 'array';
+		  description:
+			  'Critique rule classes whose rewrites to apply, as critique_run names them. A rule stands for its own pattern pairs.';
+		  items: (MCPStructureProperties new
+				   type: 'string';
+				   description: 'One rule class name.';
+				   yourself);
+		  yourself
 ]
 
 { #category : 'private - schema' }
@@ -126,9 +137,3 @@ MCPToolRewriteMethods >> title [
 	^ 'Rewrite Methods'
 ]
 
-{ #category : 'validating' }
-MCPToolRewriteMethods >> validateRequest: request [
-
-	((request booleanArgumentNamed: 'apply' default: false) and: [ (request hasArgumentNamed: 'expectedChangeSetHash') not ])
-		ifTrue: [ MCPInvalidToolInput signalMissingRequiredArgumentNamed: 'expectedChangeSetHash' forTool: self ]
-]

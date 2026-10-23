@@ -1,7 +1,7 @@
 "
 Parsed input for method_rewrite.
 
-It owns raw tool argument parsing for rewrite rules, preview/apply flags, change-set hash confirmation, and method scope selection.
+It owns raw tool argument parsing for rewrite rules, the rule classes that stand for sets of them, the preview flag, and method scope selection.
 "
 Class {
 	#name : 'MCPMethodRewriteRequest',
@@ -9,9 +9,6 @@ Class {
 	#instVars : [
 		'rules',
 		'apply',
-		'expectedChangeSetHash',
-		'force',
-		'includeSources',
 		'scopeQuery'
 	],
 	#category : 'MCP-Requests',
@@ -32,41 +29,29 @@ MCPMethodRewriteRequest >> apply [
 ]
 
 { #category : 'accessing' }
-MCPMethodRewriteRequest >> expectedChangeSetHash [
-
-	^ expectedChangeSetHash
-]
-
-{ #category : 'accessing' }
-MCPMethodRewriteRequest >> force [
-
-	^ force = true
-]
-
-{ #category : 'accessing' }
 MCPMethodRewriteRequest >> includeSources [
+	"A preview exists to show what would change; an apply has already changed it."
 
-	^ includeSources ~= false
+	^ self apply not
 ]
 
 { #category : 'initialization' }
 MCPMethodRewriteRequest >> initializeFromRequest: request tool: aTool [
 
-	| ruleObjects |
+	| ruleObjects ruleClassNames |
 	ruleObjects := request objectCollectionArgumentNamed: 'rules'.
-	ruleObjects ifEmpty: [
+	ruleClassNames := request stringCollectionArgumentNamed: 'ruleClasses'.
+	(ruleObjects isEmpty and: [ ruleClassNames isEmpty ]) ifTrue: [
 			MCPCommandError
 				signalErrorCode: #RewriteRulesRequired
-				message: 'method_rewrite requires at least one rewrite rule.'
+				message: 'method_rewrite requires rules, ruleClasses, or both.'
 				details: Dictionary new ].
 	rules := OrderedCollection new.
 	ruleObjects doWithIndex: [ :eachRule :index |
 		rules add: (MCPMethodRewriteRuleSpec fromDictionary: eachRule request: request index: index) ].
+	ruleClassNames do: [ :eachName |
+		rules addAll: (MCPMethodRewriteRuleSpec specsForRuleClassNamed: eachName startingAt: rules size + 1) ].
 	apply := request booleanArgumentNamed: 'apply' default: false.
-	force := request booleanArgumentNamed: 'force' default: false.
-	includeSources := request booleanArgumentNamed: 'includeSource' default: false.
-	expectedChangeSetHash := (request hasArgumentNamed: 'expectedChangeSetHash') ifTrue: [
-		                         request nonNegativeIntegerArgumentNamed: 'expectedChangeSetHash' default: nil ].
 	scopeQuery := aTool methodScopeQueryFromRequest: request.
 	scopeQuery requireCompleteScope
 ]
@@ -77,9 +62,6 @@ MCPMethodRewriteRequest >> requestedContext [
 	| context |
 	context := Dictionary new.
 	context at: #apply put: self apply.
-	self expectedChangeSetHash ifNotNil: [ :hash | context at: #expectedChangeSetHash put: hash ].
-	context at: #force put: self force.
-	context at: #includeSource put: self includeSources.
 	context at: #scope put: self scopeQuery asDictionary.
 	context at: #rules put: self ruleDictionaries.
 	^ context
