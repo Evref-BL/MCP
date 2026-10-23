@@ -44,9 +44,11 @@ function filesIn(directory) {
   });
 }
 
-function directoryPlan(sourceRelativePath, targetRelativePath) {
+function directoryPlan(sourceRelativePath, targetRelativePath, host) {
   const sourceDirectory = path.join(templateDirectory(), sourceRelativePath);
-  return filesIn(sourceDirectory).map((source) => ({
+  return filesIn(sourceDirectory).filter((source) =>
+    host === "codex" || !source.endsWith(`${path.sep}agents${path.sep}openai.yaml`)
+  ).map((source) => ({
     source,
     target: path.join(targetRelativePath, path.relative(sourceDirectory, source)),
   }));
@@ -59,17 +61,17 @@ function filePlan(sourceRelativePath, targetRelativePath) {
   }];
 }
 
-function guidancePlan(configuration) {
+function guidancePlan(configuration, host) {
   return [
     ...filePlan("pharo.AGENTS.md", path.join(configuration.directory, "pharo.AGENTS.md")),
-    ...directoryPlan("pharo-skills", path.join(configuration.directory, "skills")),
+    ...directoryPlan("pharo-skills", path.join(configuration.directory, "skills"), host),
     ...directoryPlan("pharo-references", path.join(configuration.directory, "pharo-references")),
   ];
 }
 
-function fullPlan(configuration) {
+function fullPlan(configuration, host) {
   const [source, target] = configuration.configuration;
-  return [...guidancePlan(configuration), ...filePlan(source, target)];
+  return [...guidancePlan(configuration, host), ...filePlan(source, target)];
 }
 
 function absolutePlan(cwd, plan) {
@@ -129,7 +131,7 @@ function writeGuide({ target, content }) {
 function prepare(options, direct) {
   const cwd = path.resolve(options.cwd ?? process.cwd());
   const configuration = hostConfiguration(options.host);
-  const plan = absolutePlan(cwd, direct ? fullPlan(configuration) : guidancePlan(configuration));
+  const plan = absolutePlan(cwd, direct ? fullPlan(configuration, options.host) : guidancePlan(configuration, options.host));
   const guide = guidePlan(cwd, configuration);
   assertCompatible(plan);
   return { configuration, cwd, guide, plan };

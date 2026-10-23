@@ -41,6 +41,12 @@ for (const [host, { directory, guide }] of Object.entries(hosts)) {
       assert.equal(result.host, host);
       assert.ok(fs.existsSync(path.join(project, directory, "pharo.AGENTS.md")));
       assert.ok(fs.existsSync(path.join(project, directory, "skills", "pharo-project-load", "SKILL.md")));
+      for (const skill of fs.readdirSync(path.join(project, directory, "skills"))) {
+        assert.equal(
+          fs.existsSync(path.join(project, directory, "skills", skill, "agents", "openai.yaml")),
+          host === "codex",
+        );
+      }
       assert.ok(fs.existsSync(path.join(project, directory, "pharo-references", "pharo-coding-rules.md")));
       for (const reference of userReferences) {
         assert.ok(fs.existsSync(path.join(project, directory, "pharo-references", reference)));
