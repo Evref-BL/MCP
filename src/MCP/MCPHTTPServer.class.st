@@ -113,7 +113,13 @@ MCPHTTPServer >> answerOptionsWith: response [
 { #category : 'initialization' }
 MCPHTTPServer >> answerPost: request with: response [
 
-	| payload |
+	| payload mismatch |
+	mismatch := self headerMismatchFor: request.
+	mismatch ifNotNil: [
+			response
+				statusLine: ZnStatusLine badRequest;
+				entity: (ZnEntity json: mismatch).
+			^ response ].
 	payload := self handleJSON: request contents.
 	(payload isString and: [ payload isEmpty ]) ifTrue: [ ^ self answerWithoutBody: response statusLine: ZnStatusLine accepted ].
 	response
@@ -167,6 +173,84 @@ MCPHTTPServer >> configureResponse: response for: request [
 MCPHTTPServer >> deferAfterCurrentResponse: aBlock [
 
 	server deferAfterCurrentResponse: aBlock
+]
+
+{ #category : 'private - modern headers' }
+MCPHTTPServer >> bodyOf: request [
+	"Answer the parsed request body, or nil when it is not JSON at all. A body that cannot be parsed is the message processor's to refuse, not this check's."
+
+	^ [ STONJSON fromString: request contents ] on: Error do: [ :error | error return: nil ]
+]
+
+{ #category : 'private - modern headers' }
+MCPHTTPServer >> decodedHeaderValue: aValue [
+	"A value that cannot travel as plain ASCII arrives wrapped in a sentinel, and has to be decoded before it can be compared with the body."
+
+	| sentinelStart sentinelEnd |
+	sentinelStart := '=?base64?'.
+	sentinelEnd := '?='.
+	((aValue beginsWith: sentinelStart) and: [ aValue endsWith: sentinelEnd ]) ifFalse: [ ^ aValue ].
+	^ [
+	  (ZnBase64Encoder new decode: (aValue copyFrom: sentinelStart size + 1 to: aValue size - sentinelEnd size)) utf8Decoded ]
+		  on: Error
+		  do: [ :error | error return: aValue ]
+]
+
+{ #category : 'private - modern headers' }
+MCPHTTPServer >> headerMismatchFor: request [
+	"Answer the error body for a modern request whose headers do not agree with it, or nil when there is nothing to refuse. Legacy requests carry none of these headers and are not asked to."
+
+	| body |
+	body := self bodyOf: request.
+	body isDictionary ifFalse: [ ^ nil ].
+	(MCP isModernRequest: (body at: 'params' ifAbsent: [ nil ])) ifFalse: [ ^ nil ].
+	^ [
+	  self validateModernHeadersFor: request body: body.
+	  nil ]
+		  on: MCPHeaderMismatch
+		  do: [ :error | error return: (error asJRPCResponseWithId: (body at: 'id' ifAbsent: [ nil ])) asJRPCJSON ]
+]
+
+{ #category : 'private - modern headers' }
+MCPHTTPServer >> headerNamed: aName in: request [
+
+	^ request headers at: aName ifAbsent: [ MCPHeaderMismatch signalMissing: aName ]
+]
+
+{ #category : 'private - modern headers' }
+MCPHTTPServer >> nameHeaderSourceIn: body [
+	"The body field Mcp-Name mirrors: the thing the call names. Only the three methods that name something carry it."
+
+	| params |
+	params := body at: 'params' ifAbsent: [ ^ nil ].
+	params isDictionary ifFalse: [ ^ nil ].
+	^ (#( 'tools/call' 'prompts/get' ) includes: (body at: 'method' ifAbsent: [ '' ]))
+		  ifTrue: [ params at: 'name' ifAbsent: [ nil ] ]
+		  ifFalse: [
+			  (body at: 'method' ifAbsent: [ '' ]) = 'resources/read'
+				  ifTrue: [ params at: 'uri' ifAbsent: [ nil ] ]
+				  ifFalse: [ nil ] ]
+]
+
+{ #category : 'private - modern headers' }
+MCPHTTPServer >> validate: aHeaderName in: request matches: aBodyValue [
+
+	| headerValue |
+	headerValue := self decodedHeaderValue: (self headerNamed: aHeaderName in: request).
+	headerValue = aBodyValue ifFalse: [
+		MCPHeaderMismatch signalName: aHeaderName header: headerValue doesNotMatch: aBodyValue ]
+]
+
+{ #category : 'private - modern headers' }
+MCPHTTPServer >> validateModernHeadersFor: request body: body [
+	"Every modern request mirrors its method and version into headers, and the three that name something mirror that too."
+
+	self
+		validate: 'MCP-Protocol-Version'
+		in: request
+		matches: (MCP requestedProtocolVersionIn: (body at: 'params' ifAbsent: [ nil ])).
+	self validate: 'Mcp-Method' in: request matches: (body at: 'method' ifAbsent: [ nil ]).
+	(self nameHeaderSourceIn: body) ifNotNil: [ :named | self validate: 'Mcp-Name' in: request matches: named ]
 ]
 
 { #category : 'private - validation' }
