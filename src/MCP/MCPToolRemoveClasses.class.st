@@ -30,7 +30,7 @@ MCPToolRemoveClasses >> buildInputSchema [
 		  type: 'object';
 		  properties: {
 				  ((MCPStructureProperties new
-					    name: 'classNames';
+					    name: 'classes';
 					    type: 'array';
 					    description: 'The class names to remove as a single batch.')
 					   items: (MCPStructureProperties new
@@ -45,7 +45,7 @@ MCPToolRemoveClasses >> buildInputSchema [
 						   'When true, proceed even if safe-removal warnings are raised. Those warnings are returned in the tool result warnings.';
 					   default: false;
 					   yourself) };
-		  required: #( 'classNames' );
+		  required: #( 'classes' );
 		  yourself
 ]
 
@@ -53,14 +53,14 @@ MCPToolRemoveClasses >> buildInputSchema [
 MCPToolRemoveClasses >> classNamesForErrorFromParsedRequest: removeRequest rawRequest: rawRequest [
 
 	removeRequest ifNotNil: [ ^ removeRequest classNames ].
-	^ rawRequest stringCollectionArgumentNamed: 'classNames'
+	^ rawRequest stringCollectionArgumentNamed: 'classes'
 ]
 
 { #category : 'private' }
 MCPToolRemoveClasses >> classNamesFromRequest: request [
 
 	| classNames |
-	classNames := request uniqueStringCollectionArgumentNamed: 'classNames'.
+	classNames := request uniqueStringCollectionArgumentNamed: 'classes'.
 	classNames ifEmpty: [ Error signal: 'classNames must contain at least one class name.' ].
 	^ classNames
 ]
@@ -92,7 +92,7 @@ MCPToolRemoveClasses >> errorResultForError: anError classNames: classNames [
 				  self errorResultText: (self failureMessageForClassNames: classNames error: toolError) details: {
 						  (#errorClass -> toolError class name).
 						  (#message -> toolError messageText).
-						  (#classNames -> classNames asArray) } asDictionary ]
+						  (#classes -> classNames asArray) } asDictionary ]
 ]
 
 { #category : 'executing' }

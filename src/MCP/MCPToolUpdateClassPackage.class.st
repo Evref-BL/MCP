@@ -28,5 +28,5 @@ MCPToolUpdateClassPackage >> classToolSpec [
 			   self packageNameSchemaProperty.
 			   self tagSchemaProperty }).
 		  (#requiredProperties -> #( 'name' )).
-		  (#atLeastOneProperties -> #( 'packageName' 'tag' )) } asDictionary
+		  (#atLeastOneProperties -> #( 'package' 'tag' )) } asDictionary
 ]

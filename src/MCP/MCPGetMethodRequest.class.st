@@ -27,7 +27,7 @@ MCPGetMethodRequest class >> fromRequest: aRequest tool: aTool [
 				  selectorString: reference selector
 				  classSide: reference classSide
 				  includeVariableDetails: (aRequest booleanArgumentNamed: 'includeVariableDetails' default: false) ].
-	className := aRequest stringArgumentNamed: 'className'.
+	className := aRequest stringArgumentNamed: 'class'.
 	((MCPMethodReference looksLikeAReference: text) or: [ className isNil ]) ifTrue: [
 		MCPCommandError
 			signalErrorCode: #MethodReferenceUnreadable

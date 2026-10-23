@@ -40,8 +40,8 @@ MCPRepositoryCommitResult >> asDictionary [
 	self commitId ifNotEmpty: [ :id | data at: #commitId put: id ].
 	self commitDescription ifNotEmpty: [ :description | data at: #commitDescription put: description ].
 	self headDescription ifNotEmpty: [ :description | data at: #headDescription put: description ].
-	self changedPackageNames ifNotEmpty: [ :names | data at: #changedPackageNames put: names ].
-	self modifiedPackageNames ifNotEmpty: [ :names | data at: #modifiedPackageNames put: names ].
+	self changedPackageNames ifNotEmpty: [ :names | data at: #changedPackages put: names ].
+	self modifiedPackageNames ifNotEmpty: [ :names | data at: #modifiedPackages put: names ].
 	^ data
 ]
 

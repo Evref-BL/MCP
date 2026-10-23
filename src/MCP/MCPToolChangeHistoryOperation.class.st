@@ -62,7 +62,7 @@ MCPToolChangeHistoryOperation >> selectionInputProperties [
 
 	^ {
 		  (self schemaPropertyNamed: 'directoryPath' type: 'string' description: 'Optional .ombu directory.').
-		  (self schemaPropertyNamed: 'historyFileName' type: 'string' description: 'Optional .ombu file name from history_file_list.').
+		  (self schemaPropertyNamed: 'historyFile' type: 'string' description: 'Optional .ombu file name from history_file_list.').
 		  (self
 			   integerArraySchemaNamed: 'indexes'
 			   description: 'One-based entry indexes returned by history_entry_list.'

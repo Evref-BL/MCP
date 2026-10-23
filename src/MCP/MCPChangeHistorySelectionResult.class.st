@@ -54,7 +54,7 @@ MCPChangeHistorySelectionResult >> asDictionary [
 	| data |
 	data := Dictionary new.
 	data at: #action put: action.
-	historyFileName ifNotNil: [ data at: #historyFileName put: historyFileName ].
+	historyFileName ifNotNil: [ data at: #historyFile put: historyFileName ].
 	data at: #selectionCriteria put: selectionCriteria.
 	data at: #selectedEntries put: (self entryDictionariesFrom: self selectedEntries).
 	data at: #previewEntries put: (self entryDictionariesFrom: self previewEntries).

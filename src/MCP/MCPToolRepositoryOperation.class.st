@@ -32,7 +32,7 @@ MCPToolRepositoryOperation >> additionalKeywords [
 { #category : 'private - schema' }
 MCPToolRepositoryOperation >> branchNameSchemaProperty [
 
-	^ self schemaPropertyNamed: 'branchName' type: 'string' description: 'Branch name.'
+	^ self schemaPropertyNamed: 'branch' type: 'string' description: 'Branch name.'
 ]
 
 { #category : 'private - execution' }
@@ -95,7 +95,7 @@ MCPToolRepositoryOperation >> messageSchemaProperty [
 MCPToolRepositoryOperation >> modifiedPackageNamesSchemaProperty [
 
 	^ self
-		  stringArraySchemaNamed: 'modifiedPackageNames'
+		  stringArraySchemaNamed: 'modifiedPackages'
 		  description: 'Expected modified package names for repository identity verification.'
 		  itemDescription: 'An expected modified package name.'
 ]
@@ -116,7 +116,7 @@ MCPToolRepositoryOperation >> operationAction [
 MCPToolRepositoryOperation >> packageNamesSchemaProperty [
 
 	^ self
-		  stringArraySchemaNamed: 'packageNames'
+		  stringArraySchemaNamed: 'packages'
 		  description: 'Expected managed package names for repository identity verification.'
 		  itemDescription: 'An expected package name.'
 ]

@@ -23,7 +23,7 @@ MCPGitRepositoryMetadataTest >> testDirectoryGitConfigProducesEmptyMetadata [
 			self assert: (metadata remoteUrlNamed: 'origin') equals: ''.
 			upstreamInfo := metadata upstreamInfoForBranchNamed: 'main'.
 			self assert: (upstreamInfo at: #remoteName) equals: ''.
-			self assert: (upstreamInfo at: #branchName) equals: ''.
+			self assert: (upstreamInfo at: #branch) equals: ''.
 			self assert: (upstreamInfo at: #remoteUrl) equals: '' ]
 ]
 
@@ -37,7 +37,7 @@ MCPGitRepositoryMetadataTest >> testMissingGitConfigProducesEmptyMetadata [
 			self assert: (metadata remoteUrlNamed: 'origin') equals: ''.
 			upstreamInfo := metadata upstreamInfoForBranchNamed: 'main'.
 			self assert: (upstreamInfo at: #remoteName) equals: ''.
-			self assert: (upstreamInfo at: #branchName) equals: ''.
+			self assert: (upstreamInfo at: #branch) equals: ''.
 			self assert: (upstreamInfo at: #remoteUrl) equals: '' ]
 ]
 
@@ -56,7 +56,7 @@ MCPGitRepositoryMetadataTest >> testReadsRemoteAndUpstreamMetadataFromGitConfig 
 			self assert: (remotes second at: #url) equals: 'https://example.com/project.git'.
 			upstreamInfo := metadata upstreamInfoForBranchNamed: 'main'.
 			self assert: (upstreamInfo at: #remoteName) equals: 'origin'.
-			self assert: (upstreamInfo at: #branchName) equals: 'main'.
+			self assert: (upstreamInfo at: #branch) equals: 'main'.
 			self assert: (upstreamInfo at: #remoteUrl) equals: 'https://example.com/project.git' ]
 ]
 
@@ -71,7 +71,7 @@ MCPGitRepositoryMetadataTest >> testReadsWorktreeMetadataFromCommonGitDirectory 
 			self assert: (metadata remoteUrlNamed: 'origin') equals: 'https://example.com/worktree.git'.
 			upstreamInfo := metadata upstreamInfoForBranchNamed: 'feature'.
 			self assert: (upstreamInfo at: #remoteName) equals: 'origin'.
-			self assert: (upstreamInfo at: #branchName) equals: 'feature'.
+			self assert: (upstreamInfo at: #branch) equals: 'feature'.
 			self assert: (upstreamInfo at: #remoteUrl) equals: 'https://example.com/worktree.git' ]
 ]
 
@@ -85,7 +85,7 @@ MCPGitRepositoryMetadataTest >> testRepositoryWithNilLocationProducesEmptyMetada
 	self assert: (metadata remoteUrlNamed: 'origin') equals: ''.
 	upstreamInfo := metadata upstreamInfoForBranchNamed: 'main'.
 	self assert: (upstreamInfo at: #remoteName) equals: ''.
-	self assert: (upstreamInfo at: #branchName) equals: ''.
+	self assert: (upstreamInfo at: #branch) equals: ''.
 	self assert: (upstreamInfo at: #remoteUrl) equals: ''
 ]
 

@@ -272,10 +272,10 @@ MCPRunTestsCommand >> testRequestsForTestCases: testCases startingAt: startIndex
 MCPRunTestsCommand >> testRunInfoForTestResult: aResult validatedRequest: validatedRequest selectedTestCount: selectedTestCount [
 
 	| issues |
-	issues := (aResult issueDetails asArray sort: [ :left :right | (left at: #testName) <= (right at: #testName) ]) collect: [ :each |
+	issues := (aResult issueDetails asArray sort: [ :left :right | (left at: #test) <= (right at: #test) ]) collect: [ :each |
 			          | issue |
 			          issue := each copy.
-			          issue removeKey: #testName ifAbsent: [ ].
+			          issue removeKey: #test ifAbsent: [ ].
 			          issue ].
 	^ MCPTestRunInfo
 		  validatedRequest: validatedRequest

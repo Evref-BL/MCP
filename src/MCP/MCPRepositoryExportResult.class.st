@@ -27,7 +27,7 @@ MCPRepositoryExportResult >> asDictionary [
 	| data |
 	data := Dictionary new.
 	data at: #didChange put: self didChange.
-	self changedPackageNames ifNotEmpty: [ :names | data at: #changedPackageNames put: names ].
+	self changedPackageNames ifNotEmpty: [ :names | data at: #changedPackages put: names ].
 	self modifiedPaths ifNotEmpty: [ :paths | data at: #modifiedPaths put: paths ].
 	self restoredOrderOnlyPaths ifNotEmpty: [ :paths | data at: #restoredOrderOnlyPaths put: paths ].
 	^ data

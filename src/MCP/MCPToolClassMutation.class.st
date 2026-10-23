@@ -294,7 +294,7 @@ MCPToolClassMutation >> mutationActionForErrorFromParsedRequest: mutationRequest
 { #category : 'private - schema' }
 MCPToolClassMutation >> newSlotNameSchemaProperty [
 
-	^ self schemaPropertyNamed: 'newSlotName' type: 'string' description: 'The replacement slot name.'
+	^ self schemaPropertyNamed: 'newSlot' type: 'string' description: 'The replacement slot name.'
 ]
 
 { #category : 'private - request' }
@@ -308,7 +308,7 @@ MCPToolClassMutation >> packageNameForMoveClassNamed: className requestedPackage
 MCPToolClassMutation >> packageNameSchemaProperty [
 
 	^ self
-		  schemaPropertyNamed: 'packageName'
+		  schemaPropertyNamed: 'package'
 		  type: 'string'
 		  description: 'Package name; omit packageName with tag to recategorize current package.'
 ]
@@ -332,7 +332,7 @@ MCPToolClassMutation >> parsedRequestFromToolRequest: request [
 { #category : 'private - schema' }
 MCPToolClassMutation >> requiredInputProperties [
 
-	^ self classToolSpec at: #requiredProperties ifAbsent: [ #( 'className' ) ]
+	^ self classToolSpec at: #requiredProperties ifAbsent: [ #( 'class' ) ]
 ]
 
 { #category : 'private - schema' }
@@ -361,7 +361,7 @@ MCPToolClassMutation >> slotDescriptionForClassSide: aBoolean [
 { #category : 'private - schema' }
 MCPToolClassMutation >> slotNameSchemaProperty [
 
-	^ self schemaPropertyNamed: 'slotName' type: 'string' description: 'The slot name.'
+	^ self schemaPropertyNamed: 'slot' type: 'string' description: 'The slot name.'
 ]
 
 { #category : 'private - schema' }
@@ -376,7 +376,7 @@ MCPToolClassMutation >> slotsSchemaProperty [
 { #category : 'private - schema' }
 MCPToolClassMutation >> superclassNameSchemaProperty [
 
-	^ self schemaPropertyNamed: 'superclassName' type: 'string' description: 'Superclass name.'
+	^ self schemaPropertyNamed: 'superclass' type: 'string' description: 'Superclass name.'
 ]
 
 { #category : 'private - schema' }

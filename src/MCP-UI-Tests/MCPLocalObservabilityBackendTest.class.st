@@ -378,7 +378,7 @@ MCPLocalObservabilityBackendTest >> testTraceExportWritesOverBudgetRecordAsJSONL
 		line := traceFile contents lines first.
 		payload := STONJSON fromString: line.
 		self assert: (payload at: 'event.name') equals: 'mcp.tool_call.output_budget_exceeded'.
-		self assert: (payload at: 'toolName') equals: 'method_source_search'.
+		self assert: (payload at: 'tool') equals: 'method_source_search'.
 		self assert: (payload at: 'dispatchPath') equals: 'direct'.
 		self assert: ((payload at: 'event.kinds') includes: 'output_budget_exceeded').
 		self assert: (payload at: 'inputBytes') > 0.

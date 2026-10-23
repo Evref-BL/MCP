@@ -75,7 +75,7 @@ MCPReparentClassCommandTest >> testMissingClassSignalsCommandError [
 		         (MCPReparentClassCommand className: 'MCPReparentClassCommandTestMissing' superclassName: self reparentSuperclassName)
 			         execute ].
 	self assert: error errorCode equals: #ClassNotFound.
-	self assert: (error structuredDetails at: #className) equals: 'MCPReparentClassCommandTestMissing'
+	self assert: (error structuredDetails at: #class) equals: 'MCPReparentClassCommandTestMissing'
 ]
 
 { #category : 'tests' }
@@ -85,7 +85,7 @@ MCPReparentClassCommandTest >> testMissingSuperclassSignalsCommandError [
 	error := self captureCommandError: [
 		         (MCPReparentClassCommand className: self reparentTargetClassName superclassName: 'DefinitelyMissingSuperclass') execute ].
 	self assert: error errorCode equals: #SuperclassNotFound.
-	self assert: (error structuredDetails at: #superclassName) equals: 'DefinitelyMissingSuperclass'
+	self assert: (error structuredDetails at: #superclass) equals: 'DefinitelyMissingSuperclass'
 ]
 
 { #category : 'tests' }

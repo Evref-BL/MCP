@@ -28,7 +28,7 @@ MCPRepositoryBranchRequest >> branchName [
 MCPRepositoryBranchRequest >> initializeFromRequest: request [
 
 	super initializeFromRequest: request.
-	branchName := request stringArgumentNamed: 'branchName'
+	branchName := request stringArgumentNamed: 'branch'
 ]
 
 { #category : 'converting' }
@@ -36,6 +36,6 @@ MCPRepositoryBranchRequest >> requestedContext [
 
 	| context |
 	context := self repositoryReference requestedContext copy.
-	context at: #branchName put: self branchName.
+	context at: #branch put: self branchName.
 	^ context
 ]

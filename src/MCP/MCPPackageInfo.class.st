@@ -29,9 +29,9 @@ MCPPackageInfo class >> fromPackage: aPackage projectNames: someProjectNames [
 MCPPackageInfo >> asDictionary [
 
 	^ {
-		  (#packageName -> self packageName).
-		  (#projectNames -> self projectNames).
-		  (#tagNames -> self tagNames).
+		  (#package -> self packageName).
+		  (#projects -> self projectNames).
+		  (#tags -> self tagNames).
 		  (#definedClassCount -> self definedClassCount).
 		  (#extensionMethodCount -> self extensionMethodCount).
 		  (#isUndefined -> self isUndefined) } asDictionary
@@ -41,9 +41,9 @@ MCPPackageInfo >> asDictionary [
 MCPPackageInfo >> asQueryDictionary [
 
 	^ {
-		  (#packageName -> self packageName).
-		  (#projectNames -> self projectNames).
-		  (#tagNames -> self tagNames) } asDictionary
+		  (#package -> self packageName).
+		  (#projects -> self projectNames).
+		  (#tags -> self tagNames) } asDictionary
 ]
 
 { #category : 'accessing' }

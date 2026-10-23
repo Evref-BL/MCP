@@ -22,8 +22,8 @@ MCPCommandError class >> detailsWith: associations suggestionsForClassNamed: cla
 	details := associations asDictionary.
 	suggestions := MCPScopeNameSuggester classSuggestionsFor: className.
 	details
-		at: #className put: className;
-		at: #scopeName put: scopeName;
+		at: #class put: className;
+		at: #scope put: scopeName;
 		at: #suggestions put: suggestions.
 	^ details
 ]
@@ -35,8 +35,8 @@ MCPCommandError class >> detailsWith: associations suggestionsForPackageNamed: p
 	details := associations asDictionary.
 	suggestions := MCPScopeNameSuggester packageSuggestionsFor: packageName.
 	details
-		at: #packageName put: packageName;
-		at: #scopeName put: scopeName;
+		at: #package put: packageName;
+		at: #scope put: scopeName;
 		at: #suggestions put: suggestions.
 	^ details
 ]
@@ -81,7 +81,7 @@ MCPCommandError class >> methodSuggestionForBehavior: aBehavior selector: aSelec
 		                ifNil: [ '' ]
 		                ifNotNil: [ :protocol | protocol name asString ].
 	^ {
-		  (#className -> aBehavior instanceSide name asString).
+		  (#class -> aBehavior instanceSide name asString).
 		  (#classSide -> aBehavior isClassSide).
 		  (#selector -> aSelectorSymbol asString).
 		  (#protocol -> protocolName) } asDictionary
@@ -114,7 +114,7 @@ MCPCommandError class >> signalClassAlreadyExistsNamed: aClassName [
 	| details message |
 	message := 'Class ' , aClassName , ' already exists.'.
 	details := {
-		           (#className -> aClassName).
+		           (#class -> aClassName).
 		           (#guidance
 		            ->
 		            'Use class_get to inspect the existing class, or use the class update tools to modify it. Do not use class_create for existing classes.') }
@@ -136,7 +136,7 @@ MCPCommandError class >> signalErrorCode: anErrorCode message: aMessage details:
 MCPCommandError class >> signalMissingClassNamed: aClassName [
 
 	| details suggestions |
-	details := self detailsWith: #(  ) suggestionsForClassNamed: aClassName scopeName: 'className'.
+	details := self detailsWith: #(  ) suggestionsForClassNamed: aClassName scopeName: 'class'.
 	suggestions := details at: #suggestions.
 	^ self
 		  signalErrorCode: #ClassNotFound
@@ -173,7 +173,7 @@ MCPCommandError class >> signalMissingMethodInClassName: aClassName classSide: a
 			               message := 'Class ' , aClassName , ' does not exist; cannot look up method '
 			                          , (self methodReferenceForClassName: aClassName selector: aSelectorString classSide: aBoolean) , '.'.
 			               ^ self signalErrorCode: #ClassNotFound message: message details: {
-					                 (#className -> aClassName).
+					                 (#class -> aClassName).
 					                 (#classSide -> aBoolean).
 					                 (#selector -> aSelectorString) } asDictionary ].
 	suggestions := self methodSuggestionsForClass: targetClass classSide: aBoolean selector: selectorSymbol.
@@ -182,11 +182,11 @@ MCPCommandError class >> signalMissingMethodInClassName: aClassName classSide: a
 	suggestions ifNotEmpty: [
 			message := message , ' Exact matches: ' , (', ' join: (suggestions collect: [ :each |
 					             self
-						             methodReferenceForClassName: (each at: #className)
+						             methodReferenceForClassName: (each at: #class)
 						             selector: (each at: #selector)
 						             classSide: (each at: #classSide) ])) , '.' ].
 	details := {
-		           (#className -> aClassName).
+		           (#class -> aClassName).
 		           (#classSide -> aBoolean).
 		           (#selector -> aSelectorString) } asDictionary.
 	suggestions ifNotEmpty: [ :matches | details at: #suggestions put: matches ].
@@ -197,7 +197,7 @@ MCPCommandError class >> signalMissingMethodInClassName: aClassName classSide: a
 MCPCommandError class >> signalMissingPackageNamed: aPackageName [
 
 	| details suggestions |
-	details := self detailsWith: #(  ) suggestionsForPackageNamed: aPackageName scopeName: 'packageName'.
+	details := self detailsWith: #(  ) suggestionsForPackageNamed: aPackageName scopeName: 'package'.
 	suggestions := details at: #suggestions.
 	^ self
 		  signalErrorCode: #PackageNotFound
@@ -213,7 +213,7 @@ MCPCommandError class >> signalMissingPackageNamed: aPackageName [
 MCPCommandError class >> signalMissingPackageNamed: aPackageName forClassNamed: aClassName [
 
 	| details suggestions |
-	details := self detailsWith: { (#className -> aClassName) } suggestionsForPackageNamed: aPackageName scopeName: 'packageName'.
+	details := self detailsWith: { (#class -> aClassName) } suggestionsForPackageNamed: aPackageName scopeName: 'package'.
 	suggestions := details at: #suggestions.
 	^ self
 		  signalErrorCode: #PackageNotFound
@@ -246,7 +246,7 @@ MCPCommandError class >> signalMissingProjectNamed: aProjectName [
 
 	| message |
 	message := 'Project ' , aProjectName , ' does not exist.'.
-	^ self signalErrorCode: #ProjectNotFound message: message details: { (#projectName -> aProjectName) } asDictionary
+	^ self signalErrorCode: #ProjectNotFound message: message details: { (#project -> aProjectName) } asDictionary
 ]
 
 { #category : 'signaling' }
@@ -255,8 +255,8 @@ MCPCommandError class >> signalMissingSuperclassNamed: aSuperclassName forClassN
 	| message |
 	message := 'Superclass ' , aSuperclassName , ' does not exist.'.
 	^ self signalErrorCode: #SuperclassNotFound message: message details: {
-			  (#className -> aClassName).
-			  (#superclassName -> aSuperclassName) } asDictionary
+			  (#class -> aClassName).
+			  (#superclass -> aSuperclassName) } asDictionary
 ]
 
 { #category : 'signaling' }
@@ -265,7 +265,7 @@ MCPCommandError class >> signalMissingTag: aTag packageName: aPackageName [
 	| message |
 	message := 'Package ' , aPackageName , ' does not have a tag named ' , aTag , '.'.
 	^ self signalErrorCode: #TagNotFound message: message details: {
-			  (#packageName -> aPackageName).
+			  (#package -> aPackageName).
 			  (#tag -> aTag) } asDictionary
 ]
 
@@ -275,8 +275,8 @@ MCPCommandError class >> signalMissingTag: aTag packageName: aPackageName forCla
 	| message |
 	message := 'Package ' , aPackageName , ' does not have a tag named ' , aTag , '.'.
 	^ self signalErrorCode: #TagNotFound message: message details: {
-			  (#className -> aClassName).
-			  (#packageName -> aPackageName).
+			  (#class -> aClassName).
+			  (#package -> aPackageName).
 			  (#tag -> aTag) } asDictionary
 ]
 

@@ -45,7 +45,7 @@ MCPToolSearchRepositories >> classNamesForRepositoryEntry: anEntry [
 
 	| classNames |
 	classNames := OrderedCollection new.
-	(anEntry at: #packageNames) do: [ :packageName |
+	(anEntry at: #packages) do: [ :packageName |
 			PackageOrganizer default
 				packageNamed: packageName asSymbol
 				ifPresent: [ :package | package definedClasses do: [ :class | classNames add: class name asString ] ] ].
@@ -77,9 +77,9 @@ MCPToolSearchRepositories >> fieldTextsForRepositoryEntry: anEntry fieldName: fi
 	fieldName = 'name' ifTrue: [ ^ { (anEntry at: #name) } ].
 	fieldName = 'location' ifTrue: [ ^ { (anEntry at: #location) } ].
 	fieldName = 'subdirectory' ifTrue: [ ^ { (anEntry at: #subdirectory) } ].
-	fieldName = 'packageName' ifTrue: [ ^ anEntry at: #packageNames ].
-	fieldName = 'className' ifTrue: [ ^ self classNamesForRepositoryEntry: anEntry ].
-	fieldName = 'modifiedPackageName' ifTrue: [ ^ anEntry at: #modifiedPackageNames ].
+	fieldName = 'package' ifTrue: [ ^ anEntry at: #packages ].
+	fieldName = 'class' ifTrue: [ ^ self classNamesForRepositoryEntry: anEntry ].
+	fieldName = 'modifiedPackage' ifTrue: [ ^ anEntry at: #modifiedPackages ].
 	^ #(  )
 ]
 
@@ -134,17 +134,17 @@ MCPToolSearchRepositories >> repositoryFieldFilterInputProperties [
 		  (self repositoryTextFilterPropertyNamed: 'name' description: 'Match repository names case-insensitively.').
 		  (self repositoryTextFilterPropertyNamed: 'location' description: 'Match repository directory paths case-insensitively.').
 		  (self repositoryTextFilterPropertyNamed: 'subdirectory' description: 'Match source subdirectories case-insensitively.').
-		  (self repositoryTextFilterPropertyNamed: 'packageName' description: 'Match managed package names case-insensitively.').
+		  (self repositoryTextFilterPropertyNamed: 'package' description: 'Match managed package names case-insensitively.').
 		  (self
-			   repositoryTextFilterPropertyNamed: 'className'
+			   repositoryTextFilterPropertyNamed: 'class'
 			   description: 'Match loaded class names in managed packages case-insensitively.').
-		  (self repositoryTextFilterPropertyNamed: 'modifiedPackageName' description: 'Match modified package names case-insensitively.') }
+		  (self repositoryTextFilterPropertyNamed: 'modifiedPackage' description: 'Match modified package names case-insensitively.') }
 ]
 
 { #category : 'private - request' }
 MCPToolSearchRepositories >> repositoryFilterFieldNames [
 
-	^ #( 'name' 'location' 'subdirectory' 'packageName' 'className' 'modifiedPackageName' )
+	^ #( 'name' 'location' 'subdirectory' 'package' 'class' 'modifiedPackage' )
 ]
 
 { #category : 'private - results' }

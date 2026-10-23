@@ -133,7 +133,7 @@ MCPCreateClassCommandTest >> testExistingClassSignalsCommandError [
 				          slots: nil
 				          classSlots: nil) execute ].
 	self assert: error errorCode equals: #ClassAlreadyExists.
-	self assert: (error structuredDetails at: #className) equals: 'MCPCreateClassCommandTestGenerated'.
+	self assert: (error structuredDetails at: #class) equals: 'MCPCreateClassCommandTestGenerated'.
 	self assert: ((error structuredDetails at: #guidance) includesSubstring: 'Use class_get')
 ]
 
@@ -150,5 +150,5 @@ MCPCreateClassCommandTest >> testMissingSuperclassSignalsCommandError [
 				          slots: nil
 				          classSlots: nil) execute ].
 	self assert: error errorCode equals: #SuperclassNotFound.
-	self assert: (error structuredDetails at: #superclassName) equals: 'DefinitelyMissingSuperclass'
+	self assert: (error structuredDetails at: #superclass) equals: 'DefinitelyMissingSuperclass'
 ]

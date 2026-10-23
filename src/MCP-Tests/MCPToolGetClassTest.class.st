@@ -130,6 +130,23 @@ MCPToolGetClassTest >> tearDown [
 ]
 
 { #category : 'tests' }
+MCPToolGetClassTest >> testClassFieldsReadInOrderAndAreNotRepeated [
+	"The summary already names the class, so a class: field would say it twice, and a reader wants what the class is before how big it is."
+
+	| labels text |
+	text := ((self callToolNamed: 'class_get' withArguments: { (#name -> self baseClassName) } asDictionary) at: #content)
+		        first at: #text.
+	labels := (text lines allButFirst
+		           select: [ :each | each includesSubstring: ': ' ]
+		           thenCollect: [ :each | each copyUpTo: $: ]) asArray.
+	self assert: text lines first equals: 'Got class ' , self baseClassName , '.'.
+	self deny: (labels includes: 'class').
+	self assert: (labels copyFrom: 1 to: 2) equals: #( 'superclass' 'layout' ).
+	self assert: ((labels indexOf: 'package') between: 1 and: (labels indexOf: 'classMethods')).
+	self assert: ((labels indexOf: 'classMethods') < (labels indexOf: 'methods'))
+]
+
+{ #category : 'tests' }
 MCPToolGetClassTest >> testClampsSubclassDepthAboveMaximum [
 
 	| data result subclasses |
@@ -140,7 +157,7 @@ MCPToolGetClassTest >> testClampsSubclassDepthAboveMaximum [
 	subclasses := data at: #subclasses.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self deny: (self resultIndicatesError: result).
-	self assert: (subclasses collect: [ :each | each at: #className ]) equals: {
+	self assert: (subclasses collect: [ :each | each at: #class ]) equals: {
 			self childAClassName.
 			self childZClassName.
 			self grandchildClassName } asArray
@@ -155,22 +172,22 @@ MCPToolGetClassTest >> testGetsClassMetadata [
 	expectedLayoutClassName := (self classNamed: self baseClassName) classLayout class name asString.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self deny: (self resultIndicatesError: result).
-	self assert: (data at: #className) equals: self baseClassName.
-	self assert: (data at: #superclassName) equals: 'Object'.
-	self assert: (data at: #packageName) equals: 'MCP-Tests'.
+	self assert: (data at: #class) equals: self baseClassName.
+	self assert: (data at: #superclass) equals: 'Object'.
+	self assert: (data at: #package) equals: 'MCP-Tests'.
 	self assert: (data at: #tag) equals: 'Internal'.
-	self deny: (data includesKey: #classComment).
-	self assert: (data at: #instanceSlotNames) equals: #( 'betaSlot' 'alphaSlot' ).
-	self assert: (data at: #classSlotNames) equals: #( 'classBeta' 'classAlpha' ).
-	self deny: (data includesKey: #traitNames).
-	self deny: (data includesKey: #classTraitNames).
+	self deny: (data includesKey: #comment).
+	self assert: (data at: #instanceSlots) equals: #( 'betaSlot' 'alphaSlot' ).
+	self assert: (data at: #classSlots) equals: #( 'classBeta' 'classAlpha' ).
+	self deny: (data includesKey: #traits).
+	self deny: (data includesKey: #classTraits).
 	self deny: (data includesKey: #traitComposition).
 	self deny: (data includesKey: #classTraitComposition).
-	self deny: (data includesKey: #sharedPoolNames).
-	self assert: (data at: #sharedVariableNames) equals: #( 'AlphaShared' 'BetaShared' ).
-	self assert: (data at: #layoutClassName) equals: expectedLayoutClassName.
-	self assert: (data at: #instanceMethodCount) equals: 1.
-	self assert: (data at: #classMethodCount) equals: 1.
+	self deny: (data includesKey: #sharedPools).
+	self assert: (data at: #sharedVariables) equals: #( 'AlphaShared' 'BetaShared' ).
+	self assert: (data at: #layout) equals: expectedLayoutClassName.
+	self assert: (data at: #methods) equals: 1.
+	self assert: (data at: #classMethods) equals: 1.
 	self deny: (data includesKey: #superclasses).
 	self deny: (data includesKey: #subclasses)
 ]
@@ -182,17 +199,17 @@ MCPToolGetClassTest >> testIncludesClassCommentsWhenRequested [
 	result := self callToolWith: {
 			          (#name -> self childZClassName).
 			          (#includeComment -> true).
-			          (#upToSuperclassName -> self baseClassName).
+			          (#upToSuperclass -> self baseClassName).
 			          (#subclassDepth -> 1) } asDictionary.
 	data := self dataFrom: result.
 	subclasses := data at: #subclasses.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self deny: (self resultIndicatesError: result).
-	self assert: (data at: #classComment) equals: 'Child Z fixture class comment.'.
+	self assert: (data at: #comment) equals: 'Child Z fixture class comment.'.
 	self deny: (data includesKey: #superclasses).
 	self assert: subclasses size equals: 1.
-	self assert: (subclasses first at: #className) equals: self grandchildClassName.
-	self assert: (subclasses first at: #classComment) equals: 'Grandchild fixture class comment.'
+	self assert: (subclasses first at: #class) equals: self grandchildClassName.
+	self assert: (subclasses first at: #comment) equals: 'Grandchild fixture class comment.'
 ]
 
 { #category : 'tests' }
@@ -206,7 +223,7 @@ MCPToolGetClassTest >> testIncludesDirectSubclasses [
 	subclasses := data at: #subclasses.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self deny: (self resultIndicatesError: result).
-	self assert: (subclasses collect: [ :each | each at: #className ]) equals: {
+	self assert: (subclasses collect: [ :each | each at: #class ]) equals: {
 			self childAClassName.
 			self childZClassName } asArray
 ]
@@ -217,12 +234,12 @@ MCPToolGetClassTest >> testIncludesNamedSuperclassChain [
 	| data result superclasses |
 	result := self callToolWith: {
 			          (#name -> self grandchildClassName).
-			          (#upToSuperclassName -> 'Object') } asDictionary.
+			          (#upToSuperclass -> 'Object') } asDictionary.
 	data := self dataFrom: result.
 	superclasses := data at: #superclasses.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self deny: (self resultIndicatesError: result).
-	self assert: (superclasses collect: [ :each | each at: #className ]) equals: {
+	self assert: (superclasses collect: [ :each | each at: #class ]) equals: {
 			self childZClassName.
 			self baseClassName } asArray
 ]
@@ -234,7 +251,7 @@ MCPToolGetClassTest >> testIncludesSharedPoolNamesForSharedPoolUsingClass [
 	result := self callToolWith: { (#name -> 'AbstractTimeZone') } asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: ((data at: #sharedPoolNames) includes: 'ChronologyConstants')
+	self assert: ((data at: #sharedPools) includes: 'ChronologyConstants')
 ]
 
 { #category : 'tests' }
@@ -248,7 +265,7 @@ MCPToolGetClassTest >> testIncludesSubclassesUpToRequestedDepth [
 	subclasses := data at: #subclasses.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self deny: (self resultIndicatesError: result).
-	self assert: (subclasses collect: [ :each | each at: #className ]) equals: {
+	self assert: (subclasses collect: [ :each | each at: #class ]) equals: {
 			self childAClassName.
 			self childZClassName.
 			self grandchildClassName } asArray
@@ -261,8 +278,8 @@ MCPToolGetClassTest >> testIncludesTraitNamesForTraitUsingClass [
 	result := self callToolWith: { (#name -> 'AlignmentMorph') } asDictionary.
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: ((data at: #traitNames) anySatisfy: [ :each | each includesSubstring: 'TAbleToRotate' ]).
-	self assert: ((data at: #classTraitNames) anySatisfy: [ :each | each includesSubstring: 'TAbleToRotate' ]).
+	self assert: ((data at: #traits) anySatisfy: [ :each | each includesSubstring: 'TAbleToRotate' ]).
+	self assert: ((data at: #classTraits) anySatisfy: [ :each | each includesSubstring: 'TAbleToRotate' ]).
 	self assert: ((data at: #traitComposition) includesSubstring: 'TAbleToRotate').
 	self assert: ((data at: #classTraitComposition) includesSubstring: 'TAbleToRotate')
 ]
@@ -288,7 +305,7 @@ MCPToolGetClassTest >> testReturnsStructuredErrorWhenClassIsMissing [
 	self assert: (result at: #isError).
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
-	self assert: (error at: #className) equals: self missingClassName
+	self assert: (error at: #class) equals: self missingClassName
 ]
 
 { #category : 'tests' }

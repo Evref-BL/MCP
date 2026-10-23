@@ -33,7 +33,7 @@ MCPRepositoryDiffResult >> asDictionary [
 	data
 		at: #changeCount put: self changeCount;
 		at: #isEmpty put: self isEmpty.
-	self changedPackageNames ifNotEmpty: [ :names | data at: #changedPackageNames put: names ].
+	self changedPackageNames ifNotEmpty: [ :names | data at: #changedPackages put: names ].
 	self modifiedPaths ifNotEmpty: [ :paths | data at: #modifiedPaths put: paths ].
 	^ data
 ]

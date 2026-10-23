@@ -58,7 +58,7 @@ MCPToolGetClass >> buildInputSchema [
 		                          default: false;
 		                          yourself.
 	upToSuperclassNameProperty := MCPStructureProperties new
-		                              name: 'upToSuperclassName';
+		                              name: 'upToSuperclass';
 		                              type: 'string';
 		                              description:
 			                              'Optional ancestor where the returned superclass chain stops. The named class is used as the exclusive upper bound and is not included.';
@@ -94,9 +94,9 @@ MCPToolGetClass >> buildInputSchema [
 { #category : 'private - schema' }
 MCPToolGetClass >> classDescriptionRequiredFields [
 
-	^ #( 'className' 'superclassName' 'packageName' 'tag' 'instanceSlotNames' 'classSlotNames' 'traitNames' 'classTraitNames'
-	     'traitComposition' 'classTraitComposition' 'sharedPoolNames' 'sharedVariableNames' 'layoutClassName' 'instanceMethodCount'
-	     'classMethodCount' )
+	^ #( 'class' 'superclass' 'package' 'tag' 'instanceSlots' 'classSlots' 'traits' 'classTraits'
+	     'traitComposition' 'classTraitComposition' 'sharedPools' 'sharedVariables' 'layout' 'methods'
+	     'classMethods' )
 ]
 
 { #category : 'private - errors' }
@@ -144,7 +144,7 @@ MCPToolGetClass >> descriptionDictionaryForClass: aClass includeComment: include
 
 	| data |
 	data := (MCPClassDescriptionInfo fromClass: aClass) asDictionary copy.
-	includeComment ifTrue: [ data at: #classComment put: (aClass comment ifNil: [ '' ]) ].
+	includeComment ifTrue: [ data at: #comment put: (aClass comment ifNil: [ '' ]) ].
 	^ data
 ]
 
@@ -157,7 +157,7 @@ MCPToolGetClass >> errorResultForError: anError className: className [
 				  self errorResultText: (self failureMessageForClassName: className error: toolError) details: {
 						  (#errorClass -> toolError class name).
 						  (#message -> toolError messageText).
-						  (#className -> className) } asDictionary ]
+						  (#class -> className) } asDictionary ]
 ]
 
 { #category : 'executing' }
@@ -190,6 +190,20 @@ MCPToolGetClass >> failureMessageForClassName: className error: anError [
 				  nextPutAll: anError class name;
 				  nextPutAll: '): ';
 				  nextPutAll: anError messageText ]
+]
+
+{ #category : 'private - results' }
+MCPToolGetClass >> keyOrder [
+	"What a class is, then where it lives, then how big it is. The comment is not named, so it lands after the inline values like any block of text."
+
+	^ #( superclass layout package tag classMethods methods )
+]
+
+{ #category : 'private - results' }
+MCPToolGetClass >> keysStatedInSummary [
+	"The summary opens with the class name, so repeating it as a field says it twice."
+
+	^ #( class )
 ]
 
 { #category : 'defaults' }

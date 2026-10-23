@@ -304,7 +304,7 @@ MCPDashboardPresenter >> initializePresenters [
 		addColumn: (SpStringTableColumn title: 'Description' evaluated: [ :tool | tool description ifNil: [ '' ] ]);
 		beResizable.
 	metricsTable
-		addColumn: (SpStringTableColumn title: 'Tool' evaluated: #toolName);
+		addColumn: (SpStringTableColumn title: 'Tool' evaluated: #tool);
 		addColumn: (SpStringTableColumn title: 'Calls' evaluated: [ :stats | stats callCount asString ]);
 		addColumn: (SpStringTableColumn title: 'Errors' evaluated: [ :stats | stats errorCount asString ]);
 		addColumn: (SpStringTableColumn title: 'Avg ms' evaluated: #displayAverageMilliseconds);
@@ -334,7 +334,7 @@ MCPDashboardPresenter >> initializeTracesTableColumns [
 
 	tracesTable
 		addColumn: (SpStringTableColumn title: 'Status' evaluated: #status);
-		addColumn: (SpStringTableColumn title: 'Tool' evaluated: #toolName);
+		addColumn: (SpStringTableColumn title: 'Tool' evaluated: #tool);
 		addColumn: (SpStringTableColumn title: 'Duration ms' evaluated: #displayDurationMilliseconds);
 		addColumn: (SpStringTableColumn title: 'Output bytes' evaluated: [ :record | record outputByteCount asString ]);
 		addColumn: (SpStringTableColumn title: 'Details' evaluated: #displaySummary);

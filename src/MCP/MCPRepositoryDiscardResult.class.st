@@ -29,7 +29,7 @@ MCPRepositoryDiscardResult >> asDictionary [
 	data
 		at: #changeCount put: self changeCount;
 		at: #isEmpty put: self isEmpty.
-	self discardedPackageNames ifNotEmpty: [ :names | data at: #discardedPackageNames put: names ].
+	self discardedPackageNames ifNotEmpty: [ :names | data at: #discardedPackages put: names ].
 	self discardedPaths ifNotEmpty: [ :paths | data at: #discardedPaths put: paths ].
 	^ data
 ]

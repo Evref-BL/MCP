@@ -18,7 +18,7 @@ Class {
 MCPRemoveMethodsRequest class >> fromRequest: aRequest tool: aTool [
 
 	^ self new
-		  initializeClassName: (aRequest stringArgumentNamed: 'className')
+		  initializeClassName: (aRequest stringArgumentNamed: 'class')
 		  classSide: (aRequest booleanArgumentNamed: 'classSide' default: false)
 		  selectors: (aTool selectorsFromRequest: aRequest)
 ]

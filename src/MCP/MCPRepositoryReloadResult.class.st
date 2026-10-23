@@ -24,7 +24,7 @@ MCPRepositoryReloadResult >> asDictionary [
 
 	| data |
 	data := Dictionary new.
-	data at: #branchName put: self repositoryInfoAfter branchName.
+	data at: #branch put: self repositoryInfoAfter branchName.
 	self previousHeadDescription ifNotEmpty: [ :description | data at: #previousHeadDescription put: description ].
 	self headDescription ifNotEmpty: [ :description | data at: #headDescription put: description ].
 	^ data

@@ -53,10 +53,10 @@ MCPTestRunRequest >> asDictionary [
 	| data |
 	data := Dictionary new.
 	self isPackageRequest ifTrue: [
-			data at: #packageName put: self packageName.
+			data at: #package put: self packageName.
 			^ data ].
-	data at: #className put: self className.
-	self testMethodName ifNotNil: [ data at: #testMethodName put: self testMethodName ].
+	data at: #class put: self className.
+	self testMethodName ifNotNil: [ data at: #testMethod put: self testMethodName ].
 	^ data
 ]
 

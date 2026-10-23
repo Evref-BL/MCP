@@ -85,7 +85,7 @@ MCPToolSearchClasses >> failureMessageForScope: scopeSummary error: anError [
 { #category : 'private - filtering' }
 MCPToolSearchClasses >> fieldTextsForClassEntry: anEntry fieldName: fieldName [
 
-	fieldName = 'name' ifTrue: [ ^ { (anEntry at: #className) } ].
+	fieldName = 'name' ifTrue: [ ^ { (anEntry at: #class) } ].
 	fieldName = 'tag' ifTrue: [ ^ { (anEntry at: #tag) } ].
 	^ #(  )
 ]
@@ -121,8 +121,8 @@ MCPToolSearchClasses >> queryResultDataForQueryRequest: queryRequest page: page 
 MCPToolSearchClasses >> queryResultEntryFromClassEntry: anEntry [
 
 	^ {
-		  (#className -> (anEntry at: #className)).
-		  (#packageName -> (anEntry at: #packageName)).
+		  (#class -> (anEntry at: #class)).
+		  (#package -> (anEntry at: #package)).
 		  (#tag -> (anEntry at: #tag)) } asDictionary
 ]
 

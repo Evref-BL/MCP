@@ -293,14 +293,14 @@ MCPToolSearch >> packageQueryScopeInputProperties [
 { #category : 'private - schema' }
 MCPToolSearch >> packageScopePackageNamesProperty [
 
-	^ self stringArraySchemaNamed: 'packageNames' description: 'Exact packages.' itemDescription: 'Package name.'
+	^ self stringArraySchemaNamed: 'packages' description: 'Exact packages.' itemDescription: 'Package name.'
 ]
 
 { #category : 'private - schema' }
 MCPToolSearch >> packageScopeProjectNamesProperty [
 
 	^ self
-		  stringArraySchemaNamed: 'projectNames'
+		  stringArraySchemaNamed: 'projects'
 		  description: 'Projects whose packages are included.'
 		  itemDescription: 'Project name.'
 ]

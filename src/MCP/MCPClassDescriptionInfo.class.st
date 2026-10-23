@@ -40,21 +40,21 @@ MCPClassDescriptionInfo >> asDictionary [
 	| data |
 	data := Dictionary new.
 	data
-		at: #className put: className;
-		at: #superclassName put: superclassName;
-		at: #packageName put: packageName;
+		at: #class put: className;
+		at: #superclass put: superclassName;
+		at: #package put: packageName;
 		at: #tag put: tag;
-		at: #layoutClassName put: layoutClassName;
-		at: #instanceMethodCount put: instanceMethodCount;
-		at: #classMethodCount put: classMethodCount.
-	instanceSlotNames ifNotEmpty: [ :names | data at: #instanceSlotNames put: names ].
-	classSlotNames ifNotEmpty: [ :names | data at: #classSlotNames put: names ].
-	traitNames ifNotEmpty: [ :names | data at: #traitNames put: names ].
-	classTraitNames ifNotEmpty: [ :names | data at: #classTraitNames put: names ].
+		at: #layout put: layoutClassName;
+		at: #methods put: instanceMethodCount;
+		at: #classMethods put: classMethodCount.
+	instanceSlotNames ifNotEmpty: [ :names | data at: #instanceSlots put: names ].
+	classSlotNames ifNotEmpty: [ :names | data at: #classSlots put: names ].
+	traitNames ifNotEmpty: [ :names | data at: #traits put: names ].
+	classTraitNames ifNotEmpty: [ :names | data at: #classTraits put: names ].
 	traitComposition = '{}' ifFalse: [ data at: #traitComposition put: traitComposition ].
 	classTraitComposition = '{}' ifFalse: [ data at: #classTraitComposition put: classTraitComposition ].
-	sharedPoolNames ifNotEmpty: [ :names | data at: #sharedPoolNames put: names ].
-	sharedVariableNames ifNotEmpty: [ :names | data at: #sharedVariableNames put: names ].
+	sharedPoolNames ifNotEmpty: [ :names | data at: #sharedPools put: names ].
+	sharedVariableNames ifNotEmpty: [ :names | data at: #sharedVariables put: names ].
 	^ data
 ]
 

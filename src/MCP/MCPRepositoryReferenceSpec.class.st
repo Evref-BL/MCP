@@ -120,7 +120,7 @@ MCPRepositoryReferenceSpec >> signalAmbiguousRepository: repositories [
 	| details matchingRepositoryNames |
 	details := self requestedContext copy.
 	matchingRepositoryNames := (repositories collect: [ :each | each name asString ] as: Array) sort.
-	details at: #matchingRepositoryNames put: matchingRepositoryNames.
+	details at: #matchingRepositories put: matchingRepositoryNames.
 	MCPCommandError
 		signalErrorCode: #RepositoryReferenceAmbiguous
 		message: 'More than one registered Iceberg repository matches the requested repository reference.'

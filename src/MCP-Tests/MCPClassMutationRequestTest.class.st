@@ -18,8 +18,8 @@ MCPClassMutationRequestTest >> testCreateRequestParsesDefinitionArguments [
 				            tool: MCPToolCreateClass new;
 				            arguments: {
 						            (#name -> 'MCPGeneratedClass').
-						            (#superclassName -> 'Object').
-						            (#packageName -> 'MCP-Generated').
+						            (#superclass -> 'Object').
+						            (#package -> 'MCP-Generated').
 						            (#tag -> 'Models').
 						            (#comment -> 'Generated comment.').
 						            (#slots -> #( 'firstName' 'lastName' )).
@@ -46,7 +46,7 @@ MCPClassMutationRequestTest >> testCreateRequestParsesDefinitionArguments [
 	self assert: request sharedPools equals: #( 'ChronologyConstants' ).
 	self assert: request layout equals: 'WeakLayout'.
 	context := request requestedContext.
-	self assert: (context at: #className) equals: 'MCPGeneratedClass'.
+	self assert: (context at: #class) equals: 'MCPGeneratedClass'.
 	self assert: (context at: #slots) equals: #( 'firstName' 'lastName' ).
 	self assert: (context at: #comment) equals: 'Generated comment.'
 ]
@@ -68,7 +68,7 @@ MCPClassMutationRequestTest >> testUpdateCommandResolvesOmittedMovePackageName [
 	self assert: command classRequest className equals: self class name asString.
 	self assert: command movePackageName equals: self class packageName asString.
 	self assert: command classRequest tag equals: 'Requests'.
-	self assert: (context at: #packageName) equals: self class packageName asString
+	self assert: (context at: #package) equals: self class packageName asString
 ]
 
 { #category : 'tests' }
@@ -80,8 +80,8 @@ MCPClassMutationRequestTest >> testUpdateRequestParsesSlotArguments [
 		           fromRequest: (self toolRequestWithArguments: {
 					            (#name -> 'ExistingClass').
 					            (#slotAction -> 'rename').
-					            (#slotName -> 'oldName').
-					            (#newSlotName -> 'newName').
+					            (#slot -> 'oldName').
+					            (#newSlot -> 'newName').
 					            (#classSide -> true).
 					            (#force -> true) } asDictionary)
 		           tool: tool.
@@ -92,10 +92,10 @@ MCPClassMutationRequestTest >> testUpdateRequestParsesSlotArguments [
 	self assert: request classSide.
 	self assert: request force.
 	context := request renameSlotRequestedContext.
-	self assert: (context at: #className) equals: 'ExistingClass'.
+	self assert: (context at: #class) equals: 'ExistingClass'.
 	self assert: (context at: #slotAction) equals: 'rename'.
-	self assert: (context at: #slotName) equals: 'oldName'.
-	self assert: (context at: #newSlotName) equals: 'newName'.
+	self assert: (context at: #slot) equals: 'oldName'.
+	self assert: (context at: #newSlot) equals: 'newName'.
 	self assert: (context at: #classSide)
 ]
 

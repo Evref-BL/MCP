@@ -1,7 +1,7 @@
 "
 Abstract command for operations targeting one existing or newly defined class.
 
-Subclasses provide #className and implement their command-specific execution.
+Subclasses provide #class and implement their command-specific execution.
 "
 Class {
 	#name : 'MCPClassCommand',
@@ -48,11 +48,11 @@ MCPClassCommand >> resolvedLayoutClassNamed: layoutName [
 				            signalErrorCode: #LayoutClassNotFound
 				            message: 'Layout class ' , layoutName , ' does not exist.'
 				            details: {
-						            (#className -> self className).
+						            (#class -> self className).
 						            (#layout -> layoutName) } asDictionary ].
 	(AbstractLayout withAllSubclasses includes: behavior) ifFalse: [
 			MCPCommandError signalErrorCode: #InvalidLayoutClass message: layoutName , ' not layout class.' details: {
-					(#className -> self className).
+					(#class -> self className).
 					(#layout -> layoutName) } asDictionary ].
 	^ behavior
 ]
@@ -67,11 +67,11 @@ MCPClassCommand >> resolvedSharedPoolNamed: aSharedPoolName [
 				            signalErrorCode: #SharedPoolNotFound
 				            message: 'Shared pool ' , sharedPoolName , ' does not exist.'
 				            details: {
-						            (#className -> self className).
-						            (#sharedPoolName -> sharedPoolName) } asDictionary ].
+						            (#class -> self className).
+						            (#sharedPool -> sharedPoolName) } asDictionary ].
 	(SharedPool withAllSubclasses includes: behavior) ifFalse: [
 			MCPCommandError signalErrorCode: #InvalidSharedPool message: sharedPoolName , ' not shared pool.' details: {
-					(#className -> self className).
-					(#sharedPoolName -> sharedPoolName) } asDictionary ].
+					(#class -> self className).
+					(#sharedPool -> sharedPoolName) } asDictionary ].
 	^ behavior
 ]

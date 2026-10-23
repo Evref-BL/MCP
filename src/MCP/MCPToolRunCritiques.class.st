@@ -300,7 +300,7 @@ MCPToolRunCritiques >> packagesForQueryRequest: queryRequest [
 	queryRequest scopeQuery usesImplicitImageScope ifTrue: [ ^ PackageOrganizer default packages asArray ].
 	queryRequest scopeQuery packageNames ifEmpty: [ ^ #(  ) ].
 	^ queryRequest scopeQuery packageNames
-		  collect: [ :eachName | queryRequest scopeQuery packageNamed: eachName inScope: 'packageNames' ]
+		  collect: [ :eachName | queryRequest scopeQuery packageNamed: eachName inScope: 'packages' ]
 		  thenSelect: [ :eachPackage | eachPackage isNotNil ]
 ]
 

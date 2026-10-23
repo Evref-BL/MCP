@@ -22,8 +22,8 @@ MCPSearchPackagesRequest class >> fromRequest: request tool: aTool [
 
 	| scopeQuery |
 	scopeQuery := MCPPackageScopeQuery new
-		              projectNames: (request stringCollectionArgumentNamed: 'projectNames');
-		              packageNames: (request stringCollectionArgumentNamed: 'packageNames');
+		              projectNames: (request stringCollectionArgumentNamed: 'projects');
+		              packageNames: (request stringCollectionArgumentNamed: 'packages');
 		              yourself.
 	^ self new
 		  scopeQuery: scopeQuery;

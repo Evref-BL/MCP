@@ -32,7 +32,7 @@ MCPToolBatchTest >> testBatchFailsOnlyWhenEveryTargetFails [
 
 	| result |
 	result := self callToolWith: {
-			          (#className -> 'MCPToolBatchTestTarget').
+			          (#class -> 'MCPToolBatchTestTarget').
 			          (#selector -> #( 'absentOne' 'absentTwo' )) } asDictionary.
 	self assert: (result at: #isError).
 	self assert: (self summaryFrom: result) equals: 'Got 0 of 2 methods. 2 failed.'.
@@ -44,7 +44,7 @@ MCPToolBatchTest >> testBatchKeepsGoingPastAFailingTarget [
 
 	| entries result |
 	result := self callToolWith: {
-			          (#className -> 'MCPToolBatchTestTarget').
+			          (#class -> 'MCPToolBatchTestTarget').
 			          (#selector -> #( 'absentSelector' 'readFirst' )) } asDictionary.
 	entries := (self dataFrom: result) at: #results.
 	self deny: (result at: #isError ifAbsent: [ false ]).
@@ -58,7 +58,7 @@ MCPToolBatchTest >> testBatchReadsAsOneBlockPerTarget [
 
 	| contentText result |
 	result := self callToolWith: {
-			          (#className -> 'MCPToolBatchTestTarget').
+			          (#class -> 'MCPToolBatchTestTarget').
 			          (#selector -> #( 'readFirst' 'readSecond' )) } asDictionary.
 	contentText := (result at: #content) first at: #text.
 	self assert: (contentText beginsWith: 'Got 2 of 2 methods.').
@@ -72,7 +72,7 @@ MCPToolBatchTest >> testBatchReturnsOneEntryPerTargetInRequestOrder [
 
 	| entries result |
 	result := self callToolWith: {
-			          (#className -> 'MCPToolBatchTestTarget').
+			          (#class -> 'MCPToolBatchTestTarget').
 			          (#selector -> #( 'readSecond' 'readFirst' )) } asDictionary.
 	entries := (self dataFrom: result) at: #results.
 	self deny: (result at: #isError ifAbsent: [ false ]).
@@ -91,8 +91,8 @@ MCPToolBatchTest >> testClassGetNamesSeveralClasses [
 		          withArguments: { (#name -> #( 'MCPToolBatchTestTarget' 'MCPTool' )) } asDictionary.
 	entries := (self dataFrom: result) at: #results.
 	self assert: (self summaryFrom: result) equals: 'Got 2 of 2 classes.'.
-	self assert: (entries first at: #className) equals: 'MCPToolBatchTestTarget'.
-	self assert: (entries second at: #className) equals: 'MCPTool'
+	self assert: (entries first at: #class) equals: 'MCPToolBatchTestTarget'.
+	self assert: (entries second at: #class) equals: 'MCPTool'
 ]
 
 { #category : 'tests' }
@@ -100,7 +100,7 @@ MCPToolBatchTest >> testOneTargetInAListReadsAsASingleCall [
 
 	| data result |
 	result := self callToolWith: {
-		          (#className -> 'MCPToolBatchTestTarget').
+		          (#class -> 'MCPToolBatchTestTarget').
 		          (#selector -> #( 'readFirst' )) } asDictionary.
 	data := self dataFrom: result.
 	self deny: (data includesKey: #results).

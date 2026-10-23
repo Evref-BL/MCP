@@ -12,20 +12,20 @@ Class {
 { #category : 'private' }
 MCPToolRemoveClassesTest >> argumentsForClassName: aClassName [
 
-	^ { (#className -> aClassName) } asDictionary
+	^ { (#class -> aClassName) } asDictionary
 ]
 
 { #category : 'private' }
 MCPToolRemoveClassesTest >> argumentsForClassNames: someClassNames [
 
-	^ { (#classNames -> someClassNames) } asDictionary
+	^ { (#classes -> someClassNames) } asDictionary
 ]
 
 { #category : 'private' }
 MCPToolRemoveClassesTest >> argumentsForClassNames: someClassNames force: aBoolean [
 
 	^ {
-		  (#classNames -> someClassNames).
+		  (#classes -> someClassNames).
 		  (#force -> aBoolean) } asDictionary
 ]
 
@@ -229,7 +229,7 @@ MCPToolRemoveClassesTest >> testReturnsStructuredErrorWhenClassHasReferences [
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self assert: (error at: #classNames) equals: { self referencedClassName } asArray.
+	self assert: (error at: #classes) equals: { self referencedClassName } asArray.
 	self assert: (self class environment includesKey: self referencedClassName asSymbol)
 ]
 
@@ -245,7 +245,7 @@ MCPToolRemoveClassesTest >> testReturnsStructuredErrorWhenClassIsMissing [
 	self assert: (result at: #isError).
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
-	self assert: (error at: #className) equals: self missingClassName.
+	self assert: (error at: #class) equals: self missingClassName.
 	self assert: (self class environment includesKey: self simpleClassName asSymbol)
 ]
 
@@ -257,7 +257,7 @@ MCPToolRemoveClassesTest >> testReturnsStructuredErrorWhenNonEmptyClassHasSubcla
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self assert: (error at: #classNames) equals: { self nonEmptyParentClassName } asArray.
+	self assert: (error at: #classes) equals: { self nonEmptyParentClassName } asArray.
 	self assert: (self class environment includesKey: self nonEmptyParentClassName asSymbol).
 	self assert: (self classNamed: self nonEmptyChildClassName) superclass name asString equals: self nonEmptyParentClassName
 ]
@@ -293,7 +293,7 @@ MCPToolRemoveClassesTest >> testToolRequiresClassNameInSchema [
 	| propertyNames schema |
 	schema := MCPToolRemoveClasses new inputSchema.
 	propertyNames := schema properties collect: [ :each | each name ].
-	self assert: schema required asSet equals: #( 'classNames' ) asSet.
+	self assert: schema required asSet equals: #( 'classes' ) asSet.
 	self assert: (propertyNames includes: 'force')
 ]
 

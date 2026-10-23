@@ -73,7 +73,7 @@ MCPToolCompileMethod >> methodToolSpec [
 		  (#action -> 'compile').
 		  (#inputProperties -> {
 			   (MCPStructureProperties new
-				    name: 'className';
+				    name: 'class';
 				    type: 'string';
 				    description: 'The class to compile the method into.';
 				    yourself).
@@ -97,6 +97,6 @@ MCPToolCompileMethod >> methodToolSpec [
 				    type: 'string';
 				    description: 'The target protocol. For extension methods, use an extension protocol such as *Package-Name.';
 				    yourself) }).
-		  (#requiredProperties -> #( 'className' 'source' 'protocol' )) } asDictionary
+		  (#requiredProperties -> #( 'class' 'source' 'protocol' )) } asDictionary
 ]
 

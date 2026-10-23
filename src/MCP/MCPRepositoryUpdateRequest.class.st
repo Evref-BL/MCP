@@ -40,9 +40,9 @@ MCPRepositoryUpdateRequest >> commandForTool: aTool [
 MCPRepositoryUpdateRequest >> contextValueForPropertyNamed: propertyName [
 
 	propertyName = 'subdirectory' ifTrue: [ ^ self subdirectory ].
-	propertyName = 'packageNames' ifTrue: [ ^ self packageNames ].
-	propertyName = 'addPackageNames' ifTrue: [ ^ self addPackageNames ].
-	propertyName = 'removePackageNames' ifTrue: [ ^ self removePackageNames ].
+	propertyName = 'packages' ifTrue: [ ^ self packageNames ].
+	propertyName = 'addPackages' ifTrue: [ ^ self addPackageNames ].
+	propertyName = 'removePackages' ifTrue: [ ^ self removePackageNames ].
 	^ nil
 ]
 
@@ -64,9 +64,9 @@ MCPRepositoryUpdateRequest >> initializeFromRequest: request [
 	super initializeFromRequest: request.
 	suppliedProperties := self updatePropertyNames select: [ :each | request hasArgumentNamed: each ].
 	subdirectory := request stringArgumentNamed: 'subdirectory'.
-	packageNames := request stringCollectionArgumentNamed: 'packageNames'.
-	addPackageNames := request stringCollectionArgumentNamed: 'addPackageNames'.
-	removePackageNames := request stringCollectionArgumentNamed: 'removePackageNames'
+	packageNames := request stringCollectionArgumentNamed: 'packages'.
+	addPackageNames := request stringCollectionArgumentNamed: 'addPackages'.
+	removePackageNames := request stringCollectionArgumentNamed: 'removePackages'
 ]
 
 { #category : 'accessing' }
@@ -110,9 +110,9 @@ MCPRepositoryUpdateRequest >> requestedRepositoryUpdateActions [
 	| actions |
 	actions := OrderedCollection new.
 	(self hasSuppliedPropertyNamed: 'subdirectory') ifTrue: [ actions add: 'setSubdirectory' ].
-	(self hasSuppliedPropertyNamed: 'packageNames') ifTrue: [ actions add: 'replacePackages' ].
-	(self hasSuppliedPropertyNamed: 'addPackageNames') ifTrue: [ actions add: 'addPackages' ].
-	(self hasSuppliedPropertyNamed: 'removePackageNames') ifTrue: [ actions add: 'removePackages' ].
+	(self hasSuppliedPropertyNamed: 'packages') ifTrue: [ actions add: 'replacePackages' ].
+	(self hasSuppliedPropertyNamed: 'addPackages') ifTrue: [ actions add: 'addPackages' ].
+	(self hasSuppliedPropertyNamed: 'removePackages') ifTrue: [ actions add: 'removePackages' ].
 	^ actions asArray
 ]
 
@@ -131,5 +131,5 @@ MCPRepositoryUpdateRequest >> suppliedProperties [
 { #category : 'private - request' }
 MCPRepositoryUpdateRequest >> updatePropertyNames [
 
-	^ #( 'subdirectory' 'packageNames' 'addPackageNames' 'removePackageNames' )
+	^ #( 'subdirectory' 'packages' 'addPackages' 'removePackages' )
 ]

@@ -24,7 +24,7 @@ MCPToolSearchPackagesTest >> createFixtureClassNamed: aClassName packageName: aP
 MCPToolSearchPackagesTest >> entryNamed: aPackageName in: packageEntries [
 
 	^ packageEntries
-		  detect: [ :each | (each at: #packageName) = aPackageName ]
+		  detect: [ :each | (each at: #package) = aPackageName ]
 		  ifNone: [ self fail: 'Missing package entry ' , aPackageName ]
 ]
 
@@ -44,8 +44,8 @@ MCPToolSearchPackagesTest >> testCanFilterPackageEntriesByTagNamesUsingControlle
 				        usingRequest: queryRequest.
 			self assert: data size equals: 1.
 			entry := self entryNamed: 'MCP-Tests-SearchPackages-Temp-Beta' in: data.
-			self assert: (entry at: #projectNames) equals: #( 'FixtureProject' ).
-			self assert: (entry at: #tagNames) equals: #( 'FixtureBetaTag' ) ]
+			self assert: (entry at: #projects) equals: #( 'FixtureProject' ).
+			self assert: (entry at: #tags) equals: #( 'FixtureBetaTag' ) ]
 ]
 
 { #category : 'tests' }
@@ -56,7 +56,7 @@ MCPToolSearchPackagesTest >> testImageScopeCanFilterPackagesByTagTarget [
 			result := self callToolWith: {
 					          (#tag -> 'FixtureBetaTag') } asDictionary.
 			data := self dataFrom: result.
-			packageNames := (data at: #packages) collect: [ :each | each at: #packageName ].
+			packageNames := (data at: #packages) collect: [ :each | each at: #package ].
 			self deny: (result at: #isError ifAbsent: [ false ]).
 			self assert: (data at: #packages) size equals: 1.
 			self assert: packageNames equals: #( 'MCP-Tests-SearchPackages-Temp-Beta' ) ]
@@ -72,7 +72,7 @@ MCPToolSearchPackagesTest >> testImageScopeCanPaginateFilteredPackages [
 	data := self dataFrom: result.
 	pagination := data at: #pagination.
 	summary := self summaryFrom: result.
-	packageNames := (data at: #packages) collect: [ :each | each at: #packageName ].
+	packageNames := (data at: #packages) collect: [ :each | each at: #package ].
 	expected := (PackageOrganizer default packages
 		             select: [ :each | each name asString beginsWith: 'MCP-' ]
 		             thenCollect: [ :each | each name asString ]) asArray sort.
@@ -90,9 +90,9 @@ MCPToolSearchPackagesTest >> testImageScopeCanPaginateFilteredPackages [
 MCPToolSearchPackagesTest >> testImageScopeReturnsExactPackageNameMatch [
 
 	| data packageNames result |
-	result := self callToolWith: { (#packageNames -> #( 'MCP-Tests' )) } asDictionary.
+	result := self callToolWith: { (#packages -> #( 'MCP-Tests' )) } asDictionary.
 	data := self dataFrom: result.
-	packageNames := (data at: #packages) collect: [ :each | each at: #packageName ].
+	packageNames := (data at: #packages) collect: [ :each | each at: #package ].
 
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #packages) size equals: 1.
@@ -103,14 +103,14 @@ MCPToolSearchPackagesTest >> testImageScopeReturnsExactPackageNameMatch [
 MCPToolSearchPackagesTest >> testImageScopeReturnsStructuredPackages [
 
 	| data entry packages result |
-	result := self callToolWith: { (#packageNames -> #( 'MCP-Tests-Resources' )) } asDictionary.
+	result := self callToolWith: { (#packages -> #( 'MCP-Tests-Resources' )) } asDictionary.
 	data := self dataFrom: result.
 	packages := data at: #packages.
 	entry := self entryNamed: 'MCP-Tests-Resources' in: packages.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: packages size equals: 1.
-	self assert: (entry includesKey: #projectNames).
-	self assert: (entry includesKey: #tagNames).
+	self assert: (entry includesKey: #projects).
+	self assert: (entry includesKey: #tags).
 	self deny: (entry includesKey: #definedClassCount).
 	self deny: (entry includesKey: #extensionMethodCount).
 	self deny: (entry includesKey: #isUndefined)
@@ -120,9 +120,9 @@ MCPToolSearchPackagesTest >> testImageScopeReturnsStructuredPackages [
 MCPToolSearchPackagesTest >> testPackageNamesSelectExactPackages [
 
 	| data packageNames result |
-	result := self callToolWith: { (#packageNames -> #( 'MCP' 'MCP-Tests' )) } asDictionary.
+	result := self callToolWith: { (#packages -> #( 'MCP' 'MCP-Tests' )) } asDictionary.
 	data := self dataFrom: result.
-	packageNames := (data at: #packages) collect: [ :each | each at: #packageName ].
+	packageNames := (data at: #packages) collect: [ :each | each at: #package ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #packages) size equals: 2.
 	self assert: packageNames equals: #( 'MCP' 'MCP-Tests' )
@@ -132,13 +132,13 @@ MCPToolSearchPackagesTest >> testPackageNamesSelectExactPackages [
 MCPToolSearchPackagesTest >> testProjectNamesReturnStructuredErrorWhenProjectIsMissing [
 
 	| error result structured |
-	result := self callToolWith: { (#projectNames -> #( 'DefinitelyMissingProject' )) } asDictionary.
+	result := self callToolWith: { (#projects -> #( 'DefinitelyMissingProject' )) } asDictionary.
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ProjectNotFound'.
-	self assert: (error at: #projectName) equals: 'DefinitelyMissingProject'.
+	self assert: (error at: #project) equals: 'DefinitelyMissingProject'.
 	self assert: (error at: #scope) equals: 'projects'
 ]
 
@@ -147,10 +147,10 @@ MCPToolSearchPackagesTest >> testProjectNamesSearchPackagesForNamedProject [
 
 	| entries packageNames |
 	entries := self packageSearchFixtureEntriesLoadedInImage: true.
-	packageNames := entries collect: [ :each | each at: #packageName ].
+	packageNames := entries collect: [ :each | each at: #package ].
 	self assert: entries size equals: self packageSearchFixturePackageNames size.
 	self assert: packageNames equals: self packageSearchFixturePackageNames.
-	self assert: (entries allSatisfy: [ :each | (each at: #projectNames) = { self packageSearchFixtureProjectName } ])
+	self assert: (entries allSatisfy: [ :each | (each at: #projects) = { self packageSearchFixtureProjectName } ])
 ]
 
 { #category : 'tests' }
@@ -158,10 +158,10 @@ MCPToolSearchPackagesTest >> testProjectNamesSelectProjectScope [
 
 	| entries packageNames |
 	entries := self packageSearchFixtureEntriesLoadedInImage: false.
-	packageNames := entries collect: [ :each | each at: #packageName ].
+	packageNames := entries collect: [ :each | each at: #package ].
 	self assert: entries size equals: self packageSearchFixturePackageNames size.
 	self assert: packageNames equals: self packageSearchFixturePackageNames.
-	self assert: (entries allSatisfy: [ :each | (each at: #projectNames) = { self packageSearchFixtureProjectName } ])
+	self assert: (entries allSatisfy: [ :each | (each at: #projects) = { self packageSearchFixtureProjectName } ])
 ]
 
 { #category : 'tests' }

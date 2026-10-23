@@ -14,12 +14,12 @@ MCPToolGetMethodTest >> testGetMethodMissingClassHasNoMethodSuggestions [
 
 	| error result |
 	result := self callToolWith: {
-			          (#className -> 'MCPToolGetMethodTestMissingClass').
+			          (#class -> 'MCPToolGetMethodTestMissingClass').
 			          (#selector -> 'value') } asDictionary.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
-	self assert: (error at: #className) equals: 'MCPToolGetMethodTestMissingClass'.
+	self assert: (error at: #class) equals: 'MCPToolGetMethodTestMissingClass'.
 	self assert: (error at: #selector) equals: 'value'.
 	self deny: (error includesKey: #suggestions).
 	self assert: ((error at: #message) includesSubstring: 'Class MCPToolGetMethodTestMissingClass does not exist')
@@ -30,7 +30,7 @@ MCPToolGetMethodTest >> testGetMethodReturnsInstanceSideVariableContext [
 
 	| classVariable data globalVariable instanceVariable result selfVariable |
 	result := self callToolWith: {
-			          (#className -> 'MCPToolGetMethodTestTarget').
+			          (#class -> 'MCPToolGetMethodTestTarget').
 			          (#selector -> 'readInstanceWith:').
 			          (#includeVariableDetails -> true) } asDictionary.
 	data := self dataFrom: result.
@@ -52,10 +52,10 @@ MCPToolGetMethodTest >> testGetMethodReturnsInstanceSideVariableContext [
 			 #( #sourceIntervals #external #declaredInMethod ) noneSatisfy: [ :key | each includesKey: key ] ]).
 	self assert: ((data at: #source) includesSubstring: String cr asString).
 	self assert: ((data at: #source) includesSubstring: 'instanceCounter ifNil: [ SharedLimit ]').
-	self deny: (data includesKey: #className).
+	self deny: (data includesKey: #class).
 	self deny: (data includesKey: #selector).
 	self deny: (data includesKey: #side).
-	self deny: (data includesKey: #argumentNames).
+	self deny: (data includesKey: #arguments).
 	self deny: (data includesKey: #temporaryNames).
 	self deny: (data includesKey: #variableDetailsIncluded).
 	self deny: (data includesKey: #variableReferenceCount).
@@ -68,14 +68,14 @@ MCPToolGetMethodTest >> testGetMethodReturnsStructuredErrorForMissingSelector [
 
 	| error result structured |
 	result := self callToolWith: {
-			          (#className -> 'MCPToolGetMethodTestTarget').
+			          (#class -> 'MCPToolGetMethodTestTarget').
 			          (#selector -> 'doesNotExist') } asDictionary.
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'MethodNotFound'.
-	self assert: (error at: #className) equals: 'MCPToolGetMethodTestTarget'.
+	self assert: (error at: #class) equals: 'MCPToolGetMethodTestTarget'.
 	self assert: (error at: #selector) equals: 'doesNotExist'.
 	self assert: (error includesKey: #classSide).
 	self deny: (error at: #classSide).
@@ -88,14 +88,14 @@ MCPToolGetMethodTest >> testGetMethodSuggestsExactOppositeSideSelector [
 
 	| error result suggestions |
 	result := self callToolWith: {
-			          (#className -> 'MCPToolGetMethodTestTarget').
+			          (#class -> 'MCPToolGetMethodTestTarget').
 			          (#selector -> 'readClassSide') } asDictionary.
 	error := self errorFrom: result.
 	suggestions := error at: #suggestions.
 	self assert: (result at: #isError).
 	self assert: (error at: #errorCode) equals: 'MethodNotFound'.
 	self assert: suggestions size equals: 1.
-	self assert: (suggestions first at: #className) equals: 'MCPToolGetMethodTestTarget'.
+	self assert: (suggestions first at: #class) equals: 'MCPToolGetMethodTestTarget'.
 	self assert: (suggestions first at: #classSide).
 	self assert: (suggestions first at: #selector) equals: 'readClassSide'
 ]
@@ -105,7 +105,7 @@ MCPToolGetMethodTest >> testGetMethodSupportsClassSideContext [
 
 	| classInstanceVariable data result thisContextVariable |
 	result := self callToolWith: {
-			          (#className -> 'MCPToolGetMethodTestTarget').
+			          (#class -> 'MCPToolGetMethodTestTarget').
 			          (#selector -> 'readClassSide').
 			          (#classSide -> true).
 			          (#includeVariableDetails -> true) } asDictionary.

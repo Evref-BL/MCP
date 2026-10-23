@@ -14,7 +14,7 @@ Class {
 { #category : 'resolving' }
 MCPImageLookup class >> classNamed: aClassName [
 
-	^ self classNamed: aClassName scopeName: 'className'
+	^ self classNamed: aClassName scopeName: 'class'
 ]
 
 { #category : 'resolving' }
@@ -28,7 +28,7 @@ MCPImageLookup class >> classNamed: aClassName scopeName: scopeName [
 { #category : 'resolving' }
 MCPImageLookup class >> packageNamed: aPackageName [
 
-	^ self packageNamed: aPackageName scopeName: 'packageName'
+	^ self packageNamed: aPackageName scopeName: 'package'
 ]
 
 { #category : 'resolving' }

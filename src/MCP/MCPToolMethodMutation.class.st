@@ -307,7 +307,7 @@ MCPToolMethodMutation >> renameRefactoringForSelector: oldSelectorSymbol inBehav
 { #category : 'private - schema' }
 MCPToolMethodMutation >> requiredInputProperties [
 
-	^ self methodToolSpec at: #requiredProperties ifAbsent: [ #( 'className' ) ]
+	^ self methodToolSpec at: #requiredProperties ifAbsent: [ #( 'class' ) ]
 ]
 
 { #category : 'private' }

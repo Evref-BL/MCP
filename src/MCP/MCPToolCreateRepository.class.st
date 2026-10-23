@@ -39,7 +39,7 @@ MCPToolCreateRepository >> repositoryToolSpec [
 				    type: 'string'
 				    description: 'Optional source subdirectory for packages managed by this repository.').
 			   (self
-				    stringArraySchemaNamed: 'packageNames'
+				    stringArraySchemaNamed: 'packages'
 				    description: 'Package names to manage initially in the new repository.'
 				    itemDescription: 'A package name.') }).
 		  (#requiredProperties -> #( 'name' )) } asDictionary

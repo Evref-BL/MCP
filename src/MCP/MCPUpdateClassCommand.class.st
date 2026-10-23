@@ -435,8 +435,8 @@ MCPUpdateClassCommand >> movePackageName [
 MCPUpdateClassCommand >> moveRequestedContext [
 
 	^ {
-		  (#className -> self classRequest className).
-		  (#packageName -> self movePackageName).
+		  (#class -> self classRequest className).
+		  (#package -> self movePackageName).
 		  (#tag -> (self classRequest tag ifNil: [ '' ])) } asDictionary
 ]
 

@@ -28,9 +28,9 @@ MCPToolMutation >> actionErrorCodePrefixFor: action [
 { #category : 'private - refactoring' }
 MCPToolMutation >> addRefactoringScopeContextFromSpec: scopeSpec toRequestedContext: requestedContext [
 
-	scopeSpec packageNames ifNotEmpty: [ requestedContext at: #packageNames put: scopeSpec packageNames ].
-	scopeSpec classNames ifNotEmpty: [ requestedContext at: #classNames put: scopeSpec classNames ].
-	scopeSpec hierarchyClassNames ifNotEmpty: [ requestedContext at: #hierarchyClassNames put: scopeSpec hierarchyClassNames ]
+	scopeSpec packageNames ifNotEmpty: [ requestedContext at: #packages put: scopeSpec packageNames ].
+	scopeSpec classNames ifNotEmpty: [ requestedContext at: #classes put: scopeSpec classNames ].
+	scopeSpec hierarchyClassNames ifNotEmpty: [ requestedContext at: #hierarchyClasses put: scopeSpec hierarchyClassNames ]
 ]
 
 { #category : 'private - errors' }
@@ -400,7 +400,7 @@ MCPToolMutation >> refactoringModelForScopeSpec: scopeSpec anchoredAtBehavior: a
 	environment := self refactoringEnvironmentForScopeSpec: scopeSpec.
 	(environment includesClass: aBehavior) ifFalse: [
 			details := scopeSpec asDictionary copy.
-			details at: #className put: aBehavior instanceSide name asString.
+			details at: #class put: aBehavior instanceSide name asString.
 			details at: #classSide put: aBehavior isMeta.
 			MCPCommandError
 				signalErrorCode: #RefactoringScopeExcludesTargetClass
@@ -414,14 +414,14 @@ MCPToolMutation >> refactoringModelForScopeSpec: scopeSpec anchoredAtBehavior: a
 { #category : 'private - schema' }
 MCPToolMutation >> refactoringScopeClassNamesSchemaProperty [
 
-	^ self stringArraySchemaNamed: 'classNames' description: 'Scope classes; include target.' itemDescription: 'Class name.'
+	^ self stringArraySchemaNamed: 'classes' description: 'Scope classes; include target.' itemDescription: 'Class name.'
 ]
 
 { #category : 'private - schema' }
 MCPToolMutation >> refactoringScopeHierarchyClassNamesSchemaProperty [
 
 	^ self
-		  stringArraySchemaNamed: 'hierarchyClassNames'
+		  stringArraySchemaNamed: 'hierarchyClasses'
 		  description: 'Scope hierarchies; include target.'
 		  itemDescription: 'Hierarchy root.'
 ]
@@ -429,16 +429,16 @@ MCPToolMutation >> refactoringScopeHierarchyClassNamesSchemaProperty [
 { #category : 'private - schema' }
 MCPToolMutation >> refactoringScopePackageNamesSchemaProperty [
 
-	^ self stringArraySchemaNamed: 'packageNames' description: 'Scope packages; include target.' itemDescription: 'Package name.'
+	^ self stringArraySchemaNamed: 'packages' description: 'Scope packages; include target.' itemDescription: 'Package name.'
 ]
 
 { #category : 'private - request' }
 MCPToolMutation >> refactoringScopeSpecFromRequest: request [
 
 	| classNames hierarchyClassNames packageNames |
-	packageNames := request stringCollectionArgumentNamed: 'packageNames'.
-	classNames := request stringCollectionArgumentNamed: 'classNames'.
-	hierarchyClassNames := request stringCollectionArgumentNamed: 'hierarchyClassNames'.
+	packageNames := request stringCollectionArgumentNamed: 'packages'.
+	classNames := request stringCollectionArgumentNamed: 'classes'.
+	hierarchyClassNames := request stringCollectionArgumentNamed: 'hierarchyClasses'.
 	self validateRefactoringScopePackageNamesExist: packageNames.
 	^ MCPRefactoringScopeSpec packageNames: packageNames classNames: classNames hierarchyClassNames: hierarchyClassNames
 ]
@@ -490,9 +490,9 @@ MCPToolMutation >> targetDescriptionForRequestedContext: requestedContext [
 
 	| className selector slotName |
 	requestedContext ifNil: [ ^ '' ].
-	className := requestedContext at: #className ifAbsent: [ nil ].
+	className := requestedContext at: #class ifAbsent: [ nil ].
 	selector := requestedContext at: #selector ifAbsent: [ nil ].
-	slotName := requestedContext at: #slotName ifAbsent: [ nil ].
+	slotName := requestedContext at: #slot ifAbsent: [ nil ].
 	(className isNil and: [ selector isNil and: [ slotName isNil ] ]) ifTrue: [ ^ '' ].
 	^ String streamContents: [ :stream |
 			  className ifNotNil: [

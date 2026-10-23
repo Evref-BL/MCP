@@ -16,7 +16,7 @@ MCPToolMethodLookupTest >> entryForReference: aReference in: methods [
 		  detect: [ :each |
 				  | reference |
 				  reference := String streamContents: [ :stream |
-						               stream nextPutAll: (each at: #className).
+						               stream nextPutAll: (each at: #class).
 						               (each at: #classSide ifAbsent: [ false ]) ifTrue: [ stream nextPutAll: ' class' ].
 						               stream
 							               nextPutAll: '>>';
@@ -58,7 +58,7 @@ MCPToolMethodLookupTest >> testLookupSchemasRequireDedicatedArguments [
 	commonProperties := #( 'scope' 'side' 'offset' ).
 	expectations := {
 		                (MCPToolSearchMethodReferences -> #( 'name' 'kind' )).
-		                (MCPToolSearchEquivalentMethods -> #( 'className' 'selector' 'classSide' )) }.
+		                (MCPToolSearchEquivalentMethods -> #( 'class' 'selector' 'classSide' )) }.
 	expectations do: [ :expectation |
 			| propertyNames schema |
 			schema := expectation key new inputSchema.
@@ -136,7 +136,7 @@ MCPToolMethodLookupTest >> testSearchEquivalentMethodsReturnsEquivalentAstMatche
 		self ensureMethodSource: methodSource protocol: 'testing' on: (self classNamed: subclassName).
 		data := self toolNamed: 'method_equivalent_search' dataFromArguments: {
 				        (self searchScope: { (#classes -> { subclassName }) }).
-				        (#className -> 'MCPToolMethodSearchReferenceFixture').
+				        (#class -> 'MCPToolMethodSearchReferenceFixture').
 				        (#selector -> 'sharedTarget') } asDictionary.
 		self assert: (data at: #methods) size equals: 1.
 		self entryForReference: subclassName , '>>sharedTarget' in: (data at: #methods) ] ensure: [ self removeClassNamed: subclassName ]
@@ -202,10 +202,10 @@ MCPToolMethodLookupTest >> testSourceAndEquivalentSearchSchemasUseDedicatedInput
 	equivalentSchema := MCPToolSearchEquivalentMethods new inputSchema.
 	equivalentRequired := equivalentSchema required asArray.
 	equivalentPropertyNames := equivalentSchema properties collect: [ :each | each name ].
-	self assert: equivalentRequired equals: #( 'className' 'selector' ).
+	self assert: equivalentRequired equals: #( 'class' 'selector' ).
 	self
 		assert: equivalentPropertyNames asSet
-		equals: #( 'scope' 'classSide' 'selector' 'side' 'className' 'offset' ) asSet
+		equals: #( 'scope' 'classSide' 'selector' 'side' 'class' 'offset' ) asSet
 ]
 
 { #category : 'private' }

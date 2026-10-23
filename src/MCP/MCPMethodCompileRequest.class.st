@@ -51,7 +51,7 @@ MCPMethodCompileRequest >> force [
 { #category : 'initialization' }
 MCPMethodCompileRequest >> initializeFromRequest: request tool: aTool [
 
-	className := request stringArgumentNamed: 'className'.
+	className := request stringArgumentNamed: 'class'.
 	classSide := request booleanArgumentNamed: 'classSide' default: false.
 	methodSource := (request
 		                 argumentNamed: 'source'
@@ -78,6 +78,6 @@ MCPMethodCompileRequest >> protocol [
 MCPMethodCompileRequest >> requestedContext [
 
 	^ {
-		  (#className -> self className).
+		  (#class -> self className).
 		  (#classSide -> self classSide) } asDictionary
 ]

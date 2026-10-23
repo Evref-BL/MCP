@@ -35,12 +35,12 @@ MCPRepositorySpecTest >> testRepositoryAdoptHeadRequestParsesTypedInput [
 	adoptHeadRequest := MCPRepositoryAdoptHeadRequest
 		                    fromRequest: (self requestWithArguments: {
 					                     (#name -> 'MCP Repo').
-					                     (#branchName -> 'main') } asDictionary)
+					                     (#branch -> 'main') } asDictionary)
 		                    tool: nil.
 	self assert: adoptHeadRequest operation equals: 'adoptHead'.
 	self assert: adoptHeadRequest repositoryReference name equals: 'MCP Repo'.
 	self assert: adoptHeadRequest branchName equals: 'main'.
-	self assert: (adoptHeadRequest requestedContext at: #branchName) equals: 'main'
+	self assert: (adoptHeadRequest requestedContext at: #branch) equals: 'main'
 ]
 
 { #category : 'tests' }
@@ -59,7 +59,7 @@ MCPRepositorySpecTest >> testRepositoryAdoptHeadResultReturnsDictionary [
 	data := result asDictionary.
 	self
 		assert: data keys asSet
-		equals: #( adoptedCommitId branchName didAdopt headDescription modifiedPackageNamesAfter modifiedPackageNamesBefore
+		equals: #( adoptedCommitId branch didAdopt headDescription modifiedPackageNamesAfter modifiedPackageNamesBefore
 			   previousReferenceCommitId referenceCommitId ) asSet.
 	self assert: (data at: #previousReferenceCommitId) equals: 'before'.
 	self assert: (data at: #referenceCommitId) equals: 'after'.
@@ -67,7 +67,7 @@ MCPRepositorySpecTest >> testRepositoryAdoptHeadResultReturnsDictionary [
 	self assert: (data at: #didAdopt).
 	self assert: (data at: #modifiedPackageNamesBefore) equals: #( 'MCP' ).
 	self assert: (data at: #modifiedPackageNamesAfter) equals: #( 'MCP' ).
-	self assert: (data at: #branchName) equals: 'main'.
+	self assert: (data at: #branch) equals: 'main'.
 	self assert: (data at: #headDescription) equals: 'initial'
 ]
 
@@ -80,7 +80,7 @@ MCPRepositorySpecTest >> testRepositoryAttachRequestParsesTypedInput [
 					                  (#name -> 'MCP Repo').
 					                  (#location -> 'C:/src/MCP').
 					                  (#subdirectory -> 'src').
-					                  (#packageNames -> #( 'MCP' 'MCP-Tests' )) } asDictionary)
+					                  (#packages -> #( 'MCP' 'MCP-Tests' )) } asDictionary)
 		                 tool: nil.
 	self assert: attachRequest operation equals: 'attach'.
 	self assert: attachRequest name equals: 'MCP Repo'.
@@ -96,8 +96,8 @@ MCPRepositorySpecTest >> testRepositoryCommitResultReturnsDictionary [
 	repository := self newRepositoryNamed: 'MCP Commit Repository' location: FileLocator imageDirectory packageNames: #( 'MCP' ).
 	result := MCPRepositoryCommitResult repository: repository changedPackageNames: #( 'MCP' ) commit: nil.
 	data := result asDictionary.
-	self assert: data keys asSet equals: #( changedPackageNames ) asSet.
-	self assert: (data at: #changedPackageNames) equals: #( 'MCP' )
+	self assert: data keys asSet equals: #( changedPackages ) asSet.
+	self assert: (data at: #changedPackages) equals: #( 'MCP' )
 ]
 
 { #category : 'tests' }
@@ -109,7 +109,7 @@ MCPRepositorySpecTest >> testRepositoryCreateUpdateExportRequestsParseTypedInput
 					                  (#name -> 'MCP Repo').
 					                  (#location -> 'C:/src/MCP').
 					                  (#subdirectory -> 'src').
-					                  (#packageNames -> #( 'MCP' 'MCP-Tests' )) } asDictionary)
+					                  (#packages -> #( 'MCP' 'MCP-Tests' )) } asDictionary)
 		                 tool: nil.
 	self assert: createRequest operation equals: 'create'.
 	self assert: createRequest name equals: 'MCP Repo'.
@@ -120,8 +120,8 @@ MCPRepositorySpecTest >> testRepositoryCreateUpdateExportRequestsParseTypedInput
 		                 fromRequest: (self requestWithArguments: {
 					                  (#name -> 'MCP Repo').
 					                  (#subdirectory -> 'src').
-					                  (#addPackageNames -> #( 'New-Package' )).
-					                  (#removePackageNames -> #( 'Old-Package' )) } asDictionary)
+					                  (#addPackages -> #( 'New-Package' )).
+					                  (#removePackages -> #( 'Old-Package' )) } asDictionary)
 		                 tool: nil.
 	self assert: updateRequest operation equals: 'update'.
 	self assert: updateRequest repositoryReference name equals: 'MCP Repo'.
@@ -162,8 +162,8 @@ MCPRepositorySpecTest >> testRepositoryDiffResultReturnsDictionary [
 		          modifiedPaths: #( 'src/MCP.package' )
 		          isEmpty: false.
 	data := result asDictionary.
-	self assert: data keys asSet equals: #( changeCount changedPackageNames isEmpty modifiedPaths ) asSet.
-	self assert: (data at: #changedPackageNames) equals: #( 'MCP' ).
+	self assert: data keys asSet equals: #( changeCount changedPackages isEmpty modifiedPaths ) asSet.
+	self assert: (data at: #changedPackages) equals: #( 'MCP' ).
 	self assert: (data at: #modifiedPaths) equals: #( 'src/MCP.package' ).
 	self assert: (data at: #changeCount) equals: 1.
 	self assert: (data at: #isEmpty) equals: false
@@ -177,8 +177,8 @@ MCPRepositorySpecTest >> testRepositoryExportResultReturnsDictionary [
 	result := MCPRepositoryExportResult repository: repository changedPackageNames: #( 'MCP' ) modifiedPaths: #( 'src/MCP.package' ).
 	result didChange: true.
 	data := result asDictionary.
-	self assert: data keys asSet equals: #( changedPackageNames didChange modifiedPaths ) asSet.
-	self assert: (data at: #changedPackageNames) equals: #( 'MCP' ).
+	self assert: data keys asSet equals: #( changedPackages didChange modifiedPaths ) asSet.
+	self assert: (data at: #changedPackages) equals: #( 'MCP' ).
 	self assert: (data at: #modifiedPaths) equals: #( 'src/MCP.package' ).
 	self assert: (data at: #didChange) equals: true
 ]
@@ -239,8 +239,8 @@ MCPRepositorySpecTest >> testRepositoryRemoteAndBranchResultsReturnDictionaries 
 			repository headDescription: 'after'.
 			reloadResult := MCPRepositoryReloadResult repositoryBefore: beforeInfo after: repository.
 			reloadData := reloadResult asDictionary.
-			self assert: reloadData keys asSet equals: #( branchName headDescription previousHeadDescription ) asSet.
-			self assert: (reloadData at: #branchName) equals: 'feature'.
+			self assert: reloadData keys asSet equals: #( branch headDescription previousHeadDescription ) asSet.
+			self assert: (reloadData at: #branch) equals: 'feature'.
 			self assert: (reloadData at: #previousHeadDescription) equals: 'initial'.
 			self assert: (reloadData at: #headDescription) equals: 'after' ]
 ]
@@ -253,10 +253,10 @@ MCPRepositorySpecTest >> testRepositoryVerifyIdentityRequestParsesTypedInput [
 		                         fromRequest: (self requestWithArguments: {
 					                          (#name -> 'MCP Repo').
 					                          (#location -> '/tmp/MCP').
-					                          (#branchName -> 'main').
+					                          (#branch -> 'main').
 					                          (#subdirectory -> 'src').
-					                          (#packageNames -> #( 'MCP' 'MCP-Tests' )).
-					                          (#modifiedPackageNames -> #( 'MCP' )).
+					                          (#packages -> #( 'MCP' 'MCP-Tests' )).
+					                          (#modifiedPackages -> #( 'MCP' )).
 					                          (#isModified -> true) } asDictionary)
 		                         tool: nil.
 	context := verifyIdentityRequest requestedContext.
@@ -268,7 +268,7 @@ MCPRepositorySpecTest >> testRepositoryVerifyIdentityRequestParsesTypedInput [
 	self assert: verifyIdentityRequest packageNames equals: #( 'MCP' 'MCP-Tests' ).
 	self assert: verifyIdentityRequest modifiedPackageNames equals: #( 'MCP' ).
 	self assert: verifyIdentityRequest isModified equals: true.
-	self assert: (context at: #branchName) equals: 'main'.
+	self assert: (context at: #branch) equals: 'main'.
 	self assert: (context at: #subdirectory) equals: 'src'.
 	self assert: (context at: #isModified) equals: true
 ]
@@ -280,7 +280,7 @@ MCPRepositorySpecTest >> testRepositoryVerifyIdentityResultReturnsDictionary [
 	repository := MCPTestIceRepository named: 'MCP VerifyIdentity Repository' location: 'memory://verifyIdentity'.
 	repository workingCopy packageNames: #( 'MCP-Tests' 'MCP' ).
 	repository modifiedPackageNames: #( 'MCP' ).
-	result := MCPRepositoryVerifyIdentityResult repository: repository checkedFields: #( 'branchName' 'packageNames' 'isModified' ).
+	result := MCPRepositoryVerifyIdentityResult repository: repository checkedFields: #( 'branch' 'packages' 'isModified' ).
 	data := result asDictionary.
 	self assert: data keys asSet equals: #( matched ) asSet.
 	self assert: (data at: #matched)
