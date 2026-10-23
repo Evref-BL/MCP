@@ -225,15 +225,14 @@ MCPRepositorySpecTest >> testRepositoryQuerySpecParsesOptionalBooleanFilters [
 	| request spec tool |
 	tool := MCPToolSearchRepositories new.
 	request := MCPToolRequest tool: tool arguments: {
-			           (#isModified -> false).
-			           (#name -> 'MCP').
-			           (#limit -> 5) } asDictionary.
+		           (#isModified -> false).
+		           (#name -> 'MCP') } asDictionary.
 	spec := tool searchRequestFromToolRequest: request.
 	self assert: spec class equals: MCPRepositoryQuerySpec.
 	self assert: spec isModified equals: false.
 	self assert: spec isMissing isNil.
 	self assert: (spec fieldFilters at: 'name') equals: 'MCP'.
-	self assert: spec limit equals: 5.
+	self assert: spec limit equals: tool defaultPageLimit.
 	self assert: spec offset equals: 0
 ]
 

@@ -169,9 +169,8 @@ MCPToolSearchClassesTest >> testImageScopeCanFilterAndPaginate [
 
 	| classNames data pagination result summary |
 	result := self callToolWith: {
-			          (#name -> self fixturePrefix).
-			          (#limit -> 2).
-			          (#offset -> 1) } asDictionary.
+		          (#name -> self fixturePrefix).
+		          (#offset -> 1) } asDictionary.
 	data := self dataFrom: result.
 	pagination := data at: #pagination.
 	summary := self summaryFrom: result.
@@ -182,7 +181,6 @@ MCPToolSearchClassesTest >> testImageScopeCanFilterAndPaginate [
 	self assert: (pagination at: #returnedCount) equals: 2.
 	self assert: (pagination at: #totalCount) equals: 3.
 	self deny: (pagination at: #truncated).
-	self deny: (pagination includesKey: #nextOffset).
 	self assert: (summary includesSubstring: 'Showing 2 of 3 classes').
 	self assert: classNames equals: {
 			self childClassName.
@@ -278,6 +276,19 @@ MCPToolSearchClassesTest >> testPackageNamesSelectPackageScope [
 			self baseClassName.
 			self childClassName.
 			self grandchildClassName } asArray
+]
+
+{ #category : 'tests' }
+MCPToolSearchClassesTest >> testPageStopsAtTheToolsOwnSize [
+	"A search wider than one page says where the next one starts, without being told a size."
+
+	| data result |
+	result := self callToolWith: { (#name -> 'MCP') } asDictionary.
+	data := self dataFrom: result.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: (data at: #classes) size equals: MCPToolSearchClasses new defaultPageLimit.
+	self assert: (data at: #nextOffset) equals: MCPToolSearchClasses new defaultPageLimit.
+	self assert: ((data at: #pagination) at: #truncated)
 ]
 
 { #category : 'tests' }

@@ -27,10 +27,7 @@ MCPToolSearchClasses class >> toolName [
 MCPToolSearchClasses >> buildInputSchema [
 
 	| properties |
-	properties := self classQueryScopeInputProperties , self classFilterInputProperties
-	              ,
-	              (self paginationInputPropertiesWithLimitDescription:
-		               'Maximum number of matching classes to return. Use 0 to return no entries.').
+	properties := self classQueryScopeInputProperties , self classFilterInputProperties , { self offsetInputProperty }.
 	^ self queryInputSchemaWithProperties: properties
 ]
 
@@ -64,6 +61,13 @@ MCPToolSearchClasses >> classFilterInputProperties [
 MCPToolSearchClasses >> defaultExposure [
 
 	^ 'static'
+]
+
+{ #category : 'defaults' }
+MCPToolSearchClasses >> defaultPageLimit [
+	"A class entry is one short line, so a page can hold more of them."
+
+	^ 50
 ]
 
 { #category : 'metadata' }

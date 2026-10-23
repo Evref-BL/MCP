@@ -302,14 +302,6 @@ MCPTool >> batchSummaryVerb [
 	^ 'Handled'
 ]
 
-{ #category : 'private - results' }
-MCPTool >> blockValueKeys [
-	"Answer the keys whose value reads better on a line of its own, however short it is. A tool declares
-	its own."
-
-	^ #(  )
-]
-
 { #category : 'private - schema' }
 MCPTool >> booleanSchemaPropertyNamed: propertyName description: propertyDescription [
 
@@ -445,14 +437,14 @@ MCPTool >> entryTextOn: stream for: entry indent: indent [
 	pairs := OrderedCollection new.
 	reference ifNotNil: [ pairs add: reference ].
 	keys do: [ :key |
-		(self isInlineValue: (entry at: key) forKey: key) ifTrue: [
+		(self isInlineValue: (entry at: key)) ifTrue: [
 			pairs add: key asString , '=' , (self inlineValueTextFor: (entry at: key)) ] ].
 	stream
 		nextPut: Character lf;
 		nextPutAll: indent;
 		nextPutAll: (' ' join: pairs).
 	keys do: [ :key |
-			(self isInlineValue: (entry at: key) forKey: key) ifFalse: [
+			(self isInlineValue: (entry at: key)) ifFalse: [
 					self
 						valueTextOn: stream
 						for: (entry at: key)
@@ -671,12 +663,6 @@ MCPTool >> isInlineValue: value [
 	value isDictionary ifTrue: [ ^ false ].
 	(value isCollection and: [ value isString not ]) ifTrue: [ ^ false ].
 	^ (self isBlockValue: value) not
-]
-
-{ #category : 'private - results' }
-MCPTool >> isInlineValue: value forKey: aKey [
-
-	^ (self blockValueKeys includes: aKey asSymbol) not and: [ self isInlineValue: value ]
 ]
 
 { #category : 'error handling' }

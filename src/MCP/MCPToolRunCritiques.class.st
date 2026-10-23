@@ -80,9 +80,7 @@ MCPToolRunCritiques >> addIntervalFromAnchor: sourceAnchor toHitData: data [
 	(sourceAnchor class canUnderstand: #interval) ifFalse: [ ^ self ].
 	interval := sourceAnchor interval.
 	interval ifNil: [ ^ self ].
-	data at: #interval put: {
-			interval first.
-			interval last }
+	data at: #interval put: interval first asString , '-' , interval last asString
 ]
 
 { #category : 'private - running' }
@@ -164,32 +162,34 @@ MCPToolRunCritiques >> allRuleClasses [
 		  left name <= right name ]
 ]
 
-{ #category : 'private - results' }
-MCPToolRunCritiques >> blockValueKeys [
-	"A rule's hint is a sentence about how to act on the rule, not a field of the hit."
-
-	^ #( hint )
-]
-
 { #category : 'metadata' }
 MCPToolRunCritiques >> buildInputSchema [
 
 	^ self queryInputSchemaWithProperties: { self searchScopeSchemaProperty } , {
 			  self methodSideSchemaProperty.
-			  self ruleClassesSchemaProperty } , (self paginationInputPropertiesWithLimitDescription: 'Maximum critique hits returned.')
+			  self ruleClassesSchemaProperty.
+			  self offsetInputProperty }
 ]
 
 { #category : 'private - entries' }
 MCPToolRunCritiques >> critiqueEntryFor: critique rule: rule fallbackEntity: fallbackEntity [
+	"The rule class and its title say which rule this is; its rationale is documentation of the rule,
+	not of the hit, and is the same on every one of them."
 
 	| entry |
 	entry := Dictionary new.
 	entry at: #ruleClass put: rule class name asString.
 	entry at: #title put: rule name asString.
-	rule rationale ifNotNil: [ :hint | entry at: #hint put: hint asString ].
 	rule severity ifNotNil: [ :severity | entry at: #severity put: severity asString ].
 	entry at: #hit put: (self hitDataForCritique: critique fallbackEntity: fallbackEntity).
 	^ entry
+]
+
+{ #category : 'defaults' }
+MCPToolRunCritiques >> defaultPageLimit [
+	"A rule carries its hits, so a page holds fewer than a flat list would."
+
+	^ 20
 ]
 
 { #category : 'metadata' }
@@ -376,7 +376,6 @@ MCPToolRunCritiques >> ruleGroupFromEntry: entry [
 	group := Dictionary new.
 	group at: #ruleClass put: (entry at: #ruleClass).
 	group at: #title put: (entry at: #title).
-	entry at: #hint ifPresent: [ :hint | hint isEmpty ifFalse: [ group at: #hint put: hint ] ].
 	entry at: #severity ifPresent: [ :severity | severity isEmpty ifFalse: [ group at: #severity put: severity ] ].
 	group at: #hits put: OrderedCollection new.
 	^ group
