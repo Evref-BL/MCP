@@ -133,7 +133,8 @@ MCPToolRegistryTest >> testServerAnswersNewToolClassesWithoutAManualReset [
 
 	| mcp |
 	mcp := self mcpWithoutObservabilityExport.
-	mcp staticToolNames: { self probeToolName }.
+	self deny: (mcp toolRegistry publicToolNames includes: self probeToolName).
 	self createProbeToolClass.
+	mcp staticToolNames: { self probeToolName }.
 	self assert: ((mcp rpcToolsList at: #tools) collect: [ :each | each at: #name ]) asArray equals: { self probeToolName }
 ]
