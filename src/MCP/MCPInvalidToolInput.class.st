@@ -25,6 +25,17 @@ MCPInvalidToolInput class >> missingRequiredArgumentViolationNamed: anArgumentNa
 ]
 
 { #category : 'instance creation' }
+MCPInvalidToolInput class >> signalEmptyArgumentNamed: anArgumentName forTool: aTool [
+
+	^ self signalForTool: aTool violations: { (MCPJSONSchemaViolation
+			   path: { anArgumentName asString }
+			   keyword: #minItems
+			   message: 'Argument names nothing to act on.'
+			   expected: 'at least one value'
+			   actual: nil) }
+]
+
+{ #category : 'instance creation' }
 MCPInvalidToolInput class >> signalForTool: aTool violations: aCollection [
 
 	^ self new

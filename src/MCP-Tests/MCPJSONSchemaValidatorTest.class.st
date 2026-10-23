@@ -80,10 +80,7 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 		  (MCPToolRewriteMethods -> { (#rules -> { {
 			    (#lhs -> 'self').
 			    (#rhs -> 'self') } asDictionary }) } asDictionary).
-		  (MCPToolSearchMethodImplementors -> { (#selector -> 'toolName') } asDictionary).
-		  (MCPToolSearchMethodSenders -> { (#selector -> 'toolName') } asDictionary).
-		  (MCPToolSearchClassReferences -> { (#className -> 'MCPTool') } asDictionary).
-		  (MCPToolSearchVariableReferences -> { (#variableName -> 'toolName') } asDictionary).
+		  (MCPToolSearchMethodReferences -> { (#name -> 'toolName') } asDictionary).
 		  (MCPToolListChangeHistoryFiles -> Dictionary new).
 		  (MCPToolListChangeHistoryEntries -> Dictionary new).
 		  (MCPToolChangeHistory -> { (#action -> 'listFiles') } asDictionary).
@@ -100,7 +97,7 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 		  (MCPToolDebugBreakpointOperation -> { (#action -> 'list') } asDictionary).
 		  (MCPToolDebugCapture -> { (#expression -> '1') } asDictionary).
 		  (MCPToolUpdateDebugMethod -> { (#sessionId -> 'debug-session-1') } asDictionary).
-		  (MCPToolSearchMethodMetadata -> Dictionary new).
+		  (MCPToolSearchMethods -> Dictionary new).
 		  (MCPToolSearchTools -> Dictionary new).
 		  (MCPToolGetTool -> { (#name -> 'class_search') } asDictionary).
 		  (MCPToolCallTool -> {
@@ -266,17 +263,17 @@ MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasAdvertiseGroupedSearchS
 
 	| classProperties classScopeProperties methodProperties methodScopeProperties |
 	classProperties := MCPToolSearchClasses new inputSchema properties.
-	methodProperties := MCPToolSearchMethodMetadata new inputSchema properties.
+	methodProperties := MCPToolSearchMethods new inputSchema properties.
 	classScopeProperties := ((classProperties detect: [ :each | each name = 'scope' ]) extraProperties at: #properties) collect: [
 		                        :each | each name ].
 	methodScopeProperties := ((methodProperties detect: [ :each | each name = 'scope' ]) extraProperties at: #properties) collect: [
 		                         :each | each name ].
 	self
 		assert: (classProperties collect: [ :each | each name ]) asSet
-		equals: #( 'scope' 'name' 'tag' 'filterMode' 'limit' 'offset' ) asSet.
+		equals: #( 'scope' 'name' 'tag' 'limit' 'offset' ) asSet.
 	self
 		assert: (methodProperties collect: [ :each | each name ]) asSet
-		equals: #( 'scope' 'selector' 'protocol' 'filterMode' 'side' 'includeSource' 'limit' 'offset' 'caseSensitive' ) asSet.
+		equals: #( 'scope' 'selector' 'protocol' 'side' 'offset' ) asSet.
 	self assert: classScopeProperties asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' ) asSet.
 	self assert: methodScopeProperties asSet equals: classScopeProperties asSet
 ]

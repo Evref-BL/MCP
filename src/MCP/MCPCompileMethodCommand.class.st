@@ -29,7 +29,7 @@ MCPCompileMethodCommand >> execute [
 		  requestedContext: self request requestedContext
 		  work: [
 				  behavior := self tool behaviorNamed: self request className classSide: self request classSide.
-				  methodSource := self request methodSource withInternalLineEndings.
+				  methodSource := self request methodSource.
 				  selector := [ self selectorForMethodSource: methodSource ]
 					              on: Exception
 					              do: [ :error | self signalCompileFailure: error methodSource: methodSource ].

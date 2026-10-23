@@ -21,6 +21,13 @@ MCPToolListDebugSessions >> annotations [
 	^ MCPStructureToolAnnotations readOnly
 ]
 
+{ #category : 'private - results' }
+MCPToolListDebugSessions >> keysStatedInSummary [
+	"The summary already counts the sessions."
+
+	^ #( totalCount )
+]
+
 { #category : 'private - specs' }
 MCPToolListDebugSessions >> sessionToolSpec [
 

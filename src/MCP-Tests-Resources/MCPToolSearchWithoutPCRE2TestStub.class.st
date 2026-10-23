@@ -3,7 +3,7 @@ Test tool that models an unavailable native PCRE2 library.
 "
 Class {
 	#name : 'MCPToolSearchWithoutPCRE2TestStub',
-	#superclass : 'MCPToolSearchMethodMetadata',
+	#superclass : 'MCPToolSearchMethods',
 	#category : 'MCP-Tests-Resources',
 	#package : 'MCP-Tests-Resources'
 }

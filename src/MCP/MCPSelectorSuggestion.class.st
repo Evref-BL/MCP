@@ -24,6 +24,22 @@ MCPSelectorSuggestion class >> minimumSharedPrefixSize [
 	^ 4
 ]
 
+{ #category : 'suggesting' }
+MCPSelectorSuggestion class >> namesLike: aName among: names [
+	"A name the caller got slightly wrong is usually one that starts the same way; a name they
+	misspelled is usually one letter off."
+
+	| missed candidates suggestions |
+	missed := aName asString.
+	candidates := (names collect: [ :each | each asString ]) asSet.
+	suggestions := (self prefixMatchesIn: candidates for: missed) asOrderedCollection.
+	suggestions size < self suggestionLimit ifTrue: [
+		(self correctionsIn: candidates for: missed) do: [ :each |
+			(suggestions size < self suggestionLimit and: [ (suggestions includes: each) not ]) ifTrue: [
+				suggestions add: each ] ] ].
+	^ suggestions asArray
+]
+
 { #category : 'accessing' }
 MCPSelectorSuggestion class >> prefixMatchesIn: selectors for: aSelectorString [
 	"The longest shared prefix wins, then the shortest selector: diffToReferenceWorkingCopy answers diffToReferenceCommit before diffTo:."
@@ -41,18 +57,10 @@ MCPSelectorSuggestion class >> prefixMatchesIn: selectors for: aSelectorString [
 	^ (scored first: (self suggestionLimit min: scored size)) collect: [ :each | each value ]
 ]
 
-{ #category : 'accessing' }
+{ #category : 'suggesting' }
 MCPSelectorSuggestion class >> selectorsLike: aSelector understoodBy: aClass [
 
-	| missed selectors suggestions |
-	missed := aSelector asString.
-	selectors := (aClass allSelectors collect: [ :each | each asString ]) asSet.
-	suggestions := (self prefixMatchesIn: selectors for: missed) asOrderedCollection.
-	suggestions size < self suggestionLimit ifTrue: [
-		(self correctionsIn: selectors for: missed) do: [ :each |
-			(suggestions size < self suggestionLimit and: [ (suggestions includes: each) not ]) ifTrue: [
-				suggestions add: each ] ] ].
-	^ suggestions asArray
+	^ self namesLike: aSelector among: aClass allSelectors
 ]
 
 { #category : 'private' }

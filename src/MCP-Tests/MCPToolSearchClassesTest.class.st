@@ -136,8 +136,7 @@ MCPToolSearchClassesTest >> testDefaultFilterAppliesToClassOnly [
 	| classNames data result |
 	result := self callToolWith: {
 			          (self searchScope: { (#packages -> #( 'MCP-Tests' )) }).
-			          (#name -> self baseClassName).
-			          (#filterMode -> 'exact') } asDictionary.
+			          (#name -> self baseClassName) } asDictionary.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	data := self dataFrom: result.
 	classNames := (data at: #classes) collect: [ :each | each at: #className ].
@@ -154,8 +153,7 @@ MCPToolSearchClassesTest >> testDirectionalScopesAreUnionedWithExactClassNames [
 					           (#classes -> { self childClassName }).
 					           (#subclassesOf -> { self childClassName }).
 					           (#superclassesOf -> { self childClassName }) }).
-			          (#name -> self fixturePrefix).
-			          (#filterMode -> 'prefix') } asDictionary.
+			          (#name -> self fixturePrefix) } asDictionary.
 	data := self dataFrom: result.
 	classNames := (data at: #classes) collect: [ :each | each at: #className ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
@@ -172,7 +170,6 @@ MCPToolSearchClassesTest >> testImageScopeCanFilterAndPaginate [
 	| classNames data pagination result summary |
 	result := self callToolWith: {
 			          (#name -> self fixturePrefix).
-			          (#filterMode -> 'prefix').
 			          (#limit -> 2).
 			          (#offset -> 1) } asDictionary.
 	data := self dataFrom: result.
@@ -220,8 +217,7 @@ MCPToolSearchClassesTest >> testMultipleScopesAreUnioned [
 						            self childClassName }).
 					           (#superclassesOf -> { self childClassName }).
 					           (#subclassesOf -> { self childClassName }) }).
-			          (#name -> 'MCPToolSearchClasses').
-			          (#filterMode -> 'prefix') } asDictionary.
+			          (#name -> 'MCPToolSearchClasses') } asDictionary.
 	data := self dataFrom: result.
 	classNames := (data at: #classes) collect: [ :each | each at: #className ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
@@ -290,8 +286,7 @@ MCPToolSearchClassesTest >> testParentClassNamesReturnParentsOnly [
 	| classNames data result |
 	result := self callToolWith: {
 			          (self searchScope: { (#superclassesOf -> { self childClassName }) }).
-			          (#name -> self fixturePrefix).
-			          (#filterMode -> 'prefix') } asDictionary.
+			          (#name -> self fixturePrefix) } asDictionary.
 	data := self dataFrom: result.
 	classNames := (data at: #classes) collect: [ :each | each at: #className ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
@@ -334,8 +329,7 @@ MCPToolSearchClassesTest >> testSubclassClassNamesReturnSubclassesOnly [
 	| classNames data result |
 	result := self callToolWith: {
 			          (self searchScope: { (#subclassesOf -> { self childClassName }) }).
-			          (#name -> self fixturePrefix).
-			          (#filterMode -> 'prefix') } asDictionary.
+			          (#name -> self fixturePrefix) } asDictionary.
 	data := self dataFrom: result.
 	classNames := (data at: #classes) collect: [ :each | each at: #className ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
@@ -352,8 +346,7 @@ MCPToolSearchClassesTest >> testSuperclassAndSubclassScopesReturnRelatedClasses 
 					           (#classes -> { self childClassName }).
 					           (#superclassesOf -> { self childClassName }).
 					           (#subclassesOf -> { self childClassName }) }).
-			          (#name -> self fixturePrefix).
-			          (#filterMode -> 'prefix') } asDictionary.
+			          (#name -> self fixturePrefix) } asDictionary.
 	data := self dataFrom: result.
 	classNames := (data at: #classes) collect: [ :each | each at: #className ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
@@ -373,8 +366,7 @@ MCPToolSearchClassesTest >> testSuperclassAndSubclassScopesSelectRelatedScope [
 					           (#classes -> { self childClassName }).
 					           (#superclassesOf -> { self childClassName }).
 					           (#subclassesOf -> { self childClassName }) }).
-			          (#name -> self fixturePrefix).
-			          (#filterMode -> 'prefix') } asDictionary.
+			          (#name -> self fixturePrefix) } asDictionary.
 	data := self dataFrom: result.
 	classNames := (data at: #classes) collect: [ :each | each at: #className ].
 	self deny: (result at: #isError ifAbsent: [ false ]).

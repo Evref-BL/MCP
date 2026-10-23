@@ -18,8 +18,7 @@ Class {
 	#name : 'MCPTool',
 	#superclass : 'Object',
 	#instVars : [
-		'inputSchema',
-		'outputSchema'
+		'inputSchema'
 	],
 	#category : 'MCP-Tools',
 	#package : 'MCP',
@@ -199,6 +198,118 @@ MCPTool >> asJRPCJSON [
 	^ dictionary
 ]
 
+{ #category : 'metadata' }
+MCPTool >> batchArgumentName [
+	"The argument naming what the call acts on. A tool that answers one accepts either a single value
+	or a list of them there, and runs once per value."
+
+	^ nil
+]
+
+{ #category : 'private - results' }
+MCPTool >> batchContentTextForResults: results summary: summary [
+	"Each target reads exactly as it would have read on its own, under one line saying how the call as a whole went."
+
+	^ String streamContents: [ :stream |
+		  stream nextPutAll: summary.
+		  results do: [ :each |
+			  stream
+				  nextPut: Character lf;
+				  nextPut: Character lf;
+				  nextPutAll: (self contentTextForStructuredContent: each structuredContent) ] ]
+]
+
+{ #category : 'private - results' }
+MCPTool >> batchEntryForResult: aResult [
+
+	| structured entry |
+	structured := aResult structuredContent.
+	entry := Dictionary new.
+	entry at: #summary put: (structured at: #summary ifAbsent: [ '' ]).
+	aResult isError
+		ifTrue: [ entry at: #error put: (structured at: #error ifAbsent: [ Dictionary new ]) ]
+		ifFalse: [
+				(structured at: #data ifAbsent: [ nil ]) ifNotNil: [ :data |
+						data keysAndValuesDo: [ :key :value | entry at: key put: value ] ].
+				(structured at: #warnings ifAbsent: [ nil ]) ifNotNil: [ :warnings | entry at: #warnings put: warnings ] ].
+	^ entry
+]
+
+{ #category : 'private - results' }
+MCPTool >> batchResultForResults: results [
+
+	| failedCount summary data structuredContent resultClass |
+	failedCount := results count: [ :each | each isError ].
+	summary := self batchSummaryForSucceeded: results size - failedCount total: results size.
+	data := Dictionary new
+		        at: #results put: (results collect: [ :each | self batchEntryForResult: each ]) asArray;
+		        yourself.
+	structuredContent := Dictionary new
+		                     at: #summary put: summary;
+		                     at: #data put: data;
+		                     yourself.
+	resultClass := failedCount = results size
+		               ifTrue: [ MCPStructureErrorToolResult ]
+		               ifFalse: [ MCPStructureCallToolResult ].
+	^ resultClass
+		  content: { (self textContent: (self batchContentTextForResults: results summary: summary)) }
+		  structuredContent: structuredContent
+]
+
+{ #category : 'private - results' }
+MCPTool >> batchResultForTargets: targets request: aRequest do: executionBlock [
+
+	| results |
+	results := targets collect: [ :target |
+		           [ executionBlock value: (aRequest withArgumentNamed: self batchArgumentName setTo: target) ]
+			           on: Error
+			           do: [ :error | self errorResultFor: error ] ].
+	^ self batchResultForResults: results
+]
+
+{ #category : 'private - results' }
+MCPTool >> batchSummaryForSucceeded: successCount total: totalCount [
+	"A batch always names at least two targets, so the noun is always plural."
+
+	^ String streamContents: [ :stream |
+		  stream
+			  nextPutAll: self batchSummaryVerb;
+			  space;
+			  print: successCount;
+			  nextPutAll: ' of ';
+			  print: totalCount;
+			  space;
+			  nextPutAll: self batchSummaryNoun;
+			  nextPut: $..
+		  successCount = totalCount ifFalse: [
+				  stream
+					  space;
+					  print: totalCount - successCount;
+					  nextPutAll: ' failed.' ] ]
+]
+
+{ #category : 'metadata' }
+MCPTool >> batchSummaryNoun [
+	"How the targets of a batch are named in its summary, in the plural."
+
+	^ 'targets'
+]
+
+{ #category : 'metadata' }
+MCPTool >> batchSummaryVerb [
+	"How a batch summary opens."
+
+	^ 'Handled'
+]
+
+{ #category : 'private - results' }
+MCPTool >> blockValueKeys [
+	"Answer the keys whose value reads better on a line of its own, however short it is. A tool declares
+	its own."
+
+	^ #(  )
+]
+
 { #category : 'private - schema' }
 MCPTool >> booleanSchemaPropertyNamed: propertyName description: propertyDescription [
 
@@ -219,12 +330,6 @@ MCPTool >> buildInputSchema [
 	self subclassResponsibility
 ]
 
-{ #category : 'metadata' }
-MCPTool >> buildOutputSchema [
-
-	self subclassResponsibility
-]
-
 { #category : 'private - execution' }
 MCPTool >> commandForRequest: aToolRequest [
 
@@ -233,19 +338,54 @@ MCPTool >> commandForRequest: aToolRequest [
 
 { #category : 'private - results' }
 MCPTool >> contentTextForStructuredContent: structuredContent [
-	"Answer the text block a caller reads. The default is the canonical JSON of the structured content; a tool overrides this when plain text reads better and costs fewer tokens."
+	"Answer the text block a caller reads: what happened, then the payload as lines. A tool overrides the rendering of its own data when its shape reads better another way."
 
-	^ STON toJsonStringPretty: structuredContent asJRPCJSON
+	^ String streamContents: [ :stream |
+			  self summaryAndWarningsOn: stream for: structuredContent.
+			  structuredContent at: #data ifPresent: [ :data | self dataTextOn: stream for: data ].
+			  structuredContent at: #error ifPresent: [ :error | self errorTextOn: stream for: error ] ]
 ]
 
 { #category : 'metadata' }
-MCPTool >> contractIncludingOutputSchema: includeOutputSchema [
+MCPTool >> contract [
 
 	| data |
 	data := self metadata copy.
 	data at: #inputSchema put: self inputSchema asJRPCJSON.
-	includeOutputSchema ifTrue: [ data at: #outputSchema put: self outputSchema asJRPCJSON ].
 	^ data
+]
+
+{ #category : 'private - results' }
+MCPTool >> dataTextOn: stream for: data [
+	"Render a payload as lines, in a reading order: what identifies the result first, then the lists and
+	blocks of text it carries. Sorting alphabetically alone buries a class name under its comment."
+
+	| keys skipped reference |
+	skipped := self keysStatedInSummary asOrderedCollection.
+	skipped addAll: self redundantKeys.
+	reference := self methodReferenceTextFor: data.
+	reference ifNotNil: [
+			skipped addAll: self methodReferenceKeys.
+			stream
+				nextPut: Character lf;
+				nextPutAll: 'method: ';
+				nextPutAll: reference ].
+	keys := (data keys reject: [ :key | skipped includes: key asSymbol ]) asSortedCollection: [ :left :right |
+		        left asString <= right asString ].
+	keys do: [ :key |
+			(self isInlineValue: (data at: key)) ifTrue: [
+					self
+						valueTextOn: stream
+						for: (data at: key)
+						labelled: key asString
+						indent: '' ] ].
+	keys do: [ :key |
+			(self isInlineValue: (data at: key)) ifFalse: [
+					self
+						valueTextOn: stream
+						for: (data at: key)
+						labelled: key asString
+						indent: '' ] ]
 ]
 
 { #category : 'metadata' }
@@ -258,6 +398,66 @@ MCPTool >> defaultExposure [
 MCPTool >> description [
 
 	self subclassResponsibility
+]
+
+{ #category : 'private - results' }
+MCPTool >> entriesTextOn: stream for: entries labelled: label indent: indent [
+	"A list of records reads as one entry at a time under the name of the list it belongs to; a list of
+	plain values reads as one line, bracketed so that a list of two is not read as one value containing
+	a comma."
+
+	| entryIndent |
+	(entries anySatisfy: [ :each | each isDictionary ]) ifFalse: [
+			stream
+				nextPut: Character lf;
+				nextPutAll: indent;
+				nextPutAll: label;
+				nextPutAll: ': [';
+				nextPutAll: (', ' join: (entries collect: [ :each | each asString ]));
+				nextPut: $].
+			^ self ].
+	stream
+		nextPut: Character lf;
+		nextPutAll: indent;
+		nextPutAll: label;
+		nextPut: $:.
+	entryIndent := indent , '  '.
+	entries do: [ :entry |
+			entry isDictionary
+				ifTrue: [ self entryTextOn: stream for: entry indent: entryIndent ]
+				ifFalse: [
+						stream
+							nextPut: Character lf;
+							nextPutAll: entryIndent;
+							nextPutAll: entry asString ] ]
+]
+
+{ #category : 'private - results' }
+MCPTool >> entryTextOn: stream for: entry indent: indent [
+	"What identifies the entry goes on its line; anything it carries that has its own shape, such as a method's source or a list of hits, follows on its own lines."
+
+	| keys pairs skipped reference |
+	reference := self methodReferenceTextFor: entry.
+	skipped := self redundantKeys asOrderedCollection.
+	reference ifNotNil: [ skipped addAll: self methodReferenceKeys ].
+	keys := (entry keys reject: [ :key | skipped includes: key asSymbol ]) asSortedCollection: [ :left :right |
+		        left asString <= right asString ].
+	pairs := OrderedCollection new.
+	reference ifNotNil: [ pairs add: reference ].
+	keys do: [ :key |
+		(self isInlineValue: (entry at: key) forKey: key) ifTrue: [
+			pairs add: key asString , '=' , (self inlineValueTextFor: (entry at: key)) ] ].
+	stream
+		nextPut: Character lf;
+		nextPutAll: indent;
+		nextPutAll: (' ' join: pairs).
+	keys do: [ :key |
+			(self isInlineValue: (entry at: key) forKey: key) ifFalse: [
+					self
+						valueTextOn: stream
+						for: (entry at: key)
+						labelled: key asString
+						indent: indent , '  ' ] ]
 ]
 
 { #category : 'private - results' }
@@ -281,11 +481,16 @@ MCPTool >> errorDetailsFor: anError [
 
 { #category : 'error handling' }
 MCPTool >> errorResultFor: anError [
+	"A command error already says what went wrong and carries its own details; only an unexpected
+	failure needs the class, the signaler and the stack."
 
-	| details |
-	details := self errorDetailsFor: anError.
-	anError mcpAddToolErrorDetailsTo: details.
-	^ self errorResultText: (self failureMessageFor: anError) details: details
+	^ anError
+		  mcpCommandErrorDo: [ :commandError | self errorResultText: commandError messageText details: commandError structuredDetails ]
+		  otherwise: [ :toolError |
+				  | details |
+				  details := self errorDetailsFor: toolError.
+				  toolError mcpAddToolErrorDetailsTo: details.
+				  self errorResultText: (self failureMessageFor: toolError) details: details ]
 ]
 
 { #category : 'error handling' }
@@ -297,40 +502,12 @@ MCPTool >> errorResultText: aString details: aDictionary [
 	details at: #message ifAbsentPut: [ normalizedSummary ].
 	details at: #errorClass ifAbsentPut: [ 'ToolError' ].
 	structuredContent := Dictionary new
-		                     at: #status put: 'error';
 		                     at: #summary put: normalizedSummary;
 		                     at: #error put: details;
 		                     yourself.
 	^ MCPStructureErrorToolResult
 		  content: { (self textContent: (self contentTextForStructuredContent: structuredContent)) }
 		  structuredContent: structuredContent
-]
-
-{ #category : 'private - schema' }
-MCPTool >> errorSchemaProperties [
-
-	^ {
-		  (self
-			   schemaPropertyNamed: 'errorClass'
-			   type: 'string'
-			   description: 'The Smalltalk exception class name describing the failure.').
-		  (self
-			   schemaPropertyNamed: 'errorCode'
-			   type: 'string'
-			   description: 'A tool-specific error code when the failure was signaled intentionally by the MCP implementation.').
-		  (self schemaPropertyNamed: 'message' type: 'string' description: 'A concise error message describing the failure.').
-		  (self
-			   schemaPropertyNamed: 'description'
-			   type: 'string'
-			   description: 'A longer textual description of the failure when available.').
-		  (self
-			   schemaPropertyNamed: 'signalerContext'
-			   type: 'string'
-			   description: 'The signaler context recorded for the exception when available.').
-		  (self
-			   stringArraySchemaNamed: 'stackTrace'
-			   description: 'A debug stack trace captured from the signaler context when available.'
-			   itemDescription: 'One stack frame from the captured signaler chain, ordered from the signaling frame outward.') }
 ]
 
 { #category : 'error handling' }
@@ -343,6 +520,39 @@ MCPTool >> errorStackTraceForContext: aContext [
 MCPTool >> errorStackTraceLimit [
 
 	^ 20
+]
+
+{ #category : 'private - results' }
+MCPTool >> errorTextOn: stream for: error [
+	"The summary already carries the class, the message, and any suggestion the command phrased into it. What it does not carry is where the failure happened, or the selectors a receiver would have understood."
+
+	error at: #suggestedSelectors ifPresent: [ :selectors |
+			stream
+				nextPut: Character lf;
+				nextPutAll: 'Did you mean: ';
+				nextPutAll: (', ' join: selectors) ].
+	error at: #stackTrace ifPresent: [ :frames |
+			frames do: [ :each |
+					stream
+						nextPut: Character lf;
+						nextPutAll: each ] ]
+]
+
+{ #category : 'executing' }
+MCPTool >> executeBatchedRequest: aRequest do: executionBlock [
+	"Run executionBlock once per value named by the batch argument. A single value behaves exactly
+	as it does when the tool does not batch at all."
+
+	| targets |
+	self batchArgumentName ifNil: [ ^ executionBlock value: aRequest ].
+	targets := aRequest stringCollectionArgumentNamed: self batchArgumentName.
+	targets ifEmpty: [
+			(aRequest namesAListAt: self batchArgumentName) ifTrue: [
+				MCPInvalidToolInput signalEmptyArgumentNamed: self batchArgumentName forTool: self ].
+			^ executionBlock value: aRequest ].
+	targets size = 1 ifTrue: [
+		^ executionBlock value: (aRequest withArgumentNamed: self batchArgumentName setTo: targets first) ].
+	^ self batchResultForTargets: targets request: aRequest do: executionBlock
 ]
 
 { #category : 'private - execution' }
@@ -412,6 +622,21 @@ MCPTool >> icons [
 	^ self class toolIcons
 ]
 
+{ #category : 'private - results' }
+MCPTool >> inlineValueTextFor: aValue [
+	"A field that carries separators is quoted, so that where its value ends is never a guess."
+
+	| text |
+	text := aValue asString.
+	(text anySatisfy: [ :char | char isSeparator ]) ifFalse: [ ^ text ].
+	^ String streamContents: [ :stream |
+		  stream nextPut: $".
+		  text do: [ :char |
+				  (char = $" or: [ char = $\ ]) ifTrue: [ stream nextPut: $\ ].
+				  stream nextPut: char ].
+		  stream nextPut: $" ]
+]
+
 { #category : 'metadata' }
 MCPTool >> inputSchema [
 
@@ -432,12 +657,41 @@ MCPTool >> integerSchemaPropertyNamed: propertyName description: propertyDescrip
 		  yourself
 ]
 
+{ #category : 'private - results' }
+MCPTool >> isBlockValue: value [
+	"A block is read as a block: text with its own lines, or prose too long to sit in a field. It belongs after the fields that identify the result, not among them."
+
+	^ value isString and: [ (value includesSubstring: String cr) or: [ value size > 160 ] ]
+]
+
+{ #category : 'private - results' }
+MCPTool >> isInlineValue: value [
+	"A value sits on the entry's own line when it is a single scalar. A block of text or a nested structure gets its own lines, since printString would fold it into one."
+
+	value isDictionary ifTrue: [ ^ false ].
+	(value isCollection and: [ value isString not ]) ifTrue: [ ^ false ].
+	^ (self isBlockValue: value) not
+]
+
+{ #category : 'private - results' }
+MCPTool >> isInlineValue: value forKey: aKey [
+
+	^ (self blockValueKeys includes: aKey asSymbol) not and: [ self isInlineValue: value ]
+]
+
 { #category : 'error handling' }
 MCPTool >> isServerFrame: aContext [
 
 	^ aContext method methodClass
 		  ifNil: [ false ]
 		  ifNotNil: [ :methodClass | methodClass instanceSide name beginsWith: 'MCP' ]
+]
+
+{ #category : 'private - results' }
+MCPTool >> keysStatedInSummary [
+	"Answer the data keys whose value the summary already states in prose, so the text does not say it twice. A tool declares its own."
+
+	^ #(  )
 ]
 
 { #category : 'metadata' }
@@ -465,22 +719,47 @@ MCPTool >> metadata [
 		  (#keywords -> self keywords) } asDictionary
 ]
 
+{ #category : 'private - results' }
+MCPTool >> methodReferenceKeys [
+	"The fields a method reference stands in for."
+
+	^ #( className behaviorName selector classSide )
+]
+
+{ #category : 'private - results' }
+MCPTool >> methodReferenceTextFor: aDictionary [
+	"A record that names a method reads the way Pharo names one, instead of spending three fields on it."
+
+	| behaviorName selector |
+	selector := self valueIn: aDictionary at: #selector.
+	selector ifNil: [ ^ nil ].
+	behaviorName := (self valueIn: aDictionary at: #className) ifNil: [ self valueIn: aDictionary at: #behaviorName ].
+	behaviorName ifNil: [ ^ nil ].
+	^ ((self valueIn: aDictionary at: #classSide) = true
+		   ifTrue: [ behaviorName asString , ' class' ]
+		   ifFalse: [ behaviorName asString ]) , '>>' , selector asString
+]
+
 { #category : 'metadata' }
 MCPTool >> name [
 
 	^ self class toolName
 ]
 
-{ #category : 'metadata' }
-MCPTool >> outputSchema [
-
-	^ self buildOutputSchema
-]
-
 { #category : 'private - request' }
 MCPTool >> parsedRequestFromToolRequest: request [
 
 	^ request
+]
+
+{ #category : 'private - results' }
+MCPTool >> pluralNounFor: aNoun [
+	"Enough English for the nouns a summary names: entry, class, match, method."
+
+	(aNoun size > 1 and: [ (aNoun endsWith: 'y') and: [ (aNoun at: aNoun size - 1) isVowel not ] ]) ifTrue: [
+		^ (aNoun allButLast: 1) , 'ies' ].
+	(#( 's' 'x' 'z' 'ch' 'sh' ) anySatisfy: [ :ending | aNoun endsWith: ending ]) ifTrue: [ ^ aNoun , 'es' ].
+	^ aNoun , 's'
 ]
 
 { #category : 'private - icons' }
@@ -505,6 +784,13 @@ MCPTool >> pngIconNamed: anIconSymbol [
 MCPTool >> pngSizeStringForForm: aForm [
 
 	^ aForm width asString , 'x' , aForm height asString
+]
+
+{ #category : 'private - results' }
+MCPTool >> redundantKeys [
+	"Answer the keys whose value the record around them already says. A tool declares its own."
+
+	^ #(  )
 ]
 
 { #category : 'validating' }
@@ -565,35 +851,6 @@ MCPTool >> shouldResumeNotification: aNotification [
 ]
 
 { #category : 'private - schema' }
-MCPTool >> standardOutputSchemaForDataProperties: dataProperties required: requiredFields [
-
-	| dataProperty errorProperty statusProperty summaryProperty |
-	dataProperty := self schemaPropertyNamed: 'data' type: 'object' description: 'Structured success payload.'.
-	dataProperty
-		properties: dataProperties;
-		required: requiredFields;
-		additionalProperties: false.
-	errorProperty := self schemaPropertyNamed: 'error' type: 'object' description: 'Structured error information.'.
-	errorProperty
-		properties: self errorSchemaProperties;
-		required: #( 'message' );
-		additionalProperties: true.
-	statusProperty := self stringEnumSchemaPropertyNamed: 'status' description: 'Tool result status.' values: #( 'ok' 'error' ).
-	summaryProperty := self schemaPropertyNamed: 'summary' type: 'string' description: 'Human-readable result summary.'.
-	^ MCPStructureInputSchema new
-		  type: 'object';
-		  properties: {
-				  statusProperty.
-				  summaryProperty.
-				  self warningsSchemaProperty.
-				  dataProperty.
-				  errorProperty };
-		  required: #( 'status' 'summary' );
-		  additionalProperties: false;
-		  yourself
-]
-
-{ #category : 'private - schema' }
 MCPTool >> stringArraySchemaNamed: aName [
 
 	^ self stringArraySchemaNamed: aName description: nil itemDescription: nil
@@ -609,32 +866,6 @@ MCPTool >> stringArraySchemaNamed: aName description: aDescription itemDescripti
 	(self shouldAdvertiseStringArrayItemDescription: anItemDescription) ifTrue: [ itemsProperty description: anItemDescription ].
 	^ (self schemaPropertyNamed: aName type: 'array' description: aDescription)
 		  items: itemsProperty;
-		  yourself
-]
-
-{ #category : 'private - schema' }
-MCPTool >> stringEnumArraySchemaNamed: propertyName description: propertyDescription itemDescription: itemDescription values: enumValues [
-
-	| itemsProperty |
-	itemsProperty := MCPStructureProperties new
-		                 type: 'string';
-		                 description: itemDescription;
-		                 enum: enumValues;
-		                 yourself.
-	^ (self schemaPropertyNamed: propertyName type: 'array' description: propertyDescription)
-		  items: itemsProperty;
-		  yourself
-]
-
-{ #category : 'private - schema' }
-MCPTool >> stringEnumArraySchemaNamed: propertyName description: propertyDescription itemDescription: itemDescription values: enumValues default: defaultValues [
-
-	^ (self
-		   stringEnumArraySchemaNamed: propertyName
-		   description: propertyDescription
-		   itemDescription: itemDescription
-		   values: enumValues)
-		  default: defaultValues;
 		  yourself
 ]
 
@@ -667,7 +898,6 @@ MCPTool >> successResultText: aSummary data: aDictionary warnings: warningString
 	normalizedSummary := aSummary ifNil: [ '' ] ifNotNil: [ aSummary asString ].
 	warnings := warningStrings ifNil: [ #(  ) ] ifNotNil: [ (warningStrings collect: [ :each | each asString ]) asArray ].
 	structuredContent := Dictionary new
-		                     at: #status put: 'ok';
 		                     at: #summary put: normalizedSummary;
 		                     at: #data put: aDictionary;
 		                     yourself.
@@ -688,9 +918,34 @@ MCPTool >> successfulStructuredDataFromResult: aResult ifAbsent: absentBlock [
 ]
 
 { #category : 'private - results' }
+MCPTool >> summaryAndWarningsOn: stream for: structuredContent [
+	"The opening of a plain-text result: what happened, then anything the call wants to qualify it with."
+
+	stream nextPutAll: (structuredContent at: #summary ifAbsent: [ '' ]).
+	(structuredContent at: #warnings ifAbsent: [ #(  ) ]) do: [ :each |
+		stream
+			nextPut: Character lf;
+			nextPutAll: 'Warning: ';
+			nextPutAll: each ]
+]
+
+{ #category : 'private - results' }
 MCPTool >> textContent: aString [
 
 	^ MCPStructureTextContent text: aString
+]
+
+{ #category : 'private - results' }
+MCPTool >> textForCount: anInteger noun: aNoun [
+	"One of a thing is not several of it."
+
+	^ String streamContents: [ :stream |
+		  stream
+			  print: anInteger;
+			  space;
+			  nextPutAll: (anInteger = 1
+					   ifTrue: [ aNoun ]
+					   ifFalse: [ self pluralNounFor: aNoun ]) ]
 ]
 
 { #category : 'metadata' }
@@ -705,8 +960,57 @@ MCPTool >> validateRequest: aToolRequest [
 	^ self
 ]
 
-{ #category : 'private - schema' }
-MCPTool >> warningsSchemaProperty [
+{ #category : 'private - results' }
+MCPTool >> valueIn: aDictionary at: aKey [
+	"Entries reach the renderer with symbol keys from the image and string keys from the wire."
 
-	^ self stringArraySchemaNamed: 'warnings' description: 'Warnings produced by the tool.' itemDescription: 'Warning message.'
+	^ aDictionary at: aKey ifAbsent: [ aDictionary at: aKey asString ifAbsent: [ nil ] ]
 ]
+
+{ #category : 'private - results' }
+MCPTool >> valueTextOn: stream for: value labelled: label indent: indent [
+
+	| reference |
+	(value isNil or: [ value isCollection and: [ value isEmpty ] ]) ifTrue: [ ^ self ].
+	value isDictionary ifTrue: [
+			reference := self methodReferenceTextFor: value.
+			reference ifNotNil: [
+					^ stream
+						  nextPut: Character lf;
+						  nextPutAll: indent;
+						  nextPutAll: label;
+						  nextPutAll: ': ';
+						  nextPutAll: reference ].
+			stream
+				nextPut: Character lf;
+				nextPutAll: indent;
+				nextPutAll: label;
+				nextPut: $:.
+			^ ((value keys reject: [ :key | self redundantKeys includes: key asSymbol ]) asSortedCollection: [ :left :right |
+			   left asString <= right asString ]) do: [ :key |
+					  self
+						  valueTextOn: stream
+						  for: (value at: key)
+						  labelled: key asString
+						  indent: indent , '  ' ] ].
+	(value isCollection and: [ value isString not ]) ifTrue: [
+			^ self
+				  entriesTextOn: stream
+				  for: value
+				  labelled: label
+				  indent: indent ].
+	stream
+		nextPut: Character lf;
+		nextPutAll: indent;
+		nextPutAll: label;
+		nextPut: $:.
+	(value isString and: [ value includesSubstring: String cr ])
+		ifTrue: [
+				stream nextPut: Character lf.
+				stream nextPutAll: value withUnixLineEndings ]
+		ifFalse: [
+				stream
+					space;
+					nextPutAll: value asString ]
+]
+

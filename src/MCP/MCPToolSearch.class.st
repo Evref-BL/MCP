@@ -21,6 +21,13 @@ MCPToolSearch >> addScopeLabel: aString to: labels [
 	(labels includes: aString) ifFalse: [ labels add: aString ]
 ]
 
+{ #category : 'testing' }
+MCPToolSearch >> advertisesLimit [
+	"Whether a caller can set the page size, or the tool answers a page of its own size."
+
+	^ self inputSchema properties anySatisfy: [ :each | each name = 'limit' ]
+]
+
 { #category : 'metadata' }
 MCPToolSearch >> annotations [
 
@@ -41,12 +48,6 @@ MCPToolSearch >> basicRegexMatcherForPattern: aPattern caseSensitive: aBoolean [
 		         ifTrue: [ aPattern asRegex ]
 		         ifFalse: [ aPattern asRegexIgnoringCase ].
 	^ [ :candidate | regex search: (self regexSubjectFrom: candidate) ]
-]
-
-{ #category : 'private - schema' }
-MCPToolSearch >> caseSensitiveSchemaPropertyWithDescription: caseSensitiveDescription [
-
-	^ self booleanSchemaPropertyNamed: 'caseSensitive' description: 'Case-sensitive matching.' default: true
 ]
 
 { #category : 'private - results' }
@@ -244,6 +245,13 @@ MCPToolSearch >> isRegexSyntaxError: anError [
 	^ anError class = RegexSyntaxError or: [ anError class = PCRE2CompileError ]
 ]
 
+{ #category : 'private - results' }
+MCPToolSearch >> keysStatedInSummary [
+	"The summary already states the counts and the next offset in prose."
+
+	^ #( pagination nextOffset )
+]
+
 { #category : 'private - template' }
 MCPToolSearch >> limitFromQueryRequest: queryRequest [
 
@@ -265,24 +273,6 @@ MCPToolSearch >> matcherForPattern: aPattern mode: aMode caseSensitive: aBoolean
 	Error signal: 'Unsupported filter mode: ' , aMode
 ]
 
-{ #category : 'private - schema' }
-MCPToolSearch >> minimalPagedQueryOutputSchemaForEntriesPropertyNamed: entriesPropertyName entriesDescription: entriesDescription entrySchema: entrySchema itemNounPhrase: itemNounPhrase [
-
-	| entriesProperty |
-	entriesProperty := self schemaPropertyNamed: entriesPropertyName type: 'array' description: entriesDescription.
-	entriesProperty items: entrySchema.
-	^ self
-		  standardOutputSchemaForDataProperties: {
-				  entriesProperty.
-				  self paginationOutputSchemaProperty.
-				  (self
-					   integerSchemaPropertyNamed: 'nextOffset'
-					   description: 'Zero-based offset for the next page. Omitted when this is the final page.') }
-		  required: {
-				  entriesPropertyName.
-				  'pagination' }
-]
-
 { #category : 'private - filtering' }
 MCPToolSearch >> normalizeFilterString: aValue caseSensitive: aBoolean [
 
@@ -297,6 +287,15 @@ MCPToolSearch >> normalizeFilterString: aValue caseSensitive: aBoolean [
 MCPToolSearch >> offsetFromQueryRequest: queryRequest [
 
 	^ queryRequest offset
+]
+
+{ #category : 'private - schema' }
+MCPToolSearch >> offsetInputProperty [
+	"A page is a fixed size, so where it starts is all a caller sets."
+
+	^ (self integerSchemaPropertyNamed: 'offset' description: 'Pagination offset.' default: 0)
+		  minimum: 0;
+		  yourself
 ]
 
 { #category : 'private - schema' }
@@ -345,28 +344,6 @@ MCPToolSearch >> paginationInputPropertiesWithLimitDescription: limitDescription
 	^ {
 		  limitProperty.
 		  offsetProperty }
-]
-
-{ #category : 'private - schema' }
-MCPToolSearch >> paginationOutputSchemaProperty [
-
-	| nextOffsetProperty property returnedCountProperty totalCountProperty truncatedProperty |
-	returnedCountProperty := self integerSchemaPropertyNamed: 'returnedCount' description: 'Entries returned in this page.'.
-	totalCountProperty := self integerSchemaPropertyNamed: 'totalCount' description: 'Total matching entries before pagination.'.
-	truncatedProperty := self booleanSchemaPropertyNamed: 'truncated' description: 'Whether more entries are available.'.
-	nextOffsetProperty := self
-		                      integerSchemaPropertyNamed: 'nextOffset'
-		                      description: 'Zero-based offset for the next page. Omitted when this is the final page.'.
-	property := self schemaPropertyNamed: 'pagination' type: 'object' description: 'Pagination metadata for this result page.'.
-	property
-		properties: {
-				returnedCountProperty.
-				totalCountProperty.
-				truncatedProperty.
-				nextOffsetProperty };
-		required: #( 'returnedCount' 'totalCount' 'truncated' );
-		additionalProperties: false.
-	^ property
 ]
 
 { #category : 'private - request' }
@@ -486,10 +463,12 @@ MCPToolSearch >> scopeQuerySuccessSummaryFor: resultKind scope: scopeSummary pag
 			  page nextOffset ifNotNil: [ :offset |
 					  stream
 						  nextPutAll: '. More available: use offset ';
-						  print: offset;
-						  nextPutAll: ' and limit ';
-						  print: page returnedCount;
-						  nextPutAll: ', or narrow the scope/filter' ].
+						  print: offset.
+					  self advertisesLimit ifTrue: [
+							  stream
+								  nextPutAll: ' and limit ';
+								  print: page returnedCount ].
+					  stream nextPutAll: ', or narrow the scope/filter' ].
 			  stream nextPut: $. ]
 ]
 

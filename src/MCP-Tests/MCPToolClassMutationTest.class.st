@@ -665,7 +665,6 @@ MCPToolClassMutationTest >> testUpdatePullUpSlotReturnsStructuredCommandErrorFor
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
 	self assert: (error at: #action) equals: 'update'.
 	self assert: (error at: #updateAction) equals: 'pullUpSlot'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
@@ -707,7 +706,6 @@ MCPToolClassMutationTest >> testUpdatePullUpSlotStopsOnRefactoringWarningByDefau
 	childOne := self classNamed: 'MCPToolClassMutationTestWarningPullUpChildOne'.
 	childTwo := self classNamed: 'MCPToolClassMutationTestWarningPullUpChildTwo'.
 	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
 	self assert: (error at: #action) equals: 'update'.
 	self assert: (error at: #updateAction) equals: 'pullUpSlot'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
@@ -844,7 +842,6 @@ MCPToolClassMutationTest >> testUpdateRemoveSlotStopsOnRefactoringWarningByDefau
 	error := self errorFrom: result.
 	target := self classNamed: 'MCPToolClassMutationTestWarningRemoveSlotTarget'.
 	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
 	self assert: (error at: #action) equals: 'update'.
 	self assert: (error at: #updateAction) equals: 'removeSlot'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
@@ -1253,7 +1250,6 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenAddSlotClassIsMi
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
 	self assert: (error at: #action) equals: 'update'.
 	self assert: (error at: #updateAction) equals: 'addSlot'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
@@ -1301,7 +1297,6 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenMoveClassIsMissi
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
 	self assert: (error at: #action) equals: 'update'.
 	self assert: (error at: #updateAction) equals: 'move'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
@@ -1321,7 +1316,6 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenPullUpSlotClassI
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
 	self assert: (error at: #action) equals: 'update'.
 	self assert: (error at: #updateAction) equals: 'pullUpSlot'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
@@ -1343,7 +1337,6 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenRemoveSlotClassI
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
 	self assert: (error at: #action) equals: 'update'.
 	self assert: (error at: #updateAction) equals: 'removeSlot'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
@@ -1386,7 +1379,6 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenRenameSlotClassI
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
 	self assert: (error at: #action) equals: 'update'.
 	self assert: (error at: #updateAction) equals: 'renameSlot'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.

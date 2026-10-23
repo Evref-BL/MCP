@@ -41,22 +41,6 @@ MCPToolCallTool >> buildInputSchema [
 		  yourself
 ]
 
-{ #category : 'metadata' }
-MCPToolCallTool >> buildOutputSchema [
-
-	| resultProperty |
-	resultProperty := self
-		                  schemaPropertyNamed: 'result'
-		                  type: 'object'
-		                  description: 'The target tool result when tool_call is executed outside the MCP server call path.'.
-	resultProperty additionalProperties: true.
-	^ self
-		  standardOutputSchemaForDataProperties: {
-				  (self schemaPropertyNamed: 'targetToolName' type: 'string' description: 'The selected target tool name.').
-				  resultProperty }
-		  required: #( 'targetToolName' 'result' )
-]
-
 { #category : 'private - execution' }
 MCPToolCallTool >> commandForRequest: callRequest [
 

@@ -40,8 +40,7 @@ MCPToolSearchRepositoriesTest >> testCanFilterByClassName [
 				beta }
 		do: [
 				result := self callToolWith: {
-						          (#className -> self class name asString).
-						          (#filterMode -> 'exact') } asDictionary.
+						          (#className -> self class name asString) } asDictionary.
 				data := self dataFrom: result.
 				repositoryNames := (data at: #repositories) collect: [ :each | each at: #name ].
 				self deny: (result at: #isError ifAbsent: [ false ]).
@@ -63,7 +62,6 @@ MCPToolSearchRepositoriesTest >> testCanFilterByMissingStateAndDirectory [
 		do: [
 				result := self callToolWith: {
 						          (#location -> missingLocation pathString).
-						          (#filterMode -> 'exact').
 						          (#isMissing -> true) } asDictionary.
 				data := self dataFrom: result.
 				repositoryNames := (data at: #repositories) collect: [ :each | each at: #name ].
@@ -85,7 +83,6 @@ MCPToolSearchRepositoriesTest >> testCanFilterByPackageNameAndModifiedState [
 		do: [
 				result := self callToolWith: {
 						          (#packageName -> 'MCP').
-						          (#filterMode -> 'exact').
 						          (#isModified -> true) } asDictionary.
 				data := self dataFrom: result.
 				repositoryNames := (data at: #repositories) collect: [ :each | each at: #name ].

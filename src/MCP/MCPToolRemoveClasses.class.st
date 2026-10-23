@@ -49,19 +49,6 @@ MCPToolRemoveClasses >> buildInputSchema [
 		  yourself
 ]
 
-{ #category : 'metadata' }
-MCPToolRemoveClasses >> buildOutputSchema [
-
-	^ self
-		  standardOutputSchemaForDataProperties: {
-				  (self stringArraySchemaNamed: 'removedPackageNames' description: 'Packages removed during cleanup.' itemDescription: nil).
-				  (self
-					   stringArraySchemaNamed: 'reparentedSubclassNames'
-					   description: 'Subclasses reparented during removal.'
-					   itemDescription: nil) }
-		  required: #(  )
-]
-
 { #category : 'private - errors' }
 MCPToolRemoveClasses >> classNamesForErrorFromParsedRequest: removeRequest rawRequest: rawRequest [
 
@@ -82,6 +69,12 @@ MCPToolRemoveClasses >> classNamesFromRequest: request [
 MCPToolRemoveClasses >> commandForRequest: removeRequest [
 
 	^ MCPRemoveClassesCommand classNames: removeRequest classNames force: removeRequest force
+]
+
+{ #category : 'metadata' }
+MCPToolRemoveClasses >> defaultExposure [
+
+	^ 'static'
 ]
 
 { #category : 'metadata' }
@@ -133,6 +126,13 @@ MCPToolRemoveClasses >> failureMessageForClassNames: classNames error: anError [
 				  nextPutAll: anError class name;
 				  nextPutAll: '): ';
 				  nextPutAll: anError messageText ]
+]
+
+{ #category : 'private - results' }
+MCPToolRemoveClasses >> keysStatedInSummary [
+	"The summary already reads 'Removed class Foo. Removed packages: Bar.'"
+
+	^ #( removedClasses removedPackageNames )
 ]
 
 { #category : 'private - request' }

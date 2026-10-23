@@ -16,12 +16,6 @@ MCPToolRepositoryRemoteOperation class >> isAbstract [
 ]
 
 { #category : 'private - schema' }
-MCPToolRepositoryRemoteOperation >> newRemoteNameSchemaProperty [
-
-	^ self schemaPropertyNamed: 'newRemoteName' type: 'string' description: 'New remote name.'
-]
-
-{ #category : 'private - schema' }
 MCPToolRepositoryRemoteOperation >> remoteNameSchemaProperty [
 
 	^ self schemaPropertyNamed: 'remoteName' type: 'string' description: 'Remote name.'

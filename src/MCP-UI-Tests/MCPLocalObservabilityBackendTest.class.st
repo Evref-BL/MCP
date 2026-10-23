@@ -22,7 +22,7 @@ MCPLocalObservabilityBackendTest >> testEnabledByDefaultRecords [
 
 	| record state |
 	state := MCPLocalObservabilityBackend new.
-	record := state recordToolCallStart: 'method_metadata_search'.
+	record := state recordToolCallStart: 'method_search'.
 	self assert: state enabled.
 	self assert: record notNil.
 	self assert: state totalCallCount equals: 0.
@@ -49,7 +49,7 @@ MCPLocalObservabilityBackendTest >> testInputSnapshotRedactsSensitiveKeys [
 		         (#limit -> 10).
 		         (#apiToken -> 'secret-token').
 		         (#nested -> { (#password -> 'secret-password') } asDictionary) } asDictionary.
-	record := state recordToolCallStart: 'method_metadata_search' input: input.
+	record := state recordToolCallStart: 'method_search' input: input.
 	state recordToolCallFinish: record result: nil error: Error new.
 
 	self assert: (record inputSnapshot at: #limit) equals: 10.
@@ -133,13 +133,13 @@ MCPLocalObservabilityBackendTest >> testMCPRecordsToolCallsWhenObservabilityIsEn
 		directory exists ifTrue: [ directory deleteAll ].
 		mcp := MCP new.
 		mcp observabilityExportDirectory: directory.
-		result := mcp rpcToolCall: 'package_search' withParams: { (#limit -> 0) } asDictionary.
+		result := mcp rpcToolCall: 'class_search' withParams: { (#limit -> 0) } asDictionary.
 		stats := mcp observabilityMetrics first.
 		record := mcp observability recentCallRecords first.
 
 		self deny: (result at: #isError ifAbsent: [ false ]).
 		self assert: mcp observability totalCallCount equals: 1.
-		self assert: stats toolName equals: 'package_search'.
+		self assert: stats toolName equals: 'class_search'.
 		self assert: stats successCount equals: 1.
 		self assert: record inputSnapshot isNil.
 		self assert: record outputSnapshot isNil.
@@ -214,7 +214,7 @@ MCPLocalObservabilityBackendTest >> testRecordsOutputBudgetMetadata [
 	| record result state stats recordData statsData |
 	state := MCPLocalObservabilityBackend new.
 	state enable.
-	record := state recordToolCallStart: 'method_metadata_search'.
+	record := state recordToolCallStart: 'method_search'.
 	result := MCPStructureCallToolResult content: #(  ) structuredContent: { (#summary -> 'Small output') } asDictionary.
 	state recordToolCallFinish: record result: result error: nil.
 	stats := state metrics first.
@@ -290,20 +290,20 @@ MCPLocalObservabilityBackendTest >> testRecordsSuccessfulCallMetricsAndLogs [
 	| state record result stats |
 	state := MCPLocalObservabilityBackend new.
 	state enable.
-	record := state recordToolCallStart: 'method_metadata_search'.
+	record := state recordToolCallStart: 'method_search'.
 	result := MCPStructureCallToolResult content: #(  ) structuredContent: { (#summary -> 'Listed methods') } asDictionary.
 	state recordToolCallFinish: record result: result error: nil.
 	stats := state metrics first.
 
 	self assert: state totalCallCount equals: 1.
-	self assert: stats toolName equals: 'method_metadata_search'.
+	self assert: stats toolName equals: 'method_search'.
 	self assert: stats successCount equals: 1.
 	self assert: stats errorCount equals: 0.
 	self assert: state recentCallRecords size equals: 1.
 	self assert: state logs size >= 2.
-	self assert: (state logs anySatisfy: [ :each | each includesSubstring: 'Begin tool method_metadata_search #' ]).
-	self assert: (state logs anySatisfy: [ :each | each includesSubstring: 'OK tool method_metadata_search #' ]).
-	self deny: (state logs anySatisfy: [ :each | each includesSubstring: 'ok tool method_metadata_search #' ]).
+	self assert: (state logs anySatisfy: [ :each | each includesSubstring: 'Begin tool method_search #' ]).
+	self assert: (state logs anySatisfy: [ :each | each includesSubstring: 'OK tool method_search #' ]).
+	self deny: (state logs anySatisfy: [ :each | each includesSubstring: 'ok tool method_search #' ]).
 	self assert: (state statusText beginsWith: 'Observability enabled. Calls: 1')
 ]
 
@@ -398,7 +398,7 @@ MCPLocalObservabilityBackendTest >> testTraceRecordsIncludeErrorsAndOutliersOnly
 	| error normal outlier start state traces |
 	state := MCPLocalObservabilityBackend new.
 	start := DateAndTime now.
-	normal := MCPToolCallRecord id: 1 toolName: 'method_metadata_search' startedAt: start.
+	normal := MCPToolCallRecord id: 1 toolName: 'method_search' startedAt: start.
 	normal finishAt: start durationMilliseconds: 5 status: 'ok'.
 	error := MCPToolCallRecord id: 2 toolName: 'method_compile' startedAt: start.
 	error finishAt: start durationMilliseconds: 7 status: 'error'.

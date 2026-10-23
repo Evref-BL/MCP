@@ -55,12 +55,6 @@ MCPToolSearchTools >> buildInputSchema [
 		  yourself
 ]
 
-{ #category : 'metadata' }
-MCPToolSearchTools >> buildOutputSchema [
-
-	^ self standardOutputSchemaForDataProperties: { self toolsArraySchemaProperty } required: #( 'tools' )
-]
-
 { #category : 'private - results' }
 MCPToolSearchTools >> catalogTextForSummary: aSummary tools: toolMetadataEntries [
 	"Separate entries with a line feed: a carriage return reaches the caller as an escaped character rather than a line break."
@@ -131,20 +125,6 @@ MCPToolSearchTools >> title [
 	^ 'Search Tool Catalog'
 ]
 
-{ #category : 'private - schema' }
-MCPToolSearchTools >> toolMetadataObjectSchema [
-
-	^ MCPStructureProperties new
-		  type: 'object';
-		  description: 'Compact metadata for one tool.';
-		  properties: {
-				  (self schemaPropertyNamed: 'name' type: 'string' description: 'Tool name.').
-				  (self schemaPropertyNamed: 'description' type: 'string' description: 'Short description.') };
-		  required: #( 'name' 'description' );
-		  additionalProperties: false;
-		  yourself
-]
-
 { #category : 'accessing' }
 MCPToolSearchTools >> toolRegistry [
 
@@ -157,10 +137,3 @@ MCPToolSearchTools >> toolRegistry: aToolRegistry [
 	toolRegistry := aToolRegistry
 ]
 
-{ #category : 'private - schema' }
-MCPToolSearchTools >> toolsArraySchemaProperty [
-
-	^ (self schemaPropertyNamed: 'tools' type: 'array' description: 'Matching tool metadata entries, best match first.')
-		  items: self toolMetadataObjectSchema;
-		  yourself
-]

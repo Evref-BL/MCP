@@ -32,12 +32,6 @@ MCPExternalTestTool >> buildInputSchema [
 ]
 
 { #category : 'metadata' }
-MCPExternalTestTool >> buildOutputSchema [
-
-	^ self standardOutputSchemaForDataProperties: #(  ) required: #(  )
-]
-
-{ #category : 'metadata' }
 MCPExternalTestTool >> description [
 
 	^ 'Test fixture for external MCP tool extensions.'

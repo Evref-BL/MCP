@@ -24,7 +24,7 @@ MCPDebugToolContractTest >> assertDebugTestStopAt: stopAt selects: selector [
 	selectedFrame := state at: #selectedFrame.
 	method := selectedFrame at: #method.
 	exception := state at: #exception.
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: result).
 	self assert: (data at: #captured).
 	self deny: (data at: #timedOut).
 	self deny: (data at: #passed).
@@ -399,7 +399,7 @@ MCPDebugToolContractTest >> testDebugCandidateAttachRegistersCandidateFromSearch
 	session := data at: #session.
 	state := data at: #state.
 
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: result).
 	self assert: (data at: #attached).
 	self deny: (data at: #alreadyAttached).
 	self assert: (data at: #candidateRef) equals: ref.
@@ -427,7 +427,7 @@ MCPDebugToolContractTest >> testDebugCandidateSearchReturnsUnattachedDebuggerCan
 	candidates := data at: #candidates.
 	refs := candidates collect: [ :each | each at: #candidateRef ].
 
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: result).
 	self assert: (refs includes: olderRef).
 	self assert: (refs includes: newerRef).
 	self
@@ -454,7 +454,7 @@ MCPDebugToolContractTest >> testDebugCandidateSearchSkipsAlreadyRegisteredDebugg
 	candidates := data at: #candidates.
 	refs := candidates collect: [ :each | each at: #candidateRef ].
 
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: result).
 	self deny: (refs includes: ref)
 ]
 
@@ -481,7 +481,7 @@ MCPDebugToolContractTest >> testDebugCandidateSearchSkipsAttachedDebuggerAfterRe
 	candidates := data at: #candidates.
 	refs := candidates collect: [ :each | each at: #candidateRef ].
 
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: result).
 	self deny: (refs includes: ref).
 	self deny: (refs includes: replacementRef)
 ]
@@ -499,7 +499,7 @@ MCPDebugToolContractTest >> testDebugCaptureCapturesRuntimeExceptionAsDebugSessi
 	state := data at: #state.
 	exception := state at: #exception.
 	sessionId := session at: #sessionId.
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: result).
 	self assert: (data at: #captured).
 	self deny: (data at: #timedOut).
 	self assert: (data at: #sessionId) equals: sessionId.
@@ -522,7 +522,7 @@ MCPDebugToolContractTest >> testDebugCaptureReportsSyntaxFailureWithoutSession [
 			          (#expression -> '1 +').
 			          (#timeoutMilliseconds -> self debugSuccessTimeoutMilliseconds) } asDictionary.
 	error := self errorFrom: result.
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'error'.
+	self assert: (self resultIndicatesError: result).
 	self assert: (error at: #errorCode) equals: 'DebugCaptureSyntaxError'.
 	self assert: (error at: #expression) equals: '1 +'.
 	self assert: MCPDebugSessionRegistry default size equals: 0
@@ -540,7 +540,7 @@ MCPDebugToolContractTest >> testDebugCaptureResumeProceedsCapturedHalt [
 	sessionId := captureData at: #sessionId.
 	resumeResult := self callToolNamed: 'debug_session_resume' withArguments: { (#sessionId -> sessionId) } asDictionary.
 	resumeData := self dataFrom: resumeResult.
-	self assert: ((self structuredContentFrom: resumeResult) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: resumeResult).
 	self assert: (resumeData at: #status) equals: 'completed'.
 	self assert: (resumeData at: #reason) equals: 'resume'
 ]
@@ -553,7 +553,7 @@ MCPDebugToolContractTest >> testDebugCaptureReturnsCompletedResultWithoutSession
 			          (#expression -> '21 + 21').
 			          (#timeoutMilliseconds -> self debugSuccessTimeoutMilliseconds) } asDictionary.
 	data := self dataFrom: result.
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: result).
 	self deny: (data at: #captured).
 	self deny: (data at: #timedOut).
 	self assert: (data at: #resultClassName) equals: 'SmallInteger'.
@@ -569,10 +569,31 @@ MCPDebugToolContractTest >> testDebugCaptureTimesOutWithoutSession [
 			          (#expression -> '(Delay forMilliseconds: 200) wait. 42').
 			          (#timeoutMilliseconds -> 1) } asDictionary.
 	error := self errorFrom: result.
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'error'.
+	self assert: (self resultIndicatesError: result).
 	self assert: (error at: #errorCode) equals: 'DebugCaptureTimedOut'.
 	self assert: (error at: #workerTerminated).
 	self assert: MCPDebugSessionRegistry default size equals: 0
+]
+
+{ #category : 'tests' }
+MCPDebugToolContractTest >> testDebugCaptureWindowsSourceAroundTheSelectedFrame [
+
+	| narrow result source wide wideSource |
+	result := self callToolNamed: 'debug_capture' withArguments: {
+		          (#expression -> '3 / 0').
+		          (#sourceContextLines -> 0).
+		          (#timeoutMilliseconds -> self debugSuccessTimeoutMilliseconds) } asDictionary.
+	source := ((self dataFrom: result) at: #state) at: #source.
+	wide := self callToolNamed: 'debug_capture' withArguments: {
+		        (#expression -> '3 / 0').
+		        (#sourceContextLines -> 3).
+		        (#timeoutMilliseconds -> self debugSuccessTimeoutMilliseconds) } asDictionary.
+	wideSource := ((self dataFrom: wide) at: #state) at: #source.
+	self assert: (source at: #sourceCode) lines size equals: 1.
+	self assert: ((source at: #sourceCode) includesSubstring: 'ZeroDivide').
+	self assert: (source at: #firstLineNumber) > 1.
+	self assert: ((source at: #selectedRange) first) <= (source at: #sourceCode) size.
+	self assert: (wideSource at: #sourceCode) lines size > (source at: #sourceCode) lines size
 ]
 
 { #category : 'tests' }
@@ -585,7 +606,7 @@ MCPDebugToolContractTest >> testDebugControlRejectsForeignFrameRef [
 			          (#sessionId -> record sessionId).
 			          (#frameRef -> (foreignRecord sessionId , '/' , foreignRecord stateId , '/frame-0')) } asDictionary.
 	error := self errorFrom: result.
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'error'.
+	self assert: (self resultIndicatesError: result).
 	self assert: (error at: #errorCode) equals: 'DebugFrameReferenceInvalid'.
 	self assert: (error at: #sessionId) equals: record sessionId.
 	self assert: (error at: #referenceSessionId) equals: foreignRecord sessionId
@@ -600,7 +621,7 @@ MCPDebugToolContractTest >> testDebugControlRejectsStaleFrameRef [
 			          (#sessionId -> record sessionId).
 			          (#frameRef -> (record sessionId , '/old-state/frame-0')) } asDictionary.
 	error := self errorFrom: result.
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'error'.
+	self assert: (self resultIndicatesError: result).
 	self assert: (error at: #errorCode) equals: 'DebugStateStale'.
 	self assert: (error at: #requestedStateId) equals: 'old-state'
 ]
@@ -613,7 +634,7 @@ MCPDebugToolContractTest >> testDebugControlResumeAdvancesStateWithoutSnapshot [
 	session := record debugSession.
 	result := self callToolNamed: 'debug_session_resume' withArguments: { (#sessionId -> record sessionId) } asDictionary.
 	resultData := self dataFrom: result.
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: result).
 	self assert: session operationNames asArray equals: #( 'resume' ).
 	self assert: (resultData at: #previousStateId) equals: 'state-0'.
 	self assert: (resultData at: #stateId) equals: 'state-1'.
@@ -635,7 +656,7 @@ MCPDebugToolContractTest >> testDebugControlStepOverAdvancesStateAndReturnsSnaps
 			          (#frameRef -> frameRef).
 			          (#returnState -> true) } asDictionary.
 	resultData := self dataFrom: result.
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: result).
 	self assert: session operationNames asArray equals: #( 'stepOver' ).
 	self assert: (resultData at: #previousStateId) equals: 'state-0'.
 	self assert: (resultData at: #stateId) equals: 'state-1'.
@@ -653,7 +674,7 @@ MCPDebugToolContractTest >> testDebugControlStepOverAdvancesStateWithoutSnapshot
 	session := record debugSession.
 	result := self callToolNamed: 'debug_session_step_over' withArguments: { (#sessionId -> record sessionId) } asDictionary.
 	resultData := self dataFrom: result.
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: result).
 	self assert: session operationNames asArray equals: #( 'stepOver' ).
 	self assert: (resultData at: #previousStateId) equals: 'state-0'.
 	self assert: (resultData at: #stateId) equals: 'state-1'.
@@ -673,7 +694,7 @@ MCPDebugToolContractTest >> testDebugEvaluateEvaluatesExpressionInSelectedFrame 
 			          (#frameRef -> frameRef).
 			          (#expression -> 'self class name') } asDictionary.
 	data := self dataFrom: result.
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: result).
 	self assert: (data at: #frameRef) equals: frameRef.
 	self assert: (data at: #resultClassName) equals: 'ByteSymbol'.
 	self assert: (data at: #resultPrintString) equals: '#MCPDebugToolContractTest'.
@@ -698,7 +719,7 @@ MCPDebugToolContractTest >> testDebugEvaluateReadsTemporaryInSelectedFrame [
 			          (#frameRef -> frameRef).
 			          (#expression -> 'marker + 1') } asDictionary.
 	data := self dataFrom: result.
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: result).
 	self assert: (data at: #resultClassName) equals: 'SmallInteger'.
 	self assert: (data at: #resultPrintString) equals: '42'
 ]
@@ -714,7 +735,7 @@ MCPDebugToolContractTest >> testDebugEvaluateRejectsForeignFrameRef [
 			          (#frameRef -> (foreignRecord sessionId , '/' , foreignRecord stateId , '/frame-0')).
 			          (#expression -> '1') } asDictionary.
 	error := self errorFrom: result.
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'error'.
+	self assert: (self resultIndicatesError: result).
 	self assert: (error at: #errorCode) equals: 'DebugFrameReferenceInvalid'.
 	self assert: (error at: #sessionId) equals: record sessionId.
 	self assert: (error at: #referenceSessionId) equals: foreignRecord sessionId
@@ -730,7 +751,7 @@ MCPDebugToolContractTest >> testDebugEvaluateRejectsStaleFrameRef [
 			          (#frameRef -> (record sessionId , '/old-state/frame-0')).
 			          (#expression -> '1') } asDictionary.
 	error := self errorFrom: result.
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'error'.
+	self assert: (self resultIndicatesError: result).
 	self assert: (error at: #errorCode) equals: 'DebugStateStale'.
 	self assert: (error at: #requestedStateId) equals: 'old-state'
 ]
@@ -747,7 +768,7 @@ MCPDebugToolContractTest >> testDebugEvaluateReportsRuntimeFailure [
 			          (#frameRef -> frameRef).
 			          (#expression -> 'self error: ''debug_expression_evaluate boom''') } asDictionary.
 	error := self errorFrom: result.
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'error'.
+	self assert: (self resultIndicatesError: result).
 	self assert: (error at: #errorCode) equals: 'DebugEvaluationFailed'.
 	self assert: (error at: #expression) equals: 'self error: ''debug_expression_evaluate boom'''
 ]
@@ -764,7 +785,7 @@ MCPDebugToolContractTest >> testDebugEvaluateReportsSyntaxFailure [
 			          (#frameRef -> frameRef).
 			          (#expression -> '1 +') } asDictionary.
 	error := self errorFrom: result.
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'error'.
+	self assert: (self resultIndicatesError: result).
 	self assert: (error at: #errorCode) equals: 'DebugEvaluationSyntaxError'.
 	self assert: (error at: #expression) equals: '1 +'
 ]
@@ -798,7 +819,7 @@ MCPDebugToolContractTest >> testDebugMethodUpdateCanIgnoreCritiquesAndProceed [
 		at: #ignoreCritiques put: true.
 	result := self callToolNamed: 'debug_method_update' withArguments: arguments.
 	updateData := self dataFrom: result.
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: result).
 	self assert: (updateData at: #updateKind) equals: 'missingMethod'.
 	self assert: (updateData at: #proceeded).
 	self deny: (updateData at: #blockedByCritiques).
@@ -844,7 +865,7 @@ MCPDebugToolContractTest >> testDebugMethodUpdateCanProceedAfterPriorCritiqueBlo
 		             (#ignoreCritiques -> true) } asDictionary.
 	result := self callToolNamed: 'debug_method_update' withArguments: arguments.
 	blockedData := self dataFrom: result.
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: result).
 	self assert: (blockedData at: #proceeded).
 	self deny: (blockedData at: #blockedByCritiques).
 	self assert: (blockedData at: #proceedOutcome) equals: 'paused'.
@@ -878,7 +899,7 @@ MCPDebugToolContractTest >> testDebugMethodUpdateCreatesMissingMethodFromRepairA
 	arguments at: #source put: methodSource.
 	result := self callToolNamed: 'debug_method_update' withArguments: arguments.
 	updateData := self dataFrom: result.
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: result).
 	self assert: (updateData at: #updateKind) equals: 'missingMethod'.
 	self assert: (updateData at: #previousStateId) equals: 'state-0'.
 	self assert: (updateData at: #stateId) equals: 'state-2'.
@@ -921,7 +942,7 @@ MCPDebugToolContractTest >> testDebugMethodUpdateProceedsAfterCleanMissingMethod
 	arguments at: #source put: methodSource.
 	result := self callToolNamed: 'debug_method_update' withArguments: arguments.
 	updateData := self dataFrom: result.
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: result).
 	self assert: (updateData at: #updateKind) equals: 'missingMethod'.
 	self assert: (updateData at: #proceeded).
 	self deny: (updateData at: #blockedByCritiques).
@@ -961,7 +982,7 @@ MCPDebugToolContractTest >> testDebugMethodUpdateRecompilesNotYetImplementedFram
 	arguments at: #source put: methodSource.
 	result := self callToolNamed: 'debug_method_update' withArguments: arguments.
 	updateData := self dataFrom: result.
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: result).
 	self assert: (updateData at: #updateKind) equals: 'notYetImplemented'.
 	self assert: (updateData at: #proceeded).
 	self deny: (updateData at: #blockedByCritiques).
@@ -1014,7 +1035,7 @@ MCPDebugToolContractTest >> testDebugMethodUpdateStopsBeforeProceedingWhenCritiq
 	arguments at: #source put: methodSource.
 	result := self callToolNamed: 'debug_method_update' withArguments: arguments.
 	updateData := self dataFrom: result.
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: result).
 	self assert: (updateData at: #updateKind) equals: 'missingMethod'.
 	self deny: (updateData at: #proceeded).
 	self assert: (updateData at: #blockedByCritiques).
@@ -1031,7 +1052,7 @@ MCPDebugToolContractTest >> testDebugSessionGetReturnsRegisteredSession [
 	result := self callToolNamed: 'debug_session_get' withArguments: { (#sessionId -> record sessionId) } asDictionary.
 	data := self dataFrom: result.
 	session := data at: #session.
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: result).
 	self assert: (session at: #sessionId) equals: record sessionId.
 	self assert: (session at: #status) equals: 'paused'
 ]
@@ -1074,7 +1095,7 @@ MCPDebugToolContractTest >> testDebugSessionsAttachRejectsUnknownCandidateRef [
 		          callToolNamed: 'debug_candidate_attach'
 		          withArguments: { (#candidateRef -> 'debugger-candidate-missing') } asDictionary.
 	error := self errorFrom: result.
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'error'.
+	self assert: (self resultIndicatesError: result).
 	self assert: (error at: #errorCode) equals: 'DebugSessionCandidateNotFound'.
 	self assert: (error at: #candidateRef) equals: 'debugger-candidate-missing'
 ]
@@ -1100,7 +1121,7 @@ MCPDebugToolContractTest >> testDebugSessionsAttachReusesRecordAfterRecordedSess
 	data := self dataFrom: result.
 	session := data at: #session.
 
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: result).
 	self assert: (data at: #alreadyAttached).
 	self assert: (data at: #sessionId) equals: record sessionId.
 	self assert: (session at: #sessionId) equals: record sessionId.
@@ -1113,7 +1134,7 @@ MCPDebugToolContractTest >> testDebugSessionsListsEmptyRegistry [
 	| result data |
 	result := self callToolNamed: 'debug_session_list' withArguments: Dictionary new.
 	data := self dataFrom: result.
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: result).
 	self assert: (data at: #totalCount) equals: 0.
 	self assert: (data at: #sessions) isEmpty
 ]
@@ -1150,7 +1171,7 @@ MCPDebugToolContractTest >> testDebugSessionsRemoveTerminatesCapturedSessionWork
 
 	result := self callToolNamed: 'debug_session_remove' withArguments: { (#sessionId -> sessionId) } asDictionary.
 	data := self dataFrom: result.
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: result).
 	self assert: (data at: #removed).
 	self assert: (data at: #terminated).
 	self assert: process isTerminated.
@@ -1210,7 +1231,7 @@ MCPDebugToolContractTest >> testDebugStateRejectsForeignFrameRef [
 			          (#sessionId -> record sessionId).
 			          (#frameRef -> (foreignRecord sessionId , '/' , foreignRecord stateId , '/frame-0')) } asDictionary.
 	error := self errorFrom: result.
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'error'.
+	self assert: (self resultIndicatesError: result).
 	self assert: (error at: #errorCode) equals: 'DebugFrameReferenceInvalid'.
 	self assert: (error at: #sessionId) equals: record sessionId.
 	self assert: (error at: #referenceSessionId) equals: foreignRecord sessionId
@@ -1225,7 +1246,7 @@ MCPDebugToolContractTest >> testDebugStateRejectsMalformedFrameRef [
 			          (#sessionId -> record sessionId).
 			          (#frameRef -> (record sessionId , '/' , record stateId , '/not-frame')) } asDictionary.
 	error := self errorFrom: result.
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'error'.
+	self assert: (self resultIndicatesError: result).
 	self assert: (error at: #errorCode) equals: 'DebugFrameReferenceInvalid'.
 	self assert: ((error at: #frameRef) includesSubstring: 'not-frame')
 ]
@@ -1239,7 +1260,7 @@ MCPDebugToolContractTest >> testDebugStateRejectsStaleFrameRef [
 			          (#sessionId -> record sessionId).
 			          (#frameRef -> (record sessionId , '/old-state/frame-0')) } asDictionary.
 	error := self errorFrom: result.
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'error'.
+	self assert: (self resultIndicatesError: result).
 	self assert: (error at: #errorCode) equals: 'DebugStateStale'.
 	self assert: (error at: #requestedStateId) equals: 'old-state'
 ]
@@ -1253,7 +1274,7 @@ MCPDebugToolContractTest >> testDebugStateRejectsStaleStateId [
 			          (#sessionId -> record sessionId).
 			          (#stateId -> 'old-state') } asDictionary.
 	error := self errorFrom: result.
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'error'.
+	self assert: (self resultIndicatesError: result).
 	self assert: (error at: #errorCode) equals: 'DebugStateStale'.
 	self assert: (error at: #currentStateId) equals: record stateId
 ]
@@ -1265,7 +1286,7 @@ MCPDebugToolContractTest >> testDebugStateReturnsCompositeSnapshotForRegisteredS
 	record := self registerSyntheticSession.
 	result := self callToolNamed: 'debug_state_get' withArguments: { (#sessionId -> record sessionId) } asDictionary.
 	data := self dataFrom: result.
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: result).
 	self assert: (data at: #sessionId) equals: record sessionId.
 	self assert: (data at: #stateId) equals: record stateId.
 	self deny: (data at: #callStack) isEmpty.
@@ -1317,7 +1338,7 @@ MCPDebugToolContractTest >> testDebugVariablesExpandsNestedChildReference [
 	childResult := self
 		               callToolNamed: 'debug_variable_get'
 		               withArguments: { (#variableRef -> (child at: #variableRef)) } asDictionary.
-	self assert: ((self structuredContentFrom: childResult) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: childResult).
 	self assert: ((self dataFrom: childResult) at: #kind) equals: 'variable'.
 	self assert: ((self dataFrom: childResult) at: #printString) equals: '#testDebugVariablesExpandsNestedChildReference'
 ]
@@ -1333,7 +1354,7 @@ MCPDebugToolContractTest >> testDebugVariablesExpandsReceiverScope [
 		          callToolNamed: 'debug_variable_get'
 		          withArguments: { (#variableRef -> (receiverScope at: #variableRef)) } asDictionary.
 	variables := (self dataFrom: result) at: #variables.
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: result).
 	self assert: ((self dataFrom: result) at: #kind) equals: 'scope'.
 	self assert: (self variableNamed: 'self' inVariables: variables) notNil
 ]
@@ -1349,7 +1370,7 @@ MCPDebugToolContractTest >> testDebugVariablesExpandsSelfObjectChildren [
 		          callToolNamed: 'debug_variable_get'
 		          withArguments: { (#variableRef -> (selfVariable at: #variableRef)) } asDictionary.
 	children := (self dataFrom: result) at: #variables.
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: result).
 	self assert: ((self dataFrom: result) at: #kind) equals: 'variable'.
 	self assert: ((self dataFrom: result) at: #hasChildren).
 	self assert: (self variableNamed: 'testSelector' inVariables: children) notNil
@@ -1365,7 +1386,7 @@ MCPDebugToolContractTest >> testDebugVariablesHonorsVariableDepthZero [
 	result := self callToolNamed: 'debug_variable_get' withArguments: {
 			          (#variableRef -> (selfVariable at: #variableRef)).
 			          (#variableDepth -> 0) } asDictionary.
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'ok'.
+	self deny: (self resultIndicatesError: result).
 	self assert: ((self dataFrom: result) at: #hasChildren).
 	self assert: ((self dataFrom: result) at: #variables) isEmpty.
 	self assert: ((self dataFrom: result) at: #truncated)
@@ -1380,7 +1401,7 @@ MCPDebugToolContractTest >> testDebugVariablesRejectsStaleVariableRef [
 		          callToolNamed: 'debug_variable_get'
 		          withArguments: { (#variableRef -> (record sessionId , '/old-state/frame-0/scope-receiver/var-self')) } asDictionary.
 	error := self errorFrom: result.
-	self assert: ((self structuredContentFrom: result) at: #status) equals: 'error'.
+	self assert: (self resultIndicatesError: result).
 	self assert: (error at: #errorCode) equals: 'DebugStateStale'.
 	self assert: (error at: #requestedStateId) equals: 'old-state'
 ]

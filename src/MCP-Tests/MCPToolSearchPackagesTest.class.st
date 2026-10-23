@@ -54,8 +54,7 @@ MCPToolSearchPackagesTest >> testImageScopeCanFilterPackagesByTagTarget [
 	self withTemporaryTaggedPackagesDo: [ :packages :packageProjectNames |
 			| data packageNames result |
 			result := self callToolWith: {
-					          (#tag -> 'FixtureBetaTag').
-					          (#filterMode -> 'exact') } asDictionary.
+					          (#tag -> 'FixtureBetaTag') } asDictionary.
 			data := self dataFrom: result.
 			packageNames := (data at: #packages) collect: [ :each | each at: #packageName ].
 			self deny: (result at: #isError ifAbsent: [ false ]).
@@ -69,7 +68,6 @@ MCPToolSearchPackagesTest >> testImageScopeCanPaginateFilteredPackages [
 	| data expected packageNames pagination result summary |
 	result := self callToolWith: {
 			          (#name -> 'MCP-').
-			          (#filterMode -> 'prefix').
 			          (#limit -> 2).
 			          (#offset -> 1) } asDictionary.
 	data := self dataFrom: result.
@@ -95,9 +93,7 @@ MCPToolSearchPackagesTest >> testImageScopeCanPaginateFilteredPackages [
 MCPToolSearchPackagesTest >> testImageScopeReturnsExactPackageNameMatch [
 
 	| data packageNames result |
-	result := self callToolWith: {
-			          (#name -> 'MCP-Tests').
-			          (#filterMode -> 'exact') } asDictionary.
+	result := self callToolWith: { (#packageNames -> #( 'MCP-Tests' )) } asDictionary.
 	data := self dataFrom: result.
 	packageNames := (data at: #packages) collect: [ :each | each at: #packageName ].
 
@@ -110,9 +106,7 @@ MCPToolSearchPackagesTest >> testImageScopeReturnsExactPackageNameMatch [
 MCPToolSearchPackagesTest >> testImageScopeReturnsStructuredPackages [
 
 	| data entry packages result |
-	result := self callToolWith: {
-			          (#name -> 'MCP-Tests-Resources').
-			          (#filterMode -> 'exact') } asDictionary.
+	result := self callToolWith: { (#packageNames -> #( 'MCP-Tests-Resources' )) } asDictionary.
 	data := self dataFrom: result.
 	packages := data at: #packages.
 	entry := self entryNamed: 'MCP-Tests-Resources' in: packages.
@@ -145,7 +139,6 @@ MCPToolSearchPackagesTest >> testProjectNamesReturnStructuredErrorWhenProjectIsM
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ProjectNotFound'.
 	self assert: (error at: #projectName) equals: 'DefinitelyMissingProject'.

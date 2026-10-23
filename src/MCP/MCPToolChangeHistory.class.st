@@ -29,59 +29,6 @@ MCPToolChangeHistory >> additionalKeywords [
 	^ #( 'history' 'change' 'epicea' 'ombu' 'recover' )
 ]
 
-{ #category : 'private - schema' }
-MCPToolChangeHistory >> changeHistoryEntryArraySchemaNamed: propertyName description: propertyDescription [
-
-	| property |
-	property := self schemaPropertyNamed: propertyName type: 'array' description: propertyDescription.
-	property items: self changeHistoryEntrySchemaProperty.
-	^ property
-]
-
-{ #category : 'private - schema' }
-MCPToolChangeHistory >> changeHistoryEntrySchemaProperty [
-
-	^ MCPStructureProperties new
-		  type: 'object';
-		  description: 'Change history entry.';
-		  properties: {
-				  (self integerSchemaPropertyNamed: 'index' description: 'One-based entry index.').
-				  (self schemaPropertyNamed: 'eventClassName' type: 'string' description: 'Event class name.').
-				  (self schemaPropertyNamed: 'summary' type: 'string' description: 'Specific entry summary.').
-				  (self
-					   stringEnumSchemaPropertyNamed: 'entryKind'
-					   description: 'Entry kind.'
-					   values: #( 'code' 'session' 'other' )
-					   default: 'code').
-				  (self schemaPropertyNamed: 'time' type: 'string' description: 'Entry time.').
-				  (self schemaPropertyNamed: 'triggerReference' type: 'string' description: 'Trigger reference.').
-				  (self schemaPropertyNamed: 'packageName' type: 'string' description: 'Package name.').
-				  (self schemaPropertyNamed: 'behaviorName' type: 'string' description: 'Class or trait name.').
-				  (self booleanSchemaPropertyNamed: 'classSide' description: 'Whether method is class-side.').
-				  (self schemaPropertyNamed: 'selector' type: 'string' description: 'Method selector.').
-				  (self schemaPropertyNamed: 'protocol' type: 'string' description: 'Method protocol.') };
-		  required: #( 'index' 'eventClassName' );
-		  additionalProperties: false;
-		  yourself
-]
-
-{ #category : 'private - schema' }
-MCPToolChangeHistory >> changeHistoryLogSchemaProperty [
-
-	^ MCPStructureProperties new
-		  type: 'object';
-		  description: 'Change history file.';
-		  properties: {
-				  (self schemaPropertyNamed: 'fileName' type: 'string' description: 'File name.').
-				  (self booleanSchemaPropertyNamed: 'exists' description: 'False when listed file is missing.').
-				  (self integerSchemaPropertyNamed: 'fileSize' description: 'File size in bytes.').
-				  (self schemaPropertyNamed: 'modificationTime' type: 'string' description: 'Modification time.').
-				  (self booleanSchemaPropertyNamed: 'isCurrent' description: 'True for current image history file.') };
-		  required: #( 'fileName' );
-		  additionalProperties: false;
-		  yourself
-]
-
 { #category : 'private - execution' }
 MCPToolChangeHistory >> commandForRequest: changeHistoryRequest [
 
@@ -130,16 +77,32 @@ MCPToolChangeHistory >> integerArraySchemaNamed: aName description: aDescription
 ]
 
 { #category : 'private - results' }
+MCPToolChangeHistory >> keysStatedInSummary [
+	"The summary already says how many entries, and the offset the next page starts at."
+
+	^ #( nextOffset )
+]
+
+{ #category : 'private - results' }
+MCPToolChangeHistory >> redundantKeys [
+	"An entry's summary prints its event class around its behavior and selector, which the entry already names."
+
+	^ #( summary )
+]
+
+{ #category : 'private - results' }
 MCPToolChangeHistory >> successSummaryForData: data operation: operation [
 
 	| action selectedCount performedCount previewCount |
-	operation = 'listFiles' ifTrue: [ ^ 'Listed ' , (data at: #files ifAbsent: [ #(  ) ]) size asString , ' change history files.' ].
+	operation = 'listFiles' ifTrue: [
+		^ 'Listed ' , (self textForCount: (data at: #files ifAbsent: [ #(  ) ]) size noun: 'change history file') , '.' ].
 	operation = 'listEntries' ifTrue: [
 			^ String streamContents: [ :stream |
 					  stream
 						  nextPutAll: 'Listed ';
-						  print: (data at: #entries ifAbsent: [ #(  ) ]) size;
-						  nextPutAll: ' change history entries'.
+						  nextPutAll: (self
+								   textForCount: (data at: #entries ifAbsent: [ #(  ) ]) size
+								   noun: 'change history entry').
 					  data at: #nextOffset ifPresent: [ :offset |
 							  stream
 								  nextPutAll: '. More available at offset ';
@@ -151,11 +114,12 @@ MCPToolChangeHistory >> successSummaryForData: data operation: operation [
 			(data at: #performed ifAbsent: [ false ])
 				ifTrue: [
 						performedCount := data at: #performedCount ifAbsent: [ 0 ].
-						^ 'Performed ' , action , ' for ' , performedCount asString , ' previewed changes from ' , selectedCount asString
-						  , ' selected history entries.' ]
+						^ 'Performed ' , action , ' for ' , (self textForCount: performedCount noun: 'previewed change') , ' from '
+						  , (self textForCount: selectedCount noun: 'selected history entry') , '.' ]
 				ifFalse: [
 						previewCount := data at: #previewCount ifAbsent: [ 0 ].
-						^ 'Previewed ' , action , ' for ' , previewCount asString , ' applicable changes from ' , selectedCount asString
-						  , ' selected history entries.' ] ].
+						^ 'Previewed ' , action , ' for ' , (self textForCount: previewCount noun: 'applicable change') , ' from '
+						  , (self textForCount: selectedCount noun: 'selected history entry') , '.' ] ].
 	^ 'Change history operation completed.'
 ]
+

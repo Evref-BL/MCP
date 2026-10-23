@@ -45,15 +45,6 @@ MCPToolListChangeHistoryFiles >> buildInputSchema [
 		  yourself
 ]
 
-{ #category : 'metadata' }
-MCPToolListChangeHistoryFiles >> buildOutputSchema [
-
-	| filesProperty |
-	filesProperty := self schemaPropertyNamed: 'files' type: 'array' description: 'Change history files.'.
-	filesProperty items: self changeHistoryLogSchemaProperty.
-	^ self standardOutputSchemaForDataProperties: { filesProperty } required: #( 'files' )
-]
-
 { #category : 'private - execution' }
 MCPToolListChangeHistoryFiles >> commandForRequest: changeHistoryRequest [
 

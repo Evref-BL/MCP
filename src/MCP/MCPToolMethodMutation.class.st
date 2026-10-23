@@ -110,16 +110,6 @@ MCPToolMethodMutation >> blockingPreCompileRuleClasses [
 	^ { ReDeadBlockRule }
 ]
 
-{ #category : 'metadata' }
-MCPToolMethodMutation >> buildOutputSchema [
-
-	^ self
-		  standardOutputSchemaForDataProperties: {
-				  (self schemaPropertyNamed: 'changeKind' type: 'string' description: 'Whether method_compile created or replaced a method.').
-				  self methodCritiquesSchemaProperty }
-		  required: #(  )
-]
-
 { #category : 'private' }
 MCPToolMethodMutation >> classReferenceNameFor: className classSide: classSide [
 
@@ -253,41 +243,6 @@ MCPToolMethodMutation >> failureMessageForRenameClassNamed: className classSide:
 MCPToolMethodMutation >> inputProperties [
 
 	^ self methodToolSpec at: #inputProperties
-]
-
-{ #category : 'private - schema' }
-MCPToolMethodMutation >> methodCritiqueSchema [
-
-	^ MCPStructureProperties new
-		  type: 'object';
-		  description: 'One included Renraku critique reported for the method.';
-		  properties: {
-				  (self schemaPropertyNamed: 'ruleClass' type: 'string' description: 'The Renraku rule class that reported the critique.').
-				  (self schemaPropertyNamed: 'title' type: 'string' description: 'The short critique title, including any rule-specific hint.').
-				  (self
-					   schemaPropertyNamed: 'description'
-					   type: 'string'
-					   description: 'The critique rationale explaining why the rule flagged the method.').
-				  (self
-					   integerSchemaPropertyNamed: 'start'
-					   description: 'The first character position of the critique interval in the method source when available.').
-				  (self
-					   integerSchemaPropertyNamed: 'stop'
-					   description: 'The last character position of the critique interval in the method source when available.') };
-		  required: #( 'ruleClass' 'title' 'description' );
-		  additionalProperties: false;
-		  yourself
-]
-
-{ #category : 'private - schema' }
-MCPToolMethodMutation >> methodCritiquesSchemaProperty [
-
-	^ (self
-		   schemaPropertyNamed: 'critiques'
-		   type: 'array'
-		   description: 'Renraku critiques included in compile output: all error-severity critiques plus selected non-error rules.')
-		  items: self methodCritiqueSchema;
-		  yourself
 ]
 
 { #category : 'private - specs' }

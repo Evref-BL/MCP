@@ -211,7 +211,7 @@ MCPToolRemoveMethodsTest >> testForceRemovesMethodsEvenWhenExternalSendersExistA
 	text := self firstTextFrom: result.
 	warnings := structured at: #warnings.
 	self deny: (result at: #isError ifAbsent: [ false ]).
-	self deny: (text includesSubstring: 'Warning:').
+	self assert: (text includesSubstring: 'Warning: This bypasses sender checks').
 	self assert: warnings equals: { 'This bypasses sender checks and may leave broken senders. history_entry_revert undoes it in the running image.' } asArray.
 	self deny: (MCPToolRemoveMethodsTestTarget includesSelector: self protectedSelectorSymbol).
 	self assert: (MCPToolRemoveMethodsTestSender includesSelector: #sendProtectedRemovalTarget).
@@ -266,7 +266,6 @@ MCPToolRemoveMethodsTest >> testReturnsStructuredErrorWhenAnyMethodIsMissing [
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
-	self assert: (structured at: #status) equals: 'error'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'MethodNotFound'.
 	self assert: (error at: #selector) equals: self missingSelectorString.

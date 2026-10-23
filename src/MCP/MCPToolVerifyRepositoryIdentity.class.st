@@ -27,6 +27,13 @@ MCPToolVerifyRepositoryIdentity >> annotations [
 	^ MCPStructureToolAnnotations readOnly
 ]
 
+{ #category : 'private - results' }
+MCPToolVerifyRepositoryIdentity >> keysStatedInSummary [
+	"The summary already says whether verification passed."
+
+	^ #( matched )
+]
+
 { #category : 'private - specs' }
 MCPToolVerifyRepositoryIdentity >> repositoryToolSpec [
 

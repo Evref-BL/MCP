@@ -32,6 +32,7 @@ MCPDebugSessionInfo >> asDictionary [
 		  (#reason -> record reason).
 		  (#lastStateId -> record stateId).
 		  (#createdAt -> record createdAt asString).
+		  (#attachedDebugger -> record debugger notNil).
 		  (#topFrame -> nil).
 		  (#exception -> nil).
 		  (#capabilities -> record capabilities) } asDictionary

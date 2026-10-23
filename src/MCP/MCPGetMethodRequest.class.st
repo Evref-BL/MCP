@@ -18,9 +18,24 @@ Class {
 { #category : 'instance creation' }
 MCPGetMethodRequest class >> fromRequest: aRequest tool: aTool [
 
+	| text reference className |
+	text := aTool selectorStringFromRequest: aRequest.
+	reference := MCPMethodReference fromString: text.
+	reference ifNotNil: [
+			^ self new
+				  initializeClassName: reference className
+				  selectorString: reference selector
+				  classSide: reference classSide
+				  includeVariableDetails: (aRequest booleanArgumentNamed: 'includeVariableDetails' default: false) ].
+	className := aRequest stringArgumentNamed: 'className'.
+	((MCPMethodReference looksLikeAReference: text) or: [ className isNil ]) ifTrue: [
+		MCPCommandError
+			signalErrorCode: #MethodReferenceUnreadable
+			message: (text ifNil: [ 'A method' ] ifNotNil: [ :each | each ]) , ' does not name a method. ' , MCPMethodReference helpText
+			details: { (#selector -> text) } asDictionary ].
 	^ self new
-		  initializeClassName: (aRequest stringArgumentNamed: 'className')
-		  selectorString: (aTool selectorStringFromRequest: aRequest)
+		  initializeClassName: className
+		  selectorString: text
 		  classSide: (aRequest booleanArgumentNamed: 'classSide' default: false)
 		  includeVariableDetails: (aRequest booleanArgumentNamed: 'includeVariableDetails' default: false)
 ]

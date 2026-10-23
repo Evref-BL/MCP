@@ -30,9 +30,27 @@ MCPToolGetClass >> annotations [
 ]
 
 { #category : 'metadata' }
+MCPToolGetClass >> batchArgumentName [
+
+	^ 'name'
+]
+
+{ #category : 'metadata' }
+MCPToolGetClass >> batchSummaryNoun [
+
+	^ 'classes'
+]
+
+{ #category : 'metadata' }
+MCPToolGetClass >> batchSummaryVerb [
+
+	^ 'Got'
+]
+
+{ #category : 'metadata' }
 MCPToolGetClass >> buildInputSchema [
 
-	| includeCommentProperty subclassDepthProperty upToSuperclassNameProperty |
+	| includeCommentProperty subclassDepthProperty upToSuperclassNameProperty nameProperty |
 	includeCommentProperty := MCPStructureProperties new
 		                          name: 'includeComment';
 		                          type: 'boolean';
@@ -53,100 +71,23 @@ MCPToolGetClass >> buildInputSchema [
 		                         minimum: 0;
 		                         maximum: self maximumSubclassDepth;
 		                         yourself.
+	nameProperty := MCPStructureProperties new
+		                name: 'name';
+		                type: #( 'string' 'array' );
+		                description: 'Class name, or several class names.';
+		                items: (MCPStructureProperties new
+			                 type: 'string';
+			                 description: 'A class name.';
+			                 yourself);
+		                yourself.
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties: {
-				  (MCPStructureProperties new
-					   name: 'name';
-					   type: 'string';
-					   description: 'Class name.';
-					   yourself).
+				  nameProperty.
 				  includeCommentProperty.
 				  upToSuperclassNameProperty.
 				  subclassDepthProperty };
 		  required: #( 'name' );
-		  yourself
-]
-
-{ #category : 'metadata' }
-MCPToolGetClass >> buildOutputSchema [
-
-	^ self
-		  standardOutputSchemaForDataProperties: self classDescriptionDataProperties , {
-				  ((self
-					    schemaPropertyNamed: 'superclasses'
-					    type: 'array'
-					    description: 'The included superclasses, starting from the direct superclass and moving upward.')
-					   items: self classDescriptionObjectSchema;
-					   yourself).
-				  ((self
-					    schemaPropertyNamed: 'subclasses'
-					    type: 'array'
-					    description: 'The included subclasses or descendants of the requested class, bounded by subclassDepth.')
-					   items: self classDescriptionObjectSchema;
-					   yourself) }
-		  required: self classDescriptionRequiredFields , #( 'superclasses' 'subclasses' )
-]
-
-{ #category : 'private - schema' }
-MCPToolGetClass >> classDescriptionDataProperties [
-
-	^ {
-		  (self schemaPropertyNamed: 'className' type: 'string' description: 'The requested class.').
-		  (self
-			   schemaPropertyNamed: 'superclassName'
-			   type: 'string'
-			   description: 'The direct superclass of the requested class, or an empty string for the root.').
-		  (self schemaPropertyNamed: 'packageName' type: 'string' description: 'The package that defines the class.').
-		  (self schemaPropertyNamed: 'tag' type: 'string' description: 'The package tag assigned to the class.').
-		  (self
-			   stringArraySchemaNamed: 'instanceSlotNames'
-			   description: 'The instance-side slots defined on the class.'
-			   itemDescription: 'An instance-side slot name.').
-		  (self
-			   stringArraySchemaNamed: 'classSlotNames'
-			   description: 'The class-side slots defined on the class.'
-			   itemDescription: 'A class-side slot name.').
-		  (self stringArraySchemaNamed: 'traitNames' description: 'The traits used by the class.' itemDescription: 'A trait name.').
-		  (self
-			   stringArraySchemaNamed: 'classTraitNames'
-			   description: 'The traits used by the class side.'
-			   itemDescription: 'A class-side trait name.').
-		  (self
-			   schemaPropertyNamed: 'traitComposition'
-			   type: 'string'
-			   description:
-			   'The full instance-side trait composition expression, preserving aliases, exclusions, and compound compositions.').
-		  (self
-			   schemaPropertyNamed: 'classTraitComposition'
-			   type: 'string'
-			   description: 'The full class-side trait composition expression, preserving aliases, exclusions, and compound compositions.').
-		  (self
-			   stringArraySchemaNamed: 'sharedPoolNames'
-			   description: 'The shared pools referenced by the class.'
-			   itemDescription: 'A shared pool name.').
-		  (self
-			   stringArraySchemaNamed: 'sharedVariableNames'
-			   description: 'The class variables defined on the class.'
-			   itemDescription: 'A class variable name.').
-		  (self schemaPropertyNamed: 'layoutClassName' type: 'string' description: 'The layout class used by the class.').
-		  (self
-			   integerSchemaPropertyNamed: 'instanceMethodCount'
-			   description: 'The number of instance-side methods defined on the class.').
-		  (self integerSchemaPropertyNamed: 'classMethodCount' description: 'The number of class-side methods defined on the class.').
-		  (self schemaPropertyNamed: 'classComment' type: 'string' description: 'The class comment when includeComment=true.') }
-]
-
-{ #category : 'private - schema' }
-MCPToolGetClass >> classDescriptionObjectSchema [
-
-	^ MCPStructureProperties new
-		  name: 'classDescription';
-		  type: 'object';
-		  description: 'Structured metadata for one class in the hierarchy.';
-		  properties: self classDescriptionDataProperties;
-		  required: self classDescriptionRequiredFields;
-		  additionalProperties: false;
 		  yourself
 ]
 
@@ -189,7 +130,7 @@ MCPToolGetClass >> defaultExposure [
 { #category : 'metadata' }
 MCPToolGetClass >> description [
 
-	^ 'Get metadata for one class. Optional superclass/subclass context. Use class_search to discover class names.'
+	^ 'Get metadata for one or more classes. Optional superclass/subclass context. Use class_search to discover class names.'
 ]
 
 { #category : 'private - hierarchy' }
@@ -222,19 +163,20 @@ MCPToolGetClass >> errorResultForError: anError className: className [
 { #category : 'executing' }
 MCPToolGetClass >> executeWithRequest: request [
 
-	^ self
-		  executeParsedRequestFrom: request
-		  do: [ :getRequest |
-				  | commandResult |
-				  commandResult := (self commandForRequest: getRequest) execute.
-				  self
-					  successResultText: (self
-							   successSummaryForClassName: commandResult className
-							   superclasses: commandResult superclasses
-							   subclasses: commandResult subclasses)
-					  data: commandResult data ]
-		  onError: [ :error :getRequest |
-			  self errorResultForError: error className: (self classNameForErrorFromParsedRequest: getRequest rawRequest: request) ]
+	^ self executeBatchedRequest: request do: [ :targetRequest |
+		  self
+			  executeParsedRequestFrom: targetRequest
+			  do: [ :getRequest |
+					  | commandResult |
+					  commandResult := (self commandForRequest: getRequest) execute.
+					  self
+						  successResultText: (self
+								   successSummaryForClassName: commandResult className
+								   superclasses: commandResult superclasses
+								   subclasses: commandResult subclasses)
+						  data: commandResult data ]
+			  onError: [ :error :getRequest |
+				  self errorResultForError: error className: (self classNameForErrorFromParsedRequest: getRequest rawRequest: targetRequest) ] ]
 ]
 
 { #category : 'private' }

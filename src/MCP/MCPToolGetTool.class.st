@@ -40,28 +40,6 @@ MCPToolGetTool >> annotations [
 	^ MCPStructureToolAnnotations readOnly
 ]
 
-{ #category : 'private - schema' }
-MCPToolGetTool >> annotationsSchemaProperty [
-
-	| property |
-	property := self schemaPropertyNamed: 'annotations' type: 'object' description: 'Standard MCP tool behavior hints.'.
-	property
-		properties: {
-				(self schemaPropertyNamed: 'title' type: 'string' description: 'Optional annotation title.').
-				(self schemaPropertyNamed: 'readOnlyHint' type: 'boolean' description: 'Whether the tool leaves its environment unchanged.').
-				(self
-					 schemaPropertyNamed: 'destructiveHint'
-					 type: 'boolean'
-					 description: 'Whether a modifying tool may perform destructive updates.').
-				(self schemaPropertyNamed: 'idempotentHint' type: 'boolean' description: 'Whether repeated calls have no additional effect.').
-				(self
-					 schemaPropertyNamed: 'openWorldHint'
-					 type: 'boolean'
-					 description: 'Whether the tool may interact with external entities.') };
-		additionalProperties: false.
-	^ property
-]
-
 { #category : 'metadata' }
 MCPToolGetTool >> buildInputSchema [
 
@@ -76,35 +54,22 @@ MCPToolGetTool >> buildInputSchema [
 		  yourself
 ]
 
-{ #category : 'metadata' }
-MCPToolGetTool >> buildOutputSchema [
-
-	| inputSchemaProperty toolProperty |
-	inputSchemaProperty := MCPStructureProperties new
-		                       name: 'inputSchema';
-		                       type: 'object';
-		                       description: 'JSON Schema object.';
-		                       additionalProperties: true;
-		                       yourself.
-	toolProperty := self schemaPropertyNamed: 'tool' type: 'object' description: 'Tool contract.'.
-	toolProperty
-		properties: {
-				(self schemaPropertyNamed: 'name' type: 'string' description: 'Tool name.').
-				(self schemaPropertyNamed: 'description' type: 'string' description: 'Tool description.').
-				(self schemaPropertyNamed: 'group' type: 'string' description: 'Tool catalog group.').
-				(self schemaPropertyNamed: 'exposure' type: 'string' description: 'Effective tool exposure.').
-				self annotationsSchemaProperty.
-				self keywordsSchemaProperty.
-				inputSchemaProperty };
-		required: #( 'name' 'description' 'group' 'exposure' 'annotations' 'keywords' 'inputSchema' );
-		additionalProperties: false.
-	^ self standardOutputSchemaForDataProperties: { toolProperty } required: #( 'tool' )
-]
-
 { #category : 'private - execution' }
 MCPToolGetTool >> commandForRequest: getRequest [
 
 	^ MCPGetToolCommand tool: self request: getRequest toolRegistry: self toolRegistry
+]
+
+{ #category : 'private - results' }
+MCPToolGetTool >> contentTextForStructuredContent: structuredContent [
+	"A contract is read in order to build a call, so it is written as YAML rather than as plain lines: lines cannot say whether a value is a number or the text of one, whether a list holds one item or is a string containing a comma, or where a value with spaces ends."
+
+	| data |
+	data := structuredContent at: #data ifAbsent: [ ^ super contentTextForStructuredContent: structuredContent ].
+	^ String streamContents: [ :stream |
+			  self summaryAndWarningsOn: stream for: structuredContent.
+			  stream nextPut: Character lf.
+			  stream nextPutAll: (MCPYamlWriter yamlFor: data indent: '') ]
 ]
 
 { #category : 'metadata' }
@@ -130,16 +95,6 @@ MCPToolGetTool >> executeWithRequest: request [
 				  contract := data at: #tool.
 				  self successResultText: 'Tool ' , (contract at: #name) , ' found.' data: data ]
 		  onError: [ :error :parsedRequest | self errorResultFor: error ]
-]
-
-{ #category : 'private - schema' }
-MCPToolGetTool >> keywordsSchemaProperty [
-
-	^ (self schemaPropertyNamed: 'keywords' type: 'array' description: 'Search terms associated with the tool.')
-		  items: (MCPStructureProperties new
-				   type: 'string';
-				   yourself);
-		  yourself
 ]
 
 { #category : 'private - request' }

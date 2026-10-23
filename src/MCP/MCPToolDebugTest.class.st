@@ -57,31 +57,6 @@ MCPToolDebugTest >> buildInputSchema [
 		  yourself
 ]
 
-{ #category : 'metadata' }
-MCPToolDebugTest >> buildOutputSchema [
-
-	^ self
-		  standardOutputSchemaForDataProperties: {
-				  (self booleanSchemaPropertyNamed: 'captured' description: 'Whether test execution stopped in a debug session.').
-				  (self booleanSchemaPropertyNamed: 'timedOut' description: 'Whether test execution timed out before completion or capture.').
-				  (self booleanSchemaPropertyNamed: 'passed' description: 'Whether the test completed without stopping or failing.').
-				  (self schemaPropertyNamed: 'className' type: 'string' description: 'SUnit TestCase subclass name.').
-				  (self schemaPropertyNamed: 'testMethodName' type: 'string' description: 'Executed test method selector.').
-				  (self
-					   stringEnumSchemaPropertyNamed: 'stopAt'
-					   description: 'Requested test execution phase.'
-					   values: MCPDebugTestRequest supportedStopPoints).
-				  (self schemaPropertyNamed: 'sessionId' type: 'string' description: 'Captured debug session identifier, when captured.').
-				  (self schemaPropertyNamed: 'stateId' type: 'string' description: 'Captured debug state token, when captured.').
-				  (self schemaPropertyNamed: 'session' type: 'object' description: 'Captured debug session summary.').
-				  (self schemaPropertyNamed: 'state' type: 'object' description: 'Immediate debug_state_get snapshot for captured execution.').
-				  (self integerSchemaPropertyNamed: 'timeoutMilliseconds' description: 'Effective timeout used for this run.').
-				  (self stringArraySchemaNamed: 'warnings' description: 'Debug-test-specific warnings.' itemDescription: 'A warning message.').
-				  (self schemaPropertyNamed: 'capabilities' type: 'object' description: 'Debug-test capability gates used for this response.') }
-		  required:
-		  #( 'captured' 'timedOut' 'passed' 'className' 'testMethodName' 'stopAt' 'timeoutMilliseconds' 'warnings' 'capabilities' )
-]
-
 { #category : 'private - execution' }
 MCPToolDebugTest >> commandForRequest: debugRequest [
 

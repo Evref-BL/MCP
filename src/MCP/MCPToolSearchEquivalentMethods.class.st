@@ -26,10 +26,7 @@ MCPToolSearchEquivalentMethods >> buildInputSchema [
 			               booleanSchemaPropertyNamed: 'classSide'
 			               description: 'Whether the reference method is on class side.'
 			               default: false).
-		              (self includeSourceSchemaPropertyWithDescription: 'Whether to include method source code in each result entry.') }
-	              ,
-	              (self paginationInputPropertiesWithLimitDescription:
-		               'Maximum number of methods to return. Use 0 to return no entries.').
+		              self offsetInputProperty }.
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties: properties;

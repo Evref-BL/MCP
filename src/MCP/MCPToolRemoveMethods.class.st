@@ -53,12 +53,6 @@ MCPToolRemoveMethods >> buildInputSchema [
 		  yourself
 ]
 
-{ #category : 'metadata' }
-MCPToolRemoveMethods >> buildOutputSchema [
-
-	^ self standardOutputSchemaForDataProperties: #(  ) required: #(  )
-]
-
 { #category : 'private - errors' }
 MCPToolRemoveMethods >> classNameForErrorFromParsedRequest: removeRequest rawRequest: rawRequest [
 
@@ -77,6 +71,12 @@ MCPToolRemoveMethods >> classSideForErrorFromParsedRequest: removeRequest rawReq
 MCPToolRemoveMethods >> commandForRequest: removeRequest [
 
 	^ MCPRemoveMethodsCommand tool: self request: removeRequest
+]
+
+{ #category : 'metadata' }
+MCPToolRemoveMethods >> defaultExposure [
+
+	^ 'static'
 ]
 
 { #category : 'metadata' }

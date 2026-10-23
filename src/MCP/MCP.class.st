@@ -514,6 +514,26 @@ MCP >> serverInfrastructureMetadata [
 	^ { (#'io.github.evref-bl/pharo' -> self pharoRuntimeMetadata) } asDictionary
 ]
 
+{ #category : 'private - tools' }
+MCP >> signalMissingToolNamed: aToolName [
+	"A name that does not resolve is the caller's mistake, not the server's, so it reads as one."
+
+	| suggestions details |
+	suggestions := MCPSelectorSuggestion
+		               namesLike: aToolName
+		               among: (self toolRegistry registrations collect: [ :each | each tool name ]).
+	details := Dictionary new
+		           at: #toolName put: aToolName;
+		           yourself.
+	suggestions ifNotEmpty: [ details at: #suggestedTools put: suggestions ].
+	MCPCommandError
+		signalErrorCode: #ToolNotFound
+		message: 'No MCP tool named ' , aToolName , '.' , (suggestions
+				 ifEmpty: [ ' Use tool_search to find one.' ]
+				 ifNotEmpty: [ ' Did you mean: ' , (', ' join: suggestions) , '?' ])
+		details: details
+]
+
 { #category : 'accessing' }
 MCP >> sortedTools [
 
@@ -564,7 +584,7 @@ MCP >> supportedPharoMajorVersions [
 { #category : 'private - tools' }
 MCP >> targetToolForCallRequest: callRequest [
 
-	^ self toolRegistry toolNamed: callRequest toolName ifAbsent: [ Error signal: 'Unknown MCP tool: ' , callRequest toolName ]
+	^ self toolRegistry toolNamed: callRequest toolName ifAbsent: [ self signalMissingToolNamed: callRequest toolName ]
 ]
 
 { #category : 'private - tools' }

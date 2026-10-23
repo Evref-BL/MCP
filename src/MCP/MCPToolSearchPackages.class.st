@@ -25,31 +25,11 @@ MCPToolSearchPackages class >> toolName [
 MCPToolSearchPackages >> buildInputSchema [
 
 	| properties |
-	properties := self packageQueryScopeInputProperties , self packageFilterInputProperties , {
-		              (self
-			               filterModeSchemaPropertyWithDescription: 'How package metadata filters are matched.'
-			               values: self basicFilterModes).
-		              (self caseSensitiveSchemaPropertyWithDescription: 'Whether package metadata matching is case-sensitive.') }
+	properties := self packageQueryScopeInputProperties , self packageFilterInputProperties
 	              ,
 	              (self paginationInputPropertiesWithLimitDescription:
 		               'Maximum number of matching packages to return. Use 0 to return no entries.').
 	^ self queryInputSchemaWithProperties: properties
-]
-
-{ #category : 'metadata' }
-MCPToolSearchPackages >> buildOutputSchema [
-
-	^ self
-		  minimalPagedQueryOutputSchemaForEntriesPropertyNamed: 'packages'
-		  entriesDescription: 'The package entries returned for the requested page.'
-		  entrySchema: self packageEntrySchema
-		  itemNounPhrase: 'package entries'
-]
-
-{ #category : 'metadata' }
-MCPToolSearchPackages >> defaultExposure [
-
-	^ 'static'
 ]
 
 { #category : 'metadata' }
@@ -105,19 +85,6 @@ MCPToolSearchPackages >> packageEntriesFromPackages: packages projectNames: pack
 	^ entries asArray
 ]
 
-{ #category : 'private - schema' }
-MCPToolSearchPackages >> packageEntrySchema [
-
-	^ MCPStructureProperties new
-		  name: 'packageEntry';
-		  type: 'object';
-		  description: 'Structured metadata for one queried package.';
-		  properties: self packageInfoDataProperties;
-		  required: #( 'packageName' 'projectNames' 'tagNames' );
-		  additionalProperties: false;
-		  yourself
-]
-
 { #category : 'private - request' }
 MCPToolSearchPackages >> packageFilterFieldNames [
 
@@ -131,21 +98,6 @@ MCPToolSearchPackages >> packageFilterInputProperties [
 		  (self schemaPropertyNamed: 'name' type: 'string' description: 'Match package names.').
 		  (self schemaPropertyNamed: 'projectName' type: 'string' description: 'Match owning projects.').
 		  (self schemaPropertyNamed: 'tag' type: 'string' description: 'Match package tags.') }
-]
-
-{ #category : 'private - schema' }
-MCPToolSearchPackages >> packageInfoDataProperties [
-
-	^ {
-		  (self schemaPropertyNamed: 'packageName' type: 'string' description: 'The package name.').
-		  (self
-			   stringArraySchemaNamed: 'projectNames'
-			   description: 'The project names that include the package.'
-			   itemDescription: 'A project name.').
-		  (self
-			   stringArraySchemaNamed: 'tagNames'
-			   description: 'The package tag names defined in the package.'
-			   itemDescription: 'A package tag name.') }
 ]
 
 { #category : 'private - template' }

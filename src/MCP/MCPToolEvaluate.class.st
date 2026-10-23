@@ -41,31 +41,20 @@ MCPToolEvaluate >> buildInputSchema [
 		  yourself
 ]
 
-{ #category : 'metadata' }
-MCPToolEvaluate >> buildOutputSchema [
-
-	^ self
-		  standardOutputSchemaForDataProperties: {
-				  (self schemaPropertyNamed: 'resultClassName' type: 'string' description: 'The name of the evaluated result''s class.').
-				  (self
-					   schemaPropertyNamed: 'resultPrintString'
-					   type: 'string'
-					   description:
-					   'A printString preview of the evaluated result, limited to ' , self resultPreviewCharacterLimit printString
-					   , ' characters.').
-				  (self
-					   booleanSchemaPropertyNamed: 'truncated'
-					   description: 'Present and true when the preview was cut short. Narrow the expression to see the rest.').
-				  (self
-					   integerSchemaPropertyNamed: 'resultSize'
-					   description: 'Element count of a truncated collection result, so a slice such as first: can be sized without evaluating it again.') }
-		  required: #( 'resultClassName' 'resultPrintString' )
-]
-
 { #category : 'private - execution' }
 MCPToolEvaluate >> commandForRequest: evaluateRequest [
 
 	^ MCPEvaluateCommand tool: self request: evaluateRequest resultPreviewCharacterLimit: self resultPreviewCharacterLimit
+]
+
+{ #category : 'private - results' }
+MCPToolEvaluate >> contentTextForStructuredContent: structuredContent [
+	"An evaluation answers one value or one failure, and the JSON envelope around it repeats the summary, the class and the signaler context that the text already carries."
+
+	^ structuredContent
+		  at: #data
+		  ifPresent: [ :data | self resultTextFor: data ]
+		  ifAbsent: [ self failureTextFor: structuredContent ]
 ]
 
 { #category : 'metadata' }
@@ -97,6 +86,31 @@ MCPToolEvaluate >> executeWithRequest: request [
 					  details: (self errorDetailsFor: error) ]
 ]
 
+{ #category : 'private - results' }
+MCPToolEvaluate >> failureTextFor: structuredContent [
+
+	| error |
+	error := structuredContent at: #error ifAbsent: [ ^ super contentTextForStructuredContent: structuredContent ].
+	^ String streamContents: [ :stream |
+			  stream nextPutAll: (structuredContent at: #summary ifAbsent: [ '' ]).
+			  error at: #sourceLine ifPresent: [ :sourceLine |
+					  stream
+						  nextPut: Character lf;
+						  nextPutAll: sourceLine ].
+			  error at: #suggestedSelectors ifPresent: [ :selectors |
+					  stream
+						  nextPut: Character lf;
+						  nextPutAll: 'Did you mean: '.
+					  selectors
+						  do: [ :each | stream nextPutAll: each ]
+						  separatedBy: [ stream nextPutAll: ', ' ] ].
+			  error at: #stackTrace ifPresent: [ :frames |
+					  frames do: [ :each |
+							  stream
+								  nextPut: Character lf;
+								  nextPutAll: each ] ] ]
+]
+
 { #category : 'private - request' }
 MCPToolEvaluate >> parsedRequestFromToolRequest: request [
 
@@ -109,8 +123,32 @@ MCPToolEvaluate >> resultPreviewCharacterLimit [
 	^ 10000
 ]
 
+{ #category : 'private - results' }
+MCPToolEvaluate >> resultTextFor: data [
+
+	| printString |
+	printString := data at: #resultPrintString.
+	(data includesKey: #truncated) ifFalse: [ ^ printString ].
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: printString;
+				  nextPut: Character lf;
+				  nextPutAll: '[truncated'.
+			  data
+				  at: #resultSize
+				  ifPresent: [ :size |
+						  stream
+							  nextPutAll: ': ';
+							  nextPutAll: (data at: #resultClassName);
+							  nextPutAll: ' of ';
+							  print: size;
+							  nextPutAll: ' elements' ].
+			  stream nextPut: $] ]
+]
+
 { #category : 'private' }
 MCPToolEvaluate >> runtimeFailureMessageFor: anError [
+	"The signaler context is the first frame of the stack trace the failure already reports, so it is not repeated here."
 
 	| message |
 	message := anError messageText ifNil: [ anError asString ] ifNotNil: [ :text | text asString ].
@@ -119,11 +157,7 @@ MCPToolEvaluate >> runtimeFailureMessageFor: anError [
 				  nextPutAll: 'Evaluation failed during execution (';
 				  nextPutAll: anError class name;
 				  nextPutAll: '): ';
-				  nextPutAll: message.
-			  anError signalerContext ifNotNil: [ :context |
-					  stream
-						  nextPutAll: ' Signaler context: ';
-						  nextPutAll: context printString ] ]
+				  nextPutAll: message ]
 ]
 
 { #category : 'private' }

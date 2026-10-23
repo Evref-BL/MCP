@@ -101,6 +101,13 @@ MCPDebugStateInfo >> limitedPrintStringOf: anObject [
 ]
 
 { #category : 'private - stack' }
+MCPDebugStateInfo >> lineNumberIn: aString at: anIndex [
+	"A selected range can point one past the end of what it was measured against."
+
+	^ aString lineNumberCorrespondingToIndex: ((anIndex max: 1) min: aString size)
+]
+
+{ #category : 'private - stack' }
 MCPDebugStateInfo >> locationInfoForContext: aContext frameIndex: frameIndex [
 
 	aContext ifNil: [ ^ nil ].
@@ -231,15 +238,27 @@ MCPDebugStateInfo >> slicedContextsFrom: contextArray [
 { #category : 'private - stack' }
 MCPDebugStateInfo >> sourceInfoForContext: aContext [
 
-	| range |
+	| range source lineBounds firstLine lastLine shift |
 	aContext ifNil: [ ^ nil ].
+	source := aContext sourceCode.
+	source ifNil: [ ^ nil ].
 	range := self selectedCodeRangeForContext: aContext.
+	lineBounds := OrderedCollection new.
+	source lineIndicesDo: [ :start :endWithoutDelimiters :end | lineBounds add: start -> endWithoutDelimiters ].
+	(range isNil or: [ lineBounds isEmpty ]) ifTrue: [
+			^ {
+				  (#sourceCode -> source).
+				  (#firstLineNumber -> 1).
+				  (#selectedRange -> #(  )) } asDictionary ].
+	firstLine := (self lineNumberIn: source at: range first) - request sourceContextLines max: 1.
+	lastLine := (self lineNumberIn: source at: range last) + request sourceContextLines min: lineBounds size.
+	shift := (lineBounds at: firstLine) key - 1.
 	^ {
-		  (#sourceCode -> aContext sourceCode).
-		  (#selectedRange -> (range ifNil: [ #(  ) ] ifNotNil: [
-				    {
-					    range first.
-					    range last } ])) } asDictionary
+		  (#sourceCode -> (source copyFrom: (lineBounds at: firstLine) key to: (lineBounds at: lastLine) value)).
+		  (#firstLineNumber -> firstLine).
+		  (#selectedRange -> {
+			   (range first - shift).
+			   (range last - shift) }) } asDictionary
 ]
 
 { #category : 'private - variables' }

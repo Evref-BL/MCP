@@ -46,12 +46,6 @@ MCPToolRunTests >> buildInputSchema [
 		  yourself
 ]
 
-{ #category : 'metadata' }
-MCPToolRunTests >> buildOutputSchema [
-
-	^ self standardOutputSchemaForDataProperties: self testRunDataProperties required: #( 'runCount' 'passedCount' )
-]
-
 { #category : 'private - execution' }
 MCPToolRunTests >> commandForRequest: runTestsRequest [
 
@@ -111,55 +105,31 @@ MCPToolRunTests >> coveragePercentageTextFor: coverageData [
 	^ percentage printShowingDecimalPlaces: 2
 ]
 
-{ #category : 'private - coverage schema' }
-MCPToolRunTests >> coverageResultObjectSchema [
+{ #category : 'private - results' }
+MCPToolRunTests >> dataTextOn: stream for: data [
+	"A failed test is read as a line naming it and why, not as a record."
 
-	| property |
-	property := self schemaPropertyNamed: 'coverage' type: 'object' description: 'Coverage summary returned by test_coverage_run.'.
-	property
-		properties: {
-				(self integerSchemaPropertyNamed: 'methodCount' description: 'The number of instrumented methods.').
-				(self
-					 integerSchemaPropertyNamed: 'coveredMethodCount'
-					 description: 'The number of instrumented methods that executed at least once.').
-				(self
-					 integerSchemaPropertyNamed: 'fullyCoveredMethodCount'
-					 description: 'The number of executed methods whose sequence nodes all executed.').
-				(self
-					 integerSchemaPropertyNamed: 'uncoveredMethodCount'
-					 description: 'The number of instrumented methods that did not execute.').
-				(self
-					 integerSchemaPropertyNamed: 'partiallyCoveredMethodCount'
-					 description: 'The number of executed methods with at least one unexecuted sequence node.').
-				(self integerSchemaPropertyNamed: 'nodeCount' description: 'The number of instrumented sequence nodes.').
-				(self integerSchemaPropertyNamed: 'coveredNodeCount' description: 'The number of executed sequence nodes.').
-				(self
-					 schemaPropertyNamed: 'percentage'
-					 type: #( 'number' 'null' )
-					 description: 'Node coverage percentage, or null when no nodes were instrumented.').
-				(self
-					 coverageMethodArrayPropertyNamed: 'uncoveredMethods'
-					 description: 'Capped list of instrumented methods that did not execute.').
-				(self
-					 coverageMethodArrayPropertyNamed: 'partiallyCoveredMethods'
-					 description: 'Capped list of executed methods with at least one unexecuted sequence node.').
-				(self
-					 coverageMethodArrayPropertyNamed: 'coveredMethods'
-					 description: 'Optional capped list of methods that executed at least once. Present only when includeCoveredMethods is true.').
-				(self
-					 booleanSchemaPropertyNamed: 'uncoveredMethodsTruncated'
-					 description: 'Whether uncoveredMethods was capped by methodLimit.').
-				(self
-					 booleanSchemaPropertyNamed: 'partiallyCoveredMethodsTruncated'
-					 description: 'Whether partiallyCoveredMethods was capped by methodLimit.').
-				(self
-					 booleanSchemaPropertyNamed: 'coveredMethodsTruncated'
-					 description: 'Whether coveredMethods was capped by methodLimit. Present only when includeCoveredMethods is true.') };
-		required: #( 'methodCount' 'coveredMethodCount' 'fullyCoveredMethodCount' 'uncoveredMethodCount' 'partiallyCoveredMethodCount'
-			   'nodeCount' 'coveredNodeCount' 'percentage' 'uncoveredMethods' 'partiallyCoveredMethods' 'uncoveredMethodsTruncated'
-			   'partiallyCoveredMethodsTruncated' );
-		additionalProperties: false.
-	^ property
+	| rest |
+	#( failures errors ) do: [ :key |
+			(data at: key ifAbsent: [ #(  ) ]) do: [ :entry |
+					stream
+						nextPut: Character lf;
+						nextPutAll: (key = #failures
+								 ifTrue: [ 'failed ' ]
+								 ifFalse: [ 'error ' ]);
+						nextPutAll: (entry at: #test ifAbsent: [ '?' ]).
+					entry at: #errorClass ifPresent: [ :errorClass |
+							stream
+								nextPutAll: ' (';
+								nextPutAll: errorClass;
+								nextPut: $) ].
+					entry at: #message ifPresent: [ :message |
+							stream
+								nextPutAll: ': ';
+								nextPutAll: message ] ] ].
+	rest := data copy.
+	#( failures errors ) do: [ :key | rest removeKey: key ifAbsent: [ nil ] ].
+	super dataTextOn: stream for: rest
 ]
 
 { #category : 'defaults' }
@@ -225,6 +195,13 @@ MCPToolRunTests >> failureMessageForTestNames: testNames error: anError [
 				  nextPutAll: anError class name;
 				  nextPutAll: '): ';
 				  nextPutAll: anError messageText ]
+]
+
+{ #category : 'private - results' }
+MCPToolRunTests >> keysStatedInSummary [
+	"The summary already reads 'Ran 731 tests (728 passed). 3 failures, 0 errors.'"
+
+	^ #( runCount passedCount failureCount errorCount skippedCount )
 ]
 
 { #category : 'private - request' }
@@ -297,29 +274,6 @@ MCPToolRunTests >> successSummaryForData: data [
 						  nextPutAll: '%.' ] ]
 ]
 
-{ #category : 'private - tests' }
-MCPToolRunTests >> testIssueArraySchemaNamed: propertyName description: propertyDescription [
-
-	^ (self schemaPropertyNamed: propertyName type: 'array' description: propertyDescription)
-		  items: self testIssueObjectSchema;
-		  yourself
-]
-
-{ #category : 'private - tests' }
-MCPToolRunTests >> testIssueObjectSchema [
-
-	^ MCPStructureProperties new
-		  type: 'object';
-		  properties: {
-				  (self schemaPropertyNamed: 'test' type: 'string' description: 'Test reference.').
-				  (self schemaPropertyNamed: 'message' type: 'string' description: 'Failure or error message.').
-				  (self schemaPropertyNamed: 'errorClass' type: 'string' description: 'Error class.').
-				  (self stringArraySchemaNamed: 'parameters' description: 'Parameterized test values.' itemDescription: nil) };
-		  required: #( 'test' );
-		  additionalProperties: false;
-		  yourself
-]
-
 { #category : 'private - errors' }
 MCPToolRunTests >> testNamesForErrorFromParsedRequest: runTestsRequest rawRequest: rawRequest [
 
@@ -331,21 +285,6 @@ MCPToolRunTests >> testNamesForErrorFromParsedRequest: runTestsRequest rawReques
 MCPToolRunTests >> testNamesFromRequests: testRequests [
 
 	^ (testRequests collect: [ :each | each displayName ]) asArray
-]
-
-{ #category : 'private - tests' }
-MCPToolRunTests >> testRunDataProperties [
-
-	^ {
-		  (self integerSchemaPropertyNamed: 'runCount' description: 'Tests run.').
-		  (self integerSchemaPropertyNamed: 'passedCount' description: 'Tests passed.').
-		  (self stringArraySchemaNamed: 'skipped' description: 'Skipped tests.' itemDescription: nil).
-		  (self testIssueArraySchemaNamed: 'failures' description: 'Failed tests.').
-		  (self testIssueArraySchemaNamed: 'errors' description: 'Errored tests.').
-		  (self booleanSchemaPropertyNamed: 'timedOut' description: 'Timeout stopped run.').
-		  (self stringArraySchemaNamed: 'unrunPackages' description: 'Unrun test packages.' itemDescription: nil).
-		  (self stringArraySchemaNamed: 'unrunClasses' description: 'Unrun test classes.' itemDescription: nil).
-		  (self stringArraySchemaNamed: 'unrunMethods' description: 'Unrun test methods.' itemDescription: nil) }
 ]
 
 { #category : 'private - tests' }

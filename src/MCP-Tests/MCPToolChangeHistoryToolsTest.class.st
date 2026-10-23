@@ -50,19 +50,6 @@ MCPToolChangeHistoryToolsTest >> testChangeHistoryToolsDeclareExpectedInputs [
 ]
 
 { #category : 'tests' }
-MCPToolChangeHistoryToolsTest >> testEntryListSchemaAdvertisesNonCodeEntryKind [
-
-	| entriesProperty entryKindProperty entrySchema tool |
-	tool := MCPToolListChangeHistoryEntries new.
-	entriesProperty := ((tool outputSchema properties detect: [ :each | each name = 'data' ]) extraProperties at: #properties)
-		                   detect: [ :each | each name = 'entries' ].
-	entrySchema := entriesProperty extraProperties at: #items.
-	entryKindProperty := (entrySchema extraProperties at: #properties) detect: [ :each | each name = 'entryKind' ].
-	self assert: (entryKindProperty extraProperties at: #enum) asArray equals: #( 'code' 'session' 'other' ).
-	self assert: (entryKindProperty extraProperties at: #default) equals: 'code'
-]
-
-{ #category : 'tests' }
 MCPToolChangeHistoryToolsTest >> testListChangeHistoryEntriesReturnsEntries [
 
 	| data |

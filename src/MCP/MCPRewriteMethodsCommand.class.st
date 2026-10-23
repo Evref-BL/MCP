@@ -172,8 +172,19 @@ MCPRewriteMethodsCommand >> stableHashForValue: anObject [
 { #category : 'private - results' }
 MCPRewriteMethodsCommand >> successSummaryForReport: report [
 
-	report apply ifTrue: [ ^ 'Applied ' , report appliedCount asString , ' method rewrite change(s).' ].
-	^ 'Previewed ' , report changeCount asString , ' method rewrite change(s).'
+	| count |
+	count := report apply
+		         ifTrue: [ report appliedCount ]
+		         ifFalse: [ report changeCount ].
+	^ String streamContents: [ :stream |
+		  stream
+			  nextPutAll: (report apply
+					   ifTrue: [ 'Applied ' ]
+					   ifFalse: [ 'Previewed ' ]);
+			  print: count;
+			  nextPutAll: ' method rewrite change'.
+		  count = 1 ifFalse: [ stream nextPut: $s ].
+		  stream nextPut: $. ]
 ]
 
 { #category : 'private - validating' }

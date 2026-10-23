@@ -54,35 +54,6 @@ MCPToolDebugBreakpointOperation >> breakpointToolSpec [
 	self subclassResponsibility
 ]
 
-{ #category : 'metadata' }
-MCPToolDebugBreakpointOperation >> buildOutputSchema [
-
-	^ self
-		  standardOutputSchemaForDataProperties: {
-				  (self
-					   schemaPropertyNamed: 'breakpoints'
-					   type: 'array'
-					   description: 'Breakpoint records returned by list or clear operations.').
-				  (self
-					   integerSchemaPropertyNamed: 'totalCount'
-					   description: 'Total number of tracked transient breakpoints after the operation.').
-				  (self schemaPropertyNamed: 'breakpointId' type: 'string' description: 'Opaque breakpoint identifier.').
-				  (self schemaPropertyNamed: 'className' type: 'string' description: 'Class that owns the instrumented method.').
-				  (self schemaPropertyNamed: 'selector' type: 'string' description: 'Instrumented method selector.').
-				  (self booleanSchemaPropertyNamed: 'classSide' description: 'Whether the instrumented method is on the class side.').
-				  (self schemaPropertyNamed: 'targetKind' type: 'string' description: 'Breakpoint target kind.').
-				  (self integerSchemaPropertyNamed: 'sourceStart' description: 'Resolved source start offset.').
-				  (self integerSchemaPropertyNamed: 'sourceStop' description: 'Resolved source stop offset.').
-				  (self schemaPropertyNamed: 'nodeClassName' type: 'string' description: 'AST node class used as the DebugPoint target.').
-				  (self booleanSchemaPropertyNamed: 'enabled' description: 'Whether the breakpoint is enabled.').
-				  (self booleanSchemaPropertyNamed: 'removed' description: 'True when a remove operation removed this breakpoint.').
-				  (self integerSchemaPropertyNamed: 'removedCount' description: 'Number of breakpoints removed by a clear operation.').
-				  (self schemaPropertyNamed: 'targetString' type: 'string' description: 'Human-readable DebugPoint target string.').
-				  (self schemaPropertyNamed: 'createdAt' type: 'string' description: 'Creation timestamp string.').
-				  (self schemaPropertyNamed: 'capabilities' type: 'object' description: 'Breakpoint capability gates used for this response.') }
-		  required: #( 'totalCount' 'capabilities' )
-]
-
 { #category : 'private - execution' }
 MCPToolDebugBreakpointOperation >> commandForRequest: debugRequest [
 
@@ -105,6 +76,14 @@ MCPToolDebugBreakpointOperation >> inputProperties [
 MCPToolDebugBreakpointOperation >> parsedRequestFromToolRequest: request [
 
 	^ MCPDebugBreakpointsRequest fromRequest: request tool: self operation: self actionName
+]
+
+{ #category : 'private - results' }
+MCPToolDebugBreakpointOperation >> redundantKeys [
+	"The breakpoint already names the method it is set on, and its kind says whether it watches the
+	whole method or one node."
+
+	^ super redundantKeys , #( targetString )
 ]
 
 { #category : 'private - schema' }
