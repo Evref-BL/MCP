@@ -58,13 +58,14 @@ MCPProtocolEraTest >> testALegacyRequestIsUnaffectedByTheVersionCheck [
 
 { #category : 'tests' }
 MCPProtocolEraTest >> testInitializeStillNegotiatesTheOldWay [
-	"Legacy semantics are untouched: the server answers a version it supports rather than refusing."
+	"Legacy semantics are untouched: the server answers a version it supports rather than refusing, and never a modern one, which a client opening with initialize could not speak."
 
 	| response |
 	response := self handleJSON:
 		            '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"1900-01-01","capabilities":{},"clientInfo":{},"websiteUrl":null}}'.
 	self assert: (response includesSubstring: '"result"').
-	self assert: (response includesSubstring: MCP latestProtocolVersion).
+	self assert: (response includesSubstring: MCP latestLegacyProtocolVersion).
+	self deny: (response includesSubstring: MCP modernProtocolVersions first).
 	self deny: (response includesSubstring: '-32022')
 ]
 
@@ -272,6 +273,25 @@ MCPProtocolEraTest >> testALegacyCatalogCarriesNoCachingHints [
 	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'.
 	self deny: (response includesSubstring: 'ttlMs').
 	self deny: (response includesSubstring: 'cacheScope')
+]
+
+{ #category : 'tests' }
+MCPProtocolEraTest >> testTheModernVersionIsAdvertised [
+
+	self assert: (MCP supportedProtocolVersions includes: '2026-07-28').
+	self assert: MCP latestProtocolVersion equals: '2026-07-28'.
+	self assert: (self mcpWithoutObservabilityExport rpcServerDiscover at: #supportedVersions) equals: MCP supportedProtocolVersions
+]
+
+{ #category : 'tests' }
+MCPProtocolEraTest >> testDeclaringALegacyVersionIsAnsweredTheLegacyWay [
+	"A request naming a legacy version gets what that version defines, even though it named it the modern way."
+
+	| response |
+	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{'
+		            , (self metaWithVersion: MCP latestLegacyProtocolVersion) , '}}'.
+	self assert: (response includesSubstring: '"result"').
+	self deny: (response includesSubstring: 'resultType')
 ]
 
 { #category : 'tests' }

@@ -45,9 +45,12 @@ MCP class >> resourceContentsCacheMilliseconds [
 
 { #category : 'protocol' }
 MCP class >> isModernRequest: someParams [
-	"A modern request declares its own protocol version in _meta. A legacy one opens with initialize and says nothing per request."
+	"A modern request declares a modern protocol version in _meta. A legacy one opens with initialize and says nothing per request; one that declares a legacy version is answered the legacy way, which is what it named."
 
-	^ (self requestedProtocolVersionIn: someParams) isNotNil
+	| declared |
+	declared := self requestedProtocolVersionIn: someParams.
+	declared ifNil: [ ^ false ].
+	^ self modernProtocolVersions includes: declared
 ]
 
 { #category : 'protocol' }
@@ -68,17 +71,38 @@ MCP class >> requestedProtocolVersionIn: someParams [
 ]
 
 { #category : 'protocol' }
+MCP class >> latestLegacyProtocolVersion [
+
+	^ self legacyProtocolVersions last
+]
+
+{ #category : 'protocol' }
 MCP class >> latestProtocolVersion [
 
 	^ self supportedProtocolVersions last
 ]
 
 { #category : 'protocol' }
-MCP class >> negotiatedProtocolVersionFor: requestedVersion [
+MCP class >> legacyProtocolVersions [
+	"The revisions that open with an initialize handshake and carry a session."
 
-	^ (self supportedProtocolVersions includes: requestedVersion)
+	^ #( '2025-03-26' '2025-06-18' '2025-11-25' )
+]
+
+{ #category : 'protocol' }
+MCP class >> modernProtocolVersions [
+	"The revisions that declare their version on every request and keep no session."
+
+	^ #( '2026-07-28' )
+]
+
+{ #category : 'protocol' }
+MCP class >> negotiatedProtocolVersionFor: requestedVersion [
+	"initialize is how a legacy client opens, so it negotiates among legacy versions only. Answering a modern version here would name one the client cannot speak, since the modern era has no handshake to answer with."
+
+	^ (self legacyProtocolVersions includes: requestedVersion)
 		  ifTrue: [ requestedVersion ]
-		  ifFalse: [ self latestProtocolVersion ]
+		  ifFalse: [ self latestLegacyProtocolVersion ]
 ]
 
 { #category : 'instance creation' }
@@ -92,7 +116,7 @@ MCP class >> onlyTools: toolsOrToolClasses [
 { #category : 'protocol' }
 MCP class >> supportedProtocolVersions [
 
-	^ #( '2025-03-26' '2025-06-18' '2025-11-25' )
+	^ self legacyProtocolVersions , self modernProtocolVersions
 ]
 
 { #category : 'observability' }
