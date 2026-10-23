@@ -103,7 +103,7 @@ MCPRepositorySpecTest >> testRepositoryCommitResultReturnsDictionary [
 { #category : 'tests' }
 MCPRepositorySpecTest >> testRepositoryCreateUpdateExportRequestsParseTypedInput [
 
-	| commitRequest createBranchRequest createRequest diffRequest exportRequest fetchRequest pullRequest pushRequest switchBranchRequest updateRequest |
+	| commitRequest createRequest diffRequest exportRequest reloadRequest updateRequest |
 	createRequest := MCPRepositoryCreateRequest
 		                 fromRequest: (self requestWithArguments: {
 					                  (#name -> 'MCP Repo').
@@ -144,32 +144,11 @@ MCPRepositorySpecTest >> testRepositoryCreateUpdateExportRequestsParseTypedInput
 		                 tool: nil.
 	self assert: commitRequest operation equals: 'commit'.
 	self assert: commitRequest message equals: 'Commit from test'.
-	fetchRequest := MCPRepositoryFetchRequest
-		                fromRequest: (self requestWithArguments: { (#name -> 'MCP Repo') } asDictionary)
-		                tool: nil.
-	self assert: fetchRequest operation equals: 'fetch'.
-	pullRequest := MCPRepositoryPullRequest
-		               fromRequest: (self requestWithArguments: { (#name -> 'MCP Repo') } asDictionary)
-		               tool: nil.
-	self assert: pullRequest operation equals: 'pull'.
-	pushRequest := MCPRepositoryPushRequest
-		               fromRequest: (self requestWithArguments: { (#name -> 'MCP Repo') } asDictionary)
-		               tool: nil.
-	self assert: pushRequest operation equals: 'push'.
-	createBranchRequest := MCPRepositoryCreateBranchRequest
-		                       fromRequest: (self requestWithArguments: {
-					                        (#name -> 'MCP Repo').
-					                        (#branchName -> 'feature') } asDictionary)
-		                       tool: nil.
-	self assert: createBranchRequest operation equals: 'createBranch'.
-	self assert: createBranchRequest branchName equals: 'feature'.
-	switchBranchRequest := MCPRepositorySwitchBranchRequest
-		                       fromRequest: (self requestWithArguments: {
-					                        (#name -> 'MCP Repo').
-					                        (#branchName -> 'main') } asDictionary)
-		                       tool: nil.
-	self assert: switchBranchRequest operation equals: 'switchBranch'.
-	self assert: switchBranchRequest branchName equals: 'main'
+	reloadRequest := MCPRepositoryReloadRequest
+		                 fromRequest: (self requestWithArguments: { (#name -> 'MCP Repo') } asDictionary)
+		                 tool: nil.
+	self assert: reloadRequest operation equals: 'reload'.
+	self assert: reloadRequest repositoryReference name equals: 'MCP Repo'
 ]
 
 { #category : 'tests' }

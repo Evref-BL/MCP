@@ -12,9 +12,7 @@ Class {
 		'actionLog',
 		'modifiedPackages',
 		'headCommitId',
-		'isDetachedHead',
-		'upstreamRemoteName',
-		'upstreamBranchName'
+		'isDetachedHead'
 	],
 	#category : 'MCP-Tests-Resources',
 	#package : 'MCP-Tests-Resources'
@@ -95,7 +93,6 @@ MCPTestIceRepository >> initialize [
 
 	branchName := 'main'.
 	headDescription := 'initial'.
-	knownBranchNames := OrderedCollection with: branchName.
 	remoteNames := #(  ).
 	actionLog := OrderedCollection new.
 	modifiedPackages := #(  ).
@@ -193,16 +190,3 @@ MCPTestIceRepository >> subdirectory [
 
 	^ ''
 ]
-
-{ #category : 'accessing' }
-MCPTestIceRepository >> upstreamBranchName [
-
-	^ upstreamBranchName ifNil: [ '' ]
-]
-
-{ #category : 'accessing' }
-MCPTestIceRepository >> upstreamRemoteName [
-
-	^ upstreamRemoteName ifNil: [ '' ]
-]
-

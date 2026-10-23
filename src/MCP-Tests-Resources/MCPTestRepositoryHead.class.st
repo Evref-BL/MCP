@@ -20,12 +20,6 @@ MCPTestRepositoryHead class >> repository: aRepository [
 ]
 
 { #category : 'testing' }
-MCPTestRepositoryHead >> hasUpstream [
-
-	^ repository upstreamRemoteName notEmpty or: [ repository upstreamBranchName notEmpty ]
-]
-
-{ #category : 'testing' }
 MCPTestRepositoryHead >> isDetached [
 
 	^ repository isDetachedHead
@@ -35,10 +29,4 @@ MCPTestRepositoryHead >> isDetached [
 MCPTestRepositoryHead >> repository: aRepository [
 
 	repository := aRepository
-]
-
-{ #category : 'accessing' }
-MCPTestRepositoryHead >> upstream [
-
-	^ MCPTestRepositoryUpstream remoteName: repository upstreamRemoteName branchName: repository upstreamBranchName
 ]
