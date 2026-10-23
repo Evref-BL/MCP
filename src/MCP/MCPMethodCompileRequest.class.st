@@ -11,7 +11,8 @@ Class {
 		'classSide',
 		'methodSource',
 		'protocol',
-		'force'
+		'force',
+		'frame'
 	],
 	#category : 'MCP-Requests',
 	#package : 'MCP',
@@ -43,6 +44,12 @@ MCPMethodCompileRequest >> commandForTool: aTool [
 ]
 
 { #category : 'accessing' }
+MCPMethodCompileRequest >> frame [
+
+	^ frame
+]
+
+{ #category : 'accessing' }
 MCPMethodCompileRequest >> force [
 
 	^ force = true
@@ -59,6 +66,10 @@ MCPMethodCompileRequest >> initializeFromRequest: request tool: aTool [
 		                withInternalLineEndings.
 	protocol := request stringArgumentNamed: 'protocol'.
 	force := request booleanArgumentNamed: 'force' default: false.
+	frame := request stringArgumentNamed: 'frame'.
+	frame ifNil: [
+			className ifNil: [ MCPInvalidToolInput signalMissingRequiredArgumentNamed: 'className' forTool: aTool ].
+			protocol ifNil: [ MCPInvalidToolInput signalMissingRequiredArgumentNamed: 'protocol' forTool: aTool ] ].
 	^ self
 ]
 

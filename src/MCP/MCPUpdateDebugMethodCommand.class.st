@@ -11,6 +11,12 @@ Class {
 	#tag : 'Commands'
 }
 
+{ #category : 'private - data' }
+MCPUpdateDebugMethodCommand >> updateWarnings [
+
+	^ #( 'Compiling into a paused frame mutates the running image and may resume a suspended process.' )
+]
+
 { #category : 'private - actions' }
 MCPUpdateDebugMethodCommand >> analyzerForRecord: aRecord [
 
@@ -329,7 +335,7 @@ MCPUpdateDebugMethodCommand >> resultDataUsing: details critiques: critiques pro
 	record := details at: #record.
 	state := self stateDataForRecord: record.
 	repairActions := state ifNil: [ #(  ) ] ifNotNil: [ state at: #repairActions ifAbsent: [ #(  ) ] ].
-	warnings := tool updateWarnings.
+	warnings := self updateWarnings.
 	methodData := self methodDataFor: (details at: #method).
 	data := {
 		        (#sessionId -> record sessionId).

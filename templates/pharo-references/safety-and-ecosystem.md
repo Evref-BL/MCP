@@ -205,12 +205,11 @@ Debugger tools are discoverable through the `debugging` group. They work with
 non-halting probes that record values while code runs, and with attached
 human-opened debuggers and their tracked Pharo `DebugSession` records.
 
-Treat debugger state references as opaque and state-scoped. After stepping,
-resuming, restarting, terminating, or editing from a debug state, use the newly
-returned state before expanding variables or evaluating in a frame again.
+Treat debugger state references as opaque and state-scoped. After editing from a
+debug state or proceeding it, read the state again before evaluating in a frame.
 
-Use `debug_method_update` only from a paused debug state and only after reading the
-offered repair actions. It uses the same critique gate as method editing before
+Compile into a frame only from a paused debug state and only after reading the
+offered repair actions. It uses the same critique gate as any method edit before
 proceeding a repaired computation.
 
 ## Evaluation Escape Hatch

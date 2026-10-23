@@ -119,11 +119,11 @@ Epicea history. Apply or revert operations stay in `history_entry_apply` and
 
 ## Debugger References Are Stale
 
-Debugger `stateId`, `frameRef`, and `variableRef` values are scoped to one
-debug_state_get snapshot. After a control action, debugger edit, or resume, discard
-old references and use the newly returned state.
+Debugger `stateId` and `frame` values are scoped to one `debug_session`
+snapshot. After an edit or a resume, discard old references and read the state
+again.
 
-If a human opened the debugger, attach through the debugging tools and let the
+If a human opened the debugger, reach it through `debug_session` and let the
 debugger controller own UI actions. Do not drive debugger windows with raw
 `image_evaluate` code.
 

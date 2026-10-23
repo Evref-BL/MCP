@@ -58,10 +58,7 @@ MCPDebugRepairAnalyzer >> classSideForBehavior: aBehavior [
 { #category : 'private - actions' }
 MCPDebugRepairAnalyzer >> debugMethodUpdateArgumentsForFrameRef: frameRef [
 
-	^ {
-		  (#sessionId -> record sessionId).
-		  (#stateId -> record stateId).
-		  (#frameRef -> frameRef) } asDictionary
+	^ { (#frame -> frameRef) } asDictionary
 ]
 
 { #category : 'private' }
@@ -197,7 +194,7 @@ MCPDebugRepairAnalyzer >> repairActionForContext: aContext behavior: aBehavior s
 		  (#repairActionId -> kind).
 		  (#kind -> kind).
 		  (#description -> (self descriptionForKind: kind behavior: aBehavior selector: aSelector)).
-		  (#toolName -> 'debug_method_update').
+		  (#toolName -> 'method_compile').
 		  (#sessionId -> record sessionId).
 		  (#stateId -> record stateId).
 		  (#frameRef -> frameRef).

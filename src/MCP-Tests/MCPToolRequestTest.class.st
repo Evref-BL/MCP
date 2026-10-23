@@ -68,7 +68,7 @@ MCPToolRequestTest >> testNonNegativeIntegerArgumentClampsValuesAboveMaximum [
 
 	| request |
 	request := MCPToolRequest new
-		           tool: MCPToolDebugState new;
+		           tool: MCPToolDebugSession new;
 		           arguments: { (#stackLimit -> 51) } asDictionary;
 		           yourself.
 	self assert: (request nonNegativeIntegerArgumentNamed: 'stackLimit' default: 5 maximum: 50) equals: 50

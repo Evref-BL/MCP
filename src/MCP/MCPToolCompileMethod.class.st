@@ -18,6 +18,12 @@ MCPToolCompileMethod class >> toolName [
 ]
 
 { #category : 'metadata' }
+MCPToolCompileMethod >> additionalKeywords [
+
+	^ super additionalKeywords , #( 'repair' 'frame' 'debugger' 'proceed' )
+]
+
+{ #category : 'metadata' }
 MCPToolCompileMethod >> batchArgumentName [
 
 	^ 'source'
@@ -63,6 +69,19 @@ MCPToolCompileMethod >> defaultExposure [
 	^ 'static'
 ]
 
+{ #category : 'executing' }
+MCPToolCompileMethod >> executeBatchedRequest: aRequest do: executionBlock [
+	"A frame names the one method that is paused, so repairing it is never a batch."
+
+	(aRequest stringArgumentNamed: 'frame') ifNil: [ ^ super executeBatchedRequest: aRequest do: executionBlock ].
+	(aRequest namesAListAt: self batchArgumentName) ifTrue: [
+			MCPCommandError
+				signalErrorCode: #MethodCompileFrameTakesOneSource
+				message: 'A frame names one method, so compiling into it takes one source.'
+				details: { (#frame -> (aRequest stringArgumentNamed: 'frame')) } asDictionary ].
+	^ executionBlock value: aRequest
+]
+
 { #category : 'private - specs' }
 MCPToolCompileMethod >> methodToolSpec [
 
@@ -96,7 +115,19 @@ MCPToolCompileMethod >> methodToolSpec [
 				    name: 'protocol';
 				    type: 'string';
 				    description: 'The target protocol. For extension methods, use an extension protocol such as *Package-Name.';
+				    yourself).
+			   (MCPStructureProperties new
+				    name: 'force';
+				    type: 'boolean';
+				    description: 'Compile even when critiques are reported.';
+				    default: false;
+				    yourself).
+			   (MCPStructureProperties new
+				    name: 'frame';
+				    type: 'string';
+				    description:
+					    'A frame reference from debug_session. Given, the source replaces the method that frame stopped in and the computation proceeds, and className and protocol are taken from the frame.';
 				    yourself) }).
-		  (#requiredProperties -> #( 'className' 'source' 'protocol' )) } asDictionary
+		  (#requiredProperties -> #( 'source' )) } asDictionary
 ]
 

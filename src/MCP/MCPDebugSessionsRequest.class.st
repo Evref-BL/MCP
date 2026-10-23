@@ -1,5 +1,7 @@
 "
-Request object for debug session registry operations.
+Parsed input for debug_session.
+
+It carries at most one reference: a debugger a person has open, or a session already attached. With none, the tool lists what is open. The snapshot options are not exposed; the defaults are what an agent reading a frame wants.
 "
 Class {
 	#name : 'MCPDebugSessionsRequest',
@@ -13,26 +15,13 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPDebugSessionsRequest class >> fromRequest: aRequest tool: aTool operation: operationName [
+MCPDebugSessionsRequest class >> fromRequest: aRequest tool: aTool [
 
-	(self supportedOperations includes: operationName) ifFalse: [
-			MCPCommandError
-				signalErrorCode: #DebugSessionsOperationUnsupported
-				message: 'Unsupported debug sessions operation: ' , operationName asString , '.'
-				details: {
-						(#operation -> operationName).
-						(#supportedOperations -> self supportedOperations) } asDictionary ].
 	^ self new
-		  operation: operationName;
-		  sessionId: (aRequest stringArgumentNamed: 'sessionId');
-		  candidateRef: (aRequest stringArgumentNamed: 'candidateRef');
+		  operation: 'session';
+		  candidateRef: (aRequest stringArgumentNamed: 'session');
+		  includeReceiver: true;
 		  yourself
-]
-
-{ #category : 'accessing' }
-MCPDebugSessionsRequest class >> supportedOperations [
-
-	^ #( 'list' 'get' 'remove' 'search' 'attach' )
 ]
 
 { #category : 'accessing' }

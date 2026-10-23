@@ -55,7 +55,7 @@ MCPToolStructuredOutputTest >> testDebugResultDropsWhatItAlreadySays [
 				          at: #selector put: '/';
 				          yourself);
 		         yourself.
-	contentText := MCPToolDebugState new contentTextForStructuredContent: (Dictionary new
+	contentText := MCPToolDebugSession new contentTextForStructuredContent: (Dictionary new
 		               at: #summary put: 'Summary.';
 		               at: #data put: (Dictionary new
 				                at: #sessionId put: 'debug-session-1';

@@ -32,11 +32,18 @@ MCPToolEvaluate >> buildInputSchema [
 
 	^ MCPStructureInputSchema new
 		  type: 'object';
-		  properties: { (MCPStructureProperties new
-				   name: 'code';
-				   type: 'string';
-				   description: 'The Smalltalk code to execute in the running Pharo image.';
-				   yourself) };
+		  properties: {
+				  (MCPStructureProperties new
+					   name: 'code';
+					   type: 'string';
+					   description: 'The Smalltalk code to execute in the running Pharo image.';
+					   yourself).
+				  (MCPStructureProperties new
+					   name: 'frame';
+					   type: 'string';
+					   description:
+						   'A frame reference from debug_session. Given, the code is evaluated in that paused frame, where the frame''s variables are in scope.';
+					   yourself) };
 		  required: #( 'code' );
 		  yourself
 ]
@@ -158,6 +165,13 @@ MCPToolEvaluate >> runtimeFailureMessageFor: anError [
 				  nextPutAll: anError class name;
 				  nextPutAll: '): ';
 				  nextPutAll: message ]
+]
+
+{ #category : 'private' }
+MCPToolEvaluate >> syntaxFailureMessageFor: aNotice [
+	"Compiling against a paused frame reports no line: the expression is the caller's, not a method's."
+
+	^ self syntaxFailureMessageFor: aNotice line: nil
 ]
 
 { #category : 'private' }

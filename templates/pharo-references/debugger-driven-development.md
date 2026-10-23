@@ -14,12 +14,12 @@ repair action.
 
 ## Main Flow
 
-1. Get a state with `debug_candidate_attach`, then `debug_state_get`.
+1. Get a state with `debug_session`, passing a reference from its listing.
 2. Check `repairActions` before inventing an edit target.
-3. Call `debug_method_update` with the action's `sessionId`, `stateId`, and `frameRef`.
+3. Call `method_compile` with the action's `frame` and your `source`.
 4. Review returned `critiques`.
 5. If the edit is blocked by critiques and the critiques are acceptable, retry
-   with `ignoreCritiques=true`.
+   with `force=true`.
 6. Continue with the returned state when execution pauses again.
 
 ## Must Do
@@ -43,33 +43,33 @@ repair action.
 
 ## Missing Methods
 
-For `MessageNotUnderstood`, `debug_method_update` creates the method implied by the
+For `MessageNotUnderstood`, `method_compile` with a `frame` creates the method implied by the
 paused message send. The target behavior, selector, class side, and frame are
 derived from the debug state; do not guess them in the request.
 
-You may omit `methodSource` when the default generated source is acceptable.
-Provide `methodSource` when the method should do real work. The compiled method
+You may use the repair action's `defaultMethodSource` when it is acceptable.
+Provide your own `source` when the method should do real work. The compiled method
 is formatted before it is returned or used to continue execution.
 
 ## Stub Methods
 
 For `subclassResponsibility`, `shouldBeImplemented`, and `notYetImplemented`,
-`debug_method_update` recompiles the method associated with the selected repair frame.
+`method_compile` with a `frame` recompiles the method associated with the selected repair frame.
 Use the repair action's frame reference instead of selecting a target class by
 hand.
 
 ## Critiques
 
-`debug_method_update` uses the same critique gate expected from method-editing tools. It
+`method_compile` uses the same critique gate expected from method-editing tools. It
 stops before proceeding when critiques are reported unless
-`ignoreCritiques=true`.
+`force=true`.
 
-Use `ignoreCritiques=true` only after reading the critiques and deciding that
+Use `force=true` only after reading the critiques and deciding that
 continuing the suspended computation is still the right next step.
 
 ## Proceeding
 
-After a successful accepted edit, `debug_method_update` attempts to proceed the repaired
+After a successful accepted edit, `method_compile` attempts to proceed the repaired
 computation. Outcomes include completed, paused, running, timed out, or blocked
 by critiques.
 
@@ -79,10 +79,9 @@ timed out, avoid issuing stale frame commands.
 
 ## Human-Owned Debuggers
 
-For debugger windows opened by a human, discover candidates with
-`debug_candidate_search`, attach with `debug_candidate_attach`, and let the
-debugger controller perform control actions. The visible debugger remains the
-UI owner. Do not use general `image_evaluate` code to drive Morphic debugger
+For debugger windows opened by a human, list them with `debug_session` and read
+one by passing its reference back; attaching happens on the way. The visible
+debugger remains the UI owner. Do not use general `image_evaluate` code to drive Morphic debugger
 widgets or mutate contexts directly.
 
 When the user asks you to perform a bounded action and give control back, run
