@@ -162,8 +162,8 @@ Add `apply` to make the changes. One call is enough; preview first only when
 you want to read them before they land. `history_entry_revert` undoes a rewrite
 that turned out wrong.
 
-A critique rule stands for its own patterns, so its name can be given instead
-of writing them out:
+Any rewrite rule stands for its own patterns, so its name can be given instead
+of writing them out. That includes Pharo's own, not only MCP's:
 
 ```json
 {
