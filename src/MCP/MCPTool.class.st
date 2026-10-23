@@ -504,14 +504,62 @@ MCPTool >> errorResultText: aString details: aDictionary [
 
 { #category : 'error handling' }
 MCPTool >> errorStackTraceForContext: aContext [
+	"The frames nearest the failure also carry what the failing code was holding, since a name on
+	its own rarely says why the call went wrong. Deeper frames stay named only, so one failure
+	does not cost a page."
 
-	^ ((self framesUpToCallerIn: (aContext stackOfSize: self errorStackTraceLimit)) collect: [ :each | each printString ]) asArray
+	| frames |
+	frames := self framesUpToCallerIn: (aContext stackOfSize: self errorStackTraceLimit).
+	^ (frames withIndexCollect: [ :each :index |
+		   | variableTexts |
+		   variableTexts := index <= self errorStackTraceVariableFrameLimit
+			                    ifTrue: [ self frameVariableTextsFor: each ]
+			                    ifFalse: [ #(  ) ].
+		   variableTexts
+			   ifEmpty: [ each printString ]
+			   ifNotEmpty: [
+					   String streamContents: [ :stream |
+							   stream nextPutAll: each printString.
+							   variableTexts do: [ :text |
+									   stream
+										   nextPut: Character lf;
+										   nextPutAll: '   ';
+										   nextPutAll: text ] ] ] ]) asArray
 ]
 
 { #category : 'private - results' }
 MCPTool >> errorStackTraceLimit [
 
 	^ 20
+]
+
+{ #category : 'private - results' }
+MCPTool >> errorStackTraceValueCharacterLimit [
+
+	^ 80
+]
+
+{ #category : 'private - results' }
+MCPTool >> errorStackTraceVariableFrameLimit [
+
+	^ 3
+]
+
+{ #category : 'private - results' }
+MCPTool >> errorStackTraceVariableLimit [
+
+	^ 10
+]
+
+{ #category : 'error handling' }
+MCPTool >> errorValueTextFor: aBlock [
+	"A frame holds values from code that already failed, so printing one can fail in turn."
+
+	| text |
+	text := [ aBlock value printString ] on: Error do: [ :error | '<unprintable>' ].
+	text size > self errorStackTraceValueCharacterLimit ifTrue: [
+		text := (text first: self errorStackTraceValueCharacterLimit) , '...' ].
+	^ self inlineValueTextFor: text
 ]
 
 { #category : 'private - results' }
@@ -589,6 +637,20 @@ MCPTool >> failureMessageFor: anError [
 					  stream
 						  nextPutAll: ': ';
 						  nextPutAll: message ] ]
+]
+
+{ #category : 'error handling' }
+MCPTool >> frameVariableTextsFor: aContext [
+	"The receiver first, then the frame's arguments and temporaries under their own names."
+
+	| texts |
+	texts := OrderedCollection new.
+	"A nil receiver is already stated by the frame, which names UndefinedObject."
+	aContext receiver ifNotNil: [ texts add: 'self=' , (self errorValueTextFor: [ aContext receiver ]) ].
+	([ aContext temporaryVariableNames ] on: Error do: [ :error | #(  ) ]) do: [ :name |
+			texts size >= self errorStackTraceVariableLimit ifTrue: [ ^ texts asArray ].
+			texts add: name asString , '=' , (self errorValueTextFor: [ aContext tempNamed: name ]) ].
+	^ texts asArray
 ]
 
 { #category : 'error handling' }
