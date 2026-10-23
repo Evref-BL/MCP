@@ -268,8 +268,8 @@ MCPToolRewriteMethodsTest >> testMissingClassScopeRejectsRewriteBeforePartialPre
 	suggestions := error at: #suggestions.
 	self assert: (result at: #isError).
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
-	self assert: (error at: #className) equals: 'MCPDefinitelyMissingRewriteClass'.
-	self assert: (error at: #scopeName) equals: 'classNames'.
+	self assert: (error at: #class) equals: 'MCPDefinitelyMissingRewriteClass'.
+	self assert: (error at: #scope) equals: 'classes'.
 	self assert: suggestions size <= 5.
 	self assert: ((error at: #message) includesSubstring: 'Did you mean:').
 	self assert: ((self sourceForSelector: #previewTarget) includesSubstring: 'oldValue')
@@ -313,7 +313,7 @@ MCPToolRewriteMethodsTest >> testPreviewChangesAreSortedByClassNameClassSideAndS
 	changes := data at: #changes.
 	triples := changes collect: [ :each |
 			           {
-				           (each at: #className).
+				           (each at: #class).
 				           (each at: #classSide).
 				           (each at: #selector) } ].
 	self assert: triples asArray equals: {
@@ -351,7 +351,7 @@ MCPToolRewriteMethodsTest >> testPreviewReturnsChangesWithoutMutatingMethod [
 	self deny: (data at: #apply).
 	self assert: (data at: #changeCount) equals: 1.
 	self assert: (data at: #appliedCount) equals: 0.
-	self assert: (change at: #className) equals: self targetClassName.
+	self assert: (change at: #class) equals: self targetClassName.
 	self assert: (change at: #classSide) equals: false.
 	self assert: (change at: #selector) equals: 'previewTarget'.
 	self assert: ((change at: #oldSource) includesSubstring: 'oldValue').

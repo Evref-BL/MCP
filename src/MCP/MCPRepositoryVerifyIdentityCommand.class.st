@@ -29,7 +29,7 @@ MCPRepositoryVerifyIdentityCommand >> checkBranchNameFor: repositoryInfo checked
 	self
 		addMismatchIfExpected: self request branchName
 		actual: repositoryInfo branchName
-		field: 'branchName'
+		field: 'branch'
 		checkedFields: checkedFields
 		mismatches: mismatches
 ]
@@ -65,7 +65,7 @@ MCPRepositoryVerifyIdentityCommand >> checkModifiedPackageNamesFor: repositoryIn
 	self
 		addMismatchIfExpected: (self sortedStringsFrom: self request modifiedPackageNames)
 		actual: repositoryInfo modifiedPackageNames
-		field: 'modifiedPackageNames'
+		field: 'modifiedPackages'
 		checkedFields: checkedFields
 		mismatches: mismatches
 ]
@@ -77,7 +77,7 @@ MCPRepositoryVerifyIdentityCommand >> checkPackageNamesFor: repositoryInfo check
 	self
 		addMismatchIfExpected: (self sortedStringsFrom: self request packageNames)
 		actual: repositoryInfo packageNames
-		field: 'packageNames'
+		field: 'packages'
 		checkedFields: checkedFields
 		mismatches: mismatches
 ]
@@ -166,7 +166,7 @@ MCPRepositoryVerifyIdentityCommand >> signalMissingExpectedIdentityFields [
 		signalErrorCode: #RepositoryIdentityExpectationRequired
 		message: 'repository_identity_verify requires at least one expected identity field besides name.'
 		details: (self request requestedContext copy
-				 at: #expectedFields put: #( 'location' 'branchName' 'subdirectory' 'packageNames' 'modifiedPackageNames'
+				 at: #expectedFields put: #( 'location' 'branch' 'subdirectory' 'packages' 'modifiedPackages'
 					    'isModified' );
 				 yourself)
 ]

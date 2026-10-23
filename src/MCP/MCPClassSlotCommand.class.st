@@ -1,7 +1,7 @@
 "
 Abstract command for class-slot operations.
 
-Subclasses provide #slotName, #classSide, and the operation-specific refactoring.
+Subclasses provide #slot, #classSide, and the operation-specific refactoring.
 "
 Class {
 	#name : 'MCPClassSlotCommand',

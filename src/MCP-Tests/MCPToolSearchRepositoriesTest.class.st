@@ -40,7 +40,7 @@ MCPToolSearchRepositoriesTest >> testCanFilterByClassName [
 				beta }
 		do: [
 				result := self callToolWith: {
-						          (#className -> self class name asString) } asDictionary.
+						          (#class -> self class name asString) } asDictionary.
 				data := self dataFrom: result.
 				repositoryNames := (data at: #repositories) collect: [ :each | each at: #name ].
 				self deny: (result at: #isError ifAbsent: [ false ]).
@@ -82,7 +82,7 @@ MCPToolSearchRepositoriesTest >> testCanFilterByPackageNameAndModifiedState [
 				beta }
 		do: [
 				result := self callToolWith: {
-						          (#packageName -> 'MCP').
+						          (#package -> 'MCP').
 						          (#isModified -> true) } asDictionary.
 				data := self dataFrom: result.
 				repositoryNames := (data at: #repositories) collect: [ :each | each at: #name ].
@@ -114,7 +114,7 @@ MCPToolSearchRepositoriesTest >> testListsRegisteredRepositoriesWithStructuredDa
 				self assert: (entry at: #isModified).
 				self deny: (entry at: #isMissing).
 				self assert: (entry at: #packageCount) equals: 2.
-				self assert: (entry at: #modifiedPackageNames) equals: #( 'MCP' 'MCP-Tests' ) ]
+				self assert: (entry at: #modifiedPackages) equals: #( 'MCP' 'MCP-Tests' ) ]
 ]
 
 { #category : 'tests' }
@@ -157,7 +157,7 @@ MCPToolSearchRepositoriesTest >> testListsStaleRepositoryAsMissingAndContinues [
 				entry := self entryNamed: 'MCP Stale Repository' in: (data at: #repositories).
 				self assert: (entry at: #isMissing) equals: true.
 				self assert: (entry at: #location) equals: missingLocation pathString.
-				self deny: (entry includesKey: #branchName) ]
+				self deny: (entry includesKey: #branch) ]
 ]
 
 { #category : 'private - calling' }

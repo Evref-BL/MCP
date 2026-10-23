@@ -212,11 +212,11 @@ MCPToolChangeHistoryTest >> testListEntriesReportsDirectoryPathAsNotFile [
 	result := self callToolWith: {
 			          (#action -> 'listEntries').
 			          (#directoryPath -> directory parent fullName).
-			          (#historyFileName -> directory basename) } asDictionary.
+			          (#historyFile -> directory basename) } asDictionary.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #errorCode) equals: 'ChangeHistoryPathNotFile'.
-	self assert: (error at: #historyFileName) equals: directory basename
+	self assert: (error at: #historyFile) equals: directory basename
 ]
 
 { #category : 'tests' }
@@ -229,11 +229,11 @@ MCPToolChangeHistoryTest >> testListEntriesReportsUnreadableHistoryFile [
 		result := self callToolWith: {
 				          (#action -> 'listEntries').
 				          (#directoryPath -> file parent fullName).
-				          (#historyFileName -> file basename) } asDictionary.
+				          (#historyFile -> file basename) } asDictionary.
 		error := self errorFrom: result.
 		self assert: (result at: #isError).
 		self assert: (error at: #errorCode) equals: 'ChangeHistoryFileUnreadable'.
-		self assert: (error at: #historyFileName) equals: file basename.
+		self assert: (error at: #historyFile) equals: file basename.
 		self assert: (error includesKey: #causeClass) ] ensure: [ file ensureDelete ]
 ]
 
@@ -253,10 +253,10 @@ MCPToolChangeHistoryTest >> testListEntriesReturnsGranularCodeChangeData [
 			self assert: entries notEmpty.
 			firstEntry := entries first.
 			self assert: (firstEntry includesKey: #index).
-			self assert: (firstEntry includesKey: #eventClassName).
+			self assert: (firstEntry includesKey: #eventClass).
 			self deny: (firstEntry includesKey: #entryKind).
-			self assert: (firstEntry at: #packageName) equals: 'MCP-Tests'.
-			self assert: (firstEntry at: #behaviorName) equals: class name.
+			self assert: (firstEntry at: #package) equals: 'MCP-Tests'.
+			self assert: (firstEntry at: #behavior) equals: class name.
 			self assert: (firstEntry at: #classSide) equals: false.
 			self assert: (firstEntry at: #selector) equals: 'rescuedValue' ]
 ]
@@ -278,10 +278,10 @@ MCPToolChangeHistoryTest >> testListEntriesSupportsHistoryFileName [
 					        ifNone: [ self skip: 'No existing change history file.' ] ].
 			result := self callToolWith: {
 					          (#action -> 'listEntries').
-					          (#historyFileName -> (file at: #fileName)) } asDictionary.
+					          (#historyFile -> (file at: #file)) } asDictionary.
 			data := self dataFrom: result.
 			entries := data at: #entries.
-			self assert: (data at: #historyFileName) equals: (file at: #fileName).
+			self assert: (data at: #historyFile) equals: (file at: #file).
 			self assert: entries size <= MCPToolListChangeHistoryEntries new defaultEntryLimit ]
 ]
 
@@ -291,7 +291,7 @@ MCPToolChangeHistoryTest >> testListFilesReportsFilePathAsNotDirectory [
 	| data error file filePath result |
 	data := self dataFrom: (self callToolWith: { (#action -> 'listFiles') } asDictionary).
 	file := (data at: #files) detect: [ :each | each at: #isCurrent ifAbsent: [ false ] ].
-	filePath := (self defaultHistoryDirectoryPath asFileReference / (file at: #fileName)) fullName.
+	filePath := (self defaultHistoryDirectoryPath asFileReference / (file at: #file)) fullName.
 	result := self callToolWith: {
 			          (#action -> 'listFiles').
 			          (#directoryPath -> filePath) } asDictionary.
@@ -322,12 +322,12 @@ MCPToolChangeHistoryTest >> testListFilesReturnsCurrentHistoryFile [
 	result := self callToolWith: { (#action -> 'listFiles') } asDictionary.
 	data := self dataFrom: result.
 	files := data at: #files.
-	allowedFileKeys := #( fileName exists fileSize modificationTime isCurrent ) asSet.
+	allowedFileKeys := #( file exists fileSize modificationTime isCurrent ) asSet.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: files notEmpty.
 	self assert: (files anySatisfy: [ :each | each at: #isCurrent ifAbsent: [ false ] ]).
 	self assert: (files allSatisfy: [ :each |
-			 (each includesKey: #fileName) and: [ each keys allSatisfy: [ :key | allowedFileKeys includes: key ] ] ])
+			 (each includesKey: #file) and: [ each keys allSatisfy: [ :key | allowedFileKeys includes: key ] ] ])
 ]
 
 { #category : 'tests' }
@@ -353,7 +353,7 @@ MCPToolChangeHistoryTest >> testNonCodeEntryDictionaryHasExpectedShape [
 	| entry |
 	entry := (MCPChangeHistoryEntryInfo fromEvent: EpSessionStart new) asDictionary.
 	self assert: entry equals: {
-			(#eventClassName -> 'EpSessionStart').
+			(#eventClass -> 'EpSessionStart').
 			(#entryKind -> 'session') } asDictionary
 ]
 

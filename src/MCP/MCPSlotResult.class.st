@@ -29,7 +29,7 @@ MCPSlotResult >> asDictionary [
 
 	| data |
 	data := self newClassInfoDictionary.
-	data at: #slotName put: self slotName.
+	data at: #slot put: self slotName.
 	data at: #classSide put: self classSide.
 	^ data
 ]

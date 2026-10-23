@@ -13,7 +13,7 @@ Class {
 MCPToolRemoveMethodsTest >> classBatchArguments [
 
 	^ {
-		  (#className -> 'MCPToolRemoveMethodsTestTarget').
+		  (#class -> 'MCPToolRemoveMethodsTestTarget').
 		  (#classSide -> true).
 		  (#selectors -> self classBatchSelectors) } asDictionary
 ]
@@ -72,7 +72,7 @@ MCPToolRemoveMethodsTest >> firstTextFrom: aResult [
 MCPToolRemoveMethodsTest >> instanceBatchArguments [
 
 	^ {
-		  (#className -> 'MCPToolRemoveMethodsTestTarget').
+		  (#class -> 'MCPToolRemoveMethodsTestTarget').
 		  (#classSide -> false).
 		  (#selectors -> self instanceBatchSelectors) } asDictionary
 ]
@@ -192,7 +192,7 @@ MCPToolRemoveMethodsTest >> testDefaultsToRemovingInstanceSideMethodsWhenClassSi
 
 	| result |
 	result := self callToolWith: {
-			          (#className -> 'MCPToolRemoveMethodsTestTarget').
+			          (#class -> 'MCPToolRemoveMethodsTestTarget').
 			          (#selectors -> self instanceBatchSelectors) } asDictionary.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self deny: (MCPToolRemoveMethodsTestTarget includesSelector: self firstInstanceBatchSelector).
@@ -204,7 +204,7 @@ MCPToolRemoveMethodsTest >> testForceRemovesMethodsEvenWhenExternalSendersExistA
 
 	| result structured text warnings |
 	result := self callToolWith: {
-			          (#className -> 'MCPToolRemoveMethodsTestTarget').
+			          (#class -> 'MCPToolRemoveMethodsTestTarget').
 			          (#classSide -> false).
 			          (#selectors -> { self protectedSelector }) } asDictionary.
 	structured := self structuredContentFrom: result.
@@ -225,7 +225,7 @@ MCPToolRemoveMethodsTest >> testForceRemovesSuperOnlyOverride [
 	self ensureMethodSource: 'printString ^ super printString' protocol: 'tests' on: MCPToolRemoveMethodsTestTarget.
 	[
 		result := self callToolWith: {
-				          (#className -> 'MCPToolRemoveMethodsTestTarget').
+				          (#class -> 'MCPToolRemoveMethodsTestTarget').
 				          (#classSide -> false).
 				          (#selectors -> #( 'printString' )) } asDictionary.
 		self deny: (result at: #isError ifAbsent: [ false ]).
@@ -258,7 +258,7 @@ MCPToolRemoveMethodsTest >> testReturnsStructuredErrorWhenAnyMethodIsMissing [
 
 	| error result structured |
 	result := self callToolWith: {
-			          (#className -> 'MCPToolRemoveMethodsTestTarget').
+			          (#class -> 'MCPToolRemoveMethodsTestTarget').
 			          (#classSide -> false).
 			          (#selectors -> {
 				           self firstInstanceBatchSelectorString.
@@ -277,7 +277,7 @@ MCPToolRemoveMethodsTest >> testToolRequiresSelectorsInSchema [
 
 	| classSideProperty |
 	classSideProperty := MCPToolRemoveMethods new inputSchema properties detect: [ :each | each name = 'classSide' ].
-	self assert: MCPToolRemoveMethods new inputSchema required asSet equals: #( 'className' 'selectors' ) asSet.
+	self assert: MCPToolRemoveMethods new inputSchema required asSet equals: #( 'class' 'selectors' ) asSet.
 	self assert: (classSideProperty extraProperties at: #default) equals: false
 ]
 

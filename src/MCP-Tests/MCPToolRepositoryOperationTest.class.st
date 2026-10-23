@@ -188,21 +188,21 @@ MCPToolRepositoryOperationTest >> testAdoptHeadAdoptsRepositoryHeadAndReportsBef
 			result := self callToolWith: {
 					          (#action -> 'adoptHead').
 					          (#name -> repository name).
-					          (#branchName -> 'main') } asDictionary.
+					          (#branch -> 'main') } asDictionary.
 			data := self dataFrom: result.
 			self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
 			self assert: repository modifiedPackages isEmpty.
 			self assert: repository workingCopy referenceCommit id equals: 'head-2'.
 			self
 				assert: data keys asSet
-				equals: #( adoptedCommitId branchName didAdopt headDescription modifiedPackageNamesBefore previousReferenceCommitId
+				equals: #( adoptedCommitId branch didAdopt headDescription modifiedPackageNamesBefore previousReferenceCommitId
 					   referenceCommitId ) asSet.
 			self assert: (data at: #modifiedPackageNamesBefore) equals: #( 'MCP' 'MCP-Tests' ).
 			self assert: (data at: #previousReferenceCommitId) equals: 'head-1'.
 			self assert: (data at: #adoptedCommitId) equals: 'head-2'.
 			self assert: (data at: #referenceCommitId) equals: 'head-2'.
 			self assert: (data at: #didAdopt).
-			self assert: (data at: #branchName) equals: 'main'.
+			self assert: (data at: #branch) equals: 'main'.
 			self assert: (data at: #headDescription) equals: 'main' ]
 ]
 
@@ -219,7 +219,7 @@ MCPToolRepositoryOperationTest >> testAdoptHeadClearsModifiedPackagesWhenReferen
 			result := self callToolWith: {
 					          (#action -> 'adoptHead').
 					          (#name -> repository name).
-					          (#branchName -> 'main') } asDictionary.
+					          (#branch -> 'main') } asDictionary.
 			data := self dataFrom: result.
 			self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
 			self assert: repository modifiedPackages isEmpty.
@@ -235,7 +235,7 @@ MCPToolRepositoryOperationTest >> testAdoptHeadOperationRequiresRepositoryAndPar
 	tool := MCPToolAdoptRepositoryHead new.
 	rawRequest := tool requestFromToolCallArguments: {
 			              (#name -> 'MCP').
-			              (#branchName -> 'main') } asDictionary.
+			              (#branch -> 'main') } asDictionary.
 	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
 	command := tool commandForRequest: parsedRequest.
 	self assert: parsedRequest class equals: MCPRepositoryAdoptHeadRequest.
@@ -255,13 +255,13 @@ MCPToolRepositoryOperationTest >> testAdoptHeadValidatesExpectedBranch [
 			result := self callToolWith: {
 					          (#action -> 'adoptHead').
 					          (#name -> repository name).
-					          (#branchName -> 'feature') } asDictionary.
+					          (#branch -> 'feature') } asDictionary.
 			self assert: (self resultIndicatesError: result).
 			self assert: ((self summaryFrom: result) includesSubstring: 'branch mismatch').
 			errorDetails := self errorFrom: result.
 			self assert: (errorDetails at: #action) equals: 'adoptHead'.
-			self assert: (errorDetails at: #expectedBranchName) equals: 'feature'.
-			self assert: (errorDetails at: #actualBranchName) equals: 'main'.
+			self assert: (errorDetails at: #expectedBranch) equals: 'feature'.
+			self assert: (errorDetails at: #actualBranch) equals: 'main'.
 			self assert: repository actionLog asArray equals: #(  ) ]
 ]
 
@@ -273,7 +273,7 @@ MCPToolRepositoryOperationTest >> testAttachParsesAndDispatchesToAttachCommand [
 	rawRequest := tool requestFromToolCallArguments: {
 			              (#name -> 'MCP').
 			              (#location -> 'C:/src/MCP').
-			              (#packageNames -> #( 'MCP' )) } asDictionary.
+			              (#packages -> #( 'MCP' )) } asDictionary.
 	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
 	command := tool commandForRequest: parsedRequest.
 
@@ -296,7 +296,7 @@ MCPToolRepositoryOperationTest >> testAttachRegistersExistingGitCheckout [
 							(#name -> repositoryName).
 							(#location -> location pathString).
 							(#subdirectory -> 'src').
-							(#packageNames -> { packageName }) } asDictionary.
+							(#packages -> { packageName }) } asDictionary.
 					self callToolWith: {
 							(#action -> 'export').
 							(#name -> repositoryName) } asDictionary.
@@ -310,7 +310,7 @@ MCPToolRepositoryOperationTest >> testAttachRegistersExistingGitCheckout [
 							          (#name -> repositoryName).
 							          (#location -> location pathString).
 							          (#subdirectory -> 'src').
-							          (#packageNames -> { packageName }) } asDictionary.
+							          (#packages -> { packageName }) } asDictionary.
 					repository := IceRepository repositories detect: [ :each | each name asString = repositoryName ].
 					self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
 					self assert: repository location pathString equals: location pathString.
@@ -335,7 +335,7 @@ MCPToolRepositoryOperationTest >> testAttachRegistersLinkedGitWorktreeCheckout [
 								(#name -> repositoryName).
 								(#location -> location pathString).
 								(#subdirectory -> 'src').
-								(#packageNames -> { packageName }) } asDictionary.
+								(#packages -> { packageName }) } asDictionary.
 						self callToolWith: {
 								(#action -> 'export').
 								(#name -> repositoryName) } asDictionary.
@@ -351,7 +351,7 @@ MCPToolRepositoryOperationTest >> testAttachRegistersLinkedGitWorktreeCheckout [
 								          (#name -> repositoryName).
 								          (#location -> linkedLocation pathString).
 								          (#subdirectory -> 'src').
-								          (#packageNames -> { packageName }) } asDictionary.
+								          (#packages -> { packageName }) } asDictionary.
 						self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
 						repository := IceRepository repositories detect: [ :each | each name asString = repositoryName ].
 						self assert: repository location pathString equals: linkedLocation pathString.
@@ -417,7 +417,7 @@ MCPToolRepositoryOperationTest >> testCheckoutBranchLoadsTargetBranchSnapshot [
 							(#action -> 'create').
 							(#name -> repositoryName).
 							(#location -> location pathString).
-							(#packageNames -> { packageName }) } asDictionary.
+							(#packages -> { packageName }) } asDictionary.
 					self callToolWith: {
 							(#action -> 'export').
 							(#name -> repositoryName) } asDictionary.
@@ -435,7 +435,7 @@ MCPToolRepositoryOperationTest >> testCheckoutBranchLoadsTargetBranchSnapshot [
 							(#action -> 'attach').
 							(#name -> repositoryName).
 							(#location -> location pathString).
-							(#packageNames -> { packageName }) } asDictionary.
+							(#packages -> { packageName }) } asDictionary.
 					self assert: ((Smalltalk at: className asSymbol) includesSelector: extraSelector).
 					self shellCommand: 'git -C ' , (self shellQuote: location pathString) , ' checkout ' , (self shellQuote: baseBranch).
 					checkoutResult := self callToolWith: {
@@ -458,15 +458,15 @@ MCPToolRepositoryOperationTest >> testCommitCreatesCommitAndReturnsResult [
 							(#action -> 'create').
 							(#name -> repositoryName).
 							(#location -> location pathString).
-							(#packageNames -> { packageName }) } asDictionary.
+							(#packages -> { packageName }) } asDictionary.
 					result := self callToolWith: {
 							          (#action -> 'commit').
 							          (#name -> repositoryName).
 							          (#message -> 'Initial commit MCP test') } asDictionary.
 					data := self dataFrom: result.
 					self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
-					self assert: data keys asSet equals: #( changedPackageNames commitDescription commitId headDescription ) asSet.
-					self assert: (data at: #changedPackageNames) equals: { packageName }.
+					self assert: data keys asSet equals: #( changedPackages commitDescription commitId headDescription ) asSet.
+					self assert: (data at: #changedPackages) equals: { packageName }.
 					self assert: (data at: #commitId) notEmpty.
 					self assert: (data at: #commitDescription) equals: 'Initial commit MCP test'.
 					self assert: (data at: #headDescription) notEmpty ] ]
@@ -502,7 +502,7 @@ MCPToolRepositoryOperationTest >> testCommitReportsIcebergRefusalErrors [
 							(#action -> 'create').
 							(#name -> repositoryName).
 							(#location -> location pathString).
-							(#packageNames -> { packageName }) } asDictionary.
+							(#packages -> { packageName }) } asDictionary.
 					self callToolWith: {
 							(#action -> 'commit').
 							(#name -> repositoryName).
@@ -529,7 +529,7 @@ MCPToolRepositoryOperationTest >> testCommitUsesFallbackGitIdentityWhenGitSignat
 							(#action -> 'create').
 							(#name -> repositoryName).
 							(#location -> location pathString).
-							(#packageNames -> { packageName }) } asDictionary.
+							(#packages -> { packageName }) } asDictionary.
 					self shellCommand: 'git -C ' , (self shellQuote: location pathString) , ' config user.name ' , (self shellQuote: '').
 					self shellCommand: 'git -C ' , (self shellQuote: location pathString) , ' config user.email ' , (self shellQuote: '').
 					result := self callToolWith: {
@@ -555,7 +555,7 @@ MCPToolRepositoryOperationTest >> testCreateCreatesAndRegistersRepository [
 					          (#name -> repositoryName).
 					          (#location -> location pathString).
 					          (#subdirectory -> 'src').
-					          (#packageNames -> #( 'MCP' 'MCP-Tests' )) } asDictionary.
+					          (#packages -> #( 'MCP' 'MCP-Tests' )) } asDictionary.
 			repository := IceRepository repositories detect: [ :each | each name asString = repositoryName ].
 			self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
 			self assert: repository location pathString equals: location pathString.
@@ -577,7 +577,7 @@ MCPToolRepositoryOperationTest >> testDiffCanReportImageModifiedPackagesWithoutW
 			self deny: (result at: #isError ifAbsent: false).
 			self assert: (data at: #isEmpty) equals: false.
 			self assert: (data at: #changeCount) equals: 1.
-			self assert: (data at: #changedPackageNames) equals: #( 'MCP-Test-Dirty' ).
+			self assert: (data at: #changedPackages) equals: #( 'MCP-Test-Dirty' ).
 			self deny: (data includesKey: #modifiedPaths) ]
 ]
 
@@ -608,7 +608,7 @@ MCPToolRepositoryOperationTest >> testDiffReportsWorkingCopyDiffWithoutWriting [
 							(#action -> 'create').
 							(#name -> repositoryName).
 							(#location -> location pathString).
-							(#packageNames -> { packageName }) } asDictionary.
+							(#packages -> { packageName }) } asDictionary.
 					repository := IceRepository repositories detect: [ :each | each name asString = repositoryName ].
 					self assert: repository index isEmpty.
 					result := self callToolWith: {
@@ -617,10 +617,10 @@ MCPToolRepositoryOperationTest >> testDiffReportsWorkingCopyDiffWithoutWriting [
 					data := self dataFrom: result.
 					childNames := self directChildNamesOf: location.
 					self deny: (result at: #isError ifAbsent: false).
-					self assert: data keys asSet equals: #( changeCount changedPackageNames isEmpty ) asSet.
+					self assert: data keys asSet equals: #( changeCount changedPackages isEmpty ) asSet.
 					self assert: (data at: #isEmpty) equals: false.
 					self assert: (data at: #changeCount) > 0.
-					self assert: (data at: #changedPackageNames) equals: { packageName }.
+					self assert: (data at: #changedPackages) equals: { packageName }.
 					self deny: (data includesKey: #modifiedPaths).
 					self deny: (childNames anySatisfy: [ :each | each includesSubstring: packageName ]) ] ]
 ]
@@ -638,7 +638,7 @@ MCPToolRepositoryOperationTest >> testDiscardCleanRepositoryDoesNothing [
 			self deny: (result at: #isError ifAbsent: [ false ]).
 			self assert: (data at: #isEmpty) equals: true.
 			self assert: (data at: #changeCount) equals: 0.
-			self deny: (data includesKey: #discardedPackageNames).
+			self deny: (data includesKey: #discardedPackages).
 			self deny: (data includesKey: #discardedPaths).
 			self assert: repository actionLog asArray equals: #(  ) ]
 ]
@@ -657,7 +657,7 @@ MCPToolRepositoryOperationTest >> testDiscardClearsImageModifiedPackages [
 			self deny: (result at: #isError ifAbsent: [ false ]).
 			self assert: (data at: #isEmpty) equals: false.
 			self assert: (data at: #changeCount) equals: 1.
-			self assert: (data at: #discardedPackageNames) equals: #( 'MCP-Test-Dirty' ).
+			self assert: (data at: #discardedPackages) equals: #( 'MCP-Test-Dirty' ).
 			self deny: (data includesKey: #discardedPaths).
 			self assert: repository modifiedPackages isEmpty.
 			self assert: repository actionLog asArray equals: #( 'discard' ) ]
@@ -690,16 +690,16 @@ MCPToolRepositoryOperationTest >> testExportUpdatesDiskAndIndexWithoutCommitting
 							(#action -> 'create').
 							(#name -> repositoryName).
 							(#location -> location pathString).
-							(#packageNames -> { packageName }) } asDictionary.
+							(#packages -> { packageName }) } asDictionary.
 					result := self callToolWith: {
 							          (#action -> 'export').
 							          (#name -> repositoryName) } asDictionary.
 					data := self dataFrom: result.
 					childNames := self directChildNamesOf: location.
 					self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
-					self assert: data keys asSet equals: #( changedPackageNames didChange modifiedPaths ) asSet.
+					self assert: data keys asSet equals: #( changedPackages didChange modifiedPaths ) asSet.
 					self assert: (data at: #didChange) equals: true.
-					self assert: (data at: #changedPackageNames) equals: { packageName }.
+					self assert: (data at: #changedPackages) equals: { packageName }.
 					self assert: (data at: #modifiedPaths) notEmpty.
 					self assert: (childNames anySatisfy: [ :each | each includesSubstring: packageName ]) ] ]
 ]
@@ -744,7 +744,7 @@ MCPToolRepositoryOperationTest >> testLinkedWorktreeAttachExportsOnLinkedBranch 
 							                (#name -> repositoryName).
 							                (#location -> location pathString).
 							                (#subdirectory -> 'src').
-							                (#packageNames -> { packageName }) } asDictionary.
+							                (#packages -> { packageName }) } asDictionary.
 					self deny: (self resultIndicatesError: createResult) description: (self summaryFrom: createResult).
 					exportResult := self callToolWith: {
 							                (#action -> 'export').
@@ -770,7 +770,7 @@ MCPToolRepositoryOperationTest >> testLinkedWorktreeAttachExportsOnLinkedBranch 
 								                (#name -> repositoryName).
 								                (#location -> linkedLocation pathString).
 								                (#subdirectory -> 'src').
-								                (#packageNames -> { packageName }) } asDictionary.
+								                (#packages -> { packageName }) } asDictionary.
 						self deny: (self resultIndicatesError: attachResult) description: (self summaryFrom: attachResult).
 						searchResult := self searchRepositoriesWith: {
 								                (#name -> repositoryName) } asDictionary.
@@ -844,13 +844,13 @@ MCPToolRepositoryOperationTest >> testUpdateAddsPackageToWorkingCopy [
 			result := self callToolWith: {
 					          (#action -> 'update').
 					          (#name -> repository name).
-					          (#addPackageNames -> { packageName }) } asDictionary.
+					          (#addPackages -> { packageName }) } asDictionary.
 			data := self dataFrom: result.
 			self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
 			self assert: (self packageNamesIn: repository) equals: { packageName }.
-			self assert: data keys asSet equals: #( addedPackageNames updateActions ) asSet.
+			self assert: data keys asSet equals: #( addedPackages updateActions ) asSet.
 			self assert: (data at: #updateActions) equals: #( 'addPackages' ).
-			self assert: (data at: #addedPackageNames) equals: { packageName } ]
+			self assert: (data at: #addedPackages) equals: { packageName } ]
 ]
 
 { #category : 'tests' }
@@ -865,12 +865,12 @@ MCPToolRepositoryOperationTest >> testUpdateCanReplacePackageMembership [
 			result := self callToolWith: {
 					          (#action -> 'update').
 					          (#name -> repository name).
-					          (#packageNames -> #( 'MCPToolRepositoryOperationNewC' 'MCPToolRepositoryOperationOldB' )) } asDictionary.
+					          (#packages -> #( 'MCPToolRepositoryOperationNewC' 'MCPToolRepositoryOperationOldB' )) } asDictionary.
 			data := self dataFrom: result.
 			self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
 			self assert: (self packageNamesIn: repository) equals: #( 'MCPToolRepositoryOperationNewC' 'MCPToolRepositoryOperationOldB' ).
 			self assert: (data at: #updateActions) equals: #( 'replacePackages' ).
-			self assert: (data at: #addedPackageNames) equals: #( 'MCPToolRepositoryOperationNewC' ).
+			self assert: (data at: #addedPackages) equals: #( 'MCPToolRepositoryOperationNewC' ).
 			self assert: (data at: #removedPackageNames) equals: #( 'MCPToolRepositoryOperationOldA' ) ]
 ]
 
@@ -913,7 +913,7 @@ MCPToolRepositoryOperationTest >> testUpdateRemovesPackageWithoutUnloading [
 				result := self callToolWith: {
 						          (#action -> 'update').
 						          (#name -> repository name).
-						          (#removePackageNames -> { packageName }) } asDictionary.
+						          (#removePackages -> { packageName }) } asDictionary.
 				data := self dataFrom: result.
 				self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
 				self assert: (self packageNamesIn: repository) equals: #(  ).
@@ -930,8 +930,8 @@ MCPToolRepositoryOperationTest >> testVerifyIdentityOperationRequiresRepositoryA
 	tool := MCPToolVerifyRepositoryIdentity new.
 	rawRequest := tool requestFromToolCallArguments: {
 			              (#name -> 'MCP').
-			              (#branchName -> 'main').
-			              (#packageNames -> #( 'MCP' )).
+			              (#branch -> 'main').
+			              (#packages -> #( 'MCP' )).
 			              (#isModified -> false) } asDictionary.
 	parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
 	command := tool commandForRequest: parsedRequest.
@@ -955,10 +955,10 @@ MCPToolRepositoryOperationTest >> testVerifyIdentityPassesWhenExpectedIdentityMa
 					          (#action -> 'verifyIdentity').
 					          (#name -> repository name).
 					          (#location -> repository location).
-					          (#branchName -> 'main').
+					          (#branch -> 'main').
 					          (#subdirectory -> '').
-					          (#packageNames -> #( 'MCP' 'MCP-Tests' )).
-					          (#modifiedPackageNames -> #( 'MCP' )).
+					          (#packages -> #( 'MCP' 'MCP-Tests' )).
+					          (#modifiedPackages -> #( 'MCP' )).
 					          (#isModified -> true) } asDictionary.
 			data := self dataFrom: result.
 			self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
@@ -977,8 +977,8 @@ MCPToolRepositoryOperationTest >> testVerifyIdentityReportsStructuredMismatch [
 			result := self callToolWith: {
 					          (#action -> 'verifyIdentity').
 					          (#name -> repository name).
-					          (#branchName -> 'feature').
-					          (#packageNames -> #( 'MCP' 'MCP-Tests' )).
+					          (#branch -> 'feature').
+					          (#packages -> #( 'MCP' 'MCP-Tests' )).
 					          (#isModified -> true) } asDictionary.
 			self assert: (self resultIndicatesError: result).
 			self assert: ((self summaryFrom: result) includesSubstring: 'Repository identity verification failed').
@@ -986,8 +986,8 @@ MCPToolRepositoryOperationTest >> testVerifyIdentityReportsStructuredMismatch [
 			self assert: (errorDetails at: #errorCode) equals: 'RepositoryIdentityMismatch'.
 			self assert: (errorDetails at: #action) equals: 'verifyIdentity'.
 			mismatchFields := (errorDetails at: #mismatches) collect: [ :each | each at: #field ].
-			self assert: mismatchFields asArray sort equals: #( 'branchName' 'isModified' 'packageNames' ).
-			branchMismatch := (errorDetails at: #mismatches) detect: [ :each | (each at: #field) = 'branchName' ].
+			self assert: mismatchFields asArray sort equals: #( 'branch' 'isModified' 'packages' ).
+			branchMismatch := (errorDetails at: #mismatches) detect: [ :each | (each at: #field) = 'branch' ].
 			self assert: (branchMismatch at: #expected) equals: 'feature'.
 			self assert: (branchMismatch at: #actual) equals: 'main'.
 			self assert: repository actionLog asArray equals: #(  ) ]

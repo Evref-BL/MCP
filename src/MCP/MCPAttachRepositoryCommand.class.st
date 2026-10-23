@@ -123,6 +123,6 @@ MCPAttachRepositoryCommand >> signalDuplicateRepositoryIfNeeded [
 		signalErrorCode: #RepositoryAlreadyRegistered
 		message: 'Repository name or location is already registered in Iceberg.'
 		details: (self request requestedContext copy
-				 at: #matchingRepositoryNames put: matchingRepositoryNames;
+				 at: #matchingRepositories put: matchingRepositoryNames;
 				 yourself)
 ]

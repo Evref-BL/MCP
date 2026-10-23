@@ -83,7 +83,7 @@ MCPToolGetMethod >> buildInputSchema [
 		  type: 'object';
 		  properties: {
 				  (MCPStructureProperties new
-					   name: 'className';
+					   name: 'class';
 					   type: 'string';
 					   description: 'The class defining the methods, for selectors that do not name their own.';
 					   yourself).
@@ -98,7 +98,7 @@ MCPToolGetMethod >> buildInputSchema [
 MCPToolGetMethod >> classNameForErrorFromParsedRequest: getRequest rawRequest: rawRequest [
 
 	getRequest ifNotNil: [ ^ getRequest className ].
-	^ (rawRequest stringArgumentNamed: 'className') ifNil: [ '' ]
+	^ (rawRequest stringArgumentNamed: 'class') ifNil: [ '' ]
 ]
 
 { #category : 'private - errors' }
@@ -139,7 +139,7 @@ MCPToolGetMethod >> errorResultForError: anError className: className selector: 
 		  mcpCommandErrorDo: [ :commandError |
 				  | details |
 				  details := commandError structuredDetails copy.
-				  details at: #className ifAbsentPut: [ className ].
+				  details at: #class ifAbsentPut: [ className ].
 				  details at: #selector ifAbsentPut: [ selectorString ].
 				  details at: #classSide put: classSide.
 				  self errorResultText: commandError messageText details: details ]
@@ -153,7 +153,7 @@ MCPToolGetMethod >> errorResultForError: anError className: className selector: 
 					  details: {
 							  (#errorClass -> toolError class name).
 							  (#message -> toolError messageText).
-							  (#className -> className).
+							  (#class -> className).
 							  (#selector -> selectorString).
 							  (#classSide -> classSide) } asDictionary ]
 ]

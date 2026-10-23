@@ -102,8 +102,8 @@ MCPClassUpdateRequest >> commandForTool: aTool [
 MCPClassUpdateRequest >> contextValueForPropertyNamed: propertyName [
 
 	propertyName = 'newName' ifTrue: [ ^ self newClassName ].
-	propertyName = 'superclassName' ifTrue: [ ^ self superclassName ].
-	propertyName = 'packageName' ifTrue: [ ^ self packageName ].
+	propertyName = 'superclass' ifTrue: [ ^ self superclassName ].
+	propertyName = 'package' ifTrue: [ ^ self packageName ].
 	propertyName = 'tag' ifTrue: [ ^ self tag ifNil: [ '' ] ].
 	propertyName = 'comment' ifTrue: [ ^ self classComment ifNil: [ '' ] ].
 	propertyName = 'slots' ifTrue: [ ^ self slotNames ].
@@ -114,8 +114,8 @@ MCPClassUpdateRequest >> contextValueForPropertyNamed: propertyName [
 	propertyName = 'sharedPools' ifTrue: [ ^ self sharedPoolNames ].
 	propertyName = 'layout' ifTrue: [ ^ self layout ifNil: [ '' ] ].
 	propertyName = 'slotAction' ifTrue: [ ^ self slotAction ].
-	propertyName = 'slotName' ifTrue: [ ^ self slotName ].
-	propertyName = 'newSlotName' ifTrue: [ ^ self newSlotName ].
+	propertyName = 'slot' ifTrue: [ ^ self slotName ].
+	propertyName = 'newSlot' ifTrue: [ ^ self newSlotName ].
 	^ nil
 ]
 
@@ -167,8 +167,8 @@ MCPClassUpdateRequest >> initializeFromRequest: request [
 	suppliedProperties := self updatePropertyNames select: [ :each | request hasArgumentNamed: each ].
 	className := request stringArgumentNamed: 'name'.
 	newClassName := request stringArgumentNamed: 'newName'.
-	superclassName := request stringArgumentNamed: 'superclassName'.
-	packageName := request stringArgumentNamed: 'packageName'.
+	superclassName := request stringArgumentNamed: 'superclass'.
+	packageName := request stringArgumentNamed: 'package'.
 	tag := request stringArgumentNamed: 'tag'.
 	classComment := (self hasSuppliedPropertyNamed: 'comment') ifTrue: [ self classCommentFromRequest: request ].
 	force := request booleanArgumentNamed: 'force' default: false.
@@ -179,8 +179,8 @@ MCPClassUpdateRequest >> initializeFromRequest: request [
 	sharedVariableNames := request stringCollectionArgumentNamed: 'sharedVariables'.
 	sharedPoolNames := request stringCollectionArgumentNamed: 'sharedPools'.
 	layout := request stringArgumentNamed: 'layout'.
-	slotName := request stringArgumentNamed: 'slotName'.
-	newSlotName := request stringArgumentNamed: 'newSlotName'.
+	slotName := request stringArgumentNamed: 'slot'.
+	newSlotName := request stringArgumentNamed: 'newSlot'.
 	slotAction := request stringArgumentNamed: 'slotAction'.
 	classSide := request booleanArgumentNamed: 'classSide' default: false
 ]
@@ -232,7 +232,7 @@ MCPClassUpdateRequest >> renameSlotRequestedContext [
 
 	| context |
 	context := self slotRequestedContext.
-	context at: #newSlotName put: self newSlotName.
+	context at: #newSlot put: self newSlotName.
 	^ context
 ]
 
@@ -242,8 +242,8 @@ MCPClassUpdateRequest >> requestedClassUpdateActions [
 	| actions |
 	actions := OrderedCollection new.
 	(self hasSuppliedPropertyNamed: 'newName') ifTrue: [ actions add: 'rename' ].
-	(self hasSuppliedPropertyNamed: 'superclassName') ifTrue: [ actions add: 'reparent' ].
-	((self hasSuppliedPropertyNamed: 'packageName') or: [ self hasSuppliedPropertyNamed: 'tag' ]) ifTrue: [ actions add: 'move' ].
+	(self hasSuppliedPropertyNamed: 'superclass') ifTrue: [ actions add: 'reparent' ].
+	((self hasSuppliedPropertyNamed: 'package') or: [ self hasSuppliedPropertyNamed: 'tag' ]) ifTrue: [ actions add: 'move' ].
 	(self hasSuppliedPropertyNamed: 'comment') ifTrue: [ actions add: 'setComment' ].
 	(self hasSuppliedPropertyNamed: 'traits') ifTrue: [ actions add: 'replaceTraits' ].
 	(self hasSuppliedPropertyNamed: 'classTraits') ifTrue: [ actions add: 'replaceClassTraits' ].
@@ -330,8 +330,8 @@ MCPClassUpdateRequest >> slotRequestedContext [
 
 	| context |
 	context := {
-		           (#className -> self className).
-		           (#slotName -> self slotName).
+		           (#class -> self className).
+		           (#slot -> self slotName).
 		           (#classSide -> self classSide) } asDictionary.
 	self slotAction ifNotNil: [ context at: #slotAction put: self slotAction ].
 	^ context
@@ -382,8 +382,8 @@ MCPClassUpdateRequest >> traits [
 { #category : 'private - request' }
 MCPClassUpdateRequest >> updatePropertyNames [
 
-	^ #( 'newName' 'superclassName' 'packageName' 'tag' 'comment' 'slots' 'classSlots' 'traits' 'classTraits' 'sharedVariables'
-	     'sharedPools' 'layout' 'slotAction' 'slotName' 'newSlotName' )
+	^ #( 'newName' 'superclass' 'package' 'tag' 'comment' 'slots' 'classSlots' 'traits' 'classTraits' 'sharedVariables'
+	     'sharedPools' 'layout' 'slotAction' 'slot' 'newSlot' )
 ]
 
 { #category : 'validating' }

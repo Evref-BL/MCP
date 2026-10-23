@@ -27,9 +27,9 @@ MCPRefactoringScopeSpec class >> packageNames: packageNamesCollection classNames
 MCPRefactoringScopeSpec >> asDictionary [
 
 	^ {
-		  (#packageNames -> self packageNames).
-		  (#classNames -> self classNames).
-		  (#hierarchyClassNames -> self hierarchyClassNames) } asDictionary
+		  (#packages -> self packageNames).
+		  (#classes -> self classNames).
+		  (#hierarchyClasses -> self hierarchyClassNames) } asDictionary
 ]
 
 { #category : 'accessing' }

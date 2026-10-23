@@ -64,7 +64,7 @@ MCPToolCallRecord >> asDictionary [
 
 	^ {
 		  (#id -> self id).
-		  (#toolName -> self toolName).
+		  (#tool -> self toolName).
 		  (#dispatchPath -> self dispatchPath).
 		  (#startedAt -> self displayStartedAt).
 		  (#durationMilliseconds -> self durationMilliseconds).

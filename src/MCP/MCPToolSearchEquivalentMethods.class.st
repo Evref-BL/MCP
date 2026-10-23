@@ -20,7 +20,7 @@ MCPToolSearchEquivalentMethods >> buildInputSchema [
 
 	| properties |
 	properties := self methodQueryScopeInputProperties , {
-		              (self schemaPropertyNamed: 'className' type: 'string' description: 'The class that defines the reference method.').
+		              (self schemaPropertyNamed: 'class' type: 'string' description: 'The class that defines the reference method.').
 		              (self schemaPropertyNamed: 'selector' type: 'string' description: 'The reference method selector.').
 		              (self
 			               booleanSchemaPropertyNamed: 'classSide'
@@ -30,7 +30,7 @@ MCPToolSearchEquivalentMethods >> buildInputSchema [
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties: properties;
-		  required: #( 'className' 'selector' );
+		  required: #( 'class' 'selector' );
 		  yourself
 ]
 
@@ -55,8 +55,8 @@ MCPToolSearchEquivalentMethods >> equivalentEntriesForQueryRequest: queryRequest
 MCPToolSearchEquivalentMethods >> methodReferenceSpecFromToolRequest: request [
 
 	| className selector |
-	className := request stringArgumentNamed: 'className'.
-	className ifNil: [ ^ MCPInvalidToolInput signalMissingRequiredArgumentNamed: 'className' forTool: self ].
+	className := request stringArgumentNamed: 'class'.
+	className ifNil: [ ^ MCPInvalidToolInput signalMissingRequiredArgumentNamed: 'class' forTool: self ].
 	selector := request stringArgumentNamed: 'selector'.
 	selector ifNil: [ ^ MCPInvalidToolInput signalMissingRequiredArgumentNamed: 'selector' forTool: self ].
 	^ MCPMethodReferenceSpec

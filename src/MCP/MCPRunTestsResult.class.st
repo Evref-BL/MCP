@@ -136,7 +136,7 @@ MCPRunTestsResult >> skippedTestReferences [
 { #category : 'converting' }
 MCPRunTestsResult >> testReferenceForIssue: issue [
 
-	^ (issue at: #className) asString , '>>#' , (issue at: #testMethodName) asString
+	^ (issue at: #class) asString , '>>#' , (issue at: #testMethod) asString
 ]
 
 { #category : 'accessing' }

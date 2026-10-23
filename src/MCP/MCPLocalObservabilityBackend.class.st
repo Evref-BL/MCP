@@ -757,7 +757,7 @@ MCPLocalObservabilityBackend >> traceRecordDictionaryFor: aRecord [
 	dictionary at: #'event.name' put: (self traceEventNameForRecord: aRecord).
 	dictionary at: #'event.kinds' put: aRecord eventKinds.
 	dictionary at: #id put: aRecord id.
-	dictionary at: #toolName put: aRecord toolName.
+	dictionary at: #tool put: aRecord toolName.
 	dictionary at: #dispatchPath put: aRecord dispatchPath.
 	dictionary at: #startedAt put: aRecord displayStartedAt.
 	dictionary at: #durationMilliseconds put: aRecord durationMilliseconds.

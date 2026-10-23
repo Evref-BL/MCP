@@ -29,7 +29,7 @@ MCPChangeHistoryListEntriesResult >> asDictionary [
 
 	| data |
 	data := Dictionary new.
-	historyFileName ifNotNil: [ data at: #historyFileName put: historyFileName ].
+	historyFileName ifNotNil: [ data at: #historyFile put: historyFileName ].
 	data at: #entries put: ((self entries collect: [ :each | each asDictionary ]) as: Array).
 	self nextOffset ifNotNil: [ :offset | data at: #nextOffset put: offset ].
 	^ data

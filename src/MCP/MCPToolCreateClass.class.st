@@ -53,7 +53,7 @@ MCPToolCreateClass >> classToolSpec [
 			   self createSharedPoolsSchemaProperty.
 			   self layoutSchemaProperty.
 			   self createCommentSchemaProperty }).
-		  (#requiredProperties -> #( 'name' 'superclassName' 'packageName' )) } asDictionary
+		  (#requiredProperties -> #( 'name' 'superclass' 'package' )) } asDictionary
 ]
 
 { #category : 'private - schema' }
@@ -91,7 +91,7 @@ MCPToolCreateClass >> createCommentSchemaProperty [
 { #category : 'private - schema' }
 MCPToolCreateClass >> createPackageNameSchemaProperty [
 
-	^ self schemaPropertyNamed: 'packageName' type: 'string' description: 'Package name for the new class.'
+	^ self schemaPropertyNamed: 'package' type: 'string' description: 'Package name for the new class.'
 ]
 
 { #category : 'private - schema' }

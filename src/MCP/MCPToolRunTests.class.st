@@ -67,13 +67,13 @@ MCPToolRunTests >> coverageMethodObjectSchema [
 		  type: 'object';
 		  description: 'A compiled method entry included in a coverage method list.';
 		  properties: {
-				  (self schemaPropertyNamed: 'className' type: 'string' description: 'The method class name.').
+				  (self schemaPropertyNamed: 'class' type: 'string' description: 'The method class name.').
 				  (self schemaPropertyNamed: 'selector' type: 'string' description: 'The method selector.').
 				  (self booleanSchemaPropertyNamed: 'classSide' description: 'Whether the method is on the class side.').
-				  (self schemaPropertyNamed: 'packageName' type: 'string' description: 'The package that defines the method.').
+				  (self schemaPropertyNamed: 'package' type: 'string' description: 'The package that defines the method.').
 				  (self booleanSchemaPropertyNamed: 'isExtension' description: 'Whether the method is an extension method.').
 				  (self schemaPropertyNamed: 'protocol' type: 'string' description: 'The method protocol.') };
-		  required: #( 'className' 'selector' 'classSide' 'packageName' 'isExtension' 'protocol' );
+		  required: #( 'class' 'selector' 'classSide' 'package' 'isExtension' 'protocol' );
 		  additionalProperties: false;
 		  yourself
 ]

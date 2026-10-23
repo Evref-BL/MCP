@@ -168,7 +168,7 @@ MCPRemoveClassesCommandTest >> testMissingClassSignalsCommandError [
 					          self simpleClassName.
 					          self missingClassName }) execute ].
 	self assert: error errorCode equals: #ClassNotFound.
-	self assert: (error structuredDetails at: #className) equals: self missingClassName.
+	self assert: (error structuredDetails at: #class) equals: self missingClassName.
 	self assert: (Smalltalk globals includesKey: self simpleClassName asSymbol)
 ]
 

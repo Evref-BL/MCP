@@ -32,8 +32,8 @@ MCPCompiledMethodInfo >> asDictionary [
 	| data |
 	data := {
 		        (#selector -> self selector).
-		        (#className -> self className).
-		        (#packageName -> self packageName).
+		        (#class -> self className).
+		        (#package -> self packageName).
 		        (#protocol -> self protocol) } asDictionary.
 	self classSide ifTrue: [ data at: #classSide put: true ].
 	self isExtension ifTrue: [ data at: #isExtension put: true ].

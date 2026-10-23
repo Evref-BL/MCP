@@ -44,9 +44,9 @@ MCPToolSearchPackages >> failureMessageForScope: scopeSummary error: anError [
 { #category : 'private - filtering' }
 MCPToolSearchPackages >> fieldTextsForPackageEntry: anEntry fieldName: fieldName [
 
-	fieldName = 'name' ifTrue: [ ^ { (anEntry at: #packageName) } ].
-	fieldName = 'projectName' ifTrue: [ ^ anEntry at: #projectNames ].
-	fieldName = 'tag' ifTrue: [ ^ anEntry at: #tagNames ].
+	fieldName = 'name' ifTrue: [ ^ { (anEntry at: #package) } ].
+	fieldName = 'project' ifTrue: [ ^ anEntry at: #projects ].
+	fieldName = 'tag' ifTrue: [ ^ anEntry at: #tags ].
 	^ #(  )
 ]
 
@@ -85,7 +85,7 @@ MCPToolSearchPackages >> packageEntriesFromPackages: packages projectNames: pack
 { #category : 'private - request' }
 MCPToolSearchPackages >> packageFilterFieldNames [
 
-	^ #( 'name' 'projectName' 'tag' )
+	^ #( 'name' 'project' 'tag' )
 ]
 
 { #category : 'private - schema' }
@@ -93,7 +93,7 @@ MCPToolSearchPackages >> packageFilterInputProperties [
 
 	^ {
 		  (self schemaPropertyNamed: 'name' type: 'string' description: 'Match package names.').
-		  (self schemaPropertyNamed: 'projectName' type: 'string' description: 'Match owning projects.').
+		  (self schemaPropertyNamed: 'project' type: 'string' description: 'Match owning projects.').
 		  (self schemaPropertyNamed: 'tag' type: 'string' description: 'Match package tags.') }
 ]
 
@@ -113,8 +113,8 @@ MCPToolSearchPackages >> queryResultDataForQueryRequest: queryRequest page: page
 MCPToolSearchPackages >> requestedContextFromRequest: request [
 
 	^ { (#scope -> (self
-		    packageScopeSummaryForProjectNames: (request stringCollectionArgumentNamed: 'projectNames')
-		    packageNames: (request stringCollectionArgumentNamed: 'packageNames'))) } asDictionary
+		    packageScopeSummaryForProjectNames: (request stringCollectionArgumentNamed: 'projects')
+		    packageNames: (request stringCollectionArgumentNamed: 'packages'))) } asDictionary
 ]
 
 { #category : 'private - template' }

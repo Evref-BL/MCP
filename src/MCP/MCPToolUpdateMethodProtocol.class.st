@@ -24,7 +24,7 @@ MCPToolUpdateMethodProtocol >> methodToolSpec [
 		  (#action -> 'update').
 		  (#inputProperties -> {
 			   (MCPStructureProperties new
-				    name: 'className';
+				    name: 'class';
 				    type: 'string';
 				    description: 'The class whose method protocol will be updated.';
 				    yourself).
@@ -44,5 +44,5 @@ MCPToolUpdateMethodProtocol >> methodToolSpec [
 				    type: 'string';
 				    description: 'The target protocol. For extension methods, use an extension protocol such as *Package-Name.';
 				    yourself) }).
-		  (#requiredProperties -> #( 'className' 'selector' 'protocol' )) } asDictionary
+		  (#requiredProperties -> #( 'class' 'selector' 'protocol' )) } asDictionary
 ]

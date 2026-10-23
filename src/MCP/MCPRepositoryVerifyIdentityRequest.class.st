@@ -69,12 +69,12 @@ MCPRepositoryVerifyIdentityRequest >> initializeFromRequest: request [
 
 	super initializeFromRequest: request.
 	hasSubdirectory := request hasArgumentNamed: 'subdirectory'.
-	hasPackageNames := request hasArgumentNamed: 'packageNames'.
-	hasModifiedPackageNames := request hasArgumentNamed: 'modifiedPackageNames'.
+	hasPackageNames := request hasArgumentNamed: 'packages'.
+	hasModifiedPackageNames := request hasArgumentNamed: 'modifiedPackages'.
 	hasIsModified := request hasArgumentNamed: 'isModified'.
 	hasSubdirectory ifTrue: [ subdirectory := self stringArgumentNamed: 'subdirectory' preservingEmptyFrom: request ].
-	hasPackageNames ifTrue: [ packageNames := request uniqueStringCollectionArgumentNamed: 'packageNames' ].
-	hasModifiedPackageNames ifTrue: [ modifiedPackageNames := request uniqueStringCollectionArgumentNamed: 'modifiedPackageNames' ].
+	hasPackageNames ifTrue: [ packageNames := request uniqueStringCollectionArgumentNamed: 'packages' ].
+	hasModifiedPackageNames ifTrue: [ modifiedPackageNames := request uniqueStringCollectionArgumentNamed: 'modifiedPackages' ].
 	hasIsModified ifTrue: [ isModified := request booleanArgumentNamed: 'isModified' default: false ]
 ]
 
@@ -113,10 +113,10 @@ MCPRepositoryVerifyIdentityRequest >> requestedContext [
 
 	| context |
 	context := self repositoryReference requestedContext copy.
-	self branchName ifNotEmpty: [ :expectedBranchName | context at: #branchName put: expectedBranchName ].
+	self branchName ifNotEmpty: [ :expectedBranchName | context at: #branch put: expectedBranchName ].
 	self hasExpectedSubdirectory ifTrue: [ context at: #subdirectory put: self subdirectory ].
-	self hasExpectedPackageNames ifTrue: [ context at: #packageNames put: self packageNames ].
-	self hasExpectedModifiedPackageNames ifTrue: [ context at: #modifiedPackageNames put: self modifiedPackageNames ].
+	self hasExpectedPackageNames ifTrue: [ context at: #packages put: self packageNames ].
+	self hasExpectedModifiedPackageNames ifTrue: [ context at: #modifiedPackages put: self modifiedPackageNames ].
 	self hasExpectedIsModified ifTrue: [ context at: #isModified put: self isModified ].
 	^ context
 ]

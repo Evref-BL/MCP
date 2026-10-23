@@ -55,7 +55,7 @@ MCPInvalidToolInput class >> signalMissingRequiredArgumentNamed: anArgumentName 
 MCPInvalidToolInput >> asJRPCErrorData [
 
 	^ {
-		  ('toolName' -> self toolName).
+		  ('tool' -> self toolName).
 		  ('violations' -> (self violations collect: [ :each | each asDictionary ])) } asDictionary
 ]
 
@@ -78,7 +78,7 @@ MCPInvalidToolInput >> initialize [
 { #category : 'dispatching' }
 MCPInvalidToolInput >> mcpAddToolErrorDetailsTo: aDictionary [
 
-	aDictionary at: #toolName put: self toolName.
+	aDictionary at: #tool put: self toolName.
 	self violations ifNotEmpty: [ aDictionary at: #violations put: (self violations collect: [ :each | each asDictionary ]) ]
 ]
 

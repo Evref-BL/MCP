@@ -54,18 +54,18 @@ MCPRepositoryInfo >> asDictionary [
 
 	^ {
 		  (#name -> self name).
-		  (#className -> self className).
+		  (#class -> self className).
 		  (#location -> self location).
 		  (#subdirectory -> self subdirectory).
-		  (#branchName -> self branchName).
+		  (#branch -> self branchName).
 		  (#headDescription -> self headDescription).
 		  (#headClassName -> self headClassName).
 		  (#headCommitId -> self headCommitId).
 		  (#isDetachedHead -> self isDetachedHead).
 		  (#isMissing -> self isMissing).
 		  (#isModified -> self isModified).
-		  (#packageNames -> self packageNames).
-		  (#modifiedPackageNames -> self modifiedPackageNames).
+		  (#packages -> self packageNames).
+		  (#modifiedPackages -> self modifiedPackageNames).
 		  (#remotes -> self remotes).
 		  (#upstreamRemoteName -> self upstreamRemoteName).
 		  (#upstreamBranchName -> self upstreamBranchName).
@@ -92,7 +92,7 @@ MCPRepositoryInfo >> asSearchDictionary [
 		at: #isMissing put: self isMissing.
 	self subdirectory ifNotNil: [ :value | value ifNotEmpty: [ data at: #subdirectory put: value ] ].
 	self packageNames ifNotEmpty: [ :names | data at: #packageCount put: names size ].
-	self modifiedPackageNames ifNotEmpty: [ :names | data at: #modifiedPackageNames put: names ].
+	self modifiedPackageNames ifNotEmpty: [ :names | data at: #modifiedPackages put: names ].
 	^ data
 ]
 
@@ -174,7 +174,7 @@ MCPRepositoryInfo >> initializeFromRepository: aRepository [
 	remotes := self repositoryRemotesFor: aRepository.
 	upstreamInfo := self repositoryUpstreamInfoFor: aRepository.
 	upstreamRemoteName := upstreamInfo at: #remoteName.
-	upstreamBranchName := upstreamInfo at: #branchName.
+	upstreamBranchName := upstreamInfo at: #branch.
 	upstreamRemoteUrl := upstreamInfo at: #remoteUrl
 ]
 

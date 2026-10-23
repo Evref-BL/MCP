@@ -362,8 +362,7 @@ MCPTool >> dataTextOn: stream for: data [
 				nextPut: Character lf;
 				nextPutAll: 'method: ';
 				nextPutAll: reference ].
-	keys := (data keys reject: [ :key | skipped includes: key asSymbol ]) asSortedCollection: [ :left :right |
-		        left asString <= right asString ].
+	keys := self orderedKeys: (data keys reject: [ :key | skipped includes: key asSymbol ]).
 	keys do: [ :key |
 			(self isInlineValue: (data at: key)) ifTrue: [
 					self
@@ -432,8 +431,7 @@ MCPTool >> entryTextOn: stream for: entry indent: indent [
 	reference := self methodReferenceTextFor: entry.
 	skipped := self redundantKeys asOrderedCollection.
 	reference ifNotNil: [ skipped addAll: self methodReferenceKeys ].
-	keys := (entry keys reject: [ :key | skipped includes: key asSymbol ]) asSortedCollection: [ :left :right |
-		        left asString <= right asString ].
+	keys := self orderedKeys: (entry keys reject: [ :key | skipped includes: key asSymbol ]).
 	pairs := OrderedCollection new.
 	reference ifNotNil: [ pairs add: reference ].
 	keys do: [ :key |
@@ -736,10 +734,32 @@ MCPTool >> isServerFrame: aContext [
 ]
 
 { #category : 'private - results' }
+MCPTool >> keyOrder [
+	"Answer the data keys this tool wants listed first, in that order. Keys it does not name follow, alphabetically. A tool declares its own."
+
+	^ #(  )
+]
+
+{ #category : 'private - results' }
 MCPTool >> keysStatedInSummary [
 	"Answer the data keys whose value the summary already states in prose, so the text does not say it twice. A tool declares its own."
 
 	^ #(  )
+]
+
+{ #category : 'private - results' }
+MCPTool >> orderedKeys: someKeys [
+	"Sort by the order the tool declared, then alphabetically among the keys it did not name."
+
+	| order |
+	order := self keyOrder.
+	^ someKeys asSortedCollection: [ :left :right |
+			  | leftIndex rightIndex |
+			  leftIndex := order indexOf: left asSymbol ifAbsent: [ order size + 1 ].
+			  rightIndex := order indexOf: right asSymbol ifAbsent: [ order size + 1 ].
+			  leftIndex = rightIndex
+				  ifTrue: [ left asString <= right asString ]
+				  ifFalse: [ leftIndex < rightIndex ] ]
 ]
 
 { #category : 'metadata' }
@@ -771,7 +791,7 @@ MCPTool >> metadata [
 MCPTool >> methodReferenceKeys [
 	"The fields a method reference stands in for."
 
-	^ #( className behaviorName selector classSide )
+	^ #( class behavior selector classSide )
 ]
 
 { #category : 'private - results' }
@@ -781,7 +801,7 @@ MCPTool >> methodReferenceTextFor: aDictionary [
 	| behaviorName selector |
 	selector := self valueIn: aDictionary at: #selector.
 	selector ifNil: [ ^ nil ].
-	behaviorName := (self valueIn: aDictionary at: #className) ifNil: [ self valueIn: aDictionary at: #behaviorName ].
+	behaviorName := (self valueIn: aDictionary at: #class) ifNil: [ self valueIn: aDictionary at: #behavior ].
 	behaviorName ifNil: [ ^ nil ].
 	^ ((self valueIn: aDictionary at: #classSide) = true
 		   ifTrue: [ behaviorName asString , ' class' ]
@@ -1034,8 +1054,7 @@ MCPTool >> valueTextOn: stream for: value labelled: label indent: indent [
 				nextPutAll: indent;
 				nextPutAll: label;
 				nextPut: $:.
-			^ ((value keys reject: [ :key | self redundantKeys includes: key asSymbol ]) asSortedCollection: [ :left :right |
-			   left asString <= right asString ]) do: [ :key |
+			^ (self orderedKeys: (value keys reject: [ :key | self redundantKeys includes: key asSymbol ])) do: [ :key |
 					  self
 						  valueTextOn: stream
 						  for: (value at: key)

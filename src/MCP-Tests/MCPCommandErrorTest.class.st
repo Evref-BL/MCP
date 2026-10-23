@@ -26,7 +26,7 @@ MCPCommandErrorTest >> testClassAlreadyExistsErrorCarriesClassName [
 	error := self capture: [ MCPCommandError signalClassAlreadyExistsNamed: 'MCPCommandErrorTestExisting' ].
 	details := error structuredDetails.
 	self assert: error errorCode equals: #ClassAlreadyExists.
-	self assert: (details at: #className) equals: 'MCPCommandErrorTestExisting'.
+	self assert: (details at: #class) equals: 'MCPCommandErrorTestExisting'.
 	self assert: (details at: #message) equals: 'Class MCPCommandErrorTestExisting already exists.'.
 	self assert: ((details at: #guidance) includesSubstring: 'Use class_get').
 	self assert: ((details at: #guidance) includesSubstring: 'Do not use class_create')
@@ -42,8 +42,8 @@ MCPCommandErrorTest >> testMissingClassErrorCarriesStructuredDetails [
 	self assert: error errorCode equals: #ClassNotFound.
 	self assert: (details at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (details at: #errorCode) equals: 'ClassNotFound'.
-	self assert: (details at: #className) equals: 'MCPCommandErrorTestMissing'.
-	self assert: (details at: #scopeName) equals: 'className'.
+	self assert: (details at: #class) equals: 'MCPCommandErrorTestMissing'.
+	self assert: (details at: #scope) equals: 'class'.
 	self assert: suggestions size <= 5.
 	self assert: ((details at: #message) includesSubstring: 'Class MCPCommandErrorTestMissing does not exist').
 	self assert: ((details at: #message) includesSubstring: 'Did you mean:')
@@ -62,10 +62,10 @@ MCPCommandErrorTest >> testMissingMethodErrorCarriesClassSideAndSelector [
 	self assert: error errorCode equals: #MethodNotFound.
 	self assert: (details at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (details at: #errorCode) equals: 'MethodNotFound'.
-	self assert: (details at: #className) equals: 'MCPToolGetMethodTestTarget'.
+	self assert: (details at: #class) equals: 'MCPToolGetMethodTestTarget'.
 	self assert: (details at: #classSide).
 	self assert: (details at: #selector) equals: 'mcpDefinitelyMissingSelectorForErrorTest'.
-	self assert: details keys asSet equals: #( errorClass errorCode message className classSide selector ) asSet
+	self assert: details keys asSet equals: #( errorClass errorCode message class classSide selector ) asSet
 ]
 
 { #category : 'tests' }
@@ -76,7 +76,7 @@ MCPCommandErrorTest >> testMissingMethodErrorForMissingClassHasNoSuggestions [
 		         MCPCommandError signalMissingMethodInClassName: 'MCPCommandErrorTestMissingClass' classSide: false selector: 'value' ].
 	details := error structuredDetails.
 	self assert: error errorCode equals: #ClassNotFound.
-	self assert: (details at: #className) equals: 'MCPCommandErrorTestMissingClass'.
+	self assert: (details at: #class) equals: 'MCPCommandErrorTestMissingClass'.
 	self assert: (details at: #selector) equals: 'value'.
 	self deny: (details includesKey: #suggestions).
 	self assert: ((details at: #message) includesSubstring: 'Class MCPCommandErrorTestMissingClass does not exist')
@@ -92,7 +92,7 @@ MCPCommandErrorTest >> testMissingMethodErrorSuggestsFirstExactSuperclassMatch [
 	suggestions := details at: #suggestions.
 	self assert: error errorCode equals: #MethodNotFound.
 	self assert: suggestions size equals: 1.
-	self assert: (suggestions first at: #className) equals: 'Object'.
+	self assert: (suggestions first at: #class) equals: 'Object'.
 	self deny: (suggestions first at: #classSide).
 	self assert: (suggestions first at: #selector) equals: 'yourself'.
 	self assert: ((details at: #message) includesSubstring: 'Exact matches: Object>>yourself')
@@ -108,7 +108,7 @@ MCPCommandErrorTest >> testMissingMethodErrorSuggestsOnlyExactOppositeSideAndSup
 	suggestions := details at: #suggestions.
 	self assert: error errorCode equals: #MethodNotFound.
 	self assert: suggestions size equals: 1.
-	self assert: (suggestions first at: #className) equals: 'MCPToolGetMethodTestTarget'.
+	self assert: (suggestions first at: #class) equals: 'MCPToolGetMethodTestTarget'.
 	self assert: (suggestions first at: #classSide).
 	self assert: (suggestions first at: #selector) equals: 'readClassSide'.
 	self assert: ((details at: #message) includesSubstring: 'Exact matches: MCPToolGetMethodTestTarget class>>readClassSide')
@@ -124,8 +124,8 @@ MCPCommandErrorTest >> testMissingPackageErrorCarriesPackageName [
 	self assert: error errorCode equals: #PackageNotFound.
 	self assert: (details at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (details at: #errorCode) equals: 'PackageNotFound'.
-	self assert: (details at: #packageName) equals: 'MCP-Tests-Missing'.
-	self assert: (details at: #scopeName) equals: 'packageName'.
+	self assert: (details at: #package) equals: 'MCP-Tests-Missing'.
+	self assert: (details at: #scope) equals: 'package'.
 	self assert: suggestions size <= 5.
 	self assert: ((details at: #message) includesSubstring: 'Package MCP-Tests-Missing does not exist')
 ]
@@ -137,8 +137,8 @@ MCPCommandErrorTest >> testMissingSuperclassErrorCarriesSuperclassName [
 	error := self capture: [ MCPCommandError signalMissingSuperclassNamed: 'MCPMissingSuperclass' forClassNamed: 'MCPNewClass' ].
 	details := error structuredDetails.
 	self assert: error errorCode equals: #SuperclassNotFound.
-	self assert: (details at: #className) equals: 'MCPNewClass'.
-	self assert: (details at: #superclassName) equals: 'MCPMissingSuperclass'
+	self assert: (details at: #class) equals: 'MCPNewClass'.
+	self assert: (details at: #superclass) equals: 'MCPMissingSuperclass'
 ]
 
 { #category : 'tests' }
@@ -149,7 +149,7 @@ MCPCommandErrorTest >> testMissingTagErrorCarriesTagAndClassName [
 		         MCPCommandError signalMissingTag: 'MissingTag' packageName: 'MCP-Tests' forClassNamed: 'MCPCommandErrorTestTarget' ].
 	details := error structuredDetails.
 	self assert: error errorCode equals: #TagNotFound.
-	self assert: (details at: #className) equals: 'MCPCommandErrorTestTarget'.
-	self assert: (details at: #packageName) equals: 'MCP-Tests'.
+	self assert: (details at: #class) equals: 'MCPCommandErrorTestTarget'.
+	self assert: (details at: #package) equals: 'MCP-Tests'.
 	self assert: (details at: #tag) equals: 'MissingTag'
 ]

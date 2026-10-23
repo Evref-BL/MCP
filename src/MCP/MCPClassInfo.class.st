@@ -35,29 +35,29 @@ MCPClassInfo class >> fromClass: aClass [
 MCPClassInfo >> asDictionary [
 
 	^ {
-		  (#className -> self className).
-		  (#superclassName -> self superclassName).
-		  (#packageName -> self packageName).
+		  (#class -> self className).
+		  (#superclass -> self superclassName).
+		  (#package -> self packageName).
 		  (#tag -> self tag).
-		  (#instanceSlotNames -> self instanceSlotNames).
-		  (#classSlotNames -> self classSlotNames).
-		  (#traitNames -> self traitNames).
-		  (#classTraitNames -> self classTraitNames).
-		  (#sharedVariableNames -> self sharedVariableNames).
-		  (#sharedPoolNames -> self sharedPoolNames).
-		  (#layoutClassName -> self layoutClassName).
-		  (#subclassNames -> self subclassNames) } asDictionary
+		  (#instanceSlots -> self instanceSlotNames).
+		  (#classSlots -> self classSlotNames).
+		  (#traits -> self traitNames).
+		  (#classTraits -> self classTraitNames).
+		  (#sharedVariables -> self sharedVariableNames).
+		  (#sharedPools -> self sharedPoolNames).
+		  (#layout -> self layoutClassName).
+		  (#subclasses -> self subclassNames) } asDictionary
 ]
 
 { #category : 'converting' }
 MCPClassInfo >> asQueryDictionary [
 
 	^ {
-		  (#className -> self className).
-		  (#packageName -> self packageName).
+		  (#class -> self className).
+		  (#package -> self packageName).
 		  (#tag -> self tag).
-		  (#instanceSlotNames -> self instanceSlotNames).
-		  (#classSlotNames -> self classSlotNames) } asDictionary
+		  (#instanceSlots -> self instanceSlotNames).
+		  (#classSlots -> self classSlotNames) } asDictionary
 ]
 
 { #category : 'accessing' }

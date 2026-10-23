@@ -71,13 +71,13 @@ MCPReplaceClassSideTraitsCommand >> resolvedClassTraitNamed: aClassTraitName [
 				            signalErrorCode: #ClassTraitNotFound
 				            message: 'Class trait ' , originalName , ' does not exist.'
 				            details: {
-						            (#className -> self className).
-						            (#classTraitName -> originalName).
+						            (#class -> self className).
+						            (#classTrait -> originalName).
 						            (#classTraits -> self classTraitNames) } asDictionary ].
 	behavior isTrait ifFalse: [
 			MCPCommandError signalErrorCode: #InvalidClassTrait message: originalName , ' is not a class trait.' details: {
-					(#className -> self className).
-					(#classTraitName -> originalName).
+					(#class -> self className).
+					(#classTrait -> originalName).
 					(#classTraits -> self classTraitNames) } asDictionary ].
 	^ behavior classTrait
 ]

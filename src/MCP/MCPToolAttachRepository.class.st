@@ -36,7 +36,7 @@ MCPToolAttachRepository >> repositoryToolSpec [
 				    type: 'string'
 				    description: 'Optional source subdirectory for packages managed by this repository.').
 			   (self
-				    stringArraySchemaNamed: 'packageNames'
+				    stringArraySchemaNamed: 'packages'
 				    description: 'Package names to manage initially from the attached checkout.'
 				    itemDescription: 'A package name.') }).
 		  (#requiredProperties -> #( 'name' 'location' )) } asDictionary

@@ -26,7 +26,7 @@ MCPClassScopeQuery >> classScopeSets [
 	| sets |
 	sets := OrderedCollection new.
 	self packageNames ifNotEmpty: [ sets add: self classesForPackageNames ].
-	self classNames ifNotEmpty: [ sets add: (self resolvedClassesNamed: self classNames inScope: 'classNames') ].
+	self classNames ifNotEmpty: [ sets add: (self resolvedClassesNamed: self classNames inScope: 'classes') ].
 	self hierarchyClassNames ifNotEmpty: [ sets add: (self hierarchyClassesNamed: self hierarchyClassNames) ].
 	self subclassClassNames ifNotEmpty: [ sets add: (self subclassClassesNamed: self subclassClassNames) ].
 	self parentClassNames ifNotEmpty: [ sets add: (self parentClassesNamed: self parentClassNames) ].
@@ -47,7 +47,7 @@ MCPClassScopeQuery >> classesForPackageNames [
 	| classes |
 	classes := IdentitySet new.
 	packageNames do: [ :eachName |
-			(self resolvedPackageNamed: eachName inScope: 'packageNames') ifNotNil: [ :package |
+			(self resolvedPackageNamed: eachName inScope: 'packages') ifNotNil: [ :package |
 				package classes do: [ :eachClass | classes add: eachClass instanceSide ] ] ].
 	^ self sortedClassesByName: classes
 ]
@@ -57,7 +57,7 @@ MCPClassScopeQuery >> hierarchyClassesNamed: someClassNames [
 
 	| classes |
 	classes := IdentitySet new.
-	(self resolvedClassesNamed: someClassNames inScope: 'hierarchyClassNames') do: [ :eachClass |
+	(self resolvedClassesNamed: someClassNames inScope: 'hierarchyClasses') do: [ :eachClass |
 		eachClass withAllSuperAndSubclasses do: [ :relatedClass | classes add: relatedClass instanceSide ] ].
 	^ self sortedClassesByName: classes
 ]
@@ -80,7 +80,7 @@ MCPClassScopeQuery >> parentClassesNamed: someClassNames [
 
 	| classes |
 	classes := IdentitySet new.
-	(self resolvedClassesNamed: someClassNames inScope: 'parentClassNames') do: [ :eachClass |
+	(self resolvedClassesNamed: someClassNames inScope: 'parentClasses') do: [ :eachClass |
 		eachClass allSuperclasses do: [ :relatedClass | classes add: relatedClass instanceSide ] ].
 	^ self sortedClassesByName: classes
 ]
@@ -138,7 +138,7 @@ MCPClassScopeQuery >> subclassClassesNamed: someClassNames [
 
 	| classes |
 	classes := IdentitySet new.
-	(self resolvedClassesNamed: someClassNames inScope: 'subclassClassNames') do: [ :eachClass |
+	(self resolvedClassesNamed: someClassNames inScope: 'subclassClasses') do: [ :eachClass |
 		eachClass allSubclasses do: [ :relatedClass | classes add: relatedClass instanceSide ] ].
 	^ self sortedClassesByName: classes
 ]

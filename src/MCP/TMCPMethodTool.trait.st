@@ -24,7 +24,7 @@ TMCPMethodTool >> behaviorNamed: aClassName classSide: aBoolean [
 TMCPMethodTool >> methodEntryLabel: anEntry [
 
 	^ self
-		  methodReferenceForClassName: (anEntry at: #className)
+		  methodReferenceForClassName: (anEntry at: #class)
 		  selector: (anEntry at: #selector)
 		  isClassSide: (anEntry at: #classSide ifAbsent: [ false ])
 ]
@@ -77,14 +77,14 @@ TMCPMethodTool >> methodReferenceForClassName: aClassName selector: aSelector is
 { #category : 'private - schema' }
 TMCPMethodTool >> methodScopeClassNamesProperty [
 
-	^ self stringArraySchemaNamed: 'classNames' description: 'Exact defining classes.' itemDescription: 'Class name.'
+	^ self stringArraySchemaNamed: 'classes' description: 'Exact defining classes.' itemDescription: 'Class name.'
 ]
 
 { #category : 'private - schema' }
 TMCPMethodTool >> methodScopeHierarchyClassNamesProperty [
 
 	^ self
-		  stringArraySchemaNamed: 'hierarchyClassNames'
+		  stringArraySchemaNamed: 'hierarchyClasses'
 		  description: 'Classes plus superclasses and subclasses.'
 		  itemDescription: 'Hierarchy root class.'
 ]
@@ -93,7 +93,7 @@ TMCPMethodTool >> methodScopeHierarchyClassNamesProperty [
 TMCPMethodTool >> methodScopePackageNamesProperty [
 
 	^ self
-		  stringArraySchemaNamed: 'packageNames'
+		  stringArraySchemaNamed: 'packages'
 		  description: 'Packages to include, including extensions.'
 		  itemDescription: 'Package name.'
 ]
@@ -102,7 +102,7 @@ TMCPMethodTool >> methodScopePackageNamesProperty [
 TMCPMethodTool >> methodScopeParentClassNamesProperty [
 
 	^ self
-		  stringArraySchemaNamed: 'parentClassNames'
+		  stringArraySchemaNamed: 'parentClasses'
 		  description: 'Superclasses of these classes; roots excluded.'
 		  itemDescription: 'Subclass name.'
 ]
@@ -123,7 +123,7 @@ TMCPMethodTool >> methodScopeQueryFromRequest: request [
 TMCPMethodTool >> methodScopeSubclassClassNamesProperty [
 
 	^ self
-		  stringArraySchemaNamed: 'subclassClassNames'
+		  stringArraySchemaNamed: 'subclassClasses'
 		  description: 'Subclasses of these classes; roots excluded.'
 		  itemDescription: 'Superclass name.'
 ]

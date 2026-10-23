@@ -39,12 +39,12 @@ MCPToolChangeHistoryToolsTest >> testChangeHistoryToolsDeclareExpectedInputs [
 	entryProperties := self inputPropertyNamesFor: MCPToolListChangeHistoryEntries new.
 	applyProperties := self inputPropertyNamesFor: MCPToolApplyChangeHistoryEntries new.
 	revertProperties := self inputPropertyNamesFor: MCPToolRevertChangeHistoryEntries new.
-	selectionProperties := #( 'directoryPath' 'historyFileName' 'indexes' 'startIndex' 'endIndex' 'latestCount' 'codeChangesOnly'
+	selectionProperties := #( 'directoryPath' 'historyFile' 'indexes' 'startIndex' 'endIndex' 'latestCount' 'codeChangesOnly'
 	                          'confirm' ).
 	self assert: fileProperties asArray equals: #( 'directoryPath' 'offset' ).
 	self
 		assert: entryProperties asArray
-		equals: #( 'directoryPath' 'historyFileName' 'offset' 'newestFirst' 'codeChangesOnly' ).
+		equals: #( 'directoryPath' 'historyFile' 'offset' 'newestFirst' 'codeChangesOnly' ).
 	self assert: applyProperties asArray equals: selectionProperties.
 	self assert: revertProperties asArray equals: selectionProperties
 ]
@@ -82,10 +82,10 @@ MCPToolChangeHistoryToolsTest >> testListChangeHistoryFilesReturnsFiles [
 	| allowedFileKeys data files |
 	data := self toolNamed: 'history_file_list' dataFromArguments: Dictionary new.
 	files := data at: #files.
-	allowedFileKeys := #( fileName exists fileSize modificationTime isCurrent ) asSet.
+	allowedFileKeys := #( file exists fileSize modificationTime isCurrent ) asSet.
 	self assert: files notEmpty.
 	self assert: (files allSatisfy: [ :each |
-			 (each includesKey: #fileName) and: [ each keys allSatisfy: [ :key | allowedFileKeys includes: key ] ] ])
+			 (each includesKey: #file) and: [ each keys allSatisfy: [ :key | allowedFileKeys includes: key ] ] ])
 ]
 
 { #category : 'tests' }
@@ -104,7 +104,7 @@ MCPToolChangeHistoryToolsTest >> testSelectionResultDataHasExpectedShape [
 	data := result asDictionary.
 	self assert: data equals: {
 			(#action -> 'apply').
-			(#historyFileName -> 'memory.ombu').
+			(#historyFile -> 'memory.ombu').
 			(#selectionCriteria -> Dictionary new).
 			(#selectedEntries -> #(  )).
 			(#previewEntries -> #(  )).

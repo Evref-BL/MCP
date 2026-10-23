@@ -24,7 +24,7 @@ MCPToolUpdateMethodSelector >> methodToolSpec [
 		  (#action -> 'update').
 		  (#inputProperties -> {
 			   (MCPStructureProperties new
-				    name: 'className';
+				    name: 'class';
 				    type: 'string';
 				    description: 'Class name.';
 				    yourself).
@@ -55,7 +55,7 @@ MCPToolUpdateMethodSelector >> methodToolSpec [
 						     yourself);
 				    yourself).
 			   ((MCPStructureProperties new
-				     name: 'argumentNames';
+				     name: 'arguments';
 				     type: 'array';
 				     description: 'Names for target arguments.')
 				    items: (MCPStructureProperties new
@@ -74,5 +74,5 @@ MCPToolUpdateMethodSelector >> methodToolSpec [
 			   self refactoringScopePackageNamesSchemaProperty.
 			   self refactoringScopeClassNamesSchemaProperty.
 			   self refactoringScopeHierarchyClassNamesSchemaProperty }).
-		  (#requiredProperties -> #( 'className' 'selector' 'newSelector' )) } asDictionary
+		  (#requiredProperties -> #( 'class' 'selector' 'newSelector' )) } asDictionary
 ]

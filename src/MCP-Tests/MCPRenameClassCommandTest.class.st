@@ -55,7 +55,7 @@ MCPRenameClassCommandTest >> testMissingClassSignalsCommandError [
 	error := self captureCommandError: [
 		         (MCPRenameClassCommand className: 'MCPRenameClassCommandTestMissing' newClassName: self renamedClassName) execute ].
 	self assert: error errorCode equals: #ClassNotFound.
-	self assert: (error structuredDetails at: #className) equals: 'MCPRenameClassCommandTestMissing'
+	self assert: (error structuredDetails at: #class) equals: 'MCPRenameClassCommandTestMissing'
 ]
 
 { #category : 'tests' }

@@ -27,16 +27,16 @@ MCPToolUpdateRepository >> repositoryToolSpec [
 		  (#inputProperties -> {
 			   (self schemaPropertyNamed: 'subdirectory' type: 'string' description: 'Set the repository source subdirectory in the image.').
 			   (self
-				    stringArraySchemaNamed: 'packageNames'
+				    stringArraySchemaNamed: 'packages'
 				    description:
 				    'Replace the full managed package list by adding and removing repository package membership without unloading packages or writing files.'
 				    itemDescription: 'A package name.').
 			   (self
-				    stringArraySchemaNamed: 'addPackageNames'
+				    stringArraySchemaNamed: 'addPackages'
 				    description: 'Package names to add to the repository working copy without writing packages to files.'
 				    itemDescription: 'A package name to add.').
 			   (self
-				    stringArraySchemaNamed: 'removePackageNames'
+				    stringArraySchemaNamed: 'removePackages'
 				    description: 'Package names to remove from repository membership without unloading packages from the image.'
 				    itemDescription: 'A package name to remove.') }) } asDictionary
 ]

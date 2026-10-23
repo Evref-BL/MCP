@@ -49,7 +49,7 @@ MCPUpdateRepositoryCommand >> execute [
 				  self request hasUpdates ifFalse: [ self signalNoUpdateRequested ].
 				  repository := self request repository.
 				  (self request hasSuppliedPropertyNamed: 'subdirectory') ifTrue: [ self setSubdirectoryOn: repository ].
-				  (self request hasSuppliedPropertyNamed: 'packageNames') ifTrue: [ self replacePackagesIn: repository ].
+				  (self request hasSuppliedPropertyNamed: 'packages') ifTrue: [ self replacePackagesIn: repository ].
 				  self addPackagesTo: repository.
 				  self removePackagesFrom: repository.
 				  result := MCPRepositoryUpdateResult

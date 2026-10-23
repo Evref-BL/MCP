@@ -16,7 +16,7 @@ MCPToolMethodSearchTest >> entryForReference: aReference in: methods [
 		  detect: [ :each |
 				  | reference |
 				  reference := String streamContents: [ :stream |
-						               stream nextPutAll: (each at: #className).
+						               stream nextPutAll: (each at: #class).
 						               (each at: #classSide ifAbsent: [ false ]) ifTrue: [ stream nextPutAll: ' class' ].
 						               stream
 							               nextPutAll: '>>';
@@ -221,7 +221,7 @@ MCPToolMethodSearchTest >> testEquivalentSearchDefaultsReferenceToInstanceSide [
 			on: (self classNamed: subclassName).
 		result := self callToolNamed: 'method_equivalent_search' withArguments: {
 				          (self searchScope: { (#classes -> { subclassName }) }).
-				          (#className -> 'MCPToolMethodSearchReferenceFixture').
+				          (#class -> 'MCPToolMethodSearchReferenceFixture').
 				          (#selector -> 'sharedTarget') } asDictionary.
 		data := self dataFrom: result.
 		self deny: (result at: #isError ifAbsent: [ false ]).
@@ -250,7 +250,7 @@ MCPToolMethodSearchTest >> testEquivalentSearchMatchesReferencedClassSideMethod 
 		result := self callToolNamed: 'method_equivalent_search' withArguments: {
 				          (self searchScope: { (#classes -> { subclassName }) }).
 				          (#side -> 'class').
-				          (#className -> 'MCPToolMethodSearchReferenceFixture').
+				          (#class -> 'MCPToolMethodSearchReferenceFixture').
 				          (#selector -> 'sharedTarget').
 				          (#classSide -> true) } asDictionary.
 		data := self dataFrom: result.
@@ -279,7 +279,7 @@ MCPToolMethodSearchTest >> testEquivalentSearchMatchesReferencedInstanceSideMeth
 			on: (self classNamed: subclassName).
 		result := self callToolNamed: 'method_equivalent_search' withArguments: {
 				          (self searchScope: { (#classes -> { subclassName }) }).
-				          (#className -> 'MCPToolMethodSearchReferenceFixture').
+				          (#class -> 'MCPToolMethodSearchReferenceFixture').
 				          (#selector -> 'sharedTarget').
 				          (#classSide -> false) } asDictionary.
 		data := self dataFrom: result.
@@ -307,7 +307,7 @@ MCPToolMethodSearchTest >> testEquivalentSearchRejectsDifferentAst [
 			on: (self classNamed: subclassName).
 		result := self callToolNamed: 'method_equivalent_search' withArguments: {
 				          (self searchScope: { (#classes -> { subclassName }) }).
-				          (#className -> 'MCPToolMethodSearchReferenceFixture').
+				          (#class -> 'MCPToolMethodSearchReferenceFixture').
 				          (#selector -> 'sharedTarget').
 				          (#classSide -> false) } asDictionary.
 		data := self dataFrom: result.
@@ -322,14 +322,14 @@ MCPToolMethodSearchTest >> testEquivalentSearchReturnsStructuredErrorWhenReferen
 	| error result |
 	result := self callToolNamed: 'method_equivalent_search' withArguments: {
 			          (self searchScope: { (#classes -> #( 'MCPToolMethodSearchReferenceFixture' )) }).
-			          (#className -> 'MCPToolMethodSearchMissingReferenceClass').
+			          (#class -> 'MCPToolMethodSearchMissingReferenceClass').
 			          (#selector -> 'sharedTarget').
 			          (#classSide -> false) } asDictionary.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
-	self assert: (error at: #className) equals: 'MCPToolMethodSearchMissingReferenceClass'
+	self assert: (error at: #class) equals: 'MCPToolMethodSearchMissingReferenceClass'
 ]
 
 { #category : 'tests' }
@@ -338,14 +338,14 @@ MCPToolMethodSearchTest >> testEquivalentSearchReturnsStructuredErrorWhenReferen
 	| error result |
 	result := self callToolNamed: 'method_equivalent_search' withArguments: {
 			          (self searchScope: { (#classes -> #( 'MCPToolMethodSearchReferenceFixture' )) }).
-			          (#className -> 'MCPToolMethodSearchReferenceFixture').
+			          (#class -> 'MCPToolMethodSearchReferenceFixture').
 			          (#selector -> 'missingEquivalentTarget').
 			          (#classSide -> false) } asDictionary.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'MethodNotFound'.
-	self assert: (error at: #className) equals: 'MCPToolMethodSearchReferenceFixture'.
+	self assert: (error at: #class) equals: 'MCPToolMethodSearchReferenceFixture'.
 	self assert: (error at: #selector) equals: 'missingEquivalentTarget'.
 	self assert: (error at: #classSide) equals: false
 ]
@@ -429,7 +429,7 @@ MCPToolMethodSearchTest >> testPackageNamesIncludeExtensionMethods [
 	method := self entryForReference: 'MCPToolMethodSearchReferenceTarget>>extensionProbe' in: (data at: #methods).
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #methods) size equals: 1.
-	self assert: (method at: #packageName) equals: 'MCP-Tests-Resources-Extensions'.
+	self assert: (method at: #package) equals: 'MCP-Tests-Resources-Extensions'.
 	self assert: (method at: #isExtension)
 ]
 
@@ -444,7 +444,7 @@ MCPToolMethodSearchTest >> testPackageNamesSelectPackageScope [
 	method := self entryForReference: 'MCPToolMethodSearchReferenceTarget>>extensionProbe' in: (data at: #methods).
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #methods) size equals: 1.
-	self assert: (method at: #packageName) equals: 'MCP-Tests-Resources-Extensions'.
+	self assert: (method at: #package) equals: 'MCP-Tests-Resources-Extensions'.
 	self assert: (method at: #isExtension)
 ]
 
@@ -558,7 +558,7 @@ MCPToolMethodSearchTest >> testSelectorReferencePackageNamesIncludeExtensionMeth
 	method := self entryForReference: 'MCPToolMethodSearchReferenceTarget>>extensionSender' in: (data at: #methods).
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #methods) size equals: 1.
-	self assert: (method at: #packageName) equals: 'MCP-Tests-Resources-Extensions'.
+	self assert: (method at: #package) equals: 'MCP-Tests-Resources-Extensions'.
 	self assert: (method at: #isExtension)
 ]
 

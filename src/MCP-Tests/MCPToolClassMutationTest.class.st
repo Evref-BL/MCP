@@ -41,7 +41,7 @@ MCPToolClassMutationTest >> callToolWith: someArguments [
 { #category : 'private - calling' }
 MCPToolClassMutationTest >> classToolClassForArguments: arguments slotAction: slotAction [
 
-	((arguments includesKey: #superclassName) and: [ arguments includesKey: #packageName ]) ifTrue: [ ^ MCPToolCreateClass ].
+	((arguments includesKey: #superclass) and: [ arguments includesKey: #package ]) ifTrue: [ ^ MCPToolCreateClass ].
 	slotAction = 'add' ifTrue: [ ^ MCPToolAddClassSlot ].
 	slotAction = 'remove' ifTrue: [ ^ MCPToolRemoveClassSlot ].
 	slotAction = 'rename' ifTrue: [ ^ MCPToolUpdateClassSlotName ].
@@ -55,8 +55,8 @@ MCPToolClassMutationTest >> classToolClassForArguments: arguments slotAction: sl
 	(arguments includesKey: #sharedPools) ifTrue: [ ^ MCPToolUpdateClassSharedPools ].
 	(arguments includesKey: #layout) ifTrue: [ ^ MCPToolUpdateClassLayout ].
 	((arguments includesKey: #slots) or: [ arguments includesKey: #classSlots ]) ifTrue: [ ^ MCPToolUpdateClassSlots ].
-	(arguments includesKey: #superclassName) ifTrue: [ ^ MCPToolUpdateClassSuperclass ].
-	((arguments includesKey: #packageName) or: [ arguments includesKey: #tag ]) ifTrue: [ ^ MCPToolUpdateClassPackage ].
+	(arguments includesKey: #superclass) ifTrue: [ ^ MCPToolUpdateClassSuperclass ].
+	((arguments includesKey: #package) or: [ arguments includesKey: #tag ]) ifTrue: [ ^ MCPToolUpdateClassPackage ].
 	^ MCPToolUpdateClassComment
 ]
 
@@ -71,8 +71,8 @@ MCPToolClassMutationTest >> createRequestArgumentsForClassName: aClassName super
 
 	^ self createRequestArgumentsWith: {
 			  (#name -> aClassName).
-			  (#superclassName -> aSuperclassName).
-			  (#packageName -> aPackageName) }
+			  (#superclass -> aSuperclassName).
+			  (#package -> aPackageName) }
 ]
 
 { #category : 'private - create' }
@@ -268,15 +268,15 @@ MCPToolClassMutationTest >> testClassToolSchemasDeclareExpectedInputs [
 	self
 		assert: createProperties asArray
 		equals:
-			#( 'name' 'superclassName' 'packageName' 'tag' 'slots' 'classSlots' 'traits' 'classTraits' 'sharedVariables' 'sharedPools'
+			#( 'name' 'superclass' 'package' 'tag' 'slots' 'classSlots' 'traits' 'classTraits' 'sharedVariables' 'sharedPools'
 			   'layout' 'comment' ).
-	self assert: MCPToolCreateClass new inputSchema required asSet equals: #( 'name' 'superclassName' 'packageName' ) asSet.
+	self assert: MCPToolCreateClass new inputSchema required asSet equals: #( 'name' 'superclass' 'package' ) asSet.
 	self assert: renameProperties asArray equals: #( 'name' 'newName' ).
 	self assert: MCPToolUpdateClassName new inputSchema required asSet equals: #( 'name' 'newName' ) asSet.
-	self assert: packageProperties asArray equals: #( 'name' 'packageName' 'tag' ).
+	self assert: packageProperties asArray equals: #( 'name' 'package' 'tag' ).
 	self assert: MCPToolUpdateClassPackage new inputSchema required asSet equals: #( 'name' ) asSet.
-	self assert: slotProperties asArray equals: #( 'name' 'slotName' 'classSide' ).
-	self assert: MCPToolAddClassSlot new inputSchema required asSet equals: #( 'name' 'slotName' ) asSet
+	self assert: slotProperties asArray equals: #( 'name' 'slot' 'classSide' ).
+	self assert: MCPToolAddClassSlot new inputSchema required asSet equals: #( 'name' 'slot' ) asSet
 ]
 
 { #category : 'tests - create' }
@@ -285,8 +285,8 @@ MCPToolClassMutationTest >> testCreateAcceptsClassSlots [
 	| createdClass data result |
 	result := self callToolWith: (self createRequestArgumentsWith: {
 				           (#name -> 'MCPToolClassMutationTestClassSlots').
-				           (#superclassName -> 'Object').
-				           (#packageName -> self generatedPackageName).
+				           (#superclass -> 'Object').
+				           (#package -> self generatedPackageName).
 				           (#classSlots -> #( 'defaultName' )) }).
 	data := self dataFrom: result.
 	createdClass := self classNamed: 'MCPToolClassMutationTestClassSlots'.
@@ -329,8 +329,8 @@ MCPToolClassMutationTest >> testCreateAcceptsSlotsAndTag [
 	| createdClass data result |
 	result := self callToolWith: (self createRequestArgumentsWith: {
 				           (#name -> 'MCPToolClassMutationTestTagged').
-				           (#superclassName -> 'Object').
-				           (#packageName -> self generatedPackageName).
+				           (#superclass -> 'Object').
+				           (#package -> self generatedPackageName).
 				           (#tag -> 'Generated').
 				           (#slots -> #( 'firstName' 'lastName' )) }).
 	data := self dataFrom: result.
@@ -403,7 +403,7 @@ MCPToolClassMutationTest >> testCreateReturnsStructuredErrorWhenSuperclassIsMiss
 	self assert: (error at: #action) equals: 'create'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'SuperclassNotFound'.
-	self assert: (error at: #superclassName) equals: 'DefinitelyMissingSuperclass'
+	self assert: (error at: #superclass) equals: 'DefinitelyMissingSuperclass'
 ]
 
 { #category : 'tests - create' }
@@ -422,11 +422,11 @@ MCPToolClassMutationTest >> testCreateReturnsStructuredErrorWhenTraitIsMissing [
 	self assert: (error at: #action) equals: 'create'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'TraitNotFound'.
-	self assert: (error at: #traitName) equals: 'DefinitelyMissingTrait'.
+	self assert: (error at: #trait) equals: 'DefinitelyMissingTrait'.
 	self assert: (error at: #traits) equals: #( 'DefinitelyMissingTrait' ).
 	self assert: (error at: #layout) equals: 'WeakLayout'.
-	self assert: (error at: #packageName) equals: self generatedPackageName.
-	self assert: (error at: #superclassName) equals: 'Object'
+	self assert: (error at: #package) equals: self generatedPackageName.
+	self assert: (error at: #superclass) equals: 'Object'
 ]
 
 { #category : 'tests - create' }
@@ -532,7 +532,7 @@ MCPToolClassMutationTest >> testUpdateForcePullUpSlotContinuesPastRefactoringWar
 	result := self callToolWith: (self updateRequestArgumentsWith: {
 				           (#name -> 'MCPToolClassMutationTestWarningPullUpTarget').
 				           (#slotAction -> 'pullUp').
-				           (#slotName -> 'sharedSlot').
+				           (#slot -> 'sharedSlot').
 				           (#classSide -> false).
 				           (#force -> true) }).
 	data := self dataFrom: result.
@@ -567,7 +567,7 @@ MCPToolClassMutationTest >> testUpdateForceRemoveSlotContinuesPastRefactoringWar
 	result := self callToolWith: (self updateRequestArgumentsWith: {
 				           (#name -> 'MCPToolClassMutationTestWarningRemoveSlotTarget').
 				           (#slotAction -> 'remove').
-				           (#slotName -> 'referencedSlot').
+				           (#slot -> 'referencedSlot').
 				           (#classSide -> false).
 				           (#force -> true) }).
 	data := self dataFrom: result.
@@ -670,8 +670,8 @@ MCPToolClassMutationTest >> testUpdatePullUpSlotReturnsStructuredCommandErrorFor
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'PullUpSlotRefactoringError'.
 	self assert: (error at: #causeClass) equals: 'RBRefactoringError'.
-	self assert: (error at: #className) equals: 'MCPToolMethodMutationTestTarget'.
-	self assert: (error at: #slotName) equals: 'missingSlot'.
+	self assert: (error at: #class) equals: 'MCPToolMethodMutationTestTarget'.
+	self assert: (error at: #slot) equals: 'missingSlot'.
 	self assert: (error at: #classSide) equals: false.
 	self assert: ((error at: #message) includesSubstring: 'missingSlot')
 ]
@@ -711,8 +711,8 @@ MCPToolClassMutationTest >> testUpdatePullUpSlotStopsOnRefactoringWarningByDefau
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'PullUpSlotRefactoringWarning'.
 	self assert: (error at: #causeClass) equals: 'RBRefactoringWarning'.
-	self assert: (error at: #className) equals: 'MCPToolClassMutationTestWarningPullUpTarget'.
-	self assert: (error at: #slotName) equals: 'sharedSlot'.
+	self assert: (error at: #class) equals: 'MCPToolClassMutationTestWarningPullUpTarget'.
+	self assert: (error at: #slot) equals: 'sharedSlot'.
 	self assert: (error at: #classSide) equals: false.
 	self assert: (error at: #forceSupported) equals: true.
 	self assert: ((error at: #howToProceed) includesSubstring: 'force=true').
@@ -847,8 +847,8 @@ MCPToolClassMutationTest >> testUpdateRemoveSlotStopsOnRefactoringWarningByDefau
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'RemoveSlotRefactoringWarning'.
 	self assert: (self expectedRefactoringWarningCauseClassNames includes: (error at: #causeClass)).
-	self assert: (error at: #className) equals: 'MCPToolClassMutationTestWarningRemoveSlotTarget'.
-	self assert: (error at: #slotName) equals: 'referencedSlot'.
+	self assert: (error at: #class) equals: 'MCPToolClassMutationTestWarningRemoveSlotTarget'.
+	self assert: (error at: #slot) equals: 'referencedSlot'.
 	self assert: (error at: #classSide) equals: false.
 	self assert: (error at: #forceSupported) equals: true.
 	self assert: ((error at: #howToProceed) includesSubstring: 'force=true').
@@ -1254,8 +1254,8 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenAddSlotClassIsMi
 	self assert: (error at: #updateAction) equals: 'addSlot'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
-	self assert: (error at: #className) equals: 'MCPToolClassMutationTestMissingAddSlot'.
-	self assert: (error at: #slotName) equals: 'addedSlot'.
+	self assert: (error at: #class) equals: 'MCPToolClassMutationTestMissingAddSlot'.
+	self assert: (error at: #slot) equals: 'addedSlot'.
 	self assert: (error at: #classSide) equals: false
 ]
 
@@ -1274,8 +1274,8 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenCommentClassIsMi
 	self assert: (error at: #updateAction) equals: 'setComment'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
-	self assert: (error at: #className) equals: 'MCPToolClassMutationTestMissing'.
-	self assert: (error at: #scopeName) equals: 'className'.
+	self assert: (error at: #class) equals: 'MCPToolClassMutationTestMissing'.
+	self assert: (error at: #scope) equals: 'class'.
 	self assert: suggestions size <= 5.
 	self assert: ((error at: #message) includesSubstring: 'MCPToolClassMutationTestMissing does not exist')
 ]
@@ -1293,7 +1293,7 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenMoveClassIsMissi
 	result := self callToolWith: {
 			          (#action -> 'update').
 			          (#name -> 'MCPToolClassMutationTestMissing').
-			          (#packageName -> self destinationPackageName) } asDictionary.
+			          (#package -> self destinationPackageName) } asDictionary.
 	structured := self structuredContentFrom: result.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
@@ -1301,7 +1301,7 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenMoveClassIsMissi
 	self assert: (error at: #updateAction) equals: 'move'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
-	self assert: (error at: #className) equals: 'MCPToolClassMutationTestMissing'
+	self assert: (error at: #class) equals: 'MCPToolClassMutationTestMissing'
 ]
 
 { #category : 'tests - update' }
@@ -1320,8 +1320,8 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenPullUpSlotClassI
 	self assert: (error at: #updateAction) equals: 'pullUpSlot'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
-	self assert: (error at: #className) equals: 'MCPToolClassMutationTestMissingPullUp'.
-	self assert: (error at: #slotName) equals: 'sharedSlot'.
+	self assert: (error at: #class) equals: 'MCPToolClassMutationTestMissingPullUp'.
+	self assert: (error at: #slot) equals: 'sharedSlot'.
 	self assert: (error at: #classSide) equals: false
 ]
 
@@ -1341,8 +1341,8 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenRemoveSlotClassI
 	self assert: (error at: #updateAction) equals: 'removeSlot'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
-	self assert: (error at: #className) equals: 'MCPToolClassMutationTestMissingRemoveSlot'.
-	self assert: (error at: #slotName) equals: 'removableSlot'.
+	self assert: (error at: #class) equals: 'MCPToolClassMutationTestMissingRemoveSlot'.
+	self assert: (error at: #slot) equals: 'removableSlot'.
 	self assert: (error at: #classSide) equals: false
 ]
 
@@ -1361,8 +1361,8 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenRenameClassIsMis
 	self assert: (error at: #updateAction) equals: 'rename'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
-	self assert: (error at: #className) equals: 'MCPToolClassMutationTestMissing'.
-	self assert: (error at: #scopeName) equals: 'className'.
+	self assert: (error at: #class) equals: 'MCPToolClassMutationTestMissing'.
+	self assert: (error at: #scope) equals: 'class'.
 	self assert: suggestions size <= 5.
 	self assert: ((error at: #message) includesSubstring: 'MCPToolClassMutationTestMissing does not exist')
 ]
@@ -1383,9 +1383,9 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenRenameSlotClassI
 	self assert: (error at: #updateAction) equals: 'renameSlot'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
-	self assert: (error at: #className) equals: 'MCPToolClassMutationTestMissingRenameSlot'.
-	self assert: (error at: #slotName) equals: 'oldSlot'.
-	self assert: (error at: #newSlotName) equals: 'renamedSlot'.
+	self assert: (error at: #class) equals: 'MCPToolClassMutationTestMissingRenameSlot'.
+	self assert: (error at: #slot) equals: 'oldSlot'.
+	self assert: (error at: #newSlot) equals: 'renamedSlot'.
 	self assert: (error at: #classSide) equals: false
 ]
 
@@ -1401,14 +1401,14 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenReparentSupercla
 	result := self callToolWith: {
 			          (#action -> 'update').
 			          (#name -> self reparentTargetClassName).
-			          (#superclassName -> 'DefinitelyMissingSuperclass') } asDictionary.
+			          (#superclass -> 'DefinitelyMissingSuperclass') } asDictionary.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #action) equals: 'update'.
 	self assert: (error at: #updateAction) equals: 'reparent'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'SuperclassNotFound'.
-	self assert: (error at: #superclassName) equals: 'DefinitelyMissingSuperclass'
+	self assert: (error at: #superclass) equals: 'DefinitelyMissingSuperclass'
 ]
 
 { #category : 'tests - update' }
@@ -1429,8 +1429,8 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenReplacementClass
 	self assert: (error at: #updateAction) equals: 'replaceClassTraits'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'ClassTraitNotFound'.
-	self assert: (error at: #className) equals: 'MCPToolClassMutationTestMissingClassTraitTarget'.
-	self assert: (error at: #classTraitName) equals: 'DefinitelyMissingClassTrait'.
+	self assert: (error at: #class) equals: 'MCPToolClassMutationTestMissingClassTraitTarget'.
+	self assert: (error at: #classTrait) equals: 'DefinitelyMissingClassTrait'.
 	self assert: (error at: #classTraits) equals: #( 'DefinitelyMissingClassTrait' )
 ]
 
@@ -1451,7 +1451,7 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenReplacementLayou
 	self assert: (error at: #updateAction) equals: 'replaceLayout'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'InvalidLayoutClass'.
-	self assert: (error at: #className) equals: 'MCPToolClassMutationTestInvalidLayoutTarget'.
+	self assert: (error at: #class) equals: 'MCPToolClassMutationTestInvalidLayoutTarget'.
 	self assert: (error at: #layout) equals: 'Object'
 ]
 
@@ -1474,7 +1474,7 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenReplacementLayou
 	self assert: (error at: #updateAction) equals: 'replaceLayout'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'LayoutClassNotFound'.
-	self assert: (error at: #className) equals: 'MCPToolClassMutationTestMissingLayoutTarget'.
+	self assert: (error at: #class) equals: 'MCPToolClassMutationTestMissingLayoutTarget'.
 	self assert: (error at: #layout) equals: 'DefinitelyMissingLayout'
 ]
 
@@ -1496,8 +1496,8 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenReplacementShare
 	self assert: (error at: #updateAction) equals: 'replaceSharedPools'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'SharedPoolNotFound'.
-	self assert: (error at: #className) equals: 'MCPToolClassMutationTestMissingSharedPoolTarget'.
-	self assert: (error at: #sharedPoolName) equals: 'DefinitelyMissingSharedPool'.
+	self assert: (error at: #class) equals: 'MCPToolClassMutationTestMissingSharedPoolTarget'.
+	self assert: (error at: #sharedPool) equals: 'DefinitelyMissingSharedPool'.
 	self assert: (error at: #sharedPools) equals: #( 'DefinitelyMissingSharedPool' )
 ]
 
@@ -1519,8 +1519,8 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenReplacementTrait
 	self assert: (error at: #updateAction) equals: 'replaceTraits'.
 	self assert: (error at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (error at: #errorCode) equals: 'TraitNotFound'.
-	self assert: (error at: #className) equals: 'MCPToolClassMutationTestMissingTraitTarget'.
-	self assert: (error at: #traitName) equals: 'DefinitelyMissingTrait'.
+	self assert: (error at: #class) equals: 'MCPToolClassMutationTestMissingTraitTarget'.
+	self assert: (error at: #trait) equals: 'DefinitelyMissingTrait'.
 	self assert: (error at: #traits) equals: #( 'DefinitelyMissingTrait' )
 ]
 
@@ -1579,7 +1579,7 @@ MCPToolClassMutationTest >> updateRequestArgumentsForMoveToPackage [
 	^ {
 		  (#action -> 'update').
 		  (#name -> self moveTargetClassName).
-		  (#packageName -> self destinationPackageName) } asDictionary
+		  (#package -> self destinationPackageName) } asDictionary
 ]
 
 { #category : 'private - update' }
@@ -1588,7 +1588,7 @@ MCPToolClassMutationTest >> updateRequestArgumentsForMoveToPackageAndTag [
 	^ {
 		  (#action -> 'update').
 		  (#name -> self moveTargetClassName).
-		  (#packageName -> self destinationPackageName).
+		  (#package -> self destinationPackageName).
 		  (#tag -> self destinationTagName) } asDictionary
 ]
 
@@ -1616,7 +1616,7 @@ MCPToolClassMutationTest >> updateRequestArgumentsForReparent [
 	^ {
 		  (#action -> 'update').
 		  (#name -> self reparentTargetClassName).
-		  (#superclassName -> self reparentSuperclassName) } asDictionary
+		  (#superclass -> self reparentSuperclassName) } asDictionary
 ]
 
 { #category : 'private - update' }
@@ -1641,7 +1641,7 @@ MCPToolClassMutationTest >> updateRequestArgumentsForSlotAction: slotAction clas
 	^ self updateRequestArgumentsWith: {
 			  (#name -> aClassName).
 			  (#slotAction -> slotAction).
-			  (#slotName -> aSlotName).
+			  (#slot -> aSlotName).
 			  (#classSide -> aBoolean) }
 ]
 
@@ -1651,8 +1651,8 @@ MCPToolClassMutationTest >> updateRequestArgumentsForSlotRenameInClassNamed: aCl
 	^ self updateRequestArgumentsWith: {
 			  (#name -> aClassName).
 			  (#slotAction -> 'rename').
-			  (#slotName -> aSlotName).
-			  (#newSlotName -> aNewSlotName).
+			  (#slot -> aSlotName).
+			  (#newSlot -> aNewSlotName).
 			  (#classSide -> aBoolean) }
 ]
 

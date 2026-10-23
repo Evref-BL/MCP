@@ -27,5 +27,5 @@ MCPToolPushDownClassSlot >> classToolSpec [
 			   self slotNameSchemaProperty.
 			   self classSideSlotSchemaProperty.
 			   self forceSchemaProperty }).
-		  (#requiredProperties -> #( 'name' 'slotName' )) } asDictionary
+		  (#requiredProperties -> #( 'name' 'slot' )) } asDictionary
 ]

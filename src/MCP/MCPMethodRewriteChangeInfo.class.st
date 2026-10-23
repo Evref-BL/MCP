@@ -32,10 +32,10 @@ MCPMethodRewriteChangeInfo >> asDictionary [
 
 	| data |
 	data := {
-		        (#className -> self className).
+		        (#class -> self className).
 		        (#classSide -> self classSide).
 		        (#selector -> self selector).
-		        (#packageName -> self packageName).
+		        (#package -> self packageName).
 		        (#protocol -> self protocol) } asDictionary.
 	self includeSources ifTrue: [
 			data at: #oldSource put: self oldSource.

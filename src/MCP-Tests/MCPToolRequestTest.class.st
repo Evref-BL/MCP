@@ -57,7 +57,7 @@ MCPToolRequestTest >> testInvalidToolInputErrorResponseIncludesViolations [
 	violations := data at: 'violations'.
 	firstViolation := violations first.
 	self assert: (errorJson at: 'code') equals: -32602.
-	self assert: (data at: 'toolName') equals: 'package_search'.
+	self assert: (data at: 'tool') equals: 'package_search'.
 	self assert: (firstViolation at: #path) equals: #( 'offset' ).
 	self assert: (firstViolation at: #keyword) equals: 'type'.
 	self assert: (firstViolation at: #message) equals: 'Value has the wrong JSON type.'
@@ -81,17 +81,17 @@ MCPToolRequestTest >> testRequestAccessorsProvideDefaultsUniqueCollectionsSymbol
 	request := MCPToolRequest tool: MCPToolCreateRepository new arguments: {
 			           (#name -> 'Example').
 			           (#location -> FileLocator imageDirectory fullName).
-			           (#packageNames -> #( ' MCP ' '' 'MCP' 'Other' )) } asDictionary.
-	self assert: (request stringCollectionArgumentNamed: 'packageNames') equals: #( 'MCP' 'MCP' 'Other' ).
-	self assert: (request uniqueStringCollectionArgumentNamed: 'packageNames') equals: #( 'MCP' 'Other' ).
+			           (#packages -> #( ' MCP ' '' 'MCP' 'Other' )) } asDictionary.
+	self assert: (request stringCollectionArgumentNamed: 'packages') equals: #( 'MCP' 'MCP' 'Other' ).
+	self assert: (request uniqueStringCollectionArgumentNamed: 'packages') equals: #( 'MCP' 'Other' ).
 	self assert: (request stringArgumentNamed: 'missing' default: 'image') equals: 'image'.
-	self assert: (request symbolCollectionArgumentNamed: 'packageNames') equals: #( #MCP #MCP #Other ).
+	self assert: (request symbolCollectionArgumentNamed: 'packages') equals: #( #MCP #MCP #Other ).
 	nested := {
-		          (#className -> ' MCPToolRequestTest ').
-		          (#testMethodName -> ' testRequestAccessorsProvideDefaultsUniqueCollectionsSymbolsAndNestedStrings ') } asDictionary.
-	self assert: (request stringArgumentNamed: 'className' in: nested) equals: 'MCPToolRequestTest'.
+		          (#class -> ' MCPToolRequestTest ').
+		          (#testMethod -> ' testRequestAccessorsProvideDefaultsUniqueCollectionsSymbolsAndNestedStrings ') } asDictionary.
+	self assert: (request stringArgumentNamed: 'class' in: nested) equals: 'MCPToolRequestTest'.
 	self
-		assert: (request stringArgumentNamed: 'testMethodName' in: nested)
+		assert: (request stringArgumentNamed: 'testMethod' in: nested)
 		equals: 'testRequestAccessorsProvideDefaultsUniqueCollectionsSymbolsAndNestedStrings'
 ]
 

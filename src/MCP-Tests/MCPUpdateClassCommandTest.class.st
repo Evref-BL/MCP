@@ -12,7 +12,7 @@ Class {
 { #category : 'private' }
 MCPUpdateClassCommandTest >> classToolClassForArguments: arguments slotAction: slotAction [
 
-	((arguments includesKey: #superclassName) and: [ arguments includesKey: #packageName ]) ifTrue: [ ^ MCPToolCreateClass ].
+	((arguments includesKey: #superclass) and: [ arguments includesKey: #package ]) ifTrue: [ ^ MCPToolCreateClass ].
 	slotAction = 'add' ifTrue: [ ^ MCPToolAddClassSlot ].
 	slotAction = 'remove' ifTrue: [ ^ MCPToolRemoveClassSlot ].
 	slotAction = 'rename' ifTrue: [ ^ MCPToolUpdateClassSlotName ].
@@ -26,8 +26,8 @@ MCPUpdateClassCommandTest >> classToolClassForArguments: arguments slotAction: s
 	(arguments includesKey: #sharedPools) ifTrue: [ ^ MCPToolUpdateClassSharedPools ].
 	(arguments includesKey: #layout) ifTrue: [ ^ MCPToolUpdateClassLayout ].
 	((arguments includesKey: #slots) or: [ arguments includesKey: #classSlots ]) ifTrue: [ ^ MCPToolUpdateClassSlots ].
-	(arguments includesKey: #superclassName) ifTrue: [ ^ MCPToolUpdateClassSuperclass ].
-	((arguments includesKey: #packageName) or: [ arguments includesKey: #tag ]) ifTrue: [ ^ MCPToolUpdateClassPackage ].
+	(arguments includesKey: #superclass) ifTrue: [ ^ MCPToolUpdateClassSuperclass ].
+	((arguments includesKey: #package) or: [ arguments includesKey: #tag ]) ifTrue: [ ^ MCPToolUpdateClassPackage ].
 	^ MCPToolUpdateClassComment
 ]
 
@@ -140,12 +140,12 @@ MCPUpdateClassCommandTest >> testBuildsTraitReplacementUpdatePlan [
 MCPUpdateClassCommandTest >> testBuildsUpdatePlan [
 
 	| command context plan |
-	command := self commandForArguments: (self updateArgumentsWith: { (#packageName -> 'MCP') }).
+	command := self commandForArguments: (self updateArgumentsWith: { (#package -> 'MCP') }).
 	plan := command updatePlan.
 	context := plan requestedContext.
 	self assert: plan updateAction equals: 'move'.
-	self assert: (context at: #className) equals: 'Object'.
-	self assert: (context at: #packageName) equals: 'MCP'
+	self assert: (context at: #class) equals: 'Object'.
+	self assert: (context at: #package) equals: 'MCP'
 ]
 
 { #category : 'tests' }
@@ -158,9 +158,9 @@ MCPUpdateClassCommandTest >> testMapsClassPatchFieldsToUpdateActions [
 					 (#newName -> 'ObjectRenamed') } asDictionary) updateAction
 		equals: 'rename'.
 	self
-		assert: (self commandForArguments: (self updateArgumentsWith: { (#superclassName -> 'ProtoObject') })) updateAction
+		assert: (self commandForArguments: (self updateArgumentsWith: { (#superclass -> 'ProtoObject') })) updateAction
 		equals: 'reparent'.
-	self assert: (self commandForArguments: (self updateArgumentsWith: { (#packageName -> 'MCP') })) updateAction equals: 'move'.
+	self assert: (self commandForArguments: (self updateArgumentsWith: { (#package -> 'MCP') })) updateAction equals: 'move'.
 	self assert: (self commandForArguments: (self updateArgumentsWith: { (#tag -> 'Commands') })) updateAction equals: 'move'.
 	self assert: (self commandForArguments: (self updateArgumentsWith: { (#comment -> '') })) updateAction equals: 'setComment'.
 	self
@@ -193,28 +193,28 @@ MCPUpdateClassCommandTest >> testMapsSlotActionsToUpdateActions [
 	self
 		assert: (self commandForArguments: (self updateArgumentsWith: {
 						  (#slotAction -> 'add').
-						  (#slotName -> 'addedSlot') })) updateAction
+						  (#slot -> 'addedSlot') })) updateAction
 		equals: 'addSlot'.
 	self
 		assert: (self commandForArguments: (self updateArgumentsWith: {
 						  (#slotAction -> 'remove').
-						  (#slotName -> 'removedSlot') })) updateAction
+						  (#slot -> 'removedSlot') })) updateAction
 		equals: 'removeSlot'.
 	self
 		assert: (self commandForArguments: (self updateArgumentsWith: {
 						  (#slotAction -> 'rename').
-						  (#slotName -> 'oldSlot').
-						  (#newSlotName -> 'newSlot') })) updateAction
+						  (#slot -> 'oldSlot').
+						  (#newSlot -> 'newSlot') })) updateAction
 		equals: 'renameSlot'.
 	self
 		assert: (self commandForArguments: (self updateArgumentsWith: {
 						  (#slotAction -> 'pullUp').
-						  (#slotName -> 'sharedSlot') })) updateAction
+						  (#slot -> 'sharedSlot') })) updateAction
 		equals: 'pullUpSlot'.
 	self
 		assert: (self commandForArguments: (self updateArgumentsWith: {
 						  (#slotAction -> 'pushDown').
-						  (#slotName -> 'sharedSlot') })) updateAction
+						  (#slot -> 'sharedSlot') })) updateAction
 		equals: 'pushDownSlot'
 ]
 

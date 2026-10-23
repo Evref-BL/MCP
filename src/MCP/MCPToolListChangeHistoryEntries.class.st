@@ -28,7 +28,7 @@ MCPToolListChangeHistoryEntries >> buildInputSchema [
 		  type: 'object';
 		  properties: {
 				  (self schemaPropertyNamed: 'directoryPath' type: 'string' description: 'Optional .ombu directory.').
-				  (self schemaPropertyNamed: 'historyFileName' type: 'string' description: 'Optional .ombu file name from history_file_list.').
+				  (self schemaPropertyNamed: 'historyFile' type: 'string' description: 'Optional .ombu file name from history_file_list.').
 				  (self integerSchemaPropertyNamed: 'offset' description: 'Pagination offset.' default: 0).
 				  (self booleanSchemaPropertyNamed: 'newestFirst' description: 'Return newest entries first.' default: false).
 				  (self booleanSchemaPropertyNamed: 'codeChangesOnly' description: 'Include only code changes.' default: false) };

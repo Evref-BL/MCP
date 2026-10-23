@@ -643,7 +643,7 @@ MCP >> signalMissingToolNamed: aToolName [
 	| suggestions details |
 	suggestions := MCPSelectorSuggestion namesLike: aToolName among: self toolRegistry toolNames.
 	details := Dictionary new
-		           at: #toolName put: aToolName;
+		           at: #tool put: aToolName;
 		           yourself.
 	suggestions ifNotEmpty: [ details at: #suggestedTools put: suggestions ].
 	MCPCommandError
@@ -733,7 +733,7 @@ MCP >> toolCallWrapperResultFor: callTool request: callRequest [
 
 	^ callTool
 		  successResultText: 'Dispatched tool ' , callRequest toolName
-		  data: { (#toolName -> callRequest toolName) } asDictionary
+		  data: { (#tool -> callRequest toolName) } asDictionary
 ]
 
 { #category : 'configuration' }

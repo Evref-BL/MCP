@@ -35,7 +35,7 @@ MCPRepositoryCreateRequest >> initializeFromRequest: request [
 	name := request stringArgumentNamed: 'name'.
 	location := request stringArgumentNamed: 'location' default: (IceLibgitRepository repositoriesLocation / name) fullName.
 	subdirectory := request stringArgumentNamed: 'subdirectory'.
-	packageNames := request stringCollectionArgumentNamed: 'packageNames'
+	packageNames := request stringCollectionArgumentNamed: 'packages'
 ]
 
 { #category : 'accessing' }
@@ -69,7 +69,7 @@ MCPRepositoryCreateRequest >> requestedContext [
 		  (#name -> self name).
 		  (#location -> self location).
 		  (#subdirectory -> (self subdirectory ifNil: [ '' ])).
-		  (#packageNames -> self packageNames) } asDictionary
+		  (#packages -> self packageNames) } asDictionary
 ]
 
 { #category : 'accessing' }

@@ -84,7 +84,7 @@ MCPGitRepositoryMetadata >> emptyUpstreamInfo [
 
 	^ {
 		  (#remoteName -> '').
-		  (#branchName -> '').
+		  (#branch -> '').
 		  (#remoteUrl -> '') } asDictionary
 ]
 
@@ -267,6 +267,6 @@ MCPGitRepositoryMetadata >> upstreamInfoForBranchNamed: aBranchName [
 	remoteUrl := self remoteUrlNamed: remoteName.
 	^ {
 		  (#remoteName -> remoteName).
-		  (#branchName -> branchName).
+		  (#branch -> branchName).
 		  (#remoteUrl -> remoteUrl) } asDictionary
 ]

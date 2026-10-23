@@ -53,9 +53,9 @@ MCPStructuredTestResult >> recordIssueFrom: anException forTestCase: aTestCase [
 	testCaseName := self testCaseNameFor: aTestCase.
 	parameters := self parametersForTestCase: aTestCase.
 	detail at: #kind put: (self issueKindFor: aTestCase).
-	detail at: #className put: className.
-	detail at: #testMethodName put: methodName.
-	detail at: #testName put: testCaseName.
+	detail at: #class put: className.
+	detail at: #testMethod put: methodName.
+	detail at: #test put: testCaseName.
 	detail at: #testCaseName put: testCaseName.
 	parameters ifNotEmpty: [ detail at: #parameters put: parameters ].
 	detail at: #errorClass put: anException class name.

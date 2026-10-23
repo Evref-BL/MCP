@@ -43,7 +43,7 @@ MCPToolCallStats class >> forToolNamed: aToolName [
 MCPToolCallStats >> asDictionary [
 
 	^ {
-		  (#toolName -> self toolName).
+		  (#tool -> self toolName).
 		  (#callCount -> self callCount).
 		  (#successCount -> self successCount).
 		  (#errorCount -> self errorCount).
@@ -70,7 +70,7 @@ MCPToolCallStats >> asMetricsDictionary [
 
 	| dictionary |
 	dictionary := {
-		              (#toolName -> self toolName).
+		              (#tool -> self toolName).
 		              (#callCount -> self callCount).
 		              (#successCount -> self successCount).
 		              (#averageMilliseconds -> self averageMilliseconds asFloat).

@@ -105,7 +105,7 @@ MCPMethodUpdateRequest >> contextValueForPropertyNamed: propertyName [
 	propertyName = 'newSelector' ifTrue: [ ^ self newSelector ].
 	propertyName = 'protocol' ifTrue: [ ^ self protocol ].
 	propertyName = 'permutation' ifTrue: [ ^ self permutation ].
-	propertyName = 'argumentNames' ifTrue: [ ^ self argumentNames ].
+	propertyName = 'arguments' ifTrue: [ ^ self argumentNames ].
 	propertyName = 'argumentValueExpressions' ifTrue: [ ^ self argumentValueExpressions ].
 	^ nil
 ]
@@ -131,7 +131,7 @@ MCPMethodUpdateRequest >> force [
 { #category : 'testing' }
 MCPMethodUpdateRequest >> hasArgumentNames [
 
-	^ self hasSuppliedPropertyNamed: 'argumentNames'
+	^ self hasSuppliedPropertyNamed: 'arguments'
 ]
 
 { #category : 'testing' }
@@ -174,12 +174,12 @@ MCPMethodUpdateRequest >> identityPermutationForSelector: aSelector [
 MCPMethodUpdateRequest >> initializeFromRequest: request [
 
 	suppliedProperties := self updatePropertyNames select: [ :each | request hasArgumentNamed: each ].
-	className := request stringArgumentNamed: 'className'.
+	className := request stringArgumentNamed: 'class'.
 	classSide := request booleanArgumentNamed: 'classSide' default: false.
 	selector := request stringArgumentNamed: 'selector'.
 	newSelector := request stringArgumentNamed: 'newSelector'.
 	protocol := request stringArgumentNamed: 'protocol'.
-	argumentNames := request stringCollectionArgumentNamed: 'argumentNames'.
+	argumentNames := request stringCollectionArgumentNamed: 'arguments'.
 	argumentValueExpressions := request stringCollectionArgumentNamed: 'argumentValueExpressions'.
 	permutation := self
 		               permutationFromRequest: request
@@ -300,7 +300,7 @@ MCPMethodUpdateRequest >> requestedContext [
 
 	| context |
 	context := Dictionary new.
-	context at: #className put: self className.
+	context at: #class put: self className.
 	context at: #classSide put: self classSide.
 	context at: #selector put: self selector.
 	self suppliedProperties do: [ :propertyName |
@@ -342,7 +342,7 @@ MCPMethodUpdateRequest >> unusedIndexOf: keyword in: oldKeywords excluding: used
 { #category : 'private - request' }
 MCPMethodUpdateRequest >> updatePropertyNames [
 
-	^ #( 'newSelector' 'protocol' 'permutation' 'argumentNames' 'argumentValueExpressions' )
+	^ #( 'newSelector' 'protocol' 'permutation' 'arguments' 'argumentValueExpressions' )
 ]
 
 { #category : 'validating' }

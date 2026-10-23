@@ -30,7 +30,7 @@ MCPToolRemoveMethods >> buildInputSchema [
 		  type: 'object';
 		  properties: {
 				  (MCPStructureProperties new
-					   name: 'className';
+					   name: 'class';
 					   type: 'string';
 					   description: 'The class from which methods will be removed.';
 					   yourself).
@@ -49,7 +49,7 @@ MCPToolRemoveMethods >> buildInputSchema [
 							    description: 'A selector to remove.';
 							    yourself);
 					   yourself) };
-		  required: #( 'className' 'selectors' );
+		  required: #( 'class' 'selectors' );
 		  yourself
 ]
 
@@ -57,7 +57,7 @@ MCPToolRemoveMethods >> buildInputSchema [
 MCPToolRemoveMethods >> classNameForErrorFromParsedRequest: removeRequest rawRequest: rawRequest [
 
 	removeRequest ifNotNil: [ ^ removeRequest className ].
-	^ (rawRequest stringArgumentNamed: 'className') ifNil: [ '' ]
+	^ (rawRequest stringArgumentNamed: 'class') ifNil: [ '' ]
 ]
 
 { #category : 'private - errors' }
@@ -100,7 +100,7 @@ MCPToolRemoveMethods >> errorResultForError: anError className: className classS
 					  details: {
 							  (#errorClass -> toolError class name).
 							  (#message -> toolError messageText).
-							  (#className -> className).
+							  (#class -> className).
 							  (#classSide -> classSide).
 							  (#selectors -> selectors asArray) } asDictionary ]
 ]

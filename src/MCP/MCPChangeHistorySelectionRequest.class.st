@@ -102,7 +102,7 @@ MCPChangeHistorySelectionRequest >> initializeFromRequest: aRequest operation: o
 
 	operation := operationName.
 	directoryPath := aRequest stringArgumentNamed: 'directoryPath'.
-	historyFileName := aRequest stringArgumentNamed: 'historyFileName'.
+	historyFileName := aRequest stringArgumentNamed: 'historyFile'.
 	indexes := self positiveIntegerCollectionArgumentNamed: 'indexes' fromRequest: aRequest.
 	startIndex := self optionalPositiveIntegerArgumentNamed: 'startIndex' fromRequest: aRequest.
 	endIndex := self optionalPositiveIntegerArgumentNamed: 'endIndex' fromRequest: aRequest.

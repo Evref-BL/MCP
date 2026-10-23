@@ -91,14 +91,14 @@ MCPChangeHistoryCommand >> logAndFileNameFromFileReference: aFileReference [
 				message: 'Change history file ' , aFileReference fullName , ' does not exist.'
 				details: {
 						(#directoryPath -> aFileReference parent fullName).
-						(#historyFileName -> aFileReference basename) } asDictionary ].
+						(#historyFile -> aFileReference basename) } asDictionary ].
 	aFileReference isFile ifFalse: [
 			MCPCommandError
 				signalErrorCode: #ChangeHistoryPathNotFile
 				message: 'Change history path ' , aFileReference fullName , ' is not a file.'
 				details: {
 						(#directoryPath -> aFileReference parent fullName).
-						(#historyFileName -> aFileReference basename) } asDictionary ].
+						(#historyFile -> aFileReference basename) } asDictionary ].
 	log := [
 		       | loadedLog |
 		       loadedLog := EpLog freshFromFile: aFileReference.
@@ -111,7 +111,7 @@ MCPChangeHistoryCommand >> logAndFileNameFromFileReference: aFileReference [
 					       message: 'Change history file ' , aFileReference fullName , ' could not be loaded.'
 					       details: {
 							       (#directoryPath -> aFileReference parent fullName).
-							       (#historyFileName -> aFileReference basename).
+							       (#historyFile -> aFileReference basename).
 							       (#causeClass -> error class name).
 							       (#causeMessage -> (error messageText ifNil: [ error asString ])) } asDictionary ].
 	^ {

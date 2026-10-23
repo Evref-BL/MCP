@@ -61,8 +61,8 @@ MCPAdoptRepositoryHeadCommand >> validateExpectedBranchFor: aRepository [
 		signalErrorCode: #RepositoryBranchMismatch
 		message: 'Repository branch mismatch. Expected ' , expectedBranchName , ' but found ' , actualBranchName , '.'
 		details: (self request requestedContext copy
-				 at: #actualBranchName put: actualBranchName;
-				 at: #expectedBranchName put: expectedBranchName;
+				 at: #actualBranch put: actualBranchName;
+				 at: #expectedBranch put: expectedBranchName;
 				 yourself)
 ]
 

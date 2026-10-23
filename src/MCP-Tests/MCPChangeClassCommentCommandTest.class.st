@@ -65,7 +65,7 @@ MCPChangeClassCommentCommandTest >> testMissingClassSignalsCommandError [
 	error := self captureCommandError: [
 		         (MCPChangeClassCommentCommand className: 'MCPChangeClassCommentCommandTestMissing' classComment: 'ignored') execute ].
 	self assert: error errorCode equals: #ClassNotFound.
-	self assert: (error structuredDetails at: #className) equals: 'MCPChangeClassCommentCommandTestMissing'
+	self assert: (error structuredDetails at: #class) equals: 'MCPChangeClassCommentCommandTestMissing'
 ]
 
 { #category : 'tests' }

@@ -85,8 +85,8 @@ MCPClassCreateRequest >> commandForTool: aTool [
 MCPClassCreateRequest >> initializeFromRequest: request [
 
 	className := request stringArgumentNamed: 'name'.
-	superclassName := request stringArgumentNamed: 'superclassName'.
-	packageName := request stringArgumentNamed: 'packageName'.
+	superclassName := request stringArgumentNamed: 'superclass'.
+	packageName := request stringArgumentNamed: 'package'.
 	tag := request stringArgumentNamed: 'tag'.
 	classComment := (request hasArgumentNamed: 'comment') ifTrue: [ self classCommentFromRequest: request ].
 	slotNames := request stringCollectionArgumentNamed: 'slots'.
@@ -114,9 +114,9 @@ MCPClassCreateRequest >> packageName [
 MCPClassCreateRequest >> requestedContext [
 
 	^ {
-		  (#className -> self className).
-		  (#superclassName -> self superclassName).
-		  (#packageName -> self packageName).
+		  (#class -> self className).
+		  (#superclass -> self superclassName).
+		  (#package -> self packageName).
 		  (#tag -> (self tag ifNil: [ '' ])).
 		  (#comment -> (self classComment ifNil: [ '' ])).
 		  (#slots -> self slotNames).
