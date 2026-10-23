@@ -187,15 +187,6 @@ MCPRepositoryCommand >> repositorySourceDirectoryFor: aRepository [
 ]
 
 { #category : 'private - git' }
-MCPRepositoryCommand >> repositorySupportsExternalGitOperations: aRepository [
-
-	| result |
-	(self repositoryHasGitWorkTree: aRepository) ifFalse: [ ^ false ].
-	result := self runGitArguments: #( 'rev-parse' '--verify' 'HEAD' ) in: aRepository.
-	^ (result at: #status) = 0
-]
-
-{ #category : 'private - git' }
 MCPRepositoryCommand >> runGitArguments: arguments in: aRepository [
 
 	| command output outputFile status |

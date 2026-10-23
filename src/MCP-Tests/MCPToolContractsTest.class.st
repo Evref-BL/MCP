@@ -92,15 +92,6 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 			  (#requestClass -> MCPRepositoryQuerySpec).
 			  (#commandClass -> MCPSearchToolCommand) } asDictionary.
 		  {
-			  (#toolClass -> MCPToolLoadRepository).
-			  (#arguments -> {
-				   (#owner -> 'ExampleOwner').
-				   (#project -> 'ExampleProject').
-				   (#baseline -> 'ExampleBaseline').
-				   (#sourceDirectory -> 'src') } asDictionary).
-			  (#requestClass -> MCPLoadRepositoryRequest).
-			  (#commandClass -> MCPLoadRepositoryCommand) } asDictionary.
-		  {
 			  (#toolClass -> MCPToolSearchPackages).
 			  (#arguments -> Dictionary new).
 			  (#requestClass -> MCPSearchPackagesRequest).
@@ -205,16 +196,6 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 				   (#arguments -> Dictionary new) } asDictionary).
 			  (#requestClass -> MCPCallToolRequest).
 			  (#commandClass -> MCPCallToolCommand) } asDictionary }
-]
-
-{ #category : 'private' }
-MCPToolContractsTest >> baselineLoadToolFlowSpec [
-
-	^ {
-		  (#toolClass -> MCPToolLoadBaseline).
-		  (#arguments -> { (#baseline -> 'ExampleBaseline') } asDictionary).
-		  (#requestClass -> MCPLoadBaselineRequest).
-		  (#commandClass -> MCPLoadBaselineCommand) } asDictionary
 ]
 
 { #category : 'private' }
@@ -665,75 +646,15 @@ MCPToolContractsTest >> repositoryToolFlowSpecs [
 			  (#requestClass -> MCPRepositoryCommitRequest).
 			  (#commandClass -> MCPCommitRepositoryCommand) } asDictionary.
 		  {
-			  (#toolClass -> MCPToolFetchRepository).
-			  (#arguments -> { (#name -> 'MCP') } asDictionary).
-			  (#requestClass -> MCPRepositoryFetchRequest).
-			  (#commandClass -> MCPFetchRepositoryCommand) } asDictionary.
-
-		  {
-			  (#toolClass -> MCPToolAddRepositoryRemote).
-			  (#arguments -> {
-				   (#name -> 'MCP').
-				   (#remoteName -> 'origin').
-				   (#remoteUrl -> 'git@example.com:mcp.git') } asDictionary).
-			  (#requestClass -> MCPRepositoryRemoteRequest).
-			  (#commandClass -> MCPAddRepositoryRemoteCommand) } asDictionary.
-
-		  {
-			  (#toolClass -> MCPToolRemoveRepositoryRemote).
-			  (#arguments -> {
-				   (#name -> 'MCP').
-				   (#remoteName -> 'origin') } asDictionary).
-			  (#requestClass -> MCPRepositoryRemoteRequest).
-			  (#commandClass -> MCPRemoveRepositoryRemoteCommand) } asDictionary.
-
-		  {
-			  (#toolClass -> MCPToolUpdateRepositoryRemote).
-			  (#arguments -> {
-				   (#name -> 'MCP').
-				   (#remoteName -> 'origin').
-				   (#remoteUrl -> 'git@example.com:mcp.git') } asDictionary).
-			  (#requestClass -> MCPRepositoryRemoteRequest).
-			  (#commandClass -> MCPUpdateRepositoryRemoteCommand) } asDictionary.
-
-
-
-		  {
-			  (#toolClass -> MCPToolPullRepository).
-			  (#arguments -> { (#name -> 'MCP') } asDictionary).
-			  (#requestClass -> MCPRepositoryPullRequest).
-			  (#commandClass -> MCPPullRepositoryCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolPushRepository).
-			  (#arguments -> { (#name -> 'MCP') } asDictionary).
-			  (#requestClass -> MCPRepositoryPushRequest).
-			  (#commandClass -> MCPPushRepositoryCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolCreateRepositoryBranch).
-			  (#arguments -> {
-				   (#name -> 'MCP').
-				   (#branchName -> 'feature') } asDictionary).
-			  (#requestClass -> MCPRepositoryCreateBranchRequest).
-			  (#commandClass -> MCPCreateRepositoryBranchCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolSwitchRepositoryBranch).
-			  (#arguments -> {
-				   (#name -> 'MCP').
-				   (#branchName -> 'main') } asDictionary).
-			  (#requestClass -> MCPRepositorySwitchBranchRequest).
-			  (#commandClass -> MCPSwitchRepositoryBranchCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolCheckoutRepositoryBranch).
-			  (#arguments -> {
-				   (#name -> 'MCP').
-				   (#branchName -> 'main') } asDictionary).
-			  (#requestClass -> MCPRepositoryCheckoutBranchRequest).
-			  (#commandClass -> MCPCheckoutRepositoryBranchCommand) } asDictionary.
-		  {
 			  (#toolClass -> MCPToolAdoptRepositoryHead).
 			  (#arguments -> { (#name -> 'MCP') } asDictionary).
 			  (#requestClass -> MCPRepositoryAdoptHeadRequest).
-			  (#commandClass -> MCPAdoptRepositoryHeadCommand) } asDictionary }
+			  (#commandClass -> MCPAdoptRepositoryHeadCommand) } asDictionary.
+		  {
+			  (#toolClass -> MCPToolReloadRepository).
+			  (#arguments -> { (#name -> 'MCP') } asDictionary).
+			  (#requestClass -> MCPRepositoryReloadRequest).
+			  (#commandClass -> MCPReloadRepositoryCommand) } asDictionary }
 ]
 
 { #category : 'private' }
@@ -1149,13 +1070,7 @@ MCPToolContractsTest >> testDictionaryShapedCommandResultsUseDTOClasses [
 		                        (MCPRepositoryVerifyIdentityCommand -> MCPRepositoryVerifyIdentityResult).
 		                        (MCPCommitRepositoryCommand -> MCPRepositoryCommitResult).
 		                        (MCPAdoptRepositoryHeadCommand -> MCPRepositoryAdoptHeadResult).
-		                        (MCPFetchRepositoryCommand -> MCPRepositoryFetchResult).
-		                        (MCPPullRepositoryCommand -> MCPRepositoryPullResult).
-		                        (MCPPushRepositoryCommand -> MCPRepositoryPushResult).
-		                        (MCPCreateRepositoryBranchCommand -> MCPRepositoryBranchResult).
-		                        (MCPSwitchRepositoryBranchCommand -> MCPRepositoryBranchResult).
-		                        (MCPLoadBaselineCommand -> MCPLoadBaselineResult).
-		                        (MCPLoadRepositoryCommand -> MCPLoadRepositoryResult) }.
+		                        (MCPReloadRepositoryCommand -> MCPRepositoryReloadResult) }.
 	commandResultClasses do: [ :association |
 			| source |
 			source := (association key >> #execute) sourceCode.
@@ -2010,20 +1925,6 @@ MCPToolContractsTest >> testRemoveMethodsHasAccurateNameAndRequiredArguments [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testRepositoryBranchCheckoutIconUsesBranchObjectBadge [
-
-	self
-		assert: MCPToolCheckoutRepositoryBranch new icons first asJRPCJSON
-		equals: (MCPStructureIcon compositeBaseIconNamed: #git leftBadgeIconNamed: #branch rightBadgeIconNamed: #openFromUrl) asJRPCJSON
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testRepositoryBranchCheckoutToolName [
-
-	self assert: MCPToolCheckoutRepositoryBranch toolName equals: 'repository_branch_checkout'
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testRepositoryCreateAndUpdateRequiredArguments [
 
 	| createPropertyNames updatePropertyNames |
@@ -2050,9 +1951,6 @@ MCPToolContractsTest >> testRequestedToolIconsAreSelected [
 		assert: MCPToolGetClass new icons first asJRPCJSON
 		equals: (MCPStructureIcon compositeBaseIconNamed: #class badgeIconNamed: #inspect) asJRPCJSON.
 	self
-		assert: MCPToolCreateRepositoryBranch new icons first asJRPCJSON
-		equals: (MCPStructureIcon compositeBaseIconNamed: #git leftBadgeIconNamed: #branch rightBadgeIconNamed: #add) asJRPCJSON.
-	self
 		assert: MCPToolSearchMethodSource new icons first asJRPCJSON
 		equals: (MCPStructureIcon compositeBaseIconNamed: #page leftBadgeIconNamed: #workspace rightBadgeIconNamed: #search) asJRPCJSON.
 	self
@@ -2064,18 +1962,6 @@ MCPToolContractsTest >> testRequestedToolIconsAreSelected [
 		assert: MCPToolUpdateMethodProtocol new icons first asJRPCJSON
 		equals:
 		(MCPStructureIcon compositeBaseIconNamed: #page leftBadgeIconNamed: #protocolProtected rightBadgeIconNamed: #edit) asJRPCJSON.
-	self
-		assert: MCPToolFetchRepository new icons first asJRPCJSON
-		equals: (MCPStructureIcon compositeBaseIconNamed: #git badgeIconNamed: #smallUpdate) asJRPCJSON.
-	self
-		assert: MCPToolAddRepositoryRemote new icons first asJRPCJSON
-		equals: (MCPStructureIcon compositeBaseIconNamed: #git leftBadgeIconNamed: #remote rightBadgeIconNamed: #add) asJRPCJSON.
-	self
-		assert: MCPToolRemoveRepositoryRemote new icons first asJRPCJSON
-		equals: (MCPStructureIcon compositeBaseIconNamed: #git leftBadgeIconNamed: #remote rightBadgeIconNamed: #delete) asJRPCJSON.
-	self
-		assert: MCPToolUpdateRepositoryRemote new icons first asJRPCJSON
-		equals: (MCPStructureIcon compositeBaseIconNamed: #git leftBadgeIconNamed: #remote rightBadgeIconNamed: #edit) asJRPCJSON.
 	self
 		assert: MCPToolPullUpClassSlot new icons first asJRPCJSON
 		equals:
@@ -2582,7 +2468,7 @@ MCPToolContractsTest >> testSearchToolsMatchesAgentGuidanceKeywords [
 		                ('repo' -> 'repository_search').
 		                ('identity' -> 'repository_identity_verify').
 		                ('diff' -> 'repository_change_list').
-		                ('stale' -> 'repository_branch_checkout').
+		                ('stale' -> 'repository_reload').
 		                ('SUnit' -> 'test_run').
 		                ('coverage' -> 'test_coverage_run').
 		                ('file' -> 'history_file_list').
@@ -2641,9 +2527,7 @@ MCPToolContractsTest >> testSearchToolsRanksMoreMatchedWordsFirst [
 
 	self assert: (self searchedToolNamesFor: 'method source') first equals: 'method_source_search'.
 	self assert: (self searchedToolNamesFor: 'method equivalent') first equals: 'method_equivalent_search'.
-	self
-		assert: ((self searchedToolNamesFor: 'repository branch') first: 3) asSet
-		equals: #( 'repository_branch_checkout' 'repository_branch_create' 'repository_branch_switch' ) asSet
+	self assert: (self searchedToolNamesFor: 'repository reload') first equals: 'repository_reload'
 ]
 
 { #category : 'tests' }
@@ -2658,7 +2542,7 @@ MCPToolContractsTest >> testSearchToolsReturnsDiscoverableMetadata [
 	self assert: (names includes: 'repository_create').
 	self assert: (names includes: 'repository_attach').
 	self assert: (names includes: 'repository_update').
-	self assert: (names includes: 'repository_load').
+	self assert: (names includes: 'repository_reload').
 	self deny: (names includes: 'class_search').
 	createRepositoryMetadata := tools detect: [ :each | (each at: #name) = 'repository_create' ].
 	self assert: createRepositoryMetadata keys asSet equals: #( name description ) asSet
@@ -2923,11 +2807,7 @@ MCPToolContractsTest >> testToolRegistryNamesUseClassSideMetadata [
 	self assert: MCPToolUpdateRepository toolName equals: 'repository_update'.
 	self assert: MCPToolExportRepository toolName equals: 'repository_export'.
 	self assert: MCPToolCommitRepository toolName equals: 'repository_commit'.
-	self assert: MCPToolFetchRepository toolName equals: 'repository_fetch'.
-	self assert: MCPToolPullRepository toolName equals: 'repository_pull'.
-	self assert: MCPToolPushRepository toolName equals: 'repository_push'.
-	self assert: MCPToolCreateRepositoryBranch toolName equals: 'repository_branch_create'.
-	self assert: MCPToolSwitchRepositoryBranch toolName equals: 'repository_branch_switch'.
+	self assert: MCPToolReloadRepository toolName equals: 'repository_reload'.
 	self assert: MCPToolAdoptRepositoryHead toolName equals: 'repository_head_adopt'.
 	self assert: MCPToolListChangeHistoryFiles toolName equals: 'history_file_list'.
 	self assert: MCPToolListChangeHistoryEntries toolName equals: 'history_entry_list'.
@@ -3049,7 +2929,6 @@ MCPToolContractsTest >> toolFlowSpecs [
 
 	| specs |
 	specs := OrderedCollection withAll: self baseToolFlowSpecs.
-	specs add: self baselineLoadToolFlowSpec.
 	specs add: self coverageToolFlowSpec.
 	specs addAll: self classMutationToolFlowSpecs.
 	specs addAll: self methodLookupToolFlowSpecs.

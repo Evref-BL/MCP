@@ -19,7 +19,7 @@ MCPToolRepositoryOperationTest >> callToolNamed: aToolName with: someArguments [
 	^ result asJRPCJSON
 ]
 
-{ #category : 'private - calling' }
+{ #category : 'private' }
 MCPToolRepositoryOperationTest >> callToolWith: someArguments [
 
 	| action arguments request result tool toolClass |
@@ -32,18 +32,10 @@ MCPToolRepositoryOperationTest >> callToolWith: someArguments [
 		             at: 'verifyIdentity' put: MCPToolVerifyRepositoryIdentity;
 		             at: 'diff' put: MCPToolListRepositoryChanges;
 		             at: 'discard' put: MCPToolDiscardRepositoryChanges;
-		             at: 'remoteAdd' put: MCPToolAddRepositoryRemote;
-		             at: 'remoteRemove' put: MCPToolRemoveRepositoryRemote;
-		             at: 'remoteUpdate' put: MCPToolUpdateRepositoryRemote;
 		             at: 'export' put: MCPToolExportRepository;
 		             at: 'commit' put: MCPToolCommitRepository;
 		             at: 'adoptHead' put: MCPToolAdoptRepositoryHead;
-		             at: 'fetch' put: MCPToolFetchRepository;
-		             at: 'pull' put: MCPToolPullRepository;
-		             at: 'push' put: MCPToolPushRepository;
-		             at: 'createBranch' put: MCPToolCreateRepositoryBranch;
-		             at: 'switchBranch' put: MCPToolSwitchRepositoryBranch;
-		             at: 'checkoutBranch' put: MCPToolCheckoutRepositoryBranch;
+		             at: 'reload' put: MCPToolReloadRepository;
 		             at: action ifAbsent: [ Error signal: 'Unknown repository action: ' , action asString ].
 	tool := toolClass new.
 	request := tool requestFromToolCallArguments: arguments.
@@ -445,9 +437,10 @@ MCPToolRepositoryOperationTest >> testCheckoutBranchLoadsTargetBranchSnapshot [
 							(#location -> location pathString).
 							(#packageNames -> { packageName }) } asDictionary.
 					self assert: ((Smalltalk at: className asSymbol) includesSelector: extraSelector).
-					checkoutResult := self callToolNamed: 'repository_branch_checkout' with: {
-							                  (#name -> repositoryName).
-							                  (#branchName -> baseBranch) } asDictionary.
+					self shellCommand: 'git -C ' , (self shellQuote: location pathString) , ' checkout ' , (self shellQuote: baseBranch).
+					checkoutResult := self callToolWith: {
+							                  (#action -> 'reload').
+							                  (#name -> repositoryName) } asDictionary.
 					self deny: (self resultIndicatesError: checkoutResult) description: (self summaryFrom: checkoutResult).
 					self deny: ((Smalltalk at: className asSymbol) includesSelector: extraSelector) ] ]
 ]
@@ -548,48 +541,6 @@ MCPToolRepositoryOperationTest >> testCommitUsesFallbackGitIdentityWhenGitSignat
 					self
 						assert: (self shellOutput: 'git -C ' , (self shellQuote: location pathString) , ' log -1 --format=%an') trimBoth
 						equals: 'MCP' ] ]
-]
-
-{ #category : 'tests' }
-MCPToolRepositoryOperationTest >> testCreateBranchReturnsResultAndReportsErrors [
-
-	| data duplicateResult failureResult repository result repeatedResult server |
-	repository := self newTestRepositoryNamed: 'MCP Create Branch Test Repository'.
-	self withRegisteredRepository: repository do: [
-			server := MCPDiscoverableToolCallingServer new.
-			result := self callToolWith: {
-					          (#action -> 'createBranch').
-					          (#name -> repository name).
-					          (#branchName -> 'feature') } asDictionary.
-			data := self dataFrom: result.
-			self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
-			self assert: repository actionLog asArray equals: #( 'createBranch:feature' ).
-			self assert: data keys asSet equals: #( branchName headDescription previousBranchName previousHeadDescription ) asSet.
-			self assert: (data at: #previousBranchName) equals: 'main'.
-			self assert: (data at: #branchName) equals: 'feature'.
-			self assert: (data at: #previousHeadDescription) equals: 'initial'.
-			self assert: (data at: #headDescription) equals: 'branch feature'.
-			repeatedResult := server rpcToolCall: 'repository_branch_create' withParams: {
-					              (#name -> repository name).
-					              (#branchName -> 'feature-save') } asDictionary.
-			self deny: (self resultIndicatesError: repeatedResult) description: (self summaryFrom: repeatedResult).
-			duplicateResult := self callToolWith: {
-					                   (#action -> 'createBranch').
-					                   (#name -> repository name).
-					                   (#branchName -> 'feature') } asDictionary.
-			self assert: (self resultIndicatesError: duplicateResult).
-			self assert: ((self summaryFrom: duplicateResult) includesSubstring: 'Failed to create repository branch').
-			self assert: ((self summaryFrom: duplicateResult) includesSubstring: 'Branch already exists') ].
-	repository := self newTestRepositoryNamed: 'MCP Create Branch Invalid Test Repository'.
-	repository failCreateBranch: IceGenericError -> 'Invalid branch name test repository'.
-	self withRegisteredRepository: repository do: [
-			failureResult := self callToolWith: {
-					                 (#action -> 'createBranch').
-					                 (#name -> repository name).
-					                 (#branchName -> 'bad branch') } asDictionary.
-			self assert: (self resultIndicatesError: failureResult).
-			self assert: ((self summaryFrom: failureResult) includesSubstring: 'Failed to create repository branch').
-			self assert: ((self summaryFrom: failureResult) includesSubstring: 'Invalid branch name') ]
 ]
 
 { #category : 'tests' }
@@ -754,45 +705,20 @@ MCPToolRepositoryOperationTest >> testExportUpdatesDiskAndIndexWithoutCommitting
 ]
 
 { #category : 'tests' }
-MCPToolRepositoryOperationTest >> testFetchReturnsResultShapeAndReportsErrors [
-
-	| data errorResult repository result |
-	repository := self newTestRepositoryNamed: 'MCP Fetch Test Repository'.
-	self withRegisteredRepository: repository do: [
-			result := self callToolWith: {
-					          (#action -> 'fetch').
-					          (#name -> repository name) } asDictionary.
-			data := self dataFrom: result.
-			self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
-			self assert: repository actionLog asArray equals: #( 'fetch:origin' ).
-			self assert: data keys asSet equals: #( branchName headDescription ) asSet.
-			self assert: (data at: #branchName) equals: 'main'.
-			self assert: (data at: #headDescription) equals: 'initial' ].
-	repository := self newTestRepositoryNamed: 'MCP Fetch Error Test Repository'.
-	repository failFetch: true.
-	self withRegisteredRepository: repository do: [
-			errorResult := self callToolWith: {
-					               (#action -> 'fetch').
-					               (#name -> repository name) } asDictionary.
-			self assert: (self resultIndicatesError: errorResult).
-			self assert: ((self summaryFrom: errorResult) includesSubstring: 'Failed to fetch repository') ]
-]
-
-{ #category : 'tests' }
 MCPToolRepositoryOperationTest >> testGitCommandFailureSignalsStructuredCommandError [
 
 	| command error |
-	command := MCPPushRepositoryCommand tool: MCPToolPushRepository new request: nil.
+	command := MCPCommitRepositoryCommand tool: MCPToolCommitRepository new request: nil.
 	error := [
 		         command
 			         signalGitCommandFailed: {
 					         (#status -> 128).
 					         (#output -> 'fatal: no upstream') } asDictionary
-			         action: 'push'.
+			         action: 'commit'.
 		         nil ]
 		         on: MCPCommandError
 		         do: [ :caught | caught ].
-	self assert: error errorCode equals: 'pushGitCommandFailed'.
+	self assert: error errorCode equals: 'commitGitCommandFailed'.
 	self assert: error messageText equals: 'fatal: no upstream'.
 	self assert: (error details at: #exitStatus) equals: 128.
 	self assert: (error details at: #output) equals: 'fatal: no upstream'
@@ -868,375 +794,6 @@ MCPToolRepositoryOperationTest >> testLinkedWorktreeAttachExportsOnLinkedBranch 
 ]
 
 { #category : 'tests' }
-MCPToolRepositoryOperationTest >> testPullReportsIcebergMergeAndLoadErrors [
-
-	| loadErrorResult mergeErrorResult repository |
-	repository := self newTestRepositoryNamed: 'MCP Pull Merge Error Test Repository'.
-	repository failPull: IceMergeAborted -> 'Iceberg merge failed for test repository'.
-	self withRegisteredRepository: repository do: [
-			mergeErrorResult := self callToolWith: {
-					                    (#action -> 'pull').
-					                    (#name -> repository name) } asDictionary.
-			self assert: (self resultIndicatesError: mergeErrorResult).
-			self assert: ((self summaryFrom: mergeErrorResult) includesSubstring: 'Failed to pull repository').
-			self assert: ((self summaryFrom: mergeErrorResult) includesSubstring: 'Iceberg merge failed') ].
-	repository := self newTestRepositoryNamed: 'MCP Pull Load Error Test Repository'.
-	repository failPull: IceCheckoutConflictError -> 'Iceberg load failed for test repository'.
-	self withRegisteredRepository: repository do: [
-			loadErrorResult := self callToolWith: {
-					                   (#action -> 'pull').
-					                   (#name -> repository name) } asDictionary.
-			self assert: (self resultIndicatesError: loadErrorResult).
-			self assert: ((self summaryFrom: loadErrorResult) includesSubstring: 'Failed to pull repository').
-			self assert: ((self summaryFrom: loadErrorResult) includesSubstring: 'Iceberg load failed') ]
-]
-
-{ #category : 'tests' }
-MCPToolRepositoryOperationTest >> testPullReturnsResultAndReportsErrors [
-
-	| data errorResult repository result repeatedResult server |
-	repository := self newTestRepositoryNamed: 'MCP Pull Test Repository'.
-	self withRegisteredRepository: repository do: [
-			server := MCPDiscoverableToolCallingServer new.
-			result := self callToolWith: {
-					          (#action -> 'pull').
-					          (#name -> repository name) } asDictionary.
-			data := self dataFrom: result.
-			self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
-			self assert: repository actionLog asArray equals: #( 'pull' ).
-			self assert: data keys asSet equals: #( branchName headDescription modifiedPackageNames ) asSet.
-			self assert: (data at: #headDescription) equals: 'after pull'.
-			self assert: (data at: #modifiedPackageNames) equals: #( 'MCP-Test-Pulled' ).
-			repeatedResult := server rpcToolCall: 'repository_pull' withParams: { (#name -> repository name) } asDictionary.
-			self deny: (self resultIndicatesError: repeatedResult) description: (self summaryFrom: repeatedResult) ].
-	repository := self newTestRepositoryNamed: 'MCP Pull Error Test Repository'.
-	repository failPull: true.
-	self withRegisteredRepository: repository do: [
-			errorResult := self callToolWith: {
-					               (#action -> 'pull').
-					               (#name -> repository name) } asDictionary.
-			self assert: (self resultIndicatesError: errorResult).
-			self assert: ((self summaryFrom: errorResult) includesSubstring: 'Failed to pull repository') ]
-]
-
-{ #category : 'tests' }
-MCPToolRepositoryOperationTest >> testPushPublishesCurrentBranchUsingRequestedRemoteName [
-
-	| bareLocation branchName commitAfter location remoteHead repository repositoryName result upstream |
-	repositoryName := 'MCP Push Requested Remote Test Repository'.
-	branchName := 'feature/requested-remote'.
-	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestGitPushRequestedRemote'.
-	bareLocation := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestGitPushRequestedRemote.git'.
-	[
-		self deleteDirectoryIfExists: location.
-		self deleteDirectoryIfExists: bareLocation.
-		location ensureCreateDirectory.
-		self shellCommand: 'git init --initial-branch=main ' , (self shellQuote: location pathString).
-		location / 'README.md' writeStreamDo: [ :stream | stream nextPutAll: 'initial' ].
-		self commitAllIn: location message: 'Initial local commit'.
-		self shellCommand: 'git init --bare --initial-branch=main ' , (self shellQuote: bareLocation pathString).
-		self shellCommand:
-			'git -C ' , (self shellQuote: location pathString) , ' remote add backup ' , (self shellQuote: bareLocation pathString).
-		self shellCommand: 'git -C ' , (self shellQuote: location pathString) , ' checkout -b ' , (self shellQuote: branchName).
-		location / 'feature.txt' writeStreamDo: [ :stream | stream nextPutAll: 'feature' ].
-		self commitAllIn: location message: 'Feature local commit'.
-		commitAfter := (LibC resultOfCommand: 'git -C ' , (self shellQuote: location pathString) , ' rev-parse HEAD') trimBoth.
-		repository := MCPTestIceRepository named: repositoryName location: location pathString.
-		self withRegisteredRepository: repository do: [
-				result := self callToolWith: {
-						          (#action -> 'push').
-						          (#name -> repositoryName).
-						          (#remoteName -> 'backup') } asDictionary.
-				self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
-				remoteHead := (LibC resultOfCommand:
-					               'git --git-dir ' , (self shellQuote: bareLocation pathString) , ' rev-parse ' , (self shellQuote: branchName))
-					              trimBoth.
-				self assert: remoteHead equals: commitAfter.
-				upstream := (LibC resultOfCommand:
-					             'git -C ' , (self shellQuote: location pathString) , ' rev-parse --abbrev-ref --symbolic-full-name '
-					             , (self shellQuote: '@{u}')) trimBoth.
-				self assert: upstream equals: 'backup/' , branchName ] ] ensure: [
-			self deleteDirectoryIfExists: location.
-			self deleteDirectoryIfExists: bareLocation ]
-]
-
-{ #category : 'tests' }
-MCPToolRepositoryOperationTest >> testPushPublishesCurrentBranchWhenUpstreamIsMissing [
-
-	| bareLocation branchName commitAfter location remoteHead repository repositoryName result upstream |
-	repositoryName := 'MCP Push Missing Upstream Test Repository'.
-	branchName := 'feature/publish-upstream'.
-	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestGitPushMissingUpstream'.
-	bareLocation := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestGitPushMissingUpstreamRemote.git'.
-	[
-		self deleteDirectoryIfExists: location.
-		self deleteDirectoryIfExists: bareLocation.
-		location ensureCreateDirectory.
-		self shellCommand: 'git init --initial-branch=main ' , (self shellQuote: location pathString).
-		location / 'README.md' writeStreamDo: [ :stream | stream nextPutAll: 'initial' ].
-		self commitAllIn: location message: 'Initial local commit'.
-		self shellCommand: 'git init --bare --initial-branch=main ' , (self shellQuote: bareLocation pathString).
-		self shellCommand:
-			'git -C ' , (self shellQuote: location pathString) , ' remote add origin ' , (self shellQuote: bareLocation pathString).
-		self shellCommand: 'git -C ' , (self shellQuote: location pathString) , ' checkout -b ' , (self shellQuote: branchName).
-		location / 'feature.txt' writeStreamDo: [ :stream | stream nextPutAll: 'feature' ].
-		self commitAllIn: location message: 'Feature local commit'.
-		commitAfter := (LibC resultOfCommand: 'git -C ' , (self shellQuote: location pathString) , ' rev-parse HEAD') trimBoth.
-		repository := MCPTestIceRepository named: repositoryName location: location pathString.
-		self withRegisteredRepository: repository do: [
-				result := self callToolWith: {
-						          (#action -> 'push').
-						          (#name -> repositoryName) } asDictionary.
-				self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
-				self assert: repository actionLog asArray equals: #(  ).
-				remoteHead := (LibC resultOfCommand:
-					               'git --git-dir ' , (self shellQuote: bareLocation pathString) , ' rev-parse ' , (self shellQuote: branchName))
-					              trimBoth.
-				self assert: remoteHead equals: commitAfter.
-				upstream := (LibC resultOfCommand:
-					             'git -C ' , (self shellQuote: location pathString) , ' rev-parse --abbrev-ref --symbolic-full-name '
-					             , (self shellQuote: '@{u}')) trimBoth.
-				self assert: upstream equals: 'origin/' , branchName ] ] ensure: [
-			self deleteDirectoryIfExists: location.
-			self deleteDirectoryIfExists: bareLocation ]
-]
-
-{ #category : 'tests' }
-MCPToolRepositoryOperationTest >> testPushReportsRemoteAndAuthenticationErrors [
-
-	| authErrorResult remoteErrorResult repository |
-	repository := self newTestRepositoryNamed: 'MCP Push Remote Error Test Repository'.
-	repository failPush: IceRemoteNotFoundError -> 'Iceberg remote not found for test repository'.
-	self withRegisteredRepository: repository do: [
-			remoteErrorResult := self callToolWith: {
-					                     (#action -> 'push').
-					                     (#name -> repository name) } asDictionary.
-			self assert: (self resultIndicatesError: remoteErrorResult).
-			self assert: ((self summaryFrom: remoteErrorResult) includesSubstring: 'Failed to push repository').
-			self assert: ((self summaryFrom: remoteErrorResult) includesSubstring: 'Iceberg remote not found') ].
-	repository := self newTestRepositoryNamed: 'MCP Push Authentication Error Test Repository'.
-	repository failPush: IceAuthenticationError -> 'Iceberg authentication failed for test repository'.
-	self withRegisteredRepository: repository do: [
-			authErrorResult := self callToolWith: {
-					                   (#action -> 'push').
-					                   (#name -> repository name) } asDictionary.
-			self assert: (self resultIndicatesError: authErrorResult).
-			self assert: ((self summaryFrom: authErrorResult) includesSubstring: 'Failed to push repository').
-			self assert: ((self summaryFrom: authErrorResult) includesSubstring: 'Iceberg authentication failed') ]
-]
-
-{ #category : 'tests' }
-MCPToolRepositoryOperationTest >> testPushRequiresRemoteNameWhenMultipleNonOriginRemotesExist [
-
-	| backupLocation branchName forkLocation location repository repositoryName result |
-	repositoryName := 'MCP Push Ambiguous Remote Test Repository'.
-	branchName := 'feature/ambiguous-remote'.
-	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestGitPushAmbiguousRemote'.
-	backupLocation := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestGitPushBackupRemote.git'.
-	forkLocation := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestGitPushForkRemote.git'.
-	[
-		self deleteDirectoryIfExists: location.
-		self deleteDirectoryIfExists: backupLocation.
-		self deleteDirectoryIfExists: forkLocation.
-		location ensureCreateDirectory.
-		self shellCommand: 'git init --initial-branch=main ' , (self shellQuote: location pathString).
-		location / 'README.md' writeStreamDo: [ :stream | stream nextPutAll: 'initial' ].
-		self commitAllIn: location message: 'Initial local commit'.
-		self shellCommand: 'git init --bare --initial-branch=main ' , (self shellQuote: backupLocation pathString).
-		self shellCommand: 'git init --bare --initial-branch=main ' , (self shellQuote: forkLocation pathString).
-		self shellCommand:
-			'git -C ' , (self shellQuote: location pathString) , ' remote add backup ' , (self shellQuote: backupLocation pathString).
-		self shellCommand:
-			'git -C ' , (self shellQuote: location pathString) , ' remote add fork ' , (self shellQuote: forkLocation pathString).
-		self shellCommand: 'git -C ' , (self shellQuote: location pathString) , ' checkout -b ' , (self shellQuote: branchName).
-		location / 'feature.txt' writeStreamDo: [ :stream | stream nextPutAll: 'feature' ].
-		self commitAllIn: location message: 'Feature local commit'.
-		repository := MCPTestIceRepository named: repositoryName location: location pathString.
-		self withRegisteredRepository: repository do: [
-				result := self callToolWith: {
-						          (#action -> 'push').
-						          (#name -> repositoryName) } asDictionary.
-				self assert: (self resultIndicatesError: result).
-				self assert: ((self errorFrom: result) at: #errorCode) equals: 'RepositoryRemoteRequired' ] ] ensure: [
-			self deleteDirectoryIfExists: location.
-			self deleteDirectoryIfExists: backupLocation.
-			self deleteDirectoryIfExists: forkLocation ]
-]
-
-{ #category : 'tests' }
-MCPToolRepositoryOperationTest >> testPushReturnsResultAndReportsErrors [
-
-	| data errorResult repository result repeatedResult server |
-	repository := self newTestRepositoryNamed: 'MCP Push Test Repository'.
-	self withRegisteredRepository: repository do: [
-			server := MCPDiscoverableToolCallingServer new.
-			result := self callToolWith: {
-					          (#action -> 'push').
-					          (#name -> repository name) } asDictionary.
-			data := self dataFrom: result.
-			self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
-			self assert: repository actionLog asArray equals: #( 'push' ).
-			self assert: data keys asSet equals: #( branchName headDescription ) asSet.
-			self assert: (data at: #headDescription) equals: 'after push'.
-			repeatedResult := server rpcToolCall: 'repository_push' withParams: { (#name -> repository name) } asDictionary.
-			self deny: (self resultIndicatesError: repeatedResult) description: (self summaryFrom: repeatedResult) ].
-	repository := self newTestRepositoryNamed: 'MCP Push Error Test Repository'.
-	repository failPush: true.
-	self withRegisteredRepository: repository do: [
-			errorResult := self callToolWith: {
-					               (#action -> 'push').
-					               (#name -> repository name) } asDictionary.
-			self assert: (self resultIndicatesError: errorResult).
-			self assert: ((self summaryFrom: errorResult) includesSubstring: 'Failed to push repository') ]
-]
-
-{ #category : 'tests' }
-MCPToolRepositoryOperationTest >> testPushUsesGitCommandForRealWorktree [
-
-	| bareLocation commitAfter location remoteHead repository repositoryName result |
-	repositoryName := 'MCP Push Git Command Test Repository'.
-	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestGitPush'.
-	bareLocation := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestGitPushRemote.git'.
-	[
-		self deleteDirectoryIfExists: location.
-		self deleteDirectoryIfExists: bareLocation.
-		location ensureCreateDirectory.
-		self shellCommand: 'git init --initial-branch=main ' , (self shellQuote: location pathString).
-		location / 'README.md' writeStreamDo: [ :stream | stream nextPutAll: 'initial' ].
-		self commitAllIn: location message: 'Initial local commit'.
-		self shellCommand: 'git init --bare --initial-branch=main ' , (self shellQuote: bareLocation pathString).
-		self shellCommand:
-			'git -C ' , (self shellQuote: location pathString) , ' remote add origin ' , (self shellQuote: bareLocation pathString).
-		self shellCommand: 'git -C ' , (self shellQuote: location pathString) , ' push -u origin main'.
-		location / 'README.md' writeStreamDo: [ :stream | stream nextPutAll: 'updated' ].
-		self commitAllIn: location message: 'Second local commit'.
-		commitAfter := (LibC resultOfCommand: 'git -C ' , (self shellQuote: location pathString) , ' rev-parse HEAD') trimBoth.
-		repository := MCPTestIceRepository named: repositoryName location: location pathString.
-		self withRegisteredRepository: repository do: [
-				result := self callToolWith: {
-						          (#action -> 'push').
-						          (#name -> repositoryName) } asDictionary.
-				self deny: (result at: #isError ifAbsent: false).
-				self assert: repository actionLog asArray equals: #(  ).
-				remoteHead := (LibC resultOfCommand: 'git --git-dir ' , (self shellQuote: bareLocation pathString) , ' rev-parse main')
-					              trimBoth.
-				self assert: remoteHead equals: commitAfter ] ] ensure: [
-			self deleteDirectoryIfExists: location.
-			self deleteDirectoryIfExists: bareLocation ]
-]
-
-{ #category : 'tests' }
-MCPToolRepositoryOperationTest >> testRemoteAndBranchOperationsParseAndDispatch [
-
-	| cases |
-	cases := {
-		         {
-			         (#toolClass -> MCPToolFetchRepository).
-			         (#action -> 'fetch').
-			         (#requestClass -> MCPRepositoryFetchRequest).
-			         (#commandClass -> MCPFetchRepositoryCommand).
-			         (#arguments -> { (#name -> 'MCP') } asDictionary) } asDictionary.
-		         {
-			         (#toolClass -> MCPToolPullRepository).
-			         (#action -> 'pull').
-			         (#requestClass -> MCPRepositoryPullRequest).
-			         (#commandClass -> MCPPullRepositoryCommand).
-			         (#arguments -> { (#name -> 'MCP') } asDictionary) } asDictionary.
-		         {
-			         (#toolClass -> MCPToolPushRepository).
-			         (#action -> 'push').
-			         (#requestClass -> MCPRepositoryPushRequest).
-			         (#commandClass -> MCPPushRepositoryCommand).
-			         (#arguments -> { (#name -> 'MCP') } asDictionary) } asDictionary.
-		         {
-			         (#toolClass -> MCPToolCreateRepositoryBranch).
-			         (#action -> 'createBranch').
-			         (#requestClass -> MCPRepositoryCreateBranchRequest).
-			         (#commandClass -> MCPCreateRepositoryBranchCommand).
-			         (#arguments -> {
-				          (#name -> 'MCP').
-				          (#branchName -> 'feature') } asDictionary) } asDictionary.
-		         {
-			         (#toolClass -> MCPToolSwitchRepositoryBranch).
-			         (#action -> 'switchBranch').
-			         (#requestClass -> MCPRepositorySwitchBranchRequest).
-			         (#commandClass -> MCPSwitchRepositoryBranchCommand).
-			         (#arguments -> {
-				          (#name -> 'MCP').
-				          (#branchName -> 'main') } asDictionary) } asDictionary.
-		         {
-			         (#toolClass -> MCPToolCheckoutRepositoryBranch).
-			         (#action -> 'checkoutBranch').
-			         (#requestClass -> MCPRepositoryCheckoutBranchRequest).
-			         (#commandClass -> MCPCheckoutRepositoryBranchCommand).
-			         (#arguments -> {
-				          (#name -> 'MCP').
-				          (#branchName -> 'main') } asDictionary) } asDictionary }.
-	cases do: [ :each |
-			| command parsedRequest rawRequest tool |
-			tool := (each at: #toolClass) new.
-			rawRequest := tool requestFromToolCallArguments: (each at: #arguments).
-			parsedRequest := tool parsedRequestFromToolRequest: rawRequest.
-			command := tool commandForRequest: parsedRequest.
-			self assert: parsedRequest class equals: (each at: #requestClass).
-			self assert: parsedRequest operation equals: (each at: #action).
-			self assert: command class equals: (each at: #commandClass) ]
-]
-
-{ #category : 'tests' }
-MCPToolRepositoryOperationTest >> testRemoteToolsManageGitRemotes [
-
-	| location remote repository repositoryName result |
-	repositoryName := 'MCP Remote Tool Test Repository'.
-	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestGitRemote'.
-	self deleteDirectoryIfExists: location.
-	location ensureCreateDirectory.
-	self shellCommand: 'git init --initial-branch=main ' , (self shellQuote: location pathString).
-	repository := MCPTestIceRepository named: repositoryName location: location pathString.
-	[
-		self withRegisteredRepository: repository do: [
-				result := self callToolWith: {
-						          (#action -> 'remoteAdd').
-						          (#name -> repositoryName).
-						          (#remoteName -> 'origin').
-						          (#remoteUrl -> 'git@example.com:one.git') } asDictionary.
-				self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
-				remote := self remoteNamed: 'origin' in: ((self dataFrom: result) at: #remotes).
-				self assert: (remote at: #url) equals: 'git@example.com:one.git'.
-
-				result := self callToolWith: {
-						          (#action -> 'remoteUpdate').
-						          (#name -> repositoryName).
-						          (#remoteName -> 'origin').
-						          (#remoteUrl -> 'git@example.com:two.git') } asDictionary.
-				self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
-				remote := self remoteNamed: 'origin' in: ((self dataFrom: result) at: #remotes).
-				self assert: (remote at: #url) equals: 'git@example.com:two.git'.
-
-				result := self callToolWith: {
-						          (#action -> 'remoteRemove').
-						          (#name -> repositoryName).
-						          (#remoteName -> 'origin') } asDictionary.
-				self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
-				self assert: ((self dataFrom: result) at: #remotes) equals: #(  ) ] ] ensure: [ self deleteDirectoryIfExists: location ]
-]
-
-{ #category : 'tests' }
-MCPToolRepositoryOperationTest >> testRepositoryErrorDetailsIncludeAction [
-
-	| errorDetails repository result |
-	repository := self newTestRepositoryNamed: 'MCP Repository Error Action Test Repository'.
-	repository failPush: true.
-	self withRegisteredRepository: repository do: [
-			result := self callToolWith: {
-					          (#action -> 'push').
-					          (#name -> repository name) } asDictionary.
-			self assert: (self resultIndicatesError: result).
-			errorDetails := self errorFrom: result.
-			self assert: (errorDetails at: #action) equals: 'push' ]
-]
-
-{ #category : 'tests' }
 MCPToolRepositoryOperationTest >> testRestoreOrderOnlyTonelChurnRestoresOriginalFile [
 
 	| command file location packageDirectory repository restored snapshot |
@@ -1255,61 +812,6 @@ MCPToolRepositoryOperationTest >> testRestoreOrderOnlyTonelChurnRestoresOriginal
 		self assert: restored equals: #( 'MCP-Order/MCPOrderTestClass.class.st' ).
 		self assert: file contents equals: (self tonelClassSourceWithMethods: #( 'alpha' 'beta' )) ] ensure: [
 		self deleteDirectoryIfExists: location ]
-]
-
-{ #category : 'tests' }
-MCPToolRepositoryOperationTest >> testSwitchBranchReturnsResultAndReportsErrors [
-
-	| data conflictResult loadResult missingResult repository result repeatedResult server |
-	repository := self newTestRepositoryNamed: 'MCP Switch Branch Test Repository'.
-	repository createBranch: 'feature'.
-	repository switchToBranchNamed: 'main'.
-	self withRegisteredRepository: repository do: [
-			server := MCPDiscoverableToolCallingServer new.
-			result := self callToolWith: {
-					          (#action -> 'switchBranch').
-					          (#name -> repository name).
-					          (#branchName -> 'feature') } asDictionary.
-			data := self dataFrom: result.
-			self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
-			self assert: data keys asSet equals: #( branchName headDescription previousBranchName previousHeadDescription ) asSet.
-			self assert: (data at: #previousBranchName) equals: 'main'.
-			self assert: (data at: #branchName) equals: 'feature'.
-			self assert: (data at: #previousHeadDescription) equals: 'branch main'.
-			self assert: (data at: #headDescription) equals: 'branch feature'.
-			repeatedResult := server rpcToolCall: 'repository_branch_switch' withParams: {
-					              (#name -> repository name).
-					              (#branchName -> 'main') } asDictionary.
-			self deny: (self resultIndicatesError: repeatedResult) description: (self summaryFrom: repeatedResult).
-			missingResult := self callToolWith: {
-					                 (#action -> 'switchBranch').
-					                 (#name -> repository name).
-					                 (#branchName -> 'missing') } asDictionary.
-			self assert: (self resultIndicatesError: missingResult).
-			self assert: ((self summaryFrom: missingResult) includesSubstring: 'Failed to switch repository branch').
-			self assert: ((self summaryFrom: missingResult) includesSubstring: 'Branch not found') ].
-	repository := self newTestRepositoryNamed: 'MCP Switch Branch Conflict Test Repository'.
-	repository createBranch: 'feature'.
-	repository failSwitchBranch: IceCheckoutConflictError -> 'Iceberg checkout conflict test repository'.
-	self withRegisteredRepository: repository do: [
-			conflictResult := self callToolWith: {
-					                  (#action -> 'switchBranch').
-					                  (#name -> repository name).
-					                  (#branchName -> 'feature') } asDictionary.
-			self assert: (self resultIndicatesError: conflictResult).
-			self assert: ((self summaryFrom: conflictResult) includesSubstring: 'Failed to switch repository branch').
-			self assert: ((self summaryFrom: conflictResult) includesSubstring: 'Iceberg checkout conflict') ].
-	repository := self newTestRepositoryNamed: 'MCP Switch Branch Load Test Repository'.
-	repository createBranch: 'feature'.
-	repository failSwitchBranch: IceGenericError -> 'Iceberg load failed test repository'.
-	self withRegisteredRepository: repository do: [
-			loadResult := self callToolWith: {
-					              (#action -> 'switchBranch').
-					              (#name -> repository name).
-					              (#branchName -> 'feature') } asDictionary.
-			self assert: (self resultIndicatesError: loadResult).
-			self assert: ((self summaryFrom: loadResult) includesSubstring: 'Failed to switch repository branch').
-			self assert: ((self summaryFrom: loadResult) includesSubstring: 'Iceberg load failed') ]
 ]
 
 { #category : 'tests' }
