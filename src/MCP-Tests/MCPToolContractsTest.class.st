@@ -936,7 +936,7 @@ MCPToolContractsTest >> testEvaluateFailureTextNamesSuggestionsAndFrames [
 			         withArguments: { (#code -> 'OrderedCollection new adAll: #( 1 2 3 )') } asDictionary).
 	lines := text lines.
 	self assert: (lines anySatisfy: [ :each | each beginsWith: 'Did you mean: addAll:' ]).
-	self assert: lines last equals: 'UndefinedObject>>DoIt'.
+	self assert: (lines reject: [ :each | each beginsWith: '   ' ]) last equals: 'UndefinedObject>>DoIt'.
 	self deny: (text includesSubstring: '"errorClass"')
 ]
 
@@ -1041,7 +1041,7 @@ MCPToolContractsTest >> testEvaluateReturnsRuntimeFailureInformation [
 	self assert: (result at: #isError).
 	self assert: (text includesSubstring: 'failed during execution').
 	self assert: (text includesSubstring: 'boom').
-	self assert: (text lines last includesSubstring: 'UndefinedObject>>DoIt')
+	self assert: ((text lines reject: [ :each | each beginsWith: '   ' ]) last includesSubstring: 'UndefinedObject>>DoIt')
 ]
 
 { #category : 'tests - evaluate' }

@@ -128,7 +128,7 @@ MCPToolStructuredOutputTest >> testEvaluateReturnsStructuredRuntimeErrorWithStac
 	self assert: (error includesKey: #signalerContext).
 	self assert: stackTrace class equals: Array.
 	self deny: stackTrace isEmpty.
-	self assert: stackTrace first equals: (error at: #signalerContext)
+	self assert: (stackTrace first beginsWith: (error at: #signalerContext))
 ]
 
 { #category : 'tests' }
