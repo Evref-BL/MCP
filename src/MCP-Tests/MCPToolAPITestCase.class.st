@@ -154,6 +154,13 @@ MCPToolAPITestCase >> searchScope: scopeAssociations [
 	^ #scope -> scopeAssociations asDictionary
 ]
 
+{ #category : 'private - calling' }
+MCPToolAPITestCase >> searchScope: scopeAssociations side: aSideName [
+	"Which sides to sweep lives in the scope, beside the entities it narrows."
+
+	^ #scope -> (scopeAssociations , { (#side -> aSideName) }) asDictionary
+]
+
 { #category : 'private - results' }
 MCPToolAPITestCase >> structuredContentFrom: aResult [
 

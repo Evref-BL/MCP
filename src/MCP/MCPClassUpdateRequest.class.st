@@ -182,7 +182,7 @@ MCPClassUpdateRequest >> initializeFromRequest: request [
 	slotName := request stringArgumentNamed: 'slot'.
 	newSlotName := request stringArgumentNamed: 'newSlot'.
 	slotAction := request stringArgumentNamed: 'slotAction'.
-	classSide := request booleanArgumentNamed: 'classSide' default: false
+	classSide := (request stringArgumentNamed: 'side' default: 'instance') = 'class'
 ]
 
 { #category : 'accessing' }
@@ -332,7 +332,7 @@ MCPClassUpdateRequest >> slotRequestedContext [
 	context := {
 		           (#class -> self className).
 		           (#slot -> self slotName).
-		           (#classSide -> self classSide) } asDictionary.
+		           (#side -> (self classSide ifTrue: [ 'class' ] ifFalse: [ 'instance' ])) } asDictionary.
 	self slotAction ifNotNil: [ context at: #slotAction put: self slotAction ].
 	^ context
 ]

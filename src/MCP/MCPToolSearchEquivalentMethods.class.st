@@ -22,10 +22,7 @@ MCPToolSearchEquivalentMethods >> buildInputSchema [
 	properties := self methodQueryScopeInputProperties , {
 		              (self schemaPropertyNamed: 'class' type: 'string' description: 'The class that defines the reference method.').
 		              (self schemaPropertyNamed: 'selector' type: 'string' description: 'The reference method selector.').
-		              (self
-			               booleanSchemaPropertyNamed: 'classSide'
-			               description: 'Whether the reference method is on class side.'
-			               default: false).
+		              (self targetSideSchemaPropertyDescribedAs: 'Which side the reference method is on.').
 		              self offsetInputProperty }.
 	^ MCPStructureInputSchema new
 		  type: 'object';
@@ -62,7 +59,7 @@ MCPToolSearchEquivalentMethods >> methodReferenceSpecFromToolRequest: request [
 	^ MCPMethodReferenceSpec
 		  className: className
 		  selector: selector
-		  classSide: (request booleanArgumentNamed: 'classSide' default: false)
+		  classSide: ((request stringArgumentNamed: 'side' default: 'instance') = 'class')
 ]
 
 { #category : 'private - template' }

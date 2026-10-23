@@ -63,9 +63,9 @@ MCPCommandErrorTest >> testMissingMethodErrorCarriesClassSideAndSelector [
 	self assert: (details at: #errorClass) equals: 'MCPCommandError'.
 	self assert: (details at: #errorCode) equals: 'MethodNotFound'.
 	self assert: (details at: #class) equals: 'MCPToolGetMethodTestTarget'.
-	self assert: (details at: #classSide).
+	self assert: (details at: #side) equals: 'class'.
 	self assert: (details at: #selector) equals: 'mcpDefinitelyMissingSelectorForErrorTest'.
-	self assert: details keys asSet equals: #( errorClass errorCode message class classSide selector ) asSet
+	self assert: details keys asSet equals: #( errorClass errorCode message class side selector ) asSet
 ]
 
 { #category : 'tests' }
@@ -93,7 +93,7 @@ MCPCommandErrorTest >> testMissingMethodErrorSuggestsFirstExactSuperclassMatch [
 	self assert: error errorCode equals: #MethodNotFound.
 	self assert: suggestions size equals: 1.
 	self assert: (suggestions first at: #class) equals: 'Object'.
-	self deny: (suggestions first at: #classSide).
+	self assert: (suggestions first at: #side) equals: 'instance'.
 	self assert: (suggestions first at: #selector) equals: 'yourself'.
 	self assert: ((details at: #message) includesSubstring: 'Exact matches: Object>>yourself')
 ]
@@ -109,7 +109,7 @@ MCPCommandErrorTest >> testMissingMethodErrorSuggestsOnlyExactOppositeSideAndSup
 	self assert: error errorCode equals: #MethodNotFound.
 	self assert: suggestions size equals: 1.
 	self assert: (suggestions first at: #class) equals: 'MCPToolGetMethodTestTarget'.
-	self assert: (suggestions first at: #classSide).
+	self assert: (suggestions first at: #side) equals: 'class'.
 	self assert: (suggestions first at: #selector) equals: 'readClassSide'.
 	self assert: ((details at: #message) includesSubstring: 'Exact matches: MCPToolGetMethodTestTarget class>>readClassSide')
 ]

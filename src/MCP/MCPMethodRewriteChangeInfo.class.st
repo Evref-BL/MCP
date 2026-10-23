@@ -33,7 +33,7 @@ MCPMethodRewriteChangeInfo >> asDictionary [
 	| data |
 	data := {
 		        (#class -> self className).
-		        (#classSide -> self classSide).
+		        (#side -> (self classSide ifTrue: [ 'class' ] ifFalse: [ 'instance' ])).
 		        (#selector -> self selector).
 		        (#package -> self packageName).
 		        (#protocol -> self protocol) } asDictionary.

@@ -44,9 +44,9 @@ MCPToolClassMutation >> classNameSchemaProperty [
 ]
 
 { #category : 'private - schema' }
-MCPToolClassMutation >> classSideSlotSchemaProperty [
+MCPToolClassMutation >> slotSideSchemaProperty [
 
-	^ self booleanSchemaPropertyNamed: 'classSide' description: 'Whether the slot update targets class-side slots.' default: false
+	^ self targetSideSchemaPropertyDescribedAs: 'Which side the slot is on.'
 ]
 
 { #category : 'private - schema' }

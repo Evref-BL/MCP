@@ -78,10 +78,11 @@ MCPToolCompileMethod >> methodToolSpec [
 				    description: 'The class to compile the method into.';
 				    yourself).
 			   (MCPStructureProperties new
-				    name: 'classSide';
-				    type: 'boolean';
+				    name: 'side';
+				    type: 'string';
+				    enum: #( 'instance' 'class' );
 				    description: 'Whether to compile on the class side.';
-				    default: false;
+				    default: 'instance';
 				    yourself).
 			   (MCPStructureProperties new
 				    name: 'source';

@@ -82,7 +82,7 @@ MCPCommandError class >> methodSuggestionForBehavior: aBehavior selector: aSelec
 		                ifNotNil: [ :protocol | protocol name asString ].
 	^ {
 		  (#class -> aBehavior instanceSide name asString).
-		  (#classSide -> aBehavior isClassSide).
+		  (#side -> (aBehavior isClassSide ifTrue: [ 'class' ] ifFalse: [ 'instance' ])).
 		  (#selector -> aSelectorSymbol asString).
 		  (#protocol -> protocolName) } asDictionary
 ]
@@ -174,7 +174,7 @@ MCPCommandError class >> signalMissingMethodInClassName: aClassName classSide: a
 			                          , (self methodReferenceForClassName: aClassName selector: aSelectorString classSide: aBoolean) , '.'.
 			               ^ self signalErrorCode: #ClassNotFound message: message details: {
 					                 (#class -> aClassName).
-					                 (#classSide -> aBoolean).
+					                 (#side -> (aBoolean ifTrue: [ 'class' ] ifFalse: [ 'instance' ])).
 					                 (#selector -> aSelectorString) } asDictionary ].
 	suggestions := self methodSuggestionsForClass: targetClass classSide: aBoolean selector: selectorSymbol.
 	message := 'Method ' , (self methodReferenceForClassName: aClassName selector: aSelectorString classSide: aBoolean)
@@ -184,10 +184,10 @@ MCPCommandError class >> signalMissingMethodInClassName: aClassName classSide: a
 					             self
 						             methodReferenceForClassName: (each at: #class)
 						             selector: (each at: #selector)
-						             classSide: (each at: #classSide) ])) , '.' ].
+						             classSide: ((each at: #side ifAbsent: [ 'instance' ]) = 'class') ])) , '.' ].
 	details := {
 		           (#class -> aClassName).
-		           (#classSide -> aBoolean).
+		           (#side -> (aBoolean ifTrue: [ 'class' ] ifFalse: [ 'instance' ])).
 		           (#selector -> aSelectorString) } asDictionary.
 	suggestions ifNotEmpty: [ :matches | details at: #suggestions put: matches ].
 	^ self signalErrorCode: #MethodNotFound message: message details: details

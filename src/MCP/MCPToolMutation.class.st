@@ -401,7 +401,7 @@ MCPToolMutation >> refactoringModelForScopeSpec: scopeSpec anchoredAtBehavior: a
 	(environment includesClass: aBehavior) ifFalse: [
 			details := scopeSpec asDictionary copy.
 			details at: #class put: aBehavior instanceSide name asString.
-			details at: #classSide put: aBehavior isMeta.
+			aBehavior isMeta ifTrue: [ details at: #side put: 'class' ].
 			MCPCommandError
 				signalErrorCode: #RefactoringScopeExcludesTargetClass
 				message: 'Refactoring scope does not include ' , (aBehavior isMeta
@@ -434,11 +434,12 @@ MCPToolMutation >> refactoringScopePackageNamesSchemaProperty [
 
 { #category : 'private - request' }
 MCPToolMutation >> refactoringScopeSpecFromRequest: request [
+	"The same scope object every other sweeping tool takes, rather than this tool's own flat spelling of one."
 
 	| classNames hierarchyClassNames packageNames |
-	packageNames := request stringCollectionArgumentNamed: 'packages'.
-	classNames := request stringCollectionArgumentNamed: 'classes'.
-	hierarchyClassNames := request stringCollectionArgumentNamed: 'hierarchyClasses'.
+	packageNames := self searchScopeStringCollectionNamed: 'packages' fromRequest: request.
+	classNames := self searchScopeStringCollectionNamed: 'classes' fromRequest: request.
+	hierarchyClassNames := self searchScopeStringCollectionNamed: 'hierarchy' fromRequest: request.
 	self validateRefactoringScopePackageNamesExist: packageNames.
 	^ MCPRefactoringScopeSpec packageNames: packageNames classNames: classNames hierarchyClassNames: hierarchyClassNames
 ]

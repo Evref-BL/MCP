@@ -165,8 +165,7 @@ MCPToolRunCritiques >> allRuleClasses [
 { #category : 'metadata' }
 MCPToolRunCritiques >> buildInputSchema [
 
-	^ self queryInputSchemaWithProperties: { self searchScopeSchemaProperty } , {
-			  self methodSideSchemaProperty.
+	^ self queryInputSchemaWithProperties: { self methodSearchScopeSchemaProperty } , {
 			  self ruleClassesSchemaProperty.
 			  self offsetInputProperty }
 ]
@@ -280,18 +279,8 @@ MCPToolRunCritiques >> methodScopeQueryFromRequest: request [
 		  classNames: (self searchScopeStringCollectionNamed: 'classes' fromRequest: request);
 		  subclassClassNames: (self searchScopeStringCollectionNamed: 'subclassesOf' fromRequest: request);
 		  parentClassNames: (self searchScopeStringCollectionNamed: 'superclassesOf' fromRequest: request);
-		  side: (request stringArgumentNamed: 'side' default: 'both');
+		  side: (self searchScopeSideFromRequest: request);
 		  yourself
-]
-
-{ #category : 'private - schema' }
-MCPToolRunCritiques >> methodSideSchemaProperty [
-
-	^ self
-		  stringEnumSchemaPropertyNamed: 'side'
-		  description: 'Method side to search.'
-		  values: #( 'instance' 'class' 'both' )
-		  default: 'both'
 ]
 
 { #category : 'private - scope' }

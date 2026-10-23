@@ -453,40 +453,6 @@ MCPToolSearch >> searchRequestFromToolRequest: request [
 	self subclassResponsibility
 ]
 
-{ #category : 'private - request' }
-MCPToolSearch >> searchScopeFromRequest: request [
-
-	^ request argumentNamed: 'scope' ifAbsent: [ Dictionary new ]
-]
-
-{ #category : 'private - schema' }
-MCPToolSearch >> searchScopeSchemaProperties [
-
-	^ {
-		  (self stringArraySchemaNamed: 'classes').
-		  (self stringArraySchemaNamed: 'packages').
-		  (self stringArraySchemaNamed: 'superclassesOf').
-		  (self stringArraySchemaNamed: 'subclassesOf') }
-]
-
-{ #category : 'private - schema' }
-MCPToolSearch >> searchScopeSchemaProperty [
-
-	^ MCPStructureProperties new
-		  name: 'scope';
-		  type: 'object';
-		  description: 'Search scope. If omitted, searches all matching entities.';
-		  properties: self searchScopeSchemaProperties;
-		  additionalProperties: false;
-		  yourself
-]
-
-{ #category : 'private - request' }
-MCPToolSearch >> searchScopeStringCollectionNamed: aName fromRequest: request [
-
-	^ request stringCollectionArgumentNamed: aName in: (self searchScopeFromRequest: request)
-]
-
 { #category : 'private - template' }
 MCPToolSearch >> successSummaryForQueryRequest: queryRequest page: page [
 

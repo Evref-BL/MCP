@@ -25,6 +25,6 @@ MCPToolAddClassSlot >> classToolSpec [
 		  (#inputProperties -> {
 			   self classNameSchemaProperty.
 			   self slotNameSchemaProperty.
-			   self classSideSlotSchemaProperty }).
+			   self slotSideSchemaProperty }).
 		  (#requiredProperties -> #( 'name' 'slot' )) } asDictionary
 ]

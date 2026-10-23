@@ -17,7 +17,7 @@ MCPToolMethodLookupTest >> entryForReference: aReference in: methods [
 				  | reference |
 				  reference := String streamContents: [ :stream |
 						               stream nextPutAll: (each at: #class).
-						               (each at: #classSide ifAbsent: [ false ]) ifTrue: [ stream nextPutAll: ' class' ].
+						               (each at: #side ifAbsent: [ 'instance' ]) = 'class' ifTrue: [ stream nextPutAll: ' class' ].
 						               stream
 							               nextPutAll: '>>';
 							               nextPutAll: (each at: #selector) ].
@@ -55,10 +55,10 @@ MCPToolMethodLookupTest >> testKindNarrowsWhatIsLookedFor [
 MCPToolMethodLookupTest >> testLookupSchemasRequireDedicatedArguments [
 
 	| commonProperties expectations |
-	commonProperties := #( 'scope' 'side' 'offset' ).
+	commonProperties := #( 'scope' 'offset' ).
 	expectations := {
 		                (MCPToolSearchMethodReferences -> #( 'name' 'kind' )).
-		                (MCPToolSearchEquivalentMethods -> #( 'class' 'selector' 'classSide' )) }.
+		                (MCPToolSearchEquivalentMethods -> #( 'class' 'selector' 'side' )) }.
 	expectations do: [ :expectation |
 			| propertyNames schema |
 			schema := expectation key new inputSchema.
@@ -170,8 +170,7 @@ MCPToolMethodLookupTest >> testSearchVariableReferencesReturnsVariableReferences
 	| data |
 	data := self toolNamed: 'method_reference_search' dataFromArguments: {
 			        (#name -> 'trackedSlot').
-			        (#side -> 'instance').
-			        (self searchScope: { (#classes -> #( 'MCPToolMethodSearchVariableReferenceTarget' )) }) } asDictionary.
+			        (self searchScope: { (#classes -> #( 'MCPToolMethodSearchVariableReferenceTarget' )) } side: 'instance') } asDictionary.
 	self assert: (data at: #methods) size equals: 2.
 	self entryForReference: 'MCPToolMethodSearchVariableReferenceTarget>>readTrackedSlot' in: (data at: #methods).
 	self entryForReference: 'MCPToolMethodSearchVariableReferenceTarget>>writeTrackedSlot' in: (data at: #methods)
@@ -197,7 +196,7 @@ MCPToolMethodLookupTest >> testSourceAndEquivalentSearchSchemasUseDedicatedInput
 	self assert: sourceRequired equals: #( 'filter' ).
 	self
 		assert: sourcePropertyNames asSet
-		equals: #( 'scope' 'side' 'filter' 'filterMode' 'offset' ) asSet.
+		equals: #( 'scope' 'filter' 'filterMode' 'offset' ) asSet.
 	self assert: (filterModeProperty extraProperties at: #enum) asArray equals: #( 'substring' 'regex' ).
 	equivalentSchema := MCPToolSearchEquivalentMethods new inputSchema.
 	equivalentRequired := equivalentSchema required asArray.
@@ -205,7 +204,7 @@ MCPToolMethodLookupTest >> testSourceAndEquivalentSearchSchemasUseDedicatedInput
 	self assert: equivalentRequired equals: #( 'class' 'selector' ).
 	self
 		assert: equivalentPropertyNames asSet
-		equals: #( 'scope' 'classSide' 'selector' 'side' 'class' 'offset' ) asSet
+		equals: #( 'scope' 'selector' 'side' 'class' 'offset' ) asSet
 ]
 
 { #category : 'private' }

@@ -791,7 +791,7 @@ MCPTool >> metadata [
 MCPTool >> methodReferenceKeys [
 	"The fields a method reference stands in for."
 
-	^ #( class behavior selector classSide )
+	^ #( class behavior selector side )
 ]
 
 { #category : 'private - results' }
@@ -803,7 +803,7 @@ MCPTool >> methodReferenceTextFor: aDictionary [
 	selector ifNil: [ ^ nil ].
 	behaviorName := (self valueIn: aDictionary at: #class) ifNil: [ self valueIn: aDictionary at: #behavior ].
 	behaviorName ifNil: [ ^ nil ].
-	^ ((self valueIn: aDictionary at: #classSide) = true
+	^ ((self valueIn: aDictionary at: #side) = 'class'
 		   ifTrue: [ behaviorName asString , ' class' ]
 		   ifFalse: [ behaviorName asString ]) , '>>' , selector asString
 ]
@@ -935,6 +935,92 @@ MCPTool >> stringArraySchemaNamed: aName description: aDescription itemDescripti
 	^ (self schemaPropertyNamed: aName type: 'array' description: aDescription)
 		  items: itemsProperty;
 		  yourself
+]
+
+{ #category : 'private - request' }
+MCPTool >> searchScopeFromRequest: request [
+
+	^ request argumentNamed: 'scope' ifAbsent: [ Dictionary new ]
+]
+
+{ #category : 'private - schema' }
+MCPTool >> methodSearchScopeSchemaProperties [
+	"What a scope selects when the entities are methods: the classes to look in, and which of their sides. side lives here rather than beside scope, so one object answers what this operates on."
+
+	^ self searchScopeSchemaProperties , { (self
+		    stringEnumSchemaPropertyNamed: 'side'
+		    description: 'Which sides to sweep.'
+		    values: #( 'instance' 'class' 'both' )
+		    default: 'both') }
+]
+
+{ #category : 'private - schema' }
+MCPTool >> searchScopeSchemaProperties [
+	"One definition of what a scope selects. A class has no side, so side belongs to the method variant rather than here."
+
+	^ {
+		  (self stringArraySchemaNamed: 'classes').
+		  (self stringArraySchemaNamed: 'packages').
+		  (self stringArraySchemaNamed: 'superclassesOf').
+		  (self stringArraySchemaNamed: 'subclassesOf').
+		  (self
+			   stringArraySchemaNamed: 'hierarchy'
+			   description: 'Whole hierarchies of these classes, superclasses and subclasses alike.'
+			   itemDescription: 'Class name.') }
+]
+
+{ #category : 'private - schema' }
+MCPTool >> methodSearchScopeSchemaProperty [
+
+	^ self searchScopeSchemaPropertyWith: self methodSearchScopeSchemaProperties
+]
+
+{ #category : 'private - schema' }
+MCPTool >> searchScopeSchemaProperty [
+
+	^ self searchScopeSchemaPropertyWith: self searchScopeSchemaProperties
+]
+
+{ #category : 'private - schema' }
+MCPTool >> searchScopeSchemaPropertyWith: someProperties [
+
+	^ MCPStructureProperties new
+		  name: 'scope';
+		  type: 'object';
+		  description: 'What to operate on. If omitted, every matching entity.';
+		  properties: someProperties;
+		  additionalProperties: false;
+		  yourself
+]
+
+{ #category : 'private - request' }
+MCPTool >> searchScopeSideFromRequest: request [
+	"Which sides to sweep lives in the scope, beside the entities it narrows."
+
+	^ request stringArgumentNamed: 'side' in: (self searchScopeFromRequest: request) default: 'both'
+]
+
+{ #category : 'private - request' }
+MCPTool >> searchScopeStringCollectionNamed: aName fromRequest: request [
+
+	^ request stringCollectionArgumentNamed: aName in: (self searchScopeFromRequest: request)
+]
+
+{ #category : 'private - schema' }
+MCPTool >> targetSideSchemaPropertyDescribedAs: aDescription [
+	"Which side the thing this tool was given is on. A single target is on one side, so there is no 'both' here; scope.side is where a sweep says which sides to cover."
+
+	^ self
+		  stringEnumSchemaPropertyNamed: 'side'
+		  description: aDescription
+		  values: #( 'instance' 'class' )
+		  default: 'instance'
+]
+
+{ #category : 'private - request' }
+MCPTool >> targetSideIsClassIn: aRequest [
+
+	^ (aRequest stringArgumentNamed: 'side' default: 'instance') = 'class'
 ]
 
 { #category : 'private - schema' }

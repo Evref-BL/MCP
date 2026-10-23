@@ -35,7 +35,7 @@ MCPCompiledMethodInfo >> asDictionary [
 		        (#class -> self className).
 		        (#package -> self packageName).
 		        (#protocol -> self protocol) } asDictionary.
-	self classSide ifTrue: [ data at: #classSide put: true ].
+	self classSide ifTrue: [ data at: #side put: 'class' ].
 	self isExtension ifTrue: [ data at: #isExtension put: true ].
 	^ data
 ]

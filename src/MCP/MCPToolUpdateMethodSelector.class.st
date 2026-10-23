@@ -29,10 +29,11 @@ MCPToolUpdateMethodSelector >> methodToolSpec [
 				    description: 'Class name.';
 				    yourself).
 			   (MCPStructureProperties new
-				    name: 'classSide';
-				    type: 'boolean';
+				    name: 'side';
+				    type: 'string';
+				    enum: #( 'instance' 'class' );
 				    description: 'Class-side method.';
-				    default: false;
+				    default: 'instance';
 				    yourself).
 			   self forceSchemaProperty.
 			   (MCPStructureProperties new
@@ -71,8 +72,6 @@ MCPToolUpdateMethodSelector >> methodToolSpec [
 						     description: 'Smalltalk expression.';
 						     yourself);
 				    yourself).
-			   self refactoringScopePackageNamesSchemaProperty.
-			   self refactoringScopeClassNamesSchemaProperty.
-			   self refactoringScopeHierarchyClassNamesSchemaProperty }).
+			   self methodSearchScopeSchemaProperty }).
 		  (#requiredProperties -> #( 'class' 'selector' 'newSelector' )) } asDictionary
 ]

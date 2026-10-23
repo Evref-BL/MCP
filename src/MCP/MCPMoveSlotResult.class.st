@@ -46,7 +46,7 @@ MCPMoveSlotResult >> asDictionary [
 	| data |
 	data := self newClassInfoDictionary.
 	data at: #slot put: self slotName.
-	data at: #classSide put: self classSide.
+	self classSide ifTrue: [ data at: #side put: 'class' ].
 	data at: #affectedClasses put: self affectedClassNames.
 	^ data
 ]
