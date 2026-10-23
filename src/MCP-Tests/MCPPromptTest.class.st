@@ -33,7 +33,7 @@ MCPPromptTest >> testCapabilitiesNamePromptsOnceOneIsRegistered [
 	| capabilities |
 	capabilities := self serverWithGreeting advertisedCapabilities asJRPCJSON.
 	self assert: (capabilities includesKey: #prompts).
-	self deny: ((capabilities at: #prompts) includesKey: #listChanged)
+	self assert: ((capabilities at: #prompts) at: #listChanged)
 ]
 
 { #category : 'tests' }

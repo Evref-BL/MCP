@@ -6,6 +6,9 @@ It configures a Zinc server, handles CORS and supported HTTP methods, decodes PO
 Class {
 	#name : 'MCPHTTPServer',
 	#superclass : 'JRPCHTTPServer',
+	#instVars : [
+		'eventStreams'
+	],
 	#category : 'MCP-Server',
 	#package : 'MCP',
 	#tag : 'Server'
@@ -39,12 +42,58 @@ MCPHTTPServer >> answer: request with: response [
 	^ self answerUnsupportedMethodWith: response
 ]
 
+{ #category : 'event streams' }
+MCPHTTPServer >> addEventStream: anEventStream [
+
+	eventStreams add: anEventStream
+]
+
 { #category : 'initialization' }
 MCPHTTPServer >> answerGet: request with: response [
-	"Codex uses Streamable HTTP. Until this server supports SSE on GET,
-	answer explicitly with 405 instead of timing out with an empty reply."
+	"A GET that accepts text/event-stream opens a notification stream. A GET that does not has no business on this endpoint, and is told so rather than left to time out on an empty reply."
 
-	^ self answerMethodNotAllowedWith: response
+	| stream |
+	(self getAcceptsEventStream: request) ifFalse: [ ^ self answerMethodNotAllowedWith: response ].
+	stream := MCPEventStream new.
+	self addEventStream: stream.
+	response headers
+		at: #'Cache-Control' put: 'no-cache';
+		at: #Connection put: 'keep-alive'.
+	^ response
+		  statusLine: ZnStatusLine ok;
+		  entity: (MCPEventStreamEntity on: stream);
+		  yourself
+]
+
+{ #category : 'event streams' }
+MCPHTTPServer >> broadcast: aJSONString [
+	"Write to every open listener, and forget the ones whose client has gone."
+
+	self eventStreams copy do: [ :each |
+			each isOpen
+				ifTrue: [ each write: aJSONString ]
+				ifFalse: [ eventStreams remove: each ifAbsent: [ nil ] ] ]
+]
+
+{ #category : 'event streams' }
+MCPHTTPServer >> closeEventStreams [
+
+	self eventStreams copy do: [ :each | each close ].
+	eventStreams removeAll
+]
+
+{ #category : 'event streams' }
+MCPHTTPServer >> eventStreams [
+
+	^ eventStreams ifNil: [ eventStreams := OrderedCollection new ]
+]
+
+{ #category : 'private - validation' }
+MCPHTTPServer >> getAcceptsEventStream: request [
+
+	| accept |
+	accept := request headers at: 'Accept' ifAbsent: [ ^ false ].
+	^ accept asLowercase includesSubstring: 'text/event-stream'
 ]
 
 { #category : 'initialization' }
@@ -140,6 +189,7 @@ MCPHTTPServer >> hasValidOriginFor: request [
 MCPHTTPServer >> initialize [
 
 	super initialize.
+	eventStreams := OrderedCollection new.
 	messageProcessor := MCPMessageProcessor new.
 	server := MCPSocketSafeZnServer new.
 
@@ -202,4 +252,12 @@ MCPHTTPServer >> start [
 
 	server register.
 	server start
+]
+
+{ #category : 'starting' }
+MCPHTTPServer >> stop [
+	"A listener parked on its queue would otherwise keep its process alive after the server is gone."
+
+	self closeEventStreams.
+	^ super stop
 ]

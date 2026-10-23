@@ -328,16 +328,41 @@ MCP >> observabilityTraces [
 
 { #category : 'start' }
 MCP >> advertisedCapabilities [
-	"Only what this server actually has. A capability for an empty catalog promises methods that would answer nothing, and neither subscribe nor listChanged is declared because the transport cannot push."
+	"Only what this server actually has. A capability for an empty catalog promises methods that would answer nothing. listChanged is declared because the stream can carry it; subscribe is not, because no resource here can say it changed."
 
 	| capabilities |
 	capabilities := MCPStructureCapabilities new
-		                tools: MCPStructureToolsCapabilities new;
+		                tools: (MCPStructureToolsCapabilities new
+				                 listChanged: true;
+				                 yourself);
 		                yourself.
-	self resourceRegistry entries ifNotEmpty: [ capabilities resources: MCPStructureResourcesCapabilities new ].
-	self promptRegistry entries ifNotEmpty: [ capabilities prompts: MCPStructurePromptsCapabilities new ].
+	self resourceRegistry entries ifNotEmpty: [
+		capabilities resources: (MCPStructureResourcesCapabilities new
+				 listChanged: true;
+				 yourself) ].
+	self promptRegistry entries ifNotEmpty: [
+		capabilities prompts: (MCPStructurePromptsCapabilities new
+				 listChanged: true;
+				 yourself) ].
 	self hasCompletableReferences ifTrue: [ capabilities completions: MCPStructureCompletionsCapabilities new ].
 	^ capabilities
+]
+
+{ #category : 'private - notifications' }
+MCP >> listeningRegistry: aRegistry notifying: aDomainName [
+	"Have a registry tell listening clients their cached list is stale whenever it changes."
+
+	aRegistry changeListener: [ self notifyListChangedFor: aDomainName ].
+	^ aRegistry
+]
+
+{ #category : 'private - notifications' }
+MCP >> notifyListChangedFor: aDomainName [
+	"Not guarded: a client that has gone is handled where the write happens, so anything raising here is a fault in the server rather than a condition to absorb. An earlier guard here hid exactly that for a whole round."
+
+	server broadcast: (STONJSON toString: {
+			 (#jsonrpc -> '2.0').
+			 (#method -> ('notifications/' , aDomainName , '/list_changed')) } asDictionary)
 ]
 
 { #category : 'private - completion' }
@@ -454,13 +479,13 @@ MCP >> promptNames [
 { #category : 'accessing' }
 MCP >> promptRegistry [
 
-	^ promptRegistry ifNil: [ promptRegistry := MCPPromptRegistry default ]
+	^ promptRegistry ifNil: [ promptRegistry := self listeningRegistry: MCPPromptRegistry default notifying: 'prompts' ]
 ]
 
 { #category : 'accessing' }
 MCP >> promptRegistry: aPromptRegistry [
 
-	promptRegistry := aPromptRegistry ifNil: [ MCPPromptRegistry default ]
+	promptRegistry := self listeningRegistry: (aPromptRegistry ifNil: [ MCPPromptRegistry default ]) notifying: 'prompts'
 ]
 
 { #category : 'configuration' }
@@ -472,13 +497,13 @@ MCP >> removePrompt: aName [
 { #category : 'accessing' }
 MCP >> resourceRegistry [
 
-	^ resourceRegistry ifNil: [ resourceRegistry := MCPResourceRegistry default ]
+	^ resourceRegistry ifNil: [ resourceRegistry := self listeningRegistry: MCPResourceRegistry default notifying: 'resources' ]
 ]
 
 { #category : 'accessing' }
 MCP >> resourceRegistry: aResourceRegistry [
 
-	resourceRegistry := aResourceRegistry ifNil: [ MCPResourceRegistry default ]
+	resourceRegistry := self listeningRegistry: (aResourceRegistry ifNil: [ MCPResourceRegistry default ]) notifying: 'resources'
 ]
 
 { #category : 'configuration' }
@@ -786,13 +811,13 @@ MCP >> toolNames [
 { #category : 'accessing' }
 MCP >> toolRegistry [
 
-	^ toolRegistry ifNil: [ toolRegistry := MCPToolRegistry default ]
+	^ toolRegistry ifNil: [ toolRegistry := self listeningRegistry: MCPToolRegistry default notifying: 'tools' ]
 ]
 
 { #category : 'accessing' }
 MCP >> toolRegistry: aToolRegistry [
 
-	toolRegistry := aToolRegistry ifNil: [ MCPToolRegistry default ].
+	toolRegistry := self listeningRegistry: (aToolRegistry ifNil: [ MCPToolRegistry default ]) notifying: 'tools'.
 	self refreshToolsList
 ]
 

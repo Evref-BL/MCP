@@ -1220,7 +1220,7 @@ MCPToolContractsTest >> testInitializeAdvertisesSupportedPharoVersions [
 
 { #category : 'tests' }
 MCPToolContractsTest >> testInitializeAdvertisesOnlyWhatTheServerHas [
-	"A capability promises the methods of a domain. Prompts are not advertised because the server holds none, and nothing is advertised that the transport could not honour."
+	"A capability promises the methods of a domain. Prompts are not advertised because the server holds none, and nothing is advertised that the transport could not honour: the stream carries list_changed, so that is declared, while subscribe is not."
 
 	| capabilities response |
 	response := (self mcpWithoutObservabilityExport
@@ -1229,8 +1229,9 @@ MCPToolContractsTest >> testInitializeAdvertisesOnlyWhatTheServerHas [
 		             clientInfo: nil
 		             websiteUrl: nil) asJRPCJSON.
 	capabilities := response at: #capabilities.
-	self assert: (capabilities at: #tools) equals: Dictionary new.
-	self assert: (capabilities at: #resources) equals: Dictionary new.
+	self assert: ((capabilities at: #tools) at: #listChanged).
+	self assert: ((capabilities at: #resources) at: #listChanged).
+	self deny: ((capabilities at: #resources) includesKey: #subscribe).
 	self deny: (capabilities includesKey: #prompts)
 ]
 

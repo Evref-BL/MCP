@@ -11,7 +11,8 @@ Class {
 	#instVars : [
 		'entries',
 		'discoversClasses',
-		'discoveredClasses'
+		'discoveredClasses',
+		'changeListener'
 	],
 	#category : 'MCP-Registries',
 	#package : 'MCP',
@@ -46,6 +47,7 @@ MCPRegistry >> add: aClassOrEntry [
 	key := self keyFor: entry.
 	(self includesKey: key) ifTrue: [ Error signal: self registeredClass name , ' already registered: ' , key ].
 	self entriesByKey at: key put: entry.
+	self noteChanged.
 	^ entry
 ]
 
@@ -73,6 +75,13 @@ MCPRegistry >> defaultEntries [
 
 	^ (self autoRegisteringClasses collect: [ :each | self newEntryFrom: each ]) asSortedCollection: [ :left :right |
 		  (self keyFor: left) <= (self keyFor: right) ]
+]
+
+{ #category : 'change notification' }
+MCPRegistry >> changeListener: aBlock [
+	"Called with no arguments whenever what this registry holds changes. The server uses it to tell listening clients their cached list is stale."
+
+	changeListener := aBlock
 ]
 
 { #category : 'entries' }
@@ -120,6 +129,14 @@ MCPRegistry >> keys [
 	^ self entriesByKey keys asArray
 ]
 
+{ #category : 'change notification' }
+MCPRegistry >> noteChanged [
+	"A listener that raises must not take the change with it, so it is the listener's business to be safe."
+
+	changeListener ifNil: [ ^ self ].
+	changeListener value
+]
+
 { #category : 'private' }
 MCPRegistry >> newEntryFrom: aClassOrEntry [
 
@@ -146,7 +163,8 @@ MCPRegistry >> rediscoverClassesIfChanged [
 		 (self keyFor: left) <= (self keyFor: right) ]) do: [ :entry |
 			| key |
 			key := self keyFor: entry.
-			(entries includesKey: key) ifFalse: [ entries at: key put: entry ] ]
+			(entries includesKey: key) ifFalse: [ entries at: key put: entry ] ].
+	self noteChanged
 ]
 
 { #category : 'entries' }
@@ -161,13 +179,17 @@ MCPRegistry >> removeAll [
 
 	discoversClasses := false.
 	discoveredClasses := nil.
-	entries := OrderedDictionary new
+	entries := OrderedDictionary new.
+	self noteChanged
 ]
 
 { #category : 'entries' }
 MCPRegistry >> removeKey: aKey [
 
-	self entriesByKey removeKey: aKey asString ifAbsent: [ nil ]
+	self entriesByKey
+		removeKey: aKey asString
+		ifAbsent: [ ^ self ].
+	self noteChanged
 ]
 
 { #category : 'entries' }
@@ -176,5 +198,6 @@ MCPRegistry >> reset [
 	discoversClasses := true.
 	discoveredClasses := self autoRegisteringClasses.
 	entries := OrderedDictionary new.
-	self defaultEntries do: [ :each | entries at: (self keyFor: each) put: each ]
+	self defaultEntries do: [ :each | entries at: (self keyFor: each) put: each ].
+	self noteChanged
 ]
