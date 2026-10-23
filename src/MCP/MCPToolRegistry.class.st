@@ -2,13 +2,17 @@
 Instance-scoped catalog of MCP tools.
 
 A registry discovers built-in concrete MCPTool subclasses, owns one reusable instance of each registered tool, owns the exposure policy applied to those registrations, and provides lookup, grouping, static-surface selection, contract composition, and catalog search. Intrinsic metadata belongs to tools; visibility overrides belong to MCPToolExposurePolicy.
+
+A registry built with #default discovers tool classes and keeps doing so: it outlives the classes it found, so it rediscovers them whenever the set of auto-registering tool classes changes. Tools registered by hand survive that rediscovery as long as their class does. A registry built with #empty is curated rather than discovered, holds exactly what was registered into it, and never rediscovers; that is what profiles use to pin a surface.
 "
 Class {
 	#name : 'MCPToolRegistry',
 	#superclass : 'Object',
 	#instVars : [
 		'registrations',
-		'exposurePolicy'
+		'exposurePolicy',
+		'discoversToolClasses',
+		'discoveredToolClasses'
 	],
 	#category : 'MCP-Tools',
 	#package : 'MCP',
@@ -47,12 +51,16 @@ MCPToolRegistry >> contractForToolNamed: aToolName [
 ]
 
 { #category : 'registrations' }
+MCPToolRegistry >> autoRegisteringToolClasses [
+
+	^ (MCPTool concreteSubclasses select: [ :toolClass | toolClass shouldAutoRegister ]) asSet
+]
+
+{ #category : 'registrations' }
 MCPToolRegistry >> defaultRegistrations [
 
 	| tools |
-	tools := (MCPTool concreteSubclasses
-		          select: [ :toolClass | toolClass shouldAutoRegister ]
-		          thenCollect: [ :toolClass | toolClass newForRegistry: self ]) asArray.
+	tools := (self autoRegisteringToolClasses collect: [ :toolClass | toolClass newForRegistry: self ]) asArray.
 	tools sort: [ :left :right |
 			left groupName = right groupName
 				ifTrue: [ left name <= right name ]
@@ -118,6 +126,21 @@ MCPToolRegistry >> initialize [
 	super initialize.
 	exposurePolicy := MCPToolExposurePolicy default.
 	self removeAllTools
+]
+
+{ #category : 'registrations' }
+MCPToolRegistry >> rediscoverToolClassesIfChanged [
+	"A discovering registry outlives the tool classes it found. Loading or removing tool classes in a running image left it answering its old surface until someone reset it by hand, so it notices here instead. Tools registered by hand survive as long as their class does."
+
+	| discovered liveToolClasses surviving |
+	discoversToolClasses ifFalse: [ ^ self ].
+	discovered := self autoRegisteringToolClasses.
+	discovered = discoveredToolClasses ifTrue: [ ^ self ].
+	liveToolClasses := MCPTool concreteSubclasses asSet.
+	surviving := registrations select: [ :each |
+		              (discoveredToolClasses includes: each tool class) not and: [ liveToolClasses includes: each tool class ] ].
+	discoveredToolClasses := discovered.
+	registrations := self defaultRegistrations , surviving
 ]
 
 { #category : 'testing' }
@@ -236,18 +259,23 @@ MCPToolRegistry >> registrationNamed: aToolName ifAbsent: absentBlock [
 { #category : 'registrations' }
 MCPToolRegistry >> registrations [
 
+	self rediscoverToolClassesIfChanged.
 	^ registrations
 ]
 
 { #category : 'registrations' }
 MCPToolRegistry >> removeAllTools [
 
+	discoversToolClasses := false.
+	discoveredToolClasses := nil.
 	registrations := #(  )
 ]
 
 { #category : 'registrations' }
 MCPToolRegistry >> resetRegistrations [
 
+	discoversToolClasses := true.
+	discoveredToolClasses := self autoRegisteringToolClasses.
 	registrations := self defaultRegistrations
 ]
 
