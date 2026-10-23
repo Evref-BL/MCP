@@ -365,13 +365,13 @@ MCPDashboardPresenter >> inspectTraceRecord: aTraceRecord [
 { #category : 'auto-refresh' }
 MCPDashboardPresenter >> isAutoRefreshEnabled [
 
-	^ autoRefreshCheckBox notNil and: [ autoRefreshCheckBox state ]
+	^ autoRefreshCheckBox isNotNil and: [ autoRefreshCheckBox state ]
 ]
 
 { #category : 'auto-refresh' }
 MCPDashboardPresenter >> isAutoRefreshProcessRunning [
 
-	^ autoRefreshProcess notNil and: [ autoRefreshProcess isTerminated not ]
+	^ autoRefreshProcess isNotNil and: [ autoRefreshProcess isTerminated not ]
 ]
 
 { #category : 'collapsing' }

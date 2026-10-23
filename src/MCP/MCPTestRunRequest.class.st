@@ -76,7 +76,7 @@ MCPTestRunRequest >> displayName [
 { #category : 'testing' }
 MCPTestRunRequest >> hasTestMethod [
 
-	^ self testMethodName notNil
+	^ self testMethodName isNotNil
 ]
 
 { #category : 'initialization' }
@@ -96,7 +96,7 @@ MCPTestRunRequest >> initializePackageName: aPackageName className: aClassName t
 { #category : 'testing' }
 MCPTestRunRequest >> isPackageRequest [
 
-	^ self packageName notNil
+	^ self packageName isNotNil
 ]
 
 { #category : 'accessing' }

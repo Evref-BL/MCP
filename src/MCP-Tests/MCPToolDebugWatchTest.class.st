@@ -61,7 +61,7 @@ MCPToolDebugWatchTest >> testNamesSeveralMethodsAndVariablesInOneCall [
 				         (#method -> #( 'MCPDebugWatchTestTarget>>sumTo:' 'MCPDebugWatchTestTarget class>>doubleOf:' )).
 				         (#variable -> #( 'total' 'doubled' )).
 				         (#run -> 'MCPDebugWatchTestTarget new sumTo: 2. MCPDebugWatchTestTarget doubleOf: 5') } asDictionary).
-	self assert: (self seriesFor: 'MCPDebugWatchTestTarget>>sumTo:' watching: 'total' in: data) notNil.
+	self assert: (self seriesFor: 'MCPDebugWatchTestTarget>>sumTo:' watching: 'total' in: data) isNotNil.
 	self
 		assert: ((self seriesFor: 'MCPDebugWatchTestTarget class>>doubleOf:' watching: 'doubled' in: data) at: #values)
 		equals: #( '5' '10' ).

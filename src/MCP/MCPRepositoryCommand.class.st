@@ -117,7 +117,7 @@ MCPRepositoryCommand >> loadLoadedPackagesFromDiskIn: aRepository [
 		                    yourself.
 	versions := workingCopy loadedPackages
 		            collect: [ :package | sourceRepository versionFrom: package name ]
-		            thenSelect: [ :version | version notNil ].
+		            thenSelect: [ :version | version isNotNil ].
 	self loadVersionsReplacingImageChanges: versions.
 	self adoptHeadCommit: aRepository headCommit for: aRepository
 ]

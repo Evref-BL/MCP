@@ -31,7 +31,7 @@ MCPToolContractsTest >> addUnimplementedResponsibilitiesFor: aClass behavior: aB
 			| method |
 			selector = #subclassResponsibility ifFalse: [
 					method := aBehavior lookupSelector: selector.
-					(method notNil and: [ self methodSendsSubclassResponsibility: method ]) ifTrue: [
+					(method isNotNil and: [ self methodSendsSubclassResponsibility: method ]) ifTrue: [
 							issues add: (String streamContents: [ :stream |
 										 stream
 											 nextPutAll: aClass name asString;
@@ -1455,7 +1455,7 @@ MCPToolContractsTest >> testMethodToolTraitOwnsSharedMethodHelpers [
 			sharedSelectors do: [ :selector |
 					| implementingClass |
 					implementingClass := toolClass whichClassIncludesSelector: selector.
-					self assert: implementingClass notNil.
+					self assert: implementingClass isNotNil.
 					self assert: (implementingClass >> selector) origin equals: TMCPMethodTool ] ]
 ]
 

@@ -77,7 +77,7 @@ MCPPaginationResult >> entries: aCollection [
 { #category : 'testing' }
 MCPPaginationResult >> hasMore [
 
-	^ self nextOffset notNil
+	^ self nextOffset isNotNil
 ]
 
 { #category : 'accessing' }

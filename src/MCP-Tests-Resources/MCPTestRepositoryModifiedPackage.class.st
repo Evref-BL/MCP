@@ -28,7 +28,7 @@ MCPTestRepositoryModifiedPackage >> beDirty: aBoolean [
 { #category : 'testing' }
 MCPTestRepositoryModifiedPackage >> isDirty [
 
-	^ name notNil
+	^ name isNotNil
 ]
 
 { #category : 'accessing' }

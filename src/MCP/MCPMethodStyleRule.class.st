@@ -3,7 +3,7 @@ Abstract base for MCP-owned Renraku rewrite rules that flag local method-shape a
 
 Subclasses keep the match narrow and name one actionable rewrite family. They are warnings, not mechanical laws.
 
-Each subclass declares its rewrites as pattern pairs, and this base records them as they are declared so method_rewrite can apply a rule by name. Renraku keeps the same pairs for matching, but offers no way to read them back and no usable change for a node critique, so the record is kept here rather than recovered from it.
+Each subclass declares its rewrites as pattern pairs, and this base records them as they are declared so method_rewrite can apply a rule by name. Renraku keeps the same pairs for matching but exposes no way to read them back, so the record is kept here rather than reached for through its instance variables.
 "
 Class {
 	#name : 'MCPMethodStyleRule',

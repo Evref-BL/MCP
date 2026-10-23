@@ -76,7 +76,7 @@ MCPChangeHistorySelectionRequest >> hasRangeSelection [
 { #category : 'testing' }
 MCPChangeHistorySelectionRequest >> hasSelectionCriteria [
 
-	^ self indexes notEmpty or: [ self hasRangeSelection or: [ self latestCount notNil ] ]
+	^ self indexes notEmpty or: [ self hasRangeSelection or: [ self latestCount isNotNil ] ]
 ]
 
 { #category : 'accessing' }

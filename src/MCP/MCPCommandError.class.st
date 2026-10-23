@@ -287,7 +287,7 @@ MCPCommandError class >> superclassMethodSuggestionForClass: targetClass classSi
 	behavior := classSide
 		            ifTrue: [ targetClass classSide superclass ]
 		            ifFalse: [ targetClass superclass ].
-	[ behavior notNil ] whileTrue: [
+	[ behavior isNotNil ] whileTrue: [
 			(behavior includesSelector: selectorSymbol) ifTrue: [ ^ self methodSuggestionForBehavior: behavior selector: selectorSymbol ].
 			behavior := behavior superclass ].
 	^ nil

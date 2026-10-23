@@ -99,7 +99,7 @@ MCPMethodSearchRequest >> hasFieldFilters [
 { #category : 'testing' }
 MCPMethodSearchRequest >> hasFilterPattern [
 
-	^ filterPattern notNil
+	^ filterPattern isNotNil
 ]
 
 { #category : 'accessing' }

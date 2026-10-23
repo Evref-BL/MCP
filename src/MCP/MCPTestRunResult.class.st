@@ -36,7 +36,7 @@ MCPTestRunResult >> asDictionary [
 { #category : 'testing' }
 MCPTestRunResult >> hasResult [
 
-	^ self resultInfo notNil
+	^ self resultInfo isNotNil
 ]
 
 { #category : 'initialization' }

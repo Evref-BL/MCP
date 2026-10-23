@@ -123,7 +123,7 @@ MCPToolSearchMethodReferences >> queryEntriesForQueryRequest: queryRequest [
 		           ifUnknown: [ :error |
 		           failures add: error.
 		           nil ].
-	(entries notNil and: [ entries notEmpty ]) ifTrue: [ ^ entries ].
+	(entries isNotNil and: [ entries notEmpty ]) ifTrue: [ ^ entries ].
 	fallback := self
 		            entriesForKinds: (self fallbackKindsFor: kinds)
 		            name: name
@@ -131,7 +131,7 @@ MCPToolSearchMethodReferences >> queryEntriesForQueryRequest: queryRequest [
 		            ifUnknown: [ :error |
 		            failures add: error.
 		            nil ].
-	(fallback notNil and: [ fallback notEmpty ]) ifTrue: [ ^ fallback ].
+	(fallback isNotNil and: [ fallback notEmpty ]) ifTrue: [ ^ fallback ].
 	failures ifNotEmpty: [ ^ self signalUnknownName: name failures: failures ].
 	^ entries ifNil: [ #(  ) ]
 ]

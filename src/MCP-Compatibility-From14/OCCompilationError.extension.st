@@ -10,6 +10,6 @@ OCCompilationError >> mcpCompilationAst [
 OCCompilationError >> mcpNoticeNode [
 
 	^ self mcpCompilationAst variableNodes
-		  detect: [ :node | node variable notNil and: [ node variable isUndeclaredVariable ] ]
+		  detect: [ :node | node variable isNotNil and: [ node variable isUndeclaredVariable ] ]
 		  ifNone: [ nil ]
 ]

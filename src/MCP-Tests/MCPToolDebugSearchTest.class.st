@@ -45,7 +45,7 @@ MCPToolDebugSearchTest >> testAnswersAnOpenDebuggerWithItsExceptionAndStack [
 	self deny: entry isNil.
 	self assert: ((entry at: #exception) includesSubstring: 'MCP searchable debugger').
 	self deny: (entry at: #stack) isEmpty.
-	self assert: debugger notNil
+	self assert: debugger isNotNil
 ]
 
 { #category : 'tests' }
@@ -68,6 +68,6 @@ MCPToolDebugSearchTest >> testQueryKeepsOnlyTheMatchingDebuggers [
 	data := self dataFrom: (self searchWith: { (#query -> 'wanted') } asDictionary).
 	self deny: (self entryNamed: 'MCP wanted debugger' in: data) isNil.
 	self assert: (self entryNamed: 'MCP other debugger' in: data) isNil.
-	self assert: wanted notNil.
-	self assert: unwanted notNil
+	self assert: wanted isNotNil.
+	self assert: unwanted isNotNil
 ]

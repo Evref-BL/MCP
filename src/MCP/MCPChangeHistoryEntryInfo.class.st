@@ -87,7 +87,7 @@ MCPChangeHistoryEntryInfo >> asDictionary [
 	data := Dictionary new.
 	index ifNotNil: [ data at: #index put: index ].
 	eventClassName ifNotNil: [ data at: #eventClassName put: eventClassName ].
-	(summary notNil and: [ summary ~= ('an ' , eventClassName) ]) ifTrue: [ data at: #summary put: summary ].
+	(summary isNotNil and: [ summary ~= ('an ' , eventClassName) ]) ifTrue: [ data at: #summary put: summary ].
 	entryKind ifNotNil: [ data at: #entryKind put: entryKind ].
 	time ifNotNil: [ data at: #time put: time ].
 	triggerReference ifNotNil: [ data at: #triggerReference put: triggerReference ].

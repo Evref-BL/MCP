@@ -301,7 +301,7 @@ MCPToolRunCritiques >> packagesForQueryRequest: queryRequest [
 	queryRequest scopeQuery packageNames ifEmpty: [ ^ #(  ) ].
 	^ queryRequest scopeQuery packageNames
 		  collect: [ :eachName | queryRequest scopeQuery packageNamed: eachName inScope: 'packageNames' ]
-		  thenSelect: [ :eachPackage | eachPackage notNil ]
+		  thenSelect: [ :eachPackage | eachPackage isNotNil ]
 ]
 
 { #category : 'private - template' }

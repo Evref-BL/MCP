@@ -140,13 +140,13 @@ MCPClassUpdateRequest >> hasDefinitionUpdate [
 { #category : 'testing' }
 MCPClassUpdateRequest >> hasNewSlotName [
 
-	^ self newSlotName notNil
+	^ self newSlotName isNotNil
 ]
 
 { #category : 'testing' }
 MCPClassUpdateRequest >> hasSlotName [
 
-	^ self slotName notNil
+	^ self slotName isNotNil
 ]
 
 { #category : 'testing' }

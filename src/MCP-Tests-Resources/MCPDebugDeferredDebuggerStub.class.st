@@ -50,7 +50,7 @@ MCPDebugDeferredDebuggerStub >> defer: aBlock [
 { #category : 'testing' }
 MCPDebugDeferredDebuggerStub >> hasDeferredAction [
 
-	^ deferredAction notNil
+	^ deferredAction isNotNil
 ]
 
 { #category : 'accessing' }
