@@ -106,6 +106,49 @@ MCPProtocolEraTest >> testDiscoverAndInitializeAgreeOnWhoTheServerIs [
 ]
 
 { #category : 'tests' }
+MCPProtocolEraTest >> testAModernResultSaysItIsComplete [
+	"Every result in the modern era declares its kind, so a client can tell an ordinary result from an interim one."
+
+	| response |
+	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{'
+		            , (self metaWithVersion: MCP latestProtocolVersion) , '}}'.
+	self assert: (response includesSubstring: '"resultType":"complete"')
+]
+
+{ #category : 'tests' }
+MCPProtocolEraTest >> testALegacyResultCarriesNoResultType [
+	"resultType belongs to a revision a legacy client never asked for."
+
+	| response |
+	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'.
+	self assert: (response includesSubstring: '"result"').
+	self deny: (response includesSubstring: 'resultType')
+]
+
+{ #category : 'tests' }
+MCPProtocolEraTest >> testResourceNotFoundIsRenumberedForModernRequests [
+	"The revision folds resource-not-found into invalid params; earlier revisions give it a code of its own."
+
+	| legacy modern |
+	legacy := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"resources/read","params":{"uri":"pharo://missing"}}'.
+	modern := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"resources/read","params":{"uri":"pharo://missing",'
+		          , (self metaWithVersion: MCP latestProtocolVersion) , '}}'.
+	self assert: (legacy includesSubstring: '"code":-32002').
+	self assert: (modern includesSubstring: '"code":-32602').
+	self assert: (modern includesSubstring: '"uri":"pharo://missing"')
+]
+
+{ #category : 'tests' }
+MCPProtocolEraTest >> testAnErrorWithNoModernCodeIsUnchanged [
+	"Only the conditions the revision renumbered move; everything else answers the same code in both eras."
+
+	| modern |
+	modern := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"prompts/get","params":{"name":"no_such_prompt",'
+		          , (self metaWithVersion: MCP latestProtocolVersion) , '}}'.
+	self assert: (modern includesSubstring: '"code":-32602')
+]
+
+{ #category : 'tests' }
 MCPProtocolEraTest >> testReadingTheDeclaredVersion [
 
 	self assert: (MCP requestedProtocolVersionIn: nil) isNil.

@@ -45,7 +45,9 @@ MCPMessageProcessor >> handleJRPCRequestObject: aJRPCRequestObject [
 		  handler := self handlerFor: aJRPCRequestObject.
 		  handler checkParametersForRequest: aJRPCRequestObject.
 		  result := handler executeWithArguments: aJRPCRequestObject params.
-		  JRPCSuccessResponseObject id: aJRPCRequestObject id result: result ]
+		  JRPCSuccessResponseObject
+			  id: aJRPCRequestObject id
+			  result: (self resultFor: result inEraOf: aJRPCRequestObject) ]
 		  on: Exception
 		  do: [ :exception |
 				  self debugMode
@@ -78,10 +80,39 @@ MCPMessageProcessor >> handleJSON: aJSONString [
 ]
 
 { #category : 'private - errors' }
+MCPMessageProcessor >> errorResponseFor: anException inEraOf: aJRPCRequestObject [
+	"Some conditions were renumbered between the eras, so a modern request is answered with the code its revision gives the condition."
+
+	| response |
+	response := anException asJRPCResponseWithId: aJRPCRequestObject id.
+	(MCP isModernRequest: aJRPCRequestObject params) ifFalse: [ ^ response ].
+	response error code: (self modernErrorCodes at: response error code ifAbsent: [ response error code ]).
+	^ response
+]
+
+{ #category : 'private - errors' }
+MCPMessageProcessor >> modernErrorCodes [
+	"The conditions the 2026-07-28 revision renumbered, old code to new. Everything absent here answers the same code in both eras."
+
+	^ { (-32002 -> -32602) } asDictionary
+]
+
+{ #category : 'private - results' }
+MCPMessageProcessor >> resultFor: aResult inEraOf: aJRPCRequestObject [
+	"A request that declares its own protocol version is answered in that era's shape, where every result says what kind it is. This server never produces the other kind, input_required, because it asks the client for nothing."
+
+	aResult ifNil: [ ^ nil ].
+	(MCP isModernRequest: aJRPCRequestObject params) ifFalse: [ ^ aResult ].
+	^ aResult asJRPCJSON
+		  at: #resultType put: 'complete';
+		  yourself
+]
+
+{ #category : 'private - errors' }
 MCPMessageProcessor >> responseForException: anException request: aJRPCRequestObject [
 
 	aJRPCRequestObject isNotification ifTrue: [
 			anException isIncorrectJSON ifTrue: [ ^ anException asJRPCResponseWithId: aJRPCRequestObject id ].
 			^ JRPCEmptyResponseObject new ].
-	^ anException asJRPCResponseWithId: aJRPCRequestObject id
+	^ self errorResponseFor: anException inEraOf: aJRPCRequestObject
 ]
