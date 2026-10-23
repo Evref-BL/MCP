@@ -74,7 +74,7 @@ MCPToolRegistry >> advertiseTools: toolsOrToolClassesOrNames [
 	names := toolsOrToolClassesOrNames collect: [ :each | self advertisedNameFor: each ].
 	unknown := names reject: [ :each | self includesToolNamed: each ].
 	unknown ifNotEmpty: [
-			Error signal: 'Unknown MCP tool(s): ' , unknown asArray printString , '. Known tools: ' , self toolNames printString ].
+		Error signal: 'Unknown MCP tool(s): ' , unknown asArray printString , '. Known tools: ' , self toolNames printString ].
 	advertisedToolNames := names asSet
 ]
 
@@ -241,18 +241,20 @@ MCPToolRegistry >> queryTermsFrom: queryString [
 
 { #category : 'tools' }
 MCPToolRegistry >> rediscoverToolClassesIfChanged [
-	"A discovering registry outlives the tool classes it found. Loading or removing tool classes in a running image left it answering its old catalog until someone reset it by hand, so it notices here instead. Tools added by hand survive as long as their class does."
+	"A discovering registry outlives the tool classes it found. Loading or removing tool classes in a running image left it answering its old catalog until someone reset it by hand, so it notices here instead.
 
-	| discovered liveToolClasses surviving |
+	It takes in what appeared and drops what vanished, rather than rebuilding. Rebuilding would undo every hand edit the catalog has had: a tool added by hand, and a tool deliberately removed, which would come back the next time any tool class was loaded."
+
+	| discovered appeared vanished |
 	discoversToolClasses ifFalse: [ ^ self ].
 	discovered := self autoRegisteringToolClasses.
 	discovered = discoveredToolClasses ifTrue: [ ^ self ].
-	liveToolClasses := MCPTool concreteSubclasses asSet.
-	surviving := tools values select: [ :each |
-		             (discoveredToolClasses includes: each class) not and: [ liveToolClasses includes: each class ] ].
+	vanished := discoveredToolClasses difference: discovered.
+	appeared := (discovered difference: discoveredToolClasses) asSortedCollection: [ :left :right | left toolName <= right toolName ].
 	discoveredToolClasses := discovered.
-	tools := OrderedDictionary new.
-	self defaultTools , surviving do: [ :each | tools at: each name put: each ]
+	(tools keys select: [ :each | vanished includes: (tools at: each) class ]) do: [ :each | tools removeKey: each ].
+	appeared do: [ :toolClass |
+		(self includesToolNamed: toolClass toolName) ifFalse: [ tools at: toolClass toolName put: (toolClass newForRegistry: self) ] ]
 ]
 
 { #category : 'tools' }

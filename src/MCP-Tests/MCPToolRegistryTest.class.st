@@ -93,6 +93,19 @@ MCPToolRegistryTest >> testCuratedRegistryIgnoresNewToolClasses [
 ]
 
 { #category : 'tests' }
+MCPToolRegistryTest >> testDeliberatelyRemovedToolsStayRemoved [
+	"Rediscovery takes in what appeared and drops what vanished. If it rebuilt instead, a tool removed on purpose would come back the next time any tool class was loaded."
+
+	| registry |
+	registry := MCPToolRegistry default.
+	self assert: (registry includesToolNamed: 'image_evaluate').
+	registry removeToolNamed: 'image_evaluate'.
+	self createProbeToolClass.
+	self assert: (registry includesToolNamed: self probeToolName).
+	self deny: (registry includesToolNamed: 'image_evaluate')
+]
+
+{ #category : 'tests' }
 MCPToolRegistryTest >> testDiscoveringRegistryDropsRemovedToolClasses [
 
 	| registry |

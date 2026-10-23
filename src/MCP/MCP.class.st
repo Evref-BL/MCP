@@ -525,18 +525,15 @@ MCP >> signalMissingToolNamed: aToolName [
 	"A name that does not resolve is the caller's mistake, not the server's, so it reads as one."
 
 	| suggestions details |
-	suggestions := MCPSelectorSuggestion
-		               namesLike: aToolName
-		               among: self toolRegistry toolNames.
+	suggestions := MCPSelectorSuggestion namesLike: aToolName among: self toolRegistry toolNames.
 	details := Dictionary new
 		           at: #toolName put: aToolName;
 		           yourself.
 	suggestions ifNotEmpty: [ details at: #suggestedTools put: suggestions ].
 	MCPCommandError
 		signalErrorCode: #ToolNotFound
-		message: 'No MCP tool named ' , aToolName , '.' , (suggestions
-				 ifEmpty: [ ' Use tool_search to find one.' ]
-				 ifNotEmpty: [ ' Did you mean: ' , (', ' join: suggestions) , '?' ])
+		message: 'No MCP tool named ' , aToolName , '.'
+			, (suggestions ifEmpty: [ ' Use tool_search to find one.' ] ifNotEmpty: [ ' Did you mean: ' , (', ' join: suggestions) , '?' ])
 		details: details
 ]
 
