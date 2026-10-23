@@ -257,7 +257,7 @@ MCPToolChangeHistoryTest >> testListEntriesReturnsGranularCodeChangeData [
 			self deny: (firstEntry includesKey: #entryKind).
 			self assert: (firstEntry at: #package) equals: 'MCP-Tests'.
 			self assert: (firstEntry at: #behavior) equals: class name.
-			self assert: (firstEntry at: #classSide) equals: false.
+			self deny: (firstEntry includesKey: #side).
 			self assert: (firstEntry at: #selector) equals: 'rescuedValue' ]
 ]
 

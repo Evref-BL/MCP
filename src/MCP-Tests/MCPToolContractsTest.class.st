@@ -377,6 +377,13 @@ MCPToolContractsTest >> inputPropertyNamed: aPropertyName inTool: aTool [
 ]
 
 { #category : 'private' }
+MCPToolContractsTest >> scopePropertyNamed: aPropertyName inTool: aTool [
+
+	^ ((self inputPropertyNamed: 'scope' inTool: aTool) extraProperties at: #properties) detect: [ :each |
+		  each name = aPropertyName ]
+]
+
+{ #category : 'private' }
 MCPToolContractsTest >> mcpClassesInPackageTagNamed: aTagName [
 
 	^ ((PackageOrganizer default packageNamed: #MCP) definedClasses select: [ :each | each packageTagName asString = aTagName ])
@@ -716,7 +723,7 @@ MCPToolContractsTest >> testClassMutationToolsHaveAccurateNamesAndRequiredArgume
 	self assert: (slotsPropertyNames includes: 'slots').
 	self assert: (slotsPropertyNames includes: 'classSlots').
 	self deny: (slotToolPropertyNames includes: 'slotAction').
-	self assert: (slotToolPropertyNames includes: 'classSide')
+	self assert: (slotToolPropertyNames includes: 'side')
 ]
 
 { #category : 'tests' }
@@ -1109,7 +1116,7 @@ MCPToolContractsTest >> testGetMethodHasAccurateNameAndRequiredArguments [
 	self assert: MCPToolGetMethod new inputSchema required asSet equals: #( 'selector' ) asSet.
 	self assert: (propertyNames includes: 'class').
 	self assert: (propertyNames includes: 'selector').
-	self assert: (propertyNames includes: 'classSide').
+	self assert: (propertyNames includes: 'side').
 	self assert: (propertyNames includes: 'includeVariableDetails')
 ]
 
@@ -1376,10 +1383,10 @@ MCPToolContractsTest >> testMethodMetadataSearchHasAccurateNameAndSchema [
 	scopePropertyNames := (scopeProperty extraProperties at: #properties) collect: [ :each | each name ].
 	self assert: MCPToolSearchMethods new name equals: 'method_search'.
 	self assert: schema required equals: #(  ).
-	self assert: propertyNames asSet equals: #( 'scope' 'selector' 'protocol' 'side' 'offset' ) asSet.
-	self assert: scopeProperty description equals: 'Search scope. If omitted, searches all matching entities.'.
+	self assert: propertyNames asSet equals: #( 'scope' 'selector' 'protocol' 'offset' ) asSet.
+	self assert: scopeProperty description equals: 'What to operate on. If omitted, every matching entity.'.
 	self assert: (scopeProperty extraProperties at: #additionalProperties) equals: false.
-	self assert: scopePropertyNames asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' ) asSet
+	self assert: scopePropertyNames asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' 'hierarchy' 'side' ) asSet
 ]
 
 { #category : 'tests' }
@@ -1432,12 +1439,12 @@ MCPToolContractsTest >> testMethodMutationToolsHaveAccurateNamesAndRequiredArgum
 	self assert: createTool inputSchema required asSet equals: #( 'class' 'source' 'protocol' ) asSet.
 	self assert: selectorTool inputSchema required asSet equals: #( 'class' 'selector' 'newSelector' ) asSet.
 	self assert: protocolTool inputSchema required asSet equals: #( 'class' 'selector' 'protocol' ) asSet.
-	self assert: createPropertyNames asSet equals: #( 'class' 'classSide' 'protocol' 'source' ) asSet.
+	self assert: createPropertyNames asSet equals: #( 'class' 'side' 'protocol' 'source' ) asSet.
 	self
 		assert: selectorPropertyNames asSet
-		equals: #( 'arguments' 'argumentValueExpressions' 'class' 'classes' 'classSide' 'force' 'hierarchyClasses'
-			   'newSelector' 'packages' 'permutation' 'selector' ) asSet.
-	self assert: protocolPropertyNames asSet equals: #( 'class' 'classSide' 'protocol' 'selector' ) asSet
+		equals: #( 'arguments' 'argumentValueExpressions' 'class' 'force' 'newSelector' 'permutation' 'scope' 'selector'
+			   'side' ) asSet.
+	self assert: protocolPropertyNames asSet equals: #( 'class' 'side' 'protocol' 'selector' ) asSet
 ]
 
 { #category : 'tests' }
@@ -1483,10 +1490,8 @@ MCPToolContractsTest >> testMutationToolSchemasAdvertiseRenameScopeConditions [
 	self deny: (classRenamePropertyNames includes: 'packages').
 	self deny: (classRenamePropertyNames includes: 'classes').
 	self deny: (classRenamePropertyNames includes: 'hierarchyClasses').
-	self deny: (selectorPropertyNames includes: 'scope').
-	self assert: (selectorPropertyNames includes: 'packages').
-	self assert: (selectorPropertyNames includes: 'classes').
-	self assert: (selectorPropertyNames includes: 'hierarchyClasses').
+	self assert: (selectorPropertyNames includes: 'scope').
+	#( 'packages' 'classes' 'hierarchyClasses' ) do: [ :each | self deny: (selectorPropertyNames includes: each) ].
 	self assert: (classRenameInputSchema asJRPCJSON at: #additionalProperties) equals: false.
 	self assert: (selectorInputSchema asJRPCJSON at: #additionalProperties) equals: false
 ]
@@ -1514,19 +1519,19 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 	searchPackagesTool := MCPToolSearchPackages new.
 	removeClassesTool := MCPToolRemoveClasses new.
 	removeMethodsTool := MCPToolRemoveMethods new.
-	self assert: ((self inputPropertyNamed: 'classSide' inTool: classSlotTool) extraProperties at: #default) equals: false.
+	self assert: ((self inputPropertyNamed: 'side' inTool: classSlotTool) extraProperties at: #default) equals: 'instance'.
 	self assert: ((self inputPropertyNamed: 'includeComment' inTool: getClassTool) extraProperties at: #default) equals: false.
 	self assert: ((self inputPropertyNamed: 'subclassDepth' inTool: getClassTool) extraProperties at: #default) equals: 0.
-	self assert: ((self inputPropertyNamed: 'classSide' inTool: getMethodTool) extraProperties at: #default) equals: false.
+	self assert: ((self inputPropertyNamed: 'side' inTool: getMethodTool) extraProperties at: #default) equals: 'instance'.
 	self
 		assert: ((self inputPropertyNamed: 'includeVariableDetails' inTool: getMethodTool) extraProperties at: #default)
 		equals: false.
-	self assert: ((self inputPropertyNamed: 'classSide' inTool: updateMethodTool) extraProperties at: #default) equals: false.
+	self assert: ((self inputPropertyNamed: 'side' inTool: updateMethodTool) extraProperties at: #default) equals: 'instance'.
 	self assert: ((self inputPropertyNamed: 'force' inTool: updateMethodTool) extraProperties at: #default) equals: false.
 	self assert: ((self inputPropertyNamed: 'apply' inTool: rewriteMethodsTool) extraProperties at: #default) equals: false.
-	self assert: ((self inputPropertyNamed: 'side' inTool: rewriteMethodsTool) extraProperties at: #default) equals: 'both'.
+	self assert: ((self scopePropertyNamed: 'side' inTool: rewriteMethodsTool) extraProperties at: #default) equals: 'both'.
 	self assert: ((self inputPropertyNamed: 'force' inTool: removeClassesTool) extraProperties at: #default) equals: false.
-	self assert: ((self inputPropertyNamed: 'classSide' inTool: removeMethodsTool) extraProperties at: #default) equals: false
+	self assert: ((self inputPropertyNamed: 'side' inTool: removeMethodsTool) extraProperties at: #default) equals: 'instance'
 ]
 
 { #category : 'tests' }
@@ -1633,12 +1638,14 @@ MCPToolContractsTest >> testQueryScopeDescriptionsExplainScopeSemantics [
 	classScope := self inputPropertyNamed: 'scope' inTool: MCPToolSearchClasses new.
 	methodScope := self inputPropertyNamed: 'scope' inTool: MCPToolSearchMethods new.
 	scopePropertyNames := (classScope extraProperties at: #properties) collect: [ :each | each name ].
-	self assert: classScope description equals: 'Search scope. If omitted, searches all matching entities.'.
+	self assert: classScope description equals: 'What to operate on. If omitted, every matching entity.'.
 	self assert: methodScope description equals: classScope description.
 	self assert: (classScope extraProperties at: #additionalProperties) equals: false.
 	self assert: (methodScope extraProperties at: #additionalProperties) equals: false.
-	self assert: scopePropertyNames asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' ) asSet.
-	self assert: ((classScope extraProperties at: #properties) allSatisfy: [ :each | each description isNil ])
+	self assert: scopePropertyNames asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' 'hierarchy' ) asSet.
+	self
+		assert: ((methodScope extraProperties at: #properties) collect: [ :each | each name ]) asSet
+		equals: scopePropertyNames asSet , #( 'side' ) asSet
 ]
 
 { #category : 'tests' }
@@ -1907,7 +1914,7 @@ MCPToolContractsTest >> testRunTestToolsHaveAccurateNamesAndRequiredArguments [
 	self deny: (inputPropertyNames includes: 'timeoutMilliseconds').
 	coverageInputProperty := coverageTool inputSchema properties detect: [ :each | each name = 'coverage' ].
 	coverageInputProperties := coverageInputProperty asJRPCJSON at: #properties.
-	self assert: coverageInputProperties keys asSet equals: #( 'scope' 'side' 'includeCoveredMethods' 'methodLimit' ) asSet
+	self assert: coverageInputProperties keys asSet equals: #( 'scope' 'includeCoveredMethods' 'methodLimit' ) asSet
 ]
 
 { #category : 'tests' }
@@ -2012,8 +2019,8 @@ MCPToolContractsTest >> testSearchClassesHasAccurateNameAndSchema [
 	self assert: MCPToolSearchClasses new name equals: 'class_search'.
 	self assert: schema required equals: #(  ).
 	self assert: propertyNames asSet equals: #( 'scope' 'name' 'tag' 'offset' ) asSet.
-	self assert: scopeProperty description equals: 'Search scope. If omitted, searches all matching entities.'.
-	self assert: scopePropertyNames asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' ) asSet
+	self assert: scopeProperty description equals: 'What to operate on. If omitted, every matching entity.'.
+	self assert: scopePropertyNames asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' 'hierarchy' ) asSet
 ]
 
 { #category : 'tests' }
@@ -2132,7 +2139,11 @@ MCPToolContractsTest >> testSearchToolSchemasAdvertiseGroupedScopeProperties [
 			scopePropertyNames := (scopeProperty extraProperties at: #properties) collect: [ :each | each name ].
 			self assert: (propertyNames includes: 'scope').
 			oldScopePropertyNames do: [ :each | self deny: (propertyNames includes: each) ].
-			self assert: scopePropertyNames asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' ) asSet ]
+			self assert: scopePropertyNames asSet
+				equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' 'hierarchy' ) asSet
+					, (tool class = MCPToolSearchClasses
+							 ifTrue: [ Set new ]
+							 ifFalse: [ #( 'side' ) asSet ]) ]
 ]
 
 { #category : 'tests' }

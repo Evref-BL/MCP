@@ -33,7 +33,7 @@ MCPRenameSlotResult >> asDictionary [
 	data := self newClassInfoDictionary.
 	data at: #oldSlotName put: self oldSlotName.
 	data at: #newSlot put: self newSlotName.
-	data at: #classSide put: self classSide.
+	self classSide ifTrue: [ data at: #side put: 'class' ].
 	^ data
 ]
 

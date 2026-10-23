@@ -192,13 +192,14 @@ MCPToolRewriteMethodsTest >> testClassSideScopeRewritesOnlyClassSideMethod [
 	rule := self rewriteRuleFrom: 'self oldSideValue' to: 'self newSideValue'.
 	result := self callToolWith: {
 			          (#rules -> { rule }).
-			          (#scope -> { (#classes -> { self targetClassName }) } asDictionary).
-			          (#side -> 'class') } asDictionary.
+			          (#scope -> {
+				           (#classes -> { self targetClassName }).
+				           (#side -> 'class') } asDictionary) } asDictionary.
 	data := self dataFrom: result.
 	change := (data at: #changes) first.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #changeCount) equals: 1.
-	self assert: (change at: #classSide).
+	self assert: (change at: #side) equals: 'class'.
 	self assert: (change at: #selector) equals: 'sideTarget'.
 	self assert: ((change at: #newSource) includesSubstring: 'newSideValue').
 	self assert: ((self sourceForSelector: #sideTarget) includesSubstring: 'oldSideValue').
@@ -314,7 +315,7 @@ MCPToolRewriteMethodsTest >> testPreviewChangesAreSortedByClassNameClassSideAndS
 	triples := changes collect: [ :each |
 			           {
 				           (each at: #class).
-				           (each at: #classSide).
+				           ((each at: #side ifAbsent: [ 'instance' ]) = 'class').
 				           (each at: #selector) } ].
 	self assert: triples asArray equals: {
 			{
@@ -352,7 +353,7 @@ MCPToolRewriteMethodsTest >> testPreviewReturnsChangesWithoutMutatingMethod [
 	self assert: (data at: #changeCount) equals: 1.
 	self assert: (data at: #appliedCount) equals: 0.
 	self assert: (change at: #class) equals: self targetClassName.
-	self assert: (change at: #classSide) equals: false.
+	self assert: (change at: #side) equals: 'instance'.
 	self assert: (change at: #selector) equals: 'previewTarget'.
 	self assert: ((change at: #oldSource) includesSubstring: 'oldValue').
 	self assert: ((change at: #newSource) includesSubstring: 'newValue').
@@ -399,8 +400,8 @@ MCPToolRewriteMethodsTest >> testSchemaAdvertisesRewriteContract [
 	self assert: (replacementProperty extraProperties at: #minLength) equals: 1.
 	self
 		assert: propertyNames asSet
-		equals: #( 'rules' 'ruleClasses' 'apply' 'scope' 'side' ) asSet.
-	self assert: scopePropertyNames asSet equals: #( 'packages' 'classes' 'subclassesOf' 'superclassesOf' ) asSet.
+		equals: #( 'rules' 'ruleClasses' 'apply' 'scope' ) asSet.
+	self assert: scopePropertyNames asSet equals: #( 'packages' 'classes' 'subclassesOf' 'superclassesOf' 'hierarchy' 'side' ) asSet.
 	self assert: (ruleProperties includes: 'match').
 	self assert: (ruleProperties includes: 'replacement').
 	self assert: (ruleProperties includes: 'isForMethod')

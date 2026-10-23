@@ -52,7 +52,7 @@ MCPMethodCompileRequest >> force [
 MCPMethodCompileRequest >> initializeFromRequest: request tool: aTool [
 
 	className := request stringArgumentNamed: 'class'.
-	classSide := request booleanArgumentNamed: 'classSide' default: false.
+	classSide := (request stringArgumentNamed: 'side' default: 'instance') = 'class'.
 	methodSource := (request
 		                 argumentNamed: 'source'
 		                 ifAbsent: [ MCPInvalidToolInput signalMissingRequiredArgumentNamed: 'source' forTool: aTool ])
@@ -79,5 +79,5 @@ MCPMethodCompileRequest >> requestedContext [
 
 	^ {
 		  (#class -> self className).
-		  (#classSide -> self classSide) } asDictionary
+		  (#side -> (self classSide ifTrue: [ 'class' ] ifFalse: [ 'instance' ])) } asDictionary
 ]

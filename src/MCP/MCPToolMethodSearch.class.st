@@ -203,9 +203,7 @@ MCPToolMethodSearch >> methodQueryResultDataForPage: page entriesKey: entriesKey
 { #category : 'private - schema' }
 MCPToolMethodSearch >> methodQueryScopeInputProperties [
 
-	^ {
-		  self methodSideSchemaProperty.
-		  self searchScopeSchemaProperty }
+	^ { self methodSearchScopeSchemaProperty }
 ]
 
 { #category : 'private - filtering' }

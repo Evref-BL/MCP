@@ -86,8 +86,7 @@ MCPToolStructuredOutputTest >> testEntryFieldsWithSeparatorsAreQuoted [
 	| contentText result |
 	result := self callToolNamed: 'method_search' withArguments: {
 		          (#protocol -> 'meta filtering').
-		          (#side -> 'class').
-		          (self searchScope: { (#classes -> #( 'MCPToolMethodSearchTestTarget' )) }) } asDictionary.
+		          (self searchScope: { (#classes -> #( 'MCPToolMethodSearchTestTarget' )) } side: 'class') } asDictionary.
 	contentText := (result at: #content) first at: #text.
 	self deny: (self resultIndicatesError: result).
 	self assert: (contentText includesSubstring: 'protocol="meta filtering"')
@@ -204,9 +203,8 @@ MCPToolStructuredOutputTest >> testGetMethodReturnsStructuredError [
 	self assert: (error at: #errorCode) equals: 'MethodNotFound'.
 	self assert: (error at: #class) equals: 'MCPToolGetMethodTestTarget'.
 	self assert: (error at: #selector) equals: 'doesNotExist'.
-	self assert: (error includesKey: #classSide).
-	self deny: (error at: #classSide).
-	self deny: (error includesKey: #side)
+	self assert: (error includesKey: #side).
+	self assert: (error at: #side) equals: 'instance'
 ]
 
 { #category : 'tests' }

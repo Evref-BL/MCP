@@ -275,7 +275,7 @@ MCPToolClassMutationTest >> testClassToolSchemasDeclareExpectedInputs [
 	self assert: MCPToolUpdateClassName new inputSchema required asSet equals: #( 'name' 'newName' ) asSet.
 	self assert: packageProperties asArray equals: #( 'name' 'package' 'tag' ).
 	self assert: MCPToolUpdateClassPackage new inputSchema required asSet equals: #( 'name' ) asSet.
-	self assert: slotProperties asArray equals: #( 'name' 'slot' 'classSide' ).
+	self assert: slotProperties asArray equals: #( 'name' 'slot' 'side' ).
 	self assert: MCPToolAddClassSlot new inputSchema required asSet equals: #( 'name' 'slot' ) asSet
 ]
 
@@ -533,7 +533,7 @@ MCPToolClassMutationTest >> testUpdateForcePullUpSlotContinuesPastRefactoringWar
 				           (#name -> 'MCPToolClassMutationTestWarningPullUpTarget').
 				           (#slotAction -> 'pullUp').
 				           (#slot -> 'sharedSlot').
-				           (#classSide -> false).
+				           (#side -> 'instance').
 				           (#force -> true) }).
 	data := self dataFrom: result.
 	warnings := self warningsFrom: result.
@@ -568,7 +568,7 @@ MCPToolClassMutationTest >> testUpdateForceRemoveSlotContinuesPastRefactoringWar
 				           (#name -> 'MCPToolClassMutationTestWarningRemoveSlotTarget').
 				           (#slotAction -> 'remove').
 				           (#slot -> 'referencedSlot').
-				           (#classSide -> false).
+				           (#side -> 'instance').
 				           (#force -> true) }).
 	data := self dataFrom: result.
 	warnings := self warningsFrom: result.
@@ -672,7 +672,7 @@ MCPToolClassMutationTest >> testUpdatePullUpSlotReturnsStructuredCommandErrorFor
 	self assert: (error at: #causeClass) equals: 'RBRefactoringError'.
 	self assert: (error at: #class) equals: 'MCPToolMethodMutationTestTarget'.
 	self assert: (error at: #slot) equals: 'missingSlot'.
-	self assert: (error at: #classSide) equals: false.
+	self assert: (error at: #side) equals: 'instance'.
 	self assert: ((error at: #message) includesSubstring: 'missingSlot')
 ]
 
@@ -713,7 +713,7 @@ MCPToolClassMutationTest >> testUpdatePullUpSlotStopsOnRefactoringWarningByDefau
 	self assert: (error at: #causeClass) equals: 'RBRefactoringWarning'.
 	self assert: (error at: #class) equals: 'MCPToolClassMutationTestWarningPullUpTarget'.
 	self assert: (error at: #slot) equals: 'sharedSlot'.
-	self assert: (error at: #classSide) equals: false.
+	self assert: (error at: #side) equals: 'instance'.
 	self assert: (error at: #forceSupported) equals: true.
 	self assert: ((error at: #howToProceed) includesSubstring: 'force=true').
 	self assert:
@@ -849,7 +849,7 @@ MCPToolClassMutationTest >> testUpdateRemoveSlotStopsOnRefactoringWarningByDefau
 	self assert: (self expectedRefactoringWarningCauseClassNames includes: (error at: #causeClass)).
 	self assert: (error at: #class) equals: 'MCPToolClassMutationTestWarningRemoveSlotTarget'.
 	self assert: (error at: #slot) equals: 'referencedSlot'.
-	self assert: (error at: #classSide) equals: false.
+	self assert: (error at: #side) equals: 'instance'.
 	self assert: (error at: #forceSupported) equals: true.
 	self assert: ((error at: #howToProceed) includesSubstring: 'force=true').
 	self assertIncludesReferencedSlotWarning: (error at: #impactMessages).
@@ -1256,7 +1256,7 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenAddSlotClassIsMi
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
 	self assert: (error at: #class) equals: 'MCPToolClassMutationTestMissingAddSlot'.
 	self assert: (error at: #slot) equals: 'addedSlot'.
-	self assert: (error at: #classSide) equals: false
+	self assert: (error at: #side) equals: 'instance'
 ]
 
 { #category : 'tests - update' }
@@ -1322,7 +1322,7 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenPullUpSlotClassI
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
 	self assert: (error at: #class) equals: 'MCPToolClassMutationTestMissingPullUp'.
 	self assert: (error at: #slot) equals: 'sharedSlot'.
-	self assert: (error at: #classSide) equals: false
+	self assert: (error at: #side) equals: 'instance'
 ]
 
 { #category : 'tests - update' }
@@ -1343,7 +1343,7 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenRemoveSlotClassI
 	self assert: (error at: #errorCode) equals: 'ClassNotFound'.
 	self assert: (error at: #class) equals: 'MCPToolClassMutationTestMissingRemoveSlot'.
 	self assert: (error at: #slot) equals: 'removableSlot'.
-	self assert: (error at: #classSide) equals: false
+	self assert: (error at: #side) equals: 'instance'
 ]
 
 { #category : 'tests - update' }
@@ -1386,7 +1386,7 @@ MCPToolClassMutationTest >> testUpdateReturnsStructuredErrorWhenRenameSlotClassI
 	self assert: (error at: #class) equals: 'MCPToolClassMutationTestMissingRenameSlot'.
 	self assert: (error at: #slot) equals: 'oldSlot'.
 	self assert: (error at: #newSlot) equals: 'renamedSlot'.
-	self assert: (error at: #classSide) equals: false
+	self assert: (error at: #side) equals: 'instance'
 ]
 
 { #category : 'tests - update' }
@@ -1642,7 +1642,7 @@ MCPToolClassMutationTest >> updateRequestArgumentsForSlotAction: slotAction clas
 			  (#name -> aClassName).
 			  (#slotAction -> slotAction).
 			  (#slot -> aSlotName).
-			  (#classSide -> aBoolean) }
+			  (#side -> (aBoolean ifTrue: [ 'class' ] ifFalse: [ 'instance' ])) }
 ]
 
 { #category : 'private - update' }
@@ -1653,7 +1653,7 @@ MCPToolClassMutationTest >> updateRequestArgumentsForSlotRenameInClassNamed: aCl
 			  (#slotAction -> 'rename').
 			  (#slot -> aSlotName).
 			  (#newSlot -> aNewSlotName).
-			  (#classSide -> aBoolean) }
+			  (#side -> (aBoolean ifTrue: [ 'class' ] ifFalse: [ 'instance' ])) }
 ]
 
 { #category : 'private - update' }

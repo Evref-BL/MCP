@@ -58,10 +58,11 @@ MCPToolGetMethod >> buildInputSchema [
 
 	| classSideProperty includeVariableDetailsProperty selectorProperty |
 	classSideProperty := MCPStructureProperties new
-		                     name: 'classSide';
-		                     type: 'boolean';
-		                     description: 'Whether a bare selector is on the class side. A method written as Class class>>selector says so itself.';
-		                     default: false;
+		                     name: 'side';
+		                     type: 'string';
+		                     enum: #( 'instance' 'class' );
+		                     description: 'Which side a bare selector is on. A method written as Class class>>selector says so itself.';
+		                     default: 'instance';
 		                     yourself.
 	includeVariableDetailsProperty := MCPStructureProperties new
 		                                  name: 'includeVariableDetails';
@@ -105,7 +106,7 @@ MCPToolGetMethod >> classNameForErrorFromParsedRequest: getRequest rawRequest: r
 MCPToolGetMethod >> classSideForErrorFromParsedRequest: getRequest rawRequest: rawRequest [
 
 	getRequest ifNotNil: [ ^ getRequest classSide ].
-	^ rawRequest booleanArgumentNamed: 'classSide' default: false
+	^ (rawRequest stringArgumentNamed: 'side' default: 'instance') = 'class'
 ]
 
 { #category : 'private - execution' }
@@ -141,7 +142,7 @@ MCPToolGetMethod >> errorResultForError: anError className: className selector: 
 				  details := commandError structuredDetails copy.
 				  details at: #class ifAbsentPut: [ className ].
 				  details at: #selector ifAbsentPut: [ selectorString ].
-				  details at: #classSide put: classSide.
+				  classSide ifTrue: [ details at: #side put: 'class' ].
 				  self errorResultText: commandError messageText details: details ]
 		  otherwise: [ :toolError |
 				  self
@@ -155,7 +156,7 @@ MCPToolGetMethod >> errorResultForError: anError className: className selector: 
 							  (#message -> toolError messageText).
 							  (#class -> className).
 							  (#selector -> selectorString).
-							  (#classSide -> classSide) } asDictionary ]
+							  (#side -> (classSide ifTrue: [ 'class' ] ifFalse: [ 'instance' ])) } asDictionary ]
 ]
 
 { #category : 'executing' }

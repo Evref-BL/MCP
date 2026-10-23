@@ -36,7 +36,7 @@ MCPGetMethodRequest class >> fromRequest: aRequest tool: aTool [
 	^ self new
 		  initializeClassName: className
 		  selectorString: text
-		  classSide: (aRequest booleanArgumentNamed: 'classSide' default: false)
+		  classSide: ((aRequest stringArgumentNamed: 'side' default: 'instance') = 'class')
 		  includeVariableDetails: (aRequest booleanArgumentNamed: 'includeVariableDetails' default: false)
 ]
 

@@ -29,10 +29,11 @@ MCPToolUpdateMethodProtocol >> methodToolSpec [
 				    description: 'The class whose method protocol will be updated.';
 				    yourself).
 			   (MCPStructureProperties new
-				    name: 'classSide';
-				    type: 'boolean';
+				    name: 'side';
+				    type: 'string';
+				    enum: #( 'instance' 'class' );
 				    description: 'Whether the target method is on the class side.';
-				    default: false;
+				    default: 'instance';
 				    yourself).
 			   (MCPStructureProperties new
 				    name: 'selector';

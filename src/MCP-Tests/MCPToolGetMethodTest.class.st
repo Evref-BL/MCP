@@ -77,9 +77,8 @@ MCPToolGetMethodTest >> testGetMethodReturnsStructuredErrorForMissingSelector [
 	self assert: (error at: #errorCode) equals: 'MethodNotFound'.
 	self assert: (error at: #class) equals: 'MCPToolGetMethodTestTarget'.
 	self assert: (error at: #selector) equals: 'doesNotExist'.
-	self assert: (error includesKey: #classSide).
-	self deny: (error at: #classSide).
-	self deny: (error includesKey: #side).
+	self assert: (error includesKey: #side).
+	self assert: (error at: #side) equals: 'instance'.
 	self assert: ((error at: #message) includesSubstring: 'Method MCPToolGetMethodTestTarget>>doesNotExist does not exist.')
 ]
 
@@ -96,7 +95,7 @@ MCPToolGetMethodTest >> testGetMethodSuggestsExactOppositeSideSelector [
 	self assert: (error at: #errorCode) equals: 'MethodNotFound'.
 	self assert: suggestions size equals: 1.
 	self assert: (suggestions first at: #class) equals: 'MCPToolGetMethodTestTarget'.
-	self assert: (suggestions first at: #classSide).
+	self assert: (suggestions first at: #side) equals: 'class'.
 	self assert: (suggestions first at: #selector) equals: 'readClassSide'
 ]
 
@@ -107,7 +106,7 @@ MCPToolGetMethodTest >> testGetMethodSupportsClassSideContext [
 	result := self callToolWith: {
 			          (#class -> 'MCPToolGetMethodTestTarget').
 			          (#selector -> 'readClassSide').
-			          (#classSide -> true).
+			          (#side -> 'class').
 			          (#includeVariableDetails -> true) } asDictionary.
 	data := self dataFrom: result.
 	classInstanceVariable := self variableNamed: 'classCounter' in: (data at: #variableReferences).

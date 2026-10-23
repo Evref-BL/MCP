@@ -175,7 +175,7 @@ MCPMethodUpdateRequest >> initializeFromRequest: request [
 
 	suppliedProperties := self updatePropertyNames select: [ :each | request hasArgumentNamed: each ].
 	className := request stringArgumentNamed: 'class'.
-	classSide := request booleanArgumentNamed: 'classSide' default: false.
+	classSide := (request stringArgumentNamed: 'side' default: 'instance') = 'class'.
 	selector := request stringArgumentNamed: 'selector'.
 	newSelector := request stringArgumentNamed: 'newSelector'.
 	protocol := request stringArgumentNamed: 'protocol'.
@@ -301,7 +301,7 @@ MCPMethodUpdateRequest >> requestedContext [
 	| context |
 	context := Dictionary new.
 	context at: #class put: self className.
-	context at: #classSide put: self classSide.
+	self classSide ifTrue: [ context at: #side put: 'class' ].
 	context at: #selector put: self selector.
 	self suppliedProperties do: [ :propertyName |
 		context at: propertyName asSymbol put: (self contextValueForPropertyNamed: propertyName) ].

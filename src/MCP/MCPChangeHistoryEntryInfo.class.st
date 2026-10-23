@@ -93,7 +93,7 @@ MCPChangeHistoryEntryInfo >> asDictionary [
 	triggerReference ifNotNil: [ data at: #triggerReference put: triggerReference ].
 	packageName ifNotNil: [ data at: #package put: packageName ].
 	behaviorName ifNotNil: [ data at: #behavior put: behaviorName ].
-	classSide ifNotNil: [ data at: #classSide put: classSide ].
+	classSide == true ifTrue: [ data at: #side put: 'class' ].
 	selector ifNotNil: [ data at: #selector put: selector ].
 	protocol ifNotNil: [ data at: #protocol put: protocol ].
 	^ data
