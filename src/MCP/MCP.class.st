@@ -336,7 +336,34 @@ MCP >> advertisedCapabilities [
 		                yourself.
 	self resourceRegistry entries ifNotEmpty: [ capabilities resources: MCPStructureResourcesCapabilities new ].
 	self promptRegistry entries ifNotEmpty: [ capabilities prompts: MCPStructurePromptsCapabilities new ].
+	self hasCompletableReferences ifTrue: [ capabilities completions: MCPStructureCompletionsCapabilities new ].
 	^ capabilities
+]
+
+{ #category : 'private - completion' }
+MCP >> completionTargetFor: aReference [
+	"Answer the prompt or resource template a completion reference names, or raise. The protocol defines two reference types and nothing else completes."
+
+	| referenceType |
+	referenceType := aReference at: #type ifAbsent: [ nil ].
+	referenceType = 'ref/prompt' ifTrue: [
+			^ self promptRegistry
+				  promptNamed: (aReference at: #name ifAbsent: [ '' ])
+				  ifAbsent: [ MCPUnknownCompletionReference signalFor: aReference ] ].
+	referenceType = 'ref/resource' ifTrue: [
+			| uri |
+			uri := aReference at: #uri ifAbsent: [ '' ].
+			^ self resourceRegistry resourceTemplates
+				  detect: [ :each | each uriTemplate = uri ]
+				  ifNone: [ MCPUnknownCompletionReference signalFor: aReference ] ].
+	^ MCPUnknownCompletionReference signalFor: aReference
+]
+
+{ #category : 'private - completion' }
+MCP >> hasCompletableReferences [
+	"Nothing can be completed without a prompt or a resource template to complete it for."
+
+	^ self promptRegistry entries notEmpty or: [ self resourceRegistry resourceTemplates notEmpty ]
 ]
 
 { #category : 'start' }
@@ -554,6 +581,20 @@ MCP >> rpcPing [
 
 	<jrpc: #ping>
 	^ Dictionary new
+]
+
+{ #category : 'rpc' }
+MCP >> rpcCompletionComplete: ref argument: argument context: context [
+
+	<jrpc: #'completion/complete'>
+	| target suggestions |
+	ref isDictionary ifFalse: [ MCPUnknownCompletionReference signalFor: ref ].
+	target := self completionTargetFor: ref.
+	suggestions := target
+		               completionsFor: (argument at: #name ifAbsent: [ '' ])
+		               value: (argument at: #value ifAbsent: [ '' ])
+		               context: ((context ifNil: [ Dictionary new ]) at: #arguments ifAbsent: [ Dictionary new ]).
+	^ { (#completion -> (MCPStructureCompletion values: suggestions) asJRPCJSON) } asDictionary
 ]
 
 { #category : 'rpc' }

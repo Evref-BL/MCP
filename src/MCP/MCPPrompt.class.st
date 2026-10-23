@@ -72,6 +72,13 @@ MCPPrompt >> asJRPCJSON [
 	^ dictionary
 ]
 
+{ #category : 'completing' }
+MCPPrompt >> completionsFor: anArgumentName value: aPrefix context: aContextDictionary [
+	"Answer the values completion/complete should suggest for one of my arguments, given what the user has typed so far and the arguments already settled. Answering none is fine: a prompt owes no completions."
+
+	^ #(  )
+]
+
 { #category : 'metadata' }
 MCPPrompt >> description [
 

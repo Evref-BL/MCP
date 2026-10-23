@@ -24,6 +24,13 @@ MCPGreetingTestPrompt >> arguments [
 		  (MCPStructurePromptArgument name: 'greeting' description: 'The greeting word.' required: false) }
 ]
 
+{ #category : 'completing' }
+MCPGreetingTestPrompt >> completionsFor: anArgumentName value: aPrefix context: aContextDictionary [
+
+	anArgumentName = 'greeting' ifFalse: [ ^ #(  ) ].
+	^ #( 'Hello' 'Goodbye' 'Good morning' ) select: [ :each | each beginsWith: aPrefix ]
+]
+
 { #category : 'metadata' }
 MCPGreetingTestPrompt >> description [
 

@@ -43,6 +43,13 @@ MCPResourceTemplate >> asJRPCJSON [
 	^ dictionary
 ]
 
+{ #category : 'completing' }
+MCPResourceTemplate >> completionsFor: aVariableName value: aPrefix context: aContextDictionary [
+	"Answer the values completion/complete should suggest for one of my URI variables, given what the user has typed so far and the variables already settled. Answering none is fine: a template owes no completions."
+
+	^ #(  )
+]
+
 { #category : 'testing' }
 MCPResourceTemplate >> isResourceTemplate [
 

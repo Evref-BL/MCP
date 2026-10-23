@@ -7,6 +7,7 @@ Class {
 	#name : 'MCPStructureCapabilities',
 	#superclass : 'Object',
 	#instVars : [
+		'completions',
 		'logging',
 		'prompts',
 		'resources',
@@ -23,12 +24,25 @@ MCPStructureCapabilities >> asJRPCJSON [
 
 	| dic |
 	dic := Dictionary new.
+	self completions ifNotNil: [ dic at: #completions put: self completions asJRPCJSON ].
 	self logging ifNotNil: [ dic at: #logging put: self logging asJRPCJSON ].
 	self prompts ifNotNil: [ dic at: #prompts put: self prompts asJRPCJSON ].
 	self resources ifNotNil: [ dic at: #resources put: self resources asJRPCJSON ].
 	self tasks ifNotNil: [ dic at: #tasks put: self tasks asJRPCJSON ].
 	self tools ifNotNil: [ dic at: #tools put: self tools asJRPCJSON ].
 	^ dic
+]
+
+{ #category : 'accessing' }
+MCPStructureCapabilities >> completions [
+
+	^ completions
+]
+
+{ #category : 'accessing' }
+MCPStructureCapabilities >> completions: anObject [
+
+	completions := anObject
 ]
 
 { #category : 'accessing' }

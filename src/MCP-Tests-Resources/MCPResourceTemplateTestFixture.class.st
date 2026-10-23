@@ -34,6 +34,13 @@ MCPResourceTemplateTestFixture >> description [
 	^ 'Greets the name in the URI.'
 ]
 
+{ #category : 'completing' }
+MCPResourceTemplateTestFixture >> completionsFor: aVariableName value: aPrefix context: aContextDictionary [
+
+	aVariableName = 'name' ifFalse: [ ^ #(  ) ].
+	^ #( 'world' 'pharo' 'moon' ) select: [ :each | each beginsWith: aPrefix ]
+]
+
 { #category : 'resolving' }
 MCPResourceTemplateTestFixture >> resourceForUri: aUri [
 
