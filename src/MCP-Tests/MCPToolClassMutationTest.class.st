@@ -106,7 +106,7 @@ MCPToolClassMutationTest >> createdClassNames [
 	     'MCPToolClassMutationTestPullUpChildOne' 'MCPToolClassMutationTestPullUpChildTwo' 'MCPToolClassMutationTestPushDownTarget'
 	     'MCPToolClassMutationTestPushDownChildOne' 'MCPToolClassMutationTestPushDownChildTwo'
 	     'MCPToolClassMutationTestWarningPullUpTarget' 'MCPToolClassMutationTestWarningPullUpChildOne'
-	     'MCPToolClassMutationTestWarningPullUpChildTwo' )
+	     'MCPToolClassMutationTestWarningPullUpChildTwo' 'TMCPToolClassMutationTestTrait' )
 ]
 
 { #category : 'private' }
@@ -368,6 +368,21 @@ MCPToolClassMutationTest >> testCreateEnsuresMissingPackage [
 	createdClass := self classNamed: 'MCPToolClassMutationTestTemporaryPackage'.
 	self assert: (self packageOrganizer hasPackage: self generatedPackageName).
 	self assert: createdClass packageName asString equals: self generatedPackageName
+]
+
+{ #category : 'tests - create' }
+MCPToolClassMutationTest >> testCreateNamesATraitATrait [
+
+	| createdTrait result text |
+	result := self callToolWith: (self createRequestArgumentsWith: {
+				           (#name -> 'TMCPToolClassMutationTestTrait').
+				           (#superclass -> 'Trait').
+				           (#package -> self generatedPackageName) }).
+	createdTrait := self classNamed: 'TMCPToolClassMutationTestTrait'.
+	text := (result at: #content) first at: #text.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: createdTrait isTrait.
+	self assert: (text includesSubstring: 'Created trait TMCPToolClassMutationTestTrait.')
 ]
 
 { #category : 'tests - create' }

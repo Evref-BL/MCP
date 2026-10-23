@@ -1,7 +1,7 @@
 "
 DTO for compact class metadata used by class queries and mutation reports.
 
-It describes class identity, package placement, slots, traits, shared variables, pools, subclasses, and layout.
+It describes class identity, whether the behavior is a trait, package placement, slots, traits, shared variables, pools, subclasses, and layout.
 "
 Class {
 	#name : 'MCPClassInfo',
@@ -18,7 +18,8 @@ Class {
 		'classTraitNames',
 		'sharedVariableNames',
 		'sharedPoolNames',
-		'layoutClassName'
+		'layoutClassName',
+		'isTrait'
 	],
 	#category : 'MCP-DTOs',
 	#package : 'MCP',
@@ -34,19 +35,22 @@ MCPClassInfo class >> fromClass: aClass [
 { #category : 'converting' }
 MCPClassInfo >> asDictionary [
 
-	^ {
-		  (#class -> self className).
-		  (#superclass -> self superclassName).
-		  (#package -> self packageName).
-		  (#tag -> self tag).
-		  (#instanceSlots -> self instanceSlotNames).
-		  (#classSlots -> self classSlotNames).
-		  (#traits -> self traitNames).
-		  (#classTraits -> self classTraitNames).
-		  (#sharedVariables -> self sharedVariableNames).
-		  (#sharedPools -> self sharedPoolNames).
-		  (#layout -> self layoutClassName).
-		  (#subclasses -> self subclassNames) } asDictionary
+	| data |
+	data := {
+		        (#class -> self className).
+		        (#superclass -> self superclassName).
+		        (#package -> self packageName).
+		        (#tag -> self tag).
+		        (#instanceSlots -> self instanceSlotNames).
+		        (#classSlots -> self classSlotNames).
+		        (#traits -> self traitNames).
+		        (#classTraits -> self classTraitNames).
+		        (#sharedVariables -> self sharedVariableNames).
+		        (#sharedPools -> self sharedPoolNames).
+		        (#layout -> self layoutClassName).
+		        (#subclasses -> self subclassNames) } asDictionary.
+	self isTrait ifTrue: [ data at: #isTrait put: true ].
+	^ data
 ]
 
 { #category : 'converting' }
@@ -82,6 +86,7 @@ MCPClassInfo >> classTraitNames [
 MCPClassInfo >> initializeFromClass: aClass [
 
 	className := aClass name asString.
+	isTrait := aClass isTrait.
 	superclassName := aClass superclass ifNil: [ '' ] ifNotNil: [ :aSuperclass | aSuperclass name asString ].
 	packageName := aClass package ifNil: [ '' ] ifNotNil: [ :aPackage | aPackage name asString ].
 	tag := aClass packageTagName asString.
@@ -100,6 +105,12 @@ MCPClassInfo >> initializeFromClass: aClass [
 MCPClassInfo >> instanceSlotNames [
 
 	^ instanceSlotNames
+]
+
+{ #category : 'accessing' }
+MCPClassInfo >> isTrait [
+
+	^ isTrait = true
 ]
 
 { #category : 'accessing' }

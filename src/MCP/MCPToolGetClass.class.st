@@ -91,14 +91,6 @@ MCPToolGetClass >> buildInputSchema [
 		  yourself
 ]
 
-{ #category : 'private - schema' }
-MCPToolGetClass >> classDescriptionRequiredFields [
-
-	^ #( 'class' 'superclass' 'package' 'tag' 'instanceSlots' 'classSlots' 'traits' 'classTraits'
-	     'traitComposition' 'classTraitComposition' 'sharedPools' 'sharedVariables' 'layout' 'methods'
-	     'classMethods' )
-]
-
 { #category : 'private - errors' }
 MCPToolGetClass >> classNameForErrorFromParsedRequest: getRequest rawRequest: rawRequest [
 
@@ -130,7 +122,7 @@ MCPToolGetClass >> defaultExposure [
 { #category : 'metadata' }
 MCPToolGetClass >> description [
 
-	^ 'Get metadata for one or more classes. Optional superclass/subclass context. Use class_search to discover class names.'
+	^ 'Get metadata for one or more classes or traits. Optional superclass/subclass context, and the classes using a trait. Use class_search to discover names.'
 ]
 
 { #category : 'private - hierarchy' }
@@ -164,19 +156,14 @@ MCPToolGetClass >> errorResultForError: anError className: className [
 MCPToolGetClass >> executeWithRequest: request [
 
 	^ self executeBatchedRequest: request do: [ :targetRequest |
-		  self
-			  executeParsedRequestFrom: targetRequest
-			  do: [ :getRequest |
-					  | commandResult |
-					  commandResult := (self commandForRequest: getRequest) execute.
-					  self
-						  successResultText: (self
-								   successSummaryForClassName: commandResult className
-								   superclasses: commandResult superclasses
-								   subclasses: commandResult subclasses)
-						  data: commandResult data ]
-			  onError: [ :error :getRequest |
-				  self errorResultForError: error className: (self classNameForErrorFromParsedRequest: getRequest rawRequest: targetRequest) ] ]
+			  self
+				  executeParsedRequestFrom: targetRequest
+				  do: [ :getRequest |
+						  | commandResult |
+						  commandResult := (self commandForRequest: getRequest) execute.
+						  self successResultText: (self successSummaryFor: commandResult) data: commandResult data ]
+				  onError: [ :error :getRequest |
+					  self errorResultForError: error className: (self classNameForErrorFromParsedRequest: getRequest rawRequest: targetRequest) ] ]
 ]
 
 { #category : 'private' }
@@ -201,9 +188,9 @@ MCPToolGetClass >> keyOrder [
 
 { #category : 'private - results' }
 MCPToolGetClass >> keysStatedInSummary [
-	"The summary opens with the class name, so repeating it as a field says it twice."
+	"The summary opens with the class name and says whether it is a trait, so repeating either says it twice."
 
-	^ #( class )
+	^ #( class isTrait )
 ]
 
 { #category : 'defaults' }
@@ -218,27 +205,31 @@ MCPToolGetClass >> parsedRequestFromToolRequest: request [
 	^ MCPGetClassRequest fromRequest: request tool: self
 ]
 
-{ #category : 'private' }
-MCPToolGetClass >> successSummaryForClassName: className superclasses: superclasses subclasses: subclasses [
+{ #category : 'private - results' }
+MCPToolGetClass >> successSummaryFor: aResult [
+	"A trait is named as one. It is not a class, and it has users rather than superclasses and subclasses."
 
 	^ String streamContents: [ :stream |
 			  stream
-				  nextPutAll: 'Got class ';
-				  nextPutAll: className;
+				  nextPutAll: 'Got ';
+				  nextPutAll: ((aResult data at: #isTrait ifAbsent: [ false ])
+						   ifTrue: [ 'trait ' ]
+						   ifFalse: [ 'class ' ]);
+				  nextPutAll: aResult className;
 				  nextPut: $..
-			  (superclasses isEmpty and: [ subclasses isEmpty ]) ifFalse: [
+			  (aResult superclasses isEmpty and: [ aResult subclasses isEmpty ]) ifFalse: [
 					  stream
 						  space;
 						  nextPutAll: 'Included ';
-						  print: superclasses size;
+						  print: aResult superclasses size;
 						  nextPutAll: ' superclass';
-						  nextPutAll: (superclasses size = 1
+						  nextPutAll: (aResult superclasses size = 1
 								   ifTrue: [ '' ]
 								   ifFalse: [ 'es' ]);
 						  nextPutAll: ' and ';
-						  print: subclasses size;
+						  print: aResult subclasses size;
 						  nextPutAll: ' subclass';
-						  nextPutAll: (subclasses size = 1
+						  nextPutAll: (aResult subclasses size = 1
 								   ifTrue: [ '' ]
 								   ifFalse: [ 'es' ]);
 						  nextPut: $. ] ]

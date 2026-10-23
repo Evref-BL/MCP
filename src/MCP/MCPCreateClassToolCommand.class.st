@@ -11,6 +11,15 @@ Class {
 	#tag : 'Commands'
 }
 
+{ #category : 'private' }
+MCPCreateClassToolCommand >> createdSummaryFor: aResult [
+	"A trait is named as one, so asking for a trait is not answered with the word class."
+
+	^ 'Created ' , (aResult classInfo isTrait
+		   ifTrue: [ 'trait ' ]
+		   ifFalse: [ 'class ' ]) , self request className , '.'
+]
+
 { #category : 'executing' }
 MCPCreateClassToolCommand >> execute [
 
@@ -36,7 +45,7 @@ MCPCreateClassToolCommand >> execute [
 					  (MCPChangeClassCommentCommand className: self request className classComment: self request classComment) execute ] ]
 		  successResult: [ :warningMessages |
 				  self tool
-					  successResultText: 'Created class ' , self request className , '.'
+					  successResultText: (self createdSummaryFor: result)
 					  data: (self tool dataForResult: result action: 'create')
 					  warnings: warningMessages ]
 		  failureSummary: [ :error |
