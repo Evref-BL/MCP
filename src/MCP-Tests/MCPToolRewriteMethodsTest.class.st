@@ -42,11 +42,11 @@ MCPToolRewriteMethodsTest >> restoreFixtureMethods [
 ]
 
 { #category : 'private' }
-MCPToolRewriteMethodsTest >> rewriteRuleFrom: lhsString to: rhsString [
+MCPToolRewriteMethodsTest >> rewriteRuleFrom: aMatchPattern to: aReplacementPattern [
 
 	^ {
-		  (#lhs -> lhsString).
-		  (#rhs -> rhsString) } asDictionary
+		  (#match -> aMatchPattern).
+		  (#replacement -> aReplacementPattern) } asDictionary
 ]
 
 { #category : 'private' }
@@ -103,8 +103,8 @@ MCPToolRewriteMethodsTest >> testNamingARuleClassStandsForItsPatterns [
 	patterns := MCPCollectionThenDoRule new rewritePatterns.
 	self assert: specs size equals: patterns size.
 	self deny: specs isEmpty.
-	self assert: (specs collect: [ :each | each lhs ]) asSet equals: (patterns collect: [ :each | each at: #lhs ]) asSet.
-	self assert: (specs collect: [ :each | each rhs ]) asSet equals: (patterns collect: [ :each | each at: #rhs ]) asSet.
+	self assert: (specs collect: [ :each | each match ]) asSet equals: (patterns collect: [ :each | each at: #match ]) asSet.
+	self assert: (specs collect: [ :each | each replacement ]) asSet equals: (patterns collect: [ :each | each at: #replacement ]) asSet.
 	self assert: (specs collect: [ :each | each name ]) asSet equals: (Set with: 'MCPCollectionThenDoRule')
 ]
 
@@ -188,18 +188,18 @@ MCPToolRewriteMethodsTest >> testInvalidLhsPatternReportsRuleDiagnostics [
 			          (#rules -> {
 				           validRule.
 				           {
-					           (#name -> 'broken-lhs').
-					           (#lhs -> 'self +').
-					           (#rhs -> 'self newValue').
+					           (#name -> 'broken-match').
+					           (#match -> 'self +').
+					           (#replacement -> 'self newValue').
 					           (#isForMethod -> false) } asDictionary }).
 			          (#scope -> { (#classes -> { self targetClassName }) } asDictionary) } asDictionary.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #errorCode) equals: 'RewriteRuleInvalidPattern'.
 	self assert: (error at: #ruleIndex) equals: 2.
-	self assert: (error at: #ruleName) equals: 'broken-lhs'.
-	self assert: (error at: #lhs) equals: 'self +'.
-	self assert: (error at: #rhs) equals: 'self newValue'.
+	self assert: (error at: #ruleName) equals: 'broken-match'.
+	self assert: (error at: #match) equals: 'self +'.
+	self assert: (error at: #replacement) equals: 'self newValue'.
 	self deny: (error at: #isForMethod).
 	self assert: (error includesKey: #backendErrorClass).
 	self assert: (error includesKey: #backendMessage)
@@ -211,18 +211,18 @@ MCPToolRewriteMethodsTest >> testInvalidRhsPatternReportsRuleDiagnostics [
 	| error result |
 	result := self callToolWith: {
 			          (#rules -> { {
-				           (#name -> 'broken-rhs').
-				           (#lhs -> 'self oldValue').
-				           (#rhs -> 'self +').
+				           (#name -> 'broken-replacement').
+				           (#match -> 'self oldValue').
+				           (#replacement -> 'self +').
 				           (#isForMethod -> false) } asDictionary }).
 			          (#scope -> { (#classes -> { self targetClassName }) } asDictionary) } asDictionary.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #errorCode) equals: 'RewriteRuleInvalidPattern'.
 	self assert: (error at: #ruleIndex) equals: 1.
-	self assert: (error at: #ruleName) equals: 'broken-rhs'.
-	self assert: (error at: #lhs) equals: 'self oldValue'.
-	self assert: (error at: #rhs) equals: 'self +'.
+	self assert: (error at: #ruleName) equals: 'broken-replacement'.
+	self assert: (error at: #match) equals: 'self oldValue'.
+	self assert: (error at: #replacement) equals: 'self +'.
 	self deny: (error at: #isForMethod).
 	self assert: (error includesKey: #backendErrorClass).
 	self assert: (error includesKey: #backendMessage)
@@ -341,26 +341,26 @@ MCPToolRewriteMethodsTest >> testRewriteRuleNormalizesLineFeedsInPatterns [
 	tool := MCPToolRewriteMethods new.
 	parsedRequest := self parsedRequestForTool: tool arguments: {
 			                 (#rules -> { {
-				                  (#lhs -> source).
-				                  (#rhs -> source) } asDictionary }).
+				                  (#match -> source).
+				                  (#replacement -> source) } asDictionary }).
 			                 (#scope -> { (#classes -> { self targetClassName }) } asDictionary) } asDictionary.
 	rule := parsedRequest rules first.
-	self deny: (rule lhs includes: Character lf).
-	self deny: (rule rhs includes: Character lf).
-	self assert: (rule lhs includes: Character cr).
-	self assert: (rule rhs includes: Character cr)
+	self deny: (rule match includes: Character lf).
+	self deny: (rule replacement includes: Character lf).
+	self assert: (rule match includes: Character cr).
+	self assert: (rule replacement includes: Character cr)
 ]
 
 { #category : 'tests' }
 MCPToolRewriteMethodsTest >> testSchemaAdvertisesRewriteContract [
 
-	| lhsProperty propertyNames rhsProperty ruleProperties rulesProperty scopeProperty scopePropertyNames tool |
+	| matchProperty propertyNames replacementProperty ruleProperties rulesProperty scopeProperty scopePropertyNames tool |
 	tool := MCPToolRewriteMethods new.
 	propertyNames := tool inputSchema properties collect: [ :each | each name ].
 	rulesProperty := tool inputSchema properties detect: [ :each | each name = 'rules' ].
 	ruleProperties := ((rulesProperty extraProperties at: #items) extraProperties at: #properties) collect: [ :each | each name ].
-	lhsProperty := ((rulesProperty extraProperties at: #items) extraProperties at: #properties) detect: [ :each | each name = 'lhs' ].
-	rhsProperty := ((rulesProperty extraProperties at: #items) extraProperties at: #properties) detect: [ :each | each name = 'rhs' ].
+	matchProperty := ((rulesProperty extraProperties at: #items) extraProperties at: #properties) detect: [ :each | each name = 'match' ].
+	replacementProperty := ((rulesProperty extraProperties at: #items) extraProperties at: #properties) detect: [ :each | each name = 'replacement' ].
 	scopeProperty := tool inputSchema properties detect: [ :each | each name = 'scope' ].
 	scopePropertyNames := (scopeProperty extraProperties at: #properties) collect: [ :each | each name ].
 
@@ -369,14 +369,14 @@ MCPToolRewriteMethodsTest >> testSchemaAdvertisesRewriteContract [
 	self assert: (tool description includesSubstring: 'Smalltalk AST pattern syntax').
 	self assert: (tool description includesSubstring: 'not regex').
 	self assert: (rulesProperty extraProperties at: #minItems) equals: 1.
-	self assert: (lhsProperty extraProperties at: #minLength) equals: 1.
-	self assert: (rhsProperty extraProperties at: #minLength) equals: 1.
+	self assert: (matchProperty extraProperties at: #minLength) equals: 1.
+	self assert: (replacementProperty extraProperties at: #minLength) equals: 1.
 	self
 		assert: propertyNames asSet
 		equals: #( 'rules' 'ruleClasses' 'apply' 'scope' 'side' ) asSet.
 	self assert: scopePropertyNames asSet equals: #( 'packages' 'classes' 'subclassesOf' 'superclassesOf' ) asSet.
-	self assert: (ruleProperties includes: 'lhs').
-	self assert: (ruleProperties includes: 'rhs').
+	self assert: (ruleProperties includes: 'match').
+	self assert: (ruleProperties includes: 'replacement').
 	self assert: (ruleProperties includes: 'isForMethod')
 ]
 

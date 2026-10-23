@@ -110,14 +110,20 @@ MCPToolRewriteMethods >> rewriteRuleSchema [
 		  description: 'Rewrite rule.';
 		  properties: {
 				  (self schemaPropertyNamed: 'name' type: 'string' description: 'Diagnostic name.').
-				  ((self schemaPropertyNamed: 'lhs' type: 'string' description: 'Pattern to match.')
+				  ((self
+					    schemaPropertyNamed: 'match'
+					    type: 'string'
+					    description: 'Pattern the code must match. Metavariables start with a backquote, as in `@receiver.')
 					   minLength: 1;
 					   yourself).
-				  ((self schemaPropertyNamed: 'rhs' type: 'string' description: 'Replacement pattern.')
+				  ((self
+					    schemaPropertyNamed: 'replacement'
+					    type: 'string'
+					    description: 'Pattern the matched code becomes. Reuse the metavariable names from match.')
 					   minLength: 1;
 					   yourself).
 				  (self booleanSchemaPropertyNamed: 'isForMethod' description: 'Match whole methods.' default: false) };
-		  required: #( 'lhs' 'rhs' );
+		  required: #( 'match' 'replacement' );
 		  additionalProperties: false;
 		  yourself
 ]

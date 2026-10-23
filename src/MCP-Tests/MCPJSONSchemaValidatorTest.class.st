@@ -52,8 +52,8 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 			   (#protocol -> 'tests') } asDictionary).
 		  (MCPToolRewriteMethods -> {
 			   (#rules -> { {
-				    (#lhs -> 'self').
-				    (#rhs -> 'self') } asDictionary }).
+				    (#match -> 'self').
+				    (#replacement -> 'self') } asDictionary }).
 			   (#scope -> { (#classes -> { 'MCPJSONSchemaValidatorTest' }) } asDictionary) } asDictionary).
 		  (MCPToolSearchMethodReferences -> { (#name -> 'toolName') } asDictionary).
 		  (MCPToolListChangeHistoryFiles -> Dictionary new).
@@ -238,8 +238,8 @@ MCPJSONSchemaValidatorTest >> testCurrentToolRequestValidationRejectsOperationSp
 				MCPToolRewriteMethods new requestFromToolCallArguments: {
 						(#apply -> true).
 						(#rules -> { {
-							 (#lhs -> 'self').
-							 (#rhs -> 'self') } asDictionary }) } asDictionary ]
+							 (#match -> 'self').
+							 (#replacement -> 'self') } asDictionary }) } asDictionary ]
 		raise: MCPInvalidToolInput
 ]
 
@@ -325,16 +325,16 @@ MCPJSONSchemaValidatorTest >> testValidatesMinItemsAndMinLength [
 			            (#items -> {
 				             (#type -> 'object').
 				             (#properties -> {
-					              ('lhs' -> {
+					              ('match' -> {
 						               (#type -> 'string').
 						               (#minLength -> 1) } asDictionary).
-					              ('rhs' -> {
+					              ('replacement' -> {
 						               (#type -> 'string').
 						               (#minLength -> 1) } asDictionary) } asDictionary) } asDictionary) } asDictionary) } asDictionary) }
 		          asDictionary.
 	arguments := { (#rules -> { {
-		              (#lhs -> '').
-		              (#rhs -> '') } asDictionary }) } asDictionary.
+		              (#match -> '').
+		              (#replacement -> '') } asDictionary }) } asDictionary.
 	violations := self violationsFor: arguments schema: schema.
 	self assert: (self keywordsFrom: violations) asBag equals: #( 'minLength' 'minLength' ) asBag.
 	violations := self violationsFor: { (#rules -> #(  )) } asDictionary schema: schema.

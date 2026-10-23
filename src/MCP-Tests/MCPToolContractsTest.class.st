@@ -117,8 +117,8 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 			  (#toolClass -> MCPToolRewriteMethods).
 			  (#arguments -> {
 				   (#rules -> { {
-					    (#lhs -> 'self').
-					    (#rhs -> 'self') } asDictionary }).
+					    (#match -> 'self').
+					    (#replacement -> 'self') } asDictionary }).
 				   (#scope -> { (#classes -> { 'MCPToolContractsTest' }) } asDictionary) } asDictionary).
 			  (#requestClass -> MCPMethodRewriteRequest).
 			  (#commandClass -> MCPRewriteMethodsCommand) } asDictionary.

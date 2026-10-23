@@ -8,8 +8,8 @@ Class {
 	#superclass : 'Object',
 	#instVars : [
 		'name',
-		'lhs',
-		'rhs',
+		'match',
+		'replacement',
 		'isForMethod',
 		'ruleIndex'
 	],
@@ -40,18 +40,18 @@ MCPMethodRewriteRuleSpec class >> specsForRuleClassNamed: aName startingAt: anIn
 	^ patterns withIndexCollect: [ :pattern :offset |
 		  self new
 			  initializeName: aName
-			  lhs: (pattern at: #lhs)
-			  rhs: (pattern at: #rhs)
+			  match: (pattern at: #match)
+			  replacement: (pattern at: #replacement)
 			  isForMethod: (pattern at: #isForMethod)
 			  index: anIndex + offset - 1 ]
 ]
 
 { #category : 'initialization' }
-MCPMethodRewriteRuleSpec >> initializeName: aName lhs: aLeftPattern rhs: aRightPattern isForMethod: aBoolean index: anIndex [
+MCPMethodRewriteRuleSpec >> initializeName: aName match: aMatchPattern replacement: aReplacementPattern isForMethod: aBoolean index: anIndex [
 
 	name := aName.
-	lhs := aLeftPattern.
-	rhs := aRightPattern.
+	match := aMatchPattern.
+	replacement := aReplacementPattern.
 	isForMethod := aBoolean.
 	ruleIndex := anIndex
 ]
@@ -62,15 +62,15 @@ MCPMethodRewriteRuleSpec >> asDictionary [
 	^ {
 		  (#ruleIndex -> self ruleIndex).
 		  (#name -> self name).
-		  (#lhs -> self lhs).
-		  (#rhs -> self rhs).
+		  (#match -> self match).
+		  (#replacement -> self replacement).
 		  (#isForMethod -> self isForMethod) } asDictionary
 ]
 
 { #category : 'converting' }
 MCPMethodRewriteRuleSpec >> asStRewriterRuleHolder [
 
-	^ StRewriterRuleHolder lhs: self lhs rhs: self rhs isForMethod: self isForMethod
+	^ StRewriterRuleHolder lhs: self match rhs: self replacement isForMethod: self isForMethod
 ]
 
 { #category : 'converting' }
@@ -79,8 +79,8 @@ MCPMethodRewriteRuleSpec >> diagnosticDetails [
 	^ {
 		  (#ruleIndex -> self ruleIndex).
 		  (#ruleName -> self name).
-		  (#lhs -> self lhs).
-		  (#rhs -> self rhs).
+		  (#match -> self match).
+		  (#replacement -> self replacement).
 		  (#isForMethod -> self isForMethod) } asDictionary
 ]
 
@@ -89,8 +89,8 @@ MCPMethodRewriteRuleSpec >> initializeFromDictionary: aDictionary request: reque
 
 	ruleIndex := index.
 	name := request stringArgumentNamed: 'name' in: aDictionary default: 'rule-' , index asString.
-	lhs := (request stringArgumentNamed: 'lhs' in: aDictionary) withInternalLineEndings.
-	rhs := (request stringArgumentNamed: 'rhs' in: aDictionary) withInternalLineEndings.
+	match := (request stringArgumentNamed: 'match' in: aDictionary) withInternalLineEndings.
+	replacement := (request stringArgumentNamed: 'replacement' in: aDictionary) withInternalLineEndings.
 	isForMethod := request booleanArgumentNamed: 'isForMethod' in: aDictionary default: false.
 	self validateAtIndex: index.
 	^ self
@@ -103,9 +103,9 @@ MCPMethodRewriteRuleSpec >> isForMethod [
 ]
 
 { #category : 'accessing' }
-MCPMethodRewriteRuleSpec >> lhs [
+MCPMethodRewriteRuleSpec >> match [
 
-	^ lhs
+	^ match
 ]
 
 { #category : 'accessing' }
@@ -115,9 +115,9 @@ MCPMethodRewriteRuleSpec >> name [
 ]
 
 { #category : 'accessing' }
-MCPMethodRewriteRuleSpec >> rhs [
+MCPMethodRewriteRuleSpec >> replacement [
 
-	^ rhs
+	^ replacement
 ]
 
 { #category : 'accessing' }
@@ -141,15 +141,15 @@ MCPMethodRewriteRuleSpec >> signalInvalidPatternError: anError [
 { #category : 'validating' }
 MCPMethodRewriteRuleSpec >> validateAtIndex: index [
 
-	lhs ifNil: [
+	match ifNil: [
 			MCPCommandError
 				signalErrorCode: #RewriteRuleMissingLhs
-				message: 'Rewrite rule ' , index asString , ' is missing lhs.'
+				message: 'Rewrite rule ' , index asString , ' is missing match.'
 				details: self diagnosticDetails ].
-	rhs ifNil: [
+	replacement ifNil: [
 			MCPCommandError
 				signalErrorCode: #RewriteRuleMissingRhs
-				message: 'Rewrite rule ' , index asString , ' is missing rhs.'
+				message: 'Rewrite rule ' , index asString , ' is missing replacement.'
 				details: self diagnosticDetails ]
 ]
 

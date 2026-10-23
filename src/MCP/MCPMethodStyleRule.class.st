@@ -42,8 +42,8 @@ MCPMethodStyleRule >> recordPattern: aPattern replacement: aReplacement forMetho
 
 	rewritePatterns := self rewritePatterns asOrderedCollection.
 	rewritePatterns add: {
-			(#lhs -> aPattern).
-			(#rhs -> aReplacement).
+			(#match -> aPattern).
+			(#replacement -> aReplacement).
 			(#isForMethod -> aBoolean) } asDictionary
 ]
 

@@ -118,9 +118,15 @@ as follow-up review evidence, not as transport failures.
 
 ## Rewriting Methods
 
-`method_rewrite` uses Smalltalk AST rewrite rules. Patterns use RB AST pattern
-syntax, not regex. A scope is required, so rewriting everything is something a
-caller asks for by naming the packages rather than by leaving an argument out.
+`method_rewrite` uses Smalltalk AST rewrite patterns, not regex. A rule has a
+`match` and a `replacement`, and a scope is required, so rewriting everything is
+something a caller asks for by naming the packages rather than by leaving an
+argument out.
+
+A metavariable starts with a backquote and stands for whatever is in its place.
+`` `@receiver `` matches one expression, however big: the same rule rewrites
+`anObject notNil` and `(anObject foo) notNil`. **The names must be the same on
+both sides** — a name that appears only in `replacement` is bound to nothing.
 
 The default mode is preview, which carries the old and new source of every
 change:
@@ -129,8 +135,23 @@ change:
 {
   "rules": [
     {
-      "lhs": "`@old",
-      "rhs": "`@new"
+      "match": "`@receiver notNil",
+      "replacement": "`@receiver isNotNil"
+    }
+  ],
+  "scope": { "packages": ["MyPackage"] }
+}
+```
+
+A metavariable stands for a block just as readily, which is how a rule drops
+one branch of a conditional:
+
+```json
+{
+  "rules": [
+    {
+      "match": "`@receiver ifTrue: [ `@body ] ifFalse: [ nil ]",
+      "replacement": "`@receiver ifTrue: [ `@body ]"
     }
   ],
   "scope": { "packages": ["MyPackage"] }

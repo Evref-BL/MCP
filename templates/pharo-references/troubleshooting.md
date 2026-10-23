@@ -55,7 +55,6 @@ Common causes:
 - missing required fields for the selected tool
 - extra fields rejected by `additionalProperties: false`
 - passing arguments from a different tool
-- `method_rewrite` without a `scope`
 - `history_entry_apply` or `history_entry_revert` without `confirm=true`
 
 ## A Refactoring Stops With A Warning
