@@ -101,7 +101,7 @@ Tools are named `domain_action`, and the domains are:
 | --- | --- |
 | `classes` | Defining classes and changing their slots, traits, shared variables, pools, layout, package and comment, including the slot refactorings. |
 | `methods` | Compiling, reading, removing and rewriting methods, renaming selectors and protocols, and searching by source, metadata, senders, implementors, references or equivalence. |
-| `repositories` | Iceberg repositories: identity, remotes, branches, changes, export, commit, fetch, pull, push, and Metacello loads. |
+| `repositories` | What the image knows about its Iceberg repositories: identity, package membership, working-copy changes, export, commit, and reloading the image from the files. Branches, remotes and transfers are git's, and belong in a shell. |
 | `debugging` | Debug sessions, their state and variables, stepping and control, breakpoints, evaluation in a frame, and method repair. |
 | `history` | Epicea change history: locating files, listing entries, and applying or reverting them. |
 | `tests` | Running tests and running them under coverage. |

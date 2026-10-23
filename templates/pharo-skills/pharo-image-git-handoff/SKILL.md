@@ -21,6 +21,9 @@ not prove files changed on disk.
    and documentation path.
 5. Commit only the intended diff. Push only when explicitly requested or
    clearly approved.
+6. When the checkout moves under the image — switching branch, pulling, or any
+   Git command that rewrites the source files — reload the image from those
+   files afterwards, or it keeps running the code the old checkout held.
 
 ## Stop Before Mutation
 

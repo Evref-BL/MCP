@@ -33,39 +33,12 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 			   (#action -> 'update').
 			   (#name -> 'MCP').
 			   (#addPackageNames -> #( 'MCP' )) } asDictionary).
-		  (MCPToolAddRepositoryRemote -> {
-			   (#name -> 'MCP').
-			   (#remoteName -> 'origin').
-			   (#remoteUrl -> 'git@example.com:mcp.git') } asDictionary).
-		  (MCPToolRemoveRepositoryRemote -> {
-			   (#name -> 'MCP').
-			   (#remoteName -> 'origin') } asDictionary).
-		  (MCPToolUpdateRepositoryRemote -> {
-			   (#name -> 'MCP').
-			   (#remoteName -> 'origin').
-			   (#remoteUrl -> 'git@example.com:mcp.git') } asDictionary).
 		  (MCPToolExportRepository -> { (#name -> 'MCP') } asDictionary).
 		  (MCPToolCommitRepository -> {
 			   (#name -> 'MCP').
 			   (#message -> 'Example commit') } asDictionary).
-		  (MCPToolFetchRepository -> { (#name -> 'MCP') } asDictionary).
-		  (MCPToolPullRepository -> { (#name -> 'MCP') } asDictionary).
-		  (MCPToolPushRepository -> { (#name -> 'MCP') } asDictionary).
-		  (MCPToolCreateRepositoryBranch -> {
-			   (#name -> 'MCP').
-			   (#branchName -> 'example-branch') } asDictionary).
-		  (MCPToolSwitchRepositoryBranch -> {
-			   (#name -> 'MCP').
-			   (#branchName -> 'main') } asDictionary).
-		  (MCPToolCheckoutRepositoryBranch -> {
-			   (#name -> 'MCP').
-			   (#branchName -> 'main') } asDictionary).
 		  (MCPToolAdoptRepositoryHead -> { (#name -> 'MCP') } asDictionary).
-		  (MCPToolLoadRepository -> {
-			   (#owner -> 'ExampleOwner').
-			   (#project -> 'ExampleProject').
-			   (#baseline -> 'ExampleBaseline').
-			   (#sourceDirectory -> 'src') } asDictionary).
+		  (MCPToolReloadRepository -> { (#name -> 'MCP') } asDictionary).
 		  (MCPToolSearchClasses -> Dictionary new).
 		  (MCPToolSearchPackages -> Dictionary new).
 		  (MCPToolClassMutation -> {
@@ -208,7 +181,6 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 				(#name -> 'MCP Test Repository').
 				(#location -> '/tmp/mcp-test-repository') } asDictionary;
 		at: MCPToolUpdateRepository put: { (#name -> 'MCP') } asDictionary;
-		at: MCPToolLoadBaseline put: { (#baseline -> 'ExampleBaseline') } asDictionary;
 		at: MCPToolRunTestCoverage put: {
 				(#classes -> { 'MCPToolContractsTest' }).
 				(#coverage -> { (#scope -> { (#classes -> #( 'MCPToolContractsTest' )) } asDictionary) } asDictionary) } asDictionary;
