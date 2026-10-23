@@ -38,8 +38,8 @@ MCPYamlWriterTest >> testQuotesOnlyWhatWouldBeMisread [
 
 	self assert: (self yamlFor: { (#a -> 'Class name.') } asDictionary) equals: 'a: Class name.'.
 	self
-		assert: (self yamlFor: { (#a -> 'Debug session id: debug_session_list.') } asDictionary)
-		equals: 'a: "Debug session id: debug_session_list."'.
+		assert: (self yamlFor: { (#a -> 'Debugger id: debug_search.') } asDictionary)
+		equals: 'a: "Debugger id: debug_search."'.
 	self assert: (self yamlFor: { (#a -> '') } asDictionary) equals: 'a: ""'.
 	self assert: (self yamlFor: { (#a -> '*Package-Name') } asDictionary) equals: 'a: "*Package-Name"'.
 	self

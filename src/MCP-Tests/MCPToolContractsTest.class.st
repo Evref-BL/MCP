@@ -44,16 +44,6 @@ MCPToolContractsTest >> addUnimplementedResponsibilitiesFor: aClass behavior: aB
 ]
 
 { #category : 'private' }
-MCPToolContractsTest >> assertDebugInputPropertyNamed: propertyName inTool: aTool default: defaultValue maximum: maximumValue [
-
-	| property |
-	property := self inputPropertyNamed: propertyName inTool: aTool.
-	self assert: (property extraProperties at: #minimum) equals: 0.
-	self assert: (property extraProperties at: #maximum) equals: maximumValue.
-	self assert: (property extraProperties at: #default) equals: defaultValue
-]
-
-{ #category : 'private' }
 MCPToolContractsTest >> assertToolFlowSpec: aSpec [
 
 	| command parsedRequest rawRequest tool |
@@ -148,32 +138,10 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 			  (#requestClass -> MCPScreenshotRequest).
 			  (#commandClass -> MCPScreenshotCommand) } asDictionary.
 		  {
-			  (#toolClass -> MCPToolDebugState).
-			  (#arguments -> { (#sessionId -> 'debug-session-1') } asDictionary).
-			  (#requestClass -> MCPDebugStateRequest).
-			  (#commandClass -> MCPDebugStateCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolDebugVariables).
-			  (#arguments -> { (#variableRef -> 'debug-session-1/state-0/frame-0/scope-receiver') } asDictionary).
-			  (#requestClass -> MCPDebugVariablesRequest).
-			  (#commandClass -> MCPDebugVariablesCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolDebugEvaluate).
-			  (#arguments -> {
-				   (#sessionId -> 'debug-session-1').
-				   (#expression -> '1') } asDictionary).
-			  (#requestClass -> MCPDebugEvaluateRequest).
-			  (#commandClass -> MCPDebugEvaluateCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolDebugCapture).
-			  (#arguments -> { (#expression -> '1') } asDictionary).
-			  (#requestClass -> MCPDebugCaptureRequest).
-			  (#commandClass -> MCPDebugCaptureCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolUpdateDebugMethod).
-			  (#arguments -> { (#sessionId -> 'debug-session-1') } asDictionary).
-			  (#requestClass -> MCPUpdateDebugMethodRequest).
-			  (#commandClass -> MCPUpdateDebugMethodCommand) } asDictionary.
+			  (#toolClass -> MCPToolDebugSearch).
+			  (#arguments -> Dictionary new).
+			  (#requestClass -> MCPDebugSearchRequest).
+			  (#commandClass -> MCPDebugSearchCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolEvaluate).
 			  (#arguments -> { (#code -> '1') } asDictionary).
@@ -386,123 +354,6 @@ MCPToolContractsTest >> critiqueRunToolFlowSpec [
 		  (#arguments -> { (#ruleClasses -> { ReAssignmentInBlockRule name }) } asDictionary).
 		  (#requestClass -> MCPCritiqueRunRequest).
 		  (#commandClass -> MCPSearchToolCommand) } asDictionary
-]
-
-{ #category : 'private' }
-MCPToolContractsTest >> debugBreakpointToolFlowSpecs [
-
-	^ {
-		  {
-			  (#toolClass -> MCPToolListDebugBreakpoints).
-			  (#arguments -> Dictionary new).
-			  (#requestClass -> MCPDebugBreakpointsRequest).
-			  (#commandClass -> MCPDebugBreakpointsCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolSetDebugBreakpoint).
-			  (#arguments -> {
-				   (#className -> 'MCPToolContractsTest').
-				   (#selector -> 'testDebuggerToolsAreDiscoverableOnly') } asDictionary).
-			  (#requestClass -> MCPDebugBreakpointsRequest).
-			  (#commandClass -> MCPDebugBreakpointsCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolRemoveDebugBreakpoint).
-			  (#arguments -> { (#breakpointId -> 'debug-breakpoint-1') } asDictionary).
-			  (#requestClass -> MCPDebugBreakpointsRequest).
-			  (#commandClass -> MCPDebugBreakpointsCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolEnableDebugBreakpoint).
-			  (#arguments -> { (#breakpointId -> 'debug-breakpoint-1') } asDictionary).
-			  (#requestClass -> MCPDebugBreakpointsRequest).
-			  (#commandClass -> MCPDebugBreakpointsCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolDisableDebugBreakpoint).
-			  (#arguments -> { (#breakpointId -> 'debug-breakpoint-1') } asDictionary).
-			  (#requestClass -> MCPDebugBreakpointsRequest).
-			  (#commandClass -> MCPDebugBreakpointsCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolClearDebugBreakpoints).
-			  (#arguments -> Dictionary new).
-			  (#requestClass -> MCPDebugBreakpointsRequest).
-			  (#commandClass -> MCPDebugBreakpointsCommand) } asDictionary }
-]
-
-{ #category : 'private' }
-MCPToolContractsTest >> debugControlToolFlowSpecs [
-
-	^ {
-		  {
-			  (#toolClass -> MCPToolStepIntoDebugSession).
-			  (#arguments -> { (#sessionId -> 'debug-session-1') } asDictionary).
-			  (#requestClass -> MCPDebugControlRequest).
-			  (#commandClass -> MCPDebugControlCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolStepOverDebugSession).
-			  (#arguments -> { (#sessionId -> 'debug-session-1') } asDictionary).
-			  (#requestClass -> MCPDebugControlRequest).
-			  (#commandClass -> MCPDebugControlCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolStepThroughDebugSession).
-			  (#arguments -> { (#sessionId -> 'debug-session-1') } asDictionary).
-			  (#requestClass -> MCPDebugControlRequest).
-			  (#commandClass -> MCPDebugControlCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolRestartDebugSession).
-			  (#arguments -> { (#sessionId -> 'debug-session-1') } asDictionary).
-			  (#requestClass -> MCPDebugControlRequest).
-			  (#commandClass -> MCPDebugControlCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolResumeDebugSession).
-			  (#arguments -> { (#sessionId -> 'debug-session-1') } asDictionary).
-			  (#requestClass -> MCPDebugControlRequest).
-			  (#commandClass -> MCPDebugControlCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolTerminateDebugSession).
-			  (#arguments -> { (#sessionId -> 'debug-session-1') } asDictionary).
-			  (#requestClass -> MCPDebugControlRequest).
-			  (#commandClass -> MCPDebugControlCommand) } asDictionary }
-]
-
-{ #category : 'private' }
-MCPToolContractsTest >> debugSessionToolFlowSpecs [
-
-	^ {
-		  {
-			  (#toolClass -> MCPToolListDebugSessions).
-			  (#arguments -> Dictionary new).
-			  (#requestClass -> MCPDebugSessionsRequest).
-			  (#commandClass -> MCPDebugSessionsCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolGetDebugSession).
-			  (#arguments -> { (#sessionId -> 'debug-session-1') } asDictionary).
-			  (#requestClass -> MCPDebugSessionsRequest).
-			  (#commandClass -> MCPDebugSessionsCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolRemoveDebugSession).
-			  (#arguments -> { (#sessionId -> 'debug-session-1') } asDictionary).
-			  (#requestClass -> MCPDebugSessionsRequest).
-			  (#commandClass -> MCPDebugSessionsCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolSearchDebugCandidates).
-			  (#arguments -> Dictionary new).
-			  (#requestClass -> MCPDebugSessionsRequest).
-			  (#commandClass -> MCPDebugSessionsCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolAttachDebugCandidate).
-			  (#arguments -> { (#candidateRef -> 'debugger-candidate-1') } asDictionary).
-			  (#requestClass -> MCPDebugSessionsRequest).
-			  (#commandClass -> MCPDebugSessionsCommand) } asDictionary }
-]
-
-{ #category : 'private' }
-MCPToolContractsTest >> debugTestToolFlowSpec [
-
-	^ {
-		  (#toolClass -> MCPToolDebugTest).
-		  (#arguments -> {
-			   (#className -> 'MCPToolContractsTest').
-			   (#testMethodName -> 'testDebuggerToolsAreDiscoverableOnly') } asDictionary).
-		  (#requestClass -> MCPDebugTestRequest).
-		  (#commandClass -> MCPDebugTestCommand) } asDictionary
 ]
 
 { #category : 'private' }
@@ -955,79 +806,10 @@ MCPToolContractsTest >> testConfiguredDiscoverableToolsAreNotDirectlyCallable [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testDebugInputSchemasAdvertiseExpansionBounds [
-
-	| snapshotTools updateTool variablesTool |
-	snapshotTools := {
-		                 MCPToolDebugState new.
-		                 MCPToolStepOverDebugSession new.
-		                 MCPToolDebugCapture new.
-		                 MCPToolDebugTest new }.
-	snapshotTools do: [ :tool |
-			self
-				assertDebugInputPropertyNamed: 'sourceContextLines'
-				inTool: tool
-				default: MCPDebugRequest defaultSourceContextLines
-				maximum: MCPDebugRequest maximumSourceContextLines.
-			self
-				assertDebugInputPropertyNamed: 'stackLimit'
-				inTool: tool
-				default: MCPDebugRequest defaultStackLimit
-				maximum: MCPDebugRequest maximumStackLimit.
-			self
-				assertDebugInputPropertyNamed: 'variableDepth'
-				inTool: tool
-				default: MCPDebugRequest defaultVariableDepth
-				maximum: MCPDebugRequest maximumVariableDepth.
-			self
-				assertDebugInputPropertyNamed: 'variableLimit'
-				inTool: tool
-				default: MCPDebugRequest defaultVariableLimit
-				maximum: MCPDebugRequest maximumVariableLimit ].
-	variablesTool := MCPToolDebugVariables new.
-	self
-		assertDebugInputPropertyNamed: 'variableDepth'
-		inTool: variablesTool
-		default: MCPDebugRequest defaultVariableDepth
-		maximum: MCPDebugRequest maximumVariableDepth.
-	self
-		assertDebugInputPropertyNamed: 'variableLimit'
-		inTool: variablesTool
-		default: MCPDebugRequest defaultVariableLimit
-		maximum: MCPDebugRequest maximumVariableLimit.
-	updateTool := MCPToolUpdateDebugMethod new.
-	self
-		assertDebugInputPropertyNamed: 'sourceContextLines'
-		inTool: updateTool
-		default: 5
-		maximum: MCPDebugRequest maximumSourceContextLines.
-	self
-		assertDebugInputPropertyNamed: 'stackLimit'
-		inTool: updateTool
-		default: 20
-		maximum: MCPDebugRequest maximumStackLimit.
-	self
-		assertDebugInputPropertyNamed: 'variableDepth'
-		inTool: updateTool
-		default: 1
-		maximum: MCPDebugRequest maximumVariableDepth.
-	self
-		assertDebugInputPropertyNamed: 'variableLimit'
-		inTool: updateTool
-		default: 50
-		maximum: MCPDebugRequest maximumVariableLimit
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testDebuggerToolsAreDiscoverableOnly [
 
 	| debugNames staticToolNames |
-	debugNames := #( 'debug_session_list' 'debug_session_get' 'debug_session_remove' 'debug_candidate_search'
-	                 'debug_candidate_attach' 'debug_state_get' 'debug_variable_get' 'debug_expression_evaluate'
-	                 'debug_session_step_into' 'debug_session_step_over' 'debug_session_step_through' 'debug_session_restart'
-	                 'debug_session_resume' 'debug_session_terminate' 'debug_breakpoint_list' 'debug_breakpoint_set'
-	                 'debug_breakpoint_remove' 'debug_breakpoint_enable' 'debug_breakpoint_disable' 'debug_breakpoint_clear'
-	                 'debug_capture' 'debug_test_run' 'debug_method_update' ).
+	debugNames := #( 'debug_search' 'debug_watch' ).
 	staticToolNames := self toolRegistry staticToolNames.
 	debugNames do: [ :each |
 			self deny: (staticToolNames includes: each).
@@ -1982,12 +1764,6 @@ MCPToolContractsTest >> testRequestedToolIconsAreSelected [
 		equals:
 		(MCPStructureIcon compositeBaseIconNamed: #testRunner leftBadgeIconNamed: #processBrowser rightBadgeIconNamed: #play) asJRPCJSON.
 	self
-		assert: MCPToolStepIntoDebugSession new icons first asJRPCJSON
-		equals: (MCPStructureIcon compositeBaseIconNamed: #bug leftBadgeIconNamed: #announcement rightBadgeIconNamed: #into) asJRPCJSON.
-	self
-		assert: MCPToolUpdateDebugMethod new icons first asJRPCJSON
-		equals: (MCPStructureIcon compositeBaseIconNamed: #bug leftBadgeIconNamed: #page rightBadgeIconNamed: #edit) asJRPCJSON.
-	self
 		assert: MCPToolCaptureScreenshot new icons first asJRPCJSON
 		equals: (MCPStructureIcon compositeBaseIconNamed: #window badgeIconNamed: #smallScreenshot) asJRPCJSON.
 	self
@@ -2476,7 +2252,8 @@ MCPToolContractsTest >> testSearchToolsMatchesAgentGuidanceKeywords [
 		                ('recover' -> 'history_entry_apply').
 		                ('window' -> 'screenshot_capture').
 		                ('display' -> 'screenshot_capture').
-		                ('repair' -> 'debug_method_update').
+		                ('watch' -> 'debug_watch').
+		                ('debugger' -> 'debug_search').
 		                ('refactor' -> 'class_slot_pull_up').
 		                ('refactoring' -> 'method_selector_update') }.
 	expectations do: [ :expectation |
@@ -2813,10 +2590,8 @@ MCPToolContractsTest >> testToolRegistryNamesUseClassSideMetadata [
 	self assert: MCPToolListChangeHistoryEntries toolName equals: 'history_entry_list'.
 	self assert: MCPToolApplyChangeHistoryEntries toolName equals: 'history_entry_apply'.
 	self assert: MCPToolRevertChangeHistoryEntries toolName equals: 'history_entry_revert'.
-	self assert: MCPToolDebugState toolName equals: 'debug_state_get'.
-	self assert: MCPToolStepOverDebugSession toolName equals: 'debug_session_step_over'.
-	self assert: MCPToolDebugCapture toolName equals: 'debug_capture'.
-	self assert: MCPToolUpdateDebugMethod toolName equals: 'debug_method_update'
+	self assert: MCPToolDebugSearch toolName equals: 'debug_search'.
+	self assert: MCPToolDebugWatch toolName equals: 'debug_watch'
 ]
 
 { #category : 'tests' }
@@ -2925,6 +2700,18 @@ MCPToolContractsTest >> testUnknownToolNameSuggestsCloseNames [
 ]
 
 { #category : 'support' }
+MCPToolContractsTest >> debugWatchToolFlowSpec [
+
+	^ {
+		  (#toolClass -> MCPToolDebugWatch).
+		  (#arguments -> {
+			   (#method -> 'MCPToolContractsTest>>testDebuggerToolsAreDiscoverableOnly').
+			   (#run -> '1') } asDictionary).
+		  (#requestClass -> MCPDebugWatchRequest).
+		  (#commandClass -> MCPDebugWatchCommand) } asDictionary
+]
+
+{ #category : 'support' }
 MCPToolContractsTest >> toolFlowSpecs [
 
 	| specs |
@@ -2936,10 +2723,7 @@ MCPToolContractsTest >> toolFlowSpecs [
 	specs addAll: self methodMutationToolFlowSpecs.
 	specs addAll: self changeHistoryToolFlowSpecs.
 	specs addAll: self repositoryToolFlowSpecs.
-	specs addAll: self debugSessionToolFlowSpecs.
-	specs addAll: self debugControlToolFlowSpecs.
-	specs addAll: self debugBreakpointToolFlowSpecs.
-	specs add: self debugTestToolFlowSpec.
+	specs add: self debugWatchToolFlowSpec.
 	^ specs asArray
 ]
 

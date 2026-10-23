@@ -117,15 +117,14 @@ Epicea history. Apply or revert operations stay in `history_entry_apply` and
 `history_entry_revert`, where they can be previewed first and performed with
 `confirm=true`.
 
-## Debugger References Are Stale
+## A Debugger Picture Goes Out Of Date
 
-Debugger `stateId`, `frameRef`, and `variableRef` values are scoped to one
-debug_state_get snapshot. After a control action, debugger edit, or resume, discard
-old references and use the newly returned state.
+`debug_search` answers what is open at the moment it is called. A person can
+step, resume or close their debugger at any time, so ask again rather than
+acting on an older answer.
 
-If a human opened the debugger, attach through the debugging tools and let the
-debugger controller own UI actions. Do not drive debugger windows with raw
-`image_evaluate` code.
+Do not drive debugger windows with raw `image_evaluate` code, and do not step,
+resume or terminate a debugger a person opened.
 
 ## Source Checks Are Not Enough
 

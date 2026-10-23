@@ -201,18 +201,12 @@ live image back to Tonel/Git.
 
 ## Debugging
 
-Debugger tools are discoverable through the `debugging` group. They work with
-tracked Pharo `DebugSession` records, captured worker-process exceptions,
-SUnit test failures, transient DebugPoint breakpoints, and attached human-opened
-debuggers.
+Debugger tools are discoverable through the `debugging` group. They keep no
+state: `debug_watch` installs non-halting probes and removes them before it
+answers, and `debug_search` only reads the debuggers a person has open.
 
-Treat debugger state references as opaque and state-scoped. After stepping,
-resuming, restarting, terminating, or editing from a debug state, use the newly
-returned state before expanding variables or evaluating in a frame again.
-
-Use `debug_method_update` only from a paused debug state and only after reading the
-offered repair actions. It uses the same critique gate as method editing before
-proceeding a repaired computation.
+A debugger somebody opened belongs to them. Read it, then act with the ordinary
+class and method tools; do not step, resume or terminate it.
 
 ## Evaluation Escape Hatch
 

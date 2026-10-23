@@ -43,33 +43,23 @@ MCPToolStructuredOutputTest >> testCoverageDropsFlagsThatAreNotSet [
 ]
 
 { #category : 'tests' }
-MCPToolStructuredOutputTest >> testDebugResultDropsWhatItAlreadySays [
+MCPToolStructuredOutputTest >> testDebugResultDoesNotRepeatItsWarnings [
 
-	| contentText frame |
-	frame := Dictionary new
-		         at: #displayString put: 'SmallInteger>>/';
-		         at: #receiverClassName put: 'SmallInteger';
-		         at: #pc put: 124;
-		         at: #method put: (Dictionary new
-				          at: #className put: 'SmallInteger';
-				          at: #selector put: '/';
-				          yourself);
-		         yourself.
-	contentText := MCPToolDebugState new contentTextForStructuredContent: (Dictionary new
-		               at: #summary put: 'Summary.';
+	| contentText |
+	contentText := MCPToolDebugSearch new contentTextForStructuredContent: (Dictionary new
+		               at: #summary put: 'One open debugger.';
+		               at: #warnings put: { 'Careful.' };
 		               at: #data put: (Dictionary new
-				                at: #sessionId put: 'debug-session-1';
-				                at: #callStack put: { frame };
-				                at: #capabilities put: (Dictionary new
-						                 at: #control put: true;
-						                 yourself);
+				                at: #debuggers put: { (Dictionary new
+						                 at: #debugger put: 'A debugger';
+						                 at: #exception put: 'ZeroDivide: divide by zero';
+						                 yourself) };
 				                yourself);
 		               yourself).
-	self assert: (contentText includesSubstring: 'displayString=SmallInteger>>/').
-	self assert: (contentText includesSubstring: 'sessionId: debug-session-1').
-	self deny: (contentText includesSubstring: 'capabilities').
-	self deny: (contentText includesSubstring: 'receiverClassName').
-	self deny: (contentText includesSubstring: 'method:')
+	self assert: (contentText includesSubstring: 'debugger="A debugger"').
+	self assert: (contentText includesSubstring: 'Careful.').
+	"The warnings are read out above the payload, so the payload does not name them again."
+	self deny: (contentText includesSubstring: 'warnings')
 ]
 
 { #category : 'tests' }
