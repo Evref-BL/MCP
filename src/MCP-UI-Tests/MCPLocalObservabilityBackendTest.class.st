@@ -46,13 +46,13 @@ MCPLocalObservabilityBackendTest >> testInputSnapshotRedactsSensitiveKeys [
 	state := MCPLocalObservabilityBackend new.
 	state enable.
 	input := {
-		         (#limit -> 10).
+		         (#offset -> 10).
 		         (#apiToken -> 'secret-token').
 		         (#nested -> { (#password -> 'secret-password') } asDictionary) } asDictionary.
 	record := state recordToolCallStart: 'method_search' input: input.
 	state recordToolCallFinish: record result: nil error: Error new.
 
-	self assert: (record inputSnapshot at: #limit) equals: 10.
+	self assert: (record inputSnapshot at: #offset) equals: 10.
 	self assert: (record inputSnapshot at: #apiToken) equals: '<redacted>'.
 	self assert: ((record inputSnapshot at: #nested) at: #password) equals: '<redacted>'.
 	self assert: record inputObject isNil
@@ -114,7 +114,7 @@ MCPLocalObservabilityBackendTest >> testMCPRecordsToolCallDispatchPath [
 
 	mcp rpcToolCall: 'tool_call' withParams: {
 			(#name -> 'package_search').
-			(#arguments -> { (#limit -> 0) } asDictionary) } asDictionary.
+			(#arguments -> Dictionary new) } asDictionary.
 	records := mcp observability recentCallRecords.
 
 	self assert: records size equals: 2.
@@ -133,7 +133,7 @@ MCPLocalObservabilityBackendTest >> testMCPRecordsToolCallsWhenObservabilityIsEn
 		directory exists ifTrue: [ directory deleteAll ].
 		mcp := MCP new.
 		mcp observabilityExportDirectory: directory.
-		result := mcp rpcToolCall: 'class_search' withParams: { (#limit -> 0) } asDictionary.
+		result := mcp rpcToolCall: 'class_search' withParams: Dictionary new.
 		stats := mcp observabilityMetrics first.
 		record := mcp observability recentCallRecords first.
 
@@ -359,7 +359,6 @@ MCPLocalObservabilityBackendTest >> testTraceExportWritesOverBudgetRecordAsJSONL
 		state outputBudgetBytes: 80.
 		state exportDirectory: directory.
 		input := {
-			         (#limit -> 1).
 			         (#apiToken -> 'secret-token') } asDictionary.
 		record := state recordToolCallStart: 'method_source_search' input: input.
 		result := MCPStructureCallToolResult content: #(  ) structuredContent: {

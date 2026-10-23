@@ -82,20 +82,19 @@ MCPToolRunCritiquesTest >> tearDown [
 
 { #category : 'tests' }
 MCPToolRunCritiquesTest >> testPaginatesIndividualCritiqueHits [
+	"A page is the tool's own size, so what a caller sets is where it starts."
 
 	| firstData firstRule secondData secondRule |
 	firstData := self dataForArguments: {
-			             (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary).
-			             (#ruleClasses -> { ReAssignmentInBlockRule name }).
-			             (#limit -> 1) } asDictionary.
-	self assert: (firstData at: #nextOffset) equals: 1.
+		             (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary).
+		             (#ruleClasses -> { ReAssignmentInBlockRule name }) } asDictionary.
 	firstRule := (firstData at: #rules) first.
-	self assert: (firstRule at: #hits) size equals: 1.
+	self deny: (firstData includesKey: #nextOffset).
+	self assert: (firstRule at: #hits) size equals: 2.
 	secondData := self dataForArguments: {
-			              (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary).
-			              (#ruleClasses -> { ReAssignmentInBlockRule name }).
-			              (#limit -> 1).
-			              (#offset -> 1) } asDictionary.
+		              (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary).
+		              (#ruleClasses -> { ReAssignmentInBlockRule name }).
+		              (#offset -> 1) } asDictionary.
 	secondRule := (secondData at: #rules) first.
 	self assert: (secondRule at: #hits) size equals: 1.
 	self assert: ((secondRule at: #hits) first at: #method) equals: self fixtureClassName , '>>secondAssignmentInBlockProbe'
@@ -117,8 +116,7 @@ MCPToolRunCritiquesTest >> testRunsAllCritiquesWhenRuleClassesAreOmitted [
 
 	| data ruleClassNames |
 	data := self dataForArguments: {
-			        (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary).
-			        (#limit -> 5) } asDictionary.
+			        (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary) } asDictionary.
 	ruleClassNames := self ruleClassNamesFromData: data.
 	self assert: (ruleClassNames includes: ReAssignmentInBlockRule name)
 ]
@@ -129,8 +127,7 @@ MCPToolRunCritiquesTest >> testRunsClassCritiqueWithClassHit [
 	| data hit rule |
 	data := self dataForArguments: {
 			        (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary).
-			        (#ruleClasses -> { ReNoClassCommentRule name }).
-			        (#limit -> 10) } asDictionary.
+			        (#ruleClasses -> { ReNoClassCommentRule name }) } asDictionary.
 	rule := (data at: #rules) first.
 	self assert: (rule at: #ruleClass) equals: ReNoClassCommentRule name.
 	hit := (rule at: #hits) first.
@@ -143,8 +140,7 @@ MCPToolRunCritiquesTest >> testRunsSelectedNodeCritiqueAndGroupsHitsByRule [
 	| data hit hits rule rules |
 	data := self dataForArguments: {
 			        (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary).
-			        (#ruleClasses -> { ReAssignmentInBlockRule name }).
-			        (#limit -> 10) } asDictionary.
+			        (#ruleClasses -> { ReAssignmentInBlockRule name }) } asDictionary.
 	rules := data at: #rules.
 	self assert: rules size equals: 1.
 	rule := rules first.

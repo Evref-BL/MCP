@@ -24,11 +24,7 @@ MCPToolListChangeHistoryFiles >> annotations [
 { #category : 'metadata' }
 MCPToolListChangeHistoryFiles >> buildInputSchema [
 
-	| limitProperty offsetProperty |
-	limitProperty := self integerSchemaPropertyNamed: 'limit' description: 'Maximum files.' default: self defaultFileLimit.
-	limitProperty
-		minimum: 0;
-		maximum: self maximumFileLimit.
+	| offsetProperty |
 	offsetProperty := self integerSchemaPropertyNamed: 'offset' description: 'Pagination offset.' default: 0.
 	offsetProperty minimum: 0.
 	^ MCPStructureInputSchema new
@@ -38,7 +34,6 @@ MCPToolListChangeHistoryFiles >> buildInputSchema [
 					   schemaPropertyNamed: 'directoryPath'
 					   type: 'string'
 					   description: 'Optional .ombu directory. Default: current image history directory.').
-				  limitProperty.
 				  offsetProperty };
 		  required: #(  );
 		  additionalProperties: false;

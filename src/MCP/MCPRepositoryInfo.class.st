@@ -80,6 +80,8 @@ MCPRepositoryInfo >> asQueryDictionary [
 
 { #category : 'converting' }
 MCPRepositoryInfo >> asSearchDictionary [
+	"A search says a repository exists, where it is and what is dirty in it. Which packages it holds is
+	what package_search answers."
 
 	| data |
 	data := Dictionary new.
@@ -89,7 +91,7 @@ MCPRepositoryInfo >> asSearchDictionary [
 		at: #isModified put: self isModified;
 		at: #isMissing put: self isMissing.
 	self subdirectory ifNotNil: [ :value | value ifNotEmpty: [ data at: #subdirectory put: value ] ].
-	self packageNames ifNotEmpty: [ :names | data at: #packageNames put: names ].
+	self packageNames ifNotEmpty: [ :names | data at: #packageCount put: names size ].
 	self modifiedPackageNames ifNotEmpty: [ :names | data at: #modifiedPackageNames put: names ].
 	^ data
 ]

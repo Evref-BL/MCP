@@ -23,7 +23,7 @@ MCPToolRequestTest >> testHasArgumentNamedHandlesSymbolAndStringKeys [
 MCPToolRequestTest >> testInvalidRequestRaisesInvalidParameters [
 
 	self
-		should: [ MCPToolRequest tool: MCPToolSearchPackages new arguments: { (#limit -> 'ten') } asDictionary ]
+		should: [ MCPToolRequest tool: MCPToolSearchPackages new arguments: { (#offset -> 'ten') } asDictionary ]
 		raise: JRPCInvalidParameters
 ]
 
@@ -31,14 +31,14 @@ MCPToolRequestTest >> testInvalidRequestRaisesInvalidParameters [
 MCPToolRequestTest >> testInvalidRequestRaisesToolInputErrorWithViolations [
 
 	| error violation |
-	[ MCPToolRequest tool: MCPToolSearchPackages new arguments: { (#limit -> 'ten') } asDictionary ]
+	[ MCPToolRequest tool: MCPToolSearchPackages new arguments: { (#offset -> 'ten') } asDictionary ]
 		on: MCPInvalidToolInput
 		do: [ :signalledError | error := signalledError ].
 	self assert: error isNotNil.
 	self assert: error toolName equals: 'package_search'.
 	self assert: error violations size equals: 1.
 	violation := error violations first.
-	self assert: violation path equals: #( 'limit' ).
+	self assert: violation path equals: #( 'offset' ).
 	self assert: violation keyword equals: 'type'.
 	self assert: violation expected equals: 'integer'.
 	self assert: violation actual equals: 'string'
@@ -48,7 +48,7 @@ MCPToolRequestTest >> testInvalidRequestRaisesToolInputErrorWithViolations [
 MCPToolRequestTest >> testInvalidToolInputErrorResponseIncludesViolations [
 
 	| data error errorJson firstViolation response violations |
-	[ MCPToolRequest tool: MCPToolSearchPackages new arguments: { (#limit -> 'ten') } asDictionary ]
+	[ MCPToolRequest tool: MCPToolSearchPackages new arguments: { (#offset -> 'ten') } asDictionary ]
 		on: MCPInvalidToolInput
 		do: [ :signalledError | error := signalledError ].
 	response := (error asJRPCResponseWithId: 7) asJRPCJSON.
@@ -58,7 +58,7 @@ MCPToolRequestTest >> testInvalidToolInputErrorResponseIncludesViolations [
 	firstViolation := violations first.
 	self assert: (errorJson at: 'code') equals: -32602.
 	self assert: (data at: 'toolName') equals: 'package_search'.
-	self assert: (firstViolation at: #path) equals: #( 'limit' ).
+	self assert: (firstViolation at: #path) equals: #( 'offset' ).
 	self assert: (firstViolation at: #keyword) equals: 'type'.
 	self assert: (firstViolation at: #message) equals: 'Value has the wrong JSON type.'
 ]
@@ -99,8 +99,12 @@ MCPToolRequestTest >> testRequestAccessorsProvideDefaultsUniqueCollectionsSymbol
 MCPToolRequestTest >> testToolRequestClampsArgumentsAboveSchemaMaximumBeforeValidation [
 
 	| request |
-	request := MCPToolSearchPackages new requestFromToolCallArguments: { (#limit -> 1000) } asDictionary.
-	self assert: (request argumentNamed: 'limit' ifAbsent: [ self fail: 'Expected normalized limit.' ]) equals: 100
+	request := MCPToolGetClass new requestFromToolCallArguments: {
+		           (#name -> 'Object').
+		           (#subclassDepth -> 1000) } asDictionary.
+	self
+		assert: (request argumentNamed: 'subclassDepth' ifAbsent: [ self fail: 'Expected a normalized depth.' ])
+		equals: MCPToolGetClass new maximumSubclassDepth
 ]
 
 { #category : 'tests' }
@@ -109,10 +113,11 @@ MCPToolRequestTest >> testValidRequestProvidesTypedAccessors [
 	| request scope |
 	scope := { (#packages -> #( 'MCP' )) } asDictionary.
 	request := MCPToolRequest tool: MCPToolSearchClasses new arguments: {
-			           (#scope -> scope).
-			           (#limit -> 3) } asDictionary.
-	self assert: (request nonNegativeIntegerArgumentNamed: 'limit' default: 100) equals: 3.
+		           (#scope -> scope).
+		           (#offset -> 3) } asDictionary.
+	self assert: (request nonNegativeIntegerArgumentNamed: 'offset' default: 100) equals: 3.
 	self assert: (request stringCollectionArgumentNamed: 'packages' in: scope) equals: #( 'MCP' ).
 	self assert: (request stringArgumentNamed: 'missing') isNil.
 	self assert: (request booleanArgumentNamed: 'missing' default: false) equals: false
 ]
+

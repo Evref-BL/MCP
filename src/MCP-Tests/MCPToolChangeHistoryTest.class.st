@@ -245,7 +245,6 @@ MCPToolChangeHistoryTest >> testListEntriesReturnsGranularCodeChangeData [
 			self recordMethodAdditionOn: class.
 			result := self callToolWith: {
 					          (#action -> 'listEntries').
-					          (#limit -> 5).
 					          (#newestFirst -> true).
 					          (#codeChangesOnly -> true) } asDictionary.
 			data := self dataFrom: result.
@@ -279,12 +278,11 @@ MCPToolChangeHistoryTest >> testListEntriesSupportsHistoryFileName [
 					        ifNone: [ self skip: 'No existing change history file.' ] ].
 			result := self callToolWith: {
 					          (#action -> 'listEntries').
-					          (#historyFileName -> (file at: #fileName)).
-					          (#limit -> 1) } asDictionary.
+					          (#historyFileName -> (file at: #fileName)) } asDictionary.
 			data := self dataFrom: result.
 			entries := data at: #entries.
 			self assert: (data at: #historyFileName) equals: (file at: #fileName).
-			self assert: entries size <= 1 ]
+			self assert: entries size <= MCPToolListChangeHistoryEntries new defaultEntryLimit ]
 ]
 
 { #category : 'tests' }

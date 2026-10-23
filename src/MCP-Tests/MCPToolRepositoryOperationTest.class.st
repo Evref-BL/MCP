@@ -853,7 +853,7 @@ MCPToolRepositoryOperationTest >> testLinkedWorktreeAttachExportsOnLinkedBranch 
 						entry := (searchData at: #repositories) anyOne.
 						self assert: (entry at: #location) equals: linkedLocation pathString.
 						self assert: (entry at: #subdirectory) equals: 'src'.
-						self assert: (entry at: #packageNames) equals: { packageName }.
+						self assert: (entry at: #packageCount) equals: 1.
 						self createClassNamed: exportedClassName inPackageNamed: packageName.
 						exportResult := self callToolWith: {
 								                (#action -> 'export').

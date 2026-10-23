@@ -35,8 +35,8 @@ MCPToolSearchRepositories >> buildInputSchema [
 	| properties |
 	properties := self repositoryFieldFilterInputProperties , {
 		              (self booleanSchemaPropertyNamed: 'isModified' description: 'Filter by image-side modified state.').
-		              (self booleanSchemaPropertyNamed: 'isMissing' description: 'Filter by missing repository directory state.') }
-	              , (self paginationInputPropertiesWithLimitDescription: 'Maximum number of matching repositories to return.').
+		              (self booleanSchemaPropertyNamed: 'isMissing' description: 'Filter by missing repository directory state.').
+		              self offsetInputProperty }.
 	^ self queryInputSchemaWithProperties: properties
 ]
 
@@ -50,6 +50,13 @@ MCPToolSearchRepositories >> classNamesForRepositoryEntry: anEntry [
 				packageNamed: packageName asSymbol
 				ifPresent: [ :package | package definedClasses do: [ :class | classNames add: class name asString ] ] ].
 	^ classNames asArray
+]
+
+{ #category : 'defaults' }
+MCPToolSearchRepositories >> defaultPageLimit [
+	"A repository entry carries an absolute path and its modified packages, so a page holds fewer."
+
+	^ 10
 ]
 
 { #category : 'metadata' }

@@ -42,13 +42,16 @@ mcp useContentAndStructuredContentToolResponses.
 
 ## Compact Paging
 
-List and search tools are optimized for low token usage. Broad tools return a
-small page by default and put only the entry array in `data`. When another page
-exists, `data` includes `nextOffset`; call the same tool again with that
-`offset` to continue.
+List and search tools are optimized for low token usage. A page is the tool's
+own size, chosen for what one of its entries costs to read: fifty classes,
+twenty-five methods or packages, twenty critique hits, ten repositories. When
+another page exists, `data` includes `nextOffset`; call the same tool again
+with that `offset` to continue.
 
-Use the returned array size for the current page and follow `nextOffset` when
-present. Request larger pages only when the next step truly needs more entries.
+A search answers what identifies each hit, not everything known about it.
+`repository_search` says how many packages a repository holds rather than
+naming them, which `package_search` answers; `critique_run` names the rule
+rather than restating its documentation on every hit.
 
 ## Naming Several Targets
 

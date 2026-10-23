@@ -188,8 +188,7 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 				(#selector -> 'class') } asDictionary;
 		at: MCPToolRunCritiques put: {
 				(#scope -> { (#classes -> { 'MCPToolRunCritiquesTest' }) } asDictionary).
-				(#ruleClasses -> { ReAssignmentInBlockRule name }).
-				(#limit -> 3) } asDictionary;
+				(#ruleClasses -> { ReAssignmentInBlockRule name }) } asDictionary;
 		at: MCPToolCompileMethod put: {
 				(#className -> 'MCPTool').
 				(#source -> 'temporarySelector ^ self').
@@ -270,7 +269,7 @@ MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasAdvertiseGroupedSearchS
 		                         :each | each name ].
 	self
 		assert: (classProperties collect: [ :each | each name ]) asSet
-		equals: #( 'scope' 'name' 'tag' 'limit' 'offset' ) asSet.
+		equals: #( 'scope' 'name' 'tag' 'offset' ) asSet.
 	self
 		assert: (methodProperties collect: [ :each | each name ]) asSet
 		equals: #( 'scope' 'selector' 'protocol' 'side' 'offset' ) asSet.

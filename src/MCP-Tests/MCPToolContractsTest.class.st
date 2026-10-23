@@ -228,7 +228,7 @@ MCPToolContractsTest >> changeHistoryToolFlowSpecs [
 			  (#commandClass -> MCPListChangeHistoryLogsCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolListChangeHistoryEntries).
-			  (#arguments -> { (#limit -> 1) } asDictionary).
+			  (#arguments -> Dictionary new).
 			  (#requestClass -> MCPChangeHistoryListEntriesRequest).
 			  (#commandClass -> MCPListChangeHistoryEntriesCommand) } asDictionary.
 		  {
@@ -844,11 +844,10 @@ MCPToolContractsTest >> testCallToolInvokesDiscoverableToolAfterStaticConfigurat
 	result := server rpcToolCall: 'tool_call' withParams: {
 			          (#name -> 'package_search').
 			          (#arguments -> {
-				           (#name -> 'MCP').
-				           (#limit -> 1) } asDictionary) } asDictionary.
+				           (#name -> 'MCP') } asDictionary) } asDictionary.
 	data := self dataFrom: result.
-	self assert: (data at: #packages) size equals: 1.
-	self assert: (((data at: #packages) first at: #packageName) includesSubstring: 'MCP')
+	self assert: (data at: #packages) notEmpty.
+	self assert: ((data at: #packages) allSatisfy: [ :each | (each at: #packageName) includesSubstring: 'MCP' ])
 ]
 
 { #category : 'tests' }
@@ -858,11 +857,10 @@ MCPToolContractsTest >> testCallToolInvokesTargetToolThroughServerPath [
 	result := self callToolNamed: 'tool_call' withArguments: {
 			          (#name -> 'package_search').
 			          (#arguments -> {
-				           (#name -> 'MCP').
-				           (#limit -> 1) } asDictionary) } asDictionary.
+				           (#name -> 'MCP') } asDictionary) } asDictionary.
 	data := self dataFrom: result.
-	self assert: (data at: #packages) size equals: 1.
-	self assert: (((data at: #packages) first at: #packageName) includesSubstring: 'MCP')
+	self assert: (data at: #packages) notEmpty.
+	self assert: ((data at: #packages) allSatisfy: [ :each | (each at: #packageName) includesSubstring: 'MCP' ])
 ]
 
 { #category : 'tests - validation' }
@@ -1032,7 +1030,7 @@ MCPToolContractsTest >> testConfiguredDiscoverableToolsAreNotDirectlyCallable [
 	| server |
 	server := self mcpWithoutObservabilityExport.
 	server staticToolNames: #( 'tool_search' 'tool_get' 'tool_call' ).
-	self should: [ server rpcToolCall: 'package_search' withParams: { (#limit -> 1) } asDictionary ] raise: JRPCNonExistentHandler
+	self should: [ server rpcToolCall: 'package_search' withParams: Dictionary new ] raise: JRPCNonExistentHandler
 ]
 
 { #category : 'tests' }
@@ -1844,7 +1842,6 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 	self assert: ((self inputPropertyNamed: 'force' inTool: rewriteMethodsTool) extraProperties at: #default) equals: false.
 	self assert: ((self inputPropertyNamed: 'includeSource' inTool: rewriteMethodsTool) extraProperties at: #default) equals: false.
 	self assert: ((self inputPropertyNamed: 'side' inTool: rewriteMethodsTool) extraProperties at: #default) equals: 'both'.
-	self assert: ((self inputPropertyNamed: 'limit' inTool: searchClassesTool) extraProperties at: #default) equals: 25.
 	self assert: ((self inputPropertyNamed: 'force' inTool: removeClassesTool) extraProperties at: #default) equals: false.
 	self assert: ((self inputPropertyNamed: 'classSide' inTool: removeMethodsTool) extraProperties at: #default) equals: false
 ]
@@ -1990,12 +1987,11 @@ MCPToolContractsTest >> testRPCRefreshesCachedToolMetadata [
 	toolDefinitions := mcp rpcToolsList at: #tools.
 	toolDefinition := toolDefinitions detect: [ :each | (each at: #name) = 'class_search' ].
 	propertyNames := ((toolDefinition at: #inputSchema) at: #properties) keys asSet.
-	self assert: propertyNames equals: #( 'scope' 'name' 'tag' 'limit' 'offset' ) asSet.
+	self assert: propertyNames equals: #( 'scope' 'name' 'tag' 'offset' ) asSet.
 	result := mcp rpcToolCall: 'class_search' withParams: {
 			          (self searchScope: {
 					           (#classes -> #( 'MCPToolContractsTest' )).
-					           (#packages -> #( 'MCP-Tests' )) }).
-			          (#limit -> 1) } asDictionary.
+					           (#packages -> #( 'MCP-Tests' )) }) } asDictionary.
 	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
@@ -2197,7 +2193,7 @@ MCPToolContractsTest >> testRpcToolCallSignalsInvalidParametersForUnexpectedArgu
 MCPToolContractsTest >> testRpcToolCallSignalsInvalidParametersForWrongArgumentType [
 
 	self
-		should: [ self callToolNamed: 'package_search' withArguments: { (#limit -> 'ten') } asDictionary ]
+		should: [ self callToolNamed: 'package_search' withArguments: { (#offset -> 'ten') } asDictionary ]
 		raise: JRPCInvalidParameters
 ]
 
@@ -2353,7 +2349,7 @@ MCPToolContractsTest >> testSearchClassesHasAccurateNameAndSchema [
 	scopePropertyNames := (scopeProperty extraProperties at: #properties) collect: [ :each | each name ].
 	self assert: MCPToolSearchClasses new name equals: 'class_search'.
 	self assert: schema required equals: #(  ).
-	self assert: propertyNames asSet equals: #( 'scope' 'name' 'tag' 'limit' 'offset' ) asSet.
+	self assert: propertyNames asSet equals: #( 'scope' 'name' 'tag' 'offset' ) asSet.
 	self assert: scopeProperty description equals: 'Search scope. If omitted, searches all matching entities.'.
 	self assert: scopePropertyNames asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' ) asSet
 ]
@@ -2363,8 +2359,7 @@ MCPToolContractsTest >> testSearchClassesListsClassesForExistingPackage [
 
 	| classNames classes data result |
 	result := self callToolNamed: 'class_search' withArguments: {
-			          (self searchScope: { (#packages -> #( 'MCP-Tests' )) }).
-			          (#limit -> 100) } asDictionary.
+			          (self searchScope: { (#packages -> #( 'MCP-Tests' )) }) } asDictionary.
 	data := (result at: #structuredContent) at: #data.
 	classes := data at: #classes.
 	classNames := classes collect: [ :each | each at: #className ].
@@ -2401,7 +2396,7 @@ MCPToolContractsTest >> testSearchPackagesHasAccurateNameAndSchema [
 	self assert: schema required equals: #(  ).
 	self
 		assert: propertyNames asSet
-		equals: #( 'projectNames' 'packageNames' 'name' 'projectName' 'tag' 'limit' 'offset' ) asSet
+		equals: #( 'projectNames' 'packageNames' 'name' 'projectName' 'tag' 'offset' ) asSet
 ]
 
 { #category : 'tests' }
@@ -2438,27 +2433,23 @@ MCPToolContractsTest >> testSearchRepositoriesHasAccurateNameAndSchema [
 		assert: propertyNames asSet
 		equals:
 			#( 'isModified' 'isMissing' 'name' 'location' 'subdirectory' 'packageName' 'className' 'modifiedPackageName'
-			   'limit' 'offset' ) asSet
+			   'offset' ) asSet
 ]
 
 { #category : 'tests' }
 MCPToolContractsTest >> testSearchToolPaginationSchemasAdvertiseBounds [
-	"A method search answers a page of a fixed size; the other searches still take a limit."
+	"No search takes a limit any more; each answers a page of its own size, and a caller sets where it starts."
 
 	MCPToolSearch concreteSubclasses do: [ :toolClass |
 			| offsetProperty propertyNames tool |
 			tool := toolClass new.
 			propertyNames := (tool inputSchema properties collect: [ :each | each name ]) asSet.
 			offsetProperty := self inputPropertyNamed: 'offset' inTool: tool.
+			self deny: (propertyNames includes: 'limit').
 			self assert: (offsetProperty extraProperties at: #minimum) equals: 0.
 			self deny: (offsetProperty extraProperties includesKey: #maximum).
 			self assert: (offsetProperty extraProperties at: #default) equals: 0.
-			(propertyNames includes: 'limit') ifTrue: [
-					| limitProperty |
-					limitProperty := self inputPropertyNamed: 'limit' inTool: tool.
-					self assert: (limitProperty extraProperties at: #minimum) equals: 0.
-					self assert: (limitProperty extraProperties at: #maximum) equals: 100.
-					self assert: (limitProperty extraProperties at: #default) equals: 25 ] ]
+			self assert: tool defaultPageLimit > 0 ]
 ]
 
 { #category : 'tests' }

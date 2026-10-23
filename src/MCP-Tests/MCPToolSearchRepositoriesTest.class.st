@@ -113,7 +113,7 @@ MCPToolSearchRepositoriesTest >> testListsRegisteredRepositoriesWithStructuredDa
 				self assert: (entry at: #location) equals: FileLocator imageDirectory pathString.
 				self assert: (entry at: #isModified).
 				self deny: (entry at: #isMissing).
-				self assert: (entry at: #packageNames) equals: #( 'MCP' 'MCP-Tests' ).
+				self assert: (entry at: #packageCount) equals: 2.
 				self assert: (entry at: #modifiedPackageNames) equals: #( 'MCP' 'MCP-Tests' ) ]
 ]
 
@@ -133,9 +133,9 @@ MCPToolSearchRepositoriesTest >> testListsRepositoryPackageMetadata [
 					data := self dataFrom: result.
 					self deny: (result at: #isError ifAbsent: [ false ]).
 					entry := self entryNamed: 'MCP Rich Repository' in: (data at: #repositories).
-					self assert: entry keys asSet equals: #( name location isModified isMissing packageNames ) asSet.
+					self assert: entry keys asSet equals: #( name location isModified isMissing packageCount ) asSet.
 					self assert: (entry at: #location) equals: repositoryDirectory pathString.
-					self assert: (entry at: #packageNames) equals: #( 'MCP' ) ] ]
+					self assert: (entry at: #packageCount) equals: 1 ] ]
 ]
 
 { #category : 'tests' }

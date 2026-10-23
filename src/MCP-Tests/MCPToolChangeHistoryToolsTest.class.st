@@ -41,10 +41,10 @@ MCPToolChangeHistoryToolsTest >> testChangeHistoryToolsDeclareExpectedInputs [
 	revertProperties := self inputPropertyNamesFor: MCPToolRevertChangeHistoryEntries new.
 	selectionProperties := #( 'directoryPath' 'historyFileName' 'indexes' 'startIndex' 'endIndex' 'latestCount' 'codeChangesOnly'
 	                          'confirm' ).
-	self assert: fileProperties asArray equals: #( 'directoryPath' 'limit' 'offset' ).
+	self assert: fileProperties asArray equals: #( 'directoryPath' 'offset' ).
 	self
 		assert: entryProperties asArray
-		equals: #( 'directoryPath' 'historyFileName' 'limit' 'offset' 'newestFirst' 'codeChangesOnly' ).
+		equals: #( 'directoryPath' 'historyFileName' 'offset' 'newestFirst' 'codeChangesOnly' ).
 	self assert: applyProperties asArray equals: selectionProperties.
 	self assert: revertProperties asArray equals: selectionProperties
 ]
@@ -54,28 +54,26 @@ MCPToolChangeHistoryToolsTest >> testListChangeHistoryEntriesReturnsEntries [
 
 	| data |
 	data := self toolNamed: 'history_entry_list' dataFromArguments: {
-			        (#limit -> 3).
 			        (#newestFirst -> true) } asDictionary.
 	self assert: (data includesKey: #entries).
-	self assert: (data at: #entries) size <= 3
+	self assert: (data at: #entries) size <= MCPToolListChangeHistoryEntries new defaultEntryLimit
 ]
 
 { #category : 'tests' }
 MCPToolChangeHistoryToolsTest >> testListChangeHistoryFilesPaginatesFiles [
 
-	| data directory files nextOffset |
+	| data directory files |
 	directory := FileLocator temp asFileReference / ('mcp-history-files-' , UUID new asString).
 	[
 		directory ensureCreateDirectory.
 		directory / 'a.ombu' writeStreamDo: [ :stream | stream nextPutAll: 'a' ].
 		directory / 'b.ombu' writeStreamDo: [ :stream | stream nextPutAll: 'b' ].
 		data := self toolNamed: 'history_file_list' dataFromArguments: {
-				        (#directoryPath -> directory fullName).
-				        (#limit -> 1) } asDictionary.
+			        (#directoryPath -> directory fullName).
+			        (#offset -> 1) } asDictionary.
 		files := data at: #files.
-		nextOffset := data at: #nextOffset.
 		self assert: files size equals: 1.
-		self assert: nextOffset equals: 1 ] ensure: [ directory ensureDeleteAll ]
+		self deny: (data includesKey: #nextOffset) ] ensure: [ directory ensureDeleteAll ]
 ]
 
 { #category : 'tests' }

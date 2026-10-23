@@ -25,10 +25,7 @@ MCPToolSearchPackages class >> toolName [
 MCPToolSearchPackages >> buildInputSchema [
 
 	| properties |
-	properties := self packageQueryScopeInputProperties , self packageFilterInputProperties
-	              ,
-	              (self paginationInputPropertiesWithLimitDescription:
-		               'Maximum number of matching packages to return. Use 0 to return no entries.').
+	properties := self packageQueryScopeInputProperties , self packageFilterInputProperties , { self offsetInputProperty }.
 	^ self queryInputSchemaWithProperties: properties
 ]
 

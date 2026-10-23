@@ -73,26 +73,6 @@ MCPToolStructuredOutputTest >> testDebugResultDropsWhatItAlreadySays [
 ]
 
 { #category : 'tests' }
-MCPToolStructuredOutputTest >> testDeclaredBlockKeyLeavesTheEntryLine [
-
-	| contentText rule |
-	rule := Dictionary new
-		        at: #title put: 'Class not referenced';
-		        at: #hint put: 'Remove it when nothing refers to it.';
-		        yourself.
-	contentText := MCPToolRunCritiques new contentTextForStructuredContent: (Dictionary new
-		               at: #summary put: 'Summary.';
-		               at: #data put: (Dictionary new
-				                at: #rules put: { rule };
-				                yourself);
-		               yourself).
-	self assert: (contentText includesSubstring: 'title="Class not referenced"').
-	self assert: (contentText lines anySatisfy: [ :each |
-			 each trimBoth = 'hint: Remove it when nothing refers to it.' ]).
-	self deny: (contentText includesSubstring: 'hint=')
-]
-
-{ #category : 'tests' }
 MCPToolStructuredOutputTest >> testEntryFieldQuotingEscapesEmbeddedQuotes [
 
 	| contentText entry |
