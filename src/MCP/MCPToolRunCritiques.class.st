@@ -174,13 +174,15 @@ MCPToolRunCritiques >> buildInputSchema [
 { #category : 'private - entries' }
 MCPToolRunCritiques >> critiqueEntryFor: critique rule: rule fallbackEntity: fallbackEntity [
 	"The rule class and its title say which rule this is; its rationale is documentation of the rule,
-	not of the hit, and is the same on every one of them."
+	not of the hit, and is the same on every one of them. A fixable hit is one whose rule method_rewrite
+	can be given by name."
 
 	| entry |
 	entry := Dictionary new.
 	entry at: #ruleClass put: rule class name asString.
 	entry at: #title put: rule name asString.
 	rule severity ifNotNil: [ :severity | entry at: #severity put: severity asString ].
+	(rule isKindOf: MCPMethodStyleRule) ifTrue: [ entry at: #fixable put: true ].
 	entry at: #hit put: (self hitDataForCritique: critique fallbackEntity: fallbackEntity).
 	^ entry
 ]
@@ -195,7 +197,7 @@ MCPToolRunCritiques >> defaultPageLimit [
 { #category : 'metadata' }
 MCPToolRunCritiques >> description [
 
-	^ 'Run Renraku critique rules over a scoped part of the Pharo image and return paginated hits grouped by rule class.'
+	^ 'Run Renraku critique rules over a scoped part of the Pharo image and return paginated hits grouped by rule class. A hit marked fixable names a rule method_rewrite can apply.'
 ]
 
 { #category : 'private - template' }
@@ -299,7 +301,7 @@ MCPToolRunCritiques >> packagesForQueryRequest: queryRequest [
 	queryRequest scopeQuery packageNames ifEmpty: [ ^ #(  ) ].
 	^ queryRequest scopeQuery packageNames
 		  collect: [ :eachName | queryRequest scopeQuery packageNamed: eachName inScope: 'packageNames' ]
-		  thenSelect: [ :eachPackage | eachPackage notNil ]
+		  thenSelect: [ :eachPackage | eachPackage isNotNil ]
 ]
 
 { #category : 'private - template' }

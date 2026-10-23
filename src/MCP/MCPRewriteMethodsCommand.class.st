@@ -27,16 +27,6 @@ MCPRewriteMethodsCommand >> changeInfosForChanges: changes [
 	^ changes collect: [ :each | MCPMethodRewriteChangeInfo fromChange: each includeSources: self request includeSources ] as: Array
 ]
 
-{ #category : 'private - hashing' }
-MCPRewriteMethodsCommand >> changeSetHashForChanges: changes [
-
-	| hash |
-	hash := changes
-		        inject: (self stableHashForString: self class name asString)
-		        into: [ :currentHash :change | (currentHash bitXor: (self hashForChange: change)) hashMultiply ].
-	^ hash abs
-]
-
 { #category : 'private - rewriting' }
 MCPRewriteMethodsCommand >> classNameForChange: aChange [
 
@@ -50,44 +40,16 @@ MCPRewriteMethodsCommand >> classNameForChange: aChange [
 { #category : 'executing' }
 MCPRewriteMethodsCommand >> execute [
 
-	| appliedCount changeInfos changes changeSetHash report |
+	| appliedCount changeInfos changes report |
 	self request apply ifTrue: [ self validateExplicitApplyScope ].
 	changes := self sortedChanges: self rewriteChanges.
-	changeSetHash := self changeSetHashForChanges: changes.
 	changeInfos := self changeInfosForChanges: changes.
 	appliedCount := 0.
 	self request apply ifTrue: [
-			self validateExpectedChangeSetHash: changeSetHash.
 			self applyChanges: changes.
 			appliedCount := changes size ].
-	report := MCPMethodRewriteReport
-		          request: self request
-		          changeInfos: changeInfos
-		          appliedCount: appliedCount
-		          changeSetHash: changeSetHash.
+	report := MCPMethodRewriteReport request: self request changeInfos: changeInfos appliedCount: appliedCount.
 	^ self tool successResultText: (self successSummaryForReport: report) data: report asDictionary
-]
-
-{ #category : 'private - hashing' }
-MCPRewriteMethodsCommand >> hashForChange: aChange [
-
-	| behavior className oldSource valueHashes |
-	behavior := aChange changeClass.
-	className := behavior isMeta
-		             ifTrue: [ behavior instanceSide name asString ]
-		             ifFalse: [ behavior name asString ].
-	oldSource := (behavior compiledMethodAt: aChange selector ifAbsent: [ nil ])
-		             ifNil: [ '' ]
-		             ifNotNil: [ :method | method sourceCode ifNil: [ '' ] ].
-	valueHashes := {
-		               (self stableHashForString: className).
-		               (self stableHashForValue: behavior isMeta).
-		               (self stableHashForString: aChange selector asString).
-		               (self stableHashForSource: oldSource).
-		               (self stableHashForSource: (aChange source ifNil: [ '' ])) }.
-	^ valueHashes
-		  inject: (self stableHashForString: self class name asString)
-		  into: [ :hash :valueHash | (hash bitXor: valueHash) hashMultiply ]
 ]
 
 { #category : 'private - rewriting' }
@@ -141,34 +103,6 @@ MCPRewriteMethodsCommand >> sortsChange: leftChange before: rightChange [
 	^ leftChange selector asString < rightChange selector asString
 ]
 
-{ #category : 'private - hashing' }
-MCPRewriteMethodsCommand >> stableHashForSource: aString [
-
-	| hash |
-	hash := 5381.
-	aString do: [ :character | character isSeparator ifFalse: [ hash := (hash bitXor: character asciiValue) hashMultiply ] ].
-	^ hash abs
-]
-
-{ #category : 'private - hashing' }
-MCPRewriteMethodsCommand >> stableHashForString: aString [
-
-	| hash |
-	hash := 5381.
-	aString do: [ :character | hash := (hash bitXor: character asciiValue) hashMultiply ].
-	^ hash abs
-]
-
-{ #category : 'private - hashing' }
-MCPRewriteMethodsCommand >> stableHashForValue: anObject [
-
-	anObject ifNil: [ ^ 0 ].
-	anObject == true ifTrue: [ ^ 2 ].
-	anObject == false ifTrue: [ ^ 1 ].
-	anObject isInteger ifTrue: [ ^ anObject abs ].
-	^ self stableHashForString: anObject asString
-]
-
 { #category : 'private - results' }
 MCPRewriteMethodsCommand >> successSummaryForReport: report [
 
@@ -187,31 +121,15 @@ MCPRewriteMethodsCommand >> successSummaryForReport: report [
 		  stream nextPut: $. ]
 ]
 
-{ #category : 'private - validating' }
-MCPRewriteMethodsCommand >> validateExpectedChangeSetHash: changeSetHashInteger [
-
-	self request expectedChangeSetHash ifNil: [
-			MCPCommandError
-				signalErrorCode: #RewriteExpectedChangeSetHashRequired
-				message: 'Applying method_rewrite requires expectedChangeSetHash from a preview.'
-				details: self request requestedContext ].
-	self request expectedChangeSetHash = changeSetHashInteger ifFalse: [
-			MCPCommandError
-				signalErrorCode: #RewriteChangeSetHashMismatch
-				message: 'Rewrite change set hash does not match expectedChangeSetHash.'
-				details: (self request requestedContext
-						 at: #actualChangeSetHash put: changeSetHashInteger;
-						 yourself) ]
-]
-
-{ #category : 'private - validating' }
+{ #category : 'private - validation' }
 MCPRewriteMethodsCommand >> validateExplicitApplyScope [
+	"Rewriting every method in the image is not something a caller should be able to ask for by
+	leaving an argument out. Naming the packages says it on purpose."
 
-	(self request scopeQuery usesImplicitImageScope and: [ self request force not ]) ifTrue: [
+	self request scopeQuery usesImplicitImageScope ifTrue: [
 			MCPCommandError
 				signalErrorCode: #RewriteApplyRequiresExplicitScope
-				message:
-				'Applying method_rewrite to the whole image requires force=true. Prefer packageNames, classNames, hierarchyClassNames, subclassClassNames, or parentClassNames.'
+				message: 'Applying method_rewrite needs a scope. Name packages, classes, subclassesOf or superclassesOf.'
 				details: self request requestedContext ]
 ]
 

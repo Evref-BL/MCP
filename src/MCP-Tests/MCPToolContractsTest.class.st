@@ -31,7 +31,7 @@ MCPToolContractsTest >> addUnimplementedResponsibilitiesFor: aClass behavior: aB
 			| method |
 			selector = #subclassResponsibility ifFalse: [
 					method := aBehavior lookupSelector: selector.
-					(method notNil and: [ self methodSendsSubclassResponsibility: method ]) ifTrue: [
+					(method isNotNil and: [ self methodSendsSubclassResponsibility: method ]) ifTrue: [
 							issues add: (String streamContents: [ :stream |
 										 stream
 											 nextPutAll: aClass name asString;
@@ -115,9 +115,11 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 			  (#commandClass -> MCPGetMethodCommand) } asDictionary.
 		  {
 			  (#toolClass -> MCPToolRewriteMethods).
-			  (#arguments -> { (#rules -> { {
-				    (#lhs -> 'self').
-				    (#rhs -> 'self') } asDictionary }) } asDictionary).
+			  (#arguments -> {
+				   (#rules -> { {
+					    (#match -> 'self').
+					    (#replacement -> 'self') } asDictionary }).
+				   (#scope -> { (#classes -> { 'MCPToolContractsTest' }) } asDictionary) } asDictionary).
 			  (#requestClass -> MCPMethodRewriteRequest).
 			  (#commandClass -> MCPRewriteMethodsCommand) } asDictionary.
 		  {
@@ -1178,22 +1180,6 @@ MCPToolContractsTest >> testImageContentSerializesNativeMCPImageBlock [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testIncludeSourceFlagsWarnAboutCost [
-
-	| descriptions |
-	descriptions := OrderedCollection new.
-	self builtInToolClasses do: [ :toolClass |
-			| tool |
-			tool := toolClass new.
-			tool inputSchema properties do: [ :property |
-					property name = 'includeSource' ifTrue: [
-							descriptions add: property description.
-							self assert: (property extraProperties at: #default) equals: false ] ] ].
-	self assert: descriptions notEmpty.
-	descriptions do: [ :each | self assert: each equals: 'Include source code. Use only for small result sets.' ]
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testInitializeAdvertisesPharoServerIcon [
 
 	| expectedIcon icon response serverInfo |
@@ -1469,7 +1455,7 @@ MCPToolContractsTest >> testMethodToolTraitOwnsSharedMethodHelpers [
 			sharedSelectors do: [ :selector |
 					| implementingClass |
 					implementingClass := toolClass whichClassIncludesSelector: selector.
-					self assert: implementingClass notNil.
+					self assert: implementingClass isNotNil.
 					self assert: (implementingClass >> selector) origin equals: TMCPMethodTool ] ]
 ]
 
@@ -1536,8 +1522,6 @@ MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable 
 	self assert: ((self inputPropertyNamed: 'classSide' inTool: updateMethodTool) extraProperties at: #default) equals: false.
 	self assert: ((self inputPropertyNamed: 'force' inTool: updateMethodTool) extraProperties at: #default) equals: false.
 	self assert: ((self inputPropertyNamed: 'apply' inTool: rewriteMethodsTool) extraProperties at: #default) equals: false.
-	self assert: ((self inputPropertyNamed: 'force' inTool: rewriteMethodsTool) extraProperties at: #default) equals: false.
-	self assert: ((self inputPropertyNamed: 'includeSource' inTool: rewriteMethodsTool) extraProperties at: #default) equals: false.
 	self assert: ((self inputPropertyNamed: 'side' inTool: rewriteMethodsTool) extraProperties at: #default) equals: 'both'.
 	self assert: ((self inputPropertyNamed: 'force' inTool: removeClassesTool) extraProperties at: #default) equals: false.
 	self assert: ((self inputPropertyNamed: 'classSide' inTool: removeMethodsTool) extraProperties at: #default) equals: false

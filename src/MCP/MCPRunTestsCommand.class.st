@@ -103,7 +103,7 @@ MCPRunTestsCommand >> resultForValidatedRequest: validatedRequest deadline: dead
 		                     ifNil: [ #(  ) ]
 		                     ifNotNil: [
 		                     self unrunRequestsForValidatedRequest: validatedRequest testCases: testCases startingAt: timedOutIndex ].
-	^ MCPTestRunResult resultInfo: resultInfo timedOut: timedOutIndex notNil unrunTestRequests: unrunTestRequests
+	^ MCPTestRunResult resultInfo: resultInfo timedOut: timedOutIndex isNotNil unrunTestRequests: unrunTestRequests
 ]
 
 { #category : 'private - coverage' }

@@ -10,8 +10,7 @@ Class {
 		'apply',
 		'changeInfos',
 		'appliedCount',
-		'scope',
-		'changeSetHash'
+		'scope'
 	],
 	#category : 'MCP-Results',
 	#package : 'MCP',
@@ -19,13 +18,12 @@ Class {
 }
 
 { #category : 'instance creation' }
-MCPMethodRewriteReport class >> request: aRequest changeInfos: changeInfoCollection appliedCount: appliedCountInteger changeSetHash: changeSetHashInteger [
+MCPMethodRewriteReport class >> request: aRequest changeInfos: changeInfoCollection appliedCount: appliedCountInteger [
 
 	^ self new
 		  initializeFromRequest: aRequest
 		  changeInfos: changeInfoCollection
 		  appliedCount: appliedCountInteger
-		  changeSetHash: changeSetHashInteger
 ]
 
 { #category : 'accessing' }
@@ -48,7 +46,6 @@ MCPMethodRewriteReport >> asDictionary [
 	data at: #apply put: self apply.
 	data at: #changeCount put: self changeCount.
 	data at: #appliedCount put: self appliedCount.
-	data at: #changeSetHash put: self changeSetHash.
 	data at: #scope put: self scope.
 	data at: #changes put: self changeDictionaries.
 	^ data
@@ -72,12 +69,6 @@ MCPMethodRewriteReport >> changeInfos [
 	^ changeInfos ifNil: [ #(  ) ]
 ]
 
-{ #category : 'accessing' }
-MCPMethodRewriteReport >> changeSetHash [
-
-	^ changeSetHash ifNil: [ 0 ]
-]
-
 { #category : 'testing' }
 MCPMethodRewriteReport >> didApplyChanges [
 
@@ -85,13 +76,12 @@ MCPMethodRewriteReport >> didApplyChanges [
 ]
 
 { #category : 'initialization' }
-MCPMethodRewriteReport >> initializeFromRequest: aRequest changeInfos: changeInfoCollection appliedCount: appliedCountInteger changeSetHash: changeSetHashInteger [
+MCPMethodRewriteReport >> initializeFromRequest: aRequest changeInfos: changeInfoCollection appliedCount: appliedCountInteger [
 
 	apply := aRequest apply.
 	changeInfos := changeInfoCollection asArray.
 	appliedCount := appliedCountInteger.
 	scope := aRequest scopeQuery asDictionary.
-	changeSetHash := changeSetHashInteger.
 	^ self
 ]
 

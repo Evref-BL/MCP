@@ -160,8 +160,8 @@ MCPToolSearchRepositories >> repositoryScopeSummaryForAssociations: scopeAssocia
 MCPToolSearchRepositories >> repositoryScopeSummaryForRequest: queryRequest [
 
 	^ self repositoryScopeSummaryForAssociations: {
-			  ('modified-state' -> queryRequest isModified notNil).
-			  ('missing-state' -> queryRequest isMissing notNil).
+			  ('modified-state' -> queryRequest isModified isNotNil).
+			  ('missing-state' -> queryRequest isMissing isNotNil).
 			  ('field-filters' -> queryRequest hasFieldFilters) }
 ]
 

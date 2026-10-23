@@ -223,15 +223,6 @@ MCPToolSearch >> filterSchemaPropertyWithDescription: filterDescription [
 	^ self schemaPropertyNamed: 'filter' type: 'string' description: filterDescription
 ]
 
-{ #category : 'private - schema' }
-MCPToolSearch >> includeSourceSchemaPropertyWithDescription: includeSourceDescription [
-
-	^ self
-		  booleanSchemaPropertyNamed: 'includeSource'
-		  description: 'Include source code. Use only for small result sets.'
-		  default: false
-]
-
 { #category : 'private - results' }
 MCPToolSearch >> isRegexSyntaxError: anError [
 

@@ -24,7 +24,7 @@ MCPLocalObservabilityBackendTest >> testEnabledByDefaultRecords [
 	state := MCPLocalObservabilityBackend new.
 	record := state recordToolCallStart: 'method_search'.
 	self assert: state enabled.
-	self assert: record notNil.
+	self assert: record isNotNil.
 	self assert: state totalCallCount equals: 0.
 	self assert: state logs notEmpty
 ]
@@ -80,7 +80,7 @@ MCPLocalObservabilityBackendTest >> testLargeOutputExceedingBudgetBecomesTraceAn
 	self assert: record outputBudgetExplanation isNotEmpty.
 	self assert: record isTraceWorthy.
 	self assert: state traceRecords asArray equals: { record }.
-	self assert: record outputSnapshot notNil.
+	self assert: record outputSnapshot isNotNil.
 	self assert: stats outputBudgetExceededCount equals: 1.
 	self assert: stats maxOutputBytes equals: record outputByteCount.
 	self assert: (state statusText includesSubstring: 'Output budget:').

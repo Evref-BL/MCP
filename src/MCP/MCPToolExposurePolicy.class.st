@@ -65,7 +65,7 @@ MCPToolExposurePolicy >> exposureForToolRegistration: aToolRegistration [
 { #category : 'testing' }
 MCPToolExposurePolicy >> hasExplicitStaticToolNames [
 
-	^ staticToolNames notNil
+	^ staticToolNames isNotNil
 ]
 
 { #category : 'initialization' }

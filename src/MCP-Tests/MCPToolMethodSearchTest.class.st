@@ -378,7 +378,6 @@ MCPToolMethodSearchTest >> testImageScopeReturnsInstanceAndClassImplementors [
 		                fieldFilters: { ('selector' -> selector asString) } asDictionary;
 		                filterMode: 'exact';
 		                caseSensitive: true;
-		                includeSource: false;
 		                yourself.
 	tool := MCPToolSearchMethods new.
 	entries := tool queryEntriesForQueryRequest: queryRequest.

@@ -116,44 +116,66 @@ Critiques include:
 The method may compile successfully and still return critiques. Treat critiques
 as follow-up review evidence, not as transport failures.
 
-## Rewrite Preview And Confirmation
+## Rewriting Methods
 
-`method_rewrite` uses Smalltalk AST rewrite rules. Patterns use RB AST pattern
-syntax, not regex.
+`method_rewrite` uses Smalltalk AST rewrite patterns, not regex. A rule has a
+`match` and a `replacement`, and a scope is required, so rewriting everything is
+something a caller asks for by naming the packages rather than by leaving an
+argument out.
 
-The default mode is preview:
+A metavariable starts with a backquote and stands for whatever is in its place.
+`` `@receiver `` matches one expression, however big: the same rule rewrites
+`anObject notNil` and `(anObject foo) notNil`. **The names must be the same on
+both sides** — a name that appears only in `replacement` is bound to nothing.
 
-```json
-{
-  "rules": [
-    {
-      "lhs": "`@receiver ifTrue: [ `@body ]",
-      "rhs": "`@receiver ifTrue: [ `@body ]"
-    }
-  ],
-  "apply": false
-}
-```
-
-Preview mode returns calculated changes and a `changeSetHash`. Applying requires
-the hash from a preview of the same request:
+The default mode is preview, which carries the old and new source of every
+change:
 
 ```json
 {
   "rules": [
     {
-      "lhs": "`@old",
-      "rhs": "`@new"
+      "match": "`@receiver notNil",
+      "replacement": "`@receiver isNotNil"
     }
   ],
-  "packageNames": ["MyPackage"],
-  "apply": true,
-  "expectedChangeSetHash": 123456
+  "scope": { "packages": ["MyPackage"] }
 }
 ```
 
-Applying to the whole image also requires `force=true`. Prefer an explicit
-package, class, hierarchy, or method scope.
+A metavariable stands for a block just as readily, which is how a rule drops
+one branch of a conditional:
+
+```json
+{
+  "rules": [
+    {
+      "match": "`@receiver ifTrue: [ `@body ] ifFalse: [ nil ]",
+      "replacement": "`@receiver ifTrue: [ `@body ]"
+    }
+  ],
+  "scope": { "packages": ["MyPackage"] }
+}
+```
+
+Add `apply` to make the changes. One call is enough; preview first only when
+you want to read them before they land. `history_entry_revert` undoes a rewrite
+that turned out wrong.
+
+Any rewrite rule stands for its own patterns, so its name can be given instead
+of writing them out. That includes Pharo's own, not only MCP's:
+
+```json
+{
+  "ruleClasses": ["MCPCollectionThenDoRule"],
+  "scope": { "packages": ["MyPackage"] },
+  "apply": true
+}
+```
+
+Rules that report a critique are not applied by the tools that compile. A
+compile reports what it would change; changing it is this tool's job, and the
+caller asks.
 
 ## Tests And Coverage
 

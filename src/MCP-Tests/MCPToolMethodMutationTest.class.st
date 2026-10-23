@@ -433,7 +433,11 @@ MCPToolMethodMutationTest >> testCollectionStyleCritiquesProvideAutomaticChanges
 		           {
 			           #sortedCollectionConversionProbe:.
 			           'sortedCollectionConversionProbe: collection ^ collection asSortedCollection asArray'.
-			           MCPSortedCollectionConversionRule } }.
+			           MCPSortedCollectionConversionRule }.
+		           {
+			           #isNotNilProbe:.
+			           'isNotNilProbe: anObject ^ anObject notNil'.
+			           MCPIsNotNilRule } }.
 	samples do: [ :sample |
 			| change critique method ruleClass selector source |
 			selector := sample first.

@@ -10,13 +10,12 @@ Class {
 }
 
 { #category : 'private' }
-MCPToolRewriteMethodsTest >> applyArgumentsForRule: aRule expectedChangeSetHash: expectedHash [
+MCPToolRewriteMethodsTest >> applyArgumentsForRule: aRule [
 
 	^ {
 		  (#rules -> { aRule }).
 		  (#scope -> { (#classes -> { self targetClassName }) } asDictionary).
-		  (#apply -> true).
-		  (#expectedChangeSetHash -> expectedHash) } asDictionary
+		  (#apply -> true) } asDictionary
 ]
 
 { #category : 'private' }
@@ -30,8 +29,7 @@ MCPToolRewriteMethodsTest >> previewArgumentsForRule: aRule [
 
 	^ {
 		  (#rules -> { aRule }).
-		  (#scope -> { (#classes -> { self targetClassName }) } asDictionary).
-		  (#includeSource -> true) } asDictionary
+		  (#scope -> { (#classes -> { self targetClassName }) } asDictionary) } asDictionary
 ]
 
 { #category : 'private' }
@@ -44,11 +42,11 @@ MCPToolRewriteMethodsTest >> restoreFixtureMethods [
 ]
 
 { #category : 'private' }
-MCPToolRewriteMethodsTest >> rewriteRuleFrom: lhsString to: rhsString [
+MCPToolRewriteMethodsTest >> rewriteRuleFrom: aMatchPattern to: aReplacementPattern [
 
 	^ {
-		  (#lhs -> lhsString).
-		  (#rhs -> rhsString) } asDictionary
+		  (#match -> aMatchPattern).
+		  (#replacement -> aReplacementPattern) } asDictionary
 ]
 
 { #category : 'private' }
@@ -98,47 +96,89 @@ MCPToolRewriteMethodsTest >> tearDown [
 ]
 
 { #category : 'tests' }
-MCPToolRewriteMethodsTest >> testApplyMutatesMethodWhenExpectedChangeSetHashMatches [
+MCPToolRewriteMethodsTest >> testNamingARuleClassStandsForItsPatterns [
 
-	| data hash previewResult result rule |
+	| specs |
+	specs := MCPMethodRewriteRuleSpec specsForRuleClassNamed: 'MCPCollectionThenDoRule' startingAt: 1.
+	self assert: specs size equals: 3.
+	self assert: (specs collect: [ :each | each name ]) asSet equals: (Set with: 'MCPCollectionThenDoRule').
+	self assert: ((specs collect: [ :each | each match ]) anySatisfy: [ :each | each includesSubstring: 'collect:' ]).
+	self assert: ((specs collect: [ :each | each replacement ]) allSatisfy: [ :each | each includesSubstring: 'thenDo:' ]).
+	"One rule always expands the same way, even though Renraku does not keep the declared order."
+	self
+		assert: (specs collect: [ :each | each match ])
+		equals: ((MCPMethodRewriteRuleSpec specsForRuleClassNamed: 'MCPCollectionThenDoRule' startingAt: 1) collect: [ :each |
+				 each match ])
+]
+
+{ #category : 'tests' }
+MCPToolRewriteMethodsTest >> testNamingARuleThatIsNotMCPsOwn [
+	"The rules worth applying are not only the ones MCP wrote."
+
+	| specs |
+	specs := MCPMethodRewriteRuleSpec specsForRuleClassNamed: 'ReEqualNilRule' startingAt: 1.
+	self deny: specs isEmpty.
+	self assert: (specs collect: [ :each | each name ]) asSet equals: (Set with: 'ReEqualNilRule')
+]
+
+{ #category : 'tests' }
+MCPToolRewriteMethodsTest >> testRuleThatComputesItsReplacementIsRejected [
+	"A rule can build its replacement with a block, which has no pattern form to hand over."
+
+	| error result |
+	result := self callToolWith: {
+			          (#ruleClasses -> #( 'ReIconHardcodedMessageRule' )).
+			          (#scope -> { (#classes -> { self targetClassName }) } asDictionary) } asDictionary.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: ((error at: #message) includesSubstring: 'computes its replacement')
+]
+
+{ #category : 'tests' }
+MCPToolRewriteMethodsTest >> testRulesOrRuleClassesIsRequired [
+
+	| error result |
+	result := self callToolWith: { (#scope -> { (#classes -> { self targetClassName }) } asDictionary) } asDictionary.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: ((error at: #message) includesSubstring: 'rules, ruleClasses, or both')
+]
+
+{ #category : 'tests' }
+MCPToolRewriteMethodsTest >> testRuleClassWithoutPatternsIsRejected [
+
+	| error result |
+	result := self callToolWith: {
+			          (#ruleClasses -> #( 'Object' )).
+			          (#scope -> { (#classes -> { self targetClassName }) } asDictionary) } asDictionary.
+	error := self errorFrom: result.
+	self assert: (result at: #isError).
+	self assert: ((error at: #message) includesSubstring: 'ReNodeRewriteRule')
+]
+
+{ #category : 'tests' }
+MCPToolRewriteMethodsTest >> testApplyMutatesMethodInOneCall [
+
+	| data result rule |
 	rule := self rewriteRuleFrom: 'self oldValue' to: 'self newValue'.
-	previewResult := self callToolWith: (self previewArgumentsForRule: rule).
-	hash := (self dataFrom: previewResult) at: #changeSetHash.
-	result := self callToolWith: (self applyArgumentsForRule: rule expectedChangeSetHash: hash).
+	result := self callToolWith: (self applyArgumentsForRule: rule).
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #apply).
 	self assert: (data at: #changeCount) equals: 1.
 	self assert: (data at: #appliedCount) equals: 1.
-	self assert: (data at: #changeSetHash) equals: hash.
 	self assert: ((self sourceForSelector: #previewTarget) includesSubstring: 'newValue')
 ]
 
 { #category : 'tests' }
-MCPToolRewriteMethodsTest >> testApplyRejectsMismatchedExpectedChangeSetHash [
-
-	| badHash error previewResult result rule |
-	rule := self rewriteRuleFrom: 'self oldValue' to: 'self newValue'.
-	previewResult := self callToolWith: (self previewArgumentsForRule: rule).
-	badHash := ((self dataFrom: previewResult) at: #changeSetHash) + 1.
-	result := self callToolWith: (self applyArgumentsForRule: rule expectedChangeSetHash: badHash).
-	error := self errorFrom: result.
-	self assert: (result at: #isError).
-	self assert: (error at: #errorCode) equals: 'RewriteChangeSetHashMismatch'.
-	self assert: (error at: #expectedChangeSetHash) equals: badHash.
-	self deny: (error at: #actualChangeSetHash) equals: badHash.
-	self assert: ((self sourceForSelector: #previewTarget) includesSubstring: 'oldValue')
-]
-
-{ #category : 'tests' }
-MCPToolRewriteMethodsTest >> testApplyRequiresExplicitScopeUnlessForced [
+MCPToolRewriteMethodsTest >> testApplyRefusesAScopeThatNamesNothing [
 
 	| error result rule |
 	rule := self rewriteRuleFrom: 'self oldValue' to: 'self newValue'.
 	result := self callToolWith: {
 			          (#rules -> { rule }).
-			          (#apply -> true).
-			          (#expectedChangeSetHash -> 1) } asDictionary.
+			          (#scope -> Dictionary new).
+			          (#apply -> true) } asDictionary.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #errorCode) equals: 'RewriteApplyRequiresExplicitScope'.
@@ -153,8 +193,7 @@ MCPToolRewriteMethodsTest >> testClassSideScopeRewritesOnlyClassSideMethod [
 	result := self callToolWith: {
 			          (#rules -> { rule }).
 			          (#scope -> { (#classes -> { self targetClassName }) } asDictionary).
-			          (#side -> 'class').
-			          (#includeSource -> true) } asDictionary.
+			          (#side -> 'class') } asDictionary.
 	data := self dataFrom: result.
 	change := (data at: #changes) first.
 	self deny: (result at: #isError ifAbsent: [ false ]).
@@ -175,18 +214,18 @@ MCPToolRewriteMethodsTest >> testInvalidLhsPatternReportsRuleDiagnostics [
 			          (#rules -> {
 				           validRule.
 				           {
-					           (#name -> 'broken-lhs').
-					           (#lhs -> 'self +').
-					           (#rhs -> 'self newValue').
+					           (#name -> 'broken-match').
+					           (#match -> 'self +').
+					           (#replacement -> 'self newValue').
 					           (#isForMethod -> false) } asDictionary }).
 			          (#scope -> { (#classes -> { self targetClassName }) } asDictionary) } asDictionary.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #errorCode) equals: 'RewriteRuleInvalidPattern'.
 	self assert: (error at: #ruleIndex) equals: 2.
-	self assert: (error at: #ruleName) equals: 'broken-lhs'.
-	self assert: (error at: #lhs) equals: 'self +'.
-	self assert: (error at: #rhs) equals: 'self newValue'.
+	self assert: (error at: #ruleName) equals: 'broken-match'.
+	self assert: (error at: #match) equals: 'self +'.
+	self assert: (error at: #replacement) equals: 'self newValue'.
 	self deny: (error at: #isForMethod).
 	self assert: (error includesKey: #backendErrorClass).
 	self assert: (error includesKey: #backendMessage)
@@ -198,18 +237,18 @@ MCPToolRewriteMethodsTest >> testInvalidRhsPatternReportsRuleDiagnostics [
 	| error result |
 	result := self callToolWith: {
 			          (#rules -> { {
-				           (#name -> 'broken-rhs').
-				           (#lhs -> 'self oldValue').
-				           (#rhs -> 'self +').
+				           (#name -> 'broken-replacement').
+				           (#match -> 'self oldValue').
+				           (#replacement -> 'self +').
 				           (#isForMethod -> false) } asDictionary }).
 			          (#scope -> { (#classes -> { self targetClassName }) } asDictionary) } asDictionary.
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: (error at: #errorCode) equals: 'RewriteRuleInvalidPattern'.
 	self assert: (error at: #ruleIndex) equals: 1.
-	self assert: (error at: #ruleName) equals: 'broken-rhs'.
-	self assert: (error at: #lhs) equals: 'self oldValue'.
-	self assert: (error at: #rhs) equals: 'self +'.
+	self assert: (error at: #ruleName) equals: 'broken-replacement'.
+	self assert: (error at: #match) equals: 'self oldValue'.
+	self assert: (error at: #replacement) equals: 'self +'.
 	self deny: (error at: #isForMethod).
 	self assert: (error includesKey: #backendErrorClass).
 	self assert: (error includesKey: #backendMessage)
@@ -237,18 +276,15 @@ MCPToolRewriteMethodsTest >> testMissingClassScopeRejectsRewriteBeforePartialPre
 ]
 
 { #category : 'tests' }
-MCPToolRewriteMethodsTest >> testPreviewCanOmitSources [
+MCPToolRewriteMethodsTest >> testApplyOmitsTheSourcesAPreviewCarries [
 
-	| change data result rule |
+	| applied change previewed rule |
 	rule := self rewriteRuleFrom: 'self oldValue' to: 'self newValue'.
-	result := self callToolWith: {
-			          (#rules -> { rule }).
-			          (#scope -> { (#classes -> { self targetClassName }) } asDictionary).
-			          (#includeSource -> false) } asDictionary.
-	data := self dataFrom: result.
-	change := (data at: #changes) first.
-	self deny: (result at: #isError ifAbsent: [ false ]).
-	self assert: (data at: #changeCount) equals: 1.
+	previewed := (self dataFrom: (self callToolWith: (self previewArgumentsForRule: rule))) at: #changes.
+	self assert: ((previewed first) includesKey: #oldSource).
+	self assert: ((previewed first) includesKey: #newSource).
+	applied := (self dataFrom: (self callToolWith: (self applyArgumentsForRule: rule))) at: #changes.
+	change := applied first.
 	self deny: (change includesKey: #oldSource).
 	self deny: (change includesKey: #newSource)
 ]
@@ -315,7 +351,6 @@ MCPToolRewriteMethodsTest >> testPreviewReturnsChangesWithoutMutatingMethod [
 	self deny: (data at: #apply).
 	self assert: (data at: #changeCount) equals: 1.
 	self assert: (data at: #appliedCount) equals: 0.
-	self assert: (data at: #changeSetHash) isInteger.
 	self assert: (change at: #className) equals: self targetClassName.
 	self assert: (change at: #classSide) equals: false.
 	self assert: (change at: #selector) equals: 'previewTarget'.
@@ -332,42 +367,42 @@ MCPToolRewriteMethodsTest >> testRewriteRuleNormalizesLineFeedsInPatterns [
 	tool := MCPToolRewriteMethods new.
 	parsedRequest := self parsedRequestForTool: tool arguments: {
 			                 (#rules -> { {
-				                  (#lhs -> source).
-				                  (#rhs -> source) } asDictionary }).
+				                  (#match -> source).
+				                  (#replacement -> source) } asDictionary }).
 			                 (#scope -> { (#classes -> { self targetClassName }) } asDictionary) } asDictionary.
 	rule := parsedRequest rules first.
-	self deny: (rule lhs includes: Character lf).
-	self deny: (rule rhs includes: Character lf).
-	self assert: (rule lhs includes: Character cr).
-	self assert: (rule rhs includes: Character cr)
+	self deny: (rule match includes: Character lf).
+	self deny: (rule replacement includes: Character lf).
+	self assert: (rule match includes: Character cr).
+	self assert: (rule replacement includes: Character cr)
 ]
 
 { #category : 'tests' }
 MCPToolRewriteMethodsTest >> testSchemaAdvertisesRewriteContract [
 
-	| lhsProperty propertyNames rhsProperty ruleProperties rulesProperty scopeProperty scopePropertyNames tool |
+	| matchProperty propertyNames replacementProperty ruleProperties rulesProperty scopeProperty scopePropertyNames tool |
 	tool := MCPToolRewriteMethods new.
 	propertyNames := tool inputSchema properties collect: [ :each | each name ].
 	rulesProperty := tool inputSchema properties detect: [ :each | each name = 'rules' ].
 	ruleProperties := ((rulesProperty extraProperties at: #items) extraProperties at: #properties) collect: [ :each | each name ].
-	lhsProperty := ((rulesProperty extraProperties at: #items) extraProperties at: #properties) detect: [ :each | each name = 'lhs' ].
-	rhsProperty := ((rulesProperty extraProperties at: #items) extraProperties at: #properties) detect: [ :each | each name = 'rhs' ].
+	matchProperty := ((rulesProperty extraProperties at: #items) extraProperties at: #properties) detect: [ :each | each name = 'match' ].
+	replacementProperty := ((rulesProperty extraProperties at: #items) extraProperties at: #properties) detect: [ :each | each name = 'replacement' ].
 	scopeProperty := tool inputSchema properties detect: [ :each | each name = 'scope' ].
 	scopePropertyNames := (scopeProperty extraProperties at: #properties) collect: [ :each | each name ].
 
 	self assert: tool name equals: 'method_rewrite'.
-	self assert: tool inputSchema required asSet equals: #( 'rules' ) asSet.
+	self assert: tool inputSchema required asSet equals: #( 'scope' ) asSet.
 	self assert: (tool description includesSubstring: 'Smalltalk AST pattern syntax').
 	self assert: (tool description includesSubstring: 'not regex').
 	self assert: (rulesProperty extraProperties at: #minItems) equals: 1.
-	self assert: (lhsProperty extraProperties at: #minLength) equals: 1.
-	self assert: (rhsProperty extraProperties at: #minLength) equals: 1.
+	self assert: (matchProperty extraProperties at: #minLength) equals: 1.
+	self assert: (replacementProperty extraProperties at: #minLength) equals: 1.
 	self
 		assert: propertyNames asSet
-		equals: #( 'rules' 'apply' 'expectedChangeSetHash' 'force' 'includeSource' 'scope' 'side' ) asSet.
+		equals: #( 'rules' 'ruleClasses' 'apply' 'scope' 'side' ) asSet.
 	self assert: scopePropertyNames asSet equals: #( 'packages' 'classes' 'subclassesOf' 'superclassesOf' ) asSet.
-	self assert: (ruleProperties includes: 'lhs').
-	self assert: (ruleProperties includes: 'rhs').
+	self assert: (ruleProperties includes: 'match').
+	self assert: (ruleProperties includes: 'replacement').
 	self assert: (ruleProperties includes: 'isForMethod')
 ]
 

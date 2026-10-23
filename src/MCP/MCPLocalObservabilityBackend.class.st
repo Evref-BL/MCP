@@ -171,7 +171,7 @@ MCPLocalObservabilityBackend >> exportDirectory: aPath [
 { #category : 'testing' }
 MCPLocalObservabilityBackend >> exportEnabled [
 
-	^ self exportDirectory notNil
+	^ self exportDirectory isNotNil
 ]
 
 { #category : 'accessing' }

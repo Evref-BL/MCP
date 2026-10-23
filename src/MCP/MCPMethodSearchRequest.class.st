@@ -8,7 +8,6 @@ Class {
 		'filterPattern',
 		'filterMode',
 		'caseSensitive',
-		'includeSource',
 		'limit',
 		'offset',
 		'scopeQuery',
@@ -38,7 +37,6 @@ MCPMethodSearchRequest class >> fromRequest: request tool: aTool [
 		  filterPattern: (aTool filterPatternFromRequest: request);
 		  filterMode: (aTool filterModeFromRequest: request);
 		  caseSensitive: true;
-		  includeSource: (request booleanArgumentNamed: 'includeSource' default: false);
 		  limit: (request nonNegativeIntegerArgumentNamed: 'limit' default: aTool defaultPageLimit);
 		  offset: (request nonNegativeIntegerArgumentNamed: 'offset' default: 0);
 		  yourself
@@ -101,19 +99,7 @@ MCPMethodSearchRequest >> hasFieldFilters [
 { #category : 'testing' }
 MCPMethodSearchRequest >> hasFilterPattern [
 
-	^ filterPattern notNil
-]
-
-{ #category : 'accessing' }
-MCPMethodSearchRequest >> includeSource [
-
-	^ includeSource
-]
-
-{ #category : 'accessing' }
-MCPMethodSearchRequest >> includeSource: aBoolean [
-
-	includeSource := aBoolean
+	^ filterPattern isNotNil
 ]
 
 { #category : 'accessing' }

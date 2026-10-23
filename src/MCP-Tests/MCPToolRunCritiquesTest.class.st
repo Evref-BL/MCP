@@ -135,6 +135,22 @@ MCPToolRunCritiquesTest >> testRunsClassCritiqueWithClassHit [
 ]
 
 { #category : 'tests' }
+MCPToolRunCritiquesTest >> testMarksTheRulesMethodRewriteCanApply [
+
+	| mcpRule renrakuRule |
+	mcpRule := (self dataForArguments: {
+			            (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary).
+			            (#ruleClasses -> { MCPCollectionThenDoRule name }) } asDictionary) at: #rules.
+	renrakuRule := (self dataForArguments: {
+			              (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary).
+			              (#ruleClasses -> { ReAssignmentInBlockRule name }) } asDictionary) at: #rules.
+	"A rule whose patterns method_rewrite can be given by name says so."
+	mcpRule ifNotEmpty: [ :rules | self assert: (rules first at: #fixable) ].
+	"One whose it cannot does not claim it."
+	self deny: (renrakuRule first includesKey: #fixable)
+]
+
+{ #category : 'tests' }
 MCPToolRunCritiquesTest >> testRunsSelectedNodeCritiqueAndGroupsHitsByRule [
 
 	| data hit hits rule rules |

@@ -75,6 +75,7 @@ MCPToolMethodMutation >> allowedNonErrorCritiqueRuleClasses [
 		  MCPDictionaryAtIfPresentRule.
 		  MCPFilteredEmptinessRule.
 		  MCPFilterThenCollectRule.
+		  MCPIsNotNilRule.
 		  MCPMessageNotUnderstoodHandlerRule.
 		  MCPNilOnlyConditionalRule.
 		  MCPRedundantExplicitSelfReturnRule.

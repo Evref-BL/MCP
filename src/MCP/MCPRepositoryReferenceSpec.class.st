@@ -40,13 +40,13 @@ MCPRepositoryReferenceSpec >> asDictionary [
 { #category : 'testing' }
 MCPRepositoryReferenceSpec >> hasLocation [
 
-	^ self location notNil
+	^ self location isNotNil
 ]
 
 { #category : 'testing' }
 MCPRepositoryReferenceSpec >> hasName [
 
-	^ self name notNil
+	^ self name isNotNil
 ]
 
 { #category : 'initialization' }

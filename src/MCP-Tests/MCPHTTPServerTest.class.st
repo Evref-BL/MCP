@@ -109,7 +109,7 @@ MCPHTTPServerTest >> testHandlesConcurrentPostRequests [
 							completed signal ] ] fork ].
 		responses size timesRepeat: [ self deny: (completed waitTimeoutSeconds: 10) description: 'Concurrent HTTP request timed out.' ].
 		responses doWithIndex: [ :response :index |
-				self assert: response notNil description: 'No response at index ' , index asString.
+				self assert: response isNotNil description: 'No response at index ' , index asString.
 				self assert: response code = 200 description: 'Unexpected response at index ' , index asString , ': ' , response printString.
 				self
 					assert: (response contents includesSubstring: '"result"')
