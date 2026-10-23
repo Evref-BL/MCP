@@ -80,11 +80,15 @@ MCPToolRegistry >> advertiseTools: toolsOrToolClassesOrNames [
 
 { #category : 'private - advertising' }
 MCPToolRegistry >> advertisedNameFor: aToolOrToolClassOrName [
+	"Answer the tool name this stands for, adding it to the catalog when it is a tool we do not have yet. Symbols answer a String, because a Symbol never equals the String a tool answers for its name."
 
-	aToolOrToolClassOrName isString ifTrue: [ ^ aToolOrToolClassOrName ].
-	aToolOrToolClassOrName isSymbol ifTrue: [ ^ aToolOrToolClassOrName asString ].
-	(self includesToolNamed: aToolOrToolClassOrName name) ifFalse: [ self addTool: aToolOrToolClassOrName ].
-	^ aToolOrToolClassOrName name
+	| toolName |
+	aToolOrToolClassOrName isString ifTrue: [ ^ aToolOrToolClassOrName asString ].
+	toolName := aToolOrToolClassOrName isBehavior
+		            ifTrue: [ aToolOrToolClassOrName toolName ]
+		            ifFalse: [ aToolOrToolClassOrName name ].
+	(self includesToolNamed: toolName) ifFalse: [ self addTool: aToolOrToolClassOrName ].
+	^ toolName
 ]
 
 { #category : 'advertising' }

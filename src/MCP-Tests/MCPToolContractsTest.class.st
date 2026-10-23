@@ -864,7 +864,7 @@ MCPToolContractsTest >> testDictionaryShapedCommandResultsUseDTOClasses [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testDiscoveryUsesConfiguredStaticToolNames [
+MCPToolContractsTest >> testDiscoveryUsesConfiguredAdvertisedTools [
 
 	| createContract metadataByName result searchContract server |
 	server := self mcpWithoutObservabilityExport.
@@ -1640,19 +1640,19 @@ MCPToolContractsTest >> testQueryScopeDescriptionsExplainScopeSemantics [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testRPCAdvertisesStaticToolSurfaceOnly [
+MCPToolContractsTest >> testRPCAdvertisesTheAdvertisedSurfaceOnly [
 	"The public surface is capped at fifteen: the catalogue, the classes, the methods, and running code."
 
-	| discoverableToolNames expectedStaticToolNames registry toolNames |
+	| discoverableToolNames expectedAdvertisedToolNames registry toolNames |
 	registry := self toolRegistry.
 	toolNames := (self mcpWithoutObservabilityExport rpcToolsList at: #tools) collect: [ :each | each at: #name ].
-	expectedStaticToolNames := #( 'tool_search' 'tool_get' 'tool_call' 'class_search' 'class_get' 'class_create' 'class_remove'
+	expectedAdvertisedToolNames := #( 'tool_search' 'tool_get' 'tool_call' 'class_search' 'class_get' 'class_create' 'class_remove'
 	                              'method_search' 'method_source_search' 'method_reference_search' 'method_get'
 	                              'method_compile' 'method_remove' 'image_evaluate' 'test_run' ).
 	discoverableToolNames := registry toolNames difference: registry advertisedToolNames.
-	self assert: expectedStaticToolNames size equals: 15.
+	self assert: expectedAdvertisedToolNames size equals: 15.
 	self assert: toolNames asSet equals: registry advertisedToolNames asSet.
-	self assert: registry advertisedToolNames asSet equals: expectedStaticToolNames asSet.
+	self assert: registry advertisedToolNames asSet equals: expectedAdvertisedToolNames asSet.
 	discoverableToolNames do: [ :each | self deny: (toolNames includes: each) ].
 	self assert: (registry toolNames includes: 'method_protocol_update').
 	self deny: (toolNames includes: 'method_protocol_update')
@@ -2205,12 +2205,12 @@ MCPToolContractsTest >> testSearchToolsCapsResultsAtResultLimit [
 { #category : 'tests' }
 MCPToolContractsTest >> testSearchToolsIncludesStaticSurface [
 
-	| metadataByName result staticTool |
+	| metadataByName result advertisedTool |
 	result := self callToolNamed: 'tool_search' withArguments: { (#query -> 'classes') } asDictionary.
 	metadataByName := (((self dataFrom: result) at: #tools) collect: [ :each | (each at: #name) -> each ]) asDictionary.
 	self assert: (metadataByName includesKey: 'class_search').
-	staticTool := self toolRegistry toolNamed: 'class_search' ifAbsent: [ self fail: 'Missing class_search tool' ].
-	self assert: staticTool defaultExposure equals: 'static'
+	advertisedTool := self toolRegistry toolNamed: 'class_search' ifAbsent: [ self fail: 'Missing class_search tool' ].
+	self assert: advertisedTool defaultExposure equals: 'static'
 ]
 
 { #category : 'tests' }
@@ -2357,7 +2357,7 @@ MCPToolContractsTest >> testSelectorSuggestionsPreferASharedPrefixOverACorrectio
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testServerCanConfigureStaticToolNames [
+MCPToolContractsTest >> testServerCanConfigureAdvertisedTools [
 
 	| server toolNames |
 	server := self mcpWithoutObservabilityExport.
@@ -2412,7 +2412,29 @@ MCPToolContractsTest >> testSpecializedClassAndMethodToolsAreDiscoverableOnly [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testStaticToolConfigurationRejectsUnknownToolNames [
+MCPToolContractsTest >> testAdvertisingAToolClassRegistersItFirst [
+	"A class says its own tool name, so naming one that is not in the catalog yet registers it instead of failing on order."
+
+	| server |
+	server := self mcpWithoutObservabilityExport.
+	self deny: (server toolNames includes: MCPExternalTestTool toolName).
+	server advertiseTools: { MCPExternalTestTool }.
+	self assert: (server toolNames includes: MCPExternalTestTool toolName).
+	self assert: server advertisedToolNames equals: { MCPExternalTestTool toolName }
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testAdvertisingAcceptsSymbolsAsWellAsStrings [
+	"A Symbol never equals the String a tool answers for its name, so the advertised set has to hold Strings."
+
+	| server |
+	server := self mcpWithoutObservabilityExport.
+	server advertiseTools: #( #tool_search #tool_get ).
+	self assert: server advertisedToolNames asSet equals: #( 'tool_search' 'tool_get' ) asSet
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testAdvertisingRejectsUnknownToolNames [
 
 	self should: [ self mcpWithoutObservabilityExport advertiseTools: #( 'tool_search' 'not-a-tool' ) ] raise: Error
 ]
