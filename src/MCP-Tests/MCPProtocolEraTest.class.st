@@ -215,6 +215,65 @@ MCPProtocolEraTest >> testALegacyStreamCarriesEverythingAndNamesNoSubscription [
 	self deny: (notification includesKey: 'params')
 ]
 
+{ #category : 'private' }
+MCPProtocolEraTest >> modernResultFor: aMethod params: aParamsFragment [
+
+	| response |
+	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"' , aMethod , '","params":{' , aParamsFragment
+		            , (self metaWithVersion: MCP latestProtocolVersion) , '}}'.
+	^ (STONJSON fromString: response) at: 'result'
+]
+
+{ #category : 'tests' }
+MCPProtocolEraTest >> testACatalogSaysHowLongItStaysGood [
+
+	| result |
+	result := self modernResultFor: 'tools/list' params: ''.
+	self assert: (result at: 'ttlMs') equals: MCP catalogCacheMilliseconds.
+	self assert: (result at: 'cacheScope') equals: 'public'
+]
+
+{ #category : 'tests' }
+MCPProtocolEraTest >> testResourceContentsAreCachedPrivatelyAndBriefly [
+	"Nothing announces that a resource's contents changed, so the window is short, and contents are where anything caller-specific would first appear."
+
+	| result |
+	result := self modernResultFor: 'resources/read' params: '"uri":"pharo://image/metadata",'.
+	self assert: (result at: 'ttlMs') equals: MCP resourceContentsCacheMilliseconds.
+	self assert: (result at: 'cacheScope') equals: 'private'
+]
+
+{ #category : 'tests' }
+MCPProtocolEraTest >> testEveryCacheableOperationCarriesHints [
+	"The revision names six operations that must carry them."
+
+	#( 'server/discover' 'tools/list' 'prompts/list' 'resources/list' 'resources/templates/list' ) do: [ :each |
+			| result |
+			result := self modernResultFor: each params: ''.
+			self assert: (result includesKey: 'ttlMs') description: each , ' carries no ttlMs'.
+			self assert: (result at: 'ttlMs') >= 0 description: each , ' has a negative ttlMs'.
+			self assert: (result includesKey: 'cacheScope') description: each , ' carries no cacheScope' ]
+]
+
+{ #category : 'tests' }
+MCPProtocolEraTest >> testAnOperationThatIsNotCacheableCarriesNoHints [
+
+	| result |
+	result := self modernResultFor: 'ping' params: ''.
+	self assert: (result at: 'resultType') equals: 'complete'.
+	self deny: (result includesKey: 'ttlMs')
+]
+
+{ #category : 'tests' }
+MCPProtocolEraTest >> testALegacyCatalogCarriesNoCachingHints [
+	"Caching hints belong to a revision a legacy client never asked for."
+
+	| response |
+	response := self handleJSON: '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'.
+	self deny: (response includesSubstring: 'ttlMs').
+	self deny: (response includesSubstring: 'cacheScope')
+]
+
 { #category : 'tests' }
 MCPProtocolEraTest >> testReadingTheDeclaredVersion [
 

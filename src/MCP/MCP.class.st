@@ -30,6 +30,20 @@ Class {
 }
 
 { #category : 'protocol' }
+MCP class >> catalogCacheMilliseconds [
+	"How long a catalog answer stays good. The catalogs only move when code is loaded or removed, and list_changed invalidates a client's copy the moment they do, so a minute costs a non-listening client at most a minute of staleness and saves everyone else the refetches."
+
+	^ 60000
+]
+
+{ #category : 'protocol' }
+MCP class >> resourceContentsCacheMilliseconds [
+	"Shorter than a catalog, because nothing announces that a resource's contents changed. Until a resource can signal that, the only protection a client has is a short freshness window."
+
+	^ 5000
+]
+
+{ #category : 'protocol' }
 MCP class >> isModernRequest: someParams [
 	"A modern request declares its own protocol version in _meta. A legacy one opens with initialize and says nothing per request."
 

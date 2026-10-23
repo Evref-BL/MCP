@@ -103,8 +103,44 @@ MCPMessageProcessor >> resultFor: aResult inEraOf: aJRPCRequestObject [
 
 	aResult ifNil: [ ^ nil ].
 	(MCP isModernRequest: aJRPCRequestObject params) ifFalse: [ ^ aResult ].
-	^ aResult asJRPCJSON
-		  at: #resultType put: 'complete';
+	^ self
+		  addCachingHintsFor: aJRPCRequestObject method
+		  to: (aResult asJRPCJSON
+				   at: #resultType put: 'complete';
+				   yourself)
+]
+
+{ #category : 'private - results' }
+MCPMessageProcessor >> addCachingHintsFor: aMethodName to: aResult [
+	"The revision requires a freshness hint on the answers worth caching. A client that listens for list_changed is told immediately when a catalog moves, so the hint saves it refetches in between rather than standing in for the notification."
+
+	| hint |
+	hint := self cachingHints at: aMethodName ifAbsent: [ ^ aResult ].
+	^ aResult
+		  at: #ttlMs put: (hint at: #ttlMs);
+		  at: #cacheScope put: (hint at: #cacheScope);
+		  yourself
+]
+
+{ #category : 'private - results' }
+MCPMessageProcessor >> cachingHints [
+	"Public for the catalogs: they describe one image and are the same for everyone asking it, with nothing in them belonging to a caller. Private for a resource's contents, which is where anything caller-specific would first appear."
+
+	| catalog |
+	catalog := Dictionary new
+		           at: #ttlMs put: MCP catalogCacheMilliseconds;
+		           at: #cacheScope put: 'public';
+		           yourself.
+	^ Dictionary new
+		  at: 'server/discover' put: catalog;
+		  at: 'tools/list' put: catalog;
+		  at: 'prompts/list' put: catalog;
+		  at: 'resources/list' put: catalog;
+		  at: 'resources/templates/list' put: catalog;
+		  at: 'resources/read' put: (Dictionary new
+				   at: #ttlMs put: MCP resourceContentsCacheMilliseconds;
+				   at: #cacheScope put: 'private';
+				   yourself);
 		  yourself
 ]
 
