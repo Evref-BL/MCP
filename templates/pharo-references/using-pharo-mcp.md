@@ -42,7 +42,7 @@ boundaries.
 write several the same way. See [Tool reference](tool-reference.md).
 
 For history recovery, inspect files and entries before applying or reverting.
-For debugger sessions, breakpoints, or repairs, read the installed local
+For watching values, debugger sessions, or repairs, read the installed local
 debugging guide.
 
 ## Image Mutation

@@ -384,44 +384,6 @@ MCPToolContractsTest >> critiqueRunToolFlowSpec [
 ]
 
 { #category : 'private' }
-MCPToolContractsTest >> debugBreakpointToolFlowSpecs [
-
-	^ {
-		  {
-			  (#toolClass -> MCPToolListDebugBreakpoints).
-			  (#arguments -> Dictionary new).
-			  (#requestClass -> MCPDebugBreakpointsRequest).
-			  (#commandClass -> MCPDebugBreakpointsCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolSetDebugBreakpoint).
-			  (#arguments -> {
-				   (#className -> 'MCPToolContractsTest').
-				   (#selector -> 'testDebuggerToolsAreDiscoverableOnly') } asDictionary).
-			  (#requestClass -> MCPDebugBreakpointsRequest).
-			  (#commandClass -> MCPDebugBreakpointsCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolRemoveDebugBreakpoint).
-			  (#arguments -> { (#breakpointId -> 'debug-breakpoint-1') } asDictionary).
-			  (#requestClass -> MCPDebugBreakpointsRequest).
-			  (#commandClass -> MCPDebugBreakpointsCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolEnableDebugBreakpoint).
-			  (#arguments -> { (#breakpointId -> 'debug-breakpoint-1') } asDictionary).
-			  (#requestClass -> MCPDebugBreakpointsRequest).
-			  (#commandClass -> MCPDebugBreakpointsCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolDisableDebugBreakpoint).
-			  (#arguments -> { (#breakpointId -> 'debug-breakpoint-1') } asDictionary).
-			  (#requestClass -> MCPDebugBreakpointsRequest).
-			  (#commandClass -> MCPDebugBreakpointsCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolClearDebugBreakpoints).
-			  (#arguments -> Dictionary new).
-			  (#requestClass -> MCPDebugBreakpointsRequest).
-			  (#commandClass -> MCPDebugBreakpointsCommand) } asDictionary }
-]
-
-{ #category : 'private' }
 MCPToolContractsTest >> debugControlToolFlowSpecs [
 
 	^ {
@@ -1006,9 +968,7 @@ MCPToolContractsTest >> testDebuggerToolsAreDiscoverableOnly [
 	debugNames := #( 'debug_session_list' 'debug_session_get' 'debug_session_remove' 'debug_candidate_search'
 	                 'debug_candidate_attach' 'debug_state_get' 'debug_variable_get' 'debug_expression_evaluate'
 	                 'debug_session_step_into' 'debug_session_step_over' 'debug_session_step_through' 'debug_session_restart'
-	                 'debug_session_resume' 'debug_session_terminate' 'debug_breakpoint_list' 'debug_breakpoint_set'
-	                 'debug_breakpoint_remove' 'debug_breakpoint_enable' 'debug_breakpoint_disable' 'debug_breakpoint_clear'
-	                 'debug_method_update' ).
+	                 'debug_session_resume' 'debug_session_terminate' 'debug_method_update' 'debug_watch' ).
 	staticToolNames := self toolRegistry staticToolNames.
 	debugNames do: [ :each |
 			self deny: (staticToolNames includes: each).
@@ -2905,6 +2865,18 @@ MCPToolContractsTest >> testUnknownToolNameSuggestsCloseNames [
 ]
 
 { #category : 'support' }
+MCPToolContractsTest >> debugWatchToolFlowSpec [
+
+	^ {
+		  (#toolClass -> MCPToolDebugWatch).
+		  (#arguments -> {
+			   (#method -> 'MCPToolContractsTest>>testDebuggerToolsAreDiscoverableOnly').
+			   (#run -> '1') } asDictionary).
+		  (#requestClass -> MCPDebugWatchRequest).
+		  (#commandClass -> MCPDebugWatchCommand) } asDictionary
+]
+
+{ #category : 'support' }
 MCPToolContractsTest >> toolFlowSpecs [
 
 	| specs |
@@ -2918,7 +2890,7 @@ MCPToolContractsTest >> toolFlowSpecs [
 	specs addAll: self repositoryToolFlowSpecs.
 	specs addAll: self debugSessionToolFlowSpecs.
 	specs addAll: self debugControlToolFlowSpecs.
-	specs addAll: self debugBreakpointToolFlowSpecs.
+	specs add: self debugWatchToolFlowSpec.
 	^ specs asArray
 ]
 

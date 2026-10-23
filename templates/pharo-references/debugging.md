@@ -1,8 +1,8 @@
 # Debugging Tools
 
-Applies when using MCP-Pharo to take over a debugger a person already opened:
-inspecting its state, controlling paused execution, managing breakpoints, or
-repairing code from a debugger state.
+Applies when using MCP-Pharo to watch values while code runs, or to take over a
+debugger a person already opened: inspecting its state, controlling paused
+execution, or repairing code from a debugger state.
 
 ## Goal
 
@@ -26,8 +26,7 @@ Debugger tools are discoverable, not part of the default static surface.
   state-scoped.
 - Use the newest returned state after every control or edit action.
 - Keep stack and variable limits small first, then expand only what is needed.
-- Clear temporary breakpoints when the task is done, and leave a person's
-  debugger as you found it.
+- Leave a person's debugger as you found it.
 - Report the exact debugger tool names used and the final session state.
 
 ## Do Not
@@ -36,7 +35,6 @@ Debugger tools are discoverable, not part of the default static surface.
   code.
 - Do not reuse frame or variable references after stepping, restarting,
   resuming, terminating, or editing.
-- Do not leave breakpoints behind without reporting them.
 - Do not use debugger editing as a substitute for normal source tools when
   there is no paused debugger state.
 
@@ -44,6 +42,7 @@ Debugger tools are discoverable, not part of the default static surface.
 
 | Tool | Use |
 | --- | --- |
+| `debug_watch` | Record what variables hold while an expression runs, without stopping it. |
 | `debug_session_list` | List tracked debug sessions. |
 | `debug_session_get` | Inspect one tracked debug session summary. |
 | `debug_session_remove` | Remove a tracked debug session from the registry. |
@@ -58,12 +57,6 @@ Debugger tools are discoverable, not part of the default static surface.
 | `debug_session_restart` | Restart the selected frame of a tracked session. |
 | `debug_session_resume` | Resume a tracked session. |
 | `debug_session_terminate` | Terminate a tracked session. |
-| `debug_breakpoint_list` | List tracked transient DebugPoint breakpoints. |
-| `debug_breakpoint_set` | Install a transient method-entry or source-interval DebugPoint breakpoint. |
-| `debug_breakpoint_remove` | Remove one tracked transient DebugPoint breakpoint. |
-| `debug_breakpoint_enable` | Enable one tracked transient DebugPoint breakpoint. |
-| `debug_breakpoint_disable` | Disable one tracked transient DebugPoint breakpoint. |
-| `debug_breakpoint_clear` | Remove all tracked transient DebugPoint breakpoints. |
 | `debug_method_update` | Update the method associated with a paused debug state, then proceed when possible. |
 
 ## Session Workflow
@@ -108,14 +101,20 @@ For externally attached debuggers, control should operate through the attached
 debugger controller so the visible debugger remains the owner of its UI. Do not
 manipulate debugger windows or contexts with general `image_evaluate` code.
 
-## Breakpoints
+## Watching Values
 
-Use the `debug_breakpoint_*` tools for temporary method-entry or
-source-interval DebugPoint breakpoints. Clear breakpoints when the debugging
-task ends.
+`debug_watch` is print debugging without editing the method. Name the methods to
+probe, the variables to record, and the expression to run. Every assignment to a
+named variable is recorded as it happens, the expression runs to completion, and
+the probes are removed before the call answers.
 
-File/line breakpoints are intentionally not emulated. Resolve source intervals
-from the relevant method when source-interval precision is needed.
+Name no variable and each method's arguments are recorded as it is entered.
+Both `method` and `variable` take one value or a list, and a probe goes on every
+pair that exists, so a variable a method never assigns simply has no series there.
+
+Nothing is left installed and no debug session is created, so there is nothing to
+clean up afterwards. Prefer it to stopping execution whenever the question is
+what a value became rather than where to intervene.
 
 ## Debugger-Driven Development
 
@@ -132,10 +131,8 @@ Read [Debugger-Driven Development](debugger-driven-development.md) before using
 
 When finishing debugger work, report:
 
-- how the session was obtained: capture, test, discovered debugger, or attached
-  debugger;
+- how the session was obtained: discovered debugger, or attached debugger;
 - debugger tools called;
 - final session outcome: completed, paused, running, terminated, forgotten, or
   still open;
-- breakpoints created, cleared, or left in place;
 - cleanup performed or still needed.

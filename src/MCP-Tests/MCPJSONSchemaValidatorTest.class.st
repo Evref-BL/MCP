@@ -67,7 +67,6 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 		  (MCPToolDebugSessionControlOperation -> {
 			   (#sessionId -> 'debug-session-1').
 			   (#action -> 'stepOver') } asDictionary).
-		  (MCPToolDebugBreakpointOperation -> { (#action -> 'list') } asDictionary).
 		  (MCPToolUpdateDebugMethod -> { (#sessionId -> 'debug-session-1') } asDictionary).
 		  (MCPToolSearchMethods -> Dictionary new).
 		  (MCPToolSearchTools -> Dictionary new).
@@ -150,7 +149,6 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 	arguments removeKey: MCPToolChangeHistory ifAbsent: [ ].
 	arguments removeKey: MCPToolDebugSessionOperation ifAbsent: [ ].
 	arguments removeKey: MCPToolDebugSessionControlOperation ifAbsent: [ ].
-	arguments removeKey: MCPToolDebugBreakpointOperation ifAbsent: [ ].
 	self classMutationRepresentativeArgumentsByToolClass keysAndValuesDo: [ :toolClass :representativeArguments |
 		arguments at: toolClass put: representativeArguments ].
 	arguments
@@ -196,14 +194,9 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 		at: MCPToolRestartDebugSession put: { (#sessionId -> 'debug-session-1') } asDictionary;
 		at: MCPToolResumeDebugSession put: { (#sessionId -> 'debug-session-1') } asDictionary;
 		at: MCPToolTerminateDebugSession put: { (#sessionId -> 'debug-session-1') } asDictionary;
-		at: MCPToolListDebugBreakpoints put: Dictionary new;
-		at: MCPToolSetDebugBreakpoint put: {
-				(#className -> 'MCPJSONSchemaValidatorTest').
-				(#selector -> 'testCurrentToolSchemasValidate') } asDictionary;
-		at: MCPToolRemoveDebugBreakpoint put: { (#breakpointId -> 'debug-breakpoint-1') } asDictionary;
-		at: MCPToolEnableDebugBreakpoint put: { (#breakpointId -> 'debug-breakpoint-1') } asDictionary;
-		at: MCPToolDisableDebugBreakpoint put: { (#breakpointId -> 'debug-breakpoint-1') } asDictionary;
-		at: MCPToolClearDebugBreakpoints put: Dictionary new.
+		at: MCPToolDebugWatch put: {
+				(#method -> 'MCPJSONSchemaValidatorTest>>testCurrentToolSchemasValidate').
+				(#run -> '1') } asDictionary.
 	^ arguments
 ]
 

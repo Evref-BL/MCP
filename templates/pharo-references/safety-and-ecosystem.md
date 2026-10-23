@@ -202,9 +202,8 @@ live image back to Tonel/Git.
 ## Debugging
 
 Debugger tools are discoverable through the `debugging` group. They work with
-tracked Pharo `DebugSession` records, captured worker-process exceptions,
-SUnit test failures, transient DebugPoint breakpoints, and attached human-opened
-debuggers.
+non-halting probes that record values while code runs, and with attached
+human-opened debuggers and their tracked Pharo `DebugSession` records.
 
 Treat debugger state references as opaque and state-scoped. After stepping,
 resuming, restarting, terminating, or editing from a debug state, use the newly

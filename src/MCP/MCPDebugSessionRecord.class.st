@@ -57,8 +57,6 @@ MCPDebugSessionRecord >> capabilities [
 		  (#variableExpansion -> true).
 		  (#evaluation -> true).
 		  (#control -> true).
-		  (#breakpoints -> true).
-		  (#capture -> true).
 		  (#attachedDebugger -> debugger notNil) } asDictionary
 ]
 

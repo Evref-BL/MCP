@@ -102,7 +102,6 @@ MCPDebugToolContractTest >> setUp [
 	super setUp.
 	MCPDebugAttachedDebuggerSelectionStrategy reset.
 	MCPDebugSessionRegistry resetDefault.
-	(Smalltalk globals includesKey: #MCPDebugBreakpointRegistry) ifTrue: [ MCPDebugBreakpointRegistry resetDefault ].
 	self removeDebugMethodUpdateTestMethods
 ]
 
@@ -138,7 +137,6 @@ MCPDebugToolContractTest >> syntheticDebuggerNamed: aString [
 { #category : 'running' }
 MCPDebugToolContractTest >> tearDown [
 
-	(Smalltalk globals includesKey: #MCPDebugBreakpointRegistry) ifTrue: [ MCPDebugBreakpointRegistry resetDefault ].
 	self terminateCapturedSessions.
 	self removeDebugMethodUpdateTestMethods.
 	MCPDebugSessionRegistry resetDefault.
@@ -304,70 +302,6 @@ MCPDebugToolContractTest >> testAttachedDebuggerSelectionStrategyReusesAttachedD
 	self assert: StDebugger allInstances size equals: debuggerCount.
 	self assert: OupsDebuggerSelectionStrategy debuggerSelectionStrategy equals: previousStrategy.
 	self assert: strategyClass activeContinuations size equals: activeCount
-]
-
-{ #category : 'tests' }
-MCPDebugToolContractTest >> testDebugBreakpointsCanDisableAndEnableBreakpoint [
-
-	| breakpointId data |
-	data := self dataFrom: (self callToolNamed: 'debug_breakpoint_set' withArguments: {
-				         (#className -> 'MCPDebugToolContractTest').
-				         (#selector -> 'syntheticDebugSession') } asDictionary).
-	breakpointId := data at: #breakpointId.
-
-	data := self dataFrom:
-		        (self callToolNamed: 'debug_breakpoint_disable' withArguments: { (#breakpointId -> breakpointId) } asDictionary).
-	self deny: (data at: #enabled).
-
-	data := self dataFrom:
-		        (self callToolNamed: 'debug_breakpoint_enable' withArguments: { (#breakpointId -> breakpointId) } asDictionary).
-	self assert: (data at: #enabled)
-]
-
-{ #category : 'tests' }
-MCPDebugToolContractTest >> testDebugBreakpointsSetsListsAndRemovesMethodBreakpoint [
-
-	| breakpointId data listData removeData result |
-	result := self callToolNamed: 'debug_breakpoint_set' withArguments: {
-			          (#className -> 'MCPDebugToolContractTest').
-			          (#selector -> 'syntheticDebugSession').
-			          (#targetKind -> 'method') } asDictionary.
-	data := self dataFrom: result.
-	self assert: (data at: #targetKind) equals: 'method'.
-	self assert: (data at: #className) equals: 'MCPDebugToolContractTest'.
-	self assert: (data at: #selector) equals: 'syntheticDebugSession'.
-	self assert: (data at: #enabled).
-	breakpointId := data at: #breakpointId.
-
-	listData := self dataFrom: (self callToolNamed: 'debug_breakpoint_list' withArguments: Dictionary new).
-	self assert: (listData at: #totalCount) equals: 1.
-	self assert: ((listData at: #breakpoints) first at: #breakpointId) equals: breakpointId.
-
-	removeData := self dataFrom:
-		              (self callToolNamed: 'debug_breakpoint_remove' withArguments: { (#breakpointId -> breakpointId) } asDictionary).
-	self assert: (removeData at: #removed).
-	listData := self dataFrom: (self callToolNamed: 'debug_breakpoint_list' withArguments: Dictionary new).
-	self assert: (listData at: #totalCount) equals: 0
-]
-
-{ #category : 'tests' }
-MCPDebugToolContractTest >> testDebugBreakpointsSupportsSourceIntervalTarget [
-
-	| data nodeClassName source start stop |
-	source := (MCPDebugToolContractTest >> #syntheticDebugSession) sourceCode.
-	start := source findString: 'thisContext'.
-	stop := start + 'thisContext' size - 1.
-	data := self dataFrom: (self callToolNamed: 'debug_breakpoint_set' withArguments: {
-				         (#className -> 'MCPDebugToolContractTest').
-				         (#selector -> 'syntheticDebugSession').
-				         (#targetKind -> 'sourceInterval').
-				         (#sourceStart -> start).
-				         (#sourceStop -> stop) } asDictionary).
-	nodeClassName := data at: #nodeClassName.
-	self assert: (data at: #targetKind) equals: 'sourceInterval'.
-	self assert: (data at: #sourceStart) equals: start.
-	self assert: (data at: #sourceStop) equals: stop.
-	self assert: (nodeClassName includesSubstring: 'VariableNode')
 ]
 
 { #category : 'tests' }
