@@ -2530,13 +2530,13 @@ MCPToolContractsTest >> testToolNamesFollowPublicNamingConvention [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testToolRegistryAcceptsPluginToolRegistration [
+MCPToolContractsTest >> testToolRegistryAcceptsAPluginTool [
 
-	| registration registry tool |
+	| added registry tool |
 	registry := MCPToolRegistry new.
-	registration := registry addTool: MCPHaltingTestTool.
+	added := registry addTool: MCPHaltingTestTool.
 	tool := registry toolNamed: MCPHaltingTestTool toolName ifAbsent: [ self fail ].
-	self assert: tool == registration tool.
+	self assert: tool == added.
 	self deny: (registry isToolAdvertisedNamed: tool name).
 	self assert: ((registry toolGroups detect: [ :each | each key = tool groupName ] ifNone: [ self fail ]) value includes:
 			 MCPHaltingTestTool)
