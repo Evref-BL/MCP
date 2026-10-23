@@ -80,7 +80,7 @@ MCPEventStreamTest >> testBroadcastDropsListenersWhoseClientHasGone [
 		addEventStream: open;
 		addEventStream: closed.
 	closed close.
-	server broadcast: '{"jsonrpc":"2.0","method":"notifications/tools/list_changed"}'.
+	server broadcastNotification: 'notifications/tools/list_changed' parameters: nil.
 	self assert: server eventStreams asArray equals: { open }.
 	server closeEventStreams
 ]

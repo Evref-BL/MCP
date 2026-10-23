@@ -384,9 +384,7 @@ MCP >> listeningRegistry: aRegistry notifying: aDomainName [
 MCP >> notifyListChangedFor: aDomainName [
 	"Not guarded: a client that has gone is handled where the write happens, so anything raising here is a fault in the server rather than a condition to absorb. An earlier guard here hid exactly that for a whole round."
 
-	server broadcast: (STONJSON toString: {
-			 (#jsonrpc -> '2.0').
-			 (#method -> ('notifications/' , aDomainName , '/list_changed')) } asDictionary)
+	server broadcastNotification: 'notifications/' , aDomainName , '/list_changed' parameters: nil
 ]
 
 { #category : 'private - completion' }

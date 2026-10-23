@@ -148,6 +148,73 @@ MCPProtocolEraTest >> testAnErrorWithNoModernCodeIsUnchanged [
 	self assert: (modern includesSubstring: '"code":-32602')
 ]
 
+{ #category : 'private' }
+MCPProtocolEraTest >> listenStreamFor: aFilterFragment [
+
+	| server body |
+	server := MCPHTTPServer new.
+	body := STONJSON fromString:
+		        '{"jsonrpc":"2.0","id":7,"method":"subscriptions/listen","params":{"notifications":{' , aFilterFragment , '},'
+		        , (self metaWithVersion: MCP latestProtocolVersion) , '}}'.
+	server answerSubscriptionsListen: body with: ZnResponse new.
+	^ server eventStreams last
+]
+
+{ #category : 'tests' }
+MCPProtocolEraTest >> testListenAcknowledgesBeforeAnythingElse [
+	"The revision requires the acknowledgement to be the first message on the subscription."
+
+	| stream |
+	stream := self listenStreamFor: '"toolsListChanged":true'.
+	self assert: (stream pendingEvents first includesSubstring: 'notifications/subscriptions/acknowledged').
+	self assert: (stream pendingEvents first includesSubstring: '"io.modelcontextprotocol/subscriptionId":7')
+]
+
+{ #category : 'tests' }
+MCPProtocolEraTest >> testListenCarriesOnlyWhatWasAskedFor [
+	"A server must not send a notification type the client did not ask for."
+
+	| stream |
+	stream := self listenStreamFor: '"toolsListChanged":true'.
+	self assert: (stream accepts: 'notifications/tools/list_changed').
+	self deny: (stream accepts: 'notifications/prompts/list_changed').
+	self deny: (stream accepts: 'notifications/resources/list_changed')
+]
+
+{ #category : 'tests' }
+MCPProtocolEraTest >> testAcknowledgementOmitsWhatTheServerCannotDo [
+	"resourceSubscriptions promises notifications/resources/updated, and no resource here can say it changed."
+
+	| stream acknowledged |
+	stream := self listenStreamFor: '"toolsListChanged":true,"resourceSubscriptions":["pharo://image/metadata"]'.
+	acknowledged := ((STONJSON fromString: stream pendingEvents first) at: 'params') at: 'notifications'.
+	self assert: (acknowledged at: 'toolsListChanged').
+	self deny: (acknowledged includesKey: 'resourceSubscriptions')
+]
+
+{ #category : 'tests' }
+MCPProtocolEraTest >> testNotificationsOnASubscriptionCarryItsId [
+
+	| stream notification |
+	stream := self listenStreamFor: '"toolsListChanged":true'.
+	stream writeNotification: 'notifications/tools/list_changed' parameters: nil.
+	notification := STONJSON fromString: stream pendingEvents last.
+	self assert: (notification at: 'method') equals: 'notifications/tools/list_changed'.
+	self assert: (((notification at: 'params') at: '_meta') at: 'io.modelcontextprotocol/subscriptionId') equals: 7
+]
+
+{ #category : 'tests' }
+MCPProtocolEraTest >> testALegacyStreamCarriesEverythingAndNamesNoSubscription [
+	"A GET stream was opened without a filter, so it agreed to everything and belongs to no subscription."
+
+	| stream notification |
+	stream := MCPEventStream new.
+	self assert: (stream accepts: 'notifications/tools/list_changed').
+	stream writeNotification: 'notifications/tools/list_changed' parameters: nil.
+	notification := STONJSON fromString: stream pendingEvents last.
+	self deny: (notification includesKey: 'params')
+]
+
 { #category : 'tests' }
 MCPProtocolEraTest >> testReadingTheDeclaredVersion [
 
