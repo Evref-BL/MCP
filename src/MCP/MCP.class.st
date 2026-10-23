@@ -21,6 +21,7 @@ Class {
 		'observability',
 		'toolRegistry',
 		'resourceRegistry',
+		'promptRegistry',
 		'toolResponseFields'
 	],
 	#category : 'MCP-Server',
@@ -334,6 +335,7 @@ MCP >> advertisedCapabilities [
 		                tools: MCPStructureToolsCapabilities new;
 		                yourself.
 	self resourceRegistry entries ifNotEmpty: [ capabilities resources: MCPStructureResourcesCapabilities new ].
+	self promptRegistry entries ifNotEmpty: [ capabilities prompts: MCPStructurePromptsCapabilities new ].
 	^ capabilities
 ]
 
@@ -387,6 +389,15 @@ MCP >> onlyTools: toolsOrToolClasses [
 ]
 
 { #category : 'configuration' }
+MCP >> onlyPrompts: promptsOrPromptClasses [
+	"Replace the prompt catalog with exactly these. A server built this way discovers nothing, so it keeps what it was given."
+
+	promptRegistry := MCPPromptRegistry empty
+		                  addPrompts: promptsOrPromptClasses;
+		                  yourself
+]
+
+{ #category : 'configuration' }
 MCP >> onlyResources: resourcesOrResourceClasses [
 	"Replace the resource catalog with exactly these. A server built this way discovers nothing, so it keeps what it was given."
 
@@ -405,6 +416,30 @@ MCP >> removeResource: aUri [
 MCP >> resourceUris [
 
 	^ self resourceRegistry resourceUris
+]
+
+{ #category : 'configuration' }
+MCP >> promptNames [
+
+	^ self promptRegistry promptNames
+]
+
+{ #category : 'accessing' }
+MCP >> promptRegistry [
+
+	^ promptRegistry ifNil: [ promptRegistry := MCPPromptRegistry default ]
+]
+
+{ #category : 'accessing' }
+MCP >> promptRegistry: aPromptRegistry [
+
+	promptRegistry := aPromptRegistry ifNil: [ MCPPromptRegistry default ]
+]
+
+{ #category : 'configuration' }
+MCP >> removePrompt: aName [
+
+	self promptRegistry removePromptNamed: aName
 ]
 
 { #category : 'accessing' }
@@ -442,6 +477,19 @@ MCP >> refreshToolsList [
 
 	toolsList := self toolRegistry advertisedToolsDictionary.
 	^ toolsList
+]
+
+{ #category : 'configuration' }
+MCP >> addPrompt: aPromptOrPromptClass [
+	"Register one prompt, as a class or as a ready instance. Every registered prompt is listed by prompts/list."
+
+	^ self promptRegistry addPrompt: aPromptOrPromptClass
+]
+
+{ #category : 'configuration' }
+MCP >> addPrompts: promptsOrPromptClasses [
+
+	^ self promptRegistry addPrompts: promptsOrPromptClasses
 ]
 
 { #category : 'configuration' }
@@ -512,14 +560,25 @@ MCP >> rpcPing [
 MCP >> rpcPromptGet: name arguments: arguments [
 
 	<jrpc: #'prompts/get'>
-	JRPCInvalidParameters signal
+	| prompt suppliedArguments result |
+	prompt := self promptRegistry
+		          promptNamed: name
+		          ifAbsent: [ ^ MCPUnknownPrompt signalNamed: name known: self promptRegistry promptNames ].
+	suppliedArguments := arguments ifNil: [ Dictionary new ].
+	prompt validateArguments: suppliedArguments.
+	result := Dictionary new
+		          at: #messages
+		          put: ((prompt messagesFor: suppliedArguments) collect: [ :each | each asJRPCJSON ]);
+		          yourself.
+	prompt description ifNotNil: [ :value | result at: #description put: value asJRPCJSON ].
+	^ result
 ]
 
 { #category : 'rpc' }
 MCP >> rpcPromptsList [
 
 	<jrpc: #'prompts/list'>
-	^ { (#prompts -> #(  )) } asDictionary
+	^ { (#prompts -> (self promptRegistry prompts collect: [ :each | each asJRPCJSON ])) } asDictionary
 ]
 
 { #category : 'rpc' }
