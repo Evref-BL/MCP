@@ -318,5 +318,5 @@ mcp useOpenTelemetryObservability
 
 The core baseline loads PharoBackwardCompatibility, JRPC, and PCRE2.
 OpenTelemetry is loaded only by the optional `Telemetry` group. CI covers
-Pharo 12, 13, and 14. Code should target the Pharo 14 API; PharoBackwardCompatibility
-backports supported APIs to older images.
+Pharo 12, 13, 14, and 15. Code should target the Pharo 14 API;
+PharoBackwardCompatibility backports supported APIs to older images.

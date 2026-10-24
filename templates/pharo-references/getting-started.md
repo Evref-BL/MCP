@@ -5,7 +5,7 @@ connecting a client.
 
 ## Requirements
 
-- Pharo 12, 13, or 14
+- Pharo 12, 13, 14, or 15
 - An MCP client that supports Streamable HTTP directly or through a local bridge
 - Network access from the client to the image host
 
