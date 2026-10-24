@@ -106,8 +106,8 @@ MCPToolSearchClassesTest >> testClassNamesReturnExactClassInfos [
 	baseEntry := self entryNamed: self baseClassName in: (data at: #classes).
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #classes) size equals: 2.
-	self assert: (baseEntry at: #package) equals: 'MCP-Tests'.
-	self assert: (baseEntry at: #tag) equals: 'Internal'.
+	self assert: (baseEntry at: #package) equals: self generatedPackageName.
+	self assert: (baseEntry at: #tag) equals: self generatedTagName.
 	self deny: (baseEntry includesKey: #instanceSlots).
 	self deny: (baseEntry includesKey: #classSlots).
 	self deny: (baseEntry includesKey: #superclass).
@@ -135,7 +135,7 @@ MCPToolSearchClassesTest >> testDefaultFilterAppliesToClassOnly [
 
 	| classNames data result |
 	result := self callToolWith: {
-			          (self searchScope: { (#packages -> #( 'MCP-Tests' )) }).
+			          (self searchScope: { (#packages -> { self generatedPackageName }) }).
 			          (#name -> self baseClassName) } asDictionary.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	data := self dataFrom: result.
@@ -232,7 +232,7 @@ MCPToolSearchClassesTest >> testNameFilterIgnoresCase [
 
 	| classNames data result |
 	result := self callToolWith: {
-			          (self searchScope: { (#packages -> #( 'MCP-Tests' )) }).
+			          (self searchScope: { (#packages -> { self generatedPackageName }) }).
 			          (#name -> self fixturePrefix asLowercase) } asDictionary.
 	data := self dataFrom: result.
 	classNames := (data at: #classes) collect: [ :each | each at: #class ].
@@ -249,7 +249,7 @@ MCPToolSearchClassesTest >> testPackageNamesReturnPackageClasses [
 
 	| classNames data result |
 	result := self callToolWith: {
-			          (self searchScope: { (#packages -> #( 'MCP-Tests' )) }).
+			          (self searchScope: { (#packages -> { self generatedPackageName }) }).
 			          (#name -> self fixturePrefix) } asDictionary.
 	data := self dataFrom: result.
 	classNames := (data at: #classes) collect: [ :each | each at: #class ].
@@ -266,7 +266,7 @@ MCPToolSearchClassesTest >> testPackageNamesSelectPackageScope [
 
 	| classNames data result |
 	result := self callToolWith: {
-			          (self searchScope: { (#packages -> #( 'MCP-Tests' )) }).
+			          (self searchScope: { (#packages -> { self generatedPackageName }) }).
 			          (#name -> self fixturePrefix) } asDictionary.
 	data := self dataFrom: result.
 	classNames := (data at: #classes) collect: [ :each | each at: #class ].

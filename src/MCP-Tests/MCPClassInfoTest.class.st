@@ -84,8 +84,8 @@ MCPClassInfoTest >> testBuildsSortedClassMetadataSnapshot [
 	info := MCPClassInfo fromClass: (self classNamed: self baseClassName).
 	self assert: info className equals: self baseClassName.
 	self assert: info superclassName equals: 'Object'.
-	self assert: info packageName equals: 'MCP-Tests'.
-	self assert: info tag equals: 'Internal'.
+	self assert: info packageName equals: self generatedPackageName.
+	self assert: info tag equals: self generatedTagName.
 	self assert: info instanceSlotNames equals: #( 'betaSlot' 'alphaSlot' ).
 	self assert: info classSlotNames equals: #( 'classBeta' 'classAlpha' ).
 	self assert: info subclassNames equals: {
