@@ -11,7 +11,17 @@ change history.
 
 ## The Client Cannot Connect
 
-Check the server in the image:
+Ask the image what servers it holds, which answers after a restart even when
+nothing in the workspace refers to one:
+
+```smalltalk
+MCP allServers.
+```
+
+`Library → MCP Servers` in the world menu shows the same list, with the state,
+port and endpoint of each, and starts or stops the one selected.
+
+Check a server directly:
 
 ```smalltalk
 mcp isRunning.

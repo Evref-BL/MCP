@@ -33,14 +33,19 @@ Metacello new
 Start the Streamable HTTP server:
 
 ```smalltalk
-mcp := MCP new.
-mcp port: 4000.
-mcp start.
+MCP startOnPort: 4000.
 ```
+
+That answers the server already on 4000 when the image has one, so running it
+again after a restart is safe. `MCP allServers` lists what the image holds, and
+`Library → MCP Servers` in the world menu shows the same list.
 
 Connect a local MCP client to `http://127.0.0.1:4000`. Client configuration
 formats differ; see [Getting started](templates/pharo-references/getting-started.md) for setup
 and first calls.
+
+Protocol revisions `2025-03-26`, `2025-06-18`, `2025-11-25` and `2026-07-28`
+are supported, each answered in its own shape.
 
 ## Documentation
 

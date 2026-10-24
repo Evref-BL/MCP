@@ -59,6 +59,14 @@ Dependencies can select the same group with `loads: #( 'Core' )`.
 ## Start And Stop
 
 ```smalltalk
+mcp := MCP startOnPort: 4000.
+```
+
+That answers the server already on 4000 when the image has one, rather than
+failing on the port it holds. Build one by hand when it needs configuring
+before it starts:
+
+```smalltalk
 mcp := MCP new.
 mcp port: 4000.
 mcp start.
