@@ -82,6 +82,46 @@ MCPToolRegistryTest >> tearDown [
 ]
 
 { #category : 'tests' }
+MCPToolRegistryTest >> testARediscoveryThatFailedPartwayIsTriedAgain [
+	"Recording what was discovered before filing it left a failed pass claiming classes it had never filed, after which every later pass answered that nothing had changed."
+
+	| registry |
+	registry := MCPFailingKeyRegistryTestDouble default.
+	self createProbeToolClass.
+	registry failNextFiling.
+	self should: [ registry toolNames ] raise: Error.
+	self assert: (registry toolNames includes: self probeToolName)
+]
+
+{ #category : 'tests' }
+MCPToolRegistryTest >> testAToolClassIsNotDiscoveredUntilItCanNameItself [
+	"Building a tool in a live image compiles the class before its methods. A catalog that tried to file it in between would raise for every tool, including the ones compiling the rest of it."
+
+	| probeClass registry |
+	probeClass := self
+		              createClassNamed: self probeToolClassName
+		              superclassName: #MCPTool
+		              slots: #(  )
+		              classSlots: #(  ).
+	self
+		ensureMethodSource: 'isBuiltIn
+
+	^ true'
+		protocol: 'testing'
+		on: probeClass class.
+	self deny: probeClass shouldAutoRegister.
+	registry := MCPToolRegistry default.
+	self deny: (registry toolNames includes: self probeToolName).
+	self
+		ensureMethodSource: 'toolName
+
+	^ ''registry_probe_tool'''
+		protocol: 'metadata'
+		on: probeClass class.
+	self assert: probeClass shouldAutoRegister
+]
+
+{ #category : 'tests' }
 MCPToolRegistryTest >> testCuratedRegistryIgnoresNewToolClasses [
 	"A registry built with #empty holds exactly what was registered into it. Profiles pin a surface that way, so discovery must not widen it."
 

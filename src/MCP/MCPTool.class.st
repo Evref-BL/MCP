@@ -121,8 +121,9 @@ MCPTool class >> runtimeGroupName [
 
 { #category : 'metadata' }
 MCPTool class >> shouldAutoRegister [
+	"A class that cannot yet answer its own name is not a tool to register. Building one in a live image compiles the class before its methods, and a catalog that tried to file it in between would raise for every tool, including the ones compiling the rest of it."
 
-	^ self isBuiltIn
+	^ self isBuiltIn and: [ (self class lookupSelector: #toolName) isSubclassResponsibility not ]
 ]
 
 { #category : 'metadata - groups' }

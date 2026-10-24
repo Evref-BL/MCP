@@ -149,7 +149,9 @@ MCPRegistry >> newEntryFrom: aClassOrEntry [
 MCPRegistry >> rediscoverClassesIfChanged [
 	"A discovering registry outlives the classes it found. Loading or removing them in a running image left it answering its old catalog until someone reset it by hand, so it notices here instead.
 
-	It takes in what appeared and drops what vanished, rather than rebuilding. Rebuilding would undo every hand edit the catalog has had: an entry added by hand, and an entry deliberately removed, which would come back the next time any class was loaded."
+	It takes in what appeared and drops what vanished, rather than rebuilding. Rebuilding would undo every hand edit the catalog has had: an entry added by hand, and an entry deliberately removed, which would come back the next time any class was loaded.
+
+	What was discovered is recorded last. Recording it first left a pass that failed partway claiming classes it had never filed, after which every later pass answered that nothing had changed."
 
 	| discovered appeared vanished |
 	discoversClasses ifFalse: [ ^ self ].
@@ -157,13 +159,13 @@ MCPRegistry >> rediscoverClassesIfChanged [
 	discovered = discoveredClasses ifTrue: [ ^ self ].
 	vanished := discoveredClasses difference: discovered.
 	appeared := discovered difference: discoveredClasses.
-	discoveredClasses := discovered.
 	(entries keys select: [ :each | vanished includes: (entries at: each) class ]) do: [ :each | entries removeKey: each ].
 	((appeared collect: [ :each | self newEntryFrom: each ]) asSortedCollection: [ :left :right |
 		 (self keyFor: left) <= (self keyFor: right) ]) do: [ :entry |
 			| key |
 			key := self keyFor: entry.
 			(entries includesKey: key) ifFalse: [ entries at: key put: entry ] ].
+	discoveredClasses := discovered.
 	self noteChanged
 ]
 
