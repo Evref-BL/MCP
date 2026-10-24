@@ -14,7 +14,7 @@ Class {
 { #category : 'private - mapping' }
 MCPToolIconSpec class >> actionIconForToolNameParts: parts [
 
-	(parts size = 2 and: [ parts first = 'screenshot' and: [ parts last = 'capture' ] ]) ifTrue: [ ^ #smallScreenshot ].
+	(parts size = 2 and: [ parts first = 'screen' and: [ parts last = 'capture' ] ]) ifTrue: [ ^ #smallScreenshot ].
 	^ self iconNameForAction: parts last
 ]
 
@@ -25,6 +25,7 @@ MCPToolIconSpec class >> actionIconMap [
 			  ('compile' -> #editThiner).
 			  ('search' -> #search).
 			  ('get' -> #inspect).
+			  ('read' -> #inspect).
 			  ('call' -> #go).
 			  ('verify' -> #accept).
 			  ('list' -> #browse).
@@ -91,7 +92,7 @@ MCPToolIconSpec class >> domainIconMap [
 			  ('method' -> #page).
 			  ('history' -> #history).
 			  ('test' -> #testRunner).
-			  ('screenshot' -> #window).
+			  ('screen' -> #window).
 			  ('debug' -> #bug).
 			  ('image' -> #pharoHalfScale) }
 ]

@@ -59,7 +59,7 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 		  (MCPToolListChangeHistoryFiles -> Dictionary new).
 		  (MCPToolListChangeHistoryEntries -> Dictionary new).
 		  (MCPToolChangeHistory -> { (#action -> 'listFiles') } asDictionary).
-		  (MCPToolCaptureScreenshot -> { (#target -> 'world') } asDictionary).
+		  (MCPToolCaptureScreen -> Dictionary new).
 		  (MCPToolDebugSearch -> Dictionary new).
 		  (MCPToolSearchMethods -> Dictionary new).
 		  (MCPToolSearchTools -> Dictionary new).
@@ -135,7 +135,9 @@ MCPJSONSchemaValidatorTest >> keywordsFrom: violations [
 MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 
 	| arguments |
-	arguments := self baseRepresentativeArgumentsByToolClass.
+	arguments := self baseRepresentativeArgumentsByToolClass
+		             at: MCPToolReadScreen put: Dictionary new;
+		             yourself.
 	arguments removeKey: MCPToolRepositoryOperation ifAbsent: [ ].
 	arguments removeKey: MCPToolClassMutation ifAbsent: [ ].
 	arguments removeKey: MCPToolMethodMutation ifAbsent: [ ].

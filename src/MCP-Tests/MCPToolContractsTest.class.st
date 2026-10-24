@@ -135,8 +135,8 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 			  (#requestClass -> MCPRunTestsRequest).
 			  (#commandClass -> MCPRunTestsCommand) } asDictionary.
 		  {
-			  (#toolClass -> MCPToolCaptureScreenshot).
-			  (#arguments -> { (#target -> 'world') } asDictionary).
+			  (#toolClass -> MCPToolCaptureScreen).
+			  (#arguments -> Dictionary new).
 			  (#requestClass -> MCPScreenshotRequest).
 			  (#commandClass -> MCPScreenshotCommand) } asDictionary.
 		  {
@@ -358,6 +358,18 @@ MCPToolContractsTest >> critiqueRunToolFlowSpec [
 		  (#commandClass -> MCPSearchToolCommand) } asDictionary
 ]
 
+{ #category : 'support' }
+MCPToolContractsTest >> debugWatchToolFlowSpec [
+
+	^ {
+		  (#toolClass -> MCPToolDebugWatch).
+		  (#arguments -> {
+			   (#method -> 'MCPToolContractsTest>>testDebuggerToolsAreDiscoverableOnly').
+			   (#run -> '1') } asDictionary).
+		  (#requestClass -> MCPDebugWatchRequest).
+		  (#commandClass -> MCPDebugWatchCommand) } asDictionary
+]
+
 { #category : 'private' }
 MCPToolContractsTest >> firstTextFromToolResult: aResult [
 
@@ -374,13 +386,6 @@ MCPToolContractsTest >> handleJSON: aJSONString [
 MCPToolContractsTest >> inputPropertyNamed: aPropertyName inTool: aTool [
 
 	^ aTool inputSchema properties detect: [ :each | each name = aPropertyName ]
-]
-
-{ #category : 'private' }
-MCPToolContractsTest >> scopePropertyNamed: aPropertyName inTool: aTool [
-
-	^ ((self inputPropertyNamed: 'scope' inTool: aTool) extraProperties at: #properties) detect: [ :each |
-		  each name = aPropertyName ]
 ]
 
 { #category : 'private' }
@@ -452,6 +457,16 @@ MCPToolContractsTest >> methodSendsSubclassResponsibility: aCompiledMethod [
 ]
 
 { #category : 'support' }
+MCPToolContractsTest >> readScreenToolFlowSpec [
+
+	^ {
+		  (#toolClass -> MCPToolReadScreen).
+		  (#arguments -> Dictionary new).
+		  (#requestClass -> MCPReadScreenRequest).
+		  (#commandClass -> MCPReadScreenCommand) } asDictionary
+]
+
+{ #category : 'support' }
 MCPToolContractsTest >> repositoryToolFlowSpecs [
 
 	^ {
@@ -518,6 +533,13 @@ MCPToolContractsTest >> repositoryToolFlowSpecs [
 ]
 
 { #category : 'private' }
+MCPToolContractsTest >> scopePropertyNamed: aPropertyName inTool: aTool [
+
+	^ ((self inputPropertyNamed: 'scope' inTool: aTool) extraProperties at: #properties) detect: [ :each |
+		  each name = aPropertyName ]
+]
+
+{ #category : 'private' }
 MCPToolContractsTest >> searchedToolNamesFor: aQuery [
 
 	| data |
@@ -545,12 +567,51 @@ MCPToolContractsTest >> signalHaltForMCPMessageProcessorTest [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testAdvertisingAToolClassRegistersItFirst [
+	"A class says its own tool name, so naming one that is not in the catalog yet registers it instead of failing on order."
+
+	| server |
+	server := self mcpWithoutObservabilityExport.
+	self deny: (server toolNames includes: MCPExternalTestTool toolName).
+	server advertiseTools: { MCPExternalTestTool }.
+	self assert: (server toolNames includes: MCPExternalTestTool toolName).
+	self assert: server advertisedToolNames equals: { MCPExternalTestTool toolName }
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testAdvertisingAcceptsSymbolsAsWellAsStrings [
+	"A Symbol never equals the String a tool answers for its name, so the advertised set has to hold Strings."
+
+	| server |
+	server := self mcpWithoutObservabilityExport.
+	server advertiseTools: #( #tool_search #tool_get ).
+	self assert: server advertisedToolNames asSet equals: #( 'tool_search' 'tool_get' ) asSet
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testAdvertisingAllToolsAdvertisesEveryRegisteredTool [
 
 	| registry |
 	registry := MCPToolRegistry default.
 	registry advertiseAllTools.
 	self assert: registry advertisedToolNames asSet equals: registry toolNames asSet
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testAdvertisingOverridesToolDefault [
+
+	| registry tool |
+	registry := MCPToolRegistry default.
+	tool := registry toolNamed: 'method_protocol_update' ifAbsent: [ self fail ].
+	registry advertiseTools: (registry advertisedToolNames copyWith: tool name).
+	self assert: tool defaultExposure equals: 'discoverable'.
+	self assert: (registry isToolAdvertisedNamed: tool name)
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testAdvertisingRejectsUnknownToolNames [
+
+	self should: [ self mcpWithoutObservabilityExport advertiseTools: #( 'tool_search' 'not-a-tool' ) ] raise: Error
 ]
 
 { #category : 'tests' }
@@ -660,17 +721,14 @@ MCPToolContractsTest >> testCallToolPreservesNestedValidationViolations [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testCaptureScreenshotHasAccurateNameAndSchemas [
+MCPToolContractsTest >> testCaptureScreenHasAccurateNameAndSchemas [
 
-	| inputPropertyNames targetProperty tool |
-	tool := MCPToolCaptureScreenshot new.
+	| inputPropertyNames tool |
+	tool := MCPToolCaptureScreen new.
 	inputPropertyNames := tool inputSchema properties collect: [ :each | each name ].
-	targetProperty := self inputPropertyNamed: 'target' inTool: tool.
-	self assert: tool name equals: 'screenshot_capture'.
+	self assert: tool name equals: 'screen_capture'.
 	self assert: tool inputSchema required equals: #(  ).
-	self assert: inputPropertyNames equals: #( 'target' ).
-	self assert: (targetProperty extraProperties at: #enum) equals: #( 'world' ).
-	self assert: (targetProperty extraProperties at: #default) equals: 'world'
+	self assert: inputPropertyNames equals: #( 'window' )
 ]
 
 { #category : 'tests' }
@@ -902,16 +960,6 @@ MCPToolContractsTest >> testEmptyListOfTargetsIsRejectedAsInput [
 		raise: MCPInvalidToolInput
 ]
 
-{ #category : 'tests' }
-MCPToolContractsTest >> testServerWithNoToolsRegistersNone [
-
-	| server |
-	server := MCP onlyTools: #(  ).
-	self assert: server toolRegistry toolNames isEmpty.
-	self assert: server advertisedToolNames isEmpty.
-	self assert: (server rpcToolsList at: #tools) isEmpty
-]
-
 { #category : 'tests - evaluate' }
 MCPToolContractsTest >> testEvaluateAnswersThePrintStringAsItsWholeText [
 	"The envelope around a one-line answer cost more than the answer."
@@ -1076,17 +1124,6 @@ MCPToolContractsTest >> testEvaluateToolPointsAtTheToolCatalog [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testAdvertisingOverridesToolDefault [
-
-	| registry tool |
-	registry := MCPToolRegistry default.
-	tool := registry toolNamed: 'method_protocol_update' ifAbsent: [ self fail ].
-	registry advertiseTools: (registry advertisedToolNames copyWith: tool name).
-	self assert: tool defaultExposure equals: 'discoverable'.
-	self assert: (registry isToolAdvertisedNamed: tool name)
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testExternalToolFixtureIsNotBuiltIn [
 
 	self assert: (MCPTool concreteSubclasses includes: MCPExternalTestTool).
@@ -1187,6 +1224,23 @@ MCPToolContractsTest >> testImageContentSerializesNativeMCPImageBlock [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testInitializeAdvertisesOnlyWhatTheServerHas [
+	"A capability promises the methods of a domain. Prompts are not advertised because the server holds none, and nothing is advertised that the transport could not honour: the stream carries list_changed, so that is declared, while subscribe is not."
+
+	| capabilities response |
+	response := (self mcpWithoutObservabilityExport
+		             onInitialize: nil
+		             capabilities: nil
+		             clientInfo: nil
+		             websiteUrl: nil) asJRPCJSON.
+	capabilities := response at: #capabilities.
+	self assert: ((capabilities at: #tools) at: #listChanged).
+	self assert: ((capabilities at: #resources) at: #listChanged).
+	self deny: ((capabilities at: #resources) includesKey: #subscribe).
+	self deny: (capabilities includesKey: #prompts)
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testInitializeAdvertisesPharoServerIcon [
 
 	| expectedIcon icon response serverInfo |
@@ -1226,23 +1280,6 @@ MCPToolContractsTest >> testInitializeAdvertisesSupportedPharoVersions [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testInitializeAdvertisesOnlyWhatTheServerHas [
-	"A capability promises the methods of a domain. Prompts are not advertised because the server holds none, and nothing is advertised that the transport could not honour: the stream carries list_changed, so that is declared, while subscribe is not."
-
-	| capabilities response |
-	response := (self mcpWithoutObservabilityExport
-		             onInitialize: nil
-		             capabilities: nil
-		             clientInfo: nil
-		             websiteUrl: nil) asJRPCJSON.
-	capabilities := response at: #capabilities.
-	self assert: ((capabilities at: #tools) at: #listChanged).
-	self assert: ((capabilities at: #resources) at: #listChanged).
-	self deny: ((capabilities at: #resources) includesKey: #subscribe).
-	self deny: (capabilities includesKey: #prompts)
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testInitializeResponseSerializesSupportedPharoVersions [
 
 	| response |
@@ -1266,16 +1303,6 @@ MCPToolContractsTest >> testInputSchemaJSONHasCompactTopLevelShape [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testMCPMethodsHaveImplementedSelfAndSuperSends [
-
-	| issues |
-	issues := self selfSentNotImplementedCritiquesForMCPMethods.
-	self
-		assert: issues isEmpty
-		description: (String streamContents: [ :stream | issues do: [ :each | stream nextPutAll: each ] separatedBy: [ stream cr ] ])
-]
-
-{ #category : 'tests' }
 MCPToolContractsTest >> testMCPAddToolRefreshesAdvertisedTools [
 
 	| server |
@@ -1296,6 +1323,16 @@ MCPToolContractsTest >> testMCPAddToolsAnswersTheAddedTools [
 	self assert: added size equals: 1.
 	self assert: added first class equals: MCPHaltingTestTool.
 	self assert: (server toolRegistry includesToolNamed: MCPHaltingTestTool toolName)
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testMCPMethodsHaveImplementedSelfAndSuperSends [
+
+	| issues |
+	issues := self selfSentNotImplementedCritiquesForMCPMethods.
+	self
+		assert: issues isEmpty
+		description: (String streamContents: [ :stream | issues do: [ :each | stream nextPutAll: each ] separatedBy: [ stream cr ] ])
 ]
 
 { #category : 'tests' }
@@ -1506,6 +1543,30 @@ MCPToolContractsTest >> testNewToolRegistryStartsEmpty [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testOnlyToolsCanKeepSomeOfThemDiscoverable [
+
+	| server |
+	server := MCP onlyTools: {
+			          MCPExternalTestTool.
+			          MCPToolSearchTools }.
+	server advertiseTools: { MCPExternalTestTool }.
+	self assert: server toolRegistry toolNames asSet equals: {
+			MCPExternalTestTool toolName.
+			MCPToolSearchTools toolName } asSet.
+	self assert: server advertisedToolNames asSet equals: { MCPExternalTestTool toolName } asSet.
+	self deny: ((server rpcToolsList at: #tools) anySatisfy: [ :each | (each at: #name) = MCPToolSearchTools toolName ])
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testOnlyToolsRegistersExactlyThoseTools [
+
+	| server |
+	server := MCP onlyTools: { MCPExternalTestTool }.
+	self assert: server toolRegistry toolNames asSet equals: { MCPExternalTestTool toolName } asSet.
+	self assert: server advertisedToolNames asSet equals: { MCPExternalTestTool toolName } asSet
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable [
 
 	| classSlotTool searchClassesTool methodMetadataTool searchPackagesTool getClassTool getMethodTool removeClassesTool removeMethodsTool rewriteMethodsTool updateMethodTool |
@@ -1556,30 +1617,6 @@ MCPToolContractsTest >> testParsedInputClassesUseRequestOrSpecSuffixes [
 	self assert: ((self mcpClassesInPackageTagNamed: 'Requests') includes: MCPToolRequest).
 	self assert: parsedInputClasses notEmpty.
 	self assert: invalidNames isEmpty
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testOnlyToolsCanKeepSomeOfThemDiscoverable [
-
-	| server |
-	server := MCP onlyTools: {
-			          MCPExternalTestTool.
-			          MCPToolSearchTools }.
-	server advertiseTools: { MCPExternalTestTool }.
-	self assert: server toolRegistry toolNames asSet equals: {
-			MCPExternalTestTool toolName.
-			MCPToolSearchTools toolName } asSet.
-	self assert: server advertisedToolNames asSet equals: { MCPExternalTestTool toolName } asSet.
-	self deny: ((server rpcToolsList at: #tools) anySatisfy: [ :each | (each at: #name) = MCPToolSearchTools toolName ])
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testOnlyToolsRegistersExactlyThoseTools [
-
-	| server |
-	server := MCP onlyTools: { MCPExternalTestTool }.
-	self assert: server toolRegistry toolNames asSet equals: { MCPExternalTestTool toolName } asSet.
-	self assert: server advertisedToolNames asSet equals: { MCPExternalTestTool toolName } asSet
 ]
 
 { #category : 'tests' }
@@ -1697,6 +1734,20 @@ MCPToolContractsTest >> testRPCRefreshesCachedToolMetadata [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testReadScreenHasAccurateNameAndSchemas [
+
+	| depthProperty inputPropertyNames tool |
+	tool := MCPToolReadScreen new.
+	inputPropertyNames := tool inputSchema properties collect: [ :each | each name ].
+	depthProperty := self inputPropertyNamed: 'depth' inTool: tool.
+	self assert: tool name equals: 'screen_read'.
+	self assert: tool inputSchema required equals: #(  ).
+	self assert: inputPropertyNames equals: #( 'window' 'depth' ).
+	self assert: (depthProperty extraProperties at: #default) equals: tool defaultDepth.
+	self assert: (depthProperty extraProperties at: #maximum) equals: tool maximumDepth
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testRemoveClassHasAccurateNameAndRequiredArguments [
 
 	self assert: MCPToolRemoveClasses new name equals: 'class_remove'.
@@ -1768,7 +1819,7 @@ MCPToolContractsTest >> testRequestedToolIconsAreSelected [
 		equals:
 		(MCPStructureIcon compositeBaseIconNamed: #testRunner leftBadgeIconNamed: #processBrowser rightBadgeIconNamed: #play) asJRPCJSON.
 	self
-		assert: MCPToolCaptureScreenshot new icons first asJRPCJSON
+		assert: MCPToolCaptureScreen new icons first asJRPCJSON
 		equals: (MCPStructureIcon compositeBaseIconNamed: #window badgeIconNamed: #smallScreenshot) asJRPCJSON.
 	self
 		assert: MCPToolRunTests new icons first asJRPCJSON
@@ -1991,12 +2042,13 @@ MCPToolContractsTest >> testRunTestsRejectsEmptySelection [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testScreenshotCommandPackagesProvidedFormAsImageContent [
+MCPToolContractsTest >> testScreenshotCommandPackagesCapturedFormAsImageContent [
 
-	| command form imageJSON request result |
-	form := Form extent: 2 @ 3 depth: 32.
-	request := MCPScreenshotRequest new initializeTarget: 'world' targetIdentifier: nil.
-	command := MCPScreenshotCommand tool: MCPToolCaptureScreenshot new request: request formProvider: [ form ].
+	| command imageJSON request result |
+	request := MCPScreenshotRequest new initializeWindow: nil.
+	command := MCPScreenshotCommand tool: MCPToolCaptureScreen new request: request morph: (Morph new
+			            extent: 2 @ 3;
+			            yourself).
 	result := command execute.
 	imageJSON := result imageContent asJRPCJSON.
 	self assert: result target equals: 'world'.
@@ -2261,8 +2313,8 @@ MCPToolContractsTest >> testSearchToolsMatchesAgentGuidanceKeywords [
 		                ('file' -> 'history_file_list').
 		                ('entry' -> 'history_entry_list').
 		                ('recover' -> 'history_entry_apply').
-		                ('window' -> 'screenshot_capture').
-		                ('display' -> 'screenshot_capture').
+		                ('window' -> 'screen_capture').
+		                ('display' -> 'screen_capture').
 		                ('watch' -> 'debug_watch').
 		                ('debugger' -> 'debug_search').
 		                ('refactor' -> 'class_slot_pull_up').
@@ -2373,6 +2425,14 @@ MCPToolContractsTest >> testSelectorSuggestionsPreferASharedPrefixOverACorrectio
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testServerAdvertisingReadsTheRegistry [
+
+	| server |
+	server := self mcpWithoutObservabilityExport.
+	self assert: server advertisedToolNames equals: server toolRegistry advertisedToolNames
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testServerCanConfigureAdvertisedTools [
 
 	| server toolNames |
@@ -2392,11 +2452,13 @@ MCPToolContractsTest >> testServerInitializationLeavesIconCacheEmpty [
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testServerAdvertisingReadsTheRegistry [
+MCPToolContractsTest >> testServerWithNoToolsRegistersNone [
 
 	| server |
-	server := self mcpWithoutObservabilityExport.
-	self assert: server advertisedToolNames equals: server toolRegistry advertisedToolNames
+	server := MCP onlyTools: #(  ).
+	self assert: server toolRegistry toolNames isEmpty.
+	self assert: server advertisedToolNames isEmpty.
+	self assert: (server rpcToolsList at: #tools) isEmpty
 ]
 
 { #category : 'tests' }
@@ -2425,34 +2487,6 @@ MCPToolContractsTest >> testSpecializedClassAndMethodToolsAreDiscoverableOnly [
 			tool := self toolRegistry toolNamed: each ifAbsent: [ self fail: 'Missing tool ' , each ].
 			self assert: tool defaultExposure equals: 'discoverable'.
 			self assert: tool searchMetadata keys asSet equals: #( name description ) asSet ]
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testAdvertisingAToolClassRegistersItFirst [
-	"A class says its own tool name, so naming one that is not in the catalog yet registers it instead of failing on order."
-
-	| server |
-	server := self mcpWithoutObservabilityExport.
-	self deny: (server toolNames includes: MCPExternalTestTool toolName).
-	server advertiseTools: { MCPExternalTestTool }.
-	self assert: (server toolNames includes: MCPExternalTestTool toolName).
-	self assert: server advertisedToolNames equals: { MCPExternalTestTool toolName }
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testAdvertisingAcceptsSymbolsAsWellAsStrings [
-	"A Symbol never equals the String a tool answers for its name, so the advertised set has to hold Strings."
-
-	| server |
-	server := self mcpWithoutObservabilityExport.
-	server advertiseTools: #( #tool_search #tool_get ).
-	self assert: server advertisedToolNames asSet equals: #( 'tool_search' 'tool_get' ) asSet
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testAdvertisingRejectsUnknownToolNames [
-
-	self should: [ self mcpWithoutObservabilityExport advertiseTools: #( 'tool_search' 'not-a-tool' ) ] raise: Error
 ]
 
 { #category : 'tests' }
@@ -2733,18 +2767,6 @@ MCPToolContractsTest >> testUnknownToolNameSuggestsCloseNames [
 ]
 
 { #category : 'support' }
-MCPToolContractsTest >> debugWatchToolFlowSpec [
-
-	^ {
-		  (#toolClass -> MCPToolDebugWatch).
-		  (#arguments -> {
-			   (#method -> 'MCPToolContractsTest>>testDebuggerToolsAreDiscoverableOnly').
-			   (#run -> '1') } asDictionary).
-		  (#requestClass -> MCPDebugWatchRequest).
-		  (#commandClass -> MCPDebugWatchCommand) } asDictionary
-]
-
-{ #category : 'support' }
 MCPToolContractsTest >> toolFlowSpecs [
 
 	| specs |
@@ -2757,6 +2779,7 @@ MCPToolContractsTest >> toolFlowSpecs [
 	specs addAll: self changeHistoryToolFlowSpecs.
 	specs addAll: self repositoryToolFlowSpecs.
 	specs add: self debugWatchToolFlowSpec.
+	specs add: self readScreenToolFlowSpec.
 	^ specs asArray
 ]
 
