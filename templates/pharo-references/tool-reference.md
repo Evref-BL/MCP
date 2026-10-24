@@ -102,12 +102,12 @@ Tools are named `domain_action`, and the domains are:
 | `classes` | Defining classes and changing their slots, traits, shared variables, pools, layout, package and comment, including the slot refactorings. |
 | `methods` | Compiling, reading, removing and rewriting methods, renaming selectors and protocols, and searching by source, metadata, senders, implementors, references or equivalence. |
 | `repositories` | What the image knows about its Iceberg repositories: identity, package membership, working-copy changes, export, commit, and reloading the image from the files. Branches, remotes and transfers are git's, and belong in a shell. |
-| `debugging` | Watching values while code runs, and taking over a debugger a person opened: its state and variables, stepping and control, evaluation in a frame, and method repair. |
+| `debugging` | Reading the debuggers a person opened, with their exceptions and nearest frames, and watching what variables hold while an expression runs. Neither attaches to a debugger or leaves a session behind. |
 | `history` | Epicea change history: locating files, listing entries, and applying or reverting them. |
 | `tests` | Running tests and running them under coverage. |
 | `packages` | Searching packages. |
 | `runtime` | `image_evaluate`, the escape hatch. |
-| `ui` | Capturing the Morphic world. |
+| `ui` | Reading what is on screen, as a tree of windows and the presenters or morphs inside them, or as a screenshot. Either one can take a single window instead of the whole world, for a fraction of the cost. |
 | `tool-catalog` | `tool_search`, `tool_get` and `tool_call`. |
 
 ## Scripting

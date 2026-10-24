@@ -275,15 +275,20 @@ makes one only when the image has none there. Starting a second server on a
 taken port fails after a couple of seconds, and the error now says when the
 port is held by another MCP in the same image.
 
-The Spec dashboard is available from an inspected `MCP` object. It shows:
+An inspected `MCP` object has two Spec tabs. The dashboard runs the server:
 
-- server status and port
+- server status, endpoint and port
 - debug mode
-- registered tools and descriptions
-- observability status
+- every tool the server could run, with `Enabled` for whether it has the tool
+  at all and `Listed` for whether `tools/list` shows it; an unlisted tool is
+  still found by `tool_search` and still runs
+
+The observability tab shows what the server recorded about itself:
+
 - per-tool timing metrics
 - traces for errors, outliers, and output overruns
 - recent logs
+- auto-refresh while the tab is displayed
 
 MCP starts with the built-in JSON observability backend enabled. Disable it for
 a specific server when its local metrics, traces, and logs are not wanted:

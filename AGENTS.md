@@ -31,9 +31,7 @@ template package.
 - Before Pharo source changes: read
   `templates/pharo-references/pharo-coding-rules.md` and
   `templates/pharo-references/pharo-coding-style.md`.
-- Before debugger work: read `templates/pharo-references/debugging.md`; for
-  repair flows also read
-  `templates/pharo-references/debugger-driven-development.md`.
+- Before debugger work: read `templates/pharo-references/debugging.md`.
 - For a tool's own contract, ask the server with `tool_search` and `tool_get`.
 - `templates/pharo-references/` holds the user-facing guidance this repository
   ships, and `templates/pharo-skills/` the workflows with their own triggers:
