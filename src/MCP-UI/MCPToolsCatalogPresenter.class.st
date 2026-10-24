@@ -6,6 +6,8 @@ Each row shows a compact tool identity cell with icon, title, and tool name, plu
 Class {
 	#name : 'MCPToolsCatalogPresenter',
 	#superclass : 'SpPresenter',
+	#traits : 'TMCPToolRowIcon',
+	#classTraits : 'TMCPToolRowIcon classTrait',
 	#instVars : [
 		'filterInput',
 		'countLabel',
@@ -120,9 +122,7 @@ MCPToolsCatalogPresenter >> initializePresenters [
 MCPToolsCatalogPresenter >> initializeToolsTable [
 
 	toolsTable
-		addColumn: ((SpImageTableColumn evaluated: [ :tool | self rowIconFor: tool ])
-				 width: self rowIconSize + 8;
-				 yourself);
+		addColumn: self rowIconColumn;
 		addColumn: ((SpStringTableColumn title: 'Tool' evaluated: #name)
 				 beSortable;
 				 yourself);
@@ -157,16 +157,9 @@ MCPToolsCatalogPresenter >> refreshView [
 ]
 
 { #category : 'private' }
-MCPToolsCatalogPresenter >> rowIconFor: aTool [
-	"The served icon is 32 square, which a table row clips. Scaling it once per tool class keeps the row readable and the scaling off the drawing path."
+MCPToolsCatalogPresenter >> rowIconCache [
 
-	^ rowIcons at: aTool class ifAbsentPut: [ (MCPTool toolIconFormOf: aTool class) scaledIntoFormOfSize: self rowIconSize ]
-]
-
-{ #category : 'defaults' }
-MCPToolsCatalogPresenter >> rowIconSize [
-
-	^ 16
+	^ rowIcons
 ]
 
 { #category : 'updating' }
