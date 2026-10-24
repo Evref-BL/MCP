@@ -263,6 +263,18 @@ It is taken from the heap rather than from a registry, so a server is never
 kept alive for being listable, and one that is still holding a port after its
 owner forgot it is shown rather than hidden.
 
+To reach the server on a port, whether or not this script is the one that
+started it, ask for the port rather than for a new server:
+
+```smalltalk
+MCP startOnPort: 4000
+```
+
+That answers the server already on 4000, starting it if it was stopped, and
+makes one only when the image has none there. Starting a second server on a
+taken port fails after a couple of seconds, and the error now says when the
+port is held by another MCP in the same image.
+
 The Spec dashboard is available from an inspected `MCP` object. It shows:
 
 - server status and port
