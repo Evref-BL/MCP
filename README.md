@@ -1,8 +1,8 @@
-[![Pharo version](https://img.shields.io/badge/Pharo-12%20%7C%2013%20%7C%2014-%23aac9ff.svg)](https://github.com/pharo-project/Pharo)
+# MCP for Pharo
+
+[![Pharo version](https://img.shields.io/badge/Pharo-12%20%7C%2013%20%7C%2014%20%7C%2015-%23aac9ff.svg)](https://github.com/pharo-project/Pharo)
 [![CI](https://github.com/Evref-BL/MCP/actions/workflows/ci.yml/badge.svg?branch=main&event=push)](https://github.com/Evref-BL/MCP/actions/workflows/ci.yml?query=branch%3Amain+event%3Apush)
 [![Coverage Status](https://coveralls.io/repos/github/Evref-BL/MCP/badge.svg?branch=main)](https://coveralls.io/github/Evref-BL/MCP?branch=main)
-
-# MCP for Pharo
 
 MCP is an in-image [Model Context Protocol](https://modelcontextprotocol.io/)
 server for Pharo. It lets MCP clients inspect and change the running image
@@ -15,8 +15,10 @@ files as plain text.
 
 ## Supported Versions
 
-Pharo 12, 13, and 14 are supported. Development targets Pharo 14 while CI
-checks the full matrix.
+Pharo 12, 13, 14, and 15 are supported.
+
+Protocol revisions `2025-03-26`, `2025-06-18`, `2025-11-25` and `2026-07-28`
+are supported, each answered in its own shape.
 
 ## Install And Start
 
@@ -44,9 +46,6 @@ Connect a local MCP client to `http://127.0.0.1:4000`. Client configuration
 formats differ; see [Getting started](templates/pharo-references/getting-started.md) for setup
 and first calls.
 
-Protocol revisions `2025-03-26`, `2025-06-18`, `2025-11-25` and `2026-07-28`
-are supported, each answered in its own shape.
-
 ## Documentation
 
 - [Documentation index](docs/README.md)
@@ -63,10 +62,10 @@ Install the guide, local references, workflow skills, and direct MCP
 configuration for an agent host into the current project:
 
 ```sh
-npx @evref-bl/pharo-mcp install --host codex
+npx @evref-bl/pharo-mcp install --host claude
 ```
 
-Use `--host claude` or `--host opencode` for those hosts. The direct MCP
+Use `--host codex` or `--host opencode` for those hosts. The direct MCP
 configuration expects port `4000`; update it when the image uses another port.
 
 Node integrations that provide their own MCP transport can install only the
@@ -80,7 +79,7 @@ installGuidance({ host: "codex", cwd: process.cwd() });
 
 ## Contributing
 
-Use Pharo 14 for normal development and preserve Pharo 12/13 compatibility.
-Live behavior must be verified in an image; source inspection alone is not
-enough. Start with [AGENTS.md](AGENTS.md) and
+Use Pharo 14 for normal development and preserve Pharo 12, 13 and 15
+compatibility. Live behavior must be verified in an image; source inspection
+alone is not enough. Start with [AGENTS.md](AGENTS.md) and
 [MCP verification](docs/mcp-verification.md).

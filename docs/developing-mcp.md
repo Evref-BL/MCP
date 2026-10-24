@@ -21,7 +21,7 @@ Iceberg state, Git state, and supported-version compatibility coherent.
 ## Development Surface
 
 - Use Pharo 14 for normal day-to-day development and smoke checks.
-- Keep Pharo 12 and Pharo 13 compatibility intact.
+- Keep Pharo 12, 13 and 15 compatibility intact.
 - Verify affected supported versions when changing compatibility-sensitive
   behavior, PharoBackwardCompatibility backports, baseline loading, tool contracts, or
   APIs that differ by Pharo version.

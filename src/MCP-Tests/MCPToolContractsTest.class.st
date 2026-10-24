@@ -1301,8 +1301,8 @@ MCPToolContractsTest >> testInitializeAdvertisesSupportedPharoVersions [
 	metadata := response at: #_meta.
 	self assert: (metadata includesKey: #'io.github.evref-bl/pharo').
 	pharo := metadata at: #'io.github.evref-bl/pharo'.
-	self assert: (pharo at: #supportedMajorVersions) equals: #( 12 13 14 ).
-	self assert: (pharo at: #supportedLauncherVersions) equals: #( '120' '130' '140' ).
+	self assert: (pharo at: #supportedMajorVersions) equals: #( 12 13 14 15 ).
+	self assert: (pharo at: #supportedLauncherVersions) equals: #( '120' '130' '140' '150' ).
 	runtimeVersion := pharo at: #runtimeVersion.
 	self assert: runtimeVersion isString.
 	self deny: runtimeVersion isEmpty
@@ -1317,8 +1317,8 @@ MCPToolContractsTest >> testInitializeResponseSerializesSupportedPharoVersions [
 	self assert: (response includesSubstring: '"result"').
 	self assert: (response includesSubstring: '"_meta"').
 	self assert: (response includesSubstring: '"io.github.evref-bl/pharo"').
-	self assert: (response includesSubstring: '"supportedMajorVersions":[12,13,14]').
-	self assert: (response includesSubstring: '"supportedLauncherVersions":["120","130","140"]').
+	self assert: (response includesSubstring: '"supportedMajorVersions":[12,13,14,15]').
+	self assert: (response includesSubstring: '"supportedLauncherVersions":["120","130","140","150"]').
 	self assert: (response includesSubstring: '"runtimeVersion":"')
 ]
 

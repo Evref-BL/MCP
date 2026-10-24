@@ -33,7 +33,7 @@ server starts, or that MCP tool execution works in a live image.
 Use Pharo 14 as the default disposable development image for MCP live smoke
 checks.
 
-Use Pharo 12 and Pharo 13 for compatibility verification when a change touches
+Use Pharo 12, 13 and 15 for compatibility verification when a change touches
 version-sensitive behavior.
 
 If the current work context is not approved to launch or mutate a live image,
