@@ -13,7 +13,8 @@ Class {
 MCPCreateClassCommandTest >> createdClassNames [
 
 	^ #( 'MCPCreateClassCommandTestGenerated' 'MCPCreateClassCommandTestTagged' 'MCPCreateClassCommandTestClassSlots'
-	     'MCPCreateClassCommandTestConfigured' 'MCPCreateClassCommandTestTemporaryPackage' )
+	     'MCPCreateClassCommandTestConfigured' 'MCPCreateClassCommandTestTemporaryPackage'
+	     'TMCPCreateClassCommandTestTrait' )
 ]
 
 { #category : 'private' }
@@ -111,6 +112,24 @@ MCPCreateClassCommandTest >> testCreatesClassWithTraitsClassTraitsSharedVariable
 	self assert: result classInfo sharedVariableNames equals: #( 'AlphaShared' 'BetaShared' ).
 	self assert: result classInfo sharedPoolNames equals: #( 'ChronologyConstants' ).
 	self assert: result classInfo layoutClassName equals: 'WeakLayout'
+]
+
+{ #category : 'tests' }
+MCPCreateClassCommandTest >> testCreatesTraitWhenSuperclassIsTrait [
+
+	| createdTrait result |
+	result := self executeCommand: (MCPCreateClassCommand
+			           className: 'TMCPCreateClassCommandTestTrait'
+			           superclassName: 'Trait'
+			           packageName: self generatedPackageName
+			           tag: nil
+			           slots: nil
+			           classSlots: nil).
+	createdTrait := self classNamed: 'TMCPCreateClassCommandTestTrait'.
+	self assert: createdTrait isTrait.
+	self assert: createdTrait superclass isNil.
+	self assert: result classInfo isTrait.
+	self assert: (result classInfo asDictionary at: #isTrait)
 ]
 
 { #category : 'tests' }

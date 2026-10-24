@@ -39,10 +39,10 @@ MCPToolCreateClass >> classToolSpec [
 	^ {
 		  (#action -> 'create').
 		  (#title -> 'Create Class').
-		  (#description -> 'Create one class definition in the running image.').
+		  (#description -> 'Create one class definition in the running image. Naming Trait as the superclass creates a trait.').
 		  (#inputProperties -> {
 			   self createClassNameSchemaProperty.
-			   self superclassNameSchemaProperty.
+			   self createSuperclassNameSchemaProperty.
 			   self createPackageNameSchemaProperty.
 			   self createTagSchemaProperty.
 			   self createSlotsSchemaProperty.
@@ -113,6 +113,15 @@ MCPToolCreateClass >> createSharedVariablesSchemaProperty [
 MCPToolCreateClass >> createSlotsSchemaProperty [
 
 	^ self stringArraySchemaNamed: 'slots' description: 'Instance slot names for the new class.' itemDescription: 'Slot name.'
+]
+
+{ #category : 'private - schema' }
+MCPToolCreateClass >> createSuperclassNameSchemaProperty [
+
+	^ self
+		  schemaPropertyNamed: 'superclass'
+		  type: 'string'
+		  description: 'Superclass name. Name Trait here to create a trait, which has no superclass of its own.'
 ]
 
 { #category : 'private - schema' }

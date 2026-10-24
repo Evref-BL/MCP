@@ -164,6 +164,23 @@ MCPToolGetClassTest >> testClampsSubclassDepthAboveMaximum [
 ]
 
 { #category : 'tests' }
+MCPToolGetClassTest >> testDescribesATraitAndNamesTheClassesUsingIt [
+
+	| data result text |
+	result := self callToolWith: { (#name -> TMCPToolMethodSearchFixture name) } asDictionary.
+	data := self dataFrom: result.
+	text := (result at: #content) first at: #text.
+	self assert: text lines first equals: 'Got trait ' , TMCPToolMethodSearchFixture name , '.'.
+	self assert: (data at: #isTrait).
+	self deny: (data includesKey: #superclass).
+	self assert: (data at: #users) equals: {
+			MCPToolMethodSearchTraitExcluder name asString.
+			MCPToolMethodSearchTraitOtherUser name asString.
+			MCPToolMethodSearchTraitOverrider name asString.
+			MCPToolMethodSearchTraitUser name asString }
+]
+
+{ #category : 'tests' }
 MCPToolGetClassTest >> testGetsClassMetadata [
 
 	| data expectedLayoutClassName result |
@@ -279,9 +296,28 @@ MCPToolGetClassTest >> testIncludesTraitNamesForTraitUsingClass [
 	data := self dataFrom: result.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: ((data at: #traits) anySatisfy: [ :each | each includesSubstring: 'TAbleToRotate' ]).
-	self assert: ((data at: #classTraits) anySatisfy: [ :each | each includesSubstring: 'TAbleToRotate' ]).
-	self assert: ((data at: #traitComposition) includesSubstring: 'TAbleToRotate').
-	self assert: ((data at: #classTraitComposition) includesSubstring: 'TAbleToRotate')
+	self assert: ((data at: #classTraits) anySatisfy: [ :each | each includesSubstring: 'TAbleToRotate' ])
+]
+
+{ #category : 'tests' }
+MCPToolGetClassTest >> testKeepsATraitCompositionThatExcludesAMethod [
+
+	| data result |
+	result := self callToolWith: { (#name -> MCPToolMethodSearchTraitExcluder name) } asDictionary.
+	data := self dataFrom: result.
+	self assert: ((data at: #traitComposition) includesSubstring: 'mcpTraitFixtureValue').
+	self assert: ((data at: #classTraitComposition) includesSubstring: 'mcpTraitFixtureValue')
+]
+
+{ #category : 'tests' }
+MCPToolGetClassTest >> testOmitsATraitCompositionThatOnlyRepeatsTheTraits [
+
+	| data result |
+	result := self callToolWith: { (#name -> MCPToolMethodSearchTraitUser name) } asDictionary.
+	data := self dataFrom: result.
+	self assert: (data at: #traits) equals: { TMCPToolMethodSearchFixture name asString }.
+	self deny: (data includesKey: #traitComposition).
+	self deny: (data includesKey: #classTraitComposition)
 ]
 
 { #category : 'tests' }
