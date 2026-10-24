@@ -30,6 +30,59 @@ MCPServerLifecycleTest >> testAbruptClientDisconnectReleasesConnection [
 ]
 
 { #category : 'tests' }
+MCPServerLifecycleTest >> testBindFailureDestroysTheSocketItCreated [
+
+	| occupiedSocket server |
+	occupiedSocket := ZnNetworkingUtils serverSocketOn: 0.
+	server := MCPSocketRecordingTestServer new.
+	[
+		server port: occupiedSocket port.
+		3 timesRepeat: [
+				[ server initializeServerSocket ]
+					on: SocketError
+					do: [ :error | error return ] ].
+		self assert: server createdSockets size equals: 3.
+		self assert: (server createdSockets allSatisfy: [ :each | each isValid not ]) ] ensure: [
+			server stop: false.
+			occupiedSocket destroy ]
+]
+
+{ #category : 'tests' }
+MCPServerLifecycleTest >> testBindFailureIsRememberedUntilTheServerBinds [
+
+	| occupiedSocket server |
+	occupiedSocket := ZnNetworkingUtils serverSocketOn: 0.
+	server := MCPSocketSafeZnServer new.
+	[
+		server port: occupiedSocket port.
+		self assert: ([ server listenLoop ]
+				 on: SocketError
+				 do: [ false ]).
+		self assert: server lastListenError isNotNil.
+		occupiedSocket destroy.
+		occupiedSocket := nil.
+		server initializeServerSocket.
+		self assert: server lastListenError isNil ] ensure: [
+			server stop: false.
+			occupiedSocket ifNotNil: [ :socket | socket destroy ] ]
+]
+
+{ #category : 'tests' }
+MCPServerLifecycleTest >> testBindSuccessKeepsTheSocketItCreated [
+
+	| server |
+	server := MCPSocketRecordingTestServer new.
+	[
+		server
+			bindingAddress: #[ 127 0 0 1 ];
+			port: 0.
+		server initializeServerSocket.
+		self assert: server createdSockets size equals: 1.
+		self assert: server createdSockets first isValid.
+		self deny: server port isZero ] ensure: [ server stop: false ]
+]
+
+{ #category : 'tests' }
 MCPServerLifecycleTest >> testMultipleServersCanListenOnDifferentPorts [
 
 	| first second |
@@ -47,6 +100,18 @@ MCPServerLifecycleTest >> testMultipleServersCanListenOnDifferentPorts [
 		self deny: first port equals: second port ] ensure: [
 			second stop.
 			first stop ]
+]
+
+{ #category : 'tests' }
+MCPServerLifecycleTest >> testRetryDelayDoublesUpToItsMaximum [
+
+	| server |
+	server := MCPSocketSafeZnServer new.
+	self assert: (server socketRestartDelayAfter: server initialSocketRestartDelayMilliseconds) equals: 500.
+	self assert: (server socketRestartDelayAfter: 500) equals: 1000.
+	self
+		assert: (server socketRestartDelayAfter: server maximumSocketRestartDelayMilliseconds)
+		equals: server maximumSocketRestartDelayMilliseconds
 ]
 
 { #category : 'tests' }
