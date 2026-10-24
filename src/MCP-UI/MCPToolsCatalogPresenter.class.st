@@ -7,11 +7,26 @@ Class {
 	#name : 'MCPToolsCatalogPresenter',
 	#superclass : 'SpPresenter',
 	#instVars : [
-		'contentPresenter'
+		'filterInput',
+		'countLabel',
+		'toolsTable',
+		'rowIcons'
 	],
 	#category : 'MCP-UI',
 	#package : 'MCP-UI'
 }
+
+{ #category : 'world menu' }
+MCPToolsCatalogPresenter class >> menuCommandOn: aBuilder [
+
+	<worldMenu>
+	(aBuilder item: 'MCP Tool Catalog')
+		action: [ self open ];
+		order: 41;
+		parent: #Tools;
+		help: 'Browse the MCP tools this image knows, with their descriptions.';
+		iconName: #book
+]
 
 { #category : 'instance creation' }
 MCPToolsCatalogPresenter class >> open [
@@ -19,45 +34,107 @@ MCPToolsCatalogPresenter class >> open [
 	^ self new open
 ]
 
-{ #category : 'layout' }
-MCPToolsCatalogPresenter >> addToolCatalogGroup: group to: contentLayout [
+{ #category : 'updating' }
+MCPToolsCatalogPresenter >> allTools [
+	"Every tool class the image has, not the surface one server advertises, which is what makes this the image's catalog rather than a server's."
 
-	| heading |
-	heading := self newLabel.
-	heading
-		label: group key;
-		displayBold: [ :ignored | true ].
-	contentLayout add: heading expand: false.
-	group value do: [ :toolClass |
-			contentLayout add: (self toolCatalogCardFor: toolClass) withConstraints: [ :constraints |
-					constraints
-						expand: false;
-						fill: true ] ]
+	^ (MCPTool toolGroups flatCollect: [ :group | group value ]) asArray collect: [ :toolClass | toolClass new ]
 ]
 
-{ #category : 'layout' }
-MCPToolsCatalogPresenter >> catalogLayout [
+{ #category : 'private' }
+MCPToolsCatalogPresenter >> browseSelectedTool [
 
-	| contentLayout |
-	contentLayout := SpBoxLayout newTopToBottom
-		                 spacing: 10;
-		                 borderWidth: 12;
-		                 yourself.
-	MCPTool toolGroups do: [ :group | self addToolCatalogGroup: group to: contentLayout ].
-	^ contentLayout
+	toolsTable selectedItem ifNotNil: [ :tool | tool class browse ]
+]
+
+{ #category : 'initialization' }
+MCPToolsCatalogPresenter >> connectPresenters [
+
+	filterInput whenTextChangedDo: [ self refreshView ]
+]
+
+{ #category : 'private' }
+MCPToolsCatalogPresenter >> copySelectedToolName [
+
+	toolsTable selectedItem ifNotNil: [ :tool | Clipboard clipboardText: tool name ]
+]
+
+{ #category : 'updating' }
+MCPToolsCatalogPresenter >> countLabelFor: shownCount of: totalCount [
+
+	^ shownCount = totalCount
+		  ifTrue: [ totalCount printString , ' tools' ]
+		  ifFalse: [ shownCount printString , ' of ' , totalCount printString , ' tools' ]
 ]
 
 { #category : 'layout' }
 MCPToolsCatalogPresenter >> defaultLayout [
 
-	^ SpScrollableLayout with: contentPresenter
+	^ SpBoxLayout newTopToBottom
+		  spacing: 6;
+		  borderWidth: 8;
+		  add: self filterLayout expand: false;
+		  add: toolsTable;
+		  yourself
+]
+
+{ #category : 'updating' }
+MCPToolsCatalogPresenter >> descriptionFor: aTool [
+
+	^ aTool description ifNil: [ 'No description available.' ]
+]
+
+{ #category : 'layout' }
+MCPToolsCatalogPresenter >> filterLayout [
+
+	^ SpBoxLayout newLeftToRight
+		  spacing: 8;
+		  vAlignCenter;
+		  add: filterInput;
+		  add: countLabel expand: false;
+		  yourself
+]
+
+{ #category : 'api' }
+MCPToolsCatalogPresenter >> initialExtent [
+
+	^ 1000 @ 700
 ]
 
 { #category : 'initialization' }
 MCPToolsCatalogPresenter >> initializePresenters [
 
-	contentPresenter := self instantiate: SpPresenter.
-	contentPresenter layout: self catalogLayout
+	rowIcons := Dictionary new.
+	filterInput := self newTextInput.
+	countLabel := self newLabel.
+	toolsTable := self newTable.
+
+	filterInput
+		placeholder: 'Filter by name, title, group or description';
+		autoAccept: true.
+	self initializeToolsTable.
+	self refreshView
+]
+
+{ #category : 'initialization' }
+MCPToolsCatalogPresenter >> initializeToolsTable [
+
+	toolsTable
+		addColumn: ((SpImageTableColumn evaluated: [ :tool | self rowIconFor: tool ])
+				 width: self rowIconSize + 8;
+				 yourself);
+		addColumn: ((SpStringTableColumn title: 'Tool' evaluated: #name)
+				 beSortable;
+				 yourself);
+		addColumn: ((SpStringTableColumn title: 'Group' evaluated: [ :tool | tool class groupName ])
+				 beSortable;
+				 yourself);
+		addColumn: ((SpStringTableColumn title: 'Title' evaluated: [ :tool | tool title ifNil: [ '' ] ])
+				 beSortable;
+				 yourself);
+		addColumn: (SpStringTableColumn title: 'Description' evaluated: [ :tool | self descriptionFor: tool ]);
+		contextMenu: [ self toolsContextMenu ];
+		beResizable
 ]
 
 { #category : 'initialization' }
@@ -66,93 +143,72 @@ MCPToolsCatalogPresenter >> initializeWindow: aWindowPresenter [
 	super initializeWindow: aWindowPresenter.
 	aWindowPresenter
 		title: 'MCP Tool Catalog';
-		initialExtent: 1000 @ 760
+		initialExtent: self initialExtent
 ]
 
-{ #category : 'layout' }
-MCPToolsCatalogPresenter >> toolCatalogCardFor: toolClass [
+{ #category : 'updating' }
+MCPToolsCatalogPresenter >> refreshView [
 
-	| card cardLayout tool |
-	tool := toolClass new.
-	card := self newPresenter.
-	cardLayout := SpBoxLayout newLeftToRight
-		              spacing: 12;
-		              borderWidth: 8;
-		              yourself.
-	cardLayout
-		add: (self toolCatalogLeftCellFor: tool) width: self toolCatalogLeftColumnWidth;
-		add: (self toolCatalogDescriptionPresenterFor: tool) withConstraints: [ :constraints |
-				constraints
-					expand: true;
-					fill: true ].
-	card layout: cardLayout.
-	^ card
+	| shown all |
+	all := self allTools.
+	shown := self toolsMatchingFilter: all.
+	toolsTable items: shown.
+	countLabel label: (self countLabelFor: shown size of: all size)
 ]
 
-{ #category : 'accessing' }
-MCPToolsCatalogPresenter >> toolCatalogDescriptionFor: tool [
+{ #category : 'private' }
+MCPToolsCatalogPresenter >> rowIconFor: aTool [
+	"The served icon is 32 square, which a table row clips. Scaling it once per tool class keeps the row readable and the scaling off the drawing path."
 
-	^ tool description ifNil: [ 'No description available.' ]
+	^ rowIcons at: aTool class ifAbsentPut: [ (MCPTool toolIconFormOf: aTool class) scaledIntoFormOfSize: self rowIconSize ]
 ]
 
-{ #category : 'layout' }
-MCPToolsCatalogPresenter >> toolCatalogDescriptionPresenterFor: tool [
+{ #category : 'defaults' }
+MCPToolsCatalogPresenter >> rowIconSize [
 
-	| description descriptionCell descriptionLayout |
-	descriptionCell := self newPresenter.
-	description := self newText.
-	description
-		text: (self toolCatalogDescriptionFor: tool);
-		beNotEditable;
-		beWrapWord;
-		withoutEditionContextMenu;
-		withoutScrollBars.
-	descriptionLayout := SpBoxLayout newTopToBottom yourself.
-	descriptionLayout add: description withConstraints: [ :constraints |
-			constraints
-				expand: true;
-				fill: true ].
-	descriptionCell layout: descriptionLayout.
-	^ descriptionCell
+	^ 16
 ]
 
-{ #category : 'layout' }
-MCPToolsCatalogPresenter >> toolCatalogLeftCellFor: tool [
+{ #category : 'updating' }
+MCPToolsCatalogPresenter >> searchTextFor: aTool [
 
-	| identifierLabel image labelLayout leftCell leftLayout title |
-	leftCell := self newPresenter.
-	image := self newImage.
-	image
-		image: (MCPTool toolIconFormOf: tool class);
-		autoScale: false.
-	title := self newLabel.
-	title
-		label: tool title;
-		displayBold: [ :ignored | true ].
-	identifierLabel := self newLabel.
-	identifierLabel label: tool name.
-	labelLayout := SpBoxLayout newTopToBottom
-		               spacing: 1;
-		               hAlignStart;
-		               yourself.
-	labelLayout
-		add: title expand: false;
-		add: identifierLabel expand: false.
-	leftLayout := SpBoxLayout newLeftToRight
-		              spacing: 8;
-		              borderWidth: 0;
-		              hAlignStart;
-		              vAlignCenter;
-		              yourself.
-	leftLayout
-		add: image expand: false;
-		add: labelLayout expand: true.
-	leftCell layout: leftLayout.
-	^ leftCell
+	^ String streamContents: [ :stream |
+			  stream
+				  << aTool name asLowercase;
+				  space;
+				  << aTool class groupName asLowercase;
+				  space;
+				  << (aTool title ifNil: [ '' ]) asLowercase;
+				  space;
+				  << (self descriptionFor: aTool) asLowercase ]
 ]
 
-{ #category : 'layout' }
-MCPToolsCatalogPresenter >> toolCatalogLeftColumnWidth [
+{ #category : 'private' }
+MCPToolsCatalogPresenter >> toolsContextMenu [
 
-	^ 180
+	^ self newMenu
+		  addGroup: [ :group |
+				  group
+					  addItem: [ :item |
+							  item
+								  name: 'Browse class';
+								  description: 'Open the class that implements the selected tool';
+								  enabled: [ toolsTable selectedItem isNotNil ];
+								  action: [ self browseSelectedTool ] ];
+					  addItem: [ :item |
+							  item
+								  name: 'Copy name';
+								  description: 'Copy the name of the selected tool to the clipboard';
+								  enabled: [ toolsTable selectedItem isNotNil ];
+								  action: [ self copySelectedToolName ] ] ];
+		  yourself
+]
+
+{ #category : 'updating' }
+MCPToolsCatalogPresenter >> toolsMatchingFilter: someTools [
+
+	| query |
+	query := filterInput text asString trimBoth asLowercase.
+	query ifEmpty: [ ^ someTools ].
+	^ someTools select: [ :tool | (self searchTextFor: tool) includesSubstring: query ]
 ]

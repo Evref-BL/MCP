@@ -248,6 +248,21 @@ source by hand.
 
 ## Observability And UI
 
+The servers an image holds are listed under `Library → MCP Servers` in the
+world menu, and on the `Servers` tab of an inspected `MCP` class. From there a
+server can be started, stopped, or opened in its dashboard, and a new one
+created on a port, where 0 asks for a free one. The tool catalog sits beside it
+under `Library → MCP Tool Catalog`, since it describes the image rather than
+any one server. The same list in a script:
+
+```smalltalk
+MCP allServers
+```
+
+It is taken from the heap rather than from a registry, so a server is never
+kept alive for being listable, and one that is still holding a port after its
+owner forgot it is shown rather than hidden.
+
 The Spec dashboard is available from an inspected `MCP` object. It shows:
 
 - server status and port

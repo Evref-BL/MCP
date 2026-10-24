@@ -10,10 +10,68 @@ Class {
 }
 
 { #category : 'tests' }
-MCPToolsCatalogPresenterTest >> testCatalogCardRendersFocusedToolIdentity [
+MCPToolsCatalogPresenterTest >> testAnUnfilteredCountNamesTheWholeCatalog [
 
-	| card presenter |
+	| presenter |
 	presenter := MCPToolsCatalogPresenter new.
-	card := presenter toolCatalogCardFor: MCPToolAttachRepository.
-	self assert: card isNotNil
+
+	self assert: (presenter instVarNamed: #countLabel) label equals: presenter allTools size printString , ' tools'
+]
+
+{ #category : 'tests' }
+MCPToolsCatalogPresenterTest >> testCatalogListsEveryToolTheImageHas [
+
+	| presenter |
+	presenter := MCPToolsCatalogPresenter new.
+
+	self assert: (presenter instVarNamed: #toolsTable) items size equals: presenter allTools size.
+	self assert: presenter allTools size equals: MCPToolRegistry default toolClasses size
+]
+
+{ #category : 'tests' }
+MCPToolsCatalogPresenterTest >> testFilterMatchesDescriptionAndGroupTooNotOnlyTheName [
+
+	| presenter tool |
+	presenter := MCPToolsCatalogPresenter new.
+	tool := presenter allTools detect: [ :each | each name = 'class_get' ].
+
+	self assert: ((presenter searchTextFor: tool) includesSubstring: 'classes').
+	self assert: ((presenter searchTextFor: tool) includesSubstring: 'metadata')
+]
+
+{ #category : 'tests' }
+MCPToolsCatalogPresenterTest >> testFilterNarrowsTheListAndSaysSoInTheCount [
+
+	| presenter table |
+	presenter := MCPToolsCatalogPresenter new.
+	table := presenter instVarNamed: #toolsTable.
+
+	(presenter instVarNamed: #filterInput) text: 'slot'.
+	presenter refreshView.
+
+	self assert: (table items allSatisfy: [ :each | each name includesSubstring: 'slot' ]).
+	self assert: table items size < presenter allTools size.
+	self assert: ((presenter instVarNamed: #countLabel) label includesSubstring: ' of ')
+]
+
+{ #category : 'tests' }
+MCPToolsCatalogPresenterTest >> testRowIconsAreBuiltOncePerToolClass [
+
+	| presenter tool |
+	presenter := MCPToolsCatalogPresenter new.
+	tool := presenter allTools first.
+
+	self assert: (presenter rowIconFor: tool) == (presenter rowIconFor: tool)
+]
+
+{ #category : 'tests' }
+MCPToolsCatalogPresenterTest >> testRowIconsAreScaledToFitARow [
+	"The icon a client is served is 32 square, which a table row clips."
+
+	| presenter tool |
+	presenter := MCPToolsCatalogPresenter new.
+	tool := presenter allTools first.
+
+	self assert: (MCPTool toolIconFormOf: tool class) extent equals: 32 @ 32.
+	self assert: (presenter rowIconFor: tool) extent equals: presenter rowIconSize @ presenter rowIconSize
 ]
