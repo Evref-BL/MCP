@@ -1,14 +1,13 @@
 "
 Parsed request for the screenshot tool.
 
-The current tool accepts the world target. targetIdentifier is optional and ignored for world captures.
+It carries the title of the window to capture, or nothing when the caller means the whole world.
 "
 Class {
 	#name : 'MCPScreenshotRequest',
 	#superclass : 'Object',
 	#instVars : [
-		'target',
-		'targetIdentifier'
+		'window'
 	],
 	#category : 'MCP-Requests',
 	#package : 'MCP',
@@ -18,33 +17,25 @@ Class {
 { #category : 'instance creation' }
 MCPScreenshotRequest class >> fromRequest: aRequest tool: aTool [
 
-	^ self new
-		  initializeTarget: (aRequest stringArgumentNamed: 'target' default: 'world')
-		  targetIdentifier: (aRequest stringArgumentNamed: 'targetIdentifier')
+	^ self new initializeWindow: (aRequest stringArgumentNamed: 'window')
 ]
 
 { #category : 'initialization' }
-MCPScreenshotRequest >> initializeTarget: targetString targetIdentifier: identifierString [
+MCPScreenshotRequest >> initializeWindow: aTitle [
 
-	target := targetString ifNil: [ 'world' ].
-	targetIdentifier := identifierString.
-	^ self
-]
-
-{ #category : 'testing' }
-MCPScreenshotRequest >> isWorldTarget [
-
-	^ self target = 'world'
+	window := aTitle
 ]
 
 { #category : 'accessing' }
-MCPScreenshotRequest >> target [
+MCPScreenshotRequest >> targetLabel [
+	"What the capture is of, for the summary and the structured result."
 
-	^ target ifNil: [ 'world' ]
+	^ window ifNil: [ 'world' ]
 ]
 
 { #category : 'accessing' }
-MCPScreenshotRequest >> targetIdentifier [
+MCPScreenshotRequest >> window [
+	"The window title the caller named, or nil when they named none and mean the world."
 
-	^ targetIdentifier
+	^ window
 ]
