@@ -29,6 +29,30 @@ Class {
 	#tag : 'Server'
 }
 
+{ #category : 'private - servers' }
+MCP class >> startNewOnPort: aPortNumber [
+
+	^ self new
+		  port: aPortNumber;
+		  start;
+		  yourself
+]
+
+{ #category : 'servers' }
+MCP class >> startOnPort: aPortNumber [
+	"Answer a running server on this port, which is the one already there when the image has one. Two servers cannot share a port, so asking for a port is asking for the server on it.
+
+	Port 0 asks the operating system for a free one, so it names no particular server and always makes a new one."
+
+	aPortNumber isZero ifTrue: [ ^ self startNewOnPort: aPortNumber ].
+	^ self allServers
+		  detect: [ :each | each port = aPortNumber ]
+		  ifFound: [ :server |
+			  server isRunning ifFalse: [ server start ].
+			  server ]
+		  ifNone: [ self startNewOnPort: aPortNumber ]
+]
+
 { #category : 'servers' }
 MCP class >> allServers [
 	"Answer every MCP server this image still holds, ordered by port.
@@ -212,8 +236,24 @@ MCP >> ensureServerIsListening [
 	server stop.
 	server start.
 	(self waitUntilListeningForMilliseconds: 1000) ifTrue: [ ^ self ].
-	Error signal: 'MCP server is not listening on port ' , self port asString
-		, (server lastListenError ifNil: [ '' ] ifNotNil: [ :reason | ': ' , reason ])
+	Error signal: self notListeningDescription
+]
+
+{ #category : 'private - start' }
+MCP >> notListeningDescription [
+	"A port is most often held by another server in the same image, and the socket error alone does not say so."
+
+	^ String streamContents: [ :stream |
+		  stream << 'MCP server is not listening on port ' << self port asString.
+		  server lastListenError ifNotNil: [ :reason | stream << ': ' << reason ].
+		  self class allServers
+			  detect: [ :each | each ~~ self and: [ each port = self port and: [ each isListening ] ] ]
+			  ifFound: [ :holder |
+				  stream
+				  << '. Another MCP in this image is listening on that port; MCP startOnPort: '
+				  << self port asString
+				  << ' answers it.' ]
+			  ifNone: [ nil ] ]
 ]
 
 { #category : 'private - tools' }

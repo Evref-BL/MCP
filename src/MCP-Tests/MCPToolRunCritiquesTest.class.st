@@ -81,6 +81,61 @@ MCPToolRunCritiquesTest >> tearDown [
 ]
 
 { #category : 'tests' }
+MCPToolRunCritiquesTest >> testFlagsCascadedStreamWrites [
+	"<< answers the stream, so a cascade of writes says the same thing with more punctuation."
+
+	| data rule |
+	self compileFixtureMethodSource: 'cascadedStreamWriteProbe
+
+	^ String streamContents: [ :stream |
+		stream
+			<< ''first'';
+			<< ''second'' ]'.
+
+	data := self dataForArguments: {
+			        (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary).
+			        (#ruleClasses -> { MCPStreamWriteCascadeRule name }) } asDictionary.
+
+	rule := (data at: #rules) first.
+	self assert: (rule at: #ruleClass) equals: MCPStreamWriteCascadeRule name.
+	self assert: (rule at: #hits) size equals: 1.
+	self assert: ((rule at: #hits) first at: #method) equals: self fixtureClassName , '>>cascadedStreamWriteProbe'
+]
+
+{ #category : 'tests' }
+MCPToolRunCritiquesTest >> testLeavesChainedStreamWritesAlone [
+
+	| data |
+	self compileFixtureMethodSource: 'chainedStreamWriteProbe
+
+	^ String streamContents: [ :stream | stream << ''first'' << ''second'' ]'.
+
+	data := self dataForArguments: {
+			        (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary).
+			        (#ruleClasses -> { MCPStreamWriteCascadeRule name }) } asDictionary.
+
+	self
+		assert: ((data at: #rules) allSatisfy: [ :each | (each at: #hits) isEmpty ])
+		description: 'A chained write is not a cascade.'
+]
+
+{ #category : 'tests' }
+MCPToolRunCritiquesTest >> testMarksTheRulesMethodRewriteCanApply [
+
+	| mcpRule renrakuRule |
+	mcpRule := (self dataForArguments: {
+			            (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary).
+			            (#ruleClasses -> { MCPCollectionThenDoRule name }) } asDictionary) at: #rules.
+	renrakuRule := (self dataForArguments: {
+			              (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary).
+			              (#ruleClasses -> { ReAssignmentInBlockRule name }) } asDictionary) at: #rules.
+	"A rule whose patterns method_rewrite can be given by name says so."
+	mcpRule ifNotEmpty: [ :rules | self assert: (rules first at: #fixable) ].
+	"One whose it cannot does not claim it."
+	self deny: (renrakuRule first includesKey: #fixable)
+]
+
+{ #category : 'tests' }
 MCPToolRunCritiquesTest >> testPaginatesIndividualCritiqueHits [
 	"A page is the tool's own size, so what a caller sets is where it starts."
 
@@ -132,22 +187,6 @@ MCPToolRunCritiquesTest >> testRunsClassCritiqueWithClassHit [
 	self assert: (rule at: #ruleClass) equals: ReNoClassCommentRule name.
 	hit := (rule at: #hits) first.
 	self assert: (hit at: #class) equals: self fixtureClassName
-]
-
-{ #category : 'tests' }
-MCPToolRunCritiquesTest >> testMarksTheRulesMethodRewriteCanApply [
-
-	| mcpRule renrakuRule |
-	mcpRule := (self dataForArguments: {
-			            (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary).
-			            (#ruleClasses -> { MCPCollectionThenDoRule name }) } asDictionary) at: #rules.
-	renrakuRule := (self dataForArguments: {
-			              (#scope -> { (#classes -> { self fixtureClassName }) } asDictionary).
-			              (#ruleClasses -> { ReAssignmentInBlockRule name }) } asDictionary) at: #rules.
-	"A rule whose patterns method_rewrite can be given by name says so."
-	mcpRule ifNotEmpty: [ :rules | self assert: (rules first at: #fixable) ].
-	"One whose it cannot does not claim it."
-	self deny: (renrakuRule first includesKey: #fixable)
 ]
 
 { #category : 'tests' }

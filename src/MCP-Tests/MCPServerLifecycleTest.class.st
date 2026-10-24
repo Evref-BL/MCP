@@ -9,6 +9,57 @@ Class {
 	#tag : 'Server'
 }
 
+{ #category : 'private' }
+MCPServerLifecycleTest >> aFreePort [
+	"A port nothing holds, found by holding one for as long as it takes to read its number."
+
+	| socket port |
+	socket := ZnNetworkingUtils serverSocketOn: 0.
+	port := socket port.
+	socket destroy.
+	^ port
+]
+
+{ #category : 'private' }
+MCPServerLifecycleTest >> stopAndForget: anMCP [
+	"A server made by startOnPort: has the observability export a plain MCP has, so what it wrote goes with it."
+
+	| directory |
+	anMCP ifNil: [ ^ self ].
+	directory := [ anMCP observabilityExportInstanceDirectory ]
+		             on: Error
+		             do: [ :error | nil ].
+	[ anMCP stop ]
+		on: Error
+		do: [ :error | error return ].
+	directory ifNotNil: [ directory asFileReference exists ifTrue: [ directory asFileReference deleteAll ] ]
+]
+
+{ #category : 'tests' }
+MCPServerLifecycleTest >> testAPortHeldByAnotherServerIsNamedInTheError [
+	"The socket error says the address is in use; it does not say that the image itself is using it."
+
+	| holder blocked message |
+	holder := self mcpWithoutObservabilityExport
+		          port: 0;
+		          start;
+		          yourself.
+	blocked := self mcpWithoutObservabilityExport
+		           port: holder port;
+		           yourself.
+	[
+		message := [
+			           blocked start.
+			           nil ]
+			           on: Error
+			           do: [ :error | error messageText ].
+		self assert: message isNotNil description: 'Starting on a held port should fail.'.
+		self assert: (message includesSubstring: 'Another MCP in this image is listening on that port').
+		self assert: (message includesSubstring: holder port asString) ] ensure: [
+			blocked stop.
+			holder stop ]
+]
+
 { #category : 'tests' }
 MCPServerLifecycleTest >> testAStartedServerIsListedEvenWhenNothingHoldsIt [
 	"A started server is held by its own process and socket, which is what turns a port held by a forgotten server into something visible."
@@ -229,6 +280,64 @@ MCPServerLifecycleTest >> testSocketSafeServerTreatsSocketErrorsAsConnectionTerm
 	| exceptionSet |
 	exceptionSet := MCPSocketSafeZnServer new readRequestTerminationExceptionSet.
 	self assert: (exceptionSet handles: SocketError new)
+]
+
+{ #category : 'tests' }
+MCPServerLifecycleTest >> testStartOnPortAnswersTheServerAlreadyThere [
+	"Two servers cannot share a port, so asking for a port is asking for the server on it."
+
+	| running found |
+	running := self mcpWithoutObservabilityExport
+		           port: 0;
+		           start;
+		           yourself.
+	[
+		found := MCP startOnPort: running port.
+		self assert: found == running.
+		self assert: found isListening ] ensure: [ running stop ]
+]
+
+{ #category : 'tests' }
+MCPServerLifecycleTest >> testStartOnPortMakesOneWhenTheImageHasNoneThere [
+
+	| port made |
+	port := self aFreePort.
+	made := nil.
+	[
+		made := MCP startOnPort: port.
+		self assert: made port equals: port.
+		self assert: made isListening ] ensure: [ self stopAndForget: made ]
+]
+
+{ #category : 'tests' }
+MCPServerLifecycleTest >> testStartOnPortStartsAServerItFindsStopped [
+
+	| stopped found |
+	stopped := self mcpWithoutObservabilityExport
+		           port: 0;
+		           start;
+		           yourself.
+	stopped stop.
+	[
+		found := MCP startOnPort: stopped port.
+		self assert: found == stopped.
+		self assert: found isRunning ] ensure: [ stopped stop ]
+]
+
+{ #category : 'tests' }
+MCPServerLifecycleTest >> testStartOnPortZeroMakesANewServerEveryTime [
+	"Port 0 asks for any free port, so it names no particular server."
+
+	| first second |
+	first := nil.
+	second := nil.
+	[
+		first := MCP startOnPort: 0.
+		second := MCP startOnPort: 0.
+		self deny: first == second.
+		self deny: first port = second port ] ensure: [
+			self stopAndForget: first.
+			self stopAndForget: second ]
 ]
 
 { #category : 'tests' }

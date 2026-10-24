@@ -133,6 +133,8 @@ Scan for:
   `thenDo:` variant would avoid the intermediate collection;
 - sorting through conversion chains instead of sorting a result array directly;
 - defensive type checks in private helpers that hide caller bugs;
+- cascaded stream writes, where `stream << a; << b` says what `stream << a << b`
+  says with more punctuation, since `<<` answers the stream;
 - wrapper methods or extensions that exist only because a collaborator might be
   wrong someday;
 - dense nested expressions that would be clearer with a temporary or extracted
