@@ -201,6 +201,18 @@ MCPDashboardPresenterTest >> testServerStatusLabelShowsListenerOnlyWhenAnomalous
 ]
 
 { #category : 'tests' }
+MCPDashboardPresenterTest >> testToolRowsAreMarkedWithTheirOwnIcon [
+	"The same icon the catalog shows and a client is served, scaled to the row."
+
+	| presenter tool |
+	presenter := MCPDashboardPresenter on: self mcpWithoutObservabilityExport.
+	tool := presenter toolRows detect: [ :each | each name = 'image_evaluate' ].
+
+	self assert: (presenter rowIconFor: tool) extent equals: presenter rowIconSize @ presenter rowIconSize.
+	self assert: (presenter rowIconFor: tool) == (presenter rowIconFor: tool)
+]
+
+{ #category : 'tests' }
 MCPDashboardPresenterTest >> testToolRowsHoldEveryToolTheServerCouldRun [
 	"The table used to show the listed tools only, so the ones tools/list hides could not be found, let alone shown."
 
@@ -217,11 +229,12 @@ MCPDashboardPresenterTest >> testToolRowsHoldEveryToolTheServerCouldRun [
 
 { #category : 'tests' }
 MCPDashboardPresenterTest >> testToolsTableHasExpectedColumns [
+	"The first column carries the tool's icon and has no title of its own."
 
 	| titles |
 	titles := (MCPDashboardPresenter new instVarNamed: #toolsTable) columns collect: [ :each | each title ].
 
-	self assert: titles equals: #( 'Tool' 'Enabled' 'Listed' 'Title' 'Description' )
+	self assert: titles equals: { nil. 'Tool'. 'Enabled'. 'Listed'. 'Title'. 'Description' }
 ]
 
 { #category : 'tests' }

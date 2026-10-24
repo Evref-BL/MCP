@@ -4,8 +4,8 @@ Spec presenter used by the inspector for an MCP server object. It shows server s
 Class {
 	#name : 'MCPDashboardPresenter',
 	#superclass : 'SpPresenterWithModel',
-	#traits : 'TMCPServerStatusDisplay',
-	#classTraits : 'TMCPServerStatusDisplay classTrait',
+	#traits : 'TMCPServerStatusDisplay + TMCPToolRowIcon',
+	#classTraits : 'TMCPServerStatusDisplay classTrait + TMCPToolRowIcon classTrait',
 	#instVars : [
 		'statusIcon',
 		'statusLabel',
@@ -20,7 +20,8 @@ Class {
 		'stopButton',
 		'restartButton',
 		'toolsLabel',
-		'toolsTable'
+		'toolsTable',
+		'rowIcons'
 	],
 	#category : 'MCP-UI',
 	#package : 'MCP-UI'
@@ -140,6 +141,7 @@ MCPDashboardPresenter >> initialExtent [
 { #category : 'initialization' }
 MCPDashboardPresenter >> initializePresenters [
 
+	rowIcons := Dictionary new.
 	statusIcon := self newImage.
 	statusLabel := self newLabel.
 	statusValueLabel := self newLabel.
@@ -176,7 +178,10 @@ MCPDashboardPresenter >> initializeToolsTable [
 	"Enabled is whether the server has the tool at all; Listed is whether tools/list shows it. An unlisted tool is still found by tool_search and still runs."
 
 	toolsTable
-		addColumn: (SpStringTableColumn title: 'Tool' evaluated: #name);
+		addColumn: self rowIconColumn;
+		addColumn: ((SpStringTableColumn title: 'Tool' evaluated: #name)
+				 beSortable;
+				 yourself);
 		addColumn: ((SpCheckBoxTableColumn title: 'Enabled' evaluated: [ :tool | self isToolEnabled: tool ])
 				 onActivation: [ :tool | self enableTool: tool ];
 				 onDeactivation: [ :tool | self disableTool: tool ];
@@ -187,7 +192,9 @@ MCPDashboardPresenter >> initializeToolsTable [
 				 onDeactivation: [ :tool | self unlistTool: tool ];
 				 width: 70;
 				 yourself);
-		addColumn: (SpStringTableColumn title: 'Title' evaluated: [ :tool | tool title ifNil: [ '' ] ]);
+		addColumn: ((SpStringTableColumn title: 'Title' evaluated: [ :tool | tool title ifNil: [ '' ] ])
+				 beSortable;
+				 yourself);
 		addColumn: (SpStringTableColumn title: 'Description' evaluated: [ :tool | tool description ifNil: [ '' ] ]);
 		beResizable
 ]
@@ -296,6 +303,12 @@ MCPDashboardPresenter >> restartServer [
 		do: [ :error | UIManager default alert: error messageText ].
 
 	self refreshView
+]
+
+{ #category : 'tools' }
+MCPDashboardPresenter >> rowIconCache [
+
+	^ rowIcons
 ]
 
 { #category : 'actions' }
