@@ -23,21 +23,22 @@ MCPCompiledMethodInfoTest >> classTarget [
 
 { #category : 'private' }
 MCPCompiledMethodInfoTest >> createTargetClass [
+	"The target is a committed fixture; this only rebuilds it where it belongs if something removed it."
 
 	self hasTargetClass ifTrue: [ ^ self ].
 	self withoutEpiceaDuring: [
 			| builder |
 			builder := Object << self targetClassName asSymbol.
-			builder package: 'MCP-Tests'.
-			builder tag: 'Internal'.
+			builder package: 'MCP-Tests-Resources'.
 			builder slots: #(  ).
 			builder install ]
 ]
 
 { #category : 'private' }
 MCPCompiledMethodInfoTest >> extensionSelector [
+	"Generated rather than committed: a test that rewrites a versioned fixture leaves its package modified, though the source it ends with is the source it started with."
 
-	^ #extensionInfoTarget
+	^ #generatedExtensionInfoTarget
 ]
 
 { #category : 'private' }
@@ -72,10 +73,10 @@ MCPCompiledMethodInfoTest >> restoreFixtureMethods [
 		protocol: 'tests'
 		on: self classTarget.
 	self
-		ensureMethodSource: 'extensionInfoTarget
+		ensureMethodSource: 'generatedExtensionInfoTarget
 
 	^ 3'
-		protocol: '*MCP-Tests-Resources-Extensions'
+		protocol: self generatedExtensionProtocol
 		on: self targetClass
 ]
 
@@ -102,6 +103,8 @@ MCPCompiledMethodInfoTest >> targetClassName [
 MCPCompiledMethodInfoTest >> tearDown [
 
 	self restoreFixtureMethods.
+	self removeSelector: self extensionSelector from: self targetClass.
+	self removeGeneratedPackagesIfEmpty.
 	super tearDown
 ]
 
@@ -111,12 +114,12 @@ MCPCompiledMethodInfoTest >> testBuildsInfoForExtensionMethod [
 	| info |
 	info := MCPCompiledMethodInfo fromMethod: self targetClass >> self extensionSelector.
 	self assert: info className equals: self targetClassName.
-	self assert: info selector equals: 'extensionInfoTarget'.
+	self assert: info selector equals: self extensionSelector asString.
 	self deny: info classSide.
-	self assert: info packageName equals: 'MCP-Tests-Resources-Extensions'.
+	self assert: info packageName equals: self generatedExtensionPackageName.
 	self assert: info isExtension.
-	self assert: info protocol equals: '*MCP-Tests-Resources-Extensions'.
-	self assert: (info source includesSubstring: 'extensionInfoTarget')
+	self assert: info protocol equals: self generatedExtensionProtocol.
+	self assert: (info source includesSubstring: self extensionSelector asString)
 ]
 
 { #category : 'tests' }

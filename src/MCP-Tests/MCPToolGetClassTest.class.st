@@ -130,23 +130,6 @@ MCPToolGetClassTest >> tearDown [
 ]
 
 { #category : 'tests' }
-MCPToolGetClassTest >> testClassFieldsReadInOrderAndAreNotRepeated [
-	"The summary already names the class, so a class: field would say it twice, and a reader wants what the class is before how big it is."
-
-	| labels text |
-	text := ((self callToolNamed: 'class_get' withArguments: { (#name -> self baseClassName) } asDictionary) at: #content)
-		        first at: #text.
-	labels := (text lines allButFirst
-		           select: [ :each | each includesSubstring: ': ' ]
-		           thenCollect: [ :each | each copyUpTo: $: ]) asArray.
-	self assert: text lines first equals: 'Got class ' , self baseClassName , '.'.
-	self deny: (labels includes: 'class').
-	self assert: (labels copyFrom: 1 to: 2) equals: #( 'superclass' 'layout' ).
-	self assert: ((labels indexOf: 'package') between: 1 and: (labels indexOf: 'classMethods')).
-	self assert: ((labels indexOf: 'classMethods') < (labels indexOf: 'methods'))
-]
-
-{ #category : 'tests' }
 MCPToolGetClassTest >> testClampsSubclassDepthAboveMaximum [
 
 	| data result subclasses |
@@ -161,6 +144,23 @@ MCPToolGetClassTest >> testClampsSubclassDepthAboveMaximum [
 			self childAClassName.
 			self childZClassName.
 			self grandchildClassName } asArray
+]
+
+{ #category : 'tests' }
+MCPToolGetClassTest >> testClassFieldsReadInOrderAndAreNotRepeated [
+	"The summary already names the class, so a class: field would say it twice, and a reader wants what the class is before how big it is."
+
+	| labels text |
+	text := ((self callToolNamed: 'class_get' withArguments: { (#name -> self baseClassName) } asDictionary) at: #content)
+		        first at: #text.
+	labels := (text lines allButFirst
+		           select: [ :each | each includesSubstring: ': ' ]
+		           thenCollect: [ :each | each copyUpTo: $: ]) asArray.
+	self assert: text lines first equals: 'Got class ' , self baseClassName , '.'.
+	self deny: (labels includes: 'class').
+	self assert: (labels copyFrom: 1 to: 2) equals: #( 'superclass' 'layout' ).
+	self assert: ((labels indexOf: 'package') between: 1 and: (labels indexOf: 'classMethods')).
+	self assert: ((labels indexOf: 'classMethods') < (labels indexOf: 'methods'))
 ]
 
 { #category : 'tests' }
@@ -191,8 +191,8 @@ MCPToolGetClassTest >> testGetsClassMetadata [
 	self deny: (self resultIndicatesError: result).
 	self assert: (data at: #class) equals: self baseClassName.
 	self assert: (data at: #superclass) equals: 'Object'.
-	self assert: (data at: #package) equals: 'MCP-Tests'.
-	self assert: (data at: #tag) equals: 'Internal'.
+	self assert: (data at: #package) equals: self generatedPackageName.
+	self assert: (data at: #tag) equals: self generatedTagName.
 	self deny: (data includesKey: #comment).
 	self assert: (data at: #instanceSlots) equals: #( 'betaSlot' 'alphaSlot' ).
 	self assert: (data at: #classSlots) equals: #( 'classBeta' 'classAlpha' ).

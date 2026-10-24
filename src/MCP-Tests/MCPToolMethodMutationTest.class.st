@@ -130,8 +130,9 @@ MCPToolMethodMutationTest >> extensionChangeArguments [
 
 { #category : 'private' }
 MCPToolMethodMutationTest >> extensionProtocolSelector [
+	"Generated rather than committed: a test that rewrites a versioned fixture leaves its package modified, though the source it ends with is the source it started with."
 
-	^ #extensionProtocolTarget
+	^ #generatedExtensionProtocolTarget
 ]
 
 { #category : 'private' }
@@ -260,10 +261,10 @@ MCPToolMethodMutationTest >> restoreFixtureMethods [
 		protocol: 'tests'
 		on: MCPToolMethodMutationTestTarget classSide.
 	self
-		ensureMethodSource: 'extensionProtocolTarget
+		ensureMethodSource: 'generatedExtensionProtocolTarget
 
 	^ 99'
-		protocol: '*MCP-Tests-Resources-Extensions'
+		protocol: self generatedExtensionProtocol
 		on: MCPToolMethodMutationTestTarget.
 	self
 		ensureMethodSource: 'callInstanceTarget
@@ -294,6 +295,8 @@ MCPToolMethodMutationTest >> tearDown [
 	self removeSelector: #combine:with:separator: from: MCPToolMethodMutationTestTarget.
 	self removeSelector: #buildValue:prefix: from: MCPToolMethodMutationTestTarget classSide.
 	self restoreFixtureMethods.
+	self removeSelector: self extensionProtocolSelector from: MCPToolMethodMutationTestTarget.
+	self removeGeneratedPackagesIfEmpty.
 	super tearDown
 ]
 
