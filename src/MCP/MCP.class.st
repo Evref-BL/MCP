@@ -29,6 +29,18 @@ Class {
 	#tag : 'Server'
 }
 
+{ #category : 'servers' }
+MCP class >> allServers [
+	"Answer every MCP server this image still holds, ordered by port.
+
+	The heap is the registry. A class-side collection of servers would keep every server its owner forgot alive for the life of the image, and a weak one would still answer servers that are garbage but not yet collected, which in a working image means a dozen corpses from the test suite for each real server. Collecting first is what tells the two apart: a server that was started is held by its own process and socket, so it survives and is answered even when no variable refers to it, which is how an abandoned server still holding a port becomes visible, while an unstarted one nobody refers to is garbage and correctly disappears.
+
+	This costs a full garbage collection, so it is for answering someone who asked, not for a polling loop."
+
+	Smalltalk garbageCollect.
+	^ self allSubInstances asArray sort: [ :left :right | left port <= right port ]
+]
+
 { #category : 'protocol' }
 MCP class >> catalogCacheMilliseconds [
 	"How long a catalog answer stays good. The catalogs only move when code is loaded or removed, and list_changed invalidates a client's copy the moment they do, so a minute costs a non-listening client at most a minute of staleness and saves everyone else the refetches."
@@ -827,6 +839,27 @@ MCP >> start [
 MCP >> advertiseAllTools [
 
 	self toolRegistry advertiseAllTools.
+	self refreshToolsList
+]
+
+{ #category : 'configuration' }
+MCP >> changePortTo: aPortNumber [
+	"Move the server to another port. A running one is restarted there, and goes back to the port it had if the new one cannot be bound."
+
+	^ self configurePort: aPortNumber debugMode: self debugMode
+]
+
+{ #category : 'configuration' }
+MCP >> advertiseTool: aToolOrToolClassOrName [
+
+	self toolRegistry advertiseTool: aToolOrToolClassOrName.
+	self refreshToolsList
+]
+
+{ #category : 'configuration' }
+MCP >> unadvertiseTool: aToolOrToolClassOrName [
+
+	self toolRegistry unadvertiseTool: aToolOrToolClassOrName.
 	self refreshToolsList
 ]
 

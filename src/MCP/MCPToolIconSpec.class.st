@@ -26,6 +26,7 @@ MCPToolIconSpec class >> actionIconMap [
 			  ('search' -> #search).
 			  ('get' -> #inspect).
 			  ('read' -> #inspect).
+			  ('watch' -> #smallInspectIt).
 			  ('call' -> #go).
 			  ('verify' -> #accept).
 			  ('list' -> #browse).
@@ -36,6 +37,7 @@ MCPToolIconSpec class >> actionIconMap [
 			  ('export' -> #saveToUrl).
 			  ('commit' -> #save).
 			  ('fetch' -> #smallUpdate).
+			  ('reload' -> #autoReload).
 			  ('pull' -> #down).
 			  ('push' -> #up).
 			  ('switch' -> #refreshCircling).
@@ -94,6 +96,7 @@ MCPToolIconSpec class >> domainIconMap [
 			  ('test' -> #testRunner).
 			  ('screen' -> #window).
 			  ('debug' -> #bug).
+			  ('critique' -> #smallWarning).
 			  ('image' -> #pharoHalfScale) }
 ]
 
@@ -164,6 +167,7 @@ MCPToolIconSpec class >> objectIconMap [
 			  ('implementor' -> #referencesUpsideDown).
 			  ('sender' -> #references).
 			  ('class' -> #class).
+			  ('classSide' -> #rightSide).
 			  ('variable' -> #instVarsSelected).
 			  ('classVariable' -> #classVarsSelected).
 			  ('reference' -> #references).
@@ -177,6 +181,7 @@ MCPToolIconSpec class >> objectIconMap [
 			  ('package' -> #package).
 			  ('comment' -> #comments).
 			  ('slot' -> #instVarsSelected).
+			  ('slots' -> #collection).
 			  ('trait' -> #trait).
 			  ('pool' -> #database).
 			  ('layout' -> #objects).
@@ -197,8 +202,9 @@ MCPToolIconSpec class >> objectWordForToolNameParts: parts [
 	domain := parts first.
 	middle := parts copyFrom: 2 to: parts size - 1.
 	domain = 'class' ifTrue: [
+			(middle includes: 'side') ifTrue: [ ^ 'classSide' ].
+			(middle includes: 'slots') ifTrue: [ ^ 'slots' ].
 			(middle includes: 'slot') ifTrue: [ ^ 'slot' ].
-			(middle includes: 'slots') ifTrue: [ ^ 'slot' ].
 			(middle includes: 'traits') ifTrue: [ ^ 'trait' ].
 			(middle includes: 'variables') ifTrue: [ ^ 'classVariable' ].
 			(middle includes: 'pools') ifTrue: [ ^ 'pool' ].

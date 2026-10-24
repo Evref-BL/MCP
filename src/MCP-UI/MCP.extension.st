@@ -8,10 +8,17 @@ MCP >> inspectionDashboard: aBuilder [
 ]
 
 { #category : '*MCP-UI' }
-MCP >> inspectionToolCatalog: aBuilder [
+MCP >> inspectionObservability: aBuilder [
 
-	<inspectorPresentationOrder: 1 title: 'Tool Catalog'>
-	^ MCPToolsCatalogPresenter new
+	<inspectorPresentationOrder: 1 title: 'Observability'>
+	^ MCPObservabilityPresenter on: self
+]
+
+{ #category : '*MCP-UI' }
+MCP class >> inspectionServers: aBuilder [
+
+	<inspectorPresentationOrder: 0 title: 'Servers'>
+	^ MCPServersPresenter new
 ]
 
 { #category : '*MCP-UI' }

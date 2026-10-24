@@ -36,6 +36,13 @@ MCPToolRegistry >> advertiseAllTools [
 ]
 
 { #category : 'advertising' }
+MCPToolRegistry >> advertiseTool: aToolOrToolClassOrName [
+	"Show one more tool in tools/list. The advertised set can be implicit, meaning each tool's own default or all of them, so it is materialized before one name is added to it."
+
+	self advertiseTools: (self advertisedToolNames copyWith: (self advertisedNameFor: aToolOrToolClassOrName))
+]
+
+{ #category : 'advertising' }
 MCPToolRegistry >> advertiseToolDefaults [
 
 	advertisedToolNames := nil
@@ -154,6 +161,17 @@ MCPToolRegistry >> includesToolNamed: aToolName [
 	^ self includesKey: aToolName
 ]
 
+{ #category : 'tools' }
+MCPToolRegistry >> isTool: aTool rankedBefore: anotherTool [
+	"Break a score tie in favor of the more general tool: fewer name segments first, then alphabetically."
+
+	| segments otherSegments |
+	segments := (aTool name findTokens: '-_') size.
+	otherSegments := (anotherTool name findTokens: '-_') size.
+	segments = otherSegments ifTrue: [ ^ aTool name <= anotherTool name ].
+	^ segments < otherSegments
+]
+
 { #category : 'advertising' }
 MCPToolRegistry >> isToolAdvertised: aTool [
 
@@ -166,17 +184,6 @@ MCPToolRegistry >> isToolAdvertised: aTool [
 MCPToolRegistry >> isToolAdvertisedNamed: aToolName [
 
 	^ self isToolAdvertised: (self toolNamed: aToolName ifAbsent: [ ^ false ])
-]
-
-{ #category : 'tools' }
-MCPToolRegistry >> isTool: aTool rankedBefore: anotherTool [
-	"Break a score tie in favor of the more general tool: fewer name segments first, then alphabetically."
-
-	| segments otherSegments |
-	segments := (aTool name findTokens: '-_') size.
-	otherSegments := (anotherTool name findTokens: '-_') size.
-	segments = otherSegments ifTrue: [ ^ aTool name <= anotherTool name ].
-	^ segments < otherSegments
 ]
 
 { #category : 'entries' }
@@ -302,4 +309,11 @@ MCPToolRegistry >> toolsMatchingQuery: queryString [
 				ifTrue: [ self isTool: left value rankedBefore: right value ]
 				ifFalse: [ left key > right key ] ].
 	^ (scoredTools collect: [ :each | each value ]) asArray
+]
+
+{ #category : 'advertising' }
+MCPToolRegistry >> unadvertiseTool: aToolOrToolClassOrName [
+	"Stop showing one tool in tools/list. It stays in the catalog, so tool_search still finds it and tool_call still runs it."
+
+	self advertiseTools: (self advertisedToolNames copyWithout: (self advertisedNameFor: aToolOrToolClassOrName))
 ]

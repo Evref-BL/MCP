@@ -1124,6 +1124,35 @@ MCPToolContractsTest >> testEvaluateToolPointsAtTheToolCatalog [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testEveryToolHasAnIconOfItsOwn [
+	"An icon two tools share marks neither of them."
+
+	| byIcon shared |
+	byIcon := Dictionary new.
+	MCPToolRegistry default toolClasses do: [ :each |
+		(byIcon at: each toolIconSpec cacheKey ifAbsentPut: [ OrderedCollection new ]) add: each toolName ].
+	shared := byIcon values select: [ :each | each size > 1 ] thenCollect: [ :each | each sorted ].
+
+	self assert: shared asArray equals: #(  )
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testEveryToolNameMapsToAKnownDomainAndAction [
+	"A name that misses the maps gets the generic tools-and-arrow icon, which says nothing. A new tool either reuses a word the maps know or adds one."
+
+	| unmapped |
+	unmapped := MCPToolRegistry default toolClasses
+		            reject: [ :each |
+				            | parts |
+				            parts := each toolName substrings: '_'.
+				            (MCPToolIconSpec domainIconMap includesKey: parts first) and: [
+					            MCPToolIconSpec actionIconMap includesKey: parts last ] ]
+		            thenCollect: [ :each | each toolName ].
+
+	self assert: unmapped asArray sorted equals: #(  )
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testExternalToolFixtureIsNotBuiltIn [
 
 	self assert: (MCPTool concreteSubclasses includes: MCPExternalTestTool).

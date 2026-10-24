@@ -10,6 +10,22 @@ Class {
 }
 
 { #category : 'tests' }
+MCPServerLifecycleTest >> testAStartedServerIsListedEvenWhenNothingHoldsIt [
+	"A started server is held by its own process and socket, which is what turns a port held by a forgotten server into something visible."
+
+	| before appeared |
+	before := MCP allServers.
+
+	(self mcpWithoutObservabilityExport port: 0) start.
+
+	appeared := MCP allServers reject: [ :each | before identityIncludes: each ].
+	[
+		self assert: appeared size equals: 1.
+		self assert: appeared first isRunning.
+		self assert: appeared first isListening ] ensure: [ appeared do: [ :each | each stop ] ]
+]
+
+{ #category : 'tests' }
 MCPServerLifecycleTest >> testAbruptClientDisconnectReleasesConnection [
 
 	| clientStream server |
@@ -112,6 +128,20 @@ MCPServerLifecycleTest >> testRetryDelayDoublesUpToItsMaximum [
 	self
 		assert: (server socketRestartDelayAfter: server maximumSocketRestartDelayMilliseconds)
 		equals: server maximumSocketRestartDelayMilliseconds
+]
+
+{ #category : 'tests' }
+MCPServerLifecycleTest >> testServersAreListedByPort [
+
+	| created ports |
+	created := (1 to: 2) collect: [ :ignored |
+			           self mcpWithoutObservabilityExport
+				           port: 0;
+				           yourself ].
+	[
+		created do: [ :each | each start ].
+		ports := (MCP allServers collect: [ :each | each port ]) asArray.
+		self assert: ports equals: ports sorted ] ensure: [ created do: [ :each | each stop ] ]
 ]
 
 { #category : 'tests' }
@@ -276,6 +306,18 @@ MCPServerLifecycleTest >> testStoppingServerStopsBindRetryLoop [
 		self deny: server isListening ] ensure: [
 			server stop: false.
 			occupiedSocket ifNotNil: [ occupiedSocket destroy ] ]
+]
+
+{ #category : 'tests' }
+MCPServerLifecycleTest >> testUnstartedServersNobodyHoldsAreNotListed [
+	"The heap is the registry. A class-side collection would answer all five forever, and a weak one would answer them until they happened to be collected."
+
+	| listed |
+	listed := MCP allServers size.
+
+	5 timesRepeat: [ self mcpWithoutObservabilityExport port: 1234 ].
+
+	self assert: MCP allServers size equals: listed
 ]
 
 { #category : 'private' }

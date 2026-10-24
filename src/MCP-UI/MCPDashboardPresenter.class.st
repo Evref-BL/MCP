@@ -4,36 +4,23 @@ Spec presenter used by the inspector for an MCP server object. It shows server s
 Class {
 	#name : 'MCPDashboardPresenter',
 	#superclass : 'SpPresenterWithModel',
+	#traits : 'TMCPServerStatusDisplay',
+	#classTraits : 'TMCPServerStatusDisplay classTrait',
 	#instVars : [
+		'statusIcon',
 		'statusLabel',
+		'statusValueLabel',
 		'urlLabel',
-		'toolsHeaderButton',
 		'portLabel',
 		'portInput',
 		'debugCheckBox',
 		'applyButton',
 		'refreshButton',
-		'autoRefreshCheckBox',
 		'startButton',
 		'stopButton',
 		'restartButton',
-		'toolsTable',
-		'observabilityCheckBox',
-		'clearObservabilityButton',
-		'metricsHeaderButton',
-		'metricsTable',
-		'tracesHeaderButton',
-		'tracesTable',
-		'logsHeaderButton',
-		'logsTable',
-		'autoRefreshProcess',
-		'toolsSectionExpanded',
-		'metricsSectionExpanded',
-		'tracesSectionExpanded',
-		'logsSectionExpanded',
-		'statusIcon',
-		'statusValueLabel',
-		'sectionExpansionInitialized'
+		'toolsLabel',
+		'toolsTable'
 	],
 	#category : 'MCP-UI',
 	#package : 'MCP-UI'
@@ -54,137 +41,51 @@ MCPDashboardPresenter class >> openOn: anMCP [
 	^ (self on: anMCP) open
 ]
 
-{ #category : 'layout' }
-MCPDashboardPresenter >> addObservabilityWidgetsLayoutTo: aBoxLayout [
-
-	self hasExpandedObservabilitySection
-		ifTrue: [ aBoxLayout add: self observabilityWidgetsLayout ]
-		ifFalse: [ aBoxLayout add: self observabilityWidgetsLayout expand: false ]
-]
-
-{ #category : 'layout' }
-MCPDashboardPresenter >> addPaddedCheckbox: aCheckBoxPresenter width: width to: aBoxLayout [
-
-	aBoxLayout add: self newNullPresenter withConstraints: [ :constraints | constraints width: 8 ].
-	aBoxLayout add: aCheckBoxPresenter withConstraints: [ :constraints | constraints width: width ].
-	^ aBoxLayout
-]
-
-{ #category : 'layout' }
-MCPDashboardPresenter >> addSectionLayout: aSectionLayout expanded: expanded to: aBoxLayout [
-
-	expanded
-		ifTrue: [ aBoxLayout add: aSectionLayout ]
-		ifFalse: [ aBoxLayout add: aSectionLayout expand: false ]
-]
-
 { #category : 'actions' }
-MCPDashboardPresenter >> applyConfiguration [
+MCPDashboardPresenter >> applyPort [
+	"Apply does one thing now: it moves the server to the port in the field. Debug mode takes effect when it is ticked."
 
-	[
-		| newPort |
-		newPort := self readPortFromInput.
-		self model configurePort: newPort debugMode: debugCheckBox state ]
+	[ self model changePortTo: self readPortFromInput ]
 		on: Error
 		do: [ :error | UIManager default alert: error messageText ].
-
-	self refreshView
-]
-
-{ #category : 'collapsing' }
-MCPDashboardPresenter >> areAllObservabilitySectionsExpanded [
-
-	^ self isMetricsSectionExpanded and: [ self isTracesSectionExpanded and: [ self isLogsSectionExpanded ] ]
-]
-
-{ #category : 'auto-refresh' }
-MCPDashboardPresenter >> autoRefreshChangedTo: enabled [
-
-	enabled
-		ifTrue: [ self startAutoRefresh ]
-		ifFalse: [ self stopAutoRefreshProcess ]
-]
-
-{ #category : 'auto-refresh' }
-MCPDashboardPresenter >> autoRefreshIntervalSeconds [
-
-	^ 2
-]
-
-{ #category : 'auto-refresh' }
-MCPDashboardPresenter >> autoRefreshLoop [
-
-	[
-		[ self shouldAutoRefresh ] whileTrue: [
-				(Delay forSeconds: self autoRefreshIntervalSeconds) wait.
-				self shouldAutoRefresh ifTrue: [ self defer: [ self refreshView ] ] ] ] ensure: [ autoRefreshProcess := nil ]
-]
-
-{ #category : 'actions' }
-MCPDashboardPresenter >> clearObservability [
-
-	self model clearObservability.
 	self refreshView
 ]
 
 { #category : 'layout' }
 MCPDashboardPresenter >> configurationLayout [
+	"Apply sits against the field it applies, and the checkbox that needs no applying comes after both."
 
-	| boxLayout |
-	boxLayout := SpBoxLayout newLeftToRight.
-	boxLayout
-		add: portLabel expand: false;
-		add: portInput withConstraints: [ :constraints | constraints width: 90 ].
-	self addPaddedCheckbox: debugCheckBox width: 140 to: boxLayout.
-	boxLayout add: applyButton withConstraints: [ :constraints | constraints width: 110 ].
-	^ boxLayout
-]
-
-{ #category : 'initialization' }
-MCPDashboardPresenter >> configureTracesTableMenu [
-
-	tracesTable ifNil: [ ^ self ].
-	tracesTable contextMenu: [ self tracesContextMenu ]
+	^ SpBoxLayout newLeftToRight
+		  spacing: 8;
+		  vAlignCenter;
+		  add: portLabel expand: false;
+		  add: portInput withConstraints: [ :constraints | constraints width: 90 ];
+		  add: applyButton expand: false;
+		  add: debugCheckBox expand: false;
+		  yourself
 ]
 
 { #category : 'initialization' }
 MCPDashboardPresenter >> connectPresenters [
 
-	applyButton action: [ self applyConfiguration ].
+	portInput
+		whenTextChangedDo: [ self updateApplyButton ];
+		whenSubmitDo: [ self applyPort ].
+	applyButton action: [ self applyPort ].
+	debugCheckBox whenChangedDo: [ :enabled | self debugModeChangedTo: enabled ].
 	refreshButton action: [ self refreshView ].
-	autoRefreshCheckBox whenChangedDo: [ :enabled | self autoRefreshChangedTo: enabled ].
-	observabilityCheckBox whenChangedDo: [ :enabled | self observabilityChangedTo: enabled ].
-	toolsHeaderButton action: [ self toggleToolsSection ].
-	metricsHeaderButton action: [ self toggleMetricsSection ].
-	tracesHeaderButton action: [ self toggleTracesSection ].
-	logsHeaderButton action: [ self toggleLogsSection ].
-	self configureTracesTableMenu.
 	startButton action: [ self startServer ].
 	stopButton action: [ self stopServer ].
-	restartButton action: [ self restartServer ].
-	clearObservabilityButton action: [ self clearObservability ]
+	restartButton action: [ self restartServer ]
 ]
 
-{ #category : 'layout' }
-MCPDashboardPresenter >> dashboardWidgetsBoxLayout [
+{ #category : 'actions' }
+MCPDashboardPresenter >> debugModeChangedTo: enabled [
 
-	| widgetLayout |
-	widgetLayout := SpBoxLayout newTopToBottom.
-	self addSectionLayout: self toolsWidgetLayout expanded: self isToolsSectionExpanded to: widgetLayout.
-	self addObservabilityWidgetsLayoutTo: widgetLayout.
-	^ widgetLayout
-]
-
-{ #category : 'layout' }
-MCPDashboardPresenter >> dashboardWidgetsLayout [
-
-	(self isToolsSectionExpanded and: [ self hasExpandedObservabilitySection ]) ifTrue: [
-			^ SpPanedLayout newTopToBottom
-				  positionOfSlider: 42 percent;
-				  first: self toolsWidgetLayout;
-				  second: self observabilityWidgetsLayout;
-				  yourself ].
-	^ self dashboardWidgetsBoxLayout
+	| mcp |
+	mcp := self model ifNil: [ ^ self ].
+	mcp debugMode = enabled ifTrue: [ ^ self ].
+	mcp debugMode: enabled
 ]
 
 { #category : 'defaults' }
@@ -197,42 +98,27 @@ MCPDashboardPresenter >> debugModeHelpText [
 MCPDashboardPresenter >> defaultLayout [
 
 	^ SpBoxLayout newTopToBottom
+		  spacing: 6;
+		  borderWidth: 8;
 		  add: self headerLayout expand: false;
-		  add: self configurationLayout withConstraints: [ :constraints | constraints height: 30 ];
-		  add: self lifecycleActionsLayout withConstraints: [ :constraints | constraints height: 30 ];
-		  add: self dashboardWidgetsLayout;
+		  add: self configurationLayout expand: false;
+		  add: self lifecycleActionsLayout expand: false;
+		  add: self toolsLayout;
 		  yourself
 ]
 
-{ #category : 'collapsing' }
-MCPDashboardPresenter >> disclosureLabelFor: title count: count expanded: expanded [
+{ #category : 'tools' }
+MCPDashboardPresenter >> disableTool: aTool [
 
-	^ String streamContents: [ :stream |
-			  stream
-				  nextPutAll: (expanded
-						   ifTrue: [ '[-] ' ]
-						   ifFalse: [ '[+] ' ]);
-				  nextPutAll: title;
-				  nextPutAll: ' (';
-				  print: count;
-				  nextPut: $) ]
+	self model removeTool: aTool name.
+	self refreshView
 ]
 
-{ #category : 'collapsing' }
-MCPDashboardPresenter >> expandedObservabilitySectionCount [
+{ #category : 'tools' }
+MCPDashboardPresenter >> enableTool: aTool [
 
-	| count |
-	count := 0.
-	self isMetricsSectionExpanded ifTrue: [ count := count + 1 ].
-	self isTracesSectionExpanded ifTrue: [ count := count + 1 ].
-	self isLogsSectionExpanded ifTrue: [ count := count + 1 ].
-	^ count
-]
-
-{ #category : 'collapsing' }
-MCPDashboardPresenter >> hasExpandedObservabilitySection [
-
-	^ self isMetricsSectionExpanded or: [ self isTracesSectionExpanded or: [ self isLogsSectionExpanded ] ]
+	self model addTool: aTool.
+	self refreshView
 ]
 
 { #category : 'layout' }
@@ -254,91 +140,55 @@ MCPDashboardPresenter >> initialExtent [
 { #category : 'initialization' }
 MCPDashboardPresenter >> initializePresenters [
 
-	toolsSectionExpanded := true.
-	metricsSectionExpanded := true.
-	tracesSectionExpanded := true.
-	logsSectionExpanded := true.
-	sectionExpansionInitialized := false.
-
-	statusIcon := self instantiate: SpImagePresenter.
-	statusLabel := self instantiate: SpLabelPresenter.
-	statusValueLabel := self instantiate: SpLabelPresenter.
-	urlLabel := self instantiate: SpLabelPresenter.
-	toolsHeaderButton := self instantiate: SpButtonPresenter.
-	portLabel := self instantiate: SpLabelPresenter.
-	portInput := self instantiate: SpTextInputFieldPresenter.
-	debugCheckBox := self instantiate: SpCheckBoxPresenter.
-	applyButton := self instantiate: SpButtonPresenter.
-	refreshButton := self instantiate: SpButtonPresenter.
-	autoRefreshCheckBox := self instantiate: SpCheckBoxPresenter.
-	startButton := self instantiate: SpButtonPresenter.
-	stopButton := self instantiate: SpButtonPresenter.
-	restartButton := self instantiate: SpButtonPresenter.
+	statusIcon := self newImage.
+	statusLabel := self newLabel.
+	statusValueLabel := self newLabel.
+	urlLabel := self newLabel.
+	portLabel := self newLabel.
+	portInput := self newTextInput.
+	debugCheckBox := self newCheckBox.
+	applyButton := self newButton.
+	refreshButton := self newButton.
+	startButton := self newButton.
+	stopButton := self newButton.
+	restartButton := self newButton.
+	toolsLabel := self newLabel.
 	toolsTable := self newTable.
-	observabilityCheckBox := self instantiate: SpCheckBoxPresenter.
-	clearObservabilityButton := self instantiate: SpButtonPresenter.
-	metricsHeaderButton := self instantiate: SpButtonPresenter.
-	metricsTable := self newTable.
-	tracesHeaderButton := self instantiate: SpButtonPresenter.
-	tracesTable := self newTable.
-	logsHeaderButton := self instantiate: SpButtonPresenter.
-	logsTable := self newTable.
 
 	statusLabel label: 'Status:'.
 	portLabel label: 'Port:'.
+	portInput help: 'The port the server listens on. Apply moves it there, restarting it if it is running.'.
 	debugCheckBox
 		label: 'Debug mode';
 		help: self debugModeHelpText.
-	applyButton label: 'Apply'.
+	applyButton
+		label: 'Apply';
+		enabled: false.
 	refreshButton label: 'Refresh'.
-	autoRefreshCheckBox label: 'Auto-refresh'.
 	startButton label: 'Start'.
 	stopButton label: 'Stop'.
 	restartButton label: 'Restart'.
-	observabilityCheckBox label: 'Enable observability'.
-	clearObservabilityButton label: 'Clear'.
-
-	toolsTable
-		addColumn: (SpStringTableColumn title: 'Tool' evaluated: #name);
-		addColumn: (SpStringTableColumn title: 'Title' evaluated: [ :tool | tool title ifNil: [ '' ] ]);
-		addColumn: (SpStringTableColumn title: 'Description' evaluated: [ :tool | tool description ifNil: [ '' ] ]);
-		beResizable.
-	metricsTable
-		addColumn: (SpStringTableColumn title: 'Tool' evaluated: #tool);
-		addColumn: (SpStringTableColumn title: 'Calls' evaluated: [ :stats | stats callCount asString ]);
-		addColumn: (SpStringTableColumn title: 'Errors' evaluated: [ :stats | stats errorCount asString ]);
-		addColumn: (SpStringTableColumn title: 'Avg ms' evaluated: #displayAverageMilliseconds);
-		addColumn: (SpStringTableColumn title: 'Min ms' evaluated: #displayMinMilliseconds);
-		addColumn: (SpStringTableColumn title: 'Max ms' evaluated: #displayMaxMilliseconds);
-		addColumn: (SpStringTableColumn title: 'Last ms' evaluated: #displayLastMilliseconds);
-		beResizable.
-	self initializeTracesTableColumns.
-	logsTable
-		addColumn: (SpStringTableColumn title: 'Log' evaluated: [ :line | line ]);
-		beResizable
-]
-
-{ #category : 'collapsing' }
-MCPDashboardPresenter >> initializeSectionExpansionFor: mcp [
-
-	sectionExpansionInitialized ifTrue: [ ^ self ].
-	toolsSectionExpanded := mcp sortedTools notEmpty.
-	metricsSectionExpanded := mcp observabilityEnabled or: [ mcp observabilityMetrics notEmpty ].
-	tracesSectionExpanded := mcp observabilityEnabled or: [ mcp observabilityTraces notEmpty ].
-	logsSectionExpanded := mcp observabilityEnabled or: [ mcp observabilityLogs notEmpty ].
-	sectionExpansionInitialized := true
+	self initializeToolsTable
 ]
 
 { #category : 'initialization' }
-MCPDashboardPresenter >> initializeTracesTableColumns [
+MCPDashboardPresenter >> initializeToolsTable [
+	"Enabled is whether the server has the tool at all; Listed is whether tools/list shows it. An unlisted tool is still found by tool_search and still runs."
 
-	tracesTable
-		addColumn: (SpStringTableColumn title: 'Status' evaluated: #status);
-		addColumn: (SpStringTableColumn title: 'Tool' evaluated: #tool);
-		addColumn: (SpStringTableColumn title: 'Duration ms' evaluated: #displayDurationMilliseconds);
-		addColumn: (SpStringTableColumn title: 'Output bytes' evaluated: [ :record | record outputByteCount asString ]);
-		addColumn: (SpStringTableColumn title: 'Details' evaluated: #displaySummary);
-		addColumn: (SpStringTableColumn title: 'Started' evaluated: #displayStartedAt);
+	toolsTable
+		addColumn: (SpStringTableColumn title: 'Tool' evaluated: #name);
+		addColumn: ((SpCheckBoxTableColumn title: 'Enabled' evaluated: [ :tool | self isToolEnabled: tool ])
+				 onActivation: [ :tool | self enableTool: tool ];
+				 onDeactivation: [ :tool | self disableTool: tool ];
+				 width: 70;
+				 yourself);
+		addColumn: ((SpCheckBoxTableColumn title: 'Listed' evaluated: [ :tool | self isToolListed: tool ])
+				 onActivation: [ :tool | self listTool: tool ];
+				 onDeactivation: [ :tool | self unlistTool: tool ];
+				 width: 70;
+				 yourself);
+		addColumn: (SpStringTableColumn title: 'Title' evaluated: [ :tool | tool title ifNil: [ '' ] ]);
+		addColumn: (SpStringTableColumn title: 'Description' evaluated: [ :tool | tool description ifNil: [ '' ] ]);
 		beResizable
 ]
 
@@ -346,165 +196,57 @@ MCPDashboardPresenter >> initializeTracesTableColumns [
 MCPDashboardPresenter >> initializeWindow: aWindowPresenter [
 
 	super initializeWindow: aWindowPresenter.
-	aWindowPresenter whenClosedDo: [ self stopAutoRefresh ]
+	aWindowPresenter
+		title: self title;
+		initialExtent: self initialExtent
 ]
 
-{ #category : 'private - menu' }
-MCPDashboardPresenter >> inspectSelectedTraceRecord [
+{ #category : 'updating' }
+MCPDashboardPresenter >> isPortChangePending [
+	"Apply has something to do only when the field holds a port that is not the one the server is on."
 
-	self inspectTraceRecord: tracesTable selectedItem
+	| mcp typed |
+	mcp := self model ifNil: [ ^ false ].
+	typed := [ self readPortFromInput ]
+		         on: Error
+		         do: [ :error | ^ false ].
+	^ typed ~= mcp port
 ]
 
-{ #category : 'private - menu' }
-MCPDashboardPresenter >> inspectTraceRecord: aTraceRecord [
+{ #category : 'tools' }
+MCPDashboardPresenter >> isToolEnabled: aTool [
 
-	aTraceRecord ifNil: [ ^ self ].
-	aTraceRecord inspect
+	^ self model toolRegistry includesToolNamed: aTool name
 ]
 
-{ #category : 'auto-refresh' }
-MCPDashboardPresenter >> isAutoRefreshEnabled [
+{ #category : 'tools' }
+MCPDashboardPresenter >> isToolListed: aTool [
 
-	^ autoRefreshCheckBox isNotNil and: [ autoRefreshCheckBox state ]
-]
-
-{ #category : 'auto-refresh' }
-MCPDashboardPresenter >> isAutoRefreshProcessRunning [
-
-	^ autoRefreshProcess isNotNil and: [ autoRefreshProcess isTerminated not ]
-]
-
-{ #category : 'collapsing' }
-MCPDashboardPresenter >> isLogsSectionExpanded [
-
-	^ logsSectionExpanded ifNil: [ true ]
-]
-
-{ #category : 'collapsing' }
-MCPDashboardPresenter >> isMetricsSectionExpanded [
-
-	^ metricsSectionExpanded ifNil: [ true ]
-]
-
-{ #category : 'collapsing' }
-MCPDashboardPresenter >> isToolsSectionExpanded [
-
-	^ toolsSectionExpanded ifNil: [ true ]
-]
-
-{ #category : 'collapsing' }
-MCPDashboardPresenter >> isTracesSectionExpanded [
-
-	^ tracesSectionExpanded ifNil: [ true ]
+	^ self model toolRegistry isToolAdvertisedNamed: aTool name
 ]
 
 { #category : 'layout' }
 MCPDashboardPresenter >> lifecycleActionsLayout [
 
 	^ SpBoxLayout newLeftToRight
-		  add: startButton withConstraints: [ :constraints | constraints width: 110 ];
-		  add: stopButton withConstraints: [ :constraints | constraints width: 110 ];
-		  add: restartButton withConstraints: [ :constraints | constraints width: 120 ];
+		  spacing: 6;
+		  add: startButton expand: false;
+		  add: stopButton expand: false;
+		  add: restartButton expand: false;
 		  yourself
 ]
 
-{ #category : 'private - observability' }
-MCPDashboardPresenter >> logsForDisplayFrom: logEntries [
+{ #category : 'tools' }
+MCPDashboardPresenter >> listTool: aTool [
+	"Advertising a tool the server does not have adds it, so a listed tool is an enabled one."
 
-	^ logEntries reversed
-]
-
-{ #category : 'layout' }
-MCPDashboardPresenter >> logsWidgetLayout [
-
-	| widgetLayout |
-	widgetLayout := SpBoxLayout newTopToBottom.
-	widgetLayout add: logsHeaderButton expand: false.
-	self isLogsSectionExpanded ifTrue: [ widgetLayout add: logsTable ].
-	^ widgetLayout
-]
-
-{ #category : 'layout' }
-MCPDashboardPresenter >> metricsWidgetLayout [
-
-	| widgetLayout |
-	widgetLayout := SpBoxLayout newTopToBottom.
-	widgetLayout add: metricsHeaderButton expand: false.
-	self isMetricsSectionExpanded ifTrue: [ widgetLayout add: metricsTable ].
-	^ widgetLayout
+	self model advertiseTool: aTool.
+	self refreshView
 ]
 
 { #category : 'updating' }
 MCPDashboardPresenter >> modelChanged [
 
-	sectionExpansionInitialized := false.
-	self refreshView
-]
-
-{ #category : 'layout' }
-MCPDashboardPresenter >> observabilityControlsLayout [
-
-	| controlsLayout |
-	controlsLayout := SpBoxLayout newLeftToRight.
-	self addPaddedCheckbox: observabilityCheckBox width: 190 to: controlsLayout.
-	controlsLayout add: refreshButton withConstraints: [ :constraints | constraints width: 110 ].
-	self addPaddedCheckbox: autoRefreshCheckBox width: 150 to: controlsLayout.
-	controlsLayout add: clearObservabilityButton withConstraints: [ :constraints | constraints width: 90 ].
-	^ controlsLayout
-]
-
-{ #category : 'layout' }
-MCPDashboardPresenter >> observabilityHeaderLayout [
-
-	^ SpBoxLayout newTopToBottom
-		  add: self observabilityControlsLayout withConstraints: [ :constraints | constraints height: 30 ];
-		  yourself
-]
-
-{ #category : 'layout' }
-MCPDashboardPresenter >> observabilitySectionsLayout [
-
-	self areAllObservabilitySectionsExpanded ifTrue: [
-			^ SpPanedLayout newTopToBottom
-				  positionOfSlider: 42 percent;
-				  first: self metricsWidgetLayout;
-				  second: (SpPanedLayout newTopToBottom
-						   positionOfSlider: 45 percent;
-						   first: self tracesWidgetLayout;
-						   second: self logsWidgetLayout;
-						   yourself);
-				  yourself ].
-	self expandedObservabilitySectionCount = 2 ifTrue: [ ^ self twoExpandedObservabilitySectionsLayout ].
-	^ self observabilityWidgetsBoxLayout
-]
-
-{ #category : 'layout' }
-MCPDashboardPresenter >> observabilityWidgetsBoxLayout [
-
-	| widgetLayout |
-	widgetLayout := SpBoxLayout newTopToBottom.
-	self addSectionLayout: self metricsWidgetLayout expanded: self isMetricsSectionExpanded to: widgetLayout.
-	self addSectionLayout: self tracesWidgetLayout expanded: self isTracesSectionExpanded to: widgetLayout.
-	self addSectionLayout: self logsWidgetLayout expanded: self isLogsSectionExpanded to: widgetLayout.
-	^ widgetLayout
-]
-
-{ #category : 'layout' }
-MCPDashboardPresenter >> observabilityWidgetsLayout [
-
-	^ SpBoxLayout newTopToBottom
-		  add: self observabilityHeaderLayout expand: false;
-		  add: self observabilitySectionsLayout;
-		  yourself
-]
-
-{ #category : 'actions' }
-MCPDashboardPresenter >> observabilityChangedTo: enabled [
-
-	| mcp |
-	mcp := self model ifNil: [ ^ self ].
-	mcp observabilityEnabled = enabled ifTrue: [ ^ self ].
-	mcp observabilityEnabled: enabled.
 	self refreshView
 ]
 
@@ -525,45 +267,25 @@ MCPDashboardPresenter >> readPortFromInput [
 	^ parsedPort
 ]
 
-{ #category : 'collapsing' }
-MCPDashboardPresenter >> refreshLayoutAfterSectionToggle [
-
-	self layout: self defaultLayout.
-	self refreshView
-]
-
-{ #category : 'actions' }
+{ #category : 'updating' }
 MCPDashboardPresenter >> refreshView [
 
-	| isListening isRunning logs mcp metrics statusText tools traces |
+	| mcp isRunning isListening tools |
 	mcp := self model ifNil: [ ^ self ].
-	self configureTracesTableMenu.
-	self initializeSectionExpansionFor: mcp.
-	tools := mcp sortedTools.
-	metrics := mcp observabilityMetrics.
-	traces := mcp observabilityTraces.
-	logs := mcp observabilityLogs.
 	isRunning := mcp isRunning.
 	isListening := mcp isListening.
-	statusText := self serverStatusLabelForRunning: isRunning listening: isListening.
+	tools := self toolRows.
 
 	statusIcon
 		image: (self iconNamed: (self serverStatusIconNameForRunning: isRunning listening: isListening));
-		help: statusText.
-	statusLabel label: 'Status:'.
+		help: (self serverStatusLabelForRunning: isRunning listening: isListening).
 	statusValueLabel label: (self serverStatusValueForRunning: isRunning listening: isListening).
 	urlLabel label: 'Endpoint: ' , mcp localUrlString.
 	portInput text: mcp port asString.
 	debugCheckBox state: mcp debugMode.
-	toolsHeaderButton label: (self disclosureLabelFor: 'Tools' count: tools size expanded: self isToolsSectionExpanded).
-	toolsTable items: tools.
-	observabilityCheckBox state: mcp observabilityEnabled.
-	metricsHeaderButton label: (self disclosureLabelFor: 'Metrics' count: metrics size expanded: self isMetricsSectionExpanded).
-	metricsTable items: metrics.
-	tracesHeaderButton label: (self disclosureLabelFor: 'Traces' count: traces size expanded: self isTracesSectionExpanded).
-	tracesTable items: traces.
-	logsHeaderButton label: (self disclosureLabelFor: 'Logs' count: logs size expanded: self isLogsSectionExpanded).
-	logsTable items: (self logsForDisplayFrom: logs)
+	self updateApplyButton.
+	toolsLabel label: (self toolsLabelFor: tools).
+	toolsTable items: tools
 ]
 
 { #category : 'actions' }
@@ -574,50 +296,6 @@ MCPDashboardPresenter >> restartServer [
 		do: [ :error | UIManager default alert: error messageText ].
 
 	self refreshView
-]
-
-{ #category : 'private - text' }
-MCPDashboardPresenter >> serverStatusIconNameForRunning: isRunning listening: isListening [
-
-	isRunning ifFalse: [
-			^ isListening
-				  ifTrue: [ #testRed ]
-				  ifFalse: [ #testNotRun ] ].
-	^ isListening
-		  ifTrue: [ #testGreen ]
-		  ifFalse: [ #testRed ]
-]
-
-{ #category : 'private - text' }
-MCPDashboardPresenter >> serverStatusLabelForRunning: isRunning listening: isListening [
-
-	^ 'Status: ' , (self serverStatusValueForRunning: isRunning listening: isListening)
-]
-
-{ #category : 'private - text' }
-MCPDashboardPresenter >> serverStatusValueForRunning: isRunning listening: isListening [
-
-	isRunning ifFalse: [
-			^ isListening
-				  ifTrue: [ 'stopped, socket still listening' ]
-				  ifFalse: [ 'stopped' ] ].
-	^ isListening
-		  ifTrue: [ 'running' ]
-		  ifFalse: [ 'running, socket not listening' ]
-]
-
-{ #category : 'auto-refresh' }
-MCPDashboardPresenter >> shouldAutoRefresh [
-
-	^ self isAutoRefreshEnabled and: [ self isDisplayed ]
-]
-
-{ #category : 'auto-refresh' }
-MCPDashboardPresenter >> startAutoRefresh [
-
-	self isAutoRefreshProcessRunning ifTrue: [ ^ self ].
-	self refreshView.
-	autoRefreshProcess := [ self autoRefreshLoop ] forkAt: Processor userBackgroundPriority
 ]
 
 { #category : 'actions' }
@@ -645,23 +323,6 @@ MCPDashboardPresenter >> statusRowLayout [
 		  yourself
 ]
 
-{ #category : 'auto-refresh' }
-MCPDashboardPresenter >> stopAutoRefresh [
-
-	autoRefreshCheckBox ifNotNil: [ autoRefreshCheckBox state: false ].
-	self stopAutoRefreshProcess
-]
-
-{ #category : 'auto-refresh' }
-MCPDashboardPresenter >> stopAutoRefreshProcess [
-
-	| process |
-	process := autoRefreshProcess.
-	autoRefreshProcess := nil.
-	process ifNil: [ ^ self ].
-	process isTerminated ifFalse: [ process terminate ]
-]
-
 { #category : 'actions' }
 MCPDashboardPresenter >> stopServer [
 
@@ -678,97 +339,45 @@ MCPDashboardPresenter >> title [
 	^ 'MCP Server Dashboard'
 ]
 
-{ #category : 'collapsing' }
-MCPDashboardPresenter >> toggleLogsSection [
+{ #category : 'tools' }
+MCPDashboardPresenter >> toolRows [
+	"Every tool the server could run, not only the ones it lists. A tool removed on purpose stays in the table so it can be put back; rediscovery never brings it back on its own."
 
-	logsSectionExpanded := self isLogsSectionExpanded not.
-	self refreshLayoutAfterSectionToggle
+	| registry absent |
+	registry := self model toolRegistry.
+	absent := registry autoRegisteringClasses
+		          reject: [ :each | registry includesToolNamed: each toolName ]
+		          thenCollect: [ :each | each new ].
+	^ registry tools asArray , absent asArray sort: [ :left :right | left name <= right name ]
 ]
 
-{ #category : 'collapsing' }
-MCPDashboardPresenter >> toggleMetricsSection [
+{ #category : 'updating' }
+MCPDashboardPresenter >> toolsLabelFor: someTools [
 
-	metricsSectionExpanded := self isMetricsSectionExpanded not.
-	self refreshLayoutAfterSectionToggle
-]
-
-{ #category : 'collapsing' }
-MCPDashboardPresenter >> toggleToolsSection [
-
-	toolsSectionExpanded := self isToolsSectionExpanded not.
-	self refreshLayoutAfterSectionToggle
-]
-
-{ #category : 'collapsing' }
-MCPDashboardPresenter >> toggleTracesSection [
-
-	tracesSectionExpanded := self isTracesSectionExpanded not.
-	self refreshLayoutAfterSectionToggle
+	| listed |
+	listed := someTools count: [ :each | self isToolListed: each ].
+	^ 'Tools (' , someTools size printString , ', ' , listed printString , ' listed)'
 ]
 
 { #category : 'layout' }
-MCPDashboardPresenter >> toolsWidgetLayout [
+MCPDashboardPresenter >> toolsLayout [
 
-	| widgetLayout |
-	widgetLayout := SpBoxLayout newTopToBottom.
-	widgetLayout add: toolsHeaderButton expand: false.
-	self isToolsSectionExpanded ifTrue: [ widgetLayout add: toolsTable ].
-	^ widgetLayout
-]
-
-{ #category : 'private - menu' }
-MCPDashboardPresenter >> tracesContextMenu [
-
-	^ self newMenu
-		  addGroup: [ :group |
-				  group addItem: [ :item |
-							  item
-								  name: 'Inspect';
-								  description: 'Inspect the selected trace record';
-								  enabled: [ tracesTable selectedItem isNotNil ];
-								  action: [ self inspectSelectedTraceRecord ] ] ];
+	^ SpBoxLayout newTopToBottom
+		  spacing: 2;
+		  add: toolsLabel expand: false;
+		  add: toolsTable;
 		  yourself
 ]
 
-{ #category : 'layout' }
-MCPDashboardPresenter >> tracesWidgetLayout [
+{ #category : 'tools' }
+MCPDashboardPresenter >> unlistTool: aTool [
 
-	| widgetLayout |
-	widgetLayout := SpBoxLayout newTopToBottom.
-	widgetLayout add: tracesHeaderButton expand: false.
-	self isTracesSectionExpanded ifTrue: [ widgetLayout add: tracesTable ].
-	^ widgetLayout
+	self model unadvertiseTool: aTool name.
+	self refreshView
 ]
 
-{ #category : 'layout' }
-MCPDashboardPresenter >> twoExpandedObservabilitySectionsLayout [
+{ #category : 'updating' }
+MCPDashboardPresenter >> updateApplyButton [
 
-	self isMetricsSectionExpanded ifFalse: [
-			^ SpBoxLayout newTopToBottom
-				  add: self metricsWidgetLayout expand: false;
-				  add: (SpPanedLayout newTopToBottom
-						   positionOfSlider: 50 percent;
-						   first: self tracesWidgetLayout;
-						   second: self logsWidgetLayout;
-						   yourself);
-				  yourself ].
-	self isTracesSectionExpanded ifFalse: [
-			^ SpPanedLayout newTopToBottom
-				  positionOfSlider: 50 percent;
-				  first: self metricsWidgetLayout;
-				  second: (SpBoxLayout newTopToBottom
-						   add: self tracesWidgetLayout expand: false;
-						   add: self logsWidgetLayout;
-						   yourself);
-				  yourself ].
-	self isLogsSectionExpanded ifFalse: [
-			^ SpBoxLayout newTopToBottom
-				  add: (SpPanedLayout newTopToBottom
-						   positionOfSlider: 50 percent;
-						   first: self metricsWidgetLayout;
-						   second: self tracesWidgetLayout;
-						   yourself);
-				  add: self logsWidgetLayout expand: false;
-				  yourself ].
-	^ self observabilityWidgetsBoxLayout
+	applyButton enabled: self isPortChangePending
 ]
