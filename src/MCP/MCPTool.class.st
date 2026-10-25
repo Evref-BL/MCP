@@ -550,17 +550,6 @@ MCPTool >> errorStackTraceVariableLimit [
 	^ 10
 ]
 
-{ #category : 'error handling' }
-MCPTool >> errorValueTextFor: aBlock [
-	"A frame holds values from code that already failed, so printing one can fail in turn."
-
-	| text |
-	text := [ aBlock value printString ] on: Error do: [ :error | '<unprintable>' ].
-	text size > self errorStackTraceValueCharacterLimit ifTrue: [
-		text := (text first: self errorStackTraceValueCharacterLimit) , '...' ].
-	^ self inlineValueTextFor: text
-]
-
 { #category : 'private - results' }
 MCPTool >> errorTextOn: stream for: error [
 	"The summary already carries the class, the message, and any suggestion the command phrased into it. What it does not carry is where the failure happened, or the selectors a receiver would have understood."
@@ -575,6 +564,17 @@ MCPTool >> errorTextOn: stream for: error [
 					stream
 						nextPut: Character lf;
 						nextPutAll: each ] ]
+]
+
+{ #category : 'error handling' }
+MCPTool >> errorValueTextFor: aBlock [
+	"A frame holds values from code that already failed, so printing one can fail in turn."
+
+	| text |
+	text := [ aBlock value printString ] on: Error do: [ :error | '<unprintable>' ].
+	text size > self errorStackTraceValueCharacterLimit ifTrue: [
+		text := (text first: self errorStackTraceValueCharacterLimit) , '...' ].
+	^ self inlineValueTextFor: text
 ]
 
 { #category : 'executing' }
@@ -748,21 +748,6 @@ MCPTool >> keysStatedInSummary [
 	^ #(  )
 ]
 
-{ #category : 'private - results' }
-MCPTool >> orderedKeys: someKeys [
-	"Sort by the order the tool declared, then alphabetically among the keys it did not name."
-
-	| order |
-	order := self keyOrder.
-	^ someKeys asSortedCollection: [ :left :right |
-			  | leftIndex rightIndex |
-			  leftIndex := order indexOf: left asSymbol ifAbsent: [ order size + 1 ].
-			  rightIndex := order indexOf: right asSymbol ifAbsent: [ order size + 1 ].
-			  leftIndex = rightIndex
-				  ifTrue: [ left asString <= right asString ]
-				  ifFalse: [ leftIndex < rightIndex ] ]
-]
-
 { #category : 'metadata' }
 MCPTool >> keywords [
 
@@ -809,10 +794,42 @@ MCPTool >> methodReferenceTextFor: aDictionary [
 		   ifFalse: [ behaviorName asString ]) , '>>' , selector asString
 ]
 
+{ #category : 'private - schema' }
+MCPTool >> methodSearchScopeSchemaProperties [
+	"What a scope selects when the entities are methods: the classes to look in, and which of their sides. side lives here rather than beside scope, so one object answers what this operates on."
+
+	^ self searchScopeSchemaProperties , { (self
+		    stringEnumSchemaPropertyNamed: 'side'
+		    description: 'Which sides to sweep.'
+		    values: #( 'instance' 'class' 'both' )
+		    default: 'both') }
+]
+
+{ #category : 'private - schema' }
+MCPTool >> methodSearchScopeSchemaProperty [
+
+	^ self searchScopeSchemaPropertyWith: self methodSearchScopeSchemaProperties
+]
+
 { #category : 'metadata' }
 MCPTool >> name [
 
 	^ self class toolName
+]
+
+{ #category : 'private - results' }
+MCPTool >> orderedKeys: someKeys [
+	"Sort by the order the tool declared, then alphabetically among the keys it did not name."
+
+	| order |
+	order := self keyOrder.
+	^ someKeys asSortedCollection: [ :left :right |
+			  | leftIndex rightIndex |
+			  leftIndex := order indexOf: left asSymbol ifAbsent: [ order size + 1 ].
+			  rightIndex := order indexOf: right asSymbol ifAbsent: [ order size + 1 ].
+			  leftIndex = rightIndex
+				  ifTrue: [ left asString <= right asString ]
+				  ifFalse: [ leftIndex < rightIndex ] ]
 ]
 
 { #category : 'private - request' }
@@ -895,6 +912,58 @@ MCPTool >> searchMetadata [
 		  (#description -> self description) } asDictionary
 ]
 
+{ #category : 'private - request' }
+MCPTool >> searchScopeFromRequest: request [
+
+	^ request argumentNamed: 'scope' ifAbsent: [ Dictionary new ]
+]
+
+{ #category : 'private - schema' }
+MCPTool >> searchScopeSchemaProperties [
+	"One definition of what a scope selects. A class has no side, so side belongs to the method variant rather than here."
+
+	^ {
+		  (self stringArraySchemaNamed: 'classes').
+		  (self stringArraySchemaNamed: 'packages').
+		  (self stringArraySchemaNamed: 'superclassesOf').
+		  (self stringArraySchemaNamed: 'subclassesOf').
+		  (self
+			   stringArraySchemaNamed: 'hierarchy'
+			   description: 'Whole hierarchies of these classes, superclasses and subclasses alike.'
+			   itemDescription: 'Class name.') }
+]
+
+{ #category : 'private - schema' }
+MCPTool >> searchScopeSchemaProperty [
+
+	^ self searchScopeSchemaPropertyWith: self searchScopeSchemaProperties
+]
+
+{ #category : 'private - schema' }
+MCPTool >> searchScopeSchemaPropertyWith: someProperties [
+
+	^ MCPStructureProperties new
+		  name: 'scope';
+		  type: 'object';
+		  description: 'What to operate on. If omitted, every matching entity.';
+		  properties: someProperties;
+		  additionalProperties: false;
+		  yourself
+]
+
+{ #category : 'private - request' }
+MCPTool >> searchScopeSideFromRequest: request [
+	"Which sides to sweep lives in the scope, beside the entities it narrows."
+
+	^ request stringArgumentNamed: 'side' in: (self searchScopeFromRequest: request) default: 'both'
+]
+
+{ #category : 'private - request' }
+MCPTool >> searchScopeStringCollectionNamed: aName fromRequest: request [
+
+	^ request stringCollectionArgumentNamed: aName in: (self searchScopeFromRequest: request)
+]
+
 { #category : 'private - schema' }
 MCPTool >> shouldAdvertiseStringArrayItemDescription: anItemDescription [
 
@@ -936,92 +1005,6 @@ MCPTool >> stringArraySchemaNamed: aName description: aDescription itemDescripti
 	^ (self schemaPropertyNamed: aName type: 'array' description: aDescription)
 		  items: itemsProperty;
 		  yourself
-]
-
-{ #category : 'private - request' }
-MCPTool >> searchScopeFromRequest: request [
-
-	^ request argumentNamed: 'scope' ifAbsent: [ Dictionary new ]
-]
-
-{ #category : 'private - schema' }
-MCPTool >> methodSearchScopeSchemaProperties [
-	"What a scope selects when the entities are methods: the classes to look in, and which of their sides. side lives here rather than beside scope, so one object answers what this operates on."
-
-	^ self searchScopeSchemaProperties , { (self
-		    stringEnumSchemaPropertyNamed: 'side'
-		    description: 'Which sides to sweep.'
-		    values: #( 'instance' 'class' 'both' )
-		    default: 'both') }
-]
-
-{ #category : 'private - schema' }
-MCPTool >> searchScopeSchemaProperties [
-	"One definition of what a scope selects. A class has no side, so side belongs to the method variant rather than here."
-
-	^ {
-		  (self stringArraySchemaNamed: 'classes').
-		  (self stringArraySchemaNamed: 'packages').
-		  (self stringArraySchemaNamed: 'superclassesOf').
-		  (self stringArraySchemaNamed: 'subclassesOf').
-		  (self
-			   stringArraySchemaNamed: 'hierarchy'
-			   description: 'Whole hierarchies of these classes, superclasses and subclasses alike.'
-			   itemDescription: 'Class name.') }
-]
-
-{ #category : 'private - schema' }
-MCPTool >> methodSearchScopeSchemaProperty [
-
-	^ self searchScopeSchemaPropertyWith: self methodSearchScopeSchemaProperties
-]
-
-{ #category : 'private - schema' }
-MCPTool >> searchScopeSchemaProperty [
-
-	^ self searchScopeSchemaPropertyWith: self searchScopeSchemaProperties
-]
-
-{ #category : 'private - schema' }
-MCPTool >> searchScopeSchemaPropertyWith: someProperties [
-
-	^ MCPStructureProperties new
-		  name: 'scope';
-		  type: 'object';
-		  description: 'What to operate on. If omitted, every matching entity.';
-		  properties: someProperties;
-		  additionalProperties: false;
-		  yourself
-]
-
-{ #category : 'private - request' }
-MCPTool >> searchScopeSideFromRequest: request [
-	"Which sides to sweep lives in the scope, beside the entities it narrows."
-
-	^ request stringArgumentNamed: 'side' in: (self searchScopeFromRequest: request) default: 'both'
-]
-
-{ #category : 'private - request' }
-MCPTool >> searchScopeStringCollectionNamed: aName fromRequest: request [
-
-	^ request stringCollectionArgumentNamed: aName in: (self searchScopeFromRequest: request)
-]
-
-{ #category : 'private - schema' }
-MCPTool >> targetSideSchemaPropertyDescribedAs: aDescription [
-	"Which side the thing this tool was given is on. A single target is on one side, so there is no 'both' here; scope.side is where a sweep says which sides to cover."
-
-	^ self
-		  stringEnumSchemaPropertyNamed: 'side'
-		  description: aDescription
-		  values: #( 'instance' 'class' )
-		  default: 'instance'
-]
-
-{ #category : 'private - request' }
-MCPTool >> targetSideIsClassIn: aRequest [
-
-	^ (aRequest stringArgumentNamed: 'side' default: 'instance') = 'class'
 ]
 
 { #category : 'private - schema' }
@@ -1082,6 +1065,23 @@ MCPTool >> summaryAndWarningsOn: stream for: structuredContent [
 			nextPut: Character lf;
 			nextPutAll: 'Warning: ';
 			nextPutAll: each ]
+]
+
+{ #category : 'private - request' }
+MCPTool >> targetSideIsClassIn: aRequest [
+
+	^ (aRequest stringArgumentNamed: 'side' default: 'instance') = 'class'
+]
+
+{ #category : 'private - schema' }
+MCPTool >> targetSideSchemaPropertyDescribedAs: aDescription [
+	"Which side the thing this tool was given is on. A single target is on one side, so there is no 'both' here; scope.side is where a sweep says which sides to cover."
+
+	^ self
+		  stringEnumSchemaPropertyNamed: 'side'
+		  description: aDescription
+		  values: #( 'instance' 'class' )
+		  default: 'instance'
 ]
 
 { #category : 'private - results' }
@@ -1167,4 +1167,3 @@ MCPTool >> valueTextOn: stream for: value labelled: label indent: indent [
 					space;
 					nextPutAll: value asString ]
 ]
-
