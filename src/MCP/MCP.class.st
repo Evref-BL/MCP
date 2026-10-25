@@ -3,7 +3,7 @@ Top-level MCP server application object. MCP owns one MCPToolRegistry, the HTTP 
 
 The registry is the source of truth for registered tools. The toolsList instance variable caches the advertised surface as a dictionary keyed by tool name.
 
-Two words govern the tool surface. A *registered* tool is in the catalog and reachable through tool_search, tool_get and tool_call. An *advertised* tool is also in tools/list.
+Two words govern the tool surface. A *registered* tool is in the catalog, callable by name, and findable through tool_search and tool_get. An *advertised* tool is also in tools/list.
 
 - `mcp addTool: MyToolClass` and `mcp addTools: { A. B }` register tools, as classes or ready instances;
 - `mcp removeTool: 'image_evaluate'` takes one back out;
@@ -508,7 +508,7 @@ MCP >> hasCompletableReferences [
 MCP >> discoveryInstructions [
 	"Natural-language guidance a client may put in front of a model. The catalog is larger than what tools/list shows, so the one thing worth saying is how to reach the rest of it."
 
-	^ 'Pharo image tools. tools/list shows the advertised surface; tool_search finds the rest of the catalog and tool_call runs any of them. image_evaluate is the escape hatch when no tool fits.'
+	^ 'Pharo image tools. tools/list shows the advertised surface; tool_search finds the rest of the catalog, and any tool it names can be called by name. image_evaluate is the escape hatch when no tool fits.'
 ]
 
 { #category : 'start' }
@@ -686,7 +686,7 @@ MCP >> addResources: resourcesOrResourceClasses [
 
 { #category : 'configuration' }
 MCP >> addTool: aToolOrToolClass [
-	"Register one tool, as a class or as a ready instance. It becomes reachable through tool_search, tool_get and tool_call; whether tools/list shows it is the advertising question."
+	"Register one tool, as a class or as a ready instance. It becomes callable, and findable through tool_search and tool_get; whether tools/list shows it is the advertising question."
 
 	| tool |
 	tool := self toolRegistry addTool: aToolOrToolClass.
@@ -812,14 +812,13 @@ MCP >> rpcResourcesTemplateList [
 
 { #category : 'rpc' }
 MCP >> rpcToolCall: name withParams: arguments [
+	"Dispatch any registered tool. Advertising decides what tools/list shows, not what a client may call: tool_call reaches an unadvertised tool already, so refusing one here buys no privacy and costs the caller a round trip and a nested argument object."
 
 	<jrpc: #'tools/call'>
-	self toolsList
-		at: name
-		ifPresent: [ :tool |
-				name = MCPToolCallTool toolName ifTrue: [ ^ self rpcCallToolCallWithParams: arguments ].
-				^ self executeTool: tool named: name withParams: arguments ]
-		ifAbsent: [ JRPCNonExistentHandler signal: name ]
+	| tool |
+	tool := self toolRegistry toolNamed: name ifAbsent: [ JRPCNonExistentHandler signal: name ].
+	name = MCPToolCallTool toolName ifTrue: [ ^ self rpcCallToolCallWithParams: arguments ].
+	^ self executeTool: tool named: name withParams: arguments
 ]
 
 { #category : 'rpc' }
