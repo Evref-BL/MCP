@@ -9,38 +9,23 @@ Class {
 	#tag : 'Commands'
 }
 
-{ #category : 'private' }
-MCPUpdateClassCommandTest >> classToolClassForArguments: arguments slotAction: slotAction [
+{ #category : 'private - calling' }
+MCPUpdateClassCommandTest >> classToolClassForArguments: arguments [
 
-	((arguments includesKey: #superclass) and: [ arguments includesKey: #package ]) ifTrue: [ ^ MCPToolCreateClass ].
-	slotAction = 'add' ifTrue: [ ^ MCPToolAddClassSlot ].
-	slotAction = 'remove' ifTrue: [ ^ MCPToolRemoveClassSlot ].
-	slotAction = 'rename' ifTrue: [ ^ MCPToolUpdateClassSlotName ].
-	slotAction = 'pullUp' ifTrue: [ ^ MCPToolPullUpClassSlot ].
-	slotAction = 'pushDown' ifTrue: [ ^ MCPToolPushDownClassSlot ].
-	(arguments includesKey: #newName) ifTrue: [ ^ MCPToolUpdateClassName ].
-	(arguments includesKey: #comment) ifTrue: [ ^ MCPToolUpdateClassComment ].
-	(arguments includesKey: #traits) ifTrue: [ ^ MCPToolUpdateClassTraits ].
-	(arguments includesKey: #classTraits) ifTrue: [ ^ MCPToolUpdateClassSideTraits ].
-	(arguments includesKey: #sharedVariables) ifTrue: [ ^ MCPToolUpdateClassSharedVariables ].
-	(arguments includesKey: #sharedPools) ifTrue: [ ^ MCPToolUpdateClassSharedPools ].
-	(arguments includesKey: #layout) ifTrue: [ ^ MCPToolUpdateClassLayout ].
-	((arguments includesKey: #slots) or: [ arguments includesKey: #classSlots ]) ifTrue: [ ^ MCPToolUpdateClassSlots ].
-	(arguments includesKey: #superclass) ifTrue: [ ^ MCPToolUpdateClassSuperclass ].
-	((arguments includesKey: #package) or: [ arguments includesKey: #tag ]) ifTrue: [ ^ MCPToolUpdateClassPackage ].
-	^ MCPToolUpdateClassComment
+	^ ((arguments includesKey: #superclass) and: [ arguments includesKey: #package ])
+		  ifTrue: [ MCPToolCreateClass ]
+		  ifFalse: [ MCPToolUpdateClass ]
 ]
 
-{ #category : 'private' }
+{ #category : 'private - calling' }
 MCPUpdateClassCommandTest >> commandForArguments: arguments [
 
-	| action mutationRequest rawArguments slotAction tool toolClass toolRequest |
+	| action mutationRequest rawArguments tool toolClass toolRequest |
 	rawArguments := arguments copy.
 	action := rawArguments removeKey: #action ifAbsent: [ nil ].
-	slotAction := rawArguments removeKey: #slotAction ifAbsent: [ nil ].
 	toolClass := action = 'create'
 		             ifTrue: [ MCPToolCreateClass ]
-		             ifFalse: [ self classToolClassForArguments: rawArguments slotAction: slotAction ].
+		             ifFalse: [ self classToolClassForArguments: rawArguments ].
 	tool := toolClass new.
 	toolRequest := tool requestFromToolCallArguments: rawArguments.
 	mutationRequest := tool parsedRequestFromToolRequest: toolRequest.
@@ -78,14 +63,14 @@ MCPUpdateClassCommandTest >> testBuildsDefinitionReplacementUpdatePlan [
 
 	| command context plan |
 	command := self commandForArguments: (self updateArgumentsWith: {
-				            (#slots -> #( 'first' 'second' )).
-				            (#classSlots -> #( 'Current' )) }).
+				            (#slots -> (Dictionary with: 'replace' -> #( 'first' 'second' ))).
+				            (#classSlots -> (Dictionary with: 'replace' -> #( 'Current' ))) }).
 	plan := command updatePlan.
 	context := plan requestedContext.
 	self assert: plan updateAction equals: 'replaceDefinition'.
 	self assert: (context at: #name) equals: 'Object'.
-	self assert: (context at: #slots) equals: #( 'first' 'second' ).
-	self assert: (context at: #classSlots) equals: #( 'Current' )
+	self assert: (context at: #slots) equals: (Dictionary with: #replace -> #( 'first' 'second' )).
+	self assert: (context at: #classSlots) equals: (Dictionary with: #replace -> #( 'Current' ))
 ]
 
 { #category : 'tests' }
@@ -164,10 +149,13 @@ MCPUpdateClassCommandTest >> testMapsClassPatchFieldsToUpdateActions [
 	self assert: (self commandForArguments: (self updateArgumentsWith: { (#tag -> 'Commands') })) updateAction equals: 'move'.
 	self assert: (self commandForArguments: (self updateArgumentsWith: { (#comment -> '') })) updateAction equals: 'setComment'.
 	self
-		assert: (self commandForArguments: (self updateArgumentsWith: { (#slots -> #( 'slot' )) })) updateAction
+		assert:
+		(self commandForArguments: (self updateArgumentsWith: { (#slots -> (Dictionary with: 'replace' -> #( 'slot' ))) })) updateAction
 		equals: 'replaceDefinition'.
 	self
-		assert: (self commandForArguments: (self updateArgumentsWith: { (#classSlots -> #( 'Current' )) })) updateAction
+		assert:
+			(self commandForArguments: (self updateArgumentsWith: { (#classSlots -> (Dictionary with: 'replace' -> #( 'Current' ))) }))
+				updateAction
 		equals: 'replaceDefinition'.
 	self
 		assert: (self commandForArguments: (self updateArgumentsWith: { (#traits -> #( 'TAbleToRotate' )) })) updateAction
@@ -191,30 +179,29 @@ MCPUpdateClassCommandTest >> testMapsClassPatchFieldsToUpdateActions [
 MCPUpdateClassCommandTest >> testMapsSlotActionsToUpdateActions [
 
 	self
-		assert: (self commandForArguments: (self updateArgumentsWith: {
-						  (#slotAction -> 'add').
-						  (#slot -> 'addedSlot') })) updateAction
+		assert:
+		(self commandForArguments: (self updateArgumentsWith: { (#slots -> (Dictionary with: 'add' -> #( 'addedSlot' ))) }))
+			updateAction
 		equals: 'addSlot'.
 	self
-		assert: (self commandForArguments: (self updateArgumentsWith: {
-						  (#slotAction -> 'remove').
-						  (#slot -> 'removedSlot') })) updateAction
+		assert:
+			(self commandForArguments: (self updateArgumentsWith: { (#slots -> (Dictionary with: 'remove' -> #( 'removedSlot' ))) }))
+				updateAction
 		equals: 'removeSlot'.
 	self
-		assert: (self commandForArguments: (self updateArgumentsWith: {
-						  (#slotAction -> 'rename').
-						  (#slot -> 'oldSlot').
-						  (#newSlot -> 'newSlot') })) updateAction
+		assert: (self commandForArguments:
+				 (self updateArgumentsWith: { (#slots -> (Dictionary with: 'rename' -> (Dictionary with: 'oldSlot' -> 'newSlot'))) }))
+				updateAction
 		equals: 'renameSlot'.
 	self
-		assert: (self commandForArguments: (self updateArgumentsWith: {
-						  (#slotAction -> 'pullUp').
-						  (#slot -> 'sharedSlot') })) updateAction
+		assert:
+			(self commandForArguments: (self updateArgumentsWith: { (#slots -> (Dictionary with: 'pullUp' -> #( 'sharedSlot' ))) }))
+				updateAction
 		equals: 'pullUpSlot'.
 	self
-		assert: (self commandForArguments: (self updateArgumentsWith: {
-						  (#slotAction -> 'pushDown').
-						  (#slot -> 'sharedSlot') })) updateAction
+		assert:
+			(self commandForArguments: (self updateArgumentsWith: { (#classSlots -> (Dictionary with: 'pushDown' -> #( 'sharedSlot' ))) }))
+				updateAction
 		equals: 'pushDownSlot'
 ]
 
@@ -222,7 +209,7 @@ MCPUpdateClassCommandTest >> testMapsSlotActionsToUpdateActions [
 MCPUpdateClassCommandTest >> testToolBuildsUpdateClassCommand [
 
 	| command mutationRequest tool toolRequest |
-	tool := MCPToolUpdateClassComment new.
+	tool := MCPToolUpdateClass new.
 	toolRequest := tool requestFromToolCallArguments: {
 			               (#name -> 'Object').
 			               (#comment -> 'updated') } asDictionary.

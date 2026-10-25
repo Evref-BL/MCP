@@ -31,3 +31,9 @@ MCPToolMethodMutationTestTarget >> instanceProtocolTarget [
 
 	^ 41
 ]
+
+{ #category : 'tests' }
+MCPToolMethodMutationTestTarget >> probeCombine: first with: second [
+
+	^ first , '-' , second
+]

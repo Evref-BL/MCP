@@ -88,7 +88,7 @@ Rerun with `force=true` only when the impact is acceptable.
 but Pharo found review issues. Inspect the critique rule class, title,
 description, and source interval if present.
 
-Use a follow-up `method_compile`, `method_selector_update`, `test_run`, or
+Use a follow-up `method_compile`, `method_update`, `test_run`, or
 `method_get` call depending on the critique.
 
 ## Repository State Looks Wrong

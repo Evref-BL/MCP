@@ -4,10 +4,19 @@ Command for applying one method update patch. It selects an internal method upda
 Class {
 	#name : 'MCPUpdateMethodCommand',
 	#superclass : 'MCPToolRequestCommand',
+	#traits : 'TMCPSequencedUpdate',
+	#classTraits : 'TMCPSequencedUpdate classTrait',
 	#category : 'MCP-Commands',
 	#package : 'MCP',
 	#tag : 'Commands'
 }
+
+{ #category : 'private - planning' }
+MCPUpdateMethodCommand >> actionApplicationOrder [
+	"Changing the protocol resolves the method by the selector the caller wrote, so a selector change comes after it."
+
+	^ #( 'changeProtocol' 'rename' 'addArguments' 'removeArguments' )
+]
 
 { #category : 'private - results' }
 MCPUpdateMethodCommand >> appliedUpdateResultFor: aChangeResult plan: plan [
@@ -18,11 +27,11 @@ MCPUpdateMethodCommand >> appliedUpdateResultFor: aChangeResult plan: plan [
 { #category : 'executing' }
 MCPUpdateMethodCommand >> execute [
 
-	| plan |
-	[ plan := self updatePlan ]
+	| actions |
+	[ actions := self updateActions ]
 		on: MCPCommandError
 		do: [ :error | ^ self tool errorResultForCommandError: error action: 'update' requestedContext: self request requestedContext ].
-	^ self executePlan: plan
+	^ self executeActions: actions
 ]
 
 { #category : 'executing - method' }
@@ -48,8 +57,8 @@ MCPUpdateMethodCommand >> executeAddArgumentsWithPlan: plan [
 					                 addParameterRefactoringForSelector: oldSelectorSymbol
 					                 inBehavior: behavior
 					                 to: newSelectorSymbol
-					                 permutation: self request permutation
-					                 newArgs: self request newArgumentSpecs
+					                 permutation: (self request permutationForBehavior: behavior)
+					                 newArgs: (self request newArgumentSpecsForBehavior: behavior)
 					                 model: refactoringModel.
 				  renameMap := self request argumentRenameMapForBehavior: behavior.
 				  renameMap ifNotEmpty: [ refactoring renameMap: renameMap ].
@@ -161,7 +170,7 @@ MCPUpdateMethodCommand >> executeRemoveArgumentsWithPlan: plan [
 							  classSide: self request classSide
 							  selector: self request selector ].
 				  oldArgumentNames := (behavior parseTreeForSelector: oldSelectorSymbol) argumentNames.
-				  removedArgumentNames := self request removedArgumentNamesInRemovalOrderFrom: oldArgumentNames.
+				  removedArgumentNames := self request removedArgumentNamesInRemovalOrderFor: behavior from: oldArgumentNames.
 				  refactoringModel := self tool refactoringModelForScopeSpec: self request refactoringScopeSpec anchoredAtBehavior: behavior.
 				  oldMethodReference := self tool methodReferenceForBehavior: behavior selector: oldSelectorSymbol.
 				  currentSelector := oldSelectorSymbol.
@@ -223,7 +232,7 @@ MCPUpdateMethodCommand >> executeRenameWithPlan: plan [
 					                 renameRefactoringForSelector: oldSelectorSymbol
 					                 inBehavior: behavior
 					                 to: newSelectorSymbol
-					                 permutation: self request permutation
+					                 permutation: (self request permutationForBehavior: behavior)
 					                 model: refactoringModel.
 				  renameMap := self request argumentRenameMapForBehavior: behavior.
 				  renameMap ifNotEmpty: [ refactoring renameMap: renameMap ].
@@ -247,6 +256,12 @@ MCPUpdateMethodCommand >> executeRenameWithPlan: plan [
 					  selector: self request selector
 					  newSelector: self request newSelector
 					  error: error ]
+]
+
+{ #category : 'private - planning' }
+MCPUpdateMethodCommand >> planForAction: action [
+
+	^ MCPMethodUpdatePlanInfo updateAction: action requestedContext: (self requestedContextForAction: action)
 ]
 
 { #category : 'private - methods' }
@@ -279,17 +294,6 @@ MCPUpdateMethodCommand >> selectorAfterRemovingArgumentNamed: argumentName fromB
 ]
 
 { #category : 'private - signaling' }
-MCPUpdateMethodCommand >> signalAmbiguousUpdateActions: actions [
-
-	^ MCPCommandError
-		  signalErrorCode: #AmbiguousMethodUpdateRequest
-		  message: 'update accepts one method update action per request. Split multiple updates into separate requests.'
-		  details: (self request requestedContext
-				   at: #updateActions put: actions;
-				   yourself)
-]
-
-{ #category : 'private - signaling' }
 MCPUpdateMethodCommand >> signalNoUpdateRequested [
 
 	^ MCPCommandError
@@ -300,19 +304,30 @@ MCPUpdateMethodCommand >> signalNoUpdateRequested [
 
 { #category : 'accessing' }
 MCPUpdateMethodCommand >> updateAction [
+	"The first change the request asks for. Execution goes through updateActions."
 
-	| actions |
+	^ self updateActions first updateAction
+]
+
+{ #category : 'accessing' }
+MCPUpdateMethodCommand >> updateActions [
+	"Every change the request asks for, as plans, in the order they must be applied."
+
+	| plans |
 	self request validateForUpdate.
-	actions := self request requestedMethodUpdateActions.
-	actions ifEmpty: [ self signalNoUpdateRequested ].
-	actions size > 1 ifTrue: [ self signalAmbiguousUpdateActions: actions ].
-	^ actions first
+	plans := self request requestedMethodUpdateActions collect: [ :action | self planForAction: action ].
+	plans ifEmpty: [ self signalNoUpdateRequested ].
+	^ self actionsInApplicationOrder: plans
 ]
 
 { #category : 'accessing' }
 MCPUpdateMethodCommand >> updatePlan [
 
-	| action |
-	action := self updateAction.
-	^ MCPMethodUpdatePlanInfo updateAction: action requestedContext: (self requestedContextForAction: action)
+	^ self updateActions first
+]
+
+{ #category : 'private - results' }
+MCPUpdateMethodCommand >> updateSubjectDescription [
+
+	^ 'method ' , self request className , '>>' , self request selector
 ]

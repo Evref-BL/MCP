@@ -83,7 +83,7 @@ MCPToolRemoveMethods >> defaultExposure [
 { #category : 'metadata' }
 MCPToolRemoveMethods >> description [
 
-	^ 'Remove methods from one class as a batch without sender safety checks. Use method_compile, method_selector_update, or method_protocol_update for method updates.'
+	^ 'Remove methods from one class as a batch without sender safety checks. Use method_compile or method_update for method updates.'
 ]
 
 { #category : 'private' }

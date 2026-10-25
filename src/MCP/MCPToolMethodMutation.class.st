@@ -93,6 +93,12 @@ MCPToolMethodMutation >> allowedNonErrorCritiqueRuleClasses [
 		  ReUnaryAccessingMethodWithoutReturnRule }
 ]
 
+{ #category : 'private - specs' }
+MCPToolMethodMutation >> atLeastOneInputProperties [
+
+	^ self methodToolSpec at: #atLeastOneProperties ifAbsent: [ #(  ) ]
+]
+
 { #category : 'private' }
 MCPToolMethodMutation >> blockingCritiqueDataForMethodNode: aMethodNode [
 

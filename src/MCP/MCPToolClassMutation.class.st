@@ -44,12 +44,6 @@ MCPToolClassMutation >> classNameSchemaProperty [
 ]
 
 { #category : 'private - schema' }
-MCPToolClassMutation >> slotSideSchemaProperty [
-
-	^ self targetSideSchemaPropertyDescribedAs: 'Which side the slot is on.'
-]
-
-{ #category : 'private - schema' }
 MCPToolClassMutation >> classSlotsSchemaProperty [
 
 	^ self
@@ -329,6 +323,12 @@ MCPToolClassMutation >> parsedRequestFromToolRequest: request [
 	^ requestClass fromRequest: mutationToolRequest tool: self
 ]
 
+{ #category : 'private - specs' }
+MCPToolClassMutation >> renameNewClassNameSchemaProperty [
+
+	^ self schemaPropertyNamed: 'newName' type: 'string' description: 'New class name.'
+]
+
 { #category : 'private - schema' }
 MCPToolClassMutation >> requiredInputProperties [
 
@@ -350,6 +350,35 @@ MCPToolClassMutation >> sharedVariablesSchemaProperty [
 		  itemDescription: 'Variable name.'
 ]
 
+{ #category : 'private - schema' }
+MCPToolClassMutation >> slotDeltaSchemaPropertyNamed: aName describedAs: aDescription [
+	"Slots are patched, not replaced: naming one slot to add needs nothing else, where a replacement list has to be complete and a stale one silently drops a slot the caller did not know about."
+
+	^ (MCPStructureProperties new
+		   name: aName;
+		   type: 'object';
+		   description: aDescription;
+		   yourself)
+		  properties: {
+				  (self stringArraySchemaNamed: 'add' description: 'Slots to add.' itemDescription: 'Slot name.').
+				  (self stringArraySchemaNamed: 'remove' description: 'Slots to remove.' itemDescription: 'Slot name.').
+				  (MCPStructureProperties new
+					   name: 'rename';
+					   type: 'object';
+					   description: 'Slots to rename, as current name to new name. Values are migrated and references updated.';
+					   yourself).
+				  (self stringArraySchemaNamed: 'pullUp' description: 'Slots to move up to the superclass.' itemDescription: 'Slot name.').
+				  (self
+					   stringArraySchemaNamed: 'pushDown'
+					   description: 'Slots to move down to every direct subclass.'
+					   itemDescription: 'Slot name.').
+				  (self
+					   stringArraySchemaNamed: 'replace'
+					   description: 'The complete slot list, replacing what the class has. Prefer add and remove.'
+					   itemDescription: 'Slot name.') };
+		  yourself
+]
+
 { #category : 'private' }
 MCPToolClassMutation >> slotDescriptionForClassSide: aBoolean [
 
@@ -362,6 +391,12 @@ MCPToolClassMutation >> slotDescriptionForClassSide: aBoolean [
 MCPToolClassMutation >> slotNameSchemaProperty [
 
 	^ self schemaPropertyNamed: 'slot' type: 'string' description: 'The slot name.'
+]
+
+{ #category : 'private - schema' }
+MCPToolClassMutation >> slotSideSchemaProperty [
+
+	^ self targetSideSchemaPropertyDescribedAs: 'Which side the slot is on.'
 ]
 
 { #category : 'private - schema' }
@@ -395,23 +430,4 @@ MCPToolClassMutation >> title [
 MCPToolClassMutation >> traitsSchemaProperty [
 
 	^ self stringArraySchemaNamed: 'traits' description: 'Instance traits; empty array clears.' itemDescription: 'Trait name.'
-]
-
-{ #category : 'validating' }
-MCPToolClassMutation >> validateAtLeastOneInputPropertyIn: request [
-
-	| propertyNames requiredName |
-	propertyNames := self atLeastOneInputProperties.
-	propertyNames ifEmpty: [ ^ self ].
-	(propertyNames anySatisfy: [ :each | request hasArgumentNamed: each ]) ifTrue: [ ^ self ].
-	requiredName := String streamContents: [ :stream |
-		                propertyNames do: [ :each | stream nextPutAll: each ] separatedBy: [ stream nextPutAll: ' or ' ] ].
-	MCPInvalidToolInput signalMissingRequiredArgumentNamed: requiredName forTool: self
-]
-
-{ #category : 'validating' }
-MCPToolClassMutation >> validateRequest: request [
-
-	super validateRequest: request.
-	self validateAtLeastOneInputPropertyIn: request
 ]

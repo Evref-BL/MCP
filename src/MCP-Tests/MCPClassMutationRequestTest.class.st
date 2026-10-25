@@ -55,7 +55,7 @@ MCPClassMutationRequestTest >> testCreateRequestParsesDefinitionArguments [
 MCPClassMutationRequestTest >> testUpdateCommandResolvesOmittedMovePackageName [
 
 	| command context mutationRequest request tool |
-	tool := MCPToolUpdateClassPackage new.
+	tool := MCPToolUpdateClass new.
 	request := MCPToolRequest new
 		           tool: tool;
 		           arguments: {
@@ -74,59 +74,52 @@ MCPClassMutationRequestTest >> testUpdateCommandResolvesOmittedMovePackageName [
 { #category : 'tests' }
 MCPClassMutationRequestTest >> testUpdateRequestParsesSlotArguments [
 
-	| context request tool |
-	tool := MCPToolUpdateClassSlotName new.
+	| delta request tool |
+	tool := MCPToolUpdateClass new.
 	request := MCPClassUpdateRequest
 		           fromRequest: (self toolRequestWithArguments: {
 					            (#name -> 'ExistingClass').
-					            (#slotAction -> 'rename').
-					            (#slot -> 'oldName').
-					            (#newSlot -> 'newName').
-					            (#side -> 'class').
+					            (#classSlots -> (Dictionary with: 'rename' -> (Dictionary with: 'oldName' -> 'newName'))).
 					            (#force -> true) } asDictionary)
 		           tool: tool.
 	self assert: request className equals: 'ExistingClass'.
-	self assert: request slotAction equals: 'rename'.
-	self assert: request slotName equals: 'oldName'.
-	self assert: request newSlotName equals: 'newName'.
-	self assert: request classSide.
 	self assert: request force.
-	context := request renameSlotRequestedContext.
-	self assert: (context at: #class) equals: 'ExistingClass'.
-	self assert: (context at: #slotAction) equals: 'rename'.
-	self assert: (context at: #slot) equals: 'oldName'.
-	self assert: (context at: #newSlot) equals: 'newName'.
-	self assert: (context at: #side) equals: 'class'
+	self assert: request slotDelta isNil.
+	delta := request classSlotDelta.
+	self deny: delta isEmpty.
+	self assert: (delta renamed at: 'oldName') equals: 'newName'.
+	self assert: delta added isEmpty.
+	self assert: delta hasReplacement not.
+	self assert: (request requestedContext at: #classSlots) equals: (Dictionary with: #rename -> delta renamed)
 ]
 
 { #category : 'tests' }
 MCPClassMutationRequestTest >> testUpdateRequestTracksSuppliedProperties [
 
 	| context request tool |
-	tool := MCPToolUpdateClassSlots new.
+	tool := MCPToolUpdateClass new.
 	request := MCPClassUpdateRequest
 		           fromRequest: (self toolRequestWithArguments: {
 					            (#name -> 'ExistingClass').
 					            (#tag -> 'Models').
 					            (#comment -> '').
 					            (#force -> true).
-					            (#slots -> #(  )) } asDictionary)
+					            (#slots -> (Dictionary with: 'add' -> #( 'count' ))) } asDictionary)
 		           tool: tool.
 	self assert: request className equals: 'ExistingClass'.
 	self assert: request tag equals: 'Models'.
 	self assert: request classComment equals: ''.
 	self assert: request force.
-	self assert: request hasUpdates.
 	self assert: (request hasSuppliedPropertyNamed: 'tag').
 	self assert: (request hasSuppliedPropertyNamed: 'comment').
 	self assert: (request hasSuppliedPropertyNamed: 'slots').
 	self deny: (request hasSuppliedPropertyNamed: 'classSlots').
-	self assert: request slotNames isEmpty.
+	self assert: request slotDelta added asArray equals: #( 'count' ).
 	context := request requestedContext.
 	self assert: (context at: #name) equals: 'ExistingClass'.
 	self assert: (context at: #tag) equals: 'Models'.
 	self assert: (context at: #comment) equals: ''.
-	self assert: (context at: #slots) equals: #(  ).
+	self assert: (context at: #slots) equals: (Dictionary with: #add -> #( 'count' )).
 	self deny: (context includesKey: #classSlots)
 ]
 
@@ -134,7 +127,7 @@ MCPClassMutationRequestTest >> testUpdateRequestTracksSuppliedProperties [
 MCPClassMutationRequestTest >> testUpdateRequestWithNoPatchArgumentsHasNoUpdates [
 
 	| context request tool |
-	tool := MCPToolUpdateClassSlots new.
+	tool := MCPToolUpdateClass new.
 	request := MCPClassUpdateRequest
 		           fromRequest: (self toolRequestWithArguments: { (#name -> 'ExistingClass') } asDictionary)
 		           tool: tool.
@@ -150,7 +143,7 @@ MCPClassMutationRequestTest >> testUpdateRequestWithNoPatchArgumentsHasNoUpdates
 MCPClassMutationRequestTest >> toolRequestWithArguments: aDictionary [
 
 	^ MCPToolRequest new
-		  tool: MCPToolUpdateClassSlots new;
+		  tool: MCPToolUpdateClass new;
 		  arguments: aDictionary;
 		  yourself
 ]

@@ -25,13 +25,12 @@ MCPToolClassMutationTest >> assertIncludesReferencedSlotWarning: warningMessages
 { #category : 'private - calling' }
 MCPToolClassMutationTest >> callToolWith: someArguments [
 
-	| action arguments request result slotAction tool toolClass |
+	| action arguments request result tool toolClass |
 	arguments := someArguments copy.
 	action := arguments removeKey: #action ifAbsent: [ nil ].
-	slotAction := arguments removeKey: #slotAction ifAbsent: [ nil ].
 	toolClass := action = 'create'
 		             ifTrue: [ MCPToolCreateClass ]
-		             ifFalse: [ self classToolClassForArguments: arguments slotAction: slotAction ].
+		             ifFalse: [ self classToolClassForArguments: arguments ].
 	tool := toolClass new.
 	request := tool requestFromToolCallArguments: arguments.
 	result := tool executeWithRequest: request.
@@ -39,25 +38,11 @@ MCPToolClassMutationTest >> callToolWith: someArguments [
 ]
 
 { #category : 'private - calling' }
-MCPToolClassMutationTest >> classToolClassForArguments: arguments slotAction: slotAction [
+MCPToolClassMutationTest >> classToolClassForArguments: arguments [
 
-	((arguments includesKey: #superclass) and: [ arguments includesKey: #package ]) ifTrue: [ ^ MCPToolCreateClass ].
-	slotAction = 'add' ifTrue: [ ^ MCPToolAddClassSlot ].
-	slotAction = 'remove' ifTrue: [ ^ MCPToolRemoveClassSlot ].
-	slotAction = 'rename' ifTrue: [ ^ MCPToolUpdateClassSlotName ].
-	slotAction = 'pullUp' ifTrue: [ ^ MCPToolPullUpClassSlot ].
-	slotAction = 'pushDown' ifTrue: [ ^ MCPToolPushDownClassSlot ].
-	(arguments includesKey: #newName) ifTrue: [ ^ MCPToolUpdateClassName ].
-	(arguments includesKey: #comment) ifTrue: [ ^ MCPToolUpdateClassComment ].
-	(arguments includesKey: #traits) ifTrue: [ ^ MCPToolUpdateClassTraits ].
-	(arguments includesKey: #classTraits) ifTrue: [ ^ MCPToolUpdateClassSideTraits ].
-	(arguments includesKey: #sharedVariables) ifTrue: [ ^ MCPToolUpdateClassSharedVariables ].
-	(arguments includesKey: #sharedPools) ifTrue: [ ^ MCPToolUpdateClassSharedPools ].
-	(arguments includesKey: #layout) ifTrue: [ ^ MCPToolUpdateClassLayout ].
-	((arguments includesKey: #slots) or: [ arguments includesKey: #classSlots ]) ifTrue: [ ^ MCPToolUpdateClassSlots ].
-	(arguments includesKey: #superclass) ifTrue: [ ^ MCPToolUpdateClassSuperclass ].
-	((arguments includesKey: #package) or: [ arguments includesKey: #tag ]) ifTrue: [ ^ MCPToolUpdateClassPackage ].
-	^ MCPToolUpdateClassComment
+	^ ((arguments includesKey: #superclass) and: [ arguments includesKey: #package ])
+		  ifTrue: [ MCPToolCreateClass ]
+		  ifFalse: [ MCPToolUpdateClass ]
 ]
 
 { #category : 'private' }
@@ -260,23 +245,21 @@ MCPToolClassMutationTest >> tearDown [
 { #category : 'tests - schema' }
 MCPToolClassMutationTest >> testClassToolSchemasDeclareExpectedInputs [
 
-	| createProperties packageProperties renameProperties slotProperties |
+	| createProperties updateProperties |
 	createProperties := MCPToolCreateClass new inputSchema properties collect: [ :each | each name ].
-	renameProperties := MCPToolUpdateClassName new inputSchema properties collect: [ :each | each name ].
-	packageProperties := MCPToolUpdateClassPackage new inputSchema properties collect: [ :each | each name ].
-	slotProperties := MCPToolAddClassSlot new inputSchema properties collect: [ :each | each name ].
+	updateProperties := MCPToolUpdateClass new inputSchema properties collect: [ :each | each name ].
 	self
 		assert: createProperties asArray
 		equals:
 			#( 'name' 'superclass' 'package' 'tag' 'slots' 'classSlots' 'traits' 'classTraits' 'sharedVariables' 'sharedPools'
 			   'layout' 'comment' ).
 	self assert: MCPToolCreateClass new inputSchema required asSet equals: #( 'name' 'superclass' 'package' ) asSet.
-	self assert: renameProperties asArray equals: #( 'name' 'newName' ).
-	self assert: MCPToolUpdateClassName new inputSchema required asSet equals: #( 'name' 'newName' ) asSet.
-	self assert: packageProperties asArray equals: #( 'name' 'package' 'tag' ).
-	self assert: MCPToolUpdateClassPackage new inputSchema required asSet equals: #( 'name' ) asSet.
-	self assert: slotProperties asArray equals: #( 'name' 'slot' 'side' ).
-	self assert: MCPToolAddClassSlot new inputSchema required asSet equals: #( 'name' 'slot' ) asSet
+	self
+		assert: updateProperties asArray
+		equals:
+			#( 'name' 'newName' 'superclass' 'package' 'tag' 'comment' 'slots' 'classSlots' 'traits' 'classTraits' 'sharedVariables'
+			   'sharedPools' 'layout' 'force' ).
+	self assert: MCPToolUpdateClass new inputSchema required asSet equals: #( 'name' ) asSet
 ]
 
 { #category : 'tests - create' }
@@ -504,6 +487,29 @@ MCPToolClassMutationTest >> testUpdateAddsInstanceSlot [
 ]
 
 { #category : 'tests - update' }
+MCPToolClassMutationTest >> testUpdateAppliesSeveralChangesInOneCall [
+
+	| data result target |
+	self
+		createClassNamed: 'MCPToolClassMutationTestFusedTarget'
+		superclassName: 'Object'
+		slots: #( 'kept' )
+		classSlots: #(  ).
+	result := self callToolWith: {
+			          (#name -> 'MCPToolClassMutationTestFusedTarget').
+			          (#superclass -> 'ProtoObject').
+			          (#slots -> (Dictionary with: 'add' -> #( 'added' ))).
+			          (#comment -> 'fused comment') } asDictionary.
+	data := self dataFrom: result.
+	target := self classNamed: 'MCPToolClassMutationTestFusedTarget'.
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: target superclass name equals: #ProtoObject.
+	self assert: target instVarNames asArray equals: #( 'kept' 'added' ).
+	self assert: target comment equals: 'fused comment'.
+	self assert: ((data at: #updates) collect: [ :each | each at: #action ]) asArray equals: #( 'reparent' 'addSlot' 'setComment' )
+]
+
+{ #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateCanClearClassComment [
 
 	| data result target |
@@ -524,7 +530,7 @@ MCPToolClassMutationTest >> testUpdateCanClearClassComment [
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateForcePullUpSlotContinuesPastRefactoringWarningAndReturnsWarnings [
 
-	| childOne childTwo data instance result target warnings |
+	| childOne childTwo instance result target warnings |
 	self
 		createClassNamed: 'MCPToolClassMutationTestWarningPullUpTarget'
 		superclassName: 'Object'
@@ -546,11 +552,8 @@ MCPToolClassMutationTest >> testUpdateForcePullUpSlotContinuesPastRefactoringWar
 		on: (self classNamed: 'MCPToolClassMutationTestWarningPullUpChildOne').
 	result := self callToolWith: (self updateRequestArgumentsWith: {
 				           (#name -> 'MCPToolClassMutationTestWarningPullUpTarget').
-				           (#slotAction -> 'pullUp').
-				           (#slot -> 'sharedSlot').
-				           (#side -> 'instance').
+				           (#slots -> (Dictionary with: 'pullUp' -> #( 'sharedSlot' ))).
 				           (#force -> true) }).
-	data := self dataFrom: result.
 	warnings := self warningsFrom: result.
 	target := self classNamed: 'MCPToolClassMutationTestWarningPullUpTarget'.
 	childOne := self classNamed: 'MCPToolClassMutationTestWarningPullUpChildOne'.
@@ -562,14 +565,13 @@ MCPToolClassMutationTest >> testUpdateForcePullUpSlotContinuesPastRefactoringWar
 	self assert: (target slots collect: #name as: Array) equals: #( #sharedSlot ).
 	self assert: (childOne slots collect: #name as: Array) equals: #(  ).
 	self assert: (childTwo slots collect: #name as: Array) equals: #(  ).
-	self assert: instance slotProbe equals: 17.
-	self deny: (result at: #isError ifAbsent: [ false ])
+	self assert: instance slotProbe equals: 17
 ]
 
 { #category : 'tests - update' }
 MCPToolClassMutationTest >> testUpdateForceRemoveSlotContinuesPastRefactoringWarningAndReturnsWarnings [
 
-	| data result target warnings |
+	| result target warnings |
 	self
 		createClassNamed: 'MCPToolClassMutationTestWarningRemoveSlotTarget'
 		superclassName: 'Object'
@@ -581,17 +583,13 @@ MCPToolClassMutationTest >> testUpdateForceRemoveSlotContinuesPastRefactoringWar
 		on: (self classNamed: 'MCPToolClassMutationTestWarningRemoveSlotTarget').
 	result := self callToolWith: (self updateRequestArgumentsWith: {
 				           (#name -> 'MCPToolClassMutationTestWarningRemoveSlotTarget').
-				           (#slotAction -> 'remove').
-				           (#slot -> 'referencedSlot').
-				           (#side -> 'instance').
+				           (#slots -> (Dictionary with: 'remove' -> #( 'referencedSlot' ))).
 				           (#force -> true) }).
-	data := self dataFrom: result.
 	warnings := self warningsFrom: result.
 	target := self classNamed: 'MCPToolClassMutationTestWarningRemoveSlotTarget'.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assertIncludesReferencedSlotWarning: warnings.
-	self assert: (target slots collect: #name as: Array) equals: #(  ).
-	self deny: (result at: #isError ifAbsent: [ false ])
+	self assert: (target slots collect: #name as: Array) equals: #(  )
 ]
 
 { #category : 'tests - update' }
@@ -1220,16 +1218,15 @@ MCPToolClassMutationTest >> testUpdateReplacesSlotDefinitionAndPreservesMatching
 	target instVarNamed: 'keptClassSlot' put: 17.
 	result := self callToolWith: (self updateRequestArgumentsWith: {
 				           (#name -> 'MCPToolClassMutationTestDefinitionTarget').
-				           (#slots -> #( 'keptSlot' 'newSlot' )).
-				           (#classSlots -> #( 'keptClassSlot' 'newClassSlot' )) }).
+				           (#slots -> (Dictionary with: 'replace' -> #( 'keptSlot' 'newSlot' ))).
+				           (#classSlots -> (Dictionary with: 'replace' -> #( 'keptClassSlot' 'newClassSlot' ))) }).
 	data := self dataFrom: result.
 	target := self classNamed: 'MCPToolClassMutationTestDefinitionTarget'.
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (target slots collect: #name as: Array) equals: #( #keptSlot #newSlot ).
 	self assert: (target classSide slots collect: #name as: Array) equals: #( #keptClassSlot #newClassSlot ).
 	self assert: (instance instVarNamed: 'keptSlot') equals: 13.
-	self assert: (target instVarNamed: 'keptClassSlot') equals: 17.
-	self deny: (result at: #isError ifAbsent: [ false ])
+	self assert: (target instVarNamed: 'keptClassSlot') equals: 17
 ]
 
 { #category : 'tests - update' }
@@ -1557,6 +1554,30 @@ MCPToolClassMutationTest >> testUpdateSetsClassComment [
 	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
+{ #category : 'tests - update' }
+MCPToolClassMutationTest >> testUpdateStopsAtTheFirstFailedChangeAndSaysWhatLanded [
+
+	| error result target |
+	self
+		createClassNamed: 'MCPToolClassMutationTestStopTarget'
+		superclassName: 'Object'
+		slots: #(  )
+		classSlots: #(  ).
+	"The layout is replaced first and fails, so the comment after it is never attempted."
+	result := self callToolWith: {
+			          (#action -> 'update').
+			          (#name -> 'MCPToolClassMutationTestStopTarget').
+			          (#layout -> 'MCPNoSuchLayout').
+			          (#comment -> 'never set') } asDictionary.
+	target := self classNamed: 'MCPToolClassMutationTestStopTarget'.
+	self assert: (result at: #isError ifAbsent: [ false ]).
+	error := (result at: #structuredContent) at: #error.
+	self assert: (error at: #failedUpdate) equals: 'replaceLayout'.
+	self assert: (error at: #appliedUpdates) equals: #(  ).
+	self assert: (error at: #skippedUpdates) equals: #( 'setComment' ).
+	self deny: target comment = 'never set'
+]
+
 { #category : 'private - calling' }
 MCPToolClassMutationTest >> toolName [
 
@@ -1655,9 +1676,9 @@ MCPToolClassMutationTest >> updateRequestArgumentsForSlotAction: slotAction clas
 
 	^ self updateRequestArgumentsWith: {
 			  (#name -> aClassName).
-			  (#slotAction -> slotAction).
-			  (#slot -> aSlotName).
-			  (#side -> (aBoolean ifTrue: [ 'class' ] ifFalse: [ 'instance' ])) }
+			  ((aBoolean
+				    ifTrue: [ #classSlots ]
+				    ifFalse: [ #slots ]) -> (Dictionary with: slotAction -> { aSlotName })) }
 ]
 
 { #category : 'private - update' }
@@ -1665,10 +1686,9 @@ MCPToolClassMutationTest >> updateRequestArgumentsForSlotRenameInClassNamed: aCl
 
 	^ self updateRequestArgumentsWith: {
 			  (#name -> aClassName).
-			  (#slotAction -> 'rename').
-			  (#slot -> aSlotName).
-			  (#newSlot -> aNewSlotName).
-			  (#side -> (aBoolean ifTrue: [ 'class' ] ifFalse: [ 'instance' ])) }
+			  ((aBoolean
+				    ifTrue: [ #classSlots ]
+				    ifFalse: [ #slots ]) -> (Dictionary with: 'rename' -> (Dictionary with: aSlotName -> aNewSlotName))) }
 ]
 
 { #category : 'private - update' }

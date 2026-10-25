@@ -199,21 +199,7 @@ MCPToolContractsTest >> classMutationToolClasses [
 
 	^ {
 		  MCPToolCreateClass.
-		  MCPToolUpdateClassName.
-		  MCPToolUpdateClassSuperclass.
-		  MCPToolUpdateClassPackage.
-		  MCPToolUpdateClassComment.
-		  MCPToolUpdateClassSlots.
-		  MCPToolUpdateClassTraits.
-		  MCPToolUpdateClassSideTraits.
-		  MCPToolUpdateClassSharedVariables.
-		  MCPToolUpdateClassSharedPools.
-		  MCPToolUpdateClassLayout.
-		  MCPToolAddClassSlot.
-		  MCPToolRemoveClassSlot.
-		  MCPToolUpdateClassSlotName.
-		  MCPToolPullUpClassSlot.
-		  MCPToolPushDownClassSlot }
+		  MCPToolUpdateClass }
 ]
 
 { #category : 'private' }
@@ -229,109 +215,10 @@ MCPToolContractsTest >> classMutationToolFlowSpecs [
 			  (#requestClass -> MCPClassCreateRequest).
 			  (#commandClass -> MCPCreateClassToolCommand) } asDictionary.
 		  {
-			  (#toolClass -> MCPToolUpdateClassName).
-			  (#arguments -> {
-				   (#name -> 'Object').
-				   (#newName -> 'MCPObject') } asDictionary).
-			  (#requestClass -> MCPClassUpdateRequest).
-			  (#commandClass -> MCPUpdateClassCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolUpdateClassSuperclass).
-			  (#arguments -> {
-				   (#name -> 'Object').
-				   (#superclass -> 'ProtoObject') } asDictionary).
-			  (#requestClass -> MCPClassUpdateRequest).
-			  (#commandClass -> MCPUpdateClassCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolUpdateClassPackage).
-			  (#arguments -> {
-				   (#name -> 'Object').
-				   (#tag -> 'Kernel') } asDictionary).
-			  (#requestClass -> MCPClassUpdateRequest).
-			  (#commandClass -> MCPUpdateClassCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolUpdateClassComment).
+			  (#toolClass -> MCPToolUpdateClass).
 			  (#arguments -> {
 				   (#name -> 'Object').
 				   (#comment -> '') } asDictionary).
-			  (#requestClass -> MCPClassUpdateRequest).
-			  (#commandClass -> MCPUpdateClassCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolUpdateClassSlots).
-			  (#arguments -> {
-				   (#name -> 'Object').
-				   (#slots -> #(  )) } asDictionary).
-			  (#requestClass -> MCPClassUpdateRequest).
-			  (#commandClass -> MCPUpdateClassCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolUpdateClassTraits).
-			  (#arguments -> {
-				   (#name -> 'Object').
-				   (#traits -> #(  )) } asDictionary).
-			  (#requestClass -> MCPClassUpdateRequest).
-			  (#commandClass -> MCPUpdateClassCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolUpdateClassSideTraits).
-			  (#arguments -> {
-				   (#name -> 'Object').
-				   (#classTraits -> #(  )) } asDictionary).
-			  (#requestClass -> MCPClassUpdateRequest).
-			  (#commandClass -> MCPUpdateClassCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolUpdateClassSharedVariables).
-			  (#arguments -> {
-				   (#name -> 'Object').
-				   (#sharedVariables -> #(  )) } asDictionary).
-			  (#requestClass -> MCPClassUpdateRequest).
-			  (#commandClass -> MCPUpdateClassCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolUpdateClassSharedPools).
-			  (#arguments -> {
-				   (#name -> 'Object').
-				   (#sharedPools -> #(  )) } asDictionary).
-			  (#requestClass -> MCPClassUpdateRequest).
-			  (#commandClass -> MCPUpdateClassCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolUpdateClassLayout).
-			  (#arguments -> {
-				   (#name -> 'Object').
-				   (#layout -> 'FixedLayout') } asDictionary).
-			  (#requestClass -> MCPClassUpdateRequest).
-			  (#commandClass -> MCPUpdateClassCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolAddClassSlot).
-			  (#arguments -> {
-				   (#name -> 'Object').
-				   (#slot -> 'temporarySlot') } asDictionary).
-			  (#requestClass -> MCPClassUpdateRequest).
-			  (#commandClass -> MCPUpdateClassCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolRemoveClassSlot).
-			  (#arguments -> {
-				   (#name -> 'Object').
-				   (#slot -> 'temporarySlot') } asDictionary).
-			  (#requestClass -> MCPClassUpdateRequest).
-			  (#commandClass -> MCPUpdateClassCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolUpdateClassSlotName).
-			  (#arguments -> {
-				   (#name -> 'Object').
-				   (#slot -> 'temporarySlot').
-				   (#newSlot -> 'renamedTemporarySlot') } asDictionary).
-			  (#requestClass -> MCPClassUpdateRequest).
-			  (#commandClass -> MCPUpdateClassCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolPullUpClassSlot).
-			  (#arguments -> {
-				   (#name -> 'Object').
-				   (#slot -> 'temporarySlot') } asDictionary).
-			  (#requestClass -> MCPClassUpdateRequest).
-			  (#commandClass -> MCPUpdateClassCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolPushDownClassSlot).
-			  (#arguments -> {
-				   (#name -> 'Object').
-				   (#slot -> 'temporarySlot') } asDictionary).
 			  (#requestClass -> MCPClassUpdateRequest).
 			  (#commandClass -> MCPUpdateClassCommand) } asDictionary }
 ]
@@ -431,15 +318,7 @@ MCPToolContractsTest >> methodMutationToolFlowSpecs [
 			  (#requestClass -> MCPMethodCompileRequest).
 			  (#commandClass -> MCPCompileMethodCommand) } asDictionary.
 		  {
-			  (#toolClass -> MCPToolUpdateMethodSelector).
-			  (#arguments -> {
-				   (#class -> 'Object').
-				   (#selector -> 'class').
-				   (#newSelector -> 'mcpClass') } asDictionary).
-			  (#requestClass -> MCPMethodUpdateRequest).
-			  (#commandClass -> MCPUpdateMethodCommand) } asDictionary.
-		  {
-			  (#toolClass -> MCPToolUpdateMethodProtocol).
+			  (#toolClass -> MCPToolUpdateMethod).
 			  (#arguments -> {
 				   (#class -> 'Object').
 				   (#selector -> 'class').
@@ -602,7 +481,7 @@ MCPToolContractsTest >> testAdvertisingOverridesToolDefault [
 
 	| registry tool |
 	registry := MCPToolRegistry default.
-	tool := registry toolNamed: 'method_protocol_update' ifAbsent: [ self fail ].
+	tool := registry toolNamed: 'method_update' ifAbsent: [ self fail ].
 	registry advertiseTools: (registry advertisedToolNames copyWith: tool name).
 	self assert: tool defaultExposure equals: 'discoverable'.
 	self assert: (registry isToolAdvertisedNamed: tool name)
@@ -745,85 +624,53 @@ MCPToolContractsTest >> testCatalogToolsUseOwningRegistry [
 { #category : 'tests' }
 MCPToolContractsTest >> testClassMutationToolsHaveAccurateNamesAndRequiredArguments [
 
-	| classTools packagePropertyNames slotToolPropertyNames slotsPropertyNames |
-	classTools := {
-		              (MCPToolCreateClass -> 'class_create').
-		              (MCPToolUpdateClassName -> 'class_name_update').
-		              (MCPToolUpdateClassSuperclass -> 'class_superclass_update').
-		              (MCPToolUpdateClassPackage -> 'class_package_update').
-		              (MCPToolUpdateClassComment -> 'class_comment_update').
-		              (MCPToolUpdateClassSlots -> 'class_slots_update').
-		              (MCPToolUpdateClassTraits -> 'class_traits_update').
-		              (MCPToolUpdateClassSideTraits -> 'class_side_traits_update').
-		              (MCPToolUpdateClassSharedVariables -> 'class_shared_variables_update').
-		              (MCPToolUpdateClassSharedPools -> 'class_shared_pools_update').
-		              (MCPToolUpdateClassLayout -> 'class_layout_update').
-		              (MCPToolAddClassSlot -> 'class_slot_add').
-		              (MCPToolRemoveClassSlot -> 'class_slot_remove').
-		              (MCPToolUpdateClassSlotName -> 'class_slot_name_update').
-		              (MCPToolPullUpClassSlot -> 'class_slot_pull_up').
-		              (MCPToolPushDownClassSlot -> 'class_slot_push_down') }.
-	classTools do: [ :association |
-			| propertyNames tool |
-			tool := association key new.
-			propertyNames := tool inputSchema properties collect: [ :each | each name ].
-			self assert: tool name equals: association value.
-			self deny: (propertyNames includes: 'operation') ].
-	self assert: MCPToolCreateClass new inputSchema required asSet equals: #( 'name' 'superclass' 'package' ) asSet.
-	self assert: MCPToolUpdateClassName new inputSchema required asSet equals: #( 'name' 'newName' ) asSet.
-	self assert: MCPToolUpdateClassComment new inputSchema required asSet equals: #( 'name' 'comment' ) asSet.
-	self assert: MCPToolUpdateClassSlotName new inputSchema required asSet equals: #( 'name' 'slot' 'newSlot' ) asSet.
-	packagePropertyNames := MCPToolUpdateClassPackage new inputSchema properties collect: [ :each | each name ].
-	slotsPropertyNames := MCPToolUpdateClassSlots new inputSchema properties collect: [ :each | each name ].
-	slotToolPropertyNames := MCPToolAddClassSlot new inputSchema properties collect: [ :each | each name ].
-	self assert: (packagePropertyNames includes: 'package').
-	self assert: (packagePropertyNames includes: 'tag').
-	self assert: (slotsPropertyNames includes: 'slots').
-	self assert: (slotsPropertyNames includes: 'classSlots').
-	self deny: (slotToolPropertyNames includes: 'slotAction').
-	self assert: (slotToolPropertyNames includes: 'side')
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testClassPackageUpdateDescriptionMentionsRecategorization [
-
-	| description |
-	description := MCPToolUpdateClassPackage new description.
-	self assert: (description includesSubstring: 'recategorize').
-	self assert: (description includesSubstring: 'tag').
-	self assert: (description includesSubstring: 'Omit packageName').
-	self assert: (description includesSubstring: 'current package')
+	| createTool slotsSchema updatePropertyNames updateTool |
+	createTool := MCPToolCreateClass new.
+	updateTool := MCPToolUpdateClass new.
+	self assert: createTool name equals: 'class_create'.
+	self assert: updateTool name equals: 'class_update'.
+	self assert: createTool inputSchema required asSet equals: #( 'name' 'superclass' 'package' ) asSet.
+	self assert: updateTool inputSchema required asSet equals: #( 'name' ) asSet.
+	updatePropertyNames := updateTool inputSchema properties collect: [ :each | each name ].
+	#( 'newName' 'superclass' 'package' 'tag' 'comment' 'slots' 'classSlots' 'traits' 'classTraits' 'sharedVariables'
+	   'sharedPools' 'layout' 'force' ) do: [ :each | self assert: (updatePropertyNames includes: each) ].
+	#( 'operation' 'slotAction' 'slot' 'newSlot' 'side' ) do: [ :each | self deny: (updatePropertyNames includes: each) ].
+	"Slots are patched, so their argument is a delta rather than a list."
+	slotsSchema := (updateTool inputSchema asJRPCJSON at: #properties) at: 'slots'.
+	self assert: (slotsSchema at: #type) equals: 'object'.
+	self assert: (slotsSchema at: #properties) keys asSet equals: #( 'add' 'remove' 'rename' 'pullUp' 'pushDown' 'replace' ) asSet
 ]
 
 { #category : 'tests' }
 MCPToolContractsTest >> testClassToolSchemaDescriptionsExplainRecategorizationAndReplacementSemantics [
 
-	| classSlotsDescription classTraitsDescription layoutDescription packageDescription sharedPoolsDescription sharedVariablesDescription slotsDescription tagDescription traitsDescription |
-	packageDescription := (self inputPropertyNamed: 'package' inTool: MCPToolUpdateClassPackage new) description.
-	tagDescription := (self inputPropertyNamed: 'tag' inTool: MCPToolUpdateClassPackage new) description.
-	slotsDescription := (self inputPropertyNamed: 'slots' inTool: MCPToolUpdateClassSlots new) description.
-	classSlotsDescription := (self inputPropertyNamed: 'classSlots' inTool: MCPToolUpdateClassSlots new) description.
-	traitsDescription := (self inputPropertyNamed: 'traits' inTool: MCPToolUpdateClassTraits new) description.
-	classTraitsDescription := (self inputPropertyNamed: 'classTraits' inTool: MCPToolUpdateClassSideTraits new) description.
-	sharedVariablesDescription := (self inputPropertyNamed: 'sharedVariables' inTool: MCPToolUpdateClassSharedVariables new)
-		                              description.
-	sharedPoolsDescription := (self inputPropertyNamed: 'sharedPools' inTool: MCPToolUpdateClassSharedPools new) description.
-	layoutDescription := (self inputPropertyNamed: 'layout' inTool: MCPToolUpdateClassLayout new) description.
+	| tool classTraitsDescription layoutDescription packageDescription sharedPoolsDescription sharedVariablesDescription slotsSchema tagDescription traitsDescription |
+	tool := MCPToolUpdateClass new.
+	packageDescription := (self inputPropertyNamed: 'package' inTool: tool) description.
+	tagDescription := (self inputPropertyNamed: 'tag' inTool: tool) description.
+	traitsDescription := (self inputPropertyNamed: 'traits' inTool: tool) description.
+	classTraitsDescription := (self inputPropertyNamed: 'classTraits' inTool: tool) description.
+	sharedVariablesDescription := (self inputPropertyNamed: 'sharedVariables' inTool: tool) description.
+	sharedPoolsDescription := (self inputPropertyNamed: 'sharedPools' inTool: tool) description.
+	layoutDescription := (self inputPropertyNamed: 'layout' inTool: tool) description.
 	self assert: (packageDescription includesSubstring: 'recategorize').
 	self assert: (packageDescription includesSubstring: 'omit packageName').
 	self assert: (packageDescription includesSubstring: 'current package').
 	self assert: (tagDescription includesSubstring: 'recategorizes').
-	self assert: (slotsDescription includesSubstring: 'empty array').
-	self assert: (slotsDescription includesSubstring: 'classSlots').
-	self assert: (classSlotsDescription includesSubstring: 'empty array').
-	self assert: (classSlotsDescription includesSubstring: 'slots').
+	"The stateless collections are replaced by value, and say so."
 	self assert: (traitsDescription includesSubstring: 'empty array').
 	self assert: (classTraitsDescription includesSubstring: 'empty array').
 	self assert: (sharedVariablesDescription includesSubstring: 'empty array').
 	self assert: (sharedPoolsDescription includesSubstring: 'empty array').
 	self assert: (sharedPoolsDescription includesSubstring: 'shared pool').
 	self assert: (layoutDescription includesSubstring: 'layout class').
-	self assert: (layoutDescription includesSubstring: 'AbstractLayout')
+	self assert: (layoutDescription includesSubstring: 'AbstractLayout').
+	"Slots are patched, and each part of the patch says what it does."
+	slotsSchema := (tool inputSchema asJRPCJSON at: #properties) at: 'slots'.
+	self
+		assert: (((slotsSchema at: #properties) at: 'rename') at: #description)
+		equals: 'Slots to rename, as current name to new name. Values are migrated and references updated.'.
+	self assert: ((((slotsSchema at: #properties) at: 'replace') at: #description) includesSubstring: 'Prefer add and remove')
 ]
 
 { #category : 'tests' }
@@ -1495,25 +1342,22 @@ MCPToolContractsTest >> testMethodMetadataSearchReturnsWarningResultForMissingCl
 { #category : 'tests' }
 MCPToolContractsTest >> testMethodMutationToolsHaveAccurateNamesAndRequiredArguments [
 
-	| createPropertyNames createTool protocolPropertyNames protocolTool selectorPropertyNames selectorTool |
+	| createPropertyNames createTool updatePropertyNames updateTool |
 	createTool := MCPToolCompileMethod new.
-	selectorTool := MCPToolUpdateMethodSelector new.
-	protocolTool := MCPToolUpdateMethodProtocol new.
+	updateTool := MCPToolUpdateMethod new.
 	createPropertyNames := createTool inputSchema properties collect: [ :each | each name ].
-	selectorPropertyNames := selectorTool inputSchema properties collect: [ :each | each name ].
-	protocolPropertyNames := protocolTool inputSchema properties collect: [ :each | each name ].
+	updatePropertyNames := updateTool inputSchema properties collect: [ :each | each name ].
 	self assert: createTool name equals: 'method_compile'.
-	self assert: selectorTool name equals: 'method_selector_update'.
-	self assert: protocolTool name equals: 'method_protocol_update'.
+	self assert: updateTool name equals: 'method_update'.
 	self assert: createTool inputSchema required asSet equals: #( 'class' 'source' 'protocol' ) asSet.
-	self assert: selectorTool inputSchema required asSet equals: #( 'class' 'selector' 'newSelector' ) asSet.
-	self assert: protocolTool inputSchema required asSet equals: #( 'class' 'selector' 'protocol' ) asSet.
+	self assert: updateTool inputSchema required asSet equals: #( 'class' 'selector' ) asSet.
+	self assert: updateTool atLeastOneInputProperties asSet equals: #( 'protocol' 'newSelector' ) asSet.
 	self assert: createPropertyNames asSet equals: #( 'class' 'side' 'protocol' 'source' ) asSet.
 	self
-		assert: selectorPropertyNames asSet
-		equals: #( 'arguments' 'argumentValueExpressions' 'class' 'force' 'newSelector' 'permutation' 'scope' 'selector'
-			   'side' ) asSet.
-	self assert: protocolPropertyNames asSet equals: #( 'class' 'side' 'protocol' 'selector' ) asSet
+		assert: updatePropertyNames asSet
+		equals:
+		#( 'arguments' 'argumentValueExpressions' 'class' 'force' 'newSelector' 'permutation' 'protocol' 'scope' 'selector' 'side' )
+			asSet
 ]
 
 { #category : 'tests' }
@@ -1541,7 +1385,7 @@ MCPToolContractsTest >> testMethodToolTraitOwnsSharedMethodHelpers [
 MCPToolContractsTest >> testMutationDescriptionsExplainForceWarningBehavior [
 
 	| methodForceDescription |
-	methodForceDescription := (self inputPropertyNamed: 'force' inTool: MCPToolUpdateMethodSelector new) description.
+	methodForceDescription := (self inputPropertyNamed: 'force' inTool: MCPToolUpdateMethod new) description.
 	self assert: (methodForceDescription includesSubstring: 'refactoring warnings').
 	self assert: (methodForceDescription includesSubstring: 'stopping')
 ]
@@ -1549,19 +1393,20 @@ MCPToolContractsTest >> testMutationDescriptionsExplainForceWarningBehavior [
 { #category : 'tests' }
 MCPToolContractsTest >> testMutationToolSchemasAdvertiseRenameScopeConditions [
 
-	| classRenameInputSchema classRenamePropertyNames selectorInputSchema selectorPropertyNames |
-	classRenameInputSchema := MCPToolUpdateClassName new inputSchema.
-	selectorInputSchema := MCPToolUpdateMethodSelector new inputSchema.
-	classRenamePropertyNames := classRenameInputSchema properties collect: [ :each | each name ].
+	| classUpdateInputSchema classUpdatePropertyNames selectorInputSchema selectorPropertyNames |
+	classUpdateInputSchema := MCPToolUpdateClass new inputSchema.
+	selectorInputSchema := MCPToolUpdateMethod new inputSchema.
+	classUpdatePropertyNames := classUpdateInputSchema properties collect: [ :each | each name ].
 	selectorPropertyNames := selectorInputSchema properties collect: [ :each | each name ].
-	self deny: (classRenamePropertyNames includes: 'scope').
-	self deny: (classRenamePropertyNames includes: 'force').
-	self deny: (classRenamePropertyNames includes: 'packages').
-	self deny: (classRenamePropertyNames includes: 'classes').
-	self deny: (classRenamePropertyNames includes: 'hierarchyClasses').
+	"A class rename takes the whole image, so it offers no scope. It does offer force, because the slot patch it shares a tool with raises refactoring warnings."
+	self deny: (classUpdatePropertyNames includes: 'scope').
+	self assert: (classUpdatePropertyNames includes: 'force').
+	self deny: (classUpdatePropertyNames includes: 'packages').
+	self deny: (classUpdatePropertyNames includes: 'classes').
+	self deny: (classUpdatePropertyNames includes: 'hierarchyClasses').
 	self assert: (selectorPropertyNames includes: 'scope').
 	#( 'packages' 'classes' 'hierarchyClasses' ) do: [ :each | self deny: (selectorPropertyNames includes: each) ].
-	self assert: (classRenameInputSchema asJRPCJSON at: #additionalProperties) equals: false.
+	self assert: (classUpdateInputSchema asJRPCJSON at: #additionalProperties) equals: false.
 	self assert: (selectorInputSchema asJRPCJSON at: #additionalProperties) equals: false
 ]
 
@@ -1601,18 +1446,13 @@ MCPToolContractsTest >> testOnlyToolsRegistersExactlyThoseTools [
 { #category : 'tests' }
 MCPToolContractsTest >> testOptionalToolArgumentsAdvertiseDefaultsWhenAvailable [
 
-	| classSlotTool searchClassesTool methodMetadataTool searchPackagesTool getClassTool getMethodTool removeClassesTool removeMethodsTool rewriteMethodsTool updateMethodTool |
-	classSlotTool := MCPToolAddClassSlot new.
+	| getClassTool getMethodTool removeClassesTool removeMethodsTool rewriteMethodsTool updateMethodTool |
 	getClassTool := MCPToolGetClass new.
 	getMethodTool := MCPToolGetMethod new.
-	updateMethodTool := MCPToolUpdateMethodSelector new.
+	updateMethodTool := MCPToolUpdateMethod new.
 	rewriteMethodsTool := MCPToolRewriteMethods new.
-	searchClassesTool := MCPToolSearchClasses new.
-	methodMetadataTool := MCPToolSearchMethods new.
-	searchPackagesTool := MCPToolSearchPackages new.
 	removeClassesTool := MCPToolRemoveClasses new.
 	removeMethodsTool := MCPToolRemoveMethods new.
-	self assert: ((self inputPropertyNamed: 'side' inTool: classSlotTool) extraProperties at: #default) equals: 'instance'.
 	self assert: ((self inputPropertyNamed: 'includeComment' inTool: getClassTool) extraProperties at: #default) equals: false.
 	self assert: ((self inputPropertyNamed: 'subclassDepth' inTool: getClassTool) extraProperties at: #default) equals: 0.
 	self assert: ((self inputPropertyNamed: 'side' inTool: getMethodTool) extraProperties at: #default) equals: 'instance'.
@@ -1644,7 +1484,7 @@ MCPToolContractsTest >> testParsedInputClassesUseRequestOrSpecSuffixes [
 
 	| invalidNames parsedInputClasses suffixes |
 	parsedInputClasses := (self mcpClassesInPackageTagNamed: 'Requests') reject: [ :each | each = MCPToolRequest ].
-	suffixes := #( 'Request' 'Spec' ).
+	suffixes := #( 'Request' 'Spec' 'Delta' ).
 	invalidNames := parsedInputClasses reject: [ :each | suffixes anySatisfy: [ :suffix | each name asString endsWith: suffix ] ].
 	self assert: ((self mcpClassesInPackageTagNamed: 'Requests') includes: MCPToolRequest).
 	self assert: parsedInputClasses notEmpty.
@@ -1725,15 +1565,15 @@ MCPToolContractsTest >> testRPCAdvertisesTheAdvertisedSurfaceOnly [
 	registry := self toolRegistry.
 	toolNames := (self mcpWithoutObservabilityExport rpcToolsList at: #tools) collect: [ :each | each at: #name ].
 	expectedAdvertisedToolNames := #( 'tool_search' 'tool_get' 'tool_call' 'class_search' 'class_get' 'class_create' 'class_remove'
-	                              'method_search' 'method_source_search' 'method_reference_search' 'method_get'
-	                              'method_compile' 'method_remove' 'image_evaluate' 'test_run' ).
+	                                  'method_search' 'method_source_search' 'method_reference_search' 'method_get' 'method_compile'
+	                                  'method_remove' 'image_evaluate' 'test_run' ).
 	discoverableToolNames := registry toolNames difference: registry advertisedToolNames.
 	self assert: expectedAdvertisedToolNames size equals: 15.
 	self assert: toolNames asSet equals: registry advertisedToolNames asSet.
 	self assert: registry advertisedToolNames asSet equals: expectedAdvertisedToolNames asSet.
 	discoverableToolNames do: [ :each | self deny: (toolNames includes: each) ].
-	self assert: (registry toolNames includes: 'method_protocol_update').
-	self deny: (toolNames includes: 'method_protocol_update')
+	self assert: (registry toolNames includes: 'method_update').
+	self deny: (toolNames includes: 'method_update')
 ]
 
 { #category : 'tests' }
@@ -1824,24 +1664,13 @@ MCPToolContractsTest >> testRequestedToolIconsAreSelected [
 		equals: (MCPStructureIcon compositeBaseIconNamed: #page leftBadgeIconNamed: #workspace rightBadgeIconNamed: #search) asJRPCJSON.
 	self
 		assert: MCPToolSearchMethodReferences new icons first asJRPCJSON
-		equals:
-		(MCPStructureIcon compositeBaseIconNamed: #page leftBadgeIconNamed: #references rightBadgeIconNamed: #search)
-			asJRPCJSON.
+		equals: (MCPStructureIcon compositeBaseIconNamed: #page leftBadgeIconNamed: #references rightBadgeIconNamed: #search) asJRPCJSON.
 	self
-		assert: MCPToolUpdateMethodProtocol new icons first asJRPCJSON
-		equals:
-		(MCPStructureIcon compositeBaseIconNamed: #page leftBadgeIconNamed: #protocolProtected rightBadgeIconNamed: #edit) asJRPCJSON.
+		assert: MCPToolUpdateMethod new icons first asJRPCJSON
+		equals: (MCPStructureIcon compositeBaseIconNamed: #page badgeIconNamed: #edit) asJRPCJSON.
 	self
-		assert: MCPToolPullUpClassSlot new icons first asJRPCJSON
-		equals:
-		(MCPStructureIcon compositeBaseIconNamed: #class leftBadgeIconNamed: #instVarsSelected rightBadgeIconNamed: #up) asJRPCJSON.
-	self
-		assert: MCPToolPushDownClassSlot new icons first asJRPCJSON
-		equals:
-		(MCPStructureIcon compositeBaseIconNamed: #class leftBadgeIconNamed: #instVarsSelected rightBadgeIconNamed: #down) asJRPCJSON.
-	self
-		assert: MCPToolUpdateClassLayout new icons first asJRPCJSON
-		equals: (MCPStructureIcon compositeBaseIconNamed: #class leftBadgeIconNamed: #objects rightBadgeIconNamed: #edit) asJRPCJSON.
+		assert: MCPToolUpdateClass new icons first asJRPCJSON
+		equals: (MCPStructureIcon compositeBaseIconNamed: #class badgeIconNamed: #edit) asJRPCJSON.
 	self
 		assert: MCPToolListChangeHistoryEntries new icons first asJRPCJSON
 		equals:
@@ -2251,7 +2080,7 @@ MCPToolContractsTest >> testSearchToolsAnswerPlainTextContent [
 	text := self firstTextFromToolResult: result.
 	lines := text lines.
 	self assert: lines first equals: (self summaryFrom: result).
-	self assert: (lines anySatisfy: [ :each | each beginsWith: 'class_slots_update - ' ]).
+	self assert: (lines anySatisfy: [ :each | each beginsWith: 'class_update - ' ]).
 	self deny: (text includesSubstring: '"tools"')
 ]
 
@@ -2261,8 +2090,8 @@ MCPToolContractsTest >> testSearchToolsAnswersBestMatchesWhenNoToolMatchesEveryW
 
 	| names |
 	names := self searchedToolNamesFor: 'class update modify slots'.
-	self assert: names first equals: 'class_slots_update'.
-	self assert: (names includes: 'class_traits_update')
+	self assert: names first equals: 'class_update'.
+	self assert: (names includes: 'class_create')
 ]
 
 { #category : 'tests' }
@@ -2293,7 +2122,7 @@ MCPToolContractsTest >> testSearchToolsAnswersCatalogOverviewWithoutQuery [
 MCPToolContractsTest >> testSearchToolsCapsResultsAtResultLimit [
 
 	| result tools |
-	result := self callToolNamed: 'tool_search' withArguments: { (#query -> 'class') } asDictionary.
+	result := self callToolNamed: 'tool_search' withArguments: { (#query -> 'class method repository') } asDictionary.
 	tools := (self dataFrom: result) at: #tools.
 	self assert: tools size equals: MCPSearchToolsCommand new resultLimit.
 	self assert: ((self summaryFrom: result) includesSubstring: 'matching tools, best first')
@@ -2325,7 +2154,7 @@ MCPToolContractsTest >> testSearchToolsLetDescriptionsRefineRankingWithoutAdmitt
 	"'the' appears in most descriptions, so a word found only there must not turn a tool into a result, but it still ranks a tool that already matches."
 
 	self assert: (self searchedToolNamesFor: 'frobnicate the widget') isEmpty.
-	self assert: (self searchedToolNamesFor: 'rename a method everywhere') first equals: 'method_selector_update'
+	self assert: (self searchedToolNamesFor: 'rename a method everywhere') first equals: 'method_update'
 ]
 
 { #category : 'tests' }
@@ -2346,8 +2175,8 @@ MCPToolContractsTest >> testSearchToolsMatchesAgentGuidanceKeywords [
 		                ('display' -> 'screen_capture').
 		                ('watch' -> 'debug_watch').
 		                ('debugger' -> 'debug_search').
-		                ('refactor' -> 'class_slot_pull_up').
-		                ('refactoring' -> 'method_selector_update') }.
+		                ('refactor' -> 'class_update').
+		                ('refactoring' -> 'method_update') }.
 	expectations do: [ :expectation |
 			| names |
 			names := (self toolRegistry toolsMatchingQuery: expectation key) collect: [ :each | each name ].
@@ -2361,9 +2190,9 @@ MCPToolContractsTest >> testSearchToolsMatchesPluralQueryTerms [
 	expectations := {
 		                ('classes' -> 'class_search').
 		                ('repositories' -> 'repository_search').
-		                ('traits' -> 'class_traits_update').
-		                ('variables' -> 'class_shared_variables_update').
-		                ('refactorings' -> 'class_slot_pull_up') }.
+		                ('traits' -> 'class_update').
+		                ('variables' -> 'class_update').
+		                ('refactorings' -> 'method_update') }.
 	expectations do: [ :expectation |
 			| names |
 			names := (self toolRegistry toolsMatchingQuery: expectation key) collect: [ :each | each name ].
@@ -2372,16 +2201,10 @@ MCPToolContractsTest >> testSearchToolsMatchesPluralQueryTerms [
 
 { #category : 'tests' }
 MCPToolContractsTest >> testSearchToolsMatchesSpecializedClassKeywords [
+	"class_update answers for every part of a class definition, so the words that used to lead to a tool each must still lead to it."
 
-	| expectations |
-	expectations := {
-		                ('trait composition' -> 'class_traits_update').
-		                ('metaclass trait' -> 'class_side_traits_update').
-		                ('classvar' -> 'class_shared_variables_update').
-		                ('pooldictionary' -> 'class_shared_pools_update').
-		                ('weak layout' -> 'class_layout_update') }.
-	expectations do: [ :expectation |
-		self assert: ((self searchedToolNamesFor: expectation key) includes: expectation value) ]
+	#( 'trait composition' 'metaclass trait' 'classvar' 'pooldictionary' 'weak layout' 'rename class' 'recategorize' ) do: [ :query |
+		self assert: ((self searchedToolNamesFor: query) includes: 'class_update') ]
 ]
 
 { #category : 'tests' }
@@ -2504,11 +2327,7 @@ MCPToolContractsTest >> testSingularSearchTermsUseGenericInflectionRules [
 MCPToolContractsTest >> testSpecializedClassAndMethodToolsAreDiscoverableOnly [
 
 	| discoverableOnlyNames |
-	discoverableOnlyNames := #( 'class_name_update' 'class_superclass_update' 'class_package_update' 'class_comment_update'
-	                            'class_slots_update' 'class_traits_update' 'class_side_traits_update' 'class_shared_variables_update'
-	                            'class_shared_pools_update' 'class_layout_update' 'class_slot_add' 'class_slot_remove'
-	                            'class_slot_name_update' 'class_slot_pull_up' 'class_slot_push_down' 'method_equivalent_search'
-	                            'test_coverage_run' ).
+	discoverableOnlyNames := #( 'class_update' 'method_equivalent_search' 'test_coverage_run' ).
 	discoverableOnlyNames do: [ :each |
 			| tool |
 			self assert: (self toolRegistry toolNames includes: each).
@@ -2527,7 +2346,7 @@ MCPToolContractsTest >> testStringArrayItemDescriptionsStayUseful [
 		                   description: 'Packages to search.'
 		                   itemDescription: 'Package name.'.
 	self deny: ((compactProperty asJRPCJSON at: #items) includesKey: #description).
-	usefulProperty := self inputPropertyNamed: 'argumentValueExpressions' inTool: MCPToolUpdateMethodSelector new.
+	usefulProperty := self inputPropertyNamed: 'argumentValueExpressions' inTool: MCPToolUpdateMethod new.
 	self assert: ((usefulProperty asJRPCJSON at: #items) at: #description) equals: 'Smalltalk expression.'
 ]
 
@@ -2654,25 +2473,10 @@ MCPToolContractsTest >> testToolRegistryNamesUseClassSideMetadata [
 	self assert: registry toolNames equals: names.
 	self assert: MCPToolSearchClasses toolName equals: 'class_search'.
 	self assert: MCPToolCreateClass toolName equals: 'class_create'.
-	self assert: MCPToolUpdateClassName toolName equals: 'class_name_update'.
-	self assert: MCPToolUpdateClassSuperclass toolName equals: 'class_superclass_update'.
-	self assert: MCPToolUpdateClassPackage toolName equals: 'class_package_update'.
-	self assert: MCPToolUpdateClassComment toolName equals: 'class_comment_update'.
-	self assert: MCPToolUpdateClassSlots toolName equals: 'class_slots_update'.
-	self assert: MCPToolUpdateClassTraits toolName equals: 'class_traits_update'.
-	self assert: MCPToolUpdateClassSideTraits toolName equals: 'class_side_traits_update'.
-	self assert: MCPToolUpdateClassSharedVariables toolName equals: 'class_shared_variables_update'.
-	self assert: MCPToolUpdateClassSharedPools toolName equals: 'class_shared_pools_update'.
-	self assert: MCPToolUpdateClassLayout toolName equals: 'class_layout_update'.
-	self assert: MCPToolAddClassSlot toolName equals: 'class_slot_add'.
-	self assert: MCPToolRemoveClassSlot toolName equals: 'class_slot_remove'.
-	self assert: MCPToolUpdateClassSlotName toolName equals: 'class_slot_name_update'.
-	self assert: MCPToolPullUpClassSlot toolName equals: 'class_slot_pull_up'.
-	self assert: MCPToolPushDownClassSlot toolName equals: 'class_slot_push_down'.
+	self assert: MCPToolUpdateClass toolName equals: 'class_update'.
 	self assert: MCPToolRunTests toolName equals: 'test_run'.
 	self assert: MCPToolCompileMethod toolName equals: 'method_compile'.
-	self assert: MCPToolUpdateMethodSelector toolName equals: 'method_selector_update'.
-	self assert: MCPToolUpdateMethodProtocol toolName equals: 'method_protocol_update'.
+	self assert: MCPToolUpdateMethod toolName equals: 'method_update'.
 	self assert: MCPToolVerifyRepositoryIdentity toolName equals: 'repository_identity_verify'.
 	self assert: MCPToolListRepositoryChanges toolName equals: 'repository_change_list'.
 	self assert: MCPToolCreateRepository toolName equals: 'repository_create'.

@@ -8,7 +8,10 @@ Class {
 	#superclass : 'MCPDataTransferObject',
 	#instVars : [
 		'requestedContext',
-		'updateAction'
+		'updateAction',
+		'slotName',
+		'newSlotName',
+		'classSide'
 	],
 	#category : 'MCP-DTOs',
 	#package : 'MCP',
@@ -33,6 +36,30 @@ MCPClassUpdatePlanInfo >> asDictionary [
 ]
 
 { #category : 'accessing' }
+MCPClassUpdatePlanInfo >> classSide [
+
+	^ classSide ifNil: [ false ]
+]
+
+{ #category : 'accessing' }
+MCPClassUpdatePlanInfo >> classSide: aBoolean [
+
+	classSide := aBoolean
+]
+
+{ #category : 'accessing' }
+MCPClassUpdatePlanInfo >> newSlotName [
+
+	^ newSlotName
+]
+
+{ #category : 'accessing' }
+MCPClassUpdatePlanInfo >> newSlotName: aString [
+
+	newSlotName := aString
+]
+
+{ #category : 'accessing' }
 MCPClassUpdatePlanInfo >> requestedContext [
 
 	^ requestedContext ifNil: [ Dictionary new ]
@@ -42,6 +69,18 @@ MCPClassUpdatePlanInfo >> requestedContext [
 MCPClassUpdatePlanInfo >> requestedContext: aDictionary [
 
 	requestedContext := aDictionary ifNil: [ Dictionary new ]
+]
+
+{ #category : 'accessing' }
+MCPClassUpdatePlanInfo >> slotName [
+
+	^ slotName
+]
+
+{ #category : 'accessing' }
+MCPClassUpdatePlanInfo >> slotName: aString [
+
+	slotName := aString
 ]
 
 { #category : 'accessing' }
