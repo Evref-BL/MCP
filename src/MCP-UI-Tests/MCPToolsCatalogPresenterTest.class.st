@@ -46,10 +46,12 @@ MCPToolsCatalogPresenterTest >> testFilterNarrowsTheListAndSaysSoInTheCount [
 	presenter := MCPToolsCatalogPresenter new.
 	table := presenter instVarNamed: #toolsTable.
 
-	(presenter instVarNamed: #filterInput) text: 'slot'.
+	(presenter instVarNamed: #filterInput) text: 'class'.
 	presenter refreshView.
 
-	self assert: (table items allSatisfy: [ :each | each name includesSubstring: 'slot' ]).
+	"The filter reads name, group, title and description, so a tool matches on any of them."
+	self assert: (table items allSatisfy: [ :each | (presenter searchTextFor: each) includesSubstring: 'class' ]).
+	self assert: (table items anySatisfy: [ :each | each name includesSubstring: 'class' ]).
 	self assert: table items size < presenter allTools size.
 	self assert: ((presenter instVarNamed: #countLabel) label includesSubstring: ' of ')
 ]

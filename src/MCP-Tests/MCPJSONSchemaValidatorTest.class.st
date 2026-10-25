@@ -77,52 +77,9 @@ MCPJSONSchemaValidatorTest >> classMutationRepresentativeArgumentsByToolClass [
 			   (#name -> 'MCPJSONSchemaValidatorTestTemporary').
 			   (#superclass -> 'Object').
 			   (#package -> 'MCP-Tests') } asDictionary).
-		  (MCPToolUpdateClassName -> {
+		  (MCPToolUpdateClass -> {
 			   (#name -> 'MCPTool').
-			   (#newName -> 'MCPToolRenamed') } asDictionary).
-		  (MCPToolUpdateClassSuperclass -> {
-			   (#name -> 'MCPTool').
-			   (#superclass -> 'Object') } asDictionary).
-		  (MCPToolUpdateClassPackage -> {
-			   (#name -> 'MCPTool').
-			   (#tag -> 'Tools') } asDictionary).
-		  (MCPToolUpdateClassComment -> {
-			   (#name -> 'MCPTool').
-			   (#comment -> '') } asDictionary).
-		  (MCPToolUpdateClassSlots -> {
-			   (#name -> 'MCPTool').
-			   (#slots -> #(  )) } asDictionary).
-		  (MCPToolUpdateClassTraits -> {
-			   (#name -> 'MCPTool').
-			   (#traits -> #(  )) } asDictionary).
-		  (MCPToolUpdateClassSideTraits -> {
-			   (#name -> 'MCPTool').
-			   (#classTraits -> #(  )) } asDictionary).
-		  (MCPToolUpdateClassSharedVariables -> {
-			   (#name -> 'MCPTool').
-			   (#sharedVariables -> #(  )) } asDictionary).
-		  (MCPToolUpdateClassSharedPools -> {
-			   (#name -> 'MCPTool').
-			   (#sharedPools -> #(  )) } asDictionary).
-		  (MCPToolUpdateClassLayout -> {
-			   (#name -> 'MCPTool').
-			   (#layout -> 'FixedLayout') } asDictionary).
-		  (MCPToolAddClassSlot -> {
-			   (#name -> 'MCPTool').
-			   (#slot -> 'temporarySlot') } asDictionary).
-		  (MCPToolRemoveClassSlot -> {
-			   (#name -> 'MCPTool').
-			   (#slot -> 'temporarySlot') } asDictionary).
-		  (MCPToolUpdateClassSlotName -> {
-			   (#name -> 'MCPTool').
-			   (#slot -> 'temporarySlot').
-			   (#newSlot -> 'renamedTemporarySlot') } asDictionary).
-		  (MCPToolPullUpClassSlot -> {
-			   (#name -> 'MCPTool').
-			   (#slot -> 'temporarySlot') } asDictionary).
-		  (MCPToolPushDownClassSlot -> {
-			   (#name -> 'MCPTool').
-			   (#slot -> 'temporarySlot') } asDictionary) } asDictionary
+			   (#comment -> '') } asDictionary) } asDictionary
 ]
 
 { #category : 'private' }
@@ -156,11 +113,7 @@ MCPJSONSchemaValidatorTest >> representativeArgumentsByToolClass [
 				(#class -> 'MCPTool').
 				(#source -> 'temporarySelector ^ self').
 				(#protocol -> 'tests') } asDictionary;
-		at: MCPToolUpdateMethodSelector put: {
-				(#class -> 'MCPTool').
-				(#selector -> 'name').
-				(#newSelector -> 'toolTitleForTesting') } asDictionary;
-		at: MCPToolUpdateMethodProtocol put: {
+		at: MCPToolUpdateMethod put: {
 				(#class -> 'MCPTool').
 				(#selector -> 'name').
 				(#protocol -> 'accessing') } asDictionary;
@@ -227,7 +180,7 @@ MCPJSONSchemaValidatorTest >> testCurrentToolRequestValidationRejectsOperationSp
 		should: [ MCPToolCreateClass new requestFromToolCallArguments: { (#name -> 'MCPTool') } asDictionary ]
 		raise: MCPInvalidToolInput.
 	self
-		should: [ MCPToolUpdateClassPackage new requestFromToolCallArguments: { (#name -> 'MCPTool') } asDictionary ]
+		should: [ MCPToolUpdateClass new requestFromToolCallArguments: { (#name -> 'MCPTool') } asDictionary ]
 		raise: MCPInvalidToolInput.
 	self
 		should: [ MCPToolCommitRepository new requestFromToolCallArguments: { (#name -> 'MCP') } asDictionary ]

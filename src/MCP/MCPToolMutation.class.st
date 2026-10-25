@@ -62,6 +62,13 @@ MCPToolMutation >> addSupplementalSelectorFromMethodNode: methodNode to: details
 	selector ifNotNil: [ details at: #selector ifAbsentPut: [ selector asString ] ]
 ]
 
+{ #category : 'private - specs' }
+MCPToolMutation >> atLeastOneInputProperties [
+	"Properties of which a request must carry at least one. Empty means no such constraint."
+
+	^ #(  )
+]
+
 { #category : 'metadata' }
 MCPToolMutation >> buildInputSchema [
 
@@ -550,6 +557,18 @@ MCPToolMutation >> unionRefactoringEnvironment: currentEnvironment with: addedEn
 	^ currentEnvironment ifNil: [ addedEnvironment ] ifNotNil: [ currentEnvironment | addedEnvironment ]
 ]
 
+{ #category : 'validating' }
+MCPToolMutation >> validateAtLeastOneInputPropertyIn: request [
+
+	| propertyNames requiredName |
+	propertyNames := self atLeastOneInputProperties.
+	propertyNames ifEmpty: [ ^ self ].
+	(propertyNames anySatisfy: [ :each | request hasArgumentNamed: each ]) ifTrue: [ ^ self ].
+	requiredName := String streamContents: [ :stream |
+		                propertyNames do: [ :each | stream nextPutAll: each ] separatedBy: [ stream nextPutAll: ' or ' ] ].
+	MCPInvalidToolInput signalMissingRequiredArgumentNamed: requiredName forTool: self
+]
+
 { #category : 'private - request' }
 MCPToolMutation >> validateRefactoringScopePackageNamesExist: packageNames [
 
@@ -561,7 +580,8 @@ MCPToolMutation >> validateRequest: request [
 
 	self requiredInputProperties do: [ :each |
 			(request argumentNamed: each ifAbsent: [ nil ]) ifNil: [
-				MCPInvalidToolInput signalMissingRequiredArgumentNamed: each forTool: self ] ]
+				MCPInvalidToolInput signalMissingRequiredArgumentNamed: each forTool: self ] ].
+	self validateAtLeastOneInputPropertyIn: request
 ]
 
 { #category : 'private - errors' }

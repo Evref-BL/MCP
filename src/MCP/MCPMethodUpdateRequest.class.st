@@ -49,15 +49,15 @@ MCPMethodUpdateRequest >> argumentNames [
 { #category : 'converting' }
 MCPMethodUpdateRequest >> argumentRenameMapForBehavior: aBehavior [
 
-	| oldArgumentNames parseTree renameMap |
+	| oldArgumentNames renameMap resolvedPermutation |
 	self argumentNames isEmpty ifTrue: [ ^ #(  ) ].
-	parseTree := aBehavior parseTreeForSelector: self selector asSymbol.
-	parseTree ifNil: [ ^ #(  ) ].
-	oldArgumentNames := parseTree argumentNames.
+	oldArgumentNames := self oldArgumentNamesForBehavior: aBehavior.
+	oldArgumentNames ifEmpty: [ ^ #(  ) ].
+	resolvedPermutation := self permutationForBehavior: aBehavior.
 	renameMap := OrderedCollection new.
-	1 to: self permutation size do: [ :targetIndex |
+	1 to: resolvedPermutation size do: [ :targetIndex |
 			| oldIndex newArgumentName oldArgumentName renameArgument |
-			oldIndex := self permutation at: targetIndex.
+			oldIndex := resolvedPermutation at: targetIndex.
 			oldIndex > 0 ifTrue: [
 					oldArgumentName := oldArgumentNames at: oldIndex.
 					newArgumentName := self argumentNames at: targetIndex.
@@ -209,16 +209,19 @@ MCPMethodUpdateRequest >> keywordPermutationFromSelector: oldSelector toSelector
 ]
 
 { #category : 'converting' }
-MCPMethodUpdateRequest >> newArgumentSpecs [
+MCPMethodUpdateRequest >> newArgumentSpecsForBehavior: aBehavior [
 
-	| newArgumentIndex |
+	| newArgumentIndex resolvedPermutation |
 	newArgumentIndex := 0.
-	^ (1 to: self permutation size) select: [ :targetIndex | (self permutation at: targetIndex) <= 0 ] thenCollect: [ :targetIndex |
-			  | argumentName defaultExpression |
-			  newArgumentIndex := newArgumentIndex + 1.
-			  argumentName := self argumentNames at: targetIndex.
-			  defaultExpression := self argumentValueExpressionAt: newArgumentIndex.
-			  RBArgumentName name: argumentName value: defaultExpression ]
+	resolvedPermutation := self permutationForBehavior: aBehavior.
+	^ (1 to: resolvedPermutation size)
+		  select: [ :targetIndex | (resolvedPermutation at: targetIndex) <= 0 ]
+		  thenCollect: [ :targetIndex |
+				  | argumentName defaultExpression |
+				  newArgumentIndex := newArgumentIndex + 1.
+				  argumentName := self argumentNames at: targetIndex ifAbsent: [ 'anArgument' , newArgumentIndex asString ].
+				  defaultExpression := self argumentValueExpressionAt: newArgumentIndex.
+				  RBArgumentName name: argumentName value: defaultExpression ]
 ]
 
 { #category : 'accessing' }
@@ -239,10 +242,30 @@ MCPMethodUpdateRequest >> newSelectorUpdateAction [
 	^ 'rename'
 ]
 
+{ #category : 'private - request' }
+MCPMethodUpdateRequest >> oldArgumentNamesForBehavior: aBehavior [
+
+	^ (aBehavior parseTreeForSelector: self selector asSymbol) ifNil: [ #(  ) ] ifNotNil: [ :parseTree | parseTree argumentNames ]
+]
+
 { #category : 'accessing' }
 MCPMethodUpdateRequest >> permutation [
 
 	^ permutation ifNil: [ #(  ) ]
+]
+
+{ #category : 'converting' }
+MCPMethodUpdateRequest >> permutationForBehavior: aBehavior [
+	"The index map from the new argument list to the old one. The caller gives argument names, which is what it knows, and the map falls out of them. An explicit permutation is still accepted and wins, because a reorder and a cross-rename cannot be told apart by name alone."
+
+	| newNames oldNames |
+	permutation ifNotNil: [ ^ permutation ].
+	oldNames := self oldArgumentNamesForBehavior: aBehavior.
+	newNames := self argumentNames.
+	newNames ifEmpty: [ ^ self permutationWithoutArgumentNamesFrom: oldNames ].
+	"Same arity means the names rename in place; a reorder has to say so with permutation."
+	newNames size = oldNames size ifTrue: [ ^ (1 to: newNames size) asArray ].
+	^ (newNames collect: [ :each | oldNames indexOf: each ]) asArray
 ]
 
 { #category : 'private - request' }
@@ -255,6 +278,20 @@ MCPMethodUpdateRequest >> permutationFromRequest: request selector: oldSelector 
 		                        ifAbsent: [ ^ self defaultPermutationFromSelector: oldSelector toSelector: selectorToUse ].
 	self validatePermutation: requestedPermutation fromSelector: oldSelector toSelector: selectorToUse.
 	^ requestedPermutation
+]
+
+{ #category : 'private - request' }
+MCPMethodUpdateRequest >> permutationWithoutArgumentNamesFrom: oldNames [
+	"No names and no permutation. Keeping the old arguments in order and appending the new ones is the only reading of a selector that grew; one that shrank does not say which argument goes, so ask."
+
+	| newArity |
+	newArity := self newSelector asSymbol numArgs.
+	newArity >= oldNames size ifTrue: [
+		^ ((1 to: oldNames size) , ((oldNames size + 1 to: newArity) collect: [ :each | 0 ])) asArray ].
+	MCPCommandError
+		signalErrorCode: #ArgumentNamesRequired
+		message: 'Removing arguments needs arguments, naming the ones the method keeps, or permutation mapping them by index.'
+		details: self requestedContext
 ]
 
 { #category : 'accessing' }
@@ -276,23 +313,18 @@ MCPMethodUpdateRequest >> refactoringScopeSpec: aRefactoringScopeSpec [
 ]
 
 { #category : 'accessing' }
-MCPMethodUpdateRequest >> removedArgumentIndexes [
+MCPMethodUpdateRequest >> removedArgumentIndexesForBehavior: aBehavior [
 
 	| keptIndexes |
-	keptIndexes := self permutation asSet.
+	keptIndexes := (self permutationForBehavior: aBehavior) asSet.
 	^ ((1 to: self selector asSymbol numArgs) reject: [ :index | keptIndexes includes: index ]) asArray
 ]
 
 { #category : 'accessing' }
-MCPMethodUpdateRequest >> removedArgumentIndexesInRemovalOrder [
+MCPMethodUpdateRequest >> removedArgumentNamesInRemovalOrderFor: aBehavior from: oldArgumentNames [
 
-	^ self removedArgumentIndexes asArray sort: [ :left :right | left > right ]
-]
-
-{ #category : 'accessing' }
-MCPMethodUpdateRequest >> removedArgumentNamesInRemovalOrderFrom: oldArgumentNames [
-
-	^ self removedArgumentIndexesInRemovalOrder collect: [ :index | oldArgumentNames at: index ]
+	^ ((self removedArgumentIndexesForBehavior: aBehavior) asArray sort: [ :left :right | left > right ]) collect: [ :index |
+		  oldArgumentNames at: index ]
 ]
 
 { #category : 'converting' }

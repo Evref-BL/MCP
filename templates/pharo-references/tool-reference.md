@@ -74,6 +74,54 @@ target under `results`, in request order. An entry that failed carries its
 A call naming one target answers exactly what it answers when the argument
 holds a single value.
 
+## Changing A Class Or A Method
+
+`class_update` and `method_update` take the whole change rather than one
+property each. Every property is optional and at least one is required;
+omitted ones are left alone.
+
+Scalar properties are replaced by value, and so are the collections that hold
+no state:
+
+```text
+class_update   name, and any of newName, superclass, package, tag, comment,
+               layout, traits, classTraits, sharedVariables, sharedPools
+```
+
+Slots are patched instead, through `slots` and `classSlots`, because they hold
+the instance's values. A replacement list cannot tell a rename from a
+remove-plus-add, and the two differ in whether the value survives; it also has
+to be complete, so a stale one silently drops a slot the caller did not know
+about.
+
+```text
+slots: { add:      [names]
+         remove:   [names]
+         rename:   { current: new }
+         pullUp:   [names]      moves them to the superclass
+         pushDown: [names]      moves them to every direct subclass
+         replace:  [names] }    the whole list; prefer add and remove
+```
+
+`method_update` takes `class` and `selector`, then `protocol`, `newSelector`
+or both. A selector change is classified by arity, so the one argument renames,
+adds or removes arguments and updates senders. Name the new argument list in
+`arguments` and the index map is worked out: names that match the current ones
+are kept, new names are added arguments needing `argumentValueExpressions`, and
+current names left out are removed. `permutation` is only for reordering, which
+names cannot express.
+
+The changes are applied in dependency order, not the order they were written:
+a superclass change first, because it decides what the rest validates against,
+slots added before anything refers to them and removed last, and a rename last,
+because every other change resolves the target by the name the caller wrote.
+
+A change that fails stops the ones after it. This is the opposite of a batch
+over several targets, and deliberately so: these all land on one class or one
+method, so carrying on would leave half a definition nobody asked for. The
+error names the change that failed, the ones already applied, and the ones not
+attempted.
+
 ## The Advertised Surface
 
 Fifteen tools are advertised directly: `tool_search`, `tool_get`, `tool_call`, `class_search`, `class_get`, `class_create`, `class_remove`, `method_search`, `method_source_search`, `method_reference_search`, `method_get`, `method_compile`, `method_remove`, `test_run` and `image_evaluate`. Every other tool is found with `tool_search` and called by name like any other; `tool_call` does the same for a client that will only send a name its own list holds.
