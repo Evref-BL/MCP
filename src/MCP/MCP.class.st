@@ -29,30 +29,6 @@ Class {
 	#tag : 'Server'
 }
 
-{ #category : 'private - servers' }
-MCP class >> startNewOnPort: aPortNumber [
-
-	^ self new
-		  port: aPortNumber;
-		  start;
-		  yourself
-]
-
-{ #category : 'servers' }
-MCP class >> startOnPort: aPortNumber [
-	"Answer a running server on this port, which is the one already there when the image has one. Two servers cannot share a port, so asking for a port is asking for the server on it.
-
-	Port 0 asks the operating system for a free one, so it names no particular server and always makes a new one."
-
-	aPortNumber isZero ifTrue: [ ^ self startNewOnPort: aPortNumber ].
-	^ self allServers
-		  detect: [ :each | each port = aPortNumber ]
-		  ifFound: [ :server |
-			  server isRunning ifFalse: [ server start ].
-			  server ]
-		  ifNone: [ self startNewOnPort: aPortNumber ]
-]
-
 { #category : 'servers' }
 MCP class >> allServers [
 	"Answer every MCP server this image still holds, ordered by port.
@@ -73,13 +49,6 @@ MCP class >> catalogCacheMilliseconds [
 ]
 
 { #category : 'protocol' }
-MCP class >> resourceContentsCacheMilliseconds [
-	"Shorter than a catalog, because nothing announces that a resource's contents changed. Until a resource can signal that, the only protection a client has is a short freshness window."
-
-	^ 5000
-]
-
-{ #category : 'protocol' }
 MCP class >> isModernRequest: someParams [
 	"A modern request declares a modern protocol version in _meta. A legacy one opens with initialize and says nothing per request; one that declares a legacy version is answered the legacy way, which is what it named."
 
@@ -87,23 +56,6 @@ MCP class >> isModernRequest: someParams [
 	declared := self requestedProtocolVersionIn: someParams.
 	declared ifNil: [ ^ false ].
 	^ self modernProtocolVersions includes: declared
-]
-
-{ #category : 'protocol' }
-MCP class >> modernProtocolVersionKey [
-
-	^ 'io.modelcontextprotocol/protocolVersion'
-]
-
-{ #category : 'protocol' }
-MCP class >> requestedProtocolVersionIn: someParams [
-	"Answer the protocol version a request declares for itself, or nil when it declares none."
-
-	| meta |
-	someParams isDictionary ifFalse: [ ^ nil ].
-	meta := someParams at: '_meta' ifAbsent: [ ^ nil ].
-	meta isDictionary ifFalse: [ ^ nil ].
-	^ meta at: self modernProtocolVersionKey ifAbsent: [ nil ]
 ]
 
 { #category : 'protocol' }
@@ -123,6 +75,12 @@ MCP class >> legacyProtocolVersions [
 	"The revisions that open with an initialize handshake and carry a session."
 
 	^ #( '2025-03-26' '2025-06-18' '2025-11-25' )
+]
+
+{ #category : 'protocol' }
+MCP class >> modernProtocolVersionKey [
+
+	^ 'io.modelcontextprotocol/protocolVersion'
 ]
 
 { #category : 'protocol' }
@@ -150,15 +108,186 @@ MCP class >> onlyTools: toolsOrToolClasses [
 ]
 
 { #category : 'protocol' }
+MCP class >> requestedProtocolVersionIn: someParams [
+	"Answer the protocol version a request declares for itself, or nil when it declares none."
+
+	| meta |
+	someParams isDictionary ifFalse: [ ^ nil ].
+	meta := someParams at: '_meta' ifAbsent: [ ^ nil ].
+	meta isDictionary ifFalse: [ ^ nil ].
+	^ meta at: self modernProtocolVersionKey ifAbsent: [ nil ]
+]
+
+{ #category : 'protocol' }
+MCP class >> resourceContentsCacheMilliseconds [
+	"Shorter than a catalog, because nothing announces that a resource's contents changed. Until a resource can signal that, the only protection a client has is a short freshness window."
+
+	^ 5000
+]
+
+{ #category : 'private - servers' }
+MCP class >> startNewOnPort: aPortNumber [
+
+	^ self new
+		  port: aPortNumber;
+		  start;
+		  yourself
+]
+
+{ #category : 'servers' }
+MCP class >> startOnPort: aPortNumber [
+	"Answer a running server on this port, which is the one already there when the image has one. Two servers cannot share a port, so asking for a port is asking for the server on it.
+
+	Port 0 asks the operating system for a free one, so it names no particular server and always makes a new one."
+
+	aPortNumber isZero ifTrue: [ ^ self startNewOnPort: aPortNumber ].
+	^ self allServers
+		  detect: [ :each | each port = aPortNumber ]
+		  ifFound: [ :server |
+				  server isRunning ifFalse: [ server start ].
+				  server ]
+		  ifNone: [ self startNewOnPort: aPortNumber ]
+]
+
+{ #category : 'protocol' }
 MCP class >> supportedProtocolVersions [
 
 	^ self legacyProtocolVersions , self modernProtocolVersions
+]
+
+{ #category : 'configuration' }
+MCP >> addPrompt: aPromptOrPromptClass [
+	"Register one prompt, as a class or as a ready instance. Every registered prompt is listed by prompts/list."
+
+	^ self promptRegistry addPrompt: aPromptOrPromptClass
+]
+
+{ #category : 'configuration' }
+MCP >> addPrompts: promptsOrPromptClasses [
+
+	^ self promptRegistry addPrompts: promptsOrPromptClasses
+]
+
+{ #category : 'configuration' }
+MCP >> addResource: aResourceOrResourceClass [
+	"Register one resource, as a class or as a ready instance. Every registered resource is listed by resources/list."
+
+	^ self resourceRegistry addResource: aResourceOrResourceClass
+]
+
+{ #category : 'configuration' }
+MCP >> addResources: resourcesOrResourceClasses [
+
+	^ self resourceRegistry addResources: resourcesOrResourceClasses
+]
+
+{ #category : 'configuration' }
+MCP >> addTool: aToolOrToolClass [
+	"Register one tool, as a class or as a ready instance. It becomes callable, and findable through tool_search and tool_get; whether tools/list shows it is the advertising question."
+
+	| tool |
+	tool := self toolRegistry addTool: aToolOrToolClass.
+	self refreshToolsList.
+	^ tool
+]
+
+{ #category : 'configuration' }
+MCP >> addTools: toolsOrToolClasses [
+
+	| added |
+	added := self toolRegistry addTools: toolsOrToolClasses.
+	self refreshToolsList.
+	^ added
+]
+
+{ #category : 'configuration' }
+MCP >> advertiseAllTools [
+
+	self toolRegistry advertiseAllTools.
+	self refreshToolsList
+]
+
+{ #category : 'configuration' }
+MCP >> advertiseTool: aToolOrToolClassOrName [
+
+	self toolRegistry advertiseTool: aToolOrToolClassOrName.
+	self refreshToolsList
+]
+
+{ #category : 'configuration' }
+MCP >> advertiseToolDefaults [
+	"Leave tools/list to each tool's own default exposure, which is where a fresh server starts."
+
+	self toolRegistry advertiseToolDefaults.
+	self refreshToolsList
+]
+
+{ #category : 'configuration' }
+MCP >> advertiseTools: toolsOrToolClassesOrNames [
+	"Say which tools tools/list should show, as classes, tool instances or names. Anything not in the catalog yet is registered, so this can be called before or after adding them."
+
+	self toolRegistry advertiseTools: toolsOrToolClassesOrNames.
+	self refreshToolsList
+]
+
+{ #category : 'start' }
+MCP >> advertisedCapabilities [
+	"Only what this server actually has. A capability for an empty catalog promises methods that would answer nothing. listChanged is declared because the stream can carry it; subscribe is not, because no resource here can say it changed."
+
+	| capabilities |
+	capabilities := MCPStructureCapabilities new
+		                tools: (MCPStructureToolsCapabilities new
+				                 listChanged: true;
+				                 yourself);
+		                yourself.
+	self resourceRegistry entries ifNotEmpty: [
+		capabilities resources: (MCPStructureResourcesCapabilities new
+				 listChanged: true;
+				 yourself) ].
+	self promptRegistry entries ifNotEmpty: [
+		capabilities prompts: (MCPStructurePromptsCapabilities new
+				 listChanged: true;
+				 yourself) ].
+	self hasCompletableReferences ifTrue: [ capabilities completions: MCPStructureCompletionsCapabilities new ].
+	^ capabilities
+]
+
+{ #category : 'configuration' }
+MCP >> advertisedToolNames [
+
+	^ self toolRegistry advertisedToolNames
+]
+
+{ #category : 'configuration' }
+MCP >> changePortTo: aPortNumber [
+	"Move the server to another port. A running one is restarted there, and goes back to the port it had if the new one cannot be bound."
+
+	^ self configurePort: aPortNumber debugMode: self debugMode
 ]
 
 { #category : 'observability' }
 MCP >> clearObservability [
 
 	self observability clear
+]
+
+{ #category : 'private - completion' }
+MCP >> completionTargetFor: aReference [
+	"Answer the prompt or resource template a completion reference names, or raise. The protocol defines two reference types and nothing else completes."
+
+	| referenceType |
+	referenceType := aReference at: #type ifAbsent: [ nil ].
+	referenceType = 'ref/prompt' ifTrue: [
+			^ self promptRegistry
+				  promptNamed: (aReference at: #name ifAbsent: [ '' ])
+				  ifAbsent: [ MCPUnknownCompletionReference signalFor: aReference ] ].
+	referenceType = 'ref/resource' ifTrue: [
+			| uri |
+			uri := aReference at: #uri ifAbsent: [ '' ].
+			^ self resourceRegistry resourceTemplates
+				  detect: [ :each | each uriTemplate = uri ]
+				  ifNone: [ MCPUnknownCompletionReference signalFor: aReference ] ].
+	^ MCPUnknownCompletionReference signalFor: aReference
 ]
 
 { #category : 'configuration' }
@@ -204,6 +333,13 @@ MCP >> debugMode: aBoolean [
 	self server messageProcessor debugMode: aBoolean
 ]
 
+{ #category : 'start' }
+MCP >> discoveryInstructions [
+	"Natural-language guidance a client may put in front of a model. The catalog is larger than what tools/list shows, so the one thing worth saying is how to reach the rest of it."
+
+	^ 'Pharo image tools. tools/list shows the advertised surface; tool_search finds the rest of the catalog, and any tool it names can be called by name. image_evaluate is the escape hatch when no tool fits.'
+]
+
 { #category : 'private - tools' }
 MCP >> dispatchToolCallWith: callTool arguments: arguments observabilityRecord: observabilityRecord [
 
@@ -237,23 +373,6 @@ MCP >> ensureServerIsListening [
 	server start.
 	(self waitUntilListeningForMilliseconds: 1000) ifTrue: [ ^ self ].
 	Error signal: self notListeningDescription
-]
-
-{ #category : 'private - start' }
-MCP >> notListeningDescription [
-	"A port is most often held by another server in the same image, and the socket error alone does not say so."
-
-	^ String streamContents: [ :stream |
-		  stream << 'MCP server is not listening on port ' << self port asString.
-		  server lastListenError ifNotNil: [ :reason | stream << ': ' << reason ].
-		  self class allServers
-			  detect: [ :each | each ~~ self and: [ each port = self port and: [ each isListening ] ] ]
-			  ifFound: [ :holder |
-				  stream
-				  << '. Another MCP in this image is listening on that port; MCP startOnPort: '
-				  << self port asString
-				  << ' answers it.' ]
-			  ifNone: [ nil ] ]
 ]
 
 { #category : 'private - tools' }
@@ -318,6 +437,13 @@ MCP >> handlersCount [
 	^ self server messageProcessor handlersCount
 ]
 
+{ #category : 'private - completion' }
+MCP >> hasCompletableReferences [
+	"Nothing can be completed without a prompt or a resource template to complete it for."
+
+	^ self promptRegistry entries notEmpty or: [ self resourceRegistry resourceTemplates notEmpty ]
+]
+
 { #category : 'initialization' }
 MCP >> initialize [
 
@@ -339,6 +465,14 @@ MCP >> isRunning [
 	^ self server isRunning
 ]
 
+{ #category : 'private - notifications' }
+MCP >> listeningRegistry: aRegistry notifying: aDomainName [
+	"Have a registry tell listening clients their cached list is stale whenever it changes."
+
+	aRegistry changeListener: [ self notifyListChangedFor: aDomainName ].
+	^ aRegistry
+]
+
 { #category : 'accessing' }
 MCP >> localUrlString [
 
@@ -352,6 +486,28 @@ MCP >> newLocalObservabilityBackend [
 		  resourceMetadata: self observabilityResourceMetadata;
 		  exportDirectory: MCPLocalObservabilityBackend defaultExportDirectory;
 		  yourself
+]
+
+{ #category : 'private - start' }
+MCP >> notListeningDescription [
+	"A port is most often held by another server in the same image, and the socket error alone does not say so."
+
+	^ String streamContents: [ :stream |
+			  stream << 'MCP server is not listening on port ' << self port asString.
+			  server lastListenError ifNotNil: [ :reason | stream << ': ' << reason ].
+			  self class allServers
+				  detect: [ :each | each ~~ self and: [ each port = self port and: [ each isListening ] ] ]
+				  ifFound: [ :holder |
+					  stream << '. Another MCP in this image is listening on that port; MCP startOnPort: ' << self port asString
+					  << ' answers it.' ]
+				  ifNone: [ nil ] ]
+]
+
+{ #category : 'private - notifications' }
+MCP >> notifyListChangedFor: aDomainName [
+	"Not guarded: a client that has gone is handled where the write happens, so anything raising here is a fault in the server rather than a condition to absorb. An earlier guard here hid exactly that for a whole round."
+
+	server broadcastNotification: 'notifications/' , aDomainName , '/list_changed' parameters: nil
 ]
 
 { #category : 'accessing' }
@@ -442,90 +598,6 @@ MCP >> observabilityTraces [
 ]
 
 { #category : 'start' }
-MCP >> advertisedCapabilities [
-	"Only what this server actually has. A capability for an empty catalog promises methods that would answer nothing. listChanged is declared because the stream can carry it; subscribe is not, because no resource here can say it changed."
-
-	| capabilities |
-	capabilities := MCPStructureCapabilities new
-		                tools: (MCPStructureToolsCapabilities new
-				                 listChanged: true;
-				                 yourself);
-		                yourself.
-	self resourceRegistry entries ifNotEmpty: [
-		capabilities resources: (MCPStructureResourcesCapabilities new
-				 listChanged: true;
-				 yourself) ].
-	self promptRegistry entries ifNotEmpty: [
-		capabilities prompts: (MCPStructurePromptsCapabilities new
-				 listChanged: true;
-				 yourself) ].
-	self hasCompletableReferences ifTrue: [ capabilities completions: MCPStructureCompletionsCapabilities new ].
-	^ capabilities
-]
-
-{ #category : 'private - notifications' }
-MCP >> listeningRegistry: aRegistry notifying: aDomainName [
-	"Have a registry tell listening clients their cached list is stale whenever it changes."
-
-	aRegistry changeListener: [ self notifyListChangedFor: aDomainName ].
-	^ aRegistry
-]
-
-{ #category : 'private - notifications' }
-MCP >> notifyListChangedFor: aDomainName [
-	"Not guarded: a client that has gone is handled where the write happens, so anything raising here is a fault in the server rather than a condition to absorb. An earlier guard here hid exactly that for a whole round."
-
-	server broadcastNotification: 'notifications/' , aDomainName , '/list_changed' parameters: nil
-]
-
-{ #category : 'private - completion' }
-MCP >> completionTargetFor: aReference [
-	"Answer the prompt or resource template a completion reference names, or raise. The protocol defines two reference types and nothing else completes."
-
-	| referenceType |
-	referenceType := aReference at: #type ifAbsent: [ nil ].
-	referenceType = 'ref/prompt' ifTrue: [
-			^ self promptRegistry
-				  promptNamed: (aReference at: #name ifAbsent: [ '' ])
-				  ifAbsent: [ MCPUnknownCompletionReference signalFor: aReference ] ].
-	referenceType = 'ref/resource' ifTrue: [
-			| uri |
-			uri := aReference at: #uri ifAbsent: [ '' ].
-			^ self resourceRegistry resourceTemplates
-				  detect: [ :each | each uriTemplate = uri ]
-				  ifNone: [ MCPUnknownCompletionReference signalFor: aReference ] ].
-	^ MCPUnknownCompletionReference signalFor: aReference
-]
-
-{ #category : 'private - completion' }
-MCP >> hasCompletableReferences [
-	"Nothing can be completed without a prompt or a resource template to complete it for."
-
-	^ self promptRegistry entries notEmpty or: [ self resourceRegistry resourceTemplates notEmpty ]
-]
-
-{ #category : 'start' }
-MCP >> discoveryInstructions [
-	"Natural-language guidance a client may put in front of a model. The catalog is larger than what tools/list shows, so the one thing worth saying is how to reach the rest of it."
-
-	^ 'Pharo image tools. tools/list shows the advertised surface; tool_search finds the rest of the catalog, and any tool it names can be called by name. image_evaluate is the escape hatch when no tool fits.'
-]
-
-{ #category : 'start' }
-MCP >> serverIdentity [
-	"Who this server says it is. Self-reported and unverified, so it is for display and logging rather than for a client to act on."
-
-	^ MCPStructureServerInfo new
-		  name: 'MCP Pharo';
-		  title: 'The MCP server for Pharo';
-		  version: '1.0.0';
-		  description: 'a MCP server for Pharo';
-		  websiteUrl: 'https://badetitou.fr';
-		  icons: { (MCPStructureIcon pngIconNamed: #pharo) };
-		  yourself
-]
-
-{ #category : 'start' }
 MCP >> onInitialize: protocolVersion capabilities: capabilities clientInfo: clientInfo websiteUrl: websiteUrl [
 
 	<jrpc: #initialize>
@@ -534,6 +606,34 @@ MCP >> onInitialize: protocolVersion capabilities: capabilities clientInfo: clie
 		  capabilities: self advertisedCapabilities;
 		  metadata: self serverInfrastructureMetadata;
 		  serverInfo: self serverIdentity
+]
+
+{ #category : 'configuration' }
+MCP >> onlyPrompts: promptsOrPromptClasses [
+	"Replace the prompt catalog with exactly these. A server built this way discovers nothing, so it keeps what it was given."
+
+	promptRegistry := MCPPromptRegistry empty
+		                  addPrompts: promptsOrPromptClasses;
+		                  yourself
+]
+
+{ #category : 'configuration' }
+MCP >> onlyResources: resourcesOrResourceClasses [
+	"Replace the resource catalog with exactly these. A server built this way discovers nothing, so it keeps what it was given."
+
+	resourceRegistry := MCPResourceRegistry empty
+		                    addResources: resourcesOrResourceClasses;
+		                    yourself
+]
+
+{ #category : 'configuration' }
+MCP >> onlyTools: toolsOrToolClasses [
+	"Replace the catalog with exactly these tools, advertising all of them. A server built this way discovers nothing, so it keeps the surface it was given."
+
+	self toolRegistry: (MCPToolRegistry empty
+			 addTools: toolsOrToolClasses;
+			 advertiseAllTools;
+			 yourself)
 ]
 
 { #category : 'infrastructure metadata' }
@@ -558,46 +658,6 @@ MCP >> port: aPortNumber [
 ]
 
 { #category : 'configuration' }
-MCP >> onlyTools: toolsOrToolClasses [
-	"Replace the catalog with exactly these tools, advertising all of them. A server built this way discovers nothing, so it keeps the surface it was given."
-
-	self toolRegistry: (MCPToolRegistry empty
-			 addTools: toolsOrToolClasses;
-			 advertiseAllTools;
-			 yourself)
-]
-
-{ #category : 'configuration' }
-MCP >> onlyPrompts: promptsOrPromptClasses [
-	"Replace the prompt catalog with exactly these. A server built this way discovers nothing, so it keeps what it was given."
-
-	promptRegistry := MCPPromptRegistry empty
-		                  addPrompts: promptsOrPromptClasses;
-		                  yourself
-]
-
-{ #category : 'configuration' }
-MCP >> onlyResources: resourcesOrResourceClasses [
-	"Replace the resource catalog with exactly these. A server built this way discovers nothing, so it keeps what it was given."
-
-	resourceRegistry := MCPResourceRegistry empty
-		                    addResources: resourcesOrResourceClasses;
-		                    yourself
-]
-
-{ #category : 'configuration' }
-MCP >> removeResource: aUri [
-
-	self resourceRegistry removeResourceAt: aUri
-]
-
-{ #category : 'configuration' }
-MCP >> resourceUris [
-
-	^ self resourceRegistry resourceUris
-]
-
-{ #category : 'configuration' }
 MCP >> promptNames [
 
 	^ self promptRegistry promptNames
@@ -613,31 +673,6 @@ MCP >> promptRegistry [
 MCP >> promptRegistry: aPromptRegistry [
 
 	promptRegistry := self listeningRegistry: (aPromptRegistry ifNil: [ MCPPromptRegistry default ]) notifying: 'prompts'
-]
-
-{ #category : 'configuration' }
-MCP >> removePrompt: aName [
-
-	self promptRegistry removePromptNamed: aName
-]
-
-{ #category : 'accessing' }
-MCP >> resourceRegistry [
-
-	^ resourceRegistry ifNil: [ resourceRegistry := self listeningRegistry: MCPResourceRegistry default notifying: 'resources' ]
-]
-
-{ #category : 'accessing' }
-MCP >> resourceRegistry: aResourceRegistry [
-
-	resourceRegistry := self listeningRegistry: (aResourceRegistry ifNil: [ MCPResourceRegistry default ]) notifying: 'resources'
-]
-
-{ #category : 'configuration' }
-MCP >> removeTool: aToolName [
-
-	self toolRegistry removeToolNamed: aToolName.
-	self refreshToolsList
 ]
 
 { #category : 'private - tools' }
@@ -659,48 +694,40 @@ MCP >> refreshToolsList [
 ]
 
 { #category : 'configuration' }
-MCP >> addPrompt: aPromptOrPromptClass [
-	"Register one prompt, as a class or as a ready instance. Every registered prompt is listed by prompts/list."
+MCP >> removePrompt: aName [
 
-	^ self promptRegistry addPrompt: aPromptOrPromptClass
+	self promptRegistry removePromptNamed: aName
 ]
 
 { #category : 'configuration' }
-MCP >> addPrompts: promptsOrPromptClasses [
+MCP >> removeResource: aUri [
 
-	^ self promptRegistry addPrompts: promptsOrPromptClasses
+	self resourceRegistry removeResourceAt: aUri
 ]
 
 { #category : 'configuration' }
-MCP >> addResource: aResourceOrResourceClass [
-	"Register one resource, as a class or as a ready instance. Every registered resource is listed by resources/list."
+MCP >> removeTool: aToolName [
 
-	^ self resourceRegistry addResource: aResourceOrResourceClass
+	self toolRegistry removeToolNamed: aToolName.
+	self refreshToolsList
+]
+
+{ #category : 'accessing' }
+MCP >> resourceRegistry [
+
+	^ resourceRegistry ifNil: [ resourceRegistry := self listeningRegistry: MCPResourceRegistry default notifying: 'resources' ]
+]
+
+{ #category : 'accessing' }
+MCP >> resourceRegistry: aResourceRegistry [
+
+	resourceRegistry := self listeningRegistry: (aResourceRegistry ifNil: [ MCPResourceRegistry default ]) notifying: 'resources'
 ]
 
 { #category : 'configuration' }
-MCP >> addResources: resourcesOrResourceClasses [
+MCP >> resourceUris [
 
-	^ self resourceRegistry addResources: resourcesOrResourceClasses
-]
-
-{ #category : 'configuration' }
-MCP >> addTool: aToolOrToolClass [
-	"Register one tool, as a class or as a ready instance. It becomes callable, and findable through tool_search and tool_get; whether tools/list shows it is the advertising question."
-
-	| tool |
-	tool := self toolRegistry addTool: aToolOrToolClass.
-	self refreshToolsList.
-	^ tool
-]
-
-{ #category : 'configuration' }
-MCP >> addTools: toolsOrToolClasses [
-
-	| added |
-	added := self toolRegistry addTools: toolsOrToolClasses.
-	self refreshToolsList.
-	^ added
+	^ self resourceRegistry resourceUris
 ]
 
 { #category : 'start' }
@@ -722,20 +749,6 @@ MCP >> rpcCallToolCallWithParams: arguments [
 ]
 
 { #category : 'rpc' }
-MCP >> rpcNotificationInitialized [
-
-	<jrpc: #'notifications/initialized'>
-	^ nil
-]
-
-{ #category : 'rpc' }
-MCP >> rpcPing [
-
-	<jrpc: #ping>
-	^ Dictionary new
-]
-
-{ #category : 'rpc' }
 MCP >> rpcCompletionComplete: ref argument: argument context: context [
 
 	<jrpc: #'completion/complete'>
@@ -750,16 +763,17 @@ MCP >> rpcCompletionComplete: ref argument: argument context: context [
 ]
 
 { #category : 'rpc' }
-MCP >> rpcServerDiscover [
-	"What a client needs before it can talk: the versions this server implements, what it can do, and who it is. A client may call it first or never, so it answers whatever version was asked for."
+MCP >> rpcNotificationInitialized [
 
-	<jrpc: #'server/discover'>
-	^ {
-		  (#supportedVersions -> self class supportedProtocolVersions).
-		  (#capabilities -> self advertisedCapabilities asJRPCJSON).
-		  (#instructions -> self discoveryInstructions).
-		  (#_meta -> { ('io.modelcontextprotocol/serverInfo' -> self serverIdentity asJRPCJSON) } asDictionary) }
-			  asDictionary
+	<jrpc: #'notifications/initialized'>
+	^ nil
+]
+
+{ #category : 'rpc' }
+MCP >> rpcPing [
+
+	<jrpc: #ping>
+	^ Dictionary new
 ]
 
 { #category : 'rpc' }
@@ -811,6 +825,19 @@ MCP >> rpcResourcesTemplateList [
 ]
 
 { #category : 'rpc' }
+MCP >> rpcServerDiscover [
+	"What a client needs before it can talk: the versions this server implements, what it can do, and who it is. A client may call it first or never, so it answers whatever version was asked for."
+
+	<jrpc: #'server/discover'>
+	^ {
+		  (#supportedVersions -> self class supportedProtocolVersions).
+		  (#capabilities -> self advertisedCapabilities asJRPCJSON).
+		  (#instructions -> self discoveryInstructions).
+		  (#_meta -> { ('io.modelcontextprotocol/serverInfo' -> self serverIdentity asJRPCJSON) } asDictionary) }
+			  asDictionary
+]
+
+{ #category : 'rpc' }
 MCP >> rpcToolCall: name withParams: arguments [
 	"Dispatch any registered tool. Advertising decides what tools/list shows, not what a client may call: tool_call reaches an unadvertised tool already, so refusing one here buys no privacy and costs the caller a round trip and a nested argument object."
 
@@ -833,6 +860,20 @@ MCP >> rpcToolsList [
 MCP >> server [
 
 	^ server
+]
+
+{ #category : 'start' }
+MCP >> serverIdentity [
+	"Who this server says it is. Self-reported and unverified, so it is for display and logging rather than for a client to act on."
+
+	^ MCPStructureServerInfo new
+		  name: 'MCP Pharo';
+		  title: 'The MCP server for Pharo';
+		  version: '1.0.0';
+		  description: 'a MCP server for Pharo';
+		  websiteUrl: 'https://badetitou.fr';
+		  icons: { (MCPStructureIcon pngIconNamed: #pharo) };
+		  yourself
 ]
 
 { #category : 'infrastructure metadata' }
@@ -872,56 +913,6 @@ MCP >> start [
 	server start.
 	self ensureServerIsListening.
 	self observability recordSessionStartFor: self
-]
-
-{ #category : 'configuration' }
-MCP >> advertiseAllTools [
-
-	self toolRegistry advertiseAllTools.
-	self refreshToolsList
-]
-
-{ #category : 'configuration' }
-MCP >> changePortTo: aPortNumber [
-	"Move the server to another port. A running one is restarted there, and goes back to the port it had if the new one cannot be bound."
-
-	^ self configurePort: aPortNumber debugMode: self debugMode
-]
-
-{ #category : 'configuration' }
-MCP >> advertiseTool: aToolOrToolClassOrName [
-
-	self toolRegistry advertiseTool: aToolOrToolClassOrName.
-	self refreshToolsList
-]
-
-{ #category : 'configuration' }
-MCP >> unadvertiseTool: aToolOrToolClassOrName [
-
-	self toolRegistry unadvertiseTool: aToolOrToolClassOrName.
-	self refreshToolsList
-]
-
-{ #category : 'configuration' }
-MCP >> advertiseToolDefaults [
-	"Leave tools/list to each tool's own default exposure, which is where a fresh server starts."
-
-	self toolRegistry advertiseToolDefaults.
-	self refreshToolsList
-]
-
-{ #category : 'configuration' }
-MCP >> advertiseTools: toolsOrToolClassesOrNames [
-	"Say which tools tools/list should show, as classes, tool instances or names. Anything not in the catalog yet is registered, so this can be called before or after adding them."
-
-	self toolRegistry advertiseTools: toolsOrToolClassesOrNames.
-	self refreshToolsList
-]
-
-{ #category : 'configuration' }
-MCP >> advertisedToolNames [
-
-	^ self toolRegistry advertisedToolNames
 ]
 
 { #category : 'start' }
@@ -1011,7 +1002,12 @@ MCP >> toolsList: aToolsList [
 	^ toolsList := aToolsList
 ]
 
+{ #category : 'configuration' }
+MCP >> unadvertiseTool: aToolOrToolClassOrName [
 
+	self toolRegistry unadvertiseTool: aToolOrToolClassOrName.
+	self refreshToolsList
+]
 
 { #category : 'configuration' }
 MCP >> useContentAndStructuredContentToolResponses [
