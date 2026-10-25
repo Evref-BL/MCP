@@ -552,8 +552,9 @@ MCPTool >> errorStackTraceVariableLimit [
 
 { #category : 'private - results' }
 MCPTool >> errorTextOn: stream for: error [
-	"The summary already carries the class, the message, and any suggestion the command phrased into it. What it does not carry is where the failure happened, or the selectors a receiver would have understood."
+	"The summary already carries the class, the message, and any suggestion the command phrased into it. What it does not carry is what a comparison found, where the failure happened, or the selectors a receiver would have understood."
 
+	error at: #mismatches ifPresent: [ :mismatches | self mismatchesTextOn: stream for: mismatches ].
 	error at: #suggestedSelectors ifPresent: [ :selectors |
 			stream
 				nextPut: Character lf;
@@ -809,6 +810,33 @@ MCPTool >> methodSearchScopeSchemaProperties [
 MCPTool >> methodSearchScopeSchemaProperty [
 
 	^ self searchScopeSchemaPropertyWith: self methodSearchScopeSchemaProperties
+]
+
+{ #category : 'private - results' }
+MCPTool >> mismatchValueText: value [
+	"One side of a mismatch, on one line. A list is the interesting case: the
+	fields a repository guard compares are often package names."
+
+	value ifNil: [ ^ 'none' ].
+	(value isCollection and: [ value isString not ]) ifTrue: [
+			value ifEmpty: [ ^ 'none' ].
+			^ '(' , (', ' join: (value collect: [ :each | each asString ])) , ')' ].
+	^ value asString
+]
+
+{ #category : 'private - results' }
+MCPTool >> mismatchesTextOn: stream for: mismatches [
+	"One line per field that did not match. A guard exists to be read when it
+	fires, and no sentence can carry a list of expected-against-actual."
+
+	mismatches do: [ :mismatch |
+			stream
+				nextPut: Character lf;
+				nextPutAll: (mismatch at: #field ifAbsent: [ 'field' ]) asString;
+				nextPutAll: ': expected ';
+				nextPutAll: (self mismatchValueText: (mismatch at: #expected ifAbsent: [ nil ]));
+				nextPutAll: ', actual ';
+				nextPutAll: (self mismatchValueText: (mismatch at: #actual ifAbsent: [ nil ])) ]
 ]
 
 { #category : 'metadata' }

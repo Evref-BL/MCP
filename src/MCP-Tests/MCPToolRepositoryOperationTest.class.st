@@ -968,6 +968,25 @@ MCPToolRepositoryOperationTest >> testVerifyIdentityPassesWhenExpectedIdentityMa
 ]
 
 { #category : 'tests' }
+MCPToolRepositoryOperationTest >> testVerifyIdentityReadsItsMismatchesWithoutStructuredContent [
+
+	| contentText repository result |
+	repository := self newTestRepositoryNamed: 'MCP VerifyIdentity Content Test Repository'.
+	repository workingCopy packageNames: #( 'MCP' ).
+	self withRegisteredRepository: repository do: [
+			result := self callToolWith: {
+					          (#action -> 'verifyIdentity').
+					          (#name -> repository name).
+					          (#branch -> 'feature').
+					          (#packages -> #( 'MCP' 'MCP-Tests' )) } asDictionary.
+			self assert: (self resultIndicatesError: result).
+			contentText := (result at: #content) first at: #text.
+			self assert: (contentText includesSubstring: 'Repository identity verification failed').
+			self assert: (contentText includesSubstring: 'branch: expected feature, actual main').
+			self assert: (contentText includesSubstring: 'packages: expected (MCP, MCP-Tests), actual (MCP)') ]
+]
+
+{ #category : 'tests' }
 MCPToolRepositoryOperationTest >> testVerifyIdentityReportsStructuredMismatch [
 
 	| branchMismatch errorDetails mismatchFields repository result |
