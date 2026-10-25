@@ -17,8 +17,9 @@ guessing from source or memory.
 
 - Inspect the tools exposed by the current client; do not rely on remembered
   names or schemas.
-- Use `tool_search`, then `tool_get`, for less common tools. Invoke a catalog
-  tool through `tool_call` when the client does not expose it directly.
+- Use `tool_search`, then `tool_get`, for less common tools. Call one by name
+  like any other, or through `tool_call` when the client will only send a name
+  its own list holds.
 - Prefer the least-mutating dedicated tool. Use `image_evaluate` only when no
   dedicated tool fits.
 - Start list/search calls with the default page or a small `limit`. Continue
@@ -123,18 +124,18 @@ MyProjectMCPTool class >> shouldAutoRegister
 ```
 
 Auto-registered external tools are discoverable by default. Agents can find
-them with `tool_search`, inspect them with `tool_get`, and call them through
-`tool_call`.
+them with `tool_search`, inspect them with `tool_get`, and call them by name.
 
 `MCPToolRegistry` is the server's source of truth for registered tools. In
 normal use, configure it through the `MCP` instance messages below. The
 `tools/list` response contains only the static tool surface cached by the MCP
-instance; discoverable tools remain available through `tool_search`, `tool_get`,
-and `tool_call`.
+instance; discoverable tools remain callable, and are found with `tool_search`
+and `tool_get`.
 
-Two words govern the surface. A **registered** tool is in the catalog and
-reachable through `tool_search`, `tool_get` and `tool_call`. An **advertised**
-tool is also in `tools/list`.
+Two words govern the surface. A **registered** tool is in the catalog, found
+with `tool_search` and `tool_get`, and callable. An **advertised** tool is also
+in `tools/list`. Advertising decides what a client is shown, not what it may
+call.
 
 For a server with only your own tools:
 

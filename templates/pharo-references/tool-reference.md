@@ -76,7 +76,7 @@ holds a single value.
 
 ## The Advertised Surface
 
-Fifteen tools are advertised directly: `tool_search`, `tool_get`, `tool_call`, `class_search`, `class_get`, `class_create`, `class_remove`, `method_search`, `method_source_search`, `method_reference_search`, `method_get`, `method_compile`, `method_remove`, `test_run` and `image_evaluate`. Every other tool is found with `tool_search` and called through `tool_call`.
+Fifteen tools are advertised directly: `tool_search`, `tool_get`, `tool_call`, `class_search`, `class_get`, `class_create`, `class_remove`, `method_search`, `method_source_search`, `method_reference_search`, `method_get`, `method_compile`, `method_remove`, `test_run` and `image_evaluate`. Every other tool is found with `tool_search` and called by name like any other; `tool_call` does the same for a client that will only send a name its own list holds.
 
 A server chooses its own surface before `start`:
 
@@ -90,7 +90,8 @@ The server answers for its own catalogue. `tool_search` ranks it by keyword,
 best match first, and answers the closest tools even when none matches every
 word; add words to narrow the ranking. With no query it answers the catalogue's
 size and its groups. `tool_get` returns one tool's metadata and input schema,
-and `tool_call` invokes a tool the current client does not advertise directly.
+and `tool_call` invokes a tool by nesting its arguments, for a client that cannot
+send a name outside its own list.
 
 Search before calling anything less common or high-risk, and read the schema
 before invoking it.

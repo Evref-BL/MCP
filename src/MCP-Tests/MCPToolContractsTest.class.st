@@ -864,12 +864,15 @@ MCPToolContractsTest >> testConcreteMCPClassesHaveNoUnimplementedResponsibilitie
 ]
 
 { #category : 'tests' }
-MCPToolContractsTest >> testConfiguredDiscoverableToolsAreNotDirectlyCallable [
+MCPToolContractsTest >> testConfiguredDiscoverableToolsAreDirectlyCallable [
 
-	| server |
+	| server result |
 	server := self mcpWithoutObservabilityExport.
 	server advertiseTools: #( 'tool_search' 'tool_get' 'tool_call' ).
-	self should: [ server rpcToolCall: 'package_search' withParams: Dictionary new ] raise: JRPCNonExistentHandler
+	self deny: (server toolsList includesKey: 'package_search').
+	result := server rpcToolCall: 'package_search' withParams: { (#name -> 'MCP') } asDictionary.
+	self assert: ((self dataFrom: result) at: #packages) isNotEmpty.
+	self should: [ server rpcToolCall: 'no_such_tool' withParams: Dictionary new ] raise: JRPCNonExistentHandler
 ]
 
 { #category : 'tests' }
@@ -1896,13 +1899,10 @@ MCPToolContractsTest >> testRewriteMethodsIsMethodScopedCommandTool [
 { #category : 'tests' }
 MCPToolContractsTest >> testRpcToolCallCatchesUnhandledHaltFromTool [
 
-	| mcp result text tool tools |
+	| mcp result text tool |
 	tool := MCPHaltingTestTool new.
-	tools := Dictionary new
-		         at: tool name put: tool;
-		         yourself.
 	mcp := self mcpWithoutObservabilityExport.
-	mcp instVarNamed: 'toolsList' put: tools.
+	mcp addTool: tool.
 	result := mcp rpcToolCall: tool name withParams: Dictionary new.
 	text := self firstTextFromToolResult: result.
 	self assert: (result at: #isError).
