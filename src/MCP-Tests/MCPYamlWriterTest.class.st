@@ -64,3 +64,4 @@ MCPYamlWriterTest >> yamlFor: anObject [
 
 	^ MCPYamlWriter yamlFor: anObject indent: ''
 ]
+
