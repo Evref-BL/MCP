@@ -1,0 +1,38 @@
+# Companion to ci.yml.
+#
+# ci.yml ignores documentation paths. A workflow that path filtering skips
+# creates no check runs at all, so the Pharo contexts the default branch
+# requires never report and a documentation-only pull request waits on them
+# forever. This reports those contexts for exactly the paths ci.yml ignores.
+#
+# A pull request that touches both documentation and sources runs both
+# workflows, and the contexts are then reported twice, both green.
+#
+# Keep the job name and the matrix in step with ci.yml.
+name: CI (documentation)
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '**.md'
+      - docs/**
+      - LICENSE
+  pull_request:
+    branches: [ main ]
+    paths:
+      - '**.md'
+      - docs/**
+      - LICENSE
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        smalltalk: [ Pharo64-12, Pharo64-13, Pharo64-14, Pharo64-15 ]
+    name: ${{ matrix.smalltalk }}
+    steps:
+      - name: Report the required context
+        run: echo 'Documentation only; ci.yml skipped the image matrix.'
+        shell: bash
