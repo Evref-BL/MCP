@@ -10,6 +10,25 @@ Class {
 }
 
 { #category : 'tests' }
+MCPToolRequestTest >> testBlankRequiredArgumentIsRefusedLikeAMissingOne [
+	"A blank required argument used to pass validation and reach the image as nil, where it failed deep inside Pharo instead of naming the argument that was wrong."
+
+	| error |
+	[
+		MCPToolRequest tool: MCPToolCreateClass new arguments: {
+				(#name -> 'MCPToolRequestTestGenerated').
+				(#superclass -> 'Object').
+				(#package -> '   ') } asDictionary ]
+		on: MCPInvalidToolInput
+		do: [ :signalledError | error := signalledError ].
+	self assert: error isNotNil.
+	self assert: error toolName equals: 'class_create'.
+	self assert: error violations size equals: 1.
+	self assert: error violations first keyword equals: 'required'.
+	self assert: error violations first expected equals: 'package'
+]
+
+{ #category : 'tests' }
 MCPToolRequestTest >> testHasArgumentNamedHandlesSymbolAndStringKeys [
 
 	| request |
@@ -120,4 +139,3 @@ MCPToolRequestTest >> testValidRequestProvidesTypedAccessors [
 	self assert: (request stringArgumentNamed: 'missing') isNil.
 	self assert: (request booleanArgumentNamed: 'missing' default: false) equals: false
 ]
-
