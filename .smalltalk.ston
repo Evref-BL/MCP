@@ -16,12 +16,14 @@ SmalltalkCISpec {
   #testing : {
     #packages : [
       'MCP-Tests',
-      'MCP-UI-Tests'
+      'MCP-UI-Tests',
+      'MCP-OpenTelemetry-Tests'
     ],
     #coverage : {
       #packages : [
         'MCP',
-        'MCP-UI'
+        'MCP-UI',
+        'MCP-OpenTelemetry'
       ],
       #format : #lcov
     }
