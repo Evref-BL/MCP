@@ -53,7 +53,7 @@ MCPToolCreateClass >> classToolSpec [
 			   self createSharedPoolsSchemaProperty.
 			   self layoutSchemaProperty.
 			   self createCommentSchemaProperty }).
-		  (#requiredProperties -> #( 'name' 'superclass' 'package' )) } asDictionary
+		  (#requiredProperties -> #( 'name' 'package' )) } asDictionary
 ]
 
 { #category : 'private - schema' }
@@ -121,7 +121,7 @@ MCPToolCreateClass >> createSuperclassNameSchemaProperty [
 	^ self
 		  schemaPropertyNamed: 'superclass'
 		  type: 'string'
-		  description: 'Superclass name. Name Trait here to create a trait, which has no superclass of its own.'
+		  description: 'Superclass name, Object when omitted. Name Trait here to create a trait, which has no superclass of its own.'
 ]
 
 { #category : 'private - schema' }

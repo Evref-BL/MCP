@@ -10,6 +10,22 @@ Class {
 }
 
 { #category : 'tests' }
+MCPClassMutationRequestTest >> testCreateRequestDefaultsTheSuperclassToObject [
+
+	| request |
+	request := MCPClassCreateRequest
+		           fromRequest: (MCPToolRequest new
+				            tool: MCPToolCreateClass new;
+				            arguments: {
+						            (#name -> 'MCPGeneratedClass').
+						            (#package -> 'MCP-Generated') } asDictionary;
+				            yourself)
+		           tool: MCPToolCreateClass new.
+	self assert: request superclassName equals: 'Object'.
+	self assert: (request requestedContext at: #superclass) equals: 'Object'
+]
+
+{ #category : 'tests' }
 MCPClassMutationRequestTest >> testCreateRequestParsesDefinitionArguments [
 
 	| context request |

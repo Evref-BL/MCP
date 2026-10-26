@@ -166,8 +166,9 @@ MCPClassCreateRequest >> slots [
 
 { #category : 'accessing' }
 MCPClassCreateRequest >> superclassName [
+	"Object when the caller omits it, because that is what a new class subclasses unless it says otherwise. Defaulting here rather than in the command keeps requestedContext and the failure messages naming the superclass the class actually gets."
 
-	^ superclassName
+	^ superclassName ifNil: [ 'Object' ]
 ]
 
 { #category : 'accessing' }

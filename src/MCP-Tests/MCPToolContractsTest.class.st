@@ -629,7 +629,8 @@ MCPToolContractsTest >> testClassMutationToolsHaveAccurateNamesAndRequiredArgume
 	updateTool := MCPToolUpdateClass new.
 	self assert: createTool name equals: 'class_create'.
 	self assert: updateTool name equals: 'class_update'.
-	self assert: createTool inputSchema required asSet equals: #( 'name' 'superclass' 'package' ) asSet.
+	"The superclass is optional and defaults to Object."
+	self assert: createTool inputSchema required asSet equals: #( 'name' 'package' ) asSet.
 	self assert: updateTool inputSchema required asSet equals: #( 'name' ) asSet.
 	updatePropertyNames := updateTool inputSchema properties collect: [ :each | each name ].
 	#( 'newName' 'superclass' 'package' 'tag' 'comment' 'slots' 'classSlots' 'traits' 'classTraits' 'sharedVariables'
