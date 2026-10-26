@@ -75,8 +75,8 @@ MCPToolClassMutationTest >> createdClassNames [
 
 	^ #( 'MCPToolClassMutationTestGenerated' 'MCPToolClassMutationTestTagged' 'MCPToolClassMutationTestClassSlots'
 	     'MCPToolClassMutationTestConfigured' 'MCPToolClassMutationTestTemporaryPackage' 'MCPToolClassMutationTestCommentTarget'
-	     'MCPToolClassMutationTestCommented' 'MCPToolClassMutationTestReparentTarget' 'MCPToolClassMutationTestReparentSuperclass'
-	     'MCPToolClassMutationTestTraitTarget' 'MCPToolClassMutationTestTraitRemovalTarget'
+	     'MCPToolClassMutationTestCommented' 'MCPToolClassMutationTestDefaultSuperclass' 'MCPToolClassMutationTestReparentTarget'
+	     'MCPToolClassMutationTestReparentSuperclass' 'MCPToolClassMutationTestTraitTarget' 'MCPToolClassMutationTestTraitRemovalTarget'
 	     'MCPToolClassMutationTestMissingTraitTarget' 'MCPToolClassMutationTestClassTraitTarget'
 	     'MCPToolClassMutationTestClassTraitRemovalTarget' 'MCPToolClassMutationTestMissingClassTraitTarget'
 	     'MCPToolClassMutationTestSharedVariableTarget' 'MCPToolClassMutationTestSharedVariableRemovalTarget'
@@ -253,7 +253,7 @@ MCPToolClassMutationTest >> testClassToolSchemasDeclareExpectedInputs [
 		equals:
 			#( 'name' 'superclass' 'package' 'tag' 'slots' 'classSlots' 'traits' 'classTraits' 'sharedVariables' 'sharedPools'
 			   'layout' 'comment' ).
-	self assert: MCPToolCreateClass new inputSchema required asSet equals: #( 'name' 'superclass' 'package' ) asSet.
+	self assert: MCPToolCreateClass new inputSchema required asSet equals: #( 'name' 'package' ) asSet.
 	self
 		assert: updateProperties asArray
 		equals:
@@ -337,6 +337,18 @@ MCPToolClassMutationTest >> testCreateCreatesClass [
 	self assert: createdClass superclass equals: Object.
 	self assert: createdClass packageName asString equals: self generatedPackageName.
 	self assert: createdClass slots isEmpty.
+	self deny: (result at: #isError ifAbsent: [ false ])
+]
+
+{ #category : 'tests - create' }
+MCPToolClassMutationTest >> testCreateDefaultsTheSuperclassToObject [
+
+	| createdClass result |
+	result := self callToolWith: (self createRequestArgumentsWith: {
+				           (#name -> 'MCPToolClassMutationTestDefaultSuperclass').
+				           (#package -> self generatedPackageName) }).
+	createdClass := self classNamed: 'MCPToolClassMutationTestDefaultSuperclass'.
+	self assert: createdClass superclass equals: Object.
 	self deny: (result at: #isError ifAbsent: [ false ])
 ]
 
