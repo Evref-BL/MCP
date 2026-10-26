@@ -46,6 +46,16 @@ MCPRepositoryCommand >> commitIdFrom: aCommit [
 	^ MCPIcebergCommitInfo idStringFrom: aCommit
 ]
 
+{ #category : 'private - source format' }
+MCPRepositoryCommand >> declaredSourceFormatFor: aRepository [
+	"The format id the checkout writes in its .properties, or nil when it names
+	none and when the repository cannot be asked at all."
+
+	^ [ aRepository properties at: #format ]
+		  on: Error
+		  do: [ nil ]
+]
+
 { #category : 'private - loading' }
 MCPRepositoryCommand >> definitionsAbsentFrom: expectedSnapshot inPackage: aPackage [
 
@@ -110,15 +120,25 @@ MCPRepositoryCommand >> loadLoadedPackagesFrom: headCommit in: aRepository [
 { #category : 'private - loading' }
 MCPRepositoryCommand >> loadLoadedPackagesFromDiskIn: aRepository [
 
-	| sourceRepository versions workingCopy |
-	workingCopy := aRepository workingCopy.
-	sourceRepository := TonelRepository new
-		                    directory: (self repositorySourceDirectoryFor: aRepository);
-		                    yourself.
-	versions := workingCopy loadedPackages
-		            collect: [ :package | sourceRepository versionFrom: package name ]
-		            thenSelect: [ :version | version isNotNil ].
-	self loadVersionsReplacingImageChanges: versions.
+	| writerClass |
+	writerClass := self sourceWriterClassFor: aRepository.
+	self withoutLeavingFiletreeMarkerIn: (self repositorySourceDirectoryFor: aRepository) do: [
+		self
+			loadLoadedPackagesFromSource: (self sourceRepositoryFor: aRepository writer: writerClass)
+			in: aRepository
+			writer: writerClass ]
+]
+
+{ #category : 'private - loading' }
+MCPRepositoryCommand >> loadLoadedPackagesFromSource: sourceRepository in: aRepository writer: aWriterClass [
+
+	| missing versionsByName |
+	versionsByName := OrderedDictionary new.
+	aRepository workingCopy loadedPackages do: [ :package |
+		versionsByName at: package name put: (self versionIn: sourceRepository for: package writer: aWriterClass) ].
+	missing := versionsByName associations select: [ :each | each value isNil ] thenCollect: [ :each | each key ].
+	missing ifNotEmpty: [ self signalMissingSourceForPackageNames: missing asArray in: aRepository writer: aWriterClass ].
+	self loadVersionsReplacingImageChanges: versionsByName values asArray.
 	self adoptHeadCommit: aRepository headCommit for: aRepository
 ]
 
@@ -153,6 +173,15 @@ MCPRepositoryCommand >> normalizedSystemStatusFrom: anInteger [
 
 	(anInteger isInteger and: [ anInteger > 255 ]) ifTrue: [ ^ anInteger bitShift: -8 ].
 	^ anInteger
+]
+
+{ #category : 'private - source format' }
+MCPRepositoryCommand >> packageNameFromDirectoryName: aName writer: aWriterClass [
+	"Each format names a package directory its own way: Tonel after the package
+	itself, filetree with a .package extension. The writer the checkout declares
+	knows which, so a changed path reports the package and not its directory."
+
+	^ (aWriterClass packageNameFromDirectory: aName asFileReference) asString
 ]
 
 { #category : 'private - iceberg state' }
@@ -244,6 +273,19 @@ MCPRepositoryCommand >> signalGitCommandFailed: gitResult action: actionName [
 			(#output -> output) } asDictionary
 ]
 
+{ #category : 'private - loading' }
+MCPRepositoryCommand >> signalMissingSourceForPackageNames: packageNames in: aRepository writer: aWriterClass [
+
+	MCPCommandError
+		signalErrorCode: #RepositorySourceMissing
+		message: 'Repository ' , aRepository name , ' has no source on disk for ' , (', ' join: packageNames)
+			, '. Reloading would drop what the image holds without restoring anything in its place.'
+		details: {
+				(#repository -> aRepository name).
+				(#packages -> packageNames).
+				(#format -> aWriterClass id asString) } asDictionary
+]
+
 { #category : 'private - validation' }
 MCPRepositoryCommand >> signalSubdirectoryRequiresHeadFor: aRepository [
 
@@ -256,10 +298,69 @@ MCPRepositoryCommand >> signalSubdirectoryRequiresHeadFor: aRepository [
 				(#subdirectory -> self request subdirectory) } asDictionary
 ]
 
+{ #category : 'private - source format' }
+MCPRepositoryCommand >> signalUnsupportedSourceFormat: formatId for: aRepository [
+
+	MCPCommandError
+		signalErrorCode: #RepositorySourceFormatUnsupported
+		message:
+		'Repository ' , aRepository name , ' keeps its source as ' , formatId asString , ', which this neither reads nor writes.'
+		details: {
+				(#repository -> aRepository name).
+				(#format -> formatId asString).
+				(#supportedFormats -> self supportedSourceFormatIds) } asDictionary
+]
+
 { #category : 'private' }
 MCPRepositoryCommand >> sortedStringsFrom: aCollection [
 
 	^ (aCollection collect: [ :each | each asString ]) asSet asArray sort
+]
+
+{ #category : 'private - source format' }
+MCPRepositoryCommand >> sourceRepositoryClassForWriter: aWriterClass [
+	"Monticello reads each format with its own repository class, and Iceberg has
+	no reader that answers Monticello versions, so the pairing is made here. A
+	writer nothing here reads back answers nil."
+
+	aWriterClass id = #tonel ifTrue: [ ^ TonelRepository ].
+	aWriterClass id = #filetree ifTrue: [ ^ Smalltalk globals at: #MCFileTreeRepository ifAbsent: [ nil ] ].
+	^ nil
+]
+
+{ #category : 'private - source format' }
+MCPRepositoryCommand >> sourceRepositoryFor: aRepository writer: aWriterClass [
+
+	| readerClass |
+	readerClass := (self sourceRepositoryClassForWriter: aWriterClass) ifNil: [
+		               self signalUnsupportedSourceFormat: aWriterClass id for: aRepository ].
+	^ readerClass new
+		  directory: (self repositorySourceDirectoryFor: aRepository);
+		  yourself
+]
+
+{ #category : 'private - source format' }
+MCPRepositoryCommand >> sourceWriterClassFor: aRepository [
+	"Iceberg names the writer for the format the checkout declares, and picks its
+	own default when the checkout declares none. It cannot answer for a format no
+	writer implements, and that is the one case reported here by name."
+
+	^ [ aRepository properties writerClass ]
+		  on: Error
+		  do: [
+				  (self declaredSourceFormatFor: aRepository)
+					  ifNil: [ IceLibgitTonelWriter ]
+					  ifNotNil: [ :formatId | self signalUnsupportedSourceFormat: formatId for: aRepository ] ]
+]
+
+{ #category : 'private - source format' }
+MCPRepositoryCommand >> supportedSourceFormatIds [
+	"Every format Iceberg writes and this reads back, asked of Iceberg rather than
+	listed here, so a format it gains is either supported or named in a refusal."
+
+	^ (TIceRepositoryWriter users
+		   select: [ :each | (self sourceRepositoryClassForWriter: each) isNotNil ]
+		   thenCollect: [ :each | each id asString ]) asArray sort
 ]
 
 { #category : 'private - loading' }
@@ -279,4 +380,30 @@ MCPRepositoryCommand >> validateSubdirectorySupportedFor: aRepository [
 
 	self request subdirectory ifNil: [ ^ self ].
 	aRepository project isUnborn ifTrue: [ self signalSubdirectoryRequiresHeadFor: aRepository ]
+]
+
+{ #category : 'private - loading' }
+MCPRepositoryCommand >> versionIn: sourceRepository for: anIcePackage writer: aWriterClass [
+	"Each format names the package's directory its own way, and every Monticello
+	directory repository reads a version from that name. The checkout answers nil
+	when it does not hold the package."
+
+	| directoryName |
+	directoryName := (aWriterClass directoryNameFor: anIcePackage) asString.
+	^ (sourceRepository directory / directoryName) exists
+		  ifTrue: [ sourceRepository versionFromFileNamed: directoryName ]
+		  ifFalse: [ nil ]
+]
+
+{ #category : 'private - source format' }
+MCPRepositoryCommand >> withoutLeavingFiletreeMarkerIn: aDirectory do: aBlock [
+	"Monticello's filetree reader writes a .filetree configuration file into any
+	directory that has none, even when it only reads. Iceberg keeps that file
+	inside each package rather than at the root of the checkout, so reading the
+	source must not leave one behind."
+
+	| marker existed |
+	marker := aDirectory / '.filetree'.
+	existed := marker exists.
+	^ aBlock ensure: [ existed ifFalse: [ marker ensureDelete ] ]
 ]
