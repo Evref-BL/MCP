@@ -44,26 +44,25 @@ MCPRepositoryWorkingCopyCommand >> changedPackageNamesFromDiff: aDiff [
 { #category : 'private - export' }
 MCPRepositoryWorkingCopyCommand >> exportLoadedPackagesFrom: aRepository [
 
-	| sourceDirectory |
+	| sourceDirectory writerClass |
+	writerClass := self sourceWriterClassFor: aRepository.
 	self exportProjectFileFor: aRepository.
 	sourceDirectory := self repositorySourceDirectoryFor: aRepository.
 	sourceDirectory ensureCreateDirectory.
-	aRepository workingCopy loadedPackages do: [ :package | self exportPackage: package to: sourceDirectory ]
+	aRepository workingCopy loadedPackages do: [ :package | self exportPackage: package in: aRepository through: writerClass ]
 ]
 
 { #category : 'private - export' }
-MCPRepositoryWorkingCopyCommand >> exportPackage: anIcePackage to: sourceDirectory [
+MCPRepositoryWorkingCopyCommand >> exportPackage: anIcePackage in: aRepository through: aWriterClass [
+	"Iceberg's internal store writes the package where the checkout keeps it, in
+	the format the writer stands for: a Tonel checkout gets Tonel files, a
+	filetree one a Name.package directory."
 
-	| versionInfo |
-	versionInfo := MCVersionInfo
-		               name: anIcePackage packageName
-		               id: UUID new
-		               message: ''
-		               date: Date today
-		               time: Time now
-		               ancestors: #(  )
-		               stepChildren: #(  ).
-	TonelWriter fileOut: (MCVersion package: anIcePackage mcPackage info: versionInfo) on: sourceDirectory
+	| mcPackage |
+	mcPackage := anIcePackage mcPackage.
+	aWriterClass
+		forInternalStoreFileOut: (MCVersion package: mcPackage info: (IceMCVersionInfo package: mcPackage message: ''))
+		on: aRepository
 ]
 
 { #category : 'private - diff' }
@@ -130,7 +129,7 @@ MCPRepositoryWorkingCopyCommand >> packageNameFromDiffPackageNode: aNode [
 ]
 
 { #category : 'private - diff' }
-MCPRepositoryWorkingCopyCommand >> packageNameFromPath: pathString in: aRepository [
+MCPRepositoryWorkingCopyCommand >> packageNameFromPath: pathString in: aRepository writer: aWriterClass [
 
 	| packageName segments subdirectory subdirectorySegments |
 	pathString isEmpty ifTrue: [ ^ '' ].
@@ -145,14 +144,17 @@ MCPRepositoryWorkingCopyCommand >> packageNameFromPath: pathString in: aReposito
 				               (segments first: subdirectorySegments size) = subdirectorySegments ifFalse: [ ^ '' ].
 				               segments at: subdirectorySegments size + 1 ].
 	(packageName beginsWith: '.') ifTrue: [ ^ '' ].
-	^ packageName
+	^ self packageNameFromDirectoryName: packageName writer: aWriterClass
 ]
 
 { #category : 'private - diff' }
 MCPRepositoryWorkingCopyCommand >> packageNamesFromModifiedPaths: paths in: aRepository [
 
-	^ self sortedStringsFrom:
-		  (paths collect: [ :path | self packageNameFromPath: path in: aRepository ] thenSelect: [ :name | name notEmpty ])
+	| writerClass |
+	writerClass := self sourceWriterClassFor: aRepository.
+	^ self sortedStringsFrom: (paths
+			   collect: [ :path | self packageNameFromPath: path in: aRepository writer: writerClass ]
+			   thenSelect: [ :name | name notEmpty ])
 ]
 
 { #category : 'private - diff' }

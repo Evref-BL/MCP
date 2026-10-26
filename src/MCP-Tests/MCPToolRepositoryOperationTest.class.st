@@ -678,6 +678,51 @@ MCPToolRepositoryOperationTest >> testDiscardParsesAndDispatchesToDiscardCommand
 ]
 
 { #category : 'tests' }
+MCPToolRepositoryOperationTest >> testExportAndReloadUseTheFormatTheCheckoutDeclares [
+
+	| className data location packageDirectory packageName repository repositoryName result |
+	repositoryName := 'MCP Repository Command Filetree Test'.
+	packageName := 'MCPToolRepositoryOperationFiletreePackage'.
+	className := 'MCPToolRepositoryOperationFiletreeClass'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestFiletree'.
+	self withExportPackageNamed: packageName className: className do: [
+			self withCleanRepositoryNamed: repositoryName location: location do: [
+					self callToolWith: {
+							(#action -> 'create').
+							(#name -> repositoryName).
+							(#location -> location pathString).
+							(#packages -> { packageName }) } asDictionary.
+					repository := IceRepository repositories detect: [ :each | each name asString = repositoryName ].
+					repository workingCopy repositoryProperties fileFormatId: #filetree.
+					(Smalltalk at: className asSymbol) compile: 'filetreeOnlyValue ^ 42' classified: 'tests'.
+					result := self callToolWith: {
+							          (#action -> 'export').
+							          (#name -> repositoryName) } asDictionary.
+					data := self dataFrom: result.
+					packageDirectory := location / (packageName , '.package').
+					self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
+					self assert: packageDirectory exists description: 'A filetree checkout keeps the package in a .package directory.'.
+					self deny: (location / packageName) exists description: 'Exporting must not leave a Tonel tree beside the filetree source.'.
+					self assert: (packageDirectory / (className , '.class') / 'instance' / 'filetreeOnlyValue.st') exists.
+					self assert: (data at: #changedPackages) equals: { packageName }.
+					self
+						deny: (location / '.filetree') exists
+						description: 'Exporting must not leave a filetree marker at the root of the checkout.'.
+					self commitAllIn: location message: 'Export filetree source'.
+					(Smalltalk at: className asSymbol) removeSelector: #filetreeOnlyValue.
+					result := self callToolWith: {
+							          (#action -> 'reload').
+							          (#name -> repositoryName) } asDictionary.
+					self deny: (self resultIndicatesError: result) description: (self summaryFrom: result).
+					self
+						assert: ((Smalltalk at: className asSymbol) includesSelector: #filetreeOnlyValue)
+						description: 'Reloading a filetree checkout must restore what its files hold.'.
+					self
+						deny: (location / '.filetree') exists
+						description: 'Reading the source must not leave a filetree marker at the root of the checkout.' ] ]
+]
+
+{ #category : 'tests' }
 MCPToolRepositoryOperationTest >> testExportUpdatesDiskAndIndexWithoutCommitting [
 
 	| childNames data location packageName repositoryName result |
@@ -794,6 +839,35 @@ MCPToolRepositoryOperationTest >> testLinkedWorktreeAttachExportsOnLinkedBranch 
 ]
 
 { #category : 'tests' }
+MCPToolRepositoryOperationTest >> testReloadRefusesWhenAPackageHasNoSourceOnDisk [
+
+	| location packageDirectory packageName repositoryName result |
+	repositoryName := 'MCP Repository Command Reload Missing Source Test'.
+	packageName := 'MCPToolRepositoryOperationReloadMissingPackage'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestReloadMissing'.
+	self withExportPackageNamed: packageName className: 'MCPToolRepositoryOperationReloadMissingClass' do: [
+			self withCleanRepositoryNamed: repositoryName location: location do: [
+					self callToolWith: {
+							(#action -> 'create').
+							(#name -> repositoryName).
+							(#location -> location pathString).
+							(#packages -> { packageName }) } asDictionary.
+					self callToolWith: {
+							(#action -> 'export').
+							(#name -> repositoryName) } asDictionary.
+					packageDirectory := (location allChildrenMatching: packageName) detect: [ :each | each isDirectory ] ifNone: [ nil ].
+					self deny: packageDirectory isNil description: 'The exported repository should hold the package on disk.'.
+					packageDirectory deleteAll.
+					result := self callToolWith: {
+							          (#action -> 'reload').
+							          (#name -> repositoryName) } asDictionary.
+					self
+						assert: (self resultIndicatesError: result)
+						description: 'Reloading a package with no source on disk must not report success.'.
+					self assert: ((self summaryFrom: result) includesSubstring: 'has no source on disk for ' , packageName) ] ]
+]
+
+{ #category : 'tests' }
 MCPToolRepositoryOperationTest >> testRestoreOrderOnlyTonelChurnRestoresOriginalFile [
 
 	| command file location packageDirectory repository restored snapshot |
@@ -812,6 +886,38 @@ MCPToolRepositoryOperationTest >> testRestoreOrderOnlyTonelChurnRestoresOriginal
 		self assert: restored equals: #( 'MCP-Order/MCPOrderTestClass.class.st' ).
 		self assert: file contents equals: (self tonelClassSourceWithMethods: #( 'alpha' 'beta' )) ] ensure: [
 		self deleteDirectoryIfExists: location ]
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testSourceFormatChoosesItsOwnReaderAndWriter [
+
+	| command |
+	command := MCPRepositoryCommand new.
+	self assert: (command sourceRepositoryClassForWriter: IceLibgitTonelWriter) equals: TonelRepository.
+	self assert: (command sourceRepositoryClassForWriter: IceLibgitFiletreeWriter) equals: MCFileTreeRepository
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testSourceFormatNamesPackageDirectoriesItsOwnWay [
+
+	| command |
+	command := MCPRepositoryCommand new.
+	self assert: (command packageNameFromDirectoryName: 'MCP-Tests' writer: IceLibgitTonelWriter) equals: 'MCP-Tests'.
+	self assert: (command packageNameFromDirectoryName: 'MCP-Tests.package' writer: IceLibgitFiletreeWriter) equals: 'MCP-Tests'
+]
+
+{ #category : 'tests' }
+MCPToolRepositoryOperationTest >> testSourceFormatSupportsEveryFormatIcebergWrites [
+
+	| command icebergFormats |
+	command := MCPRepositoryCommand new.
+	icebergFormats := (TIceRepositoryWriter users collect: [ :each | each id asString ]) asArray sort.
+	self
+		assert: command supportedSourceFormatIds = icebergFormats
+		description:
+			'Every format Iceberg writes must be one this reads back, but it writes ' , icebergFormats printString , ' and this reads '
+			, command supportedSourceFormatIds printString.
+	self assert: command supportedSourceFormatIds equals: #( 'filetree' 'tonel' )
 ]
 
 { #category : 'tests' }
