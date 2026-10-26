@@ -1,3 +1,5 @@
+# The documentation paths ignored here are covered by ci-docs.yml, which
+# reports the same contexts so a documentation-only pull request can merge.
 name: CI
 
 env:
