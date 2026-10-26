@@ -18,7 +18,7 @@ BaselineOfMCP >> baseline: spec [
 BaselineOfMCP >> defineDependencies: spec [
 
 	spec
-		baseline: 'PharoBackwardCompatibility' with: [ spec repository: 'github://jecisc/PharoBackwardCompatibility:master/src' ];
+		baseline: 'PharoBackwardCompatibility' with: [ spec repository: 'github://jecisc/PharoBackwardCompatibility:v1.x.x/src' ];
 		baseline: 'JRPC' with: [
 				spec
 					repository: 'github://juliendelplanque/JRPC:v3.2.1/src';
