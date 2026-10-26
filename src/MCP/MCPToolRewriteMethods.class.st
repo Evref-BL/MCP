@@ -79,12 +79,19 @@ MCPToolRewriteMethods >> parsedRequestFromToolRequest: request [
 
 { #category : 'private - schema' }
 MCPToolRewriteMethods >> rewriteInputProperties [
+	"Unlike the searching tools, this one requires a scope: rewriting whatever the whole image happens to match is never what a caller means."
 
 	^ {
 		  self rewriteRulesSchemaProperty.
 		  self rewriteRuleClassesSchemaProperty.
-		  (self booleanSchemaPropertyNamed: 'apply' description: 'Apply the changes instead of previewing them.' default: false) }
-	  , self methodQueryScopeInputProperties
+		  (self
+			   booleanSchemaPropertyNamed: 'apply'
+			   description: 'Carry the rewrites out. False lists what would change and changes nothing.'
+			   default: false).
+		  (self methodSearchScopeSchemaProperty
+			   description:
+				   'What to rewrite. Give several entries and everything any of them selects is covered. Required: there is no rewriting the whole image.';
+			   yourself) }
 ]
 
 { #category : 'private - schema' }
