@@ -29,7 +29,7 @@ BaselineOfMCP >> defineDependencies: spec [
 				loads: #( 'Core' ) ];
 		baseline: 'OpenTelemetry' with: [
 			spec
-				repository: 'github://Gabriel-Darbord/opentelemetry-pharo:v1.0.0/src';
+				repository: 'github://Gabriel-Darbord/opentelemetry-pharo:v1.1.0/src';
 				loads: #( 'traces' 'metrics' 'logs' ) ]
 ]
 
@@ -42,8 +42,9 @@ BaselineOfMCP >> defineGroups: spec [
 		group: 'Telemetry' with: #( 'MCP-OpenTelemetry' );
 		group: 'Tests' with: #( 'MCP-Tests-Resources' 'MCP-Tests-RunResources' 'MCP-Tests' 'MCP-Tests-Resources-Extensions' );
 		group: 'UI Tests' with: #( 'MCP-UI-Tests' );
+		group: 'Telemetry Tests' with: #( 'MCP-OpenTelemetry-Tests' );
 		group: 'default' with: #( 'Core' 'UI' 'Tests' 'UI Tests' );
-		group: 'all' with: #( 'default' 'Telemetry' ).
+		group: 'all' with: #( 'default' 'Telemetry' 'Telemetry Tests' ).
 
 	SystemVersion current major >= 13 ifTrue: [ spec group: 'Core' with: #( 'MCP' 'MCP-Compatibility-From13' ) ].
 	SystemVersion current major >= 14 ifTrue: [
@@ -57,6 +58,7 @@ BaselineOfMCP >> definePackages: spec [
 	spec package: 'MCP' with: [ spec requires: #( 'PharoBackwardCompatibility' 'JRPC' 'PCRE2' ) ].
 	spec package: 'MCP-UI' with: [ spec requires: #( 'MCP' ) ].
 	spec package: 'MCP-OpenTelemetry' with: [ spec requires: #( 'MCP' 'OpenTelemetry' ) ].
+	spec package: 'MCP-OpenTelemetry-Tests' with: [ spec requires: #( 'MCP-OpenTelemetry' ) ].
 	spec package: 'MCP-Tests-Resources' with: [ spec requires: #( 'MCP' ) ].
 	spec package: 'MCP-Tests-RunResources' with: [ spec requires: #( 'MCP-Tests-Resources' ) ].
 	spec package: 'MCP-Tests' with: [ spec requires: #( 'MCP' 'MCP-Tests-Resources' 'MCP-Tests-RunResources' ) ].
