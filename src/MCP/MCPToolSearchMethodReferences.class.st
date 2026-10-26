@@ -69,7 +69,10 @@ MCPToolSearchMethodReferences >> entriesOfKind: aKind forName: aName queryReques
 { #category : 'private - schema' }
 MCPToolSearchMethodReferences >> extraInputProperties [
 
-	^ { ((self schemaPropertyNamed: 'kind' type: 'string' description: 'What the name is, when it should not be worked out from the name.')
+	^ { ((self
+		    schemaPropertyNamed: 'kind'
+		    type: 'string'
+		    description: 'Read name as this kind of thing, instead of deciding from its spelling.')
 		   enum: self referenceKinds;
 		   yourself) }
 ]

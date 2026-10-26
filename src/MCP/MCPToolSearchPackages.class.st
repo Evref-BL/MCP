@@ -92,9 +92,15 @@ MCPToolSearchPackages >> packageFilterFieldNames [
 MCPToolSearchPackages >> packageFilterInputProperties [
 
 	^ {
-		  (self schemaPropertyNamed: 'name' type: 'string' description: 'Match package names.').
-		  (self schemaPropertyNamed: 'project' type: 'string' description: 'Match owning projects.').
-		  (self schemaPropertyNamed: 'tag' type: 'string' description: 'Match package tags.') }
+		  (self schemaPropertyNamed: 'name' type: 'string' description: 'Keep packages whose name contains this text, ignoring case.').
+		  (self
+			   schemaPropertyNamed: 'project'
+			   type: 'string'
+			   description: 'Keep packages whose owning project contains this text, ignoring case.').
+		  (self
+			   schemaPropertyNamed: 'tag'
+			   type: 'string'
+			   description: 'Keep packages carrying a tag that contains this text, ignoring case.') }
 ]
 
 { #category : 'private - template' }

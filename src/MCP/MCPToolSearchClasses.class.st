@@ -53,8 +53,11 @@ MCPToolSearchClasses >> classFilterFieldNames [
 MCPToolSearchClasses >> classFilterInputProperties [
 
 	^ {
-		  (self schemaPropertyNamed: 'name' type: 'string' description: 'Match class names case-insensitively.').
-		  (self schemaPropertyNamed: 'tag' type: 'string' description: 'Match package tags case-insensitively.') }
+		  (self schemaPropertyNamed: 'name' type: 'string' description: 'Keep classes whose name contains this text, ignoring case.').
+		  (self
+			   schemaPropertyNamed: 'tag'
+			   type: 'string'
+			   description: 'Keep classes whose package tag contains this text, ignoring case.') }
 ]
 
 { #category : 'metadata' }

@@ -418,27 +418,6 @@ MCPToolMutation >> refactoringModelForScopeSpec: scopeSpec anchoredAtBehavior: a
 	^ RBNamespace onEnvironment: environment
 ]
 
-{ #category : 'private - schema' }
-MCPToolMutation >> refactoringScopeClassNamesSchemaProperty [
-
-	^ self stringArraySchemaNamed: 'classes' description: 'Scope classes; include target.' itemDescription: 'Class name.'
-]
-
-{ #category : 'private - schema' }
-MCPToolMutation >> refactoringScopeHierarchyClassNamesSchemaProperty [
-
-	^ self
-		  stringArraySchemaNamed: 'hierarchyClasses'
-		  description: 'Scope hierarchies; include target.'
-		  itemDescription: 'Hierarchy root.'
-]
-
-{ #category : 'private - schema' }
-MCPToolMutation >> refactoringScopePackageNamesSchemaProperty [
-
-	^ self stringArraySchemaNamed: 'packages' description: 'Scope packages; include target.' itemDescription: 'Package name.'
-]
-
 { #category : 'private - request' }
 MCPToolMutation >> refactoringScopeSpecFromRequest: request [
 	"The same scope object every other sweeping tool takes, rather than this tool's own flat spelling of one."

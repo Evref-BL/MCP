@@ -56,8 +56,14 @@ MCPToolSearchMethods >> metadataFilterFieldNames [
 MCPToolSearchMethods >> metadataFilterInputProperties [
 
 	^ {
-		  (self schemaPropertyNamed: 'selector' type: 'string' description: 'Match method selectors.').
-		  (self schemaPropertyNamed: 'protocol' type: 'string' description: 'Match method protocols.') }
+		  (self
+			   schemaPropertyNamed: 'selector'
+			   type: 'string'
+			   description: 'Keep methods whose selector contains this text, ignoring case.').
+		  (self
+			   schemaPropertyNamed: 'protocol'
+			   type: 'string'
+			   description: 'Keep methods whose protocol contains this text, ignoring case.') }
 ]
 
 { #category : 'private - template' }

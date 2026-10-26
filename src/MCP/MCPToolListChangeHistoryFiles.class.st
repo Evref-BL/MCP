@@ -24,17 +24,14 @@ MCPToolListChangeHistoryFiles >> annotations [
 { #category : 'metadata' }
 MCPToolListChangeHistoryFiles >> buildInputSchema [
 
-	| offsetProperty |
-	offsetProperty := self integerSchemaPropertyNamed: 'offset' description: 'Pagination offset.' default: 0.
-	offsetProperty minimum: 0.
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties: {
 				  (self
 					   schemaPropertyNamed: 'directoryPath'
 					   type: 'string'
-					   description: 'Optional .ombu directory. Default: current image history directory.').
-				  offsetProperty };
+					   description: 'Directory holding the .ombu files. Defaults to this image''s own history directory.').
+				  self offsetInputProperty };
 		  required: #(  );
 		  additionalProperties: false;
 		  yourself

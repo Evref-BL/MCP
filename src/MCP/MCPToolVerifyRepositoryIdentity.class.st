@@ -41,7 +41,7 @@ MCPToolVerifyRepositoryIdentity >> repositoryToolSpec [
 		  (#title -> 'Verify Repository Identity').
 		  (#description
 		   ->
-		   'Assert expected Iceberg repository identity fields without writing files. Provide at least one expected field such as location, branchName, subdirectory, packageNames, modifiedPackageNames, or isModified.').
+		   'Assert what the image believes about a registered repository, without writing files. Give at least one expectation beside the repository reference: location, branch, subdirectory, packages, modifiedPackages or isModified. The call fails when one of them does not hold.').
 		  (#action -> 'verifyIdentity').
 		  (#requestClass -> MCPRepositoryVerifyIdentityRequest).
 		  (#commandClass -> MCPRepositoryVerifyIdentityCommand).

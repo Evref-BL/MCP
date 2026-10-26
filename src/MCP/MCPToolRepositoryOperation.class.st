@@ -31,8 +31,12 @@ MCPToolRepositoryOperation >> additionalKeywords [
 
 { #category : 'private - schema' }
 MCPToolRepositoryOperation >> branchNameSchemaProperty [
+	"A guard, not a checkout: both tools that take it refuse to act when the repository is on another branch."
 
-	^ self schemaPropertyNamed: 'branch' type: 'string' description: 'Branch name.'
+	^ self
+		  schemaPropertyNamed: 'branch'
+		  type: 'string'
+		  description: 'Branch the repository is expected to be on. The call fails if it is on another; it never switches branch.'
 ]
 
 { #category : 'private - execution' }
@@ -82,7 +86,7 @@ MCPToolRepositoryOperation >> isModifiedSchemaProperty [
 
 	^ self
 		  booleanSchemaPropertyNamed: 'isModified'
-		  description: 'Expected repository modified state for repository identity verification.'
+		  description: 'Assert whether the image holds changes the repository files do not.'
 ]
 
 { #category : 'private - schema' }
@@ -96,8 +100,8 @@ MCPToolRepositoryOperation >> modifiedPackageNamesSchemaProperty [
 
 	^ self
 		  stringArraySchemaNamed: 'modifiedPackages'
-		  description: 'Expected modified package names for repository identity verification.'
-		  itemDescription: 'An expected modified package name.'
+		  description: 'Assert exactly these managed packages differ from the repository files.'
+		  itemDescription: 'Package name.'
 ]
 
 { #category : 'private - errors' }
@@ -117,8 +121,8 @@ MCPToolRepositoryOperation >> packageNamesSchemaProperty [
 
 	^ self
 		  stringArraySchemaNamed: 'packages'
-		  description: 'Expected managed package names for repository identity verification.'
-		  itemDescription: 'An expected package name.'
+		  description: 'Assert the repository manages exactly these packages.'
+		  itemDescription: 'Package name.'
 ]
 
 { #category : 'private - request' }
@@ -132,7 +136,10 @@ MCPToolRepositoryOperation >> repositoryReferenceInputProperties [
 
 	^ {
 		  (self schemaPropertyNamed: 'name' type: 'string' description: 'Registered repository name.').
-		  (self schemaPropertyNamed: 'location' type: 'string' description: 'Repository location disambiguator.') }
+		  (self
+			   schemaPropertyNamed: 'location'
+			   type: 'string'
+			   description: 'Checkout path, to tell apart repositories registered under the same name.') }
 ]
 
 { #category : 'private - specs' }
@@ -160,7 +167,7 @@ MCPToolRepositoryOperation >> subdirectorySchemaProperty [
 		  schemaPropertyNamed: 'subdirectory'
 		  type: 'string'
 		  description:
-		  'Repository source subdirectory. For attaching or updating an unborn repository, omit until an initial commit/head exists.'
+		  'Directory inside the checkout holding the package sources, such as src. Omit it while the repository has no commit yet.'
 ]
 
 { #category : 'metadata' }

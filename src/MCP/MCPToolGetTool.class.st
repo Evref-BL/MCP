@@ -44,8 +44,7 @@ MCPToolGetTool >> annotations [
 MCPToolGetTool >> buildInputSchema [
 
 	| nameProperty |
-	nameProperty := self schemaPropertyNamed: 'name' type: 'string' description: 'Tool name.'.
-	nameProperty minLength: 1.
+	nameProperty := self schemaPropertyNamed: 'name' type: 'string' description: 'Name of the tool whose contract to return.'.
 	^ MCPStructureInputSchema new
 		  type: 'object';
 		  properties: { nameProperty };

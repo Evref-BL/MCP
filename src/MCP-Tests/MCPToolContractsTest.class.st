@@ -169,6 +169,15 @@ MCPToolContractsTest >> baseToolFlowSpecs [
 ]
 
 { #category : 'private' }
+MCPToolContractsTest >> camelCaseWordsIn: aString [
+	"The words in a description that are spelled like an argument name, so a caller would read them as one."
+
+	^ (aString substrings: ' ,.;:()[]{}''"/<>#*-') select: [ :each |
+			  (each allSatisfy: [ :character | character isLetter ]) and: [
+				  each first isLowercase and: [ each anySatisfy: [ :character | character isUppercase ] ] ] ]
+]
+
+{ #category : 'private' }
 MCPToolContractsTest >> changeHistoryToolFlowSpecs [
 
 	^ {
@@ -221,6 +230,19 @@ MCPToolContractsTest >> classMutationToolFlowSpecs [
 				   (#comment -> '') } asDictionary).
 			  (#requestClass -> MCPClassUpdateRequest).
 			  (#commandClass -> MCPUpdateClassCommand) } asDictionary }
+]
+
+{ #category : 'private' }
+MCPToolContractsTest >> collectSchemaNames: names descriptions: texts from: aDictionary [
+
+	aDictionary at: #description ifPresent: [ :each | texts add: each ].
+	aDictionary at: #properties ifPresent: [ :properties |
+			properties keysAndValuesDo: [ :key :value |
+					names add: key asString.
+					self collectSchemaNames: names descriptions: texts from: value ] ].
+	aDictionary
+		at: #items
+		ifPresent: [ :items | items isDictionary ifTrue: [ self collectSchemaNames: names descriptions: texts from: items ] ]
 ]
 
 { #category : 'private' }
@@ -654,17 +676,15 @@ MCPToolContractsTest >> testClassToolSchemaDescriptionsExplainRecategorizationAn
 	sharedVariablesDescription := (self inputPropertyNamed: 'sharedVariables' inTool: tool) description.
 	sharedPoolsDescription := (self inputPropertyNamed: 'sharedPools' inTool: tool) description.
 	layoutDescription := (self inputPropertyNamed: 'layout' inTool: tool) description.
-	self assert: (packageDescription includesSubstring: 'recategorize').
-	self assert: (packageDescription includesSubstring: 'omit packageName').
-	self assert: (packageDescription includesSubstring: 'current package').
-	self assert: (tagDescription includesSubstring: 'recategorizes').
+	"Moving and retagging are different changes, and package says how to ask for the second one."
+	self assert: (packageDescription includesSubstring: 'tag alone').
+	self assert: (tagDescription includesSubstring: 'package').
 	"The stateless collections are replaced by value, and say so."
 	self assert: (traitsDescription includesSubstring: 'empty array').
 	self assert: (classTraitsDescription includesSubstring: 'empty array').
 	self assert: (sharedVariablesDescription includesSubstring: 'empty array').
 	self assert: (sharedPoolsDescription includesSubstring: 'empty array').
-	self assert: (sharedPoolsDescription includesSubstring: 'shared pool').
-	self assert: (layoutDescription includesSubstring: 'layout class').
+	self assert: (sharedPoolsDescription includesSubstring: 'Shared pools').
 	self assert: (layoutDescription includesSubstring: 'AbstractLayout').
 	"Slots are patched, and each part of the patch says what it does."
 	slotsSchema := (tool inputSchema asJRPCJSON at: #properties) at: 'slots'.
@@ -1301,7 +1321,6 @@ MCPToolContractsTest >> testMethodMetadataSearchHasAccurateNameAndSchema [
 	self assert: MCPToolSearchMethods new name equals: 'method_search'.
 	self assert: schema required equals: #(  ).
 	self assert: propertyNames asSet equals: #( 'scope' 'selector' 'protocol' 'offset' ) asSet.
-	self assert: scopeProperty description equals: 'What to operate on. If omitted, every matching entity.'.
 	self assert: (scopeProperty extraProperties at: #additionalProperties) equals: false.
 	self assert: scopePropertyNames asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' 'hierarchy' 'side' ) asSet
 ]
@@ -1418,6 +1437,23 @@ MCPToolContractsTest >> testNewToolRegistryStartsEmpty [
 	registry := MCPToolRegistry new.
 	self assert: registry toolNames isEmpty.
 	self assert: registry advertisedToolNames isEmpty
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testNoDescriptionNamesAnArgumentThatDoesNotExist [
+	"Renaming an argument used to leave its old name behind in the prose that referenced it, which reads as an instruction to send an argument the schema then rejects. Every argument-shaped word a description uses must be an argument that tool really has."
+
+	| offenders |
+	offenders := OrderedCollection new.
+	MCPToolRegistry default tools do: [ :tool |
+			| names texts |
+			names := Set new.
+			texts := OrderedCollection new.
+			tool description ifNotNil: [ :each | texts add: each ].
+			self collectSchemaNames: names descriptions: texts from: tool inputSchema asJRPCJSON.
+			texts do: [ :text |
+				(self camelCaseWordsIn: text) do: [ :word | (names includes: word) ifFalse: [ offenders add: tool name , ' names ' , word ] ] ] ].
+	self assertEmpty: offenders
 ]
 
 { #category : 'tests' }
@@ -1544,18 +1580,22 @@ MCPToolContractsTest >> testProtocolVersionNegotiation [
 { #category : 'tests' }
 MCPToolContractsTest >> testQueryScopeDescriptionsExplainScopeSemantics [
 
-	| classScope methodScope scopePropertyNames |
+	| classScope methodScope scopePropertyNames selectedNames |
 	classScope := self inputPropertyNamed: 'scope' inTool: MCPToolSearchClasses new.
 	methodScope := self inputPropertyNamed: 'scope' inTool: MCPToolSearchMethods new.
 	scopePropertyNames := (classScope extraProperties at: #properties) collect: [ :each | each name ].
-	self assert: classScope description equals: 'What to operate on. If omitted, every matching entity.'.
+	"One wording for every tool, saying both how entries combine and what omitting the scope means."
 	self assert: methodScope description equals: classScope description.
+	self assert: (classScope description includesSubstring: 'Omitted').
 	self assert: (classScope extraProperties at: #additionalProperties) equals: false.
 	self assert: (methodScope extraProperties at: #additionalProperties) equals: false.
 	self assert: scopePropertyNames asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' 'hierarchy' ) asSet.
 	self
 		assert: ((methodScope extraProperties at: #properties) collect: [ :each | each name ]) asSet
-		equals: scopePropertyNames asSet , #( 'side' ) asSet
+		equals: scopePropertyNames asSet , #( 'side' ) asSet.
+	"Every entry says what it selects, since a scope nobody can read is a scope nobody narrows."
+	selectedNames := (methodScope extraProperties at: #properties) select: [ :each | each description isEmptyOrNil ].
+	self assertEmpty: (selectedNames collect: [ :each | each name ])
 ]
 
 { #category : 'tests' }
@@ -1930,7 +1970,6 @@ MCPToolContractsTest >> testSearchClassesHasAccurateNameAndSchema [
 	self assert: MCPToolSearchClasses new name equals: 'class_search'.
 	self assert: schema required equals: #(  ).
 	self assert: propertyNames asSet equals: #( 'scope' 'name' 'tag' 'offset' ) asSet.
-	self assert: scopeProperty description equals: 'What to operate on. If omitted, every matching entity.'.
 	self assert: scopePropertyNames asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' 'hierarchy' ) asSet
 ]
 

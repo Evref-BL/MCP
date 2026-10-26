@@ -72,39 +72,6 @@ TMCPMethodTool >> methodReferenceForClassName: aClassName selector: aSelector is
 				  nextPutAll: aSelector ]
 ]
 
-{ #category : 'private - schema' }
-TMCPMethodTool >> methodScopeClassNamesProperty [
-
-	^ self stringArraySchemaNamed: 'classes' description: 'Exact defining classes.' itemDescription: 'Class name.'
-]
-
-{ #category : 'private - schema' }
-TMCPMethodTool >> methodScopeHierarchyClassNamesProperty [
-
-	^ self
-		  stringArraySchemaNamed: 'hierarchyClasses'
-		  description: 'Classes plus superclasses and subclasses.'
-		  itemDescription: 'Hierarchy root class.'
-]
-
-{ #category : 'private - schema' }
-TMCPMethodTool >> methodScopePackageNamesProperty [
-
-	^ self
-		  stringArraySchemaNamed: 'packages'
-		  description: 'Packages to include, including extensions.'
-		  itemDescription: 'Package name.'
-]
-
-{ #category : 'private - schema' }
-TMCPMethodTool >> methodScopeParentClassNamesProperty [
-
-	^ self
-		  stringArraySchemaNamed: 'parentClasses'
-		  description: 'Superclasses of these classes; roots excluded.'
-		  itemDescription: 'Subclass name.'
-]
-
 { #category : 'private - methods' }
 TMCPMethodTool >> methodScopeQueryFromRequest: request [
 
@@ -115,15 +82,6 @@ TMCPMethodTool >> methodScopeQueryFromRequest: request [
 		  parentClassNames: (self searchScopeStringCollectionNamed: 'superclassesOf' fromRequest: request);
 		  side: (self searchScopeSideFromRequest: request);
 		  yourself
-]
-
-{ #category : 'private - schema' }
-TMCPMethodTool >> methodScopeSubclassClassNamesProperty [
-
-	^ self
-		  stringArraySchemaNamed: 'subclassClasses'
-		  description: 'Subclasses of these classes; roots excluded.'
-		  itemDescription: 'Superclass name.'
 ]
 
 { #category : 'private - request' }

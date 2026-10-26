@@ -69,7 +69,8 @@ MCPToolCompileMethod >> methodToolSpec [
 	^ {
 		  (#title -> 'Compile Method').
 		  (#description
-		   -> 'Compile method source into a class. Creates the method when absent and replaces it when the selector already exists. Several sources can be compiled into the same class in one call.').
+		   ->
+		   'Compile method source into a class. Creates the method when absent and replaces it when the selector already exists. Several sources can be compiled into the same class in one call.').
 		  (#action -> 'compile').
 		  (#inputProperties -> {
 			   (MCPStructureProperties new
@@ -77,27 +78,21 @@ MCPToolCompileMethod >> methodToolSpec [
 				    type: 'string';
 				    description: 'The class to compile the method into.';
 				    yourself).
-			   (MCPStructureProperties new
-				    name: 'side';
-				    type: 'string';
-				    enum: #( 'instance' 'class' );
-				    description: 'Whether to compile on the class side.';
-				    default: 'instance';
-				    yourself).
+			   (self targetSideSchemaPropertyDescribedAs: 'Which side to compile into.').
 			   (MCPStructureProperties new
 				    name: 'source';
 				    type: #( 'string' 'array' );
-				    description: 'The full method source to compile, or several method sources for the same class.';
+				    description: 'The full method source to compile, selector line included, or several method sources for the same class.';
 				    items: (MCPStructureProperties new
-					     type: 'string';
-					     description: 'The full source of one method.';
-					     yourself);
+						     type: 'string';
+						     description: 'The full source of one method.';
+						     yourself);
 				    yourself).
 			   (MCPStructureProperties new
 				    name: 'protocol';
 				    type: 'string';
-				    description: 'The target protocol. For extension methods, use an extension protocol such as *Package-Name.';
+				    description:
+					    'The protocol to file the method under. For an extension method, name an extension protocol such as *Package-Name.';
 				    yourself) }).
 		  (#requiredProperties -> #( 'class' 'source' 'protocol' )) } asDictionary
 ]
-

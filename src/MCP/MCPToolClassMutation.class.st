@@ -40,16 +40,7 @@ MCPToolClassMutation >> atLeastOneInputProperties [
 { #category : 'private - schema' }
 MCPToolClassMutation >> classNameSchemaProperty [
 
-	^ self schemaPropertyNamed: 'name' type: 'string' description: 'Class name.'
-]
-
-{ #category : 'private - schema' }
-MCPToolClassMutation >> classSlotsSchemaProperty [
-
-	^ self
-		  stringArraySchemaNamed: 'classSlots'
-		  description: 'Class-side slots; empty array clears; can combine slots.'
-		  itemDescription: 'Slot name.'
+	^ self schemaPropertyNamed: 'name' type: 'string' description: 'Name of the class to change.'
 ]
 
 { #category : 'private - specs' }
@@ -270,7 +261,10 @@ MCPToolClassMutation >> inputProperties [
 { #category : 'private - schema' }
 MCPToolClassMutation >> layoutSchemaProperty [
 
-	^ self schemaPropertyNamed: 'layout' type: 'string' description: 'layout class; AbstractLayout subclass.'
+	^ self
+		  schemaPropertyNamed: 'layout'
+		  type: 'string'
+		  description: 'Name of the layout class, a subclass of AbstractLayout, such as FixedLayout or VariableLayout.'
 ]
 
 { #category : 'private - actions' }
@@ -304,7 +298,7 @@ MCPToolClassMutation >> packageNameSchemaProperty [
 	^ self
 		  schemaPropertyNamed: 'package'
 		  type: 'string'
-		  description: 'Package name; omit packageName with tag to recategorize current package.'
+		  description: 'Move the class to this package. Give tag alone to retag it inside the package it is already in.'
 ]
 
 { #category : 'private - request' }
@@ -326,7 +320,10 @@ MCPToolClassMutation >> parsedRequestFromToolRequest: request [
 { #category : 'private - specs' }
 MCPToolClassMutation >> renameNewClassNameSchemaProperty [
 
-	^ self schemaPropertyNamed: 'newName' type: 'string' description: 'New class name.'
+	^ self
+		  schemaPropertyNamed: 'newName'
+		  type: 'string'
+		  description: 'Rename the class to this name, updating every reference to it.'
 ]
 
 { #category : 'private - schema' }
@@ -338,7 +335,10 @@ MCPToolClassMutation >> requiredInputProperties [
 { #category : 'private - schema' }
 MCPToolClassMutation >> sharedPoolsSchemaProperty [
 
-	^ self stringArraySchemaNamed: 'sharedPools' description: 'shared pool names; empty array clears.' itemDescription: 'Pool name.'
+	^ self
+		  stringArraySchemaNamed: 'sharedPools'
+		  description: 'Shared pools the class reads variables from; empty array clears.'
+		  itemDescription: 'Pool name.'
 ]
 
 { #category : 'private - schema' }
@@ -400,24 +400,15 @@ MCPToolClassMutation >> slotSideSchemaProperty [
 ]
 
 { #category : 'private - schema' }
-MCPToolClassMutation >> slotsSchemaProperty [
-
-	^ self
-		  stringArraySchemaNamed: 'slots'
-		  description: 'Instance slots; empty array clears; can combine classSlots.'
-		  itemDescription: 'Slot name.'
-]
-
-{ #category : 'private - schema' }
 MCPToolClassMutation >> superclassNameSchemaProperty [
 
-	^ self schemaPropertyNamed: 'superclass' type: 'string' description: 'Superclass name.'
+	^ self schemaPropertyNamed: 'superclass' type: 'string' description: 'Reparent the class under this superclass.'
 ]
 
 { #category : 'private - schema' }
 MCPToolClassMutation >> tagSchemaProperty [
 
-	^ self schemaPropertyNamed: 'tag' type: 'string' description: 'Package tag; recategorizes current package.'
+	^ self schemaPropertyNamed: 'tag' type: 'string' description: 'Move the class to this tag inside its package.'
 ]
 
 { #category : 'metadata' }

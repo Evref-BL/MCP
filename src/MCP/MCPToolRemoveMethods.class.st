@@ -32,19 +32,13 @@ MCPToolRemoveMethods >> buildInputSchema [
 				  (MCPStructureProperties new
 					   name: 'class';
 					   type: 'string';
-					   description: 'The class from which methods will be removed.';
+					   description: 'The class to remove the methods from.';
 					   yourself).
-				  (MCPStructureProperties new
-					   name: 'side';
-					   type: 'string';
-					   enum: #( 'instance' 'class' );
-					   description: 'Whether to remove methods from the class side.';
-					   default: 'instance';
-					   yourself).
+				  (self targetSideSchemaPropertyDescribedAs: 'Which side to remove from.').
 				  ((MCPStructureProperties new
 					    name: 'selectors';
 					    type: 'array';
-					    description: 'The selectors to remove as a single force-removal batch.')
+					    description: 'The selectors to remove. They go in one batch, and senders are not checked.')
 					   items: (MCPStructureProperties new
 							    type: 'string';
 							    description: 'A selector to remove.';

@@ -73,31 +73,40 @@ MCPToolCreateClass >> createClassNameSchemaProperty [
 { #category : 'private - schema' }
 MCPToolCreateClass >> createClassSlotsSchemaProperty [
 
-	^ self stringArraySchemaNamed: 'classSlots' description: 'Class-side slot names for the new class.' itemDescription: 'Slot name.'
+	^ self stringArraySchemaNamed: 'classSlots' description: 'Variables the class object itself holds.' itemDescription: 'Slot name.'
 ]
 
 { #category : 'private - schema' }
 MCPToolCreateClass >> createClassTraitsSchemaProperty [
 
-	^ self stringArraySchemaNamed: 'classTraits' description: 'Class-side traits for the new class.' itemDescription: 'Trait name.'
+	^ self
+		  stringArraySchemaNamed: 'classTraits'
+		  description: 'Traits the class uses on the class side.'
+		  itemDescription: 'Trait name.'
 ]
 
 { #category : 'private - schema' }
 MCPToolCreateClass >> createCommentSchemaProperty [
 
-	^ self schemaPropertyNamed: 'comment' type: 'string' description: 'Class comment for the new class.'
+	^ self schemaPropertyNamed: 'comment' type: 'string' description: 'Class comment, saying what the class is for.'
 ]
 
 { #category : 'private - schema' }
 MCPToolCreateClass >> createPackageNameSchemaProperty [
 
-	^ self schemaPropertyNamed: 'package' type: 'string' description: 'Package name for the new class.'
+	^ self
+		  schemaPropertyNamed: 'package'
+		  type: 'string'
+		  description: 'Package to create the class in. It is created if it does not exist.'
 ]
 
 { #category : 'private - schema' }
 MCPToolCreateClass >> createSharedPoolsSchemaProperty [
 
-	^ self stringArraySchemaNamed: 'sharedPools' description: 'Shared pools for the new class.' itemDescription: 'Shared pool name.'
+	^ self
+		  stringArraySchemaNamed: 'sharedPools'
+		  description: 'Shared pools the class reads variables from.'
+		  itemDescription: 'Pool name.'
 ]
 
 { #category : 'private - schema' }
@@ -105,14 +114,14 @@ MCPToolCreateClass >> createSharedVariablesSchemaProperty [
 
 	^ self
 		  stringArraySchemaNamed: 'sharedVariables'
-		  description: 'Class variables for the new class.'
+		  description: 'Class variables, shared by the class and every instance of it.'
 		  itemDescription: 'Variable name.'
 ]
 
 { #category : 'private - schema' }
 MCPToolCreateClass >> createSlotsSchemaProperty [
 
-	^ self stringArraySchemaNamed: 'slots' description: 'Instance slot names for the new class.' itemDescription: 'Slot name.'
+	^ self stringArraySchemaNamed: 'slots' description: 'Instance variables the class defines.' itemDescription: 'Slot name.'
 ]
 
 { #category : 'private - schema' }
@@ -127,13 +136,13 @@ MCPToolCreateClass >> createSuperclassNameSchemaProperty [
 { #category : 'private - schema' }
 MCPToolCreateClass >> createTagSchemaProperty [
 
-	^ self schemaPropertyNamed: 'tag' type: 'string' description: 'Package tag for the new class.'
+	^ self schemaPropertyNamed: 'tag' type: 'string' description: 'Tag to file the class under inside its package.'
 ]
 
 { #category : 'private - schema' }
 MCPToolCreateClass >> createTraitsSchemaProperty [
 
-	^ self stringArraySchemaNamed: 'traits' description: 'Instance traits for the new class.' itemDescription: 'Trait name.'
+	^ self stringArraySchemaNamed: 'traits' description: 'Traits the class uses on the instance side.' itemDescription: 'Trait name.'
 ]
 
 { #category : 'metadata' }

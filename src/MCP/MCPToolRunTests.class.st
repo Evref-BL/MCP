@@ -37,7 +37,7 @@ MCPToolRunTests >> buildInputSchema [
 	| timeoutProperty |
 	timeoutProperty := self
 		                   integerSchemaPropertyNamed: 'timeoutSeconds'
-		                   description: 'Timeout seconds; 0 returns immediately.'
+		                   description: 'Give up after this many seconds and report what ran by then. 0 answers at once.'
 		                   default: self defaultTimeoutSeconds.
 	timeoutProperty minimum: 0.
 	^ MCPStructureInputSchema new
@@ -84,13 +84,20 @@ MCPToolRunTests >> coverageOptionsObjectSchema [
 	| methodLimitProperty property |
 	methodLimitProperty := self
 		                       integerSchemaPropertyNamed: 'methodLimit'
-		                       description: 'Maximum method entries per coverage list.'
+		                       description: 'Most method entries to list per coverage list, so a wide scope does not fill the answer.'
 		                       default: self defaultCoverageMethodLimit.
 	methodLimitProperty minimum: 0.
-	property := self schemaPropertyNamed: 'coverage' type: 'object' description: 'Coverage options. Requires explicit method scope.'.
+	property := self
+		            schemaPropertyNamed: 'coverage'
+		            type: 'object'
+		            description:
+		            'Which methods to measure coverage of. Its scope is required: coverage is reported for the methods that scope selects, not for whatever the tests happen to reach.'.
 	property
 		properties: self methodQueryScopeInputProperties , {
-					(self booleanSchemaPropertyNamed: 'includeCoveredMethods' description: 'Include covered method details.' default: false).
+					(self
+						 booleanSchemaPropertyNamed: 'includeCoveredMethods'
+						 description: 'Also list the methods that were executed, not only those that were not.'
+						 default: false).
 					methodLimitProperty };
 		additionalProperties: false.
 	^ property
@@ -153,7 +160,7 @@ MCPToolRunTests >> defaultTimeoutSeconds [
 { #category : 'metadata' }
 MCPToolRunTests >> description [
 
-	^ 'Run test packages, classes, methods return compact aggregate results.'
+	^ 'Run tests and return a compact summary with the failures and errors. Name test packages, test classes or individual test methods; at least one of the three is required.'
 ]
 
 { #category : 'private' }
@@ -291,9 +298,9 @@ MCPToolRunTests >> testNamesFromRequests: testRequests [
 MCPToolRunTests >> testSelectionInputProperties [
 
 	^ {
-		  (self stringArraySchemaNamed: 'packages' description: 'Test packages run.' itemDescription: nil).
-		  (self stringArraySchemaNamed: 'classes' description: 'Test classes run.' itemDescription: nil).
-		  (self stringArraySchemaNamed: 'methods' description: 'Test methods as Class>>#selector.' itemDescription: nil) }
+		  (self stringArraySchemaNamed: 'packages' description: 'Run every test class in these packages.' itemDescription: nil).
+		  (self stringArraySchemaNamed: 'classes' description: 'Run these test classes.' itemDescription: nil).
+		  (self stringArraySchemaNamed: 'methods' description: 'Run these test methods, as Class>>#selector.' itemDescription: nil) }
 ]
 
 { #category : 'metadata' }

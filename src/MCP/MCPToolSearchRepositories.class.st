@@ -34,8 +34,12 @@ MCPToolSearchRepositories >> buildInputSchema [
 
 	| properties |
 	properties := self repositoryFieldFilterInputProperties , {
-		              (self booleanSchemaPropertyNamed: 'isModified' description: 'Filter by image-side modified state.').
-		              (self booleanSchemaPropertyNamed: 'isMissing' description: 'Filter by missing repository directory state.').
+		              (self
+			               booleanSchemaPropertyNamed: 'isModified'
+			               description: 'Keep only repositories the image holds changes for, or only those it does not.').
+		              (self
+			               booleanSchemaPropertyNamed: 'isMissing'
+			               description: 'Keep only repositories whose checkout directory is gone, or only those still on disk.').
 		              self offsetInputProperty }.
 	^ self queryInputSchemaWithProperties: properties
 ]
@@ -131,14 +135,22 @@ MCPToolSearchRepositories >> repositoryEntry: anEntry matchesRequest: queryReque
 MCPToolSearchRepositories >> repositoryFieldFilterInputProperties [
 
 	^ {
-		  (self repositoryTextFilterPropertyNamed: 'name' description: 'Match repository names case-insensitively.').
-		  (self repositoryTextFilterPropertyNamed: 'location' description: 'Match repository directory paths case-insensitively.').
-		  (self repositoryTextFilterPropertyNamed: 'subdirectory' description: 'Match source subdirectories case-insensitively.').
-		  (self repositoryTextFilterPropertyNamed: 'package' description: 'Match managed package names case-insensitively.').
+		  (self repositoryTextFilterPropertyNamed: 'name' description: 'Keep repositories whose name contains this text, ignoring case.').
+		  (self
+			   repositoryTextFilterPropertyNamed: 'location'
+			   description: 'Keep repositories whose checkout path contains this text, ignoring case.').
+		  (self
+			   repositoryTextFilterPropertyNamed: 'subdirectory'
+			   description: 'Keep repositories whose source subdirectory contains this text, ignoring case.').
+		  (self
+			   repositoryTextFilterPropertyNamed: 'package'
+			   description: 'Keep repositories managing a package whose name contains this text, ignoring case.').
 		  (self
 			   repositoryTextFilterPropertyNamed: 'class'
-			   description: 'Match loaded class names in managed packages case-insensitively.').
-		  (self repositoryTextFilterPropertyNamed: 'modifiedPackage' description: 'Match modified package names case-insensitively.') }
+			   description: 'Keep repositories whose managed packages hold a class whose name contains this text, ignoring case.').
+		  (self
+			   repositoryTextFilterPropertyNamed: 'modifiedPackage'
+			   description: 'Keep repositories holding a modified package whose name contains this text, ignoring case.') }
 ]
 
 { #category : 'private - request' }

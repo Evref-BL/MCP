@@ -61,12 +61,12 @@ MCPToolGetClass >> buildInputSchema [
 		                              name: 'upToSuperclass';
 		                              type: 'string';
 		                              description:
-			                              'Optional ancestor where the returned superclass chain stops. The named class is used as the exclusive upper bound and is not included.';
+			                              'Return the superclass hierarchy up to and not including the given class. Using Object returns the whole superclass hierarchy.';
 		                              yourself.
 	subclassDepthProperty := MCPStructureProperties new
 		                         name: 'subclassDepth';
 		                         type: 'integer';
-		                         description: 'Subclass levels.';
+		                         description: 'Return subclasses down to the given level.';
 		                         default: 0;
 		                         minimum: 0;
 		                         maximum: self maximumSubclassDepth;
@@ -76,9 +76,9 @@ MCPToolGetClass >> buildInputSchema [
 		                type: #( 'string' 'array' );
 		                description: 'Class name, or several class names.';
 		                items: (MCPStructureProperties new
-			                 type: 'string';
-			                 description: 'A class name.';
-			                 yourself);
+				                 type: 'string';
+				                 description: 'A class name.';
+				                 yourself);
 		                yourself.
 	^ MCPStructureInputSchema new
 		  type: 'object';

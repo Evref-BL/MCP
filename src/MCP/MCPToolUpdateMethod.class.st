@@ -35,15 +35,9 @@ MCPToolUpdateMethod >> methodToolSpec [
 			   (MCPStructureProperties new
 				    name: 'class';
 				    type: 'string';
-				    description: 'Class name.';
+				    description: 'The class defining the method.';
 				    yourself).
-			   (MCPStructureProperties new
-				    name: 'side';
-				    type: 'string';
-				    enum: #( 'instance' 'class' );
-				    description: 'Class-side method.';
-				    default: 'instance';
-				    yourself).
+			   (self targetSideSchemaPropertyDescribedAs: 'Which side the method is on.').
 			   self forceSchemaProperty.
 			   (MCPStructureProperties new
 				    name: 'selector';
@@ -53,12 +47,13 @@ MCPToolUpdateMethod >> methodToolSpec [
 			   (MCPStructureProperties new
 				    name: 'protocol';
 				    type: 'string';
-				    description: 'The target protocol. For extension methods, use an extension protocol such as *Package-Name.';
+				    description:
+					    'Refile the method under this protocol. For an extension method, name an extension protocol such as *Package-Name.';
 				    yourself).
 			   (MCPStructureProperties new
 				    name: 'newSelector';
 				    type: 'string';
-				    description: 'New selector.';
+				    description: 'Rename the method to this selector, updating its senders.';
 				    yourself).
 			   ((MCPStructureProperties new
 				     name: 'arguments';
