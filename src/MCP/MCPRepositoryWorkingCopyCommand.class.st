@@ -55,8 +55,8 @@ MCPRepositoryWorkingCopyCommand >> exportLoadedPackagesFrom: aRepository [
 { #category : 'private - export' }
 MCPRepositoryWorkingCopyCommand >> exportPackage: anIcePackage in: aRepository through: aWriterClass [
 	"Iceberg's internal store writes the package where the checkout keeps it, in
-	the format the writer stands for: a Tonel checkout gets Tonel files, a
-	filetree one a Name.package directory."
+	the format the writer stands for and at the version the checkout pins: a
+	Tonel checkout gets Tonel files, a filetree one a Name.package directory."
 
 	| mcPackage |
 	mcPackage := anIcePackage mcPackage.

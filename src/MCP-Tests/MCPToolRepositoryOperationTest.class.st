@@ -723,6 +723,39 @@ MCPToolRepositoryOperationTest >> testExportAndReloadUseTheFormatTheCheckoutDecl
 ]
 
 { #category : 'tests' }
+MCPToolRepositoryOperationTest >> testExportHonoursTheTonelVersionTheCheckoutPins [
+
+	| className location packageName repository repositoryName sourceFile |
+	repositoryName := 'MCP Repository Command Tonel Version Test'.
+	packageName := 'MCPToolRepositoryOperationTonelVersionPackage'.
+	className := 'MCPToolRepositoryOperationTonelVersionClass'.
+	location := self temporaryRepositoryLocationNamed: 'MCPToolRepositoryOperationTestTonelVersion'.
+	self withExportPackageNamed: packageName className: className do: [
+			self withCleanRepositoryNamed: repositoryName location: location do: [
+					self callToolWith: {
+							(#action -> 'create').
+							(#name -> repositoryName).
+							(#location -> location pathString).
+							(#packages -> { packageName }) } asDictionary.
+					repository := IceRepository repositories detect: [ :each | each name asString = repositoryName ].
+					self callToolWith: {
+							(#action -> 'export').
+							(#name -> repositoryName) } asDictionary.
+					sourceFile := location / packageName / (className , '.class.st').
+					self assert: sourceFile exists.
+					self
+						assert: (sourceFile contents includesSubstring: '#package :')
+						description: 'A checkout that pins no version is written in the current Tonel format.'.
+					repository workingCopy repositoryProperties at: #version put: #'1.0'.
+					self callToolWith: {
+							(#action -> 'export').
+							(#name -> repositoryName) } asDictionary.
+					self
+						deny: (sourceFile contents includesSubstring: '#package :')
+						description: 'A checkout pinned to Tonel 1.0 must not be written in the version 3 format.' ] ]
+]
+
+{ #category : 'tests' }
 MCPToolRepositoryOperationTest >> testExportUpdatesDiskAndIndexWithoutCommitting [
 
 	| childNames data location packageName repositoryName result |
