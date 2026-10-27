@@ -60,18 +60,24 @@ MCPToolChangeHistoryOperation >> parsedRequestFromToolRequest: request [
 { #category : 'private - schema' }
 MCPToolChangeHistoryOperation >> selectionInputProperties [
 
-	^ {
-		  (self schemaPropertyNamed: 'directoryPath' type: 'string' description: 'Optional .ombu directory.').
-		  (self schemaPropertyNamed: 'historyFile' type: 'string' description: 'Optional .ombu file name from history_file_list.').
+	^ self historyLocationInputProperties , {
 		  (self
 			   integerArraySchemaNamed: 'indexes'
-			   description: 'One-based entry indexes returned by history_entry_list.'
+			   description: 'The entries to act on, by the one-based index history_entry_list prints.'
 			   itemDescription: 'Entry index.').
-		  (self integerSchemaPropertyNamed: 'startIndex' description: 'First one-based entry index in range.').
-		  (self integerSchemaPropertyNamed: 'endIndex' description: 'Last one-based entry index in range.').
-		  (self integerSchemaPropertyNamed: 'latestCount' description: 'Select latest N entries.').
-		  (self booleanSchemaPropertyNamed: 'codeChangesOnly' description: 'Select only code changes.' default: true).
-		  (self booleanSchemaPropertyNamed: 'confirm' description: 'False previews; true performs.' default: false) }
+		  (self integerSchemaPropertyNamed: 'startIndex' description: 'Act on a range of entries, starting at this one-based index.').
+		  (self integerSchemaPropertyNamed: 'endIndex' description: 'Last one-based index of that range.').
+		  (self
+			   integerSchemaPropertyNamed: 'latestCount'
+			   description: 'Act on this many of the most recent entries instead of naming them.').
+		  (self
+			   booleanSchemaPropertyNamed: 'codeChangesOnly'
+			   description: 'Leave out everything that is not a class or method change.'
+			   default: true).
+		  (self
+			   booleanSchemaPropertyNamed: 'confirm'
+			   description: 'False lists what would happen and changes nothing; true carries it out.'
+			   default: false) }
 ]
 
 { #category : 'metadata' }

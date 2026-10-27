@@ -37,7 +37,7 @@ MCPMethodSearchRequest class >> fromRequest: request tool: aTool [
 		  filterPattern: (aTool filterPatternFromRequest: request);
 		  filterMode: (aTool filterModeFromRequest: request);
 		  caseSensitive: true;
-		  limit: (request nonNegativeIntegerArgumentNamed: 'limit' default: aTool defaultPageLimit);
+		  limit: aTool defaultPageLimit;
 		  offset: (request nonNegativeIntegerArgumentNamed: 'offset' default: 0);
 		  yourself
 ]

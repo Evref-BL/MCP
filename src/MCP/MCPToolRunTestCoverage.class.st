@@ -58,7 +58,7 @@ MCPToolRunTestCoverage >> defaultExposure [
 { #category : 'metadata' }
 MCPToolRunTestCoverage >> description [
 
-	^ 'Run tests under coverage return compact aggregate test coverage results.'
+	^ 'Run tests while recording which methods they execute, and return the test summary with per-package and per-class coverage. Name the methods to measure under coverage.scope; without it nothing is measured.'
 ]
 
 { #category : 'private - request' }

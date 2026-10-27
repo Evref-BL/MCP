@@ -64,6 +64,21 @@ MCPToolChangeHistory >> executeWithRequest: request [
 ]
 
 { #category : 'private - schema' }
+MCPToolChangeHistory >> historyLocationInputProperties [
+	"Which .ombu file the entries come from. One definition, shared by every change-history tool."
+
+	^ {
+		  (self
+			   schemaPropertyNamed: 'directoryPath'
+			   type: 'string'
+			   description: 'Directory holding the .ombu files. Defaults to this image''s own history directory.').
+		  (self
+			   schemaPropertyNamed: 'historyFile'
+			   type: 'string'
+			   description: 'One .ombu file in that directory, named as history_file_list prints it. Defaults to the session in progress.') }
+]
+
+{ #category : 'private - schema' }
 MCPToolChangeHistory >> integerArraySchemaNamed: aName description: aDescription itemDescription: anItemDescription [
 
 	| itemsProperty |
@@ -122,4 +137,3 @@ MCPToolChangeHistory >> successSummaryForData: data operation: operation [
 						  , (self textForCount: selectedCount noun: 'selected history entry') , '.' ] ].
 	^ 'Change history operation completed.'
 ]
-

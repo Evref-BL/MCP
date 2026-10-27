@@ -26,8 +26,8 @@ MCPRepositoryQuerySpec class >> fromRequest: request tool: aTool [
 		  isModified: (self optionalBooleanArgumentNamed: 'isModified' fromRequest: request);
 		  isMissing: (self optionalBooleanArgumentNamed: 'isMissing' fromRequest: request);
 		  fieldFilters: (aTool fieldFiltersFromRequest: request fieldNames: aTool repositoryFilterFieldNames);
-		  filterMode: (aTool filterModeFromRequest: request);
-		  limit: (request nonNegativeIntegerArgumentNamed: 'limit' default: aTool defaultPageLimit);
+		  filterMode: aTool defaultFilterMode;
+		  limit: aTool defaultPageLimit;
 		  offset: (request nonNegativeIntegerArgumentNamed: 'offset' default: 0);
 		  yourself
 ]

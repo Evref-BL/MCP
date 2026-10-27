@@ -56,29 +56,23 @@ MCPToolGetMethod >> bindingClassNameFor: aBinding [
 { #category : 'metadata' }
 MCPToolGetMethod >> buildInputSchema [
 
-	| classSideProperty includeVariableDetailsProperty selectorProperty |
-	classSideProperty := MCPStructureProperties new
-		                     name: 'side';
-		                     type: 'string';
-		                     enum: #( 'instance' 'class' );
-		                     description: 'Which side a bare selector is on. A method written as Class class>>selector says so itself.';
-		                     default: 'instance';
-		                     yourself.
+	| includeVariableDetailsProperty selectorProperty |
 	includeVariableDetailsProperty := MCPStructureProperties new
 		                                  name: 'includeVariableDetails';
 		                                  type: 'boolean';
-		                                  description: 'Whether to include variable reference summaries and counts.';
+		                                  description:
+			                                  'Also report, for every variable the method reads or writes, where it is defined and how often it is used.';
 		                                  default: false;
 		                                  yourself.
 	selectorProperty := MCPStructureProperties new
 		                    name: 'selector';
 		                    type: #( 'string' 'array' );
 		                    description:
-		                    'A method as Class>>selector or Class class>>selector, or a bare selector when className is given. One of them, or several.';
+			                    'A method as Class>>selector or Class class>>selector, or a bare selector when class is given. One of them, or several.';
 		                    items: (MCPStructureProperties new
-			                     type: 'string';
-			                     description: 'One method.';
-			                     yourself);
+				                     type: 'string';
+				                     description: 'One method.';
+				                     yourself);
 		                    yourself.
 	^ MCPStructureInputSchema new
 		  type: 'object';
@@ -89,7 +83,8 @@ MCPToolGetMethod >> buildInputSchema [
 					   description: 'The class defining the methods, for selectors that do not name their own.';
 					   yourself).
 				  selectorProperty.
-				  classSideProperty.
+				  (self targetSideSchemaPropertyDescribedAs:
+					   'Which side a bare selector is on. A method written as Class class>>selector says so itself.').
 				  includeVariableDetailsProperty };
 		  required: #( 'selector' );
 		  yourself
@@ -130,7 +125,7 @@ MCPToolGetMethod >> definingClassNameFromBinding: aBinding [
 { #category : 'metadata' }
 MCPToolGetMethod >> description [
 
-	^ 'Get known methods and return their source plus structured variable-reference context. Takes methods as Class>>selector, as a search prints them, or bare selectors with className. Use method_search or reference lookup tools to discover methods first.'
+	^ 'Get known methods and return their source plus structured variable-reference context. Takes methods as Class>>selector, as a search prints them, or bare selectors with class. Use method_search or reference lookup tools to discover methods first.'
 ]
 
 { #category : 'private' }

@@ -51,7 +51,7 @@ MCPMethodRewriteRequest >> initializeFromRequest: request tool: aTool [
 		rules add: (MCPMethodRewriteRuleSpec fromDictionary: eachRule request: request index: index) ].
 	ruleClassNames do: [ :eachName |
 		rules addAll: (MCPMethodRewriteRuleSpec specsForRuleClassNamed: eachName startingAt: rules size + 1) ].
-	apply := request booleanArgumentNamed: 'apply' default: false.
+	apply := request booleanArgumentNamed: 'confirm' default: false.
 	scopeQuery := aTool methodScopeQueryFromRequest: request.
 	scopeQuery requireCompleteScope
 ]
@@ -61,7 +61,7 @@ MCPMethodRewriteRequest >> requestedContext [
 
 	| context |
 	context := Dictionary new.
-	context at: #apply put: self apply.
+	context at: #confirm put: self apply.
 	context at: #scope put: self scopeQuery asDictionary.
 	context at: #rules put: self ruleDictionaries.
 	^ context

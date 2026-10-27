@@ -800,10 +800,10 @@ MCPTool >> methodSearchScopeSchemaProperties [
 	"What a scope selects when the entities are methods: the classes to look in, and which of their sides. side lives here rather than beside scope, so one object answers what this operates on."
 
 	^ self searchScopeSchemaProperties , { (self
-		    stringEnumSchemaPropertyNamed: 'side'
-		    description: 'Which sides to sweep.'
-		    values: #( 'instance' 'class' 'both' )
-		    default: 'both') }
+		   stringEnumSchemaPropertyNamed: 'side'
+		   description: 'Which sides of the selected classes to sweep.'
+		   values: #( 'instance' 'class' 'both' )
+		   default: 'both') }
 ]
 
 { #category : 'private - schema' }
@@ -843,6 +843,19 @@ MCPTool >> mismatchesTextOn: stream for: mismatches [
 MCPTool >> name [
 
 	^ self class toolName
+]
+
+{ #category : 'private - schema' }
+MCPTool >> offsetInputProperty [
+	"A page is a fixed size, so where it starts is all a caller sets. One definition, so every paginated tool says it the same way."
+
+	^ (self
+		   integerSchemaPropertyNamed: 'offset'
+		   description:
+			   'Index of the first result to return. The page size is fixed; a result that was cut short says how many more there are.'
+		   default: 0)
+		  minimum: 0;
+		  yourself
 ]
 
 { #category : 'private - results' }
@@ -948,16 +961,22 @@ MCPTool >> searchScopeFromRequest: request [
 
 { #category : 'private - schema' }
 MCPTool >> searchScopeSchemaProperties [
-	"One definition of what a scope selects. A class has no side, so side belongs to the method variant rather than here."
+	"One definition of what a scope selects. A class has no side, so side belongs to the method variant rather than here. Several of these together select everything any of them names."
 
 	^ {
-		  (self stringArraySchemaNamed: 'classes').
-		  (self stringArraySchemaNamed: 'packages').
-		  (self stringArraySchemaNamed: 'superclassesOf').
-		  (self stringArraySchemaNamed: 'subclassesOf').
+		  (self stringArraySchemaNamed: 'classes' description: 'These classes.' itemDescription: 'Class name.').
+		  (self stringArraySchemaNamed: 'packages' description: 'Every class in these packages.' itemDescription: 'Package name.').
 		  (self
-			   stringArraySchemaNamed: 'hierarchy'
-			   description: 'Whole hierarchies of these classes, superclasses and subclasses alike.'
+			   stringArraySchemaNamed: 'superclassesOf'
+			   description: 'Every ancestor of these classes, the classes themselves excluded.'
+			   itemDescription: 'Class name.').
+		  (self
+			   stringArraySchemaNamed: 'subclassesOf'
+			   description: 'Every descendant of these classes, the classes themselves excluded.'
+			   itemDescription: 'Class name.').
+		  (self
+			   stringArraySchemaNamed: 'hierarchyOf'
+			   description: 'Whole hierarchies of these classes, superclasses and subclasses alike, the classes themselves included.'
 			   itemDescription: 'Class name.') }
 ]
 
@@ -973,7 +992,8 @@ MCPTool >> searchScopeSchemaPropertyWith: someProperties [
 	^ MCPStructureProperties new
 		  name: 'scope';
 		  type: 'object';
-		  description: 'What to operate on. If omitted, every matching entity.';
+		  description:
+			  'What to narrow the sweep to. Give several entries and everything any of them selects is covered. Omitted, the whole image is swept.';
 		  properties: someProperties;
 		  additionalProperties: false;
 		  yourself

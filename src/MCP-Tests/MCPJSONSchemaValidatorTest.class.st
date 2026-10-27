@@ -19,10 +19,10 @@ MCPJSONSchemaValidatorTest >> baseRepresentativeArgumentsByToolClass [
 		  (MCPToolGetMethod -> {
 			   (#class -> 'MCPTool').
 			   (#selector -> 'name') } asDictionary).
-		  (MCPToolRemoveClasses -> { (#classes -> #( 'MCPJSONSchemaValidatorTestTemporary' )) } asDictionary).
+		  (MCPToolRemoveClasses -> { (#name -> #( 'MCPJSONSchemaValidatorTestTemporary' )) } asDictionary).
 		  (MCPToolRemoveMethods -> {
 			   (#class -> 'MCPTool').
-			   (#selectors -> #( 'temporarySelector' )) } asDictionary).
+			   (#selector -> #( 'temporarySelector' )) } asDictionary).
 		  (MCPToolSearchRepositories -> Dictionary new).
 		  (MCPToolVerifyRepositoryIdentity -> {
 			   (#name -> 'MCP').
@@ -163,13 +163,9 @@ MCPJSONSchemaValidatorTest >> testCurrentToolInputSchemasAdvertiseGroupedSearchS
 		                        :each | each name ].
 	methodScopeProperties := ((methodProperties detect: [ :each | each name = 'scope' ]) extraProperties at: #properties) collect: [
 		                         :each | each name ].
-	self
-		assert: (classProperties collect: [ :each | each name ]) asSet
-		equals: #( 'scope' 'name' 'tag' 'offset' ) asSet.
-	self
-		assert: (methodProperties collect: [ :each | each name ]) asSet
-		equals: #( 'scope' 'selector' 'protocol' 'offset' ) asSet.
-	self assert: classScopeProperties asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' 'hierarchy' ) asSet.
+	self assert: (classProperties collect: [ :each | each name ]) asSet equals: #( 'scope' 'name' 'package' 'tag' 'offset' ) asSet.
+	self assert: (methodProperties collect: [ :each | each name ]) asSet equals: #( 'scope' 'selector' 'protocol' 'offset' ) asSet.
+	self assert: classScopeProperties asSet equals: #( 'classes' 'packages' 'superclassesOf' 'subclassesOf' 'hierarchyOf' ) asSet.
 	self assert: methodScopeProperties asSet equals: classScopeProperties asSet , #( 'side' ) asSet
 ]
 
@@ -191,7 +187,7 @@ MCPJSONSchemaValidatorTest >> testCurrentToolRequestValidationRejectsOperationSp
 	self
 		should: [
 				MCPToolRewriteMethods new requestFromToolCallArguments: {
-						(#apply -> true).
+						(#confirm -> true).
 						(#rules -> { {
 							 (#match -> 'self').
 							 (#replacement -> 'self') } asDictionary }) } asDictionary ]

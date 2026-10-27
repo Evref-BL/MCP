@@ -46,15 +46,23 @@ MCPToolSearchClasses >> classEntriesForRequest: queryRequest [
 { #category : 'private - request' }
 MCPToolSearchClasses >> classFilterFieldNames [
 
-	^ #( 'name' 'tag' )
+	^ #( 'name' 'package' 'tag' )
 ]
 
 { #category : 'private - schema' }
 MCPToolSearchClasses >> classFilterInputProperties [
 
 	^ {
-		  (self schemaPropertyNamed: 'name' type: 'string' description: 'Match class names case-insensitively.').
-		  (self schemaPropertyNamed: 'tag' type: 'string' description: 'Match package tags case-insensitively.') }
+		  (self schemaPropertyNamed: 'name' type: 'string' description: 'Keep classes whose name contains this text, ignoring case.').
+		  (self
+			   schemaPropertyNamed: 'package'
+			   type: 'string'
+			   description:
+			   'Keep classes whose package name contains this text, ignoring case. Name packages exactly under scope.packages instead.').
+		  (self
+			   schemaPropertyNamed: 'tag'
+			   type: 'string'
+			   description: 'Keep classes whose package tag contains this text, ignoring case.') }
 ]
 
 { #category : 'metadata' }
@@ -86,6 +94,7 @@ MCPToolSearchClasses >> failureMessageForScope: scopeSummary error: anError [
 MCPToolSearchClasses >> fieldTextsForClassEntry: anEntry fieldName: fieldName [
 
 	fieldName = 'name' ifTrue: [ ^ { (anEntry at: #class) } ].
+	fieldName = 'package' ifTrue: [ ^ { (anEntry at: #package ifAbsent: [ '' ]) } ].
 	fieldName = 'tag' ifTrue: [ ^ { (anEntry at: #tag) } ].
 	^ #(  )
 ]

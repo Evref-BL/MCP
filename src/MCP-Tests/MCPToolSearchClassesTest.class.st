@@ -165,6 +165,23 @@ MCPToolSearchClassesTest >> testDirectionalScopesAreUnionedWithExactClassNames [
 ]
 
 { #category : 'tests' }
+MCPToolSearchClassesTest >> testHierarchyOfScopeSelectsTheWholeHierarchy [
+	"The scope advertised hierarchyOf but no query builder read it, so naming one silently widened the sweep to the whole image."
+
+	| classNames data result |
+	result := self callToolWith: {
+			          (self searchScope: { (#hierarchyOf -> { self childClassName }) }).
+			          (#name -> self fixturePrefix) } asDictionary.
+	data := self dataFrom: result.
+	classNames := (data at: #classes) collect: [ :each | each at: #class ].
+	self deny: (result at: #isError ifAbsent: [ false ]).
+	self assert: classNames equals: {
+			self baseClassName.
+			self childClassName.
+			self grandchildClassName } asArray
+]
+
+{ #category : 'tests' }
 MCPToolSearchClassesTest >> testImageScopeCanFilterAndPaginate [
 
 	| classNames data pagination result summary |
@@ -238,6 +255,23 @@ MCPToolSearchClassesTest >> testNameFilterIgnoresCase [
 	classNames := (data at: #classes) collect: [ :each | each at: #class ].
 	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: (data at: #classes) size equals: 3.
+	self assert: classNames equals: {
+			self baseClassName.
+			self childClassName.
+			self grandchildClassName } asArray
+]
+
+{ #category : 'tests' }
+MCPToolSearchClassesTest >> testPackageFilterMatchesPartOfThePackageName [
+	"scope.packages names packages exactly; this filter is how a caller narrows by part of a package name, as every other search already allows."
+
+	| classNames data result |
+	result := self callToolWith: {
+			          (#package -> self generatedPackageName asLowercase).
+			          (#name -> self fixturePrefix) } asDictionary.
+	data := self dataFrom: result.
+	classNames := (data at: #classes) collect: [ :each | each at: #class ].
+	self deny: (result at: #isError ifAbsent: [ false ]).
 	self assert: classNames equals: {
 			self baseClassName.
 			self childClassName.

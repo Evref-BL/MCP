@@ -49,6 +49,7 @@ MCPToolSearch >> classAndMethodScopeSummaryForScopeQuery: scopeQuery [
 	^ self classAndMethodScopeSummaryFromAssociations: {
 			  ('packages' -> scopeQuery packageNames).
 			  ('classes' -> scopeQuery classNames).
+			  ('hierarchies' -> scopeQuery hierarchyClassNames).
 			  ('subclasses' -> scopeQuery subclassClassNames).
 			  ('superclasses' -> scopeQuery parentClassNames) }
 ]
@@ -69,6 +70,7 @@ MCPToolSearch >> classAndMethodScopeSummaryFromRequest: request [
 	^ self classAndMethodScopeSummaryFromAssociations: {
 			  ('packages' -> (self searchScopeStringCollectionNamed: 'packages' fromRequest: request)).
 			  ('classes' -> (self searchScopeStringCollectionNamed: 'classes' fromRequest: request)).
+			  ('hierarchies' -> (self searchScopeStringCollectionNamed: 'hierarchyOf' fromRequest: request)).
 			  ('subclasses' -> (self searchScopeStringCollectionNamed: 'subclassesOf' fromRequest: request)).
 			  ('superclasses' -> (self searchScopeStringCollectionNamed: 'superclassesOf' fromRequest: request)) }
 ]
@@ -85,6 +87,7 @@ MCPToolSearch >> classScopeQueryFromRequest: request [
 	^ MCPClassScopeQuery new
 		  packageNames: (self searchScopeStringCollectionNamed: 'packages' fromRequest: request);
 		  classNames: (self searchScopeStringCollectionNamed: 'classes' fromRequest: request);
+		  hierarchyClassNames: (self searchScopeStringCollectionNamed: 'hierarchyOf' fromRequest: request);
 		  subclassClassNames: (self searchScopeStringCollectionNamed: 'subclassesOf' fromRequest: request);
 		  parentClassNames: (self searchScopeStringCollectionNamed: 'superclassesOf' fromRequest: request);
 		  yourself
@@ -205,7 +208,7 @@ MCPToolSearch >> filterModeSchemaPropertyWithDescription: modeDescription values
 
 	^ self
 		  stringEnumSchemaPropertyNamed: 'filterMode'
-		  description: 'Filter match mode.'
+		  description: modeDescription
 		  values: modeValues
 		  default: self defaultFilterMode
 ]
@@ -274,15 +277,6 @@ MCPToolSearch >> offsetFromQueryRequest: queryRequest [
 ]
 
 { #category : 'private - schema' }
-MCPToolSearch >> offsetInputProperty [
-	"A page is a fixed size, so where it starts is all a caller sets."
-
-	^ (self integerSchemaPropertyNamed: 'offset' description: 'Pagination offset.' default: 0)
-		  minimum: 0;
-		  yourself
-]
-
-{ #category : 'private - schema' }
 MCPToolSearch >> packageQueryScopeInputProperties [
 
 	^ {
@@ -293,7 +287,7 @@ MCPToolSearch >> packageQueryScopeInputProperties [
 { #category : 'private - schema' }
 MCPToolSearch >> packageScopePackageNamesProperty [
 
-	^ self stringArraySchemaNamed: 'packages' description: 'Exact packages.' itemDescription: 'Package name.'
+	^ self stringArraySchemaNamed: 'packages' description: 'These packages, named exactly.' itemDescription: 'Package name.'
 ]
 
 { #category : 'private - schema' }

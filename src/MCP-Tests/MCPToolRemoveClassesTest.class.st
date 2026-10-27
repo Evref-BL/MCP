@@ -18,14 +18,14 @@ MCPToolRemoveClassesTest >> argumentsForClassName: aClassName [
 { #category : 'private' }
 MCPToolRemoveClassesTest >> argumentsForClassNames: someClassNames [
 
-	^ { (#classes -> someClassNames) } asDictionary
+	^ { (#name -> someClassNames) } asDictionary
 ]
 
 { #category : 'private' }
 MCPToolRemoveClassesTest >> argumentsForClassNames: someClassNames force: aBoolean [
 
 	^ {
-		  (#classes -> someClassNames).
+		  (#name -> someClassNames).
 		  (#force -> aBoolean) } asDictionary
 ]
 
@@ -293,7 +293,7 @@ MCPToolRemoveClassesTest >> testToolRequiresClassNameInSchema [
 	| propertyNames schema |
 	schema := MCPToolRemoveClasses new inputSchema.
 	propertyNames := schema properties collect: [ :each | each name ].
-	self assert: schema required asSet equals: #( 'classes' ) asSet.
+	self assert: schema required asSet equals: #( 'name' ) asSet.
 	self assert: (propertyNames includes: 'force')
 ]
 

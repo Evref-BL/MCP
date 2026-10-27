@@ -79,12 +79,16 @@ MCPToolRewriteMethods >> parsedRequestFromToolRequest: request [
 
 { #category : 'private - schema' }
 MCPToolRewriteMethods >> rewriteInputProperties [
+	"Unlike the searching tools, this one requires a scope: rewriting whatever the whole image happens to match is never what a caller means."
 
 	^ {
 		  self rewriteRulesSchemaProperty.
 		  self rewriteRuleClassesSchemaProperty.
-		  (self booleanSchemaPropertyNamed: 'apply' description: 'Apply the changes instead of previewing them.' default: false) }
-	  , self methodQueryScopeInputProperties
+		  (self booleanSchemaPropertyNamed: 'confirm' description: 'False previews; true performs.' default: false).
+		  (self methodSearchScopeSchemaProperty
+			   description:
+				   'What to rewrite. Give several entries and everything any of them selects is covered. Required: there is no rewriting the whole image.';
+			   yourself) }
 ]
 
 { #category : 'private - schema' }
@@ -109,7 +113,7 @@ MCPToolRewriteMethods >> rewriteRuleSchema [
 		  type: 'object';
 		  description: 'Rewrite rule.';
 		  properties: {
-				  (self schemaPropertyNamed: 'name' type: 'string' description: 'Diagnostic name.').
+				  (self schemaPropertyNamed: 'name' type: 'string' description: 'Name for this rule in the results.').
 				  ((self
 					    schemaPropertyNamed: 'match'
 					    type: 'string'
@@ -122,7 +126,10 @@ MCPToolRewriteMethods >> rewriteRuleSchema [
 					    description: 'Pattern the matched code becomes. Reuse the metavariable names from match.')
 					   minLength: 1;
 					   yourself).
-				  (self booleanSchemaPropertyNamed: 'isForMethod' description: 'Match whole methods.' default: false) };
+				  (self
+					   booleanSchemaPropertyNamed: 'isForMethod'
+					   description: 'Match the whole method rather than an expression inside it.'
+					   default: false) };
 		  required: #( 'match' 'replacement' );
 		  additionalProperties: false;
 		  yourself
@@ -131,7 +138,10 @@ MCPToolRewriteMethods >> rewriteRuleSchema [
 { #category : 'private - schema' }
 MCPToolRewriteMethods >> rewriteRulesSchemaProperty [
 
-	^ (self schemaPropertyNamed: 'rules' type: 'array' description: 'Rewrite rules.')
+	^ (self
+		   schemaPropertyNamed: 'rules'
+		   type: 'array'
+		   description: 'The patterns to rewrite with, each a match pattern and what it becomes. They are applied in order.')
 		  minItems: 1;
 		  items: self rewriteRuleSchema;
 		  yourself
@@ -142,4 +152,3 @@ MCPToolRewriteMethods >> title [
 
 	^ 'Rewrite Methods'
 ]
-
