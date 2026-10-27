@@ -53,10 +53,9 @@ MCPToolChangeHistoryToolsTest >> testChangeHistoryToolsDeclareExpectedInputs [
 MCPToolChangeHistoryToolsTest >> testListChangeHistoryEntriesReturnsEntries [
 
 	| data |
-	data := self toolNamed: 'history_entry_list' dataFromArguments: {
-			        (#newestFirst -> true) } asDictionary.
+	data := self toolNamed: 'history_entry_list' dataFromArguments: { (#newestFirst -> true) } asDictionary.
 	self assert: (data includesKey: #entries).
-	self assert: (data at: #entries) size <= MCPToolListChangeHistoryEntries new defaultEntryLimit
+	self assert: (data at: #entries) size <= MCPToolListChangeHistoryEntries new defaultPageLimit
 ]
 
 { #category : 'tests' }

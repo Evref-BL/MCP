@@ -359,6 +359,7 @@ MCPTool >> contract [
 	| data |
 	data := self metadata copy.
 	data at: #inputSchema put: self inputSchema asJRPCJSON.
+	self defaultPageLimit ifNotNil: [ :pageSize | data at: #pageSize put: pageSize ].
 	^ data
 ]
 
@@ -398,6 +399,13 @@ MCPTool >> dataTextOn: stream for: data [
 MCPTool >> defaultExposure [
 
 	^ 'discoverable'
+]
+
+{ #category : 'metadata' }
+MCPTool >> defaultPageLimit [
+	"How many entries one page of this tool's answer holds, or nil when it answers a whole result rather than a page. A caller has no other way to find out: a page carries nextOffset when another one exists and never says how large it was, so the contract reports it."
+
+	^ nil
 ]
 
 { #category : 'metadata' }
@@ -866,7 +874,7 @@ MCPTool >> offsetInputProperty [
 	^ (self
 		   integerSchemaPropertyNamed: 'offset'
 		   description:
-			   'Index of the first result to return. The page size is fixed; a result that was cut short says how many more there are.'
+			   'Index of the first result to return. A page is a fixed size, which tool_get reports for this tool; a result that was cut short says how many more there are.'
 		   default: 0)
 		  minimum: 0;
 		  yourself
