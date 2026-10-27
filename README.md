@@ -44,9 +44,7 @@ The baseline groups are:
 
 A project embedding the server and serving tools of its own loads `Core` alone,
 which leaves out the image tools and everything behind them. Loading its package
-is all its tools need: a tool that names itself is in the catalog, the way the
-`pifs_` tools are in
-[pharo-image-fs](https://github.com/Evref-BL/pharo-image-fs).
+is all its tools need: a tool that names itself is in the catalog.
 [Building on MCP](templates/pharo-references/building-on-mcp.md) walks through
 a tool, a resource and a prompt of your own.
 
