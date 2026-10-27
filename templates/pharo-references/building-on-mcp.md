@@ -5,9 +5,9 @@ transport, the JSON-RPC and schema machinery and the catalog tools, and
 nothing that knows about Pharo code. Everything the server then offers a
 client — tools, resources, prompts — you write in a package of your own.
 
-[pharo-image-fs](https://github.com/Evref-BL/pharo-image-fs) does exactly
-that. It serves its filesystem projections as `pifs_start`, `pifs_stop` and
-`pifs_list`, from its own `PharoImageFS-MCP` package, with no change to MCP.
+A project doing this changes nothing in MCP. Its tools live in a package of
+its own, which it loads when it wants them served and leaves out when it does
+not.
 
 ## Load the server alone
 
@@ -20,14 +20,14 @@ BaselineOfMyProject >> baseline: spec
 	spec for: #common do: [
 		spec baseline: 'MCP' with: [
 			spec
-				repository: 'github://Evref-BL/MCP:v2.4.0/src';   "pin a release"
+				repository: 'github://Evref-BL/MCP:vX.Y.Z/src';   "a release, not a branch"
 				loads: #( 'Core' ) ].
 		spec package: 'MyProject-MCP' with: [ spec requires: #( 'MyProject' 'MCP' ) ].
 		spec group: 'Tools' with: #( 'MyProject-MCP' ).
 		spec group: 'default' with: #( 'Core' 'Tests' ) ]
 ```
 
-Two things there are worth copying. The group is named `Tools` rather than
+Two things in it are worth copying. The group is named `Tools` rather than
 `MCP`, because Metacello refuses a group and a baseline that share one name.
 And it is left out of `default`: your project is useful without a server, and
 an image that does not serve MCP has no use for tools it cannot register.
@@ -39,7 +39,7 @@ the world-menu server list; `Telemetry`, the OpenTelemetry backend; and
 
 ## The three things a server offers
 
-| | What it is | Who reaches for it | Subclass of | Names itself with |
+| Kind | What it is | Who reaches for it | Subclass of | Names itself with |
 | --- | --- | --- | --- | --- |
 | Tool | an action with arguments | the model, on its own | `MCPTool` | `toolName` |
 | Resource | a document to read | the host, for the user | `MCPResource` | `resourceUri` |
@@ -59,14 +59,13 @@ MCPTool << #MyProjectTool
 ```
 
 ```smalltalk
-MyProjectTool class >> isAbstract
-
-	^ self = MyProjectTool
-
 MyProjectTool class >> groupName
 
 	^ 'widgets'
 ```
+
+The base is not served, and needs to say nothing to stay out: it answers no
+`toolName`, so there is no tool there to register.
 
 Then one class per tool:
 
@@ -120,8 +119,8 @@ MyProjectToolListWidgets >> executeWithRequest: request
 `MyProject widgetNames` stands for your own code. What the rest is for:
 
 - **`toolName`** is the key in one catalog shared with every other tool the
-  image has loaded, so pick a first word that is yours. `widget_list` and
-  `pifs_start` are safe; `class_search` is taken.
+  image has loaded, so pick a first word that is yours. `widget_list` is
+  safe; `class_search` is taken.
 - **`description`** is read by a model deciding whether to call you. Say what
   the tool answers and name the tools that come next, the way the example
   points at `widget_get`.
@@ -189,11 +188,47 @@ The text is what a model reads; the data is the same answer in a shape a
 program can use. Give both. A text that says only "Done." costs the caller
 another round trip to find out what happened.
 
+You do not have to catch to report a failure. An exception that escapes
+`executeWithRequest:` is answered as an error result naming your tool, the
+error class, the message and the frames of your own code; the server leaves
+its own frames out. Build an error result yourself when you know something
+the exception does not, such as what the caller should have asked for.
+
 Which of the two reaches the client is the server's choice, not the tool's.
 `toolResponseFields` defaults to `#content`, where the data is rendered into
 the text. `useContentAndStructuredContentToolResponses` sends both, and
 `useStructuredContentOnlyToolResponses` sends only the structured half. The
 structured half carries your text as `summary` and your dictionary as `data`.
+
+### Answering a page
+
+A tool that answers a list answers one page of it, so a long result never
+arrives as one block a model has to read through. Three parts:
+
+```smalltalk
+MyProjectToolListWidgets >> buildInputSchema
+
+	^ MCPStructureInputSchema new
+		  type: 'object';
+		  properties: { self offsetInputProperty };
+		  required: #(  );
+		  yourself
+
+MyProjectToolListWidgets >> defaultPageLimit
+
+	^ 25
+```
+
+`offsetInputProperty` is the same `offset` argument every paging tool takes,
+declared once so they all describe it the same way. Read it with
+`request nonNegativeIntegerArgumentNamed: 'offset' default: 0`, answer at most
+`self defaultPageLimit` entries from there, and put `nextOffset` in the data
+when entries remain — a caller asks again with that offset until it stops
+coming.
+
+Answering `defaultPageLimit` is what puts `pageSize` in your contract, so
+`tool_get` can tell a caller how large a page is before it asks for one. A
+tool that answers whole results rather than pages leaves it alone.
 
 ## Groups and icons
 
@@ -366,14 +401,20 @@ mcp advertiseTool: MyProjectToolListWidgets.    "adds one to what is advertised"
 mcp advertiseTools: { MyProjectToolListWidgets }. "replaces the advertised set"
 mcp advertiseAllTools.
 mcp advertiseToolDefaults.
-mcp startOnPort: 4000.
+mcp port: 4000.
+mcp start.
 ```
+
+`MCP startOnPort:` on the class side answers the server already on that port,
+or builds one with the default catalog. A server you configured is started
+through the instance, as above.
 
 For a server holding only your own tools:
 
 ```smalltalk
 mcp := MCP onlyTools: { MyProjectToolListWidgets. MyProjectToolGetWidget }.
-mcp startOnPort: 4000.
+mcp port: 4000.
+mcp start.
 ```
 
 `onlyTools:` replaces the catalog with exactly those, advertises all of them,
