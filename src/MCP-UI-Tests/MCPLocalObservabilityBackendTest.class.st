@@ -4,9 +4,8 @@ Tests for the in-memory MCP observability state and its integration at the MCP t
 Class {
 	#name : 'MCPLocalObservabilityBackendTest',
 	#superclass : 'MCPTestCase',
-	#category : 'MCP-UI-Tests-Observability',
-	#package : 'MCP-UI-Tests',
-	#tag : 'Observability'
+	#category : 'MCP-UI-Tests',
+	#package : 'MCP-UI-Tests'
 }
 
 { #category : 'tests' }

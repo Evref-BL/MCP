@@ -4,9 +4,8 @@ Tests safe file-backed Git repository metadata used by MCP repository DTOs.
 Class {
 	#name : 'MCPGitRepositoryMetadataTest',
 	#superclass : 'TestCase',
-	#category : 'MCP-Tests-DTOs',
-	#package : 'MCP-Tests',
-	#tag : 'DTOs'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'tests' }

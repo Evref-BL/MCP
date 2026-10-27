@@ -9,10 +9,41 @@ Class {
 	#instVars : [
 		'eventStreams'
 	],
-	#category : 'MCP-Server',
+	#category : 'MCP-Transport',
 	#package : 'MCP',
-	#tag : 'Server'
+	#tag : 'Transport'
 }
+
+{ #category : 'event streams' }
+MCPHTTPServer >> acceptedNotificationsFor: aFilter [
+	"The notification methods this server agreed to carry, from the types the client asked for. resourceSubscriptions is absent because no resource here can say it changed, and the revision has the acknowledgement omit what the server does not support."
+
+	| accepted |
+	accepted := Set new.
+	(aFilter at: 'toolsListChanged' ifAbsent: [ false ]) = true ifTrue: [ accepted add: 'notifications/tools/list_changed' ].
+	(aFilter at: 'promptsListChanged' ifAbsent: [ false ]) = true ifTrue: [
+		accepted add: 'notifications/prompts/list_changed' ].
+	(aFilter at: 'resourcesListChanged' ifAbsent: [ false ]) = true ifTrue: [
+		accepted add: 'notifications/resources/list_changed' ].
+	^ accepted
+]
+
+{ #category : 'event streams' }
+MCPHTTPServer >> acknowledgedFilterFor: aFilter [
+	"What the server agreed to, which the client compares with what it asked for."
+
+	| acknowledged |
+	acknowledged := Dictionary new.
+	#( 'toolsListChanged' 'promptsListChanged' 'resourcesListChanged' ) do: [ :each |
+		(aFilter at: each ifAbsent: [ false ]) = true ifTrue: [ acknowledged at: each put: true ] ].
+	^ acknowledged
+]
+
+{ #category : 'event streams' }
+MCPHTTPServer >> addEventStream: anEventStream [
+
+	eventStreams add: anEventStream
+]
 
 { #category : 'accessing' }
 MCPHTTPServer >> allowedOrigins [
@@ -42,12 +73,6 @@ MCPHTTPServer >> answer: request with: response [
 	^ self answerUnsupportedMethodWith: response
 ]
 
-{ #category : 'event streams' }
-MCPHTTPServer >> addEventStream: anEventStream [
-
-	eventStreams add: anEventStream
-]
-
 { #category : 'initialization' }
 MCPHTTPServer >> answerGet: request with: response [
 	"A GET that accepts text/event-stream opens a notification stream. A GET that does not has no business on this endpoint, and is told so rather than left to time out on an empty reply."
@@ -57,37 +82,6 @@ MCPHTTPServer >> answerGet: request with: response [
 	stream := MCPEventStream new.
 	self addEventStream: stream.
 	^ self streamResponse: response for: stream
-]
-
-{ #category : 'event streams' }
-MCPHTTPServer >> broadcastNotification: aMethodName parameters: someParameters [
-	"Offer the notification to every open listener and forget the ones whose client has gone. Each stream decides whether it agreed to carry this one, and tags it with its own subscription."
-
-	self eventStreams copy do: [ :each |
-			each isOpen
-				ifTrue: [ each writeNotification: aMethodName parameters: someParameters ]
-				ifFalse: [ eventStreams remove: each ifAbsent: [ nil ] ] ]
-]
-
-{ #category : 'event streams' }
-MCPHTTPServer >> closeEventStreams [
-
-	self eventStreams copy do: [ :each | each close ].
-	eventStreams removeAll
-]
-
-{ #category : 'event streams' }
-MCPHTTPServer >> eventStreams [
-
-	^ eventStreams ifNil: [ eventStreams := OrderedCollection new ]
-]
-
-{ #category : 'private - validation' }
-MCPHTTPServer >> getAcceptsEventStream: request [
-
-	| accept |
-	accept := request headers at: 'Accept' ifAbsent: [ ^ false ].
-	^ accept asLowercase includesSubstring: 'text/event-stream'
 ]
 
 { #category : 'initialization' }
@@ -125,6 +119,23 @@ MCPHTTPServer >> answerPost: request with: response [
 ]
 
 { #category : 'initialization' }
+MCPHTTPServer >> answerSubscriptionsListen: body with: response [
+	"The response to this request is the stream itself, which stays open and carries the notifications the client opted in to. The acknowledgement goes first, before anything can be broadcast onto it."
+
+	| stream filter |
+	filter := (body at: 'params' ifAbsent: [ Dictionary new ]) at: 'notifications' ifAbsent: [ Dictionary new ].
+	stream := MCPEventStream new
+		          subscriptionId: (body at: 'id' ifAbsent: [ nil ]);
+		          acceptedNotifications: (self acceptedNotificationsFor: filter);
+		          yourself.
+	stream write: (stream
+			 notificationFor: 'notifications/subscriptions/acknowledged'
+			 parameters: { ('notifications' -> (self acknowledgedFilterFor: filter)) } asDictionary).
+	self addEventStream: stream.
+	^ self streamResponse: response for: stream
+]
+
+{ #category : 'initialization' }
 MCPHTTPServer >> answerUnsupportedMethodWith: response [
 
 	^ self answerMethodNotAllowedWith: response
@@ -150,6 +161,30 @@ MCPHTTPServer >> bindingAddress: anAddress [
 	server bindingAddress: anAddress
 ]
 
+{ #category : 'private - modern headers' }
+MCPHTTPServer >> bodyOf: request [
+	"Answer the parsed request body, or nil when it is not JSON at all. A body that cannot be parsed is the message processor's to refuse, not this check's."
+
+	^ [ STONJSON fromString: request contents ] on: Error do: [ :error | error return: nil ]
+]
+
+{ #category : 'event streams' }
+MCPHTTPServer >> broadcastNotification: aMethodName parameters: someParameters [
+	"Offer the notification to every open listener and forget the ones whose client has gone. Each stream decides whether it agreed to carry this one, and tags it with its own subscription."
+
+	self eventStreams copy do: [ :each |
+			each isOpen
+				ifTrue: [ each writeNotification: aMethodName parameters: someParameters ]
+				ifFalse: [ eventStreams remove: each ifAbsent: [ nil ] ] ]
+]
+
+{ #category : 'event streams' }
+MCPHTTPServer >> closeEventStreams [
+
+	self eventStreams copy do: [ :each | each close ].
+	eventStreams removeAll
+]
+
 { #category : 'initialization' }
 MCPHTTPServer >> configureResponse: response for: request [
 
@@ -165,82 +200,6 @@ MCPHTTPServer >> configureResponse: response for: request [
 		put: 'accept, content-type, last-event-id, mcp-protocol-version, mcp-session-id'
 ]
 
-{ #category : 'post response' }
-MCPHTTPServer >> deferAfterCurrentResponse: aBlock [
-
-	server deferAfterCurrentResponse: aBlock
-]
-
-{ #category : 'event streams' }
-MCPHTTPServer >> acceptedNotificationsFor: aFilter [
-	"The notification methods this server agreed to carry, from the types the client asked for. resourceSubscriptions is absent because no resource here can say it changed, and the revision has the acknowledgement omit what the server does not support."
-
-	| accepted |
-	accepted := Set new.
-	(aFilter at: 'toolsListChanged' ifAbsent: [ false ]) = true ifTrue: [ accepted add: 'notifications/tools/list_changed' ].
-	(aFilter at: 'promptsListChanged' ifAbsent: [ false ]) = true ifTrue: [
-		accepted add: 'notifications/prompts/list_changed' ].
-	(aFilter at: 'resourcesListChanged' ifAbsent: [ false ]) = true ifTrue: [
-		accepted add: 'notifications/resources/list_changed' ].
-	^ accepted
-]
-
-{ #category : 'event streams' }
-MCPHTTPServer >> acknowledgedFilterFor: aFilter [
-	"What the server agreed to, which the client compares with what it asked for."
-
-	| acknowledged |
-	acknowledged := Dictionary new.
-	#( 'toolsListChanged' 'promptsListChanged' 'resourcesListChanged' ) do: [ :each |
-		(aFilter at: each ifAbsent: [ false ]) = true ifTrue: [ acknowledged at: each put: true ] ].
-	^ acknowledged
-]
-
-{ #category : 'initialization' }
-MCPHTTPServer >> answerSubscriptionsListen: body with: response [
-	"The response to this request is the stream itself, which stays open and carries the notifications the client opted in to. The acknowledgement goes first, before anything can be broadcast onto it."
-
-	| stream filter |
-	filter := (body at: 'params' ifAbsent: [ Dictionary new ]) at: 'notifications' ifAbsent: [ Dictionary new ].
-	stream := MCPEventStream new
-		          subscriptionId: (body at: 'id' ifAbsent: [ nil ]);
-		          acceptedNotifications: (self acceptedNotificationsFor: filter);
-		          yourself.
-	stream write: (stream
-			 notificationFor: 'notifications/subscriptions/acknowledged'
-			 parameters: { ('notifications' -> (self acknowledgedFilterFor: filter)) } asDictionary).
-	self addEventStream: stream.
-	^ self streamResponse: response for: stream
-]
-
-{ #category : 'testing' }
-MCPHTTPServer >> isSubscriptionsListen: body [
-
-	body isDictionary ifFalse: [ ^ false ].
-	^ (body at: 'method' ifAbsent: [ nil ]) = 'subscriptions/listen'
-]
-
-{ #category : 'initialization' }
-MCPHTTPServer >> streamResponse: response for: aStream [
-	"X-Accel-Buffering keeps a reverse proxy from holding events in a buffer, which would break the point of a stream."
-
-	response headers
-		at: #'Cache-Control' put: 'no-cache';
-		at: #Connection put: 'keep-alive';
-		at: #'X-Accel-Buffering' put: 'no'.
-	^ response
-		  statusLine: ZnStatusLine ok;
-		  entity: (MCPEventStreamEntity on: aStream);
-		  yourself
-]
-
-{ #category : 'private - modern headers' }
-MCPHTTPServer >> bodyOf: request [
-	"Answer the parsed request body, or nil when it is not JSON at all. A body that cannot be parsed is the message processor's to refuse, not this check's."
-
-	^ [ STONJSON fromString: request contents ] on: Error do: [ :error | error return: nil ]
-]
-
 { #category : 'private - modern headers' }
 MCPHTTPServer >> decodedHeaderValue: aValue [
 	"A value that cannot travel as plain ASCII arrives wrapped in a sentinel, and has to be decoded before it can be compared with the body."
@@ -253,6 +212,42 @@ MCPHTTPServer >> decodedHeaderValue: aValue [
 	  (ZnBase64Encoder new decode: (aValue copyFrom: sentinelStart size + 1 to: aValue size - sentinelEnd size)) utf8Decoded ]
 		  on: Error
 		  do: [ :error | error return: aValue ]
+]
+
+{ #category : 'post response' }
+MCPHTTPServer >> deferAfterCurrentResponse: aBlock [
+
+	server deferAfterCurrentResponse: aBlock
+]
+
+{ #category : 'event streams' }
+MCPHTTPServer >> eventStreams [
+
+	^ eventStreams ifNil: [ eventStreams := OrderedCollection new ]
+]
+
+{ #category : 'private - validation' }
+MCPHTTPServer >> getAcceptsEventStream: request [
+
+	| accept |
+	accept := request headers at: 'Accept' ifAbsent: [ ^ false ].
+	^ accept asLowercase includesSubstring: 'text/event-stream'
+]
+
+{ #category : 'private - validation' }
+MCPHTTPServer >> hasSupportedProtocolVersionFor: request [
+
+	| protocolVersion |
+	protocolVersion := request headers at: 'MCP-Protocol-Version' ifAbsent: [ ^ true ].
+	^ MCP supportedProtocolVersions includes: protocolVersion
+]
+
+{ #category : 'private - validation' }
+MCPHTTPServer >> hasValidOriginFor: request [
+
+	| origin |
+	origin := request headers at: 'Origin' ifAbsent: [ ^ true ].
+	^ self isAllowedOrigin: origin
 ]
 
 { #category : 'private - modern headers' }
@@ -274,58 +269,6 @@ MCPHTTPServer >> headerMismatchFor: request [
 MCPHTTPServer >> headerNamed: aName in: request [
 
 	^ request headers at: aName ifAbsent: [ MCPHeaderMismatch signalMissing: aName ]
-]
-
-{ #category : 'private - modern headers' }
-MCPHTTPServer >> nameHeaderSourceIn: body [
-	"The body field Mcp-Name mirrors: the thing the call names. Only the three methods that name something carry it."
-
-	| params |
-	params := body at: 'params' ifAbsent: [ ^ nil ].
-	params isDictionary ifFalse: [ ^ nil ].
-	^ (#( 'tools/call' 'prompts/get' ) includes: (body at: 'method' ifAbsent: [ '' ]))
-		  ifTrue: [ params at: 'name' ifAbsent: [ nil ] ]
-		  ifFalse: [
-			  (body at: 'method' ifAbsent: [ '' ]) = 'resources/read'
-				  ifTrue: [ params at: 'uri' ifAbsent: [ nil ] ]
-				  ifFalse: [ nil ] ]
-]
-
-{ #category : 'private - modern headers' }
-MCPHTTPServer >> validate: aHeaderName in: request matches: aBodyValue [
-
-	| headerValue |
-	headerValue := self decodedHeaderValue: (self headerNamed: aHeaderName in: request).
-	headerValue = aBodyValue ifFalse: [
-		MCPHeaderMismatch signalName: aHeaderName header: headerValue doesNotMatch: aBodyValue ]
-]
-
-{ #category : 'private - modern headers' }
-MCPHTTPServer >> validateModernHeadersFor: request body: body [
-	"Every modern request mirrors its method and version into headers, and the three that name something mirror that too."
-
-	self
-		validate: 'MCP-Protocol-Version'
-		in: request
-		matches: (MCP requestedProtocolVersionIn: (body at: 'params' ifAbsent: [ nil ])).
-	self validate: 'Mcp-Method' in: request matches: (body at: 'method' ifAbsent: [ nil ]).
-	(self nameHeaderSourceIn: body) ifNotNil: [ :named | self validate: 'Mcp-Name' in: request matches: named ]
-]
-
-{ #category : 'private - validation' }
-MCPHTTPServer >> hasSupportedProtocolVersionFor: request [
-
-	| protocolVersion |
-	protocolVersion := request headers at: 'MCP-Protocol-Version' ifAbsent: [ ^ true ].
-	^ MCP supportedProtocolVersions includes: protocolVersion
-]
-
-{ #category : 'private - validation' }
-MCPHTTPServer >> hasValidOriginFor: request [
-
-	| origin |
-	origin := request headers at: 'Origin' ifAbsent: [ ^ true ].
-	^ self isAllowedOrigin: origin
 ]
 
 { #category : 'initialization' }
@@ -367,6 +310,13 @@ MCPHTTPServer >> isRunning [
 	^ server isRunning
 ]
 
+{ #category : 'testing' }
+MCPHTTPServer >> isSubscriptionsListen: body [
+
+	body isDictionary ifFalse: [ ^ false ].
+	^ (body at: 'method' ifAbsent: [ nil ]) = 'subscriptions/listen'
+]
+
 { #category : 'accessing' }
 MCPHTTPServer >> lastListenError [
 
@@ -377,6 +327,21 @@ MCPHTTPServer >> lastListenError [
 MCPHTTPServer >> localUrl [
 
 	^ server localUrl
+]
+
+{ #category : 'private - modern headers' }
+MCPHTTPServer >> nameHeaderSourceIn: body [
+	"The body field Mcp-Name mirrors: the thing the call names. Only the three methods that name something carry it."
+
+	| params |
+	params := body at: 'params' ifAbsent: [ ^ nil ].
+	params isDictionary ifFalse: [ ^ nil ].
+	^ (#( 'tools/call' 'prompts/get' ) includes: (body at: 'method' ifAbsent: [ '' ]))
+		  ifTrue: [ params at: 'name' ifAbsent: [ nil ] ]
+		  ifFalse: [
+			  (body at: 'method' ifAbsent: [ '' ]) = 'resources/read'
+				  ifTrue: [ params at: 'uri' ifAbsent: [ nil ] ]
+				  ifFalse: [ nil ] ]
 ]
 
 { #category : 'private - validation' }
@@ -409,4 +374,39 @@ MCPHTTPServer >> stop [
 
 	self closeEventStreams.
 	^ super stop
+]
+
+{ #category : 'initialization' }
+MCPHTTPServer >> streamResponse: response for: aStream [
+	"X-Accel-Buffering keeps a reverse proxy from holding events in a buffer, which would break the point of a stream."
+
+	response headers
+		at: #'Cache-Control' put: 'no-cache';
+		at: #Connection put: 'keep-alive';
+		at: #'X-Accel-Buffering' put: 'no'.
+	^ response
+		  statusLine: ZnStatusLine ok;
+		  entity: (MCPEventStreamEntity on: aStream);
+		  yourself
+]
+
+{ #category : 'private - modern headers' }
+MCPHTTPServer >> validate: aHeaderName in: request matches: aBodyValue [
+
+	| headerValue |
+	headerValue := self decodedHeaderValue: (self headerNamed: aHeaderName in: request).
+	headerValue = aBodyValue ifFalse: [
+		MCPHeaderMismatch signalName: aHeaderName header: headerValue doesNotMatch: aBodyValue ]
+]
+
+{ #category : 'private - modern headers' }
+MCPHTTPServer >> validateModernHeadersFor: request body: body [
+	"Every modern request mirrors its method and version into headers, and the three that name something mirror that too."
+
+	self
+		validate: 'MCP-Protocol-Version'
+		in: request
+		matches: (MCP requestedProtocolVersionIn: (body at: 'params' ifAbsent: [ nil ])).
+	self validate: 'Mcp-Method' in: request matches: (body at: 'method' ifAbsent: [ nil ]).
+	(self nameHeaderSourceIn: body) ifNotNil: [ :named | self validate: 'Mcp-Name' in: request matches: named ]
 ]

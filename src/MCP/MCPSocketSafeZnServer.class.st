@@ -11,9 +11,9 @@ Class {
 	#instVars : [
 		'lastListenError'
 	],
-	#category : 'MCP-Server',
+	#category : 'MCP-Transport',
 	#package : 'MCP',
-	#tag : 'Server'
+	#tag : 'Transport'
 }
 
 { #category : 'post response' }
@@ -40,6 +40,12 @@ MCPSocketSafeZnServer >> handleSocketErrorDuringListen: aSocketError [
 ]
 
 { #category : 'private' }
+MCPSocketSafeZnServer >> initialSocketRestartDelayMilliseconds [
+
+	^ 250
+]
+
+{ #category : 'private' }
 MCPSocketSafeZnServer >> initializeServerSocket [
 	"Zinc creates the socket inside ZnNetworkingUtils and loses it when binding fails, leaving its three external semaphores registered. A server retrying on a port another process holds fills the external object table within seconds, after which nothing in the image can open a socket. Owning the socket here means a failed attempt destroys it."
 
@@ -57,12 +63,6 @@ MCPSocketSafeZnServer >> initializeServerSocket [
 	"Binding to port 0 asks the OS for a port, so read back the one it gave."
 	self port isZero ifTrue: [ self optionAt: #port put: serverSocket port ].
 	self logServerSocketBound
-]
-
-{ #category : 'private' }
-MCPSocketSafeZnServer >> initialSocketRestartDelayMilliseconds [
-
-	^ 250
 ]
 
 { #category : 'testing' }

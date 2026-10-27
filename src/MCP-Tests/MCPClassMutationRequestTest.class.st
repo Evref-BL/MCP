@@ -4,9 +4,8 @@ Tests parsed class creation and update request objects used by class mutation to
 Class {
 	#name : 'MCPClassMutationRequestTest',
 	#superclass : 'MCPTestCase',
-	#category : 'MCP-Tests-Requests',
-	#package : 'MCP-Tests',
-	#tag : 'Requests'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'tests' }

@@ -4,9 +4,8 @@ Tests structured output produced by MCP tools.
 Class {
 	#name : 'MCPToolStructuredOutputTest',
 	#superclass : 'MCPToolAPITestCase',
-	#category : 'MCP-Tests-Internal',
-	#package : 'MCP-Tests',
-	#tag : 'Internal'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'tests' }

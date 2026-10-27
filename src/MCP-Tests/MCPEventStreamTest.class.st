@@ -6,30 +6,9 @@ Every wait here is bounded, so a stream that never delivers fails the test inste
 Class {
 	#name : 'MCPEventStreamTest',
 	#superclass : 'MCPTestCase',
-	#category : 'MCP-Tests-Internal',
-	#package : 'MCP-Tests',
-	#tag : 'Internal'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
-
-{ #category : 'private' }
-MCPEventStreamTest >> text: anEventStream whileDoing: aBlock untilItIncludes: aSubstring [
-	"Drive the stream's writer onto a binary stream of our own, so frames can be read back without a socket, and wait only as long as a working stream would need."
-
-	| target writer deadline text |
-	target := WriteStream on: (ByteArray new: 0).
-	writer := [ anEventStream writeOn: target ] forkAt: Processor userBackgroundPriority.
-	[
-		aBlock value.
-		deadline := DateAndTime now + 5 seconds.
-		text := ''.
-		[ text includesSubstring: aSubstring ] whileFalse: [
-				DateAndTime now > deadline ifTrue: [ self fail: 'timed out waiting for ' , aSubstring printString ].
-				(Delay forMilliseconds: 10) wait.
-				text := target contents utf8Decoded ] ] ensure: [
-			anEventStream close.
-			writer terminate ].
-	^ text
-]
 
 { #category : 'tests' }
 MCPEventStreamTest >> testAGetAcceptingEventStreamOpensAStream [
@@ -125,4 +104,24 @@ MCPEventStreamTest >> testEachEventIsOneSseFrameEndedByABlankLine [
 			        stream write: '{"b":2}' ]
 		        untilItIncludes: 'data: {"b":2}'.
 	self assert: (text includesSubstring: 'data: {"a":1}' , String lf , String lf)
+]
+
+{ #category : 'private' }
+MCPEventStreamTest >> text: anEventStream whileDoing: aBlock untilItIncludes: aSubstring [
+	"Drive the stream's writer onto a binary stream of our own, so frames can be read back without a socket, and wait only as long as a working stream would need."
+
+	| target writer deadline text |
+	target := WriteStream on: (ByteArray new: 0).
+	writer := [ anEventStream writeOn: target ] forkAt: Processor userBackgroundPriority.
+	[
+		aBlock value.
+		deadline := DateAndTime now + 5 seconds.
+		text := ''.
+		[ text includesSubstring: aSubstring ] whileFalse: [
+				DateAndTime now > deadline ifTrue: [ self fail: 'timed out waiting for ' , aSubstring printString ].
+				(Delay forMilliseconds: 10) wait.
+				text := target contents utf8Decoded ] ] ensure: [
+			anEventStream close.
+			writer terminate ].
+	^ text
 ]

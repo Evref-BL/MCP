@@ -4,9 +4,8 @@ Tests the prompt half of the protocol: listing, getting, argument validation, an
 Class {
 	#name : 'MCPPromptTest',
 	#superclass : 'MCPTestCase',
-	#category : 'MCP-Tests-Internal',
-	#package : 'MCP-Tests',
-	#tag : 'Internal'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'private' }

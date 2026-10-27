@@ -4,9 +4,8 @@ Tests the inspector tab that shows what a server recorded about itself.
 Class {
 	#name : 'MCPObservabilityPresenterTest',
 	#superclass : 'MCPTestCase',
-	#category : 'MCP-UI-Tests-Observability',
-	#package : 'MCP-UI-Tests',
-	#tag : 'Observability'
+	#category : 'MCP-UI-Tests',
+	#package : 'MCP-UI-Tests'
 }
 
 { #category : 'tests' }

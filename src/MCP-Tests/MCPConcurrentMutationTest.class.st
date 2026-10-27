@@ -6,9 +6,8 @@ The server gives every connection its own process, so two method_compile calls r
 Class {
 	#name : 'MCPConcurrentMutationTest',
 	#superclass : 'MCPTestCase',
-	#category : 'MCP-Tests-Server',
-	#package : 'MCP-Tests',
-	#tag : 'Server'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'private' }

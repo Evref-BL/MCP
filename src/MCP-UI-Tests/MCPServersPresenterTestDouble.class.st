@@ -4,9 +4,8 @@ A servers presenter whose new servers export no observability, so a test can cre
 Class {
 	#name : 'MCPServersPresenterTestDouble',
 	#superclass : 'MCPServersPresenter',
-	#category : 'MCP-UI-Tests-Server',
-	#package : 'MCP-UI-Tests',
-	#tag : 'Server'
+	#category : 'MCP-UI-Tests',
+	#package : 'MCP-UI-Tests'
 }
 
 { #category : 'actions' }

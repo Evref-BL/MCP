@@ -4,9 +4,8 @@ Tests method metadata, source, equivalent, and reference search tools.
 Class {
 	#name : 'MCPToolMethodSearchTest',
 	#superclass : 'MCPToolTestCase',
-	#category : 'MCP-Tests-Tools',
-	#package : 'MCP-Tests',
-	#tag : 'Tools'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'private' }
@@ -722,6 +721,31 @@ MCPToolMethodSearchTest >> testToolDoesNotRequireArgumentsInSchema [
 ]
 
 { #category : 'tests' }
+MCPToolMethodSearchTest >> testTraitMethodCopiesAreAnsweredOnceAsTheTraitDefiningThem [
+
+	| entries entry |
+	entries := self traitFixtureImplementors.
+	entry := self entryForReference: 'TMCPToolMethodSearchFixture>>mcpTraitFixtureValue' in: entries.
+	self assert: (entry at: #installedIn) asArray equals: {
+			MCPToolMethodSearchTraitOtherUser name.
+			MCPToolMethodSearchTraitUser name }.
+	self deny: (entries anySatisfy: [ :each | (each at: #class) = MCPToolMethodSearchTraitUser name ])
+]
+
+{ #category : 'tests' }
+MCPToolMethodSearchTest >> testTraitMethodCopiesAreAnsweredOncePerSide [
+
+	| entries entry |
+	entries := self traitFixtureImplementors.
+	self assert: entries size equals: 3.
+	entry := self entryForReference: 'TMCPToolMethodSearchFixture class>>mcpTraitFixtureValue' in: entries.
+	self assert: (entry at: #installedIn) asArray equals: {
+			MCPToolMethodSearchTraitOtherUser name.
+			MCPToolMethodSearchTraitOverrider name.
+			MCPToolMethodSearchTraitUser name }
+]
+
+{ #category : 'tests' }
 MCPToolMethodSearchTest >> testVariableReferenceReturnsClassSideVariableReferences [
 
 	| data result |
@@ -760,31 +784,6 @@ MCPToolMethodSearchTest >> testVariableReferenceReturnsStructuredErrorWhenVariab
 	error := self errorFrom: result.
 	self assert: (result at: #isError).
 	self assert: ((error at: #message) includesSubstring: 'There is no class, variable or selector named missingTrackedSlot')
-]
-
-{ #category : 'tests' }
-MCPToolMethodSearchTest >> testTraitMethodCopiesAreAnsweredOnceAsTheTraitDefiningThem [
-
-	| entries entry |
-	entries := self traitFixtureImplementors.
-	entry := self entryForReference: 'TMCPToolMethodSearchFixture>>mcpTraitFixtureValue' in: entries.
-	self assert: (entry at: #installedIn) asArray equals: {
-			MCPToolMethodSearchTraitOtherUser name.
-			MCPToolMethodSearchTraitUser name }.
-	self deny: (entries anySatisfy: [ :each | (each at: #class) = MCPToolMethodSearchTraitUser name ])
-]
-
-{ #category : 'tests' }
-MCPToolMethodSearchTest >> testTraitMethodCopiesAreAnsweredOncePerSide [
-
-	| entries entry |
-	entries := self traitFixtureImplementors.
-	self assert: entries size equals: 3.
-	entry := self entryForReference: 'TMCPToolMethodSearchFixture class>>mcpTraitFixtureValue' in: entries.
-	self assert: (entry at: #installedIn) asArray equals: {
-			MCPToolMethodSearchTraitOtherUser name.
-			MCPToolMethodSearchTraitOverrider name.
-			MCPToolMethodSearchTraitUser name }
 ]
 
 { #category : 'private - calling' }

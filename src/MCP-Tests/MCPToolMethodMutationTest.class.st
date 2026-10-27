@@ -4,9 +4,8 @@ Tests method creation and update tools, including critique handling.
 Class {
 	#name : 'MCPToolMethodMutationTest',
 	#superclass : 'MCPToolTestCase',
-	#category : 'MCP-Tests-Tools',
-	#package : 'MCP-Tests',
-	#tag : 'Tools'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'private - calling' }

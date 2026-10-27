@@ -6,9 +6,9 @@ Every registered resource is listed: resources have no advertising split, becaus
 Class {
 	#name : 'MCPResourceRegistry',
 	#superclass : 'MCPRegistry',
-	#category : 'MCP-Resources',
+	#category : 'MCP-Registries',
 	#package : 'MCP',
-	#tag : 'Resources'
+	#tag : 'Registries'
 }
 
 { #category : 'resources' }

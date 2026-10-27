@@ -4,9 +4,8 @@ Tests for repository request/spec and DTO classes used by repository management 
 Class {
 	#name : 'MCPRepositorySpecTest',
 	#superclass : 'MCPTestCase',
-	#category : 'MCP-Tests-Requests',
-	#package : 'MCP-Tests',
-	#tag : 'Requests'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'private' }

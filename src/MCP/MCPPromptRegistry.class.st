@@ -6,9 +6,9 @@ Every registered prompt is listed: prompts have no advertising split, because a 
 Class {
 	#name : 'MCPPromptRegistry',
 	#superclass : 'MCPRegistry',
-	#category : 'MCP-Prompts',
+	#category : 'MCP-Registries',
 	#package : 'MCP',
-	#tag : 'Prompts'
+	#tag : 'Registries'
 }
 
 { #category : 'prompts' }

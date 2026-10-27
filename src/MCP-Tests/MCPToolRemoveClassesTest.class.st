@@ -4,9 +4,8 @@ Tests the class_remove tool.
 Class {
 	#name : 'MCPToolRemoveClassesTest',
 	#superclass : 'MCPToolTestCase',
-	#category : 'MCP-Tests-Tools',
-	#package : 'MCP-Tests',
-	#tag : 'Tools'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'private' }

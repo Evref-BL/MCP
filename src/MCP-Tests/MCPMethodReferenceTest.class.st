@@ -4,9 +4,8 @@ Tests how permissively a method reference is read.
 Class {
 	#name : 'MCPMethodReferenceTest',
 	#superclass : 'TestCase',
-	#category : 'MCP-Tests-Utilities',
-	#package : 'MCP-Tests',
-	#tag : 'Utilities'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'tests' }

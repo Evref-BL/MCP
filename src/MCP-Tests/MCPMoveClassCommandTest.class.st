@@ -4,9 +4,8 @@ Tests command-level class movement between packages and tags.
 Class {
 	#name : 'MCPMoveClassCommandTest',
 	#superclass : 'MCPCommandTestCase',
-	#category : 'MCP-Tests-Internal',
-	#package : 'MCP-Tests',
-	#tag : 'Internal'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'private' }

@@ -4,9 +4,8 @@ SUnit tests for MCPToolCoverageTarget used to exercise MCP coverage reporting.
 Class {
 	#name : 'MCPToolCoverageTargetTest',
 	#superclass : 'TestCase',
-	#category : 'MCP-Tests-Internal',
-	#package : 'MCP-Tests',
-	#tag : 'Internal'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'tests' }

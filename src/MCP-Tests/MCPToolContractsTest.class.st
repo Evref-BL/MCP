@@ -4,9 +4,8 @@ Tests shared MCP tool contracts and catalog metadata.
 Class {
 	#name : 'MCPToolContractsTest',
 	#superclass : 'MCPToolAPITestCase',
-	#category : 'MCP-Tests-Tools',
-	#package : 'MCP-Tests',
-	#tag : 'Tools'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'private' }

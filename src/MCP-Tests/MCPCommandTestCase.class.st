@@ -4,9 +4,8 @@ Common base class for command tests that create and clean up temporary source ar
 Class {
 	#name : 'MCPCommandTestCase',
 	#superclass : 'MCPTestCase',
-	#category : 'MCP-Tests-Internal',
-	#package : 'MCP-Tests',
-	#tag : 'Internal'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'testing' }

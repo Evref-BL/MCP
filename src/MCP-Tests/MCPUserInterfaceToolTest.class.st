@@ -4,9 +4,8 @@ Tests the tools that look at the running image: the screenshot capture and the s
 Class {
 	#name : 'MCPUserInterfaceToolTest',
 	#superclass : 'MCPTestCase',
-	#category : 'MCP-Tests-Tools',
-	#package : 'MCP-Tests',
-	#tag : 'Tools'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'private' }

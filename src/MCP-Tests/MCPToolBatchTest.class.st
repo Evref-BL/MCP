@@ -4,28 +4,9 @@ Tests that a tool naming several targets in one call runs every one of them.
 Class {
 	#name : 'MCPToolBatchTest',
 	#superclass : 'MCPToolTestCase',
-	#category : 'MCP-Tests-Tools',
-	#package : 'MCP-Tests',
-	#tag : 'Tools'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
-
-{ #category : 'tests' }
-MCPToolBatchTest >> testMethodsAreReadAcrossClassesAndSides [
-
-	| entries result |
-	result := self callToolWith: { (#selector -> #( 'MCPToolBatchTestTarget>>readFirst' 'MCPTool class#toolName' 'MCPTool>>' )) } asDictionary.
-	entries := (self dataFrom: result) at: #results.
-	self assert: (self summaryFrom: result) equals: 'Got 2 of 3 methods. 1 failed.'.
-	self assert: ((entries first at: #summary) includesSubstring: 'MCPToolBatchTestTarget>>readFirst').
-	self assert: ((entries second at: #summary) includesSubstring: 'MCPTool class>>toolName').
-	self assert: (((entries third at: #error) at: #errorCode)) equals: 'MethodReferenceUnreadable'
-]
-
-{ #category : 'accessing' }
-MCPToolBatchTest >> toolName [
-
-	^ 'method_get'
-]
 
 { #category : 'tests' }
 MCPToolBatchTest >> testBatchFailsOnlyWhenEveryTargetFails [
@@ -96,6 +77,18 @@ MCPToolBatchTest >> testClassGetNamesSeveralClasses [
 ]
 
 { #category : 'tests' }
+MCPToolBatchTest >> testMethodsAreReadAcrossClassesAndSides [
+
+	| entries result |
+	result := self callToolWith: { (#selector -> #( 'MCPToolBatchTestTarget>>readFirst' 'MCPTool class#toolName' 'MCPTool>>' )) } asDictionary.
+	entries := (self dataFrom: result) at: #results.
+	self assert: (self summaryFrom: result) equals: 'Got 2 of 3 methods. 1 failed.'.
+	self assert: ((entries first at: #summary) includesSubstring: 'MCPToolBatchTestTarget>>readFirst').
+	self assert: ((entries second at: #summary) includesSubstring: 'MCPTool class>>toolName').
+	self assert: (((entries third at: #error) at: #errorCode)) equals: 'MethodReferenceUnreadable'
+]
+
+{ #category : 'tests' }
 MCPToolBatchTest >> testOneTargetInAListReadsAsASingleCall [
 
 	| data result |
@@ -108,3 +101,8 @@ MCPToolBatchTest >> testOneTargetInAListReadsAsASingleCall [
 	self assert: ((data at: #source) includesSubstring: 'readFirst')
 ]
 
+{ #category : 'accessing' }
+MCPToolBatchTest >> toolName [
+
+	^ 'method_get'
+]

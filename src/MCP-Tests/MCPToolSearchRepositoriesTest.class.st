@@ -4,9 +4,8 @@ Tests for the read-only repository_search tool.
 Class {
 	#name : 'MCPToolSearchRepositoriesTest',
 	#superclass : 'MCPToolTestCase',
-	#category : 'MCP-Tests-Tools',
-	#package : 'MCP-Tests',
-	#tag : 'Tools'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'private' }

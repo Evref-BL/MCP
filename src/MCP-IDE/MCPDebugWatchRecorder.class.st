@@ -13,9 +13,9 @@ Class {
 	#classVars : [
 		'Current'
 	],
-	#category : 'MCP-IDE-Debugging',
+	#category : 'MCP-IDE-Utilities',
 	#package : 'MCP-IDE',
-	#tag : 'Debugging'
+	#tag : 'Utilities'
 }
 
 { #category : 'accessing' }

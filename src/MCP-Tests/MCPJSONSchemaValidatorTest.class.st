@@ -4,9 +4,8 @@ Tests the JSON Schema validator used to check MCP tool input payloads.
 Class {
 	#name : 'MCPJSONSchemaValidatorTest',
 	#superclass : 'MCPTestCase',
-	#category : 'MCP-Tests-Internal',
-	#package : 'MCP-Tests',
-	#tag : 'Internal'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'private - fixtures' }

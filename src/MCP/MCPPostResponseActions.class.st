@@ -6,7 +6,7 @@ MCPSocketSafeZnServer binds an OrderedCollection while Zinc executes one request
 Class {
 	#name : 'MCPPostResponseActions',
 	#superclass : 'DynamicVariable',
-	#category : 'MCP-Server',
+	#category : 'MCP-Transport',
 	#package : 'MCP',
-	#tag : 'Server'
+	#tag : 'Transport'
 }

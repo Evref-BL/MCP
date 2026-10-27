@@ -4,9 +4,8 @@ Tests the resource half of the protocol: listing, reading, templates, and the ca
 Class {
 	#name : 'MCPResourceTest',
 	#superclass : 'MCPTestCase',
-	#category : 'MCP-Tests-Internal',
-	#package : 'MCP-Tests',
-	#tag : 'Internal'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'tests' }
@@ -74,15 +73,12 @@ MCPResourceTest >> testResourcesListEntriesCarryTheRequiredFields [
 ]
 
 { #category : 'tests' }
-MCPResourceTest >> testTemplatesListSeparatelyFromResources [
+MCPResourceTest >> testTemplateRefusesAUriOfAnotherShape [
 
 	| mcp |
 	mcp := self mcpWithoutObservabilityExport.
 	mcp addResource: MCPResourceTemplateTestFixture.
-	self deny:
-		((mcp rpcResourcesList at: #resources) anySatisfy: [ :each | (each at: #uri) = MCPResourceTemplateTestFixture resourceUriTemplate ]).
-	self assert: ((mcp rpcResourcesTemplateList at: #resourceTemplates) anySatisfy: [ :each |
-			 (each at: #uriTemplate) = MCPResourceTemplateTestFixture resourceUriTemplate ])
+	self should: [ mcp rpcResourceRead: 'pharo://farewell/world' ] raise: MCPResourceNotFound
 ]
 
 { #category : 'tests' }
@@ -96,10 +92,13 @@ MCPResourceTest >> testTemplateResolvesOneOfItsUris [
 ]
 
 { #category : 'tests' }
-MCPResourceTest >> testTemplateRefusesAUriOfAnotherShape [
+MCPResourceTest >> testTemplatesListSeparatelyFromResources [
 
 	| mcp |
 	mcp := self mcpWithoutObservabilityExport.
 	mcp addResource: MCPResourceTemplateTestFixture.
-	self should: [ mcp rpcResourceRead: 'pharo://farewell/world' ] raise: MCPResourceNotFound
+	self deny:
+		((mcp rpcResourcesList at: #resources) anySatisfy: [ :each | (each at: #uri) = MCPResourceTemplateTestFixture resourceUriTemplate ]).
+	self assert: ((mcp rpcResourcesTemplateList at: #resourceTemplates) anySatisfy: [ :each |
+			 (each at: #uriTemplate) = MCPResourceTemplateTestFixture resourceUriTemplate ])
 ]

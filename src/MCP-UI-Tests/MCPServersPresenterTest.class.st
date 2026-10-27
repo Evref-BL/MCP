@@ -4,9 +4,8 @@ Tests the presenter that lists the MCP servers an image holds.
 Class {
 	#name : 'MCPServersPresenterTest',
 	#superclass : 'MCPTestCase',
-	#category : 'MCP-UI-Tests-Server',
-	#package : 'MCP-UI-Tests',
-	#tag : 'Server'
+	#category : 'MCP-UI-Tests',
+	#package : 'MCP-UI-Tests'
 }
 
 { #category : 'private' }

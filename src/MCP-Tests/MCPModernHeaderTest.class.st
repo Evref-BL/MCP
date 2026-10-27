@@ -6,10 +6,15 @@ The 2026-07-28 revision mirrors the method, version and named thing into headers
 Class {
 	#name : 'MCPModernHeaderTest',
 	#superclass : 'MCPTestCase',
-	#category : 'MCP-Tests-Internal',
-	#package : 'MCP-Tests',
-	#tag : 'Internal'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
+
+{ #category : 'private' }
+MCPModernHeaderTest >> mismatchFor: aBody headers: someAssociations [
+
+	^ MCPHTTPServer new headerMismatchFor: (self requestFor: aBody headers: someAssociations)
+]
 
 { #category : 'private' }
 MCPModernHeaderTest >> modernBodyFor: aMethod params: aParamsFragment [
@@ -26,12 +31,6 @@ MCPModernHeaderTest >> requestFor: aBody headers: someAssociations [
 	request entity: (ZnEntity json: aBody).
 	someAssociations do: [ :each | request headers at: each key put: each value ].
 	^ request
-]
-
-{ #category : 'private' }
-MCPModernHeaderTest >> mismatchFor: aBody headers: someAssociations [
-
-	^ MCPHTTPServer new headerMismatchFor: (self requestFor: aBody headers: someAssociations)
 ]
 
 { #category : 'tests' }
@@ -53,16 +52,6 @@ MCPModernHeaderTest >> testAMatchingSetOfHeadersPasses [
 ]
 
 { #category : 'tests' }
-MCPModernHeaderTest >> testAMissingMethodHeaderIsRefused [
-
-	| mismatch |
-	mismatch := self mismatchFor: (self modernBodyFor: 'tools/list' params: '') headers:
-		            { ('MCP-Protocol-Version' -> MCP latestProtocolVersion) }.
-	self assert: ((mismatch at: 'error') at: 'code') equals: -32020.
-	self assert: (((mismatch at: 'error') at: 'message') includesSubstring: 'Mcp-Method')
-]
-
-{ #category : 'tests' }
 MCPModernHeaderTest >> testAMethodHeaderDisagreeingWithTheBodyIsRefused [
 	"A proxy routing on the header while the server runs the body is the hole this closes."
 
@@ -75,30 +64,6 @@ MCPModernHeaderTest >> testAMethodHeaderDisagreeingWithTheBodyIsRefused [
 ]
 
 { #category : 'tests' }
-MCPModernHeaderTest >> testAVersionHeaderDisagreeingWithTheBodyIsRefused [
-
-	| mismatch |
-	mismatch := self mismatchFor: (self modernBodyFor: 'tools/list' params: '') headers: {
-			            ('MCP-Protocol-Version' -> '2025-03-26').
-			            ('Mcp-Method' -> 'tools/list') }.
-	self assert: ((mismatch at: 'error') at: 'code') equals: -32020
-]
-
-{ #category : 'tests' }
-MCPModernHeaderTest >> testTheNameHeaderMirrorsTheUriForAResourceRead [
-
-	| body |
-	body := self modernBodyFor: 'resources/read' params: '"uri":"pharo://image/metadata",'.
-	self assert: (self mismatchFor: body headers: {
-				 ('MCP-Protocol-Version' -> MCP latestProtocolVersion).
-				 ('Mcp-Method' -> 'resources/read').
-				 ('Mcp-Name' -> 'pharo://image/metadata') }) isNil.
-	self assert: ((self mismatchFor: body headers: {
-				  ('MCP-Protocol-Version' -> MCP latestProtocolVersion).
-				  ('Mcp-Method' -> 'resources/read') }) at: 'error') notNil
-]
-
-{ #category : 'tests' }
 MCPModernHeaderTest >> testAMethodThatNamesNothingNeedsNoNameHeader [
 
 	| body |
@@ -106,6 +71,16 @@ MCPModernHeaderTest >> testAMethodThatNamesNothingNeedsNoNameHeader [
 	self assert: (self mismatchFor: body headers: {
 				 ('MCP-Protocol-Version' -> MCP latestProtocolVersion).
 				 ('Mcp-Method' -> 'tools/list') }) isNil
+]
+
+{ #category : 'tests' }
+MCPModernHeaderTest >> testAMissingMethodHeaderIsRefused [
+
+	| mismatch |
+	mismatch := self mismatchFor: (self modernBodyFor: 'tools/list' params: '') headers:
+		            { ('MCP-Protocol-Version' -> MCP latestProtocolVersion) }.
+	self assert: ((mismatch at: 'error') at: 'code') equals: -32020.
+	self assert: (((mismatch at: 'error') at: 'message') includesSubstring: 'Mcp-Method')
 ]
 
 { #category : 'tests' }
@@ -121,6 +96,16 @@ MCPModernHeaderTest >> testANameTooAwkwardForAHeaderTravelsEncoded [
 ]
 
 { #category : 'tests' }
+MCPModernHeaderTest >> testAVersionHeaderDisagreeingWithTheBodyIsRefused [
+
+	| mismatch |
+	mismatch := self mismatchFor: (self modernBodyFor: 'tools/list' params: '') headers: {
+			            ('MCP-Protocol-Version' -> '2025-03-26').
+			            ('Mcp-Method' -> 'tools/list') }.
+	self assert: ((mismatch at: 'error') at: 'code') equals: -32020
+]
+
+{ #category : 'tests' }
 MCPModernHeaderTest >> testAnEncodedNameThatDecodesToSomethingElseIsRefused [
 
 	| mismatch |
@@ -129,4 +114,18 @@ MCPModernHeaderTest >> testAnEncodedNameThatDecodesToSomethingElseIsRefused [
 			            ('Mcp-Method' -> 'prompts/get').
 			            ('Mcp-Name' -> '=?base64?SGVsbG8sIOS4lueVjA==?=') }.
 	self assert: ((mismatch at: 'error') at: 'code') equals: -32020
+]
+
+{ #category : 'tests' }
+MCPModernHeaderTest >> testTheNameHeaderMirrorsTheUriForAResourceRead [
+
+	| body |
+	body := self modernBodyFor: 'resources/read' params: '"uri":"pharo://image/metadata",'.
+	self assert: (self mismatchFor: body headers: {
+				 ('MCP-Protocol-Version' -> MCP latestProtocolVersion).
+				 ('Mcp-Method' -> 'resources/read').
+				 ('Mcp-Name' -> 'pharo://image/metadata') }) isNil.
+	self assert: ((self mismatchFor: body headers: {
+				  ('MCP-Protocol-Version' -> MCP latestProtocolVersion).
+				  ('Mcp-Method' -> 'resources/read') }) at: 'error') notNil
 ]

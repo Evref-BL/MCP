@@ -4,9 +4,8 @@ Tests the class update command orchestrator used behind class mutation tools.
 Class {
 	#name : 'MCPUpdateClassCommandTest',
 	#superclass : 'MCPCommandTestCase',
-	#category : 'MCP-Tests-Commands',
-	#package : 'MCP-Tests',
-	#tag : 'Commands'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'private - calling' }

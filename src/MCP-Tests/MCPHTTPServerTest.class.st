@@ -4,9 +4,8 @@ Tests MCP HTTP response behavior, transport validation, and concurrent request h
 Class {
 	#name : 'MCPHTTPServerTest',
 	#superclass : 'TestCase',
-	#category : 'MCP-Tests-Server',
-	#package : 'MCP-Tests',
-	#tag : 'Server'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'private' }

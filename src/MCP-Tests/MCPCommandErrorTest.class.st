@@ -4,9 +4,8 @@ Tests structured command error payloads and JSON-RPC conversion.
 Class {
 	#name : 'MCPCommandErrorTest',
 	#superclass : 'MCPTestCase',
-	#category : 'MCP-Tests-Internal',
-	#package : 'MCP-Tests',
-	#tag : 'Internal'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'private' }

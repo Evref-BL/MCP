@@ -4,9 +4,8 @@ Tests debug_watch: what it records, what it answers when the watched code fails,
 Class {
 	#name : 'MCPToolDebugWatchTest',
 	#superclass : 'MCPToolAPITestCase',
-	#category : 'MCP-Tests-Tools',
-	#package : 'MCP-Tests',
-	#tag : 'Tools'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'private' }
@@ -21,12 +20,6 @@ MCPToolDebugWatchTest >> seriesFor: aMethodName watching: aVariableName in: data
 	^ (data at: #watched)
 		  detect: [ :each | (each at: #method) = aMethodName and: [ (each at: #watching) = aVariableName ] ]
 		  ifNone: [ nil ]
-]
-
-{ #category : 'private' }
-MCPToolDebugWatchTest >> watchWith: someArguments [
-
-	^ self callToolNamed: 'debug_watch' withArguments: someArguments
 ]
 
 { #category : 'tests' }
@@ -115,4 +108,10 @@ MCPToolDebugWatchTest >> testVariableNoMethodAssignsIsAnError [
 			          (#run -> '1') } asDictionary.
 	self assert: (self resultIndicatesError: result).
 	self assert: ((self summaryFrom: result) includesSubstring: 'None of the named variables')
+]
+
+{ #category : 'private' }
+MCPToolDebugWatchTest >> watchWith: someArguments [
+
+	^ self callToolNamed: 'debug_watch' withArguments: someArguments
 ]

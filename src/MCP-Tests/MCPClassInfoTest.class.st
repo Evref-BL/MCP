@@ -4,9 +4,8 @@ Tests class metadata snapshots returned by MCPClassInfo.
 Class {
 	#name : 'MCPClassInfoTest',
 	#superclass : 'MCPTestCase',
-	#category : 'MCP-Tests-Internal',
-	#package : 'MCP-Tests',
-	#tag : 'Internal'
+	#category : 'MCP-Tests',
+	#package : 'MCP-Tests'
 }
 
 { #category : 'private' }
