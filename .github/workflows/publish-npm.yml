@@ -34,7 +34,9 @@ jobs:
           app-id: ${{ secrets.DEVNEXUS_AUTOMATION_APP_ID }}
           private-key: ${{ secrets.DEVNEXUS_AUTOMATION_PRIVATE_KEY }}
           owner: Evref-BL
-          repositories: PLexus
+          repositories: |
+            PLexus
+            pharo-image-fs
 
       - name: Notify released consumers
         env:
@@ -43,5 +45,7 @@ jobs:
         run: |
           version="${RELEASE_TAG#v}"
           [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
-          jq -nc --arg version "$version" '{event_type: "component-release", client_payload: {component: "mcp", version: $version}}' |
-            gh api --method POST repos/Evref-BL/PLexus/dispatches --input -
+          payload="$(jq -nc --arg version "$version" '{event_type: "component-release", client_payload: {component: "mcp", version: $version}}')"
+          for consumer in PLexus pharo-image-fs; do
+            printf '%s' "$payload" | gh api --method POST "repos/Evref-BL/${consumer}/dispatches" --input -
+          done
