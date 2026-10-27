@@ -6,8 +6,8 @@ Dictionary-style results implement #asDictionary.
 Class {
 	#name : 'MCPResult',
 	#superclass : 'Object',
-	#category : 'MCP-IDE-Results',
-	#package : 'MCP-IDE',
+	#category : 'MCP-Results',
+	#package : 'MCP',
 	#tag : 'Results'
 }
 
