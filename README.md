@@ -47,6 +47,8 @@ which is about seventy classes rather than three hundred. Loading its package is
 all its tools need: a tool that names itself is in the catalog, the way the
 `pifs_` tools are in
 [pharo-image-fs](https://github.com/Evref-BL/pharo-image-fs).
+[Building on MCP](templates/pharo-references/building-on-mcp.md) walks through
+a tool, a resource and a prompt of your own.
 
 Start the Streamable HTTP server:
 
@@ -67,6 +69,7 @@ and first calls.
 - [Documentation index](docs/README.md)
 - [Getting started](templates/pharo-references/getting-started.md)
 - [Using MCP from an agent](templates/pharo-references/using-pharo-mcp.md)
+- [Building on MCP](templates/pharo-references/building-on-mcp.md)
 - [Tool reference](templates/pharo-references/tool-reference.md)
 - [Safety and ecosystem integration](templates/pharo-references/safety-and-ecosystem.md)
 - [Troubleshooting](templates/pharo-references/troubleshooting.md)

@@ -22,6 +22,7 @@ const hosts = {
 };
 
 const userReferences = [
+  "building-on-mcp.md",
   "getting-started.md",
   "safety-and-ecosystem.md",
   "source-vs-live-image.md",

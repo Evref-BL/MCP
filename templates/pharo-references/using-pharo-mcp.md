@@ -77,101 +77,10 @@ Run `npx @evref-bl/pharo-mcp install --host <host>` in the target project to
 install context-routed skills for project loading, version compatibility,
 image-to-Git handoff, CI reproduction, and standalone MCP recovery.
 
-## Custom Tools
+## Serving Your Own
 
-Define custom tools as subclasses of `MCPTool` in your own package. At minimum,
-provide the class-side tool name and the instance-side metadata, schema, and
-execution protocol expected by `MCPTool`:
-
-```smalltalk
-MCPTool << #MyProjectMCPTool
-	slots: {};
-	package: 'MyProject-MCP'
-```
-
-```smalltalk
-MyProjectMCPTool class >> toolName
-
-	^ 'my_project_tool'
-
-MyProjectMCPTool >> description
-
-	^ 'Do one project-specific operation.'
-
-MyProjectMCPTool >> buildInputSchema
-
-	^ MCPStructureInputSchema new
-		type: 'object';
-		properties: #(  );
-		required: #(  );
-		additionalProperties: false;
-		yourself
-
-MyProjectMCPTool >> executeWithRequest: request
-
-	^ self
-		successResultText: 'Operation completed.'
-		data: Dictionary new
-```
-
-A tool is served because its package is loaded: name your tool and every
-server in the image has it, wherever the class lives. A tool that must stay
-out of every catalog says so itself:
-
-```smalltalk
-MyProjectMCPTool class >> shouldAutoRegister
-
-	^ false
-```
-
-It is the tool's own name that serves it, not an inherited one, so
-specialising an existing tool does not claim the name it already holds.
-
-Tools from other packages are discoverable rather than advertised. Agents
-find them with `tool_search`, inspect them with `tool_get`, and call them by
-name.
-
-`MCPToolRegistry` is the server's source of truth for registered tools. In
-normal use, configure it through the `MCP` instance messages below. The
-`tools/list` response contains only the static tool surface cached by the MCP
-instance; discoverable tools remain callable, and are found with `tool_search`
-and `tool_get`.
-
-Two words govern the surface. A **registered** tool is in the catalog, found
-with `tool_search` and `tool_get`, and callable. An **advertised** tool is also
-in `tools/list`. Advertising decides what a client is shown, not what it may
-call.
-
-For a server with only your own tools:
-
-```smalltalk
-mcp := MCP onlyTools: { MyProjectMCPTool }.
-mcp start.
-```
-
-`onlyTools:` replaces the catalog with exactly those tools and advertises all of
-them. Advertise a subset when some registered tools should stay discoverable
-through the catalog tools instead:
-
-```smalltalk
-mcp := MCP onlyTools: { MyProjectMCPTool. MyOtherMCPTool }.
-mcp advertiseTools: { MyProjectMCPTool }.
-```
-
-To add to the tools a server already has, rather than replacing them:
-
-```smalltalk
-mcp := MCP new.
-mcp addTool: MyProjectMCPTool.
-mcp start.
-```
-
-`addTool:` takes a class or a ready instance, and `addTools:` takes several.
-`removeTool:` takes one back out by name. `advertiseTools:` accepts classes,
-instances or names, and registers anything not in the catalog yet, so it can be
-called before or after adding. `advertiseAllTools` advertises everything, and
-`advertiseToolDefaults` returns to each tool's own default exposure.
-
-Use `defaultExposure` to decide whether a registered tool is directly
-advertised in `tools/list` (`'static'`) or kept discoverable through the catalog
-tools (`'discoverable'`, the default).
+An image can serve tools, resources and prompts a project defines itself,
+from that project's own package and without changing MCP. Read
+[Building on MCP](building-on-mcp.md) for the server-only load, what a tool,
+a resource and a prompt each need, and how the surface a client sees is
+shaped.
