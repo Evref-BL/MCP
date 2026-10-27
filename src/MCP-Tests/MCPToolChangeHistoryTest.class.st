@@ -282,7 +282,7 @@ MCPToolChangeHistoryTest >> testListEntriesSupportsHistoryFileName [
 			data := self dataFrom: result.
 			entries := data at: #entries.
 			self assert: (data at: #historyFile) equals: (file at: #file).
-			self assert: entries size <= MCPToolListChangeHistoryEntries new defaultEntryLimit ]
+			self assert: entries size <= MCPToolListChangeHistoryEntries new defaultPageLimit ]
 ]
 
 { #category : 'tests' }

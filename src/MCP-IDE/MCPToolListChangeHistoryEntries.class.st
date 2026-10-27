@@ -44,8 +44,8 @@ MCPToolListChangeHistoryEntries >> commandForRequest: changeHistoryRequest [
 	^ MCPListChangeHistoryEntriesCommand tool: self request: changeHistoryRequest
 ]
 
-{ #category : 'defaults' }
-MCPToolListChangeHistoryEntries >> defaultEntryLimit [
+{ #category : 'metadata' }
+MCPToolListChangeHistoryEntries >> defaultPageLimit [
 
 	^ 25
 ]

@@ -19,7 +19,7 @@ MCPChangeHistoryListLogsRequest class >> fromRequest: request tool: aTool [
 
 	^ self new
 		  directoryPath: (request stringArgumentNamed: 'directoryPath');
-		  limit: aTool defaultFileLimit;
+		  limit: aTool defaultPageLimit;
 		  offset: (request nonNegativeIntegerArgumentNamed: 'offset' default: 0);
 		  yourself
 ]

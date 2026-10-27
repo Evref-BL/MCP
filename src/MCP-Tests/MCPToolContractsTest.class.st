@@ -832,7 +832,10 @@ MCPToolContractsTest >> testDiscoveryUsesConfiguredAdvertisedTools [
 		                  at: #tool.
 	createContract := (self dataFrom: (server rpcToolCall: 'tool_get' withParams: { (#name -> 'repository_create') } asDictionary))
 		                  at: #tool.
-	self assert: searchContract keys asSet equals: #( name description group exposure annotations keywords inputSchema ) asSet.
+	"pageSize is there for the one that answers pages and absent from the one that does not."
+	self
+		assert: searchContract keys asSet
+		equals: #( name description group exposure annotations keywords inputSchema pageSize ) asSet.
 	self assert: createContract keys asSet equals: #( name description group exposure annotations keywords inputSchema ) asSet.
 	self assert: (searchContract at: #exposure) equals: 'static'.
 	self assert: ((searchContract at: #annotations) at: #readOnlyHint).
@@ -1011,6 +1014,23 @@ MCPToolContractsTest >> testEvaluateToolPointsAtTheToolCatalog [
 	| tool |
 	tool := self toolRegistry toolNamed: 'image_evaluate' ifAbsent: [ self fail: 'Missing image_evaluate tool' ].
 	self assert: (tool description includesSubstring: 'tool_search')
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testEveryPagingToolSaysHowBigAPageIs [
+	"A page carries nextOffset when another one exists and never says how large it was, so a caller that wants to know has only the contract to read. A tool that takes an offset has to answer there."
+
+	| registry silent |
+	registry := self toolRegistry.
+	silent := registry tools
+		          select: [ :tool |
+		          (tool inputSchema properties anySatisfy: [ :each | each name = 'offset' ]) and: [ tool defaultPageLimit isNil ] ]
+		          thenCollect: [ :tool | tool name ].
+	self assertEmpty: silent.
+	registry tools do: [ :tool |
+			tool defaultPageLimit ifNotNil: [ :pageSize |
+					self assert: pageSize > 0.
+					self assert: ((registry contractForTool: tool) at: #pageSize) equals: pageSize ] ]
 ]
 
 { #category : 'tests' }
