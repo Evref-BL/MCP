@@ -1,0 +1,71 @@
+"
+Captures the updated class state after a slot update.
+"
+Class {
+	#name : 'MCPSlotResult',
+	#superclass : 'MCPClassResult',
+	#instVars : [
+		'classInfo',
+		'slotName',
+		'classSide'
+	],
+	#category : 'MCP-IDE-Results',
+	#package : 'MCP-IDE',
+	#tag : 'Results'
+}
+
+{ #category : 'instance creation' }
+MCPSlotResult class >> classInfo: aClassInfo slotName: aSlotName classSide: aBoolean [
+
+	^ self new
+		  classInfo: aClassInfo;
+		  slotName: aSlotName;
+		  classSide: aBoolean;
+		  yourself
+]
+
+{ #category : 'converting' }
+MCPSlotResult >> asDictionary [
+
+	| data |
+	data := self newClassInfoDictionary.
+	data at: #slot put: self slotName.
+	self classSide ifTrue: [ data at: #side put: 'class' ].
+	^ data
+]
+
+{ #category : 'accessing' }
+MCPSlotResult >> classInfo [
+
+	^ classInfo
+]
+
+{ #category : 'accessing' }
+MCPSlotResult >> classInfo: aClassInfo [
+
+	classInfo := aClassInfo
+]
+
+{ #category : 'accessing' }
+MCPSlotResult >> classSide [
+
+	^ classSide
+]
+
+{ #category : 'accessing' }
+MCPSlotResult >> classSide: aBoolean [
+
+	classSide := aBoolean
+]
+
+{ #category : 'accessing' }
+MCPSlotResult >> slotName [
+
+	^ slotName
+]
+
+{ #category : 'accessing' }
+MCPSlotResult >> slotName: aSlotName [
+
+	slotName := aSlotName
+]

@@ -1,0 +1,88 @@
+"
+Result DTO for slot pull-up or push-down operations.
+
+It includes updated class info, the moved slot identity, side, and affected class names.
+"
+Class {
+	#name : 'MCPMoveSlotResult',
+	#superclass : 'MCPClassResult',
+	#instVars : [
+		'classInfo',
+		'slotName',
+		'classSide',
+		'affectedClassNames'
+	],
+	#category : 'MCP-IDE-Results',
+	#package : 'MCP-IDE',
+	#tag : 'Results'
+}
+
+{ #category : 'instance creation' }
+MCPMoveSlotResult class >> classInfo: aClassInfo slotName: aSlotName classSide: aBoolean affectedClassNames: someClassNames [
+
+	^ self new
+		  classInfo: aClassInfo;
+		  slotName: aSlotName;
+		  classSide: aBoolean;
+		  affectedClassNames: someClassNames;
+		  yourself
+]
+
+{ #category : 'accessing' }
+MCPMoveSlotResult >> affectedClassNames [
+
+	^ affectedClassNames
+]
+
+{ #category : 'accessing' }
+MCPMoveSlotResult >> affectedClassNames: someClassNames [
+
+	affectedClassNames := someClassNames
+]
+
+{ #category : 'converting' }
+MCPMoveSlotResult >> asDictionary [
+
+	| data |
+	data := self newClassInfoDictionary.
+	data at: #slot put: self slotName.
+	self classSide ifTrue: [ data at: #side put: 'class' ].
+	data at: #affectedClasses put: self affectedClassNames.
+	^ data
+]
+
+{ #category : 'accessing' }
+MCPMoveSlotResult >> classInfo [
+
+	^ classInfo
+]
+
+{ #category : 'accessing' }
+MCPMoveSlotResult >> classInfo: aClassInfo [
+
+	classInfo := aClassInfo
+]
+
+{ #category : 'accessing' }
+MCPMoveSlotResult >> classSide [
+
+	^ classSide
+]
+
+{ #category : 'accessing' }
+MCPMoveSlotResult >> classSide: aBoolean [
+
+	classSide := aBoolean
+]
+
+{ #category : 'accessing' }
+MCPMoveSlotResult >> slotName [
+
+	^ slotName
+]
+
+{ #category : 'accessing' }
+MCPMoveSlotResult >> slotName: aSlotName [
+
+	slotName := aSlotName
+]

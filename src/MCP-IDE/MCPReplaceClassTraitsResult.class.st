@@ -1,0 +1,73 @@
+"
+Result DTO for replacing the instance-side trait composition of a class.
+
+It carries the class state after replacement and the old/new trait name lists for class update output.
+"
+Class {
+	#name : 'MCPReplaceClassTraitsResult',
+	#superclass : 'MCPClassResult',
+	#instVars : [
+		'classInfo',
+		'oldTraitNames',
+		'newTraitNames'
+	],
+	#category : 'MCP-IDE-Results',
+	#package : 'MCP-IDE',
+	#tag : 'Results'
+}
+
+{ #category : 'instance creation' }
+MCPReplaceClassTraitsResult class >> classInfo: aClassInfo oldTraitNames: oldNames newTraitNames: newNames [
+
+	^ self new
+		  classInfo: aClassInfo;
+		  oldTraitNames: oldNames;
+		  newTraitNames: newNames;
+		  yourself
+]
+
+{ #category : 'converting' }
+MCPReplaceClassTraitsResult >> asDictionary [
+
+	| data |
+	data := self newClassInfoDictionary.
+	data at: #oldTraitNames put: self oldTraitNames.
+	data at: #newTraitNames put: self newTraitNames.
+	^ data
+]
+
+{ #category : 'accessing' }
+MCPReplaceClassTraitsResult >> classInfo [
+
+	^ classInfo
+]
+
+{ #category : 'accessing' }
+MCPReplaceClassTraitsResult >> classInfo: aClassInfo [
+
+	classInfo := aClassInfo
+]
+
+{ #category : 'accessing' }
+MCPReplaceClassTraitsResult >> newTraitNames [
+
+	^ newTraitNames ifNil: [ #(  ) ]
+]
+
+{ #category : 'accessing' }
+MCPReplaceClassTraitsResult >> newTraitNames: someNames [
+
+	newTraitNames := someNames ifNil: [ #(  ) ] ifNotNil: [ someNames asArray ]
+]
+
+{ #category : 'accessing' }
+MCPReplaceClassTraitsResult >> oldTraitNames [
+
+	^ oldTraitNames ifNil: [ #(  ) ]
+]
+
+{ #category : 'accessing' }
+MCPReplaceClassTraitsResult >> oldTraitNames: someNames [
+
+	oldTraitNames := someNames ifNil: [ #(  ) ] ifNotNil: [ someNames asArray ]
+]

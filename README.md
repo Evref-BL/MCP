@@ -32,6 +32,21 @@ Metacello new
    load.
 ```
 
+The baseline groups are:
+
+- `Core`: the server, its transport and schema machinery, and the three catalog
+  tools it dispatches through
+- `IDE`: the image tools — classes, methods, packages, tests, critiques,
+  repositories, change history, debugging
+- `UI`: the world-menu server list
+- `Telemetry`: the OpenTelemetry backend
+- `default`: `Core`, `IDE`, `UI` and their tests
+
+A project embedding the server and serving tools of its own loads `Core` alone,
+which is about sixty classes rather than three hundred. Its tools say they want
+registering, the way `PIFSTool` does in
+[pharo-image-fs](https://github.com/Evref-BL/pharo-image-fs).
+
 Start the Streamable HTTP server:
 
 ```smalltalk

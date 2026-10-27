@@ -38,12 +38,13 @@ BaselineOfMCP >> defineGroups: spec [
 
 	spec
 		group: 'Core' with: #( 'MCP' );
+		group: 'IDE' with: #( 'MCP-IDE' );
 		group: 'UI' with: #( 'MCP-UI' );
 		group: 'Telemetry' with: #( 'MCP-OpenTelemetry' );
 		group: 'Tests' with: #( 'MCP-Tests-Resources' 'MCP-Tests-RunResources' 'MCP-Tests' 'MCP-Tests-Resources-Extensions' );
 		group: 'UI Tests' with: #( 'MCP-UI-Tests' );
 		group: 'Telemetry Tests' with: #( 'MCP-OpenTelemetry-Tests' );
-		group: 'default' with: #( 'Core' 'UI' 'Tests' 'UI Tests' );
+		group: 'default' with: #( 'Core' 'IDE' 'UI' 'Tests' 'UI Tests' );
 		group: 'all' with: #( 'default' 'Telemetry' 'Telemetry Tests' ).
 
 	SystemVersion current major >= 13 ifTrue: [ spec group: 'Core' with: #( 'MCP' 'MCP-Compatibility-From13' ) ].
@@ -56,12 +57,13 @@ BaselineOfMCP >> definePackages: spec [
 	"common"
 
 	spec package: 'MCP' with: [ spec requires: #( 'PharoBackwardCompatibility' 'JRPC' 'PCRE2' ) ].
+	spec package: 'MCP-IDE' with: [ spec requires: #( 'MCP' ) ].
 	spec package: 'MCP-UI' with: [ spec requires: #( 'MCP' ) ].
 	spec package: 'MCP-OpenTelemetry' with: [ spec requires: #( 'MCP' 'OpenTelemetry' ) ].
 	spec package: 'MCP-OpenTelemetry-Tests' with: [ spec requires: #( 'MCP-OpenTelemetry' ) ].
-	spec package: 'MCP-Tests-Resources' with: [ spec requires: #( 'MCP' ) ].
+	spec package: 'MCP-Tests-Resources' with: [ spec requires: #( 'MCP' 'MCP-IDE' ) ].
 	spec package: 'MCP-Tests-RunResources' with: [ spec requires: #( 'MCP-Tests-Resources' ) ].
-	spec package: 'MCP-Tests' with: [ spec requires: #( 'MCP' 'MCP-Tests-Resources' 'MCP-Tests-RunResources' ) ].
+	spec package: 'MCP-Tests' with: [ spec requires: #( 'MCP' 'MCP-IDE' 'MCP-Tests-Resources' 'MCP-Tests-RunResources' ) ].
 	spec package: 'MCP-Tests-Resources-Extensions' with: [ spec requires: #( 'MCP-Tests-Resources' ) ].
 	spec package: 'MCP-UI-Tests' with: [ spec requires: #( 'MCP-UI' 'MCP-Tests' ) ].
 

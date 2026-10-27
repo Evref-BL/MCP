@@ -41,6 +41,13 @@ MCPTool class >> builtInGroupNames [
 		  self uiGroupName }
 ]
 
+{ #category : 'metadata' }
+MCPTool class >> builtInPackageNames [
+	"The packages MCP ships tools in: the catalog that the server dispatches through, and the image tools beside it. A tool defined anywhere else belongs to whoever put it there, including MCP's own test fixtures."
+
+	^ #( 'MCP' 'MCP-IDE' )
+]
+
 { #category : 'metadata - groups' }
 MCPTool class >> classesGroupName [
 
@@ -79,8 +86,9 @@ MCPTool class >> isAbstract [
 
 { #category : 'metadata' }
 MCPTool class >> isBuiltIn [
+	"A tool MCP ships, as against one another project defines. Its own no longer share a package, so provenance is a list rather than a comparison with this class's own."
 
-	^ self package = MCPTool package
+	^ self builtInPackageNames includes: self package name
 ]
 
 { #category : 'metadata - groups' }

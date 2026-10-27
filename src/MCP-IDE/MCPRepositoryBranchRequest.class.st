@@ -1,0 +1,41 @@
+"
+Abstract request DTO for repository operations that target an existing repository and branch.
+"
+Class {
+	#name : 'MCPRepositoryBranchRequest',
+	#superclass : 'MCPRepositoryRequest',
+	#instVars : [
+		'branchName'
+	],
+	#category : 'MCP-IDE-Requests',
+	#package : 'MCP-IDE',
+	#tag : 'Requests'
+}
+
+{ #category : 'testing' }
+MCPRepositoryBranchRequest class >> isAbstract [
+
+	^ self == MCPRepositoryBranchRequest
+]
+
+{ #category : 'accessing' }
+MCPRepositoryBranchRequest >> branchName [
+
+	^ branchName ifNil: [ '' ]
+]
+
+{ #category : 'initialization' }
+MCPRepositoryBranchRequest >> initializeFromRequest: request [
+
+	super initializeFromRequest: request.
+	branchName := request stringArgumentNamed: 'branch'
+]
+
+{ #category : 'converting' }
+MCPRepositoryBranchRequest >> requestedContext [
+
+	| context |
+	context := self repositoryReference requestedContext copy.
+	context at: #branch put: self branchName.
+	^ context
+]

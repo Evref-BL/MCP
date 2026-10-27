@@ -299,9 +299,10 @@ MCPToolContractsTest >> inputPropertyNamed: aPropertyName inTool: aTool [
 
 { #category : 'private' }
 MCPToolContractsTest >> mcpClassesInPackageTagNamed: aTagName [
+	"A tag says what kind of class this is, not which of MCP's packages it lives in, and since the split they live in two."
 
-	^ ((PackageOrganizer default packageNamed: #MCP) definedClasses select: [ :each | each packageTagName asString = aTagName ])
-		  asArray
+	^ ((MCPTool builtInPackageNames flatCollect: [ :each | (PackageOrganizer default packageNamed: each asSymbol) definedClasses ])
+		   select: [ :each | each packageTagName asString = aTagName ]) asArray
 ]
 
 { #category : 'private' }
@@ -2389,6 +2390,27 @@ MCPToolContractsTest >> testStringArrayItemDescriptionsStayUseful [
 	self deny: ((compactProperty asJRPCJSON at: #items) includesKey: #description).
 	usefulProperty := self inputPropertyNamed: 'argumentValueExpressions' inTool: MCPToolUpdateMethod new.
 	self assert: ((usefulProperty asJRPCJSON at: #items) at: #description) equals: 'Smalltalk expression.'
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testTheServerDoesNotReachIntoTheImageTools [
+	"MCP has to load without MCP-IDE, which is the whole point of the split: a project that wants the server and its own tools should not drag in forty it will never call. One reference from here to there, and a core-only load breaks. Its extensions to other projects' classes count too, which is where such a reference would hide."
+
+	| imageTools offenders check |
+	imageTools := ('MCP-IDE' asPackage definedClasses collect: [ :each | each instanceSide ]) asSet.
+	offenders := OrderedCollection new.
+	check := [ :method |
+		         method literals do: [ :literal |
+				         (literal isVariableBinding and: [ literal value isBehavior and: [ imageTools includes: literal value instanceSide ] ])
+					         ifTrue: [ offenders add: method methodClass name , '>>' , method selector , ' names ' , literal value name ] ] ].
+	'MCP' asPackage definedClasses do: [ :each |
+			(each superclass ifNil: [ false ] ifNotNil: [ :superclass | imageTools includes: superclass instanceSide ]) ifTrue: [
+				offenders add: each name , ' inherits from ' , each superclass name ].
+			{
+				each.
+				each class } do: [ :side | side methods do: [ :method | check value: method ] ] ].
+	'MCP' asPackage extensionMethods do: [ :method | check value: method ].
+	self assertEmpty: offenders
 ]
 
 { #category : 'tests' }

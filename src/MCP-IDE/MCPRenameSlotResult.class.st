@@ -1,0 +1,86 @@
+"
+Captures the updated class state after renaming a slot.
+"
+Class {
+	#name : 'MCPRenameSlotResult',
+	#superclass : 'MCPClassResult',
+	#instVars : [
+		'classInfo',
+		'oldSlotName',
+		'newSlotName',
+		'classSide'
+	],
+	#category : 'MCP-IDE-Results',
+	#package : 'MCP-IDE',
+	#tag : 'Results'
+}
+
+{ #category : 'instance creation' }
+MCPRenameSlotResult class >> classInfo: aClassInfo oldSlotName: anOldSlotName newSlotName: aNewSlotName classSide: aBoolean [
+
+	^ self new
+		  classInfo: aClassInfo;
+		  oldSlotName: anOldSlotName;
+		  newSlotName: aNewSlotName;
+		  classSide: aBoolean;
+		  yourself
+]
+
+{ #category : 'converting' }
+MCPRenameSlotResult >> asDictionary [
+
+	| data |
+	data := self newClassInfoDictionary.
+	data at: #oldSlotName put: self oldSlotName.
+	data at: #newSlot put: self newSlotName.
+	self classSide ifTrue: [ data at: #side put: 'class' ].
+	^ data
+]
+
+{ #category : 'accessing' }
+MCPRenameSlotResult >> classInfo [
+
+	^ classInfo
+]
+
+{ #category : 'accessing' }
+MCPRenameSlotResult >> classInfo: aClassInfo [
+
+	classInfo := aClassInfo
+]
+
+{ #category : 'accessing' }
+MCPRenameSlotResult >> classSide [
+
+	^ classSide
+]
+
+{ #category : 'accessing' }
+MCPRenameSlotResult >> classSide: aBoolean [
+
+	classSide := aBoolean
+]
+
+{ #category : 'accessing' }
+MCPRenameSlotResult >> newSlotName [
+
+	^ newSlotName
+]
+
+{ #category : 'accessing' }
+MCPRenameSlotResult >> newSlotName: aNewSlotName [
+
+	newSlotName := aNewSlotName
+]
+
+{ #category : 'accessing' }
+MCPRenameSlotResult >> oldSlotName [
+
+	^ oldSlotName
+]
+
+{ #category : 'accessing' }
+MCPRenameSlotResult >> oldSlotName: anOldSlotName [
+
+	oldSlotName := anOldSlotName
+]

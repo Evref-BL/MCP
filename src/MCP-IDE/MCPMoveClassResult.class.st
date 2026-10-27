@@ -1,0 +1,73 @@
+"
+Result DTO for moving or recategorizing a class.
+
+It carries the updated class info plus the previous package and tag.
+"
+Class {
+	#name : 'MCPMoveClassResult',
+	#superclass : 'MCPClassResult',
+	#instVars : [
+		'classInfo',
+		'oldPackageName',
+		'oldTag'
+	],
+	#category : 'MCP-IDE-Results',
+	#package : 'MCP-IDE',
+	#tag : 'Results'
+}
+
+{ #category : 'instance creation' }
+MCPMoveClassResult class >> classInfo: aClassInfo oldPackageName: anOldPackageName oldTag: anOldTag [
+
+	^ self new
+		  classInfo: aClassInfo;
+		  oldPackageName: anOldPackageName;
+		  oldTag: anOldTag;
+		  yourself
+]
+
+{ #category : 'converting' }
+MCPMoveClassResult >> asDictionary [
+
+	| data |
+	data := self newClassInfoDictionary.
+	data at: #oldPackageName put: self oldPackageName.
+	data at: #oldTag put: self oldTag.
+	^ data
+]
+
+{ #category : 'accessing' }
+MCPMoveClassResult >> classInfo [
+
+	^ classInfo
+]
+
+{ #category : 'accessing' }
+MCPMoveClassResult >> classInfo: anObject [
+
+	classInfo := anObject
+]
+
+{ #category : 'accessing' }
+MCPMoveClassResult >> oldPackageName [
+
+	^ oldPackageName ifNil: [ '' ]
+]
+
+{ #category : 'accessing' }
+MCPMoveClassResult >> oldPackageName: aString [
+
+	oldPackageName := aString ifNil: [ '' ]
+]
+
+{ #category : 'accessing' }
+MCPMoveClassResult >> oldTag [
+
+	^ oldTag ifNil: [ '' ]
+]
+
+{ #category : 'accessing' }
+MCPMoveClassResult >> oldTag: aString [
+
+	oldTag := aString ifNil: [ '' ]
+]
