@@ -13,6 +13,8 @@ The normal execution flow is:
 7. The server serializes the tool result into the HTTP/JSON-RPC response.
 
 Subclasses should keep protocol and schema mechanics in the tool, put image work in commands or query objects, and avoid passing raw argument dictionaries beyond request parsing.
+
+A tool is served because its package is loaded: a concrete subclass that can already name itself is in the catalog of every registry that discovers. One that must stay out of every catalog, a test fixture for instance, answers false to `shouldAutoRegister`.
 "
 Class {
 	#name : 'MCPTool',
@@ -86,7 +88,9 @@ MCPTool class >> isAbstract [
 
 { #category : 'metadata' }
 MCPTool class >> isBuiltIn [
-	"A tool MCP ships, as against one another project defines. Its own no longer share a package, so provenance is a list rather than a comparison with this class's own."
+	"A tool MCP ships, as against one another project defines. Its own no longer share a package, so provenance is a list rather than a comparison with this class's own.
+
+	This says whose conventions a tool answers to, which is what the contract tests ask. It says nothing about whether the tool is served: loading the package decides that."
 
 	^ self builtInPackageNames includes: self package name
 ]
@@ -129,9 +133,11 @@ MCPTool class >> runtimeGroupName [
 
 { #category : 'metadata' }
 MCPTool class >> shouldAutoRegister [
-	"A class that cannot yet answer its own name is not a tool to register. Building one in a live image compiles the class before its methods, and a catalog that tried to file it in between would raise for every tool, including the ones compiling the rest of it."
+	"A tool names itself, and naming itself is what gets it served: a registry that discovers takes in the concrete tools of whatever packages the image has loaded, wherever they come from. A tool that must stay out of every catalog, a test fixture for instance, answers false.
 
-	^ self isBuiltIn and: [ (self class lookupSelector: #toolName) isSubclassResponsibility not ]
+	Its own name, not an inherited one. A subclass of a tool is a variation of that tool and would claim the catalog key it already holds, and a class being compiled in a live image has its methods added after it exists. Neither is a tool to register until it says what it is called."
+
+	^ self class includesSelector: #toolName
 ]
 
 { #category : 'metadata - groups' }

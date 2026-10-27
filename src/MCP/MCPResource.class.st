@@ -5,7 +5,7 @@ A resource is context a client pulls rather than an action it calls. Where a too
 
 Subclasses answer a stable `uri`, which is also their key in the registry, and build their contents in `readContents`. Only `uri` and `name` are required of a resource; `title`, `description` and `mimeType` are there for clients that display a picker.
 
-Concrete subclasses in the MCP package register themselves, the way tools do. Override `shouldAutoRegister` to opt a resource of your own in.
+A resource is served because its package is loaded, the way a tool is: a concrete subclass that can already answer its URI is in the catalog. One that must stay out answers false to `shouldAutoRegister`.
 "
 Class {
 	#name : 'MCPResource',
@@ -25,12 +25,6 @@ MCPResource class >> concreteSubclasses [
 MCPResource class >> isAbstract [
 
 	^ self = MCPResource
-]
-
-{ #category : 'testing' }
-MCPResource class >> isBuiltIn [
-
-	^ self package = MCPResource package
 ]
 
 { #category : 'instance creation' }
@@ -54,8 +48,11 @@ MCPResource class >> resourceUri [
 
 { #category : 'testing' }
 MCPResource class >> shouldAutoRegister [
+	"A resource names itself with its URI, and naming itself is what gets it served, the way it is for tools. One that must stay out of every catalog answers false.
 
-	^ self isBuiltIn
+	Its own URI, not an inherited one: a subclass would otherwise claim the key its superclass already holds, and a class being compiled in a live image has its methods added after it exists."
+
+	^ self class includesSelector: #resourceUri
 ]
 
 { #category : 'converting' }

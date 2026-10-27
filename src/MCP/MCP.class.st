@@ -10,7 +10,7 @@ Two words govern the tool surface. A *registered* tool is in the catalog, callab
 - `mcp onlyTools: { A. B }` replaces the catalog with exactly those;
 - `mcp advertiseTools: { A. 'class_search' }` chooses what tools/list shows, registering anything not yet in the catalog;
 - `mcp advertiseAllTools` and `mcp advertiseToolDefaults` are the other two advertising states;
-- for automatic opt-in, override `MyToolClass class >> shouldAutoRegister` to return `true`.
+- a tool class is in the catalog because its package was loaded, wherever it was defined; `MyToolClass class >> shouldAutoRegister` answering `false` keeps one out.
 "
 Class {
 	#name : 'MCP',

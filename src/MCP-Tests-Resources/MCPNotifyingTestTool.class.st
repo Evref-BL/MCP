@@ -9,9 +9,10 @@ Class {
 }
 
 { #category : 'testing' }
-MCPNotifyingTestTool class >> isAbstract [
+MCPNotifyingTestTool class >> shouldAutoRegister [
+	"A fixture is not a tool anyone asked for, and MCP's default group loads its own tests. It used to call itself abstract to stay out of the catalog, which was a lie: the tests instantiate it."
 
-	^ true
+	^ false
 ]
 
 { #category : 'metadata' }

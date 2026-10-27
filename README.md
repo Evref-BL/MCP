@@ -43,8 +43,9 @@ The baseline groups are:
 - `default`: `Core`, `IDE`, `UI` and their tests
 
 A project embedding the server and serving tools of its own loads `Core` alone,
-which is about sixty classes rather than three hundred. Its tools say they want
-registering, the way `PIFSTool` does in
+which is about seventy classes rather than three hundred. Loading its package is
+all its tools need: a tool that names itself is in the catalog, the way the
+`pifs_` tools are in
 [pharo-image-fs](https://github.com/Evref-BL/pharo-image-fs).
 
 Start the Streamable HTTP server:

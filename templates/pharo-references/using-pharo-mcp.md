@@ -114,17 +114,22 @@ MyProjectMCPTool >> executeWithRequest: request
 		data: Dictionary new
 ```
 
-By default, tools outside the MCP package are not auto-registered. If your
-package intentionally publishes a tool whenever it is loaded, opt in:
+A tool is served because its package is loaded: name your tool and every
+server in the image has it, wherever the class lives. A tool that must stay
+out of every catalog says so itself:
 
 ```smalltalk
 MyProjectMCPTool class >> shouldAutoRegister
 
-	^ true
+	^ false
 ```
 
-Auto-registered external tools are discoverable by default. Agents can find
-them with `tool_search`, inspect them with `tool_get`, and call them by name.
+It is the tool's own name that serves it, not an inherited one, so
+specialising an existing tool does not claim the name it already holds.
+
+Tools from other packages are discoverable rather than advertised. Agents
+find them with `tool_search`, inspect them with `tool_get`, and call them by
+name.
 
 `MCPToolRegistry` is the server's source of truth for registered tools. In
 normal use, configure it through the `MCP` instance messages below. The

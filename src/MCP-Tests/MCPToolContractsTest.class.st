@@ -469,6 +469,33 @@ MCPToolContractsTest >> signalHaltForMCPMessageProcessorTest [
 ]
 
 { #category : 'tests' }
+MCPToolContractsTest >> testAToolDecidesForItselfWhetherDiscoveryServesIt [
+	"Loading the package is the opt-in, so the only knob left is the tool's own answer. A fixture that answers false stays out, a subclass inherits that answer, and overriding it back serves the subclass under the name it inherits."
+
+	| className registry toolClass |
+	self deny: (MCPToolRegistry default includesToolNamed: MCPExternalTestTool toolName).
+	className := 'MCPAutoRegisterExternalToolFixture'.
+	self
+		createClassNamed: className
+		superclassName: MCPExternalTestTool name
+		slots: #(  )
+		classSlots: #(  ).
+	[
+		toolClass := self classNamed: className.
+		self deny: toolClass shouldAutoRegister.
+		self
+			ensureMethodSource: 'shouldAutoRegister
+
+	^ true'
+			protocol: 'testing'
+			on: toolClass classSide.
+		registry := MCPToolRegistry default.
+		self assert: toolClass shouldAutoRegister.
+		self assert: (registry includesToolNamed: MCPExternalTestTool toolName).
+		self deny: (registry isToolAdvertisedNamed: MCPExternalTestTool toolName) ] ensure: [ self removeClassNamed: className ]
+]
+
+{ #category : 'tests' }
 MCPToolContractsTest >> testAdvertisingAToolClassRegistersItFirst [
 	"A class says its own tool name, so naming one that is not in the catalog yet registers it instead of failing on order."
 
@@ -555,15 +582,6 @@ MCPToolContractsTest >> testBrowseIconToolGroupsKeepRelatedToolsTogether [
 			groupedToolClasses addAll: group value ].
 	autoRegisteredToolClasses := MCPTool concreteSubclasses select: [ :toolClass | toolClass shouldAutoRegister ].
 	self assert: groupedToolClasses asSet equals: autoRegisteredToolClasses asSet
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testBuiltInToolClassesExcludeExternalToolSubclasses [
-
-	self assert: (MCPTool concreteSubclasses includes: MCPExternalTestTool).
-	self deny: MCPExternalTestTool isBuiltIn.
-	self deny: (self builtInToolClasses includes: MCPExternalTestTool).
-	self deny: (MCPTool builtInGroupNames includes: MCPExternalTestTool groupName)
 ]
 
 { #category : 'tests' }
@@ -1026,6 +1044,7 @@ MCPToolContractsTest >> testEveryToolNameMapsToAKnownDomainAndAction [
 
 { #category : 'tests' }
 MCPToolContractsTest >> testExternalToolFixtureIsNotBuiltIn [
+	"Two separate facts about the same fixture. It is not built in, so MCP's naming, grouping and icon conventions are not asked of it; and it answers false to discovery, which is its own doing rather than a consequence of the package it sits in."
 
 	self assert: (MCPTool concreteSubclasses includes: MCPExternalTestTool).
 	self deny: MCPExternalTestTool isBuiltIn.
@@ -1247,6 +1266,25 @@ MCPToolContractsTest >> testMCPRemoveToolRefreshesAdvertisedTools [
 	server removeTool: MCPHaltingTestTool toolName.
 	self deny: (server toolRegistry includesToolNamed: MCPHaltingTestTool toolName).
 	self deny: (server advertisedToolNames includes: MCPHaltingTestTool toolName)
+]
+
+{ #category : 'tests' }
+MCPToolContractsTest >> testMCPsOwnTestFixturesAreNotServed [
+	"MCP's default group loads its own tests, so a fixture that names itself and forgot to answer false would be in the catalog of every server in the image. Classes a test generates are left out of the sweep: they exist to be discovered and removed again."
+
+	| served |
+	served := Set new.
+	{
+		MCPToolRegistry.
+		MCPResourceRegistry.
+		MCPPromptRegistry } do: [ :registryClass |
+			registryClass default autoRegisteringClasses do: [ :each |
+					| packageName |
+					packageName := each package name asString.
+					((packageName beginsWith: 'MCP') and: [
+						 (packageName includesSubstring: 'Tests') and: [ packageName ~= self generatedPackageName ] ]) ifTrue: [
+						served add: each name ] ] ].
+	self assert: served asArray sorted equals: #(  )
 ]
 
 { #category : 'tests - evaluate' }
@@ -2504,30 +2542,6 @@ MCPToolContractsTest >> testToolRegistryAcceptsAPluginTool [
 	self deny: (registry isToolAdvertisedNamed: tool name).
 	self assert: ((registry toolGroups detect: [ :each | each key = tool groupName ] ifNone: [ self fail ]) value includes:
 			 MCPHaltingTestTool)
-]
-
-{ #category : 'tests' }
-MCPToolContractsTest >> testToolRegistryAutoRegistersOptInExternalTools [
-
-	| className registry toolClass |
-	className := 'MCPAutoRegisterExternalToolFixture'.
-	self
-		createClassNamed: className
-		superclassName: MCPExternalTestTool name
-		slots: #(  )
-		classSlots: #(  ).
-	[
-		toolClass := self classNamed: className.
-		self
-			ensureMethodSource: 'shouldAutoRegister
-
-	^ true'
-			protocol: 'metadata'
-			on: toolClass classSide.
-		registry := MCPToolRegistry default.
-		self assert: toolClass shouldAutoRegister.
-		self assert: (registry includesToolNamed: MCPExternalTestTool toolName).
-		self deny: (registry isToolAdvertisedNamed: MCPExternalTestTool toolName) ] ensure: [ self removeClassNamed: className ]
 ]
 
 { #category : 'tests' }
