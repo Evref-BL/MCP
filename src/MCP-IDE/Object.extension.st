@@ -13,12 +13,6 @@ Object >> mcpMethodNode [
 ]
 
 { #category : '*MCP-IDE' }
-Object >> mcpMutationFailureNotice [
-
-	^ self
-]
-
-{ #category : '*MCP-IDE' }
 Object >> mcpNoticeNode [
 
 	^ nil
